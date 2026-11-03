@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_BSplKnotDistribution;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -77,11 +80,11 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             {
                 anOracle.Same(Oracle.FromNative(aNLV), aPort.LocalValue(aLU, aK1, aK1 + 1).XY(), "LocalValue");
                 aNative.LocalD1(aLU, aK1, aK1 + 1, aNP, aNV1);
-                aPort.LocalD1(aLU, aK1, aK1 + 1, out gp_Pnt2d aP, out gp_Vec2d aV1);
+                aPort.LocalD1(aLU, aK1, aK1 + 1, out Point2D aP, out Vector2D aV1);
                 anOracle.Same(Oracle.FromNative(aNP), aP.XY(), "LocalD1 P");
                 anOracle.Same(Oracle.FromNative(aNV1), aV1.XY(), "LocalD1 V1");
                 aNative.LocalD3(aLU, aK1, aK1 + 1, aNP, aNV1, aNV2, aNV3);
-                aPort.LocalD3(aLU, aK1, aK1 + 1, out aP, out aV1, out gp_Vec2d aV2, out gp_Vec2d aV3);
+                aPort.LocalD3(aLU, aK1, aK1 + 1, out aP, out aV1, out Vector2D aV2, out Vector2D aV3);
                 anOracle.Same(Oracle.FromNative(aNP), aP.XY(), "LocalD3 P");
                 anOracle.Same(Oracle.FromNative(aNV1), aV1.XY(), "LocalD3 V1");
                 anOracle.Same(Oracle.FromNative(aNV2), aV2.XY(), "LocalD3 V2");
@@ -276,7 +279,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                     }
                     theWhat = "SetPeriodic";
                     int aLastPole = thePort.NbPoles();
-                    gp_Pnt2d aFirstPole = thePort.Pole(1);
+                    Point2D aFirstPole = thePort.Pole(1);
                     double aFirstWeight = thePort.Weight(1);
                     theNativeEdit = c =>
                     {
@@ -304,7 +307,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             case 9:
             {
                 int anIndex = theOracle.Int(1, thePort.NbPoles());
-                gp_Pnt2d aP = new gp_Pnt2d(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 double aW = theOracle.Real(0.5, 2.0);
                 switch (theOracle.Int(0, 3))
                 {
@@ -334,8 +337,8 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             }
             case 10:
             {
-                GeomAbs_BSplKnotDistribution aDist = thePort.KnotDistribution();
-                if (aDist != GeomAbs_Uniform && aDist != GeomAbs_QuasiUniform)
+                BSplKnotDistribution aDist = thePort.KnotDistribution();
+                if (aDist != Uniform && aDist != QuasiUniform)
                 {
                     theWhat = "";
                     return false;
@@ -344,7 +347,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                 {
                     theWhat = "InsertPoleAfter";
                     int anIndex = theOracle.Int(0, thePort.NbPoles());
-                    gp_Pnt2d aP = new gp_Pnt2d(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                    Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                     double aW = theOracle.Bool() ? 1.0 : theOracle.Real(0.5, 2.0);
                     theNativeEdit = c => { using var aNP = Oracle.ToNative(aP); c.InsertPoleAfter(anIndex, aNP, aW); return []; };
                     thePortEdit = c => { c.InsertPoleAfter(anIndex, aP, aW); return []; };
@@ -364,7 +367,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                 double U = theOracle.Real(aF, aL);
                 int I1 = theOracle.Int(1, thePort.NbPoles()), I2 = theOracle.Int(1, thePort.NbPoles());
                 int aLo = Math.Min(I1, I2), aHi = Math.Max(I1, I2);
-                gp_Pnt2d aP = new gp_Pnt2d(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                Point2D aP = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 theNativeEdit = c =>
                 {
                     using var aNP = Oracle.ToNative(aP);
@@ -383,8 +386,8 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             {
                 theWhat = "MovePointAndTangent";
                 double U = theOracle.Real(aF, aL);
-                gp_Pnt2d aP = thePort.Value(U).Translated(new gp_Vec2d(theOracle.Real(-1, 1), theOracle.Real(-1, 1)));
-                gp_Vec2d aTan = new gp_Vec2d(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                Point2D aP = thePort.Value(U).Translated(new Vector2D(theOracle.Real(-1, 1), theOracle.Real(-1, 1)));
+                Vector2D aTan = new Vector2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 int aStart = theOracle.Int(-1, 1), anEnd = theOracle.Int(-1, 1);
                 theNativeEdit = c =>
                 {
@@ -452,7 +455,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                     // Standard_Failure, or IndexOutOfRangeException where native OCCT raises Standard_OutOfRange
                     aPortExc = anExc;
                 }
-                if (aPortExc is Standard_ConstructionError && aThisKind == 12)
+                if (aPortExc is ConstructionErrorException && aThisKind == 12)
                 {
                     // MovePointAndTangent's 2 x 2 system is singular (degree 1 mostly): OCCT's release build divides
                     // by the zero determinant (gp_Mat2d::Invert's check is compiled out) where the port throws.
@@ -485,7 +488,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 
                 // Some edits of unclamped curves leave a pole count that doesn't match the multiplicities, natively
                 // as in the port (compared just above); later edits would then read past the arrays. Stop there.
-                if (aPort.NbPoles() != BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic(), aPort.InternalMultiplicities()))
+                if (aPort.NbPoles() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic(), aPort.InternalMultiplicities()))
                 {
                     anInconsistent[aWhat] = anInconsistent.GetValueOrDefault(aWhat) + 1;
                     break;

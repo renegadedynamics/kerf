@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -9,8 +10,8 @@ public class ShapeFix_WireSegmentTests
 {
     private static ShapeExtend_WireData Square(bool theClosed)
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0),
-                                                   new gp_Pnt(0, 1, 0), theClosed);
+        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0),
+                                                   new Point3D(0, 1, 0), theClosed);
         return new ShapeExtend_WireData(aPoly.Wire());
     }
 
@@ -57,7 +58,7 @@ public class ShapeFix_WireSegmentTests
         aSeg.SetPatchIndex(2, 0, 2, 0, 0);
         Assert.False(aSeg.CheckPatchIndex(2));
 
-        TopoDS_Edge anExtra = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 0, 1)).Edge();
+        TopoDS_Edge anExtra = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 0, 1)).Edge();
         aSeg.AddEdge(0, anExtra, 5, 5, 6, 6);
         aSeg.AddEdge(1, anExtra);
         Assert.Equal(6, aSeg.NbEdges());
@@ -73,7 +74,7 @@ public class ShapeFix_WireSegmentTests
         var aSeg = new ShapeFix_WireSegment(Square(true), TopAbs_FORWARD);
         ShapeFix_WireSegment aCopy = aSeg;
         aCopy.Orientation(TopAbs_INTERNAL);
-        aCopy.SetVertex(new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Vertex());
+        aCopy.SetVertex(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex());
         aCopy.SetEdge(1, aSeg.Edge(2));
         Assert.Equal(TopAbs_FORWARD, aSeg.Orientation());
         Assert.False(aSeg.IsVertex());

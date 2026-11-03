@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -30,9 +31,9 @@ public class BRepMeshDelaunTests
 
     private static double SignedArea(BRepMesh_DataStructureOfDelaun theStructure, (int A, int B, int C) theTriangle)
     {
-        gp_XY a = theStructure.GetNode(theTriangle.A).Coord();
-        gp_XY b = theStructure.GetNode(theTriangle.B).Coord();
-        gp_XY c = theStructure.GetNode(theTriangle.C).Coord();
+        Xy a = theStructure.GetNode(theTriangle.A).Coord();
+        Xy b = theStructure.GetNode(theTriangle.B).Coord();
+        Xy c = theStructure.GetNode(theTriangle.C).Coord();
         return 0.5 * ((b - a) ^ (c - a));
     }
 
@@ -40,7 +41,7 @@ public class BRepMeshDelaunTests
     /// Builds a structure of free nodes and triangulates it as DelaunayBaseMeshAlgo does: the vertex order 1..n, cells
     /// (-1, -1), then MeshTool.EraseFreeLinks.
     /// </summary>
-    internal static BRepMesh_DataStructureOfDelaun TriangulateFree(IReadOnlyList<gp_XY> thePoints)
+    internal static BRepMesh_DataStructureOfDelaun TriangulateFree(IReadOnlyList<Xy> thePoints)
     {
         BRepMesh_DataStructureOfDelaun aStructure = new();
         for (int i = 0; i < thePoints.Count; ++i)
@@ -112,7 +113,7 @@ public class BRepMeshDelaunTests
             Assert.True(BRepMesh_CircleTool.MakeCircle(theStructure.GetNode(a).Coord(),
                                                        theStructure.GetNode(b).Coord(),
                                                        theStructure.GetNode(c).Coord(),
-                                                       out gp_XY aCenter,
+                                                       out Xy aCenter,
                                                        out double aRadius));
             double aTol = 1e-9 * Math.Max(1.0, aRadius * aRadius);
             foreach (int n in theNodes)
@@ -129,26 +130,26 @@ public class BRepMeshDelaunTests
         }
     }
 
-    private static List<gp_XY> RandomPoints(int theSeed, int theCount, double theScale = 1.0)
+    private static List<Xy> RandomPoints(int theSeed, int theCount, double theScale = 1.0)
     {
         Random aRandom = new(theSeed);
-        List<gp_XY> aPoints = [];
+        List<Xy> aPoints = [];
         for (int i = 0; i < theCount; ++i)
         {
-            aPoints.Add(new gp_XY(theScale * aRandom.NextDouble(), theScale * aRandom.NextDouble()));
+            aPoints.Add(new Xy(theScale * aRandom.NextDouble(), theScale * aRandom.NextDouble()));
         }
 
         return aPoints;
     }
 
-    private static List<gp_XY> Grid(int theNx, int theNy, double theStep)
+    private static List<Xy> Grid(int theNx, int theNy, double theStep)
     {
-        List<gp_XY> aPoints = [];
+        List<Xy> aPoints = [];
         for (int j = 0; j < theNy; ++j)
         {
             for (int i = 0; i < theNx; ++i)
             {
-                aPoints.Add(new gp_XY(theStep * i, theStep * j));
+                aPoints.Add(new Xy(theStep * i, theStep * j));
             }
         }
 
@@ -185,33 +186,33 @@ public class BRepMeshDelaunTests
     public void Grids_inside_their_frontier_are_split_cell_by_cell(int theNx, int theNy, double theStep)
     {
         // As a face's mesh: the boundary nodes and links are the frontier (counter-clockwise), the others free.
-        List<gp_XY> aBoundary = [];
+        List<Xy> aBoundary = [];
         for (int i = 0; i < theNx - 1; ++i)
         {
-            aBoundary.Add(new gp_XY(theStep * i, 0.0));
+            aBoundary.Add(new Xy(theStep * i, 0.0));
         }
 
         for (int j = 0; j < theNy - 1; ++j)
         {
-            aBoundary.Add(new gp_XY(theStep * (theNx - 1), theStep * j));
+            aBoundary.Add(new Xy(theStep * (theNx - 1), theStep * j));
         }
 
         for (int i = theNx - 1; i > 0; --i)
         {
-            aBoundary.Add(new gp_XY(theStep * i, theStep * (theNy - 1)));
+            aBoundary.Add(new Xy(theStep * i, theStep * (theNy - 1)));
         }
 
         for (int j = theNy - 1; j > 0; --j)
         {
-            aBoundary.Add(new gp_XY(0.0, theStep * j));
+            aBoundary.Add(new Xy(0.0, theStep * j));
         }
 
-        List<gp_XY> anInterior = [];
+        List<Xy> anInterior = [];
         for (int j = 1; j < theNy - 1; ++j)
         {
             for (int i = 1; i < theNx - 1; ++i)
             {
-                anInterior.Add(new gp_XY(theStep * i, theStep * j));
+                anInterior.Add(new Xy(theStep * i, theStep * j));
             }
         }
 
@@ -235,20 +236,20 @@ public class BRepMeshDelaunTests
     public void Collinear_runs_on_the_frontier()
     {
         // A right triangle whose two legs are runs of 20 collinear frontier nodes, and free nodes inside.
-        List<gp_XY> aBoundary = [];
+        List<Xy> aBoundary = [];
         for (int i = 0; i < 20; ++i)
         {
-            aBoundary.Add(new gp_XY(0.5 * i, 0.0));
+            aBoundary.Add(new Xy(0.5 * i, 0.0));
         }
 
-        aBoundary.Add(new gp_XY(10.0, 0.0));
+        aBoundary.Add(new Xy(10.0, 0.0));
         for (int j = 19; j > 0; --j)
         {
-            aBoundary.Add(new gp_XY(0.0, 0.5 * j + 0.5));
+            aBoundary.Add(new Xy(0.0, 0.5 * j + 0.5));
         }
 
-        aBoundary.Add(new gp_XY(0.0, 0.5));
-        List<gp_XY> anInterior = [new(3.0, 2.0), new(1.5, 1.5), new(5.0, 1.0), new(1.0, 6.0)];
+        aBoundary.Add(new Xy(0.0, 0.5));
+        List<Xy> anInterior = [new(3.0, 2.0), new(1.5, 1.5), new(5.0, 1.0), new(1.0, 6.0)];
         BRepMesh_DataStructureOfDelaun aStructure =
             TriangulateConstrained([aBoundary], anInterior, null, out List<int> aFrontier, out _);
         List<(int, int, int)> aTriangles = CheckTriangulation(aStructure, theCheckEmptyCircles: false);
@@ -266,8 +267,8 @@ public class BRepMeshDelaunTests
     [Fact]
     public void Duplicates_are_merged_into_one_node()
     {
-        List<gp_XY> aPoints = RandomPoints(7, 100, 5.0);
-        List<gp_XY> aWithDuplicates = [.. aPoints, .. aPoints.Take(30), new gp_XY(aPoints[0].X() + 1e-9, aPoints[0].Y())];
+        List<Xy> aPoints = RandomPoints(7, 100, 5.0);
+        List<Xy> aWithDuplicates = [.. aPoints, .. aPoints.Take(30), new Xy(aPoints[0].X() + 1e-9, aPoints[0].Y())];
         BRepMesh_DataStructureOfDelaun aStructure = TriangulateFree(aWithDuplicates);
         BRepMesh_DataStructureOfDelaun aReference = TriangulateFree(aPoints);
 
@@ -279,24 +280,24 @@ public class BRepMeshDelaunTests
     [Fact]
     public void Near_cocircular_points()
     {
-        List<gp_XY> aPoints = [];
+        List<Xy> aPoints = [];
         Random aRandom = new(11);
         for (int i = 0; i < 64; ++i)
         {
             double anAngle = 2 * Math.PI * i / 64;
             double aRadius = 1.0 + 1e-12 * (aRandom.NextDouble() - 0.5);
-            aPoints.Add(new gp_XY(aRadius * Math.Cos(anAngle), aRadius * Math.Sin(anAngle)));
+            aPoints.Add(new Xy(aRadius * Math.Cos(anAngle), aRadius * Math.Sin(anAngle)));
         }
 
-        aPoints.Add(new gp_XY(0.0, 0.0));
-        aPoints.Add(new gp_XY(0.1, 0.05));
+        aPoints.Add(new Xy(0.0, 0.0));
+        aPoints.Add(new Xy(0.1, 0.05));
         CheckTriangulation(TriangulateFree(aPoints));
     }
 
     [Fact]
     public void The_same_input_gives_the_same_triangulation_every_time()
     {
-        List<gp_XY> aPoints = [.. RandomPoints(21, 300, 3.0), .. Grid(10, 10, 0.3)];
+        List<Xy> aPoints = [.. RandomPoints(21, 300, 3.0), .. Grid(10, 10, 0.3)];
         List<(int, int, int)> aFirst = Triangles(TriangulateFree(aPoints));
         for (int aRun = 0; aRun < 3; ++aRun)
         {
@@ -314,15 +315,15 @@ public class BRepMeshDelaunTests
     {
         // With its links as the frontier, a triangle is meshed as itself.
         BRepMesh_DataStructureOfDelaun aTriangle =
-            TriangulateConstrained([[new gp_XY(0, 0), new gp_XY(1, 0), new gp_XY(0, 1)]], [], null, out List<int> aFrontier, out _);
+            TriangulateConstrained([[new Xy(0, 0), new Xy(1, 0), new Xy(0, 1)]], [], null, out List<int> aFrontier, out _);
         Assert.Single(CheckTriangulation(aTriangle));
         CheckFrontier(aTriangle, aFrontier);
 
         // Free nodes alone (a property of OCCT's algorithm, not a bug): the cleanup after the frontier adjustment removes
         // every triangle with a free link whose nodes no frontier holds, here the only one.
-        Assert.True(TriangulateFree([new gp_XY(0, 0), new gp_XY(1, 0), new gp_XY(0, 1)]).ElementsOfDomain().IsEmpty());
+        Assert.True(TriangulateFree([new Xy(0, 0), new Xy(1, 0), new Xy(0, 1)]).ElementsOfDomain().IsEmpty());
 
-        BRepMesh_DataStructureOfDelaun aTwo = TriangulateFree([new gp_XY(0, 0), new gp_XY(1, 0)]);
+        BRepMesh_DataStructureOfDelaun aTwo = TriangulateFree([new Xy(0, 0), new Xy(1, 0)]);
         Assert.True(aTwo.ElementsOfDomain().IsEmpty());
         Assert.Equal(0, aTwo.NbLinks());
     }
@@ -333,9 +334,9 @@ public class BRepMeshDelaunTests
     /// A structure with closed frontier polygons (each counter-clockwise for material on the left; holes clockwise),
     /// free interior points, and optional fixed internal links; triangulated as DelaunayBaseMeshAlgo does.
     /// </summary>
-    internal static BRepMesh_DataStructureOfDelaun TriangulateConstrained(IReadOnlyList<IReadOnlyList<gp_XY>> theWires,
-                                                                         IReadOnlyList<gp_XY> theInterior,
-                                                                         IReadOnlyList<(gp_XY, gp_XY)>? theFixed,
+    internal static BRepMesh_DataStructureOfDelaun TriangulateConstrained(IReadOnlyList<IReadOnlyList<Xy>> theWires,
+                                                                         IReadOnlyList<Xy> theInterior,
+                                                                         IReadOnlyList<(Xy, Xy)>? theFixed,
                                                                          out List<int> theFrontierLinks,
                                                                          out List<int> theFixedLinks)
     {
@@ -343,10 +344,10 @@ public class BRepMeshDelaunTests
         theFrontierLinks = [];
         theFixedLinks = [];
         int aLocation = 0;
-        foreach (IReadOnlyList<gp_XY> aWire in theWires)
+        foreach (IReadOnlyList<Xy> aWire in theWires)
         {
             List<int> aNodes = [];
-            foreach (gp_XY aPoint in aWire)
+            foreach (Xy aPoint in aWire)
             {
                 aNodes.Add(aStructure.AddNode(new BRepMesh_Vertex(aPoint, ++aLocation, BRepMesh_Frontier)));
             }
@@ -357,14 +358,14 @@ public class BRepMeshDelaunTests
             }
         }
 
-        foreach ((gp_XY, gp_XY) aFixed in theFixed ?? [])
+        foreach ((Xy, Xy) aFixed in theFixed ?? [])
         {
             int aNode1 = aStructure.AddNode(new BRepMesh_Vertex(aFixed.Item1, ++aLocation, BRepMesh_Fixed));
             int aNode2 = aStructure.AddNode(new BRepMesh_Vertex(aFixed.Item2, ++aLocation, BRepMesh_Fixed));
             theFixedLinks.Add(aStructure.AddLink(new BRepMesh_Edge(aNode1, aNode2, BRepMesh_Fixed)));
         }
 
-        foreach (gp_XY aPoint in theInterior)
+        foreach (Xy aPoint in theInterior)
         {
             aStructure.AddNode(new BRepMesh_Vertex(aPoint, ++aLocation, BRepMesh_Free));
         }
@@ -380,28 +381,28 @@ public class BRepMeshDelaunTests
         return aStructure;
     }
 
-    private static List<gp_XY> Square(double theMin, double theMax, int thePointsPerSide, bool theIsCounterClockwise)
+    private static List<Xy> Square(double theMin, double theMax, int thePointsPerSide, bool theIsCounterClockwise)
     {
-        List<gp_XY> aPoints = [];
+        List<Xy> aPoints = [];
         double aStep = (theMax - theMin) / thePointsPerSide;
         for (int i = 0; i < thePointsPerSide; ++i)
         {
-            aPoints.Add(new gp_XY(theMin + i * aStep, theMin));
+            aPoints.Add(new Xy(theMin + i * aStep, theMin));
         }
 
         for (int i = 0; i < thePointsPerSide; ++i)
         {
-            aPoints.Add(new gp_XY(theMax, theMin + i * aStep));
+            aPoints.Add(new Xy(theMax, theMin + i * aStep));
         }
 
         for (int i = 0; i < thePointsPerSide; ++i)
         {
-            aPoints.Add(new gp_XY(theMax - i * aStep, theMax));
+            aPoints.Add(new Xy(theMax - i * aStep, theMax));
         }
 
         for (int i = 0; i < thePointsPerSide; ++i)
         {
-            aPoints.Add(new gp_XY(theMin, theMax - i * aStep));
+            aPoints.Add(new Xy(theMin, theMax - i * aStep));
         }
 
         if (!theIsCounterClockwise)
@@ -441,10 +442,10 @@ public class BRepMeshDelaunTests
     public void Square_with_a_square_hole()
     {
         // The Delaunay part of BRepMesh_DelaunTest.MeshPlanarFaceWithHole: the outer square 10 x 10 and the hole 2 x 2.
-        List<gp_XY> anInterior = [];
-        foreach (gp_XY aPoint in Grid(21, 21, 0.5))
+        List<Xy> anInterior = [];
+        foreach (Xy aPoint in Grid(21, 21, 0.5))
         {
-            gp_XY aShifted = new(aPoint.X() - 5.0 + 0.0123, aPoint.Y() - 5.0 + 0.0456);
+            Xy aShifted = new(aPoint.X() - 5.0 + 0.0123, aPoint.Y() - 5.0 + 0.0456);
             if (Math.Abs(aShifted.X()) < 4.9 && Math.Abs(aShifted.Y()) < 4.9
                 && (Math.Abs(aShifted.X()) > 1.1 || Math.Abs(aShifted.Y()) > 1.1))
             {
@@ -472,16 +473,16 @@ public class BRepMeshDelaunTests
     public void Non_convex_polygon_with_a_fixed_internal_link()
     {
         // An L-shaped polygon (counter-clockwise), random interior points away from its frontier, and a fixed link.
-        List<gp_XY> anL =
+        List<Xy> anL =
         [
             new(0, 0), new(1, 0), new(2, 0), new(3, 0), new(3, 1), new(2, 1), new(1, 1), new(1, 2), new(1, 3),
             new(0, 3), new(0, 2), new(0, 1),
         ];
         Random aRandom = new(5);
-        List<gp_XY> anInterior = [];
+        List<Xy> anInterior = [];
         while (anInterior.Count < 80)
         {
-            gp_XY aPoint = new(0.05 + 2.9 * aRandom.NextDouble(), 0.05 + 2.9 * aRandom.NextDouble());
+            Xy aPoint = new(0.05 + 2.9 * aRandom.NextDouble(), 0.05 + 2.9 * aRandom.NextDouble());
             bool isInside = (aPoint.Y() < 0.95) || (aPoint.X() < 0.95);
             bool isOffFixed = Math.Abs(aPoint.Y() - 0.5) > 0.03;
             if (isInside && isOffFixed)
@@ -491,7 +492,7 @@ public class BRepMeshDelaunTests
         }
 
         BRepMesh_DataStructureOfDelaun aStructure = TriangulateConstrained(
-            [anL], anInterior, [(new gp_XY(0.4, 0.5), new gp_XY(2.6, 0.5))],
+            [anL], anInterior, [(new Xy(0.4, 0.5), new Xy(2.6, 0.5))],
             out List<int> aFrontier, out List<int> aFixed);
 
         List<(int, int, int)> aTriangles = CheckTriangulation(aStructure, theCheckEmptyCircles: false);
@@ -514,7 +515,7 @@ public class BRepMeshDelaunTests
     [Fact]
     public void Constrained_triangulation_is_the_same_every_time()
     {
-        List<gp_XY> anInterior = [.. RandomPoints(3, 200, 8.0).Select(p => new gp_XY(p.X() - 4.0, p.Y() - 4.0))
+        List<Xy> anInterior = [.. RandomPoints(3, 200, 8.0).Select(p => new Xy(p.X() - 4.0, p.Y() - 4.0))
                                                              .Where(p => Math.Abs(p.X()) > 1.05 || Math.Abs(p.Y()) > 1.05)];
         List<(int, int, int)> aFirst = Triangles(TriangulateConstrained(
             [Square(-5.0, 5.0, 7, true), Square(-1.0, 1.0, 3, false)], anInterior, null, out _, out _));
@@ -530,7 +531,7 @@ public class BRepMeshDelaunTests
     [Fact]
     public void AddVertices_inserts_nodes_into_an_existing_triangulation()
     {
-        List<gp_XY> aBase = Square(0.0, 4.0, 4, true);
+        List<Xy> aBase = Square(0.0, 4.0, 4, true);
         BRepMesh_DataStructureOfDelaun aStructure = TriangulateConstrained([aBase], [], null, out List<int> aFrontier, out _);
         BRepMesh_Delaun aMesher = new(aStructure, -1, -1, true);
 
@@ -539,7 +540,7 @@ public class BRepMeshDelaunTests
         for (int i = 0; i < 60; ++i)
         {
             // Away from the frontier: a free node within 1/5 of a frontier link's length of it is skipped (below).
-            gp_XY aPoint = new(0.25 + 3.5 * aRandom.NextDouble(), 0.25 + 3.5 * aRandom.NextDouble());
+            Xy aPoint = new(0.25 + 3.5 * aRandom.NextDouble(), 0.25 + 3.5 * aRandom.NextDouble());
             aNew.Append(aStructure.AddNode(new BRepMesh_Vertex(aPoint, 1000 + i, BRepMesh_Free)));
         }
 
@@ -565,8 +566,8 @@ public class BRepMeshDelaunTests
         BRepMesh_Delaun aMesher = new(aStructure, -1, -1, true);
 
         NCollection_DynamicArray<int> aNew = new();
-        int aNear = aStructure.AddNode(new BRepMesh_Vertex(new gp_XY(0.15, 1.5), 100, BRepMesh_Free));
-        int aFar = aStructure.AddNode(new BRepMesh_Vertex(new gp_XY(0.25, 2.5), 101, BRepMesh_Free));
+        int aNear = aStructure.AddNode(new BRepMesh_Vertex(new Xy(0.15, 1.5), 100, BRepMesh_Free));
+        int aFar = aStructure.AddNode(new BRepMesh_Vertex(new Xy(0.25, 2.5), 101, BRepMesh_Free));
         aNew.Append(aNear);
         aNew.Append(aFar);
         aMesher.AddVertices(aNew);

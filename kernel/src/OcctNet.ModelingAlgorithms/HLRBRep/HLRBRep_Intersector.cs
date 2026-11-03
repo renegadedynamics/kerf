@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntRes2d_Position;
 
 namespace Occt;
@@ -56,15 +57,15 @@ public sealed class HLRBRep_Intersector
         {
             b = b - d * theDb1;
         }
-        myC1.D0(a, out gp_Pnt2d pa);
-        myC1.D0(b, out gp_Pnt2d pb);
+        myC1.D0(a, out Point2D pa);
+        myC1.D0(b, out Point2D pb);
         a = myC1.Parameter2d(a);
         b = myC1.Parameter2d(b);
         IntRes2d_Domain D1 = new(pa, a, (double)ta, pb, b, (double)tb);
 
         // modified by jgv, 18.04.2016 for OCC27341
         // tol = (double)(((HLRBRep_EdgeData*) A1)->Tolerance());
-        tol = Precision.Confusion();
+        tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         myIntersector.Perform(myC1, D1, tol, tol);
     }
@@ -81,16 +82,16 @@ public sealed class HLRBRep_Intersector
 
         myTypePerform = 1;
 
-        gp_Pnt2d pa1, pb1, pa2, pb2;
-        gp_Vec2d va1, vb1, va2, vb2;
+        Point2D pa1, pb1, pa2, pb2;
+        Vector2D va1, vb1, va2, vb2;
         double a1, b1, a2, b2, d, dd, tol, tol1, tol2;
         float ta, tb;
 
         // modified by jgv, 18.04.2016 for OCC27341
         // tol1 = theEdge1->Tolerance();
         // tol2 = theEdge2->Tolerance();
-        tol1 = Precision.Confusion();
-        tol2 = Precision.Confusion();
+        tol1 = global::Kerf.Engine.Foundation.Precision.Confusion();
+        tol2 = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         if (tol1 > tol2)
         {
@@ -363,8 +364,8 @@ public sealed class HLRBRep_Intersector
 
         double u3 = myC1.Parameter3d(theU);
         double v3 = myC2.Parameter3d(theV);
-        myC1.D1(u3, out gp_Pnt2d P13, out gp_Vec2d T13);
-        myC2.D1(v3, out gp_Pnt2d P23, out gp_Vec2d T23);
+        myC1.D1(u3, out Point2D P13, out Vector2D T13);
+        myC2.D1(v3, out Point2D P23, out Vector2D T23);
 
         IntRes2d_Transition Tr1 = new(), Tr2 = new();
         IntRes2d_Position Pos1, Pos2;
@@ -384,17 +385,17 @@ public sealed class HLRBRep_Intersector
     }
 
     /// <summary>The intersection of the line L with the loaded surface, up to the parameter P on the line.</summary>
-    public void Perform(in gp_Lin L, double P)
+    public void Perform(in Line3D L, double P)
     {
         myTypePerform = 2;
-        GeomAbs_SurfaceType typ = HLRBRep_SurfaceTool.GetType(mySurface!);
+        SurfaceKind typ = HLRBRep_SurfaceTool.GetType(mySurface!);
         switch (typ)
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case Plane:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 myCSIntersector.Perform(L, mySurface!);
                 break;
             default:
@@ -414,9 +415,9 @@ public sealed class HLRBRep_Intersector
                 double x0, y0, z0, x1, y1, z1, pmin, pmax; //,pp;
                 myPolyhedron.Bounding().Get(out x0, out y0, out z0, out x1, out y1, out z1);
                 double p;
-                p = ElCLib.Parameter(L, new gp_Pnt(x0, y0, z0));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x0, y0, z0));
                 pmin = pmax = p;
-                p = ElCLib.Parameter(L, new gp_Pnt(x0, y0, z1));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x0, y0, z1));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -426,7 +427,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x1, y0, z0));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x1, y0, z0));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -436,7 +437,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x1, y0, z1));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x1, y0, z1));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -446,7 +447,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x0, y1, z0));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x0, y1, z0));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -456,7 +457,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x0, y1, z1));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x0, y1, z1));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -466,7 +467,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x1, y1, z0));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x1, y1, z0));
                 if (pmin > p)
                 {
                     pmin = p;
@@ -476,7 +477,7 @@ public sealed class HLRBRep_Intersector
                     pmax = p;
                 }
 
-                p = ElCLib.Parameter(L, new gp_Pnt(x1, y1, z1));
+                p = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, new Point3D(x1, y1, z1));
                 if (pmin > p)
                 {
                     pmin = p;

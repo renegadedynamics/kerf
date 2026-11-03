@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -20,7 +22,7 @@ internal static class ClassificationTestShapes
     public static TopoDS_Face HoledSquare()
     {
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, Tol);
         aB.Add(aF, PolygonWire(aF, (0, 0), (10, 0), (10, 10), (0, 10)));
@@ -36,7 +38,7 @@ internal static class ClassificationTestShapes
         var aV = new TopoDS_Vertex[n];
         for (int i = 0; i < n; i++)
         {
-            aV[i] = TestShapes.Vertex(new gp_Pnt(theCorners[i].X, theCorners[i].Y, 0));
+            aV[i] = TestShapes.Vertex(new Point3D(theCorners[i].X, theCorners[i].Y, 0));
         }
 
         TopoDS_Wire aW = new();
@@ -46,7 +48,7 @@ internal static class ClassificationTestShapes
             (double x1, double y1) = theCorners[i];
             (double x2, double y2) = theCorners[(i + 1) % n];
             TopoDS_Edge anE = TestShapes.Edge(aV[i], aV[(i + 1) % n]);
-            aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(x1, y1), new gp_Dir2d(x2 - x1, y2 - y1)), theFace, Tol);
+            aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(x1, y1), new Direction2D(x2 - x1, y2 - y1)), theFace, Tol);
             aB.Add(aW, anE);
         }
 
@@ -61,8 +63,8 @@ internal static class ClassificationTestShapes
     /// </summary>
     public static TopoDS_Face ExtrudedTube(double r, double h)
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r);
-        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new gp_Dir(0, 0, 1));
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new Direction3D(0, 0, 1));
         var aTrimmed = new Geom_RectangularTrimmedSurface(anExtr, 0.0, 2.0 * Math.PI, 0.0, h);
         return BRepGPropTestShapes.NaturalFace(aTrimmed);
     }
@@ -77,9 +79,9 @@ internal static class ClassificationTestShapes
         TopoDS_Solid anOuterBox = TestShapes.Box(10, 10, 10);
         TopoDS_Solid anInnerBox = TestShapes.Box(2, 2, 2);
         theOuter = FirstShell(anOuterBox);
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(3, 3, 3));
-        theInner = TopoDS.Shell(FirstShell(anInnerBox).Moved(new TopLoc_Location(aT)).Reversed());
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(3, 3, 3));
+        theInner = TopoDS.Shell(FirstShell(anInnerBox).Moved(new Placement(aT)).Reversed());
         TopoDS_Solid aSolid = new();
         aB.MakeSolid(ref aSolid);
         aB.Add(aSolid, theInner);
@@ -94,18 +96,18 @@ internal static class ClassificationTestShapes
     }
 
     /// <summary>The shape moved by the translation <paramref name="theV"/>.</summary>
-    public static TopoDS_Shape Translated(in TopoDS_Shape theShape, in gp_Vec theV)
+    public static TopoDS_Shape Translated(in TopoDS_Shape theShape, in Vector3D theV)
     {
-        var aT = new gp_Trsf();
+        var aT = new Transform3D();
         aT.SetTranslation(theV);
-        return theShape.Moved(new TopLoc_Location(aT));
+        return theShape.Moved(new Placement(aT));
     }
 
     /// <summary>The shape rotated by <paramref name="theAngle"/> around the Z axis.</summary>
     public static TopoDS_Shape RotatedZ(in TopoDS_Shape theShape, double theAngle)
     {
-        var aT = new gp_Trsf();
-        aT.SetRotation(new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)), theAngle);
-        return theShape.Moved(new TopLoc_Location(aT));
+        var aT = new Transform3D();
+        aT.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), theAngle);
+        return theShape.Moved(new Placement(aT));
     }
 }

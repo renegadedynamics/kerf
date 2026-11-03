@@ -4,7 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -19,30 +22,30 @@ public sealed class Contap_ContAna
 
     private bool done;
     private int nbSol;
-    private GeomAbs_CurveType typL;
-    private gp_Pnt pt1 = new();
-    private gp_Pnt pt2 = new();
-    private gp_Pnt pt3 = new();
-    private gp_Pnt pt4 = new();
-    private gp_Dir dir1 = new();
-    private gp_Dir dir2 = new();
-    private gp_Dir dir3 = new();
-    private gp_Dir dir4 = new();
+    private CurveKind typL;
+    private Point3D pt1 = new();
+    private Point3D pt2 = new();
+    private Point3D pt3 = new();
+    private Point3D pt4 = new();
+    private Direction3D dir1 = new();
+    private Direction3D dir2 = new();
+    private Direction3D dir3 = new();
+    private Direction3D dir4 = new();
     private double prm;
 
     public Contap_ContAna()
     {
         done = false;
         nbSol = 0;
-        typL = GeomAbs_OtherCurve;
+        typL = OtherCurve;
         prm = 0.0;
     }
 
     /// <summary>The silhouette of a sphere for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Sphere S, in gp_Dir D)
+    public void Perform(in Sphere S, in Direction3D D)
     {
         done = false;
-        typL = GeomAbs_Circle;
+        typL = global::Kerf.Geometry.CurveKind.Circle;
         pt1 = S.Location();
         dir1 = D;
         if (Math.Abs(D.Dot(S.XAxis().Direction())) < 0.9999999999999)
@@ -59,10 +62,10 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The draft contour of angle <paramref name="Angle"/> of a sphere for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Sphere S, in gp_Dir D, double Angle)
+    public void Perform(in Sphere S, in Direction3D D, double Angle)
     {
         done = false;
-        typL = GeomAbs_Circle;
+        typL = global::Kerf.Geometry.CurveKind.Circle;
 
         dir1 = D;
         if (Math.Abs(D.Dot(S.XAxis().Direction())) < 0.9999999999999)
@@ -81,7 +84,7 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The silhouette of a sphere for the eye <paramref name="Eye"/>.</summary>
-    public void Perform(in gp_Sphere S, in gp_Pnt Eye)
+    public void Perform(in Sphere S, in Point3D Eye)
     {
         done = false;
 
@@ -100,7 +103,7 @@ public sealed class Contap_ContAna
             }
             else
             {
-                gp_XYZ locxyz = S.Location().XYZ();
+                Xyz locxyz = S.Location().XYZ();
                 dir1.SetXYZ(Eye.XYZ() - locxyz);
                 pt1.SetXYZ(locxyz + (radius * radius / dist) * dir1.XYZ());
                 if (Math.Abs(dir1.Dot(S.XAxis().Direction())) < 0.9999999999999)
@@ -112,18 +115,18 @@ public sealed class Contap_ContAna
                     dir2 = dir1.Crossed(S.YAxis().Direction());
                 }
                 nbSol = 1;
-                typL = GeomAbs_Circle;
+                typL = global::Kerf.Geometry.CurveKind.Circle;
             }
         }
         done = true;
     }
 
     /// <summary>The silhouette of a cylinder for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Cylinder C, in gp_Dir D)
+    public void Perform(in Cylinder C, in Direction3D D)
     {
         done = false;
 
-        gp_XYZ normale = C.Position().Direction().XYZ();
+        Xyz normale = C.Position().Direction().XYZ();
         normale.Cross(D.XYZ());
         if (normale.Modulus() <= 1e-15)
         {
@@ -132,7 +135,7 @@ public sealed class Contap_ContAna
         else
         {
             normale.Normalize();
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             dir1 = C.Position().Direction();
             dir2 = dir1;
             pt1.SetXYZ(C.Location().XYZ() + C.Radius() * normale);
@@ -144,7 +147,7 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The draft contour of angle <paramref name="Angle"/> of a cylinder for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Cylinder C, in gp_Dir D, double Angle)
+    public void Perform(in Cylinder C, in Direction3D D, double Angle)
     {
         done = false;
 
@@ -157,7 +160,7 @@ public sealed class Contap_ContAna
 
         if (Math.Abs(Coefcst) < norm2)
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             nbSol = 2;
             dir1 = dir2 = C.Position().Direction();
 
@@ -184,9 +187,9 @@ public sealed class Contap_ContAna
             sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
             sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
 
-            gp_XYZ Xdir = C.Position().XDirection().XYZ();
-            gp_XYZ Ydir = C.Position().YDirection().XYZ();
-            gp_XYZ dirxyz = new();
+            Xyz Xdir = C.Position().XDirection().XYZ();
+            Xyz Ydir = C.Position().YDirection().XYZ();
+            Xyz dirxyz = new();
 
             dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir);
             dirxyz.Multiply(C.Radius());
@@ -205,12 +208,12 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The silhouette of a cylinder for the eye <paramref name="Eye"/>.</summary>
-    public void Perform(in gp_Cylinder C, in gp_Pnt Eye)
+    public void Perform(in Cylinder C, in Point3D Eye)
     {
         done = false;
 
         double radius = C.Radius();
-        gp_Lin theaxis = new(C.Axis());
+        Line3D theaxis = new(C.Axis());
         double dist = theaxis.Distance(Eye);
         if (dist <= radius)
         {
@@ -218,12 +221,12 @@ public sealed class Contap_ContAna
         }
         else
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             prm = radius * Math.Sqrt(1.0 - radius * radius / (dist * dist));
             dir1 = C.Axis().Direction();
             dir2 = dir1;
-            gp_XYZ axeye = theaxis.Normal(Eye).Direction().XYZ(); // orientate the axis to the outside
-            gp_XYZ normale = (theaxis.Direction().Crossed(new gp_Dir(axeye))).XYZ();
+            Xyz axeye = theaxis.Normal(Eye).Direction().XYZ(); // orientate the axis to the outside
+            Xyz normale = (theaxis.Direction().Crossed(new Direction3D(axeye))).XYZ();
             //      normale.Normalize();
             pt1.SetXYZ(C.Location().XYZ() + (radius * radius / dist) * axeye);
             pt2.SetXYZ(pt1.XYZ() - prm * normale);
@@ -234,7 +237,7 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The silhouette of a cone for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Cone C, in gp_Dir D)
+    public void Perform(in Cone C, in Direction3D D)
     {
         done = false;
 
@@ -249,7 +252,7 @@ public sealed class Contap_ContAna
 
         if (Math.Abs(Coefcst) < norm2)
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             nbSol = 2;
             pt1 = C.Apex();
             pt2 = pt1;
@@ -266,10 +269,10 @@ public sealed class Contap_ContAna
             sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
             sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
 
-            gp_XYZ Xdir = C.Position().XDirection().XYZ();
-            gp_XYZ Ydir = C.Position().YDirection().XYZ();
-            gp_XYZ Zdir = C.Axis().Direction().XYZ();
-            gp_XYZ dirxyz = new();
+            Xyz Xdir = C.Position().XDirection().XYZ();
+            Xyz Ydir = C.Position().YDirection().XYZ();
+            Xyz Zdir = C.Axis().Direction().XYZ();
+            Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, 1.0 / Tgtalpha, Zdir);
             dir1.SetXYZ(dirxyz);
             pt1.SetXYZ(pt1.XYZ() + dirxyz);
@@ -285,7 +288,7 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The draft contours of angle <paramref name="Angle"/> of a cone for the direction <paramref name="D"/>.</summary>
-    public void Perform(in gp_Cone C, in gp_Dir D, double Angle)
+    public void Perform(in Cone C, in Direction3D D, double Angle)
     {
         done = false;
         nbSol = 0;
@@ -307,7 +310,7 @@ public sealed class Contap_ContAna
 
         if (Math.Abs(Coefcst) < norm2)
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             nbSol += 2;
             pt1 = C.Apex();
             pt2 = pt1;
@@ -321,14 +324,14 @@ public sealed class Contap_ContAna
             sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
             sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
 
-            gp_XYZ Xdir = C.Position().XDirection().XYZ();
-            gp_XYZ Ydir = C.Position().YDirection().XYZ();
-            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            Xyz Xdir = C.Position().XDirection().XYZ();
+            Xyz Ydir = C.Position().YDirection().XYZ();
+            Xyz Zdir = C.Axis().Direction().XYZ();
             if (!C.Direct())
             {
                 Zdir.Reverse();
             }
-            gp_XYZ dirxyz = new();
+            Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, Cosa / Sina, Zdir);
             dir1.SetXYZ(dirxyz);
             pt1.SetXYZ(pt1.XYZ() + dirxyz);
@@ -341,7 +344,7 @@ public sealed class Contap_ContAna
 
         if (Math.Abs(Coefcst) < norm2)
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             nbSol += 2;
             pt3 = C.Apex();
             pt4 = pt3;
@@ -355,14 +358,14 @@ public sealed class Contap_ContAna
             sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
             sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
 
-            gp_XYZ Xdir = C.Position().XDirection().XYZ();
-            gp_XYZ Ydir = C.Position().YDirection().XYZ();
-            gp_XYZ Zdir = C.Axis().Direction().XYZ();
+            Xyz Xdir = C.Position().XDirection().XYZ();
+            Xyz Ydir = C.Position().YDirection().XYZ();
+            Xyz Zdir = C.Axis().Direction().XYZ();
             if (!C.Direct())
             {
                 Zdir.Reverse();
             }
-            gp_XYZ dirxyz = new();
+            Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, -Cosa / Sina, Zdir);
             dir3.SetXYZ(dirxyz);
             pt3.SetXYZ(pt3.XYZ() + dirxyz);
@@ -382,13 +385,13 @@ public sealed class Contap_ContAna
     }
 
     /// <summary>The silhouette of a cone for the eye <paramref name="Eye"/>.</summary>
-    public void Perform(in gp_Cone C, in gp_Pnt Eye)
+    public void Perform(in Cone C, in Point3D Eye)
     {
         done = false;
 
         double Tgtalpha = Math.Tan(C.SemiAngle());
 
-        gp_XYZ apexeye = Eye.XYZ();
+        Xyz apexeye = Eye.XYZ();
         apexeye.Subtract(C.Apex().XYZ());
 
         double Coefcos = apexeye.Dot(C.Position().XDirection().XYZ());
@@ -400,7 +403,7 @@ public sealed class Contap_ContAna
 
         if (Math.Abs(Coefcst) < norm2)
         {
-            typL = GeomAbs_Line;
+            typL = global::Kerf.Geometry.CurveKind.Line;
             nbSol = 2;
             pt1 = C.Apex();
             pt2 = pt1;
@@ -414,10 +417,10 @@ public sealed class Contap_ContAna
             sint0 = (Coefcos * prm + Coefsin * Coefcst) / norm1;
             sint1 = (-Coefcos * prm + Coefsin * Coefcst) / norm1;
 
-            gp_XYZ Xdir = C.Position().XDirection().XYZ();
-            gp_XYZ Ydir = C.Position().YDirection().XYZ();
-            gp_XYZ Zdir = C.Axis().Direction().XYZ();
-            gp_XYZ dirxyz = new();
+            Xyz Xdir = C.Position().XDirection().XYZ();
+            Xyz Ydir = C.Position().YDirection().XYZ();
+            Xyz Zdir = C.Axis().Direction().XYZ();
+            Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, Xdir, sint0, Ydir, 1.0 / Tgtalpha, Zdir);
             dir1.SetXYZ(dirxyz);
             pt1.SetXYZ(pt1.XYZ() + dirxyz);
@@ -439,65 +442,65 @@ public sealed class Contap_ContAna
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return nbSol;
     }
 
     /// <summary>GeomAbs_Line or GeomAbs_Circle; throws StdFail_NotDone or Standard_DomainError (no contour).</summary>
-    public GeomAbs_CurveType TypeContour()
+    public CurveKind TypeContour()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (nbSol == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return typL;
     }
 
     /// <summary>The circle; throws StdFail_NotDone or Standard_DomainError.</summary>
-    public gp_Circ Circle()
+    public Circle3D Circle()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
-        if (typL != GeomAbs_Circle || nbSol == 0)
+        if (typL != global::Kerf.Geometry.CurveKind.Circle || nbSol == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Circ(new gp_Ax2(pt1, dir1, dir2), prm);
+        return new Circle3D(new Frame3D(pt1, dir1, dir2), prm);
     }
 
     /// <summary>The line <paramref name="Index"/>; throws StdFail_NotDone, Standard_DomainError or Standard_OutOfRange.</summary>
-    public gp_Lin Line(int Index)
+    public Line3D Line(int Index)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
-        if (typL != GeomAbs_Line || nbSol == 0)
+        if (typL != global::Kerf.Geometry.CurveKind.Line || nbSol == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (Index <= 0 || Index > nbSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         switch (Index)
         {
             case 1:
-                return new gp_Lin(pt1, dir1);
+                return new Line3D(pt1, dir1);
             case 2:
-                return new gp_Lin(pt2, dir2);
+                return new Line3D(pt2, dir2);
             case 3:
-                return new gp_Lin(pt3, dir3);
+                return new Line3D(pt3, dir3);
             case 4:
-                return new gp_Lin(pt4, dir4);
+                return new Line3D(pt4, dir4);
         }
-        throw new Standard_OutOfRange("Program error in Contap_ContAna");
+        throw new OutOfRangeException("Program error in Contap_ContAna");
     }
 }

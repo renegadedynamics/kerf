@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_NamedUnit : Standard_Transient
+public class StepBasic_NamedUnit : Transient
 {
     private StepBasic_DimensionalExponents dimensions;
 

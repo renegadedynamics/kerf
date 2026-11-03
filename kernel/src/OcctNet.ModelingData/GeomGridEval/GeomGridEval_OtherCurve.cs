@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,15 +28,15 @@ public sealed class GeomGridEval_OtherCurve : GeomGridEval.ICurveEvaluator
     public Adaptor3d_Curve Curve() => myCurve;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt> aResult = new(1, aNb);
+        NCollection_Array1<Point3D> aResult = new(1, aNb);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -56,7 +58,7 @@ public sealed class GeomGridEval_OtherCurve : GeomGridEval.ICurveEvaluator
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
-            myCurve.D1(theParams.Value(i), out gp_Pnt aPoint, out gp_Vec aD1);
+            myCurve.D1(theParams.Value(i), out Point3D aPoint, out Vector3D aD1);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD1 { Point = aPoint, D1 = aD1 };
         }
         return aResult;
@@ -75,7 +77,7 @@ public sealed class GeomGridEval_OtherCurve : GeomGridEval.ICurveEvaluator
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
-            myCurve.D2(theParams.Value(i), out gp_Pnt aPoint, out gp_Vec aD1, out gp_Vec aD2);
+            myCurve.D2(theParams.Value(i), out Point3D aPoint, out Vector3D aD1, out Vector3D aD2);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD2 { Point = aPoint, D1 = aD1, D2 = aD2 };
         }
         return aResult;
@@ -94,7 +96,7 @@ public sealed class GeomGridEval_OtherCurve : GeomGridEval.ICurveEvaluator
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
-            myCurve.D3(theParams.Value(i), out gp_Pnt aPoint, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            myCurve.D3(theParams.Value(i), out Point3D aPoint, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD3 { Point = aPoint, D1 = aD1, D2 = aD2, D3 = aD3 };
         }
         return aResult;
@@ -104,15 +106,15 @@ public sealed class GeomGridEval_OtherCurve : GeomGridEval.ICurveEvaluator
     /// Evaluates the Nth derivative at all grid points: from the D1-D3 grids for N up to 3, with the adaptor's DN
     /// above.
     /// </summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec> aResult = new(1, aNb);
+        NCollection_Array1<Vector3D> aResult = new(1, aNb);
 
         // Reuse existing grid evaluators for orders 1-3
         if (theN == 1)

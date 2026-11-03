@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -41,7 +43,7 @@ public class IntTools_EdgeFace
     /// <summary>An empty algorithm.</summary>
     public IntTools_EdgeFace()
     {
-        myFuzzyValue = Precision.Confusion();
+        myFuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsDone = false;
         myErrorStatus = 1;
         myQuickCoincidenceCheck = false;
@@ -80,7 +82,7 @@ public class IntTools_EdgeFace
     public IntTools_Context? Context() => myContext;
 
     /// <summary>Sets the fuzzy value (at least <see cref="Precision.Confusion"/>).</summary>
-    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, Precision.Confusion());
+    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <summary>The fuzzy value.</summary>
     public double FuzzyValue() => myFuzzyValue;
@@ -115,14 +117,14 @@ public class IntTools_EdgeFace
         int i, iCnt;
         double dT, aT, aD, aT1, aT2, aU, aV;
 
-        gp_Pnt aP;
+        Point3D aP;
         TopAbs_State aState;
-        gp_Pnt2d aP2d = new();
+        Point2D aP2d = new();
         //
         GeomAPI_ProjectPointOnSurf aProjector = myContext!.ProjPS(myFace);
 
         int aNbSeg = 23;
-        if (myC.GetType() == GeomAbs_Line && myS.GetType() == GeomAbs_Plane)
+        if (myC.GetType() == Line && myS.GetType() == Plane)
         {
             aNbSeg = 2; // Check only three points for Line/Plane intersection
         }
@@ -229,7 +231,7 @@ public class IntTools_EdgeFace
     protected bool IsProjectable(double aT)
     {
         bool bFlag;
-        gp_Pnt aPC;
+        Point3D aPC;
         //
         myC.D0(aT, out aPC);
         bFlag = myContext!.IsValidPointForFace(aPC, myFace, myCriteria);
@@ -243,7 +245,7 @@ public class IntTools_EdgeFace
         double aD = 0.0;
 
         //
-        gp_Pnt P;
+        Point3D P;
         myC.D0(t, out P);
         //
         bool bIsEqDistance;
@@ -285,17 +287,17 @@ public class IntTools_EdgeFace
     /// True, with the distance in <paramref name="aD"/>, if the point is on the axis of a cylinder or cone or on the
     /// spine of a torus (all points of the surface's circle are then at the same distance).
     /// </summary>
-    protected static bool IsEqDistance(in gp_Pnt aP, BRepAdaptor_Surface aBAS, double aTol, ref double aD)
+    protected static bool IsEqDistance(in Point3D aP, BRepAdaptor_Surface aBAS, double aTol, ref double aD)
     {
         bool bRetFlag = true;
 
-        GeomAbs_SurfaceType aSurfType = aBAS.GetType();
+        SurfaceKind aSurfType = aBAS.GetType();
 
-        if (aSurfType == GeomAbs_Cylinder)
+        if (aSurfType == SurfaceKind.Cylinder)
         {
-            gp_Cylinder aCyl = aBAS.Cylinder();
-            gp_Ax1 anAx1 = aCyl.Axis();
-            gp_Lin aLinAxis = new(anAx1);
+            Cylinder aCyl = aBAS.Cylinder();
+            Axis3D anAx1 = aCyl.Axis();
+            Line3D aLinAxis = new(anAx1);
             double aDC, aRadius = aCyl.Radius();
             aDC = aLinAxis.Distance(aP);
             if (aDC < aTol)
@@ -305,16 +307,16 @@ public class IntTools_EdgeFace
             }
         }
 
-        if (aSurfType == GeomAbs_Cone)
+        if (aSurfType == SurfaceKind.Cone)
         {
-            gp_Cone aCone = aBAS.Cone();
-            gp_Ax1 anAx1 = aCone.Axis();
-            gp_Lin aLinAxis = new(anAx1);
+            Cone aCone = aBAS.Cone();
+            Axis3D anAx1 = aCone.Axis();
+            Line3D aLinAxis = new(anAx1);
             double aDC, aRadius, aDS, aSemiAngle;
             aDC = aLinAxis.Distance(aP);
             if (aDC < aTol)
             {
-                gp_Pnt anApex = aCone.Apex();
+                Point3D anApex = aCone.Apex();
                 aSemiAngle = aCone.SemiAngle();
                 aDS = aP.Distance(anApex);
 
@@ -324,12 +326,12 @@ public class IntTools_EdgeFace
             }
         }
 
-        if (aSurfType == GeomAbs_Torus)
+        if (aSurfType == SurfaceKind.Torus)
         {
             double aMajorRadius, aMinorRadius, aDC;
 
-            gp_Torus aTorus = aBAS.Torus();
-            gp_Pnt aPLoc = aTorus.Location();
+            Torus aTorus = aBAS.Torus();
+            Point3D aPLoc = aTorus.Location();
             aMajorRadius = aTorus.MajorRadius();
 
             aDC = Math.Abs(aPLoc.Distance(aP) - aMajorRadius);
@@ -360,7 +362,7 @@ public class IntTools_EdgeFace
         aCommonPrt.Range1(out af1, out al1);
 
         {
-            gp_Pnt aPF, aPL;
+            Point3D aPF, aPL;
             myC.D0(af1, out aPF);
             myC.D0(al1, out aPL);
             df1 = aPF.Distance(aPL);
@@ -419,7 +421,7 @@ public class IntTools_EdgeFace
         }
         //
 
-        Tol = Precision.PConfusion();
+        Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         Geom_Curve Curve = BRep_Tool.Curve(myC.Edge(), out _, out _)!;
         Geom_Surface Surface = BRep_Tool.Surface(myS.Face())!;
@@ -519,12 +521,12 @@ public class IntTools_EdgeFace
             return theflag;
         }
 
-        if (Math.Abs(aTx - aTF) < Precision.PConfusion())
+        if (Math.Abs(aTx - aTF) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return !theflag;
         }
 
-        if (Math.Abs(aTx - aTL) < Precision.PConfusion())
+        if (Math.Abs(aTx - aTL) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return !theflag;
         }
@@ -556,14 +558,14 @@ public class IntTools_EdgeFace
         //
         myIsDone = false;
         myC.Initialize(myEdge);
-        GeomAbs_CurveType aCurveType;
+        CurveKind aCurveType;
         aCurveType = myC.GetType();
         //
         // Prepare myCriteria
         double aFuzz = myFuzzyValue / 2.0;
         double aTolF = BRep_Tool.Tolerance(myFace) + aFuzz;
         double aTolE = BRep_Tool.Tolerance(myEdge) + aFuzz;
-        if (aCurveType == GeomAbs_BSplineCurve || aCurveType == GeomAbs_BezierCurve)
+        if (aCurveType == BSplineCurve || aCurveType == BezierCurve)
         {
             //--- 5112
             double diff1 = (aTolE / aTolF);
@@ -632,7 +634,7 @@ public class IntTools_EdgeFace
             IntTools_CommonPrt aCP = mySeqOfCommonPrts.Value(i);
             //
             double aTx1, aTx2;
-            gp_Pnt aPx1, aPx2;
+            Point3D aPx1, aPx2;
             //
             aCP.Range1(out aTx1, out aTx2);
             myC.D0(aTx1, out aPx1);
@@ -643,8 +645,8 @@ public class IntTools_EdgeFace
         }
         {
             // Line\Cylinder's Common Parts treatment
-            GeomAbs_CurveType aCType;
-            GeomAbs_SurfaceType aSType;
+            CurveKind aCType;
+            SurfaceKind aSType;
             TopAbs_ShapeEnum aType;
             bool bIsTouch;
             double aTx = 0.0;
@@ -652,7 +654,7 @@ public class IntTools_EdgeFace
             aCType = myC.GetType();
             aSType = myS.GetType();
 
-            if (aCType == GeomAbs_Line && aSType == GeomAbs_Cylinder)
+            if (aCType == Line && aSType == SurfaceKind.Cylinder)
             {
                 for (i = 1; i <= aNb; i++)
                 {
@@ -682,7 +684,7 @@ public class IntTools_EdgeFace
 
             // Circle\Plane's Common Parts treatment
 
-            if (aCType == GeomAbs_Circle && aSType == GeomAbs_Plane)
+            if (aCType == Circle && aSType == Plane)
             {
                 bool bIsCoplanar, bIsRadius;
                 bIsCoplanar = IsCoplanar(myC, myS);
@@ -726,13 +728,13 @@ public class IntTools_EdgeFace
         double aEpsT, aDist2, aMinDist2, aTm, aDist2New;
         bool theflag = false;
         int aNbExt, i, iLower;
-        GeomAbs_CurveType aType;
+        CurveKind aType;
         //
         aCP.Range1(out aTF, out aTL);
         aType = myC.GetType();
         //
         aEpsT = 8.0e-5;
-        if (aType == GeomAbs_Line)
+        if (aType == Line)
         {
             aEpsT = 9.0e-5;
         }
@@ -741,7 +743,7 @@ public class IntTools_EdgeFace
         aDist2 = DistanceFunction(aTm);
         aDist2 *= aDist2;
 
-        Tol = Precision.PConfusion();
+        Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         Geom_Curve Curve = BRep_Tool.Curve(myC.Edge(), out _, out _)!;
         Geom_Surface Surface = BRep_Tool.Surface(myS.Face())!;
@@ -821,21 +823,21 @@ public class IntTools_EdgeFace
     {
         bool bFlag = false;
 
-        GeomAbs_CurveType aCType;
-        GeomAbs_SurfaceType aSType;
+        CurveKind aCType;
+        SurfaceKind aSType;
 
         aCType = aCurve.GetType();
         aSType = aSurface.GetType();
 
-        if (aCType == GeomAbs_Circle && aSType == GeomAbs_Plane)
+        if (aCType == Circle && aSType == Plane)
         {
-            gp_Circ aCirc = aCurve.Circle();
-            gp_Ax1 anAx1 = aCirc.Axis();
-            gp_Dir aDirAx1 = anAx1.Direction();
+            Circle3D aCirc = aCurve.Circle();
+            Axis3D anAx1 = aCirc.Axis();
+            Direction3D aDirAx1 = anAx1.Direction();
 
-            gp_Pln aPln = aSurface.Plane();
-            gp_Ax1 anAx = aPln.Axis();
-            gp_Dir aDirPln = anAx.Direction();
+            Plane3D aPln = aSurface.Plane();
+            Axis3D anAx = aPln.Axis();
+            Direction3D aDirPln = anAx.Direction();
 
             bFlag = IntTools_Tools.IsDirsCoinside(aDirAx1, aDirPln);
         }
@@ -846,18 +848,18 @@ public class IntTools_EdgeFace
     {
         bool bFlag = false;
 
-        GeomAbs_CurveType aCType;
-        GeomAbs_SurfaceType aSType;
+        CurveKind aCType;
+        SurfaceKind aSType;
 
         aCType = aCurve.GetType();
         aSType = aSurface.GetType();
 
-        if (aCType == GeomAbs_Circle && aSType == GeomAbs_Plane)
+        if (aCType == Circle && aSType == Plane)
         {
-            gp_Circ aCirc = aCurve.Circle();
-            gp_Pnt aCenter = aCirc.Location();
+            Circle3D aCirc = aCurve.Circle();
+            Point3D aCenter = aCirc.Location();
             double aR = aCirc.Radius();
-            gp_Pln aPln = aSurface.Plane();
+            Plane3D aPln = aSurface.Plane();
             double aD = aPln.Distance(aCenter);
             if (Math.Abs(aD - aR) < aCriteria)
             {
@@ -877,17 +879,17 @@ public class IntTools_EdgeFace
 
         iDiscretNew = iDiscret;
 
-        GeomAbs_SurfaceType aSType;
+        SurfaceKind aSType;
 
         aSType = aSurface.GetType();
 
-        if (aSType == GeomAbs_Cylinder)
+        if (aSType == SurfaceKind.Cylinder)
         {
             double aELength, aRadius, dLR;
 
             aELength = IntTools.Length(aCurve.Edge());
 
-            gp_Cylinder aCylinder = aSurface.Cylinder();
+            Cylinder aCylinder = aSurface.Cylinder();
             aRadius = aCylinder.Radius();
             dLR = 2 * aRadius;
 

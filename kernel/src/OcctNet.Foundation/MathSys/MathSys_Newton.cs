@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Systems;
 
 // OCCT's MathSys::Newton and LevenbergMarquardt are templates over any "FuncSetType" with the members of
 // math_FunctionSetWithDerivatives. Here those members are the interfaces below, with the same signatures as the
@@ -14,7 +15,7 @@ namespace Occt;
 public static partial class MathSys
 {
     /// <summary>A system of NbEquations() functions of NbVariables() variables (math_FunctionSet's members).</summary>
-    public interface IFunctionSet : MathUtils.ISystemFunction
+    public interface IFunctionSet : global::Kerf.Engine.Numerics.Utilities.MathUtils.ISystemFunction
     {
         /// <summary>Number of variables of the function.</summary>
         int NbVariables();
@@ -27,277 +28,277 @@ public static partial class MathSys
     public interface IFunctionSetWithDerivatives : IFunctionSet
     {
         /// <summary>Computes the Jacobian at theX into theD; false if it could not be computed.</summary>
-        bool Derivatives(math_Vector theX, math_Matrix theD);
+        bool Derivatives(math_Vector x, Matrix d);
 
         /// <summary>Computes the values and the Jacobian at theX; false if they could not be computed.</summary>
-        bool Values(math_Vector theX, math_Vector theF, math_Matrix theD);
+        bool Values(math_Vector x, math_Vector f, Matrix d);
     }
 
     /// <summary>
     /// Newton-Raphson method for solving systems of nonlinear equations F(X) = 0: solves J(X)*dX = -F(X) at each
     /// step. Converged when every |dX(i)| &lt;= theTolX(i) and every |F(i)| &lt;= theTolF.
     /// </summary>
-    public static VectorResult Newton<FuncSetType>(FuncSetType theFunc,
-                                                   math_Vector theStart,
-                                                   math_Vector theTolX,
-                                                   double theTolF,
-                                                   int theMaxIter = 100)
+    public static VectorResult Newton<FuncSetType>(FuncSetType func,
+                                                   math_Vector start,
+                                                   math_Vector tolX,
+                                                   double tolF,
+                                                   int maxIter = 100)
         where FuncSetType : IFunctionSetWithDerivatives
     {
-        VectorResult aResult = new();
+        VectorResult result = new();
 
-        int aN = theFunc.NbVariables();
-        int aM = theFunc.NbEquations();
+        int n = func.NbVariables();
+        int m = func.NbEquations();
 
         // Check dimensions
-        if (aN != aM || theStart.Length() != aN || theTolX.Length() != aN)
+        if (n != m || start.Length() != n || tolX.Length() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aLower = theStart.Lower();
-        int aUpper = theStart.Upper();
+        int lower = start.Lower();
+        int upper = start.Upper();
 
         // Working vectors
-        math_Vector aSol = new(theStart);
-        math_Vector aF = new(aLower, aUpper);
-        math_Vector aDeltaX = new(aLower, aUpper);
-        math_Matrix aJacobian = new(aLower, aUpper, aLower, aUpper);
+        math_Vector sol = new(start);
+        math_Vector f = new(lower, upper);
+        math_Vector deltaX = new(lower, upper);
+        Matrix jacobian = new(lower, upper, lower, upper);
 
         // Newton iteration
-        for (int anIter = 0; anIter < theMaxIter; ++anIter)
+        for (int iter = 0; iter < maxIter; ++iter)
         {
             // Evaluate function and Jacobian
-            if (!theFunc.Values(aSol, aF, aJacobian))
+            if (!func.Values(sol, f, jacobian))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.NbIterations = iter;
+                return result;
             }
 
             // Solve J * dX = -F
             // Negate F for the right-hand side
-            math_Vector aNegF = new(aLower, aUpper);
-            for (int i = aLower; i <= aUpper; ++i)
+            math_Vector negF = new(lower, upper);
+            for (int i = lower; i <= upper; ++i)
             {
-                aNegF[i] = -aF[i];
+                negF[i] = -f[i];
             }
 
-            LinearResult aLinResult = MathLin.Solve(aJacobian, aNegF);
-            if (!aLinResult.IsDone())
+            LinearResult linResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(jacobian, negF);
+            if (!linResult.IsDone)
             {
-                aResult.Status = Status.Singular;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = Status.Singular;
+                result.NbIterations = iter;
+                return result;
             }
 
-            aDeltaX.Initialized(aLinResult.Solution!);
+            deltaX.Initialized(linResult.Solution!);
 
             // Check X convergence before update
-            bool aXConverged = true;
-            for (int i = aLower; i <= aUpper; ++i)
+            bool xConverged = true;
+            for (int i = lower; i <= upper; ++i)
             {
-                if (Math.Abs(aDeltaX[i]) > theTolX[i])
+                if (Math.Abs(deltaX[i]) > tolX[i])
                 {
-                    aXConverged = false;
+                    xConverged = false;
                     break;
                 }
             }
 
             // Update solution
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aSol[i] += aDeltaX[i];
+                sol[i] += deltaX[i];
             }
 
             // Re-evaluate function at new solution to check F convergence
-            if (!theFunc.Value(aSol, aF))
+            if (!func.Value(sol, f))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.NbIterations = anIter + 1;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.NbIterations = iter + 1;
+                return result;
             }
 
             // Check F convergence with updated function values
-            bool aFConverged = true;
-            for (int i = aLower; i <= aUpper; ++i)
+            bool fConverged = true;
+            for (int i = lower; i <= upper; ++i)
             {
-                if (Math.Abs(aF[i]) > theTolF)
+                if (Math.Abs(f[i]) > tolF)
                 {
-                    aFConverged = false;
+                    fConverged = false;
                     break;
                 }
             }
 
-            if (aXConverged && aFConverged)
+            if (xConverged && fConverged)
             {
                 // OCCT: the Jacobian returned is the one evaluated before the last step, not at the returned Solution.
-                aResult.Status = Status.OK;
-                aResult.NbIterations = anIter + 1;
-                aResult.Solution = aSol;
-                aResult.Jacobian = aJacobian;
-                return aResult;
+                result.Status = Status.OK;
+                result.NbIterations = iter + 1;
+                result.Solution = sol;
+                result.Jacobian = jacobian;
+                return result;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
         }
 
         // Max iterations reached - return last solution
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aSol;
-        aResult.Jacobian = aJacobian;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = sol;
+        result.Jacobian = jacobian;
+        return result;
     }
 
     /// <summary>
     /// Newton-Raphson method with bounds: the start and every step are clamped to [theInfBound, theSupBound].
     /// </summary>
-    public static VectorResult NewtonBounded<FuncSetType>(FuncSetType theFunc,
-                                                          math_Vector theStart,
-                                                          math_Vector theInfBound,
-                                                          math_Vector theSupBound,
-                                                          math_Vector theTolX,
-                                                          double theTolF,
-                                                          int theMaxIter = 100)
+    public static VectorResult NewtonBounded<FuncSetType>(FuncSetType func,
+                                                          math_Vector start,
+                                                          math_Vector infBound,
+                                                          math_Vector supBound,
+                                                          math_Vector tolX,
+                                                          double tolF,
+                                                          int maxIter = 100)
         where FuncSetType : IFunctionSetWithDerivatives
     {
-        VectorResult aResult = new();
+        VectorResult result = new();
 
-        int aN = theFunc.NbVariables();
-        int aM = theFunc.NbEquations();
+        int n = func.NbVariables();
+        int m = func.NbEquations();
 
         // Check dimensions
-        if (aN != aM || theStart.Length() != aN || theTolX.Length() != aN || theInfBound.Length() != aN
-            || theSupBound.Length() != aN)
+        if (n != m || start.Length() != n || tolX.Length() != n || infBound.Length() != n
+            || supBound.Length() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aLower = theStart.Lower();
-        int aUpper = theStart.Upper();
+        int lower = start.Lower();
+        int upper = start.Upper();
 
         // Working vectors
-        math_Vector aSol = new(theStart);
-        math_Vector aF = new(aLower, aUpper);
-        math_Vector aDeltaX = new(aLower, aUpper);
-        math_Matrix aJacobian = new(aLower, aUpper, aLower, aUpper);
+        math_Vector sol = new(start);
+        math_Vector f = new(lower, upper);
+        math_Vector deltaX = new(lower, upper);
+        Matrix jacobian = new(lower, upper, lower, upper);
 
         // Clamp initial solution to bounds
-        for (int i = aLower; i <= aUpper; ++i)
+        for (int i = lower; i <= upper; ++i)
         {
-            if (aSol[i] < theInfBound[i])
+            if (sol[i] < infBound[i])
             {
-                aSol[i] = theInfBound[i];
+                sol[i] = infBound[i];
             }
-            if (aSol[i] > theSupBound[i])
+            if (sol[i] > supBound[i])
             {
-                aSol[i] = theSupBound[i];
+                sol[i] = supBound[i];
             }
         }
 
         // Newton iteration
-        for (int anIter = 0; anIter < theMaxIter; ++anIter)
+        for (int iter = 0; iter < maxIter; ++iter)
         {
             // Evaluate function and Jacobian
-            if (!theFunc.Values(aSol, aF, aJacobian))
+            if (!func.Values(sol, f, jacobian))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.NbIterations = iter;
+                return result;
             }
 
             // Solve J * dX = -F
-            math_Vector aNegF = new(aLower, aUpper);
-            for (int i = aLower; i <= aUpper; ++i)
+            math_Vector negF = new(lower, upper);
+            for (int i = lower; i <= upper; ++i)
             {
-                aNegF[i] = -aF[i];
+                negF[i] = -f[i];
             }
 
-            LinearResult aLinResult = MathLin.Solve(aJacobian, aNegF);
-            if (!aLinResult.IsDone())
+            LinearResult linResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(jacobian, negF);
+            if (!linResult.IsDone)
             {
-                aResult.Status = Status.Singular;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = Status.Singular;
+                result.NbIterations = iter;
+                return result;
             }
 
-            aDeltaX.Initialized(aLinResult.Solution!);
+            deltaX.Initialized(linResult.Solution!);
 
             // Check X convergence before update
-            bool aXConverged = true;
-            for (int i = aLower; i <= aUpper; ++i)
+            bool xConverged = true;
+            for (int i = lower; i <= upper; ++i)
             {
-                if (Math.Abs(aDeltaX[i]) > theTolX[i])
+                if (Math.Abs(deltaX[i]) > tolX[i])
                 {
-                    aXConverged = false;
+                    xConverged = false;
                     break;
                 }
             }
 
             // Update solution with bounds clamping
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aSol[i] += aDeltaX[i];
-                if (aSol[i] < theInfBound[i])
+                sol[i] += deltaX[i];
+                if (sol[i] < infBound[i])
                 {
-                    aSol[i] = theInfBound[i];
+                    sol[i] = infBound[i];
                 }
-                if (aSol[i] > theSupBound[i])
+                if (sol[i] > supBound[i])
                 {
-                    aSol[i] = theSupBound[i];
+                    sol[i] = supBound[i];
                 }
             }
 
             // Re-evaluate function at new solution to check F convergence
-            if (!theFunc.Value(aSol, aF))
+            if (!func.Value(sol, f))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.NbIterations = anIter + 1;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.NbIterations = iter + 1;
+                return result;
             }
 
             // Check F convergence with updated function values
-            bool aFConverged = true;
-            for (int i = aLower; i <= aUpper; ++i)
+            bool fConverged = true;
+            for (int i = lower; i <= upper; ++i)
             {
-                if (Math.Abs(aF[i]) > theTolF)
+                if (Math.Abs(f[i]) > tolF)
                 {
-                    aFConverged = false;
+                    fConverged = false;
                     break;
                 }
             }
 
-            if (aXConverged && aFConverged)
+            if (xConverged && fConverged)
             {
                 // OCCT: the Jacobian returned is the one evaluated before the last step, not at the returned Solution.
-                aResult.Status = Status.OK;
-                aResult.NbIterations = anIter + 1;
-                aResult.Solution = aSol;
-                aResult.Jacobian = aJacobian;
-                return aResult;
+                result.Status = Status.OK;
+                result.NbIterations = iter + 1;
+                result.Solution = sol;
+                result.Jacobian = jacobian;
+                return result;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
         }
 
         // Max iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aSol;
-        aResult.Jacobian = aJacobian;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = sol;
+        result.Jacobian = jacobian;
+        return result;
     }
 
     /// <summary>Simplified Newton method with a uniform X tolerance for all variables.</summary>
-    public static VectorResult Newton<FuncSetType>(FuncSetType theFunc,
-                                                   math_Vector theStart,
-                                                   double theTolX,
-                                                   double theTolF,
-                                                   int theMaxIter = 100)
+    public static VectorResult Newton<FuncSetType>(FuncSetType func,
+                                                   math_Vector start,
+                                                   double tolX,
+                                                   double tolF,
+                                                   int maxIter = 100)
         where FuncSetType : IFunctionSetWithDerivatives
     {
-        math_Vector aTolXVec = new(theStart.Lower(), theStart.Upper(), theTolX);
-        return Newton(theFunc, theStart, aTolXVec, theTolF, theMaxIter);
+        math_Vector tolXVec = new(start.Lower(), start.Upper(), tolX);
+        return Newton(func, start, tolXVec, tolF, maxIter);
     }
 }

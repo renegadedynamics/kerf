@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_PointStyle : Standard_Transient
+public class StepVisual_PointStyle : Transient
 {
     private TCollection_HAsciiString name;
     private StepVisual_MarkerSelect marker = new StepVisual_MarkerSelect();

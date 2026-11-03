@@ -59,31 +59,31 @@ internal static class XSDRAWCommands
     internal static void Pilot(DrawInterpreter theInterpreter, string theName, DrawCxxCommand theCommand)
         => DrawCxx.Add(theInterpreter, theName, (theDI, di, argv) =>
         {
-            Message_Messenger? anOld = Message.SetFlowMessenger(new Message_Messenger(new ResultPrinter(di)));
+            global::Kerf.Engine.Foundation.Messenger? anOld = global::Kerf.Engine.Foundation.Message.SetFlowMessenger(new global::Kerf.Engine.Foundation.Messenger(new ResultPrinter(di)));
             try
             {
                 return theCommand(theDI, di, argv);
             }
             finally
             {
-                Message.SetFlowMessenger(anOld);
+                global::Kerf.Engine.Foundation.Message.SetFlowMessenger(anOld);
             }
         });
 
     /// <summary>Draw_Printer: a message and a new line appended to the command's result.</summary>
-    private sealed class ResultPrinter : Message_Printer
+    private sealed class ResultPrinter : global::Kerf.Engine.Foundation.Printer
     {
         private readonly DrawResult myResult;
 
         public ResultPrinter(DrawResult theResult)
         {
             myResult = theResult;
-            myTraceLevel = Message_Gravity.Message_Info;
+            _traceLevel = global::Kerf.Engine.Foundation.Gravity.Info;
         }
 
-        protected override void send(string theString, Message_Gravity theGravity)
+        protected override void SendCore(string theString, global::Kerf.Engine.Foundation.Gravity theGravity)
         {
-            if (theGravity < myTraceLevel)
+            if (theGravity < _traceLevel)
             {
                 return;
             }
@@ -288,7 +288,7 @@ internal static class XSDRAWCommands
             int id = Number(theDI, WS, argv[ia]);
             if (id > 0)
             {
-                Standard_Transient? item = WS.StartingEntity(id);
+                global::Kerf.Engine.Foundation.Transient? item = WS.StartingEntity(id);
                 if (sp.Add(item))
                 {
                     sout.Append("Added:no.").Append(id).Append('\n');
@@ -335,7 +335,7 @@ internal static class XSDRAWCommands
         else
         {
             //   we request a givelist
-            NCollection_HSequence<Standard_Transient>? list = WS.GiveList(CommandPart(argv, 1));
+            NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? list = WS.GiveList(CommandPart(argv, 1));
             if (list is null)
             {
                 theDI.Output.WriteLine("Nothing selected from : " + CommandPart(argv, 1));
@@ -452,9 +452,9 @@ internal static class XSDRAWCommands
         level = levdef;
         if (argc > 2)
         {
-            level = Standard.atoi(arg2);
+            level = global::Kerf.Engine.Foundation.Standard.Atoi(arg2);
         }
-        Standard_Transient? ent = WS.StartingEntity(num);
+        global::Kerf.Engine.Foundation.Transient? ent = WS.StartingEntity(num);
         if (ent is null)
         {
             sout.Append("No entity with given id ").Append(arg1).Append(" (").Append(num).Append(") is found in the current model").Append('\n');
@@ -520,9 +520,9 @@ internal static class XSDRAWCommands
             Send(di, sout);
             return 0;
         }
-        else if (Standard.atoi(arg1) > 0)
+        else if (global::Kerf.Engine.Foundation.Standard.Atoi(arg1) > 0)
         {
-            int use = Standard.atoi(arg1);
+            int use = global::Kerf.Engine.Foundation.Standard.Atoi(arg1);
             WS.TraceStatics(use);
         }
         else
@@ -773,7 +773,7 @@ internal static class XSDRAWCommands
         {
             sout.Append("Model differs from the session");
         }
-        NCollection_HSequence<Standard_Transient>? list = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
+        NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? list = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
         // PrintStatsOnList sends its own message (the process's messenger) before the command's
         var aStats = new StringWriter();
         XSControl_TransferReader.PrintStatsOnList(TP, list, mod1, mod2, aStats);
@@ -843,7 +843,7 @@ internal static class XSDRAWCommands
 
         int nbvar = 0;
         Transfer_Binder? binder = null;
-        Standard_Transient? ent;
+        global::Kerf.Engine.Foundation.Transient? ent;
         TopoDS_Shape sh = new();
         string nomvar;
 
@@ -1005,13 +1005,13 @@ internal static class XSDRAWCommands
             }
             if (binder is Transfer_SimpleBinderOfTransient trb)
             {
-                Standard_Transient? resu = trb.Result();
+                global::Kerf.Engine.Foundation.Transient? resu = trb.Result();
                 if (resu is null)
                 {
                     sout.Append("Entity n0 ").Append(num).Append(" : no result").Append('\n');
                     continue;
                 }
-                sout.Append("Entite n0 ").Append(num).Append(" : resultat ").Append(resu.DynamicType().Name);
+                sout.Append("Entite n0 ").Append(num).Append(" : resultat ").Append(resu.DynamicTypeName());
                 // OCCT binds a geometric result to a Draw variable (XSControl_Vars::Set): Draw-lite reports it only
                 sout.Append('\n');
                 continue;
@@ -1061,7 +1061,7 @@ internal static class XSDRAWCommands
         }
         else
         {
-            NCollection_HSequence<Standard_Transient>? lise = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
+            NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? lise = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
             if (lise is null)
             {
                 sout.Append("Not a valid entity list : ").Append(CommandPart(argv, 2)).Append('\n');

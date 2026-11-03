@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -22,7 +24,7 @@ namespace Occt;
 public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClassifier
 {
     private bool myFirstCompare;
-    private gp_Pnt2d myPoint2d = new();
+    private Point2D myPoint2d = new();
     private BRepClass_Edge myBCEdge = new();
     private readonly BRepClass_FacePassiveClassifier myFPC = new();
     private TopoDS_Shape myShape = new();
@@ -181,15 +183,15 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     }
 
     // The unit tangent at v of e, pointing into the edge
-    private static gp_Vec FUN_tgINE(in TopoDS_Vertex v, in TopoDS_Vertex vl, in TopoDS_Edge e)
+    private static Vector3D FUN_tgINE(in TopoDS_Vertex v, in TopoDS_Vertex vl, in TopoDS_Edge e)
     {
         // tg oriented INSIDE 1d(e)
         // vl : last vertex of e
         double par = BRep_Tool.Parameter(v, e);
-        bool ok = TopOpeBRepTool_TOOL.TggeomE(par, e, out gp_Vec tg);
+        bool ok = TopOpeBRepTool_TOOL.TggeomE(par, e, out Vector3D tg);
         if (!ok)
         {
-            return new gp_Vec(0.0, 0.0, 0.0); // NYIRAISE
+            return new Vector3D(0.0, 0.0, 0.0); // NYIRAISE
         }
         if (v.IsSame(vl))
         {
@@ -247,10 +249,10 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
                     {
                         vshared = vl;
                     }
-                    gp_Vec tg1 = FUN_tgINE(vshared, vl1, e1);
-                    gp_Vec tg = FUN_tgINE(vshared, vl, E);
+                    Vector3D tg1 = FUN_tgINE(vshared, vl1, e1);
+                    Vector3D tg = FUN_tgINE(vshared, vl, E);
                     double dot = tg1.Dot(tg);
-                    double tol = Precision.Angular() * 1.0e4; // nyixpu
+                    double tol = global::Kerf.Engine.Foundation.Precision.Angular() * 1.0e4; // nyixpu
                     bool undecided = Math.Abs(1 + dot) < tol;
                     if (undecided)
                     {
@@ -298,7 +300,7 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
                 TopOpeBRepTool_PROJECT.FUN_tool_bounds(E2, out double f, out double l);
                 double x = 0.45678;
                 double p2 = (1 - x) * l + x * f;
-                gp_Pnt2d p2d = BC2d.Value(p2);
+                Point2D p2d = BC2d.Value(p2);
 
                 aLocalShape = ftmp.EmptyCopied();
                 TopoDS_Face F1 = TopoDS.Face(aLocalShape);
@@ -350,7 +352,7 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
     /// Prepares a classification involving the edge <paramref name="EE"/>: the 2D point to classify is on its pcurve
     /// (computed and stored on the edge if it has none).
     /// </summary>
-    /// <exception cref="Standard_ProgramError">No pcurve could be found.</exception>
+    /// <exception cref="ProgramErrorException">No pcurve could be found.</exception>
     public override void ResetElement(in TopoDS_Shape EE)
     {
         TopoDS_Edge E = TopoDS.Edge(EE);
@@ -372,7 +374,7 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
         C2D = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out double f2, out double l2, out _);
         if (C2D is null)
         {
-            throw new Standard_ProgramError("WEC : ResetElement");
+            throw new ProgramErrorException("WEC : ResetElement");
         }
 
         double t = 0.397891143689;
@@ -409,12 +411,12 @@ public class TopOpeBRepBuild_WireEdgeClassifier : TopOpeBRepBuild_CompositeClass
             C2D = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out double f2, out double l2, out _);
             double t = 0.33334567;
             double par = (1 - t) * f2 + t * l2;
-            gp_Pnt2d p2d = C2D!.Value(par);
+            Point2D p2d = C2D!.Value(par);
 
-            gp_Vec2d v2d = new(myPoint2d, p2d);
-            gp_Lin2d l2d = new(myPoint2d, new gp_Dir2d(v2d));
+            Vector2D v2d = new(myPoint2d, p2d);
+            Line2D l2d = new(myPoint2d, new Direction2D(v2d));
             double dist = myPoint2d.Distance(p2d);
-            double tol2d = Precision.PConfusion(); // NYI : a voir
+            double tol2d = global::Kerf.Engine.Foundation.Precision.PConfusion(); // NYI : a voir
             myFPC.Reset(l2d, dist, tol2d);
             myFirstCompare = false;
         }

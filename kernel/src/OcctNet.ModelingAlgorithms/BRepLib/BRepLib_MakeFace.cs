@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepLib_FaceError;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -45,38 +46,38 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>A face on the whole plane.</summary>
-    public BRepLib_MakeFace(in gp_Pln P)
+    public BRepLib_MakeFace(in Plane3D P)
     {
         var GP = new Geom_Plane(P);
-        Init(GP, true, Precision.Confusion());
+        Init(GP, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole cylinder.</summary>
-    public BRepLib_MakeFace(in gp_Cylinder C)
+    public BRepLib_MakeFace(in Cylinder C)
     {
         var GC = new Geom_CylindricalSurface(C);
-        Init(GC, true, Precision.Confusion());
+        Init(GC, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole cone.</summary>
-    public BRepLib_MakeFace(in gp_Cone C)
+    public BRepLib_MakeFace(in Cone C)
     {
         var GC = new Geom_ConicalSurface(C);
-        Init(GC, true, Precision.Confusion());
+        Init(GC, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole sphere.</summary>
-    public BRepLib_MakeFace(in gp_Sphere S)
+    public BRepLib_MakeFace(in Sphere S)
     {
         var GS = new Geom_SphericalSurface(S);
-        Init(GS, true, Precision.Confusion());
+        Init(GS, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole torus.</summary>
-    public BRepLib_MakeFace(in gp_Torus T)
+    public BRepLib_MakeFace(in Torus T)
     {
         var GT = new Geom_ToroidalSurface(T);
-        Init(GT, true, Precision.Confusion());
+        Init(GT, true, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>A face on the whole surface; <paramref name="TolDegen"/> decides degenerated boundaries.</summary>
@@ -85,34 +86,34 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         Init(S, true, TolDegen);
     }
 
-    public BRepLib_MakeFace(in gp_Pln P, double UMin, double UMax, double VMin, double VMax)
+    public BRepLib_MakeFace(in Plane3D P, double UMin, double UMax, double VMin, double VMax)
     {
         var GP = new Geom_Plane(P);
-        Init(GP, UMin, UMax, VMin, VMax, Precision.Confusion());
+        Init(GP, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public BRepLib_MakeFace(in gp_Cylinder C, double UMin, double UMax, double VMin, double VMax)
+    public BRepLib_MakeFace(in Cylinder C, double UMin, double UMax, double VMin, double VMax)
     {
         var GC = new Geom_CylindricalSurface(C);
-        Init(GC, UMin, UMax, VMin, VMax, Precision.Confusion());
+        Init(GC, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public BRepLib_MakeFace(in gp_Cone C, double UMin, double UMax, double VMin, double VMax)
+    public BRepLib_MakeFace(in Cone C, double UMin, double UMax, double VMin, double VMax)
     {
         var GC = new Geom_ConicalSurface(C);
-        Init(GC, UMin, UMax, VMin, VMax, Precision.Confusion());
+        Init(GC, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public BRepLib_MakeFace(in gp_Sphere S, double UMin, double UMax, double VMin, double VMax)
+    public BRepLib_MakeFace(in Sphere S, double UMin, double UMax, double VMin, double VMax)
     {
         var GS = new Geom_SphericalSurface(S);
-        Init(GS, UMin, UMax, VMin, VMax, Precision.Confusion());
+        Init(GS, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public BRepLib_MakeFace(in gp_Torus T, double UMin, double UMax, double VMin, double VMax)
+    public BRepLib_MakeFace(in Torus T, double UMin, double UMax, double VMin, double VMax)
     {
         var GT = new Geom_ToroidalSurface(T);
-        Init(GT, UMin, UMax, VMin, VMax, Precision.Confusion());
+        Init(GT, UMin, UMax, VMin, VMax, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     public BRepLib_MakeFace(Geom_Surface S, double UMin, double UMax, double VMin, double VMax, double TolDegen)
@@ -223,20 +224,20 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     // True if the shape or any of its sub-shapes is frozen.
     private static bool hasFrozenSubShape(in TopoDS_Shape theShape)
     {
-        if (theShape.TShape()!.IsFrozen())
+        if (theShape.TShape()!.IsFrozen)
         {
             return true;
         }
         for (var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            if (anExp.Current().TShape()!.IsFrozen())
+            if (anExp.Current().TShape()!.IsFrozen)
             {
                 return true;
             }
         }
         for (var anExp = new TopExp_Explorer(theShape, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
-            if (anExp.Current().TShape()!.IsFrozen())
+            if (anExp.Current().TShape()!.IsFrozen)
             {
                 return true;
             }
@@ -245,10 +246,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     }
 
     /// <summary>A face on the plane bounded by the wire; reversed if the wire would bound an infinite area.</summary>
-    public BRepLib_MakeFace(in gp_Pln P, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Plane3D P, in TopoDS_Wire W, bool Inside = true)
     {
         var Pl = new Geom_Plane(P);
-        Init(Pl, false, Precision.Confusion());
+        Init(Pl, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -256,10 +257,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
     }
 
-    public BRepLib_MakeFace(in gp_Cylinder C, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Cylinder C, in TopoDS_Wire W, bool Inside = true)
     {
         var GC = new Geom_CylindricalSurface(C);
-        Init(GC, false, Precision.Confusion());
+        Init(GC, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -267,10 +268,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
     }
 
-    public BRepLib_MakeFace(in gp_Cone C, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Cone C, in TopoDS_Wire W, bool Inside = true)
     {
         var GC = new Geom_ConicalSurface(C);
-        Init(GC, false, Precision.Confusion());
+        Init(GC, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -278,10 +279,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
     }
 
-    public BRepLib_MakeFace(in gp_Sphere S, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Sphere S, in TopoDS_Wire W, bool Inside = true)
     {
         var GS = new Geom_SphericalSurface(S);
-        Init(GS, false, Precision.Confusion());
+        Init(GS, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -289,10 +290,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
     }
 
-    public BRepLib_MakeFace(in gp_Torus T, in TopoDS_Wire W, bool Inside = true)
+    public BRepLib_MakeFace(in Torus T, in TopoDS_Wire W, bool Inside = true)
     {
         var GT = new Geom_ToroidalSurface(T);
-        Init(GT, false, Precision.Confusion());
+        Init(GT, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -302,7 +303,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
     public BRepLib_MakeFace(Geom_Surface S, in TopoDS_Wire W, bool Inside = true)
     {
-        Init(S, false, Precision.Confusion());
+        Init(S, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(W);
         if (Inside && BRep_Tool.IsClosed(W))
         {
@@ -346,7 +347,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         {
             var B0 = new BRep_Builder();
             TopoDS_Face aFace = new();
-            B0.MakeFace(ref aFace, S, Precision.Confusion());
+            B0.MakeFace(ref aFace, S, global::Kerf.Engine.Foundation.Precision.Confusion());
             myShape = aFace;
         }
         var B = new BRep_Builder();
@@ -361,13 +362,13 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
     public static bool IsDegenerated(Geom_Curve theCurve, double theMaxTol, out double theActTol)
     {
         var AC = new GeomAdaptor_Curve(theCurve);
-        double aConfusion = Precision.Confusion();
+        double aConfusion = global::Kerf.Engine.Foundation.Precision.Confusion();
         theActTol = aConfusion;
-        GeomAbs_CurveType Type = AC.GetType();
+        CurveKind Type = AC.GetType();
 
-        if (Type == GeomAbs_Circle)
+        if (Type == Circle)
         {
-            gp_Circ Circ = AC.Circle();
+            Circle3D Circ = AC.Circle();
             if (Circ.Radius() > theMaxTol)
             {
                 return false;
@@ -375,12 +376,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             theActTol = Max(Circ.Radius(), aConfusion);
             return true;
         }
-        else if (Type == GeomAbs_BSplineCurve)
+        else if (Type == BSplineCurve)
         {
             Geom_BSplineCurve BS = AC.BSpline();
             int NbPoles = BS.NbPoles();
             double aMaxPoleDist2 = 0.0, aMaxTol2 = theMaxTol * theMaxTol;
-            gp_Pnt P1, P2;
+            Point3D P1, P2;
             P1 = BS.Pole(1);
             for (int i = 2; i <= NbPoles; i++)
             {
@@ -398,12 +399,12 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             theActTol = Max(1.000001 * Math.Sqrt(aMaxPoleDist2), aConfusion);
             return true;
         }
-        else if (Type == GeomAbs_BezierCurve)
+        else if (Type == BezierCurve)
         {
             Geom_BezierCurve BZ = AC.Bezier();
             int NbPoles = BZ.NbPoles();
             double aMaxPoleDist2 = 0.0, aMaxTol2 = theMaxTol * theMaxTol;
-            gp_Pnt P1, P2;
+            Point3D P1, P2;
             P1 = BZ.Pole(1);
             for (int i = 2; i <= NbPoles; i++)
             {
@@ -447,7 +448,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
         // adjust periodical surface or reordonate
         // check if the values are in the natural range
-        double epsilon = Precision.PConfusion();
+        double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         BS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
 
@@ -458,7 +459,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
             if (Base.GetType() == typeof(Geom_SurfaceOfLinearExtrusion))
             {
-                if (Precision.IsInfinite(umin) || Precision.IsInfinite(umax))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax))
                 {
                     S = new Geom_RectangularTrimmedSurface(OS, UMin, UMax, VMin, VMax);
                 }
@@ -469,7 +470,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             }
             else if (Base.GetType() == typeof(Geom_SurfaceOfRevolution))
             {
-                if (Precision.IsInfinite(vmin) || Precision.IsInfinite(vmax))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                 {
                     S = new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
                 }
@@ -480,7 +481,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         // outside it are accepted.
         if (S.IsUPeriodic())
         {
-            ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
         }
         else if (UMin > UMax)
         {
@@ -496,7 +497,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
 
         if (S.IsVPeriodic())
         {
-            ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
         }
         else if (VMin > VMax)
         {
@@ -511,10 +512,10 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         }
 
         // compute infinite flags
-        bool umininf = Precision.IsNegativeInfinite(UMin);
-        bool umaxinf = Precision.IsPositiveInfinite(UMax);
-        bool vmininf = Precision.IsNegativeInfinite(VMin);
-        bool vmaxinf = Precision.IsPositiveInfinite(VMax);
+        bool umininf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UMin);
+        bool umaxinf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(UMax);
+        bool vmininf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin);
+        bool vmaxinf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax);
 
         // closed flag
         bool uclosed = S.IsUClosed() && Math.Abs(UMin - umin) < epsilon && Math.Abs(UMax - umax) < epsilon;
@@ -526,8 +527,8 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         Geom_Curve? Cumin = null, Cumax = null, Cvmin = null, Cvmax = null;
         bool Dumin, Dumax, Dvmin, Dvmax;
         Dumin = Dumax = Dvmin = Dvmax = false;
-        double uminTol = Precision.Confusion(), umaxTol = Precision.Confusion(),
-               vminTol = Precision.Confusion(), vmaxTol = Precision.Confusion();
+        double uminTol = global::Kerf.Engine.Foundation.Precision.Confusion(), umaxTol = global::Kerf.Engine.Foundation.Precision.Confusion(),
+               vminTol = global::Kerf.Engine.Foundation.Precision.Confusion(), vmaxTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         if (!umininf)
         {
@@ -611,25 +612,25 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
         Geom2d_Line? Lumin = null, Lumax = null, Lvmin = null, Lvmax = null;
         if (!umininf)
         {
-            Lumin = new Geom2d_Line(new gp_Pnt2d(UMin, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+            Lumin = new Geom2d_Line(new Point2D(UMin, 0), new Direction2D(Direction2D.D.Y));
         }
         if (!umaxinf)
         {
-            Lumax = new Geom2d_Line(new gp_Pnt2d(UMax, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+            Lumax = new Geom2d_Line(new Point2D(UMax, 0), new Direction2D(Direction2D.D.Y));
         }
         if (!vmininf)
         {
-            Lvmin = new Geom2d_Line(new gp_Pnt2d(0, VMin), new gp_Dir2d(gp_Dir2d.D.X));
+            Lvmin = new Geom2d_Line(new Point2D(0, VMin), new Direction2D(Direction2D.D.X));
         }
         if (!vmaxinf)
         {
-            Lvmax = new Geom2d_Line(new gp_Pnt2d(0, VMax), new gp_Dir2d(gp_Dir2d.D.X));
+            Lvmax = new Geom2d_Line(new Point2D(0, VMax), new Direction2D(Direction2D.D.X));
         }
 
         // make the face
         // OCCT.NET: OCCT remakes the face in myShape; the port makes it in a new variable (as BRepLib_MakeEdge).
         TopoDS_Face F = new();
-        B.MakeFace(ref F, S, Precision.Confusion());
+        B.MakeFace(ref F, S, global::Kerf.Engine.Foundation.Precision.Confusion());
         myShape = F;
 
         // make the edges
@@ -823,7 +824,7 @@ public class BRepLib_MakeFace : BRepLib_MakeShape
             // Les Isos sont Approximees a Precision::Approximation()
             // et on code Precision::Confusion() dans l'arete.
             // ==> Un petit passage dans SamePrameter pour regler les tolerances.
-            BRepLib.SameParameter(F, Precision.Confusion(), true);
+            BRepLib.SameParameter(F, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         }
 
         Done();

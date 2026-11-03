@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -12,10 +16,10 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's functor is an <see cref="IEqualityComparer{T}"/>: <c>aHasher(x)</c> is
-/// <see cref="GetHashCode(Poly_Triangulation)"/> and <c>aHasher(a, b)</c> is
-/// <see cref="Equals(Poly_Triangulation, Poly_Triangulation)"/>. The hash values are not OCCT's.
+/// <see cref="GetHashCode(Triangulation)"/> and <c>aHasher(a, b)</c> is
+/// <see cref="Equals(Triangulation, Triangulation)"/>. The hash values are not OCCT's.
 /// </remarks>
-public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triangulation?>
+public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Triangulation?>
 {
     /// <summary>The tolerance of the comparison of numeric fields.</summary>
     public readonly double CompTolerance;
@@ -32,10 +36,10 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
     }
 
     /// <summary>Hashes the triangulation; 0 for null.</summary>
-    public int GetHashCode(Poly_Triangulation? theTri) => GeomHash_HashUtils.ToInt32(Hash(theTri));
+    public int GetHashCode(Triangulation? theTri) => GeomHash_HashUtils.ToInt32(Hash(theTri));
 
     // OCCT's size_t operator()(const handle&)
-    internal ulong Hash(Poly_Triangulation? theTri)
+    internal ulong Hash(Triangulation? theTri)
     {
         if (theTri is null)
         {
@@ -45,14 +49,14 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
         double aFactor = 1.0 / HashTolerance;
         Span<ulong> aCombined = stackalloc ulong[20];
         aCombined.Clear();
-        aCombined[0] = GeomHash_HashUtils.Hash(theTri.NbNodes());
-        aCombined[1] = GeomHash_HashUtils.Hash(theTri.NbTriangles());
-        aCombined[2] = GeomHash_HashUtils.Hash(theTri.HasUVNodes() ? 1 : 0);
+        aCombined[0] = GeomHash_HashUtils.Hash(theTri.NodeCount);
+        aCombined[1] = GeomHash_HashUtils.Hash(theTri.TriangleCount);
+        aCombined[2] = GeomHash_HashUtils.Hash(theTri.HasUVNodes ? 1 : 0);
         aCombined[3] = GeomHash_HashUtils.QuantizedHash(theTri.Deflection(), aFactor);
-        if (theTri.NbNodes() > 0)
+        if (theTri.NodeCount > 0)
         {
-            gp_Pnt aFirstNode = theTri.Node(1);
-            gp_Pnt aLastNode = theTri.Node(theTri.NbNodes());
+            Point3D aFirstNode = theTri.Node(1);
+            Point3D aLastNode = theTri.Node(theTri.NodeCount);
             aCombined[4] = GeomHash_HashUtils.QuantizedHash(aFirstNode.X(), aFactor);
             aCombined[5] = GeomHash_HashUtils.QuantizedHash(aFirstNode.Y(), aFactor);
             aCombined[6] = GeomHash_HashUtils.QuantizedHash(aFirstNode.Z(), aFactor);
@@ -61,22 +65,22 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
             aCombined[9] = GeomHash_HashUtils.QuantizedHash(aLastNode.Z(), aFactor);
         }
 
-        if (theTri.NbTriangles() > 0)
+        if (theTri.TriangleCount > 0)
         {
             theTri.Triangle(1).Get(out int aN1, out int aN2, out int aN3);
             aCombined[10] = GeomHash_HashUtils.Hash(aN1);
             aCombined[11] = GeomHash_HashUtils.Hash(aN2);
             aCombined[12] = GeomHash_HashUtils.Hash(aN3);
-            theTri.Triangle(theTri.NbTriangles()).Get(out aN1, out aN2, out aN3);
+            theTri.Triangle(theTri.TriangleCount).Get(out aN1, out aN2, out aN3);
             aCombined[13] = GeomHash_HashUtils.Hash(aN1);
             aCombined[14] = GeomHash_HashUtils.Hash(aN2);
             aCombined[15] = GeomHash_HashUtils.Hash(aN3);
         }
 
-        if (theTri.HasUVNodes() && theTri.NbNodes() > 0)
+        if (theTri.HasUVNodes && theTri.NodeCount > 0)
         {
-            gp_Pnt2d aFirstUV = theTri.UVNode(1);
-            gp_Pnt2d aLastUV = theTri.UVNode(theTri.NbNodes());
+            Point2D aFirstUV = theTri.UVNode(1);
+            Point2D aLastUV = theTri.UVNode(theTri.NodeCount);
             aCombined[16] = GeomHash_HashUtils.QuantizedHash(aFirstUV.X(), aFactor);
             aCombined[17] = GeomHash_HashUtils.QuantizedHash(aFirstUV.Y(), aFactor);
             aCombined[18] = GeomHash_HashUtils.QuantizedHash(aLastUV.X(), aFactor);
@@ -87,24 +91,24 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
     }
 
     /// <summary>Compares two triangulations node by node and triangle by triangle; null equals only null.</summary>
-    public bool Equals(Poly_Triangulation? theTri1, Poly_Triangulation? theTri2)
+    public bool Equals(Triangulation? theTri1, Triangulation? theTri2)
     {
         if (theTri1 is null || theTri2 is null)
         {
             return theTri1 is null && theTri2 is null;
         }
 
-        if (theTri1.NbNodes() != theTri2.NbNodes())
+        if (theTri1.NodeCount != theTri2.NodeCount)
         {
             return false;
         }
 
-        if (theTri1.NbTriangles() != theTri2.NbTriangles())
+        if (theTri1.TriangleCount != theTri2.TriangleCount)
         {
             return false;
         }
 
-        if (theTri1.HasUVNodes() != theTri2.HasUVNodes())
+        if (theTri1.HasUVNodes != theTri2.HasUVNodes)
         {
             return false;
         }
@@ -114,10 +118,10 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
             return false;
         }
 
-        for (int aIdx = 1; aIdx <= theTri1.NbNodes(); ++aIdx)
+        for (int aIdx = 1; aIdx <= theTri1.NodeCount; ++aIdx)
         {
-            gp_Pnt aP1 = theTri1.Node(aIdx);
-            gp_Pnt aP2 = theTri2.Node(aIdx);
+            Point3D aP1 = theTri1.Node(aIdx);
+            Point3D aP2 = theTri2.Node(aIdx);
             if (Math.Abs(aP1.X() - aP2.X()) > CompTolerance || Math.Abs(aP1.Y() - aP2.Y()) > CompTolerance
                 || Math.Abs(aP1.Z() - aP2.Z()) > CompTolerance)
             {
@@ -125,7 +129,7 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
             }
         }
 
-        for (int aIdx = 1; aIdx <= theTri1.NbTriangles(); ++aIdx)
+        for (int aIdx = 1; aIdx <= theTri1.TriangleCount; ++aIdx)
         {
             theTri1.Triangle(aIdx).Get(out int aN11, out int aN12, out int aN13);
             theTri2.Triangle(aIdx).Get(out int aN21, out int aN22, out int aN23);
@@ -135,12 +139,12 @@ public sealed class GeomHash_TriangulationHasher : IEqualityComparer<Poly_Triang
             }
         }
 
-        if (theTri1.HasUVNodes())
+        if (theTri1.HasUVNodes)
         {
-            for (int aIdx = 1; aIdx <= theTri1.NbNodes(); ++aIdx)
+            for (int aIdx = 1; aIdx <= theTri1.NodeCount; ++aIdx)
             {
-                gp_Pnt2d aU1 = theTri1.UVNode(aIdx);
-                gp_Pnt2d aU2 = theTri2.UVNode(aIdx);
+                Point2D aU1 = theTri1.UVNode(aIdx);
+                Point2D aU2 = theTri2.UVNode(aIdx);
                 if (Math.Abs(aU1.X() - aU2.X()) > CompTolerance || Math.Abs(aU1.Y() - aU2.Y()) > CompTolerance)
                 {
                     return false;

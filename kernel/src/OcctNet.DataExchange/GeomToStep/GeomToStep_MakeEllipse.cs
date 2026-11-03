@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Ellipse from Geom and Geom2d (and Elips from gp) to a STEP ellipse.</summary>
@@ -18,13 +20,13 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D ellipse, its position and radii divided by the length factor.</summary>
-    public GeomToStep_MakeEllipse(in gp_Elips E, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeEllipse(in Ellipse3D E, in StepData_Factors theLocalFactors)
     {
         Make(E, theLocalFactors);
     }
 
     /// <summary>A 3D ellipse (default factors).</summary>
-    public GeomToStep_MakeEllipse(in gp_Elips E) : this(E, new StepData_Factors())
+    public GeomToStep_MakeEllipse(in Ellipse3D E) : this(E, new StepData_Factors())
     {
     }
 
@@ -36,7 +38,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     /// <summary>A 3D ellipse, its position and radii divided by the length factor.</summary>
     public GeomToStep_MakeEllipse(Geom_Ellipse Cer, in StepData_Factors theLocalFactors)
     {
-        gp_Elips E;
+        Ellipse3D E;
         E = Cer.Elips();
         Make(E, theLocalFactors);
     }
@@ -54,7 +56,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     /// <summary>A 2D ellipse.</summary>
     public GeomToStep_MakeEllipse(Geom2d_Ellipse Cer, in StepData_Factors theLocalFactors)
     {
-        gp_Elips2d E2d;
+        Ellipse2D E2d;
         E2d = Cer.Elips2d();
 
         StepGeom_Ellipse EStep = new StepGeom_Ellipse();
@@ -79,7 +81,7 @@ public sealed class GeomToStep_MakeEllipse : GeomToStep_Root
     }
 
     // GeomToStep_MakeEllipse_gen.pxx, the body OCCT includes in the 3D constructors
-    private void Make(in gp_Elips E, in StepData_Factors theLocalFactors)
+    private void Make(in Ellipse3D E, in StepData_Factors theLocalFactors)
     {
         StepGeom_Ellipse EStep = new StepGeom_Ellipse();
         StepGeom_Axis2Placement Ax2 = new StepGeom_Axis2Placement();

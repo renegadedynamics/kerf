@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepToTopoDS_TranslateVertexLoopError;
 using static Occt.TopAbs_Orientation;
 
@@ -87,7 +88,7 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
         => Init(VL, aTool, NMTool, new StepData_Factors());
 
     /// <summary>The wire, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -34,7 +36,7 @@ public class IFGraph_ConnectedComponants : IFGraph_SubPartsIterator
         Reset();
         for (loaded.Start(); loaded.More(); loaded.Next())
         {
-            Standard_Transient ent = loaded.Value();
+            Transient ent = loaded.Value();
             if (IsInPart(ent))
             {
                 continue;

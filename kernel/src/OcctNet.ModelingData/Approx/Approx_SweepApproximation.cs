@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -45,7 +48,7 @@ public sealed class Approx_SweepApproximation
     private int udeg;
     private int vdeg;
     private int deg2d;
-    private NCollection_HArray2<gp_Pnt>? tabPoles;
+    private NCollection_HArray2<Point3D>? tabPoles;
     private NCollection_HArray2<double>? tabWeights;
     private NCollection_HArray1<double>? tabUKnots;
     private NCollection_HArray1<double>? tabVKnots;
@@ -53,23 +56,23 @@ public sealed class Approx_SweepApproximation
     private NCollection_HArray1<int>? tabUMults;
     private NCollection_HArray1<int>? tabVMults;
     private NCollection_HArray1<int>? tab2dMults;
-    private readonly NCollection_Sequence<NCollection_HArray1<gp_Pnt2d>> seqPoles2d = new();
+    private readonly NCollection_Sequence<NCollection_HArray1<Point2D>> seqPoles2d = new();
     private NCollection_HArray1<double>? MError1d;
     private NCollection_HArray1<double>? tab2dError;
     private NCollection_HArray1<double>? MError3d;
     private NCollection_HArray1<double>? AError1d;
     private NCollection_HArray1<double>? Ave2dError;
     private NCollection_HArray1<double>? AError3d;
-    private NCollection_HArray1<gp_GTrsf2d>? AAffin;
+    private NCollection_HArray1<GeneralTransform2D>? AAffin;
     private NCollection_HArray1<double>? COnSurfErr;
-    private gp_Vec Translation = new();
-    private NCollection_HArray1<gp_Pnt>? myPoles;
-    private NCollection_HArray1<gp_Pnt2d>? myPoles2d;
+    private Vector3D Translation = new();
+    private NCollection_HArray1<Point3D>? myPoles;
+    private NCollection_HArray1<Point2D>? myPoles2d;
     private NCollection_HArray1<double>? myWeigths;
-    private NCollection_HArray1<gp_Vec>? myDPoles;
-    private NCollection_HArray1<gp_Vec>? myD2Poles;
-    private NCollection_HArray1<gp_Vec2d>? myDPoles2d;
-    private NCollection_HArray1<gp_Vec2d>? myD2Poles2d;
+    private NCollection_HArray1<Vector3D>? myDPoles;
+    private NCollection_HArray1<Vector3D>? myD2Poles;
+    private NCollection_HArray1<Vector2D>? myDPoles2d;
+    private NCollection_HArray1<Vector2D>? myD2Poles2d;
     private NCollection_HArray1<double>? myDWeigths;
     private NCollection_HArray1<double>? myD2Weigths;
     private int myOrder;
@@ -101,13 +104,13 @@ public sealed class Approx_SweepApproximation
                         double BoundTol,
                         double Tol2d,
                         double TolAngular,
-                        GeomAbs_Shape Continuity = GeomAbs_C0,
+                        Continuity Continuity = C0,
                         int Degmax = 11,
                         int Segmax = 50)
     {
         int NbPolSect, NbKnotSect, ii;
         double Tol, Tol3dMin = Tol3d, The3D2DTol = 0;
-        GeomAbs_Shape continuity = Continuity;
+        Continuity continuity = Continuity;
 
         // (1) Characteristics of a section
         myFunc.SectionShape(out NbPolSect, out NbKnotSect, out udeg);
@@ -167,7 +170,7 @@ public sealed class Approx_SweepApproximation
             // avoid homogeneous tolerance of approximation (u/v and 2d/3d)
             double res, tolu, tolv;
             TwoDTol = new NCollection_HArray1<double>(1, Num2DSS);
-            AAffin = new NCollection_HArray1<gp_GTrsf2d>(1, Num2DSS);
+            AAffin = new NCollection_HArray1<GeneralTransform2D>(1, Num2DSS);
             The3D2DTol = 0.9 * BoundTol; // 10% of security
             for (ii = 1; ii <= Num2DSS; ii++)
             {
@@ -189,9 +192,9 @@ public sealed class Approx_SweepApproximation
         // (3) Approximation
 
         // Init
-        myPoles = new NCollection_HArray1<gp_Pnt>(1, Num3DSS);
-        myDPoles = new NCollection_HArray1<gp_Vec>(1, Num3DSS);
-        myD2Poles = new NCollection_HArray1<gp_Vec>(1, Num3DSS);
+        myPoles = new NCollection_HArray1<Point3D>(1, Num3DSS);
+        myDPoles = new NCollection_HArray1<Vector3D>(1, Num3DSS);
+        myD2Poles = new NCollection_HArray1<Vector3D>(1, Num3DSS);
 
         myWeigths = new NCollection_HArray1<double>(1, Num3DSS);
         myDWeigths = new NCollection_HArray1<double>(1, Num3DSS);
@@ -199,21 +202,21 @@ public sealed class Approx_SweepApproximation
 
         if (Num2DSS > 0)
         {
-            myPoles2d = new NCollection_HArray1<gp_Pnt2d>(1, Num2DSS);
-            myDPoles2d = new NCollection_HArray1<gp_Vec2d>(1, Num2DSS);
-            myD2Poles2d = new NCollection_HArray1<gp_Vec2d>(1, Num2DSS);
+            myPoles2d = new NCollection_HArray1<Point2D>(1, Num2DSS);
+            myDPoles2d = new NCollection_HArray1<Vector2D>(1, Num2DSS);
+            myD2Poles2d = new NCollection_HArray1<Vector2D>(1, Num2DSS);
             COnSurfErr = new NCollection_HArray1<double>(1, Num2DSS);
         }
         else
         {
-            myPoles2d = new NCollection_HArray1<gp_Pnt2d>();
-            myDPoles2d = new NCollection_HArray1<gp_Vec2d>();
-            myD2Poles2d = new NCollection_HArray1<gp_Vec2d>();
+            myPoles2d = new NCollection_HArray1<Point2D>();
+            myDPoles2d = new NCollection_HArray1<Vector2D>();
+            myD2Poles2d = new NCollection_HArray1<Vector2D>();
             COnSurfErr = new NCollection_HArray1<double>();
         }
 
         // Checks if myFunc->D2 is implemented
-        if (continuity >= GeomAbs_C2)
+        if (continuity >= C2)
         {
             bool B;
             B = myFunc.D2(First,
@@ -230,11 +233,11 @@ public sealed class Approx_SweepApproximation
                           myD2Weigths.ChangeArray1());
             if (!B)
             {
-                continuity = GeomAbs_C1;
+                continuity = C1;
             }
         }
         // Checks if myFunc->D1 is implemented
-        if (continuity == GeomAbs_C1)
+        if (continuity == C1)
         {
             bool B;
             B = myFunc.D1(First,
@@ -248,23 +251,23 @@ public sealed class Approx_SweepApproximation
                           myDWeigths.ChangeArray1());
             if (!B)
             {
-                continuity = GeomAbs_C0;
+                continuity = C0;
             }
         }
 
         // So that F was at least 20 times more exact than its approx
         myFunc.SetTolerance(Tol3dMin / 20, Tol2d / 20);
 
-        int NbIntervalC2 = myFunc.NbIntervals(GeomAbs_C2);
-        int NbIntervalC3 = myFunc.NbIntervals(GeomAbs_C3);
+        int NbIntervalC2 = myFunc.NbIntervals(C2);
+        int NbIntervalC3 = myFunc.NbIntervals(C3);
 
         if (NbIntervalC3 > 1)
         {
             // (3.1) Approximation with preferential cut
             NCollection_Array1<double> Param_de_decoupeC2 = new(1, NbIntervalC2 + 1);
-            myFunc.Intervals(Param_de_decoupeC2, GeomAbs_C2);
+            myFunc.Intervals(Param_de_decoupeC2, C2);
             NCollection_Array1<double> Param_de_decoupeC3 = new(1, NbIntervalC3 + 1);
-            myFunc.Intervals(Param_de_decoupeC3, GeomAbs_C3);
+            myFunc.Intervals(Param_de_decoupeC3, C3);
 
             AdvApprox_PrefAndRec Preferentiel = new(Param_de_decoupeC2, Param_de_decoupeC3);
 
@@ -307,7 +310,7 @@ public sealed class Approx_SweepApproximation
                                double BoundTol,
                                double First,
                                double Last,
-                               GeomAbs_Shape Continuity,
+                               Continuity Continuity,
                                int Degmax,
                                int Segmax,
                                AdvApprox_EvaluatorFunction TheApproxFunction,
@@ -338,16 +341,16 @@ public sealed class Approx_SweepApproximation
             // Unfortunately Adv_Approx stores the transposition of the required
             // so, writing tabPoles = Approx.Poles() will give an erroneous result
             // It is only possible to allocate and recopy term by term...
-            tabPoles = new NCollection_HArray2<gp_Pnt>(1, Num3DSS, 1, aNbPoles);
+            tabPoles = new NCollection_HArray2<Point3D>(1, Num3DSS, 1, aNbPoles);
             tabWeights = new NCollection_HArray2<double>(1, Num3DSS, 1, aNbPoles);
 
             // OCCT reads Approx.Poles() (a handle) in the loops; the port's accessor copies, so it is read once.
-            NCollection_HArray2<gp_Pnt> aPoles = Approx.Poles()!;
+            NCollection_HArray2<Point3D> aPoles = Approx.Poles()!;
             if (Num1DSS == Num3DSS)
             {
                 NCollection_HArray2<double> aPoles1d = Approx.Poles1d()!;
                 double wpoid;
-                gp_Pnt P;
+                Point3D P;
                 for (ii = 1; ii <= Num3DSS; ii++)
                 {
                     for (jj = 1; jj <= aNbPoles; jj++)
@@ -380,7 +383,7 @@ public sealed class Approx_SweepApproximation
             // --> Filling of curves 2D  ----------
             if (Num2DSS > 0)
             {
-                gp_GTrsf2d TrsfInv;
+                GeneralTransform2D TrsfInv;
                 deg2d = vdeg;
                 tab2dKnots = Approx.Knots();
                 tab2dMults = Approx.Multiplicities();
@@ -388,7 +391,7 @@ public sealed class Approx_SweepApproximation
                 for (ii = 1; ii <= Num2DSS; ii++)
                 {
                     TrsfInv = AAffin!.Value(ii).Inverted();
-                    NCollection_HArray1<gp_Pnt2d> P2d = new(1, aNbPoles);
+                    NCollection_HArray1<Point2D> P2d = new(1, aNbPoles);
                     Approx.Poles2d(ii, P2d.ChangeArray1());
                     // do not forget to apply inverted homothety.
                     for (jj = 1; jj <= aNbPoles; jj++)
@@ -523,8 +526,8 @@ public sealed class Approx_SweepApproximation
 
     private bool D1(double Param, double First, double Last, Span<double> LocalResult)
     {
-        gp_XY Vcoord;
-        gp_Vec Vaux = new();
+        Xy Vcoord;
+        Vector3D Vaux = new();
         int index, ii;
         bool Ok = true;
 
@@ -600,8 +603,8 @@ public sealed class Approx_SweepApproximation
 
     private bool D2(double Param, double First, double Last, Span<double> LocalResult)
     {
-        gp_XY Vcoord;
-        gp_Vec Vaux = new();
+        Xy Vcoord;
+        Vector3D Vaux = new();
         int index, ii;
         bool Ok = true;
 
@@ -698,7 +701,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         UDegree = udeg;
         VDegree = vdeg;
@@ -709,7 +712,7 @@ public sealed class Approx_SweepApproximation
     }
 
     /// <summary>Copies the approximated surface into the caller's arrays (sized by <see cref="SurfShape"/>).</summary>
-    public void Surface(NCollection_Array2<gp_Pnt> TPoles,
+    public void Surface(NCollection_Array2<Point3D> TPoles,
                         NCollection_Array2<double> TWeights,
                         NCollection_Array1<double> TUKnots,
                         NCollection_Array1<double> TVKnots,
@@ -718,7 +721,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         TPoles.Assign(tabPoles!.Array2());
         TWeights.Assign(tabWeights!.Array2());
@@ -732,7 +735,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return udeg;
     }
@@ -741,17 +744,17 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return vdeg;
     }
 
     /// <summary>The poles of the surface (the object's own array; shared: don't modify).</summary>
-    public NCollection_Array2<gp_Pnt> SurfPoles()
+    public NCollection_Array2<Point3D> SurfPoles()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabPoles!.Array2();
     }
@@ -761,7 +764,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabWeights!.Array2();
     }
@@ -771,7 +774,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabUKnots!.Array1();
     }
@@ -781,7 +784,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabVKnots!.Array1();
     }
@@ -791,7 +794,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabUMults!.Array1();
     }
@@ -801,7 +804,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return tabVMults!.Array1();
     }
@@ -813,7 +816,7 @@ public sealed class Approx_SweepApproximation
         double MaxError = 0, err;
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
 
         if (myFunc.IsRational())
@@ -851,7 +854,7 @@ public sealed class Approx_SweepApproximation
         double MoyError = 0, err;
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
 
         if (myFunc.IsRational())
@@ -880,7 +883,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         return Num2DSS;
     }
@@ -890,11 +893,11 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError("Approx_SweepApproximation");
+            throw new DomainErrorException("Approx_SweepApproximation");
         }
         Degree = deg2d;
         NbPoles = seqPoles2d.Value(1).Length();
@@ -903,17 +906,17 @@ public sealed class Approx_SweepApproximation
 
     /// <summary>Copies the 2D curve Index into the caller's arrays (sized by <see cref="Curves2dShape"/>).</summary>
     public void Curve2d(int Index,
-                        NCollection_Array1<gp_Pnt2d> TPoles,
+                        NCollection_Array1<Point2D> TPoles,
                         NCollection_Array1<double> TKnots,
                         NCollection_Array1<int> TMults)
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError("Approx_SweepApproximation");
+            throw new DomainErrorException("Approx_SweepApproximation");
         }
         TPoles.Assign(seqPoles2d.Value(Index).Array1());
         TKnots.Assign(tab2dKnots!.Array1());
@@ -924,25 +927,25 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return deg2d;
     }
 
     /// <summary>The poles of the 2D curve Index (the object's own array; shared: don't modify).</summary>
-    public NCollection_Array1<gp_Pnt2d> Curve2dPoles(int Index)
+    public NCollection_Array1<Point2D> Curve2dPoles(int Index)
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return seqPoles2d.Value(Index).Array1();
     }
@@ -952,11 +955,11 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tab2dKnots!.Array1();
     }
@@ -966,11 +969,11 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" Approx_SweepApproximation");
+            throw new NotDoneException(" Approx_SweepApproximation");
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tab2dMults!.Array1();
     }
@@ -980,7 +983,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         return tab2dError!.Value(Index);
     }
@@ -990,7 +993,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         return Ave2dError!.Value(Index);
     }
@@ -1000,7 +1003,7 @@ public sealed class Approx_SweepApproximation
     {
         if (!done)
         {
-            throw new StdFail_NotDone("Approx_SweepApproximation");
+            throw new NotDoneException("Approx_SweepApproximation");
         }
         return COnSurfErr!.Value(Index);
     }

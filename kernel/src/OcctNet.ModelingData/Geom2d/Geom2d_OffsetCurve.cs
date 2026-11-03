@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -19,12 +22,12 @@ namespace Occt;
 /// </remarks>
 public class Geom2d_OffsetCurve : Geom2d_Curve
 {
-    private static readonly double MyAngularToleranceForG1 = Precision.Angular();
+    private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 
     private Geom2d_Curve basisCurve = null!;
     private Geom2dEval_RepCurveDesc.Base? myEvalRep;
     private double offsetValue;
-    private GeomAbs_Shape myBasisCurveContinuity;
+    private Continuity myBasisCurveContinuity;
 
     /// <summary>True if an evaluation representation is attached.</summary>
     public bool HasEvalRepresentation() => myEvalRep is not null;
@@ -33,7 +36,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     internal Geom2dEval_RepCurveDesc.Base? EvalRepresentation() => myEvalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     internal void SetEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         CheckMutable();
@@ -55,7 +58,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     /// The offset of C by theOffset. A trimmed or offset C is replaced by its basis (the offsets add up). Unless
     /// isTheNotCheckC0, a C0 B-spline basis must be G1.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The basis is a C0 B-spline that is not G1.</exception>
+    /// <exception cref="ConstructionErrorException">The basis is a C0 B-spline that is not G1.</exception>
     public Geom2d_OffsetCurve(Geom2d_Curve theCurve, double theOffset, bool isTheNotCheckC0 = false)
     {
         offsetValue = theOffset;
@@ -75,7 +78,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     // OCCT.NET: the basis curve is shared (frozen); copy it before changing it.
     private void ownBasisCurve()
     {
-        if (basisCurve.IsFrozen())
+        if (basisCurve.IsFrozen)
         {
             basisCurve = (Geom2d_Curve)basisCurve.Copy();
         }
@@ -95,7 +98,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     public sealed override double ReversedParameter(double U) => basisCurve.ReversedParameter(U);
 
     /// <summary>Changes the basis curve (see the constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">The basis is a C0 B-spline that is not G1.</exception>
+    /// <exception cref="ConstructionErrorException">The basis is a C0 B-spline that is not G1.</exception>
     internal void SetBasisCurve(Geom2d_Curve C, bool isNotCheckC0 = false)
     {
         CheckMutable();
@@ -121,7 +124,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
 
         myBasisCurveContinuity = aCheckingCurve.Continuity();
 
-        bool isC0 = !isNotCheckC0 && (myBasisCurveContinuity == GeomAbs_C0);
+        bool isC0 = !isNotCheckC0 && (myBasisCurveContinuity == C0);
 
         // Basis curve must be at least C1
         if (isC0 && aCheckingCurve is Geom2d_BSplineCurve aBC)
@@ -130,14 +133,14 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
             {
                 // Checking if basis curve has more smooth (C1, G2 and above) is not done.
                 // It can be done in case of need.
-                myBasisCurveContinuity = GeomAbs_G1;
+                myBasisCurveContinuity = G1;
                 isC0 = false;
             }
 
             // Raise exception if still C0
             if (isC0)
             {
-                throw new Standard_ConstructionError("Offset on C0 curve");
+                throw new ConstructionErrorException("Offset on C0 curve");
             }
         }
         //
@@ -169,47 +172,47 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     }
 
     /// <summary>The continuity of the basis curve lowered by one (C0 for a C1 basis, G1 for a G1 B-spline basis).</summary>
-    public sealed override GeomAbs_Shape Continuity()
+    public sealed override Continuity Continuity()
     {
-        GeomAbs_Shape OffsetShape = GeomAbs_C0;
+        Continuity OffsetShape = C0;
         switch (myBasisCurveContinuity)
         {
-            case GeomAbs_C0:
-                OffsetShape = GeomAbs_C0;
+            case C0:
+                OffsetShape = C0;
                 break;
-            case GeomAbs_C1:
-                OffsetShape = GeomAbs_C0;
+            case C1:
+                OffsetShape = C0;
                 break;
-            case GeomAbs_C2:
-                OffsetShape = GeomAbs_C1;
+            case C2:
+                OffsetShape = C1;
                 break;
-            case GeomAbs_C3:
-                OffsetShape = GeomAbs_C2;
+            case C3:
+                OffsetShape = C2;
                 break;
-            case GeomAbs_CN:
-                OffsetShape = GeomAbs_CN;
+            case CN:
+                OffsetShape = CN;
                 break;
-            case GeomAbs_G1:
-                OffsetShape = GeomAbs_G1;
+            case G1:
+                OffsetShape = G1;
                 break;
-            case GeomAbs_G2:
-                OffsetShape = GeomAbs_G2;
+            case G2:
+                OffsetShape = G2;
                 break;
         }
         return OffsetShape;
     }
 
     /// <exception cref="Geom2d_UndefinedValue">The basis curve's first derivative is null.</exception>
-    public sealed override gp_Pnt2d EvalD0(double theU)
+    public sealed override Point2D EvalD0(double theU)
     {
-        gp_Pnt2d aEvalRepResult;
+        Point2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveD0(myEvalRep, theU, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
         Geom2d_Curve.ResD1 aBasisD1 = basisCurve.EvalD1(theU);
-        gp_Pnt2d aValue = aBasisD1.Point;
+        Point2D aValue = aBasisD1.Point;
         if (!Geom2d_OffsetCurveUtils.CalculateD0(ref aValue, aBasisD1.D1, offsetValue))
         {
             throw new Geom2d_UndefinedValue("Geom2d_OffsetCurve::EvalD0");
@@ -227,8 +230,8 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
         }
 
         Geom2d_Curve.ResD2 aBasisD2 = basisCurve.EvalD2(theU);
-        gp_Pnt2d aValue = aBasisD2.Point;
-        gp_Vec2d aD1 = aBasisD2.D1;
+        Point2D aValue = aBasisD2.Point;
+        Vector2D aD1 = aBasisD2.D1;
         if (!Geom2d_OffsetCurveUtils.CalculateD1(ref aValue, ref aD1, aBasisD2.D2, offsetValue))
         {
             throw new Geom2d_UndefinedDerivative("Geom2d_OffsetCurve::EvalD1");
@@ -246,12 +249,12 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
         }
 
         Geom2d_Curve.ResD3 aBasisD3 = basisCurve.EvalD3(theU);
-        gp_Pnt2d aValue = aBasisD3.Point;
-        gp_Vec2d aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
+        Point2D aValue = aBasisD3.Point;
+        Vector2D aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
         bool isDirectionChange = false;
-        if (aD1.SquareMagnitude() <= gp.Resolution())
+        if (aD1.SquareMagnitude() <= Constants.Resolution())
         {
-            gp_Vec2d aDummyD4 = new gp_Vec2d();
+            Vector2D aDummyD4 = new Vector2D();
             if (!Geom2d_OffsetCurveUtils.AdjustDerivative(basisCurve,
                                                           3,
                                                           theU,
@@ -282,12 +285,12 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
         }
 
         Geom2d_Curve.ResD3 aBasisD3 = basisCurve.EvalD3(theU);
-        gp_Vec2d aD4Basis = basisCurve.EvalDN(theU, 4);
-        gp_Pnt2d aValue = aBasisD3.Point;
-        gp_Vec2d aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
-        gp_Vec2d aD4 = aD4Basis;
+        Vector2D aD4Basis = basisCurve.EvalDN(theU, 4);
+        Point2D aValue = aBasisD3.Point;
+        Vector2D aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
+        Vector2D aD4 = aD4Basis;
         bool isDirectionChange = false;
-        if (aD1.SquareMagnitude() <= gp.Resolution())
+        if (aD1.SquareMagnitude() <= Constants.Resolution())
         {
             if (!Geom2d_OffsetCurveUtils.AdjustDerivative(basisCurve,
                                                           4,
@@ -316,14 +319,14 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
 
     /// <summary>The Nth derivative: through EvalD1 to EvalD3 up to N = 3, the basis curve's derivative above.</summary>
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1, or the derivative can't be computed.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative("Geom2d_OffsetCurve::EvalDN");
         }
 
-        gp_Vec2d aEvalRepResult;
+        Vector2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveDN(myEvalRep, U, N, out aEvalRepResult))
         {
             return aEvalRepResult;
@@ -360,14 +363,14 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     /// <summary>True if the points at the first and last parameters are within Precision::Computational() (squared distance).</summary>
     public sealed override bool IsClosed()
     {
-        gp_Pnt2d PF, PL;
+        Point2D PF, PL;
         D0(FirstParameter(), out PF);
         D0(LastParameter(), out PL);
-        return PF.SquareDistance(PL) <= Precision.Computational();
+        return PF.SquareDistance(PL) <= global::Kerf.Engine.Foundation.Precision.Computational();
     }
 
     /// <summary>True if the basis curve is C(N + 1).</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCN(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -381,7 +384,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     public sealed override double Period() => basisCurve.Period();
 
     /// <summary>Transforms the basis curve and scales the offset by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -391,15 +394,15 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf2d T) =>
+    public sealed override double TransformedParameter(double U, in Transform2D T) =>
         basisCurve.TransformedParameter(U, T);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf2d T) =>
+    public sealed override double ParametricTransformation(in Transform2D T) =>
         basisCurve.ParametricTransformation(T);
 
     /// <summary>The continuity of the basis curve (G1 for a C0 B-spline accepted as G1).</summary>
-    public GeomAbs_Shape GetBasisCurveContinuity() => myBasisCurveContinuity;
+    public Continuity GetBasisCurveContinuity() => myBasisCurveContinuity;
 
     // Non-mutating twins of the mutators (OCCT.NET)
 
@@ -420,7 +423,7 @@ public class Geom2d_OffsetCurve : Geom2d_Curve
     }
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     public Geom2d_OffsetCurve WithEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         Geom2d_OffsetCurve aCopy = new Geom2d_OffsetCurve(this);

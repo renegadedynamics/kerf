@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_JacobiTest
@@ -10,7 +14,7 @@ public class math_JacobiTest
     public void IdentityMatrix()
     {
         // Test with identity matrix - all eigenvalues should be 1
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -21,9 +25,9 @@ public class math_JacobiTest
         aMatrix[3, 2] = 0.0;
         aMatrix[3, 3] = 1.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
         Assert.Equal(3, aValues.Length());
@@ -43,7 +47,7 @@ public class math_JacobiTest
     public void DiagonalMatrix()
     {
         // Test with diagonal matrix - eigenvalues should be diagonal elements
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 5.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -54,9 +58,9 @@ public class math_JacobiTest
         aMatrix[3, 2] = 0.0;
         aMatrix[3, 3] = 7.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
 
@@ -77,15 +81,15 @@ public class math_JacobiTest
     public void SimpleSymmetricMatrix()
     {
         // Test with simple 2x2 symmetric matrix
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 3.0;
         aMatrix[1, 2] = 1.0;
         aMatrix[2, 1] = 1.0;
         aMatrix[2, 2] = 3.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
 
@@ -103,15 +107,15 @@ public class math_JacobiTest
     public void EigenvectorVerification()
     {
         // Test eigenvector computation and verification
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 4.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[2, 1] = 2.0;
         aMatrix[2, 2] = 1.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         // Verify A * v = lambda * v for each eigenpair
         for (int i = 1; i <= 2; i++)
@@ -141,7 +145,7 @@ public class math_JacobiTest
     public void LargerSymmetricMatrix()
     {
         // Test with larger 4x4 symmetric matrix
-        math_Matrix aMatrix = new(1, 4, 1, 4);
+        Matrix aMatrix = new(1, 4, 1, 4);
         // Create a symmetric positive definite matrix
         aMatrix[1, 1] = 4.0;
         aMatrix[1, 2] = 1.0;
@@ -160,9 +164,9 @@ public class math_JacobiTest
         aMatrix[4, 3] = 2.0;
         aMatrix[4, 4] = 3.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
         Assert.Equal(4, aValues.Length());
@@ -184,12 +188,12 @@ public class math_JacobiTest
     public void SingleElementMatrix()
     {
         // Test with 1x1 matrix
-        math_Matrix aMatrix = new(1, 1, 1, 1);
+        Matrix aMatrix = new(1, 1, 1, 1);
         aMatrix[1, 1] = 42.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
         Assert.Equal(1, aValues.Length());
@@ -204,7 +208,7 @@ public class math_JacobiTest
     public void SquareMatrixRequirement()
     {
         // Test square matrix requirement for Jacobi eigenvalue decomposition
-        math_Matrix aNonSquareMatrix = new(1, 2, 1, 3); // 2x3 matrix
+        Matrix aNonSquareMatrix = new(1, 2, 1, 3); // 2x3 matrix
         aNonSquareMatrix[1, 1] = 1.0;
         aNonSquareMatrix[1, 2] = 2.0;
         aNonSquareMatrix[1, 3] = 3.0;
@@ -217,14 +221,14 @@ public class math_JacobiTest
 
         // Jacobi eigenvalue decomposition requires square matrices
         // Test with a proper square matrix instead
-        math_Matrix aSquareMatrix = new(1, 2, 1, 2);
+        Matrix aSquareMatrix = new(1, 2, 1, 2);
         aSquareMatrix[1, 1] = 1.0;
         aSquareMatrix[1, 2] = 0.5;
         aSquareMatrix[2, 1] = 0.5;
         aSquareMatrix[2, 2] = 2.0;
 
-        math_Jacobi aJacobi = new(aSquareMatrix);
-        Assert.True(aJacobi.IsDone());
+        Jacobi aJacobi = new(aSquareMatrix);
+        Assert.True(aJacobi.IsDone);
     }
 
     [Fact]
@@ -232,23 +236,23 @@ public class math_JacobiTest
     {
         // Create a scenario where Jacobi might fail (though it usually succeeds)
         // Test exception handling for accessing results before computation
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[2, 1] = 0.0;
         aMatrix[2, 2] = 1.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        if (!aJacobi.IsDone())
+        if (!aJacobi.IsDone)
         {
             // Only test exceptions if computation actually failed
-            Assert.ThrowsAny<StdFail_NotDone>(() => { aJacobi.Values(); });
-            Assert.ThrowsAny<StdFail_NotDone>(() => { aJacobi.Value(1); });
-            Assert.ThrowsAny<StdFail_NotDone>(() => { aJacobi.Vectors(); });
+            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Values(); });
+            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Value(1); });
+            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Vectors(); });
 
             math_Vector aV = new(1, 2);
-            Assert.ThrowsAny<StdFail_NotDone>(() => { aJacobi.Vector(1, aV); });
+            Assert.ThrowsAny<NotDoneException>(() => { aJacobi.Vector(1, aV); });
         }
     }
 
@@ -256,7 +260,7 @@ public class math_JacobiTest
     public void OrthogonalityOfEigenvectors()
     {
         // Test orthogonality of eigenvectors for symmetric matrix
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 6.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 1.0;
@@ -267,9 +271,9 @@ public class math_JacobiTest
         aMatrix[3, 2] = 1.0;
         aMatrix[3, 3] = 1.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         // Get eigenvectors
         math_Vector aV1 = new(1, 3), aV2 = new(1, 3), aV3 = new(1, 3);
@@ -303,7 +307,7 @@ public class math_JacobiTest
     public void NormalizationOfEigenvectors()
     {
         // Test that eigenvectors are normalized
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 2.0;
         aMatrix[1, 2] = 1.0;
         aMatrix[1, 3] = 0.0;
@@ -314,9 +318,9 @@ public class math_JacobiTest
         aMatrix[3, 2] = 1.0;
         aMatrix[3, 3] = 2.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         // Check that each eigenvector has unit norm
         for (int i = 1; i <= 3; i++)
@@ -333,15 +337,15 @@ public class math_JacobiTest
     public void CustomBounds()
     {
         // Test with custom matrix bounds
-        math_Matrix aMatrix = new(2, 3, 2, 3);
+        Matrix aMatrix = new(2, 3, 2, 3);
         aMatrix[2, 2] = 5.0;
         aMatrix[2, 3] = 1.0;
         aMatrix[3, 2] = 1.0;
         aMatrix[3, 3] = 3.0;
 
-        math_Jacobi aJacobi = new(aMatrix);
+        Jacobi aJacobi = new(aMatrix);
 
-        Assert.True(aJacobi.IsDone());
+        Assert.True(aJacobi.IsDone);
 
         math_Vector aValues = aJacobi.Values();
         Assert.Equal(2, aValues.Length());

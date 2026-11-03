@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,9 +19,9 @@ public class Interface_CheckTool
     // list; a field of the tool here (decision 1183)
     private int errh = 1;
 
-    private static void raisecheck(Standard_Failure theException, Interface_Check ach)
+    private static void raisecheck(FailureException theException, Interface_Check ach)
     {
-        string mess = Sprintf("** Exception Raised during Check : %s **", theException.GetType().Name);
+        string mess = Sprintf("** Exception Raised during Check : %s **", global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()));
         ach.AddFail(mess);
         // OCCT rethrows the system signals (OSD_Exception, OSD_Signal), caught here as Standard_Failure; their .NET
         // counterparts (NullReferenceException...) aren't Standard_Failure, so they are never caught
@@ -77,7 +79,7 @@ public class Interface_CheckTool
     /// Erroneous or Corrected Entity : Check build at Analyse time; else, Check computed for Entity (Verify
     /// integrity), can use a Graph as required to control context
     /// </summary>
-    public void FillCheck(Standard_Transient? ent, Interface_ShareTool sh, ref Interface_Check? ach)
+    public void FillCheck(Transient? ent, Interface_ShareTool sh, ref Interface_Check? ach)
     {
         Interface_GeneralModule module = null;
         int CN;
@@ -94,7 +96,7 @@ public class Interface_CheckTool
             {
                 module.CheckCase(CN, ent, sh, ref ach);
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 raisecheck(anException, ach);
             }
@@ -162,7 +164,7 @@ public class Interface_CheckTool
     public Interface_Check? Check(int num)
     {
         Interface_InterfaceModel model = theshare.Model();
-        Standard_Transient ent = model.Value(num);
+        Transient ent = model.Value(num);
         Interface_Check ach = new Interface_Check(ent); // not filtered by "Warning": as is
         errh = 1;
         FillCheck(ent, theshare, ref ach);
@@ -213,7 +215,7 @@ public class Interface_CheckTool
             {
                 throw new Interface_CheckFailure("Interface Model : an Entity is recorded as Erroneous");
             }
-            Standard_Transient ent = model.Value(i);
+            Transient ent = model.Value(i);
             if ((thestat & 1) != 0)
             {
                 if (!model.IsErrorEntity(i))
@@ -270,7 +272,7 @@ public class Interface_CheckTool
         while (n0 <= nb)
         {
             Interface_Check ach = new Interface_Check();
-            Standard_Transient ent = null;
+            Transient ent = null;
             try
             {
                 for (i = n0; i <= nb; i++)
@@ -309,7 +311,7 @@ public class Interface_CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 n0 = i + 1;
                 raisecheck(anException, ach);
@@ -347,7 +349,7 @@ public class Interface_CheckTool
         while (n0 <= nb)
         {
             Interface_Check ach = new Interface_Check();
-            Standard_Transient ent = null;
+            Transient ent = null;
             try
             {
                 for (i = n0; i <= nb; i++)
@@ -383,7 +385,7 @@ public class Interface_CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 n0 = i + 1;
                 raisecheck(anException, ach);
@@ -427,7 +429,7 @@ public class Interface_CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 n0 = i + 1;
                 raisecheck(anException, ach);
@@ -452,7 +454,7 @@ public class Interface_CheckTool
         errh = 0;
         while (n0 <= nb)
         {
-            Standard_Transient ent = null;
+            Transient ent = null;
             Interface_Check ach = new Interface_Check();
             try
             {
@@ -481,7 +483,7 @@ public class Interface_CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 n0 = i + 1;
                 raisecheck(anException, ach);
@@ -507,7 +509,7 @@ public class Interface_CheckTool
         while (n0 <= nb)
         {
             Interface_Check ach = new Interface_Check();
-            Standard_Transient ent = null;
+            Transient ent = null;
             try
             {
                 for (i = n0; i <= nb; i++)
@@ -544,7 +546,7 @@ public class Interface_CheckTool
                 }
                 n0 = nb + 1;
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
                 n0 = i + 1;
                 raisecheck(anException, ach);

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A point on a surface, with both its 3D point and its (U, V) parameters.</summary>
@@ -92,7 +96,7 @@ public partial struct IntPolyh_Point : IEquatable<IntPolyh_Point>, IntPolyh_IDum
         myU = (Point1.U() + Point2.U()) * 0.5;
         myV = (Point1.V() + Point2.V()) * 0.5;
 
-        gp_Pnt PtXYZ = MySurface.Value(myU, myV);
+        Point3D PtXYZ = MySurface.Value(myU, myV);
 
         myX = PtXYZ.X();
         myY = PtXYZ.Y();
@@ -209,7 +213,7 @@ public partial struct IntPolyh_Point : IEquatable<IntPolyh_Point>, IntPolyh_IDum
     public readonly IntPolyh_Point Divide(double RR)
     {
         IntPolyh_Point res = new();
-        if (Math.Abs(RR) > Precision.Computational())
+        if (Math.Abs(RR) > global::Kerf.Engine.Foundation.Precision.Computational())
         {
             res.SetX(myX / RR);
             res.SetY(myY / RR);
@@ -289,5 +293,5 @@ public partial struct IntPolyh_Point : IEquatable<IntPolyh_Point>, IntPolyh_IDum
 
     public static bool operator !=(in IntPolyh_Point theLeft, in IntPolyh_Point theRight) => !theLeft.Equals(theRight);
 
-    public override readonly string ToString() => gp.Format("IntPolyh_Point", myX, myY, myZ, myU, myV);
+    public override readonly string ToString() => Constants.Format("IntPolyh_Point", myX, myY, myZ, myU, myV);
 }

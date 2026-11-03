@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_PersonAndOrganizationAssignment : Standard_Transient
+public class StepBasic_PersonAndOrganizationAssignment : Transient
 {
     private StepBasic_PersonAndOrganization assignedPersonAndOrganization;
     private StepBasic_PersonAndOrganizationRole role;

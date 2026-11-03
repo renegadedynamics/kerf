@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// An Integer through a Handle (i.e. managed as TShared)
 /// </summary>
-public class Interface_IntVal : Standard_Transient
+public class Interface_IntVal : Transient
 {
 
     public Interface_IntVal()

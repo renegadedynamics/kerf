@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Defines a trihedron (tangent, normal, binormal) along a curve.</summary>
@@ -13,7 +17,7 @@ namespace Occt;
 /// adaptor). A law is not safe to evaluate from several threads at once; <see cref="Copy"/> one per thread.
 /// The evaluators' vectors are <c>ref</c>: some laws leave them unwritten on some paths, as in OCCT.
 /// </remarks>
-public abstract class GeomFill_TrihedronLaw : Standard_Transient
+public abstract class GeomFill_TrihedronLaw : Transient
 {
     protected Adaptor3d_Curve? myCurve;
     protected Adaptor3d_Curve? myTrimmed;
@@ -32,28 +36,28 @@ public abstract class GeomFill_TrihedronLaw : Standard_Transient
     public virtual GeomFill_PipeError ErrorStatus() => GeomFill_PipeError.GeomFill_PipeOk;
 
     /// <summary>Computes the trihedron on the curve at Param.</summary>
-    public abstract bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal);
+    public abstract bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal);
 
     /// <summary>Computes the trihedron and its derivative at Param (used only for C1 or C2 approximation).</summary>
-    public virtual bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                           ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public virtual bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                           ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
-        throw new Standard_NotImplemented(" GeomFill_TrihedronLaw::D2");
+        throw new MethodNotImplementedException(" GeomFill_TrihedronLaw::D2");
     }
 
     /// <summary>Computes the trihedron and its first and second derivatives at Param (used only for C2 approximation).</summary>
-    public virtual bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                           ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                           ref gp_Vec D2BiNormal)
+    public virtual bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                           ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                           ref Vector3D D2BiNormal)
     {
-        throw new Standard_NotImplemented(" GeomFill_TrihedronLaw::D2");
+        throw new MethodNotImplementedException(" GeomFill_TrihedronLaw::D2");
     }
 
     /// <summary>The number of intervals for continuity S; may be one if the law's continuity is at least S.</summary>
-    public abstract int NbIntervals(GeomAbs_Shape S);
+    public abstract int NbIntervals(Continuity S);
 
     /// <summary>Stores in T the parameters bounding the intervals of continuity S; T.Length() must exceed NbIntervals(S).</summary>
-    public abstract void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S);
+    public abstract void Intervals(NCollection_Array1<double> T, Continuity S);
 
     /// <summary>Sets the bounds of the parametric interval, which determines the derivatives there if the law isn't Cn.</summary>
     public virtual void SetInterval(double First, double Last)
@@ -69,7 +73,7 @@ public abstract class GeomFill_TrihedronLaw : Standard_Transient
     }
 
     /// <summary>The average trihedron, useful to make fast approximations of rational surfaces.</summary>
-    public abstract void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal);
+    public abstract void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal);
 
     /// <summary>Whether the law is constant.</summary>
     public virtual bool IsConstant() => false;

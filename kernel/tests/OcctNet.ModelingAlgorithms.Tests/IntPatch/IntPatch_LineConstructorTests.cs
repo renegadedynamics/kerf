@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -30,8 +32,8 @@ public class IntPatch_LineConstructorTests
     public void Circle_of_plane_and_cylinder_split_by_the_square_face()
     {
         // The plane's face is the square [-1, 1]²; the circle of radius 1.2 leaves it around the axes: four arcs.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()), -1, 1, -1, 1);
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(), 1.2), 0, 2 * Math.PI, -1, 1);
+        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), -1, 1, -1, 1);
+        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.2), 0, 2 * Math.PI, -1, 1);
         Adaptor3d_TopolTool aD1 = new TopolTool3d(aS1);
         Adaptor3d_TopolTool aD2 = new TopolTool3d(aS2);
         var anInter = new IntPatch_ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
@@ -43,7 +45,7 @@ public class IntPatch_LineConstructorTests
         var aLC = new IntPatch_LineConstructor(2);
         var aSLin = new NCollection_Sequence<IntPatch_Line>();
         aSLin.Append(aL);
-        Assert.Throws<Standard_DomainError>(() => aLC.Perform(aSLin, aL, aS1, new Adaptor3d_TopolTool(aS1), aS2,
+        Assert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new Adaptor3d_TopolTool(aS1), aS2,
                                                                new Adaptor3d_TopolTool(aS2), Tol));
         aLC.Perform(aSLin, aL, aS1, aD1, aS2, aD2, Tol);
         Assert.Equal(4, aLC.NbLines());
@@ -54,11 +56,11 @@ public class IntPatch_LineConstructorTests
             Assert.True(aG.HasFirstPoint() && aG.HasLastPoint());
             double f = aG.FirstPoint().ParameterOnLine(), l = aG.LastPoint().ParameterOnLine();
             Assert.True(l > f);
-            gp_Pnt aMid = ElCLib.Value(0.5 * (f + l), aG.Circle());
+            Point3D aMid = global::Kerf.Engine.Geometry.ElCLib.Value(0.5 * (f + l), aG.Circle());
             Assert.True(Math.Abs(aMid.X()) <= 1 && Math.Abs(aMid.Y()) <= 1, $"arc {i} is outside the square");
             foreach (double t in new[] { f, l })
             {
-                gp_Pnt aP = ElCLib.Value(t, aG.Circle());
+                Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(t, aG.Circle());
                 Assert.True(Math.Abs(Math.Max(Math.Abs(aP.X()), Math.Abs(aP.Y())) - 1.0) < 1e-9,
                             $"arc {i} doesn't end on the square");
             }
@@ -68,7 +70,7 @@ public class IntPatch_LineConstructorTests
     private static IntSurf_PntOn2S CirclePnt(double t)
     {
         var aP = new IntSurf_PntOn2S();
-        aP.SetValue(new gp_Pnt(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
+        aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
         return aP;
     }
 
@@ -76,8 +78,8 @@ public class IntPatch_LineConstructorTests
     public void Walking_line_half_outside_the_face_keeps_the_inside_part()
     {
         // The unit circle from t = 0 to π (21 points, vertices at points 1, 11 and 21) on the plane's face x >= 0.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()), 0, 2, -2, 2);
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(), 1.0), 0, 2 * Math.PI, -1, 1);
+        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), 0, 2, -2, 2);
+        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.0), 0, 2 * Math.PI, -1, 1);
         var aD1 = new Adaptor3d_TopolTool(aS1);
         var aD2 = new Adaptor3d_TopolTool(aS2);
         var aL = new IntSurf_LineOn2S();
@@ -119,9 +121,9 @@ public class IntPatch_LineConstructorTests
     [Fact]
     public void Analytic_lines_of_sphere_and_cylinder_split_at_their_vertices()
     {
-        var aS1 = new GeomAdaptor_Surface(new Geom_SphericalSurface(new gp_Ax3(), 1.0));
+        var aS1 = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
         var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(
-                                              new gp_Ax3(new gp_Pnt(0.6, 0.1, 0), new gp_Dir(0, 0, 1)), 0.5),
+                                              new CoordinateSystem(new Point3D(0.6, 0.1, 0), new Direction3D(0, 0, 1)), 0.5),
                                           0, 2 * Math.PI, -2, 2);
         var aD1 = new Adaptor3d_TopolTool(aS1);
         var aD2 = new Adaptor3d_TopolTool(aS2);
@@ -147,8 +149,8 @@ public class IntPatch_LineConstructorTests
                 var aPart = Assert.IsType<IntPatch_ALine>(aLC.Line(j));
                 aNbParts++;
                 double f = aPart.FirstPoint().ParameterOnLine(), l = aPart.LastPoint().ParameterOnLine();
-                gp_Pnt aMid = aPart.Value(0.5 * (f + l));
-                Assert.True(Math.Abs(aMid.Distance(new gp_Pnt()) - 1.0) < 1e-7, "off the sphere");
+                Point3D aMid = aPart.Value(0.5 * (f + l));
+                Assert.True(Math.Abs(aMid.Distance(new Point3D()) - 1.0) < 1e-7, "off the sphere");
                 double dx = aMid.X() - 0.6, dy = aMid.Y() - 0.1;
                 Assert.True(Math.Abs(Math.Sqrt(dx * dx + dy * dy) - 0.5) < 1e-7, "off the cylinder");
             }

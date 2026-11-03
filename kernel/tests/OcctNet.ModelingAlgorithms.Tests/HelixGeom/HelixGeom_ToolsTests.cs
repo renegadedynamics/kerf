@@ -1,7 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixGeom_Tools_Test.cxx (HelixGeom_Tools_Test).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -48,7 +49,7 @@ public class HelixGeom_ToolsTests
 
         int aResult = HelixGeom_Tools.ApprCurve3D(aHAdaptor,
                                                   myTolerance,
-                                                  GeomAbs_C1,
+                                                  C1,
                                                   50, // Max segments
                                                   6,  // Max degree
                                                   ref aBSpline,
@@ -64,13 +65,13 @@ public class HelixGeom_ToolsTests
         {
             double aParam = aHelix.FirstParameter() + i * (aHelix.LastParameter() - aHelix.FirstParameter()) / aNbSamples;
 
-            gp_Pnt aOrigPnt = aHelix.Value(aParam);
+            Point3D aOrigPnt = aHelix.Value(aParam);
 
             // Map parameter to B-spline parameter space
             double aBSplineParam = aBSpline.FirstParameter()
                                    + i * (aBSpline.LastParameter() - aBSpline.FirstParameter()) / aNbSamples;
 
-            aBSpline.D0(aBSplineParam, out gp_Pnt aApproxPnt);
+            aBSpline.D0(aBSplineParam, out Point3D aApproxPnt);
 
             double aDistance = aOrigPnt.Distance(aApproxPnt);
             Assert.True(aDistance <= aMaxError * 2); // Allow some margin
@@ -87,7 +88,7 @@ public class HelixGeom_ToolsTests
         // Test C0 continuity
         Geom_BSplineCurve? aBSplineC0 = null;
         double aMaxErrorC0 = 0;
-        int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, GeomAbs_C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
+        int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
 
         Assert.Equal(0, aResultC0);
         Assert.NotNull(aBSplineC0);
@@ -95,7 +96,7 @@ public class HelixGeom_ToolsTests
         // Test C2 continuity
         Geom_BSplineCurve? aBSplineC2 = null;
         double aMaxErrorC2 = 0;
-        int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, GeomAbs_C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
+        int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
 
         Assert.Equal(0, aResultC2);
         Assert.NotNull(aBSplineC2);

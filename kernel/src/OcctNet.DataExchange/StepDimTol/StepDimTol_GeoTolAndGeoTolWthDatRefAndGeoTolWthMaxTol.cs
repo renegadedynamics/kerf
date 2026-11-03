@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepDimTol_GeoTolAndGeoTolWthDatRefAndGeoTolWthMaxTol : StepDimTol_GeoTolAndGeoTolWthDatRefAndGeoTolWthMod
@@ -16,13 +18,13 @@ public class StepDimTol_GeoTolAndGeoTolWthDatRefAndGeoTolWthMaxTol : StepDimTol_
     {
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceWithModifiers theGTWM, StepBasic_LengthMeasureWithUnit theMaxTol, StepDimTol_GeometricToleranceType theType)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceWithModifiers theGTWM, StepBasic_LengthMeasureWithUnit theMaxTol, StepDimTol_GeometricToleranceType theType)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theGTWDR, theGTWM, theType);
         myMaxTol = theMaxTol;
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceWithModifiers theGTWM, StepBasic_LengthMeasureWithUnit theMaxTol, StepDimTol_GeometricToleranceType theType)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceWithModifiers theGTWM, StepBasic_LengthMeasureWithUnit theMaxTol, StepDimTol_GeometricToleranceType theType)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theGTWDR, theGTWM, theType);
         myMaxTol = theMaxTol;

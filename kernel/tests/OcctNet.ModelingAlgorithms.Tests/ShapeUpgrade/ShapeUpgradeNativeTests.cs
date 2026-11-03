@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -7,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -94,7 +95,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
 
     private static string Record(string theTool, in TopoDS_Shape theRes, int theStatus)
     {
-        if (!theRes.IsNull() && !theRes.TShape()!.IsFrozen())
+        if (!theRes.IsNull() && !theRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theTool}: the result isn't frozen");
         }
@@ -134,10 +135,10 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
             Trace("  " + theTool);
             return theRun();
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException && e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // an access violation natively (decision 977)
-            return $"{theTool} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : e.GetType().Name)}";
+            return $"{theTool} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()))}";
         }
     }
 
@@ -181,9 +182,9 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         aRecords.Add(Divide("CONT", aCont));
         aRecords.Add(Divide("CONTD", new ShapeUpgrade_ShapeDivideContinuity(aShape)));
         var aCont2 = new ShapeUpgrade_ShapeDivideContinuity(aShape);
-        aCont2.SetBoundaryCriterion(GeomAbs_C2);
-        aCont2.SetPCurveCriterion(GeomAbs_C2);
-        aCont2.SetSurfaceCriterion(GeomAbs_C2);
+        aCont2.SetBoundaryCriterion(C2);
+        aCont2.SetPCurveCriterion(C2);
+        aCont2.SetSurfaceCriterion(C2);
         aCont2.SetTolerance(1e-3);
         aCont2.SetTolerance2d(1e-5);
         aRecords.Add(Divide("CONT2", aCont2));

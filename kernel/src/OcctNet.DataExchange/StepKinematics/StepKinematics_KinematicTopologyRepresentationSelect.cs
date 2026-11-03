@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ public class StepKinematics_KinematicTopologyRepresentationSelect : StepData_Sel
     /// -- 2 -&gt; KinematicTopologyNetworkStructure
     /// -- 3 -&gt; KinematicTopologyStructure
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

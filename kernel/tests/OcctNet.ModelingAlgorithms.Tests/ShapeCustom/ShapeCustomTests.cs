@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -30,7 +32,7 @@ public class ShapeCustomTests
     {
         var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(theShape, aMap);
-        return aMap.All(s => s.TShape()!.IsFrozen());
+        return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
     private static Geom_Surface BasisOf(Geom_Surface theSurface)
@@ -38,12 +40,12 @@ public class ShapeCustomTests
 
     private static TopoDS_Shape Mirrored(in TopoDS_Shape theShape)
     {
-        var aT = new gp_Trsf();
-        aT.SetMirror(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)));
+        var aT = new Transform3D();
+        aT.SetMirror(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         return new BRepBuilderAPI_Transform(theShape, aT, true).Shape();
     }
 
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new gp_Pnt(1, 2, 3), new gp_Pnt(11, 12, 13)).Shape();
+    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(1, 2, 3), new Point3D(11, 12, 13)).Shape();
 
     private static TopoDS_Shape Compound(params TopoDS_Shape[] theShapes)
     {
@@ -158,7 +160,7 @@ public class ShapeCustomTests
     public void ApplyModifier_ACompoundSharingAChild_IsModifiedOnce()
     {
         TopoDS_Shape aBox = Mirrored(Box());
-        TopoDS_Shape aCompound = Compound(aBox, aBox.Located(new TopLoc_Location(new gp_Trsf())), aBox);
+        TopoDS_Shape aCompound = Compound(aBox, aBox.Located(new Placement(new Transform3D())), aBox);
         var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopoDS_Shape aResult = ShapeCustom.ApplyModifier(aCompound, new ShapeCustom_DirectModification(), aContext, new BRepTools_Modifier());
         var aChildren = new List<TopoDS_Shape>();
@@ -191,8 +193,8 @@ public class ShapeCustomTests
     public void ConvertToRevolution_ConvertsElementarySurfaces_KeepsTheBoxOfACompound()
     {
         TopoDS_Shape aBox = Box();
-        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new gp_Pnt(30, 0, 0), 5).Shape();
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(-30, 0, 0), new gp_Dir(0, 0, 1)), 3, 7).Shape();
+        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(30, 0, 0), 5).Shape();
+        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-30, 0, 0), new Direction3D(0, 0, 1)), 3, 7).Shape();
         TopoDS_Shape aCompound = Compound(aBox, aSphere, aCylinder);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCompound);
         double aVolume = VolumeOf(aCompound);
@@ -220,9 +222,9 @@ public class ShapeCustomTests
     public void SweptToElementary_ConvertsARevolutionOfASegment_ToACylinder()
     {
         // (BRepPrimAPI_MakeRevol would make a cylinder itself)
-        var aSurface = new Geom_SurfaceOfRevolution(new Geom_Line(new gp_Pnt(4, 0, 0), new gp_Dir(0, 0, 1)),
-                                                    new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
-        TopoDS_Shape aRevol = new BRepBuilderAPI_MakeFace(aSurface, 0, 2 * Math.PI, 0, 10, Precision.Confusion()).Shape();
+        var aSurface = new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(4, 0, 0), new Direction3D(0, 0, 1)),
+                                                    new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        TopoDS_Shape aRevol = new BRepBuilderAPI_MakeFace(aSurface, 0, 2 * Math.PI, 0, 10, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape();
         TopoDS_Face aFace = TopoDS.Face(SubShapes(aRevol, TopAbs_FACE)[0]);
         Assert.IsType<Geom_SurfaceOfRevolution>(BRep_Tool.Surface(aFace));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aRevol);
@@ -253,13 +255,13 @@ public class ShapeCustomTests
     [Fact]
     public void BSplineRestriction_AsToSplines_ConvertsEverySurface_TheInputIsUnchanged()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 1, 1)), 3, 7).Shape();
+        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 1)), 3, 7).Shape();
         var aParameters = new ShapeCustom_RestrictionParameters();
         aParameters.ConvertPlane() = true;
         aParameters.ConvertCylindricalSurf() = true;
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCylinder);
 
-        TopoDS_Shape aResult = ShapeCustom.BSplineRestriction(aCylinder, 1e-3, 1e-3, 3, 1, GeomAbs_C0, GeomAbs_C0, true, true, aParameters);
+        TopoDS_Shape aResult = ShapeCustom.BSplineRestriction(aCylinder, 1e-3, 1e-3, 3, 1, C0, C0, true, true, aParameters);
 
         aSnap.AssertUnchanged(aCylinder);
         Assert.True(AllFrozen(aResult));
@@ -278,12 +280,12 @@ public class ShapeCustomTests
         TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(3, 7).Shape();
         var aParameters = new ShapeCustom_RestrictionParameters();
         aParameters.ConvertCylindricalSurf() = true;
-        var aBSR = new ShapeCustom_BSplineRestriction(true, true, true, 1e-3, 1e-5, GeomAbs_C1, GeomAbs_C2, 6, 10, true, false, aParameters);
+        var aBSR = new ShapeCustom_BSplineRestriction(true, true, true, 1e-3, 1e-5, C1, C2, 6, 10, true, false, aParameters);
         var aContext = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         ShapeCustom.ApplyModifier(aCylinder, aBSR, aContext, new BRepTools_Modifier());
         Assert.True(aBSR.NbOfSpan() > 0);
         double aSurfaceError = aBSR.MaxErrors(out double a3d, out double a2d);
-        Assert.True(aSurfaceError <= 1e-3 && aSurfaceError >= Precision.Confusion());
+        Assert.True(aSurfaceError <= 1e-3 && aSurfaceError >= global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(aSurfaceError, aBSR.SurfaceError());
         Assert.Equal(a3d, aBSR.Curve3dError());
         Assert.Equal(a2d, aBSR.Curve2dError());
@@ -294,7 +296,7 @@ public class ShapeCustomTests
     {
         // what ShapeExtend.Init loads, loaded unconditionally: Init skips it once another test's Msg has stored an
         // unknown-keyword text under its probe keyword (see SHMessageTests)
-        Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+        global::Kerf.Engine.Foundation.MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
         TopoDS_Shape aBox = Mirrored(Box());
         var aDM = new ShapeCustom_DirectModification();
         var aMsg = new ShapeExtend_MsgRegistrator();

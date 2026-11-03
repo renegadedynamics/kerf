@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Approx_ParametrizationType;
 
@@ -72,8 +73,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
             mynbP2d = 1;
         }
         bool Ok = false;
-        NCollection_Array1<gp_Vec> TabV = new(1, mynbP3d);
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, mynbP2d);
+        NCollection_Array1<Vector3D> TabV = new(1, mynbP3d);
+        NCollection_Array1<Vector2D> TabV2d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -123,10 +124,10 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
             AppParCurves_LeastSquare<MultiLine, LineTool> LSQ = new(Line, index, index + 2, firstC, lastC, mypar, nbpoles);
             AppParCurves_MultiCurve C = LSQ.BezierValue();
 
-            gp_Pnt myP;
-            gp_Vec myV;
-            gp_Pnt2d myP2d;
-            gp_Vec2d myV2d;
+            Point3D myP;
+            Vector3D myV;
+            Point2D myP2d;
+            Vector2D myV2d;
             j = 1;
             for (i = 1; i <= nbP3d; i++)
             {
@@ -162,8 +163,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
             mynbP2d = 1;
         }
         bool Ok = false;
-        NCollection_Array1<gp_Vec> TabV = new(1, mynbP3d);
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, mynbP2d);
+        NCollection_Array1<Vector3D> TabV = new(1, mynbP3d);
+        NCollection_Array1<Vector2D> TabV2d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -213,10 +214,10 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
             AppParCurves_LeastSquare<MultiLine, LineTool> LSQ = new(Line, index - 2, index, firstC, lastC, mypar, nbpoles);
             AppParCurves_MultiCurve C = LSQ.BezierValue();
 
-            gp_Pnt myP;
-            gp_Vec myV;
-            gp_Pnt2d myP2d;
-            gp_Vec2d myV2d;
+            Point3D myP;
+            Vector3D myV;
+            Point2D myP2d;
+            Vector2D myV2d;
             j = 1;
             for (i = 1; i <= nbP3d; i++)
             {
@@ -243,8 +244,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         // dq/dw = lambda* V = (p2-p1)/(u2-u1)
 
         int nbP2d, nbP3d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P12d, P22d;
+        Point3D P1, P2;
+        Point2D P12d, P22d;
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
@@ -256,8 +257,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
+        NCollection_Array1<Point2D> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -294,7 +295,7 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             P1 = tabP1[1];
             P2 = tabP2[1];
-            gp_Vec P1P2 = new(P1, P2), myV = new();
+            Vector3D P1P2 = new(P1, P2), myV = new();
             myV.SetCoord(V[low], V[low + 1], V[low + 2]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -303,7 +304,7 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             P12d = tabP12d[1];
             P22d = tabP22d[1];
-            gp_Vec2d P1P2 = new(P12d, P22d), myV = new();
+            Vector2D P1P2 = new(P12d, P22d), myV = new();
             myV.SetCoord(V[low], V[low + 1]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -317,8 +318,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         // dq/dw = lambda* V = (p2-p1)/(u2-u1)
 
         int nbP2d, nbP3d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P12d, P22d;
+        Point3D P1, P2;
+        Point2D P12d, P22d;
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
@@ -330,8 +331,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> tabP = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> tabP = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
+        NCollection_Array1<Point2D> tabP2d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -367,7 +368,7 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             P1 = tabP[1];
             P2 = tabP2[1];
-            gp_Vec P1P2 = new(P1, P2), myV = new();
+            Vector3D P1P2 = new(P1, P2), myV = new();
             myV.SetCoord(V[low], V[low + 1], V[low + 2]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -376,7 +377,7 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         {
             P12d = tabP2d[1];
             P22d = tabP22d[1];
-            gp_Vec2d P1P2 = new(P12d, P22d), myV = new();
+            Vector2D P1P2 = new(P12d, P22d), myV = new();
             myV.SetCoord(V[low], V[low + 1]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -681,10 +682,10 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
                 mynbP2d = 1;
             }
 
-            NCollection_Array1<gp_Pnt> tabP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt> tabPP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynbP2d);
-            NCollection_Array1<gp_Pnt2d> tabPP2d = new(1, mynbP2d);
+            NCollection_Array1<Point3D> tabP = new(1, mynbP3d);
+            NCollection_Array1<Point3D> tabPP = new(1, mynbP3d);
+            NCollection_Array1<Point2D> tabP2d = new(1, mynbP2d);
+            NCollection_Array1<Point2D> tabPP2d = new(1, mynbP2d);
 
             for (i = firstP + 1; i <= lastP; i++)
             {
@@ -716,12 +717,12 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
                 dist = 0.0;
                 for (j = 1; j <= nbP3d; j++)
                 {
-                    gp_Pnt aP1 = tabP[j], aP2 = tabPP[j];
+                    Point3D aP1 = tabP[j], aP2 = tabPP[j];
                     dist += aP2.SquareDistance(aP1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
-                    gp_Pnt2d aP12d = tabP2d[j], aP22d = tabPP2d[j];
+                    Point2D aP12d = tabP2d[j], aP22d = tabPP2d[j];
 
                     dist += aP22d.SquareDistance(aP12d);
                 }
@@ -1051,8 +1052,8 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
         bool Ok = false;
-        NCollection_Array1<gp_Vec> TabV = new(1, Max(1, nbP3d));
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, Max(1, nbP2d));
+        NCollection_Array1<Vector3D> TabV = new(1, Max(1, nbP3d));
+        NCollection_Array1<Vector2D> TabV2d = new(1, Max(1, nbP2d));
         int Thefirstpt = LineTool.FirstPoint(Line);
         int Thelastpt = LineTool.LastPoint(Line);
 
@@ -1291,10 +1292,10 @@ public class Approx_BSplComputeLine<MultiLine, LineTool>
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
 
-        gp_Pnt myP;
-        gp_Vec myV;
-        gp_Pnt2d myP2d;
-        gp_Vec2d myV2d;
+        Point3D myP;
+        Vector3D myV;
+        Point2D myP2d;
+        Vector2D myV2d;
         j = 1;
         for (i = 1; i <= nbP3d; i++)
         {

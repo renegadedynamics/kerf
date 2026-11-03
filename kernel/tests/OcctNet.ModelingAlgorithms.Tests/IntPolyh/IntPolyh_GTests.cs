@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's IntPolyh_Point GTest.</summary>
@@ -133,7 +135,7 @@ public class IntPolyh_IntersectionTest
     [Fact]
     public void SpherePlane_ValidUVCoordinates()
     {
-        gp_Ax3 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
         Geom_SphericalSurface aSphere = new(anAxis, 1.0);
         GeomAdaptor_Surface aSurfS = new(aSphere);
@@ -167,12 +169,12 @@ public class IntPolyh_IntersectionTest
     [Fact]
     public void SphereCylinder_ValidUVCoordinates()
     {
-        gp_Ax3 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
 
         Geom_SphericalSurface aSphere = new(anAxis, 2.0);
         GeomAdaptor_Surface aSurfS = new(aSphere);
 
-        gp_Ax3 aCylAxis = new(new gp_Pnt(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        CoordinateSystem aCylAxis = new(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_CylindricalSurface aCyl = new(aCylAxis, 1.0);
         GeomAdaptor_Surface aSurfC = new(aCyl);
 
@@ -194,7 +196,7 @@ public class IntPolyh_IntersectionTest
                 validateUV(u2, v2);
 
                 // UV1 must not equal UV2 (different surfaces have different parametrization).
-                bool isSameUV = Math.Abs(u1 - u2) < Precision.PConfusion() && Math.Abs(v1 - v2) < Precision.PConfusion();
+                bool isSameUV = Math.Abs(u1 - u2) < global::Kerf.Engine.Foundation.Precision.PConfusion() && Math.Abs(v1 - v2) < global::Kerf.Engine.Foundation.Precision.PConfusion();
                 Assert.False(isSameUV, $"UV1 == UV2 at line={iL} pt={iP} (possible SetUV copy/paste bug)");
             }
         }
@@ -204,8 +206,8 @@ public class IntPolyh_IntersectionTest
     [Fact]
     public void TwoPlanes_ProducesSectionLine()
     {
-        gp_Ax3 anAxis1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        gp_Ax3 anAxis2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 1));
+        CoordinateSystem anAxis1 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        CoordinateSystem anAxis2 = new(new Point3D(0, 0, 0), new Direction3D(0, 1, 1));
 
         Geom_Plane aPlane1 = new(anAxis1);
         GeomAdaptor_Surface aSurf1 = new(aPlane1, -5.0, 5.0, -5.0, 5.0);

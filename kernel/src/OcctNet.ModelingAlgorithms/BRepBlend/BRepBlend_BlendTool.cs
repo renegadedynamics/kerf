@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The walkers' tools on the arcs of restriction: projection, intersection with a segment, vertices.</summary>
@@ -13,11 +15,11 @@ public static class BRepBlend_BlendTool
     /// Projects the point <paramref name="P"/> on the arc <paramref name="C"/>: <paramref name="Paramproj"/> is the
     /// parameter of the nearest point (the ends included) and <paramref name="Dist"/> its distance. Always true.
     /// </summary>
-    public static bool Project(in gp_Pnt2d P, Adaptor3d_Surface? S, Adaptor2d_Curve2d C, out double Paramproj,
+    public static bool Project(in Point2D P, Adaptor3d_Surface? S, Adaptor2d_Curve2d C, out double Paramproj,
                                out double Dist)
     {
         Paramproj = BRepBlend_HCurve2dTool.FirstParameter(C);
-        gp_Pnt2d P2d;
+        Point2D P2d;
         BRepBlend_HCurve2dTool.D0(C, Paramproj, out P2d);
         Dist = P2d.Distance(P);
 
@@ -58,18 +60,18 @@ public static class BRepBlend_BlendTool
     /// <paramref name="C"/>: the first intersection's parameter on the arc and its distance to <paramref name="P1"/>.
     /// </summary>
     /// <remarks><paramref name="Param"/> and <paramref name="Dist"/> are left unchanged on failure, as OCCT's.</remarks>
-    public static bool Inters(in gp_Pnt2d P1, in gp_Pnt2d P2, Adaptor3d_Surface? S, Adaptor2d_Curve2d C,
+    public static bool Inters(in Point2D P1, in Point2D P2, Adaptor3d_Surface? S, Adaptor2d_Curve2d C,
                               ref double Param, ref double Dist)
     {
         const double Tol = 1.0e-8;
-        gp_Vec2d v = new(P1, P2);
+        Vector2D v = new(P1, P2);
         double mag = v.Magnitude();
         if (mag < Tol)
         {
             return false;
         }
 
-        gp_Dir2d d = new(v);
+        Direction2D d = new(v);
         Geom2d_Line bid = new(P1, d);
         Geom2dAdaptor_Curve seg = new(bid, -0.01 * mag, 1.01 * mag);
 

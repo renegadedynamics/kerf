@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -54,7 +55,7 @@ public sealed class Approx_CurvilinearParameter
 
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct.Trim(StartEnd[0], StartEnd[1], Precision.Confusion());
+                fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.Confusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
@@ -105,7 +106,7 @@ public sealed class Approx_CurvilinearParameter
 
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct.Trim(StartEnd[0], StartEnd[1], Precision.Confusion());
+                fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.Confusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
@@ -174,7 +175,7 @@ public sealed class Approx_CurvilinearParameter
     private readonly double myMaxError2d2;
 
     /// <summary>Case of a free 3D curve.</summary>
-    public Approx_CurvilinearParameter(Adaptor3d_Curve C3D, double Tol, GeomAbs_Shape Order, int MaxDegree,
+    public Approx_CurvilinearParameter(Adaptor3d_Curve C3D, double Tol, Continuity Order, int MaxDegree,
                                        int MaxSegments)
     {
         myMaxError2d1 = 0.0;
@@ -192,12 +193,12 @@ public sealed class Approx_CurvilinearParameter
         double FirstS = fonct.FirstParameter();
         double LastS = fonct.LastParameter();
 
-        int NbInterv_C2 = fonct.NbIntervals(GeomAbs_C2);
+        int NbInterv_C2 = fonct.NbIntervals(C2);
         NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-        fonct.Intervals(CutPnts_C2, GeomAbs_C2);
-        int NbInterv_C3 = fonct.NbIntervals(GeomAbs_C3);
+        fonct.Intervals(CutPnts_C2, C2);
+        int NbInterv_C3 = fonct.NbIntervals(C3);
         NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-        fonct.Intervals(CutPnts_C3, GeomAbs_C3);
+        fonct.Intervals(CutPnts_C3, C3);
         AdvApprox_PrefAndRec CutTool = new(CutPnts_C2, CutPnts_C3);
 
         Approx_CurvilinearParameter_EvalCurv evC = new(fonct, FirstS, LastS);
@@ -220,7 +221,7 @@ public sealed class Approx_CurvilinearParameter
 
         if (myHasResult)
         {
-            NCollection_Array1<gp_Pnt> Poles = new(1, aApprox.NbPoles());
+            NCollection_Array1<Point3D> Poles = new(1, aApprox.NbPoles());
             aApprox.Poles(1, Poles);
             NCollection_HArray1<double> Knots = aApprox.Knots()!;
             NCollection_HArray1<int> Mults = aApprox.Multiplicities()!;
@@ -232,7 +233,7 @@ public sealed class Approx_CurvilinearParameter
 
     /// <summary>Case of a curve on one surface.</summary>
     public Approx_CurvilinearParameter(Adaptor2d_Curve2d C2D, Adaptor3d_Surface Surf, double Tol,
-                                       GeomAbs_Shape Order, int MaxDegree, int MaxSegments)
+                                       Continuity Order, int MaxDegree, int MaxSegments)
     {
         myCase = 2;
 
@@ -260,12 +261,12 @@ public sealed class Approx_CurvilinearParameter
         double FirstS = fonct.FirstParameter();
         double LastS = fonct.LastParameter();
 
-        int NbInterv_C2 = fonct.NbIntervals(GeomAbs_C2);
+        int NbInterv_C2 = fonct.NbIntervals(C2);
         NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-        fonct.Intervals(CutPnts_C2, GeomAbs_C2);
-        int NbInterv_C3 = fonct.NbIntervals(GeomAbs_C3);
+        fonct.Intervals(CutPnts_C2, C2);
+        int NbInterv_C3 = fonct.NbIntervals(C3);
         NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-        fonct.Intervals(CutPnts_C3, GeomAbs_C3);
+        fonct.Intervals(CutPnts_C3, C3);
         AdvApprox_PrefAndRec CutTool = new(CutPnts_C2, CutPnts_C3);
 
         Approx_CurvilinearParameter_EvalCurvOnSurf evCOnS = new(fonct, FirstS, LastS);
@@ -289,8 +290,8 @@ public sealed class Approx_CurvilinearParameter
         if (myHasResult)
         {
             int NbPoles = aApprox.NbPoles();
-            NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
-            NCollection_Array1<gp_Pnt2d> Poles2d = new(1, NbPoles);
+            NCollection_Array1<Point3D> Poles = new(1, NbPoles);
+            NCollection_Array1<Point2D> Poles2d = new(1, NbPoles);
             NCollection_Array1<double> Poles1d = new(1, NbPoles);
             aApprox.Poles(1, Poles);
             aApprox.Poles1d(1, Poles1d);
@@ -316,7 +317,7 @@ public sealed class Approx_CurvilinearParameter
 
     /// <summary>Case of a curve on two surfaces.</summary>
     public Approx_CurvilinearParameter(Adaptor2d_Curve2d C2D1, Adaptor3d_Surface Surf1, Adaptor2d_Curve2d C2D2,
-                                       Adaptor3d_Surface Surf2, double Tol, GeomAbs_Shape Order, int MaxDegree,
+                                       Adaptor3d_Surface Surf2, double Tol, Continuity Order, int MaxDegree,
                                        int MaxSegments)
     {
         int i;
@@ -346,12 +347,12 @@ public sealed class Approx_CurvilinearParameter
         double FirstS = fonct.FirstParameter();
         double LastS = fonct.LastParameter();
 
-        int NbInterv_C2 = fonct.NbIntervals(GeomAbs_C2);
+        int NbInterv_C2 = fonct.NbIntervals(C2);
         NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-        fonct.Intervals(CutPnts_C2, GeomAbs_C2);
-        int NbInterv_C3 = fonct.NbIntervals(GeomAbs_C3);
+        fonct.Intervals(CutPnts_C2, C2);
+        int NbInterv_C3 = fonct.NbIntervals(C3);
         NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-        fonct.Intervals(CutPnts_C3, GeomAbs_C3);
+        fonct.Intervals(CutPnts_C3, C3);
         AdvApprox_PrefAndRec CutTool = new(CutPnts_C2, CutPnts_C3);
 
         Approx_CurvilinearParameter_EvalCurvOn2Surf evCOn2S = new(fonct);
@@ -375,8 +376,8 @@ public sealed class Approx_CurvilinearParameter
         if (myHasResult)
         {
             int NbPoles = aApprox.NbPoles();
-            NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
-            NCollection_Array1<gp_Pnt2d> Poles2d = new(1, NbPoles);
+            NCollection_Array1<Point3D> Poles = new(1, NbPoles);
+            NCollection_Array1<Point2D> Poles2d = new(1, NbPoles);
             NCollection_Array1<double> Poles1d = new(1, NbPoles);
             aApprox.Poles(1, Poles);
             aApprox.Poles1d(1, Poles1d);
@@ -478,12 +479,12 @@ public sealed class Approx_CurvilinearParameter
     {
         double FirstU = C2D.FirstParameter(), LastU = C2D.LastParameter();
         double Max_dS_dv = 1.0, Max_dS_dw = 1.0;
-        gp_Pnt2d pntVW;
+        Point2D pntVW;
 
         for (int i = 1; i <= MaxNumber; i++)
         {
             pntVW = C2D.Value(FirstU + (i - 1) * (LastU - FirstU) / (MaxNumber - 1));
-            S.D1(pntVW.X(), pntVW.Y(), out _, out gp_Vec dS_dv, out gp_Vec dS_dw);
+            S.D1(pntVW.X(), pntVW.Y(), out _, out Vector3D dS_dv, out Vector3D dS_dw);
             Max_dS_dv = Max(Max_dS_dv, dS_dv.Magnitude());
             Max_dS_dw = Max(Max_dS_dw, dS_dw.Magnitude());
         }

@@ -5,9 +5,12 @@
 // The OSD_ThreadPool::Launcher parts of the tests are left out: OSD_ThreadPool isn't ported (decision 487's helper
 // replaces it). The functors are lambdas.
 
-using Box3d = Occt.BVH_Box<double, Occt.NCollection_Vec3<double>>;
-using BoxSet3d = Occt.BVH_BoxSet<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Occt.BVH_Tree<double, Occt.NCollection_Vec3<double>>;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry.Bvh;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
+using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -39,7 +42,7 @@ public class OSD_ParallelTest
             {
                 anY[i] = i;
             }
-            OSD_Parallel.For(0, aLength, theIndex => anY[theIndex] = 1e-6 * aX[theIndex] + anY[theIndex]);
+            OsdParallel.For(0, aLength, theIndex => anY[theIndex] = 1e-6 * aX[theIndex] + anY[theIndex]);
             for (int i = 0; i < aLength; ++i)
             {
                 Assert.Equal(anYRef[i], anY[i]);
@@ -55,7 +58,7 @@ public class OSD_ParallelTest
             }
             const int THE_BATCH_SIZE = 100000;
             int aNbBatches = (int)Math.Ceiling((double)aX.Size() / THE_BATCH_SIZE);
-            OSD_Parallel.For(0, aNbBatches, theBatchIndex =>
+            OsdParallel.For(0, aNbBatches, theBatchIndex =>
             {
                 int aLower = theBatchIndex * THE_BATCH_SIZE;
                 int anUpper = Math.Min(aLower + THE_BATCH_SIZE - 1, aX.Upper());
@@ -77,7 +80,7 @@ public class OSD_ParallelTest
     {
         const int aSize = 50;
 
-        std_mt19937 aGen = new(42);
+        Mt19937 aGen = new(42);
         NCollection_Array2<double> aMat1 = new(0, aSize - 1, 0, aSize - 1);
         NCollection_Array2<double> aMat2 = new(0, aSize - 1, 0, aSize - 1);
         NCollection_Array2<double> aMatRef = new(0, aSize - 1, 0, aSize - 1);
@@ -113,7 +116,7 @@ public class OSD_ParallelTest
 
         // OSD_Parallel::For
         aMatRes.Init(0.0);
-        OSD_Parallel.For(0, aSize, theIndex => multiply(aMatRes, theIndex));
+        OsdParallel.For(0, aSize, theIndex => multiply(aMatRes, theIndex));
         for (int i = 0; i < aSize; ++i)
         {
             for (int j = 0; j < aSize; ++j)
@@ -132,40 +135,40 @@ public class OSD_ParallelAdditionsTest
     {
         List<int> anOrder = [];
         int aThread = Environment.CurrentManagedThreadId;
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
-            Assert.True(OSD_Parallel.IsSerial());
-            OSD_Parallel.For(3, 103, theIndex =>
+            Assert.True(OsdParallel.IsSerial);
+            OsdParallel.For(3, 103, theIndex =>
             {
                 Assert.Equal(aThread, Environment.CurrentManagedThreadId);
                 anOrder.Add(theIndex);
             });
-            OSD_Parallel.ForEach(Enumerable.Range(1000, 50), theItem => anOrder.Add(theItem));
+            OsdParallel.ForEach(Enumerable.Range(1000, 50), theItem => anOrder.Add(theItem));
         }
         Assert.Equal([.. Enumerable.Range(3, 100), .. Enumerable.Range(1000, 50)], anOrder);
-        Assert.Equal(!OSD_Parallel.HasThreads, OSD_Parallel.IsSerial());
+        Assert.Equal(!OsdParallel.HasThreads, OsdParallel.IsSerial);
     }
 
     [Fact]
     public void ForceSerialScope_Nests()
     {
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
-            using (OSD_Parallel.ForceSerialScope())
+            using (OsdParallel.ForceSerialScope())
             {
-                Assert.True(OSD_Parallel.IsSerial());
+                Assert.True(OsdParallel.IsSerial);
             }
-            Assert.True(OSD_Parallel.IsSerial());
+            Assert.True(OsdParallel.IsSerial);
         }
-        Assert.Equal(!OSD_Parallel.HasThreads, OSD_Parallel.IsSerial());
+        Assert.Equal(!OsdParallel.HasThreads, OsdParallel.IsSerial);
     }
 
     [Fact]
     public void SequentialFlag_RunsInOrder()
     {
         List<int> anOrder = [];
-        OSD_Parallel.For(0, 200, anOrder.Add, true);
-        OSD_Parallel.ForEach(new[] { 5, 4, 3 }, anOrder.Add, true);
+        OsdParallel.For(0, 200, anOrder.Add, true);
+        OsdParallel.ForEach(new[] { 5, 4, 3 }, anOrder.Add, true);
         Assert.Equal([.. Enumerable.Range(0, 200), 5, 4, 3], anOrder);
     }
 
@@ -173,19 +176,19 @@ public class OSD_ParallelAdditionsTest
     public void EmptyAndSingleRanges()
     {
         int aCount = 0;
-        OSD_Parallel.For(0, 0, _ => Interlocked.Increment(ref aCount));
-        OSD_Parallel.For(5, 5, _ => Interlocked.Increment(ref aCount));
-        OSD_Parallel.ForEach(Array.Empty<int>(), _ => Interlocked.Increment(ref aCount));
+        OsdParallel.For(0, 0, _ => Interlocked.Increment(ref aCount));
+        OsdParallel.For(5, 5, _ => Interlocked.Increment(ref aCount));
+        OsdParallel.ForEach(Array.Empty<int>(), _ => Interlocked.Increment(ref aCount));
         Assert.Equal(0, aCount);
 
         int aThread = Environment.CurrentManagedThreadId;
-        OSD_Parallel.For(7, 8, theIndex =>
+        OsdParallel.For(7, 8, theIndex =>
         {
             Assert.Equal(7, theIndex);
             Assert.Equal(aThread, Environment.CurrentManagedThreadId); // one index: a plain loop, as OCCT
             Interlocked.Increment(ref aCount);
         });
-        OSD_Parallel.ForEach([1], _ =>
+        OsdParallel.ForEach([1], _ =>
         {
             Assert.Equal(aThread, Environment.CurrentManagedThreadId);
             Interlocked.Increment(ref aCount);
@@ -197,10 +200,10 @@ public class OSD_ParallelAdditionsTest
     public void ParallelVisitsEveryIndexOnce()
     {
         int[] aVisits = new int[10000];
-        OSD_Parallel.For(0, aVisits.Length, theIndex => Interlocked.Increment(ref aVisits[theIndex]));
+        OsdParallel.For(0, aVisits.Length, theIndex => Interlocked.Increment(ref aVisits[theIndex]));
         Assert.All(aVisits, theCount => Assert.Equal(1, theCount));
         int[] aVisits2 = new int[1000];
-        OSD_Parallel.ForEach(Enumerable.Range(0, aVisits2.Length), theIndex => Interlocked.Increment(ref aVisits2[theIndex]));
+        OsdParallel.ForEach(Enumerable.Range(0, aVisits2.Length), theIndex => Interlocked.Increment(ref aVisits2[theIndex]));
         Assert.All(aVisits2, theCount => Assert.Equal(1, theCount));
     }
 
@@ -209,18 +212,18 @@ public class OSD_ParallelAdditionsTest
     [InlineData(true)]
     public void Exceptions_AreUnwrapped(bool theIsSequential)
     {
-        Standard_Failure aFor = Assert.Throws<Standard_DomainError>(() =>
-            OSD_Parallel.For(0, 100, theIndex =>
+        FailureException aFor = Assert.Throws<DomainErrorException>(() =>
+            OsdParallel.For(0, 100, theIndex =>
             {
                 if (theIndex == 37)
                 {
-                    throw new Standard_DomainError("index 37");
+                    throw new DomainErrorException("index 37");
                 }
             }, theIsSequential));
         Assert.Equal("index 37", aFor.Message);
 
         Assert.Throws<InvalidOperationException>(() =>
-            OSD_Parallel.ForEach(Enumerable.Range(0, 100), theIndex =>
+            OsdParallel.ForEach(Enumerable.Range(0, 100), theIndex =>
             {
                 if (theIndex % 10 == 3)
                 {
@@ -232,17 +235,17 @@ public class OSD_ParallelAdditionsTest
     [Fact]
     public void NbLogicalProcessors_IsTheProcessorCountInEveryMode()
     {
-        int aCount = OSD_Parallel.NbLogicalProcessors();
+        int aCount = OsdParallel.LogicalProcessorCount;
         Assert.Equal(Environment.ProcessorCount, aCount);
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
-            Assert.Equal(aCount, OSD_Parallel.NbLogicalProcessors());
+            Assert.Equal(aCount, OsdParallel.LogicalProcessorCount);
         }
     }
 
     // ---- BVH loops moved onto OSD_Parallel: the serial fallback builds the parallel build's tree
 
-    private static BoxSet3d randomSet(BVH_Builder<double, NCollection_Vec3<double>> theBuilder, int theSeed, int theCount)
+    private static BoxSet3d randomSet(Builder<double, NCollection_Vec3<double>> theBuilder, int theSeed, int theCount)
     {
         Random aRandom = new(theSeed);
         BoxSet3d aBoxSet = new(theBuilder);
@@ -270,10 +273,10 @@ public class OSD_ParallelAdditionsTest
     {
         Tree3d build(bool theIsParallel, bool theIsForcedSerial)
         {
-            BVH_LinearBuilder<double, NCollection_Vec3<double>> aBuilder = new(4, 32);
+            LinearBuilder<double, NCollection_Vec3<double>> aBuilder = new(4, 32);
             aBuilder.SetParallel(theIsParallel);
             BoxSet3d aSet = randomSet(aBuilder, 11, 5000);
-            using (theIsForcedSerial ? OSD_Parallel.ForceSerialScope() : null)
+            using (theIsForcedSerial ? OsdParallel.ForceSerialScope() : null)
             {
                 aSet.Build();
             }
@@ -290,9 +293,9 @@ public class OSD_ParallelAdditionsTest
     {
         Tree3d build(int theNbThreads, bool theIsForcedSerial)
         {
-            BVH_BinnedBuilder<double, NCollection_Vec3<double>> aBuilder = new(4, 32, false, theNbThreads);
+            BinnedBuilder<double, NCollection_Vec3<double>> aBuilder = new(4, 32, false, theNbThreads);
             BoxSet3d aSet = randomSet(aBuilder, 12, 3000);
-            using (theIsForcedSerial ? OSD_Parallel.ForceSerialScope() : null)
+            using (theIsForcedSerial ? OsdParallel.ForceSerialScope() : null)
             {
                 aSet.Build();
             }

@@ -1,0 +1,16 @@
+// Port of: src/FoundationClasses/TKMath/GeomAbs/GeomAbs_JoinType.hxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Occt;
+
+namespace Kerf.Geometry;
+
+/// <summary>The type of join between two consecutive arcs of a contour parallel to a given contour.</summary>
+/// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.GeomAbs_JoinType;</c>.</remarks>
+public enum JoinKind
+{
+    Arc,
+    Tangent,
+    Intersection,
+}

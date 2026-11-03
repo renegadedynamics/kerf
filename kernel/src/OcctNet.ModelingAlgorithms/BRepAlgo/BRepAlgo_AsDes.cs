@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Stores the future sub-shapes (descendants) of shapes and the shapes containing them (ascendants).</summary>
@@ -11,7 +13,7 @@ namespace Occt;
 /// static empty list; the port's is per thread (<c>[ThreadStatic]</c>), so <see cref="ChangeDescendant"/> on such a
 /// shape still hands out one list that every later call sees, as in OCCT (marked <c>// OCCT</c>).
 /// </remarks>
-public sealed class BRepAlgo_AsDes : Standard_Transient
+public sealed class BRepAlgo_AsDes : Transient
 {
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> up = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> down = new(TopTools_ShapeMapHasher.Instance);
@@ -247,16 +249,16 @@ public sealed class BRepAlgo_AsDes : Standard_Transient
     }
 
     /// <summary>Removes <paramref name="SS"/>, which must have ascendants and no descendants.</summary>
-    /// <exception cref="Standard_ConstructionError">It has descendants, or no ascendants.</exception>
+    /// <exception cref="ConstructionErrorException">It has descendants, or no ascendants.</exception>
     public void Remove(in TopoDS_Shape SS)
     {
         if (down.IsBound(SS))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_AsDes::Remove");
+            throw new ConstructionErrorException(" BRepAlgo_AsDes::Remove");
         }
         if (!up.IsBound(SS))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_AsDes::Remove");
+            throw new ConstructionErrorException(" BRepAlgo_AsDes::Remove");
         }
         NCollection_List<TopoDS_Shape>.Iterator it = new(up[SS]);
         for (; it.More(); it.Next())

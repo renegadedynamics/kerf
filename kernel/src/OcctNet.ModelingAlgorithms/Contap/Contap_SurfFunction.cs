@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Contap_TFunction;
 
 namespace Occt;
@@ -18,24 +22,24 @@ namespace Occt;
 /// <see cref="IIntStart_SurfFunction{ThePSurface}"/>. With <see cref="Contap_DraftPrs"/> OCCT computes nothing and
 /// leaves the outputs as they were, as the port does.
 /// </remarks>
-public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntWalk_IWFunction<Contap_SurfFunction>
+public sealed class Contap_SurfFunction : FunctionSetWithDerivatives, IIntWalk_IWFunction<Contap_SurfFunction>
 {
     private Adaptor3d_Surface? mySurf;
     private double myMean;
     private Contap_TFunction myType;
-    private gp_Dir myDir;
-    private gp_Pnt myEye;
+    private Direction3D myDir;
+    private Point3D myEye;
     private double myAng;
     private double myCosAng;
     private double tol;
-    private gp_Pnt solpt;
+    private Point3D solpt;
     private double valf;
     private double Usol;
     private double Vsol;
     private double Fpu;
     private double Fpv;
-    private gp_Dir2d d2d;
-    private gp_Vec d3d;
+    private Direction2D d2d;
+    private Vector3D d3d;
     private bool tangent;
     private bool computed;
     private bool derived;
@@ -44,19 +48,19 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     {
         myMean = 1.0;
         myType = Contap_ContourStd;
-        myDir = new gp_Dir(gp_Dir.D.Z);
-        myEye = new gp_Pnt();
+        myDir = new Direction3D(Direction3D.D.Z);
+        myEye = new Point3D();
         myAng = 0.0;
         myCosAng = 0.0; // PI/2 - Angle de depouille
         tol = 1.0e-6;
-        solpt = new gp_Pnt();
+        solpt = new Point3D();
         valf = 0.0;
         Usol = 0.0;
         Vsol = 0.0;
         Fpu = 0.0;
         Fpv = 0.0;
-        d2d = new gp_Dir2d();
-        d3d = new gp_Vec();
+        d2d = new Direction2D();
+        d3d = new Vector3D();
         tangent = false;
         computed = false;
         derived = false;
@@ -96,7 +100,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
         int i;
         int nbs = Contap_HContTool.NbSamplePoints(S);
         double U, V;
-        gp_Vec norm;
+        Vector3D norm;
         if (nbs > 0)
         {
             myMean = 0.0;
@@ -115,7 +119,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     }
 
     /// <summary>A silhouette for the eye <paramref name="Eye"/>.</summary>
-    public void Set(in gp_Pnt Eye)
+    public void Set(in Point3D Eye)
     {
         myType = Contap_ContourPrs; // pers
         myEye = Eye;
@@ -123,7 +127,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     }
 
     /// <summary>A silhouette for the view direction <paramref name="Direction"/>.</summary>
-    public void Set(in gp_Dir Direction)
+    public void Set(in Direction3D Direction)
     {
         myType = Contap_ContourStd; // Contour app
         myDir = Direction;
@@ -131,7 +135,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     }
 
     /// <summary>A draft contour of angle <paramref name="Angle"/> for the direction <paramref name="Direction"/>.</summary>
-    public void Set(in gp_Dir Direction, double Angle)
+    public void Set(in Direction3D Direction, double Angle)
     {
         myType = Contap_DraftStd; // Contour vu
         myDir = Direction;
@@ -140,7 +144,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     }
 
     /// <summary>A draft contour of angle <paramref name="Angle"/> for the eye <paramref name="Eye"/>.</summary>
-    public void Set(in gp_Pnt Eye, double Angle)
+    public void Set(in Point3D Eye, double Angle)
     {
         myType = Contap_DraftPrs; // Contour vu "conique"...
         myEye = Eye;
@@ -164,17 +168,17 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
         Vsol = X[2];
         //  Adaptor3d_HSurfaceTool::D1(mySurf,Usol,Vsol,solpt,d1u,d1v);
         //  gp_Vec norm(d1u.Crossed(d1v));
-        Contap_SurfProps.Normale(mySurf!, Usol, Vsol, out solpt, out gp_Vec norm);
+        Contap_SurfProps.Normale(mySurf!, Usol, Vsol, out solpt, out Vector3D norm);
         switch (myType)
         {
             case Contap_ContourStd:
-                F[1] = valf = (norm.Dot(new gp_Vec(myDir))) / myMean;
+                F[1] = valf = (norm.Dot(new Vector3D(myDir))) / myMean;
                 break;
             case Contap_ContourPrs:
-                F[1] = valf = (norm.Dot(new gp_Vec(myEye, solpt))) / myMean;
+                F[1] = valf = (norm.Dot(new Vector3D(myEye, solpt))) / myMean;
                 break;
             case Contap_DraftStd:
-                F[1] = valf = (norm.Dot(new gp_Vec(myDir)) - myCosAng * norm.Magnitude()) / myMean;
+                F[1] = valf = (norm.Dot(new Vector3D(myDir)) - myCosAng * norm.Magnitude()) / myMean;
                 break;
             default:
                 break;
@@ -184,32 +188,32 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix Grad)
+    public override bool Derivatives(math_Vector X, Matrix Grad)
     {
         //  gp_Vec d2u,d2v,d2uv;
         Usol = X[1];
         Vsol = X[2];
         //  Adaptor3d_HSurfaceTool::D2(mySurf,Usol,Vsol,solpt,d1u,d1v,d2u,d2v,d2uv);
 
-        Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out gp_Vec norm, out gp_Vec dnu, out gp_Vec dnv);
+        Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out Vector3D norm, out Vector3D dnu, out Vector3D dnv);
 
         switch (myType)
         {
             case Contap_ContourStd:
-                Grad[1, 1] = (dnu.Dot(new gp_Vec(myDir))) / myMean;
-                Grad[1, 2] = (dnv.Dot(new gp_Vec(myDir))) / myMean;
+                Grad[1, 1] = (dnu.Dot(new Vector3D(myDir))) / myMean;
+                Grad[1, 2] = (dnv.Dot(new Vector3D(myDir))) / myMean;
                 break;
             case Contap_ContourPrs:
             {
-                gp_Vec Ep = new(myEye, solpt);
+                Vector3D Ep = new(myEye, solpt);
                 Grad[1, 1] = (dnu.Dot(Ep)) / myMean;
                 Grad[1, 2] = (dnv.Dot(Ep)) / myMean;
             }
             break;
             case Contap_DraftStd:
                 norm.Normalize();
-                Grad[1, 1] = (dnu.Dot(new gp_Vec(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
-                Grad[1, 2] = (dnv.Dot(new gp_Vec(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
+                Grad[1, 1] = (dnu.Dot(new Vector3D(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
+                Grad[1, 2] = (dnv.Dot(new Vector3D(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
                 break;
             case Contap_DraftPrs:
             default:
@@ -222,7 +226,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix Grad)
+    public override bool Values(math_Vector X, math_Vector F, Matrix Grad)
     {
         //  gp_Vec d2u,d2v,d2uv;
 
@@ -230,28 +234,28 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
         Vsol = X[2];
         //  Adaptor3d_HSurfaceTool::D2(mySurf,Usol,Vsol,solpt,d1u,d1v,d2u,d2v,d2uv);
         //  gp_Vec norm(d1u.Crossed(d1v));
-        Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out gp_Vec norm, out gp_Vec dnu, out gp_Vec dnv);
+        Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out Vector3D norm, out Vector3D dnu, out Vector3D dnv);
 
         switch (myType)
         {
             case Contap_ContourStd:
-                F[1] = (norm.Dot(new gp_Vec(myDir))) / myMean;
-                Grad[1, 1] = (dnu.Dot(new gp_Vec(myDir))) / myMean;
-                Grad[1, 2] = (dnv.Dot(new gp_Vec(myDir))) / myMean;
+                F[1] = (norm.Dot(new Vector3D(myDir))) / myMean;
+                Grad[1, 1] = (dnu.Dot(new Vector3D(myDir))) / myMean;
+                Grad[1, 2] = (dnv.Dot(new Vector3D(myDir))) / myMean;
                 break;
             case Contap_ContourPrs:
             {
-                gp_Vec Ep = new(myEye, solpt);
+                Vector3D Ep = new(myEye, solpt);
                 F[1] = (norm.Dot(Ep)) / myMean;
                 Grad[1, 1] = (dnu.Dot(Ep)) / myMean;
                 Grad[1, 2] = (dnv.Dot(Ep)) / myMean;
             }
             break;
             case Contap_DraftStd:
-                F[1] = (norm.Dot(new gp_Vec(myDir)) - myCosAng * norm.Magnitude()) / myMean;
+                F[1] = (norm.Dot(new Vector3D(myDir)) - myCosAng * norm.Magnitude()) / myMean;
                 norm.Normalize();
-                Grad[1, 1] = (dnu.Dot(new gp_Vec(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
-                Grad[1, 2] = (dnv.Dot(new gp_Vec(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
+                Grad[1, 1] = (dnu.Dot(new Vector3D(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
+                Grad[1, 2] = (dnv.Dot(new Vector3D(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
                 break;
             case Contap_DraftPrs:
             default:
@@ -272,7 +276,7 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     public double Tolerance() => tol;
 
     /// <summary>The last evaluated point.</summary>
-    public gp_Pnt Point() => solpt;
+    public Point3D Point() => solpt;
 
     /// <summary>
     /// True if the contour is singular (the gradient vanishes) at the last evaluated point; otherwise computes its
@@ -287,26 +291,26 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
             {
                 //      gp_Vec d2u,d2v,d2uv;
                 //      Adaptor3d_HSurfaceTool::D2(mySurf, Usol, Vsol, solpt, d1u, d1v, d2u, d2v, d2uv);
-                Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out gp_Vec norm, out gp_Vec dnu,
-                                           out gp_Vec dnv);
+                Contap_SurfProps.NormAndDn(mySurf!, Usol, Vsol, out solpt, out Vector3D norm, out Vector3D dnu,
+                                           out Vector3D dnv);
 
                 switch (myType)
                 {
                     case Contap_ContourStd:
-                        Fpu = (dnu.Dot(new gp_Vec(myDir))) / myMean;
-                        Fpv = (dnv.Dot(new gp_Vec(myDir))) / myMean;
+                        Fpu = (dnu.Dot(new Vector3D(myDir))) / myMean;
+                        Fpv = (dnv.Dot(new Vector3D(myDir))) / myMean;
                         break;
                     case Contap_ContourPrs:
                     {
-                        gp_Vec Ep = new(myEye, solpt);
+                        Vector3D Ep = new(myEye, solpt);
                         Fpu = (dnu.Dot(Ep)) / myMean;
                         Fpv = (dnv.Dot(Ep)) / myMean;
                     }
                     break;
                     case Contap_DraftStd:
                         norm.Normalize();
-                        Fpu = (dnu.Dot(new gp_Vec(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
-                        Fpv = (dnv.Dot(new gp_Vec(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
+                        Fpu = (dnu.Dot(new Vector3D(myDir)) - myCosAng * dnu.Dot(norm)) / myMean;
+                        Fpv = (dnv.Dot(new Vector3D(myDir)) - myCosAng * dnv.Dot(norm)) / myMean;
                         break;
                     case Contap_DraftPrs:
                     default:
@@ -317,16 +321,16 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
             tangent = false;
             double D = Math.Sqrt(Fpu * Fpu + Fpv * Fpv);
 
-            if (D <= gp.Resolution())
+            if (D <= Constants.Resolution())
             {
                 tangent = true;
             }
             else
             {
-                d2d = new gp_Dir2d(-Fpv, Fpu);
-                Adaptor3d_HSurfaceTool.D1(mySurf!, Usol, Vsol, out solpt, out gp_Vec d1u, out gp_Vec d1v); // ajout jag 02.95
+                d2d = new Direction2D(-Fpv, Fpu);
+                Adaptor3d_HSurfaceTool.D1(mySurf!, Usol, Vsol, out solpt, out Vector3D d1u, out Vector3D d1v); // ajout jag 02.95
 
-                gp_XYZ d3dxyz = -Fpv * d1u.XYZ();
+                Xyz d3dxyz = -Fpv * d1u.XYZ();
                 d3dxyz.Add(Fpu * d1v.XYZ());
                 d3d.SetXYZ(d3dxyz);
 
@@ -341,30 +345,30 @@ public sealed class Contap_SurfFunction : math_FunctionSetWithDerivatives, IIntW
     }
 
     /// <summary>The tangent of the contour in 3D. Throws StdFail_UndefinedDerivative at a singular point.</summary>
-    public gp_Vec Direction3d()
+    public Vector3D Direction3d()
     {
         if (IsTangent())
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return d3d;
     }
 
     /// <summary>The tangent in the parametric space. Throws StdFail_UndefinedDerivative at a singular point.</summary>
-    public gp_Dir2d Direction2d()
+    public Direction2D Direction2d()
     {
         if (IsTangent())
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return d2d;
     }
 
     public Contap_TFunction FunctionType() => myType;
 
-    public gp_Pnt Eye() => myEye;
+    public Point3D Eye() => myEye;
 
-    public gp_Dir Direction() => myDir;
+    public Direction3D Direction() => myDir;
 
     public double Angle() => myAng;
 

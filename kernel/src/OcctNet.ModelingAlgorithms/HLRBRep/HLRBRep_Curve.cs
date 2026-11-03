@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -23,7 +26,7 @@ namespace Occt;
 public sealed class HLRBRep_Curve
 {
     private readonly BRepAdaptor_Curve myCurve;
-    private GeomAbs_CurveType myType;
+    private CurveKind myType;
     private StrongBox<HLRAlgo_Projector>? myProj;
     private double myOX;
     private double myOZ;
@@ -80,7 +83,7 @@ public sealed class HLRBRep_Curve
 
         switch (myType)
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 if (Proj().Perspective())
                 {
                     double FmOZ = myOF - myOZ;
@@ -88,7 +91,7 @@ public sealed class HLRBRep_Curve
                 }
                 return P3d * myVX;
 
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
                 return P3d + myOX;
 
             default: // implemented to avoid gcc compiler warnings
@@ -107,17 +110,17 @@ public sealed class HLRBRep_Curve
         // P3d -> -----------------------------------------------------
         //        (myOF - myOZ) (myOF myVX + P2d myVZ) + myOF myOX myVZ
 
-        if (myType == GeomAbs_Line)
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
             if (Proj().Perspective())
             {
                 double FmOZ = myOF - myOZ;
                 return P2d * FmOZ * FmOZ / (FmOZ * (myOF * myVX + P2d * myVZ) + myOF * myOX * myVZ);
             }
-            return ((myVX <= gp.Resolution()) ? P2d : (P2d / myVX));
+            return ((myVX <= Constants.Resolution()) ? P2d : (P2d / myVX));
         }
 
-        else if (myType == GeomAbs_Ellipse)
+        else if (myType == global::Kerf.Geometry.CurveKind.Ellipse)
         {
             return P2d - myOX;
         }
@@ -128,58 +131,58 @@ public sealed class HLRBRep_Curve
     /// <summary>Updates the min-max boxes and the internal data; returns the tolerance to enlarge them by.</summary>
     public double Update(Span<double> TotMin, Span<double> TotMax)
     {
-        GeomAbs_CurveType typ = HLRBRep_BCurveTool.GetType(myCurve);
-        myType = GeomAbs_OtherCurve;
+        CurveKind typ = HLRBRep_BCurveTool.GetType(myCurve);
+        myType = OtherCurve;
 
         switch (typ)
         {
 
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 myType = typ;
                 break;
 
-            case GeomAbs_Circle:
+            case global::Kerf.Geometry.CurveKind.Circle:
                 if (!Proj().Perspective())
                 {
-                    gp_Dir D1 = HLRBRep_BCurveTool.Circle(myCurve).Axis().Direction();
+                    Direction3D D1 = HLRBRep_BCurveTool.Circle(myCurve).Axis().Direction();
                     D1.Transform(Proj().Transformation());
-                    if (D1.IsParallel(gp.DZ(), Precision.Angular()))
+                    if (D1.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        myType = GeomAbs_Circle;
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
                     }
-                    else if (Abs(D1.Dot(gp.DZ())) < Precision.Angular() * 10)
+                    else if (Abs(D1.Dot(Constants.DZ())) < global::Kerf.Engine.Foundation.Precision.Angular() * 10)
                     { //*10: The minor radius of ellipse should not be too small.
-                        myType = GeomAbs_OtherCurve;
+                        myType = OtherCurve;
                     }
                     else
                     {
-                        myType = GeomAbs_Ellipse;
+                        myType = global::Kerf.Geometry.CurveKind.Ellipse;
                         // compute the angle offset
-                        gp_Dir D3 = D1.Crossed(gp.DZ());
-                        gp_Dir D2 = HLRBRep_BCurveTool.Circle(myCurve).XAxis().Direction();
+                        Direction3D D3 = D1.Crossed(Constants.DZ());
+                        Direction3D D2 = HLRBRep_BCurveTool.Circle(myCurve).XAxis().Direction();
                         D2.Transform(Proj().Transformation());
                         myOX = D3.AngleWithRef(D2, D1);
                     }
                 }
                 break;
 
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
                 if (!Proj().Perspective())
                 {
-                    gp_Dir D1 = HLRBRep_BCurveTool.Ellipse(myCurve).Axis().Direction();
+                    Direction3D D1 = HLRBRep_BCurveTool.Ellipse(myCurve).Axis().Direction();
                     D1.Transform(Proj().Transformation());
-                    if (D1.IsParallel(gp.DZ(), Precision.Angular()))
+                    if (D1.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
                         myOX = 0.0; // no offset on the angle
-                        myType = GeomAbs_Ellipse;
+                        myType = global::Kerf.Geometry.CurveKind.Ellipse;
                     }
                 }
                 break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 if (HLRBRep_BCurveTool.Degree(myCurve) == 1)
                 {
-                    myType = GeomAbs_Line;
+                    myType = global::Kerf.Geometry.CurveKind.Line;
                 }
                 else if (!Proj().Perspective())
                 {
@@ -187,7 +190,7 @@ public sealed class HLRBRep_Curve
                 }
                 break;
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 if (!Proj().Perspective())
                 {
                     myType = typ;
@@ -198,39 +201,39 @@ public sealed class HLRBRep_Curve
                 break;
         }
 
-        if (myType == GeomAbs_Line)
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
             // compute the values for a line
-            gp_Lin L;
+            Line3D L;
             double l3d = 1.0; // length of the 3d bezier curve
-            if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_Line)
+            if (HLRBRep_BCurveTool.GetType(myCurve) == global::Kerf.Geometry.CurveKind.Line)
             {
                 L = HLRBRep_BCurveTool.Line(myCurve);
             }
             else
             { // bezier degree 1
-                HLRBRep_BCurveTool.D1(myCurve, 0, out gp_Pnt PL, out gp_Vec VL);
-                L = new gp_Lin(PL, new gp_Dir(VL));
+                HLRBRep_BCurveTool.D1(myCurve, 0, out Point3D PL, out Vector3D VL);
+                L = new Line3D(PL, new Direction3D(VL));
                 l3d = PL.Distance(HLRBRep_BCurveTool.Value(myCurve, 1.0));
             }
-            gp_Pnt P = L.Location();
-            gp_Vec V = new(L.Direction());
+            Point3D P = L.Location();
+            Vector3D V = new(L.Direction());
             P.Transform(Proj().Transformation());
             V.Transform(Proj().Transformation());
             if (Proj().Perspective())
             {
-                D1(0.0, out gp_Pnt2d F, out gp_Vec2d VFX);
+                D1(0.0, out Point2D F, out Vector2D VFX);
                 VFX.Normalize();
                 myVX = (VFX.X() * V.X() + VFX.Y() * V.Y()) * l3d;
                 double l = -(VFX.X() * F.X() + VFX.Y() * F.Y());
                 F.SetCoord(F.X() + VFX.X() * l, F.Y() + VFX.Y() * l);
                 myOX = VFX.X() * (P.X() - F.X()) + VFX.Y() * (P.Y() - F.Y());
-                gp_Vec VFZ = new(-F.X(), -F.Y(), Proj().Focus());
+                Vector3D VFZ = new(-F.X(), -F.Y(), Proj().Focus());
                 myOF = VFZ.Magnitude();
                 VFZ /= myOF;
                 myVZ = VFZ * V;
                 myVZ *= l3d;
-                myOZ = VFZ * new gp_Vec(P.X() - F.X(), P.Y() - F.Y(), P.Z());
+                myOZ = VFZ * new Vector3D(P.X() - F.X(), P.Y() - F.Y(), P.Z());
             }
             else
             {
@@ -249,7 +252,7 @@ public sealed class HLRBRep_Curve
         Proj().Project(Value3D(a), out x, out y, out z);
         HLRAlgo.UpdateMinMax(x, y, z, TotMin, TotMax);
 
-        if (myType != GeomAbs_Line)
+        if (myType != global::Kerf.Geometry.CurveKind.Line)
         {
             int nbPnt = 30;
             int i;
@@ -305,26 +308,26 @@ public sealed class HLRBRep_Curve
     /// <summary>The Z coordinate, in the viewing coordinate system, of the point of parameter U.</summary>
     public double Z(double U)
     {
-        HLRBRep_BCurveTool.D0(myCurve, U, out gp_Pnt P3d);
+        HLRBRep_BCurveTool.D0(myCurve, U, out Point3D P3d);
         P3d.Transform(Proj().Transformation());
         return P3d.Z();
     }
 
     /// <summary>The 3D point of parameter U.</summary>
-    public gp_Pnt Value3D(double U)
+    public Point3D Value3D(double U)
     {
-        D0(U, out gp_Pnt P);
+        D0(U, out Point3D P);
         return P;
     }
 
     /// <summary>The 3D point of parameter U.</summary>
-    public void D0(double U, out gp_Pnt P)
+    public void D0(double U, out Point3D P)
     {
         HLRBRep_BCurveTool.D0(myCurve, U, out P);
     }
 
     /// <summary>The 3D point of parameter U and the first derivative.</summary>
-    public void D1(double U, out gp_Pnt P, out gp_Vec V)
+    public void D1(double U, out Point3D P, out Vector3D V)
     {
         HLRBRep_BCurveTool.D1(myCurve, U, out P, out V);
     }
@@ -333,8 +336,8 @@ public sealed class HLRBRep_Curve
     /// The 2D point and tangent at the start (or the end) of the curve. If the first derivative is null, looks a little
     /// after the start (or before the end) with the second derivative.
     /// </summary>
-    /// <exception cref="StdFail_UndefinedDerivative">The tangent is undefined.</exception>
-    public void Tangent(bool AtStart, out gp_Pnt2d P, out gp_Dir2d D)
+    /// <exception cref="UndefinedDerivativeException">The tangent is undefined.</exception>
+    public void Tangent(bool AtStart, out Point2D P, out Direction2D D)
     {
         double U = AtStart ? HLRBRep_BCurveTool.FirstParameter(myCurve) : HLRBRep_BCurveTool.LastParameter(myCurve);
 
@@ -351,13 +354,13 @@ public sealed class HLRBRep_Curve
 
     public double LastParameter() => Parameter2d(HLRBRep_BCurveTool.LastParameter(myCurve));
 
-    public GeomAbs_Shape Continuity() => HLRBRep_BCurveTool.Continuity(myCurve);
+    public Continuity Continuity() => HLRBRep_BCurveTool.Continuity(myCurve);
 
     /// <summary>The number of intervals of continuity S.</summary>
-    public int NbIntervals(GeomAbs_Shape S) => HLRBRep_BCurveTool.NbIntervals(myCurve, S);
+    public int NbIntervals(Continuity S) => HLRBRep_BCurveTool.NbIntervals(myCurve, S);
 
     /// <summary>Stores in T the parameters bounding the intervals of continuity S.</summary>
-    public void Intervals(NCollection_Array1<double> Tab, GeomAbs_Shape Sh)
+    public void Intervals(NCollection_Array1<double> Tab, Continuity Sh)
     {
         HLRBRep_BCurveTool.Intervals(myCurve, Tab, Sh);
     }
@@ -369,14 +372,14 @@ public sealed class HLRBRep_Curve
     public double Period() => HLRBRep_BCurveTool.Period(myCurve);
 
     /// <summary>The 2D point of parameter U (a parameter on the 3D curve).</summary>
-    public gp_Pnt2d Value(double U)
+    public Point2D Value(double U)
     {
-        D0(U, out gp_Pnt2d P);
+        D0(U, out Point2D P);
         return P;
     }
 
     /// <summary>The 2D point of parameter U.</summary>
-    public void D0(double U, out gp_Pnt2d P)
+    public void D0(double U, out Point2D P)
     {
         /* gp_Pnt P3d;
         HLRBRep_BCurveTool::D0(myCurve,U,P3d);
@@ -386,13 +389,13 @@ public sealed class HLRBRep_Curve
           P.SetCoord(P3d.X()/R,P3d.Y()/R);
         }
         else P.SetCoord(P3d.X(),P3d.Y()); */
-        HLRBRep_BCurveTool.D0(myCurve, U, out gp_Pnt P3d);
-        P = new gp_Pnt2d(); // C++'s default point, which the first axonometric view leaves (decision 1078)
+        HLRBRep_BCurveTool.D0(myCurve, U, out Point3D P3d);
+        P = new Point2D(); // C++'s default point, which the first axonometric view leaves (decision 1078)
         Proj().Project(P3d, ref P);
     }
 
     /// <summary>The 2D point of parameter U and the first derivative.</summary>
-    public void D1(double U, out gp_Pnt2d P, out gp_Vec2d V)
+    public void D1(double U, out Point2D P, out Vector2D V)
     {
         // Mathematical formula for lines
 
@@ -402,7 +405,7 @@ public sealed class HLRBRep_Curve
         //       1 - ----   f (1 - ----)
         //            f             f
 
-        HLRBRep_BCurveTool.D1(myCurve, U, out gp_Pnt P3D, out gp_Vec V13D);
+        HLRBRep_BCurveTool.D1(myCurve, U, out Point3D P3D, out Vector3D V13D);
         if (Proj().Perspective())
         {
             P3D.Transform(Proj().Transformation());
@@ -411,8 +414,8 @@ public sealed class HLRBRep_Curve
             double f = Proj().Focus();
             double R = 1.0 - P3D.Z() / f;
             double e = V13D.Z() / (f * R * R);
-            P = new gp_Pnt2d(P3D.X() / R, P3D.Y() / R);
-            V = new gp_Vec2d(V13D.X() / R + P3D.X() * e, V13D.Y() / R + P3D.Y() * e);
+            P = new Point2D(P3D.X() / R, P3D.Y() / R);
+            V = new Vector2D(V13D.X() / R + P3D.X() * e, V13D.Y() / R + P3D.Y() * e);
         }
         else
         {
@@ -422,7 +425,7 @@ public sealed class HLRBRep_Curve
     }
 
     /// <summary>The 2D point of parameter U and the first two derivatives.</summary>
-    public void D2(double U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public void D2(double U, out Point2D P, out Vector2D V1, out Vector2D V2)
     {
         // Mathematical formula for lines
 
@@ -433,7 +436,7 @@ public sealed class HLRBRep_Curve
         //       f (1 - ----)    f  (1 - ----)    1 - ----   f (1 - ----)
         //               f                f            f             f
 
-        HLRBRep_BCurveTool.D2(myCurve, U, out gp_Pnt P3D, out gp_Vec V13D, out gp_Vec V23D);
+        HLRBRep_BCurveTool.D2(myCurve, U, out Point3D P3D, out Vector3D V13D, out Vector3D V23D);
         P3D.Transform(Proj().Transformation());
         V13D.Transform(Proj().Transformation());
         V23D.Transform(Proj().Transformation());
@@ -444,62 +447,62 @@ public sealed class HLRBRep_Curve
             double q = f * R * R;
             double e = V13D.Z() / q;
             double c = e * V13D.Z() / (f * R);
-            P = new gp_Pnt2d(P3D.X() / R, P3D.Y() / R);
-            V1 = new gp_Vec2d(V13D.X() / R + P3D.X() * e, V13D.Y() / R + P3D.Y() * e);
-            V2 = new gp_Vec2d(V23D.X() / R + 2 * V13D.X() * e + P3D.X() * V23D.Z() / q + 2 * P3D.X() * c,
+            P = new Point2D(P3D.X() / R, P3D.Y() / R);
+            V1 = new Vector2D(V13D.X() / R + P3D.X() * e, V13D.Y() / R + P3D.Y() * e);
+            V2 = new Vector2D(V23D.X() / R + 2 * V13D.X() * e + P3D.X() * V23D.Z() / q + 2 * P3D.X() * c,
                               V23D.Y() / R + 2 * V13D.Y() * e + P3D.Y() * V23D.Z() / q + 2 * P3D.Y() * c);
         }
         else
         {
-            P = new gp_Pnt2d(P3D.X(), P3D.Y());
-            V1 = new gp_Vec2d(V13D.X(), V13D.Y());
-            V2 = new gp_Vec2d(V23D.X(), V23D.Y());
+            P = new Point2D(P3D.X(), P3D.Y());
+            V1 = new Vector2D(V13D.X(), V13D.Y());
+            V2 = new Vector2D(V23D.X(), V23D.Y());
         }
     }
 
     /// <summary>OCCT's third derivative: writes nothing (the arguments keep their values).</summary>
-    public void D3(double U, ref gp_Pnt2d P, ref gp_Vec2d V1, ref gp_Vec2d V2, ref gp_Vec2d V3) { } // OCCT
+    public void D3(double U, ref Point2D P, ref Vector2D V1, ref Vector2D V2, ref Vector2D V3) { } // OCCT
 
     /// <summary>OCCT's derivative of order N: the null vector.</summary>
-    public gp_Vec2d DN(double U, int N) => new(); // OCCT
+    public Vector2D DN(double U, int N) => new(); // OCCT
 
     /// <summary>The parametric resolution for the 3D resolution R3d.</summary>
     public double Resolution(double R3d) => HLRBRep_BCurveTool.Resolution(myCurve, R3d);
 
     /// <summary>The type of the projected curve.</summary>
-    public new GeomAbs_CurveType GetType() => myType;
+    public new CurveKind GetType() => myType;
 
-    public gp_Lin2d Line()
+    public Line2D Line()
     {
-        D1(0.0, out gp_Pnt2d P, out gp_Vec2d V);
-        return new gp_Lin2d(P, new gp_Dir2d(V));
+        D1(0.0, out Point2D P, out Vector2D V);
+        return new Line2D(P, new Direction2D(V));
     }
 
-    public gp_Circ2d Circle()
+    public Circle2D Circle()
     {
-        gp_Circ C = HLRBRep_BCurveTool.Circle(myCurve);
+        Circle3D C = HLRBRep_BCurveTool.Circle(myCurve);
         C.Transform(Proj().Transformation());
-        return ProjLib.Project(new gp_Pln(new gp_Ax3(gp.XOY())), C);
+        return ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), C);
     }
 
-    public gp_Elips2d Ellipse()
+    public Ellipse2D Ellipse()
     {
-        if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_Ellipse)
+        if (HLRBRep_BCurveTool.GetType(myCurve) == global::Kerf.Geometry.CurveKind.Ellipse)
         {
-            gp_Elips E = HLRBRep_BCurveTool.Ellipse(myCurve);
+            Ellipse3D E = HLRBRep_BCurveTool.Ellipse(myCurve);
             E.Transform(Proj().Transformation());
-            return ProjLib.Project(new gp_Pln(new gp_Ax3(gp.XOY())), E);
+            return ProjLib.Project(new Plane3D(new CoordinateSystem(Constants.XOY())), E);
         }
         // this is a circle
-        gp_Circ C = HLRBRep_BCurveTool.Circle(myCurve);
+        Circle3D C = HLRBRep_BCurveTool.Circle(myCurve);
         C.Transform(Proj().Transformation());
-        gp_Dir D1 = C.Axis().Direction();
-        gp_Dir D3 = D1.Crossed(gp.DZ());
-        gp_Dir D2 = D1.Crossed(D3);
+        Direction3D D1 = C.Axis().Direction();
+        Direction3D D3 = D1.Crossed(Constants.DZ());
+        Direction3D D2 = D1.Crossed(D3);
         double rap = Sqrt(D2.X() * D2.X() + D2.Y() * D2.Y());
-        gp_Dir2d d = new(D1.Y(), -D1.X());
-        gp_Pnt2d p = new(C.Location().X(), C.Location().Y());
-        gp_Elips2d El = new(new gp_Ax2d(p, d), C.Radius(), C.Radius() * rap);
+        Direction2D d = new(D1.Y(), -D1.X());
+        Point2D p = new(C.Location().X(), C.Location().Y());
+        Ellipse2D El = new(new Axis2D(p, d), C.Radius(), C.Radius() * rap);
         if (D1.Z() < 0)
         {
             El.Reverse();
@@ -507,9 +510,9 @@ public sealed class HLRBRep_Curve
         return El;
     }
 
-    public gp_Hypr2d Hyperbola() => new();
+    public Hyperbola2D Hyperbola() => new();
 
-    public gp_Parab2d Parabola() => new();
+    public Parabola2D Parabola() => new();
 
     public bool IsRational() => HLRBRep_BCurveTool.IsRational(myCurve);
 
@@ -518,15 +521,15 @@ public sealed class HLRBRep_Curve
     public int NbPoles() => HLRBRep_BCurveTool.NbPoles(myCurve);
 
     /// <summary>The projected poles of the Bezier or B-spline curve.</summary>
-    public void Poles(NCollection_Array1<gp_Pnt2d> TP)
+    public void Poles(NCollection_Array1<Point2D> TP)
     {
         int i1 = TP.Lower();
         int i2 = TP.Upper();
-        NCollection_Array1<gp_Pnt> TP3 = new(i1, i2);
-        if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_BSplineCurve)
+        NCollection_Array1<Point3D> TP3 = new(i1, i2);
+        if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
             Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
-            NCollection_Array1<gp_Pnt> aSrcPoles = aBSpl.InternalPoles();
+            NCollection_Array1<Point3D> aSrcPoles = aBSpl.InternalPoles();
             for (int i = i1; i <= i2; i++)
             {
                 TP3[i] = aSrcPoles[i];
@@ -535,7 +538,7 @@ public sealed class HLRBRep_Curve
         else
         {
             Geom_BezierCurve aBez = HLRBRep_BCurveTool.Bezier(myCurve);
-            NCollection_Array1<gp_Pnt> aSrcPoles = aBez.InternalPoles();
+            NCollection_Array1<Point3D> aSrcPoles = aBez.InternalPoles();
             for (int i = i1; i <= i2; i++)
             {
                 TP3[i] = aSrcPoles[i];
@@ -544,17 +547,17 @@ public sealed class HLRBRep_Curve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref TP3[i]);
-            TP[i] = new gp_Pnt2d(TP3[i].X(), TP3[i].Y());
+            TP[i] = new Point2D(TP3[i].X(), TP3[i].Y());
         }
     }
 
     /// <summary>The projected poles of the given B-spline curve.</summary>
-    public void Poles(Geom_BSplineCurve aCurve, NCollection_Array1<gp_Pnt2d> TP)
+    public void Poles(Geom_BSplineCurve aCurve, NCollection_Array1<Point2D> TP)
     {
         int i1 = TP.Lower();
         int i2 = TP.Upper();
-        NCollection_Array1<gp_Pnt> TP3 = new(i1, i2);
-        NCollection_Array1<gp_Pnt> aSrcPoles = aCurve.InternalPoles();
+        NCollection_Array1<Point3D> TP3 = new(i1, i2);
+        NCollection_Array1<Point3D> aSrcPoles = aCurve.InternalPoles();
         for (int i = i1; i <= i2; i++)
         {
             TP3[i] = aSrcPoles[i];
@@ -562,20 +565,20 @@ public sealed class HLRBRep_Curve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref TP3[i]);
-            TP[i] = new gp_Pnt2d(TP3[i].X(), TP3[i].Y());
+            TP[i] = new Point2D(TP3[i].X(), TP3[i].Y());
         }
     }
 
     /// <summary>The projected poles and the weights of the Bezier or B-spline curve.</summary>
-    public void PolesAndWeights(NCollection_Array1<gp_Pnt2d> TP, NCollection_Array1<double> TW)
+    public void PolesAndWeights(NCollection_Array1<Point2D> TP, NCollection_Array1<double> TW)
     {
         int i1 = TP.Lower();
         int i2 = TP.Upper();
-        NCollection_Array1<gp_Pnt> TP3 = new(i1, i2);
-        if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_BSplineCurve)
+        NCollection_Array1<Point3D> TP3 = new(i1, i2);
+        if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
             Geom_BSplineCurve HB = (HLRBRep_BCurveTool.BSpline(myCurve));
-            NCollection_Array1<gp_Pnt> aSrcPoles = HB.InternalPoles();
+            NCollection_Array1<Point3D> aSrcPoles = HB.InternalPoles();
             NCollection_Array1<double> aSrcWeights = HB.InternalWeightsArray();
             for (int i = i1; i <= i2; i++)
             {
@@ -589,7 +592,7 @@ public sealed class HLRBRep_Curve
         else
         {
             Geom_BezierCurve HB = (HLRBRep_BCurveTool.Bezier(myCurve));
-            NCollection_Array1<gp_Pnt> aSrcPoles = HB.InternalPoles();
+            NCollection_Array1<Point3D> aSrcPoles = HB.InternalPoles();
             NCollection_Array1<double> aSrcWeights = HB.InternalWeightsArray();
             for (int i = i1; i <= i2; i++)
             {
@@ -603,18 +606,18 @@ public sealed class HLRBRep_Curve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref TP3[i]);
-            TP[i] = new gp_Pnt2d(TP3[i].X(), TP3[i].Y());
+            TP[i] = new Point2D(TP3[i].X(), TP3[i].Y());
         }
     }
 
     /// <summary>The projected poles and the weights of the given B-spline curve.</summary>
-    public void PolesAndWeights(Geom_BSplineCurve aCurve, NCollection_Array1<gp_Pnt2d> TP,
+    public void PolesAndWeights(Geom_BSplineCurve aCurve, NCollection_Array1<Point2D> TP,
                                 NCollection_Array1<double> TW)
     {
         int i1 = TP.Lower();
         int i2 = TP.Upper();
-        NCollection_Array1<gp_Pnt> TP3 = new(i1, i2);
-        NCollection_Array1<gp_Pnt> aSrcPoles = aCurve.InternalPoles();
+        NCollection_Array1<Point3D> TP3 = new(i1, i2);
+        NCollection_Array1<Point3D> aSrcPoles = aCurve.InternalPoles();
         NCollection_Array1<double> aSrcWeights = aCurve.InternalWeightsArray();
         for (int i = i1; i <= i2; i++)
         {
@@ -627,7 +630,7 @@ public sealed class HLRBRep_Curve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref TP3[i]);
-            TP[i] = new gp_Pnt2d(TP3[i].X(), TP3[i].Y());
+            TP[i] = new Point2D(TP3[i].X(), TP3[i].Y());
         }
     }
 
@@ -636,7 +639,7 @@ public sealed class HLRBRep_Curve
     /// <summary>The knots of the B-spline curve (nothing for other curves).</summary>
     public void Knots(NCollection_Array1<double> kn)
     {
-        if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_BSplineCurve)
+        if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
             Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
             NCollection_Array1<double> aSrcKnots = aBSpl.InternalKnots();
@@ -650,7 +653,7 @@ public sealed class HLRBRep_Curve
     /// <summary>The multiplicities of the B-spline curve (nothing for other curves).</summary>
     public void Multiplicities(NCollection_Array1<int> mu)
     {
-        if (HLRBRep_BCurveTool.GetType(myCurve) == GeomAbs_BSplineCurve)
+        if (HLRBRep_BCurveTool.GetType(myCurve) == BSplineCurve)
         {
             Geom_BSplineCurve aBSpl = HLRBRep_BCurveTool.BSpline(myCurve);
             NCollection_Array1<int> aSrcMults = aBSpl.InternalMultiplicities();

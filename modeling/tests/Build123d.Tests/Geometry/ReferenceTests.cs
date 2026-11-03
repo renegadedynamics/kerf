@@ -96,8 +96,8 @@ public class ReferenceTests
         {
             var p = V(c.GetProperty("point")).ToGpPnt();
             var d = V(c.GetProperty("dir")).ToGpDir();
-            var ax2 = new Occt.gp_Ax2(p, d);
-            var trsf = new Occt.gp_Trsf();
+            var ax2 = new Kerf.Geometry.Frame3D(p, d);
+            var trsf = new Kerf.Geometry.Transform3D();
             trsf = trsf.WithMirror(ax2);
             SamePlane(c.GetProperty("plane"), new Plane(new Location(trsf)), 1e-12, "mirror plane");
         }

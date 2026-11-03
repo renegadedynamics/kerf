@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepVisual_AnnotationPlane : StepVisual_AnnotationOccurrence
@@ -19,7 +21,7 @@ public class StepVisual_AnnotationPlane : StepVisual_AnnotationOccurrence
     {
     }
 
-    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> theStyles, Standard_Transient theItem, NCollection_HArray1<StepVisual_AnnotationPlaneElement> theElements)
+    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> theStyles, Transient theItem, NCollection_HArray1<StepVisual_AnnotationPlaneElement> theElements)
     {
         base.Init(theName, theStyles, theItem);
         myElements = theElements;

@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -203,7 +205,7 @@ public abstract partial class Shape
                 result = TopoUtil.Downcast(upgrader.Shape());
                 history = history.Merge(ShapeHistory.FromUnify(upgrader));
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Warnings.Warn("Boolean operation unable to clean");
             }
@@ -368,8 +370,8 @@ public abstract partial class Shape
                 toolFace = TopoDS.Face(trimTool);
             double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
             BRepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
-            var surfacePnt = new gp_Pnt();
-            var surfaceNormal = new gp_Vec();
+            var surfacePnt = new Point3D();
+            var surfaceNormal = new Vector3D();
             var props = new BRepGProp_Face(toolFace);
             props.Normal((uMin + uMax) / 2, (vMin + vMax) / 2, out surfacePnt, out surfaceNormal);
             var refPoint = new Vector(surfacePnt) + new Vector(surfaceNormal).Normalized();

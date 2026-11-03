@@ -3,13 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// The function whose roots are the parameters where the isos of two curves meet: F(t) = (C2(t) - C1(t)) · (C2'(t) -
 /// C1'(t)), with its derivative. ChFi3d_FilBuilder's <c>SplitSurf</c> searches the singular sections of a fillet with it.
 /// </summary>
-internal sealed class ChFi3d_SearchSing : math_FunctionWithDerivative
+internal sealed class ChFi3d_SearchSing : FunctionWithDerivative
 {
     private readonly Geom_Curve myC1;
     private readonly Geom_Curve myC2;
@@ -22,18 +26,18 @@ internal sealed class ChFi3d_SearchSing : math_FunctionWithDerivative
 
     public override bool Value(double X, out double F)
     {
-        myC1.D1(X, out gp_Pnt P1, out gp_Vec V1);
-        myC2.D1(X, out gp_Pnt P2, out gp_Vec V2);
-        gp_Vec V = new(P1, P2);
+        myC1.D1(X, out Point3D P1, out Vector3D V1);
+        myC2.D1(X, out Point3D P2, out Vector3D V2);
+        Vector3D V = new(P1, P2);
         F = V * (V2 - V1);
         return true;
     }
 
     public override bool Derivative(double X, out double D)
     {
-        myC1.D2(X, out gp_Pnt P1, out gp_Vec V1, out gp_Vec W1);
-        myC2.D2(X, out gp_Pnt P2, out gp_Vec V2, out gp_Vec W2);
-        gp_Vec V = new(P1, P2), VPrim;
+        myC1.D2(X, out Point3D P1, out Vector3D V1, out Vector3D W1);
+        myC2.D2(X, out Point3D P2, out Vector3D V2, out Vector3D W2);
+        Vector3D V = new(P1, P2), VPrim;
         VPrim = V2 - V1;
         D = VPrim.SquareMagnitude() + (V * (W2 - W1));
         return true;
@@ -41,9 +45,9 @@ internal sealed class ChFi3d_SearchSing : math_FunctionWithDerivative
 
     public override bool Values(double X, out double F, out double D)
     {
-        myC1.D2(X, out gp_Pnt P1, out gp_Vec V1, out gp_Vec W1);
-        myC2.D2(X, out gp_Pnt P2, out gp_Vec V2, out gp_Vec W2);
-        gp_Vec V = new(P1, P2), VPrim;
+        myC1.D2(X, out Point3D P1, out Vector3D V1, out Vector3D W1);
+        myC2.D2(X, out Point3D P2, out Vector3D V2, out Vector3D W2);
+        Vector3D V = new(P1, P2), VPrim;
         VPrim = V2 - V1;
         F = V * VPrim;
         D = VPrim.SquareMagnitude() + (V * (W2 - W1));

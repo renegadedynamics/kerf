@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.StepBasic_SiPrefix;
 using static Occt.StepBasic_SiUnitName;
 using static Occt.TopAbs_ShapeEnum;
@@ -34,7 +36,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
         return SetWS(WS);
     }
 
-    private static Transfer_SimpleBinderOfTransient TransientResult(Standard_Transient res)
+    private static Transfer_SimpleBinderOfTransient TransientResult(Transient res)
     {
         Transfer_SimpleBinderOfTransient binder = null;
         if (res is null)
@@ -372,7 +374,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     /// Adds centroid property for given shape (already mapped). Returns True if success, False in case of fail If
     /// instance is True, then centroid is assigned to an instance of component in assembly
     /// </summary>
-    public bool AddCentroid(TopoDS_Shape Shape, in gp_Pnt Pnt, bool instance = false)
+    public bool AddCentroid(TopoDS_Shape Shape, in Point3D Pnt, bool instance = false)
     {
         TCollection_HAsciiString CPName = new TCollection_HAsciiString("centre point");
         StepGeom_CartesianPoint CP = new StepGeom_CartesianPoint();
@@ -384,14 +386,14 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     /// <summary>
     /// Searches for entities of the type PropertyDefinitionRepresentation in the model and fills the sequence by them
     /// </summary>
-    public bool LoadProps(NCollection_Sequence<Standard_Transient> seq)
+    public bool LoadProps(NCollection_Sequence<Transient> seq)
     {
         // parse on PropertyDefinitionRepresentations
         int nb = Model().NbEntities();
         Type tPDR = typeof(StepRepr_PropertyDefinitionRepresentation);
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = Model().Value(i);
+            Transient enti = Model().Value(i);
             if (!enti.IsKind(tPDR))
             {
                 continue;
@@ -584,10 +586,10 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
     }
 
     /// <summary>Returns value of Centroid property (or False if it is not)</summary>
-    public bool GetPropPnt(StepRepr_RepresentationItem item, StepRepr_RepresentationContext Context, out gp_Pnt Pnt,
+    public bool GetPropPnt(StepRepr_RepresentationItem item, StepRepr_RepresentationContext Context, out Point3D Pnt,
                            in StepData_Factors theLocalFactors)
     {
-        Pnt = new gp_Pnt();
+        Pnt = new Point3D();
         // centroid
         if (!item.IsKind(typeof(StepGeom_CartesianPoint)))
         {
@@ -601,7 +603,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
             return false;
         }
 
-        gp_Pnt pos = new gp_Pnt(P.CoordinatesValue(1), P.CoordinatesValue(2), P.CoordinatesValue(3));
+        Point3D pos = new Point3D(P.CoordinatesValue(1), P.CoordinatesValue(2), P.CoordinatesValue(3));
 
         // scale according to units
         if (Context is not null)
@@ -623,7 +625,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
             {
                 STEPConstruct_UnitContext UnitTool = new STEPConstruct_UnitContext();
                 UnitTool.ComputeFactors(theGUAC, theLocalFactors);
-                gp_Pnt zero = new gp_Pnt(0, 0, 0);
+                Point3D zero = new Point3D(0, 0, 0);
                 pos.Scale(zero, UnitTool.LengthFactor());
             }
         }

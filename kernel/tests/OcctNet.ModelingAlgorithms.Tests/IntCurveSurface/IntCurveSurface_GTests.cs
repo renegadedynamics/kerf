@@ -5,6 +5,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.Intf_PIType;
 
@@ -32,7 +36,7 @@ public class IntCurveSurface_IntersectionPointTest
     [Fact]
     public void ValueConstructor_AllFieldsSet()
     {
-        gp_Pnt aP = new(1.0, 2.0, 3.0);
+        Point3D aP = new(1.0, 2.0, 3.0);
         IntCurveSurface_IntersectionPoint aPt = new(aP, 0.5, 0.6, 0.7, IntCurveSurface_In);
 
         Assert.Equal(1.0, aPt.Pnt().X(), 1e-15);
@@ -51,7 +55,7 @@ public class IntCurveSurface_IntersectionPointTest
         IntCurveSurface_IntersectionPoint aPt = new();
         Assert.Equal(IntCurveSurface_Tangent, aPt.Transition());
 
-        gp_Pnt aP = new(5.0, 6.0, 7.0);
+        Point3D aP = new(5.0, 6.0, 7.0);
         aPt.SetValues(aP, 1.0, 2.0, 3.0, IntCurveSurface_Out);
         Assert.Equal(IntCurveSurface_Out, aPt.Transition());
     }
@@ -62,7 +66,7 @@ public class IntCurveSurface_InterUtilsTest
 {
     private sealed class TestPolyhedron : IIntCurveSurface_Polyhedron
     {
-        private readonly gp_Pnt[] myPoints = [new(0.0, 0.0, 0.0), new(2.0, 0.0, 0.0), new(2.0, 0.0, 0.0)];
+        private readonly Point3D[] myPoints = [new(0.0, 0.0, 0.0), new(2.0, 0.0, 0.0), new(2.0, 0.0, 0.0)];
         private readonly double[] myU = [0.0, 1.0, 2.0];
         private readonly double[] myV = [0.0, 0.0, 0.0];
 
@@ -73,7 +77,7 @@ public class IntCurveSurface_InterUtilsTest
             theP3 = 3;
         }
 
-        public gp_Pnt Point(int theIndex) => myPoints[theIndex - 1];
+        public Point3D Point(int theIndex) => myPoints[theIndex - 1];
 
         public void Parameters(int theIndex, out double theU, out double theV)
         {
@@ -82,9 +86,9 @@ public class IntCurveSurface_InterUtilsTest
         }
 
         // Not used by SectionPointToParameters
-        public Bnd_Box Bounding() => throw new NotSupportedException();
+        public Box Bounding() => throw new NotSupportedException();
 
-        public gp_Pnt Point(int Index, out double U, out double V) => throw new NotSupportedException();
+        public Point3D Point(int Index, out double U, out double V) => throw new NotSupportedException();
     }
 
     private sealed class TestPolygon : IIntCurveSurface_Polygon
@@ -103,7 +107,7 @@ public class IntCurveSurface_InterUtilsTest
         TestPolyhedron aPolyhedron = new();
         TestPolygon aPolygon = new();
 
-        Intf_SectionPoint aSectionPoint = new(new gp_Pnt(0.5, 0.0, 0.0), Intf_EDGE, 0, 2, 0.4, Intf_FACE, 1, 0, 0.0, 0.0);
+        Intf_SectionPoint aSectionPoint = new(new Point3D(0.5, 0.0, 0.0), Intf_EDGE, 0, 2, 0.4, Intf_FACE, 1, 0, 0.0, 0.0);
 
         IntCurveSurface_InterUtils.SectionPointToParameters(aSectionPoint, aPolyhedron, aPolygon,
                                                                  out double aU, out double aV, out double aW);
@@ -120,7 +124,7 @@ public class IntCurveSurface_ThePolygonOfHInter_Test
     [Fact]
     public void ClosedFlagReflectsStoredState()
     {
-        Geom_Line aLine = new(new gp_Ax1(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0)));
+        Geom_Line aLine = new(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0)));
         GeomAdaptor_Curve anAdaptor = new(aLine);
         IntCurveSurface_ThePolygonOfHInter aPolygon = new(anAdaptor, 6);
 
@@ -135,7 +139,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
 {
     private static GeomAdaptor_Surface makeTestPlane()
     {
-        gp_Ax3 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        CoordinateSystem anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_Plane aPlane = new(anAxis);
         return new GeomAdaptor_Surface(aPlane, -1.0, 1.0, -1.0, 1.0);
     }
@@ -219,7 +223,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
         aVpars[1] = -1.0;
         aVpars[2] = 1.0;
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => new IntCurveSurface_ThePolyhedronOfHInter(aSurf, aUpars, aVpars));
+        Assert.ThrowsAny<OutOfRangeException>(() => new IntCurveSurface_ThePolyhedronOfHInter(aSurf, aUpars, aVpars));
 
         NCollection_Array1<double> aValidUpars = new(1, 2);
         aValidUpars[1] = -1.0;
@@ -228,7 +232,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
         NCollection_Array1<double> aSingleVpars = new(1, 1);
         aSingleVpars[1] = 0.0;
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => new IntCurveSurface_ThePolyhedronOfHInter(aSurf, aValidUpars, aSingleVpars));
+        Assert.ThrowsAny<OutOfRangeException>(() => new IntCurveSurface_ThePolyhedronOfHInter(aSurf, aValidUpars, aSingleVpars));
     }
 
     // PlaneEquation for a valid triangle must produce finite results.
@@ -238,7 +242,7 @@ public class IntCurveSurface_ThePolyhedronOfHInterTest
         GeomAdaptor_Surface aSurf = makeTestPlane();
         IntCurveSurface_ThePolyhedronOfHInter aPoly = new(aSurf, 3, 3, -1.0, -1.0, 1.0, 1.0);
 
-        aPoly.PlaneEquation(1, out gp_XYZ aNormal, out double aPolarDist);
+        aPoly.PlaneEquation(1, out Xyz aNormal, out double aPolarDist);
 
         Assert.True(double.IsFinite(aNormal.X()));
         Assert.True(double.IsFinite(aNormal.Y()));

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -27,11 +30,11 @@ public interface IIntStart_SurfFunction<ThePSurface>
     bool IsTangent();
 
     /// <summary>The point of the last evaluation.</summary>
-    gp_Pnt Point();
+    Point3D Point();
 
-    gp_Vec Direction3d();
+    Vector3D Direction3d();
 
-    gp_Dir2d Direction2d();
+    Direction2D Direction2d();
 }
 
 /// <summary>
@@ -48,7 +51,7 @@ public interface IIntStart_SurfFunction<ThePSurface>
 /// </remarks>
 public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
     where ThePSurfaceTool : IIntImp_ZerCSParPSurfaceTool<ThePSurface>
-    where TheFunction : math_FunctionSetWithDerivatives, IIntStart_SurfFunction<ThePSurface>
+    where TheFunction : FunctionSetWithDerivatives, IIntStart_SurfFunction<ThePSurface>
 {
     private bool done;
     private readonly NCollection_Sequence<IntSurf_InteriorPoint> list = new();
@@ -72,7 +75,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         done = false;
         list.Clear();
         math_Vector Binf = new(1, 2), Bsup = new(1, 2), UVap = new(1, 2), toler = new(1, 2);
-        gp_Pnt psol;
+        Point3D psol;
         bool testpnt;
         int i, j, nbpt;
         TopAbs_State situ;
@@ -91,8 +94,8 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         du /= (double)NbsampleU * 0.5;
         dv /= (double)NbsampleV * 0.5;
 
-        double toler1 = toler[1] = ThePSurfaceTool.UResolution(PS, Precision.Confusion());
-        double toler2 = toler[2] = ThePSurfaceTool.VResolution(PS, Precision.Confusion());
+        double toler1 = toler[1] = ThePSurfaceTool.UResolution(PS, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double toler2 = toler[2] = ThePSurfaceTool.VResolution(PS, global::Kerf.Engine.Foundation.Precision.Confusion());
         double Maxtoler1toler2 = toler1;
         if (toler2 > Maxtoler1toler2)
         {
@@ -114,7 +117,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         Func.Set(PS);
         double Tol = Func.Tolerance();
 
-        math_FunctionSetRoot Rsnld = new(Func, toler);
+        FunctionSetRoot Rsnld = new(Func, toler);
 
         //-- lbr le 15 mai 97
         umin += du * 0.01;
@@ -146,7 +149,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         math_Vector Valf = new(1, 1);
         for (i = 1; i <= Nbsample + 12; i++)
         {
-            gp_Pnt2d s2d = new();
+            Point2D s2d = new();
             bool nepastester = false;
             if (i <= Nbsample)
             {
@@ -161,8 +164,8 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                 v2 = Bsup[2] = Min(vmax, UVap[2] + dv);
 
                 //-- gp_Pnt Pmilieu = ThePSurfaceTool::Value(PS,0.5*(u1+u2),0.5*(v1+v2));
-                gp_Pnt Pextrm1 = ThePSurfaceTool.Value(PS, u1, v1);
-                gp_Pnt Pextrm2 = ThePSurfaceTool.Value(PS, u2, v2);
+                Point3D Pextrm1 = ThePSurfaceTool.Value(PS, u1, v1);
+                Point3D Pextrm2 = ThePSurfaceTool.Value(PS, u2, v2);
                 Func.Value(UVap, Valf);
                 double rvalf = Valf[1];
                 double DistPP = Pextrm1.SquareDistance(Pextrm2);
@@ -236,7 +239,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
             if (nepastester == false)
             {
                 Rsnld.Perform(Func, UVap, Binf, Bsup);
-                if (Rsnld.IsDone())
+                if (Rsnld.IsDone)
                 {
                     if (Math.Abs(Func.Root()) <= Tol)
                     {
@@ -252,7 +255,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                             while (testpnt)
                             {
                                 ref IntSurf_InteriorPoint IPj = ref list[j];
-                                gp_Pnt Pj = IPj.Value();
+                                Point3D Pj = IPj.Value();
                                 if ((Math.Abs(Pj.X() - psol.X()) <= Epsilon) && (Math.Abs(Pj.Y() - psol.Y()) <= Epsilon)
                                     && (Math.Abs(Pj.Z() - psol.Z()) <= Epsilon)
                                     && (Math.Abs(UVap[1] - IPj.UParameter()) <= toler1)
@@ -269,12 +272,12 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                             if (j > nbpt)
                             {
                                 //	    situ = TheSITool::Classify(PS,UVap(1),UVap(2));
-                                situ = T.Classify(new gp_Pnt2d(UVap[1], UVap[2]), Maxtoler1toler2,
+                                situ = T.Classify(new Point2D(UVap[1], UVap[2]), Maxtoler1toler2,
                                                   false); //-- ,false pour ne pas recadrer on Periodic
                                 if (situ == TopAbs_IN)
                                 {
                                     list.Append(new IntSurf_InteriorPoint(psol, UVap[1], UVap[2], Func.Direction3d(),
-                                                                          new gp_Vec2d(Func.Direction2d())));
+                                                                          new Vector2D(Func.Direction2d())));
                                 }
                             }
                         }
@@ -300,8 +303,8 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
         Bsup[1] = ThePSurfaceTool.LastUParameter(PS);
         Bsup[2] = ThePSurfaceTool.LastVParameter(PS);
 
-        toler[1] = ThePSurfaceTool.UResolution(PS, Precision.Confusion());
-        toler[2] = ThePSurfaceTool.VResolution(PS, Precision.Confusion());
+        toler[1] = ThePSurfaceTool.UResolution(PS, global::Kerf.Engine.Foundation.Precision.Confusion());
+        toler[2] = ThePSurfaceTool.VResolution(PS, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (UStart - Binf[1] > -toler[1] && UStart - Bsup[1] < toler[1] && VStart - Binf[2] > -toler[2]
             && VStart - Bsup[2] < toler[2])
@@ -311,18 +314,18 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
             UVap[1] = UStart;
             UVap[2] = VStart;
 
-            math_FunctionSetRoot Rsnld = new(Func, toler);
+            FunctionSetRoot Rsnld = new(Func, toler);
             Rsnld.Perform(Func, UVap, Binf, Bsup);
-            if (Rsnld.IsDone())
+            if (Rsnld.IsDone)
             {
                 double tol = Func.Tolerance();
                 double valf = Func.Root();
                 if (Math.Abs(valf) <= tol && !Func.IsTangent())
                 {
-                    gp_Pnt psol = Func.Point();
+                    Point3D psol = Func.Point();
                     Rsnld.Root(UVap);
                     IntSurf_InteriorPoint intp = new(psol, UVap[1], UVap[2], Func.Direction3d(),
-                                                     new gp_Vec2d(Func.Direction2d()));
+                                                     new Vector2D(Func.Direction2d()));
                     list.Append(intp);
                 }
             }
@@ -338,7 +341,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return list.Length();
     }
@@ -348,7 +351,7 @@ public class IntStart_SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return list.Value(Index);
     }

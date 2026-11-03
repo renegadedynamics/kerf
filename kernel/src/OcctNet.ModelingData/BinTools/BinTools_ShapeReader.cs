@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -16,7 +20,7 @@ namespace Occt;
 /// The shapes read are frozen. On untrusted input the reader also checks that references point inside the stream and
 /// don't form cycles (OCCT recurses forever), and caps the nesting of shapes, locations and references at
 /// <see cref="BinTools.MaxShapeNesting"/> and of geometry at <see cref="BinTools.MaxGeometryNesting"/>; failures
-/// throw <see cref="Storage_StreamFormatError"/>.
+/// throw <see cref="StreamFormatErrorException"/>.
 /// </remarks>
 public class BinTools_ShapeReader : BinTools_ShapeSetBase
 {
@@ -24,13 +28,13 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
     // positions of the objects already read
     private readonly NCollection_DataMap<ulong, TopoDS_Shape> myShapePos = new();
-    private readonly NCollection_DataMap<ulong, TopLoc_Location> myLocationPos = new();
+    private readonly NCollection_DataMap<ulong, Placement> myLocationPos = new();
     private readonly NCollection_DataMap<ulong, Geom_Curve?> myCurvePos = new();
     private readonly NCollection_DataMap<ulong, Geom2d_Curve?> myCurve2dPos = new();
     private readonly NCollection_DataMap<ulong, Geom_Surface?> mySurfacePos = new();
-    private readonly NCollection_DataMap<ulong, Poly_Polygon3D> myPolygon3dPos = new();
-    private readonly NCollection_DataMap<ulong, Poly_PolygonOnTriangulation> myPolygonPos = new();
-    private readonly NCollection_DataMap<ulong, Poly_Triangulation> myTriangulationPos = new();
+    private readonly NCollection_DataMap<ulong, Polygon3D> myPolygon3dPos = new();
+    private readonly NCollection_DataMap<ulong, PolygonOnTriangulation> myPolygonPos = new();
+    private readonly NCollection_DataMap<ulong, Triangulation> myTriangulationPos = new();
 
     // OCCT.NET: untrusted input: the positions of the shapes and locations being read, and the depth of the recursion
     private readonly HashSet<ulong> myShapesInProgress = [];
@@ -60,8 +64,8 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads a shape from the stream, which must be seekable. The shape is frozen.</summary>
-    /// <exception cref="Standard_Failure">The stream doesn't hold a shape OCCT can read; for input that can't be read
-    /// safely, a <see cref="Storage_StreamFormatError"/>.</exception>
+    /// <exception cref="FailureException">The stream doesn't hold a shape OCCT can read; for input that can't be read
+    /// safely, a <see cref="StreamFormatErrorException"/>.</exception>
     public override void Read(Stream theStream, ref TopoDS_Shape theShape)
     {
         var aStream = new BinTools_IStream(theStream);
@@ -72,7 +76,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         catch (Exception anException) when (BinTools.IsSignal(anException))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new Storage_StreamFormatError("BinTools_ShapeReader::Read: " + anException.Message, anException);
+            throw new StreamFormatErrorException("BinTools_ShapeReader::Read: " + anException.Message, anException);
         }
         finally
         {
@@ -93,12 +97,12 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
     {
         if (!System.Runtime.CompilerServices.RuntimeHelpers.TryEnsureSufficientExecutionStack())
         {
-            throw new Storage_StreamFormatError("BinTools_ShapeReader: objects nested too deeply for the stack");
+            throw new StreamFormatErrorException("BinTools_ShapeReader: objects nested too deeply for the stack");
         }
 
         if (++myDepth > BinTools.MaxShapeNesting)
         {
-            throw new Storage_StreamFormatError("BinTools_ShapeReader: objects nested too deeply");
+            throw new StreamFormatErrorException("BinTools_ShapeReader: objects nested too deeply");
         }
     }
 
@@ -139,7 +143,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                 if (myShapesInProgress.Contains(aRef))
                 {
                     // OCCT.NET: untrusted input: OCCT reads the shape again, forever
-                    throw new Storage_StreamFormatError("BinTools_ShapeReader: a shape contains itself");
+                    throw new StreamFormatErrorException("BinTools_ShapeReader: a shape contains itself");
                 }
 
                 ulong aCurrent = theStream.Position();
@@ -157,7 +161,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         // read the shape
         TopAbs_ShapeEnum aShapeType = theStream.ShapeType();
         TopAbs_Orientation aShapeOrientation = theStream.ShapeOrientation();
-        TopLoc_Location aShapeLocation = ReadLocation(theStream);
+        Placement aShapeLocation = ReadLocation(theStream);
         myShapesInProgress.Add(aPosition);
         // OCCT.NET: the geometry is read by a separate method (a smaller frame for the recursion)
         aResult = ReadShapeGeometry(theStream, aShapeType);
@@ -205,12 +209,12 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                     TopoDS_Vertex aV = new();
                     // Read the point geometry
                     aTol = theStream.ReadReal();
-                    gp_Pnt aPnt = theStream.ReadPnt();
+                    Point3D aPnt = theStream.ReadPnt();
                     aBuilder.MakeVertex(ref aV, aPnt, aTol);
                     aResult = aV;
                     BRep_TVertex aTV = (BRep_TVertex)aV.TShape()!;
                     NCollection_List<BRep_PointRepresentation> aLpr = aTV.ChangePoints();
-                    TopLoc_Location anEmptyLoc = new();
+                    Placement anEmptyLoc = new();
                     while (theStream)
                     {
                         byte aPrsType = theStream.ReadByte();
@@ -261,12 +265,12 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
                             default:
                             {
-                                throw new Standard_Failure("BinTools_ShapeReader::Read: UnExpected BRep_PointRepresentation = "
+                                throw new FailureException("BinTools_ShapeReader::Read: UnExpected BRep_PointRepresentation = "
                                                            + aPrsType + "\n");
                             }
                         }
 
-                        TopLoc_Location aPRLoc = ReadLocation(theStream);
+                        Placement aPRLoc = ReadLocation(theStream);
                         if (aPR is not null)
                         {
                             aPR.Location(aPRLoc);
@@ -302,7 +306,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                             case 1: // -1- Curve 3D
                             {
                                 Geom_Curve? aCurve = ReadCurve(theStream);
-                                TopLoc_Location aLoc = ReadLocation(theStream);
+                                Placement aLoc = ReadLocation(theStream);
                                 aFirst = theStream.ReadReal();
                                 aLast = theStream.ReadReal();
                                 if (aCurve is not null)
@@ -318,15 +322,15 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                             {
                                 bool aClosed = (aPrsType == 3);
                                 Geom2d_Curve? aCurve2d_2 = null, aCurve2d_1 = ReadCurve2d(theStream);
-                                GeomAbs_Shape aReg = GeomAbs_Shape.GeomAbs_C0;
+                                Continuity aReg = Continuity.C0;
                                 if (aClosed)
                                 {
                                     aCurve2d_2 = ReadCurve2d(theStream);
-                                    aReg = (GeomAbs_Shape)theStream.ReadByte();
+                                    aReg = (Continuity)theStream.ReadByte();
                                 }
 
                                 Geom_Surface? aSurface = ReadSurface(theStream);
-                                TopLoc_Location aLoc = ReadLocation(theStream);
+                                Placement aLoc = ReadLocation(theStream);
 
                                 // range
                                 aFirst = theStream.ReadReal();
@@ -350,11 +354,11 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
                             case 4: // -4- Regularity
                             {
-                                GeomAbs_Shape aReg = (GeomAbs_Shape)theStream.ReadByte();
+                                Continuity aReg = (Continuity)theStream.ReadByte();
                                 Geom_Surface? aSurface1 = ReadSurface(theStream);
-                                TopLoc_Location aLoc1 = ReadLocation(theStream);
+                                Placement aLoc1 = ReadLocation(theStream);
                                 Geom_Surface? aSurface2 = ReadSurface(theStream);
-                                TopLoc_Location aLoc2 = ReadLocation(theStream);
+                                Placement aLoc2 = ReadLocation(theStream);
                                 if (aSurface1 is not null && aSurface2 is not null)
                                 {
                                     aBuilder.Continuity(aE, aSurface1, aSurface2, aLoc1, aLoc2, aReg);
@@ -364,8 +368,8 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
                             case 5: // -5- Polygon3D
                             {
-                                Poly_Polygon3D? aPolygon = ReadPolygon3d(theStream);
-                                TopLoc_Location aLoc = ReadLocation(theStream);
+                                Polygon3D? aPolygon = ReadPolygon3d(theStream);
+                                Placement aLoc = ReadLocation(theStream);
                                 aBuilder.UpdateEdge(aE, aPolygon, aLoc);
                             }
                                 break;
@@ -374,14 +378,14 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                             case 7: // -7- Polygon on closed triangulation
                             {
                                 bool aClosed = (aPrsType == 7);
-                                Poly_PolygonOnTriangulation? aPoly2 = null, aPoly1 = ReadPolygon(theStream);
+                                PolygonOnTriangulation? aPoly2 = null, aPoly1 = ReadPolygon(theStream);
                                 if (aClosed)
                                 {
                                     aPoly2 = ReadPolygon(theStream);
                                 }
 
-                                Poly_Triangulation? aTriangulation = ReadTriangulation(theStream);
-                                TopLoc_Location aLoc = ReadLocation(theStream);
+                                Triangulation? aTriangulation = ReadTriangulation(theStream);
+                                Placement aLoc = ReadLocation(theStream);
                                 if (aClosed)
                                 {
                                     aBuilder.UpdateEdge(aE, aPoly1, aPoly2, aTriangulation, aLoc);
@@ -397,7 +401,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
                             default:
                             {
-                                throw new Standard_Failure("Unexpected Curve Representation =" + aPrsType + "\n");
+                                throw new FailureException("Unexpected Curve Representation =" + aPrsType + "\n");
                             }
                         }
                     }
@@ -420,7 +424,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                     bool aNatRes = theStream.ReadBool();
                     aTol = theStream.ReadReal();
                     Geom_Surface? aSurface = ReadSurface(theStream);
-                    TopLoc_Location aLoc = ReadLocation(theStream);
+                    Placement aLoc = ReadLocation(theStream);
                     aBuilder.UpdateFace(aF, aSurface, aLoc, aTol);
                     aBuilder.NaturalRestriction(aF, aNatRes);
                     if (theStream.ReadByte() == 2)
@@ -465,7 +469,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
 
                 default:
                 {
-                    throw new Standard_Failure("Unexpected topology type = " + (int)aShapeType + "\n");
+                    throw new FailureException("Unexpected topology type = " + (int)aShapeType + "\n");
                 }
             }
         }
@@ -478,7 +482,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads a location written by <see cref="BinTools_ShapeWriter.WriteLocation"/>, or a reference to one.</summary>
-    public TopLoc_Location ReadLocation(BinTools_IStream theStream)
+    public Placement ReadLocation(BinTools_IStream theStream)
     {
         Enter();
         try
@@ -491,20 +495,20 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         }
     }
 
-    private TopLoc_Location ReadLocationAt(BinTools_IStream theStream)
+    private Placement ReadLocationAt(BinTools_IStream theStream)
     {
         ulong aPosition = theStream.Position();
         BinTools_ObjectType aType = theStream.ReadType();
         if (aType == BinTools_ObjectType.BinTools_ObjectType_EmptyLocation
             || aType == BinTools_ObjectType.BinTools_ObjectType_LocationEnd)
         {
-            return new TopLoc_Location();
+            return new Placement();
         }
 
         if (theStream.IsReference())
         {
             ulong aRef = theStream.ReadReference();
-            if (myLocationPos.Find(aRef, out TopLoc_Location aFound))
+            if (myLocationPos.Find(aRef, out Placement aFound))
             {
                 // the location is already retrieved
                 return aFound;
@@ -513,27 +517,27 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
             if (myLocationsInProgress.Contains(aRef))
             {
                 // OCCT.NET: untrusted input: OCCT reads the location again, forever
-                throw new Storage_StreamFormatError("BinTools_ShapeReader: a location contains itself");
+                throw new StreamFormatErrorException("BinTools_ShapeReader: a location contains itself");
             }
 
             ulong aCurrent = theStream.Position();
             theStream.GoTo(aRef); // go to the referenced position
-            TopLoc_Location aResult = ReadLocation(theStream);
+            Placement aResult = ReadLocation(theStream);
             theStream.GoTo(aCurrent); // returns to the current position
             return aResult;
         }
 
         // read the location directly from the stream
-        TopLoc_Location aLoc = new();
+        Placement aLoc = new();
         if (aType == BinTools_ObjectType.BinTools_ObjectType_SimpleLocation)
         {
-            gp_Trsf aTrsf = theStream.ReadTrsf();
-            aLoc = new TopLoc_Location(aTrsf);
+            Transform3D aTrsf = theStream.ReadTrsf();
+            aLoc = new Placement(aTrsf);
         }
         else if (aType == BinTools_ObjectType.BinTools_ObjectType_Location)
         {
             myLocationsInProgress.Add(aPosition);
-            for (TopLoc_Location aNextLoc = ReadLocation(theStream); !aNextLoc.IsIdentity();
+            for (Placement aNextLoc = ReadLocation(theStream); !aNextLoc.IsIdentity;
                  aNextLoc = ReadLocation(theStream))
             {
                 // OCCT.NET: untrusted input: bounds the recursion of Powered and Multiplied
@@ -664,19 +668,19 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         }
     }
 
-    private Poly_Polygon3D? ReadPolygon3d(BinTools_IStream theStream)
+    private Polygon3D? ReadPolygon3d(BinTools_IStream theStream)
     {
         Enter();
         try
         {
-            Poly_Polygon3D? aResult = null;
+            Polygon3D? aResult = null;
             ulong aPosition = theStream.Position();
             theStream.ReadType();
             if (theStream.IsReference())
             {
                 // get by reference
                 ulong aRef = theStream.ReadReference();
-                if (myPolygon3dPos.Find(aRef, out Poly_Polygon3D aFound))
+                if (myPolygon3dPos.Find(aRef, out Polygon3D aFound))
                 {
                     // the polygon is already retrieved
                     return aFound;
@@ -694,9 +698,9 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                 bool aHasParameters = theStream.ReadBool();
                 // OCCT.NET: untrusted input
                 BinTools.CheckCount(theStream.Stream(), aNbNodes, aHasParameters ? 32 : 24, "nodes");
-                aResult = new Poly_Polygon3D(aNbNodes, aHasParameters);
+                aResult = new Polygon3D(aNbNodes, aHasParameters);
                 aResult.Deflection(theStream.ReadReal());
-                NCollection_Array1<gp_Pnt> aNodes = aResult.ChangeNodes();
+                NCollection_Array1<Point3D> aNodes = aResult.ChangeNodes();
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
                     aNodes[aNodeIter] = theStream.ReadPnt();
@@ -722,19 +726,19 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         }
     }
 
-    private Poly_PolygonOnTriangulation? ReadPolygon(BinTools_IStream theStream)
+    private PolygonOnTriangulation? ReadPolygon(BinTools_IStream theStream)
     {
         Enter();
         try
         {
-            Poly_PolygonOnTriangulation? aResult = null;
+            PolygonOnTriangulation? aResult = null;
             ulong aPosition = theStream.Position();
             theStream.ReadType();
             if (theStream.IsReference())
             {
                 // get by reference
                 ulong aRef = theStream.ReadReference();
-                if (myPolygonPos.Find(aRef, out Poly_PolygonOnTriangulation aFound))
+                if (myPolygonPos.Find(aRef, out PolygonOnTriangulation aFound))
                 {
                     // the polygon is already retrieved
                     return aFound;
@@ -751,7 +755,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                 int aNbNodes = theStream.ReadInteger();
                 // OCCT.NET: untrusted input
                 BinTools.CheckCount(theStream.Stream(), aNbNodes, 4, "nodes");
-                aResult = new Poly_PolygonOnTriangulation(aNbNodes, false);
+                aResult = new PolygonOnTriangulation(aNbNodes, false);
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
                     aResult.SetNode(aNodeIter, theStream.ReadInteger());
@@ -782,19 +786,19 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
         }
     }
 
-    private Poly_Triangulation? ReadTriangulation(BinTools_IStream theStream)
+    private Triangulation? ReadTriangulation(BinTools_IStream theStream)
     {
         Enter();
         try
         {
-            Poly_Triangulation? aResult = null;
+            Triangulation? aResult = null;
             ulong aPosition = theStream.Position();
             BinTools_ObjectType aType = theStream.ReadType();
             if (theStream.IsReference())
             {
                 // get by reference
                 ulong aRef = theStream.ReadReference();
-                if (myTriangulationPos.Find(aRef, out Poly_Triangulation aFound))
+                if (myTriangulationPos.Find(aRef, out Triangulation aFound))
                 {
                     // the triangulation is already retrieved
                     return aFound;
@@ -820,7 +824,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                                     (long)aNbNodes * aNodeBytes + aNbTriangles * 12L,
                                     1,
                                     "bytes of a triangulation");
-                aResult = new Poly_Triangulation(aNbNodes, aNbTriangles, aHasUV, aHasNormals);
+                aResult = new Triangulation(aNbNodes, aNbTriangles, aHasUV, aHasNormals);
                 aResult.Deflection(theStream.ReadReal());
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
@@ -833,7 +837,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                     {
                         double aU = theStream.ReadReal();
                         double aV = theStream.ReadReal();
-                        aResult.SetUVNode(aNodeIter, new gp_Pnt2d(aU, aV));
+                        aResult.SetUVNode(aNodeIter, new Point2D(aU, aV));
                     }
                 }
 
@@ -843,7 +847,7 @@ public class BinTools_ShapeReader : BinTools_ShapeSetBase
                     int aN1 = theStream.ReadInteger();
                     int aN2 = theStream.ReadInteger();
                     int aN3 = theStream.ReadInteger();
-                    aResult.SetTriangle(aTriIter, new Poly_Triangle(aN1, aN2, aN3));
+                    aResult.SetTriangle(aTriIter, new Triangle1(aN1, aN2, aN3));
                 }
 
                 if (aHasNormals)

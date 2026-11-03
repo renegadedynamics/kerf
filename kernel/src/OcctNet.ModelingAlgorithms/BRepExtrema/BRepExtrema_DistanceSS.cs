@@ -3,11 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -38,8 +40,8 @@ public sealed class BRepExtrema_DistanceSS
     /// </summary>
     public BRepExtrema_DistanceSS(in TopoDS_Shape theS1,
                                   in TopoDS_Shape theS2,
-                                  in Bnd_Box theBox1,
-                                  in Bnd_Box theBox2,
+                                  in Box theBox1,
+                                  in Box theBox2,
                                   double theDstRef,
                                   double theDeflection = 1.0e-7, // Precision::Confusion()
                                   Extrema_ExtFlag theExtFlag = Extrema_ExtFlag_MINMAX,
@@ -73,12 +75,12 @@ public sealed class BRepExtrema_DistanceSS
 
     //=================================================================================================
 
-    private static bool TRI_SOLUTION(NCollection_Sequence<BRepExtrema_SolutionElem> SeqSol, in gp_Pnt Pt)
+    private static bool TRI_SOLUTION(NCollection_Sequence<BRepExtrema_SolutionElem> SeqSol, in Point3D Pt)
     {
         foreach (BRepExtrema_SolutionElem anIt in SeqSol)
         {
             double dst = anIt.Point().Distance(Pt);
-            if (dst <= Precision.Confusion())
+            if (dst <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -124,8 +126,8 @@ public sealed class BRepExtrema_DistanceSS
         Geom_Curve? pCurv1 = BRep_Tool.Curve(S1, out aFirst1, out aLast1);
         Geom_Curve? pCurv2 = BRep_Tool.Curve(S2, out aFirst2, out aLast2);
 
-        if (Precision.IsInfinite(aFirst1) && Precision.IsInfinite(aLast1)
-            && Precision.IsInfinite(aFirst2) && Precision.IsInfinite(aLast2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast1)
+            && global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst2) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast2))
         {
             return;
         }
@@ -135,31 +137,31 @@ public sealed class BRepExtrema_DistanceSS
         bUmin = bUmax = false;
 
         Geom_Curve? pCurv = null;
-        if (pCurv1 is not null && (Precision.IsInfinite(aFirst1) || Precision.IsInfinite(aLast1)))
+        if (pCurv1 is not null && (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast1)))
         {
             pCurv = pCurv1;
             bIsTrim1 = true;
-            if (!Precision.IsInfinite(aFirst1))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst1))
             {
                 bUmin = true;
                 Umin = aFirst1;
             }
-            else if (!Precision.IsInfinite(aLast1))
+            else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast1))
             {
                 bUmax = true;
                 Umax = aLast1;
             }
         }
-        else if (pCurv2 is not null && (Precision.IsInfinite(aFirst2) || Precision.IsInfinite(aLast2)))
+        else if (pCurv2 is not null && (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst2) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast2)))
         {
             pCurv = pCurv2;
             bIsTrim2 = true;
-            if (!Precision.IsInfinite(aFirst2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst2))
             {
                 bUmin = true;
                 Umin = aFirst2;
             }
-            else if (!Precision.IsInfinite(aLast2))
+            else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast2))
             {
                 bUmax = true;
                 Umax = aLast2;
@@ -167,7 +169,7 @@ public sealed class BRepExtrema_DistanceSS
         }
         if (bIsTrim1 || bIsTrim2)
         {
-            var aEdgeBox = new Bnd_Box();
+            var aEdgeBox = new Box();
             if (bIsTrim1)
             {
                 BRepBndLib.Add(S2, ref aEdgeBox);
@@ -178,14 +180,14 @@ public sealed class BRepExtrema_DistanceSS
             }
             aEdgeBox.Get(out double Xmin, out double Ymin, out double Zmin, out double Xmax, out double Ymax, out double Zmax);
 
-            var aPnt0 = new gp_Pnt(Xmin, Ymin, Zmin);
-            var aPnt1 = new gp_Pnt(Xmin, Ymax, Zmin);
-            var aPnt2 = new gp_Pnt(Xmin, Ymax, Zmax);
-            var aPnt3 = new gp_Pnt(Xmin, Ymin, Zmax);
-            var aPnt4 = new gp_Pnt(Xmax, Ymax, Zmin);
-            var aPnt5 = new gp_Pnt(Xmax, Ymax, Zmax);
-            var aPnt6 = new gp_Pnt(Xmax, Ymin, Zmax);
-            var aPnt7 = new gp_Pnt(Xmax, Ymin, Zmin);
+            var aPnt0 = new Point3D(Xmin, Ymin, Zmin);
+            var aPnt1 = new Point3D(Xmin, Ymax, Zmin);
+            var aPnt2 = new Point3D(Xmin, Ymax, Zmax);
+            var aPnt3 = new Point3D(Xmin, Ymin, Zmax);
+            var aPnt4 = new Point3D(Xmax, Ymax, Zmin);
+            var aPnt5 = new Point3D(Xmax, Ymax, Zmax);
+            var aPnt6 = new Point3D(Xmax, Ymin, Zmax);
+            var aPnt7 = new Point3D(Xmax, Ymin, Zmin);
 
             Span<double> arrU = stackalloc double[8];
             var aProj = new GeomAPI_ProjectPointOnCurve(aPnt0, pCurv!);
@@ -230,7 +232,7 @@ public sealed class BRepExtrema_DistanceSS
                 }
             }
 
-            double tol = Precision.Confusion();
+            double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             if (bIsTrim1)
             {
                 tol = BRep_Tool.Tolerance(S1);
@@ -305,7 +307,7 @@ public sealed class BRepExtrema_DistanceSS
         if (bRestrict)
         {
             pSurf.Bounds(out U1, out U2, out V1, out V2);
-            if (Precision.IsInfinite(U1))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1))
             {
                 bIsTrim = true;
             }
@@ -315,7 +317,7 @@ public sealed class BRepExtrema_DistanceSS
                 bUmin = true;
             }
 
-            if (Precision.IsInfinite(U2))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
             {
                 bIsTrim = true;
             }
@@ -325,7 +327,7 @@ public sealed class BRepExtrema_DistanceSS
                 bUmax = true;
             }
 
-            if (Precision.IsInfinite(V1))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V1))
             {
                 bIsTrim = true;
             }
@@ -335,7 +337,7 @@ public sealed class BRepExtrema_DistanceSS
                 bVmin = true;
             }
 
-            if (Precision.IsInfinite(V2))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
             {
                 bIsTrim = true;
             }
@@ -348,8 +350,8 @@ public sealed class BRepExtrema_DistanceSS
         else
         {
             BRepTools.UVBounds(aF, out U1, out U2, out V1, out V2);
-            if (Precision.IsInfinite(U1) && Precision.IsInfinite(U2) && Precision.IsInfinite(V1)
-                && Precision.IsInfinite(V2))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(U2) && global::Kerf.Engine.Foundation.Precision.IsInfinite(V1)
+                && global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
             {
                 bIsTrim = true;
             }
@@ -357,24 +359,24 @@ public sealed class BRepExtrema_DistanceSS
 
         if (bIsTrim)
         {
-            var aEdgeBox = new Bnd_Box();
+            var aEdgeBox = new Box();
             BRepBndLib.Add(aE, ref aEdgeBox);
 
-            if (aEdgeBox.IsWhole())
+            if (aEdgeBox.IsWhole)
             {
                 return;
             }
 
             aEdgeBox.Get(out double Xmin, out double Ymin, out double Zmin, out double Xmax, out double Ymax, out double Zmax);
 
-            var aPnt0 = new gp_Pnt(Xmin, Ymin, Zmin);
-            var aPnt1 = new gp_Pnt(Xmin, Ymax, Zmin);
-            var aPnt2 = new gp_Pnt(Xmin, Ymax, Zmax);
-            var aPnt3 = new gp_Pnt(Xmin, Ymin, Zmax);
-            var aPnt4 = new gp_Pnt(Xmax, Ymax, Zmin);
-            var aPnt5 = new gp_Pnt(Xmax, Ymax, Zmax);
-            var aPnt6 = new gp_Pnt(Xmax, Ymin, Zmax);
-            var aPnt7 = new gp_Pnt(Xmax, Ymin, Zmin);
+            var aPnt0 = new Point3D(Xmin, Ymin, Zmin);
+            var aPnt1 = new Point3D(Xmin, Ymax, Zmin);
+            var aPnt2 = new Point3D(Xmin, Ymax, Zmax);
+            var aPnt3 = new Point3D(Xmin, Ymin, Zmax);
+            var aPnt4 = new Point3D(Xmax, Ymax, Zmin);
+            var aPnt5 = new Point3D(Xmax, Ymax, Zmax);
+            var aPnt6 = new Point3D(Xmax, Ymin, Zmax);
+            var aPnt7 = new Point3D(Xmax, Ymin, Zmin);
 
             // OCCT reads arrU and arrV uninitialised where a projection fails; the port's are zero (occt-issues.md).
             Span<double> arrU = stackalloc double[8];
@@ -482,7 +484,7 @@ public sealed class BRepExtrema_DistanceSS
             }
 
             Geom_Surface result = new Geom_RectangularTrimmedSurface(pSurf, Umin, Umax, Vmin, Vmax);
-            aResFace = new BRepBuilderAPI_MakeFace(result, Precision.Confusion()).Face();
+            aResFace = new BRepBuilderAPI_MakeFace(result, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
 
             bIsInfinit = true;
         }
@@ -533,30 +535,30 @@ public sealed class BRepExtrema_DistanceSS
                 return;
             }
 
-            if (pCurv.Continuity() == GeomAbs_C0)
+            if (pCurv.Continuity() == C0)
             {
-                double epsP = Precision.PConfusion();
+                double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                 var aAdaptorCurve = new GeomAdaptor_Curve(pCurv, aFirst, aLast);
-                int nbIntervals = aAdaptorCurve.NbIntervals(GeomAbs_C1);
+                int nbIntervals = aAdaptorCurve.NbIntervals(C1);
 
                 var arrInter = new NCollection_Array1<double>(1, 1 + nbIntervals);
-                aAdaptorCurve.Intervals(arrInter, GeomAbs_C1);
+                aAdaptorCurve.Intervals(arrInter, C1);
 
                 var aAdaptorCurveOther = new GeomAdaptor_Curve(pCurvOther!, aFOther, aLOther);
-                int nbIntervalsOther = aAdaptorCurveOther.NbIntervals(GeomAbs_C1);
+                int nbIntervalsOther = aAdaptorCurveOther.NbIntervals(C1);
                 var arrInterOther = new NCollection_Array1<double>(1, 1 + nbIntervalsOther);
-                aAdaptorCurveOther.Intervals(arrInterOther, GeomAbs_C1);
+                aAdaptorCurveOther.Intervals(arrInterOther, C1);
 
                 double Udeb, Ufin;
                 BRep_Tool.Range(Eother, out Udeb, out Ufin);
 
-                gp_Pnt Pt;
+                Point3D Pt;
                 int i, ii;
                 for (i = 1; i <= arrInter.Length(); i++)
                 {
                     double aParameter = arrInter[i];
-                    gp_Pnt aPnt = aAdaptorCurve.Value(aParameter);
+                    Point3D aPnt = aAdaptorCurve.Value(aParameter);
                     // a local vertex, never handed out: not frozen
                     TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
@@ -614,7 +616,7 @@ public sealed class BRepExtrema_DistanceSS
                     for (int i2 = 1; i2 <= arrInterOther.Length(); i2++)
                     {
                         double aParameterOther = arrInterOther[i2];
-                        gp_Pnt aPntOther = aAdaptorCurveOther.Value(aParameterOther);
+                        Point3D aPntOther = aAdaptorCurveOther.Value(aParameterOther);
                         double Dst = aPnt.Distance(aPntOther);
                         if ((Dst < DstRef - Eps) || (Math.Abs(Dst - DstRef) < Eps))
                         {
@@ -637,7 +639,7 @@ public sealed class BRepExtrema_DistanceSS
     // function : isOnBoundary
     // purpose  : Checks in 3d if the extrema point belongs to edge boundary
     //=======================================================================
-    private static bool isOnBoundary(in TopoDS_Edge theEdge, in gp_Pnt theSol, double theParam, double thePTol)
+    private static bool isOnBoundary(in TopoDS_Edge theEdge, in Point3D theSol, double theParam, double thePTol)
     {
         for (var it = new TopoDS_Iterator(theEdge); it.More(); it.Next())
         {
@@ -654,7 +656,7 @@ public sealed class BRepExtrema_DistanceSS
 
     //=================================================================================================
 
-    private void Perform(in TopoDS_Shape theS1, in TopoDS_Shape theS2, in Bnd_Box theBox1, in Bnd_Box theBox2)
+    private void Perform(in TopoDS_Shape theS1, in TopoDS_Shape theS2, in Box theBox1, in Box theBox2)
     {
         mySeqSolShape1.Clear();
         mySeqSolShape2.Clear();
@@ -791,8 +793,8 @@ public sealed class BRepExtrema_DistanceSS
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape1,
                          NCollection_Sequence<BRepExtrema_SolutionElem> theSeqSolShape2)
     {
-        gp_Pnt aP1 = BRep_Tool.Pnt(theS1);
-        gp_Pnt aP2 = BRep_Tool.Pnt(theS2);
+        Point3D aP1 = BRep_Tool.Pnt(theS1);
+        Point3D aP2 = BRep_Tool.Pnt(theS2);
 
         double Dst = aP1.Distance(aP2);
         if ((Dst < myDstRef - myEps) || (Math.Abs(Dst - myDstRef) < myEps))
@@ -840,8 +842,8 @@ public sealed class BRepExtrema_DistanceSS
             Dstmin = Math.Sqrt(Dstmin);
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
-                gp_Pnt Pt, P1 = BRep_Tool.Pnt(theS1);
-                double epsP = Precision.PConfusion();
+                Point3D Pt, P1 = BRep_Tool.Pnt(theS1);
+                double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                 for (i = 1; i <= NbExtrema; i++)
                 {
@@ -898,7 +900,7 @@ public sealed class BRepExtrema_DistanceSS
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
                 double U, V;
-                gp_Pnt Pt, P1 = BRep_Tool.Pnt(theS1);
+                Point3D Pt, P1 = BRep_Tool.Pnt(theS1);
                 var classifier = new BRepClass_FaceClassifier();
                 double tol = BRep_Tool.Tolerance(theS2);
 
@@ -911,7 +913,7 @@ public sealed class BRepExtrema_DistanceSS
                         {
                             // Check if the parameter does not correspond to a vertex
                             Ext.Parameter(i, out U, out V);
-                            var PUV = new gp_Pnt2d(U, V);
+                            var PUV = new Point2D(U, V);
                             classifier.Perform(theS2, PUV, tol);
                             if (classifier.State() == TopAbs_IN)
                             {
@@ -965,8 +967,8 @@ public sealed class BRepExtrema_DistanceSS
             Dstmin = Math.Sqrt(Dstmin);
             if ((Dstmin < myDstRef - myEps) || (Math.Abs(Dstmin - myDstRef) < myEps))
             {
-                gp_Pnt Pt1, Pt2;
-                double epsP = Precision.PConfusion();
+                Point3D Pt1, Pt2;
+                double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                 for (i = 1; i <= NbExtrema; i++)
                 {
@@ -1015,8 +1017,8 @@ public sealed class BRepExtrema_DistanceSS
         {
             for (int anIt = 1; anIt <= seqSol1.Length() && anIt <= seqSol2.Length(); anIt++)
             {
-                gp_Pnt Pt1 = seqSol1.Value(anIt).Point();
-                gp_Pnt Pt2 = seqSol2.Value(anIt).Point();
+                Point3D Pt1 = seqSol1.Value(anIt).Point();
+                Point3D Pt2 = seqSol2.Value(anIt).Point();
                 if (TRI_SOLUTION(theSeqSolShape1, Pt1) || TRI_SOLUTION(theSeqSolShape2, Pt2))
                 {
                     theSeqSolShape1.Append(seqSol1.Value(anIt));
@@ -1063,8 +1065,8 @@ public sealed class BRepExtrema_DistanceSS
                 double U, V;
                 double tol = BRep_Tool.Tolerance(theS2);
 
-                gp_Pnt Pt1, Pt2;
-                double epsP = Precision.PConfusion();
+                Point3D Pt1, Pt2;
+                double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                 for (i = 1; i <= NbExtrema; i++)
                 {
@@ -1079,7 +1081,7 @@ public sealed class BRepExtrema_DistanceSS
                             if (!isOnBoundary(theS1, Pt1, t1, epsP))
                             {
                                 Ext.ParameterOnFace(i, out U, out V);
-                                var PUV = new gp_Pnt2d(U, V);
+                                var PUV = new Point2D(U, V);
                                 classifier.Perform(theS2, PUV, tol);
                                 if (classifier.State() == TopAbs_IN)
                                 {
@@ -1108,16 +1110,16 @@ public sealed class BRepExtrema_DistanceSS
             return;
         }
 
-        if (pCurv.Continuity() == GeomAbs_C0)
+        if (pCurv.Continuity() == C0)
         {
             var SeqSolution1 = new NCollection_Sequence<BRepExtrema_SolutionElem>();
             var SeqSolution2 = new NCollection_Sequence<BRepExtrema_SolutionElem>();
 
             var aAdaptorCurve = new GeomAdaptor_Curve(pCurv, aFirst, aLast);
-            int nbIntervals = aAdaptorCurve.NbIntervals(GeomAbs_C1);
+            int nbIntervals = aAdaptorCurve.NbIntervals(C1);
 
             var arrInter = new NCollection_Array1<double>(1, 1 + nbIntervals);
-            aAdaptorCurve.Intervals(arrInter, GeomAbs_C1);
+            aAdaptorCurve.Intervals(arrInter, C1);
 
             double U, V;
             double tol = BRep_Tool.Tolerance(theS2);
@@ -1126,7 +1128,7 @@ public sealed class BRepExtrema_DistanceSS
             for (i = 1; i <= arrInter.Length(); i++)
             {
                 double aParameter = arrInter[i];
-                gp_Pnt aPnt = aAdaptorCurve.Value(aParameter);
+                Point3D aPnt = aAdaptorCurve.Value(aParameter);
                 // a local vertex, never handed out: not frozen
                 TopoDS_Vertex V1 = new BRepBuilderAPI_MakeVertex(aPnt).InternalVertex();
 
@@ -1155,7 +1157,7 @@ public sealed class BRepExtrema_DistanceSS
                             {
                                 // Check if the parameter does not correspond to a vertex
                                 ExtPF.Parameter(ii, out U, out V);
-                                var PUV = new gp_Pnt2d(U, V);
+                                var PUV = new Point2D(U, V);
                                 classifier.Perform(theS2, PUV, tol);
                                 if (classifier.State() == TopAbs_IN)
                                 {
@@ -1219,8 +1221,8 @@ public sealed class BRepExtrema_DistanceSS
                 double tol1 = BRep_Tool.Tolerance(theS1);
                 double tol2 = BRep_Tool.Tolerance(theS2);
 
-                gp_Pnt Pt1, Pt2;
-                gp_Pnt2d PUV;
+                Point3D Pt1, Pt2;
+                Point2D PUV;
                 double U1, V1, U2, V2;
                 var classifier = new BRepClass_FaceClassifier();
 
@@ -1234,12 +1236,12 @@ public sealed class BRepExtrema_DistanceSS
                         {
                             // Check if the parameter does not correspond to a vertex
                             Ext.ParameterOnFace1(i, out U1, out V1);
-                            PUV = new gp_Pnt2d(U1, V1);
+                            PUV = new Point2D(U1, V1);
                             classifier.Perform(theS1, PUV, tol1);
                             if (classifier.State() == TopAbs_IN)
                             {
                                 Ext.ParameterOnFace2(i, out U2, out V2);
-                                PUV = new gp_Pnt2d(U2, V2);
+                                PUV = new Point2D(U2, V2);
                                 classifier.Perform(theS2, PUV, tol2);
                                 if (classifier.State() == TopAbs_IN)
                                 {

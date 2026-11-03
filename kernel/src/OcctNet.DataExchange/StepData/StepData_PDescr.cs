@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// This class is intended to describe the authorized form for a parameter, as a type or a value for a field. A
 /// PDescr firstly describes a type, which can be SELECT, i.e. have several members.
 /// </summary>
-public class StepData_PDescr : Standard_Transient
+public class StepData_PDescr : Transient
 {
     private const int KindInteger = 1;
     private const int KindBoolean = 2;

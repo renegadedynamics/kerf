@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -36,18 +37,18 @@ public static class HLRTopoBRep_FaceIsoLiner
         TopExp_Explorer ExpEdges = new();
         TopoDS_Face TF = F;
         TF.Orientation(TopAbs_FORWARD);
-        gp_Pnt2d P = new();
-        gp_Pnt P1, P2;
+        Point2D P = new();
+        Point3D P1, P2;
         TopoDS_Vertex V1U = new(), V2U = new(), V1V = new(), V2V = new();
 
         Geom2dHatch_Intersector Intersector = new(IntersectorConfusion, IntersectorTangency);
         Geom2dHatch_Hatcher Hatcher = new(Intersector, HatcherConfusion2d, HatcherConfusion3d, true);
 
         BRepTools.UVBounds(TF, out UMin, out UMax, out VMin, out VMax);
-        bool InfiniteUMin = Precision.IsNegativeInfinite(UMin);
-        bool InfiniteUMax = Precision.IsPositiveInfinite(UMax);
-        bool InfiniteVMin = Precision.IsNegativeInfinite(VMin);
-        bool InfiniteVMax = Precision.IsPositiveInfinite(VMax);
+        bool InfiniteUMin = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UMin);
+        bool InfiniteUMax = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(UMax);
+        bool InfiniteVMin = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin);
+        bool InfiniteVMax = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax);
 
         if (InfiniteUMin && InfiniteUMax)
         {
@@ -101,8 +102,8 @@ public static class HLRTopoBRep_FaceIsoLiner
             int IndE;
             TopoDS_Edge newE = TopoDS.Edge(ExpEdges.Current());
             Geom2d_Curve PC = BRep_Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
-            if (Abs(PC.FirstParameter() - U1) <= Precision.PConfusion()
-                && Abs(PC.LastParameter() - U2) <= Precision.PConfusion())
+            if (Abs(PC.FirstParameter() - U1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Abs(PC.LastParameter() - U2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 IndE = Hatcher.AddElement(PC, newE.Orientation());
             }
@@ -131,8 +132,8 @@ public static class HLRTopoBRep_FaceIsoLiner
                 int IndE;
                 TopoDS_Edge newE = TopoDS.Edge(itE.Value());
                 Geom2d_Curve PC = BRep_Tool.CurveOnSurface(newE, TF, out U1, out U2)!;
-                if (Abs(PC.FirstParameter() - U1) <= Precision.PConfusion()
-                    && Abs(PC.LastParameter() - U2) <= Precision.PConfusion())
+                if (Abs(PC.FirstParameter() - U1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Abs(PC.LastParameter() - U2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     IndE = Hatcher.AddElement(PC, TopAbs_INTERNAL);
                 }
@@ -168,11 +169,11 @@ public static class HLRTopoBRep_FaceIsoLiner
         if (StepU > Confusion)
         {
             double UPrm = UMin + StepU / 2.0;
-            gp_Dir2d Dir = new(gp_Dir2d.D.Y);
+            Direction2D Dir = new(Direction2D.D.Y);
 
             for (IIso = 1; IIso <= nbIsos; IIso++)
             {
-                gp_Pnt2d Ori = new(UPrm, 0.0);
+                Point2D Ori = new(UPrm, 0.0);
                 Geom2d_Line IsoLine = new(Ori, Dir);
 
                 Geom2dAdaptor_Curve aGAC = new(IsoLine);
@@ -250,11 +251,11 @@ public static class HLRTopoBRep_FaceIsoLiner
         if (StepV > Confusion)
         {
             double VPrm = VMin + StepV / 2.0;
-            gp_Dir2d Dir = new(gp_Dir2d.D.X);
+            Direction2D Dir = new(Direction2D.D.X);
 
             for (IIso = 1; IIso <= nbIsos; IIso++)
             {
-                gp_Pnt2d Ori = new(0.0, VPrm);
+                Point2D Ori = new(0.0, VPrm);
                 Geom2d_Line IsoLine = new(Ori, Dir);
 
                 Geom2dAdaptor_Curve aGAC = new(IsoLine);
@@ -329,7 +330,7 @@ public static class HLRTopoBRep_FaceIsoLiner
     /// The vertex at the point P of parameter Par on the edge E: one of E's end vertices or of the vertices already
     /// inserted on it if P is on it, else a new internal vertex inserted in E's list.
     /// </summary>
-    public static TopoDS_Vertex MakeVertex(in TopoDS_Edge E, in gp_Pnt P, double Par, double Tol,
+    public static TopoDS_Vertex MakeVertex(in TopoDS_Edge E, in Point3D P, double Par, double Tol,
                                            HLRTopoBRep_Data DS)
     {
         TopoDS_Vertex V = new(), VF, VL;

@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Numerics.Polynomials;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -14,9 +15,9 @@ public class PLibHermitJacobiTest
     public void ConstructorAndBasicProperties()
     {
         // Test with different constraint orders
-        PLib_HermitJacobi aHermC0 = new(10, GeomAbs_C0);
-        PLib_HermitJacobi aHermC1 = new(15, GeomAbs_C1);
-        PLib_HermitJacobi aHermC2 = new(20, GeomAbs_C2);
+        HermitJacobi aHermC0 = new(10, C0);
+        HermitJacobi aHermC1 = new(15, C1);
+        HermitJacobi aHermC2 = new(20, C2);
 
         // Test WorkDegree property
         Assert.Equal(10, aHermC0.WorkDegree());
@@ -33,7 +34,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void BasisFunctionD0()
     {
-        PLib_HermitJacobi aHerm = new(6, GeomAbs_C0);
+        HermitJacobi aHerm = new(6, C0);
 
         NCollection_Array1<double> aBasisValue = new(0, aHerm.WorkDegree());
 
@@ -47,7 +48,7 @@ public class PLibHermitJacobiTest
             // Basic sanity checks
             for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
             {
-                Assert.False(Precision.IsInfinite(aBasisValue[i]),
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]),
                              $"Basis value should be finite at index {i}, U={aU}");
             }
         }
@@ -57,7 +58,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void BasisFunctionDerivatives()
     {
-        PLib_HermitJacobi aHerm = new(8, GeomAbs_C1);
+        HermitJacobi aHerm = new(8, C1);
 
         NCollection_Array1<double> aBasisValue = new(0, aHerm.WorkDegree());
         NCollection_Array1<double> aBasisD1 = new(0, aHerm.WorkDegree());
@@ -78,10 +79,10 @@ public class PLibHermitJacobiTest
         // Verify all values are finite
         for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
         {
-            Assert.False(Precision.IsInfinite(aBasisValue[i]), $"Basis value should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD1[i]), $"First derivative should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD2[i]), $"Second derivative should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD3[i]), $"Third derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]), $"Basis value should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD1[i]), $"First derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD2[i]), $"Second derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD3[i]), $"Third derivative should be finite at {i}");
         }
     }
 
@@ -90,7 +91,7 @@ public class PLibHermitJacobiTest
     public void CoefficientConversion()
     {
         const int aWorkDegree = 6; // Use smaller degree that works well with ToCoefficients
-        PLib_HermitJacobi aHerm = new(aWorkDegree, GeomAbs_C0);
+        HermitJacobi aHerm = new(aWorkDegree, C0);
 
         const int aDimension = 1;
         int aDegree = aHerm.WorkDegree() - 2 * (aHerm.NivConstr() + 1); // Use computational degree
@@ -113,7 +114,7 @@ public class PLibHermitJacobiTest
         // Verify output is finite
         for (int i = aCoefficients.Lower(); i <= aCoefficients.Upper(); i++)
         {
-            Assert.False(Precision.IsInfinite(aCoefficients[i]), $"Converted coefficient should be finite at index {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCoefficients[i]), $"Converted coefficient should be finite at index {i}");
         }
     }
 
@@ -121,7 +122,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void DegreeReduction()
     {
-        PLib_HermitJacobi aHerm = new(10, GeomAbs_C0);
+        HermitJacobi aHerm = new(10, C0);
 
         const int aDimension = 1;
         const int aMaxDegree = 8;
@@ -141,14 +142,14 @@ public class PLibHermitJacobiTest
         Assert.True(aNewDegree <= aMaxDegree, "New degree should not exceed max degree");
         Assert.True(aNewDegree >= 0, "New degree should be non-negative");
         Assert.True(aMaxError >= 0.0, "Max error should be non-negative");
-        Assert.False(Precision.IsInfinite(aMaxError), "Max error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aMaxError), "Max error should be finite");
     }
 
     // Test error estimation
     [Fact]
     public void ErrorEstimation()
     {
-        PLib_HermitJacobi aHerm = new(8, GeomAbs_C1);
+        HermitJacobi aHerm = new(8, C1);
 
         const int aDimension = 1;
 
@@ -165,16 +166,16 @@ public class PLibHermitJacobiTest
         double aMaxErr = aHerm.MaxError(aDimension, aCoeff.AsSpan(1), aNewDegree);
 
         Assert.True(aMaxErr >= 0.0, "Max error should be non-negative");
-        Assert.False(Precision.IsInfinite(aMaxErr), "Max error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aMaxErr), "Max error should be finite");
 
         // Test AverageError
         double aAvgErr = aHerm.AverageError(aDimension, aCoeff.AsSpan(1), aNewDegree);
 
         Assert.True(aAvgErr >= 0.0, "Average error should be non-negative");
-        Assert.False(Precision.IsInfinite(aAvgErr), "Average error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aAvgErr), "Average error should be finite");
 
         // Average error should typically be <= max error
-        Assert.True(aAvgErr <= aMaxErr + Precision.Confusion(),
+        Assert.True(aAvgErr <= aMaxErr + global::Kerf.Engine.Foundation.Precision.Confusion(),
                     "Average error should not exceed max error significantly");
     }
 
@@ -182,7 +183,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void ExtremeParameterValues()
     {
-        PLib_HermitJacobi aHerm = new(10, GeomAbs_C2);
+        HermitJacobi aHerm = new(10, C2);
 
         NCollection_Array1<double> aBasisValue = new(0, aHerm.WorkDegree());
 
@@ -196,7 +197,7 @@ public class PLibHermitJacobiTest
             // Check that results are finite
             for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
             {
-                Assert.False(Precision.IsInfinite(aBasisValue[i]),
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]),
                              $"Basis value should be finite at extreme parameter U={aU}");
             }
         }
@@ -206,7 +207,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void DerivativeConsistency()
     {
-        PLib_HermitJacobi aHerm = new(6, GeomAbs_C2);
+        HermitJacobi aHerm = new(6, C2);
 
         NCollection_Array1<double> aBasisValue1 = new(0, aHerm.WorkDegree());
         NCollection_Array1<double> aBasisD1_1 = new(0, aHerm.WorkDegree());
@@ -224,8 +225,8 @@ public class PLibHermitJacobiTest
         // Values and first derivatives should be consistent
         for (int i = aBasisValue1.Lower(); i <= aBasisValue1.Upper(); i++)
         {
-            Assert.Equal(aBasisValue2[i], aBasisValue1[i], Precision.Confusion());
-            Assert.Equal(aBasisD1_2[i], aBasisD1_1[i], Precision.Confusion());
+            Assert.Equal(aBasisValue2[i], aBasisValue1[i], global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(aBasisD1_2[i], aBasisD1_1[i], global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -233,7 +234,7 @@ public class PLibHermitJacobiTest
     [Fact]
     public void PerformanceTest()
     {
-        PLib_HermitJacobi aHermMax = new(30, GeomAbs_C2);
+        HermitJacobi aHermMax = new(30, C2);
 
         NCollection_Array1<double> aBasisValue = new(0, aHermMax.WorkDegree());
         NCollection_Array1<double> aBasisD1 = new(0, aHermMax.WorkDegree());

@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity GeneralPropertyRelationship
 /// </summary>
-public class StepBasic_GeneralPropertyRelationship : Standard_Transient
+public class StepBasic_GeneralPropertyRelationship : Transient
 {
     private bool defDescription;
     private TCollection_HAsciiString theName;

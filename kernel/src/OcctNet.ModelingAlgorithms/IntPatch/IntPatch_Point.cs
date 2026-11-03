@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using static Occt.IntSurf_Situation;
@@ -76,7 +78,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     /// Sets a point on no domain, when both surfaces are implicit; <paramref name="Tangent"/> if it is a point of
     /// tangency between the surfaces.
     /// </summary>
-    internal void SetValue(in gp_Pnt Pt, double Tol, bool Tangent)
+    internal void SetValue(in Point3D Pt, double Tol, bool Tangent)
     {
         onS1 = false;
         onS2 = false;
@@ -88,7 +90,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
         tol = Tol;
     }
 
-    internal void SetValue(in gp_Pnt Pt) => pt.SetValue(Pt);
+    internal void SetValue(in Point3D Pt) => pt.SetValue(Pt);
 
     /// <summary>Sets the point and its parameters.</summary>
     internal void SetValue(in IntSurf_PntOn2S thePOn2S) => pt = thePOn2S;
@@ -215,7 +217,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     // Queries
 
     /// <summary>The intersection point.</summary>
-    public readonly gp_Pnt Value() => pt.Value();
+    public readonly Point3D Value() => pt.Value();
 
     /// <summary>The parameter on the intersection line (meaningless if the point is on no line).</summary>
     public readonly double ParameterOnLine() => para;
@@ -246,7 +248,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!vtxonS1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return vS1!;
     }
@@ -256,7 +258,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return arcS1!;
     }
@@ -266,7 +268,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return traline1;
     }
@@ -276,7 +278,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tra1;
     }
@@ -286,7 +288,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return prm1;
     }
@@ -302,7 +304,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!vtxonS2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return vS2!;
     }
@@ -312,7 +314,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return arcS2!;
     }
@@ -322,7 +324,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return traline2;
     }
@@ -332,7 +334,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tra2;
     }
@@ -342,7 +344,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
     {
         if (!onS2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return prm2;
     }
@@ -408,7 +410,7 @@ public partial struct IntPatch_Point : IEquatable<IntPatch_Point>
             }
             theOut.Write('\n');
         }
-        theOut.Write("\nToler = " + Standard_Stream.FormatReal(Tolerance(), 6)); // std::cout << double
+        theOut.Write("\nToler = " + StreamUtilities.FormatReal(Tolerance(), 6)); // std::cout << double
         theOut.Write('\n');
     }
 

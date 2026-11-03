@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 using static Occt.MoniTool_ValueType;
 
@@ -102,8 +103,8 @@ public class StaticAndReaderTests
         Assert.False(anObj.SetObjectValue(new ToyUnknown()));
         Assert.True(anObj.SetObjectValue(new ToyEntity("o")));
         Assert.Equal("ToyEntity", anObj.ObjectTypeName());
-        Assert.Throws<Standard_ConstructionError>(() => new MoniTool_TypedValue("bad", MoniTool_ValueHexa));
-        Assert.Throws<Standard_ConstructionError>(() => anObj.SetIntegerLimit(true, 1));
+        Assert.Throws<ConstructionErrorException>(() => new MoniTool_TypedValue("bad", MoniTool_ValueHexa));
+        Assert.Throws<ConstructionErrorException>(() => anObj.SetIntegerLimit(true, 1));
 
         var aStatic = new Interface_Static("fam", "copy.of.logical", Interface_ParamEnum);
         Assert.Equal(Interface_ParamEnum, aStatic.Type());
@@ -175,7 +176,7 @@ public class StaticAndReaderTests
         public override int CaseNum(Interface_FileReaderData? data, int num) =>
             data!.ParamCValue(num, 1) == "BAD" ? 0 : 1;
 
-        public override void Read(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Standard_Transient? ent)
+        public override void Read(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Transient? ent)
         {
             var anEnt = (ToyEntity)ent!;
             anEnt.Name = data!.ParamCValue(num, 1)!;
@@ -200,14 +201,14 @@ public class StaticAndReaderTests
 
         public ToyReaderTool(ToyReaderData theData) => SetData(theData, ToyNorm.Protocol);
 
-        public override bool Recognize(int num, ref Interface_Check? ach, ref Standard_Transient? ent) =>
+        public override bool Recognize(int num, ref Interface_Check? ach, ref Transient? ent) =>
             RecognizeByLib(num, myGLib, myRLib, ref ach, ref ent);
 
         public override void BeginRead(Interface_InterfaceModel? amodel)
         {
         }
 
-        public override bool AnalyseRecord(int num, Standard_Transient? anent, ref Interface_Check? acheck)
+        public override bool AnalyseRecord(int num, Transient? anent, ref Interface_Check? acheck)
         {
             if (anent is ToyEntity)
             {

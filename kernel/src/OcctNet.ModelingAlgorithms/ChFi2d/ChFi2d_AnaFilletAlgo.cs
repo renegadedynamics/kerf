@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -16,7 +19,7 @@ namespace Occt;
 public sealed class ChFi2d_AnaFilletAlgo
 {
     // Plane.
-    private gp_Pln plane = new();
+    private Plane3D plane = new();
 
     // Left neighbour.
     private TopoDS_Edge e1 = new();
@@ -54,22 +57,22 @@ public sealed class ChFi2d_AnaFilletAlgo
         double l = AC.LastParameter();
         // OCCT: the middle point is taken on the edge's curve without the edge's location, the ends with it
         Geom_Circle circle = (AC.Curve().Curve() as Geom_Circle)!; // OCCT dereferences down_cast's result unchecked
-        gp_Pnt start = AC.Value(f);
-        gp_Pnt end = AC.Value(l);
-        gp_Pnt center = AC.Circle().Location();
-        gp_Ax3 plane = new(AC.Circle().Position());
+        Point3D start = AC.Value(f);
+        Point3D end = AC.Value(l);
+        Point3D center = AC.Circle().Location();
+        CoordinateSystem plane = new(AC.Circle().Position());
 
         // Get point on circle at half angle
-        circle.D0(0.5 * (f + l), out gp_Pnt m);
+        circle.D0(0.5 * (f + l), out Point3D m);
 
         // Compare angles between vectors to middle point and to the end point.
-        gp_Vec startv = new(center, start), endv = new(center, end), middlev = new(center, m);
-        double middlea = startv.AngleWithRef(middlev, new gp_Vec(plane.Direction()));
+        Vector3D startv = new(center, start), endv = new(center, end), middlev = new(center, m);
+        double middlea = startv.AngleWithRef(middlev, new Vector3D(plane.Direction()));
         while (middlea < 0.0)
         {
             middlea += 2.0 * M_PI;
         }
-        double enda = startv.AngleWithRef(endv, new gp_Vec(plane.Direction()));
+        double enda = startv.AngleWithRef(endv, new Vector3D(plane.Direction()));
         while (enda < 0.0)
         {
             enda += 2.0 * M_PI;
@@ -80,14 +83,14 @@ public sealed class ChFi2d_AnaFilletAlgo
     }
 
     // Equality of points computed through square distance between the points.
-    private static bool IsEqual(in gp_Pnt p1, in gp_Pnt p2)
+    private static bool IsEqual(in Point3D p1, in Point3D p2)
     {
-        return p1.SquareDistance(p2) < Precision.SquareConfusion();
+        return p1.SquareDistance(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
-    private static bool IsEqual(in gp_Pnt2d p1, in gp_Pnt2d p2)
+    private static bool IsEqual(in Point2D p1, in Point2D p2)
     {
-        return p1.SquareDistance(p2) < Precision.SquareConfusion();
+        return p1.SquareDistance(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
     // An empty constructor.
@@ -117,7 +120,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     /// <summary>
     /// An algorithm on a wire of two edges, each a segment or an arc of circle.
     /// </summary>
-    public ChFi2d_AnaFilletAlgo(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    public ChFi2d_AnaFilletAlgo(in TopoDS_Wire theWire, in Plane3D thePlane)
         : this()
     {
         plane = thePlane;
@@ -127,7 +130,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     /// <summary>
     /// An algorithm on two edges with a common point, each a segment or an arc of circle.
     /// </summary>
-    public ChFi2d_AnaFilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    public ChFi2d_AnaFilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
         : this()
     {
         plane = thePlane;
@@ -136,9 +139,9 @@ public sealed class ChFi2d_AnaFilletAlgo
     }
 
     /// <summary>Initializes the class by a wire consisting of two edges.</summary>
-    /// <exception cref="Standard_TypeMismatch">The wire hasn't two edges, or one isn't a segment or an arc.</exception>
-    /// <exception cref="Standard_Failure">An edge is infinite.</exception>
-    public void Init(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    /// <exception cref="TypeMismatchException">The wire hasn't two edges, or one isn't a segment or an arc.</exception>
+    /// <exception cref="FailureException">An edge is infinite.</exception>
+    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
     {
         plane = thePlane;
         // OCCT: e1 and e2 aren't reset, so a second Init keeps the edges of the first
@@ -156,36 +159,36 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
         if (e1.IsNull() || e2.IsNull())
         {
-            throw new Standard_TypeMismatch("The algorithm expects a wire consisting of two linear or circular edges.");
+            throw new TypeMismatchException("The algorithm expects a wire consisting of two linear or circular edges.");
         }
 
         // Left neighbour.
         var AC1 = new BRepAdaptor_Curve(e1);
-        if (AC1.GetType() != GeomAbs_Line && AC1.GetType() != GeomAbs_Circle)
+        if (AC1.GetType() != Line && AC1.GetType() != Circle)
         {
-            throw new Standard_TypeMismatch("A segment or an arc of circle is expected.");
+            throw new TypeMismatchException("A segment or an arc of circle is expected.");
         }
 
         TopExp.Vertices(e1, out TopoDS_Vertex v1, out TopoDS_Vertex v2, true);
         if (v1.IsNull() || v2.IsNull())
         {
-            throw new Standard_Failure("An infinite edge.");
+            throw new FailureException("An infinite edge.");
         }
 
-        gp_Pnt P1 = BRep_Tool.Pnt(v1);
-        gp_Pnt P2 = BRep_Tool.Pnt(v2);
-        gp_Pnt2d p1 = ProjLib.Project(thePlane, P1);
-        gp_Pnt2d p2 = ProjLib.Project(thePlane, P2);
+        Point3D P1 = BRep_Tool.Pnt(v1);
+        Point3D P2 = BRep_Tool.Pnt(v2);
+        Point2D p1 = ProjLib.Project(thePlane, P1);
+        Point2D p2 = ProjLib.Project(thePlane, P2);
         p1.Coord(out x11, out y11);
         p2.Coord(out x12, out y12);
 
         segment1 = true;
-        if (AC1.GetType() == GeomAbs_Circle)
+        if (AC1.GetType() == Circle)
         {
             segment1 = false;
-            gp_Circ c = AC1.Circle();
+            Circle3D c = AC1.Circle();
 
-            gp_Pnt2d loc = ProjLib.Project(thePlane, c.Location());
+            Point2D loc = ProjLib.Project(thePlane, c.Location());
             loc.Coord(out xc1, out yc1);
 
             radius1 = c.Radius();
@@ -194,15 +197,15 @@ public sealed class ChFi2d_AnaFilletAlgo
 
         // Right neighbour.
         var AC2 = new BRepAdaptor_Curve(e2);
-        if (AC2.GetType() != GeomAbs_Line && AC2.GetType() != GeomAbs_Circle)
+        if (AC2.GetType() != Line && AC2.GetType() != Circle)
         {
-            throw new Standard_TypeMismatch("A segment or an arc of circle is expected.");
+            throw new TypeMismatchException("A segment or an arc of circle is expected.");
         }
 
         TopExp.Vertices(e2, out v1, out v2, true);
         if (v1.IsNull() || v2.IsNull())
         {
-            throw new Standard_Failure("An infinite edge.");
+            throw new FailureException("An infinite edge.");
         }
 
         P1 = BRep_Tool.Pnt(v1);
@@ -213,12 +216,12 @@ public sealed class ChFi2d_AnaFilletAlgo
         p2.Coord(out x22, out y22);
 
         segment2 = true;
-        if (AC2.GetType() == GeomAbs_Circle)
+        if (AC2.GetType() == Circle)
         {
             segment2 = false;
-            gp_Circ c = AC2.Circle();
+            Circle3D c = AC2.Circle();
 
-            gp_Pnt2d loc = ProjLib.Project(thePlane, c.Location());
+            Point2D loc = ProjLib.Project(thePlane, c.Location());
             loc.Coord(out xc2, out yc2);
 
             radius2 = c.Radius();
@@ -227,8 +230,8 @@ public sealed class ChFi2d_AnaFilletAlgo
     }
 
     /// <summary>Initializes the class by two edges with a common point.</summary>
-    /// <exception cref="Standard_Failure">An edge is infinite, the edges have no common point, or no wire is made.</exception>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    /// <exception cref="FailureException">An edge is infinite, the edges have no common point, or no wire is made.</exception>
+    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
     {
         // Make a wire consisting of two edges.
 
@@ -237,15 +240,15 @@ public sealed class ChFi2d_AnaFilletAlgo
         TopExp.Vertices(theEdge2, out TopoDS_Vertex v21, out TopoDS_Vertex v22, true);
         if (v11.IsNull() || v12.IsNull() || v21.IsNull() || v22.IsNull())
         {
-            throw new Standard_Failure("An infinite edge.");
+            throw new FailureException("An infinite edge.");
         }
 
-        gp_Pnt p11 = BRep_Tool.Pnt(v11);
-        gp_Pnt p12 = BRep_Tool.Pnt(v12);
-        gp_Pnt p21 = BRep_Tool.Pnt(v21);
-        gp_Pnt p22 = BRep_Tool.Pnt(v22);
+        Point3D p11 = BRep_Tool.Pnt(v11);
+        Point3D p12 = BRep_Tool.Pnt(v12);
+        Point3D p21 = BRep_Tool.Pnt(v21);
+        Point3D p22 = BRep_Tool.Pnt(v22);
 
-        gp_Pnt pcommon;
+        Point3D pcommon;
         if (IsEqual(p11, p21) || IsEqual(p11, p22))
         {
             pcommon = p11;
@@ -256,7 +259,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
         else
         {
-            throw new Standard_Failure("The edges have no common point.");
+            throw new FailureException("The edges have no common point.");
         }
 
         // Reverse the edges in case of need (to construct a wire).
@@ -290,7 +293,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
         if (!mkWire.IsDone())
         {
-            throw new Standard_Failure("Can't make a wire.");
+            throw new FailureException("Can't make a wire.");
         }
 
         TopoDS_Wire W = mkWire.InternalWire();
@@ -301,7 +304,7 @@ public sealed class ChFi2d_AnaFilletAlgo
     public bool Perform(double radius)
     {
         bool bRet = false;
-        if (e1.IsNull() || e2.IsNull() || radius < Precision.Confusion())
+        if (e1.IsNull() || e2.IsNull() || radius < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return bRet;
         }
@@ -326,7 +329,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                 if (mkFace.IsDone())
                 {
                     TopoDS_Face F = mkFace.InternalFace();
-                    var analyzer = new ShapeAnalysis_Wire(W, F, Precision.Confusion());
+                    var analyzer = new ShapeAnalysis_Wire(W, F, global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (analyzer.CheckSelfIntersection())
                     {
                         // Cut the edges at the point of intersection.
@@ -373,9 +376,9 @@ public sealed class ChFi2d_AnaFilletAlgo
 
         // Construct a fillet.
         // Make circle.
-        gp_Pnt center = ElSLib.Value(xc, yc, plane);
-        gp_Dir normal = plane.Position().Direction();
-        var circ = new gp_Circ(new gp_Ax2(center, cw ? -normal : normal), radius);
+        Point3D center = global::Kerf.Engine.Geometry.ElSLib.Value(xc, yc, plane);
+        Direction3D normal = plane.Position().Direction();
+        var circ = new Circle3D(new Frame3D(center, cw ? -normal : normal), radius);
 
         // Fillet may only shrink a neighbour edge, it can't prolongate it.
         double delta1 = AC1.LastParameter() - AC1.FirstParameter();
@@ -384,7 +387,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         {
             // Check a case when a neighbour edge almost disappears:
             // try to reduce the fillet radius for a little (1.e-5 mm).
-            double little = 100.0 * Precision.Confusion();
+            double little = 100.0 * global::Kerf.Engine.Foundation.Precision.Confusion();
             double d1 = Math.Abs(start - delta1);
             double d2 = Math.Abs(end - delta2);
             if (d1 < little || d2 < little)
@@ -414,7 +417,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                     }
 
                     // Make the circle again.
-                    center = ElSLib.Value(xc, yc, plane);
+                    center = global::Kerf.Engine.Geometry.ElSLib.Value(xc, yc, plane);
                     circ.SetLocation(center);
                     circ.SetRadius(radius - little);
                 }
@@ -431,10 +434,10 @@ public sealed class ChFi2d_AnaFilletAlgo
         if (bRet)
         {
             // start: (xstart, ystart) - pstart.
-            gp_Pnt pstart;
+            Point3D pstart;
             if (xstart != double.MaxValue)
             {
-                pstart = ElSLib.Value(xstart, ystart, plane);
+                pstart = global::Kerf.Engine.Geometry.ElSLib.Value(xstart, ystart, plane);
             }
             else
             {
@@ -448,10 +451,10 @@ public sealed class ChFi2d_AnaFilletAlgo
                 }
             }
             // end: (xend, yend) -> pend.
-            gp_Pnt pend;
+            Point3D pend;
             if (xend != double.MaxValue)
             {
-                pend = ElSLib.Value(xend, yend, plane);
+                pend = global::Kerf.Engine.Geometry.ElSLib.Value(xend, yend, plane);
             }
             else
             {
@@ -474,7 +477,7 @@ public sealed class ChFi2d_AnaFilletAlgo
 
                 // Limit the neighbours.
                 // Left neighbour.
-                gp_Pnt p1, p2;
+                Point3D p1, p2;
                 shrinke1.Nullify();
                 if (e1.Orientation() == TopAbs_FORWARD)
                 {
@@ -560,9 +563,9 @@ public sealed class ChFi2d_AnaFilletAlgo
     private bool SegmentFilletSegment(double radius, ref double xc, ref double yc, ref bool cw, ref double start, ref double end)
     {
         // Make normalized vectors at p12.
-        var p11 = new gp_Pnt2d(x11, y11);
-        var p12 = new gp_Pnt2d(x12, y12);
-        var p22 = new gp_Pnt2d(x22, y22);
+        var p11 = new Point2D(x11, y11);
+        var p12 = new Point2D(x12, y12);
+        var p22 = new Point2D(x22, y22);
 
         // Check length of segments.
         if (IsEqual(p12, p11) || IsEqual(p12, p22))
@@ -571,16 +574,16 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Make vectors.
-        var v1 = new gp_Vec2d(p12, p11);
-        var v2 = new gp_Vec2d(p12, p22);
+        var v1 = new Vector2D(p12, p11);
+        var v2 = new Vector2D(p12, p22);
         v1.Normalize();
         v2.Normalize();
 
         // Make bisectrissa.
-        gp_Vec2d bisec = 0.5 * (v1 + v2);
+        Vector2D bisec = 0.5 * (v1 + v2);
 
         // Check bisectrissa.
-        if (bisec.SquareMagnitude() < Precision.SquareConfusion())
+        if (bisec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return false;
         }
@@ -595,7 +598,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         double L = radius / Math.Sin(Math.Abs(beta));
 
         // Center point of fillet.
-        gp_Pnt2d pc = p12.Translated(L * bisec);
+        Point2D pc = p12.Translated(L * bisec);
         pc.Coord(out xc, out yc);
 
         // Shrinking length along segments.
@@ -621,19 +624,19 @@ public sealed class ChFi2d_AnaFilletAlgo
         // This side may be defined through making a bisectrissa for vectors at p12 (or p21).
 
         // Make 2D points.
-        var p12 = new gp_Pnt2d(x12, y12);
-        var p11 = new gp_Pnt2d(x11, y11);
-        var pc2 = new gp_Pnt2d(xc2, yc2);
+        var p12 = new Point2D(x12, y12);
+        var p11 = new Point2D(x11, y11);
+        var pc2 = new Point2D(xc2, yc2);
 
         // Check length of segment.
-        if (p11.SquareDistance(p12) < gp.Resolution())
+        if (p11.SquareDistance(p12) < Constants.Resolution())
         {
             return false;
         }
 
         // Make 2D vectors.
-        var v1 = new gp_Vec2d(p12, p11);
-        var v2 = new gp_Vec2d(p12, pc2);
+        var v1 = new Vector2D(p12, p11);
+        var v2 = new Vector2D(p12, pc2);
 
         // Rotate the arc vector to become tangential at p21.
         if (cw2)
@@ -648,7 +651,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         // If vectors coincide (segment and arc are tangent),
         // the algorithm doesn't work...
         double angle = v1.Angle(v2);
-        if (Math.Abs(angle) < Precision.Angular())
+        if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
         }
@@ -656,24 +659,24 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Make a bissectrisa of vectors at p12.
         v2.Normalize();
         v1.Normalize();
-        gp_Vec2d bisec = 0.5 * (v1 + v2);
+        Vector2D bisec = 0.5 * (v1 + v2);
 
         // If segment and arc look in opposite direction,
         // no fillet is possible.
-        if (bisec.SquareMagnitude() < gp.Resolution())
+        if (bisec.SquareMagnitude() < Constants.Resolution())
         {
             return false;
         }
 
         // Define an appropriate point to choose center of fillet.
         bisec.Normalize();
-        gp_Pnt2d nearp = p12.Translated(radius * bisec);
-        var nearl = new gp_Lin2d(p12, new gp_Dir2d(bisec));
+        Point2D nearp = p12.Translated(radius * bisec);
+        var nearl = new Line2D(p12, new Direction2D(bisec));
 
         // Make a line parallel to segment and
         // passing near the "near" point.
-        gp_Vec2d d1 = v1;
-        var line = new gp_Lin2d(p11, new gp_Dir2d(-d1));
+        Vector2D d1 = v1;
+        var line = new Line2D(p11, new Direction2D(-d1));
         d1.Rotate(M_PI_2);
         line.Translate(radius * d1);
         if (line.Distance(nearp) > radius)
@@ -682,8 +685,8 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Make a circle of radius of the arc +/- fillet radius.
-        var axes = new gp_Ax2d(pc2, gp.DX2d());
-        var circ = new gp_Circ2d(axes, radius2 + radius);
+        var axes = new Axis2D(pc2, Constants.DX2d());
+        var circ = new Circle2D(axes, radius2 + radius);
         if (radius2 > radius && circ.Distance(nearp) > radius)
         {
             circ.SetRadius(radius2 - radius);
@@ -702,7 +705,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         for (i = 1; i <= intersector.NbPoints(); ++i)
         {
             IntAna2d_IntPoint intp = intersector.Point(i);
-            gp_Pnt2d p = intp.Value();
+            Point2D p = intp.Value();
 
             double d = nearl.Distance(p);
             if (d < minDist)
@@ -713,19 +716,19 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Shrink of segment.
-        var pc = new gp_Pnt2d(xc, yc);
+        var pc = new Point2D(xc, yc);
         double L2 = pc.SquareDistance(p12);
         double Rf2 = radius * radius;
         start = Math.Sqrt(L2 - Rf2);
 
         // Shrink of arc.
-        var pcc = new gp_Vec2d(pc2, pc);
-        end = Math.Abs(new gp_Vec2d(pc2, p12).Angle(pcc));
+        var pcc = new Vector2D(pc2, pc);
+        end = Math.Abs(new Vector2D(pc2, p12).Angle(pcc));
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the end of fillet.
         line.SetLocation(pc2);
-        line.SetDirection(new gp_Dir2d(pcc));
+        line.SetDirection(new Direction2D(pcc));
         circ.SetLocation(pc2);
         circ.SetRadius(radius2);
         intersector.Perform(line, circ);
@@ -739,10 +742,10 @@ public sealed class ChFi2d_AnaFilletAlgo
         for (i = 1; i <= intersector.NbPoints(); ++i)
         {
             IntAna2d_IntPoint intp = intersector.Point(i);
-            gp_Pnt2d p = intp.Value();
+            Point2D p = intp.Value();
 
             double d2 = p.SquareDistance(pc);
-            if (Math.Abs(d2 - Rf2) < Precision.Confusion())
+            if (Math.Abs(d2 - Rf2) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 p.Coord(out xend, out yend);
                 break;
@@ -769,19 +772,19 @@ public sealed class ChFi2d_AnaFilletAlgo
         // This side may be defined through making a bisectrissa for vectors at p12 (or p21).
 
         // Make 2D points.
-        var p12 = new gp_Pnt2d(x12, y12);
-        var p22 = new gp_Pnt2d(x22, y22);
-        var pc1 = new gp_Pnt2d(xc1, yc1);
+        var p12 = new Point2D(x12, y12);
+        var p22 = new Point2D(x22, y22);
+        var pc1 = new Point2D(xc1, yc1);
 
         // Check length of segment.
-        if (p12.SquareDistance(p22) < gp.Resolution())
+        if (p12.SquareDistance(p22) < Constants.Resolution())
         {
             return false;
         }
 
         // Make 2D vectors.
-        var v1 = new gp_Vec2d(p12, pc1);
-        var v2 = new gp_Vec2d(p12, p22);
+        var v1 = new Vector2D(p12, pc1);
+        var v2 = new Vector2D(p12, p22);
 
         // Rotate the arc vector to become tangential at p21.
         if (cw1)
@@ -796,7 +799,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         // If vectors coincide (segment and arc are tangent),
         // the algorithm doesn't work...
         double angle = v1.Angle(v2);
-        if (Math.Abs(angle) < Precision.Angular())
+        if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
         }
@@ -804,24 +807,24 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Make a bisectrissa of vectors at p12.
         v1.Normalize();
         v2.Normalize();
-        gp_Vec2d bisec = 0.5 * (v1 + v2);
+        Vector2D bisec = 0.5 * (v1 + v2);
 
         // If segment and arc look in opposite direction,
         // no fillet is possible.
-        if (bisec.SquareMagnitude() < gp.Resolution())
+        if (bisec.SquareMagnitude() < Constants.Resolution())
         {
             return false;
         }
 
         // Define an appropriate point to choose center of fillet.
         bisec.Normalize();
-        gp_Pnt2d nearPoint = p12.Translated(radius * bisec);
-        var nearLine = new gp_Lin2d(p12, new gp_Dir2d(bisec));
+        Point2D nearPoint = p12.Translated(radius * bisec);
+        var nearLine = new Line2D(p12, new Direction2D(bisec));
 
         // Make a line parallel to segment and
         // passing near the "near" point.
-        gp_Vec2d aD2Vec = v2;
-        var line = new gp_Lin2d(p22, new gp_Dir2d(-aD2Vec));
+        Vector2D aD2Vec = v2;
+        var line = new Line2D(p22, new Direction2D(-aD2Vec));
         aD2Vec.Rotate(M_PI_2);
         line.Translate(radius * aD2Vec);
         if (line.Distance(nearPoint) > radius)
@@ -830,8 +833,8 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Make a circle of radius of the arc +/- fillet radius.
-        var axes = new gp_Ax2d(pc1, gp.DX2d());
-        var circ = new gp_Circ2d(axes, radius1 + radius);
+        var axes = new Axis2D(pc1, Constants.DX2d());
+        var circ = new Circle2D(axes, radius1 + radius);
         if (radius1 > radius && circ.Distance(nearPoint) > radius)
         {
             circ.SetRadius(radius1 - radius);
@@ -850,7 +853,7 @@ public sealed class ChFi2d_AnaFilletAlgo
         for (i = 1; i <= intersector.NbPoints(); ++i)
         {
             IntAna2d_IntPoint intp = intersector.Point(i);
-            gp_Pnt2d p = intp.Value();
+            Point2D p = intp.Value();
 
             double d = nearLine.Distance(p);
             if (d < minDist)
@@ -861,19 +864,19 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Shrink of segment.
-        var pc = new gp_Pnt2d(xc, yc);
+        var pc = new Point2D(xc, yc);
         double L2 = pc.SquareDistance(p12);
         double Rf2 = radius * radius;
         end = Math.Sqrt(L2 - Rf2);
 
         // Shrink of arc.
-        var pcc = new gp_Vec2d(pc1, pc);
-        start = Math.Abs(new gp_Vec2d(pc1, p12).Angle(pcc));
+        var pcc = new Vector2D(pc1, pc);
+        start = Math.Abs(new Vector2D(pc1, p12).Angle(pcc));
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the start of fillet.
         line.SetLocation(pc1);
-        line.SetDirection(new gp_Dir2d(pcc));
+        line.SetDirection(new Direction2D(pcc));
         circ.SetLocation(pc1);
         circ.SetRadius(radius1);
         intersector.Perform(line, circ);
@@ -887,10 +890,10 @@ public sealed class ChFi2d_AnaFilletAlgo
         for (i = 1; i <= intersector.NbPoints(); ++i)
         {
             IntAna2d_IntPoint intp = intersector.Point(i);
-            gp_Pnt2d p = intp.Value();
+            Point2D p = intp.Value();
 
             double d2 = p.SquareDistance(pc);
-            if (Math.Abs(d2 - Rf2) < Precision.SquareConfusion()) // OCCT: SegmentFilletArc compares with Confusion
+            if (Math.Abs(d2 - Rf2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // OCCT: SegmentFilletArc compares with Confusion
             {
                 p.Coord(out xstart, out ystart);
                 break;
@@ -912,13 +915,13 @@ public sealed class ChFi2d_AnaFilletAlgo
     private bool ArcFilletArc(double radius, ref double xc, ref double yc, ref bool cw, ref double start, ref double end)
     {
         // Make points.
-        var pc1 = new gp_Pnt2d(xc1, yc1);
-        var pc2 = new gp_Pnt2d(xc2, yc2);
-        var p12 = new gp_Pnt2d(x12, y12);
+        var pc1 = new Point2D(xc1, yc1);
+        var pc2 = new Point2D(xc2, yc2);
+        var p12 = new Point2D(x12, y12);
 
         // Make vectors at p12.
-        var v1 = new gp_Vec2d(pc1, p12);
-        var v2 = new gp_Vec2d(pc2, p12);
+        var v1 = new Vector2D(pc1, p12);
+        var v2 = new Vector2D(pc2, p12);
 
         // Rotate the vectors so that they are tangent to circles at p12.
         if (cw1)
@@ -941,28 +944,28 @@ public sealed class ChFi2d_AnaFilletAlgo
         // Make a "check" point for choosing an offset circle.
         v1.Normalize();
         v2.Normalize();
-        gp_Vec2d bisec = 0.5 * (v1 + v2);
-        if (bisec.SquareMagnitude() < gp.Resolution())
+        Vector2D bisec = 0.5 * (v1 + v2);
+        if (bisec.SquareMagnitude() < Constants.Resolution())
         {
             return false;
         }
 
-        gp_Pnt2d checkp = p12.Translated(radius * bisec);
-        var checkl = new gp_Lin2d(p12, new gp_Dir2d(bisec));
+        Point2D checkp = p12.Translated(radius * bisec);
+        var checkl = new Line2D(p12, new Direction2D(bisec));
         _ = checkl; // unused, as in OCCT
 
         // Make two circles of radius r1 +/- r and r2 +/- r
         // with center point equal to pc1 and pc2.
         // Arc 1.
-        var axes = new gp_Ax2d(pc1, gp.DX2d());
-        var c1 = new gp_Circ2d(axes, radius1 + radius);
+        var axes = new Axis2D(pc1, Constants.DX2d());
+        var c1 = new Circle2D(axes, radius1 + radius);
         if (radius1 > radius && c1.Distance(checkp) > radius)
         {
             c1.SetRadius(radius1 - radius);
         }
         // Arc 2.
         axes.SetLocation(pc2);
-        var c2 = new gp_Circ2d(axes, radius2 + radius);
+        var c2 = new Circle2D(axes, radius2 + radius);
         if (radius2 > radius && c2.Distance(checkp) > radius)
         {
             c2.SetRadius(radius2 - radius);
@@ -977,12 +980,12 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Find center point of fillet.
-        gp_Pnt2d pc = new();
+        Point2D pc = new();
         double minDist = double.MaxValue;
         for (int i = 1; i <= intersector.NbPoints(); ++i)
         {
             IntAna2d_IntPoint intp = intersector.Point(i);
-            gp_Pnt2d p = intp.Value();
+            Point2D p = intp.Value();
 
             double d = checkp.SquareDistance(p);
             if (d < minDist)
@@ -995,9 +998,9 @@ public sealed class ChFi2d_AnaFilletAlgo
 
         // Orientation of fillet.
         double angle = v1.Angle(v2);
-        if (Math.Abs(angle) < Precision.Angular())
+        if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            angle = new gp_Vec2d(pc, pc1).Angle(new gp_Vec2d(pc, pc2));
+            angle = new Vector2D(pc, pc1).Angle(new Vector2D(pc, pc2));
             cw = angle < 0.0;
         }
         else
@@ -1006,15 +1009,15 @@ public sealed class ChFi2d_AnaFilletAlgo
         }
 
         // Shrinking of circles.
-        start = Math.Abs(new gp_Vec2d(pc1, p12).Angle(new gp_Vec2d(pc1, pc)));
-        end = Math.Abs(new gp_Vec2d(pc2, p12).Angle(new gp_Vec2d(pc2, pc)));
+        start = Math.Abs(new Vector2D(pc1, p12).Angle(new Vector2D(pc1, pc)));
+        end = Math.Abs(new Vector2D(pc2, p12).Angle(new Vector2D(pc2, pc)));
         return true;
     }
 
     // Cuts intersecting edges of a contour.
-    private bool Cut(in gp_Pln thePlane, ref TopoDS_Edge theE1, ref TopoDS_Edge theE2)
+    private bool Cut(in Plane3D thePlane, ref TopoDS_Edge theE1, ref TopoDS_Edge theE2)
     {
-        gp_Pnt p = new();
+        Point3D p = new();
         bool found = false;
         double param1 = 0.0, param2 = 0.0;
         double f1, l1, f2, l2;
@@ -1027,11 +1030,11 @@ public sealed class ChFi2d_AnaFilletAlgo
             for (i = 1; i <= nb; ++i)
             {
                 double d = extrema.Distance(i);
-                if (d < Precision.Confusion())
+                if (d < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     extrema.Parameters(i, out param1, out param2);
-                    if (Math.Abs(l1 - param1) > Precision.Confusion()
-                        && Math.Abs(f2 - param2) > Precision.Confusion())
+                    if (Math.Abs(l1 - param1) > global::Kerf.Engine.Foundation.Precision.Confusion()
+                        && Math.Abs(f2 - param2) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         found = true;
                         extrema.Points(i, out _, out p); // OCCT passes p for both points: the second is kept
@@ -1053,7 +1056,7 @@ public sealed class ChFi2d_AnaFilletAlgo
                 {
                     theE2 = mkEdge2.Edge();
 
-                    gp_Pnt2d p2d = ProjLib.Project(thePlane, p);
+                    Point2D p2d = ProjLib.Project(thePlane, p);
                     p2d.Coord(out x12, out y12);
                     x21 = x12;
                     y21 = y12;

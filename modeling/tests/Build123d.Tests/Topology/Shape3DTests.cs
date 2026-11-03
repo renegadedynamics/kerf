@@ -5,6 +5,7 @@
 // - TestFilletFailures.test_operation's builder half: BuildPart (phase 5).
 // - TestFilletFailures.test_diagnostic_readback_failure, test_group_failure_reasons,
 //   TestMixin3D.test_chamfer_invalid_shape_raises_error: mock the OCP builder or Shape.is_valid.
+using Kerf.Engine.Foundation;
 using Occt;
 
 using Ops = Build123d.Operations;
@@ -32,7 +33,7 @@ public class FilletFailuresTests
         {
             var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, e.Message);
-            Assert.IsAssignableFrom<Standard_Failure>(e.InnerException);
+            Assert.IsAssignableFrom<FailureException>(e.InnerException);
         }
     }
 

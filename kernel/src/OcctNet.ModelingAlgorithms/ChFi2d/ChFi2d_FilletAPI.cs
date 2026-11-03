@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -29,21 +30,21 @@ public sealed class ChFi2d_FilletAPI
     }
 
     /// <summary>A fillet algorithm on a wire of two edges in a plane.</summary>
-    public ChFi2d_FilletAPI(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    public ChFi2d_FilletAPI(in TopoDS_Wire theWire, in Plane3D thePlane)
     {
         myIsAnalytical = false;
         Init(theWire, thePlane);
     }
 
     /// <summary>A fillet algorithm on two edges in a plane.</summary>
-    public ChFi2d_FilletAPI(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    public ChFi2d_FilletAPI(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
     {
         myIsAnalytical = false;
         Init(theEdge1, theEdge2, thePlane);
     }
 
     /// <summary>Initializes a fillet algorithm: accepts a wire consisting of two edges in a plane.</summary>
-    public void Init(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
     {
         // Decide whether we may apply an analytical solution.
         TopoDS_Edge E1 = new(), E2 = new();
@@ -80,7 +81,7 @@ public sealed class ChFi2d_FilletAPI
     }
 
     /// <summary>Initializes a fillet algorithm: accepts two edges in a plane.</summary>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
     {
         // Decide whether we may apply an analytical solution.
         myIsAnalytical = IsAnalytical(theEdge1, theEdge2);
@@ -106,7 +107,7 @@ public sealed class ChFi2d_FilletAPI
     /// The number of solutions; <paramref name="thePoint"/> (the common point of the edges) chooses among several
     /// fillets.
     /// </summary>
-    public int NbResults(in gp_Pnt thePoint)
+    public int NbResults(in Point3D thePoint)
     {
         return myIsAnalytical ? 1 : myFilletAlgo.NbResults(thePoint);
     }
@@ -115,7 +116,7 @@ public sealed class ChFi2d_FilletAPI
     /// The fillet edge and the two edges it trims (all frozen): the solution nearest to <paramref name="thePoint"/> if
     /// <paramref name="iSolution"/> is -1, else that solution.
     /// </summary>
-    public TopoDS_Edge Result(in gp_Pnt thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
+    public TopoDS_Edge Result(in Point3D thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
     {
         return myIsAnalytical ? myAnaFilletAlgo.Result(ref theEdge1, ref theEdge2)
                               : myFilletAlgo.Result(thePoint, ref theEdge1, ref theEdge2, iSolution);
@@ -129,19 +130,19 @@ public sealed class ChFi2d_FilletAPI
         bool ret = false;
         var AC1 = new BRepAdaptor_Curve(theEdge1);
         var AC2 = new BRepAdaptor_Curve(theEdge2);
-        if ((AC1.GetType() == GeomAbs_Line || AC1.GetType() == GeomAbs_Circle)
-            && (AC2.GetType() == GeomAbs_Line || AC2.GetType() == GeomAbs_Circle))
+        if ((AC1.GetType() == Line || AC1.GetType() == Circle)
+            && (AC2.GetType() == Line || AC2.GetType() == Circle))
         {
             // The edges are lines or arcs of circle.
             // Now check whether they have a common point.
-            gp_Pnt p11 = AC1.Value(AC1.FirstParameter());
-            gp_Pnt p12 = AC1.Value(AC1.LastParameter());
-            gp_Pnt p21 = AC2.Value(AC2.FirstParameter());
-            gp_Pnt p22 = AC2.Value(AC2.LastParameter());
-            if (p11.SquareDistance(p21) < Precision.SquareConfusion()
-                || p11.SquareDistance(p22) < Precision.SquareConfusion()
-                || p12.SquareDistance(p21) < Precision.SquareConfusion()
-                || p12.SquareDistance(p22) < Precision.SquareConfusion())
+            Point3D p11 = AC1.Value(AC1.FirstParameter());
+            Point3D p12 = AC1.Value(AC1.LastParameter());
+            Point3D p21 = AC2.Value(AC2.FirstParameter());
+            Point3D p22 = AC2.Value(AC2.LastParameter());
+            if (p11.SquareDistance(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p11.SquareDistance(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p12.SquareDistance(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p12.SquareDistance(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 ret = true;
             }

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,12 +27,12 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
     public Geom_BezierSurface Geometry() => myGeom;
 
     /// <summary>Compute bounding box for full surface.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
 
         // For full Bezier surface, use convex hull of all poles.
-        NCollection_Array2<gp_Pnt> aPoles = myGeom.InternalPoles();
+        NCollection_Array2<Point3D> aPoles = myGeom.InternalPoles();
         for (int anI = aPoles.LowerRow(); anI <= aPoles.UpperRow(); anI++)
         {
             for (int aJ = aPoles.LowerCol(); aJ <= aPoles.UpperCol(); aJ++)
@@ -39,10 +45,10 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
     }
 
     /// <summary>Compute bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        Bnd_Box aBox = new();
-        double PTol = Precision.Parametric(Precision.Confusion());
+        Box aBox = new();
+        double PTol = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Check if the parameters match the full surface bounds.
         myGeom.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
@@ -71,7 +77,7 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
         }
 
         GeomGridEval_Surface anEvaluator = new(aGASurf);
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
         for (int anI = aGrid.LowerRow(); anI <= aGrid.UpperRow(); anI++)
         {
             for (int aJ = aGrid.LowerCol(); aJ <= aGrid.UpperCol(); aJ++)
@@ -84,14 +90,14 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
     }
 
     /// <summary>Compute precise bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol)
+    public Box BoxOptimal(double theTol)
     {
         myGeom.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         return BoxOptimal(aU1, aU2, aV1, aV2, theTol);
     }
 
     /// <summary>Compute precise bounding box using numerical optimization.</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
         GeomAdaptor_Surface aGASurf = new(myGeom);
         return SurfaceBoxOptimal(aGASurf, theUMin, theUMax, theVMin, theVMax, theTol);
@@ -101,14 +107,14 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
     /// The body of OCCT's GeomBndLib_BezierSurface::BoxOptimal after its adaptor is built; GeomBndLib_BSplineSurface's
     /// is the same text, and calls it.
     /// </summary>
-    internal static Bnd_Box SurfaceBoxOptimal(GeomAdaptor_Surface aGASurf,
+    internal static Box SurfaceBoxOptimal(GeomAdaptor_Surface aGASurf,
                                               double theUMin,
                                               double theUMax,
                                               double theVMin,
                                               double theVMax,
                                               double theTol)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         int aNbUSamples = GeomBndLib_SamplingHelpers.ComputeNbUSamples(aGASurf, theUMin, theUMax);
         int aNbVSamples = GeomBndLib_SamplingHelpers.ComputeNbVSamples(aGASurf, theVMin, theVMax);
 
@@ -136,16 +142,16 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
         }
 
         GeomGridEval_Surface anEvaluator = new(aGASurf);
-        NCollection_Array2<gp_Pnt> aFineGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aFineGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
 
-        NCollection_Array2<gp_XYZ> aPnts = new(1, aNbUSamples, 1, aNbVSamples);
+        NCollection_Array2<Xyz> aPnts = new(1, aNbUSamples, 1, aNbVSamples);
         for (int anI = 1; anI <= aNbUSamples; anI++)
         {
             int anIFine = 2 * anI - 1;
             for (int aJ = 1; aJ <= aNbVSamples; aJ++)
             {
                 int aJFine = 2 * aJ - 1;
-                gp_Pnt aP = aFineGrid.Value(anIFine, aJFine);
+                Point3D aP = aFineGrid.Value(anIFine, aJFine);
                 aPnts[anI, aJ] = aP.XYZ();
                 for (int aK = 0; aK < 3; ++aK)
                 {
@@ -161,9 +167,9 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
                 // U-midpoint deflection.
                 if (anI > 1)
                 {
-                    gp_XYZ aPm = 0.5 * (aPnts[anI - 1, aJ] + aPnts[anI, aJ]);
-                    gp_Pnt aPM = aFineGrid.Value(anIFine - 1, aJFine);
-                    gp_XYZ aD = (aPM.XYZ() - aPm);
+                    Xyz aPm = 0.5 * (aPnts[anI - 1, aJ] + aPnts[anI, aJ]);
+                    Point3D aPM = aFineGrid.Value(anIFine - 1, aJFine);
+                    Xyz aD = (aPM.XYZ() - aPm);
                     for (int aK = 0; aK < 3; ++aK)
                     {
                         if (aCoordMin[aK] > aPM.Coord(aK + 1))
@@ -184,9 +190,9 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
                 // V-midpoint deflection.
                 if (aJ > 1)
                 {
-                    gp_XYZ aPm = 0.5 * (aPnts[anI, aJ - 1] + aPnts[anI, aJ]);
-                    gp_Pnt aPM = aFineGrid.Value(anIFine, aJFine - 1);
-                    gp_XYZ aD = (aPM.XYZ() - aPm);
+                    Xyz aPm = 0.5 * (aPnts[anI, aJ - 1] + aPnts[anI, aJ]);
+                    Point3D aPM = aFineGrid.Value(anIFine, aJFine - 1);
+                    Xyz aD = (aPM.XYZ() - aPm);
                     for (int aK = 0; aK < 3; ++aK)
                     {
                         if (aCoordMin[aK] > aPM.Coord(aK + 1))
@@ -208,7 +214,7 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
         }
 
         // Adjust minmax using PSO + Powell optimization.
-        double anEps = Max(theTol, Precision.Confusion());
+        double anEps = Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int aK = 0; aK < 3; ++aK)
         {
             double aDiff = aDeflMax[aK];
@@ -252,8 +258,8 @@ public sealed class GeomBndLib_BezierSurface : GeomBndLib_Surface.ISurfaceEvalua
             aCoordMax[aK] = aCMax;
         }
 
-        aBox.Add(new gp_Pnt(aCoordMin[0], aCoordMin[1], aCoordMin[2]));
-        aBox.Add(new gp_Pnt(aCoordMax[0], aCoordMax[1], aCoordMax[2]));
+        aBox.Add(new Point3D(aCoordMin[0], aCoordMin[1], aCoordMin[2]));
+        aBox.Add(new Point3D(aCoordMax[0], aCoordMax[1], aCoordMax[2]));
         aBox.Enlarge(anEps);
         return aBox;
     }

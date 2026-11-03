@@ -2,6 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Engine.Geometry.Bvh;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Bnd_OBB_Test
@@ -9,18 +17,18 @@ public class Bnd_OBB_Test
     [Fact]
     public void OCC33009_ReBuildWithPoints()
     {
-        Bnd_OBB aBndBox = new();
+        OrientedBox aBndBox = new();
 
-        NCollection_Array1<gp_Pnt> aPoints = new(1, 5);
-        aPoints[1] = new gp_Pnt(1, 2, 3);
-        aPoints[2] = new gp_Pnt(3, 2, 1);
-        aPoints[3] = new gp_Pnt(2, 3, 1);
-        aPoints[4] = new gp_Pnt(1, 3, 2);
-        aPoints[5] = new gp_Pnt(2, 1, 3);
+        NCollection_Array1<Point3D> aPoints = new(1, 5);
+        aPoints[1] = new Point3D(1, 2, 3);
+        aPoints[2] = new Point3D(3, 2, 1);
+        aPoints[3] = new Point3D(2, 3, 1);
+        aPoints[4] = new Point3D(1, 3, 2);
+        aPoints[5] = new Point3D(2, 1, 3);
 
         // Should not throw exception when rebuilding with points
         aBndBox.ReBuild(aPoints, null, true);
-        Assert.False(aBndBox.IsVoid());
+        Assert.False(aBndBox.IsVoid);
     }
 
     [Fact]
@@ -30,17 +38,17 @@ public class Bnd_OBB_Test
         // OCCT builds the OBB of a box shape (100, 100, 100)-(200, 200, 200) with BRepBndLib::AddOBB: that form is in
         // OcctNet.ModelingAlgorithms.Tests (Bnd/Bnd_ShapeGTests.cs); here the OBB is built from the box's eight vertices,
         // which is what AddOBB uses for a box.
-        NCollection_Array1<gp_Pnt> aVertices = new(1, 8);
+        NCollection_Array1<Point3D> aVertices = new(1, 8);
         for (int i = 0; i < 8; ++i)
         {
-            aVertices[i + 1] = new gp_Pnt((i & 1) != 0 ? 200 : 100, (i & 2) != 0 ? 200 : 100, (i & 4) != 0 ? 200 : 100);
+            aVertices[i + 1] = new Point3D((i & 1) != 0 ? 200 : 100, (i & 2) != 0 ? 200 : 100, (i & 4) != 0 ? 200 : 100);
         }
 
-        Bnd_OBB aVoidBox = new(), aOBB = new();
+        OrientedBox aVoidBox = new(), aOBB = new();
         aOBB.ReBuild(aVertices);
         aVoidBox.Add(aOBB);
 
-        gp_XYZ aCenter = aVoidBox.Center();
+        Xyz aCenter = aVoidBox.Center();
         GTest.ExpectDoubleEq(150.0, aCenter.X());
         GTest.ExpectDoubleEq(150.0, aCenter.Y());
         GTest.ExpectDoubleEq(150.0, aCenter.Z());
@@ -49,12 +57,12 @@ public class Bnd_OBB_Test
     [Fact]
     public void OCC30704_AddPointToVoidBox()
     {
-        gp_Pnt aP = new(100, 200, 300);
+        Point3D aP = new(100, 200, 300);
 
-        Bnd_OBB aVoidBox = new();
+        OrientedBox aVoidBox = new();
         aVoidBox.Add(aP);
 
-        gp_XYZ aCenter = aVoidBox.Center();
+        Xyz aCenter = aVoidBox.Center();
         GTest.ExpectDoubleEq(100.0, aCenter.X());
         GTest.ExpectDoubleEq(200.0, aCenter.Y());
         GTest.ExpectDoubleEq(300.0, aCenter.Z());
@@ -63,18 +71,18 @@ public class Bnd_OBB_Test
     [Fact]
     public void Contains_Point()
     {
-        Bnd_OBB anOBB = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 5.0, 5.0, 5.0);
-        Assert.True(anOBB.Contains(new gp_Pnt(0, 0, 0)));
-        Assert.True(anOBB.Contains(new gp_Pnt(4, 4, 4)));
-        Assert.False(anOBB.Contains(new gp_Pnt(10, 0, 0)));
+        OrientedBox anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        Assert.True(anOBB.Contains(new Point3D(0, 0, 0)));
+        Assert.True(anOBB.Contains(new Point3D(4, 4, 4)));
+        Assert.False(anOBB.Contains(new Point3D(10, 0, 0)));
     }
 
     [Fact]
     public void Intersects_OBB()
     {
-        Bnd_OBB anOBB1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 5.0, 5.0, 5.0);
-        Bnd_OBB anOBB2 = new(new gp_Pnt(8, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 5.0, 5.0, 5.0);
-        Bnd_OBB anOBB3 = new(new gp_Pnt(20, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 5.0, 5.0, 5.0);
+        OrientedBox anOBB1 = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        OrientedBox anOBB2 = new(new Point3D(8, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        OrientedBox anOBB3 = new(new Point3D(20, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
         Assert.True(anOBB1.Intersects(anOBB2));
         Assert.False(anOBB1.Intersects(anOBB3));
     }
@@ -82,7 +90,7 @@ public class Bnd_OBB_Test
     [Fact]
     public void GetHalfSizes_StructuredBindings()
     {
-        Bnd_OBB anOBB = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 3.0, 5.0, 7.0);
+        OrientedBox anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 3.0, 5.0, 7.0);
         var (aHX, aHY, aHZ) = anOBB.GetHalfSizes();
         GTest.ExpectDoubleEq(3.0, aHX);
         GTest.ExpectDoubleEq(5.0, aHY);
@@ -96,10 +104,10 @@ public class Bnd_OBB_PortTest
     [Fact]
     public void DefaultIsVoid_AndValueSemantics()
     {
-        Bnd_OBB aBox = new();
-        Assert.True(aBox.IsVoid());
-        Assert.True(Bnd_OBB.Void().IsVoid());
-        Bnd_OBB anEnlarged = new Bnd_OBB(new gp_Pnt(1, 2, 3), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1), 1.0, 2.0, 3.0).Enlarged(-0.5);
+        OrientedBox aBox = new();
+        Assert.True(aBox.IsVoid);
+        Assert.True(OrientedBox.Void().IsVoid);
+        OrientedBox anEnlarged = new OrientedBox(new Point3D(1, 2, 3), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 1.0, 2.0, 3.0).Enlarged(-0.5);
         Assert.Equal(1.5, anEnlarged.XHSize());
         Assert.Equal(4.0 * (1.5 * 1.5 + 2.5 * 2.5 + 3.5 * 3.5), anEnlarged.SquareExtent());
         Assert.Equal(anEnlarged, anEnlarged.WithAABox(false));
@@ -109,14 +117,14 @@ public class Bnd_OBB_PortTest
     [Fact]
     public void FromBndBox_AndCompletelyInside()
     {
-        Bnd_Box aBox = new(new gp_Pnt(-1, -2, -3), new gp_Pnt(1, 2, 3));
-        Bnd_OBB anOBB = new(aBox);
-        Assert.True(anOBB.IsAABox());
-        Assert.Equal(new gp_XYZ(0, 0, 0), anOBB.Center());
+        Box aBox = new(new Point3D(-1, -2, -3), new Point3D(1, 2, 3));
+        OrientedBox anOBB = new(aBox);
+        Assert.True(anOBB.IsAABox);
+        Assert.Equal(new Xyz(0, 0, 0), anOBB.Center());
         Assert.Equal(3.0, anOBB.ZHSize());
         Assert.True(anOBB.Enlarged(1.0).IsCompletelyInside(anOBB));
         Assert.False(anOBB.IsCompletelyInside(anOBB.Enlarged(1.0)));
-        Assert.True(new Bnd_OBB(new Bnd_Box()).IsVoid());
+        Assert.True(new OrientedBox(new Box()).IsVoid);
     }
 
     [Fact]
@@ -128,16 +136,16 @@ public class Bnd_OBB_PortTest
             for (int aCase = 0; aCase < 20; ++aCase)
             {
                 int aNb = 1 + aCase;
-                NCollection_Array1<gp_Pnt> aPoints = new(1, aNb);
+                NCollection_Array1<Point3D> aPoints = new(1, aNb);
                 NCollection_Array1<double> aTols = new(1, aNb);
                 for (int i = 1; i <= aNb; ++i)
                 {
-                    aPoints[i] = new gp_Pnt(aRandom.NextDouble() * 10, aRandom.NextDouble() * 5, aRandom.NextDouble());
+                    aPoints[i] = new Point3D(aRandom.NextDouble() * 10, aRandom.NextDouble() * 5, aRandom.NextDouble());
                     aTols[i] = aRandom.NextDouble() * 0.01;
                 }
 
-                Bnd_OBB anOBB = Bnd_OBB.FromPoints(aPoints, aTols, isOptimal);
-                Assert.False(anOBB.IsVoid());
+                OrientedBox anOBB = OrientedBox.FromPoints(aPoints, aTols, isOptimal);
+                Assert.False(anOBB.IsVoid);
                 for (int i = 1; i <= aNb; ++i)
                 {
                     Assert.False(anOBB.Enlarged(1.0e-9).IsOut(aPoints[i]));
@@ -150,26 +158,26 @@ public class Bnd_OBB_PortTest
     public void ReBuild_TwoCoincidentPoints_DropTolerance()
     {
         // OCCT: the two-point case of coincident points loses the tolerances (enlarged by Precision::Confusion only)
-        NCollection_Array1<gp_Pnt> aPoints = new(1, 2);
-        aPoints[1] = new gp_Pnt(1, 1, 1);
-        aPoints[2] = new gp_Pnt(1, 1, 1);
+        NCollection_Array1<Point3D> aPoints = new(1, 2);
+        aPoints[1] = new Point3D(1, 1, 1);
+        aPoints[2] = new Point3D(1, 1, 1);
         NCollection_Array1<double> aTols = new(1, 2);
         aTols[1] = 0.5;
         aTols[2] = 0.5;
-        Bnd_OBB anOBB = Bnd_OBB.FromPoints(aPoints, aTols);
-        Assert.Equal(Precision.Confusion(), anOBB.XHSize());
+        OrientedBox anOBB = OrientedBox.FromPoints(aPoints, aTols);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anOBB.XHSize());
     }
 
     [Fact]
     public void Bnd_Tools_Bnd2BVH()
     {
-        Bnd_Box aBox = new(new gp_Pnt(-1, -2, -3), new gp_Pnt(1, 2, 3));
-        BVH_Box<double, NCollection_Vec3<double>> aBVH = Bnd_Tools.Bnd2BVH(aBox);
+        Box aBox = new(new Point3D(-1, -2, -3), new Point3D(1, 2, 3));
+        Box<double, NCollection_Vec3<double>> aBVH = Tools.Bnd2BVH(aBox);
         Assert.Equal(new NCollection_Vec3<double>(-1, -2, -3), aBVH.CornerMin());
         Assert.Equal(new NCollection_Vec3<double>(1, 2, 3), aBVH.CornerMax());
 
-        Bnd_Box2d aBox2d = Bnd_Box2d.FromPoint(new gp_Pnt2d(1, 2)).Added(new gp_Pnt2d(3, 4));
-        BVH_Box<double, NCollection_Vec2<double>> aBVH2d = Bnd_Tools.Bnd2BVH(aBox2d);
+        Box2d aBox2d = Box2d.FromPoint(new Point2D(1, 2)).Added(new Point2D(3, 4));
+        Box<double, NCollection_Vec2<double>> aBVH2d = Tools.Bnd2BVH(aBox2d);
         Assert.Equal(new NCollection_Vec2<double>(1, 2), aBVH2d.CornerMin());
         Assert.Equal(new NCollection_Vec2<double>(3, 4), aBVH2d.CornerMax());
     }

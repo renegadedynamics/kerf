@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -48,9 +51,9 @@ internal static class MatRecordings
     public static string Hex(double theValue) =>
         BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(gp_Pnt2d theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
 
-    private static string ExcName(Exception theE) => theE is Standard_Failure ? "!" + theE.GetType().Name : "!SEH";
+    private static string ExcName(Exception theE) => theE is FailureException ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
 
     private static string Fail(Action theF)
     {
@@ -86,39 +89,39 @@ internal static class MatRecordings
         if (aKind == "O")
         {
             double cx = theR.D(), cy = theR.D(), r = theR.D();
-            gp_Circ aC = new(new gp_Ax2(new gp_Pnt(cx, cy, 0.0), gp.DZ()), r);
+            Circle3D aC = new(new Frame3D(new Point3D(cx, cy, 0.0), Constants.DZ()), r);
             theClosed = true;
             return new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aC).Edge()).Wire();
         }
         theClosed = theR.I() != 0;
         int aNb = theR.I();
-        List<gp_Pnt> aPnts = [];
+        List<Point3D> aPnts = [];
         List<string> aKinds = [];
-        List<gp_Pnt> aMids = [];
-        List<gp_Pnt> aMids2 = [];
+        List<Point3D> aMids = [];
+        List<Point3D> aMids2 = [];
         List<TopoDS_Vertex> aVerts = [];
         for (int i = 0; i < aNb; i++)
         {
             double x = theR.D(), y = theR.D();
-            aPnts.Add(new gp_Pnt(x, y, 0.0));
+            aPnts.Add(new Point3D(x, y, 0.0));
             string k = theR.Word();
             aKinds.Add(k);
             if (k == "A")
             {
                 double mx = theR.D(), my = theR.D();
-                aMids.Add(new gp_Pnt(mx, my, 0.0));
-                aMids2.Add(new gp_Pnt());
+                aMids.Add(new Point3D(mx, my, 0.0));
+                aMids2.Add(new Point3D());
             }
             else if (k == "S")
             {
                 double mx = theR.D(), my = theR.D(), nx = theR.D(), ny = theR.D();
-                aMids.Add(new gp_Pnt(mx, my, 0.0));
-                aMids2.Add(new gp_Pnt(nx, ny, 0.0));
+                aMids.Add(new Point3D(mx, my, 0.0));
+                aMids2.Add(new Point3D(nx, ny, 0.0));
             }
             else
             {
-                aMids.Add(new gp_Pnt());
-                aMids2.Add(new gp_Pnt());
+                aMids.Add(new Point3D());
+                aMids2.Add(new Point3D());
             }
             aVerts.Add(new BRepBuilderAPI_MakeVertex(aPnts[^1]).Vertex());
         }
@@ -134,7 +137,7 @@ internal static class MatRecordings
             }
             else if (aKinds[i] == "S")
             {
-                NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+                NCollection_Array1<Point3D> aPoles = new(1, 4);
                 aPoles[1] = aPnts[i];
                 aPoles[2] = aMids[i];
                 aPoles[3] = aMids2[i];
@@ -154,7 +157,7 @@ internal static class MatRecordings
     {
         int aNbWires = theR.I();
         TopoDS_Face aFace = new();
-        gp_Pln aPln = new(new gp_Ax3(gp.XOY()));
+        Plane3D aPln = new(new CoordinateSystem(Constants.XOY()));
         for (int i = 0; i < aNbWires; i++)
         {
             TopoDS_Wire aW = ReadWire(theR, out bool isClosed);
@@ -221,10 +224,10 @@ internal static class MatRecordings
         {
             return "null";
         }
-        string aName = theG.GetType().Name;
+        string aName = global::Kerf.Engine.Foundation.OcctTypeNames.Of(theG.GetType());
         if (theG is Geom2d_TrimmedCurve aT)
         {
-            aName += "/" + aT.ChangeBasisCurve().GetType().Name + "," + Hex(aT.FirstParameter()) + ","
+            aName += "/" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aT.ChangeBasisCurve().GetType()) + "," + Hex(aT.FirstParameter()) + ","
                      + Hex(aT.LastParameter());
         }
         if (theG is Geom2d_CartesianPoint aP)
@@ -243,10 +246,10 @@ internal static class MatRecordings
             return;
         }
         Geom2d_Curve aBasis = aC.ChangeBasisCurve();
-        string aKind = aBasis.GetType().Name;
+        string aKind = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType());
         if (aBasis is Bisector_BisecAna anAna)
         {
-            Tok(theOut, thePre + "G", () => anAna.Geom2dCurve().GetType().Name);
+            Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
         theOut.Add(thePre + "T:" + aKind);
         double f = aC.FirstParameter(), l = aC.LastParameter();
@@ -307,7 +310,7 @@ internal static class MatRecordings
         anOut.Add("mod:" + (anExplo.IsModified(aFace) ? "1" : "0"));
 
         BRepMAT2d_BisectingLocus aLocus = new();
-        aFail = Fail(() => aLocus.Compute(anExplo, 1, aSide == "L" ? MAT_Left : MAT_Right, (GeomAbs_JoinType)aJoin,
+        aFail = Fail(() => aLocus.Compute(anExplo, 1, aSide == "L" ? MAT_Left : MAT_Right, (JoinKind)aJoin,
                                           anOpen != 0));
         if (aFail.Length != 0)
         {

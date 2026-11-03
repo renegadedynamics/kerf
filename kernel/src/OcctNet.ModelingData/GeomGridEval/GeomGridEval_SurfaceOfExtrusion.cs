@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,13 +17,13 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
 {
     private readonly Geom_SurfaceOfLinearExtrusion? myGeom;
     private readonly Geom_Curve? myBasisCurve;
-    private readonly gp_Dir myDirection;
+    private readonly Direction3D myDirection;
 
     /// <summary>Constructor with the extrusion surface to evaluate (null gives empty results).</summary>
     public GeomGridEval_SurfaceOfExtrusion(Geom_SurfaceOfLinearExtrusion? theExtrusion)
     {
         myGeom = theExtrusion;
-        myDirection = new gp_Dir();
+        myDirection = new Direction3D();
         if (myGeom is not null)
         {
             myBasisCurve = myGeom.BasisCurve();
@@ -31,12 +35,12 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
     public Geom_SurfaceOfLinearExtrusion? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myBasisCurve is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         int aNbU = theUParams.Length();
@@ -44,24 +48,24 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
 
         // Batch evaluate curve points using optimized curve evaluator
         GeomGridEval_Curve aCurveEval = new(myBasisCurve);
-        NCollection_Array1<gp_Pnt> aCurvePoints = aCurveEval.EvaluateGrid(theUParams);
+        NCollection_Array1<Point3D> aCurvePoints = aCurveEval.EvaluateGrid(theUParams);
         if (aCurvePoints.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         // For each curve point, compute surface points for all V values
         // S(u, v) = C(u) + v * Direction
-        gp_XYZ aDirXYZ = myDirection.XYZ();
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        Xyz aDirXYZ = myDirection.XYZ();
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         for (int i = 1; i <= aNbU; ++i)
         {
-            gp_Pnt aCurvePt = aCurvePoints.Value(i);
+            Point3D aCurvePt = aCurvePoints.Value(i);
             for (int j = 1; j <= aNbV; ++j)
             {
                 double aV = theVParams.Value(theVParams.Lower() + j - 1);
-                Geom_ExtrusionUtils.CalculateD0(aCurvePt, aV, aDirXYZ, out gp_Pnt aP);
+                Geom_ExtrusionUtils.CalculateD0(aCurvePt, aV, aDirXYZ, out Point3D aP);
                 aResult.SetValue(i, j, aP);
             }
         }
@@ -89,7 +93,7 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
         }
 
         // For extrusion: D1U = C'(u), D1V = Direction (constant)
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
         NCollection_Array2<Geom_Surface.ResD1> aResult = new(1, aNbU, 1, aNbV);
 
         for (int i = 1; i <= aNbU; ++i)
@@ -102,9 +106,9 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
                                                 aCurveData.D1,
                                                 aV,
                                                 aDirXYZ,
-                                                out gp_Pnt aP,
-                                                out gp_Vec aD1U,
-                                                out gp_Vec aD1V);
+                                                out Point3D aP,
+                                                out Vector3D aD1U,
+                                                out Vector3D aD1V);
                 aResult[i, j] = new Geom_Surface.ResD1 { Point = aP, D1U = aD1U, D1V = aD1V };
             }
         }
@@ -133,7 +137,7 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
 
         // For extrusion: D1U = C'(u), D1V = Direction
         // D2U = C''(u), D2V = 0, D2UV = 0
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
         NCollection_Array2<Geom_Surface.ResD2> aResult = new(1, aNbU, 1, aNbV);
 
         for (int i = 1; i <= aNbU; ++i)
@@ -147,12 +151,12 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
                                                 aCurveData.D2,
                                                 aV,
                                                 aDirXYZ,
-                                                out gp_Pnt aP,
-                                                out gp_Vec aD1U,
-                                                out gp_Vec aD1V,
-                                                out gp_Vec aD2U,
-                                                out gp_Vec aD2V,
-                                                out gp_Vec aD2UV);
+                                                out Point3D aP,
+                                                out Vector3D aD1U,
+                                                out Vector3D aD1V,
+                                                out Vector3D aD2U,
+                                                out Vector3D aD2V,
+                                                out Vector3D aD2UV);
                 aResult[i, j] = new Geom_Surface.ResD2
                 {
                     Point = aP,
@@ -190,7 +194,7 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
         // For extrusion: D1U = C'(u), D1V = Direction
         // D2U = C''(u), D2V = 0, D2UV = 0
         // D3U = C'''(u), D3V = 0, D3UUV = 0, D3UVV = 0
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
         NCollection_Array2<Geom_Surface.ResD3> aResult = new(1, aNbU, 1, aNbV);
 
         for (int i = 1; i <= aNbU; ++i)
@@ -205,16 +209,16 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
                                                 aCurveData.D3,
                                                 aV,
                                                 aDirXYZ,
-                                                out gp_Pnt aP,
-                                                out gp_Vec aD1U,
-                                                out gp_Vec aD1V,
-                                                out gp_Vec aD2U,
-                                                out gp_Vec aD2V,
-                                                out gp_Vec aD2UV,
-                                                out gp_Vec aD3U,
-                                                out gp_Vec aD3V,
-                                                out gp_Vec aD3UUV,
-                                                out gp_Vec aD3UVV);
+                                                out Point3D aP,
+                                                out Vector3D aD1U,
+                                                out Vector3D aD1V,
+                                                out Vector3D aD2U,
+                                                out Vector3D aD2V,
+                                                out Vector3D aD2UV,
+                                                out Vector3D aD3U,
+                                                out Vector3D aD3V,
+                                                out Vector3D aD3UUV,
+                                                out Vector3D aD3UVV);
                 aResult[i, j] = new Geom_Surface.ResD3
                 {
                     Point = aP,
@@ -234,7 +238,7 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -242,24 +246,24 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
         if (myBasisCurve is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0
             || theNV < 0 || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
 
         // For theNV == 0: need curve derivative, otherwise use CalculateDN directly
         if (theNV == 0)
         {
             // Pure U derivative = curve derivative
             GeomGridEval_Curve aCurveEval = new(myBasisCurve);
-            NCollection_Array1<gp_Vec> aCurveDN = aCurveEval.EvaluateGridDN(theUParams, theNU);
+            NCollection_Array1<Vector3D> aCurveDN = aCurveEval.EvaluateGridDN(theUParams, theNU);
             for (int i = 1; i <= aNbU; ++i)
             {
-                gp_Vec aDN = Geom_ExtrusionUtils.CalculateDN(aCurveDN.Value(i), aDirXYZ, theNU, theNV);
+                Vector3D aDN = Geom_ExtrusionUtils.CalculateDN(aCurveDN.Value(i), aDirXYZ, theNU, theNV);
                 for (int j = 1; j <= aNbV; ++j)
                 {
                     aResult.SetValue(i, j, aDN);
@@ -269,7 +273,7 @@ public sealed class GeomGridEval_SurfaceOfExtrusion : GeomGridEval.ISurfaceEvalu
         else
         {
             // For theNV >= 1: result doesn't depend on curve, use CalculateDN with zero vector
-            gp_Vec aDN = Geom_ExtrusionUtils.CalculateDN(new gp_Vec(), aDirXYZ, theNU, theNV);
+            Vector3D aDN = Geom_ExtrusionUtils.CalculateDN(new Vector3D(), aDirXYZ, theNU, theNV);
             for (int i = 1; i <= aNbU; ++i)
             {
                 for (int j = 1; j <= aNbV; ++j)

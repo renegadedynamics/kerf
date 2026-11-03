@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 /// <summary>Optimization algorithms for scalar and vector functions.</summary>
 public static partial class MathOpt
@@ -13,277 +14,277 @@ public static partial class MathOpt
     /// Brent's method for 1D minimization on [theLower, theUpper]: golden section search with parabolic
     /// interpolation. Root holds the minimum location, Value the minimum.
     /// </summary>
-    public static ScalarResult Brent<Function>(Function theFunc, double theLower, double theUpper, Config? theConfig = null)
+    public static ScalarResult Brent<Function>(Function func, double lower, double upper, Config? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new Config();
-        ScalarResult aResult = new();
+        config ??= new Config();
+        ScalarResult result = new();
 
-        double aA = theLower;
-        double aB = theUpper;
+        double a = lower;
+        double b = upper;
 
         // Initial point using golden section
-        double aX = aA + MathUtils.THE_GOLDEN_SECTION * (aB - aA);
-        double aW = aX;
-        double aV = aX;
+        double x = a + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_GOLDEN_SECTION * (b - a);
+        double w = x;
+        double v = x;
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
-        double aFw = aFx;
-        double aFv = aFx;
+        double fw = fx;
+        double fv = fx;
 
-        double aD = 0.0; // Current step
-        double aE = 0.0; // Previous step
+        double d = 0.0; // Current step
+        double e = 0.0; // Previous step
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            double aXm = 0.5 * (aA + aB);
-            double aTol1 = theConfig.XTolerance * Math.Abs(aX) + MathUtils.THE_ZERO_TOL / 10.0;
-            double aTol2 = 2.0 * aTol1;
+            double xm = 0.5 * (a + b);
+            double tol1 = config.XTolerance * Math.Abs(x) + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL / 10.0;
+            double tol2 = 2.0 * tol1;
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if (Math.Abs(aX - aXm) <= (aTol2 - 0.5 * (aB - aA)))
+            if (Math.Abs(x - xm) <= (tol2 - 0.5 * (b - a)))
             {
-                aResult.Status = Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                return result;
             }
 
-            double aU = 0.0;
-            bool aUseParabolic = false;
+            double u = 0.0;
+            bool useParabolic = false;
 
             // Try parabolic interpolation if step is large enough
-            if (Math.Abs(aE) > aTol1)
+            if (Math.Abs(e) > tol1)
             {
                 // Parabolic fit through x, w, v
-                double aR = (aX - aW) * (aFx - aFv);
-                double aQ = (aX - aV) * (aFx - aFw);
-                double aP = (aX - aV) * aQ - (aX - aW) * aR;
-                aQ = 2.0 * (aQ - aR);
+                double r = (x - w) * (fx - fv);
+                double q = (x - v) * (fx - fw);
+                double p = (x - v) * q - (x - w) * r;
+                q = 2.0 * (q - r);
 
-                if (aQ > 0.0)
+                if (q > 0.0)
                 {
-                    aP = -aP;
+                    p = -p;
                 }
                 else
                 {
-                    aQ = -aQ;
+                    q = -q;
                 }
 
-                double aETmp = aE;
-                aE = aD;
+                double eTmp = e;
+                e = d;
 
                 // Check if parabolic step is acceptable
-                if (Math.Abs(aP) < Math.Abs(0.5 * aQ * aETmp) && aP > aQ * (aA - aX) && aP < aQ * (aB - aX))
+                if (Math.Abs(p) < Math.Abs(0.5 * q * eTmp) && p > q * (a - x) && p < q * (b - x))
                 {
-                    aD = aP / aQ;
-                    aU = aX + aD;
+                    d = p / q;
+                    u = x + d;
 
                     // Don't evaluate too close to bounds
-                    if ((aU - aA) < aTol2 || (aB - aU) < aTol2)
+                    if ((u - a) < tol2 || (b - u) < tol2)
                     {
-                        aD = MathUtils.SignTransfer(aTol1, aXm - aX);
+                        d = global::Kerf.Engine.Numerics.Utilities.MathUtils.SignTransfer(tol1, xm - x);
                     }
-                    aUseParabolic = true;
+                    useParabolic = true;
                 }
             }
 
-            if (!aUseParabolic)
+            if (!useParabolic)
             {
                 // Golden section step
-                aE = (aX < aXm) ? (aB - aX) : (aA - aX);
-                aD = MathUtils.THE_GOLDEN_SECTION * aE;
+                e = (x < xm) ? (b - x) : (a - x);
+                d = global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_GOLDEN_SECTION * e;
             }
 
             // Ensure step is at least aTol1
-            if (Math.Abs(aD) >= aTol1)
+            if (Math.Abs(d) >= tol1)
             {
-                aU = aX + aD;
+                u = x + d;
             }
             else
             {
-                aU = aX + MathUtils.SignTransfer(aTol1, aD);
+                u = x + global::Kerf.Engine.Numerics.Utilities.MathUtils.SignTransfer(tol1, d);
             }
 
-            if (!theFunc.Value(aU, out double aFu))
+            if (!func.Value(u, out double fu))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Root = x;
+                result.Value = fx;
+                return result;
             }
 
             // Update bracket and best points
-            if (aFu <= aFx)
+            if (fu <= fx)
             {
-                if (aU < aX)
+                if (u < x)
                 {
-                    aB = aX;
+                    b = x;
                 }
                 else
                 {
-                    aA = aX;
+                    a = x;
                 }
 
-                aV = aW;
-                aW = aX;
-                aX = aU;
-                aFv = aFw;
-                aFw = aFx;
-                aFx = aFu;
+                v = w;
+                w = x;
+                x = u;
+                fv = fw;
+                fw = fx;
+                fx = fu;
             }
             else
             {
-                if (aU < aX)
+                if (u < x)
                 {
-                    aA = aU;
+                    a = u;
                 }
                 else
                 {
-                    aB = aU;
+                    b = u;
                 }
 
-                if (aFu <= aFw || aW == aX)
+                if (fu <= fw || w == x)
                 {
-                    aV = aW;
-                    aW = aU;
-                    aFv = aFw;
-                    aFw = aFu;
+                    v = w;
+                    w = u;
+                    fv = fw;
+                    fw = fu;
                 }
-                else if (aFu <= aFv || aV == aX || aV == aW)
+                else if (fu <= fv || v == x || v == w)
                 {
-                    aV = aU;
-                    aFv = aFu;
+                    v = u;
+                    fv = fu;
                 }
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Root = aX;
-        aResult.Value = aFx;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Root = x;
+        result.Value = fx;
+        return result;
     }
 
     /// <summary>Golden section search for 1D minimization on [theLower, theUpper] (no parabolic steps).</summary>
-    public static ScalarResult Golden<Function>(Function theFunc, double theLower, double theUpper, Config? theConfig = null)
+    public static ScalarResult Golden<Function>(Function func, double lower, double upper, Config? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new Config();
-        ScalarResult aResult = new();
+        config ??= new Config();
+        ScalarResult result = new();
 
-        const double aR = 0.618033988749895; // (sqrt(5) - 1) / 2
-        const double aC = 1.0 - aR;
+        const double r = 0.618033988749895; // (sqrt(5) - 1) / 2
+        const double c = 1.0 - r;
 
-        double aA = theLower;
-        double aB = theUpper;
+        double a = lower;
+        double b = upper;
 
         // Initialize interior points
-        double aX1 = aA + aC * (aB - aA);
-        double aX2 = aA + aR * (aB - aA);
+        double x1 = a + c * (b - a);
+        double x2 = a + r * (b - a);
 
-        if (!theFunc.Value(aX1, out double aF1))
+        if (!func.Value(x1, out double f1))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Value(aX2, out double aF2))
+        if (!func.Value(x2, out double f2))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if ((aB - aA) < theConfig.XTolerance * (Math.Abs(aX1) + Math.Abs(aX2)))
+            if ((b - a) < config.XTolerance * (Math.Abs(x1) + Math.Abs(x2)))
             {
-                aResult.Status = Status.OK;
-                if (aF1 < aF2)
+                result.Status = Status.OK;
+                if (f1 < f2)
                 {
-                    aResult.Root = aX1;
-                    aResult.Value = aF1;
+                    result.Root = x1;
+                    result.Value = f1;
                 }
                 else
                 {
-                    aResult.Root = aX2;
-                    aResult.Value = aF2;
+                    result.Root = x2;
+                    result.Value = f2;
                 }
-                return aResult;
+                return result;
             }
 
-            if (aF1 < aF2)
+            if (f1 < f2)
             {
                 // Minimum is in [a, x2]
-                aB = aX2;
-                aX2 = aX1;
-                aF2 = aF1;
-                aX1 = aA + aC * (aB - aA);
-                if (!theFunc.Value(aX1, out aF1))
+                b = x2;
+                x2 = x1;
+                f2 = f1;
+                x1 = a + c * (b - a);
+                if (!func.Value(x1, out f1))
                 {
-                    aResult.Status = Status.NumericalError;
-                    aResult.Root = aX2;
-                    aResult.Value = aF2;
-                    return aResult;
+                    result.Status = Status.NumericalError;
+                    result.Root = x2;
+                    result.Value = f2;
+                    return result;
                 }
             }
             else
             {
                 // Minimum is in [x1, b]
-                aA = aX1;
-                aX1 = aX2;
-                aF1 = aF2;
-                aX2 = aA + aR * (aB - aA);
-                if (!theFunc.Value(aX2, out aF2))
+                a = x1;
+                x1 = x2;
+                f1 = f2;
+                x2 = a + r * (b - a);
+                if (!func.Value(x2, out f2))
                 {
-                    aResult.Status = Status.NumericalError;
-                    aResult.Root = aX1;
-                    aResult.Value = aF1;
-                    return aResult;
+                    result.Status = Status.NumericalError;
+                    result.Root = x1;
+                    result.Value = f1;
+                    return result;
                 }
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = Status.MaxIterations;
-        if (aF1 < aF2)
+        result.Status = Status.MaxIterations;
+        if (f1 < f2)
         {
-            aResult.Root = aX1;
-            aResult.Value = aF1;
+            result.Root = x1;
+            result.Value = f1;
         }
         else
         {
-            aResult.Root = aX2;
-            aResult.Value = aF2;
+            result.Root = x2;
+            result.Value = f2;
         }
-        return aResult;
+        return result;
     }
 
     /// <summary>Brent's method after bracketing a minimum from theGuess with an initial step theStep.</summary>
-    public static ScalarResult BrentWithBracket<Function>(Function theFunc, double theGuess, double theStep = 1.0, Config? theConfig = null)
+    public static ScalarResult BrentWithBracket<Function>(Function func, double guess, double step = 1.0, Config? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new Config();
-        ScalarResult aResult = new();
+        config ??= new Config();
+        ScalarResult result = new();
 
         // Try to bracket minimum
-        MinBracketResult aBracket = MathUtils.BracketMinimum(theFunc, theGuess, theGuess + theStep);
+        MinBracketResult bracket = global::Kerf.Engine.Numerics.Utilities.MathUtils.BracketMinimum(func, guess, guess + step);
 
-        if (!aBracket.IsValid)
+        if (!bracket.IsValid)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Apply Brent's method on the bracket
-        return Brent(theFunc, aBracket.A, aBracket.C, theConfig);
+        return Brent(func, bracket.A, bracket.C, config);
     }
 }

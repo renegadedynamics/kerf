@@ -2,13 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 
 namespace Occt;
 
 /// <summary>
 /// The parallel loops of the Boolean component: each runs <c>Perform()</c> on every solver of a vector, in parallel
-/// unless the algorithm's <c>myRunParallel</c> flag is off, through <see cref="OSD_Parallel"/> (decision 522).
+/// unless the algorithm's <c>myRunParallel</c> flag is off, through <see cref="OsdParallel"/> (decision 522).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -54,14 +55,14 @@ internal static class BOPTools_Parallel
     internal static void Perform<TSolver>(bool theIsRunParallel, IReadOnlyList<TSolver> theSolverVector)
         where TSolver : ISolver
     {
-        OSD_Parallel.For(0, theSolverVector.Count, theIndex => theSolverVector[theIndex].Perform(), !theIsRunParallel);
+        OsdParallel.For(0, theSolverVector.Count, theIndex => theSolverVector[theIndex].Perform(), !theIsRunParallel);
     }
 
     /// <summary>Pure version over an NCollection vector.</summary>
     internal static void Perform<TSolver>(bool theIsRunParallel, NCollection_DynamicArray<TSolver> theSolverVector)
         where TSolver : ISolver
     {
-        OSD_Parallel.For(0, theSolverVector.Length(), theIndex => theSolverVector.Value(theIndex).Perform(), !theIsRunParallel);
+        OsdParallel.For(0, theSolverVector.Length(), theIndex => theSolverVector.Value(theIndex).Perform(), !theIsRunParallel);
     }
 
     /// <summary>
@@ -74,7 +75,7 @@ internal static class BOPTools_Parallel
     {
         ContextFunctor<TContext> aFunctor = new();
         aFunctor.SetContext(theContext);
-        OSD_Parallel.For(0, theSolverVector.Count, theIndex =>
+        OsdParallel.For(0, theSolverVector.Count, theIndex =>
         {
             TSolver aSolver = theSolverVector[theIndex];
             aSolver.SetContext(aFunctor.GetThreadContext());
@@ -90,7 +91,7 @@ internal static class BOPTools_Parallel
     {
         ContextFunctor<TContext> aFunctor = new();
         aFunctor.SetContext(theContext);
-        OSD_Parallel.For(0, theSolverVector.Length(), theIndex =>
+        OsdParallel.For(0, theSolverVector.Length(), theIndex =>
         {
             TSolver aSolver = theSolverVector.Value(theIndex);
             aSolver.SetContext(aFunctor.GetThreadContext());

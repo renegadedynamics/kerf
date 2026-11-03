@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +22,7 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
     private readonly Geom_OffsetCurve? myGeom;
     private readonly Geom_Curve? myBasis;
     private readonly double myOffset;
-    private readonly gp_Dir myDirection = new();
+    private readonly Direction3D myDirection = new();
 
     /// <summary>Constructor with the offset curve to evaluate (null gives empty results).</summary>
     public GeomGridEval_OffsetCurve(Geom_OffsetCurve? theOffset)
@@ -37,11 +41,11 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
     public Geom_OffsetCurve? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myBasis is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         // Offset D0 requires basis D1 to compute offset direction
@@ -51,21 +55,21 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         NCollection_Array1<Geom_Curve.ResD1> aBasisD1 = aBasisEval.EvaluateGridD1(theParams);
         if (aBasisD1.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         int aNbParams = theParams.Length();
-        NCollection_Array1<gp_Pnt> aResult = new(1, aNbParams);
+        NCollection_Array1<Point3D> aResult = new(1, aNbParams);
 
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
 
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom_Curve.ResD1 aBasis = ref aBasisD1[i];
-            gp_Pnt aP = aBasis.Point;
+            Point3D aP = aBasis.Point;
             if (!Geom_OffsetCurveUtils.CalculateD0(ref aP, aBasis.D1, aDirXYZ, myOffset))
             {
-                return new NCollection_Array1<gp_Pnt>();
+                return new NCollection_Array1<Point3D>();
             }
             aResult.SetValue(i, aP);
         }
@@ -93,13 +97,13 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         int aNbParams = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD1> aResult = new(1, aNbParams);
 
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
 
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom_Curve.ResD2 aBasis = ref aBasisD2[i];
-            gp_Pnt aP = aBasis.Point;
-            gp_Vec aD1 = aBasis.D1;
+            Point3D aP = aBasis.Point;
+            Vector3D aD1 = aBasis.D1;
             if (!Geom_OffsetCurveUtils.CalculateD1(ref aP, ref aD1, aBasis.D2, aDirXYZ, myOffset))
             {
                 return new NCollection_Array1<Geom_Curve.ResD1>();
@@ -130,21 +134,21 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         int aNbParams = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD2> aResult = new(1, aNbParams);
 
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
 
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom_Curve.ResD3 aBasis = ref aBasisD3[i];
-            gp_Pnt aP = aBasis.Point;
-            gp_Vec aD1 = aBasis.D1;
-            gp_Vec aD2 = aBasis.D2;
-            gp_Vec aD3 = aBasis.D3;
+            Point3D aP = aBasis.Point;
+            Vector3D aD1 = aBasis.D1;
+            Vector3D aD2 = aBasis.D2;
+            Vector3D aD3 = aBasis.D3;
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (aD1.SquareMagnitude() <= gp.Resolution())
+            if (aD1.SquareMagnitude() <= Constants.Resolution())
             {
-                gp_Vec aDummyD4 = new();
+                Vector3D aDummyD4 = new();
                 if (!Geom_OffsetCurveUtils.AdjustDerivative(myBasis,
                                                               3,
                                                               theParams.Value(theParams.Lower() + i - 1),
@@ -191,22 +195,22 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         int aNbParams = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD3> aResult = new(1, aNbParams);
 
-        gp_XYZ aDirXYZ = myDirection.XYZ();
+        Xyz aDirXYZ = myDirection.XYZ();
 
         for (int i = 1; i <= aNbParams; ++i)
         {
             double aParam = theParams.Value(theParams.Lower() + i - 1);
 
             ref readonly Geom_Curve.ResD3 aBasis = ref aBasisD3[i];
-            gp_Pnt aP = aBasis.Point;
-            gp_Vec aD1 = aBasis.D1;
-            gp_Vec aD2 = aBasis.D2;
-            gp_Vec aD3 = aBasis.D3;
-            gp_Vec aD4 = myBasis.DN(aParam, 4);
+            Point3D aP = aBasis.Point;
+            Vector3D aD1 = aBasis.D1;
+            Vector3D aD2 = aBasis.D2;
+            Vector3D aD3 = aBasis.D3;
+            Vector3D aD4 = myBasis.DN(aParam, 4);
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (aD1.SquareMagnitude() <= gp.Resolution())
+            if (aD1.SquareMagnitude() <= Constants.Resolution())
             {
                 if (!Geom_OffsetCurveUtils.AdjustDerivative(myBasis,
                                                               4,
@@ -235,11 +239,11 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
     /// Evaluates the Nth derivative at all grid points: from the D1-D3 grids for N up to 3, and as the basis
     /// curve's DN above.
     /// </summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myBasis is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
         int aNbParams = theParams.Length();
@@ -250,7 +254,7 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         if (theN == 1)
         {
             NCollection_Array1<Geom_Curve.ResD1> aD1Grid = EvaluateGridD1(theParams);
-            NCollection_Array1<gp_Vec> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector3D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD1Grid[i].D1);
@@ -260,7 +264,7 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         else if (theN == 2)
         {
             NCollection_Array1<Geom_Curve.ResD2> aD2Grid = EvaluateGridD2(theParams);
-            NCollection_Array1<gp_Vec> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector3D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD2Grid[i].D2);
@@ -270,7 +274,7 @@ public sealed class GeomGridEval_OffsetCurve : GeomGridEval.ICurveEvaluator
         else if (theN == 3)
         {
             NCollection_Array1<Geom_Curve.ResD3> aD3Grid = EvaluateGridD3(theParams);
-            NCollection_Array1<gp_Vec> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector3D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD3Grid[i].D3);

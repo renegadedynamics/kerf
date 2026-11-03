@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -15,7 +16,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(300, 91);
 
-    private static readonly GeomAbs_Shape[] Shapes = [GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3, GeomAbs_CN];
+    private static readonly Continuity[] Shapes = [C0, C1, C2, C3, CN];
 
     // ---------------------------------------------------------------------------------------------
     // Random curves
@@ -47,7 +48,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             {
                 aMults[1] = aMults[aNbKnots] = theDegree + 1;
             }
-            int aNbPoles = BSplCLib.NbPoles(theDegree, thePeriodic, aMults);
+            int aNbPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(theDegree, thePeriodic, aMults);
             if (aNbPoles < 2 || (thePeriodic && aNbPoles <= theDegree))
             {
                 continue;
@@ -76,7 +77,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         {
             case 0:
             {
-                (N.gp_Ax1 aNA, gp_Ax1 aA) = GeomOracleInputs.Ax1s(theO);
+                (N.gp_Ax1 aNA, Axis3D aA) = GeomOracleInputs.Ax1s(theO);
                 using (aNA)
                 {
                     return (new N.Geom_Line(aNA), new Geom_Line(aA), "line");
@@ -84,7 +85,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             }
             case 1:
             {
-                (N.gp_Ax2 aNA, gp_Ax2 aA) = GeomOracleInputs.Ax2s(theO);
+                (N.gp_Ax2 aNA, Frame3D aA) = GeomOracleInputs.Ax2s(theO);
                 double aR = theO.Real(0.1, 50);
                 using (aNA)
                 {
@@ -93,7 +94,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             }
             case 2:
             {
-                (N.gp_Ax2 aNA, gp_Ax2 aA) = GeomOracleInputs.Ax2s(theO);
+                (N.gp_Ax2 aNA, Frame3D aA) = GeomOracleInputs.Ax2s(theO);
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.05, aMaj);
                 using (aNA)
                 {
@@ -102,7 +103,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             }
             case 3:
             {
-                (N.gp_Ax2 aNA, gp_Ax2 aA) = GeomOracleInputs.Ax2s(theO);
+                (N.gp_Ax2 aNA, Frame3D aA) = GeomOracleInputs.Ax2s(theO);
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.1, 50);
                 using (aNA)
                 {
@@ -114,7 +115,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             case 4:
             {
                 int aNbPoles = theO.Int(2, 11);
-                var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+                var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
                 for (int i = 1; i <= aNbPoles; i++)
                 {
                     aPoles[i] = theO.Pnt();
@@ -133,7 +134,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 int aDeg = theO.Int(1, 6);
                 bool aPer = theO.Int(0, 2) == 0;
                 (NCollection_Array1<double> aKnots, NCollection_Array1<int> aMults, int aNbPoles) = RandomKnots(theO, aDeg, aPer);
-                var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+                var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
                 for (int i = 1; i <= aNbPoles; i++)
                 {
                     aPoles[i] = theO.Pnt();
@@ -148,9 +149,9 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static (N.gp_Ax2d Native, gp_Ax2d Port) Ax2ds(Oracle theO)
+    private static (N.gp_Ax2d Native, Axis2D Port) Ax2ds(Oracle theO)
     {
-        gp_Pnt2d aP = theO.Pnt2d();
+        Point2D aP = theO.Pnt2d();
         double aX, aY;
         do
         {
@@ -159,7 +160,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         } while (aX * aX + aY * aY < 0.01);
         using var aNP = Oracle.ToNative(aP);
         using var aND = new N.gp_Dir2d(aX, aY);
-        return (new N.gp_Ax2d(aNP, aND), new gp_Ax2d(aP, new gp_Dir2d(aX, aY)));
+        return (new N.gp_Ax2d(aNP, aND), new Axis2D(aP, new Direction2D(aX, aY)));
     }
 
     internal static (N.Geom2d_Curve Native, Geom2d_Curve Port, string Kind) RandomCurve2d(Oracle theO)
@@ -168,7 +169,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         {
             case 0:
             {
-                (N.gp_Ax2d aNA, gp_Ax2d aA) = Ax2ds(theO);
+                (N.gp_Ax2d aNA, Axis2D aA) = Ax2ds(theO);
                 using (aNA)
                 {
                     return (new N.Geom2d_Line(aNA), new Geom2d_Line(aA), "line2d");
@@ -176,7 +177,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             }
             case 1:
             {
-                (N.gp_Ax2d aNA, gp_Ax2d aA) = Ax2ds(theO);
+                (N.gp_Ax2d aNA, Axis2D aA) = Ax2ds(theO);
                 double aR = theO.Real(0.1, 50);
                 bool aSense = theO.Bool();
                 using (aNA)
@@ -186,7 +187,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             }
             case 2:
             {
-                (N.gp_Ax2d aNA, gp_Ax2d aA) = Ax2ds(theO);
+                (N.gp_Ax2d aNA, Axis2D aA) = Ax2ds(theO);
                 double aMaj = theO.Real(0.1, 50), aMin = theO.Real(0.05, aMaj);
                 using (aNA)
                 {
@@ -198,7 +199,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                 int aDeg = theO.Int(1, 6);
                 bool aPer = theO.Int(0, 2) == 0;
                 (NCollection_Array1<double> aKnots, NCollection_Array1<int> aMults, int aNbPoles) = RandomKnots(theO, aDeg, aPer);
-                var aPoles = new NCollection_Array1<gp_Pnt2d>(1, aNbPoles);
+                var aPoles = new NCollection_Array1<Point2D>(1, aNbPoles);
                 for (int i = 1; i <= aNbPoles; i++)
                 {
                     aPoles[i] = theO.Pnt2d();
@@ -216,7 +217,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
     /// <summary>Random bounds: the curve's own when finite (or a sub-range of them), otherwise a range around 0.</summary>
     internal static (double First, double Last) Bounds(Oracle theO, double theFirst, double theLast, bool thePeriodic)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);
@@ -254,7 +255,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
     private static List<double> SameIntervals3d(Oracle theO, N.GeomAdaptor_Curve theN, TestGeomAdaptor_Curve theP, string theWhat)
     {
         var aBreaks = new List<double>();
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNb = theN.NbIntervals((N.GeomAbs_Shape)(int)aS);
             theO.Same(aNb, theP.NbIntervals(aS), $"{theWhat} NbIntervals({aS})");
@@ -274,7 +275,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
     private static List<double> SameIntervals2d(Oracle theO, N.Geom2dAdaptor_Curve theN, TestGeom2dAdaptor_Curve theP, string theWhat)
     {
         var aBreaks = new List<double>();
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNb = theN.NbIntervals((N.GeomAbs_Shape)(int)aS);
             theO.Same(aNb, theP.NbIntervals(aS), $"{theWhat} NbIntervals({aS})");
@@ -300,22 +301,22 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         string aW = $"{theWhat} at {U:R}";
 
         theN.D0(U, aNP);
-        theP.D0(U, out gp_Pnt aP);
+        theP.D0(U, out Point3D aP);
         theO.Same(aNP, aP, $"{aW} D0");
 
         theN.D1(U, aNP, aNV1);
-        theP.D1(U, out aP, out gp_Vec aV1);
+        theP.D1(U, out aP, out Vector3D aV1);
         theO.Same(aNP, aP, $"{aW} D1 P");
         theO.Same(aNV1, aV1, $"{aW} D1 V1");
 
         theN.D2(U, aNP, aNV1, aNV2);
-        theP.D2(U, out aP, out aV1, out gp_Vec aV2);
+        theP.D2(U, out aP, out aV1, out Vector3D aV2);
         theO.Same(aNP, aP, $"{aW} D2 P");
         theO.Same(aNV1, aV1, $"{aW} D2 V1");
         theO.Same(aNV2, aV2, $"{aW} D2 V2");
 
         theN.D3(U, aNP, aNV1, aNV2, aNV3);
-        theP.D3(U, out aP, out aV1, out aV2, out gp_Vec aV3);
+        theP.D3(U, out aP, out aV1, out aV2, out Vector3D aV3);
         theO.Same(aNP, aP, $"{aW} D3 P");
         theO.Same(aNV1, aV1, $"{aW} D3 V1");
         theO.Same(aNV2, aV2, $"{aW} D3 V2");
@@ -337,22 +338,22 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
         string aW = $"{theWhat} at {U:R}";
 
         theN.D0(U, aNP);
-        theP.D0(U, out gp_Pnt2d aP);
+        theP.D0(U, out Point2D aP);
         theO.Same(aNP, aP, $"{aW} D0");
 
         theN.D1(U, aNP, aNV1);
-        theP.D1(U, out aP, out gp_Vec2d aV1);
+        theP.D1(U, out aP, out Vector2D aV1);
         theO.Same(aNP, aP, $"{aW} D1 P");
         theO.Same(aNV1, aV1, $"{aW} D1 V1");
 
         theN.D2(U, aNP, aNV1, aNV2);
-        theP.D2(U, out aP, out aV1, out gp_Vec2d aV2);
+        theP.D2(U, out aP, out aV1, out Vector2D aV2);
         theO.Same(aNP, aP, $"{aW} D2 P");
         theO.Same(aNV1, aV1, $"{aW} D2 V1");
         theO.Same(aNV2, aV2, $"{aW} D2 V2");
 
         theN.D3(U, aNP, aNV1, aNV2, aNV3);
-        theP.D3(U, out aP, out aV1, out aV2, out gp_Vec2d aV3);
+        theP.D3(U, out aP, out aV1, out aV2, out Vector2D aV3);
         theO.Same(aNP, aP, $"{aW} D3 P");
         theO.Same(aNV1, aV1, $"{aW} D3 V1");
         theO.Same(aNV2, aV2, $"{aW} D3 V2");
@@ -410,7 +411,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                         anOracle.Same(aN.Period(), aP.Period(), $"{aW} Period");
                     }
                     anOracle.Same(aN.IsRational(), aP.IsRational(), $"{aW} IsRational");
-                    foreach (double aTol in new[] { Precision.Confusion(), 1e-3, 0.1 })
+                    foreach (double aTol in new[] { global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-3, 0.1 })
                     {
                         anOracle.SameRelative(aN.Resolution(aTol), aP.Resolution(aTol), $"{aW} Resolution({aTol})");
                     }
@@ -466,7 +467,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
                         anOracle.Same(aN.Period(), aP.Period(), $"{aW} Period");
                     }
                     anOracle.Same(aN.IsRational(), aP.IsRational(), $"{aW} IsRational");
-                    foreach (double aTol in new[] { Precision.Confusion(), 1e-3, 0.1 })
+                    foreach (double aTol in new[] { global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-3, 0.1 })
                     {
                         anOracle.SameRelative(aN.Resolution(aTol), aP.Resolution(aTol), $"{aW} Resolution({aTol})");
                     }

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -62,15 +64,15 @@ public class GeomFill_SectionGenerator : GeomFill_Profiler, IAppBlend_SectionGen
     }
 
     /// <summary>Used for the first and last sections; returns false: the derivatives are not computed.</summary>
-    public bool Section(int P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                        NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public bool Section(int P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                        NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                         NCollection_Array1<double> Weigths, NCollection_Array1<double> DWeigths)
     {
         Section(P, Poles, Poles2d, Weigths);
         return false;
     }
 
-    public void Section(int P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
+    public void Section(int P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Point2D> Poles2d,
                         NCollection_Array1<double> Weigths)
     {
         Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[P];

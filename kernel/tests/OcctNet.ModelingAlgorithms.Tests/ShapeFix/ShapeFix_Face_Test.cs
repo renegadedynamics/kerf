@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -13,7 +14,7 @@ public class ShapeFix_Face_Test
     // Returns a null face if construction fails.
     private static TopoDS_Face makePlanarFace()
     {
-        var aMakeFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 0.0,
+        var aMakeFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 0.0,
                                                     1.0, 0.0, 1.0);
         if (!aMakeFace.IsDone())
         {
@@ -25,12 +26,12 @@ public class ShapeFix_Face_Test
     // A closed edge belting a cone's full period (8 points sampled off the cone surface).
     private static TopoDS_Face MakeFaceOnPeriodicConicalSingleWire(out Geom_ConicalSurface theCone)
     {
-        var anAxis = new gp_Ax3(new gp_Pnt(0.0, 4.0, -9.1), new gp_Dir(0.0, 0.09, -1.0));
+        var anAxis = new CoordinateSystem(new Point3D(0.0, 4.0, -9.1), new Direction3D(0.0, 0.09, -1.0));
         theCone = new Geom_ConicalSurface(anAxis, 0.35, 0.0);
 
         const int anN = 8;
         const double aV = 0.5;
-        var aPts = new NCollection_HArray1<gp_Pnt>(1, anN);
+        var aPts = new NCollection_HArray1<Point3D>(1, anN);
         for (int i = 1; i <= anN; i++)
         {
             double anU = 2.0 * Math.PI * (i - 1) / anN;

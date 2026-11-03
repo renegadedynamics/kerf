@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -47,13 +49,13 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
 
         ShapeAnalysis.GetFaceUVBounds(myFace, out double Uf, out double Ul, out double Vf, out double Vl);
         // 01.10.99 pdn Porting on DEC
-        if (Occt.Precision.IsInfinite(Uf) || Occt.Precision.IsInfinite(Ul) || Occt.Precision.IsInfinite(Vf)
-            || Occt.Precision.IsInfinite(Vl))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(Uf) || Kerf.Engine.Foundation.Precision.IsInfinite(Ul) || Kerf.Engine.Foundation.Precision.IsInfinite(Vf)
+            || Kerf.Engine.Foundation.Precision.IsInfinite(Vl))
         {
             return false;
         }
 
-        Geom_Surface surf = BRep_Tool.Surface(face, out TopLoc_Location L)!;
+        Geom_Surface surf = BRep_Tool.Surface(face, out Placement L)!;
 
         bool isUSplit = false;
         bool doSplit = false;
@@ -89,8 +91,8 @@ public class ShapeUpgrade_ClosedFaceDivide : ShapeUpgrade_FaceDivide
                     }
                     // splitting
                     var sac = new ShapeAnalysis_Curve();
-                    var B1 = new Bnd_Box2d();
-                    var B2 = new Bnd_Box2d();
+                    var B1 = new Box2d();
+                    var B2 = new Box2d();
                     sac.FillBndBox(c1!, f1, l1, 20, true, ref B1);
                     sac.FillBndBox(c2!, f2, l2, 20, true, ref B2);
                     B1.Get(out double x1min, out double y1min, out double x1max, out double y1max);

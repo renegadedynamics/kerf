@@ -1,3 +1,6 @@
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -14,19 +17,19 @@ namespace Build123d;
 public class Location : IEquatable<Location>, IFormattable, IGeometry
 {
     /// <summary>The OCCT location. Never modified: TopLoc_Location's mutators must not be called on it.</summary>
-    internal TopLoc_Location Wrapped { get; }
+    internal Placement Wrapped { get; }
 
     /// <summary>The identity location: no translation or rotation.</summary>
-    public Location() : this(new TopLoc_Location(), owned: true) { }
+    public Location() : this(new Placement(), owned: true) { }
 
     /// <summary>A copy of another location, sharing its OCCT location.</summary>
     public Location(Location location) : this(location.Wrapped, owned: true) { }
 
     /// <summary>A location from an OCCT TopLoc_Location (keeping its identity).</summary>
-    public Location(TopLoc_Location location) : this(location, owned: true) { }
+    public Location(Placement location) : this(location, owned: true) { }
 
     /// <summary>A location from an OCCT transformation.</summary>
-    public Location(gp_Trsf trsf) : this(new TopLoc_Location(trsf), owned: true) { }
+    public Location(Transform3D trsf) : this(new Placement(trsf), owned: true) { }
 
     /// <summary>A location at a position, without rotation.</summary>
     public Location(Vector position) : this(Build(position, trsf => trsf), owned: true) { }
@@ -38,9 +41,9 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Vector position, Vector direction, double angle)
         : this(Build(position, trsf =>
         {
-            var origin = new gp_Pnt(0, 0, 0);
+            var origin = new Point3D(0, 0, 0);
             var dir = direction.ToGpDir();
-            var axis = new gp_Ax1(origin, dir);
+            var axis = new Axis3D(origin, dir);
             return trsf.WithRotation(axis, angle * Constants.DegToRad);
         }), owned: true)
     {
@@ -53,7 +56,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Vector position, Vector orientation, RotationOrder ordering = default)
         : this(Build(position, trsf =>
         {
-            var q = new gp_Quaternion().WithEulerAngles(ordering.ToOcct(), orientation.X * Constants.DegToRad,
+            var q = new Quaternion3().WithEulerAngles(ordering.ToOcct(), orientation.X * Constants.DegToRad,
                                                         orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
             return trsf.WithRotation(q);
         }), owned: true)
@@ -64,36 +67,36 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Plane plane) : this(FromPlane(plane), owned: true) { }
 
     /// <summary>Takes ownership of a TopLoc_Location without copying it.</summary>
-    private protected Location(TopLoc_Location location, bool owned) => Wrapped = location;
+    private protected Location(Placement location, bool owned) => Wrapped = location;
 
     /// <summary>Wraps a new TopLoc_Location this location takes ownership of.</summary>
-    static Location Own(TopLoc_Location location) => new(location, owned: true);
+    static Location Own(Placement location) => new(location, owned: true);
 
-    static TopLoc_Location Build(Vector position, Func<gp_Trsf, gp_Trsf> rotate)
+    static Placement Build(Vector position, Func<Transform3D, Transform3D> rotate)
     {
-        var trsf = rotate(new gp_Trsf());
+        var trsf = rotate(new Transform3D());
         var translation = position.ToGpVec();
         trsf = trsf.WithTranslationPart(translation);
-        return new TopLoc_Location(trsf);
+        return new Placement(trsf);
     }
 
-    static TopLoc_Location FromPlane(Plane plane)
+    static Placement FromPlane(Plane plane)
     {
         var origin = plane.Origin.ToGpPnt();
         var z = plane.ZDir.ToGpDir();
         var x = plane.XDir.ToGpDir();
-        var cs = new gp_Ax3(origin, z, x);
-        var trsf = new gp_Trsf();
+        var cs = new CoordinateSystem(origin, z, x);
+        var trsf = new Transform3D();
         trsf = trsf.WithTransformation(cs);
         trsf = trsf.Inverted();
-        return new TopLoc_Location(trsf);
+        return new Placement(trsf);
     }
 
     /// <summary>The OCCT location (the same identity).</summary>
-    public TopLoc_Location ToTopLoc() => Wrapped;
+    public Placement ToTopLoc() => Wrapped;
 
     /// <summary>A new OCCT gp_Trsf for this location's transformation.</summary>
-    public gp_Trsf ToGpTrsf() => Wrapped.Transformation();
+    public Transform3D ToGpTrsf() => Wrapped.Transformation();
 
     /// <summary>The position (translation) part.</summary>
     public Vector Position
@@ -114,7 +117,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
             var trsf = Wrapped.Transformation();
             var q = trsf.GetRotation();
             double a = 0, b = 0, c = 0;
-            q.GetEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, out a, out b, out c);
+            q.GetEulerAngles(EulerSequence.Intrinsic_XYZ, out a, out b, out c);
             return new Vector(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
         }
     }
@@ -125,15 +128,15 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>This location with a new position and the same orientation.</summary>
     public Location WithPosition(Vector position)
     {
-        var trsfPosition = new gp_Trsf();
+        var trsfPosition = new Transform3D();
         var v = position.ToGpVec();
         trsfPosition = trsfPosition.WithTranslationPart(v);
         var current = Wrapped.Transformation();
         var rotation = current.GetRotation();
-        var trsfOrientation = new gp_Trsf();
+        var trsfOrientation = new Transform3D();
         trsfOrientation = trsfOrientation.WithRotation(rotation);
         var combined = trsfPosition.Multiplied(trsfOrientation);
-        return Own(new TopLoc_Location(combined));
+        return Own(new Placement(combined));
     }
 
     /// <summary>This location with a new orientation (intrinsic XYZ Euler angles in degrees) and the same position.</summary>
@@ -141,15 +144,15 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         var current = Wrapped.Transformation();
         var xyz = current.TranslationPart();
-        var trsfPosition = new gp_Trsf();
-        var v = new gp_Vec(xyz.X(), xyz.Y(), xyz.Z());
+        var trsfPosition = new Transform3D();
+        var v = new Vector3D(xyz.X(), xyz.Y(), xyz.Z());
         trsfPosition = trsfPosition.WithTranslationPart(v);
-        var q = new gp_Quaternion().WithEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, orientation.X * Constants.DegToRad,
+        var q = new Quaternion3().WithEulerAngles(EulerSequence.Intrinsic_XYZ, orientation.X * Constants.DegToRad,
                                                     orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
-        var trsfOrientation = new gp_Trsf();
+        var trsfOrientation = new Transform3D();
         trsfOrientation = trsfOrientation.WithRotation(q);
         var combined = trsfPosition.Multiplied(trsfOrientation);
-        return Own(new TopLoc_Location(combined));
+        return Own(new Placement(combined));
     }
 
     /// <summary>The X axis of this location used as a plane.</summary>
@@ -276,15 +279,15 @@ public class Rotation : Location
     /// <summary>A rotation by Euler angles (X, Y, Z) in degrees, as build123d's <c>RotationLike</c> tuples are.</summary>
     public static implicit operator Rotation((double X, double Y, double Z) angles) => new(angles.X, angles.Y, angles.Z);
 
-    static TopLoc_Location AboutAxis(Axis axis, double angle)
+    static Placement AboutAxis(Axis axis, double angle)
     {
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         if (angle != 0.0)
         {
             var ax1 = axis.ToGpAx1();
             trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         }
-        return new TopLoc_Location(trsf);
+        return new Placement(trsf);
     }
 }
 

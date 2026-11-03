@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Occt;
 using System.Globalization;
 
-namespace Occt;
+namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// Services for triangulations and polygons: joining triangulations, writing and reading them in OCCT's text format,
@@ -22,20 +26,20 @@ public static class Poly
     /// Joins several triangulations into a new one: a plain sum, without sharing nodes. UV nodes are dropped. Null
     /// entries are skipped; returns null if there are no nodes.
     /// </summary>
-    public static Poly_Triangulation? Catenate(NCollection_List<Poly_Triangulation?> lstTri)
+    public static Triangulation? Catenate(NCollection_List<Triangulation?> lstTri)
     {
         int nNodes = 0;
         int nTrian = 0;
 
         // Sum up the total number of nodes.
-        var anIter = new NCollection_List<Poly_Triangulation?>.Iterator(lstTri);
-        for (; anIter.More(); anIter.Next())
+        var iter = new NCollection_List<Triangulation?>.Iterator(lstTri);
+        for (; iter.More(); iter.Next())
         {
-            Poly_Triangulation? aTri = anIter.Value();
-            if (aTri is not null)
+            Triangulation? tri = iter.Value();
+            if (tri is not null)
             {
-                nNodes += aTri.NbNodes();
-                nTrian += aTri.NbTriangles();
+                nNodes += tri.NodeCount;
+                nTrian += tri.TriangleCount;
             }
         }
 
@@ -44,124 +48,124 @@ public static class Poly
             return null;
         }
 
-        var aResult = new Poly_Triangulation(nNodes, nTrian, false);
+        var result = new Triangulation(nNodes, nTrian, false);
         Span<int> iNode = [0, 0, 0];
         nNodes = 0;
         nTrian = 0;
-        for (anIter.Initialize(lstTri); anIter.More(); anIter.Next())
+        for (iter.Initialize(lstTri); iter.More(); iter.Next())
         {
-            Poly_Triangulation? aTri = anIter.Value();
-            if (aTri is null)
+            Triangulation? tri = iter.Value();
+            if (tri is null)
             {
                 continue;
             }
 
-            int nbNodes = aTri.NbNodes();
-            int nbTrian = aTri.NbTriangles();
+            int nbNodes = tri.NodeCount;
+            int nbTrian = tri.TriangleCount;
             for (int i = 1; i <= nbNodes; i++)
             {
-                aResult.SetNode(i + nNodes, aTri.Node(i));
+                result.SetNode(i + nNodes, tri.Node(i));
             }
 
             for (int i = 1; i <= nbTrian; i++)
             {
-                aTri.Triangle(i).Get(out iNode[0], out iNode[1], out iNode[2]);
-                aResult.SetTriangle(i + nTrian, new Poly_Triangle(iNode[0] + nNodes, iNode[1] + nNodes, iNode[2] + nNodes));
+                tri.Triangle(i).Get(out iNode[0], out iNode[1], out iNode[2]);
+                result.SetTriangle(i + nTrian, new Triangle1(iNode[0] + nNodes, iNode[1] + nNodes, iNode[2] + nNodes));
             }
 
             nNodes += nbNodes;
             nTrian += nbTrian;
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>
     /// Writes a triangulation: compact ("save" format, read back by <see cref="ReadTriangulation"/>) or not (an
     /// informative dump).
     /// </summary>
-    public static void Write(Poly_Triangulation T, TextWriter OS, bool Compact = true)
+    public static void Write(Triangulation t, TextWriter os, bool compact = true)
     {
-        OS.Write("Poly_Triangulation\n");
-        if (Compact)
+        os.Write("Poly_Triangulation\n");
+        if (compact)
         {
-            OS.Write(Int(T.NbNodes()) + " " + Int(T.NbTriangles()) + " ");
-            OS.Write((T.HasUVNodes() ? "1" : "0") + "\n");
+            os.Write(Int(t.NodeCount) + " " + Int(t.TriangleCount) + " ");
+            os.Write((t.HasUVNodes ? "1" : "0") + "\n");
         }
         else
         {
-            OS.Write(Setw(8, Int(T.NbNodes())) + " Nodes\n");
-            OS.Write(Setw(8, Int(T.NbTriangles())) + " Triangles\n");
-            OS.Write((T.HasUVNodes() ? "with" : "without") + " UV nodes\n");
+            os.Write(Setw(8, Int(t.NodeCount)) + " Nodes\n");
+            os.Write(Setw(8, Int(t.TriangleCount)) + " Triangles\n");
+            os.Write((t.HasUVNodes ? "with" : "without") + " UV nodes\n");
         }
 
         // write the deflection
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("Deflection : ");
+            os.Write("Deflection : ");
         }
 
-        OS.Write(Real(T.Deflection()) + "\n");
+        os.Write(Real(t.Deflection()) + "\n");
 
         // write the 3d nodes
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("\n3D Nodes :\n");
+            os.Write("\n3D Nodes :\n");
         }
 
-        int i, nbNodes = T.NbNodes();
+        int i, nbNodes = t.NodeCount;
         for (i = 1; i <= nbNodes; i++)
         {
-            gp_Pnt aNode = T.Node(i);
-            if (!Compact)
+            Point3D node = t.Node(i);
+            if (!compact)
             {
-                OS.Write(Setw(10, Int(i)) + " : ");
+                os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            OS.Write(Field(Compact, 17, Real(aNode.X())) + " ");
-            OS.Write(Field(Compact, 17, Real(aNode.Y())) + " ");
-            OS.Write(Field(Compact, 17, Real(aNode.Z())) + "\n");
+            os.Write(Field(compact, 17, Real(node.X())) + " ");
+            os.Write(Field(compact, 17, Real(node.Y())) + " ");
+            os.Write(Field(compact, 17, Real(node.Z())) + "\n");
         }
 
-        if (T.HasUVNodes())
+        if (t.HasUVNodes)
         {
-            if (!Compact)
+            if (!compact)
             {
-                OS.Write("\nUV Nodes :\n");
+                os.Write("\nUV Nodes :\n");
             }
 
             for (i = 1; i <= nbNodes; i++)
             {
-                gp_Pnt2d aNode2d = T.UVNode(i);
-                if (!Compact)
+                Point2D node2d = t.UVNode(i);
+                if (!compact)
                 {
-                    OS.Write(Setw(10, Int(i)) + " : ");
+                    os.Write(Setw(10, Int(i)) + " : ");
                 }
 
-                OS.Write(Field(Compact, 17, Real(aNode2d.X())) + " ");
-                OS.Write(Field(Compact, 17, Real(aNode2d.Y())) + "\n");
+                os.Write(Field(compact, 17, Real(node2d.X())) + " ");
+                os.Write(Field(compact, 17, Real(node2d.Y())) + "\n");
             }
         }
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("\nTriangles :\n");
+            os.Write("\nTriangles :\n");
         }
 
-        int nbTriangles = T.NbTriangles();
+        int nbTriangles = t.TriangleCount;
         for (i = 1; i <= nbTriangles; i++)
         {
-            if (!Compact)
+            if (!compact)
             {
-                OS.Write(Setw(10, Int(i)) + " : ");
+                os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            T.Triangle(i).Get(out int n1, out int n2, out int n3);
-            OS.Write(Field(Compact, 10, Int(n1)) + " ");
-            OS.Write(Field(Compact, 10, Int(n2)) + " ");
-            OS.Write(Field(Compact, 10, Int(n3)) + "\n");
+            t.Triangle(i).Get(out int n1, out int n2, out int n3);
+            os.Write(Field(compact, 10, Int(n1)) + " ");
+            os.Write(Field(compact, 10, Int(n2)) + " ");
+            os.Write(Field(compact, 10, Int(n3)) + "\n");
         }
     }
 
@@ -169,64 +173,64 @@ public static class Poly
     /// Writes a 3D polygon: compact ("save" format, read back by <see cref="ReadPolygon3D"/>) or not (an informative
     /// dump).
     /// </summary>
-    public static void Write(Poly_Polygon3D P, TextWriter OS, bool Compact = true)
+    public static void Write(Polygon3D p, TextWriter os, bool compact = true)
     {
-        OS.Write("Poly_Polygon3D\n");
-        if (Compact)
+        os.Write("Poly_Polygon3D\n");
+        if (compact)
         {
-            OS.Write(Int(P.NbNodes()) + " ");
-            OS.Write((P.HasParameters() ? "1" : "0") + "\n");
+            os.Write(Int(p.NodeCount) + " ");
+            os.Write((p.HasParameters ? "1" : "0") + "\n");
         }
         else
         {
-            OS.Write(Setw(8, Int(P.NbNodes())) + " Nodes\n");
-            OS.Write((P.HasParameters() ? "with" : "without") + " parameters\n");
+            os.Write(Setw(8, Int(p.NodeCount)) + " Nodes\n");
+            os.Write((p.HasParameters ? "with" : "without") + " parameters\n");
         }
 
         // write the deflection
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("Deflection : ");
+            os.Write("Deflection : ");
         }
 
-        OS.Write(Real(P.Deflection()) + "\n");
+        os.Write(Real(p.Deflection()) + "\n");
 
         // write the nodes
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("\nNodes :\n");
+            os.Write("\nNodes :\n");
         }
 
-        int i, nbNodes = P.NbNodes();
-        NCollection_Array1<gp_Pnt> Nodes = P.Nodes();
+        int i, nbNodes = p.NodeCount;
+        NCollection_Array1<Point3D> nodes = p.Nodes();
         for (i = 1; i <= nbNodes; i++)
         {
-            if (!Compact)
+            if (!compact)
             {
-                OS.Write(Setw(10, Int(i)) + " : ");
+                os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            OS.Write(Field(Compact, 17, Real(Nodes[i].X())) + " ");
-            OS.Write(Field(Compact, 17, Real(Nodes[i].Y())) + " ");
-            OS.Write(Field(Compact, 17, Real(Nodes[i].Z())) + "\n");
+            os.Write(Field(compact, 17, Real(nodes[i].X())) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Y())) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Z())) + "\n");
         }
 
-        if (P.HasParameters())
+        if (p.HasParameters)
         {
-            if (!Compact)
+            if (!compact)
             {
-                OS.Write("\nParameters :\n");
+                os.Write("\nParameters :\n");
             }
 
-            NCollection_Array1<double> Param = P.Parameters();
+            NCollection_Array1<double> param = p.Parameters();
             for (i = 1; i <= nbNodes; i++)
             {
-                OS.Write(Real(Param[i]) + " ");
+                os.Write(Real(param[i]) + " ");
             }
 
-            OS.Write("\n");
+            os.Write("\n");
         }
     }
 
@@ -234,87 +238,87 @@ public static class Poly
     /// Writes a 2D polygon: compact ("save" format, read back by <see cref="ReadPolygon2D"/>) or not (an informative
     /// dump).
     /// </summary>
-    public static void Write(Poly_Polygon2D P, TextWriter OS, bool Compact = true)
+    public static void Write(Polygon2D p, TextWriter os, bool compact = true)
     {
-        OS.Write("Poly_Polygon2D\n");
-        if (Compact)
+        os.Write("Poly_Polygon2D\n");
+        if (compact)
         {
-            OS.Write(Int(P.NbNodes()) + " ");
+            os.Write(Int(p.NodeCount) + " ");
         }
         else
         {
-            OS.Write(Setw(8, Int(P.NbNodes())) + " Nodes\n");
+            os.Write(Setw(8, Int(p.NodeCount)) + " Nodes\n");
         }
 
         // write the deflection
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("Deflection : ");
+            os.Write("Deflection : ");
         }
 
-        OS.Write(Real(P.Deflection()) + "\n");
+        os.Write(Real(p.Deflection()) + "\n");
 
         // write the nodes
 
-        if (!Compact)
+        if (!compact)
         {
-            OS.Write("\nNodes :\n");
+            os.Write("\nNodes :\n");
         }
 
-        int i, nbNodes = P.NbNodes();
-        NCollection_Array1<gp_Pnt2d> Nodes = P.Nodes();
+        int i, nbNodes = p.NodeCount;
+        NCollection_Array1<Point2D> nodes = p.Nodes();
         for (i = 1; i <= nbNodes; i++)
         {
-            if (!Compact)
+            if (!compact)
             {
-                OS.Write(Setw(10, Int(i)) + " : ");
+                os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            OS.Write(Field(Compact, 17, Real(Nodes[i].X())) + " ");
-            OS.Write(Field(Compact, 17, Real(Nodes[i].Y())) + "\n");
+            os.Write(Field(compact, 17, Real(nodes[i].X())) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Y())) + "\n");
         }
     }
 
-    /// <summary>Dumps a triangulation (<see cref="Write(Poly_Triangulation, TextWriter, bool)"/>, not compact).</summary>
-    public static void Dump(Poly_Triangulation T, TextWriter OS) => Write(T, OS, false);
+    /// <summary>Dumps a triangulation (<see cref="Write(Triangulation, TextWriter, bool)"/>, not compact).</summary>
+    public static void Dump(Triangulation t, TextWriter os) => Write(t, os, false);
 
-    /// <summary>Dumps a 3D polygon (<see cref="Write(Poly_Polygon3D, TextWriter, bool)"/>, not compact).</summary>
-    public static void Dump(Poly_Polygon3D P, TextWriter OS) => Write(P, OS, false);
+    /// <summary>Dumps a 3D polygon (<see cref="Write(Polygon3D, TextWriter, bool)"/>, not compact).</summary>
+    public static void Dump(Polygon3D p, TextWriter os) => Write(p, os, false);
 
-    /// <summary>Dumps a 2D polygon (<see cref="Write(Poly_Polygon2D, TextWriter, bool)"/>, not compact).</summary>
-    public static void Dump(Poly_Polygon2D P, TextWriter OS) => Write(P, OS, false);
+    /// <summary>Dumps a 2D polygon (<see cref="Write(Polygon2D, TextWriter, bool)"/>, not compact).</summary>
+    public static void Dump(Polygon2D p, TextWriter os) => Write(p, os, false);
 
     /// <summary>Reads a triangulation written in the compact format, or returns null if the text isn't one.</summary>
-    public static Poly_Triangulation? ReadTriangulation(TextReader IS)
+    public static Triangulation? ReadTriangulation(TextReader IS)
     {
         // Read a triangulation
 
-        var aStream = new Extractor(IS);
-        string line = aStream.Word();
+        var stream = new Extractor(IS);
+        string line = stream.Word();
         if (line != "Poly_Triangulation")
         {
             return null;
         }
 
-        int nbNodes = aStream.Int();
-        int nbTriangles = aStream.Int();
-        bool hasUV = aStream.Bool();
+        int nbNodes = stream.Int();
+        int nbTriangles = stream.Int();
+        bool hasUV = stream.Bool();
 
-        double d = aStream.Real();
+        double d = stream.Real();
 
         // read the 3d nodes
         double x, y, z;
         int i;
-        var Nodes = new NCollection_Array1<gp_Pnt>(1, nbNodes);
-        var UVNodes = new NCollection_Array1<gp_Pnt2d>(1, nbNodes);
+        var nodes = new NCollection_Array1<Point3D>(1, nbNodes);
+        var uvNodes = new NCollection_Array1<Point2D>(1, nbNodes);
 
         for (i = 1; i <= nbNodes; i++)
         {
-            x = aStream.Real();
-            y = aStream.Real();
-            z = aStream.Real();
-            Nodes[i].SetCoord(x, y, z);
+            x = stream.Real();
+            y = stream.Real();
+            z = stream.Real();
+            nodes[i].SetCoord(x, y, z);
         }
 
         // read the UV points if necessary
@@ -323,155 +327,155 @@ public static class Poly
         {
             for (i = 1; i <= nbNodes; i++)
             {
-                x = aStream.Real();
-                y = aStream.Real();
-                UVNodes[i].SetCoord(x, y);
+                x = stream.Real();
+                y = stream.Real();
+                uvNodes[i].SetCoord(x, y);
             }
         }
 
         // read the triangles
         int n1, n2, n3;
-        var Triangles = new NCollection_Array1<Poly_Triangle>(1, nbTriangles);
+        var triangles = new NCollection_Array1<Triangle1>(1, nbTriangles);
         for (i = 1; i <= nbTriangles; i++)
         {
-            n1 = aStream.Int();
-            n2 = aStream.Int();
-            n3 = aStream.Int();
-            Triangles[i].Set(n1, n2, n3);
+            n1 = stream.Int();
+            n2 = stream.Int();
+            n3 = stream.Int();
+            triangles[i].Set(n1, n2, n3);
         }
 
-        Poly_Triangulation T;
+        Triangulation t;
 
         if (hasUV)
         {
-            T = new Poly_Triangulation(Nodes, UVNodes, Triangles);
+            t = new Triangulation(nodes, uvNodes, triangles);
         }
         else
         {
-            T = new Poly_Triangulation(Nodes, Triangles);
+            t = new Triangulation(nodes, triangles);
         }
 
-        T.Deflection(d);
+        t.Deflection(d);
 
-        return T;
+        return t;
     }
 
     /// <summary>Reads a 3D polygon written in the compact format, or returns null if the text isn't one.</summary>
-    public static Poly_Polygon3D? ReadPolygon3D(TextReader IS)
+    public static Polygon3D? ReadPolygon3D(TextReader IS)
     {
         // Read a 3d polygon
 
-        var aStream = new Extractor(IS);
-        string line = aStream.Word();
+        var stream = new Extractor(IS);
+        string line = stream.Word();
         if (line != "Poly_Polygon3D")
         {
             return null;
         }
 
-        int nbNodes = aStream.Int();
+        int nbNodes = stream.Int();
 
-        bool hasparameters = aStream.Bool();
+        bool hasparameters = stream.Bool();
 
-        double d = aStream.Real();
+        double d = stream.Real();
 
         // read the nodes
         double x, y, z;
         int i;
-        var Nodes = new NCollection_Array1<gp_Pnt>(1, nbNodes);
+        var nodes = new NCollection_Array1<Point3D>(1, nbNodes);
 
         for (i = 1; i <= nbNodes; i++)
         {
-            x = aStream.Real();
-            y = aStream.Real();
-            z = aStream.Real();
-            Nodes[i].SetCoord(x, y, z);
+            x = stream.Real();
+            y = stream.Real();
+            z = stream.Real();
+            nodes[i].SetCoord(x, y, z);
         }
 
-        var Param = new NCollection_Array1<double>(1, nbNodes);
+        var param = new NCollection_Array1<double>(1, nbNodes);
         if (hasparameters)
         {
             for (i = 1; i <= nbNodes; i++)
             {
-                Param[i] = aStream.Real();
+                param[i] = stream.Real();
             }
         }
 
-        Poly_Polygon3D P;
+        Polygon3D p;
         if (!hasparameters)
         {
-            P = new Poly_Polygon3D(Nodes);
+            p = new Polygon3D(nodes);
         }
         else
         {
-            P = new Poly_Polygon3D(Nodes, Param);
+            p = new Polygon3D(nodes, param);
         }
 
-        P.Deflection(d);
+        p.Deflection(d);
 
-        return P;
+        return p;
     }
 
     /// <summary>Reads a 2D polygon written in the compact format, or returns null if the text isn't one.</summary>
-    public static Poly_Polygon2D? ReadPolygon2D(TextReader IS)
+    public static Polygon2D? ReadPolygon2D(TextReader IS)
     {
         // Read a 2d polygon
 
-        var aStream = new Extractor(IS);
-        string line = aStream.Word();
+        var stream = new Extractor(IS);
+        string line = stream.Word();
         if (line != "Poly_Polygon2D")
         {
             return null;
         }
 
-        int nbNodes = aStream.Int();
+        int nbNodes = stream.Int();
 
-        double d = aStream.Real();
+        double d = stream.Real();
 
         // read the nodes
         double x, y;
         int i;
-        var Nodes = new NCollection_Array1<gp_Pnt2d>(1, nbNodes);
+        var nodes = new NCollection_Array1<Point2D>(1, nbNodes);
 
         for (i = 1; i <= nbNodes; i++)
         {
-            x = aStream.Real();
-            y = aStream.Real();
-            Nodes[i].SetCoord(x, y);
+            x = stream.Real();
+            y = stream.Real();
+            nodes[i].SetCoord(x, y);
         }
 
-        var P = new Poly_Polygon2D(Nodes);
+        var p = new Polygon2D(nodes);
 
-        P.Deflection(d);
+        p.Deflection(d);
 
-        return P;
+        return p;
     }
 
     /// <summary>Computes the normals at the nodes as the mean of the normals of the triangles around them.</summary>
-    public static void ComputeNormals(Poly_Triangulation theTri) => theTri.ComputeNormals();
+    public static void ComputeNormals(Triangulation tri) => tri.ComputeNormals();
 
     /// <summary>
-    /// The parameters (U, V) of point <paramref name="theP"/> on the triangle (<paramref name="theP1"/>,
-    /// <paramref name="theP2"/>, <paramref name="theP3"/>), with P = P1 + U (P2 - P1) + V (P3 - P1), U ≥ 0, V ≥ 0,
+    /// The parameters (U, V) of point <paramref name="p"/> on the triangle (<paramref name="p1"/>,
+    /// <paramref name="p2"/>, <paramref name="p3"/>), with P = P1 + U (P2 - P1) + V (P3 - P1), U ≥ 0, V ≥ 0,
     /// U + V ≤ 1. Returns 0 if the point is inside; otherwise, or for a degenerate triangle, the parameters of the
     /// closest point and the square of the distance to it.
     /// </summary>
-    public static double PointOnTriangle(in gp_XY theP1, in gp_XY theP2, in gp_XY theP3, in gp_XY theP, out gp_XY theUV)
+    public static double PointOnTriangle(in Xy p1, in Xy p2, in Xy p3, in Xy p, out Xy uv)
     {
-        gp_XY aDP = theP - theP1;
-        gp_XY aDU = theP2 - theP1;
-        gp_XY aDV = theP3 - theP1;
-        double aDet = aDU ^ aDV;
+        Xy dp = p - p1;
+        Xy du = p2 - p1;
+        Xy dv = p3 - p1;
+        double det = du ^ dv;
 
         // case of non-degenerated triangle
-        if (Math.Abs(aDet) > gp.Resolution())
+        if (Math.Abs(det) > Constants.Resolution())
         {
-            double aU = (aDP ^ aDV) / aDet;
-            double aV = -(aDP ^ aDU) / aDet;
+            double aU = (dp ^ dv) / det;
+            double aV = -(dp ^ du) / det;
 
             // if point is inside triangle, just return parameters
-            if (aU > -gp.Resolution() && aV > -gp.Resolution() && 1.0 - aU - aV > -gp.Resolution())
+            if (aU > -Constants.Resolution() && aV > -Constants.Resolution() && 1.0 - aU - aV > -Constants.Resolution())
             {
-                theUV = new gp_XY(aU, aV);
+                uv = new Xy(aU, aV);
                 return 0.0;
             }
 
@@ -481,12 +485,12 @@ public static class Poly
 
             // project on side U=0
             aU = 0.0;
-            aV = Min(1.0, Max(0.0, (aDP * aDV) / aDV.SquareModulus()));
-            double aD = (aV * aDV - aDP).SquareModulus();
+            aV = Min(1.0, Max(0.0, (dp * dv) / dv.SquareModulus()));
+            double aD = (aV * dv - dp).SquareModulus();
 
             // project on side V=0
-            double u = Min(1.0, Max(0.0, (aDP * aDU) / aDU.SquareModulus()));
-            double d = (u * aDU - aDP).SquareModulus();
+            double u = Min(1.0, Max(0.0, (dp * du) / du.SquareModulus()));
+            double d = (u * du - dp).SquareModulus();
             if (d < aD)
             {
                 aU = u;
@@ -495,9 +499,9 @@ public static class Poly
             }
 
             // project on side U+V=1
-            gp_XY aDUV = aDV - aDU;
-            double v = Min(1.0, Max(0.0, ((aDP - aDU) * aDUV) / aDUV.SquareModulus()));
-            d = (theP2 + v * aDUV - theP).SquareModulus();
+            Xy duv = dv - du;
+            double v = Min(1.0, Max(0.0, ((dp - du) * duv) / duv.SquareModulus()));
+            d = (p2 + v * duv - p).SquareModulus();
             if (d < aD)
             {
                 aU = 1.0 - v;
@@ -505,98 +509,98 @@ public static class Poly
                 aD = d;
             }
 
-            theUV = new gp_XY(aU, aV);
+            uv = new Xy(aU, aV);
             return aD;
         }
 
         // degenerated triangle
-        double aL2U = aDU.SquareModulus();
-        double aL2V = aDV.SquareModulus();
-        if (aL2U < gp.Resolution()) // side 1-2 is degenerated
+        double l2U = du.SquareModulus();
+        double l2V = dv.SquareModulus();
+        if (l2U < Constants.Resolution()) // side 1-2 is degenerated
         {
-            if (aL2V < gp.Resolution()) // whole triangle is degenerated to point
+            if (l2V < Constants.Resolution()) // whole triangle is degenerated to point
             {
-                theUV = new gp_XY(0.0, 0.0);
-                return (theP - theP1).SquareModulus();
+                uv = new Xy(0.0, 0.0);
+                return (p - p1).SquareModulus();
             }
             else
             {
-                theUV = new gp_XY(0.0, (aDP * aDV) / aL2V);
-                return (theP - (theP1 + theUV.Y() * aDV)).SquareModulus();
+                uv = new Xy(0.0, (dp * dv) / l2V);
+                return (p - (p1 + uv.Y() * dv)).SquareModulus();
             }
         }
-        else if (aL2V < gp.Resolution()) // side 1-3 is degenerated
+        else if (l2V < Constants.Resolution()) // side 1-3 is degenerated
         {
-            theUV = new gp_XY((aDP * aDU) / aL2U, 0.0);
-            return (theP - (theP1 + theUV.X() * aDU)).SquareModulus();
+            uv = new Xy((dp * du) / l2U, 0.0);
+            return (p - (p1 + uv.X() * du)).SquareModulus();
         }
         else // sides 1-2 and 1-3 are collinear
         {
             // select parameter on one of sides so as to have points closer to picked
-            double aU = Min(1.0, Max(0.0, (aDP * aDU) / aL2U));
-            double aV = Min(1.0, Max(0.0, (aDP * aDV) / aL2V));
-            double aD1 = (aDP - aU * aDU).SquareModulus();
-            double aD2 = (aDP - aV * aDV).SquareModulus();
-            if (aD1 < aD2)
+            double aU = Min(1.0, Max(0.0, (dp * du) / l2U));
+            double aV = Min(1.0, Max(0.0, (dp * dv) / l2V));
+            double d1 = (dp - aU * du).SquareModulus();
+            double d2 = (dp - aV * dv).SquareModulus();
+            if (d1 < d2)
             {
-                theUV = new gp_XY((aDP * aDU) / aL2U, 0.0);
-                return aD1;
+                uv = new Xy((dp * du) / l2U, 0.0);
+                return d1;
             }
             else
             {
-                theUV = new gp_XY(0.0, (aDP * aDV) / aL2V);
-                return aD2;
+                uv = new Xy(0.0, (dp * dv) / l2V);
+                return d2;
             }
         }
     }
 
     /// <summary>
     /// The intersection of a ray with a triangulation: the closest (or the farthest) intersected triangle and the
-    /// distance to it along the ray. False if the ray misses; <paramref name="theTriangle"/> and
-    /// <paramref name="theDistance"/> are then unchanged.
+    /// distance to it along the ray. False if the ray misses; <paramref name="triangle"/> and
+    /// <paramref name="distance"/> are then unchanged.
     /// </summary>
-    public static bool Intersect(Poly_Triangulation theTri, in gp_Ax1 theAxis, bool theIsClosest, ref Poly_Triangle theTriangle, ref double theDistance)
+    public static bool Intersect(Triangulation tri, in Axis3D axis, bool isClosest, ref Triangle1 triangle, ref double distance)
     {
-        const double aConf = 1E-15;
-        gp_XYZ aLoc = theAxis.Location().XYZ();
-        gp_Dir aDir = theAxis.Direction();
+        const double conf = 1E-15;
+        Xyz loc = axis.Location().XYZ();
+        Direction3D dir = axis.Direction();
 
-        double aResult = theIsClosest ? RealLast() : 0.0;
-        double aParam = 0.0;
-        Span<int> aTriNodes = [0, 0, 0];
-        for (int aTriIter = 1; aTriIter <= theTri.NbTriangles(); ++aTriIter)
+        double result = isClosest ? RealLast() : 0.0;
+        double param = 0.0;
+        Span<int> triNodes = [0, 0, 0];
+        for (int triIter = 1; triIter <= tri.TriangleCount; ++triIter)
         {
-            Poly_Triangle aTri = theTri.Triangle(aTriIter);
-            aTri.Get(out aTriNodes[0], out aTriNodes[1], out aTriNodes[2]);
-            if (IntersectTriLine(aLoc,
-                                 aDir,
-                                 theTri.Node(aTriNodes[0]).XYZ(),
-                                 theTri.Node(aTriNodes[1]).XYZ(),
-                                 theTri.Node(aTriNodes[2]).XYZ(),
-                                 ref aParam) != 0)
+            Triangle1 aTri = tri.Triangle(triIter);
+            aTri.Get(out triNodes[0], out triNodes[1], out triNodes[2]);
+            if (IntersectTriLine(loc,
+                                 dir,
+                                 tri.Node(triNodes[0]).XYZ(),
+                                 tri.Node(triNodes[1]).XYZ(),
+                                 tri.Node(triNodes[2]).XYZ(),
+                                 ref param) != 0)
             {
-                if (aParam > aConf)
+                if (param > conf)
                 {
-                    if (theIsClosest)
+                    if (isClosest)
                     {
-                        if (aParam < aResult)
+                        if (param < result)
                         {
-                            aResult = aParam;
-                            theTriangle = aTri;
+                            result = param;
+                            triangle = aTri;
                         }
                     }
-                    else if (aParam > aResult)
+                    else if (param > result)
                     {
-                        aResult = aParam;
-                        theTriangle = aTri;
+                        result = param;
+                        triangle = aTri;
                     }
                 }
             }
         }
 
-        if (aConf < aResult && aResult < RealLast())
+        if (conf < result && result < RealLast())
         {
-            theDistance = aResult;
+            distance = result;
             return true;
         }
 
@@ -613,79 +617,79 @@ public static class Poly
     }
 
     /// <summary>
-    /// The intersection of the line (<paramref name="theStart"/>, <paramref name="theDir"/>) with the triangle
-    /// (<paramref name="theV0"/>, <paramref name="theV1"/>, <paramref name="theV2"/>): 1 and the parameter on the line
-    /// if found; 0 otherwise, <paramref name="theParam"/> unchanged.
+    /// The intersection of the line (<paramref name="start"/>, <paramref name="dir"/>) with the triangle
+    /// (<paramref name="v0"/>, <paramref name="v1"/>, <paramref name="v2"/>): 1 and the parameter on the line
+    /// if found; 0 otherwise, <paramref name="param"/> unchanged.
     /// </summary>
-    public static int IntersectTriLine(in gp_XYZ theStart, in gp_Dir theDir, in gp_XYZ theV0, in gp_XYZ theV1, in gp_XYZ theV2, ref double theParam)
+    public static int IntersectTriLine(in Xyz start, in Direction3D dir, in Xyz v0, in Xyz v1, in Xyz v2, ref double param)
     {
-        int aRes = 0;
-        const double aConf = 1E-15;
+        int res = 0;
+        const double conf = 1E-15;
 
-        ReadOnlySpan<double> aMat34 =
+        ReadOnlySpan<double> mat34 =
         [
-            -theDir.X(), theV1.X() - theV0.X(), theV2.X() - theV0.X(), theStart.X() - theV0.X(),
-            -theDir.Y(), theV1.Y() - theV0.Y(), theV2.Y() - theV0.Y(), theStart.Y() - theV0.Y(),
-            -theDir.Z(), theV1.Z() - theV0.Z(), theV2.Z() - theV0.Z(), theStart.Z() - theV0.Z(),
+            -dir.X(), v1.X() - v0.X(), v2.X() - v0.X(), start.X() - v0.X(),
+            -dir.Y(), v1.Y() - v0.Y(), v2.Y() - v0.Y(), start.Y() - v0.Y(),
+            -dir.Z(), v1.Z() - v0.Z(), v2.Z() - v0.Z(), start.Z() - v0.Z(),
         ];
 
-        double aD = Determinant(aMat34, 0, 1, 2);
-        double aDt = Determinant(aMat34, 3, 1, 2);
-        if (aD > aConf)
+        double d = Determinant(mat34, 0, 1, 2);
+        double dt = Determinant(mat34, 3, 1, 2);
+        if (d > conf)
         {
-            double aDa = Determinant(aMat34, 0, 3, 2);
-            if (aDa > -aConf)
+            double da = Determinant(mat34, 0, 3, 2);
+            if (da > -conf)
             {
-                double aDb = Determinant(aMat34, 0, 1, 3);
-                aRes = ((aDb > -aConf) && (aDa + aDb <= aD + aConf)) ? 1 : 0;
+                double db = Determinant(mat34, 0, 1, 3);
+                res = ((db > -conf) && (da + db <= d + conf)) ? 1 : 0;
             }
         }
-        else if (aD < -aConf)
+        else if (d < -conf)
         {
-            double aDa = Determinant(aMat34, 0, 3, 2);
-            if (aDa < aConf)
+            double da = Determinant(mat34, 0, 3, 2);
+            if (da < conf)
             {
-                double aDb = Determinant(aMat34, 0, 1, 3);
-                aRes = ((aDb < aConf) && (aDa + aDb >= aD - aConf)) ? 1 : 0;
+                double db = Determinant(mat34, 0, 1, 3);
+                res = ((db < conf) && (da + db >= d - conf)) ? 1 : 0;
             }
         }
 
-        if (aRes != 0)
+        if (res != 0)
         {
-            theParam = aDt / aD;
+            param = dt / d;
         }
 
-        return aRes;
+        return res;
     }
 
     /// <summary>
     /// The area and perimeter of a 2D polygon given by its vertices (not repeating the first). The area is negative if
     /// the polygon runs clockwise; the perimeter is always positive.
     /// </summary>
-    public static bool PolygonProperties(NCollection_Array1<gp_Pnt2d> theSeqPnts, out double theArea, out double thePerimeter)
+    public static bool PolygonProperties(NCollection_Array1<Point2D> seqPnts, out double area, out double perimeter)
     {
-        if (theSeqPnts.Length() < 2)
+        if (seqPnts.Length() < 2)
         {
-            theArea = thePerimeter = 0.0;
+            area = perimeter = 0.0;
             return true;
         }
 
-        int aStartIndex = theSeqPnts.Lower();
-        gp_XY aRefPnt = theSeqPnts.Value(aStartIndex++).XY();
-        gp_XY aPrevPt = theSeqPnts.Value(aStartIndex++).XY() - aRefPnt, aCurrPt;
-        theArea = 0.0;
-        thePerimeter = aPrevPt.Modulus();
-        for (int i = aStartIndex; i <= theSeqPnts.Upper(); i++)
+        int startIndex = seqPnts.Lower();
+        Xy refPnt = seqPnts.Value(startIndex++).XY();
+        Xy prevPt = seqPnts.Value(startIndex++).XY() - refPnt, currPt;
+        area = 0.0;
+        perimeter = prevPt.Modulus();
+        for (int i = startIndex; i <= seqPnts.Upper(); i++)
         {
-            aCurrPt = theSeqPnts.Value(i).XY() - aRefPnt;
-            double aDelta = aPrevPt.Crossed(aCurrPt);
-            theArea += aDelta;
-            thePerimeter += (aPrevPt - aCurrPt).Modulus();
-            aPrevPt = aCurrPt;
+            currPt = seqPnts.Value(i).XY() - refPnt;
+            double delta = prevPt.Crossed(currPt);
+            area += delta;
+            perimeter += (prevPt - currPt).Modulus();
+            prevPt = currPt;
         }
 
-        thePerimeter += aPrevPt.Modulus();
-        theArea *= 0.5;
+        perimeter += prevPt.Modulus();
+        area *= 0.5;
         return true;
     }
 
@@ -693,53 +697,53 @@ public static class Poly
     /// The area and perimeter of a 2D polygon given by its vertices (not repeating the first). The area is negative if
     /// the polygon runs clockwise; the perimeter is always positive.
     /// </summary>
-    public static bool PolygonProperties(NCollection_Sequence<gp_Pnt2d> theSeqPnts, out double theArea, out double thePerimeter)
+    public static bool PolygonProperties(NCollection_Sequence<Point2D> seqPnts, out double area, out double perimeter)
     {
-        if (theSeqPnts.Length() < 2)
+        if (seqPnts.Length() < 2)
         {
-            theArea = thePerimeter = 0.0;
+            area = perimeter = 0.0;
             return true;
         }
 
-        int aStartIndex = NCollection_Sequence<gp_Pnt2d>.Lower();
-        gp_XY aRefPnt = theSeqPnts.Value(aStartIndex++).XY();
-        gp_XY aPrevPt = theSeqPnts.Value(aStartIndex++).XY() - aRefPnt, aCurrPt;
-        theArea = 0.0;
-        thePerimeter = aPrevPt.Modulus();
-        for (int i = aStartIndex; i <= theSeqPnts.Upper(); i++)
+        int startIndex = NCollection_Sequence<Point2D>.Lower();
+        Xy refPnt = seqPnts.Value(startIndex++).XY();
+        Xy prevPt = seqPnts.Value(startIndex++).XY() - refPnt, currPt;
+        area = 0.0;
+        perimeter = prevPt.Modulus();
+        for (int i = startIndex; i <= seqPnts.Upper(); i++)
         {
-            aCurrPt = theSeqPnts.Value(i).XY() - aRefPnt;
-            double aDelta = aPrevPt.Crossed(aCurrPt);
-            theArea += aDelta;
-            thePerimeter += (aPrevPt - aCurrPt).Modulus();
-            aPrevPt = aCurrPt;
+            currPt = seqPnts.Value(i).XY() - refPnt;
+            double delta = prevPt.Crossed(currPt);
+            area += delta;
+            perimeter += (prevPt - currPt).Modulus();
+            prevPt = currPt;
         }
 
-        thePerimeter += aPrevPt.Modulus();
-        theArea *= 0.5;
+        perimeter += prevPt.Modulus();
+        area *= 0.5;
         return true;
     }
 
     // C++ stream formatting: OS << int, OS << double (six significant digits, as printf's %g), std::setw
 
-    private static string Int(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
+    private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     // %g with six digits, as Microsoft's C runtime writes it (ties rounded away from zero; see Standard_Stream)
-    internal static string Real(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+    internal static string Real(double value) => StreamUtilities.FormatReal(value, 6);
 
-    private static string Setw(int theWidth, string theText) => theText.PadLeft(theWidth);
+    private static string Setw(int width, string text) => text.PadLeft(width);
 
-    private static string Field(bool theCompact, int theWidth, string theText) => theCompact ? theText : theText.PadLeft(theWidth);
+    private static string Field(bool compact, int width, string text) => compact ? text : text.PadLeft(width);
 
     // C++ stream extraction (operator>>) on whitespace-separated words. A failed extraction gives zero and puts the
     // stream in a failed state, in which every later extraction fails too.
     private sealed class Extractor(TextReader theReader)
     {
-        private bool myFailed;
+        private bool _failed;
 
         public string Word()
         {
-            if (myFailed)
+            if (_failed)
             {
                 return "";
             }
@@ -753,54 +757,54 @@ public static class Poly
 
             if (aChar < 0)
             {
-                myFailed = true;
+                _failed = true;
                 return "";
             }
 
-            var aBuilder = new System.Text.StringBuilder();
+            var builder = new System.Text.StringBuilder();
             while (aChar >= 0 && !char.IsWhiteSpace((char)aChar))
             {
-                aBuilder.Append((char)theReader.Read());
+                builder.Append((char)theReader.Read());
                 aChar = theReader.Peek();
             }
 
-            return aBuilder.ToString();
+            return builder.ToString();
         }
 
         public int Int()
         {
-            string aWord = Word();
-            if (!myFailed && int.TryParse(aWord, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int aValue))
+            string word = Word();
+            if (!_failed && int.TryParse(word, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int value))
             {
-                return aValue;
+                return value;
             }
 
-            myFailed = true;
+            _failed = true;
             return 0;
         }
 
         public bool Bool()
         {
             // a bool is extracted as an integer, 0 or 1; any other integer gives true and fails the stream
-            int aValue = Int();
-            if (myFailed || aValue is 0 or 1)
+            int value = Int();
+            if (_failed || value is 0 or 1)
             {
-                return aValue == 1;
+                return value == 1;
             }
 
-            myFailed = true;
+            _failed = true;
             return true;
         }
 
         public double Real()
         {
-            string aWord = Word();
-            if (!myFailed && double.TryParse(aWord, NumberStyles.Float, CultureInfo.InvariantCulture, out double aValue))
+            string word = Word();
+            if (!_failed && double.TryParse(word, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
             {
-                return aValue;
+                return value;
             }
 
-            myFailed = true;
+            _failed = true;
             return 0.0;
         }
     }

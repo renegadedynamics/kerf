@@ -4,9 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepFill_ThruSectionErrorStatus;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -55,17 +57,17 @@ public sealed class BRepFill_Generator
 
         // characteristics of the first edge
         double first1 = 0.0, last1 = 0.0, first2, last2, ff, ll;
-        TopLoc_Location loc;
+        Placement loc;
         TopoDS_Vertex V1, V2;
         Geom_Curve? curv1, curv;
         GeomAdaptor_Curve AdC1 = new();
         bool degen1 = BRep_Tool.Degenerated(Edge1);
 
         // find the particular case
-        gp_Pnt pos1 = new(), pos;
+        Point3D pos1 = new(), pos;
         double dist;
         double dist1 = 0.0;
-        gp_Ax1 axe1 = new(), axe;
+        Axis3D axe1 = new(), axe;
 
         if (degen1)
         {
@@ -90,7 +92,7 @@ public sealed class BRepFill_Generator
                 last1 = curv1.ReversedParameter(ff);
             }
             AdC1.Load(curv1);
-            if (AdC1.GetType() == GeomAbs_Circle)
+            if (AdC1.GetType() == Circle)
             {
                 // first circular section
                 IType = 1;
@@ -98,15 +100,15 @@ public sealed class BRepFill_Generator
                 dist1 = AdC1.Circle().Radius();
                 axe1 = AdC1.Circle().Axis();
             }
-            else if (AdC1.GetType() == GeomAbs_Line)
+            else if (AdC1.GetType() == Line)
             {
                 // first straight line section
                 IType = 4;
                 pos1 = AdC1.Line().Location();
                 dist1 = AdC1.Value(first1).Distance(AdC1.Value(last1));
-                gp_Vec vec = new(AdC1.Value(first1), AdC1.Value(last1));
-                gp_Dir dir = new(vec);
-                axe1 = new gp_Ax1(AdC1.Value(first1), dir);
+                Vector3D vec = new(AdC1.Value(first1), AdC1.Value(last1));
+                Direction3D dir = new(vec);
+                axe1 = new Axis3D(AdC1.Value(first1), dir);
             }
             else
             {
@@ -126,17 +128,17 @@ public sealed class BRepFill_Generator
                 if (IType == 1)
                 {
                     // the only particular case with degenerated edge at end : the cone
-                    if (pos.IsEqual(pos1, Precision.Confusion()))
+                    if (pos.IsEqual(pos1, global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
                         // the top is mixed with the center of the circle
                         IType = 0;
                     }
                     else
                     {
-                        gp_Vec vec = new(pos1, pos);
-                        gp_Dir dir = new(vec);
-                        axe = new gp_Ax1(pos1, dir);
-                        if (axe.IsParallel(axe1, Precision.Angular()))
+                        Vector3D vec = new(pos1, pos);
+                        Direction3D dir = new(vec);
+                        axe = new Axis3D(pos1, dir);
+                        if (axe.IsParallel(axe1, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             // the top is on the axis of the circle
                             IType = 2;
@@ -174,25 +176,25 @@ public sealed class BRepFill_Generator
 
                 if (IType > 0 && IType < 4)
                 {
-                    if (AdC.GetType() != GeomAbs_Circle)
+                    if (AdC.GetType() != Circle)
                     {
                         // section not circular --> no particular case
                         IType = 0;
                     }
                     else
                     {
-                        if (AdC.Circle().Axis().IsCoaxial(axe1, Precision.Angular(), Precision.Confusion()))
+                        if (AdC.Circle().Axis().IsCoaxial(axe1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             // same axis
-                            if (Math.Abs(AdC.Circle().Radius() - dist1) < Precision.Confusion())
+                            if (Math.Abs(AdC.Circle().Radius() - dist1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 // possibility of cylinder or a piece of cylinder
                                 double h1 = Math.Abs(last1 - first1), h2 = Math.Abs(last2 - first2);
-                                bool Same, SameParametricLength = (Math.Abs(h1 - h2) < Precision.PConfusion());
+                                bool Same, SameParametricLength = (Math.Abs(h1 - h2) < global::Kerf.Engine.Foundation.Precision.PConfusion());
                                 double m1 = (first1 + last1) / 2.0, m2 = (first2 + last2) / 2.0;
-                                AdC1.D1(m1, out gp_Pnt P1, out gp_Vec DU);
-                                gp_Pnt P2 = AdC.Value(m2);
-                                Same = SameParametricLength && (new gp_Vec(P1, P2).IsNormal(DU, Precision.Angular()));
+                                AdC1.D1(m1, out Point3D P1, out Vector3D DU);
+                                Point3D P2 = AdC.Value(m2);
+                                Same = SameParametricLength && (new Vector3D(P1, P2).IsNormal(DU, global::Kerf.Engine.Foundation.Precision.Angular()));
                                 if (Same)
                                 {
                                     // cylinder or piece of cylinder
@@ -208,11 +210,11 @@ public sealed class BRepFill_Generator
                             {
                                 // possibility of cone truncation
                                 double h1 = Math.Abs(last1 - first1), h2 = Math.Abs(last2 - first2);
-                                bool Same, SameParametricLength = (Math.Abs(h1 - h2) < Precision.PConfusion());
+                                bool Same, SameParametricLength = (Math.Abs(h1 - h2) < global::Kerf.Engine.Foundation.Precision.PConfusion());
                                 double m1 = (first1 + last1) / 2.0, m2 = (first2 + last2) / 2.0;
-                                AdC1.D1(m1, out gp_Pnt P1, out gp_Vec DU);
-                                gp_Pnt P2 = AdC.Value(m2);
-                                Same = SameParametricLength && (new gp_Vec(P1, P2).IsNormal(DU, Precision.Angular()));
+                                AdC1.D1(m1, out Point3D P1, out Vector3D DU);
+                                Point3D P2 = AdC.Value(m2);
+                                Same = SameParametricLength && (new Vector3D(P1, P2).IsNormal(DU, global::Kerf.Engine.Foundation.Precision.Angular()));
                                 if (Same)
                                 {
                                     // truncation of cone
@@ -224,7 +226,7 @@ public sealed class BRepFill_Generator
                                     IType = 0;
                                 }
                             }
-                            if (AdC.Circle().Location().IsEqual(pos1, Precision.Confusion()))
+                            if (AdC.Circle().Location().IsEqual(pos1, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 // the centers are mixed
                                 IType = 0;
@@ -248,7 +250,7 @@ public sealed class BRepFill_Generator
                 }
                 else if (IType >= 4)
                 {
-                    if (AdC.GetType() != GeomAbs_Line)
+                    if (AdC.GetType() != Line)
                     {
                         // not a straight line section --> no particular case
                         IType = 0;
@@ -257,16 +259,16 @@ public sealed class BRepFill_Generator
                     {
                         pos = AdC.Line().Location();
                         dist = AdC.Value(first2).Distance(AdC.Value(last2));
-                        gp_Vec vec = new(AdC.Value(first2), AdC.Value(last2));
-                        gp_Dir aDir = new(vec);
-                        axe = new gp_Ax1(AdC.Value(first2), aDir);
-                        if (axe.IsParallel(axe1, Precision.Angular()))
+                        Vector3D vec = new(AdC.Value(first2), AdC.Value(last2));
+                        Direction3D aDir = new(vec);
+                        axe = new Axis3D(AdC.Value(first2), aDir);
+                        if (axe.IsParallel(axe1, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             // parallel straight line
-                            if (Math.Abs(dist - dist1) < Precision.Confusion())
+                            if (Math.Abs(dist - dist1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                gp_Dir dir = new(new gp_Vec(AdC1.Value(first1), AdC.Value(first2)));
-                                if (dir.IsNormal(new gp_Dir(vec), Precision.Angular()))
+                                Direction3D dir = new(new Vector3D(AdC1.Value(first1), AdC.Value(first2)));
+                                if (dir.IsNormal(new Direction3D(vec), global::Kerf.Engine.Foundation.Precision.Angular()))
                                 {
                                     // plane
                                     IType = 4;
@@ -292,26 +294,26 @@ public sealed class BRepFill_Generator
                 }
                 else if (IType == -2)
                 {
-                    if (AdC.GetType() == GeomAbs_Line)
+                    if (AdC.GetType() == Line)
                     {
                         IType = 4; // plane
                     }
-                    else if (AdC.GetType() == GeomAbs_Circle)
+                    else if (AdC.GetType() == Circle)
                     {
                         // the only particular case with degenerated edge at the beginning the cone
                         pos = AdC.Circle().Location();
                         axe = AdC.Circle().Axis();
-                        if (pos1.IsEqual(pos, Precision.Confusion()))
+                        if (pos1.IsEqual(pos, global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             // the top is mixed with the center of the circle
                             IType = 0;
                         }
                         else
                         {
-                            gp_Vec vec = new(pos1, pos);
-                            gp_Dir dir = new(vec);
-                            axe1 = new gp_Ax1(pos1, dir);
-                            if (axe.IsParallel(axe1, Precision.Angular()))
+                            Vector3D vec = new(pos1, pos);
+                            Direction3D dir = new(vec);
+                            axe1 = new Axis3D(pos1, dir);
+                            if (axe.IsParallel(axe1, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 // the top is on the axis of the circle
                                 IType = -2;
@@ -351,7 +353,7 @@ public sealed class BRepFill_Generator
     {
         Surf = null;
         // find the dimension
-        TopLoc_Location loc;
+        Placement loc;
         double a1 = 0.0, b1 = 0.0, aa = 0.0, bb = 0.0;
         TopoDS_Vertex v1f, v1l, v2f, v2l;
 
@@ -443,10 +445,10 @@ public sealed class BRepFill_Generator
         if (IType == 1)
         {
             // cylindrical surface
-            gp_Circ c1 = aC1Adaptor.Circle();
-            gp_Circ c2 = aC2Adaptor.Circle();
-            gp_Ax3 Ac1 = new(c1.Position());
-            V = new gp_Vec(c1.Location(), c2.Location()).Dot(new gp_Vec(Ac1.Direction()));
+            Circle3D c1 = aC1Adaptor.Circle();
+            Circle3D c2 = aC2Adaptor.Circle();
+            CoordinateSystem Ac1 = new(c1.Position());
+            V = new Vector3D(c1.Location(), c2.Location()).Dot(new Vector3D(Ac1.Direction()));
             if (V < 0.0)
             {
                 Ac1.ZReverse();
@@ -458,17 +460,17 @@ public sealed class BRepFill_Generator
         else if (IType == 2)
         {
             // conical surface
-            gp_Circ k1 = aC1Adaptor.Circle();
-            gp_Ax3 Ak1 = new(k1.Position());
+            Circle3D k1 = aC1Adaptor.Circle();
+            CoordinateSystem Ak1 = new(k1.Position());
             if (degen2)
             {
-                V = new gp_Vec(k1.Location(), BRep_Tool.Pnt(v2f)).Dot(new gp_Vec(Ak1.Direction()));
+                V = new Vector3D(k1.Location(), BRep_Tool.Pnt(v2f)).Dot(new Vector3D(Ak1.Direction()));
                 Rad = -k1.Radius();
             }
             else
             {
-                gp_Circ k2 = aC2Adaptor.Circle();
-                V = new gp_Vec(k1.Location(), k2.Location()).Dot(new gp_Vec(Ak1.Direction()));
+                Circle3D k2 = aC2Adaptor.Circle();
+                V = new Vector3D(k1.Location(), k2.Location()).Dot(new Vector3D(Ak1.Direction()));
                 Rad = k2.Radius() - k1.Radius();
             }
 
@@ -485,10 +487,10 @@ public sealed class BRepFill_Generator
         else if (IType == -2)
         {
             // conical surface with the top at the beginning (degen1 is true)
-            gp_Circ k2 = aC2Adaptor.Circle();
-            gp_Ax3 Ak2 = new(k2.Position());
+            Circle3D k2 = aC2Adaptor.Circle();
+            CoordinateSystem Ak2 = new(k2.Position());
             Ak2.SetLocation(BRep_Tool.Pnt(v1f));
-            V = new gp_Vec(BRep_Tool.Pnt(v1f), k2.Location()).Dot(new gp_Vec(Ak2.Direction()));
+            V = new Vector3D(BRep_Tool.Pnt(v1f), k2.Location()).Dot(new Vector3D(Ak2.Direction()));
             Rad = k2.Radius(); // - k2.Radius();
             if (V < 0.0)
             {
@@ -507,7 +509,7 @@ public sealed class BRepFill_Generator
         else if (IType == 4)
         {
             // surface plane
-            gp_Lin L1 = new(), L2 = new(), aLine = new();
+            Line3D L1 = new(), L2 = new(), aLine = new();
             if (!degen1)
             {
                 L1 = aC1Adaptor.Line();
@@ -519,14 +521,14 @@ public sealed class BRepFill_Generator
                 aLine = L2;
             }
 
-            gp_Pnt P1 = (degen1) ? BRep_Tool.Pnt(v1f) : L1.Location();
-            gp_Pnt P2 = (degen2) ? BRep_Tool.Pnt(v2f) : L2.Location();
+            Point3D P1 = (degen1) ? BRep_Tool.Pnt(v1f) : L1.Location();
+            Point3D P2 = (degen2) ? BRep_Tool.Pnt(v2f) : L2.Location();
 
-            gp_Vec P1P2 = new(P1, P2);
-            gp_Dir D1 = aLine.Direction();
-            gp_Ax3 Ax = new(aLine.Location(), D1.Crossed(new gp_Dir(P1P2)), D1);
+            Vector3D P1P2 = new(P1, P2);
+            Direction3D D1 = aLine.Direction();
+            CoordinateSystem Ax = new(aLine.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
             Geom_Plane Plan = new(Ax);
-            V = P1P2.Dot(new gp_Vec(Ax.YDirection()));
+            V = P1P2.Dot(new Vector3D(Ax.YDirection()));
             surface = Plan;
             // surface = new Geom_RectangularTrimmedSurface
             //( Plan, aa, bb, std::min(0.,V), std::max(0.,V) );
@@ -787,8 +789,8 @@ public sealed class BRepFill_Generator
                 {
                     // no part cases
                     Geom_Curve? C1, C2;
-                    NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
-                    TopLoc_Location L1 = new(), L2 = new();
+                    NCollection_Array1<Point3D> Extremities = new(1, 2);
+                    Placement L1 = new(), L2 = new();
 
                     if (degen1)
                     {
@@ -826,8 +828,8 @@ public sealed class BRepFill_Generator
 
                     // transform and trim the curves
 
-                    if (Math.Abs(f1 - C1.FirstParameter()) > Precision.PConfusion()
-                        || Math.Abs(l1 - C1.LastParameter()) > Precision.PConfusion())
+                    if (Math.Abs(f1 - C1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || Math.Abs(l1 - C1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         C1 = new Geom_TrimmedCurve(C1, f1, l1);
                     }
@@ -844,8 +846,8 @@ public sealed class BRepFill_Generator
                         C1.Reverse();
                     }
 
-                    if (Math.Abs(f2 - C2.FirstParameter()) > Precision.PConfusion()
-                        || Math.Abs(l2 - C2.LastParameter()) > Precision.PConfusion())
+                    if (Math.Abs(f2 - C2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || Math.Abs(l2 - C2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         C2 = new Geom_TrimmedCurve(C2, f2, l2);
                     }
@@ -865,10 +867,10 @@ public sealed class BRepFill_Generator
                     GeomFill_Generator Generator = new();
                     Generator.AddCurve(C1);
                     Generator.AddCurve(C2);
-                    Generator.Perform(Precision.PConfusion());
+                    Generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
                     Surf = Generator.InternalSurface();
-                    B.MakeFace(ref Face, Surf, Precision.Confusion());
+                    B.MakeFace(ref Face, Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 else
                 {
@@ -878,7 +880,7 @@ public sealed class BRepFill_Generator
                         myStatus = BRepFill_ThruSectionErrorStatus_Null3DCurve;
                         return;
                     }
-                    B.MakeFace(ref Face, Surf, Precision.Confusion());
+                    B.MakeFace(ref Face, Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
 
                 // make the missing edges
@@ -910,7 +912,7 @@ public sealed class BRepFill_Generator
                     else
                     {
                         Geom_Curve CC;
-                        NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+                        NCollection_Array1<Point3D> Extremities = new(1, 2);
                         if (IType == 0)
                         {
                             // general case : Edge3 corresponds to iso U=f1
@@ -923,7 +925,7 @@ public sealed class BRepFill_Generator
                             Extremities[2] = BRep_Tool.Pnt(V2f);
                             CC = new Geom_BezierCurve(Extremities);
                         }
-                        B.MakeEdge(ref Edge3, CC, Precision.Confusion());
+                        B.MakeEdge(ref Edge3, CC, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                     V1f.Orientation(TopAbs_FORWARD);
                     B.Add(Edge3, V1f);
@@ -957,7 +959,7 @@ public sealed class BRepFill_Generator
                     else
                     {
                         Geom_Curve CC;
-                        NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+                        NCollection_Array1<Point3D> Extremities = new(1, 2);
                         if (IType == 0)
                         {
                             // general case : Edge4 corresponds to iso U=l1
@@ -970,7 +972,7 @@ public sealed class BRepFill_Generator
                             Extremities[2] = BRep_Tool.Pnt(V2l);
                             CC = new Geom_BezierCurve(Extremities);
                         }
-                        B.MakeEdge(ref Edge4, CC, Precision.Confusion());
+                        B.MakeEdge(ref Edge4, CC, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                     V1l.Orientation(TopAbs_FORWARD);
                     B.Add(Edge4, V1l);
@@ -1011,29 +1013,29 @@ public sealed class BRepFill_Generator
                 }
 
                 // set the pcurves
-                double T = Precision.Confusion();
+                double T = global::Kerf.Engine.Foundation.Precision.Confusion();
 
                 if (IType != 4) // not plane
                 {
                     if (Edge1.Orientation() == TopAbs_REVERSED)
                     {
-                        B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+                        B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), Face, T);
                         B.Range(Edge1, Face, -l1, -f1);
                     }
                     else
                     {
-                        B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+                        B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X)), Face, T);
                         B.Range(Edge1, Face, f1, l1);
                     }
 
                     if (Edge2.Orientation() == TopAbs_REVERSED)
                     {
-                        B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+                        B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), Face, T);
                         B.Range(Edge2, Face, -l1, -f1);
                     }
                     else
                     {
-                        B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+                        B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X)), Face, T);
                         B.Range(Edge2, Face, f1, l1);
                     }
                 }
@@ -1043,15 +1045,15 @@ public sealed class BRepFill_Generator
                     if (Periodic)
                     {
                         B.UpdateEdge(Edge3,
-                                     new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
-                                     new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                                     new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)),
+                                     new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)),
                                      Face,
                                      T);
                     }
                     else
                     {
-                        B.UpdateEdge(Edge3, new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
-                        B.UpdateEdge(Edge4, new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
+                        B.UpdateEdge(Edge3, new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
+                        B.UpdateEdge(Edge4, new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
                     }
                 }
                 else
@@ -1059,10 +1061,10 @@ public sealed class BRepFill_Generator
                     // KPart
                     if (Periodic)
                     {
-                        NCollection_Array1<gp_Pnt2d> Extrem1 = new(1, 2);
+                        NCollection_Array1<Point2D> Extrem1 = new(1, 2);
                         Extrem1[1].SetCoord(l1, f2);
                         Extrem1[2].SetCoord(l1, l2);
-                        NCollection_Array1<gp_Pnt2d> Extrem2 = new(1, 2);
+                        NCollection_Array1<Point2D> Extrem2 = new(1, 2);
                         Extrem2[1].SetCoord(f1, f2);
                         Extrem2[2].SetCoord(f1, l2);
                         B.UpdateEdge(Edge3,
@@ -1073,11 +1075,11 @@ public sealed class BRepFill_Generator
                     }
                     else if (IType != 4)
                     { // not plane
-                        NCollection_Array1<gp_Pnt2d> Extrem2 = new(1, 2);
+                        NCollection_Array1<Point2D> Extrem2 = new(1, 2);
                         Extrem2[1].SetCoord(f1, f2);
                         Extrem2[2].SetCoord(f1, l2);
                         B.UpdateEdge(Edge3, new Geom2d_BezierCurve(Extrem2), Face, T);
-                        NCollection_Array1<gp_Pnt2d> Extrem1 = new(1, 2);
+                        NCollection_Array1<Point2D> Extrem1 = new(1, 2);
                         Extrem1[1].SetCoord(l1, f2);
                         Extrem1[2].SetCoord(l1, l2);
                         B.UpdateEdge(Edge4, new Geom2d_BezierCurve(Extrem1), Face, T);

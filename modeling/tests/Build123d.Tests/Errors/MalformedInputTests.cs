@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using System.Text;
 using Occt;
 using Ops = Build123d.Operations;
@@ -32,7 +33,7 @@ public class MalformedInputTests
         for (int length = 0; length < data.Length - 1; length += 13)
         {
             // Most often the end is found as such; cut in the right place, a record is malformed instead
-            var e = Assert.ThrowsAny<Standard_Failure>(() => Extras.ReadBRep(data.AsSpan(0, length)));
+            var e = Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(data.AsSpan(0, length)));
             Assert.Equal("Storage_StreamFormatError", e.OcctType);
         }
     }
@@ -42,16 +43,16 @@ public class MalformedInputTests
     [InlineData("hello")]
     [InlineData("CASCADE Topology V3, (c) Open Cascade\nLocations 99999999\n")]
     public void NonBRepIsAnError(string text) =>
-        Assert.Equal("Storage_StreamFormatError", Assert.ThrowsAny<Standard_Failure>(() => Extras.ReadBRep(Encoding.ASCII.GetBytes(text))).OcctType);
+        Assert.Equal("Storage_StreamFormatError", Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(Encoding.ASCII.GetBytes(text))).OcctType);
 
     [Fact]
     public void AnOverlongWordIsRefusedBeforeOcctReadsIt()
     {
         // OCCT reads words into fixed buffers without a limit
         var data = Encoding.ASCII.GetBytes("CASCADE Topology V3, (c) Open Cascade\nLocations " + new string('9', 100_000));
-        var e = Assert.ThrowsAny<Standard_Failure>(() => Extras.ReadBRep(data));
+        var e = Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep(data));
         Assert.Contains("too long", e.Message);
-        Assert.ThrowsAny<Standard_Failure>(() => Extras.ReadBRep("Locations\01"u8));
+        Assert.ThrowsAny<FailureException>(() => Extras.ReadBRep("Locations\01"u8));
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public class MalformedInputTests
             {
                 shape = Shape.Cast(Extras.ReadBRep(data));
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 refused++;
                 continue;
@@ -83,7 +84,7 @@ public class MalformedInputTests
                 _ = shape.Volume;
                 _ = shape.Faces().Sum(f => f.Area);
             }
-            catch (Exception e) when (e is Standard_Failure or ArgumentException or InvalidOperationException)
+            catch (Exception e) when (e is FailureException or ArgumentException or InvalidOperationException)
             {
             }
         }
@@ -142,7 +143,7 @@ public class MalformedInputTests
         {
             _ = Degenerate[name]();
         }
-        catch (Exception e) when (e is Standard_Failure or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (e is FailureException or ArgumentException or InvalidOperationException)
         {
             Assert.False(string.IsNullOrWhiteSpace(e.Message), $"{name}: an exception without a message");
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using System.Globalization;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -132,12 +133,12 @@ public class ChFi3dBuilderNativeTests
             if (IC != 0)
             {
                 double r1 = e.R1, r2 = e.R2 < 0 ? e.R1 : e.R2;
-                if (Math.Abs(r1 - r2) < Precision.Confusion())
+                if (Math.Abs(r1 - r2) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     r1 = r2 = (r1 + r2) * 0.5;
                 }
-                aB.SetRadius(new gp_XY(0.0, r1), IC, IinC);
-                aB.SetRadius(new gp_XY(1.0, r2), IC, IinC);
+                aB.SetRadius(new Xy(0.0, r1), IC, IinC);
+                aB.SetRadius(new Xy(1.0, r2), IC, IinC);
             }
         }
         aB.Compute();
@@ -280,12 +281,12 @@ public class ChFi3dBuilderNativeTests
                 f.Add(E);
                 int IC = f.Contains(E, out int IinC);
                 double r1 = e.R1, r2 = e.R2 < 0 ? e.R1 : e.R2;
-                if (Math.Abs(r1 - r2) < Precision.Confusion())
+                if (Math.Abs(r1 - r2) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     r1 = r2 = (r1 + r2) * 0.5;
                 }
-                f.SetRadius(new gp_XY(0.0, r1), IC, IinC);
-                f.SetRadius(new gp_XY(1.0, r2), IC, IinC);
+                f.SetRadius(new Xy(0.0, r1), IC, IinC);
+                f.SetRadius(new Xy(1.0, r2), IC, IinC);
             }
             aB = f;
         }

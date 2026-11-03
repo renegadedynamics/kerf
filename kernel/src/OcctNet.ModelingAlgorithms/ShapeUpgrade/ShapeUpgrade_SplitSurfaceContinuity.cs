@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -20,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
 {
-    private GeomAbs_Shape myCriterion;
+    private Continuity myCriterion;
     private double myTolerance;
     private int myCont;
 
@@ -28,27 +29,27 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
     public ShapeUpgrade_SplitSurfaceContinuity()
     {
         myCont = 0;
-        myCriterion = GeomAbs_C1;
-        myTolerance = Occt.Precision.Confusion();
+        myCriterion = C1;
+        myTolerance = Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>Sets the criterion for splitting (C1, C2, C3 or CN; any other counts as C1).</summary>
-    public void SetCriterion(GeomAbs_Shape Criterion)
+    public void SetCriterion(Continuity Criterion)
     {
         myCriterion = Criterion;
         switch (myCriterion)
         {
             default:
-            case GeomAbs_C1:
+            case C1:
                 myCont = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 myCont = 2;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 myCont = 3;
                 break;
-            case GeomAbs_CN:
+            case CN:
                 myCont = 4;
                 break;
         }
@@ -66,19 +67,19 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
         if (!Segment)
         {
             mySurface!.Bounds(out double UF, out double UL, out double VF, out double VL);
-            if (!Occt.Precision.IsInfinite(UF))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(UF))
             {
                 myUSplitValues!.SetValue(1, UF);
             }
-            if (!Occt.Precision.IsInfinite(UL))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(UL))
             {
                 myUSplitValues!.SetValue(myUSplitValues.Length(), UL);
             }
-            if (!Occt.Precision.IsInfinite(VF))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(VF))
             {
                 myVSplitValues!.SetValue(1, VF);
             }
-            if (!Occt.Precision.IsInfinite(VL))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(VL))
             {
                 myVSplitValues!.SetValue(myVSplitValues.Length(), VL);
             }
@@ -88,7 +89,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
         double ULast = myUSplitValues.Value(myUSplitValues.Length());
         double VFirst = myVSplitValues!.Value(1);
         double VLast = myVSplitValues.Value(myVSplitValues.Length());
-        double precision = Occt.Precision.Confusion();
+        double precision = Kerf.Engine.Foundation.Precision.Confusion();
 
         if (mySurface!.Continuity() < myCriterion)
         {
@@ -159,7 +160,7 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
                 Geom_Curve aNewBascurve = spc.GetCurve()!;
                 // OCCT.NET: OCCT sets the basis curve of the surface it was given (the face's own); a frozen surface
                 // is copied first and the copy becomes the tool's surface (decision 998)
-                if (SurfaceExt.IsFrozen())
+                if (SurfaceExt.IsFrozen)
                 {
                     SurfaceExt = (Geom_SurfaceOfLinearExtrusion)SurfaceExt.Copy();
                     mySurface = SurfaceExt;
@@ -199,19 +200,19 @@ public class ShapeUpgrade_SplitSurfaceContinuity : ShapeUpgrade_SplitSurface
         }
         else if (mySurface is Geom_OffsetSurface tmpOffset)
         {
-            GeomAbs_Shape BasCriterion;
+            Continuity BasCriterion;
             switch (myCriterion)
             {
                 default:
-                case GeomAbs_C1:
-                    BasCriterion = GeomAbs_C2;
+                case C1:
+                    BasCriterion = C2;
                     break;
-                case GeomAbs_C2:
-                    BasCriterion = GeomAbs_C3;
+                case C2:
+                    BasCriterion = C3;
                     break;
-                case GeomAbs_C3: // OCCT_DEBUG warning left out: criterion C3 for Offset surface
-                case GeomAbs_CN:
-                    BasCriterion = GeomAbs_CN;
+                case C3: // OCCT_DEBUG warning left out: criterion C3 for Offset surface
+                case CN:
+                    BasCriterion = CN;
                     break;
             }
             Geom_Surface theSurf = tmpOffset.BasisSurface();

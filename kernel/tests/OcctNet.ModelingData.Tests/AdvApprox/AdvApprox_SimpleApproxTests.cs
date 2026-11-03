@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -29,17 +31,17 @@ public class AdvApprox_SimpleApproxTests
     private static readonly double[] theCanonical = [0.5, -2.5, -1.5, 0.5];
 
     [Theory]
-    [InlineData(GeomAbs_C0, 8)]
-    [InlineData(GeomAbs_C1, 8)]
-    [InlineData(GeomAbs_C2, 8)]
-    [InlineData(GeomAbs_C0, 5)]
-    [InlineData(GeomAbs_C1, 5)]
-    [InlineData(GeomAbs_C2, 5)]
-    [InlineData(GeomAbs_C2, 13)]
-    public void Cubic_is_reproduced(GeomAbs_Shape theContinuity, int theMaxDegree)
+    [InlineData(C0, 8)]
+    [InlineData(C1, 8)]
+    [InlineData(C2, 8)]
+    [InlineData(C0, 5)]
+    [InlineData(C1, 5)]
+    [InlineData(C2, 5)]
+    [InlineData(C2, 13)]
+    public void Cubic_is_reproduced(Continuity theContinuity, int theMaxDegree)
     {
-        PLib.JacobiParameters(theContinuity, theMaxDegree, 1, out int aNbGaussPoints, out int aWorkDegree);
-        PLib_JacobiPolynomial aBase = new(aWorkDegree, theContinuity);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.JacobiParameters(theContinuity, theMaxDegree, 1, out int aNbGaussPoints, out int aWorkDegree);
+        global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(aWorkDegree, theContinuity);
         AdvApprox_SimpleApprox anApprox =
             new(2, 2, theContinuity, aWorkDegree, aNbGaussPoints, aBase, new CubicEvaluator());
         NCollection_Array1<int> aDims = NCollection_Array1<int>.From([1, 1]);
@@ -64,7 +66,7 @@ public class AdvApprox_SimpleApproxTests
 
         // The constraints are the derivatives at the ends, scaled to [-1, 1]
         Assert.Equal(1.0, anApprox.FirstConstr()[1, 0], 1e-15);
-        if (theContinuity != GeomAbs_C0)
+        if (theContinuity != C0)
         {
             Assert.Equal(2.0, anApprox.FirstConstr()[1, 1], 1e-15);
             Assert.Equal(2 * 2.0, anApprox.FirstConstr()[2, 1], 1e-15);
@@ -103,11 +105,11 @@ public class AdvApprox_SimpleApproxTests
     [InlineData(10, 30, true)]
     public void Odd_Gauss_point_counts_reproduce_OCCT(int theMaxDegree, int theNbGaussPoints, bool theIsAccurate)
     {
-        PLib.JacobiParameters(GeomAbs_C0, theMaxDegree, 1, out int aCodeNbPoints, out int aWorkDegree);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.JacobiParameters(C0, theMaxDegree, 1, out int aCodeNbPoints, out int aWorkDegree);
         Assert.True(aCodeNbPoints >= 30);
-        PLib_JacobiPolynomial aBase = new(aWorkDegree, GeomAbs_C0);
+        global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(aWorkDegree, C0);
         AdvApprox_SimpleApprox anApprox =
-            new(1, 1, GeomAbs_C0, aWorkDegree, theNbGaussPoints, aBase, new SineEvaluator());
+            new(1, 1, C0, aWorkDegree, theNbGaussPoints, aBase, new SineEvaluator());
         anApprox.Perform(NCollection_Array1<int>.From([1]), NCollection_Array1<double>.From([1e-12]), 0, 1,
                          theMaxDegree);
 
@@ -137,9 +139,9 @@ public class AdvApprox_SimpleApproxTests
     [Fact]
     public void Constructor_rejects_other_continuities()
     {
-        PLib_JacobiPolynomial aBase = new(14, GeomAbs_C1);
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => new AdvApprox_SimpleApprox(1, 1, GeomAbs_C3, 14, 15, aBase, new CubicEvaluator()));
+        global::Kerf.Engine.Numerics.Polynomials.JacobiPolynomial aBase = new(14, C1);
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => new AdvApprox_SimpleApprox(1, 1, C3, 14, 15, aBase, new CubicEvaluator()));
     }
 
     [Fact]
@@ -183,6 +185,6 @@ public class AdvApprox_SimpleApproxTests
         Assert.True(aCut.Value(2.0, 4.0, out aV));
         Assert.Equal(3.0, aV);
 
-        Assert.ThrowsAny<Standard_DomainError>(() => new AdvApprox_PrefAndRec(aRec, aPref, 1));
+        Assert.ThrowsAny<DomainErrorException>(() => new AdvApprox_PrefAndRec(aRec, aPref, 1));
     }
 }

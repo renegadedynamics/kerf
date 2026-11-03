@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepToTopoDS_TranslateSolidError;
 
 namespace Occt;
@@ -24,7 +25,7 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
 
     public void Init(StepVisual_TessellatedSolid theTSo, Transfer_TransientProcess theTP, StepToTopoDS_Tool theTool,
                      StepToTopoDS_NMTool theNMTool, bool theReadTessellatedWhenNoBRepOnly, ref bool theHasGeom,
-                     in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         if (theTSo is null)
         {
@@ -36,7 +37,7 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
         TopoDS_Solid aSo = new TopoDS_Solid();
 
         int aNb = theTSo.NbItems();
-        using var aPS = new Message_ProgressScope(theProgress, "Face", aNb);
+        using var aPS = new ProgressScope(theProgress, "Face", aNb);
 
         if (theTSo.HasGeometricLink() && theTP.IsBound(theTSo.GeometricLink()))
         {
@@ -105,7 +106,7 @@ public sealed class StepToTopoDS_TranslateSolid : StepToTopoDS_Root
         => Init(theTSo, theTP, theTool, theNMTool, theReadTessellatedWhenNoBRepOnly, ref theHasGeom, new StepData_Factors());
 
     /// <summary>The solid, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.UnitsMethods_LengthUnit;
 
 namespace Occt;
@@ -29,7 +30,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Returns entity given its rank. Same as InterfaceEntity, but with a shorter name.</summary>
-    public Standard_Transient? Entity(int num)
+    public Transient? Entity(int num)
     {
         return Value(num);
     } // More user-friendly name for accessing entities
@@ -47,7 +48,7 @@ public class StepData_StepModel : Interface_InterfaceModel
         Interface_CopyTool TC = new Interface_CopyTool(this, StepData.HeaderProtocol());
         for (; iter.More(); iter.Next())
         {
-            Standard_Transient newhead = null;
+            Transient newhead = null;
             if (!TC.Copy(iter.Value(), ref newhead, false, false))
             {
                 continue;
@@ -80,7 +81,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Returns Header entity with specified type, if there is.</summary>
-    public Standard_Transient? HeaderEntity(Type atype)
+    public Transient? HeaderEntity(Type atype)
     {
         return theheader.TypedEntity(atype);
     }
@@ -94,7 +95,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Adds an Entity to the Header.</summary>
-    public void AddHeaderEntity(Standard_Transient? ent)
+    public void AddHeaderEntity(Transient? ent)
     {
         theheader.Append(ent);
     }
@@ -108,7 +109,7 @@ public class StepData_StepModel : Interface_InterfaceModel
         Interface_ShareTool sh = new Interface_ShareTool(me, aHP);
         for (Interface_EntityIterator iter = Header(); iter.More(); iter.Next())
         {
-            Standard_Transient head = iter.Value();
+            Transient head = iter.Value();
             if (!lib.Select(head, out Interface_GeneralModule module, out int CN))
             {
                 continue;
@@ -133,14 +134,14 @@ public class StepData_StepModel : Interface_InterfaceModel
         S.Write(" --  Step Model Header : " + iter.NbEntities() + " Entities :\n");
         for (iter.Start(); iter.More(); iter.Next())
         {
-            S.Write("  " + iter.Value().DynamicType().Name + "\n");
+            S.Write("  " + iter.Value().DynamicTypeName() + "\n");
         }
         if (!iapro || nb == 0)
         {
             return;
         }
         S.Write(" --  --        STEP MODEL    HEADER  CONTENT      --  --" + "\n");
-        S.Write(" --   Dumped with Protocol : " + stepro.DynamicType().Name + "   --\n");
+        S.Write(" --   Dumped with Protocol : " + stepro.DynamicTypeName() + "   --\n");
 
         StepData_StepModel me = this;
         StepData_StepWriter SW = new StepData_StepWriter(me);
@@ -158,7 +159,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     // The identifier is typically a number like #123 that appears in STEP files
 
     /// <summary>Attaches an ident to an entity to produce a label (does nothing if this entity is not in the model).</summary>
-    public void SetIdentLabel(Standard_Transient? ent, int ident)
+    public void SetIdentLabel(Transient? ent, int ident)
     {
         int num = Number(ent);
         if (num == 0)
@@ -191,7 +192,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Returns the label ident attached to an entity, 0 if not in me.</summary>
-    public int IdentLabel(Standard_Transient? ent)
+    public int IdentLabel(Transient? ent)
     {
         if (theidnums is null)
         {
@@ -202,7 +203,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Prints label specific to STEP norm for a given entity, i.e. if a LabelIdent has been recorded, its value with "#", else the number in the model with "#" and between ().</summary>
-    public override void PrintLabel(Standard_Transient? ent, TextWriter S)
+    public override void PrintLabel(Transient? ent, TextWriter S)
     {
         int num = (theidnums is null ? 0 : Number(ent));
         int nid = (num == 0 ? 0 : theidnums.Value(num));
@@ -221,7 +222,7 @@ public class StepData_StepModel : Interface_InterfaceModel
     }
 
     /// <summary>Returns a string with the label attached to a given entity, warning: this string is the address of an internal object (OCCT: a static buffer); a new string is returned here.</summary>
-    public override TCollection_HAsciiString? StringLabel(Standard_Transient? ent)
+    public override TCollection_HAsciiString? StringLabel(Transient? ent)
     {
         TCollection_HAsciiString label;
         string text;
@@ -230,11 +231,11 @@ public class StepData_StepModel : Interface_InterfaceModel
 
         if (nid > 0)
         {
-            text = Standard.Sprintf("#%d", nid);
+            text = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d", nid);
         }
         else if (num > 0)
         {
-            text = Standard.Sprintf("(#%d)", num);
+            text = global::Kerf.Engine.Foundation.Standard.Sprintf("(#%d)", num);
         }
         else
         {

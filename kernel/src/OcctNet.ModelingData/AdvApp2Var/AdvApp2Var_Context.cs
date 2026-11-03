@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -146,7 +148,7 @@ public class AdvApp2Var_Context
     /// <paramref name="nlimv"/> the maximum numbers of coefficients, <paramref name="iprecis"/> the precision code
     /// (0 to 3). The tolerance arrays of a dimension without subspaces may be null.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">A negative precision code, or an error in the Fortran.</exception>
+    /// <exception cref="ConstructionErrorException">A negative precision code, or an error in the Fortran.</exception>
     public AdvApp2Var_Context(int ifav,
                               int iu,
                               int iv,
@@ -185,7 +187,7 @@ public class AdvApp2Var_Context
         }
         if (!lesparam(iu, aCoeffLimit, iprecis, ref NbPntU, ref JDegU))
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Context");
+            throw new ConstructionErrorException("AdvApp2Var_Context");
         }
         myNbURoot = NbPntU;
         myJDegU = JDegU;
@@ -208,7 +210,7 @@ public class AdvApp2Var_Context
         }
         if (!lesparam(iv, aCoeffLimit, iprecis, ref NbPntV, ref JDegV))
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Context");
+            throw new ConstructionErrorException("AdvApp2Var_Context");
         }
         myNbVRoot = NbPntV;
         myJDegV = JDegV;
@@ -236,7 +238,7 @@ public class AdvApp2Var_Context
         AdvApp2Var_ApproxF2var.mmapptt_(JDegU, NbPntU, anOrderU, UGauss.AsSpan(), ref anErrorCode);
         if (anErrorCode != 0)
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Context : Error in FORTRAN");
+            throw new ConstructionErrorException("AdvApp2Var_Context : Error in FORTRAN");
         }
         myUGauss = UGauss;
 
@@ -246,7 +248,7 @@ public class AdvApp2Var_Context
         AdvApp2Var_ApproxF2var.mmapptt_(JDegV, NbPntV, anOrderV, VGauss.AsSpan(), ref anErrorCode);
         if (anErrorCode != 0)
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Context : Error in FORTRAN");
+            throw new ConstructionErrorException("AdvApp2Var_Context : Error in FORTRAN");
         }
         myVGauss = VGauss;
 

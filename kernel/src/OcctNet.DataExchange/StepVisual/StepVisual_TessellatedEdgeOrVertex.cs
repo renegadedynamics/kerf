@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class StepVisual_TessellatedEdgeOrVertex : StepData_SelectType
     /// -- 1 -&gt; TessellatedEdge
     /// -- 2 -&gt; TessellatedVertex
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

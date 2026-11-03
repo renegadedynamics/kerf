@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.MAT_Side;
 
 namespace Occt;
@@ -14,7 +15,7 @@ namespace Occt;
 /// The maps are keyed by integers and only looked up (ChangeBasicElts iterates one to set each element's index from
 /// its key, which doesn't depend on the order).
 /// </remarks>
-public sealed class MAT_Graph : Standard_Transient
+public sealed class MAT_Graph : Transient
 {
     private NCollection_DataMap<int, MAT_Arc> theArcs = new();
     private NCollection_DataMap<int, MAT_BasicElt> theBasicElts = new();
@@ -88,7 +89,7 @@ public sealed class MAT_Graph : Standard_Transient
             while (TheRoots.More())
             {
                 CurrentArc = MakeArc(TheRoots.Current(), theBasicElts, theArcs, ref IndTabArcs);
-                Extremite = new MAT_Node(0, CurrentArc, Precision.Infinite());
+                Extremite = new MAT_Node(0, CurrentArc, global::Kerf.Engine.Foundation.Precision.Infinite());
                 Extremite.SetIndex(IndTabNodes);
                 CurrentArc.SetSecondNode(Extremite);
                 theNodes.Bind(IndTabNodes, Extremite);
@@ -401,7 +402,7 @@ public sealed class MAT_Graph : Standard_Transient
             TheBasicElts[aBisector.FirstEdge().EdgeNumber()],
             TheBasicElts[aBisector.SecondEdge().EdgeNumber()]);
         DistExt = aBisector.DistIssuePoint();
-        if (DistExt == Precision.Infinite())
+        if (DistExt == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             DistExt = 1.0;
         }

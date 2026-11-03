@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -21,11 +23,11 @@ public sealed class GeomBndLib_Curve2d
     /// <summary>The members of the per-type evaluators that the dispatchers call through OCCT's <c>std::visit</c>.</summary>
     internal interface ICurve2dEvaluator
     {
-        Bnd_Box2d Box(double theTol);
+        Box2d Box(double theTol);
 
-        Bnd_Box2d Box(double theU1, double theU2, double theTol);
+        Box2d Box(double theU1, double theU2, double theTol);
 
-        Bnd_Box2d BoxOptimal(double theU1, double theU2, double theTol);
+        Box2d BoxOptimal(double theU1, double theU2, double theTol);
 
         /// <summary>The evaluator's <c>Geometry()</c> as a Geom2d_Curve; null for GeomBndLib_OtherCurve2d, which has none.</summary>
         Geom2d_Curve? CurveGeometry();
@@ -34,7 +36,7 @@ public sealed class GeomBndLib_Curve2d
     private readonly Adaptor2d_Curve2d? myAdaptorRef;
     private readonly Adaptor2d_Curve2d? myAdaptorOwned;
     private readonly ICurve2dEvaluator? myEvaluator;
-    private readonly GeomAbs_CurveType myCurveType;
+    private readonly CurveKind myCurveType;
 
     /// <summary>Construct from an adaptor curve.</summary>
     public GeomBndLib_Curve2d(Adaptor2d_Curve2d theCurve)
@@ -44,47 +46,47 @@ public sealed class GeomBndLib_Curve2d
 
         switch (myCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 Geom2d_Line aLine = new(theCurve.Line());
                 myEvaluator = new GeomBndLib_Line2d(aLine);
                 break;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 Geom2d_Circle aCircle = new(theCurve.Circle());
                 myEvaluator = new GeomBndLib_Circle2d(aCircle);
                 break;
             }
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
                 Geom2d_Ellipse anEllipse = new(theCurve.Ellipse());
                 myEvaluator = new GeomBndLib_Ellipse2d(anEllipse);
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
                 Geom2d_Hyperbola aHyp = new(theCurve.Hyperbola());
                 myEvaluator = new GeomBndLib_Hyperbola2d(aHyp);
                 break;
             }
-            case GeomAbs_Parabola:
+            case Parabola:
             {
                 Geom2d_Parabola aPar = new(theCurve.Parabola());
                 myEvaluator = new GeomBndLib_Parabola2d(aPar);
                 break;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 myEvaluator = new GeomBndLib_BezierCurve2d(theCurve.Bezier());
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 myEvaluator = new GeomBndLib_BSplineCurve2d(theCurve.BSpline());
                 break;
             }
-            case GeomAbs_OffsetCurve:
+            case OffsetCurve:
             {
                 if (myAdaptorRef is Geom2dAdaptor_Curve aGA)
                 {
@@ -94,13 +96,13 @@ public sealed class GeomBndLib_Curve2d
                         break;
                     }
                 }
-                myCurveType = GeomAbs_OtherCurve;
+                myCurveType = OtherCurve;
                 myEvaluator = new GeomBndLib_OtherCurve2d(myAdaptorRef);
                 break;
             }
             default:
             {
-                myCurveType = GeomAbs_OtherCurve;
+                myCurveType = OtherCurve;
                 myEvaluator = new GeomBndLib_OtherCurve2d(myAdaptorRef);
                 break;
             }
@@ -110,7 +112,7 @@ public sealed class GeomBndLib_Curve2d
     /// <summary>Construct from a Geom2d_Curve.</summary>
     public GeomBndLib_Curve2d(Geom2d_Curve theCurve)
     {
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
 
         Geom2d_Curve aCurveForDetection = theCurve;
         if (theCurve is Geom2d_TrimmedCurve aTrim)
@@ -123,46 +125,46 @@ public sealed class GeomBndLib_Curve2d
         switch (aCurveForDetection)
         {
             case Geom2d_Line aLine:
-                myCurveType = GeomAbs_Line;
+                myCurveType = Line;
                 myEvaluator = new GeomBndLib_Line2d(aLine);
                 return;
             case Geom2d_Circle aCircle:
-                myCurveType = GeomAbs_Circle;
+                myCurveType = Circle;
                 myEvaluator = new GeomBndLib_Circle2d(aCircle);
                 return;
             case Geom2d_Ellipse anEllipse:
-                myCurveType = GeomAbs_Ellipse;
+                myCurveType = Ellipse;
                 myEvaluator = new GeomBndLib_Ellipse2d(anEllipse);
                 return;
             case Geom2d_Hyperbola aHyp:
-                myCurveType = GeomAbs_Hyperbola;
+                myCurveType = Hyperbola;
                 myEvaluator = new GeomBndLib_Hyperbola2d(aHyp);
                 return;
             case Geom2d_Parabola aPar:
-                myCurveType = GeomAbs_Parabola;
+                myCurveType = Parabola;
                 myEvaluator = new GeomBndLib_Parabola2d(aPar);
                 return;
             case Geom2d_BezierCurve aBez:
-                myCurveType = GeomAbs_BezierCurve;
+                myCurveType = BezierCurve;
                 myEvaluator = new GeomBndLib_BezierCurve2d(aBez);
                 return;
             case Geom2d_BSplineCurve aBSpl:
-                myCurveType = GeomAbs_BSplineCurve;
+                myCurveType = BSplineCurve;
                 myEvaluator = new GeomBndLib_BSplineCurve2d(aBSpl);
                 return;
             case Geom2d_OffsetCurve anOff:
-                myCurveType = GeomAbs_OffsetCurve;
+                myCurveType = OffsetCurve;
                 myEvaluator = new GeomBndLib_OffsetCurve2d(anOff);
                 return;
         }
 
         myAdaptorOwned ??= new Geom2dAdaptor_Curve(theCurve);
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
         myEvaluator = new GeomBndLib_OtherCurve2d(myAdaptorOwned);
     }
 
     /// <summary>Return detected curve type.</summary>
-    public new GeomAbs_CurveType GetType() => myCurveType;
+    public new CurveKind GetType() => myCurveType;
 
     private Adaptor2d_Curve2d? adaptor() => myAdaptorRef ?? myAdaptorOwned;
 
@@ -179,22 +181,22 @@ public sealed class GeomBndLib_Curve2d
     }
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Bnd_Box2d Box(double theTol)
+    public Box2d Box(double theTol)
     {
         if (adaptor() is not null)
         {
             return Box(effectiveU1(), effectiveU2(), theTol);
         }
 
-        return myEvaluator is null ? new Bnd_Box2d() : myEvaluator.Box(theTol);
+        return myEvaluator is null ? new Box2d() : myEvaluator.Box(theTol);
     }
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box2d Box(double theU1, double theU2, double theTol)
-        => myEvaluator is null ? new Bnd_Box2d() : myEvaluator.Box(theU1, theU2, theTol);
+    public Box2d Box(double theU1, double theU2, double theTol)
+        => myEvaluator is null ? new Box2d() : myEvaluator.Box(theU1, theU2, theTol);
 
     /// <summary>Compute precise bounding box for full curve.</summary>
-    public Bnd_Box2d BoxOptimal(double theTol)
+    public Box2d BoxOptimal(double theTol)
     {
         if (adaptor() is not null)
         {
@@ -204,7 +206,7 @@ public sealed class GeomBndLib_Curve2d
         switch (myEvaluator)
         {
             case null:
-                return new Bnd_Box2d();
+                return new Box2d();
             case GeomBndLib_OtherCurve2d anOther:
                 return anOther.BoxOptimal(theTol);
             default:
@@ -216,19 +218,19 @@ public sealed class GeomBndLib_Curve2d
     }
 
     /// <summary>Compute precise bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box2d BoxOptimal(double theU1, double theU2, double theTol)
-        => myEvaluator is null ? new Bnd_Box2d() : myEvaluator.BoxOptimal(theU1, theU2, theTol);
+    public Box2d BoxOptimal(double theU1, double theU2, double theTol)
+        => myEvaluator is null ? new Box2d() : myEvaluator.BoxOptimal(theU1, theU2, theTol);
 
     /// <summary>Add bounding box for full curve.</summary>
-    public void Add(double theTol, ref Bnd_Box2d theBox) => theBox.Add(Box(theTol));
+    public void Add(double theTol, ref Box2d theBox) => theBox.Add(Box(theTol));
 
     /// <summary>Add bounding box for arc [theU1, theU2].</summary>
-    public void Add(double theU1, double theU2, double theTol, ref Bnd_Box2d theBox) => theBox.Add(Box(theU1, theU2, theTol));
+    public void Add(double theU1, double theU2, double theTol, ref Box2d theBox) => theBox.Add(Box(theU1, theU2, theTol));
 
     /// <summary>Add precise bounding box for full curve.</summary>
-    public void AddOptimal(double theTol, ref Bnd_Box2d theBox) => theBox.Add(BoxOptimal(theTol));
+    public void AddOptimal(double theTol, ref Box2d theBox) => theBox.Add(BoxOptimal(theTol));
 
     /// <summary>Add precise bounding box for arc [theU1, theU2].</summary>
-    public void AddOptimal(double theU1, double theU2, double theTol, ref Bnd_Box2d theBox)
+    public void AddOptimal(double theU1, double theU2, double theTol, ref Box2d theBox)
         => theBox.Add(BoxOptimal(theU1, theU2, theTol));
 }

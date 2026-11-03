@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -28,7 +30,7 @@ public class IFGraph_Compare : Interface_GraphContent
     /// adds an entity and its shared ones to the list : first True means adds to the first sub-list, else to the
     /// 2nd
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent, bool first)
+    public void GetFromEntity(Transient? ent, bool first)
     {
         IFGraph_AllShared iter = new IFGraph_AllShared(new Interface_Graph(thegraph.Model()), ent); // OCCT: not evaluated (Begin), so GetFromIter adds nothing
         GetFromIter(iter, first);

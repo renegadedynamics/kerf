@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -47,7 +48,7 @@ public class BRepTools_WireExplorerTests
     [Fact]
     public void OpenWire_StartsAtItsFreeVertex()
     {
-        TopoDS_Vertex[] aV = [.. Enumerable.Range(0, 4).Select(i => TestShapes.Vertex(new gp_Pnt(i, i % 2, 0)))];
+        TopoDS_Vertex[] aV = [.. Enumerable.Range(0, 4).Select(i => TestShapes.Vertex(new Point3D(i, i % 2, 0)))];
         TopoDS_Edge e01 = TestShapes.Edge(aV[0], aV[1]);
         TopoDS_Edge e12 = TestShapes.Edge(aV[1], aV[2]);
         TopoDS_Edge e32 = TestShapes.Edge(aV[3], aV[2]);
@@ -88,10 +89,10 @@ public class BRepTools_WireExplorerTests
     [Fact]
     public void InternalEdgesAreSkipped()
     {
-        TopoDS_Vertex[] aV = [.. Enumerable.Range(0, 3).Select(i => TestShapes.Vertex(new gp_Pnt(i, 0, 0)))];
+        TopoDS_Vertex[] aV = [.. Enumerable.Range(0, 3).Select(i => TestShapes.Vertex(new Point3D(i, 0, 0)))];
         TopoDS_Edge e01 = TestShapes.Edge(aV[0], aV[1]);
         TopoDS_Edge e12 = TestShapes.Edge(aV[1], aV[2]);
-        TopoDS_Edge anInternal = TestShapes.Edge(TestShapes.Vertex(new gp_Pnt(0.5, 1, 0)), aV[1]);
+        TopoDS_Edge anInternal = TestShapes.Edge(TestShapes.Vertex(new Point3D(0.5, 1, 0)), aV[1]);
         TopoDS_Wire aW = MakeWire(e01, TopoDS.Edge(anInternal.Oriented(TopAbs_INTERNAL)), e12);
         Assert.Equal(2, CheckChain(new BRepTools_WireExplorer(aW)));
     }

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -14,16 +16,16 @@ namespace Occt;
 internal interface ITopClass_FaceExplorer<TheEdge>
 {
     /// <summary>Checks the point and moves it if needed; returns false to be called again.</summary>
-    bool CheckPoint(ref gp_Pnt2d thePoint);
+    bool CheckPoint(ref Point2D thePoint);
 
     /// <summary>True if the point is certainly outside the face.</summary>
-    bool Reject(in gp_Pnt2d P);
+    bool Reject(in Point2D P);
 
     /// <summary>A half-line from <paramref name="P"/> and the parameter to intersect it to; false if it is not valid.</summary>
-    bool Segment(in gp_Pnt2d P, out gp_Lin2d L, out double Par);
+    bool Segment(in Point2D P, out Line2D L, out double Par);
 
     /// <summary>Another half-line from <paramref name="P"/>, after a bad classification; false if none is valid.</summary>
-    bool OtherSegment(in gp_Pnt2d P, out gp_Lin2d L, out double Par);
+    bool OtherSegment(in Point2D P, out Line2D L, out double Par);
 
     void InitWires();
 
@@ -32,7 +34,7 @@ internal interface ITopClass_FaceExplorer<TheEdge>
     void NextWire();
 
     /// <summary>True if the current wire can't meet the segment of <paramref name="L"/> up to <paramref name="Par"/>.</summary>
-    bool RejectWire(in gp_Lin2d L, double Par);
+    bool RejectWire(in Line2D L, double Par);
 
     void InitEdges();
 
@@ -41,7 +43,7 @@ internal interface ITopClass_FaceExplorer<TheEdge>
     void NextEdge();
 
     /// <summary>True if the current edge can't meet the segment of <paramref name="L"/> up to <paramref name="Par"/>.</summary>
-    bool RejectEdge(in gp_Lin2d L, double Par);
+    bool RejectEdge(in Line2D L, double Par);
 
     /// <summary>
     /// Writes the current edge into <paramref name="E"/>, with its orientation. The edge is <c>ref</c>, as OCCT's
@@ -58,7 +60,7 @@ internal interface ITopClass_FaceExplorer<TheEdge>
 /// </summary>
 internal interface ITopClass_FClass2d<TheEdge>
 {
-    void Reset(in gp_Lin2d L, double P, double Tol);
+    void Reset(in Line2D L, double P, double Tol);
 
     void Compare(in TheEdge E, TopAbs_Orientation Or);
 
@@ -97,13 +99,13 @@ internal static class TopClass_FaceClassifier
                                                                     ref IntRes2d_Position thePosition,
                                                                     ref double theEdgeParameter,
                                                                     TheFaceExplorer theFexp,
-                                                                    in gp_Pnt2d theP,
+                                                                    in Point2D theP,
                                                                     double theTol)
         where TheFaceExplorer : ITopClass_FaceExplorer<TheEdge>
         where FClass2d : ITopClass_FClass2d<TheEdge>
         where TheEdge : new()
     {
-        gp_Pnt2d aPoint = theP;
+        Point2D aPoint = theP;
         bool aResOfPointCheck = false;
         while (aResOfPointCheck == false)
         {
@@ -117,7 +119,7 @@ internal static class TopClass_FaceClassifier
             return;
         }
 
-        gp_Lin2d aLine;
+        Line2D aLine;
         double aParam;
         bool aIsValidSegment = theFexp.Segment(aPoint, out aLine, out aParam);
         // C++ default-constructs one edge for the whole classification (see ITopClass_FaceExplorer.CurrentEdge)
@@ -233,7 +235,7 @@ internal static class TopClass_FaceClassifier
     }
 
     /// <summary>The closest edge.</summary>
-    /// <exception cref="Standard_DomainError">The point was rejected.</exception>
+    /// <exception cref="DomainErrorException">The point was rejected.</exception>
     internal static TheEdge Edge<TheEdge>(bool theRejected, in TheEdge theEdge)
     {
         Standard_DomainError_Raise_if(theRejected, "TopClass_FaceClassifier::Edge : rejected");
@@ -241,7 +243,7 @@ internal static class TopClass_FaceClassifier
     }
 
     /// <summary>The parameter on the closest edge.</summary>
-    /// <exception cref="Standard_DomainError">The point was rejected.</exception>
+    /// <exception cref="DomainErrorException">The point was rejected.</exception>
     internal static double EdgeParameter(bool theRejected, double theEdgeParameter)
     {
         Standard_DomainError_Raise_if(theRejected, "TopClass_FaceClassifier::EdgeParameter : rejected");

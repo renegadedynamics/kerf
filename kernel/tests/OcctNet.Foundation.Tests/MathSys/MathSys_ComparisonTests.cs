@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 // The C++ test passes the same math_FunctionSetWithDerivatives subclasses to MathSys::Newton (duck-typed) and to
@@ -13,7 +15,7 @@ public class MathSys_ComparisonTest
 
     // Simple 2x2 nonlinear system: F1 = x^2 + y^2 - 1, F2 = x - y
     // Solution: x = y = sqrt(0.5) ~ 0.7071
-    private sealed class SimpleCircleLineSystem : math_FunctionSetWithDerivatives, MathSys.IFunctionSetWithDerivatives
+    private sealed class SimpleCircleLineSystem : FunctionSetWithDerivatives, global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public override int NbVariables() => 2;
 
@@ -26,7 +28,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0 * X[1]; // dF1/dx
             D[1, 2] = 2.0 * X[2]; // dF1/dy
@@ -35,7 +37,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             return Value(X, F) && Derivatives(X, D);
         }
@@ -43,7 +45,7 @@ public class MathSys_ComparisonTest
 
     // Rosenbrock-like 2D system: F1 = 10*(y - x^2), F2 = 1 - x
     // Solution: x = 1, y = 1
-    private sealed class RosenbrockSystem : math_FunctionSetWithDerivatives, MathSys.IFunctionSetWithDerivatives
+    private sealed class RosenbrockSystem : FunctionSetWithDerivatives, global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public override int NbVariables() => 2;
 
@@ -56,7 +58,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = -20.0 * X[1];
             D[1, 2] = 10.0;
@@ -65,7 +67,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             return Value(X, F) && Derivatives(X, D);
         }
@@ -73,7 +75,7 @@ public class MathSys_ComparisonTest
 
     // 3x3 linear-like system: F1 = 2x + y - 2, F2 = x + 3y - 5, F3 = z - 1
     // Solution: x = 0.2, y = 1.6, z = 1
-    private sealed class Linear3System : math_FunctionSetWithDerivatives, MathSys.IFunctionSetWithDerivatives
+    private sealed class Linear3System : FunctionSetWithDerivatives, global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public override int NbVariables() => 3;
 
@@ -87,7 +89,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0;
             D[1, 2] = 1.0;
@@ -101,7 +103,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             return Value(X, F) && Derivatives(X, D);
         }
@@ -109,7 +111,7 @@ public class MathSys_ComparisonTest
 
     // Polynomial system: x^3 - y = 0, y^3 - x = 0
     // Solutions: (0,0), (1,1), (-1,-1)
-    private sealed class PolynomialSystem : math_FunctionSetWithDerivatives, MathSys.IFunctionSetWithDerivatives
+    private sealed class PolynomialSystem : FunctionSetWithDerivatives, global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public override int NbVariables() => 2;
 
@@ -122,7 +124,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 3.0 * X[1] * X[1];
             D[1, 2] = -1.0;
@@ -131,7 +133,7 @@ public class MathSys_ComparisonTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             return Value(X, F) && Derivatives(X, D);
         }
@@ -150,13 +152,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new API
-        MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         math_Vector aOldRoot = aOldSolver.Root();
 
@@ -187,13 +189,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new API
-        MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         math_Vector aOldRoot = aOldSolver.Root();
 
@@ -222,13 +224,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new API
-        MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         math_Vector aOldRoot = aOldSolver.Root();
 
@@ -258,13 +260,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new API
-        MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         math_Vector aOldRoot = aOldSolver.Root();
 
@@ -298,13 +300,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new bounded API
-        MathUtils.VectorResult aNewResult = MathSys.NewtonBounded(aFunc, aStart, aInfBound, aSupBound, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBounded(aFunc, aStart, aInfBound, aSupBound, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy bounded API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart, aInfBound, aSupBound);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         math_Vector aOldRoot = aOldSolver.Root();
 
@@ -328,8 +330,8 @@ public class MathSys_ComparisonTest
         aStart[1] = 0.5;
         aStart[2] = 0.5;
 
-        MathUtils.VectorResult aResult = MathSys.Newton(aFunc, aStart, 1.0e-10, 1.0e-10);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, 1.0e-10, 1.0e-10);
+        Assert.True(aResult.IsDone);
 
         // Evaluate function at solution
         math_Vector aF = new(1, 2);
@@ -353,13 +355,13 @@ public class MathSys_ComparisonTest
         double aTolF = 1.0e-10;
 
         // Solve using new API
-        MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-        Assert.True(aNewResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+        NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
         aOldSolver.Perform(aFunc, aStart);
-        Assert.True(aOldSolver.IsDone());
+        Assert.True(aOldSolver.IsDone);
 
         // Both should converge in similar number of iterations
         // (exact count may differ slightly due to implementation details)
@@ -367,7 +369,7 @@ public class MathSys_ComparisonTest
         Assert.True(aNewResult.NbIterations <= 20); // Reasonable upper bound
 
         // The iteration counts should be reasonably close
-        int aOldIter = aOldSolver.NbIterations();
+        int aOldIter = aOldSolver.IterationCount;
         Assert.InRange(aNewResult.NbIterations, aOldIter - 5, aOldIter + 5);
     }
 
@@ -381,8 +383,8 @@ public class MathSys_ComparisonTest
         aStart[2] = 0.5;
 
         // Use simplified interface with uniform tolerance
-        MathUtils.VectorResult aResult = MathSys.Newton(aFunc, aStart, 1.0e-10, 1.0e-10);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, 1.0e-10, 1.0e-10);
+        Assert.True(aResult.IsDone);
 
         // Expected solution
         double aExpected = Math.Sqrt(0.5);
@@ -407,12 +409,12 @@ public class MathSys_ComparisonTest
             aStart[1] = aStartPt[0];
             aStart[2] = aStartPt[1];
 
-            MathUtils.VectorResult aNewResult = MathSys.Newton(aFunc, aStart, aTolX, aTolF);
-            Assert.True(aNewResult.IsDone(), $"Failed for start ({aStartPt[0]}, {aStartPt[1]})");
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.Newton(aFunc, aStart, aTolX, aTolF);
+            Assert.True(aNewResult.IsDone, $"Failed for start ({aStartPt[0]}, {aStartPt[1]})");
 
-            math_NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
+            NewtonFunctionSetRoot aOldSolver = new(aFunc, aTolX, aTolF);
             aOldSolver.Perform(aFunc, aStart);
-            Assert.True(aOldSolver.IsDone());
+            Assert.True(aOldSolver.IsDone);
 
             math_Vector aOldRoot = aOldSolver.Root();
 

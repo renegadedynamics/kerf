@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_FunctionSetRootTest
@@ -10,7 +12,7 @@ public class math_FunctionSetRootTest
 
     // Simple 2x2 linear system: 2x + y = 5, x + 2y = 4
     // Solution: x = 2, y = 1
-    private class LinearSystem2D : math_FunctionSetWithDerivatives
+    private class LinearSystem2D : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -23,7 +25,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector theUnused, math_Matrix D)
+        public override bool Derivatives(math_Vector theUnused, Matrix D)
         {
             D[1, 1] = 2.0;
             D[1, 2] = 1.0;
@@ -32,7 +34,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -42,7 +44,7 @@ public class math_FunctionSetRootTest
 
     // Nonlinear system: x^2 + y^2 = 5, x*y = 2
     // Solutions: (2, 1), (1, 2), (-2, -1), (-1, -2)
-    private class NonlinearSystemFunction : math_FunctionSetWithDerivatives
+    private class NonlinearSystemFunction : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -55,7 +57,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0 * X[1];
             D[1, 2] = 2.0 * X[2];
@@ -64,7 +66,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -74,7 +76,7 @@ public class math_FunctionSetRootTest
 
     // Single variable function: x^2 - 4 = 0
     // Solution: x = +/-2
-    private class SingleVariableSystem : math_FunctionSetWithDerivatives
+    private class SingleVariableSystem : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 1; }
 
@@ -86,13 +88,13 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0 * X[1];
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -102,7 +104,7 @@ public class math_FunctionSetRootTest
 
     // Overdetermined system: 3 equations, 2 unknowns
     // x + y = 3, x - y = 1, 2x = 4
-    private class OverdeterminedSystemFunction : math_FunctionSetWithDerivatives
+    private class OverdeterminedSystemFunction : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -116,7 +118,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector theUnused, math_Matrix D)
+        public override bool Derivatives(math_Vector theUnused, Matrix D)
         {
             D[1, 1] = 1.0;
             D[1, 2] = 1.0;
@@ -127,7 +129,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -137,7 +139,7 @@ public class math_FunctionSetRootTest
 
     // 3x3 system: x + y + z = 6, 2x - y = 2, z = 2
     // Solution: x = 2, y = 2, z = 2
-    private class ThreeVariableSystemFunction : math_FunctionSetWithDerivatives
+    private class ThreeVariableSystemFunction : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 3; }
 
@@ -151,7 +153,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector theUnused, math_Matrix D)
+        public override bool Derivatives(math_Vector theUnused, Matrix D)
         {
             D[1, 1] = 1.0;
             D[1, 2] = 1.0;
@@ -165,7 +167,7 @@ public class math_FunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -182,7 +184,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -190,7 +192,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], TOLERANCE);
@@ -205,7 +207,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-5;
         tolerance[2] = 1.0e-5;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 1.5; // Start near solution (2, 1)
@@ -213,7 +215,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         // Just check that we found a valid solution (may not be the exact analytical one due to algorithm
@@ -235,14 +237,14 @@ public class math_FunctionSetRootTest
         math_Vector tolerance = new(1, 1);
         tolerance[1] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 1);
         startingPoint[1] = 1.5; // Start near positive root
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, Math.Abs(root[1]), TOLERANCE); // Should find +/-2
@@ -256,7 +258,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-5;
         tolerance[2] = 1.0e-5;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -264,7 +266,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         // Should find approximate solution x = 2, y = 1
@@ -281,7 +283,7 @@ public class math_FunctionSetRootTest
         tolerance[2] = 1.0e-6;
         tolerance[3] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 3);
         startingPoint[1] = 0.0;
@@ -290,7 +292,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], TOLERANCE);
@@ -306,7 +308,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -322,7 +324,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint, lowerBound, upperBound);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], TOLERANCE);
@@ -337,7 +339,7 @@ public class math_FunctionSetRootTest
     public void AlternativeConstructor()
     {
         LinearSystem2D func = new();
-        math_FunctionSetRoot solver = new(func); // No tolerance specified
+        FunctionSetRoot solver = new(func); // No tolerance specified
 
         math_Vector tolerance = new(1, 2);
         tolerance[1] = 1.0e-6;
@@ -351,7 +353,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], TOLERANCE);
@@ -366,7 +368,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance, 50); // Limited iterations
+        FunctionSetRoot solver = new(func, tolerance, 50); // Limited iterations
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -374,8 +376,8 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbIterations() <= 50);
+        Assert.True(solver.IsDone);
+        Assert.True(solver.IterationCount <= 50);
     }
 
     [Fact]
@@ -386,7 +388,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -394,7 +396,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         int state = solver.StateNumber();
         Assert.True(state >= 0); // State should be valid
@@ -408,7 +410,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -416,9 +418,9 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        math_Matrix jacobian = solver.Derivative();
+        Matrix jacobian = solver.Derivative();
         Assert.Equal(2, jacobian.RowNumber());
         Assert.Equal(2, jacobian.ColNumber());
 
@@ -437,7 +439,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -445,7 +447,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector errors = solver.FunctionSetErrors();
         Assert.Equal(2, errors.Length());
@@ -463,7 +465,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -471,7 +473,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Test output methods
         math_Vector rootCopy = new(1, 2);
@@ -479,7 +481,7 @@ public class math_FunctionSetRootTest
         Assert.Equal(2.0, rootCopy[1], TOLERANCE);
         Assert.Equal(1.0, rootCopy[2], TOLERANCE);
 
-        math_Matrix derivativeCopy = new(1, 2, 1, 2);
+        Matrix derivativeCopy = new(1, 2, 1, 2);
         solver.Derivative(derivativeCopy);
         Assert.Equal(2.0, derivativeCopy[1, 1], TOLERANCE);
         Assert.Equal(2.0, derivativeCopy[2, 2], TOLERANCE);
@@ -498,7 +500,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -506,9 +508,9 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        int iterations = solver.NbIterations();
+        int iterations = solver.IterationCount;
         Assert.True(iterations > 0);
         Assert.True(iterations <= 100); // Default max iterations
     }
@@ -521,7 +523,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 1.99; // Very close to solution
@@ -529,8 +531,8 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbIterations() <= 5); // Should converge quickly
+        Assert.True(solver.IsDone);
+        Assert.True(solver.IterationCount <= 5); // Should converge quickly
     }
 
     [Fact]
@@ -541,7 +543,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 100.0; // Start far from solution
@@ -550,9 +552,9 @@ public class math_FunctionSetRootTest
         solver.Perform(func, startingPoint, true); // Stop on divergent
 
         // May or may not converge from this bad starting point
-        if (!solver.IsDone())
+        if (!solver.IsDone)
         {
-            Assert.True(solver.IsDivergent());
+            Assert.True(solver.IsDivergent);
         }
     }
 
@@ -564,7 +566,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-10;
         tolerance[2] = 1.0e-10;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -572,7 +574,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], 1.0e-8);
@@ -588,7 +590,7 @@ public class math_FunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_FunctionSetRoot solver = new(func, tolerance);
+        FunctionSetRoot solver = new(func, tolerance);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -604,7 +606,7 @@ public class math_FunctionSetRootTest
 
         solver.Perform(func, startingPoint, lowerBound, upperBound);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         // Check bounds are respected

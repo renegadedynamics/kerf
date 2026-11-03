@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -31,10 +32,10 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
     internal BRepAdaptor_Curve2d Curve() => myCurve;
 
     /// <summary>Nothing: (RealFirst, RealFirst), as in OCCT.</summary>
-    public override gp_Pnt2d Value()
+    public override Point2D Value()
     {
         //  return myCurve->Value(Parameter(myCurve));
-        return new gp_Pnt2d(RealFirst(), RealFirst()); // do nothing
+        return new Point2D(RealFirst(), RealFirst()); // do nothing
     }
 
     /// <summary>The parameter of the vertex on the edge of <paramref name="C"/> (a BRepAdaptor_Curve2d).</summary>
@@ -53,9 +54,9 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
         double tv = BRep_Tool.Tolerance(myVtx);
         double pp, p = BRep_Tool.Parameter(myVtx, brhc.Edge(), brhc.Face());
         TopAbs_Orientation Or = Orientation();
-        C.D1(p, out gp_Pnt2d p2d, out gp_Vec2d v2d);
-        gp_Vec DC = new();
-        S.D1(p2d.X(), p2d.Y(), out gp_Pnt P, out gp_Vec DU, out gp_Vec DV);
+        C.D1(p, out Point2D p2d, out Vector2D v2d);
+        Vector3D DC = new();
+        S.D1(p2d.X(), p2d.Y(), out Point3D P, out Vector3D DU, out Vector3D DV);
         DC.SetLinearForm(v2d.X(), DU, v2d.Y(), DV);
         double ResUV, mag = DC.Magnitude();
 
@@ -104,7 +105,7 @@ public class BRepTopAdaptor_HVertex : Adaptor3d_HVertex
         }
 
         C.D0(pp, out p2d);
-        S.D0(p2d.X(), p2d.Y(), out gp_Pnt P1);
+        S.D0(p2d.X(), p2d.Y(), out Point3D P1);
 
         double Dist = P.Distance(P1);
         if ((Dist > 1e-12) && ((Dist > 1.1 * tv) || (Dist < 0.8 * tv)))

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_DoubleTabTest
@@ -11,7 +13,7 @@ public class math_DoubleTabTest
     public void DefaultConstructor()
     {
         // Test standard constructor with ranges
-        math_DoubleTab aTab = new(1, 3, 1, 3);
+        DoubleTab aTab = new(1, 3, 1, 3);
 
         // Initialize with test values
         aTab.Init(5.0);
@@ -34,7 +36,7 @@ public class math_DoubleTabTest
         double[] anArray = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
 
         // Create math_DoubleTab from external array
-        math_DoubleTab aTab = new(anArray, 1, 3, 1, 3);
+        DoubleTab aTab = new(anArray, 1, 3, 1, 3);
 
         // Check values are correctly accessed
         int anIndex = 0;
@@ -52,7 +54,7 @@ public class math_DoubleTabTest
     public void CopyConstructor()
     {
         // Create original array
-        math_DoubleTab aOriginal = new(1, 3, 1, 3);
+        DoubleTab aOriginal = new(1, 3, 1, 3);
         aOriginal.Init(10.0);
 
         // Set some specific values
@@ -61,7 +63,7 @@ public class math_DoubleTabTest
         aOriginal.Value(3, 3) = 3.5;
 
         // Create copy
-        math_DoubleTab aCopy = new(aOriginal);
+        DoubleTab aCopy = new(aOriginal);
 
         // Check values are copied correctly
         Assert.Equal(1.5, aCopy.Value(1, 1));
@@ -74,7 +76,7 @@ public class math_DoubleTabTest
     [Fact]
     public void InitOperation()
     {
-        math_DoubleTab aTab = new(0, 2, 0, 2);
+        DoubleTab aTab = new(0, 2, 0, 2);
 
         // Initialize with specific value
         aTab.Init(7.5);
@@ -92,7 +94,7 @@ public class math_DoubleTabTest
     [Fact]
     public void ValueAccess()
     {
-        math_DoubleTab aTab = new(1, 2, 1, 2);
+        DoubleTab aTab = new(1, 2, 1, 2);
 
         // Set values using Value method
         aTab.Value(1, 1) = 11.0;
@@ -110,7 +112,7 @@ public class math_DoubleTabTest
     [Fact]
     public void OperatorAccess()
     {
-        math_DoubleTab aTab = new(-1, 1, -1, 1);
+        DoubleTab aTab = new(-1, 1, -1, 1);
 
         // Set values using operator()
         aTab[-1, -1] = -11.0;
@@ -139,14 +141,14 @@ public class math_DoubleTabTest
     public void CopyMethod()
     {
         // Create source array
-        math_DoubleTab aSource = new(1, 2, 1, 2);
+        DoubleTab aSource = new(1, 2, 1, 2);
         aSource.Value(1, 1) = 100.0;
         aSource.Value(1, 2) = 200.0;
         aSource.Value(2, 1) = 300.0;
         aSource.Value(2, 2) = 400.0;
 
         // Create destination array
-        math_DoubleTab aDest = new(1, 2, 1, 2);
+        DoubleTab aDest = new(1, 2, 1, 2);
         aDest.Init(0.0);
 
         // Copy from source to destination
@@ -165,7 +167,7 @@ public class math_DoubleTabTest
     {
         // Test that small arrays (<=16 elements) use buffer optimization
         // 4x4 = 16 elements, should use buffer
-        math_DoubleTab aSmallTab = new(1, 4, 1, 4);
+        DoubleTab aSmallTab = new(1, 4, 1, 4);
         aSmallTab.Init(42.0);
 
         // Set and read values to ensure it works correctly
@@ -179,7 +181,7 @@ public class math_DoubleTabTest
     {
         // Test that large arrays (>16 elements) allocate memory
         // 5x5 = 25 elements, should allocate
-        math_DoubleTab aLargeTab = new(1, 5, 1, 5);
+        DoubleTab aLargeTab = new(1, 5, 1, 5);
         aLargeTab.Init(99.99);
 
         // Set and read values to ensure it works correctly
@@ -193,7 +195,7 @@ public class math_DoubleTabTest
     public void SingleElement()
     {
         // Test with single element array
-        math_DoubleTab aSingle = new(5, 5, 10, 10);
+        DoubleTab aSingle = new(5, 5, 10, 10);
         aSingle.Value(5, 10) = 777.0;
 
         Assert.Equal(777.0, aSingle.Value(5, 10));
@@ -204,7 +206,7 @@ public class math_DoubleTabTest
     public void NegativeIndices()
     {
         // Test with negative indices
-        math_DoubleTab aNegTab = new(-5, -1, -3, -1);
+        DoubleTab aNegTab = new(-5, -1, -3, -1);
         aNegTab.Init(-1.0);
 
         aNegTab.Value(-3, -2) = -999.0;

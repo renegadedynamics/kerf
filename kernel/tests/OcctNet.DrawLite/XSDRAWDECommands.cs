@@ -8,6 +8,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -46,14 +47,14 @@ internal static class XSDRAWDECommands
     private static bool fail(DrawInterpreter theDI, string theMessage)
     {
         _ = theDI;
-        Message.SendFail(theMessage);
+        global::Kerf.Engine.Foundation.Message.SendFail(theMessage);
         return false;
     }
 
     private static void warn(DrawInterpreter theDI, string theMessage)
     {
         _ = theDI;
-        Message.SendWarning(theMessage);
+        global::Kerf.Engine.Foundation.Message.SendWarning(theMessage);
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -691,7 +692,7 @@ internal static class XSDRAWDECommands
             }
             if (!myStlReadBRep)
             {
-                Poly_Triangulation? aTriangulation = aBytes.Length > 0 ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
+                Triangulation? aTriangulation = aBytes.Length > 0 ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
                 TopoDS_Face aFace = new();
                 var aB = new BRep_Builder();
                 aB.MakeFace(ref aFace);
@@ -796,7 +797,7 @@ internal static class XSDRAWDECommands
             // BRepTools::Read(shape, file): the shape set, then the shape
             string aText = Encoding.Latin1.GetString(aBytes);
             var aReader = new StringReader(aText);
-            Standard_Stream.SetInputLength(aReader, aText.Length);
+            global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(aReader, aText.Length);
             var aShapeSet = new BRepTools_ShapeSet();
             aShapeSet.Read(aReader);
             if (aShapeSet.NbShapes() == 0)

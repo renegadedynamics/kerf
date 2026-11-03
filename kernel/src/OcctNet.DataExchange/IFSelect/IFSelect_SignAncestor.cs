@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class IFSelect_SignAncestor : IFSelect_SignType
@@ -14,7 +16,7 @@ public class IFSelect_SignAncestor : IFSelect_SignType
     {
     }
 
-    public override bool Matches(Standard_Transient? ent, Interface_InterfaceModel? model, string text, bool exact)
+    public override bool Matches(Transient? ent, Interface_InterfaceModel? model, string text, bool exact)
     {
         if (ent is null)
         {
@@ -25,7 +27,7 @@ public class IFSelect_SignAncestor : IFSelect_SignType
         // Standard_Type::SubType(name): the type or one of its ancestors has this name
         for (Type? t = atype; t is not null; t = t.BaseType)
         {
-            if (t.Name == text)
+            if (global::Kerf.Engine.Foundation.OcctTypeNames.Of(t) == text)
             {
                 return true;
             }

@@ -4,9 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using static Occt.GccEnt_Position;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 
 namespace OcctNet.DrawLite;
 
@@ -88,14 +89,14 @@ internal static class GeometryTestCurveTanCommands
         {
             if (theArgsNb == 5 || theArgsNb == 6)
             {
-                aResult2d = new Geom2d_Circle(new gp_Ax22d(new gp_Pnt2d(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
-                                                           new gp_Dir2d(gp_Dir2d.D.X)),
+                aResult2d = new Geom2d_Circle(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+                                                           new Direction2D(Direction2D.D.X)),
                                               theDI.Atof(theArgVec[4]));
             }
             else if (theArgsNb == 7 || theArgsNb == 8)
             {
-                aResult2d = new Geom2d_Circle(new gp_Ax22d(new gp_Pnt2d(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
-                                                           new gp_Dir2d(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5]))),
+                aResult2d = new Geom2d_Circle(new Frame2D(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+                                                           new Direction2D(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5]))),
                                               theDI.Atof(theArgVec[6]));
             }
 
@@ -114,8 +115,8 @@ internal static class GeometryTestCurveTanCommands
             {
                 return Fail(theDI, "Error: wrong number of arguments");
             }
-            aResult2d = new Geom2d_Line(new gp_Pnt2d(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
-                                        new gp_Dir2d(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5])));
+            aResult2d = new Geom2d_Line(new Point2D(theDI.Atof(theArgVec[2]), theDI.Atof(theArgVec[3])),
+                                        new Direction2D(theDI.Atof(theArgVec[4]), theDI.Atof(theArgVec[5])));
             if (theArgsNb == 7)
             {
                 aPositionType = theArgVec[6];
@@ -169,7 +170,7 @@ internal static class GeometryTestCurveTanCommands
 
             di.Append("  tangent points: point (parameter on solution, parameter on argument)\n");
             double aParSol, aParArg;
-            gp_Pnt2d aPntSol;
+            Point2D aPntSol;
             // the first tangent point
             if (theCirTan3.IsTheSame1(aSolId))
             {
@@ -227,12 +228,12 @@ internal static class GeometryTestCurveTanCommands
         var aQCurve2 = theDI.GetDrawable(theArgVec[3]) as DrawQualifiedCurve2d;
         var aQCurve3 = theDI.GetDrawable(theArgVec[4]) as DrawQualifiedCurve2d;
 
-        gp_Pnt2d aPoint1 = new(), aPoint2 = new(), aPoint3 = new();
+        Point2D aPoint1 = new(), aPoint2 = new(), aPoint3 = new();
         bool anIsPoint1 = DrawTrSurf.GetPoint2d(theDI, theArgVec[2], ref aPoint1);
         bool anIsPoint2 = DrawTrSurf.GetPoint2d(theDI, theArgVec[3], ref aPoint2);
         bool anIsPoint3 = DrawTrSurf.GetPoint2d(theDI, theArgVec[4], ref aPoint3);
 
-        double aTolerance = Precision.Confusion();
+        double aTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (theArgsNb > 5)
         {
             aTolerance = theDI.Atof(theArgVec[5]);
@@ -256,12 +257,12 @@ internal static class GeometryTestCurveTanCommands
                 return Fail(theDI, "Error: wrong points definition");
             }
             var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
-            if (anAdaptorCurve1.GetType() == GeomAbs_Circle)
+            if (anAdaptorCurve1.GetType() == Circle)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aPoint2, aPoint3, aTolerance), aName);
             }
-            else if (anAdaptorCurve1.GetType() == GeomAbs_Line)
+            else if (anAdaptorCurve1.GetType() == Line)
             {
                 var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedLin1, aPoint2, aPoint3, aTolerance), aName);
@@ -278,19 +279,19 @@ internal static class GeometryTestCurveTanCommands
             }
             var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
             var anAdaptorCurve2 = new Geom2dAdaptor_Curve(aQCurve2.Curve);
-            if (anAdaptorCurve1.GetType() == GeomAbs_Circle && anAdaptorCurve2.GetType() == GeomAbs_Circle)
+            if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aPoint3, aTolerance), aName);
             }
-            else if (anAdaptorCurve1.GetType() == GeomAbs_Circle && anAdaptorCurve2.GetType() == GeomAbs_Line)
+            else if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Line)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedLin2, aPoint3, aTolerance), aName);
             }
-            else if (anAdaptorCurve1.GetType() == GeomAbs_Line && anAdaptorCurve2.GetType() == GeomAbs_Line)
+            else if (anAdaptorCurve1.GetType() == Line && anAdaptorCurve2.GetType() == Line)
             {
                 var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
                 var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
@@ -305,8 +306,8 @@ internal static class GeometryTestCurveTanCommands
             var anAdaptorCurve1 = new Geom2dAdaptor_Curve(aQCurve1.Curve);
             var anAdaptorCurve2 = new Geom2dAdaptor_Curve(aQCurve2.Curve);
             var anAdaptorCurve3 = new Geom2dAdaptor_Curve(aQCurve3.Curve);
-            if (anAdaptorCurve1.GetType() == GeomAbs_Circle && anAdaptorCurve2.GetType() == GeomAbs_Circle
-                && anAdaptorCurve3.GetType() == GeomAbs_Circle)
+            if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle
+                && anAdaptorCurve3.GetType() == Circle)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
@@ -314,8 +315,8 @@ internal static class GeometryTestCurveTanCommands
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedCircle3, aTolerance),
                                  aName);
             }
-            if (anAdaptorCurve1.GetType() == GeomAbs_Circle && anAdaptorCurve2.GetType() == GeomAbs_Circle
-                && anAdaptorCurve3.GetType() == GeomAbs_Line)
+            if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle
+                && anAdaptorCurve3.GetType() == Line)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
@@ -323,8 +324,8 @@ internal static class GeometryTestCurveTanCommands
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedLin3, aTolerance),
                                  aName);
             }
-            if (anAdaptorCurve1.GetType() == GeomAbs_Circle && anAdaptorCurve2.GetType() == GeomAbs_Line
-                && anAdaptorCurve3.GetType() == GeomAbs_Line)
+            if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Line
+                && anAdaptorCurve3.GetType() == Line)
             {
                 var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
                 var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
@@ -332,8 +333,8 @@ internal static class GeometryTestCurveTanCommands
                 return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedLin2, aQualifiedLin3, aTolerance),
                                  aName);
             }
-            if (anAdaptorCurve1.GetType() == GeomAbs_Line && anAdaptorCurve2.GetType() == GeomAbs_Line
-                && anAdaptorCurve3.GetType() == GeomAbs_Line)
+            if (anAdaptorCurve1.GetType() == Line && anAdaptorCurve2.GetType() == Line
+                && anAdaptorCurve3.GetType() == Line)
             {
                 var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
                 var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);

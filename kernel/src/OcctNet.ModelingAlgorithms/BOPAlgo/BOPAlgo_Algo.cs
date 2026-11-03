@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -15,13 +16,13 @@ public abstract class BOPAlgo_Algo : BOPAlgo_Options
     }
 
     /// <summary>Performs the operation; the range gives progress and user break.</summary>
-    public abstract void Perform(Message_ProgressRange theRange = default);
+    public abstract void Perform(ProgressRange theRange = default);
 
     /// <summary>Checks the input data (here: clears the errors).</summary>
-    protected virtual void CheckData() => GetReport().Clear(Message_Fail);
+    protected virtual void CheckData() => GetReport().Clear(Fail);
 
     /// <summary>Checks the result (here: clears the errors).</summary>
-    protected virtual void CheckResult() => GetReport().Clear(Message_Fail);
+    protected virtual void CheckResult() => GetReport().Clear(Fail);
 
     //! @name Analyzing operations to fill progress indicator
 
@@ -93,16 +94,16 @@ public abstract class BOPAlgo_Algo : BOPAlgo_Options
 /// </remarks>
 public abstract class BOPAlgo_ParallelAlgo : BOPAlgo_Algo, BOPTools_Parallel.ISolver
 {
-    protected Message_ProgressRange myProgressRange;
+    protected ProgressRange myProgressRange;
 
     /// <summary>Performs the operation with the range set by <see cref="SetProgressRange"/>.</summary>
     public abstract void Perform();
 
     /// <summary>Sets the range for a single run.</summary>
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     /// <summary>Disabled: does nothing (OCCT's private override).</summary>
-    public sealed override void Perform(Message_ProgressRange theRange)
+    public sealed override void Perform(ProgressRange theRange)
     {
     }
 }

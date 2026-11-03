@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 public static partial class MathUtils
 {
@@ -11,59 +13,59 @@ public static partial class MathUtils
     /// defensive copies.</remarks>
     public sealed class RandomGenerator
     {
-        private readonly ulong[] myState = new ulong[4]; // 256-bit generator state
+        private readonly ulong[] _state = new ulong[4]; // 256-bit generator state
 
         /// <summary>Initialize with a seed value.</summary>
-        public RandomGenerator(ulong theSeed = 1)
+        public RandomGenerator(ulong seed = 1)
         {
-            SetSeed(theSeed);
+            SetSeed(seed);
         }
 
         /// <summary>Re-seed the generator.</summary>
-        public void SetSeed(ulong theSeed)
+        public void SetSeed(ulong seed)
         {
             // Use SplitMix64 to initialize the state from a single seed.
-            ulong aSeedState = theSeed;
-            myState[0] = splitmix64(ref aSeedState);
-            myState[1] = splitmix64(ref aSeedState);
-            myState[2] = splitmix64(ref aSeedState);
-            myState[3] = splitmix64(ref aSeedState);
+            ulong seedState = seed;
+            _state[0] = Splitmix64(ref seedState);
+            _state[1] = Splitmix64(ref seedState);
+            _state[2] = Splitmix64(ref seedState);
+            _state[3] = Splitmix64(ref seedState);
         }
 
         /// <summary>Generate next 64-bit unsigned integer.</summary>
         public ulong NextInt()
         {
-            ulong aResult = rotl(myState[1] * 5, 7) * 9;
-            ulong aT = myState[1] << 17;
+            ulong result = Rotl(_state[1] * 5, 7) * 9;
+            ulong t = _state[1] << 17;
 
-            myState[2] ^= myState[0];
-            myState[3] ^= myState[1];
-            myState[1] ^= myState[2];
-            myState[0] ^= myState[3];
+            _state[2] ^= _state[0];
+            _state[3] ^= _state[1];
+            _state[1] ^= _state[2];
+            _state[0] ^= _state[3];
 
-            myState[2] ^= aT;
-            myState[3] = rotl(myState[3], 45);
+            _state[2] ^= t;
+            _state[3] = Rotl(_state[3], 45);
 
-            return aResult;
+            return result;
         }
 
         /// <summary>Generate next double in [0, 1) with 53 bits of randomness.</summary>
         public double NextReal() => (double)(NextInt() >> 11) * (1.0 / 9007199254740992.0);
 
-        private static ulong rotl(ulong theX, int theK)
+        private static ulong Rotl(ulong x, int k)
         {
-            return (theX << theK) | (theX >> (64 - theK));
+            return (x << k) | (x >> (64 - k));
         }
 
-        private static ulong splitmix64(ref ulong theState)
+        private static ulong Splitmix64(ref ulong state)
         {
             unchecked
             {
-                theState += 0x9e3779b97f4a7c15UL;
-                ulong aZ = theState;
-                aZ = (aZ ^ (aZ >> 30)) * 0xbf58476d1ce4e5b9UL;
-                aZ = (aZ ^ (aZ >> 27)) * 0x94d049bb133111ebUL;
-                return aZ ^ (aZ >> 31);
+                state += 0x9e3779b97f4a7c15UL;
+                ulong z = state;
+                z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9UL;
+                z = (z ^ (z >> 27)) * 0x94d049bb133111ebUL;
+                return z ^ (z >> 31);
             }
         }
     }

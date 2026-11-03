@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using Xunit.Abstractions;
@@ -162,9 +163,9 @@ public class StepDataNativeTests(ITestOutputHelper output)
 
             return aRes;
         }
-        catch (Standard_Failure anEx)
+        catch (FailureException anEx)
         {
-            return "THROW " + anEx.GetType().Name + " " + StepFileDump.Esc(anEx.Message);
+            return "THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType()) + " " + StepFileDump.Esc(anEx.Message);
         }
     }
 

@@ -1,6 +1,8 @@
 // AppDef_Gradient_BFGSOfTheGradient.hxx and _0.cxx are listed as ported by AppParCurves_Gradient_BFGS.cs, whose body is AppDef's copy.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>OCCT's instantiation of the BFGS minimisation over <see cref="AppDef_MultiLine"/>: <see cref="AppParCurves_Gradient_BFGS{MultiLine, ToolLine}"/>.</summary>
@@ -11,7 +13,7 @@ namespace Occt;
 public sealed class AppDef_Gradient_BFGSOfTheGradient : AppParCurves_Gradient_BFGS<AppDef_MultiLine, AppDef_MyLineTool>
 {
     /// <summary>As the base constructor.</summary>
-    public AppDef_Gradient_BFGSOfTheGradient(math_MultipleVarFunctionWithGradient F, math_Vector StartingPoint,
+    public AppDef_Gradient_BFGSOfTheGradient(MultipleVarFunctionWithGradient F, math_Vector StartingPoint,
                                              double Tolerance3d, double Tolerance2d, double Eps,
                                              int NbIterations = 200)
         : base(F, StartingPoint, Tolerance3d, Tolerance2d, Eps, NbIterations) { }

@@ -2,189 +2,191 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 public static partial class MathRoot
 {
     /// <summary>Newton-Raphson root finding from theGuess (quadratic convergence near a simple root).</summary>
-    public static MathUtils.ScalarResult Newton<Function>(Function theFunc, double theGuess, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunctionWithDerivative
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Newton<Function>(Function func, double guess, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
-        double aX = theGuess;
-        double aFx = 0.0;
-        double aDfx = 0.0;
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
+        double x = guess;
+        double fx = 0.0;
+        double dfx = 0.0;
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            double anXOld = aX;
+            double xOld = x;
 
             // Evaluate function and derivative
-            if (!theFunc.Values(aX, out aFx, out aDfx))
+            if (!func.Values(x, out fx, out dfx))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aX;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = x;
+                result.NbIterations = iter;
+                return result;
             }
 
             // Check for zero derivative (stationary point)
-            if (MathUtils.IsZero(aDfx))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(dfx))
             {
                 // Try to continue with a small perturbation if not converged
-                if (!MathUtils.IsFConverged(aFx, theConfig.FTolerance))
+                if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsFConverged(fx, config.FTolerance))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    aResult.Root = aX;
-                    aResult.Value = aFx;
-                    aResult.Derivative = aDfx;
-                    aResult.NbIterations = anIter;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    result.Root = x;
+                    result.Value = fx;
+                    result.Derivative = dfx;
+                    result.NbIterations = iter;
+                    return result;
                 }
                 // Zero derivative at a root is fine (multiple root)
             }
             else
             {
                 // Newton step
-                aX -= aFx / aDfx;
+                x -= fx / dfx;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if (MathUtils.IsConverged(anXOld, aX, aFx, theConfig))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsConverged(xOld, x, fx, config))
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                aResult.Derivative = aDfx;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                result.Derivative = dfx;
+                return result;
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = aX;
-        aResult.Value = aFx;
-        aResult.Derivative = aDfx;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = x;
+        result.Value = fx;
+        result.Derivative = dfx;
+        return result;
     }
 
     /// <summary>
     /// Newton-Raphson kept within [theLower, theUpper], falling back to bisection when the bounds bracket a root.
     /// </summary>
-    public static MathUtils.ScalarResult NewtonBounded<Function>(Function theFunc, double theGuess, double theLower, double theUpper, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunctionWithDerivative
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult NewtonBounded<Function>(Function func, double guess, double lower, double upper, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
 
         // Clamp initial guess to bounds
-        double aX = MathUtils.Clamp(theGuess, theLower, theUpper);
-        double aXLo = theLower;
-        double aXHi = theUpper;
+        double x = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(guess, lower, upper);
+        double xLo = lower;
+        double xHi = upper;
 
-        double aFx = 0.0;
-        double aDfx = 0.0;
+        double fx = 0.0;
+        double dfx = 0.0;
 
         // Initialize bounds with function values
-        if (!theFunc.Values(aXLo, out double aFLo, out _))
+        if (!func.Values(xLo, out double fLo, out _))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Values(aXHi, out double aFHi, out _))
+        if (!func.Values(xHi, out double fHi, out _))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
 
         // Check if bounds bracket a root
-        bool aBracketed = (aFLo * aFHi < 0.0);
+        bool bracketed = (fLo * fHi < 0.0);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            double anXOld = aX;
+            double xOld = x;
 
             // Evaluate function and derivative at current point
-            if (!theFunc.Values(aX, out aFx, out aDfx))
+            if (!func.Values(x, out fx, out dfx))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aX;
-                aResult.NbIterations = anIter;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = x;
+                result.NbIterations = iter;
+                return result;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if (MathUtils.IsFConverged(aFx, theConfig.FTolerance))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsFConverged(fx, config.FTolerance))
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                aResult.Derivative = aDfx;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                result.Derivative = dfx;
+                return result;
             }
 
             // Compute Newton step
-            double aXNew = aX;
-            if (!MathUtils.IsZero(aDfx))
+            double xNew = x;
+            if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(dfx))
             {
-                aXNew = aX - aFx / aDfx;
+                xNew = x - fx / dfx;
             }
 
             // Check if Newton step is within bounds
-            if (aXNew < aXLo || aXNew > aXHi)
+            if (xNew < xLo || xNew > xHi)
             {
                 // Fall back to bisection if bracketed
-                if (aBracketed)
+                if (bracketed)
                 {
-                    aXNew = 0.5 * (aXLo + aXHi);
+                    xNew = 0.5 * (xLo + xHi);
                 }
                 else
                 {
                     // Just clamp to bounds
-                    aXNew = MathUtils.Clamp(aXNew, aXLo, aXHi);
+                    xNew = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(xNew, xLo, xHi);
                 }
             }
 
-            aX = aXNew;
+            x = xNew;
 
             // Update bracket if root is bracketed
-            if (aBracketed)
+            if (bracketed)
             {
-                if (aFx * aFLo < 0.0)
+                if (fx * fLo < 0.0)
                 {
-                    aXHi = anXOld;
-                    aFHi = aFx;
+                    xHi = xOld;
+                    fHi = fx;
                 }
                 else
                 {
-                    aXLo = anXOld;
-                    aFLo = aFx;
+                    xLo = xOld;
+                    fLo = fx;
                 }
             }
 
             // Check X convergence
-            if (MathUtils.IsXConverged(anXOld, aX, theConfig.XTolerance))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsXConverged(xOld, x, config.XTolerance))
             {
                 // Re-evaluate at final position
-                theFunc.Values(aX, out aFx, out aDfx);
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                aResult.Derivative = aDfx;
-                return aResult;
+                func.Values(x, out fx, out dfx);
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                result.Derivative = dfx;
+                return result;
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = aX;
-        aResult.Value = aFx;
-        aResult.Derivative = aDfx;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = x;
+        result.Value = fx;
+        result.Derivative = dfx;
+        return result;
     }
 }

@@ -3,6 +3,8 @@
 // not port, what ChFi3d_Builder asks of it (ChFi3d_Reconstruction), reading the same data structure.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -210,7 +212,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         {
             TopOpeBRepDS_Point P = DS.Point(theIndex);
             V = new TopoDS_Vertex();
-            myBB.MakeVertex(ref V, P.Point(), Math.Max(P.Tolerance(), Precision.Confusion()));
+            myBB.MakeVertex(ref V, P.Point(), Math.Max(P.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion()));
             myPointVertices[theIndex] = V;
         }
         return V;
@@ -244,7 +246,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 {
                     continue;
                 }
-                if (aPaves[k + 1].T - aPaves[k].T <= Precision.PConfusion())
+                if (aPaves[k + 1].T - aPaves[k].T <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     continue; // two points at one parameter: no edge, as the HBuilder's pave set (decision 1159)
                 }
@@ -262,7 +264,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
     private TopoDS_Edge MakeCurveEdge(int iC, TopoDS_Vertex V1, double T1, TopoDS_Vertex V2, double T2)
     {
         TopOpeBRepDS_Curve C = DS.Curve(iC);
-        double aTol = Math.Max(C.Tolerance(), Precision.Confusion());
+        double aTol = Math.Max(C.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
         TopoDS_Edge E = new();
         Geom_Curve? C3d = C.Curve();
         if (C3d is null)
@@ -297,7 +299,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                         aTwin = j;
                     }
                 }
-                GetSupport(s, out Geom_Surface aSurf, out TopLoc_Location aLoc, out double aSurfTol);
+                GetSupport(s, out Geom_Surface aSurf, out Placement aLoc, out double aSurfTol);
                 aTol = Math.Max(aTol, aSurfTol);
                 if (aTwin < 0)
                 {
@@ -321,7 +323,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
     private static bool SameSupport(in CurveSupport A, in CurveSupport B) =>
         A.Face.IsNull() ? B.Face.IsNull() && A.Surface == B.Surface : !B.Face.IsNull() && A.Face.IsSame(B.Face);
 
-    private void GetSupport(in CurveSupport theS, out Geom_Surface theSurf, out TopLoc_Location theLoc,
+    private void GetSupport(in CurveSupport theS, out Geom_Surface theSurf, out Placement theLoc,
                             out double theTol)
     {
         if (!theS.Face.IsNull())
@@ -333,7 +335,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         {
             TopOpeBRepDS_Surface S = DS.Surface(theS.Surface);
             theSurf = S.Surface()!;
-            theLoc = new TopLoc_Location();
+            theLoc = new Placement();
             theTol = S.Tolerance(); // OCCT's BuildFaces raises the edges to the surface's tolerance
         }
     }
@@ -379,7 +381,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
     private static bool AtEnd(TopoDS_Edge E, double T)
     {
         BRep_Tool.Range(E, out double f, out double l);
-        return Math.Abs(T - f) <= Precision.PConfusion() || Math.Abs(T - l) <= Precision.PConfusion();
+        return Math.Abs(T - f) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(T - l) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>
@@ -410,8 +412,8 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 {
                     continue;
                 }
-                TopoDS_Vertex V = Math.Abs(CPI.Parameter() - f) <= Precision.PConfusion() ? V1
-                                  : Math.Abs(CPI.Parameter() - l) <= Precision.PConfusion() ? V2 : new TopoDS_Vertex();
+                TopoDS_Vertex V = Math.Abs(CPI.Parameter() - f) <= global::Kerf.Engine.Foundation.Precision.PConfusion() ? V1
+                                  : Math.Abs(CPI.Parameter() - l) <= global::Kerf.Engine.Foundation.Precision.PConfusion() ? V2 : new TopoDS_Vertex();
                 if (!V.IsNull())
                 {
                     myPointVertices[CPI.Geometry()] = V;
@@ -426,7 +428,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         TopExp.Vertices(E, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
         BRep_Tool.Range(E, out double f, out double l);
         theCuts.Sort((a, b) => a.T.CompareTo(b.T));
-        double aTolPar = Precision.PConfusion();
+        double aTolPar = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         // a point beyond an end, where the part IN runs to it: the fillet's section overflows the edge, and the part
         // kept is extended to the point along the edge's curve, as the HBuilder's pave set does (decision 1160)
@@ -536,7 +538,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 continue;
             }
             TopoDS_Face F = new();
-            myBB.MakeFace(ref F, aSurf, Math.Max(S.Tolerance(), Precision.Confusion()));
+            myBB.MakeFace(ref F, aSurf, Math.Max(S.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion()));
             NCollection_List<TopoDS_Shape> aFaces = BuildAreas(F, aLE, out NCollection_List<TopoDS_Shape> aLoops);
             if (aFaces.IsEmpty())
             {
@@ -972,7 +974,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
         {
             return null;
         }
-        double aTolPar = Precision.PConfusion();
+        double aTolPar = global::Kerf.Engine.Foundation.Precision.PConfusion();
         List<double> aParams = [];
         foreach (TopoDS_Shape S in theNew)
         {
@@ -1037,7 +1039,7 @@ internal sealed partial class ChFi3d_BOPReconstruction : ChFi3d_Reconstruction
                 {
                     continue;
                 }
-                gp_Pnt2d aP2d = C2d.Value(BOPTools_AlgoTools2D.IntermediatePoint(f, l));
+                Point2D aP2d = C2d.Value(BOPTools_AlgoTools2D.IntermediatePoint(f, l));
                 if (myContext.IsPointInFace(F, aP2d))
                 {
                     return true;

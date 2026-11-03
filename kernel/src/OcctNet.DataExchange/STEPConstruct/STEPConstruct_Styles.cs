@@ -5,8 +5,10 @@
 
 #nullable disable warnings
 
-using static Occt.Quantity_NameOfColor;
-using static Occt.Quantity_TypeOfColor;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Engine.Foundation.NameOfColor;
+using static Kerf.Engine.Foundation.ColorSpace;
 using static Occt.StepVisual_SurfaceSide;
 
 namespace Occt;
@@ -420,7 +422,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
         Type tSR = typeof(StepShape_ShapeRepresentation);
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = model.Value(i);
+            Transient enti = model.Value(i);
             if (enti.DynamicType() == tMDGPR || enti.DynamicType() == tDM)
             {
                 StepRepr_Representation container = enti as StepRepr_Representation;
@@ -433,7 +435,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
                     {
                         continue;
                     }
-                    Standard_Transient anItem = style.ItemAP242()?.Value();
+                    Transient anItem = style.ItemAP242()?.Value();
                     if (anItem is not null && anItem.IsKind(tSR))
                     {
                         myRootStyles.Add(style);
@@ -447,7 +449,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
             else if (enti.IsKind(typeof(StepVisual_StyledItem)))
             {
                 StepVisual_StyledItem aStyledItem = enti as StepVisual_StyledItem;
-                Standard_Transient anItem = aStyledItem.ItemAP242()?.Value();
+                Transient anItem = aStyledItem.ItemAP242()?.Value();
                 if (anItem is not null && anItem.IsKind(tSR) && !myRootStyles.Contains(aStyledItem))
                 {
                     myRootStyles.Add(aStyledItem);
@@ -462,7 +464,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     }
 
     /// <summary>Searches the STEP model for the INISIBILITY entities (which bring styles) and fills out sequence of styles</summary>
-    public bool LoadInvisStyles(ref NCollection_HSequence<Standard_Transient> theInvStyles)
+    public bool LoadInvisStyles(ref NCollection_HSequence<Transient> theInvStyles)
     {
         Interface_InterfaceModel model = Model();
         int nb = model.NbEntities();
@@ -470,7 +472,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
         // search for invisibility
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = model.Value(i);
+            Transient enti = model.Value(i);
             if (enti.DynamicType() != tInvisibility)
             {
                 continue;
@@ -487,7 +489,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
                     continue;
                 }
                 // collect the invisible styled items
-                theInvStyles ??= new NCollection_HSequence<Standard_Transient>();
+                theInvStyles ??= new NCollection_HSequence<Transient>();
                 theInvStyles.Append(style);
             }
         }
@@ -505,7 +507,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     {
         _ = item;
         StepVisual_PresentationStyleAssignment PSA = null;
-        NCollection_Sequence<Standard_Transient> items = new NCollection_Sequence<Standard_Transient>();
+        NCollection_Sequence<Transient> items = new NCollection_Sequence<Transient>();
 
         // surface color
         if (SurfCol is not null)
@@ -670,37 +672,37 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     }
 
     // the predefined colours of STEP (OCCT's C++ compares with Quantity_Color's operator==, IsEqual)
-    private static string predefinedName(in Quantity_Color C)
+    private static string predefinedName(in Color C)
     {
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_GREEN)))
+        if (C.IsEqual(new Color(NocGreen)))
         {
             return "green";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_RED)))
+        if (C.IsEqual(new Color(NocRed)))
         {
             return "red";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_BLUE1)))
+        if (C.IsEqual(new Color(NocBlue1)))
         {
             return "blue";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_YELLOW)))
+        if (C.IsEqual(new Color(NocYellow)))
         {
             return "yellow";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_MAGENTA1)))
+        if (C.IsEqual(new Color(NocMagenta1)))
         {
             return "magenta";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_CYAN1)))
+        if (C.IsEqual(new Color(NocCyan1)))
         {
             return "cyan";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_BLACK)))
+        if (C.IsEqual(new Color(NocBlack)))
         {
             return "black";
         }
-        if (C.IsEqual(new Quantity_Color(Quantity_NOC_WHITE)))
+        if (C.IsEqual(new Color(NocWhite)))
         {
             return "white";
         }
@@ -711,7 +713,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     /// Create STEP color entity by given Quantity_Color The analysis is performed for whether the color corresponds to
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
-    public static StepVisual_Colour EncodeColor(in Quantity_Color C)
+    public static StepVisual_Colour EncodeColor(in Color C)
     {
         // detect if color corresponds to one of pre-defined colors
         string cName = predefinedName(C);
@@ -728,7 +730,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
         {
             TCollection_HAsciiString ColName = new TCollection_HAsciiString("");
             StepVisual_ColourRgb ColRGB = new StepVisual_ColourRgb();
-            C.Values(out double aR, out double aG, out double aB, Quantity_TOC_sRGB);
+            C.Values(out double aR, out double aG, out double aB, TOC_sRGB);
             ColRGB.Init(ColName, aR, aG, aB);
             return ColRGB;
         }
@@ -739,8 +741,8 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
     /// <remarks>OCCT.NET: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
-    public static StepVisual_Colour EncodeColor(in Quantity_Color C, NCollection_DataMap<string, Standard_Transient> DPDCs,
-                                                NCollection_DataMap<gp_Pnt, Standard_Transient> ColRGBs)
+    public static StepVisual_Colour EncodeColor(in Color C, NCollection_DataMap<string, Transient> DPDCs,
+                                                NCollection_DataMap<Point3D, Transient> ColRGBs)
     {
         // detect if color corresponds to one of pre-defined colors
         string cName = predefinedName(C);
@@ -767,8 +769,8 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
         else
         {
             StepVisual_ColourRgb ColRGB;
-            C.Values(out double aR, out double aG, out double aB, Quantity_TOC_sRGB);
-            gp_Pnt P = new gp_Pnt(aR, aG, aB);
+            C.Values(out double aR, out double aG, out double aB, TOC_sRGB);
+            Point3D P = new Point3D(aR, aG, aB);
             if (ColRGBs.IsBound(P))
             {
                 ColRGB = ColRGBs.Find(P) as StepVisual_ColourRgb;
@@ -789,7 +791,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
     /// Decodes STEP color and fills the Quantity_Color. Returns True if OK or False if color is not recognized
     /// </summary>
     /// <remarks>OCCT.NET: <paramref name="Col"/> is left unchanged when the colour isn't recognised, as in OCCT.</remarks>
-    public static bool DecodeColor(StepVisual_Colour Colour, ref Quantity_Color Col)
+    public static bool DecodeColor(StepVisual_Colour Colour, ref Color Col)
     {
         if (Colour.IsKind(typeof(StepVisual_ColourRgb)))
         {
@@ -805,11 +807,11 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
                 {
                     norm = rgb.Blue();
                 }
-                Col = new Quantity_Color(rgb.Red() / norm, rgb.Green() / norm, rgb.Blue() / norm, Quantity_TOC_sRGB);
+                Col = new Color(rgb.Red() / norm, rgb.Green() / norm, rgb.Blue() / norm, TOC_sRGB);
             }
             else
             {
-                Col = new Quantity_Color(rgb.Red(), rgb.Green(), rgb.Blue(), Quantity_TOC_sRGB);
+                Col = new Color(rgb.Red(), rgb.Green(), rgb.Blue(), TOC_sRGB);
             }
             return true;
         }
@@ -821,28 +823,28 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
             switch (name)
             {
                 case "red":
-                    Col = new Quantity_Color(Quantity_NOC_RED);
+                    Col = new Color(NocRed);
                     break;
                 case "green":
-                    Col = new Quantity_Color(Quantity_NOC_GREEN);
+                    Col = new Color(NocGreen);
                     break;
                 case "blue":
-                    Col = new Quantity_Color(Quantity_NOC_BLUE1);
+                    Col = new Color(NocBlue1);
                     break;
                 case "yellow":
-                    Col = new Quantity_Color(Quantity_NOC_YELLOW);
+                    Col = new Color(NocYellow);
                     break;
                 case "magenta":
-                    Col = new Quantity_Color(Quantity_NOC_MAGENTA1);
+                    Col = new Color(NocMagenta1);
                     break;
                 case "cyan":
-                    Col = new Quantity_Color(Quantity_NOC_CYAN1);
+                    Col = new Color(NocCyan1);
                     break;
                 case "black":
-                    Col = new Quantity_Color(Quantity_NOC_BLACK);
+                    Col = new Color(NocBlack);
                     break;
                 case "white":
-                    Col = new Quantity_Color(Quantity_NOC_WHITE);
+                    Col = new Color(NocWhite);
                     break;
                 default:
                     // OCCT_DEBUG output left out
@@ -853,11 +855,11 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
         return false;
     }
 
-    private readonly NCollection_IndexedDataMap<Standard_Transient, Standard_Transient> myMapOfStyles =
-        new NCollection_IndexedDataMap<Standard_Transient, Standard_Transient>(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Standard_Transient> myStyles =
-        new NCollection_IndexedMap<Standard_Transient>(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Standard_Transient> myRootStyles =
-        new NCollection_IndexedMap<Standard_Transient>(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_Sequence<Standard_Transient> myPSA = new NCollection_Sequence<Standard_Transient>();
+    private readonly NCollection_IndexedDataMap<Transient, Transient> myMapOfStyles =
+        new NCollection_IndexedDataMap<Transient, Transient>(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedMap<Transient> myStyles =
+        new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedMap<Transient> myRootStyles =
+        new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_Sequence<Transient> myPSA = new NCollection_Sequence<Transient>();
 }

@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// (narrow V-like sub-contours) with their maximum widths. Unset properties are -1.
 /// </summary>
 /// <remarks>A working object with OCCT's setters (decision 21). The notches are keyed by <see cref="TopTools_ShapeMapHasher"/>.</remarks>
-public class ShapeAnalysis_FreeBoundData : Standard_Transient
+public class ShapeAnalysis_FreeBoundData : Transient
 {
     private TopoDS_Wire myBound = new();
     private double myArea;

@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,10 +19,10 @@ namespace Occt;
 /// </remarks>
 public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
 {
-    private readonly NCollection_DataMap<Standard_Transient, NCollection_List<Message_Msg>> myMapTransient =
+    private readonly NCollection_DataMap<Transient, NCollection_List<Msg>> myMapTransient =
         new(ReferenceEqualityComparer.Instance);
 
-    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> myMapShape =
+    private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> myMapShape =
         new(TopTools_ShapeMapHasher.Instance);
 
     /// <summary>An empty registrator.</summary>
@@ -32,7 +34,7 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
     /// Attaches the message to the object: appended to its list if it is in the map, else the object is added with
     /// it. A null object is ignored.
     /// </summary>
-    public override void Send(Standard_Transient? @object, Message_Msg message, Message_Gravity gravity)
+    public override void Send(Transient? @object, Msg message, Gravity gravity)
     {
         if (@object is null)
         {
@@ -40,12 +42,12 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
         }
         if (myMapTransient.IsBound(@object))
         {
-            NCollection_List<Message_Msg> list = myMapTransient[@object];
+            NCollection_List<Msg> list = myMapTransient[@object];
             list.Append(message);
         }
         else
         {
-            var list = new NCollection_List<Message_Msg>();
+            var list = new NCollection_List<Msg>();
             list.Append(message);
             myMapTransient.Bind(@object, list);
         }
@@ -55,7 +57,7 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
     /// Attaches the message to the shape: appended to its list if it is in the map, else the shape is added with it.
     /// A null shape is ignored.
     /// </summary>
-    public override void Send(in TopoDS_Shape shape, Message_Msg message, Message_Gravity gravity)
+    public override void Send(in TopoDS_Shape shape, Msg message, Gravity gravity)
     {
         if (shape.IsNull())
         {
@@ -63,20 +65,20 @@ public class ShapeExtend_MsgRegistrator : ShapeExtend_BasicMsgRegistrator
         }
         if (myMapShape.IsBound(shape))
         {
-            NCollection_List<Message_Msg> list = myMapShape[shape];
+            NCollection_List<Msg> list = myMapShape[shape];
             list.Append(message);
         }
         else
         {
-            var list = new NCollection_List<Message_Msg>();
+            var list = new NCollection_List<Msg>();
             list.Append(message);
             myMapShape.Bind(shape, list);
         }
     }
 
     /// <summary>The map of objects to their messages.</summary>
-    public NCollection_DataMap<Standard_Transient, NCollection_List<Message_Msg>> MapTransient() => myMapTransient;
+    public NCollection_DataMap<Transient, NCollection_List<Msg>> MapTransient() => myMapTransient;
 
     /// <summary>The map of shapes to their messages.</summary>
-    public NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> MapShape() => myMapShape;
+    public NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> MapShape() => myMapShape;
 }

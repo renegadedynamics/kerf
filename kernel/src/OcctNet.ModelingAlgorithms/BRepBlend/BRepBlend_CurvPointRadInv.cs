@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +19,7 @@ public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
 {
     private readonly Adaptor3d_Curve curv1;
     private readonly Adaptor3d_Curve curv2;
-    private gp_Pnt point;
+    private Point3D point;
 #pragma warning disable CS0414 // set and never read, as in OCCT
     private int choix;
 #pragma warning restore CS0414
@@ -39,9 +45,9 @@ public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
     public override bool Value(math_Vector X, math_Vector F)
     {
         double theD;
-        gp_Pnt ptcur1, ptcur2;
-        gp_Vec d1cur1, d1cur2;
-        gp_XYZ nplan;
+        Point3D ptcur1, ptcur2;
+        Vector3D d1cur1, d1cur2;
+        Xyz nplan;
         curv1.D1(X[1], out ptcur1, out d1cur1);
         nplan = d1cur1.Normalized().XYZ();
         theD = -(nplan.Dot(ptcur1.XYZ()));
@@ -51,10 +57,10 @@ public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Pnt ptcur1, ptcur2;
-        gp_Vec d1cur1, d2cur1, d1cur2, nplan, dnplan = new();
+        Point3D ptcur1, ptcur2;
+        Vector3D d1cur1, d2cur1, d1cur2, nplan, dnplan = new();
         double dtheD, normd1cur1, unsurnormd1cur1;
 
         curv1.D2(X[1], out ptcur1, out d1cur1, out d2cur1);
@@ -74,7 +80,7 @@ public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         Value(X, F);
         Derivatives(X, D);
@@ -82,7 +88,7 @@ public class BRepBlend_CurvPointRadInv : Blend_CurvPointFuncInv
         return true;
     }
 
-    public override void Set(in gp_Pnt P)
+    public override void Set(in Point3D P)
     {
         point = P;
     }

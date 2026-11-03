@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -42,7 +46,7 @@ public class BOPDS_SubIterator
     public void Initialize()
     {
         // sort interfering pairs for constant order of intersection
-        std_sort.stable_sort(myList.AsSpan(), new BOPDS_Pair.LessThan());
+        Sorting.stable_sort(myList.AsSpan(), new BOPDS_Pair.LessThan());
         // initialize iterator to access the pairs
         myIteratorIndex = 0;
     }
@@ -109,8 +113,8 @@ public class BOPDS_SubIterator
             {
                 int nS = it.Value();
                 BOPDS_ShapeInfo aSI = myDS!.ShapeInfo(nS);
-                Bnd_Box aBoxEx = aSI.Box();
-                aBBTree[i].Add(nS, Bnd_Tools.Bnd2BVH(aBoxEx));
+                Box aBoxEx = aSI.Box();
+                aBBTree[i].Add(nS, Tools.Bnd2BVH(aBoxEx));
             }
             aBBTree[i].Build();
         }

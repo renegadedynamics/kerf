@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -8,19 +10,19 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 internal sealed class AppParCurves_TestLine
 {
-    public readonly gp_Pnt[][] P3d; // [point - 1][curve - 1]
-    public readonly gp_Pnt2d[][] P2d;
-    public readonly Dictionary<int, (gp_Vec[] V3d, gp_Vec2d[] V2d)> Tangents = [];
-    public readonly Dictionary<int, (gp_Vec[] V3d, gp_Vec2d[] V2d)> Curvatures = [];
+    public readonly Point3D[][] P3d; // [point - 1][curve - 1]
+    public readonly Point2D[][] P2d;
+    public readonly Dictionary<int, (Vector3D[] V3d, Vector2D[] V2d)> Tangents = [];
+    public readonly Dictionary<int, (Vector3D[] V3d, Vector2D[] V2d)> Curvatures = [];
 
     public AppParCurves_TestLine(int theNbPoints, int theNbP3d, int theNbP2d)
     {
-        P3d = new gp_Pnt[theNbPoints][];
-        P2d = new gp_Pnt2d[theNbPoints][];
+        P3d = new Point3D[theNbPoints][];
+        P2d = new Point2D[theNbPoints][];
         for (int i = 0; i < theNbPoints; i++)
         {
-            P3d[i] = new gp_Pnt[theNbP3d];
-            P2d[i] = new gp_Pnt2d[theNbP2d];
+            P3d[i] = new Point3D[theNbP3d];
+            P2d[i] = new Point2D[theNbP2d];
         }
     }
 
@@ -51,8 +53,8 @@ internal sealed class AppParCurves_TestLine
     /// <summary>Stores the derivatives of <paramref name="theCurve"/> at the point <paramref name="theIndex"/> as its tangents.</summary>
     public void SetTangents(AppParCurves_MultiCurve theCurve, int theIndex, double theParam)
     {
-        gp_Vec[] aV3d = new gp_Vec[NbP3d];
-        gp_Vec2d[] aV2d = new gp_Vec2d[NbP2d];
+        Vector3D[] aV3d = new Vector3D[NbP3d];
+        Vector2D[] aV2d = new Vector2D[NbP2d];
         for (int c = 1; c <= NbP3d; c++)
         {
             theCurve.D1(c, theParam, out _, out aV3d[c - 1]);
@@ -76,7 +78,7 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
 
     public static int NbP3d(AppParCurves_TestLine ML) => ML.NbP3d;
 
-    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt)
+    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt)
     {
         for (int c = 0; c < ML.NbP3d; c++)
         {
@@ -84,7 +86,7 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         }
     }
 
-    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Pnt2d> tabPt2d)
+    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Point2D> tabPt2d)
     {
         for (int c = 0; c < ML.NbP2d; c++)
         {
@@ -92,14 +94,14 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         }
     }
 
-    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt,
-                             NCollection_Array1<gp_Pnt2d> tabPt2d)
+    public static void Value(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt,
+                             NCollection_Array1<Point2D> tabPt2d)
     {
         Value(ML, MPointIndex, tabPt);
         Value(ML, MPointIndex, tabPt2d);
     }
 
-    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV)
+    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV)
     {
         if (!ML.Tangents.TryGetValue(MPointIndex, out var aT))
         {
@@ -112,7 +114,7 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         return true;
     }
 
-    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d)
     {
         if (!ML.Tangents.TryGetValue(MPointIndex, out var aT))
         {
@@ -125,11 +127,11 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         return true;
     }
 
-    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                NCollection_Array1<gp_Vec2d> tabV2d) =>
+    public static bool Tangency(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                NCollection_Array1<Vector2D> tabV2d) =>
         Tangency(ML, MPointIndex, tabV) && Tangency(ML, MPointIndex, tabV2d);
 
-    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV)
+    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV)
     {
         if (!ML.Curvatures.TryGetValue(MPointIndex, out var aC))
         {
@@ -142,7 +144,7 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         return true;
     }
 
-    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d)
     {
         if (!ML.Curvatures.TryGetValue(MPointIndex, out var aC))
         {
@@ -155,7 +157,7 @@ internal struct AppParCurves_TestLineTool : IAppParCurves_LineTool<AppParCurves_
         return true;
     }
 
-    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                 NCollection_Array1<gp_Vec2d> tabV2d) =>
+    public static bool Curvature(AppParCurves_TestLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                 NCollection_Array1<Vector2D> tabV2d) =>
         Curvature(ML, MPointIndex, tabV) && Curvature(ML, MPointIndex, tabV2d);
 }

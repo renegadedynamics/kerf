@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace Build123d;
@@ -6,7 +7,7 @@ namespace Build123d;
 /// build123d's importers (<c>importers.py</c>): shapes from BREP, STEP and STL data, and from glTF (not in build123d).
 /// Each reads a stream, with limits for hostile data and cancellation; the file forms open the file and read it as a
 /// stream. Bad data throws <see cref="ArgumentException"/> (build123d's ValueError) or, for BREP, OCCT's
-/// <see cref="Standard_Failure"/> (<c>Storage_StreamFormatError</c>); data past a limit throws
+/// <see cref="FailureException"/> (<c>Storage_StreamFormatError</c>); data past a limit throws
 /// <see cref="InvalidDataException"/>.
 /// </summary>
 /// <remarks>STEP keeps its names, colours and assemblies (OCCT.NET's STEPCAFControl).</remarks>
@@ -108,8 +109,8 @@ public static class Importers
         Color? color = null;
         if (node.Color is { } c)
         {
-            var rgb = new Quantity_Color(c.R, c.G, c.B, Quantity_TypeOfColor.Quantity_TOC_RGB);
-            var rgba = new Quantity_ColorRGBA(rgb, (float)c.A);
+            var rgb = new global::Kerf.Engine.Foundation.Color(c.R, c.G, c.B, ColorSpace.TocRgb);
+            var rgba = new ColorWithAlpha(rgb, (float)c.A);
             color = new Color(rgba);
         }
         if (node.Shape is { } shape)

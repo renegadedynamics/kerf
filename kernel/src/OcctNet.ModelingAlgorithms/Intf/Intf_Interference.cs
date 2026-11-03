@@ -330,7 +330,7 @@ public abstract class Intf_Interference
 
     public override string ToString()
     {
-        System.Text.StringBuilder aBuilder = new(GetType().Name);
+        System.Text.StringBuilder aBuilder = new(global::Kerf.Engine.Foundation.OcctTypeNames.Of(GetType()));
         aBuilder.Append("(points: ").Append(mySPoins.Length());
         aBuilder.Append(", lines: ").Append(mySLines.Length());
         aBuilder.Append(", zones: ").Append(myTZones.Length()).Append(')');

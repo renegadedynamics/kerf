@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +24,7 @@ public class StepShape_ToleranceMethodDefinition : StepData_SelectType
     /// 1 -&gt; ToleranceValue from StepShape
     /// 2 -&gt; LimitsAndFits from StepShape
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

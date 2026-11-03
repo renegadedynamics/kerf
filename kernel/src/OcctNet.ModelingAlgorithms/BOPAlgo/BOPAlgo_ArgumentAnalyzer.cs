@@ -5,6 +5,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
@@ -124,9 +126,9 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     }
 
     /// <summary>Performs the analysis; an exception ends it with a result of unknown status.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Analyze shapes", 10);
+        using var aPS = new ProgressScope(theRange, "Analyze shapes", 10);
         try
         {
             myResult.Clear();
@@ -244,7 +246,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 }
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             BOPAlgo_CheckResult aResult = new();
             aResult.SetCheckStatus(BOPAlgo_CheckUnknown);
@@ -342,9 +344,9 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
     }
 
     /// <summary>Checks each shape on self-interference with <see cref="BOPAlgo_CheckerSI"/>.</summary>
-    protected void TestSelfInterferences(Message_ProgressRange theRange)
+    protected void TestSelfInterferences(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, (!myShape1.IsNull() && !myShape2.IsNull() ? 2 : 1));
+        using var aPS = new ProgressScope(theRange, null, (!myShape1.IsNull() && !myShape2.IsNull() ? 2 : 1));
         int ii;
         //
         for (ii = 0; ii < 2; ii++)
@@ -755,8 +757,8 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                 {
                     TopoDS_Vertex aV1 = TopoDS.Vertex(aS1);
                     TopoDS_Vertex aV2 = TopoDS.Vertex(aS2);
-                    gp_Pnt aP1 = BRep_Tool.Pnt(aV1);
-                    gp_Pnt aP2 = BRep_Tool.Pnt(aV2);
+                    Point3D aP1 = BRep_Tool.Pnt(aV1);
+                    Point3D aP2 = BRep_Tool.Pnt(aV2);
                     double aDist = aP1.Distance(aP2);
 
                     if (aDist <= (BRep_Tool.Tolerance(aV1) + BRep_Tool.Tolerance(aV2)))
@@ -904,7 +906,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
                     continue;
                 }
                 Geom_Curve? aC = BRep_Tool.Curve(aE, out _, out _);
-                if (aC!.Continuity() == GeomAbs_Shape.GeomAbs_C0)
+                if (aC!.Continuity() == Continuity.C0)
                 {
                     aMS.Add(aE);
                 }
@@ -915,7 +917,7 @@ public class BOPAlgo_ArgumentAnalyzer : BOPAlgo_Algo
             {
                 TopoDS_Face aF = TopoDS.Face(aExp.Current());
                 Geom_Surface aSurf = BRep_Tool.Surface(aF)!;
-                if (aSurf.Continuity() == GeomAbs_Shape.GeomAbs_C0)
+                if (aSurf.Continuity() == Continuity.C0)
                 {
                     aMS.Add(aF);
                 }

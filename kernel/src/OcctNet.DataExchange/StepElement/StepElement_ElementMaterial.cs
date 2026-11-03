@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ElementMaterial
 /// </summary>
-public class StepElement_ElementMaterial : Standard_Transient
+public class StepElement_ElementMaterial : Transient
 {
     private TCollection_HAsciiString theMaterialId;
     private TCollection_HAsciiString theDescription;

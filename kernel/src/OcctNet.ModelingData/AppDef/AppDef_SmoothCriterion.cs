@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +18,7 @@ namespace Occt;
 /// reads the assembly data back. The arrays and the curve it is given or returns are shared, as OCCT's handles are
 /// (decision 207).
 /// </remarks>
-public abstract class AppDef_SmoothCriterion : Standard_Transient
+public abstract class AppDef_SmoothCriterion : Transient
 {
     /// <summary>Sets the parameters of the points (kept, shared).</summary>
     public abstract void SetParameters(NCollection_HArray1<double> Parameters);
@@ -58,7 +62,7 @@ public abstract class AppDef_SmoothCriterion : Standard_Transient
     public abstract void ErrorValues(out double MaxError, out double QuadraticError, out double AverageError);
 
     /// <summary>Writes into <paramref name="H"/> the Hessian of the criterion on an element.</summary>
-    public abstract void Hessian(int Element, int Dimension1, int Dimension2, math_Matrix H);
+    public abstract void Hessian(int Element, int Dimension1, int Dimension2, Matrix H);
 
     /// <summary>Writes into <paramref name="G"/> the gradient of the criterion on an element.</summary>
     public abstract void Gradient(int Element, int Dimension, math_Vector G);

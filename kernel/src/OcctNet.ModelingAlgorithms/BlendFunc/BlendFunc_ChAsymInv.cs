@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The function of an asymmetric chamfer with one end on a surface's boundary.</summary>
@@ -18,7 +22,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
     private int choix;
     private bool first;
     private readonly math_Vector FX;
-    private readonly math_Matrix DX;
+    private readonly Matrix DX;
 
     public BlendFunc_ChAsymInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
     {
@@ -31,7 +35,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
         choix = 0;
         first = false;
         FX = new math_Vector(1, 4);
-        DX = new math_Matrix(1, 4, 1, 4);
+        DX = new Matrix(1, 4, 1, 4);
         _ = angle;
     }
 
@@ -85,14 +89,14 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
             InfBound[4] = surf2.FirstVParameter();
             SupBound[3] = surf2.LastUParameter();
             SupBound[4] = surf2.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -105,14 +109,14 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
             InfBound[4] = surf1.FirstVParameter();
             SupBound[3] = surf1.LastUParameter();
             SupBound[4] = surf1.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -124,14 +128,14 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
     public override bool IsSolution(math_Vector Sol, double Tol)
     {
         math_Vector valsol = new(1, 4);
-        gp_Pnt pts1, pts2;
-        gp_Vec nplan, Nsurf1, tsurf1;
-        gp_Vec d1u1, d1v1;
+        Point3D pts1, pts2;
+        Vector3D nplan, Nsurf1, tsurf1;
+        Vector3D d1u1, d1v1;
 
-        curv.D1(Sol[2], out _, out gp_Vec d1gui);
+        curv.D1(Sol[2], out _, out Vector3D d1gui);
         nplan = d1gui.Normalized();
 
-        gp_Pnt2d pt2d = csurf!.Value(Sol[1]);
+        Point2D pt2d = csurf!.Value(Sol[1]);
 
         if (first)
         {
@@ -147,7 +151,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
         Nsurf1 = d1u1.Crossed(d1v1);
         tsurf1 = Nsurf1.Crossed(nplan);
 
-        gp_Vec s1s2 = new gp_Vec(pts1, pts2);
+        Vector3D s1s2 = new Vector3D(pts1, pts2);
         double PScaInv = 1.0 / tsurf1.Dot(s1s2), temp;
         double Nordu1 = d1u1.Magnitude(), Nordv1 = d1v1.Magnitude();
 
@@ -168,14 +172,14 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
             return false;
         }
 
-        gp_Vec nplan, dnplan = new gp_Vec(), d1gui, d2gui, d1u1, d1v1, d2u1 = new gp_Vec(), d2v1 = new gp_Vec(),
-               d2uv1 = new gp_Vec(), d1u2 = new gp_Vec(), d1v2 = new gp_Vec();
-        gp_Vec Nsurf1, tsurf1;
-        gp_Pnt pts1, pts2, ptgui;
+        Vector3D nplan, dnplan = new Vector3D(), d1gui, d2gui, d1u1, d1v1, d2u1 = new Vector3D(), d2v1 = new Vector3D(),
+               d2uv1 = new Vector3D(), d1u2 = new Vector3D(), d1v2 = new Vector3D();
+        Vector3D Nsurf1, tsurf1;
+        Point3D pts1, pts2, ptgui;
         double PScaInv, F4;
         double Normg = 0.0;
-        gp_Pnt2d pt2d;
-        gp_Vec2d v2d = new gp_Vec2d();
+        Point2D pt2d;
+        Vector2D v2d = new Vector2D();
 
         if ((DegF == 0) && (DegL == 0))
         {
@@ -227,7 +231,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
             }
         }
 
-        gp_Vec nps1 = new gp_Vec(ptgui, pts1), s1s2 = new gp_Vec(pts1, pts2);
+        Vector3D nps1 = new Vector3D(ptgui, pts1), s1s2 = new Vector3D(pts1, pts2);
         Nsurf1 = d1u1.Crossed(d1v1);
         tsurf1 = Nsurf1.Crossed(nplan);
         PScaInv = 1.0 / s1s2.Dot(tsurf1);
@@ -246,13 +250,13 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
 
         if (DegL == 1)
         {
-            gp_Vec dwtsurf1, tempVec;
+            Vector3D dwtsurf1, tempVec;
             double temp;
-            gp_Vec nps2 = new gp_Vec(ptgui, pts2);
+            Vector3D nps2 = new Vector3D(ptgui, pts2);
 
             if (first)
             {
-                gp_Vec dw1du1, dw1dv1, dw1csurf, dw1pts1;
+                Vector3D dw1du1, dw1dv1, dw1csurf, dw1pts1;
                 dw1pts1 = v2d.X() * d1u1 + v2d.Y() * d1v1;
                 dw1du1 = v2d.X() * d2u1 + v2d.Y() * d2uv1;
                 dw1dv1 = v2d.X() * d2uv1 + v2d.Y() * d2v1;
@@ -292,7 +296,7 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
             }
             else
             {
-                gp_Vec d1utsurf1, d1vtsurf1, dw2pts2;
+                Vector3D d1utsurf1, d1vtsurf1, dw2pts2;
                 d1utsurf1 = (d2u1.Crossed(d1v1) + d1u1.Crossed(d2uv1)).Crossed(nplan);
                 d1vtsurf1 = (d2uv1.Crossed(d1v1) + d1u1.Crossed(d2v1)).Crossed(nplan);
                 dw2pts2 = v2d.X() * d1u2 + v2d.Y() * d1v2;
@@ -342,14 +346,14 @@ public class BlendFunc_ChAsymInv : Blend_FuncInv
         return Error;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         bool Error = ComputeValues(X, 1, 1);
         D.Initialized(DX);
         return Error;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         bool Error = ComputeValues(X, 0, 1);
         F.Initialized(FX);

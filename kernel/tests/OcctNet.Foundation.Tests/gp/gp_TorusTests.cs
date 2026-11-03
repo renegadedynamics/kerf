@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class gp_TorusTest
@@ -20,11 +24,11 @@ public class gp_TorusTest
         //          0.37231784651136368 0.58886674834874120 0.71736697293527607
         //          0.80682335496555135 0.17666016102759910 -0.56376170618524390
         //          87.08479625 23.14682176
-        gp_Ax3 anAx3 = new(new gp_Pnt(55.52514413, 2.070076585, 73.83409062),
-                           new gp_Dir(0.37231784651136368, 0.58886674834874120, 0.71736697293527607),
-                           new gp_Dir(0.80682335496555135, 0.17666016102759910, -0.56376170618524390));
+        CoordinateSystem anAx3 = new(new Point3D(55.52514413, 2.070076585, 73.83409062),
+                           new Direction3D(0.37231784651136368, 0.58886674834874120, 0.71736697293527607),
+                           new Direction3D(0.80682335496555135, 0.17666016102759910, -0.56376170618524390));
 
-        gp_Torus aTorus = new(anAx3, 87.08479625, 23.14682176);
+        Torus aTorus = new(anAx3, 87.08479625, 23.14682176);
 
         const double aTolerance = 3.0e-7;
         const int aNbPtsMax = 5;
@@ -40,7 +44,7 @@ public class gp_TorusTest
             double aVPar = 0.0;
             for (int aVind = 0; aVind <= aNbPtsMax; aVind++)
             {
-                gp_Pnt aPt = TorusD0(aUPar, aVPar, aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius());
+                Point3D aPt = TorusD0(aUPar, aVPar, aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius());
                 double aX1 = aPt.X();
                 double aX2 = aX1 * aX1;
                 double aX3 = aX2 * aX1;
@@ -104,12 +108,12 @@ public class gp_TorusTest
     }
 
     // ElSLib::TorusD0, the evaluation behind Geom_ToroidalSurface::Value.
-    private static gp_Pnt TorusD0(double U, double V, in gp_Ax3 Pos, double MajorRadius, double MinorRadius)
+    private static Point3D TorusD0(double U, double V, in CoordinateSystem Pos, double MajorRadius, double MinorRadius)
     {
-        gp_XYZ XDir = Pos.XDirection().XYZ();
-        gp_XYZ YDir = Pos.YDirection().XYZ();
-        gp_XYZ ZDir = Pos.Direction().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
+        Xyz XDir = Pos.XDirection().XYZ();
+        Xyz YDir = Pos.YDirection().XYZ();
+        Xyz ZDir = Pos.Direction().XYZ();
+        Xyz PLoc = Pos.Location().XYZ();
         double R = MajorRadius + MinorRadius * Math.Cos(V);
         double A3 = MinorRadius * Math.Sin(V);
         double A1 = R * Math.Cos(U);
@@ -131,7 +135,7 @@ public class gp_TorusTest
             A3 = 0.0;
         }
 
-        return new gp_Pnt(A1 * XDir.X() + A2 * YDir.X() + A3 * ZDir.X() + PLoc.X(),
+        return new Point3D(A1 * XDir.X() + A2 * YDir.X() + A3 * ZDir.X() + PLoc.X(),
                           A1 * XDir.Y() + A2 * YDir.Y() + A3 * ZDir.Y() + PLoc.Y(),
                           A1 * XDir.Z() + A2 * YDir.Z() + A3 * ZDir.Z() + PLoc.Z());
     }

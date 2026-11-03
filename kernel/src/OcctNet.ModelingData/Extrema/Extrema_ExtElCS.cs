@@ -5,6 +5,8 @@
 
 //  Modified by skv - Thu Jul  7 14:37:05 2005 OCC9134
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntAna_ResultType;
 
 namespace Occt;
@@ -12,7 +14,7 @@ namespace Occt;
 /// <summary>
 /// All the distances between an elementary curve and an elementary surface. These distances can be maximum or
 /// minimum. OCCT implements line/plane, line/cylinder, line/sphere, circle/plane, circle/cylinder, circle/sphere and
-/// hyperbola/plane; the other pairs throw <see cref="Standard_NotImplemented"/>.
+/// hyperbola/plane; the other pairs throw <see cref="MethodNotImplementedException"/>.
 /// </summary>
 /// <remarks>
 /// An algorithm object: construct it with the curve and the surface, or empty and call <c>Perform</c>. When the
@@ -37,18 +39,18 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a line and a plane. The line can be on the plane or on a parallel plane.</summary>
-    public Extrema_ExtElCS(in gp_Lin C, in gp_Pln S)
+    public Extrema_ExtElCS(in Line3D C, in Plane3D S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Lin C, in gp_Pln S)
+    public void Perform(in Line3D C, in Plane3D S)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
 
-        if (C.Direction().IsNormal(S.Axis().Direction(), Precision.Angular()))
+        if (C.Direction().IsNormal(S.Axis().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             mySqDist = new NCollection_HArray1<double>(1, 1);
             mySqDist.SetValue(1, S.SquareDistance(C));
@@ -58,23 +60,23 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a line and a cylinder.</summary>
-    public Extrema_ExtElCS(in gp_Lin C, in gp_Cylinder S)
+    public Extrema_ExtElCS(in Line3D C, in Cylinder S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Lin C, in gp_Cylinder S)
+    public void Perform(in Line3D C, in Cylinder S)
     {
         myDone = false;
         myNbExt = 0;
         myIsPar = false;
 
-        gp_Ax3 Pos = S.Position();
+        CoordinateSystem Pos = S.Position();
 
         bool isParallel = false;
 
         double radius = S.Radius();
-        Extrema_ExtElC Extrem = new(new gp_Lin(Pos.Axis()), C, Precision.Angular());
+        Extrema_ExtElC Extrem = new(new Line3D(Pos.Axis()), C, global::Kerf.Engine.Foundation.Precision.Angular());
         if (Extrem.IsParallel())
         {
             isParallel = true;
@@ -85,11 +87,11 @@ public class Extrema_ExtElCS
 
             Extrema_POnCurv myPOnC1, myPOnC2;
             Extrem.Points(1, out myPOnC1, out myPOnC2);
-            gp_Pnt PonAxis = myPOnC1.Value();
-            gp_Pnt PC = myPOnC2.Value();
+            Point3D PonAxis = myPOnC1.Value();
+            Point3D PC = myPOnC2.Value();
 
             // line intersects the cylinder
-            if (radius - PonAxis.Distance(PC) > Precision.PConfusion())
+            if (radius - PonAxis.Distance(PC) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 IntAna_Quadric theQuadric = new(S);
                 IntAna_IntConicQuad Inters = new(C, theQuadric);
@@ -110,11 +112,11 @@ public class Extrema_ExtElCS
                         for (i = 1; i <= myNbExt; i++)
                         {
                             mySqDist.SetValue(i, 0.0);
-                            gp_Pnt P_int = Inters.Point(i);
+                            Point3D P_int = Inters.Point(i);
                             w = Inters.ParamOnConic(i);
                             Extrema_POnCurv PonC = new(w, P_int);
                             myPoint1.SetValue(i, PonC);
-                            ElSLib.CylinderParameters(Pos, radius, P_int, out u, out v);
+                            global::Kerf.Engine.Geometry.ElSLib.CylinderParameters(Pos, radius, P_int, out u, out v);
                             Extrema_POnSurf PonS = new(u, v, P_int);
                             myPoint2.SetValue(i, PonS);
                         }
@@ -124,7 +126,7 @@ public class Extrema_ExtElCS
             else
             {
                 // line is tangent or outside of the cylinder
-                Extrema_ExtPElS ExPS = new(PC, S, Precision.Confusion());
+                Extrema_ExtPElS ExPS = new(PC, S, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (ExPS.IsDone())
                 {
                     myNbExt = ExPS.NbExt();
@@ -174,26 +176,26 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a line and a cone (not implemented in OCCT).</summary>
-    public Extrema_ExtElCS(in gp_Lin C, in gp_Cone S)
+    public Extrema_ExtElCS(in Line3D C, in Cone S)
     {
         Perform(C, S);
     }
 
     // void Extrema_ExtElCS::Perform(const gp_Lin& C,
     //			      const gp_Cone& S)
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public void Perform(in gp_Lin C, in gp_Cone S)
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public void Perform(in Line3D C, in Cone S)
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a line and a sphere.</summary>
-    public Extrema_ExtElCS(in gp_Lin C, in gp_Sphere S)
+    public Extrema_ExtElCS(in Line3D C, in Sphere S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Lin C, in gp_Sphere S)
+    public void Perform(in Line3D C, in Sphere S)
     {
         // In case of intersection - return four points:
         // 2 intersection points and 2 perpendicular.
@@ -204,9 +206,9 @@ public class Extrema_ExtElCS
         myIsPar = false;
         int aStartIdx = 0;
 
-        gp_Pnt aCenter = S.Location();
+        Point3D aCenter = S.Location();
 
-        Extrema_ExtPElC Extrem = new(aCenter, C, Precision.Angular(), RealFirst(), RealLast());
+        Extrema_ExtPElC Extrem = new(aCenter, C, global::Kerf.Engine.Foundation.Precision.Angular(), RealFirst(), RealLast());
 
         int i;
         if (Extrem.IsDone() && Extrem.NbExt() > 0)
@@ -229,7 +231,7 @@ public class Extrema_ExtElCS
                         Extrema_POnCurv aCPnt = new(aLinSphere.ParamOnConic(i), aLinSphere.Point(i));
 
                         double u, v;
-                        ElSLib.Parameters(S, aLinSphere.Point(i), out u, out v);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(S, aLinSphere.Point(i), out u, out v);
                         Extrema_POnSurf aSPnt = new(u, v, aLinSphere.Point(i));
 
                         myPoint1.SetValue(i, aCPnt);
@@ -239,7 +241,7 @@ public class Extrema_ExtElCS
                 }
             }
 
-            Extrema_ExtPElS ExPS = new(myPOnC1.Value(), S, Precision.Confusion());
+            Extrema_ExtPElS ExPS = new(myPOnC1.Value(), S, global::Kerf.Engine.Foundation.Precision.Confusion());
             if (ExPS.IsDone())
             {
                 if (aStartIdx == 0)
@@ -266,49 +268,49 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a line and a torus (not implemented in OCCT).</summary>
-    public Extrema_ExtElCS(in gp_Lin C, in gp_Torus S)
+    public Extrema_ExtElCS(in Line3D C, in Torus S)
     {
         Perform(C, S);
     }
 
     // void Extrema_ExtElCS::Perform(const gp_Lin& C,
     //			      const gp_Torus& S)
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public void Perform(in gp_Lin C, in gp_Torus S)
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public void Perform(in Line3D C, in Torus S)
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     //        Circle-?
 
     /// <summary>The distances between a circle and a plane.</summary>
-    public Extrema_ExtElCS(in gp_Circ C, in gp_Pln S)
+    public Extrema_ExtElCS(in Circle3D C, in Plane3D S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Circ C, in gp_Pln S)
+    public void Perform(in Circle3D C, in Plane3D S)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
 
-        gp_Ax2 Pos = C.Position();
-        gp_Dir NCirc = Pos.Direction();
-        gp_Dir NPln = S.Axis().Direction();
+        Frame3D Pos = C.Position();
+        Direction3D NCirc = Pos.Direction();
+        Direction3D NPln = S.Axis().Direction();
 
         bool isParallel = false;
 
-        if (NCirc.IsParallel(NPln, Precision.Angular()))
+        if (NCirc.IsParallel(NPln, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             isParallel = true;
         }
         else
         {
-            gp_Dir ExtLine = NCirc ^ NPln;
+            Direction3D ExtLine = NCirc ^ NPln;
             ExtLine = ExtLine ^ NCirc;
             //
-            gp_Dir XDir = Pos.XDirection();
+            Direction3D XDir = Pos.XDirection();
             Span<double> T = stackalloc double[2];
             T[0] = XDir.AngleWithRef(ExtLine, NCirc);
             if (T[0] < 0.0)
@@ -320,7 +322,7 @@ public class Extrema_ExtElCS
             //
             myNbExt = 2;
             // Check intersection
-            IntAna_IntConicQuad anInter = new(C, S, Precision.Angular(), Precision.Confusion());
+            IntAna_IntConicQuad anInter = new(C, S, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
             if (anInter.IsDone() && anInter.IsInQuadric())
             {
@@ -341,17 +343,17 @@ public class Extrema_ExtElCS
                 myPoint2 = new NCollection_HArray1<Extrema_POnSurf>(1, myNbExt);
 
                 int i;
-                gp_Pnt PC, PP;
+                Point3D PC, PP;
                 double U, V;
                 Extrema_POnCurv POnC = new();
                 Extrema_POnSurf POnS = new();
                 for (i = 0; i < 2; ++i)
                 {
-                    PC = ElCLib.CircleValue(T[i], C.Position(), C.Radius());
+                    PC = global::Kerf.Engine.Geometry.ElCLib.CircleValue(T[i], C.Position(), C.Radius());
                     POnC.SetValues(T[i], PC);
                     myPoint1.SetValue(i + 1, POnC);
-                    ElSLib.PlaneParameters(S.Position(), PC, out U, out V);
-                    PP = ElSLib.PlaneValue(U, V, S.Position());
+                    global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(S.Position(), PC, out U, out V);
+                    PP = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(U, V, S.Position());
                     POnS.SetParameters(U, V, PP);
                     myPoint2.SetValue(i + 1, POnS);
                     mySqDist.SetValue(i + 1, PC.SquareDistance(PP));
@@ -363,11 +365,11 @@ public class Extrema_ExtElCS
                     for (i = 1; i <= anInter.NbPoints(); ++i)
                     {
                         double t = anInter.ParamOnConic(i);
-                        PC = ElCLib.CircleValue(t, C.Position(), C.Radius());
+                        PC = global::Kerf.Engine.Geometry.ElCLib.CircleValue(t, C.Position(), C.Radius());
                         POnC.SetValues(t, PC);
                         myPoint1.SetValue(i + 2, POnC);
-                        ElSLib.PlaneParameters(S.Position(), PC, out U, out V);
-                        PP = ElSLib.PlaneValue(U, V, S.Position());
+                        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(S.Position(), PC, out U, out V);
+                        PP = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(U, V, S.Position());
                         POnS.SetParameters(U, V, PP);
                         myPoint2.SetValue(i + 2, POnS);
                         mySqDist.SetValue(i + 2, PC.SquareDistance(PP));
@@ -386,21 +388,21 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a circle and a cylinder.</summary>
-    public Extrema_ExtElCS(in gp_Circ C, in gp_Cylinder S)
+    public Extrema_ExtElCS(in Circle3D C, in Cylinder S)
     {
         Perform(C, S);
     }
 
     //  Modified by skv - Thu Jul  7 14:37:05 2005 OCC9134 Begin
     // Implementation of the method.
-    public void Perform(in gp_Circ C, in gp_Cylinder S)
+    public void Perform(in Circle3D C, in Cylinder S)
     {
         myDone = false;
         myIsPar = false;
         myNbExt = 0;
 
         // Get an axis line of the cylinder.
-        gp_Lin anAxis = new(S.Axis());
+        Line3D anAxis = new(S.Axis());
 
         // Compute extrema between the circle and the line.
         Extrema_ExtElC anExtC = new(anAxis, C, 0.0);
@@ -421,7 +423,7 @@ public class Extrema_ExtElCS
             int aNbExt = anExtC.NbExt();
             int i;
             int aCurI = 1;
-            double aTolConf = Precision.Confusion();
+            double aTolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
             double aCylRad = S.Radius();
 
             // Check whether two objects have intersection points
@@ -460,14 +462,14 @@ public class Extrema_ExtElCS
                         continue;
                     }
 
-                    gp_Dir aDir = new(aPOnAxis.Value().XYZ().Subtracted(aPOnCirc.Value().XYZ()));
+                    Direction3D aDir = new(aPOnAxis.Value().XYZ().Subtracted(aPOnCirc.Value().XYZ()));
                     ReadOnlySpan<double> aShift = [aDist + aCylRad, aDist - aCylRad];
                     int j;
 
                     for (j = 0; j < 2; j++)
                     {
-                        gp_Vec aVec = new(aDir);
-                        gp_Pnt aPntOnCyl;
+                        Vector3D aVec = new(aDir);
+                        Point3D aPntOnCyl;
 
                         aVec.Multiply(aShift[j]);
                         aPntOnCyl = aPOnCirc.Value().Translated(aVec);
@@ -475,7 +477,7 @@ public class Extrema_ExtElCS
                         double aU;
                         double aV;
 
-                        ElSLib.Parameters(S, aPntOnCyl, out aU, out aV);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(S, aPntOnCyl, out aU, out aV);
 
                         Extrema_POnSurf aPOnSurf = new(aU, aV, aPntOnCyl);
 
@@ -491,12 +493,12 @@ public class Extrema_ExtElCS
                     double aU;
                     double aV;
 
-                    gp_Pnt aInterPnt = aCircCylInter.Point(i);
+                    Point3D aInterPnt = aCircCylInter.Point(i);
 
-                    aU = ElCLib.Parameter(C, aInterPnt);
+                    aU = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, aInterPnt);
                     Extrema_POnCurv aPOnCirc = new(aU, aInterPnt);
 
-                    ElSLib.Parameters(S, aInterPnt, out aU, out aV);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(S, aInterPnt, out aU, out aV);
                     Extrema_POnSurf aPOnCyl = new(aU, aV, aInterPnt);
                     myPoint1.SetValue(aCurI, aPOnCirc);
                     myPoint2.SetValue(aCurI, aPOnCyl);
@@ -539,32 +541,32 @@ public class Extrema_ExtElCS
     //  Modified by skv - Thu Jul  7 14:37:05 2005 OCC9134 End
 
     /// <summary>The distances between a circle and a cone (not implemented in OCCT).</summary>
-    public Extrema_ExtElCS(in gp_Circ C, in gp_Cone S)
+    public Extrema_ExtElCS(in Circle3D C, in Cone S)
     {
         Perform(C, S);
     }
 
     // void Extrema_ExtElCS::Perform(const gp_Circ& C,
     //			 const gp_Cone& S)
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public void Perform(in gp_Circ C, in gp_Cone S)
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public void Perform(in Circle3D C, in Cone S)
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a circle and a sphere: the minimal ones only.</summary>
-    public Extrema_ExtElCS(in gp_Circ C, in gp_Sphere S)
+    public Extrema_ExtElCS(in Circle3D C, in Sphere S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Circ C, in gp_Sphere S)
+    public void Perform(in Circle3D C, in Sphere S)
     {
         myDone = false;
         myIsPar = false;
         myNbExt = 0;
 
-        if (new gp_Lin(C.Axis()).SquareDistance(S.Location()) < Precision.SquareConfusion())
+        if (new Line3D(C.Axis()).SquareDistance(S.Location()) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             // Circle and sphere are parallel
             myIsPar = true;
@@ -581,7 +583,7 @@ public class Extrema_ExtElCS
         }
 
         // Intersect sphere with circle's plane
-        gp_Pln CPln = new(C.Location(), C.Axis().Direction());
+        Plane3D CPln = new(C.Location(), C.Axis().Direction());
         IntAna_QuadQuadGeo anInter = new(CPln, S);
         if (!anInter.IsDone())
         {
@@ -602,15 +604,15 @@ public class Extrema_ExtElCS
             myPoint2 = new NCollection_HArray1<Extrema_POnSurf>(1, 1);
 
             // Compute parameter on circle
-            double aT = ElCLib.Parameter(C, S.Location());
+            double aT = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, S.Location());
             // Compute point on circle
-            gp_Pnt aPOnC = ElCLib.Value(aT, C);
+            Point3D aPOnC = global::Kerf.Engine.Geometry.ElCLib.Value(aT, C);
 
             // Compute parameters on sphere
             double aU, aV;
-            ElSLib.Parameters(S, aPOnC, out aU, out aV);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(S, aPOnC, out aU, out aV);
             // Compute point on sphere
-            gp_Pnt aPOnS = ElSLib.Value(aU, aV, S);
+            Point3D aPOnS = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, S);
 
             // Save solution
             myPoint1.SetValue(1, new Extrema_POnCurv(aT, aPOnC));
@@ -622,7 +624,7 @@ public class Extrema_ExtElCS
         // Here, the intersection is a circle
 
         // Intersection circle
-        gp_Circ aCInt = anInter.Circle(1);
+        Circle3D aCInt = anInter.Circle(1);
 
         // Perform intersection of the input circle with the intersection circle
         Extrema_ExtElC anExtC = new(C, aCInt);
@@ -655,7 +657,7 @@ public class Extrema_ExtElCS
         for (int i = 1; i <= aNbExt; ++i)
         {
             double aDiff = anExtC.SquareDistance(i) - aMinSqDist;
-            if (aDiff < Precision.SquareConfusion())
+            if (aDiff < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 aSols.Append(i);
             }
@@ -676,9 +678,9 @@ public class Extrema_ExtElCS
 
             // Compute parameters on sphere
             double aU, aV;
-            ElSLib.Parameters(S, P1.Value(), out aU, out aV);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(S, P1.Value(), out aU, out aV);
             // Compute point on sphere
-            gp_Pnt aPOnS = ElSLib.Value(aU, aV, S);
+            Point3D aPOnS = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, S);
 
             // Save solution
             myPoint1.SetValue(iSol, P1);
@@ -688,36 +690,36 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>The distances between a circle and a torus (not implemented in OCCT).</summary>
-    public Extrema_ExtElCS(in gp_Circ C, in gp_Torus S)
+    public Extrema_ExtElCS(in Circle3D C, in Torus S)
     {
         Perform(C, S);
     }
 
     // void Extrema_ExtElCS::Perform(const gp_Circ& C,
     //			      const gp_Torus& S)
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public void Perform(in gp_Circ C, in gp_Torus S)
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public void Perform(in Circle3D C, in Torus S)
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a hyperbola and a plane.</summary>
-    public Extrema_ExtElCS(in gp_Hypr C, in gp_Pln S)
+    public Extrema_ExtElCS(in Hyperbola3D C, in Plane3D S)
     {
         Perform(C, S);
     }
 
-    public void Perform(in gp_Hypr C, in gp_Pln S)
+    public void Perform(in Hyperbola3D C, in Plane3D S)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
 
-        gp_Ax2 Pos = C.Position();
-        gp_Dir NHypr = Pos.Direction();
-        gp_Dir NPln = S.Axis().Direction();
+        Frame3D Pos = C.Position();
+        Direction3D NHypr = Pos.Direction();
+        Direction3D NPln = S.Axis().Direction();
 
-        if (NHypr.IsParallel(NPln, Precision.Angular()))
+        if (NHypr.IsParallel(NPln, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             mySqDist = new NCollection_HArray1<double>(1, 1);
             mySqDist.SetValue(1, S.SquareDistance(C.Location()));
@@ -726,8 +728,8 @@ public class Extrema_ExtElCS
         }
         else
         {
-            gp_Dir XDir = Pos.XDirection();
-            gp_Dir YDir = Pos.YDirection();
+            Direction3D XDir = Pos.XDirection();
+            Direction3D YDir = Pos.YDirection();
 
             double A = C.MinorRadius() * (NPln.Dot(YDir));
             double B = C.MajorRadius() * (NPln.Dot(XDir));
@@ -735,7 +737,7 @@ public class Extrema_ExtElCS
             if (Math.Abs(B) > Math.Abs(A))
             {
                 double T = -0.5 * Math.Log((A + B) / (B - A));
-                gp_Pnt Ph = ElCLib.HyperbolaValue(T, Pos, C.MajorRadius(), C.MinorRadius());
+                Point3D Ph = global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(T, Pos, C.MajorRadius(), C.MinorRadius());
                 Extrema_POnCurv PC = new(T, Ph);
                 myPoint1 = new NCollection_HArray1<Extrema_POnCurv>(1, 1);
                 myPoint1.SetValue(1, PC);
@@ -744,8 +746,8 @@ public class Extrema_ExtElCS
                 mySqDist.SetValue(1, S.SquareDistance(Ph));
 
                 double U, V;
-                ElSLib.PlaneParameters(S.Position(), Ph, out U, out V);
-                gp_Pnt Pp = ElSLib.PlaneValue(U, V, S.Position());
+                global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(S.Position(), Ph, out U, out V);
+                Point3D Pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(U, V, S.Position());
                 Extrema_POnSurf PS = new(U, V, Pp);
                 myPoint2 = new NCollection_HArray1<Extrema_POnSurf>(1, 1);
                 myPoint2.SetValue(1, PS);
@@ -759,35 +761,35 @@ public class Extrema_ExtElCS
     public bool IsDone() => myDone;
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
     public int NbExt()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
 
     /// <summary>The value of the Nth extremum square distance.</summary>
-    /// <exception cref="Standard_OutOfRange">N is not in [1, NbExt].</exception>
+    /// <exception cref="OutOfRangeException">N is not in [1, NbExt].</exception>
     public double SquareDistance(int N = 1)
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist!.Value(N);
     }
 
     /// <summary>The points of the Nth extremum distance: P1 on the curve, P2 on the surface.</summary>
-    /// <exception cref="Standard_OutOfRange">N is not in [1, NbExt].</exception>
+    /// <exception cref="OutOfRangeException">N is not in [1, NbExt].</exception>
     public void Points(int N, out Extrema_POnCurv P1, out Extrema_POnSurf P2)
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         // OCCT: a parallel result fills no points, so this reads null handles or those of an earlier Perform
@@ -796,12 +798,12 @@ public class Extrema_ExtElCS
     }
 
     /// <summary>True if the curve is on a parallel surface.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
     public bool IsParallel()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }

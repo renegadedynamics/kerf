@@ -4,8 +4,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
-using static Occt.Convert_ParameterisationType;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Occt;
 
@@ -23,9 +27,9 @@ public class BlendFunc_EvolRad : Blend_Function
     private const double Eps = 1.0e-15;
 
     // Per-thread scratch, reused across calls via the t_OK / myX_OK guards of ComputeValues (OCCT's thread_local).
-    [ThreadStatic] private static gp_Vec d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
-    [ThreadStatic] private static gp_Vec d1gui, d2gui, d3gui;
-    [ThreadStatic] private static gp_Pnt ptgui;
+    [ThreadStatic] private static Vector3D d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
+    [ThreadStatic] private static Vector3D d1gui, d2gui, d3gui;
+    [ThreadStatic] private static Point3D ptgui;
     [ThreadStatic] private static double invnormtg, dinvnormtg;
 
     private readonly Adaptor3d_Surface surf1;
@@ -34,13 +38,13 @@ public class BlendFunc_EvolRad : Blend_Function
     private Adaptor3d_Curve tcurv;
     private readonly Law_Function fevol;
     private Law_Function tevol;
-    private gp_Pnt pts1;
-    private gp_Pnt pts2;
+    private Point3D pts1;
+    private Point3D pts2;
     private bool istangent;
-    private gp_Vec tg1;
-    private gp_Vec2d tg12d;
-    private gp_Vec tg2;
-    private gp_Vec2d tg22d;
+    private Vector3D tg1;
+    private Vector2D tg12d;
+    private Vector3D tg2;
+    private Vector2D tg22d;
     private double param;
     private double sg1;
     private double sg2;
@@ -52,49 +56,49 @@ public class BlendFunc_EvolRad : Blend_Function
     private int myTOrder;
     private readonly math_Vector xval;
     private double tval;
-    private gp_Vec d1u1;
-    private gp_Vec d1u2;
-    private gp_Vec d1v1;
-    private gp_Vec d1v2;
-    private gp_Vec d2u1;
-    private gp_Vec d2v1;
-    private gp_Vec d2uv1;
-    private gp_Vec d2u2;
-    private gp_Vec d2v2;
-    private gp_Vec d2uv2;
-    private gp_Vec dn1w;
-    private gp_Vec dn2w;
-    private gp_Vec d2n1w;
-    private gp_Vec d2n2w;
-    private gp_Vec nplan;
-    private gp_Vec nsurf1;
-    private gp_Vec nsurf2;
-    private gp_Vec dns1u1;
-    private gp_Vec dns1u2;
-    private gp_Vec dns1v1;
-    private gp_Vec dns1v2;
-    private gp_Vec dnplan;
-    private gp_Vec d2nplan;
+    private Vector3D d1u1;
+    private Vector3D d1u2;
+    private Vector3D d1v1;
+    private Vector3D d1v2;
+    private Vector3D d2u1;
+    private Vector3D d2v1;
+    private Vector3D d2uv1;
+    private Vector3D d2u2;
+    private Vector3D d2v2;
+    private Vector3D d2uv2;
+    private Vector3D dn1w;
+    private Vector3D dn2w;
+    private Vector3D d2n1w;
+    private Vector3D d2n2w;
+    private Vector3D nplan;
+    private Vector3D nsurf1;
+    private Vector3D nsurf2;
+    private Vector3D dns1u1;
+    private Vector3D dns1u2;
+    private Vector3D dns1v1;
+    private Vector3D dns1v2;
+    private Vector3D dnplan;
+    private Vector3D d2nplan;
     // OCCT's dnsurf1 and dnsurf2 are never used: left out.
-    private gp_Vec dndu1;
-    private gp_Vec dndu2;
-    private gp_Vec dndv1;
-    private gp_Vec dndv2;
-    private gp_Vec d2ndu1;
-    private gp_Vec d2ndu2;
-    private gp_Vec d2ndv1;
-    private gp_Vec d2ndv2;
-    private gp_Vec d2nduv1;
-    private gp_Vec d2nduv2;
-    private gp_Vec d2ndtu1;
-    private gp_Vec d2ndtu2;
-    private gp_Vec d2ndtv1;
-    private gp_Vec d2ndtv2;
+    private Vector3D dndu1;
+    private Vector3D dndu2;
+    private Vector3D dndv1;
+    private Vector3D dndv2;
+    private Vector3D d2ndu1;
+    private Vector3D d2ndu2;
+    private Vector3D d2ndv1;
+    private Vector3D d2ndv2;
+    private Vector3D d2nduv1;
+    private Vector3D d2nduv2;
+    private Vector3D d2ndtu1;
+    private Vector3D d2ndtu2;
+    private Vector3D d2ndtv1;
+    private Vector3D d2ndtv2;
     private readonly math_Vector E;
-    private readonly math_Matrix DEDX;
+    private readonly Matrix DEDX;
     private readonly math_Vector DEDT;
     private readonly BlendFunc_Tensor D2EDX2;
-    private readonly math_Matrix D2EDXDT;
+    private readonly Matrix D2EDXDT;
     private readonly math_Vector D2EDT2;
     private double minang;
     private double maxang;
@@ -102,7 +106,7 @@ public class BlendFunc_EvolRad : Blend_Function
     private double lengthmax;
     private double distmin;
     private BlendFunc_SectionShape mySShape;
-    private Convert_ParameterisationType myTConv;
+    private ParameterisationType myTConv;
 
     /// <remarks>OCCT leaves param, the radius and the "quadrant" uninitialised; here they are zero.</remarks>
     public BlendFunc_EvolRad(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C, Law_Function Law)
@@ -114,10 +118,10 @@ public class BlendFunc_EvolRad : Blend_Function
         istangent = true;
         xval = new math_Vector(1, 4);
         E = new math_Vector(1, 4);
-        DEDX = new math_Matrix(1, 4, 1, 4);
+        DEDX = new Matrix(1, 4, 1, 4);
         DEDT = new math_Vector(1, 4);
         D2EDX2 = new BlendFunc_Tensor(4, 4, 4);
-        D2EDXDT = new math_Matrix(1, 4, 1, 4);
+        D2EDXDT = new Matrix(1, 4, 1, 4);
         D2EDT2 = new math_Vector(1, 4);
         minang = RealLast();
         maxang = RealFirst();
@@ -318,7 +322,7 @@ public class BlendFunc_EvolRad : Blend_Function
             // Case of degenerated surfaces
             if (nsurf1.Magnitude() < Eps)
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[1], X[2]);
+                Point2D P = new Point2D(X[1], X[2]);
                 if (Order == 0)
                 {
                     BlendFunc.ComputeNormal(surf1, P, ref nsurf1);
@@ -331,7 +335,7 @@ public class BlendFunc_EvolRad : Blend_Function
 
             if (nsurf2.Magnitude() < Eps)
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 if (Order == 0)
                 {
                     BlendFunc.ComputeNormal(surf2, P, ref nsurf2);
@@ -347,7 +351,7 @@ public class BlendFunc_EvolRad : Blend_Function
         double invnorm1, invnorm2, ndotns1, ndotns2, theD;
         double ray1 = sg1 * ray;
         double ray2 = sg2 * ray;
-        gp_Vec ncrossns1, ncrossns2, resul = new gp_Vec(), temp = new gp_Vec(), n1 = new gp_Vec(), n2 = new gp_Vec();
+        Vector3D ncrossns1, ncrossns2, resul = new Vector3D(), temp = new Vector3D(), n1 = new Vector3D(), n2 = new Vector3D();
 
         theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
 
@@ -390,7 +394,7 @@ public class BlendFunc_EvolRad : Blend_Function
         n2.SetLinearForm(ndotns2, nplan, -1.0, nsurf2);
         n2.Multiply(invnorm2);
 
-        resul.SetLinearForm(ray1, n1, -ray2, n2, new gp_Vec(pts2, pts1));
+        resul.SetLinearForm(ray1, n1, -ray2, n2, new Vector3D(pts2, pts1));
 
         E[2] = resul.X();
         E[3] = resul.Y();
@@ -473,8 +477,8 @@ public class BlendFunc_EvolRad : Blend_Function
             // ------   Positioning of order 2  -----------------------------
             if (Order == 2)
             {
-                gp_Vec d2ns1u1 = new gp_Vec(), d2ns1u2 = new gp_Vec(), d2ns1v1 = new gp_Vec(),
-                       d2ns1v2 = new gp_Vec(), d2ns1uv1, d2ns1uv2;
+                Vector3D d2ns1u1 = new Vector3D(), d2ns1u2 = new Vector3D(), d2ns1v1 = new Vector3D(),
+                       d2ns1v2 = new Vector3D(), d2ns1uv1, d2ns1uv2;
                 double uterm, vterm, smallterm, p1, p2, p12;
                 double DPrim, DSecn;
                 D2EDX2.Init(0);
@@ -802,7 +806,7 @@ public class BlendFunc_EvolRad : Blend_Function
 
         for (int i = 1; i <= 4; i++)
         {
-            if (!Precision.IsInfinite(InfBound[i]) && !Precision.IsInfinite(SupBound[i]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[i]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[i]))
             {
                 double range = (SupBound[i] - InfBound[i]);
                 InfBound[i] -= range;
@@ -821,7 +825,7 @@ public class BlendFunc_EvolRad : Blend_Function
         if (Math.Abs(E[1]) <= Tol && E[2] * E[2] + E[3] * E[3] + E[4] * E[4] <= Tol * Tol)
         {
             // ns1, ns2, np are copied locally to avoid crushing the fields !
-            gp_Vec ns1, ns2, np;
+            Vector3D ns1, ns2, np;
             ns1 = nsurf1;
             ns2 = nsurf2;
             np = nplan;
@@ -843,9 +847,9 @@ public class BlendFunc_EvolRad : Blend_Function
             ns2.SetLinearForm(nplan.Dot(ns2) / norm, nplan, -1.0 / norm, ns2);
 
             double maxpiv = 1.0e-14;
-            math_Gauss Resol = new(DEDX, maxpiv);
+            Gauss Resol = new(DEDX, maxpiv);
             istangent = false;
-            if (Resol.IsDone())
+            if (Resol.IsDone)
             {
                 math_Vector controle = new(1, 4), solution = new(1, 4), tolerances = new(1, 4);
                 GetTolerance(tolerances, Tol);
@@ -952,14 +956,14 @@ public class BlendFunc_EvolRad : Blend_Function
         return Ok;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         bool Ok = ComputeValues(X, 1);
         D.Initialized(DEDX);
         return Ok;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         bool Ok = ComputeValues(X, 1);
         F.Initialized(E);
@@ -967,12 +971,12 @@ public class BlendFunc_EvolRad : Blend_Function
         return Ok;
     }
 
-    public override gp_Pnt PointOnS1()
+    public override Point3D PointOnS1()
     {
         return pts1;
     }
 
-    public override gp_Pnt PointOnS2()
+    public override Point3D PointOnS2()
     {
         return pts2;
     }
@@ -982,56 +986,56 @@ public class BlendFunc_EvolRad : Blend_Function
         return istangent;
     }
 
-    public override gp_Vec TangentOnS1()
+    public override Vector3D TangentOnS1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg1;
     }
 
-    public override gp_Vec TangentOnS2()
+    public override Vector3D TangentOnS2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg2;
     }
 
-    public override gp_Vec2d Tangent2dOnS1()
+    public override Vector2D Tangent2dOnS1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg12d;
     }
 
-    public override gp_Vec2d Tangent2dOnS2()
+    public override Vector2D Tangent2dOnS2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg22d;
     }
 
-    public override void Tangent(double U1, double V1, double U2, double V2, out gp_Vec TgF, out gp_Vec TgL,
-                                 out gp_Vec NmF, out gp_Vec NmL)
+    public override void Tangent(double U1, double V1, double U2, double V2, out Vector3D TgF, out Vector3D TgL,
+                                 out Vector3D NmF, out Vector3D NmL)
     {
-        gp_Pnt Center = new gp_Pnt();
-        gp_Vec ns1;
+        Point3D Center = new Point3D();
+        Vector3D ns1;
         double invnorm1;
 
         if ((U1 != xval[1]) || (V1 != xval[2]) || (U2 != xval[3]) || (V2 != xval[4]))
         {
-            surf1.D1(U1, V1, out _, out gp_Vec d1u, out gp_Vec d1v);
+            surf1.D1(U1, V1, out _, out Vector3D d1u, out Vector3D d1v);
             NmF = ns1 = d1u.Crossed(d1v);
             surf2.D1(U2, V2, out _, out d1u, out d1v);
             NmL = d1u.Crossed(d1v);
@@ -1055,8 +1059,8 @@ public class BlendFunc_EvolRad : Blend_Function
         ns1.SetLinearForm(nplan.Dot(ns1) * invnorm1, nplan, -invnorm1, ns1);
         Center.SetXYZ(pts1.XYZ() + sg1 * ray * ns1.XYZ());
 
-        TgF = nplan.Crossed(new gp_Vec(Center, pts1));
-        TgL = nplan.Crossed(new gp_Vec(Center, pts2));
+        TgF = nplan.Crossed(new Vector3D(Center, pts1));
+        TgL = nplan.Crossed(new Vector3D(Center, pts2));
         if (choix % 2 == 1)
         {
             TgF.Reverse();
@@ -1068,7 +1072,7 @@ public class BlendFunc_EvolRad : Blend_Function
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg1.Dot(nplan) < 0.0;
@@ -1078,7 +1082,7 @@ public class BlendFunc_EvolRad : Blend_Function
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg2.Dot(nplan) < 0.0;
@@ -1089,10 +1093,10 @@ public class BlendFunc_EvolRad : Blend_Function
     /// range: for a quick, approximate view of the surface.
     /// </summary>
     public void Section(double Param, double U1, double V1, double U2, double V2, out double Pdeb, out double Pfin,
-                        ref gp_Circ C)
+                        ref Circle3D C)
     {
-        gp_Pnt Center = new gp_Pnt();
-        gp_Vec ns1, np;
+        Point3D Center = new Point3D();
+        Vector3D ns1, np;
 
         math_Vector X = new(1, 4);
         X[1] = U1;
@@ -1129,20 +1133,20 @@ public class BlendFunc_EvolRad : Blend_Function
         }
 
         C.SetRadius(Math.Abs(ray));
-        C.SetPosition(new gp_Ax2(Center, new gp_Dir(np), new gp_Dir(ns1)));
+        C.SetPosition(new Frame3D(Center, new Direction3D(np), new Direction3D(ns1)));
         Pdeb = 0.0;
-        Pfin = ElCLib.Parameter(C, pts2);
+        Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, pts2);
         // Test negative and almost null angles : Singular Case
         if (Pfin > 1.5 * M_PI)
         {
             np.Reverse();
-            C.SetPosition(new gp_Ax2(Center, new gp_Dir(np), new gp_Dir(ns1)));
-            Pfin = ElCLib.Parameter(C, pts2);
+            C.SetPosition(new Frame3D(Center, new Direction3D(np), new Direction3D(ns1)));
+            Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, pts2);
         }
 
-        if (Pfin < Precision.PConfusion())
+        if (Pfin < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            Pfin += Precision.PConfusion();
+            Pfin += global::Kerf.Engine.Foundation.Precision.PConfusion();
         }
     }
 
@@ -1161,7 +1165,7 @@ public class BlendFunc_EvolRad : Blend_Function
         BlendFunc.GetMinimalWeights(mySShape, myTConv, minang, maxang, Weigths);
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int Nb_Int_Courbe, Nb_Int_Loi;
         Nb_Int_Courbe = curv.NbIntervals(BlendFunc.NextShape(S));
@@ -1182,7 +1186,7 @@ public class BlendFunc_EvolRad : Blend_Function
         return Inter.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int Nb_Int_Courbe, Nb_Int_Loi;
         Nb_Int_Courbe = curv.NbIntervals(BlendFunc.NextShape(S));
@@ -1212,7 +1216,7 @@ public class BlendFunc_EvolRad : Blend_Function
                                             NCollection_Sequence<double> Seq)
     {
         int ind1 = 1, ind2 = 1;
-        double Epspar = Precision.PConfusion() * 0.99;
+        double Epspar = global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99;
         // supposed that positioning works with PConfusion()/2
         double v1, v2;
         // Initialisation : IND1 and IND2 point at the 1st element
@@ -1299,11 +1303,11 @@ public class BlendFunc_EvolRad : Blend_Function
         GeomFill.Mults(myTConv, TMults);
     }
 
-    public override void Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weights)
+    public override void Section(in Blend_Point P, NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weights)
     {
-        gp_Pnt Center = new gp_Pnt();
-        gp_Vec ns1, ns2, np;
+        Point3D Center = new Point3D();
+        Vector3D ns1, ns2, np;
 
         math_Vector X = new(1, 4);
         double prm = P.Parameter();
@@ -1374,14 +1378,14 @@ public class BlendFunc_EvolRad : Blend_Function
         GeomFill.GetCircle(myTConv, ns1, ns2, np, pts1, pts2, Math.Abs(ray), Center, Poles, Weights);
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
-        gp_Vec ns1, ns2, np, dnp, dnorm1w = new gp_Vec(), dnorm2w = new gp_Vec(), tgc = new gp_Vec();
+        Vector3D ns1, ns2, np, dnp, dnorm1w = new Vector3D(), dnorm2w = new Vector3D(), tgc = new Vector3D();
         double norm1, norm2, rayprim;
 
-        gp_Pnt Center = new gp_Pnt();
+        Point3D Center = new Point3D();
         math_Vector sol = new(1, 4), secmember = new(1, 4);
 
         double prm = P.Parameter();
@@ -1406,9 +1410,9 @@ public class BlendFunc_EvolRad : Blend_Function
         if (!pts1.IsEqual(pts2, 1.0e-4))
         {
             // Calculation of derived  Normal processing
-            math_Gauss Resol = new(DEDX, 1.0e-9);
+            Gauss Resol = new(DEDX, 1.0e-9);
 
-            if (Resol.IsDone())
+            if (Resol.IsDone)
             {
                 Resol.Solve(-DEDT, secmember);
                 istgt = false;
@@ -1417,8 +1421,8 @@ public class BlendFunc_EvolRad : Blend_Function
 
         if (istgt)
         {
-            math_SVD SingRS = new(DEDX);
-            if (SingRS.IsDone())
+            Svd SingRS = new(DEDX);
+            if (SingRS.IsDone)
             {
                 SingRS.Solve(-DEDT, secmember, 1.0e-6);
                 istgt = false;
@@ -1528,21 +1532,21 @@ public class BlendFunc_EvolRad : Blend_Function
         }
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights,
                                  NCollection_Array1<double> D2Weights)
     {
-        gp_Vec ns1, ns2, np, dnp, d2np, dnorm1w = new gp_Vec(), dnorm2w = new gp_Vec(), d2norm1w = new gp_Vec(),
-               d2norm2w = new gp_Vec();
-        gp_Vec tgc = new gp_Vec(), dtgc = new gp_Vec(), dtg1 = new gp_Vec(), dtg2 = new gp_Vec(),
-               temp = new gp_Vec(), tempbis = new gp_Vec();
+        Vector3D ns1, ns2, np, dnp, d2np, dnorm1w = new Vector3D(), dnorm2w = new Vector3D(), d2norm1w = new Vector3D(),
+               d2norm2w = new Vector3D();
+        Vector3D tgc = new Vector3D(), dtgc = new Vector3D(), dtg1 = new Vector3D(), dtg2 = new Vector3D(),
+               temp = new Vector3D(), tempbis = new Vector3D();
         double norm1, norm2, rayprim, raysecn;
 
-        gp_Pnt Center = new gp_Pnt();
+        Point3D Center = new Point3D();
         math_Vector X = new(1, 4), sol = new(1, 4), secmember = new(1, 4);
-        math_Matrix D2DXdSdt = new(1, 4, 1, 4);
+        Matrix D2DXdSdt = new(1, 4, 1, 4);
 
         double prm = P.Parameter();
         int low = Poles.Lower();
@@ -1571,9 +1575,9 @@ public class BlendFunc_EvolRad : Blend_Function
 
         if (!pts1.IsEqual(pts2, 1.0e-4))
         {
-            math_Gauss Resol = new(DEDX, 1.0e-9); // Precise tolerance !!!!!
+            Gauss Resol = new(DEDX, 1.0e-9); // Precise tolerance !!!!!
             // Calculation of derivatives Processing Normal
-            if (Resol.IsDone())
+            if (Resol.IsDone)
             {
                 Resol.Solve(-DEDT, sol);
                 D2EDX2.Multiply(sol, D2DXdSdt);
@@ -1585,9 +1589,9 @@ public class BlendFunc_EvolRad : Blend_Function
 
         if (istgt)
         {
-            math_SVD SingRS = new(DEDX);
+            Svd SingRS = new(DEDX);
             math_Vector Vbis = new(1, 4);
-            if (SingRS.IsDone())
+            if (SingRS.IsDone)
             {
                 SingRS.Solve(-DEDT, sol, 1.0e-6);
                 D2EDX2.Multiply(sol, D2DXdSdt);

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
@@ -139,14 +140,14 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             }
             return new("done", aLines);
         }
-        catch (Standard_Failure)
+        catch (global::Kerf.Engine.Foundation.FailureException)
         {
             return new("throws", []);
         }
         catch (Exception anError)
         {
             // not an OCCT exception: a port bug
-            return new("port " + anError.GetType().Name + ": " + anError.Message, []);
+            return new("port " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message, []);
         }
     }
 
@@ -279,18 +280,18 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     // ---------------------------------------------------------------------------------------------------------
     // Inputs
 
-    private static readonly gp_Pnt s_centre = new(8, 8, 0);
+    private static readonly Point3D s_centre = new(8, 8, 0);
 
-    private static N.gp_Ax3 NativeAx3(Oracle theO, in gp_Pnt theCentre, double theRange)
+    private static N.gp_Ax3 NativeAx3(Oracle theO, in Point3D theCentre, double theRange)
     {
-        gp_Dir aN = Oracle.Settled(theO.Dir());
-        gp_Dir aX = Oracle.Settled(new gp_Dir(new gp_Vec(aN).Crossed(new gp_Vec(theO.Dir()))));
-        var anAx = new gp_Ax3(new gp_Pnt(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
+        Direction3D aN = Oracle.Settled(theO.Dir());
+        Direction3D aX = Oracle.Settled(new Direction3D(new Vector3D(aN).Crossed(new Vector3D(theO.Dir()))));
+        var anAx = new CoordinateSystem(new Point3D(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
                                          theCentre.Z() + theO.Real(-theRange, theRange)), aN, aX);
         return Oracle.ToNative(anAx);
     }
 
-    private static N.Geom_BSplineCurve NativeProfile(Oracle theO, in gp_Pnt theCentre, double theRange)
+    private static N.Geom_BSplineCurve NativeProfile(Oracle theO, in Point3D theCentre, double theRange)
     {
         int aDeg = theO.Int(2, 3), aNbPoles = theO.Int(aDeg + 1, 6);
         var aKnots = new NCollection_Array1<double>(1, aNbPoles - aDeg + 1);
@@ -300,10 +301,10 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             aKnots[i] = i - 1;
             aMults[i] = i == aKnots.Lower() || i == aKnots.Upper() ? aDeg + 1 : 1;
         }
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
-            aPoles[i] = new gp_Pnt(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
+            aPoles[i] = new Point3D(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
                                    theCentre.Z() + theO.Real(-theRange / 2, theRange / 2));
         }
         return Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false);
@@ -377,7 +378,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
                 aBasis.Bounds(ref aU1, ref aU2, ref aV1, ref aV2);
                 (double, double) Range(double theF, double theL, bool thePeriodic)
                 {
-                    if (Precision.IsInfinite(theF) || Precision.IsInfinite(theL))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theL))
                     {
                         double aF = theO.Real(-6, 0);
                         return (aF, aF + theO.Real(2, 8));
@@ -420,34 +421,34 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
             for (int i = 0; i < 125; i++)
             {
                 int aK1 = i % 5, aK2 = (i / 5) % 5, aCase = i / 25;
-                gp_Dir aN1 = Oracle.Settled(anO.Dir()), aN2 = Oracle.Settled(anO.Dir());
-                gp_Dir aX1 = Oracle.Settled(new gp_Dir(new gp_Vec(aN1).Crossed(new gp_Vec(anO.Dir()))));
-                gp_Dir aX2 = Oracle.Settled(new gp_Dir(new gp_Vec(aN2).Crossed(new gp_Vec(anO.Dir()))));
-                var anAx1 = new gp_Ax3(new gp_Pnt(anO.Real(-1, 1), anO.Real(-1, 1), anO.Real(-1, 1)), aN1, aX1);
-                var anAx2 = new gp_Ax3(new gp_Pnt(anO.Real(-1, 1), anO.Real(-1, 1), anO.Real(-1, 1)), aN2, aX2);
+                Direction3D aN1 = Oracle.Settled(anO.Dir()), aN2 = Oracle.Settled(anO.Dir());
+                Direction3D aX1 = Oracle.Settled(new Direction3D(new Vector3D(aN1).Crossed(new Vector3D(anO.Dir()))));
+                Direction3D aX2 = Oracle.Settled(new Direction3D(new Vector3D(aN2).Crossed(new Vector3D(anO.Dir()))));
+                var anAx1 = new CoordinateSystem(new Point3D(anO.Real(-1, 1), anO.Real(-1, 1), anO.Real(-1, 1)), aN1, aX1);
+                var anAx2 = new CoordinateSystem(new Point3D(anO.Real(-1, 1), anO.Real(-1, 1), anO.Real(-1, 1)), aN2, aX2);
                 double aR1 = Math.Round(anO.Real(0.5, 3), 3), aR2 = Math.Round(anO.Real(0.5, 3), 3);
                 double anA1 = anO.Real(0.1, 1.2), anA2 = anO.Real(0.1, 1.2);
                 switch (aCase)
                 {
                     case 1:
-                        anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.Direction()) * anO.Real(-2, 2)),
+                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.Direction()) * anO.Real(-2, 2)),
                                            anAx1.Direction(), anAx1.XDirection());
                         break;
                     case 2:
-                        anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.XDirection()) * anO.Real(-2, 2)),
+                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * anO.Real(-2, 2)),
                                            anAx1.Direction(), anAx1.XDirection());
                         break;
                     case 3:
-                        anAx2 = aK1 == 4 || aK2 == 4 ? anAx1 : new gp_Ax3(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
+                        anAx2 = aK1 == 4 || aK2 == 4 ? anAx1 : new CoordinateSystem(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
                         aR1 = aK1 == 2 ? 0.0 : aR1;
                         aR2 = aK2 == 2 ? 0.0 : aR2;
                         break;
                     case 4:
-                        anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.XDirection()) * (aR1 + aR2)),
+                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * (aR1 + aR2)),
                                            anAx1.Direction(), anAx1.XDirection());
                         break;
                 }
-                N.Geom_Surface Make(int theKind, in gp_Ax3 theAx, double theR, double theAng)
+                N.Geom_Surface Make(int theKind, in CoordinateSystem theAx, double theR, double theAng)
                 {
                     using N.gp_Ax3 anAx = Oracle.ToNative(theAx);
                     return theKind switch

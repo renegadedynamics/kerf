@@ -3,10 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -20,7 +26,7 @@ namespace Occt;
 public static partial class BRepLib
 {
     // OCCT's file statics. Process-wide as in OCCT; their setters are internal, so callers always see the defaults.
-    private static double thePrecision = Occt.Precision.Confusion();
+    private static double thePrecision = Kerf.Engine.Foundation.Precision.Confusion();
     private static Geom_Plane? thePlane;
 
     /// <summary>Sets the default precision (internal: process-wide state).</summary>
@@ -47,7 +53,7 @@ public static partial class BRepLib
     {
         if (thePlane is null)
         {
-            var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
+            var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
             aPlane.Freeze();
             Interlocked.CompareExchange(ref thePlane, aPlane, null);
         }
@@ -146,8 +152,8 @@ public static partial class BRepLib
                         first_time_in = false;
                     }
 
-                    if (Math.Abs(first - current_first) > Occt.Precision.Confusion()
-                        || Math.Abs(last - current_last) > Occt.Precision.Confusion())
+                    if (Math.Abs(first - current_first) > Kerf.Engine.Foundation.Precision.Confusion()
+                        || Math.Abs(last - current_last) > Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         if (has_curve)
                         {
@@ -199,12 +205,12 @@ public static partial class BRepLib
 
         double aNbSKnots = 0, aNbC2dKnots = 0;
 
-        if (aSurf.GetType() == GeomAbs_BSplineSurface)
+        if (aSurf.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface aBSpline = aSurf.BSpline();
             aNbSKnots = Max(aBSpline.NbUKnots(), aBSpline.NbVKnots());
         }
-        if (aCurv2d.GetType() == GeomAbs_BSplineCurve)
+        if (aCurv2d.GetType() == BSplineCurve)
         {
             aNbC2dKnots = aCurv2d.NbKnots();
         }
@@ -221,14 +227,14 @@ public static partial class BRepLib
     /// <remarks><paramref name="MaxSegment"/> 0 means 30 plus the number of knots of the surface or pcurve.</remarks>
     internal static bool BuildCurve3d(in TopoDS_Edge AnEdge,
                                       double Tolerance = 1.0e-5,
-                                      GeomAbs_Shape Continuity = GeomAbs_C1,
+                                      Continuity Continuity = C1,
                                       int MaxDegree = 14,
                                       int MaxSegment = 0)
     {
         int ii, jj;
 
-        TopLoc_Location LocalLoc = new(), LC;
-        var L = new TopLoc_Location[] { new(), new() };
+        Placement LocalLoc = new(), LC;
+        var L = new Placement[] { new(), new() };
         double f, l, fc, lc, tolerance, max_deviation;
         var first = new double[2];
         var last = new double[2];
@@ -249,7 +255,7 @@ public static partial class BRepLib
         // this should not exists but UpdateEdge makes funny things
         // if the edge is not same range
         //
-        if (!CheckSameRange(AnEdge, Occt.Precision.Confusion()))
+        if (!CheckSameRange(AnEdge, Kerf.Engine.Foundation.Precision.Confusion()))
         {
             SameRange(AnEdge, Tolerance);
         }
@@ -278,7 +284,7 @@ public static partial class BRepLib
         if (P is not null)
         {
             // compute the 3d curve
-            gp_Ax2 axes = P.Position().Ax2();
+            Frame3D axes = P.Position().Ax2();
             Geom_Curve? C3d = GeomLib.To3d(axes, PC!);
             if (C3d is null)
             {
@@ -289,7 +295,7 @@ public static partial class BRepLib
 
             var B = new BRep_Builder();
             B.UpdateEdge(AnEdge, C3d, LocalLoc, 0.0e0);
-            LC = new TopLoc_Location();
+            LC = new Placement();
             BRep_Tool.Range(AnEdge, S, LC, out First, out Last);
             B.Range(AnEdge, First, Last); // Do not forget 3D range.(PRO6412)
         }
@@ -384,7 +390,7 @@ public static partial class BRepLib
     /// </summary>
     internal static bool BuildCurves3d(in TopoDS_Shape S,
                                        double Tolerance,
-                                       GeomAbs_Shape Continuity = GeomAbs_C1,
+                                       Continuity Continuity = C1,
                                        int MaxDegree = 14,
                                        int MaxSegment = 0)
     {
@@ -442,7 +448,7 @@ public static partial class BRepLib
                                                             second_iterator = new(list_curve_rep);
         Geom2d_Curve? curve2d_ptr = null;
         Geom_Surface? surface_ptr = null;
-        TopLoc_Location local_location;
+        Placement local_location;
         var a_sampler = new GCPnts_QuasiUniformDeflection();
         var geom_reference_curve = new GeomAdaptor_Curve();
         var curve_on_surface_reference = new Adaptor3d_CurveOnSurface();
@@ -450,7 +456,7 @@ public static partial class BRepLib
         curve_on_surface_index = -1;
         if (C is not null)
         {
-            if (!local_location.IsIdentity())
+            if (!local_location.IsIdentity)
             {
                 C = (Geom_Curve)C.Transformed(local_location.Transformation());
             }
@@ -482,7 +488,7 @@ public static partial class BRepLib
                     current_last = geometric_representation_ptr.Last();
                     // must be inverted
                     //
-                    if (!local_location.IsIdentity())
+                    if (!local_location.IsIdentity)
                     {
                         surface_ptr = (Geom_Surface)geometric_representation_ptr.Surface()!.Transformed(local_location.Transformation());
                     }
@@ -550,7 +556,7 @@ public static partial class BRepLib
 
                 if (has_curve || has_closed_curve)
                 {
-                    if (!local_location.IsIdentity())
+                    if (!local_location.IsIdentity)
                     {
                         surface_ptr = (Geom_Surface)geometric_representation_ptr.Surface()!.Transformed(local_location.Transformation());
                     }
@@ -638,8 +644,8 @@ public static partial class BRepLib
 
     private static void GetEdgeTol(in TopoDS_Edge theEdge, in TopoDS_Face theFace, ref double theEdTol)
     {
-        Geom_Surface? S = BRep_Tool.Surface(theFace, out TopLoc_Location L);
-        TopLoc_Location l = L.Predivided(theEdge.Location());
+        Geom_Surface? S = BRep_Tool.Surface(theFace, out Placement L);
+        Placement l = L.Predivided(theEdge.Location());
 
         BRep_TEdge TE = (BRep_TEdge)theEdge.TShape()!;
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
@@ -669,12 +675,12 @@ public static partial class BRepLib
         var HC = new GeomAdaptor_Curve();
         var HS = new GeomAdaptor_Surface();
 
-        TopLoc_Location LC;
+        Placement LC;
         double First, Last;
         HC.Load(BRep_Tool.Curve(theEdge, out LC, out First, out Last)!);
         LC = L.Predivided(LC);
 
-        if (!LC.IsIdentity())
+        if (!LC.IsIdentity)
         {
             GP = (Geom_Plane)GP!.Transformed(LC.Transformation());
         }
@@ -684,7 +690,7 @@ public static partial class BRepLib
         var Proj = new ProjLib_ProjectedCurve(HS, HC);
         Geom2d_Curve pc = Geom2dAdaptor.MakeCurve(Proj);
 
-        gp_Pln pln = GAS.Plane();
+        Plane3D pln = GAS.Plane();
         double d2 = 0.0;
         int nn = 23;
         double unsurnn = 1.0 / nn;
@@ -692,9 +698,9 @@ public static partial class BRepLib
         {
             double t = unsurnn * i;
             double u = First * (1.0 - t) + Last * t;
-            gp_Pnt Pc3d = HC.Value(u);
-            gp_Pnt2d p2d = pc.Value(u);
-            gp_Pnt Pcons = ElSLib.Value(p2d.X(), p2d.Y(), pln);
+            Point3D Pc3d = HC.Value(u);
+            Point2D p2d = pc.Value(u);
+            Point3D Pcons = global::Kerf.Engine.Geometry.ElSLib.Value(p2d.X(), p2d.Y(), pln);
             double eps = Max(Pc3d.XYZ().SquareModulus(), Pcons.XYZ().SquareModulus());
             eps = Epsilon(eps);
             double temp = Pc3d.SquareDistance(Pcons);
@@ -895,7 +901,7 @@ public static partial class BRepLib
                 continue;
             }
             BS.Initialize(curface);
-            if (BS.GetType() != GeomAbs_Plane)
+            if (BS.GetType() != global::Kerf.Geometry.SurfaceKind.Plane)
             {
                 continue;
             }
@@ -971,7 +977,7 @@ public static partial class BRepLib
         var Projector = new Extrema_LocateExtPC();
         Projector.Initialize(gac, f, l, tol);
         double u, v;
-        gp_Pnt p;
+        Point3D p;
         tolbail = tol;
         for (int i = 1; i <= 5; i++)
         {
@@ -1019,8 +1025,8 @@ public static partial class BRepLib
         {
             double t = IntToReal(i) / IntToReal(nbp);
             double u = first * (1.0 - t) + last * t;
-            gp_Pnt Pc3d = c3d.Value(u);
-            gp_Pnt2d Puv = c2d.Value(u);
+            Point3D Pc3d = c3d.Value(u);
+            Point2D Puv = c2d.Value(u);
             if (!isUPeriodic)
             {
                 if (Puv.X() < uf - du)
@@ -1047,11 +1053,11 @@ public static partial class BRepLib
                     continue;
                 }
             }
-            gp_Pnt Pcons = surf.Value(Puv.X(), Puv.Y());
-            if (Occt.Precision.IsInfinite(Pcons.X()) || Occt.Precision.IsInfinite(Pcons.Y())
-                || Occt.Precision.IsInfinite(Pcons.Z()))
+            Point3D Pcons = surf.Value(Puv.X(), Puv.Y());
+            if (Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.X()) || Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Y())
+                || Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Z()))
             {
-                d2 = Occt.Precision.Infinite();
+                d2 = Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
             double temp = Pc3d.SquareDistance(Pcons);
@@ -1061,7 +1067,7 @@ public static partial class BRepLib
             d2 = Max(d2, temp);
         }
 
-        if (Occt.Precision.IsInfinite(d2))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(d2))
         {
             return d2;
         }
@@ -1124,7 +1130,7 @@ public static partial class BRepLib
                                    ref Geom_Curve? theC3d,
                                    ref double theF3d,
                                    ref double theL3d,
-                                   ref TopLoc_Location theLoc3d,
+                                   ref Placement theLoc3d,
                                    out NCollection_List<BRep_CurveRepresentation> theCList)
     {
         BRep_TEdge aTE = (BRep_TEdge)theEdge.TShape()!;
@@ -1164,7 +1170,7 @@ public static partial class BRepLib
     // tolerant it would change nothing but the Modified cache bit: skipped, rather than throwing.
     private static bool isUnchangedFrozen(in TopoDS_Vertex theV, double theTol)
     {
-        return theV.TShape()!.IsFrozen() && theTol <= BRep_Tool.Tolerance(theV);
+        return theV.TShape()!.IsFrozen && theTol <= BRep_Tool.Tolerance(theV);
     }
 
     //=================================================================================================
@@ -1202,7 +1208,7 @@ public static partial class BRepLib
             return new TopoDS_Edge();
         }
         double f3d = 0.0, l3d = 0.0;
-        TopLoc_Location L3d = new();
+        Placement L3d = new();
         Geom_Curve? C3d = null;
         NCollection_List<BRep_CurveRepresentation> CList;
         GetCurve3d(theEdge, ref C3d, ref f3d, ref l3d, ref L3d, out CList);
@@ -1271,7 +1277,7 @@ public static partial class BRepLib
             }
             // modified by NIZHNY-OCC486  Tue Aug 27 17:17:55 2002 .
         }
-        if (!L3d.IsIdentity())
+        if (!L3d.IsIdentity)
         {
             C3d = (Geom_Curve)C3d.Transformed(L3d.Transformation());
         }
@@ -1302,9 +1308,9 @@ public static partial class BRepLib
             {
                 YaPCu = true;
                 PC[0] = GCurve.PCurve();
-                TopLoc_Location PCLoc = GCurve.Location();
+                Placement PCLoc = GCurve.Location();
                 S = GCurve.Surface();
-                if (!PCLoc.IsIdentity())
+                if (!PCLoc.IsIdentity)
                 {
                     S = (Geom_Surface)S!.Transformed(PCLoc.Transformation());
                 }
@@ -1316,7 +1322,7 @@ public static partial class BRepLib
                 }
 
                 // Eval tol2d to compute SameRange
-                double TolSameRange = Max(GAC.Resolution(theTolerance), Occt.Precision.PConfusion());
+                double TolSameRange = Max(GAC.Resolution(theTolerance), Kerf.Engine.Foundation.Precision.PConfusion());
                 for (int i = 0; i < 2; i++)
                 {
                     Geom2d_Curve? curPC = PC[i];
@@ -1342,26 +1348,26 @@ public static partial class BRepLib
                         break;
                     }
 
-                    if (GAC2d.GetType() == GeomAbs_BSplineCurve && GAC2d.Continuity() == GeomAbs_C0)
+                    if (GAC2d.GetType() == BSplineCurve && GAC2d.Continuity() == C0)
                     {
                         double UResol = GAS.UResolution(theTolerance);
                         double VResol = GAS.VResolution(theTolerance);
                         double TolConf2d = Min(UResol, VResol);
-                        TolConf2d = Max(TolConf2d, Occt.Precision.PConfusion());
+                        TolConf2d = Max(TolConf2d, Kerf.Engine.Foundation.Precision.PConfusion());
                         Geom2d_BSplineCurve bs2d = GAC2d.BSpline();
                         Geom2d_BSplineCurve bs2dsov = bs2d;
                         double fC0 = bs2d.FirstParameter(), lC0 = bs2d.LastParameter();
                         bool repar = true;
-                        gp_Pnt2d OriginPoint;
+                        Point2D OriginPoint;
                         bs2d.D0(fC0, out OriginPoint);
                         Geom2dConvert.C0BSplineToC1BSplineCurve(ref bs2d, TolConf2d);
                         isBSP = true;
 
                         if (bs2d.IsPeriodic())
                         { // -------- IFV, Jan 2000
-                            bs2d.D0(bs2d.FirstParameter(), out gp_Pnt2d NewOriginPoint);
-                            if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Occt.Precision.PConfusion()
-                                || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Occt.Precision.PConfusion())
+                            bs2d.D0(bs2d.FirstParameter(), out Point2D NewOriginPoint);
+                            if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
 
                                 PackedList<double> Knotbs2d = bs2d.Knots();
@@ -1369,8 +1375,8 @@ public static partial class BRepLib
                                 for (int Index = 1; Index <= bs2d.NbKnots(); Index++)
                                 {
                                     bs2d.D0(Knotbs2d[Index - 1], out NewOriginPoint);
-                                    if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Occt.Precision.PConfusion()
-                                        || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Occt.Precision.PConfusion())
+                                    if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                        || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
                                         continue;
                                     }
@@ -1381,7 +1387,7 @@ public static partial class BRepLib
                             }
                         }
 
-                        if (bs2d.Continuity() == GeomAbs_C0)
+                        if (bs2d.Continuity() == C0)
                         {
                             if (EvalTol(curPC!, S!, GAC, theTolerance, out double tolbail))
                             {
@@ -1392,8 +1398,8 @@ public static partial class BRepLib
                                 bs2d.D0(bs2d.FirstParameter(), out OriginPoint);
 
                                 int nbp = bs2d.NbPoles();
-                                gp_Pnt2d p = bs2d.Pole(1), p1;
-                                double d = Occt.Precision.Infinite();
+                                Point2D p = bs2d.Pole(1), p1;
+                                double d = Kerf.Engine.Foundation.Precision.Infinite();
                                 for (int ip = 2; ip <= nbp; ip++)
                                 {
                                     p1 = bs2d.Pole(ip);
@@ -1408,9 +1414,9 @@ public static partial class BRepLib
 
                                 if (bs2d.IsPeriodic())
                                 { // -------- IFV, Jan 2000
-                                    bs2d.D0(bs2d.FirstParameter(), out gp_Pnt2d NewOriginPoint);
-                                    if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Occt.Precision.PConfusion()
-                                        || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Occt.Precision.PConfusion())
+                                    bs2d.D0(bs2d.FirstParameter(), out Point2D NewOriginPoint);
+                                    if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                        || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
 
                                         PackedList<double> Knotbs2d = bs2d.Knots();
@@ -1418,8 +1424,8 @@ public static partial class BRepLib
                                         for (int Index = 1; Index <= bs2d.NbKnots(); Index++)
                                         {
                                             bs2d.D0(Knotbs2d[Index - 1], out NewOriginPoint);
-                                            if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Occt.Precision.PConfusion()
-                                                || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Occt.Precision.PConfusion())
+                                            if (Math.Abs(OriginPoint.X() - NewOriginPoint.X()) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                                || Math.Abs(OriginPoint.Y() - NewOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                                             {
                                                 continue;
                                             }
@@ -1430,7 +1436,7 @@ public static partial class BRepLib
                                     }
                                 }
 
-                                if (bs2d.Continuity() == GeomAbs_C0)
+                                if (bs2d.Continuity() == C0)
                                 {
                                     goodpc = true;
                                     bs2d = bs2dsov;
@@ -1450,7 +1456,7 @@ public static partial class BRepLib
                                 var Knots = new NCollection_Array1<double>(1, bs2d.NbKnots());
                                 bs2d.Knots(Knots);
                                 //	    BSplCLib::Reparametrize(f3d,l3d,Knots);
-                                BSplCLib.Reparametrize(fC0, lC0, Knots);
+                                global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(fC0, lC0, Knots);
                                 bs2d.SetKnots(Knots);
                                 GAC2d.Load(bs2d, f3d, l3d);
                                 curPC = bs2d;
@@ -1473,10 +1479,10 @@ public static partial class BRepLib
                             }
 
                             // check, if new BSpline "good" or not --------- IFV, Jan of 2000
-                            GeomAbs_Shape cont = bs2d.Continuity();
+                            Continuity cont = bs2d.Continuity();
                             bool IsBad = false;
 
-                            if (cont > GeomAbs_C0 && error > Max(1.0e-3, theTolerance))
+                            if (cont > C0 && error > Max(1.0e-3, theTolerance))
                             {
                                 int NbKnots = bs2d.NbKnots();
                                 double critratio = 10.0;
@@ -1523,9 +1529,9 @@ public static partial class BRepLib
                               // by its curve length
 
                                 //	      GeomAbs_Shape cont = bs2d->Continuity();
-                                if (cont > GeomAbs_C2)
+                                if (cont > C2)
                                 {
-                                    cont = GeomAbs_C2;
+                                    cont = C2;
                                 }
                                 int maxdeg = bs2d.Degree();
                                 if (maxdeg == 1)
@@ -1551,7 +1557,7 @@ public static partial class BRepLib
                                         var Knots = new NCollection_Array1<double>(1, bs2d.NbKnots());
                                         bs2d.Knots(Knots);
                                         //		  BSplCLib::Reparametrize(f3d,l3d,Knots);
-                                        BSplCLib.Reparametrize(fC0, lC0, Knots);
+                                        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(fC0, lC0, Knots);
                                         bs2d.SetKnots(Knots);
                                         GAC2d.Load(bs2d, f3d, l3d);
                                         curPC = bs2d;
@@ -1665,7 +1671,7 @@ public static partial class BRepLib
             if (YaPCu)
             {
                 // Avoid setting too small tolerances.
-                maxdist = Max(maxdist, Occt.Precision.Confusion());
+                maxdist = Max(maxdist, Kerf.Engine.Foundation.Precision.Confusion());
                 theNewTol = maxdist;
                 aNTE.Modified(true);
                 aNTE.Tolerance(maxdist);
@@ -1692,7 +1698,7 @@ public static partial class BRepLib
             // Set tolerance to its minimum value
             Geom_Surface? S;
             var ex = new TopExp_Explorer();
-            var aB = new Bnd_Box();
+            var aB = new Box();
             double aXmin, aYmin, aZmin, aXmax, aYmax, aZmax, dMax;
             for (ex.Init(theOldShape, TopAbs_FACE); ex.More(); ex.Next())
             {
@@ -1709,36 +1715,36 @@ public static partial class BRepLib
                     var AS = new GeomAdaptor_Surface(S);
                     switch (AS.GetType())
                     {
-                        case GeomAbs_Plane:
-                        case GeomAbs_Cylinder:
-                        case GeomAbs_Cone:
+                        case global::Kerf.Geometry.SurfaceKind.Plane:
+                        case SurfaceKind.Cylinder:
+                        case SurfaceKind.Cone:
                             {
-                                tol = Occt.Precision.Confusion();
+                                tol = Kerf.Engine.Foundation.Precision.Confusion();
                                 break;
                             }
-                        case GeomAbs_Sphere:
-                        case GeomAbs_Torus:
+                        case SurfaceKind.Sphere:
+                        case SurfaceKind.Torus:
                             {
-                                tol = Occt.Precision.Confusion() * 2;
+                                tol = Kerf.Engine.Foundation.Precision.Confusion() * 2;
                                 break;
                             }
                         default:
-                            tol = Occt.Precision.Confusion() * 4;
+                            tol = Kerf.Engine.Foundation.Precision.Confusion() * 4;
                             break;
                     }
-                    if (!aB.IsWhole())
+                    if (!aB.IsWhole)
                     {
                         aB.Get(out aXmin, out aYmin, out aZmin, out aXmax, out aYmax, out aZmax);
                         dMax = 1.0;
-                        if (!aB.IsOpenXmin() && !aB.IsOpenXmax())
+                        if (!aB.IsOpenXmin && !aB.IsOpenXmax)
                         {
                             dMax = aXmax - aXmin;
                         }
-                        if (!aB.IsOpenYmin() && !aB.IsOpenYmax())
+                        if (!aB.IsOpenYmin && !aB.IsOpenYmax)
                         {
                             aYmin = aYmax - aYmin;
                         }
-                        if (!aB.IsOpenZmin() && !aB.IsOpenZmax())
+                        if (!aB.IsOpenZmin && !aB.IsOpenZmax)
                         {
                             aZmin = aZmax - aZmin;
                         }
@@ -1805,9 +1811,9 @@ public static partial class BRepLib
         {
             tol = 0;
             TopoDS_Vertex V = TopoDS.Vertex(parents.FindKey(iCur));
-            gp_Pnt aPV = BRep_Tool.Pnt(V);
+            Point3D aPV = BRep_Tool.Pnt(V);
             double aMaxDist = 0.0;
-            gp_Pnt p3d;
+            Point3D p3d;
             for (lConx.Initialize(parents[iCur]); lConx.More(); lConx.Next())
             {
                 TopoDS_Edge E = TopoDS.Edge(lConx.Value());
@@ -1823,13 +1829,13 @@ public static partial class BRepLib
                 double par = BRep_Tool.Parameter(V, E);
                 BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
                 var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
-                TopLoc_Location Eloc = E.Location();
+                Placement Eloc = E.Location();
                 while (itcr.More())
                 {
                     // For each CurveRepresentation, check the provided parameter
                     BRep_CurveRepresentation cr = itcr.Value();
-                    TopLoc_Location loc = cr.Location();
-                    TopLoc_Location L = (Eloc * loc);
+                    Placement loc = cr.Location();
+                    Placement L = (Eloc * loc);
                     if (cr.IsCurve3D())
                     {
                         Geom_Curve? C = cr.Curve3D();
@@ -1853,7 +1859,7 @@ public static partial class BRepLib
                         {
                             PC2 = cr.PCurve2();
                         }
-                        gp_Pnt2d p2d = PC.Value(par);
+                        Point2D p2d = PC.Value(par);
                         p3d = Su.Value(p2d.X(), p2d.Y());
                         p3d.Transform(L.Transformation());
                         double aDist = p3d.SquareDistance(aPV);
@@ -1950,7 +1956,7 @@ public static partial class BRepLib
             TopExp.Vertices(anEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
             BRep_Tool.Range(anEdge, out double fpar, out double lpar);
             double TolEdge = BRep_Tool.Tolerance(anEdge);
-            gp_Pnt Pnt1 = new(), Pnt2 = new();
+            Point3D Pnt1 = new(), Pnt2 = new();
             var anHCurve = new BRepAdaptor_Curve();
             anHCurve.Initialize(anEdge);
             if (!V1.IsNull())
@@ -1983,12 +1989,12 @@ public static partial class BRepLib
                     for (int k = 0; k <= NbSamples; k++)
                     {
                         double ParamOnCenter = (k == NbSamples) ? lpar : fpar + k * delta;
-                        gp_Pnt Center = theRep[1].Value(ParamOnCenter);
+                        Point3D Center = theRep[1].Value(ParamOnCenter);
                         double ParamOnCurve =
                           (BRep_Tool.SameParameter(anEdge))
                             ? ParamOnCenter
                             : ((k == 0) ? theRep[j].FirstParameter() : theRep[j].LastParameter());
-                        gp_Pnt aPoint = theRep[j].Value(ParamOnCurve);
+                        Point3D aPoint = theRep[j].Value(ParamOnCurve);
                         double aDist = Center.Distance(aPoint);
                         // aDist *= 1.1;
                         aDist += 2.0 * Epsilon(aDist);
@@ -2017,14 +2023,14 @@ public static partial class BRepLib
             TolEdge = BRep_Tool.Tolerance(anEdge);
             if (!V1.IsNull())
             {
-                gp_Pnt End1 = anHCurve.Value(fpar);
+                Point3D End1 = anHCurve.Value(fpar);
                 double dist1 = Pnt1.Distance(End1);
                 dist1 += 2.0 * Epsilon(dist1);
                 BB.UpdateVertex(V1, Max(dist1, TolEdge));
             }
             if (!V2.IsNull())
             {
-                gp_Pnt End2 = anHCurve.Value(lpar);
+                Point3D End2 = anHCurve.Value(lpar);
                 double dist2 = Pnt2.Distance(End2);
                 dist2 += 2.0 * Epsilon(dist2);
                 BB.UpdateVertex(V2, Max(dist2, TolEdge));
@@ -2042,7 +2048,7 @@ public static partial class BRepLib
     {
         // Set material inside the solid
         var where = new BRepClass3d_SolidClassifier(solid);
-        where.PerformInfinitePoint(Occt.Precision.Confusion());
+        where.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
         if (where.State() == TopAbs_IN)
         {
             solid.Reverse();
@@ -2059,40 +2065,40 @@ public static partial class BRepLib
     private sealed class SurfaceProperties
     {
         private readonly GeomLProp_SLProps mySurfaceProps; // properties calculator
-        private readonly gp_Trsf mySurfaceTrsf;
+        private readonly Transform3D mySurfaceTrsf;
         private readonly Geom2d_Curve myCurve2d;
         private readonly bool myIsReversed; // the face based on the surface is reversed
 
         // tangent vector to Pcurve in UV
-        private gp_Vec2d myCurveTangent;
+        private Vector2D myCurveTangent;
 
-        public SurfaceProperties(Geom_Surface theSurface, in gp_Trsf theSurfaceTrsf, Geom2d_Curve theCurve2D, bool theReversed)
+        public SurfaceProperties(Geom_Surface theSurface, in Transform3D theSurfaceTrsf, Geom2d_Curve theCurve2D, bool theReversed)
         {
-            mySurfaceProps = new GeomLProp_SLProps(theSurface, 2, Occt.Precision.Confusion());
+            mySurfaceProps = new GeomLProp_SLProps(theSurface, 2, Kerf.Engine.Foundation.Precision.Confusion());
             mySurfaceTrsf = theSurfaceTrsf;
             myCurve2d = theCurve2D;
             myIsReversed = theReversed;
-            myCurveTangent = new gp_Vec2d();
+            myCurveTangent = new Vector2D();
         }
 
         // Calculate derivatives on surface related to the point on curve
         public void Calculate(double theParamOnCurve)
         {
-            myCurve2d.D1(theParamOnCurve, out gp_Pnt2d aUV, out myCurveTangent);
+            myCurve2d.D1(theParamOnCurve, out Point2D aUV, out myCurveTangent);
             mySurfaceProps.SetParameters(aUV.X(), aUV.Y());
         }
 
         // Returns point just calculated
-        public gp_Pnt Value() => mySurfaceProps.Value().Transformed(mySurfaceTrsf);
+        public Point3D Value() => mySurfaceProps.Value().Transformed(mySurfaceTrsf);
 
         // Calculate a derivative orthogonal to curve's tangent vector
-        public gp_Vec Derivative()
+        public Vector3D Derivative()
         {
-            var aDeriv = new gp_Vec();
+            var aDeriv = new Vector3D();
             // direction orthogonal to tangent vector of the curve
-            var anOrtho = new gp_Vec2d(-myCurveTangent.Y(), myCurveTangent.X());
+            var anOrtho = new Vector2D(-myCurveTangent.Y(), myCurveTangent.X());
             double aLen = anOrtho.Magnitude();
-            if (aLen < Occt.Precision.Confusion())
+            if (aLen < Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return aDeriv;
             }
@@ -2106,15 +2112,15 @@ public static partial class BRepLib
             return aDeriv.Transformed(mySurfaceTrsf);
         }
 
-        public gp_Dir Normal()
+        public Direction3D Normal()
         {
-            gp_Dir aNormal = mySurfaceProps.Normal();
+            Direction3D aNormal = mySurfaceProps.Normal();
             return aNormal.Transformed(mySurfaceTrsf);
         }
 
         // Calculate principal curvatures, which consist of minimal and maximal normal curvatures and
         // the directions on the tangent plane (principal direction) where the extremums are reached
-        public void Curvature(out gp_Dir thePrincipalDir1, out double theCurvature1, out gp_Dir thePrincipalDir2, out double theCurvature2)
+        public void Curvature(out Direction3D thePrincipalDir1, out double theCurvature1, out Direction3D thePrincipalDir2, out double theCurvature2)
         {
             mySurfaceProps.CurvatureDirections(out thePrincipalDir1, out thePrincipalDir2);
             theCurvature1 = mySurfaceProps.MaxCurvature();
@@ -2124,7 +2130,7 @@ public static partial class BRepLib
                 theCurvature1 = -theCurvature1;
                 theCurvature2 = -theCurvature2;
             }
-            if (mySurfaceTrsf.IsNegative())
+            if (mySurfaceTrsf.IsNegative)
             {
                 theCurvature1 = -theCurvature1;
                 theCurvature2 = -theCurvature2;
@@ -2139,7 +2145,7 @@ public static partial class BRepLib
     /// The order of continuity between two faces connected by an edge (the angular tolerance in radians). A seam
     /// edge (both faces the same) on an elementary surface is CN.
     /// </summary>
-    public static GeomAbs_Shape ContinuityOfFaces(in TopoDS_Edge theEdge,
+    public static Continuity ContinuityOfFaces(in TopoDS_Edge theEdge,
                                                   in TopoDS_Face theFace1,
                                                   in TopoDS_Face theFace2,
                                                   double theAngleTol)
@@ -2169,7 +2175,7 @@ public static partial class BRepLib
             }
             if (anEdgeInFace1.IsNull())
             {
-                return GeomAbs_C0;
+                return C0;
             }
 
             aCurve1 = BRep_Tool.CurveOnSurface(anEdgeInFace1, aFace1, out aFirst, out aLast);
@@ -2194,13 +2200,13 @@ public static partial class BRepLib
 
         if (aCurve1 is null || aCurve2 is null)
         {
-            return GeomAbs_C0;
+            return C0;
         }
 
-        Geom_Surface aSurface1 = BRep_Tool.Surface(theFace1, out TopLoc_Location aLoc1)!;
-        gp_Trsf aSurf1Trsf = aLoc1.Transformation();
-        Geom_Surface aSurface2 = BRep_Tool.Surface(theFace2, out TopLoc_Location aLoc2)!;
-        gp_Trsf aSurf2Trsf = aLoc2.Transformation();
+        Geom_Surface aSurface1 = BRep_Tool.Surface(theFace1, out Placement aLoc1)!;
+        Transform3D aSurf1Trsf = aLoc1.Transformation();
+        Geom_Surface aSurface2 = BRep_Tool.Surface(theFace2, out Placement aLoc2)!;
+        Transform3D aSurf2Trsf = aLoc2.Transformation();
 
         if (aSurface1 is Geom_RectangularTrimmedSurface aTS1)
         {
@@ -2215,7 +2221,7 @@ public static partial class BRepLib
         bool isElementary = (aSurface1 is Geom_ElementarySurface && aSurface2 is Geom_ElementarySurface);
         if (isSeam && isElementary)
         {
-            return GeomAbs_CN;
+            return CN;
         }
 
         var aSP1 = new SurfaceProperties(aSurface1, aSurf1Trsf, aCurve1, theFace1.Orientation() == TopAbs_REVERSED);
@@ -2232,17 +2238,17 @@ public static partial class BRepLib
 
         double anAngleTol2 = theAngleTol * theAngleTol;
 
-        gp_Vec aDer1, aDer2;
+        Vector3D aDer1, aDer2;
         double aSqLen1, aSqLen2;
-        var aCrvDir1 = new gp_Dir[2];
-        var aCrvDir2 = new gp_Dir[2];
+        var aCrvDir1 = new Direction3D[2];
+        var aCrvDir2 = new Direction3D[2];
         Span<double> aCrvLen1 = stackalloc double[2];
         Span<double> aCrvLen2 = stackalloc double[2];
 
-        GeomAbs_Shape aCont = (isElementary ? GeomAbs_CN : GeomAbs_C2);
-        GeomAbs_Shape aCurCont;
+        Continuity aCont = (isElementary ? CN : C2);
+        Continuity aCurCont;
         double u;
-        for (int i = 0; i <= 20 && aCont > GeomAbs_C0; i++)
+        for (int i = 0; i <= 20 && aCont > C0; i++)
         {
             // First suppose that this is sameParameter
             u = f + (l - f) * i / 20;
@@ -2252,7 +2258,7 @@ public static partial class BRepLib
             //   orthogonal to curve's tangent vector
             // * continuity is C1 if the vectors are equal
             // * continuity is G1 if the vectors are just parallel
-            aCurCont = GeomAbs_C0;
+            aCurCont = C0;
 
             aSP1.Calculate(u);
             aSP2.Calculate(u);
@@ -2264,12 +2270,12 @@ public static partial class BRepLib
             bool isSmoothSuspect = (aDer1.CrossSquareMagnitude(aDer2) <= anAngleTol2 * aSqLen1 * aSqLen2);
             if (isSmoothSuspect)
             {
-                gp_Dir aNormal1 = aSP1.Normal();
+                Direction3D aNormal1 = aSP1.Normal();
                 if (theFace1.Orientation() == TopAbs_REVERSED)
                 {
                     aNormal1.Reverse();
                 }
-                gp_Dir aNormal2 = aSP2.Normal();
+                Direction3D aNormal2 = aSP2.Normal();
                 if (theFace2.Orientation() == TopAbs_REVERSED)
                 {
                     aNormal2.Reverse();
@@ -2277,7 +2283,7 @@ public static partial class BRepLib
 
                 if (aNormal1 * aNormal2 < 0.0)
                 {
-                    return GeomAbs_C0;
+                    return C0;
                 }
             }
 
@@ -2288,7 +2294,7 @@ public static partial class BRepLib
                 {
                     // adaptor for pcurve on the second surface
                     aHC2 = new BRepAdaptor_Curve(anEdgeInFace2, theFace2);
-                    ext.Initialize(aHC2, f, l, Occt.Precision.PConfusion());
+                    ext.Initialize(aHC2, f, l, Kerf.Engine.Foundation.Precision.PConfusion());
                 }
                 ext.Perform(aSP1.Value(), u);
                 if (ext.IsDone() && ext.IsMin())
@@ -2302,19 +2308,19 @@ public static partial class BRepLib
             }
             if (isSmoothSuspect)
             {
-                aCurCont = GeomAbs_G1;
-                if (Math.Abs(Math.Sqrt(aSqLen1) - Math.Sqrt(aSqLen2)) < Occt.Precision.Confusion()
-                    && aDer1.Dot(aDer2) > Occt.Precision.SquareConfusion())
+                aCurCont = G1;
+                if (Math.Abs(Math.Sqrt(aSqLen1) - Math.Sqrt(aSqLen2)) < Kerf.Engine.Foundation.Precision.Confusion()
+                    && aDer1.Dot(aDer2) > Kerf.Engine.Foundation.Precision.SquareConfusion())
                 { // <= check vectors are codirectional
-                    aCurCont = GeomAbs_C1;
+                    aCurCont = C1;
                 }
             }
             else
             {
-                return GeomAbs_C0;
+                return C0;
             }
 
-            if (aCont < GeomAbs_G2)
+            if (aCont < G2)
             {
                 continue; // no need further processing, because maximal continuity is less than G2
             }
@@ -2328,19 +2334,19 @@ public static partial class BRepLib
             aSP2.Curvature(out aCrvDir2[0], out aCrvLen2[0], out aCrvDir2[1], out aCrvLen2[1]);
             for (int aStep = 0; aStep <= 1; ++aStep)
             {
-                if (aCrvDir1[0].XYZ().CrossSquareMagnitude(aCrvDir2[aStep].XYZ()) <= Occt.Precision.SquareConfusion()
-                    && Math.Abs(aCrvLen1[0] - aCrvLen2[aStep]) < Occt.Precision.Confusion()
-                    && aCrvDir1[1].XYZ().CrossSquareMagnitude(aCrvDir2[1 - aStep].XYZ()) <= Occt.Precision.SquareConfusion()
-                    && Math.Abs(aCrvLen1[1] - aCrvLen2[1 - aStep]) < Occt.Precision.Confusion())
+                if (aCrvDir1[0].XYZ().CrossSquareMagnitude(aCrvDir2[aStep].XYZ()) <= Kerf.Engine.Foundation.Precision.SquareConfusion()
+                    && Math.Abs(aCrvLen1[0] - aCrvLen2[aStep]) < Kerf.Engine.Foundation.Precision.Confusion()
+                    && aCrvDir1[1].XYZ().CrossSquareMagnitude(aCrvDir2[1 - aStep].XYZ()) <= Kerf.Engine.Foundation.Precision.SquareConfusion()
+                    && Math.Abs(aCrvLen1[1] - aCrvLen2[1 - aStep]) < Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    if (aCurCont == GeomAbs_C1 && aCrvDir1[0].Dot(aCrvDir2[aStep]) > Occt.Precision.Confusion()
-                        && aCrvDir1[1].Dot(aCrvDir2[1 - aStep]) > Occt.Precision.Confusion())
+                    if (aCurCont == C1 && aCrvDir1[0].Dot(aCrvDir2[aStep]) > Kerf.Engine.Foundation.Precision.Confusion()
+                        && aCrvDir1[1].Dot(aCrvDir2[1 - aStep]) > Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        aCurCont = GeomAbs_C2;
+                        aCurCont = C2;
                     }
                     else
                     {
-                        aCurCont = GeomAbs_G2;
+                        aCurCont = G2;
                     }
                     break;
                 }
@@ -2354,9 +2360,9 @@ public static partial class BRepLib
 
         // according to the list of supported elementary surfaces,
         // if the continuity is C2, than it is totally CN
-        if (isElementary && aCont == GeomAbs_C2)
+        if (isElementary && aCont == C2)
         {
-            aCont = GeomAbs_CN;
+            aCont = CN;
         }
         return aCont;
     }
@@ -2374,7 +2380,7 @@ public static partial class BRepLib
                                          NCollection_Map<TopoDS_Shape>? theEdgesToEncode = null)
     {
         TopoDS_Shape aShape = theShape;
-        var aNullLoc = new TopLoc_Location();
+        var aNullLoc = new Placement();
         aShape.Location(aNullLoc); // nullify location
         if (!theMap.Add(aShape))
         {
@@ -2449,7 +2455,7 @@ public static partial class BRepLib
                 }
             }
         }
-        catch (Standard_Failure anException) when (anException is not TopoDS_LockedShape) // OCCT.NET: frozen
+        catch (FailureException anException) when (anException is not TopoDS_LockedShape) // OCCT.NET: frozen
         {
         }
     }
@@ -2472,7 +2478,7 @@ public static partial class BRepLib
     {
         // Collect edges without location and orientation
         var aPureEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        var aNullLoc = new TopLoc_Location();
+        var aNullLoc = new Placement();
         var anEdgeIt = new NCollection_List<TopoDS_Shape>.Iterator(LE);
         for (; anEdgeIt.More(); anEdgeIt.Next())
         {
@@ -2493,16 +2499,16 @@ public static partial class BRepLib
     internal static void EncodeRegularity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2, double TolAng = 1.0e-10)
     {
         var B = new BRep_Builder();
-        if (BRep_Tool.Continuity(E, F1, F2) <= GeomAbs_C0)
+        if (BRep_Tool.Continuity(E, F1, F2) <= C0)
         {
             try
             {
-                GeomAbs_Shape aCont = ContinuityOfFaces(E, F1, F2, TolAng);
+                Continuity aCont = ContinuityOfFaces(E, F1, F2, TolAng);
                 B.Continuity(E, F1, F2, aCont);
             }
             // OCCT.NET: frozen. OCCT swallows the TopoDS_LockedShape of a locked edge; a frozen one is a write into a
             // shape the caller holds, which must not pass silently.
-            catch (Standard_Failure) when (!E.TShape()!.IsFrozen())
+            catch (FailureException) when (!E.TShape()!.IsFrozen)
             {
             }
         }
@@ -2520,20 +2526,20 @@ public static partial class BRepLib
     /// </remarks>
     private sealed class WritableTriangulations
     {
-        private readonly Dictionary<Poly_Triangulation, Poly_Triangulation> myCopies = new(ReferenceEqualityComparer.Instance);
+        private readonly Dictionary<Triangulation, Triangulation> myCopies = new(ReferenceEqualityComparer.Instance);
 
         // The triangulation to read: the copy if one was made.
-        public Poly_Triangulation Read(Poly_Triangulation theT)
-            => myCopies.TryGetValue(theT, out Poly_Triangulation? aCopy) ? aCopy : theT;
+        public Triangulation Read(Triangulation theT)
+            => myCopies.TryGetValue(theT, out Triangulation? aCopy) ? aCopy : theT;
 
         // The triangulation to write into: a copy of a frozen one.
-        public Poly_Triangulation Write(Poly_Triangulation theT)
+        public Triangulation Write(Triangulation theT)
         {
-            if (myCopies.TryGetValue(theT, out Poly_Triangulation? aCopy))
+            if (myCopies.TryGetValue(theT, out Triangulation? aCopy))
             {
                 return aCopy;
             }
-            if (!theT.IsFrozen())
+            if (!theT.IsFrozen)
             {
                 return theT;
             }
@@ -2558,8 +2564,8 @@ public static partial class BRepLib
                     continue;
                 }
                 var aTF = (BRep_TFace)aFace.TShape()!;
-                Poly_Triangulation? anOld = aTF.ActiveTriangulation();
-                if (anOld is null || !myCopies.TryGetValue(anOld, out Poly_Triangulation? aNew))
+                Triangulation? anOld = aTF.ActiveTriangulation();
+                if (anOld is null || !myCopies.TryGetValue(anOld, out Triangulation? aNew))
                 {
                     continue;
                 }
@@ -2574,7 +2580,7 @@ public static partial class BRepLib
                     for (var anIt = new NCollection_List<BRep_CurveRepresentation>.Iterator(aTE.ChangeCurves()); anIt.More(); anIt.Next())
                     {
                         BRep_CurveRepresentation aCR = anIt.Value();
-                        if (!aCR.IsPolygonOnTriangulation() || !myCopies.TryGetValue(aCR.Triangulation()!, out Poly_Triangulation? aNewT))
+                        if (!aCR.IsPolygonOnTriangulation() || !myCopies.TryGetValue(aCR.Triangulation()!, out Triangulation? aNewT))
                         {
                             continue;
                         }
@@ -2610,13 +2616,13 @@ public static partial class BRepLib
             {
                 continue;
             }
-            Poly_Triangulation? anAttached = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+            Triangulation? anAttached = BRep_Tool.Triangulation(aFace, out Placement aLoc);
             if (anAttached is null)
             {
                 continue;
             }
-            Poly_Triangulation aPT = aWritable.Read(anAttached);
-            if (!theForceComputeNormals && aPT.HasNormals())
+            Triangulation aPT = aWritable.Read(anAttached);
+            if (!theForceComputeNormals && aPT.HasNormals)
             {
                 isNormalsFound = true;
                 continue;
@@ -2624,10 +2630,10 @@ public static partial class BRepLib
 
             aPT = aWritable.Write(anAttached);
             aPT.AddNormals();
-            var aSLP = new GeomLProp_SLProps(aSurf, 2, Occt.Precision.Confusion());
-            for (int i = 1; i <= aPT.NbNodes(); i++)
+            var aSLP = new GeomLProp_SLProps(aSurf, 2, Kerf.Engine.Foundation.Precision.Confusion());
+            for (int i = 1; i <= aPT.NodeCount; i++)
             {
-                gp_Pnt2d aP2d = aPT.UVNode(i);
+                Point2D aP2d = aPT.UVNode(i);
                 aSLP.SetParameters(aP2d.X(), aP2d.Y());
 
                 if (!aSLP.IsNormalDefined())
@@ -2636,7 +2642,7 @@ public static partial class BRepLib
                 }
                 else
                 {
-                    gp_Dir aNorm = aSLP.Normal();
+                    Direction3D aNorm = aSLP.Normal();
                     if (aFace.Orientation() == TopAbs_REVERSED)
                     {
                         aNorm.Reverse();
@@ -2670,25 +2676,25 @@ public static partial class BRepLib
             TopoDS_Face aFace1 = TopoDS.Face(anItF.Value());
             anItF.Next();
             TopoDS_Face aFace2 = TopoDS.Face(anItF.Value());
-            Poly_Triangulation? anAttached1 = BRep_Tool.Triangulation(aFace1, out TopLoc_Location aLoc1);
-            Poly_Triangulation? anAttached2 = BRep_Tool.Triangulation(aFace2, out TopLoc_Location aLoc2);
+            Triangulation? anAttached1 = BRep_Tool.Triangulation(aFace1, out Placement aLoc1);
+            Triangulation? anAttached2 = BRep_Tool.Triangulation(aFace2, out Placement aLoc2);
 
             if (anAttached1 is null || anAttached2 is null)
             {
                 continue;
             }
-            Poly_Triangulation aPT1 = aWritable.Read(anAttached1);
-            Poly_Triangulation aPT2 = aWritable.Read(anAttached2);
+            Triangulation aPT1 = aWritable.Read(anAttached1);
+            Triangulation aPT2 = aWritable.Read(anAttached2);
 
-            if (!aPT1.HasNormals() || !aPT2.HasNormals())
+            if (!aPT1.HasNormals || !aPT2.HasNormals)
             {
                 continue;
             }
 
             // the edges still refer to the attached triangulations. OCCT dereferences the polygons without a null check
             // (occt-issues.md): an edge with no polygon on one of the triangulations throws here.
-            Poly_PolygonOnTriangulation aPTEF1 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached1, aLoc1)!;
-            Poly_PolygonOnTriangulation aPTEF2 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached2, aLoc2)!;
+            PolygonOnTriangulation aPTEF1 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached1, aLoc1)!;
+            PolygonOnTriangulation aPTEF2 = BRep_Tool.PolygonOnTriangulation(anEdg, anAttached2, aLoc2)!;
 
             if (aPTEF1.Nodes().Lower() != aPTEF2.Nodes().Lower()
                 || aPTEF1.Nodes().Upper() != aPTEF2.Nodes().Upper())
@@ -2706,14 +2712,14 @@ public static partial class BRepLib
                 aPT2 = aWritable.Read(anAttached2);
                 aPT1.Normal(aFNodF1, out NCollection_Vec3<float> aNorm1f);
                 aPT2.Normal(aFNodF2, out NCollection_Vec3<float> aNorm2f);
-                var aNorm1 = new gp_XYZ(aNorm1f.x(), aNorm1f.y(), aNorm1f.z());
-                var aNorm2 = new gp_XYZ(aNorm2f.x(), aNorm2f.y(), aNorm2f.z());
+                var aNorm1 = new Xyz(aNorm1f.X(), aNorm1f.Y(), aNorm1f.Z());
+                var aNorm2 = new Xyz(aNorm2f.X(), aNorm2f.Y(), aNorm2f.Z());
                 double aDot = aNorm1 * aNorm2;
                 if (aDot > aThresDot)
                 {
-                    gp_XYZ aNewNorm = (aNorm1 + aNorm2).Normalized();
-                    aWritable.Write(anAttached1).SetNormal(aFNodF1, new gp_Dir(aNewNorm));
-                    aWritable.Write(anAttached2).SetNormal(aFNodF2, new gp_Dir(aNewNorm));
+                    Xyz aNewNorm = (aNorm1 + aNorm2).Normalized();
+                    aWritable.Write(anAttached1).SetNormal(aFNodF1, new Direction3D(aNewNorm));
+                    aWritable.Write(anAttached2).SetNormal(aFNodF2, new Direction3D(aNewNorm));
                     aRetVal = true;
                 }
             }
@@ -2735,9 +2741,9 @@ public static partial class BRepLib
         }
 
         // Evaluates deflection of the given 2d point from its 3d representation.
-        public double Eval(in gp_Pnt2d thePoint2d, in gp_Pnt thePoint3d)
+        public double Eval(in Point2D thePoint2d, in Point3D thePoint3d)
         {
-            Surface.D0(thePoint2d.X(), thePoint2d.Y(), out gp_Pnt aPnt);
+            Surface.D0(thePoint2d.X(), thePoint2d.Y(), out Point3D aPnt);
             return (thePoint3d.XYZ() - aPnt.XYZ()).SquareModulus();
         }
     }
@@ -2782,13 +2788,13 @@ public static partial class BRepLib
                 continue;
             }
 
-            Poly_Triangulation? anAttached = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+            Triangulation? anAttached = BRep_Tool.Triangulation(aFace, out Placement aLoc);
             if (anAttached is null)
             {
                 continue;
             }
-            Poly_Triangulation aPT = aWritable.Read(anAttached);
-            if (!aPT.HasUVNodes())
+            Triangulation aPT = aWritable.Read(anAttached);
+            if (!aPT.HasUVNodes)
             {
                 continue;
             }
@@ -2803,7 +2809,7 @@ public static partial class BRepLib
                 TopoDS_Edge aEdge = TopoDS.Edge(anExpEdge.Current());
                 if (BRep_Tool.Degenerated(aEdge))
                 {
-                    Poly_PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(aEdge, anAttached, aLoc);
+                    PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(aEdge, anAttached, aLoc);
                     if (aPolygon is null)
                     {
                         continue;
@@ -2819,12 +2825,12 @@ public static partial class BRepLib
             var aTool = new EvalDeflection(aFace);
             var aLinks = new NCollection_Map<Link>();
             double aSqDeflection = 0.0;
-            gp_Trsf aTrsf = aLoc.Transformation();
-            var aP3d = new gp_Pnt[3];
-            var aP2d = new gp_Pnt2d[3];
-            for (int aTriIt = 1; aTriIt <= aPT.NbTriangles(); ++aTriIt)
+            Transform3D aTrsf = aLoc.Transformation();
+            var aP3d = new Point3D[3];
+            var aP2d = new Point2D[3];
+            for (int aTriIt = 1; aTriIt <= aPT.TriangleCount; ++aTriIt)
             {
-                Poly_Triangle aTriangle = aPT.Triangle(aTriIt);
+                Triangle1 aTriangle = aPT.Triangle(aTriIt);
 
                 aTriangle.Get(out aNode[0], out aNode[1], out aNode[2]);
                 if (aDegNodes.Contains(aNode[0]) || aDegNodes.Contains(aNode[1]) || aDegNodes.Contains(aNode[2]))
@@ -2841,8 +2847,8 @@ public static partial class BRepLib
                 aP2d[2] = aPT.UVNode(aNode[2]);
 
                 // Check midpoint of triangle.
-                var aMid3d_t = new gp_Pnt((aP3d[0].XYZ() + aP3d[1].XYZ() + aP3d[2].XYZ()) / 3.0);
-                var aMid2d_t = new gp_Pnt2d((aP2d[0].XY() + aP2d[1].XY() + aP2d[2].XY()) / 3.0);
+                var aMid3d_t = new Point3D((aP3d[0].XYZ() + aP3d[1].XYZ() + aP3d[2].XYZ()) / 3.0);
+                var aMid2d_t = new Point2D((aP2d[0].XY() + aP2d[1].XY() + aP2d[2].XY()) / 3.0);
 
                 aSqDeflection = Max(aSqDeflection, aTool.Eval(aMid2d_t, aMid3d_t));
 
@@ -2853,14 +2859,14 @@ public static partial class BRepLib
                     if (!aLinks.Add(aLink))
                     {
                         // Do not estimate boundary links due to high distortions at the edge.
-                        gp_Pnt aP3d1 = aP3d[i];
-                        gp_Pnt aP3d2 = aP3d[j];
+                        Point3D aP3d1 = aP3d[i];
+                        Point3D aP3d2 = aP3d[j];
 
-                        gp_Pnt2d aP2d1 = aP2d[i];
-                        gp_Pnt2d aP2d2 = aP2d[j];
+                        Point2D aP2d1 = aP2d[i];
+                        Point2D aP2d2 = aP2d[j];
 
-                        var aMid3d_l = new gp_Pnt((aP3d1.XYZ() + aP3d2.XYZ()) / 2.0);
-                        var aMid2d_l = new gp_Pnt2d((aP2d1.XY() + aP2d2.XY()) / 2.0);
+                        var aMid3d_l = new Point3D((aP3d1.XYZ() + aP3d2.XYZ()) / 2.0);
+                        var aMid2d_l = new Point2D((aP2d1.XY() + aP2d2.XY()) / 2.0);
 
                         aSqDeflection = Max(aSqDeflection, aTool.Eval(aMid2d_l, aMid3d_l));
                     }
@@ -2896,19 +2902,19 @@ public static partial class BRepLib
                 var AS = new GeomAdaptor_Surface(S);
                 switch (AS.GetType())
                 {
-                    case GeomAbs_Plane:
+                    case global::Kerf.Geometry.SurfaceKind.Plane:
                         LPlan.Append(F);
                         break;
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                         LCyl.Append(F);
                         break;
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                         LCon.Append(F);
                         break;
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                         LSphere.Append(F);
                         break;
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                         LTor.Append(F);
                         break;
                     default:
@@ -2957,19 +2963,19 @@ public static partial class BRepLib
                 var AS = new GeomAdaptor_Surface(S);
                 switch (AS.GetType())
                 {
-                    case GeomAbs_Plane:
+                    case global::Kerf.Geometry.SurfaceKind.Plane:
                         LPlan.Append(F);
                         break;
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                         LCyl.Append(F);
                         break;
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                         LCon.Append(F);
                         break;
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                         LSphere.Append(F);
                         break;
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                         LTor.Append(F);
                         break;
                     default:
@@ -3014,7 +3020,7 @@ public static partial class BRepLib
     /// The bounding sphere of the vertices of <paramref name="theLV"/>: its centre and radius, for a new vertex
     /// covering them all. With fewer than two vertices the outputs are left unchanged, as in OCCT.
     /// </summary>
-    public static void BoundingVertex(NCollection_List<TopoDS_Shape> theLV, ref gp_Pnt theNewCenter, ref double theNewTol)
+    public static void BoundingVertex(NCollection_List<TopoDS_Shape> theLV, ref Point3D theNewCenter, ref double theNewTol)
     {
         int aNb;
         //
@@ -3030,7 +3036,7 @@ public static partial class BRepLib
             double dR, aD, aEps;
             Span<double> aR = stackalloc double[2];
             var aV = new TopoDS_Vertex[2];
-            var aP = new gp_Pnt[2];
+            var aP = new Point3D[2];
             //
             aEps = RealEpsilon();
             for (m = 0; m < aNb; ++m)
@@ -3049,7 +3055,7 @@ public static partial class BRepLib
             }
             //
             dR = aR[m] - aR[n]; // dR >= 0.
-            var aVD = new gp_Vec(aP[m], aP[n]);
+            var aVD = new Vector3D(aP[m], aP[n]);
             aD = aVD.Magnitude();
             //
             if (aD <= dR || aD < aEps)
@@ -3060,8 +3066,8 @@ public static partial class BRepLib
             else
             {
                 double aRr;
-                gp_XYZ aXYZr;
-                var aPr = new gp_Pnt();
+                Xyz aXYZr;
+                var aPr = new Point3D();
                 //
                 aRr = 0.5 * (aR[m] + aR[n] + aD);
                 aXYZr = 0.5 * (aP[m].XYZ() + aP[n].XYZ() - aVD.XYZ() * (dR / aD));
@@ -3080,25 +3086,25 @@ public static partial class BRepLib
             // issue 0027540 - sum of doubles may depend on the order
             // of addition, thus sort the coordinates for stable result
             int i;
-            var aPoints = new gp_Pnt[aNb];
+            var aPoints = new Point3D[aNb];
             NCollection_List<TopoDS_Shape>.Iterator aIt = new(theLV);
             for (i = 0; aIt.More(); aIt.Next(), ++i)
             {
                 TopoDS_Vertex aVi = TopoDS.Vertex(aIt.Value());
-                gp_Pnt aPi = BRep_Tool.Pnt(aVi);
+                Point3D aPi = BRep_Tool.Pnt(aVi);
                 aPoints[i] = aPi;
             }
             //
             Array.Sort(aPoints, comparePoints);
             //
-            var aXYZ = new gp_XYZ(0.0, 0.0, 0.0);
+            var aXYZ = new Xyz(0.0, 0.0, 0.0);
             for (i = 0; i < aNb; ++i)
             {
                 aXYZ += aPoints[i].XYZ();
             }
             aXYZ.Divide((double)aNb);
             //
-            var aP = new gp_Pnt(aXYZ);
+            var aP = new Point3D(aXYZ);
             //
             // compute the tolerance for the new vertex
             double aTi, aDi, aDmax;
@@ -3108,7 +3114,7 @@ public static partial class BRepLib
             for (; aIt.More(); aIt.Next())
             {
                 TopoDS_Vertex aVi = TopoDS.Vertex(aIt.Value());
-                gp_Pnt aPi = BRep_Tool.Pnt(aVi);
+                Point3D aPi = BRep_Tool.Pnt(aVi);
                 aTi = BRep_Tool.Tolerance(aVi);
                 aDi = aP.SquareDistance(aPi);
                 aDi = Math.Sqrt(aDi);
@@ -3125,7 +3131,7 @@ public static partial class BRepLib
     }
 
     // BRepLib_ComparePoints: lexicographic order of the coordinates (a strict weak order, as std::sort needs).
-    private static int comparePoints(gp_Pnt theP1, gp_Pnt theP2)
+    private static int comparePoints(Point3D theP1, Point3D theP2)
     {
         for (int i = 1; i <= 3; ++i)
         {
@@ -3176,10 +3182,10 @@ public static partial class BRepLib
         // Surface to build the face
         Geom_Surface aS;
 
-        GeomAbs_SurfaceType aType = aBAS.GetType();
+        SurfaceKind aType = aBAS.GetType();
         // treat analytical surfaces first
-        if (aType == GeomAbs_Plane || aType == GeomAbs_Sphere || aType == GeomAbs_Cylinder
-            || aType == GeomAbs_Torus || aType == GeomAbs_Cone)
+        if (aType == global::Kerf.Geometry.SurfaceKind.Plane || aType == SurfaceKind.Sphere || aType == SurfaceKind.Cylinder
+            || aType == SurfaceKind.Torus || aType == SurfaceKind.Cone)
         {
             // Get basis transformed basis surface
             Geom_Surface aSurf = aBAS.GeomSurfaceTransformed()!;
@@ -3237,7 +3243,7 @@ public static partial class BRepLib
 
             // Check if the periodic surface should become closed.
             // In this case, use the basis surface with basis bounds.
-            double anEps = Occt.Precision.PConfusion();
+            double anEps = Kerf.Engine.Foundation.Precision.PConfusion();
             if (isUPeriodic && Math.Abs(aFUMax - aFUMin - anUPeriod) < anEps)
             {
                 aFUMin = aSUMin;
@@ -3275,25 +3281,25 @@ public static partial class BRepLib
             bool isExtUMin = false, isExtUMax = false, isExtVMin = false, isExtVMax = false;
 
             // UMin
-            if (theExtUMin && !isUClosed && !Occt.Precision.IsInfinite(aSUMin))
+            if (theExtUMin && !isUClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(aSUMin))
             {
                 GeomLib.ExtendSurfByLength(ref aSB, theExtVal, 1, true, false);
                 isExtUMin = true;
             }
             // UMax
-            if (theExtUMax && !isUClosed && !Occt.Precision.IsInfinite(aSUMax))
+            if (theExtUMax && !isUClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(aSUMax))
             {
                 GeomLib.ExtendSurfByLength(ref aSB, theExtVal, 1, true, true);
                 isExtUMax = true;
             }
             // VMin
-            if (theExtVMin && !isVClosed && !Occt.Precision.IsInfinite(aSVMax)) // OCCT tests aSVMax where aSVMin is meant (occt-issues.md)
+            if (theExtVMin && !isVClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(aSVMax)) // OCCT tests aSVMax where aSVMin is meant (occt-issues.md)
             {
                 GeomLib.ExtendSurfByLength(ref aSB, theExtVal, 1, false, false);
                 isExtVMin = true;
             }
             // VMax
-            if (theExtVMax && !isVClosed && !Occt.Precision.IsInfinite(aSVMax))
+            if (theExtVMax && !isVClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(aSVMax))
             {
                 GeomLib.ExtendSurfByLength(ref aSB, theExtVal, 1, false, true);
                 isExtVMax = true;

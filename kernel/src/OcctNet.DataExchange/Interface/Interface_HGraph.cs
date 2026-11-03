@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// This class allows to store a redefinable Graph, via a Handle (useful for an Object which can work on
 /// several successive Models, with the same general conditions)
 /// </summary>
-public class Interface_HGraph : Standard_Transient
+public class Interface_HGraph : Transient
 {
 
     /// <summary>

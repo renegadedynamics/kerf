@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Plane from Geom (and Pln from gp) to a STEP plane.</summary>
@@ -17,7 +19,7 @@ public sealed class GeomToStep_MakePlane : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A plane, its location divided by the length factor.</summary>
-    public GeomToStep_MakePlane(in gp_Pln P, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakePlane(in Plane3D P, in StepData_Factors theLocalFactors)
     {
         StepGeom_Plane Plan = new StepGeom_Plane();
         StepGeom_Axis2Placement3d aPosition;
@@ -32,7 +34,7 @@ public sealed class GeomToStep_MakePlane : GeomToStep_Root
     }
 
     /// <summary>A plane (default factors).</summary>
-    public GeomToStep_MakePlane(in gp_Pln P) : this(P, new StepData_Factors())
+    public GeomToStep_MakePlane(in Plane3D P) : this(P, new StepData_Factors())
     {
     }
 
@@ -43,7 +45,7 @@ public sealed class GeomToStep_MakePlane : GeomToStep_Root
     /// <summary>A plane, its location divided by the length factor.</summary>
     public GeomToStep_MakePlane(Geom_Plane Gpln, in StepData_Factors theLocalFactors)
     {
-        gp_Pln P;
+        Plane3D P;
         StepGeom_Plane Plan = new StepGeom_Plane();
         StepGeom_Axis2Placement3d aPosition;
 

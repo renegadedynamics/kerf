@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -12,9 +18,9 @@ namespace Occt;
 /// <remarks>
 /// A working object (plan section 6): maps and lists of pave blocks compare them by reference and iterate in
 /// insertion order (decision 580). The sort of the paves in <see cref="Update"/> keeps MSVC's order of paves with
-/// equal parameters (<see cref="std_sort"/>).
+/// equal parameters (<see cref="Sorting"/>).
 /// </remarks>
-public class BOPDS_PaveBlock : Standard_Transient
+public class BOPDS_PaveBlock : Transient
 {
     protected int myEdge;
     protected int myOriginalEdge;
@@ -23,7 +29,7 @@ public class BOPDS_PaveBlock : Standard_Transient
     protected NCollection_List<BOPDS_Pave> myExtPaves = new();
     protected double myTS1;
     protected double myTS2;
-    protected Bnd_Box myShrunkBox = new();
+    protected Box myShrunkBox = new();
     protected NCollection_IntMap myMFence = new();
     protected bool myIsSplittable;
 
@@ -197,7 +203,7 @@ public class BOPDS_PaveBlock : Standard_Transient
         myExtPaves.Clear();
         myMFence.Clear();
         //
-        std_sort.sort(pPaves.AsSpan(), new BOPDS_Pave.LessThan());
+        Sorting.Sort(pPaves.AsSpan(), new BOPDS_Pave.LessThan());
         //
         for (i = 0; i < aNb; ++i)
         {
@@ -221,10 +227,10 @@ public class BOPDS_PaveBlock : Standard_Transient
     }
 
     /// <summary>True if the pave block has shrunk data (a non-void shrunk box).</summary>
-    public bool HasShrunkData() => !myShrunkBox.IsVoid();
+    public bool HasShrunkData() => !myShrunkBox.IsVoid;
 
     /// <summary>Sets the shrunk range, its box and whether the edge can be split.</summary>
-    internal void SetShrunkData(double theT1, double theT2, in Bnd_Box theBox, bool theIsSplittable)
+    internal void SetShrunkData(double theT1, double theT2, in Box theBox, bool theIsSplittable)
     {
         myTS1 = theT1;
         myTS2 = theT2;
@@ -233,7 +239,7 @@ public class BOPDS_PaveBlock : Standard_Transient
     }
 
     /// <summary>The shrunk range, its box and whether the edge can be split.</summary>
-    public void ShrunkData(out double theT1, out double theT2, out Bnd_Box theBox, out bool theIsSplittable)
+    public void ShrunkData(out double theT1, out double theT2, out Box theBox, out bool theIsSplittable)
     {
         theT1 = myTS1;
         theT2 = myTS2;

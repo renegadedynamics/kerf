@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 
 namespace Occt;
@@ -23,63 +24,63 @@ namespace Occt;
 /// exchange formats write. Indices are 1-based, as OCCT's. Only the members data exchange uses are ported.
 /// </para>
 /// </remarks>
-public sealed class TCollection_HAsciiString : Standard_Transient
+public sealed class TCollection_HAsciiString : Transient
 {
-    private readonly StringBuilder myString;
+    private readonly StringBuilder _string;
 
     /// <summary>An empty string.</summary>
-    public TCollection_HAsciiString() => myString = new StringBuilder();
+    public TCollection_HAsciiString() => _string = new StringBuilder();
 
     /// <summary>A copy of the text (a null text is empty, as OCCT's null <c>const char*</c> is refused earlier).</summary>
-    public TCollection_HAsciiString(string? message) => myString = new StringBuilder(message ?? "");
+    public TCollection_HAsciiString(string? message) => _string = new StringBuilder(message ?? "");
 
     /// <summary>A one-character string (empty for the null character).</summary>
-    public TCollection_HAsciiString(char aChar) => myString = new StringBuilder(aChar == '\0' ? "" : aChar.ToString());
+    public TCollection_HAsciiString(char aChar) => _string = new StringBuilder(aChar == '\0' ? "" : aChar.ToString());
 
     /// <summary>A string of <paramref name="length"/> copies of <paramref name="filler"/>.</summary>
-    public TCollection_HAsciiString(int length, char filler) => myString = new StringBuilder(new string(filler, length));
+    public TCollection_HAsciiString(int length, char filler) => _string = new StringBuilder(new string(filler, length));
 
     /// <summary>The integer in decimal (C's <c>%d</c>).</summary>
     public TCollection_HAsciiString(int value) =>
-        myString = new StringBuilder(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        _string = new StringBuilder(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
     /// <summary>The real as C's <c>%g</c> writes it (six significant digits).</summary>
-    public TCollection_HAsciiString(double value) => myString = new StringBuilder(Standard_Stream.FormatReal(value, 6));
+    public TCollection_HAsciiString(double value) => _string = new StringBuilder(StreamUtilities.FormatReal(value, 6));
 
     /// <summary>A copy of another handled string.</summary>
-    public TCollection_HAsciiString(TCollection_HAsciiString aString) => myString = new StringBuilder(aString.ToCString());
+    public TCollection_HAsciiString(TCollection_HAsciiString aString) => _string = new StringBuilder(aString.ToCString());
 
     /// <summary>The text, as OCCT's <c>ToCString</c>.</summary>
-    public string ToCString() => myString.ToString();
+    public string ToCString() => _string.ToString();
 
     /// <summary>The text, as OCCT's <c>String</c> (a <c>TCollection_AsciiString</c>, a string in the port).</summary>
-    public string String() => myString.ToString();
+    public string String() => _string.ToString();
 
     /// <summary>The text.</summary>
-    public override string ToString() => myString.ToString();
+    public override string ToString() => _string.ToString();
 
     /// <summary>The number of characters.</summary>
-    public int Length() => myString.Length;
+    public int Length() => _string.Length;
 
     /// <summary>True if the string has no characters.</summary>
-    public bool IsEmpty() => myString.Length == 0;
+    public bool IsEmpty() => _string.Length == 0;
 
     /// <summary>The character at <paramref name="where"/> (1-based).</summary>
-    /// <exception cref="Standard_OutOfRange">Out of 1 to Length.</exception>
+    /// <exception cref="OutOfRangeException">Out of 1 to Length.</exception>
     public char Value(int where)
     {
-        if (where > 0 && where <= myString.Length)
+        if (where > 0 && where <= _string.Length)
         {
-            return myString[where - 1];
+            return _string[where - 1];
         }
-        throw new Standard_OutOfRange("TCollection_AsciiString::Value : parameter theWhere");
+        throw new OutOfRangeException("TCollection_AsciiString::Value : parameter theWhere");
     }
 
     /// <summary>Appends a text.</summary>
-    internal void AssignCat(string other) => myString.Append(other);
+    internal void AssignCat(string other) => _string.Append(other);
 
     /// <summary>Appends another string.</summary>
-    internal void AssignCat(TCollection_HAsciiString other) => myString.Append(other.ToCString());
+    internal void AssignCat(TCollection_HAsciiString other) => _string.Append(other.ToCString());
 
     /// <summary>A new string: this one followed by <paramref name="other"/>.</summary>
     public TCollection_HAsciiString Cat(string other) => new(ToCString() + other);
@@ -88,104 +89,104 @@ public sealed class TCollection_HAsciiString : Standard_Transient
     public TCollection_HAsciiString Cat(TCollection_HAsciiString other) => new(ToCString() + other.ToCString());
 
     /// <summary>Empties the string.</summary>
-    internal void Clear() => myString.Clear();
+    internal void Clear() => _string.Clear();
 
     /// <summary>Replaces the character at <paramref name="where"/> (1-based).</summary>
     internal void SetValue(int where, char what)
     {
-        if (where <= 0 || where > myString.Length)
+        if (where <= 0 || where > _string.Length)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::SetValue(): out of range location");
+            throw new OutOfRangeException("TCollection_AsciiString::SetValue(): out of range location");
         }
-        myString[where - 1] = what;
+        _string[where - 1] = what;
     }
 
     /// <summary>Inserts a character at <paramref name="where"/> (1-based; Length + 1 appends).</summary>
     internal void Insert(int where, char what)
     {
-        if (where > myString.Length + 1 || where < 1)
+        if (where > _string.Length + 1 || where < 1)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Insert : Parameter where is out of range");
+            throw new OutOfRangeException("TCollection_AsciiString::Insert : Parameter where is out of range");
         }
-        myString.Insert(where - 1, what);
+        _string.Insert(where - 1, what);
     }
 
     /// <summary>Inserts a text at <paramref name="where"/> (1-based; Length + 1 appends).</summary>
     internal void Insert(int where, string what)
     {
-        if (where > myString.Length + 1 || where < 1)
+        if (where > _string.Length + 1 || where < 1)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Insert : Parameter where is out of range");
+            throw new OutOfRangeException("TCollection_AsciiString::Insert : Parameter where is out of range");
         }
-        myString.Insert(where - 1, what);
+        _string.Insert(where - 1, what);
     }
 
     /// <summary>Puts another string in front of this one.</summary>
-    internal void Prepend(TCollection_HAsciiString other) => myString.Insert(0, other.ToCString());
+    internal void Prepend(TCollection_HAsciiString other) => _string.Insert(0, other.ToCString());
 
     /// <summary>Removes <paramref name="ahowmany"/> characters from <paramref name="where"/> (1-based).</summary>
     internal void Remove(int where, int ahowmany = 1)
     {
-        if (where + ahowmany <= myString.Length + 1)
+        if (where + ahowmany <= _string.Length + 1)
         {
-            myString.Remove(where - 1, ahowmany);
+            _string.Remove(where - 1, ahowmany);
         }
         else
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Remove: Too many characters to erase or invalid starting value.");
+            throw new OutOfRangeException("TCollection_AsciiString::Remove: Too many characters to erase or invalid starting value.");
         }
     }
 
     /// <summary>Removes every occurrence of the character.</summary>
     internal void RemoveAll(char what)
     {
-        string aText = myString.ToString().Replace(what.ToString(), "", StringComparison.Ordinal);
-        myString.Clear().Append(aText);
+        string text = _string.ToString().Replace(what.ToString(), "", StringComparison.Ordinal);
+        _string.Clear().Append(text);
     }
 
     /// <summary>Keeps the first <paramref name="ahowmany"/> characters.</summary>
     internal void Trunc(int ahowmany)
     {
-        if (ahowmany < 0 || ahowmany > myString.Length)
+        if (ahowmany < 0 || ahowmany > _string.Length)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Trunc : parameter 'theHowMany'");
+            throw new OutOfRangeException("TCollection_AsciiString::Trunc : parameter 'theHowMany'");
         }
-        myString.Length = ahowmany;
+        _string.Length = ahowmany;
     }
 
     /// <summary>Removes the leading white space (C's <c>isspace</c>).</summary>
     internal void LeftAdjust()
     {
         int i = 0;
-        while (i < myString.Length && IsSpace(myString[i]))
+        while (i < _string.Length && IsSpace(_string[i]))
         {
             i++;
         }
         if (i > 0)
         {
-            myString.Remove(0, i);
+            _string.Remove(0, i);
         }
     }
 
     /// <summary>Removes the trailing white space (C's <c>isspace</c>).</summary>
     internal void RightAdjust()
     {
-        int i = myString.Length - 1;
-        while (i >= 0 && IsSpace(myString[i]))
+        int i = _string.Length - 1;
+        while (i >= 0 && IsSpace(_string[i]))
         {
             i--;
         }
-        myString.Length = i + 1;
+        _string.Length = i + 1;
     }
 
     /// <summary>Converts to upper case (ASCII letters only, as C's <c>toupper</c> in the C locale).</summary>
     internal void UpperCase()
     {
-        for (int i = 0; i < myString.Length; i++)
+        for (int i = 0; i < _string.Length; i++)
         {
-            if (myString[i] is >= 'a' and <= 'z')
+            if (_string[i] is >= 'a' and <= 'z')
             {
-                myString[i] = (char)(myString[i] - 32);
+                _string[i] = (char)(_string[i] - 32);
             }
         }
     }
@@ -193,48 +194,48 @@ public sealed class TCollection_HAsciiString : Standard_Transient
     /// <summary>Converts to lower case (ASCII letters only, as C's <c>tolower</c> in the C locale).</summary>
     internal void LowerCase()
     {
-        for (int i = 0; i < myString.Length; i++)
+        for (int i = 0; i < _string.Length; i++)
         {
-            if (myString[i] is >= 'A' and <= 'Z')
+            if (_string[i] is >= 'A' and <= 'Z')
             {
-                myString[i] = (char)(myString[i] + 32);
+                _string[i] = (char)(_string[i] + 32);
             }
         }
     }
 
     /// <summary>True if both have the same characters (case-sensitive).</summary>
-    /// <exception cref="Standard_NullObject"><paramref name="S"/> is null.</exception>
-    public bool IsSameString(TCollection_HAsciiString? S)
+    /// <exception cref="NullObjectException"><paramref name="s"/> is null.</exception>
+    public bool IsSameString(TCollection_HAsciiString? s)
     {
-        if (S is null)
+        if (s is null)
         {
-            throw new Standard_NullObject("TCollection_HAsciiString::IsSameString");
+            throw new NullObjectException("TCollection_HAsciiString::IsSameString");
         }
-        return string.Equals(ToCString(), S.ToCString(), StringComparison.Ordinal);
+        return string.Equals(ToCString(), s.ToCString(), StringComparison.Ordinal);
     }
 
-    /// <summary>True if both have the same characters, ignoring ASCII case if <paramref name="CaseSensitive"/> is false.</summary>
-    /// <exception cref="Standard_NullObject"><paramref name="S"/> is null.</exception>
-    public bool IsSameString(TCollection_HAsciiString? S, bool CaseSensitive)
+    /// <summary>True if both have the same characters, ignoring ASCII case if <paramref name="caseSensitive"/> is false.</summary>
+    /// <exception cref="NullObjectException"><paramref name="s"/> is null.</exception>
+    public bool IsSameString(TCollection_HAsciiString? s, bool caseSensitive)
     {
-        if (S is null)
+        if (s is null)
         {
-            throw new Standard_NullObject("TCollection_HAsciiString::IsSameString");
+            throw new NullObjectException("TCollection_HAsciiString::IsSameString");
         }
-        return CaseSensitive
-            ? string.Equals(ToCString(), S.ToCString(), StringComparison.Ordinal)
-            : string.Equals(ToCString(), S.ToCString(), StringComparison.OrdinalIgnoreCase);
+        return caseSensitive
+            ? string.Equals(ToCString(), s.ToCString(), StringComparison.Ordinal)
+            : string.Equals(ToCString(), s.ToCString(), StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>True if the strings differ.</summary>
-    /// <exception cref="Standard_NullObject"><paramref name="S"/> is null.</exception>
-    public bool IsDifferent(TCollection_HAsciiString? S)
+    /// <exception cref="NullObjectException"><paramref name="s"/> is null.</exception>
+    public bool IsDifferent(TCollection_HAsciiString? s)
     {
-        if (S is null)
+        if (s is null)
         {
-            throw new Standard_NullObject("TCollection_HAsciiString::IsDifferent");
+            throw new NullObjectException("TCollection_HAsciiString::IsDifferent");
         }
-        return !string.Equals(ToCString(), S.ToCString(), StringComparison.Ordinal);
+        return !string.Equals(ToCString(), s.ToCString(), StringComparison.Ordinal);
     }
 
     /// <summary>True if this string is before <paramref name="other"/> in byte order.</summary>
@@ -262,8 +263,8 @@ public sealed class TCollection_HAsciiString : Standard_Transient
         {
             return -1;
         }
-        int anIndex = ToCString().IndexOf(what, StringComparison.Ordinal);
-        return anIndex < 0 ? -1 : anIndex + 1;
+        int index = ToCString().IndexOf(what, StringComparison.Ordinal);
+        return index < 0 ? -1 : index + 1;
     }
 
     /// <summary>The 1-based position of the first occurrence of <paramref name="what"/>, -1 if none.</summary>
@@ -276,43 +277,43 @@ public sealed class TCollection_HAsciiString : Standard_Transient
         {
             return -1;
         }
-        int anIndex = ToCString().LastIndexOf(what, StringComparison.Ordinal);
-        return anIndex < 0 ? -1 : anIndex + 1;
+        int index = ToCString().LastIndexOf(what, StringComparison.Ordinal);
+        return index < 0 ? -1 : index + 1;
     }
 
     /// <summary>The 1-based position of the last occurrence of <paramref name="what"/>, -1 if none.</summary>
     public int SearchFromEnd(TCollection_HAsciiString what) => SearchFromEnd(what.ToCString());
 
     /// <summary>
-    /// The 1-based position of the first occurrence of <paramref name="S"/> starting between
-    /// <paramref name="FromIndex"/> and <paramref name="ToIndex"/>, 0 if none (or if either string is empty).
+    /// The 1-based position of the first occurrence of <paramref name="s"/> starting between
+    /// <paramref name="fromIndex"/> and <paramref name="toIndex"/>, 0 if none (or if either string is empty).
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">The range isn't in the string.</exception>
-    public int Location(TCollection_HAsciiString S, int FromIndex, int ToIndex)
+    /// <exception cref="OutOfRangeException">The range isn't in the string.</exception>
+    public int Location(TCollection_HAsciiString s, int fromIndex, int toIndex)
     {
-        if (Length() == 0 || S.Length() == 0)
+        if (Length() == 0 || s.Length() == 0)
         {
             return 0;
         }
-        if (ToIndex > Length() || FromIndex <= 0 || FromIndex > ToIndex)
+        if (toIndex > Length() || fromIndex <= 0 || fromIndex > toIndex)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        string aText = ToCString();
-        string aWhat = S.ToCString();
+        string text = ToCString();
+        string what = s.ToCString();
         // TCollection_AsciiString::Location
-        int i = FromIndex - 1;
+        int i = fromIndex - 1;
         int k = 1;
-        int l = FromIndex - 2;
-        bool aFind = false;
-        while (!aFind && i < ToIndex)
+        int l = fromIndex - 2;
+        bool find = false;
+        while (!find && i < toIndex)
         {
-            if (aText[i] == aWhat[k - 1])
+            if (text[i] == what[k - 1])
             {
                 k++;
-                if (k > aWhat.Length)
+                if (k > what.Length)
                 {
-                    aFind = true;
+                    find = true;
                 }
             }
             else
@@ -326,18 +327,18 @@ public sealed class TCollection_HAsciiString : Standard_Transient
             }
             i++;
         }
-        return aFind ? l + 2 : 0;
+        return find ? l + 2 : 0;
     }
 
-    /// <summary>A new string with the characters <paramref name="FromIndex"/> to <paramref name="ToIndex"/> (1-based, inclusive).</summary>
-    /// <exception cref="Standard_OutOfRange">The range isn't in the string.</exception>
-    public TCollection_HAsciiString SubString(int FromIndex, int ToIndex)
+    /// <summary>A new string with the characters <paramref name="fromIndex"/> to <paramref name="toIndex"/> (1-based, inclusive).</summary>
+    /// <exception cref="OutOfRangeException">The range isn't in the string.</exception>
+    public TCollection_HAsciiString SubString(int fromIndex, int toIndex)
     {
-        if (ToIndex > myString.Length || FromIndex <= 0 || FromIndex > ToIndex)
+        if (toIndex > _string.Length || fromIndex <= 0 || fromIndex > toIndex)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::SubString : parameters out of range");
+            throw new OutOfRangeException("TCollection_AsciiString::SubString : parameters out of range");
         }
-        return new TCollection_HAsciiString(myString.ToString(FromIndex - 1, ToIndex - FromIndex + 1));
+        return new TCollection_HAsciiString(_string.ToString(fromIndex - 1, toIndex - fromIndex + 1));
     }
 
     /// <summary>The <paramref name="whichone"/>-th token between the separators (empty if none).</summary>
@@ -347,16 +348,16 @@ public sealed class TCollection_HAsciiString : Standard_Transient
     /// <summary>The length without trailing non-graphic characters (non-ASCII characters count as graphic).</summary>
     public int UsefullLength()
     {
-        int aLast = 0;
-        for (int i = 0; i < myString.Length; i++)
+        int last = 0;
+        for (int i = 0; i < _string.Length; i++)
         {
-            char aChar = myString[i];
+            char aChar = _string[i];
             if (aChar > 0x7F || (aChar > ' ' && aChar < 0x7F))
             {
-                aLast = i + 1;
+                last = i + 1;
             }
         }
-        return aLast;
+        return last;
     }
 
     /// <summary>True if both have the same length and characters (OCCT's <c>IsSameState</c>).</summary>

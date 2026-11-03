@@ -5,17 +5,19 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Specific features for General Services adapted to STEP.</summary>
 public abstract class StepData_GeneralModule : Interface_GeneralModule
 {
     /// <summary>Specific filling of the list of Entities shared by an Entity ent. Can use the internal utility method Share, below.</summary>
-    public abstract override void FillSharedCase(int casenum, Standard_Transient? ent, Interface_EntityIterator iter);
+    public abstract override void FillSharedCase(int casenum, Transient? ent, Interface_EntityIterator iter);
 
     /// <summary>Specific Checking of an Entity ent.</summary>
-    public abstract override void CheckCase(int casenum, Standard_Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach);
+    public abstract override void CheckCase(int casenum, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach);
 
     /// <summary>Specific Copy ("Deep") from entfrom to entto (same type) by using a TransferControl which provides its working Map. Use method Transferred from TransferControl to work.</summary>
-    public abstract override void CopyCase(int casenum, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC);
+    public abstract override void CopyCase(int casenum, Transient? entfrom, Transient? entto, Interface_CopyTool TC);
 }

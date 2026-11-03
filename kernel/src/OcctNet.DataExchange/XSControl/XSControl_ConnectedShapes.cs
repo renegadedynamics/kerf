@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -44,7 +45,7 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
     /// <summary>
     /// Explores an entity : entities from which are connected to that produced by this entity, including itself
     /// </summary>
-    public override bool Explore(int level, Standard_Transient? ent, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient? ent, Interface_Graph G, Interface_EntityIterator explored)
     {
         Transfer_TransientProcess TP = null;
         if (theTR is not null)
@@ -60,7 +61,7 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
         {
             return false;
         }
-        NCollection_HSequence<Standard_Transient> li =
+        NCollection_HSequence<Transient> li =
             AdjacentEntities(Shape, TP, TopAbs_FACE);
         explored.AddList(li);
         return true;
@@ -78,10 +79,10 @@ public class XSControl_ConnectedShapes : IFSelect_SelectExplore
     /// <summary>
     /// This functions considers a shape from a transfer and performs the search function explained above
     /// </summary>
-    public static NCollection_HSequence<Standard_Transient>? AdjacentEntities(TopoDS_Shape ashape, Transfer_TransientProcess? TP, TopAbs_ShapeEnum type)
+    public static NCollection_HSequence<Transient>? AdjacentEntities(TopoDS_Shape ashape, Transfer_TransientProcess? TP, TopAbs_ShapeEnum type)
     {
-        NCollection_HSequence<Standard_Transient> li =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> li =
+            new NCollection_HSequence<Transient>();
         int i, nb = TP.NbMapped();
         //  NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> adj (nb);
         NCollection_Map<TopoDS_Shape> vtx = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);

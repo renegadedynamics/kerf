@@ -3,6 +3,8 @@
 // IntPatch_PrmPrmIntersection.cxx: the Perform on the domains' samplings (IntPolyh_Intersection or the voxel search),
 // PointDepart and its file-local class IntPatch_InfoPD (see IntPatch_PrmPrmIntersection.cs).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
 
 namespace Occt;
@@ -85,7 +87,7 @@ public partial class IntPatch_PrmPrmIntersection
             double incidence, dminiPointLigne;
             bool HasStartPoint = false, RejectLine = false;
             IntSurf_PntOn2S StartPOn2S = new();
-            gp_Pnt Point3dDebut, Point3dFin;
+            Point3D Point3dDebut, Point3dFin;
 
             NCollection_Array1<double> StartParams = new(1, 4);
             IntWalk_PWalking PW = new(Surf1, Surf2, TolTangency, Epsilon, Deflection, Increment);
@@ -305,8 +307,8 @@ public partial class IntPatch_PrmPrmIntersection
                                                 IntSurf_PntOn2S verPointDebut = verwline.Point(1);
                                                 IntSurf_PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
                                                 // xf
-                                                gp_Pnt aP21 = verPointDebut.Value();
-                                                gp_Pnt aP22 = verPointFin.Value();
+                                                Point3D aP21 = verPointDebut.Value();
+                                                Point3D aP22 = verPointFin.Value();
                                                 //
                                                 aD11 = Point3dDebut.Distance(aP21);
                                                 aD12 = Point3dDebut.Distance(aP22);
@@ -324,20 +326,20 @@ public partial class IntPatch_PrmPrmIntersection
                                                         ++mx;
                                                     }
                                                     //
-                                                    gp_Pnt aPx = verwline.Point(mx).Value();
+                                                    Point3D aPx = verwline.Point(mx).Value();
                                                     for (m = 1; m < iPWNbPoints; ++m)
                                                     {
-                                                        gp_Pnt aP1 = PW.Value(m).Value();
-                                                        gp_Pnt aP2 = PW.Value(m + 1).Value();
-                                                        gp_Vec aVec12 = new(aP1, aP2);
+                                                        Point3D aP1 = PW.Value(m).Value();
+                                                        Point3D aP2 = PW.Value(m + 1).Value();
+                                                        Vector3D aVec12 = new(aP1, aP2);
                                                         if (aVec12.SquareMagnitude() < 1.0e-20)
                                                         {
                                                             continue;
                                                         }
 
                                                         //
-                                                        gp_Dir aDir12 = new(aVec12);
-                                                        gp_Lin aLin12 = new(aP1, aDir12);
+                                                        Direction3D aDir12 = new(aVec12);
+                                                        Line3D aLin12 = new(aP1, aDir12);
                                                         aDx = aLin12.Distance(aPx);
 
                                                         // modified by NIZNHY-PKV Tue May 10 11:08:07 2011f
@@ -363,10 +365,10 @@ public partial class IntPatch_PrmPrmIntersection
                                             if (!RejectLine)
                                             {
                                                 IntSurf_TypeTrans trans1, trans2;
-                                                gp_Vec norm1, norm2;
-                                                gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                                Vector3D norm1, norm2;
+                                                Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                                 PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                                Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                                Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                                 norm1 = d1u.Crossed(d1v);
                                                 PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                                 Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -576,10 +578,10 @@ public partial class IntPatch_PrmPrmIntersection
                                     if (!RejectLine)
                                     {
                                         IntSurf_TypeTrans trans1, trans2;
-                                        gp_Vec norm1, norm2;
-                                        gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                        Vector3D norm1, norm2;
+                                        Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                         PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                        Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                        Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                         norm1 = d1u.Crossed(d1v);
                                         PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                         Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -680,7 +682,7 @@ public partial class IntPatch_PrmPrmIntersection
         bool HasStartPoint, RejetLigne;
         IntSurf_PntOn2S StartPOn2S = new();
         int ver;
-        gp_Pnt Point3dDebut, Point3dFin;
+        Point3D Point3dDebut, Point3dFin;
 
         //------------------------------------------------------------
         //-- Calcul des parametres approches a partir des Zones De Tangence --
@@ -772,10 +774,10 @@ public partial class IntPatch_PrmPrmIntersection
                             if (!RejetLigne)
                             {
                                 IntSurf_TypeTrans trans1, trans2;
-                                gp_Vec norm1, norm2;
-                                gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                Vector3D norm1, norm2;
+                                Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                 PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                 norm1 = d1u.Crossed(d1v);
                                 PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                 Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -841,8 +843,8 @@ public partial class IntPatch_PrmPrmIntersection
         private readonly byte[] myP2DS1;
         private readonly int[] myIP1;
         private readonly int[] myIP2;
-        private readonly gp_Pnt[] myP1;
-        private readonly gp_Pnt[] myP2;
+        private readonly Point3D[] myP1;
+        private readonly Point3D[] myP2;
 
         //----------------------------------------C-tor
         public IntPatch_InfoPD(int aNBI)
@@ -855,8 +857,8 @@ public partial class IntPatch_PrmPrmIntersection
             myP2DS1 = new byte[aNBI2];
             myIP1 = new int[aNBI2];
             myIP2 = new int[aNBI2];
-            myP1 = new gp_Pnt[aNBI2];
-            myP2 = new gp_Pnt[aNBI2];
+            myP1 = new Point3D[aNBI2];
+            myP2 = new Point3D[aNBI2];
             //
             for (i = 0; i < myNBI; ++i)
             {
@@ -891,10 +893,10 @@ public partial class IntPatch_PrmPrmIntersection
         public ref int xIP2(int i, int j) => ref myIP2[Index(i, j)];
 
         //----------------------------------------xP1
-        public ref gp_Pnt xP1(int i, int j) => ref myP1[Index(i, j)];
+        public ref Point3D xP1(int i, int j) => ref myP1[Index(i, j)];
 
         //----------------------------------------xP1
-        public ref gp_Pnt xP2(int i, int j) => ref myP2[Index(i, j)];
+        public ref Point3D xP2(int i, int j) => ref myP2[Index(i, j)];
     }
 
     // modified by NIZNHY-PKV Tue May 24 11:38:55 2011t
@@ -919,7 +921,7 @@ public partial class IntPatch_PrmPrmIntersection
         double resu0, resv0;
         double du1, du2, dv1, dv2, dmaxOn1, dmaxOn2;
         double x0, y0, z0, x1, y1, z1, d;
-        Bnd_Box Box1 = new(), Box2 = new();
+        Box Box1 = new(), Box2 = new();
         //
         iC15 = 15;
         SU1 = iC15 * SU_1;
@@ -1095,7 +1097,7 @@ public partial class IntPatch_PrmPrmIntersection
             for (j = 0; j < SV1; j++)
             {
                 aIPD.xIP1(i, j) = -1;
-                gp_Pnt P = aIPD.xP1(i, j);
+                Point3D P = aIPD.xP1(i, j);
                 aIPD.xP1DS2(i, j) = (byte)CodeReject(x20, y20, z20, x21, y21, z21, P.X(), P.Y(), P.Z());
                 int ix = CppTruncate((P.X() - x0 + dx2) / dx);
                 if (DansGrille(ix) != 0)
@@ -1118,7 +1120,7 @@ public partial class IntPatch_PrmPrmIntersection
             for (j = 0; j < SV2; j++)
             {
                 aIPD.xIP2(i, j) = -1;
-                gp_Pnt P = aIPD.xP2(i, j);
+                Point3D P = aIPD.xP2(i, j);
                 aIPD.xP2DS1(i, j) = (byte)CodeReject(x10, y10, z10, x11, y11, z11, P.X(), P.Y(), P.Z());
                 int ix = CppTruncate((P.X() - x0 + dx2) / dx);
                 if (DansGrille(ix) != 0)
@@ -1228,7 +1230,7 @@ public partial class IntPatch_PrmPrmIntersection
                     }
                 }
                 //
-                gp_Pnt P = new(dx * i + x0, dy * j + y0, dz * k + z0);
+                Point3D P = new(dx * i + x0, dy * j + y0, dz * k + z0);
                 //
                 int nu1 = -1, nu2 = -1;
                 int nv1 = 0, nv2 = 0;

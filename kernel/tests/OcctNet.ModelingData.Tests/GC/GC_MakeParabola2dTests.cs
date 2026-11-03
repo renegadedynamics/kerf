@@ -2,13 +2,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GC_MakeParabola2d_Test
 {
     // Helper: verify a parabola built from directrix+focus against expected values.
-    private static void CheckParabola2d(in gp_Ax2d theAxes,
-                                        in gp_Pnt2d theFocus,
+    private static void CheckParabola2d(in Axis2D theAxes,
+                                        in Point2D theFocus,
                                         bool theSense,
                                         double theExpectedFocal,
                                         double theExpectedVertX,
@@ -19,8 +21,8 @@ public class GC_MakeParabola2d_Test
         const double aCompareTol = 1.0e-12;
         GC_MakeParabola2d aPrb = new(theAxes, theFocus, theSense);
         Assert.NotNull(aPrb.Value());
-        gp_Parab2d aParab = aPrb.Value().Parab2d();
-        gp_Pnt2d aVert = aParab.Location();
+        Parabola2D aParab = aPrb.Value().Parab2d();
+        Point2D aVert = aParab.Location();
         Assert.Equal(theExpectedFocal, aParab.Focal(), aCompareTol);
         Assert.Equal(theExpectedVertX, aVert.X(), aCompareTol);
         Assert.Equal(theExpectedVertY, aVert.Y(), aCompareTol);
@@ -38,8 +40,8 @@ public class GC_MakeParabola2d_Test
     [Fact]
     public void OCC26747_1_ParabolaOpeningRight()
     {
-        gp_Ax2d anAxes = new(new gp_Pnt2d(0.0, 3.0), new gp_Dir2d(gp_Dir2d.D.Y));
-        gp_Pnt2d aFocus = new(1.0, 3.0);
+        Axis2D anAxes = new(new Point2D(0.0, 3.0), new Direction2D(Direction2D.D.Y));
+        Point2D aFocus = new(1.0, 3.0);
         double[] aCoeffs = [0.0, 1.0, 0.0, -1.0, -3.0, 10.0];
         CheckParabola2d(anAxes, aFocus, true, 0.5, 0.5, 3.0, 1.0, aCoeffs);
     }
@@ -48,8 +50,8 @@ public class GC_MakeParabola2d_Test
     [Fact]
     public void OCC26747_2_ParabolaOpeningLeft()
     {
-        gp_Ax2d anAxes = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
-        gp_Pnt2d aFocus = new(-1.0, 3.0);
+        Axis2D anAxes = new(new Point2D(0.0, 0.0), new Direction2D(Direction2D.D.Y));
+        Point2D aFocus = new(-1.0, 3.0);
         double[] aCoeffs = [0.0, 1.0, 0.0, 1.0, -3.0, 10.0];
         CheckParabola2d(anAxes, aFocus, false, 0.5, -0.5, 3.0, 1.0, aCoeffs);
     }
@@ -58,8 +60,8 @@ public class GC_MakeParabola2d_Test
     [Fact]
     public void OCC26747_3_DegenerateParabola()
     {
-        gp_Ax2d anAxes = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
-        gp_Pnt2d aFocus = new(0.0, 3.0);
+        Axis2D anAxes = new(new Point2D(0.0, 0.0), new Direction2D(Direction2D.D.Y));
+        Point2D aFocus = new(0.0, 3.0);
         double[] aCoeffs = [0.0, 1.0, 0.0, 0.0, -3.0, 9.0];
         CheckParabola2d(anAxes, aFocus, false, 0.0, 0.0, 3.0, 0.0, aCoeffs);
     }

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of vectors (Vector from Geom and Geom2d, Vec and Vec2d from gp) to a STEP vector.</summary>
@@ -18,15 +20,15 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D vector, its magnitude divided by the length factor.</summary>
-    public GeomToStep_MakeVector(in gp_Vec V, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeVector(in Vector3D V, in StepData_Factors theLocalFactors)
     {
-        gp_Dir D = new gp_Dir(V);
+        Direction3D D = new Direction3D(V);
         double lFactor = theLocalFactors.LengthFactor();
         Make(new GeomToStep_MakeDirection(D), V.Magnitude(), lFactor);
     }
 
     /// <summary>A 3D vector (default factors).</summary>
-    public GeomToStep_MakeVector(in gp_Vec V) : this(V, new StepData_Factors())
+    public GeomToStep_MakeVector(in Vector3D V) : this(V, new StepData_Factors())
     {
     }
 
@@ -35,15 +37,15 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D vector (the factors aren't used).</summary>
-    public GeomToStep_MakeVector(in gp_Vec2d V, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeVector(in Vector2D V, in StepData_Factors theLocalFactors)
     {
-        gp_Dir2d D = new gp_Dir2d(V);
+        Direction2D D = new Direction2D(V);
         double lFactor = 1.0;
         Make(new GeomToStep_MakeDirection(D), V.Magnitude(), lFactor);
     }
 
     /// <summary>A 2D vector.</summary>
-    public GeomToStep_MakeVector(in gp_Vec2d V) : this(V, new StepData_Factors())
+    public GeomToStep_MakeVector(in Vector2D V) : this(V, new StepData_Factors())
     {
     }
 
@@ -54,9 +56,9 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     /// <summary>A 3D vector, its magnitude divided by the length factor.</summary>
     public GeomToStep_MakeVector(Geom_Vector GVector, in StepData_Factors theLocalFactors)
     {
-        gp_Vec V;
+        Vector3D V;
         V = GVector.Vec();
-        gp_Dir D = new gp_Dir(V);
+        Direction3D D = new Direction3D(V);
         double lFactor = theLocalFactors.LengthFactor();
         Make(new GeomToStep_MakeDirection(D), V.Magnitude(), lFactor);
     }
@@ -73,9 +75,9 @@ public sealed class GeomToStep_MakeVector : GeomToStep_Root
     /// <summary>A 2D vector (the factors aren't used).</summary>
     public GeomToStep_MakeVector(Geom2d_Vector GVector, in StepData_Factors theLocalFactors)
     {
-        gp_Vec2d V;
+        Vector2D V;
         V = GVector.Vec2d();
-        gp_Dir2d D = new gp_Dir2d(V);
+        Direction2D D = new Direction2D(V);
         double lFactor = 1.0;
         Make(new GeomToStep_MakeDirection(D), V.Magnitude(), lFactor);
     }

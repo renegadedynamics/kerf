@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_HouseholderTest
@@ -10,7 +12,7 @@ public class math_HouseholderTest
     public void ExactlyDeterminedSystem()
     {
         // Test with a square matrix (exact solution exists)
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[1, 3] = 3.0;
@@ -26,8 +28,8 @@ public class math_HouseholderTest
         aB[2] = 32.0;
         aB[3] = 55.0; // Should give solution approximately [1, 2, 3]
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         math_Vector aSol = new(1, 3);
         aHouseholder.Value(aSol, 1);
@@ -52,7 +54,7 @@ public class math_HouseholderTest
     public void OverdeterminedSystem()
     {
         // Test with an overdetermined system (more equations than unknowns)
-        math_Matrix aA = new(1, 4, 1, 2); // 4 equations, 2 unknowns
+        Matrix aA = new(1, 4, 1, 2); // 4 equations, 2 unknowns
         aA[1, 1] = 1.0;
         aA[1, 2] = 1.0; // x + y = 2 (approximately)
         aA[2, 1] = 1.0;
@@ -68,8 +70,8 @@ public class math_HouseholderTest
         aB[3] = 3.0;
         aB[4] = 4.0;
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         math_Vector aSol = new(1, 2);
         aHouseholder.Value(aSol, 1);
@@ -84,7 +86,7 @@ public class math_HouseholderTest
     public void MultipleRightHandSides()
     {
         // Test solving A*X = B where B has multiple columns
-        math_Matrix aA = new(1, 3, 1, 2);
+        Matrix aA = new(1, 3, 1, 2);
         aA[1, 1] = 1.0;
         aA[1, 2] = 0.0;
         aA[2, 1] = 0.0;
@@ -92,7 +94,7 @@ public class math_HouseholderTest
         aA[3, 1] = 1.0;
         aA[3, 2] = 1.0;
 
-        math_Matrix aB = new(1, 3, 1, 2); // Two right-hand sides
+        Matrix aB = new(1, 3, 1, 2); // Two right-hand sides
         aB[1, 1] = 1.0;
         aB[1, 2] = 2.0; // First RHS: [1, 3, 4]
         aB[2, 1] = 3.0;
@@ -100,8 +102,8 @@ public class math_HouseholderTest
         aB[3, 1] = 4.0;
         aB[3, 2] = 6.0;
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         // Get first solution
         math_Vector aSol1 = new(1, 2);
@@ -123,7 +125,7 @@ public class math_HouseholderTest
     public void NearSingularMatrix()
     {
         // Test with nearly singular matrix
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[1, 3] = 3.0;
@@ -140,17 +142,17 @@ public class math_HouseholderTest
         aB[3] = 3.0;
 
         // With default EPS, should handle near-singularity
-        math_Householder aHouseholder = new(aA, aB);
+        Householder aHouseholder = new(aA, aB);
 
         // Near-singular matrix should fail with default EPS
-        Assert.False(aHouseholder.IsDone());
+        Assert.False(aHouseholder.IsDone);
     }
 
     [Fact]
     public void CustomEpsilon()
     {
         // Test with custom epsilon threshold using well-conditioned values
-        math_Matrix aA = new(1, 2, 1, 2);
+        Matrix aA = new(1, 2, 1, 2);
         aA[1, 1] = 1.0e-3;
         aA[1, 2] = 1.0;
         aA[2, 1] = 2.0e-3;
@@ -161,19 +163,19 @@ public class math_HouseholderTest
         aB[2] = 2.0;
 
         // Test that default EPS works with this matrix
-        math_Householder aHouseholder1 = new(aA, aB);
-        Assert.True(aHouseholder1.IsDone());
+        Householder aHouseholder1 = new(aA, aB);
+        Assert.True(aHouseholder1.IsDone);
 
         // Test with very restrictive EPS that should fail
-        math_Householder aHouseholder2 = new(aA, aB, 1.0e-2);
-        Assert.False(aHouseholder2.IsDone());
+        Householder aHouseholder2 = new(aA, aB, 1.0e-2);
+        Assert.False(aHouseholder2.IsDone);
     }
 
     [Fact]
     public void IdentityMatrix()
     {
         // Test with identity matrix (trivial case)
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 0.0;
         aA[1, 3] = 0.0;
@@ -189,16 +191,16 @@ public class math_HouseholderTest
         aB[2] = 7.0;
         aB[3] = 9.0;
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         math_Vector aSol = new(1, 3);
         aHouseholder.Value(aSol, 1);
 
         // For identity matrix, solution should equal RHS
-        Assert.Equal(5.0, aSol[1], Precision.Confusion());
-        Assert.Equal(7.0, aSol[2], Precision.Confusion());
-        Assert.Equal(9.0, aSol[3], Precision.Confusion());
+        Assert.Equal(5.0, aSol[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aSol[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(9.0, aSol[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Removed RangeConstructor test due to unknown exception issues
@@ -208,7 +210,7 @@ public class math_HouseholderTest
     public void DimensionCompatibility()
     {
         // Test dimension compatibility handling
-        math_Matrix aA = new(1, 3, 1, 2);
+        Matrix aA = new(1, 3, 1, 2);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[2, 1] = 3.0;
@@ -223,11 +225,11 @@ public class math_HouseholderTest
         aB_correct[3] = 3.0;
 
         // Test with correctly sized B vector - should work
-        math_Householder aHouseholder1 = new(aA, aB_correct);
-        Assert.True(aHouseholder1.IsDone());
+        Householder aHouseholder1 = new(aA, aB_correct);
+        Assert.True(aHouseholder1.IsDone);
 
         // Test with correctly sized B matrix
-        math_Matrix aB_matrix_correct = new(1, 3, 1, 2); // Correct row count 3
+        Matrix aB_matrix_correct = new(1, 3, 1, 2); // Correct row count 3
         aB_matrix_correct[1, 1] = 1.0;
         aB_matrix_correct[1, 2] = 4.0;
         aB_matrix_correct[2, 1] = 2.0;
@@ -235,15 +237,15 @@ public class math_HouseholderTest
         aB_matrix_correct[3, 1] = 3.0;
         aB_matrix_correct[3, 2] = 6.0;
 
-        math_Householder aHouseholder2 = new(aA, aB_matrix_correct);
-        Assert.True(aHouseholder2.IsDone());
+        Householder aHouseholder2 = new(aA, aB_matrix_correct);
+        Assert.True(aHouseholder2.IsDone);
     }
 
     [Fact]
     public void NearZeroMatrixState()
     {
         // Create a scenario where Householder fails
-        math_Matrix aA = new(1, 2, 1, 2);
+        Matrix aA = new(1, 2, 1, 2);
         aA[1, 1] = 1.0e-25;
         aA[1, 2] = 0.0; // Extremely small values
         aA[2, 1] = 0.0;
@@ -253,28 +255,28 @@ public class math_HouseholderTest
         aB[1] = 1.0;
         aB[2] = 2.0;
 
-        math_Householder aHouseholder = new(aA, aB, 1.0e-10); // Large EPS
-        Assert.False(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB, 1.0e-10); // Large EPS
+        Assert.False(aHouseholder.IsDone);
     }
 
     [Fact]
     public void ValidIndexRange()
     {
         // Test valid index range handling
-        math_Matrix aA = new(1, 2, 1, 2);
+        Matrix aA = new(1, 2, 1, 2);
         aA[1, 1] = 1.0;
         aA[1, 2] = 0.0;
         aA[2, 1] = 0.0;
         aA[2, 2] = 1.0;
 
-        math_Matrix aB = new(1, 2, 1, 2); // Two columns
+        Matrix aB = new(1, 2, 1, 2); // Two columns
         aB[1, 1] = 1.0;
         aB[1, 2] = 2.0;
         aB[2, 1] = 3.0;
         aB[2, 2] = 4.0;
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         math_Vector aSol = new(1, 2);
 
@@ -293,7 +295,7 @@ public class math_HouseholderTest
     public void RegressionTest()
     {
         // Regression test with known data
-        math_Matrix aA = new(1, 3, 1, 2);
+        Matrix aA = new(1, 3, 1, 2);
         aA[1, 1] = 2.0;
         aA[1, 2] = 1.0; // 2x + y = 5
         aA[2, 1] = 1.0;
@@ -306,8 +308,8 @@ public class math_HouseholderTest
         aB[2] = 3.0;
         aB[3] = 4.0;
 
-        math_Householder aHouseholder = new(aA, aB);
-        Assert.True(aHouseholder.IsDone());
+        Householder aHouseholder = new(aA, aB);
+        Assert.True(aHouseholder.IsDone);
 
         math_Vector aSol = new(1, 2);
         aHouseholder.Value(aSol, 1);

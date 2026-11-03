@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
 
@@ -26,8 +28,8 @@ public sealed partial class GccAna_Circ2d2TanOn
 
     /// <summary>The circles tangent to a circle and through a point with their centre on a line.</summary>
     public GccAna_Circ2d2TanOn(in GccEnt_QualifiedCirc Qualified1,
-                               in gp_Pnt2d Point2,
-                               in gp_Lin2d OnLine,
+                               in Point2D Point2,
+                               in Line2D OnLine,
                                double Tolerance)
         : this(4)
     {
@@ -42,21 +44,21 @@ public sealed partial class GccAna_Circ2d2TanOn
             throw new GccEnt_BadQualifier();
         }
         NCollection_Array1<double> Radius = new(1, 2);
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
-        gp_Circ2d C1 = Qualified1.Qualified();
+        Direction2D dirx = new(Direction2D.D.X);
+        Circle2D C1 = Qualified1.Qualified();
         double R1 = C1.Radius();
-        gp_Pnt2d center1 = C1.Location();
+        Point2D center1 = C1.Location();
 
         //=========================================================================
         //   Processing of boundary cases.                                        +
         //=========================================================================
 
         double dp2l = OnLine.Distance(Point2);
-        gp_Dir2d donline = OnLine.Direction();
-        gp_Pnt2d pinterm = new(Point2.XY() + dp2l * new gp_XY(-donline.Y(), donline.X()));
+        Direction2D donline = OnLine.Direction();
+        Point2D pinterm = new(Point2.XY() + dp2l * new Xy(-donline.Y(), donline.X()));
         if (OnLine.Distance(pinterm) > Tol)
         {
-            pinterm = new gp_Pnt2d(Point2.XY() - dp2l * new gp_XY(-donline.Y(), donline.X()));
+            pinterm = new Point2D(Point2.XY() - dp2l * new Xy(-donline.Y(), donline.X()));
         }
         double dist = pinterm.Distance(center1);
         if (Qualified1.IsEnclosed() && Math.Abs(R1 - dist - dp2l) <= Tol)
@@ -80,9 +82,9 @@ public sealed partial class GccAna_Circ2d2TanOn
         if (WellDone)
         {
             NbrSol++;
-            cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(pinterm, dirx), dp2l);
+            cirsol[NbrSol] = new Circle2D(new Axis2D(pinterm, dirx), dp2l);
             //  ======================================================
-            gp_Dir2d dc1 = new(center1.XY() - pinterm.XY());
+            Direction2D dc1 = new(center1.XY() - pinterm.XY());
             double distcc1 = pinterm.Distance(center1);
             if (!Qualified1.IsUnqualified())
             {
@@ -101,13 +103,13 @@ public sealed partial class GccAna_Circ2d2TanOn
                 qualifier1[NbrSol] = GccEnt_enclosing;
             }
             qualifier2[NbrSol] = GccEnt_noqualifier;
-            pnttg1sol[NbrSol] = new gp_Pnt2d(pinterm.XY() + dp2l * dc1.XY());
-            par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pnttg1sol[NbrSol] = new Point2D(pinterm.XY() + dp2l * dc1.XY());
+            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
             pnttg2sol[NbrSol] = Point2;
-            par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
             pntcen[NbrSol] = cirsol[NbrSol].Location();
-            parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+            parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
             return;
         }
 
@@ -146,7 +148,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                     {
                         for (int j = 1; j <= Intp.NbPoints(); j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double dist1 = center1.Distance(Center);
                             int nbsol = 1;
                             bool ok = false;
@@ -196,7 +198,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                                 for (int k = 1; k <= nbsol; k++)
                                 {
                                     NbrSol++;
-                                    cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius[k]);
+                                    cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius[k]);
                                     //              ==========================================================
                                     double distcc1 = Center.Distance(center1);
                                     if (!Qualified1.IsUnqualified())
@@ -224,18 +226,18 @@ public sealed partial class GccAna_Circ2d2TanOn
                                     else
                                     {
                                         TheSame1[NbrSol] = 0;
-                                        gp_Dir2d dc1 = new(center1.XY() - Center.XY());
-                                        pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius[k] * dc1.XY());
-                                        par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                        Direction2D dc1 = new(center1.XY() - Center.XY());
+                                        pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc1.XY());
+                                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
                                         // OCCT: indexed by the bisector's number i instead of NbrSol
-                                        pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                        pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                                     }
                                     TheSame2[NbrSol] = 0;
                                     pnttg2sol[NbrSol] = Point2;
-                                    par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                    par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
                                     pararg2[NbrSol] = 0.0;
                                     pntcen[NbrSol] = Center;
-                                    parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+                                    parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
                                 }
                             }
                         }

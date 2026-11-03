@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -106,7 +107,7 @@ public class XSControl_Reader
     /// Loads a file and returns the read status Zero for a Model which complies with the Controller
     /// </summary>
     /// <remarks>OCCT.NET: <paramref name="theProgress"/> (not in OCCT) is given to the session (plan 2.7).</remarks>
-    public virtual IFSelect_ReturnStatus ReadFile(string filename, Message_ProgressRange theProgress = default)
+    public virtual IFSelect_ReturnStatus ReadFile(string filename, ProgressRange theProgress = default)
     {
         IFSelect_ReturnStatus stat = thesession.ReadFile(filename, theProgress);
         thesession.InitTransferReader(4);
@@ -120,7 +121,7 @@ public class XSControl_Reader
     /// OCCT.NET: the stream is a .NET <see cref="Stream"/>; <paramref name="theProgress"/> (not in OCCT) is given to
     /// the session (plan 2.7).
     /// </remarks>
-    public virtual IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress = default)
+    public virtual IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, ProgressRange theProgress = default)
     {
         IFSelect_ReturnStatus stat = thesession.ReadStream(theName, theIStream, theProgress);
         thesession.InitTransferReader(4);
@@ -151,15 +152,15 @@ public class XSControl_Reader
     /// Reader.GiveList("xst-transferrable-roots","step-type(ADVANCED_FACE)"); Warning If the value given to
     /// second is incorrect, it will simply be ignored.
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveList(string first = "", string second = "")
+    public NCollection_HSequence<Transient>? GiveList(string first = "", string second = "")
     {
         if (first is not null && CStringChar(first, 0) != '\0')
         {
             return thesession.GiveList(first, second);
         }
 
-        NCollection_HSequence<Standard_Transient> list =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> list =
+            new NCollection_HSequence<Transient>();
         int i, nbr = NbRootsForTransfer();
         for (i = 1; i <= nbr; i++)
         {
@@ -173,7 +174,7 @@ public class XSControl_Reader
     /// an entity or a list of entities (as a HSequenceOfTransient) : the standard result of this selection
     /// applied to this list if &lt;first&gt; is erroneous, a null handle is returned
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveList(string first, Standard_Transient? list)
+    public NCollection_HSequence<Transient>? GiveList(string first, Transient? list)
     {
         return thesession.GiveListFromList(first, list);
     }
@@ -195,7 +196,7 @@ public class XSControl_Reader
         for (i = 1; i <= nbr; i++)
         {
             //    on filtre les racines qu on sait transferer
-            Standard_Transient start = sf.Root(i);
+            Transient start = sf.Root(i);
             if (thesession.TransferReader().Recognize(start))
             {
                 theroots.Append(start);
@@ -207,9 +208,9 @@ public class XSControl_Reader
     /// <summary>
     /// Returns an IGES or STEP root entity for translation. The entity is identified by its rank in a list.
     /// </summary>
-    public Standard_Transient? RootForTransfer(int num = 1)
+    public Transient? RootForTransfer(int num = 1)
     {
-        Standard_Transient voidroot = null;
+        Transient voidroot = null;
         int nbr = NbRootsForTransfer();
         if (num < 1 || num > nbr)
         {
@@ -221,7 +222,7 @@ public class XSControl_Reader
     /// <summary>
     /// Translates a root identified by the rank num in the model. false is returned if no shape is produced.
     /// </summary>
-    public bool TransferOneRoot(int num = 1, Message_ProgressRange theProgress = default)
+    public bool TransferOneRoot(int num = 1, ProgressRange theProgress = default)
     {
         return TransferEntity(RootForTransfer(num), theProgress);
     }
@@ -230,7 +231,7 @@ public class XSControl_Reader
     /// Translates an IGES or STEP entity identified by the rank num in the model. false is returned if no shape
     /// is produced.
     /// </summary>
-    public bool TransferOne(int num, Message_ProgressRange theProgress = default)
+    public bool TransferOne(int num, ProgressRange theProgress = default)
     {
         return TransferEntity(thesession.StartingEntity(num), theProgress);
     }
@@ -239,7 +240,7 @@ public class XSControl_Reader
     /// Translates an IGES or STEP entity in the model. true is returned if a shape is produced; otherwise, false
     /// is returned.
     /// </summary>
-    public bool TransferEntity(Standard_Transient? theStart, Message_ProgressRange theProgress = default)
+    public bool TransferEntity(Transient? theStart, ProgressRange theProgress = default)
     {
         if (theStart is null)
         {
@@ -267,7 +268,7 @@ public class XSControl_Reader
     /// translated. The list can be produced with GiveList. Warning - This function does not clear the existing
     /// output shapes.
     /// </summary>
-    public int TransferList(NCollection_HSequence<Standard_Transient>? theList, Message_ProgressRange theProgress = default)
+    public int TransferList(NCollection_HSequence<Transient>? theList, ProgressRange theProgress = default)
     {
         if (theList is null)
         {
@@ -279,10 +280,10 @@ public class XSControl_Reader
         aTransferReader.BeginTransfer();
         InitializeMissingParameters();
         ClearShapes();
-        Message_ProgressScope aProgressScope = new Message_ProgressScope(theProgress, null, theList.Size());
+        ProgressScope aProgressScope = new ProgressScope(theProgress, null, theList.Size());
         for (int i = 1; i <= theList.Size() && aProgressScope.More(); i++)
         {
-            Standard_Transient aStart = theList.Value(i);
+            Transient aStart = theList.Value(i);
             if (aTransferReader.TransferOne(aStart, true, aProgressScope.Next()) == 0)
             {
                 continue;
@@ -302,7 +303,7 @@ public class XSControl_Reader
     /// Translates all translatable roots and returns the number of successful translations. Warning - This
     /// function clears existing output shapes first.
     /// </summary>
-    public int TransferRoots(Message_ProgressRange theProgress = default)
+    public int TransferRoots(ProgressRange theProgress = default)
     {
         NbRootsForTransfer();
 
@@ -311,10 +312,10 @@ public class XSControl_Reader
         aTransferReader.BeginTransfer();
         InitializeMissingParameters();
         ClearShapes();
-        Message_ProgressScope aProgressScope = new Message_ProgressScope(theProgress, "Root", theroots.Size());
+        ProgressScope aProgressScope = new ProgressScope(theProgress, "Root", theroots.Size());
         for (int i = 1; i <= theroots.Size() && aProgressScope.More(); i++)
         {
-            Standard_Transient aStart = theroots.Value(i);
+            Transient aStart = theroots.Value(i);
             if (aTransferReader.TransferOne(aStart, true, aProgressScope.Next()) == 0)
             {
                 continue;
@@ -397,7 +398,7 @@ public class XSControl_Reader
     /// </summary>
     public void PrintCheckLoad(bool failsonly, IFSelect_PrintCount mode)
     {
-        using Message_Messenger.StreamBuffer aBuffer = Message.SendInfo();
+        using Messenger.StreamBuffer aBuffer = global::Kerf.Engine.Foundation.Message.SendInfo();
         StringWriter aText = new StringWriter();
         PrintCheckLoad(aText, failsonly, mode);
         aBuffer.Append(aText.ToString());
@@ -419,7 +420,7 @@ public class XSControl_Reader
     /// </summary>
     public void PrintCheckTransfer(bool failsonly, IFSelect_PrintCount mode)
     {
-        using Message_Messenger.StreamBuffer aBuffer = Message.SendInfo();
+        using Messenger.StreamBuffer aBuffer = global::Kerf.Engine.Foundation.Message.SendInfo();
         StringWriter aText = new StringWriter();
         PrintCheckTransfer(aText, failsonly, mode);
         aBuffer.Append(aText.ToString());
@@ -451,7 +452,7 @@ public class XSControl_Reader
     /// </summary>
     public void PrintStatsTransfer(int what, int mode = 0)
     {
-        using Message_Messenger.StreamBuffer aBuffer = Message.SendInfo();
+        using Messenger.StreamBuffer aBuffer = global::Kerf.Engine.Foundation.Message.SendInfo();
         StringWriter aText = new StringWriter();
         PrintStatsTransfer(aText, what, mode);
         aBuffer.Append(aText.ToString());
@@ -468,7 +469,7 @@ public class XSControl_Reader
     /// <summary>
     /// Gives statistics about Transfer
     /// </summary>
-    public void GetStatsTransfer(NCollection_HSequence<Standard_Transient>? list, out int nbMapped, out int nbWithResult, out int nbWithFail)
+    public void GetStatsTransfer(NCollection_HSequence<Transient>? list, out int nbMapped, out int nbWithResult, out int nbWithFail)
     {
         Transfer_TransientProcess TP =
             thesession.TransferReader().TransientProcess();
@@ -629,7 +630,7 @@ public class XSControl_Reader
     }
 
     protected bool therootsta;
-    protected NCollection_Sequence<Standard_Transient> theroots = new NCollection_Sequence<Standard_Transient>();
+    protected NCollection_Sequence<Transient> theroots = new NCollection_Sequence<Transient>();
     private XSControl_WorkSession? thesession;
     private NCollection_Sequence<TopoDS_Shape> theshapes = new NCollection_Sequence<TopoDS_Shape>();
 }

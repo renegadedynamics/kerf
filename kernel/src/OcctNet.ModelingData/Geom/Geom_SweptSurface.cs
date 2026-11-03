@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,14 +13,14 @@ namespace Occt;
 public abstract class Geom_SweptSurface : Geom_Surface
 {
     protected Geom_Curve? basisCurve;
-    protected gp_Dir direction = new gp_Dir();
-    protected GeomAbs_Shape smooth;
+    protected Direction3D direction = new Direction3D();
+    protected Continuity smooth;
 
     /// <summary>The continuity of the surface.</summary>
-    public override GeomAbs_Shape Continuity() => smooth;
+    public override Continuity Continuity() => smooth;
 
     /// <summary>The reference direction: the axis of revolution, or the direction of extrusion.</summary>
-    public gp_Dir Direction() => direction;
+    public Direction3D Direction() => direction;
 
     /// <summary>The swept curve: the revolved curve, or the extruded curve.</summary>
     /// <remarks>
@@ -38,7 +40,7 @@ public abstract class Geom_SweptSurface : Geom_Surface
     /// </summary>
     private protected void OwnBasisCurve()
     {
-        if (basisCurve!.IsFrozen())
+        if (basisCurve!.IsFrozen)
         {
             basisCurve = (Geom_Curve)basisCurve.Copy();
         }

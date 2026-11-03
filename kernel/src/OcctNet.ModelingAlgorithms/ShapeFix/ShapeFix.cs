@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -28,7 +32,7 @@ public static partial class ShapeFix
     /// <paramref name="enforce"/>, the SameRange and SameParameter flags are reset first. Writes into the shape.
     /// </summary>
     internal static bool SameParameter(in TopoDS_Shape shape, bool enforce, double preci = 0.0,
-                                       Message_ProgressRange theProgress = default,
+                                       ProgressRange theProgress = default,
                                        ShapeExtend_BasicMsgRegistrator? theMsgReg = null)
     {
         // Calculate number of edges
@@ -54,14 +58,14 @@ public static partial class ShapeFix
         bool   iatol   = (tol > 0);
         var    sfe     = new ShapeFix_Edge();
         var    ex      = new TopExp_Explorer(shape, TopAbs_EDGE);
-        var    doneMsg = new Message_Msg("FixEdge.SameParameter.MSG0");
+        var    doneMsg = new Msg("FixEdge.SameParameter.MSG0");
 
         // Start progress scope (no need to check if progress exists -- it is safe)
-        using var aPSForSameParam = new Message_ProgressScope(theProgress, "Fixing same parameter problem", 2);
+        using var aPSForSameParam = new ProgressScope(theProgress, "Fixing same parameter problem", 2);
 
         {
             // Start progress scope (no need to check if progress exists -- it is safe)
-            using var aPS = new Message_ProgressScope(aPSForSameParam.Next(), "Fixing edge", aNbEdges);
+            using var aPS = new ProgressScope(aPSForSameParam.Next(), "Fixing edge", aNbEdges);
 
             while (ex.More())
             {
@@ -110,7 +114,7 @@ public static partial class ShapeFix
                     }
                     else if (theMsgReg is not null && !sfe.Status(ShapeExtend_OK))
                     {
-                        theMsgReg.Send(E, doneMsg, Message_Warning);
+                        theMsgReg.Send(E, doneMsg, Warning);
                     }
 
                     // Complete step in current progress scope
@@ -127,7 +131,7 @@ public static partial class ShapeFix
 
         {
             // Start progress scope (no need to check if progress exists -- it is safe)
-            using var aPS = new Message_ProgressScope(aPSForSameParam.Next(), "Update tolerances", aNbFaces);
+            using var aPS = new ProgressScope(aPSForSameParam.Next(), "Update tolerances", aNbFaces);
 
             //: i2 abv 21 Aug 98: ProSTEP TR8 Motor.rle face 710:
             // Update tolerance of edges on planes (no pcurves are stored)
@@ -175,8 +179,8 @@ public static partial class ShapeFix
                     for (int i = 0; i < NCONTROL; i++)
                     {
                         double par  = (f * (NCONTROL - 1 - i) + l * i) / (NCONTROL - 1);
-                        gp_Pnt pnt  = crv.Value(par);
-                        gp_Pnt prj  = ACS.Value(par);
+                        Point3D pnt  = crv.Value(par);
+                        Point3D prj  = ACS.Value(par);
                         double dist = pnt.SquareDistance(prj);
                         if (tol2 < dist)
                         {
@@ -263,11 +267,11 @@ public static partial class ShapeFix
     // function : ReplaceVertex
     // purpose  : auxiliary for FixVertexPosition
     //=======================================================================
-    private static TopoDS_Edge ReplaceVertex(in TopoDS_Edge theEdge, in gp_Pnt theP, bool theFwd)
+    private static TopoDS_Edge ReplaceVertex(in TopoDS_Edge theEdge, in Point3D theP, bool theFwd)
     {
         var aNewVertex = new TopoDS_Vertex();
         var aB         = new BRep_Builder();
-        aB.MakeVertex(ref aNewVertex, theP, Occt.Precision.Confusion());
+        aB.MakeVertex(ref aNewVertex, theP, Kerf.Engine.Foundation.Precision.Confusion());
         var aV1 = new TopoDS_Vertex();
         var aV2 = new TopoDS_Vertex();
         if (theFwd)
@@ -293,21 +297,21 @@ public static partial class ShapeFix
     // function : getNearPoint
     // purpose  : auxiliary for FixVertexPosition
     //=======================================================================
-    private static double getNearPoint(NCollection_Sequence<gp_Pnt> aSeq1, NCollection_Sequence<gp_Pnt> aSeq2,
-                                       ref gp_XYZ acent)
+    private static double getNearPoint(NCollection_Sequence<Point3D> aSeq1, NCollection_Sequence<Point3D> aSeq2,
+                                       ref Xyz acent)
     {
         int    i    = 1;
         int    ind1 = 0, ind2 = 0;
         double mindist = RealLast();
         for (; i <= aSeq1.Length(); i++)
         {
-            gp_Pnt p1 = aSeq1.Value(i);
+            Point3D p1 = aSeq1.Value(i);
             int    j  = 1;
             for (; j <= aSeq2.Length(); j++)
             {
-                gp_Pnt p2 = aSeq2.Value(j);
+                Point3D p2 = aSeq2.Value(j);
                 double d  = p1.Distance(p2);
-                if (Math.Abs(d - mindist) <= Occt.Precision.Confusion())
+                if (Math.Abs(d - mindist) <= Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     continue;
                 }
@@ -335,8 +339,8 @@ public static partial class ShapeFix
                                         NCollection_Sequence<TopoDS_Shape> theSuitEdges,
                                         NCollection_Sequence<TopoDS_Shape> theRejectEdges,
                                         double theTolerance,
-                                        ref gp_XYZ thecentersuit,
-                                        ref gp_XYZ thecenterreject)
+                                        ref Xyz thecentersuit,
+                                        ref Xyz thecenterreject)
     {
         if (theLEdges.IsEmpty())
         {
@@ -351,8 +355,8 @@ public static partial class ShapeFix
         TopExp.Vertices(aEdge1, out TopoDS_Vertex aVert11, out TopoDS_Vertex aVert12);
         aMapEdges.Add(aEdge1);
         Geom_Curve? aCurve1  = BRep_Tool.Curve(aEdge1, out double aFirst1, out double aLast1);
-        var         p11      = new gp_Pnt();
-        var         p12      = new gp_Pnt();
+        var         p11      = new Point3D();
+        var         p12      = new Point3D();
         bool        isFirst1 = theVert.IsSame(aVert11);
         bool        isSame1  = aVert11.IsSame(aVert12);
         if (aCurve1 is not null)
@@ -405,8 +409,8 @@ public static partial class ShapeFix
             Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
             if (aCurve is not null)
             {
-                gp_Pnt p1;
-                var    p2 = new gp_Pnt();
+                Point3D p1;
+                var    p2 = new Point3D();
                 if (isFirst)
                 {
                     p1 = aCurve.Value(aFirst);
@@ -420,7 +424,7 @@ public static partial class ShapeFix
                     p2 = aCurve.Value(aLast);
                 }
                 double aMinDist = RealLast();
-                var    acent    = new gp_XYZ();
+                var    acent    = new Xyz();
                 if (!isSame && !isSame1)
                 {
                     aMinDist = p1.Distance(p11);
@@ -428,8 +432,8 @@ public static partial class ShapeFix
                 }
                 else
                 {
-                    var aSeq1 = new NCollection_Sequence<gp_Pnt>();
-                    var aSeq2 = new NCollection_Sequence<gp_Pnt>();
+                    var aSeq1 = new NCollection_Sequence<Point3D>();
+                    var aSeq2 = new NCollection_Sequence<Point3D>();
                     aSeq1.Append(p11);
                     if (isSame1)
                     {
@@ -556,9 +560,9 @@ public static partial class ShapeFix
 
             var aB1 = new BRep_Builder();
             aB1.UpdateVertex(aVert, theTolerance);
-            gp_Pnt aPvert        = BRep_Tool.Pnt(aVert);
-            gp_XYZ acenter       = aPvert.XYZ();
-            gp_XYZ acenterreject = aPvert.XYZ();
+            Point3D aPvert        = BRep_Tool.Pnt(aVert);
+            Xyz acenter       = aPvert.XYZ();
+            Xyz acenterreject = aPvert.XYZ();
 
             var aSuitEdges   = new NCollection_Sequence<TopoDS_Shape>();
             var aRejectEdges = new NCollection_Sequence<TopoDS_Shape>();
@@ -595,8 +599,8 @@ public static partial class ShapeFix
                 Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
                 if (aCurve is not null)
                 {
-                    gp_Pnt p1 = aCurve.Value(aFirst);
-                    gp_Pnt p2 = aCurve.Value(aLast);
+                    Point3D p1 = aCurve.Value(aFirst);
+                    Point3D p2 = aCurve.Value(aLast);
 
                     // if distance between ends of curve more than specified tolerance
                     // but vertices are the same that one of the vertex will be replaced.
@@ -613,7 +617,7 @@ public static partial class ShapeFix
                         if (isReplace)
                         {
                             TopoDS_Edge enew;
-                            if (p1.Distance(new gp_Pnt(acenter)) < p2.Distance(new gp_Pnt(acenter)))
+                            if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(aEdge, p2, false);
                             }
@@ -635,7 +639,7 @@ public static partial class ShapeFix
                         if (isReplace)
                         {
                             TopoDS_Edge enew;
-                            if (p1.Distance(new gp_Pnt(acenter)) < p2.Distance(new gp_Pnt(acenter)))
+                            if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(aEdge, p2, false);
                             }
@@ -652,7 +656,7 @@ public static partial class ShapeFix
                 }
             }
 
-            if (isAdd && aPvert.Distance(new gp_Pnt(acenter)) > theTolerance)
+            if (isAdd && aPvert.Distance(new Point3D(acenter)) > theTolerance)
             {
                 var aB = new BRep_Builder();
 
@@ -660,7 +664,7 @@ public static partial class ShapeFix
                 // else {
                 isDone = true;
                 var aNewVertex = new TopoDS_Vertex();
-                aB.MakeVertex(ref aNewVertex, new gp_Pnt(acenter), Occt.Precision.Confusion());
+                aB.MakeVertex(ref aNewVertex, new Point3D(acenter), Kerf.Engine.Foundation.Precision.Confusion());
                 aNewVertex.Orientation(aVert.Orientation());
                 thecontext.Replace(aVert, aNewVertex);
             }
@@ -684,8 +688,8 @@ public static partial class ShapeFix
                 Geom_Curve? aCurve = BRep_Tool.Curve(aEdge, out double aFirst, out double aLast);
                 if (aCurve is not null)
                 {
-                    gp_Pnt      p1 = aCurve.Value(aFirst);
-                    gp_Pnt      p2 = aCurve.Value(aLast);
+                    Point3D      p1 = aCurve.Value(aFirst);
+                    Point3D      p2 = aCurve.Value(aLast);
                     TopoDS_Edge enew;
                     if (isFirst)
                     {
@@ -728,7 +732,7 @@ public static partial class ShapeFix
             Geom_Curve? c3d  = BRep_Tool.Curve(edge, out double first, out double last);
             if (c3d is not null)
             {
-                var bb = new Bnd_Box();
+                var bb = new Box();
                 bb.Add(c3d.Value(first));
                 bb.Add(c3d.Value(last));
                 bb.Add(c3d.Value((last + first) / 2.0));

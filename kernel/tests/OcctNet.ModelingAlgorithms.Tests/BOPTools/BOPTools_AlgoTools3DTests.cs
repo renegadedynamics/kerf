@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -9,7 +10,7 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 /// <summary>Shapes for the BOPTools tests: primitives and data/occ shapes.</summary>
 internal static class BOPToolsTestShapes
 {
-    public static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new gp_Pnt(-1, -2, -3), 2, 4, 6).Shape();
+    public static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(-1, -2, -3), 2, 4, 6).Shape();
     public static TopoDS_Shape Cylinder() => new BRepPrimAPI_MakeCylinder(2, 5).Shape();
     public static TopoDS_Shape Sphere() => new BRepPrimAPI_MakeSphere(3).Shape();
     public static TopoDS_Shape Cone() => new BRepPrimAPI_MakeCone(3, 1, 4).Shape();
@@ -55,23 +56,23 @@ internal static class BOPToolsTestShapes
     }
 
     /// <summary>The state of the 2D point in the face (taken FORWARD) by BRepClass_FaceClassifier.</summary>
-    public static TopAbs_State Classify(in TopoDS_Face theFace, in gp_Pnt2d theP)
+    public static TopAbs_State Classify(in TopoDS_Face theFace, in Point2D theP)
     {
         TopoDS_Face aFF = theFace;
         aFF.Orientation(TopAbs_FORWARD);
         BRepClass_FaceClassifier aClassifier = new();
-        aClassifier.Perform(aFF, theP, Precision.PConfusion());
+        aClassifier.Perform(aFF, theP, global::Kerf.Engine.Foundation.Precision.PConfusion());
         return aClassifier.State();
     }
 
-    public static void SameBits(in gp_Pnt theA, in gp_Pnt theB)
+    public static void SameBits(in Point3D theA, in Point3D theB)
     {
         Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X()), BitConverter.DoubleToInt64Bits(theB.X()));
         Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y()), BitConverter.DoubleToInt64Bits(theB.Y()));
         Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Z()), BitConverter.DoubleToInt64Bits(theB.Z()));
     }
 
-    public static void SameBits(in gp_Pnt2d theA, in gp_Pnt2d theB)
+    public static void SameBits(in Point2D theA, in Point2D theB)
     {
         Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X()), BitConverter.DoubleToInt64Bits(theB.X()));
         Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y()), BitConverter.DoubleToInt64Bits(theB.Y()));
@@ -81,11 +82,11 @@ internal static class BOPToolsTestShapes
 /// <summary>BOPTools_AlgoTools3D: normals along edges, points in faces, seams.</summary>
 public class BOPTools_AlgoTools3DTests
 {
-    private static void CheckPointInFace(in TopoDS_Face theFace, int theErr, in gp_Pnt theP, in gp_Pnt2d theP2D, string theWhat)
+    private static void CheckPointInFace(in TopoDS_Face theFace, int theErr, in Point3D theP, in Point2D theP2D, string theWhat)
     {
         Assert.True(theErr == 0, $"{theWhat}: error {theErr}");
         Assert.Equal(TopAbs_IN, BOPToolsTestShapes.Classify(theFace, theP2D));
-        gp_Pnt aPS = BRep_Tool.Surface(theFace)!.Value(theP2D.X(), theP2D.Y());
+        Point3D aPS = BRep_Tool.Surface(theFace)!.Value(theP2D.X(), theP2D.Y());
         BOPToolsTestShapes.SameBits(aPS, theP);
     }
 
@@ -97,8 +98,8 @@ public class BOPTools_AlgoTools3DTests
         {
             foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aShape))
             {
-                gp_Pnt aP = new();
-                gp_Pnt2d aP2D = new();
+                Point3D aP = new();
+                Point2D aP2D = new();
                 int iErr = BOPTools_AlgoTools3D.PointInFace(aF, ref aP, ref aP2D, aCtx);
                 CheckPointInFace(aF, iErr, aP, aP2D, aName);
             }
@@ -121,12 +122,12 @@ public class BOPTools_AlgoTools3DTests
                     }
                     BRep_Tool.Range(aE, out double aT1, out double aT2);
                     double aT = BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2);
-                    gp_Pnt aP = new();
-                    gp_Pnt2d aP2D = new();
+                    Point3D aP = new();
+                    Point2D aP2D = new();
                     int iErr = BOPTools_AlgoTools3D.PointInFace(aF, aE, aT, 1.0e-4, ref aP, ref aP2D, aCtx);
                     CheckPointInFace(aF, iErr, aP, aP2D, aName);
                     // the point is 1e-4 from the edge's pcurve point (the domain is longer than that)
-                    BRep_Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(aT, out gp_Pnt2d aPE);
+                    BRep_Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(aT, out Point2D aPE);
                     Assert.Equal(1.0e-4, aPE.Distance(aP2D), 1.0e-12);
                 }
             }
@@ -139,13 +140,13 @@ public class BOPTools_AlgoTools3DTests
         IntTools_Context aCtx = new();
         TopoDS_Face aF = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box())[0];
         // a line far outside the face's UV domain
-        Geom2d_Line aL = new(new gp_Pnt2d(1000, 1000), new gp_Dir2d(0, 1));
-        gp_Pnt aP = new(7, 8, 9);
-        gp_Pnt2d aP2D = new(7, 8);
+        Geom2d_Line aL = new(new Point2D(1000, 1000), new Direction2D(0, 1));
+        Point3D aP = new(7, 8, 9);
+        Point2D aP2D = new(7, 8);
         int iErr = BOPTools_AlgoTools3D.PointInFace(aF, aL, ref aP, ref aP2D, aCtx);
         Assert.NotEqual(0, iErr);
-        Assert.Equal(new gp_Pnt(7, 8, 9), aP);
-        Assert.Equal(new gp_Pnt2d(7, 8), aP2D);
+        Assert.Equal(new Point3D(7, 8, 9), aP);
+        Assert.Equal(new Point2D(7, 8), aP2D);
         // no edge pcurve: 5
         // (a plane gives every edge a pcurve, so a torus face)
         TopoDS_Face aTorusFace = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Torus())[0];
@@ -163,8 +164,8 @@ public class BOPTools_AlgoTools3DTests
             foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(aShape))
             {
                 ++aNbFaces;
-                gp_Pnt aP = new();
-                gp_Pnt2d aP2D = new();
+                Point3D aP = new();
+                Point2D aP2D = new();
                 int iErr = BOPTools_AlgoTools3D.PointInFace(aF, ref aP, ref aP2D, aCtx);
                 if (iErr != 0)
                 {
@@ -172,7 +173,7 @@ public class BOPTools_AlgoTools3DTests
                 }
                 ++aNbDone;
                 Assert.NotEqual(TopAbs_OUT, BOPToolsTestShapes.Classify(aF, aP2D));
-                gp_Pnt aPS = BRep_Tool.Surface(aF)!.Value(aP2D.X(), aP2D.Y());
+                Point3D aPS = BRep_Tool.Surface(aF)!.Value(aP2D.X(), aP2D.Y());
                 BOPToolsTestShapes.SameBits(aPS, aP);
                 _ = aName;
             }
@@ -195,12 +196,12 @@ public class BOPTools_AlgoTools3DTests
         }
         // fresh answers
         int aN = aFaces.Count;
-        var aFresh = new (int Err, gp_Pnt P, gp_Pnt2d P2D)[aN];
-        var aFreshEdge = new (int Err, gp_Pnt P, gp_Pnt2d P2D)[aN];
+        var aFresh = new (int Err, Point3D P, Point2D P2D)[aN];
+        var aFreshEdge = new (int Err, Point3D P, Point2D P2D)[aN];
         for (int i = 0; i < aN; ++i)
         {
-            gp_Pnt aP = new();
-            gp_Pnt2d aP2D = new();
+            Point3D aP = new();
+            Point2D aP2D = new();
             int iErr = BOPTools_AlgoTools3D.PointInFace(aFaces[i], ref aP, ref aP2D, new IntTools_Context());
             aFresh[i] = (iErr, aP, aP2D);
             aFreshEdge[i] = EdgeVariant(aFaces[i], new IntTools_Context());
@@ -211,13 +212,13 @@ public class BOPTools_AlgoTools3DTests
         int[] anOrder = [.. Enumerable.Range(0, aN).Concat(Enumerable.Range(0, aN)).OrderBy(_ => aRandom.Next())];
         foreach (int i in anOrder)
         {
-            gp_Pnt aP = new();
-            gp_Pnt2d aP2D = new();
+            Point3D aP = new();
+            Point2D aP2D = new();
             int iErr = BOPTools_AlgoTools3D.PointInFace(aFaces[i], ref aP, ref aP2D, aCtx);
             Assert.Equal(aFresh[i].Err, iErr);
             BOPToolsTestShapes.SameBits(aFresh[i].P, aP);
             BOPToolsTestShapes.SameBits(aFresh[i].P2D, aP2D);
-            (int Err, gp_Pnt P, gp_Pnt2d P2D) anEdge = EdgeVariant(aFaces[i], aCtx);
+            (int Err, Point3D P, Point2D P2D) anEdge = EdgeVariant(aFaces[i], aCtx);
             Assert.Equal(aFreshEdge[i].Err, anEdge.Err);
             BOPToolsTestShapes.SameBits(aFreshEdge[i].P, anEdge.P);
             BOPToolsTestShapes.SameBits(aFreshEdge[i].P2D, anEdge.P2D);
@@ -225,10 +226,10 @@ public class BOPTools_AlgoTools3DTests
     }
 
     // PointInFace from the face's first non-degenerated edge with a pcurve.
-    private static (int Err, gp_Pnt P, gp_Pnt2d P2D) EdgeVariant(in TopoDS_Face theFace, IntTools_Context theCtx)
+    private static (int Err, Point3D P, Point2D P2D) EdgeVariant(in TopoDS_Face theFace, IntTools_Context theCtx)
     {
-        gp_Pnt aP = new();
-        gp_Pnt2d aP2D = new();
+        Point3D aP = new();
+        Point2D aP2D = new();
         foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(theFace))
         {
             if (BRep_Tool.Degenerated(aE) || BRep_Tool.CurveOnSurface(aE, theFace, out double aT1, out double aT2) is null)
@@ -256,15 +257,15 @@ public class BOPTools_AlgoTools3DTests
                     {
                         continue;
                     }
-                    gp_Pnt aP = new();
-                    gp_Pnt2d aP2D = new();
+                    Point3D aP = new();
+                    Point2D aP2D = new();
                     int iErr = BOPTools_AlgoTools3D.PointNearEdge(aE, aF, ref aP2D, ref aP, aCtx);
                     Assert.True(iErr == 0, $"{aName}: {iErr}");
                     Assert.NotEqual(TopAbs_OUT, BOPToolsTestShapes.Classify(aF, aP2D));
                     BOPToolsTestShapes.SameBits(BRep_Tool.Surface(aF)!.Value(aP2D.X(), aP2D.Y()), aP);
                     // close to the edge
                     BRep_Tool.Range(aE, out double aT1, out double aT2);
-                    gp_Pnt aPE = BRep_Tool.Curve(aE, out _, out _)!.Value(BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2));
+                    Point3D aPE = BRep_Tool.Curve(aE, out _, out _)!.Value(BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2));
                     Assert.True(aPE.Distance(aP) < 0.05, $"{aName}: {aPE.Distance(aP)}");
                 }
             }
@@ -280,10 +281,10 @@ public class BOPTools_AlgoTools3DTests
             foreach (TopoDS_Edge anE in BOPToolsTestShapes.Edges(aF))
             {
                 BOPTools_AlgoTools3D.OrientEdgeOnFace(anE, aF, out TopoDS_Edge aE);
-                gp_Pnt aP = new();
-                gp_Pnt2d aP2D = new();
+                Point3D aP = new();
+                Point2D aP2D = new();
                 Assert.Equal(0, BOPTools_AlgoTools3D.PointNearEdge(aE, aF, 1.0, 0.01, ref aP2D, ref aP));
-                BRep_Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(1.0, out gp_Pnt2d aPE);
+                BRep_Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(1.0, out Point2D aPE);
                 Assert.Equal(0.01, aPE.Distance(aP2D), 1.0e-12);
                 Assert.Equal(TopAbs_IN, BOPToolsTestShapes.Classify(aF, aP2D));
             }
@@ -291,26 +292,26 @@ public class BOPTools_AlgoTools3DTests
         // an edge without pcurve on the face: 1, outputs kept
         TopoDS_Face aBoxFace = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Torus())[0];
         TopoDS_Edge aForeign = BOPToolsTestShapes.Edges(BOPToolsTestShapes.Box())[0];
-        gp_Pnt aKeep = new(1, 2, 3);
-        gp_Pnt2d aKeep2D = new(4, 5);
+        Point3D aKeep = new(1, 2, 3);
+        Point2D aKeep2D = new(4, 5);
         Assert.Equal(1, BOPTools_AlgoTools3D.PointNearEdge(aForeign, aBoxFace, 0.5, 0.01, ref aKeep2D, ref aKeep));
-        Assert.Equal(new gp_Pnt(1, 2, 3), aKeep);
-        Assert.Equal(new gp_Pnt2d(4, 5), aKeep2D);
+        Assert.Equal(new Point3D(1, 2, 3), aKeep);
+        Assert.Equal(new Point2D(4, 5), aKeep2D);
     }
 
     // The outward normal of the primitive solids at a point of their surface.
-    private static gp_Dir OutwardNormal(string theName, in gp_Pnt theP, in TopoDS_Face theF, double theU, double theV)
+    private static Direction3D OutwardNormal(string theName, in Point3D theP, in TopoDS_Face theF, double theU, double theV)
     {
         switch (theName)
         {
             case "sphere":
-                return new gp_Dir(theP.XYZ());
+                return new Direction3D(theP.XYZ());
             case "box":
                 {
                     // the face's plane normal, outward
                     Geom_Surface aS = BRep_Tool.Surface(theF)!;
-                    aS.D1(theU, theV, out _, out gp_Vec aDU, out gp_Vec aDV);
-                    gp_Dir aN = new(aDU.Crossed(aDV));
+                    aS.D1(theU, theV, out _, out Vector3D aDU, out Vector3D aDV);
+                    Direction3D aN = new(aDU.Crossed(aDV));
                     return theF.Orientation() == TopAbs_REVERSED ? aN.Reversed() : aN;
                 }
             default:
@@ -331,11 +332,11 @@ public class BOPTools_AlgoTools3DTests
                     {
                         continue;
                     }
-                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, out gp_Dir aN);
+                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, out Direction3D aN);
                     Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2)!;
-                    aPC.D0(BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2), out gp_Pnt2d aUV);
-                    gp_Pnt aP = BRep_Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
-                    gp_Dir anExpected = OutwardNormal(aName, aP, aF, aUV.X(), aUV.Y());
+                    aPC.D0(BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2), out Point2D aUV);
+                    Point3D aP = BRep_Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
+                    Direction3D anExpected = OutwardNormal(aName, aP, aF, aUV.X(), aUV.Y());
                     Assert.True(aN.IsEqual(anExpected, 1.0e-9), $"{aName}: {aN} vs {anExpected}");
                     if (aName == "box")
                     {
@@ -344,9 +345,9 @@ public class BOPTools_AlgoTools3DTests
                     }
 
                     // the parameter overload doesn't reverse for the face's orientation
-                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2), out gp_Dir aN2,
+                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2), out Direction3D aN2,
                                                                new IntTools_Context());
-                    gp_Dir aN2Oriented = aF.Orientation() == TopAbs_REVERSED ? aN2.Reversed() : aN2;
+                    Direction3D aN2Oriented = aF.Orientation() == TopAbs_REVERSED ? aN2.Reversed() : aN2;
                     Assert.Equal(aN, aN2Oriented);
                 }
             }
@@ -364,17 +365,17 @@ public class BOPTools_AlgoTools3DTests
                 BOPTools_AlgoTools3D.OrientEdgeOnFace(anE, aF, out TopoDS_Edge aE);
                 BRep_Tool.Range(aE, out double aT1, out double aT2);
                 double aT = BOPTools_AlgoTools2D.IntermediatePoint(aT1, aT2);
-                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, out gp_Dir anExact);
+                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, out Direction3D anExact);
 
-                gp_Pnt aP = new();
-                gp_Dir aN = new();
+                Point3D aP = new();
+                Direction3D aN = new();
                 Assert.True(BOPTools_AlgoTools3D.GetApproxNormalToFaceOnEdge(aE, aF, aT, ref aP, ref aN, aCtx));
                 Assert.True(aN.IsEqual(anExact, 1.0e-12));
                 Assert.True(BOPTools_AlgoTools3D.GetApproxNormalToFaceOnEdge(aE, aF, aT, 1.0e-3, ref aP, ref aN, aCtx));
                 Assert.True(aN.IsEqual(anExact, 1.0e-12));
                 Assert.True(BOPTools_AlgoTools3D.GetApproxNormalToFaceOnEdge(aE, aF, aT, ref aP, ref aN, 1.0e-3));
                 Assert.True(aN.IsEqual(anExact, 1.0e-12));
-                gp_Pnt aPE = BRep_Tool.Curve(aE, out _, out _)!.Value(aT);
+                Point3D aPE = BRep_Tool.Curve(aE, out _, out _)!.Value(aT);
                 Assert.Equal(1.0e-3, aPE.Distance(aP), 1.0e-12);
             }
         }
@@ -383,22 +384,22 @@ public class BOPTools_AlgoTools3DTests
     [Fact]
     public void SenseFlag_and_GetNormalToSurface_known_answers()
     {
-        gp_Dir aZ = new(0, 0, 1);
+        Direction3D aZ = new(0, 0, 1);
         Assert.Equal(1, BOPTools_AlgoTools3D.SenseFlag(aZ, aZ));
         Assert.Equal(-1, BOPTools_AlgoTools3D.SenseFlag(aZ, aZ.Reversed()));
-        Assert.Equal(0, BOPTools_AlgoTools3D.SenseFlag(aZ, new gp_Dir(1, 0, 0)));
-        Assert.Equal(1, BOPTools_AlgoTools3D.SenseFlag(aZ, new gp_Dir(1.0e-5, 0, 1)));
+        Assert.Equal(0, BOPTools_AlgoTools3D.SenseFlag(aZ, new Direction3D(1, 0, 0)));
+        Assert.Equal(1, BOPTools_AlgoTools3D.SenseFlag(aZ, new Direction3D(1.0e-5, 0, 1)));
 
-        Geom_SphericalSurface aS = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
-        Geom_ConicalSurface aCone = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0.5, 0.0);
-        gp_Dir aD = new(0, 1, 0);
+        Geom_SphericalSurface aS = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        Geom_ConicalSurface aCone = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5, 0.0);
+        Direction3D aD = new(0, 1, 0);
         Assert.True(BOPTools_AlgoTools3D.GetNormalToSurface(aS, 0.3, 0.2, ref aD));
-        gp_Pnt aP = aS.Value(0.3, 0.2);
-        Assert.True(aD.IsEqual(new gp_Dir(aP.XYZ()), 1.0e-12));
+        Point3D aP = aS.Value(0.3, 0.2);
+        Assert.True(aD.IsEqual(new Direction3D(aP.XYZ()), 1.0e-12));
         // at the apex of a cone, DU vanishes: false and the output unchanged
-        gp_Dir aKeep = new(0, 1, 0);
+        Direction3D aKeep = new(0, 1, 0);
         Assert.False(BOPTools_AlgoTools3D.GetNormalToSurface(aCone, 0.3, 0.0, ref aKeep));
-        Assert.Equal(new gp_Dir(0, 1, 0), aKeep);
+        Assert.Equal(new Direction3D(0, 1, 0), aKeep);
     }
 
     [Fact]
@@ -531,6 +532,6 @@ public class BOPTools_AlgoTools3DTests
         TopoDS_Shape aCyl = BOPToolsTestShapes.Cylinder();
         TopoDS_Face aCF = BOPToolsTestShapes.Faces(aCyl).First(f => BRep_Tool.Surface(f) is Geom_CylindricalSurface);
         TopoDS_Edge aSeam = BOPToolsTestShapes.Edges(aCF).First(e => BRep_Tool.IsClosed(e, aCF));
-        Assert.ThrowsAny<Standard_DomainError>(() => BOPTools_AlgoTools3D.DoSplitSEAMOnFace(aSeam, aCF));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => BOPTools_AlgoTools3D.DoSplitSEAMOnFace(aSeam, aCF));
     }
 }

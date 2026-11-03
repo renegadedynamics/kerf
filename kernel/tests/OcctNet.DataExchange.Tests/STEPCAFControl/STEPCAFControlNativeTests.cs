@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Security.Cryptography;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -56,7 +57,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
                 aLines.AddRange(XdeDocDump.Dump(aDoc));
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             aLines.Add("EXC " + anExc.Message);
         }
@@ -144,7 +145,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             return aHead + $"1 {aWriter.Writer().Model().NbEntities()} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length} "
                    + Convert.ToHexStringLower(SHA256.HashData(Encoding.Latin1.GetBytes(Canonical(aText))));
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             return aHead + "EXC " + anExc.Message;
         }
@@ -233,7 +234,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
                     var aReader = new STEPCAFControl_Reader();
                     isOk = aReader.ReadFile(aFile) == IFSelect_ReturnStatus.IFSelect_RetDone && aReader.Transfer(aDoc);
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     isOk = false;
                 }

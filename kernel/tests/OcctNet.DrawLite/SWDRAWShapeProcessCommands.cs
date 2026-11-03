@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -46,19 +47,19 @@ internal static class SWDRAWShapeProcessCommands
     }
 
     // OCCT's Draw_Printer: messages written to the interpreter (here its output, as DRAWEXE's standard output)
-    private sealed class DrawPrinter : Message_Printer
+    private sealed class DrawPrinter : Printer
     {
         private readonly TextWriter myOutput;
 
         public DrawPrinter(TextWriter theOutput)
         {
             myOutput = theOutput;
-            myTraceLevel = Message_Gravity.Message_Info;
+            _traceLevel = Gravity.Info;
         }
 
-        protected override void send(string theString, Message_Gravity theGravity)
+        protected override void SendCore(string theString, Gravity theGravity)
         {
-            if (theGravity < myTraceLevel)
+            if (theGravity < _traceLevel)
             {
                 return;
             }
@@ -66,7 +67,7 @@ internal static class SWDRAWShapeProcessCommands
         }
     }
 
-    private static Message_Messenger Messenger(DrawInterpreter theDI) => new(new DrawPrinter(theDI.Output));
+    private static Messenger Messenger(DrawInterpreter theDI) => new(new DrawPrinter(theDI.Output));
 
     // The directories of the resource file theName: the interpreter's env(CSF_<name>Defaults) and
     // env(CSF_<name>UserDefaults), null where unset

@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -38,52 +41,52 @@ public class Extrema_GenExtCS
     private double mytol2;
     private readonly Extrema_FuncExtCS myF = new();
     private Adaptor3d_Surface? myS;
-    private NCollection_HArray2<gp_Pnt>? mySurfPnts;
+    private NCollection_HArray2<Point3D>? mySurfPnts;
 
-    private static bool IsQuadric(GeomAbs_SurfaceType theSType)
+    private static bool IsQuadric(SurfaceKind theSType)
     {
-        if (theSType == GeomAbs_Plane)
+        if (theSType == Plane)
         {
             return true;
         }
-        if (theSType == GeomAbs_Cylinder)
+        if (theSType == SurfaceKind.Cylinder)
         {
             return true;
         }
-        if (theSType == GeomAbs_Cone)
+        if (theSType == SurfaceKind.Cone)
         {
             return true;
         }
-        if (theSType == GeomAbs_Sphere)
+        if (theSType == SurfaceKind.Sphere)
         {
             return true;
         }
-        if (theSType == GeomAbs_Torus)
+        if (theSType == SurfaceKind.Torus)
         {
             return true;
         }
         return false;
     }
 
-    private static bool IsConic(GeomAbs_CurveType theCType)
+    private static bool IsConic(CurveKind theCType)
     {
-        if (theCType == GeomAbs_Line)
+        if (theCType == Line)
         {
             return true;
         }
-        if (theCType == GeomAbs_Circle)
+        if (theCType == Circle)
         {
             return true;
         }
-        if (theCType == GeomAbs_Ellipse)
+        if (theCType == Ellipse)
         {
             return true;
         }
-        if (theCType == GeomAbs_Hyperbola)
+        if (theCType == Hyperbola)
         {
             return true;
         }
-        if (theCType == GeomAbs_Parabola)
+        if (theCType == Parabola)
         {
             return true;
         }
@@ -93,11 +96,11 @@ public class Extrema_GenExtCS
     // restrict maximal parameter on hyperbola to avoid FPE
     private static double GetCurvMaxParamVal(Adaptor3d_Curve theC)
     {
-        if (theC.GetType() == GeomAbs_Hyperbola)
+        if (theC.GetType() == Hyperbola)
         {
             return HyperbolaLimit;
         }
-        if (theC.GetType() == GeomAbs_OffsetCurve)
+        if (theC.GetType() == OffsetCurve)
         {
             Geom_Curve aBC = theC.OffsetCurve().BasisCurve();
             Geom_TrimmedCurve? aTC = aBC as Geom_TrimmedCurve;
@@ -118,15 +121,15 @@ public class Extrema_GenExtCS
     {
         theUmax = theVmax = MaxParamVal;
 
-        if (theS.GetType() == GeomAbs_SurfaceOfExtrusion)
+        if (theS.GetType() == SurfaceOfExtrusion)
         {
             theUmax = GetCurvMaxParamVal(theS.BasisCurve());
         }
-        else if (theS.GetType() == GeomAbs_SurfaceOfRevolution)
+        else if (theS.GetType() == SurfaceOfRevolution)
         {
             theVmax = GetCurvMaxParamVal(theS.BasisCurve());
         }
-        else if (theS.GetType() == GeomAbs_OffsetSurface)
+        else if (theS.GetType() == OffsetSurface)
         {
             GetSurfMaxParamVals(theS.BasisSurface(), out theUmax, out theVmax);
         }
@@ -193,19 +196,19 @@ public class Extrema_GenExtCS
 
         GetSurfMaxParamVals(myS, out double umaxpar, out double vmaxpar);
 
-        if (Precision.IsInfinite(myusup))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myusup))
         {
             myusup = umaxpar;
         }
-        if (Precision.IsInfinite(myumin))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myumin))
         {
             myumin = -umaxpar;
         }
-        if (Precision.IsInfinite(myvsup))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myvsup))
         {
             myvsup = vmaxpar;
         }
-        if (Precision.IsInfinite(myvmin))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myvmin))
         {
             myvmin = -vmaxpar;
         }
@@ -220,7 +223,7 @@ public class Extrema_GenExtCS
         double aStepSU = (aMaxU - aMinU) / myusample;
         double aStepSV = (aMaxV - aMinV) / myvsample;
 
-        mySurfPnts = new NCollection_HArray2<gp_Pnt>(0, myusample, 0, myvsample);
+        mySurfPnts = new NCollection_HArray2<Point3D>(0, myusample, 0, myvsample);
 
         // Build UV parameter arrays for batch evaluation
         NCollection_Array1<double> aUParams = new(0, myusample);
@@ -240,7 +243,7 @@ public class Extrema_GenExtCS
         // Use batch grid evaluation for optimized surface point computation
         GeomGridEval_Surface anEvaluator = new(myS);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
 
         // aGrid is 1-based, mySurfPnts is 0-based - adjust indexing
         for (int aSUI = 0; aSUI <= myusample; aSUI++)
@@ -266,7 +269,7 @@ public class Extrema_GenExtCS
         myDone = false;
         if (myS is null)
         {
-            throw new StdFail_NotDone("Extrema_GenExtCS: the surface is not initialized");
+            throw new NotDoneException("Extrema_GenExtCS: the surface is not initialized");
         }
         myF.Initialize(C, myS);
         mytmin = tmin;
@@ -277,24 +280,24 @@ public class Extrema_GenExtCS
 
         double trimusup = myusup, trimumin = myumin, trimvsup = myvsup, trimvmin = myvmin;
         double aCMaxVal = GetCurvMaxParamVal(C);
-        if (Precision.IsInfinite(mytsup))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(mytsup))
         {
             mytsup = aCMaxVal;
         }
-        if (Precision.IsInfinite(mytmin))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(mytmin))
         {
             mytmin = -aCMaxVal;
         }
         //
         int aNbVar = 3;
-        GeomAbs_SurfaceType aSType = myS.GetType();
+        SurfaceKind aSType = myS.GetType();
         if (IsQuadric(aSType))
         {
             aNbVar = 1;
         }
         else
         {
-            GeomAbs_CurveType aCType = C.GetType();
+            CurveKind aCType = C.GetType();
             if (IsConic(aCType))
             {
                 aNbVar = 2;
@@ -346,7 +349,7 @@ public class Extrema_GenExtCS
             }
 
             // Find min approximation
-            math_FunctionSetRoot anA = new(myF, Tol);
+            FunctionSetRoot anA = new(myF, Tol);
             anA.Perform(myF, TUV, TUVinf, TUVsup);
         }
         if (aNbIntC > 1 && myF.NbExt() > 1)
@@ -372,7 +375,7 @@ public class Extrema_GenExtCS
             aSqDists.Clear();
             aPntsOnCrv.Clear();
             aPntsOnSurf.Clear();
-            double aTol = Precision.SquareConfusion();
+            double aTol = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
             for (i = 1; i <= aSqDists1.Length(); ++i)
             {
                 double aDist = aSqDists1[i];
@@ -390,7 +393,7 @@ public class Extrema_GenExtCS
     private void GlobMinGenCS(Adaptor3d_Curve theC, int theNbParticles, math_Vector theTUVinf, math_Vector theTUVsup,
         math_Vector theTUV)
     {
-        math_PSOParticlesPool aParticles = new(theNbParticles, 3);
+        PsoParticlesPool aParticles = new(theNbParticles, 3);
 
         math_Vector aMinTUV = new(1, 3);
         aMinTUV.Initialized(theTUVinf + (theTUVsup - theTUVinf) / aBorderDivisor);
@@ -424,7 +427,7 @@ public class Extrema_GenExtCS
         }
 
         // Pre-compute curve sample points.
-        NCollection_Array1<gp_Pnt> aCurvPnts = new(0, aNewCsample);
+        NCollection_Array1<Point3D> aCurvPnts = new(0, aNewCsample);
 
         double aCU1 = aMinTUV[1];
         for (int aCUI = 0; aCUI <= aNewCsample; aCUI++, aCU1 += aStepCU)
@@ -432,7 +435,7 @@ public class Extrema_GenExtCS
             aCurvPnts.SetValue(aCUI, theC.Value(aCU1));
         }
 
-        PSO_Particle aParticle = aParticles.GetWorstParticle();
+        Particle aParticle = aParticles.GetWorstParticle();
         // Select specified number of particles from pre-computed set of samples
         double aSU = aMinTUV[2];
         for (int aSUI = 0; aSUI <= myusample; aSUI++, aSU += aStepSU)
@@ -471,7 +474,7 @@ public class Extrema_GenExtCS
 
         // Find min approximation
         Extrema_GlobOptFuncCS aFunc = new(theC, myS);
-        math_PSO aPSO = new(aFunc, theTUVinf, theTUVsup, aStep);
+        Pso aPSO = new(aFunc, theTUVinf, theTUVsup, aStep);
         aPSO.Perform(aParticles, theNbParticles, out _, theTUV);
     }
 
@@ -488,7 +491,7 @@ public class Extrema_GenExtCS
         }
         //
         //
-        math_PSOParticlesPool aParticles = new(theNbParticles, aNbVar);
+        PsoParticlesPool aParticles = new(theNbParticles, aNbVar);
 
         math_Vector aMinUV = new(1, aNbVar);
         aMinUV.Initialized(anUVinf + (anUVsup - anUVinf) / aBorderDivisor);
@@ -507,7 +510,7 @@ public class Extrema_GenExtCS
         Extrema_GlobOptFuncConicS aFunc = new(myS!, anUVinf[1], anUVsup[1], anUVinf[2], anUVsup[2]);
         aFunc.LoadConic(theC, theTUVinf[1], theTUVsup[1]);
 
-        PSO_Particle aParticle = aParticles.GetWorstParticle();
+        Particle aParticle = aParticles.GetWorstParticle();
         // Select specified number of particles from pre-computed set of samples
         double aSU = aMinUV[1];
 
@@ -520,7 +523,7 @@ public class Extrema_GenExtCS
                 anUV[2] = aSV;
                 if (!aFunc.Value(anUV, out double aSqDist))
                 {
-                    aSqDist = Precision.Infinite();
+                    aSqDist = global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
 
                 if (aSqDist < aParticle.Distance)
@@ -544,15 +547,15 @@ public class Extrema_GenExtCS
         aStep[2] = aStepSV;
 
         // Find min approximation
-        math_PSO aPSO = new(aFunc, anUVinf, anUVsup, aStep);
+        Pso aPSO = new(aFunc, anUVinf, anUVsup, aStep);
         aPSO.Perform(aParticles, theNbParticles, out _, anUV);
         //
         double aCT = aFunc.ConicParameter(anUV);
         if (theC.IsPeriodic())
         {
-            if (aCT < theTUVinf[1] - Precision.PConfusion() || aCT > theTUVsup[1] + Precision.PConfusion())
+            if (aCT < theTUVinf[1] - global::Kerf.Engine.Foundation.Precision.PConfusion() || aCT > theTUVsup[1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                aCT = ElCLib.InPeriod(aCT, theTUVinf[1], theTUVinf[1] + 2.0 * M_PI);
+                aCT = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aCT, theTUVinf[1], theTUVinf[1] + 2.0 * M_PI);
             }
         }
 
@@ -561,21 +564,21 @@ public class Extrema_GenExtCS
         theTUV[3] = anUV[2];
 
         bool isBadSol = false;
-        myS!.D1(anUV[1], anUV[2], out gp_Pnt aPOnS, out gp_Vec aDU, out gp_Vec aDV);
-        theC.D1(aCT, out gp_Pnt aPOnC, out gp_Vec aDT);
+        myS!.D1(anUV[1], anUV[2], out Point3D aPOnS, out Vector3D aDU, out Vector3D aDV);
+        theC.D1(aCT, out Point3D aPOnC, out Vector3D aDT);
         double aSqDist2 = aPOnC.SquareDistance(aPOnS);
-        if (aSqDist2 <= Precision.SquareConfusion())
+        if (aSqDist2 <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return;
         }
 
-        gp_Vec aN = aDU.Crossed(aDV);
-        if (aN.SquareMagnitude() < Precision.SquareConfusion())
+        Vector3D aN = aDU.Crossed(aDV);
+        if (aN.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return;
         }
 
-        gp_Vec PcPs = new(aPOnC, aPOnS);
+        Vector3D PcPs = new(aPOnC, aPOnS);
 
         double anAngMin = M_PI_2 - M_PI_2 / 10.0;
         double anAngMax = M_PI_2 + M_PI_2 / 10.0;
@@ -598,13 +601,13 @@ public class Extrema_GenExtCS
                     v = Max(anUVinf[2], v);
                     v = Min(anUVsup[2], v);
                     myS.D1(u, v, out aPOnS, out aDU, out aDV);
-                    if (aPOnC.SquareDistance(aPOnS) < Precision.SquareConfusion())
+                    if (aPOnC.SquareDistance(aPOnS) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         isBadSol = false;
                         break;
                     }
                     aN = aDU.Crossed(aDV);
-                    if (aN.SquareMagnitude() < Precision.SquareConfusion())
+                    if (aN.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         isBadSol = false;
                         break;
@@ -663,7 +666,7 @@ public class Extrema_GenExtCS
         aTinf[1] = theTUVinf[1];
         aTsup[1] = theTUVsup[1];
         //
-        math_PSOParticlesPool aParticles = new(theNbParticles, aNbVar);
+        PsoParticlesPool aParticles = new(theNbParticles, aNbVar);
 
         math_Vector aMinT = new(1, aNbVar);
         aMinT.Initialized(aTinf + (aTsup - aTinf) / aBorderDivisor);
@@ -705,7 +708,7 @@ public class Extrema_GenExtCS
         Extrema_GlobOptFuncCQuadric aFunc = new(theC, aTinf[1], aTsup[1]);
         aFunc.LoadQuad(myS, theTUVinf[2], theTUVsup[2], theTUVinf[3], theTUVsup[3]);
 
-        PSO_Particle aParticle = aParticles.GetWorstParticle();
+        Particle aParticle = aParticles.GetWorstParticle();
         // Select specified number of particles from pre-computed set of samples
         double aCT = aMinT[1];
         for (int aCUI = 0; aCUI <= aNewCsample; aCUI++, aCT += aStepCT)
@@ -713,7 +716,7 @@ public class Extrema_GenExtCS
             aT[1] = aCT;
             if (!aFunc.Value(aT, out double aSqDist))
             {
-                aSqDist = Precision.Infinite();
+                aSqDist = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
 
             if (aSqDist < aParticle.Distance)
@@ -733,24 +736,24 @@ public class Extrema_GenExtCS
         aStep[1] = aStepCT;
 
         // Find min approximation
-        math_PSO aPSO = new(aFunc, aTinf, aTsup, aStep);
+        Pso aPSO = new(aFunc, aTinf, aTsup, aStep);
         aPSO.Perform(aParticles, theNbParticles, out _, aT);
         //
         math_Vector anUV = new(1, 2);
         aFunc.QuadricParameters(aT, anUV);
         if (myS.IsUPeriodic())
         {
-            if (anUV[1] < theTUVinf[2] - Precision.PConfusion() || anUV[1] > theTUVsup[2] + Precision.PConfusion())
+            if (anUV[1] < theTUVinf[2] - global::Kerf.Engine.Foundation.Precision.PConfusion() || anUV[1] > theTUVsup[2] + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                anUV[1] = ElCLib.InPeriod(anUV[1], theTUVinf[2], theTUVinf[2] + 2.0 * M_PI);
+                anUV[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anUV[1], theTUVinf[2], theTUVinf[2] + 2.0 * M_PI);
             }
         }
         //
         if (myS.IsVPeriodic())
         {
-            if (anUV[2] < theTUVinf[3] - Precision.PConfusion() || anUV[2] > theTUVsup[3] + Precision.PConfusion())
+            if (anUV[2] < theTUVinf[3] - global::Kerf.Engine.Foundation.Precision.PConfusion() || anUV[2] > theTUVsup[3] + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                anUV[2] = ElCLib.InPeriod(anUV[2], theTUVinf[3], theTUVinf[3] + 2.0 * M_PI);
+                anUV[2] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anUV[2], theTUVinf[3], theTUVinf[3] + 2.0 * M_PI);
             }
         }
         //
@@ -767,7 +770,7 @@ public class Extrema_GenExtCS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.NbExt();
     }
@@ -777,7 +780,7 @@ public class Extrema_GenExtCS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.SquareDistance(N);
@@ -788,7 +791,7 @@ public class Extrema_GenExtCS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.PointOnCurve(N);
@@ -799,7 +802,7 @@ public class Extrema_GenExtCS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.PointOnSurface(N);

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Topology;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -42,17 +48,17 @@ public sealed class BRepTools_PurgeLocations
         var aBadTrsfInds = new NCollection_DynamicArray<int>();
         for (ind = 1; ; ++ind)
         {
-            TopLoc_Location aLoc = myLocations.Location(ind);
+            Placement aLoc = myLocations.Location(ind);
 
-            if (aLoc.IsIdentity())
+            if (aLoc.IsIdentity)
             {
                 break;
             }
 
-            gp_Trsf aTrsf = aLoc.Transformation();
+            Transform3D aTrsf = aLoc.Transformation();
             bool isBadTrsf =
-                aTrsf.IsNegative()
-                || (Math.Abs(Math.Abs(aTrsf.ScaleFactor()) - 1.0) > TopLoc_Location.ScalePrec());
+                aTrsf.IsNegative
+                || (Math.Abs(Math.Abs(aTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
             if (isBadTrsf)
             {
                 aBadTrsfInds.Append(ind);
@@ -113,25 +119,25 @@ public sealed class BRepTools_PurgeLocations
     private bool PurgeLocation(in TopoDS_Shape theS, out TopoDS_Shape theRes)
     {
         bool isDone = true;
-        TopLoc_Location aRefLoc = theS.Location();
-        bool isEmpty = aRefLoc.IsIdentity();
+        Placement aRefLoc = theS.Location();
+        bool isEmpty = aRefLoc.IsIdentity;
         if (isEmpty)
         {
             theRes = theS;
             return isDone;
         }
 
-        TopLoc_Location aNullLoc = new TopLoc_Location();
+        Placement aNullLoc = new Placement();
         theRes = theS.Located(aNullLoc);
 
         while (!isEmpty)
         {
-            TopLoc_Datum3D aFD = aRefLoc.FirstDatum();
-            gp_Trsf aTrsf = aFD.Trsf();
+            Datum3D aFD = aRefLoc.FirstDatum();
+            Transform3D aTrsf = aFD.Trsf();
             int aFP = aRefLoc.FirstPower();
-            bool isBad = aTrsf.IsNegative()
-                         || (Math.Abs(Math.Abs(aTrsf.ScaleFactor()) - 1.0) > TopLoc_Location.ScalePrec());
-            TopLoc_Location aLoc = new TopLoc_Location(aFD);
+            bool isBad = aTrsf.IsNegative
+                         || (Math.Abs(Math.Abs(aTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+            Placement aLoc = new Placement(aFD);
             aLoc = aLoc.Powered(aFP);
             aTrsf = aLoc.Transformation();
             if (isBad)
@@ -154,7 +160,7 @@ public sealed class BRepTools_PurgeLocations
             }
 
             aRefLoc = aRefLoc.NextLocation();
-            isEmpty = aRefLoc.IsIdentity();
+            isEmpty = aRefLoc.IsIdentity;
         }
 
         return isDone;

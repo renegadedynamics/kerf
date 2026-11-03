@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_BSplineSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomGridEval_BSplineSurfaceTest
@@ -24,17 +26,17 @@ public class GeomGridEval_BSplineSurfaceTest
 
     private static Geom_BSplineSurface CreateSimpleBSplineSurface()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles.SetValue(1, 1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, 1, new gp_Pnt(1, 0, 0));
-        aPoles.SetValue(1, 2, new gp_Pnt(0, 1, 0));
-        aPoles.SetValue(2, 2, new gp_Pnt(1, 1, 1)); // Non-planar corner
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles.SetValue(1, 1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, 1, new Point3D(1, 0, 0));
+        aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
+        aPoles.SetValue(2, 2, new Point3D(1, 1, 1)); // Non-planar corner
         return new Geom_BSplineSurface(aPoles, Knots2(), Knots2(), Mults2(2), Mults2(2), 1, 1);
     }
 
     private static Geom_BSplineSurface CreateRationalBSplineSurface()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
         {
@@ -43,7 +45,7 @@ public class GeomGridEval_BSplineSurfaceTest
                 double x = (i - 1) * 1.0;
                 double y = (j - 1) * 1.0;
                 double z = (i == 2 && j == 2) ? 1.0 : 0.0;
-                aPoles.SetValue(i, j, new gp_Pnt(x, y, z));
+                aPoles.SetValue(i, j, new Point3D(x, y, z));
                 aWeights.SetValue(i, j, (i == 2 && j == 2) ? 2.0 : 1.0);
             }
         }
@@ -52,7 +54,7 @@ public class GeomGridEval_BSplineSurfaceTest
 
     private static Geom_BSplineSurface CreateMultiSpanBSplineSurface()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 5, 1, 5);
+        NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; ++i)
         {
             for (int j = 1; j <= 5; ++j)
@@ -60,7 +62,7 @@ public class GeomGridEval_BSplineSurfaceTest
                 double x = (i - 1) * 1.0;
                 double y = (j - 1) * 1.0;
                 double z = Math.Sin((i - 1) * M_PI / 4.0) * Math.Sin((j - 1) * M_PI / 4.0);
-                aPoles.SetValue(i, j, new gp_Pnt(x, y, z));
+                aPoles.SetValue(i, j, new Point3D(x, y, z));
             }
         }
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
@@ -72,13 +74,13 @@ public class GeomGridEval_BSplineSurfaceTest
     private static void CheckPointsAgainstValue(Geom_BSplineSurface theSurf,
                                                 NCollection_Array1<double> theUParams,
                                                 NCollection_Array1<double> theVParams,
-                                                NCollection_Array2<gp_Pnt> theGrid)
+                                                NCollection_Array2<Point3D> theGrid)
     {
         for (int iU = 1; iU <= theUParams.Length(); ++iU)
         {
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
-                gp_Pnt aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
+                Point3D aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
                 Assert.Equal(0.0, theGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
             }
         }
@@ -89,7 +91,7 @@ public class GeomGridEval_BSplineSurfaceTest
     private static void CheckPointsAgainstD0(Geom_BSplineSurface theSurf,
                                              NCollection_Array1<double> theUParams,
                                              NCollection_Array1<double> theVParams,
-                                             NCollection_Array2<gp_Pnt> theGrid)
+                                             NCollection_Array2<Point3D> theGrid)
     {
         int aNbU = theGrid.ColLength();
         int aNbV = theGrid.RowLength();
@@ -97,7 +99,7 @@ public class GeomGridEval_BSplineSurfaceTest
         {
             for (int iV = 1; iV <= aNbV; ++iV)
             {
-                theSurf.D0(theUParams.Value(iU), theVParams.Value(iV), out gp_Pnt aExpected);
+                theSurf.D0(theUParams.Value(iU), theVParams.Value(iV), out Point3D aExpected);
                 Assert.Equal(0.0, theGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
             }
         }
@@ -117,7 +119,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstValue(aSurf, aUParams, aVParams, aGrid);
     }
 
@@ -130,12 +132,12 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.0, 1.0]);
         NCollection_Array1<double> aVParams = NCollection_Array1<double>.From([0.0, 1.0]);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
-        Assert.Equal(0.0, aGrid.Value(1, 1).Distance(new gp_Pnt(0, 0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2, 1).Distance(new gp_Pnt(1, 0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(1, 2).Distance(new gp_Pnt(0, 1, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2, 2).Distance(new gp_Pnt(1, 1, 1)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1, 1).Distance(new Point3D(0, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2, 1).Distance(new Point3D(1, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1, 2).Distance(new Point3D(0, 1, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2, 2).Distance(new Point3D(1, 1, 1)), THE_TOLERANCE);
     }
 
     [Fact]
@@ -147,7 +149,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 11);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstValue(aSurf, aUParams, aVParams, aGrid);
     }
 
@@ -160,14 +162,14 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 21);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 21);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstValue(aSurf, aUParams, aVParams, aGrid);
     }
 
     [Fact]
     public void HigherDegree()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 4, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 4, 1, 4);
         for (int i = 1; i <= 4; ++i)
         {
             for (int j = 1; j <= 4; ++j)
@@ -175,7 +177,7 @@ public class GeomGridEval_BSplineSurfaceTest
                 double x = (i - 1) * 1.0;
                 double y = (j - 1) * 1.0;
                 double z = Math.Cos((i + j - 2) * M_PI / 6.0);
-                aPoles.SetValue(i, j, new gp_Pnt(x, y, z));
+                aPoles.SetValue(i, j, new Point3D(x, y, z));
             }
         }
 
@@ -185,7 +187,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 17);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 17);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstValue(aSurf, aUParams, aVParams, aGrid);
     }
 
@@ -203,7 +205,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.5]);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 15);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstD0(aBSpline, aUParams, aVParams, aGrid);
     }
 
@@ -217,7 +219,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 15);
         NCollection_Array1<double> aVParams = NCollection_Array1<double>.From([0.7]);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstD0(aBSpline, aUParams, aVParams, aGrid);
     }
 
@@ -231,7 +233,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([0.35]);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 20);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstD0(aBSpline, aUParams, aVParams, aGrid);
     }
 
@@ -245,7 +247,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 15);
         NCollection_Array1<double> aVParams = NCollection_Array1<double>.From([0.3]);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         CheckPointsAgainstD0(aBSpline, aUParams, aVParams, aGrid);
     }
 
@@ -268,7 +270,7 @@ public class GeomGridEval_BSplineSurfaceTest
         {
             for (int iV = 1; iV <= 5; ++iV)
             {
-                aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V);
+                aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -291,8 +293,8 @@ public class GeomGridEval_BSplineSurfaceTest
         {
             for (int iV = 1; iV <= 5; ++iV)
             {
-                aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V,
-                         out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+                aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
+                         out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -319,9 +321,9 @@ public class GeomGridEval_BSplineSurfaceTest
         {
             for (int iV = 1; iV <= 11; ++iV)
             {
-                anAdaptor.D3(aUParams.Value(iU), aVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U,
-                             out gp_Vec aD1V, out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV, out gp_Vec aD3U,
-                             out gp_Vec aD3V, out gp_Vec aD3UUV, out gp_Vec aD3UVV);
+                anAdaptor.D3(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
+                             out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV, out Vector3D aD3U,
+                             out Vector3D aD3V, out Vector3D aD3UUV, out Vector3D aD3UVV);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -347,13 +349,13 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, theNbPoints);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, theNbPoints);
 
-        NCollection_Array2<gp_Vec> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, theNU, theNV);
+        NCollection_Array2<Vector3D> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, theNU, theNV);
 
         for (int iU = 1; iU <= theNbPoints; ++iU)
         {
             for (int iV = 1; iV <= theNbPoints; ++iV)
             {
-                gp_Vec aExpected = theSurf.DN(aUParams.Value(iU), aVParams.Value(iV), theNU, theNV);
+                Vector3D aExpected = theSurf.DN(aUParams.Value(iU), aVParams.Value(iV), theNU, theNV);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV) - aExpected).Magnitude(), THE_TOLERANCE);
             }
         }
@@ -386,7 +388,7 @@ public class GeomGridEval_BSplineSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<gp_Vec> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, 2, 0);
+        NCollection_Array2<Vector3D> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, 2, 0);
 
         for (int iU = 1; iU <= 5; ++iU)
         {

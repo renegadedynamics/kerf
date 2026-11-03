@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 // The configuration structs derive from each other in C++ (BoundedConfig : Config, PSOConfig : NDimConfig :
 // Config, ...) and are passed as `const Config&`, so they are classes here, with public fields as in C++. A C++
@@ -91,22 +93,22 @@ public static partial class MathUtils
         }
 
         /// <summary>Sets all tolerances to the same value.</summary>
-        public Config(double theTolerance, int theMaxIter = 100)
+        public Config(double tolerance, int maxIter = 100)
         {
-            MaxIterations = theMaxIter;
-            Tolerance = theTolerance;
-            XTolerance = theTolerance;
-            FTolerance = theTolerance;
+            MaxIterations = maxIter;
+            Tolerance = tolerance;
+            XTolerance = tolerance;
+            FTolerance = tolerance;
         }
 
         /// <summary>Copy, as C++'s copy construction.</summary>
-        public Config(Config theOther)
+        public Config(Config other)
         {
-            MaxIterations = theOther.MaxIterations;
-            Tolerance = theOther.Tolerance;
-            XTolerance = theOther.XTolerance;
-            FTolerance = theOther.FTolerance;
-            StepMin = theOther.StepMin;
+            MaxIterations = other.MaxIterations;
+            Tolerance = other.Tolerance;
+            XTolerance = other.XTolerance;
+            FTolerance = other.FTolerance;
+            StepMin = other.StepMin;
         }
     }
 
@@ -122,18 +124,18 @@ public static partial class MathUtils
         {
         }
 
-        public BoundedConfig(double theLower, double theUpper, double theTolerance = 1.0e-10, int theMaxIter = 100)
-            : base(theTolerance, theMaxIter)
+        public BoundedConfig(double lower, double upper, double tolerance = 1.0e-10, int maxIter = 100)
+            : base(tolerance, maxIter)
         {
-            LowerBound = theLower;
-            UpperBound = theUpper;
+            LowerBound = lower;
+            UpperBound = upper;
         }
 
-        public BoundedConfig(BoundedConfig theOther)
-            : base(theOther)
+        public BoundedConfig(BoundedConfig other)
+            : base(other)
         {
-            LowerBound = theOther.LowerBound;
-            UpperBound = theOther.UpperBound;
+            LowerBound = other.LowerBound;
+            UpperBound = other.UpperBound;
         }
     }
 
@@ -147,16 +149,16 @@ public static partial class MathUtils
         {
         }
 
-        public NDimConfig(double theTolerance, int theMaxIter = 100, bool theUseBounds = false)
-            : base(theTolerance, theMaxIter)
+        public NDimConfig(double tolerance, int maxIter = 100, bool useBounds = false)
+            : base(tolerance, maxIter)
         {
-            UseBounds = theUseBounds;
+            UseBounds = useBounds;
         }
 
-        public NDimConfig(NDimConfig theOther)
-            : base(theOther)
+        public NDimConfig(NDimConfig other)
+            : base(other)
         {
-            UseBounds = theOther.UseBounds;
+            UseBounds = other.UseBounds;
         }
     }
 
@@ -176,18 +178,18 @@ public static partial class MathUtils
         {
         }
 
-        public IntegConfig(double theTolerance, int theMaxIter = 100)
+        public IntegConfig(double tolerance, int maxIter = 100)
         {
-            MaxIterations = theMaxIter;
-            Tolerance = theTolerance;
+            MaxIterations = maxIter;
+            Tolerance = tolerance;
         }
 
-        public IntegConfig(IntegConfig theOther)
+        public IntegConfig(IntegConfig other)
         {
-            InitialOrder = theOther.InitialOrder;
-            MaxOrder = theOther.MaxOrder;
-            MaxIterations = theOther.MaxIterations;
-            Tolerance = theOther.Tolerance;
+            InitialOrder = other.InitialOrder;
+            MaxOrder = other.MaxOrder;
+            MaxIterations = other.MaxIterations;
+            Tolerance = other.Tolerance;
         }
     }
 
@@ -203,10 +205,10 @@ public static partial class MathUtils
         {
         }
 
-        public LinConfig(LinConfig theOther)
+        public LinConfig(LinConfig other)
         {
-            SingularityTolerance = theOther.SingularityTolerance;
-            UsePivoting = theOther.UsePivoting;
+            SingularityTolerance = other.SingularityTolerance;
+            UsePivoting = other.UsePivoting;
         }
     }
 }

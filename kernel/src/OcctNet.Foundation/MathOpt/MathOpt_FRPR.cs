@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
@@ -33,201 +34,201 @@ public static partial class MathOpt
         {
         }
 
-        public FRPRConfig(double theTolerance, int theMaxIter = 100)
-            : base(theTolerance, theMaxIter)
+        public FRPRConfig(double tolerance, int maxIter = 100)
+            : base(tolerance, maxIter)
         {
         }
 
-        public FRPRConfig(FRPRConfig theOther)
-            : base(theOther)
+        public FRPRConfig(FRPRConfig other)
+            : base(other)
         {
-            Formula = theOther.Formula;
-            RestartInterval = theOther.RestartInterval;
+            Formula = other.Formula;
+            RestartInterval = other.RestartInterval;
         }
     }
 
     /// <summary>Fletcher-Reeves-Polak-Ribiere nonlinear conjugate gradient minimization.</summary>
-    public static VectorResult FRPR<Function>(Function theFunc, math_Vector theStartingPoint, FRPRConfig? theConfig = null)
+    public static VectorResult FRPR<Function>(Function func, math_Vector startingPoint, FRPRConfig? config = null)
         where Function : IVectorFunctionWithGradient
     {
-        theConfig ??= new FRPRConfig();
-        VectorResult aResult = new();
+        config ??= new FRPRConfig();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
 
         // Restart interval
-        int aRestartInterval = (theConfig.RestartInterval > 0) ? theConfig.RestartInterval : aN;
+        int restartInterval = (config.RestartInterval > 0) ? config.RestartInterval : n;
 
         // Current point
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector x = new(lower, upper);
+        x.Initialized(startingPoint);
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Gradient at current point
-        math_Vector aGrad = new(aLower, aUpper);
-        if (!theFunc.Gradient(aX, aGrad))
+        math_Vector grad = new(lower, upper);
+        if (!func.Gradient(x, grad))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Check if already at minimum
-        double aGradNormSq = 0.0;
-        for (int i = aLower; i <= aUpper; ++i)
+        double gradNormSq = 0.0;
+        for (int i = lower; i <= upper; ++i)
         {
-            aGradNormSq += MathUtils.Sqr(aGrad[i]);
+            gradNormSq += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(grad[i]);
         }
 
-        if (Math.Sqrt(aGradNormSq) < theConfig.FTolerance)
+        if (Math.Sqrt(gradNormSq) < config.FTolerance)
         {
-            aResult.Status = Status.OK;
-            aResult.Solution = aX;
-            aResult.Value = aFx;
-            aResult.Gradient = aGrad;
-            return aResult;
+            result.Status = Status.OK;
+            result.Solution = x;
+            result.Value = fx;
+            result.Gradient = grad;
+            return result;
         }
 
         // Search direction (initially steepest descent)
-        math_Vector aDir = new(aLower, aUpper);
-        for (int i = aLower; i <= aUpper; ++i)
+        math_Vector dir = new(lower, upper);
+        for (int i = lower; i <= upper; ++i)
         {
-            aDir[i] = -aGrad[i];
+            dir[i] = -grad[i];
         }
 
         // Working vectors
-        math_Vector aXNew = new(aLower, aUpper);
-        math_Vector aGradNew = new(aLower, aUpper);
-        math_Vector aGradDiff = new(aLower, aUpper);
+        math_Vector xNew = new(lower, upper);
+        math_Vector gradNew = new(lower, upper);
+        math_Vector gradDiff = new(lower, upper);
 
-        int aRestartCount = 0;
+        int restartCount = 0;
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Line search
-            LineSearchResult aLineResult =
-              MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+            LineSearchResult lineResult =
+              global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-            if (!aLineResult.IsValid || aLineResult.Alpha < MathUtils.THE_EPSILON)
+            if (!lineResult.IsValid || lineResult.Alpha < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
             {
                 // Line search failed, try steepest descent
-                for (int i = aLower; i <= aUpper; ++i)
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aDir[i] = -aGrad[i];
+                    dir[i] = -grad[i];
                 }
-                aLineResult = MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+                lineResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-                if (!aLineResult.IsValid)
+                if (!lineResult.IsValid)
                 {
-                    aResult.Status = Status.NotConverged;
-                    aResult.Solution = aX;
-                    aResult.Value = aFx;
-                    aResult.Gradient = aGrad;
-                    return aResult;
+                    result.Status = Status.NotConverged;
+                    result.Solution = x;
+                    result.Value = fx;
+                    result.Gradient = grad;
+                    return result;
                 }
-                aRestartCount = 0; // Reset restart counter after steepest descent
+                restartCount = 0; // Reset restart counter after steepest descent
             }
 
             // Compute new point
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = aX[i] + aLineResult.Alpha * aDir[i];
+                xNew[i] = x[i] + lineResult.Alpha * dir[i];
             }
 
             // Check X convergence
-            double aMaxDiff = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double maxDiff = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aXNew[i] - aX[i]));
+                maxDiff = Max(maxDiff, Math.Abs(xNew[i] - x[i]));
             }
 
             // Evaluate gradient at new point
-            if (!theFunc.Gradient(aXNew, aGradNew))
+            if (!func.Gradient(xNew, gradNew))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
 
             // Check gradient convergence
-            double aGradNewNormSq = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double gradNewNormSq = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aGradNewNormSq += MathUtils.Sqr(aGradNew[i]);
+                gradNewNormSq += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(gradNew[i]);
             }
 
-            if (Math.Sqrt(aGradNewNormSq) < theConfig.FTolerance)
+            if (Math.Sqrt(gradNewNormSq) < config.FTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aLineResult.FNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = lineResult.FNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aLineResult.FNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = lineResult.FNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Compute gradient difference for some formulas
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aGradDiff[i] = aGradNew[i] - aGrad[i];
+                gradDiff[i] = gradNew[i] - grad[i];
             }
 
             // Compute beta based on selected formula
-            double aBeta = 0.0;
-            ++aRestartCount;
+            double beta = 0.0;
+            ++restartCount;
 
-            if (aRestartCount >= aRestartInterval)
+            if (restartCount >= restartInterval)
             {
                 // Periodic restart with steepest descent
-                aBeta = 0.0;
-                aRestartCount = 0;
+                beta = 0.0;
+                restartCount = 0;
             }
             else
             {
-                switch (theConfig.Formula)
+                switch (config.Formula)
                 {
                     case ConjugateGradientFormula.FletcherReeves:
                         // beta = g_new^T g_new / g^T g
-                        if (aGradNormSq > MathUtils.THE_ZERO_TOL)
+                        if (gradNormSq > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                         {
-                            aBeta = aGradNewNormSq / aGradNormSq;
+                            beta = gradNewNormSq / gradNormSq;
                         }
                         break;
 
                     case ConjugateGradientFormula.PolakRibiere:
                     {
                         // beta = g_new^T (g_new - g) / g^T g
-                        double aDot = 0.0;
-                        for (int i = aLower; i <= aUpper; ++i)
+                        double dot = 0.0;
+                        for (int i = lower; i <= upper; ++i)
                         {
-                            aDot += aGradNew[i] * aGradDiff[i];
+                            dot += gradNew[i] * gradDiff[i];
                         }
-                        if (aGradNormSq > MathUtils.THE_ZERO_TOL)
+                        if (gradNormSq > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                         {
-                            aBeta = aDot / aGradNormSq;
+                            beta = dot / gradNormSq;
                         }
                         // Restart if beta < 0 (PR+ variant)
-                        if (aBeta < 0.0)
+                        if (beta < 0.0)
                         {
-                            aBeta = 0.0;
-                            aRestartCount = 0;
+                            beta = 0.0;
+                            restartCount = 0;
                         }
                     }
                     break;
@@ -235,21 +236,21 @@ public static partial class MathOpt
                     case ConjugateGradientFormula.HestenesStiefel:
                     {
                         // beta = g_new^T (g_new - g) / d^T (g_new - g)
-                        double aNum = 0.0;
-                        double aDen = 0.0;
-                        for (int i = aLower; i <= aUpper; ++i)
+                        double num = 0.0;
+                        double den = 0.0;
+                        for (int i = lower; i <= upper; ++i)
                         {
-                            aNum += aGradNew[i] * aGradDiff[i];
-                            aDen += aDir[i] * aGradDiff[i];
+                            num += gradNew[i] * gradDiff[i];
+                            den += dir[i] * gradDiff[i];
                         }
-                        if (Math.Abs(aDen) > MathUtils.THE_ZERO_TOL)
+                        if (Math.Abs(den) > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                         {
-                            aBeta = aNum / aDen;
+                            beta = num / den;
                         }
-                        if (aBeta < 0.0)
+                        if (beta < 0.0)
                         {
-                            aBeta = 0.0;
-                            aRestartCount = 0;
+                            beta = 0.0;
+                            restartCount = 0;
                         }
                     }
                     break;
@@ -257,14 +258,14 @@ public static partial class MathOpt
                     case ConjugateGradientFormula.DaiYuan:
                     {
                         // beta = g_new^T g_new / d^T (g_new - g)
-                        double aDen = 0.0;
-                        for (int i = aLower; i <= aUpper; ++i)
+                        double den = 0.0;
+                        for (int i = lower; i <= upper; ++i)
                         {
-                            aDen += aDir[i] * aGradDiff[i];
+                            den += dir[i] * gradDiff[i];
                         }
-                        if (Math.Abs(aDen) > MathUtils.THE_ZERO_TOL)
+                        if (Math.Abs(den) > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                         {
-                            aBeta = aGradNewNormSq / aDen;
+                            beta = gradNewNormSq / den;
                         }
                     }
                     break;
@@ -272,74 +273,74 @@ public static partial class MathOpt
             }
 
             // Update search direction: p = -g_new + beta * p
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aDir[i] = -aGradNew[i] + aBeta * aDir[i];
+                dir[i] = -gradNew[i] + beta * dir[i];
             }
 
             // Check if direction is still a descent direction
-            double aDirDeriv = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double dirDeriv = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aDirDeriv += aGradNew[i] * aDir[i];
+                dirDeriv += gradNew[i] * dir[i];
             }
 
-            if (aDirDeriv >= 0.0)
+            if (dirDeriv >= 0.0)
             {
                 // Not a descent direction, restart with steepest descent
-                for (int i = aLower; i <= aUpper; ++i)
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aDir[i] = -aGradNew[i];
+                    dir[i] = -gradNew[i];
                 }
-                aRestartCount = 0;
+                restartCount = 0;
             }
 
             // Update for next iteration
-            aX.Initialized(aXNew);
-            aGrad.Initialized(aGradNew);
-            aGradNormSq = aGradNewNormSq;
-            aFx = aLineResult.FNew;
+            x.Initialized(xNew);
+            grad.Initialized(gradNew);
+            gradNormSq = gradNewNormSq;
+            fx = lineResult.FNew;
         }
 
         // Maximum iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        aResult.Gradient = aGrad;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = x;
+        result.Value = fx;
+        result.Gradient = grad;
+        return result;
     }
 
     /// <summary>The wrapper class local to FRPRNumerical: adds a central-difference gradient to a value-only function.</summary>
     private sealed class FRPRNumerical_FuncWithGradient<Function> : IVectorFunctionWithGradient
         where Function : IVectorFunction
     {
-        private Function myFunc;
-        private readonly double myStep;
+        private Function _func;
+        private readonly double _step;
 
-        public FRPRNumerical_FuncWithGradient(Function theF, double theStep)
+        public FRPRNumerical_FuncWithGradient(Function f, double step)
         {
-            myFunc = theF;
-            myStep = theStep;
+            _func = f;
+            _step = step;
         }
 
-        public bool Value(math_Vector theX, out double theF) => myFunc.Value(theX, out theF);
+        public bool Value(math_Vector x, out double f) => _func.Value(x, out f);
 
-        public bool Gradient(math_Vector theX, math_Vector theGrad)
+        public bool Gradient(math_Vector x, math_Vector grad)
         {
-            math_Vector aXMod = new(theX);
-            return MathUtils.NumericalGradientAdaptive(myFunc, aXMod, theGrad, myStep);
+            math_Vector xMod = new(x);
+            return global::Kerf.Engine.Numerics.Utilities.MathUtils.NumericalGradientAdaptive(_func, xMod, grad, _step);
         }
     }
 
     /// <summary>FRPR with a numerical (central-difference) gradient for value-only functions.</summary>
-    public static VectorResult FRPRNumerical<Function>(Function theFunc,
-                                                       math_Vector theStartingPoint,
-                                                       double theGradStep = 1.0e-8,
-                                                       FRPRConfig? theConfig = null)
+    public static VectorResult FRPRNumerical<Function>(Function func,
+                                                       math_Vector startingPoint,
+                                                       double gradStep = 1.0e-8,
+                                                       FRPRConfig? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new FRPRConfig();
-        FRPRNumerical_FuncWithGradient<Function> aWrapper = new(theFunc, theGradStep);
-        return FRPR(aWrapper, theStartingPoint, theConfig);
+        config ??= new FRPRConfig();
+        FRPRNumerical_FuncWithGradient<Function> wrapper = new(func, gradStep);
+        return FRPR(wrapper, startingPoint, config);
     }
 }

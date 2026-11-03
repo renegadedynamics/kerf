@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_ProductDefinition : Standard_Transient
+public class StepBasic_ProductDefinition : Transient
 {
     private TCollection_HAsciiString id;
     private TCollection_HAsciiString description;

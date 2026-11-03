@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +16,7 @@ namespace Occt;
 /// input can be, either an Interface Model (the very source), or another-other Selection(s) or any other
 /// output. All list computations start from an input Graph (from IFGraph)
 /// </summary>
-public abstract class IFSelect_Selection : Standard_Transient
+public abstract class IFSelect_Selection : Transient
 {
 
     /// <summary>
@@ -52,7 +54,7 @@ public abstract class IFSelect_Selection : Standard_Transient
         Interface_Graph GG = new Interface_Graph(G);
         for (iter.Start(); iter.More(); iter.Next())
         {
-            Standard_Transient ent = iter.Value();
+            Transient ent = iter.Value();
             GG.GetFromEntity(ent, true); // and there we go
         }
         return new Interface_GraphContent(GG); // specialized EntityIterator (same size)

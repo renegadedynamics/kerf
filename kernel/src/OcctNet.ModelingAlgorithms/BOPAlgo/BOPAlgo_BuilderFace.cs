@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -56,9 +60,9 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     }
 
     /// <summary>Performs the algorithm.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 100);
+        using var aPS = new ProgressScope(theRange, null, 100);
 
         GetReport().Clear();
         //
@@ -90,7 +94,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     }
 
     /// <summary>Collects the edges that can't be in a loop: free edges and edges given twice.</summary>
-    protected override void PerformShapesToAvoid(Message_ProgressRange theRange)
+    protected override void PerformShapesToAvoid(ProgressRange theRange)
     {
         bool bFound;
         int i, aNbV, aNbE;
@@ -99,7 +103,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         //
         myShapesToAvoid.Clear();
         //
-        using var aPS = new Message_ProgressScope(theRange, null, 1);
+        using var aPS = new ProgressScope(theRange, null, 1);
         //
         for (;;)
         {
@@ -173,7 +177,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     }
 
     /// <summary>Makes the loops with the wire splitter, and the internal wires of the edges left over.</summary>
-    protected override void PerformLoops(Message_ProgressRange theRange)
+    protected override void PerformLoops(ProgressRange theRange)
     {
         bool bFlag;
         int i, aNbEA;
@@ -186,7 +190,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         BOPAlgo_WireEdgeSet aWES = new();
         BOPAlgo_WireSplitter aWSp = new();
         //
-        using var aMainScope = new Message_ProgressScope(theRange, "Making wires", 10);
+        using var aMainScope = new ProgressScope(theRange, "Making wires", 10);
         //
         // 1.
         myLoops.Clear();
@@ -320,17 +324,17 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     }
 
     /// <summary>Makes the faces of the loops: growths, with the holes inside them.</summary>
-    protected override void PerformAreas(Message_ProgressRange theRange)
+    protected override void PerformAreas(ProgressRange theRange)
     {
         myAreas.Clear();
         BRep_Builder aBB = new();
         // Location of the myFace
         // Get surface from myFace
-        Geom_Surface? aS = BRep_Tool.Surface(myFace, out TopLoc_Location aLoc);
+        Geom_Surface? aS = BRep_Tool.Surface(myFace, out Placement aLoc);
         // Get tolerance of myFace
         double aTol = BRep_Tool.Tolerance(myFace);
 
-        using var aMainScope = new Message_ProgressScope(theRange, null, 10);
+        using var aMainScope = new ProgressScope(theRange, null, 10);
 
         // Check if there are no loops at all
         if (myLoops.IsEmpty())
@@ -358,7 +362,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         NCollection_IndexedMap<TopoDS_Shape> aMHE = new(TopTools_ShapeMapHasher.Instance);
 
         // Analyze the new wires - classify them to be the holes and growths
-        using (var aPSClass = new Message_ProgressScope(aMainScope.Next(5), "Making faces", myLoops.Extent()))
+        using (var aPSClass = new ProgressScope(aMainScope.Next(5), "Making faces", myLoops.Extent()))
         {
             NCollection_List<TopoDS_Shape>.Iterator aItLL = new(myLoops);
             for (; aItLL.More(); aItLL.Next(), aPSClass.Next())
@@ -412,9 +416,9 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         {
             TopoDS_Face aHFace = TopoDS.Face(aHoleFaces[i]);
             //
-            Bnd_Box2d aBox = new();
+            Box2d aBox = new();
             BRepTools.AddUVBounds(aHFace, ref aBox);
-            aBoxTree.Add(i, Bnd_Tools.Bnd2BVH(aBox));
+            aBoxTree.Add(i, Tools.Bnd2BVH(aBox));
         }
 
         // Build BVH
@@ -428,7 +432,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         aSelector.SetBVHSet(aBoxTree);
 
         NCollection_List<TopoDS_Shape>.Iterator aItLS = new(aNewFaces);
-        using (var aPSHoles = new Message_ProgressScope(aMainScope.Next(4), "Adding holes", aNewFaces.Extent()))
+        using (var aPSHoles = new ProgressScope(aMainScope.Next(4), "Adding holes", aNewFaces.Extent()))
         {
             for (; aItLS.More(); aItLS.Next(), aPSHoles.Next())
             {
@@ -439,11 +443,11 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 TopoDS_Face aFace = TopoDS.Face(aItLS.Value());
 
                 // Build box
-                Bnd_Box2d aBox = new();
+                Box2d aBox = new();
                 BRepTools.AddUVBounds(aFace, ref aBox);
 
                 aSelector.Clear();
-                aSelector.SetBox(Bnd_Tools.Bnd2BVH(aBox));
+                aSelector.SetBox(Tools.Bnd2BVH(aBox));
                 aSelector.Select();
 
                 NCollection_List<int> aLI = aSelector.Indices();
@@ -494,10 +498,10 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         // Add unused holes to the original face
         if (aHoleFaces.Extent() != aHoleFaceMap.Extent())
         {
-            Bnd_Box aBoxF = new();
+            Box aBoxF = new();
             BRepBndLib.Add(myFace, ref aBoxF);
-            if (aBoxF.IsOpenXmin() || aBoxF.IsOpenXmax() || aBoxF.IsOpenYmin() || aBoxF.IsOpenYmax()
-                || aBoxF.IsOpenZmin() || aBoxF.IsOpenZmax())
+            if (aBoxF.IsOpenXmin || aBoxF.IsOpenXmax || aBoxF.IsOpenYmin || aBoxF.IsOpenYmax
+                || aBoxF.IsOpenZmin || aBoxF.IsOpenZmax)
             {
                 TopoDS_Face aFace = new();
                 aBB.MakeFace(ref aFace, aS, aLoc, aTol);
@@ -518,7 +522,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         }
 
         // Add Holes to Faces and add them to myAreas
-        using var aPSU = new Message_ProgressScope(aMainScope.Next(), null, aNewFaces.Extent());
+        using var aPSU = new ProgressScope(aMainScope.Next(), null, aNewFaces.Extent());
         aItLS.Initialize(aNewFaces);
         for (; aItLS.More(); aItLS.Next(), aPSU.Next())
         {
@@ -550,7 +554,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
     }
 
     /// <summary>Adds the internal wires into the faces that contain them; warns about the edges left over.</summary>
-    protected override void PerformInternalShapes(Message_ProgressRange theRange)
+    protected override void PerformInternalShapes(ProgressRange theRange)
     {
         if (myAvoidInternalShapes)
         {
@@ -572,7 +576,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         NCollection_IndexedMap<TopoDS_Shape> anEdgesMap = new(TopTools_ShapeMapHasher.Instance);
 
         // Main progress scope
-        using var aMainScope = new Message_ProgressScope(theRange, "Adding internal shapes", 3);
+        using var aMainScope = new ProgressScope(theRange, "Adding internal shapes", 3);
 
         // Fill the tree and the map
         NCollection_List<TopoDS_Shape>.Iterator itLE = new(myLoopsInternal);
@@ -588,11 +592,11 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 TopoDS_Edge aE = TopoDS.Edge(itE.Value());
                 if (!anEdgesMap.Contains(aE))
                 {
-                    Bnd_Box2d aBoxE = new();
+                    Box2d aBoxE = new();
                     BRepTools.AddUVBounds(myFace, aE, ref aBoxE);
                     // Make sure the index of edge in the map and
                     // of the box in the tree is the same
-                    aBoxTree.Add(anEdgesMap.Add(aE), Bnd_Tools.Bnd2BVH(aBoxE));
+                    aBoxTree.Add(anEdgesMap.Add(aE), Tools.Bnd2BVH(aBoxE));
                 }
             }
         }
@@ -606,7 +610,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
         NCollection_IntMap aMEDone = new();
 
         // Classify edges relatively faces
-        using (var aPSClass = new Message_ProgressScope(aMainScope.Next(), null, myAreas.Extent()))
+        using (var aPSClass = new ProgressScope(aMainScope.Next(), null, myAreas.Extent()))
         {
             NCollection_List<TopoDS_Shape>.Iterator itLF = new(myAreas);
             for (; itLF.More(); itLF.Next(), aPSClass.Next())
@@ -618,13 +622,13 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
                 TopoDS_Face aF = TopoDS.Face(itLF.Value());
 
                 // Build box
-                Bnd_Box2d aBoxF = new();
+                Box2d aBoxF = new();
                 BRepTools.AddUVBounds(aF, ref aBoxF);
 
                 // Select edges for the classification
                 BOPTools_Box2dTreeSelector aSelector = new();
                 aSelector.SetBVHSet(aBoxTree);
-                aSelector.SetBox(Bnd_Tools.Bnd2BVH(aBoxF));
+                aSelector.SetBox(Tools.Bnd2BVH(aBoxF));
                 if (aSelector.Select() == 0)
                 {
                     continue;
@@ -809,7 +813,7 @@ public class BOPAlgo_BuilderFace : BOPAlgo_BuilderArea
             }
 
             // Get middle point on the curve
-            gp_Pnt2d aP2D = aC2D.Value((aT1 + aT2) / 2.0);
+            Point2D aP2D = aC2D.Value((aT1 + aT2) / 2.0);
 
             // Classify the point
             TopAbs_State aState = aClassifier.Perform(aP2D);

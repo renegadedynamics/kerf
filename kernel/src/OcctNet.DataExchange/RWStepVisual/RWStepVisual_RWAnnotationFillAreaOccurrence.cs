@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -47,8 +49,8 @@ internal class RWStepVisual_RWAnnotationFillAreaOccurrence
         }
 
         // Inherited field : item
-        Standard_Transient aItem = null;
-        data.ReadEntity(num, 3, "item", ach, typeof(Standard_Transient), ref aItem);
+        Transient aItem = null;
+        data.ReadEntity(num, 3, "item", ach, typeof(Transient), ref aItem);
 
         // Own field : fill_style_target
         StepGeom_GeometricRepresentationItem aFillStyleTarget = null;

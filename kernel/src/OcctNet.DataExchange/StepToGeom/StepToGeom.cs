@@ -5,8 +5,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_KnotType;
 using static Occt.StepGeom_TrimmingPreference;
@@ -38,7 +41,7 @@ public static class StepToGeom
         {
             // sln 22.10.2001. CTS23496: If problems with creation of axis direction occur default direction
             // is used
-            gp_Dir D = new gp_Dir(gp_Dir.D.Z);
+            Direction3D D = new Direction3D(Direction3D.D.Z);
             if (SA.HasAxis())
             {
                 Geom_Direction? D1 = MakeDirection(SA.Axis());
@@ -65,11 +68,11 @@ public static class StepToGeom
         Geom_CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
         if (P is not null)
         {
-            gp_Pnt Pgp = P.Pnt();
+            Point3D Pgp = P.Pnt();
 
             // sln 22.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used (MakeLine(...) function)
-            gp_Dir Ngp = new gp_Dir(gp_Dir.D.Z);
+            Direction3D Ngp = new Direction3D(Direction3D.D.Z);
             if (SA.HasAxis())
             {
                 Geom_Direction? D = MakeDirection(SA.Axis());
@@ -79,24 +82,24 @@ public static class StepToGeom
                 }
             }
 
-            gp_Ax2 gpAx2 = new gp_Ax2();
+            Frame3D gpAx2 = new Frame3D();
             bool isDefaultDirectionUsed = true;
             if (SA.HasRefDirection())
             {
                 Geom_Direction? D = MakeDirection(SA.RefDirection());
                 if (D is not null)
                 {
-                    gp_Dir Vxgp = D.Dir();
-                    if (!Ngp.IsParallel(Vxgp, Precision.Angular()))
+                    Direction3D Vxgp = D.Dir();
+                    if (!Ngp.IsParallel(Vxgp, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        gpAx2 = new gp_Ax2(Pgp, Ngp, Vxgp);
+                        gpAx2 = new Frame3D(Pgp, Ngp, Vxgp);
                         isDefaultDirectionUsed = false;
                     }
                 }
             }
             if (isDefaultDirectionUsed)
             {
-                gpAx2 = new gp_Ax2(Pgp, Ngp);
+                gpAx2 = new Frame3D(Pgp, Ngp);
             }
 
             return new Geom_Axis2Placement(gpAx2);
@@ -125,10 +128,10 @@ public static class StepToGeom
         double aDirY = Math.Sin(theSP.Gamma()) * Math.Cos(theSP.Beta())
                        + Math.Cos(theSP.Gamma()) * Math.Cos(theSP.Alpha()) * Math.Sin(theSP.Beta());
         double aDirZ = Math.Sin(theSP.Alpha()) * Math.Sin(theSP.Beta());
-        gp_Pnt Pgp = new gp_Pnt(aLocX, aLocY, aLocZ);
-        gp_Dir Ngp = new gp_Dir(anAsisX, anAxisY, anAxisZ);
-        gp_Dir Vxgp = new gp_Dir(aDirX, aDirY, aDirZ);
-        gp_Ax2 gpAx2 = new gp_Ax2(Pgp, Ngp, Vxgp);
+        Point3D Pgp = new Point3D(aLocX, aLocY, aLocZ);
+        Direction3D Ngp = new Direction3D(anAsisX, anAxisY, anAxisZ);
+        Direction3D Vxgp = new Direction3D(aDirX, aDirY, aDirZ);
+        Frame3D gpAx2 = new Frame3D(Pgp, Ngp, Vxgp);
         return new Geom_Axis2Placement(gpAx2);
     }
 
@@ -144,7 +147,7 @@ public static class StepToGeom
         {
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
-            gp_Dir2d Vxgp = new gp_Dir2d(gp_Dir2d.D.X);
+            Direction2D Vxgp = new Direction2D(Direction2D.D.X);
             if (SA.HasRefDirection())
             {
                 Geom2d_Direction? Vx = MakeDirection2d(SA.RefDirection());
@@ -780,14 +783,14 @@ public static class StepToGeom
         {
             return null;
         }
-        NCollection_Array1<gp_Pnt> Poles = new NCollection_Array1<gp_Pnt>(1, NbPoles - aSummaryMuultypisityDifference);
+        NCollection_Array1<Point3D> Poles = new NCollection_Array1<Point3D>(1, NbPoles - aSummaryMuultypisityDifference);
 
         for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
         {
             Geom_CartesianPoint? aPoint = MakeCartesianPoint(aControlPointsList.Value(i), theLocalFactors);
             if (aPoint is not null)
             {
-                gp_Pnt aGpPnt = aPoint.Pnt();
+                Point3D aGpPnt = aPoint.Pnt();
                 Poles.SetValue(i - aFirstMuultypisityDifference, aGpPnt);
             }
             else
@@ -849,14 +852,14 @@ public static class StepToGeom
         {
             return null;
         }
-        NCollection_Array1<gp_Pnt2d> Poles = new NCollection_Array1<gp_Pnt2d>(1, NbPoles - aSummaryMuultypisityDifference);
+        NCollection_Array1<Point2D> Poles = new NCollection_Array1<Point2D>(1, NbPoles - aSummaryMuultypisityDifference);
 
         for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
         {
             Geom2d_CartesianPoint? aPoint = MakeCartesianPoint2d(aControlPointsList.Value(i), theLocalFactors);
             if (aPoint is not null)
             {
-                gp_Pnt2d aGpPnt = aPoint.Pnt2d();
+                Point2D aGpPnt = aPoint.Pnt2d();
                 Poles.SetValue(i - aFirstMuultypisityDifference, aGpPnt);
             }
             else
@@ -920,7 +923,7 @@ public static class StepToGeom
         int NUPoles = BS.NbControlPointsListI();
         int NVPoles = BS.NbControlPointsListJ();
         NCollection_HArray2<StepGeom_CartesianPoint> aControlPointsList = BS.ControlPointsList();
-        NCollection_Array2<gp_Pnt> Poles = new NCollection_Array2<gp_Pnt>(1, NUPoles, 1, NVPoles);
+        NCollection_Array2<Point3D> Poles = new NCollection_Array2<Point3D>(1, NUPoles, 1, NVPoles);
         for (i = 1; i <= NUPoles; i++)
         {
             for (j = 1; j <= NVPoles; j++)
@@ -1239,7 +1242,7 @@ public static class StepToGeom
             double Ang = SS.SemiAngle() * theLocalFactors.PlaneAngleFactor();
             // #2(K3-3) rln 12/02/98 ProSTEP ct_turbine-A.stp entity #518, #3571 (gp::Resolution() is too
             // little)
-            return new Geom_ConicalSurface(new gp_Ax3(A.Ax2()), Max(Ang, Precision.Angular()), R);
+            return new Geom_ConicalSurface(new CoordinateSystem(A.Ax2()), Max(Ang, global::Kerf.Engine.Foundation.Precision.Angular()), R);
         }
         return null;
     }
@@ -1288,7 +1291,7 @@ public static class StepToGeom
                 Geom_Curve? C1 = MakeCurve(PC, theLocalFactors);
                 if (C1 is not null)
                 {
-                    gp_Trsf T1 = new gp_Trsf();
+                    Transform3D T1 = new Transform3D();
                     if (MakeTransformation3d(T, ref T1, theLocalFactors))
                     {
                         C1.Transform(T1);
@@ -1357,7 +1360,7 @@ public static class StepToGeom
                 Geom2d_Curve? C1 = MakeCurve2d(PC, theLocalFactors);
                 if (C1 is not null)
                 {
-                    gp_Trsf2d T1 = new gp_Trsf2d();
+                    Transform2D T1 = new Transform2D();
                     if (MakeTransformation2d(T, ref T1, theLocalFactors))
                     {
                         C1.Transform(T1);
@@ -1383,7 +1386,7 @@ public static class StepToGeom
         Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_CylindricalSurface(new gp_Ax3(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new Geom_CylindricalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
         }
         return null;
     }
@@ -1406,12 +1409,12 @@ public static class StepToGeom
             double Y = SD.DirectionRatiosValue(2);
             double Z = SD.DirectionRatiosValue(3);
             // 5.08.2021. Unstable test bugs xde bug24759: Y is very large value - FPE in SquareModulus
-            if (Precision.IsInfinite(X) || Precision.IsInfinite(Y) || Precision.IsInfinite(Z))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Z))
             {
                 return null;
             }
             // sln 22.10.2001. CTS23496: Direction is not created if it has null magnitude
-            if (new gp_XYZ(X, Y, Z).SquareModulus() > gp.Resolution() * gp.Resolution())
+            if (new Xyz(X, Y, Z).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
                 return new Geom_Direction(X, Y, Z);
             }
@@ -1432,7 +1435,7 @@ public static class StepToGeom
             double X = SD.DirectionRatiosValue(1);
             double Y = SD.DirectionRatiosValue(2);
             // sln 23.10.2001. CTS23496: Direction is not created if it has null magnitude
-            if (new gp_XY(X, Y).SquareModulus() > gp.Resolution() * gp.Resolution())
+            if (new Xy(X, Y).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
                 return new Geom2d_Direction(X, Y);
             }
@@ -1488,7 +1491,7 @@ public static class StepToGeom
             Geom_Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax2 A = A1.Ax2();
+                Frame3D A = A1.Ax2();
                 double LF = theLocalFactors.LengthFactor();
                 double majorR = SC.SemiAxis1() * LF;
                 double minorR = SC.SemiAxis2() * LF;
@@ -1523,7 +1526,7 @@ public static class StepToGeom
             Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax22d A = new gp_Ax22d(A1.Ax2d());
+                Frame2D A = new Frame2D(A1.Ax2d());
                 double majorR = SC.SemiAxis1();
                 double minorR = SC.SemiAxis2();
                 if (majorR - minorR >= 0.0)
@@ -1532,8 +1535,8 @@ public static class StepToGeom
                 }
                 else
                 {
-                    gp_Dir2d X = A.XDirection();
-                    A.SetXDirection(new gp_Dir2d(X.X(), -X.Y()));
+                    Direction2D X = A.XDirection();
+                    A.SetXDirection(new Direction2D(X.X(), -X.Y()));
                     return new Geom2d_Ellipse(A, minorR, majorR);
                 }
             }
@@ -1557,7 +1560,7 @@ public static class StepToGeom
             Geom_Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax2 A = A1.Ax2();
+                Frame3D A = A1.Ax2();
                 double LF = theLocalFactors.LengthFactor();
                 return new Geom_Hyperbola(A, SC.SemiAxis() * LF, SC.SemiImagAxis() * LF);
             }
@@ -1581,7 +1584,7 @@ public static class StepToGeom
             Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax22d A = new gp_Ax22d(A1.Ax2d());
+                Frame2D A = new Frame2D(A1.Ax2d());
                 return new Geom2d_Hyperbola(A, SC.SemiAxis(), SC.SemiImagAxis());
             }
         }
@@ -1605,11 +1608,11 @@ public static class StepToGeom
             Geom_VectorWithMagnitude? D = MakeVectorWithMagnitude(SC.Dir(), theLocalFactors);
             if (D is not null)
             {
-                if (D.Vec().SquareMagnitude() < Precision.Confusion() * Precision.Confusion())
+                if (D.Vec().SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return null;
                 }
-                gp_Dir V = new gp_Dir(D.Vec());
+                Direction3D V = new Direction3D(D.Vec());
                 return new Geom_Line(P.Pnt(), V);
             }
         }
@@ -1633,7 +1636,7 @@ public static class StepToGeom
             Geom2d_VectorWithMagnitude? D = MakeVectorWithMagnitude2d(SC.Dir());
             if (D is not null)
             {
-                gp_Dir2d D1 = new gp_Dir2d(D.Vec2d());
+                Direction2D D1 = new Direction2D(D.Vec2d());
                 return new Geom2d_Line(P.Pnt2d(), D1);
             }
         }
@@ -1678,7 +1681,7 @@ public static class StepToGeom
             Geom2d_AxisPlacement? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax22d A = new gp_Ax22d(A1.Ax2d());
+                Frame2D A = new Frame2D(A1.Ax2d());
                 return new Geom2d_Parabola(A, SC.FocalDist());
             }
         }
@@ -1698,7 +1701,7 @@ public static class StepToGeom
         Geom_Axis2Placement? A = MakeAxis2Placement(SP.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_Plane(new gp_Ax3(A.Ax2()));
+            return new Geom_Plane(new CoordinateSystem(A.Ax2()));
         }
         return null;
     }
@@ -1719,7 +1722,7 @@ public static class StepToGeom
         int nbp = SPL.NbPoints();
         if (nbp > 1)
         {
-            NCollection_Array1<gp_Pnt> Poles = new NCollection_Array1<gp_Pnt>(1, nbp);
+            NCollection_Array1<Point3D> Poles = new NCollection_Array1<Point3D>(1, nbp);
             NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, nbp);
             NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, nbp);
 
@@ -1761,7 +1764,7 @@ public static class StepToGeom
         int nbp = SPL.NbPoints();
         if (nbp > 1)
         {
-            NCollection_Array1<gp_Pnt2d> Poles = new NCollection_Array1<gp_Pnt2d>(1, nbp);
+            NCollection_Array1<Point2D> Poles = new NCollection_Array1<Point2D>(1, nbp);
             NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, nbp);
             NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, nbp);
 
@@ -1859,7 +1862,7 @@ public static class StepToGeom
         Geom_Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
         if (A is not null)
         {
-            return new Geom_SphericalSurface(new gp_Ax3(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new Geom_SphericalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
         }
         return null;
     }
@@ -1915,9 +1918,9 @@ public static class StepToGeom
                 {
                     // sln 03.10.01. BUC61003. creation of  offset surface is corrected
                     double anOffset = OS.Distance() * theLocalFactors.LengthFactor();
-                    if (aBasisSurface.Continuity() == GeomAbs_C0)
+                    if (aBasisSurface.Continuity() == C0)
                     {
-                        BRepBuilderAPI_MakeFace aBFace = new BRepBuilderAPI_MakeFace(aBasisSurface, Precision.Confusion());
+                        BRepBuilderAPI_MakeFace aBFace = new BRepBuilderAPI_MakeFace(aBasisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
                         if (aBFace.IsDone())
                         {
                             // OCCT: the process-wide container (null before ShapeAlgo.Init, as in OCCT)
@@ -1928,7 +1931,7 @@ public static class StepToGeom
                             }
                         }
                     }
-                    if (aBasisSurface.Continuity() != GeomAbs_C0)
+                    if (aBasisSurface.Continuity() != C0)
                     {
                         return new Geom_OffsetSurface(aBasisSurface, anOffset);
                     }
@@ -1945,7 +1948,7 @@ public static class StepToGeom
                     Geom_Surface? S1 = MakeSurface(PS, theLocalFactors);
                     if (S1 is not null)
                     {
-                        gp_Trsf T1 = new gp_Trsf();
+                        Transform3D T1 = new Transform3D();
                         if (MakeTransformation3d(T, ref T1, theLocalFactors))
                         {
                             S1.Transform(T1);
@@ -1983,9 +1986,9 @@ public static class StepToGeom
             Geom_VectorWithMagnitude? V = MakeVectorWithMagnitude(SS.ExtrusionAxis(), theLocalFactors);
             if (V is not null)
             {
-                gp_Dir D = new gp_Dir(V.Vec());
+                Direction3D D = new Direction3D(V.Vec());
                 Geom_Line aLine = C as Geom_Line;
-                if (aLine is not null && aLine.Lin().Direction().IsParallel(D, Precision.Angular()))
+                if (aLine is not null && aLine.Lin().Direction().IsParallel(D, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return null;
                 }
@@ -2013,24 +2016,24 @@ public static class StepToGeom
             Geom_Axis1Placement? A1 = MakeAxis1Placement(SS.AxisPosition(), theLocalFactors);
             if (A1 is not null)
             {
-                gp_Ax1 A = A1.Ax1();
+                Axis3D A = A1.Ax1();
                 // skl for OCC952 (one bad case revolution of circle)
                 if (C is Geom_Circle || C is Geom_Ellipse)
                 {
                     Geom_Conic conic = C as Geom_Conic;
-                    gp_Pnt pc = conic.Location();
-                    gp_Lin rl = new gp_Lin(A);
-                    if (rl.Distance(pc) < Precision.Confusion())
+                    Point3D pc = conic.Location();
+                    Line3D rl = new Line3D(A);
+                    if (rl.Distance(pc) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     { // pc lies on A2
-                        gp_Dir dirline = A.Direction();
-                        gp_Dir norm = conic.Axis().Direction();
-                        gp_Dir xAxis = conic.XAxis().Direction();
+                        Direction3D dirline = A.Direction();
+                        Direction3D norm = conic.Axis().Direction();
+                        Direction3D xAxis = conic.XAxis().Direction();
                         // checking A2 lies on plane of circle
-                        if (dirline.IsNormal(norm, Precision.Angular())
-                            && (dirline.IsParallel(xAxis, Precision.Angular()) || C is Geom_Circle))
+                        if (dirline.IsNormal(norm, global::Kerf.Engine.Foundation.Precision.Angular())
+                            && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || C is Geom_Circle))
                         {
                             // change parametrization for trimming
-                            gp_Ax2 axnew = new gp_Ax2(pc, norm, dirline.Reversed());
+                            Frame3D axnew = new Frame3D(pc, norm, dirline.Reversed());
                             conic.SetPosition(axnew);
                             C = new Geom_TrimmedCurve(conic, 0.0, M_PI);
                         }
@@ -2080,7 +2083,7 @@ public static class StepToGeom
         if (A is not null)
         {
             double LF = theLocalFactors.LengthFactor();
-            return new Geom_ToroidalSurface(new gp_Ax3(A.Ax2()), Math.Abs(SS.MajorRadius() * LF), Math.Abs(SS.MinorRadius() * LF));
+            return new Geom_ToroidalSurface(new CoordinateSystem(A.Ax2()), Math.Abs(SS.MajorRadius() * LF), Math.Abs(SS.MinorRadius() * LF));
         }
         return null;
     }
@@ -2094,13 +2097,13 @@ public static class StepToGeom
     /// Converts a 2D cartesian transformation operator into the rigid motion it describes (its inverse, as OCCT
     /// takes it); false if its origin can't be converted (<paramref name="CT"/> unchanged).
     /// </summary>
-    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref gp_Trsf2d CT, in StepData_Factors theLocalFactors)
+    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref Transform2D CT, in StepData_Factors theLocalFactors)
     {
         //  NB : on ne s interesse ici qu au deplacement rigide
         Geom2d_CartesianPoint? CP = MakeCartesianPoint2d(SCTO.LocalOrigin(), theLocalFactors);
         if (CP is not null)
         {
-            gp_Dir2d D1 = new gp_Dir2d(gp_Dir2d.D.X);
+            Direction2D D1 = new Direction2D(Direction2D.D.X);
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
             StepGeom_Direction A = SCTO.Axis1();
@@ -2112,7 +2115,7 @@ public static class StepToGeom
                     D1 = D.Dir2d();
                 }
             }
-            gp_Ax2d result = new gp_Ax2d(CP.Pnt2d(), D1);
+            Axis2D result = new Axis2D(CP.Pnt2d(), D1);
             CT.SetTransformation(result);
             CT = CT.Inverted();
             return true;
@@ -2121,7 +2124,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a 2D cartesian transformation operator (default factors).</summary>
-    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref gp_Trsf2d CT) =>
+    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref Transform2D CT) =>
         MakeTransformation2d(SCTO, ref CT, new StepData_Factors());
 
     //=================================================================================================
@@ -2130,16 +2133,16 @@ public static class StepToGeom
     /// Converts a 3D cartesian transformation operator into the transformation it describes (its inverse, as OCCT
     /// takes it, with its scale); false if its origin can't be converted (<paramref name="CT"/> unchanged).
     /// </summary>
-    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref gp_Trsf CT, in StepData_Factors theLocalFactors)
+    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref Transform3D CT, in StepData_Factors theLocalFactors)
     {
         Geom_CartesianPoint? CP = MakeCartesianPoint(SCTO.LocalOrigin(), theLocalFactors);
         if (CP is not null)
         {
-            gp_Pnt Pgp = CP.Pnt();
+            Point3D Pgp = CP.Pnt();
 
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
-            gp_Dir D1 = new gp_Dir(gp_Dir.D.X);
+            Direction3D D1 = new Direction3D(Direction3D.D.X);
             StepGeom_Direction A1 = SCTO.Axis1();
             if (A1 is not null)
             {
@@ -2150,7 +2153,7 @@ public static class StepToGeom
                 }
             }
 
-            gp_Dir D2 = new gp_Dir(gp_Dir.D.Y);
+            Direction3D D2 = new Direction3D(Direction3D.D.Y);
             StepGeom_Direction A2 = SCTO.Axis2();
             if (A2 is not null)
             {
@@ -2162,7 +2165,7 @@ public static class StepToGeom
             }
 
             bool isDefaultDirectionUsed = true;
-            gp_Dir D3 = new gp_Dir();
+            Direction3D D3 = new Direction3D();
             StepGeom_Direction A3 = SCTO.Axis3();
             if (A3 is not null)
             {
@@ -2178,7 +2181,7 @@ public static class StepToGeom
                 D3 = D1.Crossed(D2);
             }
 
-            gp_Ax3 result = new gp_Ax3(Pgp, D3, D1);
+            CoordinateSystem result = new CoordinateSystem(Pgp, D3, D1);
             CT.SetTransformation(result);
             if (SCTO.HasScale())
             {
@@ -2191,7 +2194,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a 3D cartesian transformation operator (default factors).</summary>
-    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref gp_Trsf CT) =>
+    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref Transform3D CT) =>
         MakeTransformation3d(SCTO, ref CT, new StepData_Factors());
 
     // ----------------------------------------------------------------
@@ -2224,11 +2227,11 @@ public static class StepToGeom
                 aPoint = theSel.CartesianPoint();
                 Geom_CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
                 // OCCT: a point that isn't 3D gives a null point here, dereferenced (occt-issues.md, 8D)
-                gp_Pnt thegpPnt = theGeomPnt.Pnt();
+                Point3D thegpPnt = theGeomPnt.Pnt();
 
                 //: S4136: use advanced algorithm
                 ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
-                sac.Project(aGeomCurve, thegpPnt, Precision.Confusion(), out gp_Pnt p, out aParam);
+                sac.Project(aGeomCurve, thegpPnt, global::Kerf.Engine.Foundation.Precision.Confusion(), out Point3D p, out aParam);
                 return true;
             }
         }
@@ -2255,10 +2258,10 @@ public static class StepToGeom
                 aPoint = theSel.CartesianPoint();
                 Geom_CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
                 // OCCT: as above, a point that isn't 3D is dereferenced null
-                gp_Pnt thegpPnt = theGeomPnt.Pnt();
+                Point3D thegpPnt = theGeomPnt.Pnt();
                 // Project Point On Curve
                 ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
-                sac.Project(aGeomCurve, thegpPnt, Precision.Confusion(), out gp_Pnt p, out aParam);
+                sac.Project(aGeomCurve, thegpPnt, global::Kerf.Engine.Foundation.Precision.Confusion(), out Point3D p, out aParam);
                 return true;
             }
         }
@@ -2405,15 +2408,15 @@ public static class StepToGeom
                     trim2 = cl;
                 }
             }
-            if (Math.Abs(trim1 - trim2) < Precision.PConfusion())
+            if (Math.Abs(trim1 - trim2) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 if (theCurve.IsPeriodic())
                 {
-                    ElCLib.AdjustPeriodic(cf, cl, Precision.PConfusion(), ref trim1, ref trim2);
+                    global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref trim1, ref trim2);
                 }
                 else if (theCurve.IsClosed())
                 {
-                    if (Math.Abs(trim1 - cf) < Precision.PConfusion())
+                    if (Math.Abs(trim1 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         trim2 += cl;
                     }
@@ -2525,7 +2528,7 @@ public static class StepToGeom
         Geom_Direction? D = MakeDirection(SV.Orientation());
         if (D is not null)
         {
-            gp_Vec V = new gp_Vec(D.Dir().XYZ() * SV.Magnitude() * theLocalFactors.LengthFactor());
+            Vector3D V = new Vector3D(D.Dir().XYZ() * SV.Magnitude() * theLocalFactors.LengthFactor());
             return new Geom_VectorWithMagnitude(V);
         }
         return null;
@@ -2546,7 +2549,7 @@ public static class StepToGeom
         Geom2d_Direction? D = MakeDirection2d(SV.Orientation());
         if (D is not null)
         {
-            gp_Vec2d V = new gp_Vec2d(D.Dir2d().XY() * SV.Magnitude());
+            Vector2D V = new Vector2D(D.Dir2d().XY() * SV.Magnitude());
             return new Geom2d_VectorWithMagnitude(V);
         }
         return null;
@@ -2577,7 +2580,7 @@ public static class StepToGeom
                                                    SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(2),
                                                    SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(3));
         double anAngle = SR.RotationAboutDirection().RotationAngle();
-        if (Math.Abs(anAngle) < Precision.Angular())
+        if (Math.Abs(anAngle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             // a zero rotation is converted trivially
             anYPRRotation = new NCollection_HArray1<double>(1, 3);
@@ -2607,7 +2610,7 @@ public static class StepToGeom
         {
             StepBasic_ConversionBasedUnitAndPlaneAngleUnit aConverUnit = (StepBasic_ConversionBasedUnitAndPlaneAngleUnit)aPau;
             StepBasic_MeasureWithUnit? aConversionFactor = null;
-            Standard_Transient aTransientFactor = aConverUnit.ConversionFactor();
+            Transient aTransientFactor = aConverUnit.ConversionFactor();
             if (aTransientFactor.IsKind(typeof(StepBasic_MeasureWithUnit)))
             {
                 aConversionFactor = aTransientFactor as StepBasic_MeasureWithUnit;
@@ -2636,7 +2639,7 @@ public static class StepToGeom
         double aYaw = 0, aPitch = 0, aRoll = 0;
 
         // axis parallel either to x-axis or to z-axis?
-        if (Math.Abs(dy) < Precision.Confusion() && Math.Abs(dx * dz) < Precision.SquareConfusion())
+        if (Math.Abs(dy) < global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dx * dz) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             while (anAngle <= -Math.PI)
             {
@@ -2648,7 +2651,7 @@ public static class StepToGeom
             }
 
             aYaw = anUcf * anAngle;
-            if (Math.Abs(anAngle - Math.PI) >= Precision.Angular())
+            if (Math.Abs(anAngle - Math.PI) >= global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 aRoll = -aYaw;
             }
@@ -2660,7 +2663,7 @@ public static class StepToGeom
             anYPRRotation.SetValue(1, 0.0);
             anYPRRotation.SetValue(2, 0.0);
             anYPRRotation.SetValue(3, 0.0);
-            if (Math.Abs(dx) >= Precision.Confusion())
+            if (Math.Abs(dx) >= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (dx > 0.0)
                 {
@@ -2686,7 +2689,7 @@ public static class StepToGeom
         }
 
         // axis parallel to y-axis - use y-axis as pitch axis
-        if (Math.Abs(dy) >= Precision.Confusion() && Math.Abs(dx) < Precision.Confusion() && Math.Abs(dz) < Precision.Confusion())
+        if (Math.Abs(dy) >= global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dx) < global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dz) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             if (aCA >= 0.0)
             {
@@ -2719,10 +2722,10 @@ public static class StepToGeom
             { dx * dz * aCm1 - dy * aSA, dy * dz * aCm1 + dx * aSA, dz * dz * aCm1 + aCA } };
 
         // aRotMat[1][3] equals SIN(pitch_angle)
-        if (Math.Abs(Math.Abs(aRotMat[0, 2] - 1.0)) < Precision.Confusion())
+        if (Math.Abs(Math.Abs(aRotMat[0, 2] - 1.0)) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // |aPitch| = PI/2
-            if (Math.Abs(aRotMat[0, 2] - 1.0) < Precision.Confusion())
+            if (Math.Abs(aRotMat[0, 2] - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aPitch = Math.PI / 2;
             }
@@ -2758,7 +2761,7 @@ public static class StepToGeom
 
             if (aRotMat[0, 0] < 0.0)
             {
-                if (aYaw < 0.0 || Math.Abs(aYaw) < Precision.Angular())
+                if (aYaw < 0.0 || Math.Abs(aYaw) < global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     aYaw = aYaw + Math.PI;
                 }

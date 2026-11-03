@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -106,10 +108,10 @@ public class ShapeFix_Shape : ShapeFix_Root
     /// Fixes the shape (by type, see the class), then makes its edges SameParameter and checks the tolerances of its
     /// vertices, as the modes allow. Returns true if something was done.
     /// </summary>
-    public bool Perform(Message_ProgressRange theProgress = default)
+    public bool Perform(ProgressRange theProgress = default)
     {
         // OCCT's early return (a shape this tool already fixed, or one the context made) runs on the caller's shape
-        TopoDS_Shape aShapeNullLoc = myShape.Located(new TopLoc_Location());
+        TopoDS_Shape aShapeNullLoc = myShape.Located(new Placement());
         if (Context()!.IsNewShape(myShape) || myMapFixingShape.Contains(aShapeNullLoc))
         {
             return perform(theProgress);
@@ -137,7 +139,7 @@ public class ShapeFix_Shape : ShapeFix_Root
     }
 
     // ShapeFix_Shape::Perform on the working shape (recursive over compounds)
-    private bool perform(Message_ProgressRange theProgress)
+    private bool perform(ProgressRange theProgress)
     {
         ShapeBuild_ReShape aContext                = Context()!;
         int                savFixSmallAreaWireMode = 0;
@@ -154,7 +156,7 @@ public class ShapeFix_Shape : ShapeFix_Root
         TopAbs_ShapeEnum st;
 
         // gka fix for sharing assembly
-        TopLoc_Location nullLoc = new(), L;
+        Placement nullLoc = new(), L;
         L = myShape.Location();
         TopoDS_Shape aShapeNullLoc = myShape;
         bool         aIsRecorded   = aContext.IsNewShape(myShape);
@@ -181,7 +183,7 @@ public class ShapeFix_Shape : ShapeFix_Root
         // Open progress indication scope for the following fix stages:
         // - Fix on Solid or Shell;
         // - Fix same parameterization;
-        using var aPS = new Message_ProgressScope(theProgress, "Fixing stage", 2);
+        using var aPS = new ProgressScope(theProgress, "Fixing stage", 2);
 
         switch (st)
         {
@@ -195,7 +197,7 @@ public class ShapeFix_Shape : ShapeFix_Root
                 int aShapesNb          = S.NbChildren();
 
                 // Open progress indication scope for sub-shape fixing
-                using var aPSSubShape = new Message_ProgressScope(aPS.Next(), "Fixing sub-shape", aShapesNb);
+                using var aPSSubShape = new ProgressScope(aPS.Next(), "Fixing sub-shape", aShapesNb);
                 for (var anIter = new TopoDS_Iterator(S); anIter.More() && aPSSubShape.More(); anIter.Next())
                 {
                     myShape = anIter.Value();
@@ -363,7 +365,7 @@ public class ShapeFix_Shape : ShapeFix_Root
     }
 
     /// <summary>Fixes SameParameter of the edges of the shape (ShapeFix::SameParameter). Writes into the shape.</summary>
-    protected virtual void SameParameter(in TopoDS_Shape sh, bool enforce, Message_ProgressRange theProgress = default)
+    protected virtual void SameParameter(in TopoDS_Shape sh, bool enforce, ProgressRange theProgress = default)
     {
         ShapeFix.SameParameter(sh, enforce, 0.0, theProgress);
     }

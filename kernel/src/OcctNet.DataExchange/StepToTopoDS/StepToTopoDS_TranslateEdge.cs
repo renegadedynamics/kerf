@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepLib_EdgeError;
 using static Occt.StepToTopoDS_TranslateEdgeError;
 using static Occt.TopAbs_Orientation;
@@ -26,7 +28,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     //: d8
     // Used in I-DEAS-like STP processing (ssv; 15.11.2010)
 
-    private static void DecodeMakeEdgeError(BRepLib_MakeEdge ME, Standard_Transient orig, ref Geom_Curve myCurve, in TopoDS_Vertex V1,
+    private static void DecodeMakeEdgeError(BRepLib_MakeEdge ME, Transient orig, ref Geom_Curve myCurve, in TopoDS_Vertex V1,
                                             in TopoDS_Vertex V2, double U1, double U2, StepToTopoDS_Tool aTool,
                                             StepShape_TopologicalRepresentationItem tobind)
     {
@@ -54,7 +56,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 break;
             case BRepLib_DifferentsPointAndParameter:
                 // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
-                if (myCurve.IsFrozen())
+                if (myCurve.IsFrozen)
                 {
                     myCurve = (Geom_Curve)myCurve.Copy();
                 }
@@ -96,7 +98,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     {
         var B = new BRep_Builder();
         TopoDS_Edge E = new TopoDS_Edge();
-        B.MakeEdge(ref E, C3D, Occt.Precision.Confusion());
+        B.MakeEdge(ref E, C3D, Kerf.Engine.Foundation.Precision.Confusion());
         B.Add(E, V1);
         B.Add(E, V2);
         B.UpdateVertex(V1, U1, E, 0.0);
@@ -303,7 +305,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         => Init(aEdge, aTool, NMTool, new StepData_Factors());
 
     //: e6 abv 16 Apr 98: ProSTEP TR8, r0601_sy.stp, #14907
-    private static void GetCartesianPoints(StepShape_EdgeCurve EC, ref gp_Pnt P1, ref gp_Pnt P2, in StepData_Factors theLocalFactors)
+    private static void GetCartesianPoints(StepShape_EdgeCurve EC, ref Point3D P1, ref Point3D P2, in StepData_Factors theLocalFactors)
     {
         for (int i = 1; i <= 2; i++)
         {
@@ -345,12 +347,12 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         aTool.AddContinuity(C1);
         var B = new BRep_Builder();
         double temp1, temp2, U1, U2;
-        gp_Pnt pproj;
-        gp_Pnt pv1 = BRep_Tool.Pnt(V1);
-        gp_Pnt pv2 = BRep_Tool.Pnt(V2);
+        Point3D pproj;
+        Point3D pv1 = BRep_Tool.Pnt(V1);
+        Point3D pv2 = BRep_Tool.Pnt(V2);
 
         //: e6 abv
-        gp_Pnt pnt1 = pv1, pnt2 = pv2;
+        Point3D pnt1 = pv1, pnt2 = pv2;
         if (V1.IsSame(V2))
         {
             GetCartesianPoints(EC, ref pnt1, ref pnt2, theLocalFactors);
@@ -368,7 +370,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
 
         //: d5: instead of AdjustCurve above which is incorrect if U1 and U2 are not ends
         var aCA = new GeomAdaptor_Curve(C1);
-        gp_Pnt pU1 = aCA.Value(U1), pU2 = aCA.Value(U2);
+        Point3D pU1 = aCA.Value(U1), pU2 = aCA.Value(U2);
         temp1 = pU1.Distance(pv1);
         temp2 = pU2.Distance(pv2);
         if (temp1 > preci || temp2 > preci)
@@ -377,12 +379,12 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             // design system): edge curve is line displaced from its true position but with correct
             // direction; we can shift the line in this case so that it passes through vertices correctly
             if (Math.Abs(temp1 - temp2) < preci
-                && Math.Abs(U2 - U1 - pnt1.Distance(pnt2)) < Occt.Precision.Confusion()
+                && Math.Abs(U2 - U1 - pnt1.Distance(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
                 && C1 is Geom_Line)
             {
                 Geom_Line aLine = C1 as Geom_Line;
-                gp_Lin aLin = aLine.Lin();
-                gp_Pnt anOrigin = new gp_Pnt(pnt1.XYZ() - aLin.Position().Direction().XYZ() * U1);
+                Line3D aLin = aLine.Lin();
+                Point3D anOrigin = new Point3D(pnt1.XYZ() - aLin.Position().Direction().XYZ() * U1);
                 aLin.SetLocation(anOrigin);
                 C1 = new Geom_Line(aLin);
                 TP.AddWarning(C3D, "Poor result from projection vertex / line 3d, line shifted");
@@ -440,11 +442,11 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                     if (!V1.IsSame(V2))
                     {
                         TP.AddFail(EC, "This edge has null arc length");
-                        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-                        gp_Pnt P2 = BRep_Tool.Pnt(V2);
-                        gp_Vec avec = new gp_Vec(P1, P2);
-                        gp_Dir adir = new gp_Dir(avec);
-                        gp_Lin alin = new gp_Lin(P1, adir);
+                        Point3D P1 = BRep_Tool.Pnt(V1);
+                        Point3D P2 = BRep_Tool.Pnt(V2);
+                        Vector3D avec = new Vector3D(P1, P2);
+                        Direction3D adir = new Direction3D(avec);
+                        Line3D alin = new Line3D(P1, adir);
                         C1 = new Geom_Line(alin);
                         U1 = 0.0;
                         U2 = P1.Distance(P2);
@@ -489,7 +491,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 C2d = GeomConvert_Units.DegreeToRadian(C2d, ConvSurf, theLocalFactors.LengthFactor(), theLocalFactors.FactorDegreeRadian());
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return C2d;
         }
@@ -500,7 +502,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     public Geom2d_Curve MakePCurve(StepGeom_Pcurve PCU, Geom_Surface ConvSurf) => MakePCurve(PCU, ConvSurf, new StepData_Factors());
 
     /// <summary>The edge, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -144,7 +146,7 @@ public partial class Solid : Shape3D
         {
             return Result(new Solid(TopoDS.Solid(difference)));
         }
-        catch (Standard_Failure e) when (e.OcctType == "Standard_TypeMismatch")
+        catch (FailureException e) when (e.OcctType == "Standard_TypeMismatch")
         {
             return Result(new Solid(TopoDS.Solid(TopoUtil.UnwrapCompound(TopoDS.Compound(difference)))));
         }
@@ -191,7 +193,7 @@ public partial class Solid : Shape3D
             // Draft the sides about the plane of the profile, which keeps its size
             var center = profile.Center().ToGpPnt();
             var pullDir = pull.ToGpDir();
-            var neutral = new gp_Pln(center, pullDir);
+            var neutral = new Plane3D(center, pullDir);
             var draft = new BRepOffsetAPI_DraftAngle(prism);
             try
             {
@@ -212,7 +214,7 @@ public partial class Solid : Shape3D
                         result = new Solid(TopoDS.Solid(draft.Shape()));
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // The draft can't build every taper a loft can
             }
@@ -241,7 +243,7 @@ public partial class Solid : Shape3D
                 }
                 solids = [.. profileWires.Zip(taperWires).Select(p => MakeLoft([p.First, p.Second]))];
             }
-            catch (Exception e) when (e is InvalidOperationException or Standard_Failure)
+            catch (Exception e) when (e is InvalidOperationException or FailureException)
             {
                 throw new InvalidOperationException(
                     $"Tapered extrusion of {PyFormat.Repr(taper)} degrees over {PyFormat.Repr(direction.Length)} could not be built. "
@@ -387,7 +389,7 @@ public partial class Solid : Shape3D
         {
             case Vector v:
             {
-                var system = new gp_Ax2();
+                var system = new Frame3D();
                 var start = path.StartPoint().ToGpPnt();
                 var dir = v.ToGpDir();
                 system = system.WithLocation(start);
@@ -448,14 +450,14 @@ public partial class Solid : Shape3D
         }
         var builder = new BRepOffset_MakeOffset();
         builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, BRepOffset_Mode.BRepOffset_Skin, true, false,
-                           GeomAbs_JoinType.GeomAbs_Intersection, true, true);
+                           JoinKind.Intersection, true, true);
         builder.MakeOffsetShape();
         TopoDS_Shape thickened;
         try
         {
             thickened = builder.Shape();
         }
-        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
+        catch (FailureException e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new InvalidOperationException("Error applying thicken to given surface", e);
         }
@@ -489,7 +491,7 @@ public partial class Solid : Shape3D
             builder.Build();
             result = new Solid(TopoDS.Solid(builder.Shape()));
         }
-        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
+        catch (FailureException e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new DraftAngleError("Draft build failed on the given solid.", null, builder.ProblematicShape(), e);
         }
@@ -519,8 +521,8 @@ public partial class Solid : Shape3D
         (Vector, Vector) PointNormal(Face face, double u, double v)
         {
             var (u0, u1, v0, v1) = face.UVBounds();
-            var pnt = new gp_Pnt();
-            var norm = new gp_Vec();
+            var pnt = new Point3D();
+            var norm = new Vector3D();
             var props = new BRepGProp_Face(face.TopoFace);
             props.Normal(u0 + u * (u1 - u0), v0 + v * (v1 - v0), out pnt, out norm);
             return (new Vector(pnt), new Vector(norm));

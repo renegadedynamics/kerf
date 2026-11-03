@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepPrim_Direction;
 
 namespace Occt;
@@ -42,7 +44,7 @@ internal class BRepPrim_GWedge
         int i2 = BRepPrim_Wedge_NumDir1(d2);
         if (i1 / 2 == i2 / 2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tab[i1, i2];
     }
@@ -55,7 +57,7 @@ internal class BRepPrim_GWedge
         int i3 = BRepPrim_Wedge_NumDir1(d3);
         if ((i1 / 2 == i2 / 2) || (i2 / 2 == i3 / 2) || (i3 / 2 == i1 / 2))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return val[i1] + val[i2] + val[i3];
     }
@@ -68,28 +70,28 @@ internal class BRepPrim_GWedge
         {
             if (V[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBEDGES; i++)
         {
             if (E[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBWIRES; i++)
         {
             if (W[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBFACES; i++)
         {
             if (F[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
     }
@@ -117,7 +119,7 @@ internal class BRepPrim_GWedge
     }
 
     private readonly BRepPrim_Builder myBuilder;
-    private readonly gp_Ax2 myAxes;
+    private readonly Frame3D myAxes;
     private readonly double XMin;
     private readonly double XMax;
     private readonly double YMin;
@@ -154,7 +156,7 @@ internal class BRepPrim_GWedge
     public BRepPrim_GWedge()
     {
         myBuilder = new BRepPrim_Builder();
-        myAxes = new gp_Ax2();
+        myAxes = new Frame3D();
         XMin = 0;
         XMax = 0;
         YMin = 0;
@@ -174,7 +176,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>A box: XMin, YMin, ZMin at 0, XMax, YMax, ZMax at dx, dy, dz, Z2 = Z and X2 = X.</summary>
-    public BRepPrim_GWedge(BRepPrim_Builder B, in gp_Ax2 Axes, double dx, double dy, double dz)
+    public BRepPrim_GWedge(BRepPrim_Builder B, in Frame3D Axes, double dx, double dy, double dz)
     {
         myBuilder = B;
         myAxes = Axes;
@@ -197,7 +199,7 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>A STEP right angular wedge: as the box, with X2Min = 0 and X2Max = ltx.</summary>
-    public BRepPrim_GWedge(BRepPrim_Builder B, in gp_Ax2 Axes, double dx, double dy, double dz, double ltx)
+    public BRepPrim_GWedge(BRepPrim_Builder B, in Frame3D Axes, double dx, double dy, double dz, double ltx)
     {
         myBuilder = B;
         myAxes = Axes;
@@ -221,7 +223,7 @@ internal class BRepPrim_GWedge
 
     /// <summary>Builds a wedge by giving all the fields.</summary>
     public BRepPrim_GWedge(BRepPrim_Builder B,
-                           in gp_Ax2 Axes,
+                           in Frame3D Axes,
                            double xmin,
                            double ymin,
                            double zmin,
@@ -253,7 +255,7 @@ internal class BRepPrim_GWedge
         BRepPrim_Wedge_Init(out ShellBuilt, VerticesBuilt, EdgesBuilt, WiresBuilt, FacesBuilt);
     }
 
-    public gp_Ax2 Axes()
+    public Frame3D Axes()
     {
         return myAxes;
     }
@@ -333,7 +335,7 @@ internal class BRepPrim_GWedge
     {
         if (IsDegeneratedShape())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!ShellBuilt)
@@ -384,14 +386,14 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The plane of the face in the direction.</summary>
-    public gp_Pln Plane(BRepPrim_Direction d1)
+    public Plane3D Plane(BRepPrim_Direction d1)
     {
         int i = BRepPrim_Wedge_NumDir1(d1);
 
-        gp_Dir D = new();
-        gp_Vec VX = new(myAxes.XDirection());
-        gp_Vec VY = new(myAxes.YDirection());
-        gp_Vec VZ = new(myAxes.Direction());
+        Direction3D D = new();
+        Vector3D VX = new(myAxes.XDirection());
+        Vector3D VY = new(myAxes.YDirection());
+        Vector3D VZ = new(myAxes.Direction());
 
         switch (i / 2)
         {
@@ -418,7 +420,7 @@ internal class BRepPrim_GWedge
                 Z = ZMin;
                 if (X2Min != XMin)
                 {
-                    D = new gp_Dir((YMax - YMin) * VX + (XMin - X2Min) * VY);
+                    D = new Direction3D((YMax - YMin) * VX + (XMin - X2Min) * VY);
                 }
                 break;
 
@@ -429,7 +431,7 @@ internal class BRepPrim_GWedge
                 Z = ZMin;
                 if (X2Max != XMax)
                 {
-                    D = new gp_Dir((YMax - YMin) * VX + (XMax - X2Max) * VY);
+                    D = new Direction3D((YMax - YMin) * VX + (XMax - X2Max) * VY);
                 }
                 break;
 
@@ -454,7 +456,7 @@ internal class BRepPrim_GWedge
                 Z = ZMin;
                 if (Z2Min != ZMin)
                 {
-                    D = new gp_Dir((YMax - YMin) * VZ + (ZMin - Z2Min) * VY);
+                    D = new Direction3D((YMax - YMin) * VZ + (ZMin - Z2Min) * VY);
                 }
                 break;
 
@@ -465,16 +467,16 @@ internal class BRepPrim_GWedge
                 Z = ZMax;
                 if (Z2Max != ZMax)
                 {
-                    D = new gp_Dir((YMax - YMin) * VZ + (ZMax - Z2Max) * VY);
+                    D = new Direction3D((YMax - YMin) * VZ + (ZMax - Z2Max) * VY);
                 }
                 break;
         }
 
-        gp_Pnt P = myAxes.Location();
-        P.Translate(X * new gp_Vec(myAxes.XDirection()));
-        P.Translate(Y * new gp_Vec(myAxes.YDirection()));
-        P.Translate(Z * new gp_Vec(myAxes.Direction()));
-        gp_Pln plane = new(P, D);
+        Point3D P = myAxes.Location();
+        P.Translate(X * new Vector3D(myAxes.XDirection()));
+        P.Translate(Y * new Vector3D(myAxes.YDirection()));
+        P.Translate(Z * new Vector3D(myAxes.Direction()));
+        Plane3D plane = new(P, D);
         return plane;
     }
 
@@ -485,7 +487,7 @@ internal class BRepPrim_GWedge
 
         if (!FacesBuilt[i])
         {
-            gp_Pln P = Plane(d1);
+            Plane3D P = Plane(d1);
             myBuilder.MakeFace(ref myFaces[i], P);
             if (HasWire(d1))
             {
@@ -527,51 +529,51 @@ internal class BRepPrim_GWedge
                     break;
             }
 
-            gp_Lin L;
-            gp_Dir DX = P.XAxis().Direction();
-            gp_Dir DY = P.YAxis().Direction();
+            Line3D L;
+            Direction3D DX = P.XAxis().Direction();
+            Direction3D DY = P.YAxis().Direction();
             double U, V, DU, DV;
             if (HasEdge(d1, dd4))
             {
                 L = Line(d1, dd4);
-                ElSLib.Parameters(P, L.Location(), out U, out V);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(P, L.Location(), out U, out V);
                 DU = L.Direction() * DX;
                 DV = L.Direction() * DY;
                 myBuilder.SetPCurve(myEdges[BRepPrim_Wedge_NumDir2(d1, dd4)],
                                     myFaces[i],
-                                    new gp_Lin2d(new gp_Pnt2d(U, V), new gp_Dir2d(DU, DV)));
+                                    new Line2D(new Point2D(U, V), new Direction2D(DU, DV)));
             }
             if (HasEdge(d1, dd3))
             {
                 L = Line(d1, dd3);
-                ElSLib.Parameters(P, L.Location(), out U, out V);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(P, L.Location(), out U, out V);
                 DU = L.Direction() * DX;
                 DV = L.Direction() * DY;
                 myBuilder.SetPCurve(myEdges[BRepPrim_Wedge_NumDir2(d1, dd3)],
                                     myFaces[i],
-                                    new gp_Lin2d(new gp_Pnt2d(U, V), new gp_Dir2d(DU, DV)));
+                                    new Line2D(new Point2D(U, V), new Direction2D(DU, DV)));
             }
 
             if (HasEdge(d1, dd2))
             {
                 L = Line(d1, dd2);
-                ElSLib.Parameters(P, L.Location(), out U, out V);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(P, L.Location(), out U, out V);
                 DU = L.Direction() * DX;
                 DV = L.Direction() * DY;
                 myBuilder.SetPCurve(myEdges[BRepPrim_Wedge_NumDir2(d1, dd2)],
                                     myFaces[i],
-                                    new gp_Lin2d(new gp_Pnt2d(U, V), new gp_Dir2d(DU, DV)));
+                                    new Line2D(new Point2D(U, V), new Direction2D(DU, DV)));
             }
 
             if (HasEdge(d1, dd1))
             {
                 L = Line(d1, dd1);
-                ElSLib.Parameters(P, L.Location(), out U, out V);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(P, L.Location(), out U, out V);
                 DU = L.Direction() * DX;
                 DV = L.Direction() * DY;
                 myBuilder.SetPCurve(myEdges[BRepPrim_Wedge_NumDir2(d1, dd1)],
                                     myFaces[i],
-                                    new gp_Lin2d(new gp_Pnt2d(U, V), new gp_Dir2d(DU, DV)));
+                                    new Line2D(new Point2D(U, V), new Direction2D(DU, DV)));
             }
 
             myBuilder.CompleteFace(myFaces[i]);
@@ -705,21 +707,21 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The line of the edge between the two directions.</summary>
-    public gp_Lin Line(BRepPrim_Direction d1, BRepPrim_Direction d2)
+    public Line3D Line(BRepPrim_Direction d1, BRepPrim_Direction d2)
     {
         if (!HasEdge(d1, d2))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         int i = BRepPrim_Wedge_NumDir2(d1, d2);
 
         double X = 0.0, Y = 0.0, Z = 0.0;
 
-        gp_Dir D = new();
-        gp_Vec VX = new(myAxes.XDirection());
-        gp_Vec VY = new(myAxes.YDirection());
-        gp_Vec VZ = new(myAxes.Direction());
+        Direction3D D = new();
+        Vector3D VX = new(myAxes.XDirection());
+        Vector3D VY = new(myAxes.YDirection());
+        Vector3D VZ = new(myAxes.Direction());
 
         switch (i / 4)
         {
@@ -801,7 +803,7 @@ internal class BRepPrim_GWedge
                 Z = ZMin;
                 if ((XMin != X2Min) || (ZMin != Z2Min))
                 {
-                    D = new gp_Dir((X2Min - XMin) * VX + (YMax - YMin) * VY + (Z2Min - ZMin) * VZ);
+                    D = new Direction3D((X2Min - XMin) * VX + (YMax - YMin) * VY + (Z2Min - ZMin) * VZ);
                 }
                 break;
 
@@ -812,7 +814,7 @@ internal class BRepPrim_GWedge
                 Z = ZMax;
                 if ((XMin != X2Min) || (ZMax != Z2Max))
                 {
-                    D = new gp_Dir((X2Min - XMin) * VX + (YMax - YMin) * VY + (Z2Max - ZMax) * VZ);
+                    D = new Direction3D((X2Min - XMin) * VX + (YMax - YMin) * VY + (Z2Max - ZMax) * VZ);
                 }
                 break;
 
@@ -823,7 +825,7 @@ internal class BRepPrim_GWedge
                 Z = ZMin;
                 if ((XMax != X2Max) || (ZMin != Z2Min))
                 {
-                    D = new gp_Dir((X2Max - XMax) * VX + (YMax - YMin) * VY + (Z2Min - ZMin) * VZ);
+                    D = new Direction3D((X2Max - XMax) * VX + (YMax - YMin) * VY + (Z2Min - ZMin) * VZ);
                 }
                 break;
 
@@ -834,16 +836,16 @@ internal class BRepPrim_GWedge
                 Z = ZMax;
                 if ((XMax != X2Max) || (ZMax != Z2Max))
                 {
-                    D = new gp_Dir((X2Max - XMax) * VX + (YMax - YMin) * VY + (Z2Max - ZMax) * VZ);
+                    D = new Direction3D((X2Max - XMax) * VX + (YMax - YMin) * VY + (Z2Max - ZMax) * VZ);
                 }
                 break;
         }
 
-        gp_Pnt P = myAxes.Location();
-        P.Translate(X * new gp_Vec(myAxes.XDirection()));
-        P.Translate(Y * new gp_Vec(myAxes.YDirection()));
-        P.Translate(Z * new gp_Vec(myAxes.Direction()));
-        return new gp_Lin(new gp_Ax1(P, D));
+        Point3D P = myAxes.Location();
+        P.Translate(X * new Vector3D(myAxes.XDirection()));
+        P.Translate(Y * new Vector3D(myAxes.YDirection()));
+        P.Translate(Z * new Vector3D(myAxes.Direction()));
+        return new Line3D(new Axis3D(P, D));
     }
 
     /// <summary>The edge between the two directions (unfrozen).</summary>
@@ -851,7 +853,7 @@ internal class BRepPrim_GWedge
     {
         if (!HasEdge(d1, d2))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         int i = BRepPrim_Wedge_NumDir2(d1, d2);
@@ -881,21 +883,21 @@ internal class BRepPrim_GWedge
                     break;
             }
 
-            gp_Lin L = Line(d1, d2);
+            Line3D L = Line(d1, d2);
             myBuilder.MakeEdge(ref myEdges[i], L);
 
             if (HasVertex(d1, d2, dd2))
             {
                 myBuilder.AddEdgeVertex(myEdges[i],
                                         Vertex(d1, d2, dd2),
-                                        ElCLib.Parameter(L, Point(d1, d2, dd2)),
+                                        global::Kerf.Engine.Geometry.ElCLib.Parameter(L, Point(d1, d2, dd2)),
                                         false);
             }
             if (HasVertex(d1, d2, dd1))
             {
                 myBuilder.AddEdgeVertex(myEdges[i],
                                         Vertex(d1, d2, dd1),
-                                        ElCLib.Parameter(L, Point(d1, d2, dd1)),
+                                        global::Kerf.Engine.Geometry.ElCLib.Parameter(L, Point(d1, d2, dd1)),
                                         true);
             }
 
@@ -941,11 +943,11 @@ internal class BRepPrim_GWedge
     }
 
     /// <summary>The point of the vertex at the three directions.</summary>
-    public gp_Pnt Point(BRepPrim_Direction d1, BRepPrim_Direction d2, BRepPrim_Direction d3)
+    public Point3D Point(BRepPrim_Direction d1, BRepPrim_Direction d2, BRepPrim_Direction d3)
     {
         if (!HasVertex(d1, d2, d3))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         int i = BRepPrim_Wedge_NumDir3(d1, d2, d3);
@@ -1003,10 +1005,10 @@ internal class BRepPrim_GWedge
                 break;
         }
 
-        gp_Pnt P = myAxes.Location();
-        P.Translate(X * new gp_Vec(myAxes.XDirection()));
-        P.Translate(Y * new gp_Vec(myAxes.YDirection()));
-        P.Translate(Z * new gp_Vec(myAxes.Direction()));
+        Point3D P = myAxes.Location();
+        P.Translate(X * new Vector3D(myAxes.XDirection()));
+        P.Translate(Y * new Vector3D(myAxes.YDirection()));
+        P.Translate(Z * new Vector3D(myAxes.Direction()));
         return P;
     }
 
@@ -1015,7 +1017,7 @@ internal class BRepPrim_GWedge
     {
         if (!HasVertex(d1, d2, d3))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         int i = BRepPrim_Wedge_NumDir3(d1, d2, d3);
@@ -1070,7 +1072,7 @@ internal class BRepPrim_GWedge
     /// <summary>True if the wedge is degenerated (a null dimension, or a negative top).</summary>
     public bool IsDegeneratedShape()
     {
-        return (XMax - XMin <= Precision.Confusion()) || (YMax - YMin <= Precision.Confusion())
-               || (ZMax - ZMin <= Precision.Confusion()) || (Z2Max - Z2Min < 0) || (X2Max - X2Min < 0);
+        return (XMax - XMin <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (YMax - YMin <= global::Kerf.Engine.Foundation.Precision.Confusion())
+               || (ZMax - ZMin <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (Z2Max - Z2Min < 0) || (X2Max - X2Min < 0);
     }
 }

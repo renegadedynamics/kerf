@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -21,7 +25,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
     private BOPDS_CommonBlock? myCB;
     // <-
     private TopoDS_Edge myESp = new();
-    private Bnd_Box myBox = new();
+    private Box myBox = new();
     private double myTol;
     //
     private BOPDS_DS? myDS;
@@ -54,7 +58,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 
     public TopoDS_Edge SplitEdge() => myESp;
 
-    public Bnd_Box Box() => myBox;
+    public Box Box() => myBox;
 
     public double Tolerance() => myTol;
 
@@ -64,7 +68,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -72,7 +76,7 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
         myTol = BOPAlgo_Tools.ComputeToleranceOfCB(myCB, myDS!, myContext);
         BOPTools_AlgoTools.MakeSplitEdge(myE, myV1, myT1, myV2, myT2, out myESp);
         BRepBndLib.Add(myESp, ref myBox);
-        myBox.SetGap(myBox.GetGap() + Precision.Confusion());
+        myBox.SetGap(myBox.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }
 
@@ -129,7 +133,7 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
 
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -194,7 +198,7 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
                 BOPAlgo_PaveFiller.UpdateVertices(aCopyE, myF);
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertBuildingPCurveFailed(new TopoDS_Shape()));
         }
@@ -212,7 +216,7 @@ internal sealed class BOPAlgo_BPC : BOPTools_Parallel.ISolver
     private TopoDS_Face myF = new();
     private Geom2d_Curve? myCurve;
     private bool myToUpdate;
-    private Message_ProgressRange myRange;
+    private ProgressRange myRange;
 
     public void SetFace(in TopoDS_Face aF) => myF = aF;
 
@@ -226,11 +230,11 @@ internal sealed class BOPAlgo_BPC : BOPTools_Parallel.ISolver
 
     public bool IsToUpdate() => myToUpdate;
 
-    public void SetRange(Message_ProgressRange theRange) => myRange = theRange;
+    public void SetRange(ProgressRange theRange) => myRange = theRange;
 
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myRange, null, 1);
+        using var aPS = new ProgressScope(myRange, null, 1);
         if (!aPS.More())
         {
             return;
@@ -242,11 +246,11 @@ internal sealed class BOPAlgo_BPC : BOPTools_Parallel.ISolver
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>Makes the split edges of the pave blocks (one per common block).</summary>
-    protected void MakeSplitEdges(Message_ProgressRange theRange)
+    protected void MakeSplitEdges(ProgressRange theRange)
     {
         NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS!.ChangePaveBlocksPool();
         int aNbPBP = aPBP.Length();
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         if (aNbPBP == 0)
         {
             return;
@@ -371,7 +375,7 @@ public partial class BOPAlgo_PaveFiller
         } // for (i=0; i<aNbPBP; ++i) {
         //
         aNbVBSE = aVBSE.Length();
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Splitting edges", aNbVBSE);
+        using var aPS = new ProgressScope(aPSOuter.Next(), "Splitting edges", aNbVBSE);
         for (k = 0; k < aNbVBSE; k++)
         {
             BOPAlgo_SplitEdge aBSE = aVBSE[k];
@@ -394,7 +398,7 @@ public partial class BOPAlgo_PaveFiller
             BOPAlgo_SplitEdge aBSE = aVBSE[k];
             //
             TopoDS_Edge aSp = aBSE.SplitEdge();
-            Bnd_Box aBox = aBSE.Box();
+            Box aBox = aBSE.Box();
             //
             BOPDS_PaveBlock aPBk = aBSE.PaveBlock();
             BOPDS_CommonBlock? aCBk = aBSE.CommonBlock();
@@ -444,9 +448,9 @@ public partial class BOPAlgo_PaveFiller
         //
         aSI.SetShape(aSp);
         //
-        ref Bnd_Box aBox = ref aSI.ChangeBox();
+        ref Box aBox = ref aSI.ChangeBox();
         BRepBndLib.Add(aSp, ref aBox);
-        aBox.SetGap(aBox.GetGap() + Precision.Confusion());
+        aBox.SetGap(aBox.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         nSp = myDS.Append(aSI);
         return nSp;
@@ -462,9 +466,9 @@ public partial class BOPAlgo_PaveFiller
     /// missing: an argument edge in or on another argument's face is in a common block, which MakeSplitEdges then
     /// always splits (decisions 577 and 719).
     /// </remarks>
-    protected void MakePCurves(Message_ProgressRange theRange)
+    protected void MakePCurves(ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         if (myAvoidBuildPCurve || (!mySectionAttribute.PCurveOnS1() && !mySectionAttribute.PCurveOnS2()))
         {
             return;
@@ -636,7 +640,7 @@ public partial class BOPAlgo_PaveFiller
             } // for (i=0; i<aNbFF; ++i) {
         } // if (bPCurveOnS1 || bPCurveOnS2 ) {
         //
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Projecting edges on faces", aVMPC.Length());
+        using var aPS = new ProgressScope(aPSOuter.Next(), "Projecting edges on faces", aVMPC.Length());
         for (i = 0; i < aVMPC.Length(); i++)
         {
             BOPAlgo_MPC aMPC = aVMPC[i];
@@ -695,8 +699,8 @@ public partial class BOPAlgo_PaveFiller
         int j;
         double aUx, aVx, aTolV2, aD2, aD;
         Span<double> aT = stackalloc double[2];
-        gp_Pnt aP3D, aP3Dx;
-        gp_Pnt2d aP2Dx;
+        Point3D aP3D, aP3Dx;
+        Point2D aP2Dx;
         Geom_Surface aS;
         Geom_Curve aC3D;
         Geom2d_Curve aC2D;
@@ -738,7 +742,7 @@ public partial class BOPAlgo_PaveFiller
     /// Builds the p-curves of the argument edges on the planar faces that interfere (destructive mode only: the
     /// p-curves are stored in the argument edges).
     /// </summary>
-    protected void Prepare(Message_ProgressRange theRange)
+    protected void Prepare(ProgressRange theRange)
     {
         if (myNonDestructive)
         {
@@ -752,7 +756,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_IndexedMap<TopoDS_Shape> aMF = new(TopTools_ShapeMapHasher.Instance);
         //
         aNb = 3;
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         for (i = 0; i < aNb; ++i)
         {
             myIterator!.Initialize(aType[i], aType[2]);
@@ -791,7 +795,7 @@ public partial class BOPAlgo_PaveFiller
             }
         }
         //
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Building 2d curves on planar faces", aVBPC.Length());
+        using var aPS = new ProgressScope(aPSOuter.Next(), "Building 2d curves on planar faces", aVBPC.Length());
         for (i = 0; i < aVBPC.Length(); i++)
         {
             BOPAlgo_BPC aBPC = aVBPC[i];
@@ -827,7 +831,7 @@ public partial class BOPAlgo_PaveFiller
         Geom_RectangularTrimmedSurface? aGRTS;
         Geom_Plane? aGP;
 
-        Geom_Surface? aS = BRep_Tool.Surface(aF, out TopLoc_Location _);
+        Geom_Surface? aS = BRep_Tool.Surface(aF, out Placement _);
         aGRTS = aS as Geom_RectangularTrimmedSurface;
         if (aGRTS is not null)
         {

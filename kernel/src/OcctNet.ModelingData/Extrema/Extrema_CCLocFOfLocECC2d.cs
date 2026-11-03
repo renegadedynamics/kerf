@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -18,7 +21,7 @@ namespace Occt;
 /// <c>void*</c>; the port keeps references. Where the first derivative of a B-spline, Bezier, offset or other curve
 /// vanishes, it is replaced by the first non-zero higher derivative or by finite differences.
 /// </remarks>
-public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
+public class Extrema_CCLocFOfLocECC2d : FunctionSetWithDerivatives
 {
     private const double THE_MIN_TOL = 1.0e-20;
     private const double THE_TOL_FACTOR = 1.0e-12;
@@ -30,10 +33,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
     private double myTol;
     private double myU;
     private double myV;
-    private gp_Pnt2d myP1 = new();
-    private gp_Pnt2d myP2 = new();
-    private gp_Vec2d myDu = new();
-    private gp_Vec2d myDv = new();
+    private Point2D myP1 = new();
+    private Point2D myP2 = new();
+    private Vector2D myDu = new();
+    private Vector2D myDv = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
     private readonly NCollection_Sequence<Extrema_POnCurv2d> myPoints = new();
     private double myTolC1;
@@ -78,10 +81,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
 
         switch (Extrema_Curve2dTool.GetType(myC1))
         {
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_OtherCurve:
+            case BezierCurve:
+            case BSplineCurve:
+            case OffsetCurve:
+            case OtherCurve:
                 myMaxDerivOrderC1 = THE_MAX_ORDER;
                 myTolC1 = SearchOfTolerance(theC1);
                 break;
@@ -93,10 +96,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
 
         switch (Extrema_Curve2dTool.GetType(myC2))
         {
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_OtherCurve:
+            case BezierCurve:
+            case BSplineCurve:
+            case OffsetCurve:
+            case OtherCurve:
                 myMaxDerivOrderC2 = THE_MAX_ORDER;
                 myTolC2 = SearchOfTolerance(theC2);
                 break;
@@ -108,7 +111,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
     }
 
     /// <summary>Sets the curve of rank theRank (1 or 2).</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public void SetCurve(int theRank, Adaptor2d_Curve2d theC)
     {
         Standard_OutOfRange_Raise_if(theRank < 1 || theRank > 2, "Extrema_GFuncExtCC::SetCurve()");
@@ -118,10 +121,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
             myC1 = theC;
             switch (theC.GetType())
             {
-                case GeomAbs_BezierCurve:
-                case GeomAbs_BSplineCurve:
-                case GeomAbs_OffsetCurve:
-                case GeomAbs_OtherCurve:
+                case BezierCurve:
+                case BSplineCurve:
+                case OffsetCurve:
+                case OtherCurve:
                     myMaxDerivOrderC1 = THE_MAX_ORDER;
                     myTolC1 = SearchOfTolerance(theC);
                     break;
@@ -136,10 +139,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
             myC2 = theC;
             switch (theC.GetType())
             {
-                case GeomAbs_BezierCurve:
-                case GeomAbs_BSplineCurve:
-                case GeomAbs_OffsetCurve:
-                case GeomAbs_OtherCurve:
+                case BezierCurve:
+                case BSplineCurve:
+                case OffsetCurve:
+                case OtherCurve:
                     myMaxDerivOrderC2 = THE_MAX_ORDER;
                     myTolC2 = SearchOfTolerance(theC);
                     break;
@@ -165,7 +168,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
         Extrema_Curve2dTool.D1(myC1!, myU, out myP1, out myDu);
         Extrema_Curve2dTool.D1(myC2!, myV, out myP2, out myDv);
 
-        gp_Vec2d P1P2 = new(myP1, myP2);
+        Vector2D P1P2 = new(myP1, myP2);
 
         double Ndu = myDu.Magnitude();
 
@@ -187,7 +190,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                 double aDelta = Max(du * DivisionFactor, THE_MIN_STEP);
 
                 int n = 1;
-                gp_Vec2d V;
+                Vector2D V;
                 bool IsDeriveFound;
 
                 do
@@ -210,10 +213,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                         u = myU - aDelta;
                     }
 
-                    Extrema_Curve2dTool.D0(myC1!, Min(myU, u), out gp_Pnt2d P1);
-                    Extrema_Curve2dTool.D0(myC1!, Max(myU, u), out gp_Pnt2d P2);
+                    Extrema_Curve2dTool.D0(myC1!, Min(myU, u), out Point2D P1);
+                    Extrema_Curve2dTool.D0(myC1!, Max(myU, u), out Point2D P2);
 
-                    gp_Vec2d V1 = new(P1, P2);
+                    Vector2D V1 = new(P1, P2);
                     double aDirFactor = V.Dot(V1);
 
                     if (aDirFactor < 0.0)
@@ -227,8 +230,8 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                 }
                 else
                 {
-                    gp_Pnt2d Ptemp = new();
-                    gp_Pnt2d P1, P2, P3;
+                    Point2D Ptemp = new();
+                    Point2D P1, P2, P3;
                     bool IsParameterGrown;
 
                     if (myU - myUinfium < 2 * aDelta)
@@ -246,7 +249,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                         IsParameterGrown = false;
                     }
 
-                    gp_Vec2d V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
+                    Vector2D V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
 
                     if (IsParameterGrown)
                     {
@@ -286,7 +289,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                 double aDelta = Max(dv * DivisionFactor, THE_MIN_STEP);
 
                 int n = 1;
-                gp_Vec2d V;
+                Vector2D V;
                 bool IsDeriveFound;
 
                 do
@@ -309,10 +312,10 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                         v = myV - aDelta;
                     }
 
-                    Extrema_Curve2dTool.D0(myC2!, Min(myV, v), out gp_Pnt2d P1);
-                    Extrema_Curve2dTool.D0(myC2!, Max(myV, v), out gp_Pnt2d P2);
+                    Extrema_Curve2dTool.D0(myC2!, Min(myV, v), out Point2D P1);
+                    Extrema_Curve2dTool.D0(myC2!, Max(myV, v), out Point2D P2);
 
-                    gp_Vec2d V1 = new(P1, P2);
+                    Vector2D V1 = new(P1, P2);
                     double aDirFactor = V.Dot(V1);
 
                     if (aDirFactor < 0.0)
@@ -326,8 +329,8 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                 }
                 else
                 {
-                    gp_Pnt2d Ptemp = new();
-                    gp_Pnt2d P1, P2, P3;
+                    Point2D Ptemp = new();
+                    Point2D P1, P2, P3;
                     bool IsParameterGrown;
 
                     if (myV - myVinfium < 2 * aDelta)
@@ -345,7 +348,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                         IsParameterGrown = false;
                     }
 
-                    gp_Vec2d V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
+                    Vector2D V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
 
                     if (IsParameterGrown)
                     {
@@ -372,14 +375,14 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
     }
 
     /// <summary>The derivatives of F at (u, v), in theDF.</summary>
-    public override bool Derivatives(math_Vector theUV, math_Matrix theDF)
+    public override bool Derivatives(math_Vector theUV, Matrix theDF)
     {
         math_Vector F = new(1, 2);
         return Values(theUV, F, theDF);
     }
 
     /// <summary>F and its derivatives at (u, v).</summary>
-    public override bool Values(math_Vector theUV, math_Vector theF, math_Matrix theDF)
+    public override bool Values(math_Vector theUV, math_Vector theF, Matrix theDF)
     {
         myU = theUV[1];
         myV = theUV[2];
@@ -389,12 +392,12 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
             return false;
         }
 
-        Extrema_Curve2dTool.D2(myC1!, myU, out myP1, out gp_Vec2d Du, out gp_Vec2d Duu);
-        Extrema_Curve2dTool.D2(myC2!, myV, out myP2, out gp_Vec2d Dv, out gp_Vec2d Dvv);
+        Extrema_Curve2dTool.D2(myC1!, myU, out myP1, out Vector2D Du, out Vector2D Duu);
+        Extrema_Curve2dTool.D2(myC2!, myV, out myP2, out Vector2D Dv, out Vector2D Dvv);
 
         double myU_old = myU, myV_old = myV;
-        gp_Pnt2d myP1_old = myP1, myP2_old = myP2;
-        gp_Vec2d myDu_old = myDu, myDv_old = myDv;
+        Point2D myP1_old = myP1, myP2_old = myP2;
+        Vector2D myDu_old = myDu, myDv_old = myDv;
 
         const double DivisionFactor = 0.01;
 
@@ -422,7 +425,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
 
         double aDeltaV = Max(dv * DivisionFactor, THE_MIN_STEP);
 
-        gp_Vec2d P1P2 = new(myP1, myP2);
+        Vector2D P1P2 = new(myP1, myP2);
 
         if ((myMaxDerivOrderC1 != 0) && (Du.Magnitude() <= myTolC1))
         {
@@ -626,8 +629,8 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
     /// <summary>Saves the root just found if both functions are within the tolerance there.</summary>
     public override int GetStateNumber()
     {
-        gp_Vec2d Du = myDu, Dv = myDv;
-        gp_Vec2d P1P2 = new(myP1, myP2);
+        Vector2D Du = myDu, Dv = myDv;
+        Vector2D P1P2 = new(myP1, myP2);
 
         double mod = Du.Magnitude();
         if (mod > myTolC1)
@@ -663,7 +666,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
     }
 
     /// <summary>The curve of rank theRank (OCCT's <c>void*</c>).</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public Adaptor2d_Curve2d? CurvePtr(int theRank)
     {
         Standard_OutOfRange_Raise_if(theRank < 1 || theRank > 2, "Extrema_GFuncExtCC::CurvePtr()");
@@ -706,7 +709,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
         double aStep = (anEndParam - aStartParam) / (double)NPoint;
 
         int aNum = 0;
-        double aMax = -Precision.Infinite();
+        double aMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
 
         do
         {
@@ -716,7 +719,7 @@ public class Extrema_CCLocFOfLocECC2d : math_FunctionSetWithDerivatives
                 u = anEndParam;
             }
 
-            Extrema_Curve2dTool.D1(theC!, u, out _, out gp_Vec2d VDer);
+            Extrema_Curve2dTool.D1(theC!, u, out _, out Vector2D VDer);
             double vm = VDer.Magnitude();
             if (vm > aMax)
             {

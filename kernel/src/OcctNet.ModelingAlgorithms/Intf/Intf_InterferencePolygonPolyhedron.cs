@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.Intf_PIType;
 
 namespace Occt;
@@ -12,7 +15,7 @@ namespace Occt;
 /// </summary>
 public interface IIntf_ToolPolygon3d<Polygon3d>
 {
-    static abstract Bnd_Box Bounding(in Polygon3d thePolygon);
+    static abstract Box Bounding(in Polygon3d thePolygon);
 
     static abstract double DeflectionOverEstimation(in Polygon3d thePolygon);
 
@@ -20,9 +23,9 @@ public interface IIntf_ToolPolygon3d<Polygon3d>
 
     static abstract int NbSegments(in Polygon3d thePolygon);
 
-    static abstract gp_Pnt BeginOfSeg(in Polygon3d thePolygon, int Index);
+    static abstract Point3D BeginOfSeg(in Polygon3d thePolygon, int Index);
 
-    static abstract gp_Pnt EndOfSeg(in Polygon3d thePolygon, int Index);
+    static abstract Point3D EndOfSeg(in Polygon3d thePolygon, int Index);
 }
 
 /// <summary>
@@ -32,9 +35,9 @@ public interface IIntf_ToolPolygon3d<Polygon3d>
 /// </summary>
 public interface IIntf_ToolPolyhedron<Polyhedron>
 {
-    static abstract Bnd_Box Bounding(in Polyhedron thePolyh);
+    static abstract Box Bounding(in Polyhedron thePolyh);
 
-    static abstract NCollection_HArray1<Bnd_Box> ComponentsBounding(in Polyhedron thePolyh);
+    static abstract NCollection_HArray1<Box> ComponentsBounding(in Polyhedron thePolyh);
 
     static abstract double DeflectionOverEstimation(in Polyhedron thePolyh);
 
@@ -42,7 +45,7 @@ public interface IIntf_ToolPolyhedron<Polyhedron>
 
     static abstract void Triangle(in Polyhedron thePolyh, int Index, out int P1, out int P2, out int P3);
 
-    static abstract gp_Pnt Point(in Polyhedron thePolyh, int Index);
+    static abstract Point3D Point(in Polyhedron thePolyh, int Index);
 
     static abstract int TriConnex(in Polyhedron thePolyh, int Triang, int Pivot, int Pedge, out int TriCon,
                                   out int OtherP);
@@ -73,10 +76,10 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     private bool BeginOfClosedPolygon;
     private int iLin;
 
-    private static bool IsInSegment(in gp_Vec P1P2, in gp_Vec P1P, double NP1P2, out double Param, double Tolerance)
+    private static bool IsInSegment(in Vector3D P1P2, in Vector3D P1P, double NP1P2, out double Param, double Tolerance)
     {
         Param = 0.0;
-        if (NP1P2 < Precision.Computational())
+        if (NP1P2 < global::Kerf.Engine.Foundation.Precision.Computational())
         {
             return false;
         }
@@ -131,7 +134,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// Constructs and computes an interference between a polygon and a polyhedron whose triangles' boxes are
     /// sorted in <paramref name="PolyhGrid"/>.
     /// </summary>
-    public Intf_InterferencePolygonPolyhedron(in Polygon3d thePolyg, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public Intf_InterferencePolygonPolyhedron(in Polygon3d thePolyg, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
         : base(false)
     {
         BeginOfClosedPolygon = false;
@@ -149,7 +152,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     }
 
     /// <summary>Constructs and computes an interference between a straight line and a polyhedron.</summary>
-    public Intf_InterferencePolygonPolyhedron(in gp_Lin theLin, in Polyhedron thePolyh)
+    public Intf_InterferencePolygonPolyhedron(in Line3D theLin, in Polyhedron thePolyh)
         : base(false)
     {
         BeginOfClosedPolygon = false;
@@ -162,13 +165,13 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
         BeginOfClosedPolygon = false;
 
-        Bnd_BoundSortBox PolyhGrid = new();
+        BoundSortBox PolyhGrid = new();
         PolyhGrid.Initialize(ToolPolyh.Bounding(thePolyh), ToolPolyh.ComponentsBounding(thePolyh));
         int indTri;
 
         iLin = 0;
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool btoo = new();
         btoo.LinBox(theLin, ToolPolyh.Bounding(thePolyh), ref bofLin);
 
@@ -176,14 +179,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         while (iCl.More())
         {
             indTri = iCl.Value();
-            Intersect(theLin.Location(), theLin.Location().Translated(new gp_Vec(theLin.Direction())), true, indTri,
+            Intersect(theLin.Location(), theLin.Location().Translated(new Vector3D(theLin.Direction())), true, indTri,
                       thePolyh);
             iCl.Next();
         }
     }
 
     /// <summary>Constructs and computes an interference between the straight lines and a polyhedron.</summary>
-    public Intf_InterferencePolygonPolyhedron(NCollection_Array1<gp_Lin> theLins, in Polyhedron thePolyh)
+    public Intf_InterferencePolygonPolyhedron(NCollection_Array1<Line3D> theLins, in Polyhedron thePolyh)
         : base(false)
     {
         BeginOfClosedPolygon = false;
@@ -194,11 +197,11 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             Tolerance = Epsilon(1000.0);
         }
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool bToo = new();
         BeginOfClosedPolygon = false;
 
-        Bnd_BoundSortBox PolyhGrid = new();
+        BoundSortBox PolyhGrid = new();
         PolyhGrid.Initialize(ToolPolyh.Bounding(thePolyh), ToolPolyh.ComponentsBounding(thePolyh));
 
         int indTri;
@@ -213,7 +216,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             {
                 indTri = ilC.Value();
                 Intersect(theLins[iLin].Location(),
-                          theLins[iLin].Location().Translated(new gp_Vec(theLins[iLin].Direction())), true, indTri,
+                          theLins[iLin].Location().Translated(new Vector3D(theLins[iLin].Direction())), true, indTri,
                           thePolyh);
                 ilC.Next();
             }
@@ -235,7 +238,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         }
     }
 
-    public void Perform(in gp_Lin theLin, in Polyhedron thePolyh)
+    public void Perform(in Line3D theLin, in Polyhedron thePolyh)
     {
         SelfInterference(false);
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -246,14 +249,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
         BeginOfClosedPolygon = false;
 
-        Bnd_BoundSortBox PolyhGrid = new();
+        BoundSortBox PolyhGrid = new();
         PolyhGrid.Initialize(ToolPolyh.Bounding(thePolyh), ToolPolyh.ComponentsBounding(thePolyh));
 
         int indTri;
 
         iLin = 0;
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool btoo = new();
         btoo.LinBox(theLin, ToolPolyh.Bounding(thePolyh), ref bofLin);
 
@@ -261,14 +264,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         while (lCi.More())
         {
             indTri = lCi.Value();
-            Intersect(theLin.Location(), theLin.Location().Translated(new gp_Vec(theLin.Direction())), true, indTri,
+            Intersect(theLin.Location(), theLin.Location().Translated(new Vector3D(theLin.Direction())), true, indTri,
                       thePolyh);
             lCi.Next();
         }
     }
 
     /// <summary>Computes an interference between the straight lines and the polyhedron.</summary>
-    public void Perform(NCollection_Array1<gp_Lin> theLins, in Polyhedron thePolyh)
+    public void Perform(NCollection_Array1<Line3D> theLins, in Polyhedron thePolyh)
     {
         SelfInterference(false);
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -277,11 +280,11 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             Tolerance = Epsilon(1000.0);
         }
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool Btoo = new();
         BeginOfClosedPolygon = false;
 
-        Bnd_BoundSortBox PolyhGrid = new();
+        BoundSortBox PolyhGrid = new();
         PolyhGrid.Initialize(ToolPolyh.Bounding(thePolyh), ToolPolyh.ComponentsBounding(thePolyh));
 
         int indTri;
@@ -296,7 +299,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             {
                 indTri = tlC.Value();
                 Intersect(theLins[iLin].Location(),
-                          theLins[iLin].Location().Translated(new gp_Vec(theLins[iLin].Direction())), true, indTri,
+                          theLins[iLin].Location().Translated(new Vector3D(theLins[iLin].Direction())), true, indTri,
                           thePolyh);
                 tlC.Next();
             }
@@ -306,9 +309,9 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// <summary>Compares the boxes of the segments of the polygon with those of the triangles of the polyhedron.</summary>
     public void Interference(in Polygon3d thePolyg, in Polyhedron thePolyh)
     {
-        Bnd_Box bofSeg = new();
+        Box bofSeg = new();
 
-        Bnd_BoundSortBox PolyhGrid = new();
+        BoundSortBox PolyhGrid = new();
         PolyhGrid.Initialize(ToolPolyh.Bounding(thePolyh), ToolPolyh.ComponentsBounding(thePolyh));
 
         int indTri;
@@ -329,25 +332,25 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             for (; clt.More(); clt.Next())
             {
                 indTri = clt.Value();
-                gp_Pnt p1 = ToolPolygon3d.BeginOfSeg(thePolyg, iLin);
-                gp_Pnt p2 = ToolPolygon3d.EndOfSeg(thePolyg, iLin);
+                Point3D p1 = ToolPolygon3d.BeginOfSeg(thePolyg, iLin);
+                Point3D p2 = ToolPolygon3d.EndOfSeg(thePolyg, iLin);
                 ToolPolyh.Triangle(thePolyh, indTri, out int pTri0, out int pTri1, out int pTri2);
-                gp_Pnt Pa = ToolPolyh.Point(thePolyh, pTri0);
-                gp_Pnt Pb = ToolPolyh.Point(thePolyh, pTri1);
-                gp_Pnt Pc = ToolPolyh.Point(thePolyh, pTri2);
-                gp_Vec PaPb = new(Pa, Pb);
-                gp_Vec PaPc = new(Pa, Pc);
-                gp_Vec Normale = PaPb.Crossed(PaPc);
+                Point3D Pa = ToolPolyh.Point(thePolyh, pTri0);
+                Point3D Pb = ToolPolyh.Point(thePolyh, pTri1);
+                Point3D Pc = ToolPolyh.Point(thePolyh, pTri2);
+                Vector3D PaPb = new(Pa, Pb);
+                Vector3D PaPc = new(Pa, Pc);
+                Vector3D Normale = PaPb.Crossed(PaPc);
                 double Norm_Normale = Normale.Magnitude();
                 if (Norm_Normale < 1e-14)
                 {
                     continue;
                 }
                 Normale.Multiply(defPh / Norm_Normale);
-                gp_Pnt p1m = p1.Translated(-Normale);
-                gp_Pnt p1p = p1.Translated(Normale);
-                gp_Pnt p2m = p2.Translated(-Normale);
-                gp_Pnt p2p = p2.Translated(Normale);
+                Point3D p1m = p1.Translated(-Normale);
+                Point3D p1p = p1.Translated(Normale);
+                Point3D p2m = p2.Translated(-Normale);
+                Point3D p2p = p2.Translated(Normale);
                 Intersect(p1m, p2p, false, indTri, thePolyh);
                 Intersect(p1p, p2m, false, indTri, thePolyh);
             }
@@ -359,7 +362,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// Constructs and computes an interference between a straight line and a polyhedron whose triangles' boxes are
     /// sorted in <paramref name="PolyhGrid"/>.
     /// </summary>
-    public Intf_InterferencePolygonPolyhedron(in gp_Lin theLin, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public Intf_InterferencePolygonPolyhedron(in Line3D theLin, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
         : base(false)
     {
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -374,7 +377,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
         iLin = 0;
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool btoo = new();
         btoo.LinBox(theLin, ToolPolyh.Bounding(thePolyh), ref bofLin);
 
@@ -382,7 +385,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         while (iCl.More())
         {
             indTri = iCl.Value();
-            Intersect(theLin.Location(), theLin.Location().Translated(new gp_Vec(theLin.Direction())), true, indTri,
+            Intersect(theLin.Location(), theLin.Location().Translated(new Vector3D(theLin.Direction())), true, indTri,
                       thePolyh);
             iCl.Next();
         }
@@ -392,8 +395,8 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// Constructs and computes an interference between the straight lines and a polyhedron whose triangles' boxes
     /// are sorted in <paramref name="PolyhGrid"/>.
     /// </summary>
-    public Intf_InterferencePolygonPolyhedron(NCollection_Array1<gp_Lin> theLins, in Polyhedron thePolyh,
-                                              Bnd_BoundSortBox PolyhGrid)
+    public Intf_InterferencePolygonPolyhedron(NCollection_Array1<Line3D> theLins, in Polyhedron thePolyh,
+                                              BoundSortBox PolyhGrid)
         : base(false)
     {
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -402,7 +405,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             Tolerance = Epsilon(1000.0);
         }
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool bToo = new();
         BeginOfClosedPolygon = false;
 
@@ -418,14 +421,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             {
                 indTri = ilC.Value();
                 Intersect(theLins[iLin].Location(),
-                          theLins[iLin].Location().Translated(new gp_Vec(theLins[iLin].Direction())), true, indTri,
+                          theLins[iLin].Location().Translated(new Vector3D(theLins[iLin].Direction())), true, indTri,
                           thePolyh);
                 ilC.Next();
             }
         }
     }
 
-    public void Perform(in Polygon3d thePolyg, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public void Perform(in Polygon3d thePolyg, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
     {
         SelfInterference(false);
         Tolerance = ToolPolygon3d.DeflectionOverEstimation(thePolyg) + ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -440,7 +443,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         }
     }
 
-    public void Perform(in gp_Lin theLin, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public void Perform(in Line3D theLin, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
     {
         SelfInterference(false);
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -455,7 +458,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
         iLin = 0;
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool btoo = new();
         btoo.LinBox(theLin, ToolPolyh.Bounding(thePolyh), ref bofLin);
 
@@ -463,14 +466,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         while (lCi.More())
         {
             indTri = lCi.Value();
-            Intersect(theLin.Location(), theLin.Location().Translated(new gp_Vec(theLin.Direction())), true, indTri,
+            Intersect(theLin.Location(), theLin.Location().Translated(new Vector3D(theLin.Direction())), true, indTri,
                       thePolyh);
             lCi.Next();
         }
     }
 
     /// <summary>Computes an interference between the straight lines and the polyhedron.</summary>
-    public void Perform(NCollection_Array1<gp_Lin> theLins, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public void Perform(NCollection_Array1<Line3D> theLins, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
     {
         SelfInterference(false);
         Tolerance = ToolPolyh.DeflectionOverEstimation(thePolyh);
@@ -479,7 +482,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             Tolerance = Epsilon(1000.0);
         }
 
-        Bnd_Box bofLin = new();
+        Box bofLin = new();
         Intf_Tool Btoo = new();
         BeginOfClosedPolygon = false;
 
@@ -495,7 +498,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             {
                 indTri = tlC.Value();
                 Intersect(theLins[iLin].Location(),
-                          theLins[iLin].Location().Translated(new gp_Vec(theLins[iLin].Direction())), true, indTri,
+                          theLins[iLin].Location().Translated(new Vector3D(theLins[iLin].Direction())), true, indTri,
                           thePolyh);
                 tlC.Next();
             }
@@ -506,9 +509,9 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// Compares the boxes of the segments of the polygon with those of the triangles of the polyhedron, sorted in
     /// <paramref name="PolyhGrid"/>.
     /// </summary>
-    public void Interference(in Polygon3d thePolyg, in Polyhedron thePolyh, Bnd_BoundSortBox PolyhGrid)
+    public void Interference(in Polygon3d thePolyg, in Polyhedron thePolyh, BoundSortBox PolyhGrid)
     {
-        Bnd_Box bofSeg = new();
+        Box bofSeg = new();
 
         int indTri;
         Span<int> pTri = stackalloc int[3]; // declared in the loop in OCCT
@@ -527,8 +530,8 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             maliste = PolyhGrid.Compare(bofSeg);
             NCollection_List<int>.Iterator clt = new(maliste);
             //  Modified by MKK - Thu Oct  25 12:40:11 2007 Begin
-            gp_Pnt p1 = new(), Beg0 = new();
-            gp_Pnt p2 = new(), End0 = new();
+            Point3D p1 = new(), Beg0 = new();
+            Point3D p2 = new(), End0 = new();
             if (!maliste.IsEmpty())
             {
                 p1 = ToolPolygon3d.BeginOfSeg(thePolyg, iLin);
@@ -545,19 +548,19 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                 ToolPolyh.Triangle(thePolyh, indTri, out pTri[0], out pTri[1], out pTri[2]);
                 // Normal vector and polar distance.
                 Intf.PlaneEquation(ToolPolyh.Point(thePolyh, pTri[0]), ToolPolyh.Point(thePolyh, pTri[1]),
-                                   ToolPolyh.Point(thePolyh, pTri[2]), out gp_XYZ triNor, out double triDp);
+                                   ToolPolyh.Point(thePolyh, pTri[2]), out Xyz triNor, out double triDp);
 
                 // enlarge boundary segment
                 if (iLin == 1)
                 {
-                    gp_XYZ dif = p1.XYZ() - p2.XYZ();
+                    Xyz dif = p1.XYZ() - p2.XYZ();
                     double dist = dif.Modulus();
-                    if (dist > gp.Resolution())
+                    if (dist > Constants.Resolution())
                     {
                         dif /= dist;
                         double aCos = dif * triNor;
                         aCos = Math.Abs(aCos);
-                        if (aCos > gp.Resolution())
+                        if (aCos > Constants.Resolution())
                         {
                             double shift = defPh / aCos;
                             Beg0.SetXYZ(p1.XYZ() + dif * shift);
@@ -566,14 +569,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                 }
                 else if (iLin == ToolPolygon3d.NbSegments(thePolyg))
                 {
-                    gp_XYZ dif = p2.XYZ() - p1.XYZ();
+                    Xyz dif = p2.XYZ() - p1.XYZ();
                     double dist = dif.Modulus();
-                    if (dist > gp.Resolution())
+                    if (dist > Constants.Resolution())
                     {
                         dif /= dist;
                         double aCos = dif * triNor;
                         aCos = Math.Abs(aCos);
-                        if (aCos > gp.Resolution())
+                        if (aCos > Constants.Resolution())
                         {
                             double shift = defPh / aCos;
                             End0.SetXYZ(p2.XYZ() + dif * shift);
@@ -596,13 +599,13 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// Computes the intersection between the segment (or the line, if <paramref name="Infinite"/>) and the
     /// triangle <paramref name="TTri"/>.
     /// </summary>
-    private void Intersect(in gp_Pnt BegO, in gp_Pnt EndO, bool Infinite, int TTri, in Polyhedron thePolyh)
+    private void Intersect(in Point3D BegO, in Point3D EndO, bool Infinite, int TTri, in Polyhedron thePolyh)
     {
         Span<int> pTri = stackalloc int[3];
         ToolPolyh.Triangle(thePolyh, TTri, out pTri[0], out pTri[1], out pTri[2]);
         // Normal vector and polar distance.
         Intf.PlaneEquation(ToolPolyh.Point(thePolyh, pTri[0]), ToolPolyh.Point(thePolyh, pTri[1]),
-                           ToolPolyh.Point(thePolyh, pTri[2]), out gp_XYZ triNor, out double triDp);
+                           ToolPolyh.Point(thePolyh, pTri[2]), out Xyz triNor, out double triDp);
 
         double dBegTri = (triNor * BegO.XYZ()) - triDp; // Distance <BegO> plan
         double dEndTri = (triNor * EndO.XYZ()) - triDp; // Distance <EndO> plan
@@ -615,13 +618,13 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// triangle <paramref name="TTri"/>, whose plane equation and the distances of the segment's ends to it are
     /// given.
     /// </summary>
-    private void Intersect(in gp_Pnt BegO, in gp_Pnt EndO, bool Infinite, int TTri, in Polyhedron thePolyh,
-                           in gp_XYZ TriNormal, double TriDp, double dBegTri, double dEndTri)
+    private void Intersect(in Point3D BegO, in Point3D EndO, bool Infinite, int TTri, in Polyhedron thePolyh,
+                           in Xyz TriNormal, double TriDp, double dBegTri, double dEndTri)
     {
         _ = TriDp;
         Span<int> pTri = stackalloc int[3];
         ToolPolyh.Triangle(thePolyh, TTri, out pTri[0], out pTri[1], out pTri[2]);
-        gp_XYZ triNor = TriNormal; // Normal vector.
+        Xyz triNor = TriNormal; // Normal vector.
 
         IntersectWithPlane(BegO, EndO, Infinite, TTri, thePolyh, pTri, triNor, dBegTri, dEndTri);
     }
@@ -629,8 +632,8 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
     /// <summary>
     /// The body OCCT writes out twice, identically, in both <c>Intersect</c> methods (after their plane equation).
     /// </summary>
-    private void IntersectWithPlane(in gp_Pnt BegO, in gp_Pnt EndO, bool Infinite, int TTri, in Polyhedron thePolyh,
-                                    ReadOnlySpan<int> pTri, in gp_XYZ triNor, double dBegTri, double dEndTri)
+    private void IntersectWithPlane(in Point3D BegO, in Point3D EndO, bool Infinite, int TTri, in Polyhedron thePolyh,
+                                    ReadOnlySpan<int> pTri, in Xyz triNor, double dBegTri, double dEndTri)
     {
         Intf_PIType typOnG = Intf_EDGE;
         double t;
@@ -672,7 +675,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         }
         if (NoIntersectionWithTriangle == false)
         {
-            gp_XYZ spLieu = BegO.XYZ() + ((EndO.XYZ() - BegO.XYZ()) * param);
+            Xyz spLieu = BegO.XYZ() + ((EndO.XYZ() - BegO.XYZ()) * param);
             Span<double> dPiE = stackalloc double[3] { 0.0, 0.0, 0.0 };
             Span<double> dPtPi = stackalloc double[3];
             double sigd;
@@ -681,8 +684,8 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             int sVertex = -1;
             int tbreak = 0;
             { //-- is = 0
-                gp_XYZ segT = ToolPolyh.Point(thePolyh, pTri[1]).XYZ() - ToolPolyh.Point(thePolyh, pTri[0]).XYZ();
-                gp_XYZ vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[0]).XYZ();
+                Xyz segT = ToolPolyh.Point(thePolyh, pTri[1]).XYZ() - ToolPolyh.Point(thePolyh, pTri[0]).XYZ();
+                Xyz vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[0]).XYZ();
                 dPtPi[0] = vecP.Modulus();
                 if (dPtPi[0] <= floatgap)
                 {
@@ -692,7 +695,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                 }
                 else
                 {
-                    gp_XYZ segT_x_vecP = segT ^ vecP;
+                    Xyz segT_x_vecP = segT ^ vecP;
                     double Modulus_segT_x_vecP = segT_x_vecP.Modulus();
                     sigd = segT_x_vecP * triNor;
                     if (sigd > floatgap)
@@ -719,8 +722,8 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
             if (tbreak == 0)
             { //-- is = 1
-                gp_XYZ segT = ToolPolyh.Point(thePolyh, pTri[2]).XYZ() - ToolPolyh.Point(thePolyh, pTri[1]).XYZ();
-                gp_XYZ vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[1]).XYZ();
+                Xyz segT = ToolPolyh.Point(thePolyh, pTri[2]).XYZ() - ToolPolyh.Point(thePolyh, pTri[1]).XYZ();
+                Xyz vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[1]).XYZ();
                 dPtPi[1] = vecP.Modulus();
                 if (dPtPi[1] <= floatgap)
                 {
@@ -730,7 +733,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                 }
                 else
                 {
-                    gp_XYZ segT_x_vecP = segT ^ vecP;
+                    Xyz segT_x_vecP = segT ^ vecP;
                     double Modulus_segT_x_vecP = segT_x_vecP.Modulus();
                     sigd = segT_x_vecP * triNor;
                     if (sigd > floatgap)
@@ -756,15 +759,15 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
             }
             if (tbreak == 0)
             { //-- is = 2
-                gp_XYZ segT = ToolPolyh.Point(thePolyh, pTri[0]).XYZ() - ToolPolyh.Point(thePolyh, pTri[2]).XYZ();
-                gp_XYZ vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[2]).XYZ();
+                Xyz segT = ToolPolyh.Point(thePolyh, pTri[0]).XYZ() - ToolPolyh.Point(thePolyh, pTri[2]).XYZ();
+                Xyz vecP = spLieu - ToolPolyh.Point(thePolyh, pTri[2]).XYZ();
                 dPtPi[2] = vecP.Modulus();
                 if (dPtPi[2] <= floatgap)
                 {
                     sVertex = 2;
                     @is = 2;
                 }
-                gp_XYZ segT_x_vecP = segT ^ vecP;
+                Xyz segT_x_vecP = segT ^ vecP;
                 double Modulus_segT_x_vecP = segT_x_vecP.Modulus();
                 sigd = segT_x_vecP * triNor;
                 if (sigd > floatgap)
@@ -790,21 +793,21 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
 
             if (sVertex > -1)
             {
-                Intf_SectionPoint SP = new(new gp_Pnt(spLieu), typOnG, 0, iLin, param, Intf_VERTEX, pTri[@is], 0, 0.0,
+                Intf_SectionPoint SP = new(new Point3D(spLieu), typOnG, 0, iLin, param, Intf_VERTEX, pTri[@is], 0, 0.0,
                                            1.0);
                 mySPoins.Append(SP);
             }
             else if (sEdge > -1)
             {
                 ToolPolyh.TriConnex(thePolyh, TTri, pTri[sEdge], pTri[Pourcent3[sEdge + 1]], out _, out _);
-                Intf_SectionPoint SP = new(new gp_Pnt(spLieu), typOnG, 0, iLin, param, Intf_EDGE,
+                Intf_SectionPoint SP = new(new Point3D(spLieu), typOnG, 0, iLin, param, Intf_EDGE,
                                            Min(pTri[sEdge], pTri[Pourcent3[sEdge + 1]]),
                                            Max(pTri[sEdge], pTri[Pourcent3[sEdge + 1]]), 0.0, 1.0);
                 mySPoins.Append(SP);
             }
             else if (dPiE[0] > 0.0 && dPiE[1] > 0.0 && dPiE[2] > 0.0)
             {
-                Intf_SectionPoint SP = new(new gp_Pnt(spLieu), typOnG, 0, iLin, param, Intf_FACE, TTri, 0, 0.0, 1.0);
+                Intf_SectionPoint SP = new(new Point3D(spLieu), typOnG, 0, iLin, param, Intf_FACE, TTri, 0, 0.0, 1.0);
                 mySPoins.Append(SP);
             }
             //  Modified by Sergey KHROMOV - Fri Dec  7 14:40:11 2001 Begin
@@ -825,24 +828,24 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                     {
                         // For boundary line it is necessary to check the border deflection.
                         double Deflection = ToolPolyh.GetBorderDeflection(thePolyh);
-                        gp_Pnt BegP = ToolPolyh.Point(thePolyh, indP1);
-                        gp_Pnt EndP = ToolPolyh.Point(thePolyh, indP2);
-                        gp_Vec VecTri = new(BegP, EndP);
-                        gp_Dir DirTri = new(VecTri);
-                        gp_Lin LinTri = new(BegP, DirTri);
-                        gp_Pnt aPOnE = new(spLieu);
+                        Point3D BegP = ToolPolyh.Point(thePolyh, indP1);
+                        Point3D EndP = ToolPolyh.Point(thePolyh, indP2);
+                        Vector3D VecTri = new(BegP, EndP);
+                        Direction3D DirTri = new(VecTri);
+                        Line3D LinTri = new(BegP, DirTri);
+                        Point3D aPOnE = new(spLieu);
                         double aDist = LinTri.Distance(aPOnE);
 
                         if (aDist <= Deflection)
                         {
-                            gp_Vec aVLocPOnE = new(BegP, aPOnE);
-                            gp_Vec aVecDirTri = new(DirTri);
+                            Vector3D aVLocPOnE = new(BegP, aPOnE);
+                            Vector3D aVecDirTri = new(DirTri);
                             double aPar = aVLocPOnE * aVecDirTri;
                             double aMaxPar = VecTri.Magnitude();
 
                             if (aPar >= 0 && aPar <= aMaxPar)
                             {
-                                Intf_SectionPoint SP = new(new gp_Pnt(spLieu), typOnG, 0, iLin, param, Intf_FACE, TTri,
+                                Intf_SectionPoint SP = new(new Point3D(spLieu), typOnG, 0, iLin, param, Intf_FACE, TTri,
                                                            0, 0.0, 1.0);
                                 mySPoins.Append(SP);
                             }
@@ -858,30 +861,30 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
         //--
         //-- If this distance is less than Tolerance, a section point is created.
         {
-            gp_Vec VecPol = new(BegO, EndO);
+            Vector3D VecPol = new(BegO, EndO);
             double NVecPol = VecPol.Magnitude();
-            if (NVecPol < Precision.Computational())
+            if (NVecPol < global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 return;
             }
-            gp_Dir DirPol = new(VecPol);
-            gp_Lin LinPol = new(BegO, DirPol);
+            Direction3D DirPol = new(VecPol);
+            Line3D LinPol = new(BegO, DirPol);
             double dist2;
 
             for (int i = 0; i < 3; i++)
             {
                 int pTri_ip1pc3 = pTri[Pourcent3[i + 1]];
                 int pTri_i = pTri[i];
-                gp_Pnt BegT = ToolPolyh.Point(thePolyh, pTri_ip1pc3);
-                gp_Pnt EndT = ToolPolyh.Point(thePolyh, pTri_i);
-                gp_Vec VecTri = new(BegT, EndT);
+                Point3D BegT = ToolPolyh.Point(thePolyh, pTri_ip1pc3);
+                Point3D EndT = ToolPolyh.Point(thePolyh, pTri_i);
+                Vector3D VecTri = new(BegT, EndT);
                 double NVecTri = VecTri.Magnitude();
-                if (NVecTri < Precision.Computational())
+                if (NVecTri < global::Kerf.Engine.Foundation.Precision.Computational())
                 {
                     continue;
                 }
-                gp_Dir DirTri = new(VecTri);
-                gp_Lin LinTri = new(BegT, DirTri);
+                Direction3D DirTri = new(VecTri);
+                Line3D LinTri = new(BegT, DirTri);
                 Extrema_ExtElC Extrema = new(LinPol, LinTri, 0.00000001);
                 if (Extrema.IsDone())
                 {
@@ -893,14 +896,14 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                             if (dist2 <= Tolerance * Tolerance)
                             {
                                 Extrema.Points(1, out Extrema_POnCurv POnC1, out Extrema_POnCurv POnC2);
-                                gp_Pnt PO = POnC1.Value();
-                                gp_Pnt PT = POnC2.Value();
-                                if (IsInSegment(VecPol, new gp_Vec(BegO, PO), NVecPol, out double ParamOnO, Tolerance))
+                                Point3D PO = POnC1.Value();
+                                Point3D PT = POnC2.Value();
+                                if (IsInSegment(VecPol, new Vector3D(BegO, PO), NVecPol, out double ParamOnO, Tolerance))
                                 {
-                                    if (IsInSegment(VecTri, new gp_Vec(BegT, PT), NVecTri, out double ParamOnT,
+                                    if (IsInSegment(VecTri, new Vector3D(BegT, PT), NVecTri, out double ParamOnT,
                                                     Tolerance))
                                     {
-                                        gp_XYZ spLieu = BegT.XYZ() + ((EndT.XYZ() - BegT.XYZ()) * ParamOnT);
+                                        Xyz spLieu = BegT.XYZ() + ((EndT.XYZ() - BegT.XYZ()) * ParamOnT);
                                         int tmin, tmax;
                                         if (pTri_i > pTri_ip1pc3)
                                         {
@@ -912,7 +915,7 @@ public class Intf_InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhe
                                             tmax = pTri_ip1pc3;
                                             tmin = pTri_i;
                                         }
-                                        Intf_SectionPoint SP = new(new gp_Pnt(spLieu), typOnG, 0, iLin, ParamOnO,
+                                        Intf_SectionPoint SP = new(new Point3D(spLieu), typOnG, 0, iLin, ParamOnO,
                                                                    Intf_EDGE, tmin, tmax, 0.0, 1.0);
                                         mySPoins.Append(SP);
                                     }

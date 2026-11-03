@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
@@ -11,7 +13,7 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 public class BOPDS_DSTests
 {
     internal static TopoDS_Shape Box(double theX, double theY, double theZ, double theSize = 10.0) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(theX, theY, theZ), theSize, theSize, theSize).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(theX, theY, theZ), theSize, theSize, theSize).Shape();
 
     internal static BOPDS_DS MakeDS(params TopoDS_Shape[] theShapes)
     {
@@ -75,7 +77,7 @@ public class BOPDS_DSTests
         BOPDS_ShapeInfo aSolid = aDS.ShapeInfo(0);
         Assert.Equal(1, aSolid.SubShapes().Extent());
         Assert.Equal(TopAbs_SHELL, aDS.ShapeInfo(aSolid.SubShapes().First()).ShapeType());
-        Assert.True(aSolid.Box().IsVoid());
+        Assert.True(aSolid.Box().IsVoid);
 
         // A face's sub-shapes become its edges and vertices
         foreach (int nF in IndicesOfType(aDS, TopAbs_FACE))
@@ -84,7 +86,7 @@ public class BOPDS_DSTests
             Assert.Equal(8, aFace.SubShapes().Extent());
             Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_EDGE));
             Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_VERTEX));
-            Assert.False(aFace.Box().IsVoid());
+            Assert.False(aFace.Box().IsVoid);
             Assert.True(aFace.HasBRep());
             Assert.True(aFace.IsInterfering());
         }
@@ -102,8 +104,8 @@ public class BOPDS_DSTests
         }
         foreach (int nV in IndicesOfType(aDS, TopAbs_VERTEX))
         {
-            Bnd_Box aBox = aDS.ShapeInfo(nV).Box();
-            Assert.Equal(BRep_Tool.Tolerance(TopoDS.Vertex(aDS.Shape(nV))) + Precision.Confusion() * 0.5, aBox.GetGap());
+            Box aBox = aDS.ShapeInfo(nV).Box();
+            Assert.Equal(BRep_Tool.Tolerance(TopoDS.Vertex(aDS.Shape(nV))) + global::Kerf.Engine.Foundation.Precision.Confusion() * 0.5, aBox.GetGap());
         }
 
         Assert.True(aDS.IsSubShape(aSolid.SubShapes().First(), 0));
@@ -118,28 +120,28 @@ public class BOPDS_DSTests
         // the faces, and the faces' sub-shapes: edges and vertices
         Assert.Equal(26, aSolid.SubShapes().Extent());
         Assert.Equal(6, aSolid.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == TopAbs_FACE));
-        Assert.False(aSolid.Box().IsVoid());
-        Assert.False(aSolid.Box().IsOpen());
+        Assert.False(aSolid.Box().IsVoid);
+        Assert.False(aSolid.Box().IsOpen);
 
         // Init has replaced the solid's shells by their faces, edges and vertices: building the solid's box again
         // finds no shell and gives a void box, as in OCCT
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aDS.BuildBndBoxSolid(0, ref aBox);
-        Assert.True(aBox.IsVoid());
+        Assert.True(aBox.IsVoid);
 
         // with two arguments the shells stay, and the box is built from the faces' boxes
         BOPDS_DS aDS2 = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
-        Bnd_Box aBox2 = new();
+        Box aBox2 = new();
         aDS2.BuildBndBoxSolid(0, ref aBox2);
-        Assert.False(aBox2.IsVoid());
-        Assert.False(aBox2.IsWhole());
+        Assert.False(aBox2.IsVoid);
+        Assert.False(aBox2.IsWhole);
     }
 
     [Fact]
     public void Init_OneInvertedSolid_HasTheWholeBox()
     {
         BOPDS_DS aDS = MakeDS(Box(0, 0, 0).Reversed());
-        Assert.True(aDS.ShapeInfo(0).Box().IsWhole());
+        Assert.True(aDS.ShapeInfo(0).Box().IsWhole);
     }
 
     [Fact]
@@ -250,12 +252,12 @@ public class BOPDS_DSTests
         Assert.False(aPB2.IsToUpdate());
 
         // Shrunk data
-        Bnd_Box aBox = new();
-        aBox.Add(new gp_Pnt(1, 2, 3));
+        Box aBox = new();
+        aBox.Add(new Point3D(1, 2, 3));
         aPB.SetShrunkData(0.1, 9.9, aBox, true);
         Assert.True(aPB.HasShrunkData());
         Assert.True(aPB.IsSplittable());
-        aPB.ShrunkData(out double aTS1, out double aTS2, out Bnd_Box aShrunkBox, out bool isSplittable);
+        aPB.ShrunkData(out double aTS1, out double aTS2, out Box aShrunkBox, out bool isSplittable);
         Assert.Equal((0.1, 9.9, true), (aTS1, aTS2, isSplittable));
         Assert.Equal(aBox, aShrunkBox);
 
@@ -380,8 +382,8 @@ public class BOPDS_DSTests
             {
                 BRepAdaptor_Curve aC1 = new(TopoDS.Edge(aDS.Shape(e1)));
                 BRepAdaptor_Curve aC2 = new(TopoDS.Edge(aDS.Shape(e2)));
-                gp_Pnt a1F = aC1.Value(aC1.FirstParameter()), a1L = aC1.Value(aC1.LastParameter());
-                gp_Pnt a2F = aC2.Value(aC2.FirstParameter()), a2L = aC2.Value(aC2.LastParameter());
+                Point3D a1F = aC1.Value(aC1.FirstParameter()), a1L = aC1.Value(aC1.LastParameter());
+                Point3D a2F = aC2.Value(aC2.FirstParameter()), a2L = aC2.Value(aC2.LastParameter());
                 if (a1F.Distance(a2F) < 1e-9 && a1L.Distance(a2L) < 1e-9)
                 {
                     (nE1, nE2) = (e1, e2);
@@ -410,14 +412,14 @@ public class BOPDS_DSTests
 
         // A new vertex in the middle of both
         aPB1.Range(out double aT1, out double aT2);
-        int nVNew = aDS.Append(new BRepBuilderAPI_MakeVertex(new gp_Pnt(50, 50, 50)).Vertex());
+        int nVNew = aDS.Append(new BRepBuilderAPI_MakeVertex(new Point3D(50, 50, 50)).Vertex());
         aDS.ChangeShapeInfo(nVNew).SetShapeType(TopAbs_VERTEX);
         Assert.True(aDS.IsNewShape(nVNew));
         aPB1.AppendExtPave(new BOPDS_Pave(nVNew, 0.5 * (aT1 + aT2)));
         aPB2.Range(out aT1, out aT2);
         aPB2.AppendExtPave(new BOPDS_Pave(nVNew, 0.5 * (aT1 + aT2)));
 
-        aDS.UpdateCommonBlock(aCB, Precision.Confusion());
+        aDS.UpdateCommonBlock(aCB, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2, aDS.PaveBlocks(nE1).Extent());
         Assert.Equal(2, aDS.PaveBlocks(nE2).Extent());
         foreach (BOPDS_PaveBlock aSplit in aDS.PaveBlocks(nE1))
@@ -651,8 +653,8 @@ public class BOPDS_DSTests
         BOPDS_PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
         Assert.False(aDS.IsValidShrunkData(aPB));
         aPB.Range(out double aT1, out double aT2);
-        Bnd_Box aBox = new();
-        aBox.Add(new gp_Pnt(0, 0, 0));
+        Box aBox = new();
+        aBox.Add(new Point3D(0, 0, 0));
         // the shrunk range ends well outside the vertices' tolerances
         aPB.SetShrunkData(aT1 + 1.0, aT2 - 1.0, aBox, true);
         Assert.True(aDS.IsValidShrunkData(aPB));

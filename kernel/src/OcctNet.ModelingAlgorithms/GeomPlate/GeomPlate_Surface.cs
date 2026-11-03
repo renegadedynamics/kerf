@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -57,13 +63,13 @@ public class GeomPlate_Surface : Geom_Surface
         return (-V);
     }
 
-    public override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
     }
 
-    public override gp_GTrsf2d ParametricTransformation(in gp_Trsf T)
+    public override GeneralTransform2D ParametricTransformation(in Transform3D T)
     {
-        return new gp_GTrsf2d();
+        return new GeneralTransform2D();
     }
 
     public override void Bounds(out double U1, out double U2, out double V1, out double V2)
@@ -97,57 +103,57 @@ public class GeomPlate_Surface : Geom_Surface
 
     public override Geom_Curve VIso(double V) => null!; // OCCT returns a null handle
 
-    public override GeomAbs_Shape Continuity() => default; // GeomAbs_Shape(), GeomAbs_C0
+    public override Continuity Continuity() => default; // GeomAbs_Shape(), GeomAbs_C0
 
     public override bool IsCNu(int N)
     {
-        throw new Standard_Failure("IsCNu");
+        throw new FailureException("IsCNu");
     }
 
     public override bool IsCNv(int N)
     {
-        throw new Standard_Failure("IsCNv");
+        throw new FailureException("IsCNv");
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aSurfP = mySurfinit.EvalD0(U, V);
-        gp_XY P1 = new gp_XY(U, V);
-        gp_XYZ P3 = mySurfinter.Evaluate(P1);
-        return new gp_Pnt(P3 + aSurfP.XYZ());
+        Point3D aSurfP = mySurfinit.EvalD0(U, V);
+        Xy P1 = new Xy(U, V);
+        Xyz P3 = mySurfinter.Evaluate(P1);
+        return new Point3D(P3 + aSurfP.XYZ());
     }
 
     public override ResD1 EvalD1(double U, double V)
     {
         ResD1 aSurfD1 = mySurfinit.EvalD1(U, V);
-        gp_XY P1 = new gp_XY(U, V);
-        gp_XYZ P3 = mySurfinter.Evaluate(P1);
-        gp_XYZ V2U = mySurfinter.EvaluateDerivative(P1, 1, 0);
-        gp_XYZ V2V = mySurfinter.EvaluateDerivative(P1, 0, 1);
+        Xy P1 = new Xy(U, V);
+        Xyz P3 = mySurfinter.Evaluate(P1);
+        Xyz V2U = mySurfinter.EvaluateDerivative(P1, 1, 0);
+        Xyz V2V = mySurfinter.EvaluateDerivative(P1, 0, 1);
         ResD1 aResult;
-        aResult.Point = new gp_Pnt(P3 + aSurfD1.Point.XYZ());
-        aResult.D1U = new gp_Vec(aSurfD1.D1U.XYZ() + V2U);
-        aResult.D1V = new gp_Vec(aSurfD1.D1V.XYZ() + V2V);
+        aResult.Point = new Point3D(P3 + aSurfD1.Point.XYZ());
+        aResult.D1U = new Vector3D(aSurfD1.D1U.XYZ() + V2U);
+        aResult.D1V = new Vector3D(aSurfD1.D1V.XYZ() + V2V);
         return aResult;
     }
 
     public override ResD2 EvalD2(double U, double V)
     {
         ResD2 aSurfD2 = mySurfinit.EvalD2(U, V);
-        gp_XY P1 = new gp_XY(U, V);
-        gp_XYZ P3 = mySurfinter.Evaluate(P1);
-        gp_XYZ V2U_interp = mySurfinter.EvaluateDerivative(P1, 1, 0);
-        gp_XYZ V2V_interp = mySurfinter.EvaluateDerivative(P1, 0, 1);
-        gp_XYZ V2U = mySurfinter.EvaluateDerivative(P1, 2, 0);
-        gp_XYZ V2V = mySurfinter.EvaluateDerivative(P1, 0, 2);
-        gp_XYZ V2UV = mySurfinter.EvaluateDerivative(P1, 1, 1);
+        Xy P1 = new Xy(U, V);
+        Xyz P3 = mySurfinter.Evaluate(P1);
+        Xyz V2U_interp = mySurfinter.EvaluateDerivative(P1, 1, 0);
+        Xyz V2V_interp = mySurfinter.EvaluateDerivative(P1, 0, 1);
+        Xyz V2U = mySurfinter.EvaluateDerivative(P1, 2, 0);
+        Xyz V2V = mySurfinter.EvaluateDerivative(P1, 0, 2);
+        Xyz V2UV = mySurfinter.EvaluateDerivative(P1, 1, 1);
         ResD2 aResult;
-        aResult.Point = new gp_Pnt(P3 + aSurfD2.Point.XYZ());
-        aResult.D1U = new gp_Vec(aSurfD2.D1U.XYZ() + V2U_interp);
-        aResult.D1V = new gp_Vec(aSurfD2.D1V.XYZ() + V2V_interp);
-        aResult.D2U = new gp_Vec(aSurfD2.D2U.XYZ() + V2U);
-        aResult.D2V = new gp_Vec(aSurfD2.D2V.XYZ() + V2V);
-        aResult.D2UV = new gp_Vec(aSurfD2.D2UV.XYZ() + V2UV);
+        aResult.Point = new Point3D(P3 + aSurfD2.Point.XYZ());
+        aResult.D1U = new Vector3D(aSurfD2.D1U.XYZ() + V2U_interp);
+        aResult.D1V = new Vector3D(aSurfD2.D1V.XYZ() + V2V_interp);
+        aResult.D2U = new Vector3D(aSurfD2.D2U.XYZ() + V2U);
+        aResult.D2V = new Vector3D(aSurfD2.D2V.XYZ() + V2V);
+        aResult.D2UV = new Vector3D(aSurfD2.D2UV.XYZ() + V2UV);
         return aResult;
     }
 
@@ -156,7 +162,7 @@ public class GeomPlate_Surface : Geom_Surface
         throw new Geom_UndefinedDerivative("GeomPlate_Surface::EvalD3");
     }
 
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         throw new Geom_UndefinedDerivative("GeomPlate_Surface::EvalDN");
     }
@@ -168,7 +174,7 @@ public class GeomPlate_Surface : Geom_Surface
         return GPS;
     }
 
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
     }
@@ -176,17 +182,17 @@ public class GeomPlate_Surface : Geom_Surface
     /// <summary>The initial surface.</summary>
     public Geom_Surface CallSurfinit() => mySurfinit;
 
-    /// <exception cref="Standard_Failure">The bounds are reversed or equal.</exception>
+    /// <exception cref="FailureException">The bounds are reversed or equal.</exception>
     internal void SetBounds(double Umin, double Umax, double Vmin, double Vmax)
     {
         CheckMutable();
         if ((Umin > Umax) || (Vmin > Vmax))
         {
-            throw new Standard_Failure("Bounds haven't the good sense");
+            throw new FailureException("Bounds haven't the good sense");
         }
         if ((Umin == Umax) || (Vmin == Vmax))
         {
-            throw new Standard_Failure("Bounds are equal");
+            throw new FailureException("Bounds are equal");
         }
         myUmin = Umin;
         myUmax = Umax;
@@ -195,7 +201,7 @@ public class GeomPlate_Surface : Geom_Surface
     }
 
     /// <summary>A copy of the surface with the given bounds (the twin of OCCT's <c>SetBounds</c>).</summary>
-    /// <exception cref="Standard_Failure">The bounds are reversed or equal.</exception>
+    /// <exception cref="FailureException">The bounds are reversed or equal.</exception>
     public GeomPlate_Surface WithBounds(double Umin, double Umax, double Vmin, double Vmax)
     {
         GeomPlate_Surface aCopy = (GeomPlate_Surface)Copy();
@@ -210,7 +216,7 @@ public class GeomPlate_Surface : Geom_Surface
     }
 
     /// <summary>Appends the UV points of the plate's constraints to <paramref name="Seq"/>.</summary>
-    public void Constraints(NCollection_Sequence<gp_XY> Seq)
+    public void Constraints(NCollection_Sequence<Xy> Seq)
     {
         mySurfinter.UVConstraints(Seq);
     }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IntRes2d_Position;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
@@ -76,7 +77,7 @@ public sealed class HatchGen_PointOnHatching : HatchGen_IntersectionPoint
     public int NbPoints() => myPoints.Length();
 
     /// <summary>The <paramref name="Index"/>-th point on element.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is out of range.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is out of range.</exception>
     public HatchGen_PointOnElement Point(int Index) => myPoints.Value(Index);
 
     /// <summary>Removes the <paramref name="Index"/>-th point on element.</summary>

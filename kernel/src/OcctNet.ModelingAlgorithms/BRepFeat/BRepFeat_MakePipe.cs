@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -91,7 +93,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
     }
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">F isn't a face of the basis shape, or E an edge of the profile.</exception>
+    /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in TopoDS_Edge E, in TopoDS_Face F)
     {
         TopExp_Explorer exp = new();
@@ -104,7 +106,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
@@ -116,7 +118,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySlface.IsBound(F))
@@ -177,7 +179,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         else
         {
             myFShape = thePipe.InternalFirstShape();
-            NCollection_Sequence<gp_Pnt> spt = new();
+            NCollection_Sequence<Point3D> spt = new();
             LocOpe.SampleEdges(myFShape, spt);
             myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
             myBCurve = thePipe.BarycCurve();
@@ -186,17 +188,17 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
     }
 
     /// <summary>Builds the pipe up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape Until)
     {
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myGluedF.Clear();
         myPerfSelection = BRepFeat_SelectionU;
@@ -214,7 +216,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         GluedFacesValid();
         // OCCT: myFShape becomes the pipe's first shape, which the map doesn't hold (FirstShape then throws)
         myFShape = thePipe.InternalFirstShape();
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFShape, spt);
         myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
         myBCurve = thePipe.BarycCurve();
@@ -222,12 +224,12 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
     }
 
     /// <summary>Builds the pipe from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">From or Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
     {
         if (From.IsNull() || Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (!mySkface.IsNull())
         {
@@ -248,12 +250,12 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         TopExp_Explorer exp = new(From, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         mySFrom = Working(From);
         TransformShapeFU(0);
@@ -268,7 +270,7 @@ public sealed class BRepFeat_MakePipe : BRepFeat_Form
         GeneratedShapeValid();
         GluedFacesValid();
         myFShape = thePipe.InternalFirstShape();
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFShape, spt);
         myCurves = new NCollection_Sequence<Geom_Curve>(thePipe.Curves(spt)!);
         myBCurve = thePipe.BarycCurve();

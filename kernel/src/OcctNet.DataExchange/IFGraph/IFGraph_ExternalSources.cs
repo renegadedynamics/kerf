@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ public class IFGraph_ExternalSources : Interface_GraphContent
     /// <summary>
     /// adds an entity and its shared ones to the list
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent)
+    public void GetFromEntity(Transient? ent)
     {
         thegraph.GetFromEntity(ent, true);
     }

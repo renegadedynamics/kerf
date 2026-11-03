@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -71,26 +73,26 @@ public sealed class BRepAlgo_FaceRestrictor
     }
 
     // Puts on S the edge's first pcurve; true if it has none
-    private static bool ChangePCurve(in TopoDS_Edge E, Geom_Surface S, in TopLoc_Location L)
+    private static bool ChangePCurve(in TopoDS_Edge E, Geom_Surface S, in Placement L)
     {
         BRep_Builder BB = new();
         Geom2d_Curve? C2 = null;
         Geom_Surface? SE = null;
-        TopLoc_Location LE = new();
+        Placement LE = new();
         double f = 0.0, l = 0.0;
         BRep_Tool.CurveOnSurface(E, ref C2, ref SE, ref LE, ref f, ref l, 1);
         if (C2 is not null)
         {
-            BB.UpdateEdge(E, C2, S, L, Precision.Confusion());
+            BB.UpdateEdge(E, C2, S, L, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         return C2 is null;
     }
 
     // Puts on S the projection of the edge's 3D curve; false if it has none
-    private static bool ProjCurve3d(in TopoDS_Edge E, Geom_Surface S, in TopLoc_Location L)
+    private static bool ProjCurve3d(in TopoDS_Edge E, Geom_Surface S, in Placement L)
     {
         BRep_Builder BB = new();
-        Geom_Curve? C = BRep_Tool.Curve(E, out TopLoc_Location LE, out double f, out double l);
+        Geom_Curve? C = BRep_Tool.Curve(E, out Placement LE, out double f, out double l);
         if (C is null)
         {
             return false;
@@ -98,11 +100,11 @@ public sealed class BRepAlgo_FaceRestrictor
 
         Geom_TrimmedCurve CT = new(C, f, l);
 
-        TopLoc_Location LL = L.Inverted().Multiplied(LE);
+        Placement LL = L.Inverted().Multiplied(LE);
         CT.Transform(LL.Transformation());
 
         Geom2d_Curve? C2 = GeomProjLib.Curve2d(CT, S);
-        BB.UpdateEdge(E, C2, S, L, Precision.Confusion());
+        BB.UpdateEdge(E, C2, S, L, global::Kerf.Engine.Foundation.Precision.Confusion());
         return true;
     }
 
@@ -155,7 +157,7 @@ public sealed class BRepAlgo_FaceRestrictor
         //--------------------------------------------------------------------
         // return geometry of the reference face.
         //--------------------------------------------------------------------
-        Geom_Surface S = BRep_Tool.Surface(myFace, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(myFace, out Placement L)!;
 
         //-----------------------------------------------------------------------
         // test if edge is on S. otherwise  add S to the first pcurve.
@@ -255,17 +257,17 @@ public sealed class BRepAlgo_FaceRestrictor
             Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(edg, F, out double f, out double l)!;
             double prm;
 
-            if (!Precision.IsNegativeInfinite(f) && !Precision.IsPositiveInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 prm = (f + l) / 2.0;
             }
             else
             {
-                if (Precision.IsNegativeInfinite(f) && Precision.IsPositiveInfinite(l))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
                 {
                     prm = 0.0;
                 }
-                else if (Precision.IsNegativeInfinite(f))
+                else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
                 {
                     prm = l - 1.0;
                 }
@@ -275,8 +277,8 @@ public sealed class BRepAlgo_FaceRestrictor
                 }
             }
 
-            gp_Pnt2d pt2d = C2d.Value(prm);
-            BRepTopAdaptor_FClass2d FClass2d = new(F, Precision.PConfusion());
+            Point2D pt2d = C2d.Value(prm);
+            BRepTopAdaptor_FClass2d FClass2d = new(F, global::Kerf.Engine.Foundation.Precision.PConfusion());
             TopAbs_State st2 = FClass2d.Perform(pt2d, false);
             return st2 == TopAbs_IN;
         }
@@ -392,7 +394,7 @@ public sealed class BRepAlgo_FaceRestrictor
 
             if (IsClosed(TopoDS.Wire(W)))
             {
-                BRepTopAdaptor_FClass2d FClass2d = new(NF, Precision.PConfusion());
+                BRepTopAdaptor_FClass2d FClass2d = new(NF, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 if (FClass2d.PerformInfinitePoint() != TopAbs_OUT)
                 {
                     W.Reverse();

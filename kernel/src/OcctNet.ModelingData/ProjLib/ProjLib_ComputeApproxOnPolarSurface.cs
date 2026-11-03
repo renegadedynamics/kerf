@@ -3,11 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -70,12 +73,12 @@ public class ProjLib_ComputeApproxOnPolarSurface
         {
             theUPeriod = theSurf.LastUParameter() - theSurf.FirstUParameter();
         }
-        if (Math.Abs(theUPeriod) > Precision.PConfusion())
+        if (Math.Abs(theUPeriod) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             aTrimF = theSurf.FirstUParameter(); // Trimmed first
             aTrimL = theSurf.LastUParameter(); // Trimmed last
             aS.Bounds(out aBaseF, out aBaseL, out aDummyF, out aDummyL); // Non-trimmed values.
-            if (Math.Abs(aBaseF - aTrimF) + Math.Abs(aBaseL - aTrimL) > Precision.PConfusion())
+            if (Math.Abs(aBaseF - aTrimF) + Math.Abs(aBaseL - aTrimL) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // Param space reduced.
                 theUPeriod = 0.0;
@@ -91,12 +94,12 @@ public class ProjLib_ComputeApproxOnPolarSurface
         {
             theVPeriod = theSurf.LastVParameter() - theSurf.FirstVParameter();
         }
-        if (Math.Abs(theVPeriod) > Precision.PConfusion())
+        if (Math.Abs(theVPeriod) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             aTrimF = theSurf.FirstVParameter(); // Trimmed first
             aTrimL = theSurf.LastVParameter(); // Trimmed last
             aS.Bounds(out aDummyF, out aDummyL, out aBaseF, out aBaseL); // Non-trimmed values.
-            if (Math.Abs(aBaseF - aTrimF) + Math.Abs(aBaseL - aTrimL) > Precision.PConfusion())
+            if (Math.Abs(aBaseF - aTrimF) + Math.Abs(aBaseL - aTrimL) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // Param space reduced.
                 theVPeriod = 0.0;
@@ -104,24 +107,24 @@ public class ProjLib_ComputeApproxOnPolarSurface
         }
     }
 
-    private static double anOrthogSqValue(in gp_Pnt aBasePnt, Adaptor3d_Surface Surf, double theU, double theV)
+    private static double anOrthogSqValue(in Point3D aBasePnt, Adaptor3d_Surface Surf, double theU, double theV)
     {
         // Since find projection, formula is:
         // F1 = Dot(S_U, Vec(aBasePnt, aProjPnt))
         // F2 = Dot(S_V, Vec(aBasePnt, aProjPnt))
 
-        gp_Pnt aProjPnt;
-        gp_Vec aSu, aSv;
+        Point3D aProjPnt;
+        Vector3D aSu, aSv;
 
         Surf.D1(theU, theV, out aProjPnt, out aSu, out aSv);
-        gp_Vec aBaseVec = new(aBasePnt, aProjPnt);
+        Vector3D aBaseVec = new(aBasePnt, aProjPnt);
 
-        if (aSu.SquareMagnitude() > Precision.SquareConfusion())
+        if (aSu.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             aSu.Normalize();
         }
 
-        if (aSv.SquareMagnitude() > Precision.SquareConfusion())
+        if (aSv.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             aSv.Normalize();
         }
@@ -131,11 +134,11 @@ public class ProjLib_ComputeApproxOnPolarSurface
         return (aFirstPart * aFirstPart + aSecondPart * aSecondPart);
     }
 
-    private static gp_Pnt2d Function_Value(double theU, aFuncStruct theData)
+    private static Point2D Function_Value(double theU, aFuncStruct theData)
     {
-        gp_Pnt2d p2d = theData.myInitCurve2d.Value(theU);
-        gp_Pnt p = theData.myCurve.Value(theU);
-        gp_Pnt aSurfPnt = theData.mySurf.Value(p2d.X(), p2d.Y());
+        Point2D p2d = theData.myInitCurve2d.Value(theU);
+        Point3D p = theData.myCurve.Value(theU);
+        Point3D aSurfPnt = theData.mySurf.Value(p2d.X(), p2d.Y());
         double aSurfPntDist = aSurfPnt.SquareDistance(p);
 
         double Uinf, Usup, Vinf, Vsup;
@@ -145,11 +148,11 @@ public class ProjLib_ComputeApproxOnPolarSurface
         Vsup = theData.mySurf.LastVParameter();
 
         // Check case when curve is close to co-parametrized isoline on surf.
-        if (Math.Abs(p2d.X() - Uinf) < Precision.PConfusion()
-            || Math.Abs(p2d.X() - Usup) < Precision.PConfusion())
+        if (Math.Abs(p2d.X() - Uinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(p2d.X() - Usup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             // V isoline.
-            gp_Pnt aPnt;
+            Point3D aPnt;
             theData.mySurf.D0(p2d.X(), theU, out aPnt);
             if (aPnt.SquareDistance(p) < aSurfPntDist)
             {
@@ -157,11 +160,11 @@ public class ProjLib_ComputeApproxOnPolarSurface
             }
         }
 
-        if (Math.Abs(p2d.Y() - Vinf) < Precision.PConfusion()
-            || Math.Abs(p2d.Y() - Vsup) < Precision.PConfusion())
+        if (Math.Abs(p2d.Y() - Vinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(p2d.Y() - Vsup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             // U isoline.
-            gp_Pnt aPnt;
+            Point3D aPnt;
             theData.mySurf.D0(theU, p2d.Y(), out aPnt);
             if (aPnt.SquareDistance(p) < aSurfPntDist)
             {
@@ -172,18 +175,18 @@ public class ProjLib_ComputeApproxOnPolarSurface
         int decalU = 0, decalV = 0;
         double U0 = p2d.X(), V0 = p2d.Y();
 
-        GeomAbs_SurfaceType Type = theData.mySurf.GetType();
-        if ((Type != GeomAbs_BSplineSurface) && (Type != GeomAbs_BezierSurface)
-            && (Type != GeomAbs_OffsetSurface))
+        SurfaceKind Type = theData.mySurf.GetType();
+        if ((Type != BSplineSurface) && (Type != BezierSurface)
+            && (Type != OffsetSurface))
         {
             // Analytical cases.
             double S = 0.0, T = 0.0;
             switch (Type)
             {
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
-                    gp_Cylinder Cylinder = theData.mySurf.Cylinder();
-                    ElSLib.Parameters(Cylinder, p, out S, out T);
+                    Cylinder Cylinder = theData.mySurf.Cylinder();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, p, out S, out T);
                     if (U0 < Uinf)
                     {
                         decalU = -(int)((Uinf - U0) / (2 * M_PI)) - 1;
@@ -195,10 +198,10 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     S += decalU * 2 * M_PI;
                     break;
                 }
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                 {
-                    gp_Cone Cone = theData.mySurf.Cone();
-                    ElSLib.Parameters(Cone, p, out S, out T);
+                    Cone Cone = theData.mySurf.Cone();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, p, out S, out T);
                     if (U0 < Uinf)
                     {
                         decalU = -(int)((Uinf - U0) / (2 * M_PI)) - 1;
@@ -210,10 +213,10 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     S += decalU * 2 * M_PI;
                     break;
                 }
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                 {
-                    gp_Sphere Sphere = theData.mySurf.Sphere();
-                    ElSLib.Parameters(Sphere, p, out S, out T);
+                    Sphere Sphere = theData.mySurf.Sphere();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, p, out S, out T);
                     if (U0 < Uinf)
                     {
                         decalU = -(int)((Uinf - U0) / (2 * M_PI)) - 1;
@@ -246,10 +249,10 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     }
                     break;
                 }
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                 {
-                    gp_Torus Torus = theData.mySurf.Torus();
-                    ElSLib.Parameters(Torus, p, out S, out T);
+                    Torus Torus = theData.mySurf.Torus();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, p, out S, out T);
                     if (U0 < Uinf)
                     {
                         decalU = -(int)((Uinf - U0) / (2 * M_PI)) - 1;
@@ -271,9 +274,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     break;
                 }
                 default:
-                    throw new Standard_NoSuchObject("ProjLib_ComputeApproxOnPolarSurface::Value");
+                    throw new NoSuchObjectException("ProjLib_ComputeApproxOnPolarSurface::Value");
             }
-            return new gp_Pnt2d(S, T);
+            return new Point2D(S, T);
         }
 
         // Non-analytical case.
@@ -367,24 +370,24 @@ public class ProjLib_ComputeApproxOnPolarSurface
         }
 
         GeomAdaptor_Surface SurfLittle = new();
-        if (Type == GeomAbs_BSplineSurface)
+        if (Type == BSplineSurface)
         {
             Geom_Surface GBSS = theData.mySurf.BSpline();
             SurfLittle.Load(GBSS, uInfLi, uSupLi, vInfLi, vSupLi);
         }
-        else if (Type == GeomAbs_BezierSurface)
+        else if (Type == BezierSurface)
         {
             Geom_Surface GS = theData.mySurf.Bezier();
             SurfLittle.Load(GS, uInfLi, uSupLi, vInfLi, vSupLi);
         }
-        else if (Type == GeomAbs_OffsetSurface)
+        else if (Type == OffsetSurface)
         {
             Geom_Surface GS = GeomAdaptor.MakeSurface(theData.mySurf);
             SurfLittle.Load(GS, uInfLi, uSupLi, vInfLi, vSupLi);
         }
         else
         {
-            throw new Standard_NoSuchObject(
+            throw new NoSuchObjectException(
                 "ProjLib_ComputeApproxOnPolarSurface::ProjectUsingInitialCurve2d() - unknown surface type");
         }
 
@@ -397,9 +400,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
             Dist2Min = anOrthogSqValue(p, theData.mySurf, u, v);
             if (Dist2Min < theData.mySqProjOrtTol && // Point is projection.
                 locext.SquareDistance()
-                < aSurfPntDist + Precision.SquareConfusion()) // Point better than initial.
+                < aSurfPntDist + global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // Point better than initial.
             {
-                gp_Pnt2d pnt = new(u - decalU * uperiod, v - decalV * vperiod);
+                Point2D pnt = new(u - decalU * uperiod, v - decalV * vperiod);
                 return pnt;
             }
         }
@@ -422,9 +425,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
             Dist2Min = anOrthogSqValue(p, theData.mySurf, u, v);
             if (Dist2Min < theData.mySqProjOrtTol && // Point is projection.
                 ext.SquareDistance(GoodValue)
-                < aSurfPntDist + Precision.SquareConfusion()) // Point better than initial.
+                < aSurfPntDist + global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // Point better than initial.
             {
-                gp_Pnt2d pnt = new(u - decalU * uperiod, v - decalV * vperiod);
+                Point2D pnt = new(u - decalU * uperiod, v - decalV * vperiod);
                 return pnt;
             }
         }
@@ -460,15 +463,15 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
         public override double LastParameter() => myStruct.myCurve.LastParameter();
 
-        public gp_Pnt2d Value(double t) => Function_Value(t, myStruct);
+        public Point2D Value(double t) => Function_Value(t, myStruct);
 
-        public override bool Value(double theT, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theT, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt2d[1] = Function_Value(theT, myStruct);
             return true;
         }
 
-        public override bool D1(double theT, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theT, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
             return false;
         }
@@ -478,7 +481,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
     public ProjLib_ComputeApproxOnPolarSurface()
     {
         myProjIsDone = false;
-        myTolerance = Precision.Approximation();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.Approximation();
         myTolReached = -1.0;
         myDegMin = -1;
         myDegMax = -1;
@@ -530,7 +533,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
         if (myProjIsDone)
         {
-            gp_Pnt2d P2dproj, P2d, P2dBis;
+            Point2D P2dproj, P2d, P2dBis;
             P2dproj = bsc!.StartPoint();
             P2d = theInitialCurve2d.Value(theInitialCurve2d.FirstParameter());
             P2dBis = theInitialCurve2dBis.Value(theInitialCurve2dBis.FirstParameter());
@@ -589,15 +592,15 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
         NCollection_Array1<double> K1 = C1.InternalKnots();
         NCollection_Array1<int> M1 = C1.InternalMultiplicities();
-        NCollection_Array1<gp_Pnt2d> P1 = C1.InternalPoles();
+        NCollection_Array1<Point2D> P1 = C1.InternalPoles();
         NCollection_Array1<double> K2 = C2.InternalKnots();
         NCollection_Array1<int> M2 = C2.InternalMultiplicities();
-        NCollection_Array1<gp_Pnt2d> P2 = C2.InternalPoles();
+        NCollection_Array1<Point2D> P2 = C2.InternalPoles();
 
         // Compute the new BSplineCurve
         NCollection_Array1<double> K = new(1, nk);
         NCollection_Array1<int> M = new(1, nk);
-        NCollection_Array1<gp_Pnt2d> P = new(1, np);
+        NCollection_Array1<Point2D> P = new(1, np);
 
         int i, count = 0;
         // Set Knots and Mults
@@ -650,26 +653,26 @@ public class ProjLib_ComputeApproxOnPolarSurface
     {
         // OCC217
         double Tol3d = myTolerance;
-        double ParamTol = Precision.PApproximation();
+        double ParamTol = global::Kerf.Engine.Foundation.Precision.PApproximation();
 
         Adaptor2d_Curve2d? AHC2d = InitialCurve2d;
         Adaptor3d_Curve AHC = Curve;
 
         // if the curve 3d is a BSpline with degree C0, it is cut into sections with degree C1
         // -> bug cts18237
-        GeomAbs_CurveType typeCurve = Curve.GetType();
-        if (typeCurve == GeomAbs_BSplineCurve)
+        CurveKind typeCurve = Curve.GetType();
+        if (typeCurve == BSplineCurve)
         {
-            NCollection_List<Standard_Transient> LOfBSpline2d = new();
+            NCollection_List<Transient> LOfBSpline2d = new();
             Geom_BSplineCurve BSC = Curve.BSpline();
-            int nbInter = Curve.NbIntervals(GeomAbs_C1);
+            int nbInter = Curve.NbIntervals(C1);
             if (nbInter > 1)
             {
                 int i, j;
                 Geom_TrimmedCurve GTC;
                 Geom2d_TrimmedCurve? G2dTC = null;
                 NCollection_Array1<double> Inter = new(1, nbInter + 1);
-                Curve.Intervals(Inter, GeomAbs_C1);
+                Curve.Intervals(Inter, C1);
                 double firstinter = Inter.Value(1), secondinter = Inter.Value(2);
                 // initialization 3d
                 GTC = new Geom_TrimmedCurve(BSC, firstinter, secondinter);
@@ -690,9 +693,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
                 if (!C2dIsToCompute)
                 {
-                    nbInter2d = InitialCurve2d!.NbIntervals(GeomAbs_C1);
+                    nbInter2d = InitialCurve2d!.NbIntervals(C1);
                     NCollection_Array1<double> Inter2d = new(1, nbInter2d + 1);
-                    InitialCurve2d.Intervals(Inter2d, GeomAbs_C1);
+                    InitialCurve2d.Intervals(Inter2d, C1);
                     j = 1;
                     for (i = 1, j = 1; i <= nbInter; i++)
                     {
@@ -722,49 +725,49 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     typeCurve = InitialCurve2d!.GetType();
                     switch (typeCurve)
                     {
-                        case GeomAbs_Line:
+                        case Line:
                         {
                             G2dC = new Geom2d_Line(InitialCurve2d.Line());
                             break;
                         }
-                        case GeomAbs_Circle:
+                        case Circle:
                         {
                             G2dC = new Geom2d_Circle(InitialCurve2d.Circle());
                             break;
                         }
-                        case GeomAbs_Ellipse:
+                        case Ellipse:
                         {
                             G2dC = new Geom2d_Ellipse(InitialCurve2d.Ellipse());
                             break;
                         }
-                        case GeomAbs_Hyperbola:
+                        case Hyperbola:
                         {
                             G2dC = new Geom2d_Hyperbola(InitialCurve2d.Hyperbola());
                             break;
                         }
-                        case GeomAbs_Parabola:
+                        case Parabola:
                         {
                             G2dC = new Geom2d_Parabola(InitialCurve2d.Parabola());
                             break;
                         }
-                        case GeomAbs_BezierCurve:
+                        case BezierCurve:
                         {
                             G2dC = InitialCurve2d.Bezier();
                             break;
                         }
-                        case GeomAbs_BSplineCurve:
+                        case BSplineCurve:
                         {
                             G2dC = InitialCurve2d.BSpline();
                             break;
                         }
-                        case GeomAbs_OtherCurve:
+                        case OtherCurve:
                         default:
                             break;
                     }
                     // OCCT: an initial curve of type OtherCurve leaves G2dC null and dereferences it (the port throws
                     // NullReferenceException).
-                    gp_Pnt2d fp2d = G2dC!.Value(firstinter), lp2d = G2dC.Value(secondinter);
-                    gp_Pnt fps, lps, fpc, lpc;
+                    Point2D fp2d = G2dC!.Value(firstinter), lp2d = G2dC.Value(secondinter);
+                    Point3D fps, lps, fpc, lpc;
                     S.D0(fp2d.X(), fp2d.Y(), out fps);
                     S.D0(lp2d.X(), lp2d.Y(), out lps);
                     Curve.D0(firstinter, out fpc);
@@ -815,8 +818,8 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     }
                     else
                     {
-                        gp_Pnt2d fp2d = G2dC!.Value(iinter), lp2d = G2dC.Value(ip1inter);
-                        gp_Pnt fps, lps, fpc, lpc;
+                        Point2D fp2d = G2dC!.Value(iinter), lp2d = G2dC.Value(ip1inter);
+                        Point3D fps, lps, fpc, lpc;
                         S.D0(fp2d.X(), fp2d.Y(), out fps);
                         S.D0(lp2d.X(), lp2d.Y(), out lps);
                         Curve.D0(iinter, out fpc);
@@ -863,8 +866,8 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     Geom2d_BSplineCurve BS = (Geom2d_BSplineCurve)LOfBSpline2d.First();
 
                     // Check for period jump in point of contact.
-                    gp_Pnt2d aC1End = CurBS.Pole(CurBS.NbPoles()); // End of C1.
-                    gp_Pnt2d aC2Beg = BS.Pole(1); // Beginning of C2.
+                    Point2D aC1End = CurBS.Pole(CurBS.NbPoles()); // End of C1.
+                    Point2D aC2Beg = BS.Pole(1); // Beginning of C2.
                     double anUJump = 0.0, anVJump = 0.0;
 
                     if (anUPeriod > 0.0 && Math.Abs(aC1End.X() - aC2Beg.X()) > (anUPeriod) / 2.01)
@@ -925,7 +928,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
         int NbOfPnts = 61;
         GCPnts_QuasiUniformAbscissa QUA = new(Curve, NbOfPnts);
         NbOfPnts = QUA.NbPoints();
-        NCollection_Array1<gp_Pnt> Pts = new(1, NbOfPnts);
+        NCollection_Array1<Point3D> Pts = new(1, NbOfPnts);
         NCollection_Array1<double> Param = new(1, NbOfPnts);
         int i, j;
         for (i = 1; i <= NbOfPnts; i++)
@@ -934,7 +937,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
             Pts[i] = Curve.Value(Param[i]);
         }
 
-        NCollection_Array1<gp_Pnt2d> Pts2d = new(1, NbOfPnts);
+        NCollection_Array1<Point2D> Pts2d = new(1, NbOfPnts);
         NCollection_Array1<int> Mult = new(1, NbOfPnts);
         Mult.Init(1);
         Mult[1] = Mult[NbOfPnts] = 2;
@@ -944,25 +947,25 @@ public class ProjLib_ComputeApproxOnPolarSurface
         Usup = Surf.LastUParameter();
         Vinf = Surf.FirstVParameter();
         Vsup = Surf.LastVParameter();
-        GeomAbs_SurfaceType Type = Surf.GetType();
-        if ((Type != GeomAbs_BSplineSurface) && (Type != GeomAbs_BezierSurface)
-            && (Type != GeomAbs_OffsetSurface))
+        SurfaceKind Type = Surf.GetType();
+        if ((Type != BSplineSurface) && (Type != BezierSurface)
+            && (Type != OffsetSurface))
         {
             double S, T;
             // to know the position relatively to the period
             switch (Type)
             {
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
                     double Sloc;
                     int usens = 0;
-                    gp_Cylinder Cylinder = Surf.Cylinder();
-                    ElSLib.Parameters(Cylinder, Pts[1], out S, out T);
+                    Cylinder Cylinder = Surf.Cylinder();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, Pts[1], out S, out T);
                     Pts2d[1].SetCoord(S, T);
                     for (i = 2; i <= NbOfPnts; i++)
                     {
                         Sloc = S;
-                        ElSLib.Parameters(Cylinder, Pts[i], out S, out T);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, Pts[i], out S, out T);
                         if (Math.Abs(Sloc - S) > M_PI)
                         {
                             if (Sloc > S)
@@ -979,17 +982,17 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     myProjIsDone = true;
                     break;
                 }
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                 {
                     double Sloc;
                     int usens = 0;
-                    gp_Cone Cone = Surf.Cone();
-                    ElSLib.Parameters(Cone, Pts[1], out S, out T);
+                    Cone Cone = Surf.Cone();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, Pts[1], out S, out T);
                     Pts2d[1].SetCoord(S, T);
                     for (i = 2; i <= NbOfPnts; i++)
                     {
                         Sloc = S;
-                        ElSLib.Parameters(Cone, Pts[i], out S, out T);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, Pts[i], out S, out T);
                         if (Math.Abs(Sloc - S) > M_PI)
                         {
                             if (Sloc > S)
@@ -1006,19 +1009,19 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     myProjIsDone = true;
                     break;
                 }
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                 {
                     double Sloc, Tloc;
                     int usens = 0, vsens = 0; // usens steps by half-period
                     bool vparit = false;
-                    gp_Sphere Sphere = Surf.Sphere();
-                    ElSLib.Parameters(Sphere, Pts[1], out S, out T);
+                    Sphere Sphere = Surf.Sphere();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, Pts[1], out S, out T);
                     Pts2d[1].SetCoord(S, T);
                     for (i = 2; i <= NbOfPnts; i++)
                     {
                         Sloc = S;
                         Tloc = T;
-                        ElSLib.Parameters(Sphere, Pts[i], out S, out T);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, Pts[i], out S, out T);
                         if (1.6 * M_PI < Math.Abs(Sloc - S))
                         {
                             if (Sloc > S)
@@ -1062,18 +1065,18 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     myProjIsDone = true;
                     break;
                 }
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                 {
                     double Sloc, Tloc;
                     int usens = 0, vsens = 0;
-                    gp_Torus Torus = Surf.Torus();
-                    ElSLib.Parameters(Torus, Pts[1], out S, out T);
+                    Torus Torus = Surf.Torus();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, Pts[1], out S, out T);
                     Pts2d[1].SetCoord(S, T);
                     for (i = 2; i <= NbOfPnts; i++)
                     {
                         Sloc = S;
                         Tloc = T;
-                        ElSLib.Parameters(Torus, Pts[i], out S, out T);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, Pts[i], out S, out T);
                         if (Math.Abs(Sloc - S) > M_PI)
                         {
                             if (Sloc > S)
@@ -1102,7 +1105,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     break;
                 }
                 default:
-                    throw new Standard_NoSuchObject("ProjLib_ComputeApproxOnPolarSurface::BuildInitialCurve2d");
+                    throw new NoSuchObjectException("ProjLib_ComputeApproxOnPolarSurface::BuildInitialCurve2d");
             }
         }
         else
@@ -1110,9 +1113,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
             myProjIsDone = false;
             double Dist2Min = 1.0e+200, u = 0.0, v = 0.0;
             myDist = 0.0;
-            gp_Pnt pntproj;
+            Point3D pntproj;
 
-            NCollection_Sequence<gp_Pnt2d> Sols = new();
+            NCollection_Sequence<Point2D> Sols = new();
             bool areManyZeros = false;
 
             pntproj = Pts[1];
@@ -1131,8 +1134,8 @@ public class ProjLib_ComputeApproxOnPolarSurface
             }
             if (aMinSqDist > DistTol3d2) // try to project with less tolerance
             {
-                TolU = Min(TolU, Precision.PConfusion());
-                TolV = Min(TolV, Precision.PConfusion());
+                TolU = Min(TolU, global::Kerf.Engine.Foundation.Precision.PConfusion());
+                TolV = Min(TolV, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aExtPS.Initialize(Surf,
                                   Surf.FirstUParameter(),
                                   Surf.LastUParameter(),
@@ -1154,7 +1157,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
                         if (aExtPS.SquareDistance(i) <= 1.0e-18)
                         {
                             aExtPS.Point(i).Parameter(out u, out v);
-                            gp_Pnt2d p2d = new(u, v);
+                            Point2D p2d = new(u, v);
                             bool isSame = false;
                             for (j = 1; j <= Sols.Length(); j++)
                             {
@@ -1196,10 +1199,10 @@ public class ProjLib_ComputeApproxOnPolarSurface
                         double Dist2Max = -1.0e+200;
                         for (i = 1; i <= nbSols; i++)
                         {
-                            gp_Pnt2d aP1 = Sols.Value(i);
+                            Point2D aP1 = Sols.Value(i);
                             for (j = i + 1; j <= nbSols; j++)
                             {
-                                gp_Pnt2d aP2 = Sols.Value(j);
+                                Point2D aP2 = Sols.Value(j);
                                 double aDist2 = aP1.SquareDistance(aP2);
                                 if (aDist2 > Dist2Max)
                                 {
@@ -1245,8 +1248,8 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
                             if (tPp != 0 && tPp != NbOfPnts)
                             {
-                                gp_Pnt2d aPp = new(u, v);
-                                gp_Pnt2d aPn = new();
+                                Point2D aPp = new(u, v);
+                                Point2D aPn = new();
                                 bool isFound = false;
                                 for (j = tPp + 1; j <= NbOfPnts; ++j)
                                 {
@@ -1267,7 +1270,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
                                         if (indExt > 0)
                                         {
                                             aTPS.Point(indExt).Parameter(out u, out v);
-                                            aPn = new gp_Pnt2d(u, v);
+                                            aPn = new Point2D(u, v);
                                             isFound = true;
                                             break;
                                         }
@@ -1276,12 +1279,12 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
                                 if (isFound)
                                 {
-                                    gp_Dir2d atV = new(new gp_Vec2d(aPp, aPn));
+                                    Direction2D atV = new(new Vector2D(aPp, aPn));
                                     bool isChosen = false;
                                     for (i = 1; i <= nbSols; i++)
                                     {
-                                        gp_Pnt2d aP1 = Sols.Value(i);
-                                        gp_Dir2d asV = new(new gp_Vec2d(aP1, aPp));
+                                        Point2D aP1 = Sols.Value(i);
+                                        Direction2D asV = new(new Vector2D(aP1, aPp));
                                         if (asV.Dot(atV) > 0.0)
                                         {
                                             isChosen = true;
@@ -1414,7 +1417,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
                                         if ((i == 2) && (!IsEqual(uperiod, 0.0) || !IsEqual(vperiod, 0.0)))
                                         { // Make 1st point more precise for periodic surfaces
                                             const int aSize = 3;
-                                            gp_Pnt2d aP = Pts2d[2];
+                                            Point2D aP = Pts2d[2];
                                             Pts2d[1].Coord(out aUpar[1], out aVpar[1]);
                                             aUpar[0] = aUpar[1] - uperiod;
                                             aUpar[2] = aUpar[1] + uperiod;
@@ -1429,7 +1432,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
                                             {
                                                 for (int vInd = 0; vInd < aSizeV; vInd++)
                                                 {
-                                                    double aSQdist = aP.SquareDistance(new gp_Pnt2d(aUpar[uInd], aVpar[vInd]));
+                                                    double aSQdist = aP.SquareDistance(new Point2D(aUpar[uInd], aVpar[vInd]));
                                                     if (aSQdist < aSQdistMin)
                                                     {
                                                         aSQdistMin = aSQdist;
@@ -1657,7 +1660,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
             Geom2d_BSplineCurve aBSpline = new(Pts2d, Param, Mult, 1);
             myBSpline = aBSpline;
             // jgv: put the curve into parametric range
-            gp_Pnt2d MidPoint =
+            Point2D MidPoint =
                 aBSpline.Value(0.5 * (aBSpline.FirstParameter() + aBSpline.LastParameter()));
             double TestU = MidPoint.X(), TestV = MidPoint.Y();
             double sense = 0.0;
@@ -1692,8 +1695,8 @@ public class ProjLib_ComputeApproxOnPolarSurface
                     TestV += sense * vperiod;
                 }
             }
-            gp_Vec2d Offset = new(TestU - MidPoint.X(), TestV - MidPoint.Y());
-            if (Math.Abs(Offset.X()) > gp.Resolution() || Math.Abs(Offset.Y()) > gp.Resolution())
+            Vector2D Offset = new(TestU - MidPoint.X(), TestV - MidPoint.Y());
+            if (Math.Abs(Offset.X()) > Constants.Resolution() || Math.Abs(Offset.Y()) > Constants.Resolution())
             {
                 aBSpline.Translate(Offset);
             }
@@ -1724,23 +1727,23 @@ public class ProjLib_ComputeApproxOnPolarSurface
         }
         double DistTol3d2 = DistTol3d * DistTol3d;
         double TolU = Surf.UResolution(Tol3d), TolV = Surf.VResolution(Tol3d);
-        double Tol2d = Max(Math.Sqrt(TolU * TolU + TolV * TolV), Precision.PConfusion());
+        double Tol2d = Max(Math.Sqrt(TolU * TolU + TolV * TolV), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         int i;
-        GeomAbs_SurfaceType TheTypeS = Surf.GetType();
-        GeomAbs_CurveType TheTypeC = Curve.GetType();
-        if (TheTypeS == GeomAbs_Plane)
+        SurfaceKind TheTypeS = Surf.GetType();
+        CurveKind TheTypeC = Curve.GetType();
+        if (TheTypeS == Plane)
         {
             double S, T;
-            gp_Pln Plane = Surf.Plane();
-            if (TheTypeC == GeomAbs_BSplineCurve)
+            Plane3D Plane = Surf.Plane();
+            if (TheTypeC == BSplineCurve)
             {
-                myTolReached = Precision.Confusion();
+                myTolReached = global::Kerf.Engine.Foundation.Precision.Confusion();
                 Geom_BSplineCurve BSC = Curve.BSpline();
-                NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                 for (i = 1; i <= Curve.NbPoles(); i++)
                 {
-                    ElSLib.Parameters(Plane, BSC.Pole(i), out S, out T);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Plane, BSC.Pole(i), out S, out T);
                     Poles2d[i].SetCoord(S, T);
                 }
                 NCollection_Array1<double> Knots = BSC.InternalKnots();
@@ -1760,14 +1763,14 @@ public class ProjLib_ComputeApproxOnPolarSurface
                 }
                 return new Geom2d_BSplineCurve(Poles2d, Knots, Mults, BSC.Degree(), BSC.IsPeriodic());
             }
-            if (TheTypeC == GeomAbs_BezierCurve)
+            if (TheTypeC == BezierCurve)
             {
-                myTolReached = Precision.Confusion();
+                myTolReached = global::Kerf.Engine.Foundation.Precision.Confusion();
                 Geom_BezierCurve BC = Curve.Bezier();
-                NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                 for (i = 1; i <= Curve.NbPoles(); i++)
                 {
-                    ElSLib.Parameters(Plane, BC.Pole(i), out S, out T);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Plane, BC.Pole(i), out S, out T);
                     Poles2d[i].SetCoord(S, T);
                 }
                 NCollection_Array1<double> Knots = new(1, 2);
@@ -1791,30 +1794,30 @@ public class ProjLib_ComputeApproxOnPolarSurface
                 return new Geom2d_BSplineCurve(Poles2d, Knots, Mults, BC.Degree(), BC.IsPeriodic());
             }
         }
-        if (TheTypeS == GeomAbs_BSplineSurface)
+        if (TheTypeS == BSplineSurface)
         {
             Geom_BSplineSurface BSS = Surf.BSpline();
             // OCCT: MaxDegree() is the static maximal degree of B-spline surfaces (25), not this surface's degree, so
             // this condition is never true and the bilinear-surface branch is dead code.
             if ((Geom_BSplineSurface.MaxDegree() == 1) && (BSS.NbUPoles() == 2) && (BSS.NbVPoles() == 2))
             {
-                gp_Pnt p11 = BSS.Pole(1, 1);
-                gp_Pnt p12 = BSS.Pole(1, 2);
-                gp_Pnt p21 = BSS.Pole(2, 1);
-                gp_Pnt p22 = BSS.Pole(2, 2);
-                gp_Vec V1 = new(p11, p12);
-                gp_Vec V2 = new(p21, p22);
+                Point3D p11 = BSS.Pole(1, 1);
+                Point3D p12 = BSS.Pole(1, 2);
+                Point3D p21 = BSS.Pole(2, 1);
+                Point3D p22 = BSS.Pole(2, 2);
+                Vector3D V1 = new(p11, p12);
+                Vector3D V2 = new(p21, p22);
                 if (V1.IsEqual(V2, Tol3d, Tol3d / (p11.Distance(p12) * 180 / M_PI)))
                 {
                     // OCCT: the square distances are truncated to int (Dist2Min is an int), and the extrema start from
                     // the mean of the corners' X and Y coordinates, not from parameters.
                     int Dist2Min = IntegerLast();
                     double u, v;
-                    if (TheTypeC == GeomAbs_BSplineCurve)
+                    if (TheTypeC == BSplineCurve)
                     {
                         myTolReached = Tol3d;
                         Geom_BSplineCurve BSC = Curve.BSpline();
-                        NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                        NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                         for (i = 1; i <= Curve.NbPoles(); i++)
                         {
                             myProjIsDone = false;
@@ -1862,11 +1865,11 @@ public class ProjLib_ComputeApproxOnPolarSurface
                             return new Geom2d_BSplineCurve(Poles2d, Knots, Mults, BSC.Degree(), BSC.IsPeriodic());
                         }
                     }
-                    if (TheTypeC == GeomAbs_BezierCurve)
+                    if (TheTypeC == BezierCurve)
                     {
                         myTolReached = Tol3d;
                         Geom_BezierCurve BC = Curve.Bezier();
-                        NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                        NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                         for (i = 1; i <= Curve.NbPoles(); i++)
                         {
                             Dist2Min = IntegerLast();
@@ -1925,29 +1928,29 @@ public class ProjLib_ComputeApproxOnPolarSurface
                 }
             }
         }
-        else if (TheTypeS == GeomAbs_BezierSurface)
+        else if (TheTypeS == BezierSurface)
         {
             Geom_BezierSurface BS = Surf.Bezier();
             // OCCT: as above, MaxDegree() is static (25): this branch is dead code.
             if ((Geom_BezierSurface.MaxDegree() == 1) && (BS.NbUPoles() == 2) && (BS.NbVPoles() == 2))
             {
-                gp_Pnt p11 = BS.Pole(1, 1);
-                gp_Pnt p12 = BS.Pole(1, 2);
-                gp_Pnt p21 = BS.Pole(2, 1);
-                gp_Pnt p22 = BS.Pole(2, 2);
-                gp_Vec V1 = new(p11, p12);
-                gp_Vec V2 = new(p21, p22);
+                Point3D p11 = BS.Pole(1, 1);
+                Point3D p12 = BS.Pole(1, 2);
+                Point3D p21 = BS.Pole(2, 1);
+                Point3D p22 = BS.Pole(2, 2);
+                Vector3D V1 = new(p11, p12);
+                Vector3D V2 = new(p21, p22);
                 if (V1.IsEqual(V2, Tol3d, Tol3d / (p11.Distance(p12) * 180 / M_PI)))
                 {
                     // OCCT: as for the B-spline surface above.
                     int Dist2Min = IntegerLast();
                     double u, v;
 
-                    if (TheTypeC == GeomAbs_BSplineCurve)
+                    if (TheTypeC == BSplineCurve)
                     {
                         myTolReached = Tol3d;
                         Geom_BSplineCurve BSC = Curve.BSpline();
-                        NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                        NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                         for (i = 1; i <= Curve.NbPoles(); i++)
                         {
                             myProjIsDone = false;
@@ -1995,11 +1998,11 @@ public class ProjLib_ComputeApproxOnPolarSurface
                             return new Geom2d_BSplineCurve(Poles2d, Knots, Mults, BSC.Degree(), BSC.IsPeriodic());
                         }
                     }
-                    if (TheTypeC == GeomAbs_BezierCurve)
+                    if (TheTypeC == BezierCurve)
                     {
                         myTolReached = Tol3d;
                         Geom_BezierCurve BC = Curve.Bezier();
-                        NCollection_Array1<gp_Pnt2d> Poles2d = new(1, Curve.NbPoles());
+                        NCollection_Array1<Point2D> Poles2d = new(1, Curve.NbPoles());
                         for (i = 1; i <= Curve.NbPoles(); i++)
                         {
                             Dist2Min = IntegerLast();
@@ -2091,7 +2094,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
 
         Approx_FitAndDivide2d Fit = new(Deg1, Deg2, Tol3d, Tol2d, true, aFistC, aLastC);
         Fit.SetMaxSegments(aMaxSegments);
-        if (InitCurve2d.GetType() == GeomAbs_Line)
+        if (InitCurve2d.GetType() == Line)
         {
             Fit.SetInvOrder(false);
         }
@@ -2118,9 +2121,9 @@ public class ProjLib_ComputeApproxOnPolarSurface
             myTolReached = Max(myTolReached, myTolerance * (aNewTol2d / anOldTol2d));
             //
             NbPoles = MaxDeg * NbCurves + 1; // Tops on the BSpline
-            NCollection_Array1<gp_Pnt2d> Poles = new(1, NbPoles);
+            NCollection_Array1<Point2D> Poles = new(1, NbPoles);
 
-            NCollection_Array1<gp_Pnt2d> TempPoles = new(1, MaxDeg + 1); // to augment the degree
+            NCollection_Array1<Point2D> TempPoles = new(1, MaxDeg + 1); // to augment the degree
 
             NCollection_Array1<double> Knots = new(1, NbCurves + 1); // Nodes of the BSpline
 
@@ -2129,18 +2132,18 @@ public class ProjLib_ComputeApproxOnPolarSurface
             {
                 Fit.Parameters(i, out Knots[i], out Knots[i + 1]);
                 AppParCurves_MultiCurve MC = Fit.Value(i); // Load the Ith Curve
-                NCollection_Array1<gp_Pnt2d> Poles2d = new(1, MC.Degree() + 1); // Retrieve the tops
+                NCollection_Array1<Point2D> Poles2d = new(1, MC.Degree() + 1); // Retrieve the tops
                 MC.Curve(1, Poles2d);
 
                 // Eventual augmentation of the degree
                 int Inc = MaxDeg - MC.Degree();
                 if (Inc > 0)
                 {
-                    BSplCLib.IncreaseDegree(MaxDeg,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(MaxDeg,
                                             Poles2d,
-                                            BSplCLib.NoWeights(),
+                                            global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                             TempPoles,
-                                            BSplCLib.NoWeights());
+                                            global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
                     // update of tops of the PCurve
                     for (int k = 1; k <= MaxDeg + 1; k++)
                     {
@@ -2174,7 +2177,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
             // try to smoother the Curve GeomAbs_C1.
 
             bool OK = true;
-            double aSmoothTol = Max(Precision.Confusion(), aNewTol2d);
+            double aSmoothTol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), aNewTol2d);
             if (myBndPnt == AppParCurves_PassPoint)
             {
                 aSmoothTol *= 10.0;
@@ -2199,7 +2202,7 @@ public class ProjLib_ComputeApproxOnPolarSurface
     internal Geom2d_BSplineCurve? InternalBSpline() => myBSpline;
 
     /// <summary>The second 2D curve (of the seam-edge constructor), frozen; null for the other constructors.</summary>
-    /// <exception cref="Standard_NoSuchObject">The projection is not done.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is not done.</exception>
     public Geom2d_Curve? Curve2d()
     {
         Standard_NoSuchObject_Raise_if(!myProjIsDone, "ProjLib_ComputeApproxOnPolarSurface:2ndCurve2d");

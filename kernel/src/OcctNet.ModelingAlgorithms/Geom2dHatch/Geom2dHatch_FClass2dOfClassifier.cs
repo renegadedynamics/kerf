@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -20,7 +21,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     private bool myIsSet;
     private bool myFirstCompare;
     private bool myFirstTrans;
-    private gp_Lin2d myLin = new();
+    private Line2D myLin = new();
     private double myParam;
     private double myTolerance;
     private readonly TopTrans_CurveTransition myTrans = new();
@@ -46,7 +47,7 @@ public sealed class Geom2dHatch_FClass2dOfClassifier : ITopClass_FClass2d<Geom2d
     /// Starts a classification of the origin of <paramref name="L"/>; <paramref name="P"/> is the length of the
     /// segment of <paramref name="L"/> intersected and <paramref name="Tol"/> its tolerance in the intersections.
     /// </summary>
-    public void Reset(in gp_Lin2d L, double P, double Tol)
+    public void Reset(in Line2D L, double P, double Tol)
     {
         TopClass_Classifier2d.Reset(out myLin,
                                     out myParam,

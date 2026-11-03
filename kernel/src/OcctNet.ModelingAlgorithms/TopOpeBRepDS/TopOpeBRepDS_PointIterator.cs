@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopOpeBRepDS_Config;
 using static Occt.TopOpeBRepDS_Kind;
 
@@ -39,7 +40,7 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
     }
 
     /// <summary>The parameter of the current point on the curve or edge.</summary>
-    /// <exception cref="Standard_ProgramError">The interference is neither a curve/point nor an edge/vertex interference (exactly).</exception>
+    /// <exception cref="ProgramErrorException">The interference is neither a curve/point nor an edge/vertex interference (exactly).</exception>
     public double Parameter()
     {
         TopOpeBRepDS_Interference I = Value();
@@ -54,7 +55,7 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
         }
         else
         {
-            throw new Standard_ProgramError("TopOpeBRepDS_PointIterator::Parameter()");
+            throw new ProgramErrorException("TopOpeBRepDS_PointIterator::Parameter()");
         }
     }
 
@@ -65,7 +66,7 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
     public bool IsPoint() => (Value().GeometryType() == TopOpeBRepDS_POINT);
 
     /// <summary>Whether the current edge/vertex interference is DIFFORIENTED.</summary>
-    /// <exception cref="Standard_ProgramError">The interference is not an edge/vertex interference.</exception>
+    /// <exception cref="ProgramErrorException">The interference is not an edge/vertex interference.</exception>
     public bool DiffOriented()
     {
         TopOpeBRepDS_Interference I = Value();
@@ -75,12 +76,12 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
         }
         else
         {
-            throw new Standard_ProgramError("TopOpeBRepDS_PointIterator::DiffOriented()");
+            throw new ProgramErrorException("TopOpeBRepDS_PointIterator::DiffOriented()");
         }
     }
 
     /// <summary>Whether the current edge/vertex interference is SAMEORIENTED.</summary>
-    /// <exception cref="Standard_ProgramError">The interference is not an edge/vertex interference.</exception>
+    /// <exception cref="ProgramErrorException">The interference is not an edge/vertex interference.</exception>
     public bool SameOriented()
     {
         TopOpeBRepDS_Interference I = Value();
@@ -90,7 +91,7 @@ public sealed class TopOpeBRepDS_PointIterator : TopOpeBRepDS_InterferenceIterat
         }
         else
         {
-            throw new Standard_ProgramError("TopOpeBRepDS_PointIterator::SameOriented()");
+            throw new ProgramErrorException("TopOpeBRepDS_PointIterator::SameOriented()");
         }
     }
 

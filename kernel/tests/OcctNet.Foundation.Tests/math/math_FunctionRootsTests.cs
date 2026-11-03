@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_FunctionRootsTest
 {
     // Quadratic function: f(x) = x^2 - 4, f'(x) = 2x, roots at x = +/-2
-    private sealed class QuadraticWithDerivative : math_FunctionWithDerivative
+    private sealed class QuadraticWithDerivative : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -30,7 +32,7 @@ public class math_FunctionRootsTest
     }
 
     // Cubic function: f(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3), f'(x) = 3x^2 - 12x + 11
-    private sealed class CubicWithDerivative : math_FunctionWithDerivative
+    private sealed class CubicWithDerivative : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -53,7 +55,7 @@ public class math_FunctionRootsTest
     }
 
     // Sine function: f(x) = Math.Sin(x), f'(x) = Math.Cos(x), multiple roots
-    private sealed class SineWithDerivative : math_FunctionWithDerivative
+    private sealed class SineWithDerivative : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -76,7 +78,7 @@ public class math_FunctionRootsTest
     }
 
     // Linear function: f(x) = 2x - 4, f'(x) = 2, root at x = 2
-    private sealed class LinearWithDerivative : math_FunctionWithDerivative
+    private sealed class LinearWithDerivative : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -99,7 +101,7 @@ public class math_FunctionRootsTest
     }
 
     // Constant function: f(x) = 0, f'(x) = 0 (always null)
-    private sealed class ConstantZeroFunctionImpl : math_FunctionWithDerivative
+    private sealed class ConstantZeroFunctionImpl : FunctionWithDerivative
     {
         public override bool Value(double _, out double theF)
         {
@@ -122,7 +124,7 @@ public class math_FunctionRootsTest
     }
 
     // Function with no real roots: f(x) = x^2 + 1, f'(x) = 2x
-    private sealed class NoRootsFunctionImpl : math_FunctionWithDerivative
+    private sealed class NoRootsFunctionImpl : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -145,7 +147,7 @@ public class math_FunctionRootsTest
     }
 
     // High degree polynomial: f(x) = (x-1)(x-2)(x-3)(x-4) = x^4 - 10x^3 + 35x^2 - 50x + 24
-    private sealed class QuarticWithDerivative : math_FunctionWithDerivative
+    private sealed class QuarticWithDerivative : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -176,11 +178,11 @@ public class math_FunctionRootsTest
         // Test finding two roots of quadratic function
         QuadraticWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
-        Assert.Equal(2, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
+        Assert.Equal(2, aRootFinder.SolutionCount);
 
         // Check that roots are approximately +/-2
         double aRoot1 = aRootFinder.Value(1);
@@ -204,15 +206,15 @@ public class math_FunctionRootsTest
         // Test finding three roots of cubic function
         CubicWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, 0.0, 4.0, 30, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 0.0, 4.0, 30, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
-        Assert.Equal(3, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
+        Assert.Equal(3, aRootFinder.SolutionCount);
 
         // Check roots are approximately 1, 2, 3
         List<double> aRoots = [];
-        for (int i = 1; i <= aRootFinder.NbSolutions(); ++i)
+        for (int i = 1; i <= aRootFinder.SolutionCount; ++i)
         {
             aRoots.Add(aRootFinder.Value(i));
         }
@@ -229,12 +231,12 @@ public class math_FunctionRootsTest
         // Test finding multiple roots of sine function
         SineWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, 0.0, 2.0 * M_PI, 50, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 0.0, 2.0 * M_PI, 50, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
 
-        int aNbRoots = aRootFinder.NbSolutions();
+        int aNbRoots = aRootFinder.SolutionCount;
         Assert.True(aNbRoots >= 2);
         Assert.True(aNbRoots <= 3);
 
@@ -254,11 +256,11 @@ public class math_FunctionRootsTest
         // Test finding single root of linear function
         LinearWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, 0.0, 4.0, 10, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 0.0, 4.0, 10, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
-        Assert.Equal(1, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
+        Assert.Equal(1, aRootFinder.SolutionCount);
 
         double aRoot = aRootFinder.Value(1);
         Assert.Equal(2.0, aRoot, 1.0e-10);
@@ -270,10 +272,10 @@ public class math_FunctionRootsTest
         // Test constant zero function (all null)
         ConstantZeroFunctionImpl aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, -2.0, 2.0, 10, 1.0e-10, 1.0e-10, 1.0e-6);
+        FunctionRoots aRootFinder = new(aFunc, -2.0, 2.0, 10, 1.0e-10, 1.0e-10, 1.0e-6);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.True(aRootFinder.IsAllNull());
+        Assert.True(aRootFinder.IsDone);
+        Assert.True(aRootFinder.IsAllNull);
     }
 
     [Fact]
@@ -282,11 +284,11 @@ public class math_FunctionRootsTest
         // Test function with no real roots
         NoRootsFunctionImpl aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
-        Assert.Equal(0, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
+        Assert.Equal(0, aRootFinder.SolutionCount);
     }
 
     [Fact]
@@ -295,15 +297,15 @@ public class math_FunctionRootsTest
         // Test finding four roots of quartic function
         QuarticWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, 0.0, 5.0, 40, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 0.0, 5.0, 40, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.False(aRootFinder.IsAllNull());
-        Assert.Equal(4, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.False(aRootFinder.IsAllNull);
+        Assert.Equal(4, aRootFinder.SolutionCount);
 
         // Check roots are approximately 1, 2, 3, 4
         List<double> aRoots = [];
-        for (int i = 1; i <= aRootFinder.NbSolutions(); ++i)
+        for (int i = 1; i <= aRootFinder.SolutionCount; ++i)
         {
             aRoots.Add(aRootFinder.Value(i));
         }
@@ -322,16 +324,16 @@ public class math_FunctionRootsTest
         QuadraticWithDerivative aFunc = new();
 
         // Loose tolerances
-        math_FunctionRoots aRootFinder1 = new(aFunc, -5.0, 5.0, 20, 1.0e-3, 1.0e-3);
+        FunctionRoots aRootFinder1 = new(aFunc, -5.0, 5.0, 20, 1.0e-3, 1.0e-3);
 
-        Assert.True(aRootFinder1.IsDone());
-        Assert.Equal(2, aRootFinder1.NbSolutions());
+        Assert.True(aRootFinder1.IsDone);
+        Assert.Equal(2, aRootFinder1.SolutionCount);
 
         // Tight tolerances
-        math_FunctionRoots aRootFinder2 = new(aFunc, -5.0, 5.0, 20, 1.0e-12, 1.0e-12);
+        FunctionRoots aRootFinder2 = new(aFunc, -5.0, 5.0, 20, 1.0e-12, 1.0e-12);
 
-        Assert.True(aRootFinder2.IsDone());
-        Assert.Equal(2, aRootFinder2.NbSolutions());
+        Assert.True(aRootFinder2.IsDone);
+        Assert.Equal(2, aRootFinder2.SolutionCount);
     }
 
     [Fact]
@@ -341,16 +343,16 @@ public class math_FunctionRootsTest
         CubicWithDerivative aFunc = new();
 
         // Few samples
-        math_FunctionRoots aRootFinder1 = new(aFunc, 0.0, 4.0, 5, 1.0e-8, 1.0e-8);
+        FunctionRoots aRootFinder1 = new(aFunc, 0.0, 4.0, 5, 1.0e-8, 1.0e-8);
 
-        Assert.True(aRootFinder1.IsDone());
-        Assert.True(aRootFinder1.NbSolutions() >= 1);
+        Assert.True(aRootFinder1.IsDone);
+        Assert.True(aRootFinder1.SolutionCount >= 1);
 
         // Many samples
-        math_FunctionRoots aRootFinder2 = new(aFunc, 0.0, 4.0, 100, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder2 = new(aFunc, 0.0, 4.0, 100, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder2.IsDone());
-        Assert.Equal(3, aRootFinder2.NbSolutions());
+        Assert.True(aRootFinder2.IsDone);
+        Assert.Equal(3, aRootFinder2.SolutionCount);
     }
 
     [Fact]
@@ -359,25 +361,25 @@ public class math_FunctionRootsTest
         // Test state number access for roots
         QuadraticWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.Equal(2, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.Equal(2, aRootFinder.SolutionCount);
 
         // Test valid state number access
-        if (aRootFinder.NbSolutions() >= 1)
+        if (aRootFinder.SolutionCount >= 1)
         {
             int aState1 = aRootFinder.StateNumber(1);
             Assert.True(aState1 >= 0);
         }
-        if (aRootFinder.NbSolutions() >= 2)
+        if (aRootFinder.SolutionCount >= 2)
         {
             int aState2 = aRootFinder.StateNumber(2);
             Assert.True(aState2 >= 0);
         }
 
         // Test bounds checking in release builds
-        Assert.True(aRootFinder.NbSolutions() >= 0);
+        Assert.True(aRootFinder.SolutionCount >= 0);
     }
 
     [Fact]
@@ -387,10 +389,10 @@ public class math_FunctionRootsTest
         QuadraticWithDerivative aFunc = new(); // f(x) = x^2 - 4
 
         // Find roots of f(x) - (-4) = 0, i.e., x^2 = 0, so x = 0
-        math_FunctionRoots aRootFinder = new(aFunc, -2.0, 2.0, 20, 1.0e-10, 1.0e-10, 0.0, -4.0);
+        FunctionRoots aRootFinder = new(aFunc, -2.0, 2.0, 20, 1.0e-10, 1.0e-10, 0.0, -4.0);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.Equal(1, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.Equal(1, aRootFinder.SolutionCount);
 
         double aRoot = aRootFinder.Value(1);
         Assert.Equal(0.0, aRoot, 1.0e-8);
@@ -406,14 +408,14 @@ public class math_FunctionRootsTest
         // so we test exception handling conceptually
 
         QuadraticWithDerivative aFunc = new();
-        math_FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, -5.0, 5.0, 20, 1.0e-10, 1.0e-10);
 
         // These should work since computation is done in constructor
-        Assert.True(aRootFinder.IsDone());
-        { aRootFinder.IsAllNull(); };
-        { aRootFinder.NbSolutions(); };
+        Assert.True(aRootFinder.IsDone);
+        { _ = aRootFinder.IsAllNull; };
+        { _ = aRootFinder.SolutionCount; };
 
-        if (aRootFinder.NbSolutions() > 0)
+        if (aRootFinder.SolutionCount > 0)
         {
             { aRootFinder.Value(1); };
         }
@@ -426,10 +428,10 @@ public class math_FunctionRootsTest
         LinearWithDerivative aFunc = new();
 
         // Search in narrow range around the root
-        math_FunctionRoots aRootFinder = new(aFunc, 1.9, 2.1, 10, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 1.9, 2.1, 10, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.Equal(1, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.Equal(1, aRootFinder.SolutionCount);
 
         double aRoot = aRootFinder.Value(1);
         Assert.Equal(2.0, aRoot, 1.0e-8);
@@ -442,16 +444,16 @@ public class math_FunctionRootsTest
         LinearWithDerivative aFunc = new(); // Root at x = 2
 
         // Search range includes root at left boundary
-        math_FunctionRoots aRootFinder1 = new(aFunc, 2.0, 4.0, 10, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder1 = new(aFunc, 2.0, 4.0, 10, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder1.IsDone());
-        Assert.Equal(1, aRootFinder1.NbSolutions());
+        Assert.True(aRootFinder1.IsDone);
+        Assert.Equal(1, aRootFinder1.SolutionCount);
 
         // Search range includes root at right boundary
-        math_FunctionRoots aRootFinder2 = new(aFunc, 0.0, 2.0, 10, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder2 = new(aFunc, 0.0, 2.0, 10, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder2.IsDone());
-        Assert.Equal(1, aRootFinder2.NbSolutions());
+        Assert.True(aRootFinder2.IsDone);
+        Assert.Equal(1, aRootFinder2.SolutionCount);
     }
 
     [Fact]
@@ -460,9 +462,9 @@ public class math_FunctionRootsTest
         // Test with reversed range (B < A)
         QuadraticWithDerivative aFunc = new();
 
-        math_FunctionRoots aRootFinder = new(aFunc, 5.0, -5.0, 20, 1.0e-10, 1.0e-10);
+        FunctionRoots aRootFinder = new(aFunc, 5.0, -5.0, 20, 1.0e-10, 1.0e-10);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.Equal(2, aRootFinder.NbSolutions());
+        Assert.True(aRootFinder.IsDone);
+        Assert.Equal(2, aRootFinder.SolutionCount);
     }
 }

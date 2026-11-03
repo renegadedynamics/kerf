@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// A working object (decision 21). The surface given is not copied (OCCT's isn't); the patches are segments or
 /// trimmed copies of it, or the surface itself when nothing is cut.
 /// </remarks>
-public class ShapeUpgrade_SplitSurface : Standard_Transient
+public class ShapeUpgrade_SplitSurface : Transient
 {
     /// <summary>The U splitting values, the first and last included.</summary>
     protected NCollection_HSequence<double>? myUSplitValues;
@@ -85,7 +86,7 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
         myArea = theArea;
 
         mySurface.Bounds(out double U1, out double U2, out double V1, out double V2);
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         if (mySurface.IsUPeriodic() && ULast - UFirst <= U2 - U1 + precision)
         {
             U1 = UFirst;
@@ -161,7 +162,7 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
         {
             return;
         }
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double UFirst = myUSplitValues!.Value(1), ULast = myUSplitValues.Value(myUSplitValues.Length());
         int i = 1;
         int len = UValues.Length();
@@ -192,7 +193,7 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
         {
             return;
         }
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double VFirst = myVSplitValues!.Value(1), VLast = myVSplitValues.Value(myVSplitValues.Length());
         int i = 1;
         int len = VValues.Length();
@@ -419,10 +420,10 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
         {
             mySurface.Bounds(out U1, out U2, out V1, out V2);
             bool filled = true;
-            if (Math.Abs(U1 - UFirst) < Occt.Precision.PConfusion()
-                && Math.Abs(U2 - ULast) < Occt.Precision.PConfusion()
-                && Math.Abs(V1 - VFirst) < Occt.Precision.PConfusion()
-                && Math.Abs(V2 - VLast) < Occt.Precision.PConfusion())
+            if (Math.Abs(U1 - UFirst) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(U2 - ULast) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(V1 - VFirst) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(V2 - VLast) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 SurfacesGrid.SetValue(1, 1, mySurface);
             }
@@ -456,11 +457,11 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
                 double spval = myUSplitValues.Value(ii);
                 for (; j <= LastInd; j++)
                 {
-                    if (spval > BsSurface.UKnot(j) + Occt.Precision.PConfusion())
+                    if (spval > BsSurface.UKnot(j) + Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
-                    if (spval < BsSurface.UKnot(j) - Occt.Precision.PConfusion())
+                    if (spval < BsSurface.UKnot(j) - Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         break;
                     }
@@ -479,11 +480,11 @@ public class ShapeUpgrade_SplitSurface : Standard_Transient
                 double spval = myVSplitValues.Value(ii1);
                 for (; j <= LastInd; j++)
                 {
-                    if (spval > BsSurface.VKnot(j) + Occt.Precision.PConfusion())
+                    if (spval > BsSurface.VKnot(j) + Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
-                    if (spval < BsSurface.VKnot(j) - Occt.Precision.PConfusion())
+                    if (spval < BsSurface.VKnot(j) - Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         break;
                     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -7,7 +8,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>GccEnt: the qualifiers' names and the qualified lines and circles.</summary>
 public class GccEntTests
 {
-    private static readonly gp_Dir2d DX = new(gp_Dir2d.D.X);
+    private static readonly Direction2D DX = new(Direction2D.D.X);
 
     [Theory]
     [InlineData(GccEnt_unqualified, "UNQUALIFIED")]
@@ -39,7 +40,7 @@ public class GccEntTests
     [Fact]
     public void QualifiedCirc()
     {
-        gp_Circ2d aC = new(new gp_Ax2d(new gp_Pnt2d(1, 2), DX), 3);
+        Circle2D aC = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Assert.True(GccEnt.Unqualified(aC).IsUnqualified());
         Assert.True(GccEnt.Enclosing(aC).IsEnclosing());
         Assert.True(GccEnt.Enclosed(aC).IsEnclosed());
@@ -57,7 +58,7 @@ public class GccEntTests
     [Fact]
     public void QualifiedLin()
     {
-        gp_Lin2d aL = new(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 1));
+        Line2D aL = new(new Point2D(1, 2), new Direction2D(1, 1));
         Assert.True(GccEnt.Unqualified(aL).IsUnqualified());
         Assert.True(GccEnt.Enclosed(aL).IsEnclosed());
         Assert.True(GccEnt.Outside(aL).IsOutside());

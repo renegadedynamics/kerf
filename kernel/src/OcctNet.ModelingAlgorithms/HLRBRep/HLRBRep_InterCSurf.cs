@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +17,7 @@ namespace Occt;
 /// working object: <c>Perform</c> can be called again. The surface is kept only during <c>Perform</c>. Generated from IntCurveSurface_HInter by substituting the curve, the surface and their tools (decision 1091).
 /// </remarks>
 public sealed class HLRBRep_InterCSurf
-    : IntCurveSurface_Inter<gp_Lin, HLRBRep_LineTool, HLRBRep_Surface,
+    : IntCurveSurface_Inter<Line3D, HLRBRep_LineTool, HLRBRep_Surface,
                             HLRBRep_SurfaceTool, HLRBRep_ThePolygonOfInterCSurf,
                             HLRBRep_ThePolyhedronOfInterCSurf, HLRBRep_TheInterferenceOfInterCSurf,
                             HLRBRep_TheCSFunctionOfInterCSurf, HLRBRep_TheExactInterCSurf,

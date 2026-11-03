@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -95,7 +98,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
     }
 
     /// <summary>Performs the removal of the requested faces from the input shape.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         try
         {
@@ -110,7 +113,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
             {
                 return;
             }
-            using var aPS = new Message_ProgressScope(theRange, "Removing features", 100);
+            using var aPS = new ProgressScope(theRange, "Removing features", 100);
             BOPAlgo_PISteps aSteps = new((int)BOPAlgo_PIOperation.PIOperation_Last);
             analyzeProgress(100.0, aSteps);
 
@@ -143,7 +146,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
             // Post treatment
             PostTreat();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertRemoveFeaturesFailed());
         }
@@ -236,7 +239,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
     }
 
     /// <summary>Prepares the features: the faces to remove that belong to the input, in connected blocks.</summary>
-    protected void PrepareFeatures(Message_ProgressRange theRange)
+    protected void PrepareFeatures(ProgressRange theRange)
     {
         // Map all sub-shapes of the input solids
         TopExp.MapShapes(myInputShape, myInputsMap);
@@ -244,8 +247,8 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         // Collect all faces of the input shape requested for removal
         NCollection_List<TopoDS_Shape> aFacesToRemove = new();
         NCollection_List<TopoDS_Shape>.Iterator aIt = new(myFacesToRemove);
-        using var aPSOuter = new Message_ProgressScope(theRange, "Preparing features", 2);
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Preparing the faces to remove", myFacesToRemove.Extent());
+        using var aPSOuter = new ProgressScope(theRange, "Preparing features", 2);
+        using var aPS = new ProgressScope(aPSOuter.Next(), "Preparing the faces to remove", myFacesToRemove.Extent());
         for (; aIt.More(); aIt.Next(), aPS.Next())
         {
             TopoDS_Shape aS = aIt.Value();
@@ -296,7 +299,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         private TopoDS_Shape myFeature = new();                                       //!< Feature to remove
         private NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>? myEFMap; //!< EF Connection map to find adjacent faces
         private NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>? myFSMap; //!< FS Connection map to find solids participating in the feature removal
-        private Message_ProgressRange myRange;                                        //!< Indication of progress
+        private ProgressRange myRange;                                        //!< Indication of progress
 
         // Results
         private readonly NCollection_Map<TopoDS_Shape> myFeatureFacesMap = new(TopTools_ShapeMapHasher.Instance); //!< Faces of the feature
@@ -323,14 +326,14 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
 
         public BRepTools_History? History() => myHistory;
 
-        public void SetRange(Message_ProgressRange theRange) => myRange = theRange;
+        public void SetRange(ProgressRange theRange) => myRange = theRange;
 
         /// <summary>Extends the adjacent faces, then trims the extended faces to fill the gap.</summary>
         public void Perform()
         {
             try
             {
-                using var aPS = new Message_ProgressScope(myRange, null, 3);
+                using var aPS = new ProgressScope(myRange, null, 3);
 
                 myHistory = new BRepTools_History();
 
@@ -359,7 +362,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
                 // Trim the extended faces
                 TrimExtendedFaces(aFaceExtFaceMap, aPS.Next());
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // Make sure the warning will be given on the higher level
                 myHasAdjacentFaces = true;
@@ -376,7 +379,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         public NCollection_IndexedMap<TopoDS_Shape> Solids() => mySolids;
 
         // Finds the faces adjacent to the feature and stores them into outgoing map.
-        private void FindAdjacentFaces(NCollection_IndexedMap<TopoDS_Shape> theMFAdjacent, Message_ProgressRange theRange)
+        private void FindAdjacentFaces(NCollection_IndexedMap<TopoDS_Shape> theMFAdjacent, ProgressRange theRange)
         {
             // Map the faces of the feature to avoid them in the map of adjacent faces
             TopoDS_Iterator aIt = new(myFeature);
@@ -384,10 +387,10 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
             {
                 myFeatureFacesMap.Add(aIt.Value());
             }
-            using var aPSOuter = new Message_ProgressScope(theRange, null, 2);
+            using var aPSOuter = new ProgressScope(theRange, null, 2);
             // Find faces adjacent to the feature using the connection map
             aIt.Initialize(myFeature);
-            using var aPSF = new Message_ProgressScope(aPSOuter.Next(), "Looking for adjacent faces", 1, true);
+            using var aPSF = new ProgressScope(aPSOuter.Next(), "Looking for adjacent faces", 1, true);
             for (; aIt.More(); aIt.Next(), aPSF.Next())
             {
                 if (!aPSF.More())
@@ -425,7 +428,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
 
             // Find solids containing the edges of adjacent faces
             int aNbFA = theMFAdjacent.Extent();
-            using var aPSS = new Message_ProgressScope(aPSOuter.Next(), "Looking for adjacent solids", aNbFA);
+            using var aPSS = new ProgressScope(aPSOuter.Next(), "Looking for adjacent solids", aNbFA);
             for (int i = 1; i <= aNbFA; ++i, aPSS.Next())
             {
                 if (!aPSS.More())
@@ -459,16 +462,16 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         // Extends the found adjacent faces and binds them to the original faces.
         private void ExtendAdjacentFaces(NCollection_IndexedMap<TopoDS_Shape> theMFAdjacent,
                                          NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> theFaceExtFaceMap,
-                                         Message_ProgressRange theRange)
+                                         ProgressRange theRange)
         {
             // Get the extension value for the faces - half of the diagonal of bounding box of the feature
-            Bnd_Box aFeatureBox = new();
+            Box aFeatureBox = new();
             BRepBndLib.Add(myFeature, ref aFeatureBox);
 
             double anExtLength = Math.Sqrt(aFeatureBox.SquareExtent());
 
             int aNbFA = theMFAdjacent.Extent();
-            using var aPS = new Message_ProgressScope(theRange, "Extending adjacent faces", aNbFA);
+            using var aPS = new ProgressScope(theRange, "Extending adjacent faces", aNbFA);
             for (int i = 1; i <= aNbFA && aPS.More(); ++i, aPS.Next())
             {
                 TopoDS_Face aF = TopoDS.Face(theMFAdjacent.FindKey(i));
@@ -482,7 +485,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         // Trims the extended adjacent faces by intersection with each other
         // and following intersection with the bounds of original faces.
         private void TrimExtendedFaces(NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> theFaceExtFaceMap,
-                                       Message_ProgressRange theRange)
+                                       ProgressRange theRange)
         {
             // Intersect the extended faces first
             BOPAlgo_Builder aGFInter = new();
@@ -497,7 +500,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
 
             // Intersection result
             TopoDS_Shape anIntResult;
-            using var aPSOuter = new Message_ProgressScope(theRange, null, (aGFInter.Arguments().Extent() > 1) ? 2 : 1);
+            using var aPSOuter = new ProgressScope(theRange, null, (aGFInter.Arguments().Extent() > 1) ? 2 : 1);
             if (aGFInter.Arguments().Extent() > 1)
             {
                 aGFInter.Perform(aPSOuter.Next());
@@ -527,7 +530,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
             NCollection_IndexedMap<TopoDS_Shape> aFeatureEdgesMap = new(TopTools_ShapeMapHasher.Instance);
             TopExp.MapShapes(myFeature, TopAbs_EDGE, aFeatureEdgesMap);
 
-            using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Trimming faces", aNbF);
+            using var aPS = new ProgressScope(aPSOuter.Next(), "Trimming faces", aNbF);
             for (int i = 1; i <= aNbF && aPS.More(); ++i, aPS.Next())
             {
                 TopoDS_Face aFOriginal = TopoDS.Face(theFaceExtFaceMap.FindKey(i));
@@ -748,7 +751,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
     /// <summary>
     /// Removes the features one by one, filling each gap by extension of the adjacent faces.
     /// </summary>
-    protected void RemoveFeatures(Message_ProgressRange theRange)
+    protected void RemoveFeatures(ProgressRange theRange)
     {
         // For each feature:
         // - Find the faces adjacent to the feature;
@@ -757,7 +760,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         // - Rebuild the solids with reconstructed adjacent faces
         //   and avoiding the feature faces.
 
-        using var aPSOuter = new Message_ProgressScope(theRange, "Removing features", 2);
+        using var aPSOuter = new ProgressScope(theRange, "Removing features", 2);
 
         // Make Edge-Face connection map of the input
         // shape to find faces adjacent to the feature
@@ -785,7 +788,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         }
 
         int aNbF = aVFG.Length();
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), "Filling gaps", aNbF);
+        using var aPS = new ProgressScope(aPSOuter.Next(), "Filling gaps", aNbF);
         for (int i = 0; i < aNbF; ++i)
         {
             FillGap aFG = aVFG.Value(i);
@@ -807,7 +810,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         // Remove the features one by one.
         // It will allow removing the features even if there were
         // some problems with removal of the previous features.
-        using var aPSLoop = new Message_ProgressScope(aPSOuter.Next(), "Removing features one by one", aNbF);
+        using var aPSLoop = new ProgressScope(aPSOuter.Next(), "Removing features one by one", aNbF);
         for (int i = 0; i < aNbF; ++i)
         {
             if (UserBreak(aPSLoop))
@@ -848,7 +851,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
                                  NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theAdjFaces,
                                  BRepTools_History? theAdjFacesHistory,
                                  bool theSolidsHistoryNeeded,
-                                 Message_ProgressRange theRange)
+                                 ProgressRange theRange)
     {
         bool bFuseShapes = true;
         int aNbAF = theAdjFaces.Extent();
@@ -869,7 +872,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
             bFuseShapes = false;
         }
 
-        using var aPS = new Message_ProgressScope(theRange, null, 100);
+        using var aPS = new ProgressScope(theRange, null, 100);
         // Rebuild the shape using MakerVolume algorithm avoiding the faces of the
         // feature and replacing the adjacent faces with their images
 
@@ -1122,7 +1125,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
     }
 
     /// <summary>Updates the history with the removed features.</summary>
-    protected void UpdateHistory(Message_ProgressRange theRange)
+    protected void UpdateHistory(ProgressRange theRange)
     {
         if (!HasHistory())
         {
@@ -1137,7 +1140,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         BRepTools_History aHistory = new();
 
         int aNbS = myInputsMap.Extent();
-        using var aPS = new Message_ProgressScope(theRange, "Updating history", aNbS);
+        using var aPS = new ProgressScope(theRange, "Updating history", aNbS);
         for (int i = 1; i <= aNbS; ++i, aPS.Next())
         {
             TopoDS_Shape aS = myInputsMap.FindKey(i);
@@ -1178,13 +1181,13 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
     }
 
     /// <summary>Simplifies the result, removing the extra edges and vertices created by the operation.</summary>
-    protected void SimplifyResult(Message_ProgressRange theRange)
+    protected void SimplifyResult(ProgressRange theRange)
     {
         if (myShape.IsSame(myInputShape))
         {
             return;
         }
-        using var aPSOuter = new Message_ProgressScope(theRange, "Simplifyingthe result", 2);
+        using var aPSOuter = new ProgressScope(theRange, "Simplifyingthe result", 2);
         ShapeUpgrade_UnifySameDomain aSDTool = new();
         aSDTool.Initialize(myShape, true, true);
         // Do not allow producing internal edges
@@ -1196,7 +1199,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         }
 
         int aNbS = myInputsMap.Extent();
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(), null, aNbS);
+        using var aPS = new ProgressScope(aPSOuter.Next(), null, aNbS);
         for (int i = 1; i <= aNbS; ++i, aPS.Next())
         {
             if (UserBreak(aPS))
@@ -1335,7 +1338,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
                 FindInternals(aF, aLWToRemove);
                 if (aLWToRemove.Extent() != 0)
                 {
-                    if (aF.TShape()!.IsFrozen())
+                    if (aF.TShape()!.IsFrozen)
                     {
                         if (aCopies.IsBound(aF))
                         {
@@ -1418,7 +1421,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
                 aChild = WithTShape(aChild, aCopy);
                 aChanged = true;
             }
-            else if (!aChild.TShape()!.IsFrozen() && ReplaceFaces(aChild, theCopies))
+            else if (!aChild.TShape()!.IsFrozen && ReplaceFaces(aChild, theCopies))
             {
                 aChanged = true;
             }
@@ -1430,7 +1433,7 @@ public class BOPAlgo_RemoveFeatures : BOPAlgo_BuilderShape
         }
         // Rebuild the container's list in its order (TShape-relative children: no location or orientation composed)
         TopoDS_Shape aBare = theShape;
-        aBare.Location(new TopLoc_Location(), false);
+        aBare.Location(new Placement(), false);
         aBare.Orientation(TopAbs_FORWARD);
         bool aFree = aBare.Free();
         aBare.Free(true);

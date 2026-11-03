@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -26,14 +27,14 @@ public static class BRepGProp_EdgeTool
     {
         switch (BAC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return 2;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 return 5;
 
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
+            case BezierCurve:
+            case BSplineCurve:
             {
                 // Use the adaptor's own NbPoles(), which handles the curve-on-surface case;
                 // Curve() is null there and down-casting it segfaults.
@@ -47,14 +48,14 @@ public static class BRepGProp_EdgeTool
     }
 
     /// <summary>The point of parameter U.</summary>
-    public static gp_Pnt Value(BRepAdaptor_Curve C, double U) => C.Value(U);
+    public static Point3D Value(BRepAdaptor_Curve C, double U) => C.Value(U);
 
     /// <summary>The point of parameter U and the first derivative there.</summary>
-    public static void D1(BRepAdaptor_Curve C, double U, out gp_Pnt P, out gp_Vec V1) => C.D1(U, out P, out V1);
+    public static void D1(BRepAdaptor_Curve C, double U, out Point3D P, out Vector3D V1) => C.D1(U, out P, out V1);
 
     /// <summary>The number of intervals of continuity <paramref name="S"/>.</summary>
-    public static int NbIntervals(BRepAdaptor_Curve C, GeomAbs_Shape S) => C.NbIntervals(S);
+    public static int NbIntervals(BRepAdaptor_Curve C, Continuity S) => C.NbIntervals(S);
 
     /// <summary>The parameters bounding the intervals of continuity <paramref name="S"/> (T.Length() > NbIntervals).</summary>
-    public static void Intervals(BRepAdaptor_Curve C, NCollection_Array1<double> T, GeomAbs_Shape S) => C.Intervals(T, S);
+    public static void Intervals(BRepAdaptor_Curve C, NCollection_Array1<double> T, Continuity S) => C.Intervals(T, S);
 }

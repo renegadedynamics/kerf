@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,12 +19,12 @@ namespace Occt;
 /// <remarks>
 /// OCCT keeps pointers to the surfaces; the port keeps the adaptors, which must outlive the function.
 /// </remarks>
-public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
+public class Extrema_FuncExtSS : FunctionSetWithDerivatives
 {
     private Adaptor3d_Surface? myS1;
     private Adaptor3d_Surface? myS2;
-    private gp_Pnt myP1 = new();
-    private gp_Pnt myP2 = new();
+    private Point3D myP1 = new();
+    private Point3D myP2 = new();
     private double myU1;
     private double myV1;
     private double myU2;
@@ -74,16 +80,16 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         myU1 = UV[1];
         myV1 = UV[2];
         myU2 = UV[3];
         myV2 = UV[4];
-        myS1!.D1(myU1, myV1, out myP1, out gp_Vec Du1s1, out gp_Vec Dv1s1);
-        myS2!.D1(myU2, myV2, out myP2, out gp_Vec Du2s2, out gp_Vec Dv2s2);
+        myS1!.D1(myU1, myV1, out myP1, out Vector3D Du1s1, out Vector3D Dv1s1);
+        myS2!.D1(myU2, myV2, out myP2, out Vector3D Du2s2, out Vector3D Dv2s2);
 
-        gp_Vec P1P2 = new(myP2, myP1);
+        Vector3D P1P2 = new(myP2, myP1);
 
         F[1] = P1P2.Dot(Du1s1);
         F[2] = P1P2.Dot(Dv1s1);
@@ -94,29 +100,29 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     }
 
     /// <summary>Calculates Fi'(U1, V1, U2, V2).</summary>
-    public override bool Derivatives(math_Vector UV, math_Matrix Df)
+    public override bool Derivatives(math_Vector UV, Matrix Df)
     {
         math_Vector F = new(1, 4);
         return Values(UV, F, Df);
     }
 
     /// <summary>Calculates Fi(U1, V1, U2, V2) and Fi'(U1, V1, U2, V2).</summary>
-    public override bool Values(math_Vector UV, math_Vector F, math_Matrix Df)
+    public override bool Values(math_Vector UV, math_Vector F, Matrix Df)
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         myU1 = UV[1];
         myV1 = UV[2];
         myU2 = UV[3];
         myV2 = UV[4];
-        myS1!.D2(myU1, myV1, out myP1, out gp_Vec Du1s1, out gp_Vec Dv1s1, out gp_Vec Du1u1s1, out gp_Vec Dv1v1s1,
-            out gp_Vec Du1v1s1);
-        myS2!.D2(myU2, myV2, out myP2, out gp_Vec Du2s2, out gp_Vec Dv2s2, out gp_Vec Du2u2s2, out gp_Vec Dv2v2s2,
-            out gp_Vec Du2v2s2);
+        myS1!.D2(myU1, myV1, out myP1, out Vector3D Du1s1, out Vector3D Dv1s1, out Vector3D Du1u1s1, out Vector3D Dv1v1s1,
+            out Vector3D Du1v1s1);
+        myS2!.D2(myU2, myV2, out myP2, out Vector3D Du2s2, out Vector3D Dv2s2, out Vector3D Du2u2s2, out Vector3D Dv2v2s2,
+            out Vector3D Du2v2s2);
 
-        gp_Vec P1P2 = new(myP2, myP1);
+        Vector3D P1P2 = new(myP2, myP1);
 
         F[1] = P1P2.Dot(Du1s1);
         F[2] = P1P2.Dot(Dv1s1);
@@ -151,7 +157,7 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
 
         mySqDist.Append(myP1.SquareDistance(myP2));
@@ -168,7 +174,7 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return mySqDist.Value(N);
     }
@@ -178,7 +184,7 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint1.Value(N);
     }
@@ -188,7 +194,7 @@ public class Extrema_FuncExtSS : math_FunctionSetWithDerivatives
     {
         if (!myS1init || !myS2init)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint2.Value(N);
     }

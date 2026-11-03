@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceElementProperty
 /// </summary>
-public class StepElement_SurfaceElementProperty : Standard_Transient
+public class StepElement_SurfaceElementProperty : Transient
 {
     private TCollection_HAsciiString thePropertyId;
     private TCollection_HAsciiString theDescription;

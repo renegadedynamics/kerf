@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>Stores the "gradient of gradient": a three-index array of reals, indices from 1.</summary>
@@ -42,7 +44,7 @@ public sealed class GeomFill_Tensor
 
     public ref double this[int Row, int Col, int Mat] => ref ChangeValue(Row, Col, Mat);
 
-    public void Multiply(math_Vector Right, math_Matrix M)
+    public void Multiply(math_Vector Right, Matrix M)
     {
         int i, j, k;
         double Somme;

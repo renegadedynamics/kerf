@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +16,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
 {
     private StepGeom_Axis2Placement3d theAxis2Placement3d;
 
-    private static StepGeom_Axis2Placement3d MakeAxis2Placement3d(in gp_Pnt O, in gp_Dir D, in gp_Dir X, string nom, double aFactor)
+    private static StepGeom_Axis2Placement3d MakeAxis2Placement3d(in Point3D O, in Direction3D D, in Direction3D X, string nom, double aFactor)
     {
         StepGeom_Axis2Placement3d Axe;
         StepGeom_CartesianPoint P;
@@ -44,7 +46,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     /// <summary>The global coordinate system.</summary>
     public GeomToStep_MakeAxis2Placement3d(in StepData_Factors theLocalFactors)
     {
-        gp_Ax2 A = new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D A = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         //   le reste inchange
 
         StepGeom_Axis2Placement3d Axe = MakeAxis2Placement3d(A.Location(), A.Direction(), A.XDirection(), "", theLocalFactors.LengthFactor());
@@ -62,7 +64,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     //=============================================================================
 
     /// <summary>An Ax2, its location divided by the length factor.</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Ax2 A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement3d(in Frame3D A, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement3d Axe = MakeAxis2Placement3d(A.Location(), A.Direction(), A.XDirection(), "", theLocalFactors.LengthFactor());
         theAxis2Placement3d = Axe;
@@ -70,7 +72,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     }
 
     /// <summary>An Ax2 (default factors).</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Ax2 A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement3d(in Frame3D A) : this(A, new StepData_Factors())
     {
     }
 
@@ -79,7 +81,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     //=============================================================================
 
     /// <summary>An Ax3 (direct or not), its location divided by the length factor.</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Ax3 A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement3d(in CoordinateSystem A, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement3d Axe = MakeAxis2Placement3d(A.Location(), A.Direction(), A.XDirection(), "", theLocalFactors.LengthFactor());
         theAxis2Placement3d = Axe;
@@ -87,7 +89,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     }
 
     /// <summary>An Ax3 (default factors).</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Ax3 A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement3d(in CoordinateSystem A) : this(A, new StepData_Factors())
     {
     }
 
@@ -96,9 +98,9 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     //=============================================================================
 
     /// <summary>The global coordinate system transformed by <paramref name="T"/>.</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Trsf T, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement3d(in Transform3D T, in StepData_Factors theLocalFactors)
     {
-        gp_Ax2 A = new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D A = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         A.Transform(T);
         //   le reste inchange
 
@@ -108,7 +110,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     }
 
     /// <summary>The global coordinate system transformed (default factors).</summary>
-    public GeomToStep_MakeAxis2Placement3d(in gp_Trsf T) : this(T, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement3d(in Transform3D T) : this(T, new StepData_Factors())
     {
     }
 
@@ -120,7 +122,7 @@ public sealed class GeomToStep_MakeAxis2Placement3d : GeomToStep_Root
     /// <summary>An Axis2Placement, its location divided by the length factor.</summary>
     public GeomToStep_MakeAxis2Placement3d(Geom_Axis2Placement Axis2, in StepData_Factors theLocalFactors)
     {
-        gp_Ax2 A;
+        Frame3D A;
         A = Axis2.Ax2();
 
         StepGeom_Axis2Placement3d Axe = MakeAxis2Placement3d(A.Location(), A.Direction(), A.XDirection(), "", theLocalFactors.LengthFactor());

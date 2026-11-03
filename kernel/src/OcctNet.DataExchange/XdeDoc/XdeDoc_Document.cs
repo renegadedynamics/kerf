@@ -3,6 +3,9 @@
 // so that code ported from STEPCAFControl and the XDE Draw commands can call them in place of the tools'.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -19,11 +22,11 @@ namespace Occt;
 /// The labels are laid out as XCAF's: the shapes under 0:1:1 (top-level shapes, with an assembly's components and a
 /// part's sub-shapes as their children), the layers under 0:1:3. Each method has the name and the behaviour of the
 /// XCAF tool method it replaces (<c>XCAFDoc_ShapeTool</c>: <see cref="AddShape"/>, <see cref="NewShape"/>,
-/// <see cref="AddComponent(in XdeDoc_Label, in XdeDoc_Label, in TopLoc_Location)"/>, <see cref="Search"/>,
+/// <see cref="AddComponent(in XdeDoc_Label, in XdeDoc_Label, in Placement)"/>, <see cref="Search"/>,
 /// <see cref="SearchUsingMap"/>, <see cref="FindShape(in TopoDS_Shape, out XdeDoc_Label, bool)"/>,
 /// <see cref="AddSubShape(in XdeDoc_Label, in TopoDS_Shape)"/>, <see cref="GetFreeShapes"/>, <see cref="GetComponents"/>,
 /// <see cref="GetReferredShape"/>, <see cref="GetLocation"/>, the <c>Is...</c> tests...; <c>XCAFDoc_ColorTool</c>:
-/// <see cref="SetColor(in XdeDoc_Label, in Quantity_ColorRGBA, XdeDoc_ColorType)"/>, <see cref="GetColor(in XdeDoc_Label, XdeDoc_ColorType, out Quantity_ColorRGBA)"/>,
+/// <see cref="SetColor(in XdeDoc_Label, in ColorWithAlpha, XdeDoc_ColorType)"/>, <see cref="GetColor(in XdeDoc_Label, XdeDoc_ColorType, out ColorWithAlpha)"/>,
 /// <see cref="SetVisibility"/>, <see cref="IsVisible"/>; <c>XCAFDoc_LayerTool</c>: <see cref="AddLayer(string)"/>,
 /// <see cref="SetLayer(in XdeDoc_Label, in XdeDoc_Label, bool)"/>, <see cref="GetLayers(in XdeDoc_Label, NCollection_Sequence{string})"/>...;
 /// <c>TDataStd_Name</c>: <see cref="SetName"/>, <see cref="GetName"/>; the validation properties
@@ -54,7 +57,7 @@ public sealed class XdeDoc_Document
         public bool IsAssembly;
         public bool IsDirty;                 // an assembly whose compound must be remade from its components
         public int Referred = -1;            // a reference's referred label
-        public TopLoc_Location RefLocation;  // and its location
+        public Placement RefLocation;  // and its location
         public readonly List<int> Users = []; // the references to this label, in order
 
         public XdeDoc_Attributes Attributes = XdeDoc_Attributes.Empty; // all but the layers
@@ -65,7 +68,7 @@ public sealed class XdeDoc_Document
         public NCollection_IndexedMap<TopoDS_Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
         public Dictionary<TopoDS_Shape, int>? SubShapeLabels;      // sub-shape children by shape
 
-        public Quantity_ColorRGBA? Color;    // a colour label's colour (XCAFDoc_Color)
+        public ColorWithAlpha? Color;    // a colour label's colour (XCAFDoc_Color)
         public int[]? ColorRefs;             // a shape label's colour labels, by XdeDoc_ColorType (-1: none)
     }
 
@@ -326,7 +329,7 @@ public sealed class XdeDoc_Document
         if (aNode.Referred >= 0)
         {
             TopoDS_Shape aReferred = getShape(aNode.Referred, theDepth + 1);
-            return aReferred.IsNull() || aNode.RefLocation.IsIdentity() ? aReferred : aReferred.Moved(aNode.RefLocation);
+            return aReferred.IsNull() || aNode.RefLocation.IsIdentity ? aReferred : aReferred.Moved(aNode.RefLocation);
         }
         if (aNode.IsAssembly && aNode.IsDirty)
         {
@@ -399,7 +402,7 @@ public sealed class XdeDoc_Document
         {
             return false;
         }
-        TopoDS_Shape aS0 = findInstance ? theShape : theShape.Located(new TopLoc_Location());
+        TopoDS_Shape aS0 = findInstance ? theShape : theShape.Located(new Placement());
         if (myTopLevelShapes.TryGetValue(aS0, out int anIndex) && getShape(anIndex).IsSame(aS0))
         {
             theLabel = label(anIndex);
@@ -437,7 +440,7 @@ public sealed class XdeDoc_Document
         {
             return false;
         }
-        if (!theShape.Location().IsIdentity())
+        if (!theShape.Location().IsIdentity)
         {
             if (findInstance && FindShape(theShape, out theLabel, true))
             {
@@ -496,7 +499,7 @@ public sealed class XdeDoc_Document
             theLabel = label(anIndex);
             return true;
         }
-        TopoDS_Shape aS0 = theShape.Located(new TopLoc_Location());
+        TopoDS_Shape aS0 = theShape.Located(new Placement());
         if (myShapeLabels.TryGetValue(aS0, out int anIndex1))
         {
             var aUsers = new NCollection_Sequence<XdeDoc_Label>();
@@ -600,9 +603,9 @@ public sealed class XdeDoc_Document
             return aFound.Index;
         }
         int aShapeIndex = newChild(ShapesIndex);
-        if (!theShape.Location().IsIdentity())
+        if (!theShape.Location().IsIdentity)
         {
-            int aReferred = addShape(theShape.Located(new TopLoc_Location()), makeAssembly);
+            int aReferred = addShape(theShape.Located(new Placement()), makeAssembly);
             makeReference(aShapeIndex, aReferred, theShape.Location());
             return aShapeIndex;
         }
@@ -623,7 +626,7 @@ public sealed class XdeDoc_Document
             for (var anIt = new TopoDS_Iterator(theShape); anIt.More(); anIt.Next())
             {
                 TopoDS_Shape aComp = anIt.Value();
-                int aCompIndex = addShape(aComp.Located(new TopLoc_Location()), makeAssembly);
+                int aCompIndex = addShape(aComp.Located(new Placement()), makeAssembly);
                 int aRef = newChild(aShapeIndex);
                 makeReference(aRef, aCompIndex, aComp.Location());
             }
@@ -642,16 +645,16 @@ public sealed class XdeDoc_Document
             {
                 TopoDS_Shape aSub = aMap.FindKey(i);
                 mySubShapes[aSub] = aShapeIndex;
-                if (!aSub.Location().IsIdentity())
+                if (!aSub.Location().IsIdentity)
                 {
-                    mySubShapes[aSub.Located(new TopLoc_Location())] = aShapeIndex;
+                    mySubShapes[aSub.Located(new Placement())] = aShapeIndex;
                 }
             }
         }
         return aShapeIndex;
     }
 
-    private void makeReference(int theIndex, int theReferred, in TopLoc_Location theLocation, bool theToName = true)
+    private void makeReference(int theIndex, int theReferred, in Placement theLocation, bool theToName = true)
     {
         Node aNode = myNodes[theIndex];
         aNode.Referred = theReferred;
@@ -683,7 +686,7 @@ public sealed class XdeDoc_Document
     /// (<c>XCAFDoc_ShapeTool::AddComponent</c>). The null label if the father is neither, or if the component contains
     /// the assembly (a cycle, which XCAF doesn't check).
     /// </summary>
-    public XdeDoc_Label AddComponent(in XdeDoc_Label theAssembly, in XdeDoc_Label theComponent, in TopLoc_Location theLocation)
+    public XdeDoc_Label AddComponent(in XdeDoc_Label theAssembly, in XdeDoc_Label theComponent, in Placement theLocation)
     {
         int anAssembly = index(theAssembly);
         int aComponent = index(theComponent);
@@ -748,7 +751,7 @@ public sealed class XdeDoc_Document
     /// <summary>Adds the shape at the top level (an assembly if <paramref name="expand"/>) and as a component.</summary>
     public XdeDoc_Label AddComponent(in XdeDoc_Label theAssembly, in TopoDS_Shape theComponent, bool expand = false)
     {
-        XdeDoc_Label aCompLabel = AddShape(theComponent.Located(new TopLoc_Location()), expand);
+        XdeDoc_Label aCompLabel = AddShape(theComponent.Located(new Placement()), expand);
         return AddComponent(theAssembly, aCompLabel, theComponent.Location());
     }
 
@@ -835,10 +838,10 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The label's location: a reference's, or its shape's.</summary>
-    public TopLoc_Location GetLocation(in XdeDoc_Label theLabel)
+    public Placement GetLocation(in XdeDoc_Label theLabel)
     {
         Node aNode = node(theLabel);
-        return aNode.Referred >= 0 ? aNode.RefLocation : aNode.Shape.IsNull() ? new TopLoc_Location() : aNode.Shape.Location();
+        return aNode.Referred >= 0 ? aNode.RefLocation : aNode.Shape.IsNull() ? new Placement() : aNode.Shape.Location();
     }
 
     /// <summary>The label a reference refers to; false if the label isn't a reference.</summary>
@@ -908,8 +911,8 @@ public sealed class XdeDoc_Document
         {
             return false;
         }
-        TopLoc_Location aSupLoc = GetLocation(label(aSuperUserL));
-        TopLoc_Location aCompLoc = GetLocation(label(theUserL));
+        Placement aSupLoc = GetLocation(label(aSuperUserL));
+        Placement aCompLoc = GetLocation(label(theUserL));
         aCompLoc = aCompLoc.Multiplied(theCurSh.Location());
         aSupLoc = aSupLoc.Multiplied(aCompLoc);
         TopoDS_Shape aCopySh = theCurSh.Located(aSupLoc);
@@ -952,7 +955,7 @@ public sealed class XdeDoc_Document
     {
         theLabels.Clear();
         // search for a top-level shape that corresponds to this component
-        TopoDS_Shape S0 = theShape.Located(new TopLoc_Location());
+        TopoDS_Shape S0 = theShape.Located(new Placement());
         XdeDoc_Label aRefL = FindShape(S0);
         if (aRefL.IsNull())
         {
@@ -977,7 +980,7 @@ public sealed class XdeDoc_Document
     /// component found by <see cref="FindComponent"/>. False if there is none, or if the instance is a component of a
     /// sub-assembly placed in an assembly (XCAF's SHUO, which the document hasn't: decision 1278).
     /// </summary>
-    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Quantity_ColorRGBA theColor)
+    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in ColorWithAlpha theColor)
     {
         // find shuo label structure
         var aLabels = new NCollection_Sequence<XdeDoc_Label>();
@@ -995,9 +998,9 @@ public sealed class XdeDoc_Document
         return false;
     }
 
-    /// <summary>As <see cref="SetInstanceColor(in TopoDS_Shape, XdeDoc_ColorType, in Quantity_ColorRGBA)"/>, opaque.</summary>
-    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Quantity_Color theColor)
-        => SetInstanceColor(theShape, theType, new Quantity_ColorRGBA(theColor));
+    /// <summary>As <see cref="SetInstanceColor(in TopoDS_Shape, XdeDoc_ColorType, in ColorWithAlpha)"/>, opaque.</summary>
+    public bool SetInstanceColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, in Color theColor)
+        => SetInstanceColor(theShape, theType, new ColorWithAlpha(theColor));
 
     // ---------------------------------------------------------------------------------------------- labels: OCAF's tree
 
@@ -1105,12 +1108,12 @@ public sealed class XdeDoc_Document
         {
             bool isDefined = false;
             // the sub-shape without its location: take it with its location in the main shape
-            if (theSub.Location().IsIdentity())
+            if (theSub.Location().IsIdentity)
             {
                 for (var anIt = new TopoDS_Iterator(GetShape(theShapeLabel)); anIt.More() && !isDefined; anIt.Next())
                 {
                     TopoDS_Shape aShape = anIt.Value();
-                    if (theSub.IsSame(aShape.Located(new TopLoc_Location())))
+                    if (theSub.IsSame(aShape.Located(new Placement())))
                     {
                         isDefined = true;
                         aSubShape = aShape;
@@ -1217,7 +1220,7 @@ public sealed class XdeDoc_Document
         {
             myNodes[aNode.Referred].Users.Remove(theIndex);
             aNode.Referred = -1;
-            aNode.RefLocation = new TopLoc_Location();
+            aNode.RefLocation = new Placement();
             if (aNode.Father >= 0 && myNodes[aNode.Father].IsAssembly)
             {
                 myNodes[aNode.Father].IsDirty = true;
@@ -1341,10 +1344,10 @@ public sealed class XdeDoc_Document
     public bool IsColor(in XdeDoc_Label theLabel) => isMine(theLabel) && node(theLabel).Color is not null;
 
     /// <summary>The colour of a colour label; false if the label isn't one (<c>XCAFDoc_ColorTool::GetColor(lab, col)</c>).</summary>
-    public bool GetColor(in XdeDoc_Label theColorLabel, out Quantity_ColorRGBA theColor)
+    public bool GetColor(in XdeDoc_Label theColorLabel, out ColorWithAlpha theColor)
     {
         theColor = default;
-        if (!isMine(theColorLabel) || node(theColorLabel).Color is not Quantity_ColorRGBA aColor)
+        if (!isMine(theColorLabel) || node(theColorLabel).Color is not ColorWithAlpha aColor)
         {
             return false;
         }
@@ -1356,11 +1359,11 @@ public sealed class XdeDoc_Document
     /// The first colour label of a colour equal to the colour (<c>Quantity_ColorRGBA::IsEqual</c>), or the null label
     /// (<c>XCAFDoc_ColorTool::FindColor</c>).
     /// </summary>
-    public XdeDoc_Label FindColor(in Quantity_ColorRGBA theColor)
+    public XdeDoc_Label FindColor(in ColorWithAlpha theColor)
     {
         foreach (int aChild in myNodes[ColorsIndex].Children)
         {
-            if (myNodes[aChild].Color is Quantity_ColorRGBA aColor && aColor.IsEqual(theColor))
+            if (myNodes[aChild].Color is ColorWithAlpha aColor && aColor.IsEqual(theColor))
             {
                 return label(aChild);
             }
@@ -1372,7 +1375,7 @@ public sealed class XdeDoc_Document
     /// The colour label of the colour, added under 0:1:2 if there is none (<c>XCAFDoc_ColorTool::AddColor</c>), named
     /// as XCAF's colour auto-naming does: "RED (#FF0000)".
     /// </summary>
-    public XdeDoc_Label AddColor(in Quantity_ColorRGBA theColor)
+    public XdeDoc_Label AddColor(in ColorWithAlpha theColor)
     {
         XdeDoc_Label aFound = FindColor(theColor);
         if (!aFound.IsNull())
@@ -1381,7 +1384,7 @@ public sealed class XdeDoc_Document
         }
         int anIndex = newChild(ColorsIndex);
         myNodes[anIndex].Color = theColor;
-        setName(anIndex, Quantity_Color.StringName(theColor.GetRGB().Name()) + " (" + Quantity_ColorRGBA.ColorToHex(theColor) + ")");
+        setName(anIndex, Color.StringName(theColor.GetRGB().Name()) + " (" + ColorWithAlpha.ColorToHex(theColor) + ")");
         return label(anIndex);
     }
 
@@ -1408,7 +1411,7 @@ public sealed class XdeDoc_Document
     /// Sets the label's colour of the type (<c>XCAFDoc_ColorTool::SetColor</c>): a link to the colour's label, added if
     /// there is none; the label's colour is then the colour label's.
     /// </summary>
-    public void SetColor(in XdeDoc_Label theLabel, in Quantity_ColorRGBA theColor, XdeDoc_ColorType theType)
+    public void SetColor(in XdeDoc_Label theLabel, in ColorWithAlpha theColor, XdeDoc_ColorType theType)
         => setColorRef(index(theLabel), AddColor(theColor).Index, theType);
 
     /// <summary>Sets the label's colour of the type to the colour label's (<c>XCAFDoc_ColorTool::SetColor(L, colorL, type)</c>).</summary>
@@ -1442,11 +1445,11 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>Sets the label's colour of the type, opaque.</summary>
-    public void SetColor(in XdeDoc_Label theLabel, in Quantity_Color theColor, XdeDoc_ColorType theType)
-        => SetColor(theLabel, new Quantity_ColorRGBA(theColor), theType);
+    public void SetColor(in XdeDoc_Label theLabel, in Color theColor, XdeDoc_ColorType theType)
+        => SetColor(theLabel, new ColorWithAlpha(theColor), theType);
 
     /// <summary>Sets the colour of the shape's label, found by <see cref="Search"/>; false if not found.</summary>
-    public bool SetColor(in TopoDS_Shape theShape, in Quantity_ColorRGBA theColor, XdeDoc_ColorType theType)
+    public bool SetColor(in TopoDS_Shape theShape, in ColorWithAlpha theColor, XdeDoc_ColorType theType)
     {
         if (!Search(theShape, out XdeDoc_Label aLabel))
         {
@@ -1457,10 +1460,10 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The label's colour of the type; false if not set.</summary>
-    public bool GetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType, out Quantity_ColorRGBA theColor)
+    public bool GetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType, out ColorWithAlpha theColor)
     {
         theColor = default;
-        if (!isMine(theLabel) || node(theLabel).Attributes.Color(theType) is not Quantity_ColorRGBA aColor)
+        if (!isMine(theLabel) || node(theLabel).Attributes.Color(theType) is not ColorWithAlpha aColor)
         {
             return false;
         }
@@ -1469,15 +1472,15 @@ public sealed class XdeDoc_Document
     }
 
     /// <summary>The label's colour of the type, without its alpha; false if not set.</summary>
-    public bool GetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType, out Quantity_Color theColor)
+    public bool GetColor(in XdeDoc_Label theLabel, XdeDoc_ColorType theType, out Color theColor)
     {
-        bool isSet = GetColor(theLabel, theType, out Quantity_ColorRGBA aColor);
+        bool isSet = GetColor(theLabel, theType, out ColorWithAlpha aColor);
         theColor = aColor.GetRGB();
         return isSet;
     }
 
     /// <summary>The colour of the shape's label (found by <see cref="Search"/>); false if not found or not set.</summary>
-    public bool GetColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, out Quantity_ColorRGBA theColor)
+    public bool GetColor(in TopoDS_Shape theShape, XdeDoc_ColorType theType, out ColorWithAlpha theColor)
     {
         theColor = default;
         return Search(theShape, out XdeDoc_Label aLabel) && GetColor(aLabel, theType, out theColor);
@@ -1698,9 +1701,9 @@ public sealed class XdeDoc_Document
     public void SetArea(in XdeDoc_Label theLabel, double theArea) => setProps(theLabel, p => p with { Area = theArea });
 
     /// <summary>Sets the label's centroid (<c>XCAFDoc_Centroid::Set</c>).</summary>
-    public void SetCentroid(in XdeDoc_Label theLabel, in gp_Pnt theCentroid)
+    public void SetCentroid(in XdeDoc_Label theLabel, in Point3D theCentroid)
     {
-        gp_Pnt aCentroid = theCentroid;
+        Point3D aCentroid = theCentroid;
         setProps(theLabel, p => p with { Centroid = aCentroid });
     }
 
@@ -1743,7 +1746,7 @@ public sealed class XdeDoc_Document
         aNode.ColorRefs = null;
         foreach (XdeDoc_ColorType aType in s_colorTypes)
         {
-            if (theAttributes.Color(aType) is Quantity_ColorRGBA aColor)
+            if (theAttributes.Color(aType) is ColorWithAlpha aColor)
             {
                 SetColor(theLabel, aColor, aType);
             }
@@ -1818,7 +1821,7 @@ public sealed class XdeDoc_Document
         XdeDoc_Instance instanceOf(int theRef)
         {
             // a reference to a reference: the locations composed, the last product
-            TopLoc_Location aLocation = myNodes[theRef].RefLocation;
+            Placement aLocation = myNodes[theRef].RefLocation;
             int aReferred = myNodes[theRef].Referred;
             int aGuard = 0;
             while (myNodes[aReferred].Referred >= 0)
@@ -1928,7 +1931,7 @@ public sealed class XdeDoc_Document
 
         foreach (XdeDoc_Instance aRoot in theTree.Roots)
         {
-            if (aRoot.Location.IsIdentity() && aRoot.Attributes.IsEmpty)
+            if (aRoot.Location.IsIdentity && aRoot.Attributes.IsEmpty)
             {
                 labelOf(aRoot.Product);
                 continue;

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Occt;
 
@@ -65,36 +67,36 @@ public static class GeomFill
         // Les deux courbes sont des droites.
         if (TheCurve1 is Geom_Line aLine1 && TheCurve2 is Geom_Line aLine2 && Trim1 && Trim2)
         {
-            gp_Lin L1 = aLine1.Lin();
-            gp_Lin L2 = aLine2.Lin();
-            gp_Dir D1 = L1.Direction();
-            gp_Dir D2 = L2.Direction();
+            Line3D L1 = aLine1.Lin();
+            Line3D L2 = aLine2.Lin();
+            Direction3D D1 = L1.Direction();
+            Direction3D D2 = L2.Direction();
 
-            if (D1.IsParallel(D2, Precision.Angular()))
+            if (D1.IsParallel(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
-                gp_Vec P1P2 = new gp_Vec(L1.Location(), L2.Location());
-                double proj = P1P2.Dot(new gp_Vec(D1));
+                Vector3D P1P2 = new Vector3D(L1.Location(), L2.Location());
+                double proj = P1P2.Dot(new Vector3D(D1));
 
-                if (D1.IsEqual(D2, Precision.Angular()))
+                if (D1.IsEqual(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
-                    if (Math.Abs(a1 - proj - a2) <= Precision.Confusion()
-                        && Math.Abs(b1 - proj - b2) <= Precision.Confusion())
+                    if (Math.Abs(a1 - proj - a2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                        && Math.Abs(b1 - proj - b2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        gp_Ax3 Ax = new gp_Ax3(L1.Location(), D1.Crossed(new gp_Dir(P1P2)), D1);
+                        CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
                         Geom_Plane P = new Geom_Plane(Ax);
-                        double V = P1P2.Dot(new gp_Vec(Ax.YDirection()));
+                        double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
                         Surf = new Geom_RectangularTrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
                         IsDone = true;
                     }
                 }
-                if (D1.IsOpposite(D2, Precision.Angular()))
+                if (D1.IsOpposite(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
-                    if (Math.Abs(a1 - proj + b2) <= Precision.Confusion()
-                        && Math.Abs(b1 - proj + a2) <= Precision.Confusion())
+                    if (Math.Abs(a1 - proj + b2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                        && Math.Abs(b1 - proj + a2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        gp_Ax3 Ax = new gp_Ax3(L1.Location(), D1.Crossed(new gp_Dir(P1P2)), D1);
+                        CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
                         Geom_Plane P = new Geom_Plane(Ax);
-                        double V = P1P2.Dot(new gp_Vec(Ax.YDirection()));
+                        double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
                         Surf = new Geom_RectangularTrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
                         IsDone = true;
                     }
@@ -105,19 +107,19 @@ public static class GeomFill
         // Les deux courbes sont des cercles.
         else if (TheCurve1 is Geom_Circle aCircle1 && TheCurve2 is Geom_Circle aCircle2)
         {
-            gp_Circ C1 = aCircle1.Circ();
-            gp_Circ C2 = aCircle2.Circ();
+            Circle3D C1 = aCircle1.Circ();
+            Circle3D C2 = aCircle2.Circ();
 
-            gp_Ax3 A1 = new gp_Ax3(C1.Position());
-            gp_Ax3 A2 = new gp_Ax3(C2.Position());
+            CoordinateSystem A1 = new CoordinateSystem(C1.Position());
+            CoordinateSystem A2 = new CoordinateSystem(C2.Position());
 
             // first, A1 & A2 must be coaxials
-            if (A1.Axis().IsCoaxial(A2.Axis(), Precision.Angular(), Precision.Confusion()))
+            if (A1.Axis().IsCoaxial(A2.Axis(), global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
-                double V = new gp_Vec(A1.Location(), A2.Location()).Dot(new gp_Vec(A1.Direction()));
+                double V = new Vector3D(A1.Location(), A2.Location()).Dot(new Vector3D(A1.Direction()));
                 if (!Trim1 && !Trim2)
                 {
-                    if (Math.Abs(C1.Radius() - C2.Radius()) < Precision.Confusion())
+                    if (Math.Abs(C1.Radius() - C2.Radius()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         Geom_CylindricalSurface C = new Geom_CylindricalSurface(A1, C1.Radius());
                         Surf = new Geom_RectangularTrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
@@ -149,7 +151,7 @@ public static class GeomFill
             GeomFill_Generator Generator = new GeomFill_Generator();
             Generator.AddCurve(Curve1);
             Generator.AddCurve(Curve2);
-            Generator.Perform(Precision.PConfusion());
+            Generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
             Surf = Generator.InternalSurface();
         }
 
@@ -161,18 +163,18 @@ public static class GeomFill
     /// Convert_TgtThetaOver2_1 to _3 when the arc needs one to three spans.
     /// </summary>
     public static void GetShape(double MaxAng, out int NbPoles, out int NbKnots, out int Degree,
-                                ref Convert_ParameterisationType TConv)
+                                ref ParameterisationType TConv)
     {
         switch (TConv)
         {
-            case Convert_QuasiAngular:
+            case QuasiAngular:
                 {
                     NbPoles = 7;
                     NbKnots = 2;
                     Degree = 6;
                 }
                 break;
-            case Convert_Polynomial:
+            case Polynomial:
                 {
                     NbPoles = 8;
                     NbKnots = 2;
@@ -187,15 +189,15 @@ public static class GeomFill
                     Degree = 2;
                     if (NbSpan == 1)
                     {
-                        TConv = Convert_TgtThetaOver2_1;
+                        TConv = TgtThetaOver2_1;
                     }
                     else if (NbSpan == 2)
                     {
-                        TConv = Convert_TgtThetaOver2_2;
+                        TConv = TgtThetaOver2_2;
                     }
                     else if (NbSpan == 3)
                     {
-                        TConv = Convert_TgtThetaOver2_3;
+                        TConv = TgtThetaOver2_3;
                     }
                 }
                 break;
@@ -209,22 +211,22 @@ public static class GeomFill
     //=======================================================================
 
     /// <summary>The smallest weights of the arcs between MinAng and MaxAng in the conversion TConv.</summary>
-    public static void GetMinimalWeights(Convert_ParameterisationType TConv, double MinAng, double MaxAng,
+    public static void GetMinimalWeights(ParameterisationType TConv, double MinAng, double MaxAng,
                                          NCollection_Array1<double> Weights)
     {
-        if (TConv == Convert_Polynomial)
+        if (TConv == Polynomial)
         {
             Weights.Init(1);
         }
         else
         {
-            gp_Ax2 popAx2 = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
-            gp_Circ C = new gp_Circ(popAx2, 1);
+            Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
+            Circle3D C = new Circle3D(popAx2, 1);
             Geom_TrimmedCurve Sect1 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, MaxAng);
             Geom_BSplineCurve CtoBspl = GeomConvert.CurveToBSplineCurve(Sect1, TConv);
             Weights.Assign(CtoBspl.InternalWeightsArray());
 
-            double angle_min = Max(Precision.PConfusion(), MinAng);
+            double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), MinAng);
             Geom_TrimmedCurve Sect2 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, angle_min);
             CtoBspl = GeomConvert.CurveToBSplineCurve(Sect2, TConv);
             NCollection_Array1<double> poids = CtoBspl.InternalWeightsArray();
@@ -240,9 +242,9 @@ public static class GeomFill
     }
 
     /// <summary>The knots of the circular sections in the conversion TConv.</summary>
-    public static void Knots(Convert_ParameterisationType TConv, NCollection_Array1<double> TKnots)
+    public static void Knots(ParameterisationType TConv, NCollection_Array1<double> TKnots)
     {
-        if ((TConv != Convert_QuasiAngular) && (TConv != Convert_Polynomial))
+        if ((TConv != QuasiAngular) && (TConv != Polynomial))
         {
             int i;
             double val = 0.0;
@@ -260,17 +262,17 @@ public static class GeomFill
     }
 
     /// <summary>The multiplicities of the circular sections in the conversion TConv.</summary>
-    public static void Mults(Convert_ParameterisationType TConv, NCollection_Array1<int> TMults)
+    public static void Mults(ParameterisationType TConv, NCollection_Array1<int> TMults)
     {
         switch (TConv)
         {
-            case Convert_QuasiAngular:
+            case QuasiAngular:
                 {
                     TMults[1] = 7;
                     TMults[2] = 7;
                 }
                 break;
-            case Convert_Polynomial:
+            case Polynomial:
                 {
                     TMults[1] = 8;
                     TMults[2] = 8;
@@ -299,11 +301,11 @@ public static class GeomFill
     //=======================================================================
 
     /// <summary>The 3D tolerance of the approximation that keeps the G1 tolerance AngularTol (blends).</summary>
-    public static double GetTolerance(Convert_ParameterisationType TConv, double AngleMin, double Radius,
+    public static double GetTolerance(ParameterisationType TConv, double AngleMin, double Radius,
                                       double AngularTol, double SpatialTol)
     {
-        gp_Ax2 popAx2 = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
-        gp_Circ C = new gp_Circ(popAx2, Radius);
+        Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
+        Circle3D C = new Circle3D(popAx2, Radius);
         Geom_Circle popCircle = new Geom_Circle(C);
         Geom_TrimmedCurve Sect = new Geom_TrimmedCurve(popCircle, 0.0, Max(AngleMin, 0.02));
         // 0.02 est proche d'1 degree, en desous on ne se preocupe pas de la tngence
@@ -327,22 +329,22 @@ public static class GeomFill
     /// The poles and weights of the arc of radius Rayon about Center from pts1 to pts2 (ns1, ns2: the inward normals
     /// at the ends; nplan: the normal to the plane), in the conversion TConv.
     /// </summary>
-    public static void GetCircle(Convert_ParameterisationType TConv,
-                                 in gp_Vec ns1, // Normal rentrente au premier point
-                                 in gp_Vec ns2, // Normal rentrente au second point
-                                 in gp_Vec nplan, // Normal au plan
-                                 in gp_Pnt pts1,
-                                 in gp_Pnt pts2,
+    public static void GetCircle(ParameterisationType TConv,
+                                 in Vector3D ns1, // Normal rentrente au premier point
+                                 in Vector3D ns2, // Normal rentrente au second point
+                                 in Vector3D nplan, // Normal au plan
+                                 in Point3D pts1,
+                                 in Point3D pts2,
                                  double Rayon, // Rayon (doit etre positif)
-                                 in gp_Pnt Center,
-                                 NCollection_Array1<gp_Pnt> Poles,
+                                 in Point3D Center,
+                                 NCollection_Array1<Point3D> Poles,
                                  NCollection_Array1<double> Weights)
     {
         // La classe de convertion
 
         int i, jj;
         double Cosa, Sina, Angle, Alpha, Cosas2, lambda;
-        gp_Vec temp = new gp_Vec(), np2;
+        Vector3D temp = new Vector3D(), np2;
         int low = Poles.Lower();
         int upp = Poles.Upper();
 
@@ -375,14 +377,14 @@ public static class GeomFill
 
         switch (TConv)
         {
-            case Convert_QuasiAngular:
+            case QuasiAngular:
                 {
                     GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
                     QConvertor.Init();
                     QConvertor.Section(pts1, Center, nplan, Angle, Poles, Weights);
                     break;
                 }
-            case Convert_Polynomial:
+            case Polynomial:
                 {
                     GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
                     PConvertor.Init();
@@ -431,28 +433,28 @@ public static class GeomFill
     }
 
     /// <summary>The poles and weights of the arc and their first derivatives.</summary>
-    public static bool GetCircle(Convert_ParameterisationType TConv,
-                                 in gp_Vec ns1,
-                                 in gp_Vec ns2,
-                                 in gp_Vec dn1w,
-                                 in gp_Vec dn2w,
-                                 in gp_Vec nplan,
-                                 in gp_Vec dnplan,
-                                 in gp_Pnt pts1,
-                                 in gp_Pnt pts2,
-                                 in gp_Vec tang1,
-                                 in gp_Vec tang2,
+    public static bool GetCircle(ParameterisationType TConv,
+                                 in Vector3D ns1,
+                                 in Vector3D ns2,
+                                 in Vector3D dn1w,
+                                 in Vector3D dn2w,
+                                 in Vector3D nplan,
+                                 in Vector3D dnplan,
+                                 in Point3D pts1,
+                                 in Point3D pts2,
+                                 in Vector3D tang1,
+                                 in Vector3D tang2,
                                  double Rayon,
                                  double DRayon,
-                                 in gp_Pnt Center,
-                                 in gp_Vec DCenter,
-                                 NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Vec> DPoles,
+                                 in Point3D Center,
+                                 in Vector3D DCenter,
+                                 NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Vector3D> DPoles,
                                  NCollection_Array1<double> Weights,
                                  NCollection_Array1<double> DWeights)
     {
         double Cosa, Sina, Cosas2, Sinas2, Angle, DAngle, Alpha, lambda, Dlambda;
-        gp_Vec temp = new gp_Vec(), np2, dnp2;
+        Vector3D temp = new Vector3D(), np2, dnp2;
         int i, jj;
         int NbSpan = (Poles.Length() - 1) / 2;
         int low = Poles.Lower();
@@ -507,7 +509,7 @@ public static class GeomFill
 
         switch (TConv)
         {
-            case Convert_QuasiAngular:
+            case QuasiAngular:
                 {
                     GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
                     QConvertor.Init();
@@ -525,7 +527,7 @@ public static class GeomFill
                                        DWeights);
                     return true;
                 }
-            case Convert_Polynomial:
+            case Polynomial:
                 {
                     GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
                     PConvertor.Init();
@@ -591,31 +593,31 @@ public static class GeomFill
     }
 
     /// <summary>The poles and weights of the arc and their first and second derivatives.</summary>
-    public static bool GetCircle(Convert_ParameterisationType TConv,
-                                 in gp_Vec ns1,
-                                 in gp_Vec ns2,
-                                 in gp_Vec dn1w,
-                                 in gp_Vec dn2w,
-                                 in gp_Vec d2n1w,
-                                 in gp_Vec d2n2w,
-                                 in gp_Vec nplan,
-                                 in gp_Vec dnplan,
-                                 in gp_Vec d2nplan,
-                                 in gp_Pnt pts1,
-                                 in gp_Pnt pts2,
-                                 in gp_Vec tang1,
-                                 in gp_Vec tang2,
-                                 in gp_Vec Dtang1,
-                                 in gp_Vec Dtang2,
+    public static bool GetCircle(ParameterisationType TConv,
+                                 in Vector3D ns1,
+                                 in Vector3D ns2,
+                                 in Vector3D dn1w,
+                                 in Vector3D dn2w,
+                                 in Vector3D d2n1w,
+                                 in Vector3D d2n2w,
+                                 in Vector3D nplan,
+                                 in Vector3D dnplan,
+                                 in Vector3D d2nplan,
+                                 in Point3D pts1,
+                                 in Point3D pts2,
+                                 in Vector3D tang1,
+                                 in Vector3D tang2,
+                                 in Vector3D Dtang1,
+                                 in Vector3D Dtang2,
                                  double Rayon,
                                  double DRayon,
                                  double D2Rayon,
-                                 in gp_Pnt Center,
-                                 in gp_Vec DCenter,
-                                 in gp_Vec D2Center,
-                                 NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles,
+                                 in Point3D Center,
+                                 in Vector3D DCenter,
+                                 in Vector3D D2Center,
+                                 NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles,
                                  NCollection_Array1<double> Weights,
                                  NCollection_Array1<double> DWeights,
                                  NCollection_Array1<double> D2Weights)
@@ -623,7 +625,7 @@ public static class GeomFill
         double Cosa, Sina, Cosas2, Sinas2;
         double Angle, DAngle, D2Angle, Alpha;
         double lambda, Dlambda, D2lambda, aux;
-        gp_Vec temp = new gp_Vec(), dtemp = new gp_Vec(), np2, dnp2, d2np2;
+        Vector3D temp = new Vector3D(), dtemp = new Vector3D(), np2, dnp2, d2np2;
         int i, jj;
         int NbSpan = (Poles.Length() - 1) / 2;
         int low = Poles.Lower();
@@ -693,7 +695,7 @@ public static class GeomFill
 
         switch (TConv)
         {
-            case Convert_QuasiAngular:
+            case QuasiAngular:
                 {
                     GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
                     QConvertor.Init();
@@ -717,7 +719,7 @@ public static class GeomFill
                                        D2Weights);
                     return true;
                 }
-            case Convert_Polynomial:
+            case Polynomial:
                 {
                     GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
                     PConvertor.Init();

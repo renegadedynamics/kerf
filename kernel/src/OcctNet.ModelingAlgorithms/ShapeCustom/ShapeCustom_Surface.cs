@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -83,10 +85,10 @@ public sealed class ShapeCustom_Surface
         }
 
         mySurf!.Bounds(out U1, out U2, out V1, out V2);
-        NCollection_Array1<gp_Pnt> p1 = new(1, 3), p2 = new(1, 3), p3 = new(1, 3);
+        NCollection_Array1<Point3D> p1 = new(1, 3), p2 = new(1, 3), p3 = new(1, 3);
         NCollection_Array1<double> R = new(1, 3);
-        gp_Pnt origPnt, resPnt;
-        gp_Vec origD1U = new gp_Vec(), resD1U, resD1V;
+        Point3D origPnt, resPnt;
+        Vector3D origD1U = new Vector3D(), resD1U, resD1V;
 
         bool aCySpCo = false;
         bool aToroid = false;
@@ -122,12 +124,12 @@ public sealed class ShapeCustom_Surface
         if (aPlanar)
         {
             //    NearestPlane ...
-            NCollection_Array1<gp_Pnt> Pnts = new(1, 4);
+            NCollection_Array1<Point3D> Pnts = new(1, 4);
             Pnts.SetValue(1, mySurf.Value(U1, V1));
             Pnts.SetValue(2, mySurf.Value(U2, V1));
             Pnts.SetValue(3, mySurf.Value(U1, V2));
             Pnts.SetValue(4, mySurf.Value(U2, V2));
-            gp_Pln aPln = new gp_Pln(); // double Dmax;
+            Plane3D aPln = new Plane3D(); // double Dmax;
             bool It = ShapeAnalysis_Geom.NearestPlane(Pnts, ref aPln, out myGap /*Dmax*/);
 
             //  ICI, on fabrique le plan, et zou
@@ -141,18 +143,18 @@ public sealed class ShapeCustom_Surface
             //    On prend la normale : les deux normales doivent etre dans le meme sens
             //    Sinon, inverser la normale (pas le Pln entier !) et refaire la Plane
             newSurf = new Geom_Plane(aPln);
-            gp_Vec uold = new gp_Vec(Pnts[1], Pnts[2]);
-            gp_Vec vold = new gp_Vec(Pnts[1], Pnts[3]);
-            gp_Vec nold = uold.Crossed(vold);
-            gp_Vec unew = new gp_Vec(newSurf.Value(U1, V1), newSurf.Value(U2, V1));
-            gp_Vec vnew = new gp_Vec(newSurf.Value(U1, V1), newSurf.Value(U1, V2));
-            gp_Vec nnew = unew.Crossed(vnew);
+            Vector3D uold = new Vector3D(Pnts[1], Pnts[2]);
+            Vector3D vold = new Vector3D(Pnts[1], Pnts[3]);
+            Vector3D nold = uold.Crossed(vold);
+            Vector3D unew = new Vector3D(newSurf.Value(U1, V1), newSurf.Value(U2, V1));
+            Vector3D vnew = new Vector3D(newSurf.Value(U1, V1), newSurf.Value(U1, V2));
+            Vector3D nnew = unew.Crossed(vnew);
             if (nold.Dot(nnew) < 0.0)
             {
-                gp_Ax3 ax3 = aPln.Position();
+                CoordinateSystem ax3 = aPln.Position();
                 ax3.ZReverse();
                 ax3.XReverse();
-                aPln = new gp_Pln(ax3);
+                aPln = new Plane3D(ax3);
                 newSurf = new Geom_Plane(aPln);
             }
 
@@ -211,14 +213,14 @@ public sealed class ShapeCustom_Surface
 
             // OCCT: the last iso built, at parameter 0 rather than U1 (occt-issues.md)
             iso!.D1(0.0, out origPnt, out origD1U);
-            gp_Vec xVec = new gp_Vec(p3[3], p1[3]);
-            gp_Vec aVec = new gp_Vec(p3[1], p3[2]);
+            Vector3D xVec = new Vector3D(p3[3], p1[3]);
+            Vector3D aVec = new Vector3D(p3[1], p3[2]);
             //      gp_Dir xDir(xVec);  ne sert pas. Null si R3 = 0
-            gp_Dir aDir = new gp_Dir(aVec);
-            gp_Ax3 aAx3 = new gp_Ax3(p3[1], aDir, new gp_Dir(xVec));
+            Direction3D aDir = new Direction3D(aVec);
+            CoordinateSystem aAx3 = new CoordinateSystem(p3[1], aDir, new Direction3D(xVec));
             //  CKY  3-FEV-1997 : verification du sens de description
             // C++ converts origD1U to a gp_Dir implicitly
-            if (aAx3.YDirection().Dot(new gp_Dir(origD1U)) < 0)
+            if (aAx3.YDirection().Dot(new Direction3D(origD1U)) < 0)
             {
                 aAx3.YReverse(); //  mais X reste !
             }
@@ -248,7 +250,7 @@ public sealed class ShapeCustom_Surface
                 }
                 else
                 {
-                    gp_Vec aVec2 = new gp_Vec(p1[1], p1[2]);
+                    Vector3D aVec2 = new Vector3D(p1[1], p1[2]);
                     double angle = aVec.Angle(aVec2);
                     if (R[1] < R[2])
                     {
@@ -260,9 +262,9 @@ public sealed class ShapeCustom_Surface
                     else
                     {
                         aDir.Reverse();
-                        gp_Vec anotherXVec = new gp_Vec(p3[2], p1[2]);
-                        gp_Dir anotherXDir = new gp_Dir(anotherXVec);
-                        gp_Ax3 anotherAx3 = new gp_Ax3(p3[2], aDir, anotherXDir);
+                        Vector3D anotherXVec = new Vector3D(p3[2], p1[2]);
+                        Direction3D anotherXDir = new Direction3D(anotherXVec);
+                        CoordinateSystem anotherAx3 = new CoordinateSystem(p3[2], aDir, anotherXDir);
                         Geom_ConicalSurface anObject = new Geom_ConicalSurface(anotherAx3, angle, R[2]);
                         // if (!uClosed) anObject->UReverse();
                         anObject.UReverse();
@@ -312,22 +314,22 @@ public sealed class ShapeCustom_Surface
                 }
                 if ((Math.Abs(R[1] - R[2]) < tol) && (Math.Abs(R[1] - R[3]) < tol))
                 {
-                    gp_Pnt p10 = new gp_Pnt(0.5 * (p3[1].X() + p3[2].X()),
+                    Point3D p10 = new Point3D(0.5 * (p3[1].X() + p3[2].X()),
                                             0.5 * (p3[1].Y() + p3[2].Y()),
                                             0.5 * (p3[1].Z() + p3[2].Z()));
-                    gp_Vec aVec = new gp_Vec(p10, p3[1]);
-                    gp_Vec aVec2 = new gp_Vec(p10, p3[3]);
+                    Vector3D aVec = new Vector3D(p10, p3[1]);
+                    Vector3D aVec2 = new Vector3D(p10, p3[3]);
                     double RR1 = R[1], RR2 = R[2], RR3;
                     aVec.Cross(aVec2);
 
-                    if (aVec.Magnitude() <= gp.Resolution())
+                    if (aVec.Magnitude() <= Constants.Resolution())
                     {
                         aVec.SetCoord(0.0, 0.0, 1.0);
                     }
 
-                    gp_Dir aDir = new gp_Dir(aVec);
+                    Direction3D aDir = new Direction3D(aVec);
 
-                    gp_Ax3 aAx3 = new gp_Ax3(p10, aDir);
+                    CoordinateSystem aAx3 = new CoordinateSystem(p10, aDir);
                     RR1 = p10.Distance(p3[1]);
                     //          modif empirique (pourtant NON DEMONTREE) : inverser roles RR1,RR2
                     //          CKY, 24-JAN-1997
@@ -362,7 +364,7 @@ public sealed class ShapeCustom_Surface
 
         const int NP = 21;
         double S = 0.0, T = 0.0; // U,V deja fait
-        gp_Pnt P3d, P3d2;
+        Point3D P3d, P3d2;
         bool onSurface = true;
 
         double dis;
@@ -389,28 +391,28 @@ public sealed class ShapeCustom_Surface
                 iso.D0(U, out P3d);
                 switch (SurfAdapt.GetType())
                 {
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                     {
-                        gp_Cylinder Cylinder = SurfAdapt.Cylinder();
-                        ElSLib.Parameters(Cylinder, P3d, out S, out T);
+                        Cylinder Cylinder = SurfAdapt.Cylinder();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P3d, out S, out T);
                         break;
                     }
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                     {
-                        gp_Cone Cone = SurfAdapt.Cone();
-                        ElSLib.Parameters(Cone, P3d, out S, out T);
+                        Cone Cone = SurfAdapt.Cone();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P3d, out S, out T);
                         break;
                     }
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                     {
-                        gp_Sphere Sphere = SurfAdapt.Sphere();
-                        ElSLib.Parameters(Sphere, P3d, out S, out T);
+                        Sphere Sphere = SurfAdapt.Sphere();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, P3d, out S, out T);
                         break;
                     }
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                     {
-                        gp_Torus Torus = SurfAdapt.Torus();
-                        ElSLib.Parameters(Torus, P3d, out S, out T);
+                        Torus Torus = SurfAdapt.Torus();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, P3d, out S, out T);
                         break;
                     }
                     default:
@@ -479,7 +481,7 @@ public sealed class ShapeCustom_Surface
             if (BSpl.UMultiplicity(1) == BSpl.UDegree() + 1
                 && BSpl.UMultiplicity(BSpl.NbUKnots()) == BSpl.UDegree() + 1)
             {
-                NCollection_Array2<gp_Pnt> oldPoles = BSpl.InternalPoles();
+                NCollection_Array2<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = BSpl.InternalWeightsArray();
                 int nbUKnots = BSpl.NbUKnots();
                 NCollection_Array1<double> oldUKnots = BSpl.InternalUKnots();
@@ -522,7 +524,7 @@ public sealed class ShapeCustom_Surface
             {
                 // OCCT.NET: OCCT makes the caller's surface periodic in place; a frozen surface is copied first
                 // (decision 974)
-                if (BSpl.IsFrozen())
+                if (BSpl.IsFrozen)
                 {
                     BSpl = (Geom_BSplineSurface)BSpl.Copy();
                 }
@@ -538,7 +540,7 @@ public sealed class ShapeCustom_Surface
             if (BSpl.VMultiplicity(1) == BSpl.VDegree() + 1
                 && BSpl.VMultiplicity(BSpl.NbVKnots()) == BSpl.VDegree() + 1)
             {
-                NCollection_Array2<gp_Pnt> oldPoles = BSpl.InternalPoles();
+                NCollection_Array2<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = BSpl.InternalWeightsArray();
                 int nbVKnots = BSpl.NbVKnots();
                 NCollection_Array1<double> oldUKnots = BSpl.InternalUKnots();
@@ -580,7 +582,7 @@ public sealed class ShapeCustom_Surface
             if (set)
             {
                 // OCCT.NET: as above (decision 974)
-                if (BSpl.IsFrozen())
+                if (BSpl.IsFrozen)
                 {
                     BSpl = (Geom_BSplineSurface)BSpl.Copy();
                 }

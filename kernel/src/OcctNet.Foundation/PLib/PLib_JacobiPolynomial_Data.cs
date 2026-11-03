@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Polynomials;
 
 // Tables of PLib_JacobiPolynomial, generated from OCCT's PLib_JacobiPolynomial_Data.pxx with every literal copied
 // as written. Properties returning a ReadOnlySpan over a constant array are stored in the assembly's data section:
 // reading them allocates nothing.
-public sealed partial class PLib_JacobiPolynomial
+public sealed partial class JacobiPolynomial
 {
     // Table de la matrice de passage de canonique a Legendre.
     private static ReadOnlySpan<double> TransMatrix_C0 => [ // C++ [2][496], flattened row by row

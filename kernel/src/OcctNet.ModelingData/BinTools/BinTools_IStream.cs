@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Buffers.Binary;
 
 namespace Occt;
@@ -13,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// The stream must be seekable (OCCT's <c>tellg</c> and <c>seekg</c>). OCCT's <c>operator&gt;&gt;</c> overloads are
-/// the <c>Read*</c> methods. Reading past the end of the stream throws <see cref="Storage_StreamFormatError"/> (OCCT
+/// the <c>Read*</c> methods. Reading past the end of the stream throws <see cref="StreamFormatErrorException"/> (OCCT
 /// throws Storage_StreamTypeMismatchError for reals, integers and points, and leaves bytes and floats unread).
 /// </remarks>
 public sealed class BinTools_IStream
@@ -29,12 +31,12 @@ public sealed class BinTools_IStream
     private readonly byte[] myBuf = new byte[sizeof(double) * 3];
 
     /// <summary>Reads from the stream, starting at its current position.</summary>
-    /// <exception cref="Standard_ProgramError">The stream can't seek.</exception>
+    /// <exception cref="ProgramErrorException">The stream can't seek.</exception>
     public BinTools_IStream(Stream theStream)
     {
         if (!theStream.CanSeek)
         {
-            throw new Standard_ProgramError("BinTools_IStream: the stream must be seekable");
+            throw new ProgramErrorException("BinTools_IStream: the stream must be seekable");
         }
 
         myStream = theStream;
@@ -74,7 +76,7 @@ public sealed class BinTools_IStream
         if (thePosition > (ulong)myStream.Length)
         {
             // OCCT.NET: untrusted input: OCCT seeks past the end and reads garbage
-            throw new Storage_StreamFormatError("BinTools_IStream: a position past the end of the stream");
+            throw new StreamFormatErrorException("BinTools_IStream: a position past the end of the stream");
         }
 
         myStream.Seek((long)thePosition, SeekOrigin.Begin);
@@ -126,13 +128,13 @@ public sealed class BinTools_IStream
 
         if (aDelta == 0)
         {
-            throw new Standard_Failure("BinTools_IStream::ReadReference: invalid reference " + (char)myLastType + "\n");
+            throw new FailureException("BinTools_IStream::ReadReference: invalid reference " + (char)myLastType + "\n");
         }
 
         if (aDelta >= aCurrentPos)
         {
             // OCCT.NET: untrusted input: the reference would point before the start of the stream
-            throw new Storage_StreamFormatError("BinTools_IStream::ReadReference: a reference before the stream");
+            throw new StreamFormatErrorException("BinTools_IStream::ReadReference: a reference before the stream");
         }
 
         return aCurrentPos - aDelta - 1; // add a type-byte
@@ -166,10 +168,10 @@ public sealed class BinTools_IStream
     }
 
     /// <summary>Reads a 3D point.</summary>
-    public gp_Pnt ReadPnt()
+    public Point3D ReadPnt()
     {
         BinTools.ReadExactly(myStream, myBuf.AsSpan(0, sizeof(double) * 3));
-        gp_Pnt aValue = new(BinaryPrimitives.ReadDoubleLittleEndian(myBuf),
+        Point3D aValue = new(BinaryPrimitives.ReadDoubleLittleEndian(myBuf),
                             BinaryPrimitives.ReadDoubleLittleEndian(myBuf.AsSpan(8)),
                             BinaryPrimitives.ReadDoubleLittleEndian(myBuf.AsSpan(16)));
         myPosition += 3 * sizeof(double);
@@ -196,12 +198,12 @@ public sealed class BinTools_IStream
     }
 
     /// <summary>Reads a transformation written by <see cref="BinTools_OStream"/>.</summary>
-    public gp_Trsf ReadTrsf()
+    public Transform3D ReadTrsf()
     {
         double aV10 = ReadReal(), aV11 = ReadReal(), aV12 = ReadReal(), aV0 = ReadReal();
         double aV20 = ReadReal(), aV21 = ReadReal(), aV22 = ReadReal(), aV1 = ReadReal();
         double aV30 = ReadReal(), aV31 = ReadReal(), aV32 = ReadReal(), aV2 = ReadReal();
-        gp_Trsf theValue = new();
+        Transform3D theValue = new();
         theValue.SetValues(aV10, aV11, aV12, aV0, aV20, aV21, aV22, aV1, aV30, aV31, aV32, aV2);
         return theValue;
     }

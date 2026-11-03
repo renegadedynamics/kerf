@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An intersection segment (a common part) between two 2D curves.</summary>
@@ -113,12 +115,12 @@ public partial struct IntRes2d_IntersectionSegment : IEquatable<IntRes2d_Interse
     public readonly bool HasFirstPoint() => first;
 
     /// <summary>The first point of the segment.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasFirstPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasFirstPoint"/> is false.</exception>
     public readonly IntRes2d_IntersectionPoint FirstPoint()
     {
         if (!first)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return ptfirst;
@@ -131,12 +133,12 @@ public partial struct IntRes2d_IntersectionSegment : IEquatable<IntRes2d_Interse
     public readonly bool HasLastPoint() => last;
 
     /// <summary>The last point of the segment.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasLastPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasLastPoint"/> is false.</exception>
     public readonly IntRes2d_IntersectionPoint LastPoint()
     {
         if (!last)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return ptlast;

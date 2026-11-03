@@ -3,37 +3,39 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A symmetry in 3D space about a point, an axis or a plane, as a gp_Trsf.</summary>
 public sealed class gce_MakeMirror
 {
-    private gp_Trsf TheMirror = new();
+    private Transform3D TheMirror = new();
 
     /// <summary>A central symmetry about a point.</summary>
-    public gce_MakeMirror(in gp_Pnt Point) => TheMirror.SetMirror(Point);
+    public gce_MakeMirror(in Point3D Point) => TheMirror.SetMirror(Point);
 
     /// <summary>An axial symmetry about an axis.</summary>
-    public gce_MakeMirror(in gp_Ax1 Axis) => TheMirror.SetMirror(Axis);
+    public gce_MakeMirror(in Axis3D Axis) => TheMirror.SetMirror(Axis);
 
     /// <summary>An axial symmetry about a line.</summary>
-    public gce_MakeMirror(in gp_Lin Line) => TheMirror.SetMirror(new gp_Ax1(Line.Location(), Line.Direction()));
+    public gce_MakeMirror(in Line3D Line) => TheMirror.SetMirror(new Axis3D(Line.Location(), Line.Direction()));
 
     /// <summary>An axial symmetry about the axis through a point with a direction.</summary>
-    public gce_MakeMirror(in gp_Pnt Point, in gp_Dir Direc) => TheMirror.SetMirror(new gp_Ax1(Point, Direc));
+    public gce_MakeMirror(in Point3D Point, in Direction3D Direc) => TheMirror.SetMirror(new Axis3D(Point, Direc));
 
     /// <summary>A planar symmetry about a plane.</summary>
-    public gce_MakeMirror(in gp_Ax2 Plane) => TheMirror.SetMirror(Plane);
+    public gce_MakeMirror(in Frame3D Plane) => TheMirror.SetMirror(Plane);
 
     /// <summary>A planar symmetry about a plane.</summary>
-    public gce_MakeMirror(in gp_Pln Plane) => TheMirror.SetMirror(Plane.Position().Ax2());
+    public gce_MakeMirror(in Plane3D Plane) => TheMirror.SetMirror(Plane.Position().Ax2());
 
     /// <summary>The constructed transformation.</summary>
-    public gp_Trsf Value() => TheMirror;
+    public Transform3D Value() => TheMirror;
 
     /// <summary>Alias for Value().</summary>
-    public gp_Trsf Operator() => Value();
+    public Transform3D Operator() => Value();
 
     /// <summary>The constructed transformation (OCCT's implicit conversion operator).</summary>
-    public static explicit operator gp_Trsf(gce_MakeMirror theMaker) => theMaker.Operator();
+    public static explicit operator Transform3D(gce_MakeMirror theMaker) => theMaker.Operator();
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -51,7 +53,7 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        gp_Trsf T = new();
+        Transform3D T = new();
         int last = n;
         string aName = a[0];
         bool isBasic = false;
@@ -105,7 +107,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetTranslation(new gp_Vec(F(n - 3), F(n - 2), F(n - 1)));
+                    T.SetTranslation(new Vector3D(F(n - 3), F(n - 2), F(n - 1)));
                     last = n - 3;
                     break;
                 case "rotate":
@@ -114,7 +116,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetRotation(new gp_Ax1(new gp_Pnt(F(n - 7), F(n - 6), F(n - 5)), new gp_Dir(new gp_Vec(F(n - 4), F(n - 3), F(n - 2)))),
+                    T.SetRotation(new Axis3D(new Point3D(F(n - 7), F(n - 6), F(n - 5)), new Direction3D(new Vector3D(F(n - 4), F(n - 3), F(n - 2)))),
                                   F(n - 1) * (Math.PI / 180.0));
                     last = n - 7;
                     break;
@@ -124,7 +126,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetMirror(new gp_Ax2(new gp_Pnt(F(n - 6), F(n - 5), F(n - 4)), new gp_Dir(new gp_Vec(F(n - 3), F(n - 2), F(n - 1)))));
+                    T.SetMirror(new Frame3D(new Point3D(F(n - 6), F(n - 5), F(n - 4)), new Direction3D(new Vector3D(F(n - 3), F(n - 2), F(n - 1)))));
                     last = n - 6;
                     break;
                 case "scale":
@@ -133,16 +135,16 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetScale(new gp_Pnt(F(n - 4), F(n - 3), F(n - 2)), F(n - 1));
+                    T.SetScale(new Point3D(F(n - 4), F(n - 3), F(n - 2)), F(n - 1));
                     last = n - 4;
                     break;
             }
         }
 
-        if (T.Form() == gp_TrsfForm.gp_Identity || isBasic || isForced)
+        if (T.Form() == TransformForm.Identity || isBasic || isForced)
         {
             bool isException = !isForced;
-            var L = new TopLoc_Location(T);
+            var L = new Placement(T);
             for (int i = 1; i < last; i++)
             {
                 TopoDS_Shape S = theDI.GetShape(a[i]);
@@ -156,7 +158,7 @@ internal static class BRepTestCommands
                 {
                     theDI.SetShape(a[i], aName is "move" or "reset" ? S.Located(L, isException) : S.Moved(L, isException));
                 }
-                catch (Standard_DomainError)
+                catch (global::Kerf.Engine.Foundation.DomainErrorException)
                 {
                     theDI.Output.WriteLine($"Operation is not done: {aName} is not a valid transformation - scale = {DrawFormat.AsciiString(T.ScaleFactor())}");
                     return 0;
@@ -420,7 +422,7 @@ internal static class BRepTestCommands
         char aKind = a[0][0];
         if (witheps)
         {
-            if (Math.Abs(eps) < Precision.Angular())
+            if (Math.Abs(eps) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return 2;
             }
@@ -454,8 +456,8 @@ internal static class BRepTestCommands
             }
         }
 
-        gp_Pnt P = G.CentreOfMass();
-        gp_Mat I = G.MatrixOfInertia();
+        Point3D P = G.CentreOfMass();
+        Matrix3x3 I = G.MatrixOfInertia();
         if (n >= 5)
         {
             int shift = n - 5;
@@ -576,11 +578,11 @@ internal static class BRepTestCommands
         eps = BRepGProp.VolumePropertiesGK(S, G, eps, onlyClosed, isUseSpan, CGFlag, IFlag, SkipShared);
 
         const int anOutWidth = 24;
-        static string W(double theValue) => Standard_Stream.FormatReal(theValue, 15).PadLeft(anOutWidth);
+        static string W(double theValue) => global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(theValue, 15).PadLeft(anOutWidth);
         di.Append("\n\n" + "Mass : " + W(G.Mass()) + "\n\n" + "Relative error of mass computation : " + W(eps) + "\n\n");
         if (CGFlag || IFlag)
         {
-            gp_Pnt P = G.CentreOfMass();
+            Point3D P = G.CentreOfMass();
             if (n > 6)
             {
                 theDI.SetNumber(a[6], P.X());
@@ -604,7 +606,7 @@ internal static class BRepTestCommands
             aSStream1.Append('\n');
             if (IFlag)
             {
-                gp_Mat I = G.MatrixOfInertia();
+                Matrix3x3 I = G.MatrixOfInertia();
                 aSStream1.Append("Matrix of Inertia : \n");
                 for (int r = 1; r <= 3; r++)
                 {

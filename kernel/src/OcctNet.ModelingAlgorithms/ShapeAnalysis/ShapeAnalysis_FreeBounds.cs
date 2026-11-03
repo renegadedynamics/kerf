@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -145,7 +148,7 @@ public sealed class ShapeAnalysis_FreeBounds
             var see = new ShapeExtend_Explorer();
             NCollection_HSequence<TopoDS_Shape> edges = see.SeqFromCompound(sas.InternalFreeEdges(), false);
 
-            NCollection_HSequence<TopoDS_Shape> wires = InternalConnectEdgesToWires(edges, Occt.Precision.Confusion(), true);
+            NCollection_HSequence<TopoDS_Shape> wires = InternalConnectEdgesToWires(edges, Kerf.Engine.Foundation.Precision.Confusion(), true);
             InternalDispatchWires(wires, ref myWires, ref myEdges);
             SplitWires();
         }
@@ -291,7 +294,7 @@ public sealed class ShapeAnalysis_FreeBounds
             arrwires.SetValue(i, iwires.Value(i));
         }
         owires = new NCollection_HSequence<TopoDS_Shape>();
-        double tolerance = Max(toler, Occt.Precision.Confusion());
+        double tolerance = Max(toler, Kerf.Engine.Foundation.Precision.Confusion());
 
         var aSel = new ShapeAnalysis_BoxBndTreeSelector(arrwires, shared);
         ShapeExtend_WireData? sewd = null;
@@ -325,8 +328,8 @@ public sealed class ShapeAnalysis_FreeBounds
         saw.Load(sewd);
         saw.SetPrecision(tolerance);
 
-        var aBBTree = new NCollection_UBTree<int, Bnd_Box>();
-        var aTreeFiller = new NCollection_UBTreeFiller<int, Bnd_Box>(aBBTree);
+        var aBBTree = new SpatialTree<int, Box>();
+        var aTreeFiller = new SpatialTreeFiller<int, Box>(aBBTree);
 
         for (int inbW = 1; inbW <= arrwires.Length(); inbW++)
         {
@@ -335,10 +338,10 @@ public sealed class ShapeAnalysis_FreeBounds
                 continue;
             }
             TopoDS_Wire trW = TopoDS.Wire(arrwires.Value(inbW));
-            Bnd_Box aBox = new();
+            Box aBox = new();
             ShapeAnalysis.FindBounds(trW, out TopoDS_Vertex trV1, out TopoDS_Vertex trV2);
-            gp_Pnt trP1 = BRep_Tool.Pnt(trV1);
-            gp_Pnt trP2 = BRep_Tool.Pnt(trV2);
+            Point3D trP1 = BRep_Tool.Pnt(trV1);
+            Point3D trP2 = BRep_Tool.Pnt(trV2);
             aBox.Set(trP1);
             aBox.Add(trP2);
             aBox.SetGap(tolerance);
@@ -356,12 +359,12 @@ public sealed class ShapeAnalysis_FreeBounds
             bool found = false, tail = false, direct = false;
             int lwire = 0;
             aSel.SetStop();
-            Bnd_Box FVBox = new(), LVBox = new();
+            Box FVBox = new(), LVBox = new();
             TopoDS_Vertex Vf, Vl;
             Vf = sae.FirstVertex(sewd.Edge(1));
             Vl = sae.LastVertex(sewd.Edge(sewd.NbEdges()));
 
-            gp_Pnt pf, pl;
+            Point3D pf, pl;
             pf = BRep_Tool.Pnt(Vf);
             pl = BRep_Tool.Pnt(Vl);
             FVBox.Set(pf);
@@ -493,7 +496,7 @@ public sealed class ShapeAnalysis_FreeBounds
                                   out NCollection_HSequence<TopoDS_Shape> open)
     {
         closed = new NCollection_HSequence<TopoDS_Shape>();
-        double tolerance = Max(toler, Occt.Precision.Confusion());
+        double tolerance = Max(toler, Kerf.Engine.Foundation.Precision.Confusion());
 
         BRep_Builder B = new();
         var sae = new ShapeAnalysis_Edge();
@@ -524,7 +527,7 @@ public sealed class ShapeAnalysis_FreeBounds
                     bool found;
                     TopoDS_Edge edge;
                     TopoDS_Vertex lvertex;
-                    gp_Pnt lpoint;
+                    Point3D lpoint;
 
                     // searching for connection in ces
                     if (SearchBackward)
@@ -538,7 +541,7 @@ public sealed class ShapeAnalysis_FreeBounds
                         for (jb = ces.Length(); (jb >= 1) && !found; jb--)
                         {
                             TopoDS_Vertex fv = sae.FirstVertex(sewd.Edge(ces.Value(jb)));
-                            gp_Pnt fp = BRep_Tool.Pnt(fv);
+                            Point3D fp = BRep_Tool.Pnt(fv);
                             if ((shared && lvertex.IsSame(fv)) || (!shared && lpoint.IsEqual(fp, tolerance)))
                             {
                                 found = true;
@@ -577,7 +580,7 @@ public sealed class ShapeAnalysis_FreeBounds
                         if (statuses.Value(j) == 0)
                         {
                             TopoDS_Vertex fv = sae.FirstVertex(sewd.Edge(j));
-                            gp_Pnt fp = BRep_Tool.Pnt(fv);
+                            Point3D fp = BRep_Tool.Pnt(fv);
                             if ((shared && lvertex.IsSame(fv)) || (!shared && lpoint.IsEqual(fp, tolerance)))
                             {
                                 found = true;
@@ -697,7 +700,7 @@ public sealed class ShapeAnalysis_FreeBounds
     // its items.
     private static TopoDS_Compound writable(in TopoDS_Compound theCompound)
     {
-        if (theCompound.IsNull() || !theCompound.TShape()!.IsFrozen())
+        if (theCompound.IsNull() || !theCompound.TShape()!.IsFrozen)
         {
             return theCompound;
         }

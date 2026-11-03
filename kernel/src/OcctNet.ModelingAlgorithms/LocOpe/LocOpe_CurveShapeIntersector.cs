@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_Orientation;
 
@@ -24,17 +26,17 @@ public sealed class LocOpe_CurveShapeIntersector
         myDone = false;
     }
 
-    public LocOpe_CurveShapeIntersector(in gp_Ax1 Axis, in TopoDS_Shape S)
+    public LocOpe_CurveShapeIntersector(in Axis3D Axis, in TopoDS_Shape S)
     {
         Init(Axis, S);
     }
 
-    public LocOpe_CurveShapeIntersector(in gp_Circ C, in TopoDS_Shape S)
+    public LocOpe_CurveShapeIntersector(in Circle3D C, in TopoDS_Shape S)
     {
         Init(C, S);
     }
 
-    public void Init(in gp_Ax1 Axis, in TopoDS_Shape S)
+    public void Init(in Axis3D Axis, in TopoDS_Shape S)
     {
         myDone = false;
         myPoints.Clear();
@@ -42,15 +44,15 @@ public sealed class LocOpe_CurveShapeIntersector
         {
             return;
         }
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         BRepIntCurveSurface_Inter theInt = new();
-        theInt.Init(S, new gp_Lin(Axis), Tol);
+        theInt.Init(S, new Line3D(Axis), Tol);
         Perform(theInt, myPoints);
         myDone = true;
     }
 
-    public void Init(in gp_Circ C, in TopoDS_Shape S)
+    public void Init(in Circle3D C, in TopoDS_Shape S)
     {
         myDone = false;
         myPoints.Clear();
@@ -58,7 +60,7 @@ public sealed class LocOpe_CurveShapeIntersector
         {
             return;
         }
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         Geom_Circle GC = new(C);
         GeomAdaptor_Curve AC = new(GC, 0.0, 2.0 * Math.PI);
@@ -76,7 +78,7 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myPoints.Length();
     }
@@ -85,7 +87,7 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myPoints.Value(I);
     }
@@ -98,9 +100,9 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
-        double Eps = Precision.Confusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double param, FMEPS = From - Eps;
         int i, ifirst, nbpoints = myPoints.Length();
         for (ifirst = 1; ifirst <= nbpoints; ifirst++)
@@ -161,9 +163,9 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
-        double Eps = Precision.Confusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double param, FPEPS = From + Eps;
         int i, ifirst, nbpoints = myPoints.Length();
         for (ifirst = nbpoints; ifirst >= 1; ifirst--)
@@ -221,7 +223,7 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         int nbpoints = myPoints.Length();
         if (FromInd >= nbpoints)
@@ -229,7 +231,7 @@ public sealed class LocOpe_CurveShapeIntersector
             return false;
         }
 
-        double Eps = Precision.Confusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double param, FMEPS;
         int i, ifirst;
         if (FromInd >= 1)
@@ -295,7 +297,7 @@ public sealed class LocOpe_CurveShapeIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         int nbpoints = myPoints.Length();
         if (FromInd <= 1)
@@ -303,7 +305,7 @@ public sealed class LocOpe_CurveShapeIntersector
             return false;
         }
 
-        double Eps = Precision.Confusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double param, FPEPS;
         int i, ifirst;
         if (FromInd <= nbpoints)
@@ -373,7 +375,7 @@ public sealed class LocOpe_CurveShapeIntersector
 
         while (theInt.More())
         {
-            gp_Pnt thept = theInt.Pnt();
+            Point3D thept = theInt.Pnt();
             TopoDS_Face theface = theInt.Face();
             orface = theface.Orientation();
             param = theInt.W();

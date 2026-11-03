@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Approx_ParametrizationType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -25,7 +28,7 @@ public class Geom2dAPI_PointsToBSpline
 
     private static bool hasMeaningfulSpan(double theSpan)
     {
-        double aResolution = gp.Resolution();
+        double aResolution = Constants.Resolution();
         return theSpan * theSpan > aResolution * aResolution;
     }
 
@@ -36,8 +39,8 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> with chord-length parameters.</summary>
-    public Geom2dAPI_PointsToBSpline(NCollection_Array1<gp_Pnt2d> Points, int DegMin = 3, int DegMax = 8,
-                                     GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-6)
+    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, int DegMin = 3, int DegMax = 8,
+                                     Continuity Continuity = C2, double Tol2D = 1.0e-6)
     {
         myIsDone = false;
         Init(Points, DegMin, DegMax, Continuity, Tol2D);
@@ -48,15 +51,15 @@ public class Geom2dAPI_PointsToBSpline
     /// parametrised from X0 to X0 + DX * (YValues.Upper() - YValues.Lower()), with X(t) = t.
     /// </summary>
     public Geom2dAPI_PointsToBSpline(NCollection_Array1<double> YValues, double X0, double DX, int DegMin = 3,
-                                     int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-6)
+                                     int DegMax = 8, Continuity Continuity = C2, double Tol2D = 1.0e-6)
     {
         myIsDone = false;
         Init(YValues, X0, DX, DegMin, DegMax, Continuity, Tol2D);
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public Geom2dAPI_PointsToBSpline(NCollection_Array1<gp_Pnt2d> Points, Approx_ParametrizationType ParType,
-                                     int DegMin = 3, int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2,
+    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, Approx_ParametrizationType ParType,
+                                     int DegMin = 3, int DegMax = 8, Continuity Continuity = C2,
                                      double Tol2D = 1.0e-3)
     {
         myIsDone = false;
@@ -64,8 +67,8 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> at the parameters <paramref name="Params"/>.</summary>
-    public Geom2dAPI_PointsToBSpline(NCollection_Array1<gp_Pnt2d> Points, NCollection_Array1<double> Params,
-                                     int DegMin = 3, int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2,
+    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, NCollection_Array1<double> Params,
+                                     int DegMin = 3, int DegMax = 8, Continuity Continuity = C2,
                                      double Tol2D = 1.0e-3)
     {
         myIsDone = false;
@@ -76,16 +79,16 @@ public class Geom2dAPI_PointsToBSpline
     /// Approximates <paramref name="Points"/> by the variational method, minimising W1 x length + W2 x curvature +
     /// W3 x torsion.
     /// </summary>
-    public Geom2dAPI_PointsToBSpline(NCollection_Array1<gp_Pnt2d> Points, double W1, double W2, double W3,
-                                     int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2, double Tol3D = 1.0e-3)
+    public Geom2dAPI_PointsToBSpline(NCollection_Array1<Point2D> Points, double W1, double W2, double W3,
+                                     int DegMax = 8, Continuity Continuity = C2, double Tol3D = 1.0e-3)
     {
         myIsDone = false;
         Init(Points, W1, W2, W3, DegMax, Continuity, Tol3D);
     }
 
     /// <summary>Approximates <paramref name="Points"/> with the parametrisation <paramref name="ParType"/>.</summary>
-    public void Init(NCollection_Array1<gp_Pnt2d> Points, Approx_ParametrizationType ParType, int DegMin = 3,
-                     int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-3)
+    public void Init(NCollection_Array1<Point2D> Points, Approx_ParametrizationType ParType, int DegMin = 3,
+                     int DegMax = 8, Continuity Continuity = C2, double Tol2D = 1.0e-3)
     {
         myIsDone = false;
         double Tol3D = 0.0; // dummy argument for BSplineCompute.
@@ -105,7 +108,7 @@ public class Geom2dAPI_PointsToBSpline
 
         AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, TheCurve.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
@@ -117,13 +120,13 @@ public class Geom2dAPI_PointsToBSpline
     /// Approximates the graph of a function: the points (X0 + DX * (i - YValues.Lower()), YValues(i)), with X(t) = t.
     /// </summary>
     public void Init(NCollection_Array1<double> YValues, double X0, double DX, int DegMin = 3, int DegMax = 8,
-                     GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-6)
+                     Continuity Continuity = C2, double Tol2D = 1.0e-6)
     {
         myIsDone = false;
         // first approximate the Y values (with dummy 0 as X values)
 
         double Tol3D = 0.0; // dummy argument for BSplineCompute.
-        NCollection_Array1<gp_Pnt2d> Points = new(YValues.Lower(), YValues.Upper());
+        NCollection_Array1<Point2D> Points = new(YValues.Lower(), YValues.Upper());
         math_Vector Param = new(YValues.Lower(), YValues.Upper());
         double length = DX * (YValues.Upper() - YValues.Lower());
         double aDenominator = X0 + length;
@@ -152,7 +155,7 @@ public class Geom2dAPI_PointsToBSpline
         AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
 
         int Degree = TheCurve.Degree();
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, TheCurve.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
         int nk = TheCurve.Knots().Length();
         NCollection_Array1<double> Knots = new(1, nk);
         NCollection_Array1<int> Mults = new(1, nk);
@@ -176,11 +179,11 @@ public class Geom2dAPI_PointsToBSpline
         NCollection_Array1<double> NewTempPoles = new(1, Degree + 1);
         NCollection_Array1<double> NewTempKnots = new(1, 2);
         NCollection_Array1<int> NewTempMults = new(1, 2);
-        BSplCLib.IncreaseDegree(1, Degree, false, 1, TempPoles, TempKnots, TempMults, NewTempPoles, NewTempKnots,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(1, Degree, false, 1, TempPoles, TempKnots, TempMults, NewTempPoles, NewTempKnots,
                                 NewTempMults);
 
         // insert the Knots
-        BSplCLib.InsertKnots(Degree, false, 1, NewTempPoles, NewTempKnots, NewTempMults, TheCurve.Knots(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(Degree, false, 1, NewTempPoles, NewTempKnots, NewTempMults, TheCurve.Knots(),
                              TheCurve.Multiplicities(), XPoles, Knots, Mults, Epsilon(1));
 
         // scale the knots
@@ -200,21 +203,21 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     /// <summary>Approximates <paramref name="Points"/> with chord-length parameters.</summary>
-    public void Init(NCollection_Array1<gp_Pnt2d> Points, int DegMin = 3, int DegMax = 8,
-                     GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-6)
+    public void Init(NCollection_Array1<Point2D> Points, int DegMin = 3, int DegMax = 8,
+                     Continuity Continuity = C2, double Tol2D = 1.0e-6)
     {
         myIsDone = false;
         Init(Points, Approx_ChordLength, DegMin, DegMax, Continuity, Tol2D);
     }
 
     /// <summary>Approximates <paramref name="Points"/> at the parameters <paramref name="Params"/>.</summary>
-    public void Init(NCollection_Array1<gp_Pnt2d> Points, NCollection_Array1<double> Params, int DegMin = 3,
-                     int DegMax = 8, GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-3)
+    public void Init(NCollection_Array1<Point2D> Points, NCollection_Array1<double> Params, int DegMin = 3,
+                     int DegMax = 8, Continuity Continuity = C2, double Tol2D = 1.0e-3)
     {
         myIsDone = false;
         if (Params.Length() != Points.Length())
         {
-            throw new Standard_OutOfRange("Geom2dAPI_PointsToBSpline::Init() - invalid input");
+            throw new OutOfRangeException("Geom2dAPI_PointsToBSpline::Init() - invalid input");
         }
 
         double Tol3D = 0.0; // dummy argument for BSplineCompute.
@@ -246,7 +249,7 @@ public class Geom2dAPI_PointsToBSpline
 
         AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, TheCurve.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
@@ -259,8 +262,8 @@ public class Geom2dAPI_PointsToBSpline
     /// Approximates <paramref name="Points"/> by the variational method, minimising W1 x length + W2 x curvature +
     /// W3 x torsion.
     /// </summary>
-    public void Init(NCollection_Array1<gp_Pnt2d> Points, double W1, double W2, double W3, int DegMax = 8,
-                     GeomAbs_Shape Continuity = GeomAbs_C2, double Tol2D = 1.0e-3)
+    public void Init(NCollection_Array1<Point2D> Points, double W1, double W2, double W3, int DegMax = 8,
+                     Continuity Continuity = C2, double Tol2D = 1.0e-3)
     {
         myIsDone = false;
         int NbPoint = Points.Length(), i;
@@ -320,7 +323,7 @@ public class Geom2dAPI_PointsToBSpline
         {
             Variation.Approximate();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return;
         }
@@ -332,7 +335,7 @@ public class Geom2dAPI_PointsToBSpline
 
         AppParCurves_MultiBSpCurve TheCurve = Variation.Value();
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, TheCurve.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, TheCurve.NbPoles());
 
         TheCurve.Curve(1, Poles);
 
@@ -342,21 +345,21 @@ public class Geom2dAPI_PointsToBSpline
     }
 
     // The switch on the continuity that OCCT writes out in each least-squares Init.
-    private static void SetContinuity(AppDef_BSplineCompute TheComputer, GeomAbs_Shape Continuity)
+    private static void SetContinuity(AppDef_BSplineCompute TheComputer, Continuity Continuity)
     {
         switch (Continuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 TheComputer.SetContinuity(0);
                 break;
 
-            case GeomAbs_G1:
-            case GeomAbs_C1:
+            case G1:
+            case C1:
                 TheComputer.SetContinuity(1);
                 break;
 
-            case GeomAbs_G2:
-            case GeomAbs_C2:
+            case G2:
+            case C2:
                 TheComputer.SetContinuity(2);
                 break;
 
@@ -371,7 +374,7 @@ public class Geom2dAPI_PointsToBSpline
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone(" ");
+            throw new NotDoneException(" ");
         }
         myCurve!.Freeze();
         return myCurve;

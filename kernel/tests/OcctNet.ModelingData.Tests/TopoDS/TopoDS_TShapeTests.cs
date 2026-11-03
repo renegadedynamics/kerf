@@ -2,6 +2,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Edge_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -12,9 +13,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_TShapeTests
 {
-    private static TopoDS_Vertex MakeVertex(in gp_Pnt theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static TopoDS_Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
 
-    private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static TopoDS_Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     [Fact]
     public void ShapeType_AllTypes()
@@ -22,10 +23,10 @@ public class TopoDS_TShapeTests
         var aBuilder = new TopoDS_Builder();
 
         // Create various shapes and verify ShapeType
-        TopoDS_Vertex aVertex = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aVertex = MakeVertex(new Point3D(0, 0, 0));
         Assert.Equal(TopAbs_VERTEX, aVertex.TShape()!.ShapeType());
 
-        TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Assert.Equal(TopAbs_EDGE, anEdge.TShape()!.ShapeType());
 
         TopoDS_Wire aWire = new();
@@ -109,11 +110,11 @@ public class TopoDS_TShapeTests
         var aBuilder = new TopoDS_Builder();
 
         // Vertex has 0 children
-        TopoDS_Vertex aVertex = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aVertex = MakeVertex(new Point3D(0, 0, 0));
         Assert.Equal(0, aVertex.TShape()!.NbChildren());
 
         // Edge has 2 children (vertices)
-        TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Assert.Equal(2, anEdge.TShape()!.NbChildren());
 
         // Empty wire has 0 children
@@ -130,7 +131,7 @@ public class TopoDS_TShapeTests
         aBuilder.MakeCompound(ref aCompound);
         for (int i = 0; i < 10; ++i)
         {
-            aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(i, 0, 0)));
+            aBuilder.Add(aCompound, MakeVertex(new Point3D(i, 0, 0)));
         }
 
         Assert.Equal(10, aCompound.TShape()!.NbChildren());
@@ -144,8 +145,8 @@ public class TopoDS_TShapeTests
         // Create compound with children
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(0, 0, 0)));
-        aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(1, 0, 0)));
+        aBuilder.Add(aCompound, MakeVertex(new Point3D(0, 0, 0)));
+        aBuilder.Add(aCompound, MakeVertex(new Point3D(1, 0, 0)));
         Assert.Equal(2, aCompound.TShape()!.NbChildren());
 
         // EmptyCopy should create same type with no children
@@ -161,7 +162,7 @@ public class TopoDS_TShapeTests
 
         // Test Edge EmptyCopy
         {
-            TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+            TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
             TopoDS_TShape aCopy = anEdge.TShape()!.EmptyCopy();
             Assert.Equal(TopAbs_EDGE, aCopy.ShapeType());
             Assert.Equal(0, aCopy.NbChildren());
@@ -202,7 +203,7 @@ public class TopoDS_TShapeTests
         var aBuilder = new TopoDS_Builder();
 
         // Edge should be orientable
-        TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Assert.True(anEdge.TShape()!.Orientable());
 
         // Compound should not be orientable
@@ -253,7 +254,7 @@ public class TopoDS_TShapeTests
         // Create wire with edge
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
-        TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         aBuilder.Add(aWire, anEdge);
 
         // Get NbChildren via TShape
@@ -277,7 +278,7 @@ public class TopoDS_TShapeTests
     public void BUC60828_InfiniteFlag()
     {
         // Create a simple edge
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(0.0, 0.0, 1.0)).InternalEdge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 0.0, 1.0)).InternalEdge();
 
         // Check initial flag value (should be false by default)
         bool anInitialValue = anEdge.Infinite();
@@ -295,7 +296,7 @@ public class TopoDS_TShapeTests
     public void Initial_flags_of_each_TShape_type_are_OCCTs()
     {
         // TopoDS_TShape: Free, Modified, Orientable; TCompound and TSolid aren't orientable; TVertex is closed and convex
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt()).InternalVertex();
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D()).InternalVertex();
         Assert.True(aV.Free() && aV.Modified() && aV.Orientable() && aV.Closed() && aV.Convex());
         TopoDS_Solid aSolid = new();
         new TopoDS_Builder().MakeSolid(ref aSolid);

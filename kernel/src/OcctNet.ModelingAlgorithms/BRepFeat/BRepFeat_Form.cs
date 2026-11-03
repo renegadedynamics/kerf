@@ -878,8 +878,8 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
             theBuilder.PartsOfTool(lshape);
             //
             double pbmin = RealLast(), pbmax = RealFirst();
-            double prmin = RealLast() - 2 * Precision.Confusion();
-            double prmax = RealFirst() + 2 * Precision.Confusion();
+            double prmin = RealLast() - 2 * global::Kerf.Engine.Foundation.Precision.Confusion();
+            double prmax = RealFirst() + 2 * global::Kerf.Engine.Foundation.Precision.Confusion();
             bool flag1 = false;
             Geom_Curve? C = null;
 
@@ -912,14 +912,14 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                         prmax = prmax2;
                         if (flag1)
                         {
-                            prmin = ElCLib.InPeriod(prmin1, prmax - period, prmax);
+                            prmin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(prmin1, prmax - period, prmax);
                         }
                         else
                         {
                             prmin = Min(prmin1, prmin2);
                         }
                         pbmax = prbmax2;
-                        pbmin = ElCLib.InPeriod(prbmin1, pbmax - period, pbmax);
+                        pbmin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(prbmin1, pbmax - period, pbmax);
                     }
                     else
                     {
@@ -991,7 +991,7 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                 // intersects Shapes From and Until
                 //       case of several intersections (keep PartsOfTool according to the selection)
                 //       position of the face of intersection in PartsOfTool (before or after)
-                double delta = Precision.Confusion();
+                double delta = global::Kerf.Engine.Foundation.Precision.Confusion();
 
                 if (myPerfSelection != BRepFeat_NoSelection)
                 {
@@ -1158,13 +1158,13 @@ public abstract class BRepFeat_Form : BRepBuilderAPI_MakeShape
                             BRepFeat.ParametricMinMax(it.Value(), C, out double pr, out prmax1, out double prb, out prbmax1, out flag2, true);
                             if (flag2)
                             {
-                                prmin1 = ElCLib.InPeriod(pr, prmax1 - period, prmax1);
+                                prmin1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(pr, prmax1 - period, prmax1);
                             }
                             else
                             {
                                 prmin1 = pr;
                             }
-                            prbmin1 = ElCLib.InPeriod(prb, prbmax1 - period, prbmax1);
+                            prbmin1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(prb, prbmax1 - period, prbmax1);
                         }
                         else
                         {

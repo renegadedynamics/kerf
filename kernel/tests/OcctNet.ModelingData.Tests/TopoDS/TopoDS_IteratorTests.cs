@@ -1,6 +1,9 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Iterator_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -11,9 +14,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_IteratorTests
 {
-    private static TopoDS_Vertex MakeVertex(in gp_Pnt theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static TopoDS_Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
 
-    private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static TopoDS_Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     private static TopoDS_Shape MakeBox(double dx, double dy, double dz) => new BRepPrimAPI_MakeBox(dx, dy, dz).Shape();
 
@@ -51,7 +54,7 @@ public class TopoDS_IteratorTests
         // Add 5 vertices
         for (int i = 0; i < 5; ++i)
         {
-            TopoDS_Vertex aV = MakeVertex(new gp_Pnt(i, 0, 0));
+            TopoDS_Vertex aV = MakeVertex(new Point3D(i, 0, 0));
             aBuilder.Add(aCompound, aV);
         }
 
@@ -74,10 +77,10 @@ public class TopoDS_IteratorTests
         aBuilder.MakeWire(ref aWire);
 
         // Create a rectangular wire (4 edges)
-        TopoDS_Edge aE1 = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
-        TopoDS_Edge aE2 = MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0));
-        TopoDS_Edge aE3 = MakeEdge(new gp_Pnt(1, 1, 0), new gp_Pnt(0, 1, 0));
-        TopoDS_Edge aE4 = MakeEdge(new gp_Pnt(0, 1, 0), new gp_Pnt(0, 0, 0));
+        TopoDS_Edge aE1 = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        TopoDS_Edge aE2 = MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        TopoDS_Edge aE3 = MakeEdge(new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        TopoDS_Edge aE4 = MakeEdge(new Point3D(0, 1, 0), new Point3D(0, 0, 0));
 
         aBuilder.Add(aWire, aE1);
         aBuilder.Add(aWire, aE2);
@@ -98,7 +101,7 @@ public class TopoDS_IteratorTests
     [Fact]
     public void EdgeWithVertices()
     {
-        TopoDS_Edge anEdge = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 1, 1));
+        TopoDS_Edge anEdge = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 1, 1));
 
         int aCount = 0;
         for (var anIt = new TopoDS_Iterator(anEdge); anIt.More(); anIt.Next())
@@ -113,7 +116,7 @@ public class TopoDS_IteratorTests
     [Fact]
     public void VertexNoChildren()
     {
-        TopoDS_Vertex aVertex = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aVertex = MakeVertex(new Point3D(0, 0, 0));
 
         var anIt = new TopoDS_Iterator(aVertex);
         Assert.False(anIt.More());
@@ -126,7 +129,7 @@ public class TopoDS_IteratorTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV = MakeVertex(new Point3D(0, 0, 0));
         aBuilder.Add(aCompound, aV);
 
         // Reverse the compound
@@ -157,12 +160,12 @@ public class TopoDS_IteratorTests
         // Add different number of vertices
         for (int i = 0; i < 3; ++i)
         {
-            aBuilder.Add(aCompound1, MakeVertex(new gp_Pnt(i, 0, 0)));
+            aBuilder.Add(aCompound1, MakeVertex(new Point3D(i, 0, 0)));
         }
 
         for (int i = 0; i < 5; ++i)
         {
-            aBuilder.Add(aCompound2, MakeVertex(new gp_Pnt(i, 1, 0)));
+            aBuilder.Add(aCompound2, MakeVertex(new Point3D(i, 1, 0)));
         }
 
         var anIt = new TopoDS_Iterator(aCompound1);
@@ -228,7 +231,7 @@ public class TopoDS_IteratorTests
         // Add many vertices
         for (int i = 0; i < aNbVertices; ++i)
         {
-            aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(i, 0, 0)));
+            aBuilder.Add(aCompound, MakeVertex(new Point3D(i, 0, 0)));
         }
 
         // Iterate and count
@@ -247,7 +250,7 @@ public class TopoDS_IteratorTests
         var aBuilder = new TopoDS_Builder();
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(0, 0, 0)));
+        aBuilder.Add(aCompound, MakeVertex(new Point3D(0, 0, 0)));
 
         // Default construct, then initialize
         var anIt = new TopoDS_Iterator();
@@ -269,7 +272,7 @@ public class TopoDS_IteratorTests
         Assert.False(anIt.More());
 
         // Value() should throw Standard_NoSuchObject when !More()
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => anIt.Value());
+        Assert.ThrowsAny<NoSuchObjectException>(() => anIt.Value());
     }
 
     [Fact]
@@ -279,27 +282,27 @@ public class TopoDS_IteratorTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV = MakeVertex(new Point3D(0, 0, 0));
         aBuilder.Add(aCompound, aV);
 
         // Apply a translation to the compound
-        gp_Trsf aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(10, 20, 30));
-        var aLoc = new TopLoc_Location(aTrsf);
+        Transform3D aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        var aLoc = new Placement(aTrsf);
         aCompound.Location(aLoc);
 
         // With cumLoc=true (default), child should have composed location
         var anIt1 = new TopoDS_Iterator(aCompound, true, true);
         Assert.True(anIt1.More());
-        TopLoc_Location aChildLoc1 = anIt1.Value().Location();
+        Placement aChildLoc1 = anIt1.Value().Location();
 
         // With cumLoc=false, child should have original location
         var anIt2 = new TopoDS_Iterator(aCompound, true, false);
         Assert.True(anIt2.More());
-        TopLoc_Location aChildLoc2 = anIt2.Value().Location();
+        Placement aChildLoc2 = anIt2.Value().Location();
 
         // Locations should differ
-        Assert.NotEqual(aChildLoc1.IsIdentity(), aChildLoc2.IsIdentity());
+        Assert.NotEqual(aChildLoc1.IsIdentity, aChildLoc2.IsIdentity);
     }
 
     [Fact]
@@ -312,9 +315,9 @@ public class TopoDS_IteratorTests
         aBuilder.MakeCompound(ref aInner2);
 
         // Add vertices to inner compounds
-        aBuilder.Add(aInner1, MakeVertex(new gp_Pnt(0, 0, 0)));
-        aBuilder.Add(aInner1, MakeVertex(new gp_Pnt(1, 0, 0)));
-        aBuilder.Add(aInner2, MakeVertex(new gp_Pnt(2, 0, 0)));
+        aBuilder.Add(aInner1, MakeVertex(new Point3D(0, 0, 0)));
+        aBuilder.Add(aInner1, MakeVertex(new Point3D(1, 0, 0)));
+        aBuilder.Add(aInner2, MakeVertex(new Point3D(2, 0, 0)));
 
         // Add inner compounds to outer
         aBuilder.Add(aOuter, aInner1);
@@ -369,8 +372,8 @@ public class TopoDS_IteratorTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(2, 0, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(2, 0, 0));
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
 

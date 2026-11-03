@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -31,21 +35,21 @@ namespace Occt;
 public sealed class Geom2dGcc_Circ2d2TanOnIter
 {
     private bool WellDone;
-    private gp_Circ2d cirsol = new();
+    private Circle2D cirsol = new();
     private GccEnt_Position qualifier1;
     private GccEnt_Position qualifier2;
     private bool TheSame1;
     // OCCT's TheSame2 is only ever set to false and never read (IsTheSame2 returns false): left out.
-    private gp_Pnt2d pnttg1sol = new();
-    private gp_Pnt2d pnttg2sol = new();
-    private gp_Pnt2d pntcen = new();
+    private Point2D pnttg1sol = new();
+    private Point2D pnttg2sol = new();
+    private Point2D pntcen = new();
     private double par1sol;
     private double par2sol;
     private double pararg1;
     private double pararg2;
     private double parcen3;
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Lin2d OnLine, double Param1, double Param2, double Param3, double Tolang)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in Line2D OnLine, double Param1, double Param2, double Param3, double Tolang)
     {
 
         TheSame1 = false;
@@ -65,8 +69,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
-        gp_Lin2d            L1  = Qualified1.Qualified();
+        Direction2D            dirx = new(Direction2D.D.X);
+        Line2D            L1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
@@ -87,34 +91,34 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Tolang);
         tol[3]          = tol[1];
         tol[4]          = tol[1];
-        gp_Pnt2d point1 = ElCLib.Value(Param1, L1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = ElCLib.Value(Param3, OnLine);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, L1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param3, OnLine);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(L1, Cu2, OnLine, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             //     gp_Vec2d Tan1,Tan2,Nor1,Nor2;
-            gp_Vec2d Tan1, Tan2;
-            ElCLib.D1(Ufirst[1], L1, out point1, out Tan1);
+            Vector2D Tan1, Tan2;
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[1], L1, out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
-            gp_Vec2d Tan3 = new(OnLine.Direction().XY());
-            gp_Pnt2d point3new = new(OnLine.Location().XY() + Ufirst[3] * Tan3.XY());
+            Vector2D Tan3 = new(OnLine.Direction().XY());
+            Point2D point3new = new(OnLine.Location().XY() + Ufirst[3] * Tan3.XY());
             double   dist1 = point3new.Distance(point1);
             double   dist2 = point3new.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3new, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3new);
-                gp_Vec2d Vec2 = new(point2, point3new);
+                Vector2D Vec1 = new(point1, point3new);
+                Vector2D Vec2 = new(point2, point3new);
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -122,7 +126,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3new.XY().Dot(new gp_XY(-L1.Direction().Y(), L1.Direction().X()));
+                double pscal = point3new.XY().Dot(new Xy(-L1.Direction().Y(), L1.Direction().X()));
                 if (Qualified1.IsUnqualified() || (Qualified1.IsOutside() && pscal <= 0.0)
                         || (Qualified1.IsEnclosed() && pscal >= 0.0))
                 {
@@ -133,10 +137,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3new;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -146,7 +150,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Lin2d OnLine, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in Line2D OnLine, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -166,7 +170,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -188,22 +192,22 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = 1.0e-15;
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = ElCLib.Value(Param3, OnLine);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param3, OnLine);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Cu2, OnLine, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Vec2d Tan1, Tan2;
+            Vector2D Tan1, Tan2;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
-            gp_Vec2d Tan3 = new(OnLine.Direction().XY());
-            gp_Pnt2d point3new = new(OnLine.Location().XY() + Ufirst[3] * Tan3.XY());
+            Vector2D Tan3 = new(OnLine.Direction().XY());
+            Point2D point3new = new(OnLine.Location().XY() + Ufirst[3] * Tan3.XY());
             double   dist1 = point3new.Distance(point1);
             double   dist2 = point3new.Distance(point2);
             if ((dist1 + dist2) / 2.0 < Tol)
@@ -212,15 +216,15 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             }
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3new, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3new);
-                gp_Vec2d Vec2 = new(point2, point3new);
+                Vector2D Vec1 = new(point1, point3new);
+                Vector2D Vec2 = new(point2, point3new);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   angle1, angle2;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -228,7 +232,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -246,10 +250,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3new;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -259,7 +263,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in gp_Pnt2d Point2, in gp_Lin2d OnLine, double Param1, double Param2, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, in Line2D OnLine, double Param1, double Param2, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -277,7 +281,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
@@ -294,30 +298,30 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[1]          = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
         tol[2]          = 1.0e-15;
         tol[3]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point3 = ElCLib.Value(Param2, OnLine);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param2, OnLine);
         Ufirst[3]       = (point3.Distance(Point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Point2, OnLine, Max(Ufirst[3], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Pnt2d point1new, point3new;
-            gp_Vec2d Tan1, Tan3;
+            Point2D point1new, point3new;
+            Vector2D Tan1, Tan3;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1new, out Tan1);
-            ElCLib.D1(Ufirst[2], OnLine, out point3new, out Tan3);
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[2], OnLine, out point3new, out Tan3);
             double dist1 = point3new.Distance(point1new);
             double dist2 = point3new.Distance(Point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3new, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
-                gp_Vec2d Vec1 = new(point1new, point3new);
+                Vector2D Vec1 = new(point1new, point3new);
                 double   normevec1 = Vec1.Magnitude();
                 double   angle1;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -332,10 +336,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                     qualifier2 = GccEnt_noqualifier;
                     pnttg1sol  = point1new;
                     pararg1    = Ufirst[1];
-                    par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                    par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                     pnttg2sol  = Point2;
                     pararg2    = Ufirst[2]; // OCCT: the line parameter of the centre, not a parameter on the point
-                    par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                    par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                     pntcen     = point3new;
                     parcen3    = Ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
                     WellDone   = true;
@@ -344,7 +348,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Lin2d OnLine, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in Line2D OnLine, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -364,8 +368,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
-        gp_Circ2d           C1  = Qualified1.Qualified();
+        Direction2D            dirx = new(Direction2D.D.X);
+        Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -387,34 +391,34 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = 1.0e-15;
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = ElCLib.Value(Param1, C1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = ElCLib.Value(Param3, OnLine);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, C1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param3, OnLine);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(C1, Cu2, OnLine, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             //     gp_Vec2d Tan1,Tan2,Nor1,Nor2;
-            gp_Vec2d Tan1, Tan2, Nor2;
-            ElCLib.D2(Ufirst[1], C1, out point1, out Tan1, out Nor2);
+            Vector2D Tan1, Tan2, Nor2;
+            global::Kerf.Engine.Geometry.ElCLib.D2(Ufirst[1], C1, out point1, out Tan1, out Nor2);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             OnLine.Direction().XY(); // (OCCT_DEBUG makes a vector of it)
-            point3       = ElCLib.Value(Ufirst[1], OnLine); // OCCT: Ufirst(1) is the parameter on C1, not the centre's on OnLine (Ufirst(3))
+            point3       = global::Kerf.Engine.Geometry.ElCLib.Value(Ufirst[1], OnLine); // OCCT: Ufirst(1) is the parameter on C1, not the centre's on OnLine (Ufirst(3))
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
-                gp_Vec2d Vec2 = new(point2, point3);
+                Vector2D Vec1 = new(point1, point3);
+                Vector2D Vec2 = new(point2, point3);
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -435,10 +439,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -448,7 +452,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Circ2d OnCirc, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in Circle2D OnCirc, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -468,8 +472,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
-        gp_Circ2d           C1  = Qualified1.Qualified();
+        Direction2D            dirx = new(Direction2D.D.X);
+        Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -491,33 +495,33 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = 2.0e-15 * M_PI;
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = ElCLib.Value(Param1, C1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = ElCLib.Value(Param3, OnCirc);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, C1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param3, OnCirc);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(C1, Cu2, OnCirc, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             //     gp_Vec2d Tan1,Tan2,Nor1;
-            gp_Vec2d Tan1, Tan2;
-            ElCLib.D1(Ufirst[1], C1, out point1, out Tan1);
+            Vector2D Tan1, Tan2;
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[1], C1, out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
-            point3       = ElCLib.Value(Ufirst[3], OnCirc);
+            point3       = global::Kerf.Engine.Geometry.ElCLib.Value(Ufirst[3], OnCirc);
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
-                gp_Vec2d Vec2 = new(point2, point3);
+                Vector2D Vec1 = new(point1, point3);
+                Vector2D Vec2 = new(point2, point3);
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -538,10 +542,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -551,7 +555,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Circ2d OnCirc, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in Circle2D OnCirc, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -570,8 +574,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
-        gp_Lin2d            L1  = Qualified1.Qualified();
+        Direction2D            dirx = new(Direction2D.D.X);
+        Line2D            L1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
@@ -592,33 +596,33 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = 2.0e-15 * M_PI;
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = ElCLib.Value(Param1, L1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = ElCLib.Value(Param3, OnCirc);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, L1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param3, OnCirc);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(L1, Cu2, OnCirc, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Pnt2d point1new, point2new;
-            gp_Vec2d Tan1, Tan2;
-            ElCLib.D1(Ufirst[1], L1, out point1new, out Tan1);
+            Point2D point1new, point2new;
+            Vector2D Tan1, Tan2;
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[1], L1, out point1new, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2new, out Tan2);
-            point3       = ElCLib.Value(Ufirst[3], OnCirc);
+            point3       = global::Kerf.Engine.Geometry.ElCLib.Value(Ufirst[3], OnCirc);
             double dist1 = point3.Distance(point1new);
             double dist2 = point3.Distance(point2new);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1new, point3);
-                gp_Vec2d Vec2 = new(point2new, point3);
+                Vector2D Vec1 = new(point1new, point3);
+                Vector2D Vec2 = new(point2new, point3);
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -626,7 +630,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3.XY().Dot(new gp_XY(-L1.Direction().Y(), L1.Direction().X()));
+                double pscal = point3.XY().Dot(new Xy(-L1.Direction().Y(), L1.Direction().X()));
                 if (Qualified1.IsUnqualified() || (Qualified1.IsOutside() && pscal <= 0.0)
                         || (Qualified1.IsEnclosed() && pscal >= 0.0))
                 {
@@ -637,10 +641,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1new;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2new;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -650,7 +654,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Circ2d OnCirc, double Param1, double Param2, double Param3, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in Circle2D OnCirc, double Param1, double Param2, double Param3, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -670,7 +674,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -692,37 +696,37 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = 2.0e-15 * M_PI;
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
         double   R1     = OnCirc.Radius();
-        gp_Pnt2d point3 = new(OnCirc.Location().XY() + R1 * new gp_XY(Math.Cos(Param3), Math.Sin(Param3)));
+        Point2D point3 = new(OnCirc.Location().XY() + R1 * new Xy(Math.Cos(Param3), Math.Sin(Param3)));
         Ufirst[4] = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Cu2, OnCirc, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             //     gp_Vec2d Tan1,Tan2,Nor1;
-            gp_Vec2d Tan1, Tan2;
+            Vector2D Tan1, Tan2;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             point3 =
-                new gp_Pnt2d(OnCirc.Location().XY() + R1 * new gp_XY(Math.Cos(Ufirst[3]), Math.Sin(Ufirst[3])));
+                new Point2D(OnCirc.Location().XY() + R1 * new Xy(Math.Cos(Ufirst[3]), Math.Sin(Ufirst[3])));
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
-                gp_Vec2d Vec2 = new(point2, point3);
+                Vector2D Vec1 = new(point1, point3);
+                Vector2D Vec2 = new(point2, point3);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   angle1, angle2;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -730,7 +734,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -761,7 +765,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in gp_Pnt2d Point2, in gp_Circ2d OnCirc, double Param1, double Param2, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, in Circle2D OnCirc, double Param1, double Param2, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -779,7 +783,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
@@ -796,30 +800,30 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[1]          = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
         tol[2]          = 2.0e-15 * M_PI;
         tol[3]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point3 = ElCLib.Value(Param2, OnCirc);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(Param2, OnCirc);
         Ufirst[3]       = (point3.Distance(Point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Point2, OnCirc, Max(Ufirst[3], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Pnt2d point1new, point3new;
-            gp_Vec2d Tan1, Tan3;
+            Point2D point1new, point3new;
+            Vector2D Tan1, Tan3;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1new, out Tan1);
-            ElCLib.D1(Ufirst[2], OnCirc, out point3new, out Tan3);
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[2], OnCirc, out point3new, out Tan3);
             double dist1 = point3new.Distance(point1new);
             double dist2 = point3new.Distance(Point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3new, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
-                gp_Vec2d Vec1 = new(point1new, point3new);
+                Vector2D Vec1 = new(point1new, point3new);
                 double   normevec1 = Vec1.Magnitude();
                 double   angle1;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -834,10 +838,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                     qualifier2 = GccEnt_noqualifier;
                     pnttg1sol  = point1new;
                     pararg1    = Ufirst[1];
-                    par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                    par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                     pnttg2sol  = Point2;
                     pararg2    = 0.0;
-                    par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                    par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                     pntcen     = point3new;
                     parcen3    = Ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
                     WellDone   = true;
@@ -866,7 +870,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -888,18 +892,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = Geom2dGcc_CurveTool.EpsX(OnCurv, Math.Abs(Tolerance));
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = Geom2dGcc_CurveTool.Value(OnCurv, Param3);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = Geom2dGcc_CurveTool.Value(OnCurv, Param3);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Cu2, OnCurv, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Vec2d Tan1, Tan2, Tan3;
+            Vector2D Tan1, Tan2, Tan3;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(OnCurv, Ufirst[3], out point3, out Tan3);
@@ -907,15 +911,15 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
-                gp_Vec2d Vec2 = new(point2, point3);
+                Vector2D Vec1 = new(point1, point3);
+                Vector2D Vec2 = new(point2, point3);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   angle1, angle2;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -923,7 +927,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -975,7 +979,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Circ2d           C1  = Qualified1.Qualified();
+        Circle2D           C1  = Qualified1.Qualified();
         double              R1  = C1.Radius();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
@@ -997,33 +1001,33 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = Geom2dGcc_CurveTool.EpsX(OnCurv, Math.Abs(Tolerance));
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = ElCLib.Value(Param1, C1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, C1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(C1, Cu2, OnCurv, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Vec2d Tan1, Tan2, Tan3;
+            Vector2D Tan1, Tan2, Tan3;
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(OnCurv, Ufirst[3], out point3, out Tan3);
-            ElCLib.D1(Ufirst[1], C1, out point1, out Tan1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[1], C1, out point1, out Tan1);
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                gp_Dir2d dirx = new(gp_Dir2d.D.X);
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                Direction2D dirx = new(Direction2D.D.X);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(new gp_Pnt2d(point1.XY()), new gp_Pnt2d(point3.XY()));
-                gp_Vec2d Vec2 = new(new gp_Pnt2d(point2.XY()), new gp_Pnt2d(point3.XY()));
+                Vector2D Vec1 = new(new Point2D(point1.XY()), new Point2D(point3.XY()));
+                Vector2D Vec2 = new(new Point2D(point2.XY()), new Point2D(point3.XY()));
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -1044,10 +1048,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -1076,8 +1080,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
-        gp_Lin2d            L1  = Qualified1.Qualified();
+        Direction2D            dirx = new(Direction2D.D.X);
+        Line2D            L1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve Cu2 = Qualified2.Qualified();
         math_Vector         Umin = new(1, 4);
         math_Vector         Umax = new(1, 4);
@@ -1098,32 +1102,32 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[2]          = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]          = Geom2dGcc_CurveTool.EpsX(OnCurv, Math.Abs(Tolerance));
         tol[4]          = Tol / 10.0;
-        gp_Pnt2d point1 = ElCLib.Value(Param1, L1);
-        gp_Pnt2d point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
-        gp_Pnt2d point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
+        Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(Param1, L1);
+        Point2D point2 = Geom2dGcc_CurveTool.Value(Cu2, Param2);
+        Point2D point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
         Ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(L1, Cu2, OnCurv, Max(Ufirst[4], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
-            gp_Vec2d Tan1, Tan2, Tan3;
-            ElCLib.D1(Ufirst[1], L1, out point1, out Tan1);
+            Vector2D Tan1, Tan2, Tan3;
+            global::Kerf.Engine.Geometry.ElCLib.D1(Ufirst[1], L1, out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(OnCurv, Ufirst[3], out point3, out Tan3);
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
-                gp_Vec2d Vec2 = new(point2, point3);
+                Vector2D Vec1 = new(point1, point3);
+                Vector2D Vec2 = new(point2, point3);
                 double   normevec2 = Vec2.Magnitude();
                 double   angle2;
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     angle2 = Vec2.Angle(Tan2);
                 }
@@ -1131,7 +1135,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3.XY().Dot(new gp_XY(-L1.Direction().Y(), L1.Direction().X()));
+                double pscal = point3.XY().Dot(new Xy(-L1.Direction().Y(), L1.Direction().X()));
                 if (Qualified1.IsUnqualified() || (Qualified1.IsOutside() && pscal <= 0.0)
                         || (Qualified1.IsEnclosed() && pscal >= 0.0))
                 {
@@ -1142,10 +1146,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                         qualifier2 = Qualified2.Qualifier();
                         pnttg1sol  = point1;
                         pararg1    = Ufirst[1];
-                        par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                        par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                         pnttg2sol  = point2;
                         pararg2    = Ufirst[2];
-                        par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                        par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                         pntcen     = point3;
                         parcen3    = Ufirst[3];
                         WellDone   = true;
@@ -1155,7 +1159,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         }
     }
 
-    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in gp_Pnt2d Point2, Geom2dAdaptor_Curve OnCurv, double Param1, double ParamOn, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Param1, double ParamOn, double Tolerance)
     {
         TheSame1 = false;
         par1sol  = 0.0;
@@ -1173,7 +1177,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             throw new GccEnt_BadQualifier();
         }
         double              Tol = Math.Abs(Tolerance);
-        gp_Dir2d            dirx = new(gp_Dir2d.D.X);
+        Direction2D            dirx = new(Direction2D.D.X);
         Geom2dAdaptor_Curve Cu1 = Qualified1.Qualified();
         math_Vector         Umin = new(1, 3);
         math_Vector         Umax = new(1, 3);
@@ -1190,30 +1194,30 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
         tol[1]          = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
         tol[2]          = Geom2dGcc_CurveTool.EpsX(OnCurv, Math.Abs(Tolerance));
         tol[3]          = Tol / 10.0;
-        gp_Pnt2d point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
-        gp_Pnt2d point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
+        Point2D point1 = Geom2dGcc_CurveTool.Value(Cu1, Param1);
+        Point2D point3 = Geom2dGcc_CurveTool.Value(OnCurv, ParamOn);
         Ufirst[3]       = (point3.Distance(Point2) + point3.Distance(point1)) / 2.0;
         Geom2dGcc_FunctionTanCuCuOnCu Func = new(Cu1, Point2, OnCurv, Max(Ufirst[3], Tol));
-        math_FunctionSetRoot          Root = new(Func, tol);
+        FunctionSetRoot          Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
         Func.Value(Ufirst, Umin);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             //    gp_Vec2d Tan1,Tan2,Tan3;
-            gp_Vec2d Tan1, Tan3;
+            Vector2D Tan1, Tan3;
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(OnCurv, Ufirst[3], out point3, out Tan3);
             double dist1 = point3.Distance(point1);
             double dist2 = point3.Distance(Point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
-                cirsol             = new gp_Circ2d(new gp_Ax2d(point3, dirx), (dist1 + dist2) / 2.0);
+                cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
                 double   normetan1 = Tan1.Magnitude();
-                gp_Vec2d Vec1 = new(point1, point3);
+                Vector2D Vec1 = new(point1, point3);
                 double   normevec1 = Vec1.Magnitude();
                 double   angle1;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     angle1 = Vec1.Angle(Tan1);
                 }
@@ -1228,10 +1232,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
                     qualifier2 = GccEnt_noqualifier;
                     pnttg1sol  = point1;
                     pararg1    = Ufirst[1];
-                    par1sol    = ElCLib.Parameter(cirsol, pnttg1sol);
+                    par1sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg1sol);
                     pnttg2sol  = Point2;
                     pararg2    = 0.0;
-                    par2sol    = ElCLib.Parameter(cirsol, pnttg2sol);
+                    par2sol    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol, pnttg2sol);
                     pntcen     = point3;
                     parcen3    = Ufirst[3]; // OCCT: Ufirst(3) is the radius here, not the centre's parameter
                     WellDone   = true;
@@ -1247,18 +1251,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
     }
 
     /// <summary>The solution (not checked: an undone construction returns the default circle).</summary>
-    public gp_Circ2d ThisSolution()
+    public Circle2D ThisSolution()
     {
         return cirsol;
     }
 
     /// <summary>The qualifiers of the solution relative to the two arguments.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public void WhichQualifier(out GccEnt_Position Qualif1, out GccEnt_Position Qualif2)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1268,12 +1272,12 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
     }
 
     /// <summary>The tangency point on the first argument (the parameters are always 0, as in OCCT).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the first argument.</exception>
-    public void Tangency1(out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the first argument.</exception>
+    public void Tangency1(out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1285,18 +1289,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
 
     /// <summary>The tangency point on the second argument (the parameters are always 0, as in OCCT).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    public void Tangency2(out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    public void Tangency2(out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1307,12 +1311,12 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
     }
 
     /// <summary>The centre of the solution (its parameter is always 0, as in OCCT).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    public void CenterOn3(out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    public void CenterOn3(out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1322,12 +1326,12 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
     }
 
     /// <summary>True if the solution is the first argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame1()
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (!TheSame1)
@@ -1338,12 +1342,12 @@ public sealed class Geom2dGcc_Circ2d2TanOnIter
     }
 
     /// <summary>Always false: the second argument is never the solution.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame2()
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return false;
     }

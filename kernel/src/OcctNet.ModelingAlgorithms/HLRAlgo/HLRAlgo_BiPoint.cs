@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Occt;
@@ -65,14 +66,14 @@ public partial struct HLRAlgo_BiPoint : IEquatable<HLRAlgo_BiPoint>
     /// <summary>The points of a segment (plain data): in 3D and projected.</summary>
     public struct PointsT : IEquatable<PointsT>
     {
-        public gp_XYZ Pnt1;
-        public gp_XYZ Pnt2;
-        public gp_XYZ PntP1;
-        public gp_XYZ PntP2;
+        public Xyz Pnt1;
+        public Xyz Pnt2;
+        public Xyz PntP1;
+        public Xyz PntP2;
 
-        public readonly gp_XY PntP12D() => new(PntP1.X(), PntP1.Y());
+        public readonly Xy PntP12D() => new(PntP1.X(), PntP1.Y());
 
-        public readonly gp_XY PntP22D() => new(PntP2.X(), PntP2.Y());
+        public readonly Xy PntP22D() => new(PntP2.X(), PntP2.Y());
 
         public readonly bool Equals(PointsT other)
             => Pnt1.Equals(other.Pnt1) && Pnt2.Equals(other.Pnt2) && PntP1.Equals(other.PntP1)
@@ -126,10 +127,10 @@ public partial struct HLRAlgo_BiPoint : IEquatable<HLRAlgo_BiPoint>
                            double ZT1, double XT2, double YT2, double ZT2, int Index, int flag)
         : this()
     {
-        myPoints.Pnt1 = new gp_XYZ(X1, Y1, Z1);
-        myPoints.Pnt2 = new gp_XYZ(X2, Y2, Z2);
-        myPoints.PntP1 = new gp_XYZ(XT1, YT1, ZT1);
-        myPoints.PntP2 = new gp_XYZ(XT2, YT2, ZT2);
+        myPoints.Pnt1 = new Xyz(X1, Y1, Z1);
+        myPoints.Pnt2 = new Xyz(X2, Y2, Z2);
+        myPoints.PntP1 = new Xyz(XT1, YT1, ZT1);
+        myPoints.PntP2 = new Xyz(XT2, YT2, ZT2);
         myIndices.ShapeIndex = Index;
         myIndices.FaceConex1 = myIndices.Face1Pt1 = myIndices.Face1Pt2 = myIndices.FaceConex2 =
             myIndices.Face2Pt1 = myIndices.Face2Pt2 = 0;

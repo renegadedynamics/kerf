@@ -6,13 +6,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Auxiliary class serving as container for data resulting from translation of external file
 /// </summary>
 /// <remarks>OCCT.NET: the label is an <see cref="XdeDoc_Label"/> in place of a <c>TDF_Label</c> (decision 1231).</remarks>
-public class STEPCAFControl_ExternFile : Standard_Transient
+public class STEPCAFControl_ExternFile : Transient
 {
     /// <summary>Creates an empty structure</summary>
     public STEPCAFControl_ExternFile()

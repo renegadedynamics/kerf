@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -21,18 +22,18 @@ public partial class IntPatch_Intersection
     //===============================================================
     // function: FUN_GetMinMaxXYZPnt
     //===============================================================
-    private static void FUN_GetMinMaxXYZPnt(Adaptor3d_Surface S, out gp_Pnt pMin, out gp_Pnt pMax)
+    private static void FUN_GetMinMaxXYZPnt(Adaptor3d_Surface S, out Point3D pMin, out Point3D pMax)
     {
         double DU = 0.25 * Math.Abs(S.LastUParameter() - S.FirstUParameter());
         double DV = 0.25 * Math.Abs(S.LastVParameter() - S.FirstVParameter());
         double tMinXYZ = RealLast();
         double tMaxXYZ = -tMinXYZ;
-        gp_Pnt ptMax = new(), ptMin = new();
+        Point3D ptMax = new(), ptMin = new();
         for (double U = S.FirstUParameter(); U <= S.LastUParameter(); U += DU)
         {
             for (double V = S.FirstVParameter(); V <= S.LastVParameter(); V += DV)
             {
-                S.D0(U, V, out gp_Pnt PUV);
+                S.D0(U, V, out Point3D PUV);
                 double cXYZ = PUV.XYZ().Modulus();
                 if (cXYZ > tMaxXYZ)
                 {
@@ -54,7 +55,7 @@ public partial class IntPatch_Intersection
     // function: FUN_TrimInfSurf
     //==========================================================================
     // TrimS stays null where OCCT leaves the caller's null handle unassigned (no infinite parameter to trim).
-    private static void FUN_TrimInfSurf(in gp_Pnt Pmin, in gp_Pnt Pmax, Adaptor3d_Surface InfSurf,
+    private static void FUN_TrimInfSurf(in Point3D Pmin, in Point3D Pmax, Adaptor3d_Surface InfSurf,
                                         double AlternativeTrimPrm, out Adaptor3d_Surface? TrimS)
     {
         TrimS = null;
@@ -131,10 +132,10 @@ public partial class IntPatch_Intersection
         }
         else
         {
-            bool Uinf = Precision.IsNegativeInfinite(InfSurf.FirstUParameter());
-            bool Usup = Precision.IsPositiveInfinite(InfSurf.LastUParameter());
-            bool Vinf = Precision.IsNegativeInfinite(InfSurf.FirstVParameter());
-            bool Vsup = Precision.IsPositiveInfinite(InfSurf.LastVParameter());
+            bool Uinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(InfSurf.FirstUParameter());
+            bool Usup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(InfSurf.LastUParameter());
+            bool Vinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(InfSurf.FirstVParameter());
+            bool Vsup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(InfSurf.LastVParameter());
             Adaptor3d_Surface TmpSS;
             int IsTrimed = 0;
             double tp = 1000.0 * TP;
@@ -190,10 +191,10 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_GetUiso
     //================================================================================
-    private static void FUN_GetUiso(Geom_Surface GS, GeomAbs_SurfaceType T, double FirstV, double LastV, bool IsVC,
+    private static void FUN_GetUiso(Geom_Surface GS, SurfaceKind T, double FirstV, double LastV, bool IsVC,
                                     bool IsVP, double U, ref Geom_Curve? I)
     {
-        if (T != GeomAbs_OffsetSurface)
+        if (T != OffsetSurface)
         {
             Geom_Curve gc = GS.UIso(U);
             if (IsVP && (FirstV == 0.0 && LastV == (2.0 * M_PI)))
@@ -213,8 +214,8 @@ public partial class IntPatch_Intersection
             Geom_Surface bs = gos.BasisSurface();
             Geom_Curve gcbs = bs.UIso(U);
             GeomAdaptor_Curve gac = new(gcbs);
-            GeomAbs_CurveType GACT = gac.GetType();
-            if (IsVP || IsVC || GACT == GeomAbs_BSplineCurve || GACT == GeomAbs_BezierCurve
+            CurveKind GACT = gac.GetType();
+            if (IsVP || IsVC || GACT == BSplineCurve || GACT == BezierCurve
                 || Math.Abs(LastV - FirstV) < 1.0e+5)
             {
                 Geom_Curve gc = gos.UIso(U);
@@ -232,7 +233,7 @@ public partial class IntPatch_Intersection
             else // Offset Line, Parab, Hyperb
             {
                 double VmTr, VMTr;
-                if (GACT != GeomAbs_Hyperbola)
+                if (GACT != Hyperbola)
                 {
                     if (FirstV >= 0.0 && LastV >= 0.0)
                     {
@@ -288,10 +289,10 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_GetViso
     //================================================================================
-    private static void FUN_GetViso(Geom_Surface GS, GeomAbs_SurfaceType T, double FirstU, double LastU, bool IsUC,
+    private static void FUN_GetViso(Geom_Surface GS, SurfaceKind T, double FirstU, double LastU, bool IsUC,
                                     bool IsUP, double V, ref Geom_Curve? I)
     {
-        if (T != GeomAbs_OffsetSurface)
+        if (T != OffsetSurface)
         {
             Geom_Curve gc = GS.VIso(V);
             if (IsUP && (FirstU == 0.0 && LastU == (2 * M_PI)))
@@ -311,8 +312,8 @@ public partial class IntPatch_Intersection
             Geom_Surface bs = gos.BasisSurface();
             Geom_Curve gcbs = bs.VIso(V);
             GeomAdaptor_Curve gac = new(gcbs);
-            GeomAbs_CurveType GACT = gac.GetType();
-            if (IsUP || IsUC || GACT == GeomAbs_BSplineCurve || GACT == GeomAbs_BezierCurve
+            CurveKind GACT = gac.GetType();
+            if (IsUP || IsUC || GACT == BSplineCurve || GACT == BezierCurve
                 || Math.Abs(LastU - FirstU) < 1.0e+5)
             {
                 Geom_Curve gc = gos.VIso(V);
@@ -330,7 +331,7 @@ public partial class IntPatch_Intersection
             else // Offset Line, Parab, Hyperb
             {
                 double UmTr, UMTr;
-                if (GACT != GeomAbs_Hyperbola)
+                if (GACT != Hyperbola)
                 {
                     if (FirstU >= 0.0 && LastU >= 0.0)
                     {
@@ -384,13 +385,13 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_PL_Intersection
     //================================================================================
-    private static void FUN_PL_Intersection(Adaptor3d_Surface S1, GeomAbs_SurfaceType T1, Adaptor3d_Surface S2,
-                                            GeomAbs_SurfaceType T2, out bool IsOk, NCollection_Sequence<gp_Pnt> SP,
-                                            out gp_Vec DV)
+    private static void FUN_PL_Intersection(Adaptor3d_Surface S1, SurfaceKind T1, Adaptor3d_Surface S2,
+                                            SurfaceKind T2, out bool IsOk, NCollection_Sequence<Point3D> SP,
+                                            out Vector3D DV)
     {
         IsOk = false;
         // 1. Check: both surfaces have U(V)isos - lines.
-        DV = new gp_Vec(0.0, 0.0, 1.0);
+        DV = new Vector3D(0.0, 0.0, 1.0);
         Span<bool> isoS1isLine = [false, false];
         Span<bool> isoS2isLine = [false, false];
         Geom_Curve? C1 = null, C2 = null;
@@ -405,13 +406,13 @@ public partial class IntPatch_Intersection
         MS1[1] = 0.5 * (S1.LastVParameter() + S1.FirstVParameter());
         MS2[0] = 0.5 * (S2.LastUParameter() + S2.FirstUParameter());
         MS2[1] = 0.5 * (S2.LastVParameter() + S2.FirstVParameter());
-        if (T1 == GeomAbs_SurfaceOfExtrusion)
+        if (T1 == SurfaceOfExtrusion)
         {
             isoS1isLine[0] = true;
         }
         else if (!S1.IsVPeriodic() && !S1.IsVClosed())
         {
-            if (T1 != GeomAbs_OffsetSurface)
+            if (T1 != OffsetSurface)
             {
                 C1 = gs1.UIso(MS1[0]);
             }
@@ -422,14 +423,14 @@ public partial class IntPatch_Intersection
                 C1 = bs.UIso(MS1[0]);
             }
             GeomAdaptor_Curve gac = new(C1);
-            if (gac.GetType() == GeomAbs_Line)
+            if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS1isLine[0] = true;
             }
         }
         if (!S1.IsUPeriodic() && !S1.IsUClosed())
         {
-            if (T1 != GeomAbs_OffsetSurface)
+            if (T1 != OffsetSurface)
             {
                 C1 = gs1.VIso(MS1[1]);
             }
@@ -440,18 +441,18 @@ public partial class IntPatch_Intersection
                 C1 = bs.VIso(MS1[1]);
             }
             GeomAdaptor_Curve gac = new(C1);
-            if (gac.GetType() == GeomAbs_Line)
+            if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS1isLine[1] = true;
             }
         }
-        if (T2 == GeomAbs_SurfaceOfExtrusion)
+        if (T2 == SurfaceOfExtrusion)
         {
             isoS2isLine[0] = true;
         }
         else if (!S2.IsVPeriodic() && !S2.IsVClosed())
         {
-            if (T2 != GeomAbs_OffsetSurface)
+            if (T2 != OffsetSurface)
             {
                 C2 = gs2.UIso(MS2[0]);
             }
@@ -462,14 +463,14 @@ public partial class IntPatch_Intersection
                 C2 = bs.UIso(MS2[0]);
             }
             GeomAdaptor_Curve gac = new(C2);
-            if (gac.GetType() == GeomAbs_Line)
+            if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS2isLine[0] = true;
             }
         }
         if (!S2.IsUPeriodic() && !S2.IsUClosed())
         {
-            if (T2 != GeomAbs_OffsetSurface)
+            if (T2 != OffsetSurface)
             {
                 C2 = gs2.VIso(MS2[1]);
             }
@@ -480,7 +481,7 @@ public partial class IntPatch_Intersection
                 C2 = bs.VIso(MS2[1]);
             }
             GeomAdaptor_Curve gac = new(C2);
-            if (gac.GetType() == GeomAbs_Line)
+            if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS2isLine[1] = true;
             }
@@ -491,15 +492,15 @@ public partial class IntPatch_Intersection
             return;
         }
         // 2. Check: Uiso lines of both surfaces are collinear.
-        S1.D1(MS1[0], MS1[1], out gp_Pnt puvS1, out gp_Vec derS10, out gp_Vec derS11);
-        S2.D1(MS2[0], MS2[1], out gp_Pnt puvS2, out gp_Vec derS20, out gp_Vec derS21);
-        Span<gp_Vec> derS1 = [derS10, derS11];
-        Span<gp_Vec> derS2 = [derS20, derS21];
+        S1.D1(MS1[0], MS1[1], out Point3D puvS1, out Vector3D derS10, out Vector3D derS11);
+        S2.D1(MS2[0], MS2[1], out Point3D puvS2, out Vector3D derS20, out Vector3D derS21);
+        Span<Vector3D> derS1 = [derS10, derS11];
+        Span<Vector3D> derS2 = [derS20, derS21];
         _ = puvS2;
         C1 = null;
         C2 = null;
         int iso = 0;
-        if (isoS1isLine[0] && isoS2isLine[0] && derS1[1].IsParallel(derS2[1], Precision.Angular()))
+        if (isoS1isLine[0] && isoS2isLine[0] && derS1[1].IsParallel(derS2[1], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 1;
             FUN_GetViso(gs1, T1, S1.FirstUParameter(), S1.LastUParameter(), S1.IsUClosed(), S1.IsUPeriodic(), MS1[1],
@@ -507,7 +508,7 @@ public partial class IntPatch_Intersection
             FUN_GetViso(gs2, T2, S2.FirstUParameter(), S2.LastUParameter(), S2.IsUClosed(), S2.IsUPeriodic(), MS2[1],
                         ref C2);
         }
-        else if (isoS1isLine[0] && isoS2isLine[1] && derS1[1].IsParallel(derS2[0], Precision.Angular()))
+        else if (isoS1isLine[0] && isoS2isLine[1] && derS1[1].IsParallel(derS2[0], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 1;
             FUN_GetViso(gs1, T1, S1.FirstUParameter(), S1.LastUParameter(), S1.IsUClosed(), S1.IsUPeriodic(), MS1[1],
@@ -515,7 +516,7 @@ public partial class IntPatch_Intersection
             FUN_GetUiso(gs2, T2, S2.FirstVParameter(), S2.LastVParameter(), S2.IsVClosed(), S2.IsVPeriodic(), MS2[0],
                         ref C2);
         }
-        else if (isoS1isLine[1] && isoS2isLine[0] && derS1[0].IsParallel(derS2[1], Precision.Angular()))
+        else if (isoS1isLine[1] && isoS2isLine[0] && derS1[0].IsParallel(derS2[1], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 0;
             FUN_GetUiso(gs1, T1, S1.FirstVParameter(), S1.LastVParameter(), S1.IsVClosed(), S1.IsVPeriodic(), MS1[0],
@@ -523,7 +524,7 @@ public partial class IntPatch_Intersection
             FUN_GetViso(gs2, T2, S2.FirstUParameter(), S2.LastUParameter(), S2.IsUClosed(), S2.IsUPeriodic(), MS2[1],
                         ref C2);
         }
-        else if (isoS1isLine[1] && isoS2isLine[1] && derS1[0].IsParallel(derS2[0], Precision.Angular()))
+        else if (isoS1isLine[1] && isoS2isLine[1] && derS1[0].IsParallel(derS2[0], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 0;
             FUN_GetUiso(gs1, T1, S1.FirstVParameter(), S1.LastVParameter(), S1.IsVClosed(), S1.IsVPeriodic(), MS1[0],
@@ -543,9 +544,9 @@ public partial class IntPatch_Intersection
             return;
         }
         DV = derS1[iso];
-        Geom_Plane GPln = new(new gp_Pln(puvS1, new gp_Dir(DV)));
-        Geom_Curve? C1Prj = GeomProjLib.ProjectOnPlane(C1, GPln, new gp_Dir(DV), true);
-        Geom_Curve? C2Prj = GeomProjLib.ProjectOnPlane(C2, GPln, new gp_Dir(DV), true);
+        Geom_Plane GPln = new(new Plane3D(puvS1, new Direction3D(DV)));
+        Geom_Curve? C1Prj = GeomProjLib.ProjectOnPlane(C1, GPln, new Direction3D(DV), true);
+        Geom_Curve? C2Prj = GeomProjLib.ProjectOnPlane(C2, GPln, new Direction3D(DV), true);
         if (C1Prj is null || C2Prj is null)
         {
             return;
@@ -557,8 +558,8 @@ public partial class IntPatch_Intersection
         {
             for (int ip = 1; ip <= ICC.NbPoints(); ip++)
             {
-                gp_Pnt2d P = ICC.Point(ip);
-                gp_Pnt P3d = ElCLib.To3d(new gp_Ax2(puvS1, new gp_Dir(DV)), P);
+                Point2D P = ICC.Point(ip);
+                Point3D P3d = global::Kerf.Engine.Geometry.ElCLib.To3d(new Frame3D(puvS1, new Direction3D(DV)), P);
                 SP.Append(P3d);
             }
         }
@@ -567,7 +568,7 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_NewFirstLast
     //================================================================================
-    private static void FUN_NewFirstLast(GeomAbs_CurveType ga_ct, double Fst, double Lst, double TrVal,
+    private static void FUN_NewFirstLast(CurveKind ga_ct, double Fst, double Lst, double TrVal,
                                          out double NewFst, out double NewLst, out bool NeedTr)
     {
         NewFst = Fst;
@@ -575,8 +576,8 @@ public partial class IntPatch_Intersection
         NeedTr = false;
         switch (ga_ct)
         {
-            case GeomAbs_Line:
-            case GeomAbs_Parabola:
+            case global::Kerf.Geometry.CurveKind.Line:
+            case Parabola:
             {
                 if (Math.Abs(Lst - Fst) > TrVal)
                 {
@@ -601,7 +602,7 @@ public partial class IntPatch_Intersection
                 }
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
                 if (Math.Abs(Lst - Fst) > 10.0)
                 {
@@ -640,8 +641,8 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_TrimBothSurf
     //================================================================================
-    private static void FUN_TrimBothSurf(Adaptor3d_Surface S1, GeomAbs_SurfaceType T1, Adaptor3d_Surface S2,
-                                         GeomAbs_SurfaceType T2, double TV, ref Adaptor3d_Surface NS1,
+    private static void FUN_TrimBothSurf(Adaptor3d_Surface S1, SurfaceKind T1, Adaptor3d_Surface S2,
+                                         SurfaceKind T2, double TV, ref Adaptor3d_Surface NS1,
                                          ref Adaptor3d_Surface NS2)
     {
         GeomAdaptor_Surface gas1 = (GeomAdaptor_Surface)S1;
@@ -653,7 +654,7 @@ public partial class IntPatch_Intersection
         double VM1 = 0.5 * (S1.LastVParameter() + S1.FirstVParameter());
         double VM2 = 0.5 * (S2.LastVParameter() + S2.FirstVParameter());
         Geom_Curve? visoS1, visoS2, uisoS1, uisoS2;
-        if (T1 != GeomAbs_OffsetSurface)
+        if (T1 != OffsetSurface)
         {
             visoS1 = gs1.VIso(VM1);
             uisoS1 = gs1.UIso(UM1);
@@ -665,7 +666,7 @@ public partial class IntPatch_Intersection
             visoS1 = bs.VIso(VM1);
             uisoS1 = bs.UIso(UM1);
         }
-        if (T2 != GeomAbs_OffsetSurface)
+        if (T2 != OffsetSurface)
         {
             visoS2 = gs2.VIso(VM2);
             uisoS2 = gs2.UIso(UM2);
@@ -687,10 +688,10 @@ public partial class IntPatch_Intersection
         GeomAdaptor_Curve gav1 = new(visoS1);
         GeomAdaptor_Curve gau2 = new(uisoS2);
         GeomAdaptor_Curve gav2 = new(visoS2);
-        GeomAbs_CurveType GA_U1 = gau1.GetType();
-        GeomAbs_CurveType GA_V1 = gav1.GetType();
-        GeomAbs_CurveType GA_U2 = gau2.GetType();
-        GeomAbs_CurveType GA_V2 = gav2.GetType();
+        CurveKind GA_U1 = gau1.GetType();
+        CurveKind GA_V1 = gav1.GetType();
+        CurveKind GA_U2 = gau2.GetType();
+        CurveKind GA_V2 = gav2.GetType();
         FUN_NewFirstLast(GA_U1, S1.FirstVParameter(), S1.LastVParameter(), TV, out double V1S1, out double V2S1,
                          out bool TrmV1);
         FUN_NewFirstLast(GA_V1, S1.FirstUParameter(), S1.LastUParameter(), TV, out double U1S1, out double U2S1,

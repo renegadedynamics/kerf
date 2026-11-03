@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 public class BRepFill_CurveConstraint : GeomPlate_CurveConstraint
 {
     /// <summary>A constraint of order <paramref name="Tang"/> (-1 to 2) along a curve on a surface.</summary>
-    /// <exception cref="Standard_Failure">The order isn't -1 to 2, or <paramref name="Boundary"/> is null.</exception>
+    /// <exception cref="FailureException">The order isn't -1 to 2, or <paramref name="Boundary"/> is null.</exception>
     public BRepFill_CurveConstraint(Adaptor3d_CurveOnSurface? Boundary, int Tang, int NPt = 10, double TolDist = 0.0001,
                                     double TolAng = 0.01, double TolCurv = 0.1)
     {
@@ -26,7 +28,7 @@ public class BRepFill_CurveConstraint : GeomPlate_CurveConstraint
         myOrder = Tang;
         if ((Tang < -1) || (Tang > 2))
         {
-            throw new Standard_Failure("BRepFill : The continuity is not G0 G1 or G2");
+            throw new FailureException("BRepFill : The continuity is not G0 G1 or G2");
         }
         myNbPoints = NPt;
         myConstG0 = true;
@@ -34,7 +36,7 @@ public class BRepFill_CurveConstraint : GeomPlate_CurveConstraint
         myConstG2 = true;
         if (myFrontiere is null)
         {
-            throw new Standard_Failure("BRepFill_CurveConstraint : Curve must be on a Surface");
+            throw new FailureException("BRepFill_CurveConstraint : Curve must be on a Surface");
         }
         Geom_Surface? Surf;
         GeomAdaptor_Surface? GS1;

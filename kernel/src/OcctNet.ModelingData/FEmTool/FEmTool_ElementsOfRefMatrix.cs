@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Engine.Numerics.Polynomials;
+
 namespace Occt;
 
 /// <summary>
@@ -10,19 +16,19 @@ namespace Occt;
 /// (tension, flexion, jerk): <c>Pi(u)' * Pj(u)'</c>, <c>Pi(u)'' * Pj(u)''</c> or <c>Pi(u)''' * Pj(u)'''</c> for
 /// every i &lt;= j, where Pi is the i-th function of the Hermite-Jacobi base.
 /// </summary>
-public class FEmTool_ElementsOfRefMatrix : math_FunctionSet
+public class FEmTool_ElementsOfRefMatrix : FunctionSet
 {
-    private readonly PLib_HermitJacobi myBase;
+    private readonly HermitJacobi myBase;
     private readonly int myDerOrder;
     private readonly int myNbEquations;
 
     /// <summary>The products of the derivatives of order <paramref name="DerOrder"/> (0 to 3) of the base.</summary>
-    public FEmTool_ElementsOfRefMatrix(PLib_HermitJacobi TheBase, int DerOrder)
+    public FEmTool_ElementsOfRefMatrix(HermitJacobi TheBase, int DerOrder)
     {
         myBase = TheBase;
         if (DerOrder < 0 || DerOrder > 3)
         {
-            throw new Standard_ConstructionError("FEmTool_ElementsOfRefMatrix");
+            throw new ConstructionErrorException("FEmTool_ElementsOfRefMatrix");
         }
 
         myDerOrder = DerOrder;
@@ -42,7 +48,7 @@ public class FEmTool_ElementsOfRefMatrix : math_FunctionSet
     {
         if (F.Length() < myNbEquations)
         {
-            throw new Standard_OutOfRange("FEmTool_ElementsOfRefMatrix::Value");
+            throw new OutOfRangeException("FEmTool_ElementsOfRefMatrix::Value");
         }
 
         double u = X[X.Lower()];

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -36,7 +40,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     /// If C is not periodic, the curve goes from min(U1, U2) to max(U1, U2), in C's sense if Sense is true
     /// and U1 &lt; U2.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// C is null, U1 == U2, or (C not periodic) U1 or U2 is outside C's bounds.
     /// </exception>
     public Geom2d_TrimmedCurve(Geom2d_Curve C, double U1, double U2, bool Sense = true, bool theAdjustPeriodic = true)
@@ -45,7 +49,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
         uTrim2 = U2;
         if (C is null)
         {
-            throw new Standard_ConstructionError("Geom2d_TrimmedCurve:: C is null");
+            throw new ConstructionErrorException("Geom2d_TrimmedCurve:: C is null");
         }
         // kill trimmed basis curves
         Geom2d_TrimmedCurve? T = C as Geom2d_TrimmedCurve;
@@ -63,7 +67,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
     private void ownBasisCurve()
     {
-        if (basisCurve.IsFrozen())
+        if (basisCurve.IsFrozen)
         {
             basisCurve = (Geom2d_Curve)basisCurve.Copy();
         }
@@ -84,7 +88,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     public sealed override double ReversedParameter(double U) => basisCurve.ReversedParameter(U);
 
     /// <summary>Changes the trim parameters, as the constructor sets them.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// U1 == U2, or (basis curve not periodic) U1 or U2 is outside its bounds.
     /// </exception>
     internal void SetTrim(double U1, double U2, bool Sense = true, bool theAdjustPeriodic = true)
@@ -93,7 +97,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
         bool sameSense = true;
         if (U1 == U2)
         {
-            throw new Standard_ConstructionError("Geom2d_TrimmedCurve::U1 == U2");
+            throw new ConstructionErrorException("Geom2d_TrimmedCurve::U1 == U2");
         }
 
         double Udeb = basisCurve.FirstParameter();
@@ -109,9 +113,9 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
             uTrim2 = U2;
             if (theAdjustPeriodic)
             {
-                ElCLib.AdjustPeriodic(Udeb,
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Udeb,
                                       Ufin,
-                                      Min(Math.Abs(uTrim2 - uTrim1) / 2, Precision.PConfusion()),
+                                      Min(Math.Abs(uTrim2 - uTrim1) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                                       ref uTrim1,
                                       ref uTrim2);
             }
@@ -131,10 +135,10 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
                 uTrim2 = U1;
             }
 
-            if ((Udeb - uTrim1 > Precision.PConfusion()) || (uTrim2 - Ufin > Precision.PConfusion()))
+            if ((Udeb - uTrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (uTrim2 - Ufin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 // OCCT: the message names Geom_TrimmedCurve (cosmetic).
-                throw new Standard_ConstructionError("Geom_TrimmedCurve::parameters out of range");
+                throw new ConstructionErrorException("Geom_TrimmedCurve::parameters out of range");
             }
         }
         if (!sameSense)
@@ -165,10 +169,10 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     internal Geom2d_Curve ChangeBasisCurve() => basisCurve;
 
     /// <summary>The basis curve's continuity.</summary>
-    public sealed override GeomAbs_Shape Continuity() => basisCurve.Continuity();
+    public sealed override Continuity Continuity() => basisCurve.Continuity();
 
     /// <summary>The basis curve's IsCN.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCN(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -176,7 +180,7 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The point of the basis curve at the last trim parameter.</summary>
-    public sealed override gp_Pnt2d EndPoint() => basisCurve.Value(uTrim2);
+    public sealed override Point2D EndPoint() => basisCurve.Value(uTrim2);
 
     /// <summary>The first trim parameter.</summary>
     public sealed override double FirstParameter() => uTrim1;
@@ -191,14 +195,14 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
         {
             double aPeriod = basisCurve.Period();
             double aLength = LastParameter() - FirstParameter();
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
         }
         return Value(FirstParameter()).SquareDistance(Value(LastParameter()))
-               <= Precision.Computational();
+               <= global::Kerf.Engine.Foundation.Precision.Computational();
     }
 
     /// <summary>True if the basis curve is periodic and the trimmed range is a whole number of periods.</summary>
@@ -208,8 +212,8 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
         {
             double aPeriod = basisCurve.Period();
             double aLength = LastParameter() - FirstParameter();
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
@@ -218,21 +222,21 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The basis curve's period.</summary>
-    /// <exception cref="Standard_NoSuchObject">The basis curve is not periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The basis curve is not periodic.</exception>
     public sealed override double Period() => basisCurve.Period();
 
     /// <summary>The last trim parameter.</summary>
     public sealed override double LastParameter() => uTrim2;
 
     /// <summary>The point of the basis curve at the first trim parameter.</summary>
-    public sealed override gp_Pnt2d StartPoint()
+    public sealed override Point2D StartPoint()
     {
-        gp_Pnt2d P;
+        Point2D P;
         P = basisCurve.Value(uTrim1);
         return P;
     }
 
-    public sealed override gp_Pnt2d EvalD0(double U) => basisCurve.EvalD0(U);
+    public sealed override Point2D EvalD0(double U) => basisCurve.EvalD0(U);
 
     public sealed override ResD1 EvalD1(double U) => basisCurve.EvalD1(U);
 
@@ -240,10 +244,10 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
 
     public sealed override ResD3 EvalD3(double U) => basisCurve.EvalD3(U);
 
-    public sealed override gp_Vec2d EvalDN(double U, int N) => basisCurve.EvalDN(U, N);
+    public sealed override Vector2D EvalDN(double U, int N) => basisCurve.EvalDN(U, N);
 
     /// <summary>Transforms the basis curve and the trim parameters.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         ownBasisCurve();
@@ -254,10 +258,10 @@ public class Geom2d_TrimmedCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf2d T) =>
+    public sealed override double TransformedParameter(double U, in Transform2D T) =>
         basisCurve.TransformedParameter(U, T);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf2d T) =>
+    public sealed override double ParametricTransformation(in Transform2D T) =>
         basisCurve.ParametricTransformation(T);
 }

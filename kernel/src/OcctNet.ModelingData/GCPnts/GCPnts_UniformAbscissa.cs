@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.GCPnts_AbscissaType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -63,7 +64,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     /// <summary>theNbPoints points on the curve at a uniform distance.</summary>
-    /// <exception cref="Standard_ConstructionError">theNbPoints is below 2.</exception>
+    /// <exception cref="ConstructionErrorException">theNbPoints is below 2.</exception>
     public GCPnts_UniformAbscissa(Adaptor3d_Curve theC, int theNbPoints, double theToler = -1)
         : this()
     {
@@ -71,7 +72,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     /// <summary>theNbPoints points on the curve at a uniform distance.</summary>
-    /// <exception cref="Standard_ConstructionError">theNbPoints is below 2.</exception>
+    /// <exception cref="ConstructionErrorException">theNbPoints is below 2.</exception>
     public GCPnts_UniformAbscissa(Adaptor2d_Curve2d theC, int theNbPoints, double theToler = -1)
         : this()
     {
@@ -79,7 +80,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     /// <summary>theNbPoints points on the part theU1..theU2 of the curve at a uniform distance.</summary>
-    /// <exception cref="Standard_ConstructionError">theNbPoints is below 2.</exception>
+    /// <exception cref="ConstructionErrorException">theNbPoints is below 2.</exception>
     public GCPnts_UniformAbscissa(Adaptor3d_Curve theC, int theNbPoints, double theU1, double theU2,
         double theToler = -1)
         : this()
@@ -88,7 +89,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     /// <summary>theNbPoints points on the part theU1..theU2 of the curve at a uniform distance.</summary>
-    /// <exception cref="Standard_ConstructionError">theNbPoints is below 2.</exception>
+    /// <exception cref="ConstructionErrorException">theNbPoints is below 2.</exception>
     public GCPnts_UniformAbscissa(Adaptor2d_Curve2d theC, int theNbPoints, double theU1, double theU2,
         double theToler = -1)
         : this()
@@ -150,7 +151,7 @@ public sealed class GCPnts_UniformAbscissa
     public bool IsDone() => myDone;
 
     /// <summary>The number of points computed.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbPoints()
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformAbscissa::NbPoints()");
@@ -158,7 +159,7 @@ public sealed class GCPnts_UniformAbscissa
     }
 
     /// <summary>The parameter of the point of index Index (1 to NbPoints).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Parameter(int Index)
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformAbscissa::Parameter()");
@@ -172,7 +173,7 @@ public sealed class GCPnts_UniformAbscissa
     internal double ParameterUnchecked(int Index) => myParams!.Value(Index);
 
     /// <summary>The distance between consecutive points (computed, when a number of points was given).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Abscissa()
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformAbscissa::Abscissa()");
@@ -185,16 +186,16 @@ public sealed class GCPnts_UniformAbscissa
     {
         switch (theC.GetType())
         {
-            case GeomAbs_Circle:
+            case Circle:
             {
                 return theC.Circle().Radius();
             }
-            case GeomAbs_Line:
+            case Line:
             {
                 return 1.0;
             }
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
+            case BezierCurve:
+            case BSplineCurve:
             {
                 if (!theC.IsRational())
                 {
@@ -211,19 +212,19 @@ public sealed class GCPnts_UniformAbscissa
 
     private static GCPnts_AbscissaType GetAbsType(Adaptor3d_Curve theC)
     {
-        if (theC.NbIntervals(GeomAbs_C1) > 1)
+        if (theC.NbIntervals(C1) > 1)
         {
             return GCPnts_AbsComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
-            case GeomAbs_Circle:
+            case Line:
+            case Circle:
             {
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve aBZ = theC.Bezier();
                 if (aBZ.NbPoles() == 2 && !aBZ.IsRational())
@@ -232,7 +233,7 @@ public sealed class GCPnts_UniformAbscissa
                 }
                 return GCPnts_Parametrized;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve aBS = theC.BSpline();
                 if (aBS.NbPoles() == 2 && !aBS.IsRational())
@@ -307,7 +308,7 @@ public sealed class GCPnts_UniformAbscissa
                 isLocalDone = false;
                 isNotDone = true;
                 aDelta -= aDelta / 10;
-                if (aDelta <= Precision.PConfusion())
+                if (aDelta <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     break;
                 }
@@ -382,9 +383,9 @@ public sealed class GCPnts_UniformAbscissa
         myNbPoints = 0;
         myDone = false;
 
-        double anEPSILON = theC.Resolution(Max(theTol, Precision.Confusion()));
+        double anEPSILON = theC.Resolution(Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion()));
         double aL = GCPnts_AbscissaPoint.Length(theC, theU1, theU2, anEPSILON);
-        if (aL <= Precision.Confusion())
+        if (aL <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -451,11 +452,11 @@ public sealed class GCPnts_UniformAbscissa
         myNbPoints = 0;
         myDone = false;
 
-        double anEPSILON = theC.Resolution(Max(theTol, Precision.Confusion()));
+        double anEPSILON = theC.Resolution(Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion()));
         // although very similar to Initialize with Abscissa this avoid
         // the computation of the total length of the curve twice
         double aL = GCPnts_AbscissaPoint.Length(theC, theU1, theU2, anEPSILON);
-        if (aL <= Precision.Confusion())
+        if (aL <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -517,16 +518,16 @@ public sealed class GCPnts_UniformAbscissa
     {
         switch (theC.GetType())
         {
-            case GeomAbs_Circle:
+            case Circle:
             {
                 return theC.Circle().Radius();
             }
-            case GeomAbs_Line:
+            case Line:
             {
                 return 1.0;
             }
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
+            case BezierCurve:
+            case BSplineCurve:
             {
                 if (!theC.IsRational())
                 {
@@ -543,19 +544,19 @@ public sealed class GCPnts_UniformAbscissa
 
     private static GCPnts_AbscissaType GetAbsType(Adaptor2d_Curve2d theC)
     {
-        if (theC.NbIntervals(GeomAbs_C1) > 1)
+        if (theC.NbIntervals(C1) > 1)
         {
             return GCPnts_AbsComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
-            case GeomAbs_Circle:
+            case Line:
+            case Circle:
             {
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom2d_BezierCurve aBZ = theC.Bezier();
                 if (aBZ.NbPoles() == 2 && !aBZ.IsRational())
@@ -564,7 +565,7 @@ public sealed class GCPnts_UniformAbscissa
                 }
                 return GCPnts_Parametrized;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBS = theC.BSpline();
                 if (aBS.NbPoles() == 2 && !aBS.IsRational())
@@ -639,7 +640,7 @@ public sealed class GCPnts_UniformAbscissa
                 isLocalDone = false;
                 isNotDone = true;
                 aDelta -= aDelta / 10;
-                if (aDelta <= Precision.PConfusion())
+                if (aDelta <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     break;
                 }
@@ -714,9 +715,9 @@ public sealed class GCPnts_UniformAbscissa
         myNbPoints = 0;
         myDone = false;
 
-        double anEPSILON = theC.Resolution(Max(theTol, Precision.Confusion()));
+        double anEPSILON = theC.Resolution(Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion()));
         double aL = GCPnts_AbscissaPoint.Length(theC, theU1, theU2, anEPSILON);
-        if (aL <= Precision.Confusion())
+        if (aL <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -783,11 +784,11 @@ public sealed class GCPnts_UniformAbscissa
         myNbPoints = 0;
         myDone = false;
 
-        double anEPSILON = theC.Resolution(Max(theTol, Precision.Confusion()));
+        double anEPSILON = theC.Resolution(Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion()));
         // although very similar to Initialize with Abscissa this avoid
         // the computation of the total length of the curve twice
         double aL = GCPnts_AbscissaPoint.Length(theC, theU1, theU2, anEPSILON);
-        if (aL <= Precision.Confusion())
+        if (aL <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }

@@ -1,3 +1,7 @@
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>The range samples and the localisation data of IntTools.</summary>
@@ -91,17 +95,17 @@ public class IntTools_RangeSampleTests
         Assert.Equal(1.0e-3, aData.GetMinRange());
 
         IntTools_CurveRangeSample aS1 = new(1), aS2 = new(2), aS3 = new IntTools_CurveRangeSample(3).WithDepth(1);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aBox.Update(0, 0, 0, 1, 1, 1);
         aData.AddBox(aS1, aBox);
         aData.AddBox(aS2, aBox);
 
-        Bnd_Box aFound = new();
+        Box aFound = new();
         Assert.True(aData.FindBox(aS1, ref aFound));
-        Assert.False(aFound.IsVoid());
-        Bnd_Box aMissing = new();
+        Assert.False(aFound.IsVoid);
+        Box aMissing = new();
         Assert.False(aData.FindBox(aS3, ref aMissing));
-        Assert.True(aMissing.IsVoid());
+        Assert.True(aMissing.IsVoid);
 
         // an out range forgets its box
         aData.AddOutRange(aS2);
@@ -128,12 +132,12 @@ public class IntTools_RangeSampleTests
         Assert.Equal((3, 4, 0.1, 0.2), (aData.GetNbSampleU(), aData.GetNbSampleV(), aData.GetMinRangeU(), aData.GetMinRangeV()));
 
         IntTools_SurfaceRangeSample aS1 = new(0, 1, 0, 1), aS2 = new(1, 1, 0, 1);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aBox.Update(0, 0, 0, 1, 1, 1);
         aData.AddBox(aS1, aBox);
         aData.AddOutRange(aS1);
         aData.AddOutRange(aS2);
-        Bnd_Box aFound = new();
+        Box aFound = new();
         Assert.True(aData.FindBox(aS1, ref aFound)); // the surface's out range keeps its box
         Assert.True(aData.IsRangeOut(aS2));
 
@@ -166,13 +170,13 @@ public class IntTools_RangeSampleTests
             aData.SetUParam(i, i - 1.0);
             for (int j = 1; j <= 2; ++j)
             {
-                aData.SetGridPoint(i, j, new gp_Pnt(i, j, 0));
+                aData.SetGridPoint(i, j, new Point3D(i, j, 0));
             }
         }
         aData.SetVParam(1, 0.0);
         aData.SetVParam(2, 1.0);
         Assert.Equal(2.0, aData.GetUParam(3));
-        Assert.Equal(new gp_Pnt(2, 1, 0), aData.GetGridPoint(2, 1));
+        Assert.Equal(new Point3D(2, 1, 0), aData.GetGridPoint(2, 1));
 
         // the frame keeps the parameters strictly inside: U 1, 2 (indices 2, 3), V 0 (index 1)
         aData.SetFrame(0.5, 2.5, -1.0, 0.5);
@@ -180,11 +184,11 @@ public class IntTools_RangeSampleTests
         Assert.Equal(1, aData.GetNBVPointsInFrame());
         Assert.Equal(1.0, aData.GetUParamInFrame(1));
         Assert.Equal(2.0, aData.GetUParamInFrame(2));
-        Assert.Equal(Precision.Infinite(), aData.GetUParamInFrame(3));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aData.GetUParamInFrame(3));
         Assert.Equal(0.0, aData.GetVParamInFrame(1));
-        Assert.Equal(Precision.Infinite(), aData.GetVParamInFrame(2));
-        Assert.Equal(new gp_Pnt(2, 1, 0), aData.GetPointInFrame(1, 1));
-        Assert.Equal(new gp_Pnt(0, 0, 0), aData.GetPointInFrame(1, 2)); // outside: the origin
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aData.GetVParamInFrame(2));
+        Assert.Equal(new Point3D(2, 1, 0), aData.GetPointInFrame(1, 1));
+        Assert.Equal(new Point3D(0, 0, 0), aData.GetPointInFrame(1, 2)); // outside: the origin
 
         // a frame above every parameter is empty: min 4 (none found), max 3
         aData.SetFrame(5.0, 6.0, 5.0, 6.0);
@@ -202,8 +206,8 @@ public class IntTools_RangeSampleTests
         Assert.Equal(0, aData.GetRangeUGrid());
         Assert.Equal(0, aData.GetRangeVGrid());
         Assert.Equal(0.0, aData.GetGridDeflection());
-        Assert.Equal(Precision.Infinite(), aData.GetUParamInFrame(1));
-        Assert.Equal(new gp_Pnt(0, 0, 0), aData.GetPointInFrame(1, 1));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aData.GetUParamInFrame(1));
+        Assert.Equal(new Point3D(0, 0, 0), aData.GetPointInFrame(1, 1));
 
         // Assign keeps this object's grid when the other has none
         aCopy.Assign(aData);

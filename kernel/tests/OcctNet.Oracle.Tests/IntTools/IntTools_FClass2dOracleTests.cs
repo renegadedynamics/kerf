@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Reflection;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -37,16 +38,16 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static IEnumerable<gp_Pnt2d> Points(Random theRandom, in TopoDS_Face theF)
+    private static IEnumerable<Point2D> Points(Random theRandom, in TopoDS_Face theF)
     {
-        var aList = new List<gp_Pnt2d>();
+        var aList = new List<Point2D>();
         BRepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
         double du = u2 - u1, dv = v2 - v1;
         var aS = new BRepAdaptor_Surface(theF, false);
         // In and around the UV box
         for (int i = 0; i < PointsPerFace / 2; i++)
         {
-            aList.Add(new gp_Pnt2d(u1 - 0.2 * du + 1.4 * du * theRandom.NextDouble(), v1 - 0.2 * dv + 1.4 * dv * theRandom.NextDouble()));
+            aList.Add(new Point2D(u1 - 0.2 * du + 1.4 * du * theRandom.NextDouble(), v1 - 0.2 * dv + 1.4 * dv * theRandom.NextDouble()));
         }
         // Near the pcurves, at distances from 0 to 1e-3 of the box
         var anEdges = new List<TopoDS_Edge>();
@@ -62,9 +63,9 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             {
                 continue;
             }
-            gp_Pnt2d aP = aC.Value(f + (l - f) * theRandom.NextDouble());
+            Point2D aP = aC.Value(f + (l - f) * theRandom.NextDouble());
             double aScale = theRandom.Next(4) switch { 0 => 0.0, 1 => 1e-9, 2 => 1e-6, _ => 1e-3 };
-            aList.Add(new gp_Pnt2d(aP.X() + (theRandom.NextDouble() - 0.5) * aScale * du,
+            aList.Add(new Point2D(aP.X() + (theRandom.NextDouble() - 0.5) * aScale * du,
                                    aP.Y() + (theRandom.NextDouble() - 0.5) * aScale * dv));
         }
         // Shifted by periods
@@ -82,7 +83,7 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             if (aS.IsUPeriodic() || aS.IsVPeriodic())
             {
-                aList.Add(new gp_Pnt2d(x, y));
+                aList.Add(new Point2D(x, y));
             }
         }
         return aList;
@@ -129,14 +130,14 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             catch (Exception e)
             {
-                myMismatches.Add($"{aWhat}: port Init throws {e.GetType().Name}");
+                myMismatches.Add($"{aWhat}: port Init throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}");
                 continue;
             }
             using var aN = new N.IntTools_FClass2d(aNF, aTol);
             myFaces++;
             Same(aN.IsHole() ? 1 : 0, aP.IsHole() ? 1 : 0, $"{aWhat} IsHole");
             Same((int)aN.PerformInfinitePoint(), (int)aP.PerformInfinitePoint(), $"{aWhat} PerformInfinitePoint");
-            foreach (gp_Pnt2d aPnt in Points(theRandom, aPF))
+            foreach (Point2D aPnt in Points(theRandom, aPF))
             {
                 myPoints++;
                 string aAt = $"{aWhat} at ({aPnt.X():R}, {aPnt.Y():R})";

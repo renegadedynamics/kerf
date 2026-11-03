@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using System.Diagnostics.CodeAnalysis;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
@@ -18,12 +19,12 @@ namespace Occt;
 /// </remarks>
 public partial struct BRepMesh_Vertex : IEquatable<BRepMesh_Vertex>
 {
-    private gp_XY myUV;
+    private Xy myUV;
     private int myLocation3d;
     private BRepMesh_DegreeOfFreedom myMovability;
 
     /// <summary>A vertex associated with the 3D point of index <paramref name="theLocation3d"/>.</summary>
-    public BRepMesh_Vertex(in gp_XY theUV, int theLocation3d, BRepMesh_DegreeOfFreedom theMovability)
+    public BRepMesh_Vertex(in Xy theUV, int theLocation3d, BRepMesh_DegreeOfFreedom theMovability)
     {
         Initialize(theUV, theLocation3d, theMovability);
     }
@@ -31,13 +32,13 @@ public partial struct BRepMesh_Vertex : IEquatable<BRepMesh_Vertex>
     /// <summary>A vertex without a 3D point.</summary>
     public BRepMesh_Vertex(double theU, double theV, BRepMesh_DegreeOfFreedom theMovability)
     {
-        myUV = new gp_XY(theU, theV);
+        myUV = new Xy(theU, theV);
         myLocation3d = 0;
         myMovability = theMovability;
     }
 
     /// <summary>Sets the position, the index of the 3D point and the movability.</summary>
-    internal void Initialize(in gp_XY theUV, int theLocation3d, BRepMesh_DegreeOfFreedom theMovability)
+    internal void Initialize(in Xy theUV, int theLocation3d, BRepMesh_DegreeOfFreedom theMovability)
     {
         myUV = theUV;
         myLocation3d = theLocation3d;
@@ -45,11 +46,11 @@ public partial struct BRepMesh_Vertex : IEquatable<BRepMesh_Vertex>
     }
 
     /// <summary>The position in the parametric space.</summary>
-    public readonly gp_XY Coord() => myUV;
+    public readonly Xy Coord() => myUV;
 
     /// <summary>The position in the parametric space, for writing.</summary>
     [UnscopedRef]
-    internal ref gp_XY ChangeCoord() => ref myUV;
+    internal ref Xy ChangeCoord() => ref myUV;
 
     /// <summary>The index of the associated 3D point.</summary>
     public readonly int Location3d() => myLocation3d;
@@ -69,7 +70,7 @@ public partial struct BRepMesh_Vertex : IEquatable<BRepMesh_Vertex>
     }
 
     /// <summary>This vertex at another position (the twin of writing through <c>ChangeCoord</c>).</summary>
-    public readonly BRepMesh_Vertex WithCoord(in gp_XY theUV)
+    public readonly BRepMesh_Vertex WithCoord(in Xy theUV)
     {
         BRepMesh_Vertex aCopy = this;
         aCopy.myUV = theUV;
@@ -87,7 +88,7 @@ public partial struct BRepMesh_Vertex : IEquatable<BRepMesh_Vertex>
             return false;
         }
 
-        return myUV.IsEqual(theOther.myUV, Precision.PConfusion());
+        return myUV.IsEqual(theOther.myUV, global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     /// <summary>OCCT's hasher: <c>std::hash&lt;BRepMesh_Vertex&gt;</c> and <c>operator==</c> (<see cref="IsEqual"/>).</summary>

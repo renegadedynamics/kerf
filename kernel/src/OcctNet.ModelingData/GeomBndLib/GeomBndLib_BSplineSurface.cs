@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -35,17 +39,17 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
                                             ref int theOutMinIdx,
                                             ref int theOutMaxIdx)
     {
-        BSplCLib.Hunt(theKnots, theMin, out theOutMinIdx);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(theKnots, theMin, out theOutMinIdx);
         theOutMinIdx = Math.Clamp(theOutMinIdx, theKnots.Lower(), theKnots.Upper());
 
-        BSplCLib.Hunt(theKnots, theMax, out theOutMaxIdx);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(theKnots, theMax, out theOutMaxIdx);
         theOutMaxIdx++;
         theOutMaxIdx = Math.Clamp(theOutMaxIdx, theKnots.Lower(), theKnots.Upper());
         int aMultiplier = theMults[theOutMaxIdx];
 
-        theOutMinIdx = BSplCLib.PoleIndex(theDegree, theOutMinIdx, theIsPeriodic, theMults) + 1;
+        theOutMinIdx = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(theDegree, theOutMinIdx, theIsPeriodic, theMults) + 1;
         theOutMinIdx = Max(theOutMinIdx, 1);
-        theOutMaxIdx = BSplCLib.PoleIndex(theDegree, theOutMaxIdx, theIsPeriodic, theMults) + 1;
+        theOutMaxIdx = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(theDegree, theOutMaxIdx, theIsPeriodic, theMults) + 1;
         theOutMaxIdx += theDegree - aMultiplier;
         if (!theIsPeriodic)
         {
@@ -54,17 +58,17 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
     }
 
     /// <summary>Compute bounding box for full surface.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
         myGeom.Bounds(out double anUMin, out double anUMax, out double aVMin, out double aVMax);
         return Box(anUMin, anUMax, aVMin, aVMax, theTol);
     }
 
     /// <summary>Compute bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        Bnd_Box aBox = new();
-        double aPTol = Precision.Parametric(Precision.Confusion());
+        Box aBox = new();
+        double aPTol = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Get geometry bounds.
         myGeom.Bounds(out double anUMinParam, out double anUMaxParam, out double aVMinParam, out double aVMaxParam);
@@ -78,7 +82,7 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
             // Use convex hull algorithm with poles.
             int aNbUPoles = myGeom.NbUPoles();
             int aNbVPoles = myGeom.NbVPoles();
-            NCollection_Array2<gp_Pnt> aPoles = myGeom.InternalPoles();
+            NCollection_Array2<Point3D> aPoles = myGeom.InternalPoles();
 
             int anUMinIdx = 1, anUMaxIdx = aNbUPoles;
             int aVMinIdx = 1, aVMaxIdx = aNbVPoles;
@@ -154,7 +158,7 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
         }
 
         GeomGridEval_Surface anEvaluator = new(aGASurf);
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
         for (int anI = aGrid.LowerRow(); anI <= aGrid.UpperRow(); anI++)
         {
             for (int aJ = aGrid.LowerCol(); aJ <= aGrid.UpperCol(); aJ++)
@@ -167,7 +171,7 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
     }
 
     /// <summary>Compute precise bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol)
+    public Box BoxOptimal(double theTol)
     {
         myGeom.Bounds(out double anUMin, out double anUMax, out double aVMin, out double aVMax);
         return BoxOptimal(anUMin, anUMax, aVMin, aVMax, theTol);
@@ -175,7 +179,7 @@ public sealed class GeomBndLib_BSplineSurface : GeomBndLib_Surface.ISurfaceEvalu
 
     /// <summary>Compute precise bounding box using numerical optimization.</summary>
     /// <remarks>OCCT's body is GeomBndLib_BezierSurface::BoxOptimal's text after the adaptor; it is shared.</remarks>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
         GeomAdaptor_Surface aGASurf = new(myGeom);
         return GeomBndLib_BezierSurface.SurfaceBoxOptimal(aGASurf, theUMin, theUMax, theVMin, theVMax, theTol);

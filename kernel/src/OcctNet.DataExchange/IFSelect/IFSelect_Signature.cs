@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -107,7 +109,7 @@ public abstract class IFSelect_Signature : Interface_SignType
     /// Tells if the value for &lt;ent&gt; in &lt;model&gt; matches a text, with a criterium &lt;exact&gt;. The
     /// default definition calls MatchValue Can be redefined
     /// </summary>
-    public virtual bool Matches(Standard_Transient? ent, Interface_InterfaceModel? model, string text, bool exact)
+    public virtual bool Matches(Transient? ent, Interface_InterfaceModel? model, string text, bool exact)
     {
         return IFSelect_Signature.MatchValue(Value(ent, model), text, exact);
     }
@@ -125,7 +127,7 @@ public abstract class IFSelect_Signature : Interface_SignType
         // NB: no regexp
         if (text.Length == 0)
         {
-            throw new Standard_OutOfRange(); // OCCT: TCollection_AsciiString::Value(1) of an empty text
+            throw new OutOfRangeException(); // OCCT: TCollection_AsciiString::Value(1) of an empty text
         }
         char cardeb = text[0];
         int ln, lnt, i, j;

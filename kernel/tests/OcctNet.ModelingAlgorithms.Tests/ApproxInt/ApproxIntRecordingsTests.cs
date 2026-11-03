@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using Xunit.Abstractions;
@@ -72,7 +73,7 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
             }
             if (aDim == 3)
             {
-                NCollection_Array1<gp_Pnt> P = new(1, np);
+                NCollection_Array1<Point3D> P = new(1, np);
                 theCurve.Curve(c, P);
                 for (int i = 1; i <= np; i++)
                 {
@@ -83,7 +84,7 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
             }
             else
             {
-                NCollection_Array1<gp_Pnt2d> P = new(1, np);
+                NCollection_Array1<Point2D> P = new(1, np);
                 theCurve.Curve(c, P);
                 for (int i = 1; i <= np; i++)
                 {
@@ -197,14 +198,14 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
         GeomInt_TheMultiLineOfWLApprox ml = new(aWL, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, n);
         math_Vector pars = new(1, n);
         GeomInt_WLApprox.Parameters(ml, 1, n, Approx_ParametrizationType.Approx_ChordLength, pars);
-        NCollection_Array1<gp_Pnt> p3 = new(1, n);
-        NCollection_Array1<gp_Pnt2d> pa = new(1, n), pb = new(1, n);
+        NCollection_Array1<Point3D> p3 = new(1, n);
+        NCollection_Array1<Point2D> pa = new(1, n), pb = new(1, n);
         for (int i = 1; i <= n; i++)
         {
             aWL.Point(i).Parameters(out double u1, out double v1, out double u2, out double v2);
             p3[i] = aWL.Point(i).Value();
-            pa[i] = new gp_Pnt2d(u1, v1);
-            pb[i] = new gp_Pnt2d(u2, v2);
+            pa[i] = new Point2D(u1, v1);
+            pb[i] = new Point2D(u2, v2);
         }
         Assert.Equal(4, aRec.KnotTools.Count);
         foreach (ApproxIntRecordings.KnotToolsRun aRun in aRec.KnotTools)

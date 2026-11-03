@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Describes a list of ONE field.</summary>
@@ -27,7 +29,7 @@ public class StepData_FieldList1 : StepData_FieldList
     {
         if (num != 1)
         {
-            throw new Standard_OutOfRange("StepData_FieldList1 : Field");
+            throw new OutOfRangeException("StepData_FieldList1 : Field");
         }
         return thefield;
     }
@@ -36,7 +38,7 @@ public class StepData_FieldList1 : StepData_FieldList
     {
         if (num != 1)
         {
-            throw new Standard_OutOfRange("StepData_FieldList1 : CField");
+            throw new OutOfRangeException("StepData_FieldList1 : CField");
         }
         return thefield;
     }

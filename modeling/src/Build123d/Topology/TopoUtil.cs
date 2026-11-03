@@ -1,3 +1,6 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -241,7 +244,7 @@ internal static partial class TopoUtil
     internal static void ThrowIfFailed(BRepAlgoAPI_Algo operation)
     {
         if (operation.HasErrors())
-            throw new StdFail_NotDone(Extras.AlgoErrors(operation) ?? "");
+            throw new NotDoneException(Extras.AlgoErrors(operation) ?? "");
     }
 
     internal static void SetTools(BRepAlgoAPI_BuilderAlgo operation, NCollection_List<TopoDS_Shape> tools)
@@ -255,14 +258,14 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The unit normal of a face at the point of it nearest <paramref name="surfacePoint"/>.</summary>
-    internal static Vector FaceNormalAt(TopoDS_Face face, gp_Pnt surfacePoint)
+    internal static Vector FaceNormalAt(TopoDS_Face face, Point3D surfacePoint)
     {
         var surface = BRep_Tool.Surface(face);
         var projector = new GeomAPI_ProjectPointOnSurf(surfacePoint, surface!);
         double u = 0, v = 0;
         projector.LowerDistanceParameters(out u, out v);
-        var pnt = new gp_Pnt();
-        var normal = new gp_Vec();
+        var pnt = new Point3D();
+        var normal = new Vector3D();
         var props = new BRepGProp_Face(face);
         props.Normal(u, v, out pnt, out normal);
         return new Vector(normal).Normalized();
@@ -288,7 +291,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The Location that carries <paramref name="source"/>'s frame onto <paramref name="target"/>'s.</summary>
-    internal static TopLoc_Location RelocationBetween(TopoDS_Shape source, TopoDS_Shape target)
+    internal static Placement RelocationBetween(TopoDS_Shape source, TopoDS_Shape target)
     {
         var s = source.Location();
         var t = target.Location();

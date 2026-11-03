@@ -4,7 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Std;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_Orientation;
@@ -36,7 +39,7 @@ public class GeomInt_LineConstructor
         public void SetVertex(in IntPatch_Point theOther)
         {
             myVertex = theOther;
-            double aNewParam = ElCLib.InPeriod(theOther.ParameterOnLine(), 0.0, TwoPI);
+            double aNewParam = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theOther.ParameterOnLine(), 0.0, TwoPI);
             SetParameter(aNewParam);
         }
 
@@ -48,7 +51,7 @@ public class GeomInt_LineConstructor
     }
 
     //! To provide sort
-    private readonly struct VertexLess : std_heap.ILess<GeomInt_Vertex>
+    private readonly struct VertexLess : Heap.ILess<GeomInt_Vertex>
     {
         public bool Less(GeomInt_Vertex theLeft, GeomInt_Vertex theRight)
             => theLeft.Getvertex().ParameterOnLine() < theRight.Getvertex().ParameterOnLine();
@@ -83,7 +86,7 @@ public class GeomInt_LineConstructor
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return (seqp.Length() / 2);
     }
@@ -93,7 +96,7 @@ public class GeomInt_LineConstructor
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         WFirst = seqp[2 * I - 1];
         WLast = seqp[2 * I];
@@ -104,7 +107,7 @@ public class GeomInt_LineConstructor
     {
         int i, nbvtx;
         double firstp, lastp;
-        double Tol = Precision.PConfusion() * 35.0;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 35.0;
 
         IntPatch_IType typl = L.ArcType();
         if (typl == IntPatch_Analytic)
@@ -120,13 +123,13 @@ public class GeomInt_LineConstructor
                 if (firstp != lastp)
                 {
                     double pmid = (firstp + lastp) * 0.5;
-                    gp_Pnt Pmid = ALine.Value(pmid);
+                    Point3D Pmid = ALine.Value(pmid);
                     Parameters(myHS1!, myHS2!, Pmid, out u1, out v1, out u2, out v2);
                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                    TopAbs_State in1 = myDom1!.Classify(new gp_Pnt2d(u1, v1), Tol);
+                    TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
                     if (in1 != TopAbs_OUT)
                     {
-                        TopAbs_State in2 = myDom2!.Classify(new gp_Pnt2d(u2, v2), Tol);
+                        TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
                         if (in2 != TopAbs_OUT)
                         {
                             seqp.Append(firstp);
@@ -156,10 +159,10 @@ public class GeomInt_LineConstructor
                         IntSurf_PntOn2S Pmid = WLine.Point(pmid);
                         Pmid.Parameters(out u1, out v1, out u2, out v2);
                         AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                        TopAbs_State in1 = myDom1!.Classify(new gp_Pnt2d(u1, v1), Tol);
+                        TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
                         if (in1 != TopAbs_OUT)
                         {
-                            TopAbs_State in2 = myDom2!.Classify(new gp_Pnt2d(u2, v2), Tol);
+                            TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
                             if (in2 != TopAbs_OUT)
                             {
                                 seqp.Append(firstp);
@@ -201,10 +204,10 @@ public class GeomInt_LineConstructor
                             u2 = 0.5 * (u2 + aU22);
                             v2 = 0.5 * (v2 + aV22);
 
-                            TopAbs_State in1 = myDom1!.Classify(new gp_Pnt2d(u1, v1), Tol);
+                            TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
                             if (in1 != TopAbs_OUT)
                             {
-                                TopAbs_State in2 = myDom2!.Classify(new gp_Pnt2d(u2, v2), Tol);
+                                TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
                                 if (in2 != TopAbs_OUT)
                                 {
                                     seqp.Append(firstp);
@@ -217,19 +220,19 @@ public class GeomInt_LineConstructor
                             IntSurf_PntOn2S Pfirst = WLine.Point((int)(firstp));
                             Pfirst.Parameters(out u1, out v1, out u2, out v2);
                             AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                            TopAbs_State in1 = myDom1!.Classify(new gp_Pnt2d(u1, v1), Tol);
+                            TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
                             if (in1 != TopAbs_OUT)
                             {
-                                TopAbs_State in2 = myDom2!.Classify(new gp_Pnt2d(u2, v2), Tol);
+                                TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
                                 if (in2 != TopAbs_OUT)
                                 {
                                     IntSurf_PntOn2S Plast = WLine.Point((int)(lastp));
                                     Plast.Parameters(out u1, out v1, out u2, out v2);
                                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                                    in1 = myDom1.Classify(new gp_Pnt2d(u1, v1), Tol);
+                                    in1 = myDom1.Classify(new Point2D(u1, v1), Tol);
                                     if (in1 != TopAbs_OUT)
                                     {
-                                        in2 = myDom2.Classify(new gp_Pnt2d(u2, v2), Tol);
+                                        in2 = myDom2.Classify(new Point2D(u2, v2), Tol);
                                         if (in2 != TopAbs_OUT)
                                         {
                                             seqp.Append(firstp);
@@ -257,21 +260,21 @@ public class GeomInt_LineConstructor
             if (aNbParts > 1)
             {
                 bool bCond;
-                GeomAbs_SurfaceType aST1, aST2;
+                SurfaceKind aST1, aST2;
                 aST1 = myHS1!.GetType();
                 aST2 = myHS2!.GetType();
                 //
                 bCond = false;
-                if (aST1 == GeomAbs_Plane)
+                if (aST1 == Plane)
                 {
-                    if (aST2 == GeomAbs_SurfaceOfExtrusion || aST2 == GeomAbs_SurfaceOfRevolution)
+                    if (aST2 == SurfaceOfExtrusion || aST2 == SurfaceOfRevolution)
                     { //+zft
                         bCond = !bCond;
                     }
                 }
-                else if (aST2 == GeomAbs_Plane)
+                else if (aST2 == Plane)
                 {
-                    if (aST1 == GeomAbs_SurfaceOfExtrusion || aST1 == GeomAbs_SurfaceOfRevolution)
+                    if (aST1 == SurfaceOfExtrusion || aST1 == SurfaceOfRevolution)
                     { //+zft
                         bCond = !bCond;
                     }
@@ -340,18 +343,18 @@ public class GeomInt_LineConstructor
             {
                 firstp = GeomInt_LineTool.Vertex(L, i).ParameterOnLine();
                 lastp = GeomInt_LineTool.Vertex(L, i + 1).ParameterOnLine();
-                if (Math.Abs(firstp - lastp) > Precision.PConfusion())
+                if (Math.Abs(firstp - lastp) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     intrvtested = true;
                     double pmid = (firstp + lastp) * 0.5;
-                    GLinePoint(typl, GLine, pmid, out gp_Pnt Pmid);
+                    GLinePoint(typl, GLine, pmid, out Point3D Pmid);
                     //
                     Parameters(myHS1!, myHS2!, Pmid, out u1, out v1, out u2, out v2);
                     AdjustPeriodic(myHS1!, myHS2!, ref u1, ref v1, ref u2, ref v2);
-                    TopAbs_State in1 = myDom1!.Classify(new gp_Pnt2d(u1, v1), Tol);
+                    TopAbs_State in1 = myDom1!.Classify(new Point2D(u1, v1), Tol);
                     if (in1 != TopAbs_OUT)
                     {
-                        TopAbs_State in2 = myDom2!.Classify(new gp_Pnt2d(u2, v2), Tol);
+                        TopAbs_State in2 = myDom2!.Classify(new Point2D(u2, v2), Tol);
                         if (in2 != TopAbs_OUT)
                         {
                             seqp.Append(firstp);
@@ -518,7 +521,7 @@ public class GeomInt_LineConstructor
                 if (!GeomInt_LineTool.Vertex(L, i).IsOnDomS1())
                 {
                     GeomInt_LineTool.Vertex(L, i).ParametersOnS1(out U, out V);
-                    gp_Pnt2d PPCC = new(U, V);
+                    Point2D PPCC = new(U, V);
                     if (myDom1!.Classify(PPCC, Tol) == TopAbs_OUT)
                     {
                         done = true;
@@ -549,7 +552,7 @@ public class GeomInt_LineConstructor
                 if (!GeomInt_LineTool.Vertex(L, i).IsOnDomS2())
                 {
                     GeomInt_LineTool.Vertex(L, i).ParametersOnS2(out U, out V);
-                    if (myDom2!.Classify(new gp_Pnt2d(U, V), Tol) == TopAbs_OUT)
+                    if (myDom2!.Classify(new Point2D(U, V), Tol) == TopAbs_OUT)
                     {
                         done = true;
                         return;
@@ -675,7 +678,7 @@ public class GeomInt_LineConstructor
             aVtxArr[i].SetVertex(aGLine.Vertex(i));
         }
 
-        std_sort.sort(aVtxArr.AsSpan()[..aNbVtx], new VertexLess());
+        Sorting.Sort(aVtxArr.AsSpan()[..aNbVtx], new VertexLess());
 
         // Create last vertex
         double aMinPrm = aVtxArr.First().Getvertex().ParameterOnLine() + TwoPI;
@@ -683,10 +686,10 @@ public class GeomInt_LineConstructor
 
         RejectDuplicates(aVtxArr);
 
-        std_sort.sort(aVtxArr.AsSpan(), new VertexLess());
+        Sorting.Sort(aVtxArr.AsSpan(), new VertexLess());
 
         double aU1, aV1, aU2, aV2;
-        gp_Pnt2d aP2D = new();
+        Point2D aP2D = new();
         for (int i = aVtxArr.Lower(); i <= aVtxArr.Upper() - 1; i++)
         {
             double aT1 = aVtxArr[i].Getvertex().ParameterOnLine();
@@ -698,7 +701,7 @@ public class GeomInt_LineConstructor
             }
 
             double aTmid = (aT1 + aT2) * 0.5;
-            GLinePoint(aType, aGLine, aTmid, out gp_Pnt aPmid);
+            GLinePoint(aType, aGLine, aTmid, out Point3D aPmid);
             //
             Parameters(myHS1!, myHS2!, aPmid, out aU1, out aV1, out aU2, out aV2);
             AdjustPeriodic(myHS1!, myHS2!, ref aU1, ref aV1, ref aU2, ref aV2);
@@ -722,18 +725,18 @@ public class GeomInt_LineConstructor
                                        ref double v1, ref double u2, ref double v2)
     {
         bool myHS1IsUPeriodic, myHS1IsVPeriodic;
-        GeomAbs_SurfaceType typs1 = myHS1.GetType();
+        SurfaceKind typs1 = myHS1.GetType();
         switch (typs1)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
             {
                 myHS1IsUPeriodic = true;
                 myHS1IsVPeriodic = false;
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 myHS1IsUPeriodic = myHS1IsVPeriodic = true;
                 break;
@@ -746,18 +749,18 @@ public class GeomInt_LineConstructor
             }
         }
         bool myHS2IsUPeriodic, myHS2IsVPeriodic;
-        GeomAbs_SurfaceType typs2 = myHS2.GetType();
+        SurfaceKind typs2 = myHS2.GetType();
         switch (typs2)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
             {
                 myHS2IsUPeriodic = true;
                 myHS2IsVPeriodic = false;
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 myHS2IsUPeriodic = myHS2IsVPeriodic = true;
                 break;
@@ -800,63 +803,63 @@ public class GeomInt_LineConstructor
         }
     }
 
-    private static void Parameters(GeomAdaptor_Surface myHS1, GeomAdaptor_Surface myHS2, in gp_Pnt Ptref,
+    private static void Parameters(GeomAdaptor_Surface myHS1, GeomAdaptor_Surface myHS2, in Point3D Ptref,
                                    out double U1, out double V1, out double U2, out double V2)
     {
         Parameters(myHS1, Ptref, out U1, out V1);
         Parameters(myHS2, Ptref, out U2, out V2);
     }
 
-    private static void Parameters(GeomAdaptor_Surface myHS1, in gp_Pnt Ptref, out double U1, out double V1)
+    private static void Parameters(GeomAdaptor_Surface myHS1, in Point3D Ptref, out double U1, out double V1)
     {
         IntSurf_Quadric quad1 = new();
         //
         switch (myHS1.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 quad1.SetValue(myHS1.Plane());
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 quad1.SetValue(myHS1.Cylinder());
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 quad1.SetValue(myHS1.Cone());
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 quad1.SetValue(myHS1.Sphere());
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 quad1.SetValue(myHS1.Torus());
                 break;
             default:
-                throw new Standard_ConstructionError("GeomInt_LineConstructor::Parameters");
+                throw new ConstructionErrorException("GeomInt_LineConstructor::Parameters");
         }
         U1 = 0.0;
         V1 = 0.0;
         quad1.Parameters(Ptref, ref U1, ref V1);
     }
 
-    private static void GLinePoint(IntPatch_IType typl, IntPatch_GLine GLine, double aT, out gp_Pnt aP)
+    private static void GLinePoint(IntPatch_IType typl, IntPatch_GLine GLine, double aT, out Point3D aP)
     {
         switch (typl)
         {
             case IntPatch_Lin:
-                aP = ElCLib.Value(aT, GLine.Line());
+                aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, GLine.Line());
                 break;
             case IntPatch_Circle:
-                aP = ElCLib.Value(aT, GLine.Circle());
+                aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, GLine.Circle());
                 break;
             case IntPatch_Ellipse:
-                aP = ElCLib.Value(aT, GLine.Ellipse());
+                aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, GLine.Ellipse());
                 break;
             case IntPatch_Hyperbola:
-                aP = ElCLib.Value(aT, GLine.Hyperbola());
+                aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, GLine.Hyperbola());
                 break;
             case IntPatch_Parabola:
-                aP = ElCLib.Value(aT, GLine.Parabola());
+                aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, GLine.Parabola());
                 break;
             default:
-                throw new Standard_ConstructionError("GeomInt_LineConstructor::Parameters");
+                throw new ConstructionErrorException("GeomInt_LineConstructor::Parameters");
         }
     }
 
@@ -887,7 +890,7 @@ public class GeomInt_LineConstructor
         // About the value aTolPC=1000.*Precision::PConfusion(),
         // see IntPatch_GLine::ComputeVertexParameters(...)
         // for more details;
-        double aTolPC = 1000.0 * Precision.PConfusion();
+        double aTolPC = 1000.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         // Find duplicates in a slice of the array [LowerBound, UpperBound-1].
         // If a duplicate has been found, the element with greater index will be rejected.

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -33,7 +35,7 @@ public class StepAP203_DateTimeItem : StepData_SelectType
     /// 9 -&gt; Certification from StepBasic
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

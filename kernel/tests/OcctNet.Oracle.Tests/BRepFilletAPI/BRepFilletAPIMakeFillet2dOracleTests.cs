@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -59,7 +61,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     private static string? ErrorOf(Exception theException) => theException switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
-        Standard_Failure f => f.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         _ => null,
     };
 
@@ -67,17 +69,17 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
 
     private static TopoDS_Face Face(in TopoDS_Wire theWire) => new BRepBuilderAPI_MakeFace(theWire, true).Face();
 
-    private static gp_Pnt OnPlane(in gp_Ax2 theAx, double theU, double theV)
-        => theAx.Location().Translated(new gp_Vec(theAx.XDirection()) * theU + new gp_Vec(theAx.YDirection()) * theV);
+    private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
+        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
     // A polygon around the origin of the plane (theArcs: some sides arcs of circles)
     private static TopoDS_Face Profile(Oracle theOracle, bool theArcs, out double theSize)
     {
-        gp_Ax2 anAx = theOracle.Bool() ? new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)) : theOracle.Ax2();
+        Frame3D anAx = theOracle.Bool() ? new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)) : theOracle.Ax2();
         int aNb = theOracle.Int(3, 8);
         double aRadius = theOracle.Real(1.0, 50.0);
         theSize = aRadius;
-        var aPoints = new gp_Pnt[aNb];
+        var aPoints = new Point3D[aNb];
         for (int i = 0; i < aNb; i++)
         {
             double anAngle = 2.0 * Math.PI * (i + 0.3 * theOracle.Real(-1.0, 1.0)) / aNb;
@@ -87,7 +89,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         if (!theArcs)
         {
             var aPoly = new BRepBuilderAPI_MakePolygon();
-            foreach (gp_Pnt aP in aPoints)
+            foreach (Point3D aP in aPoints)
             {
                 aPoly.Add(aP);
             }
@@ -97,13 +99,13 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         var aWire = new BRepBuilderAPI_MakeWire();
         for (int i = 0; i < aNb; i++)
         {
-            gp_Pnt a = aPoints[i], b = aPoints[(i + 1) % aNb];
+            Point3D a = aPoints[i], b = aPoints[(i + 1) % aNb];
             if (theOracle.Int(0, 9) < 4)
             {
                 // an arc through a point off the middle of the side
-                var aSide = new gp_Vec(a, b);
-                gp_Vec aNormal = new gp_Vec(anAx.Direction()).Crossed(aSide);
-                gp_Pnt aMid = a.Translated(aSide * 0.5).Translated(aNormal * theOracle.Real(-0.3, 0.3));
+                var aSide = new Vector3D(a, b);
+                Vector3D aNormal = new Vector3D(anAx.Direction()).Crossed(aSide);
+                Point3D aMid = a.Translated(aSide * 0.5).Translated(aNormal * theOracle.Real(-0.3, 0.3));
                 aWire.Add(new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(a, aMid, b).Value()).Edge());
             }
             else
@@ -117,8 +119,8 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     // build123d.NET's Face.MakeRect: a rectangle centred on the origin of Plane.XY
     private static TopoDS_Wire Rect(double theW, double theH, double theX = 0.0, double theY = 0.0)
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon(new gp_Pnt(theX - theW / 2, theY - theH / 2, 0), new gp_Pnt(theX + theW / 2, theY - theH / 2, 0),
-                                                   new gp_Pnt(theX + theW / 2, theY + theH / 2, 0), new gp_Pnt(theX - theW / 2, theY + theH / 2, 0), true);
+        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(theX - theW / 2, theY - theH / 2, 0), new Point3D(theX + theW / 2, theY - theH / 2, 0),
+                                                   new Point3D(theX + theW / 2, theY + theH / 2, 0), new Point3D(theX - theW / 2, theY + theH / 2, 0), true);
         return aPoly.Wire();
     }
 
@@ -225,9 +227,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                 }
                 aStep = $"{anOp.Kind} {(anEdge.IsNull() ? "e0" : "e1")} {(int)aMaker.Status()}";
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                aStep = $"{anOp.Kind} !{e.GetType().Name}";
+                aStep = $"{anOp.Kind} !{Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}";
             }
             aRun.Steps.Add(aStep);
         }
@@ -415,9 +417,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             {
                 aPH.Add(string.Join(",", aP.Maker.Modified(aPE).Select(s => aPResEdges.FindIndex(s))));
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                aPH.Add("!" + e.GetType().Name);
+                aPH.Add("!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
             }
         }
         for (int k = 1; k <= aN.Maker.NbCurves(); k++)
@@ -476,7 +478,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             {
                 aFace = Profile(anOracle, isArcs, out aSize);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue; // a profile the makers reject (a degenerate arc)
             }

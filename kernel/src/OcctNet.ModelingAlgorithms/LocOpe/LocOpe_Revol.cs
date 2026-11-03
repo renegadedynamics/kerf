@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -21,7 +24,7 @@ namespace Occt;
 public sealed class LocOpe_Revol
 {
     private TopoDS_Shape myBase = new();
-    private gp_Ax1 myAxis = new();
+    private Axis3D myAxis = new();
     private double myAngle;
     private double myAngTra;
     private bool myIsTrans;
@@ -40,7 +43,7 @@ public sealed class LocOpe_Revol
         myDone = false;
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Ax1 Axis, double Angle)
+    public void Perform(in TopoDS_Shape Base, in Axis3D Axis, double Angle)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -55,7 +58,7 @@ public sealed class LocOpe_Revol
         IntPerf();
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Ax1 Axis, double Angle, double angledec)
+    public void Perform(in TopoDS_Shape Base, in Axis3D Axis, double Angle, double angledec)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -76,7 +79,7 @@ public sealed class LocOpe_Revol
         BRepTools_Modifier Modif = new();
         if (myIsTrans)
         {
-            gp_Trsf T = new();
+            Transform3D T = new();
             T.SetRotation(myAxis, myAngTra);
             BRepTools_TrsfModification modbase = new(T);
             Modif.Init(theBase);
@@ -218,7 +221,7 @@ public sealed class LocOpe_Revol
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -245,15 +248,15 @@ public sealed class LocOpe_Revol
     public void Curves(NCollection_Sequence<Geom_Curve> Scurves)
     {
         Scurves.Clear();
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFirstShape, spt);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
-            gp_Circ CAX = new();
+            Point3D pvt = spt[jj];
+            Circle3D CAX = new();
             if (FindCircle(myAxis, pvt, ref CAX))
             {
-                gp_Ax2 A2 = CAX.Position();
+                Frame3D A2 = CAX.Position();
                 double r = CAX.Radius();
                 Geom_Circle Ci = new(A2, r);
                 Scurves.Append(Ci);
@@ -264,21 +267,21 @@ public sealed class LocOpe_Revol
     /// <summary>The circle around the axis through the barycentre of the first shape's sample points (null if on the axis).</summary>
     public Geom_Curve? BarycCurve()
     {
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFirstShape, spt);
-        gp_XYZ aBar = new(0.0, 0.0, 0.0);
+        Xyz aBar = new(0.0, 0.0, 0.0);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             aBar += pvt.XYZ();
         }
         aBar.Divide(spt.Length());
-        gp_Pnt bar = new(aBar);
-        gp_Circ CAX = new();
+        Point3D bar = new(aBar);
+        Circle3D CAX = new();
         Geom_Circle? theCi = null;
         if (FindCircle(myAxis, bar, ref CAX))
         {
-            gp_Ax2 A2 = CAX.Position();
+            Frame3D A2 = CAX.Position();
             double r = CAX.Radius();
             theCi = new Geom_Circle(A2, r);
         }
@@ -286,22 +289,22 @@ public sealed class LocOpe_Revol
     }
 
     /// <summary>The circle around the axis through the point (false when the point is on the axis).</summary>
-    internal static bool FindCircle(in gp_Ax1 Ax, in gp_Pnt Pt, ref gp_Circ Ci)
+    internal static bool FindCircle(in Axis3D Ax, in Point3D Pt, ref Circle3D Ci)
     {
-        gp_Dir Dax = Ax.Direction();
-        gp_Vec OP = new(Ax.Location(), Pt);
+        Direction3D Dax = Ax.Direction();
+        Vector3D OP = new(Ax.Location(), Pt);
 
-        double prm = OP.Dot(new gp_Vec(Dax));
+        double prm = OP.Dot(new Vector3D(Dax));
 
-        gp_Pnt prj = new(Ax.Location().XYZ().Added(prm * Dax.XYZ()));
-        gp_Vec axx = new(prj, Pt);
+        Point3D prj = new(Ax.Location().XYZ().Added(prm * Dax.XYZ()));
+        Vector3D axx = new(prj, Pt);
         double Radius = axx.Magnitude();
-        if (Radius < Precision.Confusion())
+        if (Radius < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
         Ci.SetRadius(Radius);
-        Ci.SetPosition(new gp_Ax2(prj, Dax, new gp_Dir(axx)));
+        Ci.SetPosition(new Frame3D(prj, Dax, new Direction3D(axx)));
         return true;
     }
 }

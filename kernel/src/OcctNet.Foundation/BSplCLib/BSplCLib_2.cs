@@ -2,306 +2,312 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Occt;
+
+namespace Kerf.Engine.Geometry.Splines;
 
 // methods for 1 dimensional BSplines
 public static partial class BSplCLib
 {
     // Note: OCCT's BSplCLib_DataContainer (BSplCLib_DataContainer_T<1> of BSplCLib_CurveComputation.pxx): stack
     // buffers for the poles, knots and derivatives of one span. The port allocates them with stackalloc.
-    private const int DataContainer1_PolesSize = (BSplCLib_CurveComputation.THE_MAX_DEGREE + 1) * (1 + 1);
-    private const int DataContainer1_KnotsSize = 2 * BSplCLib_CurveComputation.THE_MAX_DEGREE;
+    private const int DataContainer1_PolesSize = (CurveComputation.THE_MAX_DEGREE + 1) * (1 + 1);
+    private const int DataContainer1_KnotsSize = 2 * CurveComputation.THE_MAX_DEGREE;
     private const int DataContainer1_DersSize = 1 * 4;
 
     /// <summary>
-    /// Copies in <paramref name="LP"/> the poles (and weights, multiplying the poles: homogeneous coordinates)
-    /// of the span starting at pole <paramref name="Index"/>, Degree + 1 of them, wrapping around the poles.
+    /// Copies in <paramref name="lp"/> the poles (and weights, multiplying the poles: homogeneous coordinates)
+    /// of the span starting at pole <paramref name="index"/>, Degree + 1 of them, wrapping around the poles.
     /// </summary>
-    public static void BuildEval(int Degree, int Index, NCollection_Array1<double> Poles,
-                                 NCollection_Array1<double>? Weights, Span<double> LP)
+    public static void BuildEval(int degree, int index, NCollection_Array1<double> poles,
+                                 NCollection_Array1<double>? weights, Span<double> lp)
     {
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
         int i;
-        int ip = PLower + Index - 1;
+        int ip = pLower + index - 1;
         double w;
-        Span<double> pole = LP;
+        Span<double> pole = lp;
         int aPole = 0;
-        if (Weights == null)
+        if (weights == null)
         {
 
-            for (i = 0; i <= Degree; i++)
+            for (i = 0; i <= degree; i++)
             {
                 ip++;
-                if (ip > PUpper)
+                if (ip > pUpper)
                 {
-                    ip = PLower;
+                    ip = pLower;
                 }
-                pole[aPole + 0] = Poles[ip];
+                pole[aPole + 0] = poles[ip];
                 aPole += 1;
             }
         }
         else
         {
 
-            for (i = 0; i <= Degree; i++)
+            for (i = 0; i <= degree; i++)
             {
                 ip++;
-                if (ip > PUpper)
+                if (ip > pUpper)
                 {
-                    ip = PLower;
+                    ip = pLower;
                 }
-                pole[aPole + 1] = w = Weights[ip];
-                pole[aPole + 0] = Poles[ip] * w;
+                pole[aPole + 1] = w = weights[ip];
+                pole[aPole + 0] = poles[ip] * w;
                 aPole += 2;
             }
         }
     }
 
-    private static void PrepareEval(ref double u, ref int index, out int dim, out bool rational, int Degree,
-                                    bool Periodic, NCollection_Array1<double> Poles,
-                                    NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                                    NCollection_Array1<int>? Mults, Span<double> dc_poles, Span<double> dc_knots)
+    private static void PrepareEval(ref double u, ref int index, out int dim, out bool rational, int degree,
+                                    bool periodic, NCollection_Array1<double> poles,
+                                    NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                                    NCollection_Array1<int>? mults, Span<double> dc_poles, Span<double> dc_knots)
     {
         // Set the Index
-        BSplCLib.LocateParameter(Degree, Knots, Mults, u, Periodic, ref index, out u);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(degree, knots, mults, u, periodic, ref index, out u);
 
         // make the knots
-        BSplCLib.BuildKnots(Degree, index, Periodic, Knots, Mults, dc_knots);
-        if (Mults == null)
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildKnots(degree, index, periodic, knots, mults, dc_knots);
+        if (mults == null)
         {
-            index -= Knots.Lower() + Degree;
+            index -= knots.Lower() + degree;
         }
         else
         {
-            index = BSplCLib.PoleIndex(Degree, index, Periodic, Mults);
+            index = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(degree, index, periodic, mults);
         }
 
         // check truly rational
-        rational = (Weights != null);
+        rational = (weights != null);
         if (rational)
         {
-            int WLower = Weights!.Lower() + index;
-            rational = BSplCLib.IsRational(Weights, WLower, WLower + Degree);
+            int wLower = weights!.Lower() + index;
+            rational = global::Kerf.Engine.Geometry.Splines.BSplCLib.IsRational(weights, wLower, wLower + degree);
         }
 
         // make the poles
         if (rational)
         {
             dim = 2;
-            BSplCLib.BuildEval(Degree, index, Poles, Weights, dc_poles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildEval(degree, index, poles, weights, dc_poles);
         }
         else
         {
             dim = 1;
-            BSplCLib.BuildEval(Degree, index, Poles, BSplCLib.NoWeights(), dc_poles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildEval(degree, index, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), dc_poles);
         }
     }
 
     /// <summary>The value at <paramref name="U"/> of a one-dimensional B-spline (rational if weights are given).</summary>
-    public static void D0(double U, int Index, int Degree, bool Periodic, NCollection_Array1<double> Poles,
-                          NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults, out double P)
+    public static void D0(double U, int Index, int degree, bool periodic, NCollection_Array1<double> poles,
+                          NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults, out double p)
     {
         int dim, index = Index;
         double u = U;
         bool rational;
-        BSplCLib_CurveComputation.validateBSplineDegree(Degree);
+        CurveComputation.ValidateBSplineDegree(degree);
         Span<double> dc_poles = stackalloc double[DataContainer1_PolesSize];
         Span<double> dc_knots = stackalloc double[DataContainer1_KnotsSize];
-        PrepareEval(ref u, ref index, out dim, out rational, Degree, Periodic, Poles, Weights, Knots, Mults, dc_poles, dc_knots);
-        BSplCLib.Eval(u, Degree, dc_knots, dim, dc_poles);
+        PrepareEval(ref u, ref index, out dim, out rational, degree, periodic, poles, weights, knots, mults, dc_poles, dc_knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(u, degree, dc_knots, dim, dc_poles);
         if (rational)
         {
-            P = dc_poles[0] / dc_poles[1];
+            p = dc_poles[0] / dc_poles[1];
         }
         else
         {
-            P = dc_poles[0];
+            p = dc_poles[0];
         }
     }
 
     /// <summary>The value and first derivative at <paramref name="U"/> of a one-dimensional B-spline.</summary>
-    public static void D1(double U, int Index, int Degree, bool Periodic, NCollection_Array1<double> Poles,
-                          NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults, out double P, out double V)
+    public static void D1(double U, int Index, int degree, bool periodic, NCollection_Array1<double> poles,
+                          NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults, out double p, out double v)
     {
         int dim, index = Index;
         double u = U;
         bool rational;
-        BSplCLib_CurveComputation.validateBSplineDegree(Degree);
+        CurveComputation.ValidateBSplineDegree(degree);
         Span<double> dc_poles = stackalloc double[DataContainer1_PolesSize];
         Span<double> dc_knots = stackalloc double[DataContainer1_KnotsSize];
         Span<double> dc_ders = stackalloc double[DataContainer1_DersSize];
-        PrepareEval(ref u, ref index, out dim, out rational, Degree, Periodic, Poles, Weights, Knots, Mults, dc_poles, dc_knots);
-        BSplCLib.Bohm(u, Degree, 1, dc_knots, dim, dc_poles);
+        PrepareEval(ref u, ref index, out dim, out rational, degree, periodic, poles, weights, knots, mults, dc_poles, dc_knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Bohm(u, degree, 1, dc_knots, dim, dc_poles);
         Span<double> result = dc_poles;
         if (rational)
         {
-            PLib.RationalDerivative(Degree, 1, 1, dc_poles, dc_ders);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.RationalDerivative(degree, 1, 1, dc_poles, dc_ders);
             result = dc_ders;
         }
-        P = result[0];
-        V = result[1];
+        p = result[0];
+        v = result[1];
     }
 
     /// <summary>The value and first two derivatives at <paramref name="U"/> of a one-dimensional B-spline.</summary>
-    public static void D2(double U, int Index, int Degree, bool Periodic, NCollection_Array1<double> Poles,
-                          NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults, out double P, out double V1, out double V2)
+    public static void D2(double U, int Index, int degree, bool periodic, NCollection_Array1<double> poles,
+                          NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults, out double p, out double v1, out double v2)
     {
         int dim, index = Index;
         double u = U;
         bool rational;
-        BSplCLib_CurveComputation.validateBSplineDegree(Degree);
+        CurveComputation.ValidateBSplineDegree(degree);
         Span<double> dc_poles = stackalloc double[DataContainer1_PolesSize];
         Span<double> dc_knots = stackalloc double[DataContainer1_KnotsSize];
         Span<double> dc_ders = stackalloc double[DataContainer1_DersSize];
-        PrepareEval(ref u, ref index, out dim, out rational, Degree, Periodic, Poles, Weights, Knots, Mults, dc_poles, dc_knots);
-        BSplCLib.Bohm(u, Degree, 2, dc_knots, dim, dc_poles);
+        PrepareEval(ref u, ref index, out dim, out rational, degree, periodic, poles, weights, knots, mults, dc_poles, dc_knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Bohm(u, degree, 2, dc_knots, dim, dc_poles);
         Span<double> result = dc_poles;
         if (rational)
         {
-            PLib.RationalDerivative(Degree, 2, 1, dc_poles, dc_ders);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.RationalDerivative(degree, 2, 1, dc_poles, dc_ders);
             result = dc_ders;
         }
-        P = result[0];
-        V1 = result[1];
-        if (!rational && (Degree < 2))
+        p = result[0];
+        v1 = result[1];
+        if (!rational && (degree < 2))
         {
-            V2 = 0.0;
+            v2 = 0.0;
         }
         else
         {
-            V2 = result[2];
+            v2 = result[2];
         }
     }
 
     /// <summary>The value and first three derivatives at <paramref name="U"/> of a one-dimensional B-spline.</summary>
-    public static void D3(double U, int Index, int Degree, bool Periodic, NCollection_Array1<double> Poles,
-                          NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults, out double P, out double V1, out double V2, out double V3)
+    public static void D3(double U, int Index, int degree, bool periodic, NCollection_Array1<double> poles,
+                          NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults, out double p, out double v1, out double v2, out double v3)
     {
         int dim, index = Index;
         double u = U;
         bool rational;
-        BSplCLib_CurveComputation.validateBSplineDegree(Degree);
+        CurveComputation.ValidateBSplineDegree(degree);
         Span<double> dc_poles = stackalloc double[DataContainer1_PolesSize];
         Span<double> dc_knots = stackalloc double[DataContainer1_KnotsSize];
         Span<double> dc_ders = stackalloc double[DataContainer1_DersSize];
-        PrepareEval(ref u, ref index, out dim, out rational, Degree, Periodic, Poles, Weights, Knots, Mults, dc_poles, dc_knots);
-        BSplCLib.Bohm(u, Degree, 3, dc_knots, dim, dc_poles);
+        PrepareEval(ref u, ref index, out dim, out rational, degree, periodic, poles, weights, knots, mults, dc_poles, dc_knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Bohm(u, degree, 3, dc_knots, dim, dc_poles);
         Span<double> result = dc_poles;
         if (rational)
         {
-            PLib.RationalDerivative(Degree, 3, 1, dc_poles, dc_ders);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.RationalDerivative(degree, 3, 1, dc_poles, dc_ders);
             result = dc_ders;
         }
-        P = result[0];
-        V1 = result[1];
-        if (!rational && (Degree < 2))
+        p = result[0];
+        v1 = result[1];
+        if (!rational && (degree < 2))
         {
-            V2 = 0.0;
+            v2 = 0.0;
         }
         else
         {
-            V2 = result[2];
+            v2 = result[2];
         }
-        if (!rational && (Degree < 3))
+        if (!rational && (degree < 3))
         {
-            V3 = 0.0;
+            v3 = 0.0;
         }
         else
         {
-            V3 = result[3];
+            v3 = result[3];
         }
     }
 
-    /// <summary>The derivative of order <paramref name="N"/> at <paramref name="U"/> of a one-dimensional B-spline.</summary>
-    public static void DN(double U, int N, int Index, int Degree, bool Periodic, NCollection_Array1<double> Poles,
-                          NCollection_Array1<double>? Weights, NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults, out double VN)
+    /// <summary>The derivative of order <paramref name="n"/> at <paramref name="U"/> of a one-dimensional B-spline.</summary>
+    public static void DN(double U, int n, int Index, int degree, bool periodic, NCollection_Array1<double> poles,
+                          NCollection_Array1<double>? weights, NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults, out double vn)
     {
         int dim, index = Index;
         double u = U;
         bool rational;
-        BSplCLib_CurveComputation.validateBSplineDegree(Degree);
+        CurveComputation.ValidateBSplineDegree(degree);
         Span<double> dc_poles = stackalloc double[DataContainer1_PolesSize];
         Span<double> dc_knots = stackalloc double[DataContainer1_KnotsSize];
-        PrepareEval(ref u, ref index, out dim, out rational, Degree, Periodic, Poles, Weights, Knots, Mults, dc_poles, dc_knots);
-        BSplCLib.Bohm(u, Degree, N, dc_knots, dim, dc_poles);
+        PrepareEval(ref u, ref index, out dim, out rational, degree, periodic, poles, weights, knots, mults, dc_poles, dc_knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Bohm(u, degree, n, dc_knots, dim, dc_poles);
         if (rational)
         {
             Span<double> v = stackalloc double[1];
-            PLib.RationalDerivative(Degree, N, 1, dc_poles, v, false);
-            VN = v[0];
+            global::Kerf.Engine.Numerics.Polynomials.PLib.RationalDerivative(degree, n, 1, dc_poles, v, false);
+            vn = v[0];
         }
         else
         {
-            if (N > Degree)
+            if (n > degree)
             {
-                VN = 0.0;
+                vn = 0.0;
             }
             else
             {
-                VN = dc_poles[N];
+                vn = dc_poles[n];
             }
         }
     }
 
     /// <summary>
     /// Builds the banded matrix of the B-spline basis functions (of the derivative orders given by
-    /// <paramref name="OrderArray"/>) at <paramref name="Parameters"/>, for interpolation. The matrix must have
+    /// <paramref name="orderArray"/>) at <paramref name="parameters"/>, for interpolation. The matrix must have
     /// Parameters' row range and columns 1 to UpperBandWidth + LowerBandWidth + 1. Returns 0 on success.
     /// </summary>
-    public static int BuildBSpMatrix(NCollection_Array1<double> Parameters, NCollection_Array1<int> OrderArray,
-                                     NCollection_Array1<double> FlatKnots, int Degree, math_Matrix Matrix,
-                                     out int UpperBandWidth, out int LowerBandWidth)
+    public static int BuildBSpMatrix(NCollection_Array1<double> parameters, NCollection_Array1<int> orderArray,
+                                     NCollection_Array1<double> flatKnots, int degree, Matrix matrix,
+                                     out int upperBandWidth, out int lowerBandWidth)
     {
-        NCollection_Array1<int> ContactOrderArray = OrderArray;
-        const int aMaxOrder = 25 + 1; // BSplCLib::MaxDegree() + 1
-        int anOrder = Degree + 1;
-        UpperBandWidth = Degree;
-        LowerBandWidth = Degree;
-        int aBandWidth = UpperBandWidth + LowerBandWidth + 1;
+        NCollection_Array1<int> contactOrderArray = orderArray;
+        const int maxOrder = 25 + 1; // BSplCLib::MaxDegree() + 1
+        int order = degree + 1;
+        upperBandWidth = degree;
+        lowerBandWidth = degree;
+        int bandWidth = upperBandWidth + lowerBandWidth + 1;
 
-        if (Matrix.LowerRow() != Parameters.Lower() || Matrix.UpperRow() != Parameters.Upper()
-            || Matrix.LowerCol() != 1 || Matrix.UpperCol() != aBandWidth)
+        if (matrix.LowerRow() != parameters.Lower() || matrix.UpperRow() != parameters.Upper()
+            || matrix.LowerCol() != 1 || matrix.UpperCol() != bandWidth)
         {
             return 1;
         }
 
         // A stack buffer in OCCT; math_Matrix needs an array to share
-        double[] aBasisBuf = new double[aMaxOrder * aMaxOrder];
-        math_Matrix aBSplineBasis = new(aBasisBuf, 1, aMaxOrder, 1, aMaxOrder);
+        double[] basisBuf = new double[maxOrder * maxOrder];
+        Matrix bSplineBasis = new(basisBuf, 1, maxOrder, 1, maxOrder);
 
         // Zero the entire matrix once instead of per-row zero-fill loops.
-        Matrix.Init(0.0);
-        int aMatLRow = Matrix.LowerRow();
-        int aMatNCols = Matrix.ColNumber();
-        Span<double> aMatData = Matrix.AsSpan();
+        matrix.Init(0.0);
+        int matLRow = matrix.LowerRow();
+        int matNCols = matrix.ColNumber();
+        Span<double> matData = matrix.AsSpan();
 
-        for (int i = Parameters.Lower(); i <= Parameters.Upper(); i++)
+        for (int i = parameters.Lower(); i <= parameters.Upper(); i++)
         {
-            int aFirstNonZeroIndex = 0;
-            int aContactOrder = ContactOrderArray[i];
-            int anErrorCode = BSplCLib.EvalBsplineBasis(aContactOrder,
-                                                        anOrder,
-                                                        FlatKnots,
-                                                        Parameters[i],
-                                                        out aFirstNonZeroIndex,
-                                                        aBSplineBasis);
-            if (anErrorCode != 0)
+            int firstNonZeroIndex = 0;
+            int contactOrder = contactOrderArray[i];
+            int errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(contactOrder,
+                                                        order,
+                                                        flatKnots,
+                                                        parameters[i],
+                                                        out firstNonZeroIndex,
+                                                        bSplineBasis);
+            if (errorCode != 0)
             {
                 return 2;
             }
 
-            int anIndex = LowerBandWidth + 1 + aFirstNonZeroIndex - i;
-            Span<double> aRowData = aMatData.Slice((i - aMatLRow) * aMatNCols);
-            ReadOnlySpan<double> aBasisSrc = aBasisBuf.AsSpan(aContactOrder * aMaxOrder);
-            for (int j = 0; j < anOrder; j++)
+            int index = lowerBandWidth + 1 + firstNonZeroIndex - i;
+            Span<double> rowData = matData.Slice((i - matLRow) * matNCols);
+            ReadOnlySpan<double> basisSrc = basisBuf.AsSpan(contactOrder * maxOrder);
+            for (int j = 0; j < order; j++)
             {
-                aRowData[anIndex + j - 1] = aBasisSrc[j];
+                rowData[index + j - 1] = basisSrc[j];
             }
         }
 
@@ -310,44 +316,44 @@ public static partial class BSplCLib
 
     /// <summary>
     /// Factors the banded matrix in LU form, with a banded storage of the L components. Returns 0, or 1 with
-    /// <paramref name="PivotIndexProblem"/> the row of a null pivot. Not to be used for totally positive matrices
+    /// <paramref name="pivotIndexProblem"/> the row of a null pivot. Not to be used for totally positive matrices
     /// (B-spline matrices built at the Schoenberg points).
     /// </summary>
-    public static int FactorBandedMatrix(math_Matrix Matrix, int UpperBandWidth, int LowerBandWidth,
-                                         out int PivotIndexProblem)
+    public static int FactorBandedMatrix(Matrix matrix, int upperBandWidth, int lowerBandWidth,
+                                         out int pivotIndexProblem)
     {
-        int aBandWidth = UpperBandWidth + LowerBandWidth + 1;
-        PivotIndexProblem = 0;
+        int bandWidth = upperBandWidth + lowerBandWidth + 1;
+        pivotIndexProblem = 0;
 
-        int aLRow = Matrix.LowerRow();
-        int aNCols = Matrix.ColNumber();
+        int lRow = matrix.LowerRow();
+        int nCols = matrix.ColNumber();
         // &Matrix(aLRow, 1): the storage starts at column LowerCol
-        Span<double> aData = Matrix.AsSpan();
-        int aBase = 1 - Matrix.LowerCol();
+        Span<double> data = matrix.AsSpan();
+        int aBase = 1 - matrix.LowerCol();
 
-        for (int i = aLRow + 1; i <= Matrix.UpperRow(); i++)
+        for (int i = lRow + 1; i <= matrix.UpperRow(); i++)
         {
-            int aMinIndex = (LowerBandWidth - i + 2 >= 1 ? LowerBandWidth - i + 2 : 1);
-            int aRowI = aBase + (i - aLRow) * aNCols;
+            int minIndex = (lowerBandWidth - i + 2 >= 1 ? lowerBandWidth - i + 2 : 1);
+            int rowI = aBase + (i - lRow) * nCols;
 
-            for (int j = aMinIndex; j <= LowerBandWidth; j++)
+            for (int j = minIndex; j <= lowerBandWidth; j++)
             {
-                int anIndex = i - LowerBandWidth + j - 1;
-                int aRowIdx = aBase + (anIndex - aLRow) * aNCols;
-                double aPivot = aData[aRowIdx + LowerBandWidth];
-                if (Math.Abs(aPivot) <= RealSmall())
+                int index = i - lowerBandWidth + j - 1;
+                int rowIdx = aBase + (index - lRow) * nCols;
+                double pivot = data[rowIdx + lowerBandWidth];
+                if (Math.Abs(pivot) <= RealSmall())
                 {
-                    PivotIndexProblem = anIndex;
+                    pivotIndexProblem = index;
                     return 1;
                 }
 
-                double anInverse = -1.0 / aPivot;
-                aData[aRowI + j - 1] = aData[aRowI + j - 1] * anInverse;
-                int aMaxIndex = aBandWidth + anIndex - i;
+                double inverse = -1.0 / pivot;
+                data[rowI + j - 1] = data[rowI + j - 1] * inverse;
+                int maxIndex = bandWidth + index - i;
 
-                for (int k = j + 1; k <= aMaxIndex; k++)
+                for (int k = j + 1; k <= maxIndex; k++)
                 {
-                    aData[aRowI + k - 1] += aData[aRowI + j - 1] * aData[aRowIdx + k + i - anIndex - 1];
+                    data[rowI + k - 1] += data[rowI + j - 1] * data[rowIdx + k + i - index - 1];
                 }
             }
         }
@@ -356,16 +362,16 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Evaluates the B-spline basis at <paramref name="Parameter"/> up to <paramref name="DerivativeOrder"/>:
+    /// Evaluates the B-spline basis at <paramref name="parameter"/> up to <paramref name="derivativeOrder"/>:
     /// BsplineBasis(1, n) is the value of the n-th non-vanishing basis function (index FirstNonZeroBsplineIndex +
     /// n - 1), BsplineBasis(k + 1, n) its k-th derivative. The matrix needs rows and columns from 1, at least
     /// DerivativeOrder + 1 rows and Order columns. Returns 0 on success.
     /// </summary>
-    public static int EvalBsplineBasis(int DerivativeOrder, int Order, NCollection_Array1<double> FlatKnots,
-                                       double Parameter, out int FirstNonZeroBsplineIndex, math_Matrix BsplineBasis,
+    public static int EvalBsplineBasis(int derivativeOrder, int order, NCollection_Array1<double> flatKnots,
+                                       double parameter, out int firstNonZeroBsplineIndex, Matrix bsplineBasis,
                                        bool isPeriodic = false)
     {
-        int DerivativeRequest = DerivativeOrder;
+        int derivativeRequest = derivativeOrder;
         // the matrix must have at least DerivativeRequest + 1
         //   row and Order columns
         // the result are stored in the following way in
@@ -388,103 +394,103 @@ public static partial class BSplCLib
         //   B (t)   B (t)                     B (t)
         //    i       i+1                       i+k-1
         //
-        FirstNonZeroBsplineIndex = 0;
-        int aLocalRequest = DerivativeRequest;
-        if (DerivativeRequest >= Order)
+        firstNonZeroBsplineIndex = 0;
+        int localRequest = derivativeRequest;
+        if (derivativeRequest >= order)
         {
-            aLocalRequest = Order - 1;
+            localRequest = order - 1;
         }
 
-        if (BsplineBasis.LowerCol() != 1 || BsplineBasis.UpperCol() < Order
-            || BsplineBasis.LowerRow() != 1 || BsplineBasis.UpperRow() <= aLocalRequest)
+        if (bsplineBasis.LowerCol() != 1 || bsplineBasis.UpperCol() < order
+            || bsplineBasis.LowerRow() != 1 || bsplineBasis.UpperRow() <= localRequest)
         {
             return 1;
         }
 
-        int aNumPoles = FlatKnots.Upper() - FlatKnots.Lower() + 1 - Order;
+        int numPoles = flatKnots.Upper() - flatKnots.Lower() + 1 - order;
         int ii = 0;
-        double aNewParam = 0.0;
-        BSplCLib.LocateParameter(Order - 1,
-                                 FlatKnots,
-                                 Parameter,
+        double newParam = 0.0;
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(order - 1,
+                                 flatKnots,
+                                 parameter,
                                  isPeriodic,
-                                 Order,
-                                 aNumPoles + 1,
+                                 order,
+                                 numPoles + 1,
                                  out ii,
-                                 out aNewParam);
+                                 out newParam);
 
-        FirstNonZeroBsplineIndex = ii - Order + 1;
+        firstNonZeroBsplineIndex = ii - order + 1;
 
         // Spans over BsplineBasis and FlatKnots bypass the accessors in the tight loops
-        int aBasisNCols = BsplineBasis.ColNumber();
-        Span<double> aBasisData = BsplineBasis.AsSpan();
-        ReadOnlySpan<double> aKnotsData = FlatKnots.AsSpan();
-        double aResolution = gp.Resolution();
-        ii -= FlatKnots.Lower(); // rebase to zero-based indexing into aKnotsData
+        int basisNCols = bsplineBasis.ColNumber();
+        Span<double> basisData = bsplineBasis.AsSpan();
+        ReadOnlySpan<double> knotsData = flatKnots.AsSpan();
+        double resolution = Constants.Resolution();
+        ii -= flatKnots.Lower(); // rebase to zero-based indexing into aKnotsData
 
-        aBasisData[0] = 1.0;
-        aLocalRequest = DerivativeRequest;
-        if (DerivativeRequest >= Order)
+        basisData[0] = 1.0;
+        localRequest = derivativeRequest;
+        if (derivativeRequest >= order)
         {
-            aLocalRequest = Order - 1;
+            localRequest = order - 1;
         }
 
-        for (int qq = 2; qq <= Order - aLocalRequest; qq++)
+        for (int qq = 2; qq <= order - localRequest; qq++)
         {
-            aBasisData[qq - 1] = 0.0;
+            basisData[qq - 1] = 0.0;
 
             for (int pp = 1; pp <= qq - 1; pp++)
             {
-                double aScale = aKnotsData[ii + pp] - aKnotsData[ii - qq + pp + 1];
-                if (Math.Abs(aScale) < aResolution)
+                double scale = knotsData[ii + pp] - knotsData[ii - qq + pp + 1];
+                if (Math.Abs(scale) < resolution)
                 {
                     return 2;
                 }
 
-                double aFactor = (Parameter - aKnotsData[ii - qq + pp + 1]) / aScale;
-                double aSaved = aFactor * aBasisData[pp - 1];
-                aBasisData[pp - 1] *= (1.0 - aFactor);
-                aBasisData[pp - 1] += aBasisData[qq - 1];
-                aBasisData[qq - 1] = aSaved;
+                double factor = (parameter - knotsData[ii - qq + pp + 1]) / scale;
+                double saved = factor * basisData[pp - 1];
+                basisData[pp - 1] *= (1.0 - factor);
+                basisData[pp - 1] += basisData[qq - 1];
+                basisData[qq - 1] = saved;
             }
         }
 
-        for (int qq = Order - aLocalRequest + 1; qq <= Order; qq++)
+        for (int qq = order - localRequest + 1; qq <= order; qq++)
         {
             for (int pp = 1; pp <= qq - 1; pp++)
             {
-                aBasisData[(Order - qq + 1) * aBasisNCols + (pp - 1)] = aBasisData[pp - 1];
+                basisData[(order - qq + 1) * basisNCols + (pp - 1)] = basisData[pp - 1];
             }
-            aBasisData[qq - 1] = 0.0;
+            basisData[qq - 1] = 0.0;
 
-            for (int ss = Order - aLocalRequest + 1; ss <= qq; ss++)
+            for (int ss = order - localRequest + 1; ss <= qq; ss++)
             {
-                aBasisData[(Order - ss + 1) * aBasisNCols + (qq - 1)] = 0.0;
+                basisData[(order - ss + 1) * basisNCols + (qq - 1)] = 0.0;
             }
 
             for (int pp = 1; pp <= qq - 1; pp++)
             {
-                double aScale = aKnotsData[ii + pp] - aKnotsData[ii - qq + pp + 1];
-                if (Math.Abs(aScale) < aResolution)
+                double scale = knotsData[ii + pp] - knotsData[ii - qq + pp + 1];
+                if (Math.Abs(scale) < resolution)
                 {
                     return 2;
                 }
 
-                double anInverse = 1.0 / aScale;
-                double aFactor = (Parameter - aKnotsData[ii - qq + pp + 1]) * anInverse;
-                double aSaved = aFactor * aBasisData[pp - 1];
-                aBasisData[pp - 1] *= (1.0 - aFactor);
-                aBasisData[pp - 1] += aBasisData[qq - 1];
-                aBasisData[qq - 1] = aSaved;
-                double aLocalInverse = (double)(qq - 1) * anInverse;
+                double inverse = 1.0 / scale;
+                double factor = (parameter - knotsData[ii - qq + pp + 1]) * inverse;
+                double saved = factor * basisData[pp - 1];
+                basisData[pp - 1] *= (1.0 - factor);
+                basisData[pp - 1] += basisData[qq - 1];
+                basisData[qq - 1] = saved;
+                double localInverse = (double)(qq - 1) * inverse;
 
-                for (int ss = Order - aLocalRequest + 1; ss <= qq; ss++)
+                for (int ss = order - localRequest + 1; ss <= qq; ss++)
                 {
-                    Span<double> aRowS = aBasisData.Slice((Order - ss + 1) * aBasisNCols);
-                    aSaved = aLocalInverse * aRowS[pp - 1];
-                    aRowS[pp - 1] *= -aLocalInverse;
-                    aRowS[pp - 1] += aRowS[qq - 1];
-                    aRowS[qq - 1] = aSaved;
+                    Span<double> rowS = basisData.Slice((order - ss + 1) * basisNCols);
+                    saved = localInverse * rowS[pp - 1];
+                    rowS[pp - 1] *= -localInverse;
+                    rowS[pp - 1] += rowS[qq - 1];
+                    rowS[qq - 1] = saved;
                 }
             }
         }
@@ -494,17 +500,17 @@ public static partial class BSplCLib
 
     /// <summary>
     /// Dimension-free version of MovePointAndTangent: moves the B-spline (poles of dimension
-    /// <paramref name="ArrayDimension"/>) so that its point at <paramref name="U"/> moves by
-    /// <paramref name="Delta"/> and its derivative by <paramref name="DeltaDerivative"/>.
-    /// <paramref name="StartingCondition"/> and <paramref name="EndingCondition"/> say how many derivatives at the
-    /// ends must not move (-1: the end itself may move). <paramref name="ErrorStatus"/> is 0, 1 if there are not
+    /// <paramref name="arrayDimension"/>) so that its point at <paramref name="u"/> moves by
+    /// <paramref name="delta"/> and its derivative by <paramref name="deltaDerivative"/>.
+    /// <paramref name="startingCondition"/> and <paramref name="endingCondition"/> say how many derivatives at the
+    /// ends must not move (-1: the end itself may move). <paramref name="errorStatus"/> is 0, 1 if there are not
     /// enough poles for the conditions, or 2 if the conditions are invalid.
     /// </summary>
-    public static void MovePointAndTangent(double U, int ArrayDimension, ReadOnlySpan<double> Delta,
-                                           ReadOnlySpan<double> DeltaDerivative, double Tolerance, int Degree,
-                                           int StartingCondition, int EndingCondition, ReadOnlySpan<double> Poles,
-                                           NCollection_Array1<double>? Weights, NCollection_Array1<double> FlatKnots,
-                                           Span<double> NewPoles, out int ErrorStatus)
+    public static void MovePointAndTangent(double u, int arrayDimension, ReadOnlySpan<double> delta,
+                                           ReadOnlySpan<double> deltaDerivative, double tolerance, int degree,
+                                           int startingCondition, int endingCondition, ReadOnlySpan<double> poles,
+                                           NCollection_Array1<double>? weights, NCollection_Array1<double> flatKnots,
+                                           Span<double> newPoles, out int errorStatus)
     {
         int num_poles, num_knots, ii, jj, conditions, start_num_poles, end_num_poles, index, start_index,
           end_index, other_index, type, order;
@@ -513,51 +519,51 @@ public static partial class BSplCLib
         ReadOnlySpan<double> poles_array, delta_array, derivatives_array, weights_array;
         Span<double> new_poles_array;
 
-        ErrorStatus = 0;
+        errorStatus = 0;
         weights_array = default;
-        if (Weights != null)
+        if (weights != null)
         {
-            weights_array = Weights.AsSpan();
+            weights_array = weights.AsSpan();
         }
 
-        poles_array = Poles;
-        new_poles_array = NewPoles;
-        delta_array = Delta;
-        derivatives_array = DeltaDerivative;
-        order = Degree + 1;
-        num_knots = FlatKnots.Length();
+        poles_array = poles;
+        new_poles_array = newPoles;
+        delta_array = delta;
+        derivatives_array = deltaDerivative;
+        order = degree + 1;
+        num_knots = flatKnots.Length();
         num_poles = num_knots - order;
-        conditions = StartingCondition + EndingCondition + 4;
+        conditions = startingCondition + endingCondition + 4;
         //
         // check validity of input data
         //
-        if (StartingCondition >= -1 && StartingCondition <= Degree && EndingCondition >= -1
-            && EndingCondition <= Degree && conditions <= num_poles)
+        if (startingCondition >= -1 && startingCondition <= degree && endingCondition >= -1
+            && endingCondition <= degree && conditions <= num_poles)
         {
             //
             // check the parameter is within bounds
             //
-            start_index = FlatKnots.Lower() + Degree;
-            end_index = FlatKnots.Upper() - Degree;
+            start_index = flatKnots.Lower() + degree;
+            end_index = flatKnots.Upper() - degree;
             //
             //  check if there is enough room to move the poles
             //
             bool aConditions = true;
-            if (StartingCondition == -1)
+            if (startingCondition == -1)
             {
-                aConditions = aConditions && (FlatKnots[start_index] <= U);
+                aConditions = aConditions && (flatKnots[start_index] <= u);
             }
             else
             {
-                aConditions = aConditions && (FlatKnots[start_index] + Tolerance < U);
+                aConditions = aConditions && (flatKnots[start_index] + tolerance < u);
             }
-            if (EndingCondition == -1)
+            if (endingCondition == -1)
             {
-                aConditions = aConditions && (FlatKnots[end_index] >= U);
+                aConditions = aConditions && (flatKnots[end_index] >= u);
             }
             else
             {
-                aConditions = aConditions && (FlatKnots[end_index] - Tolerance > U);
+                aConditions = aConditions && (flatKnots[end_index] - tolerance > u);
             }
 
             if (aConditions)
@@ -569,11 +575,11 @@ public static partial class BSplCLib
                 NCollection_Array1<double> first_function = new(1, num_poles);
                 NCollection_Array1<double> second_function = new(1, num_poles);
 
-                BuildSchoenbergPoints(Degree, FlatKnots, schoenberg_points);
-                start_index = StartingCondition + 2;
-                end_index = num_poles - EndingCondition - 1;
+                BuildSchoenbergPoints(degree, flatKnots, schoenberg_points);
+                start_index = startingCondition + 2;
+                end_index = num_poles - endingCondition - 1;
                 LocateParameter(schoenberg_points,
-                                U,
+                                u,
                                 false,
                                 start_index,
                                 end_index,
@@ -591,7 +597,7 @@ public static partial class BSplCLib
                     other_index = index - 1;
                 }
                 // OCCT compares U with the flat knots at index, an index into schoenberg_points
-                else if (U - FlatKnots[index] < FlatKnots[index + 1] - U)
+                else if (u - flatKnots[index] < flatKnots[index + 1] - u)
                 {
                     other_index = index - 1;
                 }
@@ -601,8 +607,8 @@ public static partial class BSplCLib
                 }
                 type = 3;
 
-                start_num_poles = StartingCondition + 2;
-                end_num_poles = num_poles - EndingCondition - 1;
+                start_num_poles = startingCondition + 2;
+                end_num_poles = num_poles - endingCondition - 1;
                 if (start_num_poles == 1)
                 {
                     start_value = schoenberg_points[num_poles] - schoenberg_points[1];
@@ -697,31 +703,31 @@ public static partial class BSplCLib
                 int derivative_request = 1, dimension = 1;
                 bool periodic_flag = false;
 
-                extrap_mode[0] = Degree;
-                extrap_mode[1] = Degree;
-                if (Weights != null)
+                extrap_mode[0] = degree;
+                extrap_mode[1] = degree;
+                if (weights != null)
                 {
                     //
                     // evaluate in homogenised form
                     //
-                    Eval(U,
+                    Eval(u,
                          periodic_flag,
                          derivative_request,
                          extrap_mode,
-                         Degree,
-                         FlatKnots,
+                         degree,
+                         flatKnots,
                          dimension,
                          first_function.AsSpan(),
                          weights_array,
                          results.Slice(0, 2),
                          weights_results.Slice(0, 2));
 
-                    Eval(U,
+                    Eval(u,
                          periodic_flag,
                          derivative_request,
                          extrap_mode,
-                         Degree,
-                         FlatKnots,
+                         degree,
+                         flatKnots,
                          dimension,
                          second_function.AsSpan(),
                          weights_array,
@@ -733,16 +739,16 @@ public static partial class BSplCLib
 
                     for (ii = 0; ii < 2; ii++)
                     {
-                        PLib.RationalDerivatives(1, 1, results.Slice(2 * ii), weights_results.Slice(2 * ii), results.Slice(2 * ii));
+                        global::Kerf.Engine.Numerics.Polynomials.PLib.RationalDerivatives(1, 1, results.Slice(2 * ii), weights_results.Slice(2 * ii), results.Slice(2 * ii));
                     }
                 }
                 else
                 {
-                    Eval(U, false, 1, extrap_mode, Degree, FlatKnots, 1, first_function.AsSpan(), results.Slice(0, 2));
+                    Eval(u, false, 1, extrap_mode, degree, flatKnots, 1, first_function.AsSpan(), results.Slice(0, 2));
 
-                    Eval(U, false, 1, extrap_mode, Degree, FlatKnots, 1, second_function.AsSpan(), results.Slice(2, 2));
+                    Eval(u, false, 1, extrap_mode, degree, flatKnots, 1, second_function.AsSpan(), results.Slice(2, 2));
                 }
-                gp_Mat2d a_matrix = new();
+                Matrix2x2 a_matrix = new();
 
                 for (ii = 0; ii < 2; ii++)
                 {
@@ -754,10 +760,10 @@ public static partial class BSplCLib
                 }
                 a_matrix.Invert();
                 // math_Vector(0, ArrayDimension - 1) in OCCT, which keeps small vectors on the stack
-                Span<double> the_a_vector = ArrayDimension <= 128 ? stackalloc double[ArrayDimension] : new double[ArrayDimension];
-                Span<double> the_b_vector = ArrayDimension <= 128 ? stackalloc double[ArrayDimension] : new double[ArrayDimension];
+                Span<double> the_a_vector = arrayDimension <= 128 ? stackalloc double[arrayDimension] : new double[arrayDimension];
+                Span<double> the_b_vector = arrayDimension <= 128 ? stackalloc double[arrayDimension] : new double[arrayDimension];
 
-                for (ii = 0; ii < ArrayDimension; ii++)
+                for (ii = 0; ii < arrayDimension; ii++)
                 {
                     the_a_vector[ii] =
                       a_matrix.Value(1, 1) * delta_array[ii] + a_matrix.Value(2, 1) * derivatives_array[ii];
@@ -769,7 +775,7 @@ public static partial class BSplCLib
                 for (ii = 0; ii < num_poles; ii++)
                 {
 
-                    for (jj = 0; jj < ArrayDimension; jj++)
+                    for (jj = 0; jj < arrayDimension; jj++)
                     {
                         new_poles_array[index] = poles_array[index];
                         new_poles_array[index] += first_function[ii + 1] * the_a_vector[jj];
@@ -780,236 +786,236 @@ public static partial class BSplCLib
             }
             else
             {
-                ErrorStatus = 1;
+                errorStatus = 1;
             }
         }
         else
         {
-            ErrorStatus = 2;
+            errorStatus = 2;
         }
     }
 
     /// <summary>
     /// Multiplies the vectorial B-spline F(t) (poles [1..NumPoles][1..PolesDimension]) by the function a(t):
-    /// interpolates a(t) * F(t) at the Schoenberg points of the B-spline of degree <paramref name="NewDegree"/> on
-    /// <paramref name="FlatKnots"/>. The caller ensures a(t) * F(t) is such a B-spline and that a(t) has F's range;
-    /// nothing is checked. <paramref name="theStatus"/> is 0, 1 if the function failed, or the pivot index of a
+    /// interpolates a(t) * F(t) at the Schoenberg points of the B-spline of degree <paramref name="newDegree"/> on
+    /// <paramref name="flatKnots"/>. The caller ensures a(t) * F(t) is such a B-spline and that a(t) has F's range;
+    /// nothing is checked. <paramref name="status"/> is 0, 1 if the function failed, or the pivot index of a
     /// failed interpolation.
     /// </summary>
-    public static void FunctionMultiply(BSplCLib_EvaluatorFunction Function, int BSplineDegree,
-                                        NCollection_Array1<double> BSplineFlatKnots, int PolesDimension,
-                                        ReadOnlySpan<double> Poles, NCollection_Array1<double> FlatKnots,
-                                        int NewDegree, Span<double> NewPoles, out int theStatus)
+    public static void FunctionMultiply(EvaluatorFunction function, int bSplineDegree,
+                                        NCollection_Array1<double> bSplineFlatKnots, int polesDimension,
+                                        ReadOnlySpan<double> poles, NCollection_Array1<double> flatKnots,
+                                        int newDegree, Span<double> newPoles, out int status)
     {
-        BSplCLib_EvaluatorFunction FunctionPtr = Function;
-        Span<double> anArrayOfPoles = NewPoles;
-        int aNumNewPoles = FlatKnots.Length() - NewDegree - 1;
-        Span<double> aStartEnd = [FlatKnots[NewDegree + 1], FlatKnots[aNumNewPoles + 1]];
+        EvaluatorFunction functionPtr = function;
+        Span<double> arrayOfPoles = newPoles;
+        int numNewPoles = flatKnots.Length() - newDegree - 1;
+        Span<double> startEnd = [flatKnots[newDegree + 1], flatKnots[numNewPoles + 1]];
 
-        NCollection_Array1<double> aParameters = new(1, aNumNewPoles);
-        NCollection_Array1<int> aContactOrderArray = new(1, aNumNewPoles);
-        NCollection_Array1<double> aNewPolesArray = new(1, aNumNewPoles * PolesDimension);
+        NCollection_Array1<double> parameters = new(1, numNewPoles);
+        NCollection_Array1<int> contactOrderArray = new(1, numNewPoles);
+        NCollection_Array1<double> newPolesArray = new(1, numNewPoles * polesDimension);
 
-        Span<double> anArrayOfNewPoles = aNewPolesArray.AsSpan();
-        BuildSchoenbergPoints(NewDegree, FlatKnots, aParameters);
+        Span<double> arrayOfNewPoles = newPolesArray.AsSpan();
+        BuildSchoenbergPoints(newDegree, flatKnots, parameters);
 
-        if (aParameters[1] < aStartEnd[0])
+        if (parameters[1] < startEnd[0])
         {
-            aParameters[1] = aStartEnd[0];
+            parameters[1] = startEnd[0];
         }
-        if (aParameters[aNumNewPoles] > aStartEnd[1])
+        if (parameters[numNewPoles] > startEnd[1])
         {
-            aParameters[aNumNewPoles] = aStartEnd[1];
+            parameters[numNewPoles] = startEnd[1];
         }
 
         // OCCT passes a single int where Eval reads two extrapolation modes (ExtrapMode[1] is read past it, from
         // uninitialised stack memory, but only when a parameter lies beyond the last knot); the port passes the
         // degree for both ends
-        ReadOnlySpan<int> anExtrapMode = [BSplineDegree, BSplineDegree];
-        int anIndex = 0;
-        for (int i = 1; i <= aNumNewPoles; i++)
+        ReadOnlySpan<int> extrapMode = [bSplineDegree, bSplineDegree];
+        int index = 0;
+        for (int i = 1; i <= numNewPoles; i++)
         {
-            aContactOrderArray[i] = 0;
-            FunctionPtr.Evaluate(aContactOrderArray[i], aStartEnd, aParameters[i], out double aResult, out int anErrorCode);
-            if (anErrorCode != 0)
+            contactOrderArray[i] = 0;
+            functionPtr.Evaluate(contactOrderArray[i], startEnd, parameters[i], out double result, out int errorCode);
+            if (errorCode != 0)
             {
-                theStatus = 1;
+                status = 1;
                 return;
             }
 
-            Eval(aParameters[i],
+            Eval(parameters[i],
                  false,
                  0,
-                 anExtrapMode,
-                 BSplineDegree,
-                 BSplineFlatKnots,
-                 PolesDimension,
-                 Poles,
-                 anArrayOfNewPoles[anIndex..]);
+                 extrapMode,
+                 bSplineDegree,
+                 bSplineFlatKnots,
+                 polesDimension,
+                 poles,
+                 arrayOfNewPoles[index..]);
 
-            for (int j = 0; j < PolesDimension; j++)
+            for (int j = 0; j < polesDimension; j++)
             {
-                anArrayOfNewPoles[anIndex] *= aResult;
-                anIndex += 1;
+                arrayOfNewPoles[index] *= result;
+                index += 1;
             }
         }
 
-        Interpolate(NewDegree,
-                    FlatKnots,
-                    aParameters,
-                    aContactOrderArray,
-                    PolesDimension,
-                    anArrayOfNewPoles,
-                    out theStatus);
+        Interpolate(newDegree,
+                    flatKnots,
+                    parameters,
+                    contactOrderArray,
+                    polesDimension,
+                    arrayOfNewPoles,
+                    out status);
 
-        for (int i = 0; i < aNumNewPoles * PolesDimension; i++)
+        for (int i = 0; i < numNewPoles * polesDimension; i++)
         {
-            anArrayOfPoles[i] = anArrayOfNewPoles[i];
+            arrayOfPoles[i] = arrayOfNewPoles[i];
         }
     }
 
     /// <summary>
     /// Composes the vectorial B-spline F(t) (poles [1..NumPoles][1..PolesDimension]) with the function a(t):
-    /// interpolates F(a(t)) at the Schoenberg points of the B-spline of degree <paramref name="NewDegree"/> on
-    /// <paramref name="FlatKnots"/>. The caller ensures F(a(t)) is such a B-spline and that a(t) maps FlatKnots'
-    /// range onto BSplineFlatKnots'; nothing is checked. <paramref name="theStatus"/> is 0, 1 if the function
+    /// interpolates F(a(t)) at the Schoenberg points of the B-spline of degree <paramref name="newDegree"/> on
+    /// <paramref name="flatKnots"/>. The caller ensures F(a(t)) is such a B-spline and that a(t) maps FlatKnots'
+    /// range onto BSplineFlatKnots'; nothing is checked. <paramref name="status"/> is 0, 1 if the function
     /// failed, or the pivot index of a failed interpolation.
     /// </summary>
-    public static void FunctionReparameterise(BSplCLib_EvaluatorFunction Function, int BSplineDegree,
-                                              NCollection_Array1<double> BSplineFlatKnots, int PolesDimension,
-                                              ReadOnlySpan<double> Poles, NCollection_Array1<double> FlatKnots,
-                                              int NewDegree, Span<double> NewPoles, out int theStatus)
+    public static void FunctionReparameterise(EvaluatorFunction function, int bSplineDegree,
+                                              NCollection_Array1<double> bSplineFlatKnots, int polesDimension,
+                                              ReadOnlySpan<double> poles, NCollection_Array1<double> flatKnots,
+                                              int newDegree, Span<double> newPoles, out int status)
     {
-        BSplCLib_EvaluatorFunction FunctionPtr = Function;
-        Span<double> anArrayOfPoles = NewPoles;
-        int aNumNewPoles = FlatKnots.Length() - NewDegree - 1;
-        Span<double> aStartEnd = [FlatKnots[NewDegree + 1], FlatKnots[aNumNewPoles + 1]];
+        EvaluatorFunction functionPtr = function;
+        Span<double> arrayOfPoles = newPoles;
+        int numNewPoles = flatKnots.Length() - newDegree - 1;
+        Span<double> startEnd = [flatKnots[newDegree + 1], flatKnots[numNewPoles + 1]];
 
-        NCollection_Array1<double> aParameters = new(1, aNumNewPoles);
-        NCollection_Array1<int> aContactOrderArray = new(1, aNumNewPoles);
-        NCollection_Array1<double> aNewPolesArray = new(1, aNumNewPoles * PolesDimension);
+        NCollection_Array1<double> parameters = new(1, numNewPoles);
+        NCollection_Array1<int> contactOrderArray = new(1, numNewPoles);
+        NCollection_Array1<double> newPolesArray = new(1, numNewPoles * polesDimension);
 
-        Span<double> anArrayOfNewPoles = aNewPolesArray.AsSpan();
-        BuildSchoenbergPoints(NewDegree, FlatKnots, aParameters);
+        Span<double> arrayOfNewPoles = newPolesArray.AsSpan();
+        BuildSchoenbergPoints(newDegree, flatKnots, parameters);
 
         // OCCT passes a single int where Eval reads two extrapolation modes (ExtrapMode[1] is read past it, from
         // uninitialised stack memory, but only when a parameter lies beyond the last knot); the port passes the
         // degree for both ends
-        ReadOnlySpan<int> anExtrapMode = [BSplineDegree, BSplineDegree];
-        int anIndex = 0;
-        for (int i = 1; i <= aNumNewPoles; i++)
+        ReadOnlySpan<int> extrapMode = [bSplineDegree, bSplineDegree];
+        int index = 0;
+        for (int i = 1; i <= numNewPoles; i++)
         {
-            aContactOrderArray[i] = 0;
-            FunctionPtr.Evaluate(aContactOrderArray[i], aStartEnd, aParameters[i], out double aResult, out int anErrorCode);
-            if (anErrorCode != 0)
+            contactOrderArray[i] = 0;
+            functionPtr.Evaluate(contactOrderArray[i], startEnd, parameters[i], out double result, out int errorCode);
+            if (errorCode != 0)
             {
-                theStatus = 1;
+                status = 1;
                 return;
             }
 
-            Eval(aResult,
+            Eval(result,
                  false,
                  0,
-                 anExtrapMode,
-                 BSplineDegree,
-                 BSplineFlatKnots,
-                 PolesDimension,
-                 Poles,
-                 anArrayOfNewPoles[anIndex..]);
-            anIndex += PolesDimension;
+                 extrapMode,
+                 bSplineDegree,
+                 bSplineFlatKnots,
+                 polesDimension,
+                 poles,
+                 arrayOfNewPoles[index..]);
+            index += polesDimension;
         }
 
-        Interpolate(NewDegree,
-                    FlatKnots,
-                    aParameters,
-                    aContactOrderArray,
-                    PolesDimension,
-                    anArrayOfNewPoles,
-                    out theStatus);
+        Interpolate(newDegree,
+                    flatKnots,
+                    parameters,
+                    contactOrderArray,
+                    polesDimension,
+                    arrayOfNewPoles,
+                    out status);
 
-        for (int i = 0; i < aNumNewPoles * PolesDimension; i++)
+        for (int i = 0; i < numNewPoles * polesDimension; i++)
         {
-            anArrayOfPoles[i] = anArrayOfNewPoles[i];
+            arrayOfPoles[i] = arrayOfNewPoles[i];
         }
     }
 
     /// <summary>
-    /// <see cref="FunctionMultiply(BSplCLib_EvaluatorFunction, int, NCollection_Array1{double}, int, ReadOnlySpan{double}, NCollection_Array1{double}, int, Span{double}, out int)"/>
-    /// for a one-dimensional B-spline. Throws <see cref="Standard_ConstructionError"/> if the pole counts don't
+    /// <see cref="FunctionMultiply(EvaluatorFunction, int, NCollection_Array1{double}, int, ReadOnlySpan{double}, NCollection_Array1{double}, int, Span{double}, out int)"/>
+    /// for a one-dimensional B-spline. Throws <see cref="ConstructionErrorException"/> if the pole counts don't
     /// match the knots.
     /// </summary>
-    public static void FunctionMultiply(BSplCLib_EvaluatorFunction Function, int BSplineDegree,
-                                        NCollection_Array1<double> BSplineFlatKnots, NCollection_Array1<double> Poles,
-                                        NCollection_Array1<double> FlatKnots, int NewDegree,
-                                        NCollection_Array1<double> NewPoles, out int theStatus)
+    public static void FunctionMultiply(EvaluatorFunction function, int bSplineDegree,
+                                        NCollection_Array1<double> bSplineFlatKnots, NCollection_Array1<double> poles,
+                                        NCollection_Array1<double> flatKnots, int newDegree,
+                                        NCollection_Array1<double> newPoles, out int status)
     {
-        int num_bspline_poles = BSplineFlatKnots.Length() - BSplineDegree - 1;
-        int num_new_poles = FlatKnots.Length() - NewDegree - 1;
+        int num_bspline_poles = bSplineFlatKnots.Length() - bSplineDegree - 1;
+        int num_new_poles = flatKnots.Length() - newDegree - 1;
 
-        if (Poles.Length() != num_bspline_poles || NewPoles.Length() != num_new_poles)
+        if (poles.Length() != num_bspline_poles || newPoles.Length() != num_new_poles)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        Span<double> array_of_poles = Poles.AsSpan();
-        Span<double> array_of_new_poles = NewPoles.AsSpan();
-        BSplCLib.FunctionMultiply(Function,
-                                  BSplineDegree,
-                                  BSplineFlatKnots,
+        Span<double> array_of_poles = poles.AsSpan();
+        Span<double> array_of_new_poles = newPoles.AsSpan();
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(function,
+                                  bSplineDegree,
+                                  bSplineFlatKnots,
                                   1,
                                   array_of_poles,
-                                  FlatKnots,
-                                  NewDegree,
+                                  flatKnots,
+                                  newDegree,
                                   array_of_new_poles,
-                                  out theStatus);
+                                  out status);
     }
 
     /// <summary>
-    /// <see cref="FunctionReparameterise(BSplCLib_EvaluatorFunction, int, NCollection_Array1{double}, int, ReadOnlySpan{double}, NCollection_Array1{double}, int, Span{double}, out int)"/>
-    /// for a one-dimensional B-spline. Throws <see cref="Standard_ConstructionError"/> if the pole counts don't
+    /// <see cref="FunctionReparameterise(EvaluatorFunction, int, NCollection_Array1{double}, int, ReadOnlySpan{double}, NCollection_Array1{double}, int, Span{double}, out int)"/>
+    /// for a one-dimensional B-spline. Throws <see cref="ConstructionErrorException"/> if the pole counts don't
     /// match the knots.
     /// </summary>
-    public static void FunctionReparameterise(BSplCLib_EvaluatorFunction Function, int BSplineDegree,
-                                              NCollection_Array1<double> BSplineFlatKnots,
-                                              NCollection_Array1<double> Poles, NCollection_Array1<double> FlatKnots,
-                                              int NewDegree, NCollection_Array1<double> NewPoles, out int theStatus)
+    public static void FunctionReparameterise(EvaluatorFunction function, int bSplineDegree,
+                                              NCollection_Array1<double> bSplineFlatKnots,
+                                              NCollection_Array1<double> poles, NCollection_Array1<double> flatKnots,
+                                              int newDegree, NCollection_Array1<double> newPoles, out int status)
     {
-        int num_bspline_poles = BSplineFlatKnots.Length() - BSplineDegree - 1;
-        int num_new_poles = FlatKnots.Length() - NewDegree - 1;
+        int num_bspline_poles = bSplineFlatKnots.Length() - bSplineDegree - 1;
+        int num_new_poles = flatKnots.Length() - newDegree - 1;
 
-        if (Poles.Length() != num_bspline_poles || NewPoles.Length() != num_new_poles)
+        if (poles.Length() != num_bspline_poles || newPoles.Length() != num_new_poles)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        Span<double> array_of_poles = Poles.AsSpan();
-        Span<double> array_of_new_poles = NewPoles.AsSpan();
-        BSplCLib.FunctionReparameterise(Function,
-                                        BSplineDegree,
-                                        BSplineFlatKnots,
+        Span<double> array_of_poles = poles.AsSpan();
+        Span<double> array_of_new_poles = newPoles.AsSpan();
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(function,
+                                        bSplineDegree,
+                                        bSplineFlatKnots,
                                         1,
                                         array_of_poles,
-                                        FlatKnots,
-                                        NewDegree,
+                                        flatKnots,
+                                        newDegree,
                                         array_of_new_poles,
-                                        out theStatus);
+                                        out status);
     }
 
     /// <summary>
-    /// Merges two knot vectors (of B-splines of degrees <paramref name="Degree1"/> and <paramref name="Degree2"/>),
+    /// Merges two knot vectors (of B-splines of degrees <paramref name="degree1"/> and <paramref name="degree2"/>),
     /// both reparametrised to [StartValue, EndValue], into the knots and multiplicities of their product, of degree
     /// Degree1 + Degree2, and its number of poles.
     /// </summary>
-    public static void MergeBSplineKnots(double Tolerance, double StartValue, double EndValue, int Degree1,
-                                         NCollection_Array1<double> Knots1, NCollection_Array1<int> Mults1,
-                                         int Degree2, NCollection_Array1<double> Knots2,
-                                         NCollection_Array1<int> Mults2, out int NumPoles,
-                                         out NCollection_HArray1<double> NewKnots, out NCollection_HArray1<int> NewMults)
+    public static void MergeBSplineKnots(double tolerance, double startValue, double endValue, int degree1,
+                                         NCollection_Array1<double> Knots1, NCollection_Array1<int> mults1,
+                                         int degree2, NCollection_Array1<double> Knots2,
+                                         NCollection_Array1<int> mults2, out int numPoles,
+                                         out NCollection_HArray1<double> newKnots, out NCollection_HArray1<int> newMults)
     {
         int ii, jj, continuity, set_mults_flag, degree, index, num_knots;
-        if (StartValue < EndValue - Tolerance)
+        if (startValue < endValue - tolerance)
         {
             NCollection_Array1<double> knots1 = new(1, Knots1.Length());
             NCollection_Array1<double> knots2 = new(1, Knots2.Length());
-            degree = Degree1 + Degree2;
+            degree = degree1 + degree2;
             index = 1;
 
             for (ii = Knots1.Lower(); ii <= Knots1.Upper(); ii++)
@@ -1024,29 +1030,29 @@ public static partial class BSplCLib
                 knots2[index] = Knots2[ii];
                 index += 1;
             }
-            BSplCLib.Reparametrize(StartValue, EndValue, knots1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(startValue, endValue, knots1);
 
-            BSplCLib.Reparametrize(StartValue, EndValue, knots2);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(startValue, endValue, knots2);
             num_knots = 0;
             jj = 1;
 
             for (ii = 1; ii <= knots1.Length(); ii++)
             {
 
-                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] - Tolerance)
+                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] - tolerance)
                 {
                     jj += 1;
                     num_knots += 1;
                 }
 
-                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] + Tolerance)
+                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] + tolerance)
                 {
                     jj += 1;
                 }
                 num_knots += 1;
             }
-            NewKnots = new NCollection_HArray1<double>(1, num_knots);
-            NewMults = new NCollection_HArray1<int>(1, num_knots);
+            newKnots = new NCollection_HArray1<double>(1, num_knots);
+            newMults = new NCollection_HArray1<int>(1, num_knots);
             num_knots = 1;
             jj = 1;
 
@@ -1054,53 +1060,53 @@ public static partial class BSplCLib
             {
 
                 // OCCT indexes Mults1 and Mults2 from 1, whatever their lower bounds (as it does knots1 and knots2)
-                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] - Tolerance)
+                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] - tolerance)
                 {
-                    NewKnots.ChangeArray1()[num_knots] = knots2[jj];
-                    NewMults.ChangeArray1()[num_knots] = Mults2[jj] + Degree1;
+                    newKnots.ChangeArray1()[num_knots] = knots2[jj];
+                    newMults.ChangeArray1()[num_knots] = mults2[jj] + degree1;
                     jj += 1;
                     num_knots += 1;
                 }
                 set_mults_flag = 0;
 
-                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] + Tolerance)
+                while (jj <= knots2.Length() && knots2[jj] <= knots1[ii] + tolerance)
                 {
-                    continuity = Min(Degree1 - Mults1[ii], Degree2 - Mults2[jj]);
+                    continuity = Min(degree1 - mults1[ii], degree2 - mults2[jj]);
                     set_mults_flag = 1;
-                    NewMults.ChangeArray1()[num_knots] = degree - continuity;
+                    newMults.ChangeArray1()[num_knots] = degree - continuity;
                     jj += 1;
                 }
 
-                NewKnots.ChangeArray1()[num_knots] = knots1[ii];
+                newKnots.ChangeArray1()[num_knots] = knots1[ii];
                 if (set_mults_flag == 0)
                 {
-                    NewMults.ChangeArray1()[num_knots] = Mults1[ii] + Degree2;
+                    newMults.ChangeArray1()[num_knots] = mults1[ii] + degree2;
                 }
                 num_knots += 1;
             }
             num_knots -= 1;
-            NewMults.ChangeArray1()[1] = degree + 1;
-            NewMults.ChangeArray1()[num_knots] = degree + 1;
+            newMults.ChangeArray1()[1] = degree + 1;
+            newMults.ChangeArray1()[num_knots] = degree + 1;
             index = 0;
 
             for (ii = 1; ii <= num_knots; ii++)
             {
-                index += NewMults.Value(ii);
+                index += newMults.Value(ii);
             }
-            NumPoles = index - degree - 1;
+            numPoles = index - degree - 1;
         }
         else
         {
-            degree = Degree1 + Degree2;
+            degree = degree1 + degree2;
             num_knots = 2;
-            NewKnots = new NCollection_HArray1<double>(1, num_knots);
-            NewKnots.ChangeArray1()[1] = StartValue;
-            NewKnots.ChangeArray1()[num_knots] = EndValue;
+            newKnots = new NCollection_HArray1<double>(1, num_knots);
+            newKnots.ChangeArray1()[1] = startValue;
+            newKnots.ChangeArray1()[num_knots] = endValue;
 
-            NewMults = new NCollection_HArray1<int>(1, num_knots);
-            NewMults.ChangeArray1()[1] = degree + 1;
-            NewMults.ChangeArray1()[num_knots] = degree + 1;
-            NumPoles = BSplCLib.NbPoles(degree, false, NewMults.Array1());
+            newMults = new NCollection_HArray1<int>(1, num_knots);
+            newMults.ChangeArray1()[1] = degree + 1;
+            newMults.ChangeArray1()[num_knots] = degree + 1;
+            numPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(degree, false, newMults.Array1());
         }
     }
 }

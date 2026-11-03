@@ -3,12 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.BOPAlgo_Operation;
 using static Occt.BRepFill_TransitionStyle;
 using static Occt.BRepLib_WireError;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -30,7 +35,7 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFill_Draft
 {
-    private gp_Dir myDir;
+    private Direction3D myDir;
     private double myAngle;
     private double angmin;
     private double angmax;
@@ -44,20 +49,20 @@ public sealed class BRepFill_Draft
     private readonly TopoDS_Shape myTop;
     private TopoDS_Shell myShell = new();
     private TopoDS_Wire myWire = new();
-    private readonly GeomAbs_Shape myCont;
+    private readonly Continuity myCont;
     private BRepFill_TransitionStyle myStyle;
     private bool IsInternal;
     private bool myDone;
 
     //=================================================================================================
 
-    private static void ComputeTrsf(in TopoDS_Wire W, in gp_Dir D, ref Bnd_Box Box, ref gp_Trsf Tf)
+    private static void ComputeTrsf(in TopoDS_Wire W, in Direction3D D, ref Box Box, ref Transform3D Tf)
     {
         // Calculate approximate barycenter
         BRepTools_WireExplorer Exp = new(W);
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool BT;
-        gp_XYZ Bary = new(0.0, 0.0, 0.0);
+        Xyz Bary = new(0.0, 0.0, 0.0);
         int nb;
 
         for (nb = 0; Exp.More(); Exp.Next())
@@ -69,14 +74,14 @@ public sealed class BRepFill_Draft
         Bary /= nb;
 
         // Calculate the Transformation
-        gp_Ax3 N = new(new gp_Pnt(Bary), D);
+        CoordinateSystem N = new(new Point3D(Bary), D);
         Tf.SetTransformation(N);
         BRepAdaptor_Curve AC = new();
         //  BndLib_Add3dCurve BC;
 
         // transformation to the wire
         TopoDS_Wire TheW = W;
-        TopLoc_Location Loc = new(Tf);
+        Placement Loc = new(Tf);
         TheW.Location(Loc);
 
         // Calculate the box
@@ -91,7 +96,7 @@ public sealed class BRepFill_Draft
 
     //=================================================================================================
 
-    private static double Longueur(in Bnd_Box WBox, in Bnd_Box SBox, ref gp_Dir D, ref gp_Pnt P)
+    private static double Longueur(in Box WBox, in Box SBox, ref Direction3D D, ref Point3D P)
     {
         // face of the box most remoted from the face input in
         // the direction of skin
@@ -123,13 +128,13 @@ public sealed class BRepFill_Draft
     // function : GoodOrientation
     // purpose  : Check if the law is oriented to have an exterior skin
     //======================================================================
-    private static bool GoodOrientation(in Bnd_Box B, BRepFill_LocationLaw Law, in gp_Dir D)
+    private static bool GoodOrientation(in Box B, BRepFill_LocationLaw Law, in Direction3D D)
     {
         double f, l, r, t = 0.0;
 
         B.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
-        gp_Pnt P1 = new(aXmin, aYmin, aZmin), P2 = new(aXmax, aYmax, aZmax);
-        gp_Vec V = new(P1, P2);
+        Point3D P1 = new(aXmin, aYmin, aZmin), P2 = new(aXmax, aYmax, aZmax);
+        Vector3D V = new(P1, P2);
 
         Law.CurvilinearBounds(Law.NbLaw(), out f, out l);
         r = V.Magnitude() / l;
@@ -140,9 +145,9 @@ public sealed class BRepFill_Draft
 
         Nb++; // Number of points
 
-        NCollection_Array1<gp_Pnt> Pnts = new(1, Nb);
+        NCollection_Array1<Point3D> Pnts = new(1, Nb);
         Adaptor3d_Curve AC;
-        gp_XYZ Bary = new(0.0, 0.0, 0.0);
+        Xyz Bary = new(0.0, 0.0, 0.0);
 
         for (ii = 1; ii <= Nb; ii++)
         {
@@ -153,14 +158,14 @@ public sealed class BRepFill_Draft
         }
 
         Bary /= Nb;
-        gp_Pnt Centre = new(Bary);
-        gp_Vec Normal = new(D.XYZ());
+        Point3D Centre = new(Bary);
+        Vector3D Normal = new(D.XYZ());
         double Angle = 0;
-        gp_Vec Ref = new(Centre, Pnts[1]);
+        Vector3D Ref = new(Centre, Pnts[1]);
 
         for (ii = 2; ii <= Nb; ii++)
         {
-            gp_Vec R = new(Centre, Pnts[ii]);
+            Vector3D R = new(Centre, Pnts[ii]);
             Angle += Ref.AngleWithRef(R, Normal);
             Ref = R;
         }
@@ -174,8 +179,8 @@ public sealed class BRepFill_Draft
     /// The draft of the wire, face or shell <paramref name="S"/> in the direction <paramref name="Dir"/> at the angle
     /// <paramref name="Angle"/>.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">Another shape type, or a shell without a free boundary wire.</exception>
-    public BRepFill_Draft(in TopoDS_Shape S, in gp_Dir Dir, double Angle)
+    /// <exception cref="ConstructionErrorException">Another shape type, or a shell without a free boundary wire.</exception>
+    public BRepFill_Draft(in TopoDS_Shape S, in Direction3D Dir, double Angle)
     {
         myLoc = null;
         mySec = null;
@@ -227,17 +232,17 @@ public sealed class BRepFill_Draft
                     }
                     else
                     {
-                        throw new Standard_ConstructionError("BRepFill_Draft");
+                        throw new ConstructionErrorException("BRepFill_Draft");
                     }
                 }
                 else
                 {
-                    throw new Standard_ConstructionError("BRepFill_Draft");
+                    throw new ConstructionErrorException("BRepFill_Draft");
                 }
                 break;
             }
             default:
-                throw new Standard_ConstructionError("BRepFill_Draft");
+                throw new ConstructionErrorException("BRepFill_Draft");
         }
 
         // Attention to closed non declared wires !
@@ -248,7 +253,7 @@ public sealed class BRepFill_Draft
             {
                 // OCCT.NET: OCCT sets the flag on the caller's wire; a frozen one is replaced by a new wire with the same
                 // edges (decision 1045).
-                if (myWire.TShape()!.IsFrozen())
+                if (myWire.TShape()!.IsFrozen)
                 {
                     TopoDS_Wire aNewWire = TopoDS.Wire(myWire.EmptyCopied());
                     BRep_Builder aBB = new();
@@ -267,7 +272,7 @@ public sealed class BRepFill_Draft
         myTop = S;
         myDone = false;
         myTol = 1.0e-4;
-        myCont = GeomAbs_C1;
+        myCont = C1;
         SetOptions();
         SetDraft();
     }
@@ -298,8 +303,8 @@ public sealed class BRepFill_Draft
     public void Perform(double LengthMax)
     {
         Geom_Surface? S = null;
-        Bnd_Box WBox = new(); //, SBox;
-        gp_Trsf Trsf = new();
+        Box WBox = new(); //, SBox;
+        Transform3D Trsf = new();
 
         ComputeTrsf(myWire, myDir, ref WBox, ref Trsf);
         Init(S, LengthMax, WBox);
@@ -314,9 +319,9 @@ public sealed class BRepFill_Draft
     /// <summary>Builds the draft up to the surface <paramref name="Surface"/>.</summary>
     public void Perform(Geom_Surface Surface, bool KeepInsideSurface = true)
     {
-        Bnd_Box WBox = new(), SBox = new();
-        gp_Trsf Trsf = new();
-        gp_Pnt Pt = new();
+        Box WBox = new(), SBox = new();
+        Transform3D Trsf = new();
+        Point3D Pt = new();
         double L;
 
         ComputeTrsf(myWire, myDir, ref WBox, ref Trsf);
@@ -346,15 +351,15 @@ public sealed class BRepFill_Draft
     /// <summary>Builds the draft up to the shape <paramref name="StopShape"/>.</summary>
     public void Perform(in TopoDS_Shape StopShape, bool KeepOutSide = true)
     {
-        Bnd_Box WBox = new(), SBox = new();
-        gp_Trsf Trsf = new();
-        gp_Pnt Pt = new();
+        Box WBox = new(), SBox = new();
+        Transform3D Trsf = new();
+        Point3D Pt = new();
         double L;
 
         ComputeTrsf(myWire, myDir, ref WBox, ref Trsf);
 
         // bounding box of the stop shape
-        Bnd_Box BSurf = new(); //, TheBox;
+        Box BSurf = new(); //, TheBox;
         double Umin, Umax, Vmin, Vmax;
         //  BRepTools B;
         //  BRep_Tool BT;
@@ -383,7 +388,7 @@ public sealed class BRepFill_Draft
         L /= Math.Abs(Math.Cos(myAngle));
 
         // surface of stop
-        gp_Trsf Inv;
+        Transform3D Inv;
         Inv = Trsf.Inverted(); // inverted transformation
         Pt.Transform(Inv); // coordinate in the absolute reference
         Geom_Plane Plan = new(Pt, myDir);
@@ -398,7 +403,7 @@ public sealed class BRepFill_Draft
 
     //=================================================================================================
 
-    private void Init(Geom_Surface? Surf, double Length, in Bnd_Box Box)
+    private void Init(Geom_Surface? Surf, double Length, in Box Box)
     {
         bool B;
 
@@ -419,23 +424,23 @@ public sealed class BRepFill_Draft
 
         // law of section
         // generating line is straight and parallel to binormal.
-        gp_Pnt P = new(0, 0, 0);
-        gp_Vec D = new(0.0, 1.0, 0.0);
+        Point3D P = new(0, 0, 0);
+        Vector3D D = new(0.0, 1.0, 0.0);
 
         // Control of the orientation
         myLoc.Law(1).GetDomain(out double f, out double l);
-        gp_Mat M = new();
+        Matrix3x3 M = new();
 
-        gp_Vec Bid = new();
+        Vector3D Bid = new();
         myLoc.Law(1).D0((f + l) / 2, ref M, ref Bid);
-        gp_Dir BN = new(M.Column(2));
+        Direction3D BN = new(M.Column(2));
 
         double ang = myDir.Angle(BN);
         if (ang > M_PI / 2)
         {
             D.Reverse();
         }
-        Geom_Line L = new(P, new gp_Dir(D));
+        Geom_Line L = new(P, new Direction3D(D));
 
         Geom_Curve TC = new Geom_TrimmedCurve(L, 0, Length);
 
@@ -476,10 +481,10 @@ public sealed class BRepFill_Draft
             F = TopoDS.Face(ex.Current());
             BRepAdaptor_Surface SF = new(F);
             double u, v;
-            gp_Vec V;
+            Vector3D V;
             u = SF.FirstUParameter();
             v = SF.FirstVParameter();
-            SF.D1(u, v, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2);
+            SF.D1(u, v, out Point3D P, out Vector3D V1, out Vector3D V2);
             V = V1.Crossed(V2);
             if (F.Orientation() == TopAbs_REVERSED)
             {
@@ -487,7 +492,7 @@ public sealed class BRepFill_Draft
             }
             if (V.Magnitude() > 1.0e-10)
             {
-                @out = myDir.Angle(new gp_Dir(V)) > M_PI / 2;
+                @out = myDir.Angle(new Direction3D(V)) > M_PI / 2;
             }
             if (@out == IsInternal)
             {
@@ -507,7 +512,7 @@ public sealed class BRepFill_Draft
             // Waiting the use of traces & restriction in BRepFill_Sweep
             // Make Fuse.
             BRepLib_MakeFace MkF = new();
-            MkF.Init(Surf, true, Precision.Confusion());
+            MkF.Init(Surf, true, global::Kerf.Engine.Foundation.Precision.Confusion());
             Fuse(MkF.InternalFace(), KeepOutSide);
         }
     }
@@ -599,7 +604,7 @@ public sealed class BRepFill_Draft
 
             // We need to find the section edge, closest to myWire
             TopoDS_Edge aSEMin = new();
-            double Dmin = Precision.Infinite();
+            double Dmin = global::Kerf.Engine.Foundation.Precision.Infinite();
             BRepExtrema_DistShapeShape DistTool = new();
             DistTool.LoadS1(myWire);
 
@@ -615,7 +620,7 @@ public sealed class BRepFill_Draft
                     {
                         Dmin = D;
                         aSEMin = TopoDS.Edge(aSE);
-                        if (Dmin < Precision.Confusion())
+                        if (Dmin < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             break;
                         }
@@ -629,12 +634,12 @@ public sealed class BRepFill_Draft
                 Geom_Surface? S = null;
                 Geom2d_Curve? C2d = null;
                 double f = 0.0, l = 0.0;
-                TopLoc_Location L = new();
+                Placement L = new();
                 BRep_Tool.CurveOnSurface(aSEMin, ref C2d, ref S, ref L, ref f, ref l, 2);
 
                 // Find a normal.
                 // OCCT dereferences the second pcurve without a check.
-                C2d!.D0((f + l) / 2, out gp_Pnt2d P2d);
+                C2d!.D0((f + l) / 2, out Point2D P2d);
                 GeomLProp_SLProps SP = new(S!, P2d.X(), P2d.Y(), 1, 1.0e-12);
                 if (!SP.IsNormalDefined())
                 {
@@ -694,7 +699,7 @@ public sealed class BRepFill_Draft
             NCollection_List<TopoDS_Shape> aLO = new(), aLT = new();
             aLO.Append(Sol1);
             aLT.Append(Sol2);
-            aBuilder.BuildBOP(aLO, aLT, BOPAlgo_CUT, new Message_ProgressRange());
+            aBuilder.BuildBOP(aLO, aLT, BOPAlgo_CUT, new ProgressRange());
             if (!aBuilder.HasErrors())
             {
                 TopoDS_Solid aCutMin = new();
@@ -705,7 +710,7 @@ public sealed class BRepFill_Draft
                     anExpS.Next();
                     if (anExpS.More())
                     {
-                        double aDMin = Precision.Infinite();
+                        double aDMin = global::Kerf.Engine.Foundation.Precision.Infinite();
                         BRepExtrema_DistShapeShape DistTool = new();
                         DistTool.LoadS1(myWire);
 
@@ -741,7 +746,7 @@ public sealed class BRepFill_Draft
 
                     aLO.Clear();
                     aLO.Append(aCutMin);
-                    aGluer.BuildBOP(aLO, State1, aLT, State2, new Message_ProgressRange());
+                    aGluer.BuildBOP(aLO, State1, aLT, State2, new ProgressRange());
 
                     if (!aGluer.HasErrors())
                     {
@@ -763,7 +768,7 @@ public sealed class BRepFill_Draft
             aLO.Append(Sol1);
             aLT.Append(Sol2);
 
-            aBuilder.BuildBOP(aLO, State1, aLT, State2, new Message_ProgressRange());
+            aBuilder.BuildBOP(aLO, State1, aLT, State2, new ProgressRange());
             if (aBuilder.HasErrors())
             {
                 return false;
@@ -896,7 +901,7 @@ public sealed class BRepFill_Draft
                 BS.Add(solid, TopoDS.Shell(myShape));
 
                 BRepClass3d_SolidClassifier SC = new(solid);
-                SC.PerformInfinitePoint(Precision.Confusion());
+                SC.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (SC.State() == TopAbs_IN)
                 {
                     BS.MakeSolid(ref solid);

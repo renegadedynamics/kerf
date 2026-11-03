@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -59,7 +67,7 @@ public sealed class BRepGProp_Gauss
     private const double ERROR_ALGEBR_RATIO = 2.0 / 3.0;
 
     // Maximum of GaussPoints on a subinterval and maximum of subintervals
-    private static readonly int GPM = math.GaussPointsMax();
+    private static readonly int GPM = NumericTables.GaussPointsMax();
     private const int SUBS_POWER = 32;
     private static readonly int SM = SUBS_POWER * GPM + 1;
 
@@ -78,51 +86,51 @@ public sealed class BRepGProp_Gauss
 
     private static double AddInf(double theA, double theB)
     {
-        if (Precision.IsPositiveInfinite(theA))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theA))
         {
-            if (Precision.IsNegativeInfinite(theB))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theB))
             {
                 return 0.0;
             }
             else
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsPositiveInfinite(theB))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theB))
         {
-            if (Precision.IsNegativeInfinite(theA))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theA))
             {
                 return 0.0;
             }
             else
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsNegativeInfinite(theA))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theA))
         {
-            if (Precision.IsPositiveInfinite(theB))
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theB))
             {
                 return 0.0;
             }
             else
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsNegativeInfinite(theB))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theB))
         {
-            if (Precision.IsPositiveInfinite(theA))
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theA))
             {
                 return 0.0;
             }
             else
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
@@ -138,51 +146,51 @@ public sealed class BRepGProp_Gauss
             return 0.0;
         }
 
-        if (Precision.IsPositiveInfinite(theA))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theA))
         {
             if (theB < 0.0)
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsPositiveInfinite(theB))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theB))
         {
             if (theA < 0.0)
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsNegativeInfinite(theA))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theA))
         {
             if (theB < 0.0)
             {
-                return +Precision.Infinite();
+                return +global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (Precision.IsNegativeInfinite(theB))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theB))
         {
             if (theA < 0.0)
             {
-                return +Precision.Infinite();
+                return +global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
-                return -Precision.Infinite();
+                return -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
@@ -284,9 +292,9 @@ public sealed class BRepGProp_Gauss
         return k;
     }
 
-    private static void computeVInertiaOfElementaryPart(in gp_Pnt thePoint,
-                                                        in gp_Vec theNormal,
-                                                        in gp_Pnt theLocation,
+    private static void computeVInertiaOfElementaryPart(in Point3D thePoint,
+                                                        in Vector3D theNormal,
+                                                        in Point3D theLocation,
                                                         double theWeight,
                                                         ReadOnlySpan<double> theCoeff,
                                                         bool theIsByPoint,
@@ -365,9 +373,9 @@ public sealed class BRepGProp_Gauss
         }
     }
 
-    private void computeSInertiaOfElementaryPart(in gp_Pnt thePoint,
-                                                 in gp_Vec theNormal,
-                                                 in gp_Pnt theLocation,
+    private void computeSInertiaOfElementaryPart(in Point3D thePoint,
+                                                 in Vector3D theNormal,
+                                                 in Point3D theLocation,
                                                  double theWeight,
                                                  ref Inertia theOutInertia)
     {
@@ -401,8 +409,8 @@ public sealed class BRepGProp_Gauss
 
     private void checkBounds(double theU1, double theU2, double theV1, double theV2)
     {
-        if (Precision.IsInfinite(theU1) || Precision.IsInfinite(theU2) || Precision.IsInfinite(theV1)
-            || Precision.IsInfinite(theV2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theU2) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theV1)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(theV2))
         {
             myIsInf = true;
         }
@@ -437,8 +445,8 @@ public sealed class BRepGProp_Gauss
     }
 
     private static void convert(in Inertia theInertia,
-                                ref gp_Pnt theOutGravityCenter,
-                                ref gp_Mat theOutMatrixOfInertia,
+                                ref Point3D theOutGravityCenter,
+                                ref Matrix3x3 theOutMatrixOfInertia,
                                 ref double theOutMass)
     {
         if (Math.Abs(theInertia.Mass) >= EPS_DIM)
@@ -456,16 +464,16 @@ public sealed class BRepGProp_Gauss
             theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
         }
 
-        theOutMatrixOfInertia = new gp_Mat(new gp_XYZ(theInertia.Ixx, -theInertia.Ixy, -theInertia.Ixz),
-                                           new gp_XYZ(-theInertia.Ixy, theInertia.Iyy, -theInertia.Iyz),
-                                           new gp_XYZ(-theInertia.Ixz, -theInertia.Iyz, theInertia.Izz));
+        theOutMatrixOfInertia = new Matrix3x3(new Xyz(theInertia.Ixx, -theInertia.Ixy, -theInertia.Ixz),
+                                           new Xyz(-theInertia.Ixy, theInertia.Iyy, -theInertia.Iyz),
+                                           new Xyz(-theInertia.Ixz, -theInertia.Iyz, theInertia.Izz));
     }
 
     private static void convert(in Inertia theInertia,
                                 ReadOnlySpan<double> theCoeff,
                                 bool theIsByPoint,
-                                ref gp_Pnt theOutGravityCenter,
-                                ref gp_Mat theOutMatrixOfInertia,
+                                ref Point3D theOutGravityCenter,
+                                ref Matrix3x3 theOutMatrixOfInertia,
                                 ref double theOutMass)
     {
         convert(theInertia, ref theOutGravityCenter, ref theOutMatrixOfInertia, ref theOutMass);
@@ -494,9 +502,9 @@ public sealed class BRepGProp_Gauss
             theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
         }
 
-        theOutMatrixOfInertia = new gp_Mat(new gp_XYZ(theInertia.Ixx, theInertia.Ixy, theInertia.Ixz),
-                                           new gp_XYZ(theInertia.Ixy, theInertia.Iyy, theInertia.Iyz),
-                                           new gp_XYZ(theInertia.Ixz, theInertia.Iyz, theInertia.Izz));
+        theOutMatrixOfInertia = new Matrix3x3(new Xyz(theInertia.Ixx, theInertia.Ixy, theInertia.Ixz),
+                                           new Xyz(theInertia.Ixy, theInertia.Iyy, theInertia.Iyz),
+                                           new Xyz(theInertia.Ixz, theInertia.Iyz, theInertia.Izz));
     }
 
     /// <summary>
@@ -508,13 +516,13 @@ public sealed class BRepGProp_Gauss
     /// <returns>The relative error, |(M(i+1) - M(i)) / M(i+1)| for two successive steps.</returns>
     public double Compute(BRepGProp_Face theSurface,
                           BRepGProp_Domain theDomain,
-                          in gp_Pnt theLocation,
+                          in Point3D theLocation,
                           double theEps,
                           ReadOnlySpan<double> theCoeff,
                           bool theIsByPoint,
                           ref double theOutMass,
-                          ref gp_Pnt theOutGravityCenter,
-                          ref gp_Mat theOutInertia)
+                          ref Point3D theOutGravityCenter,
+                          ref Matrix3x3 theOutInertia)
     {
         bool isErrorCalculation = 0.0 > theEps || theEps < 0.001;
         bool isVerifyComputation = 0.0 < theEps && theEps < 0.001;
@@ -572,8 +580,8 @@ public sealed class BRepGProp_Gauss
         double u1 = BU1, u2, l1, l2, lm, lr, l, v;
 
         // On the boundary curve u-v
-        gp_Pnt2d Puv;
-        gp_Vec2d Vuv;
+        Point2D Puv;
+        Vector2D Vuv;
         double Dul; // Dul = Du / Dl
 
         int iLS, iLSubEnd, iGL, iGLEnd, iL, kL, kLEnd, IL, JL;
@@ -590,10 +598,10 @@ public sealed class BRepGProp_Gauss
         NbUGaussP[0] = theSurface.SIntOrder(anEpsilon);
         NbUGaussP[1] = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * NbUGaussP[0]));
 
-        math.GaussPoints(NbUGaussP[0], UGaussP[0]);
-        math.GaussWeights(NbUGaussP[0], UGaussW[0]);
-        math.GaussPoints(NbUGaussP[1], UGaussP[1]);
-        math.GaussWeights(NbUGaussP[1], UGaussW[1]);
+        NumericTables.GaussPoints(NbUGaussP[0], UGaussP[0]);
+        NumericTables.GaussWeights(NbUGaussP[0], UGaussW[0]);
+        NumericTables.GaussPoints(NbUGaussP[1], UGaussP[1]);
+        NumericTables.GaussWeights(NbUGaussP[1], UGaussW[1]);
 
         int aNbUSubs = theSurface.SUIntSubs();
         var UKnots = new NCollection_Array1<double>(1, aNbUSubs + 1);
@@ -605,13 +613,13 @@ public sealed class BRepGProp_Gauss
         {
             if (isNaturalRestriction)
             {
-                NbLGaussP[0] = Min(2 * NbUGaussP[0], math.GaussPointsMax());
+                NbLGaussP[0] = Min(2 * NbUGaussP[0], NumericTables.GaussPointsMax());
             }
             else
             {
                 if (!theSurface.Load(theDomain.Value()))
                 {
-                    return Precision.Infinite();
+                    return global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
 
                 NbLGaussP[0] = theSurface.LIntOrder(anEpsilon);
@@ -619,10 +627,10 @@ public sealed class BRepGProp_Gauss
 
             NbLGaussP[1] = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * NbLGaussP[0]));
 
-            math.GaussPoints(NbLGaussP[0], LGaussP[0]);
-            math.GaussWeights(NbLGaussP[0], LGaussW[0]);
-            math.GaussPoints(NbLGaussP[1], LGaussP[1]);
-            math.GaussWeights(NbLGaussP[1], LGaussW[1]);
+            NumericTables.GaussPoints(NbLGaussP[0], LGaussP[0]);
+            NumericTables.GaussWeights(NbLGaussP[0], LGaussW[0]);
+            NumericTables.GaussPoints(NbLGaussP[1], LGaussP[1]);
+            NumericTables.GaussWeights(NbLGaussP[1], LGaussW[1]);
 
             int aNbLSubs = isNaturalRestriction ? theSurface.SVIntSubs() : theSurface.LIntSubs();
             var LKnots = new NCollection_Array1<double>(1, aNbLSubs + 1);
@@ -801,8 +809,8 @@ public sealed class BRepGProp_Gauss
                                         }
                                         else
                                         {
-                                            gp_Pnt aPoint;
-                                            gp_Vec aNormal;
+                                            Point3D aPoint;
+                                            Vector3D aNormal;
 
                                             for (kU = 0; kU < kUEnd; ++kU)
                                             {
@@ -1049,14 +1057,14 @@ public sealed class BRepGProp_Gauss
     }
 
     /// <summary>The global properties of the bounded face, by adaptive Gauss integration (see the general form).</summary>
-    /// <exception cref="Standard_ProgramError">The integrator isn't of type Sinert.</exception>
+    /// <exception cref="ProgramErrorException">The integrator isn't of type Sinert.</exception>
     public double Compute(BRepGProp_Face theSurface,
                           BRepGProp_Domain theDomain,
-                          in gp_Pnt theLocation,
+                          in Point3D theLocation,
                           double theEps,
                           ref double theOutMass,
-                          ref gp_Pnt theOutGravityCenter,
-                          ref gp_Mat theOutInertia)
+                          ref Point3D theOutGravityCenter,
+                          ref Matrix3x3 theOutInertia)
     {
         Standard_ASSERT_RAISE(myType == BRepGProp_GaussType.Sinert, "BRepGProp_Gauss: Incorrect type");
 
@@ -1075,13 +1083,13 @@ public sealed class BRepGProp_Gauss
     /// The global properties of the bounded face, by non-adaptive Gauss integration with numbers of points chosen by
     /// the types of the surface and the curves. Returns without writing the outputs if an edge has no pcurve.
     /// </summary>
-    /// <exception cref="Standard_ProgramError">The integrator isn't of type Sinert.</exception>
+    /// <exception cref="ProgramErrorException">The integrator isn't of type Sinert.</exception>
     public void Compute(BRepGProp_Face theSurface,
                         BRepGProp_Domain theDomain,
-                        in gp_Pnt theLocation,
+                        in Point3D theLocation,
                         ref double theOutMass,
-                        ref gp_Pnt theOutGravityCenter,
-                        ref gp_Mat theOutInertia)
+                        ref Point3D theOutGravityCenter,
+                        ref Matrix3x3 theOutInertia)
     {
         Standard_ASSERT_RAISE(myType == BRepGProp_GaussType.Sinert, "BRepGProp_Gauss: Incorrect type");
 
@@ -1089,17 +1097,17 @@ public sealed class BRepGProp_Gauss
         theSurface.Bounds(out u1, out u2, out v1, out v2);
         checkBounds(u1, u2, v1, v2);
 
-        int NbUGaussgp_Pnts = Min(theSurface.UIntegrationOrder(), math.GaussPointsMax());
+        int NbUGaussgp_Pnts = Min(theSurface.UIntegrationOrder(), NumericTables.GaussPointsMax());
 
-        int NbVGaussgp_Pnts = Min(theSurface.VIntegrationOrder(), math.GaussPointsMax());
+        int NbVGaussgp_Pnts = Min(theSurface.VIntegrationOrder(), NumericTables.GaussPointsMax());
 
         int NbGaussgp_Pnts = Max(NbUGaussgp_Pnts, NbVGaussgp_Pnts);
 
         // Number of Gauss points for the integration on the face
         var GaussSPV = new math_Vector(1, NbGaussgp_Pnts);
         var GaussSWV = new math_Vector(1, NbGaussgp_Pnts);
-        math.GaussPoints(NbGaussgp_Pnts, GaussSPV);
-        math.GaussWeights(NbGaussgp_Pnts, GaussSWV);
+        NumericTables.GaussPoints(NbGaussgp_Pnts, GaussSPV);
+        NumericTables.GaussWeights(NbGaussgp_Pnts, GaussSWV);
 
         Inertia anInertia = new();
         for (; theDomain.More(); theDomain.Next())
@@ -1109,14 +1117,14 @@ public sealed class BRepGProp_Gauss
                 return;
             }
 
-            int NbCGaussgp_Pnts = Min(theSurface.IntegrationOrder(), math.GaussPointsMax());
+            int NbCGaussgp_Pnts = Min(theSurface.IntegrationOrder(), NumericTables.GaussPointsMax());
 
             NbCGaussgp_Pnts = Max(NbCGaussgp_Pnts, NbGaussgp_Pnts);
 
             var GaussCP = new math_Vector(1, NbCGaussgp_Pnts);
             var GaussCW = new math_Vector(1, NbCGaussgp_Pnts);
-            math.GaussPoints(NbCGaussgp_Pnts, GaussCP);
-            math.GaussWeights(NbCGaussgp_Pnts, GaussCW);
+            NumericTables.GaussPoints(NbCGaussgp_Pnts, GaussCP);
+            NumericTables.GaussWeights(NbCGaussgp_Pnts, GaussCW);
 
             double l1 = theSurface.FirstParameter();
             double l2 = theSurface.LastParameter();
@@ -1128,7 +1136,7 @@ public sealed class BRepGProp_Gauss
             {
                 double l = lm + lr * GaussCP[i];
 
-                theSurface.D12d(l, out gp_Pnt2d Puv, out gp_Vec2d Vuv);
+                theSurface.D12d(l, out Point2D Puv, out Vector2D Vuv);
 
                 double v = Puv.Y();
                 u2 = Puv.X();
@@ -1144,7 +1152,7 @@ public sealed class BRepGProp_Gauss
 
                     double aWeight = Dul * GaussSWV[j];
 
-                    theSurface.Normal(u, v, out gp_Pnt aPoint, out gp_Vec aNormal);
+                    theSurface.Normal(u, v, out Point3D aPoint, out Vector3D aNormal);
 
                     computeSInertiaOfElementaryPart(aPoint, aNormal, theLocation, aWeight, ref aLocalInertia);
                 }
@@ -1165,15 +1173,15 @@ public sealed class BRepGProp_Gauss
     /// the coefficients), by non-adaptive Gauss integration. Returns without writing the outputs if an edge has no
     /// pcurve.
     /// </summary>
-    /// <exception cref="Standard_ProgramError">The integrator isn't of type Vinert.</exception>
+    /// <exception cref="ProgramErrorException">The integrator isn't of type Vinert.</exception>
     public void Compute(BRepGProp_Face theSurface,
                         BRepGProp_Domain theDomain,
-                        in gp_Pnt theLocation,
+                        in Point3D theLocation,
                         ReadOnlySpan<double> theCoeff,
                         bool theIsByPoint,
                         ref double theOutMass,
-                        ref gp_Pnt theOutGravityCenter,
-                        ref gp_Mat theOutInertia)
+                        ref Point3D theOutGravityCenter,
+                        ref Matrix3x3 theOutInertia)
     {
         Standard_ASSERT_RAISE(myType == BRepGProp_GaussType.Vinert, "BRepGProp_Gauss: Incorrect type");
 
@@ -1193,12 +1201,12 @@ public sealed class BRepGProp_Gauss
 
             int aVNbCGaussgp_Pnts = theSurface.VIntegrationOrder();
 
-            int aNbGaussgp_Pnts = Min(Max(theSurface.IntegrationOrder(), aVNbCGaussgp_Pnts), math.GaussPointsMax());
+            int aNbGaussgp_Pnts = Min(Max(theSurface.IntegrationOrder(), aVNbCGaussgp_Pnts), NumericTables.GaussPointsMax());
 
             var GaussP = new math_Vector(1, aNbGaussgp_Pnts);
             var GaussW = new math_Vector(1, aNbGaussgp_Pnts);
-            math.GaussPoints(aNbGaussgp_Pnts, GaussP);
-            math.GaussWeights(aNbGaussgp_Pnts, GaussW);
+            NumericTables.GaussPoints(aNbGaussgp_Pnts, GaussP);
+            NumericTables.GaussWeights(aNbGaussgp_Pnts, GaussW);
 
             double l1 = theSurface.FirstParameter();
             double l2 = theSurface.LastParameter();
@@ -1210,7 +1218,7 @@ public sealed class BRepGProp_Gauss
             {
                 double l = lm + lr * GaussP[i];
 
-                theSurface.D12d(l, out gp_Pnt2d Puv, out gp_Vec2d Vuv);
+                theSurface.D12d(l, out Point2D Puv, out Vector2D Vuv);
 
                 u2 = Puv.X();
                 u2 = Min(Max(u1, u2), _u2); // OCC104
@@ -1226,7 +1234,7 @@ public sealed class BRepGProp_Gauss
                     double u = um + ur * GaussP[j];
                     double aWeight = Dul * GaussW[j];
 
-                    theSurface.Normal(u, v, out gp_Pnt aPoint, out gp_Vec aNormal);
+                    theSurface.Normal(u, v, out Point3D aPoint, out Vector3D aNormal);
 
                     computeVInertiaOfElementaryPart(aPoint,
                                                     aNormal,
@@ -1253,19 +1261,19 @@ public sealed class BRepGProp_Gauss
     /// plane, or of the face itself, by non-adaptive Gauss integration.
     /// </summary>
     public void Compute(BRepGProp_Face theSurface,
-                        in gp_Pnt theLocation,
+                        in Point3D theLocation,
                         ReadOnlySpan<double> theCoeff,
                         bool theIsByPoint,
                         ref double theOutMass,
-                        ref gp_Pnt theOutGravityCenter,
-                        ref gp_Mat theOutInertia)
+                        ref Point3D theOutGravityCenter,
+                        ref Matrix3x3 theOutInertia)
     {
         double LowerU, UpperU, LowerV, UpperV;
         theSurface.Bounds(out LowerU, out UpperU, out LowerV, out UpperV);
         checkBounds(LowerU, UpperU, LowerV, UpperV);
 
-        int UOrder = Min(theSurface.UIntegrationOrder(), math.GaussPointsMax());
-        int VOrder = Min(theSurface.VIntegrationOrder(), math.GaussPointsMax());
+        int UOrder = Min(theSurface.UIntegrationOrder(), NumericTables.GaussPointsMax());
+        int VOrder = Min(theSurface.VIntegrationOrder(), NumericTables.GaussPointsMax());
 
         // Gauss points and weights
         var GaussPU = new math_Vector(1, UOrder);
@@ -1273,18 +1281,18 @@ public sealed class BRepGProp_Gauss
         var GaussPV = new math_Vector(1, VOrder);
         var GaussWV = new math_Vector(1, VOrder);
 
-        math.GaussPoints(UOrder, GaussPU);
-        math.GaussWeights(UOrder, GaussWU);
-        math.GaussPoints(VOrder, GaussPV);
-        math.GaussWeights(VOrder, GaussWV);
+        NumericTables.GaussPoints(UOrder, GaussPU);
+        NumericTables.GaussWeights(UOrder, GaussWU);
+        NumericTables.GaussPoints(VOrder, GaussPV);
+        NumericTables.GaussWeights(VOrder, GaussWV);
 
         double um = 0.5 * add(UpperU, LowerU);
         double vm = 0.5 * add(UpperV, LowerV);
         double ur = 0.5 * add(UpperU, -LowerU);
         double vr = 0.5 * add(UpperV, -LowerV);
 
-        gp_Pnt aPoint;
-        gp_Vec aNormal;
+        Point3D aPoint;
+        Vector3D aNormal;
 
         Inertia anInertia = new();
         for (int j = 1; j <= VOrder; ++j)
@@ -1339,12 +1347,12 @@ public sealed class BRepGProp_Gauss
     }
 
     /// <summary>The global properties of the face, unbounded (its natural restriction), by non-adaptive Gauss integration.</summary>
-    /// <exception cref="Standard_ProgramError">The integrator isn't of type Sinert.</exception>
+    /// <exception cref="ProgramErrorException">The integrator isn't of type Sinert.</exception>
     public void Compute(BRepGProp_Face theSurface,
-                        in gp_Pnt theLocation,
+                        in Point3D theLocation,
                         ref double theOutMass,
-                        ref gp_Pnt theOutGravityCenter,
-                        ref gp_Mat theOutInertia)
+                        ref Point3D theOutGravityCenter,
+                        ref Matrix3x3 theOutInertia)
     {
         Standard_ASSERT_RAISE(myType == BRepGProp_GaussType.Sinert, "BRepGProp_Gauss: Incorrect type");
 
@@ -1356,7 +1364,7 @@ public sealed class BRepGProp_Gauss
     {
         if (!theCondition)
         {
-            throw new Standard_ProgramError(theMessage);
+            throw new ProgramErrorException(theMessage);
         }
     }
 }

@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.DrawLite;
@@ -29,9 +31,9 @@ internal static partial class BRepTestFeatureCommands
         public readonly BRepOffset_MakeOffset TheOffset = new();
         public double TheRadius;
         public bool theYaBouchon;
-        public double TheTolerance = Precision.Confusion();
+        public double TheTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         public bool TheInter;
-        public GeomAbs_JoinType TheJoin = GeomAbs_Arc;
+        public JoinKind TheJoin = Arc;
         public bool RemoveIntEdges;
     }
 
@@ -106,21 +108,21 @@ internal static partial class BRepTestFeatureCommands
 
         double Of = theDI.Atof(a[3]);
 
-        GeomAbs_JoinType JT = GeomAbs_Arc;
+        JoinKind JT = Arc;
         if (n > 4)
         {
             if (a[4] == "i")
             {
-                JT = GeomAbs_Intersection;
+                JT = Intersection;
             }
             if (a[4] == "t")
             {
-                JT = GeomAbs_Tangent;
+                JT = Tangent;
             }
         }
 
         bool Inter = false; // true;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 5)
         {
             Tol = theDI.Atof(a[5]);
@@ -184,12 +186,12 @@ internal static partial class BRepTestFeatureCommands
                 }
             }
 
-            GeomAbs_JoinType aJoin = GeomAbs_Arc;
+            JoinKind aJoin = Arc;
             if (theArgNb > 7)
             {
                 if (theArgVec[7] == "i")
                 {
-                    aJoin = GeomAbs_Intersection;
+                    aJoin = Intersection;
                 }
             }
 
@@ -230,16 +232,16 @@ internal static partial class BRepTestFeatureCommands
 
         double Of = theDI.Atof(a[3]);
         bool Inter = a[0] == "offsetcompshape";
-        GeomAbs_JoinType JT = GeomAbs_Arc;
+        JoinKind JT = Arc;
         if (a[0] == "offsetinter")
         {
-            JT = GeomAbs_Intersection;
+            JT = Intersection;
             Inter = true;
         }
 
         BRepOffset_MakeOffset B = new();
         int IB = 4;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 4)
         {
             TopoDS_Shape SF = theDI.GetShape(a[4], TopAbs_FACE);
@@ -309,10 +311,10 @@ internal static partial class BRepTestFeatureCommands
 
             switch (s.TheJoin)
             {
-                case GeomAbs_Arc:
+                case Arc:
                     di.Append("Arc");
                     break;
-                case GeomAbs_Intersection:
+                case Intersection:
                     di.Append("Intersection");
                     break;
                 default:
@@ -343,15 +345,15 @@ internal static partial class BRepTestFeatureCommands
         //
         if (a[3] == "a")
         {
-            s.TheJoin = GeomAbs_Arc;
+            s.TheJoin = Arc;
         }
         else if (a[3] == "i")
         {
-            s.TheJoin = GeomAbs_Intersection;
+            s.TheJoin = Intersection;
         }
         else if (a[3] == "t")
         {
-            s.TheJoin = GeomAbs_Tangent;
+            s.TheJoin = Tangent;
         }
         //
         s.RemoveIntEdges = (n >= 5) && a[4] == "r";
@@ -493,7 +495,7 @@ internal static partial class BRepTestFeatureCommands
             return 0;
         }
         double anOffsetValue = theDI.Atof(a[3]);
-        if (Math.Abs(anOffsetValue) < gp.Resolution())
+        if (Math.Abs(anOffsetValue) < Constants.Resolution())
         {
             theCommands.Append("Null offset value");
             return 0;
@@ -501,7 +503,7 @@ internal static partial class BRepTestFeatureCommands
 
         bool makeSolid = narg > 4 && string.Equals(a[4], "solid", StringComparison.OrdinalIgnoreCase);
         int iTolArg = (makeSolid ? 5 : 4);
-        double aTol = (narg > iTolArg ? theDI.Atof(a[iTolArg]) : Precision.Confusion());
+        double aTol = (narg > iTolArg ? theDI.Atof(a[iTolArg]) : global::Kerf.Engine.Foundation.Precision.Confusion());
 
         BRepOffset_MakeSimpleOffset aMaker = new(aShape, anOffsetValue);
         aMaker.SetTolerance(aTol);

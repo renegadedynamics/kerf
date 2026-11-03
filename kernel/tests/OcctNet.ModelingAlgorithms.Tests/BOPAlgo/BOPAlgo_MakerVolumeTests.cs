@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -14,7 +15,7 @@ public class BOPAlgo_MakerVolumeTests
     // A = [0, 10]^3 and B = [5, 15]^3
     internal static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    internal static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new gp_Pnt(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    internal static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
     internal static NCollection_List<TopoDS_Shape> Faces(params TopoDS_Shape[] theShapes)
     {
@@ -64,7 +65,7 @@ public class BOPAlgo_MakerVolumeTests
         Assert.Equal(TopAbs_COMPOUND, aR.ShapeType());
         Assert.Equal(3, Count(aR, TopAbs_SOLID));
         Assert.Equal(1875.0, Volume(aR), 1.0e-6);
-        Assert.True(aR.TShape()!.IsFrozen());
+        Assert.True(aR.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -90,7 +91,7 @@ public class BOPAlgo_MakerVolumeTests
     [Fact]
     public void An_edge_inside_becomes_internal_unless_avoided()
     {
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(2, 2, 2), new gp_Pnt(8, 8, 8)).Shape();
+        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(2, 2, 2), new Point3D(8, 8, 8)).Shape();
         NCollection_List<TopoDS_Shape> anArgs = Faces(BoxA());
         anArgs.Append(anEdge);
 

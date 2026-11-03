@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GeomFill_FillingStyle;
 
 namespace Occt;
@@ -107,11 +109,11 @@ public class GeomFill_BSplineCurves
 
     private static int SetSameDistribution(ref Geom_BSplineCurve C1, ref Geom_BSplineCurve C2)
     {
-        NCollection_Array1<gp_Pnt> P1 = new(C1.InternalPoles());
+        NCollection_Array1<Point3D> P1 = new(C1.InternalPoles());
         NCollection_Array1<double> W1 = C1.InternalWeightsArray();
         NCollection_Array1<double> K1 = new(C1.InternalKnots());
         NCollection_Array1<int> M1 = new(C1.InternalMultiplicities());
-        NCollection_Array1<gp_Pnt> P2 = new(C2.InternalPoles());
+        NCollection_Array1<Point3D> P2 = new(C2.InternalPoles());
         NCollection_Array1<double> W2 = C2.InternalWeightsArray();
         NCollection_Array1<double> K2 = new(C2.InternalKnots());
         NCollection_Array1<int> M2 = new(C2.InternalMultiplicities());
@@ -123,29 +125,29 @@ public class GeomFill_BSplineCurves
 
         if ((K12 - K11) > (K22 - K21))
         {
-            BSplCLib.Reparametrize(K11, K12, K2);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(K11, K12, K2);
             C2.SetKnots(K2);
         }
         else if ((K12 - K11) < (K22 - K21))
         {
-            BSplCLib.Reparametrize(K21, K22, K1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(K21, K22, K1);
             C1.SetKnots(K1);
         }
-        else if (Math.Abs(K12 - K11) > Precision.PConfusion())
+        else if (Math.Abs(K12 - K11) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            BSplCLib.Reparametrize(K11, K12, K2);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(K11, K12, K2);
             C2.SetKnots(K2);
         }
 
         int NP, NK;
-        if (BSplCLib.PrepareInsertKnots(C1.Degree(), false, K1, M1, K2, M2, out NP, out NK, Precision.PConfusion(), false))
+        if (global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(C1.Degree(), false, K1, M1, K2, M2, out NP, out NK, global::Kerf.Engine.Foundation.Precision.PConfusion(), false))
         {
-            NCollection_Array1<gp_Pnt> NewP = new(1, NP);
+            NCollection_Array1<Point3D> NewP = new(1, NP);
             NCollection_Array1<double> NewW = new(1, NP);
             NCollection_Array1<double> NewK = new(1, NK);
             NCollection_Array1<int> NewM = new(1, NK);
-            BSplCLib.InsertKnots(C1.Degree(), false, P1, W1, K1, M1, K2, M2, NewP, NewW, NewK, NewM,
-                                 Precision.PConfusion(), false);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(C1.Degree(), false, P1, W1, K1, M1, K2, M2, NewP, NewW, NewK, NewM,
+                                 global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
             if (C1.IsRational())
             {
                 C1 = new Geom_BSplineCurve(NewP, NewW, NewK, NewM, C1.Degree());
@@ -154,8 +156,8 @@ public class GeomFill_BSplineCurves
             {
                 C1 = new Geom_BSplineCurve(NewP, NewK, NewM, C1.Degree());
             }
-            BSplCLib.InsertKnots(C2.Degree(), false, P2, W2, K2, M2, K1, M1, NewP, NewW, NewK, NewM,
-                                 Precision.PConfusion(), false);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(C2.Degree(), false, P2, W2, K2, M2, K1, M1, NewP, NewW, NewK, NewM,
+                                 global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
             if (C2.IsRational())
             {
                 C2 = new Geom_BSplineCurve(NewP, NewW, NewK, NewM, C2.Degree());
@@ -167,7 +169,7 @@ public class GeomFill_BSplineCurves
         }
         else
         {
-            throw new Standard_ConstructionError(" ");
+            throw new ConstructionErrorException(" ");
         }
 
         return C1.NbPoles();
@@ -207,7 +209,7 @@ public class GeomFill_BSplineCurves
         // On ordonne les courbes
         Geom_BSplineCurve CC1, CC2, CC3, CC4;
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         bool IsOK = Arrange(C1, C2, C3, C4, out CC1, out CC2, out CC3, out CC4, Tol);
 
         Standard_ConstructionError_Raise_if(!IsOK, " GeomFill_BSplineCurves: Courbes non jointives");
@@ -244,14 +246,14 @@ public class GeomFill_BSplineCurves
         {
             if (NbUPoles < 4 || NbVPoles < 4)
             {
-                throw new Standard_ConstructionError("GeomFill_BSplineCurves: invalid filling style");
+                throw new ConstructionErrorException("GeomFill_BSplineCurves: invalid filling style");
             }
         }
 
-        NCollection_Array1<gp_Pnt> P1 = CC1.InternalPoles();
-        NCollection_Array1<gp_Pnt> P2 = CC2.InternalPoles();
-        NCollection_Array1<gp_Pnt> P3 = CC3.InternalPoles();
-        NCollection_Array1<gp_Pnt> P4 = CC4.InternalPoles();
+        NCollection_Array1<Point3D> P1 = CC1.InternalPoles();
+        NCollection_Array1<Point3D> P2 = CC2.InternalPoles();
+        NCollection_Array1<Point3D> P3 = CC3.InternalPoles();
+        NCollection_Array1<Point3D> P4 = CC4.InternalPoles();
 
         // Traitement des courbes rationelles
         bool isRat = (CC1.IsRational() || CC2.IsRational() || CC3.IsRational() || CC4.IsRational());
@@ -295,7 +297,7 @@ public class GeomFill_BSplineCurves
 
         NbUPoles = Caro.NbUPoles();
         NbVPoles = Caro.NbVPoles();
-        NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+        NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
 
         // Creation de la surface
         NCollection_Array1<double> UKnots = CC1.InternalKnots();
@@ -322,10 +324,10 @@ public class GeomFill_BSplineCurves
     public void Init(Geom_BSplineCurve C1, Geom_BSplineCurve C2, Geom_BSplineCurve C3, GeomFill_FillingStyle Type)
     {
         Geom_BSplineCurve C4;
-        NCollection_Array1<gp_Pnt> Poles = new(1, 2);
+        NCollection_Array1<Point3D> Poles = new(1, 2);
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Mults = new(1, 2);
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Tol = Tol * Tol;
         if (C1.StartPoint().SquareDistance(C2.StartPoint()) > Tol
             && C1.StartPoint().SquareDistance(C2.EndPoint()) > Tol)
@@ -383,9 +385,9 @@ public class GeomFill_BSplineCurves
 
             // Mise en conformite des distributions de noeuds
             int NbPoles = SetSameDistribution(ref CC1, ref CC2);
-            NCollection_Array2<gp_Pnt> Poles = new(1, NbPoles, 1, 2);
-            NCollection_Array1<gp_Pnt> P1 = CC1.InternalPoles();
-            NCollection_Array1<gp_Pnt> P2 = CC2.InternalPoles();
+            NCollection_Array2<Point3D> Poles = new(1, NbPoles, 1, 2);
+            NCollection_Array1<Point3D> P1 = CC1.InternalPoles();
+            NCollection_Array1<Point3D> P2 = CC2.InternalPoles();
 
             int i;
             for (i = 1; i <= NbPoles; i++)
@@ -423,7 +425,7 @@ public class GeomFill_BSplineCurves
         }
         else
         {
-            double Eps = Precision.Confusion();
+            double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             bool IsOK = false;
             if (CC1.StartPoint().IsEqual(CC2.StartPoint(), Eps))
             {
@@ -450,13 +452,13 @@ public class GeomFill_BSplineCurves
 
             if (!IsOK)
             {
-                throw new Standard_OutOfRange("GeomFill_BSplineCurves: Courbes non jointives");
+                throw new OutOfRangeException("GeomFill_BSplineCurves: Courbes non jointives");
             }
 
             int NbUPoles = CC1.NbPoles();
             int NbVPoles = CC2.NbPoles();
-            NCollection_Array1<gp_Pnt> P1 = CC1.InternalPoles();
-            NCollection_Array1<gp_Pnt> P2 = CC2.InternalPoles();
+            NCollection_Array1<Point3D> P1 = CC1.InternalPoles();
+            NCollection_Array1<Point3D> P2 = CC2.InternalPoles();
 
             NCollection_Array1<double> UKnots = CC1.InternalKnots();
             NCollection_Array1<int> UMults = CC1.InternalMultiplicities();
@@ -477,7 +479,7 @@ public class GeomFill_BSplineCurves
 
             NbUPoles = Caro.NbUPoles();
             NbVPoles = Caro.NbVPoles();
-            NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+            NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
             Caro.Poles(Poles);
 
             if (Caro.isRational())

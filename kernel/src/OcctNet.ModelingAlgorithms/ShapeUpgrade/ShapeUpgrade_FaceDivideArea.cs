@@ -29,7 +29,7 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
     /// <summary>Empty constructor (precision 1e-5, no maximal area).</summary>
     public ShapeUpgrade_FaceDivideArea()
     {
-        myMaxArea = Occt.Precision.Infinite();
+        myMaxArea = Kerf.Engine.Foundation.Precision.Infinite();
         myNbParts = 0;
         myUnbSplit = myVnbSplit = -1;
         myIsSplittingByNumber = false;
@@ -85,7 +85,7 @@ public class ShapeUpgrade_FaceDivideArea : ShapeUpgrade_FaceDivide
             myMaxArea = anArea / anbParts;
         }
 
-        if ((anArea - myMaxArea) < Occt.Precision.Confusion())
+        if ((anArea - myMaxArea) < Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }

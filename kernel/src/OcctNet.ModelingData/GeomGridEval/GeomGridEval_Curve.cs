@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -20,7 +21,7 @@ namespace Occt;
 public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
 {
     private GeomGridEval.ICurveEvaluator? myEvaluator;
-    private GeomAbs_CurveType myCurveType;
+    private CurveKind myCurveType;
 
     /// <summary>
     /// Constructor from an adaptor: a GeomAdaptor_Curve is evaluated through its curve, any other adaptor point by
@@ -29,7 +30,7 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
     public GeomGridEval_Curve(Adaptor3d_Curve theCurve)
     {
         myEvaluator = null;
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
         initialization(theCurve);
     }
 
@@ -37,12 +38,12 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
     public GeomGridEval_Curve(Geom_Curve? theCurve)
     {
         myEvaluator = null;
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
         initialization(theCurve);
     }
 
     /// <summary>Returns the detected curve type.</summary>
-    public new GeomAbs_CurveType GetType() => myCurveType;
+    public new CurveKind GetType() => myCurveType;
 
     // Extracts basis curve from potentially nested TrimmedCurve wrappers.
     private static Geom_Curve ExtractBasisCurve(Geom_Curve theCurve)
@@ -74,7 +75,7 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
         if (theCurve is null)
         {
             myEvaluator = null;
-            myCurveType = GeomAbs_OtherCurve;
+            myCurveType = OtherCurve;
             return;
         }
 
@@ -83,42 +84,42 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
 
         if (aBasisCurve is Geom_Line aLine)
         {
-            myCurveType = GeomAbs_Line;
+            myCurveType = Line;
             myEvaluator = new GeomGridEval_Line(aLine);
         }
         else if (aBasisCurve is Geom_Circle aCircle)
         {
-            myCurveType = GeomAbs_Circle;
+            myCurveType = Circle;
             myEvaluator = new GeomGridEval_Circle(aCircle);
         }
         else if (aBasisCurve is Geom_Ellipse anEllipse)
         {
-            myCurveType = GeomAbs_Ellipse;
+            myCurveType = Ellipse;
             myEvaluator = new GeomGridEval_Ellipse(anEllipse);
         }
         else if (aBasisCurve is Geom_Hyperbola aHyperbola)
         {
-            myCurveType = GeomAbs_Hyperbola;
+            myCurveType = Hyperbola;
             myEvaluator = new GeomGridEval_Hyperbola(aHyperbola);
         }
         else if (aBasisCurve is Geom_Parabola aParabola)
         {
-            myCurveType = GeomAbs_Parabola;
+            myCurveType = Parabola;
             myEvaluator = new GeomGridEval_Parabola(aParabola);
         }
         else if (aBasisCurve is Geom_BezierCurve aBezier)
         {
-            myCurveType = GeomAbs_BezierCurve;
+            myCurveType = BezierCurve;
             myEvaluator = new GeomGridEval_BezierCurve(aBezier);
         }
         else if (aBasisCurve is Geom_BSplineCurve aBSpline)
         {
-            myCurveType = GeomAbs_BSplineCurve;
+            myCurveType = BSplineCurve;
             myEvaluator = new GeomGridEval_BSplineCurve(aBSpline);
         }
         else if (aBasisCurve is Geom_OffsetCurve anOffset)
         {
-            myCurveType = GeomAbs_OffsetCurve;
+            myCurveType = OffsetCurve;
             myEvaluator = new GeomGridEval_OffsetCurve(anOffset);
         }
         else
@@ -126,14 +127,14 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
             // Unknown curve type - set uninitialized
             // All known Geom_Curve types are handled above
             myEvaluator = null;
-            myCurveType = GeomAbs_OtherCurve;
+            myCurveType = OtherCurve;
         }
     }
 
     /// <summary>Evaluates grid points at all parameters; 1-based, or empty.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
-        return myEvaluator is null ? new NCollection_Array1<gp_Pnt>() : myEvaluator.EvaluateGrid(theParams);
+        return myEvaluator is null ? new NCollection_Array1<Point3D>() : myEvaluator.EvaluateGrid(theParams);
     }
 
     /// <summary>Evaluates grid points with the first derivative; 1-based, or empty.</summary>
@@ -155,8 +156,8 @@ public sealed class GeomGridEval_Curve : GeomGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative (N &gt;= 1) at all grid points; 1-based, or empty.</summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
-        return myEvaluator is null ? new NCollection_Array1<gp_Vec>() : myEvaluator.EvaluateGridDN(theParams, theN);
+        return myEvaluator is null ? new NCollection_Array1<Vector3D>() : myEvaluator.EvaluateGridDN(theParams, theN);
     }
 }

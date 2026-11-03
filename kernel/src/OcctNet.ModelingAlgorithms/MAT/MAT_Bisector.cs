@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A bisector in MAT2d_Mat2d's algorithm: its number, its two edges, its issue and end points, its vectors,
@@ -10,7 +12,7 @@ namespace Occt;
 /// <remarks>A working object of MAT2d_Mat2d (decision 21): the setters are internal. OCCT leaves theindexnumber,
 /// theissuepoint, theendpoint, the vectors, the sense and distissuepoint uninitialised; they are 0 in the port.
 /// Dump (to std::cout) is left out.</remarks>
-public sealed class MAT_Bisector : Standard_Transient
+public sealed class MAT_Bisector : Transient
 {
     private int thebisectornumber;
     private int theindexnumber;
@@ -29,8 +31,8 @@ public sealed class MAT_Bisector : Standard_Transient
     public MAT_Bisector()
     {
         thebisectornumber = -1;
-        thefirstparameter = Precision.Infinite();
-        thesecondparameter = Precision.Infinite();
+        thefirstparameter = global::Kerf.Engine.Foundation.Precision.Infinite();
+        thesecondparameter = global::Kerf.Engine.Foundation.Precision.Infinite();
         thelistofbisectors = new MAT_ListOfBisector();
     }
 

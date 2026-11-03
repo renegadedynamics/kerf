@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Parametrisation;
 
 namespace Occt;
@@ -68,7 +69,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
         }
         myPatches = new NCollection_HArray2<Geom_Surface>(GridSurf); // OCCT.NET: OCCT shares the caller's array
         ComputeJointValues(param);
-        return CheckConnectivity(Occt.Precision.Confusion());
+        return CheckConnectivity(Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>
@@ -92,7 +93,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
             ComputeJointValues(ShapeExtend_Natural);
         }
 
-        return (CheckConnectivity(Occt.Precision.Confusion()) ? ok : false);
+        return (CheckConnectivity(Kerf.Engine.Foundation.Precision.Confusion()) ? ok : false);
     }
 
     /// <summary>The number of patches in U.</summary>
@@ -158,7 +159,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
         for (int i = 1, j = UJoints.Lower(); i <= NbU + 1; i++, j++)
         {
             UJointValues.SetValue(i, UJoints[j]);
-            if (i > 1 && UJoints[j] - UJoints[j - 1] < Occt.Precision.PConfusion())
+            if (i > 1 && UJoints[j] - UJoints[j - 1] < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
@@ -183,7 +184,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
         for (int i = 1, j = VJoints.Lower(); i <= NbV + 1; i++, j++)
         {
             VJointValues.SetValue(i, VJoints[j]);
-            if (i > 1 && VJoints[j] - VJoints[j - 1] < Occt.Precision.PConfusion())
+            if (i > 1 && VJoints[j] - VJoints[j - 1] < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
@@ -301,7 +302,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>The indices of the patch holding the global point.</summary>
-    public void LocateUVPoint(in gp_Pnt2d pnt, out int i, out int j)
+    public void LocateUVPoint(in Point2D pnt, out int i, out int j)
     {
         i = LocateUParameter(pnt.X());
         j = LocateVParameter(pnt.Y());
@@ -311,7 +312,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     public Geom_Surface Patch(double U, double V) => Shared(myPatches!.Value(LocateUParameter(U), LocateVParameter(V)));
 
     /// <summary>The patch holding the global point. Frozen.</summary>
-    public Geom_Surface Patch(in gp_Pnt2d pnt) => Shared(myPatches!.Value(LocateUParameter(pnt.X()), LocateVParameter(pnt.Y())));
+    public Geom_Surface Patch(in Point2D pnt) => Shared(myPatches!.Value(LocateUParameter(pnt.X()), LocateVParameter(pnt.Y())));
 
     /// <summary>The global U of the local parameter u on patch (i, j).</summary>
     public double ULocalToGlobal(int i, int j, double u)
@@ -330,12 +331,12 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>The global point of the local point uv on patch (i, j).</summary>
-    public gp_Pnt2d LocalToGlobal(int i, int j, in gp_Pnt2d uv)
+    public Point2D LocalToGlobal(int i, int j, in Point2D uv)
     {
         myPatches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
         double scaleu = (myUJointValues!.Value(i + 1) - myUJointValues.Value(i)) / (u2 - u1);
         double scalev = (myVJointValues!.Value(j + 1) - myVJointValues.Value(j)) / (v2 - v1);
-        return new gp_Pnt2d(uv.X() * scaleu
+        return new Point2D(uv.X() * scaleu
                             + (myUJointValues.Value(i)
                                - u1 * scaleu), // ! this formula is stable if u1 or v1 is infinite
                             uv.Y() * scalev + (myVJointValues.Value(j) - v1 * scalev));
@@ -358,12 +359,12 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     /// <summary>The local point on patch (i, j) of the global point UV.</summary>
-    public gp_Pnt2d GlobalToLocal(int i, int j, in gp_Pnt2d UV)
+    public Point2D GlobalToLocal(int i, int j, in Point2D UV)
     {
         myPatches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
         double scaleu = (u2 - u1) / (myUJointValues!.Value(i + 1) - myUJointValues.Value(i));
         double scalev = (v2 - v1) / (myVJointValues!.Value(j + 1) - myVJointValues.Value(j));
-        return new gp_Pnt2d(
+        return new Point2D(
             UV.X() * scaleu
             + (u1
                - myUJointValues.Value(i) * scaleu), // ! this formula is stable if u1 or v1 is infinite
@@ -374,26 +375,26 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     /// The transformation from the global parameters to the local ones of patch (i, j), as a 2D transformation
     /// <paramref name="Trsf"/> (applied after scaling U by <paramref name="uFact"/>). True unless it is the identity.
     /// </summary>
-    public bool GlobalToLocalTransformation(int i, int j, out double uFact, out gp_Trsf2d Trsf)
+    public bool GlobalToLocalTransformation(int i, int j, out double uFact, out Transform2D Trsf)
     {
         myPatches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
 
         double scaleu = (u2 - u1) / (myUJointValues!.Value(i + 1) - myUJointValues.Value(i));
         double scalev = (v2 - v1) / (myVJointValues!.Value(j + 1) - myVJointValues.Value(j));
-        var shift = new gp_Vec2d(u1 / scaleu - myUJointValues.Value(i), v1 / scalev - myVJointValues.Value(j));
+        var shift = new Vector2D(u1 / scaleu - myUJointValues.Value(i), v1 / scalev - myVJointValues.Value(j));
 
         uFact = scaleu / scalev;
-        gp_Trsf2d Shift = new(), Scale = new();
+        Transform2D Shift = new(), Scale = new();
         if (shift.X() != 0.0 || shift.Y() != 0.0)
         {
             Shift.SetTranslation(shift);
         }
         if (scalev != 1.0)
         {
-            Scale.SetScale(new gp_Pnt2d(0, 0), scalev);
+            Scale.SetScale(new Point2D(0, 0), scalev);
         }
         Trsf = Scale * Shift;
-        return uFact != 1.0 || Trsf.Form() != gp_TrsfForm.gp_Identity;
+        return uFact != 1.0 || Trsf.Form() != TransformForm.Identity;
     }
 
     //=======================================================================
@@ -401,7 +402,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     //=======================================================================
 
     /// <summary>Transforms each patch (a frozen patch is copied first).</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
         if (myPatches is null)
@@ -415,7 +416,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
                 // OCCT.NET: frozen: OCCT transforms the patch in place, which may be shared; the port transforms its
                 // own copy of a frozen patch.
                 Geom_Surface aPatch = myPatches.Value(i, j);
-                if (aPatch.IsFrozen())
+                if (aPatch.IsFrozen)
                 {
                     aPatch = (Geom_Surface)aPatch.Copy();
                     myPatches.SetValue(i, j, aPatch);
@@ -502,7 +503,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     public override Geom_Curve VIso(double V) => null!; // OCCT returns a null handle
 
     /// <summary>C0.</summary>
-    public override GeomAbs_Shape Continuity() => GeomAbs_C0;
+    public override Continuity Continuity() => C0;
 
     /// <summary>True for N &lt;= 0 only.</summary>
     public override bool IsCNu(int N) => N <= 0;
@@ -516,11 +517,11 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     /// <summary>True if the first and last V columns meet (computed by <see cref="CheckConnectivity"/>).</summary>
     public override bool IsVClosed() => myVClosed;
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
         int i = LocateUParameter(U);
         int j = LocateVParameter(V);
-        gp_Pnt2d uv = GlobalToLocal(i, j, new gp_Pnt2d(U, V));
+        Point2D uv = GlobalToLocal(i, j, new Point2D(U, V));
         return myPatches!.Value(i, j).EvalD0(uv.X(), uv.Y());
     }
 
@@ -529,7 +530,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     {
         int i = LocateUParameter(U);
         int j = LocateVParameter(V);
-        gp_Pnt2d uv = GlobalToLocal(i, j, new gp_Pnt2d(U, V));
+        Point2D uv = GlobalToLocal(i, j, new Point2D(U, V));
         return myPatches!.Value(i, j).EvalD1(uv.X(), uv.Y());
     }
 
@@ -537,7 +538,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     {
         int i = LocateUParameter(U);
         int j = LocateVParameter(V);
-        gp_Pnt2d uv = GlobalToLocal(i, j, new gp_Pnt2d(U, V));
+        Point2D uv = GlobalToLocal(i, j, new Point2D(U, V));
         return myPatches!.Value(i, j).EvalD2(uv.X(), uv.Y());
     }
 
@@ -545,25 +546,25 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     {
         int i = LocateUParameter(U);
         int j = LocateVParameter(V);
-        gp_Pnt2d uv = GlobalToLocal(i, j, new gp_Pnt2d(U, V));
+        Point2D uv = GlobalToLocal(i, j, new Point2D(U, V));
         return myPatches!.Value(i, j).EvalD3(uv.X(), uv.Y());
     }
 
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         int i = LocateUParameter(U);
         int j = LocateVParameter(V);
-        gp_Pnt2d uv = GlobalToLocal(i, j, new gp_Pnt2d(U, V));
+        Point2D uv = GlobalToLocal(i, j, new Point2D(U, V));
         return myPatches!.Value(i, j).EvalDN(uv.X(), uv.Y(), Nu, Nv);
     }
 
     /// <summary>The point at the global parameters.</summary>
-    public gp_Pnt Value(in gp_Pnt2d pnt)
+    public Point3D Value(in Point2D pnt)
     {
         int i = LocateUParameter(pnt.X());
         int j = LocateVParameter(pnt.Y());
-        gp_Pnt2d uv = GlobalToLocal(i, j, pnt);
-        myPatches!.Value(i, j).D0(uv.X(), uv.Y(), out gp_Pnt point);
+        Point2D uv = GlobalToLocal(i, j, pnt);
+        myPatches!.Value(i, j).D0(uv.X(), uv.Y(), out Point3D point);
         return point;
     }
 
@@ -625,7 +626,7 @@ public class ShapeExtend_CompositeSurface : Geom_Surface
     }
 
     private static double LimitValue(double par) =>
-        Occt.Precision.IsInfinite(par) ? (par < 0 ? -10000.0 : 10000.0) : par;
+        Kerf.Engine.Foundation.Precision.IsInfinite(par) ? (par < 0 ? -10000.0 : 10000.0) : par;
 
     private static void GetLimitedBounds(Geom_Surface surf, out double U1, out double U2, out double V1, out double V2)
     {

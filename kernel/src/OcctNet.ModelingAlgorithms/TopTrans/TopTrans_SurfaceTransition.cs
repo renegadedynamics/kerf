@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -31,9 +32,9 @@ public class TopTrans_SurfaceTransition
     private const int BEFORE = 2;
     private const int AFTER = 1;
 
-    private gp_Dir myTgt = new();
-    private gp_Dir myNorm = new();
-    private gp_Dir beafter = new();
+    private Direction3D myTgt = new();
+    private Direction3D myNorm = new();
+    private Direction3D beafter = new();
     private double myCurvRef;
     private readonly NCollection_Array2<double> myAng;
     private readonly NCollection_Array2<double> myCurv;
@@ -56,7 +57,7 @@ public class TopTrans_SurfaceTransition
     /// Initializes the transition with the local description of the intersection curve and of the reference
     /// surface. <paramref name="Norm"/> must be oriented outside the geometric matter.
     /// </summary>
-    public void Reset(in gp_Dir Tgt, in gp_Dir Norm, in gp_Dir MaxD, in gp_Dir MinD, double MaxCurv, double MinCurv)
+    public void Reset(in Direction3D Tgt, in Direction3D Norm, in Direction3D MaxD, in Direction3D MinD, double MaxCurv, double MinCurv)
     {
         myIsDefined = false;
 
@@ -64,7 +65,7 @@ public class TopTrans_SurfaceTransition
         myTgt = Tgt;
         beafter = Norm ^ Tgt;
 
-        double tola = Precision.Angular();
+        double tola = global::Kerf.Engine.Foundation.Precision.Angular();
         bool curismax = Math.Abs(MaxD.Dot(Tgt)) < tola;
         bool curismin = Math.Abs(MinD.Dot(Tgt)) < tola;
 
@@ -115,7 +116,7 @@ public class TopTrans_SurfaceTransition
     }
 
     /// <summary>Initializes the transition with the local description of a straight line.</summary>
-    public void Reset(in gp_Dir Tgt, in gp_Dir Norm)
+    public void Reset(in Direction3D Tgt, in Direction3D Norm)
     {
         myIsDefined = false;
 
@@ -146,7 +147,7 @@ public class TopTrans_SurfaceTransition
     /// intersection, REVERSED after it, INTERNAL that the intersection is inside the face.
     /// <paramref name="Norm"/> must be oriented outside the geometric matter.
     /// </remarks>
-    public void Compare(double Tole, in gp_Dir Norm, in gp_Dir MaxD, in gp_Dir MinD, double MaxCurv, double MinCurv,
+    public void Compare(double Tole, in Direction3D Norm, in Direction3D MaxD, in Direction3D MinD, double MaxCurv, double MinCurv,
                         TopAbs_Orientation S, TopAbs_Orientation O)
     {
         if (!myIsDefined)
@@ -155,7 +156,7 @@ public class TopTrans_SurfaceTransition
         }
 
         double Curv = 0.0;
-        double tola = (Tole > 0.0) ? Tole : Precision.Angular();
+        double tola = (Tole > 0.0) ? Tole : global::Kerf.Engine.Foundation.Precision.Angular();
         bool curismax = Math.Abs(MaxD.Dot(myTgt)) < tola;
         bool curismin = Math.Abs(MinD.Dot(myTgt)) < tola;
         if (!curismax && !curismin)
@@ -183,7 +184,7 @@ public class TopTrans_SurfaceTransition
             Curv = 0.0;
         }
 
-        gp_Dir dironF = FUN_nCinsideS(myTgt, Norm);
+        Direction3D dironF = FUN_nCinsideS(myTgt, Norm);
         double prod = (dironF ^ Norm).Dot(myTgt);
         if (prod < 0.0)
         {
@@ -250,7 +251,7 @@ public class TopTrans_SurfaceTransition
     }
 
     /// <summary>Adds a plane or a cylindrical face to the boundary.</summary>
-    public void Compare(double Tole, in gp_Dir Norm, TopAbs_Orientation S, TopAbs_Orientation O)
+    public void Compare(double Tole, in Direction3D Norm, TopAbs_Orientation S, TopAbs_Orientation O)
     {
         if (!myIsDefined)
         {
@@ -260,7 +261,7 @@ public class TopTrans_SurfaceTransition
         // oriented Ang(beafter,dironF),
         // dironF normal to the curve, oriented INSIDE F, the added oriented support
         double Ang = FUN_Ang(myNorm, beafter, myTgt, Norm, O);
-        double tola = (Tole > 0.0) ? Tole : Precision.Angular();
+        double tola = (Tole > 0.0) ? Tole : global::Kerf.Engine.Foundation.Precision.Angular();
 
         // i = 0,1,2 : cos = 0,>0,<0
         // j = 0,1,2 : sin = 0,>0,<0
@@ -416,14 +417,14 @@ public class TopTrans_SurfaceTransition
     private static bool M_UNKNOWN(TopAbs_State st) => st == TopAbs_UNKNOWN;
 
     // Modified: eap Mar 25 2002 (occ102,occ227), touch case
-    private static gp_Dir FUN_nCinsideS(in gp_Dir tgC, in gp_Dir ngS)
+    private static Direction3D FUN_nCinsideS(in Direction3D tgC, in Direction3D ngS)
     {
         // Give us a curve C on surface S, <parOnC>, a parameter
         // Purpose : compute normal vector to C, tangent to S at
         //           given point , oriented INSIDE S
         // <tgC> : geometric tangent at point of <parOnC>
         // <ngS> : geometric normal at point of <parOnC>
-        gp_Dir XX = ngS ^ tgC;
+        Direction3D XX = ngS ^ tgC;
         return XX;
     }
 
@@ -442,9 +443,9 @@ public class TopTrans_SurfaceTransition
         return 0;
     }
 
-    private static double FUN_Ang(in gp_Dir _, in gp_Dir beafter, in gp_Dir TgC, in gp_Dir Norm, TopAbs_Orientation O)
+    private static double FUN_Ang(in Direction3D _, in Direction3D beafter, in Direction3D TgC, in Direction3D Norm, TopAbs_Orientation O)
     {
-        gp_Dir dironF = FUN_nCinsideS(TgC, Norm);
+        Direction3D dironF = FUN_nCinsideS(TgC, Norm);
         if (M_REVERSED(O))
         {
             dironF.Reverse();

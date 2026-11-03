@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -20,16 +22,16 @@ namespace Occt;
 public sealed class LocOpe_LinearForm
 {
     private TopoDS_Shape myBase = new();
-    private gp_Vec myVec = new();
-    private gp_Vec myTra = new();
+    private Vector3D myVec = new();
+    private Vector3D myTra = new();
     private bool myDone;
     private bool myIsTrans;
     private TopoDS_Shape myRes = new();
     private TopoDS_Shape myFirstShape = new();
     private TopoDS_Shape myLastShape = new();
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
-    private gp_Pnt myPnt1 = new();
-    private gp_Pnt myPnt2 = new();
+    private Point3D myPnt1 = new();
+    private Point3D myPnt2 = new();
     private LocOpe_WorkingShapes myWork = new();
 
     public LocOpe_LinearForm()
@@ -38,17 +40,17 @@ public sealed class LocOpe_LinearForm
         myIsTrans = false;
     }
 
-    public LocOpe_LinearForm(in TopoDS_Shape Base, in gp_Vec V, in gp_Pnt Pnt1, in gp_Pnt Pnt2)
+    public LocOpe_LinearForm(in TopoDS_Shape Base, in Vector3D V, in Point3D Pnt1, in Point3D Pnt2)
     {
         Perform(Base, V, Pnt1, Pnt2);
     }
 
-    public LocOpe_LinearForm(in TopoDS_Shape Base, in gp_Vec V, in gp_Vec Vectra, in gp_Pnt Pnt1, in gp_Pnt Pnt2)
+    public LocOpe_LinearForm(in TopoDS_Shape Base, in Vector3D V, in Vector3D Vectra, in Point3D Pnt1, in Point3D Pnt2)
     {
         Perform(Base, V, Vectra, Pnt1, Pnt2);
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Vec V, in gp_Pnt Pnt1, in gp_Pnt Pnt2)
+    public void Perform(in TopoDS_Shape Base, in Vector3D V, in Point3D Pnt1, in Point3D Pnt2)
     {
         myIsTrans = false;
         myMap.Clear();
@@ -67,7 +69,7 @@ public sealed class LocOpe_LinearForm
         IntPerf();
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Vec V, in gp_Vec Vectra, in gp_Pnt Pnt1, in gp_Pnt Pnt2)
+    public void Perform(in TopoDS_Shape Base, in Vector3D V, in Vector3D Vectra, in Point3D Pnt1, in Point3D Pnt2)
     {
         myIsTrans = true;
         myTra = Vectra;
@@ -93,7 +95,7 @@ public sealed class LocOpe_LinearForm
         BRepTools_Modifier Modif = new();
         if (myIsTrans)
         {
-            gp_Trsf T = new();
+            Transform3D T = new();
             T.SetTranslation(myTra);
             BRepTools_TrsfModification modbase = new(T);
             Modif.Init(theBase);
@@ -235,7 +237,7 @@ public sealed class LocOpe_LinearForm
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -259,5 +261,5 @@ public sealed class LocOpe_LinearForm
     internal NCollection_List<TopoDS_Shape> InternalShapes(in TopoDS_Shape S) => myMap[myWork.Copied(S)];
 
     // the points OCCT keeps and doesn't read
-    internal (gp_Pnt, gp_Pnt) Points() => (myPnt1, myPnt2);
+    internal (Point3D, Point3D) Points() => (myPnt1, myPnt2);
 }

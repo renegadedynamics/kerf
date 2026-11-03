@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -24,7 +26,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     private readonly double VFirst;
     private readonly double VLast;
     private readonly NCollection_Sequence<TopoDS_Shape> myShapes = new();
-    private readonly NCollection_Sequence<gp_Trsf> myTrsfs = new();
+    private readonly NCollection_Sequence<Transform3D> myTrsfs = new();
     private readonly NCollection_Sequence<double> myParams = new();
     private NCollection_HArray2<TopoDS_Shape>? myEdges;
     private Geom_BSplineSurface? mySurface;
@@ -50,7 +52,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             aMults[1] = 2;
             aMults[2] = 2;
 
-            NCollection_Array1<gp_Pnt> aPoles = new(1, 2);
+            NCollection_Array1<Point3D> aPoles = new(1, 2);
             TopExp.Vertices(theEdge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
             aPoles[1] = BRep_Tool.Pnt(vf);
             aPoles[2] = BRep_Tool.Pnt(vl);
@@ -60,7 +62,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         else
         {
             // get the curve of the edge
-            Geom_Curve aCurve = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out double aFirst, out double aLast)!;
+            Geom_Curve aCurve = BRep_Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast)!;
 
             // convert its part used by edge to bspline; note that if edge curve is bspline,
             // approximation or conversion made via trimmed curve is still needed -- it will copy it,
@@ -68,7 +70,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             Geom_TrimmedCurve aTrimCurve = new(aCurve, aFirst, aLast);
 
             Geom_Curve aCurveTemp = aTrimCurve; // to avoid ambiguity
-            GeomConvert_ApproxCurve anAppr = new(aCurveTemp, Precision.Confusion(), GeomAbs_C1, 16, 14);
+            GeomConvert_ApproxCurve anAppr = new(aCurveTemp, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
             if (anAppr.HasResult())
             {
                 aBSCurve = anAppr.InternalCurve();
@@ -80,14 +82,14 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             }
 
             // apply transformation if needed
-            if (!aLoc.IsIdentity())
+            if (!aLoc.IsIdentity)
             {
                 aBSCurve.Transform(aLoc.Transformation());
             }
 
             // reparameterize to [0,1]
             NCollection_Array1<double> aKnots = new(aBSCurve.InternalKnots());
-            BSplCLib.Reparametrize(0.0, 1.0, aKnots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aKnots);
             aBSCurve.SetKnots(aKnots);
         }
 
@@ -124,7 +126,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             jdeb++;
             edge = TopoDS.Edge(shapes.Value(1, 1));
             TopExp.Vertices(edge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
-            NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+            NCollection_Array1<Point3D> Extremities = new(1, 2);
             Extremities[1] = BRep_Tool.Pnt(vf);
             Extremities[2] = BRep_Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
@@ -176,7 +178,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
                     }
                     else
                     {
-                        epsV = Precision.Confusion();
+                        epsV = global::Kerf.Engine.Foundation.Precision.Confusion();
                     }
                     Bof = CompBS.Add(curvBS, epsV, true, false, 1);
                     if (!Bof)
@@ -204,7 +206,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         {
             edge = TopoDS.Edge(shapes.Value(NbEdges, NbSects));
             TopExp.Vertices(edge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
-            NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+            NCollection_Array1<Point3D> Extremities = new(1, 2);
             Extremities[1] = BRep_Tool.Pnt(vf);
             Extremities[2] = BRep_Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
@@ -223,7 +225,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             HPar.SetValue(i, @params[i]);
         }
         section.SetParam(HPar);
-        section.Perform(Precision.PConfusion());
+        section.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         GeomFill_Line line = new(NbSects);
         int nbIt = 0, degmin = 2, degmax = 6;
         bool knownP = true;
@@ -254,7 +256,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             nvp--;
         }
 
-        NCollection_Array2<gp_Pnt> poles = new(1, nup, 1, nvp);
+        NCollection_Array2<Point3D> poles = new(1, nup, 1, nvp);
         NCollection_Array2<double> weights = new(1, nup, 1, nvp);
         for (j = 1; j <= nvp; j++)
         {
@@ -358,7 +360,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     /// Not done if the parameters don't increase.
     /// </summary>
     public BRepFill_NSections(NCollection_Sequence<TopoDS_Shape> S,
-                              NCollection_Sequence<gp_Trsf> Transformations,
+                              NCollection_Sequence<Transform3D> Transformations,
                               NCollection_Sequence<double> P,
                               double VF,
                               double VL,
@@ -538,7 +540,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
         myLaws = new NCollection_HArray1<GeomFill_SectionLaw>(1, NbEdge);
 
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         mySurface = totalsurf(myEdges.Array2(),
                               myShapes.Length(),
                               NbEdge,
@@ -572,7 +574,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
                     if (BRep_Tool.Degenerated(E))
                     {
                         TopExp.Vertices(E, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
-                        NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+                        NCollection_Array1<Point3D> Extremities = new(1, 2);
                         Extremities[1] = BRep_Tool.Pnt(vf);
                         Extremities[2] = BRep_Tool.Pnt(vl);
                         NCollection_Array1<double> Bounds = new(1, 2);
@@ -640,21 +642,21 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
         BRep_Builder B = new();
         TopoDS_Vertex V = new();
         B.MakeVertex(ref V);
-        gp_Pnt P;
+        Point3D P;
 
         if (Index <= myEdges!.ColLength())
         {
             Geom_BSplineCurve Curve = (Geom_BSplineCurve)LawSurface(Index).VIso(Param);
             double first = Curve.FirstParameter();
             Curve.D0(first, out P);
-            B.UpdateVertex(V, P, Precision.Confusion());
+            B.UpdateVertex(V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else if (Index == myEdges.ColLength() + 1)
         {
             Geom_BSplineCurve Curve = (Geom_BSplineCurve)LawSurface(Index - 1).VIso(Param);
             double last = Curve.LastParameter();
             Curve.D0(last, out P);
-            B.UpdateVertex(V, P, Precision.Confusion());
+            B.UpdateVertex(V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         V.TShape()?.FreezeGraph();
@@ -669,7 +671,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     /// <summary>The gap between the end of the edge of rank <paramref name="Index"/> and the start of the next one.</summary>
     public override double VertexTol(int Index, double Param)
     {
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         int I1, I2;
         if ((Index == 0) || (Index == myEdges!.ColLength()))
         {
@@ -688,15 +690,15 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
         GeomFill_SectionLaw Loi;
         int NbPoles, NbKnots, Degree;
-        NCollection_HArray1<gp_Pnt> Poles;
+        NCollection_HArray1<Point3D> Poles;
         NCollection_HArray1<double> Knots, Weigth;
         NCollection_HArray1<int> Mults;
         Geom_BSplineCurve BS;
-        gp_Pnt PFirst;
+        Point3D PFirst;
 
         Loi = myLaws!.Value(I1);
         Loi.SectionShape(out NbPoles, out NbKnots, out Degree);
-        Poles = new NCollection_HArray1<gp_Pnt>(1, NbPoles);
+        Poles = new NCollection_HArray1<Point3D>(1, NbPoles);
         Weigth = new NCollection_HArray1<double>(1, NbPoles);
         Loi.D0(Param, Poles.ChangeArray1(), Weigth.ChangeArray1());
         Knots = new NCollection_HArray1<double>(1, NbKnots);
@@ -713,7 +715,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
         Loi = myLaws.Value(I2);
         Loi.SectionShape(out NbPoles, out NbKnots, out Degree);
-        Poles = new NCollection_HArray1<gp_Pnt>(1, NbPoles);
+        Poles = new NCollection_HArray1<Point3D>(1, NbPoles);
         Weigth = new NCollection_HArray1<double>(1, NbPoles);
         Loi.D0(Param, Poles.ChangeArray1(), Weigth.ChangeArray1());
         Knots = new NCollection_HArray1<double>(1, NbKnots);
@@ -760,12 +762,12 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
     //=================================================================================================
 
     /// <summary>The least continuity over the sections at the vertex between their edges of ranks <paramref name="Index"/> and next.</summary>
-    public override GeomAbs_Shape Continuity(int Index, double TolAngular)
+    public override Continuity Continuity(int Index, double TolAngular)
     {
 
         int jj;
-        GeomAbs_Shape cont_jj;
-        GeomAbs_Shape cont = GeomAbs_C0;
+        Continuity cont_jj;
+        Continuity cont = C0;
 
         for (jj = 1; jj <= myShapes.Length(); jj++)
         {
@@ -775,7 +777,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
             {
                 if (!uclosed)
                 {
-                    return GeomAbs_C0; // The least possible error
+                    return C0; // The least possible error
                 }
 
                 Edge1 = TopoDS.Edge(myEdges!.Value(myEdges.ColLength(), jj));
@@ -807,7 +809,7 @@ public sealed class BRepFill_NSections : BRepFill_SectionLaw
 
             if (BRep_Tool.Degenerated(Edge1) || BRep_Tool.Degenerated(Edge2))
             {
-                cont_jj = GeomAbs_CN;
+                cont_jj = CN;
             }
             else
             {

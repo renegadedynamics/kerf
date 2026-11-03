@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Describes a Complex Entity (Plex) as a list of Simple ones.</summary>
 public class StepData_ECDescr : StepData_EDescr
 {
-    private readonly NCollection_Sequence<Standard_Transient> thelist = new();
+    private readonly NCollection_Sequence<Transient> thelist = new();
 
     public StepData_ECDescr()
     {

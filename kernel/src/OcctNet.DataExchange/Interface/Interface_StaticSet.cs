@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -172,11 +173,11 @@ public sealed class Interface_StaticSet
                 //  Recognition of the sub-case and routing
                 if (CStringChar(init, 0) == 'i' && CStringChar(init, 2) == 'i')
                 {
-                    unstat.SetIntegerLimit(false, atoi(init.Substring(iblc)));
+                    unstat.SetIntegerLimit(false, Atoi(init.Substring(iblc)));
                 }
                 else if (CStringChar(init, 0) == 'i' && CStringChar(init, 2) == 'a')
                 {
-                    unstat.SetIntegerLimit(true, atoi(init.Substring(iblc)));
+                    unstat.SetIntegerLimit(true, Atoi(init.Substring(iblc)));
                 }
                 else if (CStringChar(init, 0) == 'r' && CStringChar(init, 2) == 'i')
                 {
@@ -192,11 +193,11 @@ public sealed class Interface_StaticSet
                 }
                 else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'm')
                 {
-                    unstat.StartEnum(atoi(init.Substring(iblc)), true);
+                    unstat.StartEnum(Atoi(init.Substring(iblc)), true);
                 }
                 else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'n')
                 {
-                    unstat.StartEnum(atoi(init.Substring(iblc)), false);
+                    unstat.StartEnum(Atoi(init.Substring(iblc)), false);
                 }
                 else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'v')
                 {
@@ -574,9 +575,9 @@ public sealed class Interface_StaticSet
 
     /// <summary>
     /// Declares the standard parameters of data exchange (family "XSTEP": read and write precision, surface curves,
-    /// encode regularity), once per set, and loads data exchange's messages into <see cref="Message_MsgFile"/>.
+    /// encode regularity), once per set, and loads data exchange's messages into <see cref="MsgFile"/>.
     /// </summary>
-    /// <exception cref="Standard_ProgramError">The messages can't be loaded (never with the compiled-in text).</exception>
+    /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
     public void Standards()
     {
         if (!StartInit("Interface_Static::Standards"))
@@ -649,7 +650,7 @@ public sealed class Interface_StaticSet
     }
 
     /// <summary>
-    /// Loads data exchange's messages (XSMessage's texts) into <see cref="Message_MsgFile"/>, once per process,
+    /// Loads data exchange's messages (XSMessage's texts) into <see cref="MsgFile"/>, once per process,
     /// unless they are there already: the end of OCCT's <c>Interface_Static::Standards</c>.
     /// </summary>
     /// <remarks>
@@ -657,18 +658,18 @@ public sealed class Interface_StaticSet
     /// compiled in, OCCT's XSTEP.us (as decision 975 for Shape Healing). Process-wide state, as OCCT's, behind a lock:
     /// loading the same texts again changes nothing.
     /// </remarks>
-    /// <exception cref="Standard_ProgramError">The messages can't be loaded (never with the compiled-in text).</exception>
+    /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
     public static void LoadMessages()
     {
         lock (theMessagesLock)
         {
-            if (!Message_MsgFile.HasMsg("XSTEP_1"))
+            if (!MsgFile.HasMsg("XSTEP_1"))
             {
                 // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_XSMessage", "XSTEP") left out (decision 1181)
-                Message_MsgFile.LoadFromString(XSMessage_XSTEP_us.Text);
-                if (!Message_MsgFile.HasMsg("XSTEP_1"))
+                MsgFile.LoadFromString(XSMessage_XSTEP_us.Text);
+                if (!MsgFile.HasMsg("XSTEP_1"))
                 {
-                    throw new Standard_ProgramError(
+                    throw new ProgramErrorException(
                         "Critical Error - message resources for Interface_Static are invalid or undefined!");
                 }
             }

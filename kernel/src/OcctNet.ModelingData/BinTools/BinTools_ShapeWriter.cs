@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -18,13 +21,13 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
 {
     // positions of the objects already stored
     private readonly NCollection_DataMap<TopoDS_Shape, ulong> myShapePos = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopLoc_Location, ulong> myLocationPos = new();
+    private readonly NCollection_DataMap<Placement, ulong> myLocationPos = new();
     private readonly NCollection_DataMap<Geom_Curve, ulong> myCurvePos = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_DataMap<Geom2d_Curve, ulong> myCurve2dPos = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_DataMap<Geom_Surface, ulong> mySurfacePos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Poly_Polygon3D, ulong> myPolygon3dPos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Poly_PolygonOnTriangulation, ulong> myPolygonPos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Poly_Triangulation, ulong> myTriangulationPos = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_DataMap<Polygon3D, ulong> myPolygon3dPos = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_DataMap<PolygonOnTriangulation, ulong> myPolygonPos = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_DataMap<Triangulation, ulong> myTriangulationPos = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>A writer that has written nothing yet.</summary>
     public BinTools_ShapeWriter()
@@ -53,9 +56,9 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the location, or a reference to it if it has been written already.</summary>
-    public virtual void WriteLocation(BinTools_OStream theStream, in TopLoc_Location theLocation)
+    public virtual void WriteLocation(BinTools_OStream theStream, in Placement theLocation)
     {
-        if (theLocation.IsIdentity())
+        if (theLocation.IsIdentity)
         {
             theStream = theStream << BinTools_ObjectType.BinTools_ObjectType_EmptyLocation;
             return;
@@ -70,10 +73,10 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         ulong aNewLoc = theStream.Position();
         try
         {
-            TopLoc_Location aL2 = theLocation.NextLocation();
-            bool isSimple = aL2.IsIdentity();
+            Placement aL2 = theLocation.NextLocation();
+            bool isSimple = aL2.IsIdentity;
             int aPower = theLocation.FirstPower();
-            TopLoc_Location aL1 = new(theLocation.FirstDatum());
+            Placement aL1 = new(theLocation.FirstDatum());
             bool elementary = (isSimple && aPower == 1);
             if (elementary)
             {
@@ -84,9 +87,9 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
                 theStream = theStream << BinTools_ObjectType.BinTools_ObjectType_Location;
                 WriteLocation(theStream, aL1);
                 theStream = theStream << aPower;
-                while (!aL2.IsIdentity())
+                while (!aL2.IsIdentity)
                 {
-                    aL1 = new TopLoc_Location(aL2.FirstDatum());
+                    aL1 = new Placement(aL2.FirstDatum());
                     aPower = aL2.FirstPower();
                     aL2 = aL2.NextLocation();
                     WriteLocation(theStream, aL1);
@@ -116,7 +119,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
             return;
         }
 
-        TopoDS_Shape aShape = theShape.Located(new TopLoc_Location());
+        TopoDS_Shape aShape = theShape.Located(new Placement());
         if (myShapePos.Find(aShape, out ulong anExisting))
         {
             // shape is already there, so, write reference to it
@@ -162,7 +165,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
                 {
                     TopoDS_Vertex aV = TopoDS.Vertex(aShape);
                     theStream = theStream << BRep_Tool.Tolerance(aV);
-                    gp_Pnt aP = BRep_Tool.Pnt(aV);
+                    Point3D aP = BRep_Tool.Pnt(aV);
                     theStream = theStream << aP;
                     BRep_TVertex aTV = (BRep_TVertex)aShape.TShape()!;
                     foreach (BRep_PointRepresentation aPR in aTV.Points())
@@ -307,7 +310,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
                             theStream = theStream << (byte)2;
                             WriteTriangulation(theStream,
                                                aTF.Triangulation(),
-                                               aTF.Triangulation()!.HasNormals()
+                                               aTF.Triangulation()!.HasNormals
                                                    && (IsWithNormals() || aTF.Surface() is null));
                         }
                         else
@@ -391,7 +394,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         BinTools_SurfaceSet.WriteSurface(theSurface, theStream);
     }
 
-    private void WritePolygon(BinTools_OStream theStream, Poly_Polygon3D? thePolygon)
+    private void WritePolygon(BinTools_OStream theStream, Polygon3D? thePolygon)
     {
         if (thePolygon is null)
         {
@@ -408,15 +411,15 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         myPolygon3dPos.Bind(thePolygon, theStream.Position());
         theStream = theStream << BinTools_ObjectType.BinTools_ObjectType_Polygon3d;
 
-        int aNbNodes = thePolygon.NbNodes();
-        theStream = theStream << aNbNodes << thePolygon.HasParameters() << thePolygon.Deflection();
-        NCollection_Array1<gp_Pnt> aNodes = thePolygon.Nodes();
+        int aNbNodes = thePolygon.NodeCount;
+        theStream = theStream << aNbNodes << thePolygon.HasParameters << thePolygon.Deflection();
+        NCollection_Array1<Point3D> aNodes = thePolygon.Nodes();
         for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
         {
             theStream = theStream << aNodes.Value(aNodeIter);
         }
 
-        if (thePolygon.HasParameters())
+        if (thePolygon.HasParameters)
         {
             NCollection_Array1<double> aParam = thePolygon.Parameters();
             for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
@@ -426,7 +429,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         }
     }
 
-    private void WritePolygon(BinTools_OStream theStream, Poly_PolygonOnTriangulation? thePolygon)
+    private void WritePolygon(BinTools_OStream theStream, PolygonOnTriangulation? thePolygon)
     {
         if (thePolygon is null)
         {
@@ -465,7 +468,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         }
     }
 
-    private void WriteTriangulation(BinTools_OStream theStream, Poly_Triangulation? theTriangulation, bool theNeedToWriteNormals)
+    private void WriteTriangulation(BinTools_OStream theStream, Triangulation? theTriangulation, bool theNeedToWriteNormals)
     {
         if (theTriangulation is null)
         {
@@ -482,9 +485,9 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
         myTriangulationPos.Bind(theTriangulation, theStream.Position());
         theStream = theStream << BinTools_ObjectType.BinTools_ObjectType_Triangulation;
 
-        int aNbNodes = theTriangulation.NbNodes();
-        int aNbTriangles = theTriangulation.NbTriangles();
-        theStream = theStream << aNbNodes << aNbTriangles << theTriangulation.HasUVNodes();
+        int aNbNodes = theTriangulation.NodeCount;
+        int aNbTriangles = theTriangulation.TriangleCount;
+        theStream = theStream << aNbNodes << aNbTriangles << theTriangulation.HasUVNodes;
         theStream = theStream << theNeedToWriteNormals << theTriangulation.Deflection();
 
         // write the 3d nodes
@@ -493,7 +496,7 @@ public class BinTools_ShapeWriter : BinTools_ShapeSetBase
             theStream = theStream << theTriangulation.Node(aNodeIter);
         }
 
-        if (theTriangulation.HasUVNodes())
+        if (theTriangulation.HasUVNodes)
         {
             for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
             {

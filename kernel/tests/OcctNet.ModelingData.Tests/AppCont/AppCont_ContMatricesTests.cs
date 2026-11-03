@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class AppCont_ContMatricesTest
@@ -54,7 +58,7 @@ public class AppCont_ContMatricesTest
     {
         for (int aClasse = 2; aClasse <= 20; aClasse++)
         {
-            math_Matrix aMat = new(1, aClasse, 1, aClasse);
+            Matrix aMat = new(1, aClasse, 1, aClasse);
             AppCont_ContMatrices.MMatrix(aClasse, aMat);
 
             int n = aClasse - 1;
@@ -75,7 +79,7 @@ public class AppCont_ContMatricesTest
     {
         for (int aClasse = 2; aClasse <= 20; aClasse++)
         {
-            math_Matrix aMat = new(1, aClasse, 1, aClasse);
+            Matrix aMat = new(1, aClasse, 1, aClasse);
             AppCont_ContMatrices.MMatrix(aClasse, aMat);
 
             for (int i = 1; i <= aClasse; i++)
@@ -94,12 +98,12 @@ public class AppCont_ContMatricesTest
     {
         for (int aClasse = 2; aClasse <= 12; aClasse++)
         {
-            math_Matrix aMat = new(1, aClasse, 1, aClasse);
-            math_Matrix anInvMat = new(1, aClasse, 1, aClasse);
+            Matrix aMat = new(1, aClasse, 1, aClasse);
+            Matrix anInvMat = new(1, aClasse, 1, aClasse);
             AppCont_ContMatrices.MMatrix(aClasse, aMat);
             AppCont_ContMatrices.InvMMatrix(aClasse, anInvMat);
 
-            math_Matrix aProduct = anInvMat * aMat;
+            Matrix aProduct = anInvMat * aMat;
             for (int i = 1; i <= aClasse; i++)
             {
                 for (int j = 1; j <= aClasse; j++)
@@ -117,7 +121,7 @@ public class AppCont_ContMatricesTest
     {
         for (int aClasse = 2; aClasse <= 24; aClasse++)
         {
-            math_Matrix anInvMat = new(1, aClasse, 1, aClasse);
+            Matrix anInvMat = new(1, aClasse, 1, aClasse);
             AppCont_ContMatrices.InvMMatrix(aClasse, anInvMat);
 
             for (int i = 1; i <= aClasse; i++)
@@ -135,40 +139,40 @@ public class AppCont_ContMatricesTest
     public void LegacyRangeLimits()
     {
         {
-            math_Matrix aMat24 = new(1, 24, 1, 24);
-            math_Matrix aMat25 = new(1, 25, 1, 25);
+            Matrix aMat24 = new(1, 24, 1, 24);
+            Matrix aMat25 = new(1, 25, 1, 25);
             AppCont_ContMatrices.MMatrix(24, aMat24);
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.MMatrix(25, aMat25));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.MMatrix(25, aMat25));
         }
 
         {
-            math_Matrix anInv24 = new(1, 24, 1, 24);
-            math_Matrix anInv25 = new(1, 25, 1, 25);
+            Matrix anInv24 = new(1, 24, 1, 24);
+            Matrix anInv25 = new(1, 25, 1, 25);
             AppCont_ContMatrices.InvMMatrix(24, anInv24);
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.InvMMatrix(25, anInv25));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.InvMMatrix(25, anInv25));
         }
 
         {
-            math_Matrix anIBP26 = new(1, 24, 1, 24);
-            math_Matrix anIBP27 = new(1, 25, 1, 25);
+            Matrix anIBP26 = new(1, 24, 1, 24);
+            Matrix anIBP27 = new(1, 25, 1, 25);
             AppCont_ContMatrices.IBPMatrix(26, anIBP26);
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.IBPMatrix(27, anIBP27));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.IBPMatrix(27, anIBP27));
         }
 
         {
-            math_Matrix anIBT26 = new(1, 22, 1, 22);
-            math_Matrix anIBT27 = new(1, 23, 1, 23);
+            Matrix anIBT26 = new(1, 22, 1, 22);
+            Matrix anIBT27 = new(1, 23, 1, 23);
             AppCont_ContMatrices.IBTMatrix(26, anIBT26);
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.IBTMatrix(27, anIBT27));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.IBTMatrix(27, anIBT27));
         }
 
         {
-            math_Matrix aVB26x24 = new(1, 26, 1, 24);
-            math_Matrix aVB27x24 = new(1, 27, 1, 24);
-            math_Matrix aVB26x25 = new(1, 26, 1, 25);
+            Matrix aVB26x24 = new(1, 26, 1, 24);
+            Matrix aVB27x24 = new(1, 27, 1, 24);
+            Matrix aVB26x25 = new(1, 26, 1, 25);
             AppCont_ContMatrices.VBernstein(26, 24, aVB26x24);
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.VBernstein(27, 24, aVB27x24));
-            Assert.ThrowsAny<Standard_DimensionError>(() => AppCont_ContMatrices.VBernstein(26, 25, aVB26x25));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.VBernstein(27, 24, aVB27x24));
+            Assert.ThrowsAny<DimensionErrorException>(() => AppCont_ContMatrices.VBernstein(26, 25, aVB26x25));
         }
     }
 
@@ -179,7 +183,7 @@ public class AppCont_ContMatricesTest
         for (int aClasse = 3; aClasse <= 22; aClasse++)
         {
             int aDim = aClasse - 2;
-            math_Matrix anIBP = new(1, aDim, 1, aDim);
+            Matrix anIBP = new(1, aDim, 1, aDim);
             AppCont_ContMatrices.IBPMatrix(aClasse, anIBP);
 
             for (int i = 1; i <= aDim; i++)
@@ -199,7 +203,7 @@ public class AppCont_ContMatricesTest
         for (int aClasse = 5; aClasse <= 26; aClasse++)
         {
             int aDim = aClasse - 4;
-            math_Matrix anIBT = new(1, aDim, 1, aDim);
+            Matrix anIBT = new(1, aDim, 1, aDim);
             AppCont_ContMatrices.IBTMatrix(aClasse, anIBT);
 
             for (int i = 1; i <= aDim; i++)
@@ -220,12 +224,12 @@ public class AppCont_ContMatricesTest
         {
             foreach (int aNbPts in new[] { 4, 8, 12, 20, 24 })
             {
-                math_Matrix aVB = new(1, aClasse, 1, aNbPts);
+                Matrix aVB = new(1, aClasse, 1, aNbPts);
                 AppCont_ContMatrices.VBernstein(aClasse, aNbPts, aVB);
 
                 // Get Gauss-Legendre points on [-1, 1] and remap to [0, 1].
                 math_Vector aGaussP = new(1, aNbPts);
-                math.GaussPoints(aNbPts, aGaussP);
+                NumericTables.GaussPoints(aNbPts, aGaussP);
 
                 math_Vector aParams = new(1, aNbPts);
                 int aHalf = (aNbPts + 1) / 2;
@@ -265,7 +269,7 @@ public class AppCont_ContMatricesTest
         foreach (int aClasse in new[] { 3, 5, 10, 20 })
         {
             const int aNbPts = 12;
-            math_Matrix aVB = new(1, aClasse, 1, aNbPts);
+            Matrix aVB = new(1, aClasse, 1, aNbPts);
             AppCont_ContMatrices.VBernstein(aClasse, aNbPts, aVB);
 
             for (int j = 1; j <= aNbPts; j++)

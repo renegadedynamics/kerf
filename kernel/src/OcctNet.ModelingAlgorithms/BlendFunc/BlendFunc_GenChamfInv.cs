@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>The function of a general chamfer with one end on a surface's boundary.</summary>
@@ -65,14 +67,14 @@ public abstract class BlendFunc_GenChamfInv : Blend_FuncInv
             InfBound[4] = surf2.FirstVParameter();
             SupBound[3] = surf2.LastUParameter();
             SupBound[4] = surf2.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -85,14 +87,14 @@ public abstract class BlendFunc_GenChamfInv : Blend_FuncInv
             InfBound[4] = surf1.FirstVParameter();
             SupBound[3] = surf1.LastUParameter();
             SupBound[4] = surf1.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -102,7 +104,7 @@ public abstract class BlendFunc_GenChamfInv : Blend_FuncInv
     }
 
     /// <summary>Value then Derivatives; always true.</summary>
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         Value(X, F);
         Derivatives(X, D);

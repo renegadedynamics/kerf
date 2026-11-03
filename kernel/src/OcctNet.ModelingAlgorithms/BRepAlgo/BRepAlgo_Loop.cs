@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -125,7 +127,7 @@ public sealed class BRepAlgo_Loop
     {
         TopoDS_Vertex[] VB = [new(), new()];
         TopoDS_Vertex VRes = new();
-        gp_Pnt P, PC;
+        Point3D P, PC;
         bool OnStart = false, OnEnd = false;
         //// modified by jgv, 13.04.04 for OCC5634 ////
         TopExp.Vertices(E, out TopoDS_Vertex V1, out _);
@@ -252,7 +254,7 @@ public sealed class BRepAlgo_Loop
     // Whether E1's start and E2's end meet at V in the face's parametric space (100 times V's tolerance)
     private static bool SamePnt2d(in TopoDS_Vertex V, in TopoDS_Edge E1, in TopoDS_Edge E2, in TopoDS_Face F)
     {
-        gp_Pnt2d P1, P2;
+        Point2D P1, P2;
         TopoDS_Shape aLocalF = F.Oriented(TopAbs_FORWARD);
         TopoDS_Face FF = TopoDS.Face(aLocalF);
         Geom2d_Curve C1 = BRep_Tool.CurveOnSurface(E1, FF, out double f1, out double l1)!;
@@ -325,7 +327,7 @@ public sealed class BRepAlgo_Loop
                 u = f;
             }
 
-            gp_Pnt2d P2, PV = C.Value(u);
+            Point2D P2, PV = C.Value(u);
 
             for (itl.Initialize(LE); itl.More(); itl.Next())
             {
@@ -413,7 +415,7 @@ public sealed class BRepAlgo_Loop
                                    double theTolConf)
     {
         TopoDS_Vertex V1, V2, V;
-        gp_Pnt P1, P;
+        Point3D P1, P;
         BRep_Builder BB = new();
         for (int iV = 1; iV <= MVE.Extent(); iV++)
         {
@@ -496,7 +498,7 @@ public sealed class BRepAlgo_Loop
             }
             MVE.ChangeFromKey(V2).Append(E);
         }
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         if (BRep_Tool.IsClosed(E, S, L))
         {
             MVE.ChangeFromKey(V2).Append(E.Reversed());
@@ -821,13 +823,13 @@ public sealed class BRepAlgo_Loop
             // skl : I change "E" to "EE"
             TopoDS_Edge EE = TopoDS.Edge(it.Value());
             BRep_Tool.Range(EE, out double fpar, out double lpar);
-            if (lpar - fpar <= Precision.Confusion())
+            if (lpar - fpar <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 NE.Remove(it);
             }
             else
             {
-                BRep_Tool.UVPoints(EE, myFace, out gp_Pnt2d pf, out gp_Pnt2d pl);
+                BRep_Tool.UVPoints(EE, myFace, out Point2D pf, out Point2D pl);
                 if (pf.Distance(pl) <= Tol && !BRep_Tool.IsClosed(EE))
                 {
                     NE.Remove(it);
@@ -936,7 +938,7 @@ public sealed class BRepAlgo_Loop
             }
 
             double aMaxTol = 0.0;
-            NCollection_Array1<gp_Pnt> Points = new(1, aVlist.Extent());
+            NCollection_Array1<Point3D> Points = new(1, aVlist.Extent());
 
             NCollection_List<TopoDS_Shape>.Iterator itl = new(aVlist);
             int jj = 0;
@@ -945,12 +947,12 @@ public sealed class BRepAlgo_Loop
                 TopoDS_Vertex aVertex = TopoDS.Vertex(itl.Value());
                 double aTol = BRep_Tool.Tolerance(aVertex);
                 aMaxTol = Max(aMaxTol, aTol);
-                gp_Pnt aPnt = BRep_Tool.Pnt(aVertex);
+                Point3D aPnt = BRep_Tool.Pnt(aVertex);
                 Points[++jj] = aPnt;
             }
 
-            GeomLib.AxeOfInertia(Points, out gp_Ax2 anAxis, out _);
-            gp_Pnt aCentre = anAxis.Location();
+            GeomLib.AxeOfInertia(Points, out Frame3D anAxis, out _);
+            Point3D aCentre = anAxis.Location();
             double aMaxDist = 0.0;
             for (jj = 1; jj <= Points.Upper(); jj++)
             {

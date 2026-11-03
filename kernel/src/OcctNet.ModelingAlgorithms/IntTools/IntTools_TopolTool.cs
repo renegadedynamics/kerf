@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -41,7 +43,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     }
 
     /// <summary>Not implemented: throws Standard_NotImplemented, as in OCCT.</summary>
-    public override void Initialize() => throw new Standard_NotImplemented("IntTools_TopolTool::Initialize ()");
+    public override void Initialize() => throw new MethodNotImplementedException("IntTools_TopolTool::Initialize ()");
 
     /// <summary>Initializes the tool with the surface.</summary>
     public override void Initialize(Adaptor3d_Surface theSurface)
@@ -77,10 +79,10 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
             vsup = temp;
         }
         bool isbiguinf, isbigusup, isbigvinf, isbigvsup;
-        isbiguinf = Precision.IsNegativeInfinite(uinf);
-        isbigusup = Precision.IsPositiveInfinite(usup);
-        isbigvinf = Precision.IsNegativeInfinite(vinf);
-        isbigvsup = Precision.IsPositiveInfinite(vsup);
+        isbiguinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uinf);
+        isbigusup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(usup);
+        isbigvinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vinf);
+        isbigvsup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vsup);
 
         if (isbiguinf && isbigusup)
         {
@@ -113,17 +115,17 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
         myV0 = vinf;
 
         int nbsu = 0, nbsv = 0;
-        GeomAbs_SurfaceType typS = myS.GetType();
+        SurfaceKind typS = myS.GetType();
 
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 {
                     nbsu = 10;
                     nbsv = 10;
                 }
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 {
                     double aRadius = myS.Cylinder().Radius();
                     double aMaxAngle = M_PI * 0.5;
@@ -133,7 +135,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     {
                         aMaxAngle = Math.Acos(1.0 - aDeflection / aRadius) * 2.0;
                     }
-                    if (aMaxAngle > Precision.Angular())
+                    if (aMaxAngle > global::Kerf.Engine.Foundation.Precision.Angular())
                     {
                         nbsu = (int)((usup - uinf) / aMaxAngle);
                     }
@@ -161,12 +163,12 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 {
-                    gp_Cone aCone = myS.Cone();
-                    gp_Circ aCircle = ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vinf);
+                    Cone aCone = myS.Cone();
+                    Circle3D aCircle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vinf);
                     double aRadius = aCircle.Radius();
-                    aCircle = ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vsup);
+                    aCircle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), vsup);
 
                     if (aRadius < aCircle.Radius())
                     {
@@ -180,7 +182,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                         aMaxAngle = Math.Acos(1.0 - aDeflection / aRadius) * 2.0;
                     }
 
-                    if (aMaxAngle > Precision.Angular())
+                    if (aMaxAngle > global::Kerf.Engine.Foundation.Precision.Angular())
                     {
                         nbsu = (int)((usup - uinf) / aMaxAngle);
                     }
@@ -208,28 +210,28 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 {
-                    gp_Circ aCircle;
+                    Circle3D aCircle;
                     double aRadius1, aRadius2;
 
-                    if (typS == GeomAbs_Torus)
+                    if (typS == SurfaceKind.Torus)
                     {
-                        gp_Torus aTorus = myS.Torus();
-                        aCircle = ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), uinf);
+                        Torus aTorus = myS.Torus();
+                        aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), uinf);
                         aRadius2 = aCircle.Radius();
-                        aCircle = ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), usup);
+                        aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), usup);
                         aRadius2 = (aRadius2 < aCircle.Radius()) ? aCircle.Radius() : aRadius2;
 
-                        aCircle = ElSLib.TorusVIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), vinf);
+                        aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), vinf);
                         aRadius1 = aCircle.Radius();
-                        aCircle = ElSLib.TorusVIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), vsup);
+                        aCircle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius(), vsup);
                         aRadius1 = (aRadius1 < aCircle.Radius()) ? aCircle.Radius() : aRadius1;
                     }
                     else
                     {
-                        gp_Sphere aSphere = myS.Sphere();
+                        Sphere aSphere = myS.Sphere();
                         aRadius1 = aSphere.Radius();
                         aRadius2 = aSphere.Radius();
                     }
@@ -241,7 +243,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                         aMaxAngle = Math.Acos(1.0 - aDeflection / aRadius1) * 2.0;
                     }
 
-                    if (aMaxAngle > Precision.Angular())
+                    if (aMaxAngle > global::Kerf.Engine.Foundation.Precision.Angular())
                     {
                         nbsu = (int)((usup - uinf) / aMaxAngle);
                     }
@@ -252,7 +254,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                         aMaxAngle = Math.Acos(1.0 - aDeflection / aRadius2) * 2.0;
                     }
 
-                    if (aMaxAngle > Precision.Angular())
+                    if (aMaxAngle > global::Kerf.Engine.Foundation.Precision.Angular())
                     {
                         nbsv = (int)((vsup - vinf) / aMaxAngle);
                     }
@@ -274,14 +276,14 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 {
                     nbsv = 3 + myS.NbVPoles();
                     nbsu = 3 + myS.NbUPoles();
 
                     if (nbsu > 10 || nbsv > 10)
                     {
-                        NCollection_Array2<gp_Pnt> array2 = myS.Bezier().InternalPoles();
+                        NCollection_Array2<Point3D> array2 = myS.Bezier().InternalPoles();
                         Analyse(array2, out nbsu, out nbsv);
                     }
 
@@ -295,7 +297,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 {
                     nbsv = myS.NbVKnots();
                     nbsv *= myS.VDegree();
@@ -312,7 +314,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
                     if (nbsu > 10 || nbsv > 10)
                     {
-                        NCollection_Array2<gp_Pnt> array2 = myS.BSpline().InternalPoles();
+                        NCollection_Array2<Point3D> array2 = myS.BSpline().InternalPoles();
                         Analyse(array2, out nbsu, out nbsv);
                     }
                     if (nbsu < 10)
@@ -339,7 +341,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     nbsu = 15;
                     nbsv = (int)(vsup - vinf);
@@ -354,7 +356,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     nbsv = 15;
                     nbsu = 15;
@@ -408,7 +410,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
     }
 
     /// <summary>The sample point of the index (1 to NbSamples) in the parameter space and in 3D.</summary>
-    public override void SamplePoint(int Index, out gp_Pnt2d P2d, out gp_Pnt P3d)
+    public override void SamplePoint(int Index, out Point2D P2d, out Point3D P3d)
     {
         if (myUPars is null)
         {
@@ -420,7 +422,7 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
             int iu = 1 + Index - (iv - 1) * myNbSmplU;
             double u = myU0 + iu * myDU;
             double v = myV0 + iv * myDV;
-            P2d = new gp_Pnt2d(u, v);
+            P2d = new Point2D(u, v);
             P3d = myS!.Value(u, v);
         }
         else
@@ -431,9 +433,9 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
     // OCCT's file-static Analyse: the number of curvature sign changes along the pole rows and columns, plus 5.
     // As OCCT, the first three poles of each row are read at columns 1 to 3 whatever the array's lower column.
-    private static void Analyse(NCollection_Array2<gp_Pnt> array2, out int theNbSamplesU, out int theNbSamplesV)
+    private static void Analyse(NCollection_Array2<Point3D> array2, out int theNbSamplesU, out int theNbSamplesV)
     {
-        gp_Vec Vi = new(), Vip1 = new();
+        Vector3D Vi = new(), Vip1 = new();
         int sh, nbch, i, j;
         int nbup = array2.UpperRow() - array2.LowerRow() + 1;
         int nbvp = array2.UpperCol() - array2.LowerCol() + 1;
@@ -445,9 +447,9 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
             for (i = array2.LowerRow(); i <= array2.UpperRow(); i++)
             {
-                gp_Pnt A = array2.Value(i, 1);
-                gp_Pnt B = array2.Value(i, 2);
-                gp_Pnt C = array2.Value(i, 3);
+                Point3D A = array2.Value(i, 1);
+                Point3D B = array2.Value(i, 2);
+                Point3D C = array2.Value(i, 3);
                 Vi.SetCoord(C.X() - B.X() - B.X() + A.X(),
                             C.Y() - B.Y() - B.Y() + A.Y(),
                             C.Z() - B.Z() - B.Z() + A.Z());
@@ -455,9 +457,9 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
                 for (j = array2.LowerCol() + 2; j < array2.UpperCol(); j++)
                 { //-- essai
-                    gp_Pnt Ax = array2.Value(i, j - 1);
-                    gp_Pnt Bx = array2.Value(i, j);
-                    gp_Pnt Cx = array2.Value(i, j + 1);
+                    Point3D Ax = array2.Value(i, j - 1);
+                    Point3D Bx = array2.Value(i, j);
+                    Point3D Cx = array2.Value(i, j + 1);
                     Vip1.SetCoord(Cx.X() - Bx.X() - Bx.X() + Ax.X(),
                                   Cx.Y() - Bx.Y() - Bx.Y() + Ax.Y(),
                                   Cx.Z() - Bx.Z() - Bx.Z() + Ax.Z());
@@ -496,9 +498,9 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
         {
             for (j = array2.LowerCol(); j <= array2.UpperCol(); j++)
             {
-                gp_Pnt A = array2.Value(array2.LowerRow(), j);
-                gp_Pnt B = array2.Value(array2.LowerRow() + 1, j);
-                gp_Pnt C = array2.Value(array2.LowerRow() + 2, j);
+                Point3D A = array2.Value(array2.LowerRow(), j);
+                Point3D B = array2.Value(array2.LowerRow() + 1, j);
+                Point3D C = array2.Value(array2.LowerRow() + 2, j);
                 Vi.SetCoord(C.X() - B.X() - B.X() + A.X(),
                             C.Y() - B.Y() - B.Y() + A.Y(),
                             C.Z() - B.Z() - B.Z() + A.Z());
@@ -506,9 +508,9 @@ public class IntTools_TopolTool : Adaptor3d_TopolTool
 
                 for (i = array2.LowerRow() + 2; i < array2.UpperRow(); i++)
                 { //-- essai
-                    gp_Pnt Ax = array2.Value(i - 1, j);
-                    gp_Pnt Bx = array2.Value(i, j);
-                    gp_Pnt Cx = array2.Value(i + 1, j);
+                    Point3D Ax = array2.Value(i - 1, j);
+                    Point3D Bx = array2.Value(i, j);
+                    Point3D Cx = array2.Value(i + 1, j);
                     Vip1.SetCoord(Cx.X() - Bx.X() - Bx.X() + Ax.X(),
                                   Cx.Y() - Bx.Y() - Bx.Y() + Ax.Y(),
                                   Cx.Z() - Bx.Z() - Bx.Z() + Ax.Z());

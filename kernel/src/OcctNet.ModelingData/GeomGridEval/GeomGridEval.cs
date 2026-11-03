@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,7 +23,7 @@ public static class GeomGridEval
     public interface ICurveEvaluator
     {
         /// <summary>Points at all parameters (1-based), or an empty array.</summary>
-        NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams);
+        NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams);
 
         /// <summary>Points and first derivatives at all parameters (1-based), or an empty array.</summary>
         NCollection_Array1<Geom_Curve.ResD1> EvaluateGridD1(NCollection_Array1<double> theParams);
@@ -33,14 +35,14 @@ public static class GeomGridEval
         NCollection_Array1<Geom_Curve.ResD3> EvaluateGridD3(NCollection_Array1<double> theParams);
 
         /// <summary>The derivative of order <paramref name="theN"/> (N &gt;= 1) at all parameters (1-based).</summary>
-        NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN);
+        NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN);
     }
 
     /// <summary>A grid evaluator of a surface: what every GeomGridEval_* surface evaluator offers.</summary>
     public interface ISurfaceEvaluator
     {
         /// <summary>Points at all (U, V) of the grid, [1..NbU, 1..NbV], or an empty array.</summary>
-        NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+        NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                 NCollection_Array1<double> theVParams);
 
         /// <summary>Points and first partial derivatives on the grid, or an empty array.</summary>
@@ -56,7 +58,7 @@ public static class GeomGridEval
                                                               NCollection_Array1<double> theVParams);
 
         /// <summary>The partial derivative of orders (NU, NV) on the grid, or an empty array.</summary>
-        NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+        NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                   NCollection_Array1<double> theVParams,
                                                   int theNU,
                                                   int theNV);
@@ -75,12 +77,12 @@ public static class GeomGridEval
     //=================================================================================================
 
     /// <summary>Evaluates grid points with a point evaluator functor; a 2D array [1..NbU, 1..NbV].</summary>
-    public static NCollection_Array2<gp_Pnt> EvaluateGridHelper<TEvaluator>(NCollection_Array1<double> theUParams,
+    public static NCollection_Array2<Point3D> EvaluateGridHelper<TEvaluator>(NCollection_Array1<double> theUParams,
                                                                            NCollection_Array1<double> theVParams,
                                                                            TEvaluator theEval)
-        where TEvaluator : IGridFunctor<gp_Pnt>
+        where TEvaluator : IGridFunctor<Point3D>
     {
-        return evaluateGridHelper<gp_Pnt, TEvaluator>(theUParams, theVParams, theEval);
+        return evaluateGridHelper<Point3D, TEvaluator>(theUParams, theVParams, theEval);
     }
 
     /// <summary>Evaluates grid points with D1 with an evaluator functor.</summary>
@@ -114,12 +116,12 @@ public static class GeomGridEval
     }
 
     /// <summary>Evaluates a grid of DN with an evaluator functor.</summary>
-    public static NCollection_Array2<gp_Vec> EvaluateGridDNHelper<TEvaluator>(NCollection_Array1<double> theUParams,
+    public static NCollection_Array2<Vector3D> EvaluateGridDNHelper<TEvaluator>(NCollection_Array1<double> theUParams,
                                                                              NCollection_Array1<double> theVParams,
                                                                              TEvaluator theEval)
-        where TEvaluator : IGridFunctor<gp_Vec>
+        where TEvaluator : IGridFunctor<Vector3D>
     {
-        return evaluateGridHelper<gp_Vec, TEvaluator>(theUParams, theVParams, theEval);
+        return evaluateGridHelper<Vector3D, TEvaluator>(theUParams, theVParams, theEval);
     }
 
     // OCCT writes the five helpers out with the same body; the port shares it.

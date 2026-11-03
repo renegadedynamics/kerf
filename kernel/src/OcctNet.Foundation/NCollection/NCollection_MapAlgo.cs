@@ -17,62 +17,62 @@ namespace Occt;
 public static class NCollection_MapAlgo
 {
     /// <summary>
-    /// Makes <paramref name="theMap"/> the union of the two maps (boolean OR). <paramref name="theMap"/> may be one of
+    /// Makes <paramref name="map"/> the union of the two maps (boolean OR). <paramref name="map"/> may be one of
     /// the operands.
     /// </summary>
-    public static void Union<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theLeftMap, NCollection_Map<TKey> theRightMap)
+    public static void Union<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> leftMap, NCollection_Map<TKey> rightMap)
         where TKey : notnull
     {
-        if (ReferenceEquals(theLeftMap, theRightMap))
+        if (ReferenceEquals(leftMap, rightMap))
         {
-            Assign(theMap, theLeftMap);
+            Assign(map, leftMap);
             return;
         }
-        if (!ReferenceEquals(theMap, theLeftMap) && !ReferenceEquals(theMap, theRightMap))
+        if (!ReferenceEquals(map, leftMap) && !ReferenceEquals(map, rightMap))
         {
-            theMap.Clear();
+            map.Clear();
         }
-        if (!ReferenceEquals(theMap, theLeftMap))
+        if (!ReferenceEquals(map, leftMap))
         {
-            foreach (TKey aKey in theLeftMap)
+            foreach (TKey key in leftMap)
             {
-                theMap.Add(aKey);
+                map.Add(key);
             }
         }
-        if (!ReferenceEquals(theMap, theRightMap))
+        if (!ReferenceEquals(map, rightMap))
         {
-            foreach (TKey aKey in theRightMap)
+            foreach (TKey key in rightMap)
             {
-                theMap.Add(aKey);
+                map.Add(key);
             }
         }
     }
 
-    /// <summary>Adds the keys of <paramref name="theOtherMap"/> to <paramref name="theMap"/>. True if it changed.</summary>
-    public static bool Unite<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    /// <summary>Adds the keys of <paramref name="otherMap"/> to <paramref name="map"/>. True if it changed.</summary>
+    public static bool Unite<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap))
+        if (ReferenceEquals(map, otherMap))
         {
             return false;
         }
-        int anOldExtent = theMap.Extent();
-        Union(theMap, theMap, theOtherMap);
-        return anOldExtent != theMap.Extent();
+        int oldExtent = map.Extent();
+        Union(map, map, otherMap);
+        return oldExtent != map.Extent();
     }
 
     /// <summary>True if the two maps have a common key.</summary>
-    public static bool HasIntersection<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    public static bool HasIntersection<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        NCollection_Map<TKey> aMap1 = theMap;
-        NCollection_Map<TKey> aMap2 = theOtherMap;
-        if (theOtherMap.Size() < theMap.Size())
+        NCollection_Map<TKey> map1 = map;
+        NCollection_Map<TKey> map2 = otherMap;
+        if (otherMap.Size() < map.Size())
         {
-            aMap1 = theOtherMap;
-            aMap2 = theMap;
+            map1 = otherMap;
+            map2 = map;
         }
-        foreach (TKey aKey in aMap1)
+        foreach (TKey key in map1)
         {
-            if (aMap2.Contains(aKey))
+            if (map2.Contains(key))
             {
                 return true;
             }
@@ -81,185 +81,185 @@ public static class NCollection_MapAlgo
     }
 
     /// <summary>
-    /// Makes <paramref name="theMap"/> the intersection of the two maps (boolean AND). <paramref name="theMap"/> may be
+    /// Makes <paramref name="map"/> the intersection of the two maps (boolean AND). <paramref name="map"/> may be
     /// one of the operands.
     /// </summary>
-    public static void Intersection<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theLeftMap,
-                                          NCollection_Map<TKey> theRightMap) where TKey : notnull
+    public static void Intersection<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> leftMap,
+                                          NCollection_Map<TKey> rightMap) where TKey : notnull
     {
-        if (ReferenceEquals(theLeftMap, theRightMap))
+        if (ReferenceEquals(leftMap, rightMap))
         {
-            Assign(theMap, theLeftMap);
+            Assign(map, leftMap);
             return;
         }
-        if (ReferenceEquals(theMap, theLeftMap))
+        if (ReferenceEquals(map, leftMap))
         {
-            NCollection_Map<TKey> aCopy = exchanged(theMap);
-            Intersection(theMap, aCopy, theRightMap);
+            NCollection_Map<TKey> copy = Exchanged(map);
+            Intersection(map, copy, rightMap);
             return;
         }
-        else if (ReferenceEquals(theMap, theRightMap))
+        else if (ReferenceEquals(map, rightMap))
         {
-            NCollection_Map<TKey> aCopy = exchanged(theMap);
-            Intersection(theMap, theLeftMap, aCopy);
+            NCollection_Map<TKey> copy = Exchanged(map);
+            Intersection(map, leftMap, copy);
             return;
         }
-        theMap.Clear();
-        if (theLeftMap.Extent() < theRightMap.Extent())
+        map.Clear();
+        if (leftMap.Extent() < rightMap.Extent())
         {
-            foreach (TKey aKey in theLeftMap)
+            foreach (TKey key in leftMap)
             {
-                if (theRightMap.Contains(aKey))
+                if (rightMap.Contains(key))
                 {
-                    theMap.Add(aKey);
+                    map.Add(key);
                 }
             }
         }
         else
         {
-            foreach (TKey aKey in theRightMap)
+            foreach (TKey key in rightMap)
             {
-                if (theLeftMap.Contains(aKey))
+                if (leftMap.Contains(key))
                 {
-                    theMap.Add(aKey);
+                    map.Add(key);
                 }
             }
         }
     }
 
-    /// <summary>Keeps in <paramref name="theMap"/> only the keys also in <paramref name="theOtherMap"/>. True if it changed.</summary>
-    public static bool Intersect<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    /// <summary>Keeps in <paramref name="map"/> only the keys also in <paramref name="otherMap"/>. True if it changed.</summary>
+    public static bool Intersect<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap) || theMap.IsEmpty())
+        if (ReferenceEquals(map, otherMap) || map.IsEmpty())
         {
             return false;
         }
-        int anOldExtent = theMap.Extent();
-        Intersection(theMap, theMap, theOtherMap);
-        return anOldExtent != theMap.Extent();
+        int oldExtent = map.Extent();
+        Intersection(map, map, otherMap);
+        return oldExtent != map.Extent();
     }
 
-    /// <summary>Removes from <paramref name="theMap"/> the keys of <paramref name="theOtherMap"/>. True if it changed.</summary>
-    public static bool Subtract<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    /// <summary>Removes from <paramref name="map"/> the keys of <paramref name="otherMap"/>. True if it changed.</summary>
+    public static bool Subtract<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap))
+        if (ReferenceEquals(map, otherMap))
         {
-            if (theMap.IsEmpty())
+            if (map.IsEmpty())
             {
                 return false;
             }
-            theMap.Clear();
+            map.Clear();
             return true;
         }
-        int anOldExtent = theMap.Extent();
-        foreach (TKey aKey in theOtherMap)
+        int oldExtent = map.Extent();
+        foreach (TKey key in otherMap)
         {
-            theMap.Remove(aKey);
+            map.Remove(key);
         }
-        return anOldExtent != theMap.Extent();
+        return oldExtent != map.Extent();
     }
 
     /// <summary>
-    /// Makes <paramref name="theMap"/> the keys of the left map that aren't in the right one. <paramref name="theMap"/>
+    /// Makes <paramref name="map"/> the keys of the left map that aren't in the right one. <paramref name="map"/>
     /// may be one of the operands.
     /// </summary>
-    public static void Subtraction<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theLeftMap,
-                                         NCollection_Map<TKey> theRightMap) where TKey : notnull
+    public static void Subtraction<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> leftMap,
+                                         NCollection_Map<TKey> rightMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theLeftMap))
+        if (ReferenceEquals(map, leftMap))
         {
-            Subtract(theMap, theRightMap);
+            Subtract(map, rightMap);
             return;
         }
-        else if (ReferenceEquals(theMap, theRightMap))
+        else if (ReferenceEquals(map, rightMap))
         {
-            NCollection_Map<TKey> aCopy = exchanged(theMap);
-            Subtraction(theMap, theLeftMap, aCopy);
+            NCollection_Map<TKey> copy = Exchanged(map);
+            Subtraction(map, leftMap, copy);
             return;
         }
-        Assign(theMap, theLeftMap);
-        Subtract(theMap, theRightMap);
+        Assign(map, leftMap);
+        Subtract(map, rightMap);
     }
 
     /// <summary>
-    /// Makes <paramref name="theMap"/> the symmetric difference of the two maps (boolean XOR). <paramref name="theMap"/>
+    /// Makes <paramref name="map"/> the symmetric difference of the two maps (boolean XOR). <paramref name="map"/>
     /// may be one of the operands.
     /// </summary>
-    public static void Difference<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theLeftMap,
-                                        NCollection_Map<TKey> theRightMap) where TKey : notnull
+    public static void Difference<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> leftMap,
+                                        NCollection_Map<TKey> rightMap) where TKey : notnull
     {
-        if (ReferenceEquals(theLeftMap, theRightMap))
+        if (ReferenceEquals(leftMap, rightMap))
         {
-            theMap.Clear();
+            map.Clear();
             return;
         }
-        else if (ReferenceEquals(theMap, theLeftMap))
+        else if (ReferenceEquals(map, leftMap))
         {
-            NCollection_Map<TKey> aCopy = exchanged(theMap);
-            Difference(theMap, aCopy, theRightMap);
+            NCollection_Map<TKey> copy = Exchanged(map);
+            Difference(map, copy, rightMap);
             return;
         }
-        else if (ReferenceEquals(theMap, theRightMap))
+        else if (ReferenceEquals(map, rightMap))
         {
-            NCollection_Map<TKey> aCopy = exchanged(theMap);
-            Difference(theMap, theLeftMap, aCopy);
+            NCollection_Map<TKey> copy = Exchanged(map);
+            Difference(map, leftMap, copy);
             return;
         }
-        theMap.Clear();
-        foreach (TKey aKey in theLeftMap)
+        map.Clear();
+        foreach (TKey key in leftMap)
         {
-            if (!theRightMap.Contains(aKey))
+            if (!rightMap.Contains(key))
             {
-                theMap.Add(aKey);
+                map.Add(key);
             }
         }
-        foreach (TKey aKey in theRightMap)
+        foreach (TKey key in rightMap)
         {
-            if (!theLeftMap.Contains(aKey))
+            if (!leftMap.Contains(key))
             {
-                theMap.Add(aKey);
+                map.Add(key);
             }
         }
     }
 
     /// <summary>
-    /// Makes <paramref name="theMap"/> the symmetric difference of itself and <paramref name="theOtherMap"/>. True if
+    /// Makes <paramref name="map"/> the symmetric difference of itself and <paramref name="otherMap"/>. True if
     /// it changed.
     /// </summary>
     /// <remarks>
     /// As OCCT, "changed" is judged by the number of keys: exchanging as many keys as are added keeps the count and
     /// returns false.
     /// </remarks>
-    public static bool Differ<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    public static bool Differ<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap))
+        if (ReferenceEquals(map, otherMap))
         {
-            if (theMap.IsEmpty())
+            if (map.IsEmpty())
             {
                 return false;
             }
-            theMap.Clear();
+            map.Clear();
             return true;
         }
-        int anOldExtent = theMap.Extent();
-        Difference(theMap, theMap, theOtherMap);
-        return anOldExtent != theMap.Extent();
+        int oldExtent = map.Extent();
+        Difference(map, map, otherMap);
+        return oldExtent != map.Extent();
     }
 
-    /// <summary>True if <paramref name="theMap"/> contains every key of <paramref name="theOtherMap"/>.</summary>
-    public static bool Contains<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    /// <summary>True if <paramref name="map"/> contains every key of <paramref name="otherMap"/>.</summary>
+    public static bool Contains<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap) || theOtherMap.IsEmpty())
+        if (ReferenceEquals(map, otherMap) || otherMap.IsEmpty())
         {
             return true;
         }
-        else if (theMap.Extent() < theOtherMap.Extent())
+        else if (map.Extent() < otherMap.Extent())
         {
             return false;
         }
-        foreach (TKey aKey in theOtherMap)
+        foreach (TKey key in otherMap)
         {
-            if (!theMap.Contains(aKey))
+            if (!map.Contains(key))
             {
                 return false;
             }
@@ -268,34 +268,34 @@ public static class NCollection_MapAlgo
     }
 
     /// <summary>True if the two maps have exactly the same keys.</summary>
-    public static bool IsEqual<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOtherMap) where TKey : notnull
+    public static bool IsEqual<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> otherMap) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOtherMap))
+        if (ReferenceEquals(map, otherMap))
         {
             return true;
         }
-        return theMap.Extent() == theOtherMap.Extent() && Contains(theMap, theOtherMap);
+        return map.Extent() == otherMap.Extent() && Contains(map, otherMap);
     }
 
     // theMap.Assign(theOther)
-    private static void Assign<TKey>(NCollection_Map<TKey> theMap, NCollection_Map<TKey> theOther) where TKey : notnull
+    private static void Assign<TKey>(NCollection_Map<TKey> map, NCollection_Map<TKey> other) where TKey : notnull
     {
-        if (ReferenceEquals(theMap, theOther))
+        if (ReferenceEquals(map, other))
         {
             return;
         }
-        theMap.Clear();
-        foreach (TKey aKey in theOther)
+        map.Clear();
+        foreach (TKey key in other)
         {
-            theMap.Add(aKey);
+            map.Add(key);
         }
     }
 
     // MapType aCopy; theMap.Exchange(aCopy): the content moves to the returned map and theMap is left empty.
-    private static NCollection_Map<TKey> exchanged<TKey>(NCollection_Map<TKey> theMap) where TKey : notnull
+    private static NCollection_Map<TKey> Exchanged<TKey>(NCollection_Map<TKey> map) where TKey : notnull
     {
-        NCollection_Map<TKey> aCopy = new(theMap);
-        theMap.Clear();
-        return aCopy;
+        NCollection_Map<TKey> copy = new(map);
+        map.Clear();
+        return copy;
     }
 }

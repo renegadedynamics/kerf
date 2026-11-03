@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
@@ -102,16 +104,16 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
 
     // ------------------------------------------------------------ settled placements
 
-    private static bool Same(N.gp_Dir theN, in gp_Dir theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
 
-    private static gp_Dir FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
+    private static Direction3D FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
 
     // A random placement that native gp_Ax2 holds with the port's directions to the bit.
-    private static gp_Ax2 Ax2(Oracle theO)
+    private static Frame3D Ax2(Oracle theO)
     {
         while (true)
         {
-            gp_Pnt aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
+            Point3D aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
             using var aNP = Oracle.ToNative(aP);
             using var aN0 = Oracle.ToNative(theO.Dir());
             using var aX0 = Oracle.ToNative(theO.Dir());
@@ -124,7 +126,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
             }
             using var aND = aNAx.Direction();
             using var aNX = aNAx.XDirection();
-            var anAx = new gp_Ax2(aP, FromNative(aND), FromNative(aNX));
+            var anAx = new Frame3D(aP, FromNative(aND), FromNative(aNX));
             using var aN2 = Oracle.ToNative(anAx);
             using var aD2 = aN2.Direction();
             using var aX2 = aN2.XDirection();
@@ -158,9 +160,9 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         {
             aP = thePort();
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
-            aPErr = e.GetType().Name;
+            aPErr = global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
         }
         Assert.True((aNErr is null) == (aPErr is null), $"{theKind}: native {aNErr ?? "built"}, port {aPErr ?? "built"}");
         if (aN is null)
@@ -193,7 +195,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         {
             aP = thePort();
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aPThrew = true;
             aPMessage = e.ToString();
@@ -206,7 +208,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         }
         using (aN)
         {
-            Assert.True(aP.TShape()!.IsFrozen(), $"{theWhat}: the published shape isn't frozen");
+            Assert.True(aP.TShape()!.IsFrozen, $"{theWhat}: the published shape isn't frozen");
             Compare(theWhat, aN, aP);
         }
     }
@@ -281,9 +283,9 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
     {
         int aForm = theO.Int(0, 3);
         double dx = Size(theO, aForm != 3), dy = Size(theO, aForm != 3), dz = Size(theO, aForm != 3);
-        gp_Pnt aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
-        gp_Pnt aP2 = new(aP.X() + dx, aP.Y() + dy, aP.Z() + dz);
-        gp_Ax2 anAx = aForm == 3 ? Ax2(theO) : new gp_Ax2();
+        Point3D aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
+        Point3D aP2 = new(aP.X() + dx, aP.Y() + dy, aP.Z() + dz);
+        Frame3D anAx = aForm == 3 ? Ax2(theO) : new Frame3D();
         Case("box" + aForm,
              () =>
              {
@@ -340,7 +342,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         double ltx = aKind == 0 ? 0.0 : aKind == 1 ? -theO.Real(0.1, 2) : aKind == 2 ? dx * theO.Real(1, 2) : theO.Real(0, dx);
         double xmin = theO.Real(-5, dx), xmax = theO.Int(0, 6) == 0 ? xmin : xmin + theO.Real(0, 10);
         double zmin = theO.Real(-5, dz), zmax = theO.Int(0, 6) == 0 ? zmin : zmin + theO.Real(0, 10);
-        gp_Ax2 anAx = aForm % 2 == 1 ? Ax2(theO) : new gp_Ax2();
+        Frame3D anAx = aForm % 2 == 1 ? Ax2(theO) : new Frame3D();
         Case("wedge" + aForm,
              () =>
              {
@@ -372,7 +374,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
     {
         int aForm = theO.Int(0, 3);
         double R = theO.Real(0.2, 10), H = theO.Real(0.2, 20), anAngle = PartialAngle(theO);
-        gp_Ax2 anAx = aForm >= 2 ? Ax2(theO) : new gp_Ax2();
+        Frame3D anAx = aForm >= 2 ? Ax2(theO) : new Frame3D();
         Case("cylinder" + aForm,
              () =>
              {
@@ -402,7 +404,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         double R1 = aKind == 0 ? 0.0 : theO.Real(0.2, 10);
         double R2 = aKind == 1 ? 0.0 : aKind == 2 ? R1 : theO.Real(0.2, 10);
         double H = aKind == 3 ? 0.0 : theO.Real(0.2, 20), anAngle = PartialAngle(theO);
-        gp_Ax2 anAx = aForm >= 2 ? Ax2(theO) : new gp_Ax2();
+        Frame3D anAx = aForm >= 2 ? Ax2(theO) : new Frame3D();
         Case("cone" + aForm,
              () =>
              {
@@ -433,8 +435,8 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         double anAngle = theO.Int(0, 3) == 0 && aForm == 1 ? -PartialAngle(theO) : PartialAngle(theO);
         double a1 = theO.Int(0, 4) == 0 ? -Math.PI / 2 : theO.Real(-Math.PI / 2, Math.PI / 2 - 0.2);
         double a2 = theO.Int(0, 4) == 0 ? Math.PI / 2 : theO.Real(a1 + 0.1, Math.PI / 2);
-        gp_Pnt aC = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
-        gp_Ax2 anAx = aForm >= 8 ? Ax2(theO) : new gp_Ax2();
+        Point3D aC = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
+        Frame3D anAx = aForm >= 8 ? Ax2(theO) : new Frame3D();
         Case("sphere" + aForm,
              () =>
              {
@@ -499,7 +501,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
                 a2 = a1 + theO.Real(0.2, 2 * Math.PI - 0.2);
                 break;
         }
-        gp_Ax2 anAx = aForm >= 4 ? Ax2(theO) : new gp_Ax2();
+        Frame3D anAx = aForm >= 4 ? Ax2(theO) : new Frame3D();
         Case("torus" + aForm,
              () =>
              {
@@ -534,12 +536,12 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
     // reference point anywhere around it.
     private void HalfSpaceCase(Oracle theO)
     {
-        gp_Ax2 anAx = Ax2(theO);
+        Frame3D anAx = Ax2(theO);
         int aBase = theO.Int(0, 2);
         double a = theO.Real(1, 10), b = theO.Real(1, 10), c = theO.Real(1, 10);
         bool isShell = theO.Bool();
         int aFaceIndex = theO.Int(1, 6);
-        gp_Pnt aRef = new(anAx.Location().X() + theO.Real(-15, 15), anAx.Location().Y() + theO.Real(-15, 15),
+        Point3D aRef = new(anAx.Location().X() + theO.Real(-15, 15), anAx.Location().Y() + theO.Real(-15, 15),
                           anAx.Location().Z() + theO.Real(-15, 15));
 
         using var aNAx = Oracle.ToNative(anAx);

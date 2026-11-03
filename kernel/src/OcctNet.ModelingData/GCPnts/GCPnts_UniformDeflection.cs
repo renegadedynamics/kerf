@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GCPnts_DeflectionType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -23,7 +25,7 @@ public sealed class GCPnts_UniformDeflection
     private bool myDone;
     private double myDeflection;
     private readonly NCollection_Sequence<double> myParams = new();
-    private readonly NCollection_Sequence<gp_Pnt> myPoints = new();
+    private readonly NCollection_Sequence<Point3D> myPoints = new();
 
     /// <summary>An empty algorithm; use <c>Initialize</c>.</summary>
     public GCPnts_UniformDeflection()
@@ -103,7 +105,7 @@ public sealed class GCPnts_UniformDeflection
     public bool IsDone() => myDone;
 
     /// <summary>The number of points computed.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbPoints()
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformDeflection::NbPoints()");
@@ -111,7 +113,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     /// <summary>The parameter of the point of index Index (1 to NbPoints).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Parameter(int Index)
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformDeflection::Parameter()");
@@ -119,8 +121,8 @@ public sealed class GCPnts_UniformDeflection
     }
 
     /// <summary>The point of index theIndex (1 to NbPoints).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    public gp_Pnt Value(int theIndex)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    public Point3D Value(int theIndex)
     {
         // OCCT names the wrong class and method in the message (occt-issues.md).
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformAbscissa::Parameter()");
@@ -128,7 +130,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     /// <summary>The deflection given to the algorithm.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Deflection()
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_UniformDeflection::Deflection()");
@@ -136,15 +138,15 @@ public sealed class GCPnts_UniformDeflection
     }
 
     // mask the return of a Adaptor2d_Curve2d as a gp_Pnt
-    private static gp_Pnt Value(Adaptor3d_Curve theC, double theParameter)
+    private static Point3D Value(Adaptor3d_Curve theC, double theParameter)
     {
         return theC.Value(theParameter);
     }
 
-    private static gp_Pnt Value(Adaptor2d_Curve2d theC, double theParameter)
+    private static Point3D Value(Adaptor2d_Curve2d theC, double theParameter)
     {
-        gp_Pnt2d a2dPoint = theC.Value(theParameter);
-        return new gp_Pnt(a2dPoint.X(), a2dPoint.Y(), 0.0);
+        Point2D a2dPoint = theC.Value(theParameter);
+        return new Point3D(a2dPoint.X(), a2dPoint.Y(), 0.0);
     }
 
     // ---- Templates over the curve type (3D instantiation) ----
@@ -152,7 +154,7 @@ public sealed class GCPnts_UniformDeflection
     // Control of the last points.
     private static void Controle(Adaptor3d_Curve theC,
                                  NCollection_Sequence<double> theParameters,
-                                 NCollection_Sequence<gp_Pnt> thePoints,
+                                 NCollection_Sequence<Point3D> thePoints,
                                  double theU2)
     {
         int aNbPnts = thePoints.Length();
@@ -171,12 +173,12 @@ public sealed class GCPnts_UniformDeflection
 
     private static bool PerformLinear(Adaptor3d_Curve theC,
                                       NCollection_Sequence<double> theParameters,
-                                      NCollection_Sequence<gp_Pnt> thePoints,
+                                      NCollection_Sequence<Point3D> thePoints,
                                       double theU1,
                                       double theU2)
     {
         theParameters.Append(theU1);
-        gp_Pnt aPoint = Value(theC, theU1);
+        Point3D aPoint = Value(theC, theU1);
         thePoints.Append(aPoint);
 
         theParameters.Append(theU2);
@@ -187,12 +189,12 @@ public sealed class GCPnts_UniformDeflection
 
     private static bool PerformCircular(Adaptor3d_Curve theC,
                                         NCollection_Sequence<double> theParameters,
-                                        NCollection_Sequence<gp_Pnt> thePoints,
+                                        NCollection_Sequence<Point3D> thePoints,
                                         double theDeflection,
                                         double theU1,
                                         double theU2)
     {
-        gp_Pnt aPoint;
+        Point3D aPoint;
         double anAngle = Max(1.0 - (theDeflection / theC.Circle().Radius()), 0.0);
         anAngle = 2.0e0 * Math.Acos(anAngle);
         int aNbPoints = (int)((theU2 - theU1) / anAngle);
@@ -211,23 +213,23 @@ public sealed class GCPnts_UniformDeflection
 
     private static GCPnts_DeflectionType GetDefType(Adaptor3d_Curve theC)
     {
-        if (theC.NbIntervals(GeomAbs_C2) > 1)
+        if (theC.NbIntervals(C2) > 1)
         {
             return GCPnts_DefComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return GCPnts_Linear;
-            case GeomAbs_Circle:
+            case Circle:
                 return GCPnts_Circular;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve aBSpline = theC.BSpline();
                 return (aBSpline.NbPoles() == 2) ? GCPnts_Linear : GCPnts_Curved;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve aBezier = theC.Bezier();
                 return (aBezier.NbPoles() == 2) ? GCPnts_Linear : GCPnts_Curved;
@@ -240,7 +242,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     private static bool PerformCurve(NCollection_Sequence<double> theParameters,
-                                     NCollection_Sequence<gp_Pnt> thePoints,
+                                     NCollection_Sequence<Point3D> thePoints,
                                      Adaptor3d_Curve theC,
                                      double theDeflection,
                                      double theU1,
@@ -258,7 +260,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     private static bool PerformComposite(NCollection_Sequence<double> theParameters,
-                                         NCollection_Sequence<gp_Pnt> thePoints,
+                                         NCollection_Sequence<Point3D> thePoints,
                                          Adaptor3d_Curve theC,
                                          double theDeflection,
                                          double theU1,
@@ -266,11 +268,11 @@ public sealed class GCPnts_UniformDeflection
                                          double theEPSILON,
                                          bool theWithControl)
     {
-        int aNbIntervals = theC.NbIntervals(GeomAbs_C2);
+        int aNbIntervals = theC.NbIntervals(C2);
         int aPIndex;
         NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-        theC.Intervals(aTI, GeomAbs_C2);
-        BSplCLib.Hunt(aTI, theU1, out aPIndex);
+        theC.Intervals(aTI, C2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU1, out aPIndex);
 
         // iterate by continuous segments
         double aUa = theU1;
@@ -305,7 +307,7 @@ public sealed class GCPnts_UniformDeflection
     private void initialize(Adaptor3d_Curve theC, double theDeflection, double theU1, double theU2,
         bool theWithControl)
     {
-        double anEPSILON = theC.Resolution(Precision.Confusion());
+        double anEPSILON = theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         myDeflection = theDeflection;
         myDone = false;
         myParams.Clear();
@@ -346,7 +348,7 @@ public sealed class GCPnts_UniformDeflection
     // Control of the last points.
     private static void Controle(Adaptor2d_Curve2d theC,
                                  NCollection_Sequence<double> theParameters,
-                                 NCollection_Sequence<gp_Pnt> thePoints,
+                                 NCollection_Sequence<Point3D> thePoints,
                                  double theU2)
     {
         int aNbPnts = thePoints.Length();
@@ -365,12 +367,12 @@ public sealed class GCPnts_UniformDeflection
 
     private static bool PerformLinear(Adaptor2d_Curve2d theC,
                                       NCollection_Sequence<double> theParameters,
-                                      NCollection_Sequence<gp_Pnt> thePoints,
+                                      NCollection_Sequence<Point3D> thePoints,
                                       double theU1,
                                       double theU2)
     {
         theParameters.Append(theU1);
-        gp_Pnt aPoint = Value(theC, theU1);
+        Point3D aPoint = Value(theC, theU1);
         thePoints.Append(aPoint);
 
         theParameters.Append(theU2);
@@ -381,12 +383,12 @@ public sealed class GCPnts_UniformDeflection
 
     private static bool PerformCircular(Adaptor2d_Curve2d theC,
                                         NCollection_Sequence<double> theParameters,
-                                        NCollection_Sequence<gp_Pnt> thePoints,
+                                        NCollection_Sequence<Point3D> thePoints,
                                         double theDeflection,
                                         double theU1,
                                         double theU2)
     {
-        gp_Pnt aPoint;
+        Point3D aPoint;
         double anAngle = Max(1.0 - (theDeflection / theC.Circle().Radius()), 0.0);
         anAngle = 2.0e0 * Math.Acos(anAngle);
         int aNbPoints = (int)((theU2 - theU1) / anAngle);
@@ -405,23 +407,23 @@ public sealed class GCPnts_UniformDeflection
 
     private static GCPnts_DeflectionType GetDefType(Adaptor2d_Curve2d theC)
     {
-        if (theC.NbIntervals(GeomAbs_C2) > 1)
+        if (theC.NbIntervals(C2) > 1)
         {
             return GCPnts_DefComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return GCPnts_Linear;
-            case GeomAbs_Circle:
+            case Circle:
                 return GCPnts_Circular;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBSpline = theC.BSpline();
                 return (aBSpline.NbPoles() == 2) ? GCPnts_Linear : GCPnts_Curved;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom2d_BezierCurve aBezier = theC.Bezier();
                 return (aBezier.NbPoles() == 2) ? GCPnts_Linear : GCPnts_Curved;
@@ -434,7 +436,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     private static bool PerformCurve(NCollection_Sequence<double> theParameters,
-                                     NCollection_Sequence<gp_Pnt> thePoints,
+                                     NCollection_Sequence<Point3D> thePoints,
                                      Adaptor2d_Curve2d theC,
                                      double theDeflection,
                                      double theU1,
@@ -452,7 +454,7 @@ public sealed class GCPnts_UniformDeflection
     }
 
     private static bool PerformComposite(NCollection_Sequence<double> theParameters,
-                                         NCollection_Sequence<gp_Pnt> thePoints,
+                                         NCollection_Sequence<Point3D> thePoints,
                                          Adaptor2d_Curve2d theC,
                                          double theDeflection,
                                          double theU1,
@@ -460,11 +462,11 @@ public sealed class GCPnts_UniformDeflection
                                          double theEPSILON,
                                          bool theWithControl)
     {
-        int aNbIntervals = theC.NbIntervals(GeomAbs_C2);
+        int aNbIntervals = theC.NbIntervals(C2);
         int aPIndex;
         NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-        theC.Intervals(aTI, GeomAbs_C2);
-        BSplCLib.Hunt(aTI, theU1, out aPIndex);
+        theC.Intervals(aTI, C2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU1, out aPIndex);
 
         // iterate by continuous segments
         double aUa = theU1;
@@ -499,7 +501,7 @@ public sealed class GCPnts_UniformDeflection
     private void initialize(Adaptor2d_Curve2d theC, double theDeflection, double theU1, double theU2,
         bool theWithControl)
     {
-        double anEPSILON = theC.Resolution(Precision.Confusion());
+        double anEPSILON = theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         myDeflection = theDeflection;
         myDone = false;
         myParams.Clear();

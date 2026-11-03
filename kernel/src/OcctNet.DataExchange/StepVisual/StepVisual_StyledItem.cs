@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepVisual_StyledItem : StepRepr_RepresentationItem
@@ -14,7 +16,7 @@ public class StepVisual_StyledItem : StepRepr_RepresentationItem
     /// <summary>
     /// May be StepRepr_RepresentationItem for AP214(203) and StepVisual_StyledItemTarget for AP242
     /// </summary>
-    private Standard_Transient myItem;
+    private Transient myItem;
     /// <summary>
     /// This is downcasted from myItem
     /// </summary>
@@ -27,7 +29,7 @@ public class StepVisual_StyledItem : StepRepr_RepresentationItem
     {
     }
 
-    public void Init(TCollection_HAsciiString aName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> aStyles, Standard_Transient aItem)
+    public void Init(TCollection_HAsciiString aName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> aStyles, Transient aItem)
     {
         // --- classe own fields ---
         myStyles = aStyles;

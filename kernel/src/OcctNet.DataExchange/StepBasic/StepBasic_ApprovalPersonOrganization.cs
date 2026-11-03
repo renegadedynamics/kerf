@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_ApprovalPersonOrganization : Standard_Transient
+public class StepBasic_ApprovalPersonOrganization : Transient
 {
     private StepBasic_PersonOrganizationSelect personOrganization = new StepBasic_PersonOrganizationSelect();
     private StepBasic_Approval authorizedApproval;

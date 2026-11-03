@@ -1,7 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -28,7 +29,7 @@ public class ShapeUpgrade_DivideTests
         TopExp.MapShapes(theShape, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            if (!aMap[i].TShape()!.IsFrozen())
+            if (!aMap[i].TShape()!.IsFrozen)
             {
                 return false;
             }
@@ -136,12 +137,12 @@ public class ShapeUpgrade_DivideTests
     // A C0 B-spline of degree 2 with a kink at its interior knot of multiplicity 2.
     private static Geom_BSplineCurve KinkedCurve()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 5);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 1, 0);
-        aPoles[3] = new gp_Pnt(2, 0, 0);
-        aPoles[4] = new gp_Pnt(3, 2, 0);
-        aPoles[5] = new gp_Pnt(4, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 5);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 1, 0);
+        aPoles[3] = new Point3D(2, 0, 0);
+        aPoles[4] = new Point3D(3, 2, 0);
+        aPoles[5] = new Point3D(4, 0, 0);
         var aKnots = new NCollection_Array1<double>(1, 3);
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -170,7 +171,7 @@ public class ShapeUpgrade_DivideTests
         Assert.Equal(2, Count(aRes, TopAbs_EDGE));
         for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            Assert.True(BRep_Tool.Curve(TopoDS.Edge(anExp.Current()), out _, out _)!.Continuity() >= GeomAbs_C1);
+            Assert.True(BRep_Tool.Curve(TopoDS.Edge(anExp.Current()), out _, out _)!.Continuity() >= C1);
         }
     }
 
@@ -203,7 +204,7 @@ public class ShapeUpgrade_DivideTests
             TopoDS_Face aF = TopoDS.Face(anExp.Current());
             Geom_Surface aS = BRep_Tool.Surface(aF)!;
             Assert.True(aS is Geom_BezierSurface or Geom_CylindricalSurface or Geom_RectangularTrimmedSurface,
-                        aS.GetType().Name);
+                        global::Kerf.Engine.Foundation.OcctTypeNames.Of(aS.GetType()));
         }
         for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
@@ -270,7 +271,7 @@ public class ShapeUpgrade_DivideTests
     public void RemoveInternalWires_RemovesTheHolesAndTheFaceInside()
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(5, 5, -1), new gp_Dir(0, 0, 1)), 1, 12).Shape();
+        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 1, 12).Shape();
         TopoDS_Shape aHoled = new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
         Assert.Equal(7, Count(aHoled, TopAbs_FACE));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aHoled);
@@ -317,7 +318,7 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShellSewing_WithoutShells_ReturnsANullShape()
     {
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Shape();
+        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
         Assert.True(new ShapeUpgrade_ShellSewing().ApplySewing(anEdge).IsNull());
     }
 
@@ -332,8 +333,8 @@ public class ShapeUpgrade_DivideTests
 
         Assert.Equal(2, aSeq!.Length());
         Assert.Equal(3, aCurve.NbKnots());
-        Assert.Equal(new gp_Pnt(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(1)).EndPoint().X(), 12);
-        Assert.Equal(new gp_Pnt(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(2)).StartPoint().X(), 12);
+        Assert.Equal(new Point3D(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(1)).EndPoint().X(), 12);
+        Assert.Equal(new Point3D(2, 0, 0).X(), ((Geom_BSplineCurve)aSeq.Value(2)).StartPoint().X(), 12);
 
         // a C1 curve: false, the sequence untouched
         NCollection_HSequence<Geom_BoundedCurve>? aNone = null;
@@ -366,7 +367,7 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ConvertCurve3dToBezier_OnACircle_GivesBezierArcs()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aTool = new ShapeUpgrade_ConvertCurve3dToBezier();
         aTool.Init(aCircle, 0, 2 * Math.PI);
         aTool.Perform(true);
@@ -385,10 +386,10 @@ public class ShapeUpgrade_DivideTests
     public void SplitCurve2dContinuity_RemovesAKnotWithinTheTolerance()
     {
         // a straight 2D B-spline with a needless knot of full multiplicity: C0 nominally, the knot can be removed
-        var aPoles = new NCollection_Array1<gp_Pnt2d>(1, 5);
+        var aPoles = new NCollection_Array1<Point2D>(1, 5);
         for (int i = 1; i <= 5; i++)
         {
-            aPoles[i] = new gp_Pnt2d(i - 1, 0);
+            aPoles[i] = new Point2D(i - 1, 0);
         }
         var aKnots = new NCollection_Array1<double>(1, 3);
         aKnots[1] = 0;
@@ -402,7 +403,7 @@ public class ShapeUpgrade_DivideTests
         aCurve.Freeze();
 
         var aTool = new ShapeUpgrade_SplitCurve2dContinuity();
-        aTool.SetCriterion(GeomAbs_C1);
+        aTool.SetCriterion(C1);
         aTool.Init(aCurve, 0, 2);
         aTool.Compute();
 
@@ -452,9 +453,9 @@ public class ShapeAlgoTests
     public void HomoWires_GivesWiresWithTheSameNumberOfEdges()
     {
         var aContainer = new ShapeAlgo_AlgoContainer();
-        TopoDS_Wire aW1 = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0), true).Wire();
-        TopoDS_Wire aW2 = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 1), new gp_Pnt(2, 0, 1), new gp_Pnt(2, 2, 1),
-                                                         new gp_Pnt(0, 2, 1), true).Wire();
+        TopoDS_Wire aW1 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire();
+        TopoDS_Wire aW2 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(2, 0, 1), new Point3D(2, 2, 1),
+                                                         new Point3D(0, 2, 1), true).Wire();
         Assert.True(aContainer.HomoWires(aW1, aW2, out TopoDS_Wire aOut1, out TopoDS_Wire aOut2, false));
         int n1 = 0, n2 = 0;
         for (var it = new TopoDS_Iterator(aOut1); it.More(); it.Next())

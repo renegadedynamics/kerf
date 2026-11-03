@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_BSplKnotDistribution;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -28,7 +31,7 @@ namespace Occt;
 /// </remarks>
 public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 {
-    private NCollection_Array1<gp_Pnt2d> myPoles = new NCollection_Array1<gp_Pnt2d>();
+    private NCollection_Array1<Point2D> myPoles = new NCollection_Array1<Point2D>();
     private NCollection_Array1<double> myWeights = new NCollection_Array1<double>();
     private NCollection_Array1<double> myKnots = new NCollection_Array1<double>();
     private NCollection_Array1<double> myFlatKnots = new NCollection_Array1<double>();
@@ -37,8 +40,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     private int myDeg = 0;
     private bool myPeriodic = false;
     private bool myRational = false;
-    private GeomAbs_BSplKnotDistribution myKnotSet = GeomAbs_NonUniform;
-    private GeomAbs_Shape mySmooth = GeomAbs_C0;
+    private BSplKnotDistribution myKnotSet = NonUniform;
+    private Continuity mySmooth = C0;
     private double myMaxDerivInv = 0.0;
     private bool myMaxDerivInvOk = false;
 
@@ -49,7 +52,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     internal Geom2dEval_RepCurveDesc.Base? EvalRepresentation() => myEvalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     internal void SetEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         CheckMutable();
@@ -64,7 +67,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         myEvalRep = null;
     }
 
-    private static void CheckCurveData(NCollection_Array1<gp_Pnt2d> CPoles,
+    private static void CheckCurveData(NCollection_Array1<Point2D> CPoles,
                                        NCollection_Array1<double> CKnots,
                                        NCollection_Array1<int> CMults,
                                        int Degree,
@@ -72,30 +75,30 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     {
         if (Degree < 1 || Degree > Geom2d_BSplineCurve.MaxDegree())
         {
-            throw new Standard_ConstructionError("BSpline curve: invalid degree");
+            throw new ConstructionErrorException("BSpline curve: invalid degree");
         }
 
         if (CPoles.Length() < 2)
         {
-            throw new Standard_ConstructionError("BSpline curve: at least 2 poles required");
+            throw new ConstructionErrorException("BSpline curve: at least 2 poles required");
         }
 
         if (CKnots.Length() != CMults.Length())
         {
-            throw new Standard_ConstructionError("BSpline curve: Knot and Mult array size mismatch");
+            throw new ConstructionErrorException("BSpline curve: Knot and Mult array size mismatch");
         }
 
         for (int I = CKnots.Lower(); I < CKnots.Upper(); I++)
         {
             if (CKnots[I + 1] - CKnots[I] <= Epsilon(Math.Abs(CKnots[I])))
             {
-                throw new Standard_ConstructionError("BSpline curve: Knots interval values too close");
+                throw new ConstructionErrorException("BSpline curve: Knots interval values too close");
             }
         }
 
-        if (CPoles.Length() != BSplCLib.NbPoles(Degree, Periodic, CMults))
+        if (CPoles.Length() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(Degree, Periodic, CMults))
         {
-            throw new Standard_ConstructionError("BSpline curve: # Poles and degree mismatch");
+            throw new ConstructionErrorException("BSpline curve: # Poles and degree mismatch");
         }
     }
 
@@ -104,7 +107,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     {
         for (int i = theWeights.Lower(); i < theWeights.Upper(); i++)
         {
-            if (Math.Abs(theWeights[i] - theWeights[i + 1]) > gp.Resolution())
+            if (Math.Abs(theWeights[i] - theWeights[i + 1]) > Constants.Resolution())
             {
                 return true;
             }
@@ -118,9 +121,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// <summary>A copy of theOther (its evaluation representation deep-copied), not frozen.</summary>
     public Geom2d_BSplineCurve(Geom2d_BSplineCurve theOther)
     {
-        myPoles = new NCollection_Array1<gp_Pnt2d>(theOther.myPoles);
+        myPoles = new NCollection_Array1<Point2D>(theOther.myPoles);
         myWeights = theOther.myRational ? new NCollection_Array1<double>(theOther.myWeights)
-                                        : BSplCLib.UnitWeights(theOther.myPoles.Length());
+                                        : global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(theOther.myPoles.Length());
         myKnots = new NCollection_Array1<double>(theOther.myKnots);
         myFlatKnots = new NCollection_Array1<double>(theOther.myFlatKnots);
         myMults = new NCollection_Array1<int>(theOther.myMults);
@@ -135,11 +138,11 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A non-rational B-spline curve.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// Degree outside [1, MaxDegree()], fewer than 2 poles, knots and multiplicities of different lengths, knots
     /// not increasing (by more than Epsilon), or a pole count inconsistent with the degree and multiplicities.
     /// </exception>
-    public Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d> Poles,
+    public Geom2d_BSplineCurve(NCollection_Array1<Point2D> Poles,
                                NCollection_Array1<double> Knots,
                                NCollection_Array1<int> Multiplicities,
                                int Degree,
@@ -157,7 +160,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         // copy arrays
         myPoles.Resize(1, Poles.Length(), false);
         myPoles.CopyValues(Poles);
-        myWeights = BSplCLib.UnitWeights(Poles.Length());
+        myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(Poles.Length());
 
         myKnots.Resize(1, Knots.Length(), false);
         myKnots.CopyValues(Knots);
@@ -169,11 +172,11 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A rational B-spline curve (non-rational if all the weights are equal).</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// As the non-rational constructor, or weights of a different length than the poles, or a weight not above
     /// gp::Resolution().
     /// </exception>
-    public Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d> Poles,
+    public Geom2d_BSplineCurve(NCollection_Array1<Point2D> Poles,
                                NCollection_Array1<double> Weights,
                                NCollection_Array1<double> Knots,
                                NCollection_Array1<int> Multiplicities,
@@ -191,15 +194,15 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         if (Weights.Length() != Poles.Length())
         {
-            throw new Standard_ConstructionError("Geom2d_BSplineCurve: Weights and Poles array size mismatch");
+            throw new ConstructionErrorException("Geom2d_BSplineCurve: Weights and Poles array size mismatch");
         }
 
         int i;
         for (i = Weights.Lower(); i <= Weights.Upper(); i++)
         {
-            if (Weights[i] <= gp.Resolution())
+            if (Weights[i] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom2d_BSplineCurve: Weights values too small");
+                throw new ConstructionErrorException("Geom2d_BSplineCurve: Weights values too small");
             }
         }
 
@@ -216,7 +219,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(Poles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(Poles.Length());
         }
 
         myKnots.Resize(1, Knots.Length(), false);
@@ -229,10 +232,10 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The maximum degree of a B-spline curve: 25.</summary>
-    public static int MaxDegree() => BSplCLib.MaxDegree();
+    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Raises the degree to Degree, keeping the shape of the curve.</summary>
-    /// <exception cref="Standard_ConstructionError">Degree is below the current degree or above MaxDegree().</exception>
+    /// <exception cref="ConstructionErrorException">Degree is below the current degree or above MaxDegree().</exception>
     internal void IncreaseDegree(int Degree)
     {
         CheckMutable();
@@ -243,7 +246,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         if (Degree < myDeg || Degree > Geom2d_BSplineCurve.MaxDegree())
         {
-            throw new Standard_ConstructionError("BSpline curve: IncreaseDegree: bad degree value");
+            throw new ConstructionErrorException("BSpline curve: IncreaseDegree: bad degree value");
         }
 
         int FromK1 = FirstUKnotIndex();
@@ -253,9 +256,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         // OCCT: counts only the knots of the parameter range; on a curve not clamped at its ends the new pole count
         // doesn't match the new multiplicities, or BSplCLib::IncreaseDegree writes past it (occt-issues.md).
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Length() + Step * (ToK2 - FromK1));
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, myPoles.Length() + Step * (ToK2 - FromK1));
 
-        int nbknots = BSplCLib.IncreaseDegreeCountKnots(myDeg, Degree, myPeriodic, myMults);
+        int nbknots = global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegreeCountKnots(myDeg, Degree, myPeriodic, myMults);
 
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
 
@@ -267,7 +270,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             nweights.Resize(1, npoles.Upper(), false);
         }
 
-        BSplCLib.IncreaseDegree(myDeg,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(myDeg,
                                 Degree,
                                 myPeriodic,
                                 myPoles,
@@ -275,7 +278,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                 myKnots,
                                 myMults,
                                 npoles,
-                                myRational ? nweights : BSplCLib.NoWeights(),
+                                myRational ? nweights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                 nknots,
                                 nmults);
 
@@ -287,7 +290,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(myPoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
         }
         myKnots = nknots;
         myMults = nmults;
@@ -295,7 +298,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Raises the multiplicity of the knot of index Index to M (does nothing if it is already M or more).</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside the knot range.</exception>
+    /// <exception cref="OutOfRangeException">Index is outside the knot range.</exception>
     internal void IncreaseMultiplicity(int Index, int M)
     {
         CheckMutable();
@@ -348,7 +351,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// Inserts the knots Knots with the multiplicities Mults. A knot within ParametricTolerance of an existing
     /// knot raises its multiplicity: to the given one if Add is false, by the given one if Add is true.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The insertion is not possible (BSplCLib::PrepareInsertKnots).</exception>
+    /// <exception cref="ConstructionErrorException">The insertion is not possible (BSplCLib::PrepareInsertKnots).</exception>
     internal void InsertKnots(NCollection_Array1<double> Knots,
                               NCollection_Array1<int> Mults,
                               double ParametricTolerance = 0.0,
@@ -358,7 +361,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         // Check and compute new sizes
         int nbpoles, nbknots;
 
-        if (!BSplCLib.PrepareInsertKnots(myDeg,
+        if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(myDeg,
                                          myPeriodic,
                                          myKnots,
                                          myMults,
@@ -369,7 +372,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                          ParametricTolerance,
                                          Add))
         {
-            throw new Standard_ConstructionError("Geom2d_BSplineCurve::InsertKnots");
+            throw new ConstructionErrorException("Geom2d_BSplineCurve::InsertKnots");
         }
 
         if (nbpoles == myPoles.Length())
@@ -377,7 +380,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             return;
         }
 
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles);
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, nbknots);
         NCollection_Array1<double> nweights = new NCollection_Array1<double>();
@@ -387,7 +390,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             nweights.Resize(1, nbpoles, false);
         }
 
-        BSplCLib.InsertKnots(myDeg,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(myDeg,
                              myPeriodic,
                              myPoles,
                              InternalWeights(),
@@ -396,7 +399,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                              Knots,
                              Mults,
                              npoles,
-                             myRational ? nweights : BSplCLib.NoWeights(),
+                             myRational ? nweights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                              nknots,
                              nmults,
                              ParametricTolerance,
@@ -408,7 +411,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(npoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(npoles.Length());
         }
         myPoles = npoles;
         myKnots = nknots;
@@ -420,7 +423,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// Lowers the multiplicity of the knot of index Index to M (0 removes it) if the curve stays within
     /// Tolerance of itself; returns false, leaving the curve unchanged, if not.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [FirstUKnotIndex(), LastUKnotIndex()].</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [FirstUKnotIndex(), LastUKnotIndex()].</exception>
     internal bool RemoveKnot(int Index, int M, double Tolerance)
     {
         CheckMutable();
@@ -434,10 +437,10 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         if (Index < I1 || Index > I2)
         {
-            throw new Standard_OutOfRange("BSpline curve: RemoveKnot: index out of range");
+            throw new OutOfRangeException("BSpline curve: RemoveKnot: index out of range");
         }
 
-        NCollection_Array1<gp_Pnt2d> oldpoles = myPoles;
+        NCollection_Array1<Point2D> oldpoles = myPoles;
 
         int step = myMults.Value(Index) - M;
         if (step <= 0)
@@ -445,7 +448,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             return true;
         }
 
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, oldpoles.Length() - step);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, oldpoles.Length() - step);
 
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, myKnots.Length() - (M == 0 ? 1 : 0));
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, myMults.Length() - (M == 0 ? 1 : 0));
@@ -456,7 +459,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             nweights.Resize(1, npoles.Length(), false);
         }
 
-        if (!BSplCLib.RemoveKnot(Index,
+        if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.RemoveKnot(Index,
                                  M,
                                  myDeg,
                                  myPeriodic,
@@ -465,7 +468,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                  myKnots,
                                  myMults,
                                  npoles,
-                                 myRational ? nweights : BSplCLib.NoWeights(),
+                                 myRational ? nweights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                  nknots,
                                  nmults,
                                  Tolerance))
@@ -479,7 +482,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(npoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(npoles.Length());
         }
         myPoles = npoles;
         myKnots = nknots;
@@ -494,26 +497,26 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// Inserts the pole P (weight Weight) after the pole of index Index, adding a knot at the end of a uniform
     /// or quasi-uniform knot sequence.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [0, NbPoles()].</exception>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="OutOfRangeException">Index is outside [0, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">
     /// Weight is not above gp::Resolution(), or the knots are non-uniform or piecewise Bezier.
     /// </exception>
-    internal void InsertPoleAfter(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    internal void InsertPoleAfter(int Index, in Point2D P, double Weight = 1.0)
     {
         CheckMutable();
         if (Index < 0 || Index > myPoles.Length())
         {
-            throw new Standard_OutOfRange("BSpline curve: InsertPoleAfter: Index and #pole mismatch");
+            throw new OutOfRangeException("BSpline curve: InsertPoleAfter: Index and #pole mismatch");
         }
 
-        if (Weight <= gp.Resolution())
+        if (Weight <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError("BSpline curve: InsertPoleAfter: Weight too small");
+            throw new ConstructionErrorException("BSpline curve: InsertPoleAfter: Weight too small");
         }
 
-        if (myKnotSet == GeomAbs_NonUniform || myKnotSet == GeomAbs_PiecewiseBezier)
+        if (myKnotSet == NonUniform || myKnotSet == PiecewiseBezier)
         {
-            throw new Standard_ConstructionError("BSpline curve: InsertPoleAfter: bad knotSet type");
+            throw new ConstructionErrorException("BSpline curve: InsertPoleAfter: bad knotSet type");
         }
 
         NCollection_Array1<double> cknots = myKnots;
@@ -539,9 +542,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         nmults[1] = cmults[1];
         nmults[nbknots + 1] = cmults[nbknots];
 
-        NCollection_Array1<gp_Pnt2d> cpoles = myPoles;
+        NCollection_Array1<Point2D> cpoles = myPoles;
         int nbpoles = cpoles.Length();
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles + 1);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles + 1);
 
         // insert the pole
 
@@ -560,7 +563,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         // Insert the weight
 
         NCollection_Array1<double> nweights = new NCollection_Array1<double>();
-        bool rat = IsRational() || Math.Abs(Weight - 1.0) > gp.Resolution();
+        bool rat = IsRational() || Math.Abs(Weight - 1.0) > Constants.Resolution();
 
         if (rat)
         {
@@ -600,7 +603,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(myPoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
         }
         myRational = rat;
         myKnots = nknots;
@@ -610,15 +613,15 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Inserts the pole P (weight Weight) before the pole of index Index.</summary>
-    internal void InsertPoleBefore(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    internal void InsertPoleBefore(int Index, in Point2D P, double Weight = 1.0)
     {
         CheckMutable();
         InsertPoleAfter(Index - 1, P, Weight);
     }
 
     /// <summary>Removes the pole of index Index, and the last knot (uniform or quasi-uniform knots only).</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">
     /// The curve has only 2 poles, or the knots are non-uniform or piecewise Bezier.
     /// </exception>
     internal void RemovePole(int Index)
@@ -626,17 +629,17 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         CheckMutable();
         if (Index < 1 || Index > myPoles.Length())
         {
-            throw new Standard_OutOfRange("BSpline curve: RemovePole: Index and #pole mismatch");
+            throw new OutOfRangeException("BSpline curve: RemovePole: Index and #pole mismatch");
         }
 
         if (myPoles.Length() <= 2)
         {
-            throw new Standard_ConstructionError("BSpline curve: RemovePole: #pole is already minimum");
+            throw new ConstructionErrorException("BSpline curve: RemovePole: #pole is already minimum");
         }
 
-        if (myKnotSet == GeomAbs_NonUniform || myKnotSet == GeomAbs_PiecewiseBezier)
+        if (myKnotSet == NonUniform || myKnotSet == PiecewiseBezier)
         {
-            throw new Standard_ConstructionError("BSpline curve: RemovePole: bad knotSet type");
+            throw new ConstructionErrorException("BSpline curve: RemovePole: bad knotSet type");
         }
 
         int i;
@@ -653,7 +656,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         nknots[nknots.Upper()] = myKnots.Value(myKnots.Upper());
         nmults[nmults.Upper()] = myMults.Value(myMults.Upper());
 
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Upper() - 1);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, myPoles.Upper() - 1);
 
         for (i = 1; i < Index; i++)
         {
@@ -685,12 +688,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             myRational = Rational(myWeights);
             if (!myRational)
             {
-                myWeights = BSplCLib.UnitWeights(myPoles.Length());
+                myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
             }
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(myPoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
         }
         myKnots = nknots;
         myMults = nmults;
@@ -701,8 +704,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     protected internal sealed override void Reverse()
     {
         CheckMutable();
-        BSplCLib.Reverse(myKnots);
-        BSplCLib.Reverse(myMults);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myMults);
         int last;
         if (myPeriodic)
         {
@@ -712,10 +715,10 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         {
             last = myPoles.Upper();
         }
-        BSplCLib.Reverse(myPoles, last);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myPoles, last);
         if (myRational)
         {
-            BSplCLib.Reverse(myWeights, last);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myWeights, last);
         }
         updateKnots();
     }
@@ -730,13 +733,13 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// Keeps the part of the curve between U1 and U2 (knots within theTolerance are merged). A periodic curve
     /// becomes non-periodic; U2 - U1 may not exceed its period.
     /// </summary>
-    /// <exception cref="Standard_DomainError">U2 &lt; U1, or U2 - U1 exceeds the period of a periodic curve.</exception>
+    /// <exception cref="DomainErrorException">U2 &lt; U1, or U2 - U1 exceeds the period of a periodic curve.</exception>
     internal void Segment(double aU1, double aU2, double theTolerance = Precision_PConfusion)
     {
         CheckMutable();
         if (aU2 < aU1)
         {
-            throw new Standard_DomainError("Geom2d_BSplineCurve::Segment");
+            throw new DomainErrorException("Geom2d_BSplineCurve::Segment");
         }
 
         double NewU1, NewU2;
@@ -753,9 +756,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         {
             double Period = LastParameter() - FirstParameter();
             DU = U2 - U1;
-            if (DU - Period > Precision.PConfusion())
+            if (DU - Period > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new Standard_DomainError("Geom2d_BSplineCurve::Segment");
+                throw new DomainErrorException("Geom2d_BSplineCurve::Segment");
             }
             if (DU > Period)
             {
@@ -765,7 +768,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
 
         index = 0;
-        BSplCLib.LocateParameter(myDeg,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg,
                                  myKnots,
                                  myMults,
                                  U1,
@@ -775,7 +778,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                  out index,
                                  out NewU1);
         index = 0;
-        BSplCLib.LocateParameter(myDeg,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg,
                                  myKnots,
                                  myMults,
                                  U2,
@@ -802,7 +805,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         if (myPeriodic)
         { // set the origine at NewU1
             index = 0;
-            BSplCLib.LocateParameter(myDeg,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg,
                                      myKnots,
                                      myMults,
                                      U1,
@@ -824,13 +827,13 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         int index1 = 0, index2 = 0;
         int FromU1 = myKnots.Lower();
         int ToU2 = myKnots.Upper();
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, NewU1, myPeriodic, FromU1, ToU2, out index1, out U);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, NewU1, myPeriodic, FromU1, ToU2, out index1, out U);
         if (Math.Abs(myKnots.Value(index1 + 1) - U) <= Eps)
         {
             index1++;
         }
 
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, NewU2, myPeriodic, FromU1, ToU2, out index2, out U);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, NewU2, myPeriodic, FromU1, ToU2, out index2, out U);
         if (Math.Abs(myKnots.Value(index2 + 1) - U) <= Eps || index2 == index1)
         {
             index2++;
@@ -859,8 +862,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         nmults.SetValue(nbknots, myDeg + 1);
 
         // compute index1 and index2 to set the new poles and weights
-        int pindex1 = BSplCLib.PoleIndex(myDeg, index1, myPeriodic, myMults);
-        int pindex2 = BSplCLib.PoleIndex(myDeg, index2, myPeriodic, myMults);
+        int pindex1 = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myDeg, index1, myPeriodic, myMults);
+        int pindex2 = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myDeg, index2, myPeriodic, myMults);
 
         pindex1++;
         pindex2 = Min(pindex2 + 1, myPoles.Length());
@@ -868,7 +871,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         int nbpoles = pindex2 - pindex1 + 1;
 
         NCollection_Array1<double> nweights = new NCollection_Array1<double>();
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles);
 
         k = 1;
         if (myRational)
@@ -910,7 +913,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(myPoles.Length());
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
         }
 
         myMaxDerivInvOk = false;
@@ -918,35 +921,35 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Changes the value of the knot of index Index; the knots must stay increasing.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbKnots()].</exception>
-    /// <exception cref="Standard_ConstructionError">K is not strictly between the neighbouring knots.</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbKnots()].</exception>
+    /// <exception cref="ConstructionErrorException">K is not strictly between the neighbouring knots.</exception>
     internal void SetKnot(int Index, double K)
     {
         CheckMutable();
         if (Index < 1 || Index > myKnots.Length())
         {
-            throw new Standard_OutOfRange("BSpline curve: SetKnot: Index and #knots mismatch");
+            throw new OutOfRangeException("BSpline curve: SetKnot: Index and #knots mismatch");
         }
         double DK = Math.Abs(Epsilon(K));
         if (Index == 1)
         {
             if (K >= myKnots.Value(2) - DK)
             {
-                throw new Standard_ConstructionError("BSpline curve: SetKnot: K out of range");
+                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
             }
         }
         else if (Index == myKnots.Length())
         {
             if (K <= myKnots.Value(myKnots.Length() - 1) + DK)
             {
-                throw new Standard_ConstructionError("BSpline curve: SetKnot: K out of range");
+                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
             }
         }
         else
         {
             if (K <= myKnots.Value(Index - 1) + DK || K >= myKnots.Value(Index + 1) - DK)
             {
-                throw new Standard_ConstructionError("BSpline curve: SetKnot: K out of range");
+                throw new ConstructionErrorException("BSpline curve: SetKnot: K out of range");
             }
         }
         if (K != myKnots.Value(Index))
@@ -958,7 +961,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Changes all the knot values.</summary>
-    /// <exception cref="Standard_ConstructionError">The knots are not increasing or don't match the multiplicities.</exception>
+    /// <exception cref="ConstructionErrorException">The knots are not increasing or don't match the multiplicities.</exception>
     internal void SetKnots(NCollection_Array1<double> K)
     {
         CheckMutable();
@@ -1021,7 +1024,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         myMults = cmults;
 
         // compute new number of poles;
-        int nbp = BSplCLib.NbPoles(myDeg, true, myMults);
+        int nbp = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(myDeg, true, myMults);
 
         myPoles.Resize(1, nbp, true);
         if (myRational)
@@ -1030,7 +1033,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(nbp);
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(nbp);
         }
 
         myPeriodic = true;
@@ -1040,14 +1043,14 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Sets the origin of a periodic curve at the knot of index Index.</summary>
-    /// <exception cref="Standard_NoSuchObject">The curve is not periodic.</exception>
-    /// <exception cref="Standard_DomainError">Index is outside [FirstUKnotIndex(), LastUKnotIndex()].</exception>
+    /// <exception cref="NoSuchObjectException">The curve is not periodic.</exception>
+    /// <exception cref="DomainErrorException">Index is outside [FirstUKnotIndex(), LastUKnotIndex()].</exception>
     internal void SetOrigin(int Index)
     {
         CheckMutable();
         if (!myPeriodic)
         {
-            throw new Standard_NoSuchObject("Geom2d_BSplineCurve::SetOrigin");
+            throw new NoSuchObjectException("Geom2d_BSplineCurve::SetOrigin");
         }
 
         int i, k;
@@ -1056,7 +1059,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
         if ((Index < first) || (Index > last))
         {
-            throw new Standard_DomainError("Geom2d_BSplineCurve::SetOrigin");
+            throw new DomainErrorException("Geom2d_BSplineCurve::SetOrigin");
         }
 
         int nbknots = myKnots.Length();
@@ -1089,7 +1092,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
 
         // set the poles and weights
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles);
         NCollection_Array1<double> nweights = new NCollection_Array1<double>();
         first = myPoles.Lower();
         last = myPoles.Upper();
@@ -1134,7 +1137,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            myWeights = BSplCLib.UnitWeights(nbpoles);
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(nbpoles);
         }
         myMaxDerivInvOk = false;
         updateKnots();
@@ -1147,9 +1150,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         if (myPeriodic)
         {
             int NbKnots, NbPoles;
-            BSplCLib.PrepareUnperiodize(myDeg, myMults, out NbKnots, out NbPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(myDeg, myMults, out NbKnots, out NbPoles);
 
-            NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, NbPoles);
+            NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, NbPoles);
 
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, NbKnots);
 
@@ -1162,7 +1165,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                 nweights.Resize(1, NbPoles, false);
             }
 
-            BSplCLib.Unperiodize(myDeg,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Unperiodize(myDeg,
                                  myMults,
                                  myKnots,
                                  myPoles,
@@ -1170,7 +1173,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                                  nmults,
                                  nknots,
                                  npoles,
-                                 myRational ? nweights : BSplCLib.NoWeights());
+                                 myRational ? nweights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
 
             myPoles = npoles;
             if (IsRational())
@@ -1179,7 +1182,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             }
             else
             {
-                myWeights = BSplCLib.UnitWeights(myPoles.Length());
+                myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
             }
             myMults = nmults;
             myKnots = nknots;
@@ -1191,20 +1194,20 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Replaces the pole of index Index by P.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    internal void SetPole(int Index, in gp_Pnt2d P)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    internal void SetPole(int Index, in Point2D P)
     {
         CheckMutable();
         if (Index < 1 || Index > myPoles.Length())
         {
-            throw new Standard_OutOfRange("BSpline curve: SetPole: index and #pole mismatch");
+            throw new OutOfRangeException("BSpline curve: SetPole: index and #pole mismatch");
         }
         myPoles.SetValue(Index, P);
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Replaces the pole of index Index by P, and its weight by W.</summary>
-    internal void SetPole(int Index, in gp_Pnt2d P, double W)
+    internal void SetPole(int Index, in Point2D P, double W)
     {
         CheckMutable();
         SetPole(Index, P);
@@ -1212,22 +1215,22 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Changes the weight of the pole of index Index; the curve may become rational or non-rational.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    /// <exception cref="Standard_ConstructionError">W is not above gp::Resolution().</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">W is not above gp::Resolution().</exception>
     internal void SetWeight(int Index, double W)
     {
         CheckMutable();
         if (Index < 1 || Index > myPoles.Length())
         {
-            throw new Standard_OutOfRange("BSpline curve: SetWeight: Index and #pole mismatch");
+            throw new OutOfRangeException("BSpline curve: SetWeight: Index and #pole mismatch");
         }
 
-        if (W <= gp.Resolution())
+        if (W <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError("BSpline curve: SetWeight: Weight too small");
+            throw new ConstructionErrorException("BSpline curve: SetWeight: Weight too small");
         }
 
-        bool rat = IsRational() || (Math.Abs(W - 1.0) > gp.Resolution());
+        bool rat = IsRational() || (Math.Abs(W - 1.0) > Constants.Resolution());
 
         if (rat)
         {
@@ -1244,7 +1247,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                 rat = Rational(myWeights);
                 if (!rat)
                 {
-                    myWeights = BSplCLib.UnitWeights(myPoles.Length());
+                    myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(myPoles.Length());
                 }
             }
 
@@ -1259,9 +1262,9 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// FirstModifiedPole and LastModifiedPole are the poles actually changed; FirstModifiedPole is 0 if the
     /// point couldn't be moved.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">Index1 or Index2 is outside [1, NbPoles()], or Index1 &gt; Index2.</exception>
+    /// <exception cref="OutOfRangeException">Index1 or Index2 is outside [1, NbPoles()], or Index1 &gt; Index2.</exception>
     internal void MovePoint(double U,
-                            in gp_Pnt2d P,
+                            in Point2D P,
                             int Index1,
                             int Index2,
                             out int FirstModifiedPole,
@@ -1271,13 +1274,13 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         if (Index1 < 1 || Index1 > myPoles.Length() || Index2 < 1 || Index2 > myPoles.Length()
             || Index1 > Index2)
         {
-            throw new Standard_OutOfRange("BSpline curve: MovePoint: Index and #pole mismatch");
+            throw new OutOfRangeException("BSpline curve: MovePoint: Index and #pole mismatch");
         }
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Length());
-        gp_Pnt2d P0;
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, myPoles.Length());
+        Point2D P0;
         D0(U, out P0);
-        gp_Vec2d Displ = new gp_Vec2d(P0, P);
-        BSplCLib.MovePoint(U,
+        Vector2D Displ = new Vector2D(P0, P);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.MovePoint(U,
                            Displ,
                            Index1,
                            Index2,
@@ -1300,8 +1303,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     /// ErrorStatus is 0 on success; the curve is unchanged otherwise.
     /// </summary>
     internal void MovePointAndTangent(double U,
-                                      in gp_Pnt2d P,
-                                      in gp_Vec2d Tangent,
+                                      in Point2D P,
+                                      in Vector2D Tangent,
                                       double Tolerance,
                                       int StartingCondition,
                                       int EndingCondition,
@@ -1316,17 +1319,17 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             //
             SetNotPeriodic();
         }
-        NCollection_Array1<gp_Pnt2d> new_poles = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Length());
-        gp_Pnt2d P0;
+        NCollection_Array1<Point2D> new_poles = new NCollection_Array1<Point2D>(1, myPoles.Length());
+        Point2D P0;
 
-        gp_Vec2d delta_derivative;
+        Vector2D delta_derivative;
         D1(U, out P0, out delta_derivative);
-        gp_Vec2d delta = new gp_Vec2d(P0, P);
+        Vector2D delta = new Vector2D(P0, P);
         for (ii = 1; ii <= 2; ii++)
         {
             delta_derivative.SetCoord(ii, Tangent.Coord(ii) - delta_derivative.Coord(ii));
         }
-        BSplCLib.MovePointAndTangent(U,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.MovePointAndTangent(U,
                                      delta,
                                      delta_derivative,
                                      Tolerance,
@@ -1350,42 +1353,42 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     {
         myMaxDerivInvOk = false;
         int MaxKnotMult = 0;
-        BSplCLib.KnotAnalysis(myDeg, myPeriodic, myKnots, myMults, out myKnotSet, out MaxKnotMult);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotAnalysis(myDeg, myPeriodic, myKnots, myMults, out myKnotSet, out MaxKnotMult);
 
-        if (myKnotSet == GeomAbs_Uniform && !myPeriodic)
+        if (myKnotSet == Uniform && !myPeriodic)
         {
             myFlatKnots.Resize(myKnots.Lower(), myKnots.Upper(), false);
             myFlatKnots.Assign(myKnots);
         }
         else
         {
-            myFlatKnots.Resize(1, BSplCLib.KnotSequenceLength(myMults, myDeg, myPeriodic), false);
+            myFlatKnots.Resize(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(myMults, myDeg, myPeriodic), false);
 
-            BSplCLib.KnotSequence(myKnots, myMults, myDeg, myPeriodic, myFlatKnots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(myKnots, myMults, myDeg, myPeriodic, myFlatKnots);
         }
 
         if (MaxKnotMult == 0)
         {
-            mySmooth = GeomAbs_CN;
+            mySmooth = CN;
         }
         else
         {
             switch (myDeg - MaxKnotMult)
             {
                 case 0:
-                    mySmooth = GeomAbs_C0;
+                    mySmooth = C0;
                     break;
                 case 1:
-                    mySmooth = GeomAbs_C1;
+                    mySmooth = C1;
                     break;
                 case 2:
-                    mySmooth = GeomAbs_C2;
+                    mySmooth = C2;
                     break;
                 case 3:
-                    mySmooth = GeomAbs_C3;
+                    mySmooth = C3;
                     break;
                 default:
-                    mySmooth = GeomAbs_C3;
+                    mySmooth = C3;
                     break;
             }
         }
@@ -1394,30 +1397,30 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     // Geom2d_BSplineCurve_1.cxx
 
     /// <summary>True if the curve is CN (from the multiplicities of its interior knots).</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCN(int N)
     {
         Standard_RangeError_Raise_if(N < 0, "Geom2d_BSplineCurve::IsCN");
 
         switch (mySmooth)
         {
-            case GeomAbs_CN:
+            case CN:
                 return true;
-            case GeomAbs_C0:
+            case C0:
                 return N <= 0;
-            case GeomAbs_G1:
+            case G1:
                 return N <= 0;
-            case GeomAbs_C1:
+            case C1:
                 return N <= 1;
-            case GeomAbs_G2:
+            case G2:
                 return N <= 1;
-            case GeomAbs_C2:
+            case C2:
                 return N <= 2;
-            case GeomAbs_C3:
+            case C3:
                 return N <= 3
                          ? true
                          : N <= myDeg
-                                  - BSplCLib.MaxKnotMult(myMults, myMults.Lower() + 1, myMults.Upper() - 1);
+                                  - global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(myMults, myMults.Lower() + 1, myMults.Upper() - 1);
             default:
                 return false;
         }
@@ -1456,12 +1459,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                 continue;
             }
 
-            gp_Pnt2d aP1, aP2;
-            gp_Vec2d aV1, aV2;
+            Point2D aP1, aP2;
+            Vector2D aV1, aV2;
             LocalD1(aTpar, aNKnot - 1, aNKnot, out aP1, out aV1);
             LocalD1(aTpar, aNKnot, aNKnot + 1, out aP2, out aV2);
 
-            if ((aV1.SquareMagnitude() <= gp.Resolution()) || aV2.SquareMagnitude() <= gp.Resolution())
+            if ((aV1.SquareMagnitude() <= Constants.Resolution()) || aV2.SquareMagnitude() <= Constants.Resolution())
             {
                 return false;
             }
@@ -1490,12 +1493,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         // intersect curve boundary. Therefore, it is necessary to
         // check if curve is smooth in its first and last point.
 
-        gp_Pnt2d aP;
-        gp_Vec2d aV1b, aV2b;
+        Point2D aP;
+        Vector2D aV1b, aV2b;
         D1(Knot(FirstUKnotIndex()), out aP, out aV1b);
         D1(Knot(LastUKnotIndex()), out aP, out aV2b);
 
-        if ((aV1b.SquareMagnitude() <= gp.Resolution()) || aV2b.SquareMagnitude() <= gp.Resolution())
+        if ((aV1b.SquareMagnitude() <= Constants.Resolution()) || aV2b.SquareMagnitude() <= Constants.Resolution())
         {
             return false;
         }
@@ -1509,35 +1512,35 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>True if the start and end points are within Precision::Computational() (squared distance).</summary>
-    public sealed override bool IsClosed() => StartPoint().SquareDistance(EndPoint()) <= Precision.Computational();
+    public sealed override bool IsClosed() => StartPoint().SquareDistance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Computational();
 
     /// <summary>True if the curve is periodic.</summary>
     public sealed override bool IsPeriodic() => myPeriodic;
 
     /// <summary>The global continuity, from the highest interior knot multiplicity (C3 at most, or CN).</summary>
-    public sealed override GeomAbs_Shape Continuity() => mySmooth;
+    public sealed override Continuity Continuity() => mySmooth;
 
     /// <summary>The degree.</summary>
     public int Degree() => myDeg;
 
-    public sealed override gp_Pnt2d EvalD0(double U)
+    public sealed override Point2D EvalD0(double U)
     {
-        gp_Pnt2d aEvalRepResult;
+        Point2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveD0(myEvalRep, U, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
-        gp_Pnt2d P;
+        Point2D P;
         int aSpanIndex = 0;
         double aNewU = U;
         PeriodicNormalization(ref aNewU);
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
         if (aNewU < myKnots.Value(aSpanIndex))
         {
             aSpanIndex--;
         }
 
-        BSplCLib.D0(aNewU, aSpanIndex, myDeg, myPeriodic, myPoles, InternalWeights(), myKnots, myMults, out P);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(aNewU, aSpanIndex, myDeg, myPeriodic, myPoles, InternalWeights(), myKnots, myMults, out P);
         return P;
     }
 
@@ -1552,12 +1555,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         int aSpanIndex = 0;
         double aNewU = U;
         PeriodicNormalization(ref aNewU);
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
         if (aNewU < myKnots.Value(aSpanIndex))
         {
             aSpanIndex--;
         }
-        BSplCLib.D1(aNewU,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(aNewU,
                     aSpanIndex,
                     myDeg,
                     myPeriodic,
@@ -1581,12 +1584,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         int aSpanIndex = 0;
         double aNewU = U;
         PeriodicNormalization(ref aNewU);
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
         if (aNewU < myKnots.Value(aSpanIndex))
         {
             aSpanIndex--;
         }
-        BSplCLib.D2(aNewU,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(aNewU,
                     aSpanIndex,
                     myDeg,
                     myPeriodic,
@@ -1611,12 +1614,12 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         int aSpanIndex = 0;
         double aNewU = U;
         PeriodicNormalization(ref aNewU);
-        BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myKnots, myMults, U, myPeriodic, ref aSpanIndex, out aNewU);
         if (aNewU < myKnots.Value(aSpanIndex))
         {
             aSpanIndex--;
         }
-        BSplCLib.D3(aNewU,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(aNewU,
                     aSpanIndex,
                     myDeg,
                     myPeriodic,
@@ -1632,24 +1635,24 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative();
         }
-        gp_Vec2d aEvalRepResult;
+        Vector2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveDN(myEvalRep, U, N, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
-        gp_Vec2d V;
-        BSplCLib.DN(U, N, 0, myDeg, myPeriodic, myPoles, InternalWeights(), myFlatKnots, BSplCLib.NoMults(), out V);
+        Vector2D V;
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(U, N, 0, myDeg, myPeriodic, myPoles, InternalWeights(), myFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out V);
         return V;
     }
 
     /// <summary>The last pole if the last knot has multiplicity Degree() + 1, the point at LastParameter() otherwise.</summary>
-    public sealed override gp_Pnt2d EndPoint()
+    public sealed override Point2D EndPoint()
     {
         if (myMults.Value(myKnots.Upper()) == myDeg + 1)
         {
@@ -1670,7 +1673,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            return BSplCLib.FirstUKnotIndex(myDeg, myMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(myDeg, myMults);
         }
     }
 
@@ -1678,7 +1681,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public sealed override double FirstParameter() => myFlatKnots.Value(myDeg + 1);
 
     /// <summary>The knot of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbKnots()].</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbKnots()].</exception>
     public double Knot(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myKnots.Length(), "Geom2d_BSplineCurve::Knot");
@@ -1686,10 +1689,10 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The knot distribution: NonUniform, Uniform, QuasiUniform or PiecewiseBezier.</summary>
-    public GeomAbs_BSplKnotDistribution KnotDistribution() => myKnotSet;
+    public BSplKnotDistribution KnotDistribution() => myKnotSet;
 
     /// <summary>Copies the knots of K's index range into K.</summary>
-    /// <exception cref="Standard_DomainError">K's range is outside [1, NbKnots()].</exception>
+    /// <exception cref="DomainErrorException">K's range is outside [1, NbKnots()].</exception>
     public void Knots(NCollection_Array1<double> K)
     {
         Standard_DomainError_Raise_if(K.Lower() < myKnots.Lower() || K.Upper() > myKnots.Upper(),
@@ -1707,7 +1710,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     internal NCollection_Array1<double> InternalKnots() => myKnots;
 
     /// <summary>Copies the flat knots of K's index range into K.</summary>
-    /// <exception cref="Standard_DomainError">K's range is outside the flat knots' range.</exception>
+    /// <exception cref="DomainErrorException">K's range is outside the flat knots' range.</exception>
     public void KnotSequence(NCollection_Array1<double> K)
     {
         Standard_DomainError_Raise_if(K.Lower() < myFlatKnots.Lower() || K.Upper() > myFlatKnots.Upper(),
@@ -1733,7 +1736,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         }
         else
         {
-            return BSplCLib.LastUKnotIndex(myDeg, myMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(myDeg, myMults);
         }
     }
 
@@ -1741,108 +1744,108 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public sealed override double LastParameter() => myFlatKnots.Value(myFlatKnots.Upper() - myDeg);
 
     /// <summary>The point of parameter U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
-    public gp_Pnt2d LocalValue(double U, int FromK1, int ToK2)
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
+    public Point2D LocalValue(double U, int FromK1, int ToK2)
     {
-        gp_Pnt2d P;
+        Point2D P;
         LocalD0(U, FromK1, ToK2, out P);
         return P;
     }
 
     /// <summary>The point of parameter U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
-    public void LocalD0(double U, int FromK1, int ToK2, out gp_Pnt2d P)
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
+    public void LocalD0(double U, int FromK1, int ToK2, out Point2D P)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalValue");
 
         double u = U;
         int index = 0;
-        BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
-        index = BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
 
-        BSplCLib.D0(u,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u,
                     index,
                     myDeg,
                     myPeriodic,
                     myPoles,
                     InternalWeights(),
                     myFlatKnots,
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     out P);
     }
 
     /// <summary>The point and first derivative at U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
-    public void LocalD1(double U, int FromK1, int ToK2, out gp_Pnt2d P, out gp_Vec2d V1)
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
+    public void LocalD1(double U, int FromK1, int ToK2, out Point2D P, out Vector2D V1)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalD1");
 
         double u = U;
         int index = 0;
-        BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
-        index = BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
 
-        BSplCLib.D1(u,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(u,
                     index,
                     myDeg,
                     myPeriodic,
                     myPoles,
                     InternalWeights(),
                     myFlatKnots,
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     out P,
                     out V1);
     }
 
     /// <summary>The point and first two derivatives at U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
-    public void LocalD2(double U, int FromK1, int ToK2, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
+    public void LocalD2(double U, int FromK1, int ToK2, out Point2D P, out Vector2D V1, out Vector2D V2)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalD2");
 
         double u = U;
         int index = 0;
-        BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
-        index = BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
 
-        BSplCLib.D2(u,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u,
                     index,
                     myDeg,
                     myPeriodic,
                     myPoles,
                     InternalWeights(),
                     myFlatKnots,
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     out P,
                     out V1,
                     out V2);
     }
 
     /// <summary>The point and first three derivatives at U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
     public void LocalD3(double U,
                         int FromK1,
                         int ToK2,
-                        out gp_Pnt2d P,
-                        out gp_Vec2d V1,
-                        out gp_Vec2d V2,
-                        out gp_Vec2d V3)
+                        out Point2D P,
+                        out Vector2D V1,
+                        out Vector2D V2,
+                        out Vector2D V3)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalD3");
 
         double u = U;
         int index = 0;
-        BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
-        index = BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
 
-        BSplCLib.D3(u,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(u,
                     index,
                     myDeg,
                     myPeriodic,
                     myPoles,
                     InternalWeights(),
                     myFlatKnots,
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     out P,
                     out V1,
                     out V2,
@@ -1850,20 +1853,20 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The Nth derivative at U, computed on the span between the knots FromK1 and ToK2.</summary>
-    /// <exception cref="Standard_DomainError">FromK1 == ToK2.</exception>
-    public gp_Vec2d LocalDN(double U, int FromK1, int ToK2, int N)
+    /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
+    public Vector2D LocalDN(double U, int FromK1, int ToK2, int N)
     {
         // OCCT: the message says LocalD3 (cosmetic).
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Geom2d_BSplineCurve::LocalD3");
 
         double u = U;
         int index = 0;
-        BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
-        index = BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myDeg, myFlatKnots, U, myPeriodic, FromK1, ToK2, out index, out u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myDeg, index, myMults, myPeriodic);
 
-        gp_Vec2d V;
+        Vector2D V;
 
-        BSplCLib.DN(u,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(u,
                     N,
                     index,
                     myDeg,
@@ -1871,13 +1874,13 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                     myPoles,
                     InternalWeights(),
                     myFlatKnots,
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     out V);
         return V;
     }
 
     /// <summary>The multiplicity of the knot of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbKnots()].</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbKnots()].</exception>
     public int Multiplicity(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myMults.Length(),
@@ -1886,7 +1889,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Copies the multiplicities into M.</summary>
-    /// <exception cref="Standard_DimensionError">M's length is not NbKnots().</exception>
+    /// <exception cref="DimensionErrorException">M's length is not NbKnots().</exception>
     public void Multiplicities(NCollection_Array1<int> M)
     {
         Standard_DimensionError_Raise_if(M.Length() != myMults.Length(),
@@ -1907,29 +1910,29 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public int NbPoles() => myPoles.Length();
 
     /// <summary>The pole of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    public gp_Pnt2d Pole(int Index)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    public Point2D Pole(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myPoles.Length(), "Geom2d_BSplineCurve::Pole");
         return myPoles.Value(Index);
     }
 
     /// <summary>Copies the poles into P.</summary>
-    /// <exception cref="Standard_DimensionError">P's length is not NbPoles().</exception>
-    public void Poles(NCollection_Array1<gp_Pnt2d> P)
+    /// <exception cref="DimensionErrorException">P's length is not NbPoles().</exception>
+    public void Poles(NCollection_Array1<Point2D> P)
     {
         Standard_DimensionError_Raise_if(P.Length() != myPoles.Length(), "Geom2d_BSplineCurve::Poles");
         P.Assign(myPoles);
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public PackedList<gp_Pnt2d> Poles() => myPoles.ToPackedList();
+    public PackedList<Point2D> Poles() => myPoles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<gp_Pnt2d> InternalPoles() => myPoles;
+    internal NCollection_Array1<Point2D> InternalPoles() => myPoles;
 
     /// <summary>The first pole if the first knot has multiplicity Degree() + 1, the point at FirstParameter() otherwise.</summary>
-    public sealed override gp_Pnt2d StartPoint()
+    public sealed override Point2D StartPoint()
     {
         if (myMults.Value(1) == myDeg + 1)
         {
@@ -1942,7 +1945,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The weight of the pole of index Index (1 if the curve is not rational).</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
     public double Weight(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myPoles.Length(),
@@ -1958,7 +1961,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Copies the weights into W (ones if the curve is not rational).</summary>
-    /// <exception cref="Standard_DimensionError">W's length is not NbPoles().</exception>
+    /// <exception cref="DimensionErrorException">W's length is not NbPoles().</exception>
     public void Weights(NCollection_Array1<double> W)
     {
         Standard_DimensionError_Raise_if(W.Length() != myPoles.Length(), "Geom2d_BSplineCurve::Weights");
@@ -1987,7 +1990,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         {
             return myWeights;
         }
-        return BSplCLib.NoWeights();
+        return global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights();
     }
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
@@ -2000,7 +2003,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     public bool IsRational() => myRational;
 
     /// <summary>Applies T to the poles.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         for (int I = 1; I <= myPoles.Length(); I++)
@@ -2052,7 +2055,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
         else
         {
             I1 = 1;
-            BSplCLib.Hunt(CKnots, NewU, out I1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(CKnots, NewU, out I1);
             I1 = Max(Min(I1, CKnots.Upper()), CKnots.Lower());
             while (I1 + 1 <= CKnots.Upper() && Math.Abs(CKnots[I1 + 1] - NewU) <= PParametricTolerance)
             {
@@ -2082,8 +2085,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             if (myPeriodic)
             {
                 int NbKnots, NbPoles;
-                BSplCLib.PrepareUnperiodize(myDeg, myMults, out NbKnots, out NbPoles);
-                NCollection_Array1<gp_Pnt2d> new_poles = new NCollection_Array1<gp_Pnt2d>(1, NbPoles);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(myDeg, myMults, out NbKnots, out NbPoles);
+                NCollection_Array1<Point2D> new_poles = new NCollection_Array1<Point2D>(1, NbPoles);
                 NCollection_Array1<double> new_weights = new NCollection_Array1<double>(1, NbPoles);
                 for (int ii = 1; ii <= NbPoles; ii++)
                 {
@@ -2096,8 +2099,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
                         new_weights[ii] = myWeights[((ii - 1) % myPoles.Length()) + 1];
                     }
                 }
-                BSplCLib.Resolution(new_poles,
-                                    myRational ? new_weights : BSplCLib.NoWeights(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Resolution(new_poles,
+                                    myRational ? new_weights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                     new_poles.Length(),
                                     myFlatKnots,
                                     myDeg,
@@ -2106,7 +2109,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
             }
             else
             {
-                BSplCLib.Resolution(myPoles,
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Resolution(myPoles,
                                     InternalWeights(),
                                     myPoles.Length(),
                                     myFlatKnots,
@@ -2181,7 +2184,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted after the pole of index Index.</summary>
-    public Geom2d_BSplineCurve PoleInsertedAfter(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    public Geom2d_BSplineCurve PoleInsertedAfter(int Index, in Point2D P, double Weight = 1.0)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);
         aCopy.InsertPoleAfter(Index, P, Weight);
@@ -2189,7 +2192,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted before the pole of index Index.</summary>
-    public Geom2d_BSplineCurve PoleInsertedBefore(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    public Geom2d_BSplineCurve PoleInsertedBefore(int Index, in Point2D P, double Weight = 1.0)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);
         aCopy.InsertPoleBefore(Index, P, Weight);
@@ -2261,7 +2264,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    public Geom2d_BSplineCurve WithPole(int Index, in gp_Pnt2d P)
+    public Geom2d_BSplineCurve WithPole(int Index, in Point2D P)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);
         aCopy.SetPole(Index, P);
@@ -2269,7 +2272,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight W.</summary>
-    public Geom2d_BSplineCurve WithPole(int Index, in gp_Pnt2d P, double W)
+    public Geom2d_BSplineCurve WithPole(int Index, in Point2D P, double W)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);
         aCopy.SetPole(Index, P, W);
@@ -2286,7 +2289,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
     /// <summary>A copy whose point of parameter U is moved to P (see MovePoint).</summary>
     public Geom2d_BSplineCurve PointMoved(double U,
-                                          in gp_Pnt2d P,
+                                          in Point2D P,
                                           int Index1,
                                           int Index2,
                                           out int FirstModifiedPole,
@@ -2299,8 +2302,8 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
 
     /// <summary>A copy whose point and tangent at U are moved (see MovePointAndTangent).</summary>
     public Geom2d_BSplineCurve PointAndTangentMoved(double U,
-                                                    in gp_Pnt2d P,
-                                                    in gp_Vec2d Tangent,
+                                                    in Point2D P,
+                                                    in Vector2D Tangent,
                                                     double Tolerance,
                                                     int StartingCondition,
                                                     int EndingCondition,
@@ -2312,7 +2315,7 @@ public class Geom2d_BSplineCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     public Geom2d_BSplineCurve WithEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         Geom2d_BSplineCurve aCopy = new Geom2d_BSplineCurve(this);

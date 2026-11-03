@@ -10,7 +10,7 @@ public class BSplCLibTest
     public void UnitWeights_SmallSize_ReturnsNonOwning()
     {
         const int aNbElems = 10;
-        NCollection_Array1<double> aWeights = BSplCLib.UnitWeights(aNbElems);
+        NCollection_Array1<double> aWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(aNbElems);
 
         Assert.Equal(1, aWeights.Lower());
         Assert.Equal(aNbElems, aWeights.Upper());
@@ -26,8 +26,8 @@ public class BSplCLibTest
     [Fact]
     public void UnitWeights_MaxSize_ReturnsNonOwning()
     {
-        int aNbElems = BSplCLib.MaxUnitWeightsSize();
-        NCollection_Array1<double> aWeights = BSplCLib.UnitWeights(aNbElems);
+        int aNbElems = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxUnitWeightsSize();
+        NCollection_Array1<double> aWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(aNbElems);
 
         Assert.Equal(aNbElems, aWeights.Length());
         Assert.False(aWeights.IsDeletable());
@@ -39,8 +39,8 @@ public class BSplCLibTest
     [Fact]
     public void UnitWeights_OverMaxSize_ReturnsOwning()
     {
-        int aNbElems = BSplCLib.MaxUnitWeightsSize() + 1;
-        NCollection_Array1<double> aWeights = BSplCLib.UnitWeights(aNbElems);
+        int aNbElems = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxUnitWeightsSize() + 1;
+        NCollection_Array1<double> aWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(aNbElems);
 
         Assert.Equal(1, aWeights.Lower());
         Assert.Equal(aNbElems, aWeights.Upper());
@@ -56,7 +56,7 @@ public class BSplCLibTest
     [Fact]
     public void UnitWeights_SingleElement()
     {
-        NCollection_Array1<double> aWeights = BSplCLib.UnitWeights(1);
+        NCollection_Array1<double> aWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(1);
 
         Assert.Equal(1, aWeights.Length());
         Assert.False(aWeights.IsDeletable());
@@ -66,7 +66,7 @@ public class BSplCLibTest
     [Fact]
     public void MaxUnitWeightsSize_IsPositive()
     {
-        Assert.True(BSplCLib.MaxUnitWeightsSize() > 0);
-        Assert.Equal(2049, BSplCLib.MaxUnitWeightsSize());
+        Assert.True(global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxUnitWeightsSize() > 0);
+        Assert.Equal(2049, global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxUnitWeightsSize());
     }
 }

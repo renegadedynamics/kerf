@@ -13,191 +13,191 @@ namespace Occt;
 public partial struct NCollection_Vec2<T> : INCollection_Vec<T, NCollection_Vec2<T>>
     where T : unmanaged, INumber<T>
 {
-    private NCollection_Buffer2<T> v;
+    private NCollection_Buffer2<T> _v;
 
     /// <summary>The number of components.</summary>
     public static int Length() => 2;
 
-    /// <summary>All components set to <paramref name="theValue"/>.</summary>
-    public NCollection_Vec2(T theValue)
+    /// <summary>All components set to <paramref name="value"/>.</summary>
+    public NCollection_Vec2(T value)
     {
-        v[0] = theValue;
-        v[1] = theValue;
+        _v[0] = value;
+        _v[1] = value;
     }
 
-    public NCollection_Vec2(T theX, T theY)
+    public NCollection_Vec2(T x, T y)
     {
-        v[0] = theX;
-        v[1] = theY;
+        _v[0] = x;
+        _v[1] = y;
     }
 
     /// <summary>
     /// Converts a vector of another element type, as OCCT's converting constructor (<c>static_cast</c> of each
     /// component: truncation towards zero from a real to an integer type).
     /// </summary>
-    public static NCollection_Vec2<T> From<TOther>(in NCollection_Vec2<TOther> theOther) where TOther : unmanaged, INumber<TOther>
-        => new(T.CreateTruncating(theOther[0]), T.CreateTruncating(theOther[1]));
+    public static NCollection_Vec2<T> From<TOther>(in NCollection_Vec2<TOther> other) where TOther : unmanaged, INumber<TOther>
+        => new(T.CreateTruncating(other[0]), T.CreateTruncating(other[1]));
 
-    static NCollection_Vec2<T> INCollection_Vec<T, NCollection_Vec2<T>>.Create(T theValue) => new(theValue);
+    static NCollection_Vec2<T> INCollection_Vec<T, NCollection_Vec2<T>>.Create(T value) => new(value);
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValues(T theX, T theY)
+    internal void SetValues(T x, T y)
     {
-        v[0] = theX;
-        v[1] = theY;
+        _v[0] = x;
+        _v[1] = y;
     }
 
     /// <summary>The components, for writing (OCCT's <c>ChangeData()</c> and non-const <c>x()</c>, <c>y()</c>, ...).</summary>
     [UnscopedRef]
-    internal Span<T> ChangeData() => v;
+    internal Span<T> ChangeData() => _v;
 
-    internal void Add(in NCollection_Vec2<T> theAdd)
+    internal void Add(in NCollection_Vec2<T> add)
     {
-        v[0] += theAdd.v[0];
-        v[1] += theAdd.v[1];
+        _v[0] += add._v[0];
+        _v[1] += add._v[1];
     }
 
-    internal void Subtract(in NCollection_Vec2<T> theDec)
+    internal void Subtract(in NCollection_Vec2<T> dec)
     {
-        v[0] -= theDec.v[0];
-        v[1] -= theDec.v[1];
+        _v[0] -= dec._v[0];
+        _v[1] -= dec._v[1];
     }
 
     /// <summary>Per-component multiplication (OCCT's <c>operator*=</c> with a vector).</summary>
-    internal void Multiply(in NCollection_Vec2<T> theRight)
+    internal void Multiply(in NCollection_Vec2<T> right)
     {
-        v[0] *= theRight.v[0];
-        v[1] *= theRight.v[1];
+        _v[0] *= right._v[0];
+        _v[1] *= right._v[1];
     }
 
-    internal void Multiply(T theFactor)
+    internal void Multiply(T factor)
     {
-        v[0] *= theFactor;
-        v[1] *= theFactor;
+        _v[0] *= factor;
+        _v[1] *= factor;
     }
 
     /// <summary>Per-component division by a scale factor (OCCT's <c>operator/=</c>).</summary>
-    internal void Divide(T theInvFactor)
+    internal void Divide(T invFactor)
     {
-        v[0] /= theInvFactor;
-        v[1] /= theInvFactor;
+        _v[0] /= invFactor;
+        _v[1] /= invFactor;
     }
 
     /// <summary>Per-component division (OCCT's <c>operator/=</c> with a vector).</summary>
-    internal void Divide(in NCollection_Vec2<T> theRight)
+    internal void Divide(in NCollection_Vec2<T> right)
     {
-        v[0] /= theRight.v[0];
-        v[1] /= theRight.v[1];
+        _v[0] /= right._v[0];
+        _v[1] /= right._v[1];
     }
 
     // Copies with a mutator applied
 
-    public readonly NCollection_Vec2<T> WithValues(T theX, T theY) => new(theX, theY);
+    public readonly NCollection_Vec2<T> WithValues(T x, T y) => new(x, y);
 
     /// <summary>A copy with the component of the given (0-based) index replaced.</summary>
-    public readonly NCollection_Vec2<T> WithValue(int theIndex, T theValue)
+    public readonly NCollection_Vec2<T> WithValue(int index, T value)
     {
-        NCollection_Vec2<T> aCopy = this;
-        aCopy[theIndex] = theValue;
-        return aCopy;
+        NCollection_Vec2<T> copy = this;
+        copy[index] = value;
+        return copy;
     }
 
-    public readonly NCollection_Vec2<T> Added(in NCollection_Vec2<T> theAdd) => this + theAdd;
+    public readonly NCollection_Vec2<T> Added(in NCollection_Vec2<T> add) => this + add;
 
-    public readonly NCollection_Vec2<T> Subtracted(in NCollection_Vec2<T> theDec) => this - theDec;
+    public readonly NCollection_Vec2<T> Subtracted(in NCollection_Vec2<T> dec) => this - dec;
 
-    public readonly NCollection_Vec2<T> Divided(T theInvFactor) => this / theInvFactor;
+    public readonly NCollection_Vec2<T> Divided(T invFactor) => this / invFactor;
 
-    public readonly NCollection_Vec2<T> Divided(in NCollection_Vec2<T> theRight) => this / theRight;
+    public readonly NCollection_Vec2<T> Divided(in NCollection_Vec2<T> right) => this / right;
 
-    public readonly NCollection_Vec2<T> Multiplied(in NCollection_Vec2<T> theRight) => this * theRight;
+    public readonly NCollection_Vec2<T> Multiplied(in NCollection_Vec2<T> right) => this * right;
 
     // Queries
 
     /// <summary>The component of the given (0-based) index.</summary>
-    public T this[int theIndex]
+    public T this[int index]
     {
-        readonly get => v[theIndex];
-        internal set => v[theIndex] = value;
+        readonly get => _v[index];
+        internal set => _v[index] = value;
     }
 
-    public readonly T x() => v[0];
+    public readonly T X() => _v[0];
 
-    public readonly T y() => v[1];
+    public readonly T Y() => _v[1];
 
-    public readonly NCollection_Vec2<T> xy() => new(x(), y());
+    public readonly NCollection_Vec2<T> Xy() => new(X(), Y());
 
-    public readonly NCollection_Vec2<T> yx() => new(y(), x());
+    public readonly NCollection_Vec2<T> Yx() => new(Y(), X());
 
     /// <summary>Exact comparison, without tolerance (C++ <c>==</c> on each component).</summary>
-    public readonly bool IsEqual(in NCollection_Vec2<T> theOther) => v[0] == theOther.v[0] && v[1] == theOther.v[1];
+    public readonly bool IsEqual(in NCollection_Vec2<T> other) => _v[0] == other._v[0] && _v[1] == other._v[1];
 
-    public readonly NCollection_Vec2<T> Multiplied(T theFactor)
+    public readonly NCollection_Vec2<T> Multiplied(T factor)
     {
-        return new(v[0] * theFactor, v[1] * theFactor);
+        return new(_v[0] * factor, _v[1] * factor);
     }
 
     /// <summary>The component-wise minimum of two vectors.</summary>
-    public readonly NCollection_Vec2<T> cwiseMin(in NCollection_Vec2<T> theVec)
-        => new(v[0] < theVec.v[0] ? v[0] : theVec.v[0], v[1] < theVec.v[1] ? v[1] : theVec.v[1]);
+    public readonly NCollection_Vec2<T> CwiseMin(in NCollection_Vec2<T> vec)
+        => new(_v[0] < vec._v[0] ? _v[0] : vec._v[0], _v[1] < vec._v[1] ? _v[1] : vec._v[1]);
 
     /// <summary>The component-wise maximum of two vectors.</summary>
-    public readonly NCollection_Vec2<T> cwiseMax(in NCollection_Vec2<T> theVec)
-        => new(v[0] > theVec.v[0] ? v[0] : theVec.v[0], v[1] > theVec.v[1] ? v[1] : theVec.v[1]);
+    public readonly NCollection_Vec2<T> CwiseMax(in NCollection_Vec2<T> vec)
+        => new(_v[0] > vec._v[0] ? _v[0] : vec._v[0], _v[1] > vec._v[1] ? _v[1] : vec._v[1]);
 
     /// <summary>The component-wise absolute value.</summary>
-    public readonly NCollection_Vec2<T> cwiseAbs() => new(T.Abs(v[0]), T.Abs(v[1]));
+    public readonly NCollection_Vec2<T> CwiseAbs() => new(T.Abs(_v[0]), T.Abs(_v[1]));
 
     /// <summary>The largest component.</summary>
-    public readonly T maxComp() => v[0] > v[1] ? v[0] : v[1];
+    public readonly T MaxComp() => _v[0] > _v[1] ? _v[0] : _v[1];
 
     /// <summary>The smallest component.</summary>
-    public readonly T minComp() => v[0] < v[1] ? v[0] : v[1];
+    public readonly T MinComp() => _v[0] < _v[1] ? _v[0] : _v[1];
 
-    public readonly T Dot(in NCollection_Vec2<T> theOther) => x() * theOther.x() + y() * theOther.y();
+    public readonly T Dot(in NCollection_Vec2<T> other) => X() * other.X() + Y() * other.Y();
 
     /// <summary>The vector's length.</summary>
-    public readonly T Modulus() => NCollection_VecTools.Sqrt(x() * x() + y() * y());
+    public readonly T Modulus() => NCollection_VecTools.Sqrt(X() * X() + Y() * Y());
 
-    public readonly T SquareModulus() => x() * x() + y() * y();
+    public readonly T SquareModulus() => X() * X() + Y() * Y();
 
     public static NCollection_Vec2<T> DX() => new(T.One, T.Zero);
 
     public static NCollection_Vec2<T> DY() => new(T.Zero, T.One);
 
     /// <summary>Copies the components into a span of at least 2 elements.</summary>
-    public readonly void CopyTo(Span<T> theDestination)
+    public readonly void CopyTo(Span<T> destination)
     {
-        theDestination[0] = v[0];
-        theDestination[1] = v[1];
+        destination[0] = _v[0];
+        destination[1] = _v[1];
     }
 
-    public static NCollection_Vec2<T> operator +(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => new(theLeft.v[0] + theRight.v[0], theLeft.v[1] + theRight.v[1]);
+    public static NCollection_Vec2<T> operator +(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => new(left._v[0] + right._v[0], left._v[1] + right._v[1]);
 
-    public static NCollection_Vec2<T> operator -(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => new(theLeft.v[0] - theRight.v[0], theLeft.v[1] - theRight.v[1]);
+    public static NCollection_Vec2<T> operator -(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => new(left._v[0] - right._v[0], left._v[1] - right._v[1]);
 
-    public static NCollection_Vec2<T> operator *(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => new(theLeft.v[0] * theRight.v[0], theLeft.v[1] * theRight.v[1]);
+    public static NCollection_Vec2<T> operator *(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => new(left._v[0] * right._v[0], left._v[1] * right._v[1]);
 
-    public static NCollection_Vec2<T> operator /(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => new(theLeft.v[0] / theRight.v[0], theLeft.v[1] / theRight.v[1]);
+    public static NCollection_Vec2<T> operator /(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => new(left._v[0] / right._v[0], left._v[1] / right._v[1]);
 
-    public static NCollection_Vec2<T> operator /(in NCollection_Vec2<T> theVec, T theInvFactor) => new(theVec.v[0] / theInvFactor, theVec.v[1] / theInvFactor);
+    public static NCollection_Vec2<T> operator /(in NCollection_Vec2<T> vec, T invFactor) => new(vec._v[0] / invFactor, vec._v[1] / invFactor);
 
-    public static NCollection_Vec2<T> operator -(in NCollection_Vec2<T> theVec) => new(-theVec.x(), -theVec.y());
+    public static NCollection_Vec2<T> operator -(in NCollection_Vec2<T> vec) => new(-vec.X(), -vec.Y());
 
-    public static NCollection_Vec2<T> operator *(in NCollection_Vec2<T> theVec, T theFactor) => theVec.Multiplied(theFactor);
+    public static NCollection_Vec2<T> operator *(in NCollection_Vec2<T> vec, T factor) => vec.Multiplied(factor);
 
     // Exact equality, for use as a value
 
-    public readonly bool Equals(NCollection_Vec2<T> other) => v[0].Equals(other.v[0]) && v[1].Equals(other.v[1]);
+    public readonly bool Equals(NCollection_Vec2<T> other) => _v[0].Equals(other._v[0]) && _v[1].Equals(other._v[1]);
 
     public override readonly bool Equals(object? obj) => obj is NCollection_Vec2<T> other && Equals(other);
 
-    public override readonly int GetHashCode() => HashCode.Combine(v[0], v[1]);
+    public override readonly int GetHashCode() => HashCode.Combine(_v[0], _v[1]);
 
-    public static bool operator ==(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => theLeft.Equals(theRight);
+    public static bool operator ==(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => left.Equals(right);
 
-    public static bool operator !=(in NCollection_Vec2<T> theLeft, in NCollection_Vec2<T> theRight) => !theLeft.Equals(theRight);
+    public static bool operator !=(in NCollection_Vec2<T> left, in NCollection_Vec2<T> right) => !left.Equals(right);
 
-    public override readonly string ToString() => NCollection_VecTools.Format<T>("NCollection_Vec2", v);
+    public override readonly string ToString() => NCollection_VecTools.Format<T>("NCollection_Vec2", _v);
 }

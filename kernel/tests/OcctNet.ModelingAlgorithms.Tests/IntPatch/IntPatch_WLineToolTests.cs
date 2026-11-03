@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -49,7 +51,7 @@ public class IntPatch_WLineToolTests
         {
             var aWL = (IntPatch_WLine)anInt.Line(i);
             int aNbBefore = aWL.NbPnts();
-            gp_Pnt aFirst = aWL.Point(1).Value(), aLast = aWL.Point(aNbBefore).Value();
+            Point3D aFirst = aWL.Point(1).Value(), aLast = aWL.Point(aNbBefore).Value();
             IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aWL, aS1, aS2, aD1, aD2);
             Assert.NotNull(aRW);
             Assert.Equal(aNbBefore, aWL.NbPnts()); // the given line is unchanged
@@ -71,7 +73,7 @@ public class IntPatch_WLineToolTests
     public void ComputePurgedWLine_on_ImpPrm_line()
     {
         // A plane against a patch, as ImpPrmIntersection walks it.
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0.1), new gp_Dir(0.1, 0.2, 1))));
+        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0.1), new Direction3D(0.1, 0.2, 1))));
         var aS2 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
         var aD1 = new Adaptor3d_TopolTool(aS1);
         var aD2 = new Adaptor3d_TopolTool(aS2);
@@ -97,14 +99,14 @@ public class IntPatch_WLineToolTests
     private static IntSurf_PntOn2S Pnt(double x)
     {
         var aP = new IntSurf_PntOn2S();
-        aP.SetValue(new gp_Pnt(x, 0, 0), x, 0, x, 1);
+        aP.SetValue(new Point3D(x, 0, 0), x, 0, x, 1);
         return aP;
     }
 
     private static IntPatch_Point Vtx(double x, double theParam)
     {
         var aV = new IntPatch_Point();
-        aV.SetValue(new gp_Pnt(x, 0, 0), 1e-7, false);
+        aV.SetValue(new Point3D(x, 0, 0), 1e-7, false);
         aV.SetParameters(x, 0, x, 1);
         aV.SetParameter(theParam);
         return aV;
@@ -123,7 +125,7 @@ public class IntPatch_WLineToolTests
         aW.AddVertex(Vtx(0, 1));
         aW.AddVertex(Vtx(2, 4));
         aW.AddVertex(Vtx(3, 5));
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()));
+        var aS = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
         var aD = new Adaptor3d_TopolTool(aS);
         IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aW, aS, aS, aD, aD);
         Assert.NotNull(aRW);
@@ -136,7 +138,7 @@ public class IntPatch_WLineToolTests
     [Fact]
     public void ComputePurgedWLine_drops_degenerate_lines()
     {
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()));
+        var aS = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
         var aD = new Adaptor3d_TopolTool(aS);
 
         var aL2 = new IntSurf_LineOn2S();
@@ -160,9 +162,9 @@ public class IntPatch_WLineToolTests
         Assert.Equal(2, aRW.NbPnts());
     }
 
-    private static gp_Ax3 Ax(double x, double y, double z, double dx, double dy, double dz, double xx, double xy,
+    private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz, double xx, double xy,
                              double xz) =>
-        new(new gp_Pnt(x, y, z), new gp_Dir(dx, dy, dz), new gp_Dir(xx, xy, xz));
+        new(new Point3D(x, y, z), new Direction3D(dx, dy, dz), new Direction3D(xx, xy, xz));
 
     // IntPatch_Intersection's GeomGeomPerfom on two cylinders: the ImpImp lines and points, then JoinWLines.
     private static (NCollection_Sequence<IntPatch_Line>, GeomAdaptor_Surface, GeomAdaptor_Surface) JoinCylinders(
@@ -253,7 +255,7 @@ public class IntPatch_WLineToolTests
     private static IntSurf_PntOn2S CirclePnt(double t)
     {
         var aP = new IntSurf_PntOn2S();
-        aP.SetValue(new gp_Pnt(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
+        aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
         return aP;
     }
 
@@ -275,13 +277,13 @@ public class IntPatch_WLineToolTests
         return aW;
     }
 
-    private static (GeomAdaptor_Surface, GeomAdaptor_Surface, Bnd_Box2d, Bnd_Box2d, double[]) PlaneCylinder()
+    private static (GeomAdaptor_Surface, GeomAdaptor_Surface, Box2d, Box2d, double[]) PlaneCylinder()
     {
-        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()));
-        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(), 1.0));
-        var aB1 = new Bnd_Box2d();
+        var aS1 = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()));
+        var aS2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(), 1.0));
+        var aB1 = new Box2d();
         aB1.Update(-2, -2, 2, 2);
-        var aB2 = new Bnd_Box2d();
+        var aB2 = new Box2d();
         aB2.Update(0, -1, 2 * Math.PI, 1);
         return (aS1, aS2, aB1, aB2, new[] { 0.0, 0.0, 2 * Math.PI, 0.0 });
     }
@@ -295,7 +297,7 @@ public class IntPatch_WLineToolTests
         var aSLin = new NCollection_Sequence<IntPatch_Line>();
         aSLin.Append(aW1);
         aSLin.Append(aW2);
-        IntPatch_WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<gp_Pnt>());
+        IntPatch_WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
         Assert.Equal(1, aSLin.Length());
         var aW = (IntPatch_WLine)aSLin.Value(1);
         Assert.Same(aW1, aW);
@@ -315,7 +317,7 @@ public class IntPatch_WLineToolTests
         var aSLin = new NCollection_Sequence<IntPatch_Line>();
         aSLin.Append(CircleLine(0.2, 1.0, 9));
         aSLin.Append(CircleLine(1.0 + 1.0e-4, 2.0, 11));
-        var aCrit = new NCollection_List<gp_Pnt>();
+        var aCrit = new NCollection_List<Point3D>();
         aCrit.Append(CirclePnt(1.0).Value());
         IntPatch_WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, aCrit);
         Assert.Equal(2, aSLin.Length());
@@ -325,7 +327,7 @@ public class IntPatch_WLineToolTests
         var aWide = new NCollection_Sequence<IntPatch_Line>();
         aWide.Append(CircleLine(0.2, 1.0, 9));
         aWide.Append(CircleLine(1.05, 2.0, 11));
-        IntPatch_WLineTool.ExtendTwoWLines(aWide, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<gp_Pnt>());
+        IntPatch_WLineTool.ExtendTwoWLines(aWide, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
         Assert.Equal(2, aWide.Length());
         Assert.Equal(9, ((IntPatch_WLine)aWide.Value(1)).NbPnts());
         Assert.Equal(11, ((IntPatch_WLine)aWide.Value(2)).NbPnts());

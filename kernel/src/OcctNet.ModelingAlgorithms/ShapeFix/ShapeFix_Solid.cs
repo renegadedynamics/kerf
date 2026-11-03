@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -103,7 +105,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 int          st          = 0;
                 if (!theMapStatus.IsBound(aShell1))
                 {
-                    bsc3d.PerformInfinitePoint(Occt.Precision.Confusion());
+                    bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3d.State();
                     if (infinstatus != TopAbs_UNKNOWN && infinstatus != TopAbs_ON)
                     {
@@ -164,8 +166,8 @@ public class ShapeFix_Solid : ShapeFix_Root
                          k++)
                     {
                         TopoDS_Vertex aV  = TopoDS.Vertex(amapVert.FindKey(k));
-                        gp_Pnt        aPf = BRep_Tool.Pnt(aV);
-                        bsc3d.Perform(aPf, Occt.Precision.Confusion());
+                        Point3D        aPf = BRep_Tool.Pnt(aV);
+                        bsc3d.Perform(aPf, Kerf.Engine.Foundation.Precision.Confusion());
                         pointstatus = bsc3d.State();
                         if (pointstatus == TopAbs_ON)
                         {
@@ -190,7 +192,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                     }
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue;
             }
@@ -276,10 +278,10 @@ public class ShapeFix_Solid : ShapeFix_Root
                 try
                 {
                     var bsc3d = new BRepClass3d_SolidClassifier(aSolid);
-                    bsc3d.PerformInfinitePoint(Occt.Precision.Confusion());
+                    bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3d.State();
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     ShellSolid.Add(aShell, aSolid);
                     continue;
@@ -308,7 +310,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                     B.MakeSolid(ref solid);
                     B.Add(solid, aShellHole);
                     var bsc3dHol = new BRepClass3d_SolidClassifier(solid);
-                    bsc3dHol.PerformInfinitePoint(Occt.Precision.Confusion());
+                    bsc3dHol.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3dHol.State();
                 }
                 if (infinstatus == TopAbs_OUT)
@@ -377,7 +379,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     /// mode allows): a solid is made from a closed shell (or from an open one in <see cref="CreateOpenSolidMode"/>),
     /// several solids or a compsolid from shells that are several solids. Returns true if something was done.
     /// </summary>
-    public virtual bool Perform(Message_ProgressRange theProgress = default)
+    public virtual bool Perform(ProgressRange theProgress = default)
     {
         if (Context() is null)
         {
@@ -400,7 +402,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     }
 
     // ShapeFix_Solid::Perform on the working solid
-    private bool perform(Message_ProgressRange theProgress)
+    private bool perform(ProgressRange theProgress)
     {
         bool status = false;
         if (Context() is null)
@@ -420,12 +422,12 @@ public class ShapeFix_Solid : ShapeFix_Root
         }
 
         // Start progress scope (no need to check if progress exists -- it is safe)
-        using var aPS = new Message_ProgressScope(theProgress, "Fixing solid stage", 2);
+        using var aPS = new ProgressScope(theProgress, "Fixing solid stage", 2);
 
         if (NeedFix(myFixShellMode))
         {
             // Start progress scope (no need to check if progress exists -- it is safe)
-            using var aPSFixShell = new Message_ProgressScope(aPS.Next(), "Fixing shell", aNbShells);
+            using var aPSFixShell = new ProgressScope(aPS.Next(), "Fixing shell", aNbShells);
 
             // Fix shell by shell using ShapeFix_Shell tool
             for (var aExpSh = new TopExp_Explorer(S, TopAbs_SHELL); aExpSh.More() && aPSFixShell.More(); aExpSh.Next())
@@ -496,7 +498,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                     TopoDS_Solid aSol = InternalSolidFromShell(aShell);
                     if (ShapeExtend.DecodeStatus(myStatus, ShapeExtend_DONE2))
                     {
-                        SendWarning(new Message_Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected.
+                        SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected.
                         aContext.Replace(tmpShape, aSol);
                         tmpShape = aSol;
                     }
@@ -509,7 +511,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
                 var aIt = new TopoDS_Iterator(tmpShape, false);
                 aContext.Replace(tmpShape, aIt.Value());
-                SendFail(new Message_Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
+                SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
             }
         }
         else
@@ -518,7 +520,7 @@ public class ShapeFix_Solid : ShapeFix_Root
             var          aMapSolids = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
             if (CreateSolids(aResShape, aMapSolids))
             {
-                SendWarning(new Message_Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected..
+                SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected..
                 if (aMapSolids.Extent() == 1)
                 {
                     TopoDS_Shape aResSol = aMapSolids.FindKey(1);
@@ -535,18 +537,18 @@ public class ShapeFix_Solid : ShapeFix_Root
                         mySolid = aResSol;
                         if (aResSol.ShapeType() == TopAbs_SHELL)
                         {
-                            SendFail(new Message_Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
+                            SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }
                     }
                     aContext.Replace(aResShape, mySolid);
                 }
                 else if (aMapSolids.Extent() > 1)
                 {
-                    SendWarning(new Message_Msg("FixAdvSolid.FixOrientation.MSG30")); // Bad connected solid a few solids were created.
+                    SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG30")); // Bad connected solid a few solids were created.
                     var aB    = new BRep_Builder();
                     var aComp = new TopoDS_Compound();
                     aB.MakeCompound(ref aComp);
-                    using var aPSCreatingSolid = new Message_ProgressScope(aPS.Next(), "Creating solid", aMapSolids.Extent());
+                    using var aPSCreatingSolid = new ProgressScope(aPS.Next(), "Creating solid", aMapSolids.Extent());
                     for (int i = 1; (i <= aMapSolids.Extent()) && (aPSCreatingSolid.More()); i++, aPSCreatingSolid.Next())
                     {
                         TopoDS_Shape aResSh = aMapSolids.FindKey(i);
@@ -561,7 +563,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                         }
                         else if (aResShape.ShapeType() == TopAbs_SHELL)
                         {
-                            SendFail(new Message_Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
+                            SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }
                         aB.Add(aComp, aResSh);
                     }
@@ -598,7 +600,7 @@ public class ShapeFix_Solid : ShapeFix_Root
     internal TopoDS_Solid InternalSolidFromShell(in TopoDS_Shell shell)
     {
         TopoDS_Shell sh = shell;
-        if (!sh.Free() && !sh.TShape()!.IsFrozen()) // OCCT.NET: frozen: a frozen shell keeps its Free flag
+        if (!sh.Free() && !sh.TShape()!.IsFrozen) // OCCT.NET: frozen: a frozen shell keeps its Free flag
         {
             sh.Free(true);
         }
@@ -610,7 +612,7 @@ public class ShapeFix_Solid : ShapeFix_Root
         try
         {
             var    bsc3d = new BRepClass3d_SolidClassifier(solid);
-            double t     = Occt.Precision.Confusion(); // tolerance moyenne
+            double t     = Kerf.Engine.Foundation.Precision.Confusion(); // tolerance moyenne
             bsc3d.PerformInfinitePoint(t);
 
             if (bsc3d.State() == TopAbs_IN)
@@ -618,7 +620,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
                 //         (l inversion du solide n est pas bien prise en compte)
                 sh = shell;
-                if (!sh.Free() && !sh.TShape()!.IsFrozen()) // OCCT.NET: frozen
+                if (!sh.Free() && !sh.TShape()!.IsFrozen) // OCCT.NET: frozen
                 {
                     sh.Free(true);
                 }
@@ -630,7 +632,7 @@ public class ShapeFix_Solid : ShapeFix_Root
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return solid;
         }

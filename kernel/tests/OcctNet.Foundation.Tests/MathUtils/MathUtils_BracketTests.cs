@@ -6,7 +6,7 @@ namespace OcctNet.Foundation.Tests;
 
 public class MathUtils_BracketTest
 {
-    private sealed class QuadraticMinimum : MathUtils.IScalarFunction
+    private sealed class QuadraticMinimum : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
         public bool Value(double theX, out double theF)
         {
@@ -15,7 +15,7 @@ public class MathUtils_BracketTest
         }
     }
 
-    private sealed class QuadraticWithPrecomputedEndpoints : MathUtils.IScalarFunction
+    private sealed class QuadraticWithPrecomputedEndpoints : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
         public bool Value(double theX, out double theF)
         {
@@ -34,13 +34,13 @@ public class MathUtils_BracketTest
     {
         QuadraticMinimum aFunc = new();
 
-        MathUtils.MinBracketOptions anOptions = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketOptions anOptions = new();
         anOptions.MaxIterations = 50;
         anOptions.UseLimits = true;
         anOptions.LeftLimit = 0.0;
         anOptions.RightLimit = 5.0;
 
-        MathUtils.MinBracketResult aResult = MathUtils.BracketMinimum(aFunc, 0.0, 1.0, anOptions);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketResult aResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.BracketMinimum(aFunc, 0.0, 1.0, anOptions);
         Assert.True(aResult.IsValid);
         Assert.True(aResult.A >= anOptions.LeftLimit);
         Assert.True(aResult.C <= anOptions.RightLimit);
@@ -53,13 +53,13 @@ public class MathUtils_BracketTest
     {
         QuadraticMinimum aFunc = new();
 
-        MathUtils.MinBracketOptions anOptions = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketOptions anOptions = new();
         anOptions.MaxIterations = 50;
         anOptions.UseLimits = true;
         anOptions.LeftLimit = 0.0;
         anOptions.RightLimit = 1.0;
 
-        MathUtils.MinBracketResult aResult = MathUtils.BracketMinimum(aFunc, 0.0, 0.5, anOptions);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketResult aResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.BracketMinimum(aFunc, 0.0, 0.5, anOptions);
         Assert.False(aResult.IsValid);
     }
 
@@ -68,14 +68,14 @@ public class MathUtils_BracketTest
     {
         QuadraticWithPrecomputedEndpoints aFunc = new();
 
-        MathUtils.MinBracketOptions anOptions = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketOptions anOptions = new();
         anOptions.MaxIterations = 50;
         anOptions.HasFA = true;
         anOptions.HasFB = true;
         anOptions.FA = 4.0;
         anOptions.FB = 1.0;
 
-        MathUtils.MinBracketResult aResult = MathUtils.BracketMinimum(aFunc, 0.0, 1.0, anOptions);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.MinBracketResult aResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.BracketMinimum(aFunc, 0.0, 1.0, anOptions);
         Assert.True(aResult.IsValid);
         Assert.True(aResult.Fb < aResult.Fa);
         Assert.True(aResult.Fb < aResult.Fc);

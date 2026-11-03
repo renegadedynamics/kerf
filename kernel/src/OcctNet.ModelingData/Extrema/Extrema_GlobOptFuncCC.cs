@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Extrema_GlobOptFuncCC;
 
 namespace Occt;
@@ -55,8 +57,8 @@ internal static class Extrema_GlobOptFuncCC
             return false;
         }
 
-        C1.D1(X[1], out gp_Pnt C1D0, out gp_Vec C1D1);
-        C2.D1(X[2], out gp_Pnt C2D0, out gp_Vec C2D1);
+        C1.D1(X[1], out Point3D C1D0, out Vector3D C1D1);
+        C2.D1(X[2], out Point3D C2D0, out Vector3D C2D1);
 
         G[1] = -(C2D0.X() - C1D0.X()) * C1D1.X() - (C2D0.Y() - C1D0.Y()) * C1D1.Y()
                - (C2D0.Z() - C1D0.Z()) * C1D1.Z();
@@ -75,8 +77,8 @@ internal static class Extrema_GlobOptFuncCC
             return false;
         }
 
-        C1.D1(X[1], out gp_Pnt2d C1D0, out gp_Vec2d C1D1);
-        C2.D1(X[2], out gp_Pnt2d C2D0, out gp_Vec2d C2D1);
+        C1.D1(X[1], out Point2D C1D0, out Vector2D C1D1);
+        C2.D1(X[2], out Point2D C2D0, out Vector2D C2D1);
 
         G[1] = -(C2D0.X() - C1D0.X()) * C1D1.X() - (C2D0.Y() - C1D0.Y()) * C1D1.Y();
 
@@ -87,7 +89,7 @@ internal static class Extrema_GlobOptFuncCC
     }
 
     // 3d _Hessian
-    internal static bool _Hessian(Adaptor3d_Curve C1, Adaptor3d_Curve C2, math_Vector X, math_Matrix H)
+    internal static bool _Hessian(Adaptor3d_Curve C1, Adaptor3d_Curve C2, math_Vector X, Matrix H)
     {
         if (X[1] < C1.FirstParameter() || X[1] > C1.LastParameter() || X[2] < C2.FirstParameter()
             || X[2] > C2.LastParameter())
@@ -95,8 +97,8 @@ internal static class Extrema_GlobOptFuncCC
             return false;
         }
 
-        C1.D2(X[1], out gp_Pnt C1D0, out gp_Vec C1D1, out gp_Vec C1D2);
-        C2.D2(X[2], out gp_Pnt C2D0, out gp_Vec C2D1, out gp_Vec C2D2);
+        C1.D2(X[1], out Point3D C1D0, out Vector3D C1D1, out Vector3D C1D2);
+        C2.D2(X[2], out Point3D C2D0, out Vector3D C2D1, out Vector3D C2D2);
 
         H[1, 1] = C1D1.X() * C1D1.X() + C1D1.Y() * C1D1.Y() + C1D1.Z() * C1D1.Z()
                   - (C2D0.X() - C1D0.X()) * C1D2.X() - (C2D0.Y() - C1D0.Y()) * C1D2.Y()
@@ -114,7 +116,7 @@ internal static class Extrema_GlobOptFuncCC
     }
 
     // 2d _Hessian
-    internal static bool _Hessian(Adaptor2d_Curve2d C1, Adaptor2d_Curve2d C2, math_Vector X, math_Matrix H)
+    internal static bool _Hessian(Adaptor2d_Curve2d C1, Adaptor2d_Curve2d C2, math_Vector X, Matrix H)
     {
         if (X[1] < C1.FirstParameter() || X[1] > C1.LastParameter() || X[2] < C2.FirstParameter()
             || X[2] > C2.LastParameter())
@@ -122,8 +124,8 @@ internal static class Extrema_GlobOptFuncCC
             return false;
         }
 
-        C1.D2(X[1], out gp_Pnt2d C1D0, out gp_Vec2d C1D1, out gp_Vec2d C1D2);
-        C2.D2(X[2], out gp_Pnt2d C2D0, out gp_Vec2d C2D1, out gp_Vec2d C2D2);
+        C1.D2(X[1], out Point2D C1D0, out Vector2D C1D1, out Vector2D C1D2);
+        C2.D2(X[2], out Point2D C2D0, out Vector2D C2D1, out Vector2D C2D2);
 
         H[1, 1] = C1D1.X() * C1D1.X() + C1D1.Y() * C1D1.Y() - (C2D0.X() - C1D0.X()) * C1D2.X()
                   - (C2D0.Y() - C1D0.Y()) * C1D2.Y();
@@ -144,7 +146,7 @@ internal static class Extrema_GlobOptFuncCC
 /// outside the curves' ranges.
 /// </summary>
 /// <remarks>Keeps references to the curves, as OCCT does.</remarks>
-public class Extrema_GlobOptFuncCCC0 : math_MultipleVarFunction
+public class Extrema_GlobOptFuncCCC0 : MultipleVarFunction
 {
     private readonly Adaptor3d_Curve? myC1_3d, myC2_3d;
     private readonly Adaptor2d_Curve2d? myC1_2d, myC2_2d;
@@ -168,7 +170,7 @@ public class Extrema_GlobOptFuncCCC0 : math_MultipleVarFunction
         myType = 2;
     }
 
-    public override int NbVariables() => _NbVariables();
+    public override int VariableCount => _NbVariables();
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -185,7 +187,7 @@ public class Extrema_GlobOptFuncCCC0 : math_MultipleVarFunction
 
 /// <summary>The distance between two curves with its gradient (see <see cref="Extrema_GlobOptFuncCCC0"/>); the gradient
 /// is the one of the square distance.</summary>
-public class Extrema_GlobOptFuncCCC1 : math_MultipleVarFunctionWithGradient
+public class Extrema_GlobOptFuncCCC1 : MultipleVarFunctionWithGradient
 {
     private readonly Adaptor3d_Curve? myC1_3d, myC2_3d;
     private readonly Adaptor2d_Curve2d? myC1_2d, myC2_2d;
@@ -209,7 +211,7 @@ public class Extrema_GlobOptFuncCCC1 : math_MultipleVarFunctionWithGradient
         myType = 2;
     }
 
-    public override int NbVariables() => _NbVariables();
+    public override int VariableCount => _NbVariables();
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -240,7 +242,7 @@ public class Extrema_GlobOptFuncCCC1 : math_MultipleVarFunctionWithGradient
 
 /// <summary>The distance between two curves with its gradient and hessian (see <see cref="Extrema_GlobOptFuncCCC0"/>);
 /// the gradient and the hessian are those of the square distance.</summary>
-public class Extrema_GlobOptFuncCCC2 : math_MultipleVarFunctionWithHessian
+public class Extrema_GlobOptFuncCCC2 : MultipleVarFunctionWithHessian
 {
     private readonly Adaptor3d_Curve? myC1_3d, myC2_3d;
     private readonly Adaptor2d_Curve2d? myC1_2d, myC2_2d;
@@ -264,7 +266,7 @@ public class Extrema_GlobOptFuncCCC2 : math_MultipleVarFunctionWithHessian
         myType = 2;
     }
 
-    public override int NbVariables() => _NbVariables();
+    public override int VariableCount => _NbVariables();
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -292,7 +294,7 @@ public class Extrema_GlobOptFuncCCC2 : math_MultipleVarFunctionWithHessian
 
     public override bool Values(math_Vector X, out double F, math_Vector G) => (Value(X, out F) && Gradient(X, G));
 
-    public override bool Values(math_Vector X, out double F, math_Vector G, math_Matrix H)
+    public override bool Values(math_Vector X, out double F, math_Vector G, Matrix H)
     {
         bool isHessianComputed = false;
         if (myType == 1)

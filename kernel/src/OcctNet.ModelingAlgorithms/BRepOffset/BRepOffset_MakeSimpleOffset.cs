@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepOffsetSimple_Status;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -94,7 +97,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     public BRepOffset_MakeSimpleOffset()
     {
         myOffsetValue = 0.0;
-        myTolerance = Precision.Confusion();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsBuildSolid = false;
         myMaxAngle = 0.0;
         myError = BRepOffsetSimple_OK;
@@ -109,7 +112,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     {
         myInputShape = theInputShape;
         myOffsetValue = theOffsetValue;
-        myTolerance = Precision.Confusion();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsBuildSolid = false;
         myMaxAngle = 0.0;
         myError = BRepOffsetSimple_OK;
@@ -370,11 +373,11 @@ public sealed class BRepOffset_MakeSimpleOffset
         eps = (l - f) / 100.0;
         f += eps; // to avoid calculations on
         l -= eps; // points of pointed squares.
-        gp_Pnt2d p;
-        gp_Pnt pp1, pp2; //,PP;
-        gp_Vec du1, dv1;
-        gp_Vec du2, dv2;
-        gp_Vec d1, d2;
+        Point2D p;
+        Point3D pp1, pp2; //,PP;
+        Vector3D du1, dv1;
+        Vector3D du2, dv2;
+        Vector3D d1, d2;
         double norm;
 
         const int NBPNT = 23;
@@ -476,13 +479,13 @@ public sealed class BRepOffset_MakeSimpleOffset
             }
             if (found)
             {
-                if (BRep_Tool.Continuity(E, F1, F2) <= GeomAbs_C0)
+                if (BRep_Tool.Continuity(E, F1, F2) <= C0)
                 {
                     try
                     {
                         tgtfaces(E, F1, F2, couture, ref theResAngle);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                     }
                 }
@@ -705,7 +708,7 @@ public sealed class BRepOffset_MakeSimpleOffset
                 aF = aFM.InternalFace();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
         }
 
@@ -722,25 +725,25 @@ public sealed class BRepOffset_MakeSimpleOffset
             var ThrusecGenerator = new GeomFill_Generator();
             ThrusecGenerator.AddCurve(TrEdgeCurve);
             ThrusecGenerator.AddCurve(TrOffsetCurve);
-            ThrusecGenerator.Perform(Precision.PConfusion());
+            ThrusecGenerator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
             Geom_Surface theSurf = ThrusecGenerator.Surface()!;
             // theSurf = new Geom_SurfaceOfLinearExtrusion( TrOffsetCurve, OffsetDir );
             theSurf.Bounds(out double Uf, out double Ul, out double Vf, out double Vl);
-            TopLoc_Location Loc = new();
+            Placement Loc = new();
             Geom2d_Line EdgeLine2d, OELine2d, aLine2d, aLine2d2;
-            EdgeLine2d = new Geom2d_Line(new gp_Pnt2d(0.0, Vf), new gp_Dir2d(gp_Dir2d.D.X));
-            aBB.UpdateEdge(theOrigEdge, EdgeLine2d, theSurf, Loc, Precision.Confusion());
-            OELine2d = new Geom2d_Line(new gp_Pnt2d(0.0, Vl), new gp_Dir2d(gp_Dir2d.D.X));
-            aBB.UpdateEdge(aNewEdge, OELine2d, theSurf, Loc, Precision.Confusion());
+            EdgeLine2d = new Geom2d_Line(new Point2D(0.0, Vf), new Direction2D(Direction2D.D.X));
+            aBB.UpdateEdge(theOrigEdge, EdgeLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
+            OELine2d = new Geom2d_Line(new Point2D(0.0, Vl), new Direction2D(Direction2D.D.X));
+            aBB.UpdateEdge(aNewEdge, OELine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             double UonV1 = (ToReverse) ? Ul : Uf;
             double UonV2 = (ToReverse) ? Uf : Ul;
-            aLine2d = new Geom2d_Line(new gp_Pnt2d(UonV2, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
-            aLine2d2 = new Geom2d_Line(new gp_Pnt2d(UonV1, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+            aLine2d = new Geom2d_Line(new Point2D(UonV2, 0.0), new Direction2D(Direction2D.D.Y));
+            aLine2d2 = new Geom2d_Line(new Point2D(UonV1, 0.0), new Direction2D(Direction2D.D.Y));
             if (aWall1.IsSame(aWall2))
             {
-                aBB.UpdateEdge(aWall1, aLine2d, aLine2d2, theSurf, Loc, Precision.Confusion());
+                aBB.UpdateEdge(aWall1, aLine2d, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Geom_Curve BSplC34 = theSurf.UIso(Uf);
-                aBB.UpdateEdge(aWall1, BSplC34, Precision.Confusion());
+                aBB.UpdateEdge(aWall1, BSplC34, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall1, Vf, Vl);
             }
             else
@@ -749,15 +752,15 @@ public sealed class BRepOffset_MakeSimpleOffset
                 aBB.SameRange(aWall1, false);
                 aBB.SameParameter(aWall2, false);
                 aBB.SameRange(aWall2, false);
-                aBB.UpdateEdge(aWall1, aLine2d, theSurf, Loc, Precision.Confusion());
+                aBB.UpdateEdge(aWall1, aLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall1, theSurf, Loc, Vf, Vl);
-                aBB.UpdateEdge(aWall2, aLine2d2, theSurf, Loc, Precision.Confusion());
+                aBB.UpdateEdge(aWall2, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall2, theSurf, Loc, Vf, Vl);
                 Geom_Curve BSplC3 = theSurf.UIso(UonV2);
-                aBB.UpdateEdge(aWall1, BSplC3, Precision.Confusion());
+                aBB.UpdateEdge(aWall1, BSplC3, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall1, Vf, Vl, true); // only for 3d curve
                 Geom_Curve BSplC4 = theSurf.UIso(UonV1);
-                aBB.UpdateEdge(aWall2, BSplC4, Precision.Confusion());
+                aBB.UpdateEdge(aWall2, BSplC4, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aBB.Range(aWall2, Vf, Vl, true); // only for 3d curve
             }
 
@@ -770,7 +773,7 @@ public sealed class BRepOffset_MakeSimpleOffset
     //=================================================================================================
 
     /// <summary>The shape generated from a sub-shape of the input (frozen); null if none.</summary>
-    /// <exception cref="Standard_NoSuchObject">The shape isn't a sub-shape of the input.</exception>
+    /// <exception cref="NoSuchObjectException">The shape isn't a sub-shape of the input.</exception>
     public TopoDS_Shape Generated(in TopoDS_Shape theShape)
     {
         TopoDS_Shape aRes = InternalGenerated(theShape);

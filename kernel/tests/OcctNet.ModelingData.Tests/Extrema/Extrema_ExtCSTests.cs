@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -37,15 +41,15 @@ public class Extrema_ExtCSTests
     }
 
     private static GeomAdaptor_Surface Sphere(double theR)
-        => new(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), theR));
+        => new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theR));
 
     private static GeomAdaptor_Surface PlaneXY()
-        => new(new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        => new(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
     [Fact]
     public void LineSphere()
     {
-        var aC = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0)), -10, 10);
+        var aC = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), -10, 10);
         var aS = Sphere(2);
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         CheckSolutions(anExt, aC, aS);
@@ -56,8 +60,8 @@ public class Extrema_ExtCSTests
     [Fact]
     public void LineCylinder()
     {
-        var aC = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 3, 0), new gp_Dir(1, 0, 0)), -10, 10);
-        var aS = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1));
+        var aC = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 3, 0), new Direction3D(1, 0, 0)), -10, 10);
+        var aS = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1));
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         CheckSolutions(anExt, aC, aS);
         Assert.Equal(4.0, MinSquareDistance(anExt), Tol);
@@ -66,7 +70,7 @@ public class Extrema_ExtCSTests
     [Fact]
     public void LinePlane_Parallel()
     {
-        var aC = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 2), new gp_Dir(1, 0, 0)), -10, 10);
+        var aC = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 2), new Direction3D(1, 0, 0)), -10, 10);
         var aS = PlaneXY();
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
@@ -74,14 +78,14 @@ public class Extrema_ExtCSTests
         Assert.Equal(1, anExt.NbExt());
         Assert.Equal(4.0, anExt.SquareDistance(1), Tol);
         // OCCT stores no points for a parallel result.
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anExt.Points(1, out _, out _));
+        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Points(1, out _, out _));
     }
 
     [Fact]
     public void LinePlane_NotParallel_FindsTheCrossing()
     {
         // A line through (0, 0, 2) along (0, 1, 1) crosses the XY plane at (0, -2, 0); the generic path finds it
-        var aC = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 2), new gp_Dir(0, 1, 1)), -10, 10);
+        var aC = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 2), new Direction3D(0, 1, 1)), -10, 10);
         var aS = PlaneXY();
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
@@ -98,14 +102,14 @@ public class Extrema_ExtCSTests
 
         Assert.Equal(0.0, anExt.SquareDistance(aMin), 1e-12);
         anExt.Points(aMin, out Extrema_POnCurv aOnCurve, out _);
-        Assert.True(aOnCurve.Value().IsEqual(new gp_Pnt(0, -2, 0), 1e-6));
+        Assert.True(aOnCurve.Value().IsEqual(new Point3D(0, -2, 0), 1e-6));
     }
 
     [Fact]
     public void CirclePlane()
     {
         // P(u) = (0, 0, 5) + 2 cos(u) Z + 2 sin(u) Y: z from 3 to 7.
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0), new gp_Dir(0, 0, 1)), 2);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
         var aS = PlaneXY();
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
@@ -116,7 +120,7 @@ public class Extrema_ExtCSTests
     [Fact]
     public void CirclePlane_Parallel()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 3), new gp_Dir(0, 0, 1)), 2);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 2);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
         var anExt = new Extrema_ExtCS(aC, PlaneXY(), 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
@@ -127,9 +131,9 @@ public class Extrema_ExtCSTests
     [Fact]
     public void CircleCylinder()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 5), new gp_Dir(0, 0, 1)), 2);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 2);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
-        var aS = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 1));
+        var aS = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1));
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         CheckSolutions(anExt, aC, aS);
         Assert.True(anExt.NbExt() >= 1);
@@ -138,7 +142,7 @@ public class Extrema_ExtCSTests
         double aSampled = double.MaxValue;
         for (int i = 0; i < 3600; i++)
         {
-            gp_Pnt aP = aC.Value(2 * Math.PI * i / 3600);
+            Point3D aP = aC.Value(2 * Math.PI * i / 3600);
             double aD = Math.Sqrt(aP.Y() * aP.Y() + aP.Z() * aP.Z()) - 1;
             aSampled = Math.Min(aSampled, aD * aD);
         }
@@ -148,7 +152,7 @@ public class Extrema_ExtCSTests
     [Fact]
     public void CircleSphere()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
         var aS = Sphere(2);
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
@@ -160,9 +164,9 @@ public class Extrema_ExtCSTests
     public void HyperbolaPlane()
     {
         // P(u) = 2 cosh(u) Z + sinh(u) X, above the plane z = -1: closest at u = 0, distance 3.
-        var aH = new gp_Hypr(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, -1, 0), new gp_Dir(0, 0, 1)), 2, 1);
+        var aH = new Hyperbola3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(0, 0, 1)), 2, 1);
         var aC = new GeomAdaptor_Curve(new Geom_Hyperbola(aH), -3, 3);
-        var aS = new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(0, 0, -1), new gp_Dir(0, 0, 1)));
+        var aS = new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, -1), new Direction3D(0, 0, 1)));
         var anExt = new Extrema_ExtCS(aC, aS, 1e-9, 1e-9);
         CheckSolutions(anExt, aC, aS);
         Assert.Equal(1, anExt.NbExt());
@@ -175,7 +179,7 @@ public class Extrema_ExtCSTests
     public void ExtremityFallback_WhenAnalyticExtremaAreOutOfRange()
     {
         // z(u) = 5 + 2 cos(u): extrema at 0 and pi, outside [pi/4, pi/2]. The ends are tried, the closer one kept.
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0), new gp_Dir(0, 0, 1)), 2);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
         var aS = PlaneXY();
         var anExt = new Extrema_ExtCS();
@@ -193,7 +197,7 @@ public class Extrema_ExtCSTests
     public void PeriodicCurveParameter_IsPutInTheRange()
     {
         // The closest point of the circle (5 + cos u, sin u, 0) to the sphere is at u = pi, reported in [2pi, 4pi].
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1);
         var aC = new GeomAdaptor_Curve(new Geom_Circle(aCirc));
         var aS = Sphere(2);
         var anExt = new Extrema_ExtCS();
@@ -220,14 +224,14 @@ public class Extrema_ExtCSTests
     {
         var anEmpty = new Extrema_ExtCS();
         Assert.False(anEmpty.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anEmpty.NbExt());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anEmpty.IsParallel());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anEmpty.SquareDistance(1));
+        Assert.ThrowsAny<NotDoneException>(() => anEmpty.NbExt());
+        Assert.ThrowsAny<NotDoneException>(() => anEmpty.IsParallel());
+        Assert.ThrowsAny<NotDoneException>(() => anEmpty.SquareDistance(1));
 
-        var aC = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0)), -10, 10);
+        var aC = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), -10, 10);
         var anExt = new Extrema_ExtCS(aC, Sphere(2), 1e-9, 1e-9);
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anExt.SquareDistance(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anExt.SquareDistance(anExt.NbExt() + 1));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anExt.Points(anExt.NbExt() + 1, out _, out _));
+        Assert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => anExt.SquareDistance(anExt.NbExt() + 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Points(anExt.NbExt() + 1, out _, out _));
     }
 }

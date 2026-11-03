@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -28,29 +29,29 @@ public static class HLRBRep
 
         switch (ec.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 Edg = new BRepLib_MakeEdge2d(ec.Line(), sta, end).InternalEdge();
                 break;
 
-            case GeomAbs_Circle:
+            case Circle:
                 Edg = new BRepLib_MakeEdge2d(ec.Circle(), sta, end).InternalEdge();
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 Edg = new BRepLib_MakeEdge2d(ec.Ellipse(), sta, end).InternalEdge();
                 break;
 
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 Edg = new BRepLib_MakeEdge2d(ec.Hyperbola(), sta, end).InternalEdge();
                 break;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 Edg = new BRepLib_MakeEdge2d(ec.Parabola(), sta, end).InternalEdge();
                 break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
-                NCollection_Array1<gp_Pnt2d> Poles = new(1, ec.NbPoles());
+                NCollection_Array1<Point2D> Poles = new(1, ec.NbPoles());
                 Geom2d_BezierCurve ec2d;
                 if (ec.IsRational())
                 {
@@ -71,7 +72,7 @@ public static class HLRBRep
                 break;
             }
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve ec2d;
                 GeomAdaptor_Curve GAcurve = ec.GetCurve().Curve();
@@ -87,7 +88,7 @@ public static class HLRBRep
                 if (theCurve.IsPeriodic() && !GAcurve.IsClosed())
                 {
                     theCurve.Segment(sta, end);
-                    NCollection_Array1<gp_Pnt2d> Poles = new(1, theCurve.NbPoles());
+                    NCollection_Array1<Point2D> Poles = new(1, theCurve.NbPoles());
                     NCollection_Array1<double> knots = new(theCurve.InternalKnots());
                     NCollection_Array1<int> mults = new(theCurve.InternalMultiplicities());
                     if (theCurve.IsRational())
@@ -105,7 +106,7 @@ public static class HLRBRep
                 }
                 else
                 {
-                    NCollection_Array1<gp_Pnt2d> Poles = new(1, ec.NbPoles());
+                    NCollection_Array1<Point2D> Poles = new(1, ec.NbPoles());
                     NCollection_Array1<double> knots = new(1, ec.NbKnots());
                     NCollection_Array1<int> mults = new(1, ec.NbKnots());
                     //-- ec.KnotsAndMultiplicities(knots,mults);
@@ -133,7 +134,7 @@ public static class HLRBRep
             default:
             {
                 const int nbPnt = 15;
-                NCollection_Array1<gp_Pnt2d> Poles = new(1, nbPnt);
+                NCollection_Array1<Point2D> Poles = new(1, nbPnt);
                 NCollection_Array1<double> knots = new(1, nbPnt);
                 NCollection_Array1<int> mults = new(1, nbPnt);
                 mults.Init(1);
@@ -189,14 +190,14 @@ public static class HLRBRep
         TopoDS_Vertex V1, V2, V1new, V2new;
         TopExp.Vertices(anEdge, out V1, out V2);
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (Math.Abs(fpar - U1) <= Tol)
         {
             V1new = V1;
         }
         else
         {
-            gp_Pnt aPnt = BAcurve.Value(U1);
+            Point3D aPnt = BAcurve.Value(U1);
             V1new = new BRepLib_MakeVertex(aPnt).InternalVertex();
         }
         if (Math.Abs(lpar - U2) <= Tol)
@@ -205,7 +206,7 @@ public static class HLRBRep
         }
         else
         {
-            gp_Pnt aPnt = BAcurve.Value(U2);
+            Point3D aPnt = BAcurve.Value(U2);
             V2new = new BRepLib_MakeVertex(aPnt).InternalVertex();
         }
 

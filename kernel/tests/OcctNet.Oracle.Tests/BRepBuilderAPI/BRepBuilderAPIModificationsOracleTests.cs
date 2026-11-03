@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -59,7 +61,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             theOracle.Same(aN.Length, aP.Count, "Modified count");
             for (int i = 0; i < Math.Min(aN.Length, aP.Count); i++)
             {
-                Assert.True(aP[i].TShape() is null || aP[i].TShape()!.IsFrozen());
+                Assert.True(aP[i].TShape() is null || aP[i].TShape()!.IsFrozen);
                 BRepToolsModifierOracleTests.CompareImage(theOracle, aTwin, aN[i], aP[i], "Modified");
             }
         }
@@ -73,7 +75,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         int aMoved = 0;
         foreach (int aScene in Tape.Budget(Scenes))
         {
-            (N.gp_Trsf aNT, gp_Trsf aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, aScene % 4);
+            (N.gp_Trsf aNT, Transform3D aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, aScene % 4);
             using (aNT)
             {
                 using var aNTransform = new N.BRepBuilderAPI_Transform(aNT);
@@ -157,9 +159,9 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                 aShape.P.TShape()!.FreezeGraph();
             }
 
-            (N.gp_GTrsf aNG, gp_GTrsf aG) = anOracle.Int(0, 2) == 0
+            (N.gp_GTrsf aNG, GeneralTransform3D aG) = anOracle.Int(0, 2) == 0
                 ? (new N.gp_GTrsf(new N.gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new N.gp_XYZ(0, 0, 0)),
-                   new gp_GTrsf(new gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new gp_XYZ(0, 0, 0)))
+                   new GeneralTransform3D(new Matrix3x3(1, 0, 0, 0, 1, 0, 0, 0, 1), new Xyz(0, 0, 0)))
                 : BRepToolsModifierOracleTests.RandomGTrsf(anOracle);
             using (aNG)
             {
@@ -197,7 +199,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             {
                 case 0:
                 {
-                    (N.gp_Trsf aNT, gp_Trsf aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, k % 4);
+                    (N.gp_Trsf aNT, Transform3D aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, k % 4);
                     using (aNT)
                     {
                         bool aCopyMesh = anOracle.Bool();
@@ -226,7 +228,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                 }
                 default:
                 {
-                    (N.gp_GTrsf aNG, gp_GTrsf aG) = BRepToolsModifierOracleTests.RandomGTrsf(anOracle);
+                    (N.gp_GTrsf aNG, GeneralTransform3D aG) = BRepToolsModifierOracleTests.RandomGTrsf(anOracle);
                     using (aNG)
                     {
                         using var aN = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);

@@ -1,13 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepBuilderAPI_EdgeError;
 using static Occt.BRepBuilderAPI_FaceError;
 using static Occt.BRepBuilderAPI_ShellError;
 using static Occt.BRepBuilderAPI_WireError;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -34,12 +37,12 @@ public class BRepBuilderAPITests
     {
         for (var anExp = new TopExp_Explorer(theS, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
-            if (!anExp.Current().TShape()!.IsFrozen())
+            if (!anExp.Current().TShape()!.IsFrozen)
             {
                 return false;
             }
         }
-        return theS.TShape()!.IsFrozen();
+        return theS.TShape()!.IsFrozen;
     }
 
     // ------------------------------------------------------------ makers
@@ -47,43 +50,43 @@ public class BRepBuilderAPITests
     [Fact]
     public void Vertex_is_frozen_when_read_and_not_through_the_internal_accessor()
     {
-        var aMV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 2, 3));
+        var aMV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3));
         Assert.True(aMV.IsDone());
         TopoDS_Vertex anInternal = aMV.InternalVertex();
-        Assert.False(anInternal.TShape()!.IsFrozen());
+        Assert.False(anInternal.TShape()!.IsFrozen);
         TopoDS_Vertex aV = aMV.Vertex();
-        Assert.True(aV.TShape()!.IsFrozen());
+        Assert.True(aV.TShape()!.IsFrozen);
         Assert.True(aV.IsSame(anInternal));
         Assert.True(aV.IsSame((TopoDS_Vertex)aMV));
-        Assert.Equal(new gp_Pnt(1, 2, 3), BRep_Tool.Pnt(aV));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aV));
+        Assert.Equal(new Point3D(1, 2, 3), BRep_Tool.Pnt(aV));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(aV));
     }
 
     [Fact]
     public void Edge_maker_maps_BRepLib_errors()
     {
-        var aSame = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 1, 1), new gp_Pnt(1, 1, 1));
+        var aSame = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
         Assert.False(aSame.IsDone());
         Assert.Equal(BRepBuilderAPI_LineThroughIdenticPoints, aSame.Error());
-        Assert.Throws<StdFail_NotDone>(() => aSame.Shape());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSame.Shape());
 
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1);
-        var aOff = new BRepBuilderAPI_MakeEdge(aCirc, new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
+        var aOff = new BRepBuilderAPI_MakeEdge(aCirc, new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Assert.Equal(BRepBuilderAPI_PointProjectionFailed, aOff.Error());
 
-        var aLine = new BRepBuilderAPI_MakeEdge(new gp_Lin(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 2);
+        var aLine = new BRepBuilderAPI_MakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 2);
         Assert.Equal(BRepBuilderAPI_EdgeDone, aLine.Error());
-        Assert.True(aLine.Vertex1().TShape()!.IsFrozen());
-        Assert.True(aLine.Edge().TShape()!.IsFrozen());
-        Assert.Equal(new gp_Pnt(2, 0, 0), BRep_Tool.Pnt(aLine.Vertex2()));
+        Assert.True(aLine.Vertex1().TShape()!.IsFrozen);
+        Assert.True(aLine.Edge().TShape()!.IsFrozen);
+        Assert.Equal(new Point3D(2, 0, 0), BRep_Tool.Pnt(aLine.Vertex2()));
     }
 
     [Fact]
     public void Edge_maker_Init_after_a_public_read_makes_a_new_edge()
     {
-        var aME = new BRepBuilderAPI_MakeEdge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 1);
+        var aME = new BRepBuilderAPI_MakeEdge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1);
         TopoDS_Edge aFirst = aME.Edge();
-        aME.Init(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 0, 3);
+        aME.Init(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 0, 3);
         Assert.True(aME.IsDone());
         TopoDS_Edge aSecond = aME.Edge();
         Assert.False(aSecond.IsSame(aFirst));
@@ -96,49 +99,49 @@ public class BRepBuilderAPITests
     [Fact]
     public void Edge2d_lies_in_the_default_plane()
     {
-        var aME = new BRepBuilderAPI_MakeEdge2d(new gp_Pnt2d(0, 0), new gp_Pnt2d(3, 4));
+        var aME = new BRepBuilderAPI_MakeEdge2d(new Point2D(0, 0), new Point2D(3, 4));
         Assert.True(aME.IsDone());
         Assert.Equal(BRepBuilderAPI_EdgeDone, aME.Error());
         TopoDS_Edge anE = aME.Edge();
-        Geom2d_Curve? aC = BRep_Tool.CurveOnSurface(anE, BRepBuilderAPI.Plane(), new TopLoc_Location(), out double f, out double l);
+        Geom2d_Curve? aC = BRep_Tool.CurveOnSurface(anE, BRepBuilderAPI.Plane(), new Placement(), out double f, out double l);
         Assert.NotNull(aC);
         Assert.Equal(5.0, l - f, 1e-12);
-        Assert.True(BRepBuilderAPI.Plane().IsFrozen());
-        Assert.Equal(Precision.Confusion(), BRepBuilderAPI.Precision());
+        Assert.True(BRepBuilderAPI.Plane().IsFrozen);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRepBuilderAPI.Precision());
         Assert.Equal(BRepBuilderAPI_LineThroughIdenticPoints,
-                     new BRepBuilderAPI_MakeEdge2d(new gp_Pnt2d(1, 1), new gp_Pnt2d(1, 1)).Error());
+                     new BRepBuilderAPI_MakeEdge2d(new Point2D(1, 1), new Point2D(1, 1)).Error());
     }
 
     [Fact]
     public void Polygon_adds_points_closes_and_reports_coincident_points()
     {
         var aMP = new BRepBuilderAPI_MakePolygon();
-        aMP.Add(new gp_Pnt(0, 0, 0));
+        aMP.Add(new Point3D(0, 0, 0));
         Assert.False(aMP.IsDone());
-        aMP.Add(new gp_Pnt(1, 0, 0));
+        aMP.Add(new Point3D(1, 0, 0));
         Assert.True(aMP.Added());
         Assert.True(aMP.IsDone());
-        aMP.Add(new gp_Pnt(1, 0, 0));
+        aMP.Add(new Point3D(1, 0, 0));
         Assert.False(aMP.Added());
-        aMP.Add(new gp_Pnt(1, 1, 0));
+        aMP.Add(new Point3D(1, 1, 0));
         // the internal accessors don't freeze: the maker goes on in place
-        Assert.False(aMP.InternalLastVertex().TShape()!.IsFrozen());
+        Assert.False(aMP.InternalLastVertex().TShape()!.IsFrozen);
         aMP.Close();
         TopoDS_Wire aW = aMP.Wire();
         Assert.True(aW.Closed());
         Assert.Equal(3, Count(aW, TopAbs_EDGE));
         Assert.Equal(3, Count(aW, TopAbs_VERTEX));
         Assert.True(AllFrozen(aW));
-        Assert.True(aMP.FirstVertex().IsSame(aMP.LastVertex()) || BRep_Tool.Pnt(aMP.FirstVertex()).Distance(new gp_Pnt(0, 0, 0)) == 0);
+        Assert.True(aMP.FirstVertex().IsSame(aMP.LastVertex()) || BRep_Tool.Pnt(aMP.FirstVertex()).Distance(new Point3D(0, 0, 0)) == 0);
         Assert.True(aMP.Shape().IsSame(aW));
     }
 
     [Fact]
     public void Wire_Add_after_a_public_read_leaves_the_published_wire_unchanged()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0)).Edge();
-        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(5, 5, 5), new gp_Pnt(6, 6, 6)).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Edge();
+        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new Point3D(5, 5, 5), new Point3D(6, 6, 6)).Edge();
         var aMW = new BRepBuilderAPI_MakeWire(e1);
         TopoDS_Wire aFirst = aMW.Wire();
         Assert.Equal(1, Count(aFirst, TopAbs_EDGE));
@@ -157,8 +160,8 @@ public class BRepBuilderAPITests
     [Fact]
     public void Wire_Modified_answers_the_copy_of_a_frozen_vertex_that_had_to_move()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1 + 5e-8, 0, 0), new gp_Pnt(1, 1, 0)).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1 + 5e-8, 0, 0), new Point3D(1, 1, 0)).Edge();
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1), s2 = ShapeSnapshot.Of(e2);
         var aMW = new BRepBuilderAPI_MakeWire(e1, e2);
         TopoDS_Wire aW = aMW.Wire();
@@ -166,12 +169,12 @@ public class BRepBuilderAPITests
         s2.AssertUnchanged(e2);
         ISchematiqList<TopoDS_Shape> aModified = aMW.Modified(e1);
         TopoDS_Shape aCopy = Assert.Single(aModified);
-        Assert.True(aCopy.TShape()!.IsFrozen());
+        Assert.True(aCopy.TShape()!.IsFrozen);
         Assert.True(new TopExp_Explorer(aW, TopAbs_EDGE).Current().IsSame(aCopy));
         Assert.False(aMW.IsDeleted(e1));
 
         // a wire of edges that meet exactly copies nothing, and Modified is empty as in OCCT
-        var aPlain = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge());
+        var aPlain = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge());
         Assert.Empty(aPlain.Modified(aPlain.Edge()));
     }
 
@@ -179,19 +182,19 @@ public class BRepBuilderAPITests
     public void Face_from_a_frozen_wire_answers_its_replacements_in_Modified()
     {
         var aV = new TopoDS_Vertex[4];
-        gp_Pnt[] aP = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0)];
+        Point3D[] aP = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0)];
         for (int i = 0; i < 4; i++)
         {
             aV[i] = TestShapes.Vertex(aP[i]);
         }
         var aB = new BRep_Builder();
         TopoDS_Vertex aOff = new();
-        aB.MakeVertex(ref aOff, new gp_Pnt(0, 1.0001, 0), Precision.Confusion());
+        aB.MakeVertex(ref aOff, new Point3D(0, 1.0001, 0), global::Kerf.Engine.Foundation.Precision.Confusion());
         var anEdges = new[]
         {
             TestShapes.Edge(aV[0], aV[1]), TestShapes.Edge(aV[1], aV[2]),
-            TestShapes.Edge(new Geom_Line(aP[2], new gp_Dir(-1, 0, 0)), 0, 1, aV[2], aOff),
-            TestShapes.Edge(new Geom_Line(aP[3], new gp_Dir(0, -1, 0)), 0, 1, aOff, aV[0]),
+            TestShapes.Edge(new Geom_Line(aP[2], new Direction3D(-1, 0, 0)), 0, 1, aV[2], aOff),
+            TestShapes.Edge(new Geom_Line(aP[3], new Direction3D(0, -1, 0)), 0, 1, aOff, aV[0]),
         };
         TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
                                                         TestShapes.Frozen(anEdges[2]), TestShapes.Frozen(anEdges[3])).Wire();
@@ -204,7 +207,7 @@ public class BRepBuilderAPITests
         Assert.Empty(aMF.Modified(anEdges[0]));
         Assert.Single(aMF.Modified(anEdges[2]));
         TopoDS_Vertex aNewOff = TopoDS.Vertex(Assert.Single(aMF.Modified(aOff)));
-        Assert.True(aNewOff.TShape()!.IsFrozen());
+        Assert.True(aNewOff.TShape()!.IsFrozen);
         Assert.Equal(1e-4, BRep_Tool.Tolerance(aNewOff), 1e-9);
         Assert.True(AllFrozen(aF));
 
@@ -219,17 +222,17 @@ public class BRepBuilderAPITests
     [Fact]
     public void Face_maker_maps_BRepLib_errors_and_adds_holes()
     {
-        TopoDS_Wire aSkew = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0.5),
-                                                           new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aSkew = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+                                                           new Point3D(0, 1, 0), true).Wire();
         var aNotPlanar = new BRepBuilderAPI_MakeFace(aSkew, true);
         Assert.False(aNotPlanar.IsDone());
         Assert.Equal(BRepBuilderAPI_NotPlanar, aNotPlanar.Error());
         Assert.Equal(BRepBuilderAPI_NoFace, new BRepBuilderAPI_MakeFace().Error());
 
-        var aSquare = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), -2, 2, -2, 2);
+        var aSquare = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -2, 2, -2, 2);
         TopoDS_Face aBefore = aSquare.Face();
-        TopoDS_Wire aHole = new BRepBuilderAPI_MakePolygon(new gp_Pnt(-1, -1, 0), new gp_Pnt(-1, 1, 0), new gp_Pnt(1, 1, 0),
-                                                           new gp_Pnt(1, -1, 0), true).Wire();
+        TopoDS_Wire aHole = new BRepBuilderAPI_MakePolygon(new Point3D(-1, -1, 0), new Point3D(-1, 1, 0), new Point3D(1, 1, 0),
+                                                           new Point3D(1, -1, 0), true).Wire();
         aSquare.Add(aHole);
         Assert.True(aSquare.IsDone());
         TopoDS_Face anAfter = aSquare.Face();
@@ -243,7 +246,7 @@ public class BRepBuilderAPITests
     [Fact]
     public void Shell_and_solid_makers()
     {
-        var aSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
+        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aMS = new BRepBuilderAPI_MakeShell(aSurf, 0, Math.PI, 0, 1);
         Assert.True(aMS.IsDone());
         Assert.Equal(BRepBuilderAPI_ShellDone, aMS.Error());
@@ -256,7 +259,7 @@ public class BRepBuilderAPITests
         var aSolid = new BRepBuilderAPI_MakeSolid(aBoxShell);
         Assert.True(aSolid.IsDone());
         TopoDS_Solid aS = aSolid.Solid();
-        Assert.True(aS.TShape()!.IsFrozen());
+        Assert.True(aS.TShape()!.IsFrozen);
         Assert.True(new TopoDS_Iterator(aS).Value().IsSame(aBoxShell));
         Assert.False(aSolid.IsDeleted(new TopExp_Explorer(aBox, TopAbs_FACE).Current()));
         // Add after the public read: the published solid keeps one shell
@@ -272,8 +275,8 @@ public class BRepBuilderAPITests
     {
         TopoDS_Shape aBox = Box10();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(1, 2, 3), new gp_Dir(0, 1, 0)), 0.3);
+        var aTrsf = new Transform3D();
+        aTrsf.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 0)), 0.3);
         var aT = new BRepBuilderAPI_Transform(aBox, aTrsf);
         Assert.True(aT.IsDone());
         TopoDS_Shape aR = aT.Shape();
@@ -300,8 +303,8 @@ public class BRepBuilderAPITests
     {
         TopoDS_Shape aBox = Box10();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetScale(new gp_Pnt(0, 0, 0), 0.5);
+        var aTrsf = new Transform3D();
+        aTrsf.SetScale(new Point3D(0, 0, 0), 0.5);
         var aT = new BRepBuilderAPI_Transform(aTrsf);
         Assert.False(aT.IsDone());
         aT.Perform(aBox);
@@ -314,13 +317,13 @@ public class BRepBuilderAPITests
         for (var anExp = new TopExp_Explorer(aBox, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
             TopoDS_Vertex aV = TopoDS.Vertex(aT.ModifiedShape(anExp.Current()));
-            gp_Pnt anOld = BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current()));
-            Assert.True(BRep_Tool.Pnt(aV).IsEqual(new gp_Pnt(anOld.X() / 2, anOld.Y() / 2, anOld.Z() / 2), 1e-12));
+            Point3D anOld = BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current()));
+            Assert.True(BRep_Tool.Pnt(aV).IsEqual(new Point3D(anOld.X() / 2, anOld.Y() / 2, anOld.Z() / 2), 1e-12));
         }
         aSnap.AssertUnchanged(aBox);
 
         // the same framework reused on another shape
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0)).Edge();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).Edge();
         aT.Perform(anE);
         var aLProps = new GProp_GProps();
         BRepGProp.LinearProperties(aT.Shape(), aLProps);
@@ -367,7 +370,7 @@ public class BRepBuilderAPITests
         anArgs.Append(aBox);
         var aHistory = new BRepTools_History(anArgs, aDeep);
         Assert.True(aHistory.Modified(aF)[0].IsSame(aFd));
-        Assert.Throws<Standard_NullObject>(() => new BRepBuilderAPI_Copy(new TopoDS_Shape()));
+        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepBuilderAPI_Copy(new TopoDS_Shape()));
     }
 
     [Fact]
@@ -380,13 +383,13 @@ public class BRepBuilderAPITests
         TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMEF);
         TopoDS_Edge anE = TopoDS.Edge(aMEF.FindKey(1));
         TopoDS_Face aF1 = TopoDS.Face(aMEF[1].First()), aF2 = TopoDS.Face(aMEF[1].Last());
-        new BRep_Builder().Continuity(anE, aF1, aF2, GeomAbs_Shape.GeomAbs_G1);
+        new BRep_Builder().Continuity(anE, aF1, aF2, Continuity.G1);
         TestShapes.Frozen(aBox);
 
         var aC = new BRepBuilderAPI_Copy(aBox);
         TopoDS_Shape aFirst = aC.Shape();
         TopoDS_Edge aCopiedE = TopoDS.Edge(aC.ModifiedShape(anE));
-        Assert.Equal(GeomAbs_Shape.GeomAbs_G1,
+        Assert.Equal(Continuity.G1,
                      BRep_Tool.Continuity(aCopiedE, TopoDS.Face(aC.ModifiedShape(aF1)), TopoDS.Face(aC.ModifiedShape(aF2))));
         aC.Perform(aBox);
         Assert.True(aC.Shape().IsPartner(aFirst));
@@ -402,13 +405,13 @@ public class BRepBuilderAPITests
         TopoDS_Shape aR = aNC.Shape();
         Assert.True(AllFrozen(aR));
         TopoDS_Face aRF = TopoDS.Face(new TopExp_Explorer(aR, TopAbs_FACE).Current());
-        Assert.Equal(GeomAbs_BSplineSurface, new BRepAdaptor_Surface(aRF).GetType());
+        Assert.Equal(BSplineSurface, new BRepAdaptor_Surface(aRF).GetType());
         for (var anExp = new TopExp_Explorer(aCyl, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             TopoDS_Edge anE = TopoDS.Edge(aNC.ModifiedShape(anExp.Current()));
             if (!BRep_Tool.Degenerated(anE))
             {
-                Assert.Equal(GeomAbs_BSplineCurve, new BRepAdaptor_Curve(anE).GetType());
+                Assert.Equal(BSplineCurve, new BRepAdaptor_Curve(anE).GetType());
             }
             Assert.True(Assert.Single(aNC.Modified(anExp.Current())).IsEqual(anE));
         }
@@ -425,22 +428,22 @@ public class BRepBuilderAPITests
     [Fact]
     public void OcctIssue_NurbsConvert_of_a_meshed_BSpline_face_drops_its_surface()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[1, 2] = new gp_Pnt(0, 1, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 0.5);
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[1, 2] = new Point3D(0, 1, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 0);
+        aPoles[2, 2] = new Point3D(1, 1, 0.5);
         var aSurf = new Geom_BezierSurface(aPoles);
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, Precision.Confusion()).InternalFace();
-        var aTri = new Poly_Triangulation(4, 2, true);
+        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
+        var aTri = new Triangulation(4, 2, true);
         (double u, double v)[] aUV = [(0, 0), (1, 0), (1, 1), (0, 1)];
         for (int i = 0; i < 4; i++)
         {
             aTri.SetNode(i + 1, aSurf.Value(aUV[i].u, aUV[i].v));
-            aTri.SetUVNode(i + 1, new gp_Pnt2d(aUV[i].u, aUV[i].v));
+            aTri.SetUVNode(i + 1, new Point2D(aUV[i].u, aUV[i].v));
         }
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-        aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
+        aTri.SetTriangle(2, new Triangle1(1, 3, 4));
         new BRep_Builder().UpdateFace(aF, aTri);
         TestShapes.Frozen(aF);
 
@@ -450,24 +453,24 @@ public class BRepBuilderAPITests
         Assert.NotNull(BRep_Tool.Surface(aF));
 
         // without the mesh the face keeps its surface
-        TopoDS_Face aBare = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, Precision.Confusion()).Face();
+        TopoDS_Face aBare = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
         Assert.NotNull(BRep_Tool.Surface(TopoDS.Face(new BRepBuilderAPI_NurbsConvert(aBare).Shape())));
     }
 
     [Fact]
     public void GTransform_by_an_affinity_turns_a_circle_into_a_B_spline_ellipse()
     {
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1)).Edge();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCircle);
-        var aG = new gp_GTrsf();
+        var aG = new GeneralTransform3D();
         aG.SetValue(1, 1, 3.0);
         var aGT = new BRepBuilderAPI_GTransform(aCircle, aG);
         Assert.True(aGT.IsDone());
         TopoDS_Edge anE = TopoDS.Edge(aGT.Shape());
-        Assert.True(anE.TShape()!.IsFrozen());
+        Assert.True(anE.TShape()!.IsFrozen);
         var aC = new BRepAdaptor_Curve(anE);
-        Assert.Equal(GeomAbs_BSplineCurve, aC.GetType());
-        gp_Pnt aP = aC.Value(aC.FirstParameter());
+        Assert.Equal(BSplineCurve, aC.GetType());
+        Point3D aP = aC.Value(aC.FirstParameter());
         Assert.Equal(3.0, aP.X(), 1e-9);
         Assert.True(aGT.ModifiedShape(aCircle).IsSame(anE));
         // Modified: OCCT's list of the last converted shape's image
@@ -484,7 +487,7 @@ public class BRepBuilderAPITests
     public void Collect_records_images_against_the_initial_shapes()
     {
         TopoDS_Shape aBox = Box10();
-        var aT = new BRepBuilderAPI_Transform(aBox, gp_Trsf.Translation(new gp_Vec(1, 0, 0)), true);
+        var aT = new BRepBuilderAPI_Transform(aBox, Transform3D.Translation(new Vector3D(1, 0, 0)), true);
         var aCollect = new BRepBuilderAPI_Collect();
         aCollect.Add(aBox, aT);
         TopoDS_Shape aF = new TopExp_Explorer(aBox, TopAbs_FACE).Current();
@@ -493,7 +496,7 @@ public class BRepBuilderAPITests
         Assert.True(aImage.IsSame(aT.ModifiedShape(aF)));
 
         // a second modification of the image is recorded against the initial face
-        var aNew = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Vertex();
+        var aNew = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
         aCollect.AddModif(aImage, aNew);
         Assert.True(aCollect.Modification()[aF].First().IsSame(aNew));
         Assert.False(aCollect.Modification().IsBound(aImage));
@@ -510,25 +513,25 @@ public class BRepBuilderAPITests
     [Fact]
     public void FindPlane_finds_the_plane_of_planar_edges_only()
     {
-        TopoDS_Wire aSquare = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 1), new gp_Pnt(1, 0, 1), new gp_Pnt(1, 1, 1),
-                                                             new gp_Pnt(0, 1, 1), true).Wire();
+        TopoDS_Wire aSquare = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1),
+                                                             new Point3D(0, 1, 1), true).Wire();
         var aFP = new BRepBuilderAPI_FindPlane(aSquare);
         Assert.True(aFP.Found());
         Geom_Plane aPl = aFP.Plane()!;
-        Assert.True(aPl.IsFrozen());
-        Assert.True(aPl.Pln().Axis().Direction().IsParallel(new gp_Dir(0, 0, 1), 1e-12));
-        Assert.Equal(0.0, aPl.Pln().Distance(new gp_Pnt(0.3, 0.7, 1)), 1e-12);
+        Assert.True(aPl.IsFrozen);
+        Assert.True(aPl.Pln().Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-12));
+        Assert.Equal(0.0, aPl.Pln().Distance(new Point3D(0.3, 0.7, 1)), 1e-12);
 
-        TopoDS_Wire aSkew = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0.5),
-                                                           new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aSkew = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+                                                           new Point3D(0, 1, 0), true).Wire();
         Assert.False(new BRepBuilderAPI_FindPlane(aSkew).Found());
         Assert.True(new BRepBuilderAPI_FindPlane(aSkew, 0.5).Found());
 
         // a conic gives its own plane
-        TopoDS_Edge aCirc = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0)), 2)).Edge();
+        TopoDS_Edge aCirc = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), 2)).Edge();
         var aFC = new BRepBuilderAPI_FindPlane(aCirc);
         Assert.True(aFC.Found());
-        Assert.True(aFC.Plane()!.Pln().Axis().Direction().IsParallel(new gp_Dir(1, 0, 0), 1e-12));
+        Assert.True(aFC.Plane()!.Pln().Axis().Direction().IsParallel(new Direction3D(1, 0, 0), 1e-12));
         Assert.False(new BRepBuilderAPI_FindPlane().Found());
     }
 }

@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -19,8 +21,8 @@ public static partial class BOPTools_AlgoTools
     {
         double aTolVF, aTolNewVertex, aDist, aNewTol;
         //
-        gp_Pnt aPVF = BRep_Tool.Pnt(aVF);
-        gp_Pnt aPNewVertex = BRep_Tool.Pnt(aNewVertex);
+        Point3D aPVF = BRep_Tool.Pnt(aVF);
+        Point3D aPNewVertex = BRep_Tool.Pnt(aNewVertex);
         aTolVF = BRep_Tool.Tolerance(aVF);
         aTolNewVertex = BRep_Tool.Tolerance(aNewVertex);
 
@@ -41,9 +43,9 @@ public static partial class BOPTools_AlgoTools
     public static void UpdateVertex(in TopoDS_Edge aE, double aT, in TopoDS_Vertex aV)
     {
         double aTolV, aDist;
-        gp_Pnt aPc;
+        Point3D aPc;
 
-        gp_Pnt aPv = BRep_Tool.Pnt(aV);
+        Point3D aPv = BRep_Tool.Pnt(aV);
         aTolV = BRep_Tool.Tolerance(aV);
 
         GeomAdaptor_Curve aCA = new(BRep_Tool.Curve(aE, out _, out _)!);
@@ -63,9 +65,9 @@ public static partial class BOPTools_AlgoTools
     public static void UpdateVertex(in IntTools_Curve aC, double aT, in TopoDS_Vertex aV)
     {
         double aTolV, aDist;
-        gp_Pnt aPc;
+        Point3D aPc;
 
-        gp_Pnt aPv = BRep_Tool.Pnt(aV);
+        Point3D aPv = BRep_Tool.Pnt(aV);
         aTolV = BRep_Tool.Tolerance(aV);
 
         GeomAdaptor_Curve aCA = new(aC.Curve()!);
@@ -163,10 +165,10 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void MakeNewVertex(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2, out TopoDS_Vertex aNewVertex)
     {
-        gp_Pnt aPnt1 = BRep_Tool.Pnt(aV1);
+        Point3D aPnt1 = BRep_Tool.Pnt(aV1);
         double aTol1 = BRep_Tool.Tolerance(aV1);
 
-        gp_Pnt aPnt2 = BRep_Tool.Pnt(aV2);
+        Point3D aPnt2 = BRep_Tool.Pnt(aV2);
         double aTol2 = BRep_Tool.Tolerance(aV2);
 
         double aMaxTol, aDist;
@@ -175,18 +177,18 @@ public static partial class BOPTools_AlgoTools
         aMaxTol = (aTol1 > aTol2) ? aTol1 : aTol2;
         aMaxTol = aMaxTol + 0.5 * aDist;
 
-        gp_XYZ aXYZ1 = aPnt1.XYZ();
-        gp_XYZ aXYZ2 = aPnt2.XYZ();
-        gp_XYZ aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
+        Xyz aXYZ1 = aPnt1.XYZ();
+        Xyz aXYZ2 = aPnt2.XYZ();
+        Xyz aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
 
-        gp_Pnt aNewPnt = new(aNewXYZ);
+        Point3D aNewPnt = new(aNewXYZ);
         BRep_Builder aBB = new();
         aNewVertex = new TopoDS_Vertex();
         aBB.MakeVertex(ref aNewVertex, aNewPnt, aMaxTol);
     }
 
     /// <summary>A new vertex at the point with the tolerance.</summary>
-    public static void MakeNewVertex(in gp_Pnt aP, double aTol, out TopoDS_Vertex aNewVertex)
+    public static void MakeNewVertex(in Point3D aP, double aTol, out TopoDS_Vertex aNewVertex)
     {
         BRep_Builder aBB = new();
         aNewVertex = new TopoDS_Vertex();
@@ -201,8 +203,8 @@ public static partial class BOPTools_AlgoTools
     {
         double aTol1, aTol2, aMaxTol, aDist;
 
-        PointOnEdge(aE1, aParm1, out gp_Pnt aPnt1);
-        PointOnEdge(aE2, aParm2, out gp_Pnt aPnt2);
+        PointOnEdge(aE1, aParm1, out Point3D aPnt1);
+        PointOnEdge(aE2, aParm2, out Point3D aPnt2);
 
         aTol1 = BRep_Tool.Tolerance(aE1);
         aTol2 = BRep_Tool.Tolerance(aE2);
@@ -211,11 +213,11 @@ public static partial class BOPTools_AlgoTools
         aMaxTol = (aTol1 > aTol2) ? aTol1 : aTol2;
         aMaxTol = aMaxTol + 0.5 * aDist;
 
-        gp_XYZ aXYZ1 = aPnt1.XYZ();
-        gp_XYZ aXYZ2 = aPnt2.XYZ();
-        gp_XYZ aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
+        Xyz aXYZ1 = aPnt1.XYZ();
+        Xyz aXYZ2 = aPnt2.XYZ();
+        Xyz aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
 
-        gp_Pnt aNewPnt = new(aNewXYZ);
+        Point3D aNewPnt = new(aNewXYZ);
         BRep_Builder aBB = new();
         aNewVertex = new TopoDS_Vertex();
         aBB.MakeVertex(ref aNewVertex, aNewPnt, aMaxTol);
@@ -228,7 +230,7 @@ public static partial class BOPTools_AlgoTools
     {
         double aTol1, aTol2, aMaxTol;
 
-        PointOnEdge(aE1, aParm1, out gp_Pnt aPnt);
+        PointOnEdge(aE1, aParm1, out Point3D aPnt);
 
         aTol1 = BRep_Tool.Tolerance(aE1);
         aTol2 = BRep_Tool.Tolerance(aF1);
@@ -241,7 +243,7 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>The point of the edge's 3D curve at the parameter.</summary>
-    public static void PointOnEdge(in TopoDS_Edge aE, double aParm, out gp_Pnt aPnt)
+    public static void PointOnEdge(in TopoDS_Edge aE, double aParm, out Point3D aPnt)
     {
         Geom_Curve C1 = BRep_Tool.Curve(aE, out _, out _)!;
         C1.D0(aParm, out aPnt);
@@ -256,18 +258,18 @@ public static partial class BOPTools_AlgoTools
         int i;
         double aRes, aTolE1, aTolE2, aTF, aTL, dT;
         BRepAdaptor_Curve aBC = new();
-        GeomAbs_CurveType aCT;
+        CurveKind aCT;
         //
         aNewSR = aSR;
         //
         aBC.Initialize(aE1);
         aCT = aBC.GetType();
-        if (aCT == GeomAbs_Line)
+        if (aCT == Line)
         {
             return;
         }
         //
-        dT = Precision.PConfusion();
+        dT = global::Kerf.Engine.Foundation.Precision.PConfusion();
         aTF = aSR.First();
         aTL = aSR.Last();
         //
@@ -278,11 +280,11 @@ public static partial class BOPTools_AlgoTools
         {
             aRes = 2.0 * (aTolE1 + aTolE2);
             //
-            if (aCT == GeomAbs_BezierCurve || aCT == GeomAbs_BSplineCurve || aCT == GeomAbs_OffsetCurve
-                || aCT == GeomAbs_OtherCurve)
+            if (aCT == BezierCurve || aCT == BSplineCurve || aCT == OffsetCurve
+                || aCT == OtherCurve)
             {
-                gp_Pnt aP;
-                gp_Vec aDer;
+                Point3D aP;
+                Vector3D aDer;
                 if (i == 0)
                 {
                     aBC.D1(aTF, out aP, out aDer);
@@ -334,11 +336,11 @@ public static partial class BOPTools_AlgoTools
         int i;
         double aRes, aTolF, aTF, aTL, dT;
         BRepAdaptor_Curve aBC = new();
-        GeomAbs_CurveType aCT;
+        CurveKind aCT;
         //
         aNewSR = aSR;
         //
-        dT = Precision.PConfusion();
+        dT = global::Kerf.Engine.Foundation.Precision.PConfusion();
         aTF = aSR.First();
         aTL = aSR.Last();
         //
@@ -351,11 +353,11 @@ public static partial class BOPTools_AlgoTools
         {
             aRes = aTolF;
 
-            if (aCT == GeomAbs_BezierCurve || aCT == GeomAbs_BSplineCurve || aCT == GeomAbs_OffsetCurve
-                || aCT == GeomAbs_OtherCurve)
+            if (aCT == BezierCurve || aCT == BSplineCurve || aCT == OffsetCurve
+                || aCT == OtherCurve)
             {
-                gp_Pnt aP;
-                gp_Vec aDer;
+                Point3D aP;
+                Vector3D aDer;
                 if (i == 0)
                 {
                     aBC.D1(aTF, out aP, out aDer);

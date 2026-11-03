@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using Occt;
 
@@ -450,12 +451,12 @@ internal static class BOPTestPartitionCommands
             return 1;
         }
 
-        Message_Report aReport = new();
+        Report aReport = new();
         pBuilder.BuildBOP(aLObjects, aLTools, anOp, default, aReport);
 
         BOPTestObjects.ReportAlerts(theDI, di, aReport);
 
-        if (!aReport.GetAlerts(Message_Gravity.Message_Fail).IsEmpty())
+        if (!aReport.GetAlerts(Gravity.Fail).IsEmpty())
         {
             return 0;
         }

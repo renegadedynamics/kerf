@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -19,10 +22,10 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): load a face once, then intersect any number of curves with
-/// <see cref="Perform(in gp_Lin, double, double)"/>. On surfaces other than the elementary ones it keeps a polyhedron
+/// <see cref="Perform(in Line3D, double, double)"/>. On surfaces other than the elementary ones it keeps a polyhedron
 /// of the surface, and the sorted boxes of its triangles, for all the curves. It only reads the face.
 /// </remarks>
-public class IntCurvesFace_Intersector : Standard_Transient
+public class IntCurvesFace_Intersector : Transient
 {
     private readonly BRepTopAdaptor_TopolTool myTopolTool;
     private readonly BRepAdaptor_Surface Hsurface;
@@ -34,7 +37,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
     private int nbpnt;
     private readonly TopoDS_Face face;
     private readonly IntCurveSurface_ThePolyhedronOfHInter? myPolyhedron;
-    private Bnd_BoundSortBox? myBndBounding;
+    private BoundSortBox? myBndBounding;
     private bool myUseBoundTol;
     private bool myIsParallel; // Curve is "parallel" face surface
                                // This case is recognized only for some pairs
@@ -46,12 +49,12 @@ public class IntCurvesFace_Intersector : Standard_Transient
                                           out NCollection_HArray1<double> UPars,
                                           out NCollection_HArray1<double> VPars)
     {
-        int NbUInts = Hsurface.NbUIntervals(GeomAbs_C2);
-        int NbVInts = Hsurface.NbVIntervals(GeomAbs_C2);
+        int NbUInts = Hsurface.NbUIntervals(C2);
+        int NbVInts = Hsurface.NbVIntervals(C2);
         var UInts = new NCollection_Array1<double>(1, NbUInts + 1);
         var VInts = new NCollection_Array1<double>(1, NbVInts + 1);
-        Hsurface.UIntervals(UInts, GeomAbs_C2);
-        Hsurface.VIntervals(VInts, GeomAbs_C2);
+        Hsurface.UIntervals(UInts, C2);
+        Hsurface.VIntervals(VInts, C2);
         //
         var NbUSubInts = new NCollection_Array1<int>(1, NbUInts);
         var NbVSubInts = new NCollection_Array1<int>(1, NbVInts);
@@ -113,7 +116,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
     }
 
     /// <summary>The type of the face's surface.</summary>
-    public GeomAbs_SurfaceType SurfaceType() => (Adaptor3d_HSurfaceTool.GetType(Hsurface));
+    public SurfaceKind SurfaceType() => (Adaptor3d_HSurfaceTool.GetType(Hsurface));
 
     /// <summary>
     /// Loads the face <paramref name="Face"/>. <paramref name="aTol"/> decides whether the first point of a segment
@@ -138,10 +141,10 @@ public class IntCurvesFace_Intersector : Standard_Transient
         Hsurface = surface;
         myTopolTool = new BRepTopAdaptor_TopolTool(Hsurface);
 
-        GeomAbs_SurfaceType SurfaceType = Adaptor3d_HSurfaceTool.GetType(Hsurface);
-        if ((SurfaceType != GeomAbs_Plane) && (SurfaceType != GeomAbs_Cylinder)
-            && (SurfaceType != GeomAbs_Cone) && (SurfaceType != GeomAbs_Sphere)
-            && (SurfaceType != GeomAbs_Torus))
+        SurfaceKind SurfaceType = Adaptor3d_HSurfaceTool.GetType(Hsurface);
+        if ((SurfaceType != Plane) && (SurfaceType != SurfaceKind.Cylinder)
+            && (SurfaceType != SurfaceKind.Cone) && (SurfaceType != SurfaceKind.Sphere)
+            && (SurfaceType != SurfaceKind.Torus))
         {
             int nbsu, nbsv;
             double U0, V0, U1, V1;
@@ -183,7 +186,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
                 nbsv = aMaxSamples;
             }
 
-            if (dU > Precision.Confusion() && dV > Precision.Confusion())
+            if (dU > global::Kerf.Engine.Foundation.Precision.Confusion() && dV > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (Max(dU, dV) > Min(dU, dV) * aTresh)
                 {
@@ -207,8 +210,8 @@ public class IntCurvesFace_Intersector : Standard_Transient
                 return; // surface has no extension along one of directions
             }
 
-            int NbUOnS = Hsurface.NbUIntervals(GeomAbs_C2);
-            int NbVOnS = Hsurface.NbVIntervals(GeomAbs_C2);
+            int NbUOnS = Hsurface.NbUIntervals(C2);
+            int NbVOnS = Hsurface.NbVIntervals(C2);
 
             if (NbUOnS > 1 || NbVOnS > 1)
             {
@@ -251,7 +254,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
             for (int index = HICS.NbPoints(); index >= 1; index--)
             {
                 IntCurveSurface_IntersectionPoint HICSPointindex = HICS.Point(index);
-                gp_Pnt2d Puv = new(HICSPointindex.U(), HICSPointindex.V());
+                Point2D Puv = new(HICSPointindex.U(), HICSPointindex.V());
 
                 // TopAbs_State currentstate = myTopolTool->Classify(Puv,Tol);
                 TopAbs_State currentstate = myTopolTool.Classify(Puv, !myUseBoundTol ? 0 : mintol2d);
@@ -294,7 +297,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
                         double V = HICSPointindex.V();
                         double W = HICSW;
                         IntCurveSurface_TransitionOnCurve transition = HICSPointindex.Transition();
-                        gp_Pnt pnt = HICSPointindex.Pnt();
+                        Point3D pnt = HICSPointindex.Pnt();
                         //  Modified by skv - Wed Sep  3 16:14:10 2003 OCC578 Begin
                         int anIntState = (currentstate == TopAbs_IN) ? 0 : 1;
                         //  Modified by skv - Wed Sep  3 16:14:11 2003 OCC578 End
@@ -367,7 +370,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
     /// Intersects the segment [<paramref name="ParMin"/>, <paramref name="ParMax"/>] of the line
     /// <paramref name="L"/> (they may be ∓RealLast) with the face.
     /// </summary>
-    public void Perform(in gp_Lin L, double ParMin, double ParMax)
+    public void Perform(in Line3D L, double ParMin, double ParMax)
     {
         done = false;
         if (!myReady)
@@ -394,7 +397,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
         else
         {
             var bndTool = new Intf_Tool();
-            Bnd_Box boxLine = new();
+            Box boxLine = new();
             bndTool.LinBox(L, myPolyhedron.Bounding(), ref boxLine);
             if (bndTool.NbSegments() == 0)
             {
@@ -462,7 +465,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
             // OPTIMISATION is 1 in OCCT: the boxes of the triangles are sorted once for all the curves
             if (myBndBounding is null)
             {
-                myBndBounding = new Bnd_BoundSortBox();
+                myBndBounding = new BoundSortBox();
                 myBndBounding.Initialize(IntCurveSurface_ThePolyhedronToolOfHInter.Bounding(myPolyhedron),
                                          IntCurveSurface_ThePolyhedronToolOfHInter.ComponentsBounding(myPolyhedron));
             }
@@ -527,7 +530,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
             // OPTIMISATION is 1 in OCCT: the boxes of the triangles are sorted once for all the curves
             if (myBndBounding is null)
             {
-                myBndBounding = new Bnd_BoundSortBox();
+                myBndBounding = new BoundSortBox();
                 myBndBounding.Initialize(IntCurveSurface_ThePolyhedronToolOfHInter.Bounding(myPolyhedron),
                                          IntCurveSurface_ThePolyhedronToolOfHInter.ComponentsBounding(myPolyhedron));
             }
@@ -554,7 +557,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
     public double WParameter(int i) => (SeqPnt.Value(i).W());
 
     /// <summary>The <paramref name="i"/>-th point.</summary>
-    public gp_Pnt Pnt(int i) => (SeqPnt.Value(i).Pnt());
+    public Point3D Pnt(int i) => (SeqPnt.Value(i).Pnt());
 
     /// <summary>The transition of the line or curve on the surface at the <paramref name="i"/>-th point (taking the face's orientation into account).</summary>
     public IntCurveSurface_TransitionOnCurve Transition(int i) => (SeqPnt.Value(i).Transition());
@@ -573,14 +576,14 @@ public class IntCurvesFace_Intersector : Standard_Transient
     public TopoDS_Face Face() => (face);
 
     /// <summary>The state of the point <paramref name="Puv"/> of the face's parameter space (tolerance 1e-7).</summary>
-    public TopAbs_State ClassifyUVPoint(in gp_Pnt2d Puv)
+    public TopAbs_State ClassifyUVPoint(in Point2D Puv)
     {
         TopAbs_State state = myTopolTool.Classify(Puv, 1e-7);
         return state;
     }
 
     /// <summary>The box of the polyhedron of the surface; a void box for the elementary surfaces.</summary>
-    public Bnd_Box Bounding()
+    public Box Bounding()
     {
         if (myPolyhedron is not null)
         {
@@ -588,7 +591,7 @@ public class IntCurvesFace_Intersector : Standard_Transient
         }
         else
         {
-            Bnd_Box B = new();
+            Box B = new();
             return B;
         }
     }

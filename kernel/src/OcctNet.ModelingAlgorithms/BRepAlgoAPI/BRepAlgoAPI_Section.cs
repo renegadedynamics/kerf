@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BOPAlgo_Operation;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -52,7 +54,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>The section of a shape by a plane.</summary>
-    public BRepAlgoAPI_Section(in TopoDS_Shape Sh, in gp_Pln Pl, bool PerformNow = true)
+    public BRepAlgoAPI_Section(in TopoDS_Shape Sh, in Plane3D Pl, bool PerformNow = true)
         : base(Sh, MakeShape(new Geom_Plane(Pl)), BOPAlgo_SECTION)
     {
         Init(PerformNow);
@@ -101,7 +103,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>Sets the first argument to a plane.</summary>
-    public void Init1(in gp_Pln Pl) => Init1(MakeShape(new Geom_Plane(Pl)));
+    public void Init1(in Plane3D Pl) => Init1(MakeShape(new Geom_Plane(Pl)));
 
     /// <summary>Sets the first argument to a surface.</summary>
     public void Init1(Geom_Surface Sf) => Init1(MakeShape(Sf));
@@ -114,7 +116,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>Sets the second argument to a plane.</summary>
-    public void Init2(in gp_Pln Pl) => Init2(MakeShape(new Geom_Plane(Pl)));
+    public void Init2(in Plane3D Pl) => Init2(MakeShape(new Geom_Plane(Pl)));
 
     /// <summary>Sets the second argument to a surface.</summary>
     public void Init2(Geom_Surface Sf) => Init2(MakeShape(Sf));
@@ -136,7 +138,7 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     }
 
     /// <summary>Performs the section.</summary>
-    public override void Build(Message_ProgressRange theRange = default) => base.Build(theRange);
+    public override void Build(ProgressRange theRange = default) => base.Build(theRange);
 
     /// <summary>
     /// The face of the first argument on which the section edge <paramref name="E"/> lies, and true; false (and a null
@@ -231,10 +233,10 @@ public class BRepAlgoAPI_Section : BRepAlgoAPI_BooleanOperation
     // A face (C2 or smoother surfaces) or a shell on the whole surface, unfrozen (made here, as in OCCT).
     private static TopoDS_Shape MakeShape(Geom_Surface S)
     {
-        GeomAbs_Shape c = S.Continuity();
-        if (c >= GeomAbs_C2)
+        Continuity c = S.Continuity();
+        if (c >= C2)
         {
-            return new BRepBuilderAPI_MakeFace(S, Precision.Confusion()).InternalShape();
+            return new BRepBuilderAPI_MakeFace(S, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape();
         }
         return new BRepBuilderAPI_MakeShell(S).InternalShape();
     }

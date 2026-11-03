@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +24,7 @@ public class BRepMesh_CustomDelaunayBaseMeshAlgoOfDelabella : BRepMesh_Delabella
     }
 
     /// <summary>Processes the generated mesh: fills the mesher's circles, then the base's processing.</summary>
-    protected override void postProcessMesh(BRepMesh_Delaun theMesher, Message_ProgressRange theRange)
+    protected override void postProcessMesh(BRepMesh_Delaun theMesher, ProgressRange theRange)
     {
         BRepMesh_DataStructureOfDelaun aStructure = getStructure();
         (int first, int second) aCellsCount = getCellsCount(aStructure.NbNodes());

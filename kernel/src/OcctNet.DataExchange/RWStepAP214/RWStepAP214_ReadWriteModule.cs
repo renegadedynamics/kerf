@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -3429,7 +3431,7 @@ internal class RWStepAP214_ReadWriteModule : StepData_ReadWriteModule
         return true;
     }
 
-    public override void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient ent)
+    public override void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Transient ent)
     {
         if (CN == 0)
         {
@@ -8440,7 +8442,7 @@ internal class RWStepAP214_ReadWriteModule : StepData_ReadWriteModule
         }
     }
 
-    public override void WriteStep(int CN, StepData_StepWriter SW, Standard_Transient ent)
+    public override void WriteStep(int CN, StepData_StepWriter SW, Transient ent)
     {
         if (CN == 0)
         {

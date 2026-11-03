@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG2d/GTests/Geom2dGridEval_BezierCurve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2dGridEval_BezierCurveTest
@@ -20,11 +22,11 @@ public class Geom2dGridEval_BezierCurveTest
 
     private static Geom2d_BezierCurve CubicBezier()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 2));
-        aPoles.SetValue(3, new gp_Pnt2d(3, 2));
-        aPoles.SetValue(4, new gp_Pnt2d(4, 0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0, 0));
+        aPoles.SetValue(2, new Point2D(1, 2));
+        aPoles.SetValue(3, new Point2D(3, 2));
+        aPoles.SetValue(4, new Point2D(4, 0));
         return new Geom2d_BezierCurve(aPoles);
     }
 
@@ -38,12 +40,12 @@ public class Geom2dGridEval_BezierCurveTest
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aBezier.Value(aParams.Value(i));
+            Point2D aExpected = aBezier.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -60,7 +62,7 @@ public class Geom2dGridEval_BezierCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aBezier.D1(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1);
+            aBezier.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -78,7 +80,7 @@ public class Geom2dGridEval_BezierCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aBezier.D2(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2);
+            aBezier.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -97,7 +99,7 @@ public class Geom2dGridEval_BezierCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aBezier.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            aBezier.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -114,7 +116,7 @@ public class Geom2dGridEval_BezierCurveTest
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 11);
 
         // Degree 3 Bezier, 4th derivative should be zero
-        NCollection_Array1<gp_Vec2d> aGrid = anEval.EvaluateGridDN(aParams, 4);
+        NCollection_Array1<Vector2D> aGrid = anEval.EvaluateGridDN(aParams, 4);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -125,11 +127,11 @@ public class Geom2dGridEval_BezierCurveTest
     [Fact]
     public void RationalBezier()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 3);
+        NCollection_Array1<Point2D> aPoles = new(1, 3);
         NCollection_Array1<double> aWeights = new(1, 3);
-        aPoles.SetValue(1, new gp_Pnt2d(1, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 1));
-        aPoles.SetValue(3, new gp_Pnt2d(0, 1));
+        aPoles.SetValue(1, new Point2D(1, 0));
+        aPoles.SetValue(2, new Point2D(1, 1));
+        aPoles.SetValue(3, new Point2D(0, 1));
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
@@ -139,11 +141,11 @@ public class Geom2dGridEval_BezierCurveTest
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 21);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 21; ++i)
         {
-            gp_Pnt2d aExpected = aBezier.Value(aParams.Value(i));
+            Point2D aExpected = aBezier.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }

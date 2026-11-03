@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_AutoDesignOrganizationItem : StepAP214_AutoDesignGeneralOrgItem
@@ -14,7 +16,7 @@ public class StepAP214_AutoDesignOrganizationItem : StepAP214_AutoDesignGeneralO
     {
     }
 
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text.RegularExpressions;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
@@ -15,7 +17,7 @@ public class ShapeBuildTests
 {
     private const double Conf = 1e-7;
 
-    private static Geom_Plane XOY() => new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+    private static Geom_Plane XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
     // BRep text with the flag lines masked: kept sub-shapes keep their Free and Modified bits, copies have their own
     private static string Text(in TopoDS_Shape theShape)
@@ -30,7 +32,7 @@ public class ShapeBuildTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(theInput);
         TopoDS_Edge aResult = theTwin(theInput);
         aSnap.AssertUnchanged(theInput);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
 
         TopoDS_Edge aCopy = TopoDS.Edge(BRepTools.ExactCopyForWrite(theInput, out _));
         theInPlace(aCopy);
@@ -52,8 +54,8 @@ public class ShapeBuildTests
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(-10, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(-10, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
         TopoDS_Wire aW = new();
@@ -71,9 +73,9 @@ public class ShapeBuildTests
         aB.MakeFace(ref aF, XOY(), Conf);
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(0, 0, 0)).Oriented(TopAbs_FORWARD));
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(4, 0, 0)).Oriented(TopAbs_REVERSED));
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
+        aB.Add(anE, TestShapes.Vertex(new Point3D(0, 0, 0)).Oriented(TopAbs_FORWARD));
+        aB.Add(anE, TestShapes.Vertex(new Point3D(4, 0, 0)).Oriented(TopAbs_REVERSED));
         aB.Range(anE, aF, 0, 4);
         TopoDS_Wire aW = new();
         aB.MakeWire(ref aW);
@@ -87,8 +89,8 @@ public class ShapeBuildTests
     {
         Geom_Plane aP = ShapeBuild.PlaneXOY();
         Assert.Same(aP, ShapeBuild.PlaneXOY());
-        Assert.True(aP.IsFrozen());
-        Assert.True(aP.Axis().Direction().IsEqual(new gp_Dir(0, 0, 1), 0));
+        Assert.True(aP.IsFrozen);
+        Assert.True(aP.Axis().Direction().IsEqual(new Direction3D(0, 0, 1), 0));
         Assert.Equal(0.0, aP.Location().Z());
     }
 
@@ -97,20 +99,20 @@ public class ShapeBuildTests
     {
         var sbv = new ShapeBuild_Vertex();
         // the first covers the second
-        TopoDS_Vertex aV = sbv.CombineVertex(new gp_Pnt(0, 0, 0), new gp_Pnt(0.5, 0, 0), 1.0, 0.1);
-        Assert.True(aV.TShape()!.IsFrozen());
-        Assert.Equal(new gp_Pnt(0, 0, 0), BRep_Tool.Pnt(aV));
+        TopoDS_Vertex aV = sbv.CombineVertex(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0), 1.0, 0.1);
+        Assert.True(aV.TShape()!.IsFrozen);
+        Assert.Equal(new Point3D(0, 0, 0), BRep_Tool.Pnt(aV));
         Assert.Equal(1.0 * 1.0001, BRep_Tool.Tolerance(aV));
         // the second covers the first
-        aV = sbv.CombineVertex(new gp_Pnt(0, 0, 0), new gp_Pnt(0.5, 0, 0), 0.1, 1.0, 1.0);
-        Assert.Equal(new gp_Pnt(0.5, 0, 0), BRep_Tool.Pnt(aV));
+        aV = sbv.CombineVertex(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0), 0.1, 1.0, 1.0);
+        Assert.Equal(new Point3D(0.5, 0, 0), BRep_Tool.Pnt(aV));
         Assert.Equal(1.0, BRep_Tool.Tolerance(aV));
         // neither: the smallest sphere around both
-        aV = sbv.CombineVertex(TestShapes.Vertex(new gp_Pnt(0, 0, 0)), TestShapes.Vertex(new gp_Pnt(1, 0, 0)), 1.0);
+        aV = sbv.CombineVertex(TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(1, 0, 0)), 1.0);
         Assert.Equal(0.5, BRep_Tool.Pnt(aV).X(), 1e-15);
-        Assert.Equal(0.5 * (1 + 2 * Precision.Confusion()), BRep_Tool.Tolerance(aV), 1e-15);
+        Assert.Equal(0.5 * (1 + 2 * global::Kerf.Engine.Foundation.Precision.Confusion()), BRep_Tool.Tolerance(aV), 1e-15);
         // different tolerances: the centre moves towards the larger sphere
-        aV = sbv.CombineVertex(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0), 0.0, 1.0, 1.0);
+        aV = sbv.CombineVertex(new Point3D(0, 0, 0), new Point3D(2, 0, 0), 0.0, 1.0, 1.0);
         Assert.Equal(1.5, BRep_Tool.Tolerance(aV));
         Assert.Equal(1.5, BRep_Tool.Pnt(aV).X(), 1e-15);
     }
@@ -121,10 +123,10 @@ public class ShapeBuildTests
         (TopoDS_Edge anE, TopoDS_Face aF) = BoxEdge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
         var sbe = new ShapeBuild_Edge();
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(-1, -1, -1));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(-1, -1, -1));
         TopoDS_Edge aNew = sbe.CopyReplaceVertices(anE, aV1, new TopoDS_Vertex());
         aSnap.AssertUnchanged(anE);
-        Assert.True(aNew.TShape()!.IsFrozen());
+        Assert.True(aNew.TShape()!.IsFrozen);
         Assert.False(aNew.IsSame(anE));
         var sae = new ShapeAnalysis_Edge();
         TopExp.Vertices(aNew, out TopoDS_Vertex aF1, out TopoDS_Vertex aL1);
@@ -138,7 +140,7 @@ public class ShapeBuildTests
         Assert.Same(BRep_Tool.CurveOnSurface(anE, aF, out _, out _), BRep_Tool.CurveOnSurface(aNew, aF, out _, out _));
 
         TopoDS_Edge aShared = sbe.Copy(anE);
-        Assert.True(aShared.TShape()!.IsFrozen());
+        Assert.True(aShared.TShape()!.IsFrozen);
         Assert.Same(BRep_Tool.CurveOnSurface(anE, aF, out _, out _), BRep_Tool.CurveOnSurface(aShared, aF, out _, out _));
         TopoDS_Edge anOwn = sbe.Copy(anE, false);
         Geom2d_Curve aPC0 = BRep_Tool.CurveOnSurface(anE, aF, out double pf, out double pl)!;
@@ -146,7 +148,7 @@ public class ShapeBuildTests
         Assert.NotSame(aPC0, aPC1);
         Assert.Equal((pf, pl), (qf, ql));
         Assert.Equal(aPC0.Value(pl), aPC1.Value(ql));
-        Assert.False(sbe.InternalCopy(anE).TShape()!.IsFrozen());
+        Assert.False(sbe.InternalCopy(anE).TShape()!.IsFrozen);
         aSnap.AssertUnchanged(anE);
     }
 
@@ -158,10 +160,10 @@ public class ShapeBuildTests
 
         AssertTwin(anE, e => sbe.WithRange3d(e, 1, 2), e => sbe.SetRange3d(e, 1, 2));
         AssertTwin(anE, e => sbe.PCurveRemoved(e, aF), e => sbe.RemovePCurve(e, aF));
-        Geom_Surface aS = BRep_Tool.Surface(aF, out TopLoc_Location aL)!;
+        Geom_Surface aS = BRep_Tool.Surface(aF, out Placement aL)!;
         AssertTwin(anE, e => sbe.PCurveRemoved(e, aS, aL), e => sbe.RemovePCurve(e, aS, aL));
         AssertTwin(anE, e => sbe.PCurveRemoved(e, aS), e => sbe.RemovePCurve(e, aS));
-        var aLine = new Geom2d_Line(new gp_Pnt2d(5, 5), new gp_Dir2d(0, 1));
+        var aLine = new Geom2d_Line(new Point2D(5, 5), new Direction2D(0, 1));
         AssertTwin(anE, e => sbe.PCurveReplaced(e, aLine, aF), e => sbe.ReplacePCurve(e, aLine, aF));
         AssertTwin(anE, e => sbe.Curve3dRemoved(e), e => sbe.RemoveCurve3d(e));
 
@@ -186,7 +188,7 @@ public class ShapeBuildTests
         BRep_Tool.Range(aRanged, aShiftedF, out f, out l);
         Assert.Equal((12.5, 17.5), (f, l));
 
-        TopoDS_Edge aBare = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)));
+        TopoDS_Edge aBare = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         AssertTwin(aBare, e => sbe.PCurvesCopied(e, aFrom), e => sbe.CopyPCurves(e, aFrom));
         Assert.True(new ShapeAnalysis_Edge().HasPCurve(sbe.PCurvesCopied(aBare, aFrom), aShiftedF));
 
@@ -196,7 +198,7 @@ public class ShapeBuildTests
         TopoDS_Edge aBuilt = sbe.Curve3dBuilt(aFrozenPOnly, out bool isDone);
         Assert.True(isDone);
         Geom_Curve aC = BRep_Tool.Curve(aBuilt, out f, out l)!;
-        Assert.True(aC.Value(l).Distance(new gp_Pnt(4, 0, 0)) < 1e-7);
+        Assert.True(aC.Value(l).Distance(new Point3D(4, 0, 0)) < 1e-7);
         _ = aPF;
     }
 
@@ -207,7 +209,7 @@ public class ShapeBuildTests
         var aB = new BRep_Builder();
         (TopoDS_Edge anE, TopoDS_Face aF) = ShiftedEdge();
         TopoDS_Face aSub = new();
-        aB.MakeFace(ref aSub, new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Conf);
+        aB.MakeFace(ref aSub, new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Conf);
         TopoDS_Edge aFrozenE = TestShapes.Frozen(anE);
         TopoDS_Face aFrozenSub = TestShapes.Frozen(aSub);
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(aFrozenE, aF, out _, out _)!;
@@ -222,7 +224,7 @@ public class ShapeBuildTests
 
         // no pcurve on old (not a plane, so none is computed): false, and the input comes back unchanged
         TopoDS_Face aCyl = TopoDS.Face(new TopExp_Explorer(new BRepPrimAPI_MakeCylinder(1, 1).Shape(), TopAbs_FACE).Current());
-        TopoDS_Edge anOther = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 5), new gp_Pnt(1, 0, 5)));
+        TopoDS_Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 5), new Point3D(1, 0, 5)));
         TopoDS_Edge aSame = sbe.PCurveReassigned(anOther, aCyl, aFrozenSub, out isDone);
         Assert.False(isDone);
         Assert.True(aSame.IsEqual(anOther));
@@ -233,22 +235,22 @@ public class ShapeBuildTests
     {
         var sbe = new ShapeBuild_Edge();
         (TopoDS_Edge anE, TopoDS_Face aF) = BoxEdge();
-        Assert.ThrowsAny<Standard_Failure>(() => sbe.RemoveCurve3d(anE));
-        Assert.ThrowsAny<Standard_Failure>(() => sbe.SetRange3d(anE, 0, 1));
-        Assert.ThrowsAny<Standard_Failure>(() => sbe.RemovePCurve(anE, aF));
-        Assert.ThrowsAny<Standard_Failure>(() => sbe.CopyRanges(anE, anE));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemoveCurve3d(anE));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.SetRange3d(anE, 0, 1));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemovePCurve(anE, aF));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.CopyRanges(anE, anE));
 
         // OCCT's BuildCurve3d catches every failure; the port lets the frozen edge's through
         (TopoDS_Edge aPOnly, _) = PCurveOnlyEdge();
         TopoDS_Edge aFrozen = TestShapes.Frozen(aPOnly);
-        Assert.ThrowsAny<Standard_Failure>(() => sbe.BuildCurve3d(aFrozen));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.BuildCurve3d(aFrozen));
     }
 
     [Fact]
     public void CopyRanges_shifts_into_the_period()
     {
         var sbe = new ShapeBuild_Edge();
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
         TopoDS_Edge aFrom = TestShapes.Edge(aCircle, 7, 8);
         TopoDS_Edge aTo = TestShapes.Edge(aCircle, 0, 1);
         sbe.CopyRanges(aTo, aFrom);
@@ -270,80 +272,80 @@ public class ShapeBuildTests
     public void TransformPCurve_scales_along_u()
     {
         var sbe = new ShapeBuild_Edge();
-        var anId = new gp_Trsf2d();
+        var anId = new Transform2D();
 
         // a line: stays a line
-        var aLine = new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0));
+        var aLine = new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 0));
         double f = 0, l = 1;
         Geom2d_Curve aRes = sbe.TransformPCurve(aLine, anId, 2, ref f, ref l);
         Geom2d_Line aResLine = Assert.IsType<Geom2d_Line>(aRes);
         Assert.Equal((0.0, 2.0), (f, l));
-        Assert.Equal(new gp_Pnt2d(2, 1), aResLine.Value(f));
-        Assert.Equal(new gp_Pnt2d(4, 1), aResLine.Value(l));
+        Assert.Equal(new Point2D(2, 1), aResLine.Value(f));
+        Assert.Equal(new Point2D(4, 1), aResLine.Value(l));
 
         // uFact 1: a copy, transformed
-        var aT = new gp_Trsf2d();
-        aT.SetTranslation(new gp_Vec2d(0, 3));
+        var aT = new Transform2D();
+        aT.SetTranslation(new Vector2D(0, 3));
         f = 0;
         l = 1;
         aRes = sbe.TransformPCurve(aLine, aT, 1, ref f, ref l);
         Assert.NotSame(aLine, aRes);
-        Assert.False(aRes.IsFrozen());
-        Assert.Equal(new gp_Pnt2d(1, 4), aRes.Value(0));
-        Assert.Equal(new gp_Pnt2d(1, 1), aLine.Value(0));
+        Assert.False(aRes.IsFrozen);
+        Assert.Equal(new Point2D(1, 4), aRes.Value(0));
+        Assert.Equal(new Point2D(1, 1), aLine.Value(0));
 
         // a circle: a B-spline approximation over the range
-        var aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1);
+        var aCircle = new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
         f = 0;
         l = Math.PI / 2;
         aRes = sbe.TransformPCurve(aCircle, anId, 2, ref f, ref l);
         Geom2d_BSplineCurve aBS = Assert.IsType<Geom2d_BSplineCurve>(aRes);
-        Assert.True(aBS.Value(f).Distance(new gp_Pnt2d(2, 0)) < 1e-6);
-        Assert.True(aBS.Value(l).Distance(new gp_Pnt2d(0, 1)) < 1e-6);
+        Assert.True(aBS.Value(f).Distance(new Point2D(2, 0)) < 1e-6);
+        Assert.True(aBS.Value(l).Distance(new Point2D(0, 1)) < 1e-6);
 
         // a Bezier curve: its poles scaled
-        var aBez = new Geom2d_BezierCurve(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(1, 0), new gp_Pnt2d(2, 1), new gp_Pnt2d(3, 0)]));
+        var aBez = new Geom2d_BezierCurve(NCollection_Array1<Point2D>.From([new Point2D(1, 0), new Point2D(2, 1), new Point2D(3, 0)]));
         f = 0;
         l = 1;
         aRes = sbe.TransformPCurve(aBez, anId, 3, ref f, ref l);
         Geom2d_BezierCurve aResBez = Assert.IsType<Geom2d_BezierCurve>(aRes);
-        Assert.Equal(new gp_Pnt2d(6, 1), aResBez.Pole(2));
-        Assert.Equal(new gp_Pnt2d(2, 1), aBez.Pole(2));
+        Assert.Equal(new Point2D(6, 1), aResBez.Pole(2));
+        Assert.Equal(new Point2D(2, 1), aBez.Pole(2));
 
         // a trimmed B-spline: the basis, its poles scaled
-        var aBSp = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 1)]),
+        var aBSp = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(1, 1)]),
                                            NCollection_Array1<double>.From([0.0, 1.0]), NCollection_Array1<int>.From([2, 2]), 1);
         aBSp.Freeze();
         f = 0.25;
         l = 0.5;
         aRes = sbe.TransformPCurve(new Geom2d_TrimmedCurve(aBSp, 0.25, 0.5), anId, 2, ref f, ref l);
         Geom2d_BSplineCurve aResBSp = Assert.IsType<Geom2d_BSplineCurve>(aRes);
-        Assert.Equal(new gp_Pnt2d(2, 1), aResBSp.Pole(2));
+        Assert.Equal(new Point2D(2, 1), aResBSp.Pole(2));
         Assert.Equal((0.25, 0.5), (f, l));
-        Assert.Equal(new gp_Pnt2d(1, 1), aBSp.Pole(2));
+        Assert.Equal(new Point2D(1, 1), aBSp.Pole(2));
     }
 
     [Fact]
     public void MakeEdge_from_curves_and_pcurves()
     {
         var sbe = new ShapeBuild_Edge();
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(0, 0, 5));
-        var aLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(0, 0, 5));
+        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         TopoDS_Edge anE = new();
-        sbe.MakeEdge(ref anE, aLine, new TopLoc_Location(aT), 0, 3);
-        Assert.True(anE.TShape()!.IsFrozen());
+        sbe.MakeEdge(ref anE, aLine, new Placement(aT), 0, 3);
+        Assert.True(anE.TShape()!.IsFrozen);
         TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        Assert.Equal(new gp_Pnt(0, 0, 5), BRep_Tool.Pnt(aV1));
-        Assert.Equal(new gp_Pnt(3, 0, 5), BRep_Tool.Pnt(aV2));
+        Assert.Equal(new Point3D(0, 0, 5), BRep_Tool.Pnt(aV1));
+        Assert.Equal(new Point3D(3, 0, 5), BRep_Tool.Pnt(aV2));
         Geom_Curve aC = BRep_Tool.Curve(anE, out double f, out double l)!;
         Assert.Equal(5.0, aC.Value(l).Z());
         Assert.Equal((0.0, 3.0), (f, l));
 
         // an empty range fails: the edge is unchanged
         TopoDS_Edge aKept = anE;
-        sbe.MakeEdge(ref aKept, aLine, new TopLoc_Location(), 1, 1);
+        sbe.MakeEdge(ref aKept, aLine, new Placement(), 1, 1);
         Assert.True(aKept.IsEqual(anE));
 
         // on a face
@@ -351,20 +353,20 @@ public class ShapeBuildTests
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
         TopoDS_Edge aPE = new();
-        sbe.MakeEdge(ref aPE, new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(0, 1)), aF, 0, 2);
-        Assert.True(aPE.TShape()!.IsFrozen());
+        sbe.MakeEdge(ref aPE, new Geom2d_Line(new Point2D(1, 1), new Direction2D(0, 1)), aF, 0, 2);
+        Assert.True(aPE.TShape()!.IsFrozen);
         TopExp.Vertices(aPE, out aV1, out aV2);
-        Assert.Equal(new gp_Pnt(1, 3, 0), BRep_Tool.Pnt(aV2));
+        Assert.Equal(new Point3D(1, 3, 0), BRep_Tool.Pnt(aV2));
 
         // on a located surface
         TopoDS_Edge aLE = new();
-        sbe.MakeEdge(ref aLE, new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(0, 1)), XOY(), new TopLoc_Location(aT), 0, 2);
+        sbe.MakeEdge(ref aLE, new Geom2d_Line(new Point2D(1, 1), new Direction2D(0, 1)), XOY(), new Placement(aT), 0, 2);
         TopExp.Vertices(aLE, out aV1, out aV2);
-        Assert.Equal(new gp_Pnt(1, 3, 5), BRep_Tool.Pnt(aV2));
+        Assert.Equal(new Point3D(1, 3, 5), BRep_Tool.Pnt(aV2));
 
         TopoDS_Edge anInternal = new();
-        sbe.InternalMakeEdge(ref anInternal, aLine, new TopLoc_Location(), 0, 1);
-        Assert.False(anInternal.TShape()!.IsFrozen());
+        sbe.InternalMakeEdge(ref anInternal, aLine, new Placement(), 0, 1);
+        Assert.False(anInternal.TShape()!.IsFrozen);
     }
 
     [Fact]

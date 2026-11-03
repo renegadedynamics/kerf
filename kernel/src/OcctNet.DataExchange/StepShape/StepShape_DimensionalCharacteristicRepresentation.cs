@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity DimensionalCharacteristicRepresentation
 /// </summary>
-public class StepShape_DimensionalCharacteristicRepresentation : Standard_Transient
+public class StepShape_DimensionalCharacteristicRepresentation : Transient
 {
     private StepShape_DimensionalCharacteristic theDimension = new StepShape_DimensionalCharacteristic();
     private StepShape_ShapeDimensionRepresentation theRepresentation;

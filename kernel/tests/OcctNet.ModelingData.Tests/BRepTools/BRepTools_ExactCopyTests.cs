@@ -18,7 +18,7 @@ public class BRepTools_ExactCopyTests
         TopoDS_Edge anE = TopoDS.Edge(new TopExp_Explorer(aF, TopAbs_EDGE).Current());
         var aB = new BRep_Builder();
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, aF, out _, out _)!;
-        aB.UpdateEdge(anE, aPC, aF, Precision.Confusion());
+        aB.UpdateEdge(anE, aPC, aF, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.Range(anE, aF, 0, 1);
         aB.SameRange(anE, false);
         return TestShapes.Frozen(aBox);
@@ -31,7 +31,7 @@ public class BRepTools_ExactCopyTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out BRepTools_History aH);
         aSnap.AssertUnchanged(aBox);
-        Assert.False(aCopy.TShape()!.IsFrozen());
+        Assert.False(aCopy.TShape()!.IsFrozen);
         Assert.False(aCopy.IsSame(aBox));
         aSnap.AssertSameValues(ShapeSnapshot.Of(aCopy));
         for (var anExp = new TopExp_Explorer(aBox, TopAbs_EDGE); anExp.More(); anExp.Next())
@@ -89,6 +89,6 @@ public class BRepTools_ExactCopyTests
         Assert.Equal((9, 3), Count(TopAbs_EDGE));
         Assert.Equal((3, 3), Count(TopAbs_FACE));
         Assert.Equal(1e-3, BRep_Tool.Tolerance(TopoDS.Vertex(aH.Modified(aV)[0])));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aV));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(aV));
     }
 }

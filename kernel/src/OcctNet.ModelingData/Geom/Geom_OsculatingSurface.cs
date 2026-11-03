@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
 
 namespace Occt;
 
@@ -67,10 +71,10 @@ internal sealed class Geom_OsculatingSurface
 
             int i;
             theBS.Bounds(out U1, out U2, out V1, out V2);
-            myAlong[0] = isQPunctual(theBS, V1, GeomAbs_IsoV, TolMin, theTol);
-            myAlong[1] = isQPunctual(theBS, V2, GeomAbs_IsoV, TolMin, theTol);
-            myAlong[2] = isQPunctual(theBS, U1, GeomAbs_IsoU, TolMin, theTol);
-            myAlong[3] = isQPunctual(theBS, U2, GeomAbs_IsoU, TolMin, theTol);
+            myAlong[0] = isQPunctual(theBS, V1, IsoV, TolMin, theTol);
+            myAlong[1] = isQPunctual(theBS, V2, IsoV, TolMin, theTol);
+            myAlong[2] = isQPunctual(theBS, U1, IsoU, TolMin, theTol);
+            myAlong[3] = isQPunctual(theBS, U2, IsoU, TolMin, theTol);
             if (myAlong[0] || myAlong[1] || myAlong[2] || myAlong[3])
             {
                 Geom_BSplineSurface InitSurf, S;
@@ -132,7 +136,7 @@ internal sealed class Geom_OsculatingSurface
                                         break;
                                     }
                                     k++;
-                                    IsQPunc = isQPunctual(L!, V1, GeomAbs_IsoV, 0.0, theTol);
+                                    IsQPunc = isQPunctual(L!, V1, IsoV, 0.0, theTol);
                                     UKnot = 1;
                                     VKnot = 1;
                                     S = L!;
@@ -161,7 +165,7 @@ internal sealed class Geom_OsculatingSurface
                                             break;
                                         }
                                         k++;
-                                        IsQPunc = isQPunctual(L!, V2, GeomAbs_IsoV, 0.0, theTol);
+                                        IsQPunc = isQPunctual(L!, V2, IsoV, 0.0, theTol);
                                         UKnot = 1;
                                         VKnot = 1;
                                         S = L!;
@@ -188,7 +192,7 @@ internal sealed class Geom_OsculatingSurface
                                         break;
                                     }
                                     k++;
-                                    IsQPunc = isQPunctual(L!, V2, GeomAbs_IsoV, 0.0, theTol);
+                                    IsQPunc = isQPunctual(L!, V2, IsoV, 0.0, theTol);
                                     UKnot = 1;
                                     VKnot = 1;
                                     S = L!;
@@ -224,7 +228,7 @@ internal sealed class Geom_OsculatingSurface
                                         break;
                                     }
                                     k++;
-                                    IsQPunc = isQPunctual(L!, U1, GeomAbs_IsoU, 0.0, theTol);
+                                    IsQPunc = isQPunctual(L!, U1, IsoU, 0.0, theTol);
                                     UKnot = 1;
                                     VKnot = 1;
                                     S = L!;
@@ -252,7 +256,7 @@ internal sealed class Geom_OsculatingSurface
                                             break;
                                         }
                                         k++;
-                                        IsQPunc = isQPunctual(L!, U2, GeomAbs_IsoU, 0.0, theTol);
+                                        IsQPunc = isQPunctual(L!, U2, IsoU, 0.0, theTol);
                                         UKnot = 1;
                                         VKnot = 1;
                                         S = L!;
@@ -279,7 +283,7 @@ internal sealed class Geom_OsculatingSurface
                                         break;
                                     }
                                     k++;
-                                    IsQPunc = isQPunctual(L!, U2, GeomAbs_IsoU, 0.0, theTol);
+                                    IsQPunc = isQPunctual(L!, U2, IsoU, 0.0, theTol);
                                     UKnot = 1;
                                     VKnot = 1;
                                     S = L!;
@@ -352,8 +356,8 @@ internal sealed class Geom_OsculatingSurface
                 NbVK = BSur.NbVKnots();
                 NCollection_Array1<double> UKnots = BSur.InternalUKnots();
                 NCollection_Array1<double> VKnots = BSur.InternalVKnots();
-                BSplCLib.Hunt(UKnots, theU, out NU);
-                BSplCLib.Hunt(VKnots, theV, out NV);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(UKnots, theU, out NU);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(VKnots, theV, out NV);
                 if (NU < 1)
                 {
                     NU = 1;
@@ -419,8 +423,8 @@ internal sealed class Geom_OsculatingSurface
                 NbVK = BSur.NbVKnots();
                 NCollection_Array1<double> UKnots = BSur.InternalUKnots();
                 NCollection_Array1<double> VKnots = BSur.InternalVKnots();
-                BSplCLib.Hunt(UKnots, theU, out NU);
-                BSplCLib.Hunt(VKnots, theV, out NV);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(UKnots, theU, out NU);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(VKnots, theV, out NV);
                 if (NV < 1)
                 {
                     NV = 1;
@@ -486,7 +490,7 @@ internal sealed class Geom_OsculatingSurface
             MinDegree = (int)Math.Min(udeg, vdeg);
             MaxDegree = (int)Math.Max(udeg, vdeg);
 
-            NCollection_Array2<gp_Pnt> cachepoles = new(1, MaxDegree + 1, 1, MinDegree + 1);
+            NCollection_Array2<Point3D> cachepoles = new(1, MaxDegree + 1, 1, MinDegree + 1);
             // end for cache
 
             // for polynomial grid
@@ -536,7 +540,7 @@ internal sealed class Geom_OsculatingSurface
             int ULocalIndex, VLocalIndex;
             double ucacheparameter, vcacheparameter, uspanlength, vspanlength;
 
-            NCollection_Array2<gp_Pnt> aPoles = theBS.InternalPoles();
+            NCollection_Array2<Point3D> aPoles = theBS.InternalPoles();
             NCollection_Array1<double> aUFlatKnts = theBS.InternalUKnotSequence();
             NCollection_Array1<double> aVFlatKnts = theBS.InternalVKnotSequence();
 
@@ -562,7 +566,7 @@ internal sealed class Geom_OsculatingSurface
                 ucacheparameter = ucacheparameter + uspanlength;
             }
 
-            BSplSLib.BuildCache(ucacheparameter,
+            SurfaceBSplSLib.BuildCache(ucacheparameter,
                                 vcacheparameter,
                                 uspanlength,
                                 vspanlength,
@@ -575,11 +579,11 @@ internal sealed class Geom_OsculatingSurface
                                 aUFlatKnts,
                                 aVFlatKnts,
                                 aPoles,
-                                BSplSLib.NoWeights(),
+                                SurfaceBSplSLib.NoWeights(),
                                 cachepoles,
-                                BSplSLib.NoWeights());
+                                SurfaceBSplSLib.NoWeights());
             int m, n, index;
-            NCollection_Array2<gp_Pnt> OscCoeff = new(1, OscUNumCoeff, 1, OscVNumCoeff);
+            NCollection_Array2<Point3D> OscCoeff = new(1, OscUNumCoeff, 1, OscVNumCoeff);
 
             if (IsAlongU())
             {
@@ -605,7 +609,7 @@ internal sealed class Geom_OsculatingSurface
                 }
                 if (IsVNegative)
                 {
-                    PLib.VTrimming(-1, 0, OscCoeff, PLib.NoWeights2());
+                    global::Kerf.Engine.Numerics.Polynomials.PLib.VTrimming(-1, 0, OscCoeff, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2());
                 }
 
                 index = 1;
@@ -644,7 +648,7 @@ internal sealed class Geom_OsculatingSurface
                 }
                 if (IsUNegative)
                 {
-                    PLib.UTrimming(-1, 0, OscCoeff, PLib.NoWeights2());
+                    global::Kerf.Engine.Numerics.Polynomials.PLib.UTrimming(-1, 0, OscCoeff, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2());
                 }
                 index = 1;
                 for (n = 1; n <= (int)udeg; n++)
@@ -669,7 +673,7 @@ internal sealed class Geom_OsculatingSurface
             UContinuity = -1;
             VContinuity = -1;
 
-            Convert_GridPolynomialToPoles Data = new(1,
+            GridPolynomialToPoles Data = new(1,
                                                      1,
                                                      UContinuity,
                                                      VContinuity,
@@ -696,16 +700,16 @@ internal sealed class Geom_OsculatingSurface
     }
 
     // Returns true if the isoparametric is quasi-punctual.
-    private static bool isQPunctual(Geom_Surface theS, double theParam, GeomAbs_IsoType theIT, double theTolMin,
+    private static bool isQPunctual(Geom_Surface theS, double theParam, IsoType theIT, double theTolMin,
                                     double theTolMax)
     {
         double U1, U2, V1, V2, T;
         bool Along = true;
         theS.Bounds(out U1, out U2, out V1, out V2);
-        gp_Vec D1U, D1V;
-        gp_Pnt P;
+        Vector3D D1U, D1V;
+        Point3D P;
         double Step, D1NormMax;
-        if (theIT == GeomAbs_IsoV)
+        if (theIT == IsoV)
         {
             Step = (U2 - U1) / 10;
             D1NormMax = 0.0;

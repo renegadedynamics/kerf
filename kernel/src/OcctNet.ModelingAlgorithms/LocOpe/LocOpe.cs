@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -59,7 +61,7 @@ public static class LocOpe
         }
         TopoDS_Edge El = TopoDS.Edge(exp.Current());
 
-        gp_Pnt2d pf, pl;
+        Point2D pf, pl;
         Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(Ef, F, out double f, out double l)!;
         if (Ef.Orientation() == TopAbs_FORWARD)
         {
@@ -79,7 +81,7 @@ public static class LocOpe
             pl = C2d.Value(f);
         }
 
-        if (pf.Distance(pl) <= Precision.PConfusion(Precision.Confusion()))
+        if (pf.Distance(pl) <= global::Kerf.Engine.Foundation.Precision.PConfusion(global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return true;
         }
@@ -121,7 +123,7 @@ public static class LocOpe
         eps = (l - f) / 100.0;
         f += eps; // pour eviter de faire des calculs sur les
         l -= eps; // pointes des carreaux pointus.
-        gp_Vec d1, d2;
+        Vector3D d1, d2;
 
         double uu, vv;
 
@@ -129,8 +131,8 @@ public static class LocOpe
         for (i = 0; i <= 20; i++)
         {
             u = f + (l - f) * i / 20;
-            HC2d.D0(u, out gp_Pnt2d p);
-            HS1.D1(p.X(), p.Y(), out gp_Pnt pp1, out gp_Vec du, out gp_Vec dv);
+            HC2d.D0(u, out Point2D p);
+            HS1.D1(p.X(), p.Y(), out Point3D pp1, out Vector3D du, out Vector3D dv);
             d1 = (du.Crossed(dv)).Normalized();
             if (rev1)
             {
@@ -162,7 +164,7 @@ public static class LocOpe
     /// Fills <paramref name="theSeq"/> with points sampled on the edges of <paramref name="theShape"/> (not at their
     /// ends), then with every vertex.
     /// </summary>
-    public static void SampleEdges(in TopoDS_Shape theShape, NCollection_Sequence<gp_Pnt> theSeq)
+    public static void SampleEdges(in TopoDS_Shape theShape, NCollection_Sequence<Point3D> theSeq)
     {
         theSeq.Clear();
         NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
@@ -181,7 +183,7 @@ public static class LocOpe
             }
             if (!BRep_Tool.Degenerated(edg))
             {
-                Geom_Curve C = BRep_Tool.Curve(edg, out TopLoc_Location Loc, out double f, out double l)!;
+                Geom_Curve C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
                 C = (Geom_Curve)C.Transformed(Loc.Transformation());
                 double delta = (l - f) / NECHANT * 0.123456;
                 for (i = 1; i < NECHANT; i++)

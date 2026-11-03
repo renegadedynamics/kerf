@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -13,9 +14,9 @@ public class MathOpt_NDim_ComparisonTest
     // Adapter classes for old API (inherit from math_MultipleVarFunction)
 
     // Quadratic function: f(x,y) = (x-1)^2 + (y-2)^2, minimum at (1, 2) with f = 0
-    private sealed class QuadraticFuncOld : math_MultipleVarFunction
+    private sealed class QuadraticFuncOld : MultipleVarFunction
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -27,9 +28,9 @@ public class MathOpt_NDim_ComparisonTest
     }
 
     // Rosenbrock function: f(x,y) = 100*(y-x^2)^2 + (1-x)^2, minimum at (1, 1) with f = 0
-    private sealed class RosenbrockFuncOld : math_MultipleVarFunction
+    private sealed class RosenbrockFuncOld : MultipleVarFunction
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -43,9 +44,9 @@ public class MathOpt_NDim_ComparisonTest
     }
 
     // Booth function: f(x,y) = (x + 2y - 7)^2 + (2x + y - 5)^2, minimum at (1, 3) with f = 0
-    private sealed class BoothFuncOld : math_MultipleVarFunction
+    private sealed class BoothFuncOld : MultipleVarFunction
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -59,7 +60,7 @@ public class MathOpt_NDim_ComparisonTest
     }
 
     // Sphere function in N dimensions: f(x) = sum(x_i^2), minimum at origin with f = 0
-    private sealed class SphereFuncOld : math_MultipleVarFunction
+    private sealed class SphereFuncOld : MultipleVarFunction
     {
         private readonly int myN;
 
@@ -68,7 +69,7 @@ public class MathOpt_NDim_ComparisonTest
             myN = theN;
         }
 
-        public override int NbVariables() => myN;
+        public override int VariableCount => myN;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -83,9 +84,9 @@ public class MathOpt_NDim_ComparisonTest
 
     // Adapter classes for old BFGS API (inherit from math_MultipleVarFunctionWithGradient)
 
-    private sealed class QuadraticFuncGradOld : math_MultipleVarFunctionWithGradient
+    private sealed class QuadraticFuncGradOld : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -108,9 +109,9 @@ public class MathOpt_NDim_ComparisonTest
         }
     }
 
-    private sealed class RosenbrockFuncGradOld : math_MultipleVarFunctionWithGradient
+    private sealed class RosenbrockFuncGradOld : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -137,9 +138,9 @@ public class MathOpt_NDim_ComparisonTest
         }
     }
 
-    private sealed class BoothFuncGradOld : math_MultipleVarFunctionWithGradient
+    private sealed class BoothFuncGradOld : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -168,7 +169,7 @@ public class MathOpt_NDim_ComparisonTest
         }
     }
 
-    private sealed class SphereFuncGradOld : math_MultipleVarFunctionWithGradient
+    private sealed class SphereFuncGradOld : MultipleVarFunctionWithGradient
     {
         private readonly int myN;
 
@@ -177,7 +178,7 @@ public class MathOpt_NDim_ComparisonTest
             myN = theN;
         }
 
-        public override int NbVariables() => myN;
+        public override int VariableCount => myN;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -293,9 +294,9 @@ public class MathOpt_NDim_ComparisonTest
     }
 
     // Create identity matrix for Powell directions.
-    private static math_Matrix CreateIdentityMatrix(int theN)
+    private static Matrix CreateIdentityMatrix(int theN)
     {
-        math_Matrix aMat = new(1, theN, 1, theN, 0.0);
+        Matrix aMat = new(1, theN, 1, theN, 0.0);
         for (int i = 1; i <= theN; ++i)
         {
             aMat[i, i] = 1.0;
@@ -322,15 +323,15 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
         // Old API
-        math_Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
-        math_Matrix aDirections = CreateIdentityMatrix(2);
+        Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
+        Matrix aDirections = CreateIdentityMatrix(2);
         anOldSolver.Perform(anOldFunc, aStart, aDirections);
 
         // New API
-        VectorResult aNewResult = MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -351,15 +352,15 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(0.0, 0.0);
 
         // Old API
-        math_Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
-        math_Matrix aDirections = CreateIdentityMatrix(2);
+        Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
+        Matrix aDirections = CreateIdentityMatrix(2);
         anOldSolver.Perform(anOldFunc, aStart, aDirections);
 
         // New API
-        VectorResult aNewResult = MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -380,15 +381,15 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(-1.0, 1.0);
 
         // Old API - needs more iterations for Rosenbrock
-        math_Powell anOldSolver = new(anOldFunc, 1.0e-6, 1000);
-        math_Matrix aDirections = CreateIdentityMatrix(2);
+        Powell anOldSolver = new(anOldFunc, 1.0e-6, 1000);
+        Matrix aDirections = CreateIdentityMatrix(2);
         anOldSolver.Perform(anOldFunc, aStart, aDirections);
 
         // New API
-        VectorResult aNewResult = MathOpt.Powell(aNewFunc, aStart, MakeConfig(1000, 1.0e-6, 1.0e-8));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aNewFunc, aStart, MakeConfig(1000, 1.0e-6, 1.0e-8));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the minimum (relaxed tolerance for Rosenbrock)
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], 1.0e-3);
@@ -407,15 +408,15 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(3.0, -2.0, 4.0);
 
         // Old API
-        math_Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
-        math_Matrix aDirections = CreateIdentityMatrix(3);
+        Powell anOldSolver = new(anOldFunc, 1.0e-8, 200);
+        Matrix aDirections = CreateIdentityMatrix(3);
         anOldSolver.Perform(anOldFunc, aStart, aDirections);
 
         // New API
-        VectorResult aNewResult = MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the origin
         for (int i = 1; i <= 3; ++i)
@@ -437,14 +438,14 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
         // Old API
-        math_BFGS anOldSolver = new(2, 1.0e-8, 100);
+        Bfgs anOldSolver = new(2, 1.0e-8, 100);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -465,14 +466,14 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(0.0, 0.0);
 
         // Old API
-        math_BFGS anOldSolver = new(2, 1.0e-8, 100);
+        Bfgs anOldSolver = new(2, 1.0e-8, 100);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -493,14 +494,14 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(-1.0, 1.0);
 
         // Old API - needs more iterations for Rosenbrock
-        math_BFGS anOldSolver = new(2, 1.0e-6, 1000);
+        Bfgs anOldSolver = new(2, 1.0e-6, 1000);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(1000, 1.0e-6, 1.0e-8));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(1000, 1.0e-6, 1.0e-8));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the minimum (relaxed tolerance for Rosenbrock)
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], 1.0e-3);
@@ -519,14 +520,14 @@ public class MathOpt_NDim_ComparisonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(3.0, -2.0, 4.0);
 
         // Old API
-        math_BFGS anOldSolver = new(3, 1.0e-8, 100);
+        Bfgs anOldSolver = new(3, 1.0e-8, 100);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(100, 1.0e-8, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the origin
         for (int i = 1; i <= 3; ++i)
@@ -548,11 +549,11 @@ public class MathOpt_NDim_ComparisonTest
 
         Config aConfig = MakeConfig(500, 1.0e-8, 1.0e-10);
 
-        VectorResult aPowellResult = MathOpt.Powell(aNewFunc, aStart, aConfig);
-        VectorResult aBFGSResult = MathOpt.BFGS(aNewFunc, aStart, aConfig);
+        VectorResult aPowellResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aNewFunc, aStart, aConfig);
+        VectorResult aBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, aConfig);
 
-        Assert.True(aPowellResult.IsDone());
-        Assert.True(aBFGSResult.IsDone());
+        Assert.True(aPowellResult.IsDone);
+        Assert.True(aBFGSResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aBFGSResult.Value!.Value, aPowellResult.Value!.Value, THE_TOLERANCE);
@@ -573,11 +574,11 @@ public class MathOpt_NDim_ComparisonTest
 
         Config aConfig = MakeConfig(100, 1.0e-8, 1.0e-10);
 
-        VectorResult aBFGSResult = MathOpt.BFGS(aNewFunc, aStart, aConfig);
-        VectorResult aLBFGSResult = MathOpt.LBFGS(aNewFunc, aStart, 10, aConfig);
+        VectorResult aBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, aConfig);
+        VectorResult aLBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.LBFGS(aNewFunc, aStart, 10, aConfig);
 
-        Assert.True(aBFGSResult.IsDone());
-        Assert.True(aLBFGSResult.IsDone());
+        Assert.True(aBFGSResult.IsDone);
+        Assert.True(aLBFGSResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aLBFGSResult.Value!.Value, aBFGSResult.Value!.Value, THE_TOLERANCE);
@@ -603,14 +604,14 @@ public class MathOpt_NDim_ComparisonTest
         const double aTightTol = 1.0e-12;
 
         // Old API
-        math_BFGS anOldSolver = new(2, aTightTol, 200);
+        Bfgs anOldSolver = new(2, aTightTol, 200);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(200, aTightTol, 1.0e-14));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(200, aTightTol, 1.0e-14));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should achieve good accuracy
         Assert.Equal(1.0, anOldSolver.Location()[1], 1.0e-8);
@@ -635,14 +636,14 @@ public class MathOpt_NDim_ComparisonTest
             math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(aFirst, aSecond);
 
             // Old API
-            math_BFGS anOldSolver = new(2, 1.0e-8, 200);
+            Bfgs anOldSolver = new(2, 1.0e-8, 200);
             anOldSolver.Perform(anOldFunc, aStart);
 
             // New API
-            VectorResult aNewResult = MathOpt.BFGS(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
+            VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aNewFunc, aStart, MakeConfig(200, 1.0e-8, 1.0e-10));
 
-            Assert.True(anOldSolver.IsDone(), $"Old API failed for start point ({aFirst}, {aSecond})");
-            Assert.True(aNewResult.IsDone(), $"New API failed for start point ({aFirst}, {aSecond})");
+            Assert.True(anOldSolver.IsDone, $"Old API failed for start point ({aFirst}, {aSecond})");
+            Assert.True(aNewResult.IsDone, $"New API failed for start point ({aFirst}, {aSecond})");
 
             // Both should find the same minimum
             Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);

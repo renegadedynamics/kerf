@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -93,7 +96,7 @@ public sealed class LocOpe_Spliter
     {
         if (myShape.IsNull())
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
         myDone = false;
         myMap.Clear();
@@ -133,7 +136,7 @@ public sealed class LocOpe_Spliter
                         }
                         lsubs.Clear();
                         TopoDS_Vertex vsub = TopoDS.Vertex(vtx.Oriented(TopAbs_FORWARD));
-                        gp_Pnt p1 = BRep_Tool.Pnt(vsub), p2 = BRep_Tool.Pnt(Vb);
+                        Point3D p1 = BRep_Tool.Pnt(vsub), p2 = BRep_Tool.Pnt(Vb);
                         double d = p1.Distance(p2);
                         d = d + BRep_Tool.Tolerance(Vb);
                         BB.UpdateVertex(vsub, d);
@@ -315,12 +318,12 @@ public sealed class LocOpe_Spliter
                 { // discrimination sur les tangentes
                     if (vf2.IsSame(vl2) && vl2.IsSame(vl1))
                     { // tout au meme point
-                        Geom_Curve C = BRep_Tool.Curve(e1, out TopLoc_Location Loc, out double f, out _)!;
-                        C.D1(f, out gp_Pnt pbid, out gp_Vec v1);
+                        Geom_Curve C = BRep_Tool.Curve(e1, out Placement Loc, out double f, out _)!;
+                        C.D1(f, out Point3D pbid, out Vector3D v1);
                         v1.Transform(Loc.Transformation());
 
                         C = BRep_Tool.Curve(e2, out Loc, out f, out _)!;
-                        C.D1(f, out pbid, out gp_Vec v2);
+                        C.D1(f, out pbid, out Vector3D v2);
                         v2.Transform(Loc.Transformation());
                         if (v1.Dot(v2) > 0.0)
                         {
@@ -558,7 +561,7 @@ public sealed class LocOpe_Spliter
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -574,7 +577,7 @@ public sealed class LocOpe_Spliter
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myDLeft;
     }
@@ -590,7 +593,7 @@ public sealed class LocOpe_Spliter
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myLeft;
     }
@@ -606,7 +609,7 @@ public sealed class LocOpe_Spliter
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         TopoDS_Shape aF = myWork is null ? F : myWork.Copied(F);
         if (myMap.IsBound(aF))
@@ -626,7 +629,7 @@ public sealed class LocOpe_Spliter
         //  Modified by skv - Mon May 31 12:31:40 2004 OCC5865 End
         if (!theBuild.IsDone())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         ledge = new NCollection_List<TopoDS_Shape>(theBuild.InternalResult());
     }
@@ -653,14 +656,14 @@ public sealed class LocOpe_Spliter
         double dmin = RealLast();
         int i = 0, imin = 0;
 
-        Geom_Curve C = BRep_Tool.Curve(Ebase, out TopLoc_Location Loc, out double f, out double l)!;
+        Geom_Curve C = BRep_Tool.Curve(Ebase, out Placement Loc, out double f, out double l)!;
 
-        if (!Loc.IsIdentity())
+        if (!Loc.IsIdentity)
         {
             Geom_Geometry GG = C.Transformed(Loc.Transformation());
             C = (Geom_Curve)GG;
         }
-        gp_Pnt Pt = C.Value((f + l) / 2.0);
+        Point3D Pt = C.Value((f + l) / 2.0);
 
         GeomAPI_ProjectPointOnCurve proj = new();
         NCollection_List<TopoDS_Shape>.Iterator itl = new(lsubs);
@@ -669,7 +672,7 @@ public sealed class LocOpe_Spliter
             i++;
             TopoDS_Edge edg = TopoDS.Edge(itl.Value());
             C = BRep_Tool.Curve(edg, out Loc, out f, out l)!;
-            if (!Loc.IsIdentity())
+            if (!Loc.IsIdentity)
             {
                 Geom_Geometry GG = C.Transformed(Loc.Transformation());
                 C = (Geom_Curve)GG;

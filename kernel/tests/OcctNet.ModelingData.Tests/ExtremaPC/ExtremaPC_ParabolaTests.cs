@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Parabola_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_ParabolaTest
@@ -17,8 +19,8 @@ public class ExtremaPC_ParabolaTest
     public void PointOnAxis_AtVertex()
     {
         // Parabola with focal length 5, vertex at origin
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(0.0, 0.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(0.0, 0.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -33,8 +35,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOnAxis_Positive()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(10.0, 0.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(10.0, 0.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -51,8 +53,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOnAxis_Negative()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(-10.0, 0.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(-10.0, 0.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -72,8 +74,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOffAxis_Positive()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(5.0, 10.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(5.0, 10.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -83,7 +85,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify the point is on the parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         double aExpectedSq = aPoint.SquareDistance(aPtOnParab);
         Assert.Equal(aExpectedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -91,8 +93,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOffAxis_Negative()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(5.0, -10.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(5.0, -10.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -102,7 +104,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify the closest point is on the parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
 
@@ -113,8 +115,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOffAxis_LargeY()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(0.0, 50.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(0.0, 50.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -124,7 +126,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify the closest point is on the parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
 
         // Distance should be less than distance to vertex (50)
@@ -141,8 +143,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointAbovePlane()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(5.0, 10.0, 7.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(5.0, 10.0, 7.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -158,8 +160,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointBelowPlane()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(0.0, 0.0, -5.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(0.0, 0.0, -5.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -179,11 +181,11 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void BoundsPositive()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(0.0, -10.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(0.0, -10.0, 0.0);
 
         // Create evaluator with positive domain [0, 10]
-        ExtremaPC_Parabola anEval = new(aParabola, new MathUtils.Domain1D(0.0, 10.0));
+        ExtremaPC_Parabola anEval = new(aParabola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 10.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -198,11 +200,11 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void BoundsNegative()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(0.0, 10.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(0.0, 10.0, 0.0);
 
         // Create evaluator with negative domain [-10, 0]
-        ExtremaPC_Parabola anEval = new(aParabola, new MathUtils.Domain1D(-10.0, 0.0));
+        ExtremaPC_Parabola anEval = new(aParabola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-10.0, 0.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -217,11 +219,11 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void NarrowBounds()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(5.0, 5.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(5.0, 5.0, 0.0);
 
         // Create evaluator with narrow domain [4, 6]
-        ExtremaPC_Parabola anEval = new(aParabola, new MathUtils.Domain1D(4.0, 6.0));
+        ExtremaPC_Parabola anEval = new(aParabola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(4.0, 6.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -242,8 +244,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void SmallFocalLength()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 0.5);
-        gp_Pnt aPoint = new(1.0, 2.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.5);
+        Point3D aPoint = new(1.0, 2.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -253,7 +255,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify point is on parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -261,8 +263,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void LargeFocalLength()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 100.0);
-        gp_Pnt aPoint = new(50.0, 100.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 100.0);
+        Point3D aPoint = new(50.0, 100.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -272,7 +274,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify point is on parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
     }
 
@@ -283,8 +285,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOnParabola_AtVertex()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = ElCLib.Value(0.0, aParabola);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, aParabola);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -298,8 +300,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOnParabola_Positive()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = ElCLib.Value(10.0, aParabola);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(10.0, aParabola);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -313,8 +315,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void PointOnParabola_Negative()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = ElCLib.Value(-15.0, aParabola);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(-15.0, aParabola);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -332,8 +334,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void ParabolaWithOffset()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(100.0, 200.0, 50.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(100.0, 200.0, 50.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -348,8 +350,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void ParabolaWithOffset_PointOff()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(110.0, 210.0, 50.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(110.0, 210.0, 50.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -359,7 +361,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify point is on parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -371,8 +373,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void ParabolaInYZPlane()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0)), 5.0);
-        gp_Pnt aPoint = new(3.0, 10.0, 5.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 5.0);
+        Point3D aPoint = new(3.0, 10.0, 5.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -382,7 +384,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify extremum point is on the parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
 
         // Distance should include X component (out of plane)
@@ -392,8 +394,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void ParabolaInXZPlane()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(10.0, 3.0, 5.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(10.0, 3.0, 5.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -403,7 +405,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify extremum point is on the parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnParab = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
 
         // Distance should include Y component (out of plane)
@@ -417,8 +419,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void VerifyProjectedPoint()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(10.0, 15.0, 0.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(10.0, 15.0, 0.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -428,7 +430,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify the projected point is on the parabola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnCurve = ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
+        Point3D aPtOnCurve = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
         Assert.Equal(aPtOnCurve.X(), aResult[aMinIdx].Point.X(), THE_TOL);
         Assert.Equal(aPtOnCurve.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
         Assert.Equal(aPtOnCurve.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
@@ -437,8 +439,8 @@ public class ExtremaPC_ParabolaTest
     [Fact]
     public void VerifyDistanceConsistency()
     {
-        gp_Parab aParabola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Pnt aPoint = new(8.0, 12.0, 3.0);
+        Parabola3D aParabola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Point3D aPoint = new(8.0, 12.0, 3.0);
 
         ExtremaPC_Parabola anEval = new(aParabola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);

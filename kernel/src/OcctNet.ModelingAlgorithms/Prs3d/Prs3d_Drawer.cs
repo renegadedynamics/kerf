@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +18,7 @@ namespace Occt;
 /// object (decision 21), as OCCT's: <see cref="StdPrs_ToolTriangulatedShape.GetDeflection"/> stores the absolute
 /// deflection it computes into the drawer.
 /// </remarks>
-public class Prs3d_Drawer : Standard_Transient
+public class Prs3d_Drawer : Transient
 {
     private Prs3d_Drawer? myLink;
     private double myChordialDeviation;

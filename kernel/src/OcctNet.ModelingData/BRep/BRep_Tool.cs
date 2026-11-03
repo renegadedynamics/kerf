@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
-using static Occt.Poly_MeshPurpose;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Engine.Meshing.MeshPurpose;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -16,7 +20,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// The geometry returned is the shapes' own, frozen, except where a method says it returns a transformed copy. Outputs
-/// are <c>out</c> parameters. <see cref="SetUVPoints(in TopoDS_Edge, Geom_Surface?, in TopLoc_Location, in gp_Pnt2d, in gp_Pnt2d)"/>
+/// are <c>out</c> parameters. <see cref="SetUVPoints(in TopoDS_Edge, Geom_Surface?, in Placement, in Point2D, in Point2D)"/>
 /// changes an edge and is internal.
 /// </remarks>
 public static class BRep_Tool
@@ -40,12 +44,12 @@ public static class BRep_Tool
         }
 
         return aBasisCurve.IsPeriodic()
-               || (aBasisCurve.FirstParameter() - aTrimFirst <= Precision.PConfusion()
-                   && aTrimLast - aBasisCurve.LastParameter() <= Precision.PConfusion());
+               || (aBasisCurve.FirstParameter() - aTrimFirst <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                   && aTrimLast - aBasisCurve.LastParameter() <= global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     /// <summary>The surface of the face, with in <paramref name="L"/> the location for it.</summary>
-    public static Geom_Surface? Surface(in TopoDS_Face F, out TopLoc_Location L)
+    public static Geom_Surface? Surface(in TopoDS_Face F, out Placement L)
     {
         BRep_TFace TF = (BRep_TFace)F.TShape()!;
         L = F.Location() * TF.Location();
@@ -63,8 +67,8 @@ public static class BRep_Tool
             return S;
         }
 
-        TopLoc_Location L = F.Location() * TF.Location();
-        if (!L.IsIdentity())
+        Placement L = F.Location() * TF.Location();
+        if (!L.IsIdentity)
         {
             Geom_Geometry aCopy = S.Transformed(L.Transformation());
             return (Geom_Surface)aCopy;
@@ -77,9 +81,9 @@ public static class BRep_Tool
     /// The face's triangulation for the purpose (the active one for NONE), with in <paramref name="theLocation"/> the
     /// location for it; null if there is none.
     /// </summary>
-    public static Poly_Triangulation? Triangulation(in TopoDS_Face theFace,
-                                                    out TopLoc_Location theLocation,
-                                                    Poly_MeshPurpose theMeshPurpose = Poly_MeshPurpose_NONE)
+    public static Triangulation? Triangulation(in TopoDS_Face theFace,
+                                                    out Placement theLocation,
+                                                    MeshPurpose theMeshPurpose = MeshPurpose_NONE)
     {
         theLocation = theFace.Location();
         BRep_TFace aTFace = (BRep_TFace)theFace.TShape()!;
@@ -88,8 +92,8 @@ public static class BRep_Tool
 
     /// <summary>The face's triangulations, with in <paramref name="theLocation"/> the location for them.</summary>
     /// <remarks>Internal: the list is the face's own. Callers use <see cref="BRep_TFace.TriangulationList"/>.</remarks>
-    internal static NCollection_List<Poly_Triangulation> Triangulations(in TopoDS_Face theFace,
-                                                                       out TopLoc_Location theLocation)
+    internal static NCollection_List<Triangulation> Triangulations(in TopoDS_Face theFace,
+                                                                       out Placement theLocation)
     {
         theLocation = theFace.Location();
         BRep_TFace aTFace = (BRep_TFace)theFace.TShape()!;
@@ -101,7 +105,7 @@ public static class BRep_Tool
     {
         BRep_TFace TF = (BRep_TFace)F.TShape()!;
         double p = TF.Tolerance();
-        double pMin = Precision.Confusion();
+        double pMin = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (p > pMin)
         {
             return p;
@@ -123,7 +127,7 @@ public static class BRep_Tool
     /// The 3D curve of the edge, or null; in <paramref name="L"/> the location for it, in <paramref name="First"/> and
     /// <paramref name="Last"/> its range.
     /// </summary>
-    public static Geom_Curve? Curve(in TopoDS_Edge E, out TopLoc_Location L, out double First, out double Last)
+    public static Geom_Curve? Curve(in TopoDS_Edge E, out Placement L, out double First, out double Last)
     {
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -143,7 +147,7 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         First = Last = 0.0;
         return null;
     }
@@ -154,10 +158,10 @@ public static class BRep_Tool
     /// </summary>
     public static Geom_Curve? Curve(in TopoDS_Edge E, out double First, out double Last)
     {
-        Geom_Curve? C = Curve(E, out TopLoc_Location L, out First, out Last);
+        Geom_Curve? C = Curve(E, out Placement L, out First, out Last);
         if (C is not null)
         {
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 Geom_Geometry aCopy = C.Transformed(L.Transformation());
                 return (Geom_Curve)aCopy;
@@ -205,7 +209,7 @@ public static class BRep_Tool
     }
 
     /// <summary>The 3D polygon of the edge, or null; in <paramref name="L"/> the location for it.</summary>
-    public static Poly_Polygon3D? Polygon3D(in TopoDS_Edge E, out TopLoc_Location L)
+    public static Polygon3D? Polygon3D(in TopoDS_Edge E, out Placement L)
     {
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -224,7 +228,7 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         return null;
     }
 
@@ -245,7 +249,7 @@ public static class BRep_Tool
                                                out double Last,
                                                out bool theIsStored)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         TopoDS_Edge aLocalEdge = E;
         if (F.Orientation() == TopAbs_REVERSED)
         {
@@ -261,7 +265,7 @@ public static class BRep_Tool
     /// </summary>
     public static Geom2d_Curve? CurveOnSurface(in TopoDS_Edge E,
                                                Geom_Surface? S,
-                                               in TopLoc_Location L,
+                                               in Placement L,
                                                out double First,
                                                out double Last)
         => CurveOnSurface(E, S, L, out First, out Last, out _);
@@ -272,7 +276,7 @@ public static class BRep_Tool
     /// </summary>
     public static Geom2d_Curve? CurveOnSurface(in TopoDS_Edge E,
                                                Geom_Surface? S,
-                                               in TopLoc_Location L,
+                                               in Placement L,
                                                out double First,
                                                out double Last,
                                                out bool theIsStored)
@@ -285,7 +289,7 @@ public static class BRep_Tool
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
         if (itcr.More())
         {
-            TopLoc_Location loc = L.Predivided(E.Location());
+            Placement loc = L.Predivided(E.Location());
             while (itcr.More())
             {
                 BRep_CurveRepresentation cr = itcr.Value();
@@ -318,7 +322,7 @@ public static class BRep_Tool
     /// </summary>
     public static Geom2d_Curve? CurveOnPlane(in TopoDS_Edge E,
                                              Geom_Surface? S,
-                                             in TopLoc_Location L,
+                                             in Placement L,
                                              out double First,
                                              out double Last)
     {
@@ -343,7 +347,7 @@ public static class BRep_Tool
         }
 
         // Check existence of 3d curve in edge
-        Geom_Curve? C3D = BRep_Tool.Curve(E, out TopLoc_Location aCurveLocation, out double f, out double l);
+        Geom_Curve? C3D = BRep_Tool.Curve(E, out Placement aCurveLocation, out double f, out double l);
         if (C3D is null)
         {
             // no 3d curve
@@ -355,9 +359,9 @@ public static class BRep_Tool
         Last = l;
 
         // Transform curve and update parameters in account of scale factor
-        if (!aCurveLocation.IsIdentity())
+        if (!aCurveLocation.IsIdentity)
         {
-            gp_Trsf aTrsf = aCurveLocation.Transformation();
+            Transform3D aTrsf = aCurveLocation.Transformation();
             C3D = (Geom_Curve)C3D.Transformed(aTrsf);
             f = C3D.TransformedParameter(f, aTrsf);
             l = C3D.TransformedParameter(l, aTrsf);
@@ -391,7 +395,7 @@ public static class BRep_Tool
     public static void CurveOnSurface(in TopoDS_Edge E,
                                       out Geom2d_Curve? C,
                                       out Geom_Surface? S,
-                                      out TopLoc_Location L,
+                                      out Placement L,
                                       out double First,
                                       out double Last)
     {
@@ -417,7 +421,7 @@ public static class BRep_Tool
 
         C = null;
         S = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         First = Last = 0.0;
     }
 
@@ -428,7 +432,7 @@ public static class BRep_Tool
     public static void CurveOnSurface(in TopoDS_Edge E,
                                       ref Geom2d_Curve? C,
                                       ref Geom_Surface? S,
-                                      ref TopLoc_Location L,
+                                      ref Placement L,
                                       ref double First,
                                       ref double Last,
                                       int Index)
@@ -473,14 +477,14 @@ public static class BRep_Tool
 
         C = null;
         S = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         First = Last = 0.0;
     }
 
     /// <summary>The polygon of the edge in the parametric space of the face, or null.</summary>
-    public static Poly_Polygon2D? PolygonOnSurface(in TopoDS_Edge E, in TopoDS_Face F)
+    public static Polygon2D? PolygonOnSurface(in TopoDS_Edge E, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         TopoDS_Edge aLocalEdge = E;
         if (F.Orientation() == TopAbs_REVERSED)
         {
@@ -491,9 +495,9 @@ public static class BRep_Tool
     }
 
     /// <summary>The polygon of the edge in the parametric space of the surface, or null.</summary>
-    public static Poly_Polygon2D? PolygonOnSurface(in TopoDS_Edge E, Geom_Surface? S, in TopLoc_Location L)
+    public static Polygon2D? PolygonOnSurface(in TopoDS_Edge E, Geom_Surface? S, in Placement L)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         bool Eisreversed = (E.Orientation() == TopAbs_REVERSED);
 
         // find the representation
@@ -523,9 +527,9 @@ public static class BRep_Tool
 
     /// <summary>The first polygon on a surface of the edge, with its surface and location; nulls if none.</summary>
     public static void PolygonOnSurface(in TopoDS_Edge E,
-                                        out Poly_Polygon2D? P,
+                                        out Polygon2D? P,
                                         out Geom_Surface? S,
-                                        out TopLoc_Location L)
+                                        out Placement L)
     {
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -546,16 +550,16 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         P = null;
         S = null;
     }
 
     /// <summary>The <paramref name="Index"/>-th polygon on a surface of the edge (from 1), with its surface and location; nulls if none.</summary>
     public static void PolygonOnSurface(in TopoDS_Edge E,
-                                        out Poly_Polygon2D? P,
+                                        out Polygon2D? P,
                                         out Geom_Surface? S,
-                                        out TopLoc_Location L,
+                                        out Placement L,
                                         int Index)
     {
         int i = 0;
@@ -588,17 +592,17 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         P = null;
         S = null;
     }
 
     /// <summary>The polygon of the edge on the triangulation <paramref name="T"/> with location <paramref name="L"/>, or null.</summary>
-    public static Poly_PolygonOnTriangulation? PolygonOnTriangulation(in TopoDS_Edge E,
-                                                                      Poly_Triangulation? T,
-                                                                      in TopLoc_Location L)
+    public static PolygonOnTriangulation? PolygonOnTriangulation(in TopoDS_Edge E,
+                                                                      Triangulation? T,
+                                                                      in Placement L)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         bool Eisreversed = (E.Orientation() == TopAbs_REVERSED);
 
         // find the representation
@@ -628,9 +632,9 @@ public static class BRep_Tool
 
     /// <summary>The first polygon on a triangulation of the edge, with its triangulation and location; nulls if none.</summary>
     public static void PolygonOnTriangulation(in TopoDS_Edge E,
-                                              out Poly_PolygonOnTriangulation? P,
-                                              out Poly_Triangulation? T,
-                                              out TopLoc_Location L)
+                                              out PolygonOnTriangulation? P,
+                                              out Triangulation? T,
+                                              out Placement L)
     {
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -651,7 +655,7 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         P = null;
         T = null;
     }
@@ -661,9 +665,9 @@ public static class BRep_Tool
     /// location; nulls if none.
     /// </summary>
     public static void PolygonOnTriangulation(in TopoDS_Edge E,
-                                              out Poly_PolygonOnTriangulation? P,
-                                              out Poly_Triangulation? T,
-                                              out TopLoc_Location L,
+                                              out PolygonOnTriangulation? P,
+                                              out Triangulation? T,
+                                              out Placement L,
                                               int Index)
     {
         int i = 0;
@@ -696,7 +700,7 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        L = new TopLoc_Location();
+        L = new Placement();
         P = null;
         T = null;
     }
@@ -707,13 +711,13 @@ public static class BRep_Tool
     /// </summary>
     public static bool IsClosed(in TopoDS_Edge E, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         if (IsClosed(E, S, l))
         {
             return true;
         }
 
-        Poly_Triangulation? T = BRep_Tool.Triangulation(F, out l);
+        Triangulation? T = BRep_Tool.Triangulation(F, out l);
         return IsClosed(E, T, l);
     }
 
@@ -721,7 +725,7 @@ public static class BRep_Tool
     /// True if the edge has two pcurves in the parametric space of the surface (it is on the closing curve of a closed
     /// surface). False for planes.
     /// </summary>
-    public static bool IsClosed(in TopoDS_Edge E, Geom_Surface? S, in TopLoc_Location L)
+    public static bool IsClosed(in TopoDS_Edge E, Geom_Surface? S, in Placement L)
     {
         // modified by NIZNHY-PKV Fri Oct 17 12:16:58 2008f
         if (IsPlane(S))
@@ -729,7 +733,7 @@ public static class BRep_Tool
             return false;
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -750,14 +754,14 @@ public static class BRep_Tool
     }
 
     /// <summary>True if the edge has two arrays of indices in the triangulation.</summary>
-    public static bool IsClosed(in TopoDS_Edge E, Poly_Triangulation? T, in TopLoc_Location L)
+    public static bool IsClosed(in TopoDS_Edge E, Triangulation? T, in Placement L)
     {
         if (T is null)
         {
             return false;
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -782,7 +786,7 @@ public static class BRep_Tool
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         double p = TE.Tolerance();
-        double pMin = Precision.Confusion();
+        double pMin = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (p > pMin)
         {
             return p;
@@ -850,9 +854,9 @@ public static class BRep_Tool
 
     /// <summary>The range of the edge's curve on the surface; the edge's range if it has none.</summary>
     /// <remarks>OCCT sets the edge's Modified flag here; the port does too, unless the edge is frozen.</remarks>
-    public static void Range(in TopoDS_Edge E, Geom_Surface? S, in TopLoc_Location L, out double First, out double Last)
+    public static void Range(in TopoDS_Edge E, Geom_Surface? S, in Placement L, out double First, out double Last)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -878,7 +882,7 @@ public static class BRep_Tool
         }
 
         // OCCT (occt-issues.md): a query that sets the Modified flag. OCCT.NET: frozen: not on a frozen edge.
-        if (!E.TShape()!.IsFrozen())
+        if (!E.TShape()!.IsFrozen)
         {
             E.TShape()!.Modified(true);
         }
@@ -887,7 +891,7 @@ public static class BRep_Tool
     /// <summary>The range of the edge's curve on the face; the edge's range if it has none.</summary>
     public static void Range(in TopoDS_Edge E, in TopoDS_Face F, out double First, out double Last)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         Range(E, S, L, out First, out Last);
     }
 
@@ -897,11 +901,11 @@ public static class BRep_Tool
     /// </summary>
     public static void UVPoints(in TopoDS_Edge E,
                                 Geom_Surface? S,
-                                in TopLoc_Location L,
-                                out gp_Pnt2d PFirst,
-                                out gp_Pnt2d PLast)
+                                in Placement L,
+                                out Point2D PFirst,
+                                out Point2D PLast)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         bool Eisreversed = (E.Orientation() == TopAbs_REVERSED);
 
         // find the representation
@@ -949,41 +953,41 @@ public static class BRep_Tool
             // get the two vertices
             TopExp.Vertices(E, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
 
-            TopLoc_Location Linverted = L.Inverted();
+            Placement Linverted = L.Inverted();
             Vf.Move(Linverted, false);
             Vl.Move(Linverted, false);
             double u, v;
-            gp_Pln pln = GP.Pln();
+            Plane3D pln = GP.Pln();
 
             u = v = 0.0;
             if (!Vf.IsNull())
             {
-                gp_Pnt PF = BRep_Tool.Pnt(Vf);
-                ElSLib.Parameters(pln, PF, out u, out v);
+                Point3D PF = BRep_Tool.Pnt(Vf);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, PF, out u, out v);
             }
 
-            PFirst = new gp_Pnt2d(u, v);
+            PFirst = new Point2D(u, v);
 
             u = v = 0.0;
             if (!Vl.IsNull())
             {
-                gp_Pnt PL = BRep_Tool.Pnt(Vl);
-                ElSLib.Parameters(pln, PL, out u, out v);
+                Point3D PL = BRep_Tool.Pnt(Vl);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, PL, out u, out v);
             }
 
-            PLast = new gp_Pnt2d(u, v);
+            PLast = new Point2D(u, v);
         }
         else
         {
-            PFirst = new gp_Pnt2d(0.0, 0.0);
-            PLast = new gp_Pnt2d(0.0, 0.0);
+            PFirst = new Point2D(0.0, 0.0);
+            PLast = new Point2D(0.0, 0.0);
         }
     }
 
     /// <summary>The UV points at the ends of the edge's curve on the face.</summary>
-    public static void UVPoints(in TopoDS_Edge E, in TopoDS_Face F, out gp_Pnt2d PFirst, out gp_Pnt2d PLast)
+    public static void UVPoints(in TopoDS_Edge E, in TopoDS_Face F, out Point2D PFirst, out Point2D PLast)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         TopoDS_Edge aLocalEdge = E;
         if (F.Orientation() == TopAbs_REVERSED)
         {
@@ -994,14 +998,14 @@ public static class BRep_Tool
     }
 
     /// <summary>Sets the UV points at the ends of the edge's curve on the surface.</summary>
-    /// <remarks>Internal: it changes the edge, and throws <see cref="Standard_ImmutableObject"/> on a frozen one.</remarks>
+    /// <remarks>Internal: it changes the edge, and throws <see cref="ImmutableObjectException"/> on a frozen one.</remarks>
     internal static void SetUVPoints(in TopoDS_Edge E,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L,
-                                     in gp_Pnt2d PFirst,
-                                     in gp_Pnt2d PLast)
+                                     in Placement L,
+                                     in Point2D PFirst,
+                                     in Point2D PLast)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         bool Eisreversed = (E.Orientation() == TopAbs_REVERSED);
 
         // find the representation
@@ -1030,10 +1034,10 @@ public static class BRep_Tool
     }
 
     /// <summary>Sets the UV points at the ends of the edge's curve on the face.</summary>
-    /// <remarks>Internal: it changes the edge, and throws <see cref="Standard_ImmutableObject"/> on a frozen one.</remarks>
-    internal static void SetUVPoints(in TopoDS_Edge E, in TopoDS_Face F, in gp_Pnt2d PFirst, in gp_Pnt2d PLast)
+    /// <remarks>Internal: it changes the edge, and throws <see cref="ImmutableObjectException"/> on a frozen one.</remarks>
+    internal static void SetUVPoints(in TopoDS_Edge E, in TopoDS_Face F, in Point2D PFirst, in Point2D PLast)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         TopoDS_Edge aLocalEdge = E;
         if (F.Orientation() == TopAbs_REVERSED)
         {
@@ -1046,16 +1050,16 @@ public static class BRep_Tool
     /// <summary>True if the edge has a continuity between the surfaces of the two faces.</summary>
     public static bool HasContinuity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
     {
-        Geom_Surface? S1 = BRep_Tool.Surface(F1, out TopLoc_Location l1);
-        Geom_Surface? S2 = BRep_Tool.Surface(F2, out TopLoc_Location l2);
+        Geom_Surface? S1 = BRep_Tool.Surface(F1, out Placement l1);
+        Geom_Surface? S2 = BRep_Tool.Surface(F2, out Placement l2);
         return HasContinuity(E, S1, S2, l1, l2);
     }
 
     /// <summary>The continuity of the edge between the surfaces of the two faces (C0 if none is stored).</summary>
-    public static GeomAbs_Shape Continuity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
+    public static Continuity Continuity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
     {
-        Geom_Surface? S1 = BRep_Tool.Surface(F1, out TopLoc_Location l1);
-        Geom_Surface? S2 = BRep_Tool.Surface(F2, out TopLoc_Location l2);
+        Geom_Surface? S1 = BRep_Tool.Surface(F1, out Placement l1);
+        Geom_Surface? S2 = BRep_Tool.Surface(F2, out Placement l2);
         return Continuity(E, S1, S2, l1, l2);
     }
 
@@ -1063,12 +1067,12 @@ public static class BRep_Tool
     public static bool HasContinuity(in TopoDS_Edge E,
                                      Geom_Surface? S1,
                                      Geom_Surface? S2,
-                                     in TopLoc_Location L1,
-                                     in TopLoc_Location L2)
+                                     in Placement L1,
+                                     in Placement L2)
     {
-        TopLoc_Location Eloc = E.Location();
-        TopLoc_Location l1 = L1.Predivided(Eloc);
-        TopLoc_Location l2 = L2.Predivided(Eloc);
+        Placement Eloc = E.Location();
+        Placement l1 = L1.Predivided(Eloc);
+        Placement l2 = L2.Predivided(Eloc);
 
         // find the representation
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -1089,14 +1093,14 @@ public static class BRep_Tool
     }
 
     /// <summary>The continuity of the edge between the two surfaces (C0 if none is stored).</summary>
-    public static GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public static Continuity Continuity(in TopoDS_Edge E,
                                            Geom_Surface? S1,
                                            Geom_Surface? S2,
-                                           in TopLoc_Location L1,
-                                           in TopLoc_Location L2)
+                                           in Placement L1,
+                                           in Placement L2)
     {
-        TopLoc_Location l1 = L1.Predivided(E.Location());
-        TopLoc_Location l2 = L2.Predivided(E.Location());
+        Placement l1 = L1.Predivided(E.Location());
+        Placement l2 = L2.Predivided(E.Location());
 
         // find the representation
         // OCCT reads ChangeCurves(), which the port guards against frozen edges: Curves() is the same list
@@ -1113,7 +1117,7 @@ public static class BRep_Tool
             itcr.Next();
         }
 
-        return GeomAbs_C0;
+        return C0;
     }
 
     /// <summary>True if the edge has a continuity between some two surfaces.</summary>
@@ -1134,9 +1138,9 @@ public static class BRep_Tool
     }
 
     /// <summary>The highest continuity stored on the edge (C0 if none).</summary>
-    public static GeomAbs_Shape MaxContinuity(in TopoDS_Edge theEdge)
+    public static Continuity MaxContinuity(in TopoDS_Edge theEdge)
     {
-        GeomAbs_Shape aMaxCont = GeomAbs_C0;
+        Continuity aMaxCont = C0;
         // OCCT reads ChangeCurves(), which the port guards against frozen edges: Curves() is the same list
         for (var aReprIter = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)theEdge.TShape()!).Curves());
              aReprIter.More();
@@ -1145,7 +1149,7 @@ public static class BRep_Tool
             BRep_CurveRepresentation aRepr = aReprIter.Value();
             if (aRepr.IsRegularity())
             {
-                GeomAbs_Shape aCont = aRepr.Continuity();
+                Continuity aCont = aRepr.Continuity();
                 if ((int)aCont > (int)aMaxCont)
                 {
                     aMaxCont = aCont;
@@ -1157,18 +1161,18 @@ public static class BRep_Tool
     }
 
     /// <summary>The 3D point of the vertex, placed.</summary>
-    /// <exception cref="Standard_NullObject">The vertex is null.</exception>
-    public static gp_Pnt Pnt(in TopoDS_Vertex V)
+    /// <exception cref="NullObjectException">The vertex is null.</exception>
+    public static Point3D Pnt(in TopoDS_Vertex V)
     {
         BRep_TVertex? TV = (BRep_TVertex?)V.TShape();
 
         if (TV is null)
         {
-            throw new Standard_NullObject("BRep_Tool:: TopoDS_Vertex hasn't gp_Pnt");
+            throw new NullObjectException("BRep_Tool:: TopoDS_Vertex hasn't gp_Pnt");
         }
 
-        gp_Pnt P = TV.Pnt();
-        if (V.Location().IsIdentity())
+        Point3D P = TV.Pnt();
+        if (V.Location().IsIdentity)
         {
             return P;
         }
@@ -1177,18 +1181,18 @@ public static class BRep_Tool
     }
 
     /// <summary>The tolerance of the vertex, at least Precision::Confusion().</summary>
-    /// <exception cref="Standard_NullObject">The vertex is null.</exception>
+    /// <exception cref="NullObjectException">The vertex is null.</exception>
     public static double Tolerance(in TopoDS_Vertex V)
     {
         BRep_TVertex? aTVert = (BRep_TVertex?)V.TShape();
 
         if (aTVert is null)
         {
-            throw new Standard_NullObject("BRep_Tool:: TopoDS_Vertex hasn't gp_Pnt");
+            throw new NullObjectException("BRep_Tool:: TopoDS_Vertex hasn't gp_Pnt");
         }
 
         double p = aTVert.Tolerance();
-        double pMin = Precision.Confusion();
+        double pMin = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (p > pMin)
         {
             return p;
@@ -1268,7 +1272,7 @@ public static class BRep_Tool
 
         else
         {
-            Geom_Curve? C = BRep_Tool.Curve(theE, out TopLoc_Location L, out f, out l);
+            Geom_Curve? C = BRep_Tool.Curve(theE, out Placement L, out f, out l);
             L = L.Predivided(theV.Location());
             if (C is not null || BRep_Tool.Degenerated(theE))
             {
@@ -1285,20 +1289,20 @@ public static class BRep_Tool
                         if (C is not null)
                         {
                             // Closed curves RLE 16 june 94
-                            if (Precision.IsNegativeInfinite(f))
+                            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
                             {
                                 theParam = pr.Parameter(); // p;
                                 return true;
                             }
 
-                            if (Precision.IsPositiveInfinite(l))
+                            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
                             {
                                 theParam = pr.Parameter(); // p;
                                 return true;
                             }
 
-                            gp_Pnt Pf = C.Value(f).Transformed(L.Transformation());
-                            gp_Pnt Pl = C.Value(l).Transformed(L.Transformation());
+                            Point3D Pf = C.Value(f).Transformed(L.Transformation());
+                            Point3D Pl = C.Value(l).Transformed(L.Transformation());
                             double tol = BRep_Tool.Tolerance(theV);
                             if (Pf.Distance(Pl) < tol)
                             {
@@ -1367,7 +1371,7 @@ public static class BRep_Tool
     }
 
     /// <summary>The parameter of the vertex on the edge.</summary>
-    /// <exception cref="Standard_NoSuchObject">The vertex has no parameter on the edge.</exception>
+    /// <exception cref="NoSuchObjectException">The vertex has no parameter on the edge.</exception>
     public static double Parameter(in TopoDS_Vertex V, in TopoDS_Edge E)
     {
         if (Parameter(V, E, out double p))
@@ -1375,20 +1379,20 @@ public static class BRep_Tool
             return p;
         }
 
-        throw new Standard_NoSuchObject("BRep_Tool:: no parameter on edge");
+        throw new NoSuchObjectException("BRep_Tool:: no parameter on edge");
     }
 
     /// <summary>The parameter of the vertex on the edge's curve on the face.</summary>
-    /// <exception cref="Standard_NoSuchObject">The vertex has no parameter on the edge.</exception>
+    /// <exception cref="NoSuchObjectException">The vertex has no parameter on the edge.</exception>
     public static double Parameter(in TopoDS_Vertex V, in TopoDS_Edge E, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         return BRep_Tool.Parameter(V, E, S, L);
     }
 
     /// <summary>The parameter of the vertex on the edge's curve on the surface.</summary>
-    /// <exception cref="Standard_NoSuchObject">The vertex has no parameter on the edge.</exception>
-    public static double Parameter(in TopoDS_Vertex V, in TopoDS_Edge E, Geom_Surface? S, in TopLoc_Location L)
+    /// <exception cref="NoSuchObjectException">The vertex has no parameter on the edge.</exception>
+    public static double Parameter(in TopoDS_Vertex V, in TopoDS_Edge E, Geom_Surface? S, in Placement L)
     {
         // Search the vertex in the edge
 
@@ -1456,7 +1460,7 @@ public static class BRep_Tool
 
         //----------------------------------------------------------
 
-        Geom_Curve? C = BRep_Tool.Curve(E, out TopLoc_Location L1, out f, out l);
+        Geom_Curve? C = BRep_Tool.Curve(E, out Placement L1, out f, out l);
         L1 = L1.Predivided(V.Location());
         if (C is not null || Degenerated(E))
         {
@@ -1473,18 +1477,18 @@ public static class BRep_Tool
                     if (C is not null)
                     {
                         // Closed curves RLE 16 june 94
-                        if (Precision.IsNegativeInfinite(f))
+                        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
                         {
                             return res;
                         }
 
-                        if (Precision.IsPositiveInfinite(l))
+                        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
                         {
                             return res;
                         }
 
-                        gp_Pnt Pf = C.Value(f).Transformed(L1.Transformation());
-                        gp_Pnt Pl = C.Value(l).Transformed(L1.Transformation());
+                        Point3D Pf = C.Value(f).Transformed(L1.Transformation());
+                        Point3D Pl = C.Value(l).Transformed(L1.Transformation());
                         double tol = BRep_Tool.Tolerance(V);
                         if (Pf.Distance(Pl) < tol)
                         {
@@ -1511,14 +1515,14 @@ public static class BRep_Tool
 
         //----------------------------------------------------------
 
-        throw new Standard_NoSuchObject("BRep_Tool:: no parameter on edge");
+        throw new NoSuchObjectException("BRep_Tool:: no parameter on edge");
     }
 
     /// <summary>The parameters of the vertex on the face.</summary>
-    /// <exception cref="Standard_NoSuchObject">The vertex has no parameters on the face.</exception>
-    public static gp_Pnt2d Parameters(in TopoDS_Vertex V, in TopoDS_Face F)
+    /// <exception cref="NoSuchObjectException">The vertex has no parameters on the face.</exception>
+    public static Point2D Parameters(in TopoDS_Vertex V, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         L = L.Predivided(V.Location());
         BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
         var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(TV.Points());
@@ -1528,7 +1532,7 @@ public static class BRep_Tool
         {
             if (itpr.Value().IsPointOnSurface(S, L))
             {
-                return new gp_Pnt2d(itpr.Value().Parameter(), itpr.Value().Parameter2());
+                return new Point2D(itpr.Value().Parameter(), itpr.Value().Parameter2());
             }
 
             itpr.Next();
@@ -1545,7 +1549,7 @@ public static class BRep_Tool
             TopExp.Vertices(E, out Vf, out Vl);
             if ((V.IsSame(Vf)) || (V.IsSame(Vl)))
             {
-                UVPoints(E, F, out gp_Pnt2d Pf, out gp_Pnt2d Pl);
+                UVPoints(E, F, out Point2D Pf, out Point2D Pl);
                 if (V.IsSame(Vf))
                 {
                     return Pf;
@@ -1557,7 +1561,7 @@ public static class BRep_Tool
             }
         }
 
-        throw new Standard_NoSuchObject("BRep_Tool:: no parameters on surface");
+        throw new NoSuchObjectException("BRep_Tool:: no parameters on surface");
     }
 
     /// <summary>

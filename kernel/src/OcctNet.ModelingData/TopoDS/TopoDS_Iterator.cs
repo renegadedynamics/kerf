@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -17,14 +21,14 @@ public sealed class TopoDS_Iterator
     private TopoDS_Shape myShape;
     private readonly NCollection_List<TopoDS_Shape>.Iterator myIterator = new();
     private TopAbs_Orientation myOrientation;
-    private TopLoc_Location myLocation;
+    private Placement myLocation;
 
     /// <summary>An empty iterator.</summary>
     public TopoDS_Iterator()
     {
         myShape = new TopoDS_Shape();
         myOrientation = TopAbs_Orientation.TopAbs_FORWARD;
-        myLocation = new TopLoc_Location();
+        myLocation = new Placement();
         myIterator.Initialize(theEmptyList);
     }
 
@@ -36,7 +40,7 @@ public sealed class TopoDS_Iterator
     {
         myShape = new TopoDS_Shape();
         myOrientation = TopAbs_Orientation.TopAbs_FORWARD;
-        myLocation = new TopLoc_Location();
+        myLocation = new Placement();
         Initialize(S, cumOri, cumLoc);
     }
 
@@ -93,7 +97,7 @@ public sealed class TopoDS_Iterator
     }
 
     /// <summary>The current sub-shape.</summary>
-    /// <exception cref="Standard_NoSuchObject">There is no current sub-shape.</exception>
+    /// <exception cref="NoSuchObjectException">There is no current sub-shape.</exception>
     public TopoDS_Shape Value()
     {
         Standard_NoSuchObject_Raise_if(!More(), "TopoDS_Iterator::Value");
@@ -105,7 +109,7 @@ public sealed class TopoDS_Iterator
     {
         myShape = myIterator.Value();
         myShape.Orientation(TopAbs.Compose(myOrientation, myShape.Orientation()));
-        if (!myLocation.IsIdentity())
+        if (!myLocation.IsIdentity)
         {
             myShape.Move(myLocation, false);
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using OcctNet.TestHarness;
 using static Occt.BOPAlgo_Operation;
@@ -14,10 +15,10 @@ namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 public class BRepAlgoAPI_ShellTests
 {
     private static TopoDS_Shape Box(double x, double y = 0, double z = 0, double d = 1) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), d, d, d).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), d, d, d).Shape();
 
     private static TopoDS_Shape UnfrozenBox(double x) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, 0, 0), 1, 1, 1).InternalShape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, 0, 0), 1, 1, 1).InternalShape();
 
     private static double Volume(in TopoDS_Shape theShape)
     {
@@ -30,7 +31,7 @@ public class BRepAlgoAPI_ShellTests
 
     private static bool AllFrozen(in TopoDS_Shape theShape)
     {
-        if (theShape.TShape() is { } aT && !aT.IsFrozen())
+        if (theShape.TShape() is { } aT && !aT.IsFrozen)
         {
             return false;
         }
@@ -65,7 +66,7 @@ public class BRepAlgoAPI_ShellTests
         Assert.False(aFuse.HasErrors());
 
         TopoDS_Shape anInternal = aFuse.InternalShape();
-        Assert.False(anInternal.TShape()!.IsFrozen()); // the internal read doesn't publish
+        Assert.False(anInternal.TShape()!.IsFrozen); // the internal read doesn't publish
         TopoDS_Shape aResult = aFuse.Shape();
         Assert.Equal(TopAbs_COMPOUND, aResult.ShapeType());
         Assert.True(AllFrozen(aResult));
@@ -142,16 +143,16 @@ public class BRepAlgoAPI_ShellTests
         Assert.True(da.IsIdenticalMaskingFree, da.ToString());
         Assert.Equal(1, da.FreeFlagDifferences);
         Assert.True(BRepTextComparison.Compare(tb, BRepTextComparison.Write(b)).IsIdenticalMaskingFree);
-        Assert.False(a.TShape()!.IsFrozen()); // the class API doesn't freeze its inputs until the result is published
+        Assert.False(a.TShape()!.IsFrozen); // the class API doesn't freeze its inputs until the result is published
         aFuse.Shape();
-        Assert.True(a.TShape()!.IsFrozen()); // the published result shares them
+        Assert.True(a.TShape()!.IsFrozen); // the published result shares them
     }
 
     [Fact]
     public void ModifiedAndHistory_FreezeTheWholeResult()
     {
         var aFuse = new BRepAlgoAPI_Fuse(UnfrozenBox(0), UnfrozenBox(5));
-        Assert.False(aFuse.InternalShape().TShape()!.IsFrozen());
+        Assert.False(aFuse.InternalShape().TShape()!.IsFrozen);
         aFuse.Modified(aFuse.Shape1());
         Assert.True(AllFrozen(aFuse.InternalShape()));
 
@@ -245,7 +246,7 @@ public class BRepAlgoAPI_ShellTests
     public void Cut_ToolOfLowerDimension_IsNotAllowed()
     {
         // OCCT's BOPAlgo_BOP::CheckData: the tools' smallest dimension must be at least the objects' largest
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(10, 10, 10), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(10, 10, 10), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
         var aCut = new BRepAlgoAPI_Cut(Box(0), aFace);
         Assert.True(aCut.HasError(typeof(BOPAlgo_AlertBOPNotAllowed)));
     }
@@ -272,7 +273,7 @@ public class BRepAlgoAPI_ShellTests
     public void Section_Constructors_DisjointGiveEmptyCompounds()
     {
         TopoDS_Shape a = Box(0);
-        gp_Pln aFar = new(new gp_Pnt(0, 0, 10), new gp_Dir(0, 0, 1));
+        Plane3D aFar = new(new Point3D(0, 0, 10), new Direction3D(0, 0, 1));
 
         var s1 = new BRepAlgoAPI_Section(a, Box(5));
         Assert.True(s1.IsDone());
@@ -285,7 +286,7 @@ public class BRepAlgoAPI_ShellTests
         Assert.True(s2.IsDone());
         Assert.False(new TopoDS_Iterator(s2.Shape()).More());
 
-        var s2b = new BRepAlgoAPI_Section(a, new gp_Pln(new gp_Pnt(0, 0, 0.5), new gp_Dir(0, 0, 1)));
+        var s2b = new BRepAlgoAPI_Section(a, new Plane3D(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1)));
         Assert.True(s2b.IsDone());
         Assert.Equal(4, TShapes(s2b.Shape(), TopAbs_EDGE).Count);
 
@@ -293,7 +294,7 @@ public class BRepAlgoAPI_ShellTests
         Assert.Equal(TopAbs_FACE, s3.Shape1().ShapeType());
         Assert.True(s3.IsDone());
 
-        var s4 = new BRepAlgoAPI_Section(new Geom_Plane(aFar), new Geom_Plane(new gp_Pln(new gp_Pnt(), new gp_Dir(1, 0, 0))), false);
+        var s4 = new BRepAlgoAPI_Section(new Geom_Plane(aFar), new Geom_Plane(new Plane3D(new Point3D(), new Direction3D(1, 0, 0))), false);
         Assert.Equal(TopAbs_FACE, s4.Shape1().ShapeType());
         Assert.False(s4.IsDone());
 
@@ -314,7 +315,7 @@ public class BRepAlgoAPI_ShellTests
     public void Options_DefaultsAndEquality()
     {
         BRepAlgoAPI_Options o = new();
-        Assert.Equal(Precision.Confusion(), o.FuzzyValue);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), o.FuzzyValue);
         Assert.Equal(BOPAlgo_GlueEnum.BOPAlgo_GlueOff, o.Glue);
         Assert.False(o.UseOBB);
         Assert.True(o.CheckInverted);
@@ -369,12 +370,12 @@ public class BRepAlgoAPI_ShellTests
     public void Twins_Errors_ThrowWithTheReport()
     {
         // FUSE needs arguments of the same dimension (BOPAlgo_BOP::CheckData)
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(10, 10, 10), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(10, 10, 10), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
         var anError = Assert.Throws<BRepAlgoAPI_Failure>(
             () => Occt.BRepAlgoAPI.Fuse([Box(0)], [aFace], new BRepAlgoAPI_Options()));
         Assert.Contains("BOPAlgo_AlertBOPNotAllowed", anError.Message);
-        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertBOPNotAllowed), Message_Gravity.Message_Fail));
-        Assert.IsAssignableFrom<StdFail_NotDone>(anError);
+        Assert.True(anError.Report().HasAlert(typeof(BOPAlgo_AlertBOPNotAllowed), global::Kerf.Engine.Foundation.Gravity.Fail));
+        Assert.IsAssignableFrom<global::Kerf.Engine.Foundation.NotDoneException>(anError);
 
         Assert.Throws<BRepAlgoAPI_Failure>(() => Occt.BRepAlgoAPI.Cut([Box(0)], [], new BRepAlgoAPI_Options()));
     }
@@ -412,9 +413,9 @@ public class BRepAlgoAPI_ShellTests
     public void Options_Forwarded()
     {
         var aFuse = new BRepAlgoAPI_Fuse();
-        Assert.Equal(Precision.Confusion(), aFuse.FuzzyValue());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aFuse.FuzzyValue());
         aFuse.SetFuzzyValue(1e-12);
-        Assert.Equal(Precision.Confusion(), aFuse.FuzzyValue());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aFuse.FuzzyValue());
         aFuse.SetFuzzyValue(1e-3);
         Assert.Equal(1e-3, aFuse.FuzzyValue());
         aFuse.SetUseOBB(true);

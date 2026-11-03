@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -70,7 +73,7 @@ public static class ShapeAnalysis
     public static double TotCross2D(ShapeExtend_WireData sewd, in TopoDS_Face aFace)
     {
         int      i, nbc = 0;
-        gp_Pnt2d fuv = new gp_Pnt2d(), luv, uv0 = new gp_Pnt2d();
+        Point2D fuv = new Point2D(), luv, uv0 = new Point2D();
         double   totcross = 0;
         for (i = 1; i <= sewd.NbEdges(); i++)
         {
@@ -79,7 +82,7 @@ public static class ShapeAnalysis
             if (c2d is not null)
             {
                 nbc++;
-                NCollection_Sequence<gp_Pnt2d> SeqPnt = new NCollection_Sequence<gp_Pnt2d>();
+                NCollection_Sequence<Point2D> SeqPnt = new NCollection_Sequence<Point2D>();
                 ShapeAnalysis_Curve.GetSamplePoints(c2d, f2d, l2d, SeqPnt);
                 if (edge.Orientation() == TopAbs_REVERSED)
                 {
@@ -110,8 +113,8 @@ public static class ShapeAnalysis
     public static double ContourArea(in TopoDS_Wire theWire)
     {
         int    nbc = 0;
-        gp_Pnt fuv = new gp_Pnt(), luv, uv0 = new gp_Pnt();
-        gp_XYZ aTotal = new gp_XYZ(0.0, 0.0, 0.0);
+        Point3D fuv = new Point3D(), luv, uv0 = new Point3D();
+        Xyz aTotal = new Xyz(0.0, 0.0, 0.0);
         TopoDS_Iterator aIte = new TopoDS_Iterator(theWire, false);
         for (; aIte.More(); aIte.Next())
         {
@@ -119,7 +122,7 @@ public static class ShapeAnalysis
             Geom_Curve? c3d  = BRep_Tool.Curve(edge, out double first, out double last);
             if (c3d is not null)
             {
-                NCollection_Sequence<gp_Pnt> aSeqPnt = new NCollection_Sequence<gp_Pnt>();
+                NCollection_Sequence<Point3D> aSeqPnt = new NCollection_Sequence<Point3D>();
                 if (!ShapeAnalysis_Curve.GetSamplePoints(c3d, first, last, aSeqPnt))
                 {
                     continue;
@@ -231,7 +234,7 @@ public static class ShapeAnalysis
             return;
         }
 
-        Bnd_Box2d           B   = new Bnd_Box2d();
+        Box2d           B   = new Box2d();
         ShapeAnalysis_Edge  sae = new ShapeAnalysis_Edge();
         ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
         for (; ex.More(); ex.Next())

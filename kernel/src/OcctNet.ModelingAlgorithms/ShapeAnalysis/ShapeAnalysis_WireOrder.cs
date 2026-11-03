@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,8 +30,8 @@ public sealed class ShapeAnalysis_WireOrder
     private NCollection_HArray1<int>? myOrd;
     private NCollection_HArray1<int>? myChains;
     private NCollection_HArray1<int>? myCouples = null;
-    private NCollection_HSequence<gp_XYZ> myXYZ = null!;
-    private NCollection_HSequence<gp_XY> myXY = null!;
+    private NCollection_HSequence<Xyz> myXYZ = null!;
+    private NCollection_HSequence<Xy> myXY = null!;
     private double myTol;
     private double myGap;
     private int myStat;
@@ -41,7 +45,7 @@ public sealed class ShapeAnalysis_WireOrder
         myStat = 0;
         myKeepLoops = false;
         myMode = ModeType.Mode3D;
-        myTol = Precision.Confusion();
+        myTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Clear();
     }
 
@@ -115,14 +119,14 @@ public sealed class ShapeAnalysis_WireOrder
     /// <summary>Clears the list of edges, but not the mode and tolerance.</summary>
     public void Clear()
     {
-        myXYZ = new NCollection_HSequence<gp_XYZ>();
-        myXY = new NCollection_HSequence<gp_XY>();
+        myXYZ = new NCollection_HSequence<Xyz>();
+        myXY = new NCollection_HSequence<Xy>();
         myStat = 0;
         myGap = 0.0;
     }
 
     /// <summary>Adds an edge by the 3D points of its ends (3D mode only).</summary>
-    public void Add(in gp_XYZ theStart3d, in gp_XYZ theEnd3d)
+    public void Add(in Xyz theStart3d, in Xyz theEnd3d)
     {
         if (myMode == ModeType.Mode3D)
         {
@@ -132,11 +136,11 @@ public sealed class ShapeAnalysis_WireOrder
     }
 
     /// <summary>Adds an edge by the 2D points of its ends (2D mode only).</summary>
-    public void Add(in gp_XY theStart2d, in gp_XY theEnd2d)
+    public void Add(in Xy theStart2d, in Xy theEnd2d)
     {
         if (myMode == ModeType.Mode2D)
         {
-            gp_XYZ val = new gp_XYZ();
+            Xyz val = new Xyz();
             val.SetCoord(theStart2d.X(), theStart2d.Y(), 0.0);
             myXYZ.Append(val);
             val.SetCoord(theEnd2d.X(), theEnd2d.Y(), 0.0);
@@ -145,7 +149,7 @@ public sealed class ShapeAnalysis_WireOrder
     }
 
     /// <summary>Adds an edge by the 3D and 2D points of its ends (both mode only).</summary>
-    public void Add(in gp_XYZ theStart3d, in gp_XYZ theEnd3d, in gp_XY theStart2d, in gp_XY theEnd2d)
+    public void Add(in Xyz theStart3d, in Xyz theEnd3d, in Xy theStart2d, in Xy theEnd2d)
     {
         if (myMode == ModeType.ModeBoth)
         {
@@ -163,7 +167,7 @@ public sealed class ShapeAnalysis_WireOrder
         return myXYZ.Length() / 2;
     }
 
-    private static double DISTABS(in gp_XYZ v1, in gp_XYZ v2)
+    private static double DISTABS(in Xyz v1, in Xyz v2)
     {
         return Math.Abs(v1.X() - v2.X()) + Math.Abs(v1.Y() - v2.Y()) + Math.Abs(v1.Z() - v2.Z());
     }
@@ -200,10 +204,10 @@ public sealed class ShapeAnalysis_WireOrder
         var aLoops = new NCollection_Sequence<NCollection_HSequence<int>>();
 
         // the beginnings and ends of the edges
-        var aBegins3D = new NCollection_Array1<gp_XYZ>(1, aNbEdges);
-        var anEnds3D = new NCollection_Array1<gp_XYZ>(1, aNbEdges);
-        var aBegins2D = new NCollection_Array1<gp_XY>(1, aNbEdges);
-        var anEnds2D = new NCollection_Array1<gp_XY>(1, aNbEdges);
+        var aBegins3D = new NCollection_Array1<Xyz>(1, aNbEdges);
+        var anEnds3D = new NCollection_Array1<Xyz>(1, aNbEdges);
+        var aBegins2D = new NCollection_Array1<Xy>(1, aNbEdges);
+        var anEnds2D = new NCollection_Array1<Xy>(1, aNbEdges);
         for (int i = 1; i <= aNbEdges; i++)
         {
             aBegins3D[i] = myXYZ.Value(2 * i - 1);
@@ -219,19 +223,19 @@ public sealed class ShapeAnalysis_WireOrder
         var isEdgeUsed = new NCollection_Array1<bool>(1, aNbEdges);
         isEdgeUsed.Init(false);
 
-        double aTol2 = Precision.SquareConfusion();
-        double aTolP2 = Precision.SquarePConfusion();
+        double aTol2 = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
+        double aTolP2 = global::Kerf.Engine.Foundation.Precision.SquarePConfusion();
 
         // take the first edge to the constructed chain
         isEdgeUsed[1] = true;
-        gp_Pnt aFirstPnt3D = new gp_Pnt(aBegins3D[1]);
-        gp_Pnt aLastPnt3D = new gp_Pnt(anEnds3D[1]);
-        gp_Pnt2d aFirstPnt2D = new gp_Pnt2d();
-        gp_Pnt2d aLastPnt2D = new gp_Pnt2d();
+        Point3D aFirstPnt3D = new Point3D(aBegins3D[1]);
+        Point3D aLastPnt3D = new Point3D(anEnds3D[1]);
+        Point2D aFirstPnt2D = new Point2D();
+        Point2D aLastPnt2D = new Point2D();
         if (myMode == ModeType.ModeBoth)
         {
-            aFirstPnt2D = new gp_Pnt2d(aBegins2D[1]);
-            aLastPnt2D = new gp_Pnt2d(anEnds2D[1]);
+            aFirstPnt2D = new Point2D(aBegins2D[1]);
+            aLastPnt2D = new Point2D(anEnds2D[1]);
         }
 
         anEdgeSeq.Append(1);
@@ -264,10 +268,10 @@ public sealed class ShapeAnalysis_WireOrder
                 int aCurJointType;
                 double aCurMin;
                 // distance for four possible cases
-                double aSeqTailEdgeHead = aLastPnt3D.SquareDistance(new gp_Pnt(aBegins3D[i]));
-                double aSeqTailEdgeTail = aLastPnt3D.SquareDistance(new gp_Pnt(anEnds3D[i]));
-                double aSeqHeadEdgeTail = aFirstPnt3D.SquareDistance(new gp_Pnt(anEnds3D[i]));
-                double aSeqHeadEdgeHead = aFirstPnt3D.SquareDistance(new gp_Pnt(aBegins3D[i]));
+                double aSeqTailEdgeHead = aLastPnt3D.SquareDistance(new Point3D(aBegins3D[i]));
+                double aSeqTailEdgeTail = aLastPnt3D.SquareDistance(new Point3D(anEnds3D[i]));
+                double aSeqHeadEdgeTail = aFirstPnt3D.SquareDistance(new Point3D(anEnds3D[i]));
+                double aSeqHeadEdgeHead = aFirstPnt3D.SquareDistance(new Point3D(aBegins3D[i]));
                 // the best distances for joints with head and tail of sequence
                 double aMinDistToTail, aMinDistToHead;
                 int aTailJoinType, aHeadJointType;
@@ -347,10 +351,10 @@ public sealed class ShapeAnalysis_WireOrder
                         aJointMask3D |= (1 << 3);
                     }
 
-                    double aSeqTailEdgeHead2D = aLastPnt2D.SquareDistance(new gp_Pnt2d(aBegins2D[i]));
-                    double aSeqTailEdgeTail2D = aLastPnt2D.SquareDistance(new gp_Pnt2d(anEnds2D[i]));
-                    double aSeqHeadEdgeTail2D = aFirstPnt2D.SquareDistance(new gp_Pnt2d(anEnds2D[i]));
-                    double aSeqHeadEdgeHead2D = aFirstPnt2D.SquareDistance(new gp_Pnt2d(aBegins2D[i]));
+                    double aSeqTailEdgeHead2D = aLastPnt2D.SquareDistance(new Point2D(aBegins2D[i]));
+                    double aSeqTailEdgeTail2D = aLastPnt2D.SquareDistance(new Point2D(anEnds2D[i]));
+                    double aSeqHeadEdgeTail2D = aFirstPnt2D.SquareDistance(new Point2D(anEnds2D[i]));
+                    double aSeqHeadEdgeHead2D = aFirstPnt2D.SquareDistance(new Point2D(aBegins2D[i]));
                     if (aSeqTailEdgeHead2D < aTolP2)
                     {
                         aJointMask2D |= (1 << 0);
@@ -447,19 +451,19 @@ public sealed class ShapeAnalysis_WireOrder
                     {
                         case 0:
                             anEdgeSeq.Append(aBestEdgeNum);
-                            aLastPnt3D = new gp_Pnt(anEnds3D[aBestEdgeNum]);
+                            aLastPnt3D = new Point3D(anEnds3D[aBestEdgeNum]);
                             break;
                         case 1:
                             anEdgeSeq.Prepend(aBestEdgeNum);
-                            aFirstPnt3D = new gp_Pnt(aBegins3D[aBestEdgeNum]);
+                            aFirstPnt3D = new Point3D(aBegins3D[aBestEdgeNum]);
                             break;
                         case 2:
                             anEdgeSeq.Append(-aBestEdgeNum);
-                            aLastPnt3D = new gp_Pnt(aBegins3D[aBestEdgeNum]);
+                            aLastPnt3D = new Point3D(aBegins3D[aBestEdgeNum]);
                             break;
                         case 3:
                             anEdgeSeq.Prepend(-aBestEdgeNum);
-                            aFirstPnt3D = new gp_Pnt(anEnds3D[aBestEdgeNum]);
+                            aFirstPnt3D = new Point3D(anEnds3D[aBestEdgeNum]);
                             break;
                     }
 
@@ -468,16 +472,16 @@ public sealed class ShapeAnalysis_WireOrder
                         switch (aBestJointType)
                         {
                             case 0:
-                                aLastPnt2D = new gp_Pnt2d(anEnds2D[aBestEdgeNum]);
+                                aLastPnt2D = new Point2D(anEnds2D[aBestEdgeNum]);
                                 break;
                             case 1:
-                                aFirstPnt2D = new gp_Pnt2d(aBegins2D[aBestEdgeNum]);
+                                aFirstPnt2D = new Point2D(aBegins2D[aBestEdgeNum]);
                                 break;
                             case 2:
-                                aLastPnt2D = new gp_Pnt2d(aBegins2D[aBestEdgeNum]);
+                                aLastPnt2D = new Point2D(aBegins2D[aBestEdgeNum]);
                                 break;
                             case 3:
-                                aFirstPnt2D = new gp_Pnt2d(anEnds2D[aBestEdgeNum]);
+                                aFirstPnt2D = new Point2D(anEnds2D[aBestEdgeNum]);
                                 break;
                         }
                     }
@@ -487,12 +491,12 @@ public sealed class ShapeAnalysis_WireOrder
                 {
                     aLoops.Append(anEdgeSeq);
                     anEdgeSeq = new NCollection_HSequence<int>();
-                    aFirstPnt3D = new gp_Pnt(aBegins3D[aBestEdgeNum]);
-                    aLastPnt3D = new gp_Pnt(anEnds3D[aBestEdgeNum]);
+                    aFirstPnt3D = new Point3D(aBegins3D[aBestEdgeNum]);
+                    aLastPnt3D = new Point3D(anEnds3D[aBestEdgeNum]);
                     if (myMode == ModeType.ModeBoth)
                     {
-                        aFirstPnt2D = new gp_Pnt2d(aBegins2D[aBestEdgeNum]);
-                        aLastPnt2D = new gp_Pnt2d(anEnds2D[aBestEdgeNum]);
+                        aFirstPnt2D = new Point2D(aBegins2D[aBestEdgeNum]);
+                        aLastPnt2D = new Point2D(anEnds2D[aBestEdgeNum]);
                     }
 
                     anEdgeSeq.Append(aBestEdgeNum);
@@ -552,8 +556,8 @@ public sealed class ShapeAnalysis_WireOrder
                         int aPrevEdgeIt = aCurEdgeIt == 1 ? aCurLoopLength : aCurEdgeIt - 1;
                         int aCurEdgeIdx = aCurLoop.Value(aCurEdgeIt);
                         int aPrevEdgeIdx = aCurLoop.Value(aPrevEdgeIt);
-                        gp_Pnt aCurLoopFirst = new gp_Pnt(aCurEdgeIdx > 0 ? aBegins3D[aCurEdgeIdx] : anEnds3D[-aCurEdgeIdx]);
-                        gp_Pnt aCurLoopLast = new gp_Pnt(aPrevEdgeIdx > 0 ? anEnds3D[aPrevEdgeIdx] : aBegins3D[-aPrevEdgeIdx]);
+                        Point3D aCurLoopFirst = new Point3D(aCurEdgeIdx > 0 ? aBegins3D[aCurEdgeIdx] : anEnds3D[-aCurEdgeIdx]);
+                        Point3D aCurLoopLast = new Point3D(aPrevEdgeIdx > 0 ? anEnds3D[aPrevEdgeIdx] : aBegins3D[-aPrevEdgeIdx]);
                         // iterate over all gaps between edges in main loop
                         double aMinDist3 = RealLast();
                         int aMainLoopIt3 = 0;
@@ -566,8 +570,8 @@ public sealed class ShapeAnalysis_WireOrder
                             int aNextEdgeIt2 = aCurEdgeIt2 == aMainLoopLength ? 1 : aCurEdgeIt2 + 1;
                             int aCurEdgeIdx2 = aMainLoop.Value(aCurEdgeIt2);
                             int aNextEdgeIdx2 = aMainLoop.Value(aNextEdgeIt2);
-                            gp_Pnt aMainLoopFirst = new gp_Pnt(aCurEdgeIdx2 > 0 ? anEnds3D[aCurEdgeIdx2] : aBegins3D[-aCurEdgeIdx2]);
-                            gp_Pnt aMainLoopLast = new gp_Pnt(aNextEdgeIdx2 > 0 ? aBegins3D[aNextEdgeIdx2] : anEnds3D[-aNextEdgeIdx2]);
+                            Point3D aMainLoopFirst = new Point3D(aCurEdgeIdx2 > 0 ? anEnds3D[aCurEdgeIdx2] : aBegins3D[-aCurEdgeIdx2]);
+                            Point3D aMainLoopLast = new Point3D(aNextEdgeIdx2 > 0 ? aBegins3D[aNextEdgeIdx2] : anEnds3D[-aNextEdgeIdx2]);
                             // getting the sum of square distances if we try to sew the current loop with the main loop
                             // in current positions
                             double aDirectDist = aCurLoopFirst.SquareDistance(aMainLoopFirst) + aCurLoopLast.SquareDistance(aMainLoopLast);
@@ -719,14 +723,14 @@ public sealed class ShapeAnalysis_WireOrder
     }
 
     /// <summary>The 3D ends of the edge <paramref name="theIdx"/> (swapped for a negative index).</summary>
-    public void XYZ(int theIdx, out gp_XYZ theStart3D, out gp_XYZ theEnd3D)
+    public void XYZ(int theIdx, out Xyz theStart3D, out Xyz theEnd3D)
     {
         theStart3D = myXYZ.Value((theIdx > 0 ? 2 * theIdx - 1 : -2 * theIdx));
         theEnd3D = myXYZ.Value((theIdx > 0 ? 2 * theIdx : -2 * theIdx - 1));
     }
 
     /// <summary>The 2D ends of the edge <paramref name="theIdx"/> (swapped for a negative index).</summary>
-    public void XY(int theIdx, out gp_XY theStart2D, out gp_XY theEnd2D)
+    public void XY(int theIdx, out Xy theStart2D, out Xy theEnd2D)
     {
         if (myMode == ModeType.ModeBoth)
         {
@@ -735,11 +739,11 @@ public sealed class ShapeAnalysis_WireOrder
         }
         else
         {
-            gp_XYZ aStart3d = myXYZ.Value((theIdx > 0 ? 2 * theIdx - 1 : -2 * theIdx));
-            theStart2D = new gp_XY();
+            Xyz aStart3d = myXYZ.Value((theIdx > 0 ? 2 * theIdx - 1 : -2 * theIdx));
+            theStart2D = new Xy();
             theStart2D.SetCoord(aStart3d.X(), aStart3d.Y());
-            gp_XYZ anEnd3d = myXYZ.Value((theIdx > 0 ? 2 * theIdx : -2 * theIdx - 1));
-            theEnd2D = new gp_XY();
+            Xyz anEnd3d = myXYZ.Value((theIdx > 0 ? 2 * theIdx : -2 * theIdx - 1));
+            theEnd2D = new Xy();
             theEnd2D.SetCoord(anEnd3d.X(), anEnd3d.Y());
         }
     }
@@ -774,7 +778,7 @@ public sealed class ShapeAnalysis_WireOrder
         var chain = new NCollection_Sequence<int>();
         n0 = 0;
         chain.Append(1); // On demarre la partie
-        gp_XYZ f3d, l3d, f13d = new gp_XYZ(), l13d = new gp_XYZ();
+        Xyz f3d, l3d, f13d = new Xyz(), l13d = new Xyz();
         for (n1 = 1; n1 <= nb; n1++)
         {
             if (n0 == 0)

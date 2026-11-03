@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +17,7 @@ public class StepRepr_MakeFromUsageOption : StepRepr_ProductDefinitionUsage
 {
     private int theRanking;
     private TCollection_HAsciiString theRankingRationale;
-    private Standard_Transient theQuantity;
+    private Transient theQuantity;
 
     /// <summary>
     /// Empty constructor
@@ -27,7 +29,7 @@ public class StepRepr_MakeFromUsageOption : StepRepr_ProductDefinitionUsage
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString aProductDefinitionRelationship_Id, TCollection_HAsciiString aProductDefinitionRelationship_Name, bool hasProductDefinitionRelationship_Description, TCollection_HAsciiString aProductDefinitionRelationship_Description, StepBasic_ProductDefinition aProductDefinitionRelationship_RelatingProductDefinition, StepBasic_ProductDefinition aProductDefinitionRelationship_RelatedProductDefinition, int aRanking, TCollection_HAsciiString aRankingRationale, Standard_Transient aQuantity)
+    public void Init(TCollection_HAsciiString aProductDefinitionRelationship_Id, TCollection_HAsciiString aProductDefinitionRelationship_Name, bool hasProductDefinitionRelationship_Description, TCollection_HAsciiString aProductDefinitionRelationship_Description, StepBasic_ProductDefinition aProductDefinitionRelationship_RelatingProductDefinition, StepBasic_ProductDefinition aProductDefinitionRelationship_RelatedProductDefinition, int aRanking, TCollection_HAsciiString aRankingRationale, Transient aQuantity)
     {
         base.Init(aProductDefinitionRelationship_Id, aProductDefinitionRelationship_Name, hasProductDefinitionRelationship_Description, aProductDefinitionRelationship_Description, aProductDefinitionRelationship_RelatingProductDefinition, aProductDefinitionRelationship_RelatedProductDefinition);
 
@@ -41,7 +43,7 @@ public class StepRepr_MakeFromUsageOption : StepRepr_ProductDefinitionUsage
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString aProductDefinitionRelationship_Id, TCollection_HAsciiString aProductDefinitionRelationship_Name, bool hasProductDefinitionRelationship_Description, TCollection_HAsciiString aProductDefinitionRelationship_Description, StepBasic_ProductDefinitionOrReference aProductDefinitionRelationship_RelatingProductDefinition, StepBasic_ProductDefinitionOrReference aProductDefinitionRelationship_RelatedProductDefinition, int aRanking, TCollection_HAsciiString aRankingRationale, Standard_Transient aQuantity)
+    public void Init(TCollection_HAsciiString aProductDefinitionRelationship_Id, TCollection_HAsciiString aProductDefinitionRelationship_Name, bool hasProductDefinitionRelationship_Description, TCollection_HAsciiString aProductDefinitionRelationship_Description, StepBasic_ProductDefinitionOrReference aProductDefinitionRelationship_RelatingProductDefinition, StepBasic_ProductDefinitionOrReference aProductDefinitionRelationship_RelatedProductDefinition, int aRanking, TCollection_HAsciiString aRankingRationale, Transient aQuantity)
     {
         base.Init(aProductDefinitionRelationship_Id, aProductDefinitionRelationship_Name, hasProductDefinitionRelationship_Description, aProductDefinitionRelationship_Description, aProductDefinitionRelationship_RelatingProductDefinition, aProductDefinitionRelationship_RelatedProductDefinition);
 
@@ -87,7 +89,7 @@ public class StepRepr_MakeFromUsageOption : StepRepr_ProductDefinitionUsage
     /// <summary>
     /// Returns field Quantity
     /// </summary>
-    public Standard_Transient Quantity()
+    public Transient Quantity()
     {
         return theQuantity;
     }
@@ -95,7 +97,7 @@ public class StepRepr_MakeFromUsageOption : StepRepr_ProductDefinitionUsage
     /// <summary>
     /// Set field Quantity
     /// </summary>
-    public void SetQuantity(Standard_Transient aQuantity)
+    public void SetQuantity(Transient aQuantity)
     {
         theQuantity = aQuantity;
     }

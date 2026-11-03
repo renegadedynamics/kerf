@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,19 +28,19 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
     public Adaptor2d_Curve2d Curve() => myCurve;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNb);
+        NCollection_Array1<Point2D> aResult = new(1, aNb);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
-            gp_Pnt2d aP = myCurve.EvalD0(theParams.Value(i));
+            Point2D aP = myCurve.EvalD0(theParams.Value(i));
             aResult.SetValue(i - theParams.Lower() + 1, aP);
         }
         return aResult;
@@ -111,15 +113,15 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
     /// Evaluates the Nth derivative at all grid points: from the D1-D3 grids for N up to 3, with the adaptor's
     /// EvalDN above.
     /// </summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
+        NCollection_Array1<Vector2D> aResult = new(1, aNb);
 
         // Reuse existing grid evaluators for orders 1-3
         if (theN == 1)
@@ -127,7 +129,7 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD1> aD1Grid = EvaluateGridD1(theParams);
             if (aD1Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
             for (int i = 1; i <= aNb; ++i)
             {
@@ -139,7 +141,7 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD2> aD2Grid = EvaluateGridD2(theParams);
             if (aD2Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
             for (int i = 1; i <= aNb; ++i)
             {
@@ -151,7 +153,7 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD3> aD3Grid = EvaluateGridD3(theParams);
             if (aD3Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
             for (int i = 1; i <= aNb; ++i)
             {
@@ -163,7 +165,7 @@ public sealed class Geom2dGridEval_OtherCurve : Geom2dGridEval.ICurveEvaluator
             // For orders > 3, use adaptor EvalDN method
             for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
             {
-                gp_Vec2d aDN = myCurve.EvalDN(theParams.Value(i), theN);
+                Vector2D aDN = myCurve.EvalDN(theParams.Value(i), theN);
                 aResult.SetValue(i - theParams.Lower() + 1, aDN);
             }
         }

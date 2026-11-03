@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Text;
 using Occt;
 
@@ -60,7 +62,7 @@ internal static class DrawVariableCommands
         }
 
         var aStream = new StringWriter { NewLine = "\n" };
-        Standard_Stream.Precision(aStream, 15);
+        StreamUtilities.Precision(aStream, 15);
         aStream.Write(aDrawable.TypeName + "\n");
         aDrawable.Save(aStream);
         aStream.Write("\n");
@@ -88,8 +90,8 @@ internal static class DrawVariableCommands
 
         string aText = Encoding.Latin1.GetString(aBytes);
         TextReader aStream = Reader(aText);
-        string? aType = Standard_Stream.ReadWord(aStream);
-        if (aType is null || Standard_Stream.Fail(aStream))
+        string? aType = StreamUtilities.ReadWord(aStream);
+        if (aType is null || StreamUtilities.Fail(aStream))
         {
             di.Append("Error: cannot read file: '").Append(aFileName).Append("'");
             return 1;
@@ -121,7 +123,7 @@ internal static class DrawVariableCommands
     private static StringReader Reader(string theText)
     {
         var aReader = new StringReader(theText);
-        Standard_Stream.SetInputLength(aReader, theText.Length);
+        StreamUtilities.SetInputLength(aReader, theText.Length);
         return aReader;
     }
 
@@ -142,10 +144,10 @@ internal static class DrawVariableCommands
             case "Draw_Number":
             {
                 double aValue = double.MaxValue;
-                string? aWord = Standard_Stream.ReadWord(theStream);
+                string? aWord = StreamUtilities.ReadWord(theStream);
                 if (aWord is not null)
                 {
-                    aValue = Standard_Stream.Strtod(aWord);
+                    aValue = StreamUtilities.Strtod(aWord);
                 }
 
                 return new DrawNumber(aValue);
@@ -235,7 +237,7 @@ internal static class DrawVariableCommands
             if (theDI.GetDrawable(a[i]) is { } aDrawable)
             {
                 var aStream = new StringWriter { NewLine = "\n" };
-                Standard_Stream.Precision(aStream, 15);
+                StreamUtilities.Precision(aStream, 15);
                 aStream.Write("\n\n*********** Dump of " + a[i] + " *************\n");
                 aDrawable.Dump(aStream);
                 di.Append(aStream.ToString());
@@ -331,8 +333,8 @@ internal static class DrawVariableCommands
         {
             // OCCT: dout.Zoom(p_id) is false (0) in batch mode, so the pick is NaN; dout.GetTrsf leaves the identity
             double z = 0.0;
-            var P = new gp_Pnt(p_X / z, p_Y / z, 0);
-            var T = new gp_Trsf();
+            var P = new Point3D(p_X / z, p_Y / z, 0);
+            var T = new Transform3D();
             T.Invert();
             P.Transform(T);
             theDI.SetNumber(a[2], P.X());

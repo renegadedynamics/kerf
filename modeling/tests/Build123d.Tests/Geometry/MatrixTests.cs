@@ -1,5 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_matrix.py. Element-type validation is the compiler's
 // job in C#. Python's Matrix.rotate changes the matrix; the port's Rotated returns a new one.
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d.Tests.Geometry;
@@ -22,7 +23,7 @@ public class MatrixTests
                 Check.AlmostEqual(expected[r, c], m[r, c], places);
     }
 
-    static gp_TrsfForm Form(Matrix m)
+    static TransformForm Form(Matrix m)
     {
         var g = m.ToGpGTrsf();
         return g.Form();
@@ -93,10 +94,10 @@ public class MatrixTests
         }, inverse);
 
         // From a gp_Trsf
-        var rotX = new gp_Trsf();
-        var origin = new gp_Pnt(0, 0, 0);
-        var dx = new gp_Dir(1, 0, 0);
-        var ax = new gp_Ax1(origin, dx);
+        var rotX = new Transform3D();
+        var origin = new Point3D(0, 0, 0);
+        var dx = new Direction3D(1, 0, 0);
+        var ax = new Axis3D(origin, dx);
         double t = Math.PI;
         rotX = rotX.WithRotation(ax, t);
         var rotXMatrix = new double[,]
@@ -113,7 +114,7 @@ public class MatrixTests
     public void TranslationFromValuesIsASimilarity()
     {
         var translation = new Matrix(new double[,] { { 1, 0, 0, 1 }, { 0, 1, 0, 2 }, { 0, 0, 1, 3 }, { 0, 0, 0, 1 } });
-        Assert.NotEqual(gp_TrsfForm.gp_Other, Form(translation));
+        Assert.NotEqual(TransformForm.Other, Form(translation));
         Check.AlmostEqual((11, 22, 33), translation.Multiply(new Vector(10, 20, 30)), 7);
         Assert.Equal(1.0, translation[0, 0]);
         Assert.Equal(2.0, translation[1, 3]);
@@ -124,7 +125,7 @@ public class MatrixTests
     {
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
         var rotationScaleMirror = new Matrix(new double[,] { { -2 * c, 2 * s, 0, 5 }, { 2 * s, 2 * c, 0, 0 }, { 0, 0, 2, 0 } });
-        Assert.NotEqual(gp_TrsfForm.gp_Other, Form(rotationScaleMirror));
+        Assert.NotEqual(TransformForm.Other, Form(rotationScaleMirror));
         Check.AlmostEqual((5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
 
         // A similarity converts to a gp_Trsf, so it can place a shape
@@ -198,7 +199,7 @@ public class MatrixTests
     public void GeneralAffineMultipliesVectors()
     {
         var nonUniform = new Matrix(new double[,] { { 2, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });
-        Assert.Equal(gp_TrsfForm.gp_Other, Form(nonUniform));
+        Assert.Equal(TransformForm.Other, Form(nonUniform));
         Check.AlmostEqual((2, 1, 1), nonUniform.Multiply(new Vector(1, 1, 1)), 7);
 
         var shear = new Matrix(new double[,] { { 1, 0.5, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } });

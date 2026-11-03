@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepShape_ContextDependentShapeRepresentation : Standard_Transient
+public class StepShape_ContextDependentShapeRepresentation : Transient
 {
     private StepRepr_ShapeRepresentationRelationship theRepRel;
     private StepRepr_ProductDefinitionShape theProRel;

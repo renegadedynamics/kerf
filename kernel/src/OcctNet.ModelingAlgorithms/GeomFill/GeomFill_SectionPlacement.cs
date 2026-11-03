@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -20,7 +24,7 @@ public sealed class GeomFill_SectionPlacement
 {
     private bool done;
     private bool isplan;
-    private gp_Ax1 TheAxe;
+    private Axis3D TheAxe;
     private readonly double Gabarit;
     private GeomFill_LocationLaw myLaw;
     private readonly GeomAdaptor_Curve myAdpSection;
@@ -31,20 +35,20 @@ public sealed class GeomFill_SectionPlacement
     private double AngleMax;
     private readonly Extrema_ExtPC myExt;
     private readonly bool myIsPoint;
-    private readonly gp_Pnt myPoint;
+    private readonly Point3D myPoint;
 
-    private static void Tangente(Adaptor3d_Curve Path, double Param, out gp_Pnt P, out gp_Vec Tang)
+    private static void Tangente(Adaptor3d_Curve Path, double Param, out Point3D P, out Vector3D Tang)
     {
         Path.D1(Param, out P, out Tang);
         double Norm = Tang.Magnitude();
 
-        for (int ii = 2; (ii < 12) && (Norm < Precision.Confusion()); ii++)
+        for (int ii = 2; (ii < 12) && (Norm < global::Kerf.Engine.Foundation.Precision.Confusion()); ii++)
         {
             Tang = Path.DN(Param, ii);
             Norm = Tang.Magnitude();
         }
 
-        if (Norm > 100 * gp.Resolution())
+        if (Norm > 100 * Constants.Resolution())
         {
             Tang /= Norm;
         }
@@ -79,7 +83,7 @@ public sealed class GeomFill_SectionPlacement
         return penal;
     }
 
-    private static double EvalAngle(in gp_Vec V1, in gp_Vec V2)
+    private static double EvalAngle(in Vector3D V1, in Vector3D V2)
     {
         double angle;
         angle = V1.Angle(V2);
@@ -136,7 +140,7 @@ public sealed class GeomFill_SectionPlacement
         AngleMax = 0.0;
         myAdpSection = new GeomAdaptor_Curve();
         myExt = new Extrema_ExtPC();
-        TheAxe = new gp_Ax1();
+        TheAxe = new Axis3D();
 
         done = false;
         isplan = false;
@@ -159,7 +163,7 @@ public sealed class GeomFill_SectionPlacement
         double aXmin, aYmin, aZmin, aXmax, aYmax, aZmax;
 
         // Boite d'encombrement de la section pour en deduire le gabarit
-        Bnd_Box box = new Bnd_Box();
+        Box box = new Box();
         if (myIsPoint)
         {
             box.Add(myPoint);
@@ -175,41 +179,41 @@ public sealed class GeomFill_SectionPlacement
         double DZ = aZmax - aZmin;
         Gabarit = Math.Sqrt(DX * DX + DY * DY + DZ * DZ) / 2.0;
 
-        Gabarit += Precision.Confusion(); // Cas des toute petite
+        Gabarit += global::Kerf.Engine.Foundation.Precision.Confusion(); // Cas des toute petite
 
         // Initialisation de TheAxe pour les cas singulier
         if (!myIsPoint)
         {
-            Tangente(myAdpSection, (myAdpSection.FirstParameter() + myAdpSection.LastParameter()) / 2, out gp_Pnt P,
-                     out gp_Vec V);
+            Tangente(myAdpSection, (myAdpSection.FirstParameter() + myAdpSection.LastParameter()) / 2, out Point3D P,
+                     out Vector3D V);
             TheAxe.SetLocation(P);
-            TheAxe.SetDirection(new gp_Dir(V));
+            TheAxe.SetDirection(new Direction3D(V));
 
             // y a t'il un Plan moyen ?
-            GeomAbs_CurveType TheType = myAdpSection.GetType();
+            CurveKind TheType = myAdpSection.GetType();
             switch (TheType)
             {
-                case GeomAbs_Circle:
+                case Circle:
                     isplan = true;
                     TheAxe = myAdpSection.Circle().Axis();
                     break;
-                case GeomAbs_Ellipse:
+                case Ellipse:
                     isplan = true;
                     TheAxe = myAdpSection.Ellipse().Axis();
                     break;
-                case GeomAbs_Hyperbola:
+                case Hyperbola:
                     isplan = true;
                     TheAxe = myAdpSection.Hyperbola().Axis();
                     break;
-                case GeomAbs_Parabola:
+                case Parabola:
                     isplan = true;
                     TheAxe = myAdpSection.Parabola().Axis();
                     break;
-                case GeomAbs_Line:
+                case Line:
                     NbPoles = 0; // Pas de Plan !!
                     break;
-                case GeomAbs_BezierCurve:
-                case GeomAbs_BSplineCurve:
+                case BezierCurve:
+                case BSplineCurve:
                     NbPoles = myAdpSection.NbPoles();
                     break;
                 default:
@@ -220,7 +224,7 @@ public sealed class GeomFill_SectionPlacement
             if (!isplan && NbPoles > 2)
             {
                 // Calcul d'un plan moyen.
-                NCollection_HArray1<gp_Pnt> Pnts;
+                NCollection_HArray1<Point3D> Pnts;
                 double first = myAdpSection.FirstParameter();
                 double last = myAdpSection.LastParameter();
                 if (myAdpSection.IsPeriodic())
@@ -235,22 +239,22 @@ public sealed class GeomFill_SectionPlacement
                     double aPeriod = aCurve.Period();
                     double U1 = Ufirst + Math.Floor((first - Ufirst) / aPeriod) * aPeriod;
                     double U2 = U1 + aPeriod;
-                    if (Math.Abs(first - U1) <= Precision.PConfusion())
+                    if (Math.Abs(first - U1) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         first = U1;
                     }
-                    if (Math.Abs(last - U2) <= Precision.PConfusion())
+                    if (Math.Abs(last - U2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         last = U2;
                     }
                 }
                 double t, delta;
-                if (myAdpSection.GetType() == GeomAbs_BSplineCurve)
+                if (myAdpSection.GetType() == BSplineCurve)
                 {
                     Geom_BSplineCurve BC = (Geom_BSplineCurve)myAdpSection.Curve()!;
                     int I1, I2, I3, I4;
-                    BC.LocateU(first, Precision.Confusion(), out I1, out I2);
-                    BC.LocateU(last, Precision.Confusion(), out I3, out I4);
+                    BC.LocateU(first, global::Kerf.Engine.Foundation.Precision.Confusion(), out I1, out I2);
+                    BC.LocateU(last, global::Kerf.Engine.Foundation.Precision.Confusion(), out I3, out I4);
                     int NbKnots = I3 - I2 + 1;
 
                     int NbLocalPnts = 10;
@@ -271,7 +275,7 @@ public sealed class GeomFill_SectionPlacement
                     {
                         NbPnts++;
                     }
-                    Pnts = new NCollection_HArray1<gp_Pnt>(1, NbPnts);
+                    Pnts = new NCollection_HArray1<Point3D>(1, NbPnts);
                     int nb = 1;
                     if (I1 != I2)
                     {
@@ -315,7 +319,7 @@ public sealed class GeomFill_SectionPlacement
                     {
                         NbPnts++;
                     }
-                    Pnts = new NCollection_HArray1<gp_Pnt>(1, NbPnts);
+                    Pnts = new NCollection_HArray1<Point3D>(1, NbPnts);
                     delta = (last - first) / (NbPoles - 1);
                     for (i = 0; i < NbPoles - 1; i++)
                     {
@@ -328,7 +332,7 @@ public sealed class GeomFill_SectionPlacement
                     }
                 }
 
-                GeomLib.AxeOfInertia(Pnts, out gp_Ax2 axe, out bool issing, Precision.Confusion());
+                GeomLib.AxeOfInertia(Pnts, out Frame3D axe, out bool issing, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (!issing)
                 {
                     isplan = true;
@@ -338,7 +342,7 @@ public sealed class GeomFill_SectionPlacement
             }
 
             myExt.Initialize(myAdpSection, myAdpSection.FirstParameter(), myAdpSection.LastParameter(),
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -360,11 +364,11 @@ public sealed class GeomFill_SectionPlacement
     public void Perform(Adaptor3d_Curve Path, double Tol)
     {
         double IntTol = 1.0e-5;
-        double DistCenter = Precision.Infinite();
+        double DistCenter = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         if (myIsPoint)
         {
-            Extrema_ExtPC Projector = new Extrema_ExtPC(myPoint, Path, Precision.Confusion());
+            Extrema_ExtPC Projector = new Extrema_ExtPC(myPoint, Path, global::Kerf.Engine.Foundation.Precision.Confusion());
             DistMini(Projector, Path, ref Dist, ref PathParam);
             AngleMax = M_PI / 2;
         }
@@ -374,8 +378,8 @@ public sealed class GeomFill_SectionPlacement
             SecParam = myAdpSection.FirstParameter();
 
             double distaux = 0.0, taux = 0.0, alpha;
-            gp_Pnt PonPath, PonSec, P;
-            gp_Vec VRef = new gp_Vec(), dp1;
+            Point3D PonPath, PonSec, P;
+            Vector3D VRef = new Vector3D(), dp1;
             VRef.SetXYZ(TheAxe.Direction().XYZ());
 
             Tangente(Path, PathParam, out PonPath, out dp1);
@@ -403,14 +407,14 @@ public sealed class GeomFill_SectionPlacement
             {
                 // (1.1) Distances Point-Plan
                 double DistPlan;
-                gp_Vec V1 = new gp_Vec(PonPath, TheAxe.Location());
+                Vector3D V1 = new Vector3D(PonPath, TheAxe.Location());
                 DistPlan = Math.Abs(V1.Dot(VRef));
                 if (DistPlan <= IntTol)
                 {
                     DistCenter = V1.Magnitude();
                 }
 
-                gp_Pnt Plast = Path.Value(Path.LastParameter());
+                Point3D Plast = Path.Value(Path.LastParameter());
                 V1.SetXYZ(TheAxe.Location().XYZ() - Plast.XYZ());
                 DistPlan = Math.Abs(V1.Dot(VRef));
                 if (DistPlan <= IntTol)
@@ -425,7 +429,7 @@ public sealed class GeomFill_SectionPlacement
                 }
 
                 // (1.2) Intersection Plan-courbe
-                gp_Ax3 axe = new gp_Ax3(TheAxe.Location(), TheAxe.Direction());
+                CoordinateSystem axe = new CoordinateSystem(TheAxe.Location(), TheAxe.Direction());
                 Geom_Plane plan = new Geom_Plane(axe);
                 GeomAdaptor_Surface adplan = new GeomAdaptor_Surface(plan);
                 IntCurveSurface_HInter Intersector = new IntCurveSurface_HInter();
@@ -451,14 +455,14 @@ public sealed class GeomFill_SectionPlacement
                 {
                     // Comparing the distances from the path's endpoints to the best matching plane of the
                     // profile.
-                    gp_Pnt firstPoint = Path.Value(Path.FirstParameter());
-                    gp_Pnt lastPoint = Path.Value(Path.LastParameter());
-                    gp_Pln plane = plan.Pln();
+                    Point3D firstPoint = Path.Value(Path.FirstParameter());
+                    Point3D lastPoint = Path.Value(Path.LastParameter());
+                    Plane3D plane = plan.Pln();
                     double firstDistance = plane.SquareDistance(firstPoint);
                     double lastDistance = plane.SquareDistance(lastPoint);
 
-                    if (((Math.Abs(firstDistance) < Precision.SquareConfusion())
-                         && Math.Abs(lastDistance) < Precision.SquareConfusion())
+                    if (((Math.Abs(firstDistance) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                         && Math.Abs(lastDistance) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                         || firstDistance < lastDistance)
                     {
                         PathParam = Path.FirstParameter();
@@ -554,7 +558,7 @@ public sealed class GeomFill_SectionPlacement
                         // Si l'on a toujours rien, on essai une distance point/path
                         // c'est la derniere chance.
                         Extrema_ExtPC PExt = new Extrema_ExtPC();
-                        PExt.Initialize(Path, Path.FirstParameter(), Path.LastParameter(), Precision.Confusion());
+                        PExt.Initialize(Path, Path.FirstParameter(), Path.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
                         PExt.Perform(PonSec);
                         if (PExt.IsDone())
                         {
@@ -589,7 +593,7 @@ public sealed class GeomFill_SectionPlacement
         PathParam = Param;
         if (myIsPoint)
         {
-            gp_Pnt PonPath = Path.Value(PathParam);
+            Point3D PonPath = Path.Value(PathParam);
             Dist = PonPath.Distance(myPoint);
             AngleMax = M_PI / 2;
         }
@@ -597,8 +601,8 @@ public sealed class GeomFill_SectionPlacement
         {
             SecParam = myAdpSection.FirstParameter();
 
-            gp_Pnt PonPath, PonSec;
-            gp_Vec VRef = new gp_Vec(), dp1;
+            Point3D PonPath, PonSec;
+            Vector3D VRef = new Vector3D(), dp1;
             VRef.SetXYZ(TheAxe.Direction().XYZ());
 
             Tangente(Path, PathParam, out PonPath, out dp1);
@@ -638,13 +642,13 @@ public sealed class GeomFill_SectionPlacement
     /// WithTranslation forces the contact of the section and the path; WithCorrection rotates a planar section so
     /// that its normal is the law's tangent.
     /// </summary>
-    public gp_Trsf Transformation(bool WithTranslation, bool WithCorrection = false)
+    public Transform3D Transformation(bool WithTranslation, bool WithCorrection = false)
     {
-        gp_Vec V = new gp_Vec();
-        gp_Mat M = new gp_Mat();
-        gp_Dir DN = new gp_Dir(), D = new gp_Dir();
+        Vector3D V = new Vector3D();
+        Matrix3x3 M = new Matrix3x3();
+        Direction3D DN = new Direction3D(), D = new Direction3D();
         // modified by NIZHNY-MKK  Fri Oct 17 15:27:07 2003
-        gp_Pnt P = new gp_Pnt(0.0, 0.0, 0.0), PSection = new gp_Pnt(0.0, 0.0, 0.0);
+        Point3D P = new Point3D(0.0, 0.0, 0.0), PSection = new Point3D(0.0, 0.0, 0.0);
 
         // Calcul des reperes
         myLaw.D0(PathParam, ref M, ref V);
@@ -652,7 +656,7 @@ public sealed class GeomFill_SectionPlacement
         P.SetXYZ(V.XYZ());
         D.SetXYZ(M.Column(3));
         DN.SetXYZ(M.Column(1));
-        gp_Ax3 Paxe = new gp_Ax3(P, D, DN);
+        CoordinateSystem Paxe = new CoordinateSystem(P, D, DN);
 
         if (WithTranslation || WithCorrection)
         {
@@ -666,7 +670,7 @@ public sealed class GeomFill_SectionPlacement
             }
         }
         // modified by NIZHNY-MKK  Wed Oct  8 15:03:19 2003.BEGIN
-        gp_Trsf Rot = new gp_Trsf();
+        Transform3D Rot = new Transform3D();
 
         if (WithCorrection && !myIsPoint)
         {
@@ -674,16 +678,16 @@ public sealed class GeomFill_SectionPlacement
 
             if (!isplan)
             {
-                throw new Standard_Failure("Illegal usage: can't rotate non-planar profile");
+                throw new FailureException("Illegal usage: can't rotate non-planar profile");
             }
 
-            gp_Dir ProfileNormal = TheAxe.Direction();
-            gp_Dir SpineStartDir = Paxe.Direction();
-            if (!ProfileNormal.IsParallel(SpineStartDir, Precision.Angular()))
+            Direction3D ProfileNormal = TheAxe.Direction();
+            Direction3D SpineStartDir = Paxe.Direction();
+            if (!ProfileNormal.IsParallel(SpineStartDir, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
-                gp_Dir DirAxeOfRotation = ProfileNormal ^ SpineStartDir;
+                Direction3D DirAxeOfRotation = ProfileNormal ^ SpineStartDir;
                 angle = ProfileNormal.AngleWithRef(SpineStartDir, DirAxeOfRotation);
-                gp_Ax1 AxeOfRotation = new gp_Ax1(TheAxe.Location(), DirAxeOfRotation);
+                Axis3D AxeOfRotation = new Axis3D(TheAxe.Location(), DirAxeOfRotation);
                 Rot.SetRotation(AxeOfRotation, angle);
             }
             PSection.Transform(Rot);
@@ -699,10 +703,10 @@ public sealed class GeomFill_SectionPlacement
             P.SetCoord(0.0, 0.0, 0.0);
         }
 
-        gp_Ax3 Saxe = new gp_Ax3(P, gp.DZ(), gp.DX());
+        CoordinateSystem Saxe = new CoordinateSystem(P, Constants.DZ(), Constants.DX());
 
         // Transfo
-        gp_Trsf Tf = new gp_Trsf();
+        Transform3D Tf = new Transform3D();
         Tf.SetTransformation(Saxe, Paxe);
 
         if (WithCorrection)
@@ -736,11 +740,11 @@ public sealed class GeomFill_SectionPlacement
     }
 
     // OCCT's private SectionAxis is defined but never called; it is internal here so that the port keeps it.
-    internal void SectionAxis(in gp_Mat M, ref gp_Vec T, ref gp_Vec N, ref gp_Vec BN)
+    internal void SectionAxis(in Matrix3x3 M, ref Vector3D T, ref Vector3D N, ref Vector3D BN)
     {
         double Eps = 1.0e-10;
-        gp_Dir D;
-        gp_Vec PathNormal = new gp_Vec();
+        Direction3D D;
+        Vector3D PathNormal = new Vector3D();
         GeomLProp_CLProps CP = new GeomLProp_CLProps(mySection!, SecParam, 2, Eps);
         if (CP.IsTangentDefined())
         {

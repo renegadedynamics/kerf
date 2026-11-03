@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Occt;
@@ -30,12 +31,12 @@ public partial struct HLRAlgo_PolyHidingData : IEquatable<HLRAlgo_PolyHidingData
     /// <summary>The triangle's plane: Normal . P + D = 0 (plain data).</summary>
     public struct PlaneT : IEquatable<PlaneT>
     {
-        public gp_XYZ Normal;
+        public Xyz Normal;
         public double D;
 
         public PlaneT()
         {
-            Normal = new gp_XYZ();
+            Normal = new Xyz();
             D = 0.0;
         }
 
@@ -60,7 +61,7 @@ public partial struct HLRAlgo_PolyHidingData : IEquatable<HLRAlgo_PolyHidingData
         myIndices.Index = Index;
         myIndices.Min = Minim;
         myIndices.Max = Maxim;
-        myPlane.Normal = new gp_XYZ(A, B, C);
+        myPlane.Normal = new Xyz(A, B, C);
         myPlane.D = D;
     }
 
@@ -88,5 +89,5 @@ public partial struct HLRAlgo_PolyHidingData : IEquatable<HLRAlgo_PolyHidingData
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"HLRAlgo_PolyHidingData({myIndices.Index}, {myIndices.Min}, {myIndices.Max}, {myPlane.Normal}, {gp.Format("D", myPlane.D)})";
+        => $"HLRAlgo_PolyHidingData({myIndices.Index}, {myIndices.Min}, {myIndices.Max}, {myPlane.Normal}, {Constants.Format("D", myPlane.D)})";
 }

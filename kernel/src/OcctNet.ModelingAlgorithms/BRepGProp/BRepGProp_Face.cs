@@ -4,9 +4,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -27,7 +32,7 @@ public sealed class BRepGProp_Face
     private readonly BRepAdaptor_Surface mySurface;
     private readonly Geom2dAdaptor_Curve myCurve;
     private Geom_Surface? myFaceSurface;
-    private TopLoc_Location myFaceLocation;
+    private Placement myFaceLocation;
     private bool myIsFaceContextReady;
     private bool mySReverse;
     private readonly bool myIsUseSpan;
@@ -40,7 +45,7 @@ public sealed class BRepGProp_Face
     {
         mySurface = new BRepAdaptor_Surface();
         myCurve = new Geom2dAdaptor_Curve();
-        myFaceLocation = new TopLoc_Location();
+        myFaceLocation = new Placement();
         myIsFaceContextReady = false;
         mySReverse = false;
         myIsUseSpan = IsUseSpan;
@@ -82,18 +87,18 @@ public sealed class BRepGProp_Face
         int Nu;
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 Nu = 4;
                 break;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 Nu = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
                 Nu = Max(4, Nu);
             }
 
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 int a = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree() + 1;
                 int b = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbUKnots() - 1;
@@ -115,18 +120,18 @@ public sealed class BRepGProp_Face
         int Nv;
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 Nv = 4;
                 break;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 Nv = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
                 Nv = Max(4, Nv);
             }
 
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 int a = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree() + 1;
                 int b = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbVKnots() - 1;
@@ -149,7 +154,7 @@ public sealed class BRepGProp_Face
     public TopoDS_Face GetFace() => mySurface.Face();
 
     /// <summary>The point of parameter U on the current boundary curve.</summary>
-    public gp_Pnt2d Value2d(double U) => myCurve.Value(U);
+    public Point2D Value2d(double U) => myCurve.Value(U);
 
     /// <summary>The number of points along the current boundary curve for an accurate integration.</summary>
     public int IntegrationOrder()
@@ -158,27 +163,27 @@ public sealed class BRepGProp_Face
 
         switch (myCurve.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 N = 2;
                 break;
 
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
-            case GeomAbs_Hyperbola:
+            case Circle:
+            case Ellipse:
+            case Hyperbola:
                 N = 9;
                 break;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 N = 9;
                 break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 N = ((Geom2d_BezierCurve)myCurve.Curve()!).Degree() + 1;
             }
 
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 int a = ((Geom2d_BSplineCurve)myCurve.Curve()!).Degree() + 1;
                 int b = ((Geom2d_BSplineCurve)myCurve.Curve()!).NbKnots() - 1;
@@ -231,9 +236,9 @@ public sealed class BRepGProp_Face
     }
 
     /// <summary>The point of parameters (U, V) on the face and the normal there (D1U ^ D1V, reversed with the face).</summary>
-    public void Normal(double U, double V, out gp_Pnt P, out gp_Vec VNor)
+    public void Normal(double U, double V, out Point3D P, out Vector3D VNor)
     {
-        mySurface.D1(U, V, out P, out gp_Vec D1U, out gp_Vec D1V);
+        mySurface.D1(U, V, out P, out Vector3D D1U, out Vector3D D1V);
         VNor = D1U.Crossed(D1V);
         if (mySReverse)
         {
@@ -256,31 +261,31 @@ public sealed class BRepGProp_Face
         int Nv, Nu;
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 Nu = 1;
                 Nv = 1;
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 Nu = 2;
                 Nv = 1;
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 Nu = 2;
                 Nv = 1;
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 Nu = 2;
                 Nv = 2;
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 Nu = 2;
                 Nv = 2;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 Nv = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
                 Nu = ((Geom_BezierSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 Nv = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).VDegree();
                 Nu = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).UDegree();
                 break;
@@ -290,7 +295,7 @@ public sealed class BRepGProp_Face
                 break;
         }
 
-        return Min(RealToInt(Math.Ceiling(SCoeff(Eps) * Max((Nu + 1), (Nv + 1)))), math.GaussPointsMax());
+        return Min(RealToInt(Math.Ceiling(SCoeff(Eps) * Max((Nu + 1), (Nv + 1)))), NumericTables.GaussPointsMax());
     }
 
     /// <summary>The number of subintervals in U over the surface.</summary>
@@ -299,25 +304,25 @@ public sealed class BRepGProp_Face
         int N;
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 N = 2;
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 N = 4;
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 N = 4;
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 N = 4;
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 N = 4;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 N = 2;
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 N = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbUKnots();
                 break;
             default:
@@ -334,25 +339,25 @@ public sealed class BRepGProp_Face
         int N;
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 N = 2;
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 N = 2;
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 N = 2;
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 N = 3;
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 N = 4;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 N = 2;
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 N = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).NbVKnots();
                 break;
             default:
@@ -368,20 +373,20 @@ public sealed class BRepGProp_Face
     {
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 Knots[1] = mySurface.FirstUParameter();
                 Knots[2] = mySurface.LastUParameter();
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 Knots[1] = 0.0;
                 Knots[2] = M_PI * 2.0 / 3.0;
                 Knots[3] = M_PI * 4.0 / 3.0;
                 Knots[4] = M_PI * 6.0 / 3.0;
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 NCollection_Array1<double> aSrcKnots = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalUKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
@@ -403,25 +408,25 @@ public sealed class BRepGProp_Face
     {
         switch (mySurface.GetType())
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
+            case Plane:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
                 // OCCT takes the U bounds for the V knots of these surfaces (occt-issues.md)
                 Knots[1] = mySurface.FirstUParameter();
                 Knots[2] = mySurface.LastUParameter();
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 Knots[1] = -M_PI / 2.0;
                 Knots[2] = 0.0;
                 Knots[3] = +M_PI / 2.0;
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 Knots[1] = 0.0;
                 Knots[2] = M_PI * 2.0 / 3.0;
                 Knots[3] = M_PI * 4.0 / 3.0;
                 Knots[4] = M_PI * 6.0 / 3.0;
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 NCollection_Array1<double> aSrcKnots = ((Geom_BSplineSurface)mySurface.GeomSurfaceOriginal()!).InternalVKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
@@ -441,7 +446,7 @@ public sealed class BRepGProp_Face
     /// <summary>The number of Gauss points along the current boundary curve for the relative precision <paramref name="Eps"/>.</summary>
     public int LIntOrder(double Eps)
     {
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
 
         BndLib_Add2dCurve.Add(myCurve, 1.0e-7, ref aBox);
         double aXmin, aXmax, aYmin, aYmax;
@@ -459,25 +464,25 @@ public sealed class BRepGProp_Face
         double NL, NS = Max(SIntOrder(1.0) * anRInt / aLSubs, 1);
         switch (myCurve.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 NL = 1;
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 NL = 2 * 3;
                 break; // correction for the spans of converted curve
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 NL = 2 * 3;
                 break; //
-            case GeomAbs_Parabola:
+            case Parabola:
                 NL = 2 * 3;
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 NL = 3 * 3;
                 break;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 NL = ((Geom2d_BezierCurve)myCurve.Curve()!).Degree();
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 NL = ((Geom2d_BSplineCurve)myCurve.Curve()!).Degree();
                 break;
             default:
@@ -489,7 +494,7 @@ public sealed class BRepGProp_Face
 
         int nn = RealToInt(aLSubs <= 4 ? Math.Ceiling(LCoeff(Eps) * (NL + 1)) : NL + 1);
 
-        return Min(nn, math.GaussPointsMax());
+        return Min(nn, NumericTables.GaussPointsMax());
     }
 
     /// <summary>The number of subintervals of the current boundary curve.</summary>
@@ -498,18 +503,18 @@ public sealed class BRepGProp_Face
         int N;
         switch (myCurve.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 N = 2;
                 break;
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
+            case Circle:
+            case Ellipse:
                 N = 4;
                 break;
-            case GeomAbs_Parabola:
-            case GeomAbs_Hyperbola:
+            case Parabola:
+            case Hyperbola:
                 N = 2;
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 N = ((Geom2d_BSplineCurve)myCurve.Curve()!).NbKnots();
                 break;
             default:
@@ -525,23 +530,23 @@ public sealed class BRepGProp_Face
     {
         switch (myCurve.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 Knots[1] = myCurve.FirstParameter();
                 Knots[2] = myCurve.LastParameter();
                 break;
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
+            case Circle:
+            case Ellipse:
                 Knots[1] = 0.0;
                 Knots[2] = M_PI * 2.0 / 3.0;
                 Knots[3] = M_PI * 4.0 / 3.0;
                 Knots[4] = M_PI * 6.0 / 3.0;
                 break;
-            case GeomAbs_Parabola:
-            case GeomAbs_Hyperbola:
+            case Parabola:
+            case Hyperbola:
                 Knots[1] = myCurve.FirstParameter();
                 Knots[2] = myCurve.LastParameter();
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 NCollection_Array1<double> aSrcKnots = ((Geom2d_BSplineCurve)myCurve.Curve()!).InternalKnots();
                 for (int i = Knots.Lower(); i <= Knots.Upper(); i++)
@@ -565,25 +570,25 @@ public sealed class BRepGProp_Face
     public double LastParameter() => myCurve.LastParameter();
 
     /// <summary>The point of parameter U of the current boundary curve and the first derivative there.</summary>
-    public void D12d(double U, out gp_Pnt2d P, out gp_Vec2d V1) => myCurve.D1(U, out P, out V1);
+    public void D12d(double U, out Point2D P, out Vector2D V1) => myCurve.D1(U, out P, out V1);
 
     /// <summary>
-    /// Loads a side of the UV rectangle of the face as the current arc: with <see cref="GeomAbs_IsoU"/> the left
-    /// (<paramref name="IsFirstParam"/>) or right side, with <see cref="GeomAbs_IsoV"/> the bottom or top one.
+    /// Loads a side of the UV rectangle of the face as the current arc: with <see cref="IsoU"/> the left
+    /// (<paramref name="IsFirstParam"/>) or right side, with <see cref="IsoV"/> the bottom or top one.
     /// </summary>
-    public void Load(bool IsFirstParam, GeomAbs_IsoType theIsoType)
+    public void Load(bool IsFirstParam, IsoType theIsoType)
     {
         double aLen;
         double aU1;
         double aU2;
         double aV1;
         double aV2;
-        gp_Pnt2d aLoc = new();
-        gp_Dir2d aDir = new();
+        Point2D aLoc = new();
+        Direction2D aDir = new();
 
         Bounds(out aU1, out aU2, out aV1, out aV2);
 
-        if (theIsoType == GeomAbs_IsoU)
+        if (theIsoType == IsoU)
         {
             aLen = aV2 - aV1;
 
@@ -598,7 +603,7 @@ public sealed class BRepGProp_Face
                 aDir.SetCoord(0.0, 1.0);
             }
         }
-        else if (theIsoType == GeomAbs_IsoV)
+        else if (theIsoType == IsoV)
         {
             aLen = aU2 - aU1;
 
@@ -632,7 +637,7 @@ public sealed class BRepGProp_Face
         int iU = theKnots.Upper();
         int aStartI = 0;
         int aEndI = 0;
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         while (++i < iU)
         {
@@ -675,7 +680,7 @@ public sealed class BRepGProp_Face
                                       Geom2dAdaptor_Curve theCurve,
                                       out NCollection_HArray1<double> theKnots)
     {
-        bool isSBSpline = theCurve.GetType() == GeomAbs_BSplineCurve;
+        bool isSBSpline = theCurve.GetType() == BSplineCurve;
 
         if (isSBSpline)
         {
@@ -701,18 +706,18 @@ public sealed class BRepGProp_Face
     public NCollection_HArray1<double> GetUKnots(double theUMin, double theUMax)
     {
         NCollection_HArray1<double> theUKnots;
-        bool isSBSpline = mySurface.GetType() == GeomAbs_BSplineSurface;
+        bool isSBSpline = mySurface.GetType() == BSplineSurface;
         bool isCBSpline = false;
 
         if (!isSBSpline)
         {
-            if (mySurface.GetType() == GeomAbs_SurfaceOfExtrusion)
+            if (mySurface.GetType() == SurfaceOfExtrusion)
             {
                 var aCurve = new GeomAdaptor_Curve();
                 Geom_Surface aSurf = mySurface.GeomSurfaceOriginal()!;
 
                 aCurve.Load(((Geom_SurfaceOfLinearExtrusion)aSurf).BasisCurve());
-                isCBSpline = aCurve.GetType() == GeomAbs_BSplineCurve;
+                isCBSpline = aCurve.GetType() == BSplineCurve;
             }
         }
 
@@ -758,7 +763,7 @@ public sealed class BRepGProp_Face
     public NCollection_HArray1<double> GetTKnots(double theTMin, double theTMax)
     {
         NCollection_HArray1<double> theTKnots;
-        bool isBSpline = mySurface.GetType() == GeomAbs_BSplineSurface;
+        bool isBSpline = mySurface.GetType() == BSplineSurface;
 
         if (myIsUseSpan && isBSpline)
         {

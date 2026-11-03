@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -34,8 +37,8 @@ internal static partial class ChFi3d_Builder_0
     /// <paramref name="Pcurv"/> on <paramref name="Surf"/> (<paramref name="IFlag"/> 0), or only the pcurve of the
     /// given curve (<paramref name="IFlag"/> &gt; 0, its parameters imposed for 2).
     /// </summary>
-    internal static void ChFi3d_ComputeArete(in ChFiDS_CommonPoint P1, in gp_Pnt2d UV1, in ChFiDS_CommonPoint P2,
-                                             in gp_Pnt2d UV2, Geom_Surface Surf, ref Geom_Curve? C3d,
+    internal static void ChFi3d_ComputeArete(in ChFiDS_CommonPoint P1, in Point2D UV1, in ChFiDS_CommonPoint P2,
+                                             in Point2D UV2, Geom_Surface Surf, ref Geom_Curve? C3d,
                                              ref Geom2d_Curve? Pcurv, ref double Pardeb, ref double Parfin,
                                              double tol3d, double tol2d, out double tolreached, int IFlag)
     {
@@ -66,7 +69,7 @@ internal static partial class ChFi3d_Builder_0
                     C3d = tc.BasisCurve();
                     if (C3d.IsPeriodic())
                     {
-                        ElCLib.AdjustPeriodic(C3d.FirstParameter(), C3d.LastParameter(), tol2d, ref Pardeb,
+                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(C3d.FirstParameter(), C3d.LastParameter(), tol2d, ref Pardeb,
                                               ref Parfin);
                     }
                 }
@@ -82,7 +85,7 @@ internal static partial class ChFi3d_Builder_0
             }
             else
             {
-                Pcurv = new Geom2d_Line(UV1, new gp_Dir2d(new gp_Vec2d(UV1, UV2)));
+                Pcurv = new Geom2d_Line(UV1, new Direction2D(new Vector2D(UV1, UV2)));
             }
         }
         else if (Math.Abs(UV1.Y() - UV2.Y()) <= tol2d)
@@ -104,7 +107,7 @@ internal static partial class ChFi3d_Builder_0
                     C3d = tc.BasisCurve();
                     if (C3d.IsPeriodic())
                     {
-                        ElCLib.AdjustPeriodic(C3d.FirstParameter(), C3d.LastParameter(), tol2d, ref Pardeb,
+                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(C3d.FirstParameter(), C3d.LastParameter(), tol2d, ref Pardeb,
                                               ref Parfin);
                     }
                 }
@@ -120,7 +123,7 @@ internal static partial class ChFi3d_Builder_0
             }
             else
             {
-                Pcurv = new Geom2d_Line(UV1, new gp_Dir2d(new gp_Vec2d(UV1, UV2)));
+                Pcurv = new Geom2d_Line(UV1, new Direction2D(new Vector2D(UV1, UV2)));
             }
         }
         else if (IFlag == 0)
@@ -129,7 +132,7 @@ internal static partial class ChFi3d_Builder_0
             {
                 // A straight line is constructed to avoid
                 // arc and tangent.
-                NCollection_Array1<gp_Pnt2d> qoles = new(1, 2);
+                NCollection_Array1<Point2D> qoles = new(1, 2);
                 qoles[1] = UV1;
                 qoles[2] = UV2;
                 Pcurv = new Geom2d_BezierCurve(qoles);
@@ -137,9 +140,9 @@ internal static partial class ChFi3d_Builder_0
             else
             {
                 BRepAdaptor_Curve C1 = new(P1.Arc());
-                C1.D1(P1.ParameterOnArc(), out gp_Pnt Pp, out gp_Vec Vv1);
+                C1.D1(P1.ParameterOnArc(), out Point3D Pp, out Vector3D Vv1);
                 C1.Initialize(P2.Arc());
-                C1.D1(P2.ParameterOnArc(), out Pp, out gp_Vec Vv2);
+                C1.D1(P2.ParameterOnArc(), out Pp, out Vector3D Vv2);
                 hs.Load(Surf);
                 Pcurv = ChFi3d_BuildPCurve(hs, UV1, Vv1, UV2, Vv2, true);
                 // There are some cases when PCurve constructed in this way
@@ -147,18 +150,18 @@ internal static partial class ChFi3d_Builder_0
                 // extension. A posteriori checking is required and if
                 // the curve leaves the surface it is replaced by straight line UV1 UV2
                 // non regarding the tangency with neighboring arcs!
-                Bnd_Box2d bs = new();
+                Box2d bs = new();
                 double umin, umax, vmin, vmax;
                 Surf.Bounds(out umin, out umax, out vmin, out vmax);
                 bs.Update(umin, vmin, umax, vmax);
-                bs.SetGap(Precision.PConfusion());
+                bs.SetGap(global::Kerf.Engine.Foundation.Precision.PConfusion());
                 bool aIN = true;
                 for (int ii = 1; ii <= 4 && aIN; ii++)
                 {
                     if (bs.IsOut(((Geom2d_BezierCurve)Pcurv).Pole(ii)))
                     {
                         aIN = false;
-                        NCollection_Array1<gp_Pnt2d> qoles = new(1, 2);
+                        NCollection_Array1<Point2D> qoles = new(1, 2);
                         qoles[1] = UV1;
                         qoles[2] = UV2;
                         Pcurv = new Geom2d_BezierCurve(qoles);
@@ -180,10 +183,10 @@ internal static partial class ChFi3d_Builder_0
             hs.Load(Surf);
             hc.Load(C3d!, Pardeb, Parfin);
             ChFi3d_ProjectPCurv(hc, hs, ref Pcurv, tol3d, ref tolreached);
-            gp_Pnt2d p2d = Pcurv!.Value(Pardeb);
-            if (!UV1.IsEqual(p2d, Precision.PConfusion()))
+            Point2D p2d = Pcurv!.Value(Pardeb);
+            if (!UV1.IsEqual(p2d, global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
-                gp_Vec2d v2d = new(p2d, UV1);
+                Vector2D v2d = new(p2d, UV1);
                 Pcurv = Writable(Pcurv);
                 Pcurv.Translate(v2d);
             }
@@ -336,13 +339,13 @@ internal static partial class ChFi3d_Builder_0
     //=================================================================================================
 
     /// <summary>Adds to the data structure the solid (or shell) of the spine's first edge; returns its index.</summary>
-    /// <exception cref="Standard_Failure">The spine has no edge.</exception>
+    /// <exception cref="FailureException">The spine has no edge.</exception>
     internal static int ChFi3d_SolidIndex(ChFiDS_Spine? sp, TopOpeBRepDS_DataStructure DStr, ChFiDS_Map MapESo,
                                           ChFiDS_Map MapESh)
     {
         if (sp is null || sp.NbEdges() == 0)
         {
-            throw new Standard_Failure("SolidIndex : Spine incomplete");
+            throw new FailureException("SolidIndex : Spine incomplete");
         }
         TopoDS_Shape edref = sp.Edges(1);
         TopoDS_Shape shellousolid;
@@ -532,7 +535,7 @@ internal static partial class ChFi3d_Builder_0
     private static bool findIndexPoint(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Fd, int OnS, out int ipoin)
     {
         ipoin = 0;
-        gp_Pnt P = Fd.Vertex(false, OnS).Point();
+        Point3D P = Fd.Vertex(false, OnS).Point();
 
         foreach (TopOpeBRepDS_Interference SCIIt in DStr.SurfaceInterferences(Fd.Surf()))
         {

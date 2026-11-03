@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -14,10 +15,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class HLRBRepTests
 {
     private static readonly HLRAlgo_Projector Axo =
-        new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, -1, 1), new gp_Dir(-1, 1, 2)));
+        new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)));
 
     private static readonly HLRAlgo_Projector Persp =
-        new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, -1, 1), new gp_Dir(-1, 1, 2)), 400.0);
+        new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)), 400.0);
 
     private static string BRepText(TopoDS_Shape theShape)
     {
@@ -50,7 +51,7 @@ public class HLRBRepTests
         for (int e = 1; e <= DS.NbEdges(); e++)
         {
             HLRBRep_Curve C = DS.EDataArray()[e].Geometry();
-            Assert.Equal(GeomAbs_Line, C.GetType());
+            Assert.Equal(Line, C.GetType());
             double f3 = C.Curve().FirstParameter(), l3 = C.Curve().LastParameter();
             foreach (double t in new[] { 0.0, 0.3, 1.0 })
             {
@@ -58,15 +59,15 @@ public class HLRBRepTests
                 // Parameter3d inverts Parameter2d
                 Assert.Equal(p3, C.Parameter3d(C.Parameter2d(p3)), 9);
                 // the 2D point is the projection of the 3D point
-                gp_Pnt2d aExpected = new();
+                Point2D aExpected = new();
                 P.Project(C.Value3D(p3), ref aExpected);
-                gp_Pnt2d a2d = C.Value(p3);
+                Point2D a2d = C.Value(p3);
                 Assert.True(a2d.Distance(aExpected) < 1e-9);
             }
             // D1 against a finite difference of D0
             double pm = 0.5 * (f3 + l3), h = 1e-6;
-            C.D1(pm, out gp_Pnt2d _, out gp_Vec2d V);
-            gp_Pnt2d aA = C.Value(pm - h), aB = C.Value(pm + h);
+            C.D1(pm, out Point2D _, out Vector2D V);
+            Point2D aA = C.Value(pm - h), aB = C.Value(pm + h);
             Assert.True(Math.Abs(V.X() - (aB.X() - aA.X()) / (2 * h)) < 1e-5);
             Assert.True(Math.Abs(V.Y() - (aB.Y() - aA.Y()) / (2 * h)) < 1e-5);
         }
@@ -81,18 +82,18 @@ public class HLRBRepTests
         for (int e = 1; e <= DS.NbEdges(); e++)
         {
             HLRBRep_Curve C = DS.EDataArray()[e].Geometry();
-            if (C.GetType() != GeomAbs_Ellipse)
+            if (C.GetType() != Ellipse)
             {
                 continue;
             }
             nbEllipses++;
-            gp_Elips2d El = C.Ellipse();
+            Ellipse2D El = C.Ellipse();
             double f = C.FirstParameter(), l = C.LastParameter();
             foreach (double t in new[] { 0.0, 0.25, 0.8 })
             {
                 // the 2D parameter is the ellipse's own parameter
                 double p2 = f + (l - f) * t;
-                gp_Pnt2d aOnEllipse = ElCLib.Value(p2, El);
+                Point2D aOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(p2, El);
                 Assert.True(aOnEllipse.Distance(C.Value(C.Parameter3d(p2))) < 1e-9);
             }
         }
@@ -102,7 +103,7 @@ public class HLRBRepTests
     [Fact]
     public void Surface_PlaneSeenEdgeOnIsSide()
     {
-        HLRAlgo_Projector aTop = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        HLRAlgo_Projector aTop = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
         HLRBRep_Data DS = Load(aBox, aTop, 0, out _);
         int nbSide = 0, nbHiding = 0;
@@ -141,7 +142,7 @@ public class HLRBRepTests
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
         HLRBRep_Data A = Load(aBox, Axo, 0, out _);
-        HLRBRep_Data B = Load(new BRepPrimAPI_MakeBox(new gp_Pnt(50, 0, 0), 5.0, 5.0, 5.0).Shape(), Axo, 0, out _);
+        HLRBRep_Data B = Load(new BRepPrimAPI_MakeBox(new Point3D(50, 0, 0), 5.0, 5.0, 5.0).Shape(), Axo, 0, out _);
         HLRBRep_Data AB = new(A.NbVertices() + B.NbVertices(), A.NbEdges() + B.NbEdges(), A.NbFaces() + B.NbFaces());
         AB.Write(A, 0, 0, 0);
         int aBefore = B.FDataArray()[1].Wires()!.Wire(1)!.Edge(1);
@@ -193,7 +194,7 @@ public class HLRBRepTests
         foreach (double p in aPars)
         {
             TopoDS_Vertex V = new();
-            B.MakeVertex(ref V, new gp_Pnt(p, 0, 0), 1e-7);
+            B.MakeVertex(ref V, new Point3D(p, 0, 0), 1e-7);
             bool inserted = false;
             for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
             {
@@ -226,7 +227,7 @@ public class HLRBRepTests
     public void OutLiner_FrozenInputIsCopiedAndUnchanged()
     {
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape(); // frozen
-        Assert.True(aCyl.TShape()!.IsFrozen());
+        Assert.True(aCyl.TShape()!.IsFrozen);
         string aBefore = BRepText(aCyl);
         HLRBRep_Data DS = Load(aCyl, Axo, 3, out HLRTopoBRep_OutLiner S);
         Assert.Equal(aBefore, BRepText(aCyl));
@@ -250,7 +251,7 @@ public class HLRBRepTests
         Assert.Equal(2, nbIntL);
         Assert.True(DS.NbEdges() > 3);
         // the outlined shape is published frozen
-        Assert.True(S.OutLinedShape().TShape()!.IsFrozen());
+        Assert.True(S.OutLinedShape().TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -258,7 +259,7 @@ public class HLRBRepTests
     {
         TopoDS_Shape aFrozen = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
         TopoDS_Shape aWork = BRepTools.ExactCopyForWrite(aFrozen, out _);
-        Assert.False(aWork.TShape()!.IsFrozen());
+        Assert.False(aWork.TShape()!.IsFrozen);
 
         HLRBRep_Data DS1 = Load(aFrozen, Axo, 3, out HLRTopoBRep_OutLiner S1);
         HLRBRep_Data DS2 = Load(aWork, Axo, 3, out HLRTopoBRep_OutLiner S2);
@@ -281,19 +282,19 @@ public class HLRBRepTests
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
         HLRTopoBRep_Data DS = new();
         NCollection_DataMap<TopoDS_Shape, BRepTopAdaptor_Tool> MST = new(TopTools_ShapeMapHasher.Instance);
-        Contap_Contour FO = new(new gp_Vec(1, -1, 1));
+        Contap_Contour FO = new(new Vector3D(1, -1, 1));
         Assert.Throws<TopoDS_LockedShape>(() => HLRTopoBRep_DSFiller.Insert(aCyl, FO, DS, MST, 0));
     }
 
     [Fact]
     public void Intersector_LineThroughSphere()
     {
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new gp_Pnt(0, 0, 0), 5.0).Shape();
+        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(0, 0, 0), 5.0).Shape();
         HLRBRep_Data DS = Load(aSph, Axo, 0, out _);
         HLRBRep_Surface S = DS.FDataArray()[1].Geometry();
         HLRBRep_Intersector I = new();
         I.Load(S);
-        I.Perform(new gp_Lin(new gp_Pnt(-10, 0, 0), new gp_Dir(1, 0, 0)), 100.0);
+        I.Perform(new Line3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 100.0);
         Assert.True(I.IsDone());
         Assert.Equal(2, I.NbPoints());
         Assert.Equal(5.0, Math.Abs(I.CSPoint(1).Pnt().X()), 9);

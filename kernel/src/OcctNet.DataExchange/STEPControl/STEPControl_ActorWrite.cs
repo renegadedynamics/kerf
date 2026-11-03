@@ -5,6 +5,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.STEPControl_StepModelType;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopoDSToStep_FacetedError;
@@ -190,7 +193,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     // function : mergeInfoForNM
     // purpose  : bind already written shared faces to STEP entity for non-manifold
     //=======================================================================
-    private void mergeInfoForNM(Transfer_FinderProcess theFP, Standard_Transient theInfo)
+    private void mergeInfoForNM(Transfer_FinderProcess theFP, Transient theInfo)
     {
         ShapeProcess_ShapeContext aContext = theInfo as ShapeProcess_ShapeContext;
         if (aContext is null)
@@ -406,7 +409,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             for (TopExp_Explorer ffac = new TopExp_Explorer(theShape, TopAbs_FACE); ffac.More(); ffac.Next())
             {
                 TopoDS_Face F = TopoDS.Face(ffac.Current());
-                TopLoc_Location locbid = new TopLoc_Location();
+                Placement locbid = new Placement();
                 Geom_Surface surf = BRep_Tool.Surface(F, out locbid);
                 if (surf is null || !surf.IsKind(typeof(Geom_Plane)))
                 {
@@ -416,7 +419,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             for (TopExp_Explorer fedg = new TopExp_Explorer(theShape, TopAbs_EDGE); fedg.More(); fedg.Next())
             {
                 TopoDS_Edge E = TopoDS.Edge(fedg.Current());
-                TopLoc_Location locbid;
+                Placement locbid;
                 Geom_Curve curv = BRep_Tool.Curve(E, out locbid, out double first, out double last);
                 if (curv is null || !curv.IsKind(typeof(Geom_Line)))
                 {
@@ -445,7 +448,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     //  ########    MAKE PRODUCT DATA + CONTEXT    ########
 
-    public override Transfer_Binder Transfer(Transfer_Finder start, Transfer_FinderProcess FP, Message_ProgressRange theProgress = default)
+    public override Transfer_Binder Transfer(Transfer_Finder start, Transfer_FinderProcess FP, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeMapper mapper = start as TransferBRep_ShapeMapper;
 
@@ -483,7 +486,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         Transfer_Binder resbind = TransferShape(mapper, sdr, FP, aLocalFactors, null, true, theProgress);
 
         // create binder with all root entities produced from shape
-        NCollection_HSequence<Standard_Transient> roots = myContext.GetRootsForPart(SDRTool);
+        NCollection_HSequence<Transient> roots = myContext.GetRootsForPart(SDRTool);
         Transfer_Binder resprod = TransientResult(myContext.GetAPD());
         for (int i = 1; i <= roots.Length(); i++)
         {
@@ -582,8 +585,8 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                        in TopoDS_Shape aShVrtx, int theNum, in StepData_Factors theLocalFactors)
     {
         bool IsDone = false;
-        NCollection_DataMap<TopoDS_Shape, Standard_Transient> aMap =
-            new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<TopoDS_Shape, Transient> aMap =
+            new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         TopoDSToStep_Tool aTool = new TopoDSToStep_Tool(aMap, true, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         TopoDSToStep_MakeStepVertex aMkVrtx = new TopoDSToStep_MakeStepVertex(TopoDS.Vertex(aShVrtx), aTool, FP, theLocalFactors);
@@ -609,7 +612,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
     public Transfer_Binder TransferShape(Transfer_Finder start, StepShape_ShapeDefinitionRepresentation SDR0, Transfer_FinderProcess FP,
                                          in StepData_Factors theLocalFactors, NCollection_HSequence<TopoDS_Shape> shapeGroup = null,
-                                         bool isManifold = true, Message_ProgressRange theProgress = default)
+                                         bool isManifold = true, ProgressRange theProgress = default)
     {
         STEPControl_StepModelType mymode = Mode();
         TransferBRep_ShapeMapper mapper = start as TransferBRep_ShapeMapper;
@@ -653,7 +656,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             return TransferCompound(start, SDR0, FP, theLocalFactors, theProgress);
         }
 
-        using Message_ProgressScope aPSRoot = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPSRoot = new ProgressScope(theProgress, null, 2);
 
         // [BEGIN] Separate manifold topology from non-manifold in group mode 0 (ssv; 18.11.2010)
         bool isNMMode = aStepModel.InternalParameters.WriteNonmanifold;
@@ -776,7 +779,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                 // Complete SDR with shape representations.
                 // NOTE: aNMBinder is connected now with this SDR. It will be added to the resulting
                 //       binder in the end of this invocation of TransferShape
-                using Message_ProgressScope aPS0 = new Message_ProgressScope(aPSRoot.Next(), null, aNMItemsNb);
+                using ProgressScope aPS0 = new ProgressScope(aPSRoot.Next(), null, aNMItemsNb);
                 for (int i = 1; i <= aNMItemsNb && aPS0.More(); i++)
                 {
                     TransferBRep_ShapeMapper aMapper = TransferBRep.ShapeMapper(FP, RepItemSeq1.Value(i));
@@ -925,12 +928,12 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         // according to the current StepModelMode
 
         int nbs = RepItemSeq.Length();
-        NCollection_HSequence<Standard_Transient> ItemSeq = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> ItemSeq = new NCollection_HSequence<Transient>();
 
         // ptv 10.11.00: allow to write empty Compound:  if (GroupMode() >0)
         ItemSeq.Append(myContext.GetDefaultAxis());
         STEPControl_StepModelType trmode = mymode;
-        using Message_ProgressScope aPS = new Message_ProgressScope(aPSRoot.Next(), null, nbs);
+        using ProgressScope aPS = new ProgressScope(aPSRoot.Next(), null, nbs);
         for (int i = 1; i <= nbs && aPS.More(); i++)
         {
             TopoDS_Shape xShape = RepItemSeq.Value(i);
@@ -954,7 +957,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                 }
             }
 
-            using Message_ProgressScope aPS1 = new Message_ProgressScope(aPS.Next(), null, 2);
+            using ProgressScope aPS1 = new ProgressScope(aPS.Next(), null, 2);
 
             TopoDS_Shape aShape = xShape;
 
@@ -1515,7 +1518,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     // purpose  :
     //=======================================================================
     public Transfer_Binder TransferCompound(Transfer_Finder start, StepShape_ShapeDefinitionRepresentation SDR0, Transfer_FinderProcess FP,
-                                            in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                                            in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeMapper mapper = start as TransferBRep_ShapeMapper;
         Transfer_Binder binder = null;
@@ -1600,10 +1603,10 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
         // translate components
         int i, nbs = RepItemSeq.Length();
-        NCollection_HSequence<Standard_Transient> ItemSeq = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> ItemSeq = new NCollection_HSequence<Transient>();
         ItemSeq.Append(myContext.GetDefaultAxis());
         myContext.NextLevel();
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, nbs);
+        using ProgressScope aPS = new ProgressScope(theProgress, null, nbs);
         for (i = 1; i <= nbs && aPS.More(); i++)
         {
             TransferBRep_ShapeMapper subs = TransferBRep.ShapeMapper(FP, RepItemSeq.Value(i));
@@ -1652,7 +1655,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     public Transfer_Binder TransferSubShape(Transfer_Finder start, StepShape_ShapeDefinitionRepresentation SDR0,
                                             ref StepGeom_GeometricRepresentationItem AX1, Transfer_FinderProcess FP,
                                             in StepData_Factors theLocalFactors, NCollection_HSequence<TopoDS_Shape> shapeGroup = null,
-                                            bool isManifold = true, Message_ProgressRange theProgress = default)
+                                            bool isManifold = true, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeMapper mapper = start as TransferBRep_ShapeMapper;
         if (mapper is null)
@@ -1667,14 +1670,14 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         //   A part, un item decrivant une occurence en position est cree
         //   SINON, la shape est prise et transferee telle quelle
         TopoDS_Shape sh0 = shape;
-        gp_Trsf aLoc = new gp_Trsf();
+        Transform3D aLoc = new Transform3D();
         bool isShapeLocated = false;
         if (GroupMode() > 0)
         {
-            TopLoc_Location shloc = shape.Location();
-            isShapeLocated = !shloc.IsIdentity();
+            Placement shloc = shape.Location();
+            isShapeLocated = !shloc.IsIdentity;
             aLoc = shloc.Transformation();
-            TopLoc_Location shident = new TopLoc_Location();
+            Placement shident = new Placement();
             sh0.Location(shident);
             mapper = TransferBRep.ShapeMapper(FP, sh0);
             mapper.SameAttributes(start);
@@ -1721,7 +1724,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         STEPConstruct_Assembly mkitem = new STEPConstruct_Assembly();
 
         // make location for assembly placement
-        if (Math.Abs(aLoc.ScaleFactor() - 1.0) > Precision.Confusion())
+        if (Math.Abs(aLoc.ScaleFactor() - 1.0) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             if (aStepModel.InternalParameters.WriteScalingTrsf)
             {
@@ -1732,7 +1735,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                 FP.AddWarning(start, "The shape has a scaling factor, skipped");
             }
         }
-        if (Math.Abs(aLoc.ScaleFactor() - 1.0) < Precision.Confusion() || !aStepModel.InternalParameters.WriteScalingTrsf)
+        if (Math.Abs(aLoc.ScaleFactor() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion() || !aStepModel.InternalParameters.WriteScalingTrsf)
         {
             // create a new axis2placement3d
             GeomToStep_MakeAxis2Placement3d mkax = new GeomToStep_MakeAxis2Placement3d(aLoc, theLocalFactors);
@@ -1753,7 +1756,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
         // OCCT numbers the occurrence from a process-wide counter: here the writer's (decision 1266)
         mkitem.MakeRelationship(ref myContext.NauoId());
-        NCollection_HSequence<Standard_Transient> roots = myContext.GetRootsForAssemblyLink(mkitem);
+        NCollection_HSequence<Transient> roots = myContext.GetRootsForAssemblyLink(mkitem);
 
         // add roots corresponding to assembly and product structures to binder
         // KA: we need only the current subshape in resprod, since the binder is copied

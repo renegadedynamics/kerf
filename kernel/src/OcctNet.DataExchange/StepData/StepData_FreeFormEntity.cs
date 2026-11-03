@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// A Free Form Entity allows to record any kind of STEP parameters, in any way of typing. It is implemented with an
 /// array of fields. A Complex entity can be defined, as a chain of FreeFormEntity (see Next and As).
 /// </summary>
-public class StepData_FreeFormEntity : Standard_Transient
+public class StepData_FreeFormEntity : Transient
 {
     private string thetype = "";
     private NCollection_HArray1<StepData_Field> thefields;
@@ -142,14 +144,14 @@ public class StepData_FreeFormEntity : Standard_Transient
         //  Reordering using a dictionary (map) to sort entity types alphabetically
         e1 = ent;
         e2 = null;
-        SortedDictionary<string, Standard_Transient> dic = new(StringComparer.Ordinal);
+        SortedDictionary<string, Transient> dic = new(StringComparer.Ordinal);
         while (e1 is not null)
         {
             dic[e1.StepType()] = e1;
             e1 = e1.Next();
         }
         //  First clear the current 'next' links to break the chain...
-        foreach (KeyValuePair<string, Standard_Transient> iter in dic)
+        foreach (KeyValuePair<string, Transient> iter in dic)
         {
             e1 = iter.Value as StepData_FreeFormEntity;
             if (e1 is not null)
@@ -159,7 +161,7 @@ public class StepData_FreeFormEntity : Standard_Transient
         }
         //  ... then rebuild the chain in alphabetical order
         e1 = null;
-        foreach (KeyValuePair<string, Standard_Transient> iter in dic)
+        foreach (KeyValuePair<string, Transient> iter in dic)
         {
             e2 = iter.Value as StepData_FreeFormEntity;
             if (e1 is not null)

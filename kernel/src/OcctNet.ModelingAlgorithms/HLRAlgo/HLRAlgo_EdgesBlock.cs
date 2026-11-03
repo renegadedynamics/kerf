@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -12,7 +13,7 @@ namespace Occt;
 /// (orientation, outline, internal, double, isoline), and the block's encoded min-max box.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's: its setters are public.</remarks>
-public class HLRAlgo_EdgesBlock : Standard_Transient
+public class HLRAlgo_EdgesBlock : Transient
 {
     /// <summary>Eight integers, as OCCT's <c>int[8]</c>.</summary>
     [InlineArray(8)]

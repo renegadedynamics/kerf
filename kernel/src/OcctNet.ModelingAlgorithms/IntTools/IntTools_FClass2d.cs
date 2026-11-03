@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -12,7 +14,7 @@ namespace Occt;
 
 /// <summary>
 /// The 2D point classifier of a face used by the Boolean component: each wire is sampled once into a polygon
-/// (<see cref="CSLib_Class2d"/>), and points the polygons can't decide go to <see cref="BRepClass_FClassifier"/> over a
+/// (<see cref="Class2d"/>), and points the polygons can't decide go to <see cref="BRepClass_FClassifier"/> over a
 /// face explorer made on the first such point.
 /// </summary>
 /// <remarks>
@@ -27,7 +29,7 @@ namespace Occt;
 /// </remarks>
 public sealed class IntTools_FClass2d
 {
-    private readonly NCollection_Sequence<CSLib_Class2d> TabClass = new();
+    private readonly NCollection_Sequence<Class2d> TabClass = new();
     private readonly NCollection_Sequence<int> TabOrien = new();
     private double Toluv;
     private TopoDS_Face Face;
@@ -84,13 +86,13 @@ public sealed class IntTools_FClass2d
         BRepTools_WireExplorer aWExp = new();
         TopExp_Explorer aExpF = new(), aExp = new();
         Geom2d_Curve? aC2D;
-        gp_Pnt Ancienpnt3d = new();
-        NCollection_Sequence<gp_Pnt2d> SeqPnt2d = new();
+        Point3D Ancienpnt3d = new();
+        NCollection_Sequence<Point2D> SeqPnt2d = new();
         NCollection_DataMap<int, int> anIndexMap = new();
-        NCollection_Sequence<gp_Vec2d> aD1Prev = new();
-        NCollection_Sequence<gp_Vec2d> aD1Next = new();
+        NCollection_Sequence<Vector2D> aD1Prev = new();
+        NCollection_Sequence<Vector2D> aD1Next = new();
         //
-        aPrCf = Precision.Confusion();
+        aPrCf = global::Kerf.Engine.Foundation.Precision.Confusion();
         aPrCf2 = aPrCf * aPrCf;
         myIsHole = true;
         //
@@ -197,15 +199,15 @@ public sealed class IntTools_FClass2d
                     // check that whole curve is located in vicinity of its middle point
                     // (within sphere of Precision::Confusion() diameter)
                     C3d.Initialize(edge, Face);
-                    gp_Pnt P3da = C3d.Value(0.5 * (pfbid + plbid));
+                    Point3D P3da = C3d.Value(0.5 * (pfbid + plbid));
                     du = plbid - pfbid;
                     const int NBSTEPS = 10;
-                    double aPrec2 = 0.25 * Precision.Confusion() * Precision.Confusion();
+                    double aPrec2 = 0.25 * global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
                     degenerated = true;
                     for (int i = 0; i <= NBSTEPS; i++)
                     {
                         double U = pfbid + i * du / NBSTEPS;
-                        gp_Pnt P3db = C3d.Value(U);
+                        Point3D P3db = C3d.Value(U);
                         double aR2 = P3da.SquareDistance(P3db);
                         if (aR2 > aPrec2)
                         {
@@ -276,8 +278,8 @@ public sealed class IntTools_FClass2d
                     bool IsRealCurve3d;
                     int ii;
                     double aDstX;
-                    gp_Pnt2d P2d;
-                    gp_Pnt P3d = new();
+                    Point2D P2d;
+                    Point3D P3d = new();
                     //
                     u = aPrms[iX];
                     P2d = C.Value(u);
@@ -317,7 +319,7 @@ public sealed class IntTools_FClass2d
                         if (iX > 1)
                         {
                             double aDstX1;
-                            gp_Pnt MidP3d;
+                            Point3D MidP3d;
                             //
                             MidP3d = C3d.Value(0.5 * (u + aPrms[iX - 1]));
                             aDstX1 = P3d.SquareDistance(MidP3d);
@@ -342,11 +344,11 @@ public sealed class IntTools_FClass2d
                     if (ii > (Avant + 4))
                     {
                         double ul, dU, dV;
-                        gp_Pnt2d Pp;
+                        Point2D Pp;
                         //
-                        gp_Lin2d Lin = new(SeqPnt2d[ii - 2], new gp_Dir2d(new gp_Vec2d(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
-                        ul = ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
-                        Pp = ElCLib.Value(ul, Lin);
+                        Line2D Lin = new(SeqPnt2d[ii - 2], new Direction2D(new Vector2D(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
+                        ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
+                        Pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, Lin);
                         dU = Math.Abs(Pp.X() - SeqPnt2d[ii - 1].X());
                         dV = Math.Abs(Pp.Y() - SeqPnt2d[ii - 1].Y());
                         if (dU > FlecheU)
@@ -374,7 +376,7 @@ public sealed class IntTools_FClass2d
                 WireIsNotEmpty = true;
                 // Append the derivative of the first parameter.
                 double aU = aPrms[1];
-                C.D1(aU, out _, out gp_Vec2d aV);
+                C.D1(aU, out _, out Vector2D aV);
 
                 if (Or == TopAbs_REVERSED)
                 {
@@ -416,11 +418,11 @@ public sealed class IntTools_FClass2d
             if (NbEdges != 0)
             {
                 //-- count ++ with normal explorer and -- with Wire Explorer
-                NCollection_Array1<gp_Pnt2d> PClass = new(1, 2);
-                gp_Pnt2d anInitPnt = new(0.0, 0.0);
+                NCollection_Array1<Point2D> PClass = new(1, 2);
+                Point2D anInitPnt = new(0.0, 0.0);
                 //
                 PClass.Init(anInitPnt);
-                TabClass.Append(new CSLib_Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                TabClass.Append(new Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                 BadWire = 1;
                 TabOrien.Append(-1);
             }
@@ -429,7 +431,7 @@ public sealed class IntTools_FClass2d
             {
                 if (SeqPnt2d.Length() > 3)
                 {
-                    Poly.PolygonProperties(SeqPnt2d, out double aS, out double aPer);
+                    global::Kerf.Engine.Meshing.Poly.PolygonProperties(SeqPnt2d, out double aS, out double aPer);
 
                     double anExpThick = Max(2.0 * Math.Abs(aS) / aPer, 1e-7);
                     double aDefl = Max(FlecheU, FlecheV);
@@ -476,15 +478,15 @@ public sealed class IntTools_FClass2d
                                 }
                                 for (; i != iEnd; i += iStep)
                                 {
-                                    gp_Pnt2d aP2d = C.Value(aDiscr.Parameter(i));
+                                    Point2D aP2d = C.Value(aDiscr.Parameter(i));
                                     SeqPnt2d.Append(aP2d);
                                 }
                                 if (nbp > 2)
                                 {
                                     int ii = SeqPnt2d.Length();
-                                    gp_Lin2d Lin = new(SeqPnt2d[ii - 2], new gp_Dir2d(new gp_Vec2d(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
-                                    double ul = ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
-                                    gp_Pnt2d Pp = ElCLib.Value(ul, Lin);
+                                    Line2D Lin = new(SeqPnt2d[ii - 2], new Direction2D(new Vector2D(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
+                                    double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
+                                    Point2D Pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, Lin);
                                     double dU = Math.Abs(Pp.X() - SeqPnt2d[ii - 1].X());
                                     double dV = Math.Abs(Pp.Y() - SeqPnt2d[ii - 1].Y());
                                     if (dU > FlecheU)
@@ -508,7 +510,7 @@ public sealed class IntTools_FClass2d
 
                     if (isChanged)
                     {
-                        Poly.PolygonProperties(SeqPnt2d, out aS, out aPer);
+                        global::Kerf.Engine.Meshing.Poly.PolygonProperties(SeqPnt2d, out aS, out aPer);
                     }
                     //
                     if (FlecheU < Toluv)
@@ -521,9 +523,9 @@ public sealed class IntTools_FClass2d
                         FlecheV = Toluv;
                     }
 
-                    TabClass.Append(new CSLib_Class2d(SeqPnt2d, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                    TabClass.Append(new Class2d(SeqPnt2d, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                     //
-                    if (Math.Abs(aS) < Precision.SquareConfusion())
+                    if (Math.Abs(aS) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         BadWire = 1;
                         TabOrien.Append(-1);
@@ -547,7 +549,7 @@ public sealed class IntTools_FClass2d
                     BadWire = 1;
                     TabOrien.Append(-1);
                     SeqPnt2d.Clear();
-                    TabClass.Append(new CSLib_Class2d(SeqPnt2d, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                    TabClass.Append(new Class2d(SeqPnt2d, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                 }
             } // else if(WireIsNotEmpty)
         } // for(; aExpF.More();  aExpF.Next()) {
@@ -562,9 +564,9 @@ public sealed class IntTools_FClass2d
                 TabOrien[1] = -1;
             }
 
-            if (surf.GetType() == GeomAbs_Cone || surf.GetType() == GeomAbs_Cylinder
-                || surf.GetType() == GeomAbs_Torus || surf.GetType() == GeomAbs_Sphere
-                || surf.GetType() == GeomAbs_SurfaceOfRevolution)
+            if (surf.GetType() == SurfaceKind.Cone || surf.GetType() == SurfaceKind.Cylinder
+                || surf.GetType() == SurfaceKind.Torus || surf.GetType() == SurfaceKind.Sphere
+                || surf.GetType() == SurfaceOfRevolution)
             {
                 double uuu = M_PI + M_PI - (Umax - Umin);
                 if (uuu < 0)
@@ -579,7 +581,7 @@ public sealed class IntTools_FClass2d
                 U1 = U2 = 0.0;
             }
 
-            if (surf.GetType() == GeomAbs_Torus)
+            if (surf.GetType() == SurfaceKind.Torus)
             {
                 double uuu = M_PI + M_PI - (Vmax - Vmin);
                 if (uuu < 0)
@@ -604,7 +606,7 @@ public sealed class IntTools_FClass2d
         {
             return (TopAbs_IN);
         }
-        gp_Pnt2d P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
+        Point2D P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
         return (Perform(P, false));
     }
 
@@ -612,7 +614,7 @@ public sealed class IntTools_FClass2d
     /// The state of the point <paramref name="_Puv"/> in the face. On a periodic surface the point is also tried at
     /// its periods within the face's UV box, if <paramref name="RecadreOnPeriodic"/>.
     /// </summary>
-    public TopAbs_State Perform(in gp_Pnt2d _Puv, bool RecadreOnPeriodic = true)
+    public TopAbs_State Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
     {
         int nbtabclass = TabClass.Length();
         if (nbtabclass == 0)
@@ -657,7 +659,7 @@ public sealed class IntTools_FClass2d
         for (;;)
         {
             dedans = 1;
-            gp_Pnt2d Puv = new(u, v);
+            Point2D Puv = new(u, v);
             bUseClassifier = (TabOrien[1] == -1);
             if (!bUseClassifier)
             {
@@ -781,7 +783,7 @@ public sealed class IntTools_FClass2d
     /// The state of the point <paramref name="_Puv"/> tested with an offset of <paramref name="Tol"/>: ON where some
     /// offset points are IN and some OUT (internal use).
     /// </summary>
-    public TopAbs_State TestOnRestriction(in gp_Pnt2d _Puv, double Tol, bool RecadreOnPeriodic = true)
+    public TopAbs_State TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
     {
         int nbtabclass = TabClass.Length();
         if (nbtabclass == 0)
@@ -820,7 +822,7 @@ public sealed class IntTools_FClass2d
         for (;;)
         {
             dedans = 1;
-            gp_Pnt2d Puv = new(u, v);
+            Point2D Puv = new(u, v);
 
             if (TabOrien[1] != -1)
             {

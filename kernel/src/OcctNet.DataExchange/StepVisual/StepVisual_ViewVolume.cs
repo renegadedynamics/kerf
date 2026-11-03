@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_ViewVolume : Standard_Transient
+public class StepVisual_ViewVolume : Transient
 {
     private StepVisual_CentralOrParallel projectionType;
     private StepGeom_CartesianPoint projectionPoint;

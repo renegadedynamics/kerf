@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using static Occt.Approx_ParametrizationType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -58,12 +59,12 @@ internal static class AppSurfRecordings
         public void Put(string theTok) => Tokens.Add(theTok);
     }
 
-    private static string ExcName(Standard_Failure theF) => "!" + theF.GetType().Name;
+    private static string ExcName(global::Kerf.Engine.Foundation.FailureException theF) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theF.GetType());
 
     private static string Hex(double theValue) =>
         ((ulong)BitConverter.DoubleToInt64Bits(theValue)).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(gp_Pnt theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
 
     private static string Int(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
@@ -86,7 +87,7 @@ internal static class AppSurfRecordings
             myN++;
         }
 
-        public void Add(gp_Pnt theP)
+        public void Add(Point3D theP)
         {
             Add(theP.X());
             Add(theP.Y());
@@ -117,12 +118,12 @@ internal static class AppSurfRecordings
             bool aRat = theR.NextInt() != 0;
             bool aPer = theR.NextInt() != 0;
             int aNbP = theR.NextInt();
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbP);
             NCollection_Array1<double> aW = new(1, aNbP);
             for (int i = 1; i <= aNbP; i++)
             {
                 double x = theR.Next(), y = theR.Next(), z = theR.Next();
-                aPoles[i] = new gp_Pnt(x, y, z);
+                aPoles[i] = new Point3D(x, y, z);
                 if (aRat)
                 {
                     aW[i] = theR.Next();
@@ -143,12 +144,12 @@ internal static class AppSurfRecordings
         {
             bool aRat = theR.NextInt() != 0;
             int aNbP = theR.NextInt();
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbP);
             NCollection_Array1<double> aW = new(1, aNbP);
             for (int i = 1; i <= aNbP; i++)
             {
                 double x = theR.Next(), y = theR.Next(), z = theR.Next();
-                aPoles[i] = new gp_Pnt(x, y, z);
+                aPoles[i] = new Point3D(x, y, z);
                 if (aRat)
                 {
                     aW[i] = theR.Next();
@@ -159,13 +160,13 @@ internal static class AppSurfRecordings
         if (aType == 2)
         {
             double cx = theR.Next(), h = theR.Next(), cz = theR.Next(), r = theR.Next(), a = theR.Next(), b = theR.Next();
-            Geom_Circle aC = new(new gp_Ax2(new gp_Pnt(cx, h, cz), new gp_Dir(0, 1, 0)), r);
+            Geom_Circle aC = new(new Frame3D(new Point3D(cx, h, cz), new Direction3D(0, 1, 0)), r);
             return new Geom_TrimmedCurve(aC, a, b);
         }
         {
             double x = theR.Next(), y = theR.Next(), z = theR.Next();
             double dx = theR.Next(), dy = theR.Next(), dz = theR.Next(), l = theR.Next();
-            Geom_Line aL = new(new gp_Pnt(x, y, z), new gp_Dir(dx, dy, dz));
+            Geom_Line aL = new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
             return new Geom_TrimmedCurve(aL, 0.0, l);
         }
     }
@@ -181,7 +182,7 @@ internal static class AppSurfRecordings
         {
             aP.AddCurve(aC);
         }
-        aP.Perform(Precision.PConfusion());
+        aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         int aDeg = aP.Degree(), aNbP = aP.NbPoles(), aNbK = aP.NbKnots();
         theW.Put("prof:" + Int(aDeg) + "," + Int(aNbP) + "," + Int(aNbK) + "," + (aP.IsPeriodic() ? "1" : "0"));
         NCollection_Array1<double> aK = new(1, aNbK);
@@ -208,7 +209,7 @@ internal static class AppSurfRecordings
         }
         for (int c = 1; c <= theCurves.Count; c++)
         {
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbP);
             NCollection_Array1<double> aW = new(1, aNbP);
             aP.Poles(c, aPoles);
             aP.Weights(c, aW);
@@ -272,7 +273,7 @@ internal static class AppSurfRecordings
         theA.SurfShape(out int ud, out int vd, out int nup, out int nvp, out int nuk, out int nvk);
         theW.Put("shape:" + Int(ud) + "," + Int(vd) + "," + Int(nup) + "," + Int(nvp) + "," + Int(nuk) + "," + Int(nvk));
         Digest aP = new(), aW = new();
-        NCollection_Array2<gp_Pnt> aPoles = theA.SurfPoles();
+        NCollection_Array2<Point3D> aPoles = theA.SurfPoles();
         NCollection_Array2<double> aWts = theA.SurfWeights();
         for (int i = aPoles.LowerRow(); i <= aPoles.UpperRow(); i++)
         {
@@ -304,7 +305,7 @@ internal static class AppSurfRecordings
                                          theA.SurfUMults(), theA.SurfVMults(), theA.UDegree(), theA.VDegree());
             PutBSplineSurface(theW, aS);
         }
-        catch (Standard_Failure anExc)
+        catch (global::Kerf.Engine.Foundation.FailureException anExc)
         {
             theW.Put("srf:" + ExcName(anExc));
         }
@@ -346,10 +347,10 @@ internal static class AppSurfRecordings
                 {
                     aGen.AddCurve(aC);
                 }
-                aGen.Perform(Precision.PConfusion());
+                aGen.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
                 PutBSplineSurface(aW, (Geom_BSplineSurface)aGen.Surface()!);
             }
-            catch (Standard_Failure anExc)
+            catch (global::Kerf.Engine.Foundation.FailureException anExc)
             {
                 aW.Put("exc:" + ExcName(anExc));
             }
@@ -387,7 +388,7 @@ internal static class AppSurfRecordings
             {
                 aSec.AddCurve(aC);
             }
-            aSec.Perform(Precision.PConfusion());
+            aSec.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
             NCollection_HArray1<double> aPar = new(1, aNb);
             for (int i = 1; i <= aNb; i++)
             {
@@ -398,12 +399,12 @@ internal static class AppSurfRecordings
             GeomFill_AppSurf anApp = new();
             if (aDraw)
             {
-                anApp.Init(3, 8, Precision.Confusion(), Precision.PConfusion(), 0);
+                anApp.Init(3, 8, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(), 0);
             }
             else
             {
                 anApp.Init(aDMin, aDMax, aTol3d, aTol2d, aNbIt, aKnown);
-                GeomAbs_Shape[] aConts = [GeomAbs_C0, GeomAbs_C1, GeomAbs_C2, GeomAbs_C3];
+                Continuity[] aConts = [C0, C1, C2, C3];
                 Approx_ParametrizationType[] aPars = [Approx_ChordLength, Approx_Centripetal, Approx_IsoParametric];
                 anApp.SetContinuity(aConts[aCont]);
                 anApp.SetParType(aPars[aParT]);
@@ -427,7 +428,7 @@ internal static class AppSurfRecordings
             }
             PutApprox(aW, anApp);
         }
-        catch (Standard_Failure anExc)
+        catch (global::Kerf.Engine.Foundation.FailureException anExc)
         {
             aW.Put("exc:" + ExcName(anExc));
         }

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -20,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepTopAdaptor_FClass2d
 {
-    private readonly NCollection_Sequence<CSLib_Class2d> TabClass = new();
+    private readonly NCollection_Sequence<Class2d> TabClass = new();
     private readonly NCollection_Sequence<int> TabOrien = new();
     private double Toluv;
     private TopoDS_Face Face;
@@ -70,12 +72,12 @@ public sealed class BRepTopAdaptor_FClass2d
     private static bool isDegenerated(BRepAdaptor_Curve theCurve, double theStartParam, double theEndParam)
     {
         double aParametricStep = (theEndParam - theStartParam) * 0.1;
-        gp_Pnt aStartPoint = theCurve.Value(theStartParam);
+        Point3D aStartPoint = theCurve.Value(theStartParam);
         for (double aCurrParam = theStartParam; aCurrParam < theEndParam;
              aCurrParam = safeIncrement(aCurrParam, theEndParam, aParametricStep))
         {
-            gp_Pnt aCurrentPoint = theCurve.Value(aCurrParam);
-            if (aStartPoint.SquareDistance(aCurrentPoint) > Precision.Confusion())
+            Point3D aCurrentPoint = theCurve.Value(aCurrParam);
+            if (aStartPoint.SquareDistance(aCurrentPoint) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -113,7 +115,7 @@ public sealed class BRepTopAdaptor_FClass2d
              aFaceExplorer.Next())
         {
             int nbpnts = 0;
-            var SeqPnt2d = new NCollection_Sequence<gp_Pnt2d>();
+            var SeqPnt2d = new NCollection_Sequence<Point2D>();
             int firstpoint = 1;
             double FlecheU = 0.0;
             double FlecheV = 0.0;
@@ -128,7 +130,7 @@ public sealed class BRepTopAdaptor_FClass2d
 
             aNbE = NbEdges;
 
-            gp_Pnt Ancienpnt3d = new(0, 0, 0);
+            Point3D Ancienpnt3d = new(0, 0, 0);
             bool Ancienpnt3dinitialise = false;
 
             for (WireExplorer.Init(TopoDS.Wire(aFaceExplorer.Current()), Face); WireExplorer.More();
@@ -212,7 +214,7 @@ public sealed class BRepTopAdaptor_FClass2d
                     int Avant = nbpnts;
                     for (int e = firstpoint; e <= nbs; e++)
                     {
-                        gp_Pnt2d P2d = aCurveAdaptor2D.Value(u);
+                        Point2D P2d = aCurveAdaptor2D.Value(u);
                         if (P2d.X() < Umin)
                         {
                             Umin = P2d.X();
@@ -234,7 +236,7 @@ public sealed class BRepTopAdaptor_FClass2d
                         }
 
                         double dist3dptcourant_ancienpnt = 1e+20; // RealLast();
-                        gp_Pnt P3d = new();
+                        Point3D P3d = new();
                         if (!degenerated)
                         {
                             P3d = aCurveAdaptor3D.Value(u);
@@ -245,10 +247,10 @@ public sealed class BRepTopAdaptor_FClass2d
                         }
 
                         bool IsRealCurve3d = true; // patch
-                        if (dist3dptcourant_ancienpnt < Precision.Confusion())
+                        if (dist3dptcourant_ancienpnt < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
-                            gp_Pnt MidP3d = aCurveAdaptor3D.Value(u - du / 2.0);
-                            if (P3d.Distance(MidP3d) < Precision.Confusion())
+                            Point3D MidP3d = aCurveAdaptor3D.Value(u - du / 2.0);
+                            if (P3d.Distance(MidP3d) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 IsRealCurve3d = false;
                             }
@@ -272,9 +274,9 @@ public sealed class BRepTopAdaptor_FClass2d
                         if (ii > (Avant + 4) && SeqPnt2d[ii - 2].SquareDistance(SeqPnt2d[ii]) != 0.0)
                         //  Modified by Sergey KHROMOV - Fri Apr 19 09:46:13 2002 End
                         {
-                            var Lin = new gp_Lin2d(SeqPnt2d[ii - 2], new gp_Dir2d(new gp_Vec2d(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
-                            double ul = ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
-                            gp_Pnt2d Pp = ElCLib.Value(ul, Lin);
+                            var Lin = new Line2D(SeqPnt2d[ii - 2], new Direction2D(new Vector2D(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
+                            double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
+                            Point2D Pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, Lin);
                             double dU = Math.Abs(Pp.X() - SeqPnt2d[ii - 1].X());
                             double dV = Math.Abs(Pp.Y() - SeqPnt2d[ii - 1].Y());
                             if (dU > FlecheU)
@@ -301,17 +303,17 @@ public sealed class BRepTopAdaptor_FClass2d
             if (NbEdges != 0)
             {
                 //-- on compte ++ with a normal explorer and with the Wire Explorer
-                var PClass = new NCollection_Array1<gp_Pnt2d>(1, 2);
+                var PClass = new NCollection_Array1<Point2D>(1, 2);
                 //// modified by jgv, 28.04.2009 ////
-                PClass.Init(new gp_Pnt2d(0.0, 0.0));
+                PClass.Init(new Point2D(0.0, 0.0));
                 /////////////////////////////////////
-                TabClass.Append(new CSLib_Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                TabClass.Append(new Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                 anIsBadWire = true;
                 TabOrien.Append(-1);
             }
             else if (WireIsNotEmpty)
             {
-                var PClass = new NCollection_Array1<gp_Pnt2d>(1, nbpnts);
+                var PClass = new NCollection_Array1<Point2D>(1, nbpnts);
                 double square = 0.0;
 
                 //-------------------------------------------------------------------
@@ -390,16 +392,16 @@ public sealed class BRepTopAdaptor_FClass2d
 
                                 for (; i != iEnd; i += iStep)
                                 {
-                                    gp_Pnt2d aP2d = C.Value(aDiscr.Parameter(i));
+                                    Point2D aP2d = C.Value(aDiscr.Parameter(i));
                                     SeqPnt2d.Append(aP2d);
                                 }
 
                                 if (nbp > 2)
                                 {
                                     int ii = SeqPnt2d.Length();
-                                    var Lin = new gp_Lin2d(SeqPnt2d[ii - 2], new gp_Dir2d(new gp_Vec2d(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
-                                    double ul = ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
-                                    gp_Pnt2d Pp = ElCLib.Value(ul, Lin);
+                                    var Lin = new Line2D(SeqPnt2d[ii - 2], new Direction2D(new Vector2D(SeqPnt2d[ii - 2], SeqPnt2d[ii])));
+                                    double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin, SeqPnt2d[ii - 1]);
+                                    Point2D Pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, Lin);
                                     double dU = Math.Abs(Pp.X() - SeqPnt2d[ii - 1].X());
                                     double dV = Math.Abs(Pp.Y() - SeqPnt2d[ii - 1].Y());
                                     if (dU > FlecheU)
@@ -464,18 +466,18 @@ public sealed class BRepTopAdaptor_FClass2d
                         FlecheV = Toluv;
                     }
 
-                    TabClass.Append(new CSLib_Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                    TabClass.Append(new Class2d(PClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                 } // if(nbpoints>3
                 else
                 {
                     anIsBadWire = true;
                     TabOrien.Append(-1);
-                    var xPClass = new NCollection_Array1<gp_Pnt2d>(1, 2);
+                    var xPClass = new NCollection_Array1<Point2D>(1, 2);
                     // OCCT reads the first two points even when the wire gave fewer (out of range with
                     // No_Standard_OutOfRange); the port throws Standard_OutOfRange (occt-issues.md)
                     xPClass[1] = SeqPnt2d[1];
                     xPClass[2] = SeqPnt2d[2];
-                    TabClass.Append(new CSLib_Class2d(xPClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
+                    TabClass.Append(new Class2d(xPClass, FlecheU, FlecheV, Umin, Vmin, Umax, Vmax));
                 }
             } // else if(WareIsNotEmpty
         } // for(FaceExplorer
@@ -490,9 +492,9 @@ public sealed class BRepTopAdaptor_FClass2d
                 TabOrien[1] = -1;
             }
 
-            if (surf.GetType() == GeomAbs_Cone || surf.GetType() == GeomAbs_Cylinder
-                || surf.GetType() == GeomAbs_Torus || surf.GetType() == GeomAbs_Sphere
-                || surf.GetType() == GeomAbs_SurfaceOfRevolution)
+            if (surf.GetType() == SurfaceKind.Cone || surf.GetType() == SurfaceKind.Cylinder
+                || surf.GetType() == SurfaceKind.Torus || surf.GetType() == SurfaceKind.Sphere
+                || surf.GetType() == SurfaceOfRevolution)
             {
                 U1 = 0.0; // modified by NIZHNY-OFV  Thu May 31 14:24:10 2001 ---> //Umin-uuu*0.5;
                 U2 = 2 * M_PI; // modified by NIZHNY-OFV  Thu May 31 14:24:35 2001 ---> //U1+M_PI+M_PI;
@@ -502,7 +504,7 @@ public sealed class BRepTopAdaptor_FClass2d
                 U1 = U2 = 0.0;
             }
 
-            if (surf.GetType() == GeomAbs_Torus)
+            if (surf.GetType() == SurfaceKind.Torus)
             {
                 V1 = 0.0; // modified by NIZHNY-OFV  Thu May 31 14:24:55 2001 ---> //Vmin-uuu*0.5;
                 V2 = 2 * M_PI; // modified by NIZHNY-OFV  Thu May 31 14:24:59 2001 ---> //V1+M_PI+M_PI;
@@ -522,7 +524,7 @@ public sealed class BRepTopAdaptor_FClass2d
             return (TopAbs_IN);
         }
 
-        gp_Pnt2d P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
+        Point2D P = new(Umin - (Umax - Umin), Vmin - (Vmax - Vmin));
         return (Perform(P, false));
     }
 
@@ -530,20 +532,20 @@ public sealed class BRepTopAdaptor_FClass2d
     /// The state of the point <paramref name="_Puv"/> in the face. On a periodic surface the point is also tried at
     /// its periods within the face's UV box, if <paramref name="RecadreOnPeriodic"/>.
     /// </summary>
-    public TopAbs_State Perform(in gp_Pnt2d _Puv, bool RecadreOnPeriodic = true)
+    public TopAbs_State Perform(in Point2D _Puv, bool RecadreOnPeriodic = true)
         => Classify(_Puv, Toluv, RecadreOnPeriodic, false);
 
     /// <summary>
     /// The state of the point <paramref name="_Puv"/> tested with an offset of <paramref name="Tol"/>: ON where the
     /// polygons can't decide (internal use).
     /// </summary>
-    public TopAbs_State TestOnRestriction(in gp_Pnt2d _Puv, double Tol, bool RecadreOnPeriodic = true)
+    public TopAbs_State TestOnRestriction(in Point2D _Puv, double Tol, bool RecadreOnPeriodic = true)
         => Classify(_Puv, Tol, RecadreOnPeriodic, true);
 
     // Perform and TestOnRestriction, which OCCT writes out twice: they differ in the polygon test (SiDans or
     // SiDans_OnMode with Tol), in what an undecided polygon gives (the face classifier with Toluv capped at 4, or ON)
     // and in the face classifier's tolerance for a bad wire (Toluv or Tol).
-    private TopAbs_State Classify(in gp_Pnt2d _Puv, double Tol, bool RecadreOnPeriodic, bool theOnMode)
+    private TopAbs_State Classify(in Point2D _Puv, double Tol, bool RecadreOnPeriodic, bool theOnMode)
     {
         int dedans;
         int nbtabclass = TabClass.Length();
@@ -613,7 +615,7 @@ public sealed class BRepTopAdaptor_FClass2d
         for (;;)
         {
             dedans = 1;
-            gp_Pnt2d Puv = new(u, v);
+            Point2D Puv = new(u, v);
 
             if (TabOrien[1] != -1)
             {

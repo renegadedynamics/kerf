@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ namespace Occt;
 /// concern specific Entities, see also in package IFAdapt : a sub-class of ModelCopier allows to work with
 /// EntityModifier, in addition to Modifier itself which still applies to a whole copied Model.
 /// </summary>
-public class IFSelect_ModelCopier : Standard_Transient
+public class IFSelect_ModelCopier : Transient
 {
 
     /// <summary>
@@ -157,7 +159,7 @@ public class IFSelect_ModelCopier : Standard_Transient
     /// </summary>
     public Interface_CheckIterator SendCopied(IFSelect_WorkLibrary? WL, Interface_Protocol? protocol)
     {
-        Message.SendInfo().Append("** WorkSession : Sending split data already copied").Append('\n').Flush();
+        global::Kerf.Engine.Foundation.Message.SendInfo().Append("** WorkSession : Sending split data already copied").Append('\n').Flush();
         int nb = NbFiles();
         Interface_CheckIterator checks = new Interface_CheckIterator();
         if (nb > 0)
@@ -182,7 +184,7 @@ public class IFSelect_ModelCopier : Standard_Transient
                 {
                     string mess = Sprintf("Split Send (WriteFile) abandon on file n0.%d", i);
                     checks.CCheck(0).AddFail(mess);
-                    Message.SendInfo().Append("  **  Sending File n0.").Append(i).Append(" has failed, abandon  **").Append('\n').Flush();
+                    global::Kerf.Engine.Foundation.Message.SendInfo().Append("  **  Sending File n0.").Append(i).Append(" has failed, abandon  **").Append('\n').Flush();
                     return checks;
                 }
                 AddSentFile(FileName(i));
@@ -203,7 +205,7 @@ public class IFSelect_ModelCopier : Standard_Transient
     {
         Interface_CheckIterator checks = new Interface_CheckIterator();
         checks.SetName("X-STEP WorkSession : Send All");
-        Message.SendInfo().Append("** WorkSession : Sending all data").Append('\n').Flush();
+        global::Kerf.Engine.Foundation.Message.SendInfo().Append("** WorkSession : Sending all data").Append('\n').Flush();
         Interface_InterfaceModel model = G.Model();
         if (model is null || protocol is null || WL is null)
         {
@@ -249,7 +251,7 @@ public class IFSelect_ModelCopier : Standard_Transient
     {
         Interface_CheckIterator checks = new Interface_CheckIterator();
         checks.SetName("X-STEP WorkSession : Send Selected");
-        Message.SendInfo().Append("** WorkSession : Sending selected data").Append('\n').Flush();
+        global::Kerf.Engine.Foundation.Message.SendInfo().Append("** WorkSession : Sending selected data").Append('\n').Flush();
         Interface_InterfaceModel original = G.Model();
         if (original is null || protocol is null || WL is null)
         {
@@ -586,7 +588,7 @@ public class IFSelect_ModelCopier : Standard_Transient
                 //    . and this list is exploitable by the Modifier ...
                 for (list.Start(); list.More(); list.Next())
                 {
-                    if (TC.Search(list.Value(), out Standard_Transient newent))
+                    if (TC.Search(list.Value(), out Transient newent))
                     {
                         applied.AddNum(newmod.Number(newent));
                     }

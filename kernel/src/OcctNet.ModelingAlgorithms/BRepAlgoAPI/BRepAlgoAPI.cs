@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -28,34 +30,34 @@ public static class BRepAlgoAPI
     /// <summary>The union of the arguments and the tools.</summary>
     public static TopoDS_Shape Fuse(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                     in BRepAlgoAPI_Options theOptions, out BRepTools_History theHistory,
-                                    Message_ProgressRange theRange = default) =>
+                                    ProgressRange theRange = default) =>
         Run(new BRepAlgoAPI_Fuse(), theArguments, theTools, theOptions, out theHistory, theRange);
 
-    /// <inheritdoc cref="Fuse(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, Message_ProgressRange)"/>
+    /// <inheritdoc cref="Fuse(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, ProgressRange)"/>
     public static TopoDS_Shape Fuse(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
-                                    in BRepAlgoAPI_Options theOptions, Message_ProgressRange theRange = default) =>
+                                    in BRepAlgoAPI_Options theOptions, ProgressRange theRange = default) =>
         Fuse(theArguments, theTools, theOptions, out _, theRange);
 
     /// <summary>The common part of the arguments and the tools.</summary>
     public static TopoDS_Shape Common(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                       in BRepAlgoAPI_Options theOptions, out BRepTools_History theHistory,
-                                      Message_ProgressRange theRange = default) =>
+                                      ProgressRange theRange = default) =>
         Run(new BRepAlgoAPI_Common(), theArguments, theTools, theOptions, out theHistory, theRange);
 
-    /// <inheritdoc cref="Common(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, Message_ProgressRange)"/>
+    /// <inheritdoc cref="Common(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, ProgressRange)"/>
     public static TopoDS_Shape Common(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
-                                      in BRepAlgoAPI_Options theOptions, Message_ProgressRange theRange = default) =>
+                                      in BRepAlgoAPI_Options theOptions, ProgressRange theRange = default) =>
         Common(theArguments, theTools, theOptions, out _, theRange);
 
     /// <summary>The arguments minus the tools.</summary>
     public static TopoDS_Shape Cut(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                    in BRepAlgoAPI_Options theOptions, out BRepTools_History theHistory,
-                                   Message_ProgressRange theRange = default) =>
+                                   ProgressRange theRange = default) =>
         Run(new BRepAlgoAPI_Cut(), theArguments, theTools, theOptions, out theHistory, theRange);
 
-    /// <inheritdoc cref="Cut(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, Message_ProgressRange)"/>
+    /// <inheritdoc cref="Cut(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, ProgressRange)"/>
     public static TopoDS_Shape Cut(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
-                                   in BRepAlgoAPI_Options theOptions, Message_ProgressRange theRange = default) =>
+                                   in BRepAlgoAPI_Options theOptions, ProgressRange theRange = default) =>
         Cut(theArguments, theTools, theOptions, out _, theRange);
 
     /// <summary>
@@ -64,7 +66,7 @@ public static class BRepAlgoAPI
     /// </summary>
     public static TopoDS_Shape Section(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                        in BRepAlgoAPI_Options theOptions, in BOPAlgo_SectionAttribute theSectionOptions,
-                                       out BRepTools_History theHistory, Message_ProgressRange theRange = default)
+                                       out BRepTools_History theHistory, ProgressRange theRange = default)
     {
         BRepAlgoAPI_Section anAlgo = new();
         anAlgo.Approximation(theSectionOptions.Approximation());
@@ -73,31 +75,31 @@ public static class BRepAlgoAPI
         return Run(anAlgo, theArguments, theTools, theOptions, out theHistory, theRange);
     }
 
-    /// <inheritdoc cref="Section(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, in BOPAlgo_SectionAttribute, out BRepTools_History, Message_ProgressRange)"/>
+    /// <inheritdoc cref="Section(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, in BOPAlgo_SectionAttribute, out BRepTools_History, ProgressRange)"/>
     public static TopoDS_Shape Section(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                        in BRepAlgoAPI_Options theOptions, in BOPAlgo_SectionAttribute theSectionOptions,
-                                       Message_ProgressRange theRange = default) =>
+                                       ProgressRange theRange = default) =>
         Section(theArguments, theTools, theOptions, theSectionOptions, out _, theRange);
 
     /// <summary>The arguments split by the tools (the tools' splits left out).</summary>
     public static TopoDS_Shape Split(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
                                      in BRepAlgoAPI_Options theOptions, out BRepTools_History theHistory,
-                                     Message_ProgressRange theRange = default)
+                                     ProgressRange theRange = default)
     {
         BRepAlgoAPI_Splitter anAlgo = new();
         anAlgo.SetTools(Published(theTools));
         return Run(anAlgo, theArguments, theOptions, out theHistory, theRange);
     }
 
-    /// <inheritdoc cref="Split(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, Message_ProgressRange)"/>
+    /// <inheritdoc cref="Split(IReadOnlyList{TopoDS_Shape}, IReadOnlyList{TopoDS_Shape}, in BRepAlgoAPI_Options, out BRepTools_History, ProgressRange)"/>
     public static TopoDS_Shape Split(IReadOnlyList<TopoDS_Shape> theArguments, IReadOnlyList<TopoDS_Shape> theTools,
-                                     in BRepAlgoAPI_Options theOptions, Message_ProgressRange theRange = default) =>
+                                     in BRepAlgoAPI_Options theOptions, ProgressRange theRange = default) =>
         Split(theArguments, theTools, theOptions, out _, theRange);
 
     // A Boolean operation: the arguments and tools set, then Run.
     private static TopoDS_Shape Run(BRepAlgoAPI_BooleanOperation theAlgo, IReadOnlyList<TopoDS_Shape> theArguments,
                                     IReadOnlyList<TopoDS_Shape> theTools, in BRepAlgoAPI_Options theOptions,
-                                    out BRepTools_History theHistory, Message_ProgressRange theRange)
+                                    out BRepTools_History theHistory, ProgressRange theRange)
     {
         theAlgo.SetTools(Published(theTools));
         return Run(theAlgo, theArguments, theOptions, out theHistory, theRange);
@@ -105,7 +107,7 @@ public static class BRepAlgoAPI
 
     private static TopoDS_Shape Run(BRepAlgoAPI_BuilderAlgo theAlgo, IReadOnlyList<TopoDS_Shape> theArguments,
                                     in BRepAlgoAPI_Options theOptions, out BRepTools_History theHistory,
-                                    Message_ProgressRange theRange)
+                                    ProgressRange theRange)
     {
         theAlgo.SetArguments(Published(theArguments));
         theAlgo.SetFuzzyValue(theOptions.FuzzyValue);
@@ -149,25 +151,24 @@ public static class BRepAlgoAPI
 }
 
 /// <summary>A Boolean operation of <see cref="BRepAlgoAPI"/> failed; <see cref="Report"/> holds its errors and warnings.</summary>
-[OcctName("BRepAlgoAPI_Failure")]
-public sealed class BRepAlgoAPI_Failure : StdFail_NotDone
+public sealed class BRepAlgoAPI_Failure : NotDoneException
 {
-    private readonly Message_Report myReport;
+    private readonly Report myReport;
 
     /// <summary>The failure of an operation with this report; the message lists the errors' keys.</summary>
-    public BRepAlgoAPI_Failure(Message_Report theReport)
+    public BRepAlgoAPI_Failure(Report theReport)
         : base(ErrorText(theReport))
     {
         myReport = theReport;
     }
 
     /// <summary>The report of the failed operation (its own: nothing else holds it).</summary>
-    public Message_Report Report() => myReport;
+    public Report Report() => myReport;
 
-    private static string ErrorText(Message_Report theReport)
+    private static string ErrorText(Report theReport)
     {
         using StringWriter aText = new();
-        theReport.Dump(aText, Message_Gravity.Message_Fail);
+        theReport.Dump(aText, Gravity.Fail);
         string anErrors = aText.ToString().Trim().Replace('\n', ' ');
         return "The Boolean operation failed: " + (anErrors.Length == 0 ? "not done" : anErrors);
     }

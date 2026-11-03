@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -14,19 +17,19 @@ public class GeomConvert_PortTests
 {
     private const double Tol = 1e-9;
 
-    private static gp_Pnt P(double theX, double theY, double theZ = 0.0) => new(theX, theY, theZ);
+    private static Point3D P(double theX, double theY, double theZ = 0.0) => new(theX, theY, theZ);
 
     private static Geom_BSplineCurve Cubic()
     {
         // A smooth cubic with three spans
-        NCollection_Array1<gp_Pnt> aPoles = NCollection_Array1<gp_Pnt>.From([
+        NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From([
             P(0, 0, 0), P(1, 2, 1), P(3, 3, 0), P(5, 1, -1), P(7, 2, 0), P(8, 0, 1)]);
         return new Geom_BSplineCurve(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                                      NCollection_Array1<int>.From([4, 1, 1, 4]), 3);
     }
 
-    private static Geom_BSplineCurve Segment(gp_Pnt theP1, gp_Pnt theP2) =>
-        new(NCollection_Array1<gp_Pnt>.From([theP1, theP2]), NCollection_Array1<double>.From([0.0, 1.0]),
+    private static Geom_BSplineCurve Segment(Point3D theP1, Point3D theP2) =>
+        new(NCollection_Array1<Point3D>.From([theP1, theP2]), NCollection_Array1<double>.From([0.0, 1.0]),
             NCollection_Array1<int>.From([2, 2]), 1);
 
     private static void AssertSamePoints(Geom_Curve theExpected, double theU1, double theU2, Geom_Curve theActual,
@@ -34,8 +37,8 @@ public class GeomConvert_PortTests
     {
         for (int i = 0; i <= 20; i++)
         {
-            gp_Pnt aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
-            gp_Pnt aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
+            Point3D aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
+            Point3D aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
             Assert.True(aP.Distance(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
         }
     }
@@ -43,10 +46,10 @@ public class GeomConvert_PortTests
     [Fact]
     public void CurveToBSplineCurve_WholeCircle_IsPeriodic_AndLongRationalC1Arc_IsJoined()
     {
-        Geom_Circle aCircle = new(new gp_Ax2(P(1, 2, 3), new gp_Dir(0, 1, 1), new gp_Dir(1, 0, 0)), 4.0);
+        Geom_Circle aCircle = new(new Frame3D(P(1, 2, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)), 4.0);
         Geom_BSplineCurve aWhole = GeomConvert.CurveToBSplineCurve(aCircle);
         Assert.True(aWhole.IsPeriodic());
-        Assert.False(aWhole.IsFrozen());
+        Assert.False(aWhole.IsFrozen);
         Assert.True(aWhole.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
         for (int i = 0; i <= 20; i++)
         {
@@ -54,10 +57,10 @@ public class GeomConvert_PortTests
         }
 
         // An arc of 6.2 radians with RationalC1: two halves joined by GeomConvert_CompCurveToBSplineCurve
-        Geom_BSplineCurve aLong = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, 0.0, 6.2), Convert_RationalC1);
+        Geom_BSplineCurve aLong = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, 0.0, 6.2), RationalC1);
         Assert.True(aLong.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
         Assert.True(aLong.EndPoint().Distance(aCircle.Value(6.2)) < Tol);
-        Assert.True(aLong.Continuity() >= GeomAbs_C1);
+        Assert.True(aLong.Continuity() >= C1);
     }
 
     [Fact]
@@ -68,7 +71,7 @@ public class GeomConvert_PortTests
         aPeriodic.Freeze();
         Geom_TrimmedCurve aTrimmed = new(aPeriodic, 0.5, 2.5);
         Geom_BSplineCurve aResult = GeomConvert.CurveToBSplineCurve(aTrimmed);
-        Assert.False(aResult.IsFrozen());
+        Assert.False(aResult.IsFrozen);
         AssertSamePoints(aPeriodic, 0.5, 2.5, aResult, 0.5, 2.5, Tol);
         Assert.Equal(3.0, aPeriodic.LastParameter());
     }
@@ -76,18 +79,18 @@ public class GeomConvert_PortTests
     [Fact]
     public void CurveToBSplineCurve_OffsetCurve_IsApproximated_AndUnboundedCurvesThrow()
     {
-        Geom_OffsetCurve anOffset = new(Cubic(), 0.5, new gp_Dir(0, 0, 1));
+        Geom_OffsetCurve anOffset = new(Cubic(), 0.5, new Direction3D(0, 0, 1));
         Geom_BSplineCurve aResult = GeomConvert.CurveToBSplineCurve(anOffset);
-        Assert.False(aResult.IsFrozen());
+        Assert.False(aResult.IsFrozen);
         for (int i = 0; i <= 10; i++)
         {
             double aU = 0.3 * i;
             Assert.True(aResult.Value(aU).Distance(anOffset.Value(aU)) < 1e-3);
         }
 
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.CurveToBSplineCurve(new Geom_Line(P(0, 0), new gp_Dir(1, 0, 0))));
-        Assert.ThrowsAny<Standard_DomainError>(
-            () => GeomConvert.CurveToBSplineCurve(new Geom_Parabola(new gp_Ax2(P(0, 0), new gp_Dir(0, 0, 1)), 1.0)));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.CurveToBSplineCurve(new Geom_Line(P(0, 0), new Direction3D(1, 0, 0))));
+        Assert.ThrowsAny<DomainErrorException>(
+            () => GeomConvert.CurveToBSplineCurve(new Geom_Parabola(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 1.0)));
     }
 
     [Fact]
@@ -108,13 +111,13 @@ public class GeomConvert_PortTests
         Assert.True(aByParams.EndPoint().Distance(aC.Value(0.5)) < Tol);
 
         // GeomConvert throws Standard_DomainError for both (Geom2dConvert: Standard_OutOfRange for the second)
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.SplitBSplineCurve(aC, 2, 2));
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.SplitBSplineCurve(aC, 0, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineCurve(aC, 2, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineCurve(aC, 0, 2));
     }
 
     private static Geom_BSplineSurface BiCubic()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 5, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 4);
         for (int i = 1; i <= 5; i++)
         {
             for (int j = 1; j <= 4; j++)
@@ -148,9 +151,9 @@ public class GeomConvert_PortTests
         // reversed in V
         Assert.True(aParams.Value(1.0, aV1).Distance(aS.Value(1.0, 1.5)) < Tol);
 
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
-        Assert.ThrowsAny<Standard_DomainError>(() => GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
+        Assert.ThrowsAny<DomainErrorException>(() => GeomConvert.SplitBSplineSurface(aS, 1.0, 1.0, true, 1e-9));
     }
 
     [Fact]
@@ -182,8 +185,8 @@ public class GeomConvert_PortTests
         NCollection_Array1<int> aValues = new(1, aSplit2.NbSplits());
         aSplit2.Splitting(aValues);
         Assert.Equal([1, 2, 3, 4], aValues.AsSpan().ToArray());
-        Assert.ThrowsAny<Standard_RangeError>(() => new GeomConvert_BSplineCurveKnotSplitting(aC, -1));
-        Assert.ThrowsAny<Standard_RangeError>(() => aSplit2.SplitValue(5));
+        Assert.ThrowsAny<RangeErrorException>(() => new GeomConvert_BSplineCurveKnotSplitting(aC, -1));
+        Assert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
     }
 
     [Fact]
@@ -203,20 +206,20 @@ public class GeomConvert_PortTests
             Assert.Equal(3, anArcs[i].Degree());
             AssertSamePoints(aC, i - 1.0, i, anArcs[i], 0.0, 1.0, Tol);
             Assert.NotSame(anArcs[i], aConv.Arc(i));
-            Assert.False(anArcs[i].IsFrozen());
+            Assert.False(anArcs[i].IsFrozen);
         }
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aConv.Arc(4));
+        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
 
         // A part, with bounds snapped onto knots within half the tolerance
         GeomConvert_BSplineCurveToBezierCurve aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
         Assert.Equal(2, aPart.NbArcs());
         AssertSamePoints(aC, 0.5, 1.0, aPart.Arc(1), 0.0, 1.0, Tol);
-        Assert.ThrowsAny<Standard_DomainError>(() => new GeomConvert_BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
+        Assert.ThrowsAny<DomainErrorException>(() => new GeomConvert_BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
 
         // Rational
         Geom_BSplineCurve aRational = GeomConvert.CurveToBSplineCurve(
-            new Geom_TrimmedCurve(new Geom_Circle(new gp_Ax2(P(0, 0), new gp_Dir(0, 0, 1)), 2.0), 0.0, 3.0));
+            new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0), 0.0, 3.0));
         GeomConvert_BSplineCurveToBezierCurve aRConv = new(aRational);
         for (int i = 1; i <= aRConv.NbArcs(); i++)
         {
@@ -230,7 +233,7 @@ public class GeomConvert_PortTests
     public void BSplineCurveToBezierCurve_Periodic()
     {
         // GeomConvert keeps a periodic curve periodic (Geom2dConvert makes it non-periodic first, OCC7372)
-        NCollection_Array1<gp_Pnt> aPoles = NCollection_Array1<gp_Pnt>.From([P(0, 0), P(4, 0, 1), P(4, 4), P(0, 4, -1), P(-1, 2)]);
+        NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From([P(0, 0), P(4, 0, 1), P(4, 4), P(0, 4, -1), P(-1, 2)]);
         Geom_BSplineCurve aPeriodic = new(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),
                                           NCollection_Array1<int>.From([1, 1, 1, 1, 1, 1]), 3, true);
         GeomConvert_BSplineCurveToBezierCurve aConv = new(aPeriodic);
@@ -252,7 +255,7 @@ public class GeomConvert_PortTests
         GeomConvert_CompCurveToBSplineCurve aComp = new(aMiddle);
         Geom_BSplineCurve? aHandedOut = aComp.BSplineCurve();
         Assert.NotNull(aHandedOut);
-        Assert.True(aHandedOut.IsFrozen());
+        Assert.True(aHandedOut.IsFrozen);
         Assert.Same(aHandedOut, aComp.BSplineCurve());
         Assert.NotSame(aMiddle, aHandedOut);
 
@@ -273,7 +276,7 @@ public class GeomConvert_PortTests
         Assert.Equal(2, aKept.BSplineCurve()!.Multiplicity(2));
 
         // A lower degree is raised; WithRatio false keeps the added curve's parametrisation length
-        Geom_TrimmedCurve aLine = new(new Geom_Line(aC.EndPoint(), new gp_Dir(1, 0, 0)), 0.0, 10.0);
+        Geom_TrimmedCurve aLine = new(new Geom_Line(aC.EndPoint(), new Direction3D(1, 0, 0)), 0.0, 10.0);
         GeomConvert_CompCurveToBSplineCurve aWithLine = new(aC);
         Assert.True(aWithLine.Add(aLine, 1e-7, true, false));
         Geom_BSplineCurve aJoined = aWithLine.BSplineCurve()!;
@@ -302,7 +305,7 @@ public class GeomConvert_PortTests
         AssertSamePoints(aC, 0.0, 3.0, aResult[0], 0.0, 3.0, 1e-9);
 
         // A closed G1 contour: four quarter circles, as rational B-splines
-        Geom_Circle aCircle = new(new gp_Ax2(P(0, 0, 1), new gp_Dir(1, 1, 1)), 2.0);
+        Geom_Circle aCircle = new(new Frame3D(P(0, 0, 1), new Direction3D(1, 1, 1)), 2.0);
         NCollection_Array1<Geom_BSplineCurve> aQuarters = new(0, 3);
         for (int i = 0; i < 4; i++)
         {
@@ -324,7 +327,7 @@ public class GeomConvert_PortTests
     [Fact]
     public void ConcatG1_SingleClosedCurve_DoesNotChangeTheCaller()
     {
-        Geom_Circle aCircle = new(new gp_Ax2(P(0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        Geom_Circle aCircle = new(new Frame3D(P(0, 0), new Direction3D(0, 0, 1)), 2.0);
         Geom_BSplineCurve aWhole = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aCircle, 0.0, 2 * M_PI));
         aWhole.Freeze();
         NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 0);
@@ -346,7 +349,7 @@ public class GeomConvert_PortTests
         aCurves[1] = GeomConvert.SplitBSplineCurve(aC, 3, 4);
         bool isClosed = false;
         // GeomLProp::Continuity: "Courbes non jointives"
-        Assert.ThrowsAny<Standard_Failure>(() => GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
+        Assert.ThrowsAny<FailureException>(() => GeomConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
                                                                        out _, ref isClosed, 1e-7));
     }
 
@@ -366,7 +369,7 @@ public class GeomConvert_PortTests
 
         NCollection_Array1<Geom_BSplineCurve> aCurves = NCollection_Array1<Geom_BSplineCurve>.From(aSegments, 0);
         bool isClosed = true;
-        Assert.ThrowsAny<Standard_ConstructionError>(() => GeomConvert.ConcatG1(
+        Assert.ThrowsAny<ConstructionErrorException>(() => GeomConvert.ConcatG1(
             aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
 
         aCurves = NCollection_Array1<Geom_BSplineCurve>.From(aSegments, 0);
@@ -382,7 +385,7 @@ public class GeomConvert_PortTests
     public void ConcatC1_GroupsAndIndices()
     {
         // A polyline with a corner after the second segment: two groups
-        gp_Pnt[] aPts = [P(0, 0), P(1, 0), P(2, 0), P(2, 1)];
+        Point3D[] aPts = [P(0, 0), P(1, 0), P(2, 0), P(2, 1)];
         NCollection_Array1<Geom_BSplineCurve> aCurves = new(0, 2);
         for (int i = 0; i < 3; i++)
         {
@@ -407,7 +410,7 @@ public class GeomConvert_PortTests
     {
         // Two rational quartics joining with G1 continuity, whose two first and two last weights are 2: Pretreatment
         // divides their weights by 2, in copies that replace them in the array; then Hermit makes them C1
-        gp_Pnt[][] aPoles =
+        Point3D[][] aPoles =
         [
             [P(0, 0), P(1, 0), P(2, 1, 1), P(3, 1), P(4, 1)],
             [P(4, 1), P(5, 1), P(6, 2, -1), P(7, 0), P(8, 0)],
@@ -416,7 +419,7 @@ public class GeomConvert_PortTests
         Geom_BSplineCurve[] anOriginals = new Geom_BSplineCurve[2];
         for (int i = 0; i < 2; i++)
         {
-            anOriginals[i] = new Geom_BSplineCurve(NCollection_Array1<gp_Pnt>.From(aPoles[i]),
+            anOriginals[i] = new Geom_BSplineCurve(NCollection_Array1<Point3D>.From(aPoles[i]),
                                                    NCollection_Array1<double>.From([2.0, 2.0, 1.0, 2.0, 2.0]),
                                                    NCollection_Array1<double>.From([0.0, 1.0]),
                                                    NCollection_Array1<int>.From([5, 5]), 4);
@@ -447,9 +450,9 @@ public class GeomConvert_PortTests
         Geom_BSplineCurve aResult = aC0;
         GeomConvert.C0BSplineToC1BSplineCurve(ref aResult, 1e-7);
         Assert.NotSame(aC0, aResult);
-        Assert.False(aResult.IsFrozen());
+        Assert.False(aResult.IsFrozen);
         Assert.Equal(3, aC0.Multiplicity(2));
-        Assert.True(aResult.Continuity() >= GeomAbs_C1);
+        Assert.True(aResult.Continuity() >= C1);
         Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
         Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
 
@@ -463,7 +466,7 @@ public class GeomConvert_PortTests
     [Fact]
     public void C0BSplineToArrayOfC1BSplineCurve_SplitsAtCorners()
     {
-        Geom_BSplineCurve aPolyline = new(NCollection_Array1<gp_Pnt>.From([P(0, 0), P(1, 0), P(1, 1)]),
+        Geom_BSplineCurve aPolyline = new(NCollection_Array1<Point3D>.From([P(0, 0), P(1, 0), P(1, 1)]),
                                           NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<int>.From([2, 1, 2]), 1);
         GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<Geom_BSplineCurve> aTab, 1e-7);
         Assert.Equal(2, aTab.Length());
@@ -479,13 +482,13 @@ public class GeomConvert_PortTests
     [Fact]
     public void ApproxCurve_OfAnOffsetCurve_AndThroughAnAdaptor()
     {
-        Geom_OffsetCurve anOffset = new(Cubic(), -0.3, new gp_Dir(0, 0, 1));
-        GeomConvert_ApproxCurve anApprox = new(anOffset, 1e-5, GeomAbs_C2, 20, 9);
+        Geom_OffsetCurve anOffset = new(Cubic(), -0.3, new Direction3D(0, 0, 1));
+        GeomConvert_ApproxCurve anApprox = new(anOffset, 1e-5, C2, 20, 9);
         Assert.True(anApprox.HasResult());
         Assert.True(anApprox.IsDone());
         Assert.True(anApprox.MaxError() < 1e-5);
         Geom_BSplineCurve aCurve = anApprox.Curve()!;
-        Assert.True(aCurve.IsFrozen());
+        Assert.True(aCurve.IsFrozen);
         Assert.Same(aCurve, anApprox.Curve());
         for (int i = 0; i <= 30; i++)
         {
@@ -493,7 +496,7 @@ public class GeomConvert_PortTests
             Assert.True(aCurve.Value(aU).Distance(anOffset.Value(aU)) < 1e-5);
         }
 
-        GeomConvert_ApproxCurve aPart = new(new GeomAdaptor_Curve(anOffset, 0.5, 2.0), 1e-5, GeomAbs_C1, 20, 9);
+        GeomConvert_ApproxCurve aPart = new(new GeomAdaptor_Curve(anOffset, 0.5, 2.0), 1e-5, C1, 20, 9);
         Assert.True(aPart.HasResult());
         Assert.Equal(0.5, aPart.Curve()!.FirstParameter());
         Assert.Equal(2.0, aPart.Curve()!.LastParameter());
@@ -505,10 +508,10 @@ public class GeomConvert_PortTests
     {
         Geom_BSplineSurface aBasis = BiCubic();
         Geom_OffsetSurface anOffset = new(aBasis, 0.2);
-        GeomConvert_ApproxSurface anApprox = new(anOffset, 1e-4, GeomAbs_C1, GeomAbs_C1, 9, 9, 50, 1);
+        GeomConvert_ApproxSurface anApprox = new(anOffset, 1e-4, C1, C1, 9, 9, 50, 1);
         Assert.True(anApprox.HasResult());
         Geom_BSplineSurface aSurface = anApprox.Surface()!;
-        Assert.True(aSurface.IsFrozen());
+        Assert.True(aSurface.IsFrozen);
         Assert.True(anApprox.MaxError() >= 0.0);
         for (int i = 0; i <= 6; i++)
         {
@@ -523,7 +526,7 @@ public class GeomConvert_PortTests
 
         // Through SurfaceToBSplineSurface: an unfrozen copy for the caller
         Geom_BSplineSurface aConverted = GeomConvert.SurfaceToBSplineSurface(anOffset);
-        Assert.False(aConverted.IsFrozen());
+        Assert.False(aConverted.IsFrozen);
         Assert.True(aConverted.Value(1.0, 1.0).Distance(anOffset.Value(1.0, 1.0)) < 1e-3);
     }
 
@@ -531,23 +534,23 @@ public class GeomConvert_PortTests
     public void SurfaceToBSplineSurface_SweptAndElementary()
     {
         // A trimmed surface of revolution of a circle arc (a torus patch) and an extrusion of a B-spline curve
-        Geom_Circle aMeridian = new(new gp_Ax2(P(5, 0, 0), new gp_Dir(0, 1, 0)), 1.0);
-        Geom_SurfaceOfRevolution aRevol = new(aMeridian, new gp_Ax1(P(0, 0, 0), new gp_Dir(0, 0, 1)));
+        Geom_Circle aMeridian = new(new Frame3D(P(5, 0, 0), new Direction3D(0, 1, 0)), 1.0);
+        Geom_SurfaceOfRevolution aRevol = new(aMeridian, new Axis3D(P(0, 0, 0), new Direction3D(0, 0, 1)));
         Geom_RectangularTrimmedSurface aRevolPatch = new(aRevol, 0.0, 4.0, 0.5, 2.0);
         Geom_BSplineSurface aR = GeomConvert.SurfaceToBSplineSurface(aRevolPatch);
-        Geom_SurfaceOfLinearExtrusion anExtru = new(Cubic(), new gp_Dir(0, 1, 1));
+        Geom_SurfaceOfLinearExtrusion anExtru = new(Cubic(), new Direction3D(0, 1, 1));
         Geom_BSplineSurface anE = GeomConvert.SurfaceToBSplineSurface(new Geom_RectangularTrimmedSurface(anExtru, 0.5, 2.5, -1.0, 2.0));
         for (int i = 0; i <= 8; i++)
         {
             double aT = i / 8.0;
-            gp_Pnt aOnR = aR.Value(4.0 * aT, 0.5 + 1.5 * aT);
+            Point3D aOnR = aR.Value(4.0 * aT, 0.5 + 1.5 * aT);
             Assert.Equal(1.0, Math.Sqrt(Math.Pow(Math.Sqrt(aOnR.X() * aOnR.X() + aOnR.Y() * aOnR.Y()) - 5.0, 2) + aOnR.Z() * aOnR.Z()), 1e-12);
             Assert.True(anE.Value(0.5 + 2 * aT, -1 + 3 * aT).Distance(anExtru.Value(0.5 + 2 * aT, -1 + 3 * aT)) < Tol);
         }
 
-        Assert.ThrowsAny<Standard_DomainError>(
-            () => GeomConvert.SurfaceToBSplineSurface(new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0)));
-        Geom_BSplineSurface aSphere = GeomConvert.SurfaceToBSplineSurface(new Geom_SphericalSurface(new gp_Ax3(gp.XOY()), 3.0));
+        Assert.ThrowsAny<DomainErrorException>(
+            () => GeomConvert.SurfaceToBSplineSurface(new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0)));
+        Geom_BSplineSurface aSphere = GeomConvert.SurfaceToBSplineSurface(new Geom_SphericalSurface(new CoordinateSystem(Constants.XOY()), 3.0));
         Assert.True(aSphere.IsUPeriodic());
         Assert.Equal(3.0, aSphere.Value(1.0, 0.3).Distance(P(0, 0)), 1e-12);
     }

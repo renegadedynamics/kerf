@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_Invisibility : Standard_Transient
+public class StepVisual_Invisibility : Transient
 {
     private NCollection_HArray1<StepVisual_InvisibleItem> invisibleItems;
 

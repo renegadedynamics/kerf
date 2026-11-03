@@ -2,7 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Engine.Geometry;
+
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Parameter domain types for curves and surfaces.</summary>
 public static partial class MathUtils
@@ -17,10 +21,10 @@ public static partial class MathUtils
         /// <summary>Upper bound of the domain.</summary>
         public double Max;
 
-        public Domain1D(double theMin, double theMax)
+        public Domain1D(double min, double max)
         {
-            Min = theMin;
-            Max = theMax;
+            Min = min;
+            Max = max;
         }
 
         public readonly double Length() => Max - Min;
@@ -28,56 +32,56 @@ public static partial class MathUtils
         public readonly double Mid() => (Min + Max) * 0.5;
 
         /// <summary>True if theU is in [Min - theTol, Max + theTol].</summary>
-        public readonly bool Contains(double theU, double theTol = 0.0)
+        public readonly bool Contains(double u, double tol = 0.0)
         {
-            return theU >= Min - theTol && theU <= Max + theTol;
+            return u >= Min - tol && u <= Max + tol;
         }
 
         /// <summary>Clamp value to domain bounds.</summary>
-        public readonly double Clamp(double theU) => theU < Min ? Min : (theU > Max ? Max : theU);
+        public readonly double Clamp(double u) => u < Min ? Min : (u > Max ? Max : u);
 
         /// <summary>True if Length() &gt; theThreshold (effectively unbounded for optimization).</summary>
-        public readonly bool IsLarge(double theThreshold = 1000.0) => Length() > theThreshold;
+        public readonly bool IsLarge(double threshold = 1000.0) => Length() > threshold;
 
         /// <summary>True if the domain covers at least one full period.</summary>
-        public readonly bool IsFullPeriod(double thePeriod, double theTol = 1.0e-10)
+        public readonly bool IsFullPeriod(double period, double tol = 1.0e-10)
         {
-            return Length() >= thePeriod - theTol;
+            return Length() >= period - tol;
         }
 
         /// <summary>Min + theT * Length().</summary>
-        public readonly double Lerp(double theT) => Min + theT * (Max - Min);
+        public readonly double Lerp(double t) => Min + t * (Max - Min);
 
         /// <summary>(theU - Min) / Length(), or 0.5 if Length() == 0.</summary>
-        public readonly double Normalize(double theU)
+        public readonly double Normalize(double u)
         {
-            double aLen = Length();
-            return aLen > 0.0 ? (theU - Min) / aLen : 0.5;
+            double len = Length();
+            return len > 0.0 ? (u - Min) / len : 0.5;
         }
 
         /// <summary>True if both Min and Max are within (-theInfLimit, theInfLimit).</summary>
-        public readonly bool IsFinite(double theInfLimit = 1.0e100)
+        public readonly bool IsFinite(double infLimit = 1.0e100)
         {
-            return Min > -theInfLimit && Max < theInfLimit;
+            return Min > -infLimit && Max < infLimit;
         }
 
         /// <summary>True if the domains are equal within tolerance.</summary>
-        public readonly bool IsEqual(in Domain1D theOther, double theTol = 1.0e-10)
+        public readonly bool IsEqual(in Domain1D other, double tol = 1.0e-10)
         {
-            return Math.Abs(Min - theOther.Min) <= theTol && Math.Abs(Max - theOther.Max) <= theTol;
+            return Math.Abs(Min - other.Min) <= tol && Math.Abs(Max - other.Max) <= tol;
         }
 
-        public readonly bool Equals(Domain1D theOther) => Min.Equals(theOther.Min) && Max.Equals(theOther.Max);
+        public readonly bool Equals(Domain1D other) => Min.Equals(other.Min) && Max.Equals(other.Max);
 
-        public override readonly bool Equals(object? theObj) => theObj is Domain1D anOther && Equals(anOther);
+        public override readonly bool Equals(object? obj) => obj is Domain1D other && Equals(other);
 
         public override readonly int GetHashCode() => HashCode.Combine(Min, Max);
 
-        public static bool operator ==(Domain1D theLeft, Domain1D theRight) => theLeft.Equals(theRight);
+        public static bool operator ==(Domain1D left, Domain1D right) => left.Equals(right);
 
-        public static bool operator !=(Domain1D theLeft, Domain1D theRight) => !theLeft.Equals(theRight);
+        public static bool operator !=(Domain1D left, Domain1D right) => !left.Equals(right);
 
-        public override readonly string ToString() => gp.Format("MathUtils.Domain1D", Min, Max);
+        public override readonly string ToString() => Constants.Format("MathUtils.Domain1D", Min, Max);
     }
 
     /// <summary>2D parameter domain [UMin, UMax] x [VMin, VMax] for surfaces.</summary>
@@ -90,20 +94,20 @@ public static partial class MathUtils
         public double VMin;
         public double VMax;
 
-        public Domain2D(double theUMin, double theUMax, double theVMin, double theVMax)
+        public Domain2D(double uMin, double uMax, double vMin, double vMax)
         {
-            UMin = theUMin;
-            UMax = theUMax;
-            VMin = theVMin;
-            VMax = theVMax;
+            UMin = uMin;
+            UMax = uMax;
+            VMin = vMin;
+            VMax = vMax;
         }
 
-        public Domain2D(in Domain1D theUDomain, in Domain1D theVDomain)
+        public Domain2D(in Domain1D uDomain, in Domain1D vDomain)
         {
-            UMin = theUDomain.Min;
-            UMax = theUDomain.Max;
-            VMin = theVDomain.Min;
-            VMax = theVDomain.Max;
+            UMin = uDomain.Min;
+            UMax = uDomain.Max;
+            VMin = vDomain.Min;
+            VMax = vDomain.Max;
         }
 
         /// <summary>Returns the U subdomain.</summary>
@@ -121,52 +125,52 @@ public static partial class MathUtils
         public readonly double VMid() => (VMin + VMax) * 0.5;
 
         /// <summary>True if (theU, theV) is in the domain, extended by theTol.</summary>
-        public readonly bool Contains(double theU, double theV, double theTol = 0.0)
+        public readonly bool Contains(double u, double v, double tol = 0.0)
         {
-            return theU >= UMin - theTol && theU <= UMax + theTol && theV >= VMin - theTol
-                   && theV <= VMax + theTol;
+            return u >= UMin - tol && u <= UMax + tol && v >= VMin - tol
+                   && v <= VMax + tol;
         }
 
         /// <summary>Clamp UV to domain bounds, in place.</summary>
-        public readonly void Clamp(ref double theU, ref double theV)
+        public readonly void Clamp(ref double u, ref double v)
         {
-            theU = theU < UMin ? UMin : (theU > UMax ? UMax : theU);
-            theV = theV < VMin ? VMin : (theV > VMax ? VMax : theV);
+            u = u < UMin ? UMin : (u > UMax ? UMax : u);
+            v = v < VMin ? VMin : (v > VMax ? VMax : v);
         }
 
         /// <summary>True if both U and V lengths exceed theThreshold.</summary>
-        public readonly bool IsLarge(double theThreshold = 1000.0)
+        public readonly bool IsLarge(double threshold = 1000.0)
         {
-            return ULength() > theThreshold && VLength() > theThreshold;
+            return ULength() > threshold && VLength() > threshold;
         }
 
-        public readonly bool IsUFullPeriod(double thePeriod, double theTol = 1.0e-10)
+        public readonly bool IsUFullPeriod(double period, double tol = 1.0e-10)
         {
-            return ULength() >= thePeriod - theTol;
+            return ULength() >= period - tol;
         }
 
-        public readonly bool IsVFullPeriod(double thePeriod, double theTol = 1.0e-10)
+        public readonly bool IsVFullPeriod(double period, double tol = 1.0e-10)
         {
-            return VLength() >= thePeriod - theTol;
+            return VLength() >= period - tol;
         }
 
         /// <summary>True if all bounds are within (-theInfLimit, theInfLimit).</summary>
-        public readonly bool IsFinite(double theInfLimit = 1.0e100)
+        public readonly bool IsFinite(double infLimit = 1.0e100)
         {
-            return UMin > -theInfLimit && UMax < theInfLimit && VMin > -theInfLimit && VMax < theInfLimit;
+            return UMin > -infLimit && UMax < infLimit && VMin > -infLimit && VMax < infLimit;
         }
 
-        public readonly bool Equals(Domain2D theOther)
-            => UMin.Equals(theOther.UMin) && UMax.Equals(theOther.UMax) && VMin.Equals(theOther.VMin) && VMax.Equals(theOther.VMax);
+        public readonly bool Equals(Domain2D other)
+            => UMin.Equals(other.UMin) && UMax.Equals(other.UMax) && VMin.Equals(other.VMin) && VMax.Equals(other.VMax);
 
-        public override readonly bool Equals(object? theObj) => theObj is Domain2D anOther && Equals(anOther);
+        public override readonly bool Equals(object? obj) => obj is Domain2D other && Equals(other);
 
         public override readonly int GetHashCode() => HashCode.Combine(UMin, UMax, VMin, VMax);
 
-        public static bool operator ==(Domain2D theLeft, Domain2D theRight) => theLeft.Equals(theRight);
+        public static bool operator ==(Domain2D left, Domain2D right) => left.Equals(right);
 
-        public static bool operator !=(Domain2D theLeft, Domain2D theRight) => !theLeft.Equals(theRight);
+        public static bool operator !=(Domain2D left, Domain2D right) => !left.Equals(right);
 
-        public override readonly string ToString() => gp.Format("MathUtils.Domain2D", UMin, UMax, VMin, VMax);
+        public override readonly string ToString() => Constants.Format("MathUtils.Domain2D", UMin, UMax, VMin, VMax);
     }
 }

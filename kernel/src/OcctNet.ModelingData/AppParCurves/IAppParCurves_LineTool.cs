@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -37,47 +39,47 @@ public interface IAppParCurves_LineTool<MultiLine>
     static abstract int NbP3d(MultiLine ML);
 
     /// <summary>Fills <paramref name="tabPt"/> with the 3d points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt);
+    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt);
 
     /// <summary>Fills <paramref name="tabPt2d"/> with the 2d points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt2d> tabPt2d);
+    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<Point2D> tabPt2d);
 
     /// <summary>Fills both arrays with the points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt,
-                               NCollection_Array1<gp_Pnt2d> tabPt2d);
+    static abstract void Value(MultiLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt,
+                               NCollection_Array1<Point2D> tabPt2d);
 
     /// <summary>
     /// Fills <paramref name="tabV"/> with the tangents at the MultiPoint <paramref name="MPointIndex"/>; false if
     /// there are none.
     /// </summary>
-    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV);
+    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV);
 
     /// <summary>
     /// Fills <paramref name="tabV2d"/> with the 2d tangents at the MultiPoint <paramref name="MPointIndex"/>; false if
     /// there are none.
     /// </summary>
-    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d);
+    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d);
 
     /// <summary>Fills both arrays with the tangents at the MultiPoint <paramref name="MPointIndex"/>; false if there are none.</summary>
-    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                  NCollection_Array1<gp_Vec2d> tabV2d);
+    static abstract bool Tangency(MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                  NCollection_Array1<Vector2D> tabV2d);
 
     /// <summary>
     /// Fills <paramref name="tabV"/> with the curvature vectors at the MultiPoint <paramref name="MPointIndex"/>;
     /// false if there are none.
     /// </summary>
-    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV);
+    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV);
 
     /// <summary>
     /// Fills <paramref name="tabV2d"/> with the 2d curvature vectors at the MultiPoint
     /// <paramref name="MPointIndex"/>; false if there are none.
     /// </summary>
-    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d);
+    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d);
 
     /// <summary>
     /// Fills both arrays with the curvature vectors at the MultiPoint <paramref name="MPointIndex"/>; false if
     /// there are none.
     /// </summary>
-    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                   NCollection_Array1<gp_Vec2d> tabV2d);
+    static abstract bool Curvature(MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                   NCollection_Array1<Vector2D> tabV2d);
 }

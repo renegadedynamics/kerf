@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -19,7 +25,7 @@ namespace Occt;
 /// <para>A working object (decision 21). It only reads its inputs: the faces it builds are empty copies of the
 /// caller's, sharing their surfaces. <see cref="GetResult"/> hands out the result frozen.</para>
 /// </remarks>
-public class BRepBuilderAPI_FastSewing : Standard_Transient
+public class BRepBuilderAPI_FastSewing : Transient
 {
     /// <summary>Result statuses (bits of <see cref="GetStatuses"/>).</summary>
     public enum FS_Statuses : uint
@@ -93,7 +99,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
     {
         if ((theIndex < 0) || (theIndex > 3))
         {
-            throw new Standard_OutOfRange("BRepBuilderAPI_FastSewing.cxx, Get2DCurve(): OUT of Range");
+            throw new OutOfRangeException("BRepBuilderAPI_FastSewing.cxx, Get2DCurve(): OUT of Range");
         }
 
         Geom2d_Curve? a2dCurv = null;
@@ -104,25 +110,25 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
             {
                 case 0:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(0.0, theVfirst), new gp_Dir2d(gp_Dir2d.D.X)),
+                        new Geom2d_Line(new Point2D(0.0, theVfirst), new Direction2D(Direction2D.D.X)),
                         theUfirst,
                         theUlast);
                     break;
                 case 1:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUlast, 0.0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                        new Geom2d_Line(new Point2D(theUlast, 0.0), new Direction2D(Direction2D.D.Y)),
                         theVfirst,
                         theVlast);
                     break;
                 case 2:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(0.0, theVlast), new gp_Dir2d(gp_Dir2d.D.X)),
+                        new Geom2d_Line(new Point2D(0.0, theVlast), new Direction2D(Direction2D.D.X)),
                         theUfirst,
                         theUlast);
                     break;
                 case 3:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUfirst, 0.0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                        new Geom2d_Line(new Point2D(theUfirst, 0.0), new Direction2D(Direction2D.D.Y)),
                         theVfirst,
                         theVlast);
                     break;
@@ -136,25 +142,25 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
             {
                 case 0:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUfirst + theUlast, theVfirst), new gp_Dir2d(gp_Dir2d.D.NX)),
+                        new Geom2d_Line(new Point2D(theUfirst + theUlast, theVfirst), new Direction2D(Direction2D.D.NX)),
                         theUfirst,
                         theUlast);
                     break;
                 case 1:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUlast, theVfirst + theVlast), new gp_Dir2d(gp_Dir2d.D.NY)),
+                        new Geom2d_Line(new Point2D(theUlast, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
                         theVfirst,
                         theVlast);
                     break;
                 case 2:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUfirst + theUlast, theVlast), new gp_Dir2d(gp_Dir2d.D.NX)),
+                        new Geom2d_Line(new Point2D(theUfirst + theUlast, theVlast), new Direction2D(Direction2D.D.NX)),
                         theUfirst,
                         theUlast);
                     break;
                 case 3:
                     a2dCurv = new Geom2d_TrimmedCurve(
-                        new Geom2d_Line(new gp_Pnt2d(theUfirst, theVfirst + theVlast), new gp_Dir2d(gp_Dir2d.D.NY)),
+                        new Geom2d_Line(new Point2D(theUfirst, theVfirst + theVlast), new Direction2D(Direction2D.D.NY)),
                         theVfirst,
                         theVlast);
                     break;
@@ -230,8 +236,8 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
                 }
 
                 aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
-                if (Precision.IsInfinite(aUf) || Precision.IsInfinite(aUl) || Precision.IsInfinite(aVf)
-                    || Precision.IsInfinite(aVl))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aUf) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aUl) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVf)
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVl))
                 {
                     SetStatus(FS_Statuses.FS_InfiniteSurface);
                     continue;
@@ -266,8 +272,8 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
         }
 
         theSurface.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
-        if (Precision.IsInfinite(aUf) || Precision.IsInfinite(aUl) || Precision.IsInfinite(aVf)
-            || Precision.IsInfinite(aVl))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aUf) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aUl) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVf)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVl))
         {
             SetStatus(FS_Statuses.FS_InfiniteSurface);
             return false;
@@ -303,7 +309,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
             {
                 // create vertices having unique coordinates
                 double aRange = Compute3DRange();
-                var aCells = new NCollection_CellFilter<NodeInspector, int, gp_XYZ>(Max(myTolerance, aRange / IntegerLast()));
+                var aCells = new CellFilter<NodeInspector, int, Xyz>(Max(myTolerance, aRange / IntegerLast()));
 
                 for (int i = myFaceVec.Lower(); i <= myFaceVec.Upper(); i++)
                 {
@@ -344,7 +350,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
 
             myResShape = aQuilt.InternalShells();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             SetStatus(FS_Statuses.FS_Exception);
             return;
@@ -399,14 +405,14 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
     //=================================================================================================
 
     /// <summary>Finds or creates the vertices of the corners of a face.</summary>
-    protected void FindVertexes(int theSurfID, NCollection_CellFilter<NodeInspector, int, gp_XYZ> theCells)
+    protected void FindVertexes(int theSurfID, CellFilter<NodeInspector, int, Xyz> theCells)
     {
         const int aNbPoints = 4;
         FS_Face aFace = myFaceVec.Value(theSurfID);
         Geom_Surface aSurf = BRep_Tool.Surface(aFace.mySrcFace)!;
         aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
-        gp_Pnt[] aPnts = [aSurf.Value(aUf, aVf),
+        Point3D[] aPnts = [aSurf.Value(aUf, aVf),
                           aSurf.Value(aUl, aVf),
                           aSurf.Value(aUl, aVl),
                           aSurf.Value(aUf, aVl)];
@@ -416,7 +422,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
             var aVert = new FS_Vertex();
 
             var anInspector = new NodeInspector(myVertexVec, aPnts[i], myTolerance);
-            var aBox = new Bnd_Box();
+            var aBox = new Box();
             aBox.Add(aPnts[i]);
             aBox.Enlarge(myTolerance);
 
@@ -544,7 +550,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
     /// <summary>The largest extent of the box of the faces' corners.</summary>
     protected double Compute3DRange()
     {
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
 
         for (int i = myFaceVec.Lower(); i <= myFaceVec.Upper(); i++)
         {
@@ -581,7 +587,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
     protected sealed class FS_Vertex
     {
         /// <summary>Geometry point of this Vertex</summary>
-        public gp_Pnt myPnt = new();
+        public Point3D myPnt = new();
         public TopoDS_Vertex myTopoVert = new();
         /// <summary>List of faces and edges which share this vertex</summary>
         public readonly NCollection_List<int> myFaces = new();
@@ -648,7 +654,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
         public void CreateTopologicalWire(NCollection_DynamicArray<FS_Edge> theEdgeVec, double theToler)
         {
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Geom_Surface aSurf = BRep_Tool.Surface(mySrcFace, out TopLoc_Location aLocation)!;
+            Geom_Surface aSurf = BRep_Tool.Surface(mySrcFace, out Placement aLocation)!;
 
             aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
@@ -676,10 +682,10 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
                 {
                     Geom_Curve a3dCurv = BRep_Tool.Curve(anTopE, out double aFirstPar, out double aLastPar)!;
                     Geom2d_Curve a2dCurv = Get2DCurve(anEdge, aUf, aUl, aVf, aVl);
-                    gp_Pnt aPref = a3dCurv.Value(aFirstPar);
-                    gp_Pnt2d aP2df = a2dCurv.Value(aFirstPar), aP2dl = a2dCurv.Value(aLastPar);
-                    gp_Pnt aP3df = aSurf.Value(aP2df.X(), aP2df.Y());
-                    gp_Pnt aP3dl = aSurf.Value(aP2dl.X(), aP2dl.Y());
+                    Point3D aPref = a3dCurv.Value(aFirstPar);
+                    Point2D aP2df = a2dCurv.Value(aFirstPar), aP2dl = a2dCurv.Value(aLastPar);
+                    Point3D aP3df = aSurf.Value(aP2df.X(), aP2df.Y());
+                    Point3D aP3dl = aSurf.Value(aP2dl.X(), aP2dl.Y());
 
                     aP3df.Transform(aLocation.Transformation());
                     aP3dl.Transform(aLocation.Transformation());
@@ -774,7 +780,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
             FS_Face aFace = theFaceVec.Value(myFaces.Value(NCollection_Sequence<int>.Lower()));
 
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Geom_Surface aSurf = BRep_Tool.Surface(aFace.mySrcFace, out TopLoc_Location aLocation)!;
+            Geom_Surface aSurf = BRep_Tool.Surface(aFace.mySrcFace, out Placement aLocation)!;
 
             aSurf.Bounds(out double aUf, out double aUl, out double aVf, out double aVl);
 
@@ -821,7 +827,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
                     a3dCurv = aSurf.UIso(aUf);
                     break;
                 default:
-                    throw new Standard_OutOfRange("FS_Edge::CreateTopologicalEdge()");
+                    throw new OutOfRangeException("FS_Edge::CreateTopologicalEdge()");
             }
 
             aBuilder.MakeEdge(ref myTopoEdge, a3dCurv, theTol);
@@ -832,23 +838,23 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
     }
 
     /// <summary>Finds the node nearest to the given point, not farther than the tolerance.</summary>
-    protected sealed class NodeInspector : INCollection_CellFilter_Inspector<int, gp_XYZ>
+    protected sealed class NodeInspector : ICellFilterInspector<int, Xyz>
     {
         private readonly NCollection_DynamicArray<FS_Vertex> myVecOfVertexes;
-        private readonly gp_Pnt myPoint;
+        private readonly Point3D myPoint;
         private double mySQToler;
         private int myResID;
 
         public static int Dimension => 3;
 
-        public static double Coord(int i, gp_XYZ thePnt) => thePnt.Coord(i + 1);
+        public static double Coord(int i, Xyz thePnt) => thePnt.Coord(i + 1);
 
-        public static gp_XYZ Shift(in gp_XYZ thePnt, double theTol) =>
+        public static Xyz Shift(in Xyz thePnt, double theTol) =>
             new(thePnt.X() + theTol, thePnt.Y() + theTol, thePnt.Z() + theTol);
 
         //=================================================================================================
 
-        public NodeInspector(NCollection_DynamicArray<FS_Vertex> theVec, in gp_Pnt thePnt, double theTol)
+        public NodeInspector(NCollection_DynamicArray<FS_Vertex> theVec, in Point3D thePnt, double theTol)
         {
             myVecOfVertexes = theVec;
             myPoint = thePnt;
@@ -858,9 +864,9 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
 
         //=================================================================================================
 
-        public NCollection_CellFilter_Action Inspect(int theID)
+        public CellFilterAction Inspect(int theID)
         {
-            gp_Pnt aPt = myVecOfVertexes.Value(theID).myPnt;
+            Point3D aPt = myVecOfVertexes.Value(theID).myPnt;
             double aSQDist = aPt.SquareDistance(myPoint);
             if (aSQDist < mySQToler)
             {
@@ -868,7 +874,7 @@ public class BRepBuilderAPI_FastSewing : Standard_Transient
                 myResID = theID;
             }
 
-            return NCollection_CellFilter_Action.CellFilter_Keep;
+            return CellFilterAction.CellFilter_Keep;
         }
 
         public int GetResult() => myResID;

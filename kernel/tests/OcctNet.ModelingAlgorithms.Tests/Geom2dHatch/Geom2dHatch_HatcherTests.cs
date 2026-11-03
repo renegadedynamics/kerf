@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.HatchGen_ErrorStatus;
 using static Occt.TopAbs_Orientation;
@@ -19,8 +20,8 @@ public class Geom2dHatch_HatcherTests
     // A segment as a trimmed line, as IntTools_Context trims the pcurves.
     private static Geom2dAdaptor_Curve Segment(double x1, double y1, double x2, double y2)
     {
-        gp_Pnt2d aP1 = new(x1, y1), aP2 = new(x2, y2);
-        Geom2d_Line aLine = new(aP1, new gp_Dir2d(new gp_Vec2d(aP1, aP2)));
+        Point2D aP1 = new(x1, y1), aP2 = new(x2, y2);
+        Geom2d_Line aLine = new(aP1, new Direction2D(new Vector2D(aP1, aP2)));
         return new Geom2dAdaptor_Curve(new Geom2d_TrimmedCurve(aLine, 0.0, aP1.Distance(aP2)));
     }
 
@@ -37,8 +38,8 @@ public class Geom2dHatch_HatcherTests
 
     // A half-line from (x, y) in the direction (dx, dy), as BOPTools_AlgoTools3D::PointNearEdge builds them.
     private static Geom2dAdaptor_Curve HalfLine(double x, double y, double dx, double dy) =>
-        new(new Geom2d_TrimmedCurve(new Geom2d_Line(new gp_Pnt2d(x, y), new gp_Dir2d(dx, dy)), 0.0,
-                                    Precision.Infinite()));
+        new(new Geom2d_TrimmedCurve(new Geom2d_Line(new Point2D(x, y), new Direction2D(dx, dy)), 0.0,
+                                    global::Kerf.Engine.Foundation.Precision.Infinite()));
 
     private static (double First, double Second)[] Domains(Geom2dHatch_Hatcher theHatcher, int theIndH)
     {
@@ -146,7 +147,7 @@ public class Geom2dHatch_HatcherTests
     public void Circle_Chord()
     {
         Geom2dHatch_Hatcher aHatcher = NewHatcher();
-        aHatcher.AddElement(new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0));
+        aHatcher.AddElement(new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         int aIH = aHatcher.AddHatching(HalfLine(-2, 0.6, 1, 0));
 
         (double First, double Second)[] aDomains = Domains(aHatcher, aIH);
@@ -252,7 +253,7 @@ public class Geom2dHatch_HatcherTests
         aHatcher.KeepSegments(true); // clears the domains, keeps the points
         Assert.True(aHatcher.KeepSegments());
         Assert.False(aHatcher.IsDone(aIH));
-        Assert.Throws<StdFail_NotDone>(() => aHatcher.NbDomains(aIH));
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aHatcher.NbDomains(aIH));
         Assert.True(aHatcher.TrimDone(aIH));
         Assert.Equal(2, aHatcher.NbPoints(aIH));
 
@@ -270,7 +271,7 @@ public class Geom2dHatch_HatcherTests
         Assert.Equal(0, aHatcher.NbPoints(aIH));
 
         aHatcher.Clear();
-        Assert.Throws<Standard_NoSuchObject>(() => aHatcher.NbPoints(aIH));
+        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aHatcher.NbPoints(aIH));
     }
 
     [Fact]
@@ -313,16 +314,16 @@ public class Geom2dHatch_HatcherTests
         anElements.Bind(3, new Geom2dHatch_Element(Segment(1, 1, 0, 1)));
         anElements.Bind(4, new Geom2dHatch_Element(Segment(0, 1, 0, 0)));
 
-        Assert.Equal(TopAbs_IN, new Geom2dHatch_Classifier(anElements, new gp_Pnt2d(0.3, 0.6), 1.0e-7).State());
-        Assert.Equal(TopAbs_OUT, new Geom2dHatch_Classifier(anElements, new gp_Pnt2d(1.3, 0.6), 1.0e-7).State());
-        Geom2dHatch_Classifier anOn = new(anElements, new gp_Pnt2d(1.0, 0.4), 1.0e-7);
+        Assert.Equal(TopAbs_IN, new Geom2dHatch_Classifier(anElements, new Point2D(0.3, 0.6), 1.0e-7).State());
+        Assert.Equal(TopAbs_OUT, new Geom2dHatch_Classifier(anElements, new Point2D(1.3, 0.6), 1.0e-7).State());
+        Geom2dHatch_Classifier anOn = new(anElements, new Point2D(1.0, 0.4), 1.0e-7);
         Assert.Equal(TopAbs_ON, anOn.State());
         Assert.Equal(0.4, anOn.EdgeParameter(), 1e-9);
         Assert.Equal(1.0, anOn.Edge().Value(0.0).X());
         Assert.False(anOn.Rejected());
         Assert.False(anOn.NoWires());
 
-        Assert.Equal(TopAbs_IN, new Geom2dHatch_Classifier(new Geom2dHatch_Elements(), new gp_Pnt2d(), 1.0e-7).State());
+        Assert.Equal(TopAbs_IN, new Geom2dHatch_Classifier(new Geom2dHatch_Elements(), new Point2D(), 1.0e-7).State());
     }
 
     [Fact]
@@ -341,7 +342,7 @@ public class Geom2dHatch_HatcherTests
     {
         Geom2dAdaptor_Curve aCurve = Segment(0, 0, 1, 0);
         Geom2dHatch_Element anElement = new(aCurve, TopAbs_REVERSED);
-        aCurve.Load(new Geom2d_Line(new gp_Pnt2d(5, 5), new gp_Dir2d(0, 1)));
+        aCurve.Load(new Geom2d_Line(new Point2D(5, 5), new Direction2D(0, 1)));
         Assert.Equal(0.0, anElement.Curve().Value(0.0).X());
         Assert.Equal(TopAbs_REVERSED, anElement.Orientation());
         Geom2dHatch_Element aForward = anElement.WithOrientation(TopAbs_FORWARD);

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,18 +18,18 @@ namespace Occt;
 /// function, as in OCCT) and a copy of the point. Outside the surface's parameter range the functions return false and
 /// write 0 to their <c>out</c> value (decision 221).
 /// </remarks>
-public class Extrema_FuncPSDist : math_MultipleVarFunctionWithGradient
+public class Extrema_FuncPSDist : MultipleVarFunctionWithGradient
 {
     private readonly Adaptor3d_Surface mySurf;
-    private readonly gp_Pnt myP;
+    private readonly Point3D myP;
 
-    public Extrema_FuncPSDist(Adaptor3d_Surface theS, in gp_Pnt theP)
+    public Extrema_FuncPSDist(Adaptor3d_Surface theS, in Point3D theP)
     {
         mySurf = theS;
         myP = theP;
     }
 
-    public override int NbVariables() => 2;
+    public override int VariableCount => 2;
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -47,9 +51,9 @@ public class Extrema_FuncPSDist : math_MultipleVarFunctionWithGradient
             return false;
         }
 
-        mySurf.D1(X[1], X[2], out gp_Pnt aP, out gp_Vec Du1s, out gp_Vec Dv1s);
+        mySurf.D1(X[1], X[2], out Point3D aP, out Vector3D Du1s, out Vector3D Dv1s);
 
-        gp_Vec P1P2 = new(aP, myP);
+        Vector3D P1P2 = new(aP, myP);
 
         G[1] = P1P2.Dot(Du1s);
         G[2] = P1P2.Dot(Dv1s);
@@ -65,9 +69,9 @@ public class Extrema_FuncPSDist : math_MultipleVarFunctionWithGradient
             return false;
         }
 
-        mySurf.D1(X[1], X[2], out gp_Pnt aP, out gp_Vec Du1s, out gp_Vec Dv1s);
+        mySurf.D1(X[1], X[2], out Point3D aP, out Vector3D Du1s, out Vector3D Dv1s);
 
-        gp_Vec P1P2 = new(aP, myP);
+        Vector3D P1P2 = new(aP, myP);
 
         G[1] = P1P2.Dot(Du1s);
         G[2] = P1P2.Dot(Dv1s);

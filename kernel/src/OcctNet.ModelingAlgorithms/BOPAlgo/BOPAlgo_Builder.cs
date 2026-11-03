@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BOPAlgo_Operation;
-using static Occt.Message_Gravity;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -132,7 +133,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     //! @name Performing the operation
 
     /// <summary>Intersects the arguments with a new pave filler and builds the result.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         GetReport().Clear();
         //
@@ -145,7 +146,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         //
         pPF.SetArguments(myArguments);
         pPF.SetRunParallel(myRunParallel);
-        using var aPS = new Message_ProgressScope(theRange, "Performing General Fuse operation", 10);
+        using var aPS = new ProgressScope(theRange, "Performing General Fuse operation", 10);
         pPF.SetFuzzyValue(myFuzzyValue);
         pPF.SetNonDestructive(myNonDestructive);
         pPF.SetGlue(myGlue);
@@ -158,7 +159,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     }
 
     /// <summary>Builds the result from the intersections of <paramref name="theFiller"/>.</summary>
-    public virtual void PerformWithFiller(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange = default)
+    public virtual void PerformWithFiller(BOPAlgo_PaveFiller theFiller, ProgressRange theRange = default)
     {
         GetReport().Clear();
         myEntryPoint = 0;
@@ -181,7 +182,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// </remarks>
     public virtual void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, TopAbs_State theObjState,
                                  NCollection_List<TopoDS_Shape> theTools, TopAbs_State theToolsState,
-                                 Message_ProgressRange theRange, Message_Report? theReport = null)
+                                 ProgressRange theRange, Report? theReport = null)
     {
         if (HasErrors())
         {
@@ -189,18 +190,18 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         }
 
         // Report for the method
-        Message_Report aReport = theReport is null ? myReport : theReport;
+        Report aReport = theReport is null ? myReport : theReport;
 
         if (myArguments.IsEmpty() || myShape.IsNull())
         {
-            aReport.AddAlert(Message_Fail, new BOPAlgo_AlertBuilderFailed());
+            aReport.AddAlert(Fail, new BOPAlgo_AlertBuilderFailed());
             return;
         }
         // Check the input data
         if ((theObjState != TopAbs_IN && theObjState != TopAbs_OUT)
             || (theToolsState != TopAbs_IN && theToolsState != TopAbs_OUT))
         {
-            aReport.AddAlert(Message_Fail, new BOPAlgo_AlertBOPNotSet());
+            aReport.AddAlert(Fail, new BOPAlgo_AlertBOPNotSet());
             return;
         }
 
@@ -209,7 +210,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         bool hasTools = !theTools.IsEmpty();
         if (!hasObjects && !hasTools)
         {
-            aReport.AddAlert(Message_Fail, new BOPAlgo_AlertTooFewArguments());
+            aReport.AddAlert(Fail, new BOPAlgo_AlertTooFewArguments());
             return;
         }
 
@@ -224,7 +225,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                 // Check if the shape belongs to the arguments of operation
                 if (myDS!.Index(aS) < 0)
                 {
-                    aReport.AddAlert(Message_Fail, new BOPAlgo_AlertUnknownShape(aS));
+                    aReport.AddAlert(Fail, new BOPAlgo_AlertUnknownShape(aS));
                     return;
                 }
 
@@ -241,7 +242,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                         TopoDS_Shape aSx = it.Value();
                         if (aSx.ShapeType() != TopAbs_SOLID && aSx.ShapeType() != TopAbs_COMPSOLID)
                         {
-                            aReport.AddAlert(Message_Fail, new BOPAlgo_AlertUnsupportedType(aS));
+                            aReport.AddAlert(Fail, new BOPAlgo_AlertUnsupportedType(aS));
                             return;
                         }
                     }
@@ -444,7 +445,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
                 aResFaces.Append(aRF);
             }
         }
-        using var aPS = new Message_ProgressScope(theRange, null, 2);
+        using var aPS = new ProgressScope(theRange, null, 2);
         BRep_Builder aBB = new();
 
         // Try to build closed solids from the faces
@@ -588,7 +589,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     /// overload with states).
     /// </summary>
     public void BuildBOP(NCollection_List<TopoDS_Shape> theObjects, NCollection_List<TopoDS_Shape> theTools,
-                         BOPAlgo_Operation theOperation, Message_ProgressRange theRange, Message_Report? theReport = null)
+                         BOPAlgo_Operation theOperation, ProgressRange theRange, Report? theReport = null)
     {
         TopAbs_State anObjState, aToolsState;
         switch (theOperation)
@@ -758,7 +759,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     //! @name Methods for building the result
 
     /// <summary>Builds the result, catching the failures as <see cref="BOPAlgo_AlertBuilderFailed"/>.</summary>
-    protected virtual void PerformInternal(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected virtual void PerformInternal(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
         GetReport().Clear();
         //
@@ -767,14 +768,14 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             PerformInternal1(theFiller, theRange);
         }
         //
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertBuilderFailed());
         }
     }
 
     /// <summary>Builds the result: the images of the vertices, edges, wires, faces, shells, solids and compounds.</summary>
-    protected virtual void PerformInternal1(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected virtual void PerformInternal1(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
         myPaveFiller = theFiller;
         myDS = myPaveFiller.PDS();
@@ -782,7 +783,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
         myFuzzyValue = myPaveFiller.FuzzyValue();
         myNonDestructive = myPaveFiller.NonDestructive();
         //
-        using var aPS = new Message_ProgressScope(theRange, "Building the result of General Fuse operation", 100);
+        using var aPS = new ProgressScope(theRange, "Building the result of General Fuse operation", 100);
         // 1. CheckData
         CheckData();
         if (HasErrors())
@@ -951,7 +952,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
     //! @name Post treatment
 
     /// <summary>Corrects the tolerances of the result (not of the argument sub-shapes in the non-destructive mode).</summary>
-    protected virtual void PostTreat(Message_ProgressRange theRange)
+    protected virtual void PostTreat(ProgressRange theRange)
     {
         int i, aNbS;
         TopAbs_ShapeEnum aType;
@@ -972,7 +973,7 @@ public partial class BOPAlgo_Builder : BOPAlgo_BuilderShape
             }
         }
         //
-        using var aPS = new Message_ProgressScope(theRange, "Post treatment of result shape", 2);
+        using var aPS = new ProgressScope(theRange, "Post treatment of result shape", 2);
         BOPTools_AlgoTools.CorrectTolerances(myShape, aMA, 0.05, myRunParallel);
         aPS.Next();
         BOPTools_AlgoTools.CorrectShapeTolerances(myShape, aMA, myRunParallel);

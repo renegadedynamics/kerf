@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_BracketedRootTest
 {
     // Quadratic function: f(x) = (x-2)^2 - 1, roots at x = 1 and x = 3
-    private sealed class QuadraticFunction : math_Function
+    private sealed class QuadraticFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -17,7 +19,7 @@ public class math_BracketedRootTest
     }
 
     // Cubic function: f(x) = x^3 - x - 2, root at x approximately 1.521
-    private sealed class CubicFunction : math_Function
+    private sealed class CubicFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -27,7 +29,7 @@ public class math_BracketedRootTest
     }
 
     // Sine function: f(x) = Math.Sin(x), root at x = PI
-    private sealed class SineFunction : math_Function
+    private sealed class SineFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -37,7 +39,7 @@ public class math_BracketedRootTest
     }
 
     // Linear function: f(x) = 2x - 4, root at x = 2
-    private sealed class LinearFunction : math_Function
+    private sealed class LinearFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -53,12 +55,12 @@ public class math_BracketedRootTest
         // Test finding root of quadratic function between x = 0 and x = 1.5
         QuadraticFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 0.0, 1.5, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 0.0, 1.5, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(1.0, aSolver.Root(), 1.0e-8);
         Assert.Equal(0.0, aSolver.Value(), 1.0e-9);
-        Assert.True(aSolver.NbIterations() > 0);
+        Assert.True(aSolver.IterationCount > 0);
     }
 
     [Fact]
@@ -67,9 +69,9 @@ public class math_BracketedRootTest
         // Test finding the second root of quadratic function between x = 2.5 and x = 4
         QuadraticFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 2.5, 4.0, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 2.5, 4.0, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(3.0, aSolver.Root(), 1.0e-8);
         Assert.Equal(0.0, aSolver.Value(), 1.0e-9);
     }
@@ -80,9 +82,9 @@ public class math_BracketedRootTest
         // Test finding root of cubic function x^3 - x - 2 = 0
         CubicFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 1.0, 2.0, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 1.0, 2.0, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         double aRoot = aSolver.Root();
         Assert.True(aRoot > 1.52);
         Assert.True(aRoot < 1.53);
@@ -95,9 +97,9 @@ public class math_BracketedRootTest
         // Test finding root of Math.Sin(x) = 0 near PI
         SineFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 3.0, 3.5, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 3.0, 3.5, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(M_PI, aSolver.Root(), 1.0e-8);
         Assert.Equal(0.0, aSolver.Value(), 1.0e-9);
     }
@@ -108,9 +110,9 @@ public class math_BracketedRootTest
         // Test finding root of linear function 2x - 4 = 0
         LinearFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 1.0, 3.0, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 1.0, 3.0, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(2.0, aSolver.Root(), 1.0e-12);
         Assert.Equal(0.0, aSolver.Value(), 1.0e-12);
     }
@@ -122,13 +124,13 @@ public class math_BracketedRootTest
         QuadraticFunction aFunc = new();
 
         // Loose tolerance
-        math_BracketedRoot aSolver1 = new(aFunc, 0.5, 1.5, 1.0e-3);
-        Assert.True(aSolver1.IsDone());
+        BracketedRoot aSolver1 = new(aFunc, 0.5, 1.5, 1.0e-3);
+        Assert.True(aSolver1.IsDone);
         Assert.Equal(1.0, aSolver1.Root(), 1.0e-2);
 
         // Tight tolerance
-        math_BracketedRoot aSolver2 = new(aFunc, 0.5, 1.5, 1.0e-12);
-        Assert.True(aSolver2.IsDone());
+        BracketedRoot aSolver2 = new(aFunc, 0.5, 1.5, 1.0e-12);
+        Assert.True(aSolver2.IsDone);
         Assert.Equal(1.0, aSolver2.Root(), 1.0e-10);
     }
 
@@ -139,15 +141,15 @@ public class math_BracketedRootTest
         CubicFunction aFunc = new();
 
         // Very few iterations
-        math_BracketedRoot aSolver1 = new(aFunc, 1.0, 2.0, 1.0e-12, 5);
-        if (aSolver1.IsDone())
+        BracketedRoot aSolver1 = new(aFunc, 1.0, 2.0, 1.0e-12, 5);
+        if (aSolver1.IsDone)
         {
-            Assert.True(aSolver1.NbIterations() <= 5);
+            Assert.True(aSolver1.IterationCount <= 5);
         }
 
         // Many iterations
-        math_BracketedRoot aSolver2 = new(aFunc, 1.0, 2.0, 1.0e-15, 200);
-        Assert.True(aSolver2.IsDone());
+        BracketedRoot aSolver2 = new(aFunc, 1.0, 2.0, 1.0e-15, 200);
+        Assert.True(aSolver2.IsDone);
     }
 
     [Fact]
@@ -157,9 +159,9 @@ public class math_BracketedRootTest
         QuadraticFunction aFunc = new(); // f(x) = (x-2)^2 - 1
 
         // Both bounds give positive function values: f(3.5) > 0, f(4) > 0
-        math_BracketedRoot aSolver = new(aFunc, 3.5, 4.0, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 3.5, 4.0, 1.0e-10);
 
-        Assert.False(aSolver.IsDone());
+        Assert.False(aSolver.IsDone);
     }
 
     [Fact]
@@ -168,9 +170,9 @@ public class math_BracketedRootTest
         // Test when the root is exactly at one of the boundaries
         LinearFunction aFunc = new(); // f(x) = 2x - 4, root at x = 2
 
-        math_BracketedRoot aSolver = new(aFunc, 2.0, 3.0, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 2.0, 3.0, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(2.0, aSolver.Root(), 1.0e-12);
     }
 
@@ -180,9 +182,9 @@ public class math_BracketedRootTest
         // Test with very narrow bracketing interval
         LinearFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 1.999, 2.001, 1.0e-10);
+        BracketedRoot aSolver = new(aFunc, 1.999, 2.001, 1.0e-10);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(2.0, aSolver.Root(), 1.0e-8);
     }
 
@@ -192,9 +194,9 @@ public class math_BracketedRootTest
         // Test with bounds in reverse order (Bound2 < Bound1)
         QuadraticFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 1.5, 0.0, 1.0e-10); // Reversed bounds
+        BracketedRoot aSolver = new(aFunc, 1.5, 0.0, 1.0e-10); // Reversed bounds
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(1.0, aSolver.Root(), 1.0e-8);
     }
 
@@ -204,9 +206,9 @@ public class math_BracketedRootTest
         // Test state handling for incomplete calculations
         // Create solver with invalid bounds to force failure
         QuadraticFunction aFunc = new();
-        math_BracketedRoot aSolver = new(aFunc, 3.5, 4.0, 1.0e-10); // No root in interval
+        BracketedRoot aSolver = new(aFunc, 3.5, 4.0, 1.0e-10); // No root in interval
 
-        Assert.False(aSolver.IsDone());
+        Assert.False(aSolver.IsDone);
     }
 
     [Fact]
@@ -214,11 +216,11 @@ public class math_BracketedRootTest
     {
         // Test with extremely tight tolerance
         SineFunction aFunc = new();
-        math_BracketedRoot aSolver = new(aFunc, 3.0, 3.5, 1.0e-15, 200);
+        BracketedRoot aSolver = new(aFunc, 3.0, 3.5, 1.0e-15, 200);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(M_PI, aSolver.Root(), 1.0e-10);
-        Assert.True(aSolver.NbIterations() > 5);
+        Assert.True(aSolver.IterationCount > 5);
     }
 
     [Fact]
@@ -227,9 +229,9 @@ public class math_BracketedRootTest
         // Test with custom ZEPS parameter (machine epsilon)
         QuadraticFunction aFunc = new();
 
-        math_BracketedRoot aSolver = new(aFunc, 0.5, 1.5, 1.0e-10, 100, 1.0e-15);
+        BracketedRoot aSolver = new(aFunc, 0.5, 1.5, 1.0e-10, 100, 1.0e-15);
 
-        Assert.True(aSolver.IsDone());
+        Assert.True(aSolver.IsDone);
         Assert.Equal(1.0, aSolver.Root(), 1.0e-8);
     }
 }

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +21,7 @@ namespace Occt;
 public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, TheMyImpParTool> : IntRes2d_Intersection
     where ThePCurveTool : IIntCurve_CurveTool<ThePCurve>
     where TheProjPCur : IIntImpParGen_ProjectOnPCurveTool<ThePCurve>
-    where TheMyImpParTool : math_FunctionWithDerivative,
+    where TheMyImpParTool : FunctionWithDerivative,
                             IIntImpParGen_MyImpParTool<TheMyImpParTool, IntCurve_IConicTool, ThePCurve>
 {
     /// <summary>Empty constructor.</summary>
@@ -26,14 +30,14 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     }
 
     /// <summary>Intersection between a line and a parametric curve.</summary>
-    public IntCurve_IntConicCurveGen(in gp_Lin2d L, in IntRes2d_Domain D1, in ThePCurve PCurve,
+    public IntCurve_IntConicCurveGen(in Line2D L, in IntRes2d_Domain D1, in ThePCurve PCurve,
                                      in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(L), D1, PCurve, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a circle and a parametric curve.</summary>
-    public IntCurve_IntConicCurveGen(in gp_Circ2d C, in IntRes2d_Domain D1, in ThePCurve PCurve,
+    public IntCurve_IntConicCurveGen(in Circle2D C, in IntRes2d_Domain D1, in ThePCurve PCurve,
                                      in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         if (!D1.IsClosed())
@@ -50,7 +54,7 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     }
 
     /// <summary>Intersection between an ellipse and a parametric curve.</summary>
-    public IntCurve_IntConicCurveGen(in gp_Elips2d E, in IntRes2d_Domain D1, in ThePCurve PCurve,
+    public IntCurve_IntConicCurveGen(in Ellipse2D E, in IntRes2d_Domain D1, in ThePCurve PCurve,
                                      in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         if (!D1.IsClosed())
@@ -67,21 +71,21 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     }
 
     /// <summary>Intersection between a parabola and a parametric curve.</summary>
-    public IntCurve_IntConicCurveGen(in gp_Parab2d Prb, in IntRes2d_Domain D1, in ThePCurve PCurve,
+    public IntCurve_IntConicCurveGen(in Parabola2D Prb, in IntRes2d_Domain D1, in ThePCurve PCurve,
                                      in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(Prb), D1, PCurve, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between the main branch of a hyperbola and a parametric curve.</summary>
-    public IntCurve_IntConicCurveGen(in gp_Hypr2d H, in IntRes2d_Domain D1, in ThePCurve PCurve,
+    public IntCurve_IntConicCurveGen(in Hyperbola2D H, in IntRes2d_Domain D1, in ThePCurve PCurve,
                                      in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(H), D1, PCurve, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a line and a parametric curve.</summary>
-    public void Perform(in gp_Lin2d L, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
+    public void Perform(in Line2D L, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
                         double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(L), D1, PCurve, D2, TolConf, Tol);
@@ -91,7 +95,7 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     /// Intersection between a circle and a parametric curve. A domain of the circle that is not closed is closed
     /// with a period starting at its first parameter.
     /// </summary>
-    public void Perform(in gp_Circ2d C, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
+    public void Perform(in Circle2D C, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
                         double TolConf, double Tol)
     {
         if (!D1.IsClosed())
@@ -111,7 +115,7 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     /// Intersection between an ellipse and a parametric curve. A domain of the ellipse that is not closed is
     /// closed with a period starting at its first parameter.
     /// </summary>
-    public void Perform(in gp_Elips2d E, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
+    public void Perform(in Ellipse2D E, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
                         double TolConf, double Tol)
     {
         if (!D1.IsClosed())
@@ -127,14 +131,14 @@ public class IntCurve_IntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur, Th
     }
 
     /// <summary>Intersection between a parabola and a parametric curve.</summary>
-    public void Perform(in gp_Parab2d Prb, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
+    public void Perform(in Parabola2D Prb, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
                         double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(Prb), D1, PCurve, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between the main branch of a hyperbola and a parametric curve.</summary>
-    public void Perform(in gp_Hypr2d H, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
+    public void Perform(in Hyperbola2D H, in IntRes2d_Domain D1, in ThePCurve PCurve, in IntRes2d_Domain D2,
                         double TolConf, double Tol)
     {
         Perform(new IntCurve_IConicTool(H), D1, PCurve, D2, TolConf, Tol);

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -63,14 +65,14 @@ public sealed class ChFi2d_FilletAlgo
     }
 
     /// <summary>A fillet algorithm on a wire of two edges in a plane.</summary>
-    public ChFi2d_FilletAlgo(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    public ChFi2d_FilletAlgo(in TopoDS_Wire theWire, in Plane3D thePlane)
         : this()
     {
         Init(theWire, thePlane);
     }
 
     /// <summary>A fillet algorithm on two edges in a plane.</summary>
-    public ChFi2d_FilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    public ChFi2d_FilletAlgo(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
         : this()
     {
         myEdge1 = theEdge1;
@@ -79,8 +81,8 @@ public sealed class ChFi2d_FilletAlgo
     }
 
     /// <summary>Initializes the algorithm by a wire of two edges in a plane.</summary>
-    /// <exception cref="Standard_ConstructionError">The wire has fewer than two edges.</exception>
-    public void Init(in TopoDS_Wire theWire, in gp_Pln thePlane)
+    /// <exception cref="ConstructionErrorException">The wire has fewer than two edges.</exception>
+    public void Init(in TopoDS_Wire theWire, in Plane3D thePlane)
     {
         TopoDS_Edge theEdge1 = new(), theEdge2 = new();
         var itr = new TopoDS_Iterator(theWire);
@@ -101,13 +103,13 @@ public sealed class ChFi2d_FilletAlgo
         }
         if (theEdge1.IsNull() || theEdge2.IsNull())
         {
-            throw new Standard_ConstructionError("The fillet algorithms expects a wire consisting of two edges.");
+            throw new ConstructionErrorException("The fillet algorithms expects a wire consisting of two edges.");
         }
         Init(theEdge1, theEdge2, thePlane);
     }
 
     /// <summary>Initializes the algorithm by two edges in a plane.</summary>
-    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in gp_Pln thePlane)
+    public void Init(in TopoDS_Edge theEdge1, in TopoDS_Edge theEdge2, in Plane3D thePlane)
     {
         myPlane = new Geom_Plane(thePlane);
 
@@ -169,42 +171,42 @@ public sealed class ChFi2d_FilletAlgo
     private static bool IsRadiusIntersected(Geom2d_Curve theCurve,
                                             double theCurveMin,
                                             double theCurveMax,
-                                            gp_Pnt2d theStart,
-                                            gp_Pnt2d theEnd,
+                                            Point2D theStart,
+                                            Point2D theEnd,
                                             bool theStartConnected)
     {
         // Check the given start and end if they are identical. If yes
         // return false
-        if (theStart.SquareDistance(theEnd) < Precision.SquareConfusion())
+        if (theStart.SquareDistance(theEnd) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return false;
         }
-        var line = new Geom2d_Line(theStart, new gp_Dir2d(new gp_Vec2d(theStart, theEnd)));
-        var anInter = new Geom2dAPI_InterCurveCurve(theCurve, line, Precision.Confusion());
+        var line = new Geom2d_Line(theStart, new Direction2D(new Vector2D(theStart, theEnd)));
+        var anInter = new Geom2dAPI_InterCurveCurve(theCurve, line, global::Kerf.Engine.Foundation.Precision.Confusion());
         int a;
-        gp_Pnt2d aPoint;
+        Point2D aPoint;
         for (a = anInter.NbPoints(); a > 0; a--)
         {
             aPoint = anInter.Point(a);
             var aProjInt = new Geom2dAPI_ProjectPointOnCurve(aPoint, theCurve, theCurveMin, theCurveMax);
             // OCCT compares the parameter of the nearest projection, not its distance, with the tolerance
-            if (aProjInt.NbPoints() < 1 || aProjInt.LowerDistanceParameter() > Precision.Confusion()) // OCCT: a parameter
+            if (aProjInt.NbPoints() < 1 || aProjInt.LowerDistanceParameter() > global::Kerf.Engine.Foundation.Precision.Confusion()) // OCCT: a parameter
             {
                 continue; // point is not on edge
             }
 
-            if (aPoint.Distance(theStart) < Precision.Confusion())
+            if (aPoint.Distance(theStart) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (!theStartConnected)
                 {
                     return true;
                 }
             }
-            if (aPoint.Distance(theEnd) < Precision.Confusion())
+            if (aPoint.Distance(theEnd) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
-            if (new gp_Vec2d(aPoint, theStart).IsOpposite(new gp_Vec2d(aPoint, theEnd), Precision.Angular()))
+            if (new Vector2D(aPoint, theStart).IsOpposite(new Vector2D(aPoint, theEnd), global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return true;
             }
@@ -216,20 +218,20 @@ public sealed class ChFi2d_FilletAlgo
             aPoint = aCurve.Value(aCurve.FirstParameter());
 
             var aProjInt = new Geom2dAPI_ProjectPointOnCurve(aPoint, theCurve, theCurveMin, theCurveMax);
-            if (aProjInt.NbPoints() != 0 && aProjInt.LowerDistanceParameter() < Precision.Confusion()) // OCCT: a parameter
+            if (aProjInt.NbPoints() != 0 && aProjInt.LowerDistanceParameter() < global::Kerf.Engine.Foundation.Precision.Confusion()) // OCCT: a parameter
             { // point is on edge
-                if (aPoint.Distance(theStart) < Precision.Confusion())
+                if (aPoint.Distance(theStart) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     if (!theStartConnected)
                     {
                         return true;
                     }
                 }
-                if (aPoint.Distance(theEnd) < Precision.Confusion())
+                if (aPoint.Distance(theEnd) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return true;
                 }
-                if (new gp_Vec2d(aPoint, theStart).IsOpposite(new gp_Vec2d(aPoint, theEnd), Precision.Angular()))
+                if (new Vector2D(aPoint, theStart).IsOpposite(new Vector2D(aPoint, theEnd), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return true;
                 }
@@ -237,20 +239,20 @@ public sealed class ChFi2d_FilletAlgo
             aPoint = aCurve.Value(aCurve.LastParameter());
 
             aProjInt.Init(aPoint, theCurve, theCurveMin, theCurveMax);
-            if (aProjInt.NbPoints() != 0 && aProjInt.LowerDistanceParameter() < Precision.Confusion()) // OCCT: a parameter
+            if (aProjInt.NbPoints() != 0 && aProjInt.LowerDistanceParameter() < global::Kerf.Engine.Foundation.Precision.Confusion()) // OCCT: a parameter
             { // point is on edge
-                if (aPoint.Distance(theStart) < Precision.Confusion())
+                if (aPoint.Distance(theStart) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     if (!theStartConnected)
                     {
                         return true;
                     }
                 }
-                if (aPoint.Distance(theEnd) < Precision.Confusion())
+                if (aPoint.Distance(theEnd) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return true;
                 }
-                if (new gp_Vec2d(aPoint, theStart).IsOpposite(new gp_Vec2d(aPoint, theEnd), Precision.Angular()))
+                if (new Vector2D(aPoint, theStart).IsOpposite(new Vector2D(aPoint, theEnd), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return true;
                 }
@@ -265,8 +267,8 @@ public sealed class ChFi2d_FilletAlgo
     {
         // on the intersection point
         bool aValid = false;
-        double aStep = Precision.Confusion();
-        gp_Pnt2d aCenter = new(), aPoint = new(); // center of fillet and point on curve1
+        double aStep = global::Kerf.Engine.Foundation.Precision.Confusion();
+        Point2D aCenter = new(), aPoint = new(); // center of fillet and point on curve1
         double aParam = thePoint.getParam();
         if (theLimit < aParam)
         {
@@ -279,20 +281,20 @@ public sealed class ChFi2d_FilletAlgo
                 break; // limit was exceeded
             }
             aStep *= 2;
-            myCurve1!.D1(aParam, out aPoint, out gp_Vec2d aVec);
-            if (aVec.SquareMagnitude() < Precision.Confusion())
+            myCurve1!.D1(aParam, out aPoint, out Vector2D aVec);
+            if (aVec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
 
-            var aPerp = new gp_Vec2d(((myStartSide) ? -1 : 1) * aVec.Y(), ((myStartSide) ? 1 : -1) * aVec.X());
+            var aPerp = new Vector2D(((myStartSide) ? -1 : 1) * aVec.Y(), ((myStartSide) ? 1 : -1) * aVec.X());
             aPerp.Normalize();
             aPerp.Multiply(myRadius);
             aCenter = aPoint.Translated(aPerp);
 
             var aProjInt = new Geom2dAPI_ProjectPointOnCurve(aPoint, myCurve2!, myStart2, myEnd2);
             if (aProjInt.NbPoints() == 0
-                || aPoint.Distance(aProjInt.NearestPoint()) > Precision.Confusion())
+                || aPoint.Distance(aProjInt.NearestPoint()) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aValid = true;
                 break;
@@ -309,7 +311,7 @@ public sealed class ChFi2d_FilletAlgo
         int a, aNB = aProj.NbPoints();
         for (a = aNB; a > 0; a--)
         {
-            if (aPoint.SquareDistance(aProj.Point(a)) < Precision.Confusion())
+            if (aPoint.SquareDistance(aProj.Point(a)) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -330,7 +332,7 @@ public sealed class ChFi2d_FilletAlgo
             double d = aProj.Distance(a);
             thePoint.appendValue(d * d - myRadius * myRadius,
                                  (aParamProj >= myStart2 && aParamProj <= myEnd2 && aValid2));
-            if (Math.Abs(d - myRadius) < Precision.Confusion())
+            if (Math.Abs(d - myRadius) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 thePoint.setParam2(aParamProj);
             }
@@ -364,16 +366,16 @@ public sealed class ChFi2d_FilletAlgo
         var aGAC = new Geom2dAdaptor_Curve(myCurve1!);
         switch (aGAC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 aNBSteps = 2;
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 aNBSteps = 4;
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 aNBSteps = 5;
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 aNBSteps = 2 + aGAC.Degree() * aGAC.NbPoles();
                 break;
             default: // unknown: maximum
@@ -393,7 +395,7 @@ public sealed class ChFi2d_FilletAlgo
             FilletPoint? aLeft = null, aRight;
 
             for (aParam = myStart1 + aStep;
-                 aParam < myEnd1 || Math.Abs(myEnd1 - aParam) < Precision.Confusion();
+                 aParam < myEnd1 || Math.Abs(myEnd1 - aParam) < global::Kerf.Engine.Foundation.Precision.Confusion();
                  aParam += aStep)
             {
                 if (aLeft is null)
@@ -487,7 +489,7 @@ public sealed class ChFi2d_FilletAlgo
         }
 
         double aDX = theRight.getParam() - theLeft.getParam();
-        if (aDX < 1.0e-6 * Precision.Confusion())
+        if (aDX < 1.0e-6 * global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             a = theRight.hasSolution(myRadius);
             if (a != 0 && theRight.isValid(a))
@@ -507,7 +509,7 @@ public sealed class ChFi2d_FilletAlgo
                         + aA * theLeft.getParam() * theLeft.getParam() / 2.0;
             double aDet = aB * aB - 2.0 * aA * aC;
 
-            if (Math.Abs(aA) < Precision.Confusion())
+            if (Math.Abs(aA) < global::Kerf.Engine.Foundation.Precision.Confusion())
             { // linear case
                 // std::cout<<"###"<<std::endl;
                 if (Math.Abs(aB) > 10e-20)
@@ -575,11 +577,11 @@ public sealed class ChFi2d_FilletAlgo
     /// The number of solutions; <paramref name="thePoint"/> (the intersecting or common point of the edges) chooses
     /// among several fillets.
     /// </summary>
-    public int NbResults(in gp_Pnt thePoint)
+    public int NbResults(in Point3D thePoint)
     {
         double aX, aY;
-        gp_Pnt2d aTargetPoint2d = new();
-        ElSLib.PlaneParameters(myPlane!.Pln().Position(), thePoint, out aX, out aY);
+        Point2D aTargetPoint2d = new();
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(myPlane!.Pln().Position(), thePoint, out aX, out aY);
         aTargetPoint2d.SetCoord(aX, aY);
 
         // iterate through all possible solutions.
@@ -603,12 +605,12 @@ public sealed class ChFi2d_FilletAlgo
     /// The fillet edge and the two edges it trims (all frozen): the solution nearest to <paramref name="thePoint"/> if
     /// <paramref name="iSolution"/> is -1, else that solution. A null edge if there is none.
     /// </summary>
-    public TopoDS_Edge Result(in gp_Pnt thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
+    public TopoDS_Edge Result(in Point3D thePoint, ref TopoDS_Edge theEdge1, ref TopoDS_Edge theEdge2, int iSolution = -1)
     {
         TopoDS_Edge aResult = new();
-        gp_Pnt2d aTargetPoint2d = new();
+        Point2D aTargetPoint2d = new();
         double aX, aY;
-        ElSLib.PlaneParameters(myPlane!.Pln().Position(), thePoint, out aX, out aY);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(myPlane!.Pln().Position(), thePoint, out aX, out aY);
         aTargetPoint2d.SetCoord(aX, aY);
 
         // choose the nearest circle
@@ -652,22 +654,22 @@ public sealed class ChFi2d_FilletAlgo
         }
 
         // create circle edge
-        gp_Pnt aCenter = ElSLib.PlaneValue(aNearest.getCenter().X(),
+        Point3D aCenter = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(aNearest.getCenter().X(),
                                            aNearest.getCenter().Y(),
                                            myPlane.Pln().Position());
-        var aCircle = new Geom_Circle(new gp_Ax2(aCenter, myPlane.Pln().Axis().Direction()), myRadius);
-        myCurve1!.D0(aNearest.getParam(), out gp_Pnt2d aPoint2d1);
-        myCurve2!.D0(aNearest.getParam2(), out gp_Pnt2d aPoint2d2);
-        gp_Pnt aPoint1 = ElSLib.PlaneValue(aPoint2d1.X(), aPoint2d1.Y(), myPlane.Pln().Position());
-        gp_Pnt aPoint2 = ElSLib.PlaneValue(aPoint2d2.X(), aPoint2d2.Y(), myPlane.Pln().Position());
+        var aCircle = new Geom_Circle(new Frame3D(aCenter, myPlane.Pln().Axis().Direction()), myRadius);
+        myCurve1!.D0(aNearest.getParam(), out Point2D aPoint2d1);
+        myCurve2!.D0(aNearest.getParam2(), out Point2D aPoint2d2);
+        Point3D aPoint1 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(aPoint2d1.X(), aPoint2d1.Y(), myPlane.Pln().Position());
+        Point3D aPoint2 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(aPoint2d2.X(), aPoint2d2.Y(), myPlane.Pln().Position());
 
         var aProj = new GeomAPI_ProjectPointOnCurve(thePoint, aCircle);
         double aTargetParam = aProj.LowerDistanceParameter();
-        gp_Pnt aPointOnCircle = aProj.NearestPoint();
+        Point3D aPointOnCircle = aProj.NearestPoint();
 
         // There is a bug in Open CASCADE in calculation of nearest point to a circle near the parameter
         // 0.0 Therefore I check this extrema point manually:
-        gp_Pnt p0 = ElCLib.Value(0.0, aCircle.Circ());
+        Point3D p0 = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, aCircle.Circ());
         if (p0.Distance(thePoint) < aPointOnCircle.Distance(thePoint))
         {
             aTargetParam = 0.0;
@@ -692,9 +694,9 @@ public sealed class ChFi2d_FilletAlgo
         // divide edges
         double aStart, anEnd;
         Geom_Curve aCurve = BRep_Tool.Curve(myEdge1, out aStart, out anEnd)!;
-        aCurve.D1(aNearest.getParam(), out aPoint1, out gp_Vec aDir);
+        aCurve.D1(aNearest.getParam(), out aPoint1, out Vector3D aDir);
 
-        aCircle.D1(aParam1, out aPoint1, out gp_Vec aCircleDir);
+        aCircle.D1(aParam1, out aPoint1, out Vector3D aCircleDir);
 
         if ((aCircleDir.Angle(aDir) > M_PI / 2.0) ? !aIsOut : aIsOut)
         {
@@ -708,9 +710,9 @@ public sealed class ChFi2d_FilletAlgo
         // Check the case when start and end are identical. This happens
         // when the edge decreases to size 0. Old ww5 allows such
         // cases. So we are again bug compatible
-        if (Math.Abs(aStart - anEnd) < Precision.Confusion())
+        if (Math.Abs(aStart - anEnd) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            anEnd = aStart + Precision.Confusion();
+            anEnd = aStart + global::Kerf.Engine.Foundation.Precision.Confusion();
         }
         // Divide edge
         var aDivider1 = new BRepBuilderAPI_MakeEdge(aCurve, aStart, anEnd);
@@ -740,9 +742,9 @@ public sealed class ChFi2d_FilletAlgo
         // Check the case when start and end are identical. This happens
         // when the edge decreases to size 0. Old ww5 allows such
         // cases. So we are again bug compatible
-        if (Math.Abs(aStart - anEnd) < Precision.Confusion())
+        if (Math.Abs(aStart - anEnd) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            anEnd = aStart + Precision.Confusion();
+            anEnd = aStart + global::Kerf.Engine.Foundation.Precision.Confusion();
         }
         var aDivider2 = new BRepBuilderAPI_MakeEdge(aCurve, aStart, anEnd);
         if (myEdgesExchnged)
@@ -772,7 +774,7 @@ internal sealed class FilletPoint
     //! May be several if there are many projections on the second curve.
     private readonly NCollection_Sequence<double> myV = new(), myD = new();
     //! Center of the fillet arc.
-    private gp_Pnt2d myCenter = new();
+    private Point2D myCenter = new();
     //! Flags for storage the validity of solutions. Indexes corresponds to indexes
     //! in sequences myV, myD.
     private readonly NCollection_Sequence<bool> myValid = new();
@@ -813,10 +815,10 @@ internal sealed class FilletPoint
     public double getParam2() { return myParam2; }
 
     //! Center of the fillet.
-    public void setCenter(gp_Pnt2d thePoint) { myCenter = thePoint; }
+    public void setCenter(Point2D thePoint) { myCenter = thePoint; }
 
     //! Center of the fillet.
-    public gp_Pnt2d getCenter() { return myCenter; }
+    public Point2D getCenter() { return myCenter; }
 
     //! For debug only
     public double LowerValue()
@@ -929,7 +931,7 @@ internal sealed class FilletPoint
                 { // the same sign at the same sides of the interval
                     if (myV.Value(a) * myD.Value(a) > 0)
                     {
-                        if (Math.Abs(myD.Value(a)) > Precision.Confusion())
+                        if (Math.Abs(myD.Value(a)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             aNear = 0;
                         }
@@ -939,7 +941,7 @@ internal sealed class FilletPoint
                         if (Math.Abs(myV.Value(a)) > Math.Abs(thePoint.myV.Value(aNear)))
                         {
                             if (thePoint.myV.Value(aNear) * thePoint.myD.Value(aNear) < 0
-                                && Math.Abs(thePoint.myD.Value(aNear)) > Precision.Confusion())
+                                && Math.Abs(thePoint.myD.Value(aNear)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 aNear = 0;
                             }
@@ -952,10 +954,10 @@ internal sealed class FilletPoint
             {
                 if (myV.Value(a) * thePoint.myV.Value(aNear) > 0)
                 {
-                    if ((myV.Value(a) + myD.Value(a) * aDX) * myV.Value(a) > Precision.Confusion()
+                    if ((myV.Value(a) + myD.Value(a) * aDX) * myV.Value(a) > global::Kerf.Engine.Foundation.Precision.Confusion()
                         && (thePoint.myV.Value(aNear) + thePoint.myD.Value(aNear) * aDX)
                                * thePoint.myV.Value(aNear)
-                           > Precision.Confusion())
+                           > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         aNear = 0;
                     }
@@ -1038,7 +1040,7 @@ internal sealed class FilletPoint
         for (a = 1; a <= myV.Length(); a++)
         {
             if (Math.Abs(Math.Sqrt(Math.Abs(Math.Abs(myV.Value(a)) + theRadius * theRadius)) - theRadius)
-                < Precision.Confusion())
+                < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return a;
             }

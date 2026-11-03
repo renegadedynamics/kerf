@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_Trihedron;
 
 namespace OcctNet.DrawLite;
@@ -93,7 +94,7 @@ internal static class GeometryTestPipeCommands
         }
         else if (Option == GeomFill_IsConstantNormal)
         {
-            gp_Dir D = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+            Direction3D D = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
             Geom_Curve path = DrawTrSurf.GetCurve(theDI, a[6])!;
             Geom_Curve firstS = DrawTrSurf.GetCurve(theDI, a[7])!;
             Pipe.Init(path, firstS, D);
@@ -124,7 +125,7 @@ internal static class GeometryTestPipeCommands
             }
         }
 
-        Pipe.Perform(Tol, false, GeomAbs_C2, MaxDegree, NbSeg);
+        Pipe.Perform(Tol, false, C2, MaxDegree, NbSeg);
 
         if (!Pipe.IsDone())
         {
@@ -147,7 +148,7 @@ internal static class GeometryTestPipeCommands
             return 1;
         }
 
-        GeomAbs_Shape Cont = GeomAbs_C2;
+        Continuity Cont = C2;
         GeomFill_Pipe Pipe = new();
         Pipe.GenerateParticularCase(true);
 
@@ -192,7 +193,7 @@ internal static class GeometryTestPipeCommands
                 {
                     // tuyau a section evolutive
                     Geom_Curve lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
-                    Cont = GeomAbs_C2;
+                    Cont = C2;
                     Pipe.Init(path, firstS, lastS);
                 }
                 else
@@ -200,7 +201,7 @@ internal static class GeometryTestPipeCommands
                     if (narg == 6 && !Option_NS && theDI.Atof(a[5]) != 0)
                     {
                         Geom_Curve lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
-                        Cont = GeomAbs_C2;
+                        Cont = C2;
                         Pipe = new GeomFill_Pipe(path, firstS, lastS, theDI.Atof(a[5]));
                         Pipe.Perform(true);
                         Geom_Surface? aSurface = null;
@@ -220,7 +221,7 @@ internal static class GeometryTestPipeCommands
                         Geom_Curve nextS = DrawTrSurf.GetCurve(theDI, a[i])!;
                         Seq.Append(nextS);
                     }
-                    Cont = GeomAbs_C2;
+                    Cont = C2;
                     Pipe.Init(path, Seq);
                 }
             }

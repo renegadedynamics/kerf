@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using static Occt.TopAbs_ShapeEnum;
@@ -37,20 +39,20 @@ internal sealed class HlrDataRecorder
 
     private void Line(string theText) => gOut.Append(theText).Append('\n');
 
-    private void Pnt(gp_Pnt P)
+    private void Pnt(Point3D P)
     {
         Hex(P.X());
         Hex(P.Y());
         Hex(P.Z());
     }
 
-    private void Pnt2d(gp_Pnt2d P)
+    private void Pnt2d(Point2D P)
     {
         Hex(P.X());
         Hex(P.Y());
     }
 
-    private void Vec2d(gp_Vec2d V)
+    private void Vec2d(Vector2D V)
     {
         Hex(V.X());
         Hex(V.Y());
@@ -217,7 +219,7 @@ internal sealed class HlrDataRecorder
             for (int k = 0; k <= 2; k++)
             {
                 double p = C.Parameter3d(f + (l - f) * (k == 0 ? 0.0 : (k == 1 ? 0.37 : 1.0)));
-                C.D1(p, out gp_Pnt2d P, out gp_Vec2d V);
+                C.D1(p, out Point2D P, out Vector2D V);
                 Tag("pt");
                 Hex(p);
                 Hex(C.Parameter2d(p));
@@ -400,7 +402,7 @@ internal sealed class HlrDataRecorder
                     DS.NextEdge();
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Line("exception");
             }
@@ -427,7 +429,7 @@ internal sealed class HlrDataRecorder
             RecFData(DS);
             RecHide(DS, MST, theMaxFaces);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Line("exception");
         }
@@ -435,14 +437,14 @@ internal sealed class HlrDataRecorder
 
     public static HLRAlgo_Projector View(int theView) => theView switch
     {
-        0 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, -1, 1), new gp_Dir(-1, 1, 2))),
-        1 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))),
-        2 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, -1), new gp_Dir(1, 0, 0))),
-        3 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, -1, 0), new gp_Dir(1, 0, 0))),
-        4 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(-1, 0, 0))),
-        5 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(-1, 0, 0), new gp_Dir(0, -1, 0))),
-        6 => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0))),
-        _ => new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, -1, 1), new gp_Dir(-1, 1, 2)), 400.0),
+        0 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2))),
+        1 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
+        2 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))),
+        3 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))),
+        4 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(-1, 0, 0))),
+        5 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(-1, 0, 0), new Direction3D(0, -1, 0))),
+        6 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0))),
+        _ => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)), 400.0),
     };
 
     public static readonly string[] THE_VIEWS = ["axo", "top", "bottom", "front", "back", "left", "right", "persp"];
@@ -459,10 +461,10 @@ internal sealed class HlrDataRecorder
     {
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
         TopoDS_Shape aTorus = new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new gp_Pnt(3, 2, 1), 8.0).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
+        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(3, 2, 1), 8.0).Shape();
         TopoDS_Shape aCone =
-            new BRepPrimAPI_MakeCone(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 1)), 10.0, 4.0, 20.0).Shape();
+            new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)), 10.0, 4.0, 20.0).Shape();
         for (int v = 0; v < 8; v++)
         {
             RecData("cylinder", aCyl, THE_VIEWS[v], View(v), v == 0 ? 3 : 0, 1000);

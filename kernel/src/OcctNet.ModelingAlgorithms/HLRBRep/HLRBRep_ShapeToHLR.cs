@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -107,9 +108,9 @@ public static class HLRBRep_ShapeToHLR
                     TopoDS_Face F1 = TopoDS.Face(itn.Value());
                     itn.Next();
                     TopoDS_Face F2 = TopoDS.Face(itn.Value());
-                    GeomAbs_Shape rg = BRep_Tool.Continuity(Edg, F1, F2);
-                    reg1 = rg >= GeomAbs_G1;
-                    regn = rg >= GeomAbs_G2;
+                    Continuity rg = BRep_Tool.Continuity(Edg, F1, F2);
+                    reg1 = rg >= G1;
+                    regn = rg >= G2;
                 }
             }
 

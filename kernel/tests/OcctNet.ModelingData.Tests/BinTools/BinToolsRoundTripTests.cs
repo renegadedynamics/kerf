@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -81,30 +85,30 @@ public class BinToolsRoundTripTests
         for (; anE.More(); anE.Next(), anA.Next())
         {
             Assert.True(anA.More());
-            gp_Pnt aP1 = BRep_Tool.Pnt(TopoDS.Vertex(anE.Current()));
-            gp_Pnt aP2 = BRep_Tool.Pnt(TopoDS.Vertex(anA.Current()));
+            Point3D aP1 = BRep_Tool.Pnt(TopoDS.Vertex(anE.Current()));
+            Point3D aP2 = BRep_Tool.Pnt(TopoDS.Vertex(anA.Current()));
             Assert.True(aP1.Distance(aP2) < 1e-12, $"{aP1} {aP2}");
         }
     }
 
     private static void AssertFrozen(in TopoDS_Shape theShape)
     {
-        Assert.True(theShape.TShape()!.IsFrozen());
+        Assert.True(theShape.TShape()!.IsFrozen);
         for (var anIt = new TopExp_Explorer(theShape, TopAbs_VERTEX); anIt.More(); anIt.Next())
         {
-            Assert.True(anIt.Current().TShape()!.IsFrozen());
+            Assert.True(anIt.Current().TShape()!.IsFrozen);
         }
 
         for (var anIt = new TopExp_Explorer(theShape, TopAbs_EDGE); anIt.More(); anIt.Next())
         {
-            Assert.True(anIt.Current().TShape()!.IsFrozen());
+            Assert.True(anIt.Current().TShape()!.IsFrozen);
         }
 
         for (var anIt = new TopExp_Explorer(theShape, TopAbs_FACE); anIt.More(); anIt.Next())
         {
-            Assert.True(anIt.Current().TShape()!.IsFrozen());
-            Poly_Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(anIt.Current()), out _);
-            Assert.True(aTri is null || aTri.IsFrozen());
+            Assert.True(anIt.Current().TShape()!.IsFrozen);
+            Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(anIt.Current()), out _);
+            Assert.True(aTri is null || aTri.IsFrozen);
         }
     }
 
@@ -190,9 +194,9 @@ public class BinToolsRoundTripTests
     {
         TopoDS_Shape aBox = BinTestShapes.MeshedBox(true, true);
         TopoDS_Shape aFace = new TopExp_Explorer(aBox, TopAbs_FACE).Current();
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(0, 0, 7));
-        TopoDS_Shape aMoved = aFace.Moved(new TopLoc_Location(aT));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(0, 0, 7));
+        TopoDS_Shape aMoved = aFace.Moved(new Placement(aT));
         byte[] aBytes = WriteShapes(true, true, aBox, aMoved, aBox);
         byte[] aBoxOnly = WriteShapes(true, true, aBox);
         // the second and third shapes are references: a reference, a location, an orientation
@@ -220,13 +224,13 @@ public class BinToolsRoundTripTests
             Assert.True(aB1.AsSpan().SequenceEqual(WriteSet(aS1, aVersion)));
             TopoDS_Edge anEdge = BinTestShapes.FirstEdge(aS1);
             var aFaces = BinTestShapes.FacesOf(aS1, anEdge);
-            Assert.Equal(GeomAbs_Shape.GeomAbs_G1, BRep_Tool.Continuity(anEdge, aFaces[0], aFaces[1]));
-            Poly_Polygon3D? aPolygon = BRep_Tool.Polygon3D(BinTestShapes.NthEdge(aS1, 2), out _);
+            Assert.Equal(Continuity.G1, BRep_Tool.Continuity(anEdge, aFaces[0], aFaces[1]));
+            Polygon3D? aPolygon = BRep_Tool.Polygon3D(BinTestShapes.NthEdge(aS1, 2), out _);
             Assert.NotNull(aPolygon);
-            Assert.Equal(3, aPolygon.NbNodes());
-            Assert.True(aPolygon.HasParameters());
+            Assert.Equal(3, aPolygon.NodeCount);
+            Assert.True(aPolygon.HasParameters);
             Assert.Equal(0.01, aPolygon.Deflection());
-            Assert.True(aPolygon.IsFrozen());
+            Assert.True(aPolygon.IsFrozen);
         }
 
         byte[] aW1 = WriteShapes(true, false, aShape);
@@ -245,26 +249,26 @@ public class BinToolsRoundTripTests
         {
             TopoDS_Shape aRead = ReadSet(WriteSet(aShape, 4, true, aWithNormals));
             TopoDS_Face aFace = TopoDS.Face(new TopExp_Explorer(aRead, TopAbs_FACE).Current());
-            Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out _);
+            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out _);
             Assert.NotNull(aTri);
-            Assert.Equal(4, aTri.NbNodes());
-            Assert.Equal(2, aTri.NbTriangles());
-            Assert.True(aTri.HasUVNodes());
-            Assert.Equal(anExpectNormals, aTri.HasNormals());
-            Assert.Equal(new gp_Pnt2d(1, 0.5).X(), aTri.UVNode(2).X());
+            Assert.Equal(4, aTri.NodeCount);
+            Assert.Equal(2, aTri.TriangleCount);
+            Assert.True(aTri.HasUVNodes);
+            Assert.Equal(anExpectNormals, aTri.HasNormals);
+            Assert.Equal(new Point2D(1, 0.5).X(), aTri.UVNode(2).X());
 
             // version 3 writes no normals
             TopoDS_Shape aV3 = ReadSet(WriteSet(aShape, 3, true, aWithNormals));
-            Assert.False(BRep_Tool.Triangulation(TopoDS.Face(new TopExp_Explorer(aV3, TopAbs_FACE).Current()), out _)!.HasNormals());
+            Assert.False(BRep_Tool.Triangulation(TopoDS.Face(new TopExp_Explorer(aV3, TopAbs_FACE).Current()), out _)!.HasNormals);
         }
 
         // a face with only a triangulation keeps it, with its normals, even when triangles aren't asked for
         TopoDS_Shape aTriOnly = ReadSet(WriteSet(BinTestShapes.TriangulationOnlyFace(), 4, false, false));
-        Poly_Triangulation? aOnly = BRep_Tool.Triangulation(TopoDS.Face(aTriOnly), out _);
+        Triangulation? aOnly = BRep_Tool.Triangulation(TopoDS.Face(aTriOnly), out _);
         Assert.NotNull(aOnly);
-        Assert.True(aOnly.HasNormals());
+        Assert.True(aOnly.HasNormals);
         aTriOnly = ReadShapes(WriteShapes(false, false, BinTestShapes.TriangulationOnlyFace()), 1)[0];
-        Assert.True(BRep_Tool.Triangulation(TopoDS.Face(aTriOnly), out _)!.HasNormals());
+        Assert.True(BRep_Tool.Triangulation(TopoDS.Face(aTriOnly), out _)!.HasNormals);
 
         // polygons on triangulations, closed (the seam) and not
         TopoDS_Shape aCylinder = ReadSet(WriteSet(BinTestShapes.MeshedCylinder(), 4));
@@ -370,7 +374,7 @@ public class BinToolsRoundTripTests
         for (var anIt = new TopoDS_Iterator(theCompound); anIt.More(); anIt.Next())
         {
             if (anIt.Value().ShapeType() == TopAbs_VERTEX
-                && BRep_Tool.Pnt(TopoDS.Vertex(anIt.Value())).Distance(new gp_Pnt(0.25, 0.5, 0.75)) < 1e-12)
+                && BRep_Tool.Pnt(TopoDS.Vertex(anIt.Value())).Distance(new Point3D(0.25, 0.5, 0.75)) < 1e-12)
             {
                 return TopoDS.Vertex(anIt.Value());
             }
@@ -383,7 +387,7 @@ public class BinToolsRoundTripTests
     public void Locations_elementary_and_complex_round_trip()
     {
         TopoDS_Shape aShape = BinTestShapes.CompoundWithLocations();
-        var aExpected = new List<gp_Trsf>();
+        var aExpected = new List<Transform3D>();
         for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
         {
             aExpected.Add(anIt.Value().Location().Transformation());
@@ -394,7 +398,7 @@ public class BinToolsRoundTripTests
             int i = 0;
             for (var anIt = new TopoDS_Iterator(aRead); anIt.More(); anIt.Next(), i++)
             {
-                gp_Trsf aT = anIt.Value().Location().Transformation();
+                Transform3D aT = anIt.Value().Location().Transformation();
                 for (int r = 1; r <= 3; r++)
                 {
                     for (int c = 1; c <= 4; c++)
@@ -409,14 +413,14 @@ public class BinToolsRoundTripTests
 
         // the location set alone, with its complex entries
         var aSet = new BinTools_LocationSet();
-        var aT1 = new gp_Trsf();
-        aT1.SetTranslation(new gp_Vec(1, 2, 3));
-        var aT2 = new gp_Trsf();
-        aT2.SetRotation(new gp_Ax1(new gp_Pnt(), new gp_Dir(1, 0, 0)), 1.0);
-        var aL1 = new TopLoc_Location(aT1);
-        var aL2 = new TopLoc_Location(aT2);
-        TopLoc_Location aComplex = aL2.Powered(3) * aL1.Powered(-2);
-        Assert.Equal(0, aSet.Add(new TopLoc_Location()));
+        var aT1 = new Transform3D();
+        aT1.SetTranslation(new Vector3D(1, 2, 3));
+        var aT2 = new Transform3D();
+        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(1, 0, 0)), 1.0);
+        var aL1 = new Placement(aT1);
+        var aL2 = new Placement(aT2);
+        Placement aComplex = aL2.Powered(3) * aL1.Powered(-2);
+        Assert.Equal(0, aSet.Add(new Placement()));
         int anIndex = aSet.Add(aComplex);
         Assert.Equal(3, anIndex);
         Assert.Equal(3, aSet.NbLocations());
@@ -426,21 +430,21 @@ public class BinToolsRoundTripTests
         var aRead2 = new BinTools_LocationSet();
         aRead2.Read(aStream);
         Assert.Equal(3, aRead2.NbLocations());
-        TopLoc_Location aReadComplex = aRead2.Location(3);
+        Placement aReadComplex = aRead2.Location(3);
         Assert.Equal(2, NbItems(aReadComplex));
         // the first item of a product is its right-hand factor
         Assert.Equal(-2, aReadComplex.FirstPower());
         Assert.Equal(3, aReadComplex.NextLocation().FirstPower());
-        Assert.True(aRead2.Location(0).IsIdentity());
+        Assert.True(aRead2.Location(0).IsIdentity);
         var aAgain = new MemoryStream();
         aRead2.Write(aAgain);
         Assert.Equal(aStream.ToArray(), aAgain.ToArray());
     }
 
-    private static int NbItems(TopLoc_Location theLocation)
+    private static int NbItems(Placement theLocation)
     {
         int aNb = 0;
-        for (; !theLocation.IsIdentity(); theLocation = theLocation.NextLocation())
+        for (; !theLocation.IsIdentity; theLocation = theLocation.NextLocation())
         {
             aNb++;
         }
@@ -474,9 +478,9 @@ public class BinToolsRoundTripTests
         {
             Geom_Curve? aCurve = aRead.Curve(i);
             Assert.NotNull(aCurve);
-            Assert.True(aCurve.IsFrozen());
+            Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
-            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicTypeName()}");
             Assert.Equal(i, aRead.Index(aCurve));
         }
 
@@ -502,7 +506,7 @@ public class BinToolsRoundTripTests
         aSingle.Position = 0;
         BinTools_CurveSet.ReadCurve(aSingle, out Geom_Curve? aSingleRead);
         Assert.NotNull(aSingleRead);
-        Assert.False(aSingleRead.IsFrozen());
+        Assert.False(aSingleRead.IsFrozen);
         Assert.True(aHasher.Equals(aCurves[7], aSingleRead));
     }
 
@@ -528,9 +532,9 @@ public class BinToolsRoundTripTests
         {
             Geom2d_Curve? aCurve = aRead.Curve2d(i);
             Assert.NotNull(aCurve);
-            Assert.True(aCurve.IsFrozen());
+            Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
-            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicTypeName()}");
         }
 
         // kinds without directions (which reading normalises again) write the same bytes
@@ -577,9 +581,9 @@ public class BinToolsRoundTripTests
         {
             Geom_Surface? aSurface = aRead.Surface(i);
             Assert.NotNull(aSurface);
-            Assert.True(aSurface.IsFrozen());
+            Assert.True(aSurface.IsFrozen);
             Assert.Equal(aSurfaces[i - 1].DynamicType(), aSurface.DynamicType());
-            Assert.True(aHasher.Equals(aSurfaces[i - 1], aSurface), $"surface {i}, {aSurface.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aSurfaces[i - 1], aSurface), $"surface {i}, {aSurface.DynamicTypeName()}");
             aKinds.Add(aSurface.GetType());
         }
 
@@ -667,7 +671,7 @@ public class BinToolsRoundTripTests
 
             // the sets read a stream that can't seek: the character after a count is pushed back
             var aSet = new BinTools_CurveSet();
-            aSet.Add(new Geom_Line(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)));
+            aSet.Add(new Geom_Line(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)));
             var aStream = new MemoryStream();
             aSet.Write(aStream);
             var aRead2 = new BinTools_CurveSet();
@@ -683,7 +687,7 @@ public class BinToolsRoundTripTests
             Assert.Equal(WriteShapes(false, false, aShape), aWriterOnly.Written());
 
             // the position-based reader needs to seek
-            Assert.Throws<Standard_ProgramError>(() =>
+            Assert.Throws<ProgramErrorException>(() =>
             {
                 TopoDS_Shape aShapeRead = new();
                 new BinTools_ShapeReader().Read(new UnseekableStream(aWriterOnly.Written()), ref aShapeRead);

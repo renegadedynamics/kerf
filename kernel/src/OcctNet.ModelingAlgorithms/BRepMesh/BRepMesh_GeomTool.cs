@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.CSLib_DerivativeStatus;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.DerivativeStatus;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -32,7 +34,7 @@ public sealed class BRepMesh_GeomTool
 
     private readonly TopoDS_Edge? myEdge;
     private readonly GCPnts_TangentialDeflection myDiscretTool = new();
-    private readonly GeomAbs_IsoType myIsoType;
+    private readonly IsoType myIsoType;
 
     /// <summary>
     /// Discretizes the curve between the parameters with the linear and angular deflections, in at least
@@ -47,14 +49,14 @@ public sealed class BRepMesh_GeomTool
                              double theMinSize = 1.0e-7 /* Precision::Confusion() */)
     {
         myEdge = theCurve.Edge();
-        myIsoType = GeomAbs_NoneIso;
+        myIsoType = NoneIso;
         myDiscretTool.Initialize(theCurve,
                                  theFirstParam,
                                  theLastParam,
                                  theAngDeflection,
                                  theLinDeflection,
                                  theMinPointsNb,
-                                 Precision.PConfusion(),
+                                 global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                  theMinSize);
     }
 
@@ -63,7 +65,7 @@ public sealed class BRepMesh_GeomTool
     /// with the linear and angular deflections.
     /// </summary>
     public BRepMesh_GeomTool(BRepAdaptor_Surface theSurface,
-                             GeomAbs_IsoType theIsoType,
+                             IsoType theIsoType,
                              double theParamIso,
                              double theFirstParam,
                              double theLastParam,
@@ -82,7 +84,7 @@ public sealed class BRepMesh_GeomTool
                                  theAngDeflection,
                                  theLinDeflection,
                                  theMinPointsNb,
-                                 Precision.PConfusion(),
+                                 global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                  theMinSize);
     }
 
@@ -90,7 +92,7 @@ public sealed class BRepMesh_GeomTool
     /// Adds a point to the computed points, or replaces one within the parametric tolerance if
     /// <paramref name="theIsReplace"/>; returns its index.
     /// </summary>
-    public int AddPoint(in gp_Pnt thePoint, double theParam, bool theIsReplace = true)
+    public int AddPoint(in Point3D thePoint, double theParam, bool theIsReplace = true)
     {
         return myDiscretTool.AddPoint(thePoint, theParam, theIsReplace);
     }
@@ -102,11 +104,11 @@ public sealed class BRepMesh_GeomTool
     /// The discretization point with the given index (from 1) on the iso curve: its parameter, the 3D point and the
     /// point in the surface's parametric space, with <paramref name="theIsoParam"/> as the other coordinate.
     /// </summary>
-    public bool Value(int theIndex, double theIsoParam, out double theParam, out gp_Pnt thePoint, out gp_Pnt2d theUV)
+    public bool Value(int theIndex, double theIsoParam, out double theParam, out Point3D thePoint, out Point2D theUV)
     {
         theParam = 0.0;
-        thePoint = new gp_Pnt();
-        theUV = new gp_Pnt2d();
+        thePoint = new Point3D();
+        theUV = new Point2D();
         if (theIndex < 1 || theIndex > NbPoints())
         {
             return false;
@@ -115,7 +117,7 @@ public sealed class BRepMesh_GeomTool
         thePoint = myDiscretTool.Value(theIndex);
         theParam = myDiscretTool.Parameter(theIndex);
 
-        if (myIsoType == GeomAbs_IsoU)
+        if (myIsoType == IsoU)
         {
             theUV.SetCoord(theIsoParam, theParam);
         }
@@ -131,12 +133,12 @@ public sealed class BRepMesh_GeomTool
     /// The discretization point with the given index (from 1) on the edge: its parameter, the 3D point and the point
     /// of the edge's pcurve on the surface's face. False for an iso curve.
     /// </summary>
-    public bool Value(int theIndex, BRepAdaptor_Surface theSurface, out double theParam, out gp_Pnt thePoint,
-                      out gp_Pnt2d theUV)
+    public bool Value(int theIndex, BRepAdaptor_Surface theSurface, out double theParam, out Point3D thePoint,
+                      out Point2D theUV)
     {
         theParam = 0.0;
-        thePoint = new gp_Pnt();
-        theUV = new gp_Pnt2d();
+        thePoint = new Point3D();
+        theUV = new Point2D();
         if (theIndex < 1 || theIndex > NbPoints())
         {
             return false;
@@ -167,26 +169,26 @@ public sealed class BRepMesh_GeomTool
     public static bool Normal(BRepAdaptor_Surface theSurface,
                               double theParamU,
                               double theParamV,
-                              out gp_Pnt thePoint,
-                              out gp_Dir theNormal)
+                              out Point3D thePoint,
+                              out Direction3D theNormal)
     {
         bool isOK = true;
-        theNormal = new gp_Dir();
-        theSurface.D1(theParamU, theParamV, out thePoint, out gp_Vec aD1U, out gp_Vec aD1V);
+        theNormal = new Direction3D();
+        theSurface.D1(theParamU, theParamV, out thePoint, out Vector3D aD1U, out Vector3D aD1V);
 
-        CSLib.Normal(aD1U, aD1V, Precision.Angular(), out CSLib_DerivativeStatus aStatus, ref theNormal);
-        if (aStatus != CSLib_Done)
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, global::Kerf.Engine.Foundation.Precision.Angular(), out DerivativeStatus aStatus, ref theNormal);
+        if (aStatus != Done)
         {
-            theSurface.D2(theParamU, theParamV, out thePoint, out aD1U, out aD1V, out gp_Vec aD2U, out gp_Vec aD2V,
-                          out gp_Vec aD2UV);
-            CSLib.Normal(aD1U,
+            theSurface.D2(theParamU, theParamV, out thePoint, out aD1U, out aD1V, out Vector3D aD2U, out Vector3D aD2V,
+                          out Vector3D aD2UV);
+            global::Kerf.Engine.Geometry.CSLib.Normal(aD1U,
                          aD1V,
                          aD2U,
                          aD2V,
                          aD2UV,
-                         Precision.Angular(),
+                         global::Kerf.Engine.Foundation.Precision.Angular(),
                          out isOK,
-                         out CSLib_NormalStatus _,
+                         out NormalStatus _,
                          ref theNormal);
         }
 
@@ -216,21 +218,21 @@ public sealed class BRepMesh_GeomTool
     /// <param name="theEndPnt2">The end point of the second segment.</param>
     /// <param name="theIntPnt">The intersection point, written on a cross.</param>
     /// <param name="theParamOnSegment">Two values (OCCT's <c>double (&amp;)[2]</c>), written on a cross.</param>
-    public static IntFlag IntLinLin(in gp_XY theStartPnt1,
-                                    in gp_XY theEndPnt1,
-                                    in gp_XY theStartPnt2,
-                                    in gp_XY theEndPnt2,
-                                    ref gp_XY theIntPnt,
+    public static IntFlag IntLinLin(in Xy theStartPnt1,
+                                    in Xy theEndPnt1,
+                                    in Xy theStartPnt2,
+                                    in Xy theEndPnt2,
+                                    ref Xy theIntPnt,
                                     Span<double> theParamOnSegment)
     {
-        gp_XY aVec1 = theEndPnt1 - theStartPnt1;
-        gp_XY aVec2 = theEndPnt2 - theStartPnt2;
-        gp_XY aVecO1O2 = theStartPnt2 - theStartPnt1;
+        Xy aVec1 = theEndPnt1 - theStartPnt1;
+        Xy aVec2 = theEndPnt2 - theStartPnt2;
+        Xy aVecO1O2 = theStartPnt2 - theStartPnt1;
 
         double aCrossD1D2 = aVec1 ^ aVec2;
         double aCrossD1D3 = aVecO1O2 ^ aVec2;
 
-        double aPrec = gp.Resolution();
+        double aPrec = Constants.Resolution();
         // Are edgegs codirectional
         if (Math.Abs(aCrossD1D2) < aPrec)
         {
@@ -259,13 +261,13 @@ public sealed class BRepMesh_GeomTool
     /// point on the other segment is <see cref="IntFlag.PointOnSegment"/> (with the point) if
     /// <paramref name="isConsiderPointOnSegment"/>; <see cref="IntFlag.Cross"/> writes the intersection point.
     /// </summary>
-    public static IntFlag IntSegSeg(in gp_XY theStartPnt1,
-                                    in gp_XY theEndPnt1,
-                                    in gp_XY theStartPnt2,
-                                    in gp_XY theEndPnt2,
+    public static IntFlag IntSegSeg(in Xy theStartPnt1,
+                                    in Xy theEndPnt1,
+                                    in Xy theStartPnt2,
+                                    in Xy theEndPnt2,
                                     bool isConsiderEndPointTouch,
                                     bool isConsiderPointOnSegment,
-                                    ref gp_Pnt2d theIntPnt)
+                                    ref Point2D theIntPnt)
     {
         Span<int> aPointHash = [classifyPoint(theStartPnt1, theEndPnt1, theStartPnt2),
                                 classifyPoint(theStartPnt1, theEndPnt1, theEndPnt2),
@@ -304,19 +306,19 @@ public sealed class BRepMesh_GeomTool
                 // end for [1], ... (occt-issues.md, unit 4A). BRepMesh_Delaun doesn't use the point in this case.
                 if (aPointHash[0] == 1)
                 {
-                    theIntPnt = new gp_Pnt2d(theStartPnt1);
+                    theIntPnt = new Point2D(theStartPnt1);
                 }
                 else if (aPointHash[1] == 1)
                 {
-                    theIntPnt = new gp_Pnt2d(theEndPnt1);
+                    theIntPnt = new Point2D(theEndPnt1);
                 }
                 else if (aPointHash[2] == 1)
                 {
-                    theIntPnt = new gp_Pnt2d(theStartPnt2);
+                    theIntPnt = new Point2D(theStartPnt2);
                 }
                 else
                 {
-                    theIntPnt = new gp_Pnt2d(theEndPnt2);
+                    theIntPnt = new Point2D(theEndPnt2);
                 }
 
                 return IntFlag.PointOnSegment;
@@ -353,7 +355,7 @@ public sealed class BRepMesh_GeomTool
 
         // Cross
         // Intersection is out of segments ranges
-        double aPrec = Precision.PConfusion();
+        double aPrec = global::Kerf.Engine.Foundation.Precision.PConfusion();
         double aEndPrec = 1 - aPrec;
         for (int i = 0; i < 2; ++i)
         {
@@ -370,12 +372,12 @@ public sealed class BRepMesh_GeomTool
     /// The square of the deflection of the segment from its middle point: the distance from the line through the
     /// end points, or from the first point if they coincide.
     /// </summary>
-    public static double SquareDeflectionOfSegment(in gp_Pnt theFirstPoint, in gp_Pnt theLastPoint, in gp_Pnt theMidPoint)
+    public static double SquareDeflectionOfSegment(in Point3D theFirstPoint, in Point3D theLastPoint, in Point3D theMidPoint)
     {
         // 23.03.2010 skl for OCC21645 - change precision for comparison
-        if (theFirstPoint.SquareDistance(theLastPoint) > Precision.SquareConfusion())
+        if (theFirstPoint.SquareDistance(theLastPoint) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            gp_Lin aLin = new(theFirstPoint, new gp_Dir(new gp_Vec(theFirstPoint, theLastPoint)));
+            Line3D aLin = new(theFirstPoint, new Direction3D(new Vector3D(theFirstPoint, theLastPoint)));
             return aLin.SquareDistance(theMidPoint);
         }
 
@@ -397,7 +399,7 @@ public sealed class BRepMesh_GeomTool
             return (-1, -1);
         }
 
-        GeomAbs_SurfaceType aType = theSurface.GetType();
+        SurfaceKind aType = theSurface.GetType();
 
         ComputeErrFactors(theDeflection, theSurface, out double anErrFactorU, out double anErrFactorV);
 
@@ -406,14 +408,14 @@ public sealed class BRepMesh_GeomTool
         (double first, double second) aDelta = theRangeSplitter.GetDelta();
 
         int aCellsCountU, aCellsCountV;
-        if (aType == GeomAbs_Torus)
+        if (aType == SurfaceKind.Torus)
         {
             aCellsCountU =
                 (int)Math.Ceiling(Math.Pow(2, Math.Log10((aRangeU.second - aRangeU.first) / aDelta.first)));
             aCellsCountV =
                 (int)Math.Ceiling(Math.Pow(2, Math.Log10((aRangeV.second - aRangeV.first) / aDelta.second)));
         }
-        else if (aType == GeomAbs_Cylinder)
+        else if (aType == SurfaceKind.Cylinder)
         {
             aCellsCountU =
                 (int)Math.Ceiling(Math.Pow(2,
@@ -436,12 +438,12 @@ public sealed class BRepMesh_GeomTool
 
     // Classifies the point in case of coincidence of two vectors: zero if the point is out of the segment, -1 if it
     // coincides with an end point, 1 if it is between them.
-    private static int classifyPoint(in gp_XY thePoint1, in gp_XY thePoint2, in gp_XY thePointToCheck)
+    private static int classifyPoint(in Xy thePoint1, in Xy thePoint2, in Xy thePointToCheck)
     {
-        gp_XY aP1 = thePoint2 - thePoint1;
-        gp_XY aP2 = thePointToCheck - thePoint1;
+        Xy aP1 = thePoint2 - thePoint1;
+        Xy aP2 = thePointToCheck - thePoint1;
 
-        double aPrec = Precision.PConfusion();
+        double aPrec = global::Kerf.Engine.Foundation.Precision.PConfusion();
         double aSqPrec = aPrec * aPrec;
         double aDist = Math.Abs(aP1 ^ aP2);
         if (aDist > aPrec)
@@ -453,7 +455,7 @@ public sealed class BRepMesh_GeomTool
             }
         }
 
-        gp_XY aMult = aP1.Multiplied(aP2);
+        Xy aMult = aP1.Multiplied(aP2);
         if (aMult.X() < 0.0 || aMult.Y() < 0.0)
         {
             return 0; // out
@@ -482,23 +484,23 @@ public sealed class BRepMesh_GeomTool
 
         switch (theFace.GetType())
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 break;
 
-            case GeomAbs_SurfaceOfExtrusion:
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
+            case SurfaceOfRevolution:
             {
                 Adaptor3d_Curve aCurve = theFace.BasisCurve();
-                if (aCurve.GetType() == GeomAbs_BSplineCurve && aCurve.Degree() > 2)
+                if (aCurve.GetType() == BSplineCurve && aCurve.Degree() > 2)
                 {
                     theErrFactorV /= (aCurve.Degree() * aCurve.NbKnots());
                 }
                 break;
             }
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 if (theFace.UDegree() > 2)
                 {
@@ -510,7 +512,7 @@ public sealed class BRepMesh_GeomTool
                 }
                 break;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (theFace.UDegree() > 2)
                 {
@@ -523,7 +525,7 @@ public sealed class BRepMesh_GeomTool
                 break;
             }
 
-            case GeomAbs_Plane:
+            case Plane:
             default:
                 theErrFactorU = theErrFactorV = 1.0;
                 break;
@@ -535,8 +537,8 @@ public sealed class BRepMesh_GeomTool
                                           ref int theCellsCountU,
                                           ref int theCellsCountV)
     {
-        GeomAbs_SurfaceType aType = theFace.GetType();
-        if (aType == GeomAbs_OtherSurface)
+        SurfaceKind aType = theFace.GetType();
+        if (aType == OtherSurface)
         {
             // fallback to the default behavior
             theCellsCountU = theCellsCountV = -1;
@@ -544,22 +546,22 @@ public sealed class BRepMesh_GeomTool
         }
 
         double aSqNbVert = theNbVertices;
-        if (aType == GeomAbs_Plane)
+        if (aType == Plane)
         {
             theCellsCountU = theCellsCountV = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
         }
-        else if (aType == GeomAbs_Cylinder || aType == GeomAbs_Cone)
+        else if (aType == SurfaceKind.Cylinder || aType == SurfaceKind.Cone)
         {
             theCellsCountV = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
         }
-        else if (aType == GeomAbs_SurfaceOfExtrusion || aType == GeomAbs_SurfaceOfRevolution)
+        else if (aType == SurfaceOfExtrusion || aType == SurfaceOfRevolution)
         {
             Adaptor3d_Curve aCurve = theFace.BasisCurve();
-            if (aCurve.GetType() == GeomAbs_Line
-                || (aCurve.GetType() == GeomAbs_BSplineCurve && aCurve.Degree() < 2))
+            if (aCurve.GetType() == Line
+                || (aCurve.GetType() == BSplineCurve && aCurve.Degree() < 2))
             {
                 // planar, cylindrical, conical cases
-                if (aType == GeomAbs_SurfaceOfExtrusion)
+                if (aType == SurfaceOfExtrusion)
                 {
                     theCellsCountU = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
                 }
@@ -568,13 +570,13 @@ public sealed class BRepMesh_GeomTool
                     theCellsCountV = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
                 }
             }
-            if (aType == GeomAbs_SurfaceOfExtrusion)
+            if (aType == SurfaceOfExtrusion)
             {
                 // V is always a line
                 theCellsCountV = (int)Math.Ceiling(Math.Pow(2, Math.Log10(aSqNbVert)));
             }
         }
-        else if (aType == GeomAbs_BezierSurface || aType == GeomAbs_BSplineSurface)
+        else if (aType == BezierSurface || aType == BSplineSurface)
         {
             if (theFace.UDegree() < 2)
             {

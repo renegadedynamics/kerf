@@ -4,10 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepCheck_Status;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -40,7 +42,7 @@ public static class BRepAlgo
         public Geom2d_TrimmedCurve Curve;
         public bool IsReverse;
 
-        public readonly gp_Pnt2d Point(bool isEnd)
+        public readonly Point2D Point(bool isEnd)
         {
             if (isEnd == IsReverse)
             {
@@ -121,18 +123,18 @@ public static class BRepAlgo
         {
             // Build the first vertex
             BRep_Builder aVBuilder = new();
-            gp_Pnt2d[] aPnt = [vecCurve.Value(0).Point(false), vecCurve.Value(vecCurve.Length() - 1).Point(true)];
+            Point2D[] aPnt = [vecCurve.Value(0).Point(false), vecCurve.Value(vecCurve.Length() - 1).Point(true)];
             double aDist = aPnt[0].Distance(aPnt[1]);
-            if (aDist > aMaxTol + Precision.Confusion())
+            if (aDist > aMaxTol + global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                aDist = Precision.Confusion();
+                aDist = global::Kerf.Engine.Foundation.Precision.Confusion();
             }
             else
             {
-                aDist = 0.5 * aDist + Precision.Confusion();
-                aPnt[0] = new gp_Pnt2d(0.5 * (aPnt[0].XY() + aPnt[1].XY()));
+                aDist = 0.5 * aDist + global::Kerf.Engine.Foundation.Precision.Confusion();
+                aPnt[0] = new Point2D(0.5 * (aPnt[0].XY() + aPnt[1].XY()));
             }
-            gp_Pnt aPnt3d = aSurf.Value(aPnt[0].X(), aPnt[0].Y());
+            Point3D aPnt3d = aSurf.Value(aPnt[0].X(), aPnt[0].Y());
             TopoDS_Vertex aFirstVertex = new();
             aVBuilder.MakeVertex(ref aFirstVertex, aPnt3d, aDist);
 
@@ -149,10 +151,10 @@ public static class BRepAlgo
                 {
                     aPnt[1] = vecCurve.Value(0).Point(false);
                     aDist = aPnt[0].Distance(aPnt[1]);
-                    if (aDist > aMaxTol + Precision.Confusion())
+                    if (aDist > aMaxTol + global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         aPnt3d = aSurf.Value(aPnt[0].X(), aPnt[0].Y());
-                        aVBuilder.MakeVertex(ref aNextVertex, aPnt3d, Precision.Confusion());
+                        aVBuilder.MakeVertex(ref aNextVertex, aPnt3d, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                     else
                     {
@@ -162,8 +164,8 @@ public static class BRepAlgo
                 else
                 {
                     aPnt[1] = vecCurve.Value(iCrv + 1).Point(false);
-                    aDist = 0.5 * (aPnt[0].Distance(aPnt[1])) + Precision.Confusion();
-                    aPnt[0] = new gp_Pnt2d(0.5 * (aPnt[0].XY() + aPnt[1].XY()));
+                    aDist = 0.5 * (aPnt[0].Distance(aPnt[1])) + global::Kerf.Engine.Foundation.Precision.Confusion();
+                    aPnt[0] = new Point2D(0.5 * (aPnt[0].XY() + aPnt[1].XY()));
                     aPnt3d = aSurf.Value(aPnt[0].X(), aPnt[0].Y());
                     aVBuilder.MakeVertex(ref aNextVertex, aPnt3d, aDist);
                 }
@@ -199,7 +201,7 @@ public static class BRepAlgo
     {
         TopoDS_Face aResult = new();
         Geom_Surface aSurf = BRep_Tool.Surface(theFace)!;
-        BRepBuilderAPI_MakeFace aMkFace = new(aSurf, Precision.Confusion());
+        BRepBuilderAPI_MakeFace aMkFace = new(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         TopExp_Explorer anExp = new(theFace, TopAbs_WIRE);
         for (; anExp.More(); anExp.Next())
@@ -220,7 +222,7 @@ public static class BRepAlgo
     /// A wire whose edges are C1 (or G1, with <paramref name="Option"/>) made from <paramref name="W"/>, whose edges
     /// may meet with G1 continuity: the vertices between such edges are removed.
     /// </summary>
-    public static TopoDS_Wire ConcatenateWire(in TopoDS_Wire W, GeomAbs_Shape Option, double TolAngular = 1.0e-4)
+    public static TopoDS_Wire ConcatenateWire(in TopoDS_Wire W, Continuity Option, double TolAngular = 1.0e-4)
     {
         int nb_curve, // number of curves in the Wire
             index;
@@ -229,7 +231,7 @@ public static class BRepAlgo
         double First = 0.0, Last = 0.0, // extremal values for the curve
             First0 = 0.0, toler = 0.0, tolleft, tolright; // Vertex tolerances
         TopoDS_Vertex Vfirst = new(), Vlast = new(); // Vertex of the Wire
-        gp_Pnt Pfirst, Plast; //, Pint;  corresponding points
+        Point3D Pfirst, Plast; //, Pint;  corresponding points
 
         BRepLib_MakeWire MakeResult = new();
         double closed_tolerance = 0.0;
@@ -253,11 +255,11 @@ public static class BRepAlgo
             for (index = 0; index < nb_curve; index++)
             { // main loop
                 edge = WExp.Current();
-                Geom_Curve aCurve = BRep_Tool.Curve(edge, out TopLoc_Location L, out First, out Last)!;
+                Geom_Curve aCurve = BRep_Tool.Curve(edge, out Placement L, out First, out Last)!;
                 Geom_TrimmedCurve aTrCurve = new(aCurve, First, Last);
                 tab[index] = GeomConvert.CurveToBSplineCurve(aTrCurve); // storage in a array
                 tab[index].Transform(L.Transformation());
-                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[index], Precision.Confusion());
+                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[index], global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 if (index >= 1)
                 { // continuity test loop
@@ -312,13 +314,13 @@ public static class BRepAlgo
 
             if ((Pfirst.Distance(Plast) <= toler) && // C0 continuity test at the closing point
                 (GeomLProp.Continuity(tab[nb_curve - 1], tab[0], Last, First0, true, true, toler, TolAngular)
-                 >= GeomAbs_G1))
+                 >= G1))
             {
                 closed_tolerance = toler; // if ClosedG1!=0 it will be True and
                 closed_flag = true;
             } // with the toler value
             NCollection_HArray1<Geom_BSplineCurve> concatcurve; // array of the concatenated curves
-            if (Option == GeomAbs_G1)
+            if (Option == G1)
             {
                 GeomConvert.ConcatG1(tab,
                                      tabtolvertex,
@@ -348,10 +350,10 @@ public static class BRepAlgo
             WExp.Init(W);
 
             edge = WExp.Current();
-            Geom_Curve aC = BRep_Tool.Curve(edge, out TopLoc_Location L, out First, out Last)!;
+            Geom_Curve aC = BRep_Tool.Curve(edge, out Placement L, out First, out Last)!;
             Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(new Geom_TrimmedCurve(aC, First, Last));
             aBS.Transform(L.Transformation());
-            GeomConvert.C0BSplineToC1BSplineCurve(ref aBS, Precision.Confusion());
+            GeomConvert.C0BSplineToC1BSplineCurve(ref aBS, global::Kerf.Engine.Foundation.Precision.Confusion());
             if (edge.Orientation() == TopAbs_REVERSED)
             {
                 aBS.Reverse();
@@ -370,8 +372,8 @@ public static class BRepAlgo
     /// </summary>
     public static TopoDS_Edge ConcatenateWireC0(in TopoDS_Wire aWire)
     {
-        double LinTol = Precision.Confusion();
-        double AngTol = Precision.Angular();
+        double LinTol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double AngTol = global::Kerf.Engine.Foundation.Precision.Angular();
 
         TopoDS_Edge ResEdge = new();
 
@@ -390,7 +392,7 @@ public static class BRepAlgo
         NCollection_Sequence<double> LparSeq = new();
         NCollection_Sequence<double> TolSeq = new();
         NCollection_Sequence<bool> IsFwdSeq = new();
-        GeomAbs_CurveType CurType = GeomAbs_OtherCurve;
+        CurveKind CurType = OtherCurve;
         TopoDS_Vertex FirstVertex = new(), LastVertex;
 
         BRepTools_WireExplorer wexp = new(theWire);
@@ -405,15 +407,15 @@ public static class BRepAlgo
             }
 
             GeomAdaptor_Curve aGACurve = new(aCurve);
-            GeomAbs_CurveType aType = aGACurve.GetType();
+            CurveKind aType = aGACurve.GetType();
             Geom_Curve aBasisCurve = aGACurve.Curve()!;
             bool isFwd = wexp.Orientation() != TopAbs_REVERSED;
 
             if (aBasisCurve.IsPeriodic())
             {
-                ElCLib.AdjustPeriodic(aBasisCurve.FirstParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aBasisCurve.FirstParameter(),
                                       aBasisCurve.LastParameter(),
-                                      Precision.PConfusion(),
+                                      global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                       ref fpar,
                                       ref lpar);
             }
@@ -443,45 +445,45 @@ public static class BRepAlgo
                 {
                     switch (aType)
                     {
-                        case GeomAbs_Line:
+                        case Line:
                         {
-                            gp_Lin aLine = aGACurve.Line();
-                            gp_Lin PrevLine = GAprevcurve.Line();
+                            Line3D aLine = aGACurve.Line();
+                            Line3D PrevLine = GAprevcurve.Line();
 
                             if (aLine.Contains(PrevLine.Location(), LinTol)
                                 && aLine.Direction().IsParallel(PrevLine.Direction(), AngTol))
                             {
-                                gp_Pnt P1 = ElCLib.Value(fpar, aLine);
-                                gp_Pnt P2 = ElCLib.Value(lpar, aLine);
+                                Point3D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(fpar, aLine);
+                                Point3D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(lpar, aLine);
 
-                                NewFpar = ElCLib.Parameter(PrevLine, P1);
-                                NewLpar = ElCLib.Parameter(PrevLine, P2);
+                                NewFpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevLine, P1);
+                                NewLpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevLine, P2);
                                 isSameCurve = true;
                             }
                             break;
                         }
-                        case GeomAbs_Circle:
+                        case Circle:
                         {
-                            gp_Circ aCircle = aGACurve.Circle();
-                            gp_Circ PrevCircle = GAprevcurve.Circle();
+                            Circle3D aCircle = aGACurve.Circle();
+                            Circle3D PrevCircle = GAprevcurve.Circle();
 
                             if (aCircle.Location().Distance(PrevCircle.Location()) <= LinTol
                                 && Math.Abs(aCircle.Radius() - PrevCircle.Radius()) <= LinTol
                                 && aCircle.Axis().IsParallel(PrevCircle.Axis(), AngTol))
                             {
-                                gp_Pnt P1 = ElCLib.Value(fpar, aCircle);
-                                gp_Pnt P2 = ElCLib.Value(lpar, aCircle);
+                                Point3D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(fpar, aCircle);
+                                Point3D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(lpar, aCircle);
 
-                                NewFpar = ElCLib.Parameter(PrevCircle, P1);
-                                NewLpar = ElCLib.Parameter(PrevCircle, P2);
+                                NewFpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevCircle, P1);
+                                NewLpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevCircle, P2);
                                 isSameCurve = true;
                             }
                             break;
                         }
-                        case GeomAbs_Ellipse:
+                        case Ellipse:
                         {
-                            gp_Elips anEllipse = aGACurve.Ellipse();
-                            gp_Elips PrevEllipse = GAprevcurve.Ellipse();
+                            Ellipse3D anEllipse = aGACurve.Ellipse();
+                            Ellipse3D PrevEllipse = GAprevcurve.Ellipse();
 
                             if (anEllipse.Focus1().Distance(PrevEllipse.Focus1()) <= LinTol
                                 && anEllipse.Focus2().Distance(PrevEllipse.Focus2()) <= LinTol
@@ -489,19 +491,19 @@ public static class BRepAlgo
                                 && Math.Abs(anEllipse.MinorRadius() - PrevEllipse.MinorRadius()) <= LinTol
                                 && anEllipse.Axis().IsParallel(PrevEllipse.Axis(), AngTol))
                             {
-                                gp_Pnt P1 = ElCLib.Value(fpar, anEllipse);
-                                gp_Pnt P2 = ElCLib.Value(lpar, anEllipse);
+                                Point3D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(fpar, anEllipse);
+                                Point3D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(lpar, anEllipse);
 
-                                NewFpar = ElCLib.Parameter(PrevEllipse, P1);
-                                NewLpar = ElCLib.Parameter(PrevEllipse, P2);
+                                NewFpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevEllipse, P1);
+                                NewLpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevEllipse, P2);
                                 isSameCurve = true;
                             }
                             break;
                         }
-                        case GeomAbs_Hyperbola:
+                        case Hyperbola:
                         {
-                            gp_Hypr aHypr = aGACurve.Hyperbola();
-                            gp_Hypr PrevHypr = GAprevcurve.Hyperbola();
+                            Hyperbola3D aHypr = aGACurve.Hyperbola();
+                            Hyperbola3D PrevHypr = GAprevcurve.Hyperbola();
 
                             if (aHypr.Focus1().Distance(PrevHypr.Focus1()) <= LinTol
                                 && aHypr.Focus2().Distance(PrevHypr.Focus2()) <= LinTol
@@ -509,30 +511,30 @@ public static class BRepAlgo
                                 && Math.Abs(aHypr.MinorRadius() - PrevHypr.MinorRadius()) <= LinTol
                                 && aHypr.Axis().IsParallel(PrevHypr.Axis(), AngTol))
                             {
-                                gp_Pnt P1 = ElCLib.Value(fpar, aHypr);
-                                gp_Pnt P2 = ElCLib.Value(lpar, aHypr);
+                                Point3D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(fpar, aHypr);
+                                Point3D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(lpar, aHypr);
 
-                                NewFpar = ElCLib.Parameter(PrevHypr, P1);
-                                NewLpar = ElCLib.Parameter(PrevHypr, P2);
+                                NewFpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevHypr, P1);
+                                NewLpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevHypr, P2);
                                 isSameCurve = true;
                             }
                             break;
                         }
-                        case GeomAbs_Parabola:
+                        case Parabola:
                         {
-                            gp_Parab aParab = aGACurve.Parabola();
-                            gp_Parab PrevParab = GAprevcurve.Parabola();
+                            Parabola3D aParab = aGACurve.Parabola();
+                            Parabola3D PrevParab = GAprevcurve.Parabola();
 
                             if (aParab.Location().Distance(PrevParab.Location()) <= LinTol
                                 && aParab.Focus().Distance(PrevParab.Focus()) <= LinTol
                                 && Math.Abs(aParab.Focal() - PrevParab.Focal()) <= LinTol
                                 && aParab.Axis().IsParallel(PrevParab.Axis(), AngTol))
                             {
-                                gp_Pnt P1 = ElCLib.Value(fpar, aParab);
-                                gp_Pnt P2 = ElCLib.Value(lpar, aParab);
+                                Point3D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(fpar, aParab);
+                                Point3D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(lpar, aParab);
 
-                                NewFpar = ElCLib.Parameter(PrevParab, P1);
-                                NewLpar = ElCLib.Parameter(PrevParab, P2);
+                                NewFpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevParab, P1);
+                                NewLpar = global::Kerf.Engine.Geometry.ElCLib.Parameter(PrevParab, P2);
                                 isSameCurve = true;
                             }
                             break;
@@ -578,18 +580,18 @@ public static class BRepAlgo
                         if (IsFwdSeq.Last())
                         {
                             // The current curve should be after the previous one.
-                            ElCLib.AdjustPeriodic(LparSeq.Last(),
+                            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(LparSeq.Last(),
                                                   LparSeq.Last() + aPeriod,
-                                                  Precision.PConfusion(),
+                                                  global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                                   ref NewFpar,
                                                   ref NewLpar);
                         }
                         else
                         {
                             // The current curve should be before the previous one.
-                            ElCLib.AdjustPeriodic(FparSeq.Last() - aPeriod,
+                            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(FparSeq.Last() - aPeriod,
                                                   FparSeq.Last(),
-                                                  Precision.PConfusion(),
+                                                  global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                                   ref NewFpar,
                                                   ref NewLpar);
                         }
@@ -673,7 +675,7 @@ public static class BRepAlgo
 
                 Geom_TrimmedCurve aTrCurve = new(CurveSeq.Value(i), FparSeq.Value(i), LparSeq.Value(i));
                 tab[i - 1] = GeomConvert.CurveToBSplineCurve(aTrCurve);
-                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[i - 1], Precision.Confusion());
+                GeomConvert.C0BSplineToC1BSplineCurve(ref tab[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 if (!IsFwdSeq.Value(i))
                 {
@@ -698,7 +700,7 @@ public static class BRepAlgo
                                         false,
                                         LinTol,
                                         AngTol)
-                   >= GeomAbs_G1)
+                   >= G1)
             {
                 closed_flag = true;
                 closed_tolerance = BRep_Tool.Tolerance(FirstVertex);

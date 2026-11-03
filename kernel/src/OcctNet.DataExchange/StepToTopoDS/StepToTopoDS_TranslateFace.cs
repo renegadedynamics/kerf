@@ -5,6 +5,10 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using static Occt.StepToTopoDS_TranslateFaceError;
 using static Occt.TopAbs_Orientation;
 
@@ -21,35 +25,35 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
     private TopoDS_Shape myResult = new TopoDS_Shape();
 
     // Set nodes to the triangulation from an array
-    private static void SetNodes(Poly_Triangulation theMesh, NCollection_HArray1<gp_XYZ> theNodes, NCollection_HArray1<int> thePnindices,
+    private static void SetNodes(Triangulation theMesh, NCollection_HArray1<Xyz> theNodes, NCollection_HArray1<int> thePnindices,
                                  double theLengthFactor)
     {
         if (thePnindices is not null)
         {
-            for (int aPnIndex = 1; aPnIndex <= theMesh.NbNodes(); ++aPnIndex)
+            for (int aPnIndex = 1; aPnIndex <= theMesh.NodeCount; ++aPnIndex)
             {
-                gp_XYZ aPoint = theNodes.Value(thePnindices.Value(aPnIndex));
-                theMesh.SetNode(aPnIndex, new gp_Pnt(theLengthFactor * aPoint));
+                Xyz aPoint = theNodes.Value(thePnindices.Value(aPnIndex));
+                theMesh.SetNode(aPnIndex, new Point3D(theLengthFactor * aPoint));
             }
         }
         else
         {
-            for (int aPnIndex = 1; aPnIndex <= theMesh.NbNodes(); ++aPnIndex)
+            for (int aPnIndex = 1; aPnIndex <= theMesh.NodeCount; ++aPnIndex)
             {
-                theMesh.SetNode(aPnIndex, new gp_Pnt(theLengthFactor * theNodes.Value(aPnIndex)));
+                theMesh.SetNode(aPnIndex, new Point3D(theLengthFactor * theNodes.Value(aPnIndex)));
             }
         }
     }
 
     // Set normals to the triangulation from an array
-    private static void SetNormals(Poly_Triangulation theMesh, NCollection_HArray2<double> theNormals, int theNormNum, int theNbNodes)
+    private static void SetNormals(Triangulation theMesh, NCollection_HArray2<double> theNormals, int theNormNum, int theNbNodes)
     {
         if (theNormals.RowLength() != 3)
         {
             return;
         }
 
-        gp_XYZ aNorm = new gp_XYZ();
+        Xyz aNorm = new Xyz();
         if (theNormNum == 1)
         {
             aNorm.SetX(theNormals.Value(1, 1));
@@ -57,7 +61,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             aNorm.SetZ(theNormals.Value(1, 3));
             for (int aNodeIndex = 1; aNodeIndex <= theNbNodes; ++aNodeIndex)
             {
-                theMesh.SetNormal(aNodeIndex, new gp_Dir(aNorm));
+                theMesh.SetNormal(aNodeIndex, new Direction3D(aNorm));
             }
         }
         else if (theNbNodes == theNormNum)
@@ -67,21 +71,21 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                 aNorm.SetX(theNormals.Value(aNormIndex, 1));
                 aNorm.SetY(theNormals.Value(aNormIndex, 2));
                 aNorm.SetZ(theNormals.Value(aNormIndex, 3));
-                theMesh.SetNormal(aNormIndex, new gp_Dir(aNorm));
+                theMesh.SetNormal(aNormIndex, new Direction3D(aNorm));
             }
         }
     }
 
     // Set triangles to the triangulation from an array
-    private static void SetTriangles(Poly_Triangulation theMesh, NCollection_HArray2<int> theTriangles, int theTrianStripsNum,
-                                     NCollection_HArray1<Standard_Transient> theTrianStrips, int theTrianFansNum,
-                                     NCollection_HArray1<Standard_Transient> theTrianFans)
+    private static void SetTriangles(Triangulation theMesh, NCollection_HArray2<int> theTriangles, int theTrianStripsNum,
+                                     NCollection_HArray1<Transient> theTrianStrips, int theTrianFansNum,
+                                     NCollection_HArray1<Transient> theTrianFans)
     {
         if (theTrianStripsNum == 0 && theTrianFansNum == 0)
         {
-            for (int aTrianIndex = 1; aTrianIndex <= theMesh.NbTriangles(); ++aTrianIndex)
+            for (int aTrianIndex = 1; aTrianIndex <= theMesh.TriangleCount; ++aTrianIndex)
             {
-                theMesh.SetTriangle(aTrianIndex, new Poly_Triangle(theTriangles.Value(aTrianIndex, 1), theTriangles.Value(aTrianIndex, 2),
+                theMesh.SetTriangle(aTrianIndex, new Triangle1(theTriangles.Value(aTrianIndex, 1), theTriangles.Value(aTrianIndex, 2),
                                                                    theTriangles.Value(aTrianIndex, 3)));
             }
         }
@@ -96,7 +100,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     if (aTriangleStrip.Value(anIndex) != aTriangleStrip.Value(anIndex - 2)
                         && aTriangleStrip.Value(anIndex) != aTriangleStrip.Value(anIndex - 1))
                     {
-                        theMesh.SetTriangle(aTriangleIndex++, new Poly_Triangle(aTriangleStrip.Value(anIndex - 2), aTriangleStrip.Value(anIndex),
+                        theMesh.SetTriangle(aTriangleIndex++, new Triangle1(aTriangleStrip.Value(anIndex - 2), aTriangleStrip.Value(anIndex),
                                                                                 aTriangleStrip.Value(anIndex - 1)));
                     }
                 }
@@ -106,7 +110,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     if (aTriangleStrip.Value(anIndex) != aTriangleStrip.Value(anIndex - 2)
                         && aTriangleStrip.Value(anIndex) != aTriangleStrip.Value(anIndex - 1))
                     {
-                        theMesh.SetTriangle(aTriangleIndex++, new Poly_Triangle(aTriangleStrip.Value(anIndex - 2),
+                        theMesh.SetTriangle(aTriangleIndex++, new Triangle1(aTriangleStrip.Value(anIndex - 2),
                                                                                 aTriangleStrip.Value(anIndex - 1),
                                                                                 aTriangleStrip.Value(anIndex)));
                     }
@@ -121,7 +125,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     if (aTriangleFan.Value(anIndex) != aTriangleFan.Value(anIndex - 2)
                         && aTriangleFan.Value(anIndex - 1) != aTriangleFan.Value(anIndex - 2))
                     {
-                        theMesh.SetTriangle(aTriangleIndex++, new Poly_Triangle(aTriangleFan.Value(1), aTriangleFan.Value(anIndex),
+                        theMesh.SetTriangle(aTriangleIndex++, new Triangle1(aTriangleFan.Value(1), aTriangleFan.Value(anIndex),
                                                                                 aTriangleFan.Value(anIndex - 1)));
                     }
                 }
@@ -130,7 +134,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
     }
 
     // GetSimpleFaceElements: OCCT's template, once per instantiation
-    private static void GetSimpleFaceElements(StepVisual_TriangulatedFace theFace, out NCollection_HArray1<gp_XYZ> theNodes,
+    private static void GetSimpleFaceElements(StepVisual_TriangulatedFace theFace, out NCollection_HArray1<Xyz> theNodes,
                                               out NCollection_HArray2<double> theNormals, out NCollection_HArray2<int> theTriangles,
                                               out int theNormNb, out int theTriNb, ref NCollection_HArray1<int> thePnindices)
     {
@@ -150,7 +154,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
     }
 
-    private static void GetSimpleFaceElements(StepVisual_TriangulatedSurfaceSet theFace, out NCollection_HArray1<gp_XYZ> theNodes,
+    private static void GetSimpleFaceElements(StepVisual_TriangulatedSurfaceSet theFace, out NCollection_HArray1<Xyz> theNodes,
                                               out NCollection_HArray2<double> theNormals, out NCollection_HArray2<int> theTriangles,
                                               out int theNormNb, out int theTriNb, ref NCollection_HArray1<int> thePnindices)
     {
@@ -171,10 +175,10 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
     }
 
     // GetComplexFaceElements: OCCT's template, once per instantiation
-    private static void GetComplexFaceElements(StepVisual_ComplexTriangulatedFace theFace, out NCollection_HArray1<gp_XYZ> theNodes,
+    private static void GetComplexFaceElements(StepVisual_ComplexTriangulatedFace theFace, out NCollection_HArray1<Xyz> theNodes,
                                                out NCollection_HArray2<double> theNormals,
-                                               out NCollection_HArray1<Standard_Transient> theTriangleStrips,
-                                               out NCollection_HArray1<Standard_Transient> theTriangleFans, out int theNormNb,
+                                               out NCollection_HArray1<Transient> theTriangleStrips,
+                                               out NCollection_HArray1<Transient> theTriangleFans, out int theNormNb,
                                                out int theTriStripsNb, out int theTriFansNb, ref NCollection_HArray1<int> thePnindices)
     {
         theNodes = theFace.Coordinates().Points();
@@ -195,10 +199,10 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
     }
 
-    private static void GetComplexFaceElements(StepVisual_ComplexTriangulatedSurfaceSet theFace, out NCollection_HArray1<gp_XYZ> theNodes,
+    private static void GetComplexFaceElements(StepVisual_ComplexTriangulatedSurfaceSet theFace, out NCollection_HArray1<Xyz> theNodes,
                                                out NCollection_HArray2<double> theNormals,
-                                               out NCollection_HArray1<Standard_Transient> theTriangleStrips,
-                                               out NCollection_HArray1<Standard_Transient> theTriangleFans, out int theNormNb,
+                                               out NCollection_HArray1<Transient> theTriangleStrips,
+                                               out NCollection_HArray1<Transient> theTriangleFans, out int theNormNb,
                                                out int theTriStripsNb, out int theTriFansNb, ref NCollection_HArray1<int> thePnindices)
     {
         theNodes = theFace.Coordinates().Points();
@@ -219,23 +223,23 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
     }
 
-    private static Poly_Triangulation CreatePolyTriangulation(StepVisual_TessellatedItem theTI, in StepData_Factors theLocalFactors)
+    private static Triangulation CreatePolyTriangulation(StepVisual_TessellatedItem theTI, in StepData_Factors theLocalFactors)
     {
-        Poly_Triangulation aMesh;
+        Triangulation aMesh;
         if (theTI is null)
         {
             return null;
         }
 
-        NCollection_HArray1<gp_XYZ> aNodes;
+        NCollection_HArray1<Xyz> aNodes;
         NCollection_HArray2<double> aNormals;
         NCollection_HArray2<int> aTriangles = null;
         int aNormNum = 0;
         int aTrianNum = 0;
         NCollection_HArray1<int> aPnindices = null;
 
-        NCollection_HArray1<Standard_Transient> aTriaStrips = null;
-        NCollection_HArray1<Standard_Transient> aTriaFans = null;
+        NCollection_HArray1<Transient> aTriaStrips = null;
+        NCollection_HArray1<Transient> aTriaFans = null;
         int aTrianStripsNum = 0;
         int aTrianFansNum = 0;
 
@@ -268,7 +272,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 
         if (aTrianStripsNum == 0 && aTrianFansNum == 0)
         {
-            aMesh = new Poly_Triangulation(aNbNodes, aTrianNum, aHasUVNodes, aHasNormals);
+            aMesh = new Triangulation(aNbNodes, aTrianNum, aHasUVNodes, aHasNormals);
         }
         else
         {
@@ -303,7 +307,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                 aNbTriaFans += aTriangleFan.Length() - 2;
             }
 
-            aMesh = new Poly_Triangulation(aNbNodes, aNbTriaStrips + aNbTriaFans, aHasUVNodes, aHasNormals);
+            aMesh = new Triangulation(aNbNodes, aNbTriaStrips + aNbTriaFans, aHasUVNodes, aHasNormals);
         }
 
         SetNodes(aMesh, aNodes, aPnindices, theLocalFactors.LengthFactor());
@@ -452,7 +456,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 
         TopoDS_Face aResultFace = new TopoDS_Face();
         var aFaceBuilder = new BRep_Builder();
-        aFaceBuilder.MakeFace(ref aResultFace, aGeomSurface, Occt.Precision.Confusion());
+        aFaceBuilder.MakeFace(ref aResultFace, aGeomSurface, Kerf.Engine.Foundation.Precision.Confusion());
 
         // ----------------------------------
         // Iterate on each FaceBounds (Wires)
@@ -673,7 +677,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             theHasGeom = false;
         }
 
-        Poly_Triangulation aMesh;
+        Triangulation aMesh;
         if (theTF is StepVisual_TriangulatedFace aTriaF)
         {
             aMesh = createMesh(aTriaF, theLocalFactors);
@@ -726,7 +730,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         TopoDS_Face aF = new TopoDS_Face();
         aB.MakeFace(ref aF);
 
-        Poly_Triangulation aMesh;
+        Triangulation aMesh;
         if (theTSS is StepVisual_TriangulatedSurfaceSet aTriaSS)
         {
             aMesh = createMesh(aTriaSS, theLocalFactors);
@@ -763,11 +767,11 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         => Init(theTSS, theTool, theNMTool, new StepData_Factors());
 
     // Creates a Poly_Triangulation from a simple or complex triangulated face or surface set
-    private Poly_Triangulation createMesh(StepVisual_TessellatedItem theTI, in StepData_Factors theLocalFactors)
+    private Triangulation createMesh(StepVisual_TessellatedItem theTI, in StepData_Factors theLocalFactors)
         => CreatePolyTriangulation(theTI, theLocalFactors);
 
     /// <summary>The face, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

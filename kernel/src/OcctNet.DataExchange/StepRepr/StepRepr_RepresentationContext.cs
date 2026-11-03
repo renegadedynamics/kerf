@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepRepr_RepresentationContext : Standard_Transient
+public class StepRepr_RepresentationContext : Transient
 {
     private TCollection_HAsciiString contextIdentifier;
     private TCollection_HAsciiString contextType;

@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -21,16 +24,16 @@ public class ShapeUpgrade_UnifySameDomainTest
         public TopoDS_Edge  ValidPCurveEdge;
     }
 
-    private static TopoDS_Vertex makeVertex(BRep_Builder theBuilder, in gp_Pnt thePoint)
+    private static TopoDS_Vertex makeVertex(BRep_Builder theBuilder, in Point3D thePoint)
     {
         var aVertex = new TopoDS_Vertex();
-        theBuilder.MakeVertex(ref aVertex, thePoint, Precision.Confusion());
+        theBuilder.MakeVertex(ref aVertex, thePoint, global::Kerf.Engine.Foundation.Precision.Confusion());
         return aVertex;
     }
 
     private static TopoDS_Edge makeEdge(BRep_Builder    theBuilder,
                                         Geom_Surface?   theSurface,
-                                        in TopLoc_Location theLocation,
+                                        in Placement theLocation,
                                         in TopoDS_Vertex   theFirst,
                                         in TopoDS_Vertex   theLast,
                                         bool            theAddPCurve)
@@ -44,13 +47,13 @@ public class ShapeUpgrade_UnifySameDomainTest
         TopoDS_Edge anEdge = anEdgeMaker.InternalEdge();
         if (theAddPCurve)
         {
-            gp_Pnt        aFirstPoint   = BRep_Tool.Pnt(theFirst);
-            gp_Pnt        aLastPoint    = BRep_Tool.Pnt(theLast);
-            var           aFirstPoint2d = new gp_Pnt2d(Math.Atan2(aFirstPoint.Y(), aFirstPoint.X()), aFirstPoint.Z());
-            var           aLastPoint2d  = new gp_Pnt2d(Math.Atan2(aLastPoint.Y(), aLastPoint.X()), aLastPoint.Z());
-            var           aDirection    = new gp_Vec2d(aFirstPoint2d, aLastPoint2d);
-            Geom2d_Curve  aPCurve       = new Geom2d_Line(aFirstPoint2d, new gp_Dir2d(aDirection));
-            theBuilder.UpdateEdge(anEdge, aPCurve, theSurface, theLocation, Precision.Confusion());
+            Point3D        aFirstPoint   = BRep_Tool.Pnt(theFirst);
+            Point3D        aLastPoint    = BRep_Tool.Pnt(theLast);
+            var           aFirstPoint2d = new Point2D(Math.Atan2(aFirstPoint.Y(), aFirstPoint.X()), aFirstPoint.Z());
+            var           aLastPoint2d  = new Point2D(Math.Atan2(aLastPoint.Y(), aLastPoint.X()), aLastPoint.Z());
+            var           aDirection    = new Vector2D(aFirstPoint2d, aLastPoint2d);
+            Geom2d_Curve  aPCurve       = new Geom2d_Line(aFirstPoint2d, new Direction2D(aDirection));
+            theBuilder.UpdateEdge(anEdge, aPCurve, theSurface, theLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
             theBuilder.Range(anEdge, 0.0, aDirection.Magnitude());
         }
         return anEdge;
@@ -58,8 +61,8 @@ public class ShapeUpgrade_UnifySameDomainTest
 
     private static MissingPCurveShape makeMissingPCurveShape(BRep_Builder theBuilder)
     {
-        var           aSurface  = new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0);
-        var           aLocation = new TopLoc_Location();
+        var           aSurface  = new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
+        var           aLocation = new Placement();
         TopoDS_Vertex aVertexA  = makeVertex(theBuilder, aSurface.Value(0.0, 0.0));
         TopoDS_Vertex aVertexB  = makeVertex(theBuilder, aSurface.Value(1.0, 0.0));
         TopoDS_Vertex aVertexC  = makeVertex(theBuilder, aSurface.Value(1.0, 1.0));
@@ -84,7 +87,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         aSelfTouchingWire.Closed(true);
 
         var aSelfTouchingFace = new TopoDS_Face();
-        theBuilder.MakeFace(ref aSelfTouchingFace, aSurface, aLocation, Precision.Confusion());
+        theBuilder.MakeFace(ref aSelfTouchingFace, aSurface, aLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
         theBuilder.Add(aSelfTouchingFace, aSelfTouchingWire);
 
         TopoDS_Edge aReversedCommonEdge = aCommonEdge;
@@ -97,7 +100,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         aSecondWire.Closed(true);
 
         var aSecondFace = new TopoDS_Face();
-        theBuilder.MakeFace(ref aSecondFace, aSurface, aLocation, Precision.Confusion());
+        theBuilder.MakeFace(ref aSecondFace, aSurface, aLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
         theBuilder.Add(aSecondFace, aSecondWire);
 
         var aResult = new MissingPCurveShape { Shell = new TopoDS_Shell() };
@@ -112,8 +115,8 @@ public class ShapeUpgrade_UnifySameDomainTest
 
     private static MissingPCurveShape makeMissingPCurveTransformationShape(BRep_Builder theBuilder)
     {
-        var           aSurface  = new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0);
-        var           aLocation = new TopLoc_Location();
+        var           aSurface  = new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
+        var           aLocation = new Placement();
         TopoDS_Vertex aVertexA  = makeVertex(theBuilder, aSurface.Value(0.0, 0.0));
         TopoDS_Vertex aVertexB  = makeVertex(theBuilder, aSurface.Value(0.5, 0.0));
         TopoDS_Vertex aVertexC  = makeVertex(theBuilder, aSurface.Value(0.5, 1.0));
@@ -148,10 +151,10 @@ public class ShapeUpgrade_UnifySameDomainTest
         aRightWire.Closed(true);
 
         var aResult = new MissingPCurveShape { Shell = new TopoDS_Shell(), ReferenceFace = new TopoDS_Face() };
-        theBuilder.MakeFace(ref aResult.ReferenceFace, aSurface, aLocation, Precision.Confusion());
+        theBuilder.MakeFace(ref aResult.ReferenceFace, aSurface, aLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
         theBuilder.Add(aResult.ReferenceFace, aLeftWire);
         var aRightFace = new TopoDS_Face();
-        theBuilder.MakeFace(ref aRightFace, aSurface, aLocation, Precision.Confusion());
+        theBuilder.MakeFace(ref aRightFace, aSurface, aLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
         theBuilder.Add(aRightFace, aRightWire);
         theBuilder.MakeShell(ref aResult.Shell);
         theBuilder.Add(aResult.Shell, aResult.ReferenceFace);
@@ -164,13 +167,13 @@ public class ShapeUpgrade_UnifySameDomainTest
     private static bool addPlanarFacePair(BRep_Builder theBuilder, in TopoDS_Shell theShell)
     {
         Geom_Surface? aNullSurface = null;
-        var           aLocation    = new TopLoc_Location();
-        TopoDS_Vertex aVertex1     = makeVertex(theBuilder, new gp_Pnt(3.0, 0.0, 0.0));
-        TopoDS_Vertex aVertex2     = makeVertex(theBuilder, new gp_Pnt(4.0, 0.0, 0.0));
-        TopoDS_Vertex aVertex3     = makeVertex(theBuilder, new gp_Pnt(4.0, 1.0, 0.0));
-        TopoDS_Vertex aVertex4     = makeVertex(theBuilder, new gp_Pnt(3.0, 1.0, 0.0));
-        TopoDS_Vertex aVertex5     = makeVertex(theBuilder, new gp_Pnt(5.0, 0.0, 0.0));
-        TopoDS_Vertex aVertex6     = makeVertex(theBuilder, new gp_Pnt(5.0, 1.0, 0.0));
+        var           aLocation    = new Placement();
+        TopoDS_Vertex aVertex1     = makeVertex(theBuilder, new Point3D(3.0, 0.0, 0.0));
+        TopoDS_Vertex aVertex2     = makeVertex(theBuilder, new Point3D(4.0, 0.0, 0.0));
+        TopoDS_Vertex aVertex3     = makeVertex(theBuilder, new Point3D(4.0, 1.0, 0.0));
+        TopoDS_Vertex aVertex4     = makeVertex(theBuilder, new Point3D(3.0, 1.0, 0.0));
+        TopoDS_Vertex aVertex5     = makeVertex(theBuilder, new Point3D(5.0, 0.0, 0.0));
+        TopoDS_Vertex aVertex6     = makeVertex(theBuilder, new Point3D(5.0, 1.0, 0.0));
 
         TopoDS_Edge anEdge12 = makeEdge(theBuilder, aNullSurface, aLocation, aVertex1, aVertex2, false);
         TopoDS_Edge anEdge23 = makeEdge(theBuilder, aNullSurface, aLocation, aVertex2, aVertex3, false);
@@ -207,7 +210,7 @@ public class ShapeUpgrade_UnifySameDomainTest
             return false;
         }
 
-        var aPlanarSurface  = new gp_Pln(new gp_Ax3(gp.XOY()));
+        var aPlanarSurface  = new Plane3D(new CoordinateSystem(Constants.XOY()));
         var aLeftFaceMaker  = new BRepBuilderAPI_MakeFace(aPlanarSurface, aLeftWireMaker.InternalWire());
         var aRightFaceMaker = new BRepBuilderAPI_MakeFace(aPlanarSurface, aRightWireMaker.InternalWire());
         if (!aLeftFaceMaker.IsDone() || !aRightFaceMaker.IsDone())
@@ -242,10 +245,10 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aBuilder = new BRep_Builder();
 
         // Create a rectangular outer wire
-        var aP1 = new gp_Pnt(0, 0, 0);
-        var aP2 = new gp_Pnt(10, 0, 0);
-        var aP3 = new gp_Pnt(10, 10, 0);
-        var aP4 = new gp_Pnt(0, 10, 0);
+        var aP1 = new Point3D(0, 0, 0);
+        var aP2 = new Point3D(10, 0, 0);
+        var aP3 = new Point3D(10, 10, 0);
+        var aP4 = new Point3D(0, 10, 0);
 
         var aME1 = new BRepBuilderAPI_MakeEdge(aP1, aP2);
         var aME2 = new BRepBuilderAPI_MakeEdge(aP2, aP3);
@@ -262,7 +265,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         TopoDS_Wire anOuterWire = aMW.Wire();
 
         // Create a face from the outer wire
-        var aPlane = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPlane = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aMF    = new BRepBuilderAPI_MakeFace(aPlane, anOuterWire);
         Assert.True(aMF.IsDone(), "Failed to create face");
 
@@ -271,9 +274,9 @@ public class ShapeUpgrade_UnifySameDomainTest
         // Create internal edges forming an open path inside the face.
         // These edges share a common vertex (aIP2) which is key to triggering
         // the infinite loop bug in IntVEmap processing.
-        var aIP1 = new gp_Pnt(2, 2, 0);
-        var aIP2 = new gp_Pnt(5, 5, 0);
-        var aIP3 = new gp_Pnt(8, 2, 0);
+        var aIP1 = new Point3D(2, 2, 0);
+        var aIP2 = new Point3D(5, 5, 0);
+        var aIP3 = new Point3D(8, 2, 0);
 
         var aMIE1 = new BRepBuilderAPI_MakeEdge(aIP1, aIP2);
         var aMIE2 = new BRepBuilderAPI_MakeEdge(aIP2, aIP3);
@@ -329,13 +332,13 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aBuilder = new BRep_Builder();
 
         // Create two adjacent coplanar rectangular faces
-        var aPlane = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPlane = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
         // First face: 0-5 x 0-10
-        var aP1 = new gp_Pnt(0, 0, 0);
-        var aP2 = new gp_Pnt(5, 0, 0);
-        var aP3 = new gp_Pnt(5, 10, 0);
-        var aP4 = new gp_Pnt(0, 10, 0);
+        var aP1 = new Point3D(0, 0, 0);
+        var aP2 = new Point3D(5, 0, 0);
+        var aP3 = new Point3D(5, 10, 0);
+        var aP4 = new Point3D(0, 10, 0);
 
         var aMW1 = new BRepBuilderAPI_MakeWire();
         aMW1.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
@@ -350,10 +353,10 @@ public class ShapeUpgrade_UnifySameDomainTest
         TopoDS_Face aFace1 = aMF1.InternalFace();
 
         // Second face: 5-10 x 0-10
-        var aP5 = new gp_Pnt(5, 0, 0);
-        var aP6 = new gp_Pnt(10, 0, 0);
-        var aP7 = new gp_Pnt(10, 10, 0);
-        var aP8 = new gp_Pnt(5, 10, 0);
+        var aP5 = new Point3D(5, 0, 0);
+        var aP6 = new Point3D(10, 0, 0);
+        var aP7 = new Point3D(10, 10, 0);
+        var aP8 = new Point3D(5, 10, 0);
 
         var aMW2 = new BRepBuilderAPI_MakeWire();
         aMW2.Add(new BRepBuilderAPI_MakeEdge(aP5, aP6).Edge());
@@ -368,8 +371,8 @@ public class ShapeUpgrade_UnifySameDomainTest
         TopoDS_Face aFace2 = aMF2.InternalFace();
 
         // Add internal wire to first face
-        var aIP1  = new gp_Pnt(1, 5, 0);
-        var aIP2  = new gp_Pnt(4, 5, 0);
+        var aIP1  = new Point3D(1, 5, 0);
+        var aIP2  = new Point3D(4, 5, 0);
         var aMIW1 = new BRepBuilderAPI_MakeWire();
         aMIW1.Add(new BRepBuilderAPI_MakeEdge(aIP1, aIP2).Edge());
         Assert.True(aMIW1.IsDone(), "Failed to create internal wire 1");
@@ -378,8 +381,8 @@ public class ShapeUpgrade_UnifySameDomainTest
         aBuilder.Add(aFace1, anInternalWire1);
 
         // Add internal wire to second face
-        var aIP3  = new gp_Pnt(6, 5, 0);
-        var aIP4  = new gp_Pnt(9, 5, 0);
+        var aIP3  = new Point3D(6, 5, 0);
+        var aIP4  = new Point3D(9, 5, 0);
         var aMIW2 = new BRepBuilderAPI_MakeWire();
         aMIW2.Add(new BRepBuilderAPI_MakeEdge(aIP3, aIP4).Edge());
         Assert.True(aMIW2.IsDone(), "Failed to create internal wire 2");
@@ -425,10 +428,10 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aBuilder = new BRep_Builder();
 
         // Create a large rectangular face
-        var aP1 = new gp_Pnt(0, 0, 0);
-        var aP2 = new gp_Pnt(20, 0, 0);
-        var aP3 = new gp_Pnt(20, 20, 0);
-        var aP4 = new gp_Pnt(0, 20, 0);
+        var aP1 = new Point3D(0, 0, 0);
+        var aP2 = new Point3D(20, 0, 0);
+        var aP3 = new Point3D(20, 20, 0);
+        var aP4 = new Point3D(0, 20, 0);
 
         var aMW = new BRepBuilderAPI_MakeWire();
         aMW.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
@@ -438,15 +441,15 @@ public class ShapeUpgrade_UnifySameDomainTest
 
         Assert.True(aMW.IsDone(), "Failed to create outer wire");
 
-        var aPlane = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPlane = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aMF    = new BRepBuilderAPI_MakeFace(aPlane, aMW.Wire());
         Assert.True(aMF.IsDone(), "Failed to create face");
         TopoDS_Face aFace = aMF.InternalFace();
 
         // Create a closed internal wire (triangle) inside the face
-        var aIP1 = new gp_Pnt(5, 5, 0);
-        var aIP2 = new gp_Pnt(15, 5, 0);
-        var aIP3 = new gp_Pnt(10, 15, 0);
+        var aIP1 = new Point3D(5, 5, 0);
+        var aIP2 = new Point3D(15, 5, 0);
+        var aIP3 = new Point3D(10, 15, 0);
 
         var aMIW = new BRepBuilderAPI_MakeWire();
         aMIW.Add(new BRepBuilderAPI_MakeEdge(aIP1, aIP2).Edge());
@@ -482,7 +485,7 @@ public class ShapeUpgrade_UnifySameDomainTest
     public void BasicBoxUnification()
     {
         // Create a simple box using two corner points
-        var aBoxMaker = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 10));
+        var aBoxMaker = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10));
         aBoxMaker.Build();
         Assert.True(aBoxMaker.IsDone(), "Failed to create box");
 

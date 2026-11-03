@@ -2,93 +2,94 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Occt;
 using System.Numerics;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>
 /// A binary BVH tree: OCCT's <c>BVH_Tree&lt;T, N, BVH_BinaryTree&gt;</c>, which is also its default
-/// <c>BVH_Tree&lt;T, N&gt;</c>. The quad tree is <see cref="BVH_QuadTree{T, TVec}"/>; OCCT's arity tag types are
+/// <c>BVH_Tree&lt;T, N&gt;</c>. The quad tree is <see cref="QuadTree{T, TVec}"/>; OCCT's arity tag types are
 /// not needed.
 /// </summary>
-public class BVH_Tree<T, TVec> : BVH_TreeBase<T, TVec>
+public class Tree<T, TVec> : TreeBase<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
     /// <summary>Creates a new empty tree.</summary>
-    public BVH_Tree()
+    public Tree()
     {
     }
 
     /// <summary>Sets the node type to 'outer' (leaf).</summary>
-    public void SetOuter(int theNodeIndex) => NodeInfo(theNodeIndex, 0) = 1;
+    public void SetOuter(int nodeIndex) => NodeInfo(nodeIndex, 0) = 1;
 
     /// <summary>Sets the node type to 'inner'.</summary>
-    public void SetInner(int theNodeIndex) => NodeInfo(theNodeIndex, 0) = 0;
+    public void SetInner(int nodeIndex) => NodeInfo(nodeIndex, 0) = 0;
 
     /// <summary>The index of the K-th child (0 or 1) of the given inner node (OCCT's <c>Child&lt;K&gt;</c>).</summary>
-    public ref int Child(int theK, int theNodeIndex) => ref NodeInfo(theNodeIndex, theK + 1);
+    public ref int Child(int k, int nodeIndex) => ref NodeInfo(nodeIndex, k + 1);
 
     /// <summary>The index of the K-th child (0 or 1) of the given inner node, for writing.</summary>
-    public ref int ChangeChild(int theK, int theNodeIndex) => ref NodeInfo(theNodeIndex, theK + 1);
+    public ref int ChangeChild(int k, int nodeIndex) => ref NodeInfo(nodeIndex, k + 1);
 
     // Adding and removing nodes
 
     /// <summary>Removes all nodes from the tree.</summary>
     public void Clear()
     {
-        myDepth = 0;
-        myMinPointBuffer.Clear();
-        myMaxPointBuffer.Clear();
-        myNodeInfoBuffer.Clear();
+        _depth = 0;
+        _minPointBuffer.Clear();
+        _maxPointBuffer.Clear();
+        _nodeInfoBuffer.Clear();
     }
 
     /// <summary>Reserves storage for the given number of nodes.</summary>
-    public void Reserve(int theNbNodes)
+    public void Reserve(int nbNodes)
     {
-        myMinPointBuffer.Reserve(theNbNodes);
-        myMaxPointBuffer.Reserve(theNbNodes);
-        myNodeInfoBuffer.Reserve(theNbNodes);
+        _minPointBuffer.Reserve(nbNodes);
+        _maxPointBuffer.Reserve(nbNodes);
+        _nodeInfoBuffer.Reserve(nbNodes);
     }
 
     /// <summary>Adds a new leaf node; returns its index.</summary>
-    public int AddLeafNode(in TVec theMinPoint, in TVec theMaxPoint, int theBegElem, int theEndElem)
+    public int AddLeafNode(in TVec minPoint, in TVec maxPoint, int begElem, int endElem)
     {
-        myMinPointBuffer.Append(theMinPoint);
-        myMaxPointBuffer.Append(theMaxPoint);
-        myNodeInfoBuffer.Append(new NCollection_Vec4<int>(1, theBegElem, theEndElem, 0));
-        return myNodeInfoBuffer.Size() - 1;
+        _minPointBuffer.Append(minPoint);
+        _maxPointBuffer.Append(maxPoint);
+        _nodeInfoBuffer.Append(new NCollection_Vec4<int>(1, begElem, endElem, 0));
+        return _nodeInfoBuffer.Size() - 1;
     }
 
     /// <summary>Adds a new inner node; returns its index.</summary>
-    public int AddInnerNode(in TVec theMinPoint, in TVec theMaxPoint, int theLftChild, int theRghChild)
+    public int AddInnerNode(in TVec minPoint, in TVec maxPoint, int lftChild, int rghChild)
     {
-        myMinPointBuffer.Append(theMinPoint);
-        myMaxPointBuffer.Append(theMaxPoint);
-        myNodeInfoBuffer.Append(new NCollection_Vec4<int>(0, theLftChild, theRghChild, 0));
-        return myNodeInfoBuffer.Size() - 1;
+        _minPointBuffer.Append(minPoint);
+        _maxPointBuffer.Append(maxPoint);
+        _nodeInfoBuffer.Append(new NCollection_Vec4<int>(0, lftChild, rghChild, 0));
+        return _nodeInfoBuffer.Size() - 1;
     }
 
     /// <summary>Adds a new leaf node; returns its index.</summary>
-    public int AddLeafNode(in BVH_Box<T, TVec> theAABB, int theBegElem, int theEndElem)
-        => AddLeafNode(theAABB.CornerMin(), theAABB.CornerMax(), theBegElem, theEndElem);
+    public int AddLeafNode(in Box<T, TVec> aabb, int begElem, int endElem)
+        => AddLeafNode(aabb.CornerMin(), aabb.CornerMax(), begElem, endElem);
 
     /// <summary>Adds a new inner node; returns its index.</summary>
-    public int AddInnerNode(in BVH_Box<T, TVec> theAABB, int theLftChild, int theRghChild)
-        => AddInnerNode(theAABB.CornerMin(), theAABB.CornerMax(), theLftChild, theRghChild);
+    public int AddInnerNode(in Box<T, TVec> aabb, int lftChild, int rghChild)
+        => AddInnerNode(aabb.CornerMin(), aabb.CornerMax(), lftChild, rghChild);
 
     /// <summary>Adds a new leaf node without bounds (the point buffers are not extended); returns its index.</summary>
-    public int AddLeafNode(int theBegElem, int theEndElem)
+    public int AddLeafNode(int begElem, int endElem)
     {
-        myNodeInfoBuffer.Append(new NCollection_Vec4<int>(1, theBegElem, theEndElem, 0));
-        return myNodeInfoBuffer.Size() - 1;
+        _nodeInfoBuffer.Append(new NCollection_Vec4<int>(1, begElem, endElem, 0));
+        return _nodeInfoBuffer.Size() - 1;
     }
 
     /// <summary>Adds a new inner node without bounds (the point buffers are not extended); returns its index.</summary>
-    public int AddInnerNode(int theLftChild, int theRghChild)
+    public int AddInnerNode(int lftChild, int rghChild)
     {
-        myNodeInfoBuffer.Append(new NCollection_Vec4<int>(0, theLftChild, theRghChild, 0));
-        return myNodeInfoBuffer.Size() - 1;
+        _nodeInfoBuffer.Append(new NCollection_Vec4<int>(0, lftChild, rghChild, 0));
+        return _nodeInfoBuffer.Size() - 1;
     }
 
     // Methods specific to binary BVH
@@ -99,117 +100,117 @@ public class BVH_Tree<T, TVec> : BVH_TreeBase<T, TVec>
     /// </summary>
     public T EstimateSAH()
     {
-        T aSAH = T.Zero;
-        EstimateSAH(this, 0, T.One, ref aSAH);
-        return aSAH;
+        T sah = T.Zero;
+        EstimateSAH(this, 0, T.One, ref sah);
+        return sah;
     }
 
     /// <summary>
     /// Collapses the tree into a quad tree and returns it: every second level of this tree is kept and the rest are
     /// discarded.
     /// </summary>
-    public BVH_QuadTree<T, TVec> CollapseToQuadTree()
+    public QuadTree<T, TVec> CollapseToQuadTree()
     {
-        BVH_QuadTree<T, TVec> aQBVH = new();
+        QuadTree<T, TVec> qbvh = new();
 
         if (Length() == 0)
         {
-            return aQBVH;
+            return qbvh;
         }
 
-        Queue<(int Node, int Level)> aQueue = new();
-        aQueue.Enqueue((0, 0));
+        Queue<(int Node, int Level)> queue = new();
+        queue.Enqueue((0, 0));
 
-        for (int aNbNodes = 1; aQueue.Count != 0;)
+        for (int nbNodes = 1; queue.Count != 0;)
         {
-            (int Node, int Level) aNode = aQueue.Peek();
+            (int Node, int Level) node = queue.Peek();
 
-            aQBVH.myMinPointBuffer.Append(myMinPointBuffer.Value(aNode.Node));
-            aQBVH.myMaxPointBuffer.Append(myMaxPointBuffer.Value(aNode.Node));
+            qbvh._minPointBuffer.Append(_minPointBuffer.Value(node.Node));
+            qbvh._maxPointBuffer.Append(_maxPointBuffer.Value(node.Node));
 
-            NCollection_Vec4<int> aNodeInfo;
-            if (IsOuter(aNode.Node)) // is leaf node
+            NCollection_Vec4<int> nodeInfo;
+            if (IsOuter(node.Node)) // is leaf node
             {
-                aNodeInfo = new NCollection_Vec4<int>(1 /* leaf flag */,
-                                                      BegPrimitive(aNode.Node),
-                                                      EndPrimitive(aNode.Node),
-                                                      aNode.Level /* level */);
+                nodeInfo = new NCollection_Vec4<int>(1 /* leaf flag */,
+                                                      BegPrimitive(node.Node),
+                                                      EndPrimitive(node.Node),
+                                                      node.Level /* level */);
             }
             else
             {
-                NCollection_DynamicArray<int> aGrandChildNodes = new();
+                NCollection_DynamicArray<int> grandChildNodes = new();
 
-                int aLftChild = Child(0, aNode.Node);
-                int aRghChild = Child(1, aNode.Node);
-                if (IsOuter(aLftChild)) // is leaf node
+                int lftChild = Child(0, node.Node);
+                int rghChild = Child(1, node.Node);
+                if (IsOuter(lftChild)) // is leaf node
                 {
-                    aGrandChildNodes.Append(aLftChild);
+                    grandChildNodes.Append(lftChild);
                 }
                 else
                 {
-                    aGrandChildNodes.Append(Child(0, aLftChild));
-                    aGrandChildNodes.Append(Child(1, aLftChild));
+                    grandChildNodes.Append(Child(0, lftChild));
+                    grandChildNodes.Append(Child(1, lftChild));
                 }
 
-                if (IsOuter(aRghChild)) // is leaf node
+                if (IsOuter(rghChild)) // is leaf node
                 {
-                    aGrandChildNodes.Append(aRghChild);
+                    grandChildNodes.Append(rghChild);
                 }
                 else
                 {
-                    aGrandChildNodes.Append(Child(0, aRghChild));
-                    aGrandChildNodes.Append(Child(1, aRghChild));
+                    grandChildNodes.Append(Child(0, rghChild));
+                    grandChildNodes.Append(Child(1, rghChild));
                 }
 
-                for (int aNodeIdx = 0; aNodeIdx < aGrandChildNodes.Length(); ++aNodeIdx)
+                for (int nodeIdx = 0; nodeIdx < grandChildNodes.Length(); ++nodeIdx)
                 {
-                    aQueue.Enqueue((aGrandChildNodes.Value(aNodeIdx), aNode.Level + 1));
+                    queue.Enqueue((grandChildNodes.Value(nodeIdx), node.Level + 1));
                 }
 
-                aNodeInfo = new NCollection_Vec4<int>(0 /* inner flag */,
-                                                      aNbNodes,
-                                                      aGrandChildNodes.Length() - 1,
-                                                      aNode.Level /* level */);
+                nodeInfo = new NCollection_Vec4<int>(0 /* inner flag */,
+                                                      nbNodes,
+                                                      grandChildNodes.Length() - 1,
+                                                      node.Level /* level */);
 
-                aQBVH.myDepth = Max(aQBVH.myDepth, aNode.Level + 1);
+                qbvh._depth = Max(qbvh._depth, node.Level + 1);
 
-                aNbNodes += aGrandChildNodes.Length();
+                nbNodes += grandChildNodes.Length();
             }
 
-            aQBVH.myNodeInfoBuffer.Append(aNodeInfo);
-            aQueue.Dequeue(); // node processing completed
+            qbvh._nodeInfoBuffer.Append(nodeInfo);
+            queue.Dequeue(); // node processing completed
         }
 
-        return aQBVH;
+        return qbvh;
     }
 
     /// <summary>Recursive calculation of the surface area heuristic (<c>BVH::EstimateSAH</c>).</summary>
-    private static void EstimateSAH(BVH_Tree<T, TVec> theTree, int theNode, T theProb, ref T theSAH)
+    private static void EstimateSAH(Tree<T, TVec> tree, int node, T prob, ref T sah)
     {
-        BVH_Box<T, TVec> aBox = new(theTree.MinPoint(theNode), theTree.MaxPoint(theNode));
+        Box<T, TVec> box = new(tree.MinPoint(node), tree.MaxPoint(node));
 
-        if (theTree.IsOuter(theNode))
+        if (tree.IsOuter(node))
         {
-            theSAH += theProb * T.CreateTruncating(theTree.EndPrimitive(theNode) - theTree.BegPrimitive(theNode) + 1);
+            sah += prob * T.CreateTruncating(tree.EndPrimitive(node) - tree.BegPrimitive(node) + 1);
         }
         else
         {
-            theSAH += theProb * T.CreateTruncating(2.0);
+            sah += prob * T.CreateTruncating(2.0);
 
-            BVH_Box<T, TVec> aLftBox = new(theTree.MinPoint(theTree.Child(0, theNode)),
-                                          theTree.MaxPoint(theTree.Child(0, theNode)));
+            Box<T, TVec> lftBox = new(tree.MinPoint(tree.Child(0, node)),
+                                          tree.MaxPoint(tree.Child(0, node)));
 
-            if (theProb > T.Zero)
+            if (prob > T.Zero)
             {
-                EstimateSAH(theTree, theTree.Child(0, theNode), theProb * aLftBox.Area() / aBox.Area(), ref theSAH);
+                EstimateSAH(tree, tree.Child(0, node), prob * lftBox.Area() / box.Area(), ref sah);
             }
 
-            BVH_Box<T, TVec> aRghBox = new(theTree.MinPoint(theTree.Child(1, theNode)),
-                                          theTree.MaxPoint(theTree.Child(1, theNode)));
+            Box<T, TVec> rghBox = new(tree.MinPoint(tree.Child(1, node)),
+                                          tree.MaxPoint(tree.Child(1, node)));
 
-            if (theProb > T.Zero)
+            if (prob > T.Zero)
             {
-                EstimateSAH(theTree, theTree.Child(1, theNode), theProb * aRghBox.Area() / aBox.Area(), ref theSAH);
+                EstimateSAH(tree, tree.Child(1, node), prob * rghBox.Area() / box.Area(), ref sah);
             }
         }
     }

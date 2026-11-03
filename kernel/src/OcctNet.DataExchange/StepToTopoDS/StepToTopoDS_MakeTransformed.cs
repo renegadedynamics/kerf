@@ -5,14 +5,17 @@
 
 #nullable disable warnings
 
-using static Occt.gp_TrsfForm;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.TransformForm;
 
 namespace Occt;
 
 /// <summary>Produces instances by transformation of a basic item.</summary>
 public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
 {
-    private gp_Trsf theTrsf = new gp_Trsf();
+    private Transform3D theTrsf = new Transform3D();
 
     public StepToTopoDS_MakeTransformed()
     {
@@ -24,7 +27,7 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
     /// </summary>
     public bool Compute(StepGeom_Axis2Placement3d Origin, StepGeom_Axis2Placement3d Target, in StepData_Factors theLocalFactors)
     {
-        theTrsf = new gp_Trsf(); // reinit
+        theTrsf = new Transform3D(); // reinit
         if (Origin is null || Target is null)
         {
             return false;
@@ -43,8 +46,8 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
             return false;
         }
 
-        gp_Ax3 ax3Orig = new gp_Ax3(theOrig.Ax2());
-        gp_Ax3 ax3Targ = new gp_Ax3(theTarg.Ax2());
+        CoordinateSystem ax3Orig = new CoordinateSystem(theOrig.Ax2());
+        CoordinateSystem ax3Targ = new CoordinateSystem(theTarg.Ax2());
 
         //  ne pas se tromper de sens !
         theTrsf.SetTransformation(ax3Targ, ax3Orig);
@@ -61,17 +64,17 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
     public bool Compute(StepGeom_CartesianTransformationOperator3d Operator) => Compute(Operator, new StepData_Factors());
 
     /// <summary>The computed transformation (the identity if not yet computed or if that failed).</summary>
-    public gp_Trsf Transformation() => theTrsf;
+    public Transform3D Transformation() => theTrsf;
 
     /// <summary>Applies the computed transformation to a shape; false if the transformation is the identity.</summary>
     public bool Transform(ref TopoDS_Shape shape)
     {
-        if (theTrsf.Form() == gp_Identity)
+        if (theTrsf.Form() == Identity)
         {
             return false;
         }
 
-        TopLoc_Location theLoc = new TopLoc_Location(theTrsf);
+        Placement theLoc = new Placement(theTrsf);
         shape.Move(theLoc);
         return true;
     }
@@ -81,7 +84,7 @@ public sealed class StepToTopoDS_MakeTransformed : StepToTopoDS_Root
     /// mapped representation converted to a shape (through the transient process), then moved as an instance of it.
     /// </summary>
     public TopoDS_Shape TranslateMappedItem(StepRepr_MappedItem mapit, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
-                                            Message_ProgressRange theProgress = default)
+                                            ProgressRange theProgress = default)
     {
         TopoDS_Shape theResult = new TopoDS_Shape();
 

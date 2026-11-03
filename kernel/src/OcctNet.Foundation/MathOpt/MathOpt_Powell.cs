@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
@@ -12,140 +13,140 @@ public static partial class MathOpt
     /// Powell's conjugate direction method for N-dimensional minimization (gradient-free), starting from the
     /// coordinate axes.
     /// </summary>
-    public static VectorResult Powell<Function>(Function theFunc, math_Vector theStartingPoint, Config? theConfig = null)
+    public static VectorResult Powell<Function>(Function func, math_Vector startingPoint, Config? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new Config();
-        VectorResult aResult = new();
+        config ??= new Config();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
 
         // Current point
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector x = new(lower, upper);
+        x.Initialized(startingPoint);
 
         // Function value at current point
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Initialize direction set to coordinate axes
         // Directions stored as rows of matrix
-        math_Matrix aDirections = new(1, aN, 1, aN, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        Matrix directions = new(1, n, 1, n, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
-            aDirections[i, i] = 1.0;
+            directions[i, i] = 1.0;
         }
 
         // Working vectors
-        math_Vector aDir = new(aLower, aUpper);
-        math_Vector aXOld = new(aLower, aUpper);
-        math_Vector aPt = new(aLower, aUpper);
-        math_Vector aPtt = new(aLower, aUpper);
-        math_Vector aXit = new(aLower, aUpper);
-        _ = aPt; // unused, as in C++
+        math_Vector dir = new(lower, upper);
+        math_Vector xOld = new(lower, upper);
+        math_Vector pt = new(lower, upper);
+        math_Vector ptt = new(lower, upper);
+        math_Vector xit = new(lower, upper);
+        _ = pt; // unused, as in C++
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
-            double aFp = aFx;
-            aXOld.Initialized(aX);
+            double fp = fx;
+            xOld.Initialized(x);
 
             // Track largest decrease and its direction index
-            double aDel = 0.0;
-            int aIBig = 0;
+            double del = 0.0;
+            int iBig = 0;
 
             // Minimize along each direction
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
                 // Extract direction i
-                for (int j = aLower; j <= aUpper; ++j)
+                for (int j = lower; j <= upper; ++j)
                 {
-                    aDir[j] = aDirections[i, j - aLower + 1];
+                    dir[j] = directions[i, j - lower + 1];
                 }
 
-                double aFpPrev = aFx;
+                double fpPrev = fx;
 
                 // Line minimization along direction
-                LineSearchResult aLineResult =
-                  MathUtils.ExactLineSearch(theFunc, aX, aDir, 10.0, theConfig.XTolerance);
+                LineSearchResult lineResult =
+                  global::Kerf.Engine.Numerics.Utilities.MathUtils.ExactLineSearch(func, x, dir, 10.0, config.XTolerance);
 
-                if (aLineResult.IsValid)
+                if (lineResult.IsValid)
                 {
                     // Update position
-                    for (int j = aLower; j <= aUpper; ++j)
+                    for (int j = lower; j <= upper; ++j)
                     {
-                        aX[j] += aLineResult.Alpha * aDir[j];
+                        x[j] += lineResult.Alpha * dir[j];
                     }
-                    aFx = aLineResult.FNew;
+                    fx = lineResult.FNew;
 
                     // Track direction with largest decrease
-                    double aDecrease = aFpPrev - aFx;
-                    if (aDecrease > aDel)
+                    double decrease = fpPrev - fx;
+                    if (decrease > del)
                     {
-                        aDel = aDecrease;
-                        aIBig = i;
+                        del = decrease;
+                        iBig = i;
                     }
                 }
             }
 
             // Check convergence
-            if (2.0 * Math.Abs(aFp - aFx)
-                <= theConfig.FTolerance * (Math.Abs(aFp) + Math.Abs(aFx) + MathUtils.THE_ZERO_TOL))
+            if (2.0 * Math.Abs(fp - fx)
+                <= config.FTolerance * (Math.Abs(fp) + Math.Abs(fx) + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL))
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
 
             // Construct extrapolated point and new direction
-            for (int j = aLower; j <= aUpper; ++j)
+            for (int j = lower; j <= upper; ++j)
             {
-                aPtt[j] = 2.0 * aX[j] - aXOld[j];
-                aXit[j] = aX[j] - aXOld[j];
+                ptt[j] = 2.0 * x[j] - xOld[j];
+                xit[j] = x[j] - xOld[j];
             }
 
             // Evaluate at extrapolated point
-            if (!theFunc.Value(aPtt, out double aFptt))
+            if (!func.Value(ptt, out double fptt))
             {
                 // If evaluation fails, continue with current directions
                 continue;
             }
 
             // Check if new direction should be added
-            if (aFptt < aFp)
+            if (fptt < fp)
             {
-                double aT = 2.0 * (aFp - 2.0 * aFx + aFptt) * MathUtils.Sqr(aFp - aFx - aDel)
-                            - aDel * MathUtils.Sqr(aFp - aFptt);
+                double t = 2.0 * (fp - 2.0 * fx + fptt) * global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(fp - fx - del)
+                            - del * global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(fp - fptt);
 
-                if (aT < 0.0)
+                if (t < 0.0)
                 {
                     // Minimize along new direction
-                    LineSearchResult aLineResult =
-                      MathUtils.ExactLineSearch(theFunc, aX, aXit, 10.0, theConfig.XTolerance);
+                    LineSearchResult lineResult =
+                      global::Kerf.Engine.Numerics.Utilities.MathUtils.ExactLineSearch(func, x, xit, 10.0, config.XTolerance);
 
-                    if (aLineResult.IsValid)
+                    if (lineResult.IsValid)
                     {
                         // Update position
-                        for (int j = aLower; j <= aUpper; ++j)
+                        for (int j = lower; j <= upper; ++j)
                         {
-                            aX[j] += aLineResult.Alpha * aXit[j];
+                            x[j] += lineResult.Alpha * xit[j];
                         }
-                        aFx = aLineResult.FNew;
+                        fx = lineResult.FNew;
 
                         // Replace direction with largest decrease
-                        if (aIBig > 0)
+                        if (iBig > 0)
                         {
-                            for (int j = 1; j <= aN; ++j)
+                            for (int j = 1; j <= n; ++j)
                             {
-                                aDirections[aIBig, j] = aDirections[aN, j];
-                                aDirections[aN, j] = aXit[aLower + j - 1];
+                                directions[iBig, j] = directions[n, j];
+                                directions[n, j] = xit[lower + j - 1];
                             }
                         }
                     }
@@ -153,174 +154,174 @@ public static partial class MathOpt
             }
 
             // Check X convergence
-            double aMaxDiff = 0.0;
-            for (int j = aLower; j <= aUpper; ++j)
+            double maxDiff = 0.0;
+            for (int j = lower; j <= upper; ++j)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aX[j] - aXOld[j]));
+                maxDiff = Max(maxDiff, Math.Abs(x[j] - xOld[j]));
             }
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = x;
+        result.Value = fx;
+        return result;
     }
 
     /// <summary>Powell's method with a custom initial direction set (N x N, directions as rows).</summary>
-    public static VectorResult PowellWithDirections<Function>(Function theFunc,
-                                                              math_Vector theStartingPoint,
-                                                              math_Matrix theInitialDirections,
-                                                              Config? theConfig = null)
+    public static VectorResult PowellWithDirections<Function>(Function func,
+                                                              math_Vector startingPoint,
+                                                              Matrix initialDirections,
+                                                              Config? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new Config();
-        VectorResult aResult = new();
+        config ??= new Config();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
 
         // Validate dimensions
-        if (theInitialDirections.RowNumber() != aN || theInitialDirections.ColNumber() != aN)
+        if (initialDirections.RowNumber() != n || initialDirections.ColNumber() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector x = new(lower, upper);
+        x.Initialized(startingPoint);
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Copy initial directions
-        math_Matrix aDirections = new(1, aN, 1, aN);
-        aDirections.Initialized(theInitialDirections);
+        Matrix directions = new(1, n, 1, n);
+        directions.Initialized(initialDirections);
 
-        math_Vector aDir = new(aLower, aUpper);
-        math_Vector aXOld = new(aLower, aUpper);
-        math_Vector aPtt = new(aLower, aUpper);
-        math_Vector aXit = new(aLower, aUpper);
+        math_Vector dir = new(lower, upper);
+        math_Vector xOld = new(lower, upper);
+        math_Vector ptt = new(lower, upper);
+        math_Vector xit = new(lower, upper);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
-            double aFp = aFx;
-            aXOld.Initialized(aX);
+            double fp = fx;
+            xOld.Initialized(x);
 
-            double aDel = 0.0;
-            int aIBig = 0;
+            double del = 0.0;
+            int iBig = 0;
 
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                for (int j = aLower; j <= aUpper; ++j)
+                for (int j = lower; j <= upper; ++j)
                 {
-                    aDir[j] = aDirections[i, j - aLower + 1];
+                    dir[j] = directions[i, j - lower + 1];
                 }
 
-                double aFpPrev = aFx;
+                double fpPrev = fx;
 
-                LineSearchResult aLineResult =
-                  MathUtils.ExactLineSearch(theFunc, aX, aDir, 10.0, theConfig.XTolerance);
+                LineSearchResult lineResult =
+                  global::Kerf.Engine.Numerics.Utilities.MathUtils.ExactLineSearch(func, x, dir, 10.0, config.XTolerance);
 
-                if (aLineResult.IsValid)
+                if (lineResult.IsValid)
                 {
-                    for (int j = aLower; j <= aUpper; ++j)
+                    for (int j = lower; j <= upper; ++j)
                     {
-                        aX[j] += aLineResult.Alpha * aDir[j];
+                        x[j] += lineResult.Alpha * dir[j];
                     }
-                    aFx = aLineResult.FNew;
+                    fx = lineResult.FNew;
 
-                    double aDecrease = aFpPrev - aFx;
-                    if (aDecrease > aDel)
+                    double decrease = fpPrev - fx;
+                    if (decrease > del)
                     {
-                        aDel = aDecrease;
-                        aIBig = i;
+                        del = decrease;
+                        iBig = i;
                     }
                 }
             }
 
             // Check convergence
-            if (2.0 * Math.Abs(aFp - aFx)
-                <= theConfig.FTolerance * (Math.Abs(aFp) + Math.Abs(aFx) + MathUtils.THE_ZERO_TOL))
+            if (2.0 * Math.Abs(fp - fx)
+                <= config.FTolerance * (Math.Abs(fp) + Math.Abs(fx) + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL))
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
 
             // Construct extrapolated point
-            for (int j = aLower; j <= aUpper; ++j)
+            for (int j = lower; j <= upper; ++j)
             {
-                aPtt[j] = 2.0 * aX[j] - aXOld[j];
-                aXit[j] = aX[j] - aXOld[j];
+                ptt[j] = 2.0 * x[j] - xOld[j];
+                xit[j] = x[j] - xOld[j];
             }
 
-            if (!theFunc.Value(aPtt, out double aFptt))
+            if (!func.Value(ptt, out double fptt))
             {
                 continue;
             }
 
-            if (aFptt < aFp)
+            if (fptt < fp)
             {
-                double aT = 2.0 * (aFp - 2.0 * aFx + aFptt) * MathUtils.Sqr(aFp - aFx - aDel)
-                            - aDel * MathUtils.Sqr(aFp - aFptt);
+                double t = 2.0 * (fp - 2.0 * fx + fptt) * global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(fp - fx - del)
+                            - del * global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(fp - fptt);
 
-                if (aT < 0.0)
+                if (t < 0.0)
                 {
-                    LineSearchResult aLineResult =
-                      MathUtils.ExactLineSearch(theFunc, aX, aXit, 10.0, theConfig.XTolerance);
+                    LineSearchResult lineResult =
+                      global::Kerf.Engine.Numerics.Utilities.MathUtils.ExactLineSearch(func, x, xit, 10.0, config.XTolerance);
 
-                    if (aLineResult.IsValid)
+                    if (lineResult.IsValid)
                     {
-                        for (int j = aLower; j <= aUpper; ++j)
+                        for (int j = lower; j <= upper; ++j)
                         {
-                            aX[j] += aLineResult.Alpha * aXit[j];
+                            x[j] += lineResult.Alpha * xit[j];
                         }
-                        aFx = aLineResult.FNew;
+                        fx = lineResult.FNew;
 
-                        if (aIBig > 0)
+                        if (iBig > 0)
                         {
-                            for (int j = 1; j <= aN; ++j)
+                            for (int j = 1; j <= n; ++j)
                             {
-                                aDirections[aIBig, j] = aDirections[aN, j];
-                                aDirections[aN, j] = aXit[aLower + j - 1];
+                                directions[iBig, j] = directions[n, j];
+                                directions[n, j] = xit[lower + j - 1];
                             }
                         }
                     }
                 }
             }
 
-            double aMaxDiff = 0.0;
-            for (int j = aLower; j <= aUpper; ++j)
+            double maxDiff = 0.0;
+            for (int j = lower; j <= upper; ++j)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aX[j] - aXOld[j]));
+                maxDiff = Max(maxDiff, Math.Abs(x[j] - xOld[j]));
             }
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
         }
 
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = x;
+        result.Value = fx;
+        return result;
     }
 }

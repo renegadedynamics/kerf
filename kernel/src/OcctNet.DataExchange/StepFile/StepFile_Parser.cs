@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using static Occt.Interface_ParamType;
 
@@ -79,8 +80,8 @@ public sealed class StepFile_Parser
 
     private readonly StepFile_Scanner scanner;
     private readonly StepFile_ReadLimits myLimits;
-    private readonly Message_ProgressRange myRange;
-    private Message_ProgressScope? myScope;
+    private readonly ProgressRange myRange;
+    private ProgressScope? myScope;
     private long myInputLength;
     private long myReported;
     private int myTokens;
@@ -95,7 +96,7 @@ public sealed class StepFile_Parser
     }
 
     /// <summary>A parser over <paramref name="theScanner"/>'s tokens.</summary>
-    public StepFile_Parser(StepFile_Scanner theScanner, Message_ProgressRange theRange = default)
+    public StepFile_Parser(StepFile_Scanner theScanner, ProgressRange theRange = default)
     {
         scanner = theScanner;
         myLimits = theScanner.Limits;
@@ -113,13 +114,13 @@ public sealed class StepFile_Parser
     /// <summary>
     /// Parses the input: 0 when it was accepted (possibly with errors recovered, in
     /// <see cref="StepFile_ReadData.GetLastError"/>), 1 when the parser gave up (an error it couldn't recover, a limit
-    /// reached, or cancellation). The scanner's <see cref="Standard_Failure"/> (a token beyond 16,383 bytes) goes
+    /// reached, or cancellation). The scanner's <see cref="FailureException"/> (a token beyond 16,383 bytes) goes
     /// through, as OCCT's does.
     /// </summary>
     public int parse()
     {
         myInputLength = scanner.InputLength;
-        myScope = new Message_ProgressScope(myRange, "Reading the STEP file", myInputLength > 0 ? myInputLength : 1);
+        myScope = new ProgressScope(myRange, "Reading the STEP file", myInputLength > 0 ? myInputLength : 1);
         try
         {
             stepf();
@@ -447,7 +448,7 @@ public sealed class StepFile_Parser
                 {
                     Shift();
                     // OCCT prints it with printf on the standard output (the port: the messenger's warnings)
-                    Message.SendWarning("***  Warning : Export List not yet processed");
+                    global::Kerf.Engine.Foundation.Message.SendWarning("***  Warning : Export List not yet processed");
                     StepData.RecordNewEntity();
                     StepData.FinalOfScope();
                     break;
@@ -742,11 +743,11 @@ public sealed class StepFile_Parser
         string aText = "**** ERR StepFile : " + theErrorMessage + "    ****";
         if (theIsFail)
         {
-            Message.SendFail(aText);
+            global::Kerf.Engine.Foundation.Message.SendFail(aText);
         }
         else
         {
-            Message.SendTrace(aText);
+            global::Kerf.Engine.Foundation.Message.SendTrace(aText);
         }
     }
 
@@ -774,7 +775,7 @@ public sealed class StepFile_Parser
             long aRead = Math.Min(scanner.BytesRead, myInputLength);
             if (aRead > myReported)
             {
-                Message_ProgressRange aStep = myScope.Next(aRead - myReported);
+                ProgressRange aStep = myScope.Next(aRead - myReported);
                 aStep.Close();
                 myReported = aRead;
             }

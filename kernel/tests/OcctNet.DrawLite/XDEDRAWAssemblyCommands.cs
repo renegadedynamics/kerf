@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using Occt;
 
@@ -121,28 +122,28 @@ internal static class XDEDRAWAssemblyCommands
             {
                 if (iarg + 1 >= argc)
                 {
-                    throw new Standard_ProgramError("Root is expected!");
+                    throw new ProgramErrorException("Root is expected!");
                 }
                 // XCAFDoc_AssemblyItemId::Init (string): the entries separated by '/'
                 aRoot = [.. argv[++iarg].Split('/', StringSplitOptions.RemoveEmptyEntries)];
                 if (aRoot.Count == 0)
                 {
-                    throw new Standard_NullObject("Null assembly item!");
+                    throw new NullObjectException("Null assembly item!");
                 }
             }
             else if (argv[iarg] == "-level")
             {
                 if (iarg + 1 >= argc)
                 {
-                    throw new Standard_ProgramError("Level is expected!");
+                    throw new ProgramErrorException("Level is expected!");
                 }
                 if (!int.TryParse(argv[++iarg], System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out aLevel))
                 {
-                    throw new Standard_ProgramError("Integer value is expected!");
+                    throw new ProgramErrorException("Integer value is expected!");
                 }
                 if (aLevel < 0)
                 {
-                    throw new Standard_RangeError("Null document!");
+                    throw new RangeErrorException("Null document!");
                 }
             }
             else if (argv[iarg] == "-names")
@@ -360,7 +361,7 @@ internal static class XDEDRAWAssemblyCommands
             {
                 if (iarg + 1 >= argc)
                 {
-                    throw new Standard_ProgramError("Root is expected!");
+                    throw new ProgramErrorException("Root is expected!");
                 }
                 aLabel = DDocStdCommands.Label(aDoc, argv[++iarg]);
             }
@@ -371,7 +372,7 @@ internal static class XDEDRAWAssemblyCommands
         }
         if (aLabel.IsNull())
         {
-            throw new Standard_NullObject("Null label!");
+            throw new NullObjectException("Null label!");
         }
 
         var aG = new Graph(aDoc, aLabel);

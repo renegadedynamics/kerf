@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -55,7 +57,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
     }
 
     private static bool findPDWADandExcludeExcess(StepAP214_AppliedDocumentReference ADR,
-                                                  NCollection_Sequence<Standard_Transient> aSeqOfPDWAD,
+                                                  NCollection_Sequence<Transient> aSeqOfPDWAD,
                                                   Interface_Graph Graph,
                                                   ref StepBasic_ProductDefinitionWithAssociatedDocuments aPDWAD)
     {
@@ -129,11 +131,11 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
 
         // PTV 28.01.2003 CAX-IF TRJ11, file ext_ref_master.stp
         // search all ADR and PDWAD and exclude excess PDWADs
-        NCollection_Sequence<Standard_Transient> aSeqOfADR = new NCollection_Sequence<Standard_Transient>();
-        NCollection_Sequence<Standard_Transient> aSeqOfPDWAD = new NCollection_Sequence<Standard_Transient>();
+        NCollection_Sequence<Transient> aSeqOfADR = new NCollection_Sequence<Transient>();
+        NCollection_Sequence<Transient> aSeqOfPDWAD = new NCollection_Sequence<Transient>();
         for (int ient = 1; ient <= nb; ient++)
         {
-            Standard_Transient enti = model.Value(ient);
+            Transient enti = model.Value(ient);
             if (enti.DynamicType() == tPDWAD)
             {
                 aSeqOfPDWAD.Append(enti);
@@ -203,7 +205,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
                 Interface_EntityIterator subs = Graph().Sharings(DocFile);
                 for (subs.Start(); subs.More(); subs.Next())
                 {
-                    Standard_Transient sub = subs.Value();
+                    Transient sub = subs.Value();
 
                     // FORMAT - ???????
                     //
@@ -261,11 +263,11 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
                 aSeqOfPDWAD.Value(pdwadi) as StepBasic_ProductDefinitionWithAssociatedDocuments;
             myShapes.Append(aPDWAD);
             myIsAP214.Append(IsAP214);
-            myAEIAs.Append((Standard_Transient)null);
-            myRoles.Append((Standard_Transient)null);
-            myFormats.Append((Standard_Transient)null);
-            myTypes.Append((Standard_Transient)null);
-            myDocFiles.Append((Standard_Transient)null);
+            myAEIAs.Append((Transient)null);
+            myRoles.Append((Transient)null);
+            myFormats.Append((Transient)null);
+            myTypes.Append((Transient)null);
+            myDocFiles.Append((Transient)null);
         }
 
         return myShapes.Length() > 0;
@@ -354,7 +356,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
             // search document file name by long chain ADR->D<-DPE->PDF<-PDWAD->DF
             StepBasic_ProductDefinitionWithAssociatedDocuments aPDWAD = null;
             // create an empty aSeqOfPDWAD
-            NCollection_Sequence<Standard_Transient> aSeqOfPDWAD = new NCollection_Sequence<Standard_Transient>();
+            NCollection_Sequence<Transient> aSeqOfPDWAD = new NCollection_Sequence<Transient>();
             // we do not need to exclude, just find PDWAD
             findPDWADandExcludeExcess(ADR, aSeqOfPDWAD, Graph(), ref aPDWAD);
 
@@ -726,7 +728,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
             Interface_EntityIterator subs = Graph().Sharings(PD);
             for (subs.Start(); subs.More(); subs.Next())
             {
-                Standard_Transient sub = subs.Value();
+                Transient sub = subs.Value();
                 if (!sub.IsKind(typeof(StepRepr_ProductDefinitionShape)))
                 {
                     continue;
@@ -745,7 +747,7 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
             Interface_EntityIterator subs2 = Graph().Sharings(PD);
             for (subs2.Start(); subs2.More(); subs2.Next())
             {
-                Standard_Transient sub2 = subs2.Value();
+                Transient sub2 = subs2.Value();
 
                 if (sub2.IsKind(typeof(StepRepr_NextAssemblyUsageOccurrence)))
                 {
@@ -1005,14 +1007,14 @@ public class STEPConstruct_ExternRefs : STEPConstruct_Tool
         return true;
     }
 
-    private readonly NCollection_Sequence<Standard_Transient> myAEIAs = new NCollection_Sequence<Standard_Transient>();
-    private readonly NCollection_Sequence<Standard_Transient> myRoles = new NCollection_Sequence<Standard_Transient>();
-    private readonly NCollection_Sequence<Standard_Transient> myFormats = new NCollection_Sequence<Standard_Transient>();
-    private readonly NCollection_Sequence<Standard_Transient> myShapes = new NCollection_Sequence<Standard_Transient>();
-    private readonly NCollection_Sequence<Standard_Transient> myTypes = new NCollection_Sequence<Standard_Transient>();
+    private readonly NCollection_Sequence<Transient> myAEIAs = new NCollection_Sequence<Transient>();
+    private readonly NCollection_Sequence<Transient> myRoles = new NCollection_Sequence<Transient>();
+    private readonly NCollection_Sequence<Transient> myFormats = new NCollection_Sequence<Transient>();
+    private readonly NCollection_Sequence<Transient> myShapes = new NCollection_Sequence<Transient>();
+    private readonly NCollection_Sequence<Transient> myTypes = new NCollection_Sequence<Transient>();
     private readonly NCollection_Sequence<int> myIsAP214 = new NCollection_Sequence<int>();
     private readonly NCollection_Sequence<int> myReplaceNum = new NCollection_Sequence<int>();
-    private readonly NCollection_Sequence<Standard_Transient> myDocFiles = new NCollection_Sequence<Standard_Transient>();
+    private readonly NCollection_Sequence<Transient> myDocFiles = new NCollection_Sequence<Transient>();
     private StepBasic_ProductRelatedProductCategory mySharedPRPC;
     private StepBasic_DocumentType mySharedDocType;
     private StepBasic_ProductDefinitionContext mySharedPDC;

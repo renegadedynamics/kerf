@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -54,7 +55,7 @@ public sealed class BRepMAT2d_Explorer
         TopExp_Explorer Exp = new(F, TopAbs_WIRE);
         Geom_Surface aSurf = BRep_Tool.Surface(F)!;
         // OCCT.NET: InternalFace, unfrozen: the wires are added to it.
-        TopoDS_Face aNewF = new BRepBuilderAPI_MakeFace(aSurf, Precision.Confusion()).InternalFace();
+        TopoDS_Face aNewF = new BRepBuilderAPI_MakeFace(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
 
         while (Exp.More())
         {
@@ -90,9 +91,9 @@ public sealed class BRepMAT2d_Explorer
         Geom2d_Curve C2d;
         Geom2d_TrimmedCurve CT2d;
         Geom2d_TrimmedCurve aFirstCurve;
-        gp_Pnt2d aPFirst;
-        gp_Pnt2d aPLast;
-        gp_Pnt2d aPCurFirst;
+        Point2D aPFirst;
+        Point2D aPLast;
+        Point2D aPCurFirst;
         // The confusion tolerance of the further algorithm.
         double aTolConf = 1.0e-8;
         bool isModif = false;
@@ -139,8 +140,8 @@ public sealed class BRepMAT2d_Explorer
 
                 int aNbC = theCurves.Value(currentContour).Length();
                 Geom2d_BoundedCurve CPrev = (Geom2d_BoundedCurve)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
-                GeomAbs_CurveType TCPrev = GetCurveType(CPrev);
-                GeomAbs_CurveType TCCurr = GetCurveType(CT2d);
+                CurveKind TCPrev = GetCurveType(CPrev);
+                CurveKind TCCurr = GetCurveType(CT2d);
 
                 if (TCCurr <= TCPrev)
                 {
@@ -164,7 +165,7 @@ public sealed class BRepMAT2d_Explorer
                 }
                 else
                 {
-                    gp_Pnt2d aP = CT2d.Value(CT2d.FirstParameter());
+                    Point2D aP = CT2d.Value(CT2d.FirstParameter());
 
                     CPrev = AdjustCurveEnd(CPrev, aP, false);
                     theCurves.ChangeValue(currentContour).ChangeValue(aNbC) = CPrev;
@@ -199,8 +200,8 @@ public sealed class BRepMAT2d_Explorer
 
             int aNbC = theCurves.Value(currentContour).Length();
             Geom2d_BoundedCurve CPrev = (Geom2d_BoundedCurve)theCurves.ChangeValue(currentContour).ChangeValue(aNbC);
-            GeomAbs_CurveType TCPrev = GetCurveType(CPrev);
-            GeomAbs_CurveType TCCurr = GetCurveType(aFirstCurve);
+            CurveKind TCPrev = GetCurveType(CPrev);
+            CurveKind TCCurr = GetCurveType(aFirstCurve);
 
             if (TCCurr <= TCPrev)
             {
@@ -225,7 +226,7 @@ public sealed class BRepMAT2d_Explorer
             }
             else
             {
-                gp_Pnt2d aP = aFirstCurve.Value(aFirstCurve.FirstParameter());
+                Point2D aP = aFirstCurve.Value(aFirstCurve.FirstParameter());
 
                 CPrev = AdjustCurveEnd(CPrev, aP, false);
                 theCurves.ChangeValue(currentContour).ChangeValue(aNbC) = CPrev;
@@ -367,7 +368,7 @@ public sealed class BRepMAT2d_Explorer
     {
         TopoDS_Edge aNewEdge = new();
         BRep_Builder aBuilder = new();
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double aFPar = theCurve.FirstParameter();
         double aLPar = theCurve.LastParameter();
 
@@ -380,9 +381,9 @@ public sealed class BRepMAT2d_Explorer
         return aNewEdge;
     }
 
-    private static GeomAbs_CurveType GetCurveType(Geom2d_Curve theC2d)
+    private static CurveKind GetCurveType(Geom2d_Curve theC2d)
     {
-        GeomAbs_CurveType aTypeCurve;
+        CurveKind aTypeCurve;
         Type TheType = theC2d.GetType();
 
         if (TheType == typeof(Geom2d_TrimmedCurve))
@@ -392,66 +393,66 @@ public sealed class BRepMAT2d_Explorer
 
         if (TheType == typeof(Geom2d_Circle))
         {
-            aTypeCurve = GeomAbs_Circle;
+            aTypeCurve = Circle;
         }
         else if (TheType == typeof(Geom2d_Line))
         {
-            aTypeCurve = GeomAbs_Line;
+            aTypeCurve = Line;
         }
         else if (TheType == typeof(Geom2d_Ellipse))
         {
-            aTypeCurve = GeomAbs_Ellipse;
+            aTypeCurve = Ellipse;
         }
         else if (TheType == typeof(Geom2d_Parabola))
         {
-            aTypeCurve = GeomAbs_Parabola;
+            aTypeCurve = Parabola;
         }
         else if (TheType == typeof(Geom2d_Hyperbola))
         {
-            aTypeCurve = GeomAbs_Hyperbola;
+            aTypeCurve = Hyperbola;
         }
         else if (TheType == typeof(Geom2d_BezierCurve))
         {
-            aTypeCurve = GeomAbs_BezierCurve;
+            aTypeCurve = BezierCurve;
         }
         else if (TheType == typeof(Geom2d_BSplineCurve))
         {
-            aTypeCurve = GeomAbs_BSplineCurve;
+            aTypeCurve = BSplineCurve;
         }
         else if (TheType == typeof(Geom2d_OffsetCurve))
         {
-            aTypeCurve = GeomAbs_OffsetCurve;
+            aTypeCurve = OffsetCurve;
         }
         else
         {
-            aTypeCurve = GeomAbs_OtherCurve;
+            aTypeCurve = OtherCurve;
         }
 
         return aTypeCurve;
     }
 
-    private static Geom2d_TrimmedCurve AdjustCurveEnd(Geom2d_BoundedCurve theC2d, gp_Pnt2d theP, bool isFirst)
+    private static Geom2d_TrimmedCurve AdjustCurveEnd(Geom2d_BoundedCurve theC2d, Point2D theP, bool isFirst)
     {
-        GeomAbs_CurveType aType = GetCurveType(theC2d);
+        CurveKind aType = GetCurveType(theC2d);
 
-        if (aType == GeomAbs_Line)
+        if (aType == Line)
         {
             // A new line.
             if (isFirst)
             {
-                gp_Pnt2d aP = theC2d.Value(theC2d.LastParameter());
+                Point2D aP = theC2d.Value(theC2d.LastParameter());
                 return new GC_MakeSegment2d(theP, aP).Value();
             }
             else
             {
-                gp_Pnt2d aP = theC2d.Value(theC2d.FirstParameter());
+                Point2D aP = theC2d.Value(theC2d.FirstParameter());
                 return new GC_MakeSegment2d(aP, theP).Value();
             }
         }
         else
         {
             // Converted to a B-spline whose end pole is moved.
-            Geom2d_BSplineCurve BCurve = Geom2dConvert.CurveToBSplineCurve(theC2d, Convert_QuasiAngular);
+            Geom2d_BSplineCurve BCurve = Geom2dConvert.CurveToBSplineCurve(theC2d, QuasiAngular);
 
             if (isFirst)
             {

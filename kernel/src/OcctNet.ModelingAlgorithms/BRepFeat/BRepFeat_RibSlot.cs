@@ -4,12 +4,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.LocOpe_Operation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -30,8 +34,8 @@ namespace Occt;
 /// </remarks>
 public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 {
-    protected gp_Pnt myFirstPnt = new();
-    protected gp_Pnt myLastPnt = new();
+    protected Point3D myFirstPnt = new();
+    protected Point3D myLastPnt = new();
     protected bool myFuse;
     protected bool mySliding;
     protected NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
@@ -246,7 +250,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>True if the face <paramref name="F"/> has no descendant in the result.</summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="F"/> isn't a shape of the history.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="F"/> isn't a shape of the history.</exception>
     public override bool IsDeleted(in TopoDS_Shape F)
     {
         return myMap.Find(F).IsEmpty();
@@ -427,7 +431,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     public BRepFeat_StatusError CurrentStatusError() => myStatusError;
 
     /// <summary>A proofing point somewhat inside the material side of the edge <paramref name="e"/>.</summary>
-    protected gp_Pnt CheckPoint(in TopoDS_Edge e, double bnd, Geom_Plane Pln)
+    protected Point3D CheckPoint(in TopoDS_Edge e, double bnd, Geom_Plane Pln)
     {
         // Vector product : normal to plane X direction Wire
         // -> gives the material side
@@ -435,52 +439,52 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         Geom_Curve cc = BRep_Tool.Curve(e, out double f, out double l)!;
 
         double par = (f + l) / 2.0;
-        cc.D1(par, out gp_Pnt pp, out gp_Vec tgt);
+        cc.D1(par, out Point3D pp, out Vector3D tgt);
 
         if (e.Orientation() == TopAbs_REVERSED)
         {
             tgt.Reverse();
         }
 
-        gp_Vec D = -tgt.Crossed(new gp_Vec(Pln.Pln().Position().Direction())) / 10.0;
+        Vector3D D = -tgt.Crossed(new Vector3D(Pln.Pln().Position().Direction())) / 10.0;
         pp.Translate(D);
 
         return pp;
     }
 
     /// <summary>The normal of the face <paramref name="F"/> at <paramref name="P"/>, reversed for a forward face.</summary>
-    protected gp_Dir Normal(in TopoDS_Face F, in gp_Pnt P)
+    protected Direction3D Normal(in TopoDS_Face F, in Point3D P)
     {
         double U, V;
         BRepAdaptor_Surface AS = new(F, true);
 
         switch (AS.GetType())
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(AS.Plane(), P, out U, out V);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(AS.Plane(), P, out U, out V);
                 break;
 
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(AS.Cylinder(), P, out U, out V);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(AS.Cylinder(), P, out U, out V);
                 break;
 
-            case GeomAbs_Cone:
-                ElSLib.Parameters(AS.Cone(), P, out U, out V);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(AS.Cone(), P, out U, out V);
                 break;
 
-            case GeomAbs_Torus:
-                ElSLib.Parameters(AS.Torus(), P, out U, out V);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(AS.Torus(), P, out U, out V);
                 break;
 
             default:
             {
-                return new gp_Dir(gp_Dir.D.X);
+                return new Direction3D(Direction3D.D.X);
             }
         }
 
-        AS.D1(U, V, out gp_Pnt pt, out gp_Vec D1U, out gp_Vec D1V);
-        gp_Dir N = new();
-        CSLib.Normal(D1U, D1V, Precision.Confusion(), out CSLib_DerivativeStatus St, ref N);
+        AS.D1(U, V, out Point3D pt, out Vector3D D1U, out Vector3D D1V);
+        Direction3D N = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(D1U, D1V, global::Kerf.Engine.Foundation.Precision.Confusion(), out DerivativeStatus St, ref N);
         if (F.Orientation() == TopAbs_FORWARD)
         {
             N.Reverse();
@@ -489,7 +493,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The parameter of the point <paramref name="P"/> on the conic <paramref name="C"/> (0 for other curves).</summary>
-    public static double IntPar(Geom_Curve? C, in gp_Pnt P)
+    public static double IntPar(Geom_Curve? C, in Point3D P)
     {
         if (C is null)
         {
@@ -501,24 +505,24 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
         switch (AC.GetType())
         {
-            case GeomAbs_Line:
-                U = ElCLib.Parameter(AC.Line(), P);
+            case Line:
+                U = global::Kerf.Engine.Geometry.ElCLib.Parameter(AC.Line(), P);
                 break;
 
-            case GeomAbs_Circle:
-                U = ElCLib.Parameter(AC.Circle(), P);
+            case Circle:
+                U = global::Kerf.Engine.Geometry.ElCLib.Parameter(AC.Circle(), P);
                 break;
 
-            case GeomAbs_Ellipse:
-                U = ElCLib.Parameter(AC.Ellipse(), P);
+            case Ellipse:
+                U = global::Kerf.Engine.Geometry.ElCLib.Parameter(AC.Ellipse(), P);
                 break;
 
-            case GeomAbs_Hyperbola:
-                U = ElCLib.Parameter(AC.Hyperbola(), P);
+            case Hyperbola:
+                U = global::Kerf.Engine.Geometry.ElCLib.Parameter(AC.Hyperbola(), P);
                 break;
 
-            case GeomAbs_Parabola:
-                U = ElCLib.Parameter(AC.Parabola(), P);
+            case Parabola:
+                U = global::Kerf.Engine.Geometry.ElCLib.Parameter(AC.Parabola(), P);
                 break;
 
             default:
@@ -555,22 +559,22 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         else
         {
             Geom_Line ln;
-            gp_Pnt Pt;
+            Point3D Pt;
             if (FirstLast)
             {
-                C.D1(f, out gp_Pnt pnt, out gp_Vec vct);
-                ln = new Geom_Line(pnt, new gp_Dir(-vct));
+                C.D1(f, out Point3D pnt, out Vector3D vct);
+                ln = new Geom_Line(pnt, new Direction3D(-vct));
                 ln.D0(bnd / 1000.0, out Pt);
-                GeomLib.ExtendCurveToPoint(ref C, Pt, (int)GeomAbs_G1, false);
+                GeomLib.ExtendCurveToPoint(ref C, Pt, (int)G1, false);
                 BRepLib_MakeEdge Edg = new(C, Pt, BRep_Tool.Pnt(TopExp.LastVertex(e, true)));
                 E = TopoDS.Edge(Edg.InternalShape());
             }
             else
             {
-                C.D1(l, out gp_Pnt pnt, out gp_Vec vct);
-                ln = new Geom_Line(pnt, new gp_Dir(vct));
+                C.D1(l, out Point3D pnt, out Vector3D vct);
+                ln = new Geom_Line(pnt, new Direction3D(vct));
                 ln.D0(bnd / 1000.0, out Pt);
-                GeomLib.ExtendCurveToPoint(ref C, Pt, (int)GeomAbs_G1, true);
+                GeomLib.ExtendCurveToPoint(ref C, Pt, (int)G1, true);
                 BRepLib_MakeEdge Edg = new(C, BRep_Tool.Pnt(TopExp.FirstVertex(e, true)), Pt);
                 E = TopoDS.Edge(Edg.InternalShape());
             }
@@ -587,14 +591,14 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     {
         TopoDS_Face FFF = new();
 
-        cc.D1(par, out gp_Pnt pp, out gp_Vec tgt);
+        cc.D1(par, out Point3D pp, out Vector3D tgt);
 
-        Geom_Line l1 = new(pp, new gp_Dir(tgt));
+        Geom_Line l1 = new(pp, new Direction3D(tgt));
 
         NCollection_Sequence<Geom_Curve?> scur = new();
         int Counter = 0;
 
-        gp_Ax1 Axe = new(pp, Pln.Position().Direction());
+        Axis3D Axe = new(pp, Pln.Position().Direction());
         for (int i = 1; i <= 8; i++)
         {
             Geom_Curve L = (Geom_Curve)l1.Rotated(Axe, i * M_PI / 9.0);
@@ -632,9 +636,9 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The bound of the boxes of the basis shape and the until shape, and the box's corners pushed outwards.</summary>
-    protected double HeightMax(in TopoDS_Shape theSbase, in TopoDS_Shape theSUntil, ref gp_Pnt p1, ref gp_Pnt p2)
+    protected double HeightMax(in TopoDS_Shape theSbase, in TopoDS_Shape theSUntil, ref Point3D p1, ref Point3D p2)
     {
-        Bnd_Box Box = new();
+        Box Box = new();
         BRepBndLib.Add(theSbase, ref Box);
         if (!theSUntil.IsNull())
         {
@@ -691,13 +695,13 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         if (NumberOfEdges == 1)
         {
             exp.ReInit();
-            gp_Pnt firstpoint = new(), lastpoint = new();
+            Point3D firstpoint = new(), lastpoint = new();
 
             // Points limit the unique edge
             TopoDS_Edge E = TopoDS.Edge(exp.Current());
             Geom_Curve cc = BRep_Tool.Curve(E, out double f, out double l)!;
-            gp_Pnt p1 = BRep_Tool.Pnt(TopExp.FirstVertex(E, true));
-            gp_Pnt p2 = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
+            Point3D p1 = BRep_Tool.Pnt(TopExp.FirstVertex(E, true));
+            Point3D p2 = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
 
             double FirstPar = f;
             double LastPar = l;
@@ -931,11 +935,11 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
             if (!OnFirstFace)
             {
-                OnFirstFace = p1.Distance(firstpoint) <= Precision.Confusion();
+                OnFirstFace = p1.Distance(firstpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
             if (!OnLastFace)
             {
-                OnLastFace = p2.Distance(lastpoint) <= Precision.Confusion();
+                OnLastFace = p2.Distance(lastpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
             Data = !(FirstFace.IsNull() || LastFace.IsNull());
@@ -954,7 +958,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 l = l + bnd / 10000;
                 Geom_TrimmedCurve curve;
                 curve = new Geom_TrimmedCurve(Cur, f, l, true);
-                gp_Pnt P2 = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
+                Point3D P2 = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
                 ex1.Init(mySbase, TopAbs_FACE);
                 TopoDS_Vertex theVertex = new();
                 TopoDS_Edge theEdge = new();
@@ -975,10 +979,10 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     }
                     for (; inter.More(); inter.Next())
                     {
-                        gp_Pnt thePoint = inter.Pnt();
+                        Point3D thePoint = inter.Pnt();
                         if (!FirstVertex.IsNull())
                         {
-                            gp_Pnt point = BRep_Tool.Pnt(FirstVertex);
+                            Point3D point = BRep_Tool.Pnt(FirstVertex);
                             if (point.Distance(thePoint) <= BRep_Tool.Tolerance(aCurFace))
                             {
                                 continue;
@@ -987,10 +991,10 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                         intpar = IntPar(curve, thePoint);
                         theEdge = E;
                         theFace = aCurFace;
-                        B.MakeVertex(ref theVertex, thePoint, Precision.Confusion());
+                        B.MakeVertex(ref theVertex, thePoint, global::Kerf.Engine.Foundation.Precision.Confusion());
                         if (!FirstOK)
                         {
-                            if (thePoint.Distance(P2) <= Precision.Confusion())
+                            if (thePoint.Distance(P2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 continue;
                             }
@@ -1144,10 +1148,10 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
             if (FirstOK && LastOK)
             {
                 Data = true;
-                gp_Pnt PP1 = BRep_Tool.Pnt(TopExp.FirstVertex(FirstEdge, true));
-                gp_Pnt PP2 = BRep_Tool.Pnt(TopExp.LastVertex(LastEdge, true));
-                gp_Pnt p1 = BRep_Tool.Pnt(FirstVertex);
-                gp_Pnt p2 = BRep_Tool.Pnt(LastVertex);
+                Point3D PP1 = BRep_Tool.Pnt(TopExp.FirstVertex(FirstEdge, true));
+                Point3D PP2 = BRep_Tool.Pnt(TopExp.LastVertex(LastEdge, true));
+                Point3D p1 = BRep_Tool.Pnt(FirstVertex);
+                Point3D p2 = BRep_Tool.Pnt(LastVertex);
                 if (p1.Distance(PP1) <= BRep_Tool.Tolerance(FirstFace))
                 {
                     OnFirstFace = true;
@@ -1166,7 +1170,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Finds whether the point is on an edge or a vertex of the shape.</summary>
-    protected void PtOnEdgeVertex(bool RevolRib, in TopoDS_Shape shape, in gp_Pnt point, in TopoDS_Vertex FirstVertex,
+    protected void PtOnEdgeVertex(bool RevolRib, in TopoDS_Shape shape, in Point3D point, in TopoDS_Vertex FirstVertex,
                                   in TopoDS_Vertex LastVertex, ref bool PtOnEdge, ref TopoDS_Edge OnEdge,
                                   ref bool PtOnVertex, ref TopoDS_Vertex OnVertex)
     {
@@ -1216,8 +1220,8 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 OnEdge = e;
                 TopoDS_Vertex ev1 = TopExp.FirstVertex(e, true);
                 TopoDS_Vertex ev2 = TopExp.LastVertex(e, true);
-                gp_Pnt ep1 = BRep_Tool.Pnt(ev1);
-                gp_Pnt ep2 = BRep_Tool.Pnt(ev2);
+                Point3D ep1 = BRep_Tool.Pnt(ev1);
+                Point3D ep2 = BRep_Tool.Pnt(ev2);
                 if (point.Distance(ep1) <= BRep_Tool.Tolerance(ev1))
                 {
                     PtOnVertex = true;
@@ -1237,7 +1241,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
     /// <summary>The profile of a sliding rib or groove: part of the bounding box closed by the contour.</summary>
     protected bool SlidingProfile(ref TopoDS_Face Prof, bool RevolRib, double myTol, ref int Concavite, Geom_Plane myPln,
-                                  in TopoDS_Face BndFace, in gp_Pnt CheckPnt, in TopoDS_Face FirstFace,
+                                  in TopoDS_Face BndFace, in Point3D CheckPnt, in TopoDS_Face FirstFace,
                                   in TopoDS_Face LastFace, in TopoDS_Vertex FirstVertex, in TopoDS_Vertex LastVertex,
                                   in TopoDS_Edge FirstEdge, in TopoDS_Edge LastEdge)
     {
@@ -1246,7 +1250,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         // --> 1 part bounding box + 1 part wire
         //   attention to the compatibility of orientations
 
-        gp_Dir FN, LN;
+        Direction3D FN, LN;
         BRepLib_MakeWire WW = new();
 
         FN = Normal(FirstFace, myFirstPnt);
@@ -1262,7 +1266,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         }
 
         Geom_Line ln1, ln2;
-        gp_Pnt Pt = new();
+        Point3D Pt = new();
 
         ln2 = new Geom_Line(myFirstPnt, FN);
         ln1 = new Geom_Line(myLastPnt, LN);
@@ -1270,18 +1274,18 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         Geom2d_Curve ln2d1 = GeomAPI.To2d(ln1, myPln.Pln())!;
         Geom2d_Curve ln2d2 = GeomAPI.To2d(ln2, myPln.Pln())!;
 
-        Geom2dAPI_InterCurveCurve inter = new(ln2d1, ln2d2, Precision.Confusion());
+        Geom2dAPI_InterCurveCurve inter = new(ln2d1, ln2d2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool TestOK = true;
         if (RevolRib)
         {
-            gp_Dir d1, d2;
+            Direction3D d1, d2;
             d1 = ln1.Position().Direction();
             d2 = ln2.Position().Direction();
             if (d1.IsOpposite(d2, myTol))
             {
-                double par1 = ElCLib.Parameter(ln1.Lin(), myFirstPnt);
-                double par2 = ElCLib.Parameter(ln2.Lin(), myLastPnt);
+                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln1.Lin(), myFirstPnt);
+                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln2.Lin(), myLastPnt);
                 if (par1 >= myTol || par2 >= myTol)
                 {
                     Concavite = 2; // parallel and concave
@@ -1302,7 +1306,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         {
             if (inter.NbPoints() > 0)
             {
-                gp_Pnt2d P = inter.Point(1);
+                Point2D P = inter.Point(1);
                 myPln.D0(P.X(), P.Y(), out Pt);
                 double par = IntPar(ln1, Pt);
                 if (par > 0)
@@ -1327,7 +1331,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
             // BndEdge : edges of intersection with the bounding box
             TopoDS_Edge BndEdge1 = new(), BndEdge2 = new();
             // Points of intersection with the bounding box / Find Profile
-            gp_Pnt BndPnt1 = new(), BndPnt2 = new(), LastPnt = new();
+            Point3D BndPnt1 = new(), BndPnt2 = new(), LastPnt = new();
             TopExp_Explorer expl = new();
             expl.Init(BndFace, TopAbs_WIRE);
             BRepTools_WireExplorer explo = new();
@@ -1338,11 +1342,11 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 TopoDS_Edge e = TopoDS.Edge(explo.Current());
                 Geom_Curve c = BRep_Tool.Curve(e, out double first, out double last)!;
                 Geom2d_Curve c2d = GeomAPI.To2d(c, myPln.Pln())!;
-                Geom2dAPI_InterCurveCurve intcln1 = new(ln2d1, c2d, Precision.Confusion());
+                Geom2dAPI_InterCurveCurve intcln1 = new(ln2d1, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln1.NbPoints() > 0)
                 {
-                    gp_Pnt2d p2d = intcln1.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out gp_Pnt p);
+                    Point2D p2d = intcln1.Point(1);
+                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
                     double parl = IntPar(ln1, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1352,11 +1356,11 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     }
                 }
 
-                Geom2dAPI_InterCurveCurve intcln2 = new(ln2d2, c2d, Precision.Confusion());
+                Geom2dAPI_InterCurveCurve intcln2 = new(ln2d2, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln2.NbPoints() > 0)
                 {
-                    gp_Pnt2d p2d = intcln2.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out gp_Pnt p);
+                    Point2D p2d = intcln2.Point(1);
+                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
                     double parl = IntPar(ln2, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1396,7 +1400,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     TopoDS_Edge e = TopoDS.Edge(explo.Current());
                     if (e.IsSame(BndEdge1))
                     {
-                        gp_Pnt pp;
+                        Point3D pp;
                         pp = BRep_Tool.Pnt(TopExp.LastVertex(e, true));
                         if (pp.Distance(BndPnt1) >= BRep_Tool.Tolerance(e))
                         {
@@ -1430,7 +1434,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     TopoDS_Edge e = TopoDS.Edge(explo.Current());
                     if (!e.IsSame(BndEdge2))
                     {
-                        gp_Pnt pp;
+                        Point3D pp;
                         pp = BRep_Tool.Pnt(TopExp.LastVertex(e, true));
                         BRepLib_MakeEdge ee = new(LastPnt, pp);
                         WW.Add(ee.InternalEdge());
@@ -1475,7 +1479,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         if (!FirstEdge.IsSame(LastEdge))
         {
             TopoDS_Vertex FLVert = TopExp.LastVertex(FirstEdge, true);
-            gp_Pnt FLPnt = BRep_Tool.Pnt(FLVert);
+            Point3D FLPnt = BRep_Tool.Pnt(FLVert);
             BRepLib_MakeEdge ef = new(FirstCurve, myFirstPnt, FLPnt);
             WW.Add(ef.InternalEdge());
             for (; EX.More(); EX.Next())
@@ -1501,7 +1505,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
             }
             Geom_Curve LastCurve = BRep_Tool.Curve(LastEdge, out ff, out ll)!;
             TopoDS_Vertex LFVert = TopExp.FirstVertex(LastEdge, true);
-            gp_Pnt LFPnt = BRep_Tool.Pnt(LFVert);
+            Point3D LFPnt = BRep_Tool.Pnt(LFVert);
             BRepLib_MakeEdge el = new(LastCurve, LFPnt, myLastPnt);
             WW.Add(el.InternalEdge());
         }
@@ -1544,8 +1548,8 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
             // CheckPnt : point slightly inside the material side
             // Bndface  : face/cut of the bounding box in the plane of the profile
             BRepTopAdaptor_FClass2d Cl = new(fac, BRep_Tool.Tolerance(fac));
-            ElSLib.Parameters(myPln.Pln(), CheckPnt, out double u, out double v);
-            gp_Pnt2d checkpnt2d = new(u, v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Pln(), CheckPnt, out double u, out double v);
+            Point2D checkpnt2d = new(u, v);
             if (Cl.Perform(checkpnt2d, true) == TopAbs_OUT)
             {
                 // If face is not the correct part of BndFace take the complementary
@@ -1572,7 +1576,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
     /// <summary>The profile of a rib or groove without sliding: the contour extended to the bounding box.</summary>
     protected bool NoSlidingProfile(ref TopoDS_Face Prof, bool RevolRib, double myTol, ref int Concavite,
-                                    Geom_Plane myPln, double bnd, in TopoDS_Face BndFace, in gp_Pnt CheckPnt,
+                                    Geom_Plane myPln, double bnd, in TopoDS_Face BndFace, in Point3D CheckPnt,
                                     in TopoDS_Face FirstFace, in TopoDS_Face LastFace, in TopoDS_Vertex FirstVertex,
                                     in TopoDS_Vertex LastVertex, in TopoDS_Edge FirstEdge, in TopoDS_Edge LastEdge,
                                     bool OnFirstFace, bool OnLastFace)
@@ -1581,12 +1585,12 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
         TopoDS_Vertex theFV = new();
         theFV.Nullify();
-        gp_Pnt theFirstpoint = new();
+        Point3D theFirstpoint = new();
         TopoDS_Edge theLastEdge = new();
         theLastEdge.Nullify();
 
-        gp_Pnt firstpoint, lastpoint;
-        gp_Vec firstvect, lastvect;
+        Point3D firstpoint, lastpoint;
+        Vector3D firstvect, lastvect;
         TopoDS_Wire w = new();
         BRep_Builder BB = new();
         BB.MakeWire(ref w);
@@ -1597,27 +1601,27 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
 
         Geom_Line firstln, lastln;
         FirstCurve.D1(f1, out firstpoint, out firstvect);
-        lastln = new Geom_Line(firstpoint, new gp_Dir(-firstvect));
+        lastln = new Geom_Line(firstpoint, new Direction3D(-firstvect));
         LastCurve.D1(l2, out lastpoint, out lastvect);
-        firstln = new Geom_Line(lastpoint, new gp_Dir(lastvect));
+        firstln = new Geom_Line(lastpoint, new Direction3D(lastvect));
 
-        gp_Pnt Pt = new();
+        Point3D Pt = new();
 
         Geom2d_Curve ln2d1 = GeomAPI.To2d(firstln, myPln.Pln())!;
         Geom2d_Curve ln2d2 = GeomAPI.To2d(lastln, myPln.Pln())!;
 
-        Geom2dAPI_InterCurveCurve inter = new(ln2d1, ln2d2, Precision.Confusion());
+        Geom2dAPI_InterCurveCurve inter = new(ln2d1, ln2d2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool TestOK = true;
         if (RevolRib)
         {
-            gp_Dir d1, d2;
+            Direction3D d1, d2;
             d1 = firstln.Position().Direction();
             d2 = lastln.Position().Direction();
             if (d1.IsOpposite(d2, myTol))
             {
-                double par1 = ElCLib.Parameter(firstln.Lin(), myFirstPnt);
-                double par2 = ElCLib.Parameter(lastln.Lin(), myLastPnt);
+                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(firstln.Lin(), myFirstPnt);
+                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lastln.Lin(), myLastPnt);
                 if (par1 >= myTol || par2 >= myTol)
                 {
                     Concavite = 2; // parallel and concave
@@ -1636,7 +1640,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         {
             if (inter.NbPoints() > 0)
             {
-                gp_Pnt2d P = inter.Point(1);
+                Point2D P = inter.Point(1);
                 myPln.D0(P.X(), P.Y(), out Pt);
                 double par = IntPar(firstln, Pt);
                 if (par > 0)
@@ -1657,7 +1661,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 firstpoint = BRep_Tool.Pnt(vv1);
                 Geom_Curve cc = BRep_Tool.Curve(FalseFirstEdge, out double f, out double l)!;
                 cc.D1(f, out firstpoint, out firstvect);
-                lastln = new Geom_Line(firstpoint, new gp_Dir(-firstvect));
+                lastln = new Geom_Line(firstpoint, new Direction3D(-firstvect));
                 if (FirstEdge.IsSame(LastEdge))
                 {
                     FalseOnlyOne = FalseFirstEdge;
@@ -1688,12 +1692,12 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 Geom_Curve cc = BRep_Tool.Curve(FalseLastEdge, out double f, out double l)!;
                 cc.D1(l, out lastpoint, out lastvect);
                 lastpoint = BRep_Tool.Pnt(vv2);
-                firstln = new Geom_Line(lastpoint, new gp_Dir(lastvect));
+                firstln = new Geom_Line(lastpoint, new Direction3D(lastvect));
                 ln2d1 = GeomAPI.To2d(firstln, myPln.Pln())!;
             }
 
             TopoDS_Edge BndEdge1 = new(), BndEdge2 = new();
-            gp_Pnt BndPnt1 = new(), BndPnt2 = new(), LastPnt = new();
+            Point3D BndPnt1 = new(), BndPnt2 = new(), LastPnt = new();
             TopExp_Explorer expl = new();
             expl.Init(BndFace, TopAbs_WIRE);
             BRepTools_WireExplorer explo = new();
@@ -1704,11 +1708,11 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 TopoDS_Edge e = TopoDS.Edge(explo.Current());
                 Geom_Curve c = BRep_Tool.Curve(e, out double first, out double last)!;
                 Geom2d_Curve c2d = GeomAPI.To2d(c, myPln.Pln())!;
-                Geom2dAPI_InterCurveCurve intcln1 = new(ln2d1, c2d, Precision.Confusion());
+                Geom2dAPI_InterCurveCurve intcln1 = new(ln2d1, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln1.NbPoints() > 0)
                 {
-                    gp_Pnt2d p2d = intcln1.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out gp_Pnt p);
+                    Point2D p2d = intcln1.Point(1);
+                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
                     double parl = IntPar(firstln, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1718,11 +1722,11 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     }
                 }
 
-                Geom2dAPI_InterCurveCurve intcln2 = new(ln2d2, c2d, Precision.Confusion());
+                Geom2dAPI_InterCurveCurve intcln2 = new(ln2d2, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln2.NbPoints() > 0)
                 {
-                    gp_Pnt2d p2d = intcln2.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out gp_Pnt p);
+                    Point2D p2d = intcln2.Point(1);
+                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
                     double parl = IntPar(lastln, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1814,7 +1818,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     TopoDS_Edge e = TopoDS.Edge(explo.Current());
                     if (e.IsSame(BndEdge1))
                     {
-                        gp_Pnt pp;
+                        Point3D pp;
                         pp = BRep_Tool.Pnt(TopExp.LastVertex(e, true));
                         if (pp.Distance(BndPnt1) > BRep_Tool.Tolerance(e))
                         {
@@ -1862,7 +1866,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     TopoDS_Edge e = TopoDS.Edge(explo.Current());
                     if (!e.IsSame(BndEdge2))
                     {
-                        gp_Pnt pp;
+                        Point3D pp;
                         pp = BRep_Tool.Pnt(TopExp.LastVertex(e, true));
                         TopoDS_Edge eee1;
                         if (theLastEdge.IsNull())
@@ -1987,7 +1991,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 {
                     TopoDS_Vertex v1 = TopExp.LastVertex(theLastEdge, true);
                     TopoDS_Vertex v2;
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2003,7 +2007,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 {
                     TopoDS_Vertex v1 = TopExp.FirstVertex(FalseOnlyOne, true);
                     TopoDS_Vertex v2;
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2032,7 +2036,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     TopoDS_Vertex v1 = TopExp.LastVertex(theLastEdge, true);
                     TopoDS_Vertex v2;
                     // Attention case Wire Reversed -> LastVertex without true
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FirstEdge));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FirstEdge));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2048,7 +2052,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 {
                     TopoDS_Vertex v1 = TopExp.FirstVertex(FirstEdge, true);
                     TopoDS_Vertex v2;
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FirstEdge, true));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FirstEdge, true));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2188,7 +2192,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     {
                         TopoDS_Vertex v1 = TopExp.LastVertex(theLastEdge, true);
                         TopoDS_Vertex v2;
-                        gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(edg, true));
+                        Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(edg, true));
                         if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                         {
                             v2 = theFV;
@@ -2204,7 +2208,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     {
                         TopoDS_Vertex v1 = TopExp.FirstVertex(edg, true);
                         TopoDS_Vertex v2;
-                        gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(edg, true));
+                        Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(edg, true));
                         if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                         {
                             v2 = theFV;
@@ -2237,7 +2241,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     {
                         TopoDS_Vertex v1 = TopExp.LastVertex(theLastEdge, true);
                         TopoDS_Vertex v2;
-                        gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
+                        Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
                         if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                         {
                             v2 = theFV;
@@ -2253,7 +2257,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                     {
                         TopoDS_Vertex v1 = TopExp.FirstVertex(FalseOnlyOne, true);
                         TopoDS_Vertex v2;
-                        gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
+                        Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseOnlyOne, true));
                         if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                         {
                             v2 = theFV;
@@ -2287,7 +2291,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 {
                     TopoDS_Vertex v1 = TopExp.LastVertex(theLastEdge, true);
                     TopoDS_Vertex v2;
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseLastEdge, true));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseLastEdge, true));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2303,7 +2307,7 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
                 {
                     TopoDS_Vertex v1 = TopExp.FirstVertex(FalseLastEdge, true);
                     TopoDS_Vertex v2;
-                    gp_Pnt pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseLastEdge, true));
+                    Point3D pp = BRep_Tool.Pnt(TopExp.LastVertex(FalseLastEdge, true));
                     if (!theFV.IsNull() && theFirstpoint.Distance(pp) <= myTol)
                     {
                         v2 = theFV;
@@ -2373,8 +2377,8 @@ public abstract class BRepFeat_RibSlot : BRepBuilderAPI_MakeShape
         if (Concavite == 3)
         {
             BRepTopAdaptor_FClass2d Cl = new(fac, BRep_Tool.Tolerance(fac));
-            ElSLib.Parameters(myPln.Pln(), CheckPnt, out double u, out double v);
-            gp_Pnt2d checkpnt2d = new(u, v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Pln(), CheckPnt, out double u, out double v);
+            Point2D checkpnt2d = new(u, v);
             if (Cl.Perform(checkpnt2d, true) == TopAbs_OUT)
             {
                 BRepAlgoAPI_Cut c = new(BndFace, fac);

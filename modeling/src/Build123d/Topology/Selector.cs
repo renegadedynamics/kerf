@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace Build123d;
@@ -312,7 +313,7 @@ public sealed class Selector : IEquatable<Selector>
             {
                 return get();
             }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException or Standard_Failure or NotSupportedException
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or NotSupportedException
                                        or NotImplementedException)
             {
                 return null;

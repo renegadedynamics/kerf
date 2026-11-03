@@ -1,7 +1,9 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Curve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -26,11 +28,11 @@ file static class CurveTestData
     // Helper function to create a simple B-spline curve
     public static Geom_BSplineCurve CreateSimpleBSpline()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(1, 2, 0));
-        aPoles.SetValue(3, new gp_Pnt(3, 2, 0));
-        aPoles.SetValue(4, new gp_Pnt(4, 0, 0));
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, new Point3D(1, 2, 0));
+        aPoles.SetValue(3, new Point3D(3, 2, 0));
+        aPoles.SetValue(4, new Point3D(4, 0, 0));
 
         NCollection_Array1<double> aKnots = new(1, 2);
         NCollection_Array1<int> aMults = new(1, 2);
@@ -45,12 +47,12 @@ file static class CurveTestData
     // The rational quarter-circle-like NURBS of RationalBSpline and DerivativeDN_RationalCurve
     public static Geom_BSplineCurve CreateRationalBSpline()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
         NCollection_Array1<double> aWeights = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt(1, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(1, 1, 0));
-        aPoles.SetValue(3, new gp_Pnt(0, 1, 0));
-        aPoles.SetValue(4, new gp_Pnt(-1, 1, 0));
+        aPoles.SetValue(1, new Point3D(1, 0, 0));
+        aPoles.SetValue(2, new Point3D(1, 1, 0));
+        aPoles.SetValue(3, new Point3D(0, 1, 0));
+        aPoles.SetValue(4, new Point3D(-1, 1, 0));
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
@@ -70,13 +72,13 @@ file static class CurveTestData
     public static Geom_BSplineCurve CreateMultiSpanBSpline()
     {
         // Formula: n_poles = sum(multiplicities) - degree - 1 = (4 + 2 + 4) - 3 - 1 = 6
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 6);
-        aPoles.SetValue(1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(1, 2, 0));
-        aPoles.SetValue(3, new gp_Pnt(2, 2, 0));
-        aPoles.SetValue(4, new gp_Pnt(3, 0, 0));
-        aPoles.SetValue(5, new gp_Pnt(4, -1, 0));
-        aPoles.SetValue(6, new gp_Pnt(5, 0, 0));
+        NCollection_Array1<Point3D> aPoles = new(1, 6);
+        aPoles.SetValue(1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, new Point3D(1, 2, 0));
+        aPoles.SetValue(3, new Point3D(2, 2, 0));
+        aPoles.SetValue(4, new Point3D(3, 0, 0));
+        aPoles.SetValue(5, new Point3D(4, -1, 0));
+        aPoles.SetValue(6, new Point3D(5, 0, 0));
 
         NCollection_Array1<double> aKnots = new(1, 3);
         NCollection_Array1<int> aMults = new(1, 3);
@@ -90,22 +92,22 @@ file static class CurveTestData
         return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
     }
 
-    public static Geom_Circle Circle2() => new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+    public static Geom_Circle Circle2() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
-    public static void CheckD1(in Geom_Curve.ResD1 theGrid, gp_Pnt thePnt, gp_Vec theD1)
+    public static void CheckD1(in Geom_Curve.ResD1 theGrid, Point3D thePnt, Vector3D theD1)
     {
         Assert.Equal(0.0, theGrid.Point.Distance(thePnt), THE_TOLERANCE);
         Assert.Equal(0.0, (theGrid.D1 - theD1).Magnitude(), THE_TOLERANCE);
     }
 
-    public static void CheckD2(in Geom_Curve.ResD2 theGrid, gp_Pnt thePnt, gp_Vec theD1, gp_Vec theD2)
+    public static void CheckD2(in Geom_Curve.ResD2 theGrid, Point3D thePnt, Vector3D theD1, Vector3D theD2)
     {
         Assert.Equal(0.0, theGrid.Point.Distance(thePnt), THE_TOLERANCE);
         Assert.Equal(0.0, (theGrid.D1 - theD1).Magnitude(), THE_TOLERANCE);
         Assert.Equal(0.0, (theGrid.D2 - theD2).Magnitude(), THE_TOLERANCE);
     }
 
-    public static void CheckD3(in Geom_Curve.ResD3 theGrid, gp_Pnt thePnt, gp_Vec theD1, gp_Vec theD2, gp_Vec theD3)
+    public static void CheckD3(in Geom_Curve.ResD3 theGrid, Point3D thePnt, Vector3D theD1, Vector3D theD2, Vector3D theD3)
     {
         Assert.Equal(0.0, theGrid.Point.Distance(thePnt), THE_TOLERANCE);
         Assert.Equal(0.0, (theGrid.D1 - theD1).Magnitude(), THE_TOLERANCE);
@@ -114,12 +116,12 @@ file static class CurveTestData
     }
 
     // Grid points against a curve's own Value at the same parameters
-    public static void CheckPoints(NCollection_Array1<gp_Pnt> theGrid, NCollection_Array1<double> theParams,
+    public static void CheckPoints(NCollection_Array1<Point3D> theGrid, NCollection_Array1<double> theParams,
                                    Geom_Curve theCurve)
     {
         for (int i = 1; i <= theParams.Length(); ++i)
         {
-            gp_Pnt aExpected = theCurve.Value(theParams.Value(i));
+            Point3D aExpected = theCurve.Value(theParams.Value(i));
             Assert.Equal(0.0, theGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -137,21 +139,21 @@ public class GeomGridEval_LineTest
     public void BasicEvaluation()
     {
         // Create a Geom_Line along X axis starting at origin
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         GeomGridEval_Line anEval = new(aGeomLine);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         // Verify points
         for (int i = 1; i <= 11; ++i)
         {
             double t = aParams.Value(i);
-            gp_Pnt aExpected = new(t, 0, 0);
+            Point3D aExpected = new(t, 0, 0);
             Assert.Equal(aExpected.X(), aGrid.Value(i).X(), THE_TOLERANCE);
             Assert.Equal(aExpected.Y(), aGrid.Value(i).Y(), THE_TOLERANCE);
             Assert.Equal(aExpected.Z(), aGrid.Value(i).Z(), THE_TOLERANCE);
@@ -162,20 +164,20 @@ public class GeomGridEval_LineTest
     public void NonOriginLine()
     {
         // Create a line at (1, 2, 3) along direction (1, 1, 1)/sqrt(3)
-        Geom_Line aGeomLine = new(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 1));
+        Geom_Line aGeomLine = new(new Point3D(1, 2, 3), new Direction3D(1, 1, 1));
 
         GeomGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify first and last point
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new gp_Pnt(1, 2, 3)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point3D(1, 2, 3)), THE_TOLERANCE);
 
         // Line direction is normalized, so t=5 moves 5 units along normalized direction
         double d = 5.0 / Math.Sqrt(3.0);
-        gp_Pnt aLast = new(1 + d, 2 + d, 3 + d);
+        Point3D aLast = new(1 + d, 2 + d, 3 + d);
         Assert.Equal(0.0, aGrid.Value(6).Distance(aLast), THE_TOLERANCE);
     }
 
@@ -183,7 +185,7 @@ public class GeomGridEval_LineTest
     public void DerivativeD1()
     {
         // Line along (1, 2, 3) normalized direction
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 2, 3));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 2, 3));
         GeomGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
@@ -192,7 +194,7 @@ public class GeomGridEval_LineTest
         Assert.Equal(6, aGrid.Size());
 
         // For a line, D1 is constant (the direction vector)
-        gp_Dir aDir = new(1, 2, 3);
+        Direction3D aDir = new(1, 2, 3);
         for (int i = 1; i <= 6; ++i)
         {
             // Verify D1 is the direction
@@ -205,7 +207,7 @@ public class GeomGridEval_LineTest
     [Fact]
     public void DerivativeD2D3()
     {
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
@@ -254,7 +256,7 @@ public class GeomGridEval_CircleTest
 
         NCollection_Array1<double> aParams = QuarterParams();
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // u=0: (2, 0, 0)
         Assert.Equal(2.0, aGrid.Value(1).X(), THE_TOLERANCE);
@@ -281,16 +283,16 @@ public class GeomGridEval_CircleTest
     public void NonStandardCircle()
     {
         // Circle in YZ plane, radius 3, center at (1, 0, 0)
-        Geom_Circle aGeomCircle = new(new gp_Ax2(new gp_Pnt(1, 0, 0), new gp_Dir(1, 0, 0)), 3.0);
+        Geom_Circle aGeomCircle = new(new Frame3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0)), 3.0);
 
         GeomGridEval_Circle anEval = new(aGeomCircle);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 9);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // All points should be at distance 3 from center (1, 0, 0)
-        gp_Pnt aCenter = new(1, 0, 0);
+        Point3D aCenter = new(1, 0, 0);
         for (int i = 1; i <= aGrid.Length(); ++i)
         {
             Assert.Equal(3.0, aGrid.Value(i).Distance(aCenter), THE_TOLERANCE);
@@ -311,7 +313,7 @@ public class GeomGridEval_CircleTest
         // Verify D1 against direct evaluation
         for (int i = 1; i <= 5; ++i)
         {
-            aGeomCircle.D1(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1);
+            aGeomCircle.D1(aParams.Value(i), out Point3D aPnt, out Vector3D aD1);
             CurveTestData.CheckD1(aGrid.Value(i), aPnt, aD1);
         }
     }
@@ -329,7 +331,7 @@ public class GeomGridEval_CircleTest
         // Verify D2 against direct evaluation
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D2(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2);
+            aGeomCircle.D2(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2);
             CurveTestData.CheckD2(aGrid.Value(i), aPnt, aD1, aD2);
         }
     }
@@ -347,7 +349,7 @@ public class GeomGridEval_CircleTest
         // Verify D3 against direct evaluation
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            aGeomCircle.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             CurveTestData.CheckD3(aGrid.Value(i), aPnt, aD1, aD2, aD3);
         }
     }
@@ -371,7 +373,7 @@ public class GeomGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         // Verify against direct evaluation
@@ -389,13 +391,13 @@ public class GeomGridEval_BSplineCurveTest
         aParams.SetValue(1, 0.0);
         aParams.SetValue(2, 1.0);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // First point should match first pole
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new gp_Pnt(0, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point3D(0, 0, 0)), THE_TOLERANCE);
 
         // Last point should match last pole
-        Assert.Equal(0.0, aGrid.Value(2).Distance(new gp_Pnt(4, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2).Distance(new Point3D(4, 0, 0)), THE_TOLERANCE);
     }
 
     // Additional tests for B-spline curves (from BSplCLib_GridEvaluator_Test)
@@ -410,7 +412,7 @@ public class GeomGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 21);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(21, aGrid.Size());
 
         // Verify against direct evaluation
@@ -427,7 +429,7 @@ public class GeomGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 31);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation - should match exactly
         CurveTestData.CheckPoints(aGrid, aParams, aCurve);
@@ -437,13 +439,13 @@ public class GeomGridEval_BSplineCurveTest
     public void HighDegree()
     {
         // Create a higher degree B-spline (degree 5)
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 6);
-        aPoles.SetValue(1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(1, 3, 0));
-        aPoles.SetValue(3, new gp_Pnt(2, 1, 0));
-        aPoles.SetValue(4, new gp_Pnt(3, 4, 0));
-        aPoles.SetValue(5, new gp_Pnt(4, 2, 0));
-        aPoles.SetValue(6, new gp_Pnt(5, 0, 0));
+        NCollection_Array1<Point3D> aPoles = new(1, 6);
+        aPoles.SetValue(1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, new Point3D(1, 3, 0));
+        aPoles.SetValue(3, new Point3D(2, 1, 0));
+        aPoles.SetValue(4, new Point3D(3, 4, 0));
+        aPoles.SetValue(5, new Point3D(4, 2, 0));
+        aPoles.SetValue(6, new Point3D(5, 0, 0));
 
         NCollection_Array1<double> aKnots = new(1, 2);
         NCollection_Array1<int> aMults = new(1, 2);
@@ -458,7 +460,7 @@ public class GeomGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 51);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aCurve);
@@ -477,7 +479,7 @@ public class GeomGridEval_BSplineCurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D1(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1);
+            aCurve.D1(aParams.Value(i), out Point3D aPnt, out Vector3D aD1);
             CurveTestData.CheckD1(aGrid.Value(i), aPnt, aD1);
         }
     }
@@ -495,7 +497,7 @@ public class GeomGridEval_BSplineCurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D2(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2);
+            aCurve.D2(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2);
             CurveTestData.CheckD2(aGrid.Value(i), aPnt, aD1, aD2);
         }
     }
@@ -513,7 +515,7 @@ public class GeomGridEval_BSplineCurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            aCurve.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             CurveTestData.CheckD3(aGrid.Value(i), aPnt, aD1, aD2, aD3);
         }
     }
@@ -523,10 +525,10 @@ public class GeomGridEval_BSplineCurveTest
     private static void CheckDN(Geom_BSplineCurve theCurve, NCollection_Array1<double> theParams, int theOrder)
     {
         GeomGridEval_BSplineCurve anEval = new(theCurve);
-        NCollection_Array1<gp_Vec> aGrid = anEval.EvaluateGridDN(theParams, theOrder);
+        NCollection_Array1<Vector3D> aGrid = anEval.EvaluateGridDN(theParams, theOrder);
         for (int i = 1; i <= theParams.Length(); ++i)
         {
-            gp_Vec aExpected = theCurve.DN(theParams.Value(i), theOrder);
+            Vector3D aExpected = theCurve.DN(theParams.Value(i), theOrder);
             Assert.Equal(0.0, (aGrid.Value(i) - aExpected).Magnitude(), THE_TOLERANCE);
         }
     }
@@ -558,7 +560,7 @@ public class GeomGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Vec> aGrid = anEval.EvaluateGridDN(aParams, 4);
+        NCollection_Array1<Vector3D> aGrid = anEval.EvaluateGridDN(aParams, 4);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -607,14 +609,14 @@ public class GeomGridEval_OtherCurveTest
     public void EllipseFallback()
     {
         // Ellipse is not directly supported, so it should use OtherCurve fallback
-        Geom_Ellipse anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0, 2.0);
+        Geom_Ellipse anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
         GeomAdaptor_Curve anAdaptor = new(anEllipse);
 
         GeomGridEval_OtherCurve anEval = new(anAdaptor);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 9);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, anEllipse);
@@ -632,7 +634,7 @@ public class GeomGridEval_OffsetCurveTest
     {
         // Offset curve from a circle
         Geom_Circle aCircle = CurveTestData.Circle2();
-        Geom_OffsetCurve anOffset = new(aCircle, 0.5, gp.DZ());
+        Geom_OffsetCurve anOffset = new(aCircle, 0.5, Constants.DZ());
         GeomAdaptor_Curve anAdaptor = new(anOffset);
 
         GeomGridEval_OtherCurve anEval = new(anAdaptor);
@@ -644,7 +646,7 @@ public class GeomGridEval_OffsetCurveTest
         // Verify D3 against adaptor evaluation
         for (int i = 1; i <= 9; ++i)
         {
-            anAdaptor.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            anAdaptor.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             CurveTestData.CheckD3(aGrid.Value(i), aPnt, aD1, aD2, aD3);
         }
     }
@@ -661,15 +663,15 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void LineDispatch()
     {
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Line, anEval.GetType());
+        Assert.Equal(Line, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         // Verify against direct evaluation
@@ -683,11 +685,11 @@ public class GeomGridEval_CurveTest
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Circle, anEval.GetType());
+        Assert.Equal(Circle, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 17);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aGeomCircle);
@@ -700,11 +702,11 @@ public class GeomGridEval_CurveTest
         GeomAdaptor_Curve anAdaptor = new(aCurve);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BSplineCurve, anEval.GetType());
+        Assert.Equal(BSplineCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 21);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aCurve);
@@ -713,15 +715,15 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void EllipseDispatch()
     {
-        Geom_Ellipse anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0, 2.0);
+        Geom_Ellipse anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
         GeomAdaptor_Curve anAdaptor = new(anEllipse);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Ellipse, anEval.GetType());
+        Assert.Equal(Ellipse, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 13);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, anEllipse);
@@ -730,15 +732,15 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void HyperbolaDispatch()
     {
-        Geom_Hyperbola aHypr = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0, 2.0);
+        Geom_Hyperbola aHypr = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0, 2.0);
         GeomAdaptor_Curve anAdaptor = new(aHypr);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Hyperbola, anEval.GetType());
+        Assert.Equal(Hyperbola, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(-2.0, 2.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aHypr);
@@ -747,15 +749,15 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void ParabolaDispatch()
     {
-        Geom_Parabola aParab = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        Geom_Parabola aParab = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         GeomAdaptor_Curve anAdaptor = new(aParab);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Parabola, anEval.GetType());
+        Assert.Equal(Parabola, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(-2.0, 2.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aParab);
@@ -765,20 +767,20 @@ public class GeomGridEval_CurveTest
     public void BezierCurveDispatch()
     {
         // Bezier curve is not optimized, should use fallback
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(1, 2, 0));
-        aPoles.SetValue(3, new gp_Pnt(3, 2, 0));
-        aPoles.SetValue(4, new gp_Pnt(4, 0, 0));
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, new Point3D(1, 2, 0));
+        aPoles.SetValue(3, new Point3D(3, 2, 0));
+        aPoles.SetValue(4, new Point3D(4, 0, 0));
         Geom_BezierCurve aBezier = new(aPoles);
         GeomAdaptor_Curve anAdaptor = new(aBezier);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BezierCurve, anEval.GetType());
+        Assert.Equal(BezierCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, aBezier);
@@ -788,16 +790,16 @@ public class GeomGridEval_CurveTest
     public void OffsetCurveFallbackDispatch()
     {
         // Offset curve is not optimized, should use fallback
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        Geom_OffsetCurve anOffset = new(aLine, 1.0, gp.DZ());
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Geom_OffsetCurve anOffset = new(aLine, 1.0, Constants.DZ());
         GeomAdaptor_Curve anAdaptor = new(anOffset);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_OffsetCurve, anEval.GetType());
+        Assert.Equal(OffsetCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // Verify against direct evaluation
         CurveTestData.CheckPoints(aGrid, aParams, anOffset);
@@ -806,13 +808,13 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void DirectHandleInit()
     {
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         GeomGridEval_Curve anEval = new(aGeomLine);
-        Assert.Equal(GeomAbs_Line, anEval.GetType());
+        Assert.Equal(Line, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
         Assert.Equal(0.0, aGrid.Value(1).X(), THE_TOLERANCE);
     }
@@ -820,14 +822,14 @@ public class GeomGridEval_CurveTest
     [Fact]
     public void EmptyParams()
     {
-        Geom_Line aGeomLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
 
         // EvaluateGrid with empty params should return empty
         NCollection_Array1<double> aEmptyParams = new();
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aEmptyParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aEmptyParams);
         Assert.True(aGrid.IsEmpty());
     }
 
@@ -846,7 +848,7 @@ public class GeomGridEval_CurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D1(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1);
+            aGeomCircle.D1(aParams.Value(i), out Point3D aPnt, out Vector3D aD1);
             CurveTestData.CheckD1(aGrid.Value(i), aPnt, aD1);
         }
     }
@@ -866,7 +868,7 @@ public class GeomGridEval_CurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D2(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2);
+            aCurve.D2(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2);
             CurveTestData.CheckD2(aGrid.Value(i), aPnt, aD1, aD2);
         }
     }
@@ -875,12 +877,12 @@ public class GeomGridEval_CurveTest
     public void OffsetCurveDerivativeD3()
     {
         // Offset curve via unified dispatcher
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        Geom_OffsetCurve anOffset = new(aLine, 1.0, gp.DZ());
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Geom_OffsetCurve anOffset = new(aLine, 1.0, Constants.DZ());
         GeomAdaptor_Curve anAdaptor = new(anOffset);
 
         GeomGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_OffsetCurve, anEval.GetType());
+        Assert.Equal(OffsetCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
 
@@ -889,7 +891,7 @@ public class GeomGridEval_CurveTest
         // Verify D3 against adaptor evaluation
         for (int i = 1; i <= 6; ++i)
         {
-            anAdaptor.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            anAdaptor.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             CurveTestData.CheckD3(aGrid.Value(i), aPnt, aD1, aD2, aD3);
         }
     }
@@ -909,7 +911,7 @@ public class GeomGridEval_CurveTest
         // Verify against direct evaluation
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            aCurve.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             CurveTestData.CheckD3(aGrid.Value(i), aPnt, aD1, aD2, aD3);
         }
     }

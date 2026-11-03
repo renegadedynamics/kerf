@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -145,7 +146,7 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_SOLID); exp.More(); exp.Next())
         {
             TopoDS_Solid sol = TopoDS.Solid(exp.Current());
-            sol.Location(new TopLoc_Location());
+            sol.Location(new Placement());
             mapsh.Add(sol);
             int nbs = 0;
             for (var shel = new TopExp_Explorer(sol, TopAbs_SHELL); shel.More(); shel.Next())
@@ -168,7 +169,7 @@ public sealed class ShapeAnalysis_ShapeContents
         {
             myNbShells++;
             TopoDS_Shell she = TopoDS.Shell(exp.Current());
-            she.Location(new TopLoc_Location());
+            she.Location(new Placement());
             mapsh.Add(she);
             for (var shel = new TopExp_Explorer(she, TopAbs_FACE); shel.More(); shel.Next())
             {
@@ -189,8 +190,8 @@ public sealed class ShapeAnalysis_ShapeContents
         {
             TopoDS_Face face = TopoDS.Face(exp.Current());
             myNbFaces++;
-            Geom_Surface? surf = BRep_Tool.Surface(face, out TopLoc_Location _);
-            face.Location(new TopLoc_Location());
+            Geom_Surface? surf = BRep_Tool.Surface(face, out Placement _);
+            face.Location(new Placement());
             mapsh.Add(face);
             if (surf is Geom_RectangularTrimmedSurface trsu)
             {
@@ -312,7 +313,7 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_WIRE); exp.More(); exp.Next())
         {
             TopoDS_Wire wire = TopoDS.Wire(exp.Current());
-            wire.Location(new TopLoc_Location());
+            wire.Location(new Placement());
             mapsh.Add(wire);
             myNbWires++;
         }
@@ -325,10 +326,10 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_EDGE); exp.More(); exp.Next())
         {
             TopoDS_Edge edge = TopoDS.Edge(exp.Current());
-            edge.Location(new TopLoc_Location());
+            edge.Location(new Placement());
             mapsh.Add(edge);
             myNbEdges++;
-            Geom_Curve? c3d = BRep_Tool.Curve(edge, out TopLoc_Location _, out double _, out double _);
+            Geom_Curve? c3d = BRep_Tool.Curve(edge, out Placement _, out double _, out double _);
             if (c3d is not null && c3d.IsKind(typeof(Geom_OffsetCurve)))
             {
                 myNbOffsetCurves++;
@@ -348,7 +349,7 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_VERTEX); exp.More(); exp.Next())
         {
             TopoDS_Vertex vert = TopoDS.Vertex(exp.Current());
-            vert.Location(new TopLoc_Location());
+            vert.Location(new Placement());
             myNbVertices++;
             mapsh.Add(vert);
         }
@@ -358,7 +359,7 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_EDGE, TopAbs_FACE); exp.More(); exp.Next())
         {
             TopoDS_Edge edge = TopoDS.Edge(exp.Current());
-            edge.Location(new TopLoc_Location());
+            edge.Location(new Placement());
             myNbFreeEdges++;
             mapsh.Add(edge);
         }
@@ -368,7 +369,7 @@ public sealed class ShapeAnalysis_ShapeContents
         for (exp.Init(Shape, TopAbs_WIRE, TopAbs_FACE); exp.More(); exp.Next())
         {
             TopoDS_Wire wire = TopoDS.Wire(exp.Current());
-            wire.Location(new TopLoc_Location());
+            wire.Location(new Placement());
             myNbFreeWires++;
             mapsh.Add(wire);
         }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -137,12 +139,12 @@ internal static class BOPTestTolerCommands
         }
         double dT = (aT2 - aT1) / aNb;
         BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
-        TopLoc_Location Eloc = aE.Location();
+        Placement Eloc = aE.Location();
         double aTolMax2 = -1.0e6;
         foreach (BRep_CurveRepresentation cr in TE.Curves())
         {
-            TopLoc_Location loc = cr.Location();
-            TopLoc_Location L = Eloc * loc;
+            Placement loc = cr.Location();
+            Placement L = Eloc * loc;
             // 3D-Curve
             if (cr.IsCurve3D())
             {
@@ -166,9 +168,9 @@ internal static class BOPTestTolerCommands
                     {
                         aT = aT2;
                     }
-                    gp_Pnt aPC3D = aC3D.Value(aT);
-                    gp_Pnt2d aPC2D = aC2D.Value(aT);
-                    gp_Pnt aP3D = aS.Value(aPC2D.X(), aPC2D.Y());
+                    Point3D aPC3D = aC3D.Value(aT);
+                    Point2D aPC2D = aC2D.Value(aT);
+                    Point3D aP3D = aS.Value(aPC2D.X(), aPC2D.Y());
                     aP3D.Transform(L.Transformation());
                     double aD2 = aPC3D.SquareDistance(aP3D);
                     if (aD2 > aTolMax2)
@@ -194,13 +196,13 @@ internal static class BOPTestTolerCommands
     {
         double aTolMax2 = -1.0e6;
         BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
-        gp_Pnt aPV3D = TV.Pnt();
+        Point3D aPV3D = TV.Pnt();
         double aTol = BRep_Tool.Tolerance(aV);
         foreach (TopoDS_Shape aLEi in aLE)
         {
             TopoDS_Edge aE = TopoDS.Edge(aLEi);
             BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
-            TopLoc_Location Eloc = aE.Location();
+            Placement Eloc = aE.Location();
             TopExp_Explorer aVExp = new(aE, TopAbs_ShapeEnum.TopAbs_VERTEX);
             for (; aVExp.More(); aVExp.Next())
             {
@@ -216,8 +218,8 @@ internal static class BOPTestTolerCommands
                 }
                 foreach (BRep_CurveRepresentation cr in TE.Curves())
                 {
-                    TopLoc_Location loc = cr.Location();
-                    TopLoc_Location L = (Eloc * loc).Predivided(aV.Location());
+                    Placement loc = cr.Location();
+                    Placement L = (Eloc * loc).Predivided(aV.Location());
                     // 3D-Curve
                     if (cr.IsCurve3D())
                     {
@@ -228,7 +230,7 @@ internal static class BOPTestTolerCommands
                         }
                         // 3D-point treatment
                         double aParam = BRep_Tool.Parameter(aVx, aE);
-                        gp_Pnt aPC3D = aC3D.Value(aParam);
+                        Point3D aPC3D = aC3D.Value(aParam);
                         aPC3D.Transform(L.Transformation());
                         double aD2 = aPV3D.SquareDistance(aPC3D);
                         if (aD2 > aTolMax2)
@@ -248,8 +250,8 @@ internal static class BOPTestTolerCommands
                         Geom_Surface aS = cr.Surface()!;
                         // 2D-point treatment
                         double aParam = BRep_Tool.Parameter(aVx, aE, aS, L);
-                        gp_Pnt2d aPC2D = aC2D.Value(aParam);
-                        gp_Pnt aPC3D = aS.Value(aPC2D.X(), aPC2D.Y());
+                        Point2D aPC2D = aC2D.Value(aParam);
+                        Point3D aPC3D = aS.Value(aPC2D.X(), aPC2D.Y());
                         aPC3D.Transform(L.Transformation());
                         double aD2 = aPV3D.SquareDistance(aPC3D);
                         if (aD2 > aTolMax2)
@@ -400,7 +402,7 @@ internal static class BOPTestTolerCommands
                     //
                 }
                 //
-                Geom_Surface? aS = BRep_Tool.Surface(aF, out TopLoc_Location aLoc);
+                Geom_Surface? aS = BRep_Tool.Surface(aF, out Placement aLoc);
                 if (!aSCRMap.Contains(aS))
                 {
                     // try to obtain 2D curve

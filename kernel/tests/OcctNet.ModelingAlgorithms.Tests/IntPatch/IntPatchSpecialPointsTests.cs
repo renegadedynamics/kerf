@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntPatch_SpecPntType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -12,21 +15,21 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class IntPatchSpecialPointsTests
 {
-    private static readonly gp_Ax3 Origin = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+    private static readonly CoordinateSystem Origin = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
     private static GeomAdaptor_Surface Plane(double x, double y, double z, double nx, double ny, double nz) =>
-        new(new Geom_Plane(new gp_Pnt(x, y, z), new gp_Dir(nx, ny, nz)), -10, 10, -10, 10);
+        new(new Geom_Plane(new Point3D(x, y, z), new Direction3D(nx, ny, nz)), -10, 10, -10, 10);
 
-    private static IntSurf_PntOn2S Pnt(gp_Pnt P, double u1, double v1, double u2, double v2) =>
+    private static IntSurf_PntOn2S Pnt(Point3D P, double u1, double v1, double u2, double v2) =>
         new IntSurf_PntOn2S().WithValue(P, u1, v1, u2, v2);
 
     [Fact]
     public void GetTangentToIntLineForCone_TwoOrNone()
     {
-        gp_XYZ[] aRes = new gp_XYZ[2];
+        Xyz[] aRes = new Xyz[2];
 
         // A plane through the apex containing the axis: the two generatrices at u = -pi/2 and u = pi/2.
-        int aNb = IntPatch_SpecialPoints.GetTangentToIntLineForCone(M_PI / 4, new gp_XYZ(1, 0, 0), aRes);
+        int aNb = IntPatch_SpecialPoints.GetTangentToIntLineForCone(M_PI / 4, new Xyz(1, 0, 0), aRes);
         Assert.Equal(2, aNb);
         double aTan = Math.Tan(M_PI / 4);
         Assert.Equal(0.0, aRes[0].X(), 15);
@@ -36,7 +39,7 @@ public class IntPatchSpecialPointsTests
         Assert.Equal(aTan, aRes[1].Y(), 15);
 
         // A plane normal to the axis meets the cone at its apex only.
-        Assert.Equal(0, IntPatch_SpecialPoints.GetTangentToIntLineForCone(M_PI / 4, new gp_XYZ(0, 0, 1), aRes));
+        Assert.Equal(0, IntPatch_SpecialPoints.GetTangentToIntLineForCone(M_PI / 4, new Xyz(0, 0, 1), aRes));
     }
 
     [Fact]
@@ -48,21 +51,21 @@ public class IntPatchSpecialPointsTests
         GeomAdaptor_Surface aP = Plane(0, 0, 2, 1, 0, 1);
 
         IntPatch_Point aVertex = new();
-        aVertex.SetValue(Pnt(new gp_Pnt(0, 1e-4, 2), M_PI / 2 + 0.1, M_PI / 2 - 1e-4, 0.0, 0.0));
+        aVertex.SetValue(Pnt(new Point3D(0, 1e-4, 2), M_PI / 2 + 0.1, M_PI / 2 - 1e-4, 0.0, 0.0));
         aVertex.SetTolerance(1e-3);
         IntSurf_PntOn2S aPtIso = aVertex.PntOn2S();
         IntSurf_PntOn2S anAdded = new();
 
         Assert.True(IntPatch_SpecialPoints.AddSingularPole(aQ, aP, aPtIso, ref aVertex, ref anAdded));
-        Assert.True(anAdded.Value().Distance(new gp_Pnt(0, 0, 2)) < 1e-9);
+        Assert.True(anAdded.Value().Distance(new Point3D(0, 0, 2)) < 1e-9);
         anAdded.Parameters(out double aUq, out double aVq, out double aUp, out double aVp);
         Assert.Equal(M_PI_2, aVq);
         Assert.Equal(M_PI_2, aUq, 9);
-        Assert.True(aP.Value(aUp, aVp).Distance(new gp_Pnt(0, 0, 2)) < 1e-9);
+        Assert.True(aP.Value(aUp, aVp).Distance(new Point3D(0, 0, 2)) < 1e-9);
 
         // The pole is found on the sphere's other side too (reversed: the quadric is the second surface).
         IntPatch_Point aVertexR = new();
-        aVertexR.SetValue(Pnt(new gp_Pnt(0, 1e-4, 2), 0.0, 0.0, M_PI / 2 + 0.1, M_PI / 2 - 1e-4));
+        aVertexR.SetValue(Pnt(new Point3D(0, 1e-4, 2), 0.0, 0.0, M_PI / 2 + 0.1, M_PI / 2 - 1e-4));
         aVertexR.SetTolerance(1e-3);
         IntSurf_PntOn2S anAddedR = new();
         Assert.True(IntPatch_SpecialPoints.AddSingularPole(aQ, aP, aVertexR.PntOn2S(), ref aVertexR, ref anAddedR, true));
@@ -80,18 +83,18 @@ public class IntPatchSpecialPointsTests
         GeomAdaptor_Surface aP = Plane(0, 0, -1, 1, 0, 0);
 
         IntPatch_Point aVertex = new();
-        aVertex.SetValue(Pnt(new gp_Pnt(0, 1e-4, -1 + 1e-4), M_PI / 2 + 0.05, -Math.Sqrt(2.0) + 1e-4, 0.0, 0.0));
+        aVertex.SetValue(Pnt(new Point3D(0, 1e-4, -1 + 1e-4), M_PI / 2 + 0.05, -Math.Sqrt(2.0) + 1e-4, 0.0, 0.0));
         aVertex.SetTolerance(1e-3);
         IntSurf_PntOn2S anAdded = new();
         Assert.True(IntPatch_SpecialPoints.AddSingularPole(aQ, aP, aVertex.PntOn2S(), ref aVertex, ref anAdded));
-        Assert.True(anAdded.Value().Distance(new gp_Pnt(0, 0, -1)) < 1e-9);
+        Assert.True(anAdded.Value().Distance(new Point3D(0, 0, -1)) < 1e-9);
         anAdded.ParametersOnS1(out double aUq, out double aVq);
         Assert.Equal(-1.0 / Math.Sin(M_PI / 4), aVq);
         Assert.Equal(M_PI_2, aUq, 9);
 
         // With the reference check, a vertex far from the apex is refused.
         IntPatch_Point aFar = new();
-        aFar.SetValue(Pnt(new gp_Pnt(0, 0.5, -0.5), M_PI / 2, -0.7, 0.0, 0.0));
+        aFar.SetValue(Pnt(new Point3D(0, 0.5, -0.5), M_PI / 2, -0.7, 0.0, 0.0));
         aFar.SetTolerance(1e-3);
         IntSurf_PntOn2S anUnused = new();
         Assert.False(IntPatch_SpecialPoints.AddSingularPole(aQ, aP, aFar.PntOn2S(), ref aFar, ref anUnused, false, true));
@@ -105,7 +108,7 @@ public class IntPatchSpecialPointsTests
         IntPatch_Point aVertex = new();
         aVertex.SetTolerance(1e-3);
         IntSurf_PntOn2S anAdded = new();
-        Assert.Throws<Standard_TypeMismatch>(() =>
+        Assert.Throws<TypeMismatchException>(() =>
             IntPatch_SpecialPoints.AddSingularPole(aQ, aP, aVertex.PntOn2S(), ref aVertex, ref anAdded));
     }
 
@@ -116,7 +119,7 @@ public class IntPatchSpecialPointsTests
         // plane at (U, V) = (1, 0), on the cylinder at (0, 0.5), adjusted to the reference point's U = 6.2 (2*pi).
         GeomAdaptor_Surface aQ = new(new Geom_CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
         GeomAdaptor_Surface aP = Plane(0, 0, 0.5, 0, 0, 1);
-        IntSurf_PntOn2S aRef = Pnt(new gp_Pnt(1, 0, 0.5), 6.2, 0.5, 1.0, -0.08);
+        IntSurf_PntOn2S aRef = Pnt(new Point3D(1, 0, 0.5), 6.2, 0.5, 1.0, -0.08);
 
         math_Vector aTol = new(1, 3), aStart = new(1, 3), anInf = new(1, 3), aSup = new(1, 3);
         aTol[1] = 1e-9;
@@ -139,7 +142,7 @@ public class IntPatchSpecialPointsTests
         Assert.Equal(0.5, aVq, 9);
         Assert.Equal(1.0, aUp, 9);
         Assert.Equal(0.0, aVp, 9);
-        Assert.True(anAdded.Value().Distance(new gp_Pnt(1, 0, 0.5)) < 1e-9);
+        Assert.True(anAdded.Value().Distance(new Point3D(1, 0, 0.5)) < 1e-9);
     }
 
     [Fact]
@@ -148,7 +151,7 @@ public class IntPatchSpecialPointsTests
         // The cylinder's point (U, V) = (0, 0) is (1, 0, 0), on the plane z = 0 at (1, 0).
         GeomAdaptor_Surface aQ = new(new Geom_CylindricalSurface(Origin, 1.0), 0, 2 * M_PI, -10, 10);
         GeomAdaptor_Surface aP = Plane(0, 0, 0, 0, 0, 1);
-        IntSurf_PntOn2S aRef = Pnt(new gp_Pnt(1, 0, 0), 6.2, 0.01, 0.9, 0.1);
+        IntSurf_PntOn2S aRef = Pnt(new Point3D(1, 0, 0), 6.2, 0.01, 0.9, 0.1);
         IntSurf_PntOn2S anAdded = new();
         Assert.True(IntPatch_SpecialPoints.AddCrossUVIsoPoint(aQ, aP, aRef, 1e-7, ref anAdded));
         anAdded.Parameters(out double aUq, out double aVq, out double aUp, out double aVp);
@@ -165,8 +168,8 @@ public class IntPatchSpecialPointsTests
     [Fact]
     public void AdjustPointAndVertex_ByPeriods()
     {
-        IntSurf_PntOn2S aRef = Pnt(new gp_Pnt(), 0.1, 0.2, 6.2, 0.3);
-        IntSurf_PntOn2S aNew = Pnt(new gp_Pnt(), 6.3, 0.2, 0.0, 0.3 + 4 * M_PI);
+        IntSurf_PntOn2S aRef = Pnt(new Point3D(), 0.1, 0.2, 6.2, 0.3);
+        IntSurf_PntOn2S aNew = Pnt(new Point3D(), 6.3, 0.2, 0.0, 0.3 + 4 * M_PI);
         double[] aPeriods = [2 * M_PI, 0.0, 2 * M_PI, 2 * M_PI];
         IntPatch_Point aVertex = new();
         IntPatch_SpecialPoints.AdjustPointAndVertex(aRef, aPeriods, ref aNew, ref aVertex);
@@ -180,7 +183,7 @@ public class IntPatchSpecialPointsTests
         Assert.Equal((u1, v1, u2, v2), (w1, x1, w2, x2));
 
         // No period: unchanged.
-        IntSurf_PntOn2S aSame = Pnt(new gp_Pnt(), 100, 100, 100, 100);
+        IntSurf_PntOn2S aSame = Pnt(new Point3D(), 100, 100, 100, 100);
         IntPatch_SpecialPoints.AdjustPointAndVertex(aRef, [0.0, 0.0, 0.0, 0.0], ref aSame);
         aSame.Parameters(out double a, out double b, out double c, out double d);
         Assert.Equal((100.0, 100.0, 100.0, 100.0), (a, b, c, d));
@@ -191,13 +194,13 @@ public class IntPatchSpecialPointsTests
     {
         GeomAdaptor_Surface aQ = new(new Geom_SphericalSurface(Origin, 2.0));
         GeomAdaptor_Surface aP = Plane(0, 0, 2, 1, 0, 1);
-        IntSurf_PntOn2S aRef = Pnt(new gp_Pnt(0, 0, 2), 1.0, M_PI_2, 0.0, 0.0);
+        IntSurf_PntOn2S aRef = Pnt(new Point3D(0, 0, 2), 1.0, M_PI_2, 0.0, 0.0);
         IntSurf_PntOn2S aNew = aRef;
         Assert.False(IntPatch_SpecialPoints.ContinueAfterSpecialPoint(aQ, aP, aRef, IntPatch_SPntNone, 1e-9, ref aNew));
         Assert.False(IntPatch_SpecialPoints.ContinueAfterSpecialPoint(aQ, aP, aRef, IntPatch_SPntPole, -1.0, ref aNew));
 
         // Through the pole, the quadric's U is adjusted with period pi/2 (OCCT's rule).
-        IntSurf_PntOn2S aJump = Pnt(new gp_Pnt(0, 0.01, 2), 1.0 + M_PI, M_PI_2, 0.5, 0.0);
+        IntSurf_PntOn2S aJump = Pnt(new Point3D(0, 0.01, 2), 1.0 + M_PI, M_PI_2, 0.5, 0.0);
         Assert.True(IntPatch_SpecialPoints.ContinueAfterSpecialPoint(aQ, aP, aRef, IntPatch_SPntPole, -1.0, ref aJump));
         aJump.ParametersOnS1(out double aU, out _);
         Assert.True(Math.Abs(aU - 1.0) <= M_PI_2 / 2, $"U = {aU}");

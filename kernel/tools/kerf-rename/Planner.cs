@@ -337,8 +337,9 @@ internal static class Planner
                 foreach ((string name, Dictionary<string, ISymbol> group) in groups)
                 {
                     // Overloads, and names that already coexisted, stay legal unless a method becomes a property
+                    // (methods that would share a signature too, such as send and Send, aren't overloads: unit 10E)
                     bool converting = group.Keys.Any(plan.Converts);
-                    if (group.Count < 2 || (!converting && (group.Values.All(m => m is IMethodSymbol)
+                    if (group.Count < 2 || (!converting && ((group.Values.All(m => m is IMethodSymbol) && !SharesSignature(group.Values))
                                                             || group.Values.Select(m => m.Name).Distinct().Count() < 2)))
                     {
                         continue;
@@ -356,5 +357,27 @@ internal static class Planner
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Whether two methods of different names would have one signature once renamed: not overloads, but a duplicate
+    /// (CS0111) in one type, or a hidden member (CS0108) across a base and a derived type.
+    /// </summary>
+    private static bool SharesSignature(IEnumerable<ISymbol> methods)
+    {
+        var seen = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (IMethodSymbol method in methods.Cast<IMethodSymbol>())
+        {
+            string signature = method.TypeParameters.Length + "(" + string.Join(",", method.Parameters.Select(p =>
+                (p.RefKind is RefKind.None or RefKind.In ? "" : "ref ") + p.Type.ToDisplayString())) + ")";
+            if (seen.TryGetValue(signature, out string? name) && name != method.Name)
+            {
+                return true;
+            }
+
+            seen.TryAdd(signature, method.Name);
+        }
+
+        return false;
     }
 }

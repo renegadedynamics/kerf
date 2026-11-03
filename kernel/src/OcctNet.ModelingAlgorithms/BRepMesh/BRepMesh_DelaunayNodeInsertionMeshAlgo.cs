@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.TopAbs_State;
 
@@ -48,7 +50,7 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
 
         if (myIsPreProcessSurfaceNodes)
         {
-            NCollection_List<gp_Pnt2d>? aSurfaceNodes =
+            NCollection_List<Point2D>? aSurfaceNodes =
                 getRangeSplitter().GenerateSurfaceNodes(getParameters());
 
             registerSurfaceNodes(aSurfaceNodes);
@@ -67,17 +69,17 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
     }
 
     /// <summary>Processes the generated mesh: generates the surface nodes and inserts them.</summary>
-    protected override void postProcessMesh(BRepMesh_Delaun theMesher, Message_ProgressRange theRange)
+    protected override void postProcessMesh(BRepMesh_Delaun theMesher, ProgressRange theRange)
     {
         if (!theRange.More())
         {
             return;
         }
-        base.postProcessMesh(theMesher, new Message_ProgressRange()); // shouldn't be range passed here?
+        base.postProcessMesh(theMesher, new ProgressRange()); // shouldn't be range passed here?
 
         if (!myIsPreProcessSurfaceNodes)
         {
-            NCollection_List<gp_Pnt2d>? aSurfaceNodes =
+            NCollection_List<Point2D>? aSurfaceNodes =
                 getRangeSplitter().GenerateSurfaceNodes(getParameters());
 
             insertNodes(aSurfaceNodes, theMesher, theRange);
@@ -85,9 +87,9 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
     }
 
     /// <summary>Inserts the nodes inside the face into the mesh; true if any was.</summary>
-    protected bool insertNodes(NCollection_List<gp_Pnt2d>? theNodes,
+    protected bool insertNodes(NCollection_List<Point2D>? theNodes,
                                BRepMesh_Delaun theMesher,
-                               Message_ProgressRange theRange)
+                               ProgressRange theRange)
     {
         if (theNodes is null || theNodes.IsEmpty())
         {
@@ -95,10 +97,10 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
         }
 
         NCollection_DynamicArray<int> aVertexIndexes = new(theNodes.Size());
-        NCollection_List<gp_Pnt2d>.Iterator aNodesIt = new(theNodes);
+        NCollection_List<Point2D>.Iterator aNodesIt = new(theNodes);
         for (int aNodeIt = 1; aNodesIt.More(); aNodesIt.Next(), ++aNodeIt)
         {
-            gp_Pnt2d aPnt2d = aNodesIt.Value();
+            Point2D aPnt2d = aNodesIt.Value();
             if (getClassifier().Perform(aPnt2d) == TopAbs_IN)
             {
                 aVertexIndexes.Append(
@@ -115,7 +117,7 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
     }
 
     // Registers surface nodes in data structure.
-    private bool registerSurfaceNodes(NCollection_List<gp_Pnt2d>? theNodes)
+    private bool registerSurfaceNodes(NCollection_List<Point2D>? theNodes)
     {
         if (theNodes is null || theNodes.IsEmpty())
         {
@@ -123,10 +125,10 @@ public class BRepMesh_DelaunayNodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_No
         }
 
         bool isAdded = false;
-        NCollection_List<gp_Pnt2d>.Iterator aNodesIt = new(theNodes);
+        NCollection_List<Point2D>.Iterator aNodesIt = new(theNodes);
         for (int aNodeIt = 1; aNodesIt.More(); aNodesIt.Next(), ++aNodeIt)
         {
-            gp_Pnt2d aPnt2d = aNodesIt.Value();
+            Point2D aPnt2d = aNodesIt.Value();
             if (getClassifier().Perform(aPnt2d) == TopAbs_IN)
             {
                 isAdded = true;

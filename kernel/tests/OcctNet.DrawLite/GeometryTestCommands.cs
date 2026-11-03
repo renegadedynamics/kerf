@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using Occt;
 
@@ -56,18 +58,18 @@ internal static class GeometryTestCommands
             using var iFile = new StringReader(System.Text.Encoding.Latin1.GetString(aBytes));
             int nbp = 0, i;
             double x, y, z;
-            Standard_Stream.Read(iFile, ref nbp);
+            global::Kerf.Engine.Foundation.StreamUtilities.Read(iFile, ref nbp);
             const int aBufferSize = 3;
-            string dimen = Standard_Stream.ReadWord(iFile, aBufferSize) ?? "";
+            string dimen = global::Kerf.Engine.Foundation.StreamUtilities.ReadWord(iFile, aBufferSize) ?? "";
             if (dimen == "3d")
             {
-                var Point = new NCollection_HArray1<gp_Pnt>(1, nbp);
+                var Point = new NCollection_HArray1<Point3D>(1, nbp);
                 for (i = 1; i <= nbp; i++)
                 {
                     GeomTools.GetReal(iFile, out x);
                     GeomTools.GetReal(iFile, out y);
                     GeomTools.GetReal(iFile, out z);
-                    Point.SetValue(i, new gp_Pnt(x, y, z));
+                    Point.SetValue(i, new Point3D(x, y, z));
                 }
                 var anInterpolator = new GeomAPI_Interpolate(Point, false, 1.0e-5);
                 anInterpolator.Perform();
@@ -79,12 +81,12 @@ internal static class GeometryTestCommands
             }
             else if (dimen == "2d")
             {
-                var PointPtr = new NCollection_HArray1<gp_Pnt2d>(1, nbp);
+                var PointPtr = new NCollection_HArray1<Point2D>(1, nbp);
                 for (i = 1; i <= nbp; i++)
                 {
                     GeomTools.GetReal(iFile, out x);
                     GeomTools.GetReal(iFile, out y);
-                    PointPtr.SetValue(i, new gp_Pnt2d(x, y));
+                    PointPtr.SetValue(i, new Point2D(x, y));
                 }
                 var a2dInterpolator = new Geom2dAPI_Interpolate(PointPtr, false, 1.0e-5);
                 a2dInterpolator.Perform();
@@ -111,8 +113,8 @@ internal static class GeometryTestCommands
         double tolerance;
 
         bool periodic_flag = false;
-        gp_Pnt a_point = new();
-        gp_Vec a_vector = new();
+        Point3D a_point = new();
+        Vector3D a_vector = new();
         tolerance = 1.0e-5;
 
         Geom_BSplineCurve NewCurvePtr;
@@ -133,7 +135,7 @@ internal static class GeometryTestCommands
         {
             return 1;
         }
-        var PointsArrayPtr = new NCollection_HArray1<gp_Pnt>(1, num_parameters);
+        var PointsArrayPtr = new NCollection_HArray1<Point3D>(1, num_parameters);
 
         num_tangents = ((n - num_read) / 3) - num_parameters;
         num_tangents = Math.Max(0, num_tangents);
@@ -155,7 +157,7 @@ internal static class GeometryTestCommands
 
         if (num_tangents > 0)
         {
-            var TangentsArray = new NCollection_Array1<gp_Vec>(1, num_parameters);
+            var TangentsArray = new NCollection_Array1<Vector3D>(1, num_parameters);
             var TangentFlagsPtr = new NCollection_HArray1<bool>(1, num_parameters);
 
             for (ii = 1; ii <= num_tangents; ii++)
@@ -191,14 +193,14 @@ internal static class GeometryTestCommands
         return 0;
     }
 
-    private static void ShowProjSolution(DrawInterpreter theDI, DrawResult di, int i, in gp_Pnt P, in gp_Pnt P1, double U, double V,
+    private static void ShowProjSolution(DrawInterpreter theDI, DrawResult di, int i, in Point3D P, in Point3D P1, double U, double V,
                                          bool isSurface)
     {
         string name = $"ext_{i}";
         di.Append(name).Append(" ");
-        if (P.Distance(P1) > Precision.Confusion())
+        if (P.Distance(P1) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            var L = new Geom_Line(P, new gp_Dir(new gp_Vec(P, P1)));
+            var L = new Geom_Line(P, new Direction3D(new Vector3D(P, P1)));
             var CT = new Geom_TrimmedCurve(L, 0.0, P.Distance(P1));
             DrawTrSurf.Set(theDI, name, CT);
         }
@@ -235,7 +237,7 @@ internal static class GeometryTestCommands
             return 1;
         }
 
-        var P = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+        var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
 
         Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
         Geom_Surface? GS;
@@ -268,16 +270,16 @@ internal static class GeometryTestCommands
 
                 for (int i = 1; i <= proj.NbPoints(); i++)
                 {
-                    gp_Pnt P1 = proj.Point(i);
+                    Point3D P1 = proj.Point(i);
                     proj.Parameters(i, out double UU, out double VV);
                     ShowProjSolution(theDI, di, i, P, P1, UU, VV, true);
                 }
             }
             else if (n == 7)
             {
-                var aP2d = new gp_XY(theDI.Atof(a[5]), theDI.Atof(a[6]));
+                var aP2d = new Xy(theDI.Atof(a[5]), theDI.Atof(a[6]));
                 var aGAS = new GeomAdaptor_Surface(GS);
-                var aProjector = new Extrema_GenLocateExtPS(aGAS, Precision.PConfusion(), Precision.PConfusion());
+                var aProjector = new Extrema_GenLocateExtPS(aGAS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aProjector.Perform(P, aP2d.X(), aP2d.Y(), false);
                 if (!aProjector.IsDone())
                 {
@@ -303,7 +305,7 @@ internal static class GeometryTestCommands
 
             for (int i = 1; i <= proj.NbPoints(); i++)
             {
-                gp_Pnt P1 = proj.Point(i);
+                Point3D P1 = proj.Point(i);
                 double UU = proj.Parameter(i);
                 ShowProjSolution(theDI, di, i, P, P1, UU, UU, false);
             }
@@ -359,8 +361,8 @@ internal static class GeometryTestCommands
             U2l = GC2.LastParameter();
         }
 
-        var aPnts1 = new List<gp_Pnt>();
-        var aPnts2 = new List<gp_Pnt>();
+        var aPnts1 = new List<Point3D>();
+        var aPnts2 = new List<Point3D>();
         List<double>[] aPrms = [[], [], [], []];
         if (GC1 is not null && GC2 is not null)
         {
@@ -374,7 +376,7 @@ internal static class GeometryTestCommands
             {
                 for (int aJ = 1; aJ <= Ex.NbExtrema(); ++aJ)
                 {
-                    Ex.Points(aJ, out gp_Pnt aP1, out gp_Pnt aP2);
+                    Ex.Points(aJ, out Point3D aP1, out Point3D aP2);
                     aPnts1.Add(aP1);
                     aPnts2.Add(aP2);
                     Ex.Parameters(aJ, out double aU1, out double aU2);
@@ -395,7 +397,7 @@ internal static class GeometryTestCommands
             {
                 for (int aJ = 1; aJ <= Ex.NbExtrema(); ++aJ)
                 {
-                    Ex.Points(aJ, out gp_Pnt aP1, out gp_Pnt aP2);
+                    Ex.Points(aJ, out Point3D aP1, out Point3D aP2);
                     aPnts1.Add(aP1);
                     aPnts2.Add(aP2);
                     Ex.Parameters(aJ, out double aU1, out double aU2, out double aV2);
@@ -417,7 +419,7 @@ internal static class GeometryTestCommands
             {
                 for (int aJ = 1; aJ <= Ex.NbExtrema(); ++aJ)
                 {
-                    Ex.Points(aJ, out gp_Pnt aP2, out gp_Pnt aP1);
+                    Ex.Points(aJ, out Point3D aP2, out Point3D aP1);
                     aPnts1.Add(aP1);
                     aPnts2.Add(aP2);
                     Ex.Parameters(aJ, out double aU2, out double aU1, out double aV1);
@@ -439,7 +441,7 @@ internal static class GeometryTestCommands
             {
                 for (int aJ = 1; aJ <= Ex.NbExtrema(); ++aJ)
                 {
-                    Ex.Points(aJ, out gp_Pnt aP1, out gp_Pnt aP2);
+                    Ex.Points(aJ, out Point3D aP1, out Point3D aP2);
                     aPnts1.Add(aP1);
                     aPnts2.Add(aP2);
                     Ex.Parameters(aJ, out double aU1, out double aV1, out double aU2, out double aV2);
@@ -467,7 +469,7 @@ internal static class GeometryTestCommands
 
         for (int aJ = 1; aJ <= aPntCount; aJ++)
         {
-            gp_Pnt aP1 = aPnts1[aJ - 1], aP2 = aPnts2[aJ - 1];
+            Point3D aP1 = aPnts1[aJ - 1], aP2 = aPnts2[aJ - 1];
             if (aP1.Distance(aP2) < 1.0e-16)
             {
                 di.Append("Extrema ").Append(aJ).Append(" is point : ").Append(aP1.X()).Append(" ").Append(aP1.Y()).Append(" ")
@@ -475,7 +477,7 @@ internal static class GeometryTestCommands
                 continue;
             }
 
-            var aL = new Geom_Line(aP1, new gp_Dir(new gp_Vec(aP1, aP2)));
+            var aL = new Geom_Line(aP1, new Direction3D(new Vector3D(aP1, aP2)));
             var aCT = new Geom_TrimmedCurve(aL, 0.0, aP1.Distance(aP2));
             string aName = $"ext_{aJ}";
             DrawTrSurf.Set(theDI, aName, aCT);
@@ -508,7 +510,7 @@ internal static class GeometryTestCommands
 
     // The three `solutions` helpers of GeometryTest_ConstraintCommands.cxx: each circle bound as name_i, the names
     // listed in the result.
-    private static int Solutions(DrawInterpreter theDI, DrawResult di, bool theIsDone, Func<int> theNb, Func<int, gp_Circ2d> theSolution,
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, bool theIsDone, Func<int> theNb, Func<int, Circle2D> theSolution,
                                  string theName, string theNotDone)
     {
         if (theIsDone)
@@ -554,9 +556,9 @@ internal static class GeometryTestCommands
 
         string Word(int theI) => theI < theNArgs ? theArgVals[theI] : "";
 
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Geom2d_Curve?[] aC = new Geom2d_Curve?[3];
-        gp_Pnt2d[] aP = [new(), new(), new()];
+        Point2D[] aP = [new(), new(), new()];
         double aRadius = -1.0;
 
         int aNbCurves = 0, aNbPnts = 0;
@@ -733,7 +735,7 @@ internal static class GeometryTestCommands
             double                ang = theDI.Atof(a[4]) * (Math.PI / 180.0);
             Geom2dGcc_Lin2dTanObl ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
                                             L.Lin2d(),
-                                            Precision.Angular(),
+                                            global::Kerf.Engine.Foundation.Precision.Angular(),
                                             (C1.FirstParameter() + C1.LastParameter()) / 2.0,
                                             ang);
             if (ct3.IsDone())
@@ -755,7 +757,7 @@ internal static class GeometryTestCommands
         {
             Geom2dGcc_Lin2d2Tan ct3 = new(Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C1)),
                                           Geom2dGcc.Unqualified(new Geom2dAdaptor_Curve(C2)),
-                                          Precision.Angular(),
+                                          global::Kerf.Engine.Foundation.Precision.Angular(),
                                           (C1.FirstParameter() + C1.LastParameter()) / 2.0,
                                           (C2.FirstParameter() + C2.LastParameter()) / 2.0);
             if (ct3.IsDone())
@@ -787,7 +789,7 @@ internal static class GeometryTestCommands
         int n = a.Count;
         if (n >= 5)
         {
-            gp_Pnt P1 = new(), P2 = new(), P3 = new(), P4 = new();
+            Point3D P1 = new(), P2 = new(), P3 = new(), P4 = new();
             if (a[2] == "seg")
             {
                 if (DrawTrSurf.GetPoint(theDI, a[3], ref P1) && DrawTrSurf.GetPoint(theDI, a[4], ref P2))
@@ -806,7 +808,7 @@ internal static class GeometryTestCommands
                     if (n > 6)
                     {
                         DrawTrSurf.GetPoint(theDI, a[6], ref P4);
-                        var V1 = new gp_Vec(P2, P3);
+                        var V1 = new Vector3D(P2, P3);
                         DrawTrSurf.Set(theDI, a[1], new GC_MakeArcOfCircle(P1, V1, P4).Value());
                         // OCCT
                         return 1;

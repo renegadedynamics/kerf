@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -9,13 +11,13 @@ namespace Occt;
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>The vertex/vertex interferences: the chains of coinciding vertices become same-domain vertices.</summary>
-    protected virtual void PerformVV(Message_ProgressRange theRange)
+    protected virtual void PerformVV(ProgressRange theRange)
     {
         int n1, n2, iFlag, aSize;
         //
         myIterator!.Initialize(TopAbs_VERTEX, TopAbs_VERTEX);
         aSize = myIterator.ExpectedLength();
-        using var aPS = new Message_ProgressScope(theRange, null, 2.0);
+        using var aPS = new ProgressScope(theRange, null, 2.0);
         if (aSize == 0)
         {
             return;
@@ -29,7 +31,7 @@ public partial class BOPAlgo_PaveFiller
         //
         // 1. Map V/LV
         // Split progress range on intersection stage and making blocks. Display only intersection stage.
-        using (var aPSLoop = new Message_ProgressScope(aPS.Next(1.0), "Performing Vertex-Vertex intersection", aSize))
+        using (var aPSLoop = new ProgressScope(aPS.Next(1.0), "Performing Vertex-Vertex intersection", aSize))
         {
             for (; myIterator.More(); myIterator.Next(), aPSLoop.Next())
             {
@@ -145,9 +147,9 @@ public partial class BOPAlgo_PaveFiller
             nV = myDS!.Append(aSIn);
         }
         BOPDS_ShapeInfo aSIDS = myDS!.ChangeShapeInfo(nV);
-        ref Bnd_Box aBox = ref aSIDS.ChangeBox();
+        ref Box aBox = ref aSIDS.ChangeBox();
         aBox.Add(BRep_Tool.Pnt(aVn));
-        aBox.SetGap(BRep_Tool.Tolerance(aVn) + Precision.Confusion());
+        aBox.SetGap(BRep_Tool.Tolerance(aVn) + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // Fill ShapesSD
         NCollection_DynamicArray<BOPDS_InterfVV> aVVs = myDS.InterfVV();

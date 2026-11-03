@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -14,7 +15,7 @@ public class BOPAlgo_BuilderTests
     // A = [0, 10]^3 and B = [5, 15]^3: the General Fuse splits them into A \ B, A & B and B \ A.
     private static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new gp_Pnt(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
     private static double Volume(in TopoDS_Shape theShape)
     {
@@ -118,7 +119,7 @@ public class BOPAlgo_BuilderTests
         Assert.True(aBuilder.PPaveFiller()!.NonDestructive());
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
-        Assert.True(aBuilder.Shape().TShape()!.IsFrozen());
+        Assert.True(aBuilder.Shape().TShape()!.IsFrozen);
     }
 
     [Fact]

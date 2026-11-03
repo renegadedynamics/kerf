@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +24,7 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
     private double paramBis;
     private double distance;
     private bool infinite;
-    private gp_Pnt2d point;
+    private Point2D point;
 
     /// <summary>All zeros, not infinite.</summary>
     public Bisector_PointOnBis()
@@ -30,11 +34,11 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
         paramBis = 0.0;
         distance = 0.0;
         infinite = false;
-        point = new gp_Pnt2d();
+        point = new Point2D();
     }
 
     /// <summary>The point P of parameter ParamBis on the bisector, of parameters Param1 and Param2 on the curves.</summary>
-    public Bisector_PointOnBis(double Param1, double Param2, double ParamBis, double Distance, in gp_Pnt2d P)
+    public Bisector_PointOnBis(double Param1, double Param2, double ParamBis, double Distance, in Point2D P)
     {
         param1 = Param1;
         param2 = Param2;
@@ -52,7 +56,7 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
 
     internal void Distance(double Distance) => distance = Distance;
 
-    internal void Point(in gp_Pnt2d P) => point = P;
+    internal void Point(in Point2D P) => point = P;
 
     internal void IsInfinite(bool Infinite) => infinite = Infinite;
 
@@ -69,7 +73,7 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
     public readonly double Distance() => distance;
 
     /// <summary>The point.</summary>
-    public readonly gp_Pnt2d Point() => point;
+    public readonly Point2D Point() => point;
 
     /// <summary>True if the point is at infinity.</summary>
     public readonly bool IsInfinite() => infinite;
@@ -107,7 +111,7 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
     }
 
     /// <summary>A copy with the point changed.</summary>
-    public readonly Bisector_PointOnBis WithPoint(in gp_Pnt2d P)
+    public readonly Bisector_PointOnBis WithPoint(in Point2D P)
     {
         Bisector_PointOnBis aCopy = this;
         aCopy.Point(P);
@@ -145,5 +149,5 @@ public partial struct Bisector_PointOnBis : IEquatable<Bisector_PointOnBis>
 
     /// <inheritdoc/>
     public override readonly string ToString() =>
-        gp.Format("Bisector_PointOnBis", param1, param2, paramBis, distance, infinite ? 1.0 : 0.0, point.X(), point.Y());
+        Constants.Format("Bisector_PointOnBis", param1, param2, paramBis, distance, infinite ? 1.0 : 0.0, point.X(), point.Y());
 }

@@ -4,8 +4,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFeat_Status;
-using static Occt.CSLib_NormalStatus;
+using static Kerf.Engine.Geometry.NormalStatus;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -16,7 +21,7 @@ namespace Occt;
 /// parameters along the axis, or blind for a length.
 /// </summary>
 /// <remarks>
-/// <para>A BRepFeat_Builder: <see cref="BRepFeat_Builder.Init(in TopoDS_Shape)"/> or <see cref="Init(in TopoDS_Shape, in gp_Ax1)"/>
+/// <para>A BRepFeat_Builder: <see cref="BRepFeat_Builder.Init(in TopoDS_Shape)"/> or <see cref="Init(in TopoDS_Shape, in Axis3D)"/>
 /// gives the shape, a <c>Perform</c> method the hole, <see cref="Build"/> the result
 /// (<see cref="BOPAlgo_BuilderShape.Shape"/>, frozen) and <see cref="Status"/> its status. OCCT makes the Boolean's
 /// <c>Perform</c> protected; C# can't narrow it, so BOPAlgo_BOP's stays public.</para>
@@ -24,7 +29,7 @@ namespace Occt;
 /// </remarks>
 public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 {
-    private gp_Ax1 myAxis = new();
+    private Axis3D myAxis = new();
     private bool myAxDef;
     private BRepFeat_Status myStatus;
     private bool myIsBlind;
@@ -42,14 +47,14 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Sets the axis of the hole.</summary>
-    public void Init(in gp_Ax1 Axis)
+    public void Init(in Axis3D Axis)
     {
         myAxis = Axis;
         myAxDef = true;
     }
 
     /// <summary>Sets the shape and the axis of the hole.</summary>
-    public void Init(in TopoDS_Shape S, in gp_Ax1 Axis)
+    public void Init(in TopoDS_Shape S, in Axis3D Axis)
     {
         base.Init(S);
         myAxis = Axis;
@@ -57,13 +62,13 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Performs a hole of radius <paramref name="Radius"/> through all the shape.</summary>
-    /// <exception cref="Standard_ConstructionError">No shape or no axis.</exception>
+    /// <exception cref="ConstructionErrorException">No shape or no axis.</exception>
     public void Perform(double Radius)
     {
         TopoDS_Shape aObject = myArguments.First();
         if (aObject.IsNull() || !myAxDef)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myIsBlind = false;
@@ -79,10 +84,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         // It is not possible to use infinite cylinder for topological operations.
         BoxParameters(aObject, myAxis, out double PMin, out double PMax);
         double Heigth = 2.0 * (PMax - PMin);
-        gp_XYZ theOrig = myAxis.Location().XYZ();
+        Xyz theOrig = myAxis.Location().XYZ();
         theOrig += ((3.0 * PMin - PMax) / 2.0) * myAxis.Direction().XYZ();
-        gp_Pnt p1_ao1 = new(theOrig);
-        gp_Ax2 a1_ao1 = new(p1_ao1, myAxis.Direction());
+        Point3D p1_ao1 = new(theOrig);
+        Frame3D a1_ao1 = new(p1_ao1, myAxis.Direction());
         BRepPrim_Cylinder theCylinder = new(a1_ao1, Radius, Heigth);
 
         // Probably it is better to make cut directly
@@ -104,14 +109,14 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Performs a hole of radius <paramref name="Radius"/> through the next faces met along the axis.</summary>
-    /// <exception cref="Standard_ConstructionError">No shape or no axis.</exception>
+    /// <exception cref="ConstructionErrorException">No shape or no axis.</exception>
     public void PerformThruNext(double Radius, bool Cont = true)
     {
         //
         TopoDS_Shape aObject = myArguments.First();
         if (aObject.IsNull() || !myAxDef)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myIsBlind = false;
@@ -205,8 +210,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             double parbar, parmin = Last;
             for (its.Initialize(parts); its.More(); its.Next())
             {
-                Baryc(its.Value(), out gp_Pnt Barycentre);
-                parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                Baryc(its.Value(), out Point3D Barycentre);
+                parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                 if (parbar >= First && parbar <= Last && parbar <= parmin)
                 {
                     parmin = parbar;
@@ -220,8 +225,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 double dmin = RealLast();
                 for (its.Initialize(parts); its.More(); its.Next())
                 {
-                    Baryc(its.Value(), out gp_Pnt Barycentre);
-                    parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                    Baryc(its.Value(), out Point3D Barycentre);
+                    parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                     if (parbar < First)
                     {
                         if (First - parbar < dmin)
@@ -252,14 +257,14 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Performs a hole of radius <paramref name="Radius"/> from the first face met up to the end.</summary>
-    /// <exception cref="Standard_ConstructionError">No shape or no axis.</exception>
+    /// <exception cref="ConstructionErrorException">No shape or no axis.</exception>
     public void PerformUntilEnd(double Radius, bool Cont = true)
     {
         //
         TopoDS_Shape aObject = myArguments.First();
         if (aObject.IsNull() || !myAxDef)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myIsBlind = false;
@@ -339,8 +344,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             double parbar;
             for (its.Initialize(parts); its.More(); its.Next())
             {
-                Baryc(its.Value(), out gp_Pnt Barycentre);
-                parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                Baryc(its.Value(), out Point3D Barycentre);
+                parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                 if (parbar > PntInfoFirst.Parameter())
                 {
                     KeepPart(its.Value());
@@ -353,14 +358,14 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     /// Performs a hole of radius <paramref name="Radius"/> between the parameters <paramref name="PFrom"/> and
     /// <paramref name="PTo"/> along the axis.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">No shape or no axis.</exception>
+    /// <exception cref="ConstructionErrorException">No shape or no axis.</exception>
     public void Perform(double Radius, double PFrom, double PTo, bool Cont = true)
     {
         //
         TopoDS_Shape aObject = myArguments.First();
         if (aObject.IsNull() || !myAxDef)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myIsBlind = false;
@@ -452,8 +457,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             double parbar;
             for (its.Initialize(parts); its.More(); its.Next())
             {
-                Baryc(its.Value(), out gp_Pnt Barycentre);
-                parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                Baryc(its.Value(), out Point3D Barycentre);
+                parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                 if (parbar >= PntInfoFirst.Parameter() && parbar <= PntInfoLast.Parameter())
                 {
                     KeepPart(its.Value());
@@ -463,14 +468,14 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     /// <summary>Performs a blind hole of radius <paramref name="Radius"/> and length <paramref name="Length"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">No shape, no axis, or a length not positive.</exception>
+    /// <exception cref="ConstructionErrorException">No shape, no axis, or a length not positive.</exception>
     public void PerformBlind(double Radius, double Length, bool Cont = true)
     {
         //
         TopoDS_Shape aObject = myArguments.First();
         if (aObject.IsNull() || !myAxDef || Length <= 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myIsBlind = true;
@@ -536,10 +541,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         }
 
         double Heigth = 3.0 * (Length - PMin) / 2.0;
-        gp_XYZ theOrig = myAxis.Location().XYZ();
+        Xyz theOrig = myAxis.Location().XYZ();
         theOrig += ((3.0 * PMin - Length) / 2.0) * myAxis.Direction().XYZ();
-        gp_Pnt p5_ao1 = new(theOrig);
-        gp_Ax2 a5_ao1 = new(p5_ao1, myAxis.Direction());
+        Point3D p5_ao1 = new(theOrig);
+        Frame3D a5_ao1 = new(p5_ao1, myAxis.Direction());
         BRepPrim_Cylinder theCylinder = new(a5_ao1, Radius, Heigth);
 
         BRep_Builder B = new();
@@ -575,8 +580,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             double parbar, parmin = RealLast();
             for (its.Initialize(parts); its.More(); its.Next())
             {
-                Baryc(its.Value(), out gp_Pnt Barycentre);
-                parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                Baryc(its.Value(), out Point3D Barycentre);
+                parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                 if (parbar >= First && parbar <= parmin)
                 {
                     parmin = parbar;
@@ -590,8 +595,8 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 double dmin = RealLast();
                 for (its.Initialize(parts); its.More(); its.Next())
                 {
-                    Baryc(its.Value(), out gp_Pnt Barycentre);
-                    parbar = ElCLib.LineParameter(myAxis, Barycentre);
+                    Baryc(its.Value(), out Point3D Barycentre);
+                    parbar = global::Kerf.Engine.Geometry.ElCLib.LineParameter(myAxis, Barycentre);
                     if (Math.Abs(First - parbar) < dmin)
                     {
                         dmin = Math.Abs(First - parbar);
@@ -672,10 +677,10 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         return thestat;
     }
 
-    private static void Baryc(in TopoDS_Shape S, out gp_Pnt B)
+    private static void Baryc(in TopoDS_Shape S, out Point3D B)
     {
         TopExp_Explorer exp = new(S, TopAbs_EDGE);
-        gp_XYZ Bar = new(0.0, 0.0, 0.0);
+        Xyz Bar = new(0.0, 0.0, 0.0);
         Geom_Curve C;
         double prm;
         int i, nbp = 0;
@@ -686,7 +691,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             TopoDS_Edge E = TopoDS.Edge(exp.Current());
             if (!BRep_Tool.Degenerated(E))
             {
-                C = BRep_Tool.Curve(E, out TopLoc_Location L, out double First, out double Last)!;
+                C = BRep_Tool.Curve(E, out Placement L, out double First, out double Last)!;
                 C = (Geom_Curve)C.Transformed(L.Transformation());
 
                 for (i = 1; i <= 11; i++)
@@ -698,18 +703,18 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
             }
         }
         Bar.Divide((double)nbp);
-        B = new gp_Pnt();
+        B = new Point3D();
         B.SetXYZ(Bar);
     }
 
-    private static void BoxParameters(in TopoDS_Shape S, in gp_Ax1 Axis, out double parmin, out double parmax)
+    private static void BoxParameters(in TopoDS_Shape S, in Axis3D Axis, out double parmin, out double parmax)
     {
         // calculate the parameters of a bounding box in the direction of the axis of the hole
-        Bnd_Box B = new();
+        Box B = new();
         BRepBndLib.Add(S, ref B);
         double[] c = new double[6];
         B.Get(out c[0], out c[2], out c[4], out c[1], out c[3], out c[5]);
-        gp_Pnt P = new();
+        Point3D P = new();
         int i, j, k;
         parmin = RealLast();
         parmax = RealFirst();
@@ -723,7 +728,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
                 for (k = 4; k <= 5; k++)
                 {
                     P.SetZ(c[k]);
-                    param = ElCLib.LineParameter(Axis, P);
+                    param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Axis, P);
                     parmin = Min(param, parmin);
                     parmax = Max(param, parmax);
                 }
@@ -731,7 +736,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
         }
     }
 
-    private static bool GetOffset(in LocOpe_PntFace PntInfo, double Radius, in gp_Ax1 Axis, out double outOff)
+    private static bool GetOffset(in LocOpe_PntFace PntInfo, double Radius, in Axis3D Axis, out double outOff)
     {
         outOff = 0.0; // OCCT leaves it unchanged when false
         TopoDS_Face FF = PntInfo.Face();
@@ -739,15 +744,15 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         double Up = PntInfo.UParameter();
         double Vp = PntInfo.VParameter();
-        FFA.D1(Up, Vp, out gp_Pnt PP, out gp_Vec D1U, out gp_Vec D1V);
-        gp_Dir NormF = new();
-        CSLib.Normal(D1U, D1V, Precision.Angular(), out CSLib_NormalStatus stat, ref NormF);
-        if (stat != CSLib_Defined)
+        FFA.D1(Up, Vp, out Point3D PP, out Vector3D D1U, out Vector3D D1V);
+        Direction3D NormF = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(D1U, D1V, global::Kerf.Engine.Foundation.Precision.Angular(), out NormalStatus stat, ref NormF);
+        if (stat != Defined)
         {
             return false;
         }
         double angle = Axis.Direction().Angle(NormF);
-        if (Math.Abs(M_PI / 2.0 - angle) < Precision.Angular())
+        if (Math.Abs(M_PI / 2.0 - angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
         }
@@ -756,7 +761,7 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
     }
 
     private static void CreateCyl(in LocOpe_PntFace PntInfoFirst, in LocOpe_PntFace PntInfoLast, double Radius,
-                                  in gp_Ax1 Axis, out TopoDS_Shell Cyl, out TopoDS_Face CylTopF,
+                                  in Axis3D Axis, out TopoDS_Shell Cyl, out TopoDS_Face CylTopF,
                                   out TopoDS_Face CylBottF)
     {
         double First = 0, Last = 0;
@@ -776,9 +781,9 @@ public sealed class BRepFeat_MakeCylindricalHole : BRepFeat_Builder
 
         // create cylinder along the axis (myAxis);
         // from 'First - offF' to 'Last + offL' params
-        gp_XYZ theOrig = PntInfoFirst.Pnt().XYZ() - offF * Axis.Direction().XYZ();
-        gp_Pnt p2_ao1 = new(theOrig);
-        gp_Ax2 a2_ao1 = new(p2_ao1, Axis.Direction());
+        Xyz theOrig = PntInfoFirst.Pnt().XYZ() - offF * Axis.Direction().XYZ();
+        Point3D p2_ao1 = new(theOrig);
+        Frame3D a2_ao1 = new(p2_ao1, Axis.Direction());
         BRepPrim_Cylinder theCylinder = new(a2_ao1, Radius, Heigth + offF + offL);
         Cyl = theCylinder.Shell();
         CylTopF = theCylinder.TopFace();

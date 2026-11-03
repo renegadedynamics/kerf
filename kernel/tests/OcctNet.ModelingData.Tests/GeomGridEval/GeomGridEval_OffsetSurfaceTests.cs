@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_OffsetSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomGridEval_OffsetSurfaceTest
@@ -21,13 +23,13 @@ public class GeomGridEval_OffsetSurfaceTest
     // Cylinder radius 5, offset by 2.0 -> cylinder radius 7 (outward)
     private static Geom_OffsetSurface MakeCylinderOffset()
     {
-        Geom_CylindricalSurface aCyl = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         return new Geom_OffsetSurface(aCyl, 2.0);
     }
 
     private static Geom_OffsetSurface PlaneOffsetSurface(double theOffset)
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         return new Geom_OffsetSurface(aPlane, theOffset);
     }
 
@@ -39,7 +41,7 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 3);
 
-        NCollection_Array2<gp_Vec> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, theNU, theNV);
+        NCollection_Array2<Vector3D> aGrid = anEval.EvaluateGridDN(aUParams, aVParams, theNU, theNV);
 
         // Use Geom_OffsetSurface::DN as reference (GeomAdaptor_Surface::DN doesn't
         // properly handle offset surfaces - it returns base surface derivatives)
@@ -47,7 +49,7 @@ public class GeomGridEval_OffsetSurfaceTest
         {
             for (int j = 1; j <= 3; ++j)
             {
-                gp_Vec aExpected = anOffset.DN(aUParams.Value(i), aVParams.Value(j), theNU, theNV);
+                Vector3D aExpected = anOffset.DN(aUParams.Value(i), aVParams.Value(j), theNU, theNV);
                 Assert.Equal(0.0, (aGrid.Value(i, j) - aExpected).Magnitude(), THE_TOLERANCE);
             }
         }
@@ -64,13 +66,13 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 10.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 10.0, 5);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         for (int i = 1; i <= 5; ++i)
         {
             for (int j = 1; j <= 5; ++j)
             {
-                gp_Pnt aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
+                Point3D aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
                 Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
                 Assert.Equal(10.0, aGrid.Value(i, j).Z(), THE_TOLERANCE);
             }
@@ -87,13 +89,13 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 5);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         for (int i = 1; i <= 9; ++i)
         {
             for (int j = 1; j <= 5; ++j)
             {
-                gp_Pnt aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
+                Point3D aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
                 Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
 
                 // Check radius from Z axis
@@ -119,7 +121,7 @@ public class GeomGridEval_OffsetSurfaceTest
         {
             for (int j = 1; j <= 3; ++j)
             {
-                anOffset.D1(aUParams.Value(i), aVParams.Value(j), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V);
+                anOffset.D1(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
                 Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -138,7 +140,7 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 3);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 3);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.Equal(3, aGrid.RowLength());
         Assert.Equal(3, aGrid.ColLength());
         Assert.Equal(5.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
@@ -159,8 +161,8 @@ public class GeomGridEval_OffsetSurfaceTest
         {
             for (int j = 1; j <= 3; ++j)
             {
-                anOffset.D2(aUParams.Value(i), aVParams.Value(j), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V,
-                            out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+                anOffset.D2(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
+                            out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
                 Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -187,9 +189,9 @@ public class GeomGridEval_OffsetSurfaceTest
         {
             for (int j = 1; j <= 3; ++j)
             {
-                anAdaptor.D3(aUParams.Value(i), aVParams.Value(j), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V,
-                             out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV, out gp_Vec aD3U, out gp_Vec aD3V,
-                             out gp_Vec aD3UUV, out gp_Vec aD3UVV);
+                anAdaptor.D3(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
+                             out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV, out Vector3D aD3U, out Vector3D aD3V,
+                             out Vector3D aD3UUV, out Vector3D aD3UVV);
                 Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -239,22 +241,22 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 10.0, 5);
 
         // Test DN(1,0) and DN(0,1) - use Geom_OffsetSurface::DN as reference
-        NCollection_Array2<gp_Vec> aGridU = anEval.EvaluateGridDN(aUParams, aVParams, 1, 0);
-        NCollection_Array2<gp_Vec> aGridV = anEval.EvaluateGridDN(aUParams, aVParams, 0, 1);
+        NCollection_Array2<Vector3D> aGridU = anEval.EvaluateGridDN(aUParams, aVParams, 1, 0);
+        NCollection_Array2<Vector3D> aGridV = anEval.EvaluateGridDN(aUParams, aVParams, 0, 1);
 
         for (int i = 1; i <= 5; ++i)
         {
             for (int j = 1; j <= 5; ++j)
             {
-                gp_Vec aExpectedU = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 1, 0);
-                gp_Vec aExpectedV = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 0, 1);
+                Vector3D aExpectedU = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 1, 0);
+                Vector3D aExpectedV = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 0, 1);
                 Assert.Equal(0.0, (aGridU.Value(i, j) - aExpectedU).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGridV.Value(i, j) - aExpectedV).Magnitude(), THE_TOLERANCE);
             }
         }
 
         // For a plane offset, 2nd and higher derivatives should be zero
-        NCollection_Array2<gp_Vec> aGrid2U = anEval.EvaluateGridDN(aUParams, aVParams, 2, 0);
+        NCollection_Array2<Vector3D> aGrid2U = anEval.EvaluateGridDN(aUParams, aVParams, 2, 0);
         for (int i = 1; i <= 5; ++i)
         {
             for (int j = 1; j <= 5; ++j)
@@ -274,7 +276,7 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([M_PI / 4]);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 15);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         // Note: RowLength() = V count (columns), ColLength() = U count (rows)
         Assert.Equal(15, aGrid.RowLength());
@@ -283,7 +285,7 @@ public class GeomGridEval_OffsetSurfaceTest
         // Compare against Geom_OffsetSurface::D0
         for (int j = 1; j <= 15; ++j)
         {
-            anOffset.D0(aUParams.Value(1), aVParams.Value(j), out gp_Pnt aExpected);
+            anOffset.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
             Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -298,7 +300,7 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 15);
         NCollection_Array1<double> aVParams = NCollection_Array1<double>.From([2.5]);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         // Note: RowLength() = V count (columns), ColLength() = U count (rows)
         Assert.Equal(1, aGrid.RowLength());
@@ -307,7 +309,7 @@ public class GeomGridEval_OffsetSurfaceTest
         // Compare against Geom_OffsetSurface::D0
         for (int i = 1; i <= 15; ++i)
         {
-            anOffset.D0(aUParams.Value(i), aVParams.Value(1), out gp_Pnt aExpected);
+            anOffset.D0(aUParams.Value(i), aVParams.Value(1), out Point3D aExpected);
             Assert.Equal(0.0, aGrid.Value(i, 1).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -323,11 +325,11 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array1<double> aUParams = NCollection_Array1<double>.From([5.0]);
         NCollection_Array1<double> aVParams = CreateUniformParams(-10.0, 10.0, 20);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         for (int j = 1; j <= 20; ++j)
         {
-            anOffset.D0(aUParams.Value(1), aVParams.Value(j), out gp_Pnt aExpected);
+            anOffset.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
             Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
         }
     }

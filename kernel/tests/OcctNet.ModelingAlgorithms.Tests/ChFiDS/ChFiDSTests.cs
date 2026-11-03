@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ChFiDS_ChamfMethod;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiDS_ErrorStatus;
@@ -24,20 +25,20 @@ public class ChFiDSTests
         Assert.False(P.IsOnArc());
         Assert.False(P.HasVector());
         Assert.Equal(0.0, P.Tolerance());
-        Assert.ThrowsAny<Standard_DomainError>(() => P.Vertex());
-        Assert.ThrowsAny<Standard_DomainError>(() => P.Arc());
-        Assert.ThrowsAny<Standard_DomainError>(() => P.ParameterOnArc());
-        Assert.ThrowsAny<Standard_DomainError>(() => P.TransitionOnArc());
-        Assert.ThrowsAny<Standard_DomainError>(() => P.Vector());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vertex());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Arc());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.ParameterOnArc());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.TransitionOnArc());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => P.Vector());
 
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         TopoDS_Vertex V = TopExp.FirstVertex(E);
         P.SetVertex(V);
         P.SetArc(1.0e-3, E, 0.25, TopAbs_REVERSED);
         P.SetArc(1.0e-5, E, 0.5, TopAbs_FORWARD); // the tolerance only grows
         P.SetParameter(2.5);
-        P.SetPoint(new gp_Pnt(1, 2, 3));
-        P.SetVector(new gp_Vec(0, 0, 1));
+        P.SetPoint(new Point3D(1, 2, 3));
+        P.SetVector(new Vector3D(0, 0, 1));
         P.SetTolerance(1.0e-4);
         Assert.True(P.IsVertex() && P.IsOnArc() && P.HasVector());
         Assert.True(P.Vertex().IsSame(V));
@@ -46,14 +47,14 @@ public class ChFiDSTests
         Assert.Equal(TopAbs_FORWARD, P.TransitionOnArc());
         Assert.Equal(1.0e-3, P.Tolerance());
         Assert.Equal(2.5, P.Parameter());
-        Assert.Equal(new gp_Pnt(1, 2, 3), P.Point());
-        Assert.Equal(new gp_Vec(0, 0, 1), P.Vector());
+        Assert.Equal(new Point3D(1, 2, 3), P.Point());
+        Assert.Equal(new Vector3D(0, 0, 1), P.Vector());
 
         // Reset keeps the point, the arc and the parameter, as OCCT's.
         ChFiDS_CommonPoint R = P.Reseted();
         Assert.False(R.IsVertex() || R.IsOnArc() || R.HasVector());
         Assert.Equal(0.0, R.Tolerance());
-        Assert.Equal(new gp_Pnt(1, 2, 3), R.Point());
+        Assert.Equal(new Point3D(1, 2, 3), R.Point());
         Assert.Equal(2.5, R.Parameter());
         Assert.True(P.IsVertex()); // the twin does not change the original
         Assert.Equal(P, P.WithTolerance(1.0e-6));
@@ -67,8 +68,8 @@ public class ChFiDSTests
         Assert.Equal(0, I.LineIndex());
         Assert.Equal(TopAbs_FORWARD, I.Transition());
         Assert.Null(I.PCurveOnFace());
-        Geom2d_Line L1 = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
-        Geom2d_Line L2 = new(new gp_Pnt2d(0, 1), new gp_Dir2d(0, 1));
+        Geom2d_Line L1 = new(new Point2D(0, 0), new Direction2D(1, 0));
+        Geom2d_Line L2 = new(new Point2D(0, 1), new Direction2D(0, 1));
         I.SetInterference(3, TopAbs_REVERSED, L1, L2);
         I.SetParameter(0.5, true);
         I.SetParameter(2.5, false);
@@ -106,7 +107,7 @@ public class ChFiDSTests
         ChFiDS_SurfData D = new();
         Assert.Equal(TopAbs_FORWARD, D.Orientation());
         Assert.False(D.IsOnCurve1());
-        Assert.ThrowsAny<Standard_Failure>(() => D.IndexOfC1());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => D.IndexOfC1());
         D.ChangeIndexOfS1(1);
         D.ChangeIndexOfS2(2);
         D.ChangeSurf(7);
@@ -114,12 +115,12 @@ public class ChFiDSTests
         D.SetIndexOfC2(0);
         D.ChangeOrientation() = TopAbs_REVERSED;
         D.ChangeVertexFirstOnS1().SetParameter(1.5);
-        D.ChangeVertex(false, 2).SetPoint(new gp_Pnt(1, 1, 1));
+        D.ChangeVertex(false, 2).SetPoint(new Point3D(1, 1, 1));
         D.ChangeInterference(2).SetLineIndex(9);
         D.FirstSpineParam(0.25);
         D.LastSpineParam(0.75);
         D.FirstExtensionValue(1.0);
-        D.Set2dPoints(new gp_Pnt2d(1, 0), new gp_Pnt2d(2, 0), new gp_Pnt2d(3, 0), new gp_Pnt2d(4, 0));
+        D.Set2dPoints(new Point2D(1, 0), new Point2D(2, 0), new Point2D(3, 0), new Point2D(4, 0));
         D.TwistOnS2(true);
 
         Assert.Equal(1, D.Index(1));
@@ -130,10 +131,10 @@ public class ChFiDSTests
         Assert.False(D.IsOnCurve2());
         Assert.Equal(TopAbs_REVERSED, D.Orientation());
         Assert.Equal(1.5, D.VertexFirstOnS1().Parameter());
-        Assert.Equal(new gp_Pnt(1, 1, 1), D.VertexLastOnS2().Point());
+        Assert.Equal(new Point3D(1, 1, 1), D.VertexLastOnS2().Point());
         Assert.Equal(9, D.InterferenceOnS2().LineIndex());
-        Assert.Equal(new gp_Pnt2d(2, 0), D.Get2dPoints(false, 1));
-        Assert.Equal(new gp_Pnt2d(3, 0), D.Get2dPoints(true, 2));
+        Assert.Equal(new Point2D(2, 0), D.Get2dPoints(false, 1));
+        Assert.Equal(new Point2D(3, 0), D.Get2dPoints(true, 2));
         Assert.True(D.TwistOnS2());
 
         // Copy copies all but the curves' indices, as OCCT's.
@@ -171,8 +172,8 @@ public class ChFiDSTests
         S.SetIndexPoint(8, false, 2);
         S.SetOrientation(TopAbs_REVERSED, 2);
         S.SetOrientation(TopAbs_REVERSED, true);
-        S.ChangeFirstPCurve() = new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
-        S.ChangeLastPCurve() = new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1));
+        S.ChangeFirstPCurve() = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
+        S.ChangeLastPCurve() = new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1));
         S.Choix(3);
         S.InDS(false, 2);
         S.SetSolidIndex(11);
@@ -238,12 +239,12 @@ public class ChFiDSTests
         Sp.SetDist(2.0);
         Sp.GetDist(out double d);
         Assert.Equal(2.0, d);
-        Assert.ThrowsAny<Standard_Failure>(() => Sp.Dists(out _, out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Dists(out _, out _));
         Sp.SetDists(1.0, 3.0);
         Sp.Dists(out double d1, out double d2);
         Assert.Equal((1.0, 3.0), (d1, d2));
         Assert.Equal(ChFiDS_TwoDist, Sp.IsChamfer());
-        Assert.ThrowsAny<Standard_Failure>(() => Sp.GetDist(out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.GetDist(out _));
         Sp.SetDistAngle(1.5, 0.5);
         Sp.GetDistAngle(out double dd, out double a);
         Assert.Equal((1.5, 0.5), (dd, a));
@@ -256,7 +257,7 @@ public class ChFiDSTests
     public void Spine_StatesAndErrorStatus()
     {
         ChFiDS_Spine Sp = new();
-        Assert.Equal(Precision.Confusion(), Sp.GetTolesp());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), Sp.GetTolesp());
         Assert.Equal(ChFiDS_OnSame, Sp.FirstStatus());
         Assert.Equal(ChFiDS_TypeOfConcavity.ChFiDS_Other, Sp.GetTypeOfConcavity());
         Assert.Equal(ChFiDS_Ok, Sp.ErrorStatus());
@@ -282,10 +283,10 @@ public class ChFiDSTests
         Sp.Load();
         Assert.True(Sp.IsClosed());
         Assert.Equal(10.0 * Math.PI, Sp.LastParameter(), 1.0e-9);
-        Assert.ThrowsAny<Standard_Failure>(() => Sp.Period());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.Period());
         Sp.SetFirstStatus(ChFiDS_Closed);
         Assert.Equal(Sp.LastParameter(), Sp.Period());
-        Assert.ThrowsAny<Standard_Failure>(() => Sp.SetFirstTgt(0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => Sp.SetFirstTgt(0.0));
         Assert.Null(Sp.ElSpine(1.0));
 
         ChFiDS_ElSpine anEls = new();
@@ -316,11 +317,11 @@ public class ChFiDSTests
 
         Sp.SetRadius(3.0, Sp.Edges(3));
         Assert.False(Sp.IsConstant());
-        Assert.ThrowsAny<Standard_DomainError>(() => Sp.Radius());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius());
         Assert.True(Sp.IsConstant(3));
         Assert.Equal(3.0, Sp.Radius(3));
         Assert.False(Sp.IsConstant(2));
-        Assert.ThrowsAny<Standard_DomainError>(() => Sp.Radius(2));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.Radius(2));
         Assert.Equal(3.0, Sp.MaxRadFromSeqAndLaws());
 
         Sp.UnSetRadius(Sp.Edges(3));
@@ -331,6 +332,6 @@ public class ChFiDSTests
         Assert.Equal(5.0, Sp.MaxRadFromSeqAndLaws());
         Sp.UnSetRadius(V);
         Assert.Equal(2.0, Sp.MaxRadFromSeqAndLaws());
-        Assert.ThrowsAny<Standard_DomainError>(() => Sp.ChangeLaw(Sp.Edges(1)));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => Sp.ChangeLaw(Sp.Edges(1)));
     }
 }

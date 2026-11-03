@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -14,13 +18,13 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="Read(Stream, Message_ProgressRange)"/> freezes the shapes it creates once it has read them all (or has
+/// <see cref="Read(Stream, ProgressRange)"/> freezes the shapes it creates once it has read them all (or has
 /// failed), so every shape a set hands out after a read is frozen, as phase3-design.md, section 4.2, requires. The
 /// writers write the seven flags OCCT writes (Free to Convex: the Locked bit isn't part of this format).
 /// </para>
 /// <para>
 /// Reading a vertex in versions 1, 2 and 4 steps back in the stream, as OCCT does, so the stream must be seekable;
-/// <see cref="BinTools.Read(out TopoDS_Shape, Stream, Message_ProgressRange)"/> buffers a stream that isn't.
+/// <see cref="BinTools.Read(out TopoDS_Shape, Stream, ProgressRange)"/> buffers a stream that isn't.
 /// </para>
 /// </remarks>
 public class BinTools_ShapeSet : BinTools_ShapeSetBase
@@ -32,12 +36,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     private readonly BinTools_SurfaceSet mySurfaces = new();
     private readonly BinTools_CurveSet myCurves = new();
     private readonly BinTools_Curve2dSet myCurves2d = new();
-    private readonly NCollection_IndexedMap<Poly_Polygon2D> myPolygons2D = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Poly_Polygon3D> myPolygons3D = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedMap<Polygon2D> myPolygons2D = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedMap<Polygon3D> myPolygons3D = new(ReferenceEqualityComparer.Instance);
 
     // with a flag telling whether the triangulation's normals are written
-    private readonly NCollection_IndexedDataMap<Poly_Triangulation, bool> myTriangulations = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Poly_PolygonOnTriangulation> myNodes = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedDataMap<Triangulation, bool> myTriangulations = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IndexedMap<PolygonOnTriangulation> myNodes = new(ReferenceEqualityComparer.Instance);
 
     // OCCT.NET: untrusted input: the nesting depth of each shape read, by index - 1
     private readonly List<int> myDepths = [];
@@ -77,7 +81,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
         myLocations.Add(theShape.Location());
         TopoDS_Shape aS2 = theShape;
-        aS2.Location(new TopLoc_Location());
+        aS2.Location(new Placement());
         int anIndex = myShapes.FindIndex(aS2);
         if (anIndex == 0)
         {
@@ -94,7 +98,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>The shape of index I.</summary>
-    /// <exception cref="Standard_OutOfRange">There is no shape of index I.</exception>
+    /// <exception cref="OutOfRangeException">There is no shape of index I.</exception>
     public TopoDS_Shape Shape(int theIndx)
     {
         return myShapes[theIndx];
@@ -199,7 +203,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                         {
                             // OCCT adds the null handle and dereferences it in WriteTriangulation, which throws (a caught
                             // access violation); the port's maps can't hold null, so it throws here
-                            throw new Standard_Failure("BinTools_ShapeSet: a polygon on a null triangulation");
+                            throw new FailureException("BinTools_ShapeSet: a polygon on a null triangulation");
                         }
 
                         myTriangulations.Add(CR.Triangulation()!, false); // edge triangulation does not need normals
@@ -247,7 +251,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
             if (IsWithTriangles() || TF.Surface() is null)
             {
-                Poly_Triangulation? Tr = TF.Triangulation();
+                Triangulation? Tr = TF.Triangulation();
                 if (Tr is not null)
                 {
                     myTriangulations.Add(Tr, needNormals);
@@ -259,9 +263,9 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the geometry of the set: 2D curves, curves, 3D polygons, polygons on triangulations, surfaces, triangulations.</summary>
-    public virtual void WriteGeometry(Stream OS, Message_ProgressRange theRange = default)
+    public virtual void WriteGeometry(Stream OS, ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Writing geometry", 6);
+        using var aPS = new ProgressScope(theRange, "Writing geometry", 6);
         myCurves2d.Write(OS, aPS.Next());
         if (!aPS.More())
         {
@@ -299,7 +303,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     /// Writes the set: the header line, the locations, the geometry, then the shapes, sub-shapes first, each with its
     /// type, geometry, flags and sub-shapes.
     /// </summary>
-    public override void Write(Stream OS, Message_ProgressRange theRange = default)
+    public override void Write(Stream OS, ProgressRange theRange = default)
     {
         // write the copyright
         BinTools.PutText(OS, "\n");
@@ -316,7 +320,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         // write the geometry
         //-----------------------------------------
 
-        using var aPS = new Message_ProgressScope(theRange, "Writing geometry", 2);
+        using var aPS = new ProgressScope(theRange, "Writing geometry", 2);
 
         WriteGeometry(OS, aPS.Next());
         if (!aPS.More())
@@ -329,7 +333,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         //-----------------------------------------
 
         int i, nbShapes = myShapes.Extent();
-        using var aPSinner = new Message_ProgressScope(aPS.Next(), "Writing shapes", nbShapes);
+        using var aPSinner = new ProgressScope(aPS.Next(), "Writing shapes", nbShapes);
         BinTools.PutText(OS, "\nTShapes ");
         BinTools.PutText(OS, nbShapes);
         BinTools.PutText(OS, "\n");
@@ -365,12 +369,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>
-    /// Clears the set and reads one written by <see cref="Write(Stream, Message_ProgressRange)"/>. The shapes are frozen.
+    /// Clears the set and reads one written by <see cref="Write(Stream, ProgressRange)"/>. The shapes are frozen.
     /// If the stream has no header line of a known version, writes a message to the console and returns, as OCCT does.
     /// </summary>
-    /// <exception cref="Standard_Failure">The stream isn't a binary shape set OCCT can read; for input that can't be
-    /// read safely, a <see cref="Storage_StreamFormatError"/>.</exception>
-    public override void Read(Stream IS, Message_ProgressRange theRange = default)
+    /// <exception cref="FailureException">The stream isn't a binary shape set OCCT can read; for input that can't be
+    /// read safely, a <see cref="StreamFormatErrorException"/>.</exception>
+    public override void Read(Stream IS, ProgressRange theRange = default)
     {
         try
         {
@@ -379,7 +383,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         catch (Exception anException) when (BinTools.IsSignal(anException))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new Storage_StreamFormatError("BinTools_ShapeSet::Read: " + anException.Message, anException);
+            throw new StreamFormatErrorException("BinTools_ShapeSet::Read: " + anException.Message, anException);
         }
         finally
         {
@@ -391,7 +395,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         }
     }
 
-    private void ReadSet(Stream IS, Message_ProgressRange theRange)
+    private void ReadSet(Stream IS, ProgressRange theRange)
     {
         Clear();
 
@@ -454,7 +458,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         // read the geometry
         //-----------------------------------------
 
-        using var aPSouter = new Message_ProgressScope(theRange, "Reading", 2);
+        using var aPSouter = new ProgressScope(theRange, "Reading", 2);
         ReadGeometry(IS, aPSouter.Next());
         if (!aPSouter.More())
         {
@@ -468,14 +472,14 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         string? buffer = BinTools.ReadWord(IS);
         if (buffer is null || buffer != "TShapes")
         {
-            throw new Standard_Failure("BinTools_ShapeSet::Read: Not a TShape table" + "\n");
+            throw new FailureException("BinTools_ShapeSet::Read: Not a TShape table" + "\n");
         }
 
         int nbShapes = BinTools.ReadFormattedInteger(IS);
         BinTools.Get(IS); // remove lf
         // OCCT.NET: untrusted input: a shape takes at least 9 bytes (its type, 7 flags and the end of its sub-shapes)
         BinTools.CheckCount(IS, nbShapes, 9, "shapes");
-        using var aPSinner = new Message_ProgressScope(aPSouter.Next(), "Reading Shapes", nbShapes);
+        using var aPSinner = new ProgressScope(aPSouter.Next(), "Reading Shapes", nbShapes);
         for (int i = 1; i <= nbShapes && aPSinner.More(); i++, aPSinner.Next())
         {
             TopoDS_Shape S = new();
@@ -488,13 +492,13 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
             int aDepth = 1;
             for (var its = new TopoDS_Iterator(S, false, false); its.More(); its.Next())
             {
-                int aSub = myShapes.FindIndex(its.Value().Located(new TopLoc_Location()));
+                int aSub = myShapes.FindIndex(its.Value().Located(new Placement()));
                 aDepth = Math.Max(aDepth, myDepths[aSub - 1] + 1);
             }
 
             if (aDepth > BinTools.MaxShapeNesting)
             {
-                throw new Storage_StreamFormatError("BinTools_ShapeSet::Read: shapes nested too deeply");
+                throw new StreamFormatErrorException("BinTools_ShapeSet::Read: shapes nested too deeply");
             }
 
             myDepths.Add(aDepth);
@@ -512,7 +516,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         {
             // {TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_INTERNAL, TopAbs_EXTERNAL}
             OS.WriteByte((byte)S.Orientation());
-            BinTools.PutInteger(OS, myShapes.Extent() - myShapes.FindIndex(S.Located(new TopLoc_Location())) + 1);
+            BinTools.PutInteger(OS, myShapes.Extent() - myShapes.FindIndex(S.Located(new Placement())) + 1);
             BinTools.PutInteger(OS, Locations().Index(S.Location()));
         }
     }
@@ -598,9 +602,9 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads the geometry of the set, as <see cref="WriteGeometry"/> writes it.</summary>
-    public virtual void ReadGeometry(Stream IS, Message_ProgressRange theRange = default)
+    public virtual void ReadGeometry(Stream IS, ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Reading geometry", 6);
+        using var aPS = new ProgressScope(theRange, "Reading geometry", 6);
         myCurves2d.Read(IS, aPS.Next());
         if (!aPS.More())
         {
@@ -645,7 +649,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                 // Write the point geometry
                 TopoDS_Vertex V = TopoDS.Vertex(S);
                 BinTools.PutReal(OS, BRep_Tool.Tolerance(V));
-                gp_Pnt p = BRep_Tool.Pnt(V);
+                Point3D p = BRep_Tool.Pnt(V);
                 Write(OS, p);
 
                 BRep_TVertex TV = (BRep_TVertex)S.TShape()!;
@@ -741,7 +745,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                         if (FormatNb() == (int)BinTools_FormatVersion.BinTools_FormatVersion_VERSION_2
                             || FormatNb() == (int)BinTools_FormatVersion.BinTools_FormatVersion_VERSION_3)
                         {
-                            gp_Pnt2d Pf, Pl;
+                            Point2D Pf, Pl;
                             if (CR.IsCurveOnClosedSurface())
                             {
                                 BRep_CurveOnClosedSurface COCS = (BRep_CurveOnClosedSurface)CR;
@@ -855,9 +859,9 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         int val, c, pc, pc2 = 0, s, s2, l, l2, t, pt, pt2 = 0;
         double tol, X, Y, Z, first, last, p1 = 0.0, p2;
         double PfX, PfY, PlX, PlY;
-        gp_Pnt2d aPf = new(), aPl = new();
+        Point2D aPf = new(), aPl = new();
         bool closed, bval;
-        GeomAbs_Shape reg = GeomAbs_Shape.GeomAbs_C0;
+        Continuity reg = Continuity.C0;
         try
         {
             switch (T)
@@ -873,12 +877,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                     BinTools.GetReal(IS, out X);
                     BinTools.GetReal(IS, out Y);
                     BinTools.GetReal(IS, out Z);
-                    gp_Pnt aPnt = new(X, Y, Z);
+                    Point3D aPnt = new(X, Y, Z);
                     myBuilder.MakeVertex(ref V, aPnt, tol);
                     S = V;
                     BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
                     NCollection_List<BRep_PointRepresentation> lpr = TV.ChangePoints();
-                    TopLoc_Location L = new();
+                    Placement L = new();
 
                     do
                     {
@@ -898,7 +902,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                             // 1e-303) is misread (occt-issues.md).
                             if (!IS.CanSeek)
                             {
-                                throw new Standard_ProgramError("BinTools_ShapeSet: reading a vertex needs a seekable stream");
+                                throw new ProgramErrorException("BinTools_ShapeSet: reading a vertex needs a seekable stream");
                             }
 
                             long aPos = IS.Position;
@@ -972,7 +976,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
                             default:
                             {
-                                throw new Standard_Failure("BinTools_SurfaceSet::ReadGeometry: UnExpected BRep_PointRepresentation = "
+                                throw new FailureException("BinTools_SurfaceSet::ReadGeometry: UnExpected BRep_PointRepresentation = "
                                                            + val + "\n");
                             }
                         }
@@ -1059,7 +1063,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                                 if (closed)
                                 {
                                     BinTools.GetInteger(IS, out pc2);
-                                    reg = (GeomAbs_Shape)BinTools.Get(IS);
+                                    reg = (Continuity)BinTools.Get(IS);
                                 }
 
                                 // surface, location
@@ -1078,8 +1082,8 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                                     BinTools.GetReal(IS, out PfY);
                                     BinTools.GetReal(IS, out PlX);
                                     BinTools.GetReal(IS, out PlY);
-                                    aPf = new gp_Pnt2d(PfX, PfY);
-                                    aPl = new gp_Pnt2d(PlX, PlY);
+                                    aPf = new Point2D(PfX, PfY);
+                                    aPl = new Point2D(PlX, PlY);
                                 }
 
                                 // OCCT.NET: untrusted input
@@ -1156,7 +1160,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                                 break;
 
                             case 4: // -4- Regularity
-                                reg = (GeomAbs_Shape)BinTools.Get(IS);
+                                reg = (Continuity)BinTools.Get(IS);
                                 BinTools.GetInteger(IS, out s);
                                 BinTools.GetInteger(IS, out l);
                                 BinTools.GetInteger(IS, out s2);
@@ -1230,7 +1234,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
                             default:
                             {
-                                throw new Standard_Failure("Unexpected Curve Representation =" + val + "\n");
+                                throw new FailureException("Unexpected Curve Representation =" + val + "\n");
                             }
                         }
                     } while (val > 0);
@@ -1329,7 +1333,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
                 default:
                 {
-                    throw new Standard_Failure("Unexpected topology type = " + (int)T + "\n");
+                    throw new FailureException("Unexpected topology type = " + (int)T + "\n");
                 }
             }
         }
@@ -1346,7 +1350,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the polygons on triangulations ("PolygonOnTriangulations", the count, then each polygon).</summary>
-    public void WritePolygonOnTriangulation(Stream OS, Message_ProgressRange theRange = default)
+    public void WritePolygonOnTriangulation(Stream OS, ProgressRange theRange = default)
     {
         int aNbPol = myNodes.Extent();
         BinTools.PutText(OS, "PolygonOnTriangulations ");
@@ -1354,10 +1358,10 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         BinTools.PutText(OS, "\n");
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Writing polygons on triangulation", aNbPol);
+            using var aPS = new ProgressScope(theRange, "Writing polygons on triangulation", aNbPol);
             for (int aPolIter = 1; aPolIter <= aNbPol && aPS.More(); ++aPolIter, aPS.Next())
             {
-                Poly_PolygonOnTriangulation aPoly = myNodes.FindKey(aPolIter);
+                PolygonOnTriangulation aPoly = myNodes.FindKey(aPolIter);
                 NCollection_Array1<int> aNodes = aPoly.Nodes();
                 BinTools.PutInteger(OS, aNodes.Length());
                 for (int aNodeIter = 1; aNodeIter <= aNodes.Length(); ++aNodeIter)
@@ -1390,12 +1394,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads the polygons on triangulations written by <see cref="WritePolygonOnTriangulation"/>.</summary>
-    public void ReadPolygonOnTriangulation(Stream IS, Message_ProgressRange theRange = default)
+    public void ReadPolygonOnTriangulation(Stream IS, ProgressRange theRange = default)
     {
         string? aHeader = BinTools.ReadWord(IS);
         if (aHeader is null || !aHeader.Contains("PolygonOnTriangulations", StringComparison.Ordinal))
         {
-            throw new Standard_Failure("BinTools_ShapeSet::ReadPolygonOnTriangulation: Not a PolygonOnTriangulation section");
+            throw new FailureException("BinTools_ShapeSet::ReadPolygonOnTriangulation: Not a PolygonOnTriangulation section");
         }
 
         int aNbPol = BinTools.ReadFormattedInteger(IS);
@@ -1404,13 +1408,13 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         BinTools.CheckCount(IS, aNbPol, 13, "polygons on triangulation");
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Reading Polygones on triangulation", aNbPol);
+            using var aPS = new ProgressScope(theRange, "Reading Polygones on triangulation", aNbPol);
             for (int aPolIter = 1; aPolIter <= aNbPol && aPS.More(); ++aPolIter, aPS.Next())
             {
                 BinTools.GetInteger(IS, out int aNbNodes);
                 // OCCT.NET: untrusted input
                 BinTools.CheckCount(IS, aNbNodes, 4, "nodes");
-                Poly_PolygonOnTriangulation aPoly = new(aNbNodes, false);
+                PolygonOnTriangulation aPoly = new(aNbNodes, false);
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
                     BinTools.GetInteger(IS, out int aNode);
@@ -1444,7 +1448,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the 3D polygons ("Polygon3D", the count, then each polygon).</summary>
-    public void WritePolygon3D(Stream OS, Message_ProgressRange theRange = default)
+    public void WritePolygon3D(Stream OS, ProgressRange theRange = default)
     {
         int aNbPol = myPolygons3D.Extent();
         BinTools.PutText(OS, "Polygon3D ");
@@ -1452,28 +1456,28 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         BinTools.PutText(OS, "\n");
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Writing polygons 3D", aNbPol);
+            using var aPS = new ProgressScope(theRange, "Writing polygons 3D", aNbPol);
             for (int aPolIter = 1; aPolIter <= aNbPol && aPS.More(); ++aPolIter, aPS.Next())
             {
-                Poly_Polygon3D aPoly = myPolygons3D.FindKey(aPolIter);
-                BinTools.PutInteger(OS, aPoly.NbNodes());
-                BinTools.PutBool(OS, aPoly.HasParameters());
+                Polygon3D aPoly = myPolygons3D.FindKey(aPolIter);
+                BinTools.PutInteger(OS, aPoly.NodeCount);
+                BinTools.PutBool(OS, aPoly.HasParameters);
 
                 // write the deflection
                 BinTools.PutReal(OS, aPoly.Deflection());
 
                 // write the nodes
-                int aNbNodes = aPoly.NbNodes();
-                NCollection_Array1<gp_Pnt> aNodes = aPoly.Nodes();
+                int aNbNodes = aPoly.NodeCount;
+                NCollection_Array1<Point3D> aNodes = aPoly.Nodes();
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
-                    gp_Pnt aPnt = aNodes.Value(aNodeIter);
+                    Point3D aPnt = aNodes.Value(aNodeIter);
                     BinTools.PutReal(OS, aPnt.X());
                     BinTools.PutReal(OS, aPnt.Y());
                     BinTools.PutReal(OS, aPnt.Z());
                 }
 
-                if (aPoly.HasParameters())
+                if (aPoly.HasParameters)
                 {
                     NCollection_Array1<double> aParam = aPoly.Parameters();
                     for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
@@ -1490,12 +1494,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads the 3D polygons written by <see cref="WritePolygon3D"/>.</summary>
-    public void ReadPolygon3D(Stream IS, Message_ProgressRange theRange = default)
+    public void ReadPolygon3D(Stream IS, ProgressRange theRange = default)
     {
         string? aHeader = BinTools.ReadWord(IS);
         if (aHeader is null || !aHeader.Contains("Polygon3D", StringComparison.Ordinal))
         {
-            throw new Standard_Failure("BinTools_ShapeSet::ReadPolygon3D: Not a Polygon3D section");
+            throw new FailureException("BinTools_ShapeSet::ReadPolygon3D: Not a Polygon3D section");
         }
 
         int aNbPol = BinTools.ReadFormattedInteger(IS);
@@ -1504,7 +1508,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
         BinTools.CheckCount(IS, aNbPol, 13, "3D polygons");
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Reading polygones 3D", aNbPol);
+            using var aPS = new ProgressScope(theRange, "Reading polygones 3D", aNbPol);
             for (int aPolIter = 1; aPolIter <= aNbPol && aPS.More(); ++aPolIter, aPS.Next())
             {
                 BinTools.GetInteger(IS, out int aNbNodes);
@@ -1512,16 +1516,16 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                 BinTools.GetReal(IS, out double aDefl);
                 // OCCT.NET: untrusted input
                 BinTools.CheckCount(IS, aNbNodes, hasParameters ? 32 : 24, "nodes");
-                Poly_Polygon3D aPoly = new(aNbNodes, hasParameters);
+                Polygon3D aPoly = new(aNbNodes, hasParameters);
                 aPoly.Deflection(aDefl);
 
-                NCollection_Array1<gp_Pnt> aNodes = aPoly.ChangeNodes();
+                NCollection_Array1<Point3D> aNodes = aPoly.ChangeNodes();
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
                     BinTools.GetReal(IS, out double aX);
                     BinTools.GetReal(IS, out double aY);
                     BinTools.GetReal(IS, out double aZ);
-                    aNodes[aNodeIter] = new gp_Pnt(aX, aY, aZ);
+                    aNodes[aNodeIter] = new Point3D(aX, aY, aZ);
                 }
 
                 if (hasParameters)
@@ -1543,7 +1547,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the triangulations ("Triangulations", the count, then each triangulation).</summary>
-    public void WriteTriangulation(Stream OS, Message_ProgressRange theRange = default)
+    public void WriteTriangulation(Stream OS, ProgressRange theRange = default)
     {
         int aNbTriangulations = myTriangulations.Extent();
         BinTools.PutText(OS, "Triangulations ");
@@ -1552,20 +1556,20 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Writing triangulation", aNbTriangulations);
+            using var aPS = new ProgressScope(theRange, "Writing triangulation", aNbTriangulations);
             for (int aTriangulationIter = 1; aTriangulationIter <= aNbTriangulations && aPS.More();
                  ++aTriangulationIter, aPS.Next())
             {
-                Poly_Triangulation aTriangulation = myTriangulations.FindKey(aTriangulationIter);
+                Triangulation aTriangulation = myTriangulations.FindKey(aTriangulationIter);
                 bool NeedToWriteNormals = myTriangulations.FindFromIndex(aTriangulationIter);
-                int aNbNodes = aTriangulation.NbNodes();
-                int aNbTriangles = aTriangulation.NbTriangles();
+                int aNbNodes = aTriangulation.NodeCount;
+                int aNbTriangles = aTriangulation.TriangleCount;
                 BinTools.PutInteger(OS, aNbNodes);
                 BinTools.PutInteger(OS, aNbTriangles);
-                BinTools.PutBool(OS, aTriangulation.HasUVNodes());
+                BinTools.PutBool(OS, aTriangulation.HasUVNodes);
                 if (FormatNb() >= (int)BinTools_FormatVersion.BinTools_FormatVersion_VERSION_4)
                 {
-                    BinTools.PutBool(OS, aTriangulation.HasNormals() && NeedToWriteNormals);
+                    BinTools.PutBool(OS, aTriangulation.HasNormals && NeedToWriteNormals);
                 }
 
                 BinTools.PutReal(OS, aTriangulation.Deflection());
@@ -1573,17 +1577,17 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                 // write the 3d nodes
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                 {
-                    gp_Pnt aPnt = aTriangulation.Node(aNodeIter);
+                    Point3D aPnt = aTriangulation.Node(aNodeIter);
                     BinTools.PutReal(OS, aPnt.X());
                     BinTools.PutReal(OS, aPnt.Y());
                     BinTools.PutReal(OS, aPnt.Z());
                 }
 
-                if (aTriangulation.HasUVNodes())
+                if (aTriangulation.HasUVNodes)
                 {
                     for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                     {
-                        gp_Pnt2d aUV = aTriangulation.UVNode(aNodeIter);
+                        Point2D aUV = aTriangulation.UVNode(aNodeIter);
                         BinTools.PutReal(OS, aUV.X());
                         BinTools.PutReal(OS, aUV.Y());
                     }
@@ -1591,7 +1595,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
                 for (int aTriIter = 1; aTriIter <= aNbTriangles; ++aTriIter)
                 {
-                    Poly_Triangle aTri = aTriangulation.Triangle(aTriIter);
+                    Triangle1 aTri = aTriangulation.Triangle(aTriIter);
                     BinTools.PutInteger(OS, aTri.Value(1));
                     BinTools.PutInteger(OS, aTri.Value(2));
                     BinTools.PutInteger(OS, aTri.Value(3));
@@ -1600,14 +1604,14 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                 // write the normals
                 if (FormatNb() >= (int)BinTools_FormatVersion.BinTools_FormatVersion_VERSION_4)
                 {
-                    if (aTriangulation.HasNormals() && NeedToWriteNormals)
+                    if (aTriangulation.HasNormals && NeedToWriteNormals)
                     {
                         for (int aNormalIter = 1; aNormalIter <= aNbNodes; ++aNormalIter)
                         {
                             aTriangulation.Normal(aNormalIter, out NCollection_Vec3<float> aNormal);
-                            BinTools.PutShortReal(OS, aNormal.x());
-                            BinTools.PutShortReal(OS, aNormal.y());
-                            BinTools.PutShortReal(OS, aNormal.z());
+                            BinTools.PutShortReal(OS, aNormal.X());
+                            BinTools.PutShortReal(OS, aNormal.Y());
+                            BinTools.PutShortReal(OS, aNormal.Z());
                         }
                     }
                 }
@@ -1620,12 +1624,12 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
     }
 
     /// <summary>Reads the triangulations written by <see cref="WriteTriangulation"/>.</summary>
-    public void ReadTriangulation(Stream IS, Message_ProgressRange theRange = default)
+    public void ReadTriangulation(Stream IS, ProgressRange theRange = default)
     {
         string? aHeader = BinTools.ReadWord(IS);
         if (aHeader is null || !aHeader.Contains("Triangulations", StringComparison.Ordinal))
         {
-            throw new Standard_Failure("BinTools_ShapeSet::Triangulation: Not a Triangulation section");
+            throw new FailureException("BinTools_ShapeSet::Triangulation: Not a Triangulation section");
         }
 
         int aNbTriangulations = BinTools.ReadFormattedInteger(IS);
@@ -1635,7 +1639,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
 
         try
         {
-            using var aPS = new Message_ProgressScope(theRange, "Reading triangulation", aNbTriangulations);
+            using var aPS = new ProgressScope(theRange, "Reading triangulation", aNbTriangulations);
             for (int aTriangulationIter = 1; aTriangulationIter <= aNbTriangulations && aPS.More();
                  ++aTriangulationIter, aPS.Next())
             {
@@ -1656,7 +1660,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                                     aNbNodes * (24L + (hasUV ? 16 : 0) + (hasNormals ? 12 : 0)) + aNbTriangles * 12L,
                                     1,
                                     "bytes of a triangulation");
-                Poly_Triangulation aTriangulation = new(aNbNodes, aNbTriangles, hasUV, hasNormals);
+                Triangulation aTriangulation = new(aNbNodes, aNbTriangles, hasUV, hasNormals);
                 aTriangulation.Deflection(aDefl);
 
                 for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
@@ -1664,7 +1668,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                     BinTools.GetReal(IS, out double aX);
                     BinTools.GetReal(IS, out double aY);
                     BinTools.GetReal(IS, out double aZ);
-                    aTriangulation.SetNode(aNodeIter, new gp_Pnt(aX, aY, aZ));
+                    aTriangulation.SetNode(aNodeIter, new Point3D(aX, aY, aZ));
                 }
 
                 if (hasUV)
@@ -1673,7 +1677,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                     {
                         BinTools.GetReal(IS, out double aU);
                         BinTools.GetReal(IS, out double aV);
-                        aTriangulation.SetUVNode(aNodeIter, new gp_Pnt2d(aU, aV));
+                        aTriangulation.SetUVNode(aNodeIter, new Point2D(aU, aV));
                     }
                 }
 
@@ -1683,7 +1687,7 @@ public class BinTools_ShapeSet : BinTools_ShapeSetBase
                     BinTools.GetInteger(IS, out int aTriNode0);
                     BinTools.GetInteger(IS, out int aTriNode1);
                     BinTools.GetInteger(IS, out int aTriNode2);
-                    aTriangulation.SetTriangle(aTriIter, new Poly_Triangle(aTriNode0, aTriNode1, aTriNode2));
+                    aTriangulation.SetTriangle(aTriIter, new Triangle1(aTriNode0, aTriNode1, aTriNode2));
                 }
 
                 if (hasNormals)

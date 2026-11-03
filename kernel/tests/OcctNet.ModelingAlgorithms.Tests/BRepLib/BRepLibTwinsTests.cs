@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Text.RegularExpressions;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
@@ -28,7 +29,7 @@ public class BRepLibTwinsTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(theInput);
         TopoDS_Shape aResult = theTwin(theInput);
         aSnap.AssertUnchanged(theInput);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
 
         TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(theInput, out _);
         theStatic(aCopy);
@@ -56,10 +57,10 @@ public class BRepLibTwinsTests
     private static TopoDS_Face SquareWithAPcurveOnlyEdge()
     {
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, Conf);
-        gp_Pnt[] aP = [new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0)];
+        Point3D[] aP = [new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0)];
         TopoDS_Vertex[] aV = aP.Select(p => TestShapes.Vertex(p)).ToArray();
         TopoDS_Wire aW = new();
         aB.MakeWire(ref aW);
@@ -69,7 +70,7 @@ public class BRepLibTwinsTests
         }
         TopoDS_Edge aLast = new();
         aB.MakeEdge(ref aLast);
-        aB.UpdateEdge(aLast, new Geom2d_Line(new gp_Pnt2d(0, 2), new gp_Dir2d(0, -1)), aF, Conf);
+        aB.UpdateEdge(aLast, new Geom2d_Line(new Point2D(0, 2), new Direction2D(0, -1)), aF, Conf);
         aB.Range(aLast, 0, 2);
         aB.Add(aLast, aV[3].Oriented(TopAbs_Orientation.TopAbs_FORWARD));
         aB.Add(aLast, aV[0].Oriented(TopAbs_Orientation.TopAbs_REVERSED));
@@ -120,7 +121,7 @@ public class BRepLibTwinsTests
         for (int i = 1; i <= anEF.Extent(); i++)
         {
             TopoDS_Edge anE = TopoDS.Edge(anEF.FindKey(i));
-            Assert.Equal(GeomAbs_Shape.GeomAbs_C0,
+            Assert.Equal(Continuity.C0,
                          BRep_Tool.Continuity(anE, TopoDS.Face(anEF[i].First()), TopoDS.Face(anEF[i].Last())));
         }
         // every edge changed, the vertices didn't
@@ -146,11 +147,11 @@ public class BRepLibTwinsTests
     public void SameParametered_makes_the_pcurve_follow_the_3d_curve()
     {
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
-        var aBent = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(2, 0), new gp_Pnt2d(10, 0)]),
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
+        var aBent = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(2, 0), new Point2D(10, 0)]),
                                             NCollection_Array1<double>.From([0.0, 10.0]), NCollection_Array1<int>.From([3, 3]), 2);
         aB.UpdateEdge(anE, aBent, aF, Conf);
         aB.SameParameter(anE, false);
@@ -166,7 +167,7 @@ public class BRepLibTwinsTests
         Assert.True(BRep_Tool.SameParameter(aNewE));
         Assert.False(BRep_Tool.SameParameter(anE));
         Assert.Single(aH.Modified(anE));
-        gp_Pnt2d aUV = BRep_Tool.CurveOnSurface(aNewE, TopoDS.Face(aResult), out _, out _)!.Value(5);
+        Point2D aUV = BRep_Tool.CurveOnSurface(aNewE, TopoDS.Face(aResult), out _, out _)!.Value(5);
         Assert.Equal(5, aUV.X(), 1e-5);
     }
 
@@ -197,7 +198,7 @@ public class BRepLibTwinsTests
     public void TolerancesUpdated_raises_the_vertices_to_their_edges()
     {
         var aB = new BRep_Builder();
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         aB.UpdateEdge(anE, 1e-3);
         TestShapes.Frozen(anE);
         AssertTwin(anE, s => BRepLib.TolerancesUpdated(s), s => BRepLib.UpdateTolerances(s));
@@ -217,10 +218,10 @@ public class BRepLibTwinsTests
     public void InnerTolerancesUpdated_covers_a_vertex_off_the_curve()
     {
         var aB = new BRep_Builder();
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
         TopoDS_Vertex aV2 = new();
-        aB.MakeVertex(ref aV2, new gp_Pnt(1, 0.01, 0), Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 1, aV1, aV2);
+        aB.MakeVertex(ref aV2, new Point3D(1, 0.01, 0), Conf);
+        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1, aV1, aV2);
         TestShapes.Frozen(anE);
         AssertTwin(anE, s => BRepLib.InnerTolerancesUpdated(s), s => BRepLib.UpdateInnerTolerances(s));
         TopoDS_Shape aResult = BRepLib.InnerTolerancesUpdated(anE);

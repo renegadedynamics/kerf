@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -20,23 +22,23 @@ public class GeomLib_CheckCurveOnSurfaceParallelTest
             aMults[i] = i == 1 || i == aNbKnots ? 4 : 2;
         }
         int aNbPoles = 4 + 4 + 2 * (aNbKnots - 2) - 4;
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
-        NCollection_Array1<gp_Pnt2d> aPoles2d = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point2D> aPoles2d = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
-            aPoles[i] = new gp_Pnt(i, Math.Sin(i), 0.0);
-            aPoles2d[i] = new gp_Pnt2d(i, Math.Sin(i) + 0.001 * Math.Cos(3.0 * i));
+            aPoles[i] = new Point3D(i, Math.Sin(i), 0.0);
+            aPoles2d[i] = new Point2D(i, Math.Sin(i) + 0.001 * Math.Cos(3.0 * i));
         }
         Geom_BSplineCurve aCurve = new(aPoles, aKnots, aMults, 3);
         Geom2d_BSplineCurve aPCurve = new(aPoles2d, aKnots, aMults, 3);
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)));
 
         GeomAdaptor_Curve aC3d = new(aCurve);
         Adaptor3d_CurveOnSurface aCoS = new(new Geom2dAdaptor_Curve(aPCurve), new GeomAdaptor_Surface(aPlane));
         GeomLib_CheckCurveOnSurface aCheck = new();
-        aCheck.Init(aC3d, Precision.PConfusion());
+        aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.SetParallel(theIsParallel);
-        using (theIsForcedSerial ? OSD_Parallel.ForceSerialScope() : null)
+        using (theIsForcedSerial ? global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope() : null)
         {
             aCheck.Perform(aCoS);
         }

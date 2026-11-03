@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntRes2d_Position;
 using static Occt.TopAbs_Orientation;
 
@@ -14,7 +16,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21): an <see cref="IntRes2d_Intersection"/> whose results are those of the last
-/// <see cref="Perform(in gp_Lin2d, double, double, in BRepClass_Edge)"/>.
+/// <see cref="Perform(in Line2D, double, double, in BRepClass_Edge)"/>.
 /// </remarks>
 public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_Intersector<BRepClass_Edge>
 {
@@ -60,17 +62,17 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         return aTol2D;
     }
 
-    private static bool IsInter(in Bnd_Box2d theBox, in gp_Lin2d theL, double theP)
+    private static bool IsInter(in Box2d theBox, in Line2D theL, double theP)
     {
         bool aStatusInter = true;
-        if (Precision.IsInfinite(theP))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theP))
         {
             aStatusInter = theBox.IsOut(theL);
         }
         else
         {
-            gp_Pnt2d aPntF = theL.Location();
-            gp_Pnt2d aPntL = ElCLib.Value(theP, theL);
+            Point2D aPntF = theL.Location();
+            Point2D aPntL = global::Kerf.Engine.Geometry.ElCLib.Value(theP, theL);
             aStatusInter = theBox.IsOut(aPntF, aPntL);
         }
 
@@ -79,7 +81,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
     private static bool CheckOn(ref IntRes2d_IntersectionPoint thePntInter,
                                 in TopoDS_Face theF,
-                                in gp_Lin2d theL,
+                                in Line2D theL,
                                 Geom2dAdaptor_Curve theCur,
                                 ref double theTolZ,
                                 double theFin,
@@ -110,7 +112,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
         if (aMinDist <= theTolZ)
         {
-            gp_Pnt2d aPntExact = (anExtPC2d.Point(aMinInd)).Value();
+            Point2D aPntExact = (anExtPC2d.Point(aMinInd)).Value();
             double aPar = (anExtPC2d.Point(aMinInd)).Parameter();
             //
             RefineTolerance(theF, theCur, aPar, ref theTolZ);
@@ -119,11 +121,11 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             {
                 var aTrOnLin = new IntRes2d_Transition(IntRes2d_Head);
                 IntRes2d_Position aPosOnCurve = IntRes2d_Middle;
-                if ((Math.Abs(aPar - theDeb) <= Precision.Confusion()) || (aPar < theDeb))
+                if ((Math.Abs(aPar - theDeb) <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (aPar < theDeb))
                 {
                     aPosOnCurve = IntRes2d_Head;
                 }
-                else if ((Math.Abs(aPar - theFin) <= Precision.Confusion()) || (aPar > theFin))
+                else if ((Math.Abs(aPar - theFin) <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (aPar > theFin))
                 {
                     aPosOnCurve = IntRes2d_End;
                 }
@@ -140,7 +142,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     }
 
     private static void CheckSkip(ref Geom2dInt_GInter theInter,
-                                  in gp_Lin2d theL,
+                                  in Line2D theL,
                                   in BRepClass_Edge theE,
                                   Geom2d_Curve theC2D,
                                   in IntRes2d_Domain theDL,
@@ -149,8 +151,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
                                   ref double theFin,
                                   ref double theDeb,
                                   double theMaxTol,
-                                  ref gp_Pnt2d thePdeb,
-                                  ref gp_Pnt2d thePfin)
+                                  ref Point2D thePdeb,
+                                  ref Point2D thePfin)
     {
         if (theE.Edge().IsNull() || theE.Face().IsNull())
         {
@@ -184,7 +186,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
         double anA, aB, aC; // coefficients of the straight line
         double aX1, anY1, aX2, anY2; // coordinates of the ends of edges
-        gp_Pnt2d aP1, aP2; // the ends of edges
+        Point2D aP1, aP2; // the ends of edges
 
         theL.Coefficients(out anA, out aB, out aC);
 
@@ -204,8 +206,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         aP2 = aLC2D.Value(at2);
 
         // Check if points belong to DL domain
-        double aPar1 = ElCLib.Parameter(theL, aP1);
-        double aPar2 = ElCLib.Parameter(theL, aP2);
+        double aPar1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theL, aP1);
+        double aPar2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theL, aP2);
 
         if (aPar1 <= theDL.FirstParameter() || aPar1 >= theDL.LastParameter()
             || aPar2 <= theDL.FirstParameter() || aPar2 >= theDL.LastParameter())
@@ -268,13 +270,13 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
                                             theDL,
                                             theCur,
                                             aDE,
-                                            Precision.PConfusion(),
-                                            Precision.PIntersection());
+                                            global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                            global::Kerf.Engine.Foundation.Precision.PIntersection());
         }
     }
 
     /// <summary>Intersects the segment of <paramref name="L"/> from its origin to the parameter <paramref name="P"/> with the edge.</summary>
-    public void Perform(in gp_Lin2d L, double P, double Tol, in BRepClass_Edge E)
+    public void Perform(in Line2D L, double P, double Tol, in BRepClass_Edge E)
     {
         double deb = 0.0, fin = 0.0, aTolZ = Tol;
         Geom2d_Curve? aC2D;
@@ -291,8 +293,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         }
 
         //
-        Bnd_Box2d aBond = new();
-        gp_Pnt2d aPntF = new();
+        Box2d aBond = new();
+        Point2D aPntF = new();
         bool anUseBndBox = E.UseBndBox();
         if (anUseBndBox)
         {
@@ -312,7 +314,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             IntRes2d_IntersectionPoint aPntInter = new();
             double aDebTol = deb;
             double aFinTol = fin;
-            if (aTolZ > Precision.Confusion())
+            if (aTolZ > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aDebTol = deb - aTolZ;
                 aFinTol = fin + aTolZ;
@@ -344,8 +346,8 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             }
         }
 
-        C.D0(deb, out gp_Pnt2d pdeb);
-        C.D0(fin, out gp_Pnt2d pfin);
+        C.D0(deb, out Point2D pdeb);
+        C.D0(fin, out Point2D pfin);
         double toldeb = 1.0e-5, tolfin = 1.0e-5;
 
         IntRes2d_Domain DL = new();
@@ -354,14 +356,14 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
         {
             DL.SetValues(L.Location(),
                          0.0,
-                         Precision.PConfusion(),
-                         ElCLib.Value(P, L),
+                         global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                         global::Kerf.Engine.Geometry.ElCLib.Value(P, L),
                          P,
-                         Precision.PConfusion());
+                         global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
         else
         {
-            DL.SetValues(L.Location(), 0.0, Precision.PConfusion(), true);
+            DL.SetValues(L.Location(), 0.0, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
         }
 
         var DE = new IntRes2d_Domain(pdeb, deb, toldeb, pfin, fin, tolfin);
@@ -375,7 +377,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
 
         var GL = new Geom2d_Line(L);
         var CGA = new Geom2dAdaptor_Curve(GL);
-        var Inter = new Geom2dInt_GInter(CGA, DL, C, DE, Precision.PConfusion(), Precision.PIntersection());
+        var Inter = new Geom2dInt_GInter(CGA, DL, C, DE, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PIntersection());
         //
         // The check is for hitting the intersector to
         // a vertex with high tolerance
@@ -396,12 +398,12 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     /// Where OCCT leaves the tangent as the caller had it (no tangent and a chord too short), the port gives OCCT's
     /// callers' default, (1, 0).
     /// </remarks>
-    public void LocalGeometry(in BRepClass_Edge E, double U, out gp_Dir2d Tang, out gp_Dir2d Norm, out double C)
+    public void LocalGeometry(in BRepClass_Edge E, double U, out Direction2D Tang, out Direction2D Norm, out double C)
     {
-        Tang = new gp_Dir2d();
-        Norm = new gp_Dir2d();
+        Tang = new Direction2D();
+        Norm = new Direction2D();
         Geom2d_Curve aPCurve = BRep_Tool.CurveOnSurface(E.Edge(), E.Face(), out double fpar, out double lpar)!;
-        var Prop = new GeomLProp_CLProps2d(aPCurve, U, 2, Precision.PConfusion());
+        var Prop = new GeomLProp_CLProps2d(aPCurve, U, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         C = 0.0;
         if (Prop.IsTangentDefined())
@@ -414,7 +416,7 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             GetTangentAsChord(aPCurve, ref Tang, U, fpar, lpar);
         }
 
-        if (C > Precision.PConfusion() && !Precision.IsInfinite(C))
+        if (C > global::Kerf.Engine.Foundation.Precision.PConfusion() && !global::Kerf.Engine.Foundation.Precision.IsInfinite(C))
         {
             Prop.Normal(out Norm);
         }
@@ -429,20 +431,20 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
                                         double aT,
                                         ref double aTolZ)
     {
-        GeomAbs_SurfaceType aTypeS;
+        SurfaceKind aTypeS;
         //
         var aBAS = new BRepAdaptor_Surface(aF, false);
         //
         aTypeS = aBAS.GetType();
-        if (aTypeS == GeomAbs_Cylinder)
+        if (aTypeS == SurfaceKind.Cylinder)
         {
             double aURes, aVRes, aTolX;
             //
             aURes = aBAS.UResolution(aTolZ);
             aVRes = aBAS.VResolution(aTolZ);
             //
-            aC.D1(aT, out gp_Pnt2d _, out gp_Vec2d aV2D);
-            gp_Dir2d aD2D = new(aV2D);
+            aC.D1(aT, out Point2D _, out Vector2D aV2D);
+            Direction2D aD2D = new(aV2D);
             //
             aTolX = aURes * aD2D.Y() + aVRes * aD2D.X();
             if (aTolX < 0.0)
@@ -451,9 +453,9 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             }
 
             //
-            if (aTolX < Precision.Confusion())
+            if (aTolX < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                aTolX = Precision.Confusion();
+                aTolX = global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
             //
@@ -465,14 +467,14 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
     }
 
     private static void GetTangentAsChord(Geom2d_Curve thePCurve,
-                                          ref gp_Dir2d theTangent,
+                                          ref Direction2D theTangent,
                                           double theParam,
                                           double theFirst,
                                           double theLast)
     {
         double Offset = 0.1 * (theLast - theFirst);
 
-        if (theLast - theParam < Precision.PConfusion())
+        if (theLast - theParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             // theParam == theLast
             Offset *= -1;
@@ -483,19 +485,19 @@ public class BRepClass_Intersector : Geom2dInt_IntConicCurveOfGInter, ITopClass_
             Offset = 0.5 * (theLast - theParam);
         }
 
-        gp_Pnt2d aPnt2d = thePCurve.Value(theParam);
-        gp_Pnt2d OffsetPnt2d = thePCurve.Value(theParam + Offset);
+        Point2D aPnt2d = thePCurve.Value(theParam);
+        Point2D OffsetPnt2d = thePCurve.Value(theParam + Offset);
 
-        gp_Vec2d aChord = new(aPnt2d, OffsetPnt2d);
+        Vector2D aChord = new(aPnt2d, OffsetPnt2d);
         if (Offset < 0.0)
         {
             aChord.Reverse();
         }
 
         double SqLength = aChord.SquareMagnitude();
-        if (SqLength > Precision.SquarePConfusion())
+        if (SqLength > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
         {
-            theTangent = new gp_Dir2d(aChord);
+            theTangent = new Direction2D(aChord);
         }
     }
 }

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 using static Occt.Transfer_StatusResult;
 
@@ -112,7 +113,7 @@ public class XSControl_SignTransferStatus : IFSelect_Signature
     /// <summary>
     /// Returns the Signature for a Transient object, as its transfer status
     /// </summary>
-    public override string Value(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override string Value(Transient? ent, Interface_InterfaceModel? model)
     {
         if (ent is null)
         {

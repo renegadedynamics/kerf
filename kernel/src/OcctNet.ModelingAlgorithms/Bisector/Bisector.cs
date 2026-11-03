@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Tools of the Bisector package.</summary>
@@ -15,7 +17,7 @@ public static class Bisector
     public static bool IsConvex(Geom2d_Curve Cu, double Sign)
     {
         double U1 = (Cu.LastParameter() + Cu.FirstParameter()) / 2.0;
-        Cu.D2(U1, out gp_Pnt2d _, out gp_Vec2d V1, out gp_Vec2d V2);
+        Cu.D2(U1, out Point2D _, out Vector2D V1, out Vector2D V2);
         double Tol = 1.0e-5;
         return Sign * (V1 ^ V2) < Tol;
     }

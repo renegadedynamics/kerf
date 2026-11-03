@@ -5,6 +5,7 @@
 
 // szv#4 S4163
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -277,7 +278,7 @@ public sealed class ShapeFix_WireVertex
 
             if (stat > 2)
             {
-                B.UpdateVertex(V1, new gp_Pnt(myAnalyzer.Position(i)), Prec);
+                B.UpdateVertex(V1, new Point3D(myAnalyzer.Position(i)), Prec);
             }
 
             //    ce qui suit : seulement si vertex a reprendre

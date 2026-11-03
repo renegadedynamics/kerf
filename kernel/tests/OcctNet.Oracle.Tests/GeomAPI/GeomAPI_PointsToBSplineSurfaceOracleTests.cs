@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.Approx_ParametrizationType;
 
@@ -32,7 +34,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (FailureException anE)
         {
             aPortError = anE;
         }
@@ -75,7 +77,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
     // A grid of NbU x NbV points, indexed from 1 (GeomAPI_PointsToBSplineSurface requires it): random points, or
     // samples of a random smooth surface (polynomial, wave, cylinder-like), on uneven parameters, with or without
     // noise.
-    internal static NCollection_Array2<gp_Pnt> Grid(Oracle theO, int theNbU, int theNbV, bool theClosedInU = false)
+    internal static NCollection_Array2<Point3D> Grid(Oracle theO, int theNbU, int theNbV, bool theClosedInU = false)
     {
         int aKind = theO.Int(0, 3);
         double aNoise = theO.Bool() ? 0.0 : theO.Real(0.0, 0.3);
@@ -85,33 +87,33 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
             aC[k] = theO.Real(-3, 3);
         }
         double[] aU = Steps(theO, theNbU), aV = Steps(theO, theNbV);
-        NCollection_Array2<gp_Pnt> aPoints = new(1, theNbU, 1, theNbV);
+        NCollection_Array2<Point3D> aPoints = new(1, theNbU, 1, theNbV);
         for (int i = 1; i <= theNbU; i++)
         {
             for (int j = 1; j <= theNbV; j++)
             {
                 double u = aU[i - 1], v = aV[j - 1];
-                gp_Pnt aP;
+                Point3D aP;
                 if (theClosedInU)
                 {
                     // rings around an axis: the grid closes up in U (the first index)
                     double a = 2 * Math.PI * (i - 1) / theNbU, r = 5 + aC[0] * v + aC[1] * Math.Sin(a);
-                    aP = new gp_Pnt(r * Math.Cos(a), r * Math.Sin(a), 10 * v + aC[2] * Math.Cos(2 * a));
+                    aP = new Point3D(r * Math.Cos(a), r * Math.Sin(a), 10 * v + aC[2] * Math.Cos(2 * a));
                 }
                 else
                 {
                     aP = aKind switch
                     {
-                        0 => new gp_Pnt(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10)),
-                        1 => new gp_Pnt(10 * u, 10 * v,
+                        0 => new Point3D(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10)),
+                        1 => new Point3D(10 * u, 10 * v,
                                         aC[0] + aC[1] * u + aC[2] * v + aC[3] * u * v + aC[4] * u * u * v + aC[5] * v * v),
-                        2 => new gp_Pnt(10 * u + aC[6] * v, 10 * v, aC[7] * Math.Sin(3 * u + aC[8]) * Math.Cos(2 * v)),
-                        _ => new gp_Pnt(5 * Math.Cos(aC[9] + 2 * u), 5 * Math.Sin(aC[9] + 2 * u), 10 * v + aC[10] * u),
+                        2 => new Point3D(10 * u + aC[6] * v, 10 * v, aC[7] * Math.Sin(3 * u + aC[8]) * Math.Cos(2 * v)),
+                        _ => new Point3D(5 * Math.Cos(aC[9] + 2 * u), 5 * Math.Sin(aC[9] + 2 * u), 10 * v + aC[10] * u),
                     };
                 }
                 if (aNoise > 0.0)
                 {
-                    aP = new gp_Pnt(aP.X() + theO.Real(-aNoise, aNoise), aP.Y() + theO.Real(-aNoise, aNoise),
+                    aP = new Point3D(aP.X() + theO.Real(-aNoise, aNoise), aP.Y() + theO.Real(-aNoise, aNoise),
                                     aP.Z() + theO.Real(-aNoise, aNoise));
                 }
                 aPoints[i, j] = aP;
@@ -153,7 +155,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
             int aMethod = c % 7;
             bool aReuse = anOracle.Bool();
             int aNbU = anOracle.Int(2, 12), aNbV = anOracle.Int(2, 12);
-            GeomAbs_Shape aCont = AppDefOracleTests.Continuity(anOracle);
+            Continuity aCont = AppDefOracleTests.Continuity(anOracle);
             double aTol3D = AppDefOracleTests.Tolerance(anOracle);
             int aDegMin = anOracle.Int(1, 4);
             int aDegMax = anOracle.Int(Math.Max(aDegMin, 2), 8);
@@ -167,7 +169,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
             string aW;
             double aTolerance = aTol3D <= 1.0e-3 ? 1.0e-9 : 1.0e-6;
             bool aOk;
-            NCollection_Array2<gp_Pnt>? aPoints = null;
+            NCollection_Array2<Point3D>? aPoints = null;
             NCollection_Array2<double>? aZ = null;
             if (aMethod <= 4)
             {
@@ -231,7 +233,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                     // "WorkDegree too small for given ConstraintOrder", on both sides)
                     int aDeg = anOracle.Int(0, 3) == 0 ? anOracle.Int(3, 6) : anOracle.Int(7, 8);
                     // Not C0: native results change from run to run there (occt-issues.md, FEmTool_Curve::D2)
-                    GeomAbs_Shape aVCont = anOracle.Bool() ? GeomAbs_Shape.GeomAbs_C1 : GeomAbs_Shape.GeomAbs_C2;
+                    Continuity aVCont = anOracle.Bool() ? Continuity.C1 : Continuity.C2;
                     N.GeomAbs_Shape aNVCont = (N.GeomAbs_Shape)(int)aVCont;
                     aW = $"#{c} {aNbU}x{aNbV} variational {W1:R} {W2:R} {W3:R} {aDeg} {aVCont} {aTol3D}";
                     aTolerance = 1.0e-6;

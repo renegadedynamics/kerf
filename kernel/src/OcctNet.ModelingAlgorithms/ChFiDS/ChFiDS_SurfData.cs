@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -17,7 +19,7 @@ namespace Occt;
 /// internal mutators and the <c>Change*</c> accessors that return the stored values by reference. The public
 /// members only read.
 /// </remarks>
-public sealed class ChFiDS_SurfData : Standard_Transient
+public sealed class ChFiDS_SurfData : Transient
 {
     private ChFiDS_CommonPoint pfirstOnS1 = new();
     private ChFiDS_CommonPoint plastOnS1 = new();
@@ -25,10 +27,10 @@ public sealed class ChFiDS_SurfData : Standard_Transient
     private ChFiDS_CommonPoint plastOnS2 = new();
     private ChFiDS_FaceInterference intf1 = new();
     private ChFiDS_FaceInterference intf2 = new();
-    private gp_Pnt2d p2df1 = new();
-    private gp_Pnt2d p2dl1 = new();
-    private gp_Pnt2d p2df2 = new();
-    private gp_Pnt2d p2dl2 = new();
+    private Point2D p2df1 = new();
+    private Point2D p2dl1 = new();
+    private Point2D p2df2 = new();
+    private Point2D p2dl2 = new();
     private double ufspine;
     private double ulspine;
     private double myfirstextend;
@@ -116,23 +118,23 @@ public sealed class ChFiDS_SurfData : Standard_Transient
         return isoncurv2;
     }
 
-    /// <summary>The index of the curve on the first face; throws <see cref="Standard_Failure"/> if not on a curve.</summary>
+    /// <summary>The index of the curve on the first face; throws <see cref="FailureException"/> if not on a curve.</summary>
     public int IndexOfC1()
     {
         if (!isoncurv1)
         {
-            throw new Standard_Failure("Interference pas sur courbe");
+            throw new FailureException("Interference pas sur courbe");
         }
 
         return indexOfC1;
     }
 
-    /// <summary>The index of the curve on the second face; throws <see cref="Standard_Failure"/> if not on a curve.</summary>
+    /// <summary>The index of the curve on the second face; throws <see cref="FailureException"/> if not on a curve.</summary>
     public int IndexOfC2()
     {
         if (!isoncurv2)
         {
-            throw new Standard_Failure("Interference pas sur courbe");
+            throw new FailureException("Interference pas sur courbe");
         }
 
         return indexOfC2;
@@ -315,7 +317,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
         {
             if (!isoncurv1)
             {
-                throw new Standard_Failure("Interference pas sur courbe");
+                throw new FailureException("Interference pas sur courbe");
             }
 
             return indexOfC1;
@@ -323,7 +325,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
 
         if (!isoncurv2)
         {
-            throw new Standard_Failure("Interference pas sur courbe");
+            throw new FailureException("Interference pas sur courbe");
         }
 
         return indexOfC2;
@@ -386,7 +388,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
     }
 
     /// <summary>The first or last 2d point on face <paramref name="OnS"/>.</summary>
-    public gp_Pnt2d Get2dPoints(bool First, int OnS)
+    public Point2D Get2dPoints(bool First, int OnS)
     {
         if (First && OnS == 1)
         {
@@ -404,7 +406,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
         return p2dl2;
     }
 
-    public void Get2dPoints(out gp_Pnt2d P2df1, out gp_Pnt2d P2dl1, out gp_Pnt2d P2df2, out gp_Pnt2d P2dl2)
+    public void Get2dPoints(out Point2D P2df1, out Point2D P2dl1, out Point2D P2df2, out Point2D P2dl2)
     {
         P2df1 = p2df1;
         P2dl1 = p2dl1;
@@ -412,7 +414,7 @@ public sealed class ChFiDS_SurfData : Standard_Transient
         P2dl2 = p2dl2;
     }
 
-    internal void Set2dPoints(in gp_Pnt2d P2df1, in gp_Pnt2d P2dl1, in gp_Pnt2d P2df2, in gp_Pnt2d P2dl2)
+    internal void Set2dPoints(in Point2D P2df1, in Point2D P2dl1, in Point2D P2df2, in Point2D P2dl2)
     {
         p2df1 = P2df1;
         p2dl1 = P2dl1;

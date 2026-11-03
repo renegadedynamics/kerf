@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementEndReleasePacket
 /// </summary>
-public class StepElement_CurveElementEndReleasePacket : Standard_Transient
+public class StepElement_CurveElementEndReleasePacket : Transient
 {
     private StepElement_CurveElementFreedom theReleaseFreedom = new StepElement_CurveElementFreedom();
     private double theReleaseStiffness;

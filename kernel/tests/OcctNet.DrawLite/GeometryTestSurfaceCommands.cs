@@ -1,7 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
-using static Occt.Convert_ParameterisationType;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Occt.GeomFill_FillingStyle;
 
 namespace OcctNet.DrawLite;
@@ -73,11 +73,11 @@ internal static class GeometryTestSurfaceCommands
             Section.AddCurve(C);
         }
 
-        Section.Perform(Precision.PConfusion());
+        Section.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         GeomFill_Line Line = new(n - 2);
         int NbIt = 0;
-        GeomFill_AppSurf App = new(3, 8, Precision.Confusion(), Precision.PConfusion(), NbIt);
+        GeomFill_AppSurf App = new(3, 8, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(), NbIt);
 
         App.Perform(Line, Section);
 
@@ -113,7 +113,7 @@ internal static class GeometryTestSurfaceCommands
             {
                 return 1;
             }
-            C[i - 2] = GeomConvert.CurveToBSplineCurve(aC, Convert_RationalC1);
+            C[i - 2] = GeomConvert.CurveToBSplineCurve(aC, RationalC1);
         }
 
         int ist = 2;

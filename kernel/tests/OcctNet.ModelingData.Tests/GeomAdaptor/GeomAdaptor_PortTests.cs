@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -9,12 +13,12 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class GeomAdaptor_PortTests
 {
-    private static readonly gp_Ax1 ZAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+    private static readonly Axis3D ZAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
     private static Geom_BSplineCurve Cubic()
     {
-        var aPoles = NCollection_Array1<gp_Pnt>.From([new gp_Pnt(1, 0, 0), new gp_Pnt(2, 0, 1), new gp_Pnt(1.5, 0, 2),
-                                                      new gp_Pnt(3, 0, 3), new gp_Pnt(2, 0, 4)]);
+        var aPoles = NCollection_Array1<Point3D>.From([new Point3D(1, 0, 0), new Point3D(2, 0, 1), new Point3D(1.5, 0, 2),
+                                                      new Point3D(3, 0, 3), new Point3D(2, 0, 4)]);
         var aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
         var aMults = NCollection_Array1<int>.From([4, 1, 4]);
         return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
@@ -22,8 +26,8 @@ public class GeomAdaptor_PortTests
 
     private static void AssertSameEval(Adaptor3d_Surface theA, Geom_Surface theS, double U, double V)
     {
-        theA.D2(U, V, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV, out gp_Vec aDUU, out gp_Vec aDVV, out gp_Vec aDUV);
-        theS.D2(U, V, out gp_Pnt aSP, out gp_Vec aSDU, out gp_Vec aSDV, out gp_Vec aSDUU, out gp_Vec aSDVV, out gp_Vec aSDUV);
+        theA.D2(U, V, out Point3D aP, out Vector3D aDU, out Vector3D aDV, out Vector3D aDUU, out Vector3D aDVV, out Vector3D aDUV);
+        theS.D2(U, V, out Point3D aSP, out Vector3D aSDU, out Vector3D aSDV, out Vector3D aSDUU, out Vector3D aSDVV, out Vector3D aSDUV);
         Assert.True(aP.IsEqual(aSP, 1e-12));
         Assert.True(aDU.IsEqual(aSDU, 1e-12, 1e-12));
         Assert.True(aDV.IsEqual(aSDV, 1e-12, 1e-12));
@@ -36,69 +40,69 @@ public class GeomAdaptor_PortTests
     public void SurfaceOfRevolution_Recognises_Elementary_Surfaces()
     {
         // a line parallel to the axis: a cylinder
-        var aParallel = new GeomAdaptor_Curve(new Geom_Line(new gp_Ax1(new gp_Pnt(3, 0, 0), new gp_Dir(0, 0, 1))), -2, 2);
+        var aParallel = new GeomAdaptor_Curve(new Geom_Line(new Axis3D(new Point3D(3, 0, 0), new Direction3D(0, 0, 1))), -2, 2);
         var aCyl = new GeomAdaptor_SurfaceOfRevolution(aParallel, ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Cylinder, aCyl.GetType());
+        Assert.Equal(SurfaceKind.Cylinder, aCyl.GetType());
         Assert.Equal(3.0, aCyl.Cylinder().Radius(), 12);
 
         // a line normal to the axis: a plane
-        var aNormal = new GeomAdaptor_Curve(new Geom_Line(new gp_Ax1(new gp_Pnt(1, 0, 2), new gp_Dir(1, 0, 0))), 0, 5);
+        var aNormal = new GeomAdaptor_Curve(new Geom_Line(new Axis3D(new Point3D(1, 0, 2), new Direction3D(1, 0, 0))), 0, 5);
         var aPln = new GeomAdaptor_SurfaceOfRevolution(aNormal, ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Plane, aPln.GetType());
+        Assert.Equal(SurfaceKind.Plane, aPln.GetType());
         Assert.Equal(2.0, aPln.Plane().Location().Z(), 12);
 
         // a line crossing the axis: a cone
-        var aSlant = new GeomAdaptor_Curve(new Geom_Line(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1))), 0.5, 3);
+        var aSlant = new GeomAdaptor_Curve(new Geom_Line(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1))), 0.5, 3);
         var aCone = new GeomAdaptor_SurfaceOfRevolution(aSlant, ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Cone, aCone.GetType());
+        Assert.Equal(SurfaceKind.Cone, aCone.GetType());
         Assert.Equal(Math.PI / 4, Math.Abs(aCone.Cone().SemiAngle()), 12);
 
         // a circle centred on the axis, in a plane containing it: a sphere; off the axis: a torus
-        var aMeridian = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(1, 0, 0));
+        var aMeridian = new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0));
         var aSph = new GeomAdaptor_SurfaceOfRevolution(new GeomAdaptor_Curve(new Geom_Circle(aMeridian, 2)), ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Sphere, aSph.GetType());
+        Assert.Equal(SurfaceKind.Sphere, aSph.GetType());
         Assert.Equal(2.0, aSph.Sphere().Radius(), 12);
-        var aTorusMeridian = new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(1, 0, 0));
+        var aTorusMeridian = new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0));
         var aTor = new GeomAdaptor_SurfaceOfRevolution(new GeomAdaptor_Curve(new Geom_Circle(aTorusMeridian, 1)), ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Torus, aTor.GetType());
+        Assert.Equal(SurfaceKind.Torus, aTor.GetType());
         Assert.Equal(5.0, aTor.Torus().MajorRadius(), 12);
 
         // a B-spline curve: a general surface of revolution, evaluated as Geom_SurfaceOfRevolution
         var aGen = new GeomAdaptor_SurfaceOfRevolution(new GeomAdaptor_Curve(Cubic()), ZAxis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution, aGen.GetType());
+        Assert.Equal(SurfaceKind.SurfaceOfRevolution, aGen.GetType());
         Geom_SurfaceOfRevolution aGeom = new(Cubic(), ZAxis);
         AssertSameEval(aGen, aGeom, 1.2, 0.3);
         AssertSameEval(aGen, aGeom, 4.0, 0.75);
         Assert.Equal(0.0, aGen.FirstUParameter());
         Assert.Equal(2 * Math.PI, aGen.LastUParameter());
-        Assert.Equal(1, aGen.NbVIntervals(GeomAbs_Shape.GeomAbs_C2)); // C2 at its single knot
-        Assert.Equal(2, aGen.NbVIntervals(GeomAbs_Shape.GeomAbs_C3));
-        Assert.Throws<Standard_OutOfRange>(() => aGen.UTrim(0.5, 1.0, 1e-7));
+        Assert.Equal(1, aGen.NbVIntervals(Continuity.C2)); // C2 at its single knot
+        Assert.Equal(2, aGen.NbVIntervals(Continuity.C3));
+        Assert.Throws<OutOfRangeException>(() => aGen.UTrim(0.5, 1.0, 1e-7));
         Adaptor3d_Surface aVTrim = aGen.VTrim(0.2, 0.6, 1e-7);
         Assert.Equal(0.6, aVTrim.LastVParameter());
-        Assert.Throws<Standard_NoSuchObject>(() => aGen.BSpline());
+        Assert.Throws<NoSuchObjectException>(() => aGen.BSpline());
     }
 
     [Fact]
     public void SurfaceOfLinearExtrusion_Recognises_Planes_And_Cylinders()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
-        var aCyl = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(aCircle), new gp_Dir(0, 0, -1));
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Cylinder, aCyl.GetType());
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        var aCyl = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(aCircle), new Direction3D(0, 0, -1));
+        Assert.Equal(SurfaceKind.Cylinder, aCyl.GetType());
         Assert.Equal(-1.0, aCyl.Cylinder().Position().Direction().Z(), 12); // reversed to the direction
 
-        var aLine = new Geom_Line(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)));
-        var aPln = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(aLine), new gp_Dir(0, 1, 0));
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Plane, aPln.GetType());
+        var aLine = new Geom_Line(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        var aPln = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(aLine), new Direction3D(0, 1, 0));
+        Assert.Equal(SurfaceKind.Plane, aPln.GetType());
         Assert.Equal(1.0, Math.Abs(aPln.Plane().Axis().Direction().Z()), 12);
 
-        var aGen = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(Cubic()), new gp_Dir(0, 1, 1));
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion, aGen.GetType());
-        Geom_SurfaceOfLinearExtrusion aGeom = new(Cubic(), new gp_Dir(0, 1, 1));
+        var aGen = new GeomAdaptor_SurfaceOfLinearExtrusion(new GeomAdaptor_Curve(Cubic()), new Direction3D(0, 1, 1));
+        Assert.Equal(SurfaceKind.SurfaceOfExtrusion, aGen.GetType());
+        Geom_SurfaceOfLinearExtrusion aGeom = new(Cubic(), new Direction3D(0, 1, 1));
         AssertSameEval(aGen, aGeom, 0.3, -2.0);
         AssertSameEval(aGen, aGeom, 0.5, 7.0);
         Assert.Equal(RealFirst(), aGen.FirstVParameter());
-        Assert.Throws<Standard_DomainError>(() => aGen.VPeriod());
+        Assert.Throws<DomainErrorException>(() => aGen.VPeriod());
         Assert.Equal(3, aGen.UDegree());
 
         // OCCT (occt-issues.md): VTrim trims the curve, which carries U, and UTrim trims nothing
@@ -120,7 +124,7 @@ public class GeomAdaptor_PortTests
         Assert.Equal(0.2, aTrim.FirstParameter());
         Assert.Equal(0.7, aTrim.LastParameter());
 
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1)), 2);
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)), 2);
         Geom_Surface aS = GeomAdaptor.MakeSurface(new GeomAdaptor_Surface(aCyl, 0, 1, -1, 1));
         Geom_RectangularTrimmedSurface aT = Assert.IsType<Geom_RectangularTrimmedSurface>(aS);
         Assert.IsType<Geom_CylindricalSurface>(aT.BasisSurface());
@@ -132,19 +136,19 @@ public class GeomAdaptor_PortTests
         Assert.IsType<Geom_RectangularTrimmedSurface>(anOffS.BasisSurface());
         Assert.True(anOffS.Value(0.5, 0.5).IsEqual(anOff.Value(0.5, 0.5), 1e-12));
 
-        Assert.Throws<Standard_DomainError>(() => GeomAdaptor.MakeCurve(new GeomAdaptor_Curve(new Geom_OffsetCurve(aC, 1, new gp_Dir(0, 1, 0)))));
+        Assert.Throws<DomainErrorException>(() => GeomAdaptor.MakeCurve(new GeomAdaptor_Curve(new Geom_OffsetCurve(aC, 1, new Direction3D(0, 1, 0)))));
     }
 
     [Fact]
     public void HSurfaceTool_Samples_And_G1()
     {
-        var aPlane = new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1))), 0, 1, 0, 1);
+        var aPlane = new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1))), 0, 1, 0, 1);
         Assert.Equal(2, Adaptor3d_HSurfaceTool.NbSamplesU(aPlane));
-        var aTorus = new GeomAdaptor_Surface(new Geom_ToroidalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1)), 5, 1));
+        var aTorus = new GeomAdaptor_Surface(new Geom_ToroidalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)), 5, 1));
         Assert.Equal(20, Adaptor3d_HSurfaceTool.NbSamplesU(aTorus));
         Assert.Equal(15, Adaptor3d_HSurfaceTool.NbSamplesV(aTorus));
         Assert.Equal(5, Adaptor3d_HSurfaceTool.NbSamplesU(aTorus, 0, Math.PI)); // 20 * (int)0.5 = 0, raised to 5
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Torus, Adaptor3d_HSurfaceTool.GetType(aTorus));
+        Assert.Equal(SurfaceKind.Torus, Adaptor3d_HSurfaceTool.GetType(aTorus));
 
         // a revolution of a B-spline curve with a G1 corner is G1 along V, and not along U (no B-spline there)
         var aRev = new GeomAdaptor_Surface(new Geom_SurfaceOfRevolution(Cubic(), ZAxis));
@@ -156,19 +160,19 @@ public class GeomAdaptor_PortTests
     [Fact]
     public void ShallowCopy_Has_Its_Own_Cache_And_Reload_Drops_It()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, (i * j) % 3);
+                aPoles[i, j] = new Point3D(i, j, (i * j) % 3);
             }
         }
         var aKnots = NCollection_Array1<double>.From([0.0, 0.5, 1.0]);
         var aMults = NCollection_Array1<int>.From([3, 1, 3]);
         Geom_BSplineSurface aS = new(aPoles, aKnots, aKnots, aMults, aMults, 2, 2);
         var anA = new GeomAdaptor_Surface(aS);
-        gp_Pnt aP1 = anA.Value(0.2, 0.3);
+        Point3D aP1 = anA.Value(0.2, 0.3);
         var aCopy = (GeomAdaptor_Surface)anA.ShallowCopy();
         Assert.Same(anA.Surface(), aCopy.Surface());
         Assert.True(aCopy.Value(0.8, 0.9).IsEqual(aS.Value(0.8, 0.9), 1e-12));
@@ -177,12 +181,12 @@ public class GeomAdaptor_PortTests
         // the same surface reloaded with other bounds: the cache is rebuilt; another surface replaces it
         anA.Load(aS, 0.1, 0.9, 0.1, 0.9);
         Assert.True(anA.Value(0.75, 0.25).IsEqual(aS.Value(0.75, 0.25), 1e-12));
-        anA.Load(new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1))));
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Plane, anA.GetType());
+        anA.Load(new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1))));
+        Assert.Equal(SurfaceKind.Plane, anA.GetType());
 
         var aCurve = new GeomAdaptor_Curve(Cubic());
         aCurve.Reset();
-        Assert.Equal(GeomAbs_CurveType.GeomAbs_OtherCurve, aCurve.GetType());
+        Assert.Equal(CurveKind.OtherCurve, aCurve.GetType());
         Assert.Null(aCurve.Curve());
     }
 }

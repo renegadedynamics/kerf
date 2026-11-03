@@ -3,26 +3,30 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// A circular paraboloid of revolution with focal distance F &gt; 0, its vertex at the origin of its coordinate
 /// system: <c>P(u,v) = O + v*cos(u)*XDir + v*sin(u)*YDir + v^2/(4*F)*ZDir</c>, u in [0, 2*Pi] (periodic),
 /// v in (-inf, +inf). Implicit equation in local coordinates: <c>X^2 + Y^2 - 4*F*Z = 0</c>.
-/// Reversal, transformation and iso curves are not supported (they throw <see cref="Standard_NotImplemented"/>).
+/// Reversal, transformation and iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 {
     private double myFocal; // Focal distance (> 0)
 
     /// <summary>Creates a paraboloid with the given local coordinate system and focal distance.</summary>
-    /// <exception cref="Standard_ConstructionError">theFocal &lt;= 0.</exception>
-    public GeomEval_ParaboloidSurface(in gp_Ax3 thePosition, double theFocal)
+    /// <exception cref="ConstructionErrorException">theFocal &lt;= 0.</exception>
+    public GeomEval_ParaboloidSurface(in CoordinateSystem thePosition, double theFocal)
     {
         myFocal = theFocal;
         if (theFocal <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_ParaboloidSurface: focal distance must be > 0");
+            throw new ConstructionErrorException("GeomEval_ParaboloidSurface: focal distance must be > 0");
         }
         pos = thePosition;
     }
@@ -30,20 +34,20 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
     /// <summary>The focal distance.</summary>
     public double Focal() => myFocal;
 
-    /// <exception cref="Standard_ConstructionError">theFocal &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theFocal &lt;= 0.</exception>
     internal void SetFocal(double theFocal)
     {
         CheckMutable();
         if (theFocal <= 0.0)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_ParaboloidSurface::SetFocal: focal distance must be > 0");
         }
         myFocal = theFocal;
     }
 
     /// <summary>A copy with the focal distance set to theFocal.</summary>
-    /// <exception cref="Standard_ConstructionError">theFocal &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theFocal &lt;= 0.</exception>
     public GeomEval_ParaboloidSurface WithFocal(double theFocal)
     {
         GeomEval_ParaboloidSurface aCopy = (GeomEval_ParaboloidSurface)Copy();
@@ -51,30 +55,30 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
         return aCopy;
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::VReversedParameter");
     }
 
     /// <summary>U in [0, 2*Pi], V in [-Precision::Infinite(), Precision::Infinite()].</summary>
@@ -82,8 +86,8 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
     {
         U1 = 0.0;
         U2 = 2.0 * M_PI;
-        V1 = -Precision.Infinite();
-        V2 = Precision.Infinite();
+        V1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        V2 = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>True: the paraboloid is closed in U (period 2*Pi).</summary>
@@ -96,40 +100,40 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
     public override bool IsVPeriodic() => false;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::UIso");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::VIso");
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
         double aZComp = V * V / (4.0 * myFocal);
 
-        return new gp_Pnt(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
+        return new Point3D(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
                           anO.Y() + V * aCosU * aXDir.Y() + V * aSinU * aYDir.Y() + aZComp * aZDir.Y(),
                           anO.Z() + V * aCosU * aXDir.Z() + V * aSinU * aYDir.Z() + aZComp * aZDir.Z());
     }
 
     public override ResD1 EvalD1(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
@@ -140,17 +144,17 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
         // P = O + V*cosU*XD + V*sinU*YD + V^2/(4F)*ZD
         aResult.Point =
-            new gp_Pnt(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
+            new Point3D(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
                        anO.Y() + V * aCosU * aXDir.Y() + V * aSinU * aYDir.Y() + aZComp * aZDir.Y(),
                        anO.Z() + V * aCosU * aXDir.Z() + V * aSinU * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du = -V*sinU*XD + V*cosU*YD
-        aResult.D1U = new gp_Vec(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
+        aResult.D1U = new Vector3D(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
                                  -V * aSinU * aXDir.Y() + V * aCosU * aYDir.Y(),
                                  -V * aSinU * aXDir.Z() + V * aCosU * aYDir.Z());
 
         // dP/dv = cosU*XD + sinU*YD + V/(2F)*ZD
-        aResult.D1V = new gp_Vec(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
+        aResult.D1V = new Vector3D(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
                                  aCosU * aXDir.Y() + aSinU * aYDir.Y() + aVOver2F * aZDir.Y(),
                                  aCosU * aXDir.Z() + aSinU * aYDir.Z() + aVOver2F * aZDir.Z());
 
@@ -159,10 +163,10 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
     public override ResD2 EvalD2(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
@@ -174,30 +178,30 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
         // P
         aResult.Point =
-            new gp_Pnt(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
+            new Point3D(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
                        anO.Y() + V * aCosU * aXDir.Y() + V * aSinU * aYDir.Y() + aZComp * aZDir.Y(),
                        anO.Z() + V * aCosU * aXDir.Z() + V * aSinU * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du
-        aResult.D1U = new gp_Vec(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
+        aResult.D1U = new Vector3D(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
                                  -V * aSinU * aXDir.Y() + V * aCosU * aYDir.Y(),
                                  -V * aSinU * aXDir.Z() + V * aCosU * aYDir.Z());
 
         // dP/dv
-        aResult.D1V = new gp_Vec(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
+        aResult.D1V = new Vector3D(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
                                  aCosU * aXDir.Y() + aSinU * aYDir.Y() + aVOver2F * aZDir.Y(),
                                  aCosU * aXDir.Z() + aSinU * aYDir.Z() + aVOver2F * aZDir.Z());
 
         // d2P/du2 = -V*cosU*XD - V*sinU*YD
-        aResult.D2U = new gp_Vec(-V * aCosU * aXDir.X() - V * aSinU * aYDir.X(),
+        aResult.D2U = new Vector3D(-V * aCosU * aXDir.X() - V * aSinU * aYDir.X(),
                                  -V * aCosU * aXDir.Y() - V * aSinU * aYDir.Y(),
                                  -V * aCosU * aXDir.Z() - V * aSinU * aYDir.Z());
 
         // d2P/dv2 = 1/(2F)*ZD
-        aResult.D2V = new gp_Vec(aInv2F * aZDir.X(), aInv2F * aZDir.Y(), aInv2F * aZDir.Z());
+        aResult.D2V = new Vector3D(aInv2F * aZDir.X(), aInv2F * aZDir.Y(), aInv2F * aZDir.Z());
 
         // d2P/dudv = -sinU*XD + cosU*YD
-        aResult.D2UV = new gp_Vec(-aSinU * aXDir.X() + aCosU * aYDir.X(),
+        aResult.D2UV = new Vector3D(-aSinU * aXDir.X() + aCosU * aYDir.X(),
                                   -aSinU * aXDir.Y() + aCosU * aYDir.Y(),
                                   -aSinU * aXDir.Z() + aCosU * aYDir.Z());
 
@@ -206,10 +210,10 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
     public override ResD3 EvalD3(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
@@ -221,63 +225,63 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
 
         // P
         aResult.Point =
-            new gp_Pnt(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
+            new Point3D(anO.X() + V * aCosU * aXDir.X() + V * aSinU * aYDir.X() + aZComp * aZDir.X(),
                        anO.Y() + V * aCosU * aXDir.Y() + V * aSinU * aYDir.Y() + aZComp * aZDir.Y(),
                        anO.Z() + V * aCosU * aXDir.Z() + V * aSinU * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du
-        aResult.D1U = new gp_Vec(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
+        aResult.D1U = new Vector3D(-V * aSinU * aXDir.X() + V * aCosU * aYDir.X(),
                                  -V * aSinU * aXDir.Y() + V * aCosU * aYDir.Y(),
                                  -V * aSinU * aXDir.Z() + V * aCosU * aYDir.Z());
 
         // dP/dv
-        aResult.D1V = new gp_Vec(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
+        aResult.D1V = new Vector3D(aCosU * aXDir.X() + aSinU * aYDir.X() + aVOver2F * aZDir.X(),
                                  aCosU * aXDir.Y() + aSinU * aYDir.Y() + aVOver2F * aZDir.Y(),
                                  aCosU * aXDir.Z() + aSinU * aYDir.Z() + aVOver2F * aZDir.Z());
 
         // d2P/du2
-        aResult.D2U = new gp_Vec(-V * aCosU * aXDir.X() - V * aSinU * aYDir.X(),
+        aResult.D2U = new Vector3D(-V * aCosU * aXDir.X() - V * aSinU * aYDir.X(),
                                  -V * aCosU * aXDir.Y() - V * aSinU * aYDir.Y(),
                                  -V * aCosU * aXDir.Z() - V * aSinU * aYDir.Z());
 
         // d2P/dv2
-        aResult.D2V = new gp_Vec(aInv2F * aZDir.X(), aInv2F * aZDir.Y(), aInv2F * aZDir.Z());
+        aResult.D2V = new Vector3D(aInv2F * aZDir.X(), aInv2F * aZDir.Y(), aInv2F * aZDir.Z());
 
         // d2P/dudv
-        aResult.D2UV = new gp_Vec(-aSinU * aXDir.X() + aCosU * aYDir.X(),
+        aResult.D2UV = new Vector3D(-aSinU * aXDir.X() + aCosU * aYDir.X(),
                                   -aSinU * aXDir.Y() + aCosU * aYDir.Y(),
                                   -aSinU * aXDir.Z() + aCosU * aYDir.Z());
 
         // d3P/du3 = V*sinU*XD - V*cosU*YD
-        aResult.D3U = new gp_Vec(V * aSinU * aXDir.X() - V * aCosU * aYDir.X(),
+        aResult.D3U = new Vector3D(V * aSinU * aXDir.X() - V * aCosU * aYDir.X(),
                                  V * aSinU * aXDir.Y() - V * aCosU * aYDir.Y(),
                                  V * aSinU * aXDir.Z() - V * aCosU * aYDir.Z());
 
         // d3P/dv3 = 0
-        aResult.D3V = new gp_Vec(0.0, 0.0, 0.0);
+        aResult.D3V = new Vector3D(0.0, 0.0, 0.0);
 
         // d3P/du2dv = -cosU*XD - sinU*YD
-        aResult.D3UUV = new gp_Vec(-aCosU * aXDir.X() - aSinU * aYDir.X(),
+        aResult.D3UUV = new Vector3D(-aCosU * aXDir.X() - aSinU * aYDir.X(),
                                    -aCosU * aXDir.Y() - aSinU * aYDir.Y(),
                                    -aCosU * aXDir.Z() - aSinU * aYDir.Z());
 
         // d3P/dudv2 = 0
-        aResult.D3UVV = new gp_Vec(0.0, 0.0, 0.0);
+        aResult.D3UVV = new Vector3D(0.0, 0.0, 0.0);
 
         return aResult;
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative("GeomEval_ParaboloidSurface::EvalDN: invalid derivative order");
         }
 
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         // The parametrization is:
         //   P = O + v*cos(u)*XD + v*sin(u)*YD + v^2/(4F)*ZD
@@ -326,16 +330,16 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
             // else 0 for Nv >= 3
         }
 
-        return new gp_Vec(aXCoeff * aXDir.X() + aYCoeff * aYDir.X() + aZCoeff * aZDir.X(),
+        return new Vector3D(aXCoeff * aXDir.X() + aYCoeff * aYDir.X() + aZCoeff * aZDir.X(),
                           aXCoeff * aXDir.Y() + aYCoeff * aYDir.Y() + aZCoeff * aZDir.Y(),
                           aXCoeff * aXDir.Z() + aYCoeff * aYDir.Z() + aZCoeff * aZDir.Z());
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_ParaboloidSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::Transform");
     }
 
     public override Geom_Geometry Copy() => new GeomEval_ParaboloidSurface(pos, myFocal);
@@ -354,7 +358,7 @@ public sealed class GeomEval_ParaboloidSurface : Geom_ElementarySurface
         // Transform to global coordinates using:
         //   (X_L, Y_L, Z_L)^T = T * (x, y, z, 1)^T
         // where T is the transformation matrix from pos.
-        gp_Trsf aT = new gp_Trsf();
+        Transform3D aT = new Transform3D();
         aT.SetTransformation(pos);
         double T11 = aT.Value(1, 1);
         double T12 = aT.Value(1, 2);

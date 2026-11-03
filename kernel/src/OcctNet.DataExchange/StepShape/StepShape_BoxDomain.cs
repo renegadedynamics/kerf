@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepShape_BoxDomain : Standard_Transient
+public class StepShape_BoxDomain : Transient
 {
     private StepGeom_CartesianPoint corner;
     private double xlength;

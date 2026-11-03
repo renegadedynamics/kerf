@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceSectionField
 /// </summary>
-public class StepElement_SurfaceSectionField : Standard_Transient
+public class StepElement_SurfaceSectionField : Transient
 {
     /// <summary>
     /// Empty constructor

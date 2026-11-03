@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -31,7 +33,7 @@ public abstract partial class Shape2D : Shape
         {
             sum = new Shell(faces);
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
         {
             throw new ArgumentException(
                 "Unable to sew faces into a single connected Shell - faces must meet along shared edges, "
@@ -301,7 +303,7 @@ public abstract partial class Shape2D : Shape
             return this;
         var builder = new BRepOffset_MakeOffset();
         builder.Initialize(TopoShape, amount, Constants.Tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false,
-                           GeomAbs_JoinType.GeomAbs_Intersection, false, true);
+                           JoinKind.Intersection, false, true);
         builder.MakeOffsetShape();
         var offset = builder.Shape();
         if (offset.IsNull())

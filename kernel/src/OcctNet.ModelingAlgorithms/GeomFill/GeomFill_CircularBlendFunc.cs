@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -20,7 +23,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
 {
     private const double TolAng = 1.0e-6;
 
-    private gp_Pnt myBary = new gp_Pnt();
+    private Point3D myBary = new Point3D();
     private readonly double myRadius;
     private double maxang;
     private double minang;
@@ -34,23 +37,23 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     private readonly int myDegree;
     private readonly int myNbKnots;
     private readonly int myNbPoles;
-    private readonly Convert_ParameterisationType myTConv;
+    private readonly ParameterisationType myTConv;
     private bool myreverse;
 
-    private static GeomAbs_Shape GeomFillNextShape(GeomAbs_Shape S)
+    private static Continuity GeomFillNextShape(Continuity S)
     {
         switch (S)
         {
-            case GeomAbs_C0:
-                return GeomAbs_C1;
-            case GeomAbs_C1:
-                return GeomAbs_C2;
-            case GeomAbs_C2:
-                return GeomAbs_C3;
-            case GeomAbs_C3:
-                return GeomAbs_CN;
+            case C0:
+                return C1;
+            case C1:
+                return C2;
+            case C2:
+                return C3;
+            case C3:
+                return CN;
             default:
-                return GeomAbs_CN;
+                return CN;
         }
     }
 
@@ -58,7 +61,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
                                        NCollection_Sequence<double> Seq)
     {
         int ind1 = 1, ind2 = 1;
-        double Epspar = Precision.PConfusion() * 0.99;
+        double Epspar = global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99;
         // en suposant que le positionement fonctionne a PConfusion()/2
         double v1, v2;
         // Initialisations : les IND1 et IND2 pointent sur le 1er element
@@ -136,15 +139,15 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         // Type de convertion ?
         if (Polynomial)
         {
-            myTConv = Convert_Polynomial;
+            myTConv = global::Kerf.Engine.Geometry.Conversion.ParameterisationType.Polynomial;
         }
         else if (maxang > 0.65 * M_PI)
         {
-            myTConv = Convert_QuasiAngular; // car c'est Continue
+            myTConv = QuasiAngular; // car c'est Continue
         }
         else
         {
-            myTConv = Convert_TgtThetaOver2;
+            myTConv = TgtThetaOver2;
         }
         // car c'est le plus performant
 
@@ -159,8 +162,8 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         int ii;
         double L1, L2;
         Adaptor3d_Curve C;
-        gp_Pnt P1, P2, P3, Center;
-        gp_Vec DCenter;
+        Point3D P1, P2, P3, Center;
+        Vector3D DCenter;
 
         P1 = myCurve1.Value(TFirst);
         P2 = myCurve1.Value((TFirst + TLast) / 2.0);
@@ -189,7 +192,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         GCPnts_QuasiUniformDeflection Samp = new GCPnts_QuasiUniformDeflection();
         Samp.Initialize(C, Fleche);
         myBary.SetCoord(0.0, 0.0, 0.0);
-        gp_Vec ns1 = new gp_Vec(), ns2 = new gp_Vec();
+        Vector3D ns1 = new Vector3D(), ns2 = new Vector3D();
 
         if (Samp.IsDone())
         {
@@ -273,13 +276,13 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     public override bool D0(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Point2D> Poles2d,
                             NCollection_Array1<double> Weigths)
     {
-        gp_Pnt P1, P2, Center;
-        gp_Vec ns1 = new gp_Vec(), ns2 = new gp_Vec(), nplan;
-        gp_XYZ temp = new gp_XYZ();
+        Point3D P1, P2, Center;
+        Vector3D ns1 = new Vector3D(), ns2 = new Vector3D(), nplan;
+        Xyz temp = new Xyz();
 
         // Positionnement
         myTPath.D0(Param, out Center);
@@ -317,18 +320,18 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     public override bool D1(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
-                            NCollection_Array1<gp_Vec2d> DPoles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Point2D> Poles2d,
+                            NCollection_Array1<Vector2D> DPoles2d,
                             NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths)
     {
-        gp_Pnt P1, P2, Center;
+        Point3D P1, P2, Center;
         double invnorm1, invnorm2, invnormp;
-        gp_Vec DCenter, nplan, dnplan, DP1, DP2;
-        gp_Vec ns1 = new gp_Vec(), ns2 = new gp_Vec(), Dns1, Dns2;
-        gp_XYZ temp = new gp_XYZ();
+        Vector3D DCenter, nplan, dnplan, DP1, DP2;
+        Vector3D ns1 = new Vector3D(), ns2 = new Vector3D(), Dns1, Dns2;
+        Xyz temp = new Xyz();
 
         // Positionemment
         myTPath.D1(Param, out Center, out DCenter);
@@ -402,22 +405,22 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
     public override bool D2(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Vec> D2Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
-                            NCollection_Array1<gp_Vec2d> DPoles2d,
-                            NCollection_Array1<gp_Vec2d> D2Poles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Vector3D> D2Poles,
+                            NCollection_Array1<Point2D> Poles2d,
+                            NCollection_Array1<Vector2D> DPoles2d,
+                            NCollection_Array1<Vector2D> D2Poles2d,
                             NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths,
                             NCollection_Array1<double> D2Weigths)
     {
-        gp_Pnt P1, P2, Center;
+        Point3D P1, P2, Center;
         double invnorm1, invnorm2, invnormp, sc;
-        gp_Vec DCenter, D2Center, DP1, DP2, D2P1, D2P2;
-        gp_Vec nplan, dnplan, d2nplan;
-        gp_Vec ns1 = new gp_Vec(), ns2 = new gp_Vec(), Dns1, Dns2, D2ns1, D2ns2;
-        gp_XYZ temp = new gp_XYZ();
+        Vector3D DCenter, D2Center, DP1, DP2, D2P1, D2P2;
+        Vector3D nplan, dnplan, d2nplan;
+        Vector3D ns1 = new Vector3D(), ns2 = new Vector3D(), Dns1, Dns2, D2ns1, D2ns2;
+        Xyz temp = new Xyz();
 
         // Positionement
         myTPath.D2(Param, out Center, out DCenter, out D2Center);
@@ -435,7 +438,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         {
             nplan = ns1.Crossed(ns2);
             dnplan = Dns1.Crossed(ns2).Added(ns1.Crossed(Dns2));
-            d2nplan = new gp_Vec();
+            d2nplan = new Vector3D();
             d2nplan.SetLinearForm(1, D2ns1.Crossed(ns2), 2, Dns1.Crossed(Dns2), ns1.Crossed(D2ns2));
         }
         else
@@ -544,9 +547,9 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         GeomFill.Mults(myTConv, TMults);
     }
 
-    public override bool IsRational() => (myTConv != Convert_Polynomial);
+    public override bool IsRational() => (myTConv != Polynomial);
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int NbI_Center, NbI_Cb1, NbI_Cb2, ii;
         NbI_Center = myPath.NbIntervals(GeomFillNextShape(S));
@@ -576,7 +579,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         return Inter.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int NbI_Center, NbI_Cb1, NbI_Cb2, ii;
         NbI_Center = myPath.NbIntervals(GeomFillNextShape(S));
@@ -612,7 +615,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
 
     public override void SetInterval(double First, double Last)
     {
-        double Eps = Precision.PConfusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myTPath = myPath.Trim(First, Last, Eps);
         myTCurve1 = myCurve1.Trim(First, Last, Eps);
         myTCurve2 = myCurve2.Trim(First, Last, Eps);
@@ -634,7 +637,7 @@ public class GeomFill_CircularBlendFunc : Approx_SweepFunction
         // y rien a faire !
     }
 
-    public override gp_Pnt BarycentreOfSurf() => myBary;
+    public override Point3D BarycentreOfSurf() => myBary;
 
     public override double MaximalSection() => maxang * myRadius;
 

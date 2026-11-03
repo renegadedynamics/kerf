@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +26,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     private GeomEval_RepSurfaceDesc.Base? myEvalRep;
 
     /// <summary>The extrusion of a copy of C along V. Nothing is checked (C may be a line parallel to V).</summary>
-    public Geom_SurfaceOfLinearExtrusion(Geom_Curve C, in gp_Dir V)
+    public Geom_SurfaceOfLinearExtrusion(Geom_Curve C, in Direction3D V)
     {
         basisCurve = (Geom_Curve)C.Copy();
         direction = V;
@@ -58,7 +64,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     }
 
     /// <summary>Changes the direction of extrusion.</summary>
-    internal void SetDirection(in gp_Dir V)
+    internal void SetDirection(in Direction3D V)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -75,7 +81,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     }
 
     /// <summary>A copy extruded along V.</summary>
-    public Geom_SurfaceOfLinearExtrusion WithDirection(in gp_Dir V)
+    public Geom_SurfaceOfLinearExtrusion WithDirection(in Direction3D V)
     {
         Geom_SurfaceOfLinearExtrusion aCopy = (Geom_SurfaceOfLinearExtrusion)Copy();
         aCopy.SetDirection(V);
@@ -116,22 +122,22 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     /// <summary>U between the bounds of the basis curve; V infinite.</summary>
     public sealed override void Bounds(out double U1, out double U2, out double V1, out double V2)
     {
-        V1 = -Precision.Infinite();
-        V2 = Precision.Infinite();
+        V1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        V2 = global::Kerf.Engine.Foundation.Precision.Infinite();
         U1 = basisCurve!.FirstParameter();
         U2 = basisCurve.LastParameter();
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aEvalRepResult;
+        Point3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
-        gp_Pnt aBasisD0 = basisCurve!.EvalD0(U);
-        gp_Pnt aP;
+        Point3D aBasisD0 = basisCurve!.EvalD0(U);
+        Point3D aP;
         Geom_ExtrusionUtils.CalculateD0(aBasisD0, V, direction.XYZ(), out aP);
         return aP;
     }
@@ -210,14 +216,14 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
 
-        gp_Vec aEvalRepResult;
+        Vector3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out aEvalRepResult))
         {
             return aEvalRepResult;
@@ -225,14 +231,14 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
 
         if (Nv == 0)
         {
-            gp_Vec aDN = basisCurve!.EvalDN(U, Nu);
+            Vector3D aDN = basisCurve!.EvalDN(U, Nu);
             return Geom_ExtrusionUtils.CalculateDN(aDN, direction.XYZ(), Nu, Nv);
         }
         else if (Nu == 0 && Nv == 1)
         {
-            return new gp_Vec(direction.XYZ());
+            return new Vector3D(direction.XYZ());
         }
-        return new gp_Vec(0.0, 0.0, 0.0);
+        return new Vector3D(0.0, 0.0, 0.0);
     }
 
     /// <summary>The U iso-curve: the line through the point of parameter U of the basis curve, along the direction.</summary>
@@ -246,7 +252,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     /// <summary>The V iso-curve: a copy of the basis curve translated by V * Direction.</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        gp_Vec Vdir = new gp_Vec(direction);
+        Vector3D Vdir = new Vector3D(direction);
         Vdir.Multiply(V);
         Geom_Curve C;
         C = (Geom_Curve)basisCurve!.Translated(Vdir);
@@ -254,7 +260,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     }
 
     /// <summary>True if the basis curve is CN.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNu(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -265,7 +271,7 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     public sealed override bool IsCNv(int N) => true;
 
     /// <summary>Transforms the direction and the basis curve.</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -287,25 +293,25 @@ public class Geom_SurfaceOfLinearExtrusion : Geom_SweptSurface
     public sealed override bool IsVPeriodic() => false;
 
     /// <summary>U changed into the transformed parameter of the basis curve; V scaled by |T.ScaleFactor()| unless infinite.</summary>
-    public sealed override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public sealed override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
         U = basisCurve!.TransformedParameter(U, T);
-        if (!Precision.IsInfinite(V))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(V))
         {
             V *= Math.Abs(T.ScaleFactor());
         }
     }
 
     /// <summary>The product of an affinity along U (the basis curve's) and one along V (the scale factor).</summary>
-    public sealed override gp_GTrsf2d ParametricTransformation(in gp_Trsf T)
+    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D T)
     {
         // transformation in the V Direction
-        gp_GTrsf2d TV = new gp_GTrsf2d();
-        gp_Ax2d Axis = new gp_Ax2d(gp.Origin2d(), gp.DX2d());
+        GeneralTransform2D TV = new GeneralTransform2D();
+        Axis2D Axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
         TV.SetAffinity(Axis, Math.Abs(T.ScaleFactor()));
         // transformation in the U Direction
-        gp_GTrsf2d TU = new gp_GTrsf2d();
-        Axis = new gp_Ax2d(gp.Origin2d(), gp.DY2d());
+        GeneralTransform2D TU = new GeneralTransform2D();
+        Axis = new Axis2D(Constants.Origin2d(), Constants.DY2d());
         TU.SetAffinity(Axis, basisCurve!.ParametricTransformation(T));
         return TU * TV;
     }

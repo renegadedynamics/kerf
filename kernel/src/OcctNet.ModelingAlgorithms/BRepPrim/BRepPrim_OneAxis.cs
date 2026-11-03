@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -66,35 +70,35 @@ internal abstract class BRepPrim_OneAxis
         {
             if (V[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBEDGES; i++)
         {
             if (E[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBWIRES; i++)
         {
             if (W[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
         for (i = 0; i < NBFACES; i++)
         {
             if (F[i])
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
         }
     }
 
     protected readonly BRepPrim_Builder myBuilder;
 
-    private gp_Ax2 myAxes;
+    private Frame3D myAxes;
     private double myAngle;
     private double myVMin;
     private double myVMax;
@@ -111,7 +115,7 @@ internal abstract class BRepPrim_OneAxis
     private readonly bool[] FacesBuilt = new bool[NBFACES];
 
     /// <summary>Creates a OneAxis algorithm. <paramref name="B"/> is used to build the Topology. The angle defaults to 2π.</summary>
-    protected BRepPrim_OneAxis(BRepPrim_Builder B, in gp_Ax2 A, double VMin, double VMax)
+    protected BRepPrim_OneAxis(BRepPrim_Builder B, in Frame3D A, double VMin, double VMax)
     {
         myBuilder = B;
         myAxes = A;
@@ -150,12 +154,12 @@ internal abstract class BRepPrim_OneAxis
         myMeridianOffset = O;
     }
 
-    public gp_Ax2 Axes()
+    public Frame3D Axes()
     {
         return myAxes;
     }
 
-    public void Axes(in gp_Ax2 A)
+    public void Axes(in Frame3D A)
     {
         BRepPrim_OneAxis_Check(VerticesBuilt, EdgesBuilt, WiresBuilt, FacesBuilt);
         myAxes = A;
@@ -204,12 +208,12 @@ internal abstract class BRepPrim_OneAxis
     public abstract void SetMeridianPCurve(in TopoDS_Edge E, in TopoDS_Face F);
 
     /// <summary>The meridian point at parameter <paramref name="V"/> in the plane XZ.</summary>
-    public abstract gp_Pnt2d MeridianValue(double V);
+    public abstract Point2D MeridianValue(double V);
 
     /// <summary>True if the point of parameter <paramref name="V"/> on the meridian is on the axis.</summary>
     public virtual bool MeridianOnAxis(double V)
     {
-        return Math.Abs(MeridianValue(V).X()) < Precision.Confusion();
+        return Math.Abs(MeridianValue(V).X()) < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>True if the meridian is closed.</summary>
@@ -223,19 +227,19 @@ internal abstract class BRepPrim_OneAxis
         {
             return false;
         }
-        return MeridianValue(myVMin).IsEqual(MeridianValue(myVMax), Precision.Confusion());
+        return MeridianValue(myVMin).IsEqual(MeridianValue(myVMax), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>True if VMax is infinite.</summary>
     public virtual bool VMaxInfinite()
     {
-        return Precision.IsPositiveInfinite(myVMax);
+        return global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(myVMax);
     }
 
     /// <summary>True if VMin is infinite.</summary>
     public virtual bool VMinInfinite()
     {
-        return Precision.IsNegativeInfinite(myVMin);
+        return global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(myVMin);
     }
 
     // True if the geometric height ordering is inverted (MeridianValue(VMax).Y() < MeridianValue(VMin).Y()): VMin is
@@ -249,7 +253,7 @@ internal abstract class BRepPrim_OneAxis
         double yMax = MeridianValue(myVMax).Y();
         double yMin = MeridianValue(myVMin).Y();
         // Use tolerance to avoid floating-point issues (e.g., for closed meridian where yMax ~ yMin)
-        return yMax < yMin - Precision.Confusion();
+        return yMax < yMin - global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     // True if the heights at VMin and VMax are equal (within tolerance): the AxisEdge would be degenerate.
@@ -261,7 +265,7 @@ internal abstract class BRepPrim_OneAxis
         }
         double yMax = MeridianValue(myVMax).Y();
         double yMin = MeridianValue(myVMin).Y();
-        return Math.Abs(yMax - yMin) < Precision.Confusion();
+        return Math.Abs(yMax - yMin) < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>True if there is a top face: neither VMaxInfinite, MeridianClosed nor MeridianOnAxis(VMax).</summary>
@@ -303,7 +307,7 @@ internal abstract class BRepPrim_OneAxis
     /// <summary>True if there are start and end faces: 2π - Angle > Precision::Angular().</summary>
     public virtual bool HasSides()
     {
-        return 2 * M_PI - myAngle > Precision.Angular();
+        return 2 * M_PI - myAngle > global::Kerf.Engine.Foundation.Precision.Angular();
     }
 
     /// <summary>The shell containing all the faces of the primitive (unfrozen).</summary>
@@ -361,8 +365,8 @@ internal abstract class BRepPrim_OneAxis
                 // closed edge
                 myBuilder.SetPCurve(myEdges[ETOP],
                                     myFaces[FLATERAL],
-                                    new gp_Lin2d(new gp_Pnt2d(0, myVMin), new gp_Dir2d(gp_Dir2d.D.X)),
-                                    new gp_Lin2d(new gp_Pnt2d(0, myVMax), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, myVMin), new Direction2D(Direction2D.D.X)),
+                                    new Line2D(new Point2D(0, myVMax), new Direction2D(Direction2D.D.X)));
             }
             else
             {
@@ -370,7 +374,7 @@ internal abstract class BRepPrim_OneAxis
                 {
                     myBuilder.SetPCurve(myEdges[ETOP],
                                         myFaces[FLATERAL],
-                                        new gp_Lin2d(new gp_Pnt2d(0, myVMax), new gp_Dir2d(gp_Dir2d.D.X)));
+                                        new Line2D(new Point2D(0, myVMax), new Direction2D(Direction2D.D.X)));
                     if (!HasSides() || MeridianOnAxis(myVMax))
                     {
                         // closed edge set parameters
@@ -381,7 +385,7 @@ internal abstract class BRepPrim_OneAxis
                 {
                     myBuilder.SetPCurve(myEdges[EBOTTOM],
                                         myFaces[FLATERAL],
-                                        new gp_Lin2d(new gp_Pnt2d(0, myVMin), new gp_Dir2d(gp_Dir2d.D.X)));
+                                        new Line2D(new Point2D(0, myVMin), new Direction2D(Direction2D.D.X)));
                     if (!HasSides() || MeridianOnAxis(myVMin))
                     {
                         // closed edge set parameters
@@ -393,19 +397,19 @@ internal abstract class BRepPrim_OneAxis
             {
                 myBuilder.SetPCurve(myEdges[ESTART],
                                     myFaces[FLATERAL],
-                                    new gp_Lin2d(new gp_Pnt2d(0, -myMeridianOffset), new gp_Dir2d(gp_Dir2d.D.Y)));
+                                    new Line2D(new Point2D(0, -myMeridianOffset), new Direction2D(Direction2D.D.Y)));
 
                 myBuilder.SetPCurve(myEdges[EEND],
                                     myFaces[FLATERAL],
-                                    new gp_Lin2d(new gp_Pnt2d(myAngle, -myMeridianOffset), new gp_Dir2d(gp_Dir2d.D.Y)));
+                                    new Line2D(new Point2D(myAngle, -myMeridianOffset), new Direction2D(Direction2D.D.Y)));
             }
             else
             {
                 // closed edge
                 myBuilder.SetPCurve(myEdges[ESTART],
                                     myFaces[FLATERAL],
-                                    new gp_Lin2d(new gp_Pnt2d(myAngle, -myMeridianOffset), new gp_Dir2d(gp_Dir2d.D.Y)),
-                                    new gp_Lin2d(new gp_Pnt2d(0, -myMeridianOffset), new gp_Dir2d(gp_Dir2d.D.Y)));
+                                    new Line2D(new Point2D(myAngle, -myMeridianOffset), new Direction2D(Direction2D.D.Y)),
+                                    new Line2D(new Point2D(0, -myMeridianOffset), new Direction2D(Direction2D.D.Y)));
             }
             myBuilder.CompleteFace(myFaces[FLATERAL]);
             FacesBuilt[FLATERAL] = true;
@@ -423,25 +427,25 @@ internal abstract class BRepPrim_OneAxis
 
             // make the empty face by translating the axes
             double z = MeridianValue(myVMax).Y();
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(z);
-            myBuilder.MakeFace(ref myFaces[FTOP], new gp_Pln(new gp_Ax3(myAxes.Translated(V))));
+            myBuilder.MakeFace(ref myFaces[FTOP], new Plane3D(new CoordinateSystem(myAxes.Translated(V))));
 
             myBuilder.AddFaceWire(myFaces[FTOP], TopWire());
 
             // put the parametric curves
             myBuilder.SetPCurve(myEdges[ETOP],
                                 myFaces[FTOP],
-                                new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.X)),
+                                new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)),
                                               MeridianValue(myVMax).X()));
             if (HasSides())
             {
                 myBuilder.SetPCurve(myEdges[ETOPSTART],
                                     myFaces[FTOP],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)));
                 myBuilder.SetPCurve(myEdges[ETOPEND],
                                     myFaces[FTOP],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(Math.Cos(myAngle), Math.Sin(myAngle))));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Math.Cos(myAngle), Math.Sin(myAngle))));
             }
             myBuilder.CompleteFace(myFaces[FTOP]);
             FacesBuilt[FTOP] = true;
@@ -459,26 +463,26 @@ internal abstract class BRepPrim_OneAxis
 
             // make the empty face by translating the axes
             double z = MeridianValue(myVMin).Y();
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(z);
-            gp_Ax2 axes = myAxes.Translated(V);
-            myBuilder.MakeFace(ref myFaces[FBOTTOM], new gp_Pln(new gp_Ax3(axes)));
+            Frame3D axes = myAxes.Translated(V);
+            myBuilder.MakeFace(ref myFaces[FBOTTOM], new Plane3D(new CoordinateSystem(axes)));
             myBuilder.ReverseFace(ref myFaces[FBOTTOM]);
             myBuilder.AddFaceWire(myFaces[FBOTTOM], BottomWire());
 
             // put the parametric curves
             myBuilder.SetPCurve(myEdges[EBOTTOM],
                                 myFaces[FBOTTOM],
-                                new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.X)),
+                                new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)),
                                               MeridianValue(myVMin).X()));
             if (HasSides())
             {
                 myBuilder.SetPCurve(myEdges[EBOTSTART],
                                     myFaces[FBOTTOM],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)));
                 myBuilder.SetPCurve(myEdges[EBOTEND],
                                     myFaces[FBOTTOM],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(Math.Cos(myAngle), Math.Sin(myAngle))));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Math.Cos(myAngle), Math.Sin(myAngle))));
             }
             myBuilder.CompleteFace(myFaces[FBOTTOM]);
             FacesBuilt[FBOTTOM] = true;
@@ -495,8 +499,8 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasSides(), "BRepPrim_OneAxes::StartFace:No side faces");
 
             // build the empty face, perpendicular to myTool.Axes()
-            gp_Ax2 axes = new(myAxes.Location(), myAxes.YDirection().Reversed(), myAxes.XDirection());
-            myBuilder.MakeFace(ref myFaces[FSTART], new gp_Pln(new gp_Ax3(axes)));
+            Frame3D axes = new(myAxes.Location(), myAxes.YDirection().Reversed(), myAxes.XDirection());
+            myBuilder.MakeFace(ref myFaces[FSTART], new Plane3D(new CoordinateSystem(axes)));
 
             // When heights are inverted, the wire traversal direction changes due to the AxisEdge running in the
             // opposite direction. Reverse the face to compensate. For equal heights with open meridian (not closed),
@@ -521,23 +525,23 @@ internal abstract class BRepPrim_OneAxis
             {
                 myBuilder.SetPCurve(myEdges[EAXIS],
                                     myFaces[FSTART],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.Y)));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Direction2D.D.Y)));
             }
 
             // When heights are equal, the pcurves for TopStart and BotStart edges would overlap at Y = height. Use
             // small offsets to separate them.
-            double aPCurveOffset = areHeightsEqual() ? Precision.Confusion() * THE_PCURVE_OFFSET_FACTOR : 0.0;
+            double aPCurveOffset = areHeightsEqual() ? global::Kerf.Engine.Foundation.Precision.Confusion() * THE_PCURVE_OFFSET_FACTOR : 0.0;
             if (EdgesBuilt[ETOPSTART])
             {
                 myBuilder.SetPCurve(myEdges[ETOPSTART],
                                     myFaces[FSTART],
-                                    new gp_Lin2d(new gp_Pnt2d(0, MeridianValue(myVMax).Y() + aPCurveOffset), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, MeridianValue(myVMax).Y() + aPCurveOffset), new Direction2D(Direction2D.D.X)));
             }
             if (EdgesBuilt[EBOTSTART])
             {
                 myBuilder.SetPCurve(myEdges[EBOTSTART],
                                     myFaces[FSTART],
-                                    new gp_Lin2d(new gp_Pnt2d(0, MeridianValue(myVMin).Y() - aPCurveOffset), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, MeridianValue(myVMin).Y() - aPCurveOffset), new Direction2D(Direction2D.D.X)));
             }
             myBuilder.CompleteFace(myFaces[FSTART]);
             FacesBuilt[FSTART] = true;
@@ -554,9 +558,9 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasSides(), "BRepPrim_OneAxes::EndFace:No side faces");
 
             // build the empty face, perpendicular to myTool.Axes()
-            gp_Ax2 axes = new(myAxes.Location(), myAxes.YDirection().Reversed(), myAxes.XDirection());
+            Frame3D axes = new(myAxes.Location(), myAxes.YDirection().Reversed(), myAxes.XDirection());
             axes.Rotate(myAxes.Axis(), myAngle);
-            myBuilder.MakeFace(ref myFaces[FEND], new gp_Pln(new gp_Ax3(axes)));
+            myBuilder.MakeFace(ref myFaces[FEND], new Plane3D(new CoordinateSystem(axes)));
 
             // When heights are inverted, the wire traversal direction changes due to the AxisEdge running in the
             // opposite direction. Don't reverse the face in this case. For equal heights with open meridian (not
@@ -579,23 +583,23 @@ internal abstract class BRepPrim_OneAxis
             {
                 myBuilder.SetPCurve(myEdges[EAXIS],
                                     myFaces[FEND],
-                                    new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(gp_Dir2d.D.Y)));
+                                    new Line2D(new Point2D(0, 0), new Direction2D(Direction2D.D.Y)));
             }
 
             // When heights are equal, the pcurves for TopEnd and BotEnd edges would overlap at Y = height. Use small
             // offsets to separate them.
-            double aPCurveOffset = areHeightsEqual() ? Precision.Confusion() * THE_PCURVE_OFFSET_FACTOR : 0.0;
+            double aPCurveOffset = areHeightsEqual() ? global::Kerf.Engine.Foundation.Precision.Confusion() * THE_PCURVE_OFFSET_FACTOR : 0.0;
             if (EdgesBuilt[ETOPEND])
             {
                 myBuilder.SetPCurve(myEdges[ETOPEND],
                                     myFaces[FEND],
-                                    new gp_Lin2d(new gp_Pnt2d(0, MeridianValue(myVMax).Y() + aPCurveOffset), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, MeridianValue(myVMax).Y() + aPCurveOffset), new Direction2D(Direction2D.D.X)));
             }
             if (EdgesBuilt[EBOTEND])
             {
                 myBuilder.SetPCurve(myEdges[EBOTEND],
                                     myFaces[FEND],
-                                    new gp_Lin2d(new gp_Pnt2d(0, MeridianValue(myVMin).Y() - aPCurveOffset), new gp_Dir2d(gp_Dir2d.D.X)));
+                                    new Line2D(new Point2D(0, MeridianValue(myVMin).Y() - aPCurveOffset), new Direction2D(Direction2D.D.X)));
             }
             myBuilder.CompleteFace(myFaces[FEND]);
             FacesBuilt[FEND] = true;
@@ -851,7 +855,7 @@ internal abstract class BRepPrim_OneAxis
             else
             {
                 // build the empty edge.
-                myBuilder.MakeEdge(ref myEdges[EAXIS], new gp_Lin(myAxes.Axis()));
+                myBuilder.MakeEdge(ref myEdges[EAXIS], new Line3D(myAxes.Axis()));
 
                 // When heights are inverted (VMax is geometrically below VMin), swap the first flags so the edge's
                 // parameter range is increasing: the edge always runs from the geometrically lower vertex up.
@@ -970,10 +974,10 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasTop() || !HasSides(), "BRepPrim_OneAxis::StartTopEdge:no sides or no top");
 
             // build the empty Edge
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(MeridianValue(myVMax).Y());
-            gp_Pnt P = myAxes.Location().Translated(V);
-            myBuilder.MakeEdge(ref myEdges[ETOPSTART], new gp_Lin(P, myAxes.XDirection()));
+            Point3D P = myAxes.Location().Translated(V);
+            myBuilder.MakeEdge(ref myEdges[ETOPSTART], new Line3D(P, myAxes.XDirection()));
 
             myBuilder.AddEdgeVertex(myEdges[ETOPSTART], AxisTopVertex(), 0.0, true);
             myBuilder.AddEdgeVertex(myEdges[ETOPSTART], TopStartVertex(), MeridianValue(myVMax).X(), false);
@@ -993,10 +997,10 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasBottom() || !HasSides(), "BRepPrim_OneAxis::StartBottomEdge:no sides or no top");
 
             // build the empty Edge
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(MeridianValue(myVMin).Y());
-            gp_Pnt P = myAxes.Location().Translated(V);
-            myBuilder.MakeEdge(ref myEdges[EBOTSTART], new gp_Lin(P, myAxes.XDirection()));
+            Point3D P = myAxes.Location().Translated(V);
+            myBuilder.MakeEdge(ref myEdges[EBOTSTART], new Line3D(P, myAxes.XDirection()));
 
             myBuilder.AddEdgeVertex(myEdges[EBOTSTART], BottomStartVertex(), MeridianValue(myVMin).X(), false);
             myBuilder.AddEdgeVertex(myEdges[EBOTSTART], AxisBottomVertex(), 0.0, true);
@@ -1016,10 +1020,10 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasTop() || !HasSides(), "BRepPrim_OneAxis::EndTopEdge:no sides or no top");
 
             // build the empty Edge
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(MeridianValue(myVMax).Y());
-            gp_Pnt P = myAxes.Location().Translated(V);
-            gp_Lin L = new(P, myAxes.XDirection());
+            Point3D P = myAxes.Location().Translated(V);
+            Line3D L = new(P, myAxes.XDirection());
             L.Rotate(myAxes.Axis(), myAngle);
             myBuilder.MakeEdge(ref myEdges[ETOPEND], L);
 
@@ -1041,10 +1045,10 @@ internal abstract class BRepPrim_OneAxis
             Standard_DomainError_Raise_if(!HasBottom() || !HasSides(), "BRepPrim_OneAxis::EndBottomEdge:no sides or no bottom");
 
             // build the empty Edge
-            gp_Vec V = new(myAxes.Direction());
+            Vector3D V = new(myAxes.Direction());
             V.Multiply(MeridianValue(myVMin).Y());
-            gp_Pnt P = myAxes.Location().Translated(V);
-            gp_Lin L = new(P, myAxes.XDirection());
+            Point3D P = myAxes.Location().Translated(V);
+            Line3D L = new(P, myAxes.XDirection());
             L.Rotate(myAxes.Axis(), myAngle);
             myBuilder.MakeEdge(ref myEdges[EBOTEND], L);
 
@@ -1073,11 +1077,11 @@ internal abstract class BRepPrim_OneAxis
                 // build the empty Edge
                 if (!MeridianOnAxis(myVMax))
                 {
-                    gp_Pnt2d mp = MeridianValue(myVMax);
-                    gp_Vec V = new(myAxes.Direction());
+                    Point2D mp = MeridianValue(myVMax);
+                    Vector3D V = new(myAxes.Direction());
                     V.Multiply(mp.Y());
-                    gp_Pnt P = myAxes.Location().Translated(V);
-                    gp_Circ C = new(new gp_Ax2(P, myAxes.Direction(), myAxes.XDirection()), mp.X());
+                    Point3D P = myAxes.Location().Translated(V);
+                    Circle3D C = new(new Frame3D(P, myAxes.Direction(), myAxes.XDirection()), mp.X());
                     myBuilder.MakeEdge(ref myEdges[ETOP], C);
                 }
                 else
@@ -1119,11 +1123,11 @@ internal abstract class BRepPrim_OneAxis
                 // build the empty Edge
                 if (!MeridianOnAxis(myVMin))
                 {
-                    gp_Pnt2d mp = MeridianValue(myVMin);
-                    gp_Vec V = new(myAxes.Direction());
+                    Point2D mp = MeridianValue(myVMin);
+                    Vector3D V = new(myAxes.Direction());
                     V.Multiply(mp.Y());
-                    gp_Pnt P = myAxes.Location().Translated(V);
-                    gp_Circ C = new(new gp_Ax2(P, myAxes.Direction(), myAxes.XDirection()), mp.X());
+                    Point3D P = myAxes.Location().Translated(V);
+                    Circle3D C = new(new Frame3D(P, myAxes.Direction(), myAxes.XDirection()), mp.X());
                     myBuilder.MakeEdge(ref myEdges[EBOTTOM], C);
                 }
                 else
@@ -1174,9 +1178,9 @@ internal abstract class BRepPrim_OneAxis
                 Standard_DomainError_Raise_if(MeridianClosed(), "BRepPrim_OneAxis::AxisTopVertex");
                 Standard_DomainError_Raise_if(VMaxInfinite(), "BRepPrim_OneAxis::AxisTopVertex");
 
-                gp_Vec V = new(myAxes.Direction());
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(MeridianValue(myVMax).Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
+                Point3D P = myAxes.Location().Translated(V);
                 myBuilder.MakeVertex(ref myVertices[VAXISTOP], P);
             }
 
@@ -1210,9 +1214,9 @@ internal abstract class BRepPrim_OneAxis
                 Standard_DomainError_Raise_if(MeridianClosed(), "BRepPrim_OneAxis::AxisBottomVertex");
                 Standard_DomainError_Raise_if(VMinInfinite(), "BRepPrim_OneAxis::AxisBottomVertex");
 
-                gp_Vec V = new(myAxes.Direction());
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(MeridianValue(myVMin).Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
+                Point3D P = myAxes.Location().Translated(V);
                 myBuilder.MakeVertex(ref myVertices[VAXISBOT], P);
             }
 
@@ -1246,11 +1250,11 @@ internal abstract class BRepPrim_OneAxis
             }
             else
             {
-                gp_Pnt2d mp = MeridianValue(myVMax);
-                gp_Vec V = new(myAxes.Direction());
+                Point2D mp = MeridianValue(myVMax);
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(mp.Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
-                V = new gp_Vec(myAxes.XDirection());
+                Point3D P = myAxes.Location().Translated(V);
+                V = new Vector3D(myAxes.XDirection());
                 V.Multiply(mp.X());
                 P.Translate(V);
                 myBuilder.MakeVertex(ref myVertices[VTOPSTART], P);
@@ -1286,11 +1290,11 @@ internal abstract class BRepPrim_OneAxis
             }
             else
             {
-                gp_Pnt2d mp = MeridianValue(myVMax);
-                gp_Vec V = new(myAxes.Direction());
+                Point2D mp = MeridianValue(myVMax);
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(mp.Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
-                V = new gp_Vec(myAxes.XDirection());
+                Point3D P = myAxes.Location().Translated(V);
+                V = new Vector3D(myAxes.XDirection());
                 V.Multiply(mp.X());
                 P.Translate(V);
                 P.Rotate(myAxes.Axis(), myAngle);
@@ -1327,11 +1331,11 @@ internal abstract class BRepPrim_OneAxis
             }
             else
             {
-                gp_Pnt2d mp = MeridianValue(myVMin);
-                gp_Vec V = new(myAxes.Direction());
+                Point2D mp = MeridianValue(myVMin);
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(mp.Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
-                V = new gp_Vec(myAxes.XDirection());
+                Point3D P = myAxes.Location().Translated(V);
+                V = new Vector3D(myAxes.XDirection());
                 V.Multiply(mp.X());
                 P.Translate(V);
                 myBuilder.MakeVertex(ref myVertices[VBOTSTART], P);
@@ -1367,11 +1371,11 @@ internal abstract class BRepPrim_OneAxis
             }
             else
             {
-                gp_Pnt2d mp = MeridianValue(myVMin);
-                gp_Vec V = new(myAxes.Direction());
+                Point2D mp = MeridianValue(myVMin);
+                Vector3D V = new(myAxes.Direction());
                 V.Multiply(mp.Y());
-                gp_Pnt P = myAxes.Location().Translated(V);
-                V = new gp_Vec(myAxes.XDirection());
+                Point3D P = myAxes.Location().Translated(V);
+                V = new Vector3D(myAxes.XDirection());
                 V.Multiply(mp.X());
                 P.Translate(V);
                 P.Rotate(myAxes.Axis(), myAngle);

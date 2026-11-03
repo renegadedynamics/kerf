@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of SurfaceOfLinearExtrusion from Geom to a STEP surface_of_linear_extrusion.</summary>
@@ -27,7 +29,7 @@ public sealed class GeomToStep_MakeSurfaceOfLinearExtrusion : GeomToStep_Root
         StepGeom_Vector aExtrusionAxis;
 
         GeomToStep_MakeCurve MkCurve = new GeomToStep_MakeCurve(S.BasisCurve(), theLocalFactors);
-        GeomToStep_MakeVector MkVector = new GeomToStep_MakeVector(new gp_Vec(S.Direction()), theLocalFactors);
+        GeomToStep_MakeVector MkVector = new GeomToStep_MakeVector(new Vector3D(S.Direction()), theLocalFactors);
 
         aSweptCurve = MkCurve.Value();
         aExtrusionAxis = MkVector.Value();

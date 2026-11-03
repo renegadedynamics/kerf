@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -16,10 +19,10 @@ public sealed class GccAna_Circ2dTanCen
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol;
+    private readonly NCollection_Array1<Circle2D> cirsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<int> TheSame1;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> pararg1;
 
@@ -28,10 +31,10 @@ public sealed class GccAna_Circ2dTanCen
     //========================================================================
     private GccAna_Circ2dTanCen(int theSize)
     {
-        cirsol = new NCollection_Array1<gp_Circ2d>(1, theSize);
+        cirsol = new NCollection_Array1<Circle2D>(1, theSize);
         qualifier1 = new NCollection_Array1<GccEnt_Position>(1, theSize);
         TheSame1 = new NCollection_Array1<int>(1, theSize);
-        pnttg1sol = new NCollection_Array1<gp_Pnt2d>(1, theSize);
+        pnttg1sol = new NCollection_Array1<Point2D>(1, theSize);
         par1sol = new NCollection_Array1<double>(1, theSize);
         pararg1 = new NCollection_Array1<double>(1, theSize);
     }
@@ -50,7 +53,7 @@ public sealed class GccAna_Circ2dTanCen
 
     /// <summary>The circles centred on Pcenter and tangent to the qualified circle.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
-    public GccAna_Circ2dTanCen(in GccEnt_QualifiedCirc Qualified1, in gp_Pnt2d Pcenter, double Tolerance) : this(2)
+    public GccAna_Circ2dTanCen(in GccEnt_QualifiedCirc Qualified1, in Point2D Pcenter, double Tolerance) : this(2)
     {
         NbrSol = 0;
         double Radius = 0.0;
@@ -60,11 +63,11 @@ public sealed class GccAna_Circ2dTanCen
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double Tol = Math.Abs(Tolerance);
-        gp_Circ2d C1 = Qualified1.Qualified();
+        Circle2D C1 = Qualified1.Qualified();
         double R1 = C1.Radius();
-        gp_Pnt2d center1 = C1.Location();
+        Point2D center1 = C1.Location();
         double dist;
         int signe = 0;
         int signe1 = 0;
@@ -107,22 +110,22 @@ public sealed class GccAna_Circ2dTanCen
             if (signe != 0)
             {
                 NbrSol++;
-                cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Pcenter, dirx), Radius);
+                cirsol[NbrSol] = new Circle2D(new Axis2D(Pcenter, dirx), Radius);
                 //     ========================================================
                 qualifier1[NbrSol] = Qualified1.Qualifier();
-                if (dist <= gp.Resolution())
+                if (dist <= Constants.Resolution())
                 {
                     TheSame1[NbrSol] = 1;
                 }
                 else
                 {
                     TheSame1[NbrSol] = 0;
-                    gp_Dir2d d = new(Pcenter.X() - center1.X(), Pcenter.Y() - center1.Y());
-                    pnttg1sol[NbrSol] = new gp_Pnt2d(Pcenter.XY() + signe * Radius * d.XY());
+                    Direction2D d = new(Pcenter.X() - center1.X(), Pcenter.Y() - center1.Y());
+                    pnttg1sol[NbrSol] = new Point2D(Pcenter.XY() + signe * Radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
-                    par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                    pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                    par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                    pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                 }
                 WellDone = true;
             }
@@ -131,7 +134,7 @@ public sealed class GccAna_Circ2dTanCen
         {
             // ====
             dist = Pcenter.Distance(center1);
-            if (dist >= gp.Resolution())
+            if (dist >= Constants.Resolution())
             {
                 signe = 1;
                 for (int i = 1; i <= 2; i++)
@@ -147,7 +150,7 @@ public sealed class GccAna_Circ2dTanCen
                     }
                     Radius = Math.Abs(R1 + signe * dist);
                     NbrSol++;
-                    cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Pcenter, dirx), Radius);
+                    cirsol[NbrSol] = new Circle2D(new Axis2D(Pcenter, dirx), Radius);
                     //       ========================================================
                     double distcc1 = Pcenter.Distance(center1);
                     if (!Qualified1.IsUnqualified())
@@ -168,12 +171,12 @@ public sealed class GccAna_Circ2dTanCen
                     }
                     TheSame1[NbrSol] = 0;
                     WellDone = true;
-                    gp_Dir2d d = new(Pcenter.X() - center1.X(), Pcenter.Y() - center1.Y());
-                    pnttg1sol[NbrSol] = new gp_Pnt2d(Pcenter.XY() + signe1 * Radius * d.XY());
+                    Direction2D d = new(Pcenter.X() - center1.X(), Pcenter.Y() - center1.Y());
+                    pnttg1sol[NbrSol] = new Point2D(Pcenter.XY() + signe1 * Radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
-                    par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                    pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                    par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                    pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                 }
             }
             else
@@ -195,11 +198,11 @@ public sealed class GccAna_Circ2dTanCen
     //=========================================================================
 
     /// <summary>The circle centred on Pcenter and tangent to Linetan.</summary>
-    public GccAna_Circ2dTanCen(in gp_Lin2d Linetan, in gp_Pnt2d Pcenter) : this(1)
+    public GccAna_Circ2dTanCen(in Line2D Linetan, in Point2D Pcenter) : this(1)
     {
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double rayon = Linetan.Distance(Pcenter);
-        cirsol[1] = new gp_Circ2d(new gp_Ax2d(Pcenter, dirx), rayon);
+        cirsol[1] = new Circle2D(new Axis2D(Pcenter, dirx), rayon);
         // ==================================================
         qualifier1[1] = GccEnt_noqualifier;
         TheSame1[1] = 0;
@@ -208,17 +211,17 @@ public sealed class GccAna_Circ2dTanCen
         double xdir = Linetan.Direction().X();
         double ydir = Linetan.Direction().Y();
 
-        if (new gp_Dir2d(xloc - Pcenter.X(), yloc - Pcenter.Y()).Dot(new gp_Dir2d(-ydir, xdir)) > 0.0)
+        if (new Direction2D(xloc - Pcenter.X(), yloc - Pcenter.Y()).Dot(new Direction2D(-ydir, xdir)) > 0.0)
         {
-            pnttg1sol[1] = new gp_Pnt2d(Pcenter.XY() + rayon * new gp_XY(-ydir, xdir));
-            par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-            pararg1[1] = ElCLib.Parameter(Linetan, pnttg1sol[1]);
+            pnttg1sol[1] = new Point2D(Pcenter.XY() + rayon * new Xy(-ydir, xdir));
+            par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+            pararg1[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Linetan, pnttg1sol[1]);
         }
         else
         {
-            pnttg1sol[1] = new gp_Pnt2d(Pcenter.XY() + rayon * new gp_XY(ydir, -xdir));
-            par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-            pararg1[1] = ElCLib.Parameter(Linetan, pnttg1sol[1]);
+            pnttg1sol[1] = new Point2D(Pcenter.XY() + rayon * new Xy(ydir, -xdir));
+            par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+            pararg1[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Linetan, pnttg1sol[1]);
         }
         NbrSol = 1;
         WellDone = true;
@@ -231,17 +234,17 @@ public sealed class GccAna_Circ2dTanCen
     //=========================================================================
 
     /// <summary>The circle centred on Pcenter through Point1.</summary>
-    public GccAna_Circ2dTanCen(in gp_Pnt2d Point1, in gp_Pnt2d Pcenter) : this(1)
+    public GccAna_Circ2dTanCen(in Point2D Point1, in Point2D Pcenter) : this(1)
     {
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double rayon = Point1.Distance(Pcenter);
-        cirsol[1] = new gp_Circ2d(new gp_Ax2d(Pcenter, dirx), rayon);
+        cirsol[1] = new Circle2D(new Axis2D(Pcenter, dirx), rayon);
         // =================================================
         qualifier1[1] = GccEnt_noqualifier;
         TheSame1[1] = 0;
         pnttg1sol[1] = Point1;
         // coincident points give a circle of radius 0 through its centre
-        par1sol[1] = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+        par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
         pararg1[1] = 0.0;
         NbrSol = 1;
         WellDone = true;
@@ -260,11 +263,11 @@ public sealed class GccAna_Circ2dTanCen
     }
 
     /// <summary>The solution number Index (OCCT doesn't check IsDone here).</summary>
-    public gp_Circ2d ThisSolution(int Index)
+    public Circle2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return cirsol[Index];
     }
@@ -277,11 +280,11 @@ public sealed class GccAna_Circ2dTanCen
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -290,16 +293,16 @@ public sealed class GccAna_Circ2dTanCen
     }
 
     /// <summary>The tangency point of the solution number Index with the argument, and its parameters.</summary>
-    /// <exception cref="StdFail_NotDone">The solution is the argument itself (IsTheSame1).</exception>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The solution is the argument itself (IsTheSame1).</exception>
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -311,7 +314,7 @@ public sealed class GccAna_Circ2dTanCen
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
@@ -321,12 +324,12 @@ public sealed class GccAna_Circ2dTanCen
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame1[Index] == 0)

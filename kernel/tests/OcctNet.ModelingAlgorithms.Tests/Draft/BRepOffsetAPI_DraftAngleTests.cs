@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.Draft_ErrorStatus;
 using static Occt.TopAbs_ShapeEnum;
@@ -16,13 +18,13 @@ public class BRepOffsetAPI_DraftAngleTests
     private static List<TopoDS_Shape> Faces(in TopoDS_Shape theShape) =>
         BRepOffset_MakeOffsetTests.SubShapes(theShape, TopAbs_FACE);
 
-    private static TopoDS_Face FaceWithNormal(in TopoDS_Shape theShape, gp_Dir theNormal)
+    private static TopoDS_Face FaceWithNormal(in TopoDS_Shape theShape, Direction3D theNormal)
     {
         foreach (TopoDS_Shape aF in Faces(theShape))
         {
             if (BRep_Tool.Surface(TopoDS.Face(aF)) is Geom_Plane aPlane)
             {
-                gp_Dir aN = aPlane.Pln().Axis().Direction();
+                Direction3D aN = aPlane.Pln().Axis().Direction();
                 if (aF.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
                 {
                     aN.Reverse();
@@ -40,17 +42,17 @@ public class BRepOffsetAPI_DraftAngleTests
     public void Angle_OfPlanesAndCones()
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Face aSide = FaceWithNormal(aBox, new gp_Dir(1, 0, 0));
-        Assert.Equal(0.0, Draft.Angle(aSide, new gp_Dir(0, 0, 1)), 12);
-        TopoDS_Face aTop = FaceWithNormal(aBox, new gp_Dir(0, 0, 1));
-        Assert.Equal(Math.PI / 2, Draft.Angle(aTop, new gp_Dir(0, 0, 1)), 12);
+        TopoDS_Face aSide = FaceWithNormal(aBox, new Direction3D(1, 0, 0));
+        Assert.Equal(0.0, Draft.Angle(aSide, new Direction3D(0, 0, 1)), 12);
+        TopoDS_Face aTop = FaceWithNormal(aBox, new Direction3D(0, 0, 1));
+        Assert.Equal(Math.PI / 2, Draft.Angle(aTop, new Direction3D(0, 0, 1)), 12);
 
         TopoDS_Shape aCone = new BRepPrimAPI_MakeCone(5, 3, 10).Shape();
         TopoDS_Face aLateral = TopoDS.Face(Faces(aCone).First(f => BRep_Tool.Surface(TopoDS.Face(f)) is Geom_ConicalSurface));
-        double anAngle = Draft.Angle(aLateral, new gp_Dir(0, 0, 1));
+        double anAngle = Draft.Angle(aLateral, new Direction3D(0, 0, 1));
         Assert.Equal(Math.Atan2(2, 10), anAngle, 9);
 
-        Assert.Throws<Standard_DomainError>(() => Draft.Angle(aLateral, new gp_Dir(1, 0, 0)));
+        Assert.Throws<DomainErrorException>(() => Draft.Angle(aLateral, new Direction3D(1, 0, 0)));
     }
 
     [Fact]
@@ -58,10 +60,10 @@ public class BRepOffsetAPI_DraftAngleTests
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        TopoDS_Face aSide = FaceWithNormal(aBox, new gp_Dir(1, 0, 0));
+        TopoDS_Face aSide = FaceWithNormal(aBox, new Direction3D(1, 0, 0));
 
         var aDraft = new BRepOffsetAPI_DraftAngle(aBox);
-        aDraft.Add(aSide, new gp_Dir(0, 0, 1), 10.0 * Math.PI / 180.0, new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        aDraft.Add(aSide, new Direction3D(0, 0, 1), 10.0 * Math.PI / 180.0, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         Assert.True(aDraft.AddDone());
         aDraft.Build();
         Assert.True(aDraft.IsDone());
@@ -78,7 +80,7 @@ public class BRepOffsetAPI_DraftAngleTests
         // History: the side is generated into its drafted face, the bottom and the far side are the caller's faces.
         Assert.Single(aDraft.Generated(aSide));
         Assert.True(aDraft.Modified(aSide).Count == 0);
-        TopoDS_Face aFar = FaceWithNormal(aBox, new gp_Dir(-1, 0, 0));
+        TopoDS_Face aFar = FaceWithNormal(aBox, new Direction3D(-1, 0, 0));
         Assert.Contains(Faces(aResult), f => f.IsSame(aFar));
         Assert.Single(aDraft.ModifiedFaces());
         Assert.Single(aDraft.ConnectedFaces(aSide));
@@ -92,7 +94,7 @@ public class BRepOffsetAPI_DraftAngleTests
         TopoDS_Face aLateral = TopoDS.Face(Faces(aCyl).First(f => BRep_Tool.Surface(TopoDS.Face(f)) is Geom_CylindricalSurface));
 
         var aDraft = new BRepOffsetAPI_DraftAngle(aCyl);
-        aDraft.Add(aLateral, new gp_Dir(0, 0, 1), 5.0 * Math.PI / 180.0, new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        aDraft.Add(aLateral, new Direction3D(0, 0, 1), 5.0 * Math.PI / 180.0, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         Assert.True(aDraft.AddDone());
         aDraft.Build();
         Assert.True(aDraft.IsDone());
@@ -118,13 +120,13 @@ public class BRepOffsetAPI_DraftAngleTests
         TopoDS_Face aFace = TopoDS.Face(Faces(aSphere)[0]);
 
         var aDraft = new BRepOffsetAPI_DraftAngle(aSphere);
-        aDraft.Add(aFace, new gp_Dir(0, 0, 1), 0.1, new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        aDraft.Add(aFace, new Direction3D(0, 0, 1), 0.1, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         Assert.False(aDraft.AddDone());
         Assert.Equal(Draft_FaceRecomputation, aDraft.Status());
         Assert.True(aDraft.ProblematicShape().IsSame(aFace));
-        Assert.Throws<Standard_ConstructionError>(() => aDraft.Build());
+        Assert.Throws<ConstructionErrorException>(() => aDraft.Build());
         // OCCT: the face that failed was never added, so Remove can't take it back (occt-issues.md, unit 7G).
-        Assert.Throws<Standard_NoSuchObject>(() => aDraft.Remove(aFace));
+        Assert.Throws<NoSuchObjectException>(() => aDraft.Remove(aFace));
         aDraft.Clear();
         Assert.True(aDraft.AddDone());
     }
@@ -134,8 +136,8 @@ public class BRepOffsetAPI_DraftAngleTests
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
         var aDraft = new BRepOffsetAPI_DraftAngle(aBox);
-        aDraft.Add(FaceWithNormal(aBox, new gp_Dir(1, 0, 0)), new gp_Dir(0, 0, 1), 1.0e-5,
-                   new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        aDraft.Add(FaceWithNormal(aBox, new Direction3D(1, 0, 0)), new Direction3D(0, 0, 1), 1.0e-5,
+                   new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         Assert.True(aDraft.AddDone());
         aDraft.Build();
         Assert.True(aDraft.IsDone());
@@ -147,8 +149,8 @@ public class BRepOffsetAPI_DraftAngleTests
     {
         var aDraft = new BRepOffsetAPI_DraftAngle();
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        Assert.Throws<Standard_NullObject>(() => aDraft.Add(TopoDS.Face(Faces(aBox)[0]), new gp_Dir(0, 0, 1), 0.1,
-                                                             new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))));
+        Assert.Throws<NullObjectException>(() => aDraft.Add(TopoDS.Face(Faces(aBox)[0]), new Direction3D(0, 0, 1), 0.1,
+                                                             new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
     }
 
     [Fact]
@@ -156,14 +158,14 @@ public class BRepOffsetAPI_DraftAngleTests
     {
         // A cylinder cut by a small box across its seam (u = 0, the +X side), with its top face drafted.
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(3, -1, 4), new gp_Pnt(7, 1, 6)).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(3, -1, 4), new Point3D(7, 1, 6)).Shape();
         TopoDS_Shape aCut = new BRepAlgoAPI_Cut(aCyl, aBox).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCut);
         // The top face is drafted: the lateral face keeps its surface, and its hole wire is the caller's.
-        TopoDS_Face aTop = FaceWithNormal(aCut, new gp_Dir(0, 0, 1));
+        TopoDS_Face aTop = FaceWithNormal(aCut, new Direction3D(0, 0, 1));
 
         var aDraft = new BRepOffsetAPI_DraftAngle(aCut);
-        aDraft.Add(aTop, new gp_Dir(1, 0, 0), 5.0 * Math.PI / 180.0, new gp_Pln(new gp_Pnt(0, 0, 10), new gp_Dir(1, 0, 0)));
+        aDraft.Add(aTop, new Direction3D(1, 0, 0), 5.0 * Math.PI / 180.0, new Plane3D(new Point3D(0, 0, 10), new Direction3D(1, 0, 0)));
         Assert.True(aDraft.AddDone());
         aDraft.Build();
         aSnap.AssertUnchanged(aCut);
@@ -172,7 +174,7 @@ public class BRepOffsetAPI_DraftAngleTests
         Assert.True(BRepOffset_MakeOffsetTests.AllFrozen(aResult));
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         // the caller's bottom face (untouched by the draft) is in the result
-        TopoDS_Face aBottom = FaceWithNormal(aCut, new gp_Dir(0, 0, -1));
+        TopoDS_Face aBottom = FaceWithNormal(aCut, new Direction3D(0, 0, -1));
         Assert.Contains(Faces(aResult), f => f.IsSame(aBottom));
     }
 }

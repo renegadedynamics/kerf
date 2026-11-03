@@ -4,13 +4,14 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_SpKP;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -58,8 +59,8 @@ public partial class ChFi3d_Builder
         double wtg = SD.InterferenceOnS1().Parameter(isfirst);
         bool bid = false;
         double wsp = ParamOnSpine(DStr, wtg, SD, Spine, iedge, false, false, tolesp, ref bid);
-        gp_Pnt ped = new(), psp = new();
-        gp_Vec ded = new(), dsp = new();
+        Point3D ped = new(), psp = new();
+        Vector3D ded = new(), dsp = new();
         TopoDS_Vertex bout1 = new(), bout2 = new(), boutemp = new();
 
         BRepAdaptor_Curve bc = Spine.CurrentElementarySpine(iedge);
@@ -89,9 +90,9 @@ public partial class ChFi3d_Builder
             ded.Reverse();
         }
         Spine.D1(wsp, out psp, out dsp);
-        gp_Pnt p1 = new(), p2 = new();
+        Point3D p1 = new(), p2 = new();
         Geom_Surface? surf = DStr.Surface(SD.Surf()).Surface();
-        gp_Pnt2d pp1 = new(), pp2 = new();
+        Point2D pp1 = new(), pp2 = new();
         pp1 = SD.InterferenceOnS1().PCurveOnSurf().Value(wtg);
         pp2 = SD.InterferenceOnS2().PCurveOnSurf().Value(wtg);
         p1 = surf.Value(pp1.X(), pp1.Y());
@@ -197,7 +198,7 @@ public partial class ChFi3d_Builder
     {
         // The hatching of each faces is started by tangency lines.
 
-        double pitol = Precision.PIntersection();
+        double pitol = global::Kerf.Engine.Foundation.Precision.PIntersection();
 
         NCollection_DataMap<int, Adaptor2d_Curve2d> M1 = new(), M2 = new();
         int iH1 = 0, iH2 = 0;
@@ -320,7 +321,7 @@ public partial class ChFi3d_Builder
             // It is checked if the point 2d of the degenerated edge is in the face.
             if (C1 is null)
             {
-                gp_Pnt2d p2d1 = CD.Get2dPoints(false, 1);
+                Point2D p2d1 = CD.Get2dPoints(false, 1);
                 TopAbs_State situ = I1.Classify(p2d1, 1.0e-8, false);
                 if (situ == TopAbs_OUT)
                 {
@@ -374,7 +375,7 @@ public partial class ChFi3d_Builder
             // It is checked if the point 2d of the degenerated is in the face.
             if (C2 is null)
             {
-                gp_Pnt2d p2d2 = CD.Get2dPoints(false, 2);
+                Point2D p2d2 = CD.Get2dPoints(false, 2);
                 TopAbs_State situ = I2.Classify(p2d2, 1.0e-8, false);
                 if (situ == TopAbs_OUT)
                 {
@@ -927,7 +928,7 @@ internal static class ChFi3d_Builder_SpKP
             V = TopExp.LastVertex(arc);
         }
         FilPoint.SetVertex(V);
-        FilPoint.SetArc(Precision.PIntersection(), arc, PE.Parameter(), TopAbs.Compose(arc.Orientation(), Or));
+        FilPoint.SetArc(global::Kerf.Engine.Foundation.Precision.PIntersection(), arc, PE.Parameter(), TopAbs.Compose(arc.Orientation(), Or));
     }
 
     internal static ChFiDS_FaceInterference CpInterf(TopOpeBRepDS_DataStructure DStr, in ChFiDS_FaceInterference FI)
@@ -990,8 +991,8 @@ internal static class ChFi3d_Builder_SpKP
             return false;
         }
 
-        f = ElCLib.InPeriod(f, wref - pitol, wref + period - pitol);
-        l = ElCLib.InPeriod(l, wref + pitol, wref + period + pitol);
+        f = global::Kerf.Engine.Geometry.ElCLib.InPeriod(f, wref - pitol, wref + period - pitol);
+        l = global::Kerf.Engine.Geometry.ElCLib.InPeriod(l, wref + pitol, wref + period + pitol);
         if (l < f)
         {
             f -= period;
@@ -1004,9 +1005,9 @@ internal static class ChFi3d_Builder_SpKP
     {
         switch (C.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return U;
-            case GeomAbs_Circle:
+            case Circle:
                 return C.Circle().Radius() * U;
             default:
                 return 0;
@@ -1028,8 +1029,8 @@ internal static class ChFi3d_Builder_SpKP
         else
         {
             // construction of the plane containing the section of CD with parameter ptg.
-            gp_Pnt PP = new();
-            gp_Vec VV = new();
+            Point3D PP = new();
+            Vector3D VV = new();
             Geom_Curve? c3d = null;
             if (CD.InterferenceOnS1().LineIndex() != 0)
             {
@@ -1041,7 +1042,7 @@ internal static class ChFi3d_Builder_SpKP
             }
             c3d.D1(ptg, out PP, out VV);
 
-            gp_Pln nlp = new(PP, new gp_Dir(VV));
+            Plane3D nlp = new(PP, new Direction3D(VV));
             Geom_Plane? pln = new Geom_Plane(nlp);
             GeomAdaptor_Surface? plan = new GeomAdaptor_Surface(pln);
 
@@ -1080,7 +1081,7 @@ internal static class ChFi3d_Builder_SpKP
                 CE.Initialize(Spine.Edges(ii));
                 double tolc = CE.Resolution(tol);
                 found = ChFi3d_InterPlaneEdge(plan, HE, ref Nl, First, tolc);
-                gp_Pnt point = CE.Value(Nl);
+                Point3D point = CE.Value(Nl);
                 if (found)
                 {
                     Nl = Spine.Absc(Nl, ii);

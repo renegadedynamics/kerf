@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Blend_DecrochStatus;
 using static Occt.BlendFunc_SectionShape;
 
@@ -25,23 +29,23 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     private readonly Adaptor3d_CurveOnSurface cons2;
     private readonly Adaptor3d_Curve guide;
     private Adaptor3d_Curve tguide;
-    private gp_Pnt ptrst1;
-    private gp_Pnt ptrst2;
-    private gp_Pnt2d pt2drst1;
-    private gp_Pnt2d pt2drst2;
+    private Point3D ptrst1;
+    private Point3D ptrst2;
+    private Point2D pt2drst1;
+    private Point2D pt2drst2;
     private double prmrst1;
     private double prmrst2;
     private bool istangent;
-    private gp_Vec tgrst1;
-    private gp_Vec2d tg2drst1;
-    private gp_Vec tgrst2;
-    private gp_Vec2d tg2drst2;
+    private Vector3D tgrst1;
+    private Vector2D tg2drst1;
+    private Vector3D tgrst2;
+    private Vector2D tg2drst2;
     private double ray;
     private int choix;
-    private gp_Pnt ptgui;
-    private gp_Vec d1gui;
-    private gp_Vec d2gui;
-    private gp_Vec nplan;
+    private Point3D ptgui;
+    private Vector3D d1gui;
+    private Vector3D d2gui;
+    private Vector3D nplan;
     private double normtg;
     private double theD;
     private Adaptor3d_Surface? surfref1;
@@ -53,9 +57,9 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     private double distmin;
     private BlendFunc_SectionShape mySShape;
     // OCCT leaves myTConv uninitialised until GetShape sets it; here it starts at its first value.
-    private Convert_ParameterisationType myTConv;
+    private ParameterisationType myTConv;
 
-    private static void t3dto2d(out double a, out double b, in gp_Vec A, in gp_Vec B, in gp_Vec C)
+    private static void t3dto2d(out double a, out double b, in Vector3D A, in Vector3D B, in Vector3D C)
     {
         double AB = A.Dot(B);
         double AC = A.Dot(C);
@@ -112,9 +116,9 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec d11, d21;
+        Vector3D d11, d21;
 
         cons1.D1(X[1], out ptrst1, out d11);
         cons2.D1(X[2], out ptrst2, out d21);
@@ -128,7 +132,7 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         Value(X, F);
         Derivatives(X, D);
@@ -180,10 +184,10 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     public override bool IsSolution(math_Vector Sol, double Tol)
     {
         math_Vector valsol = new(1, 2), secmember = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
 
-        gp_Vec dnplan = new(), d1urst1, d1vrst1, d1urst2, d1vrst2, d11, d21, temp = new();
-        gp_Pnt bid;
+        Vector3D dnplan = new(), d1urst1, d1vrst1, d1urst2, d1vrst2, d11, d21, temp = new();
+        Point3D bid;
 
         double Cosa, Sina, Angle;
 
@@ -208,17 +212,17 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
             temp.SetXYZ(ptrst2.XYZ() - ptgui.XYZ());
             secmember[2] = normtg - dnplan.Dot(temp);
 
-            math_Gauss Resol = new(gradsol);
+            Gauss Resol = new(gradsol);
 
-            if (Resol.IsDone())
+            if (Resol.IsDone)
             {
                 Resol.Solve(secmember);
                 istangent = false;
             }
             else
             {
-                math_SVD SingRS = new(gradsol);
-                if (SingRS.IsDone())
+                Svd SingRS = new(gradsol);
+                if (SingRS.IsDone)
                 {
                     // OCCT: DEDT has 3 entries for this 2x2 system; native's release build (its dimension checks
                     // compiled out) copies secmember's 2 and solves on them, as here.
@@ -247,8 +251,8 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
                 tg2drst2.SetCoord(a, b);
             }
 
-            gp_Pnt Center = new();
-            gp_Vec NotUsed;
+            Point3D Center = new();
+            Vector3D NotUsed;
             bool IsCenter;
 
             IsCenter = CenterCircleRst1Rst2(ptrst1, ptrst2, nplan, ref Center, out NotUsed);
@@ -258,7 +262,7 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
                 return false;
             }
 
-            gp_Vec n1 = new(Center, ptrst1), n2 = new(Center, ptrst2);
+            Vector3D n1 = new(Center, ptrst1), n2 = new(Center, ptrst2);
 
             n1.Normalize();
             n2.Normalize();
@@ -298,13 +302,13 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         return distmin;
     }
 
-    public override gp_Pnt PointOnRst1() => ptrst1;
+    public override Point3D PointOnRst1() => ptrst1;
 
-    public override gp_Pnt PointOnRst2() => ptrst2;
+    public override Point3D PointOnRst2() => ptrst2;
 
-    public override gp_Pnt2d Pnt2dOnRst1() => pt2drst1;
+    public override Point2D Pnt2dOnRst1() => pt2drst1;
 
-    public override gp_Pnt2d Pnt2dOnRst2() => pt2drst2;
+    public override Point2D Pnt2dOnRst2() => pt2drst2;
 
     public override double ParameterOnRst1() => prmrst1;
 
@@ -312,49 +316,49 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
 
     public override bool IsTangencyPoint() => istangent;
 
-    public override gp_Vec TangentOnRst1()
+    public override Vector3D TangentOnRst1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tgrst1;
     }
 
-    public override gp_Vec2d Tangent2dOnRst1()
+    public override Vector2D Tangent2dOnRst1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tg2drst1;
     }
 
-    public override gp_Vec TangentOnRst2()
+    public override Vector3D TangentOnRst2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tgrst2;
     }
 
-    public override gp_Vec2d Tangent2dOnRst2()
+    public override Vector2D Tangent2dOnRst2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tg2drst2;
     }
 
     /// <summary>Which of the restrictions the section at <paramref name="Sol"/> leaves its reference surface on.</summary>
-    public override Blend_DecrochStatus Decroch(math_Vector Sol, out gp_Vec NRst1, out gp_Vec TgRst1,
-                                                out gp_Vec NRst2, out gp_Vec TgRst2)
+    public override Blend_DecrochStatus Decroch(math_Vector Sol, out Vector3D NRst1, out Vector3D TgRst1,
+                                                out Vector3D NRst2, out Vector3D TgRst2)
     {
-        gp_Vec NRst1InPlane = new(), NRst2InPlane = new();
-        gp_Pnt PtTmp1, PtTmp2, Center = new();
-        gp_Vec d1u, d1v, centptrst = new(), NotUsed;
+        Vector3D NRst1InPlane = new(), NRst2InPlane = new();
+        Point3D PtTmp1, PtTmp2, Center = new();
+        Vector3D d1u, d1v, centptrst = new(), NotUsed;
         double norm, unsurnorm;
         double u, v;
 
@@ -444,11 +448,11 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     /// <paramref name="np"/>: false if they are too far apart. <paramref name="Center"/> is written only on success;
     /// <paramref name="VdMed"/> is the direction of the perpendicular bisector.
     /// </summary>
-    public bool CenterCircleRst1Rst2(in gp_Pnt PtRst1, in gp_Pnt PtRst2, in gp_Vec np, ref gp_Pnt Center,
-                                     out gp_Vec VdMed)
+    public bool CenterCircleRst1Rst2(in Point3D PtRst1, in Point3D PtRst2, in Vector3D np, ref Point3D Center,
+                                     out Vector3D VdMed)
     {
-        gp_Vec rst1rst2 = new(PtRst1, PtRst2);
-        gp_Vec vdmedNor; // directing vector of the perpendicular bisector
+        Vector3D rst1rst2 = new(PtRst1, PtRst2);
+        Vector3D vdmedNor; // directing vector of the perpendicular bisector
         double norm2;
         double Dist; // distance between the middle of PtRst1,PtRst2 and Center
 
@@ -482,10 +486,10 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
     }
 
     /// <summary>The circular section at <paramref name="Param"/> through the points U and V, and its bounds.</summary>
-    public void Section(double Param, double U, double V, out double Pdeb, out double Pfin, ref gp_Circ C)
+    public void Section(double Param, double U, double V, out double Pdeb, out double Pfin, ref Circle3D C)
     {
-        gp_Vec ns, np, NotUsed;
-        gp_Pnt Center = new();
+        Vector3D ns, np, NotUsed;
+        Point3D Center = new();
 
         tguide.D1(Param, out ptgui, out d1gui);
         np = d1gui.Normalized();
@@ -495,27 +499,27 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         CenterCircleRst1Rst2(ptrst1, ptrst2, np, ref Center, out NotUsed);
 
         C.SetRadius(Math.Abs(ray));
-        ns = new gp_Vec(Center, ptrst1).Normalized();
+        ns = new Vector3D(Center, ptrst1).Normalized();
 
         if (choix % 2 != 0)
         {
             np.Reverse();
         }
 
-        C.SetPosition(new gp_Ax2(Center, new gp_Dir(np), new gp_Dir(ns)));
+        C.SetPosition(new Frame3D(Center, new Direction3D(np), new Direction3D(ns)));
         Pdeb = 0; // ElCLib::Parameter(C, pts);
-        Pfin = ElCLib.Parameter(C, ptrst2);
+        Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, ptrst2);
 
         // Test of angles negative and almost null : Special Case
         if (Pfin > 1.5 * M_PI)
         {
             np.Reverse();
-            C.SetPosition(new gp_Ax2(Center, new gp_Dir(np), new gp_Dir(ns)));
-            Pfin = ElCLib.Parameter(C, ptrst2);
+            C.SetPosition(new Frame3D(Center, new Direction3D(np), new Direction3D(ns)));
+            Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, ptrst2);
         }
-        if (Pfin < Precision.PConfusion())
+        if (Pfin < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            Pfin += Precision.PConfusion();
+            Pfin += global::Kerf.Engine.Foundation.Precision.PConfusion();
         }
     }
 
@@ -535,12 +539,12 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         // It is supposed that it does not depend on the Radius!
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return guide.NbIntervals(BlendFunc.NextShape(S));
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         guide.Intervals(T, BlendFunc.NextShape(S));
     }
@@ -574,11 +578,11 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         GeomFill.Mults(myTConv, TMults);
     }
 
-    public override void Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weights)
+    public override void Section(in Blend_Point P, NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weights)
     {
-        gp_Vec ns, ns2, NotUsed;
-        gp_Pnt Center = new();
+        Vector3D ns, ns2, NotUsed;
+        Point3D Center = new();
         double u, v;
 
         double prm = P.Parameter();
@@ -591,8 +595,8 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         u = P.ParameterOnC1();
         v = P.ParameterOnC2();
 
-        gp_Pnt2d pt2d1 = rst1.Value(u);
-        gp_Pnt2d pt2d2 = rst2.Value(v);
+        Point2D pt2d1 = rst1.Value(u);
+        Point2D pt2d2 = rst2.Value(v);
 
         ptrst1 = cons1.Value(u);
         ptrst2 = cons2.Value(v);
@@ -615,8 +619,8 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         CenterCircleRst1Rst2(ptrst1, ptrst2, nplan, ref Center, out NotUsed);
 
         // normals to the section with points
-        ns = new gp_Vec(Center, ptrst1).Normalized();
-        ns2 = new gp_Vec(Center, ptrst2).Normalized();
+        ns = new Vector3D(Center, ptrst1).Normalized();
+        ns2 = new Vector3D(Center, ptrst2).Normalized();
 
         if (choix % 2 != 0)
         {
@@ -626,20 +630,20 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         GeomFill.GetCircle(myTConv, ns, ns2, nplan, ptrst1, ptrst2, Math.Abs(ray), Center, Poles, Weights);
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
-        gp_Vec d11, d21;
-        gp_Vec dnplan = new(), d1n1 = new(), d1n2 = new();
-        gp_Vec temp = new(), tgct = new();
-        gp_Vec d1urst, d1vrst;
-        gp_Pnt Center = new(), NotUsed;
+        Vector3D d11, d21;
+        Vector3D dnplan = new(), d1n1 = new(), d1n2 = new();
+        Vector3D temp = new(), tgct = new();
+        Vector3D d1urst, d1vrst;
+        Point3D Center = new(), NotUsed;
 
         double norm2, normmed, Dist;
 
         math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
 
         double prm = P.Parameter();
         int low = Poles.Lower();
@@ -667,17 +671,17 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         temp.SetXYZ(ptrst2.XYZ() - ptgui.XYZ());
         secmember[2] = normtg - dnplan.Dot(temp);
 
-        math_Gauss Resol = new(gradsol, 1.0e-9);
+        Gauss Resol = new(gradsol, 1.0e-9);
 
-        if (Resol.IsDone())
+        if (Resol.IsDone)
         {
             istgt = false;
             Resol.Solve(secmember);
         }
         else
         {
-            math_SVD SingRS = new(gradsol);
-            if (SingRS.IsDone())
+            Svd SingRS = new(gradsol);
+            if (SingRS.IsDone)
             {
                 math_Vector DEDT = new(1, 2);
                 DEDT.Initialized(secmember);
@@ -690,8 +694,8 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
             }
         }
 
-        gp_Vec med;
-        gp_Vec rst1rst2 = new(ptrst1, ptrst2);
+        Vector3D med;
+        Vector3D rst1rst2 = new(ptrst1, ptrst2);
         bool IsCenter;
 
         IsCenter = CenterCircleRst1Rst2(ptrst1, ptrst2, nplan, ref Center, out med);
@@ -702,7 +706,7 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
 
         normmed = med.Magnitude();
         med.Normalize();
-        gp_Vec n1 = new(Center, ptrst1), n2 = new(Center, ptrst2);
+        Vector3D n1 = new(Center, ptrst1), n2 = new(Center, ptrst2);
         n1.Normalize();
         n2.Normalize();
 
@@ -712,7 +716,7 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
             tgrst1 = secmember[1] * d11;
             tgrst2 = secmember[2] * d21;
 
-            gp_Vec d1rst1rst2;
+            Vector3D d1rst1rst2;
 
             norm2 = rst1rst2.SquareMagnitude();
             d1rst1rst2 = tgrst2 - tgrst1;
@@ -720,7 +724,7 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
 
             if (Dist > 1.0E-07)
             {
-                gp_Vec d1P1P2CrosNp, dmed;
+                Vector3D d1P1P2CrosNp, dmed;
                 d1P1P2CrosNp = d1rst1rst2.Crossed(nplan) + rst1rst2.Crossed(dnplan);
                 // derivative of the perpendicular bisector
                 dmed = d1P1P2CrosNp - med.Dot(d1P1P2CrosNp) * med;
@@ -811,9 +815,9 @@ public class BRepBlend_RstRstConstRad : Blend_RstRstFunction
         }
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weigths, NCollection_Array1<double> DWeigths,
                                  NCollection_Array1<double> D2Weigths)
     {

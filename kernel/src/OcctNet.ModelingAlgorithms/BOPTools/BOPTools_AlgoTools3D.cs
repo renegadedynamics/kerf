@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -36,8 +39,8 @@ public static class BOPTools_AlgoTools3D
         double aTol, a, b, aT, anU, dU, anU1;
         double aScPr, anV, dV, anV1;
         double aUmin, aUmax, aVmin, aVmax;
-        gp_Pnt2d aP2D;
-        gp_Vec2d aVec2D;
+        Point2D aP2D;
+        Vector2D aVec2D;
         Geom2d_Curve aTmpC1, aTmpC2;
         Geom2d_Curve C2D1;
         Geom_Surface aS;
@@ -120,7 +123,7 @@ public static class BOPTools_AlgoTools3D
         //
         aT = BOPTools_AlgoTools2D.IntermediatePoint(a, b);
         C2D1.D1(aT, out aP2D, out aVec2D);
-        gp_Dir2d aDir2D1 = new(aVec2D), aDOX = new(gp_Dir2d.D.NX), aDOY = new(gp_Dir2d.D.Y);
+        Direction2D aDir2D1 = new(aVec2D), aDOX = new(Direction2D.D.NX), aDOY = new(Direction2D.D.Y);
         //
         anU = aP2D.X();
         anV = aP2D.Y();
@@ -172,7 +175,7 @@ public static class BOPTools_AlgoTools3D
         //
         aTmpC2 = (Geom2d_Curve)C2D1.Copy();
         Geom2d_TrimmedCurve aC2 = new(aTmpC2, a, b);
-        gp_Vec2d aTrV = new(anU1 - anU, anV1 - anV);
+        Vector2D aTrV = new(anU1 - anU, anV1 - anV);
         aC2.Translate(aTrV);
         //
         if (!bIsLeft)
@@ -236,7 +239,7 @@ public static class BOPTools_AlgoTools3D
             BRep_Tool.CurveOnSurface(TopoDS.Edge(theEOrigin.Oriented(TopAbs_REVERSED)), aFace, out aT1, out aT2)!;
 
         double aT = BOPTools_AlgoTools2D.IntermediatePoint(aTS1, aTS2);
-        aC2DSplit.D1(aT, out gp_Pnt2d aPMid, out gp_Vec2d aVTgt);
+        aC2DSplit.D1(aT, out Point2D aPMid, out Vector2D aVTgt);
 
         // project on original 2d curves
         Geom2dAPI_ProjectPointOnCurve aProjPC1 = new(), aProjPC2 = new();
@@ -251,13 +254,13 @@ public static class BOPTools_AlgoTools3D
         double aDist1 = aProjPC1.NbPoints() != 0 ? aProjPC1.LowerDistance() : RealLast();
         double aDist2 = aProjPC2.NbPoints() != 0 ? aProjPC2.LowerDistance() : RealLast();
 
-        if (aDist1 > Precision.PConfusion() && aDist2 > Precision.PConfusion())
+        if (aDist1 > global::Kerf.Engine.Foundation.Precision.PConfusion() && aDist2 > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
 
         // choose the closest and take corresponding point from the opposite
-        gp_Pnt2d aNewPnt = aDist1 < aDist2 ? aC2D2.Value(aProjPC1.LowerDistanceParameter())
+        Point2D aNewPnt = aDist1 < aDist2 ? aC2D2.Value(aProjPC1.LowerDistanceParameter())
                                            : aC2D1.Value(aProjPC2.LowerDistanceParameter());
 
         Geom2d_Curve aTmpC1 = (Geom2d_Curve)aC2DSplit.Copy();
@@ -266,10 +269,10 @@ public static class BOPTools_AlgoTools3D
         Geom2d_TrimmedCurve aC1 = new(aTmpC1, aTS1, aTS2);
         Geom2d_TrimmedCurve aC2 = new(aTmpC2, aTS1, aTS2);
 
-        gp_Vec2d aTrVec = new(aPMid, aNewPnt);
+        Vector2D aTrVec = new(aPMid, aNewPnt);
         aC2.Translate(aTrVec);
 
-        gp_Vec2d aVTgtOrigin;
+        Vector2D aVTgtOrigin;
         if (aDist1 < aDist2)
         {
             aC2D1.D1(aProjPC1.LowerDistanceParameter(), out _, out aVTgtOrigin);
@@ -296,7 +299,7 @@ public static class BOPTools_AlgoTools3D
     /// The normal of the face's surface at the edge's intermediate point (through the edge's pcurve), reversed for a
     /// REVERSED face.
     /// </summary>
-    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, out gp_Dir aDNF, IntTools_Context? theContext = null)
+    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, out Direction3D aDNF, IntTools_Context? theContext = null)
     {
         double aT;
 
@@ -315,11 +318,11 @@ public static class BOPTools_AlgoTools3D
     /// The normal of the face's surface (DU ^ DV, whatever the face's orientation) at the parameter of the edge,
     /// through the edge's pcurve (made if missing).
     /// </summary>
-    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF1, double aT, out gp_Dir aDNF1,
+    public static void GetNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF1, double aT, out Direction3D aDNF1,
                                              IntTools_Context? theContext = null)
     {
         double U, V;
-        gp_Pnt2d aP2D;
+        Point2D aP2D;
 
         Geom_Surface aS1 = BRep_Tool.Surface(aF1)!;
 
@@ -329,9 +332,9 @@ public static class BOPTools_AlgoTools3D
         U = aP2D.X();
         V = aP2D.Y();
 
-        aS1.D1(U, V, out _, out gp_Vec aD1U, out gp_Vec aD1V);
-        gp_Dir aDD1U = new(aD1U);
-        gp_Dir aDD1V = new(aD1V);
+        aS1.D1(U, V, out _, out Vector3D aD1U, out Vector3D aD1V);
+        Direction3D aDD1U = new(aD1U);
+        Direction3D aDD1V = new(aD1V);
 
         aDNF1 = aDD1U ^ aDD1V;
     }
@@ -340,7 +343,7 @@ public static class BOPTools_AlgoTools3D
     /// 1 if the two normals coincide in the same sense, -1 if opposite (or orthogonal after coinciding), 0 if they
     /// don't coincide.
     /// </summary>
-    public static int SenseFlag(in gp_Dir aDNF1, in gp_Dir aDNF2)
+    public static int SenseFlag(in Direction3D aDNF1, in Direction3D aDNF2)
     {
         bool bIsDirsCoinside;
         //
@@ -368,24 +371,24 @@ public static class BOPTools_AlgoTools3D
     /// The normal DU ^ DV of the surface at (U, V); false (and <paramref name="aDNS"/> unchanged) where a derivative is
     /// null.
     /// </summary>
-    public static bool GetNormalToSurface(Geom_Surface aS, double U, double V, ref gp_Dir aDNS)
+    public static bool GetNormalToSurface(Geom_Surface aS, double U, double V, ref Direction3D aDNS)
     {
-        aS.D1(U, V, out _, out gp_Vec aD1U, out gp_Vec aD1V);
+        aS.D1(U, V, out _, out Vector3D aD1U, out Vector3D aD1V);
 
         double aLenU = aD1U.SquareMagnitude();
-        if (aLenU < gp.Resolution())
+        if (aLenU < Constants.Resolution())
         {
             return false;
         }
 
         double aLenV = aD1V.SquareMagnitude();
-        if (aLenV < gp.Resolution())
+        if (aLenV < Constants.Resolution())
         {
             return false;
         }
 
-        gp_Dir aDD1U = new(aD1U);
-        gp_Dir aDD1V = new(aD1V);
+        Direction3D aDD1U = new(aD1U);
+        Direction3D aDD1V = new(aD1V);
 
         // OCCT: compares DU with itself, so the check always passes (occt-issues.md).
         bool bFlag = IntTools_Tools.IsDirsCoinside(aDD1U, aDD1U);
@@ -403,10 +406,10 @@ public static class BOPTools_AlgoTools3D
     /// classification) and the face's normal there. True if the point was found (PointNearEdge returned 0);
     /// <paramref name="aPNear"/> and <paramref name="aDNF"/> are unchanged when the edge has no pcurve on the face.
     /// </summary>
-    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref gp_Pnt aPNear,
-                                                   ref gp_Dir aDNF, double aDt2D)
+    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point3D aPNear,
+                                                   ref Direction3D aDNF, double aDt2D)
     {
-        gp_Pnt2d aPx2DNear = new();
+        Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, aDt2D, ref aPx2DNear, ref aPNear);
         if (iErr != 1)
         {
@@ -424,10 +427,10 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>As the overload with a step, the step chosen by PointNearEdge and the point checked to be in the face.</summary>
-    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref gp_Pnt aPNear,
-                                                   ref gp_Dir aDNF, IntTools_Context theContext)
+    public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point3D aPNear,
+                                                   ref Direction3D aDNF, IntTools_Context theContext)
     {
-        gp_Pnt2d aPx2DNear = new();
+        Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, ref aPx2DNear, ref aPNear, theContext);
         if (iErr != 1)
         {
@@ -446,9 +449,9 @@ public static class BOPTools_AlgoTools3D
 
     /// <summary>As the overload with a step, the point checked to be in the face.</summary>
     public static bool GetApproxNormalToFaceOnEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double theStep,
-                                                   ref gp_Pnt aPNear, ref gp_Dir aDNF, IntTools_Context theContext)
+                                                   ref Point3D aPNear, ref Direction3D aDNF, IntTools_Context theContext)
     {
-        gp_Pnt2d aPx2DNear = new();
+        Point2D aPx2DNear = new();
         int iErr = PointNearEdge(aE, aF, aT, theStep, ref aPx2DNear, ref aPNear, theContext);
         if (iErr != 1)
         {
@@ -470,11 +473,11 @@ public static class BOPTools_AlgoTools3D
     /// large tolerances) perpendicular to the pcurve, into the face. Returns 1 (outputs unchanged) if the edge has no
     /// pcurve on the face, else 0. No classification.
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double aDt2D, ref gp_Pnt2d aPx2DNear,
-                                    ref gp_Pnt aPxNear)
+    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double aDt2D, ref Point2D aPx2DNear,
+                                    ref Point3D aPxNear)
     {
         double aETol, aFTol, transVal;
-        GeomAbs_SurfaceType aTS;
+        SurfaceKind aTS;
         Geom2d_Curve? aC2D;
         Geom_Surface aS;
         //
@@ -487,10 +490,10 @@ public static class BOPTools_AlgoTools3D
         //
         aS = BRep_Tool.Surface(aF)!;
         //
-        aC2D!.D1(aT, out gp_Pnt2d aPx2D, out gp_Vec2d aVx2D);
-        gp_Dir2d aDx2D = new(aVx2D);
+        aC2D!.D1(aT, out Point2D aPx2D, out Vector2D aVx2D);
+        Direction2D aDx2D = new(aVx2D);
 
-        gp_Dir2d aDP = new();
+        Direction2D aDP = new();
         aDP.SetCoord(-aDx2D.Y(), aDx2D.X());
 
         if (aE.Orientation() == TopAbs_REVERSED)
@@ -508,7 +511,7 @@ public static class BOPTools_AlgoTools3D
         // NPAL19220
         GeomAdaptor_Surface aGAS = new(aS);
         aTS = aGAS.GetType();
-        if (aTS == GeomAbs_BSplineSurface)
+        if (aTS == BSplineSurface)
         {
             if (aETol > 1.0e-5)
             {
@@ -518,15 +521,15 @@ public static class BOPTools_AlgoTools3D
         if (aETol > 1.0e-5 || aFTol > 1.0e-5)
         {
             //
-            if (aTS != GeomAbs_Sphere)
+            if (aTS != SurfaceKind.Sphere)
             {
-                gp_Vec2d transVec = new(aDP);
+                Vector2D transVec = new(aDP);
                 transVal = aDt2D + aETol + aFTol;
-                if (aTS == GeomAbs_Cylinder)
+                if (aTS == SurfaceKind.Cylinder)
                 { // pkv/909/F8
                     double aR, dT;
                     //
-                    gp_Cylinder aCyl = aGAS.Cylinder();
+                    Cylinder aCyl = aGAS.Cylinder();
                     aR = aCyl.Radius();
                     dT = 1.0 - transVal / aR;
                     if (dT >= -1 && dT <= 1)
@@ -555,10 +558,10 @@ public static class BOPTools_AlgoTools3D
 
     /// <summary>
     /// As the overload with a step, the step being 1e-4 (1e-3 on cylinders and spheres) or twice the sum of the
-    /// tolerances; a point not in the face is replaced by <see cref="PointInFace(in TopoDS_Face, in TopoDS_Edge, double, double, ref gp_Pnt, ref gp_Pnt2d, IntTools_Context)"/>'s.
+    /// tolerances; a point not in the face is replaced by <see cref="PointInFace(in TopoDS_Face, in TopoDS_Edge, double, double, ref Point3D, ref Point2D, IntTools_Context)"/>'s.
     /// Returns 0, 1 (no pcurve) or 2 (no point in the face).
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref gp_Pnt2d aPx2DNear, ref gp_Pnt aPxNear,
+    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, ref Point2D aPx2DNear, ref Point3D aPxNear,
                                     IntTools_Context theContext)
     {
         double aTolE, aTolF, dTx, dT2D;
@@ -569,7 +572,7 @@ public static class BOPTools_AlgoTools3D
         //
         aS = BRep_Tool.Surface(aF)!;
         aGAS.Load(aS);
-        if (aGAS.GetType() == GeomAbs_Cylinder || aGAS.GetType() == GeomAbs_Sphere)
+        if (aGAS.GetType() == SurfaceKind.Cylinder || aGAS.GetType() == SurfaceKind.Sphere)
         {
             dT2D = 10.0 * dT2D;
         }
@@ -585,8 +588,8 @@ public static class BOPTools_AlgoTools3D
         int iErr = PointNearEdge(aE, aF, aT, dT2D, ref aPx2DNear, ref aPxNear);
         if ((iErr != 1) && !theContext.IsPointInOnFace(aF, aPx2DNear))
         {
-            gp_Pnt aP = new();
-            gp_Pnt2d aP2d = new();
+            Point3D aP = new();
+            Point2D aP2d = new();
             //
             iErr = PointInFace(aF, aE, aT, dT2D, ref aP, ref aP2d, theContext);
             if (iErr == 0)
@@ -607,14 +610,14 @@ public static class BOPTools_AlgoTools3D
     /// As the overload without a context, then a point not in the face is replaced by PointInFace's. Returns 0, 1 (no
     /// pcurve) or 2 (no point in the face).
     /// </summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double theStep, ref gp_Pnt2d aPx2DNear,
-                                    ref gp_Pnt aPxNear, IntTools_Context theContext)
+    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, double aT, double theStep, ref Point2D aPx2DNear,
+                                    ref Point3D aPxNear, IntTools_Context theContext)
     {
         int iErr = PointNearEdge(aE, aF, aT, theStep, ref aPx2DNear, ref aPxNear);
         if ((iErr != 1) && !theContext.IsPointInOnFace(aF, aPx2DNear))
         {
-            gp_Pnt aP = new();
-            gp_Pnt2d aP2d = new();
+            Point3D aP = new();
+            Point2D aP2d = new();
             //
             iErr = PointInFace(aF, aE, aT, theStep, ref aP, ref aP2d, theContext);
             if (iErr == 0)
@@ -632,7 +635,7 @@ public static class BOPTools_AlgoTools3D
     }
 
     /// <summary>A point inside the face near the edge's intermediate point, the edge oriented as it is in the face.</summary>
-    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, ref gp_Pnt2d aPInFace2D, ref gp_Pnt aPInFace,
+    public static int PointNearEdge(in TopoDS_Edge aE, in TopoDS_Face aF, ref Point2D aPInFace2D, ref Point3D aPInFace,
                                     IntTools_Context theContext)
     {
         double aT;
@@ -767,7 +770,7 @@ public static class BOPTools_AlgoTools3D
             {
                 return bHasGeometry;
             }
-            Poly_Triangulation? Tr = TF.Triangulation();
+            Triangulation? Tr = TF.Triangulation();
             if (Tr is not null)
             {
                 return bHasGeometry;
@@ -829,19 +832,19 @@ public static class BOPTools_AlgoTools3D
     /// A point inside the face: hatches the face along the V-isoline at the intermediate U (then its mirror) and takes
     /// the middle of the first domain. Returns 0 on success, 1 to 4 (outputs unchanged) on failure.
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, ref gp_Pnt theP, ref gp_Pnt2d theP2D, IntTools_Context theContext)
+    public static int PointInFace(in TopoDS_Face theF, ref Point3D theP, ref Point2D theP2D, IntTools_Context theContext)
     {
         int i, iErr = 1;
         double aUx;
         //
         theContext.UVBounds(theF, out double aUMin, out double aUMax, out _, out _);
         //
-        gp_Dir2d aD2D = new(gp_Dir2d.D.Y);
+        Direction2D aD2D = new(Direction2D.D.Y);
         aUx = IntTools_Tools.IntermediatePoint(aUMin, aUMax);
         //
         for (i = 0; i < 2; ++i)
         {
-            gp_Pnt2d aP2D = new(aUx, 0.0);
+            Point2D aP2D = new(aUx, 0.0);
             Geom2d_Line aL2D = new(aP2D, aD2D);
             iErr = PointInFace(theF, aL2D, ref theP, ref theP2D, theContext);
             if (iErr == 0)
@@ -865,8 +868,8 @@ public static class BOPTools_AlgoTools3D
     /// perpendicular to the pcurve, into the face, <paramref name="theDt2D"/> from the boundary if the domain is long
     /// enough. Returns 0 on success, 5 if the edge has no pcurve, 1 to 4 if hatching fails (outputs unchanged).
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, in TopoDS_Edge theE, double theT, double theDt2D, ref gp_Pnt theP,
-                                  ref gp_Pnt2d theP2D, IntTools_Context theContext)
+    public static int PointInFace(in TopoDS_Face theF, in TopoDS_Edge theE, double theT, double theDt2D, ref Point3D theP,
+                                  ref Point2D theP2D, IntTools_Context theContext)
     {
         int iErr;
         Geom2d_Curve? aC2D;
@@ -879,10 +882,10 @@ public static class BOPTools_AlgoTools3D
             return iErr;
         }
         //
-        aC2D.D1(theT, out gp_Pnt2d aP2D, out gp_Vec2d aV2D);
-        gp_Dir2d aD2Dx = new(aV2D);
+        aC2D.D1(theT, out Point2D aP2D, out Vector2D aV2D);
+        Direction2D aD2Dx = new(aV2D);
         //
-        gp_Dir2d aD2D = new();
+        Direction2D aD2D = new();
         aD2D.SetCoord(-aD2Dx.Y(), aD2Dx.X());
         //
         if (theE.Orientation() == TopAbs_REVERSED)
@@ -896,7 +899,7 @@ public static class BOPTools_AlgoTools3D
         }
         //
         Geom2d_Line aL2D = new(aP2D, aD2D);
-        Geom2d_TrimmedCurve aL2DTrim = new(aL2D, 0.0, Precision.Infinite());
+        Geom2d_TrimmedCurve aL2DTrim = new(aL2D, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
         //
         iErr = PointInFace(theF, aL2DTrim, ref theP, ref theP2D, theContext, theDt2D);
         //
@@ -909,7 +912,7 @@ public static class BOPTools_AlgoTools3D
     /// else at its intermediate point. Returns 0 on success; 1 if trimming fails, 2 if there is no domain, 3 or 4 if
     /// the domain is open (outputs unchanged).
     /// </summary>
-    public static int PointInFace(in TopoDS_Face theF, Geom2d_Curve theL2D, ref gp_Pnt theP, ref gp_Pnt2d theP2D,
+    public static int PointInFace(in TopoDS_Face theF, Geom2d_Curve theL2D, ref Point3D theP, ref Point2D theP2D,
                                   IntTools_Context theContext, double theDt2D = 0.0)
     {
         bool bIsDone, bHasFirstPoint, bHasSecondPoint;

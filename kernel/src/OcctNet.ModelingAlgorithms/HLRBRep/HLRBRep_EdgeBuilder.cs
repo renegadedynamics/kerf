@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -386,7 +387,7 @@ public sealed class HLRBRep_EdgeBuilder
         }
         else
         {
-            throw new Standard_NoSuchObject("EdgeBuilder::NextVertex : No current edge");
+            throw new NoSuchObjectException("EdgeBuilder::NextVertex : No current edge");
         }
     }
 
@@ -403,7 +404,7 @@ public sealed class HLRBRep_EdgeBuilder
         }
         else
         {
-            throw new Standard_NoSuchObject("EdgeBuilder::Current : No current vertex");
+            throw new NoSuchObjectException("EdgeBuilder::Current : No current vertex");
         }
     }
 
@@ -420,7 +421,7 @@ public sealed class HLRBRep_EdgeBuilder
         }
         else
         {
-            throw new Standard_NoSuchObject("EdgeBuilder::IsBoundary : No current vertex");
+            throw new NoSuchObjectException("EdgeBuilder::IsBoundary : No current vertex");
         }
     }
 
@@ -437,7 +438,7 @@ public sealed class HLRBRep_EdgeBuilder
         }
         else
         {
-            throw new Standard_NoSuchObject("EdgeBuilder::IsInterference : No current vertex");
+            throw new NoSuchObjectException("EdgeBuilder::IsInterference : No current vertex");
         }
     }
 

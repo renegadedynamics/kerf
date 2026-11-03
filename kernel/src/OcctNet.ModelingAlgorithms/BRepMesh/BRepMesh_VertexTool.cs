@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,9 +16,9 @@ namespace Occt;
 /// start at 1; a deleted vertex's index is reused.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-public sealed class BRepMesh_VertexTool : Standard_Transient
+public sealed class BRepMesh_VertexTool : Transient
 {
-    private readonly NCollection_CellFilter<BRepMesh_VertexInspector, int, gp_XY> myCellFilter;
+    private readonly CellFilter<BRepMesh_VertexInspector, int, Xy> myCellFilter;
     private BRepMesh_VertexInspector mySelector;
     private double myTolerance0;
     private double myTolerance1;
@@ -20,9 +26,9 @@ public sealed class BRepMesh_VertexTool : Standard_Transient
     /// <summary>An empty tool with the tolerance and cell size of <c>Precision::Confusion()</c>.</summary>
     public BRepMesh_VertexTool()
     {
-        myCellFilter = new NCollection_CellFilter<BRepMesh_VertexInspector, int, gp_XY>(0.0);
+        myCellFilter = new CellFilter<BRepMesh_VertexInspector, int, Xy>(0.0);
         mySelector = new BRepMesh_VertexInspector();
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         SetCellSize(aTol + 0.05 * aTol);
         SetTolerance(aTol, aTol);
     }
@@ -78,7 +84,7 @@ public sealed class BRepMesh_VertexTool : Standard_Transient
         {
             aIndex = mySelector.Add(theVertex);
 
-            expandPoint(theVertex.Coord(), out gp_XY aMinPnt, out gp_XY aMaxPnt);
+            expandPoint(theVertex.Coord(), out Xy aMinPnt, out Xy aMaxPnt);
             myCellFilter.Add(aIndex, aMinPnt, aMaxPnt);
         }
 
@@ -90,7 +96,7 @@ public sealed class BRepMesh_VertexTool : Standard_Transient
     {
         ref BRepMesh_Vertex aV = ref mySelector.GetVertex(theIndex);
 
-        expandPoint(aV.Coord(), out gp_XY aMinPnt, out gp_XY aMaxPnt);
+        expandPoint(aV.Coord(), out Xy aMinPnt, out Xy aMaxPnt);
 
         myCellFilter.Remove(theIndex, aMinPnt, aMaxPnt);
         mySelector.Delete(theIndex);
@@ -124,7 +130,7 @@ public sealed class BRepMesh_VertexTool : Standard_Transient
     {
         ref BRepMesh_Vertex aV = ref mySelector.GetVertex(theIndex);
 
-        expandPoint(aV.Coord(), out gp_XY aMinPnt, out gp_XY aMaxPnt);
+        expandPoint(aV.Coord(), out Xy aMinPnt, out Xy aMaxPnt);
 
         myCellFilter.Remove(theIndex, aMinPnt, aMaxPnt);
 
@@ -139,9 +145,9 @@ public sealed class BRepMesh_VertexTool : Standard_Transient
     /// <summary>The indices of the deleted vertices, reused by the next additions.</summary>
     public NCollection_List<int> GetListOfDelNodes() => mySelector.GetListOfDelPoints();
 
-    private void expandPoint(in gp_XY thePoint, out gp_XY theMinPoint, out gp_XY theMaxPoint)
+    private void expandPoint(in Xy thePoint, out Xy theMinPoint, out Xy theMaxPoint)
     {
-        theMinPoint = new gp_XY(thePoint.X() - myTolerance0, thePoint.Y() - myTolerance1);
-        theMaxPoint = new gp_XY(thePoint.X() + myTolerance0, thePoint.Y() + myTolerance1);
+        theMinPoint = new Xy(thePoint.X() - myTolerance0, thePoint.Y() - myTolerance1);
+        theMaxPoint = new Xy(thePoint.X() + myTolerance0, thePoint.Y() + myTolerance1);
     }
 }

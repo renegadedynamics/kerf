@@ -1,3 +1,6 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
@@ -25,13 +28,13 @@ public class HarnessTests
     private static TopoDS_Shape SharedCompound()
     {
         TopoDS_Shape aBox = Box();
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(100.0, 0.0, 0.0));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
         var aBuilder = new BRep_Builder();
         var aCompound = new TopoDS_Compound();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox);
-        aBuilder.Add(aCompound, aBox.Located(new TopLoc_Location(aTrsf)));
+        aBuilder.Add(aCompound, aBox.Located(new Placement(aTrsf)));
         aBuilder.Add(aCompound, new BRepPrimAPI_MakeCylinder(5.0, 12.0).Shape());
         aBuilder.Add(aCompound, new BRepPrimAPI_MakeSphere(4.0).Shape());
         return aCompound;
@@ -221,8 +224,8 @@ public class HarnessTests
         TopoDS_Shape aBox = Box();
         TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
         TopoDS_Vertex aVertex = TopoDS.Vertex(CanonicalShapeComparer.SubShapes(aCopy, TopAbs_VERTEX)[0]);
-        gp_Pnt aP = BRep_Tool.Pnt(aVertex);
-        new BRep_Builder().UpdateVertex(aVertex, new gp_Pnt(aP.X() + 1.0e-12, aP.Y(), aP.Z()), BRep_Tool.Tolerance(aVertex));
+        Point3D aP = BRep_Tool.Pnt(aVertex);
+        new BRep_Builder().UpdateVertex(aVertex, new Point3D(aP.X() + 1.0e-12, aP.Y(), aP.Z()), BRep_Tool.Tolerance(aVertex));
 
         CanonicalComparison anExact = CanonicalShapeComparer.Compare(aBox, aCopy);
         Assert.False(anExact.IsIdentical);
@@ -262,9 +265,9 @@ public class HarnessTests
     public void Canonical_TranslatedShape_IsNotIdentical()
     {
         TopoDS_Shape aBox = Box();
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(0.0, 0.0, 1.0e-6));
-        CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aBox, aBox.Located(new TopLoc_Location(aTrsf)));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 1.0e-6));
+        CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aBox, aBox.Located(new Placement(aTrsf)));
         Assert.False(aComparison.IsIdentical);
         Assert.True(aComparison.CountsEqual);
         Assert.NotEmpty(aComparison.Unmatched);
@@ -291,7 +294,7 @@ public class HarnessTests
         string aReference = DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             double[] aValues = new double[2000];
-            OSD_Parallel.For(0, aValues.Length, i => aValues[i] = Math.Sqrt(i) * Math.Sin(i));
+            OsdParallel.For(0, aValues.Length, i => aValues[i] = Math.Sqrt(i) * Math.Sin(i));
             return string.Join("\n", aValues.Select(v => BitConverter.DoubleToInt64Bits(v)));
         });
         Assert.NotEmpty(aReference);
@@ -307,7 +310,7 @@ public class HarnessTests
         {
             int aThis = Interlocked.Increment(ref aRun);
             var aSum = new ConcurrentQueue<int>();
-            OSD_Parallel.For(0, 100, i => aSum.Enqueue(i));
+            OsdParallel.For(0, 100, i => aSum.Enqueue(i));
             return aThis + ":" + aSum.Count;
         }, 3, 2, 4));
     }

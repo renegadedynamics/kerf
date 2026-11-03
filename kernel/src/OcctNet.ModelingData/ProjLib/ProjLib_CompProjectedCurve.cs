@@ -7,10 +7,13 @@
 // Created on: 1997-09-23
 // Created by: Roman BORISOV
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -35,14 +38,14 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     private Adaptor3d_Surface mySurface = null!;
     private Adaptor3d_Curve myCurve = null!;
     private int myNbCurves;
-    private NCollection_HSequence<NCollection_HSequence<gp_Pnt>> mySequence = null!;
+    private NCollection_HSequence<NCollection_HSequence<Point3D>> mySequence = null!;
     private NCollection_HArray1<bool>? myUIso;
     private NCollection_HArray1<bool>? myVIso;
     private NCollection_HArray1<bool>? mySnglPnts;
     private NCollection_HArray1<double>? myMaxDistance;
     private NCollection_HArray1<double>? myTabInt;
     private double myTol3d;
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private int myMaxDegree;
     private int myMaxSeg;
     private bool myProj2d;
@@ -55,8 +58,8 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     private NCollection_HArray1<double>? myResult2dUApproxError;
     private NCollection_HArray1<double>? myResult2dVApproxError;
     private NCollection_HArray1<double>? myResult3dApproxError;
-    private NCollection_HArray1<gp_Pnt>? myResult3dPoint;
-    private NCollection_HArray1<gp_Pnt2d>? myResult2dPoint;
+    private NCollection_HArray1<Point3D>? myResult3dPoint;
+    private NCollection_HArray1<Point2D>? myResult2dPoint;
     private NCollection_HArray1<Geom_Curve?>? myResult3dCurve;
     private NCollection_HArray1<Geom2d_Curve?>? myResult2dCurve;
 
@@ -101,166 +104,166 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     private static void d1(double t,
                            double u,
                            double v,
-                           out gp_Vec2d V,
+                           out Vector2D V,
                            Adaptor3d_Curve Curve,
                            Adaptor3d_Surface Surface)
     {
-        gp_Pnt S, C;
-        gp_Vec DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DC1_t;
+        Point3D S, C;
+        Vector3D DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DC1_t;
         Surface.D2(u, v, out S, out DS1_u, out DS1_v, out DS2_u, out DS2_v, out DS2_uv);
         Curve.D1(t, out C, out DC1_t);
-        gp_Vec Ort = new(C, S); // Ort = S - C
+        Vector3D Ort = new(C, S); // Ort = S - C
 
-        gp_Vec2d dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
-        gp_XY dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
-        gp_XY dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
+        Vector2D dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
+        Xy dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
+        Xy dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
 
         double det = dE_du.X() * dE_dv.Y() - dE_du.Y() * dE_dv.X();
-        if (Math.Abs(det) < gp.Resolution())
+        if (Math.Abs(det) < Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        gp_Mat2d M = new(new gp_XY(dE_dv.Y() / det, -dE_du.Y() / det), new gp_XY(-dE_dv.X() / det, dE_du.X() / det));
+        Matrix2x2 M = new(new Xy(dE_dv.Y() / det, -dE_du.Y() / det), new Xy(-dE_dv.X() / det, dE_du.X() / det));
 
-        V = -new gp_Vec2d(new gp_Vec2d(M.Row(1)) * dE_dt, new gp_Vec2d(M.Row(2)) * dE_dt);
+        V = -new Vector2D(new Vector2D(M.Row(1)) * dE_dt, new Vector2D(M.Row(2)) * dE_dt);
     }
 
     private static void d2(double t,
                            double u,
                            double v,
-                           out gp_Vec2d V1,
-                           out gp_Vec2d V2,
+                           out Vector2D V1,
+                           out Vector2D V2,
                            Adaptor3d_Curve Curve,
                            Adaptor3d_Surface Surface)
     {
-        gp_Pnt S, C;
-        gp_Vec DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DS3_u, DS3_v, DS3_uuv, DS3_uvv, DC1_t, DC2_t;
+        Point3D S, C;
+        Vector3D DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DS3_u, DS3_v, DS3_uuv, DS3_uvv, DC1_t, DC2_t;
         Surface.D3(u, v, out S, out DS1_u, out DS1_v, out DS2_u, out DS2_v, out DS2_uv, out DS3_u, out DS3_v,
                    out DS3_uuv, out DS3_uvv);
         Curve.D2(t, out C, out DC1_t, out DC2_t);
-        gp_Vec Ort = new(C, S);
+        Vector3D Ort = new(C, S);
 
-        gp_Vec2d dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
-        gp_XY dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
-        gp_XY dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
+        Vector2D dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
+        Xy dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
+        Xy dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
 
         double det = dE_du.X() * dE_dv.Y() - dE_du.Y() * dE_dv.X();
-        if (Math.Abs(det) < gp.Resolution())
+        if (Math.Abs(det) < Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        gp_Mat2d M = new(new gp_XY(dE_dv.Y() / det, -dE_du.Y() / det), new gp_XY(-dE_dv.X() / det, dE_du.X() / det));
+        Matrix2x2 M = new(new Xy(dE_dv.Y() / det, -dE_du.Y() / det), new Xy(-dE_dv.X() / det, dE_du.X() / det));
 
         // First derivative
-        V1 = -new gp_Vec2d(new gp_Vec2d(M.Row(1)) * dE_dt, new gp_Vec2d(M.Row(2)) * dE_dt);
+        V1 = -new Vector2D(new Vector2D(M.Row(1)) * dE_dt, new Vector2D(M.Row(2)) * dE_dt);
 
         /* Second derivative */
 
         // Computation of d2E_dt2 = S1
-        gp_Vec2d d2E_dt = new(-DC2_t * DS1_u, -DC2_t * DS1_v);
+        Vector2D d2E_dt = new(-DC2_t * DS1_u, -DC2_t * DS1_v);
 
         // Computation of 2*(d2E/dtdX)(dX/dt) = S2
-        gp_Vec2d d2E1_dtdX = new(-DC1_t * DS2_u, -DC1_t * DS2_uv);
-        gp_Vec2d d2E2_dtdX = new(-DC1_t * DS2_uv, -DC1_t * DS2_v);
-        gp_Vec2d S2 = 2 * new gp_Vec2d(d2E1_dtdX * V1, d2E2_dtdX * V1);
+        Vector2D d2E1_dtdX = new(-DC1_t * DS2_u, -DC1_t * DS2_uv);
+        Vector2D d2E2_dtdX = new(-DC1_t * DS2_uv, -DC1_t * DS2_v);
+        Vector2D S2 = 2 * new Vector2D(d2E1_dtdX * V1, d2E2_dtdX * V1);
 
         // Computation of (d2E/dX2)*(dX/dt)2 = S3
 
         // Row11 = (d2E1/du2, d2E1/dudv)
         double tmp;
-        gp_Vec2d Row11 = new(3 * DS1_u * DS2_u + Ort * DS3_u,
+        Vector2D Row11 = new(3 * DS1_u * DS2_u + Ort * DS3_u,
                              tmp = 2 * DS1_u * DS2_uv + DS1_v * DS2_u + Ort * DS3_uuv);
 
         // Row12 = (d2E1/dudv, d2E1/dv2)
-        gp_Vec2d Row12 = new(tmp, DS2_v * DS1_u + 2 * DS1_v * DS2_uv + Ort * DS3_uvv);
+        Vector2D Row12 = new(tmp, DS2_v * DS1_u + 2 * DS1_v * DS2_uv + Ort * DS3_uvv);
 
         // Row21 = (d2E2/du2, d2E2/dudv)
-        gp_Vec2d Row21 = new(DS2_u * DS1_v + 2 * DS1_u * DS2_uv + Ort * DS3_uuv,
+        Vector2D Row21 = new(DS2_u * DS1_v + 2 * DS1_u * DS2_uv + Ort * DS3_uuv,
                              tmp = 2 * DS2_uv * DS1_v + DS1_u * DS2_v + Ort * DS3_uvv);
 
         // Row22 = (d2E2/duv, d2E2/dvdv)
-        gp_Vec2d Row22 = new(tmp, 3 * DS1_v * DS2_v + Ort * DS3_v);
+        Vector2D Row22 = new(tmp, 3 * DS1_v * DS2_v + Ort * DS3_v);
 
-        gp_Vec2d S3 = new(V1 * new gp_Vec2d(Row11 * V1, Row12 * V1), V1 * new gp_Vec2d(Row21 * V1, Row22 * V1));
+        Vector2D S3 = new(V1 * new Vector2D(Row11 * V1, Row12 * V1), V1 * new Vector2D(Row21 * V1, Row22 * V1));
 
-        gp_Vec2d Sum = d2E_dt + S2 + S3;
+        Vector2D Sum = d2E_dt + S2 + S3;
 
-        V2 = -new gp_Vec2d(new gp_Vec2d(M.Row(1)) * Sum, new gp_Vec2d(M.Row(2)) * Sum);
+        V2 = -new Vector2D(new Vector2D(M.Row(1)) * Sum, new Vector2D(M.Row(2)) * Sum);
     }
 
     private static void d2CurvOnSurf(double t,
                                      double u,
                                      double v,
-                                     out gp_Vec V1,
-                                     out gp_Vec V2,
+                                     out Vector3D V1,
+                                     out Vector3D V2,
                                      Adaptor3d_Curve Curve,
                                      Adaptor3d_Surface Surface)
     {
-        gp_Pnt S, C;
-        gp_Vec2d V12d, V22d;
-        gp_Vec DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DS3_u, DS3_v, DS3_uuv, DS3_uvv, DC1_t, DC2_t;
+        Point3D S, C;
+        Vector2D V12d, V22d;
+        Vector3D DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DS3_u, DS3_v, DS3_uuv, DS3_uvv, DC1_t, DC2_t;
         Surface.D3(u, v, out S, out DS1_u, out DS1_v, out DS2_u, out DS2_v, out DS2_uv, out DS3_u, out DS3_v,
                    out DS3_uuv, out DS3_uvv);
         Curve.D2(t, out C, out DC1_t, out DC2_t);
-        gp_Vec Ort = new(C, S);
+        Vector3D Ort = new(C, S);
 
-        gp_Vec2d dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
-        gp_XY dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
-        gp_XY dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
+        Vector2D dE_dt = new(-DC1_t * DS1_u, -DC1_t * DS1_v);
+        Xy dE_du = new(DS1_u * DS1_u + Ort * DS2_u, DS1_u * DS1_v + Ort * DS2_uv);
+        Xy dE_dv = new(DS1_v * DS1_u + Ort * DS2_uv, DS1_v * DS1_v + Ort * DS2_v);
 
         double det = dE_du.X() * dE_dv.Y() - dE_du.Y() * dE_dv.X();
-        if (Math.Abs(det) < gp.Resolution())
+        if (Math.Abs(det) < Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        gp_Mat2d M = new(new gp_XY(dE_dv.Y() / det, -dE_du.Y() / det), new gp_XY(-dE_dv.X() / det, dE_du.X() / det));
+        Matrix2x2 M = new(new Xy(dE_dv.Y() / det, -dE_du.Y() / det), new Xy(-dE_dv.X() / det, dE_du.X() / det));
 
         // First derivative
-        V12d = -new gp_Vec2d(new gp_Vec2d(M.Row(1)) * dE_dt, new gp_Vec2d(M.Row(2)) * dE_dt);
+        V12d = -new Vector2D(new Vector2D(M.Row(1)) * dE_dt, new Vector2D(M.Row(2)) * dE_dt);
 
         /* Second derivative */
 
         // Computation of d2E_dt2 = S1
-        gp_Vec2d d2E_dt = new(-DC2_t * DS1_u, -DC2_t * DS1_v);
+        Vector2D d2E_dt = new(-DC2_t * DS1_u, -DC2_t * DS1_v);
 
         // Computation of 2*(d2E/dtdX)(dX/dt) = S2
-        gp_Vec2d d2E1_dtdX = new(-DC1_t * DS2_u, -DC1_t * DS2_uv);
-        gp_Vec2d d2E2_dtdX = new(-DC1_t * DS2_uv, -DC1_t * DS2_v);
-        gp_Vec2d S2 = 2 * new gp_Vec2d(d2E1_dtdX * V12d, d2E2_dtdX * V12d);
+        Vector2D d2E1_dtdX = new(-DC1_t * DS2_u, -DC1_t * DS2_uv);
+        Vector2D d2E2_dtdX = new(-DC1_t * DS2_uv, -DC1_t * DS2_v);
+        Vector2D S2 = 2 * new Vector2D(d2E1_dtdX * V12d, d2E2_dtdX * V12d);
 
         // Computation of (d2E/dX2)*(dX/dt)2 = S3
 
         // Row11 = (d2E1/du2, d2E1/dudv)
         double tmp;
-        gp_Vec2d Row11 = new(3 * DS1_u * DS2_u + Ort * DS3_u,
+        Vector2D Row11 = new(3 * DS1_u * DS2_u + Ort * DS3_u,
                              tmp = 2 * DS1_u * DS2_uv + DS1_v * DS2_u + Ort * DS3_uuv);
 
         // Row12 = (d2E1/dudv, d2E1/dv2)
-        gp_Vec2d Row12 = new(tmp, DS2_v * DS1_u + 2 * DS1_v * DS2_uv + Ort * DS3_uvv);
+        Vector2D Row12 = new(tmp, DS2_v * DS1_u + 2 * DS1_v * DS2_uv + Ort * DS3_uvv);
 
         // Row21 = (d2E2/du2, d2E2/dudv)
-        gp_Vec2d Row21 = new(DS2_u * DS1_v + 2 * DS1_u * DS2_uv + Ort * DS3_uuv,
+        Vector2D Row21 = new(DS2_u * DS1_v + 2 * DS1_u * DS2_uv + Ort * DS3_uuv,
                              tmp = 2 * DS2_uv * DS1_v + DS1_u * DS2_v + Ort * DS3_uvv);
 
         // Row22 = (d2E2/duv, d2E2/dvdv)
-        gp_Vec2d Row22 = new(tmp, 3 * DS1_v * DS2_v + Ort * DS3_v);
+        Vector2D Row22 = new(tmp, 3 * DS1_v * DS2_v + Ort * DS3_v);
 
-        gp_Vec2d S3 = new(V12d * new gp_Vec2d(Row11 * V12d, Row12 * V12d),
-                          V12d * new gp_Vec2d(Row21 * V12d, Row22 * V12d));
+        Vector2D S3 = new(V12d * new Vector2D(Row11 * V12d, Row12 * V12d),
+                          V12d * new Vector2D(Row21 * V12d, Row22 * V12d));
 
-        gp_Vec2d Sum = d2E_dt + S2 + S3;
+        Vector2D Sum = d2E_dt + S2 + S3;
 
-        V22d = -new gp_Vec2d(new gp_Vec2d(M.Row(1)) * Sum, new gp_Vec2d(M.Row(2)) * Sum);
+        V22d = -new Vector2D(new Vector2D(M.Row(1)) * Sum, new Vector2D(M.Row(2)) * Sum);
 
         V1 = DS1_u * V12d.X() + DS1_v * V12d.Y();
         V2 = DS2_u * V12d.X() * V12d.X() + DS1_u * V22d.X() + 2 * DS2_uv * V12d.X() * V12d.Y()
              + DS2_v * V12d.Y() * V12d.Y() + DS1_v * V22d.Y();
     }
 
-    private static bool ExactBound(ref gp_Pnt Sol,
+    private static bool ExactBound(ref Point3D Sol,
                                    double NotSol,
                                    double Tol,
                                    double TolU,
@@ -269,7 +272,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                                    Adaptor3d_Surface Surface)
     {
         double U0, V0, t, t1, t2, FirstU, LastU, FirstV, LastV;
-        gp_Pnt2d POnS;
+        Point2D POnS;
         U0 = Sol.Y();
         V0 = Sol.Z();
         FirstU = Surface.FirstUParameter();
@@ -277,38 +280,38 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         FirstV = Surface.FirstVParameter();
         LastV = Surface.LastVParameter();
         // Here we have to compute the boundary that projection is going to intersect
-        gp_Vec2d D2d;
+        Vector2D D2d;
         // these variables are to estimate which boundary has more opportunity
         // to be intersected
         double RU1, RU2, RV1, RV2;
         d1(Sol.X(), U0, V0, out D2d, Curve, Surface);
         // Here we assume that D2d != (0, 0)
-        if (Math.Abs(D2d.X()) < gp.Resolution())
+        if (Math.Abs(D2d.X()) < Constants.Resolution())
         {
-            RU1 = Precision.Infinite();
-            RU2 = Precision.Infinite();
+            RU1 = global::Kerf.Engine.Foundation.Precision.Infinite();
+            RU2 = global::Kerf.Engine.Foundation.Precision.Infinite();
             RV1 = V0 - FirstV;
             RV2 = LastV - V0;
         }
-        else if (Math.Abs(D2d.Y()) < gp.Resolution())
+        else if (Math.Abs(D2d.Y()) < Constants.Resolution())
         {
             RU1 = U0 - FirstU;
             RU2 = LastU - U0;
-            RV1 = Precision.Infinite();
-            RV2 = Precision.Infinite();
+            RV1 = global::Kerf.Engine.Foundation.Precision.Infinite();
+            RV2 = global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         else
         {
-            RU1 = new gp_Pnt2d(U0, V0).Distance(new gp_Pnt2d(FirstU, V0 + (FirstU - U0) * D2d.Y() / D2d.X()));
-            RU2 = new gp_Pnt2d(U0, V0).Distance(new gp_Pnt2d(LastU, V0 + (LastU - U0) * D2d.Y() / D2d.X()));
-            RV1 = new gp_Pnt2d(U0, V0).Distance(new gp_Pnt2d(U0 + (FirstV - V0) * D2d.X() / D2d.Y(), FirstV));
-            RV2 = new gp_Pnt2d(U0, V0).Distance(new gp_Pnt2d(U0 + (LastV - V0) * D2d.X() / D2d.Y(), LastV));
+            RU1 = new Point2D(U0, V0).Distance(new Point2D(FirstU, V0 + (FirstU - U0) * D2d.Y() / D2d.X()));
+            RU2 = new Point2D(U0, V0).Distance(new Point2D(LastU, V0 + (LastU - U0) * D2d.Y() / D2d.X()));
+            RV1 = new Point2D(U0, V0).Distance(new Point2D(U0 + (FirstV - V0) * D2d.X() / D2d.Y(), FirstV));
+            RV2 = new Point2D(U0, V0).Distance(new Point2D(U0 + (LastV - V0) * D2d.X() / D2d.Y(), LastV));
         }
-        NCollection_Sequence<gp_Pnt> Seq = new();
-        Seq.Append(new gp_Pnt(FirstU, RU1, 2));
-        Seq.Append(new gp_Pnt(LastU, RU2, 2));
-        Seq.Append(new gp_Pnt(FirstV, RV1, 3));
-        Seq.Append(new gp_Pnt(LastV, RV2, 3));
+        NCollection_Sequence<Point3D> Seq = new();
+        Seq.Append(new Point3D(FirstU, RU1, 2));
+        Seq.Append(new Point3D(LastU, RU2, 2));
+        Seq.Append(new Point3D(FirstV, RV1, 3));
+        Seq.Append(new Point3D(LastV, RV2, 3));
         int i, j;
         for (i = 1; i <= 3; i++)
         {
@@ -316,7 +319,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             {
                 if (Seq.Value(j).Y() < Seq.Value(j + 1).Y())
                 {
-                    gp_Pnt swp;
+                    Point3D swp;
                     swp = Seq.Value(j + 1);
                     Seq.ChangeValue(j + 1) = Seq.Value(j);
                     Seq.ChangeValue(j) = swp;
@@ -331,7 +334,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         bool isDone = false;
         while (!Seq.IsEmpty())
         {
-            gp_Pnt P;
+            Point3D P;
             P = Seq.Last();
             Seq.Remove(Seq.Length());
             ProjLib_PrjResolve aPrjPS = new(Curve, Surface, (int)P.Z());
@@ -340,16 +343,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 aPrjPS.Perform(t,
                                P.X(),
                                V0,
-                               new gp_Pnt2d(Tol, TolV),
-                               new gp_Pnt2d(t1, Surface.FirstVParameter()),
-                               new gp_Pnt2d(t2, Surface.LastVParameter()),
+                               new Point2D(Tol, TolV),
+                               new Point2D(t1, Surface.FirstVParameter()),
+                               new Point2D(t2, Surface.LastVParameter()),
                                FuncTol);
                 if (!aPrjPS.IsDone())
                 {
                     continue;
                 }
                 POnS = aPrjPS.Solution();
-                Sol = new gp_Pnt(POnS.X(), P.X(), POnS.Y());
+                Sol = new Point3D(POnS.X(), P.X(), POnS.Y());
                 isDone = true;
                 break;
             }
@@ -358,16 +361,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 aPrjPS.Perform(t,
                                U0,
                                P.X(),
-                               new gp_Pnt2d(Tol, TolU),
-                               new gp_Pnt2d(t1, Surface.FirstUParameter()),
-                               new gp_Pnt2d(t2, Surface.LastUParameter()),
+                               new Point2D(Tol, TolU),
+                               new Point2D(t1, Surface.FirstUParameter()),
+                               new Point2D(t2, Surface.LastUParameter()),
                                FuncTol);
                 if (!aPrjPS.IsDone())
                 {
                     continue;
                 }
                 POnS = aPrjPS.Solution();
-                Sol = new gp_Pnt(POnS.X(), POnS.Y(), P.X());
+                Sol = new Point3D(POnS.X(), POnS.Y(), P.X());
                 isDone = true;
                 break;
             }
@@ -376,7 +379,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         return isDone;
     }
 
-    private static void DichExactBound(ref gp_Pnt Sol,
+    private static void DichExactBound(ref Point3D Sol,
                                        double NotSol,
                                        double Tol,
                                        double TolU,
@@ -385,7 +388,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                                        Adaptor3d_Surface Surface)
     {
         double U0, V0, t;
-        gp_Pnt2d POnS;
+        Point2D POnS;
         U0 = Sol.Y();
         V0 = Sol.Z();
         ProjLib_PrjResolve aPrjPS = new(Curve, Surface, 1);
@@ -397,16 +400,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             aPrjPS.Perform(t,
                            U0,
                            V0,
-                           new gp_Pnt2d(TolU, TolV),
-                           new gp_Pnt2d(Surface.FirstUParameter(), Surface.FirstVParameter()),
-                           new gp_Pnt2d(Surface.LastUParameter(), Surface.LastVParameter()),
+                           new Point2D(TolU, TolV),
+                           new Point2D(Surface.FirstUParameter(), Surface.FirstVParameter()),
+                           new Point2D(Surface.LastUParameter(), Surface.LastVParameter()),
                            FuncTol,
                            true);
 
             if (aPrjPS.IsDone())
             {
                 POnS = aPrjPS.Solution();
-                Sol = new gp_Pnt(t, POnS.X(), POnS.Y());
+                Sol = new Point3D(t, POnS.X(), POnS.Y());
                 U0 = Sol.Y();
                 V0 = Sol.Z();
             }
@@ -419,7 +422,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
     /// <remarks><paramref name="U"/> and <paramref name="V"/> are 0 when it returns false, where OCCT leaves them
     /// unchanged; no caller reads them then (decision 32).</remarks>
-    private static bool InitialPoint(in gp_Pnt Point,
+    private static bool InitialPoint(in Point3D Point,
                                      double t,
                                      Adaptor3d_Curve C,
                                      Adaptor3d_Surface S,
@@ -462,9 +465,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 aPrjPS.Perform(t,
                                ParU,
                                ParV,
-                               new gp_Pnt2d(TolU, TolV),
-                               new gp_Pnt2d(S.FirstUParameter(), S.FirstVParameter()),
-                               new gp_Pnt2d(S.LastUParameter(), S.LastVParameter()),
+                               new Point2D(TolU, TolV),
+                               new Point2D(S.FirstUParameter(), S.FirstVParameter()),
+                               new Point2D(S.LastUParameter(), S.LastVParameter()),
                                FuncTol,
                                true);
                 if (aPrjPS.IsDone())
@@ -512,9 +515,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         mySurface = theSurface;
         myCurve = theCurve;
         myNbCurves = 0;
-        mySequence = new NCollection_HSequence<NCollection_HSequence<gp_Pnt>>();
+        mySequence = new NCollection_HSequence<NCollection_HSequence<Point3D>>();
         myTol3d = 1.0e-6;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myMaxDegree = 14;
         myMaxSeg = 16;
         myProj2d = true;
@@ -538,9 +541,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         mySurface = theSurface;
         myCurve = theCurve;
         myNbCurves = 0;
-        mySequence = new NCollection_HSequence<NCollection_HSequence<gp_Pnt>>();
+        mySequence = new NCollection_HSequence<NCollection_HSequence<Point3D>>();
         myTol3d = 1.0e-6;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myMaxDegree = 14;
         myMaxSeg = 16;
         myProj2d = true;
@@ -563,16 +566,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         mySurface = theSurface;
         myCurve = theCurve;
         myNbCurves = 0;
-        mySequence = new NCollection_HSequence<NCollection_HSequence<gp_Pnt>>();
+        mySequence = new NCollection_HSequence<NCollection_HSequence<Point3D>>();
         myTol3d = theTol3d;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myMaxDegree = 14;
         myMaxSeg = 16;
         myProj2d = true;
         myProj3d = false;
         myMaxDist = theMaxDist;
-        myTolU = Max(Precision.PConfusion(), mySurface.UResolution(theTol3d));
-        myTolV = Max(Precision.PConfusion(), mySurface.VResolution(theTol3d));
+        myTolU = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), mySurface.UResolution(theTol3d));
+        myTolV = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), mySurface.VResolution(theTol3d));
 
         Init();
     }
@@ -620,7 +623,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         int i, Nend = 0, aSplitIdx = 0;
         bool FromLastU = false, isSplitsComputed = false;
 
-        double aTolExt = Precision.PConfusion();
+        double aTolExt = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Extrema_ExtCS CExt = new(myCurve, mySurface, aTolExt, aTolExt);
         if (CExt.IsDone() && CExt.NbExt() != 0)
         {
@@ -628,7 +631,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             // Avoid usage of extrema result that can be wrong for extrusion.
             if (myMaxDist > 0 &&
 
-                mySurface.GetType() != GeomAbs_SurfaceOfExtrusion)
+                mySurface.GetType() != SurfaceOfExtrusion)
             {
                 double min_val2;
                 min_val2 = CExt.SquareDistance(1);
@@ -659,9 +662,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         SearchStep = 10 * MinStep;
         Step = SearchStep;
 
-        gp_Pnt2d aLowBorder = new(mySurface.FirstUParameter(), mySurface.FirstVParameter());
-        gp_Pnt2d aUppBorder = new(mySurface.LastUParameter(), mySurface.LastVParameter());
-        gp_Pnt2d aTol = new(myTolU, myTolV);
+        Point2D aLowBorder = new(mySurface.FirstUParameter(), mySurface.FirstVParameter());
+        Point2D aUppBorder = new(mySurface.LastUParameter(), mySurface.LastVParameter());
+        Point2D aTol = new(myTolU, myTolV);
         ProjLib_PrjResolve aPrjPS = new(myCurve, mySurface, 1);
 
         t = FirstU;
@@ -669,7 +672,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         double prevDeb = 0.0;
         bool SameDeb = false;
 
-        gp_Pnt Triple = new(), prevTriple = new();
+        Point3D Triple = new(), prevTriple = new();
 
         // Basic loop
         while (t <= LastU)
@@ -677,7 +680,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             // Search for the beginning of a new continuous part
             // to avoid infinite computation in some difficult cases.
             new_part = false;
-            if (t > FirstU && Math.Abs(t - prevDeb) <= Precision.PConfusion())
+            if (t > FirstU && Math.Abs(t - prevDeb) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 SameDeb = true;
             }
@@ -690,7 +693,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 }
                 bool initpoint = false;
                 double U = 0.0, V = 0.0;
-                gp_Pnt CPoint = new();
+                Point3D CPoint = new();
                 double ParT, ParU, ParV;
 
                 // Search an initial point in the list of Extrema Curve-Surface
@@ -707,7 +710,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         aPrjPS.Perform(ParT, ParU, ParV, aTol, aLowBorder, aUppBorder, FuncTol, true);
 
                         if (aPrjPS.IsDone()
-                            && P1.Parameter() > Max(FirstU, t - Step + Precision.PConfusion())
+                            && P1.Parameter() > Max(FirstU, t - Step + global::Kerf.Engine.Foundation.Precision.PConfusion())
                             && P1.Parameter() <= t)
                         {
                             t = ParT;
@@ -729,16 +732,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 {
                     // When U or V lie on surface joint in some cases we cannot use them
                     // as initial point for aPrjPS, so we switch them
-                    gp_Vec2d D;
+                    Vector2D D;
 
                     if ((mySurface.IsUPeriodic()
                          && Math.Abs(aUppBorder.X() - aLowBorder.X() - mySurface.UPeriod())
-                              < Precision.Confusion())
+                              < global::Kerf.Engine.Foundation.Precision.Confusion())
                         || (mySurface.IsVPeriodic()
                             && Math.Abs(aUppBorder.Y() - aLowBorder.Y() - mySurface.VPeriod())
-                                 < Precision.Confusion()))
+                                 < global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
-                        if ((Math.Abs(U - aLowBorder.X()) < mySurface.UResolution(Precision.PConfusion()))
+                        if ((Math.Abs(U - aLowBorder.X()) < mySurface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             && mySurface.IsUPeriodic())
                         {
                             d1(t, U, V, out D, myCurve, mySurface);
@@ -747,7 +750,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                                 U = aUppBorder.X();
                             }
                         }
-                        else if ((Math.Abs(U - aUppBorder.X()) < mySurface.UResolution(Precision.PConfusion()))
+                        else if ((Math.Abs(U - aUppBorder.X()) < mySurface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                                  && mySurface.IsUPeriodic())
                         {
                             d1(t, U, V, out D, myCurve, mySurface);
@@ -757,7 +760,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                             }
                         }
 
-                        if ((Math.Abs(V - aLowBorder.Y()) < mySurface.VResolution(Precision.PConfusion()))
+                        if ((Math.Abs(V - aLowBorder.Y()) < mySurface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             && mySurface.IsVPeriodic())
                         {
                             d1(t, U, V, out D, myCurve, mySurface);
@@ -766,7 +769,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                                 V = aUppBorder.Y();
                             }
                         }
-                        else if ((Math.Abs(V - aUppBorder.Y()) <= mySurface.VResolution(Precision.PConfusion()))
+                        else if ((Math.Abs(V - aUppBorder.Y()) <= mySurface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                                  && mySurface.IsVPeriodic())
                         {
                             d1(t, U, V, out D, myCurve, mySurface);
@@ -781,7 +784,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     {
                         // Here we are going to stop if the distance between projection and
                         // corresponding curve point is greater than myMaxDist
-                        gp_Pnt POnS;
+                        Point3D POnS;
                         double d;
                         mySurface.D0(U, V, out POnS);
                         d = CPoint.Distance(POnS);
@@ -792,12 +795,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                             return;
                         }
                     }
-                    Triple = new gp_Pnt(t, U, V);
+                    Triple = new Point3D(t, U, V);
                     if (t != FirstU)
                     {
                         // Search for exact boundary point
                         Tol = Min(myTolU, myTolV);
-                        gp_Vec2d aD;
+                        Vector2D aD;
                         d1(Triple.X(), Triple.Y(), Triple.Z(), out aD, myCurve, mySurface);
                         Tol /= Max(Math.Abs(aD.X()), Math.Abs(aD.Y()));
 
@@ -828,7 +831,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             }
 
             // We have found a new continuous part
-            NCollection_HSequence<gp_Pnt> hSeq = new();
+            NCollection_HSequence<Point3D> hSeq = new();
             mySequence.Append(hSeq);
             myNbCurves++;
             mySequence.Value(myNbCurves).Append(Triple);
@@ -840,12 +843,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             }
 
             // Computation of WalkStep
-            gp_Vec D1, D2;
+            Vector3D D1, D2;
             double MagnD1, MagnD2;
             d2CurvOnSurf(Triple.X(), Triple.Y(), Triple.Z(), out D1, out D2, myCurve, mySurface);
             MagnD1 = D1.Magnitude();
             MagnD2 = D2.Magnitude();
-            if (MagnD2 < Precision.Confusion())
+            if (MagnD2 < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 WalkStep = MaxStep;
             }
@@ -881,7 +884,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     {
                         // Search for exact boundary point
                         Tol = Min(myTolU, myTolV);
-                        gp_Vec2d D;
+                        Vector2D D;
                         d1(Triple.X(), Triple.Y(), Triple.Z(), out D, myCurve, mySurface);
                         Tol /= Max(Math.Abs(D.X()), Math.Abs(D.Y()));
 
@@ -920,7 +923,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         if (t > (LastU - MinStep / 4))
                         {
                             Step = Step + LastU - t;
-                            if (Math.Abs(Step - SaveStep) <= Precision.PConfusion())
+                            if (Math.Abs(Step - SaveStep) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 Step = GlobalMinStep; // to avoid looping
                             }
@@ -933,7 +936,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 {
                     prevTriple = Triple;
                     prevStep = Step;
-                    Triple = new gp_Pnt(t, aPrjPS.Solution().X(), aPrjPS.Solution().Y());
+                    Triple = new Point3D(t, aPrjPS.Solution().X(), aPrjPS.Solution().Y());
 
                     // Check for possible local traps.
                     UpdateTripleByTrapCriteria(ref Triple);
@@ -943,16 +946,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     {
                         bool isUPossible = false;
                         if (mySurface.IsUPeriodic()
-                            && (Math.Abs(Triple.Y() - mySurface.FirstUParameter()) > Precision.PConfusion()
-                                && Math.Abs(Triple.Y() - mySurface.LastUParameter()) > Precision.PConfusion()))
+                            && (Math.Abs(Triple.Y() - mySurface.FirstUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                && Math.Abs(Triple.Y() - mySurface.LastUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                         {
                             isUPossible = true;
                         }
 
                         bool isVPossible = false;
                         if (mySurface.IsVPeriodic()
-                            && (Math.Abs(Triple.Z() - mySurface.FirstVParameter()) > Precision.PConfusion()
-                                && Math.Abs(Triple.Z() - mySurface.LastVParameter()) > Precision.PConfusion()))
+                            && (Math.Abs(Triple.Z() - mySurface.FirstVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                && Math.Abs(Triple.Z() - mySurface.LastVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                         {
                             isVPossible = true;
                         }
@@ -980,7 +983,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     d2CurvOnSurf(Triple.X(), Triple.Y(), Triple.Z(), out D1, out D2, myCurve, mySurface);
                     MagnD1 = D1.Magnitude();
                     MagnD2 = D2.Magnitude();
-                    if (MagnD2 < Precision.Confusion())
+                    if (MagnD2 < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         WalkStep = MaxStep;
                     }
@@ -1002,7 +1005,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     for (int anIdx = aSplitIdx; anIdx < aSize; ++anIdx)
                     {
                         double aParam = aSplits.Value(anIdx);
-                        if (Math.Abs(aParam - Triple.X()) < Precision.PConfusion())
+                        if (Math.Abs(aParam - Triple.X()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             // The current point is equal to a split point.
                             new_part = false;
@@ -1011,7 +1014,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                             ++aSplitIdx;
                             break;
                         }
-                        else if (aParam < t + Precision.PConfusion())
+                        else if (aParam < t + global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             // The next point crosses the split point.
                             t = aParam;
@@ -1066,7 +1069,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         {
             for (j = 1; j <= mySequence.Value(i).Length(); j++)
             {
-                gp_Pnt POnC, POnS, aTriple;
+                Point3D POnC, POnS, aTriple;
                 double Distance;
                 aTriple = mySequence.Value(i).Value(j);
                 myCurve.D0(aTriple.X(), out POnC);
@@ -1081,7 +1084,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
         // 4. Check the projection to be a single point
 
-        gp_Pnt2d Pmoy = new(), Pcurr, P;
+        Point2D Pmoy = new(), Pcurr, P;
         double AveU, AveV;
         mySnglPnts = new NCollection_HArray1<bool>(1, myNbCurves);
         mySnglPnts.Init(true);
@@ -1101,7 +1104,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             Pmoy.SetCoord(AveU, AveV);
             for (j = 1; j <= mySequence.Value(i).Length(); j++)
             {
-                Pcurr = new gp_Pnt2d(mySequence.Value(i).Value(j).Y(), mySequence.Value(i).Value(j).Z());
+                Pcurr = new Point2D(mySequence.Value(i).Value(j).Y(), mySequence.Value(i).Value(j).Z());
                 if (Pcurr.Distance(Pmoy) > ((myTolU < myTolV) ? myTolV : myTolU))
                 {
                     mySnglPnts.SetValue(i, false);
@@ -1180,8 +1183,8 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         bool approx2d = myProj2d;
         bool approx3d = myProj3d;
         double Udeb, Ufin, UIso, VIso;
-        gp_Pnt2d P2d, Pdeb, Pfin;
-        gp_Pnt P;
+        Point2D P2d, Pdeb, Pfin;
+        Point3D P;
         Adaptor2d_Curve2d? HPCur;
         Adaptor3d_Surface HS = mySurface.ShallowCopy(); // For expand bounds of surface
         Geom2d_Curve? PCur2d = null;                    // Only for isoparametric projection
@@ -1189,13 +1192,13 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
         if (myProj2d)
         {
-            myResult2dPoint = new NCollection_HArray1<gp_Pnt2d>(1, myNbCurves);
+            myResult2dPoint = new NCollection_HArray1<Point2D>(1, myNbCurves);
             myResult2dCurve = new NCollection_HArray1<Geom2d_Curve?>(1, myNbCurves);
         }
 
         if (myProj3d)
         {
-            myResult3dPoint = new NCollection_HArray1<gp_Pnt>(1, myNbCurves);
+            myResult3dPoint = new NCollection_HArray1<Point3D>(1, myNbCurves);
             myResult3dCurve = new NCollection_HArray1<Geom_Curve?>(1, myNbCurves);
         }
 
@@ -1229,7 +1232,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             else
             {
                 Bounds(k, out Udeb, out Ufin);
-                gp_Dir2d Dir; // Only for isoparametric projection
+                Direction2D Dir; // Only for isoparametric projection
 
                 // OCCT: approx2d is cleared for good by an isoparametric part, so a later part that isn't
                 // isoparametric is not approximated in 2D and gets the previous part's PCur2d (occt-issues.md;
@@ -1244,15 +1247,15 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     Ufin = Pfin.Y();
                     if (Udeb > Ufin)
                     {
-                        Dir = new gp_Dir2d(gp_Dir2d.D.NY);
+                        Dir = new Direction2D(Direction2D.D.NY);
                         Udeb = -Udeb;
                         Ufin = -Ufin;
                     }
                     else
                     {
-                        Dir = new gp_Dir2d(gp_Dir2d.D.Y);
+                        Dir = new Direction2D(Direction2D.D.Y);
                     }
-                    PCur2d = new Geom2d_TrimmedCurve(new Geom2d_Line(new gp_Pnt2d(UIso, 0), Dir), Udeb, Ufin);
+                    PCur2d = new Geom2d_TrimmedCurve(new Geom2d_Line(new Point2D(UIso, 0), Dir), Udeb, Ufin);
                     HPCur = new Geom2dAdaptor_Curve(PCur2d);
                 }
                 else if (IsVIso(k, out VIso)) // Part k of the projection is V-isoparametric curve
@@ -1265,15 +1268,15 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     Ufin = Pfin.X();
                     if (Udeb > Ufin)
                     {
-                        Dir = new gp_Dir2d(gp_Dir2d.D.NX);
+                        Dir = new Direction2D(Direction2D.D.NX);
                         Udeb = -Udeb;
                         Ufin = -Ufin;
                     }
                     else
                     {
-                        Dir = new gp_Dir2d(gp_Dir2d.D.X);
+                        Dir = new Direction2D(Direction2D.D.X);
                     }
-                    PCur2d = new Geom2d_TrimmedCurve(new Geom2d_Line(new gp_Pnt2d(0, VIso), Dir), Udeb, Ufin);
+                    PCur2d = new Geom2d_TrimmedCurve(new Geom2d_Line(new Point2D(0, VIso), Dir), Udeb, Ufin);
                     HPCur = new Geom2dAdaptor_Curve(PCur2d);
                 }
                 else
@@ -1361,7 +1364,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     }
 
     /// <summary>Sets the continuity of the approximation (default C2).</summary>
-    public void SetContinuity(GeomAbs_Shape theContinuity)
+    public void SetContinuity(Continuity theContinuity)
     {
         myContinuity = theContinuity;
     }
@@ -1426,62 +1429,62 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     public int NbCurves() => myNbCurves;
 
     /// <summary>The curve parameters bounding part <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">Index is out of range.</exception>
+    /// <exception cref="NoSuchObjectException">Index is out of range.</exception>
     public void Bounds(int Index, out double Udeb, out double Ufin)
     {
         if (Index < 1 || Index > myNbCurves)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         Udeb = mySequence.Value(Index).Value(1).X();
         Ufin = mySequence.Value(Index).Value(mySequence.Value(Index).Length()).X();
     }
 
     /// <summary>True if part <paramref name="Index"/> projects to a single point, <paramref name="P"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">Index is out of range.</exception>
-    public bool IsSinglePnt(int Index, out gp_Pnt2d P)
+    /// <exception cref="NoSuchObjectException">Index is out of range.</exception>
+    public bool IsSinglePnt(int Index, out Point2D P)
     {
         if (Index < 1 || Index > myNbCurves)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
-        P = new gp_Pnt2d(mySequence.Value(Index).Value(1).Y(), mySequence.Value(Index).Value(1).Z());
+        P = new Point2D(mySequence.Value(Index).Value(1).Y(), mySequence.Value(Index).Value(1).Z());
         return mySnglPnts!.Value(Index);
     }
 
     /// <summary>True if part <paramref name="Index"/> is a U-isoparametric line, at <paramref name="U"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">Index is out of range.</exception>
+    /// <exception cref="NoSuchObjectException">Index is out of range.</exception>
     public bool IsUIso(int Index, out double U)
     {
         if (Index < 1 || Index > myNbCurves)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         U = mySequence.Value(Index).Value(1).Y();
         return myUIso!.Value(Index);
     }
 
     /// <summary>True if part <paramref name="Index"/> is a V-isoparametric line, at <paramref name="V"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">Index is out of range.</exception>
+    /// <exception cref="NoSuchObjectException">Index is out of range.</exception>
     public bool IsVIso(int Index, out double V)
     {
         if (Index < 1 || Index > myNbCurves)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         V = mySequence.Value(Index).Value(1).Z();
         return myVIso!.Value(Index);
     }
 
-    public override gp_Pnt2d Value(double t)
+    public override Point2D Value(double t)
     {
-        gp_Pnt2d P;
+        Point2D P;
         D0(t, out P);
         return P;
     }
 
-    /// <exception cref="Standard_DomainError">U is in none of the parts.</exception>
-    public override void D0(double U, out gp_Pnt2d P)
+    /// <exception cref="DomainErrorException">U is in none of the parts.</exception>
+    public override void D0(double U, out Point2D P)
     {
         int i, j;
         double Udeb, Ufin;
@@ -1498,7 +1501,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         }
         if (!found)
         {
-            throw new Standard_DomainError("ProjLib_CompProjectedCurve::D0");
+            throw new DomainErrorException("ProjLib_CompProjectedCurve::D0");
         }
 
         double U0, V0;
@@ -1517,12 +1520,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
         //  Cubic Interpolation
         if (mySequence.Value(i).Length() < 4
-            || (Math.Abs(U - mySequence.Value(i).Value(j).X()) <= Precision.PConfusion()))
+            || (Math.Abs(U - mySequence.Value(i).Value(j).X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             U0 = mySequence.Value(i).Value(j).Y();
             V0 = mySequence.Value(i).Value(j).Z();
         }
-        else if (Math.Abs(U - mySequence.Value(i).Value(j + 1).X()) <= Precision.PConfusion())
+        else if (Math.Abs(U - mySequence.Value(i).Value(j + 1).X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             U0 = mySequence.Value(i).Value(j + 1).Y();
             V0 = mySequence.Value(i).Value(j + 1).Z();
@@ -1538,7 +1541,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 j = mySequence.Value(i).Length() - 2;
             }
 
-            gp_Vec2d I1, I2, I3, I21, I22, I31, Y1, Y2, Y3, Y4, Res;
+            Vector2D I1, I2, I3, I21, I22, I31, Y1, Y2, Y3, Y4, Res;
             double X1, X2, X3, X4;
 
             X1 = mySequence.Value(i).Value(j - 1).X();
@@ -1546,10 +1549,10 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             X3 = mySequence.Value(i).Value(j + 1).X();
             X4 = mySequence.Value(i).Value(j + 2).X();
 
-            Y1 = new gp_Vec2d(mySequence.Value(i).Value(j - 1).Y(), mySequence.Value(i).Value(j - 1).Z());
-            Y2 = new gp_Vec2d(mySequence.Value(i).Value(j).Y(), mySequence.Value(i).Value(j).Z());
-            Y3 = new gp_Vec2d(mySequence.Value(i).Value(j + 1).Y(), mySequence.Value(i).Value(j + 1).Z());
-            Y4 = new gp_Vec2d(mySequence.Value(i).Value(j + 2).Y(), mySequence.Value(i).Value(j + 2).Z());
+            Y1 = new Vector2D(mySequence.Value(i).Value(j - 1).Y(), mySequence.Value(i).Value(j - 1).Z());
+            Y2 = new Vector2D(mySequence.Value(i).Value(j).Y(), mySequence.Value(i).Value(j).Z());
+            Y3 = new Vector2D(mySequence.Value(i).Value(j + 1).Y(), mySequence.Value(i).Value(j + 1).Z());
+            Y4 = new Vector2D(mySequence.Value(i).Value(j + 2).Y(), mySequence.Value(i).Value(j + 2).Z());
 
             I1 = (Y1 - Y2) / (X1 - X2);
             I2 = (Y2 - Y3) / (X2 - X3);
@@ -1589,9 +1592,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         aPrjPS.Perform(U,
                        U0,
                        V0,
-                       new gp_Pnt2d(myTolU, myTolV),
-                       new gp_Pnt2d(mySurface.FirstUParameter(), mySurface.FirstVParameter()),
-                       new gp_Pnt2d(mySurface.LastUParameter(), mySurface.LastVParameter()),
+                       new Point2D(myTolU, myTolV),
+                       new Point2D(mySurface.FirstUParameter(), mySurface.FirstVParameter()),
+                       new Point2D(mySurface.LastUParameter(), mySurface.LastVParameter()),
                        FuncTol);
         if (aPrjPS.IsDone())
         {
@@ -1599,7 +1602,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         }
         else
         {
-            gp_Pnt thePoint = myCurve.Value(U);
+            Point3D thePoint = myCurve.Value(U);
             Extrema_ExtPS aExtPS = new(thePoint, mySurface, myTolU, myTolV, Extrema_ExtFlag_MIN);
             if (aExtPS.IsDone() && aExtPS.NbExt() != 0)
             {
@@ -1616,16 +1619,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 Extrema_POnSurf POnS = aExtPS.Point(imin);
                 double ParU, ParV;
                 POnS.Parameter(out ParU, out ParV);
-                P = new gp_Pnt2d(ParU, ParV);
+                P = new Point2D(ParU, ParV);
             }
             else
             {
-                P = new gp_Pnt2d(U0, V0);
+                P = new Point2D(U0, V0);
             }
         }
     }
 
-    public override void D1(double t, out gp_Pnt2d P, out gp_Vec2d V)
+    public override void D1(double t, out Point2D P, out Vector2D V)
     {
         double u, v;
         D0(t, out P);
@@ -1634,7 +1637,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         d1(t, u, v, out V, myCurve, mySurface);
     }
 
-    public override void D2(double t, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public override void D2(double t, out Point2D P, out Vector2D V1, out Vector2D V2)
     {
         double u, v;
         D0(t, out P);
@@ -1643,47 +1646,47 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         d2(t, u, v, out V1, out V2, myCurve, mySurface);
     }
 
-    /// <exception cref="Standard_OutOfRange">N is less than 1.</exception>
-    /// <exception cref="Standard_NotImplemented">N is greater than 2.</exception>
-    public override gp_Vec2d DN(double t, int N)
+    /// <exception cref="OutOfRangeException">N is less than 1.</exception>
+    /// <exception cref="MethodNotImplementedException">N is greater than 2.</exception>
+    public override Vector2D DN(double t, int N)
     {
         if (N < 1)
         {
-            throw new Standard_OutOfRange("ProjLib_CompProjectedCurve : N must be greater than 0");
+            throw new OutOfRangeException("ProjLib_CompProjectedCurve : N must be greater than 0");
         }
         else if (N == 1)
         {
-            gp_Pnt2d P;
-            gp_Vec2d V;
+            Point2D P;
+            Vector2D V;
             D1(t, out P, out V);
             return V;
         }
         else if (N == 2)
         {
-            gp_Pnt2d P;
-            gp_Vec2d V1, V2;
+            Point2D P;
+            Vector2D V1, V2;
             D2(t, out P, out V1, out V2);
             return V2;
         }
         else if (N > 2)
         {
-            throw new Standard_NotImplemented("ProjLib_CompProjectedCurve::DN");
+            throw new MethodNotImplementedException("ProjLib_CompProjectedCurve::DN");
         }
-        return new gp_Vec2d();
+        return new Vector2D();
     }
 
     /// <summary>
     /// The (t, u, v) triples of each part. A deep copy in the port, where OCCT returns its own sequences: the
     /// projection keeps (and its shallow copies share) them.
     /// </summary>
-    public NCollection_HSequence<NCollection_HSequence<gp_Pnt>> GetSequence()
+    public NCollection_HSequence<NCollection_HSequence<Point3D>> GetSequence()
     {
-        NCollection_HSequence<NCollection_HSequence<gp_Pnt>> aCopy = new();
+        NCollection_HSequence<NCollection_HSequence<Point3D>> aCopy = new();
         if (mySequence is not null)
         {
             for (int i = 1; i <= mySequence.Length(); i++)
             {
-                aCopy.Append(new NCollection_HSequence<gp_Pnt>(mySequence.Value(i)));
+                aCopy.Append(new NCollection_HSequence<Point3D>(mySequence.Value(i)));
             }
         }
         return aCopy;
@@ -1693,15 +1696,15 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
     public override double LastParameter() => myCurve.LastParameter();
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
-        GeomAbs_Shape ContC = myCurve.Continuity();
-        GeomAbs_Shape ContSu = mySurface.UContinuity();
+        Continuity ContC = myCurve.Continuity();
+        Continuity ContSu = mySurface.UContinuity();
         if (ContSu < ContC)
         {
             ContC = ContSu;
         }
-        GeomAbs_Shape ContSv = mySurface.VContinuity();
+        Continuity ContSv = mySurface.VContinuity();
         if (ContSv < ContC)
         {
             ContC = ContSv;
@@ -1711,12 +1714,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     }
 
     /// <summary>The maximum distance between the curve and its projection in part <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">Index is out of range.</exception>
+    /// <exception cref="NoSuchObjectException">Index is out of range.</exception>
     public double MaxDistance(int Index)
     {
         if (Index < 1 || Index > myNbCurves)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         return myMaxDistance!.Value(Index);
     }
@@ -1725,7 +1728,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     /// The number of intervals of continuity <paramref name="S"/>: the parts' bounds, the curve's intervals and
     /// the points where the projection crosses the surface's intervals. Recomputes and caches them.
     /// </summary>
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         myTabInt = null;
         BuildIntervals(S);
@@ -1736,7 +1739,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     /// The intervals cached by <see cref="NbIntervals"/>, computed for <paramref name="S"/> if none are cached (as
     /// OCCT, a cache computed for another continuity is returned).
     /// </summary>
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         if (myTabInt is null)
         {
@@ -1745,28 +1748,28 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         T.Assign(myTabInt!.Array1());
     }
 
-    private void BuildIntervals(GeomAbs_Shape S)
+    private void BuildIntervals(Continuity S)
     {
-        GeomAbs_Shape SforS = GeomAbs_CN;
+        Continuity SforS = CN;
         switch (S)
         {
-            case GeomAbs_C0:
-                SforS = GeomAbs_C1;
+            case C0:
+                SforS = C1;
                 break;
-            case GeomAbs_C1:
-                SforS = GeomAbs_C2;
+            case C1:
+                SforS = C2;
                 break;
-            case GeomAbs_C2:
-                SforS = GeomAbs_C3;
+            case C2:
+                SforS = C3;
                 break;
-            case GeomAbs_C3:
-                SforS = GeomAbs_CN;
+            case C3:
+                SforS = CN;
                 break;
-            case GeomAbs_CN:
-                SforS = GeomAbs_CN;
+            case CN:
+                SforS = CN;
                 break;
             default:
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
         }
         int i, j, k;
         int NbIntCur = myCurve.NbIntervals(S);
@@ -1829,11 +1832,11 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         V = (mySequence.Value(i).Value(j).Z() + mySequence.Value(i).Value(j + 1).Z()) / 2;
                         ProjLib_PrjResolve Solver = new(myCurve, mySurface, 2);
 
-                        gp_Vec2d D;
-                        gp_Pnt Triple;
+                        Vector2D D;
+                        Point3D Triple;
                         Triple = mySequence.Value(i).Value(j);
                         d1(Triple.X(), Triple.Y(), Triple.Z(), out D, myCurve, mySurface);
-                        if (Math.Abs(D.X()) < Precision.Confusion())
+                        if (Math.Abs(D.X()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             Tol = myTolU;
                         }
@@ -1848,9 +1851,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         Solver.Perform((Tl + Tr) / 2,
                                        CutPntsU[k],
                                        V,
-                                       new gp_Pnt2d(Tol, myTolV),
-                                       new gp_Pnt2d(Tl, mySurface.FirstVParameter()),
-                                       new gp_Pnt2d(Tr, mySurface.LastVParameter()),
+                                       new Point2D(Tol, myTolV),
+                                       new Point2D(Tl, mySurface.FirstVParameter()),
+                                       new Point2D(Tr, mySurface.LastVParameter()),
                                        FuncTol);
                         //
                         if (Solver.IsDone())
@@ -1863,7 +1866,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         }
         for (i = 2; i <= TUdisc.Length(); i++)
         {
-            if (TUdisc.Value(i) - TUdisc.Value(i - 1) < Precision.PConfusion())
+            if (TUdisc.Value(i) - TUdisc.Value(i - 1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 TUdisc.Remove(i--);
             }
@@ -1904,11 +1907,11 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         U = (mySequence.Value(i).Value(j).Y() + mySequence.Value(i).Value(j + 1).Y()) / 2;
                         ProjLib_PrjResolve Solver = new(myCurve, mySurface, 3);
 
-                        gp_Vec2d D;
-                        gp_Pnt Triple;
+                        Vector2D D;
+                        Point3D Triple;
                         Triple = mySequence.Value(i).Value(j);
                         d1(Triple.X(), Triple.Y(), Triple.Z(), out D, myCurve, mySurface);
-                        if (Math.Abs(D.Y()) < Precision.Confusion())
+                        if (Math.Abs(D.Y()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             Tol = myTolV;
                         }
@@ -1923,9 +1926,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                         Solver.Perform((Tl + Tr) / 2,
                                        U,
                                        CutPntsV[k],
-                                       new gp_Pnt2d(Tol, myTolV),
-                                       new gp_Pnt2d(Tl, mySurface.FirstUParameter()),
-                                       new gp_Pnt2d(Tr, mySurface.LastUParameter()),
+                                       new Point2D(Tol, myTolV),
+                                       new Point2D(Tl, mySurface.FirstUParameter()),
+                                       new Point2D(Tr, mySurface.LastUParameter()),
                                        FuncTol);
                         //
                         if (Solver.IsDone())
@@ -1939,7 +1942,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
         for (i = 2; i <= TVdisc.Length(); i++)
         {
-            if (TVdisc.Value(i) - TVdisc.Value(i - 1) < Precision.PConfusion())
+            if (TVdisc.Value(i) - TVdisc.Value(i - 1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 TVdisc.Remove(i--);
             }
@@ -1961,7 +1964,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             GeomLib.FuseIntervals(BArr.ChangeArray1(),
                                   CArr.ChangeArray1(),
                                   Fusion,
-                                  Precision.PConfusion());
+                                  global::Kerf.Engine.Foundation.Precision.PConfusion());
             BArr = new NCollection_HArray1<double>(1, Fusion.Length());
             for (i = 1; i <= BArr.Length(); i++)
             {
@@ -1975,7 +1978,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             GeomLib.FuseIntervals(BArr.ChangeArray1(),
                                   UArr.ChangeArray1(),
                                   Fusion,
-                                  Precision.PConfusion());
+                                  global::Kerf.Engine.Foundation.Precision.PConfusion());
             BArr = new NCollection_HArray1<double>(1, Fusion.Length());
             for (i = 1; i <= BArr.Length(); i++)
             {
@@ -1989,7 +1992,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
             GeomLib.FuseIntervals(BArr.ChangeArray1(),
                                   VArr.ChangeArray1(),
                                   Fusion,
-                                  Precision.PConfusion());
+                                  global::Kerf.Engine.Foundation.Precision.PConfusion());
             BArr = new NCollection_HArray1<double>(1, Fusion.Length());
             for (i = 1; i <= BArr.Length(); i++)
             {
@@ -2017,7 +2020,7 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
     }
 
     /// <summary>OtherCurve.</summary>
-    public override GeomAbs_CurveType GetType() => GeomAbs_OtherCurve;
+    public override CurveKind GetType() => OtherCurve;
 
     /// <summary>True if part <paramref name="theIndex"/> of the result of <see cref="Perform"/> is a point.</summary>
     public bool ResultIsPoint(int theIndex) => myResultIsPoint!.Value(theIndex);
@@ -2050,16 +2053,16 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         return aCurve;
     }
 
-    /// <exception cref="Standard_TypeMismatch">The part is not a point.</exception>
-    public gp_Pnt2d GetResult2dP(int theIndex)
+    /// <exception cref="TypeMismatchException">The part is not a point.</exception>
+    public Point2D GetResult2dP(int theIndex)
     {
         Standard_TypeMismatch_Raise_if(!myResultIsPoint!.Value(theIndex),
                                        "ProjLib_CompProjectedCurve : result is not a point 2d");
         return myResult2dPoint!.Value(theIndex);
     }
 
-    /// <exception cref="Standard_TypeMismatch">The part is not a point.</exception>
-    public gp_Pnt GetResult3dP(int theIndex)
+    /// <exception cref="TypeMismatchException">The part is not a point.</exception>
+    public Point3D GetResult3dP(int theIndex)
     {
         Standard_TypeMismatch_Raise_if(!myResultIsPoint!.Value(theIndex),
                                        "ProjLib_CompProjectedCurve : result is not a point 3d");
@@ -2070,17 +2073,17 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
     public bool GetProj3d() => myProj3d;
 
-    private void UpdateTripleByTrapCriteria(ref gp_Pnt thePoint)
+    private void UpdateTripleByTrapCriteria(ref Point3D thePoint)
     {
         bool isProblemsPossible = false;
         // Check possible traps cases:
 
         // 25892 bug.
-        if (mySurface.GetType() == GeomAbs_SurfaceOfRevolution)
+        if (mySurface.GetType() == SurfaceOfRevolution)
         {
             // Compute maximal deviation from 3D and choose the biggest one.
-            double aVRes = mySurface.VResolution(Precision.Confusion());
-            double aMaxTol = Max(Precision.PConfusion(), aVRes);
+            double aVRes = mySurface.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
+            double aMaxTol = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), aVRes);
 
             if (Math.Abs(thePoint.Z() - mySurface.FirstVParameter()) < aMaxTol
                 || Math.Abs(thePoint.Z() - mySurface.LastVParameter()) < aMaxTol)
@@ -2090,11 +2093,11 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         }
 
         // 27135 bug. Trap on degenerated edge.
-        if (mySurface.GetType() == GeomAbs_Sphere
-            && (Math.Abs(thePoint.Z() - mySurface.FirstVParameter()) < Precision.PConfusion()
-                || Math.Abs(thePoint.Z() - mySurface.LastVParameter()) < Precision.PConfusion()
-                || Math.Abs(thePoint.Y() - mySurface.FirstUParameter()) < Precision.PConfusion()
-                || Math.Abs(thePoint.Y() - mySurface.LastUParameter()) < Precision.PConfusion()))
+        if (mySurface.GetType() == SurfaceKind.Sphere
+            && (Math.Abs(thePoint.Z() - mySurface.FirstVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(thePoint.Z() - mySurface.LastVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(thePoint.Y() - mySurface.FirstUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(thePoint.Y() - mySurface.LastUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             isProblemsPossible = true;
         }
@@ -2109,8 +2112,8 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                                    thePoint.X(),
                                    myCurve,
                                    mySurface,
-                                   Precision.PConfusion(),
-                                   Precision.PConfusion(),
+                                   global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                   global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                    out U,
                                    out V,
                                    myMaxDist);
@@ -2122,12 +2125,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
 
         // Restore original position in case of period jump.
         if (mySurface.IsUPeriodic()
-            && Math.Abs(Math.Abs(U - thePoint.Y()) - mySurface.UPeriod()) < Precision.PConfusion())
+            && Math.Abs(Math.Abs(U - thePoint.Y()) - mySurface.UPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             U = thePoint.Y();
         }
         if (mySurface.IsVPeriodic()
-            && Math.Abs(Math.Abs(V - thePoint.Z()) - mySurface.VPeriod()) < Precision.PConfusion())
+            && Math.Abs(Math.Abs(V - thePoint.Z()) - mySurface.VPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             V = thePoint.Z();
         }
@@ -2179,9 +2182,9 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
         // In this method assumed that the points cannot be closer to each other that 1% of the parameter
         // space.
 
-        gp_Pnt2d aStartPnt = new(theSplitDS.mySurface.FirstUParameter(),
+        Point2D aStartPnt = new(theSplitDS.mySurface.FirstUParameter(),
                                  theSplitDS.mySurface.FirstVParameter());
-        gp_Dir2d aDir = new(theSplitDS.myPeriodicDir, theSplitDS.myPeriodicDir == 0 ? 1 : 0);
+        Direction2D aDir = new(theSplitDS.myPeriodicDir, theSplitDS.myPeriodicDir == 0 ? 1 : 0);
 
         theSplitDS.myPerMinParam = theSplitDS.myPeriodicDir == 0 ? theSplitDS.mySurface.FirstUParameter()
                                                                  : theSplitDS.mySurface.FirstVParameter();
@@ -2254,15 +2257,15 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                 aPOnS.Parameter(out U, out V);
                 aProjParam = theSplitDS.myPeriodicDir != 0 ? V : U;
 
-                if (Math.Abs(aProjParam - theSplitDS.myPerMinParam) < Precision.PConfusion()
-                    || Math.Abs(aProjParam - theSplitDS.myPerMaxParam) < Precision.PConfusion())
+                if (Math.Abs(aProjParam - theSplitDS.myPerMinParam) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    || Math.Abs(aProjParam - theSplitDS.myPerMaxParam) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     double aParam = aPOnC2.Parameter();
                     double aCFParam = theSplitDS.myCurve.FirstParameter();
                     double aCLParam = theSplitDS.myCurve.LastParameter();
 
-                    if (aParam > aCFParam + Precision.PConfusion()
-                        && aParam < aCLParam - Precision.PConfusion())
+                    if (aParam > aCFParam + global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        && aParam < aCLParam - global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // Add only inner points.
                         theSplitDS.mySplits.Append(aParam);
@@ -2271,12 +2274,12 @@ public class ProjLib_CompProjectedCurve : Adaptor2d_Curve2d
                     const double aDeltaCoeff = 0.01;
                     double aDelta = (theMaxParam - theMinParam + aCLParam - aCFParam) * aDeltaCoeff;
 
-                    if (aParam - aDelta > theMinParam + Precision.PConfusion())
+                    if (aParam - aDelta > theMinParam + global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         FindSplitPoint(theSplitDS, theMinParam, aParam - aDelta); // Curve parameters.
                     }
 
-                    if (aParam + aDelta < theMaxParam - Precision.PConfusion())
+                    if (aParam + aDelta < theMaxParam - global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         FindSplitPoint(theSplitDS, aParam + aDelta, theMaxParam); // Curve parameters.
                     }

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -70,7 +72,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     public void Init(in TopoDS_Wire W, Geom_Surface S)
     {
         myWire = W;
-        var mkf = new BRepLib_MakeFace(S, Occt.Precision.Confusion());
+        var mkf = new BRepLib_MakeFace(S, Kerf.Engine.Foundation.Precision.Confusion());
         myFace = mkf.InternalFace();
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
     }
@@ -100,15 +102,15 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
     /// <summary>Sets the supporting surface.</summary>
     public void SetSurface(Geom_Surface S)
     {
-        var mkf = new BRepLib_MakeFace(S, Occt.Precision.Confusion());
+        var mkf = new BRepLib_MakeFace(S, Kerf.Engine.Foundation.Precision.Confusion());
         myFace = mkf.InternalFace();
     }
 
     /// <summary>Sets the supporting surface with a location.</summary>
-    public void SetSurface(Geom_Surface S, in TopLoc_Location L)
+    public void SetSurface(Geom_Surface S, in Placement L)
     {
         var B = new BRep_Builder();
-        B.MakeFace(ref myFace, S, L, Occt.Precision.Confusion());
+        B.MakeFace(ref myFace, S, L, Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OCCT's file-static CorrectSplitValues: makes the split values transferred between the 3D curve and the pcurve
@@ -118,7 +120,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                                            NCollection_HSequence<double> new2d,
                                            NCollection_HSequence<double> new3d)
     {
-        double preci = Occt.Precision.PConfusion();
+        double preci = Kerf.Engine.Foundation.Precision.PConfusion();
         int len3d = orig3d.Length();
         int len2d = orig2d.Length();
         var fixNew2d = new NCollection_Array1<bool>(1, len3d);
@@ -258,7 +260,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
 
         var newWire = new TopoDS_Wire();
         B.MakeWire(ref newWire);
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         Geom_Surface? Surf = null;
         if (!myFace.IsNull())
         {
@@ -456,7 +458,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     {
                         TopoDS_Vertex aVold = TopoDS.Vertex(aItv.Value());
                         aSeqNMVertices.Append(aVold);
-                        gp_Pnt aP = BRep_Tool.Pnt(TopoDS.Vertex(aVold));
+                        Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(aVold));
                         double ppar;
                         if (c3d is not null)
                         {
@@ -508,7 +510,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                 var resWire = new TopoDS_Wire();
                 B.MakeWire(ref resWire);
                 int numE = 0;
-                gp_Pnt pntV1 = BRep_Tool.Pnt(V1);
+                Point3D pntV1 = BRep_Tool.Pnt(V1);
                 // gp_Pnt pntV2 = BRep_Tool::Pnt(V2); // pntV2 not used - see below (skl)
                 // double V2Tol = LimitTolerance( BRep_Tool::Tolerance(V2) ); // V2Tol not used - see below (skl)
 
@@ -544,7 +546,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                     if (icurv <= nbc && nbc != 1 && !isDeg)
                     {
                         double par, parf /*,SavParl*/;
-                        gp_Pnt P, P1, PM;
+                        Point3D P, P1, PM;
                         // if edge has 3d curve, take point from it
                         if (theNewCurve3d is not null)
                         {
@@ -579,9 +581,9 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                                 par = theKnots2d!.Value(icurv + 1);
                                 parf = theKnots2d.Value(icurv);
                             }
-                            gp_Pnt2d p2d = theNewPCurve1!.Value(par);
-                            gp_Pnt2d p2df = theNewPCurve1.Value(parf);
-                            gp_Pnt2d p2dM = theNewPCurve1.Value((parf + par) / 2);
+                            Point2D p2d = theNewPCurve1!.Value(par);
+                            Point2D p2df = theNewPCurve1.Value(parf);
+                            Point2D p2dM = theNewPCurve1.Value((parf + par) / 2);
                             P = Surf!.Value(p2d.X(), p2d.Y());
                             P1 = Surf.Value(p2df.X(), p2df.Y());
                             PM = Surf.Value(p2dM.X(), p2dM.Y());
@@ -613,7 +615,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                             if (P.Distance(P1) > MinTolerance() || P.Distance(PM) > MinTolerance())
                             {
                                 // FixSmallCurveTool->Perform(prevEdge,theNewCurve3d,theNewPCurve1,revPCurve,SavParf,SavParl);
-                                var pmid = new gp_Pnt(0.5 * (pntV1.XYZ() + P1.XYZ()));
+                                var pmid = new Point3D(0.5 * (pntV1.XYZ() + P1.XYZ()));
                                 B.UpdateVertex(V1, pmid, 0);
                             }
                             else
@@ -628,7 +630,7 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                                 }
                                 else
                                 {
-                                    var pmid = new gp_Pnt(0.5 * (pntV1.XYZ() + P1.XYZ()));
+                                    var pmid = new Point3D(0.5 * (pntV1.XYZ() + P1.XYZ()));
                                     B.UpdateVertex(V1, pmid, 0);
                                 }
                             }
@@ -776,11 +778,11 @@ public class ShapeUpgrade_WireDivide : ShapeUpgrade_Tool
                         TopoDS_Vertex aVold = TopoDS.Vertex(aSeqNMVertices.Value(n));
                         TopoDS_Vertex aNMVer = ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aVold, newEdge, E);
                         Context()!.Replace(aVold, aNMVer);
-                        if (Math.Abs(apar - afpar) <= Occt.Precision.PConfusion())
+                        if (Math.Abs(apar - afpar) <= Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             Context()!.Replace(aNMVer, V1);
                         }
-                        else if (Math.Abs(apar - alpar) <= Occt.Precision.PConfusion())
+                        else if (Math.Abs(apar - alpar) <= Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             Context()!.Replace(aNMVer, V);
                         }

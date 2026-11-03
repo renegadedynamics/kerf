@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,21 +19,21 @@ public static class Geom2dInt_TheCurveLocatorOfTheProjPCurOfGInter
     /// Among the points C(ui), i = 1 to <paramref name="theNbU"/> - 1, evenly spaced from the first parameter of
     /// the curve, the one nearest <paramref name="theP"/>.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="theNbU"/> is less than 2.</exception>
-    public static void Locate(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, int theNbU, out Extrema_POnCurv2d thePapp)
+    /// <exception cref="OutOfRangeException"><paramref name="theNbU"/> is less than 2.</exception>
+    public static void Locate(in Point2D theP, Adaptor2d_Curve2d theC, int theNbU, out Extrema_POnCurv2d thePapp)
     {
         if (theNbU < 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         double aU = Geom2dInt_Geom2dCurveTool.FirstParameter(theC);
         double aPasU = (Geom2dInt_Geom2dCurveTool.LastParameter(theC) - aU) / (theNbU - 1);
         double aDist2Min = RealLast();
         double aUMin = 0;
-        gp_Pnt2d aPntMin = new();
+        Point2D aPntMin = new();
         double aDist2;
-        gp_Pnt2d aPt;
+        Point2D aPt;
 
         for (int aNoSample = 1; aNoSample < theNbU; aNoSample++, aU += aPasU)
         {
@@ -49,13 +53,13 @@ public static class Geom2dInt_TheCurveLocatorOfTheProjPCurOfGInter
     /// As the other overload, sampling between <paramref name="theUmin"/> and <paramref name="theUsup"/> (clamped to
     /// the curve's range).
     /// </summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="theNbU"/> is less than 2.</exception>
-    public static void Locate(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, int theNbU, double theUmin, double theUsup,
+    /// <exception cref="OutOfRangeException"><paramref name="theNbU"/> is less than 2.</exception>
+    public static void Locate(in Point2D theP, Adaptor2d_Curve2d theC, int theNbU, double theUmin, double theUsup,
                               out Extrema_POnCurv2d thePapp)
     {
         if (theNbU < 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         double aUinf = Geom2dInt_Geom2dCurveTool.FirstParameter(theC);
@@ -79,9 +83,9 @@ public static class Geom2dInt_TheCurveLocatorOfTheProjPCurOfGInter
         double aPasU = (aU12 - aU) / (theNbU - 1);
         double aDist2Min = RealLast();
         double aUMin = 0;
-        gp_Pnt2d aPntMin = new();
+        Point2D aPntMin = new();
         double aDist2;
-        gp_Pnt2d aPt;
+        Point2D aPt;
 
         for (int aNoSample = 1; aNoSample < theNbU; aNoSample++, aU += aPasU)
         {

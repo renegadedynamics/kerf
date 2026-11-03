@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -63,7 +64,7 @@ internal static class StepFileBench
                 {
                     new StepFile_Parser(new StepFile_Scanner(new StepFile_ReadData(), new MemoryStream(anInput))).parse();
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                 }
 

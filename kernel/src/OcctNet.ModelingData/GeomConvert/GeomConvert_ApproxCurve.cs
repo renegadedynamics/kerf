@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -42,13 +43,13 @@ public sealed class GeomConvert_ApproxCurve
 
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct = fonct.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
+                fonct = fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
 
-            gp_Pnt pnt;
-            gp_Vec v1, v2;
+            Point3D pnt;
+            Vector3D v1, v2;
 
             switch (Order)
             {
@@ -87,19 +88,19 @@ public sealed class GeomConvert_ApproxCurve
     /// Approximates Curve within Tol3d, with continuity Order, at most MaxSegments segments and degree at most
     /// MaxDegree.
     /// </summary>
-    public GeomConvert_ApproxCurve(Geom_Curve Curve, double Tol3d, GeomAbs_Shape Order, int MaxSegments, int MaxDegree)
+    public GeomConvert_ApproxCurve(Geom_Curve Curve, double Tol3d, Continuity Order, int MaxSegments, int MaxDegree)
     {
         GeomAdaptor_Curve HCurve = new(Curve);
         Approximate(HCurve, Tol3d, Order, MaxSegments, MaxDegree);
     }
 
     /// <summary>As the other constructor, for a curve given by an adaptor (which the approximation evaluates).</summary>
-    public GeomConvert_ApproxCurve(Adaptor3d_Curve Curve, double Tol3d, GeomAbs_Shape Order, int MaxSegments, int MaxDegree)
+    public GeomConvert_ApproxCurve(Adaptor3d_Curve Curve, double Tol3d, Continuity Order, int MaxSegments, int MaxDegree)
     {
         Approximate(Curve, Tol3d, Order, MaxSegments, MaxDegree);
     }
 
-    private void Approximate(Adaptor3d_Curve theCurve, double theTol3d, GeomAbs_Shape theOrder, int theMaxSegments,
+    private void Approximate(Adaptor3d_Curve theCurve, double theTol3d, Continuity theOrder, int theMaxSegments,
                              int theMaxDegree)
     {
         // Initialisation of input parameters of AdvApprox
@@ -112,12 +113,12 @@ public sealed class GeomConvert_ApproxCurve
         double First = theCurve.FirstParameter();
         double Last = theCurve.LastParameter();
 
-        int NbInterv_C2 = theCurve.NbIntervals(GeomAbs_C2);
+        int NbInterv_C2 = theCurve.NbIntervals(C2);
         NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-        theCurve.Intervals(CutPnts_C2, GeomAbs_C2);
-        int NbInterv_C3 = theCurve.NbIntervals(GeomAbs_C3);
+        theCurve.Intervals(CutPnts_C2, C2);
+        int NbInterv_C3 = theCurve.NbIntervals(C3);
         NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-        theCurve.Intervals(CutPnts_C3, GeomAbs_C3);
+        theCurve.Intervals(CutPnts_C3, C3);
         AdvApprox_PrefAndRec CutTool = new(CutPnts_C2, CutPnts_C3);
 
         myMaxError = 0;
@@ -142,7 +143,7 @@ public sealed class GeomConvert_ApproxCurve
 
         if (myHasResult)
         {
-            NCollection_Array1<gp_Pnt> Poles = new(1, aApprox.NbPoles());
+            NCollection_Array1<Point3D> Poles = new(1, aApprox.NbPoles());
             aApprox.Poles(1, Poles);
             NCollection_HArray1<double> Knots = aApprox.Knots()!;
             NCollection_HArray1<int> Mults = aApprox.Multiplicities()!;

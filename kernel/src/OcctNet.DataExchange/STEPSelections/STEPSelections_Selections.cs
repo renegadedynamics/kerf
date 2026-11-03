@@ -15,6 +15,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The roots the transfer reader's transient process recorded for transfer (a STEP reader's roots).</summary>
@@ -32,7 +34,7 @@ public class STEPSelections_SelectForTransfer : XSControl_SelectForTransfer
     public override Interface_EntityIterator RootResult(Interface_Graph G)
     {
         Interface_EntityIterator iter = new Interface_EntityIterator();
-        NCollection_HSequence<Standard_Transient> roots = Reader().TransientProcess().RootsForTransfer();
+        NCollection_HSequence<Transient> roots = Reader().TransientProcess().RootsForTransfer();
         int nb = roots.Length();
         for (int i = 1; i <= nb; i++)
         {
@@ -62,12 +64,12 @@ public class STEPSelections_SelectDerived : StepSelect_StepType
             return atype;
         }
         RWStepAP214_GeneralModule genModul = new RWStepAP214_GeneralModule();
-        genModul.NewVoid(num, out Standard_Transient ent);
+        genModul.NewVoid(num, out Transient ent);
         atype = ent.DynamicType();
         return atype;
     }
 
-    public override bool Matches(Standard_Transient ent, Interface_InterfaceModel model, string text, bool exact)
+    public override bool Matches(Transient ent, Interface_InterfaceModel model, string text, bool exact)
     {
         bool ok = thelib.Select(ent, out StepData_ReadWriteModule module, out int CN);
         if (!ok)
@@ -112,7 +114,7 @@ public class STEPSelections_SelectFaces : IFSelect_SelectExplore
     {
     }
 
-    public override bool Explore(int level, Standard_Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
     {
         if (start is null)
         {
@@ -177,7 +179,7 @@ public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
         flag = 1;
     }
 
-    public override bool Explore(int level, Standard_Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
     {
         if (start is null)
         {
@@ -256,7 +258,7 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
     {
     }
 
-    public override bool Explore(int level, Standard_Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
     {
         if (start is null)
         {
@@ -271,7 +273,7 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
             {
                 return false;
             }
-            Standard_Transient ent = pds.Definition().ProductDefinitionRelationship();
+            Transient ent = pds.Definition().ProductDefinitionRelationship();
             if (ent is null)
             {
                 return false;
@@ -315,7 +317,7 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
             {
                 return false;
             }
-            Standard_Transient ent = pds.Definition().ProductDefinitionRelationship();
+            Transient ent = pds.Definition().ProductDefinitionRelationship();
             if (ent is null)
             {
                 return false;
@@ -354,7 +356,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
     {
     }
 
-    private static void AddAllSharings(Standard_Transient start, Interface_Graph graph, Interface_EntityIterator explored)
+    private static void AddAllSharings(Transient start, Interface_Graph graph, Interface_EntityIterator explored)
     {
         if (start is null)
         {
@@ -368,7 +370,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         }
     }
 
-    private static void AddInstances(Standard_Transient start, Interface_Graph graph, Interface_EntityIterator explored)
+    private static void AddInstances(Transient start, Interface_Graph graph, Interface_EntityIterator explored)
     {
         if (start is null)
         {
@@ -456,7 +458,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
             StepRepr_ShapeRepresentationRelationship und = start as StepRepr_ShapeRepresentationRelationship;
             for (int i = 1; i <= 2; i++)
             {
-                Standard_Transient anitem = null;
+                Transient anitem = null;
                 if (i == 1)
                 {
                     anitem = und.Rep1();
@@ -488,7 +490,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         {
             Interface_EntityIterator select = InputResult(G);
             int nbSelected = select.NbEntities();
-            HashSet<Standard_Transient> filter = new HashSet<Standard_Transient>(nbSelected, ReferenceEqualityComparer.Instance);
+            HashSet<Transient> filter = new HashSet<Transient>(nbSelected, ReferenceEqualityComparer.Instance);
             for (select.Start(); select.More(); select.Next())
             {
                 filter.Add(select.Value());
@@ -509,7 +511,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         }
     }
 
-    public override bool Explore(int level, Standard_Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
     {
         return false;
     }

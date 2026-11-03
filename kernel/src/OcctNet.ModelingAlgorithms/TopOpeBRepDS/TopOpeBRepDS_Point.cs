@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A point of the legacy data structure: a 3D point with a tolerance, and whether it is kept.</summary>
@@ -12,7 +16,7 @@ namespace Occt;
 /// </remarks>
 public partial struct TopOpeBRepDS_Point : IEquatable<TopOpeBRepDS_Point>
 {
-    private gp_Pnt myPoint;
+    private Point3D myPoint;
     private double myTolerance;
     private bool myKeep;
 
@@ -20,13 +24,13 @@ public partial struct TopOpeBRepDS_Point : IEquatable<TopOpeBRepDS_Point>
     /// <remarks>OCCT leaves the tolerance unset; the port's is 0.</remarks>
     public TopOpeBRepDS_Point()
     {
-        myPoint = new gp_Pnt();
+        myPoint = new Point3D();
         myTolerance = 0.0;
         myKeep = true;
     }
 
     /// <summary>The point <paramref name="P"/> with the tolerance <paramref name="T"/>, kept.</summary>
-    public TopOpeBRepDS_Point(in gp_Pnt P, double T)
+    public TopOpeBRepDS_Point(in Point3D P, double T)
     {
         myPoint = P;
         myTolerance = T;
@@ -34,7 +38,7 @@ public partial struct TopOpeBRepDS_Point : IEquatable<TopOpeBRepDS_Point>
     }
 
     /// <summary>The point and tolerance of the vertex <paramref name="S"/>.</summary>
-    /// <exception cref="Standard_ProgramError"><paramref name="S"/> is not a vertex.</exception>
+    /// <exception cref="ProgramErrorException"><paramref name="S"/> is not a vertex.</exception>
     public TopOpeBRepDS_Point(in TopoDS_Shape S)
     {
         myPoint = TopOpeBRepTool_ShapeTool.Pnt(S);
@@ -52,10 +56,10 @@ public partial struct TopOpeBRepDS_Point : IEquatable<TopOpeBRepDS_Point>
     }
 
     /// <summary>The 3D point.</summary>
-    public readonly gp_Pnt Point() => myPoint;
+    public readonly Point3D Point() => myPoint;
 
     [System.Diagnostics.CodeAnalysis.UnscopedRef]
-    internal ref gp_Pnt ChangePoint() => ref myPoint;
+    internal ref Point3D ChangePoint() => ref myPoint;
 
     /// <summary>The tolerance.</summary>
     public readonly double Tolerance() => myTolerance;

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -34,7 +36,7 @@ public class IFSelect_SignValidity : IFSelect_Signature
     /// Returns the Signature for a Transient object, as a validity deducted from data (reports) stored in the
     /// model. Class method, can be called by any one
     /// </summary>
-    public static string CVal(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public static string CVal(Transient? ent, Interface_InterfaceModel? model)
     {
         if (ent is null || model is null)
         {
@@ -82,7 +84,7 @@ public class IFSelect_SignValidity : IFSelect_Signature
     /// Returns the Signature for a Transient object, as a validity deducted from data (reports) stored in the
     /// model Calls the class method CVal
     /// </summary>
-    public override string Value(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override string Value(Transient? ent, Interface_InterfaceModel? model)
     {
         return IFSelect_SignValidity.CVal(ent, model);
     }

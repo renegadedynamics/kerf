@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity PropertyDefinitionRepresentation
 /// </summary>
-public class StepRepr_PropertyDefinitionRepresentation : Standard_Transient
+public class StepRepr_PropertyDefinitionRepresentation : Transient
 {
     private StepRepr_RepresentedDefinition theDefinition = new StepRepr_RepresentedDefinition();
     private StepRepr_Representation theUsedRepresentation;

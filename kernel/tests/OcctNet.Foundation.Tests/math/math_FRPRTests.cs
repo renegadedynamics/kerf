@@ -2,14 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_FRPRTest
 {
     // Quadratic bowl function: f(x,y) = (x-1)^2 + (y-2)^2, minimum at (1, 2) with value 0
-    private sealed class QuadraticBowlFunction : math_MultipleVarFunctionWithGradient
+    private sealed class QuadraticBowlFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -35,9 +40,12 @@ public class math_FRPRTest
     }
 
     // Rosenbrock function: f(x,y) = (1-x)^2 + 100*(y-x^2)^2, minimum at (1, 1) with value 0
-    private sealed class RosenbrockFunction : math_MultipleVarFunctionWithGradient
+    private sealed class RosenbrockFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -67,9 +75,12 @@ public class math_FRPRTest
     }
 
     // 3D quadratic function: f(x,y,z) = (x-1)^2 + 2*(y-2)^2 + 3*(z-3)^2, minimum at (1,2,3)
-    private sealed class Quadratic3DFunction : math_MultipleVarFunctionWithGradient
+    private sealed class Quadratic3DFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 3; }
+        public override int VariableCount {
+            get
+            { return 3; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -97,9 +108,12 @@ public class math_FRPRTest
     }
 
     // Linear function: f(x,y) = 2*x + 3*y (unbounded, no minimum)
-    private sealed class LinearFunction : math_MultipleVarFunctionWithGradient
+    private sealed class LinearFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -123,9 +137,12 @@ public class math_FRPRTest
     }
 
     // Quartic function with flat minimum: f(x,y) = (x-1)^4 + (y-2)^4
-    private sealed class QuarticFunction : math_MultipleVarFunctionWithGradient
+    private sealed class QuarticFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -164,16 +181,16 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0; // Start at (0, 0)
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for quadratic bowl function");
+        Assert.True(aSolver.IsDone, "Should find minimum for quadratic bowl function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-6);
         Assert.Equal(2.0, aLoc[2], 1.0e-6);
         Assert.Equal(0.0, aSolver.Minimum(), 1.0e-10);
-        Assert.True(aSolver.NbIterations() > 0, "Should have performed some iterations");
+        Assert.True(aSolver.IterationCount > 0, "Should have performed some iterations");
     }
 
     [Fact]
@@ -186,10 +203,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0; // Start at (0, 0)
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-8, 500); // More iterations for challenging function
+        Frpr aSolver = new(aFunc, 1.0e-8, 500); // More iterations for challenging function
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for Rosenbrock function");
+        Assert.True(aSolver.IsDone, "Should find minimum for Rosenbrock function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-3);
@@ -208,10 +225,10 @@ public class math_FRPRTest
         aStartPoint[2] = 0.0;
         aStartPoint[3] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for 3D function");
+        Assert.True(aSolver.IsDone, "Should find minimum for 3D function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-6);
@@ -231,18 +248,18 @@ public class math_FRPRTest
         aStartPoint[2] = 0.0;
 
         // Loose tolerance
-        math_FRPR aSolver1 = new(aFunc, 1.0e-3);
+        Frpr aSolver1 = new(aFunc, 1.0e-3);
         aSolver1.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver1.IsDone(), "Should converge with loose tolerance");
+        Assert.True(aSolver1.IsDone, "Should converge with loose tolerance");
         Assert.Equal(1.0, aSolver1.Location()[1], 1.0e-2);
         Assert.Equal(2.0, aSolver1.Location()[2], 1.0e-2);
 
         // Tight tolerance
-        math_FRPR aSolver2 = new(aFunc, 1.0e-12);
+        Frpr aSolver2 = new(aFunc, 1.0e-12);
         aSolver2.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver2.IsDone(), "Should converge with tight tolerance");
+        Assert.True(aSolver2.IsDone, "Should converge with tight tolerance");
         Assert.Equal(1.0, aSolver2.Location()[1], 1.0e-8);
         Assert.Equal(2.0, aSolver2.Location()[2], 1.0e-8);
     }
@@ -258,19 +275,19 @@ public class math_FRPRTest
         aStartPoint[2] = 0.0;
 
         // Few iterations
-        math_FRPR aSolver1 = new(aFunc, 1.0e-10, 10);
+        Frpr aSolver1 = new(aFunc, 1.0e-10, 10);
         aSolver1.Perform(aFunc, aStartPoint);
 
-        if (aSolver1.IsDone())
+        if (aSolver1.IsDone)
         {
-            Assert.True(aSolver1.NbIterations() <= 10, "Should respect iteration limit");
+            Assert.True(aSolver1.IterationCount <= 10, "Should respect iteration limit");
         }
 
         // Many iterations
-        math_FRPR aSolver2 = new(aFunc, 1.0e-10, 1000);
+        Frpr aSolver2 = new(aFunc, 1.0e-10, 1000);
         aSolver2.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver2.IsDone(), "Should converge with many iterations allowed");
+        Assert.True(aSolver2.IsDone, "Should converge with many iterations allowed");
     }
 
     [Fact]
@@ -283,10 +300,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         math_Vector aGrad = aSolver.Gradient();
         Assert.Equal(0.0, aGrad[1], 1.0e-8);
@@ -309,10 +326,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         // Test location output method
         math_Vector aLocOut = new(1, 2);
@@ -331,10 +348,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10, 200, 1.0e-15);
+        Frpr aSolver = new(aFunc, 1.0e-10, 200, 1.0e-15);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should work with custom ZEPS");
+        Assert.True(aSolver.IsDone, "Should work with custom ZEPS");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-6);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-6);
     }
@@ -344,15 +361,15 @@ public class math_FRPRTest
     {
         // Test state handling before Perform() is called
         QuadraticBowlFunction aFunc = new();
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
 
         // Before Perform() is called, solver should report not done
-        Assert.False(aSolver.IsDone(), "Solver should not be done before Perform()");
+        Assert.False(aSolver.IsDone, "Solver should not be done before Perform()");
 
         // In release builds, verify the solver maintains consistent state
-        if (!aSolver.IsDone())
+        if (!aSolver.IsDone)
         {
-            Assert.False(aSolver.IsDone(), "State should be consistent when not done");
+            Assert.False(aSolver.IsDone, "State should be consistent when not done");
         }
     }
 
@@ -366,10 +383,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         // Test with correctly dimensioned vectors
         math_Vector aCorrectVec = new(1, 2); // 2D vector for 2D function
@@ -390,10 +407,10 @@ public class math_FRPRTest
         aStartPoint[1] = 1.001; // Very close to minimum at (1, 2)
         aStartPoint[2] = 1.999;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10);
+        Frpr aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should succeed when starting near minimum");
+        Assert.True(aSolver.IsDone, "Should succeed when starting near minimum");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-6);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-6);
         Assert.Equal(0.0, aSolver.Minimum(), 1.0e-10);
@@ -409,10 +426,10 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-8); // Slightly looser tolerance for flat minimum
+        Frpr aSolver = new(aFunc, 1.0e-8); // Slightly looser tolerance for flat minimum
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should handle quartic function with flat minimum");
+        Assert.True(aSolver.IsDone, "Should handle quartic function with flat minimum");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-4);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-4);
     }
@@ -427,15 +444,15 @@ public class math_FRPRTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_FRPR aSolver = new(aFunc, 1.0e-10, 50); // Limited iterations
+        Frpr aSolver = new(aFunc, 1.0e-10, 50); // Limited iterations
         aSolver.Perform(aFunc, aStartPoint);
 
         // The algorithm may or may not converge for unbounded functions
         // depending on implementation details and stopping criteria
-        if (aSolver.IsDone())
+        if (aSolver.IsDone)
         {
             // If it "converges", it should have done some work
-            Assert.True(aSolver.NbIterations() > 0, "Should have performed some iterations");
+            Assert.True(aSolver.IterationCount > 0, "Should have performed some iterations");
         }
     }
 
@@ -455,17 +472,17 @@ public class math_FRPRTest
         aStartPoint3D[2] = 0.0;
         aStartPoint3D[3] = 0.0;
 
-        math_FRPR aSolver = new(aFunc1, 1.0e-10);
+        Frpr aSolver = new(aFunc1, 1.0e-10);
 
         // First call with 2D function
         aSolver.Perform(aFunc1, aStartPoint2D);
-        Assert.True(aSolver.IsDone(), "First call should succeed");
+        Assert.True(aSolver.IsDone, "First call should succeed");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-6);
 
         // Second call with 3D function - need to create new solver with appropriate function
-        math_FRPR aSolver2 = new(aFunc2, 1.0e-10);
+        Frpr aSolver2 = new(aFunc2, 1.0e-10);
         aSolver2.Perform(aFunc2, aStartPoint3D);
-        Assert.True(aSolver2.IsDone(), "Second call should succeed");
+        Assert.True(aSolver2.IsDone, "Second call should succeed");
         Assert.Equal(1.0, aSolver2.Location()[1], 1.0e-6);
     }
 }

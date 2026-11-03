@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -85,10 +86,10 @@ internal static class BRepTestMatCommands
     {
         int n = a.Count;
         State aState = Get(theDI);
-        GeomAbs_JoinType theJoinType = GeomAbs_Arc;
+        JoinKind theJoinType = Arc;
         if (n >= 2 && a[1] == "i")
         {
-            theJoinType = GeomAbs_Intersection;
+            theJoinType = Intersection;
         }
 
         bool IsOpenResult = false;

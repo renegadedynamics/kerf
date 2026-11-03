@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepBasic_SizeSelect : StepData_SelectType
@@ -22,7 +24,7 @@ public class StepBasic_SizeSelect : StepData_SelectType
     /// 1 -&gt; SizeMember
     /// 0 else (i.e. Real)
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

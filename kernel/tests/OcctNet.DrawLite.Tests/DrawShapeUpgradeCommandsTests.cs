@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -23,7 +24,7 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
     private static TopoDS_Shape TwoCoplanarFaces(out TopoDS_Shape theSharedEdge)
     {
         TopoDS_Face Rectangle(double x0, double x1)
-            => new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), x0, x1, 0, 4).Face();
+            => new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), x0, x1, 0, 4).Face();
         var aSewing = new BRepBuilderAPI_Sewing(1.0e-6);
         aSewing.Add(Rectangle(0, 5));
         aSewing.Add(Rectangle(5, 10));

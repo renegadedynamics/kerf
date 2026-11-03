@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -16,7 +19,7 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The face of <paramref name="map"/> other than <paramref name="F1"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">None is found and <paramref name="F"/> is null.</exception>
+    /// <exception cref="ConstructionErrorException">None is found and <paramref name="F"/> is null.</exception>
     internal static void ChFi3d_cherche_face1(NCollection_List<TopoDS_Shape> map, in TopoDS_Face F1,
                                               ref TopoDS_Face F)
     {
@@ -37,7 +40,7 @@ internal static partial class ChFi3d_Builder_0
         }
         if (F.IsNull())
         {
-            throw new Standard_ConstructionError("Failed to find face");
+            throw new ConstructionErrorException("Failed to find face");
         }
     }
 
@@ -49,7 +52,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The edge <paramref name="E"/> of <paramref name="F1"/>, other than <paramref name="E1"/>, on
     /// <paramref name="V"/>; <paramref name="Vtx"/> its other vertex.</summary>
-    /// <exception cref="Standard_ConstructionError">None is found and <paramref name="E"/> is null.</exception>
+    /// <exception cref="ConstructionErrorException">None is found and <paramref name="E"/> is null.</exception>
     internal static void ChFi3d_cherche_element(in TopoDS_Vertex V, in TopoDS_Edge E1, in TopoDS_Face F1,
                                                 ref TopoDS_Edge E, ref TopoDS_Vertex Vtx)
     {
@@ -87,7 +90,7 @@ internal static partial class ChFi3d_Builder_0
         }
         if (E.IsNull())
         {
-            throw new Standard_ConstructionError("Failed to find element");
+            throw new ConstructionErrorException("Failed to find element");
         }
     }
 
@@ -99,7 +102,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The edge <paramref name="E"/> of <paramref name="F1"/>, none of <paramref name="E1"/>, on
     /// <paramref name="V"/>; <paramref name="Vtx"/> its other vertex.</summary>
-    /// <exception cref="Standard_ConstructionError">None is found and <paramref name="E"/> is null.</exception>
+    /// <exception cref="ConstructionErrorException">None is found and <paramref name="E"/> is null.</exception>
     internal static void ChFi3d_cherche_edge(in TopoDS_Vertex V, NCollection_Array1<TopoDS_Shape> E1,
                                              in TopoDS_Face F1, ref TopoDS_Edge E, ref TopoDS_Vertex Vtx)
     {
@@ -146,7 +149,7 @@ internal static partial class ChFi3d_Builder_0
         }
         if (E.IsNull())
         {
-            throw new Standard_ConstructionError("Failed to find edge");
+            throw new ConstructionErrorException("Failed to find edge");
         }
     }
 
@@ -234,8 +237,8 @@ internal static partial class ChFi3d_Builder_0
         double parE1, parE2;
         parE1 = BRep_Tool.Parameter(Vtx, E1);
         parE2 = BRep_Tool.Parameter(Vtx, E2);
-        BCurv1.D1(parE1, out gp_Pnt P1, out gp_Vec dir1);
-        BCurv2.D1(parE2, out gp_Pnt P2, out gp_Vec dir2);
+        BCurv1.D1(parE1, out Point3D P1, out Vector3D dir1);
+        BCurv2.D1(parE2, out Point3D P2, out Vector3D dir2);
         if (!Vtx.IsSame(TopExp.FirstVertex(E1)))
         {
             dir1.Reverse();
@@ -360,7 +363,7 @@ internal static partial class ChFi3d_Builder_0
             else
             {
                 ChFi3d_conexfaces(cur, out TopoDS_Face F1, out TopoDS_Face F2, EFMap);
-                if (!F2.IsNull() && ChFi3d.IsTangentFaces(cur, F1, F2, GeomAbs_G2))
+                if (!F2.IsNull() && ChFi3d.IsTangentFaces(cur, F1, F2, G2))
                 {
                     nba--;
                 }
@@ -464,7 +467,7 @@ internal static partial class ChFi3d_Builder_0
         couture = false;
         NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(F, TopAbs_EDGE, MapE1);
-        Geom_Surface? Surf = BRep_Tool.Surface(F, out TopLoc_Location Loc);
+        Geom_Surface? Surf = BRep_Tool.Surface(F, out Placement Loc);
         for (int i = 1; i <= MapE1.Extent() && !couture; i++)
         {
             TopoDS_Shape aLocalShape = MapE1.FindKey(i);
@@ -488,7 +491,7 @@ internal static partial class ChFi3d_Builder_0
         couture = false;
         NCollection_IndexedMap<TopoDS_Shape> MapE1 = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(F, TopAbs_EDGE, MapE1);
-        Geom_Surface? Surf = BRep_Tool.Surface(F, out TopLoc_Location Loc);
+        Geom_Surface? Surf = BRep_Tool.Surface(F, out Placement Loc);
         for (int i = 1; i <= MapE1.Extent(); i++)
         {
             TopoDS_Shape aLocalShape = MapE1.FindKey(i);

@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -30,7 +31,7 @@ public class BRepOffset_MakeOffsetTests
     {
         var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(theShape, aMap);
-        return aMap.All(s => s.TShape()!.IsFrozen());
+        return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
     internal static double Volume(in TopoDS_Shape theShape)
@@ -47,7 +48,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Arc);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -70,7 +71,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Intersection);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, Intersection);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -90,7 +91,7 @@ public class BRepOffset_MakeOffsetTests
         var anAlgo = new BRepOffsetAPI_MakeThickSolid();
         var aClosing = new NCollection_List<TopoDS_Shape>();
         aClosing.Append(aTop);
-        anAlgo.MakeThickSolidByJoin(aBox, aClosing, -1.0, 1.0e-3, BRepOffset_Skin, false, false, GeomAbs_Arc);
+        anAlgo.MakeThickSolidByJoin(aBox, aClosing, -1.0, 1.0e-3, BRepOffset_Skin, false, false, Arc);
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone());
@@ -111,7 +112,7 @@ public class BRepOffset_MakeOffsetTests
         {
             foreach (TopoDS_Shape aG in anAlgo.Generated(aF).Concat(anAlgo.Modified(aF)))
             {
-                Assert.True(aG.TShape()!.IsFrozen());
+                Assert.True(aG.TShape()!.IsFrozen);
                 Assert.Contains(aResultFaces, r => r.IsSame(aG));
             }
         }
@@ -125,7 +126,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(aFace, 2.0, 1.0e-5, BRepOffset_Skin, true, false, GeomAbs_Intersection, true, true);
+        anAlgo.Initialize(aFace, 2.0, 1.0e-5, BRepOffset_Skin, true, false, Intersection, true, true);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -152,10 +153,10 @@ public class BRepOffset_MakeOffsetTests
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Arc);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
         TopoDS_Shape aFirst = anAlgo.Shape();
-        anAlgo.Initialize(aCyl, -1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Arc);
+        anAlgo.Initialize(aCyl, -1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
         Assert.True(anAlgo.IsDone());
         Assert.Equal(Math.PI * 16 * 8, Volume(anAlgo.Shape()), 4);
@@ -169,7 +170,7 @@ public class BRepOffset_MakeOffsetTests
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
         TopoDS_Face aTop = TopoDS.Face(SubShapes(aBox, TopAbs_FACE)[5]);
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(aBox, -1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Arc);
+        anAlgo.Initialize(aBox, -1.0, 1.0e-7, BRepOffset_Skin, false, false, Arc);
         anAlgo.AddFace(aTop);
         anAlgo.MakeThickSolid();
         Assert.True(anAlgo.IsDone());
@@ -180,10 +181,10 @@ public class BRepOffset_MakeOffsetTests
             Assert.True(anImage.HasImage(aF));
             foreach (TopoDS_Shape anIm in anImage.Image(aF))
             {
-                Assert.True(anIm.TShape()!.IsFrozen());
+                Assert.True(anIm.TShape()!.IsFrozen);
             }
         }
-        Assert.Equal(GeomAbs_Arc, anAlgo.GetJoinType());
+        Assert.Equal(Arc, anAlgo.GetJoinType());
         Assert.Equal(BRepOffset_NoError, anAlgo.Error());
     }
 
@@ -205,7 +206,7 @@ public class BRepOffset_MakeOffsetTests
     public void CompleteIntersection_OfAnLShape_IsValid(double theOffset)
     {
         TopoDS_Shape aBox1 = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 20, 5, 5).Shape();
+        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 20, 5, 5).Shape();
         TopoDS_Shape aL = new BRepAlgoAPI_Fuse(aBox1, aBox2).Shape();
         var aL2 = new ShapeUpgrade_UnifySameDomain(aL);
         aL2.Build();
@@ -213,7 +214,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anL);
 
         var anAlgo = new BRepOffset_MakeOffset();
-        anAlgo.Initialize(anL, theOffset, 1.0e-7, BRepOffset_Skin, true, false, GeomAbs_Intersection);
+        anAlgo.Initialize(anL, theOffset, 1.0e-7, BRepOffset_Skin, true, false, Intersection);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(anL);

@@ -5,14 +5,17 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFiDS_ChamfMethod;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -74,8 +77,8 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
         double tga1 = 0.0, tga2 = 0.0;
         double d1plus = 0.0, d2plus = 0.0;
 
-        gp_Pnt tmp = new();
-        gp_Vec tg1 = new(), tg2 = new();
+        Point3D tmp = new();
+        Vector3D tg1 = new(), tg2 = new();
         Spine1.D1(Spine1.Absc(V), out tmp, out tg1);
         Spine2.D1(Spine2.Absc(V), out tmp, out tg2);
         tg1.Normalize();
@@ -274,7 +277,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             }
             else
             {
-                throw new Standard_DomainError("the face is not common to any of edges of the contour");
+                throw new DomainErrorException("the face is not common to any of edges of the contour");
             }
         }
     }
@@ -387,7 +390,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             }
             else
             {
-                throw new Standard_DomainError("the face is not common to any of edges of the contour");
+                throw new DomainErrorException("the face is not common to any of edges of the contour");
             }
         }
     }
@@ -486,7 +489,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             }
             else
             {
-                throw new Standard_DomainError("the face is not common to any edges of the contour");
+                throw new DomainErrorException("the face is not common to any edges of the contour");
             }
         }
     }
@@ -600,40 +603,40 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
     {
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
         Geom_Surface? S = DStr.Surface(SD.Surf()).Surface();
-        gp_Pnt2d p1f = 
+        Point2D p1f = 
             SD.InterferenceOnS1().PCurveOnSurf().Value(SD.InterferenceOnS1().FirstParameter());
-        gp_Pnt2d p1l = 
+        Point2D p1l = 
             SD.InterferenceOnS1().PCurveOnSurf().Value(SD.InterferenceOnS1().LastParameter());
-        gp_Pnt2d p2f = 
+        Point2D p2f = 
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().FirstParameter());
-        gp_Pnt2d p2l = 
+        Point2D p2l = 
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().LastParameter());
         GeomAdaptor_Surface AS = new(S);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
         double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
-        GeomAbs_SurfaceType typ = AS.GetType();
+        SurfaceKind typ = AS.GetType();
         switch (typ)
         {
-            case GeomAbs_Plane: {
+            case Plane: {
                 v1 = p1f.Y();
                 v2 = p2f.Y();
                 u1 = Max(p1f.X(), p2f.X());
                 u2 = Min(p1l.X(), p2l.X());
                 sec = new NCollection_HArray1<ChFiDS_CircSection>(1, 2);
-                gp_Pln Pl = AS.Plane();
+                Plane3D Pl = AS.Plane();
                 ref ChFiDS_CircSection sec1 = ref sec.ChangeValue(1);
                 ref ChFiDS_CircSection sec2 = ref sec.ChangeValue(2);
-                sec1.Set(ElSLib.PlaneUIso(Pl.Position(), u1), v1, v2);
-                sec2.Set(ElSLib.PlaneUIso(Pl.Position(), u2), v1, v2);
+                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(Pl.Position(), u1), v1, v2);
+                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(Pl.Position(), u2), v1, v2);
             }
             break;
-            case GeomAbs_Cone: {
+            case SurfaceKind.Cone: {
                 v1 = p1f.Y();
                 v2 = p2f.Y();
                 u1 = Max(p1f.X(), p2f.X());
                 u2 = Min(p1l.X(), p2l.X());
                 double ang = (u2 - u1);
-                gp_Cone Co = AS.Cone();
+                Cone Co = AS.Cone();
                 double rad = Co.RefRadius(), sang = Co.SemiAngle();
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
@@ -645,7 +648,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
                 {
                     ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(ElSLib.ConeUIso(Co.Position(), rad, sang, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.ConeUIso(Co.Position(), rad, sang, u), v1, v2);
                 }
             }
             break;
@@ -664,7 +667,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
 
         if (chsp is null)
         {
-            throw new Standard_ConstructionError("SimulSurf : this is not the spine of a chamfer");
+            throw new ConstructionErrorException("SimulSurf : this is not the spine of a chamfer");
         }
 
         double radius = 0.0;
@@ -673,8 +676,8 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
         double longueur = la - fi;
         double MaxStep = longueur * 0.05;
         double radiusspine = 0, locfleche, w;
-        gp_Pnt Pbid = new();
-        gp_Vec d1 = new(), d2 = new();
+        Point3D Pbid = new();
+        Vector3D d1 = new(), d2 = new();
         // As ElSpine is parameterized by a curvilinear quasi-abscissa,
         // the min radius is estimated as 1/D2 max;
         // for(int i = 0; i <= 20; i++){
@@ -733,7 +736,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
                 return false;
             }
             NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-            gp_Pnt2d pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
+            Point2D pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
 
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -741,7 +744,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0, ww = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Lin line = new();
+                Line3D line = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS1(out u1, out v1);
                 p.ParametersOnS2(out u2, out v2);
@@ -862,7 +865,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
                 return false;
             }
             NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-            gp_Pnt2d pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
+            Point2D pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
 
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -870,7 +873,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0, ww = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Lin line = new();
+                Line3D line = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS1(out u1, out v1);
                 p.ParametersOnS2(out u2, out v2);
@@ -964,7 +967,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
                 return false;
             }
             NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-            gp_Pnt2d pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
+            Point2D pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
 
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -972,7 +975,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0, ww = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Lin line = new();
+                Line3D line = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS1(out u1, out v1);
                 p.ParametersOnS2(out u2, out v2);
@@ -1048,17 +1051,17 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
 
     internal override void SimulSurf(ChFiDS_SurfData? _unused1, ChFiDS_ElSpine? _unused2, ChFiDS_Spine? _unused3, int _unused4, BRepAdaptor_Surface? _unused5, Adaptor3d_TopolTool? _unused6, BRepAdaptor_Curve2d? _unused7, BRepAdaptor_Surface? _unused8, BRepAdaptor_Curve2d? _unused9, ref bool _unused10, BRepAdaptor_Surface? _unused11, Adaptor3d_TopolTool? _unused12, TopAbs_Orientation _unused13, double _unused14, double _unused15, ref double _unused16, ref double _unused17, bool _unused18, bool _unused19, bool _unused20, bool _unused21, bool _unused22, bool _unused23, math_Vector _unused24)
     {
-        throw new Standard_Failure("SimulSurf Not Implemented");
+        throw new FailureException("SimulSurf Not Implemented");
     }
 
     internal override void SimulSurf(ChFiDS_SurfData? _unused25, ChFiDS_ElSpine? _unused26, ChFiDS_Spine? _unused27, int _unused28, BRepAdaptor_Surface? _unused29, Adaptor3d_TopolTool? _unused30, TopAbs_Orientation _unused31, BRepAdaptor_Surface? _unused32, Adaptor3d_TopolTool? _unused33, BRepAdaptor_Curve2d? _unused34, BRepAdaptor_Surface? _unused35, BRepAdaptor_Curve2d? _unused36, ref bool _unused37, double _unused38, double _unused39, ref double _unused40, ref double _unused41, bool _unused42, bool _unused43, bool _unused44, bool _unused45, bool _unused46, bool _unused47, math_Vector _unused48)
     {
-        throw new Standard_Failure("SimulSurf Not Implemented");
+        throw new FailureException("SimulSurf Not Implemented");
     }
 
     internal override void SimulSurf(ChFiDS_SurfData? _unused49, ChFiDS_ElSpine? _unused50, ChFiDS_Spine? _unused51, int _unused52, BRepAdaptor_Surface? _unused53, Adaptor3d_TopolTool? _unused54, BRepAdaptor_Curve2d? _unused55, BRepAdaptor_Surface? _unused56, BRepAdaptor_Curve2d? _unused57, ref bool _unused58, TopAbs_Orientation _unused59, BRepAdaptor_Surface? _unused60, Adaptor3d_TopolTool? _unused61, BRepAdaptor_Curve2d? _unused62, BRepAdaptor_Surface? _unused63, BRepAdaptor_Curve2d? _unused64, ref bool _unused65, TopAbs_Orientation _unused66, double _unused67, double _unused68, ref double _unused69, ref double _unused70, bool _unused71, bool _unused72, bool _unused73, bool _unused74, bool _unused75, bool _unused76, bool _unused77, math_Vector _unused78)
     {
-        throw new Standard_Failure("SimulSurf Not Implemented");
+        throw new FailureException("SimulSurf Not Implemented");
     }
 
     //------------------------MODIFS---------------------------------------
@@ -1073,7 +1076,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
 
         if (chsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a chamfer");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a chamfer");
         }
 
         double TolGuide = HGuide.Resolution(tolapp3d);
@@ -1096,9 +1099,9 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             BRepBlend_Walking TheWalk = new(S1, S2, I1, I2, HGuide);
 
             // calculate an approximate starting solution
-            gp_Vec TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
-            gp_Pnt pt1 = new(), pt2 = new(), ptgui = new();
-            gp_XYZ temp = new();
+            Vector3D TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
+            Point3D pt1 = new(), pt2 = new(), ptgui = new();
+            Xyz temp = new();
 
             HGuide.D1(Par, out ptgui, out d1gui);
             //  ptgui = S1->Value(SolDep[1],SolDep[2]);
@@ -1195,9 +1198,9 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             BRepBlend_Walking TheWalk = new(S1, S2, I1, I2, HGuide);
 
             // calculate an approximate starting solution
-            gp_Vec TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
-            gp_Pnt pt1 = new(), pt2 = new(), ptgui = new();
-            gp_XYZ temp = new();
+            Vector3D TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
+            Point3D pt1 = new(), pt2 = new(), ptgui = new();
+            Xyz temp = new();
 
             HGuide.D1(Par, out ptgui, out d1gui);
             //  ptgui = S1->Value(SolDep[1],SolDep[2]);
@@ -1285,9 +1288,9 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             BRepBlend_Walking TheWalk = new(S1, S2, I1, I2, HGuide);
 
             // calculate an approximate starting solution
-            gp_Vec TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
-            gp_Pnt pt1 = new(), pt2 = new(), ptgui = new();
-            gp_XYZ temp = new();
+            Vector3D TgF = new(), TgL = new(), tmp1 = new(), tmp2 = new(), d1gui = new();
+            Point3D pt1 = new(), pt2 = new(), ptgui = new();
+            Xyz temp = new();
 
             HGuide.D1(Par, out ptgui, out d1gui);
             //  ptgui = S1->Value(SolDep[1],SolDep[2]);
@@ -1363,7 +1366,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
 
         if (chsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a chamfer");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a chamfer");
         }
 
         bool gd1 = false, gd2 = false, gf1 = false, gf2 = false;
@@ -1409,7 +1412,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             done = CompleteData(Data, pFunc, lin, S1, S2, Or, gd1, gd2, gf1, gf2);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Fail of approximation!");
+                throw new FailureException("PerformSurf : Fail of approximation!");
             }
         }
         else if (chsp.IsChamfer() == ChFiDS_TwoDist)
@@ -1463,7 +1466,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             done = CompleteData(Data, pFunc, lin, S1, S2, Or, gd1, gd2, gf1, gf2);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Fail of approximation!");
+                throw new FailureException("PerformSurf : Fail of approximation!");
             }
         }
         else
@@ -1489,7 +1492,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
             done = CompleteData(Data, Func, lin, S1, S2, Or, gd1, gd2, gf1, gf2);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Fail of approximation!");
+                throw new FailureException("PerformSurf : Fail of approximation!");
             }
         }
 
@@ -1498,17 +1501,17 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> _unused79, ChFiDS_ElSpine? _unused80, ChFiDS_Spine? _unused81, int _unused82, BRepAdaptor_Surface? _unused83, Adaptor3d_TopolTool? _unused84, BRepAdaptor_Curve2d? _unused85, BRepAdaptor_Surface? _unused86, BRepAdaptor_Curve2d? _unused87, ref bool _unused88, BRepAdaptor_Surface? _unused89, Adaptor3d_TopolTool? _unused90, TopAbs_Orientation _unused91, double _unused92, double _unused93, double _unused94, ref double _unused95, ref double _unused96, bool _unused97, bool _unused98, bool _unused99, bool _unused100, bool _unused101, bool _unused102, math_Vector _unused103)
     {
-        throw new Standard_Failure("PerformSurf Not Implemented");
+        throw new FailureException("PerformSurf Not Implemented");
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> _unused104, ChFiDS_ElSpine? _unused105, ChFiDS_Spine? _unused106, int _unused107, BRepAdaptor_Surface? _unused108, Adaptor3d_TopolTool? _unused109, TopAbs_Orientation _unused110, BRepAdaptor_Surface? _unused111, Adaptor3d_TopolTool? _unused112, BRepAdaptor_Curve2d? _unused113, BRepAdaptor_Surface? _unused114, BRepAdaptor_Curve2d? _unused115, ref bool _unused116, double _unused117, double _unused118, double _unused119, ref double _unused120, ref double _unused121, bool _unused122, bool _unused123, bool _unused124, bool _unused125, bool _unused126, bool _unused127, math_Vector _unused128)
     {
-        throw new Standard_Failure("PerformSurf Not Implemented");
+        throw new FailureException("PerformSurf Not Implemented");
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> _unused129, ChFiDS_ElSpine? _unused130, ChFiDS_Spine? _unused131, int _unused132, BRepAdaptor_Surface? _unused133, Adaptor3d_TopolTool? _unused134, BRepAdaptor_Curve2d? _unused135, BRepAdaptor_Surface? _unused136, BRepAdaptor_Curve2d? _unused137, ref bool _unused138, TopAbs_Orientation _unused139, BRepAdaptor_Surface? _unused140, Adaptor3d_TopolTool? _unused141, BRepAdaptor_Curve2d? _unused142, BRepAdaptor_Surface? _unused143, BRepAdaptor_Curve2d? _unused144, ref bool _unused145, TopAbs_Orientation _unused146, double _unused147, double _unused148, double _unused149, ref double _unused150, ref double _unused151, bool _unused152, bool _unused153, bool _unused154, bool _unused155, bool _unused156, bool _unused157, bool _unused158, math_Vector _unused159)
     {
-        throw new Standard_Failure("PerformSurf Not Implemented");
+        throw new FailureException("PerformSurf Not Implemented");
     }
 
     //=======================================================================
@@ -1790,8 +1793,8 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
         BRepAdaptor_Surface S = new();
         BRepAdaptor_Curve2d PC = new();
         double u = 0.0, v = 0.0, t = 0.0;
-        gp_Pnt p = new();
-        gp_Vec n1 = new(), n2 = new(), du = new(), dv = new();
+        Point3D p = new();
+        Vector3D n1 = new(), n2 = new(), du = new(), dv = new();
         BRep_Builder B = new();
         double Seuil = M_PI / 360.0;
         double Seuil2 = Seuil * Seuil;
@@ -1830,7 +1833,7 @@ public partial class ChFi3d_ChBuilder : ChFi3d_Builder
                             double sina2 = n1.Crossed(n2).SquareMagnitude();
                             if (sina2 < Seuil2)
                             {
-                                GeomAbs_Shape cont = ChFi3d_evalconti(E, F1, F2);
+                                Continuity cont = ChFi3d_evalconti(E, F1, F2);
                                 B.Continuity(E, F1, F2, cont);
                             }
                         }

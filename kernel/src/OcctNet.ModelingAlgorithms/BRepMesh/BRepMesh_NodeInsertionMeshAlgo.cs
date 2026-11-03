@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.IMeshData_Status;
 using static Occt.TopAbs_State;
@@ -33,7 +35,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
     /// <summary>Meshes the face.</summary>
     public override void Perform(IMeshData_Face theDFace,
                                  in IMeshTools_Parameters theParameters,
-                                 Message_ProgressRange theRange)
+                                 ProgressRange theRange)
     {
         myRangeSplitter.Reset(theDFace, theParameters);
         myClassifier = new BRepMesh_Classifier();
@@ -49,7 +51,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
     protected override bool initDataStructure()
     {
         IMeshData_Face aDFace = getDFace();
-        NCollection_Array1<NCollection_Sequence<gp_Pnt2d>?> aWires = new(0, aDFace.WiresNb() - 1);
+        NCollection_Array1<NCollection_Sequence<Point2D>?> aWires = new(0, aDFace.WiresNb() - 1);
         for (int aWireIt = 0; aWireIt < aDFace.WiresNb(); ++aWireIt)
         {
             IMeshData_Wire aDWire = aDFace.GetWire(aWireIt);
@@ -80,7 +82,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
 
         for (int aWireIt = 0; aWireIt < aDFace.WiresNb(); ++aWireIt)
         {
-            NCollection_Sequence<gp_Pnt2d>? aWire = aWires[aWireIt];
+            NCollection_Sequence<Point2D>? aWire = aWires[aWireIt];
             if (aWire is not null && !aWire.IsEmpty())
             {
                 myClassifier!.RegisterWire(aWire,
@@ -99,7 +101,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
     }
 
     /// <summary>Adds the 2D point, scaled into the splitter's basis, to the mesh structure.</summary>
-    protected override int addNodeToStructure(in gp_Pnt2d thePoint,
+    protected override int addNodeToStructure(in Point2D thePoint,
                                               int theLocation3d,
                                               BRepMesh_DegreeOfFreedom theMovability,
                                               bool isForceAdd)
@@ -111,9 +113,9 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
     }
 
     /// <summary>The 2D point of the vertex, scaled back from the splitter's basis.</summary>
-    protected override gp_Pnt2d getNodePoint2d(in BRepMesh_Vertex theVertex)
+    protected override Point2D getNodePoint2d(in BRepMesh_Vertex theVertex)
     {
-        return myRangeSplitter.Scale(new gp_Pnt2d(theVertex.Coord()), false);
+        return myRangeSplitter.Scale(new Point2D(theVertex.Coord()), false);
     }
 
     /// <summary>The range splitter.</summary>
@@ -124,9 +126,9 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
 
     // Creates collection of points representing discrete wire (OCCT keeps pointers to the pcurves' points; the
     // points aren't changed while the face is meshed, so their values are kept).
-    private NCollection_Sequence<gp_Pnt2d> collectWirePoints(IMeshData_Wire theDWire)
+    private NCollection_Sequence<Point2D> collectWirePoints(IMeshData_Wire theDWire)
     {
-        NCollection_Sequence<gp_Pnt2d> aWirePoints = new();
+        NCollection_Sequence<Point2D> aWirePoints = new();
         for (int aEdgeIt = 0; aEdgeIt < theDWire.EdgesNb(); ++aEdgeIt)
         {
             IMeshData_Edge aDEdge = theDWire.GetEdge(aEdgeIt);
@@ -156,7 +158,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
             // this cycle will not be executed.
             for (; aPointIt != aEndIndex; aPointIt += aInc)
             {
-                gp_Pnt2d aPnt2d = aPCurve.GetPoint(aPointIt);
+                Point2D aPnt2d = aPCurve.GetPoint(aPointIt);
                 aWirePoints.Append(aPnt2d);
                 myRangeSplitter.AddPoint(aPnt2d);
             }
@@ -186,7 +188,7 @@ public class BRepMesh_NodeInsertionMeshAlgo<RangeSplitter> : BRepMesh_DelaunayBa
     {
         try
         {
-            gp_Pnt2d aPnt2d = BRep_Tool.Parameters(theVertex, getDFace().GetFace());
+            Point2D aPnt2d = BRep_Tool.Parameters(theVertex, getDFace().GetFace());
             // check UV values for internal vertices
             if (myClassifier!.Perform(aPnt2d) != TopAbs_IN)
             {

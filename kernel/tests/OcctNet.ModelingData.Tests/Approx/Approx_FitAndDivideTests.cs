@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,21 +22,21 @@ public class Approx_FitAndDivideTests
             myNbPnt2d = 0;
         }
 
-        public static gp_Pnt P(double u) => new(1.0 + 2.0 * u - u * u * u, 0.5 * u * u, 3.0 - u + 0.25 * u * u * u);
+        public static Point3D P(double u) => new(1.0 + 2.0 * u - u * u * u, 0.5 * u * u, 3.0 - u + 0.25 * u * u * u);
 
         public override double FirstParameter() => myU0;
 
         public override double LastParameter() => myU1;
 
-        public override bool Value(double theU, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theU, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt[1] = P(theU);
             return true;
         }
 
-        public override bool D1(double theU, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theU, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
-            theVec[1] = new gp_Vec(2.0 - 3.0 * theU * theU, theU, -1.0 + 0.75 * theU * theU);
+            theVec[1] = new Vector3D(2.0 - 3.0 * theU * theU, theU, -1.0 + 0.75 * theU * theU);
             return true;
         }
     }
@@ -58,43 +59,43 @@ public class Approx_FitAndDivideTests
 
         public override double LastParameter() => myU1;
 
-        public override bool Value(double theU, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theU, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             if (myNbPnt == 1)
             {
-                thePnt[1] = new gp_Pnt(myR * Math.Cos(theU), myR * Math.Sin(theU), 0.0);
+                thePnt[1] = new Point3D(myR * Math.Cos(theU), myR * Math.Sin(theU), 0.0);
             }
             else
             {
-                thePnt2d[1] = new gp_Pnt2d(myR * Math.Cos(theU), myR * Math.Sin(theU));
+                thePnt2d[1] = new Point2D(myR * Math.Cos(theU), myR * Math.Sin(theU));
             }
             return true;
         }
 
-        public override bool D1(double theU, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theU, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
             if (myNbPnt == 1)
             {
-                theVec[1] = new gp_Vec(-myR * Math.Sin(theU), myR * Math.Cos(theU), 0.0);
+                theVec[1] = new Vector3D(-myR * Math.Sin(theU), myR * Math.Cos(theU), 0.0);
             }
             else
             {
-                theVec2d[1] = new gp_Vec2d(-myR * Math.Sin(theU), myR * Math.Cos(theU));
+                theVec2d[1] = new Vector2D(-myR * Math.Sin(theU), myR * Math.Cos(theU));
             }
             return true;
         }
     }
 
     // Evaluates the Bezier MultiCurve's first 3d curve at the parameter u of [U0, U1].
-    private static gp_Pnt Value3d(AppParCurves_MultiCurve theCurve, double U0, double U1, double u)
+    private static Point3D Value3d(AppParCurves_MultiCurve theCurve, double U0, double U1, double u)
     {
-        theCurve.Value(1, (u - U0) / (U1 - U0), out gp_Pnt aP);
+        theCurve.Value(1, (u - U0) / (U1 - U0), out Point3D aP);
         return aP;
     }
 
-    private static gp_Pnt2d Value2d(AppParCurves_MultiCurve theCurve, double U0, double U1, double u)
+    private static Point2D Value2d(AppParCurves_MultiCurve theCurve, double U0, double U1, double u)
     {
-        theCurve.Value(1, (u - U0) / (U1 - U0), out gp_Pnt2d aP);
+        theCurve.Value(1, (u - U0) / (U1 - U0), out Point2D aP);
         return aP;
     }
 
@@ -163,8 +164,8 @@ public class Approx_FitAndDivideTests
             for (int j = 0; j <= 8; j++)
             {
                 double u = aFirst + (aLast - aFirst) * j / 8.0;
-                gp_Pnt aP = Value3d(aCurve, aFirst, aLast, u);
-                Assert.True(aP.Distance(new gp_Pnt(2.0 * Math.Cos(u), 2.0 * Math.Sin(u), 0.0)) < 10.0 * aTol);
+                Point3D aP = Value3d(aCurve, aFirst, aLast, u);
+                Assert.True(aP.Distance(new Point3D(2.0 * Math.Cos(u), 2.0 * Math.Sin(u), 0.0)) < 10.0 * aTol);
             }
         }
         Assert.Equal(2.0 * Math.PI, aPrevLast);
@@ -203,8 +204,8 @@ public class Approx_FitAndDivideTests
             Assert.True(aTol2d <= aTol);
             AppParCurves_MultiCurve aCurve = anApprox.Value(i);
             double u = 0.5 * (aFirst + aLast);
-            gp_Pnt2d aP = Value2d(aCurve, aFirst, aLast, u);
-            Assert.True(aP.Distance(new gp_Pnt2d(1.5 * Math.Cos(u), 1.5 * Math.Sin(u))) < 10.0 * aTol);
+            Point2D aP = Value2d(aCurve, aFirst, aLast, u);
+            Assert.True(aP.Distance(new Point2D(1.5 * Math.Cos(u), 1.5 * Math.Sin(u))) < 10.0 * aTol);
         }
 
         // With one segment allowed, the cutting stops at once with the best curve found.

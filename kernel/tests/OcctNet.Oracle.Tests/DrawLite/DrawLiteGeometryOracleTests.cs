@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -45,27 +46,27 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             Assert.True(theNative == thePort, $"{theWhat}: native {theNative}, port {thePort}");
         }
 
-        public void Same(N.gp_Pnt theN, in gp_Pnt theP, string theWhat)
+        public void Same(N.gp_Pnt theN, in Point3D theP, string theWhat)
         {
             Same(theN.X(), theP.X(), theWhat + ".X");
             Same(theN.Y(), theP.Y(), theWhat + ".Y");
             Same(theN.Z(), theP.Z(), theWhat + ".Z");
         }
 
-        public void Same(N.gp_Vec theN, in gp_Vec theP, string theWhat)
+        public void Same(N.gp_Vec theN, in Vector3D theP, string theWhat)
         {
             Same(theN.X(), theP.X(), theWhat + ".X");
             Same(theN.Y(), theP.Y(), theWhat + ".Y");
             Same(theN.Z(), theP.Z(), theWhat + ".Z");
         }
 
-        public void Same(N.gp_Pnt2d theN, in gp_Pnt2d theP, string theWhat)
+        public void Same(N.gp_Pnt2d theN, in Point2D theP, string theWhat)
         {
             Same(theN.X(), theP.X(), theWhat + ".X");
             Same(theN.Y(), theP.Y(), theWhat + ".Y");
         }
 
-        public void Same(N.gp_Vec2d theN, in gp_Vec2d theP, string theWhat)
+        public void Same(N.gp_Vec2d theN, in Vector2D theP, string theWhat)
         {
             Same(theN.X(), theP.X(), theWhat + ".X");
             Same(theN.Y(), theP.Y(), theWhat + ".Y");
@@ -97,7 +98,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             foreach (double U in Parameters(theP.FirstParameter(), theP.LastParameter()))
             {
                 theN.D2(U, aNP, aNV1, aNV2);
-                theP.D2(U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2);
+                theP.D2(U, out Point3D P, out Vector3D V1, out Vector3D V2);
                 Same(aNP, P, $"{theWhat} D2({U:R}) P");
                 Same(aNV1, V1, $"{theWhat} D2({U:R}) V1");
                 Same(aNV2, V2, $"{theWhat} D2({U:R}) V2");
@@ -114,7 +115,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             foreach (double U in Parameters(theP.FirstParameter(), theP.LastParameter()))
             {
                 theN.D2(U, aNP, aNV1, aNV2);
-                theP.D2(U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2);
+                theP.D2(U, out Point2D P, out Vector2D V1, out Vector2D V2);
                 Same(aNP, P, $"{theWhat} D2({U:R}) P");
                 Same(aNV1, V1, $"{theWhat} D2({U:R}) V1");
                 Same(aNV2, V2, $"{theWhat} D2({U:R}) V2");
@@ -141,7 +142,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             {
                 double U = aUs[k], V = aVs[k % aVs.Count];
                 theN.D2(U, V, aNP, aNU, aNV, aNUU, aNVV, aNUV);
-                theP.D2(U, V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V, out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV);
+                theP.D2(U, V, out Point3D P, out Vector3D D1U, out Vector3D D1V, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
                 string aAt = $"{theWhat} D2({U:R}, {V:R})";
                 Same(aNP, P, aAt + " P");
                 Same(aNU, D1U, aAt + " D1U");
@@ -632,12 +633,12 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using var aNV1 = new N.gp_Vec();
             using var aNV2 = new N.gp_Vec();
             aNE.D2(U, aNP, aNV1, aNV2);
-            aBits.Same(aNP, new gp_Pnt(Num("x"), Num("y"), Num("z")), $"cvalue {c} P");
-            aBits.Same(aNV1, new gp_Vec(Num("dx"), Num("dy"), Num("dz")), $"cvalue {c} D1");
-            aBits.Same(aNV2, new gp_Vec(Num("d2x"), Num("d2y"), Num("d2z")), $"cvalue {c} D2");
+            aBits.Same(aNP, new Point3D(Num("x"), Num("y"), Num("z")), $"cvalue {c} P");
+            aBits.Same(aNV1, new Vector3D(Num("dx"), Num("dy"), Num("dz")), $"cvalue {c} D1");
+            aBits.Same(aNV2, new Vector3D(Num("d2x"), Num("d2y"), Num("d2z")), $"cvalue {c} D2");
             i.Eval($"cvalue e {R(U)} pt");
             aNE.D0(U, aNP);
-            aBits.Same(aNP, Assert.IsType<gp_Pnt>(Geometry(i, "pt")), $"cvalue {c} point");
+            aBits.Same(aNP, Assert.IsType<Point3D>(Geometry(i, "pt")), $"cvalue {c} point");
 
             double[] P2 = Pnt(aBits, 2);
             i.Eval($"ellipse e2 {Words(P2)} {R(r1)} {R(r2)}; 2dcvalue e2 {R(U)} x y dx dy d2x d2y");
@@ -646,9 +647,9 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using var aNW1 = new N.gp_Vec2d();
             using var aNW2 = new N.gp_Vec2d();
             aNE2.D2(U, aNP2, aNW1, aNW2);
-            aBits.Same(aNP2, new gp_Pnt2d(Num("x"), Num("y")), $"2dcvalue {c} P");
-            aBits.Same(aNW1, new gp_Vec2d(Num("dx"), Num("dy")), $"2dcvalue {c} D1");
-            aBits.Same(aNW2, new gp_Vec2d(Num("d2x"), Num("d2y")), $"2dcvalue {c} D2");
+            aBits.Same(aNP2, new Point2D(Num("x"), Num("y")), $"2dcvalue {c} P");
+            aBits.Same(aNW1, new Vector2D(Num("dx"), Num("dy")), $"2dcvalue {c} D1");
+            aBits.Same(aNW2, new Vector2D(Num("d2x"), Num("d2y")), $"2dcvalue {c} D2");
 
             i.Eval($"torus t {Words(P)} {Words(D)} {R(r1)} {R(r2)}; svalue t {R(U)} {R(V)} {string.Join(" ", aS2)}");
             using var aNT = new N.Geom_ToroidalSurface(new N.gp_Ax3(NPnt(P), NDir(D)), r1, r2);
@@ -658,19 +659,19 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
             using var aNVV = new N.gp_Vec();
             using var aNUV = new N.gp_Vec();
             aNT.D2(U, V, aNP, aNU, aNV, aNUU, aNVV, aNUV);
-            aBits.Same(aNP, new gp_Pnt(Num("x"), Num("y"), Num("z")), $"svalue {c} P");
-            aBits.Same(aNU, new gp_Vec(Num("dux"), Num("duy"), Num("duz")), $"svalue {c} DU");
-            aBits.Same(aNV, new gp_Vec(Num("dvx"), Num("dvy"), Num("dvz")), $"svalue {c} DV");
-            aBits.Same(aNUU, new gp_Vec(Num("d2ux"), Num("d2uy"), Num("d2uz")), $"svalue {c} D2U");
-            aBits.Same(aNVV, new gp_Vec(Num("d2vx"), Num("d2vy"), Num("d2vz")), $"svalue {c} D2V");
-            aBits.Same(aNUV, new gp_Vec(Num("d2uvx"), Num("d2uvy"), Num("d2uvz")), $"svalue {c} D2UV");
+            aBits.Same(aNP, new Point3D(Num("x"), Num("y"), Num("z")), $"svalue {c} P");
+            aBits.Same(aNU, new Vector3D(Num("dux"), Num("duy"), Num("duz")), $"svalue {c} DU");
+            aBits.Same(aNV, new Vector3D(Num("dvx"), Num("dvy"), Num("dvz")), $"svalue {c} DV");
+            aBits.Same(aNUU, new Vector3D(Num("d2ux"), Num("d2uy"), Num("d2uz")), $"svalue {c} D2U");
+            aBits.Same(aNVV, new Vector3D(Num("d2vx"), Num("d2vy"), Num("d2vz")), $"svalue {c} D2V");
+            aBits.Same(aNUV, new Vector3D(Num("d2uvx"), Num("d2uvy"), Num("d2uvz")), $"svalue {c} D2UV");
 
             int nu = aBits.Int(0, 2), nv = aBits.Int(0, 2);
             if (nu + nv > 0)
             {
                 i.Eval($"sderivative t {R(U)} {R(V)} {nu} {nv} dnx dny dnz");
                 using N.gp_Vec aNDN = aNT.DN(U, V, nu, nv);
-                aBits.Same(aNDN, new gp_Vec(Num("dnx"), Num("dny"), Num("dnz")), $"sderivative {c}");
+                aBits.Same(aNDN, new Vector3D(Num("dnx"), Num("dny"), Num("dnz")), $"sderivative {c}");
             }
 
             double t1 = aBits.Real(-1, 0), t2 = aBits.Real(0.1, 1);

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -85,8 +87,8 @@ public class BRepCheck_Vertex : BRepCheck_Result
         }
 
         var TV = (BRep_TVertex)myShape.TShape()!;
-        gp_Pnt prep = TV.Pnt();
-        gp_Pnt Controlp;
+        Point3D prep = TV.Pnt();
+        Point3D Controlp;
 
         TopAbs_ShapeEnum styp = S.ShapeType();
         switch (styp)
@@ -138,15 +140,15 @@ public class BRepCheck_Vertex : BRepCheck_Result
 
                 var TE = (BRep_TEdge)E.TShape()!;
                 var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
-                TopLoc_Location Eloc = E.Location();
+                Placement Eloc = E.Location();
 
                 var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator();
                 while (itcr.More())
                 {
                     // For each CurveRepresentation, the provided parameter is checked
                     BRep_CurveRepresentation cr = itcr.Value();
-                    TopLoc_Location loc = cr.Location();
-                    TopLoc_Location L = (Eloc * loc).Predivided(myShape.Location());
+                    Placement loc = cr.Location();
+                    Placement L = (Eloc * loc).Predivided(myShape.Location());
 
                     if (cr.IsCurve3D())
                     {
@@ -211,7 +213,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
                             BRep_PointRepresentation pr = itpr.Value();
                             if (pr.IsPointOnCurveOnSurface(PC, Su, L))
                             {
-                                gp_Pnt2d p2d = PC.Value(pr.Parameter());
+                                Point2D p2d = PC.Value(pr.Parameter());
                                 Controlp = Su.Value(p2d.X(), p2d.Y());
                                 Controlp.Transform(L.Transformation());
                                 if (prep.SquareDistance(Controlp) > Tol)
@@ -222,7 +224,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
 
                             if (PC2 is not null && pr.IsPointOnCurveOnSurface(PC2, Su, L))
                             {
-                                gp_Pnt2d p2d = PC2.Value(pr.Parameter());
+                                Point2D p2d = PC2.Value(pr.Parameter());
                                 Controlp = Su.Value(p2d.X(), p2d.Y());
                                 Controlp.Transform(L.Transformation());
                                 if (prep.SquareDistance(Controlp) > Tol)
@@ -248,10 +250,10 @@ public class BRepCheck_Vertex : BRepCheck_Result
             case TopAbs_FACE:
             {
                 var TF = (BRep_TFace)S.TShape()!;
-                TopLoc_Location Floc = S.Location();
-                TopLoc_Location TFloc = TF.Location();
+                Placement Floc = S.Location();
+                Placement TFloc = TF.Location();
                 Geom_Surface? Su = TF.Surface();
-                TopLoc_Location L = (Floc * TFloc).Predivided(myShape.Location());
+                Placement L = (Floc * TFloc).Predivided(myShape.Location());
 
                 double Tol = BRep_Tool.Tolerance(TopoDS.Vertex(myShape));
                 Tol = Max(Tol, BRep_Tool.Tolerance(TopoDS.Face(S))); // to check
@@ -307,17 +309,17 @@ public class BRepCheck_Vertex : BRepCheck_Result
     {
         // Check all the representations  of the vertex. (i-e checks the TVertex
         var TV = (BRep_TVertex)myShape.TShape()!;
-        gp_Pnt prep = TV.Pnt();
+        Point3D prep = TV.Pnt();
         double Tol = BRep_Tool.Tolerance(TopoDS.Vertex(myShape));
         Tol *= Tol;
 
-        gp_Pnt Controlp;
+        Point3D Controlp;
         Controlp = prep;
         var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(TV.Points());
         while (itpr.More())
         {
             BRep_PointRepresentation pr = itpr.Value();
-            TopLoc_Location loc = pr.Location();
+            Placement loc = pr.Location();
             if (pr.IsPointOnCurve())
             {
                 // OCCT: with a null curve, the previous point is kept and transformed again below
@@ -328,7 +330,7 @@ public class BRepCheck_Vertex : BRepCheck_Result
             }
             else if (pr.IsPointOnCurveOnSurface())
             {
-                gp_Pnt2d Puv = pr.PCurve()!.Value(pr.Parameter());
+                Point2D Puv = pr.PCurve()!.Value(pr.Parameter());
                 Controlp = pr.Surface()!.Value(Puv.X(), Puv.Y());
             }
             else if (pr.IsPointOnSurface())

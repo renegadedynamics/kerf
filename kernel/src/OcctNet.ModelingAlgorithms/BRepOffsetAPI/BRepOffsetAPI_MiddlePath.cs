@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2014 OPEN CASCADE SAS; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.BRepExtrema_SupportType;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -30,16 +33,16 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
     private readonly NCollection_Map<TopoDS_Shape> myEndWireEdges = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_Sequence<NCollection_Sequence<TopoDS_Shape>> myPaths = new();
 
-    private static bool IsLinear(in TopoDS_Edge anEdge, out gp_Lin aLine)
+    private static bool IsLinear(in TopoDS_Edge anEdge, out Line3D aLine)
     {
-        aLine = new gp_Lin();
+        aLine = new Line3D();
         Geom_Curve aCurve = BRep_Tool.Curve(anEdge, out _, out _)!;
         if (aCurve.GetType() == typeof(Geom_TrimmedCurve))
         {
             aCurve = ((Geom_TrimmedCurve)aCurve).BasisCurve();
         }
 
-        gp_Pnt Pnt1, Pnt2;
+        Point3D Pnt1, Pnt2;
         if (aCurve is Geom_Line aGeomLine)
         {
             aLine = aGeomLine.Lin();
@@ -69,18 +72,18 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
         return false;
     }
 
-    private static GeomAbs_CurveType TypeOfEdge(in TopoDS_Edge anEdge)
+    private static CurveKind TypeOfEdge(in TopoDS_Edge anEdge)
     {
         if (IsLinear(anEdge, out _))
         {
-            return GeomAbs_Line;
+            return Line;
         }
 
         BRepAdaptor_Curve BAcurve = new(anEdge);
         return BAcurve.GetType();
     }
 
-    private static gp_Vec TangentOfEdge(in TopoDS_Shape aShape, bool OnFirst)
+    private static Vector3D TangentOfEdge(in TopoDS_Shape aShape, bool OnFirst)
     {
         TopoDS_Edge anEdge = TopoDS.Edge(aShape);
         TopAbs_Orientation anOr = anEdge.Orientation();
@@ -96,7 +99,7 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
             thePar = (anOr == TopAbs_FORWARD) ? lpar : fpar;
         }
 
-        aCurve.D1(thePar, out _, out gp_Vec theTangent);
+        aCurve.D1(thePar, out _, out Vector3D theTangent);
         if (anOr == TopAbs_REVERSED)
         {
             theTangent.Reverse();
@@ -109,7 +112,7 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
     {
         TopExp.Vertices(theEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         int i;
 
         TopExp_Explorer Explo = new(theFace, TopAbs_EDGE);
@@ -216,7 +219,7 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>Builds the middle path.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         NCollection_List<TopoDS_Shape>.Iterator itl = new();
 
@@ -542,8 +545,8 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                         {
                             LastPar2 = fpar2;
                         }
-                        gp_Pnt2d FirstPnt2d = PCurve1.Value(LastPar1);
-                        gp_Pnt2d LastPnt2d = PCurve2.Value(LastPar2);
+                        Point2D FirstPnt2d = PCurve1.Value(LastPar1);
+                        Point2D LastPnt2d = PCurve2.Value(LastPar2);
                         Geom_Surface theSurf = BRep_Tool.Surface(theFace)!;
                         Geom2d_Line theLine = new GC_MakeLine2d(FirstPnt2d, LastPnt2d).Value();
                         double len_ne = FirstPnt2d.Distance(LastPnt2d);
@@ -578,15 +581,15 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                             FirstPar2 = lpar2;
                             LastPar2 = fpar2;
                         }
-                        gp_Pnt2d FirstPnt2d = PCurve1.Value(LastPar1);
-                        gp_Pnt2d LastPnt2d = PCurve2.Value(LastPar2);
+                        Point2D FirstPnt2d = PCurve1.Value(LastPar1);
+                        Point2D LastPnt2d = PCurve2.Value(LastPar2);
                         Geom_Surface theSurf = BRep_Tool.Surface(theFace)!;
                         Geom2d_Line theLine = new GC_MakeLine2d(FirstPnt2d, LastPnt2d).Value();
                         double len_ne = FirstPnt2d.Distance(LastPnt2d);
                         TopoDS_Edge NewEdge = new BRepLib_MakeEdge(theLine, theSurf, PrevVertex, CurVertex, 0.0, len_ne).InternalEdge();
                         BRepLib.BuildCurve3d(NewEdge);
-                        gp_Pnt2d PrevFirstPnt2d = PCurve1.Value(FirstPar1);
-                        gp_Pnt2d PrevLastPnt2d = PCurve2.Value(FirstPar2);
+                        Point2D PrevFirstPnt2d = PCurve1.Value(FirstPar1);
+                        Point2D PrevLastPnt2d = PCurve2.Value(FirstPar2);
                         Geom2d_Line Line1 = new GC_MakeLine2d(PrevFirstPnt2d, LastPnt2d).Value();
                         Geom2d_Line Line2 = new GC_MakeLine2d(FirstPnt2d, PrevLastPnt2d).Value();
                         double len_ne1 = PrevFirstPnt2d.Distance(LastPnt2d);
@@ -598,8 +601,8 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                         bool good_ne = IsValidEdge(NewEdge, theFace);
                         bool good_ne1 = IsValidEdge(NewEdge1, theFace);
 
-                        GeomAbs_CurveType type_E1 = TypeOfEdge(E1);
-                        GeomAbs_CurveType type_E2 = TypeOfEdge(E2);
+                        CurveKind type_E1 = TypeOfEdge(E1);
+                        CurveKind type_E2 = TypeOfEdge(E2);
 
                         int ChooseEdge = 0;
 
@@ -618,11 +621,11 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                             }
                             else // types are different
                             {
-                                if (type_E1 == GeomAbs_Line)
+                                if (type_E1 == Line)
                                 {
                                     ChooseEdge = 1;
                                 }
-                                else if (type_E2 == GeomAbs_Line)
+                                else if (type_E2 == Line)
                                 {
                                     ChooseEdge = 2;
                                 }
@@ -714,7 +717,7 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
             }
         }
 
-        NCollection_Array1<gp_Pnt> Centers = new(1, NbSecFaces);
+        NCollection_Array1<Point3D> Centers = new(1, NbSecFaces);
         for (i = 1; i <= NbSecFaces; i++)
         {
             GProp_GProps Properties = new();
@@ -733,20 +736,20 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
         NCollection_Array1<TopoDS_Shape> MidEdges = new(1, NbSecFaces - 1);
         double LinTol = 1.0e-5;
         double AngTol = 1.0e-7;
-        gp_Pnt Pnt1, Pnt2;
+        Point3D Pnt1, Pnt2;
         for (i = 1; i < NbSecFaces; i++)
         {
-            GeomAbs_CurveType TypeOfMidEdge = GeomAbs_OtherCurve;
+            CurveKind TypeOfMidEdge = OtherCurve;
             for (j = 1; j <= myPaths.Length(); j++)
             {
                 TopoDS_Shape aShape = myPaths[j][i];
                 if (aShape.ShapeType() == TopAbs_VERTEX)
                 {
-                    TypeOfMidEdge = GeomAbs_OtherCurve;
+                    TypeOfMidEdge = OtherCurve;
                     break;
                 }
                 anEdge = TopoDS.Edge(aShape);
-                GeomAbs_CurveType aType = TypeOfEdge(anEdge);
+                CurveKind aType = TypeOfEdge(anEdge);
                 if (j == 1)
                 {
                     TypeOfMidEdge = aType;
@@ -755,21 +758,21 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                 {
                     if (aType != TypeOfMidEdge)
                     {
-                        TypeOfMidEdge = GeomAbs_OtherCurve;
+                        TypeOfMidEdge = OtherCurve;
                         break;
                     }
                 }
             }
-            if (TypeOfMidEdge == GeomAbs_Line)
+            if (TypeOfMidEdge == Line)
             {
                 MidEdges[i] = new BRepLib_MakeEdge(Centers[i], Centers[i + 1]).InternalEdge();
             }
-            else if (TypeOfMidEdge == GeomAbs_Circle)
+            else if (TypeOfMidEdge == Circle)
             {
-                gp_Ax1 theAxis = new();
-                gp_Dir theDir1 = new(), theDir2 = new();
+                Axis3D theAxis = new();
+                Direction3D theDir1 = new(), theDir2 = new();
                 double theAngle = 0.0;
-                gp_Vec theTangent = new();
+                Vector3D theTangent = new();
                 bool SimilarArcs = true;
                 for (j = 1; j <= myPaths.Length(); j++)
                 {
@@ -782,12 +785,12 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                     Pnt1 = aCurve.Value(fpar);
                     Pnt2 = aCurve.Value(lpar);
                     Geom_Circle aCircle = (Geom_Circle)aCurve;
-                    gp_Circ aCirc = aCircle.Circ();
+                    Circle3D aCirc = aCircle.Circ();
                     if (j == 1)
                     {
                         theAxis = aCirc.Axis();
-                        theDir1 = new gp_Dir(new gp_Vec(aCirc.Location(), Pnt1));
-                        theDir2 = new gp_Dir(new gp_Vec(aCirc.Location(), Pnt2));
+                        theDir1 = new Direction3D(new Vector3D(aCirc.Location(), Pnt1));
+                        theDir2 = new Direction3D(new Vector3D(aCirc.Location(), Pnt2));
                         theAngle = lpar - fpar;
                         double theParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
                         aCurve.D1(theParam, out Pnt1, out theTangent);
@@ -798,15 +801,15 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                     }
                     else
                     {
-                        gp_Ax1 anAxis = aCirc.Axis();
-                        gp_Lin aLin = new(anAxis);
+                        Axis3D anAxis = aCirc.Axis();
+                        Line3D aLin = new(anAxis);
                         if (!aLin.Contains(theAxis.Location(), LinTol) || !anAxis.IsParallel(theAxis, AngTol))
                         {
                             SimilarArcs = false;
                             break;
                         }
-                        gp_Dir aDir1 = new(new gp_Vec(aCirc.Location(), Pnt1));
-                        gp_Dir aDir2 = new(new gp_Vec(aCirc.Location(), Pnt2));
+                        Direction3D aDir1 = new(new Vector3D(aCirc.Location(), Pnt1));
+                        Direction3D aDir2 = new(new Vector3D(aCirc.Location(), Pnt2));
                         if (!((aDir1.IsEqual(theDir1, AngTol) && aDir2.IsEqual(theDir2, AngTol))
                               || (aDir1.IsEqual(theDir2, AngTol) && aDir2.IsEqual(theDir1, AngTol))))
                         {
@@ -817,15 +820,15 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                 }
                 if (SimilarArcs)
                 {
-                    gp_XYZ AxisLoc = theAxis.Location().XYZ();
-                    gp_XYZ AxisDir = theAxis.Direction().XYZ();
+                    Xyz AxisLoc = theAxis.Location().XYZ();
+                    Xyz AxisDir = theAxis.Direction().XYZ();
                     double Parameter = (Centers[i].XYZ() - AxisLoc) * AxisDir;
-                    gp_Pnt theCenterOfCirc = new(AxisLoc + Parameter * AxisDir);
+                    Point3D theCenterOfCirc = new(AxisLoc + Parameter * AxisDir);
 
-                    gp_Vec Vec1 = new(theCenterOfCirc, Centers[i]);
-                    gp_Vec Vec2 = new(theCenterOfCirc, Centers[i + 1]);
+                    Vector3D Vec1 = new(theCenterOfCirc, Centers[i]);
+                    Vector3D Vec2 = new(theCenterOfCirc, Centers[i + 1]);
 
-                    double anAngle = Vec1.AngleWithRef(Vec2, new gp_Vec(theAxis.Direction()));
+                    double anAngle = Vec1.AngleWithRef(Vec2, new Vector3D(theAxis.Direction()));
                     if (anAngle < 0.0)
                     {
                         anAngle += 2.0 * M_PI;
@@ -834,13 +837,13 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                     {
                         theAxis.Reverse();
                     }
-                    gp_Ax2 theAx2 = new(theCenterOfCirc, theAxis.Direction(), new gp_Dir(Vec1));
+                    Frame3D theAx2 = new(theCenterOfCirc, theAxis.Direction(), new Direction3D(Vec1));
                     Geom_Circle theCircle = new GC_MakeCircle(theAx2, Vec1.Magnitude()).Value();
-                    theCircle.D1(0.0, out Pnt1, out gp_Vec aTangent);
+                    theCircle.D1(0.0, out Pnt1, out Vector3D aTangent);
                     if (aTangent * theTangent < 0.0)
                     {
                         theAxis.Reverse();
-                        theAx2 = new gp_Ax2(theCenterOfCirc, theAxis.Direction(), new gp_Dir(Vec1));
+                        theAx2 = new Frame3D(theCenterOfCirc, theAxis.Direction(), new Direction3D(Vec1));
                         theCircle = new GC_MakeCircle(theAx2, Vec1.Magnitude()).Value();
                     }
                     BRepLib_MakeEdge aME = new(theCircle, 0.0, theAngle);
@@ -864,8 +867,8 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                     }
                 }
                 // from i to j-1 all edges are null
-                NCollection_HArray1<gp_Pnt> thePoints = new(1, j - i + 1);
-                NCollection_Array1<gp_Vec> theTangents = new(1, j - i + 1);
+                NCollection_HArray1<Point3D> thePoints = new(1, j - i + 1);
+                NCollection_Array1<Vector3D> theTangents = new(1, j - i + 1);
                 NCollection_HArray1<bool> theFlags = new(1, j - i + 1);
                 for (k = i; k <= j; k++)
                 {
@@ -873,10 +876,10 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                 }
                 for (k = i; k <= j; k++)
                 {
-                    NCollection_Sequence<gp_Pnt> PntSeq = new();
+                    NCollection_Sequence<Point3D> PntSeq = new();
                     for (int indp = 1; indp <= myPaths.Length(); indp++)
                     {
-                        gp_Vec aTangent;
+                        Vector3D aTangent;
                         if (k == i)
                         {
                             if (myPaths[indp][k].ShapeType() == TopAbs_VERTEX)
@@ -899,21 +902,21 @@ public class BRepOffsetAPI_MiddlePath : BRepBuilderAPI_MakeShape
                             {
                                 continue;
                             }
-                            gp_Vec Tangent1 = TangentOfEdge(myPaths[indp][k - 1], false); // at end
-                            gp_Vec Tangent2 = TangentOfEdge(myPaths[indp][k], true); // at begin
+                            Vector3D Tangent1 = TangentOfEdge(myPaths[indp][k - 1], false); // at end
+                            Vector3D Tangent2 = TangentOfEdge(myPaths[indp][k], true); // at begin
                             aTangent = Tangent1 + Tangent2;
                         }
                         aTangent.Normalize();
-                        gp_Pnt aPnt = new(aTangent.XYZ());
+                        Point3D aPnt = new(aTangent.XYZ());
                         PntSeq.Append(aPnt);
                     }
-                    NCollection_Array1<gp_Pnt> PntArray = new(1, PntSeq.Length());
+                    NCollection_Array1<Point3D> PntArray = new(1, PntSeq.Length());
                     for (int ip = 1; ip <= PntSeq.Length(); ip++)
                     {
                         PntArray[ip] = PntSeq[ip];
                     }
-                    GeomLib.Inertia(PntArray, out gp_Pnt theBary, out _, out _, out _, out _, out _);
-                    gp_Vec theTangent = new(theBary.XYZ());
+                    GeomLib.Inertia(PntArray, out Point3D theBary, out _, out _, out _, out _, out _);
+                    Vector3D theTangent = new(theBary.XYZ());
                     theTangents[k - i + 1] = theTangent;
                 }
                 theFlags.Init(true);

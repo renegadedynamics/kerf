@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 
@@ -45,8 +47,8 @@ internal sealed class ShapeSnapshot
 
             aText.Append(CultureInfo.InvariantCulture,
                          $"T{anIndex[aT]} {aT.ShapeType()} free={aT.Free()} locked={aT.LockedFlag()} mod={aT.Modified()} chk={aT.Checked()} "
-                         + $"ori={aT.Orientable()} closed={aT.Closed()} inf={aT.Infinite()} cvx={aT.Convex()} frozen={aT.IsFrozen()}\n");
-            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aT, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
+                         + $"ori={aT.Orientable()} closed={aT.Closed()} inf={aT.Infinite()} cvx={aT.Convex()} frozen={aT.IsFrozen}\n");
+            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aT, new Placement(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
                  anIt.More(); anIt.Next())
             {
                 TopoDS_Shape aChild = anIt.Value();
@@ -61,7 +63,7 @@ internal sealed class ShapeSnapshot
                     foreach (BRep_PointRepresentation aPR in aV.PointRepresentations())
                     {
                         anObjects.Add(aPR);
-                        aText.Append(CultureInfo.InvariantCulture, $"  prep {aPR.GetType().Name} {aPR.Parameter():R} {Loc(aPR.Location())}\n");
+                        aText.Append(CultureInfo.InvariantCulture, $"  prep {Kerf.Engine.Foundation.OcctTypeNames.Of(aPR.GetType())} {aPR.Parameter():R} {Loc(aPR.Location())}\n");
                     }
 
                     break;
@@ -71,7 +73,7 @@ internal sealed class ShapeSnapshot
                     foreach (BRep_CurveRepresentation aCR in anE.CurveRepresentations())
                     {
                         anObjects.Add(aCR);
-                        aText.Append(CultureInfo.InvariantCulture, $"  crep {aCR.GetType().Name} {Loc(aCR.Location())} frozen={aCR.IsFrozen()}");
+                        aText.Append(CultureInfo.InvariantCulture, $"  crep {Kerf.Engine.Foundation.OcctTypeNames.Of(aCR.GetType())} {Loc(aCR.Location())} frozen={aCR.IsFrozen}");
                         if (aCR is BRep_GCurve aGC)
                         {
                             aText.Append(CultureInfo.InvariantCulture, $" [{aGC.First():R}, {aGC.Last():R}]");
@@ -89,7 +91,7 @@ internal sealed class ShapeSnapshot
                                  $"  tol {aF.Tolerance():R} nat={aF.NaturalRestriction()} {Loc(aF.Location())} ntri={aF.NbTriangulations()}\n");
                     anObjects.Add(aF.Surface());
                     anObjects.Add(aF.ActiveTriangulation());
-                    foreach (Poly_Triangulation aTri in aF.TriangulationList())
+                    foreach (Triangulation aTri in aF.TriangulationList())
                     {
                         anObjects.Add(aTri);
                     }
@@ -119,7 +121,7 @@ internal sealed class ShapeSnapshot
         return $"T{anIndex} {theShape.Orientation()} {Loc(theShape.Location())}";
     }
 
-    private static string Loc(in TopLoc_Location theLoc) => theLoc.IsIdentity() ? "I" : theLoc.Transformation().ToString();
+    private static string Loc(in Placement theLoc) => theLoc.IsIdentity ? "I" : theLoc.Transformation().ToString();
 
     /// <summary>
     /// Asserts that another shape graph has this one's values: the same structure, flags (apart from the frozen state),
@@ -129,8 +131,8 @@ internal sealed class ShapeSnapshot
     public void AssertSameValues(ShapeSnapshot theOther)
     {
         static string WithoutFrozen(string theText) => System.Text.RegularExpressions.Regex.Replace(theText, @" frozen=\w+", "");
-        static bool IsGeometry(object? theObject) => theObject is null or Geom_Geometry or Geom2d_Geometry or Poly_Triangulation
-                                                         or Poly_Polygon3D or Poly_Polygon2D or Poly_PolygonOnTriangulation;
+        static bool IsGeometry(object? theObject) => theObject is null or Geom_Geometry or Geom2d_Geometry or Triangulation
+                                                         or Polygon3D or Polygon2D or PolygonOnTriangulation;
         Assert.Equal(WithoutFrozen(myText), WithoutFrozen(theOther.myText));
         List<object?> aMine = myObjects.Where(IsGeometry).ToList();
         List<object?> aTheirs = theOther.myObjects.Where(IsGeometry).ToList();

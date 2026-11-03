@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -29,7 +33,7 @@ public static class Hermit
             Deriv0, Deriv1;           // derivative denominator value for u=0 & 1
         bool Periodic;
 
-        BSplCLib.Reparametrize(0.0, 1.0, Knots); // affinity on the nodal vector
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, Knots); // affinity on the nodal vector
         Degree = BS.Degree();
         Periodic = BS.IsPeriodic();
         Index0 = BS.FirstUKnotIndex();
@@ -39,8 +43,8 @@ public static class Hermit
         // at u=0 and u=1. The weight function of a rational BSpline is itself a polynomial
         // BSpline of the same degree, with weight values as scalar "poles" and no rational
         // denominator -- hence Weights is passed as Poles, with NoWeights() for unweighted evaluation.
-        BSplCLib.D1(0.0, Index0, Degree, Periodic, Weights, BSplCLib.NoWeights(), Knots, Mults, out Denom0, out Deriv0);
-        BSplCLib.D1(1.0, Index1, Degree, Periodic, Weights, BSplCLib.NoWeights(), Knots, Mults, out Denom1, out Deriv1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(0.0, Index0, Degree, Periodic, Weights, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Knots, Mults, out Denom0, out Deriv0);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(1.0, Index1, Degree, Periodic, Weights, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Knots, Mults, out Denom1, out Deriv1);
         TAB[0] = 1 / Denom0; // Hermit coefficients
         TAB[1] = -Deriv0 / (Denom0 * Denom0);
         TAB[2] = -Deriv1 / (Denom1 * Denom1);
@@ -58,7 +62,7 @@ public static class Hermit
             Deriv0, Deriv1;           // derivative denominator value for u=0 & 1
         bool Periodic;
 
-        BSplCLib.Reparametrize(0.0, 1.0, Knots); // affinity on the nodal vector
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, Knots); // affinity on the nodal vector
         Degree = BS.Degree();
         Periodic = BS.IsPeriodic();
         Index0 = BS.FirstUKnotIndex();
@@ -68,8 +72,8 @@ public static class Hermit
         // at u=0 and u=1. The weight function of a rational BSpline is itself a polynomial
         // BSpline of the same degree, with weight values as scalar "poles" and no rational
         // denominator -- hence Weights is passed as Poles, with NoWeights() for unweighted evaluation.
-        BSplCLib.D1(0.0, Index0, Degree, Periodic, Weights, BSplCLib.NoWeights(), Knots, Mults, out Denom0, out Deriv0);
-        BSplCLib.D1(1.0, Index1, Degree, Periodic, Weights, BSplCLib.NoWeights(), Knots, Mults, out Denom1, out Deriv1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(0.0, Index0, Degree, Periodic, Weights, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Knots, Mults, out Denom0, out Deriv0);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(1.0, Index1, Degree, Periodic, Weights, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Knots, Mults, out Denom1, out Deriv1);
         TAB[0] = 1 / Denom0; // Hermit coefficients
         TAB[1] = -Deriv0 / (Denom0 * Denom0);
         TAB[2] = -Deriv1 / (Denom1 * Denom1);
@@ -77,7 +81,7 @@ public static class Hermit
     }
 
     /// <summary>Gives the sign of Herm(0): true for positive.</summary>
-    private static bool SignDenom(NCollection_Array1<gp_Pnt2d> Poles)
+    private static bool SignDenom(NCollection_Array1<Point2D> Poles)
     {
         bool Result;
 
@@ -86,7 +90,7 @@ public static class Hermit
     }
 
     /// <summary>Gives the max and the min of the Poles (by their index).</summary>
-    private static void Polemax(NCollection_Array1<gp_Pnt2d> Poles, out int min, out int max)
+    private static void Polemax(NCollection_Array1<Point2D> Poles, out int min, out int max)
     {
         int i;
         double Max, Min; // intermediate value of max and min ordinates
@@ -123,7 +127,7 @@ public static class Hermit
     {
         _ = TolKnots; // unused, as in OCCT
         int index, i, I1 = 0, I2 = 0, I3 = 0, I4 = 0; // knots index
-        NCollection_Array1<gp_Pnt2d> Polesinit = new(0, 3);
+        NCollection_Array1<Point2D> Polesinit = new(0, 3);
         NCollection_HArray1<double> Knots; // array of the BSpline knots + the ones inserted
         int cas = 0, mark = 0, dercas = 0, // loop marks
             min, max;                      // Pole min and max indices
@@ -206,7 +210,7 @@ public static class Hermit
                 if (Polesinit[0].Y() >= (1 / TolPoles) * Polesinit[3].Y()
                     || Polesinit[0].Y() <= TolPoles * Polesinit[3].Y())
                 {
-                    throw new Standard_DimensionError("Hermit Impossible Tolerance");
+                    throw new DimensionErrorException("Hermit Impossible Tolerance");
                 }
                 if ((max == 0) || (max == 3))
                 {
@@ -327,7 +331,7 @@ public static class Hermit
                     Us1 = Us1 * Ux;
                 }
             }
-            BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
             if (I1 < 2)
             {
                 U4 = Us1;
@@ -352,7 +356,7 @@ public static class Hermit
                     Us2 = Uy + Us2 * (1 - Uy);
                 }
             }
-            BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I1, out Us2);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I1, out Us2);
             if (I1 >= (knots.Length() - 1))
             {
                 U5 = Us2;
@@ -382,7 +386,7 @@ public static class Hermit
             }
             if (Us2 <= Us1)
             {
-                BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
                 if (knots[I1] >= Us2)
                 { // insertion of one knot for the two poles
                     U4 = knots[I1];
@@ -392,7 +396,7 @@ public static class Hermit
                     if (I1 >= 2)
                     {                   // insertion to the left and
                         U4 = knots[I1]; // to the right without a new knot
-                        BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
                         if (I3 < (BS.NbKnots() - 1))
                         {
                             U5 = knots[I3 + 1];
@@ -407,7 +411,7 @@ public static class Hermit
             }
             else
             { // insertion of two knots
-                BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
                 if (I1 >= 2)
                 {
                     U4 = knots[I1];
@@ -416,7 +420,7 @@ public static class Hermit
                 {
                     U4 = Us1;
                 }
-                BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
                 if (I3 < (BS.NbKnots() - 1))
                 {
                     U5 = knots[I3 + 1];
@@ -442,7 +446,7 @@ public static class Hermit
     {
         _ = TolKnots; // unused, as in OCCT
         int index, i, I1 = 0, I2 = 0, I3 = 0, I4 = 0; // knots index
-        NCollection_Array1<gp_Pnt2d> Polesinit = new(0, 3);
+        NCollection_Array1<Point2D> Polesinit = new(0, 3);
         NCollection_HArray1<double> Knots; // array of the BSpline knots + the ones inserted
         int cas = 0, mark = 0, dercas = 0, // loop marks
             min, max;                      // Pole min and max indices
@@ -525,7 +529,7 @@ public static class Hermit
                 if (Polesinit[0].Y() >= (1 / TolPoles) * Polesinit[3].Y()
                     || Polesinit[0].Y() <= TolPoles * Polesinit[3].Y())
                 {
-                    throw new Standard_DimensionError("Hermit Impossible Tolerance");
+                    throw new DimensionErrorException("Hermit Impossible Tolerance");
                 }
                 if ((max == 0) || (max == 3))
                 {
@@ -646,7 +650,7 @@ public static class Hermit
                     Us1 = Us1 * Ux;
                 }
             }
-            BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
             if (I1 < 2)
             {
                 U4 = Us1;
@@ -671,7 +675,7 @@ public static class Hermit
                     Us2 = Uy + Us2 * (1 - Uy);
                 }
             }
-            BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I1, out Us2);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I1, out Us2);
             if (I1 >= (knots.Length() - 1))
             {
                 U5 = Us2;
@@ -701,7 +705,7 @@ public static class Hermit
             }
             if (Us2 <= Us1)
             {
-                BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
                 if (knots[I1] >= Us2)
                 { // insertion of one knot for the two poles
                     U4 = knots[I1];
@@ -711,7 +715,7 @@ public static class Hermit
                     if (I1 >= 2)
                     {                   // insertion to the left and
                         U4 = knots[I1]; // to the right without a new knot
-                        BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
                         if (I3 < (BS.NbKnots() - 1))
                         {
                             U5 = knots[I3 + 1];
@@ -726,7 +730,7 @@ public static class Hermit
             }
             else
             { // insertion of two knots
-                BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us1, false, 1, knots.Length(), out I1, out Us1);
                 if (I1 >= 2)
                 {
                     U4 = knots[I1];
@@ -735,7 +739,7 @@ public static class Hermit
                 {
                     U4 = Us1;
                 }
-                BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(3, knots, Us2, false, 1, knots.Length(), out I3, out Us2);
                 if (I3 < (BS.NbKnots() - 1))
                 {
                     U5 = knots[I3 + 1];
@@ -764,7 +768,7 @@ public static class Hermit
     /// <summary>Moves the poles above the x axis.</summary>
     private static void MovePoles(Geom2d_BSplineCurve BS)
     {
-        gp_Pnt2d P = new();
+        Point2D P = new();
         int i;
 
         for (i = 3; i <= (BS.NbPoles() - 2); i++)
@@ -776,7 +780,7 @@ public static class Hermit
     }
 
     /// <summary>Returns the correct spline a(u) which will be multiplied with BS later.</summary>
-    /// <exception cref="Standard_DimensionError">The tolerances can't be met.</exception>
+    /// <exception cref="DimensionErrorException">The tolerances can't be met.</exception>
     public static Geom2d_BSplineCurve Solution(Geom_BSplineCurve BS, double TolPoles = 0.000001, double TolKnots = 0.000001)
     {
         NCollection_Array1<double> Herm = new(0, 3);
@@ -786,7 +790,7 @@ public static class Hermit
         int boucle = 1;                                   // loop mark
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Multiplicities = new(1, 2);
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, 4);
+        NCollection_Array1<Point2D> Poles = new(1, 4);
         int zeroboucle = 0;
         HermiteCoeff(BS, Herm); // computation of the Hermite coefficient
 
@@ -803,7 +807,7 @@ public static class Hermit
         Geom2d_BSplineCurve BS2 = new Geom2d_BSplineCurve(Poles, Knots, Multiplicities, 3); // BSpline without modif
 
         // computation of the positivity knots
-        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, Precision.Confusion(), Precision.Confusion(), 1.0, 0.0);
+        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion(), 1.0, 0.0);
         InsertKnots(BS2, Upos1, Upos2); // and insertion
 
         if (Upos1 != 0.0)
@@ -853,7 +857,7 @@ public static class Hermit
         }
         if ((BS2.Knot(2) < TolKnots) || (BS2.Knot(BS2.NbKnots() - 1) > (1 - TolKnots)))
         { // checking of the knots tolerance
-            throw new Standard_DimensionError("Hermit Impossible Tolerance");
+            throw new DimensionErrorException("Hermit Impossible Tolerance");
         }
         else
         {
@@ -878,7 +882,7 @@ public static class Hermit
     }
 
     /// <summary>Returns the correct spline a(u) which will be multiplied with BS later.</summary>
-    /// <exception cref="Standard_DimensionError">The tolerances can't be met.</exception>
+    /// <exception cref="DimensionErrorException">The tolerances can't be met.</exception>
     public static Geom2d_BSplineCurve Solution(Geom2d_BSplineCurve BS, double TolPoles = 0.000001, double TolKnots = 0.000001)
     {
         NCollection_Array1<double> Herm = new(0, 3);
@@ -888,7 +892,7 @@ public static class Hermit
         int boucle = 1;                                   // loop mark
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Multiplicities = new(1, 2);
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, 4);
+        NCollection_Array1<Point2D> Poles = new(1, 4);
         int zeroboucle = 0;
         HermiteCoeff(BS, Herm); // computation of the Hermite coefficient
 
@@ -905,7 +909,7 @@ public static class Hermit
         Geom2d_BSplineCurve BS2 = new Geom2d_BSplineCurve(Poles, Knots, Multiplicities, 3); // BSpline without modif
 
         // computation of the positivity knots
-        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, Precision.Confusion(), Precision.Confusion(), 1.0, 0.0);
+        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion(), 1.0, 0.0);
         InsertKnots(BS2, Upos1, Upos2); // and insertion
 
         if (Upos1 != 0.0)
@@ -955,7 +959,7 @@ public static class Hermit
         }
         if ((BS2.Knot(2) < TolKnots) || (BS2.Knot(BS2.NbKnots() - 1) > (1 - TolKnots)))
         { // checking of the knots tolerance
-            throw new Standard_DimensionError("Hermit Impossible Tolerance");
+            throw new DimensionErrorException("Hermit Impossible Tolerance");
         }
         else
         {
@@ -984,7 +988,7 @@ public static class Hermit
     /// <paramref name="Knotmin"/> and <paramref name="Knotmax"/> are <c>ref</c>: OCCT writes only one of them in
     /// some cases and leaves the other as the caller set it.
     /// </remarks>
-    /// <exception cref="Standard_DimensionError">The tolerances can't be met.</exception>
+    /// <exception cref="DimensionErrorException">The tolerances can't be met.</exception>
     public static void Solutionbis(Geom_BSplineCurve BS,
                                    ref double Knotmin,
                                    ref double Knotmax,
@@ -998,7 +1002,7 @@ public static class Hermit
         int boucle = 1;                                   // loop mark
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Multiplicities = new(1, 2);
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, 4);
+        NCollection_Array1<Point2D> Poles = new(1, 4);
         int zeroboucle = 0;
         HermiteCoeff(BS, Herm); // computation of the Hermite coefficient
 
@@ -1014,7 +1018,7 @@ public static class Hermit
         Geom2d_BSplineCurve BS2 = new Geom2d_BSplineCurve(Poles, Knots, Multiplicities, 3); // creation of the basic BSpline without modif
 
         // computation of the positivity knots
-        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, Precision.Confusion(), Precision.Confusion(), 1.0, 0.0);
+        PolyTest(Herm, BS, out Upos1, out Upos2, ref zeroboucle, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion(), 1.0, 0.0);
         InsertKnots(BS2, Upos1, Upos2); // and insertion
 
         if (Upos1 != 0.0)
@@ -1064,7 +1068,7 @@ public static class Hermit
         }
         if ((BS2.Knot(2) < TolKnots) || (BS2.Knot(BS2.NbKnots() - 1) > (1 - TolKnots)))
         { // checking of the knots tolerance
-            throw new Standard_DimensionError("Hermit Impossible Tolerance");
+            throw new DimensionErrorException("Hermit Impossible Tolerance");
         }
         else
         {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.Approx_ParametrizationType;
 using static Occt.Extrema_ExtAlgo;
@@ -32,7 +33,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (global::Kerf.Engine.Foundation.FailureException anE)
         {
             aPortError = anE;
         }
@@ -87,7 +88,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 var aRange = new GeomAdaptor_Curve(aPC, aFirst, aLast);
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt aP = k == 0 ? anOracle.Pnt()
+                    Point3D aP = k == 0 ? anOracle.Pnt()
                                        : aRange.Value(anOracle.Real(aFirst, aLast)).Translated(anOracle.Real(0, 0.2) * anOracle.Vec());
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     string aWP = $"{aW} point {k}";
@@ -188,7 +189,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 anOracle.Same(aN.IsDone(), aPort.IsDone(), $"{aW} IsDone after Init");
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt aP = k == 0 ? new gp_Pnt(anOracle.Real(-30, 30), anOracle.Real(-30, 30), anOracle.Real(-30, 30))
+                    Point3D aP = k == 0 ? new Point3D(anOracle.Real(-30, 30), anOracle.Real(-30, 30), anOracle.Real(-30, 30))
                                        : aPS.Value(anOracle.Real(aWU1, aWU2), anOracle.Real(aWV1, aWV2))
                                             .Translated(anOracle.Real(0, 0.05) * anOracle.Vec());
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
@@ -221,7 +222,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                         anOracle.Same(aNU, aU, $"{aWP} LowerDistanceParameters U");
                         anOracle.Same(aNV, aV, $"{aWP} LowerDistanceParameters V");
                         using N.gp_Pnt aNNearest = aN.NearestPoint();
-                        anOracle.Same(aNNearest, (gp_Pnt)aPort, $"{aWP} NearestPoint");
+                        anOracle.Same(aNNearest, (Point3D)aPort, $"{aWP} NearestPoint");
                         anOracle.Same(aN.LowerDistance(), aPort.LowerDistance(), $"{aWP} LowerDistance");
                     }
                 }
@@ -239,7 +240,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
     // A finite sub-range of [theFirst, theLast] (a random window where a bound is infinite).
     private static (double, double) Window(Oracle theO, double theFirst, double theLast)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double a = theO.Real(-10, 5);
             return (a, a + theO.Real(1, 12));
@@ -265,16 +266,16 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         int aDone = 0;
         for (int c = 0; c < 600; c++)
         {
-            NCollection_Array1<gp_Pnt> aPoints = AppDefOracleTests.Points(anOracle);
+            NCollection_Array1<Point3D> aPoints = AppDefOracleTests.Points(anOracle);
             int aNb = aPoints.Length();
             bool aPeriodic = anOracle.Int(0, 2) == 0;
             bool aWithParams = anOracle.Bool();
             int aTangents = anOracle.Int(0, 2); // none, the end tangents, some points
             bool aScale = anOracle.Bool();
-            double aTol = anOracle.Bool() ? Precision.Confusion() : 1.0e-3;
+            double aTol = anOracle.Bool() ? global::Kerf.Engine.Foundation.Precision.Confusion() : 1.0e-3;
             string aW = $"#{c} ({aNb} points, {(aPeriodic ? "periodic" : "open")}, {(aWithParams ? "parameters" : "chord")}, tangents {aTangents}, scale {aScale})";
 
-            NCollection_HArray1<gp_Pnt> aPnts = new(1, aNb);
+            NCollection_HArray1<Point3D> aPnts = new(1, aNb);
             using var aNPnts = new N.TColgp_HArray1OfPnt(1, aNb);
             for (int i = 1; i <= aNb; i++)
             {
@@ -309,7 +310,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             {
                 if (aTangents == 1)
                 {
-                    gp_Vec aT1 = anOracle.Vec(), aT2 = anOracle.Vec();
+                    Vector3D aT1 = anOracle.Vec(), aT2 = anOracle.Vec();
                     using N.gp_Vec aNT1 = Oracle.ToNative(aT1);
                     using N.gp_Vec aNT2 = Oracle.ToNative(aT2);
                     if (!Both(anOracle, () => aN!.Load(aNT1, aNT2, aScale), () => aPort!.Load(aT1, aT2, aScale),
@@ -320,7 +321,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 }
                 else if (aTangents == 2)
                 {
-                    NCollection_Array1<gp_Vec> aTs = new(1, aNb);
+                    NCollection_Array1<Vector3D> aTs = new(1, aNb);
                     NCollection_HArray1<bool> aFlags = new(1, aNb);
                     using var aNTs = new N.TColgp_Array1OfVec(1, aNb);
                     using var aNFlags = new N.TColStd_HArray1OfBoolean(1, aNb);
@@ -368,7 +369,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
         int aDone = 0;
         for (int c = 0; c < 450; c++)
         {
-            NCollection_Array1<gp_Pnt> aPoints = AppDefOracleTests.Points(anOracle);
+            NCollection_Array1<Point3D> aPoints = AppDefOracleTests.Points(anOracle);
             int aMethod = c % 3;
             using N.TColgp_Array1OfPnt aNPoints = Oracle.ToNative(aPoints);
             N.GeomAPI_PointsToBSpline? aN = null;
@@ -385,7 +386,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 };
                 int aDegMin = anOracle.Int(1, 4);
                 int aDegMax = anOracle.Int(aDegMin, 8);
-                GeomAbs_Shape aCont = AppDefOracleTests.Continuity(anOracle);
+                Continuity aCont = AppDefOracleTests.Continuity(anOracle);
                 double aTol3D = AppDefOracleTests.Tolerance(anOracle);
                 aW = $"#{c} {aParType} {aDegMin}-{aDegMax} {aCont} {aTol3D}";
                 // As in AppDefOracleTests: squares is a direct solve, the gradient iterates and amplifies rounding
@@ -411,7 +412,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 }
                 int aDegMin = anOracle.Int(1, 4);
                 int aDegMax = anOracle.Int(aDegMin, 8);
-                GeomAbs_Shape aCont = AppDefOracleTests.Continuity(anOracle);
+                Continuity aCont = AppDefOracleTests.Continuity(anOracle);
                 double aTol3D = AppDefOracleTests.Tolerance(anOracle);
                 aW = $"#{c} parameters {aDegMin}-{aDegMax} {aCont} {aTol3D}";
                 aTolerance = 1.0e-9;
@@ -438,7 +439,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 }
                 int aDegMax = anOracle.Int(3, 8);
                 // Not C0: native results change from run to run there (occt-issues.md, AppDefOracleTests)
-                GeomAbs_Shape aCont = anOracle.Bool() ? GeomAbs_Shape.GeomAbs_C1 : GeomAbs_Shape.GeomAbs_C2;
+                Continuity aCont = anOracle.Bool() ? Continuity.C1 : Continuity.C2;
                 double aTol3D = AppDefOracleTests.Tolerance(anOracle);
                 aW = $"#{c} variational {W1:R} {W2:R} {W3:R} {aDegMax} {aCont} {aTol3D}";
                 aTolerance = 1.0e-6;

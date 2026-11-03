@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
 
 namespace Occt;
@@ -116,7 +118,7 @@ public partial class IntPatch_PrmPrmIntersection
 
         int ver;
 
-        gp_Pnt Point3dDebut, Point3dFin;
+        Point3D Point3dDebut, Point3dFin;
 
         if (nbLigSec >= 1)
         {
@@ -350,10 +352,10 @@ public partial class IntPatch_PrmPrmIntersection
                                         {
                                             // Calculation transition
                                             IntSurf_TypeTrans trans1, trans2;
-                                            gp_Vec norm1, norm2;
-                                            gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                            Vector3D norm1, norm2;
+                                            Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                             PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                            Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                            Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                             norm1 = d1u.Crossed(d1v);
                                             PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                             Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -528,10 +530,10 @@ public partial class IntPatch_PrmPrmIntersection
                                     if (!RejetLigne)
                                     {
                                         IntSurf_TypeTrans trans1, trans2;
-                                        gp_Vec norm1, norm2;
-                                        gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                        Vector3D norm1, norm2;
+                                        Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                         PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                        Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                        Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                         norm1 = d1u.Crossed(d1v);
                                         PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                         Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -616,7 +618,7 @@ public partial class IntPatch_PrmPrmIntersection
 
         int ver;
 
-        gp_Pnt Point3dDebut, Point3dFin;
+        Point3D Point3dDebut, Point3dFin;
 
         if (nbLigSec >= 1)
         {
@@ -709,8 +711,8 @@ public partial class IntPatch_PrmPrmIntersection
                             for (l = 1; (l <= NbLigCalculee) && (dminiPointLigne >= SeuildPointLigne); l++)
                             {
                                 IntPatch_WLine testwline = (IntPatch_WLine)SLin.Value(l);
-                                if ((!testwline.IsOutSurf1Box(new gp_Pnt2d(pu1, pv1)))
-                                    && (!testwline.IsOutSurf2Box(new gp_Pnt2d(pu2, pv2)))
+                                if ((!testwline.IsOutSurf1Box(new Point2D(pu1, pv1)))
+                                    && (!testwline.IsOutSurf2Box(new Point2D(pu2, pv2)))
                                     && (!testwline.IsOutBox(StartPOn2S.Value())))
                                 {
                                     NbPntOn2SOnLine = testwline.NbPnts();
@@ -784,10 +786,10 @@ public partial class IntPatch_PrmPrmIntersection
                                         if (!RejetLigne)
                                         {
                                             IntSurf_TypeTrans trans1, trans2;
-                                            gp_Vec norm1, norm2;
-                                            gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                            Vector3D norm1, norm2;
+                                            Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                             PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                            Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                            Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                             norm1 = d1u.Crossed(d1v);
                                             PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                             Surf1.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -843,8 +845,8 @@ public partial class IntPatch_PrmPrmIntersection
                         for (l = 1; (l <= NbLigCalculee) && (dminiPointLigne >= SeuildPointLigne); l++)
                         {
                             IntPatch_WLine testwline = (IntPatch_WLine)SLin.Value(l);
-                            if ((!testwline.IsOutSurf1Box(new gp_Pnt2d(pu1, pv1)))
-                                && (!testwline.IsOutSurf2Box(new gp_Pnt2d(pu2, pv2)))
+                            if ((!testwline.IsOutSurf1Box(new Point2D(pu1, pv1)))
+                                && (!testwline.IsOutSurf2Box(new Point2D(pu2, pv2)))
                                 && (!testwline.IsOutBox(StartPOn2S.Value())))
                             {
                                 NbPntOn2SOnLine = testwline.NbPnts();
@@ -916,10 +918,10 @@ public partial class IntPatch_PrmPrmIntersection
                                     if (!RejetLigne)
                                     {
                                         IntSurf_TypeTrans trans1, trans2;
-                                        gp_Vec norm1, norm2;
-                                        gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                        Vector3D norm1, norm2;
+                                        Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                         PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                        Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                        Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                         norm1 = d1u.Crossed(d1v);
                                         PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                         Surf1.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -957,7 +959,7 @@ public partial class IntPatch_PrmPrmIntersection
     // of the loop body as the `continue` does.
     private bool KeepOffDiagonalPart(IntWalk_PWalking PW, Adaptor3d_Surface Surf1, Adaptor3d_TopolTool D1,
                                      IntSurf_TypeTrans trans1, IntSurf_TypeTrans trans2, double TolTangency,
-                                     gp_Pnt Point3dDebut, gp_Pnt Point3dFin)
+                                     Point3D Point3dDebut, Point3D Point3dFin)
     {
         int nbpw, imin, imax, i;
         nbpw = PW.Line().NbPoints();
@@ -1031,8 +1033,8 @@ public partial class IntPatch_PrmPrmIntersection
 
     // The block every Perform of OCCT repeats verbatim when a line has no vertex: vertices at the walking's first
     // point and at its point of the line's last index, at the given 3D points.
-    private static void AddEndVertices(IntPatch_WLine wline, IntWalk_PWalking PW, in gp_Pnt Point3dDebut,
-                                       in gp_Pnt Point3dFin, double TolTang)
+    private static void AddEndVertices(IntPatch_WLine wline, IntWalk_PWalking PW, in Point3D Point3dDebut,
+                                       in Point3D Point3dFin, double TolTang)
     {
         IntPatch_Point vtx = new();
         IntSurf_PntOn2S POn2S = PW.Line().Value(1);
@@ -1057,15 +1059,15 @@ public partial class IntPatch_PrmPrmIntersection
     /// <paramref name="NumLine"/>, with about <paramref name="NbPntsToInsert"/> walking points inserted at constant
     /// arc length (measured on the first surface's parameters) where the existing points aren't too close.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">The line index is out of range or <paramref name="Low"/> ≥ <paramref name="High"/>.</exception>
-    /// <exception cref="StdFail_NotDone">The intersection is not done.</exception>
+    /// <exception cref="OutOfRangeException">The line index is out of range or <paramref name="Low"/> ≥ <paramref name="High"/>.</exception>
+    /// <exception cref="NotDoneException">The intersection is not done.</exception>
     public IntPatch_Line NewLine(Adaptor3d_Surface Surf1, Adaptor3d_Surface Surf2, int NumLine, int Low, int High,
                                  int NbPntsToInsert)
     {
         int NbPnts = NbPntsToInsert + High - Low;
         if (NumLine > NbLines() || NumLine < 1 || Low >= High)
         {
-            throw new Standard_OutOfRange(" IntPatch_PrmPrmIntersection NewLine ");
+            throw new OutOfRangeException(" IntPatch_PrmPrmIntersection NewLine ");
         }
         //------------------------------------------------------------------
         //--  Indice     :   Low       Low+1     I    I+1         High    --
@@ -1331,7 +1333,7 @@ public partial class IntPatch_PrmPrmIntersection
         NCollection_List<IntSurf_PntOn2S>.Iterator IterLOP1 = new(LOfPnts);
         if (Surf1.IsUClosed() || Surf1.IsVClosed() || Surf2.IsUClosed() || Surf2.IsVClosed())
         {
-            double TolPar = Precision.PConfusion();
+            double TolPar = global::Kerf.Engine.Foundation.Precision.PConfusion();
             NCollection_List<IntSurf_PntOn2S> AdditionalPnts = new();
             double NewU1, NewV1, NewU2, NewV2;
             for (; IterLOP1.More(); IterLOP1.Next())
@@ -1470,7 +1472,7 @@ public partial class IntPatch_PrmPrmIntersection
         double dminiPointLigne;
         bool HasStartPoint, RejetLigne;
         IntSurf_PntOn2S StartPOn2S = new();
-        gp_Pnt Point3dDebut, Point3dFin;
+        Point3D Point3dDebut, Point3dFin;
 
         NCollection_Array1<double> StartParams = new(1, 4);
         IntWalk_PWalking PW = new(Surf1, Surf2, TolTangency, Epsilon, Deflection, Increment);
@@ -1547,10 +1549,10 @@ public partial class IntPatch_PrmPrmIntersection
                             if (!RejetLigne)
                             {
                                 IntSurf_TypeTrans trans1, trans2;
-                                gp_Vec norm1, norm2;
-                                gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                                Vector3D norm1, norm2;
+                                Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                                 PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                                Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                                Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                                 norm1 = d1u.Crossed(d1v);
                                 PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                                 Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -1627,7 +1629,7 @@ public partial class IntPatch_PrmPrmIntersection
 
         IntSurf_PntOn2S StartPOn2S = new();
 
-        gp_Pnt Point3dDebut, Point3dFin;
+        Point3D Point3dDebut, Point3dFin;
 
         //------------------------------------------------------------
 
@@ -1657,10 +1659,10 @@ public partial class IntPatch_PrmPrmIntersection
                     Point3dFin = PW.Value(PW.NbPoints()).Value();
 
                     IntSurf_TypeTrans trans1, trans2;
-                    gp_Vec norm1, norm2;
-                    gp_Vec tgline = new(PW.TangentAtLine(out int indextg));
+                    Vector3D norm1, norm2;
+                    Vector3D tgline = new(PW.TangentAtLine(out int indextg));
                     PW.Line().Value(indextg).ParametersOnS1(out double locu, out double locv);
-                    Surf1.D1(locu, locv, out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+                    Surf1.D1(locu, locv, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
                     norm1 = d1u.Crossed(d1v);
                     PW.Line().Value(indextg).ParametersOnS2(out locu, out locv);
                     Surf2.D1(locu, locv, out ptbid, out d1u, out d1v);
@@ -1712,34 +1714,34 @@ public partial class IntPatch_PrmPrmIntersection
     public bool IsDone() => done;
 
     /// <summary>True if there is no intersection line.</summary>
-    /// <exception cref="StdFail_NotDone">The intersection is not done.</exception>
+    /// <exception cref="NotDoneException">The intersection is not done.</exception>
     public bool IsEmpty()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntPatch_PrmPrmIntersection ");
+            throw new NotDoneException(" IntPatch_PrmPrmIntersection ");
         }
         return (empt);
     }
 
     /// <summary>The number of intersection lines.</summary>
-    /// <exception cref="StdFail_NotDone">The intersection is not done.</exception>
+    /// <exception cref="NotDoneException">The intersection is not done.</exception>
     public int NbLines()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntPatch_PrmPrmIntersection ");
+            throw new NotDoneException(" IntPatch_PrmPrmIntersection ");
         }
         return (SLin.Length());
     }
 
     /// <summary>The line <paramref name="n"/> (the line itself, decision 609).</summary>
-    /// <exception cref="StdFail_NotDone">The intersection is not done.</exception>
+    /// <exception cref="NotDoneException">The intersection is not done.</exception>
     public IntPatch_Line Line(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntPatch_PrmPrmIntersection ");
+            throw new NotDoneException(" IntPatch_PrmPrmIntersection ");
         }
         return (SLin.Value(n));
     }

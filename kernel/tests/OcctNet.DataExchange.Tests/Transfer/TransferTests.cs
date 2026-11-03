@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using OcctNet.DataExchange.Tests.Interface;
 using static Occt.Interface_CheckStatus;
@@ -11,13 +12,13 @@ using static OcctNet.DataExchange.Tests.Interface.ToyNorm;
 namespace OcctNet.DataExchange.Tests.Transfer;
 
 /// <summary>A printer keeping what a messenger prints (every gravity).</summary>
-internal sealed class StringPrinter : Message_Printer
+internal sealed class StringPrinter : Printer
 {
     public readonly StringBuilder Text = new();
 
-    public StringPrinter() => myTraceLevel = Message_Gravity.Message_Trace;
+    public StringPrinter() => _traceLevel = Gravity.Trace;
 
-    protected override void send(string theString, Message_Gravity theGravity) => Text.Append(theString).Append('\n');
+    protected override void SendCore(string theString, Gravity theGravity) => Text.Append(theString).Append('\n');
 }
 
 /// <summary>
@@ -30,15 +31,15 @@ internal sealed class ToyActor : Transfer_ActorOfTransientProcess
     public bool Nested;
     public string? Throw;
 
-    public override bool Recognize(Standard_Transient? start) => start is ToyEntity;
+    public override bool Recognize(Transient? start) => start is ToyEntity;
 
-    public override Transfer_Binder? Transfer(Standard_Transient? start, Transfer_TransientProcess? TP,
-                                              Message_ProgressRange theProgress = default)
+    public override Transfer_Binder? Transfer(Transient? start, Transfer_TransientProcess? TP,
+                                              ProgressRange theProgress = default)
     {
         var anEnt = (ToyEntity)start!;
         if (anEnt.Name == Throw)
         {
-            throw new Standard_Failure("boom " + anEnt.Name);
+            throw new FailureException("boom " + anEnt.Name);
         }
         if (Nested)
         {
@@ -87,7 +88,7 @@ public class TransferTests
         Assert.False(b1.HasResult());
         Assert.Equal(Transfer_StatusVoid, b1.Status());
         Assert.Equal("(void)", b1.ResultTypeName());
-        Assert.Equal(typeof(Standard_Transient), b1.ResultType());
+        Assert.Equal(typeof(Transient), b1.ResultType());
         b1.SetResult(new TCollection_HAsciiString("x"));
         Assert.Equal(Transfer_StatusDone, b1.StatusExec());
         Assert.Equal("TCollection_HAsciiString", b1.ResultTypeName());
@@ -122,8 +123,8 @@ public class TransferTests
         Assert.Equal("(void)", b4.ResultTypeName());
 
         // GetTypedResult searches the chain
-        Standard_Transient? aRes = null;
-        Assert.True(Transfer_SimpleBinderOfTransient.GetTypedResult(b3, typeof(Standard_Transient), ref aRes) == false);
+        Transient? aRes = null;
+        Assert.True(Transfer_SimpleBinderOfTransient.GetTypedResult(b3, typeof(Transient), ref aRes) == false);
         Assert.True(Transfer_SimpleBinderOfTransient.GetTypedResult(b1, typeof(TCollection_HAsciiString), ref aRes));
         Assert.Equal("x", ((TCollection_HAsciiString)aRes!).ToCString());
         Assert.False(Transfer_SimpleBinderOfTransient.GetTypedResult(b1, typeof(Interface_IntVal), ref aRes));
@@ -194,7 +195,7 @@ public class TransferTests
         Assert.IsType<Transfer_VoidBinder>(aVoid);
         Assert.Same(aVoid, TP.FindElseBind(B));
         Assert.Null(TP.FindTransient(B));
-        Standard_Transient? aVal = null;
+        Transient? aVal = null;
         Assert.True(TP.FindTypedTransient(A, typeof(TCollection_HAsciiString), ref aVal));
         Assert.Null(TP.Check(F));
 
@@ -214,7 +215,7 @@ public class TransferTests
         Assert.Same(A, TP.Root(1));
         Assert.Equal(1, TP.RootIndex(A));
         Assert.Equal(0, TP.RootIndex(B));
-        Assert.Throws<Standard_OutOfRange>(() => TP.Root(2));
+        Assert.Throws<OutOfRangeException>(() => TP.Root(2));
 
         // OCCT's Unbind keeps the binder in the map (thelastbnd is the former binder), but drops the root
         Assert.True(TP.Unbind(A));
@@ -233,7 +234,7 @@ public class TransferTests
     {
         var aPrinter = new StringPrinter();
         var TP = new Transfer_TransientProcess();
-        TP.SetMessenger(new Message_Messenger(aPrinter));
+        TP.SetMessenger(new Messenger(aPrinter));
         Assert.Equal(0, TP.TraceLevel());
         TP.AddFail(A, "silent");
         Assert.Equal("", aPrinter.Text.ToString());
@@ -254,7 +255,7 @@ public class TransferTests
         Assert.Equal("M : bad", TP.Check(B)!.CFail(1));
 
         // the messages as Message_Msg: the value, and the original when edited
-        var aMsg = new Message_Msg();
+        var aMsg = new Msg();
         aMsg.Set("value %d");
         aMsg.Arg(5);
         TP.SendWarning(D, aMsg);
@@ -300,7 +301,7 @@ public class TransferTests
         Transfer_IteratorOfProcessForTransient anAll = TP.CompleteResult();
         Assert.Equal(3, anAll.Number());
         Assert.False(anAll.HasStarting());
-        Assert.Throws<Standard_NoSuchObject>(() => anAll.Starting());
+        Assert.Throws<NoSuchObjectException>(() => anAll.Starting());
         Assert.Equal(0, TP.AbnormalResult().Number());
         Assert.True(TP.CheckList(false).IsEmpty(false));
 
@@ -318,7 +319,7 @@ public class TransferTests
     {
         var aPrinter = new StringPrinter();
         var TP = new Transfer_TransientProcess();
-        TP.SetMessenger(new Message_Messenger(aPrinter));
+        TP.SetMessenger(new Messenger(aPrinter));
         TP.SetModel(myModel);
         TP.SetActor(new ToyActor { Nested = true });
 
@@ -355,7 +356,7 @@ public class TransferTests
     {
         var aPrinter = new StringPrinter();
         var TP = new Transfer_TransientProcess();
-        TP.SetMessenger(new Message_Messenger(aPrinter));
+        TP.SetMessenger(new Messenger(aPrinter));
         TP.SetTraceLevel(1);
         TP.SetActor(new ToyActor { Throw = "B" });
         Assert.True(TP.ErrorHandle());
@@ -368,7 +369,7 @@ public class TransferTests
         Assert.Throws<Transfer_TransferFailure>(() => TP.Transferring(B));
 
         TP.SetErrorHandle(false);
-        Assert.Throws<Standard_Failure>(() => TP.Transferring(new ToyEntity("B")));
+        Assert.Throws<FailureException>(() => TP.Transferring(new ToyEntity("B")));
     }
 
     [Fact]
@@ -376,7 +377,7 @@ public class TransferTests
     {
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
-        var anIndicator = new Message_ProgressIndicator(aSource.Token, null);
+        var anIndicator = new ProgressIndicator(aSource.Token, null);
         var TP = new Transfer_TransientProcess();
         TP.SetActor(new ToyActor());
         Assert.Null(TP.Transferring(A, anIndicator.Start()));
@@ -419,12 +420,12 @@ public class TransferTests
         anIter.AddItem(b2);
         anIter.AddItem(b3);
         Assert.Equal(3, anIter.Number());
-        Assert.Throws<Standard_NoSuchObject>(() => new Transfer_TransferIterator().Value());
+        Assert.Throws<NoSuchObjectException>(() => new Transfer_TransferIterator().Value());
 
         var aTypes = new List<string>();
         for (anIter.Start(); anIter.More(); anIter.Next())
         {
-            aTypes.Add(anIter.Value().GetType().Name + ":" + anIter.HasResult() + anIter.HasUniqueResult() + anIter.HasTransientResult());
+            aTypes.Add(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anIter.Value().GetType()) + ":" + anIter.HasResult() + anIter.HasUniqueResult() + anIter.HasTransientResult());
         }
         Assert.Equal(["Transfer_SimpleBinderOfTransient:TrueTrueTrue", "Transfer_VoidBinder:FalseFalseTrue",
                       "Transfer_MultipleBinder:FalseFalseFalse"], aTypes);
@@ -461,8 +462,8 @@ public class TransferTests
         anIter.Add(new Transfer_VoidBinder(), A);
         anIter.Add(new Transfer_VoidBinder(), B);
         anIter.Add(new Transfer_VoidBinder(), C);
-        Assert.Throws<Standard_NoSuchObject>(() => anIter.Add(new Transfer_VoidBinder()));
-        var aList = new NCollection_HSequence<Standard_Transient>();
+        Assert.Throws<NoSuchObjectException>(() => anIter.Add(new Transfer_VoidBinder()));
+        var aList = new NCollection_HSequence<Transient>();
         aList.Append(B);
         anIter.Filter(aList);
         Assert.Equal(1, anIter.Number());
@@ -496,7 +497,7 @@ public class TransferTests
         Assert.Equal(0, TP.TypedSharings(C, typeof(ToyEntity)).NbEntities());
 
         // contexts
-        Standard_Transient? aCtx = null;
+        Transient? aCtx = null;
         Assert.False(TP.GetContext("x", null, ref aCtx));
         TP.SetContext("x", A);
         Assert.True(TP.GetContext("x", typeof(ToyEntity), ref aCtx));
@@ -572,8 +573,8 @@ public class TransferTests
 
     private sealed class ToyFinderActor : Transfer_ActorOfFinderProcess
     {
-        public override Standard_Transient? TransferTransient(Standard_Transient? ent, Transfer_FinderProcess? FP,
-                                                              Message_ProgressRange theProgress = default) =>
+        public override Transient? TransferTransient(Transient? ent, Transfer_FinderProcess? FP,
+                                                              ProgressRange theProgress = default) =>
             ent is ToyEntity anEnt ? new TCollection_HAsciiString(anEnt.Name + "!") : null;
     }
 
@@ -598,7 +599,7 @@ public class TransferTests
         Assert.Equal(0.0, m.RealAttribute("i"));
         Assert.True(m.GetStringAttribute("s", out string s) && s == "text");
         Assert.Equal("", m.StringAttribute("i"));
-        Assert.True(m.GetAttribute("t", typeof(ToyEntity), out Standard_Transient? t) && t == B);
+        Assert.True(m.GetAttribute("t", typeof(ToyEntity), out Transient? t) && t == B);
         Assert.False(m.GetAttribute("t", typeof(Interface_IntVal), out t));
         Assert.Null(t);
 
@@ -692,7 +693,7 @@ public class TransferTests
 
         var aControl = (Transfer_DispatchControl)aTool.Control()!;
         Assert.Same(myModel, aControl.StartingModel());
-        Assert.True(aControl.Search(A, out Standard_Transient? aRes));
+        Assert.True(aControl.Search(A, out Transient? aRes));
         Assert.Same(aCopyOfA, aRes);
         aControl.Bind(D, E);
         Assert.Same(E, TP.FindTransient(D));
@@ -709,10 +710,10 @@ public class TransferTests
 
     private sealed class RenameActor : Transfer_ActorOfTransientProcess
     {
-        public override bool Recognize(Standard_Transient? start) => start is ToyEntity { Name: "F" };
+        public override bool Recognize(Transient? start) => start is ToyEntity { Name: "F" };
 
-        public override Standard_Transient? TransferTransient(Standard_Transient? ent, Transfer_TransientProcess? TP,
-                                                              Message_ProgressRange theProgress = default) => new ToyEntity("F*");
+        public override Transient? TransferTransient(Transient? ent, Transfer_TransientProcess? TP,
+                                                              ProgressRange theProgress = default) => new ToyEntity("F*");
     }
 
     [Fact]

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class StepDimTol_GeometricToleranceWithMaximumTolerance : StepDimTol_Geom
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, NCollection_HArray1<StepDimTol_GeometricToleranceModifier> theModifiers, StepBasic_LengthMeasureWithUnit theMaximumUpperTolerance)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, NCollection_HArray1<StepDimTol_GeometricToleranceModifier> theModifiers, StepBasic_LengthMeasureWithUnit theMaximumUpperTolerance)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theModifiers);
         myMaximumUpperTolerance = theMaximumUpperTolerance;

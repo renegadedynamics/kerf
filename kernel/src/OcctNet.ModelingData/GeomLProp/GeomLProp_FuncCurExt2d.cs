@@ -2,13 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// The function whose roots are the extrema of curvature of a 2D curve: F = dKC/dU, KC = (V1 ^ V2) / |V1|^3, with its
 /// derivative by finite differences.
 /// </summary>
-internal sealed class GeomLProp_FuncCurExt2d : math_FunctionWithDerivative
+internal sealed class GeomLProp_FuncCurExt2d : FunctionWithDerivative
 {
     private readonly Geom2d_Curve myCurve; // The analyzed curve.
     private readonly double myEpsX;        // Parametric tolerance for finite differences.
@@ -24,7 +30,7 @@ internal sealed class GeomLProp_FuncCurExt2d : math_FunctionWithDerivative
     {
         theF = 0.0; // OCCT leaves it unset when it returns false
 
-        myCurve.D3(theU, out gp_Pnt2d _, out gp_Vec2d aDeriv1, out gp_Vec2d aDeriv2, out gp_Vec2d aDeriv3);
+        myCurve.D3(theU, out Point2D _, out Vector2D aDeriv1, out Vector2D aDeriv2, out Vector2D aDeriv3);
         double aCross12 = aDeriv1.Crossed(aDeriv2);
         double aCross13 = aDeriv1.Crossed(aDeriv3);
         double aDot12 = aDeriv1.Dot(aDeriv2);
@@ -33,7 +39,7 @@ internal sealed class GeomLProp_FuncCurExt2d : math_FunctionWithDerivative
         double aNorm1Cb = aSqNorm1 * aNorm1;     // ||V1||^3
         double aNorm1Pow5 = aNorm1Cb * aSqNorm1; // ||V1||^5
 
-        if (aNorm1Pow5 < gp.Resolution())
+        if (aNorm1Pow5 < Constants.Resolution())
         {
             return false;
         }
@@ -76,13 +82,13 @@ internal sealed class GeomLProp_FuncCurExt2d : math_FunctionWithDerivative
         double aDeltaU = myEpsX;
 
         // Compute curvature at theU.
-        myCurve.D3(theU, out gp_Pnt2d aPnt, out gp_Vec2d aDeriv1, out gp_Vec2d aDeriv2, out gp_Vec2d aDeriv3);
+        myCurve.D3(theU, out Point2D aPnt, out Vector2D aDeriv1, out Vector2D aDeriv2, out Vector2D aDeriv3);
         double aCross12 = aDeriv1.Crossed(aDeriv2);
         double aSqNorm1 = aDeriv1.SquareMagnitude();
         double aNorm1 = Math.Sqrt(aSqNorm1);
         double aNorm1Cb = aSqNorm1 * aNorm1;
 
-        if (aNorm1Cb < gp.Resolution())
+        if (aNorm1Cb < Constants.Resolution())
         {
             return false;
         }
@@ -101,7 +107,7 @@ internal sealed class GeomLProp_FuncCurExt2d : math_FunctionWithDerivative
         aNorm1 = Math.Sqrt(aSqNorm1);
         aNorm1Cb = aSqNorm1 * aNorm1;
 
-        if (aNorm1Cb < gp.Resolution())
+        if (aNorm1Cb < Constants.Resolution())
         {
             return false;
         }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingData/TKBRep/GTests/BRepTools_ReShape_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -12,7 +13,7 @@ namespace OcctNet.ModelingData.Tests;
 public class BRepTools_ReShapeTest
 {
     private static TopoDS_Vertex MakeVertex(double theX, double theY, double theZ)
-        => new BRepBuilderAPI_MakeVertex(new gp_Pnt(theX, theY, theZ)).Vertex();
+        => new BRepBuilderAPI_MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
 
     private static TopoDS_Edge MakeEdge(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2)
         => new BRepBuilderAPI_MakeEdge(theV1, theV2).Edge();

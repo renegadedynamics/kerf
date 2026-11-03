@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -65,8 +67,8 @@ public class IntTools_BeanFaceIntersector
         myFaceTolerance = 0.0;
         myIsDone = false;
         myMinSqDistance = RealLast();
-        myCriteria = Precision.Confusion();
-        myCurveResolution = Precision.PConfusion();
+        myCriteria = global::Kerf.Engine.Foundation.Precision.Confusion();
+        myCurveResolution = global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>
@@ -137,7 +139,7 @@ public class IntTools_BeanFaceIntersector
         myBeanTolerance = BRep_Tool.Tolerance(theEdge);
         myFaceTolerance = BRep_Tool.Tolerance(theFace);
 
-        myCriteria = myBeanTolerance + myFaceTolerance + Precision.Confusion();
+        myCriteria = myBeanTolerance + myFaceTolerance + global::Kerf.Engine.Foundation.Precision.Confusion();
         myCurveResolution = myCurve.Resolution(myCriteria);
 
         SetSurfaceParameters(mySurface.FirstUParameter(),
@@ -219,7 +221,7 @@ public class IntTools_BeanFaceIntersector
         myContext ??= new IntTools_Context();
 
         // Fast computation of Line/Plane case
-        if (myCurve.GetType() == GeomAbs_Line && mySurface.GetType() == GeomAbs_Plane)
+        if (myCurve.GetType() == Line && mySurface.GetType() == Plane)
         {
             ComputeLinePlane();
             return;
@@ -248,11 +250,11 @@ public class IntTools_BeanFaceIntersector
         // Perform intersection
 
         // try to find localized solution
-        bool bLocalize = (!Precision.IsInfinite(myUMinParameter) && !Precision.IsInfinite(myUMaxParameter)
-                          && !Precision.IsInfinite(myVMinParameter) && !Precision.IsInfinite(myVMaxParameter));
+        bool bLocalize = (!global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMinParameter) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMaxParameter)
+                          && !global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMinParameter) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMaxParameter));
         bLocalize = bLocalize
-                    && (mySurface.GetType() == GeomAbs_BezierSurface || mySurface.GetType() == GeomAbs_OtherSurface
-                        || (mySurface.GetType() == GeomAbs_BSplineSurface
+                    && (mySurface.GetType() == BezierSurface || mySurface.GetType() == OtherSurface
+                        || (mySurface.GetType() == BSplineSurface
                             && (mySurface.UDegree() > 2 || mySurface.VDegree() > 2)
                             && (mySurface.NbUKnots() > 2 && mySurface.NbVKnots() > 2)));
 
@@ -283,7 +285,7 @@ public class IntTools_BeanFaceIntersector
             if (iLastRange > 0)
             {
                 ref IntTools_Range aLastRange = ref myResults.ChangeValue(iLastRange);
-                if (Math.Abs(aRange.First() - aLastRange.Last()) > Precision.PConfusion())
+                if (Math.Abs(aRange.First() - aLastRange.Last()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     myResults.Append(aRange);
                 }
@@ -313,7 +315,7 @@ public class IntTools_BeanFaceIntersector
 
     private double Distance(double theArg)
     {
-        gp_Pnt aPoint = myCurve.Value(theArg);
+        Point3D aPoint = myCurve.Value(theArg);
 
         GeomAPI_ProjectPointOnSurf aProjector = myContext!.ProjPS(mySurface.Face());
         aProjector.Perform(aPoint);
@@ -332,11 +334,11 @@ public class IntTools_BeanFaceIntersector
             double aMinParameter = (i < 2) ? myVMinParameter : myUMinParameter;
             double aMaxParameter = (i < 2) ? myVMaxParameter : myUMaxParameter;
             double aMidParameter = (aMinParameter + aMaxParameter) * 0.5;
-            gp_Pnt aPointMin = (i < 2) ? mySurface.Value(anIsoParameter, aMinParameter)
+            Point3D aPointMin = (i < 2) ? mySurface.Value(anIsoParameter, aMinParameter)
                                        : mySurface.Value(aMinParameter, anIsoParameter);
-            gp_Pnt aPointMax = (i < 2) ? mySurface.Value(anIsoParameter, aMaxParameter)
+            Point3D aPointMax = (i < 2) ? mySurface.Value(anIsoParameter, aMaxParameter)
                                        : mySurface.Value(aMaxParameter, anIsoParameter);
-            gp_Pnt aPointMid = (i < 2) ? mySurface.Value(anIsoParameter, aMidParameter)
+            Point3D aPointMid = (i < 2) ? mySurface.Value(anIsoParameter, aMidParameter)
                                        : mySurface.Value(aMidParameter, anIsoParameter);
 
             bool useMinMaxPoints = true;
@@ -377,7 +379,7 @@ public class IntTools_BeanFaceIntersector
 
     private double Distance(double theArg, ref double theUParameter, ref double theVParameter)
     {
-        gp_Pnt aPoint = myCurve.Value(theArg);
+        Point3D aPoint = myCurve.Value(theArg);
 
         theUParameter = myUMinParameter;
         theVParameter = myVMinParameter;
@@ -405,11 +407,11 @@ public class IntTools_BeanFaceIntersector
                 double aMinParameter = (i < 2) ? myVMinParameter : myUMinParameter;
                 double aMaxParameter = (i < 2) ? myVMaxParameter : myUMaxParameter;
                 double aMidParameter = (aMinParameter + aMaxParameter) * 0.5;
-                gp_Pnt aPointMin = (i < 2) ? mySurface.Value(anIsoParameter, aMinParameter)
+                Point3D aPointMin = (i < 2) ? mySurface.Value(anIsoParameter, aMinParameter)
                                            : mySurface.Value(aMinParameter, anIsoParameter);
-                gp_Pnt aPointMax = (i < 2) ? mySurface.Value(anIsoParameter, aMaxParameter)
+                Point3D aPointMax = (i < 2) ? mySurface.Value(anIsoParameter, aMaxParameter)
                                            : mySurface.Value(aMaxParameter, anIsoParameter);
-                gp_Pnt aPointMid = (i < 2) ? mySurface.Value(anIsoParameter, aMidParameter)
+                Point3D aPointMid = (i < 2) ? mySurface.Value(anIsoParameter, aMidParameter)
                                            : mySurface.Value(aMidParameter, anIsoParameter);
 
                 bool useMinMaxPoints = true;
@@ -487,7 +489,7 @@ public class IntTools_BeanFaceIntersector
                 // To avoid unification of the intersection points in a single intersection
                 // range, perform exact range search considering the lowest possible tolerance
                 // for edge and face.
-                myCriteria = 3 * Precision.Confusion();
+                myCriteria = 3 * global::Kerf.Engine.Foundation.Precision.Confusion();
                 myCurveResolution = myCurve.Resolution(myCriteria);
             }
 
@@ -589,9 +591,9 @@ public class IntTools_BeanFaceIntersector
     /// </summary>
     private bool FastComputeAnalytic()
     {
-        GeomAbs_CurveType aCT = myCurve.GetType();
-        if (aCT == GeomAbs_BezierCurve || aCT == GeomAbs_BSplineCurve || aCT == GeomAbs_OffsetCurve
-            || aCT == GeomAbs_OtherCurve)
+        CurveKind aCT = myCurve.GetType();
+        if (aCT == BezierCurve || aCT == BSplineCurve || aCT == OffsetCurve
+            || aCT == OtherCurve)
         {
             // not supported type
             return false;
@@ -600,36 +602,36 @@ public class IntTools_BeanFaceIntersector
         bool isCoincide = false;
         bool hasIntersection = true;
 
-        GeomAbs_SurfaceType aST = mySurface.GetType();
+        SurfaceKind aST = mySurface.GetType();
 
         // Plane - Circle/Ellipse/Hyperbola/Parabola
-        if (aST == GeomAbs_Plane)
+        if (aST == Plane)
         {
-            gp_Pln surfPlane = mySurface.Plane();
+            Plane3D surfPlane = mySurface.Plane();
 
-            gp_Dir aDir;
-            gp_Pnt aPLoc;
+            Direction3D aDir;
+            Point3D aPLoc;
             switch (aCT)
             {
-                case GeomAbs_Circle:
+                case Circle:
                     {
                         aDir = myCurve.Circle().Axis().Direction();
                         aPLoc = myCurve.Circle().Location();
                         break;
                     }
-                case GeomAbs_Ellipse:
+                case Ellipse:
                     {
                         aDir = myCurve.Ellipse().Axis().Direction();
                         aPLoc = myCurve.Ellipse().Location();
                         break;
                     }
-                case GeomAbs_Hyperbola:
+                case Hyperbola:
                     {
                         aDir = myCurve.Hyperbola().Axis().Direction();
                         aPLoc = myCurve.Hyperbola().Location();
                         break;
                     }
-                case GeomAbs_Parabola:
+                case Parabola:
                     {
                         aDir = myCurve.Parabola().Axis().Direction();
                         aPLoc = myCurve.Parabola().Location();
@@ -640,7 +642,7 @@ public class IntTools_BeanFaceIntersector
             }
 
             double anAngle = aDir.Angle(surfPlane.Axis().Direction());
-            if (anAngle > Precision.Angular())
+            if (anAngle > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return false;
             }
@@ -652,17 +654,17 @@ public class IntTools_BeanFaceIntersector
         }
 
         // Cylinder - Line/Circle
-        else if (aST == GeomAbs_Cylinder)
+        else if (aST == SurfaceKind.Cylinder)
         {
-            gp_Cylinder aCylinder = mySurface.Cylinder();
-            gp_Ax1 aCylAxis = aCylinder.Axis();
-            gp_Dir aCylDir = aCylAxis.Direction();
+            Cylinder aCylinder = mySurface.Cylinder();
+            Axis3D aCylAxis = aCylinder.Axis();
+            Direction3D aCylDir = aCylAxis.Direction();
             double aCylRadius = aCylinder.Radius();
 
-            if (aCT == GeomAbs_Line)
+            if (aCT == Line)
             {
-                gp_Lin aLin = myCurve.Line();
-                if (!aLin.Direction().IsParallel(aCylDir, Precision.Angular()))
+                Line3D aLin = myCurve.Line();
+                if (!aLin.Direction().IsParallel(aCylDir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return false;
                 }
@@ -673,17 +675,17 @@ public class IntTools_BeanFaceIntersector
                 isCoincide = (aDist < myCriteria);
             }
 
-            else if (aCT == GeomAbs_Circle)
+            else if (aCT == Circle)
             {
-                gp_Circ aCircle = myCurve.Circle();
+                Circle3D aCircle = myCurve.Circle();
 
                 double anAngle = aCylDir.Angle(aCircle.Axis().Direction());
-                if (anAngle > Precision.Angular())
+                if (anAngle > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     return false;
                 }
 
-                double aDistLoc = new gp_Lin(aCylAxis).Distance(aCircle.Location());
+                double aDistLoc = new Line3D(aCylAxis).Distance(aCircle.Location());
                 double aDist = aDistLoc + Math.Abs(aCircle.Radius() - aCylRadius);
                 isCoincide = (aDist < myCriteria);
 
@@ -696,13 +698,13 @@ public class IntTools_BeanFaceIntersector
         }
 
         // Sphere - Line
-        else if (aST == GeomAbs_Sphere)
+        else if (aST == SurfaceKind.Sphere)
         {
-            gp_Sphere aSph = mySurface.Sphere();
-            gp_Pnt aSphLoc = aSph.Location();
-            if (aCT == GeomAbs_Line)
+            Sphere aSph = mySurface.Sphere();
+            Point3D aSphLoc = aSph.Location();
+            if (aCT == Line)
             {
-                gp_Lin aLin = myCurve.Line();
+                Line3D aLin = myCurve.Line();
                 double aDist = aLin.Distance(aSphLoc) - aSph.Radius();
                 hasIntersection = aDist < myCriteria;
             }
@@ -720,8 +722,8 @@ public class IntTools_BeanFaceIntersector
     private void ComputeLinePlane()
     {
         double Tolang = 1.0e-9;
-        gp_Pln P = mySurface.Plane();
-        gp_Lin L = myCurve.Line();
+        Plane3D P = mySurface.Plane();
+        Line3D L = myCurve.Line();
 
         myIsDone = true;
 
@@ -730,7 +732,7 @@ public class IntTools_BeanFaceIntersector
         double Dis, Direc;
 
         P.Coefficients(out A, out B, out C, out D);
-        gp_Pnt Orig = L.Location();
+        Point3D Orig = L.Location();
         L.Direction().Coord(out Al, out Bl, out Cl);
 
         Direc = A * Al + B * Bl + C * Cl;
@@ -744,8 +746,8 @@ public class IntTools_BeanFaceIntersector
         }
         else
         {
-            gp_Pnt p1 = ElCLib.Value(myFirstParameter, L);
-            gp_Pnt p2 = ElCLib.Value(myLastParameter, L);
+            Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(myFirstParameter, L);
+            Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(myLastParameter, L);
             double d1 = A * p1.X() + B * p1.Y() + C * p1.Z() + D;
             if (d1 < 0)
             {
@@ -780,10 +782,10 @@ public class IntTools_BeanFaceIntersector
             return;
         }
 
-        gp_Pnt pint = new(Orig.X() + t * Al, Orig.Y() + t * Bl, Orig.Z() + t * Cl);
+        Point3D pint = new(Orig.X() + t * Al, Orig.Y() + t * Bl, Orig.Z() + t * Cl);
 
         double u, v;
-        ElSLib.Parameters(P, pint, out u, out v);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(P, pint, out u, out v);
         if (myUMinParameter > u || u > myUMaxParameter || myVMinParameter > v || v > myVMaxParameter)
         {
             return;
@@ -791,7 +793,7 @@ public class IntTools_BeanFaceIntersector
         //
         // compute correct range on the edge
         double anAngle, aDt;
-        gp_Dir aDL, aDP;
+        Direction3D aDL, aDP;
         //
         aDL = L.Position().Direction();
         aDP = P.Position().Direction();
@@ -808,7 +810,7 @@ public class IntTools_BeanFaceIntersector
     private void ComputeUsingExtremum()
     {
         double Tol;
-        Tol = Precision.PConfusion();
+        Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Geom_Curve aCurve = BRep_Tool.Curve(myCurve.Edge(), out _, out _)!;
 
         for (int i = 1; i <= myRangeManager.Length(); i++)
@@ -823,7 +825,7 @@ public class IntTools_BeanFaceIntersector
             double anarg1 = aParamRange.First();
             double anarg2 = aParamRange.Last();
 
-            if (anarg2 - anarg1 < Precision.PConfusion())
+            if (anarg2 - anarg1 < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
 
                 if (((i > 1) && (myRangeManager.Flag(i - 1) == 2))
@@ -839,7 +841,7 @@ public class IntTools_BeanFaceIntersector
             anExtCS.Initialize(mySurface, myUMinParameter, myUMaxParameter, myVMinParameter, myVMaxParameter, Tol, Tol);
             double first = aCurve.FirstParameter(), last = aCurve.LastParameter();
             if (aCurve.IsPeriodic()
-                || (anarg1 >= first - Precision.PConfusion() && anarg2 <= last + Precision.PConfusion()))
+                || (anarg1 >= first - global::Kerf.Engine.Foundation.Precision.PConfusion() && anarg2 <= last + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 // Extrema_ExtCS anExtCS (aGACurve, aGASurface, Tol, Tol);
                 anExtCS.Perform(aGACurve, anarg1, anarg2);
@@ -1094,7 +1096,7 @@ public class IntTools_BeanFaceIntersector
             bool pointfound = false;
 
             //
-            gp_Pnt aPoint = myCurve.Value(aCurPar);
+            Point3D aPoint = myCurve.Value(aCurPar);
             Extrema_GenLocateExtPS anExtrema = new(mySurface, 1.0e-10, 1.0e-10);
             anExtrema.Perform(aPoint, U, V);
 
@@ -1234,9 +1236,9 @@ public class IntTools_BeanFaceIntersector
     }
 
     private bool LocalizeSolutions(in IntTools_CurveRangeSample theCurveRange,
-                                   in Bnd_Box theBoxCurve,
+                                   in Box theBoxCurve,
                                    in IntTools_SurfaceRangeSample theSurfaceRange,
-                                   in Bnd_Box theBoxSurface,
+                                   in Box theBoxSurface,
                                    IntTools_CurveRangeLocalizeData theCurveData,
                                    IntTools_SurfaceRangeLocalizeData theSurfaceData,
                                    NCollection_List<IntTools_CurveRangeSample> theListCurveRange,
@@ -1249,8 +1251,8 @@ public class IntTools_BeanFaceIntersector
         aRootRangeC.SetDepth(0);
         IntTools_SurfaceRangeSample aRootRangeS = new(0, 0, 0, 0);
 
-        Bnd_Box aMainBoxC = theBoxCurve;
-        Bnd_Box aMainBoxS = theBoxSurface;
+        Box aMainBoxC = theBoxCurve;
+        Box aMainBoxS = theBoxSurface;
         bool bMainBoxFoundS = false;
         bool bMainBoxFoundC = false;
         //
@@ -1390,12 +1392,12 @@ public class IntTools_BeanFaceIntersector
 
                 // ///////
 
-                Bnd_Box aBoxS = new();
+                Box aBoxS = new();
 
                 if (!theSurfaceData.FindBox(aNewRangeS, ref aBoxS))
                 {
 
-                    if (mySurface.GetType() == GeomAbs_BSplineSurface)
+                    if (mySurface.GetType() == BSplineSurface)
                     {
                         aBoxS = GetSurfaceBox(mySurface, aPrevParU, aCurParU, aPrevParV, aCurParV, myCriteria, theSurfaceData);
                     }
@@ -1442,7 +1444,7 @@ public class IntTools_BeanFaceIntersector
                     continue;
                 }
 
-                NCollection_List<Bnd_Box> aListOfBox = new();
+                NCollection_List<Box> aListOfBox = new();
                 NCollection_List<int> aListOfIndex = new();
 
                 bool bHasOutC = false;
@@ -1488,7 +1490,7 @@ public class IntTools_BeanFaceIntersector
                     // ignore already computed. end
 
                     // compute Box
-                    Bnd_Box aBoxC = new();
+                    Box aBoxC = new();
 
                     if (!theCurveData.FindBox(aCurRangeC, ref aBoxC))
                     {
@@ -1543,7 +1545,7 @@ public class IntTools_BeanFaceIntersector
 
                 aCurIndex = aCurIndexInit;
                 NCollection_List<int>.Iterator anItI = new(aListOfIndex);
-                NCollection_List<Bnd_Box>.Iterator anItBox = new(aListOfBox);
+                NCollection_List<Box>.Iterator anItBox = new(aListOfBox);
                 bool bUseOldC = false;
                 bool bUseOldS = false;
                 bool bCheckSize = !bHasOutC;
@@ -1571,9 +1573,9 @@ public class IntTools_BeanFaceIntersector
                         else if ((theCurveRange.GetDepth() < 4) && (theSurfaceRange.GetDepthU() < 4)
                                  && (theSurfaceRange.GetDepthV() < 4))
                         {
-                            Bnd_Box aBoxC = anItBox.Value();
+                            Box aBoxC = anItBox.Value();
 
-                            if (!aBoxC.IsWhole() && !aBoxS.IsWhole())
+                            if (!aBoxC.IsWhole && !aBoxS.IsWhole)
                             {
                                 double aDiagC = aBoxC.SquareExtent();
                                 double aDiagS = aBoxS.SquareExtent();
@@ -1683,10 +1685,10 @@ public class IntTools_BeanFaceIntersector
 
     private bool ComputeLocalized()
     {
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         IntTools_SurfaceRangeSample aSurfaceRange = new(0, 0, 0, 0);
-        double dMinU = 10.0 * Precision.PConfusion();
+        double dMinU = 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
         double dMinV = dMinU;
         // (OCCT builds an unused IntTools_SurfaceRangeLocalizeData aSurfaceDataInit(3, 3, dMinU, dMinV) here.)
         //
@@ -1697,10 +1699,10 @@ public class IntTools_BeanFaceIntersector
         aSurfaceData.RemoveRangeOutAll();
         aSurfaceData.ClearGrid();
 
-        Bnd_Box FBox = new();
+        Box FBox = new();
         bool bFBoxFound = aSurfaceData.FindBox(aSurfaceRange, ref FBox);
 
-        if (mySurface.GetType() == GeomAbs_BSplineSurface)
+        if (mySurface.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface aBsplineSurface = (Geom_BSplineSurface)myTrsfSurface!;
             ComputeGridPoints(mySurface,
@@ -1737,9 +1739,9 @@ public class IntTools_BeanFaceIntersector
             aSurfaceData.AddBox(aSurfaceRange, FBox);
         }
 
-        Bnd_Box EBox = new();
+        Box EBox = new();
 
-        BndLib_Add3dCurve.Add(myCurve.Trim(myFirstParameter, myLastParameter, Precision.PConfusion()),
+        BndLib_Add3dCurve.Add(myCurve.Trim(myFirstParameter, myLastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                               myBeanTolerance,
                               ref EBox);
 
@@ -1921,15 +1923,15 @@ public class IntTools_BeanFaceIntersector
 
                             if (myCurve.IsPeriodic())
                             {
-                                T = ElCLib.InPeriod(T, anarg1, anarg1 + myCurve.Period());
+                                T = global::Kerf.Engine.Geometry.ElCLib.InPeriod(T, anarg1, anarg1 + myCurve.Period());
                             }
                             if (mySurface.IsUPeriodic())
                             {
-                                U = ElCLib.InPeriod(U, parUF, parUF + mySurface.UPeriod());
+                                U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, parUF, parUF + mySurface.UPeriod());
                             }
                             if (mySurface.IsVPeriodic())
                             {
-                                V = ElCLib.InPeriod(V, parVF, parVF + mySurface.VPeriod());
+                                V = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, parVF, parVF + mySurface.VPeriod());
                             }
 
                             // To avoid occasional going out of boundaries because of numerical
@@ -2054,7 +2056,7 @@ public class IntTools_BeanFaceIntersector
 
     //  Modified by skv - Wed Nov  2 15:21:11 2005 Optimization Begin
 
-    private static Bnd_Box GetSurfaceBox(BRepAdaptor_Surface theSurf,
+    private static Box GetSurfaceBox(BRepAdaptor_Surface theSurf,
                                          double theFirstU,
                                          double theLastU,
                                          double theFirstV,
@@ -2062,7 +2064,7 @@ public class IntTools_BeanFaceIntersector
                                          double theTolerance,
                                          IntTools_SurfaceRangeLocalizeData theSurfaceData)
     {
-        Bnd_Box aTotalBox = new();
+        Box aTotalBox = new();
 
         BuildBox(theSurf, theFirstU, theLastU, theFirstV, theLastV, theSurfaceData, ref aTotalBox);
 
@@ -2243,14 +2245,14 @@ public class IntTools_BeanFaceIntersector
         }
 
         // Compute of grid points.
-        gp_Pnt aPnt;
+        Point3D aPnt;
         double aParU;
         double aParV;
-        gp_Vec aDU = new(), aDV = new();
+        Vector3D aDU = new(), aDV = new();
         double du = 0, dv = 0;
         bool isCalcDefl = aNbGridPnts[0] < 30 && aNbGridPnts[1] < 30;
 
-        Bnd_Box aGridBox = new(), anExtBox = new();
+        Box aGridBox = new(), anExtBox = new();
 
         for (i = 1; i <= aNbGridPnts[0]; i++)
         {
@@ -2282,7 +2284,7 @@ public class IntTools_BeanFaceIntersector
                     if (i < aNbGridPnts[0] && j < aNbGridPnts[1])
                     {
                         dv = 0.5 * (theSurfaceData.GetVParam(j + 1) - aParV);
-                        gp_Vec aShift = du * aDU + dv * aDV;
+                        Vector3D aShift = du * aDU + dv * aDV;
                         aPnt.Translate(aShift);
                         anExtBox.Add(aPnt);
                     }
@@ -2349,14 +2351,14 @@ public class IntTools_BeanFaceIntersector
                                  double theFirstV,
                                  double theLastV,
                                  IntTools_SurfaceRangeLocalizeData theSurfaceData,
-                                 ref Bnd_Box theBox)
+                                 ref Box theBox)
     {
         int i;
         int j;
         int aNbUPnts;
         int aNbVPnts;
         double aParam;
-        gp_Pnt aPnt;
+        Point3D aPnt;
 
         theSurfaceData.SetFrame(theFirstU, theLastU, theFirstV, theLastV);
         aNbUPnts = theSurfaceData.GetNBUPointsInFrame();
@@ -2384,7 +2386,7 @@ public class IntTools_BeanFaceIntersector
             // Add internal points.
             for (j = 1; j <= aNbVPnts; j++)
             {
-                gp_Pnt aGridPnt = theSurfaceData.GetPointInFrame(i, j);
+                Point3D aGridPnt = theSurfaceData.GetPointInFrame(i, j);
 
                 theBox.Add(aGridPnt);
             }

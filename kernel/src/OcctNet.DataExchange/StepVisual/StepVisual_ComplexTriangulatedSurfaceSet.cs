@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,8 +16,8 @@ namespace Occt;
 public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSurfaceSet
 {
     private NCollection_HArray1<int> myPnindex;
-    private NCollection_HArray1<Standard_Transient> myTriangleStrips;
-    private NCollection_HArray1<Standard_Transient> myTriangleFans;
+    private NCollection_HArray1<Transient> myTriangleStrips;
+    private NCollection_HArray1<Transient> myTriangleFans;
 
     /// <summary>
     /// default constructor
@@ -27,7 +29,7 @@ public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSu
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theRepresentationItem_Name, StepVisual_CoordinatesList theTessellatedSurfaceSet_Coordinates, int theTessellatedSurfaceSet_Pnmax, NCollection_HArray2<double> theTessellatedSurfaceSet_Normals, NCollection_HArray1<int> thePnindex, NCollection_HArray1<Standard_Transient> theTriangleStrips, NCollection_HArray1<Standard_Transient> theTriangleFans)
+    public void Init(TCollection_HAsciiString theRepresentationItem_Name, StepVisual_CoordinatesList theTessellatedSurfaceSet_Coordinates, int theTessellatedSurfaceSet_Pnmax, NCollection_HArray2<double> theTessellatedSurfaceSet_Normals, NCollection_HArray1<int> thePnindex, NCollection_HArray1<Transient> theTriangleStrips, NCollection_HArray1<Transient> theTriangleFans)
     {
         base.Init(theRepresentationItem_Name, theTessellatedSurfaceSet_Coordinates, theTessellatedSurfaceSet_Pnmax, theTessellatedSurfaceSet_Normals);
 
@@ -77,7 +79,7 @@ public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSu
     /// <summary>
     /// Returns field TriangleStrips
     /// </summary>
-    public NCollection_HArray1<Standard_Transient> TriangleStrips()
+    public NCollection_HArray1<Transient> TriangleStrips()
     {
         return myTriangleStrips;
     }
@@ -85,7 +87,7 @@ public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSu
     /// <summary>
     /// Sets field TriangleStrips
     /// </summary>
-    public void SetTriangleStrips(NCollection_HArray1<Standard_Transient> theTriangleStrips)
+    public void SetTriangleStrips(NCollection_HArray1<Transient> theTriangleStrips)
     {
         myTriangleStrips = theTriangleStrips;
     }
@@ -105,7 +107,7 @@ public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSu
     /// <summary>
     /// Returns field TriangleFans
     /// </summary>
-    public NCollection_HArray1<Standard_Transient> TriangleFans()
+    public NCollection_HArray1<Transient> TriangleFans()
     {
         return myTriangleFans;
     }
@@ -113,7 +115,7 @@ public class StepVisual_ComplexTriangulatedSurfaceSet : StepVisual_TessellatedSu
     /// <summary>
     /// Sets field TriangleFans
     /// </summary>
-    public void SetTriangleFans(NCollection_HArray1<Standard_Transient> theTriangleFans)
+    public void SetTriangleFans(NCollection_HArray1<Transient> theTriangleFans)
     {
         myTriangleFans = theTriangleFans;
     }

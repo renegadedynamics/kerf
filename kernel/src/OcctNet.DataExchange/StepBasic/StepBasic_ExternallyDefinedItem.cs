@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ExternallyDefinedItem
 /// </summary>
-public class StepBasic_ExternallyDefinedItem : Standard_Transient
+public class StepBasic_ExternallyDefinedItem : Transient
 {
     private StepBasic_SourceItem theItemId = new StepBasic_SourceItem();
     private StepBasic_ExternalSource theSource;

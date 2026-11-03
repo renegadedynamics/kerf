@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BRepCheck_Status;
 
 namespace Occt;
@@ -16,7 +17,7 @@ namespace Occt;
 /// <c>BRepCheck_ListOfStatus</c>, <c>NCollection_List&lt;BRepCheck_Status&gt;</c>). The context iterator visits the
 /// contexts in the order they were checked (OCCT's map iterates in hash order, decision 18).
 /// </remarks>
-public abstract class BRepCheck_Result : Standard_Transient
+public abstract class BRepCheck_Result : Transient
 {
     protected TopoDS_Shape myShape;
     protected bool myMin;

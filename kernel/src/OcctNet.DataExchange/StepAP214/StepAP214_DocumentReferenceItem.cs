@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_DocumentReferenceItem : StepData_SelectType
@@ -20,7 +22,7 @@ public class StepAP214_DocumentReferenceItem : StepData_SelectType
     /// <summary>
     /// Recognizes a DocumentReferenceItem Kind Entity that is :
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

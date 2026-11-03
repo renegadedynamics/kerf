@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.BRepFill_TransitionStyle;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -123,8 +127,8 @@ public sealed class BRepFill_AdvancedEvolved
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVEP = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(theProfile, TopAbs_VERTEX, TopAbs_EDGE, aMVEP);
 
-        gp_Vec aN2 = new();
-        gp_Pnt aLoc = new();
+        Vector3D aN2 = new();
+        Point3D aLoc = new();
 
         for (int i = 1; i <= aMVEP.Extent(); i++)
         {
@@ -145,12 +149,12 @@ public sealed class BRepFill_AdvancedEvolved
             double aPar1 = BRep_Tool.Parameter(aVC, anE1);
             double aPar2 = BRep_Tool.Parameter(aVC, anE2);
 
-            anAC1.D1(aPar1, out gp_Pnt aP, out gp_Vec aT1);
-            anAC1.D1(aPar2, out aP, out gp_Vec aT2); // OCCT: anAC1, not anAC2
+            anAC1.D1(aPar1, out Point3D aP, out Vector3D aT1);
+            anAC1.D1(aPar2, out aP, out Vector3D aT2); // OCCT: anAC1, not anAC2
 
             aN2 = aT1.Crossed(aT2);
 
-            if (aN2.SquareMagnitude() > Precision.SquareConfusion())
+            if (aN2.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 aLoc = BRep_Tool.Pnt(aVC);
                 break;
@@ -160,9 +164,9 @@ public sealed class BRepFill_AdvancedEvolved
         BRepExtrema_DistShapeShape anExtr = new();
         anExtr.LoadS1(theSpine);
 
-        if (aN2.SquareMagnitude() > Precision.SquareConfusion())
+        if (aN2.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            gp_Pln aPln = new(aLoc, new gp_Dir(aN2));
+            Plane3D aPln = new(aLoc, new Direction3D(aN2));
             BRepLib_MakeFace aMF = new(aPln, theProfile);
             if (!aMF.IsDone())
             {
@@ -204,7 +208,7 @@ public sealed class BRepFill_AdvancedEvolved
 
         BRepExtrema_SupportType anExtrType2 = anExtr.SupportTypeShape2(anIdxMin);
 
-        if (aDistMin < Precision.Confusion())
+        if (aDistMin < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             anExtrType2 = BRepExtrema_IsInFace;
         }
@@ -229,12 +233,12 @@ public sealed class BRepFill_AdvancedEvolved
                     double aPar1 = BRep_Tool.Parameter(aV, anE1);
                     double aPar2 = BRep_Tool.Parameter(aV, anE2);
 
-                    anAC1.D1(aPar1, out gp_Pnt aP, out gp_Vec aT1);
-                    anAC1.D1(aPar2, out aP, out gp_Vec aT2); // OCCT: anAC1, not anAC2
+                    anAC1.D1(aPar1, out Point3D aP, out Vector3D aT1);
+                    anAC1.D1(aPar2, out aP, out Vector3D aT2); // OCCT: anAC1, not anAC2
 
                     // Find minimal sine
-                    double aSqT1 = Max(aT1.SquareMagnitude(), 1.0 / Precision.Infinite());
-                    double aSqT2 = Max(aT2.SquareMagnitude(), 1.0 / Precision.Infinite());
+                    double aSqT1 = Max(aT1.SquareMagnitude(), 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
+                    double aSqT2 = Max(aT2.SquareMagnitude(), 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
 
                     double aSqSin1 = aT1.CrossSquareMagnitude(aN2) / aSqT1;
                     double aSqSin2 = aT2.CrossSquareMagnitude(aN2) / aSqT2;
@@ -260,7 +264,7 @@ public sealed class BRepFill_AdvancedEvolved
                     BRepAdaptor_Curve anAC = new(anE);
                     anExtr.ParOnEdgeS1(anIdxMin, out double aPar);
 
-                    anAC.D1(aPar, out gp_Pnt aP, out gp_Vec aT1);
+                    anAC.D1(aPar, out Point3D aP, out Vector3D aT1);
 
                     if (aT1.Dot(aN2) > 0.0)
                     {
@@ -281,8 +285,8 @@ public sealed class BRepFill_AdvancedEvolved
                 TopoDS_Face aFSpine = aMkFSpine.InternalFace();
                 // OCCT dereferences the down-cast plane without a check.
                 Geom_Plane aPlnSpine = BRep_Tool.Surface(aFSpine) as Geom_Plane ?? throw new NullReferenceException();
-                gp_Vec aN1 = new(aPlnSpine.Axis().Direction());
-                gp_Vec aTanV;
+                Vector3D aN1 = new(aPlnSpine.Axis().Direction());
+                Vector3D aTanV;
 
                 if (anExtr.SupportTypeShape2(anIdxMin) == BRepExtrema_IsVertex)
                 {
@@ -301,19 +305,19 @@ public sealed class BRepFill_AdvancedEvolved
                     double aPar1 = BRep_Tool.Parameter(aV, anE1);
                     double aPar2 = BRep_Tool.Parameter(aV, anE2);
 
-                    anAC1.D1(aPar1, out gp_Pnt aP, out gp_Vec aT1);
-                    anAC1.D1(aPar2, out aP, out gp_Vec aT2); // OCCT: anAC1, not anAC2
+                    anAC1.D1(aPar1, out Point3D aP, out Vector3D aT1);
+                    anAC1.D1(aPar2, out aP, out Vector3D aT2); // OCCT: anAC1, not anAC2
 
                     // Find maximal cosine
                     double aSqT1 = aT1.SquareMagnitude();
                     double aSqT2 = aT2.SquareMagnitude();
 
-                    if (aSqT1 < Precision.SquareConfusion())
+                    if (aSqT1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aSqT1 = RealLast();
                     }
 
-                    if (aSqT2 < Precision.SquareConfusion())
+                    if (aSqT2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aSqT2 = RealLast();
                     }
@@ -337,13 +341,13 @@ public sealed class BRepFill_AdvancedEvolved
                     BRepAdaptor_Curve anAC = new(anE);
                     anExtr.ParOnEdgeS2(anIdxMin, out double aPar);
 
-                    anAC.D1(aPar, out gp_Pnt aP, out aTanV);
+                    anAC.D1(aPar, out Point3D aP, out aTanV);
                 }
 
                 // The point in the profile, which is the nearest to the spine
-                gp_Pnt aPnear = anExtr.PointOnShape2(anIdxMin);
+                Point3D aPnear = anExtr.PointOnShape2(anIdxMin);
 
-                BRepClass_FaceClassifier aFClass = new(aFSpine, aPnear, Precision.Confusion());
+                BRepClass_FaceClassifier aFClass = new(aFSpine, aPnear, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (aFClass.State() != TopAbs_OUT)
                 {
                     if (aN1.Dot(aTanV) < 0.0)
@@ -403,7 +407,7 @@ public sealed class BRepFill_AdvancedEvolved
     {
         myErrorStatus = BRepFill_AdvancedEvolved_Empty;
 
-        if (myFuzzyValue < Precision.Confusion())
+        if (myFuzzyValue < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             myFuzzyValue = theTolerance;
         }
@@ -521,13 +525,13 @@ public sealed class BRepFill_AdvancedEvolved
 
         double aTol = Max(aFS.Tolerance(), aFS.ToleranceReached());
         aTol += myFuzzyValue;
-        Bnd_Box aProfBox = new();
+        Box aProfBox = new();
         BRepBndLib.Add(myProfile, ref aProfBox);
         double aSqDiag = aProfBox.SquareExtent();
         // Square of the default angular tolerance in
         // BOPAlgo_Tools::EdgesToWires(...) and BOPAlgo_Tools::WiresToFaces(...) methods
         double aSqAnguarTol = aTol * aTol / aSqDiag;
-        gp_Dir aNormal = aSurf.Position().Direction();
+        Direction3D aNormal = aSurf.Position().Direction();
 
         // Obtain free-edges from myPipeShell. All edges must be planar
         // and parallel to the plane of mySpine
@@ -557,10 +561,10 @@ public sealed class BRepFill_AdvancedEvolved
                 continue;
             }
 
-            anAC.D1(0.5 * (anAC.FirstParameter() + anAC.LastParameter()), out gp_Pnt aPtmp, out gp_Vec aTan);
+            anAC.D1(0.5 * (anAC.FirstParameter() + anAC.LastParameter()), out Point3D aPtmp, out Vector3D aTan);
 
             double aSqModulus = aTan.SquareMagnitude();
-            if (aSqModulus < Precision.Confusion())
+            if (aSqModulus < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -616,27 +620,27 @@ public sealed class BRepFill_AdvancedEvolved
                 TopoDS_Face aF = TopoDS.Face(anExp.Current());
                 // OCCT dereferences the down-cast plane without a check.
                 Geom_Plane aPln = BRep_Tool.Surface(aF) as Geom_Plane ?? throw new NullReferenceException();
-                gp_XYZ aNorm = aPln.Position().Direction().XYZ();
-                gp_XYZ aLocP = aPln.Position().Location().XYZ();
+                Xyz aNorm = aPln.Position().Direction().XYZ();
+                Xyz aLocP = aPln.Position().Location().XYZ();
 
                 bool isFound = false;
 
                 for (int i = 1; i <= aMapV.Extent(); i++)
                 {
                     TopoDS_Vertex aV = TopoDS.Vertex(aMapV.FindKey(i));
-                    gp_XYZ aP = BRep_Tool.Pnt(aV).XYZ();
+                    Xyz aP = BRep_Tool.Pnt(aV).XYZ();
 
-                    gp_XYZ aDelta = aP - aLocP;
+                    Xyz aDelta = aP - aLocP;
                     double aSqD = aDelta.SquareModulus();
 
-                    if (aSqD < Precision.SquareConfusion())
+                    if (aSqD < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         continue;
                     }
 
                     double aDP = aDelta.Dot(aNorm);
 
-                    if (aDP * aDP < aSqD * Precision.SquareConfusion())
+                    if (aDP * aDP < aSqD * global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         // aP is in the plane
                         continue;
@@ -1085,8 +1089,8 @@ public sealed class BRepFill_AdvancedEvolved
     //=======================================================================
     private static bool MakeEdgeDegenerated(in TopoDS_Vertex theV,
                                             in TopoDS_Face theFace,
-                                            in gp_Pnt2d thePf,
-                                            in gp_Pnt2d thePl,
+                                            in Point2D thePf,
+                                            in Point2D thePl,
                                             NCollection_List<TopoDS_Shape> theLEdges)
     {
         BRepAdaptor_Surface anAS = new(theFace, false);
@@ -1102,17 +1106,17 @@ public sealed class BRepFill_AdvancedEvolved
         TopoDS_Vertex aVf = TopoDS.Vertex(theV.Oriented(TopAbs_FORWARD)),
                       aVl = TopoDS.Vertex(theV.Oriented(TopAbs_REVERSED));
 
-        gp_XY aV = thePl.XY() - thePf.XY();
-        Geom2d_Line aL1 = new(thePf, new gp_Dir2d(aV));
-        Geom2d_Line aL2 = new(thePl, new gp_Dir2d(aV.Reversed()));
+        Xy aV = thePl.XY() - thePf.XY();
+        Geom2d_Line aL1 = new(thePf, new Direction2D(aV));
+        Geom2d_Line aL2 = new(thePl, new Direction2D(aV.Reversed()));
 
         BRep_Builder aBB = new();
         TopoDS_Edge anEdegen1 = new(), anEdegen2 = new();
         aBB.MakeEdge(ref anEdegen1);
         aBB.MakeEdge(ref anEdegen2);
 
-        aBB.UpdateEdge(anEdegen1, aL1, theFace, Precision.Confusion());
-        aBB.UpdateEdge(anEdegen2, aL2, theFace, Precision.Confusion());
+        aBB.UpdateEdge(anEdegen1, aL1, theFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBB.UpdateEdge(anEdegen2, aL2, theFace, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         anEdegen1.Orientation(TopAbs_FORWARD);
         anEdegen2.Orientation(TopAbs_FORWARD);
@@ -1207,7 +1211,7 @@ public sealed class BRepFill_AdvancedEvolved
                          aC2 = BRep_Tool.CurveOnSurface(anE2, theFace, out aF, out aL)!;
             aF = BRep_Tool.Parameter(aVertCurr, anE1);
             aL = BRep_Tool.Parameter(aVertCurr, anE2);
-            gp_Pnt2d aPf = aC1.Value(aF), aPl = aC2.Value(aL);
+            Point2D aPf = aC1.Value(aF), aPl = aC2.Value(aL);
 
             if (MakeEdgeDegenerated(aVertCurr, theFace, aPf, aPl, theLEdges))
             {
@@ -1250,7 +1254,7 @@ public sealed class BRepFill_AdvancedEvolved
             // Look for the pair for anE1 and anE2 edges
             for (int i = 0; i < 2; i++)
             {
-                gp_Pnt2d aPoint = i != 0 ? aPl : aPf;
+                Point2D aPoint = i != 0 ? aPl : aPf;
                 anItr.Initialize(anEList);
                 for (; anItr.More(); anItr.Next())
                 {
@@ -1263,7 +1267,7 @@ public sealed class BRepFill_AdvancedEvolved
 
                     Geom2d_Curve aC = BRep_Tool.CurveOnSurface(anEdge, theFace, out aF, out aL)!;
                     aF = BRep_Tool.Parameter(aVertCurr, anEdge);
-                    gp_Pnt2d aP = aC.Value(aF);
+                    Point2D aP = aC.Value(aF);
 
                     if (MakeEdgeDegenerated(aVertCurr, theFace, aPoint, aP, theLEdges))
                     {
@@ -1323,7 +1327,7 @@ public sealed class BRepFill_AdvancedEvolved
                              aC2 = BRep_Tool.CurveOnSurface(aLastEdge, theFace, out aF, out aL)!;
                 aF = BRep_Tool.Parameter(aV[anIDFE], aFirstEdge);
                 aL = BRep_Tool.Parameter(aV[anIDLE], aLastEdge);
-                gp_Pnt2d aPf = aC1.Value(aF), aPl = aC2.Value(aL);
+                Point2D aPf = aC1.Value(aF), aPl = aC2.Value(aL);
 
                 MakeEdgeDegenerated(aV[anIDFE], theFace, aPf, aPl, theLEdges);
             }
@@ -1340,14 +1344,14 @@ public sealed class BRepFill_AdvancedEvolved
                                         NCollection_List<TopoDS_Shape> theListOfSplits)
     {
         BRepAdaptor_Surface anAS = new(theF, false);
-        GeomAbs_SurfaceType aSType = anAS.GetType();
+        SurfaceKind aSType = anAS.GetType();
 
-        if (aSType == GeomAbs_OffsetSurface)
+        if (aSType == OffsetSurface)
         {
             aSType = anAS.BasisSurface()!.GetType();
         }
 
-        if (aSType == GeomAbs_Plane)
+        if (aSType == Plane)
         {
             NCollection_Map<TopoDS_Shape> aME = new(TopTools_ShapeMapHasher.Instance);
             NCollection_List<TopoDS_Shape> aLE = new();
@@ -1413,8 +1417,8 @@ public sealed class BRepFill_AdvancedEvolved
             return true;
         }
 
-        if ((aSType != GeomAbs_Cone) && (aSType != GeomAbs_Sphere) && (aSType != GeomAbs_BezierSurface)
-            && (aSType != GeomAbs_BSplineSurface) && (aSType != GeomAbs_SurfaceOfRevolution))
+        if ((aSType != SurfaceKind.Cone) && (aSType != SurfaceKind.Sphere) && (aSType != BezierSurface)
+            && (aSType != BSplineSurface) && (aSType != SurfaceOfRevolution))
         {
             theListOfFaces.Append(theF);
             return false;
@@ -1585,8 +1589,8 @@ public sealed class BRepFill_AdvancedEvolved
     private static void ProcessVertex(in TopoDS_Vertex aV, NCollection_List<TopoDS_Shape> aLE, NCollection_List<TopoDS_Shape> aLF)
     {
         double aTol, aD2, aTolMax2, aTolE, aParam;
-        gp_Pnt aPC3D;
-        gp_Pnt2d aPC2D;
+        Point3D aPC3D;
+        Point2D aPC2D;
         TopAbs_Orientation anOrV;
 
         NCollection_List<TopoDS_Shape>.Iterator anIt = new();
@@ -1596,7 +1600,7 @@ public sealed class BRepFill_AdvancedEvolved
         aTolMax2 = -1.0e6;
         //
         BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
-        gp_Pnt aPV3D = TV.Pnt();
+        Point3D aPV3D = TV.Pnt();
         aTol = BRep_Tool.Tolerance(aV);
         //
         anIt.Initialize(aLE);
@@ -1605,7 +1609,7 @@ public sealed class BRepFill_AdvancedEvolved
             TopoDS_Edge aE = TopoDS.Edge(anIt.Value());
             //
             BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
-            TopLoc_Location Eloc = aE.Location();
+            Placement Eloc = aE.Location();
             //
             aVExp.Init(aE, TopAbs_VERTEX);
             for (; aVExp.More(); aVExp.Next())
@@ -1628,8 +1632,8 @@ public sealed class BRepFill_AdvancedEvolved
                 for (; itcr.More(); itcr.Next())
                 {
                     BRep_CurveRepresentation cr = itcr.Value();
-                    TopLoc_Location loc = cr.Location();
-                    TopLoc_Location L = (Eloc * loc).Predivided(aV.Location());
+                    Placement loc = cr.Location();
+                    Placement L = (Eloc * loc).Predivided(aV.Location());
                     //
                     // 3D-Curve
                     if (cr.IsCurve3D())

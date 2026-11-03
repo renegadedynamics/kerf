@@ -9,6 +9,8 @@
 // approximate solution (MultiCurve). The algorithm used is the
 // Uzawa algorithm from the mathematical package.
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace Occt;
@@ -29,10 +31,10 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
     where ToolLine : struct, IAppParCurves_LineTool<MultiLine>
 {
     private bool Done;
-    private readonly math_Matrix Cont;
-    private readonly math_Matrix DeCont;
+    private readonly Matrix Cont;
+    private readonly Matrix DeCont;
     private readonly math_Vector Secont;
-    private readonly math_Matrix CTCinv;
+    private readonly Matrix CTCinv;
     private readonly math_Vector Vardua;
     private int IncPass;
     private int IncTan;
@@ -48,21 +50,21 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
     /// points' parameters.
     /// </summary>
     public AppParCurves_ResolConstraint(MultiLine SSP, AppParCurves_MultiCurve SCurv, int FirstPoint, int LastPoint,
-                                        NCollection_HArray1<AppParCurves_ConstraintCouple> TheConstraints, math_Matrix Bern,
-                                        math_Matrix DerivativeBern, double Tolerance = 1.0e-10)
+                                        NCollection_HArray1<AppParCurves_ConstraintCouple> TheConstraints, Matrix Bern,
+                                        Matrix DerivativeBern, double Tolerance = 1.0e-10)
     {
-        Cont = new math_Matrix(1,
+        Cont = new Matrix(1,
                                NbConstraints(SSP, FirstPoint, LastPoint, TheConstraints),
                                1,
                                NbColumns(SSP, SCurv.NbPoles() - 1),
                                0.0);
-        DeCont = new math_Matrix(1,
+        DeCont = new Matrix(1,
                                  NbConstraints(SSP, FirstPoint, LastPoint, TheConstraints),
                                  1,
                                  NbColumns(SSP, SCurv.NbPoles() - 1),
                                  0.0);
         Secont = new math_Vector(1, NbConstraints(SSP, FirstPoint, LastPoint, TheConstraints), 0.0);
-        CTCinv = new math_Matrix(1,
+        CTCinv = new Matrix(1,
                                  NbConstraints(SSP, FirstPoint, LastPoint, TheConstraints),
                                  1,
                                  NbConstraints(SSP, FirstPoint, LastPoint, TheConstraints));
@@ -77,10 +79,10 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
         int myindex, Def = SCurv.NbPoles() - 1;
         int nb3d, nb2d, Npol = Def + 1, Npol2 = 2 * Npol;
         double T1 = 0.0, T2 = 0.0, T3, Tmax, Daij;
-        gp_Vec V;
-        gp_Vec2d V2d;
-        gp_Pnt Poi;
-        gp_Pnt2d Poi2d;
+        Vector3D V;
+        Vector2D V2d;
+        Point3D Poi;
+        Point2D Poi2d;
         AppParCurves_ConstraintCouple mycouple;
         AppParCurves_Constraint FC = AppParCurves_NoConstraint, LC = AppParCurves_NoConstraint, Cons;
 
@@ -139,7 +141,7 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
         CCol = nb3d * 3 + nb2d * 2;
 
         // Declaration et initialisation des matrices et vecteurs de contraintes:
-        math_Matrix ContInit = new(1, IncPass, 1, Npol);
+        Matrix ContInit = new(1, IncPass, 1, Npol);
         math_Vector Start = new(1, CCol * Npol);
         NCollection_Array2<int> Ibont = new(1, NbCu, 1, IncTan);
 
@@ -162,10 +164,10 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
         // poles of SCurv.
         // Filling of secont and resolution.
 
-        NCollection_Array1<gp_Vec> tabV = new(1, mynb3d);
-        NCollection_Array1<gp_Vec2d> tabV2d = new(1, mynb2d);
-        NCollection_Array1<gp_Pnt> tabP = new(1, mynb3d);
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynb2d);
+        NCollection_Array1<Vector3D> tabV = new(1, mynb3d);
+        NCollection_Array1<Vector2D> tabV2d = new(1, mynb2d);
+        NCollection_Array1<Point3D> tabP = new(1, mynb3d);
+        NCollection_Array1<Point2D> tabP2d = new(1, mynb2d);
 
         Inc3 = CCol * IncPass + 1;
         IncCol = 0;
@@ -425,8 +427,8 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
 
         // Resolution par Uzawa:
 
-        math_Uzawa UzaResol = new(Cont, Secont, Start, Tolerance);
-        if (!(UzaResol.IsDone()))
+        Uzawa UzaResol = new(Cont, Secont, Start, Tolerance);
+        if (!(UzaResol.IsDone))
         {
             Done = false;
             return;
@@ -462,13 +464,13 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
             {
                 if (k <= nb3d)
                 {
-                    gp_Pnt Pol = new(VecPoles[IncCol + i], VecPoles[IncCol + Npol + i], VecPoles[IncCol + 2 * Npol + i]);
+                    Point3D Pol = new(VecPoles[IncCol + i], VecPoles[IncCol + Npol + i], VecPoles[IncCol + 2 * Npol + i]);
                     MPol.SetPoint(k, Pol);
                     IncCol = IncCol + 3 * Npol;
                 }
                 else
                 {
-                    gp_Pnt2d Pol2d = new(VecPoles[IncCol + i], VecPoles[IncCol + Npol + i]);
+                    Point2D Pol2d = new(VecPoles[IncCol + i], VecPoles[IncCol + Npol + i]);
                     MPol.SetPoint2d(k, Pol2d);
                     IncCol = IncCol + 2 * Npol;
                 }
@@ -528,10 +530,10 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
     }
 
     /// <summary>The constraint matrix (shared: don't modify).</summary>
-    public math_Matrix ConstraintMatrix() => Cont;
+    public Matrix ConstraintMatrix() => Cont;
 
     /// <summary>The inverse of C tC, symmetrised (shared: don't modify).</summary>
-    public math_Matrix InverseMatrix() => CTCinv;
+    public Matrix InverseMatrix() => CTCinv;
 
     /// <summary>The dual variables of the Uzawa resolution (shared: don't modify).</summary>
     public math_Vector Duale() => Vardua;
@@ -540,7 +542,7 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
     /// The derivative of the constraint matrix with respect to the parameters (the object's own matrix,
     /// recomputed by each call; shared: don't modify).
     /// </summary>
-    public math_Matrix ConstraintDerivative(MultiLine SSP, math_Vector Parameters, int Deg, math_Matrix DA)
+    public Matrix ConstraintDerivative(MultiLine SSP, math_Vector Parameters, int Deg, Matrix DA)
     {
         int i, j, k, nb2d, nb3d, CCol, Inc3, IncCol, Npt;
         int Npol, Npol2, NbCu = ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP);
@@ -549,10 +551,10 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
         Npol = Deg + 1;
         Npol2 = 2 * Npol;
         NCollection_Array2<int> Ibont = new(1, NbCu, 1, IncTan);
-        math_Matrix DeCInit = new(1, IncPass, 1, Npol);
+        Matrix DeCInit = new(1, IncPass, 1, Npol);
         math_Vector DDA = new(1, Npol);
-        gp_Vec V;
-        gp_Vec2d V2d;
+        Vector3D V;
+        Vector2D V2d;
         // T1 and T2 are uninitialised in OCCT; the relations below may read the values the loop above left
         double T1 = 0.0, T2 = 0.0, T3, Tmax, DDaij;
         nb3d = ToolLine.NbP3d(SSP);
@@ -568,8 +570,8 @@ public class AppParCurves_ResolConstraint<MultiLine, ToolLine>
         }
         CCol = nb3d * 3 + nb2d * 2;
 
-        NCollection_Array1<gp_Vec> tabV = new(1, mynb3d);
-        NCollection_Array1<gp_Vec2d> tabV2d = new(1, mynb2d);
+        NCollection_Array1<Vector3D> tabV = new(1, mynb3d);
+        NCollection_Array1<Vector2D> tabV2d = new(1, mynb2d);
 
         for (i = 1; i <= DeCont.RowNumber(); i++)
         {

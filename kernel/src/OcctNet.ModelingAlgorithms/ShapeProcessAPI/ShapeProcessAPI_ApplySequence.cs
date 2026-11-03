@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Resources;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -53,7 +55,7 @@ public class ShapeProcessAPI_ApplySequence
     /// other arguments are unused, as in OCCT.
     /// </summary>
     public TopoDS_Shape PrepareShape(in TopoDS_Shape shape, bool fillmap = false, TopAbs_ShapeEnum until = TopAbs_SHAPE,
-                                     Message_ProgressRange theProgress = default)
+                                     ProgressRange theProgress = default)
     {
         TopoDS_Shape aResult = InternalPrepareShape(shape, theProgress);
         return shape.IsNull() ? aResult : myContext.Result();
@@ -62,13 +64,13 @@ public class ShapeProcessAPI_ApplySequence
     /// <summary>
     /// <see cref="PrepareShape"/> without freezing the result, for ported code (Draw-lite runs it on a copy it owns).
     /// </summary>
-    internal TopoDS_Shape InternalPrepareShape(in TopoDS_Shape shape, Message_ProgressRange theProgress = default)
+    internal TopoDS_Shape InternalPrepareShape(in TopoDS_Shape shape, ProgressRange theProgress = default)
     {
         if (shape.IsNull())
         {
             return shape;
         }
-        Resource_Manager rsc = myContext.ResourceManager()!;
+        Manager rsc = myContext.ResourceManager()!;
         myContext.Init(shape);
 
         string str = mySeq;

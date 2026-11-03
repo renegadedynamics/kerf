@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
@@ -282,10 +284,10 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         else if (shape is Edge edge && shape.GeomType == GeomType.Line)
         {
             var curve = edge.GeomAdaptor();
-            var pnt = new gp_Pnt();
-            var d1 = new gp_Vec();
+            var pnt = new Point3D();
+            var d1 = new Vector3D();
             curve.D1(curve.FirstParameter(), out pnt, out d1);
-            var dir = new gp_Dir(d1);
+            var dir = new Direction3D(d1);
             shapeAxis = new Axis(new Vector(pnt), new Vector(dir));
         }
         else
@@ -616,7 +618,7 @@ internal static class Measures
                 _ => null,
             };
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or Standard_Failure or NotImplementedException)
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or NotImplementedException)
         {
             return null;
         }

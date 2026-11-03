@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using System.Diagnostics.CodeAnalysis;
 using static Occt.TopAbs_Orientation;
 
@@ -184,5 +185,5 @@ public partial struct ChFiDS_FaceInterference : IEquatable<ChFiDS_FaceInterferen
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("ChFiDS_FaceInterference", lineindex, (int)LineTransition, firstParam, lastParam);
+        => Constants.Format("ChFiDS_FaceInterference", lineindex, (int)LineTransition, firstParam, lastParam);
 }

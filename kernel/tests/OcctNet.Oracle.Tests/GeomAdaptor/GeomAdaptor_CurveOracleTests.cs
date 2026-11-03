@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -17,9 +18,9 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(60, 4);
 
-    private static readonly GeomAbs_Shape[] Shapes =
-        [GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_G1, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_G2,
-         GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3, GeomAbs_Shape.GeomAbs_CN];
+    private static readonly Continuity[] Shapes =
+        [Continuity.C0, Continuity.G1, Continuity.C1, Continuity.G2,
+         Continuity.C2, Continuity.C3, Continuity.CN];
 
     /// <summary>Continuity, and NbIntervals and Intervals for every continuity (throwing on both sides, or neither).</summary>
     private static void SameIntervals(Oracle theO, N.GeomAdaptor_Curve theN, GeomAdaptor_Curve theP, string theWhat)
@@ -29,7 +30,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
         {
             theO.Same(aNC, aPC, theWhat + " Continuity");
         }
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNNb = 0, aPNb = 0;
             if (!SameOutcome(Catch(() => aNNb = theN.NbIntervals((N.GeomAbs_Shape)(int)aS)), Catch(() => aPNb = theP.NbIntervals(aS)),
@@ -68,14 +69,14 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
 
         switch (theP.GetType())
         {
-            case GeomAbs_CurveType.GeomAbs_Line:
+            case CurveKind.Line:
             {
                 using N.gp_Lin aNL = theN.Line();
                 using N.gp_Ax1 aNA = aNL.Position();
                 SameAx1(theO, aNA, theP.Line().Position(), theWhat + " Line");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Circle:
+            case CurveKind.Circle:
             {
                 using N.gp_Circ aNC = theN.Circle();
                 using N.gp_Ax2 aNA = aNC.Position();
@@ -83,7 +84,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 theO.Same(aNC.Radius(), theP.Circle().Radius(), theWhat + " Circle radius");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Ellipse:
+            case CurveKind.Ellipse:
             {
                 using N.gp_Elips aNE = theN.Ellipse();
                 using N.gp_Ax2 aNA = aNE.Position();
@@ -92,7 +93,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 theO.Same(aNE.MinorRadius(), theP.Ellipse().MinorRadius(), theWhat + " Ellipse minor");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Hyperbola:
+            case CurveKind.Hyperbola:
             {
                 using N.gp_Hypr aNH = theN.Hyperbola();
                 using N.gp_Ax2 aNA = aNH.Position();
@@ -101,7 +102,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 theO.Same(aNH.MinorRadius(), theP.Hyperbola().MinorRadius(), theWhat + " Hyperbola minor");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Parabola:
+            case CurveKind.Parabola:
             {
                 using N.gp_Parab aNPa = theN.Parabola();
                 using N.gp_Ax2 aNA = aNPa.Position();
@@ -109,7 +110,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 theO.Same(aNPa.Focal(), theP.Parabola().Focal(), theWhat + " Parabola focal");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_BezierCurve:
+            case CurveKind.BezierCurve:
             {
                 theO.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
                 theO.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
@@ -117,7 +118,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 GeomIsoCurveCompare.SameCurve(theO, aNB, theP.Bezier(), theWhat + " Bezier()");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_BSplineCurve:
+            case CurveKind.BSplineCurve:
             {
                 theO.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
                 theO.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
@@ -126,7 +127,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                 GeomIsoCurveCompare.SameCurve(theO, aNB, theP.BSpline(), theWhat + " BSpline()");
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_OffsetCurve:
+            case CurveKind.OffsetCurve:
             {
                 using N.Geom_OffsetCurve aNO = theN.OffsetCurve()!;
                 Geom_OffsetCurve aPO = theP.OffsetCurve();
@@ -145,7 +146,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
     private static List<double> Params(Oracle theO, GeomAdaptor_Curve theP, double theRange)
     {
         double aF = theP.FirstParameter(), aL = theP.LastParameter();
-        bool isInfinite = Precision.IsInfinite(aF) || Precision.IsInfinite(aL);
+        bool isInfinite = global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
         var aParams = new List<double>();
         for (int k = 0; k < 8; k++)
         {
@@ -160,7 +161,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             aParams.Add(aL - 1e-9 * (aL - aF));
             aParams.Add(aF);
         }
-        if (theP.GetType() == GeomAbs_CurveType.GeomAbs_BSplineCurve)
+        if (theP.GetType() == CurveKind.BSplineCurve)
         {
             Geom_BSplineCurve aBS = theP.BSpline();
             for (int i = 1; i <= aBS.NbKnots(); i++)
@@ -204,7 +205,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                     CompareAdaptors(anOracle, aNA, aPA, aRange, aWhat);
 
                     double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
-                    if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL) || aPC.IsPeriodic() && anOracle.Bool())
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPC.IsPeriodic() && anOracle.Bool())
                     {
                         aF = anOracle.Real(-aRange, 0);
                         aL = aF + anOracle.Real(0.1, 2 * aRange);

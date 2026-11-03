@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,9 +21,9 @@ public sealed class GccAna_Lin2dBisec
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Lin2d> linsol;
-    private readonly NCollection_Array1<gp_Pnt2d> pntint1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pntint2sol;
+    private readonly NCollection_Array1<Line2D> linsol;
+    private readonly NCollection_Array1<Point2D> pntint1sol;
+    private readonly NCollection_Array1<Point2D> pntint2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -32,11 +38,11 @@ public sealed class GccAna_Lin2dBisec
     //=========================================================================
 
     /// <summary>Constructs the bisecting lines of Lin1 and Lin2.</summary>
-    public GccAna_Lin2dBisec(in gp_Lin2d Lin1, in gp_Lin2d Lin2)
+    public GccAna_Lin2dBisec(in Line2D Lin1, in Line2D Lin2)
     {
-        linsol = new NCollection_Array1<gp_Lin2d>(1, 2);
-        pntint1sol = new NCollection_Array1<gp_Pnt2d>(1, 2);
-        pntint2sol = new NCollection_Array1<gp_Pnt2d>(1, 2);
+        linsol = new NCollection_Array1<Line2D>(1, 2);
+        pntint1sol = new NCollection_Array1<Point2D>(1, 2);
+        pntint2sol = new NCollection_Array1<Point2D>(1, 2);
         par1sol = new NCollection_Array1<double>(1, 2);
         par2sol = new NCollection_Array1<double>(1, 2);
         pararg1 = new NCollection_Array1<double>(1, 2);
@@ -62,8 +68,8 @@ public sealed class GccAna_Lin2dBisec
                     // as straight lines can be concurrent for gp_Lin2d
                     // so dist = 0.0 (test of the angle too strict ?)
                     double dist = Lin1.Distance(Lin2.Location()) / 2.0;
-                    double cross = new gp_Vec2d(-Lin2.Direction().Y(), Lin2.Direction().X())
-                                       .Dot(new gp_Vec2d(Lin2.Location(), Lin1.Location()));
+                    double cross = new Vector2D(-Lin2.Direction().Y(), Lin2.Direction().X())
+                                       .Dot(new Vector2D(Lin2.Location(), Lin1.Location()));
                     if (cross < 0)
                     {
                         dist = -dist;
@@ -71,8 +77,8 @@ public sealed class GccAna_Lin2dBisec
                     NbrSol++;
                     WellDone = true;
                     linsol[NbrSol] =
-                        new gp_Lin2d(new gp_Pnt2d(Lin2.Location().XY()
-                                                  + new gp_XY(-Lin2.Direction().Y() * dist, Lin2.Direction().X() * dist)),
+                        new Line2D(new Point2D(Lin2.Location().XY()
+                                                  + new Xy(-Lin2.Direction().Y() * dist, Lin2.Direction().X() * dist)),
                                      Lin2.Direction());
                 }
             }
@@ -83,11 +89,11 @@ public sealed class GccAna_Lin2dBisec
                     for (int i = 1; i <= Intp.NbPoints(); i++)
                     {
                         NbrSol++;
-                        linsol[NbrSol] = new gp_Lin2d(Intp.Point(i).Value(),
-                                                      new gp_Dir2d(Lin1.Direction().XY() + Lin2.Direction().XY()));
+                        linsol[NbrSol] = new Line2D(Intp.Point(i).Value(),
+                                                      new Direction2D(Lin1.Direction().XY() + Lin2.Direction().XY()));
                         NbrSol++;
-                        linsol[NbrSol] = new gp_Lin2d(Intp.Point(i).Value(),
-                                                      new gp_Dir2d(Lin1.Direction().XY() - Lin2.Direction().XY()));
+                        linsol[NbrSol] = new Line2D(Intp.Point(i).Value(),
+                                                      new Direction2D(Lin1.Direction().XY() - Lin2.Direction().XY()));
                         if (Lin1.Angle(Lin2) >= 0.0)
                         {
                             linsol[NbrSol].Reverse();
@@ -102,10 +108,10 @@ public sealed class GccAna_Lin2dBisec
         {
             pntint1sol[i] = linsol[i].Location();
             pntint2sol[i] = pntint1sol[i];
-            par1sol[i] = ElCLib.Parameter(linsol[i], pntint1sol[i]);
-            par2sol[i] = ElCLib.Parameter(linsol[i], pntint2sol[i]);
-            pararg1[i] = ElCLib.Parameter(Lin1, pntint1sol[i]);
-            pararg2[i] = ElCLib.Parameter(Lin2, pntint2sol[i]);
+            par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pntint1sol[i]);
+            par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pntint2sol[i]);
+            pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin1, pntint1sol[i]);
+            pararg2[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Lin2, pntint2sol[i]);
         }
     }
 
@@ -120,7 +126,7 @@ public sealed class GccAna_Lin2dBisec
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return NbrSol;
     }
@@ -129,29 +135,29 @@ public sealed class GccAna_Lin2dBisec
     /// The solution number Index: the first is the inside bisector (along D1 + D2), the second the outside one (along
     /// D1 - D2).
     /// </summary>
-    public gp_Lin2d ThisSolution(int Index)
+    public Line2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return linsol[Index];
     }
 
     /// <summary>The intersection of the solution number Index with the first argument.</summary>
-    public void Intersection1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Intersection1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -162,15 +168,15 @@ public sealed class GccAna_Lin2dBisec
     }
 
     /// <summary>The intersection of the solution number Index with the second argument.</summary>
-    public void Intersection2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Intersection2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {

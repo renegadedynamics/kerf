@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceStyleReflectanceAmbient
 /// </summary>
-public class StepVisual_SurfaceStyleReflectanceAmbient : Standard_Transient
+public class StepVisual_SurfaceStyleReflectanceAmbient : Transient
 {
     private double myAmbientReflectance;
 

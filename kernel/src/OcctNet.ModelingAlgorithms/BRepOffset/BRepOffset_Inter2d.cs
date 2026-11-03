@@ -5,10 +5,14 @@
 
 //  Modified by skv - Wed Dec 24 18:08:39 2003 OCC4455
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -59,9 +63,9 @@ public static class BRepOffset_Inter2d
             if (BRepTools.IsReallyClosed(anEdge, theFace))
             {
                 Geom2d_Curve? aPCurve = BRep_Tool.CurveOnSurface(anEdge, theFace, out double fpar, out _);
-                gp_Vec2d aTangent = aPCurve!.DN(fpar, 1);
-                double aCrossProd1 = aTangent ^ new gp_Vec2d(gp.DX2d());
-                double aCrossProd2 = aTangent ^ new gp_Vec2d(gp.DY2d());
+                Vector2D aTangent = aPCurve!.DN(fpar, 1);
+                double aCrossProd1 = aTangent ^ new Vector2D(Constants.DX2d());
+                double aCrossProd2 = aTangent ^ new Vector2D(Constants.DY2d());
                 if (Math.Abs(aCrossProd2) < Math.Abs(aCrossProd1))
                 { // pcurve is parallel to OY
                     return 1;
@@ -155,8 +159,8 @@ public static class BRepOffset_Inter2d
                     double aParam2 = BRep_Tool.Parameter(aVertex, anEdge2);
                     BRepAdaptor_Curve2d aBAcurve1 = new(anEdge1, theFace);
                     BRepAdaptor_Curve2d aBAcurve2 = new(anEdge2, theFace);
-                    gp_Pnt2d aPnt1 = aBAcurve1.Value(aParam1);
-                    gp_Pnt2d aPnt2 = aBAcurve2.Value(aParam2);
+                    Point2D aPnt1 = aBAcurve1.Value(aParam1);
+                    Point2D aPnt2 = aBAcurve2.Value(aParam2);
                     double aDelta = Math.Abs(aPnt1.Coord(IndCoord) - aPnt2.Coord(IndCoord));
                     if (aDelta > aMaxDelta)
                     {
@@ -266,7 +270,7 @@ public static class BRepOffset_Inter2d
                 continue;
             }
             //
-            gp_Pnt aP = BRep_Tool.Pnt(aV);
+            Point3D aP = BRep_Tool.Pnt(aV);
             double aTol = BRep_Tool.Tolerance(aV);
             //
             NCollection_List<TopoDS_Shape> aLVC = new();
@@ -278,7 +282,7 @@ public static class BRepOffset_Inter2d
                 {
                     break;
                 }
-                gp_Pnt aPEx = BRep_Tool.Pnt(aVEx);
+                Point3D aPEx = BRep_Tool.Pnt(aVEx);
                 double aTolVEx = BRep_Tool.Tolerance(aVEx);
                 if (aP.IsEqual(aPEx, aTol + aTolVEx))
                 {
@@ -398,9 +402,9 @@ public static class BRepOffset_Inter2d
             double TolSum = BRep_Tool.Tolerance(E1) + BRep_Tool.Tolerance(E2);
             TolSum = Max(TolSum, 1.0e-5);
 
-            NCollection_Sequence<gp_Pnt> ResPoints = new();
+            NCollection_Sequence<Point3D> ResPoints = new();
             NCollection_Sequence<double> ResParamsOnE1 = new(), ResParamsOnE2 = new();
-            gp_Pnt DegPoint = new();
+            Point3D DegPoint = new();
             bool WithDegen = BRep_Tool.Degenerated(E1) || BRep_Tool.Degenerated(E2);
 
             if (WithDegen)
@@ -426,14 +430,14 @@ public static class BRepOffset_Inter2d
             Geom2dInt_GInter Inter2d = new(GAC1, GAC2, TolDub, TolDub);
             for (i = 1; i <= Inter2d.NbPoints(); i++)
             {
-                gp_Pnt P3d;
+                Point3D P3d;
                 if (WithDegen)
                 {
                     P3d = DegPoint;
                 }
                 else
                 {
-                    gp_Pnt2d P2d = Inter2d.Point(i).Value();
+                    Point2D P2d = Inter2d.Point(i).Value();
                     P3d = BAsurf.Value(P2d.X(), P2d.Y());
                 }
                 ResPoints.Append(P3d);
@@ -445,19 +449,19 @@ public static class BRepOffset_Inter2d
             {
                 double aT1 = ResParamsOnE1[i]; // ponc1.Parameter();
                 double aT2 = ResParamsOnE2[i]; // ponc2.Parameter();
-                if (Precision.IsInfinite(aT1) || Precision.IsInfinite(aT2))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aT1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aT2))
                 {
                     // OCCT_DEBUG output left out
                     continue;
                 }
 
-                gp_Pnt P = ResPoints[i]; // ponc1.Value();
+                Point3D P = ResPoints[i]; // ponc1.Value();
                 TopoDS_Vertex aNewVertex = new BRepLib_MakeVertex(P).InternalVertex();
                 aNewVertex.Orientation(TopAbs_INTERNAL);
                 B.UpdateVertex(aNewVertex, aT1, E1, Tol);
                 B.UpdateVertex(aNewVertex, aT2, E2, Tol);
-                gp_Pnt P1 = CE1.Value(aT1);
-                gp_Pnt P2 = CE2.Value(aT2);
+                Point3D P1 = CE1.Value(aT1);
+                Point3D P2 = CE2.Value(aT2);
                 double dist1, dist2, dist3;
                 dist1 = P1.Distance(P);
                 dist2 = P2.Distance(P);
@@ -474,9 +478,9 @@ public static class BRepOffset_Inter2d
                 {
                     BRepAdaptor_Curve2d PCE1 = new(E1, F);
                     BRepAdaptor_Curve2d PCE2 = new(E2, F);
-                    gp_Vec2d V1or, V2or;
-                    PCE1.D1(aT1, out _, out gp_Vec2d V1);
-                    PCE2.D1(aT2, out _, out gp_Vec2d V2);
+                    Vector2D V1or, V2or;
+                    PCE1.D1(aT1, out _, out Vector2D V1);
+                    PCE2.D1(aT2, out _, out Vector2D V2);
                     V1or = V1;
                     V2or = V2;
                     if (E1.Orientation() == TopAbs_REVERSED)
@@ -534,8 +538,8 @@ public static class BRepOffset_Inter2d
                     }
                 }
                 //
-                gp_Pnt P1 = BRep_Tool.Pnt(V1v[j]);
-                gp_Pnt P2 = BRep_Tool.Pnt(V2v[k]);
+                Point3D P1 = BRep_Tool.Pnt(V1v[j]);
+                Point3D P2 = BRep_Tool.Pnt(V2v[k]);
                 double Dist = P1.Distance(P2);
                 if (Dist < TolConf)
                 {
@@ -572,7 +576,7 @@ public static class BRepOffset_Inter2d
                 for (it1LV1.Initialize(LV1), it1LV2.Initialize(LV2); it1LV1.More(); it1LV1.Next(), it1LV2.Next())
                 {
                     TopoDS_Vertex aV1 = TopoDS.Vertex(it1LV1.Value());
-                    gp_Pnt P1 = BRep_Tool.Pnt(aV1);
+                    Point3D P1 = BRep_Tool.Pnt(aV1);
                     double aTol1 = BRep_Tool.Tolerance(aV1);
 
                     j = 1;
@@ -580,7 +584,7 @@ public static class BRepOffset_Inter2d
                     while (j < i)
                     {
                         TopoDS_Vertex aV2 = TopoDS.Vertex(it2LV1.Value());
-                        gp_Pnt P2 = BRep_Tool.Pnt(aV2);
+                        Point3D P2 = BRep_Tool.Pnt(aV2);
                         double aTol = Max(aTol1, BRep_Tool.Tolerance(aV2));
                         if (P1.IsEqual(P2, aTol))
                         {
@@ -664,9 +668,9 @@ public static class BRepOffset_Inter2d
         BRepLib.BuildCurve3d(E1);
         BRepLib.BuildCurve3d(E2);
 
-        NCollection_Sequence<gp_Pnt> ResPoints = new();
+        NCollection_Sequence<Point3D> ResPoints = new();
         NCollection_Sequence<double> ResParamsOnE1 = new(), ResParamsOnE2 = new();
-        gp_Pnt DegPoint = new();
+        Point3D DegPoint = new();
         bool WithDegen = BRep_Tool.Degenerated(E1) || BRep_Tool.Degenerated(E2);
 
         if (WithDegen)
@@ -687,7 +691,7 @@ public static class BRepOffset_Inter2d
         //
         Geom2dAdaptor_Curve GAC1 = new(pcurve1, f[1], l[1]);
         Geom2dAdaptor_Curve GAC2 = new(pcurve2, f[2], l[2]);
-        if ((GAC1.GetType() == GeomAbs_Line) && (GAC2.GetType() == GeomAbs_Line))
+        if ((GAC1.GetType() == Line) && (GAC2.GetType() == Line))
         {
             // Just quickly check if lines coincide
             double anAngle = Math.Abs(GAC1.Line().Direction().Angle(GAC2.Line().Direction()));
@@ -709,21 +713,21 @@ public static class BRepOffset_Inter2d
         //
         if (!Inter2d.IsDone() || Inter2d.NbPoints() == 0)
         {
-            theCoincide = (Inter2d.NbSegments() != 0 && (GAC1.GetType() == GeomAbs_Line)
-                           && (GAC2.GetType() == GeomAbs_Line));
+            theCoincide = (Inter2d.NbSegments() != 0 && (GAC1.GetType() == Line)
+                           && (GAC2.GetType() == Line));
             return;
         }
         //
         for (i = 1; i <= Inter2d.NbPoints(); i++)
         {
-            gp_Pnt P3d;
+            Point3D P3d;
             if (WithDegen)
             {
                 P3d = DegPoint;
             }
             else
             {
-                gp_Pnt2d P2d = Inter2d.Point(i).Value();
+                Point2D P2d = Inter2d.Point(i).Value();
                 P3d = BAsurf.Value(P2d.X(), P2d.Y());
             }
             ResPoints.Append(P3d);
@@ -735,19 +739,19 @@ public static class BRepOffset_Inter2d
         {
             double aT1 = ResParamsOnE1[i]; // ponc1.Parameter();
             double aT2 = ResParamsOnE2[i]; // ponc2.Parameter();
-            if (Precision.IsInfinite(aT1) || Precision.IsInfinite(aT2))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aT1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aT2))
             {
                 // OCCT_DEBUG output left out
                 continue;
             }
 
-            gp_Pnt P = ResPoints[i]; // ponc1.Value();
+            Point3D P = ResPoints[i]; // ponc1.Value();
             TopoDS_Vertex aNewVertex = new BRepLib_MakeVertex(P).InternalVertex();
             aNewVertex.Orientation(TopAbs_INTERNAL);
             B.UpdateVertex(aNewVertex, aT1, E1, Tol);
             B.UpdateVertex(aNewVertex, aT2, E2, Tol);
-            gp_Pnt P1 = CE1.Value(aT1);
-            gp_Pnt P2 = CE2.Value(aT2);
+            Point3D P1 = CE1.Value(aT1);
+            Point3D P2 = CE2.Value(aT2);
             double dist1, dist2, dist3;
             dist1 = P1.Distance(P);
             dist2 = P2.Distance(P);
@@ -764,9 +768,9 @@ public static class BRepOffset_Inter2d
             {
                 BRepAdaptor_Curve2d PCE1 = new(E1, F);
                 BRepAdaptor_Curve2d PCE2 = new(E2, F);
-                gp_Vec2d V1or, V2or;
-                PCE1.D1(aT1, out _, out gp_Vec2d V1);
-                PCE2.D1(aT2, out _, out gp_Vec2d V2);
+                Vector2D V1or, V2or;
+                PCE1.D1(aT1, out _, out Vector2D V1);
+                PCE2.D1(aT2, out _, out Vector2D V2);
                 V1or = V1;
                 V2or = V2;
                 if (E1.Orientation() == TopAbs_REVERSED)
@@ -833,8 +837,8 @@ public static class BRepOffset_Inter2d
                     }
                 }
                 //
-                gp_Pnt P1 = BRep_Tool.Pnt(V1v[j]);
-                gp_Pnt P2 = BRep_Tool.Pnt(V2v[k]);
+                Point3D P1 = BRep_Tool.Pnt(V1v[j]);
+                Point3D P2 = BRep_Tool.Pnt(V2v[k]);
                 double Dist = P1.Distance(P2);
                 if (Dist < TolConf)
                 {
@@ -859,7 +863,7 @@ public static class BRepOffset_Inter2d
             // there can be doubles
             //----------------------------------
             NCollection_List<TopoDS_Shape>.Iterator it1LV1 = new(), it1LV2 = new(), it2LV1 = new();
-            gp_Pnt P1, P2;
+            Point3D P1, P2;
             bool Purge = true;
 
             while (Purge)
@@ -902,12 +906,12 @@ public static class BRepOffset_Inter2d
             if (LV1.Extent() > 1)
             {
                 // std::cout << "IFV - RefEdgeInter: remove vertex" << std::endl;
-                gp_Pnt Pref = BRep_Tool.Pnt(theVref);
+                Point3D Pref = BRep_Tool.Pnt(theVref);
                 double dmin = RealLast();
                 TopoDS_Vertex Vmin = new();
                 for (it1LV1.Initialize(LV1); it1LV1.More(); it1LV1.Next())
                 {
-                    gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(it1LV1.Value()));
+                    Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(it1LV1.Value()));
                     double d = P.SquareDistance(Pref);
                     if (d < dmin)
                     {
@@ -967,12 +971,12 @@ public static class BRepOffset_Inter2d
 
         double aNbSKnots = 0, aNbC2dKnots = 0;
 
-        if (aSurf.GetType() == GeomAbs_BSplineSurface)
+        if (aSurf.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface aBSpline = aSurf.BSpline();
             aNbSKnots = Max(aBSpline.NbUKnots(), aBSpline.NbVKnots());
         }
-        if (aCurv2d.GetType() == GeomAbs_BSplineCurve)
+        if (aCurv2d.GetType() == BSplineCurve)
         {
             aNbC2dKnots = aCurv2d.NbKnots();
         }
@@ -1004,9 +1008,9 @@ public static class BRepOffset_Inter2d
                 Geom2d_BezierCurve aBezier = (Geom2d_BezierCurve)NewPCurve;
                 if (aBezier.NbPoles() == 2)
                 {
-                    NCollection_Array1<gp_Pnt2d> thePoles = aBezier.InternalPoles();
-                    gp_Vec2d aVec = new(thePoles[1], thePoles[2]);
-                    NewPCurve = new Geom2d_Line(thePoles[1], new gp_Dir2d(aVec));
+                    NCollection_Array1<Point2D> thePoles = aBezier.InternalPoles();
+                    Vector2D aVec = new(thePoles[1], thePoles[2]);
+                    NewPCurve = new Geom2d_Line(thePoles[1], new Direction2D(aVec));
                     return true;
                 }
             }
@@ -1015,9 +1019,9 @@ public static class BRepOffset_Inter2d
                 Geom2d_BSplineCurve aBSpline = (Geom2d_BSplineCurve)NewPCurve;
                 if (aBSpline.NbKnots() == 2 && aBSpline.NbPoles() == 2)
                 {
-                    NCollection_Array1<gp_Pnt2d> thePoles = aBSpline.InternalPoles();
-                    gp_Vec2d aVec = new(thePoles[1], thePoles[2]);
-                    NewPCurve = new Geom2d_Line(thePoles[1], new gp_Dir2d(aVec));
+                    NCollection_Array1<Point2D> thePoles = aBSpline.InternalPoles();
+                    Vector2D aVec = new(thePoles[1], thePoles[2]);
+                    NewPCurve = new Geom2d_Line(thePoles[1], new Direction2D(aVec));
                     return true;
                 }
             }
@@ -1029,21 +1033,21 @@ public static class BRepOffset_Inter2d
 
         // The curve is not prolonged on begin or end.
         // Trying to prolong it adding a segment to its bound.
-        gp_Pnt2d aPBnd;
-        gp_Vec2d aVBnd;
-        gp_Pnt2d aPBeg;
-        gp_Dir2d aDBnd = new();
+        Point2D aPBnd;
+        Vector2D aVBnd;
+        Point2D aPBeg;
+        Direction2D aDBnd = new();
         Geom2d_Line aLin;
         Geom2d_TrimmedCurve aSegment;
-        Geom2dConvert_CompCurveToBSplineCurve aCompCurve = new(aTrCurve, Convert_RationalC1);
-        double aTol = Precision.Confusion();
+        Geom2dConvert_CompCurveToBSplineCurve aCompCurve = new(aTrCurve, RationalC1);
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double aDelta = Max(a2Offset, 1.0);
 
         if (FirstPar > anEf - a2Offset)
         {
             aPCurve.D1(FirstPar, out aPBnd, out aVBnd);
             aDBnd.SetXY(aVBnd.XY());
-            aPBeg = aPBnd.Translated(new gp_Vec2d(-aDelta * aDBnd.XY()));
+            aPBeg = aPBnd.Translated(new Vector2D(-aDelta * aDBnd.XY()));
             aLin = new Geom2d_Line(aPBeg, aDBnd);
             aSegment = new Geom2d_TrimmedCurve(aLin, 0, aDelta);
 
@@ -1102,7 +1106,7 @@ public static class BRepOffset_Inter2d
         double FirstParOnPC = RealFirst(), LastParOnPC = RealLast();
         Geom2d_Curve? MinPC = null;
         Geom_Surface? MinSurf = null;
-        TopLoc_Location MinLoc = new();
+        Placement MinLoc = new();
 
         NCollection_List<BRep_CurveRepresentation>.Iterator itr = new(((BRep_TEdge)NE.TShape()!).ChangeCurves());
         for (; itr.More(); itr.Next())
@@ -1150,24 +1154,24 @@ public static class BRepOffset_Inter2d
                 Geom_Surface theSurf = CurveRep.Surface()!;
                 theSurf.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
                 NCollection_Sequence<Geom2d_Curve> BoundLines = new();
-                if (!Precision.IsInfinite(Vmin))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(Vmin))
                 {
-                    Geom2d_Line aLine = new(new gp_Pnt2d(0.0, Vmin), new gp_Dir2d(gp_Dir2d.D.X));
+                    Geom2d_Line aLine = new(new Point2D(0.0, Vmin), new Direction2D(Direction2D.D.X));
                     BoundLines.Append(aLine);
                 }
-                if (!Precision.IsInfinite(Umin))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(Umin))
                 {
-                    Geom2d_Line aLine = new(new gp_Pnt2d(Umin, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+                    Geom2d_Line aLine = new(new Point2D(Umin, 0.0), new Direction2D(Direction2D.D.Y));
                     BoundLines.Append(aLine);
                 }
-                if (!Precision.IsInfinite(Vmax))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(Vmax))
                 {
-                    Geom2d_Line aLine = new(new gp_Pnt2d(0.0, Vmax), new gp_Dir2d(gp_Dir2d.D.X));
+                    Geom2d_Line aLine = new(new Point2D(0.0, Vmax), new Direction2D(Direction2D.D.X));
                     BoundLines.Append(aLine);
                 }
-                if (!Precision.IsInfinite(Umax))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(Umax))
                 {
-                    Geom2d_Line aLine = new(new gp_Pnt2d(Umax, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+                    Geom2d_Line aLine = new(new Point2D(Umax, 0.0), new Direction2D(Direction2D.D.Y));
                     BoundLines.Append(aLine);
                 }
 
@@ -1177,13 +1181,13 @@ public static class BRepOffset_Inter2d
                 for (i = 1; i <= BoundLines.Length(); i++)
                 {
                     Geom2dAdaptor_Curve GAline = new(BoundLines[i]);
-                    IntCC.Perform(GAcurve, GAline, Precision.PConfusion(), Precision.PConfusion());
+                    IntCC.Perform(GAcurve, GAline, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
                     if (IntCC.IsDone())
                     {
                         for (j = 1; j <= IntCC.NbPoints(); j++)
                         {
                             IntRes2d_IntersectionPoint ip = IntCC.Point(j);
-                            gp_Pnt2d aPoint = ip.Value();
+                            Point2D aPoint = ip.Value();
                             if (aPoint.X() >= Umin && aPoint.X() <= Umax && aPoint.Y() >= Vmin && aPoint.Y() <= Vmax)
                             {
                                 params_.Append(ip.ParamOnFirst());
@@ -1195,7 +1199,7 @@ public static class BRepOffset_Inter2d
                             if (is_.HasFirstPoint())
                             {
                                 IntRes2d_IntersectionPoint ip = is_.FirstPoint();
-                                gp_Pnt2d aPoint = ip.Value();
+                                Point2D aPoint = ip.Value();
                                 if (aPoint.X() >= Umin && aPoint.X() <= Umax && aPoint.Y() >= Vmin
                                     && aPoint.Y() <= Vmax)
                                 {
@@ -1205,7 +1209,7 @@ public static class BRepOffset_Inter2d
                             if (is_.HasLastPoint())
                             {
                                 IntRes2d_IntersectionPoint ip = is_.LastPoint();
-                                gp_Pnt2d aPoint = ip.Value();
+                                Point2D aPoint = ip.Value();
                                 if (aPoint.X() >= Umin && aPoint.X() <= Umax && aPoint.Y() >= Vmin
                                     && aPoint.Y() <= Vmax)
                                 {
@@ -1219,7 +1223,7 @@ public static class BRepOffset_Inter2d
                 {
                     if (params_.Length() == 1)
                     {
-                        gp_Pnt2d PntFirst = theCurve.Value(FirstPar);
+                        Point2D PntFirst = theCurve.Value(FirstPar);
                         if (PntFirst.X() >= Umin && PntFirst.X() <= Umax && PntFirst.Y() >= Vmin
                             && PntFirst.Y() <= Vmax)
                         {
@@ -1307,12 +1311,12 @@ public static class BRepOffset_Inter2d
                 {
                     f = FirstParOnPC;
                     l = LastParOnPC;
-                    gp_Trsf aMinLocTrsf = MinLoc.Transformation();
+                    Transform3D aMinLocTrsf = MinLoc.Transformation();
                     GeomAPI_ProjectPointOnCurve Projector = new();
-                    if (!Precision.IsInfinite(FirstParOnPC))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(FirstParOnPC))
                     {
-                        gp_Pnt2d P2d1 = MinPC.Value(FirstParOnPC);
-                        gp_Pnt P1 = MinSurf!.Value(P2d1.X(), P2d1.Y());
+                        Point2D P2d1 = MinPC.Value(FirstParOnPC);
+                        Point3D P1 = MinSurf!.Value(P2d1.X(), P2d1.Y());
                         P1.Transform(aMinLocTrsf);
                         Projector.Init(P1, C3d);
                         if (Projector.NbPoints() > 0)
@@ -1321,10 +1325,10 @@ public static class BRepOffset_Inter2d
                         }
                         // OCCT_DEBUG output left out
                     }
-                    if (!Precision.IsInfinite(LastParOnPC))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(LastParOnPC))
                     {
-                        gp_Pnt2d P2d2 = MinPC.Value(LastParOnPC);
-                        gp_Pnt P2 = MinSurf!.Value(P2d2.X(), P2d2.Y());
+                        Point2D P2d2 = MinPC.Value(LastParOnPC);
+                        Point3D P2 = MinSurf!.Value(P2d2.X(), P2d2.Y());
                         P2.Transform(aMinLocTrsf);
                         Projector.Init(P2, C3d);
                         if (Projector.NbPoints() > 0)
@@ -1335,16 +1339,16 @@ public static class BRepOffset_Inter2d
                     }
                 }
                 BB.Range(NE, f, l);
-                if (!Precision.IsInfinite(f) && !Precision.IsInfinite(l))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
                 {
-                    BRepLib.SameParameter(NE, Precision.Confusion(), true);
+                    BRepLib.SameParameter(NE, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                 }
             }
             else if (!BRep_Tool.Degenerated(E)) // no 3d curve
             {
                 MinSurf = (Geom_Surface)MinSurf!.Transformed(MinLoc.Transformation());
                 double max_deviation = 0.0;
-                if (Precision.IsInfinite(FirstParOnPC) || Precision.IsInfinite(LastParOnPC))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(FirstParOnPC) || global::Kerf.Engine.Foundation.Precision.IsInfinite(LastParOnPC))
                 {
                     if (MinPC!.GetType() == typeof(Geom2d_Line))
                     {
@@ -1357,19 +1361,19 @@ public static class BRepOffset_Inter2d
                                  || MinSurf.GetType() == typeof(Geom_ConicalSurface))
                         {
                             Geom2d_Line theLine = (Geom2d_Line)MinPC;
-                            gp_Dir2d LineDir = theLine.Direction();
-                            if (LineDir.IsParallel(gp.DY2d(), Precision.Angular()))
+                            Direction2D LineDir = theLine.Direction();
+                            if (LineDir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 IsLine = true;
                             }
                         }
                         if (IsLine)
                         {
-                            gp_Pnt2d P2d1 = MinPC.Value(0.0), P2d2 = MinPC.Value(1.0);
-                            gp_Pnt P1 = MinSurf.Value(P2d1.X(), P2d1.Y());
-                            gp_Pnt P2 = MinSurf.Value(P2d2.X(), P2d2.Y());
-                            gp_Vec aVec = new(P1, P2);
-                            C3d = new Geom_Line(P1, new gp_Dir(aVec));
+                            Point2D P2d1 = MinPC.Value(0.0), P2d2 = MinPC.Value(1.0);
+                            Point3D P1 = MinSurf.Value(P2d1.X(), P2d1.Y());
+                            Point3D P2 = MinSurf.Value(P2d2.X(), P2d2.Y());
+                            Vector3D aVec = new(P1, P2);
+                            C3d = new Geom_Line(P1, new Direction3D(aVec));
                         }
                     }
                 }
@@ -1381,10 +1385,10 @@ public static class BRepOffset_Inter2d
                     Geom2dAdaptor_Curve HC2d = AC2d;
                     GeomAdaptor_Surface HSurf = GAsurf;
                     Adaptor3d_CurveOnSurface ConS = new(HC2d, HSurf);
-                    GeomAbs_Shape Continuity = GeomAbs_C1;
+                    Continuity Continuity = C1;
                     int MaxDegree = 14;
                     int MaxSegment = evaluateMaxSegment(ConS);
-                    GeomLib.BuildCurve3d(Precision.Confusion(),
+                    GeomLib.BuildCurve3d(global::Kerf.Engine.Foundation.Precision.Confusion(),
                                          ConS,
                                          FirstParOnPC,
                                          LastParOnPC,
@@ -1409,7 +1413,7 @@ public static class BRepOffset_Inter2d
                         {
                             Geom2d_Curve theCurve = CurveRep.PCurve()!;
                             Geom_Surface theSurf = CurveRep.Surface()!;
-                            TopLoc_Location theLoc = CurveRep.Location();
+                            Placement theLoc = CurveRep.Location();
                             // OCCT: MinSurf was replaced above by its transformed copy, so this test never holds and
                             // the pcurve the 3D curve was built from is checked (and maybe projected) as well
                             if (theCurve == MinPC && theSurf == MinSurf && theLoc == MinLoc)
@@ -1418,26 +1422,26 @@ public static class BRepOffset_Inter2d
                             }
                             FirstPar = ((BRep_GCurve)CurveRep).First();
                             LastPar = ((BRep_GCurve)CurveRep).Last();
-                            if (Math.Abs(FirstPar - FirstParOnPC) > Precision.PConfusion()
-                                || Math.Abs(LastPar - LastParOnPC) > Precision.PConfusion())
+                            if (Math.Abs(FirstPar - FirstParOnPC) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                || Math.Abs(LastPar - LastParOnPC) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 theLoc = E.Location() * theLoc;
                                 theSurf = (Geom_Surface)theSurf.Transformed(theLoc.Transformation());
 
                                 if (theCurve.GetType() == typeof(Geom2d_Line) && theSurf is Geom_BoundedSurface)
                                 {
-                                    gp_Dir2d theDir = ((Geom2d_Line)theCurve).Direction();
-                                    if (theDir.IsParallel(gp.DX2d(), Precision.Angular())
-                                        || theDir.IsParallel(gp.DY2d(), Precision.Angular()))
+                                    Direction2D theDir = ((Geom2d_Line)theCurve).Direction();
+                                    if (theDir.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular())
+                                        || theDir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                                     {
                                         theSurf.Bounds(out double U1, out double U2, out double V1, out double V2);
-                                        gp_Pnt2d Origin = ((Geom2d_Line)theCurve).Location();
-                                        if (Math.Abs(Origin.X() - U1) <= Precision.Confusion()
-                                            || Math.Abs(Origin.X() - U2) <= Precision.Confusion()
-                                            || Math.Abs(Origin.Y() - V1) <= Precision.Confusion()
-                                            || Math.Abs(Origin.Y() - V2) <= Precision.Confusion())
+                                        Point2D Origin = ((Geom2d_Line)theCurve).Location();
+                                        if (Math.Abs(Origin.X() - U1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(Origin.X() - U2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(Origin.Y() - V1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(Origin.Y() - V2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
-                                            BRepLib.SameParameter(NE, Precision.Confusion(), true);
+                                            BRepLib.SameParameter(NE, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                                             break;
                                         }
                                     }
@@ -1470,7 +1474,7 @@ public static class BRepOffset_Inter2d
                 else
                 {
                     BB.Range(NE, FirstParOnPC, LastParOnPC, true);
-                    BRepLib.SameParameter(NE, Precision.Confusion(), true);
+                    BRepLib.SameParameter(NE, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                 }
             }
         }
@@ -1485,21 +1489,21 @@ public static class BRepOffset_Inter2d
 
                 // The curve is not prolonged on begin or end.
                 // Trying to prolong it adding a segment to its bound.
-                gp_Pnt aPBnd;
-                gp_Vec aVBnd;
-                gp_Pnt aPBeg;
-                gp_Dir aDBnd = new();
+                Point3D aPBnd;
+                Vector3D aVBnd;
+                Point3D aPBeg;
+                Direction3D aDBnd = new();
                 Geom_Line aLin;
                 Geom_TrimmedCurve aSegment;
-                GeomConvert_CompCurveToBSplineCurve aCompCurve = new(aTrCurve, Convert_RationalC1);
-                double aTol = Precision.Confusion();
+                GeomConvert_CompCurveToBSplineCurve aCompCurve = new(aTrCurve, RationalC1);
+                double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
                 double aDelta = Max(a2Offset, 1.0);
 
                 if (FirstPar > anEf - a2Offset)
                 {
                     C3d.D1(FirstPar, out aPBnd, out aVBnd);
                     aDBnd.SetXYZ(aVBnd.XYZ());
-                    aPBeg = aPBnd.Translated(new gp_Vec(-aDelta * aDBnd.XYZ()));
+                    aPBeg = aPBnd.Translated(new Vector3D(-aDelta * aDBnd.XYZ()));
                     aLin = new Geom_Line(aPBeg, aDBnd);
                     aSegment = new Geom_TrimmedCurve(aLin, 0, aDelta);
 
@@ -1525,7 +1529,7 @@ public static class BRepOffset_Inter2d
                 C3d = aCompCurve.BSplineCurve()!;
                 FirstPar = C3d.FirstParameter();
                 LastPar = C3d.LastParameter();
-                BB.UpdateEdge(NE, C3d, Precision.Confusion());
+                BB.UpdateEdge(NE, C3d, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else if (C3d.IsPeriodic())
             {
@@ -1557,8 +1561,8 @@ public static class BRepOffset_Inter2d
         double Nf = NC.FirstParameter();
         double Nl = NC.LastParameter();
         double U = 0.0;
-        double ParTol = Precision.PConfusion();
-        gp_Pnt P = BRep_Tool.Pnt(V);
+        double ParTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        Point3D P = BRep_Tool.Pnt(V);
         bool OK = false;
 
         if (P.Distance(OC.Value(Of)) < TolConf)
@@ -1604,7 +1608,7 @@ public static class BRepOffset_Inter2d
                                double Tol,
                                NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgeIntEdges,
                                NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVV,
-                               Message_ProgressRange theRange = default)
+                               ProgressRange theRange = default)
     {
 
         // Do not intersect the edges of face
@@ -1629,7 +1633,7 @@ public static class BRepOffset_Inter2d
         int j, i = 1;
         BRepAdaptor_Surface BAsurf = new(F);
         //
-        using Message_ProgressScope aPS = new(theRange, "Intersecting edges on faces", LE.Extent());
+        using ProgressScope aPS = new(theRange, "Intersecting edges on faces", LE.Extent());
         for (it1LE.Initialize(LE); it1LE.More(); it1LE.Next(), aPS.Next())
         {
             if (!aPS.More())
@@ -1718,12 +1722,12 @@ public static class BRepOffset_Inter2d
                                       BRepAlgo_Image theImageVV,
                                       NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgeIntEdges,
                                       NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVV,
-                                      Message_ProgressRange theRange = default)
+                                      ProgressRange theRange = default)
     {
 
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> MVE = new(TopTools_ShapeMapHasher.Instance);
         BRepOffset_Tool.MapVertexEdges(FI, MVE);
-        using Message_ProgressScope aPS = new(theRange, "Intersecting edges obtained as intersection of faces", 1, true);
+        using ProgressScope aPS = new(theRange, "Intersecting edges obtained as intersection of faces", 1, true);
         //---------------------
         // Extension of edges.
         //---------------------
@@ -1983,7 +1987,7 @@ public static class BRepOffset_Inter2d
                                             double Tol,
                                             BRepOffset_Analyse Analyse,
                                             NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMVV,
-                                            Message_ProgressRange theRange = default)
+                                            ProgressRange theRange = default)
     {
         TopoDS_Face FIO = OFI.InternalFace();
         if (MES.IsBound(FIO))
@@ -2002,7 +2006,7 @@ public static class BRepOffset_Inter2d
         //
         BRepAdaptor_Surface BAsurf = new(FIO);
         //
-        using Message_ProgressScope aPS = new(theRange, "Intersecting edges created from vertices", 1, true);
+        using ProgressScope aPS = new(theRange, "Intersecting edges created from vertices", 1, true);
         TopExp_Explorer exp = new(FI.Oriented(TopAbs_FORWARD), TopAbs_WIRE);
         for (; exp.More(); exp.Next(), aPS.Next())
         {

@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -80,7 +82,7 @@ public abstract partial class Shape3D : Shape
             if (!result.IsValid)
                 throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)");
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)", e);
         }
@@ -134,7 +136,7 @@ public abstract partial class Shape3D : Shape
             if (!result.IsValid)
                 throw new InvalidOperationException();
         }
-        catch (Exception e) when (e is Standard_Failure or InvalidOperationException)
+        catch (Exception e) when (e is FailureException or InvalidOperationException)
         {
             string details = "";
             try
@@ -225,7 +227,7 @@ public abstract partial class Shape3D : Shape
                 if (!Make3DResult(builder.Shape()).IsValid)
                     return Search(windowMin, windowMid, iteration + 1);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return Search(windowMin, windowMid, iteration + 1);
             }
@@ -246,7 +248,7 @@ public abstract partial class Shape3D : Shape
         var faceList = faces?.ToList() ?? [];
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
-        var join = kind == Kind.Arc ? GeomAbs_JoinType.GeomAbs_Arc : GeomAbs_JoinType.GeomAbs_Intersection;
+        var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
         var builder = new BRepOffsetAPI_MakeThickSolid();
         builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join);
@@ -284,7 +286,7 @@ public abstract partial class Shape3D : Shape
         var faceList = openings?.ToList() ?? [];
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
-        var join = kind == Kind.Arc ? GeomAbs_JoinType.GeomAbs_Arc : GeomAbs_JoinType.GeomAbs_Intersection;
+        var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
         var builder = new BRepOffsetAPI_MakeThickSolid();
         builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join, true);
@@ -294,7 +296,7 @@ public abstract partial class Shape3D : Shape
         {
             solid = builder.Shape();
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", e);
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -24,9 +25,9 @@ public class BRepOffset_OffsetTests
         return aList;
     }
 
-    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 20, 30)).Shape();
+    private static TopoDS_Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
 
-    private static TopoDS_Face FaceOnPlane(in TopoDS_Shape theShape, Func<gp_Pln, bool> thePredicate)
+    private static TopoDS_Face FaceOnPlane(in TopoDS_Shape theShape, Func<Plane3D, bool> thePredicate)
     {
         foreach (TopoDS_Shape aF in SubShapes(theShape, TopAbs_FACE))
         {
@@ -41,8 +42,8 @@ public class BRepOffset_OffsetTests
     // The top (z = 30) and front (y = 0) faces of the box, and their common edge.
     private static (TopoDS_Face, TopoDS_Face, TopoDS_Edge) TopFrontAndEdge(in TopoDS_Shape theBox)
     {
-        TopoDS_Face aTop = FaceOnPlane(theBox, p => Math.Abs(p.Location().Z() - 30) < 1e-9 && p.Axis().Direction().IsParallel(new gp_Dir(0, 0, 1), 1e-9));
-        TopoDS_Face aFront = FaceOnPlane(theBox, p => Math.Abs(p.Location().Y()) < 1e-9 && p.Axis().Direction().IsParallel(new gp_Dir(0, 1, 0), 1e-9));
+        TopoDS_Face aTop = FaceOnPlane(theBox, p => Math.Abs(p.Location().Z() - 30) < 1e-9 && p.Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-9));
+        TopoDS_Face aFront = FaceOnPlane(theBox, p => Math.Abs(p.Location().Y()) < 1e-9 && p.Axis().Direction().IsParallel(new Direction3D(0, 1, 0), 1e-9));
         foreach (TopoDS_Shape anE in SubShapes(aTop, TopAbs_EDGE))
         {
             foreach (TopoDS_Shape anE2 in SubShapes(aFront, TopAbs_EDGE))
@@ -68,7 +69,7 @@ public class BRepOffset_OffsetTests
 
         aSnap.AssertUnchanged(aBox);
         Assert.Equal(BRepOffset_Status.BRepOffset_Good, anOffset.Status());
-        Assert.True(aFace.TShape()!.IsFrozen());
+        Assert.True(aFace.TShape()!.IsFrozen);
         Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
         Assert.Equal(4, SubShapes(aFace, TopAbs_EDGE).Count);
         var aPln = ((Geom_Plane)BRep_Tool.Surface(aFace)!).Pln();
@@ -76,10 +77,10 @@ public class BRepOffset_OffsetTests
 
         TopoDS_Shape aGen = anOffset.Generated(anEdge);
         Assert.False(aGen.IsNull());
-        Assert.True(aGen.TShape()!.IsFrozen());
+        Assert.True(aGen.TShape()!.IsFrozen);
         Assert.Contains(SubShapes(aFace, TopAbs_EDGE), e => e.IsSame(aGen));
         BRep_Tool.Range(TopoDS.Edge(aGen), out double aF, out double aL);
-        gp_Pnt aP = BRep_Tool.Curve(TopoDS.Edge(aGen), out _, out _)!.Value(0.5 * (aF + aL));
+        Point3D aP = BRep_Tool.Curve(TopoDS.Edge(aGen), out _, out _)!.Value(0.5 * (aF + aL));
         Assert.Equal(32.0, aP.Z(), 9);
         Assert.Equal(0.0, aP.Y(), 9);
     }
@@ -125,7 +126,7 @@ public class BRepOffset_OffsetTests
         aSnapBox.AssertUnchanged(aBox);
         aSnap1.AssertUnchanged(aFace1);
         aSnap2.AssertUnchanged(aFace2);
-        Assert.True(aFace.TShape()!.IsFrozen());
+        Assert.True(aFace.TShape()!.IsFrozen);
         Assert.Equal(4, SubShapes(aFace, TopAbs_EDGE).Count);
         Assert.DoesNotContain(SubShapes(aFace, TopAbs_EDGE), e => e.IsSame(anE1) || e.IsSame(anE2));
         Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
@@ -141,7 +142,7 @@ public class BRepOffset_OffsetTests
         var anOF2 = new BRepOffset_Offset(aFront, 2.0);
         TopoDS_Edge anE1 = TopoDS.Edge(anOF1.InternalGenerated(anEdge));
         TopoDS_Edge anE2 = TopoDS.Edge(anOF2.InternalGenerated(anEdge));
-        Assert.False(anE1.TShape()!.IsFrozen());
+        Assert.False(anE1.TShape()!.IsFrozen);
 
         var aPipe = new BRepOffset_Offset(anEdge, anE1, anE2, 2.0);
         TopoDS_Face aFace = aPipe.InternalFace();
@@ -152,21 +153,21 @@ public class BRepOffset_OffsetTests
         Assert.Contains(anEdges, e => e.IsSame(anE2));
         Assert.NotNull(BRep_Tool.CurveOnSurface(anE1, aFace, out _, out _));
         Assert.NotNull(BRep_Tool.CurveOnSurface(anE1, anOF1.InternalFace(), out _, out _));
-        Assert.False(aFace.TShape()!.IsFrozen());
+        Assert.False(aFace.TShape()!.IsFrozen);
     }
 
     [Fact]
     public void Sphere_OnFrozenArcs_WorksOnCopies_TheArcsAreUnchanged()
     {
         const double R = 3.0;
-        var aCenter = new gp_Pnt(0, 0, 0);
+        var aCenter = new Point3D(0, 0, 0);
         TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(aCenter).Vertex();
-        TopoDS_Vertex aVX = new BRepBuilderAPI_MakeVertex(new gp_Pnt(R, 0, 0)).Vertex();
-        TopoDS_Vertex aVY = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, R, 0)).Vertex();
-        TopoDS_Vertex aVZ = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, R)).Vertex();
-        var aCXY = new gp_Circ(new gp_Ax2(aCenter, new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), R);
-        var aCYZ = new gp_Circ(new gp_Ax2(aCenter, new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0)), R);
-        var aCZX = new gp_Circ(new gp_Ax2(aCenter, new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1)), R);
+        TopoDS_Vertex aVX = new BRepBuilderAPI_MakeVertex(new Point3D(R, 0, 0)).Vertex();
+        TopoDS_Vertex aVY = new BRepBuilderAPI_MakeVertex(new Point3D(0, R, 0)).Vertex();
+        TopoDS_Vertex aVZ = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, R)).Vertex();
+        var aCXY = new Circle3D(new Frame3D(aCenter, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
+        var aCYZ = new Circle3D(new Frame3D(aCenter, new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), R);
+        var aCZX = new Circle3D(new Frame3D(aCenter, new Direction3D(0, 1, 0), new Direction3D(0, 0, 1)), R);
         var aList = new NCollection_List<TopoDS_Shape>();
         aList.Append(new BRepBuilderAPI_MakeEdge(aCXY, aVX, aVY).Edge());
         aList.Append(new BRepBuilderAPI_MakeEdge(aCYZ, aVY, aVZ).Edge());

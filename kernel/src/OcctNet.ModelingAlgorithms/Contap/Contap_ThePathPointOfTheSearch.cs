@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +24,7 @@ namespace Occt;
 public partial struct Contap_ThePathPointOfTheSearch
     : IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>, IEquatable<Contap_ThePathPointOfTheSearch>
 {
-    private gp_Pnt point;
+    private Point3D point;
     private double tol;
     private bool isnew;
     private Adaptor3d_HVertex? vtx;
@@ -27,7 +33,7 @@ public partial struct Contap_ThePathPointOfTheSearch
 
     public Contap_ThePathPointOfTheSearch()
     {
-        point = new gp_Pnt();
+        point = new Point3D();
         tol = 0.0;
         isnew = true;
         vtx = null;
@@ -36,7 +42,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>A point on the vertex <paramref name="V"/> of the arc <paramref name="A"/>.</summary>
-    public Contap_ThePathPointOfTheSearch(in gp_Pnt P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A,
+    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A,
                                                double Parameter)
     {
         point = P;
@@ -48,7 +54,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>A new point on the arc <paramref name="A"/>.</summary>
-    public Contap_ThePathPointOfTheSearch(in gp_Pnt P, double Tol, Adaptor2d_Curve2d A, double Parameter)
+    public Contap_ThePathPointOfTheSearch(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter)
     {
         point = P;
         tol = Tol;
@@ -60,7 +66,7 @@ public partial struct Contap_ThePathPointOfTheSearch
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValue(in gp_Pnt P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter)
+    internal void SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter)
     {
         isnew = false;
         point = P;
@@ -71,7 +77,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     }
 
     /// <summary>Sets a new point (the vertex field is kept, as in OCCT; it is not readable on a new point).</summary>
-    internal void SetValue(in gp_Pnt P, double Tol, Adaptor2d_Curve2d A, double Parameter)
+    internal void SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter)
     {
         isnew = true;
         point = P;
@@ -82,7 +88,7 @@ public partial struct Contap_ThePathPointOfTheSearch
 
     // Queries
 
-    public readonly gp_Pnt Value() => point;
+    public readonly Point3D Value() => point;
 
     public readonly double Tolerance() => tol;
 
@@ -94,7 +100,7 @@ public partial struct Contap_ThePathPointOfTheSearch
     {
         if (isnew)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return vtx!;
     }
@@ -104,16 +110,16 @@ public partial struct Contap_ThePathPointOfTheSearch
     public readonly double Parameter() => param;
 
     static Contap_ThePathPointOfTheSearch IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.Create(
-        in gp_Pnt P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, V, A, Parameter);
+        in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, V, A, Parameter);
 
     static Contap_ThePathPointOfTheSearch IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.Create(
-        in gp_Pnt P, double Tol, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, A, Parameter);
+        in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter) => new(P, Tol, A, Parameter);
 
-    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in gp_Pnt P, double Tol, Adaptor3d_HVertex V,
+    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V,
                                                                              Adaptor2d_Curve2d A, double Parameter) =>
         SetValue(P, Tol, V, A, Parameter);
 
-    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in gp_Pnt P, double Tol, Adaptor2d_Curve2d A,
+    void IIntStart_PathPoint<Contap_ThePathPointOfTheSearch>.SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A,
                                                                              double Parameter) =>
         SetValue(P, Tol, A, Parameter);
 
@@ -132,5 +138,5 @@ public partial struct Contap_ThePathPointOfTheSearch
                                    in Contap_ThePathPointOfTheSearch theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("Contap_ThePathPointOfTheSearch", point.X(), point.Y(), point.Z(), tol, param)} new {isnew}";
+        => $"{Constants.Format("Contap_ThePathPointOfTheSearch", point.X(), point.Y(), point.Z(), tol, param)} new {isnew}";
 }

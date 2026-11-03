@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
@@ -19,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public class IntPatch_GLine : IntPatch_Line
 {
-    private gp_Ax2 pos;
+    private Frame3D pos;
     private double par1;
     private double par2;
     private bool fipt;
@@ -29,37 +31,37 @@ public class IntPatch_GLine : IntPatch_Line
     private readonly NCollection_Sequence<IntPatch_Point> svtx = new();
 
     /// <summary>Creates a line as intersection line when the transitions are in or out.</summary>
-    public IntPatch_GLine(in gp_Lin L, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_GLine(in Line3D L, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         par1 = 0.0;
         par2 = 0.0;
         typ = IntPatch_Lin;
-        pos = new gp_Pln(L.Location(), L.Direction()).Position().Ax2();
+        pos = new Plane3D(L.Location(), L.Direction()).Position().Ax2();
     }
 
     /// <summary>Creates a line as intersection line when the transitions are touch.</summary>
-    public IntPatch_GLine(in gp_Lin L, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_GLine(in Line3D L, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         par1 = 0.0;
         par2 = 0.0;
         typ = IntPatch_Lin;
-        pos = new gp_Pln(L.Location(), L.Direction()).Position().Ax2();
+        pos = new Plane3D(L.Location(), L.Direction()).Position().Ax2();
     }
 
     /// <summary>Creates a line as intersection line when the transitions are undecided.</summary>
-    public IntPatch_GLine(in gp_Lin L, bool Tang)
+    public IntPatch_GLine(in Line3D L, bool Tang)
         : base(Tang)
     {
         par1 = 0.0;
         par2 = 0.0;
         typ = IntPatch_Lin;
-        pos = new gp_Pln(L.Location(), L.Direction()).Position().Ax2();
+        pos = new Plane3D(L.Location(), L.Direction()).Position().Ax2();
     }
 
     /// <summary>Creates a circle as intersection line when the transitions are in or out.</summary>
-    public IntPatch_GLine(in gp_Circ C, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_GLine(in Circle3D C, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         pos = C.Position();
@@ -69,7 +71,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a circle as intersection line when the transitions are touch.</summary>
-    public IntPatch_GLine(in gp_Circ C, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_GLine(in Circle3D C, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         pos = C.Position();
@@ -79,7 +81,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a circle as intersection line when the transitions are undecided.</summary>
-    public IntPatch_GLine(in gp_Circ C, bool Tang)
+    public IntPatch_GLine(in Circle3D C, bool Tang)
         : base(Tang)
     {
         pos = C.Position();
@@ -89,7 +91,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates an ellipse as intersection line when the transitions are in or out.</summary>
-    public IntPatch_GLine(in gp_Elips E, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_GLine(in Ellipse3D E, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         pos = E.Position();
@@ -99,7 +101,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates an ellipse as intersection line when the transitions are touch.</summary>
-    public IntPatch_GLine(in gp_Elips E, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_GLine(in Ellipse3D E, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         pos = E.Position();
@@ -109,7 +111,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates an ellipse as intersection line when the transitions are undecided.</summary>
-    public IntPatch_GLine(in gp_Elips E, bool Tang)
+    public IntPatch_GLine(in Ellipse3D E, bool Tang)
         : base(Tang)
     {
         pos = E.Position();
@@ -119,7 +121,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a parabola as intersection line when the transitions are in or out.</summary>
-    public IntPatch_GLine(in gp_Parab P, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_GLine(in Parabola3D P, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         pos = P.Position();
@@ -129,7 +131,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a parabola as intersection line when the transitions are touch.</summary>
-    public IntPatch_GLine(in gp_Parab P, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_GLine(in Parabola3D P, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         pos = P.Position();
@@ -139,7 +141,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a parabola as intersection line when the transitions are undecided.</summary>
-    public IntPatch_GLine(in gp_Parab P, bool Tang)
+    public IntPatch_GLine(in Parabola3D P, bool Tang)
         : base(Tang)
     {
         pos = P.Position();
@@ -149,7 +151,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a hyperbola as intersection line when the transitions are in or out.</summary>
-    public IntPatch_GLine(in gp_Hypr H, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
+    public IntPatch_GLine(in Hyperbola3D H, bool Tang, IntSurf_TypeTrans Trans1, IntSurf_TypeTrans Trans2)
         : base(Tang, Trans1, Trans2)
     {
         pos = H.Position();
@@ -159,7 +161,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a hyperbola as intersection line when the transitions are touch.</summary>
-    public IntPatch_GLine(in gp_Hypr H, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
+    public IntPatch_GLine(in Hyperbola3D H, bool Tang, IntSurf_Situation Situ1, IntSurf_Situation Situ2)
         : base(Tang, Situ1, Situ2)
     {
         pos = H.Position();
@@ -169,7 +171,7 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>Creates a hyperbola as intersection line when the transitions are undecided.</summary>
-    public IntPatch_GLine(in gp_Hypr H, bool Tang)
+    public IntPatch_GLine(in Hyperbola3D H, bool Tang)
         : base(Tang)
     {
         pos = H.Position();
@@ -203,7 +205,7 @@ public class IntPatch_GLine : IntPatch_Line
                     }
                     if (par < pf)
                     {
-                        double PrecisionPConfusion = Precision.PConfusion() * 1000.0;
+                        double PrecisionPConfusion = global::Kerf.Engine.Foundation.Precision.PConfusion() * 1000.0;
                         if ((pf - par) > PrecisionPConfusion)
                         {
                             return;
@@ -252,53 +254,53 @@ public class IntPatch_GLine : IntPatch_Line
     }
 
     /// <summary>The line, when <see cref="IntPatch_Line.ArcType"/> is IntPatch_Lin; throws Standard_DomainError otherwise.</summary>
-    public gp_Lin Line()
+    public Line3D Line()
     {
         if (typ != IntPatch_Lin)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Lin(pos.Axis());
+        return new Line3D(pos.Axis());
     }
 
     /// <summary>The circle, when the type is IntPatch_Circle; throws Standard_DomainError otherwise.</summary>
-    public gp_Circ Circle()
+    public Circle3D Circle()
     {
         if (typ != IntPatch_Circle)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Circ(pos, par1);
+        return new Circle3D(pos, par1);
     }
 
     /// <summary>The ellipse, when the type is IntPatch_Ellipse; throws Standard_DomainError otherwise.</summary>
-    public gp_Elips Ellipse()
+    public Ellipse3D Ellipse()
     {
         if (typ != IntPatch_Ellipse)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Elips(pos, par1, par2);
+        return new Ellipse3D(pos, par1, par2);
     }
 
     /// <summary>The parabola, when the type is IntPatch_Parabola; throws Standard_DomainError otherwise.</summary>
-    public gp_Parab Parabola()
+    public Parabola3D Parabola()
     {
         if (typ != IntPatch_Parabola)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Parab(pos, par1);
+        return new Parabola3D(pos, par1);
     }
 
     /// <summary>The hyperbola, when the type is IntPatch_Hyperbola; throws Standard_DomainError otherwise.</summary>
-    public gp_Hypr Hyperbola()
+    public Hyperbola3D Hyperbola()
     {
         if (typ != IntPatch_Hyperbola)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Hypr(pos, par1, par2);
+        return new Hyperbola3D(pos, par1, par2);
     }
 
     /// <summary>True if the line has a known first point (<see cref="FirstPoint"/>).</summary>
@@ -312,7 +314,7 @@ public class IntPatch_GLine : IntPatch_Line
     {
         if (!fipt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indf);
     }
@@ -322,7 +324,7 @@ public class IntPatch_GLine : IntPatch_Line
     {
         if (!lapt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indl);
     }
@@ -356,7 +358,7 @@ public class IntPatch_GLine : IntPatch_Line
 
         int nbvtx = NbVertex();
 
-        double PrecisionPConfusion = Precision.PConfusion() * 1000.0;
+        double PrecisionPConfusion = global::Kerf.Engine.Foundation.Precision.PConfusion() * 1000.0;
 
         do
         {

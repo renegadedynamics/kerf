@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -17,11 +19,11 @@ public sealed class Geom2dGcc_Lin2d2Tan
 {
     private readonly bool WellDone;
     private readonly int NbrSol;
-    private readonly NCollection_Array1<gp_Lin2d> linsol;
+    private readonly NCollection_Array1<Line2D> linsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<GccEnt_Position> qualifier2;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg2sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -49,20 +51,20 @@ public sealed class Geom2dGcc_Lin2d2Tan
         Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
         Geom2d_Curve?       CC2   = C2.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
-        GeomAbs_CurveType   Type2 = C2.GetType();
+        CurveKind   Type1 = C1.GetType();
+        CurveKind   Type2 = C2.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
         //=============================================================================
 
         NbrSol = 0;
-        if (Type1 == GeomAbs_Circle && Type2 == GeomAbs_Circle)
+        if (Type1 == Circle && Type2 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             Geom2d_Circle        CCC2 = (CC2 as Geom2d_Circle)!;
-            gp_Circ2d            c2   = CCC2.Circ2d();
+            Circle2D            c2   = CCC2.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccEnt_QualifiedCirc Qc2  = new(c2, Qualified2.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, Qc2, Tolang);
@@ -121,22 +123,22 @@ public sealed class Geom2dGcc_Lin2d2Tan
     }
 
     /// <summary>Lines tangent to a qualified curve through a point. Tolang is the angular tolerance.</summary>
-    public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in gp_Pnt2d ThePoint, double Tolang)
+    public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in Point2D ThePoint, double Tolang)
         : this(2)
     {
         Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
+        CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
         //=============================================================================
 
         NbrSol = 0;
-        if (Type1 == GeomAbs_Circle)
+        if (Type1 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, ThePoint, Tolang);
             WellDone                  = Lin.IsDone();
@@ -194,20 +196,20 @@ public sealed class Geom2dGcc_Lin2d2Tan
         Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
         Geom2d_Curve?       CC2   = C2.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
-        GeomAbs_CurveType   Type2 = C2.GetType();
+        CurveKind   Type1 = C1.GetType();
+        CurveKind   Type2 = C2.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
         //=============================================================================
 
         NbrSol = 0;
-        if (Type1 == GeomAbs_Circle && Type2 == GeomAbs_Circle)
+        if (Type1 == Circle && Type2 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             Geom2d_Circle        CCC2 = (CC2 as Geom2d_Circle)!;
-            gp_Circ2d            c2   = CCC2.Circ2d();
+            Circle2D            c2   = CCC2.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccEnt_QualifiedCirc Qc2  = new(c2, Qualified2.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, Qc2, Tolang);
@@ -245,22 +247,22 @@ public sealed class Geom2dGcc_Lin2d2Tan
     /// The line tangent to a qualified curve through a point found from the parameter Param1 on the curve (a circle
     /// still goes to GccAna).
     /// </summary>
-    public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in gp_Pnt2d ThePoint, double Tolang, double Param1)
+    public Geom2dGcc_Lin2d2Tan(in Geom2dGcc_QualifiedCurve Qualified1, in Point2D ThePoint, double Tolang, double Param1)
         : this(2)
     {
         Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
+        CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
         //=============================================================================
 
         NbrSol = 0;
-        if (Type1 == GeomAbs_Circle)
+        if (Type1 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2d2Tan     Lin  = new(Qc1, ThePoint, Tolang);
             WellDone                  = Lin.IsDone();
@@ -305,12 +307,12 @@ public sealed class Geom2dGcc_Lin2d2Tan
     }
 
     /// <summary>The solution of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is not in 1..NbSolutions().</exception>
-    public gp_Lin2d ThisSolution(int Index)
+    /// <exception cref="OutOfRangeException">Index is not in 1..NbSolutions().</exception>
+    public Line2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return linsol[Index];
     }
@@ -320,11 +322,11 @@ public sealed class Geom2dGcc_Lin2d2Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -334,15 +336,15 @@ public sealed class Geom2dGcc_Lin2d2Tan
     }
 
     /// <summary>The tangency point between the solution of index Index and the first argument, and its parameters.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -353,15 +355,15 @@ public sealed class Geom2dGcc_Lin2d2Tan
     }
 
     /// <summary>The tangency point between the solution of index Index and the second argument, and its parameters.</summary>
-    public void Tangency2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -375,10 +377,10 @@ public sealed class Geom2dGcc_Lin2d2Tan
                      Geom2dAdaptor_Curve theC2)
     {
         int      i;
-        gp_Lin2d aLin = theLin.ThisSolution();
+        Line2D aLin = theLin.ThisSolution();
 
-        theLin.Tangency1(out double aPar1sol, out double aPar1arg, out gp_Pnt2d aPnt1Sol);
-        theLin.Tangency2(out double aPar2sol, out double aPar2arg, out gp_Pnt2d aPnt2Sol);
+        theLin.Tangency1(out double aPar1sol, out double aPar1arg, out Point2D aPnt1Sol);
+        theLin.Tangency2(out double aPar2sol, out double aPar2arg, out Point2D aPnt2Sol);
 
         for (i = 1; i < theIndex; i++)
         {
@@ -388,11 +390,11 @@ public sealed class Geom2dGcc_Lin2d2Tan
             }
         }
 
-        gp_Dir2d aLinDir = aLin.Direction();
+        Direction2D aLinDir = aLin.Direction();
 
-        Geom2dGcc_CurveTool.D1(theC1, aPar1arg, out _, out gp_Vec2d aVTan);
+        Geom2dGcc_CurveTool.D1(theC1, aPar1arg, out _, out Vector2D aVTan);
 
-        if (Math.Abs(aLinDir.Crossed(new gp_Dir2d(aVTan))) > theTol)
+        if (Math.Abs(aLinDir.Crossed(new Direction2D(aVTan))) > theTol)
         {
             return false;
         }
@@ -401,7 +403,7 @@ public sealed class Geom2dGcc_Lin2d2Tan
         {
             Geom2dGcc_CurveTool.D1(theC2, aPar2arg, out _, out aVTan);
 
-            if (Math.Abs(aLinDir.Crossed(new gp_Dir2d(aVTan))) > theTol)
+            if (Math.Abs(aLinDir.Crossed(new Direction2D(aVTan))) > theTol)
             {
                 return false;
             }

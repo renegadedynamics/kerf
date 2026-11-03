@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -64,7 +66,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// Adds an entity by considering its signature, which is given by call to method AddSign Returns True if
     /// added, False if already in the map (and map control status set)
     /// </summary>
-    public virtual bool AddEntity(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public virtual bool AddEntity(Transient? ent, Interface_InterfaceModel? model)
     {
         if (themapstat && ent is not null)
         {
@@ -83,7 +85,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// containing model. Its value is provided by the object Signature given at start, if no Signature is
     /// defined, it does nothing. Can be redefined (in this case, see also Sign)
     /// </summary>
-    public virtual void AddSign(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public virtual void AddSign(Transient? ent, Interface_InterfaceModel? model)
     {
         const string nulsign = "";
         if (ent is null || thematcher is null)
@@ -99,7 +101,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// <summary>
     /// Adds a list of entities by adding each of the items
     /// </summary>
-    public void AddList(NCollection_HSequence<Standard_Transient>? list, Interface_InterfaceModel? model)
+    public void AddList(NCollection_HSequence<Transient>? list, Interface_InterfaceModel? model)
     {
         if (list is null)
         {
@@ -116,7 +118,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// Adds a list of entities in the context given by the graph Default just call basic AddList Can be
     /// redefined to get a signature computed with the graph
     /// </summary>
-    public virtual void AddWithGraph(NCollection_HSequence<Standard_Transient>? list, Interface_Graph graph)
+    public virtual void AddWithGraph(NCollection_HSequence<Transient>? list, Interface_Graph graph)
     {
         AddList(list, graph.Model());
     }
@@ -237,7 +239,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// Determines and returns the value of the signature for an entity as an HAsciiString. This method works
     /// exactly as AddSign, which is optimized Can be redefined, accorded with AddSign
     /// </summary>
-    public virtual TCollection_HAsciiString? Sign(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public virtual TCollection_HAsciiString? Sign(Transient? ent, Interface_InterfaceModel? model)
     {
         TCollection_HAsciiString res = null;
         if (ent is null || thematcher is null)
@@ -252,10 +254,10 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     /// Applies AddWithGraph on one entity, and returns the Signature Value which has been recorded To do this,
     /// Add is called with SignOnly Mode True during the call, the returned value is LastValue
     /// </summary>
-    public string ComputedSign(Standard_Transient? ent, Interface_Graph G)
+    public string ComputedSign(Transient? ent, Interface_Graph G)
     {
-        NCollection_HSequence<Standard_Transient> list =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> list =
+            new NCollection_HSequence<Transient>();
         list.Append(ent);
         ModeSignOnly() = true;
         AddWithGraph(list, G);
@@ -265,7 +267,7 @@ public class IFSelect_SignCounter : IFSelect_SignatureList
     }
 
     private bool themapstat;
-    private NCollection_Map<Standard_Transient> themap = new NCollection_Map<Standard_Transient>();
+    private NCollection_Map<Transient> themap = new NCollection_Map<Transient>();
     private IFSelect_Signature? thematcher;
     private IFSelect_Selection? theselect;
     private int theselmode;

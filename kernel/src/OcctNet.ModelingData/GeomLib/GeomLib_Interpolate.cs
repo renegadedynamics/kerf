@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GeomLib_InterpolationErrors;
 
 namespace Occt;
@@ -24,7 +25,7 @@ public sealed class GeomLib_Interpolate
     /// Interpolates the first NumPoints points of PointsArray at the parameters ParametersArray (both indexed from
     /// 1), with the given degree (at least 3).
     /// </summary>
-    public GeomLib_Interpolate(int Degree, int NumPoints, NCollection_Array1<gp_Pnt> PointsArray,
+    public GeomLib_Interpolate(int Degree, int NumPoints, NCollection_Array1<Point3D> PointsArray,
                                NCollection_Array1<double> ParametersArray)
     {
         myIsDone = false;
@@ -41,7 +42,7 @@ public sealed class GeomLib_Interpolate
         }
         else
         {
-            gp_Pnt null_point = new(0.0e0, 0.0e0, 0.0e0);
+            Point3D null_point = new(0.0e0, 0.0e0, 0.0e0);
             int order = Degree + 1, half_order;
             if (order % 2 != 0)
             {
@@ -54,7 +55,7 @@ public sealed class GeomLib_Interpolate
             NCollection_Array1<int> contacts = new(1, num_controls);
             NCollection_Array1<int> multiplicities = new(1, NumPoints);
             NCollection_Array1<double> parameters = new(1, num_controls);
-            NCollection_Array1<gp_Pnt> poles = new(1, num_controls);
+            NCollection_Array1<Point3D> poles = new(1, num_controls);
 
             for (ii = 1; ii <= NumPoints; ii++)
             {
@@ -100,7 +101,7 @@ public sealed class GeomLib_Interpolate
             contacts[num_controls] = 0;
             poles[1] = PointsArray[1];
             poles[num_controls] = PointsArray[NumPoints];
-            BSplCLib.Interpolate(order - 1, flat_knots, parameters, contacts, poles, out inversion_problem);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(order - 1, flat_knots, parameters, contacts, poles, out inversion_problem);
 
             if (inversion_problem == 0)
             {

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace OcctNet.Foundation.Tests;
 
 /// <summary>
@@ -61,7 +63,7 @@ public class NCollection_IntDataMapTests
         Assert.True(aMap.UnBind(108));
         Assert.False(aMap.UnBind(108));
         Assert.Equal([2, 7], Keys(aMap));
-        Assert.Throws<Standard_NoSuchObject>(() => aMap.Find(108));
+        Assert.Throws<NoSuchObjectException>(() => aMap.Find(108));
     }
 
     [Fact]

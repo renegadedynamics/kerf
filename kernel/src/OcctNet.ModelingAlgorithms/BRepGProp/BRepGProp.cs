@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
 using static Occt.BRepGProp_MeshProps.BRepGProp_MeshObjType;
-using static Occt.gp_TrsfForm;
+using static Kerf.Geometry.TransformForm;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -45,18 +49,18 @@ public static class BRepGProp
         //! Apply a rigid transform to the stored properties.
         //! Transforms reference point (loc) as absolute point, gravity center offset (g)
         //! as relative vector (rotation only, no translation), and rotates inertia tensor.
-        public void ApplyTransform(in gp_Trsf theTrsf)
+        public void ApplyTransform(in Transform3D theTrsf)
         {
             loc.Transform(theTrsf);
-            gp_TrsfForm aForm = theTrsf.Form();
-            if (aForm != gp_Identity && aForm != gp_Translation)
+            TransformForm aForm = theTrsf.Form();
+            if (aForm != Identity && aForm != Translation)
             {
                 // g is a relative offset from loc to center of mass - rotate only.
-                gp_Mat aR = theTrsf.VectorialPart();
-                gp_XYZ aGxyz = g.XYZ();
+                Matrix3x3 aR = theTrsf.VectorialPart();
+                Xyz aGxyz = g.XYZ();
                 aGxyz.Multiply(aR);
                 g.SetXYZ(aGxyz);
-                gp_Mat aRt = aR.Transposed();
+                Matrix3x3 aRt = aR.Transposed();
                 inertia = aR.Multiplied(inertia).Multiplied(aRt);
             }
         }
@@ -69,11 +73,11 @@ public static class BRepGProp
         }
     }
 
-    private static gp_Pnt roughBaryCenter(in TopoDS_Shape S)
+    private static Point3D roughBaryCenter(in TopoDS_Shape S)
     {
         int i;
         var ex = new TopExp_Explorer();
-        gp_XYZ xyz = new(0, 0, 0);
+        Xyz xyz = new(0, 0, 0);
         for (ex.Init(S, TopAbs_VERTEX), i = 0; ex.More(); ex.Next(), i++)
         {
             xyz += BRep_Tool.Pnt(TopoDS.Vertex(ex.Current())).XYZ();
@@ -90,11 +94,11 @@ public static class BRepGProp
             for (; ex.More(); ex.Next())
             {
                 TopoDS_Shape aF = ex.Current();
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aF), out TopLoc_Location aLocDummy);
-                if (aTri is not null && aTri.NbNodes() > 0)
+                Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aF), out Placement aLocDummy);
+                if (aTri is not null && aTri.NodeCount > 0)
                 {
                     xyz = aTri.Node(1).XYZ();
-                    if (!aLocDummy.IsIdentity())
+                    if (!aLocDummy.IsIdentity)
                     {
                         aLocDummy.Transformation().Transforms(ref xyz);
                     }
@@ -104,7 +108,7 @@ public static class BRepGProp
             }
         }
 
-        return new gp_Pnt(xyz);
+        return new Point3D(xyz);
     }
 
     /// <summary>
@@ -121,7 +125,7 @@ public static class BRepGProp
                                         bool UseTriangulation = false)
     {
         // find the origin
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
         LProps.Assign(new GProp_GProps(P));
 
@@ -136,7 +140,7 @@ public static class BRepGProp
                 continue;
             }
 
-            NCollection_HArray1<gp_Pnt>? theNodes = null;
+            NCollection_HArray1<Point3D>? theNodes = null;
             bool IsGeom = BRep_Tool.IsGeometric(aE);
             if (UseTriangulation || !IsGeom)
             {
@@ -188,7 +192,7 @@ public static class BRepGProp
         var BF = new BRepGProp_Face();
         var BD = new BRepGProp_Domain();
         var aFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopLoc_Location aLocDummy;
+        Placement aLocDummy;
 
         for (ex.Init(S, TopAbs_FACE), i = 1; ex.More(); ex.Next(), i++)
         {
@@ -206,8 +210,8 @@ public static class BRepGProp
                     NoSurf = true;
                 }
 
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
-                if (aTri is null || aTri.NbNodes() == 0 || aTri.NbTriangles() == 0)
+                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                if (aTri is null || aTri.NodeCount == 0 || aTri.TriangleCount == 0)
                 {
                     NoTri = true;
                 }
@@ -221,7 +225,7 @@ public static class BRepGProp
             if ((UseTriangulation && !NoTri) || (NoSurf && !NoTri))
             {
                 TopAbs_Orientation anOri = F.Orientation();
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
                 MG.Perform(aTri, aLocDummy, anOri);
                 Props.Add(MG);
             }
@@ -276,7 +280,7 @@ public static class BRepGProp
                                          bool UseTriangulation = false)
     {
         // find the origin
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
         SProps.Assign(new GProp_GProps(P));
         surfaceProperties(S, SProps, 1.0, SkipShared, UseTriangulation);
@@ -298,7 +302,7 @@ public static class BRepGProp
     public static double SurfaceProperties(in TopoDS_Shape S, GProp_GProps SProps, double Eps, bool SkipShared = false)
     {
         // find the origin
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
         SProps.Assign(new GProp_GProps(P));
         double ErrorMax = surfaceProperties(S, SProps, Eps, SkipShared, false);
@@ -310,7 +314,7 @@ public static class BRepGProp
     //! and for shapes without shared solids.
     private static double volumePropertiesFaces(in TopoDS_Shape S,
                                                 GProp_GProps Props,
-                                                in gp_Pnt theRefPnt,
+                                                in Point3D theRefPnt,
                                                 double Eps,
                                                 bool SkipShared,
                                                 bool UseTriangulation)
@@ -327,7 +331,7 @@ public static class BRepGProp
         var BD = new BRepGProp_Domain();
         var aFwdFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         var aRvsFMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        TopLoc_Location aLocDummy;
+        Placement aLocDummy;
 
         for (ex.Init(S, TopAbs_FACE), i = 1; ex.More(); ex.Next(), i++)
         {
@@ -356,8 +360,8 @@ public static class BRepGProp
                     NoSurf = true;
                 }
 
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
-                if (aTri is null || aTri.NbNodes() == 0 || aTri.NbTriangles() == 0)
+                Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                if (aTri is null || aTri.NodeCount == 0 || aTri.TriangleCount == 0)
                 {
                     NoTri = true;
                 }
@@ -372,7 +376,7 @@ public static class BRepGProp
             {
                 if ((UseTriangulation && !NoTri) || (NoSurf && !NoTri))
                 {
-                    Poly_Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
+                    Triangulation? aTri = BRep_Tool.Triangulation(F, out aLocDummy);
                     MG.Perform(aTri, aLocDummy, anOri);
                     Props.Add(MG);
                 }
@@ -417,7 +421,7 @@ public static class BRepGProp
     private sealed class SolidCacheEntry
     {
         public GProp_GProps Props = new();
-        public TopLoc_Location Location = new();
+        public Placement Location = new();
         public TopAbs_Orientation Orientation;
     }
 
@@ -427,7 +431,7 @@ public static class BRepGProp
                                            bool SkipShared,
                                            bool UseTriangulation)
     {
-        gp_Pnt P = roughBaryCenter(S);
+        Point3D P = roughBaryCenter(S);
 
         // Check for shared solids: if the same TShape appears multiple times
         // (via compound nesting with different locations), we compute properties
@@ -468,11 +472,11 @@ public static class BRepGProp
             {
                 // Duplicate instance: transform cached properties.
                 SolidCacheEntry aCached = aSolidCache.Find(aTS);
-                TopLoc_Location aRelLoc = aSolid.Location().Multiplied(aCached.Location.Inverted());
+                Placement aRelLoc = aSolid.Location().Multiplied(aCached.Location.Inverted());
 
                 // When SkipShared is enabled, skip exact duplicate instances
                 // (same placement and orientation) - matches original face-level dedup behavior.
-                if (SkipShared && aRelLoc.IsIdentity() && aSolid.Orientation() == aCached.Orientation)
+                if (SkipShared && aRelLoc.IsIdentity && aSolid.Orientation() == aCached.Orientation)
                 {
                     continue;
                 }
@@ -481,9 +485,9 @@ public static class BRepGProp
                 // Shape locations may contain scaling or negative determinant
                 // (TopoDS_Shape::Location() does not enforce rigidity by default),
                 // which would produce incorrect volume/inertia with rotation-only transform.
-                gp_Trsf aRelTrsf = aRelLoc.Transformation();
-                if (Math.Abs(Math.Abs(aRelTrsf.ScaleFactor()) - 1.0) > TopLoc_Location.ScalePrec()
-                    || aRelTrsf.IsNegative())
+                Transform3D aRelTrsf = aRelLoc.Transformation();
+                if (Math.Abs(Math.Abs(aRelTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec()
+                    || aRelTrsf.IsNegative)
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
                     var aSolidProps = new GProp_GProps(P);
@@ -498,7 +502,7 @@ public static class BRepGProp
                 }
 
                 var aTransformed = new GPropTransformer(aCached.Props);
-                if (!aRelLoc.IsIdentity())
+                if (!aRelLoc.IsIdentity)
                 {
                     aTransformed.ApplyTransform(aRelTrsf);
                 }
@@ -578,7 +582,7 @@ public static class BRepGProp
                                         bool UseTriangulation = false)
     {
         // find the origin
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
         VProps.Assign(new GProp_GProps(P));
         if (OnlyClosed)
@@ -628,7 +632,7 @@ public static class BRepGProp
                                           bool SkipShared = false)
     {
         // find the origin
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         P.Transform(S.Location().Transformation());
         VProps.Assign(new GProp_GProps(P));
         int i;
@@ -681,7 +685,7 @@ public static class BRepGProp
         double aTol = theTol;
 
         // Compute properties.
-        gp_Pnt aLoc = roughBaryCenter(theShape);
+        Point3D aLoc = roughBaryCenter(theShape);
         var aVProps = new BRepGProp_VinertGK();
         var aPropFace = new BRepGProp_Face(IsUseSpan);
         var aPropDomain = new BRepGProp_Domain();
@@ -770,7 +774,7 @@ public static class BRepGProp
                                             bool IFlag = false,
                                             bool SkipShared = false)
     {
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         double anError = 0.0;
 
         P.Transform(S.Location().Transformation());
@@ -842,7 +846,7 @@ public static class BRepGProp
 
     private static double volumePropertiesGK(in TopoDS_Shape theShape,
                                              GProp_GProps theProps,
-                                             in gp_Pln thePln,
+                                             in Plane3D thePln,
                                              double theTol,
                                              bool IsUseSpan,
                                              bool CGFlag,
@@ -855,7 +859,7 @@ public static class BRepGProp
         double aTol = theTol;
 
         // Compute properties.
-        gp_Pnt aLoc = roughBaryCenter(theShape);
+        Point3D aLoc = roughBaryCenter(theShape);
         var aVProps = new BRepGProp_VinertGK();
         var aPropFace = new BRepGProp_Face(IsUseSpan);
         var aPropDomain = new BRepGProp_Domain();
@@ -929,7 +933,7 @@ public static class BRepGProp
     /// </summary>
     public static double VolumePropertiesGK(in TopoDS_Shape S,
                                             GProp_GProps VProps,
-                                            in gp_Pln thePln,
+                                            in Plane3D thePln,
                                             double Eps = 0.001,
                                             bool OnlyClosed = false,
                                             bool IsUseSpan = false,
@@ -937,7 +941,7 @@ public static class BRepGProp
                                             bool IFlag = false,
                                             bool SkipShared = false)
     {
-        gp_Pnt P = new(0, 0, 0);
+        Point3D P = new(0, 0, 0);
         double anError = 0.0;
 
         P.Transform(S.Location().Transformation());

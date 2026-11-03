@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity Product_Definition_Reference
 /// </summary>
-public class StepBasic_ProductDefinitionReference : Standard_Transient
+public class StepBasic_ProductDefinitionReference : Transient
 {
     private StepBasic_ExternalSource mySource;
     private TCollection_HAsciiString myProductId;

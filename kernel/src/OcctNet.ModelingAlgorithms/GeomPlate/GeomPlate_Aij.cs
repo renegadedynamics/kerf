@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,16 +19,16 @@ public struct GeomPlate_Aij : IEquatable<GeomPlate_Aij>
 {
     internal int Ind1;
     internal int Ind2;
-    internal gp_Vec Vec;
+    internal Vector3D Vec;
 
     public GeomPlate_Aij()
     {
         Ind1 = 0;
         Ind2 = 0;
-        Vec = new gp_Vec();
+        Vec = new Vector3D();
     }
 
-    public GeomPlate_Aij(int anInd1, int anInd2, in gp_Vec aVec)
+    public GeomPlate_Aij(int anInd1, int anInd2, in Vector3D aVec)
     {
         Ind1 = anInd1;
         Ind2 = anInd2;

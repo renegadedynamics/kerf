@@ -4,11 +4,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepOffset_Status;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -17,7 +21,7 @@ namespace Occt;
 /// <summary>Builds the offset of a face, or the pipe or sphere joining offsets along an edge or at a vertex.</summary>
 /// <remarks>
 /// <para>
-/// The offset of a face (<see cref="Init(in TopoDS_Face, double, bool, GeomAbs_JoinType)"/>) only reads the face: its
+/// The offset of a face (<see cref="Init(in TopoDS_Face, double, bool, JoinKind)"/>) only reads the face: its
 /// edges and vertices are new, but for those taken from <c>Created</c>, the images of its edges and vertices in the
 /// offsets of other faces. As in OCCT, the offset writes pcurves on the new face and ranges into those
 /// <c>Created</c> edges, in place: they are the 3D offset's own working edges and must be unfrozen (a frozen one throws
@@ -45,21 +49,21 @@ public sealed class BRepOffset_Offset
 
     // OCCT_DEBUG statics (Affich, NbOFFSET) and their blocks are left out.
 
-    private static gp_Pnt GetFarestCorner(in TopoDS_Wire aWire)
+    private static Point3D GetFarestCorner(in TopoDS_Wire aWire)
     {
         var Vertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(aWire, TopAbs_VERTEX, Vertices);
 
         double MaxDist = 0.0;
-        gp_Pnt thePoint = new();
+        Point3D thePoint = new();
         for (int i = 1; i <= Vertices.Extent(); i++)
         {
             for (int j = 1; j <= Vertices.Extent(); j++)
             {
                 TopoDS_Vertex V1 = TopoDS.Vertex(Vertices[i]);
                 TopoDS_Vertex V2 = TopoDS.Vertex(Vertices[j]);
-                gp_Pnt P1 = BRep_Tool.Pnt(V1);
-                gp_Pnt P2 = BRep_Tool.Pnt(V2);
+                Point3D P1 = BRep_Tool.Pnt(V1);
+                Point3D P2 = BRep_Tool.Pnt(V2);
                 double aDist = P1.SquareDistance(P2);
                 if (aDist > MaxDist)
                 {
@@ -74,7 +78,7 @@ public sealed class BRepOffset_Offset
 
     //=================================================================================================
 
-    private static void UpdateEdge(in TopoDS_Edge E, Geom_Curve? C, in TopLoc_Location L, double Tol)
+    private static void UpdateEdge(in TopoDS_Edge E, Geom_Curve? C, in Placement L, double Tol)
     {
         // Cut curves to avoid copies in the extensions.
         var B = new BRep_Builder();
@@ -135,7 +139,7 @@ public sealed class BRepOffset_Offset
     // purpose  : Particular case of Curve On Surface.
     //=======================================================================
 
-    private static void ComputeCurve3d(in TopoDS_Edge Edge, Geom2d_Curve Curve, Geom_Surface Surf, in TopLoc_Location Loc,
+    private static void ComputeCurve3d(in TopoDS_Edge Edge, Geom2d_Curve Curve, Geom_Surface Surf, in Placement Loc,
                                        double Tol)
     {
         // try to find the particular case
@@ -146,34 +150,34 @@ public sealed class BRepOffset_Offset
         // Search only isos on analytic surfaces.
         var C = new Geom2dAdaptor_Curve(Curve);
         var S = new GeomAdaptor_Surface(Surf);
-        GeomAbs_CurveType CTy = C.GetType();
-        GeomAbs_SurfaceType STy = S.GetType();
+        CurveKind CTy = C.GetType();
+        SurfaceKind STy = S.GetType();
         var TheBuilder = new BRep_Builder();
 
-        if (STy != GeomAbs_Plane)
+        if (STy != Plane)
         { // if plane buildcurve3d manage KPart
-            if (CTy == GeomAbs_Line)
+            if (CTy == Line)
             {
-                gp_Dir2d D = C.Line().Direction();
-                if (D.IsParallel(gp.DX2d(), Precision.Angular()))
+                Direction2D D = C.Line().Direction();
+                if (D.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso V.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        gp_Pnt2d P = C.Line().Location();
-                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) < Precision.PConfusion())
+                        Point2D P = C.Line().Location();
+                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             TheBuilder.Degenerated(Edge, true);
                         }
                         else
                         {
-                            gp_Sphere Sph = S.Sphere();
-                            gp_Ax3 Axis = Sph.Position();
-                            gp_Circ Ci = ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
-                            gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                            var AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                            Sphere Sph = S.Sphere();
+                            CoordinateSystem Axis = Sph.Position();
+                            Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
+                            Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                            var AxeRev = new Axis3D(Axis.Location(), DRev);
                             Ci.Rotate(AxeRev, P.X());
                             Geom_Circle Circle = new Geom_Circle(Ci);
-                            if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                            if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 Circle.Reverse();
                             }
@@ -181,51 +185,51 @@ public sealed class BRepOffset_Offset
                         }
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        gp_Cylinder Cyl = S.Cylinder();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Cyl.Position();
-                        gp_Circ Ci = ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        var AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        Cylinder Cyl = S.Cylinder();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Cyl.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        var AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new Geom_Circle(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         UpdateEdge(Edge, Circle, Loc, Tol);
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        gp_Cone Cone = S.Cone();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Cone.Position();
-                        gp_Circ Ci = ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        var AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        Cone Cone = S.Cone();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Cone.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        var AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new Geom_Circle(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         UpdateEdge(Edge, Circle, Loc, Tol);
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
-                        gp_Torus Tore = S.Torus();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Tore.Position();
-                        gp_Circ Ci = ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        var AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        Torus Tore = S.Torus();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Tore.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        var AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new Geom_Circle(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
@@ -233,76 +237,76 @@ public sealed class BRepOffset_Offset
                         IsComputed = true;
                     }
                 }
-                else if (D.IsParallel(gp.DY2d(), Precision.Angular()))
+                else if (D.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso U.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        gp_Sphere Sph = S.Sphere();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Sph.Position();
+                        Sphere Sph = S.Sphere();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Sph.Position();
                         // calculate iso 0.
-                        gp_Circ Ci = ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
 
                         // set to sameparameter (rotation of circle - offset of Y)
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.Direction());
-                        var AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.Direction());
+                        var AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.Y());
 
                         // transformation en iso U ( = P.X())
                         DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new Geom_Circle(Ci);
 
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         UpdateEdge(Edge, Circle, Loc, Tol);
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        gp_Cylinder Cyl = S.Cylinder();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Lin L = ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
-                        var Tr = new gp_Vec(L.Direction());
+                        Cylinder Cyl = S.Cylinder();
+                        Point2D P = C.Line().Location();
+                        Line3D L = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
+                        var Tr = new Vector3D(L.Direction());
                         Tr.Multiply(P.Y());
                         L.Translate(Tr);
                         Geom_Line Line = new Geom_Line(L);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Line.Reverse();
                         }
                         UpdateEdge(Edge, Line, Loc, Tol);
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        gp_Cone Cone = S.Cone();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Lin L = ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
-                        var Tr = new gp_Vec(L.Direction());
+                        Cone Cone = S.Cone();
+                        Point2D P = C.Line().Location();
+                        Line3D L = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
+                        var Tr = new Vector3D(L.Direction());
                         Tr.Multiply(P.Y());
                         L.Translate(Tr);
                         Geom_Line Line = new Geom_Line(L);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Line.Reverse();
                         }
                         UpdateEdge(Edge, Line, Loc, Tol);
                         IsComputed = true;
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
-                        gp_Torus Tore = S.Torus();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Tore.Position();
-                        gp_Circ Ci = ElSLib.TorusUIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.X());
+                        Torus Tore = S.Torus();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Tore.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.X());
                         Ci.Rotate(Ci.Axis(), P.Y());
                         Geom_Circle Circle = new Geom_Circle(Ci);
 
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
@@ -340,7 +344,7 @@ public sealed class BRepOffset_Offset
 
     /// <summary>The offset of <paramref name="Face"/> by <paramref name="Offset"/>.</summary>
     public BRepOffset_Offset(in TopoDS_Face Face, double Offset, bool OffsetOutside = true,
-                             GeomAbs_JoinType JoinType = GeomAbs_Arc) =>
+                             JoinKind JoinType = Arc) =>
         Init(Face, Offset, OffsetOutside, JoinType);
 
     //=================================================================================================
@@ -352,14 +356,14 @@ public sealed class BRepOffset_Offset
     /// into and must be unfrozen.
     /// </summary>
     public BRepOffset_Offset(in TopoDS_Face Face, double Offset, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Created,
-                             bool OffsetOutside = true, GeomAbs_JoinType JoinType = GeomAbs_Arc) =>
+                             bool OffsetOutside = true, JoinKind JoinType = Arc) =>
         Init(Face, Offset, Created, OffsetOutside, JoinType);
 
     //=================================================================================================
 
     /// <summary>The pipe of radius <paramref name="Offset"/> along <paramref name="Path"/> between two edges.</summary>
     public BRepOffset_Offset(in TopoDS_Edge Path, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, double Offset,
-                             bool Polynomial = false, double Tol = 1.0e-4, GeomAbs_Shape Conti = GeomAbs_C1) =>
+                             bool Polynomial = false, double Tol = 1.0e-4, Continuity Conti = C1) =>
         Init(Path, Edge1, Edge2, Offset, Polynomial, Tol, Conti);
 
     //=================================================================================================
@@ -367,7 +371,7 @@ public sealed class BRepOffset_Offset
     /// <summary>The pipe along <paramref name="Path"/> between two edges, closed by the given end edges.</summary>
     public BRepOffset_Offset(in TopoDS_Edge Path, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, double Offset,
                              in TopoDS_Edge FirstEdge, in TopoDS_Edge LastEdge, bool Polynomial = false,
-                             double Tol = 1.0e-4, GeomAbs_Shape Conti = GeomAbs_C1) =>
+                             double Tol = 1.0e-4, Continuity Conti = C1) =>
         Init(Path, Edge1, Edge2, Offset, FirstEdge, LastEdge, Polynomial, Tol, Conti);
 
     //=================================================================================================
@@ -378,14 +382,14 @@ public sealed class BRepOffset_Offset
     /// <paramref name="Polynomial"/> (for the approximation).
     /// </summary>
     public BRepOffset_Offset(in TopoDS_Vertex Vertex, NCollection_List<TopoDS_Shape> LEdge, double Offset,
-                             bool Polynomial = false, double Tol = 1.0e-4, GeomAbs_Shape Conti = GeomAbs_C1) =>
+                             bool Polynomial = false, double Tol = 1.0e-4, Continuity Conti = C1) =>
         Init(Vertex, LEdge, Offset, Polynomial, Tol, Conti);
 
     //=================================================================================================
 
     /// <summary>Builds the offset of <paramref name="Face"/> by <paramref name="Offset"/>.</summary>
     public void Init(in TopoDS_Face Face, double Offset, bool OffsetOutside = true,
-                     GeomAbs_JoinType JoinType = GeomAbs_Arc)
+                     JoinKind JoinType = Arc)
     {
         var Empty = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         Init(Face, Offset, Empty, OffsetOutside, JoinType);
@@ -398,7 +402,7 @@ public sealed class BRepOffset_Offset
     /// constructor). The edges of <paramref name="Created"/> are written into and must be unfrozen.
     /// </summary>
     public void Init(in TopoDS_Face Face, double Offset, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Created,
-                     bool OffsetOutside = true, GeomAbs_JoinType JoinType = GeomAbs_Arc)
+                     bool OffsetOutside = true, JoinKind JoinType = Arc)
     {
         myShape = Face;
         double myOffset = Offset;
@@ -407,7 +411,7 @@ public sealed class BRepOffset_Offset
             myOffset *= -1.0;
         }
 
-        Geom_Surface S = BRep_Tool.Surface(Face, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(Face, out Placement L)!;
         // On detrime les surfaces, evite des recopies dans les extensions.
         if (S is Geom_RectangularTrimmedSurface RT)
         {
@@ -416,7 +420,7 @@ public sealed class BRepOffset_Offset
         bool IsTransformed = false;
         if ((S is Geom_BSplineSurface || S is Geom_SurfaceOfLinearExtrusion || S is Geom_SurfaceOfRevolution
              || S is Geom_OffsetSurface)
-            && !L.IsIdentity())
+            && !L.IsIdentity)
         {
             S = (Geom_Surface)S.Copy();
             S.Transform(L.Transformation());
@@ -425,8 +429,8 @@ public sealed class BRepOffset_Offset
         // particular case of cone
         if (S is Geom_ConicalSurface Co)
         {
-            gp_Pnt Apex = Co.Apex();
-            ElSLib.Parameters(Co.Cone(), Apex, out double Uc, out double Vc);
+            Point3D Apex = Co.Apex();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Co.Cone(), Apex, out double Uc, out double Vc);
             BRepTools.UVBounds(Face, out double UU1, out double UU2, out double VV1, out double VV2);
             if (VV2 < Vc && Co.SemiAngle() > 0)
             {
@@ -450,11 +454,11 @@ public sealed class BRepOffset_Offset
         bool VminDegen = false;
         bool VmaxDegen = false;
         bool UisoDegen = false;
-        gp_Pnt MinApex = new(), MaxApex = new();
+        Point3D MinApex = new(), MaxApex = new();
         bool HasSingularity = false;
         double fpar, lpar;
         BRepTools.UVBounds(Face, out double uf1, out double uf2, out double vf1, out double vf2);
-        if ((!OffsetOutside || JoinType != GeomAbs_Arc)
+        if ((!OffsetOutside || JoinType != Arc)
             && (TheSurf.GetType() == typeof(Geom_ConicalSurface) || TheSurf.GetType() == typeof(Geom_OffsetSurface)))
         {
             var DegEdges = new NCollection_Sequence<TopoDS_Shape>();
@@ -467,15 +471,15 @@ public sealed class BRepOffset_Offset
                 {
                     Geom2d_Curve c2d = BRep_Tool.CurveOnSurface(anEdge, Face, out double aF, out double aL)!;
 
-                    gp_Pnt2d aFPnt2d = c2d.Value(aF), aLPnt2d = c2d.Value(aL);
+                    Point2D aFPnt2d = c2d.Value(aF), aLPnt2d = c2d.Value(aL);
 
-                    gp_Pnt aFPnt = S.Value(aFPnt2d.X(), aFPnt2d.Y()),
+                    Point3D aFPnt = S.Value(aFPnt2d.X(), aFPnt2d.Y()),
                            aLPnt = S.Value(aLPnt2d.X(), aLPnt2d.Y());
 
                     //  aFPnt.SquareDistance(aLPnt) > Precision::SquareConfusion() -
                     // is a sufficient condition of troubles: non-singular case, but edge is degenerated.
                     // So, normal handling of degenerated edges is not applicable in case of non-singular point.
-                    if (aFPnt.SquareDistance(aLPnt) < Precision.SquareConfusion())
+                    if (aFPnt.SquareDistance(aLPnt) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         DegEdges.Append(anEdge);
                     }
@@ -487,9 +491,9 @@ public sealed class BRepOffset_Offset
                 // define the iso of singularity (u or v)
                 TopoDS_Edge theDegEdge = TopoDS.Edge(DegEdges[1]);
                 Geom2d_Curve aCurve = BRep_Tool.CurveOnSurface(theDegEdge, Face, out fpar, out lpar)!;
-                gp_Pnt2d fp2d = aCurve.Value(fpar);
-                gp_Pnt2d lp2d = aCurve.Value(lpar);
-                if (Math.Abs(fp2d.X() - lp2d.X()) <= Precision.PConfusion())
+                Point2D fp2d = aCurve.Value(fpar);
+                Point2D lp2d = aCurve.Value(lpar);
+                if (Math.Abs(fp2d.X() - lp2d.X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     UisoDegen = true;
                 }
@@ -511,7 +515,7 @@ public sealed class BRepOffset_Offset
                 {
                     if (UisoDegen)
                     {
-                        if (Math.Abs(fp2d.X() - uf1) <= Precision.Confusion())
+                        if (Math.Abs(fp2d.X() - uf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             UminDegen = true;
                         }
@@ -522,7 +526,7 @@ public sealed class BRepOffset_Offset
                     }
                     else
                     {
-                        if (Math.Abs(fp2d.Y() - vf1) <= Precision.Confusion())
+                        if (Math.Abs(fp2d.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             VminDegen = true;
                         }
@@ -534,9 +538,9 @@ public sealed class BRepOffset_Offset
                 }
                 if (TheSurf.GetType() == typeof(Geom_ConicalSurface))
                 {
-                    gp_Cone theCone = ((Geom_ConicalSurface)TheSurf).Cone();
-                    gp_Pnt apex = theCone.Apex();
-                    ElSLib.Parameters(theCone, apex, out double Uapex, out double Vapex);
+                    Cone theCone = ((Geom_ConicalSurface)TheSurf).Cone();
+                    Point3D apex = theCone.Apex();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, apex, out double Uapex, out double Vapex);
                     if (VminDegen)
                     {
                         TheSurf = new Geom_RectangularTrimmedSurface(TheSurf, uf1, uf2, Vapex, vf2);
@@ -559,17 +563,17 @@ public sealed class BRepOffset_Offset
                         if (BRepOffset_Tool.Gabarit(uiso) > TolApex)
                         {
                             Geom_Surface BasisSurf = ((Geom_OffsetSurface)TheSurf).BasisSurface();
-                            gp_Pnt Papex, Pfirst, Pquart, Pmid;
+                            Point3D Papex, Pfirst, Pquart, Pmid;
                             Papex = BasisSurf.Value(uf1, vf1);
                             Pfirst = TheSurf.Value(uf1, vf1);
                             Pquart = TheSurf.Value(uf1, 0.75 * vf1 + 0.25 * vf2);
                             Pmid = TheSurf.Value(uf1, 0.5 * (vf1 + vf2));
-                            gp_Vec DirApex = new gp_Vec(Pfirst, Pquart) ^ new gp_Vec(Pfirst, Pmid);
-                            var LineApex = new Geom_Line(Papex, new gp_Dir(DirApex));
-                            gp_Vec DirGeneratrix = BasisSurf.DN(uf1, vf1, 1, 0);
-                            var LineGeneratrix = new Geom_Line(Pfirst, new gp_Dir(DirGeneratrix));
+                            Vector3D DirApex = new Vector3D(Pfirst, Pquart) ^ new Vector3D(Pfirst, Pmid);
+                            var LineApex = new Geom_Line(Papex, new Direction3D(DirApex));
+                            Vector3D DirGeneratrix = BasisSurf.DN(uf1, vf1, 1, 0);
+                            var LineGeneratrix = new Geom_Line(Pfirst, new Direction3D(DirGeneratrix));
                             var theExtrema = new GeomAPI_ExtremaCurveCurve(LineGeneratrix, LineApex);
-                            theExtrema.NearestPoints(out gp_Pnt Pint1, out gp_Pnt Pint2);
+                            theExtrema.NearestPoints(out Point3D Pint1, out Point3D Pint2);
                             double length = Pfirst.Distance(Pint1);
                             if (OffsetOutside)
                             {
@@ -596,17 +600,17 @@ public sealed class BRepOffset_Offset
                         if (BRepOffset_Tool.Gabarit(uiso) > TolApex)
                         {
                             Geom_Surface BasisSurf = ((Geom_OffsetSurface)TheSurf).BasisSurface();
-                            gp_Pnt Papex, Pfirst, Pquart, Pmid;
+                            Point3D Papex, Pfirst, Pquart, Pmid;
                             Papex = BasisSurf.Value(uf2, vf1);
                             Pfirst = TheSurf.Value(uf2, vf1);
                             Pquart = TheSurf.Value(uf2, 0.75 * vf1 + 0.25 * vf2);
                             Pmid = TheSurf.Value(uf2, 0.5 * (vf1 + vf2));
-                            gp_Vec DirApex = new gp_Vec(Pfirst, Pquart) ^ new gp_Vec(Pfirst, Pmid);
-                            var LineApex = new Geom_Line(Papex, new gp_Dir(DirApex));
-                            gp_Vec DirGeneratrix = BasisSurf.DN(uf2, vf1, 1, 0);
-                            var LineGeneratrix = new Geom_Line(Pfirst, new gp_Dir(DirGeneratrix));
+                            Vector3D DirApex = new Vector3D(Pfirst, Pquart) ^ new Vector3D(Pfirst, Pmid);
+                            var LineApex = new Geom_Line(Papex, new Direction3D(DirApex));
+                            Vector3D DirGeneratrix = BasisSurf.DN(uf2, vf1, 1, 0);
+                            var LineGeneratrix = new Geom_Line(Pfirst, new Direction3D(DirGeneratrix));
                             var theExtrema = new GeomAPI_ExtremaCurveCurve(LineGeneratrix, LineApex);
-                            theExtrema.NearestPoints(out gp_Pnt Pint1, out gp_Pnt Pint2);
+                            theExtrema.NearestPoints(out Point3D Pint1, out Point3D Pint2);
                             double length = Pfirst.Distance(Pint1);
                             if (OffsetOutside)
                             {
@@ -633,17 +637,17 @@ public sealed class BRepOffset_Offset
                         if (BRepOffset_Tool.Gabarit(viso) > TolApex)
                         {
                             Geom_Surface BasisSurf = ((Geom_OffsetSurface)TheSurf).BasisSurface();
-                            gp_Pnt Papex, Pfirst, Pquart, Pmid;
+                            Point3D Papex, Pfirst, Pquart, Pmid;
                             Papex = BasisSurf.Value(uf1, vf1);
                             Pfirst = TheSurf.Value(uf1, vf1);
                             Pquart = TheSurf.Value(0.75 * uf1 + 0.25 * uf2, vf1);
                             Pmid = TheSurf.Value(0.5 * (uf1 + uf2), vf1);
-                            gp_Vec DirApex = new gp_Vec(Pfirst, Pquart) ^ new gp_Vec(Pfirst, Pmid);
-                            var LineApex = new Geom_Line(Papex, new gp_Dir(DirApex));
-                            gp_Vec DirGeneratrix = BasisSurf.DN(uf1, vf1, 0, 1);
-                            var LineGeneratrix = new Geom_Line(Pfirst, new gp_Dir(DirGeneratrix));
+                            Vector3D DirApex = new Vector3D(Pfirst, Pquart) ^ new Vector3D(Pfirst, Pmid);
+                            var LineApex = new Geom_Line(Papex, new Direction3D(DirApex));
+                            Vector3D DirGeneratrix = BasisSurf.DN(uf1, vf1, 0, 1);
+                            var LineGeneratrix = new Geom_Line(Pfirst, new Direction3D(DirGeneratrix));
                             var theExtrema = new GeomAPI_ExtremaCurveCurve(LineGeneratrix, LineApex);
-                            theExtrema.NearestPoints(out gp_Pnt Pint1, out gp_Pnt Pint2);
+                            theExtrema.NearestPoints(out Point3D Pint1, out Point3D Pint2);
                             double length = Pfirst.Distance(Pint1);
                             if (OffsetOutside)
                             {
@@ -672,17 +676,17 @@ public sealed class BRepOffset_Offset
                         if (BRepOffset_Tool.Gabarit(viso) > TolApex)
                         {
                             Geom_Surface BasisSurf = ((Geom_OffsetSurface)TheSurf).BasisSurface();
-                            gp_Pnt Papex, Pfirst, Pquart, Pmid;
+                            Point3D Papex, Pfirst, Pquart, Pmid;
                             Papex = BasisSurf.Value(uf1, vf2);
                             Pfirst = TheSurf.Value(uf1, vf2);
                             Pquart = TheSurf.Value(0.75 * uf1 + 0.25 * uf2, vf2);
                             Pmid = TheSurf.Value(0.5 * (uf1 + uf2), vf2);
-                            gp_Vec DirApex = new gp_Vec(Pfirst, Pquart) ^ new gp_Vec(Pfirst, Pmid);
-                            var LineApex = new Geom_Line(Papex, new gp_Dir(DirApex));
-                            gp_Vec DirGeneratrix = BasisSurf.DN(uf1, vf2, 0, 1);
-                            var LineGeneratrix = new Geom_Line(Pfirst, new gp_Dir(DirGeneratrix));
+                            Vector3D DirApex = new Vector3D(Pfirst, Pquart) ^ new Vector3D(Pfirst, Pmid);
+                            var LineApex = new Geom_Line(Papex, new Direction3D(DirApex));
+                            Vector3D DirGeneratrix = BasisSurf.DN(uf1, vf2, 0, 1);
+                            var LineGeneratrix = new Geom_Line(Pfirst, new Direction3D(DirGeneratrix));
                             var theExtrema = new GeomAPI_ExtremaCurveCurve(LineGeneratrix, LineApex);
-                            theExtrema.NearestPoints(out gp_Pnt Pint1, out gp_Pnt Pint2);
+                            theExtrema.NearestPoints(out Point3D Pint1, out Point3D Pint2);
                             double length = Pfirst.Distance(Pint1);
                             if (OffsetOutside)
                             {
@@ -719,7 +723,7 @@ public sealed class BRepOffset_Offset
         }
         else
         {
-            myBuilder.UpdateFace(myFace, TheSurf, new TopLoc_Location(), BRep_Tool.Tolerance(Face));
+            myBuilder.UpdateFace(myFace, TheSurf, new Placement(), BRep_Tool.Tolerance(Face));
         }
 
         var MapSS = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
@@ -781,8 +785,8 @@ public sealed class BRepOffset_Offset
             {
                 TopoDS_Edge E = TopoDS.Edge(expe.Current());
                 TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-                gp_Pnt2d P2d1 = new(), P2d2 = new();
-                gp_Pnt P1, P2;
+                Point2D P2d1 = new(), P2d2 = new();
+                Point3D P1, P2;
                 double vstart, vend;
                 double f, l;
                 Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(E, CurFace, out f, out l)!;
@@ -812,7 +816,7 @@ public sealed class BRepOffset_Offset
                     P2d2 = C2d.Value(BRep_Tool.Parameter(V2, Eforward, CurFace));
                     if (VonDegen.Contains(V1))
                     {
-                        if (Math.Abs(P2d1.Y() - vf1) <= Precision.Confusion())
+                        if (Math.Abs(P2d1.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             P1 = MinApex;
                             vstart = v1;
@@ -826,7 +830,7 @@ public sealed class BRepOffset_Offset
                     else
                     {
                         TheSurf.D0(P2d1.X(), P2d1.Y(), out P1);
-                        if (!L.IsIdentity() && !IsTransformed)
+                        if (!L.IsIdentity && !IsTransformed)
                         {
                             P1.Transform(L.Transformation());
                         }
@@ -834,7 +838,7 @@ public sealed class BRepOffset_Offset
                     }
                     if (VonDegen.Contains(V2))
                     {
-                        if (Math.Abs(P2d2.Y() - vf1) <= Precision.Confusion())
+                        if (Math.Abs(P2d2.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             P2 = MinApex;
                             vend = v1;
@@ -848,7 +852,7 @@ public sealed class BRepOffset_Offset
                     else
                     {
                         TheSurf.D0(P2d2.X(), P2d2.Y(), out P2);
-                        if (!L.IsIdentity() && !IsTransformed)
+                        if (!L.IsIdentity && !IsTransformed)
                         {
                             P2.Transform(L.Transformation());
                         }
@@ -905,7 +909,7 @@ public sealed class BRepOffset_Offset
                         {
                             P2d2.SetY(vend);
                         }
-                        C2d = new Geom2d_Line(P2d1, new gp_Dir2d(new gp_Vec2d(P2d1, P2d2)));
+                        C2d = new Geom2d_Line(P2d1, new Direction2D(new Vector2D(P2d1, P2d2)));
                         f = 0.0;
                         l = P2d1.Distance(P2d2);
                         if (MapSS.IsBound(E)) // seam edge
@@ -941,7 +945,7 @@ public sealed class BRepOffset_Offset
                             {
                                 P2d2.SetY(vend);
                             }
-                            C2d_1 = new Geom2d_Line(P2d1, new gp_Dir2d(new gp_Vec2d(P2d1, P2d2)));
+                            C2d_1 = new Geom2d_Line(P2d1, new Direction2D(new Vector2D(P2d1, P2d2)));
                             if (E.Orientation() == TopAbs_FORWARD)
                             {
                                 UpdateEdge(OE, C2d, C2d_1, myFace, BRep_Tool.Tolerance(E));
@@ -988,7 +992,7 @@ public sealed class BRepOffset_Offset
     /// <paramref name="Edge1"/> and <paramref name="Edge2"/>, which get pcurves on it.
     /// </summary>
     public void Init(in TopoDS_Edge Path, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, double Offset,
-                     bool Polynomial = false, double Tol = 1.0e-4, GeomAbs_Shape Conti = GeomAbs_C1)
+                     bool Polynomial = false, double Tol = 1.0e-4, Continuity Conti = C1)
     {
         TopoDS_Edge FirstEdge = new(), LastEdge = new();
         Init(Path, Edge1, Edge2, Offset, FirstEdge, LastEdge, Polynomial, Tol, Conti);
@@ -1004,7 +1008,7 @@ public sealed class BRepOffset_Offset
     /// </summary>
     public void Init(in TopoDS_Edge Path, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, double Offset,
                      in TopoDS_Edge FirstEdge, in TopoDS_Edge LastEdge, bool Polynomial = false, double Tol = 1.0e-4,
-                     GeomAbs_Shape Conti = GeomAbs_C1)
+                     Continuity Conti = C1)
     {
         // OCCT.NET: copy at entry (plan 2.2) of the edges written below, when one of them holds a frozen shape.
         BRepTools_CopyAtEntry? anEntry = CopyAtEntry([Edge1, Edge2, FirstEdge, LastEdge]);
@@ -1022,14 +1026,14 @@ public sealed class BRepOffset_Offset
     // The body of OCCT's Init(Path, Edge1, Edge2, Offset, FirstEdge, LastEdge, ...), on the edges to write.
     private void initPipe(in TopoDS_Edge Path, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, double Offset,
                           in TopoDS_Edge FirstEdge, in TopoDS_Edge LastEdge, bool Polynomial, double Tol,
-                          GeomAbs_Shape Conti)
+                          Continuity Conti)
     {
         bool C1Denerated = false;
         bool C2Denerated = false;
         myStatus = BRepOffset_Good;
         myShape = Path;
 
-        TopLoc_Location Loc;
+        Placement Loc;
         var f = new double[3];
         var l = new double[3];
 
@@ -1059,9 +1063,9 @@ public sealed class BRepOffset_Offset
             C1.Transform(Loc.Transformation());
             HEdge1 = new GeomAdaptor_Curve(C1);
             var AC1 = new GeomAdaptor_Curve(C1);
-            if (AC1.GetType() == GeomAbs_Circle)
+            if (AC1.GetType() == Circle)
             {
-                C1Denerated = (AC1.Circle().Radius() < Precision.Confusion());
+                C1Denerated = (AC1.Circle().Radius() < global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -1086,9 +1090,9 @@ public sealed class BRepOffset_Offset
             C2.Transform(Loc.Transformation());
             HEdge2 = new GeomAdaptor_Curve(C2);
             var AC2 = new GeomAdaptor_Curve(C2);
-            if (AC2.GetType() == GeomAbs_Circle)
+            if (AC2.GetType() == Circle)
             {
-                C2Denerated = (AC2.Circle().Radius() < Precision.Confusion());
+                C2Denerated = (AC2.Circle().Radius() < global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -1097,7 +1101,7 @@ public sealed class BRepOffset_Offset
         Pipe.Perform(Tol, Polynomial, Conti);
         if (!Pipe.IsDone())
         {
-            throw new Standard_ConstructionError("GeomFill_Pipe : Cannot make a surface");
+            throw new ConstructionErrorException("GeomFill_Pipe : Cannot make a surface");
         }
         double ErrorPipe = Pipe.ErrorOnSurf();
 
@@ -1110,7 +1114,7 @@ public sealed class BRepOffset_Offset
         double TheTol;
         var myBuilder = new BRep_Builder();
         myBuilder.MakeFace(ref myFace);
-        var Id = new TopLoc_Location();
+        var Id = new Placement();
         myBuilder.UpdateFace(myFace, S, Id, PathTol);
 
         // update de Edge1. (Rem : has already a 3d curve)
@@ -1118,7 +1122,7 @@ public sealed class BRepOffset_Offset
         Geom2d_Curve PC;
         if (ExchUV)
         {
-            PC = new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X));
+            PC = new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X));
             U1 = f1;
             U2 = l1;
             if (!C1is3D)
@@ -1128,7 +1132,7 @@ public sealed class BRepOffset_Offset
         }
         else
         {
-            PC = new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+            PC = new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y));
             U1 = f2;
             U2 = l2;
             if (!C1is3D)
@@ -1171,7 +1175,7 @@ public sealed class BRepOffset_Offset
         // Update de edge2. (Rem : has already a 3d curve)
         if (ExchUV)
         {
-            PC = new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X));
+            PC = new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X));
             U1 = f1;
             U2 = l1;
             if (!C2is3D)
@@ -1181,7 +1185,7 @@ public sealed class BRepOffset_Offset
         }
         else
         {
-            PC = new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+            PC = new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y));
             U1 = f2;
             U2 = l2;
             if (!C2is3D)
@@ -1268,7 +1272,7 @@ public sealed class BRepOffset_Offset
             Edge4 = Edge3;
         }
 
-        double TolApp = Precision.Approximation();
+        double TolApp = global::Kerf.Engine.Foundation.Precision.Approximation();
 
         Geom2d_Line L1, L2;
         if (IsClosed)
@@ -1277,15 +1281,15 @@ public sealed class BRepOffset_Offset
             {
                 // rem : si ExchUv, il faut  reverser le Wire.
                 // donc l'edge Forward dans la face sera E4 : d'ou L1 et L2
-                L2 = new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
-                L1 = new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+                L2 = new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y));
+                L1 = new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y));
                 U1 = f2;
                 U2 = l2;
             }
             else
             {
-                L1 = new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X));
-                L2 = new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X));
+                L1 = new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X));
+                L2 = new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X));
                 U1 = f1;
                 U2 = l1;
             }
@@ -1340,13 +1344,13 @@ public sealed class BRepOffset_Offset
 
             if (ExchUV)
             {
-                L1 = new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+                L1 = new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y));
                 U1 = f2;
                 U2 = l2;
             }
             else
             {
-                L1 = new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X));
+                L1 = new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X));
                 U1 = f1;
                 U2 = l1;
             }
@@ -1370,13 +1374,13 @@ public sealed class BRepOffset_Offset
 
             if (ExchUV)
             {
-                L2 = new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y));
+                L2 = new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y));
                 U1 = f2;
                 U2 = l2;
             }
             else
             {
-                L2 = new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X));
+                L2 = new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X));
                 U1 = f1;
                 U2 = l1;
             }
@@ -1451,7 +1455,7 @@ public sealed class BRepOffset_Offset
     /// <paramref name="Polynomial"/> (for the approximation).
     /// </summary>
     public void Init(in TopoDS_Vertex Vertex, NCollection_List<TopoDS_Shape> LEdge, double Offset,
-                     bool Polynomial = false, double Tol = 1.0e-4, GeomAbs_Shape Conti = GeomAbs_C1)
+                     bool Polynomial = false, double Tol = 1.0e-4, Continuity Conti = C1)
     {
         // OCCT.NET: copy at entry (plan 2.2) of the edges written below, when one of them holds a frozen shape.
         var aShapes = new List<TopoDS_Shape>();
@@ -1478,7 +1482,7 @@ public sealed class BRepOffset_Offset
 
     // The body of OCCT's Init(Vertex, LEdge, Offset, Polynomial, TolApp, Conti), on the edges to write.
     private void initSphere(in TopoDS_Vertex Vertex, NCollection_List<TopoDS_Shape> LEdge, double Offset,
-                            bool Polynomial, double TolApp, GeomAbs_Shape Conti)
+                            bool Polynomial, double TolApp, Continuity Conti)
     {
         myStatus = BRepOffset_Good;
         myShape = Vertex;
@@ -1489,7 +1493,7 @@ public sealed class BRepOffset_Offset
 
         // OCCT_DEBUG naming of the shapes (Affich) left out.
 
-        gp_Pnt Origin = BRep_Tool.Pnt(Vertex);
+        Point3D Origin = BRep_Tool.Pnt(Vertex);
 
         //// Find the axis of the sphere to exclude
         //// degenerated and seam edges from the face under construction
@@ -1503,20 +1507,20 @@ public sealed class BRepOffset_Offset
 
         var GlobalProps = new GProp_GProps();
         BRepGProp.LinearProperties(theWire, GlobalProps);
-        gp_Pnt BaryCenter = GlobalProps.CentreOfMass();
-        var Xdir = new gp_Vec(BaryCenter, Origin);
+        Point3D BaryCenter = GlobalProps.CentreOfMass();
+        var Xdir = new Vector3D(BaryCenter, Origin);
 
-        gp_Pnt FarestCorner = GetFarestCorner(theWire);
-        gp_Pln thePlane = new gce_MakePln(Origin, BaryCenter, FarestCorner).Value();
-        gp_Dir Vdir = thePlane.Axis().Direction();
+        Point3D FarestCorner = GetFarestCorner(theWire);
+        Plane3D thePlane = new gce_MakePln(Origin, BaryCenter, FarestCorner).Value();
+        Direction3D Vdir = thePlane.Axis().Direction();
 
-        var Axis = new gp_Ax3(Origin, Vdir, new gp_Dir(Xdir));
+        var Axis = new CoordinateSystem(Origin, Vdir, new Direction3D(Xdir));
 
         Geom_Surface S = new Geom_SphericalSurface(Axis, Math.Abs(Offset));
 
         double f, l, Tol = BRep_Tool.Tolerance(Vertex);
 
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         var myBuilder = new BRep_Builder();
         myBuilder.MakeFace(ref myFace);
         Geom_Surface SS = S;
@@ -1556,22 +1560,22 @@ public sealed class BRepOffset_Offset
             // of the sphere. Else move it.
             // the transformation is : U` = U + PI + 2 k  PI
             //                         V` = +/- PI + 2 k` PI
-            gp_Pnt2d P2d = PCurve.Value(f);
+            Point2D P2d = PCurve.Value(f);
             bool IsToAdjust = false;
             if (P2d.Y() < -M_PI / 2.0)
             {
                 IsToAdjust = true;
-                PCurve.Mirror(new gp_Ax2d(new gp_Pnt2d(0.0, -M_PI / 2.0), gp.DX2d()));
+                PCurve.Mirror(new Axis2D(new Point2D(0.0, -M_PI / 2.0), Constants.DX2d()));
             }
             else if (P2d.Y() > M_PI / 2.0)
             {
                 IsToAdjust = true;
-                PCurve.Mirror(new gp_Ax2d(new gp_Pnt2d(0.0, M_PI / 2.0), gp.DX2d()));
+                PCurve.Mirror(new Axis2D(new Point2D(0.0, M_PI / 2.0), Constants.DX2d()));
             }
             if (IsToAdjust)
             {
                 // set the u firstpoint in [0,2*pi]
-                var Tr = new gp_Vec2d(M_PI, 0.0);
+                var Tr = new Vector2D(M_PI, 0.0);
                 if (P2d.X() > M_PI)
                 {
                     Tr.Reverse();
@@ -1605,7 +1609,7 @@ public sealed class BRepOffset_Offset
         myShape = Edge;
         double myOffset = Math.Abs(Offset);
 
-        Geom_Curve CP = BRep_Tool.Curve(Edge, out TopLoc_Location Loc, out double f, out double l)!;
+        Geom_Curve CP = BRep_Tool.Curve(Edge, out Placement Loc, out double f, out double l)!;
         CP = new Geom_TrimmedCurve(CP, f, l);
         CP.Transform(Loc.Transformation());
 
@@ -1613,10 +1617,10 @@ public sealed class BRepOffset_Offset
         Pipe.Perform();
         if (!Pipe.IsDone())
         {
-            throw new Standard_ConstructionError("GeomFill_Pipe : Cannot make a surface");
+            throw new ConstructionErrorException("GeomFill_Pipe : Cannot make a surface");
         }
 
-        var MF = new BRepLib_MakeFace(Pipe.InternalSurface()!, Precision.Confusion());
+        var MF = new BRepLib_MakeFace(Pipe.InternalSurface()!, global::Kerf.Engine.Foundation.Precision.Confusion());
         myFace = MF.InternalFace();
 
         if (Offset < 0.0)

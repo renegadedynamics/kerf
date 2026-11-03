@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -49,14 +53,14 @@ public class Law_Composite : Law_Function
     }
 
     /// <summary>Not implemented in OCCT.</summary>
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public override GeomAbs_Shape Continuity()
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public override Continuity Continuity()
     {
-        throw new Standard_NotImplemented("Law_Composite::Continuity()");
+        throw new MethodNotImplementedException("Law_Composite::Continuity()");
     }
 
     /// <summary>The sum of the laws' intervals.</summary>
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         NCollection_List<Law_Function>.Iterator It = new NCollection_List<Law_Function>.Iterator(funclist);
         Law_Function func;
@@ -71,7 +75,7 @@ public class Law_Composite : Law_Function
         return nbr_interval;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         NCollection_List<Law_Function>.Iterator It = new NCollection_List<Law_Function>.Iterator(funclist);
         Law_Function func;
@@ -156,7 +160,7 @@ public class Law_Composite : Law_Function
         Wtest = W + Eps; // Decalage pour discriminer les noeuds
         if (periodic)
         {
-            Wtest = ElCLib.InPeriod(Wtest, first, last);
+            Wtest = global::Kerf.Engine.Geometry.ElCLib.InPeriod(Wtest, first, last);
             W = Wtest - Eps;
         }
 

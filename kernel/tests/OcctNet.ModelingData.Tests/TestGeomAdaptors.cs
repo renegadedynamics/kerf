@@ -14,31 +14,32 @@
 // Geom curve's own EvalD*, and offset curves report a single interval and the curve's own continuity (OCCT evaluates
 // them through Geom_OffsetCurveUtils over a basis adaptor); ShallowCopy shares nothing but the curve and bounds.
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.Standard;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Engine.Foundation.Standard;
 
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>A test stand-in for GeomAdaptor_Curve: a Geom_Curve seen through Adaptor3d_Curve (see the file header).</summary>
 internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 {
-    private static readonly double PosTol = Precision.PConfusion() / 2;
+    private static readonly double PosTol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 2;
 
     private Geom_Curve? myCurve;
-    private GeomAbs_CurveType myTypeCurve = GeomAbs_OtherCurve;
+    private CurveKind myTypeCurve = OtherCurve;
     private double myFirst;
     private double myLast;
 
-    private gp_Lin myLin = new();
-    private gp_Circ myCirc = new();
-    private gp_Elips myElips = new();
-    private gp_Hypr myHypr = new();
-    private gp_Parab myParab = new();
+    private Line3D myLin = new();
+    private Circle3D myCirc = new();
+    private Ellipse3D myElips = new();
+    private Hyperbola3D myHypr = new();
+    private Parabola3D myParab = new();
     private Geom_BezierCurve? myBezier;
     private Geom_BSplineCurve? myBSpline;
     private bool myHasEvalRep;
-    private BSplCLib_Cache? myCache;
+    private global::Kerf.Engine.Geometry.Splines.Cache? myCache;
     private NCollection_Array1<double>? myBezierFlatKnots;
 
     public TestGeomAdaptor_Curve()
@@ -59,7 +60,7 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
     {
         if (theCurve is null)
         {
-            throw new Standard_NullObject();
+            throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
         load(theCurve, theCurve.FirstParameter(), theCurve.LastParameter());
     }
@@ -68,11 +69,11 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
     {
         if (theCurve is null)
         {
-            throw new Standard_NullObject();
+            throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
-        if (theUFirst > theULast + Precision.Confusion())
+        if (theUFirst > theULast + global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_ConstructionError();
+            throw new global::Kerf.Engine.Foundation.ConstructionErrorException();
         }
         load(theCurve, theUFirst, theULast);
     }
@@ -98,42 +99,42 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                     Load(aTrimmed.BasisCurve(), UFirst, ULast);
                     break;
                 case Geom_Circle aCircle when C.GetType() == typeof(Geom_Circle):
-                    myTypeCurve = GeomAbs_Circle;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Circle;
                     myCirc = aCircle.Circ();
                     break;
                 case Geom_Line aLine when C.GetType() == typeof(Geom_Line):
-                    myTypeCurve = GeomAbs_Line;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Line;
                     myLin = aLine.Lin();
                     break;
                 case Geom_Ellipse anEllipse when C.GetType() == typeof(Geom_Ellipse):
-                    myTypeCurve = GeomAbs_Ellipse;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
                     myElips = anEllipse.Elips();
                     break;
                 case Geom_Parabola aParabola when C.GetType() == typeof(Geom_Parabola):
-                    myTypeCurve = GeomAbs_Parabola;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Parabola;
                     myParab = aParabola.Parab();
                     break;
                 case Geom_Hyperbola aHyperbola when C.GetType() == typeof(Geom_Hyperbola):
-                    myTypeCurve = GeomAbs_Hyperbola;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
                     myHypr = aHyperbola.Hypr();
                     break;
                 case Geom_BezierCurve aBezier when C.GetType() == typeof(Geom_BezierCurve):
-                    myTypeCurve = GeomAbs_BezierCurve;
+                    myTypeCurve = BezierCurve;
                     myBezier = aBezier;
                     myHasEvalRep = aBezier.HasEvalRepresentation();
                     break;
                 case Geom_BSplineCurve aBSpline when C.GetType() == typeof(Geom_BSplineCurve):
-                    myTypeCurve = GeomAbs_BSplineCurve;
+                    myTypeCurve = BSplineCurve;
                     myBSpline = aBSpline;
                     myHasEvalRep = aBSpline.HasEvalRepresentation();
                     break;
                 case Geom_OffsetCurve when C.GetType() == typeof(Geom_OffsetCurve):
                     // Test-only: evaluated through the curve itself (see the file header).
-                    myTypeCurve = GeomAbs_OffsetCurve;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.OffsetCurve;
                     myHasEvalRep = true;
                     break;
                 default:
-                    myTypeCurve = GeomAbs_OtherCurve;
+                    myTypeCurve = OtherCurve;
                     break;
             }
         }
@@ -158,25 +159,25 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 
     public override double LastParameter() => myLast;
 
-    private GeomAbs_Shape LocalContinuity(double U1, double U2)
+    private Continuity LocalContinuity(double U1, double U2)
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_BSplineCurve, " ");
+        Standard_NoSuchObject_Raise_if(myTypeCurve != BSplineCurve, " ");
         Geom_BSplineCurve aBSpl = myBSpline!;
         int Nb = aBSpl.NbKnots();
         int Index1;
         int Index2;
         NCollection_Array1<double> TK = aBSpl.InternalKnots();
         NCollection_Array1<int> TM = aBSpl.InternalMultiplicities();
-        BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U1, aBSpl.IsPeriodic(), 1, Nb, out Index1, out double newFirst);
-        BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U2, aBSpl.IsPeriodic(), 1, Nb, out Index2, out double newLast);
-        if (Math.Abs(newFirst - TK[Index1 + 1]) < Precision.PConfusion())
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U1, aBSpl.IsPeriodic(), 1, Nb, out Index1, out double newFirst);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U2, aBSpl.IsPeriodic(), 1, Nb, out Index2, out double newLast);
+        if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (Index1 < Nb)
             {
                 Index1++;
             }
         }
-        if (Math.Abs(newLast - TK[Index2]) < Precision.PConfusion())
+        if (Math.Abs(newLast - TK[Index2]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             Index2--;
         }
@@ -205,84 +206,84 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         }
         if (MultMax <= 0)
         {
-            return GeomAbs_C0;
+            return C0;
         }
         else if (MultMax == 1)
         {
-            return GeomAbs_C1;
+            return C1;
         }
         else if (MultMax == 2)
         {
-            return GeomAbs_C2;
+            return C2;
         }
         else if (MultMax == 3)
         {
-            return GeomAbs_C3;
+            return C3;
         }
         else
         {
-            return GeomAbs_CN;
+            return CN;
         }
     }
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             return LocalContinuity(myFirst, myLast);
         }
-        if (myTypeCurve == GeomAbs_OffsetCurve)
+        if (myTypeCurve == global::Kerf.Geometry.CurveKind.OffsetCurve)
         {
             return myCurve!.Continuity(); // test-only simplification
         }
-        else if (myTypeCurve == GeomAbs_OtherCurve)
+        else if (myTypeCurve == OtherCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Curve::Contunuity");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("GeomAdaptor_Curve::Contunuity");
         }
-        return GeomAbs_CN;
+        return CN;
     }
 
-    private int BSplineContinuityOrder(GeomAbs_Shape S, string theWhere)
+    private int BSplineContinuityOrder(Continuity S, string theWhere)
     {
         switch (S)
         {
-            case GeomAbs_C1:
+            case C1:
                 return 1;
-            case GeomAbs_C2:
+            case C2:
                 return 2;
-            case GeomAbs_C3:
+            case C3:
                 return 3;
-            case GeomAbs_CN:
+            case CN:
                 return myBSpline!.Degree();
             default:
-                throw new Standard_DomainError(theWhere);
+                throw new global::Kerf.Engine.Foundation.DomainErrorException(theWhere);
         }
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             Geom_BSplineCurve aBSpl = myBSpline!;
-            if ((!aBSpl.IsPeriodic() && S <= Continuity()) || S == GeomAbs_C0)
+            if ((!aBSpl.IsPeriodic() && S <= Continuity()) || S == C0)
             {
                 return 1;
             }
             int aDegree = aBSpl.Degree();
             int aCont = BSplineContinuityOrder(S, "GeomAdaptor_Curve::NbIntervals()");
-            double anEps = Min(Resolution(Precision.Confusion()), Precision.PConfusion());
-            return BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic(),
+            double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic(),
                                       aCont, myFirst, myLast, anEps, null);
         }
         return 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             Geom_BSplineCurve aBSpl = myBSpline!;
-            if ((!aBSpl.IsPeriodic() && S <= Continuity()) || S == GeomAbs_C0)
+            if ((!aBSpl.IsPeriodic() && S <= Continuity()) || S == C0)
             {
                 T[T.Lower()] = myFirst;
                 T[T.Lower() + 1] = myLast;
@@ -290,8 +291,8 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
             }
             int aDegree = aBSpl.Degree();
             int aCont = BSplineContinuityOrder(S, "GeomAdaptor_Curve::Intervals()");
-            double anEps = Min(Resolution(Precision.Confusion()), Precision.PConfusion());
-            BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic(), aCont,
+            double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic(), aCont,
                                myFirst, myLast, anEps, T);
         }
         else
@@ -306,11 +307,11 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 
     public override bool IsClosed()
     {
-        if (!Precision.IsPositiveInfinite(myLast) && !Precision.IsNegativeInfinite(myFirst))
+        if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(myLast) && !global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(myFirst))
         {
-            gp_Pnt Pd = Value(myFirst);
-            gp_Pnt Pf = Value(myLast);
-            return (Pd.Distance(Pf) <= Precision.Confusion());
+            Point3D Pd = Value(myFirst);
+            Point3D Pf = Value(myLast);
+            return (Pd.Distance(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         return false;
     }
@@ -321,21 +322,21 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 
     private void RebuildCache(double theParameter)
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             // Create cache for Bezier
             Geom_BezierCurve aBezier = myBezier!;
             int aDeg = aBezier.Degree();
-            myBezierFlatKnots ??= NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(aDeg));
-            myCache ??= new BSplCLib_Cache(aDeg, aBezier.IsPeriodic(), myBezierFlatKnots, aBezier.InternalPoles(),
+            myBezierFlatKnots ??= NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDeg));
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aDeg, aBezier.IsPeriodic(), myBezierFlatKnots, aBezier.InternalPoles(),
                                            aBezier.InternalWeights());
             myCache.BuildCache(theParameter, myBezierFlatKnots, aBezier.InternalPoles(), aBezier.InternalWeights());
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             // Create cache for B-spline
             Geom_BSplineCurve aBSpl = myBSpline!;
-            myCache ??= new BSplCLib_Cache(aBSpl.Degree(), aBSpl.IsPeriodic(), aBSpl.InternalKnotSequence(),
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpl.Degree(), aBSpl.IsPeriodic(), aBSpl.InternalKnotSequence(),
                                            aBSpl.InternalPoles(), aBSpl.InternalWeights());
             myCache.BuildCache(theParameter, aBSpl.InternalKnotSequence(), aBSpl.InternalPoles(), aBSpl.InternalWeights());
         }
@@ -377,23 +378,23 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         return false;
     }
 
-    public override gp_Pnt EvalD0(double theU)
+    public override Point3D EvalD0(double theU)
     {
         double U = theU;
-        gp_Pnt P;
+        Point3D P;
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                return ElCLib.Value(U, myLin);
-            case GeomAbs_Circle:
-                return ElCLib.Value(U, myCirc);
-            case GeomAbs_Ellipse:
-                return ElCLib.Value(U, myElips);
-            case GeomAbs_Hyperbola:
-                return ElCLib.Value(U, myHypr);
-            case GeomAbs_Parabola:
-                return ElCLib.Value(U, myParab);
-            case GeomAbs_BezierCurve:
+            case global::Kerf.Geometry.CurveKind.Line:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myLin);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myCirc);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myElips);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myHypr);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myParab);
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -406,7 +407,7 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                 myCache!.D0(U, out P);
                 return P;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -437,22 +438,22 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         Geom_Curve.ResD1 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D1(U, myCirc, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myCirc, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D1(U, myElips, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myElips, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D1(U, myHypr, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myHypr, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D1(U, myParab, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myParab, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -465,7 +466,7 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                 myCache!.D1(U, out aResult.Point, out aResult.D1);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -496,23 +497,23 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         Geom_Curve.ResD2 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 aResult.D2.SetCoord(0.0, 0.0, 0.0);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D2(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D2(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -525,7 +526,7 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                 myCache!.D2(U, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -556,25 +557,25 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         Geom_Curve.ResD3 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 aResult.D2.SetCoord(0.0, 0.0, 0.0);
                 aResult.D3.SetCoord(0.0, 0.0, 0.0);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D3(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D3(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
                 aResult.D3.SetCoord(0.0, 0.0, 0.0);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -587,7 +588,7 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                 myCache!.D3(U, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -613,25 +614,25 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
         }
     }
 
-    public override gp_Vec EvalDN(double theU, int theN)
+    public override Vector3D EvalDN(double theU, int theN)
     {
         double U = theU;
         int N = theN;
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                return ElCLib.DN(U, myLin, N);
-            case GeomAbs_Circle:
-                return ElCLib.DN(U, myCirc, N);
-            case GeomAbs_Ellipse:
-                return ElCLib.DN(U, myElips, N);
-            case GeomAbs_Hyperbola:
-                return ElCLib.DN(U, myHypr, N);
-            case GeomAbs_Parabola:
-                return ElCLib.DN(U, myParab, N);
-            case GeomAbs_BezierCurve:
+            case global::Kerf.Geometry.CurveKind.Line:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myLin, N);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myCirc, N);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myElips, N);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myHypr, N);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myParab, N);
+            case BezierCurve:
                 return myCurve!.EvalDN(U, N);
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -652,9 +653,9 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
     {
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 return R3D;
-            case GeomAbs_Circle:
+            case global::Kerf.Geometry.CurveKind.Circle:
             {
                 double R = myCirc.Radius();
                 if (R > R3D / 2.0)
@@ -663,78 +664,78 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
                 }
                 return 2 * Math.PI;
             }
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
                 return R3D / myElips.MajorRadius();
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 myBezier!.Resolution(R3D, out double res);
                 return res;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 myBSpline!.Resolution(R3D, out double res);
                 return res;
             }
             default:
-                return Precision.Parametric(R3D);
+                return global::Kerf.Engine.Foundation.Precision.Parametric(R3D);
         }
     }
 
-    public override GeomAbs_CurveType GetType() => myTypeCurve;
+    public override CurveKind GetType() => myTypeCurve;
 
-    public override gp_Lin Line()
+    public override Line3D Line()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Line, "GeomAdaptor_Curve::Line() - curve is not a Line");
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Line, "GeomAdaptor_Curve::Line() - curve is not a Line");
         return myLin;
     }
 
-    public override gp_Circ Circle()
+    public override Circle3D Circle()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Circle, "GeomAdaptor_Curve::Circle() - curve is not a Circle");
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Circle, "GeomAdaptor_Curve::Circle() - curve is not a Circle");
         return myCirc;
     }
 
-    public override gp_Elips Ellipse()
+    public override Ellipse3D Ellipse()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Ellipse,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Ellipse,
                                        "GeomAdaptor_Curve::Ellipse() - curve is not an Ellipse");
         return myElips;
     }
 
-    public override gp_Hypr Hyperbola()
+    public override Hyperbola3D Hyperbola()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Hyperbola,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Hyperbola,
                                        "GeomAdaptor_Curve::Hyperbola() - curve is not a Hyperbola");
         return myHypr;
     }
 
-    public override gp_Parab Parabola()
+    public override Parabola3D Parabola()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Parabola,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Parabola,
                                        "GeomAdaptor_Curve::Parabola() - curve is not a Parabola");
         return myParab;
     }
 
     public override int Degree()
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             return myBezier!.Degree();
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             return myBSpline!.Degree();
         }
-        throw new Standard_NoSuchObject();
+        throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
 
     public override bool IsRational()
     {
         switch (myTypeCurve)
         {
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 return myBSpline!.IsRational();
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 return myBezier!.IsRational();
             default:
                 return false;
@@ -743,49 +744,49 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 
     public override int NbPoles()
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             return myBezier!.NbPoles();
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             return myBSpline!.NbPoles();
         }
-        throw new Standard_NoSuchObject();
+        throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
 
     public override int NbKnots()
     {
-        if (myTypeCurve != GeomAbs_BSplineCurve)
+        if (myTypeCurve != BSplineCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Curve::NbKnots");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("GeomAdaptor_Curve::NbKnots");
         }
         return myBSpline!.NbKnots();
     }
 
     public override Geom_BezierCurve Bezier()
     {
-        if (myTypeCurve != GeomAbs_BezierCurve)
+        if (myTypeCurve != BezierCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Curve::Bezier");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("GeomAdaptor_Curve::Bezier");
         }
         return myBezier!;
     }
 
     public override Geom_BSplineCurve BSpline()
     {
-        if (myTypeCurve != GeomAbs_BSplineCurve)
+        if (myTypeCurve != BSplineCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Curve::BSpline");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("GeomAdaptor_Curve::BSpline");
         }
         return myBSpline!;
     }
 
     public override Geom_OffsetCurve OffsetCurve()
     {
-        if (myTypeCurve != GeomAbs_OffsetCurve)
+        if (myTypeCurve != global::Kerf.Geometry.CurveKind.OffsetCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Curve::OffsetCurve");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("GeomAdaptor_Curve::OffsetCurve");
         }
         return (Geom_OffsetCurve)myCurve!;
     }
@@ -794,22 +795,22 @@ internal sealed class TestGeomAdaptor_Curve : Adaptor3d_Curve
 /// <summary>A test stand-in for Geom2dAdaptor_Curve: a Geom2d_Curve seen through Adaptor2d_Curve2d (see the file header).</summary>
 internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
 {
-    private static readonly double PosTol = Precision.PConfusion() / 2;
+    private static readonly double PosTol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 2;
 
     private Geom2d_Curve? myCurve;
-    private GeomAbs_CurveType myTypeCurve = GeomAbs_OtherCurve;
+    private CurveKind myTypeCurve = OtherCurve;
     private double myFirst;
     private double myLast;
 
-    private gp_Lin2d myLin = new();
-    private gp_Circ2d myCirc = new();
-    private gp_Elips2d myElips = new();
-    private gp_Hypr2d myHypr = new();
-    private gp_Parab2d myParab = new();
+    private Line2D myLin = new();
+    private Circle2D myCirc = new();
+    private Ellipse2D myElips = new();
+    private Hyperbola2D myHypr = new();
+    private Parabola2D myParab = new();
     private Geom2d_BezierCurve? myBezier;
     private Geom2d_BSplineCurve? myBSpline;
     private bool myHasEvalRep;
-    private BSplCLib_Cache? myCache;
+    private global::Kerf.Engine.Geometry.Splines.Cache? myCache;
     private NCollection_Array1<double>? myBezierFlatKnots;
 
     public TestGeom2dAdaptor_Curve()
@@ -832,7 +833,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
     {
         if (theCurve is null)
         {
-            throw new Standard_NullObject();
+            throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
         load(theCurve, theCurve.FirstParameter(), theCurve.LastParameter());
     }
@@ -841,11 +842,11 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
     {
         if (theCurve is null)
         {
-            throw new Standard_NullObject();
+            throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
-        if (theUFirst > theULast + Precision.Confusion())
+        if (theUFirst > theULast + global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_ConstructionError();
+            throw new global::Kerf.Engine.Foundation.ConstructionErrorException();
         }
         load(theCurve, theUFirst, theULast);
     }
@@ -871,42 +872,42 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                     Load(aTrimmed.BasisCurve(), UFirst, ULast);
                     break;
                 case Geom2d_Circle aCircle when C.GetType() == typeof(Geom2d_Circle):
-                    myTypeCurve = GeomAbs_Circle;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Circle;
                     myCirc = aCircle.Circ2d();
                     break;
                 case Geom2d_Line aLine when C.GetType() == typeof(Geom2d_Line):
-                    myTypeCurve = GeomAbs_Line;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Line;
                     myLin = aLine.Lin2d();
                     break;
                 case Geom2d_Ellipse anEllipse when C.GetType() == typeof(Geom2d_Ellipse):
-                    myTypeCurve = GeomAbs_Ellipse;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
                     myElips = anEllipse.Elips2d();
                     break;
                 case Geom2d_Parabola aParabola when C.GetType() == typeof(Geom2d_Parabola):
-                    myTypeCurve = GeomAbs_Parabola;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Parabola;
                     myParab = aParabola.Parab2d();
                     break;
                 case Geom2d_Hyperbola aHyperbola when C.GetType() == typeof(Geom2d_Hyperbola):
-                    myTypeCurve = GeomAbs_Hyperbola;
+                    myTypeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
                     myHypr = aHyperbola.Hypr2d();
                     break;
                 case Geom2d_BezierCurve aBezier when C.GetType() == typeof(Geom2d_BezierCurve):
-                    myTypeCurve = GeomAbs_BezierCurve;
+                    myTypeCurve = BezierCurve;
                     myBezier = aBezier;
                     myHasEvalRep = aBezier.HasEvalRepresentation();
                     break;
                 case Geom2d_BSplineCurve aBSpline when C.GetType() == typeof(Geom2d_BSplineCurve):
-                    myTypeCurve = GeomAbs_BSplineCurve;
+                    myTypeCurve = BSplineCurve;
                     myBSpline = aBSpline;
                     myHasEvalRep = aBSpline.HasEvalRepresentation();
                     break;
                 case Geom2d_OffsetCurve when C.GetType() == typeof(Geom2d_OffsetCurve):
                     // Test-only: evaluated through the curve itself (see the file header).
-                    myTypeCurve = GeomAbs_OffsetCurve;
+                    myTypeCurve = OffsetCurve;
                     myHasEvalRep = true;
                     break;
                 default:
-                    myTypeCurve = GeomAbs_OtherCurve;
+                    myTypeCurve = OtherCurve;
                     break;
             }
         }
@@ -931,27 +932,27 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
 
     public override double LastParameter() => myLast;
 
-    private GeomAbs_Shape LocalContinuity(double U1, double U2)
+    private Continuity LocalContinuity(double U1, double U2)
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_BSplineCurve, " ");
+        Standard_NoSuchObject_Raise_if(myTypeCurve != BSplineCurve, " ");
         Geom2d_BSplineCurve aBSpline = myBSpline!;
         int Nb = aBSpline.NbKnots();
         int Index1;
         int Index2;
         NCollection_Array1<double> TK = aBSpline.InternalKnots();
         NCollection_Array1<int> TM = aBSpline.InternalMultiplicities();
-        BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U1, aBSpline.IsPeriodic(), 1, Nb, out Index1,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U1, aBSpline.IsPeriodic(), 1, Nb, out Index1,
                                  out double newFirst);
-        BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U2, aBSpline.IsPeriodic(), 1, Nb, out Index2,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U2, aBSpline.IsPeriodic(), 1, Nb, out Index2,
                                  out double newLast);
-        if (Math.Abs(newFirst - TK[Index1 + 1]) < Precision.PConfusion())
+        if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (Index1 < Nb)
             {
                 Index1++;
             }
         }
-        if (Math.Abs(newLast - TK[Index2]) < Precision.PConfusion())
+        if (Math.Abs(newLast - TK[Index2]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             Index2--;
         }
@@ -980,87 +981,87 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         }
         if (MultMax <= 0)
         {
-            return GeomAbs_C0;
+            return C0;
         }
         else if (MultMax == 1)
         {
-            return GeomAbs_C1;
+            return C1;
         }
         else if (MultMax == 2)
         {
-            return GeomAbs_C2;
+            return C2;
         }
         else if (MultMax == 3)
         {
-            return GeomAbs_C3;
+            return C3;
         }
         else
         {
-            return GeomAbs_CN;
+            return CN;
         }
     }
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             return LocalContinuity(myFirst, myLast);
         }
-        else if (myTypeCurve == GeomAbs_OffsetCurve)
+        else if (myTypeCurve == OffsetCurve)
         {
             return myCurve!.Continuity(); // test-only simplification
         }
-        else if (myTypeCurve == GeomAbs_OtherCurve)
+        else if (myTypeCurve == OtherCurve)
         {
-            throw new Standard_NoSuchObject("Geom2dAdaptor_Curve::Continuity");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("Geom2dAdaptor_Curve::Continuity");
         }
         else
         {
-            return GeomAbs_CN;
+            return CN;
         }
     }
 
-    private int BSplineContinuityOrder(GeomAbs_Shape S, string theWhere)
+    private int BSplineContinuityOrder(Continuity S, string theWhere)
     {
         switch (S)
         {
-            case GeomAbs_C1:
+            case C1:
                 return 1;
-            case GeomAbs_C2:
+            case C2:
                 return 2;
-            case GeomAbs_C3:
+            case C3:
                 return 3;
-            case GeomAbs_CN:
+            case CN:
                 return myBSpline!.Degree();
             default:
-                throw new Standard_DomainError(theWhere);
+                throw new global::Kerf.Engine.Foundation.DomainErrorException(theWhere);
         }
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             Geom2d_BSplineCurve aBSpline = myBSpline!;
-            if ((!aBSpline.IsPeriodic() && S <= Continuity()) || S == GeomAbs_C0)
+            if ((!aBSpline.IsPeriodic() && S <= Continuity()) || S == C0)
             {
                 return 1;
             }
             int aDegree = aBSpline.Degree();
             int aCont = BSplineContinuityOrder(S, "Geom2dAdaptor_Curve::NbIntervals()");
-            double anEps = Min(Resolution(Precision.Confusion()), Precision.PConfusion());
-            return BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree,
+            double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree,
                                       aBSpline.IsPeriodic(), aCont, myFirst, myLast, anEps, null);
         }
         return 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        if (myTypeCurve == GeomAbs_BSplineCurve)
+        if (myTypeCurve == BSplineCurve)
         {
             Geom2d_BSplineCurve aBSpline = myBSpline!;
-            if ((!aBSpline.IsPeriodic() && S <= Continuity()) || S == GeomAbs_C0)
+            if ((!aBSpline.IsPeriodic() && S <= Continuity()) || S == C0)
             {
                 T[T.Lower()] = myFirst;
                 T[T.Lower() + 1] = myLast;
@@ -1068,8 +1069,8 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
             }
             int aDegree = aBSpline.Degree();
             int aCont = BSplineContinuityOrder(S, "Geom2dAdaptor_Curve::Intervals()");
-            double anEps = Min(Resolution(Precision.Confusion()), Precision.PConfusion());
-            BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree, aBSpline.IsPeriodic(),
+            double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree, aBSpline.IsPeriodic(),
                                aCont, myFirst, myLast, anEps, T);
         }
         else
@@ -1084,11 +1085,11 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
 
     public override bool IsClosed()
     {
-        if (!Precision.IsPositiveInfinite(myLast) && !Precision.IsNegativeInfinite(myFirst))
+        if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(myLast) && !global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(myFirst))
         {
-            gp_Pnt2d Pd = Value(myFirst);
-            gp_Pnt2d Pf = Value(myLast);
-            return (Pd.Distance(Pf) <= Precision.Confusion());
+            Point2D Pd = Value(myFirst);
+            Point2D Pf = Value(myLast);
+            return (Pd.Distance(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         return false;
     }
@@ -1099,21 +1100,21 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
 
     private void RebuildCache(double theParameter)
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             // Create cache for Bezier
             Geom2d_BezierCurve aBezier = myBezier!;
             int aDeg = aBezier.Degree();
-            myBezierFlatKnots ??= NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(aDeg));
-            myCache ??= new BSplCLib_Cache(aDeg, aBezier.IsPeriodic(), myBezierFlatKnots, aBezier.InternalPoles(),
+            myBezierFlatKnots ??= NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDeg));
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aDeg, aBezier.IsPeriodic(), myBezierFlatKnots, aBezier.InternalPoles(),
                                            aBezier.InternalWeights());
             myCache.BuildCache(theParameter, myBezierFlatKnots, aBezier.InternalPoles(), aBezier.InternalWeights());
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             // Create cache for B-spline
             Geom2d_BSplineCurve aBSpline = myBSpline!;
-            myCache ??= new BSplCLib_Cache(aBSpline.Degree(), aBSpline.IsPeriodic(), aBSpline.InternalKnotSequence(),
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpline.Degree(), aBSpline.IsPeriodic(), aBSpline.InternalKnotSequence(),
                                            aBSpline.InternalPoles(), aBSpline.InternalWeights());
             myCache.BuildCache(theParameter, aBSpline.InternalKnotSequence(), aBSpline.InternalPoles(),
                                aBSpline.InternalWeights());
@@ -1156,22 +1157,22 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         return false;
     }
 
-    public override gp_Pnt2d Value(double U)
+    public override Point2D Value(double U)
     {
-        D0(U, out gp_Pnt2d aRes);
+        D0(U, out Point2D aRes);
         return aRes;
     }
 
-    public override void D0(double U, out gp_Pnt2d P) => P = EvalD0(U);
+    public override void D0(double U, out Point2D P) => P = EvalD0(U);
 
-    public override void D1(double U, out gp_Pnt2d P, out gp_Vec2d V)
+    public override void D1(double U, out Point2D P, out Vector2D V)
     {
         Geom2d_Curve.ResD1 aRes = EvalD1(U);
         P = aRes.Point;
         V = aRes.D1;
     }
 
-    public override void D2(double U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public override void D2(double U, out Point2D P, out Vector2D V1, out Vector2D V2)
     {
         Geom2d_Curve.ResD2 aRes = EvalD2(U);
         P = aRes.Point;
@@ -1179,7 +1180,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         V2 = aRes.D2;
     }
 
-    public override void D3(double U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
+    public override void D3(double U, out Point2D P, out Vector2D V1, out Vector2D V2, out Vector2D V3)
     {
         Geom2d_Curve.ResD3 aRes = EvalD3(U);
         P = aRes.Point;
@@ -1188,25 +1189,25 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         V3 = aRes.D3;
     }
 
-    public override gp_Vec2d DN(double U, int N) => EvalDN(U, N);
+    public override Vector2D DN(double U, int N) => EvalDN(U, N);
 
-    public override gp_Pnt2d EvalD0(double theU)
+    public override Point2D EvalD0(double theU)
     {
         double U = theU;
-        gp_Pnt2d P;
+        Point2D P;
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                return ElCLib.Value(U, myLin);
-            case GeomAbs_Circle:
-                return ElCLib.Value(U, myCirc);
-            case GeomAbs_Ellipse:
-                return ElCLib.Value(U, myElips);
-            case GeomAbs_Hyperbola:
-                return ElCLib.Value(U, myHypr);
-            case GeomAbs_Parabola:
-                return ElCLib.Value(U, myParab);
-            case GeomAbs_BezierCurve:
+            case global::Kerf.Geometry.CurveKind.Line:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myLin);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myCirc);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myElips);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myHypr);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, myParab);
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1219,7 +1220,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                 myCache!.D0(U, out P);
                 return P;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1250,22 +1251,22 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         Geom2d_Curve.ResD1 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D1(U, myCirc, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myCirc, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D1(U, myElips, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myElips, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D1(U, myHypr, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myHypr, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D1(U, myParab, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myParab, out aResult.Point, out aResult.D1);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1278,7 +1279,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                 myCache!.D1(U, out aResult.Point, out aResult.D1);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1309,23 +1310,23 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         Geom2d_Curve.ResD2 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 aResult.D2.SetCoord(0.0, 0.0);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D2(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D2(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1338,7 +1339,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                 myCache!.D2(U, out aResult.Point, out aResult.D1, out aResult.D2);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1369,25 +1370,25 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         Geom2d_Curve.ResD3 aResult = new();
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
+            case global::Kerf.Geometry.CurveKind.Line:
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
                 aResult.D2.SetCoord(0.0, 0.0);
                 aResult.D3.SetCoord(0.0, 0.0);
                 return aResult;
-            case GeomAbs_Circle:
-                ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Ellipse:
-                ElCLib.D3(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myElips, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Hyperbola:
-                ElCLib.D3(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, myHypr, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
-            case GeomAbs_Parabola:
-                ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
                 aResult.D3.SetCoord(0.0, 0.0);
                 return aResult;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1400,7 +1401,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                 myCache!.D3(U, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
                 return aResult;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1426,25 +1427,25 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
         }
     }
 
-    public override gp_Vec2d EvalDN(double theU, int theN)
+    public override Vector2D EvalDN(double theU, int theN)
     {
         double U = theU;
         int N = theN;
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
-                return ElCLib.DN(U, myLin, N);
-            case GeomAbs_Circle:
-                return ElCLib.DN(U, myCirc, N);
-            case GeomAbs_Ellipse:
-                return ElCLib.DN(U, myElips, N);
-            case GeomAbs_Hyperbola:
-                return ElCLib.DN(U, myHypr, N);
-            case GeomAbs_Parabola:
-                return ElCLib.DN(U, myParab, N);
-            case GeomAbs_BezierCurve:
+            case global::Kerf.Geometry.CurveKind.Line:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myLin, N);
+            case global::Kerf.Geometry.CurveKind.Circle:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myCirc, N);
+            case global::Kerf.Geometry.CurveKind.Ellipse:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myElips, N);
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myHypr, N);
+            case global::Kerf.Geometry.CurveKind.Parabola:
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, myParab, N);
+            case BezierCurve:
                 return myCurve!.EvalDN(U, N);
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 if (myHasEvalRep)
                 {
@@ -1465,9 +1466,9 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
     {
         switch (myTypeCurve)
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 return Ruv;
-            case GeomAbs_Circle:
+            case global::Kerf.Geometry.CurveKind.Circle:
             {
                 double R = myCirc.Radius();
                 if (R > Ruv / 2.0)
@@ -1476,79 +1477,79 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
                 }
                 return 2 * Math.PI;
             }
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
                 return Ruv / myElips.MajorRadius();
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 myBezier!.Resolution(Ruv, out double res);
                 return res;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 myBSpline!.Resolution(Ruv, out double res);
                 return res;
             }
             default:
-                return Precision.Parametric(Ruv);
+                return global::Kerf.Engine.Foundation.Precision.Parametric(Ruv);
         }
     }
 
-    public override GeomAbs_CurveType GetType() => myTypeCurve;
+    public override CurveKind GetType() => myTypeCurve;
 
-    public override gp_Lin2d Line()
+    public override Line2D Line()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Line, "Geom2dAdaptor_Curve::Line() - curve is not a Line");
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Line, "Geom2dAdaptor_Curve::Line() - curve is not a Line");
         return myLin;
     }
 
-    public override gp_Circ2d Circle()
+    public override Circle2D Circle()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Circle,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Circle,
                                        "Geom2dAdaptor_Curve::Circle() - curve is not a Circle");
         return myCirc;
     }
 
-    public override gp_Elips2d Ellipse()
+    public override Ellipse2D Ellipse()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Ellipse,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Ellipse,
                                        "Geom2dAdaptor_Curve::Ellipse() - curve is not an Ellipse");
         return myElips;
     }
 
-    public override gp_Hypr2d Hyperbola()
+    public override Hyperbola2D Hyperbola()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Hyperbola,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Hyperbola,
                                        "Geom2dAdaptor_Curve::Hyperbola() - curve is not a Hyperbola");
         return myHypr;
     }
 
-    public override gp_Parab2d Parabola()
+    public override Parabola2D Parabola()
     {
-        Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Parabola,
+        Standard_NoSuchObject_Raise_if(myTypeCurve != global::Kerf.Geometry.CurveKind.Parabola,
                                        "Geom2dAdaptor_Curve::Parabola() - curve is not a Parabola");
         return myParab;
     }
 
     public override int Degree()
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             return myBezier!.Degree();
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             return myBSpline!.Degree();
         }
-        throw new Standard_NoSuchObject();
+        throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
 
     public override bool IsRational()
     {
         switch (myTypeCurve)
         {
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 return myBSpline!.IsRational();
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 return myBezier!.IsRational();
             default:
                 return false;
@@ -1557,22 +1558,22 @@ internal sealed class TestGeom2dAdaptor_Curve : Adaptor2d_Curve2d
 
     public override int NbPoles()
     {
-        if (myTypeCurve == GeomAbs_BezierCurve)
+        if (myTypeCurve == BezierCurve)
         {
             return myBezier!.NbPoles();
         }
-        else if (myTypeCurve == GeomAbs_BSplineCurve)
+        else if (myTypeCurve == BSplineCurve)
         {
             return myBSpline!.NbPoles();
         }
-        throw new Standard_NoSuchObject();
+        throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
 
     public override int NbKnots()
     {
-        if (myTypeCurve != GeomAbs_BSplineCurve)
+        if (myTypeCurve != BSplineCurve)
         {
-            throw new Standard_NoSuchObject("Geom2dAdaptor_Curve::NbKnots");
+            throw new global::Kerf.Engine.Foundation.NoSuchObjectException("Geom2dAdaptor_Curve::NbKnots");
         }
         return myBSpline!.NbKnots();
     }

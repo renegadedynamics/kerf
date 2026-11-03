@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,13 +19,13 @@ namespace Occt;
 /// <remarks>
 /// OCCT keeps a pointer to the surface; the port keeps the adaptor, which must outlive the function.
 /// </remarks>
-public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
+public class Extrema_FuncPSNorm : FunctionSetWithDerivatives
 {
-    private gp_Pnt myP = new();
+    private Point3D myP = new();
     private Adaptor3d_Surface? myS;
     private double myU;
     private double myV;
-    private gp_Pnt myPs = new();
+    private Point3D myPs = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
     private readonly NCollection_Sequence<Extrema_POnSurf> myPoint = new();
     private bool myPinit;
@@ -34,7 +40,7 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
         mySinit = false;
     }
 
-    public Extrema_FuncPSNorm(in gp_Pnt P, Adaptor3d_Surface S)
+    public Extrema_FuncPSNorm(in Point3D P, Adaptor3d_Surface S)
     {
         myU = 0.0;
         myV = 0.0;
@@ -54,7 +60,7 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     }
 
     /// <summary>Sets the point, and forgets the extrema found.</summary>
-    public void SetPoint(in gp_Pnt P)
+    public void SetPoint(in Point3D P)
     {
         myP = P;
         myPinit = true;
@@ -71,13 +77,13 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     {
         if (!myPinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         myU = UV[1];
         myV = UV[2];
-        myS!.D1(myU, myV, out myPs, out gp_Vec Dus, out gp_Vec Dvs);
+        myS!.D1(myU, myV, out myPs, out Vector3D Dus, out Vector3D Dvs);
 
-        gp_Vec PPs = new(myP, myPs);
+        Vector3D PPs = new(myP, myPs);
 
         F[1] = PPs.Dot(Dus);
         F[2] = PPs.Dot(Dvs);
@@ -86,24 +92,24 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     }
 
     /// <summary>Calculates Fi'(U, V).</summary>
-    public override bool Derivatives(math_Vector UV, math_Matrix Df)
+    public override bool Derivatives(math_Vector UV, Matrix Df)
     {
         math_Vector F = new(1, 2);
         return Values(UV, F, Df);
     }
 
     /// <summary>Calculates Fi(U, V) and Fi'(U, V).</summary>
-    public override bool Values(math_Vector UV, math_Vector F, math_Matrix Df)
+    public override bool Values(math_Vector UV, math_Vector F, Matrix Df)
     {
         if (!myPinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         myU = UV[1];
         myV = UV[2];
-        myS!.D2(myU, myV, out myPs, out gp_Vec Dus, out gp_Vec Dvs, out gp_Vec Duus, out gp_Vec Dvvs, out gp_Vec Duvs);
+        myS!.D2(myU, myV, out myPs, out Vector3D Dus, out Vector3D Dvs, out Vector3D Duus, out Vector3D Dvvs, out Vector3D Duvs);
 
-        gp_Vec PPs = new(myP, myPs);
+        Vector3D PPs = new(myP, myPs);
 
         Df[1, 1] = Dus.SquareMagnitude() + PPs.Dot(Duus);
         Df[1, 2] = Dvs.Dot(Dus) + PPs.Dot(Duvs);
@@ -122,11 +128,11 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     {
         if (!myPinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         // comparison of solution with previous solutions
         int i = 1, nbSol = mySqDist.Length();
-        double tol2d = Precision.PConfusion() * Precision.PConfusion();
+        double tol2d = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         for (; i <= nbSol; i++)
         {
@@ -153,7 +159,7 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     {
         if (!myPinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return mySqDist.Value(N);
     }
@@ -163,7 +169,7 @@ public class Extrema_FuncPSNorm : math_FunctionSetWithDerivatives
     {
         if (!myPinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint.Value(N);
     }

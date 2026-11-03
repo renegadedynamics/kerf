@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
 using System.Buffers;
 using System.Buffers.Binary;
 
@@ -15,10 +18,10 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The port reads .NET streams: <see cref="Read(Stream, Message_ProgressRange)"/> reads a stream as
-/// <see cref="Read(string, Message_ProgressRange)"/> reads a file, from the stream's position (a stream that can't seek
+/// The port reads .NET streams: <see cref="Read(Stream, ProgressRange)"/> reads a stream as
+/// <see cref="Read(string, ProgressRange)"/> reads a file, from the stream's position (a stream that can't seek
 /// is first copied into memory, within <see cref="RWStl_ReadLimits.MaxBytes"/>). The lower-level
-/// <see cref="ReadBinary"/>, <see cref="ReadAscii"/> and <see cref="IsAscii"/> take a <see cref="Standard_IStream"/>,
+/// <see cref="ReadBinary"/>, <see cref="ReadAscii"/> and <see cref="IsAscii"/> take a <see cref="InputStream"/>,
 /// which keeps a C++ stream's flags between calls as OCCT's loop over the domains needs.
 /// </para>
 /// <para>
@@ -28,10 +31,10 @@ namespace Occt;
 /// Cancellation is through the progress range, as in OCCT.
 /// </para>
 /// <para>
-/// OCCT parses numbers with the C library's <c>strtod</c> in the C locale; the port with <see cref="Standard_Stream.Strtod(ReadOnlySpan{char}, out int)"/>.
+/// OCCT parses numbers with the C library's <c>strtod</c> in the C locale; the port with <see cref="StreamUtilities.Strtod(ReadOnlySpan{char}, out int)"/>.
 /// </para>
 /// </remarks>
-public abstract class RWStl_Reader : Standard_Transient
+public abstract class RWStl_Reader : Transient
 {
     private const int THE_STL_HEADER_SIZE = 84;
     private const int THE_STL_SIZEOF_FACET = 50;
@@ -55,7 +58,7 @@ public abstract class RWStl_Reader : Standard_Transient
     }
 
     // Merges the nodes of the triangles read, then calls the reader's AddNode and AddTriangle
-    private sealed class MergeNodeTool : Poly_MergeNodesTool
+    private sealed class MergeNodeTool : MergeNodesTool
     {
         private readonly RWStl_Reader myReader;
         private readonly NCollection_DataMap<int, int> myNodeIndexMap;
@@ -70,7 +73,7 @@ public abstract class RWStl_Reader : Standard_Transient
         }
 
         // Add new triangle
-        public new void AddTriangle(ReadOnlySpan<gp_XYZ> theElemNodes)
+        public new void AddTriangle(ReadOnlySpan<Xyz> theElemNodes)
         {
             base.AddTriangle(theElemNodes);
 
@@ -98,7 +101,7 @@ public abstract class RWStl_Reader : Standard_Transient
     // OCCT's readStlFloat: a little-endian float
     private static float readStlFloat(ReadOnlySpan<byte> theData) => BinaryPrimitives.ReadSingleLittleEndian(theData);
 
-    private static gp_XYZ readStlFloatVec3(ReadOnlySpan<byte> theData)
+    private static Xyz readStlFloatVec3(ReadOnlySpan<byte> theData)
         => new(readStlFloat(theData), readStlFloat(theData[sizeof(float)..]), readStlFloat(theData[(sizeof(float) * 2)..]));
 
     /// <summary>
@@ -106,12 +109,12 @@ public abstract class RWStl_Reader : Standard_Transient
     /// concatenation of files (nodes are not merged between domains). True on success, false on an error or a user
     /// break.
     /// </summary>
-    public bool Read(string theFile, Message_ProgressRange theProgress = default)
+    public bool Read(string theFile, ProgressRange theProgress = default)
     {
         FileStream? aFile = OpenFile(theFile);
         if (aFile is null)
         {
-            Message.SendFail("Error: file '" + theFile + "' is not found");
+            global::Kerf.Engine.Foundation.Message.SendFail("Error: file '" + theFile + "' is not found");
             return false;
         }
 
@@ -122,12 +125,12 @@ public abstract class RWStl_Reader : Standard_Transient
     }
 
     /// <summary>
-    /// <see cref="Read(string, Message_ProgressRange)"/> on the data of a stream from its position (an addition: OCCT
+    /// <see cref="Read(string, ProgressRange)"/> on the data of a stream from its position (an addition: OCCT
     /// reads files only).
     /// </summary>
-    public bool Read(Stream theStream, Message_ProgressRange theProgress = default)
+    public bool Read(Stream theStream, ProgressRange theProgress = default)
     {
-        Standard_IStream? aStream = OpenStream(theStream);
+        InputStream? aStream = OpenStream(theStream);
         if (aStream is null)
         {
             return false;
@@ -144,14 +147,14 @@ public abstract class RWStl_Reader : Standard_Transient
         // (probing may bring stream to fail state if EOF is reached)
         bool isAscii = (ulong)theEnd < THE_STL_MIN_FILE_SIZE || IsAscii(aStream, true);
 
-        var aBuffer = new Standard_ReadLineBuffer(THE_BUFFER_SIZE);
+        var aBuffer = new ReadLineBuffer(THE_BUFFER_SIZE);
 
         // Note: here we are trying to handle rare but realistic case of
         // STL files which are composed of several STL data blocks
         // running translation in cycle.
         // For this reason use infinite (logarithmic) progress scale,
         // but in special mode so that the first cycle will take ~ 70% of it
-        using var aPS = new Message_ProgressScope(theProgress, null, 1, true);
+        using var aPS = new ProgressScope(theProgress, null, 1, true);
         while (aStream.Good())
         {
             if (isAscii)
@@ -179,14 +182,14 @@ public abstract class RWStl_Reader : Standard_Transient
     /// them is above <c>~</c> (a binary file may start with "solid " too). The stream goes back to its start
     /// (<paramref name="isSeekgAvailable"/>) or the bytes read are put back.
     /// </summary>
-    public bool IsAscii(Standard_IStream theStream, bool isSeekgAvailable)
+    public bool IsAscii(InputStream theStream, bool isSeekgAvailable)
     {
         // read first 134 bytes to detect file format
         Span<byte> aBuffer = stackalloc byte[THE_STL_MIN_FILE_SIZE];
         long aNbRead = theStream.Read(aBuffer);
         if (theStream.Fail())
         {
-            Message.SendFail("Error: Cannot read file");
+            global::Kerf.Engine.Foundation.Message.SendFail("Error: Cannot read file");
             return true;
         }
 
@@ -284,11 +287,11 @@ public abstract class RWStl_Reader : Standard_Transient
         }
 
         // strtod's end pointer is its start when nothing is converted: Strtod's count is 0 then
-        theX = Standard_Stream.Strtod(aChars, out int aEnd);
+        theX = StreamUtilities.Strtod(aChars, out int aEnd);
         int aStr = aEnd;
-        theY = Standard_Stream.Strtod(aChars[aStr..], out aEnd);
+        theY = StreamUtilities.Strtod(aChars[aStr..], out aEnd);
         aStr += aEnd;
-        theZ = Standard_Stream.Strtod(aChars[aStr..], out aEnd);
+        theZ = StreamUtilities.Strtod(aChars[aStr..], out aEnd);
         if (aRented is not null)
         {
             ArrayPool<char>.Shared.Return(aRented);
@@ -303,7 +306,7 @@ public abstract class RWStl_Reader : Standard_Transient
     /// or an error. <paramref name="theUntilPos"/> only scales the progress. Empty lines are not supported (they
     /// make the reading fail). True on success, false on an error or a user break.
     /// </summary>
-    public bool ReadAscii(Standard_IStream theStream, Standard_ReadLineBuffer theBuffer, long theUntilPos, Message_ProgressRange theProgress)
+    public bool ReadAscii(InputStream theStream, ReadLineBuffer theBuffer, long theUntilPos, ProgressRange theProgress)
     {
         long aStartPos = theStream.TellG();
         Span<byte> aLine;
@@ -317,7 +320,7 @@ public abstract class RWStl_Reader : Standard_Transient
         }
         if (!isLine)
         {
-            Message.SendFail("Error: premature end of file");
+            global::Kerf.Engine.Foundation.Message.SendFail("Error: premature end of file");
             return false;
         }
 
@@ -328,11 +331,11 @@ public abstract class RWStl_Reader : Standard_Transient
         // report progress every 1 MiB of read data
         const int aStepB = 1024 * 1024;
         int aNbSteps = 1 + (int)((theUntilPos - aStartPos) / aStepB);
-        using var aPS = new Message_ProgressScope(theProgress, "Reading text STL file", aNbSteps);
+        using var aPS = new ProgressScope(theProgress, "Reading text STL file", aNbSteps);
         long aProgressPos = aStartPos + aStepB;
         int aNbLine = 1;
 
-        Span<gp_XYZ> aVertex = stackalloc gp_XYZ[3];
+        Span<Xyz> aVertex = stackalloc Xyz[3];
         while (aPS.More())
         {
             if (theStream.TellG() > aProgressPos)
@@ -344,7 +347,7 @@ public abstract class RWStl_Reader : Standard_Transient
             isLine = theBuffer.ReadLine(theStream, out aLine); // "facet normal nx ny nz"
             if (!isLine)
             {
-                Message.SendFail("Error: premature end of file");
+                global::Kerf.Engine.Foundation.Message.SendFail("Error: premature end of file");
                 return false;
             }
             if (str_starts_with(CStr(aLine), "endsolid", 8))
@@ -354,14 +357,14 @@ public abstract class RWStl_Reader : Standard_Transient
             }
             if (!str_starts_with(CStr(aLine), "facet", 5))
             {
-                Message.SendFail("Error: unexpected format of facet at line " + (aNbLine + 1));
+                global::Kerf.Engine.Foundation.Message.SendFail("Error: unexpected format of facet at line " + (aNbLine + 1));
                 return false;
             }
 
             isLine = theBuffer.ReadLine(theStream, out aLine); // "outer loop"
             if (!isLine || !str_starts_with(CStr(aLine), "outer", 5))
             {
-                Message.SendFail("Error: unexpected format of facet at line " + (aNbLine + 1));
+                global::Kerf.Engine.Foundation.Message.SendFail("Error: unexpected format of facet at line " + (aNbLine + 1));
                 return false;
             }
 
@@ -376,10 +379,10 @@ public abstract class RWStl_Reader : Standard_Transient
                 }
                 if (!ReadVertex(CStr(aLine), out double aX, out double aY, out double aZ))
                 {
-                    Message.SendFail("Error: cannot read vertex coordinates at line " + aNbLine);
+                    global::Kerf.Engine.Foundation.Message.SendFail("Error: cannot read vertex coordinates at line " + aNbLine);
                     return false;
                 }
-                aVertex[i] = new gp_XYZ(aX, aY, aZ);
+                aVertex[i] = new Xyz(aX, aY, aZ);
             }
 
             // stop reading if end of file is reached;
@@ -411,13 +414,13 @@ public abstract class RWStl_Reader : Standard_Transient
     /// Reads binary STL from the stream (opened in binary mode): the 84-byte header, then as many facets as the
     /// header's count says. True on success, false on an error or a user break.
     /// </summary>
-    public bool ReadBinary(Standard_IStream theStream, Message_ProgressRange theProgress)
+    public bool ReadBinary(InputStream theStream, ProgressRange theProgress)
     {
         // read file header at first
         Span<byte> aHeader = stackalloc byte[THE_STL_HEADER_SIZE];
         if (theStream.Read(aHeader) != THE_STL_HEADER_SIZE)
         {
-            Message.SendFail("Error: Corrupted binary STL file");
+            global::Kerf.Engine.Foundation.Message.SendFail("Error: Corrupted binary STL file");
             return false;
         }
 
@@ -436,7 +439,7 @@ public abstract class RWStl_Reader : Standard_Transient
 
         // don't trust the number of triangles which is coded in the file
         // sometimes it is wrong, and with this technique we don't need to swap endians for integer
-        using var aPS = new Message_ProgressScope(theProgress, "Reading binary STL file", aNbFacets);
+        using var aPS = new ProgressScope(theProgress, "Reading binary STL file", aNbFacets);
 
         // allocate buffer for 80 triangles
         const int THE_CHUNK_NBFACETS = 80;
@@ -447,7 +450,7 @@ public abstract class RWStl_Reader : Standard_Transient
         const int aFaceDataLen = aVec3Size * 4 + 2;
         int aBufferPtr = 0;
         int aNbFacesInBuffer = 0;
-        Span<gp_XYZ> aTriNodes = stackalloc gp_XYZ[3];
+        Span<Xyz> aTriNodes = stackalloc Xyz[3];
         for (int aNbFacetRead = 0; aNbFacetRead < aNbFacets && aPS.More();
              ++aNbFacetRead, --aNbFacesInBuffer, aBufferPtr += aFaceDataLen, aPS.Next())
         {
@@ -458,7 +461,7 @@ public abstract class RWStl_Reader : Standard_Transient
                 int aDataToRead = aNbFacesInBuffer * aFaceDataLen;
                 if (theStream.Read(aBuffer.AsSpan(0, aDataToRead)) != aDataToRead)
                 {
-                    Message.SendFail("Error: binary STL read failed");
+                    global::Kerf.Engine.Foundation.Message.SendFail("Error: binary STL read failed");
                     return false;
                 }
                 aBufferPtr = 0;
@@ -480,7 +483,7 @@ public abstract class RWStl_Reader : Standard_Transient
     /// Called for each node: creates it in the target model and returns its index (as given to
     /// <see cref="AddTriangle"/>).
     /// </summary>
-    public abstract int AddNode(in gp_XYZ thePnt);
+    public abstract int AddNode(in Xyz thePnt);
 
     /// <summary>Called for each triangle: creates it on the nodes in the target model.</summary>
     public abstract void AddTriangle(int theN1, int theN2, int theN3);
@@ -521,7 +524,7 @@ public abstract class RWStl_Reader : Standard_Transient
         if (myNbFacetsRead > myLimits.MaxTriangles)
         {
             myLimitExceeded = true;
-            Message.SendFail("Error: the STL data exceed the limit of " + myLimits.MaxTriangles + " triangles");
+            global::Kerf.Engine.Foundation.Message.SendFail("Error: the STL data exceed the limit of " + myLimits.MaxTriangles + " triangles");
             return false;
         }
         return true;
@@ -531,7 +534,7 @@ public abstract class RWStl_Reader : Standard_Transient
     /// The stream to read, from its position, within the size limit: a stream that can't seek is copied into memory
     /// first. Null (with an error message, and <see cref="LimitExceeded"/>) if the data are larger than the limit.
     /// </summary>
-    internal Standard_IStream? OpenStream(Stream theStream)
+    internal InputStream? OpenStream(Stream theStream)
     {
         ArgumentNullException.ThrowIfNull(theStream);
         long aMax = myLimits.MaxBytes;
@@ -541,7 +544,7 @@ public abstract class RWStl_Reader : Standard_Transient
             {
                 return SizeExceeded();
             }
-            return new Standard_IStream(theStream);
+            return new InputStream(theStream);
         }
 
         var aCopy = new MemoryStream();
@@ -567,13 +570,13 @@ public abstract class RWStl_Reader : Standard_Transient
             ArrayPool<byte>.Shared.Return(aChunk);
         }
         aCopy.Position = 0;
-        return new Standard_IStream(aCopy);
+        return new InputStream(aCopy);
     }
 
-    private Standard_IStream? SizeExceeded()
+    private InputStream? SizeExceeded()
     {
         myLimitExceeded = true;
-        Message.SendFail("Error: the STL data exceed the limit of " + myLimits.MaxBytes + " bytes");
+        global::Kerf.Engine.Foundation.Message.SendFail("Error: the STL data exceed the limit of " + myLimits.MaxBytes + " bytes");
         return null;
     }
 

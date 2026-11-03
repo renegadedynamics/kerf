@@ -3,12 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The default discrete pcurve of an edge on a face.</summary>
 public class BRepMeshData_PCurve : IMeshData_PCurve
 {
-    private readonly List<gp_Pnt2d> myPoints2d = [];
+    private readonly List<Point2D> myPoints2d = [];
     private readonly List<double> myParameters = [];
     private readonly List<int> myIndices = [];
 
@@ -19,7 +21,7 @@ public class BRepMeshData_PCurve : IMeshData_PCurve
     }
 
     /// <inheritdoc/>
-    public override void InsertPoint(int thePosition, in gp_Pnt2d thePoint, double theParamOnPCurve)
+    public override void InsertPoint(int thePosition, in Point2D thePoint, double theParamOnPCurve)
     {
         myPoints2d.Insert(thePosition, thePoint);
         myParameters.Insert(thePosition, theParamOnPCurve);
@@ -27,7 +29,7 @@ public class BRepMeshData_PCurve : IMeshData_PCurve
     }
 
     /// <inheritdoc/>
-    public override void AddPoint(in gp_Pnt2d thePoint, double theParamOnPCurve)
+    public override void AddPoint(in Point2D thePoint, double theParamOnPCurve)
     {
         myPoints2d.Add(thePoint);
         myParameters.Add(theParamOnPCurve);
@@ -35,7 +37,7 @@ public class BRepMeshData_PCurve : IMeshData_PCurve
     }
 
     /// <inheritdoc/>
-    public override ref gp_Pnt2d GetPoint(int theIndex)
+    public override ref Point2D GetPoint(int theIndex)
     {
         Standard_OutOfRange_Raise_if(theIndex < 0 || theIndex >= myPoints2d.Count,
                                      "BRepMeshData_PCurve::GetPoint");

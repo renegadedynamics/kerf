@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -35,11 +39,11 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
     public Geom2d_OffsetCurve? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myBasis is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         // Offset D0 requires basis D1 to compute offset normal direction
@@ -48,19 +52,19 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
         NCollection_Array1<Geom2d_Curve.ResD1> aBasisD1 = aBasisEval.EvaluateGridD1(theParams);
         if (aBasisD1.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNbParams = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNbParams);
+        NCollection_Array1<Point2D> aResult = new(1, aNbParams);
 
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom2d_Curve.ResD1 aBasis = ref aBasisD1[i];
-            gp_Pnt2d aP = aBasis.Point;
+            Point2D aP = aBasis.Point;
             if (!Geom2d_OffsetCurveUtils.CalculateD0(ref aP, aBasis.D1, myOffset))
             {
-                return new NCollection_Array1<gp_Pnt2d>();
+                return new NCollection_Array1<Point2D>();
             }
             aResult.SetValue(i, aP);
         }
@@ -90,8 +94,8 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom2d_Curve.ResD2 aBasis = ref aBasisD2[i];
-            gp_Pnt2d aP = aBasis.Point;
-            gp_Vec2d aD1 = aBasis.D1;
+            Point2D aP = aBasis.Point;
+            Vector2D aD1 = aBasis.D1;
             if (!Geom2d_OffsetCurveUtils.CalculateD1(ref aP, ref aD1, aBasis.D2, myOffset))
             {
                 return new NCollection_Array1<Geom2d_Curve.ResD1>();
@@ -124,16 +128,16 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
         for (int i = 1; i <= aNbParams; ++i)
         {
             ref readonly Geom2d_Curve.ResD3 aBasis = ref aBasisD3[i];
-            gp_Pnt2d aP = aBasis.Point;
-            gp_Vec2d aD1 = aBasis.D1;
-            gp_Vec2d aD2 = aBasis.D2;
-            gp_Vec2d aD3 = aBasis.D3;
+            Point2D aP = aBasis.Point;
+            Vector2D aD1 = aBasis.D1;
+            Vector2D aD2 = aBasis.D2;
+            Vector2D aD3 = aBasis.D3;
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (aD1.SquareMagnitude() <= gp.Resolution())
+            if (aD1.SquareMagnitude() <= Constants.Resolution())
             {
-                gp_Vec2d aDummyD4 = new();
+                Vector2D aDummyD4 = new();
                 if (!Geom2d_OffsetCurveUtils.AdjustDerivative(myBasis,
                                                               3,
                                                               theParams.Value(theParams.Lower() + i - 1),
@@ -184,15 +188,15 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
             double aParam = theParams.Value(theParams.Lower() + i - 1);
 
             ref readonly Geom2d_Curve.ResD3 aBasis = ref aBasisD3[i];
-            gp_Pnt2d aP = aBasis.Point;
-            gp_Vec2d aD1 = aBasis.D1;
-            gp_Vec2d aD2 = aBasis.D2;
-            gp_Vec2d aD3 = aBasis.D3;
-            gp_Vec2d aD4 = myBasis.EvalDN(aParam, 4);
+            Point2D aP = aBasis.Point;
+            Vector2D aD1 = aBasis.D1;
+            Vector2D aD2 = aBasis.D2;
+            Vector2D aD3 = aBasis.D3;
+            Vector2D aD4 = myBasis.EvalDN(aParam, 4);
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (aD1.SquareMagnitude() <= gp.Resolution())
+            if (aD1.SquareMagnitude() <= Constants.Resolution())
             {
                 if (!Geom2d_OffsetCurveUtils.AdjustDerivative(myBasis,
                                                               4,
@@ -221,11 +225,11 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
     /// Evaluates the Nth derivative at all grid points: from the D1-D3 grids for N up to 3, and as the basis
     /// curve's DN above.
     /// </summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myBasis is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNbParams = theParams.Length();
@@ -236,9 +240,9 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD1> aD1Grid = EvaluateGridD1(theParams);
             if (aD1Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
-            NCollection_Array1<gp_Vec2d> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector2D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD1Grid[i].D1);
@@ -250,9 +254,9 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD2> aD2Grid = EvaluateGridD2(theParams);
             if (aD2Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
-            NCollection_Array1<gp_Vec2d> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector2D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD2Grid[i].D2);
@@ -264,9 +268,9 @@ public sealed class Geom2dGridEval_OffsetCurve : Geom2dGridEval.ICurveEvaluator
             NCollection_Array1<Geom2d_Curve.ResD3> aD3Grid = EvaluateGridD3(theParams);
             if (aD3Grid.IsEmpty())
             {
-                return new NCollection_Array1<gp_Vec2d>();
+                return new NCollection_Array1<Vector2D>();
             }
-            NCollection_Array1<gp_Vec2d> aResult = new(1, aNbParams);
+            NCollection_Array1<Vector2D> aResult = new(1, aNbParams);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aResult.SetValue(i, aD3Grid[i].D3);

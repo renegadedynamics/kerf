@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -36,16 +37,16 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
                 aMults[k] = anOracle.Int(1, aDeg);
             }
             aMults[1] = aMults[aNbKnots] = aDeg + 1;
-            int aNbPoles = Occt.BSplCLib.NbPoles(aDeg, false, aMults);
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+            int aNbPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, false, aMults);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
             for (int k = 1; k <= aNbPoles; k++)
             {
                 // a zigzag in the XY plane (inflexions); now and then three aligned poles (a straight piece)
                 double aY = (k % 2 == 0 ? 1 : -1) * anOracle.Real(0.5, 3);
-                aPoles[k] = new gp_Pnt(k * 2.0 + anOracle.Real(-0.3, 0.3), aY, 0);
+                aPoles[k] = new Point3D(k * 2.0 + anOracle.Real(-0.3, 0.3), aY, 0);
                 if (k > 2 && anOracle.Int(0, 5) == 0)
                 {
-                    aPoles[k] = new gp_Pnt(2 * aPoles[k - 1].X() - aPoles[k - 2].X(), 2 * aPoles[k - 1].Y() - aPoles[k - 2].Y(), 0);
+                    aPoles[k] = new Point3D(2 * aPoles[k - 1].X() - aPoles[k - 2].X(), 2 * aPoles[k - 1].Y() - aPoles[k - 2].Y(), 0);
                 }
             }
             NCollection_Array1<double>? aWeights = anOracle.Bool() ? null : anOracle.Weights(aNbPoles, true);
@@ -58,7 +59,7 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
             var aPLaw = new GeomFill_Frenet();
             TrihedronOracle.Compare(anOracle, aNLaw, aPLaw, aNA, aPA, $"planar #{i}");
             aPLaw.SetCurve(aPA);
-            if (aPLaw.NbIntervals(GeomAbs_Shape.GeomAbs_C0) > aPA.NbIntervals(GeomAbs_Shape.GeomAbs_C2))
+            if (aPLaw.NbIntervals(Continuity.C0) > aPA.NbIntervals(Continuity.C2))
             {
                 aNbSingular++;
             }

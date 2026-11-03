@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The intersection between a conic and a 2D curve that may be a conic or composite.</summary>
@@ -17,35 +19,35 @@ public class Geom2dInt_IntConicCurveOfGInter
     }
 
     /// <summary>Intersection between a line and a parametric curve.</summary>
-    public Geom2dInt_IntConicCurveOfGInter(in gp_Lin2d Lin1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
+    public Geom2dInt_IntConicCurveOfGInter(in Line2D Lin1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
                                            double TolConf, double Tol)
         : base(Lin1, D1, C2, D2, TolConf, Tol)
     {
     }
 
     /// <summary>Intersection between a circle and a parametric curve.</summary>
-    public Geom2dInt_IntConicCurveOfGInter(in gp_Circ2d Circ1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
+    public Geom2dInt_IntConicCurveOfGInter(in Circle2D Circ1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
                                            double TolConf, double Tol)
         : base(Circ1, D1, C2, D2, TolConf, Tol)
     {
     }
 
     /// <summary>Intersection between an ellipse and a parametric curve.</summary>
-    public Geom2dInt_IntConicCurveOfGInter(in gp_Elips2d Elips1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
+    public Geom2dInt_IntConicCurveOfGInter(in Ellipse2D Elips1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
                                            double TolConf, double Tol)
         : base(Elips1, D1, C2, D2, TolConf, Tol)
     {
     }
 
     /// <summary>Intersection between a parabola and a parametric curve.</summary>
-    public Geom2dInt_IntConicCurveOfGInter(in gp_Parab2d Parab1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
+    public Geom2dInt_IntConicCurveOfGInter(in Parabola2D Parab1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
                                            double TolConf, double Tol)
         : base(Parab1, D1, C2, D2, TolConf, Tol)
     {
     }
 
     /// <summary>Intersection between the main branch of a hyperbola and a parametric curve.</summary>
-    public Geom2dInt_IntConicCurveOfGInter(in gp_Hypr2d Hyper1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
+    public Geom2dInt_IntConicCurveOfGInter(in Hyperbola2D Hyper1, in IntRes2d_Domain D1, Adaptor2d_Curve2d C2, in IntRes2d_Domain D2,
                                            double TolConf, double Tol)
         : base(Hyper1, D1, C2, D2, TolConf, Tol)
     {

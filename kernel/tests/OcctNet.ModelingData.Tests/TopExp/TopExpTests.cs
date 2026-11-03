@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopExp_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -173,7 +174,7 @@ public class TopExpTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox);
-        TopoDS_Vertex aFree = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(50, 0, 0)));
+        TopoDS_Vertex aFree = TestShapes.Frozen(TestShapes.Vertex(new Point3D(50, 0, 0)));
         aBuilder.Add(aCompound, aFree);
 
         int aCount = 0;
@@ -210,9 +211,9 @@ public class TopExpTests
         Assert.Equal(TopAbs_REVERSED, aV2.Orientation());
 
         // an open wire of two segments
-        TopoDS_Vertex aA = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
-        TopoDS_Vertex aB = TestShapes.Vertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aC = TestShapes.Vertex(new gp_Pnt(1, 1, 0));
+        TopoDS_Vertex aA = TestShapes.Vertex(new Point3D(0, 0, 0));
+        TopoDS_Vertex aB = TestShapes.Vertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aC = TestShapes.Vertex(new Point3D(1, 1, 0));
         var aBuilder = new BRep_Builder();
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);

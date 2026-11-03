@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Law_Composite: choosing the elementary law, the junctions, periodicity, intervals and Trim.</summary>
@@ -75,11 +79,11 @@ public class Law_CompositeTests
     public void IntervalsAndTrim()
     {
         Law_Composite aComp = ThreeLaws(0, 4, 0.0);
-        Assert.Equal(3, aComp.NbIntervals(GeomAbs_Shape.GeomAbs_C2));
+        Assert.Equal(3, aComp.NbIntervals(Continuity.C2));
         var aT = new NCollection_Array1<double>(1, 4);
-        aComp.Intervals(aT, GeomAbs_Shape.GeomAbs_C2);
+        aComp.Intervals(aT, Continuity.C2);
         Assert.Equal([0.0, 1.0, 2.0, 4.0], aT.AsSpan().ToArray());
-        Assert.Throws<Standard_NotImplemented>(() => aComp.Continuity());
+        Assert.Throws<MethodNotImplementedException>(() => aComp.Continuity());
 
         var aTrim = Assert.IsType<Law_Composite>(aComp.Trim(0.5, 3.5, 1.0e-9));
         Assert.Equal(3, aTrim.ChangeLaws().Extent());

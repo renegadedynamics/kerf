@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 using static OcctNet.ModelingAlgorithms.Tests.EdgeIntersectorRecordings;
 
@@ -13,10 +15,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntTools_EdgeIntersectorTests
 {
     private static TopoDS_Edge Segment(double x1, double y1, double z1, double x2, double y2, double z2) =>
-        new BRepBuilderAPI_MakeEdge(new gp_Pnt(x1, y1, z1), new gp_Pnt(x2, y2, z2)).Edge();
+        new BRepBuilderAPI_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     private static TopoDS_Face PlaneFace(double theSize) =>
-        new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), -theSize, theSize, -theSize, theSize).Face();
+        new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -theSize, theSize, -theSize, theSize).Face();
 
     [Fact]
     public void EdgeEdge_CrossingLines_GiveOneVertex()
@@ -63,7 +65,7 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeEdge_CircleAndLine_GiveTwoVertices_InEdge1sParameters()
     {
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0)).Edge();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0)).Edge();
         TopoDS_Edge aLine = Segment(-2, 0.5, 0, 2, 0.5, 0);
         IntTools_EdgeEdge anEE = new(aLine, aCircle);
         anEE.Perform();
@@ -72,7 +74,7 @@ public class IntTools_EdgeIntersectorTests
         {
             Assert.Equal(TopAbs_VERTEX, aCP.Type());
             Assert.True(aCP.Edge1().IsSame(aLine)); // the edges are swapped inside, not in the common parts
-            gp_Pnt aP = BRep_Tool.Curve(aLine, out _, out _)!.Value(aCP.VertexParameter1());
+            Point3D aP = BRep_Tool.Curve(aLine, out _, out _)!.Value(aCP.VertexParameter1());
             Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-6);
         }
     }
@@ -117,7 +119,7 @@ public class IntTools_EdgeIntersectorTests
     public void BeanFace_CircleOnCylinder_IsCoincident_LineMissingSphere_IsEmpty()
     {
         TopoDS_Face aCyl = TopoDS.Face(new TopExp_Explorer(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), TopAbs_FACE).Current());
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)), 1.0)).Edge();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0)).Edge();
         IntTools_BeanFaceIntersector aBF = new(aCircle, aCyl);
         BRep_Tool.Range(aCircle, out double f, out double l);
         aBF.SetBeanParameters(f, l);
@@ -181,7 +183,7 @@ public class IntTools_EdgeIntersectorTests
         }
         Assert.NotEmpty(aTemplate);
         List<string> aSerial;
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             aSerial = Run(aTemplate, true);
         }
@@ -195,7 +197,7 @@ public class IntTools_EdgeIntersectorTests
         Assert.Equal(aFresh, aSerial);
         foreach (int aDegree in new[] { 2, 4, Environment.ProcessorCount })
         {
-            using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+            using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
             {
                 Assert.Equal(aSerial, Run(aTemplate, true));
             }

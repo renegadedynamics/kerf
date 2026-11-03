@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -12,12 +18,12 @@ public class Extrema_SurfaceCSSSTests
     // A bicubic B-spline surface on [0, 3] x [0, 2], a wavy sheet near z = 0.
     private static Geom_BSplineSurface MakeBSplineSurface(double theZ = 0.0)
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 6, 1, 5);
+        NCollection_Array2<Point3D> aPoles = new(1, 6, 1, 5);
         for (int i = 1; i <= 6; i++)
         {
             for (int j = 1; j <= 5; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, theZ + 0.4 * Math.Sin(i * 1.3 + j * 0.7));
+                aPoles[i, j] = new Point3D(i, j, theZ + 0.4 * Math.Sin(i * 1.3 + j * 0.7));
             }
         }
         NCollection_Array1<double> aUKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0, 2.0, 3.0 });
@@ -31,13 +37,13 @@ public class Extrema_SurfaceCSSSTests
     // theSign = 1, down for -1.
     private static Geom_BSplineSurface MakeBump(double theSign, double theZ)
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 7, 1, 7);
+        NCollection_Array2<Point3D> aPoles = new(1, 7, 1, 7);
         for (int i = 1; i <= 7; i++)
         {
             for (int j = 1; j <= 7; j++)
             {
                 double r2 = (i - 4.1) * (i - 4.1) + (j - 3.9) * (j - 3.9);
-                aPoles[i, j] = new gp_Pnt(i, j, theZ + theSign * 2.0 * Math.Exp(-r2 / 3.0));
+                aPoles[i, j] = new Point3D(i, j, theZ + theSign * 2.0 * Math.Exp(-r2 / 3.0));
             }
         }
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0, 2.0, 3.0, 4.0 });
@@ -48,13 +54,13 @@ public class Extrema_SurfaceCSSSTests
     // A cubic B-spline curve above the sheet.
     private static Geom_BSplineCurve MakeBSplineCurve()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 6);
-        aPoles[1] = new gp_Pnt(1.2, 1.1, 2.0);
-        aPoles[2] = new gp_Pnt(2.0, 2.5, 1.2);
-        aPoles[3] = new gp_Pnt(3.0, 1.5, 0.9);
-        aPoles[4] = new gp_Pnt(4.0, 3.5, 1.5);
-        aPoles[5] = new gp_Pnt(5.0, 2.0, 1.1);
-        aPoles[6] = new gp_Pnt(5.5, 4.5, 2.2);
+        NCollection_Array1<Point3D> aPoles = new(1, 6);
+        aPoles[1] = new Point3D(1.2, 1.1, 2.0);
+        aPoles[2] = new Point3D(2.0, 2.5, 1.2);
+        aPoles[3] = new Point3D(3.0, 1.5, 0.9);
+        aPoles[4] = new Point3D(4.0, 3.5, 1.5);
+        aPoles[5] = new Point3D(5.0, 2.0, 1.1);
+        aPoles[6] = new Point3D(5.5, 4.5, 2.2);
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0, 2.0, 3.0 });
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From(new[] { 4, 1, 1, 4 });
         return new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
@@ -64,7 +70,7 @@ public class Extrema_SurfaceCSSSTests
     private static double SampledMinCS(Adaptor3d_Curve theC, Adaptor3d_Surface theS, int theN = 80)
     {
         double aMin = double.MaxValue;
-        gp_Pnt[] aSPnts = new gp_Pnt[(theN + 1) * (theN + 1)];
+        Point3D[] aSPnts = new Point3D[(theN + 1) * (theN + 1)];
         for (int i = 0; i <= theN; i++)
         {
             double u = theS.FirstUParameter() + (theS.LastUParameter() - theS.FirstUParameter()) * i / theN;
@@ -76,8 +82,8 @@ public class Extrema_SurfaceCSSSTests
         }
         for (int k = 0; k <= 4 * theN; k++)
         {
-            gp_Pnt aP = theC.Value(theC.FirstParameter() + (theC.LastParameter() - theC.FirstParameter()) * k / (4 * theN));
-            foreach (gp_Pnt aQ in aSPnts)
+            Point3D aP = theC.Value(theC.FirstParameter() + (theC.LastParameter() - theC.FirstParameter()) * k / (4 * theN));
+            foreach (Point3D aQ in aSPnts)
             {
                 aMin = Math.Min(aMin, aP.SquareDistance(aQ));
             }
@@ -87,9 +93,9 @@ public class Extrema_SurfaceCSSSTests
 
     private static double SampledMinSS(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2, int theN = 40)
     {
-        gp_Pnt[] Grid(Adaptor3d_Surface theS)
+        Point3D[] Grid(Adaptor3d_Surface theS)
         {
-            gp_Pnt[] aPnts = new gp_Pnt[(theN + 1) * (theN + 1)];
+            Point3D[] aPnts = new Point3D[(theN + 1) * (theN + 1)];
             for (int i = 0; i <= theN; i++)
             {
                 double u = theS.FirstUParameter() + (theS.LastUParameter() - theS.FirstUParameter()) * i / theN;
@@ -101,11 +107,11 @@ public class Extrema_SurfaceCSSSTests
             }
             return aPnts;
         }
-        gp_Pnt[] aG1 = Grid(theS1), aG2 = Grid(theS2);
+        Point3D[] aG1 = Grid(theS1), aG2 = Grid(theS2);
         double aMin = double.MaxValue;
-        foreach (gp_Pnt aP in aG1)
+        foreach (Point3D aP in aG1)
         {
-            foreach (gp_Pnt aQ in aG2)
+            foreach (Point3D aQ in aG2)
             {
                 aMin = Math.Min(aMin, aP.SquareDistance(aQ));
             }
@@ -117,10 +123,10 @@ public class Extrema_SurfaceCSSSTests
     private static void AssertStationaryCS(Adaptor3d_Curve theC, Adaptor3d_Surface theS, Extrema_POnCurv thePC,
         Extrema_POnSurf thePS, double theTol = 1e-6)
     {
-        theC.D1(thePC.Parameter(), out gp_Pnt aPC, out gp_Vec aDT);
+        theC.D1(thePC.Parameter(), out Point3D aPC, out Vector3D aDT);
         thePS.Parameter(out double u, out double v);
-        theS.D1(u, v, out gp_Pnt aPS, out gp_Vec aDU, out gp_Vec aDV);
-        gp_Vec aD = new(aPS, aPC);
+        theS.D1(u, v, out Point3D aPS, out Vector3D aDU, out Vector3D aDV);
+        Vector3D aD = new(aPS, aPC);
         if (aD.Magnitude() < 1e-7)
         {
             return;
@@ -134,10 +140,10 @@ public class Extrema_SurfaceCSSSTests
     [Fact]
     public void GlobOptFuncCS_GradientAndHessian_MatchFiniteDifferences()
     {
-        GeomAdaptor_Curve aC = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(1.5, 1.0, 2.0), new gp_Dir(0.2, 0.3, 1.0)), 0.8));
+        GeomAdaptor_Curve aC = new(new Geom_Circle(new Frame3D(new Point3D(1.5, 1.0, 2.0), new Direction3D(0.2, 0.3, 1.0)), 0.8));
         GeomAdaptor_Surface aS = new(MakeBSplineSurface());
         Extrema_GlobOptFuncCS aF = new(aC, aS);
-        Assert.Equal(3, aF.NbVariables());
+        Assert.Equal(3, aF.VariableCount);
 
         math_Vector X = new(1, 3);
         X[1] = 1.1;
@@ -147,7 +153,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(aC.Value(1.1).SquareDistance(aS.Value(1.3, 0.7)), F0, 1e-14);
 
         math_Vector G = new(1, 3);
-        math_Matrix H = new(1, 3, 1, 3);
+        Matrix H = new(1, 3, 1, 3);
         Assert.True(aF.Values(X, out double F1, G, H));
         Assert.Equal(F0, F1);
 
@@ -181,10 +187,10 @@ public class Extrema_SurfaceCSSSTests
     public void GlobOptFuncConicS_ValueAndConicParameter()
     {
         // A line along X at height 2 above the plane z = 0, on [-1, 1]
-        GeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(0, 0, 2), new gp_Dir(1, 0, 0)), -1.0, 1.0);
-        GeomAdaptor_Surface aS = new(new Geom_Plane(new gp_Ax3()), -5, 5, -5, 5);
+        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(0, 0, 2), new Direction3D(1, 0, 0)), -1.0, 1.0);
+        GeomAdaptor_Surface aS = new(new Geom_Plane(new CoordinateSystem()), -5, 5, -5, 5);
         Extrema_GlobOptFuncConicS aF = new(aC, aS);
-        Assert.Equal(2, aF.NbVariables());
+        Assert.Equal(2, aF.VariableCount);
 
         math_Vector UV = new(1, 2);
         UV[1] = 0.5;
@@ -205,7 +211,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.False(aF.Value(UV, out _));
 
         // Circle: parameters are shifted into the range when it goes past 2 Pi
-        GeomAdaptor_Curve aCirc = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)), 1.0), 4.0, 8.0);
+        GeomAdaptor_Curve aCirc = new(new Geom_Circle(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0), 4.0, 8.0);
         Extrema_GlobOptFuncConicS aFC = new(aS);
         aFC.LoadConic(aCirc, 4.0, 8.0);
         UV[1] = Math.Cos(7.0) * 3;
@@ -219,10 +225,10 @@ public class Extrema_SurfaceCSSSTests
     public void GlobOptFuncCQuadric_ValueAndQuadricParameters()
     {
         // A sphere of radius 1 at the origin; a line along X at height 3
-        GeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(0, 0, 3), new gp_Dir(1, 0, 0)), -2.0, 2.0);
-        GeomAdaptor_Surface aS = new(new Geom_SphericalSurface(new gp_Ax3(), 1.0));
+        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(0, 0, 3), new Direction3D(1, 0, 0)), -2.0, 2.0);
+        GeomAdaptor_Surface aS = new(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
         Extrema_GlobOptFuncCQuadric aF = new(aC, aS);
-        Assert.Equal(1, aF.NbVariables());
+        Assert.Equal(1, aF.VariableCount);
 
         math_Vector T = new(1, 1);
         T[1] = 0.0;
@@ -242,7 +248,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.False(aF.Value(T, out _));
 
         // Line vs a bounded plane: the projection when inside, the nearest corner otherwise
-        GeomAdaptor_Surface aP = new(new Geom_Plane(new gp_Ax3()), 0, 1, 0, 1);
+        GeomAdaptor_Surface aP = new(new Geom_Plane(new CoordinateSystem()), 0, 1, 0, 1);
         Extrema_GlobOptFuncCQuadric aFP = new(aC, -2.0, 2.0);
         aFP.LoadQuad(aP, 0, 1, 0, 1);
         T[1] = 0.5;
@@ -270,7 +276,7 @@ public class Extrema_SurfaceCSSSTests
         X[2] = 1.7;
         X[3] = 0.6;
         math_Vector F = new(1, 3);
-        math_Matrix D = new(1, 3, 1, 3);
+        Matrix D = new(1, 3, 1, 3);
         Assert.True(aF.Values(X, F, D));
         const double h = 1e-6;
         for (int k = 1; k <= 3; k++)
@@ -294,14 +300,14 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(aC.Value(1.3).SquareDistance(aS.Value(1.7, 0.6)), aF.SquareDistance(1), 1e-14);
         Assert.Equal(1.3, aF.PointOnCurve(1).Parameter());
 
-        Assert.Throws<Standard_TypeMismatch>(() => new Extrema_FuncExtCS().Value(X, F));
+        Assert.Throws<TypeMismatchException>(() => new Extrema_FuncExtCS().Value(X, F));
     }
 
     [Fact]
     public void FuncExtSS_DerivativesMatchFiniteDifferences()
     {
         GeomAdaptor_Surface aS1 = new(MakeBSplineSurface());
-        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(2, 1, 3), new gp_Dir(0, 0, 1)), 1.0));
+        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(2, 1, 3), new Direction3D(0, 0, 1)), 1.0));
         Extrema_FuncExtSS aF = new(aS1, aS2);
         Assert.Equal(4, aF.NbVariables());
         Assert.Equal(4, aF.NbEquations());
@@ -312,7 +318,7 @@ public class Extrema_SurfaceCSSSTests
         X[3] = 2.0;
         X[4] = -0.5;
         math_Vector F = new(1, 4);
-        math_Matrix D = new(1, 4, 1, 4);
+        Matrix D = new(1, 4, 1, 4);
         Assert.True(aF.Values(X, F, D));
         const double h = 1e-6;
         for (int k = 1; k <= 4; k++)
@@ -333,8 +339,8 @@ public class Extrema_SurfaceCSSSTests
     public void GenExtCS_LineSphere_QuadricPath()
     {
         // A line at distance 5 from the centre of a sphere of radius 2: the minimum is 3
-        GeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(-10, 5, 0), new gp_Dir(1, 0, 0)), 0.0, 20.0);
-        GeomAdaptor_Surface aS = new(new Geom_SphericalSurface(new gp_Ax3(), 2.0));
+        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(-10, 5, 0), new Direction3D(1, 0, 0)), 0.0, 20.0);
+        GeomAdaptor_Surface aS = new(new Geom_SphericalSurface(new CoordinateSystem(), 2.0));
         Extrema_GenExtCS anExt = new(aC, aS, 10, 10, 10, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
         Assert.True(anExt.NbExt() >= 1);
@@ -350,7 +356,7 @@ public class Extrema_SurfaceCSSSTests
         }
         Assert.Equal(9.0, aMin, 1e-8);
         Assert.Equal(10.0, anExt.PointOnCurve(aIMin).Parameter(), 1e-5);
-        gp_Pnt aPS = anExt.PointOnSurface(aIMin).Value();
+        Point3D aPS = anExt.PointOnSurface(aIMin).Value();
         Assert.Equal(0.0, aPS.X(), 1e-5);
         Assert.Equal(2.0, aPS.Y(), 1e-5);
     }
@@ -358,7 +364,7 @@ public class Extrema_SurfaceCSSSTests
     [Fact]
     public void GenExtCS_CircleBSpline_ConicPath()
     {
-        GeomAdaptor_Curve aC = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(3.5, 3.0, 1.5), new gp_Dir(0.3, -0.2, 1.0)), 0.7));
+        GeomAdaptor_Curve aC = new(new Geom_Circle(new Frame3D(new Point3D(3.5, 3.0, 1.5), new Direction3D(0.3, -0.2, 1.0)), 0.7));
         GeomAdaptor_Surface aS = new(MakeBSplineSurface());
         Extrema_GenExtCS anExt = new(aC, aS, 20, 20, 20, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
@@ -393,16 +399,16 @@ public class Extrema_SurfaceCSSSTests
         Assert.True(aMin <= aSampled + 1e-9, $"{aMin} > sampled {aSampled}");
         Assert.True(Math.Sqrt(aMin) > Math.Sqrt(aSampled) - 0.05);
 
-        Assert.Throws<Standard_OutOfRange>(() => anExt.SquareDistance(anExt.NbExt() + 1));
-        Assert.Throws<StdFail_NotDone>(() => new Extrema_GenExtCS().NbExt());
+        Assert.Throws<OutOfRangeException>(() => anExt.SquareDistance(anExt.NbExt() + 1));
+        Assert.Throws<NotDoneException>(() => new Extrema_GenExtCS().NbExt());
     }
 
     [Fact]
     public void GenExtCS_LinePlane_InitializeThenPerform()
     {
         // A line crossing a bounded plane: the minimum is 0 at the crossing
-        GeomAdaptor_Surface aS = new(new Geom_Plane(new gp_Ax3()), -2, 2, -2, 2);
-        GeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(0.3, 0.2, -1), new gp_Dir(0.1, 0.2, 1.0)), 0.0, 3.0);
+        GeomAdaptor_Surface aS = new(new Geom_Plane(new CoordinateSystem()), -2, 2, -2, 2);
+        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(0.3, 0.2, -1), new Direction3D(0.1, 0.2, 1.0)), 0.0, 3.0);
         Extrema_GenExtCS anExt = new();
         anExt.Initialize(aS, 10, 10, 1e-9);
         anExt.Perform(aC, 10, 1e-9);
@@ -416,8 +422,8 @@ public class Extrema_SurfaceCSSSTests
     public void GenLocateExtCS_LineCylinder()
     {
         // A line parallel to the X axis at y = 4, cylinder of radius 1 around Z: the minimum is 3 at (0, 1, z)
-        GeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(-5, 4, 0.5), new gp_Dir(1, 0, 0)), 0.0, 10.0);
-        GeomAdaptor_Surface aS = new(new Geom_CylindricalSurface(new gp_Ax3(), 1.0), 0, 2 * M_PI, -2, 2);
+        GeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(-5, 4, 0.5), new Direction3D(1, 0, 0)), 0.0, 10.0);
+        GeomAdaptor_Surface aS = new(new Geom_CylindricalSurface(new CoordinateSystem(), 1.0), 0, 2 * M_PI, -2, 2);
         Extrema_GenLocateExtCS anExt = new(aC, aS, 4.5, 1.4, 0.3, 1e-10, 1e-10);
         Assert.True(anExt.IsDone());
         Assert.Equal(9.0, anExt.SquareDistance(), 1e-10);
@@ -426,14 +432,14 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(M_PI / 2, u, 1e-7);
         Assert.Equal(0.5, v, 1e-7);
 
-        Assert.Throws<StdFail_NotDone>(() => new Extrema_GenLocateExtCS().SquareDistance());
+        Assert.Throws<NotDoneException>(() => new Extrema_GenLocateExtCS().SquareDistance());
     }
 
     [Fact]
     public void GenLocateExtSS_SphereSphere()
     {
-        GeomAdaptor_Surface aS1 = new(new Geom_SphericalSurface(new gp_Ax3(), 1.0));
-        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1)), 2.0));
+        GeomAdaptor_Surface aS1 = new(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
+        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 2.0));
         Extrema_GenLocateExtSS anExt = new(aS1, aS2, 0.2, 0.1, M_PI - 0.2, -0.1, 1e-10, 1e-10);
         Assert.True(anExt.IsDone());
         Assert.Equal(4.0, anExt.SquareDistance(), 1e-10);
@@ -444,8 +450,8 @@ public class Extrema_SurfaceCSSSTests
     [Fact]
     public void GenExtSS_SphereSphere_MinAndMax()
     {
-        GeomAdaptor_Surface aS1 = new(new Geom_SphericalSurface(new gp_Ax3(), 1.0));
-        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(3, 4, 0), new gp_Dir(0, 0, 1)), 2.0));
+        GeomAdaptor_Surface aS1 = new(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
+        GeomAdaptor_Surface aS2 = new(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(3, 4, 0), new Direction3D(0, 0, 1)), 2.0));
         Extrema_GenExtSS anExt = new(aS1, aS2, 20, 20, 1e-10, 1e-10);
         Assert.True(anExt.IsDone());
         Assert.True(anExt.NbExt() >= 2);
@@ -464,22 +470,22 @@ public class Extrema_SurfaceCSSSTests
     [Fact]
     public void ExtSS_ParallelPlanes()
     {
-        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new gp_Ax3()), -1, 1, -1, 1);
-        GeomAdaptor_Surface aS2 = new(new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 2.5), new gp_Dir(0, 0, -1))), -1, 1, -1, 1);
+        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new CoordinateSystem()), -1, 1, -1, 1);
+        GeomAdaptor_Surface aS2 = new(new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 2.5), new Direction3D(0, 0, -1))), -1, 1, -1, 1);
         Extrema_ExtSS anExt = new(aS1, aS2, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
         Assert.True(anExt.IsParallel());
         Assert.Equal(1, anExt.NbExt());
         Assert.Equal(6.25, anExt.SquareDistance(1), 1e-14);
         // OCCT stores no points for parallel planes
-        Assert.ThrowsAny<Standard_Failure>(() => anExt.Points(1, out _, out _));
+        Assert.ThrowsAny<FailureException>(() => anExt.Points(1, out _, out _));
     }
 
     [Fact]
     public void ExtSS_IntersectingPlanes_NoExtrema()
     {
-        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new gp_Ax3()), -1, 1, -1, 1);
-        GeomAdaptor_Surface aS2 = new(new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0))), -1, 1, -1, 1);
+        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new CoordinateSystem()), -1, 1, -1, 1);
+        GeomAdaptor_Surface aS2 = new(new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))), -1, 1, -1, 1);
         Extrema_ExtSS anExt = new(aS1, aS2, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
         Assert.False(anExt.IsParallel());
@@ -489,7 +495,7 @@ public class Extrema_SurfaceCSSSTests
     [Fact]
     public void ExtSS_PlaneBSpline_AgainstSampling()
     {
-        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 3), new gp_Dir(0.05, 0.02, 1))), -10, 10,
+        GeomAdaptor_Surface aS1 = new(new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 3), new Direction3D(0.05, 0.02, 1))), -10, 10,
             -10, 10);
         GeomAdaptor_Surface aS2 = new(MakeBump(1.0, 0.0));
         Extrema_ExtSS anExt = new(aS1, aS2, 1e-9, 1e-9);
@@ -511,7 +517,7 @@ public class Extrema_SurfaceCSSSTests
     public void ExtSS_BSplineBSpline_AgainstSampling()
     {
         GeomAdaptor_Surface aS1 = new(MakeBump(1.0, 0.0));
-        GeomAdaptor_Surface aS2 = new((Geom_Surface)MakeBump(-1.0, 4.5).Rotated(new gp_Ax1(new gp_Pnt(4, 4, 0), new gp_Dir(0, 0, 1)), 0.4));
+        GeomAdaptor_Surface aS2 = new((Geom_Surface)MakeBump(-1.0, 4.5).Rotated(new Axis3D(new Point3D(4, 4, 0), new Direction3D(0, 0, 1)), 0.4));
         Extrema_ExtSS anExt = new(aS1, aS2, 1e-9, 1e-9);
         Assert.True(anExt.IsDone());
         Assert.True(anExt.NbExt() >= 1);

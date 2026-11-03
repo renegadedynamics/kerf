@@ -1,6 +1,7 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using System.Collections.Immutable;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// <param name="Style">The style: the path's attributes merged, each instance's after its product's.</param>
 public sealed record XdeDoc_FlatItem(XdeDoc_Product Product,
                                      ImmutableArray<XdeDoc_Instance> Path,
-                                     TopLoc_Location Location,
+                                     Placement Location,
                                      XdeDoc_Style Style)
 {
     /// <summary>The part's shape placed in the world.</summary>
@@ -24,7 +25,7 @@ public sealed record XdeDoc_FlatItem(XdeDoc_Product Product,
         get
         {
             TopoDS_Shape aShape = Product.Shape;
-            return Location.IsIdentity() ? aShape : aShape.Moved(Location);
+            return Location.IsIdentity ? aShape : aShape.Moved(Location);
         }
     }
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -99,7 +100,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         {
             aTally.Differences.Add($"{aWhat}: the port changed its frozen operands");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             aTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -590,7 +591,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
             return (Build123dPhase7Capture.ErrorOf(e), "", null);
         }

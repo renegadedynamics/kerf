@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -60,29 +62,29 @@ internal static class BisectorRecordings
             if (aKind == "L")
             {
                 double x = D(), y = D(), dx = D(), dy = D(), u1 = D(), u2 = D();
-                Geom2d_Line aL = new(new gp_Pnt2d(x, y), new gp_Dir2d(dx, dy));
+                Geom2d_Line aL = new(new Point2D(x, y), new Direction2D(dx, dy));
                 return new Geom2d_TrimmedCurve(aL, u1, u2);
             }
             if (aKind == "C")
             {
                 double cx = D(), cy = D(), r = D(), s = D(), u1 = D(), u2 = D();
-                Geom2d_Circle aC = new(new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(cx, cy), new gp_Dir2d(1.0, 0.0)), r,
+                Geom2d_Circle aC = new(new Circle2D(new Axis2D(new Point2D(cx, cy), new Direction2D(1.0, 0.0)), r,
                                                      s != 0.0));
                 return new Geom2d_TrimmedCurve(aC, u1, u2);
             }
             if (aKind == "E")
             {
                 double cx = D(), cy = D(), dx = D(), dy = D(), a = D(), b = D(), u1 = D(), u2 = D();
-                Geom2d_Ellipse aE = new(new gp_Elips2d(new gp_Ax2d(new gp_Pnt2d(cx, cy), new gp_Dir2d(dx, dy)), a, b));
+                Geom2d_Ellipse aE = new(new Ellipse2D(new Axis2D(new Point2D(cx, cy), new Direction2D(dx, dy)), a, b));
                 return new Geom2d_TrimmedCurve(aE, u1, u2);
             }
             if (aKind == "S")
             {
-                NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
+                NCollection_Array1<Point2D> aPoles = new(1, 4);
                 for (int i = 1; i <= 4; i++)
                 {
                     double x = D(), y = D();
-                    aPoles[i] = new gp_Pnt2d(x, y);
+                    aPoles[i] = new Point2D(x, y);
                 }
                 NCollection_Array1<double> aKnots = new(1, 2);
                 aKnots[1] = 0.0;
@@ -103,11 +105,11 @@ internal static class BisectorRecordings
     public static string Hex(double theValue) =>
         BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(gp_Pnt2d theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
 
-    private static string Hex(gp_Vec2d theV) => Hex(theV.X()) + "," + Hex(theV.Y());
+    private static string Hex(Vector2D theV) => Hex(theV.X()) + "," + Hex(theV.Y());
 
-    private static string ExcName(Exception theE) => theE is Standard_Failure ? "!" + theE.GetType().Name : "!SEH";
+    private static string ExcName(Exception theE) => theE is FailureException ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
 
     private static void Tok(List<string> theOut, string theName, Func<string> theF)
     {
@@ -151,10 +153,10 @@ internal static class BisectorRecordings
         }
         Geom2d_Curve aBasis = theT.ChangeBasisCurve();
         Bisector_Curve? aBis = aBasis as Bisector_Curve;
-        theOut.Add(thePre + "T:" + aBasis.GetType().Name);
+        theOut.Add(thePre + "T:" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType()));
         if (aBasis is Bisector_BisecAna anAna)
         {
-            Tok(theOut, thePre + "G", () => anAna.Geom2dCurve().GetType().Name);
+            Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
         Tok(theOut, thePre + "F", () => Hex(theT.FirstParameter()));
         Tok(theOut, thePre + "L", () => Hex(theT.LastParameter()));
@@ -181,7 +183,7 @@ internal static class BisectorRecordings
             Tok(theOut, thePre + "P" + k, () => Hex(theT.Value(u)));
             Tok(theOut, thePre + "D" + k, () =>
             {
-                theT.D1(u, out gp_Pnt2d _, out gp_Vec2d aV);
+                theT.D1(u, out Point2D _, out Vector2D aV);
                 return Hex(aV);
             });
         }
@@ -189,8 +191,8 @@ internal static class BisectorRecordings
     }
 
     /// <summary>Bisector_Bisec::Perform as MAT2d_Tool2d::CreateBisector calls it, by the kinds of the elements.</summary>
-    public static void Perform(Bisector_Bisec theB, Geom2d_Geometry theE1, Geom2d_Geometry theE2, in gp_Pnt2d theP,
-                               in gp_Vec2d theV1, in gp_Vec2d theV2, double theSense, GeomAbs_JoinType theJoin,
+    public static void Perform(Bisector_Bisec theB, Geom2d_Geometry theE1, Geom2d_Geometry theE2, in Point2D theP,
+                               in Vector2D theV1, in Vector2D theV2, double theSense, JoinKind theJoin,
                                double theTol, bool theOnCurve)
     {
         Geom2d_Point? aP1 = theE1 as Geom2d_Point;
@@ -233,7 +235,7 @@ internal static class BisectorRecordings
             double Limit = 50000.0;
             if (Type1 == typeof(Geom2d_Parabola))
             {
-                gp_Parab2d gpParabola = ((Geom2d_Parabola)BasisCurve).Parab2d();
+                Parabola2D gpParabola = ((Geom2d_Parabola)BasisCurve).Parab2d();
                 double Focus = gpParabola.Focal();
                 double Val1 = Math.Sqrt(Limit * Focus);
                 double Val2 = Math.Sqrt(Limit * Limit);
@@ -241,7 +243,7 @@ internal static class BisectorRecordings
             }
             else if (Type1 == typeof(Geom2d_Hyperbola))
             {
-                gp_Hypr2d gpHyperbola = ((Geom2d_Hyperbola)BasisCurve).Hypr2d();
+                Hyperbola2D gpHyperbola = ((Geom2d_Hyperbola)BasisCurve).Hypr2d();
                 double Majr = gpHyperbola.MajorRadius();
                 double Minr = gpHyperbola.MinorRadius();
                 double Valu1 = Limit / Majr;
@@ -300,10 +302,10 @@ internal static class BisectorRecordings
                 Bisector_Bisec aB = new();
                 try
                 {
-                    Perform(aB, aE1, aE2, new gp_Pnt2d(px, py), new gp_Vec2d(v1x, v1y), new gp_Vec2d(v2x, v2y), aSense,
-                            (GeomAbs_JoinType)aJoin, aTol, anOn);
+                    Perform(aB, aE1, aE2, new Point2D(px, py), new Vector2D(v1x, v1y), new Vector2D(v2x, v2y), aSense,
+                            (JoinKind)aJoin, aTol, anOn);
                 }
-                catch (Standard_Failure e)
+                catch (FailureException e)
                 {
                     aOut.Add("E:" + ExcName(e));
                     return aOut;
@@ -321,14 +323,14 @@ internal static class BisectorRecordings
                 Bisector_Bisec aB1 = new(), aB2 = new();
                 try
                 {
-                    gp_Pnt2d aP1 = aA.Value(aA.LastParameter());
+                    Point2D aP1 = aA.Value(aA.LastParameter());
                     aB1.Perform(aA, aBc, aP1, aA.DN(aA.LastParameter(), 1), aBc.DN(aBc.FirstParameter(), 1).Reversed(),
-                                aSense, (GeomAbs_JoinType)aJoin, aTol, true);
-                    gp_Pnt2d aP2 = aBc.Value(aBc.LastParameter());
+                                aSense, (JoinKind)aJoin, aTol, true);
+                    Point2D aP2 = aBc.Value(aBc.LastParameter());
                     aB2.Perform(aBc, aC, aP2, aBc.DN(aBc.LastParameter(), 1), aC.DN(aC.FirstParameter(), 1).Reversed(),
-                                aSense, (GeomAbs_JoinType)aJoin, aTol, true);
+                                aSense, (JoinKind)aJoin, aTol, true);
                 }
-                catch (Standard_Failure e)
+                catch (FailureException e)
                 {
                     aOut.Add("E:" + ExcName(e));
                     return aOut;

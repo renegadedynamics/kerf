@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,22 +21,22 @@ namespace Occt;
 /// </remarks>
 public partial struct IntSurf_InteriorPoint : IEquatable<IntSurf_InteriorPoint>
 {
-    private gp_Pnt point;
+    private Point3D point;
     private double paramu;
     private double paramv;
-    private gp_Vec direc;
-    private gp_Vec2d direc2d;
+    private Vector3D direc;
+    private Vector2D direc2d;
 
     public IntSurf_InteriorPoint()
     {
-        point = new gp_Pnt();
+        point = new Point3D();
         paramu = 0.0;
         paramv = 0.0;
-        direc = new gp_Vec();
-        direc2d = new gp_Vec2d();
+        direc = new Vector3D();
+        direc2d = new Vector2D();
     }
 
-    public IntSurf_InteriorPoint(in gp_Pnt P, double U, double V, in gp_Vec Direc, in gp_Vec2d Direc2d)
+    public IntSurf_InteriorPoint(in Point3D P, double U, double V, in Vector3D Direc, in Vector2D Direc2d)
     {
         point = P;
         paramu = U;
@@ -43,7 +47,7 @@ public partial struct IntSurf_InteriorPoint : IEquatable<IntSurf_InteriorPoint>
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValue(in gp_Pnt P, double U, double V, in gp_Vec Direc, in gp_Vec2d Direc2d)
+    internal void SetValue(in Point3D P, double U, double V, in Vector3D Direc, in Vector2D Direc2d)
     {
         point = P;
         paramu = U;
@@ -55,7 +59,7 @@ public partial struct IntSurf_InteriorPoint : IEquatable<IntSurf_InteriorPoint>
     // Queries
 
     /// <summary>The 3D point.</summary>
-    public readonly gp_Pnt Value() => point;
+    public readonly Point3D Value() => point;
 
     /// <summary>The parameters on the parametric surface.</summary>
     public readonly void Parameters(out double U, out double V)
@@ -69,10 +73,10 @@ public partial struct IntSurf_InteriorPoint : IEquatable<IntSurf_InteriorPoint>
     public readonly double VParameter() => paramv;
 
     /// <summary>The tangent of the intersection in 3D.</summary>
-    public readonly gp_Vec Direction() => direc;
+    public readonly Vector3D Direction() => direc;
 
     /// <summary>The tangent of the intersection in the parametric space of the parametric surface.</summary>
-    public readonly gp_Vec2d Direction2d() => direc2d;
+    public readonly Vector2D Direction2d() => direc2d;
 
     public readonly bool Equals(IntSurf_InteriorPoint other)
         => point.Equals(other.point) && paramu.Equals(other.paramu) && paramv.Equals(other.paramv)
@@ -87,6 +91,6 @@ public partial struct IntSurf_InteriorPoint : IEquatable<IntSurf_InteriorPoint>
     public static bool operator !=(in IntSurf_InteriorPoint theLeft, in IntSurf_InteriorPoint theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("IntSurf_InteriorPoint", point.X(), point.Y(), point.Z(), paramu, paramv, direc.X(), direc.Y(),
+        => Constants.Format("IntSurf_InteriorPoint", point.X(), point.Y(), point.Z(), paramu, paramv, direc.X(), direc.Y(),
                      direc.Z(), direc2d.X(), direc2d.Y());
 }

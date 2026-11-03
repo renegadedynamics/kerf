@@ -2,6 +2,8 @@
 // OCCT.NET addition (unit 7L): not a port of an OCCT class. tools/dsrec/main.cpp writes native OCCT's data structure in
 // the same format; keep the two in step.
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -62,7 +64,7 @@ internal static class TopOpeBRepDS_TextDump
     private static readonly string[] theKindNames = ["POINT", "CURVE", "SURFACE", "VERTEX", "EDGE", "WIRE", "FACE", "SHELL", "SOLID", "COMPSOLID", "COMPOUND", "UNKNOWN"];
     private static readonly string[] theConfigNames = ["UNSH", "SAME", "DIFF"];
 
-    private static string R(double v) => Standard_Stream.FormatReal(v, 17);
+    private static string R(double v) => StreamUtilities.FormatReal(v, 17);
 
     private static string I(int v) => v.ToString(CultureInfo.InvariantCulture);
 
@@ -90,7 +92,7 @@ internal static class TopOpeBRepDS_TextDump
         internal Writer(TopOpeBRepDS_DataStructure theDS, in TopoDS_Shape theInput)
         {
             DS = theDS;
-            Standard_Stream.Precision(OS, 17);
+            StreamUtilities.Precision(OS, 17);
             for (int t = 0; t < 9; t++)
             {
                 InMaps[t] = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
@@ -118,7 +120,7 @@ internal static class TopOpeBRepDS_TextDump
             s += " new";
             if (S.ShapeType() == TopAbs_VERTEX)
             {
-                gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(S));
+                Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(S));
                 s += " " + R(P.X()) + " " + R(P.Y()) + " " + R(P.Z());
             }
             return s;
@@ -618,7 +620,7 @@ internal static class TopOpeBRepDS_TextDump
                     DS.myPoints.UnBind(i);
                     continue;
                 }
-                TopOpeBRepDS_Point P = new(new gp_Pnt(Real(t[2]), Real(t[3]), Real(t[4])), Real(t[5]));
+                TopOpeBRepDS_Point P = new(new Point3D(Real(t[2]), Real(t[3]), Real(t[4])), Real(t[5]));
                 P.ChangeKeep(t[7] == "1");
                 DS.AddPoint(P);
                 List(DS.ChangePointInterferences(i));

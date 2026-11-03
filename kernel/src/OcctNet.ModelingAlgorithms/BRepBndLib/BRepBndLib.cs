@@ -3,8 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -28,20 +33,20 @@ public static partial class BRepBndLib
     /// each vertex outside the edges. After each one the box is enlarged by its tolerance (plus the deflection of a
     /// mesh). The box may be somewhat larger than the shape.
     /// </summary>
-    public static void Add(in TopoDS_Shape S, ref Bnd_Box B, bool useTriangulation = true)
+    public static void Add(in TopoDS_Shape S, ref Box B, bool useTriangulation = true)
     {
         var ex = new TopExp_Explorer();
 
         // Add the faces
         var BS = new BRepAdaptor_Surface();
-        TopLoc_Location l, aDummyLoc;
+        Placement l, aDummyLoc;
         int i, nbNodes;
         var BC = new BRepAdaptor_Curve();
 
         for (ex.Init(S, TopAbs_FACE); ex.More(); ex.Next())
         {
             TopoDS_Face F = TopoDS.Face(ex.Current());
-            Poly_Triangulation? T = BRep_Tool.Triangulation(F, out l);
+            Triangulation? T = BRep_Tool.Triangulation(F, out l);
             Geom_Surface? GS = BRep_Tool.Surface(F, out aDummyLoc);
             if ((useTriangulation || GS is null) && T is not null && T.MinMax(ref B, l.Transformation()))
             {
@@ -53,7 +58,7 @@ public static partial class BRepBndLib
                 if (GS is not null)
                 {
                     BS.Initialize(F, false);
-                    if (BS.GetType() != GeomAbs_Plane)
+                    if (BS.GetType() != Plane)
                     {
                         BS.Initialize(F);
                         BndLib_AddSurface.Add(BS, BRep_Tool.Tolerance(F), ref B);
@@ -97,14 +102,14 @@ public static partial class BRepBndLib
                 continue;
             }
 
-            Poly_Polygon3D? P3d = BRep_Tool.Polygon3D(E, out l);
-            if (P3d is not null && P3d.NbNodes() > 0)
+            Polygon3D? P3d = BRep_Tool.Polygon3D(E, out l);
+            if (P3d is not null && P3d.NodeCount > 0)
             {
-                NCollection_Array1<gp_Pnt> Nodes = P3d.Nodes();
-                nbNodes = P3d.NbNodes();
+                NCollection_Array1<Point3D> Nodes = P3d.Nodes();
+                nbNodes = P3d.NodeCount;
                 for (i = 1; i <= nbNodes; i++)
                 {
-                    if (l.IsIdentity())
+                    if (l.IsIdentity)
                     {
                         B.Add(Nodes[i]);
                     }
@@ -119,12 +124,12 @@ public static partial class BRepBndLib
             }
             else
             {
-                BRep_Tool.PolygonOnTriangulation(E, out Poly_PolygonOnTriangulation? Poly, out Poly_Triangulation? T, out l);
-                if (Poly is not null && T is not null && T.NbNodes() > 0)
+                BRep_Tool.PolygonOnTriangulation(E, out PolygonOnTriangulation? Poly, out Triangulation? T, out l);
+                if (Poly is not null && T is not null && T.NodeCount > 0)
                 {
                     NCollection_Array1<int> Indices = Poly.Nodes();
                     nbNodes = Indices.Length();
-                    if (l.IsIdentity())
+                    if (l.IsIdentity)
                     {
                         for (i = 1; i <= nbNodes; i++)
                         {
@@ -167,7 +172,7 @@ public static partial class BRepBndLib
     /// vertices outside the edges, without enlarging by tolerances. Quick, but right only for shapes of polygonal
     /// planar faces (not checked).
     /// </summary>
-    public static void AddClose(in TopoDS_Shape S, ref Bnd_Box B)
+    public static void AddClose(in TopoDS_Shape S, ref Box B)
     {
         var ex = new TopExp_Explorer();
 
@@ -202,7 +207,7 @@ public static partial class BRepBndLib
     /// Precision::Confusion.
     /// </summary>
     public static void AddOptimal(in TopoDS_Shape S,
-                                  ref Bnd_Box B,
+                                  ref Box B,
                                   bool useTriangulation = true,
                                   bool useShapeTolerance = false)
     {
@@ -210,8 +215,8 @@ public static partial class BRepBndLib
 
         // Add the faces
         var BS = new BRepAdaptor_Surface();
-        Poly_Triangulation? T;
-        TopLoc_Location l;
+        Triangulation? T;
+        Placement l;
         int i, nbNodes;
         var BC = new BRepAdaptor_Curve();
 
@@ -219,7 +224,7 @@ public static partial class BRepBndLib
         {
             TopoDS_Face F = TopoDS.Face(ex.Current());
             T = BRep_Tool.Triangulation(F, out l);
-            Bnd_Box aLocBox = new();
+            Box aLocBox = new();
             if (useTriangulation && T is not null && T.MinMax(ref aLocBox, l.Transformation()))
             {
                 //       B.Enlarge(T->Deflection());
@@ -247,7 +252,7 @@ public static partial class BRepBndLib
                             double Tol;
                             for (; ex2.More(); ex2.Next())
                             {
-                                Bnd_Box anEBox = new();
+                                Box anEBox = new();
                                 TopoDS_Edge anE = TopoDS.Edge(ex2.Current());
                                 if (BRep_Tool.Degenerated(anE) || !BRep_Tool.IsGeometric(anE))
                                 {
@@ -272,10 +277,10 @@ public static partial class BRepBndLib
                         if (!isNaturalRestriction)
                         {
                             var ex2 = new TopExp_Explorer(F, TopAbs_EDGE);
-                            Bnd_Box EBox = new();
+                            Box EBox = new();
                             for (; ex2.More(); ex2.Next())
                             {
-                                Bnd_Box anEBox = new();
+                                Box anEBox = new();
                                 TopoDS_Edge anE = TopoDS.Edge(ex2.Current());
                                 if (BRep_Tool.Degenerated(anE) || !BRep_Tool.IsGeometric(anE))
                                 {
@@ -293,7 +298,7 @@ public static partial class BRepBndLib
                         }
                     }
 
-                    if (!aLocBox.IsVoid())
+                    if (!aLocBox.IsVoid)
                     {
                         aLocBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
                         B.Update(xmin, ymin, zmin, xmax, ymax, zmax);
@@ -306,15 +311,15 @@ public static partial class BRepBndLib
         for (ex.Init(S, TopAbs_EDGE, TopAbs_FACE); ex.More(); ex.Next())
         {
             TopoDS_Edge E = TopoDS.Edge(ex.Current());
-            Bnd_Box aLocBox = new();
-            Poly_Polygon3D? P3d = BRep_Tool.Polygon3D(E, out l);
-            if (useTriangulation && P3d is not null && P3d.NbNodes() > 0)
+            Box aLocBox = new();
+            Polygon3D? P3d = BRep_Tool.Polygon3D(E, out l);
+            if (useTriangulation && P3d is not null && P3d.NodeCount > 0)
             {
-                NCollection_Array1<gp_Pnt> Nodes = P3d.Nodes();
-                nbNodes = P3d.NbNodes();
+                NCollection_Array1<Point3D> Nodes = P3d.Nodes();
+                nbNodes = P3d.NodeCount;
                 for (i = 1; i <= nbNodes; i++)
                 {
-                    if (l.IsIdentity())
+                    if (l.IsIdentity)
                     {
                         aLocBox.Add(Nodes[i]);
                     }
@@ -329,14 +334,14 @@ public static partial class BRepBndLib
             }
             else
             {
-                BRep_Tool.PolygonOnTriangulation(E, out Poly_PolygonOnTriangulation? Poly, out T, out l);
-                if (useTriangulation && Poly is not null && T is not null && T.NbNodes() > 0)
+                BRep_Tool.PolygonOnTriangulation(E, out PolygonOnTriangulation? Poly, out T, out l);
+                if (useTriangulation && Poly is not null && T is not null && T.NodeCount > 0)
                 {
                     NCollection_Array1<int> Indices = Poly.Nodes();
                     nbNodes = Indices.Length();
                     for (i = 1; i <= nbNodes; i++)
                     {
-                        if (l.IsIdentity())
+                        if (l.IsIdentity)
                         {
                             aLocBox.Add(T.Node(Indices[i]));
                         }
@@ -360,7 +365,7 @@ public static partial class BRepBndLib
                 }
             }
 
-            if (!aLocBox.IsVoid())
+            if (!aLocBox.IsVoid)
             {
                 aLocBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
                 B.Update(xmin, ymin, zmin, xmax, ymax, zmax);
@@ -371,7 +376,7 @@ public static partial class BRepBndLib
 
         for (ex.Init(S, TopAbs_VERTEX, TopAbs_EDGE); ex.More(); ex.Next())
         {
-            Bnd_Box aLocBox = new();
+            Box aLocBox = new();
             TopoDS_Vertex aV = TopoDS.Vertex(ex.Current());
             aLocBox.Add(BRep_Tool.Pnt(aV));
             double Tol = useShapeTolerance ? BRep_Tool.Tolerance(aV) : 0.0;
@@ -384,29 +389,29 @@ public static partial class BRepBndLib
     // Defines whether the box of the face can be found from the boxes of its edges only
     private static bool CanUseEdges(Adaptor3d_Surface BS)
     {
-        GeomAbs_SurfaceType aST = BS.GetType();
-        if (aST == GeomAbs_Plane || aST == GeomAbs_Cylinder || aST == GeomAbs_Cone
-            || aST == GeomAbs_SurfaceOfExtrusion)
+        SurfaceKind aST = BS.GetType();
+        if (aST == Plane || aST == SurfaceKind.Cylinder || aST == SurfaceKind.Cone
+            || aST == SurfaceOfExtrusion)
         {
             return true;
         }
-        else if (aST == GeomAbs_SurfaceOfRevolution)
+        else if (aST == SurfaceOfRevolution)
         {
             Adaptor3d_Curve aBC = BS.BasisCurve();
-            return aBC.GetType() == GeomAbs_Line;
+            return aBC.GetType() == Line;
         }
-        else if (aST == GeomAbs_OffsetSurface)
+        else if (aST == OffsetSurface)
         {
             Adaptor3d_Surface aS = BS.BasisSurface();
             return CanUseEdges(aS);
         }
-        else if (aST == GeomAbs_BSplineSurface)
+        else if (aST == BSplineSurface)
         {
             Geom_BSplineSurface aBSpl = BS.BSpline();
             return (aBSpl.UDegree() == 1 && aBSpl.NbUKnots() == 2)
                    || (aBSpl.VDegree() == 1 && aBSpl.NbVKnots() == 2);
         }
-        else if (aST == GeomAbs_BezierSurface)
+        else if (aST == BezierSurface)
         {
             Geom_BezierSurface aBz = BS.Bezier();
             return (aBz.UDegree() == 1) || (aBz.VDegree() == 1);
@@ -442,10 +447,10 @@ public static partial class BRepBndLib
             vmax = aBAS.LastVParameter();
             bool isUperiodic = aBAS.IsUPeriodic(), isVperiodic = aBAS.IsVPeriodic();
             double aT1, aT2;
-            double TolU = Max(aBAS.UResolution(Tol), Precision.PConfusion());
-            double TolV = Max(aBAS.VResolution(Tol), Precision.PConfusion());
+            double TolU = Max(aBAS.UResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            double TolV = Max(aBAS.VResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
             int Nu = 0, Nv = 0, NbEdges = 0;
-            gp_Vec2d Du = new(1, 0), Dv = new(0, 1);
+            Vector2D Du = new(1, 0), Dv = new(0, 1);
             for (; ex.More(); ex.Next())
             {
                 NbEdges++;
@@ -462,9 +467,9 @@ public static partial class BRepBndLib
                 }
 
                 //
-                aC2D.D1((aT1 + aT2) / 2.0, out gp_Pnt2d aP, out gp_Vec2d aV);
+                aC2D.D1((aT1 + aT2) / 2.0, out Point2D aP, out Vector2D aV);
                 double magn = aV.SquareMagnitude();
-                if (magn < gp.Resolution())
+                if (magn < Constants.Resolution())
                 {
                     break;
                 }
@@ -477,20 +482,20 @@ public static partial class BRepBndLib
                 if (isUperiodic)
                 {
                     // OCCT discards the result of ElCLib::InPeriod (it returns the value), so u is unchanged (occt-issues.md)
-                    _ = ElCLib.InPeriod(u, umin, umax);
+                    _ = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, umin, umax);
                 }
 
                 if (isVperiodic)
                 {
                     // OCCT discards the result of ElCLib::InPeriod (it returns the value), so v is unchanged (occt-issues.md)
-                    _ = ElCLib.InPeriod(v, vmin, vmax);
+                    _ = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, vmin, vmax);
                 }
 
                 //
                 if (Math.Abs(u - umin) <= TolU || Math.Abs(u - umax) <= TolU)
                 {
                     double d = Dv * aV;
-                    if (1.0 - Math.Abs(d) <= Precision.PConfusion())
+                    if (1.0 - Math.Abs(d) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Nu++;
                         if (Nu > 2)
@@ -506,7 +511,7 @@ public static partial class BRepBndLib
                 else if (Math.Abs(v - vmin) <= TolV || Math.Abs(v - vmax) <= TolV)
                 {
                     double d = Du * aV;
-                    if (1.0 - Math.Abs(d) <= Precision.PConfusion())
+                    if (1.0 - Math.Abs(d) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Nv++;
                         if (Nv > 2)
@@ -544,10 +549,10 @@ public static partial class BRepBndLib
         // fill box for the given face
         {
             double aT1, aT2;
-            double TolU = Max(aBAS.UResolution(Tol), Precision.PConfusion());
-            double TolV = Max(aBAS.VResolution(Tol), Precision.PConfusion());
+            double TolU = Max(aBAS.UResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
+            double TolV = Max(aBAS.VResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
             double TolUV = Max(TolU, TolV);
-            Bnd_Box2d aBox = new();
+            Box2d aBox = new();
             ex.Init(F, TopAbs_EDGE);
             for (; ex.More(); ex.Next())
             {
@@ -564,14 +569,14 @@ public static partial class BRepBndLib
             }
 
             // In some cases no edges are found
-            if (!aBox.IsVoid())
+            if (!aBox.IsVoid)
             {
                 aBox.Get(out umin, out vmin, out umax, out vmax);
             }
         }
 
         //
-        Geom_Surface aS = BRep_Tool.Surface(FF, out TopLoc_Location _)!;
+        Geom_Surface aS = BRep_Tool.Surface(FF, out Placement _)!;
         aS.Bounds(out double aUmin, out double aUmax, out double aVmin, out double aVmax);
         if (!aS.IsUPeriodic())
         {
@@ -616,8 +621,8 @@ public static partial class BRepBndLib
     }
 
     private static bool IsModifySize(BRepAdaptor_Surface theBS,
-                                     in gp_Pln thePln,
-                                     in gp_Pnt theP,
+                                     in Plane3D thePln,
+                                     in Point3D theP,
                                      double umin,
                                      double umax,
                                      double vmin,
@@ -627,7 +632,7 @@ public static partial class BRepBndLib
                                      double theTolV)
     {
         double pu1 = 0, pu2, pv1 = 0, pv2;
-        ElSLib.PlaneParameters(thePln.Position(), theP, out pu2, out pv2);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(thePln.Position(), theP, out pu2, out pv2);
         Reorder(ref pu1, ref pu2);
         Reorder(ref pv1, ref pv2);
         var aPlane = new Geom_Plane(thePln);
@@ -661,7 +666,7 @@ public static partial class BRepBndLib
                 }
 
                 //
-                gp_Pnt2d aP2d = new(uextr, vextr);
+                Point2D aP2d = new(uextr, vextr);
                 TopAbs_State aSt = theFClass.Perform(aP2d);
                 if (aSt != TopAbs_IN)
                 {
@@ -683,16 +688,16 @@ public static partial class BRepBndLib
                                       double umax,
                                       double vmin,
                                       double vmax,
-                                      ref Bnd_Box FaceBox,
-                                      in Bnd_Box EdgeBox,
+                                      ref Box FaceBox,
+                                      in Box EdgeBox,
                                       double Tol)
     {
-        if (EdgeBox.IsVoid())
+        if (EdgeBox.IsVoid)
         {
             return;
         }
 
-        if (FaceBox.IsVoid())
+        if (FaceBox.IsVoid)
         {
             FaceBox = EdgeBox;
             return;
@@ -701,16 +706,16 @@ public static partial class BRepBndLib
         FaceBox.Get(out double fxmin, out double fymin, out double fzmin, out double fxmax, out double fymax, out double fzmax);
         EdgeBox.Get(out double exmin, out double eymin, out double ezmin, out double exmax, out double eymax, out double ezmax);
         //
-        double TolU = Max(BS.UResolution(Tol), Precision.PConfusion());
-        double TolV = Max(BS.VResolution(Tol), Precision.PConfusion());
+        double TolU = Max(BS.UResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        double TolV = Max(BS.VResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         var FClass = new BRepTopAdaptor_FClass2d(BS.Face(), Max(TolU, TolV));
         //
         bool isModified = false;
         if (exmin > fxmin)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmin, fymin, fzmin), gp.DX()));
-            gp_Pnt aP = new(fxmin, fymax, fzmax);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmin, fymin, fzmin), Constants.DX()));
+            Point3D aP = new(fxmin, fymax, fzmax);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fxmin = exmin;
@@ -721,8 +726,8 @@ public static partial class BRepBndLib
         if (exmax < fxmax)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmax, fymax, fzmax), gp.DX()));
-            gp_Pnt aP = new(fxmax, fymin, fzmin);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmax, fymax, fzmax), Constants.DX()));
+            Point3D aP = new(fxmax, fymin, fzmin);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fxmax = exmax;
@@ -734,8 +739,8 @@ public static partial class BRepBndLib
         if (eymin > fymin)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmin, fymin, fzmin), gp.DY()));
-            gp_Pnt aP = new(fxmax, fymin, fzmax);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmin, fymin, fzmin), Constants.DY()));
+            Point3D aP = new(fxmax, fymin, fzmax);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fymin = eymin;
@@ -746,8 +751,8 @@ public static partial class BRepBndLib
         if (eymax < fymax)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmax, fymax, fzmax), gp.DY()));
-            gp_Pnt aP = new(fxmin, fymax, fzmin);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmax, fymax, fzmax), Constants.DY()));
+            Point3D aP = new(fxmin, fymax, fzmin);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fymax = eymax;
@@ -759,8 +764,8 @@ public static partial class BRepBndLib
         if (ezmin > fzmin)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmin, fymin, fzmin), gp.DZ()));
-            gp_Pnt aP = new(fxmax, fymax, fzmin);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmin, fymin, fzmin), Constants.DZ()));
+            Point3D aP = new(fxmax, fymax, fzmin);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fzmin = ezmin;
@@ -771,8 +776,8 @@ public static partial class BRepBndLib
         if (ezmax < fzmax)
         {
             //
-            var pl = new gp_Pln(new gp_Ax3(new gp_Pnt(fxmax, fymax, fzmax), gp.DZ()));
-            gp_Pnt aP = new(fxmin, fymin, fzmax);
+            var pl = new Plane3D(new CoordinateSystem(new Point3D(fxmax, fymax, fzmax), Constants.DZ()));
+            Point3D aP = new(fxmin, fymin, fzmax);
             if (IsModifySize(BS, pl, aP, umin, umax, vmin, vmax, FClass, TolU, TolV))
             {
                 fzmax = ezmax;
@@ -791,25 +796,25 @@ public static partial class BRepBndLib
     // Functional forms (not in OCCT)
 
     /// <summary>The box of the shape: a new box given to <see cref="Add"/>.</summary>
-    public static Bnd_Box Box(in TopoDS_Shape S, bool useTriangulation = true)
+    public static Box Box(in TopoDS_Shape S, bool useTriangulation = true)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         Add(S, ref aBox, useTriangulation);
         return aBox;
     }
 
     /// <summary>The close box of the shape: a new box given to <see cref="AddClose"/>.</summary>
-    public static Bnd_Box BoxClose(in TopoDS_Shape S)
+    public static Box BoxClose(in TopoDS_Shape S)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         AddClose(S, ref aBox);
         return aBox;
     }
 
     /// <summary>The optimal box of the shape: a new box given to <see cref="AddOptimal"/>.</summary>
-    public static Bnd_Box BoxOptimal(in TopoDS_Shape S, bool useTriangulation = true, bool useShapeTolerance = false)
+    public static Box BoxOptimal(in TopoDS_Shape S, bool useTriangulation = true, bool useShapeTolerance = false)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         AddOptimal(S, ref aBox, useTriangulation, useShapeTolerance);
         return aBox;
     }

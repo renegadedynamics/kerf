@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepLib_ShellError;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -50,13 +51,13 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
             BS = RTS.BasisSurface();
         }
         myError = BRepLib_EmptyShell;
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // Make a shell from a surface
         var GS = new GeomAdaptor_Surface(BS, UMin, UMax, VMin, VMax);
 
-        int nu = GS.NbUIntervals(GeomAbs_C2);
-        int nv = GS.NbVIntervals(GeomAbs_C2);
+        int nu = GS.NbUIntervals(C2);
+        int nv = GS.NbVIntervals(C2);
 
         bool uperiodic = GS.IsUPeriodic();
         bool vperiodic = GS.IsVPeriodic();
@@ -74,25 +75,25 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
 
         int iu, iv;
 
-        GS.UIntervals(upars, GeomAbs_C2);
-        var dv = new gp_Dir2d(gp_Dir2d.D.Y);
+        GS.UIntervals(upars, C2);
+        var dv = new Direction2D(Direction2D.D.Y);
         for (iu = 1; iu <= nu + 1; iu++)
         {
             double u = upars[iu];
-            if (!Precision.IsInfinite(u))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
             {
-                uisos[iu] = new Geom2d_Line(new gp_Pnt2d(u, 0.0), dv);
+                uisos[iu] = new Geom2d_Line(new Point2D(u, 0.0), dv);
             }
         }
 
-        GS.VIntervals(vpars, GeomAbs_C2);
-        var du = new gp_Dir2d(gp_Dir2d.D.X);
+        GS.VIntervals(vpars, C2);
+        var du = new Direction2D(Direction2D.D.X);
         for (iv = 1; iv <= nv + 1; iv++)
         {
             double v = vpars[iv];
-            if (!Precision.IsInfinite(v))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
             {
-                visos[iv] = new Geom2d_Line(new gp_Pnt2d(0.0, v), du);
+                visos[iv] = new Geom2d_Line(new Point2D(0.0, v), du);
             }
         }
 
@@ -119,9 +120,9 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
         TopoDS_Vertex vlb = new(), vlt = new(), vrb = new(), vrt = new(), fvlt = new();
 
         // init the botedges and botvertices
-        if (!Precision.IsInfinite(vpars[1]))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(vpars[1]))
         {
-            if (!Precision.IsInfinite(upars[1]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[1]))
             {
                 B.MakeVertex(ref vrt, S.Value(upars[1], vpars[1]), tol);
             }
@@ -135,7 +136,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
                 {
                     vrt = TopoDS.Vertex(botvertices[1]);
                 }
-                else if (!Precision.IsInfinite(upars[iu + 1]))
+                else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[iu + 1]))
                 {
                     B.MakeVertex(ref vrt, S.Value(upars[iu + 1], vpars[1]), tol);
                 }
@@ -168,9 +169,9 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
             else
             {
                 vrt.Nullify();
-                if (!Precision.IsInfinite(vpars[iv + 1]))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(vpars[iv + 1]))
                 {
-                    if (!Precision.IsInfinite(upars[1]))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[1]))
                     {
                         B.MakeVertex(ref vrt, S.Value(upars[1], vpars[iv + 1]), tol);
                     }
@@ -178,7 +179,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
             }
 
             eright.Nullify();
-            if (!Precision.IsInfinite(upars[1]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[1]))
             {
                 B.MakeEdge(ref eright);
                 if (!vrb.IsNull())
@@ -204,7 +205,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
 
                 // the surface
                 var SS = (Geom_Surface)BS.Copy();
-                if (GS.GetType() == GeomAbs_BSplineSurface && Segment)
+                if (GS.GetType() == BSplineSurface && Segment)
                 {
                     ((Geom_BSplineSurface)SS).Segment(upars[iu], upars[iu + 1], vpars[iv], vpars[iv + 1]);
                 }
@@ -227,9 +228,9 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
                 else
                 {
                     vrt.Nullify();
-                    if (!Precision.IsInfinite(vpars[iv + 1]))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(vpars[iv + 1]))
                     {
-                        if (!Precision.IsInfinite(upars[iu + 1]))
+                        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[iu + 1]))
                         {
                             B.MakeVertex(ref vrt, S.Value(upars[iu + 1], vpars[iv + 1]), tol);
                         }
@@ -250,7 +251,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
                 else
                 {
                     eright.Nullify();
-                    if (!Precision.IsInfinite(upars[iu + 1]))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(upars[iu + 1]))
                     {
                         B.MakeEdge(ref eright);
                         if (!vrb.IsNull())
@@ -297,7 +298,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
                 else
                 {
                     etop.Nullify();
-                    if (!Precision.IsInfinite(vpars[iv + 1]))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(vpars[iv + 1]))
                     {
                         B.MakeEdge(ref etop);
                         if (!vlt.IsNull())
@@ -370,7 +371,7 @@ public class BRepLib_MakeShell : BRepLib_MakeShape
 
         // Additional checking for degenerated edges
         bool isDegenerated;
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         var anExp = new TopExp_Explorer(myShape, TopAbs_EDGE);
         for (; anExp.More(); anExp.Next())
         {

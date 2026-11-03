@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntAna_ResultType;
 
 namespace OcctNet.ModelingData.Tests;
@@ -14,15 +15,15 @@ public partial class IntAna_IntQuadQuad_Test
     [Fact]
     public void CylinderCylinderNearTangent_CollapsesToSingleLine()
     {
-        gp_Pnt aCenter1 = new(0.0, 0.0, 0.0);
-        gp_Pnt aCenter2 = new(2.0 - 1.0e-9, 0.0, 0.0);
-        gp_Dir aZDir = new(gp_Dir.D.Z);
-        gp_Dir anXDir = new(gp_Dir.D.X);
-        gp_Ax3 anAxis1 = new(aCenter1, aZDir, anXDir);
-        gp_Ax3 anAxis2 = new(aCenter2, aZDir, anXDir);
+        Point3D aCenter1 = new(0.0, 0.0, 0.0);
+        Point3D aCenter2 = new(2.0 - 1.0e-9, 0.0, 0.0);
+        Direction3D aZDir = new(Direction3D.D.Z);
+        Direction3D anXDir = new(Direction3D.D.X);
+        CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
+        CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        gp_Cylinder aCyl1 = new(anAxis1, 1.0);
-        gp_Cylinder aCyl2 = new(anAxis2, 1.0);
+        Cylinder aCyl1 = new(anAxis1, 1.0);
+        Cylinder aCyl2 = new(anAxis2, 1.0);
 
         IntAna_QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-4);
 
@@ -35,15 +36,15 @@ public partial class IntAna_IntQuadQuad_Test
     [Fact]
     public void CylinderCylinderNonTangent_HasTwoLines()
     {
-        gp_Pnt aCenter1 = new(0.0, 0.0, 0.0);
-        gp_Pnt aCenter2 = new(1.8, 0.0, 0.0);
-        gp_Dir aZDir = new(gp_Dir.D.Z);
-        gp_Dir anXDir = new(gp_Dir.D.X);
-        gp_Ax3 anAxis1 = new(aCenter1, aZDir, anXDir);
-        gp_Ax3 anAxis2 = new(aCenter2, aZDir, anXDir);
+        Point3D aCenter1 = new(0.0, 0.0, 0.0);
+        Point3D aCenter2 = new(1.8, 0.0, 0.0);
+        Direction3D aZDir = new(Direction3D.D.Z);
+        Direction3D anXDir = new(Direction3D.D.X);
+        CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
+        CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        gp_Cylinder aCyl1 = new(anAxis1, 1.0);
-        gp_Cylinder aCyl2 = new(anAxis2, 1.0);
+        Cylinder aCyl1 = new(anAxis1, 1.0);
+        Cylinder aCyl2 = new(anAxis2, 1.0);
 
         IntAna_QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-7);
 
@@ -60,11 +61,11 @@ public partial class IntAna_IntQuadQuad_Test
         double aR2 = 2.0;
         double aDist = aR1 + aR2;
 
-        gp_Ax3 anAxis1 = new(new gp_Pnt(0.0, 0.0, 0.0), gp_Dir.D.Z, gp_Dir.D.X);
-        gp_Ax3 anAxis2 = new(new gp_Pnt(0.0, aDist, 0.0), gp_Dir.D.X, gp_Dir.D.Y);
+        CoordinateSystem anAxis1 = new(new Point3D(0.0, 0.0, 0.0), Direction3D.D.Z, Direction3D.D.X);
+        CoordinateSystem anAxis2 = new(new Point3D(0.0, aDist, 0.0), Direction3D.D.X, Direction3D.D.Y);
 
-        gp_Cylinder aCyl1 = new(anAxis1, aR1);
-        gp_Cylinder aCyl2 = new(anAxis2, aR2);
+        Cylinder aCyl1 = new(anAxis1, aR1);
+        Cylinder aCyl2 = new(anAxis2, aR2);
 
         IntAna_QuadQuadGeo anInter = new(aCyl1, aCyl2, 1.0e-7);
 
@@ -72,8 +73,8 @@ public partial class IntAna_IntQuadQuad_Test
         Assert.Equal(IntAna_Point, anInter.TypeInter());
         Assert.Equal(1, anInter.NbSolutions());
 
-        gp_Pnt aP = anInter.Point(1);
-        Assert.Equal(aR1, new gp_Lin(aCyl1.Axis()).Distance(aP), 1.0e-7);
-        Assert.Equal(aR2, new gp_Lin(aCyl2.Axis()).Distance(aP), 1.0e-7);
+        Point3D aP = anInter.Point(1);
+        Assert.Equal(aR1, new Line3D(aCyl1.Axis()).Distance(aP), 1.0e-7);
+        Assert.Equal(aR2, new Line3D(aCyl2.Axis()).Distance(aP), 1.0e-7);
     }
 }

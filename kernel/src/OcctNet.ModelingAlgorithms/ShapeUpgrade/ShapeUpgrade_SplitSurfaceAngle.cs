@@ -59,7 +59,7 @@ public class ShapeUpgrade_SplitSurfaceAngle : ShapeUpgrade_SplitSurface
             double ULast = myUSplitValues.Sequence().Last();
             double maxAngle = myMaxAngle; // maximal u length of segment
             double uLength = ULast - UFirst;
-            int nbSegments = (int)((uLength - Occt.Precision.Angular()) / maxAngle) + 1;
+            int nbSegments = (int)((uLength - Kerf.Engine.Foundation.Precision.Angular()) / maxAngle) + 1;
             if (nbSegments == 1)
             {
                 if (!isRect || !(uLength < maxAngle) || !((U2 - U1) < maxAngle))

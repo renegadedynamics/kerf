@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
 using Xunit.Abstractions;
@@ -35,7 +38,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         Assert.True(aNbTransferred > 0);
         TopoDS_Shape aShape = aReader.OneShape();
         Assert.False(aShape.IsNull());
-        Assert.True(aShape.TShape()!.IsFrozen());
+        Assert.True(aShape.TShape()!.IsFrozen);
         theOutput.WriteLine($"{aNbRoots} roots, {aReader.NbShapes()} shapes, {BRepText(aShape).Length} chars of BRep");
     }
 
@@ -66,7 +69,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         // a cancelled read stops
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
-        var anIndicator = new Message_ProgressIndicator(aSource.Token);
+        var anIndicator = new ProgressIndicator(aSource.Token);
         var aCancelled = new STEPControl_Reader();
         Assert.NotEqual(IFSelect_ReturnStatus.IFSelect_RetDone,
                         aCancelled.ReadStream("screw.step", new MemoryStream(aBytes), anIndicator.Start()));
@@ -120,10 +123,10 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         var aBuilder = new BRep_Builder();
         var aCompound = new TopoDS_Compound();
         aBuilder.MakeCompound(ref aCompound);
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(100.0, 0.0, 0.0));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
         aBuilder.Add(aCompound, aBox);
-        aBuilder.Add(aCompound, aBox.Moved(new TopLoc_Location(aTrsf)));
+        aBuilder.Add(aCompound, aBox.Moved(new Placement(aTrsf)));
 
         var aWriter = new STEPControl_Writer();
         Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aWriter.Transfer(aCompound, STEPControl_StepModelType.STEPControl_AsIs));

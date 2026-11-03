@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ShapeAspectRelationship
 /// </summary>
-public class StepRepr_ShapeAspectRelationship : Standard_Transient
+public class StepRepr_ShapeAspectRelationship : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

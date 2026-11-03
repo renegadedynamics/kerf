@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using static Occt.TopTools_FormatVersion;
@@ -87,7 +88,7 @@ internal sealed class IntersectionComparison : IDisposable
     {
         using var aNPlane = new N.Geom_Plane(new N.gp_Pln());
         string aNText = NativeText(new N.BRepBuilderAPI_MakeEdge(theNative, aNPlane).Edge());
-        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort, new Geom_Plane(new gp_Pln())).Edge());
+        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort, new Geom_Plane(new Plane3D())).Edge());
         if (CompareRecords(Section(aNText, "Curve2ds"), Section(aPText, "Curve2ds"), theWhat))
         {
             return;
@@ -165,8 +166,8 @@ internal sealed class IntersectionComparison : IDisposable
     private void Deviation(double theFirst, double theLast, Func<double, double> theDistance, string theWhat)
     {
         // an infinite line is compared on [-10, 10] about its origin (a hyperbola's points grow as cosh)
-        double aFirst = Precision.IsInfinite(theFirst) ? -10.0 : theFirst;
-        double aLast = Precision.IsInfinite(theLast) ? 10.0 : theLast;
+        double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) ? -10.0 : theFirst;
+        double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast) ? 10.0 : theLast;
         const int aNbSamples = 64;
         double aMax = 0.0;
         for (int i = 0; i <= aNbSamples; i++)

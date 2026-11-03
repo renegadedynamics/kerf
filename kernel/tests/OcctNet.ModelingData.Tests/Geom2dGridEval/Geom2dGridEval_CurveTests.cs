@@ -1,7 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG2d/GTests/Geom2dGridEval_Curve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -24,11 +25,11 @@ file static class CurveTestData
     // Helper function to create a simple 2D B-spline curve
     public static Geom2d_BSplineCurve CreateSimpleBSpline2d()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 2));
-        aPoles.SetValue(3, new gp_Pnt2d(3, 2));
-        aPoles.SetValue(4, new gp_Pnt2d(4, 0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0, 0));
+        aPoles.SetValue(2, new Point2D(1, 2));
+        aPoles.SetValue(3, new Point2D(3, 2));
+        aPoles.SetValue(4, new Point2D(4, 0));
 
         NCollection_Array1<double> aKnots = new(1, 2);
         NCollection_Array1<int> aMults = new(1, 2);
@@ -40,7 +41,7 @@ file static class CurveTestData
         return new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 3);
     }
 
-    public static Geom2d_Circle Circle2() => new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+    public static Geom2d_Circle Circle2() => new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
 }
 
 //=================================================================================================
@@ -54,14 +55,14 @@ public class Geom2dGridEval_LineTest
     [Fact]
     public void BasicEvaluation()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 0));
 
         Geom2dGridEval_Line anEval = new(aGeomLine);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         for (int i = 1; i <= 11; ++i)
@@ -75,24 +76,24 @@ public class Geom2dGridEval_LineTest
     [Fact]
     public void NonOriginLine()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 1));
+        Geom2d_Line aGeomLine = new(new Point2D(1, 2), new Direction2D(1, 1));
 
         Geom2dGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new gp_Pnt2d(1, 2)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point2D(1, 2)), THE_TOLERANCE);
 
         double d = 5.0 / Math.Sqrt(2.0);
-        Assert.Equal(0.0, aGrid.Value(6).Distance(new gp_Pnt2d(1 + d, 2 + d)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(6).Distance(new Point2D(1 + d, 2 + d)), THE_TOLERANCE);
     }
 
     [Fact]
     public void DerivativeD1()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 2));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 2));
         Geom2dGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
@@ -100,7 +101,7 @@ public class Geom2dGridEval_LineTest
         NCollection_Array1<Geom2d_Curve.ResD1> aGrid = anEval.EvaluateGridD1(aParams);
         Assert.Equal(6, aGrid.Size());
 
-        gp_Dir2d aDir = new(1, 2);
+        Direction2D aDir = new(1, 2);
         for (int i = 1; i <= 6; ++i)
         {
             Assert.Equal(aDir.X(), aGrid.Value(i).D1.X(), THE_TOLERANCE);
@@ -111,7 +112,7 @@ public class Geom2dGridEval_LineTest
     [Fact]
     public void DerivativeD2D3()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 0));
         Geom2dGridEval_Line anEval = new(aGeomLine);
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
@@ -151,7 +152,7 @@ public class Geom2dGridEval_CircleTest
         aParams.SetValue(4, 3 * M_PI / 2);
         aParams.SetValue(5, 2 * M_PI);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         Assert.Equal(2.0, aGrid.Value(1).X(), THE_TOLERANCE);
         Assert.Equal(0.0, aGrid.Value(1).Y(), THE_TOLERANCE);
@@ -181,7 +182,7 @@ public class Geom2dGridEval_CircleTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D1(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1);
+            aGeomCircle.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -199,7 +200,7 @@ public class Geom2dGridEval_CircleTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D2(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2);
+            aGeomCircle.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -218,7 +219,7 @@ public class Geom2dGridEval_CircleTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            aGeomCircle.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -245,12 +246,12 @@ public class Geom2dGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aCurve.Value(aParams.Value(i));
+            Point2D aExpected = aCurve.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -266,10 +267,10 @@ public class Geom2dGridEval_BSplineCurveTest
         aParams.SetValue(1, 0.0);
         aParams.SetValue(2, 1.0);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new gp_Pnt2d(0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2).Distance(new gp_Pnt2d(4, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point2D(0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2).Distance(new Point2D(4, 0)), THE_TOLERANCE);
     }
 
     [Fact]
@@ -284,7 +285,7 @@ public class Geom2dGridEval_BSplineCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D1(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1);
+            aCurve.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -302,7 +303,7 @@ public class Geom2dGridEval_BSplineCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D2(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2);
+            aCurve.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -321,7 +322,7 @@ public class Geom2dGridEval_BSplineCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            aCurve.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -337,7 +338,7 @@ public class Geom2dGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Vec2d> aGrid = anEval.EvaluateGridDN(aParams, 4);
+        NCollection_Array1<Vector2D> aGrid = anEval.EvaluateGridDN(aParams, 4);
 
         for (int i = 1; i <= 11; ++i)
         {
@@ -348,13 +349,13 @@ public class Geom2dGridEval_BSplineCurveTest
     [Fact]
     public void MultiSpanBSpline()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 6);
-        aPoles.SetValue(1, new gp_Pnt2d(0, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 2));
-        aPoles.SetValue(3, new gp_Pnt2d(2, 2));
-        aPoles.SetValue(4, new gp_Pnt2d(3, 0));
-        aPoles.SetValue(5, new gp_Pnt2d(4, -1));
-        aPoles.SetValue(6, new gp_Pnt2d(5, 0));
+        NCollection_Array1<Point2D> aPoles = new(1, 6);
+        aPoles.SetValue(1, new Point2D(0, 0));
+        aPoles.SetValue(2, new Point2D(1, 2));
+        aPoles.SetValue(3, new Point2D(2, 2));
+        aPoles.SetValue(4, new Point2D(3, 0));
+        aPoles.SetValue(5, new Point2D(4, -1));
+        aPoles.SetValue(6, new Point2D(5, 0));
 
         NCollection_Array1<double> aKnots = new(1, 3);
         NCollection_Array1<int> aMults = new(1, 3);
@@ -371,11 +372,11 @@ public class Geom2dGridEval_BSplineCurveTest
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 31);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 31; ++i)
         {
-            gp_Pnt2d aExpected = aCurve.Value(aParams.Value(i));
+            Point2D aExpected = aCurve.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -392,20 +393,20 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void LineDispatch()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 0));
         Geom2dAdaptor_Curve anAdaptor = new(aGeomLine);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Line, anEval.GetType());
+        Assert.Equal(Line, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aGeomLine.Value(aParams.Value(i));
+            Point2D aExpected = aGeomLine.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -417,15 +418,15 @@ public class Geom2dGridEval_CurveTest
         Geom2dAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Circle, anEval.GetType());
+        Assert.Equal(Circle, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 17);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 17; ++i)
         {
-            gp_Pnt2d aExpected = aGeomCircle.Value(aParams.Value(i));
+            Point2D aExpected = aGeomCircle.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -433,19 +434,19 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void EllipseDispatch()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(anEllipse);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Ellipse, anEval.GetType());
+        Assert.Equal(Ellipse, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 13);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 13; ++i)
         {
-            gp_Pnt2d aExpected = anEllipse.Value(aParams.Value(i));
+            Point2D aExpected = anEllipse.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -453,19 +454,19 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void HyperbolaDispatch()
     {
-        Geom2d_Hyperbola aHypr = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Hyperbola aHypr = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(aHypr);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Hyperbola, anEval.GetType());
+        Assert.Equal(Hyperbola, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(-2.0, 2.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aHypr.Value(aParams.Value(i));
+            Point2D aExpected = aHypr.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -473,19 +474,19 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void ParabolaDispatch()
     {
-        Geom2d_Parabola aParab = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0);
+        Geom2d_Parabola aParab = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         Geom2dAdaptor_Curve anAdaptor = new(aParab);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Parabola, anEval.GetType());
+        Assert.Equal(Parabola, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(-2.0, 2.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aParab.Value(aParams.Value(i));
+            Point2D aExpected = aParab.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -497,15 +498,15 @@ public class Geom2dGridEval_CurveTest
         Geom2dAdaptor_Curve anAdaptor = new(aCurve);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BSplineCurve, anEval.GetType());
+        Assert.Equal(BSplineCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 21);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 21; ++i)
         {
-            gp_Pnt2d aExpected = aCurve.Value(aParams.Value(i));
+            Point2D aExpected = aCurve.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -513,24 +514,24 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void BezierCurveDispatch()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 2));
-        aPoles.SetValue(3, new gp_Pnt2d(3, 2));
-        aPoles.SetValue(4, new gp_Pnt2d(4, 0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0, 0));
+        aPoles.SetValue(2, new Point2D(1, 2));
+        aPoles.SetValue(3, new Point2D(3, 2));
+        aPoles.SetValue(4, new Point2D(4, 0));
         Geom2d_BezierCurve aBezier = new(aPoles);
         Geom2dAdaptor_Curve anAdaptor = new(aBezier);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BezierCurve, anEval.GetType());
+        Assert.Equal(BezierCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 1.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 11; ++i)
         {
-            gp_Pnt2d aExpected = aBezier.Value(aParams.Value(i));
+            Point2D aExpected = aBezier.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -538,19 +539,19 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void OffsetCurveDispatch()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
         Geom2d_OffsetCurve anOffset = new(aLine, 1.0);
 
         Geom2dGridEval_Curve anEval = new(anOffset);
-        Assert.Equal(GeomAbs_OffsetCurve, anEval.GetType());
+        Assert.Equal(OffsetCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         for (int i = 1; i <= 6; ++i)
         {
-            gp_Pnt2d aExpected = anOffset.Value(aParams.Value(i));
+            Point2D aExpected = anOffset.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -558,14 +559,14 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void DirectHandleInit()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 0));
 
         Geom2dGridEval_Curve anEval = new(aGeomLine);
-        Assert.Equal(GeomAbs_Line, anEval.GetType());
+        Assert.Equal(Line, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 10.0, 11);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
         Assert.Equal(0.0, aGrid.Value(1).X(), THE_TOLERANCE);
     }
@@ -573,13 +574,13 @@ public class Geom2dGridEval_CurveTest
     [Fact]
     public void EmptyParams()
     {
-        Geom2d_Line aGeomLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line aGeomLine = new(new Point2D(0, 0), new Direction2D(1, 0));
         Geom2dAdaptor_Curve anAdaptor = new(aGeomLine);
 
         Geom2dGridEval_Curve anEval = new(anAdaptor);
 
         NCollection_Array1<double> aEmptyParams = new();
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aEmptyParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aEmptyParams);
         Assert.True(aGrid.IsEmpty());
     }
 
@@ -597,7 +598,7 @@ public class Geom2dGridEval_CurveTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aGeomCircle.D1(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1);
+            aGeomCircle.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -617,7 +618,7 @@ public class Geom2dGridEval_CurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D2(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2);
+            aCurve.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -638,7 +639,7 @@ public class Geom2dGridEval_CurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            aCurve.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            aCurve.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -653,7 +654,7 @@ public class Geom2dGridEval_CurveTest
         Geom2d_OffsetCurve anOffset = new(aCircle, 0.5);
 
         Geom2dGridEval_Curve anEval = new(anOffset);
-        Assert.Equal(GeomAbs_OffsetCurve, anEval.GetType());
+        Assert.Equal(OffsetCurve, anEval.GetType());
 
         NCollection_Array1<double> aParams = CurveTestData.CreateUniformParams(0.0, 2 * M_PI, 9);
 
@@ -661,7 +662,7 @@ public class Geom2dGridEval_CurveTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            anOffset.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            anOffset.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -28,7 +30,7 @@ public class IFSelect_SignType : IFSelect_Signature
     /// Returns the Signature for a Transient object, as its Dynamic Type, with or without package name,
     /// according starting option
     /// </summary>
-    public override string Value(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override string Value(Transient? ent, Interface_InterfaceModel? model)
     {
         if (ent is null)
         {
@@ -36,7 +38,7 @@ public class IFSelect_SignType : IFSelect_Signature
         }
         // OCCT first takes the entity as a Standard_Type itself: a System.Type is never an entity here
         Type atype = ent.DynamicType();
-        string tn = atype.Name;
+        string tn = global::Kerf.Engine.Foundation.OcctTypeNames.Of(atype);
         if (!thenopk)
         {
             return tn;

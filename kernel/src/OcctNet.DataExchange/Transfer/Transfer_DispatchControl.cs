@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -40,7 +42,7 @@ public class Transfer_DispatchControl : Interface_CopyControl
     }
 
     /// <summary>Binds a (Transient) Result to a (Transient) Starting Entity.</summary>
-    public override void Bind(Standard_Transient? ent, Standard_Transient? res)
+    public override void Bind(Transient? ent, Transient? res)
     {
         theTP.BindTransient(ent, res);
     }
@@ -49,7 +51,7 @@ public class Transfer_DispatchControl : Interface_CopyControl
     /// Searches for the Result bound to a Starting Entity. If Found, returns True and fills <paramref name="res"/>.
     /// Else, returns False and nullifies <paramref name="res"/>.
     /// </summary>
-    public override bool Search(Standard_Transient? ent, out Standard_Transient? res)
+    public override bool Search(Transient? ent, out Transient? res)
     {
         res = theTP.FindTransient(ent);
         return res is not null;

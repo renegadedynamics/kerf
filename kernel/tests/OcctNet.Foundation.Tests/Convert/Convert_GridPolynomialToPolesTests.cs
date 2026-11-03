@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Convert_GridPolynomialToPolesTest
@@ -50,17 +54,17 @@ public class Convert_GridPolynomialToPolesTest
         aPolyV.SetValue(1, 0.0);
         aPolyV.SetValue(2, 1.0);
 
-        Convert_GridPolynomialToPoles aConv = new(aMaxUDeg, aMaxVDeg, aNumCoeff, aCoeffs, aPolyU, aPolyV);
+        GridPolynomialToPoles aConv = new(aMaxUDeg, aMaxVDeg, aNumCoeff, aCoeffs, aPolyU, aPolyV);
 
-        Assert.True(aConv.IsDone());
-        Assert.True(aConv.NbUPoles() > 0);
-        Assert.True(aConv.NbVPoles() > 0);
+        Assert.True(aConv.IsDone);
+        Assert.True(aConv.UPoleCount > 0);
+        Assert.True(aConv.VPoleCount > 0);
         Assert.Equal(1, aConv.UDegree());
         Assert.Equal(1, aConv.VDegree());
-        Assert.True(aConv.NbUKnots() > 0);
-        Assert.True(aConv.NbVKnots() > 0);
+        Assert.True(aConv.UKnotCount > 0);
+        Assert.True(aConv.VKnotCount > 0);
 
-        NCollection_Array2<gp_Pnt> aPoles = aConv.Poles();
+        NCollection_Array2<Point3D> aPoles = aConv.Poles();
         Assert.True(aPoles.Size() > 0);
     }
 
@@ -92,9 +96,9 @@ public class Convert_GridPolynomialToPolesTest
         aPolyV.SetValue(1, 0.0);
         aPolyV.SetValue(2, 1.0);
 
-        Convert_GridPolynomialToPoles aConv = new(aMaxUDeg, aMaxVDeg, aNumCoeff, aCoeffs, aPolyU, aPolyV);
+        GridPolynomialToPoles aConv = new(aMaxUDeg, aMaxVDeg, aNumCoeff, aCoeffs, aPolyU, aPolyV);
 
-        Assert.True(aConv.IsDone());
+        Assert.True(aConv.IsDone);
 
         NCollection_Array1<double> aUKnots = aConv.UKnots();
         NCollection_Array1<double> aVKnots = aConv.VKnots();
@@ -106,7 +110,7 @@ public class Convert_GridPolynomialToPolesTest
         Assert.True(aUMults.Size() > 0);
         Assert.True(aVMults.Size() > 0);
 
-        Assert.Equal(aConv.NbUKnots(), aUKnots.Length());
-        Assert.Equal(aConv.NbVKnots(), aVKnots.Length());
+        Assert.Equal(aConv.UKnotCount, aUKnots.Length());
+        Assert.Equal(aConv.VKnotCount, aVKnots.Length());
     }
 }

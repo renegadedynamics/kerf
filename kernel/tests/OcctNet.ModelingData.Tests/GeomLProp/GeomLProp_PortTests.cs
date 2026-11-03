@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -10,7 +12,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class GeomLProp_PortTests
 {
-    private static void SameVec(in gp_Vec theA, in gp_Vec theB)
+    private static void SameVec(in Vector3D theA, in Vector3D theB)
     {
         Assert.Equal(theA.X(), theB.X());
         Assert.Equal(theA.Y(), theB.Y());
@@ -54,15 +56,15 @@ public class GeomLProp_PortTests
         }
 
         // 2D: a planar 3D curve and the same 2D curve
-        var aCircle2d = new GeomLProp_CLProps2d(new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 3), 0.7, 3, 1e-7);
-        var aCircle3d = new GeomLProp_CLProps(new Geom_Circle(new gp_Ax2(new gp_Pnt(1, 2, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 3), 0.7, 3, 1e-7);
+        var aCircle2d = new GeomLProp_CLProps2d(new Geom2d_Circle(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3), 0.7, 3, 1e-7);
+        var aCircle3d = new GeomLProp_CLProps(new Geom_Circle(new Frame3D(new Point3D(1, 2, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3), 0.7, 3, 1e-7);
         Assert.Equal(aCircle2d.Curvature(), aCircle3d.Curvature());
-        aCircle2d.CentreOfCurvature(out gp_Pnt2d aC2);
-        aCircle3d.CentreOfCurvature(out gp_Pnt aC3);
+        aCircle2d.CentreOfCurvature(out Point2D aC2);
+        aCircle3d.CentreOfCurvature(out Point3D aC3);
         Assert.Equal(aC2.X(), aC3.X());
         Assert.Equal(aC2.Y(), aC3.Y());
-        aCircle2d.Normal(out gp_Dir2d aN2);
-        aCircle3d.Normal(out gp_Dir aN3);
+        aCircle2d.Normal(out Direction2D aN2);
+        aCircle3d.Normal(out Direction3D aN3);
         Assert.Equal(aN2.X(), aN3.X());
         Assert.Equal(aN2.Y(), aN3.Y());
         Assert.True(aCompared > 2000);
@@ -73,15 +75,15 @@ public class GeomLProp_PortTests
     {
         // a cubic Bezier curve whose first two poles coincide: D1 = 0 at u = 0, so the tangent comes from D2, with the
         // sign of the chord to a nearby point, and the curvature is infinite
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(0, 0, 0);
-        aPoles[3] = new gp_Pnt(1, 1, 0);
-        aPoles[4] = new gp_Pnt(2, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(0, 0, 0);
+        aPoles[3] = new Point3D(1, 1, 0);
+        aPoles[4] = new Point3D(2, 0, 0);
         var aCurve = new Geom_BezierCurve(aPoles);
         var aProps = new GeomLProp_CLProps(aCurve, 0.0, 2, 1e-7);
         Assert.True(aProps.IsTangentDefined());
-        aProps.Tangent(out gp_Dir aTangent);
+        aProps.Tangent(out Direction3D aTangent);
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.X(), 1e-15);
         Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.Y(), 1e-15);
         Assert.Equal(RealLast(), aProps.Curvature());
@@ -89,46 +91,46 @@ public class GeomLProp_PortTests
 
         // OCCT goes on with the null normal D2 (D1.D1) - D1 (D1.D2) and the stale curvature 0 (occt-issues.md): its
         // release build computes NaN, the port's gp_Vec::Normalize throws
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aProps.CentreOfCurvature(out _));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aProps.CentreOfCurvature(out _));
 
         // a point (all derivatives null): no tangent
-        var aPoint = new Geom_BezierCurve(new NCollection_Array1<gp_Pnt>(1, 2));
+        var aPoint = new Geom_BezierCurve(new NCollection_Array1<Point3D>(1, 2));
         var aPointProps = new GeomLProp_CLProps(aPoint, 0.5, 1, 1e-7);
         Assert.False(aPointProps.IsTangentDefined());
         Assert.ThrowsAny<LProp_NotDefined>(() => aPointProps.Tangent(out _));
         Assert.ThrowsAny<LProp_NotDefined>(() => aPointProps.Curvature());
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => new GeomLProp_CLProps(aCurve, 4, 1e-7));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => new GeomLProp_SLProps(3, 1e-7));
+        Assert.ThrowsAny<OutOfRangeException>(() => new GeomLProp_CLProps(aCurve, 4, 1e-7));
+        Assert.ThrowsAny<OutOfRangeException>(() => new GeomLProp_SLProps(3, 1e-7));
     }
 
     [Fact]
     public void Continuity_of_joined_curves()
     {
-        var aLine1 = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        var aLine2 = new Geom_Line(new gp_Pnt(5, 0, 0), new gp_Dir(1, 0, 0));
-        Assert.Equal(GeomAbs_C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, false, false));
-        Assert.Equal(GeomAbs_C0, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, false));
-        Assert.Equal(GeomAbs_C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, true));
+        var aLine1 = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        var aLine2 = new Geom_Line(new Point3D(5, 0, 0), new Direction3D(1, 0, 0));
+        Assert.Equal(C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, false, false));
+        Assert.Equal(C0, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, false));
+        Assert.Equal(C2, GeomLProp.Continuity(aLine1, aLine2, 5.0, 0.0, true, true));
 
         // same direction, different speed: G1
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 2, 0), new gp_Dir(0, 0, 1)), 2.0);
-        Assert.Equal(GeomAbs_G1, GeomLProp.Continuity(aLine1, aCircle, 0.0, -Math.PI / 2, false, false));
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), 2.0);
+        Assert.Equal(G1, GeomLProp.Continuity(aLine1, aCircle, 0.0, -Math.PI / 2, false, false));
 
         // at an angle: C0
-        var aLine3 = new Geom_Line(new gp_Pnt(5, 0, 0), new gp_Dir(0, 1, 0));
-        Assert.Equal(GeomAbs_C0, GeomLProp.Continuity(aLine1, aLine3, 5.0, 0.0, false, false));
+        var aLine3 = new Geom_Line(new Point3D(5, 0, 0), new Direction3D(0, 1, 0));
+        Assert.Equal(C0, GeomLProp.Continuity(aLine1, aLine3, 5.0, 0.0, false, false));
 
-        Assert.ThrowsAny<Standard_Failure>(() => GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
+        Assert.ThrowsAny<FailureException>(() => GeomLProp.Continuity(aLine1, aLine3, 4.0, 0.0, false, false));
     }
 
     private static Geom_BSplineCurve CubicWithKnot(int theMult)
     {
         int aNbPoles = 4 + theMult;
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
-            aPoles[i] = new gp_Pnt(i, Math.Sin(i), 0.1 * i * i);
+            aPoles[i] = new Point3D(i, Math.Sin(i), 0.1 * i * i);
         }
 
         var aKnots = new NCollection_Array1<double>(1, 3);
@@ -151,20 +153,20 @@ public class GeomLProp_PortTests
     {
         // a cubic with a simple knot is C2 there: OCCT compares first derivatives only
         Geom_BSplineCurve aC2 = CubicWithKnot(1);
-        Assert.Equal(GeomAbs_C1, GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
+        Assert.Equal(C1, GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
 
         // with a double knot it is C1: OCCT compares nothing
         Geom_BSplineCurve aC1 = CubicWithKnot(2);
-        Assert.Equal(GeomAbs_C0, GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+        Assert.Equal(C0, GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
 
         // away from the knot (not a B-spline knot: cont 5, n 3) both are C2
-        Assert.Equal(GeomAbs_C2, GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
+        Assert.Equal(C2, GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
     }
 
     [Fact]
     public void Surface_curvatures_of_known_surfaces()
     {
-        var anAx3 = new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1));
+        var anAx3 = new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
         var aSphere = new GeomLProp_SLProps(new Geom_SphericalSurface(anAx3, 2.0), 0.4, 0.3, 2, 1e-7);
         Assert.True(aSphere.IsCurvatureDefined());
         Assert.Equal(-0.5, aSphere.MaxCurvature(), 1e-15);
@@ -178,10 +180,10 @@ public class GeomLProp_PortTests
         Assert.Equal(-0.125, aCylinder.MeanCurvature(), 1e-15);
         Assert.Equal(0.0, aCylinder.GaussianCurvature(), 1e-15);
         Assert.False(aCylinder.IsUmbilic());
-        aCylinder.CurvatureDirections(out gp_Dir aMax, out gp_Dir aMin);
+        aCylinder.CurvatureDirections(out Direction3D aMax, out Direction3D aMin);
         Assert.Equal(1.0, Math.Abs(aMax.Z()), 1e-15);
         Assert.Equal(0.0, aMin.Z(), 1e-15);
-        Assert.Equal(new gp_Dir(Math.Cos(1.0), Math.Sin(1.0), 0.0).X(), aCylinder.Normal().X(), 1e-15);
+        Assert.Equal(new Direction3D(Math.Cos(1.0), Math.Sin(1.0), 0.0).X(), aCylinder.Normal().X(), 1e-15);
 
         // a cone at its apex: no normal, no curvature
         var aCone = new GeomLProp_SLProps(new Geom_ConicalSurface(anAx3, 0.5, 0.0), 0.0, 0.0, 2, 1e-7);
@@ -205,12 +207,12 @@ public class GeomLProp_PortTests
     [Fact]
     public void Curvatures_asked_first_return_the_previous_value_as_in_OCCT()
     {
-        var aSphere = new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aProps = new GeomLProp_SLProps(aSphere, 0.4, 0.3, 2, 1e-7);
         Assert.Equal(0.0, aProps.MaxCurvature());
         Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
 
-        var aCylinder = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 4.0);
+        var aCylinder = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0);
         var aCylProps = new GeomLProp_SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
         Assert.True(aCylProps.IsUmbilic()); // compares 0 and 0
         Assert.False(aCylProps.IsUmbilic());

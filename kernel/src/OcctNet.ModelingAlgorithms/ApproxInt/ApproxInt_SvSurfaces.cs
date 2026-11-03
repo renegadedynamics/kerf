@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -31,23 +33,23 @@ public abstract class ApproxInt_SvSurfaces
     /// OCCT's references: the outputs are left unchanged where OCCT leaves them (a result found in the cache, a
     /// failure), so they are <c>ref</c>.
     /// </remarks>
-    public abstract bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref gp_Pnt Pt,
-                                 ref gp_Vec Tg, ref gp_Vec2d Tguv1, ref gp_Vec2d Tguv2);
+    public abstract bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref Point3D Pt,
+                                 ref Vector3D Tg, ref Vector2D Tguv1, ref Vector2D Tguv2);
 
     /// <summary>The point of the intersection line at (u1, v1, u2, v2).</summary>
-    public abstract void Pnt(double u1, double v1, double u2, double v2, ref gp_Pnt P);
+    public abstract void Pnt(double u1, double v1, double u2, double v2, ref Point3D P);
 
     /// <summary>Computes the point on the curve and its parameters on the surfaces.</summary>
     public abstract bool SeekPoint(double u1, double v1, double u2, double v2, ref IntSurf_PntOn2S Point);
 
     /// <summary>The 3D tangent of the intersection line at (u1, v1, u2, v2).</summary>
-    public abstract bool Tangency(double u1, double v1, double u2, double v2, ref gp_Vec Tg);
+    public abstract bool Tangency(double u1, double v1, double u2, double v2, ref Vector3D Tg);
 
     /// <summary>The 2D tangent of the intersection line on the first surface.</summary>
-    public abstract bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref gp_Vec2d Tg);
+    public abstract bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref Vector2D Tg);
 
     /// <summary>The 2D tangent of the intersection line on the second surface.</summary>
-    public abstract bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref gp_Vec2d Tg);
+    public abstract bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref Vector2D Tg);
 
     /// <summary>Whether the parameters given are refined by the solver (see the remarks of the class).</summary>
     public void SetUseSolver(bool theUseSol)

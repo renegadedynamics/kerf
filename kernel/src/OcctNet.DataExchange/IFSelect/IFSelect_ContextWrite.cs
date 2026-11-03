@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -201,11 +203,11 @@ public class IFSelect_ContextWrite
     /// <summary>
     /// Returns the current selected entity in the model
     /// </summary>
-    public Standard_Transient? Value()
+    public Transient? Value()
     {
         if (thecurr < 1 || thecurr > thenbent)
         {
-            throw new Standard_NoSuchObject("IFSelect_ContextWrite:Value");
+            throw new NoSuchObjectException("IFSelect_ContextWrite:Value");
         }
         int num = theapply.ItemNum(thecurr);
         return themodel.Value(num);
@@ -222,7 +224,7 @@ public class IFSelect_ContextWrite
         {
             return;
         }
-        Standard_Transient ent = check.Entity();
+        Transient ent = check.Entity();
         int num = themodel.Number(ent);
         if (num == 0 && ent is not null)
         {
@@ -235,7 +237,7 @@ public class IFSelect_ContextWrite
     /// Adds a Warning Message for an Entity from the Model If &lt;start&gt; is not an Entity from the model
     /// (e.g. the model itself) this message is added to Global Check.
     /// </summary>
-    public void AddWarning(Standard_Transient? start, string mess, string orig = "")
+    public void AddWarning(Transient? start, string mess, string orig = "")
     {
         thecheck.CCheck(themodel.Number(start)).AddWarning(mess, orig);
     }
@@ -244,7 +246,7 @@ public class IFSelect_ContextWrite
     /// Adds a Fail Message for an Entity from the Model If &lt;start&gt; is not an Entity from the model (e.g.
     /// the model itself) this message is added to Global Check.
     /// </summary>
-    public void AddFail(Standard_Transient? start, string mess, string orig = "")
+    public void AddFail(Transient? start, string mess, string orig = "")
     {
         thecheck.CCheck(themodel.Number(start)).AddFail(mess, orig);
     }
@@ -268,7 +270,7 @@ public class IFSelect_ContextWrite
     /// Returns a Check attached to an Entity from the Model It can then be acknowledged on the spot, in
     /// condition that the caller works by reference ("Interface_Check&amp; check = ...")
     /// </summary>
-    public Interface_Check? CCheck(Standard_Transient? ent)
+    public Interface_Check? CCheck(Transient? ent)
     {
         int num = themodel.Number(ent);
         if (num == 0)

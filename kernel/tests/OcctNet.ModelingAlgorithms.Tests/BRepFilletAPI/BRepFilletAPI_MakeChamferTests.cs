@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeChamfer_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -83,7 +85,7 @@ public class BRepFilletAPI_MakeChamferTests
         TopoDS_Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone());
 
-        gp_Ax2 anAxis = new(new gp_Pnt(5.0, 0.0, 5.0), new gp_Dir(0.0, 1.0, 0.0));
+        Frame3D anAxis = new(new Point3D(5.0, 0.0, 5.0), new Direction3D(0.0, 1.0, 0.0));
         BRepPrimAPI_MakeCylinder aCylMaker = new(anAxis, 3.0, 10.0);
         TopoDS_Shape aCyl = aCylMaker.Shape();
         Assert.True(aCylMaker.IsDone());
@@ -135,7 +137,7 @@ public class BRepFilletAPI_MakeChamferTests
                 Assert.True(new BRepCheck_Analyzer(aChamfer.Shape()).IsValid());
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             // Exception instead of crash is acceptable.
         }
@@ -188,11 +190,11 @@ public class BRepFilletAPI_MakeChamferTests
                     break;
                 }
             }
-            catch (Standard_ConstructionError)
+            catch (ConstructionErrorException)
             {
                 break;
             }
-            catch (StdFail_NotDone)
+            catch (NotDoneException)
             {
                 break;
             }

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,14 +22,14 @@ namespace Occt;
 /// Entity, but can use the class UndefinedContent to brings parameters : it is enough for most of
 /// information and avoids to redefine them, only the specific part remains to be defined for each norm.
 /// </summary>
-public class Interface_ReportEntity : Standard_Transient
+public class Interface_ReportEntity : Transient
 {
 
     /// <summary>
     /// Creates a ReportEntity for an Unknown Entity : Check is empty, and Concerned equates Content (i.e. the
     /// Unknown Entity)
     /// </summary>
-    public Interface_ReportEntity(Standard_Transient? unknown)
+    public Interface_ReportEntity(Transient? unknown)
     {
         theconcerned = unknown;
         thecontent = unknown;
@@ -38,7 +40,7 @@ public class Interface_ReportEntity : Standard_Transient
     /// &lt;concerned&gt; is the Entity to which the Check is bound Later, a Content can be set : it is required
     /// for an Error
     /// </summary>
-    public Interface_ReportEntity(Interface_Check? acheck, Standard_Transient? concerned)
+    public Interface_ReportEntity(Interface_Check? acheck, Transient? concerned)
     {
         thecheck = acheck;
         theconcerned = concerned;
@@ -49,7 +51,7 @@ public class Interface_ReportEntity : Standard_Transient
     /// Sets a Content : it brings non interpreted data which belong to the Concerned Entity. It can be empty
     /// then loaded later. Remark that for an Unknown Entity, Content is set by Create.
     /// </summary>
-    public void SetContent(Standard_Transient? content)
+    public void SetContent(Transient? content)
     {
         thecontent = content;
     }
@@ -73,7 +75,7 @@ public class Interface_ReportEntity : Standard_Transient
     /// <summary>
     /// Returns the stored Concerned Entity. It equates the Content in the case of an Unknown Entity
     /// </summary>
-    public Standard_Transient? Concerned()
+    public Transient? Concerned()
     {
         return theconcerned;
     }
@@ -99,7 +101,7 @@ public class Interface_ReportEntity : Standard_Transient
     /// Returns the stored Content, or a Null Handle Remark that it must be an "Unknown Entity" suitable for the
     /// norm of the containing Model
     /// </summary>
-    public Standard_Transient? Content()
+    public Transient? Content()
     {
         return thecontent;
     }
@@ -122,6 +124,6 @@ public class Interface_ReportEntity : Standard_Transient
     }
 
     private Interface_Check? thecheck;
-    private Standard_Transient? theconcerned;
-    private Standard_Transient? thecontent;
+    private Transient? theconcerned;
+    private Transient? thecontent;
 }

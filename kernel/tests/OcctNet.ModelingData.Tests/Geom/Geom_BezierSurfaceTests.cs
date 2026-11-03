@@ -1,6 +1,10 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/Geom_BezierSurface_Test.cxx (V8_0_1), plus OCCT.NET's own checks.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -13,25 +17,25 @@ public class Geom_BezierSurfaceTests
 
     public Geom_BezierSurfaceTests()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 3; ++j)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, (i + j) * 0.1);
+                aPoles[i, j] = new Point3D(i, j, (i + j) * 0.1);
             }
         }
         myOriginalSurface = new Geom_BezierSurface(aPoles);
     }
 
     /// <summary>The 2 x 2 test poles (0,0,0), (1,0,0) / (0,1,0), (1,1,z11).</summary>
-    private static NCollection_Array2<gp_Pnt> Poles2x2(double theZ22 = 0.0)
+    private static NCollection_Array2<Point3D> Poles2x2(double theZ22 = 0.0)
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[1, 2] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(0, 1, 0);
-        aPoles[2, 2] = new gp_Pnt(1, 1, theZ22);
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[1, 2] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(0, 1, 0);
+        aPoles[2, 2] = new Point3D(1, 1, theZ22);
         return aPoles;
     }
 
@@ -45,7 +49,7 @@ public class Geom_BezierSurfaceTests
         return aWeights;
     }
 
-    private static NCollection_Array1<gp_Pnt> Points(params gp_Pnt[] thePoints) => NCollection_Array1<gp_Pnt>.From(thePoints);
+    private static NCollection_Array1<Point3D> Points(params Point3D[] thePoints) => NCollection_Array1<Point3D>.From(thePoints);
 
     private static NCollection_Array1<double> Reals(params double[] theValues) => NCollection_Array1<double>.From(theValues);
 
@@ -109,7 +113,7 @@ public class Geom_BezierSurfaceTests
     public void CopyIndependence()
     {
         Geom_BezierSurface aCopiedSurface = new(myOriginalSurface);
-        gp_Pnt aNewPole = new(10, 10, 10);
+        Point3D aNewPole = new(10, 10, 10);
         myOriginalSurface.SetPole(2, 2, aNewPole);
         Assert.False(aCopiedSurface.Pole(2, 2).IsEqual(aNewPole, 1e-10));
     }
@@ -117,16 +121,16 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Evaluation_D0()
     {
-        myOriginalSurface.D0(0.0, 0.0, out gp_Pnt aPnt);
-        Assert.True(aPnt.IsEqual(new gp_Pnt(1, 1, 0.2), 1e-10));
+        myOriginalSurface.D0(0.0, 0.0, out Point3D aPnt);
+        Assert.True(aPnt.IsEqual(new Point3D(1, 1, 0.2), 1e-10));
         myOriginalSurface.D0(1.0, 1.0, out aPnt);
-        Assert.True(aPnt.IsEqual(new gp_Pnt(3, 3, 0.6), 1e-10));
+        Assert.True(aPnt.IsEqual(new Point3D(3, 3, 0.6), 1e-10));
     }
 
     [Fact]
     public void Evaluation_D1()
     {
-        myOriginalSurface.D1(0.5, 0.5, out _, out gp_Vec aD1U, out gp_Vec aD1V);
+        myOriginalSurface.D1(0.5, 0.5, out _, out Vector3D aD1U, out Vector3D aD1V);
         Assert.True(aD1U.Magnitude() > 0.0);
         Assert.True(aD1V.Magnitude() > 0.0);
     }
@@ -134,7 +138,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Evaluation_D2()
     {
-        myOriginalSurface.D2(0.5, 0.5, out _, out gp_Vec aD1U, out _, out _, out _, out _);
+        myOriginalSurface.D2(0.5, 0.5, out _, out Vector3D aD1U, out _, out _, out _, out _);
         Assert.True(aD1U.Magnitude() > 0.0);
     }
 
@@ -173,7 +177,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetPole()
     {
-        gp_Pnt aNewPole = new(5, 5, 5);
+        Point3D aNewPole = new(5, 5, 5);
         myOriginalSurface.SetPole(2, 2, aNewPole);
         Assert.True(myOriginalSurface.Pole(2, 2).IsEqual(aNewPole, 1e-10));
     }
@@ -182,7 +186,7 @@ public class Geom_BezierSurfaceTests
     public void SetWeight()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 1.0));
-        gp_Pnt aValBefore = aSurf.Value(0.5, 0.5);
+        Point3D aValBefore = aSurf.Value(0.5, 0.5);
         aSurf.SetWeight(2, 2, 10.0);
         Assert.Equal(10.0, aSurf.Weight(2, 2));
         Assert.True(aSurf.IsURational() || aSurf.IsVRational());
@@ -192,7 +196,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Increase()
     {
-        gp_Pnt aValBefore = myOriginalSurface.Value(0.5, 0.5);
+        Point3D aValBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Increase(4, 3);
         Assert.Equal(4, myOriginalSurface.UDegree());
         Assert.Equal(3, myOriginalSurface.VDegree());
@@ -204,7 +208,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Segment()
     {
-        gp_Pnt aPntBefore = myOriginalSurface.Value(0.5, 0.5);
+        Point3D aPntBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Segment(0.25, 0.75, 0.25, 0.75);
         Assert.True(myOriginalSurface.Value(0.5, 0.5).IsEqual(aPntBefore, 1e-6));
     }
@@ -212,7 +216,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void ExchangeUV()
     {
-        gp_Pnt aValBefore = myOriginalSurface.Value(0.3, 0.7);
+        Point3D aValBefore = myOriginalSurface.Value(0.3, 0.7);
         int aUDeg = myOriginalSurface.UDegree();
         int aVDeg = myOriginalSurface.VDegree();
         myOriginalSurface.ExchangeUV();
@@ -224,7 +228,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void UReverse()
     {
-        gp_Pnt aValBefore = myOriginalSurface.Value(0.3, 0.5);
+        Point3D aValBefore = myOriginalSurface.Value(0.3, 0.5);
         myOriginalSurface.UReverse();
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.7, 0.5), 1e-10));
     }
@@ -232,7 +236,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void VReverse()
     {
-        gp_Pnt aValBefore = myOriginalSurface.Value(0.5, 0.3);
+        Point3D aValBefore = myOriginalSurface.Value(0.5, 0.3);
         myOriginalSurface.VReverse();
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.5, 0.7), 1e-10));
     }
@@ -245,8 +249,8 @@ public class Geom_BezierSurfaceTests
 
         for (double v = 0.0; v <= 1.0; v += 0.25)
         {
-            gp_Pnt aSurfPnt = myOriginalSurface.Value(0.5, v);
-            gp_Pnt anIsoPnt = anIso.Value(v);
+            Point3D aSurfPnt = myOriginalSurface.Value(0.5, v);
+            Point3D anIsoPnt = anIso.Value(v);
             Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
         }
     }
@@ -259,8 +263,8 @@ public class Geom_BezierSurfaceTests
 
         for (double u = 0.0; u <= 1.0; u += 0.25)
         {
-            gp_Pnt aSurfPnt = myOriginalSurface.Value(u, 0.5);
-            gp_Pnt anIsoPnt = anIso.Value(u);
+            Point3D aSurfPnt = myOriginalSurface.Value(u, 0.5);
+            Point3D anIsoPnt = anIso.Value(u);
             Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
         }
     }
@@ -276,11 +280,11 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Transform()
     {
-        gp_Trsf aTrsf = new();
-        aTrsf.SetTranslation(new gp_Vec(10, 20, 30));
-        gp_Pnt aPtBefore = myOriginalSurface.Value(0.5, 0.5);
+        Transform3D aTrsf = new();
+        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Point3D aPtBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Transform(aTrsf);
-        gp_Pnt aPtAfter = myOriginalSurface.Value(0.5, 0.5);
+        Point3D aPtAfter = myOriginalSurface.Value(0.5, 0.5);
         Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
         Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
         Assert.Equal(aPtBefore.Z() + 30.0, aPtAfter.Z(), 1e-10);
@@ -290,7 +294,7 @@ public class Geom_BezierSurfaceTests
     public void InsertPoleRowAfter()
     {
         int aNbUBefore = myOriginalSurface.NbUPoles();
-        myOriginalSurface.InsertPoleRowAfter(1, Points(new gp_Pnt(1.5, 1, 0), new gp_Pnt(1.5, 2, 0), new gp_Pnt(1.5, 3, 0)));
+        myOriginalSurface.InsertPoleRowAfter(1, Points(new Point3D(1.5, 1, 0), new Point3D(1.5, 2, 0), new Point3D(1.5, 3, 0)));
         Assert.Equal(aNbUBefore + 1, myOriginalSurface.NbUPoles());
         Assert.Equal(3, myOriginalSurface.UDegree());
     }
@@ -299,7 +303,7 @@ public class Geom_BezierSurfaceTests
     public void InsertPoleColAfter()
     {
         int aNbVBefore = myOriginalSurface.NbVPoles();
-        myOriginalSurface.InsertPoleColAfter(1, Points(new gp_Pnt(1, 1.5, 0), new gp_Pnt(2, 1.5, 0), new gp_Pnt(3, 1.5, 0)));
+        myOriginalSurface.InsertPoleColAfter(1, Points(new Point3D(1, 1.5, 0), new Point3D(2, 1.5, 0), new Point3D(3, 1.5, 0)));
         Assert.Equal(aNbVBefore + 1, myOriginalSurface.NbVPoles());
         Assert.Equal(3, myOriginalSurface.VDegree());
     }
@@ -307,7 +311,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void RemovePoleRow()
     {
-        myOriginalSurface.InsertPoleRowAfter(1, Points(new gp_Pnt(1.5, 1, 0), new gp_Pnt(1.5, 2, 0), new gp_Pnt(1.5, 3, 0)));
+        myOriginalSurface.InsertPoleRowAfter(1, Points(new Point3D(1.5, 1, 0), new Point3D(1.5, 2, 0), new Point3D(1.5, 3, 0)));
         Assert.Equal(4, myOriginalSurface.NbUPoles());
         myOriginalSurface.RemovePoleRow(2);
         Assert.Equal(3, myOriginalSurface.NbUPoles());
@@ -316,7 +320,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void RemovePoleCol()
     {
-        myOriginalSurface.InsertPoleColAfter(1, Points(new gp_Pnt(1, 1.5, 0), new gp_Pnt(2, 1.5, 0), new gp_Pnt(3, 1.5, 0)));
+        myOriginalSurface.InsertPoleColAfter(1, Points(new Point3D(1, 1.5, 0), new Point3D(2, 1.5, 0), new Point3D(3, 1.5, 0)));
         Assert.Equal(4, myOriginalSurface.NbVPoles());
         myOriginalSurface.RemovePoleCol(2);
         Assert.Equal(3, myOriginalSurface.NbVPoles());
@@ -325,7 +329,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetPoleRow()
     {
-        myOriginalSurface.SetPoleRow(2, Points(new gp_Pnt(10, 1, 0), new gp_Pnt(10, 2, 0), new gp_Pnt(10, 3, 0)));
+        myOriginalSurface.SetPoleRow(2, Points(new Point3D(10, 1, 0), new Point3D(10, 2, 0), new Point3D(10, 3, 0)));
         for (int j = 1; j <= 3; ++j)
         {
             Assert.Equal(10.0, myOriginalSurface.Pole(2, j).X(), 1e-10);
@@ -335,7 +339,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void SetPoleCol()
     {
-        myOriginalSurface.SetPoleCol(2, Points(new gp_Pnt(1, 10, 0), new gp_Pnt(2, 10, 0), new gp_Pnt(3, 10, 0)));
+        myOriginalSurface.SetPoleCol(2, Points(new Point3D(1, 10, 0), new Point3D(2, 10, 0), new Point3D(3, 10, 0)));
         for (int i = 1; i <= 3; ++i)
         {
             Assert.Equal(10.0, myOriginalSurface.Pole(i, 2).Y(), 1e-10);
@@ -351,10 +355,10 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void PolesAccess()
     {
-        NCollection_Array2<gp_Pnt> aPoles = myOriginalSurface.Poles();
+        NCollection_Array2<Point3D> aPoles = myOriginalSurface.Poles();
         Assert.Equal(3, aPoles.ColLength());
         Assert.Equal(3, aPoles.RowLength());
-        Assert.True(aPoles[1, 1].IsEqual(new gp_Pnt(1, 1, 0.2), 1e-10));
+        Assert.True(aPoles[1, 1].IsEqual(new Point3D(1, 1, 0.2), 1e-10));
     }
 
     [Fact]
@@ -366,12 +370,12 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void RationalSurface_UIso()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
         NCollection_Array2<double> aWeights = new(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[1, 2] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(0, 1, 0);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 0);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[1, 2] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(0, 1, 0);
+        aPoles[2, 2] = new Point3D(1, 1, 0);
         aWeights[1, 1] = 1.0;
         aWeights[1, 2] = 2.0;
         aWeights[2, 1] = 2.0;
@@ -384,8 +388,8 @@ public class Geom_BezierSurfaceTests
 
         for (double v = 0.0; v <= 1.0; v += 0.25)
         {
-            gp_Pnt aSurfPnt = aSurf.Value(0.5, v);
-            gp_Pnt anIsoPnt = anIso.Value(v);
+            Point3D aSurfPnt = aSurf.Value(0.5, v);
+            Point3D anIsoPnt = anIso.Value(v);
             Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
         }
     }
@@ -393,7 +397,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Evaluation_D3()
     {
-        myOriginalSurface.D3(0.5, 0.5, out _, out _, out _, out _, out _, out _, out gp_Vec aD3U, out gp_Vec aD3V, out _, out _);
+        myOriginalSurface.D3(0.5, 0.5, out _, out _, out _, out _, out _, out _, out Vector3D aD3U, out Vector3D aD3V, out _, out _);
         Assert.Equal(0.0, aD3U.Magnitude(), 1e-10);
         Assert.Equal(0.0, aD3V.Magnitude(), 1e-10);
     }
@@ -402,36 +406,36 @@ public class Geom_BezierSurfaceTests
     public void InsertPoleRowBefore()
     {
         int aNbUBefore = myOriginalSurface.NbUPoles();
-        myOriginalSurface.InsertPoleRowBefore(2, Points(new gp_Pnt(0.5, 1, 0), new gp_Pnt(0.5, 2, 0), new gp_Pnt(0.5, 3, 0)));
+        myOriginalSurface.InsertPoleRowBefore(2, Points(new Point3D(0.5, 1, 0), new Point3D(0.5, 2, 0), new Point3D(0.5, 3, 0)));
         Assert.Equal(aNbUBefore + 1, myOriginalSurface.NbUPoles());
-        Assert.True(myOriginalSurface.Pole(2, 1).IsEqual(new gp_Pnt(0.5, 1, 0), 1e-10));
+        Assert.True(myOriginalSurface.Pole(2, 1).IsEqual(new Point3D(0.5, 1, 0), 1e-10));
     }
 
     [Fact]
     public void InsertPoleColBefore()
     {
         int aNbVBefore = myOriginalSurface.NbVPoles();
-        myOriginalSurface.InsertPoleColBefore(2, Points(new gp_Pnt(1, 0.5, 0), new gp_Pnt(2, 0.5, 0), new gp_Pnt(3, 0.5, 0)));
+        myOriginalSurface.InsertPoleColBefore(2, Points(new Point3D(1, 0.5, 0), new Point3D(2, 0.5, 0), new Point3D(3, 0.5, 0)));
         Assert.Equal(aNbVBefore + 1, myOriginalSurface.NbVPoles());
-        Assert.True(myOriginalSurface.Pole(1, 2).IsEqual(new gp_Pnt(1, 0.5, 0), 1e-10));
+        Assert.True(myOriginalSurface.Pole(1, 2).IsEqual(new Point3D(1, 0.5, 0), 1e-10));
     }
 
     [Fact]
     public void RationalSegment()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 3; ++j)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, (i + j) * 0.1);
+                aPoles[i, j] = new Point3D(i, j, (i + j) * 0.1);
                 aWeights[i, j] = 1.0 + 0.3 * ((i - 1) + (j - 1));
             }
         }
         Geom_BezierSurface aSurf = new(aPoles, aWeights);
         Assert.True(aSurf.IsURational() || aSurf.IsVRational());
-        gp_Pnt aMid = aSurf.Value(0.5, 0.5);
+        Point3D aMid = aSurf.Value(0.5, 0.5);
         aSurf.Segment(0.25, 0.75, 0.25, 0.75);
         Assert.True(aMid.IsEqual(aSurf.Value(0.5, 0.5), 1e-5));
     }
@@ -440,7 +444,7 @@ public class Geom_BezierSurfaceTests
     public void RationalIncrease()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(1.0), Weights2x2(1.0, 2.0, 2.0, 1.0));
-        gp_Pnt aValBefore = aSurf.Value(0.5, 0.5);
+        Point3D aValBefore = aSurf.Value(0.5, 0.5);
         aSurf.Increase(3, 3);
         Assert.Equal(3, aSurf.UDegree());
         Assert.Equal(3, aSurf.VDegree());
@@ -469,7 +473,7 @@ public class Geom_BezierSurfaceTests
     public void InsertPoleRowAfterWithWeights()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
-        aSurf.InsertPoleRowAfter(1, Points(new gp_Pnt(0, 0.5, 0), new gp_Pnt(1, 0.5, 0)), Reals(3.0, 4.0));
+        aSurf.InsertPoleRowAfter(1, Points(new Point3D(0, 0.5, 0), new Point3D(1, 0.5, 0)), Reals(3.0, 4.0));
         Assert.Equal(3, aSurf.NbUPoles());
         Assert.Equal(3.0, aSurf.Weight(2, 1));
         Assert.Equal(4.0, aSurf.Weight(2, 2));
@@ -478,12 +482,12 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void VIso_Rational()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
         NCollection_Array2<double> aWeights = new(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[1, 2] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(0, 1, 0);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 0);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[1, 2] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(0, 1, 0);
+        aPoles[2, 2] = new Point3D(1, 1, 0);
         aWeights[1, 1] = 1.0;
         aWeights[1, 2] = 2.0;
         aWeights[2, 1] = 2.0;
@@ -496,8 +500,8 @@ public class Geom_BezierSurfaceTests
 
         for (double u = 0.0; u <= 1.0; u += 0.25)
         {
-            gp_Pnt aSurfPnt = aSurf.Value(u, 0.5);
-            gp_Pnt anIsoPnt = anIso.Value(u);
+            Point3D aSurfPnt = aSurf.Value(u, 0.5);
+            Point3D anIsoPnt = anIso.Value(u);
             Assert.True(aSurfPnt.IsEqual(anIsoPnt, 1e-10));
         }
     }
@@ -506,7 +510,7 @@ public class Geom_BezierSurfaceTests
     public void SetPoleWithWeight()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 1.0, 1.0, 2.0));
-        gp_Pnt aNewPole = new(0.5, 0.5, 1.0);
+        Point3D aNewPole = new(0.5, 0.5, 1.0);
         aSurf.SetPole(1, 1, aNewPole, 5.0);
         Assert.True(aSurf.Pole(1, 1).IsEqual(aNewPole, 1e-10));
         Assert.Equal(5.0, aSurf.Weight(1, 1));
@@ -516,8 +520,8 @@ public class Geom_BezierSurfaceTests
     public void SetPoleColWithWeights()
     {
         Geom_BezierSurface aSurf = new(Poles2x2(), Weights2x2(1.0, 2.0, 2.0, 1.0));
-        aSurf.SetPoleCol(2, Points(new gp_Pnt(5, 0, 0), new gp_Pnt(5, 1, 0)), Reals(3.0, 4.0));
-        Assert.True(aSurf.Pole(1, 2).IsEqual(new gp_Pnt(5, 0, 0), 1e-10));
+        aSurf.SetPoleCol(2, Points(new Point3D(5, 0, 0), new Point3D(5, 1, 0)), Reals(3.0, 4.0));
+        Assert.True(aSurf.Pole(1, 2).IsEqual(new Point3D(5, 0, 0), 1e-10));
         Assert.Equal(3.0, aSurf.Weight(1, 2));
         Assert.Equal(4.0, aSurf.Weight(2, 2));
     }
@@ -599,12 +603,12 @@ public class Geom_BezierSurfaceTests
     public void FrozenSurface_RejectsMutators_TwinsCopy()
     {
         myOriginalSurface.Freeze();
-        Assert.Throws<Standard_ImmutableObject>(() => myOriginalSurface.SetPole(1, 1, new gp_Pnt()));
-        Assert.Throws<Standard_ImmutableObject>(() => myOriginalSurface.Increase(3, 3));
-        Assert.Throws<Standard_ImmutableObject>(() => myOriginalSurface.VReverse());
+        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.SetPole(1, 1, new Point3D()));
+        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.Increase(3, 3));
+        Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.VReverse());
 
         Geom_BezierSurface aIncreased = myOriginalSurface.Increased(3, 4);
-        Assert.False(aIncreased.IsFrozen());
+        Assert.False(aIncreased.IsFrozen);
         Assert.Equal(4, aIncreased.VDegree());
         Assert.Equal(2, myOriginalSurface.VDegree());
         Assert.Equal(2, myOriginalSurface.PoleColRemoved(2).NbVPoles());
@@ -617,11 +621,11 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void EvalRepresentation_KeptByPoleEdits_AsInOCCT()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 5);
-        aPoles[1, 2] = new gp_Pnt(1, 0, 5);
-        aPoles[2, 1] = new gp_Pnt(0, 1, 5);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 5);
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 5);
+        aPoles[1, 2] = new Point3D(1, 0, 5);
+        aPoles[2, 1] = new Point3D(0, 1, 5);
+        aPoles[2, 2] = new Point3D(1, 1, 5);
         Geom_BezierSurface aRep = new(aPoles);
         Geom_BezierSurface aSurf = myOriginalSurface.WithEvalRepresentation(new GeomEval_RepSurfaceDesc.Full { Representation = aRep });
         Assert.True(aSurf.HasEvalRepresentation());
@@ -630,11 +634,11 @@ public class Geom_BezierSurfaceTests
         Assert.True(aSurf.Copy() is Geom_BezierSurface { } aCopy && aCopy.HasEvalRepresentation());
 
         // OCCT: a pole edit keeps the representation (occt-issues.md), Transform drops it
-        aSurf.SetPole(1, 1, new gp_Pnt(-10, -10, -10));
+        aSurf.SetPole(1, 1, new Point3D(-10, -10, -10));
         Assert.True(aSurf.HasEvalRepresentation());
-        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new gp_Pnt(0, 0, 5), 0.0));
-        aSurf.Transform(gp_Trsf.Translation(new gp_Vec(0, 0, 1)));
+        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new Point3D(0, 0, 5), 0.0));
+        aSurf.Transform(Transform3D.Translation(new Vector3D(0, 0, 1)));
         Assert.False(aSurf.HasEvalRepresentation());
-        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new gp_Pnt(-10, -10, -9), 1e-12));
+        Assert.True(aSurf.Value(0.0, 0.0).IsEqual(new Point3D(-10, -10, -9), 1e-12));
     }
 }

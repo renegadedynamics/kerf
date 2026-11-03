@@ -2,7 +2,9 @@
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixBRep_BuilderHelix_Integration_Test.cxx (HelixBRepTest),
 // and the port's own tests of the builder's frozen result.
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class HelixBRep_BuilderHelix_IntegrationTests
 {
     // Standard axis aligned with Z
-    private readonly gp_Ax3 myAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+    private readonly CoordinateSystem myAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
     private const double myTolerance = 1.0e-4;
 
     // Helper method to validate helix wire properties
@@ -42,7 +44,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = false; // PF1 = 0 means number of turns
         aBuilder.SetParameters(myAxis, 100.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -71,7 +73,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = true; // PF1 = 1 means pitch
         aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -102,7 +104,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aIsPitches[2] = false; // PF2 = 0
         aIsPitches[3] = false; // PF3 = 0
         aBuilder.SetParameters(myAxis, 100.0, 20.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -127,7 +129,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aNbTurns[2] = 6.0; // N2
         aNbTurns[3] = 2.0; // N3
         aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -172,7 +174,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aIsPitches[4] = false;
         aIsPitches[5] = false;
         aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -197,7 +199,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aHeights[1] = 50.0;
         aPitches[1] = 10.0;
         aIsPitches[1] = true;
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches));
     }
 
     [Fact]
@@ -210,7 +212,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aPitches[1] = 10.0;
         aPitches[2] = 10.0;
         aNbTurns[1] = 5.0;
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns));
     }
 
     // Test tolerance and approximation quality
@@ -227,7 +229,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.SetParameters(myAxis, 50.0, aHeights, aPitches, aIsPitches);
         // Test different tolerance levels
         double aTightTolerance = 1.0e-6;
-        aBuilder.SetApproxParameters(aTightTolerance, 8, GeomAbs_C2);
+        aBuilder.SetApproxParameters(aTightTolerance, 8, C2);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         double aToleranceReached = aBuilder.ToleranceReached();
@@ -250,7 +252,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aPitches[1] = 10.0;
         aIsPitches[1] = true;
         aBuilder.SetParameters(myAxis, 50.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.NotEqual(0, aBuilder.ErrorStatus()); // Should have error status 12 (invalid height)
         // Test zero pitch - should cause error
@@ -281,7 +283,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aIsPitches[1] = true;
         aIsPitches[2] = true;
         aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aHelixWire = aBuilder.Shape();
@@ -326,12 +328,12 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aWire = aBuilder.Shape();
-        Assert.True(aWire.TShape()!.IsFrozen());
+        Assert.True(aWire.TShape()!.IsFrozen);
         for (var anExp = new TopExp_Explorer(aWire, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-            Assert.True(anEdge.TShape()!.IsFrozen());
-            Assert.True(BRep_Tool.Curve(anEdge, out _, out _)!.IsFrozen());
+            Assert.True(anEdge.TShape()!.IsFrozen);
+            Assert.True(BRep_Tool.Curve(anEdge, out _, out _)!.IsFrozen);
         }
         // a second Perform builds a new wire and leaves the first unchanged
         aBuilder.Perform();

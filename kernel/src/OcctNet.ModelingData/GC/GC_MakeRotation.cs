@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A rotation about an axis, as a Geom_Transformation.</summary>
@@ -12,24 +14,24 @@ public sealed class GC_MakeRotation
     private readonly Geom_Transformation TheRotation;
 
     /// <summary>The rotation of angle Angle about the line Line.</summary>
-    public GC_MakeRotation(in gp_Lin Line, double Angle)
+    public GC_MakeRotation(in Line3D Line, double Angle)
     {
         TheRotation = new Geom_Transformation();
-        TheRotation.SetRotation(new gp_Ax1(Line.Location(), Line.Direction()), Angle);
+        TheRotation.SetRotation(new Axis3D(Line.Location(), Line.Direction()), Angle);
     }
 
     /// <summary>The rotation of angle Angle about the axis Axis.</summary>
-    public GC_MakeRotation(in gp_Ax1 Axis, double Angle)
+    public GC_MakeRotation(in Axis3D Axis, double Angle)
     {
         TheRotation = new Geom_Transformation();
         TheRotation.SetRotation(Axis, Angle);
     }
 
     /// <summary>The rotation of angle Angle about the axis through Point with direction Direc.</summary>
-    public GC_MakeRotation(in gp_Pnt Point, in gp_Dir Direc, double Angle)
+    public GC_MakeRotation(in Point3D Point, in Direction3D Direc, double Angle)
     {
         TheRotation = new Geom_Transformation();
-        TheRotation.SetRotation(new gp_Ax1(Point, Direc), Angle);
+        TheRotation.SetRotation(new Axis3D(Point, Direc), Angle);
     }
 
     /// <summary>The constructed transformation (frozen).</summary>

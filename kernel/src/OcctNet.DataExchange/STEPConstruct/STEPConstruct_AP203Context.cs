@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using System.Net;
 using System.Net.Sockets;
 using static Occt.StepBasic_AheadOrBehind;
@@ -304,7 +305,7 @@ public class STEPConstruct_AP203Context
         roleApprover.Init(new TCollection_HAsciiString("approver"));
     }
 
-    private static StepAP203_PersonOrganizationItem PersonOrganizationItem(Standard_Transient theValue)
+    private static StepAP203_PersonOrganizationItem PersonOrganizationItem(Transient theValue)
     {
         StepAP203_PersonOrganizationItem anItem = new StepAP203_PersonOrganizationItem();
         anItem.SetValue(theValue);

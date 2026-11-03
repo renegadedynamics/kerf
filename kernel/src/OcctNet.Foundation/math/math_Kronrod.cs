@@ -2,9 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
 
-public static partial class math
+namespace Kerf.Engine.Numerics;
+
+public static partial class NumericTables
 {
     /// <summary>The largest number of Kronrod points stored in the table; more are computed.</summary>
     public static int KronrodPointsMax()
@@ -13,61 +15,61 @@ public static partial class math
     }
 
     /// <summary>
-    /// The <paramref name="Index"/> Kronrod points in increasing order and their weights, for the Gauss-Kronrod method.
+    /// The <paramref name="index"/> Kronrod points in increasing order and their weights, for the Gauss-Kronrod method.
     /// Index must be odd and at least 3 (2*N + 1 for N Gauss points); each even element of Points is a Gauss point of
     /// the N-point rule. Points and weights up to <see cref="KronrodPointsMax"/> come from a table, beyond are computed.
     /// False if Index is invalid, the vectors' lengths are not Index, or the computation fails.
     /// </summary>
-    public static bool KronrodPointsAndWeights(int Index, math_Vector Points, math_Vector Weights)
+    public static bool KronrodPointsAndWeights(int index, math_Vector points, math_Vector weights)
     {
-        if (Index < 3 ||                // Index is less then 3
-            Index % 2 == 0 ||           // Index is even
-            Points.Length() != Index || // Inconsistent length of Points
-            Weights.Length() != Index)
+        if (index < 3 ||                // Index is less then 3
+            index % 2 == 0 ||           // Index is even
+            points.Length() != index || // Inconsistent length of Points
+            weights.Length() != index)
         { // Inconsistent length of Weights
             return false;
         }
 
-        if (Index <= 123)
+        if (index <= 123)
         {
             // Get points from the array.
             int i;
-            int aStartInd = 0;
+            int startInd = 0;
 
             // Compute the index of starting point in the array.
-            for (i = 3; i < Index; i += 2)
+            for (i = 3; i < index; i += 2)
             {
-                aStartInd += (i + 1) / 2;
+                startInd += (i + 1) / 2;
             }
 
             // Get points from the array.
-            int aNbPts = i / 2;
-            int aLowerI = Points.Lower();
-            int anUpperI = Points.Upper();
+            int nbPts = i / 2;
+            int lowerI = points.Lower();
+            int upperI = points.Upper();
 
-            for (i = 0; i < aNbPts; i++)
+            for (i = 0; i < nbPts; i++)
             {
-                Points.Value(aLowerI + i) = -KronrodPoint[aStartInd + i];
-                Points.Value(anUpperI - i) = KronrodPoint[aStartInd + i];
-                Weights.Value(aLowerI + i) = KronrodWeight[aStartInd + i];
-                Weights.Value(anUpperI - i) = KronrodWeight[aStartInd + i];
+                points.Value(lowerI + i) = -KronrodPoint[startInd + i];
+                points.Value(upperI - i) = KronrodPoint[startInd + i];
+                weights.Value(lowerI + i) = KronrodWeight[startInd + i];
+                weights.Value(upperI - i) = KronrodWeight[startInd + i];
             }
 
-            Points.Value(aLowerI + aNbPts) = KronrodPoint[aStartInd + aNbPts];
-            Weights.Value(aLowerI + aNbPts) = KronrodWeight[aStartInd + aNbPts];
+            points.Value(lowerI + nbPts) = KronrodPoint[startInd + nbPts];
+            weights.Value(lowerI + nbPts) = KronrodWeight[startInd + nbPts];
 
             return true;
         }
         else
         {
-            math_ComputeKronrodPointsAndWeights PWcomputer = new((Index - 1) / 2);
-            if (!PWcomputer.IsDone())
+            ComputeKronrodPointsAndWeights pWcomputer = new((index - 1) / 2);
+            if (!pWcomputer.IsDone)
             {
                 return false;
             }
 
-            Points.Initialized(PWcomputer.Points());
-            Weights.Initialized(PWcomputer.Weights());
+            points.Initialized(pWcomputer.Points());
+            weights.Initialized(pWcomputer.Weights());
             return true;
         }
     }

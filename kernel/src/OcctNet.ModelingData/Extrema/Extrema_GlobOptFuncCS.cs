@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +17,7 @@ namespace Occt;
 /// The curve and the surface are kept by reference and must outlive the function, as in OCCT. Outside the parameter
 /// ranges the functions return false and write 0 to their <c>out</c> value (decision 221).
 /// </remarks>
-public class Extrema_GlobOptFuncCS : math_MultipleVarFunctionWithHessian
+public class Extrema_GlobOptFuncCS : MultipleVarFunctionWithHessian
 {
     private readonly Adaptor3d_Curve myC;
     private readonly Adaptor3d_Surface myS;
@@ -29,8 +33,8 @@ public class Extrema_GlobOptFuncCS : math_MultipleVarFunctionWithHessian
 
     private void gradient(double cu, double su, double sv, math_Vector G)
     {
-        myC.D1(cu, out gp_Pnt CD0, out gp_Vec CD1);
-        myS.D1(su, sv, out gp_Pnt SD0, out gp_Vec SD1U, out gp_Vec SD1V);
+        myC.D1(cu, out Point3D CD0, out Vector3D CD1);
+        myS.D1(su, sv, out Point3D SD0, out Vector3D SD1U, out Vector3D SD1V);
 
         G[1] = +(CD0.X() - SD0.X()) * CD1.X() + (CD0.Y() - SD0.Y()) * CD1.Y() + (CD0.Z() - SD0.Z()) * CD1.Z();
         G[2] = -(CD0.X() - SD0.X()) * SD1U.X() - (CD0.Y() - SD0.Y()) * SD1U.Y()
@@ -39,11 +43,11 @@ public class Extrema_GlobOptFuncCS : math_MultipleVarFunctionWithHessian
                - (CD0.Z() - SD0.Z()) * SD1V.Z();
     }
 
-    private void hessian(double cu, double su, double sv, math_Matrix H)
+    private void hessian(double cu, double su, double sv, Matrix H)
     {
-        myC.D2(cu, out gp_Pnt CD0, out gp_Vec CD1, out gp_Vec CD2);
-        myS.D2(su, sv, out gp_Pnt SD0, out gp_Vec SD1U, out gp_Vec SD1V, out gp_Vec SD2UU, out gp_Vec SD2VV,
-            out gp_Vec SD2UV);
+        myC.D2(cu, out Point3D CD0, out Vector3D CD1, out Vector3D CD2);
+        myS.D2(su, sv, out Point3D SD0, out Vector3D SD1U, out Vector3D SD1V, out Vector3D SD2UU, out Vector3D SD2VV,
+            out Vector3D SD2UV);
 
         H[1, 1] = +CD1.X() * CD1.X() + CD1.Y() * CD1.Y() + CD1.Z() * CD1.Z()
                   + (CD0.X() - SD0.X()) * CD2.X() + (CD0.Y() - SD0.Y()) * CD2.Y()
@@ -91,7 +95,7 @@ public class Extrema_GlobOptFuncCS : math_MultipleVarFunctionWithHessian
         myS = S;
     }
 
-    public override int NbVariables() => 3;
+    public override int VariableCount => 3;
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -129,7 +133,7 @@ public class Extrema_GlobOptFuncCS : math_MultipleVarFunctionWithHessian
         return true;
     }
 
-    public override bool Values(math_Vector X, out double F, math_Vector G, math_Matrix H)
+    public override bool Values(math_Vector X, out double F, math_Vector G, Matrix H)
     {
         if (!checkInputData(X, out double cu, out double su, out double sv))
         {

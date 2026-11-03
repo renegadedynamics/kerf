@@ -2,104 +2,106 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Polynomials;
 
 /// <summary>Polynomial root finding algorithms.</summary>
 public static partial class MathPoly
 {
     /// <summary>Solve linear equation a*x + b = 0, handling the degenerate case a = 0.</summary>
-    public static MathUtils.PolyResult Linear(double theA, double theB)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult Linear(double a, double b)
     {
-        MathUtils.PolyResult aResult = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult result = new();
 
-        if (MathUtils.IsZero(theA))
+        if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(a))
         {
-            if (MathUtils.IsZero(theB))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(b))
             {
-                aResult.Status = MathUtils.Status.InfiniteSolutions;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InfiniteSolutions;
             }
             else
             {
-                aResult.Status = MathUtils.Status.NoSolution;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NoSolution;
             }
         }
         else
         {
-            aResult.Status = MathUtils.Status.OK;
-            aResult.NbRoots = 1;
-            aResult.Roots[0] = -theB / theA;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.NbRoots = 1;
+            result.Roots[0] = -b / a;
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>
     /// Solve quadratic equation a*x^2 + b*x + c = 0 with numerically stable formulas: 0, 1 or 2 real roots, sorted
     /// in ascending order.
     /// </summary>
-    public static MathUtils.PolyResult Quadratic(double theA, double theB, double theC)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult Quadratic(double a, double b, double c)
     {
-        MathUtils.PolyResult aResult = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult result = new();
 
         // Linear case: b*x + c = 0
-        if (MathUtils.IsZero(theA))
+        if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(a))
         {
-            return Linear(theB, theC);
+            return Linear(b, c);
         }
 
         // Scale coefficients for numerical stability
-        double aScale = Max(Max(Math.Abs(theA), Math.Abs(theB)), Math.Abs(theC));
-        if (aScale < MathUtils.THE_ZERO_TOL)
+        double scale = Max(Max(Math.Abs(a), Math.Abs(b)), Math.Abs(c));
+        if (scale < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
         {
-            aResult.Status = MathUtils.Status.InfiniteSolutions;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InfiniteSolutions;
+            return result;
         }
 
-        double aA = theA / aScale;
-        double aB = theB / aScale;
-        double aC = theC / aScale;
+        double aA = a / scale;
+        double aB = b / scale;
+        double aC = c / scale;
 
         // Compute discriminant
-        double aDisc = aB * aB - 4.0 * aA * aC;
+        double disc = aB * aB - 4.0 * aA * aC;
 
         // Tolerance for discriminant based on coefficient magnitudes
-        double aDiscTol = MathUtils.THE_ZERO_TOL * (aB * aB + Math.Abs(4.0 * aA * aC));
+        double discTol = global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL * (aB * aB + Math.Abs(4.0 * aA * aC));
 
-        if (aDisc < -aDiscTol)
+        if (disc < -discTol)
         {
             // No real roots (complex conjugate pair)
-            aResult.Status = MathUtils.Status.OK;
-            aResult.NbRoots = 0;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.NbRoots = 0;
+            return result;
         }
 
-        if (Math.Abs(aDisc) <= aDiscTol)
+        if (Math.Abs(disc) <= discTol)
         {
             // Double root
-            aResult.Status = MathUtils.Status.OK;
-            aResult.NbRoots = 1;
-            aResult.Roots[0] = -aB / (2.0 * aA);
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.NbRoots = 1;
+            result.Roots[0] = -aB / (2.0 * aA);
+            return result;
         }
 
         // Two distinct real roots
         // Use numerically stable formula to avoid catastrophic cancellation
-        double aSqrtDisc = Math.Sqrt(aDisc);
+        double sqrtDisc = Math.Sqrt(disc);
 
         // q = -0.5 * (b + sign(b) * sqrt(discriminant))
-        double aQ = -0.5 * (aB + MathUtils.SignTransfer(aSqrtDisc, aB));
+        double q = -0.5 * (aB + global::Kerf.Engine.Numerics.Utilities.MathUtils.SignTransfer(sqrtDisc, aB));
 
-        aResult.Status = MathUtils.Status.OK;
-        aResult.NbRoots = 2;
-        aResult.Roots[0] = aQ / aA;
-        aResult.Roots[1] = aC / aQ;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+        result.NbRoots = 2;
+        result.Roots[0] = q / aA;
+        result.Roots[1] = aC / q;
 
         // Sort roots in ascending order
-        if (aResult.Roots[0] > aResult.Roots[1])
+        if (result.Roots[0] > result.Roots[1])
         {
-            (aResult.Roots[0], aResult.Roots[1]) = (aResult.Roots[1], aResult.Roots[0]);
+            (result.Roots[0], result.Roots[1]) = (result.Roots[1], result.Roots[0]);
         }
 
-        return aResult;
+        return result;
     }
 }

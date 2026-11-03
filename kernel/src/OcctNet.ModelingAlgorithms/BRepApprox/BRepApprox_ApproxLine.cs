@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +17,7 @@ namespace Occt;
 /// A working object (decision 609), sharing the curves and the line it is given; it is the line of BRepApprox's
 /// instantiation of ApproxInt's generics (<see cref="IApproxInt_WLine{TSelf}"/>).
 /// </remarks>
-public class BRepApprox_ApproxLine : Standard_Transient, IApproxInt_WLine<BRepApprox_ApproxLine>
+public class BRepApprox_ApproxLine : Transient, IApproxInt_WLine<BRepApprox_ApproxLine>
 {
     private readonly Geom_BSplineCurve? myCurveXYZ;
     private readonly Geom2d_BSplineCurve? myCurveUV1;
@@ -64,8 +68,8 @@ public class BRepApprox_ApproxLine : Standard_Transient, IApproxInt_WLine<BRepAp
                 return (myLineOn2S.Value(Index));
             }
         }
-        gp_Pnt2d P1 = new(), P2 = new();
-        gp_Pnt P = new();
+        Point2D P1 = new(), P2 = new();
+        Point3D P = new();
         if (myCurveXYZ is not null)
         {
             P = myCurveXYZ.Pole(Index);

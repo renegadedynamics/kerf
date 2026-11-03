@@ -4,9 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -35,7 +38,7 @@ namespace Occt;
 /// without the read.
 /// </para>
 /// </remarks>
-public class HLRBRep_Data : Standard_Transient
+public class HLRBRep_Data : Transient
 {
     // OCCT's global counters (HLRBRep_Data.cxx), read by the hider's traces (decision 1097).
     internal static int nbOkIntersection;
@@ -386,7 +389,7 @@ public class HLRBRep_Data : Standard_Transient
     private HLRBRep_FaceData? iFaceData;
     private HLRBRep_Surface? iFaceGeom;
     private HLRAlgo_WiresBlock? iFaceWires; // OCCT's iFaceMinMax points into its min-max
-    private GeomAbs_SurfaceType iFaceType;
+    private SurfaceKind iFaceType;
     private bool iFaceBack;
     private bool iFaceSimp;
     private bool iFaceSmpl;
@@ -404,7 +407,7 @@ public class HLRBRep_Data : Standard_Transient
     private HLRBRep_EdgeData? myLEData;
     private HLRBRep_Curve? myLEGeom;
     private HLRBRep_EdgeData? myLEMinMaxOwner; // OCCT's myLEMinMax points into its min-max
-    private GeomAbs_CurveType myLEType;
+    private CurveKind myLEType;
     private float myLETol;
     private int myFE;
     private TopAbs_Orientation myFEOri;
@@ -413,7 +416,7 @@ public class HLRBRep_Data : Standard_Transient
     private bool myFEDouble;
     private HLRBRep_EdgeData? myFEData;
     private HLRBRep_Curve? myFEGeom;
-    private GeomAbs_CurveType myFEType;
+    private CurveKind myFEType;
     private float myFETol;
     private readonly HLRBRep_Intersector myIntersector = new();
     private BRepTopAdaptor_TopolTool? myClassifier;
@@ -527,7 +530,7 @@ public class HLRBRep_Data : Standard_Transient
     public void Update(in HLRAlgo_Projector P)
     {
         myProj.Value = P;
-        gp_Trsf T = myProj.Value.Transformation();
+        Transform3D T = myProj.Value.Transformation();
         int i;
         double tolMinMax = 0;
 
@@ -538,7 +541,7 @@ public class HLRBRep_Data : Standard_Transient
         HLRAlgo_EdgesBlock.MinMaxIndices MinMaxEdge = new();
         Span<double> TotMin = stackalloc double[16];
         Span<double> TotMax = stackalloc double[16];
-        HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+        HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
 
         // compute the global MinMax
         // *************************
@@ -557,7 +560,7 @@ public class HLRBRep_Data : Standard_Transient
         }
         HLRAlgo.EnlargeMinMax(tolMinMax, TotMin, TotMax);
         Span<double> d = stackalloc double[16];
-        double precad = -Precision.Infinite();
+        double precad = -global::Kerf.Engine.Foundation.Precision.Infinite();
 
         for (i = 0; i <= 15; i++)
         {
@@ -592,7 +595,7 @@ public class HLRBRep_Data : Standard_Transient
 
             HLRBRep_EdgeData ed = myEData[edge];
             HLRBRep_Curve EC = ed.ChangeGeometry();
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             tolMinMax = EC.UpdateMinMax(TotMin, TotMax);
             tol = (double)(ed.Tolerance());
             ed.Vertical(TotMax[0] - TotMin[0] < tol && TotMax[1] - TotMin[1] < tol && TotMax[2] - TotMin[2] < tol
@@ -631,8 +634,8 @@ public class HLRBRep_Data : Standard_Transient
             }
             else
             {
-                EC.D1(EC.Parameter3d(EC.FirstParameter()), out gp_Pnt Pt, out gp_Vec Tg1);
-                EC.D1(EC.Parameter3d(EC.LastParameter()), out Pt, out gp_Vec Tg2);
+                EC.D1(EC.Parameter3d(EC.FirstParameter()), out Point3D Pt, out Vector3D Tg1);
+                EC.D1(EC.Parameter3d(EC.LastParameter()), out Pt, out Vector3D Tg2);
                 Tg1.Transform(T);
                 Tg2.Transform(T);
                 if (Abs(Tg1.X()) + Abs(Tg1.Y()) < myToler * 10)
@@ -641,7 +644,7 @@ public class HLRBRep_Data : Standard_Transient
                 }
                 else
                 {
-                    gp_Dir Dir1 = new(Tg1);
+                    Direction3D Dir1 = new(Tg1);
                     ver1 = Abs(Dir1.X()) + Abs(Dir1.Y()) < myToler * 10;
                 }
                 if (Abs(Tg2.X()) + Abs(Tg2.Y()) < myToler * 10)
@@ -650,7 +653,7 @@ public class HLRBRep_Data : Standard_Transient
                 }
                 else
                 {
-                    gp_Dir Dir2 = new(Tg2);
+                    Direction3D Dir2 = new(Tg2);
                     ver2 = Abs(Dir2.X()) + Abs(Dir2.Y()) < myToler * 10;
                 }
             }
@@ -701,8 +704,8 @@ public class HLRBRep_Data : Standard_Transient
             // not cut and simple surface
 
             if (!withOutL
-                && (iFaceType == GeomAbs_Plane || iFaceType == GeomAbs_Cylinder || iFaceType == GeomAbs_Cone
-                    || iFaceType == GeomAbs_Sphere || iFaceType == GeomAbs_Torus))
+                && (iFaceType == Plane || iFaceType == SurfaceKind.Cylinder || iFaceType == SurfaceKind.Cone
+                    || iFaceType == SurfaceKind.Sphere || iFaceType == SurfaceKind.Torus))
             {
                 fd.Simple(true);
             }
@@ -711,11 +714,11 @@ public class HLRBRep_Data : Standard_Transient
                 fd.Simple(false);
             }
 
-            fd.Plane(iFaceType == GeomAbs_Plane);
-            fd.Cylinder(iFaceType == GeomAbs_Cylinder);
-            fd.Cone(iFaceType == GeomAbs_Cone);
-            fd.Sphere(iFaceType == GeomAbs_Sphere);
-            fd.Torus(iFaceType == GeomAbs_Torus);
+            fd.Plane(iFaceType == Plane);
+            fd.Cylinder(iFaceType == SurfaceKind.Cylinder);
+            fd.Cone(iFaceType == SurfaceKind.Cone);
+            fd.Sphere(iFaceType == SurfaceKind.Sphere);
+            fd.Torus(iFaceType == SurfaceKind.Torus);
             tol = (double)(fd.Tolerance());
             fd.Side(FS.IsSide(tol, myToler * 10));
             bool inverted = false;
@@ -751,11 +754,11 @@ public class HLRBRep_Data : Standard_Transient
                         if (HLRBRep_EdgeFaceTool.UVPoint(p, myFEGeom, iFaceGeom, out pu, out pv))
                         {
                             mySLProps.SetParameters(pu, pv);
-                            gp_Pnt Pt;
+                            Point3D Pt;
                             Pt = EC.Value3D(p);
                             if (mySLProps.IsNormalDefined())
                             {
-                                gp_Vec Nm = new(mySLProps.Normal());
+                                Vector3D Nm = new(mySLProps.Normal());
                                 Pt.Transform(T);
                                 Nm.Transform(T);
                                 if (myProj.Value.Perspective())
@@ -922,7 +925,7 @@ public class HLRBRep_Data : Standard_Transient
         }
         else
         {
-            BRepTopAdaptor_Tool BRT = new(topodsface, Precision.PConfusion());
+            BRepTopAdaptor_Tool BRT = new(topodsface, global::Kerf.Engine.Foundation.Precision.PConfusion());
             MST.Bind(topodsface, BRT);
             myClassifier = BRT.GetTopolTool();
         }
@@ -1342,46 +1345,46 @@ public class HLRBRep_Data : Standard_Transient
     public ref HLRAlgo_Interference Interference() => ref myIntf;
 
     /// <summary>The tangent, normal and curvature of the current edge at Param, in the projection plane.</summary>
-    /// <exception cref="Standard_Failure">The tangent is undefined.</exception>
-    public void LocalLEGeometry2D(double Param, out gp_Dir2d Tg, out gp_Dir2d Nm, out double Cu)
+    /// <exception cref="FailureException">The tangent is undefined.</exception>
+    public void LocalLEGeometry2D(double Param, out Direction2D Tg, out Direction2D Nm, out double Cu)
     {
         myLLProps.SetParameter(Param);
         if (!myLLProps.IsTangentDefined())
         {
-            throw new Standard_Failure("HLRBRep_Data::LocalGeometry2D");
+            throw new FailureException("HLRBRep_Data::LocalGeometry2D");
         }
         myLLProps.Tangent(out Tg);
         Cu = myLLProps.Curvature();
-        if (Cu > Epsilon(1.0) && !Precision.IsInfinite(Cu))
+        if (Cu > Epsilon(1.0) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(Cu))
         {
             myLLProps.Normal(out Nm);
         }
         else
         {
-            Nm = new gp_Dir2d(-Tg.Y(), Tg.X());
+            Nm = new Direction2D(-Tg.Y(), Tg.X());
         }
     }
 
     /// <summary>The tangent, normal and curvature of the edge FE at Param, in the projection plane.</summary>
-    /// <exception cref="Standard_Failure">The tangent is undefined.</exception>
-    public void LocalFEGeometry2D(int FE, double Param, out gp_Dir2d Tg, out gp_Dir2d Nm, out double Cu)
+    /// <exception cref="FailureException">The tangent is undefined.</exception>
+    public void LocalFEGeometry2D(int FE, double Param, out Direction2D Tg, out Direction2D Nm, out double Cu)
     {
         HLRBRep_Curve aCurve = myEData[FE].ChangeGeometry();
         myFLProps.SetCurve(aCurve);
         myFLProps.SetParameter(Param);
         if (!myFLProps.IsTangentDefined())
         {
-            throw new Standard_Failure("HLRBRep_Data::LocalGeometry2D");
+            throw new FailureException("HLRBRep_Data::LocalGeometry2D");
         }
         myFLProps.Tangent(out Tg);
         Cu = myFLProps.Curvature();
-        if (Cu > Epsilon(1.0) && !Precision.IsInfinite(Cu))
+        if (Cu > Epsilon(1.0) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(Cu))
         {
             myFLProps.Normal(out Nm);
         }
         else
         {
-            Nm = new gp_Dir2d(-Tg.Y(), Tg.X());
+            Nm = new Direction2D(-Tg.Y(), Tg.X());
         }
     }
 
@@ -1398,21 +1401,21 @@ public class HLRBRep_Data : Standard_Transient
             mySLProps.SetParameters(pu, pv);
             if (mySLProps.IsNormalDefined())
             {
-                gp_Dir NrmFace = mySLProps.Normal();
+                Direction3D NrmFace = mySLProps.Normal();
 
-                myLEGeom!.D1(p1, out gp_Pnt Pbid, out gp_Vec TngEdge);
+                myLEGeom!.D1(p1, out Point3D Pbid, out Vector3D TngEdge);
 
-                gp_Trsf TI = myProj.Value.InvertedTransformation();
-                gp_Dir V;
+                Transform3D TI = myProj.Value.InvertedTransformation();
+                Direction3D V;
                 if (myProj.Value.Perspective())
                 {
-                    gp_Pnt2d P2d = new();
+                    Point2D P2d = new();
                     myProj.Value.Project(Pbid, ref P2d);
-                    V = new gp_Dir(P2d.X(), P2d.Y(), -myProj.Value.Focus());
+                    V = new Direction3D(P2d.X(), P2d.Y(), -myProj.Value.Focus());
                 }
                 else
                 {
-                    V = new gp_Dir(gp_Dir.D.NZ);
+                    V = new Direction3D(Direction3D.D.NZ);
                 }
                 V.Transform(TI);
                 if (NrmFace.Dot(V) > 0.0)
@@ -1420,7 +1423,7 @@ public class HLRBRep_Data : Standard_Transient
                     NrmFace.Reverse();
                 }
 
-                double scal = (TngEdge.SquareMagnitude() > 1.0e-10) ? NrmFace.Dot(new gp_Dir(TngEdge)) : 0.0;
+                double scal = (TngEdge.SquareMagnitude() > 1.0e-10) ? NrmFace.Dot(new Direction3D(TngEdge)) : 0.0;
 
                 if (scal > myToler * 10)
                 {
@@ -1546,8 +1549,8 @@ public class HLRBRep_Data : Standard_Transient
         HLRAlgo_WiresBlock wb = FD.Wires()!;
         int nw = wb.NbWires();
         int iw1, ie1, ne1;
-        gp_Trsf T = myProj.Value.Transformation();
-        gp_Trsf TI = myProj.Value.InvertedTransformation();
+        Transform3D T = myProj.Value.Transformation();
+        Transform3D TI = myProj.Value.InvertedTransformation();
         bool inverted = false;
         bool FirstInversion = true;
 
@@ -1594,23 +1597,23 @@ public class HLRBRep_Data : Standard_Transient
                     if (HLRBRep_EdgeFaceTool.UVPoint(p, myFEGeom, iFaceGeom!, out pu, out pv))
                     {
                         mySLProps.SetParameters(pu, pv);
-                        EC.D1(p, out gp_Pnt Pt, out gp_Vec Tg);
-                        gp_Dir V;
+                        EC.D1(p, out Point3D Pt, out Vector3D Tg);
+                        Direction3D V;
                         if (myProj.Value.Perspective())
                         {
-                            gp_Pnt2d P2d = new();
+                            Point2D P2d = new();
                             myProj.Value.Project(Pt, ref P2d);
-                            V = new gp_Dir(P2d.X(), P2d.Y(), -myProj.Value.Focus());
+                            V = new Direction3D(P2d.X(), P2d.Y(), -myProj.Value.Focus());
                         }
                         else
                         {
-                            V = new gp_Dir(gp_Dir.D.NZ);
+                            V = new Direction3D(Direction3D.D.NZ);
                         }
                         V.Transform(TI);
                         if (mySLProps.IsNormalDefined())
                         {
                             double curv = HLRBRep_EdgeFaceTool.CurvatureValue(iFaceGeom!, pu, pv, V);
-                            gp_Vec Nm = new(mySLProps.Normal());
+                            Vector3D Nm = new(mySLProps.Normal());
                             if (curv == 0)
                             {
                                 // OCCT_DEBUG trace left out
@@ -1623,7 +1626,7 @@ public class HLRBRep_Data : Standard_Transient
                             Pt.Transform(T);
                             Nm.Transform(T);
                             Nm.Cross(Tg);
-                            if (Tg.Magnitude() < gp.Resolution())
+                            if (Tg.Magnitude() < Constants.Resolution())
                             {
                                 // OCCT_DEBUG trace left out
                             }
@@ -1665,7 +1668,7 @@ public class HLRBRep_Data : Standard_Transient
         HLRAlgo_WiresBlock wb = FD.Wires()!;
         int nw = wb.NbWires();
         int iw1, ie1, ne1;
-        gp_Trsf T = myProj.Value.Transformation();
+        Transform3D T = myProj.Value.Transformation();
 
         for (iw1 = 1; iw1 <= nw; iw1++)
         {
@@ -1686,11 +1689,11 @@ public class HLRBRep_Data : Standard_Transient
                     p = EC.Parameter3d((EC.LastParameter() + EC.FirstParameter()) / 2);
                     if (HLRBRep_EdgeFaceTool.UVPoint(p, myFEGeom, iFaceGeom!, out pu, out pv))
                     {
-                        gp_Pnt Pt = EC.Value3D(p);
+                        Point3D Pt = EC.Value3D(p);
                         mySLProps.SetParameters(pu, pv);
                         if (mySLProps.IsNormalDefined())
                         {
-                            gp_Vec Nm = new(mySLProps.Normal());
+                            Vector3D Nm = new(mySLProps.Normal());
                             Pt.Transform(T);
                             Nm.Transform(T);
                             if (myProj.Value.Perspective())
@@ -1779,7 +1782,7 @@ public class HLRBRep_Data : Standard_Transient
             sta = param;
             myProj.Value.Project(EC.Value3D(sta), out xsta, out ysta, out zsta);
 
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             HLRAlgo.UpdateMinMax(xsta, ysta, zsta, TotMin, TotMax);
             HLRAlgo.EnlargeMinMax(tol, TotMin, TotMax);
             REJECT1(myDeca, TotMin, TotMax, mySurD, ref VertMin, ref VertMax);
@@ -1795,7 +1798,7 @@ public class HLRBRep_Data : Standard_Transient
             sta = EC.Parameter3d(EC.FirstParameter());
             myProj.Value.Project(EC.Value3D(sta), out xsta, out ysta, out zsta);
 
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             HLRAlgo.UpdateMinMax(xsta, ysta, zsta, TotMin, TotMax);
             HLRAlgo.EnlargeMinMax(tol, TotMin, TotMax);
             REJECT1(myDeca, TotMin, TotMax, mySurD, ref VertMin, ref VertMax);
@@ -1808,7 +1811,7 @@ public class HLRBRep_Data : Standard_Transient
             end = EC.Parameter3d(EC.LastParameter());
             myProj.Value.Project(EC.Value3D(end), out xend, out yend, out zend);
 
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             HLRAlgo.UpdateMinMax(xend, yend, zend, TotMin, TotMax);
             HLRAlgo.EnlargeMinMax(tol, TotMin, TotMax);
             REJECT1(myDeca, TotMin, TotMax, mySurD, ref VertMin, ref VertMax);
@@ -1821,7 +1824,7 @@ public class HLRBRep_Data : Standard_Transient
             sta = 0.4 * sta + 0.6 * end; // dangerous if it is the middle
             myProj.Value.Project(EC.Value3D(sta), out xsta, out ysta, out zsta);
 
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             HLRAlgo.UpdateMinMax(xsta, ysta, zsta, TotMin, TotMax);
             HLRAlgo.EnlargeMinMax(tol, TotMin, TotMax);
             REJECT1(myDeca, TotMin, TotMax, mySurD, ref VertMin, ref VertMax);
@@ -1835,15 +1838,15 @@ public class HLRBRep_Data : Standard_Transient
         }
 
         nbCal3Intersection++;
-        gp_Pnt PLim;
-        gp_Pnt2d Psta;
+        Point3D PLim;
+        Point2D Psta;
         Psta = EC.Value(sta);
         PLim = EC.Value3D(sta);
 
         // OCCT's debug dump of the point (a function-scope static flag never set) is left out
 
-        gp_Lin L = myProj.Value.Shoot(Psta.X(), Psta.Y());
-        double wLim = ElCLib.Parameter(L, PLim);
+        Line3D L = myProj.Value.Shoot(Psta.X(), Psta.Y());
+        double wLim = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, PLim);
         myIntersector.Perform(L, wLim);
         if (myIntersector.IsDone())
         {
@@ -1884,7 +1887,7 @@ public class HLRBRep_Data : Standard_Transient
                 {
                     PeriodV = 0;
                 }
-                gp_Pnt PInter;
+                Point3D PInter;
                 double u, v, w;
                 IntCurveSurface_TransitionOnCurve Tr;
 
@@ -1903,8 +1906,8 @@ public class HLRBRep_Data : Standard_Transient
                             GeomInt.AdjustPeriodic(v, VMin, VMax, PeriodV, out v, out aDummyShift);
                         }
 
-                        gp_Pnt2d pnt2d = new(u, v);
-                        if (myClassifier!.Classify(pnt2d, Precision.PConfusion()) != TopAbs_OUT)
+                        Point2D pnt2d = new(u, v);
+                        if (myClassifier!.Classify(pnt2d, global::Kerf.Engine.Foundation.Precision.PConfusion()) != TopAbs_OUT)
                         {
                             state = TopAbs_IN;
                             Level++;
@@ -1941,7 +1944,7 @@ public class HLRBRep_Data : Standard_Transient
         {
             myProj.Value.Project(EC.Value3D(sta), out xsta, out ysta, out zsta);
 
-            HLRAlgo.InitMinMax(Precision.Infinite(), TotMin, TotMax);
+            HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), TotMin, TotMax);
             HLRAlgo.UpdateMinMax(xsta, ysta, zsta, TotMin, TotMax);
             HLRAlgo.EnlargeMinMax(tol, TotMin, TotMax);
             REJECT1(myDeca, TotMin, TotMax, mySurD, ref VertMin, ref VertMax);
@@ -2085,8 +2088,8 @@ public class HLRBRep_Data : Standard_Transient
 
                 bool douteux = false;
                 double psav = p2;
-                gp_Pnt2d Ptsav;
-                gp_Vec2d Tgsav = new(), Nmsav;
+                Point2D Ptsav;
+                Vector2D Tgsav = new(), Nmsav;
                 if (Tr2.PositionOnCurve() == IntRes2d_Head)
                 {
                     Ind = myFEData!.VSta();
@@ -2117,7 +2120,7 @@ public class HLRBRep_Data : Standard_Transient
                         }
                     }
                 }
-                myFEGeom.D1(p2, out Ptsav, out gp_Vec2d TgFE);
+                myFEGeom.D1(p2, out Ptsav, out Vector2D TgFE);
                 if (douteux)
                 {
                     if (TgFE.XY().Dot(Tgsav.XY()) < 0.0)
@@ -2138,8 +2141,8 @@ public class HLRBRep_Data : Standard_Transient
             {                           // correction de la transition  sur myLE
                 bool douteux = false; // si intersection a une extremite verticale !
                 double psav = p1;
-                gp_Pnt2d Ptsav;
-                gp_Vec2d Tgsav = new(), Nmsav;
+                Point2D Ptsav;
+                Vector2D Tgsav = new(), Nmsav;
                 if (Ori == TopAbs_FORWARD)
                 {
                     AdjustParameter(myLEData!, true, ref p1, out t1);
@@ -2168,7 +2171,7 @@ public class HLRBRep_Data : Standard_Transient
                 }
                 if (douteux)
                 {
-                    myLEGeom.D1(p1, out Ptsav, out gp_Vec2d TgLE);
+                    myLEGeom.D1(p1, out Ptsav, out Vector2D TgLE);
                     if (TgLE.XY().Dot(Tgsav.XY()) < 0.0)
                     {
                         if (Orie == TopAbs_FORWARD)
@@ -2240,8 +2243,8 @@ public class HLRBRep_Data : Standard_Transient
         if (SameV)
         {
             myIntersected = true; // compute the intersections
-            if ((myLEType == GeomAbs_Line || myLEType == GeomAbs_Circle || myLEType == GeomAbs_Ellipse)
-                && (myFEType == GeomAbs_Line || myFEType == GeomAbs_Circle || myFEType == GeomAbs_Ellipse))
+            if ((myLEType == Line || myLEType == Circle || myLEType == Ellipse)
+                && (myFEType == Line || myFEType == Circle || myFEType == Ellipse))
             {
                 myIntersected = false; // no other intersection
             }

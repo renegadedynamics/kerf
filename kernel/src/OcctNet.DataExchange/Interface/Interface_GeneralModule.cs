@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 /// (e.g. firstly bind an Entity to a Module then calls Module), each recognized Entity Type corresponds to a
 /// Case Number, determined by the Protocol each class of GeneralModule belongs to.
 /// </summary>
-public abstract class Interface_GeneralModule : Standard_Transient
+public abstract class Interface_GeneralModule : Transient
 {
 
     /// <summary>
@@ -21,7 +23,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// &lt;CN&gt; (formerly computed by CaseNum), considered in the context of a Model &lt;model&gt; Default
     /// calls FillSharedCase (i.e., ignores the model) Can be redefined to use the model for working
     /// </summary>
-    public virtual void FillShared(Interface_InterfaceModel? model, int casenum, Standard_Transient? ent, Interface_EntityIterator iter)
+    public virtual void FillShared(Interface_InterfaceModel? model, int casenum, Transient? ent, Interface_EntityIterator iter)
     {
         FillSharedCase(casenum, ent, iter);
     }
@@ -30,12 +32,12 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// Specific filling of the list of Entities shared by an Entity &lt;ent&gt;, according a Case Number
     /// &lt;CN&gt; (formerly computed by CaseNum). Can use the internal utility method Share, below
     /// </summary>
-    public abstract void FillSharedCase(int CN, Standard_Transient? ent, Interface_EntityIterator iter);
+    public abstract void FillSharedCase(int CN, Transient? ent, Interface_EntityIterator iter);
 
     /// <summary>
     /// Adds an Entity to a Shared List (uses GetOneItem on &lt;iter&gt;)
     /// </summary>
-    public void Share(Interface_EntityIterator iter, Standard_Transient? shared)
+    public void Share(Interface_EntityIterator iter, Transient? shared)
     {
         iter.GetOneItem(shared);
     }
@@ -47,7 +49,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// + ListImplied give the complete list of References Default calls ListImpliedCase (i.e. ignores the model)
     /// Can be redefined to use the model for working
     /// </summary>
-    public virtual void ListImplied(Interface_InterfaceModel? model, int casenum, Standard_Transient? ent, Interface_EntityIterator iter)
+    public virtual void ListImplied(Interface_InterfaceModel? model, int casenum, Transient? ent, Interface_EntityIterator iter)
     {
         ListImpliedCase(casenum, ent, iter);
     }
@@ -59,7 +61,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// Entities The provided default method does nothing (Implied References are specific of a little amount of
     /// Entity Classes).
     /// </summary>
-    public virtual void ListImpliedCase(int CN, Standard_Transient? ent, Interface_EntityIterator iter)
+    public virtual void ListImpliedCase(int CN, Transient? ent, Interface_EntityIterator iter)
     {
 
     }
@@ -67,13 +69,13 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// <summary>
     /// Specific Checking of an Entity &lt;ent&gt; Can check context queried through a ShareTool, as required
     /// </summary>
-    public abstract void CheckCase(int CN, Standard_Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach);
+    public abstract void CheckCase(int CN, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach);
 
     /// <summary>
     /// Specific answer to the question "is Copy properly implemented" Remark that it should be in phase with the
     /// implementation of NewVoid+CopyCase/NewCopyCase Default returns always False, can be redefined
     /// </summary>
-    public virtual bool CanCopy(int CN, Standard_Transient? ent)
+    public virtual bool CanCopy(int CN, Transient? ent)
     {
         return false;
     }
@@ -88,7 +90,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// (1) -&gt; the dispatched entity is a COPY, hence it can be modified The provided default just duplicates
     /// the handle without copying, then returns False. Can be redefined
     /// </summary>
-    public virtual bool Dispatch(int CN, Standard_Transient? entfrom, out Standard_Transient? entto, Interface_CopyTool TC)
+    public virtual bool Dispatch(int CN, Transient? entfrom, out Transient? entto, Interface_CopyTool TC)
     {
         entto = entfrom;
         return false;
@@ -98,13 +100,13 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// Creates a new void entity &lt;entto&gt; according to a Case Number This entity remains to be filled, by
     /// reading from a file or by copying from another entity of same type (see CopyCase)
     /// </summary>
-    public abstract bool NewVoid(int CN, out Standard_Transient? entto);
+    public abstract bool NewVoid(int CN, out Transient? entto);
 
     /// <summary>
     /// Specific Copy ("Deep") from &lt;entfrom&gt; to &lt;entto&gt; (same type) by using a CopyTool which
     /// provides its working Map. Use method Transferred from CopyTool to work
     /// </summary>
-    public abstract void CopyCase(int CN, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC);
+    public abstract void CopyCase(int CN, Transient? entfrom, Transient? entto, Interface_CopyTool TC);
 
     /// <summary>
     /// Specific operator (create+copy) defaulted to do nothing. It can be redefined : When it is not possible to
@@ -112,7 +114,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// the result &lt;entto&gt; must be created with an effective definition. Remark : if NewCopiedCase is
     /// defined, CopyCase has nothing to do Returns True if it has produced something, false else
     /// </summary>
-    public virtual bool NewCopiedCase(int CN, Standard_Transient? entfrom, ref Standard_Transient? entto, Interface_CopyTool TC)
+    public virtual bool NewCopiedCase(int CN, Transient? entfrom, ref Transient? entto, Interface_CopyTool TC)
     {
         return false;
     }
@@ -121,7 +123,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// Specific Copying of Implied References A Default is provided which does nothing (must current case !)
     /// Already copied references (by CopyFrom) must remain unchanged Use method Search from CopyTool to work
     /// </summary>
-    public virtual void RenewImpliedCase(int CN, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC)
+    public virtual void RenewImpliedCase(int CN, Transient? entfrom, Transient? entto, Interface_CopyTool TC)
     {
 
     }
@@ -139,7 +141,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// copy or not. If it copies the entity, this one should be deleted If it doesn't (i.e. duplicates the
     /// handle) nothing to do If &lt;dispatch&gt; is False, normal deletion is to be performed
     /// </summary>
-    public virtual void WhenDeleteCase(int CN, Standard_Transient? ent, bool dispatched)
+    public virtual void WhenDeleteCase(int CN, Transient? ent, bool dispatched)
     {
 
     }
@@ -149,7 +151,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// Category &lt;shares&gt; can be used to evaluate this number in the context Default returns 0 which means
     /// "unspecified"
     /// </summary>
-    public virtual int CategoryNumber(int CN, Standard_Transient? ent, Interface_ShareTool shares)
+    public virtual int CategoryNumber(int CN, Transient? ent, Interface_ShareTool shares)
     {
         return 0;
     }
@@ -159,7 +161,7 @@ public abstract class Interface_GeneralModule : Standard_Transient
     /// By default, returns a Null Handle (no name can be produced) Can be redefined Warning : While this string
     /// may be edited on the spot, if it is a read field, the returned value must be copied before.
     /// </summary>
-    public virtual TCollection_HAsciiString? Name(int CN, Standard_Transient? ent, Interface_ShareTool shares)
+    public virtual TCollection_HAsciiString? Name(int CN, Transient? ent, Interface_ShareTool shares)
     {
         TCollection_HAsciiString str = null;
         return str;

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -156,8 +158,8 @@ public sealed class ShapeFix_EdgeConnect
     {
         var theLIterator = new NCollection_List<TopoDS_Shape>.Iterator();
 
-        var    thePositions = new NCollection_Sequence<gp_XYZ>();
-        gp_XYZ thePosition;
+        var    thePositions = new NCollection_Sequence<Xyz>();
+        Xyz thePosition;
         double theMaxDev;
         var    theBuilder = new BRep_Builder();
 
@@ -195,7 +197,7 @@ public sealed class ShapeFix_EdgeConnect
                     }
                     // Calculate vertex position for this curve
                     GC.Range(out double theFParam, out double theLParam);
-                    gp_Pnt thePoint;
+                    Point3D thePoint;
                     if (use_start)
                     {
                         GC.D0(theFParam, out thePoint);
@@ -212,11 +214,11 @@ public sealed class ShapeFix_EdgeConnect
             int i, theNbPos = thePositions.Length();
 
             // Calculate vertex position
-            thePosition = new gp_XYZ(0.0, 0.0, 0.0);
+            thePosition = new Xyz(0.0, 0.0, 0.0);
 
             // (OCCT's POSITION_USES_MEAN_POINT branch, disabled there, is left out)
-            var theLBound = new gp_XYZ(0.0, 0.0, 0.0);
-            var theRBound = new gp_XYZ(0.0, 0.0, 0.0);
+            var theLBound = new Xyz(0.0, 0.0, 0.0);
+            var theRBound = new Xyz(0.0, 0.0, 0.0);
             for (i = 1; i <= theNbPos; i++)
             {
                 thePosition = thePositions.Value(i);
@@ -269,13 +271,13 @@ public sealed class ShapeFix_EdgeConnect
                 }
             }
             theMaxDev *= 1.0001; // To avoid numerical roundings
-            if (theMaxDev < Precision.Confusion())
+            if (theMaxDev < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                theMaxDev = Precision.Confusion();
+                theMaxDev = global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
             // Update shared vertex
-            theBuilder.UpdateVertex(theSharedVertex, new gp_Pnt(thePosition), theMaxDev);
+            theBuilder.UpdateVertex(theSharedVertex, new Point3D(thePosition), theMaxDev);
 
             // Iterate on edges, adding shared vertex
             for (theLIterator.Initialize(theList); theLIterator.More(); theLIterator.Next())

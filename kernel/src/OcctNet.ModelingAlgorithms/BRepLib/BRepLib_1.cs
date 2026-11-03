@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -18,7 +19,7 @@ public static partial class BRepLib
                                               double theFirst,
                                               double theLast,
                                               bool isFirst,
-                                              in gp_Pnt theVertPnt,
+                                              in Point3D theVertPnt,
                                               double theTol,
                                               double theEps,
                                               ref double thePar)
@@ -31,7 +32,7 @@ public static partial class BRepLib
         {
             (aStartU, anEndU) = (anEndU, aStartU);
         }
-        gp_Pnt aP = theCurve.Value(aStartU);
+        Point3D aP = theCurve.Value(aStartU);
         double aSqTol = theTol * theTol;
         if (aP.SquareDistance(theVertPnt) > aSqTol)
         {
@@ -54,14 +55,14 @@ public static partial class BRepLib
         // (inverse of resolution is the maximal derivative);
         // this is actual for bezier and b-spline types only
         double aD1Mag = 0.0;
-        GeomAbs_CurveType aType = theCurve.GetType();
-        if (aType == GeomAbs_OffsetCurve)
+        CurveKind aType = theCurve.GetType();
+        if (aType == OffsetCurve)
         {
             Geom_OffsetCurve anOffsetCurve = theCurve.OffsetCurve();
             Geom_Curve aBaseCurve = anOffsetCurve.BasisCurve();
             aType = new GeomAdaptor_Curve(aBaseCurve).GetType();
         }
-        if (aType == GeomAbs_BezierCurve || aType == GeomAbs_BSplineCurve)
+        if (aType == BezierCurve || aType == BSplineCurve)
         {
             aD1Mag = 1.0 / theCurve.Resolution(1.0) * 0.01;
             aD1Mag *= aD1Mag;
@@ -97,7 +98,7 @@ public static partial class BRepLib
                 for (;;)
                 {
                     // cycle to go out of local singularity
-                    theCurve.D1(anUOut, out aP, out gp_Vec aD1);
+                    theCurve.D1(anUOut, out aP, out Vector3D aD1);
                     isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
                     if (!isOut && aD1.SquareMagnitude() < aD1Mag)
                     {
@@ -162,20 +163,20 @@ public static partial class BRepLib
     public static bool FindValidRange(Adaptor3d_Curve theCurve,
                                       double theTolE,
                                       double theParV1,
-                                      in gp_Pnt thePntV1,
+                                      in Point3D thePntV1,
                                       double theTolV1,
                                       double theParV2,
-                                      in gp_Pnt thePntV2,
+                                      in Point3D thePntV2,
                                       double theTolV2,
                                       ref double theFirst,
                                       ref double theLast)
     {
-        if (theParV2 - theParV1 < Occt.Precision.PConfusion())
+        if (theParV2 - theParV1 < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
 
-        bool isInfParV1 = Occt.Precision.IsInfinite(theParV1), isInfParV2 = Occt.Precision.IsInfinite(theParV2);
+        bool isInfParV1 = Kerf.Engine.Foundation.Precision.IsInfinite(theParV1), isInfParV2 = Kerf.Engine.Foundation.Precision.IsInfinite(theParV2);
 
         double aMaxPar = 0.0;
         if (!isInfParV1)
@@ -187,7 +188,7 @@ public static partial class BRepLib
             aMaxPar = Max(aMaxPar, Math.Abs(theParV2));
         }
 
-        double anEps = Max(Max(theCurve.Resolution(theTolE) * 0.1, Epsilon(aMaxPar)), Occt.Precision.PConfusion());
+        double anEps = Max(Max(theCurve.Resolution(theTolE) * 0.1, Epsilon(aMaxPar)), Kerf.Engine.Foundation.Precision.PConfusion());
 
         if (isInfParV1)
         {
@@ -243,7 +244,7 @@ public static partial class BRepLib
         }
         var anAC = new BRepAdaptor_Curve(theEdge);
         Span<double> aParV = [anAC.FirstParameter(), anAC.LastParameter()];
-        if (aParV[1] - aParV[0] < Occt.Precision.PConfusion())
+        if (aParV[1] - aParV[0] < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -255,8 +256,8 @@ public static partial class BRepLib
         double aTolE = BRep_Tool.Tolerance(theEdge);
         // to have correspondence with intersection precision
         // the tolerances of vertices are increased on Precision::Confusion()
-        Span<double> aTolV = [Occt.Precision.Confusion(), Occt.Precision.Confusion()];
-        var aPntV = new gp_Pnt[] { new(), new() };
+        Span<double> aTolV = [Kerf.Engine.Foundation.Precision.Confusion(), Kerf.Engine.Foundation.Precision.Confusion()];
+        var aPntV = new Point3D[] { new(), new() };
         for (int i = 0; i < 2; i++)
         {
             if (!aV[i].IsNull())
@@ -264,7 +265,7 @@ public static partial class BRepLib
                 aTolV[i] += BRep_Tool.Tolerance(aV[i]);
                 aPntV[i] = BRep_Tool.Pnt(aV[i]);
             }
-            else if (!Occt.Precision.IsInfinite(aParV[i]))
+            else if (!Kerf.Engine.Foundation.Precision.IsInfinite(aParV[i]))
             {
                 aTolV[i] += aTolE;
                 aPntV[i] = anAC.Value(aParV[i]);

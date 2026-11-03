@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -31,7 +33,7 @@ public class BRepAlgoAPI_Splitter : BRepAlgoAPI_BuilderAlgo
     public NCollection_List<TopoDS_Shape> Tools() => myTools;
 
     /// <summary>Performs the split.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // Set Not Done status by default
         NotDone();
@@ -45,7 +47,7 @@ public class BRepAlgoAPI_Splitter : BRepAlgoAPI_BuilderAlgo
         }
 
         // If necessary perform intersection of the argument shapes
-        using var aPS = new Message_ProgressScope(theRange, "Performing Split operation", myIsIntersectionNeeded ? 100 : 30);
+        using var aPS = new ProgressScope(theRange, "Performing Split operation", myIsIntersectionNeeded ? 100 : 30);
         if (myIsIntersectionNeeded)
         {
             // Combine Objects and Tools into a single list for intersection

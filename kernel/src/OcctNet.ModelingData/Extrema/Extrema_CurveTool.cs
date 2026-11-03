@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -17,13 +18,13 @@ public static class Extrema_CurveTool
 
     public static double LastParameter(Adaptor3d_Curve theC) => theC.LastParameter();
 
-    public static GeomAbs_Shape Continuity(Adaptor3d_Curve theC) => theC.Continuity();
+    public static Continuity Continuity(Adaptor3d_Curve theC) => theC.Continuity();
 
     /// <summary>The number of intervals of continuity theS (the array for <see cref="Intervals"/> needs one more).</summary>
-    public static int NbIntervals(Adaptor3d_Curve theC, GeomAbs_Shape theS) => theC.NbIntervals(theS);
+    public static int NbIntervals(Adaptor3d_Curve theC, Continuity theS) => theC.NbIntervals(theS);
 
     /// <summary>Stores the parameters of the intervals of continuity theS in theT.</summary>
-    public static void Intervals(Adaptor3d_Curve theC, NCollection_Array1<double> theT, GeomAbs_Shape theS) =>
+    public static void Intervals(Adaptor3d_Curve theC, NCollection_Array1<double> theT, Continuity theS) =>
         theC.Intervals(theT, theS);
 
     /// <summary>
@@ -39,17 +40,17 @@ public static class Extrema_CurveTool
         int nbpnts = 23, i;
         double L = 0.0;
         double tf = C.FirstParameter(), tl = C.LastParameter();
-        gp_Pnt aP = C.Value(tf);
+        Point3D aP = C.Value(tf);
         for (i = 2; i <= nbpnts; ++i)
         {
             double t = (tf * (nbpnts - i) + (i - 1) * tl) / (nbpnts - 1);
-            gp_Pnt aP1 = C.Value(t);
+            Point3D aP1 = C.Value(t);
             // OCCT never moves aP along, so L sums the distances from the first point, not the polygon's length
             L += aP.Distance(aP1);
         }
         //
         double dLdt = L / (tl - tf);
-        if (L <= Precision.Confusion() || dLdt < epsd
+        if (L <= global::Kerf.Engine.Foundation.Precision.Confusion() || dLdt < epsd
             || (tl - tf) > 10000.0) // To avoid problemwith GCPnts
         {
             nbpnts = 2;
@@ -69,8 +70,8 @@ public static class Extrema_CurveTool
             return Intervals;
         }
         //
-        double aMinLen = Max(.00001 * L, Precision.Confusion());
-        double aTol = Max(0.00001 * (tl - tf), Precision.PConfusion());
+        double aMinLen = Max(.00001 * L, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double aTol = Max(0.00001 * (tl - tf), global::Kerf.Engine.Foundation.Precision.PConfusion());
         //
         GCPnts_TangentialDeflection aPntGen = new(C, M_PI / 6, aDefl, 2, aTol, aMinLen);
         nbpnts = aPntGen.NbPoints();
@@ -85,8 +86,8 @@ public static class Extrema_CurveTool
     /// <summary>True for circles and ellipses (whatever their range), otherwise the curve's own periodicity.</summary>
     public static bool IsPeriodic(Adaptor3d_Curve C)
     {
-        GeomAbs_CurveType aType = GetType(C);
-        if (aType == GeomAbs_Circle || aType == GeomAbs_Ellipse)
+        CurveKind aType = GetType(C);
+        if (aType == global::Kerf.Geometry.CurveKind.Circle || aType == global::Kerf.Geometry.CurveKind.Ellipse)
         {
             return true;
         }
@@ -100,32 +101,32 @@ public static class Extrema_CurveTool
 
     public static double Resolution(Adaptor3d_Curve theC, double theR3d) => theC.Resolution(theR3d);
 
-    public static GeomAbs_CurveType GetType(Adaptor3d_Curve theC) => theC.GetType();
+    public static CurveKind GetType(Adaptor3d_Curve theC) => theC.GetType();
 
-    public static gp_Pnt Value(Adaptor3d_Curve theC, double theU) => theC.Value(theU);
+    public static Point3D Value(Adaptor3d_Curve theC, double theU) => theC.Value(theU);
 
-    public static void D0(Adaptor3d_Curve theC, double theU, out gp_Pnt theP) => theC.D0(theU, out theP);
+    public static void D0(Adaptor3d_Curve theC, double theU, out Point3D theP) => theC.D0(theU, out theP);
 
-    public static void D1(Adaptor3d_Curve theC, double theU, out gp_Pnt theP, out gp_Vec theV) =>
+    public static void D1(Adaptor3d_Curve theC, double theU, out Point3D theP, out Vector3D theV) =>
         theC.D1(theU, out theP, out theV);
 
-    public static void D2(Adaptor3d_Curve theC, double theU, out gp_Pnt theP, out gp_Vec theV1, out gp_Vec theV2) =>
+    public static void D2(Adaptor3d_Curve theC, double theU, out Point3D theP, out Vector3D theV1, out Vector3D theV2) =>
         theC.D2(theU, out theP, out theV1, out theV2);
 
-    public static void D3(Adaptor3d_Curve theC, double theU, out gp_Pnt theP, out gp_Vec theV1, out gp_Vec theV2,
-        out gp_Vec theV3) => theC.D3(theU, out theP, out theV1, out theV2, out theV3);
+    public static void D3(Adaptor3d_Curve theC, double theU, out Point3D theP, out Vector3D theV1, out Vector3D theV2,
+        out Vector3D theV3) => theC.D3(theU, out theP, out theV1, out theV2, out theV3);
 
-    public static gp_Vec DN(Adaptor3d_Curve theC, double theU, int theN) => theC.DN(theU, theN);
+    public static Vector3D DN(Adaptor3d_Curve theC, double theU, int theN) => theC.DN(theU, theN);
 
-    public static gp_Lin Line(Adaptor3d_Curve theC) => theC.Line();
+    public static Line3D Line(Adaptor3d_Curve theC) => theC.Line();
 
-    public static gp_Circ Circle(Adaptor3d_Curve theC) => theC.Circle();
+    public static Circle3D Circle(Adaptor3d_Curve theC) => theC.Circle();
 
-    public static gp_Elips Ellipse(Adaptor3d_Curve theC) => theC.Ellipse();
+    public static Ellipse3D Ellipse(Adaptor3d_Curve theC) => theC.Ellipse();
 
-    public static gp_Hypr Hyperbola(Adaptor3d_Curve theC) => theC.Hyperbola();
+    public static Hyperbola3D Hyperbola(Adaptor3d_Curve theC) => theC.Hyperbola();
 
-    public static gp_Parab Parabola(Adaptor3d_Curve theC) => theC.Parabola();
+    public static Parabola3D Parabola(Adaptor3d_Curve theC) => theC.Parabola();
 
     public static int Degree(Adaptor3d_Curve theC) => theC.Degree();
 

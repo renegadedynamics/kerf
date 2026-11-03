@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +28,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
     private double TheDeflection;
     private int NbPntIn;
     private int TheMaxNbPoints;
-    private readonly NCollection_Array1<gp_Pnt2d> ThePnts;
+    private readonly NCollection_Array1<Point2D> ThePnts;
     private readonly NCollection_Array1<double> TheParams;
     private readonly NCollection_Array1<int> TheIndex;
     private bool ClosedPolygon;
@@ -43,7 +49,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
     /// </summary>
     public IntCurve_Polygon2dGen(in TheCurve C, int tNbPts, in IntRes2d_Domain D, double Tol)
     {
-        ThePnts = new NCollection_Array1<gp_Pnt2d>(1, (tNbPts < 3) ? 6 : (tNbPts + tNbPts));
+        ThePnts = new NCollection_Array1<Point2D>(1, (tNbPts < 3) ? 6 : (tNbPts + tNbPts));
         TheParams = new NCollection_Array1<double>(1, (tNbPts < 3) ? 6 : (tNbPts + tNbPts));
         TheIndex = new NCollection_Array1<int>(1, (tNbPts < 3) ? 6 : (tNbPts + tNbPts));
 
@@ -66,7 +72,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
 
         do
         {
-            gp_Pnt2d P = TheCurveTool.Value(C, u);
+            Point2D P = TheCurveTool.Value(C, u);
             myBox.Add(P);
             TheIndex.SetValue(i, i);
             ThePnts.SetValue(i, P);
@@ -85,9 +91,9 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
 
         do
         {
-            gp_Pnt2d Pm = TheCurveTool.Value(C, u);
-            gp_Pnt2d P1 = ThePnts.Value(i);
-            gp_Pnt2d P2 = ThePnts.Value(i + 1);
+            Point2D Pm = TheCurveTool.Value(C, u);
+            Point2D P1 = ThePnts.Value(i);
+            Point2D P2 = ThePnts.Value(i + 1);
 
             u += du;
             i++;
@@ -105,7 +111,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
             }
             if (dx + dy > 1e-12)
             {
-                gp_Lin2d L = new(P1, new gp_Dir2d(new gp_Vec2d(P1, P2)));
+                Line2D L = new(P1, new Direction2D(new Vector2D(P1, P2)));
                 t = L.Distance(Pm);
                 if (t > TheDeflection)
                 {
@@ -122,7 +128,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
     /// Keeps only the parts of the polygon near the box of the other polygon, refined where the deflection
     /// requires it.
     /// </summary>
-    public void ComputeWithBox(in TheCurve C, in Bnd_Box2d BoxOtherPolygon)
+    public void ComputeWithBox(in TheCurve C, in Box2d BoxOtherPolygon)
     {
         if (myBox.IsOut(BoxOtherPolygon))
         {
@@ -149,7 +155,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
             Rprec = CalculRegion(x, y, bx0, bx1, by0, by1);
             for (i = 2; i <= NbPntIn; i++)
             {
-                gp_Pnt2d P2d = ThePnts.Value(TheIndex.Value(i));
+                Point2D P2d = ThePnts.Value(TheIndex.Value(i));
                 Ri = CalculRegion(P2d.X(), P2d.Y(), bx0, bx1, by0, by1);
                 if ((Ri & Rprec) == 0)
                 {
@@ -200,15 +206,15 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
                     {
                         int Ii = TheIndex.Value(i);
                         int Iim1 = TheIndex.Value(i - 1);
-                        gp_Pnt2d Pi = ThePnts.Value(Ii);
-                        gp_Pnt2d Pim1 = ThePnts.Value(Iim1);
+                        Point2D Pi = ThePnts.Value(Ii);
+                        Point2D Pim1 = ThePnts.Value(Iim1);
                         myBox.Add(Pi);
                         int Regi = CalculRegion(Pi.X(), Pi.Y(), bx0, bx1, by0, by1);
                         int Regim1 = CalculRegion(Pim1.X(), Pim1.Y(), bx0, bx1, by0, by1);
                         if ((Regi & Regim1) == 0)
                         {
                             double u = 0.5 * (TheParams.Value(Ii) + TheParams.Value(Iim1));
-                            gp_Pnt2d Pm = TheCurveTool.Value(C, u);
+                            Point2D Pm = TheCurveTool.Value(C, u);
                             double dx, dy, t = 0;
                             dx = Pim1.X() - Pi.X();
                             if (dx < 0)
@@ -222,11 +228,11 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
                             }
                             if (dx + dy > 1e-12)
                             {
-                                gp_Lin2d L = new(Pim1, new gp_Dir2d(new gp_Vec2d(Pim1, Pi)));
+                                Line2D L = new(Pim1, new Direction2D(new Vector2D(Pim1, Pi)));
                                 t = L.Distance(Pm);
                                 if ((MaxIndexUsed < (TheMaxNbPoints - 1)) && (t > (TheDeflection * 0.5)))
                                 {
-                                    gp_Pnt2d P1 = Pim1;
+                                    Point2D P1 = Pim1;
                                     nbp++;
                                     for (int j = nbp; j >= i + 1; j--)
                                     {
@@ -239,8 +245,8 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
 
                                     // OCCT computes a deflection at the new quarter point and never uses it.
                                     double u1m = 0.5 * (u + TheParams.Value(TheIndex.Value(i - 1)));
-                                    gp_Pnt2d P1m = TheCurveTool.Value(C, u1m);
-                                    gp_Lin2d L1m = new(P1, new gp_Dir2d(new gp_Vec2d(P1, Pm)));
+                                    Point2D P1m = TheCurveTool.Value(C, u1m);
+                                    Line2D L1m = new(P1, new Direction2D(new Vector2D(P1, Pm)));
                                     t = L1m.Distance(P1m);
                                     i--;
                                 }
@@ -295,8 +301,8 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
     public override int NbSegments() => ((ClosedPolygon) ? NbPntIn : NbPntIn - 1);
 
     /// <summary>The points of the segment <paramref name="theIndex"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">The index is the last point's of an open polygon.</exception>
-    public override void Segment(int theIndex, out gp_Pnt2d theBegin, out gp_Pnt2d theEnd)
+    /// <exception cref="OutOfRangeException">The index is the last point's of an open polygon.</exception>
+    public override void Segment(int theIndex, out Point2D theBegin, out Point2D theEnd)
     {
         int ind = theIndex;
         theBegin = ThePnts[TheIndex[theIndex]];
@@ -304,7 +310,7 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
         {
             if (!ClosedPolygon)
             {
-                throw new Standard_OutOfRange("IntCurve_Polygon2dGen::Segment!");
+                throw new OutOfRangeException("IntCurve_Polygon2dGen::Segment!");
             }
             ind = 0;
         }
@@ -320,10 +326,10 @@ public class IntCurve_Polygon2dGen<TheCurve, TheCurveTool> : Intf_Polygon2d
     /// <summary>True if two segments of the polygon go in opposite directions (a self-intersection is possible).</summary>
     public bool AutoIntersectionIsPossible()
     {
-        gp_Vec2d VRef = new(ThePnts.Value(TheIndex.Value(1)), ThePnts.Value(TheIndex.Value(2)));
+        Vector2D VRef = new(ThePnts.Value(TheIndex.Value(1)), ThePnts.Value(TheIndex.Value(2)));
         for (int i = 3; i <= NbPntIn; i++)
         {
-            gp_Vec2d V = new(ThePnts.Value(TheIndex.Value(i - 1)), ThePnts.Value(TheIndex.Value(i)));
+            Vector2D V = new(ThePnts.Value(TheIndex.Value(i - 1)), ThePnts.Value(TheIndex.Value(i)));
             if (V.Dot(VRef) < 0.0)
             {
                 return (true);

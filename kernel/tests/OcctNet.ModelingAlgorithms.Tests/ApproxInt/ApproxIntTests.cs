@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -8,12 +10,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ApproxIntTests
 {
-    private static Adaptor3d_Surface PlaneZ() => new GeomAdaptor_Surface(new Geom_Plane(new gp_Pln()));
+    private static Adaptor3d_Surface PlaneZ() => new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()));
 
     private static Adaptor3d_Surface PlaneX() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0))));
+        new GeomAdaptor_Surface(new Geom_Plane(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
 
-    private static void AssertPnt(double x, double y, double z, gp_Pnt P)
+    private static void AssertPnt(double x, double y, double z, Point3D P)
     {
         Assert.Equal(x, P.X());
         Assert.Equal(y, P.Y());
@@ -44,14 +46,14 @@ public class ApproxIntTests
     [Fact]
     public void ImpPrmSvSurfaces_ComputeTwice_LeavesTheOutputsTheSecondTime()
     {
-        IntSurf_Quadric Q = new(new gp_Pln());
+        IntSurf_Quadric Q = new(new Plane3D());
         GeomInt_TheImpPrmSvSurfacesOfWLApprox sv = new(Q, PlaneX());
         for (int k = 1; k <= 2; k++)
         {
             double u1 = 0.0, v1 = -0.5, u2 = 0.0001, v2 = 0.5;
-            gp_Pnt P = new(0, 0, 0);
-            gp_Vec T = new(0, 0, 0);
-            gp_Vec2d T1 = new(0, 0), T2 = new(0, 0);
+            Point3D P = new(0, 0, 0);
+            Vector3D T = new(0, 0, 0);
+            Vector2D T1 = new(0, 0), T2 = new(0, 0);
             Assert.True(sv.Compute(ref u1, ref v1, ref u2, ref v2, ref P, ref T, ref T1, ref T2));
             if (k == 1)
             {
@@ -75,7 +77,7 @@ public class ApproxIntTests
         IntSurf_LineOn2S L = new();
         for (int k = 1; k <= theNb; k++)
         {
-            L.Add(new IntSurf_PntOn2S().WithValue(new gp_Pnt(k, 0, 0), k, 0, k, 1));
+            L.Add(new IntSurf_PntOn2S().WithValue(new Point3D(k, 0, 0), k, 0, k, 1));
         }
         return new IntPatch_WLine(L, false);
     }
@@ -95,7 +97,7 @@ public class ApproxIntTests
         int np = mb.NbPoles();
         Assert.Equal(8, np);
         Assert.Equal(3, mb.Knots().Length());
-        NCollection_Array1<gp_Pnt> pp = new(1, np);
+        NCollection_Array1<Point3D> pp = new(1, np);
         mb.Curve(1, pp);
         Assert.Equal(theFirstX, pp[1].X()); // OCCT for theMin > 1: native gives 75 and 50
         Assert.Equal(300.0, pp[np].X());
@@ -109,13 +111,13 @@ public class ApproxIntTests
         Assert.Equal(3, ml.FirstPoint());
         Assert.Equal(7, ml.LastPoint());
         Assert.Equal(Approx_Status.Approx_NoPointsAdded, ml.WhatStatus());
-        NCollection_Array1<gp_Pnt> P = new(1, 1);
-        NCollection_Array1<gp_Pnt2d> P2 = new(1, 1);
+        NCollection_Array1<Point3D> P = new(1, 1);
+        NCollection_Array1<Point2D> P2 = new(1, 1);
         ml.Value(4, P, P2);
         AssertPnt(5, 2, 3, P[1]);
         // one 2d point, not on the first surface: (u2 + U2o, v2 + V2o)
         Assert.Equal((34.0, 41.0), (P2[1].X(), P2[1].Y()));
-        NCollection_Array1<gp_Vec> T = new(1, 1);
+        NCollection_Array1<Vector3D> T = new(1, 1);
         Assert.False(ml.Tangency(4, T));
 
         ApproxInt_MultiLine<IntPatch_WLine> anEmpty = ml.MakeMLBetween(3, 7, 4);
@@ -133,22 +135,22 @@ public class ApproxIntTests
     public void MultiLine_WithSvSurfaces_AddsPoints(bool theNonUniform, double theNewY)
     {
         Adaptor3d_Surface S1 = PlaneZ(), S2 = PlaneX();
-        gp_Pln pl1 = new(), pl2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Plane3D pl1 = new(), pl2 = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntSurf_LineOn2S L = new();
         for (int k = 0; k <= 20; k++)
         {
             double y = theNonUniform ? 0.01 * k * k : 0.1 * k;
-            gp_Pnt aP = new(0, y, 0);
-            ElSLib.Parameters(pl1, aP, out double u1, out double v1);
-            ElSLib.Parameters(pl2, aP, out double u2, out double v2);
+            Point3D aP = new(0, y, 0);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(pl1, aP, out double u1, out double v1);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(pl2, aP, out double u2, out double v2);
             L.Add(new IntSurf_PntOn2S().WithValue(aP, u1, v1, u2, v2));
         }
         IntPatch_WLine WL = new(L, false);
         GeomInt_ThePrmPrmSvSurfacesOfWLApprox sv = new(S1, S2);
         GeomInt_TheMultiLineOfWLApprox ml = new(WL, sv, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, 21);
         Assert.Equal(Approx_Status.Approx_PointsAdded, ml.WhatStatus());
-        NCollection_Array1<gp_Vec> T = new(1, 1);
-        NCollection_Array1<gp_Vec2d> T2 = new(1, 2);
+        NCollection_Array1<Vector3D> T = new(1, 1);
+        NCollection_Array1<Vector2D> T2 = new(1, 2);
         Assert.True(ml.Tangency(5, T, T2));
         Assert.Equal((0.0, 1.0, 0.0), (T[1].X(), T[1].Y(), T[1].Z()));
         Assert.Equal((0.0, 1.0, 0.0, -1.0), (T2[1].X(), T2[1].Y(), T2[2].X(), T2[2].Y()));
@@ -162,7 +164,7 @@ public class ApproxIntTests
 
         Assert.True(ml.MakeMLOneMorePoint(1, 21, 11, out ApproxInt_MultiLine<IntPatch_WLine> anOther));
         Assert.Equal(22, anOther.LastPoint());
-        NCollection_Array1<gp_Pnt> P = new(1, 1);
+        NCollection_Array1<Point3D> P = new(1, 1);
         anOther.Value(11, P);
         AssertPnt(0, theNewY, 0, P[1]);
     }
@@ -170,14 +172,14 @@ public class ApproxIntTests
     [Fact]
     public void BRepApproxLine_FromCurvesAndFromPoints()
     {
-        NCollection_Array1<gp_Pnt> p3 = new(1, 3);
-        NCollection_Array1<gp_Pnt2d> p2 = new(1, 3);
+        NCollection_Array1<Point3D> p3 = new(1, 3);
+        NCollection_Array1<Point2D> p2 = new(1, 3);
         NCollection_Array1<double> kn = new(1, 3);
         NCollection_Array1<int> mu = new(1, 3);
         for (int i = 1; i <= 3; i++)
         {
-            p3[i] = new gp_Pnt(i, 2 * i, 3 * i);
-            p2[i] = new gp_Pnt2d(-i, i);
+            p3[i] = new Point3D(i, 2 * i, 3 * i);
+            p2[i] = new Point2D(-i, i);
             kn[i] = i;
             mu[i] = 1;
         }
@@ -190,7 +192,7 @@ public class ApproxIntTests
         Assert.Equal((0.0, 0.0, -2.0, 2.0), (u1, v1, u2, v2));
 
         IntSurf_LineOn2S lin = new();
-        lin.Add(new IntSurf_PntOn2S().WithValue(new gp_Pnt(1, 1, 1), 1, 2, 3, 4));
+        lin.Add(new IntSurf_PntOn2S().WithValue(new Point3D(1, 1, 1), 1, 2, 3, 4));
         BRepApprox_ApproxLine L2 = new(lin);
         Assert.Equal(1, L2.NbPnts());
         Assert.Equal(lin.Value(1), L2.Point(1));

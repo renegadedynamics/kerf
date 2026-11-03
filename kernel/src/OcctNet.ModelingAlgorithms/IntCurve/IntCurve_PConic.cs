@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -18,61 +19,61 @@ namespace Occt;
 /// </remarks>
 public struct IntCurve_PConic
 {
-    private gp_Ax22d axe;
+    private Frame2D axe;
     private double prm1;
     private double prm2;
     private double TheEpsX;
     private int TheAccuracy;
-    private GeomAbs_CurveType type;
+    private CurveKind type;
 
-    public IntCurve_PConic(in gp_Elips2d E)
+    public IntCurve_PConic(in Ellipse2D E)
     {
         axe = E.Axis();
         prm1 = E.MajorRadius();
         prm2 = E.MinorRadius();
         TheEpsX = 0.00000001;
         TheAccuracy = 20;
-        type = GeomAbs_Ellipse;
+        type = Ellipse;
     }
 
-    public IntCurve_PConic(in gp_Hypr2d H)
+    public IntCurve_PConic(in Hyperbola2D H)
     {
         axe = H.Axis();
         prm1 = H.MajorRadius();
         prm2 = H.MinorRadius();
         TheEpsX = 0.00000001;
         TheAccuracy = 50;
-        type = GeomAbs_Hyperbola;
+        type = Hyperbola;
     }
 
-    public IntCurve_PConic(in gp_Circ2d C)
+    public IntCurve_PConic(in Circle2D C)
     {
         axe = C.Axis();
         prm1 = C.Radius();
         prm2 = 0.0;
         TheEpsX = 0.00000001;
         TheAccuracy = 20;
-        type = GeomAbs_Circle;
+        type = Circle;
     }
 
-    public IntCurve_PConic(in gp_Parab2d P)
+    public IntCurve_PConic(in Parabola2D P)
     {
         axe = P.Axis();
         prm1 = P.Focal();
         prm2 = 0.0;
         TheEpsX = 0.00000001;
         TheAccuracy = 20;
-        type = GeomAbs_Parabola;
+        type = Parabola;
     }
 
-    public IntCurve_PConic(in gp_Lin2d L)
+    public IntCurve_PConic(in Line2D L)
     {
-        axe = new gp_Ax22d(L.Position());
+        axe = new Frame2D(L.Position());
         prm1 = 0.0;
         prm2 = 0.0;
         TheEpsX = 0.00000001;
         TheAccuracy = 20;
-        type = GeomAbs_Line;
+        type = Line;
     }
 
     /// <summary>The internal tolerance of the math algorithms, usually about 1e-10.</summary>
@@ -108,9 +109,9 @@ public struct IntCurve_PConic
     public readonly double EpsX() => (TheEpsX);
 
     /// <summary>The type of the conic.</summary>
-    public readonly GeomAbs_CurveType TypeCurve() => (type);
+    public readonly CurveKind TypeCurve() => (type);
 
-    public readonly gp_Ax22d Axis2() => (axe);
+    public readonly Frame2D Axis2() => (axe);
 
     public readonly double Param1() => (prm1);
 

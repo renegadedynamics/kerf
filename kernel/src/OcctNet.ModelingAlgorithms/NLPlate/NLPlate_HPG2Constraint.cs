@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A G1 and G2 constraint of a non-linear plate, the position free.</summary>
@@ -10,7 +12,7 @@ public class NLPlate_HPG2Constraint : NLPlate_HPG1Constraint
 {
     private readonly Plate_D2 myG2Target;
 
-    public NLPlate_HPG2Constraint(in gp_XY UV, in Plate_D1 D1T, in Plate_D2 D2T) : base(UV, D1T)
+    public NLPlate_HPG2Constraint(in Xy UV, in Plate_D1 D1T, in Plate_D2 D2T) : base(UV, D1T)
     {
         myG2Target = D2T;
         SetActiveOrder(2);

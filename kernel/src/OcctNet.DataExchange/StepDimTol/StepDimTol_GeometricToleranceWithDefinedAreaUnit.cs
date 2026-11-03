@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ public class StepDimTol_GeometricToleranceWithDefinedAreaUnit : StepDimTol_Geome
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize, StepDimTol_AreaUnitType theUnitType, bool theHasSecondUnitSize, StepBasic_LengthMeasureWithUnit theSecondUnitSize)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize, StepDimTol_AreaUnitType theUnitType, bool theHasSecondUnitSize, StepBasic_LengthMeasureWithUnit theSecondUnitSize)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theUnitSize);
         myAreaType = theUnitType;

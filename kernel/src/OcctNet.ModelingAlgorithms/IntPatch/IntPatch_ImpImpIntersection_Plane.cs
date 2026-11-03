@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntAna_ResultType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -31,8 +32,8 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         IntSurf_TypeTrans trans1, trans2;
         IntAna_ResultType typint;
-        gp_Pln pl1 = Quad1.Plane();
-        gp_Pln pl2 = Quad2.Plane();
+        Plane3D pl1 = Quad1.Plane();
+        Plane3D pl2 = Quad2.Plane();
 
         IntAna_QuadQuadGeo inter = new(pl1, pl2, Tolang, TolTang);
         if (!inter.IsDone())
@@ -47,9 +48,9 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
         else if (typint != IntAna_Empty)
         { // on a une ligne
-            gp_Lin linsol = inter.Line(1);
-            double discri = linsol.Direction().DotCross(new gp_Dir(Quad2.Normale(linsol.Location())),
-                                                        new gp_Dir(Quad1.Normale(linsol.Location())));
+            Line3D linsol = inter.Line(1);
+            double discri = linsol.Direction().DotCross(new Direction3D(Quad2.Normale(linsol.Location())),
+                                                        new Direction3D(Quad1.Normale(linsol.Location())));
 
             if (discri > 0.0)
             {
@@ -81,8 +82,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                NCollection_Sequence<IntPatch_Line> slin,
                                double H = 0.0)
     {
-        gp_Pln Pl;
-        gp_Cylinder Cy;
+        Plane3D Pl;
+        Cylinder Cy;
 
         IntSurf_TypeTrans trans1, trans2;
         IntAna_ResultType typint;
@@ -117,12 +118,12 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Line:
                 {
-                    gp_Lin linsol = inter.Line(1);
-                    gp_Pnt orig = linsol.Location();
+                    Line3D linsol = inter.Line(1);
+                    Point3D orig = linsol.Location();
                     if (NbSol == 1)
                     { // ligne de tangence
-                        gp_Vec TestCurvature = new(orig, Cy.Location());
-                        gp_Vec Normp, Normcyl;
+                        Vector3D TestCurvature = new(orig, Cy.Location());
+                        Vector3D Normp, Normcyl;
                         if (!Reversed)
                         {
                             Normp = Quad1.Normale(orig);
@@ -177,7 +178,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         // on a 2 droites. Il faut determiner les transitions
                         // de chacune.
 
-                        if (linsol.Direction().DotCross(new gp_Dir(Quad2.Normale(orig)), new gp_Dir(Quad1.Normale(orig)))
+                        if (linsol.Direction().DotCross(new Direction3D(Quad2.Normale(orig)), new Direction3D(Quad1.Normale(orig)))
                             > 0.0)
                         {
                             trans1 = IntSurf_Out;
@@ -194,7 +195,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         linsol = inter.Line(2);
                         orig = linsol.Location();
 
-                        if (linsol.Direction().DotCross(new gp_Dir(Quad2.Normale(orig)), new gp_Dir(Quad1.Normale(orig)))
+                        if (linsol.Direction().DotCross(new Direction3D(Quad2.Normale(orig)), new Direction3D(Quad1.Normale(orig)))
                             > 0.0)
                         {
                             trans1 = IntSurf_Out;
@@ -213,13 +214,13 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             case IntAna_Circle:
                 {
-                    gp_Circ cirsol;
+                    Circle3D cirsol;
                     //
                     cirsol = inter.Circle(1);
                     // modified by NIZNHY-PKV Thu Sep 15 11:30:03 2011f
                     AdjustToSeam(Cy, ref cirsol);
                     // modified by NIZNHY-PKV Thu Sep 15 11:30:15 2011t
-                    ElCLib.D1(0.0, cirsol, out gp_Pnt ptref, out gp_Vec Tgt);
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
 
                     if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
                     {
@@ -238,8 +239,8 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             case IntAna_Ellipse:
                 {
-                    gp_Elips elipsol = inter.Ellipse(1);
-                    ElCLib.D1(0.0, elipsol, out gp_Pnt ptref, out gp_Vec Tgt);
+                    Ellipse3D elipsol = inter.Ellipse(1);
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, elipsol, out Point3D ptref, out Vector3D Tgt);
 
                     if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
                     {
@@ -278,9 +279,9 @@ public sealed partial class IntPatch_ImpImpIntersection
                                NCollection_Sequence<IntPatch_Line> slin,
                                NCollection_Sequence<IntPatch_Point> spnt)
     {
-        gp_Circ cirsol;
-        gp_Pln Pl;
-        gp_Sphere Sp;
+        Circle3D cirsol;
+        Plane3D Pl;
+        Sphere Sp;
         IntSurf_TypeTrans trans1, trans2;
         IntAna_ResultType typint;
 
@@ -315,7 +316,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             case IntAna_Point:
                 {
-                    gp_Pnt psol = inter.Point(1);
+                    Point3D psol = inter.Point(1);
                     double U1 = 0.0, V1 = 0.0, U2 = 0.0, V2 = 0.0;
                     Quad1.Parameters(psol, ref U1, ref V1);
                     Quad2.Parameters(psol, ref U2, ref V2);
@@ -332,7 +333,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     // modified by NIZNHY-PKV Thu Sep 15 11:30:03 2011f
                     AdjustToSeam(Sp, ref cirsol, Tolang);
                     // modified by NIZNHY-PKV Thu Sep 15 11:30:15 2011t
-                    ElCLib.D1(0.0, cirsol, out gp_Pnt ptref, out gp_Vec Tgt);
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
 
                     if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
                     {
@@ -372,10 +373,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                                NCollection_Sequence<IntPatch_Line> slin,
                                NCollection_Sequence<IntPatch_Point> spnt)
     {
-        gp_Pnt apex;
+        Point3D apex;
 
-        gp_Pln Pl;
-        gp_Cone Co;
+        Plane3D Pl;
+        Cone Co;
 
         IntSurf_TypeTrans trans1, trans2;
         IntAna_ResultType typint;
@@ -408,7 +409,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         {
             case IntAna_Point:
                 {
-                    gp_Pnt psol = inter.Point(1);
+                    Point3D psol = inter.Point(1);
                     double U1 = 0.0, V1 = 0.0, U2 = 0.0, V2 = 0.0;
                     Quad1.Parameters(psol, ref U1, ref V1);
                     Quad2.Parameters(psol, ref U2, ref V2);
@@ -421,13 +422,13 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Line:
                 {
-                    gp_Lin linsol = inter.Line(1);
+                    Line3D linsol = inter.Line(1);
                     if (linsol.Direction().Dot(Co.Axis().Direction()) < 0.0)
                     {
                         linsol.SetDirection(linsol.Direction().Reversed());
                     }
-                    double para = ElCLib.Parameter(linsol, apex);
-                    gp_Pnt ptbid = ElCLib.Value(para + 5.0, linsol);
+                    double para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
+                    Point3D ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
                     double U1 = 0.0, V1 = 0.0, U2 = 0.0, V2 = 0.0;
                     Quad1.Parameters(apex, ref U1, ref V1);
                     Quad2.Parameters(apex, ref U2, ref V2);
@@ -438,9 +439,9 @@ public sealed partial class IntPatch_ImpImpIntersection
                         ptsol.SetValue(apex, TolTang, false);
                         ptsol.SetParameters(U1, V1, U2, V2);
                         ptsol.SetParameter(para);
-                        gp_Pnt ptbid2 = new(apex.XYZ() + 5.0 * Co.Axis().Direction().XYZ());
-                        gp_Vec TestCurvature = new(ptbid, ptbid2);
-                        gp_Vec Normp, Normco;
+                        Point3D ptbid2 = new(apex.XYZ() + 5.0 * Co.Axis().Direction().XYZ());
+                        Vector3D TestCurvature = new(ptbid, ptbid2);
+                        Vector3D Normp, Normco;
                         if (!Reversed)
                         {
                             Normp = Quad1.Normale(ptbid);
@@ -522,7 +523,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         // de l axe du cone. Les transitions de chaque ligne seront
                         // inverses l une de l autre => on ne fait le calcul que sur
                         // la premiere.
-                        if (linsol.Direction().DotCross(new gp_Dir(Quad2.Normale(ptbid)), new gp_Dir(Quad1.Normale(ptbid)))
+                        if (linsol.Direction().DotCross(new Direction3D(Quad2.Normale(ptbid)), new Direction3D(Quad1.Normale(ptbid)))
                             > 0.0)
                         {
                             trans1 = IntSurf_Out;
@@ -552,7 +553,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         //--
                         linsol.SetDirection(linsol.Direction().Reversed());
                         glig = new IntPatch_GLine(linsol, false, trans1, trans2);
-                        para = ElCLib.Parameter(linsol, apex);
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
                         glig.AddVertex(ptsol);
                         glig.SetFirstPoint(1);
@@ -564,9 +565,9 @@ public sealed partial class IntPatch_ImpImpIntersection
                         {
                             linsol.SetDirection(linsol.Direction().Reversed());
                         }
-                        para = ElCLib.Parameter(linsol, apex);
-                        ptbid = ElCLib.Value(para + 5.0, linsol);
-                        if (linsol.Direction().DotCross(new gp_Dir(Quad2.Normale(ptbid)), new gp_Dir(Quad1.Normale(ptbid)))
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
+                        ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
+                        if (linsol.Direction().DotCross(new Direction3D(Quad2.Normale(ptbid)), new Direction3D(Quad1.Normale(ptbid)))
                             > 0.0)
                         {
                             trans1 = IntSurf_Out;
@@ -579,7 +580,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         }
                         ptsol.SetParameter(para);
                         glig = new IntPatch_GLine(linsol, false, trans1, trans2);
-                        para = ElCLib.Parameter(linsol, apex);
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
                         glig.AddVertex(ptsol);
                         glig.SetFirstPoint(1);
@@ -590,7 +591,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         //--
                         linsol.SetDirection(linsol.Direction().Reversed());
                         glig = new IntPatch_GLine(linsol, false, trans1, trans2);
-                        para = ElCLib.Parameter(linsol, apex);
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
                         glig.AddVertex(ptsol);
                         glig.SetFirstPoint(1);
@@ -601,11 +602,11 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Circle:
                 {
-                    gp_Circ cirsol = inter.Circle(1);
+                    Circle3D cirsol = inter.Circle(1);
                     // modified by NIZNHY-PKV Thu Sep 15 11:34:04 2011f
                     AdjustToSeam(Co, ref cirsol);
                     // modified by NIZNHY-PKV Thu Sep 15 11:36:08 2011t
-                    ElCLib.D1(0.0, cirsol, out gp_Pnt ptref, out gp_Vec Tgt);
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
 
                     if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
                     {
@@ -624,8 +625,8 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Ellipse:
                 {
-                    gp_Elips elipsol = inter.Ellipse(1);
-                    ElCLib.D1(0.0, elipsol, out gp_Pnt ptref, out gp_Vec Tgt);
+                    Ellipse3D elipsol = inter.Ellipse(1);
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, elipsol, out Point3D ptref, out Vector3D Tgt);
 
                     if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
                     {
@@ -644,9 +645,9 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Parabola:
                 {
-                    gp_Parab parabsol = inter.Parabola(1);
+                    Parabola3D parabsol = inter.Parabola(1);
 
-                    gp_Vec Tgtorig = new(parabsol.YAxis().Direction());
+                    Vector3D Tgtorig = new(parabsol.YAxis().Direction());
                     double ptran =
                         Tgtorig.DotCross(Quad2.Normale(parabsol.Location()), Quad1.Normale(parabsol.Location()));
                     if (ptran > 0.00000001)
@@ -670,14 +671,14 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Hyperbola:
                 {
-                    gp_Pnt tophypr;
-                    gp_Vec Tgttop;
+                    Point3D tophypr;
+                    Vector3D Tgttop;
 
                     for (int i = 1; i <= 2; i++)
                     {
-                        gp_Hypr hyprsol = inter.Hyperbola(i);
-                        tophypr = ElCLib.Value(hyprsol.MajorRadius(), new gp_Lin(hyprsol.XAxis()));
-                        Tgttop = new gp_Vec(hyprsol.YAxis().Direction());
+                        Hyperbola3D hyprsol = inter.Hyperbola(i);
+                        tophypr = global::Kerf.Engine.Geometry.ElCLib.Value(hyprsol.MajorRadius(), new Line3D(hyprsol.XAxis()));
+                        Tgttop = new Vector3D(hyprsol.YAxis().Direction());
                         double qwe = Tgttop.DotCross(Quad2.Normale(tophypr), Quad1.Normale(tophypr));
 
                         if (qwe > 0.00000001)
@@ -717,8 +718,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                ref bool bEmpty,
                                NCollection_Sequence<IntPatch_Line> theSeqLin)
     {
-        gp_Pln aPln = bReversed ? theQuad2.Plane() : theQuad1.Plane();
-        gp_Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
+        Plane3D aPln = bReversed ? theQuad2.Plane() : theQuad1.Plane();
+        Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
         //
         IntAna_QuadQuadGeo inter = new(aPln, aTorus, theTolTang);
         bool bRet = inter.IsDone();
@@ -745,12 +746,12 @@ public sealed partial class IntPatch_ImpImpIntersection
                     //
                     for (i = 1; i <= NbSol; ++i)
                     {
-                        gp_Circ aC = inter.Circle(i);
-                        if (!aPln.Axis().IsNormal(aTorus.Axis(), Precision.Angular()))
+                        Circle3D aC = inter.Circle(i);
+                        if (!aPln.Axis().IsNormal(aTorus.Axis(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             AdjustToSeam(aTorus, ref aC);
                         }
-                        ElCLib.D1(0.0, aC, out gp_Pnt ptref, out gp_Vec Tgt);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(0.0, aC, out Point3D ptref, out Vector3D Tgt);
                         //
                         if (Tgt.DotCross(theQuad2.Normale(ptref), theQuad1.Normale(ptref)) > 0.0)
                         {
@@ -782,31 +783,31 @@ public sealed partial class IntPatch_ImpImpIntersection
     // modified by NIZNHY-PKV Thu Sep 15 10:53:39 2011f
     //=================================================================================================
 
-    private static void AdjustToSeam(in gp_Cone aQuad, ref gp_Circ aCirc)
+    private static void AdjustToSeam(in Cone aQuad, ref Circle3D aCirc)
     {
-        gp_Ax2 aAx2;
+        Frame3D aAx2;
         //
-        gp_Pnt aPLoc = aCirc.Location();
-        gp_Ax3 aAx3 = aQuad.Position();
+        Point3D aPLoc = aCirc.Location();
+        CoordinateSystem aAx3 = aQuad.Position();
         SeamPosition(aPLoc, aAx3, out aAx2);
         aCirc.SetPosition(aAx2);
     }
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in gp_Sphere aQuad, ref gp_Circ aCirc, double aTolAng)
+    private static void AdjustToSeam(in Sphere aQuad, ref Circle3D aCirc, double aTolAng)
     {
-        gp_Ax2 aAx2;
+        Frame3D aAx2;
         //
-        gp_Ax1 aAx1C = aCirc.Axis();
-        gp_Ax3 aAx3 = aQuad.Position();
-        gp_Ax1 aAx1Q = aAx3.Axis();
+        Axis3D aAx1C = aCirc.Axis();
+        CoordinateSystem aAx3 = aQuad.Position();
+        Axis3D aAx1Q = aAx3.Axis();
         //
-        gp_Dir aDirC = aAx1C.Direction();
-        gp_Dir aDirQ = aAx1Q.Direction();
+        Direction3D aDirC = aAx1C.Direction();
+        Direction3D aDirQ = aAx1Q.Direction();
         if (aDirC.IsParallel(aDirQ, aTolAng))
         {
-            gp_Pnt aPLoc = aCirc.Location();
+            Point3D aPLoc = aCirc.Location();
             SeamPosition(aPLoc, aAx3, out aAx2);
             aCirc.SetPosition(aAx2);
         }
@@ -814,35 +815,35 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in gp_Cylinder aQuad, ref gp_Circ aCirc)
+    private static void AdjustToSeam(in Cylinder aQuad, ref Circle3D aCirc)
     {
-        gp_Ax2 aAx2;
+        Frame3D aAx2;
         //
-        gp_Pnt aPLoc = aCirc.Location();
-        gp_Ax3 aAx3 = aQuad.Position();
+        Point3D aPLoc = aCirc.Location();
+        CoordinateSystem aAx3 = aQuad.Position();
         SeamPosition(aPLoc, aAx3, out aAx2);
         aCirc.SetPosition(aAx2);
     }
 
     //=================================================================================================
 
-    private static void AdjustToSeam(in gp_Torus aQuad, ref gp_Circ aCirc)
+    private static void AdjustToSeam(in Torus aQuad, ref Circle3D aCirc)
     {
-        gp_Ax2 aAx2;
+        Frame3D aAx2;
         //
-        gp_Pnt aPLoc = aCirc.Location();
-        gp_Ax3 aAx3 = aQuad.Position();
+        Point3D aPLoc = aCirc.Location();
+        CoordinateSystem aAx3 = aQuad.Position();
         SeamPosition(aPLoc, aAx3, out aAx2);
         aCirc.SetPosition(aAx2);
     }
 
     //=================================================================================================
 
-    private static void SeamPosition(in gp_Pnt aPLoc, in gp_Ax3 aPos, out gp_Ax2 aSeamPos)
+    private static void SeamPosition(in Point3D aPLoc, in CoordinateSystem aPos, out Frame3D aSeamPos)
     {
-        gp_Dir aDZ = aPos.Direction();
-        gp_Dir aDX = aPos.XDirection();
-        gp_Ax2 aAx2 = new(aPLoc, aDZ, aDX);
+        Direction3D aDZ = aPos.Direction();
+        Direction3D aDX = aPos.XDirection();
+        Frame3D aAx2 = new(aPLoc, aDZ, aDX);
         aSeamPos = aAx2;
     }
 

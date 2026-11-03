@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -24,16 +25,16 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
 
     public static double LastParameter(in Adaptor3d_Curve C) => C.LastParameter();
 
-    public static GeomAbs_Shape Continuity(in Adaptor3d_Curve C) => C.Continuity();
+    public static Continuity Continuity(in Adaptor3d_Curve C) => C.Continuity();
 
     /// <summary>The number of intervals for continuity <paramref name="S"/>; may be one when the curve is <paramref name="S"/>.</summary>
-    public static int NbIntervals(in Adaptor3d_Curve C, GeomAbs_Shape S) => C.NbIntervals(S);
+    public static int NbIntervals(in Adaptor3d_Curve C, Continuity S) => C.NbIntervals(S);
 
     /// <summary>
     /// Stores in <paramref name="T"/> the parameters bounding the intervals of continuity <paramref name="S"/>; its
     /// length must be at least <see cref="NbIntervals"/> + 1.
     /// </summary>
-    public static void Intervals(in Adaptor3d_Curve C, NCollection_Array1<double> T, GeomAbs_Shape S) =>
+    public static void Intervals(in Adaptor3d_Curve C, NCollection_Array1<double> T, Continuity S) =>
         C.Intervals(T, S);
 
     public static bool IsClosed(in Adaptor3d_Curve C) => C.IsClosed();
@@ -42,34 +43,34 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
 
     public static double Period(in Adaptor3d_Curve C) => C.Period();
 
-    public static gp_Pnt Value(in Adaptor3d_Curve C, double U) => C.Value(U);
+    public static Point3D Value(in Adaptor3d_Curve C, double U) => C.Value(U);
 
-    public static void D0(in Adaptor3d_Curve C, double U, out gp_Pnt P) => C.D0(U, out P);
+    public static void D0(in Adaptor3d_Curve C, double U, out Point3D P) => C.D0(U, out P);
 
-    public static void D1(in Adaptor3d_Curve C, double U, out gp_Pnt P, out gp_Vec V) => C.D1(U, out P, out V);
+    public static void D1(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V) => C.D1(U, out P, out V);
 
-    public static void D2(in Adaptor3d_Curve C, double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2) =>
+    public static void D2(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V1, out Vector3D V2) =>
         C.D2(U, out P, out V1, out V2);
 
-    public static void D3(in Adaptor3d_Curve C, double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3) =>
+    public static void D3(in Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3) =>
         C.D3(U, out P, out V1, out V2, out V3);
 
-    public static gp_Vec DN(in Adaptor3d_Curve C, double U, int N) => C.DN(U, N);
+    public static Vector3D DN(in Adaptor3d_Curve C, double U, int N) => C.DN(U, N);
 
     /// <summary>The parametric resolution corresponding to the real space resolution <paramref name="R3d"/>.</summary>
     public static double Resolution(in Adaptor3d_Curve C, double R3d) => C.Resolution(R3d);
 
-    public static GeomAbs_CurveType GetType(in Adaptor3d_Curve C) => C.GetType();
+    public static CurveKind GetType(in Adaptor3d_Curve C) => C.GetType();
 
-    public static gp_Lin Line(in Adaptor3d_Curve C) => C.Line();
+    public static Line3D Line(in Adaptor3d_Curve C) => C.Line();
 
-    public static gp_Circ Circle(in Adaptor3d_Curve C) => C.Circle();
+    public static Circle3D Circle(in Adaptor3d_Curve C) => C.Circle();
 
-    public static gp_Elips Ellipse(in Adaptor3d_Curve C) => C.Ellipse();
+    public static Ellipse3D Ellipse(in Adaptor3d_Curve C) => C.Ellipse();
 
-    public static gp_Hypr Hyperbola(in Adaptor3d_Curve C) => C.Hyperbola();
+    public static Hyperbola3D Hyperbola(in Adaptor3d_Curve C) => C.Hyperbola();
 
-    public static gp_Parab Parabola(in Adaptor3d_Curve C) => C.Parabola();
+    public static Parabola3D Parabola(in Adaptor3d_Curve C) => C.Parabola();
 
     public static Geom_BezierCurve Bezier(in Adaptor3d_Curve C) => C.Bezier();
 
@@ -78,25 +79,25 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
     /// <summary>The number of samples of the polygon of the curve between <paramref name="U0"/> and <paramref name="U1"/>.</summary>
     public static int NbSamples(in Adaptor3d_Curve C, double U0, double U1)
     {
-        GeomAbs_CurveType typC = C.GetType();
+        CurveKind typC = C.GetType();
         const double nbsOther = 10.0;
         double nbs = nbsOther;
 
-        if (typC == GeomAbs_Line)
+        if (typC == global::Kerf.Geometry.CurveKind.Line)
         {
             nbs = 2;
         }
-        else if (typC == GeomAbs_BezierCurve)
+        else if (typC == BezierCurve)
         {
             nbs = 3 + C.NbPoles();
         }
-        else if (typC == GeomAbs_BSplineCurve)
+        else if (typC == BSplineCurve)
         {
             nbs = C.NbKnots();
             nbs *= C.Degree();
             nbs *= C.LastParameter() - C.FirstParameter();
             double aRange = U1 - U0;
-            if (Math.Abs(aRange) > Precision.PConfusion())
+            if (Math.Abs(aRange) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 nbs /= aRange;
             }
@@ -121,20 +122,20 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
                                                          int NbMin)
     {
         NCollection_HArray1<double> Pars;
-        GeomAbs_CurveType typC = C.GetType();
+        CurveKind typC = C.GetType();
         const double nbsOther = 10.0;
         double nbs = nbsOther;
 
-        if (typC == GeomAbs_Line)
+        if (typC == global::Kerf.Geometry.CurveKind.Line)
         {
             nbs = 2;
         }
-        else if (typC == GeomAbs_BezierCurve)
+        else if (typC == BezierCurve)
         {
             nbs = 3 + C.NbPoles();
         }
 
-        if (typC != GeomAbs_BSplineCurve)
+        if (typC != BSplineCurve)
         {
             if (nbs > 50)
             {
@@ -259,11 +260,11 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
             }
 
             t2 = aPars[j];
-            gp_Pnt p1 = aBC.Value(t2);
+            Point3D p1 = aBC.Value(t2);
             for (k = j + 2; k <= nbsu; ++k)
             {
                 t2 = aPars[k];
-                gp_Pnt p2 = aBC.Value(t2);
+                Point3D p2 = aBC.Value(t2);
 
                 if (p1.SquareDistance(p2) <= tol)
                 {
@@ -271,7 +272,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
                 }
 
                 gce_MakeLin MkLin = new(p1, p2);
-                gp_Lin lin = MkLin.Value();
+                Line3D lin = MkLin.Value();
                 bool ok = true;
                 for (l = j + 1; l < k; ++l)
                 {
@@ -281,7 +282,7 @@ public readonly struct IntCurveSurface_TheHCurveTool : IIntCurveSurface_CurveToo
                         break;
                     }
 
-                    gp_Pnt pp = aBC.Value(aPars[l]);
+                    Point3D pp = aBC.Value(aPars[l]);
                     double d = lin.SquareDistance(pp);
 
                     if (d <= aDefl2)

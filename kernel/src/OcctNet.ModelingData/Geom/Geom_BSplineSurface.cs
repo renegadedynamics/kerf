@@ -4,8 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_BSplKnotDistribution;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -31,7 +35,7 @@ namespace Occt;
 /// </remarks>
 public class Geom_BSplineSurface : Geom_BoundedSurface
 {
-    private NCollection_Array2<gp_Pnt> myPoles = new NCollection_Array2<gp_Pnt>();
+    private NCollection_Array2<Point3D> myPoles = new NCollection_Array2<Point3D>();
     private NCollection_Array2<double> myWeights = new NCollection_Array2<double>();
     private NCollection_Array1<double> myUKnots = new NCollection_Array1<double>();
     private NCollection_Array1<double> myVKnots = new NCollection_Array1<double>();
@@ -46,10 +50,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     private bool myVPeriodic = false;
     private bool myURational = false;
     private bool myVRational = false;
-    private GeomAbs_BSplKnotDistribution myUKnotSet = GeomAbs_NonUniform;
-    private GeomAbs_BSplKnotDistribution myVKnotSet = GeomAbs_NonUniform;
-    private GeomAbs_Shape myUSmooth = GeomAbs_C0;
-    private GeomAbs_Shape myVSmooth = GeomAbs_C0;
+    private BSplKnotDistribution myUKnotSet = NonUniform;
+    private BSplKnotDistribution myVKnotSet = NonUniform;
+    private Continuity myUSmooth = C0;
+    private Continuity myVSmooth = C0;
     private double myUMaxDerivInv = 0.0;
     private double myVMaxDerivInv = 0.0;
     private volatile bool myMaxDerivInvOk = false;
@@ -81,7 +85,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         myEvalRep = null;
     }
 
-    private static void CheckSurfaceData(NCollection_Array2<gp_Pnt> SPoles,
+    private static void CheckSurfaceData(NCollection_Array2<Point3D> SPoles,
                                          NCollection_Array1<double> SUKnots,
                                          NCollection_Array1<double> SVKnots,
                                          NCollection_Array1<int> SUMults,
@@ -94,17 +98,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (UDegree < 1 || UDegree > Geom_BSplineSurface.MaxDegree() || VDegree < 1
             || VDegree > Geom_BSplineSurface.MaxDegree())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: invalid degree");
+            throw new ConstructionErrorException("Geom_BSplineSurface: invalid degree");
         }
 
         if (SPoles.ColLength() < 2 || SPoles.RowLength() < 2)
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: at least 2 poles required");
+            throw new ConstructionErrorException("Geom_BSplineSurface: at least 2 poles required");
         }
 
         if (SUKnots.Length() != SUMults.Length() || SVKnots.Length() != SVMults.Length())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: Knot and Mult array size mismatch");
+            throw new ConstructionErrorException("Geom_BSplineSurface: Knot and Mult array size mismatch");
         }
 
         int i;
@@ -112,7 +116,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (SUKnots[i + 1] - SUKnots[i] <= Epsilon(Math.Abs(SUKnots[i])))
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface: UKnots interval values too close");
+                throw new ConstructionErrorException("Geom_BSplineSurface: UKnots interval values too close");
             }
         }
 
@@ -120,18 +124,18 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (SVKnots[i + 1] - SVKnots[i] <= Epsilon(Math.Abs(SVKnots[i])))
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface: VKnots interval values too close");
+                throw new ConstructionErrorException("Geom_BSplineSurface: VKnots interval values too close");
             }
         }
 
-        if (SPoles.ColLength() != BSplCLib.NbPoles(UDegree, UPeriodic, SUMults))
+        if (SPoles.ColLength() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(UDegree, UPeriodic, SUMults))
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: # U Poles and degree mismatch");
+            throw new ConstructionErrorException("Geom_BSplineSurface: # U Poles and degree mismatch");
         }
 
-        if (SPoles.RowLength() != BSplCLib.NbPoles(VDegree, VPeriodic, SVMults))
+        if (SPoles.RowLength() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(VDegree, VPeriodic, SVMults))
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: # V Poles and degree mismatch");
+            throw new ConstructionErrorException("Geom_BSplineSurface: # V Poles and degree mismatch");
         }
     }
 
@@ -172,10 +176,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// <summary>A copy of theOther, without validation (OCCT's copy constructor).</summary>
     public Geom_BSplineSurface(Geom_BSplineSurface theOther)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(theOther.myPoles);
+        myPoles = new NCollection_Array2<Point3D>(theOther.myPoles);
         myWeights = (theOther.myURational || theOther.myVRational)
                       ? new NCollection_Array2<double>(theOther.myWeights)
-                      : BSplSLib.UnitWeights(theOther.myPoles.ColLength(), theOther.myPoles.RowLength());
+                      : SurfaceBSplSLib.UnitWeights(theOther.myPoles.ColLength(), theOther.myPoles.RowLength());
         myUKnots = new NCollection_Array1<double>(theOther.myUKnots);
         myVKnots = new NCollection_Array1<double>(theOther.myVKnots);
         myUFlatKnots = new NCollection_Array1<double>(theOther.myUFlatKnots);
@@ -199,11 +203,11 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>A non-rational B-spline surface.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// A degree not in [1, MaxDegree()], fewer than 2 poles in a direction, knots and multiplicities of different
     /// lengths, knots not increasing, or numbers of poles that don't match the multiplicities.
     /// </exception>
-    public Geom_BSplineSurface(NCollection_Array2<gp_Pnt> Poles,
+    public Geom_BSplineSurface(NCollection_Array2<Point3D> Poles,
                                NCollection_Array1<double> UKnots,
                                NCollection_Array1<double> VKnots,
                                NCollection_Array1<int> UMults,
@@ -229,7 +233,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // copy arrays
         myPoles.Resize(1, Poles.ColLength(), 1, Poles.RowLength(), false);
         myPoles.CopyValues(Poles);
-        myWeights = BSplSLib.UnitWeights(Poles.ColLength(), Poles.RowLength());
+        myWeights = SurfaceBSplSLib.UnitWeights(Poles.ColLength(), Poles.RowLength());
 
         myUKnots.Resize(1, UKnots.Length(), false);
         myUKnots.CopyValues(UKnots);
@@ -245,11 +249,11 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>A rational B-spline surface (non-rational if the weights are all equal in each direction).</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// As the non-rational constructor, or weights of a different size from the poles, or a weight not greater
     /// than gp::Resolution().
     /// </exception>
-    public Geom_BSplineSurface(NCollection_Array2<gp_Pnt> Poles,
+    public Geom_BSplineSurface(NCollection_Array2<Point3D> Poles,
                                NCollection_Array2<double> Weights,
                                NCollection_Array1<double> UKnots,
                                NCollection_Array1<double> VKnots,
@@ -267,12 +271,12 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // check weights
         if (Weights.ColLength() != Poles.ColLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: U Weights and Poles array size mismatch");
+            throw new ConstructionErrorException("Geom_BSplineSurface: U Weights and Poles array size mismatch");
         }
 
         if (Weights.RowLength() != Poles.RowLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface: V Weights and Poles array size mismatch");
+            throw new ConstructionErrorException("Geom_BSplineSurface: V Weights and Poles array size mismatch");
         }
 
         int i, j;
@@ -280,9 +284,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             for (j = Weights.LowerCol(); j <= Weights.UpperCol(); j++)
             {
-                if (Weights[i, j] <= gp.Resolution())
+                if (Weights[i, j] <= Constants.Resolution())
                 {
-                    throw new Standard_ConstructionError("Geom_BSplineSurface: Weights values too small");
+                    throw new ConstructionErrorException("Geom_BSplineSurface: Weights values too small");
                 }
             }
         }
@@ -310,7 +314,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(Poles.ColLength(), Poles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(Poles.ColLength(), Poles.RowLength());
         }
 
         myUKnots.Resize(1, UKnots.Length(), false);
@@ -336,7 +340,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int LR = myPoles.LowerRow();
         int UR = myPoles.UpperRow();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(LC, UC, LR, UR);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(LC, UC, LR, UR);
         NCollection_Array2<double> nweights = new NCollection_Array2<double>();
         if (myURational || myVRational)
         {
@@ -362,7 +366,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         (myURational, myVRational) = (myVRational, myURational);
@@ -376,7 +380,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Raises the degrees to UDegree and VDegree (no change where equal to the current degree).</summary>
-    /// <exception cref="Standard_ConstructionError">A degree lower than the current one or above MaxDegree().</exception>
+    /// <exception cref="ConstructionErrorException">A degree lower than the current one or above MaxDegree().</exception>
     internal void IncreaseDegree(int UDegree, int VDegree)
     {
         CheckMutable();
@@ -384,7 +388,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (UDegree < myUDeg || UDegree > Geom_BSplineSurface.MaxDegree())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::IncreaseDegree: bad U degree value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad U degree value");
             }
 
             ClearEvalRepresentation();
@@ -394,10 +398,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
             int Step = UDegree - myUDeg;
 
-            NCollection_Array2<gp_Pnt> npoles =
-                new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength() + Step * (ToK2 - FromK1), 1, myPoles.RowLength());
+            NCollection_Array2<Point3D> npoles =
+                new NCollection_Array2<Point3D>(1, myPoles.ColLength() + Step * (ToK2 - FromK1), 1, myPoles.RowLength());
 
-            int nbknots = BSplCLib.IncreaseDegreeCountKnots(myUDeg, UDegree, myUPeriodic, myUMults);
+            int nbknots = global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegreeCountKnots(myUDeg, UDegree, myUPeriodic, myUMults);
 
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
 
@@ -408,7 +412,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 NCollection_Array2<double> nweights =
                     new NCollection_Array2<double>(1, npoles.ColLength(), 1, npoles.RowLength());
 
-                BSplSLib.IncreaseDegree(true,
+                SurfaceBSplSLib.IncreaseDegree(true,
                                         myUDeg,
                                         UDegree,
                                         myUPeriodic,
@@ -424,19 +428,19 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.IncreaseDegree(true,
+                SurfaceBSplSLib.IncreaseDegree(true,
                                         myUDeg,
                                         UDegree,
                                         myUPeriodic,
                                         myPoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         myUKnots,
                                         myUMults,
                                         npoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         nknots,
                                         nmults);
-                myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+                myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
             }
             myUDeg = UDegree;
             myPoles = npoles;
@@ -449,7 +453,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (VDegree < myVDeg || VDegree > Geom_BSplineSurface.MaxDegree())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::IncreaseDegree: bad V degree value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad V degree value");
             }
 
             ClearEvalRepresentation();
@@ -459,10 +463,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
             int Step = VDegree - myVDeg;
 
-            NCollection_Array2<gp_Pnt> npoles =
-                new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength(), 1, myPoles.RowLength() + Step * (ToK2 - FromK1));
+            NCollection_Array2<Point3D> npoles =
+                new NCollection_Array2<Point3D>(1, myPoles.ColLength(), 1, myPoles.RowLength() + Step * (ToK2 - FromK1));
 
-            int nbknots = BSplCLib.IncreaseDegreeCountKnots(myVDeg, VDegree, myVPeriodic, myVMults);
+            int nbknots = global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegreeCountKnots(myVDeg, VDegree, myVPeriodic, myVMults);
 
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
 
@@ -473,7 +477,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 NCollection_Array2<double> nweights =
                     new NCollection_Array2<double>(1, npoles.ColLength(), 1, npoles.RowLength());
 
-                BSplSLib.IncreaseDegree(false,
+                SurfaceBSplSLib.IncreaseDegree(false,
                                         myVDeg,
                                         VDegree,
                                         myVPeriodic,
@@ -489,19 +493,19 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.IncreaseDegree(false,
+                SurfaceBSplSLib.IncreaseDegree(false,
                                         myVDeg,
                                         VDegree,
                                         myVPeriodic,
                                         myPoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         myVKnots,
                                         myVMults,
                                         npoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         nknots,
                                         nmults);
-                myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+                myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
             }
             myVDeg = VDegree;
             myPoles = npoles;
@@ -575,9 +579,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myUPeriodic)
         {
             double aUPeriod = myUKnots.Last() - myUKnots.First();
-            if (deltaU - aUPeriod > Precision.PConfusion())
+            if (deltaU - aUPeriod > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new Standard_DomainError("Geom_BSplineSurface::Segment");
+                throw new DomainErrorException("Geom_BSplineSurface::Segment");
             }
             if (deltaU > aUPeriod)
             {
@@ -589,9 +593,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myVPeriodic)
         {
             double aVPeriod = myVKnots.Last() - myVKnots.First();
-            if (deltaV - aVPeriod > Precision.PConfusion())
+            if (deltaV - aVPeriod > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                throw new Standard_DomainError("Geom_BSplineSurface::Segment");
+                throw new DomainErrorException("Geom_BSplineSurface::Segment");
             }
             if (deltaV > aVPeriod)
             {
@@ -603,9 +607,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         double U, V;
         int indexU, indexV;
 
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U1, myUPeriodic, myUKnots.Lower(), myUKnots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U1, myUPeriodic, myUKnots.Lower(), myUKnots.Upper(),
                                  out indexU, out NewU1);
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U2, myUPeriodic, myUKnots.Lower(), myUKnots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U2, myUPeriodic, myUKnots.Lower(), myUKnots.Upper(),
                                  out indexU, out NewU2);
         if (SegmentInU)
         {
@@ -619,9 +623,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             InsertUKnots(UKnots, UMults, EpsU);
         }
 
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V1, myVPeriodic, myVKnots.Lower(), myVKnots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V1, myVPeriodic, myVKnots.Lower(), myVKnots.Upper(),
                                  out indexV, out NewV1);
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V2, myVPeriodic, myVKnots.Lower(), myVKnots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V2, myVPeriodic, myVKnots.Lower(), myVKnots.Upper(),
                                  out indexV, out NewV2);
         if (SegmentInV)
         {
@@ -638,7 +642,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myUPeriodic && SegmentInU)
         { // set the origine at NewU1
             int index;
-            BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U1, myUPeriodic, myUKnots.Lower(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U1, myUPeriodic, myUKnots.Lower(),
                                      myUKnots.Upper(), out index, out U);
             if (Math.Abs(myUKnots.Value(index + 1) - U) <= EpsU)
             {
@@ -655,12 +659,12 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int index1U, index2U;
         int FromU1 = myUKnots.Lower();
         int ToU2 = myUKnots.Upper();
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, NewU1, myUPeriodic, FromU1, ToU2, out index1U, out U);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, NewU1, myUPeriodic, FromU1, ToU2, out index1U, out U);
         if (Math.Abs(myUKnots.Value(index1U + 1) - U) <= EpsU)
         {
             index1U++;
         }
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, NewU1 + deltaU, myUPeriodic, FromU1, ToU2,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, NewU1 + deltaU, myUPeriodic, FromU1, ToU2,
                                  out index2U, out U);
         if (Math.Abs(myUKnots.Value(index2U + 1) - U) <= EpsU || index2U == index1U)
         {
@@ -688,7 +692,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myVPeriodic && SegmentInV)
         { // set the origine at NewV1
             int index;
-            BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V1, myVPeriodic, myVKnots.Lower(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V1, myVPeriodic, myVKnots.Lower(),
                                      myVKnots.Upper(), out index, out V);
             if (Math.Abs(myVKnots.Value(index + 1) - V) <= EpsV)
             {
@@ -702,12 +706,12 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int index1V, index2V;
         int FromV1 = myVKnots.Lower();
         int ToV2 = myVKnots.Upper();
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, NewV1, myVPeriodic, FromV1, ToV2, out index1V, out V);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, NewV1, myVPeriodic, FromV1, ToV2, out index1V, out V);
         if (Math.Abs(myVKnots.Value(index1V + 1) - V) <= EpsV)
         {
             index1V++;
         }
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, NewV1 + deltaV, myVPeriodic, FromV1, ToV2,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, NewV1 + deltaV, myVPeriodic, FromV1, ToV2,
                                  out index2V, out V);
         if (Math.Abs(myVKnots.Value(index2V + 1) - V) <= EpsV || index2V == index1V)
         {
@@ -733,8 +737,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
 
         // compute index1 and index2 to set the new poles and weights
-        int pindex1U = BSplCLib.PoleIndex(myUDeg, index1U, myUPeriodic, myUMults);
-        int pindex2U = BSplCLib.PoleIndex(myUDeg, index2U, myUPeriodic, myUMults);
+        int pindex1U = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myUDeg, index1U, myUPeriodic, myUMults);
+        int pindex2U = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myUDeg, index2U, myUPeriodic, myUMults);
 
         pindex1U++;
         pindex2U = Min(pindex2U + 1, myPoles.ColLength());
@@ -742,15 +746,15 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int nbupoles = pindex2U - pindex1U + 1;
 
         // compute index1 and index2 to set the new poles and weights
-        int pindex1V = BSplCLib.PoleIndex(myVDeg, index1V, myVPeriodic, myVMults);
-        int pindex2V = BSplCLib.PoleIndex(myVDeg, index2V, myVPeriodic, myVMults);
+        int pindex1V = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myVDeg, index1V, myVPeriodic, myVMults);
+        int pindex2V = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(myVDeg, index2V, myVPeriodic, myVMults);
 
         pindex1V++;
         pindex2V = Min(pindex2V + 1, myPoles.RowLength());
 
         int nbvpoles = pindex2V - pindex1V + 1;
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, nbupoles, 1, nbvpoles);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, nbupoles, 1, nbvpoles);
 
         k = 1;
         int j, l;
@@ -782,7 +786,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 }
                 k++;
             }
-            myWeights = BSplSLib.UnitWeights(nbupoles, nbvpoles);
+            myWeights = SurfaceBSplSLib.UnitWeights(nbupoles, nbvpoles);
         }
 
         myUKnots = nuknots;
@@ -800,7 +804,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// Restricts the surface to the parametric rectangle [U1, U2] x [V1, V2], inserting knots of multiplicity
     /// Degree at the bounds; a periodic direction becomes non-periodic.
     /// </summary>
-    /// <exception cref="Standard_DomainError">U2 &lt; U1 or V2 &lt; V1, or a segment longer than the period.</exception>
+    /// <exception cref="DomainErrorException">U2 &lt; U1 or V2 &lt; V1, or a segment longer than the period.</exception>
     internal void Segment(double U1,
                           double U2,
                           double V1,
@@ -811,7 +815,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         CheckMutable();
         if ((U2 < U1) || (V2 < V1))
         {
-            throw new Standard_DomainError("Geom_BSplineSurface::Segment");
+            throw new DomainErrorException("Geom_BSplineSurface::Segment");
         }
 
         double aMaxU = Max(Math.Abs(U2), Math.Abs(U1));
@@ -834,7 +838,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         CheckMutable();
         if ((U2 < U1) || (V2 < V1))
         {
-            throw new Standard_DomainError("Geom_BSplineSurface::CheckAndSegment");
+            throw new DomainErrorException("Geom_BSplineSurface::CheckAndSegment");
         }
 
         double aMaxU = Max(Math.Abs(U2), Math.Abs(U1));
@@ -852,14 +856,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the value of the U knot UIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUKnots].</exception>
-    /// <exception cref="Standard_ConstructionError">K not strictly between the neighbouring knots.</exception>
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUKnots].</exception>
+    /// <exception cref="ConstructionErrorException">K not strictly between the neighbouring knots.</exception>
     internal void SetUKnot(int UIndex, double K)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myUKnots.Length())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetUKnot: Index and #knots mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetUKnot: Index and #knots mismatch");
         }
 
         int NewIndex = UIndex;
@@ -868,21 +872,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (K >= myUKnots.Value(2) - DU)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
             }
         }
         else if (UIndex == myUKnots.Length())
         {
             if (K <= myUKnots.Value(myUKnots.Length() - 1) + DU)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
             }
         }
         else
         {
             if (K <= myUKnots.Value(NewIndex - 1) + DU || K >= myUKnots.Value(NewIndex + 1) - DU)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnot: K out of range");
             }
         }
 
@@ -903,20 +907,20 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int Upper = UK.Upper();
         if (Lower < 1 || Lower > myUKnots.Length() || Upper < 1 || Upper > myUKnots.Length())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetUKnots: invalid array dimension");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetUKnots: invalid array dimension");
         }
         if (Lower > 1)
         {
-            if (Math.Abs(UK[Lower] - myUKnots.Value(Lower - 1)) <= gp.Resolution())
+            if (Math.Abs(UK[Lower] - myUKnots.Value(Lower - 1)) <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
             }
         }
         if (Upper < myUKnots.Length())
         {
-            if (Math.Abs(UK[Upper] - myUKnots.Value(Upper + 1)) <= gp.Resolution())
+            if (Math.Abs(UK[Upper] - myUKnots.Value(Upper + 1)) <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
             }
         }
         double K1 = UK[Lower];
@@ -926,9 +930,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             myUKnots.SetValue(i, UK[i]);
             if (i != Lower)
             {
-                if (Math.Abs(UK[i] - K1) <= gp.Resolution())
+                if (Math.Abs(UK[i] - K1) <= Constants.Resolution())
                 {
-                    throw new Standard_ConstructionError("Geom_BSplineSurface::SetUKnots: invalid knot value");
+                    throw new ConstructionErrorException("Geom_BSplineSurface::SetUKnots: invalid knot value");
                 }
                 K1 = UK[i];
             }
@@ -947,14 +951,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the value of the V knot VIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">VIndex out of [1, NbVKnots].</exception>
-    /// <exception cref="Standard_ConstructionError">K not strictly between the neighbouring knots.</exception>
+    /// <exception cref="OutOfRangeException">VIndex out of [1, NbVKnots].</exception>
+    /// <exception cref="ConstructionErrorException">K not strictly between the neighbouring knots.</exception>
     internal void SetVKnot(int VIndex, double K)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myVKnots.Length())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetVKnot: Index and #knots mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetVKnot: Index and #knots mismatch");
         }
         int NewIndex = VIndex + myVKnots.Lower() - 1;
         double DV = Math.Abs(Epsilon(K));
@@ -962,21 +966,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             if (K >= myVKnots.Value(2) - DV)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
             }
         }
         else if (VIndex == myVKnots.Length())
         {
             if (K <= myVKnots.Value(myVKnots.Length() - 1) + DV)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
             }
         }
         else
         {
             if (K <= myVKnots.Value(NewIndex - 1) + DV || K >= myVKnots.Value(NewIndex + 1) - DV)
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnot: K out of range");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnot: K out of range");
             }
         }
 
@@ -997,20 +1001,20 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int Upper = VK.Upper();
         if (Lower < 1 || Lower > myVKnots.Length() || Upper < 1 || Upper > myVKnots.Length())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetVKnots: invalid array dimension");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetVKnots: invalid array dimension");
         }
         if (Lower > 1)
         {
-            if (Math.Abs(VK[Lower] - myVKnots.Value(Lower - 1)) <= gp.Resolution())
+            if (Math.Abs(VK[Lower] - myVKnots.Value(Lower - 1)) <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
             }
         }
         if (Upper < myVKnots.Length())
         {
-            if (Math.Abs(VK[Upper] - myVKnots.Value(Upper + 1)) <= gp.Resolution())
+            if (Math.Abs(VK[Upper] - myVKnots.Value(Upper + 1)) <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
             }
         }
         double K1 = VK[Lower];
@@ -1020,9 +1024,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             myVKnots.SetValue(i, VK[i]);
             if (i != Lower)
             {
-                if (Math.Abs(VK[i] - K1) <= gp.Resolution())
+                if (Math.Abs(VK[i] - K1) <= Constants.Resolution())
                 {
-                    throw new Standard_ConstructionError("Geom_BSplineSurface::SetVKnots: invalid knot value");
+                    throw new ConstructionErrorException("Geom_BSplineSurface::SetVKnots: invalid knot value");
                 }
                 K1 = VK[i];
             }
@@ -1087,41 +1091,41 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     {
         myMaxDerivInvOk = false;
         int MaxKnotMult;
-        BSplCLib.KnotAnalysis(myUDeg, myUPeriodic, myUKnots, myUMults, out myUKnotSet, out MaxKnotMult);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotAnalysis(myUDeg, myUPeriodic, myUKnots, myUMults, out myUKnotSet, out MaxKnotMult);
 
-        if (myUKnotSet == GeomAbs_Uniform && !myUPeriodic)
+        if (myUKnotSet == Uniform && !myUPeriodic)
         {
             myUFlatKnots.Resize(myUKnots.Lower(), myUKnots.Upper(), false);
             myUFlatKnots.Assign(myUKnots);
         }
         else
         {
-            myUFlatKnots.Resize(1, BSplCLib.KnotSequenceLength(myUMults, myUDeg, myUPeriodic), false);
-            BSplCLib.KnotSequence(myUKnots, myUMults, myUDeg, myUPeriodic, myUFlatKnots);
+            myUFlatKnots.Resize(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(myUMults, myUDeg, myUPeriodic), false);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(myUKnots, myUMults, myUDeg, myUPeriodic, myUFlatKnots);
         }
 
         if (MaxKnotMult == 0)
         {
-            myUSmooth = GeomAbs_CN;
+            myUSmooth = CN;
         }
         else
         {
             switch (myUDeg - MaxKnotMult)
             {
                 case 0:
-                    myUSmooth = GeomAbs_C0;
+                    myUSmooth = C0;
                     break;
                 case 1:
-                    myUSmooth = GeomAbs_C1;
+                    myUSmooth = C1;
                     break;
                 case 2:
-                    myUSmooth = GeomAbs_C2;
+                    myUSmooth = C2;
                     break;
                 case 3:
-                    myUSmooth = GeomAbs_C3;
+                    myUSmooth = C3;
                     break;
                 default:
-                    myUSmooth = GeomAbs_C3;
+                    myUSmooth = C3;
                     break;
             }
         }
@@ -1132,41 +1136,41 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     {
         myMaxDerivInvOk = false;
         int MaxKnotMult;
-        BSplCLib.KnotAnalysis(myVDeg, myVPeriodic, myVKnots, myVMults, out myVKnotSet, out MaxKnotMult);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotAnalysis(myVDeg, myVPeriodic, myVKnots, myVMults, out myVKnotSet, out MaxKnotMult);
 
-        if (myVKnotSet == GeomAbs_Uniform && !myVPeriodic)
+        if (myVKnotSet == Uniform && !myVPeriodic)
         {
             myVFlatKnots.Resize(myVKnots.Lower(), myVKnots.Upper(), false);
             myVFlatKnots.Assign(myVKnots);
         }
         else
         {
-            myVFlatKnots.Resize(1, BSplCLib.KnotSequenceLength(myVMults, myVDeg, myVPeriodic), false);
-            BSplCLib.KnotSequence(myVKnots, myVMults, myVDeg, myVPeriodic, myVFlatKnots);
+            myVFlatKnots.Resize(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(myVMults, myVDeg, myVPeriodic), false);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(myVKnots, myVMults, myVDeg, myVPeriodic, myVFlatKnots);
         }
 
         if (MaxKnotMult == 0)
         {
-            myVSmooth = GeomAbs_CN;
+            myVSmooth = CN;
         }
         else
         {
             switch (myVDeg - MaxKnotMult)
             {
                 case 0:
-                    myVSmooth = GeomAbs_C0;
+                    myVSmooth = C0;
                     break;
                 case 1:
-                    myVSmooth = GeomAbs_C1;
+                    myVSmooth = C1;
                     break;
                 case 2:
-                    myVSmooth = GeomAbs_C2;
+                    myVSmooth = C2;
                     break;
                 case 3:
-                    myVSmooth = GeomAbs_C3;
+                    myVSmooth = C3;
                     break;
                 default:
-                    myVSmooth = GeomAbs_C3;
+                    myVSmooth = C3;
                     break;
             }
         }
@@ -1176,7 +1180,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// Brings the parameters of a periodic direction into its period range by whole periods; the parameters of a
     /// non-periodic direction are unchanged.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">The period is not greater than Epsilon of the parameter.</exception>
+    /// <exception cref="OutOfRangeException">The period is not greater than Epsilon of the parameter.</exception>
     public void PeriodicNormalization(ref double Uparameter, ref double Vparameter)
     {
         double Period, aMaxVal, aMinVal;
@@ -1190,7 +1194,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
             if (Period <= eps)
             {
-                throw new Standard_OutOfRange("Geom_BSplineSurface::PeriodicNormalization: Uparameter is too great number");
+                throw new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Uparameter is too great number");
             }
 
             bool isLess, isGreater;
@@ -1213,7 +1217,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
             if (Period <= eps)
             {
-                throw new Standard_OutOfRange("Geom_BSplineSurface::PeriodicNormalization: Vparameter is too great number");
+                throw new OutOfRangeException("Geom_BSplineSurface::PeriodicNormalization: Vparameter is too great number");
             }
 
             bool isLess, isGreater;
@@ -1230,19 +1234,19 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the weight of the pole (UIndex, VIndex); the rationality flags are recomputed.</summary>
-    /// <exception cref="Standard_ConstructionError">Weight not greater than gp::Resolution().</exception>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
+    /// <exception cref="ConstructionErrorException">Weight not greater than gp::Resolution().</exception>
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     internal void SetWeight(int UIndex, int VIndex, double Weight)
     {
         CheckMutable();
-        if (Weight <= gp.Resolution())
+        if (Weight <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::SetWeight: Weight too small");
+            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeight: Weight too small");
         }
 
         if (UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetWeight: Index and #pole mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetWeight: Index and #pole mismatch");
         }
 
         ClearEvalRepresentation();
@@ -1255,7 +1259,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!myURational && !myVRational)
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         myMaxDerivInvOk = false;
@@ -1267,13 +1271,13 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetWeightCol: Index and #pole mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetWeightCol: Index and #pole mismatch");
         }
 
         if (CPoleWeights.Lower() < 1 || CPoleWeights.Lower() > myPoles.ColLength() || CPoleWeights.Upper() < 1
             || CPoleWeights.Upper() > myPoles.ColLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::SetWeightCol: invalid array dimension");
+            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: invalid array dimension");
         }
 
         ClearEvalRepresentation();
@@ -1285,9 +1289,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         int I = CPoleWeights.Lower();
         while (I <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[I] <= gp.Resolution())
+            if (CPoleWeights[I] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetWeightCol: Weight too small");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: Weight too small");
             }
             myWeights[I + myWeights.LowerRow() - 1, VIndex + myWeights.LowerCol() - 1] = CPoleWeights[I];
             I++;
@@ -1296,7 +1300,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!myURational && !myVRational)
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         myMaxDerivInvOk = false;
@@ -1308,13 +1312,13 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetWeightRow: Index and #pole mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetWeightRow: Index and #pole mismatch");
         }
 
         if (CPoleWeights.Lower() < 1 || CPoleWeights.Lower() > myPoles.RowLength() || CPoleWeights.Upper() < 1
             || CPoleWeights.Upper() > myPoles.RowLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::SetWeightRow: invalid array dimension");
+            throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: invalid array dimension");
         }
 
         ClearEvalRepresentation();
@@ -1327,9 +1331,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         while (I <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[I] <= gp.Resolution())
+            if (CPoleWeights[I] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Geom_BSplineSurface::SetWeightRow: Weight too small");
+                throw new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: Weight too small");
             }
             myWeights[UIndex + myWeights.LowerRow() - 1, I + myWeights.LowerCol() - 1] = CPoleWeights[I];
             I++;
@@ -1338,7 +1342,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!myURational && !myVRational)
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         myMaxDerivInvOk = false;
@@ -1349,64 +1353,64 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     //=============================================================================================
 
     /// <summary>True if the surface is at least CN in the U direction.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNu(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
         switch (myUSmooth)
         {
-            case GeomAbs_CN:
+            case CN:
                 return true;
-            case GeomAbs_C0:
+            case C0:
                 return N <= 0;
-            case GeomAbs_G1:
+            case G1:
                 return N <= 0;
-            case GeomAbs_C1:
+            case C1:
                 return N <= 1;
-            case GeomAbs_G2:
+            case G2:
                 return N <= 1;
-            case GeomAbs_C2:
+            case C2:
                 return N <= 2;
-            case GeomAbs_C3:
+            case C3:
                 return N <= 3 ? true
-                              : N <= myUDeg - BSplCLib.MaxKnotMult(myUMults, myUMults.Lower() + 1, myUMults.Upper() - 1);
+                              : N <= myUDeg - global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(myUMults, myUMults.Lower() + 1, myUMults.Upper() - 1);
             default:
                 return false;
         }
     }
 
     /// <summary>True if the surface is at least CN in the V direction.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNv(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
 
         switch (myVSmooth)
         {
-            case GeomAbs_CN:
+            case CN:
                 return true;
-            case GeomAbs_C0:
+            case C0:
                 return N <= 0;
-            case GeomAbs_G1:
+            case G1:
                 return N <= 0;
-            case GeomAbs_C1:
+            case C1:
                 return N <= 1;
-            case GeomAbs_G2:
+            case G2:
                 return N <= 1;
-            case GeomAbs_C2:
+            case C2:
                 return N <= 2;
-            case GeomAbs_C3:
+            case C3:
                 return N <= 3 ? true
-                              : N <= myVDeg - BSplCLib.MaxKnotMult(myVMults, myVMults.Lower() + 1, myVMults.Upper() - 1);
+                              : N <= myVDeg - global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(myVMults, myVMults.Lower() + 1, myVMults.Upper() - 1);
             default:
                 return false;
         }
     }
 
     /// <summary>The point of parameters (U, V); periodic parameters are normalised first.</summary>
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aEvalRepResult;
+        Point3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out aEvalRepResult))
         {
             return aEvalRepResult;
@@ -1416,8 +1420,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         double aNewV = V;
         PeriodicNormalization(ref aNewU, ref aNewV);
 
-        gp_Pnt P;
-        BSplSLib.D0(aNewU,
+        Point3D P;
+        SurfaceBSplSLib.D0(aNewU,
                     aNewV,
                     0,
                     0,
@@ -1425,8 +1429,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1452,14 +1456,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         int uindex = 0, vindex = 0;
 
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U, myUPeriodic, ref uindex, out aNewU);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U, myUPeriodic, ref uindex, out aNewU);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V, myVPeriodic, ref vindex, out aNewV);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V, myVPeriodic, ref vindex, out aNewV);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
         ResD1 aResult;
-        BSplSLib.D1(aNewU,
+        SurfaceBSplSLib.D1(aNewU,
                     aNewV,
                     uindex,
                     vindex,
@@ -1467,8 +1471,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1496,14 +1500,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         int uindex = 0, vindex = 0;
 
-        BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U, myUPeriodic, ref uindex, out aNewU);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUKnots, myUMults, U, myUPeriodic, ref uindex, out aNewU);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V, myVPeriodic, ref vindex, out aNewV);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVKnots, myVMults, V, myVPeriodic, ref vindex, out aNewV);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
         ResD2 aResult;
-        BSplSLib.D2(aNewU,
+        SurfaceBSplSLib.D2(aNewU,
                     aNewV,
                     uindex,
                     vindex,
@@ -1511,8 +1515,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1538,7 +1542,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
 
         ResD3 aResult;
-        BSplSLib.D3(U,
+        SurfaceBSplSLib.D3(U,
                     V,
                     0,
                     0,
@@ -1546,8 +1550,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1569,21 +1573,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
 
-        gp_Vec aEvalRepResult;
+        Vector3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
-        gp_Vec Vn;
-        BSplSLib.DN(U,
+        Vector3D Vn;
+        SurfaceBSplSLib.DN(U,
                     V,
                     Nu,
                     Nv,
@@ -1593,8 +1597,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1606,9 +1610,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The point at (U, V), evaluated on the spans between the knots FromUK1-ToUK2 and FromVK1-ToVK2.</summary>
-    public gp_Pnt LocalValue(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2)
+    public Point3D LocalValue(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2)
     {
-        gp_Pnt P;
+        Point3D P;
         LocalD0(U, V, FromUK1, ToUK2, FromVK1, ToVK2, out P);
         return P;
     }
@@ -1617,21 +1621,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// The point at (U, V), evaluated on the spans between the flat knots FromUK1 and ToUK2 in U, FromVK1 and
     /// ToVK2 in V (useful at a knot of a C0 surface).
     /// </summary>
-    /// <exception cref="Standard_DomainError">FromUK1 == ToUK2 or FromVK1 == ToVK2.</exception>
-    public void LocalD0(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2, out gp_Pnt P)
+    /// <exception cref="DomainErrorException">FromUK1 == ToUK2 or FromVK1 == ToVK2.</exception>
+    public void LocalD0(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2, out Point3D P)
     {
         Standard_DomainError_Raise_if(FromUK1 == ToUK2 || FromVK1 == ToVK2, "Geom_BSplineSurface::LocalD0");
 
         double u, v;
         int uindex, vindex;
 
-        BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
-        BSplSLib.D0(u,
+        SurfaceBSplSLib.D0(u,
                     v,
                     uindex,
                     vindex,
@@ -1639,8 +1643,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1657,22 +1661,22 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                         int ToUK2,
                         int FromVK1,
                         int ToVK2,
-                        out gp_Pnt P,
-                        out gp_Vec D1U,
-                        out gp_Vec D1V)
+                        out Point3D P,
+                        out Vector3D D1U,
+                        out Vector3D D1V)
     {
         Standard_DomainError_Raise_if(FromUK1 == ToUK2 || FromVK1 == ToVK2, "Geom_BSplineSurface::LocalD1");
 
         double u, v;
         int uindex, vindex;
 
-        BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
-        BSplSLib.D1(u,
+        SurfaceBSplSLib.D1(u,
                     v,
                     uindex,
                     vindex,
@@ -1680,8 +1684,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1700,25 +1704,25 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                         int ToUK2,
                         int FromVK1,
                         int ToVK2,
-                        out gp_Pnt P,
-                        out gp_Vec D1U,
-                        out gp_Vec D1V,
-                        out gp_Vec D2U,
-                        out gp_Vec D2V,
-                        out gp_Vec D2UV)
+                        out Point3D P,
+                        out Vector3D D1U,
+                        out Vector3D D1V,
+                        out Vector3D D2U,
+                        out Vector3D D2V,
+                        out Vector3D D2UV)
     {
         Standard_DomainError_Raise_if(FromUK1 == ToUK2 || FromVK1 == ToVK2, "Geom_BSplineSurface::LocalD2");
 
         double u, v;
         int uindex, vindex;
 
-        BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
-        BSplSLib.D2(u,
+        SurfaceBSplSLib.D2(u,
                     v,
                     uindex,
                     vindex,
@@ -1726,8 +1730,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1749,29 +1753,29 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                         int ToUK2,
                         int FromVK1,
                         int ToVK2,
-                        out gp_Pnt P,
-                        out gp_Vec D1U,
-                        out gp_Vec D1V,
-                        out gp_Vec D2U,
-                        out gp_Vec D2V,
-                        out gp_Vec D2UV,
-                        out gp_Vec D3U,
-                        out gp_Vec D3V,
-                        out gp_Vec D3UUV,
-                        out gp_Vec D3UVV)
+                        out Point3D P,
+                        out Vector3D D1U,
+                        out Vector3D D1V,
+                        out Vector3D D2U,
+                        out Vector3D D2V,
+                        out Vector3D D2UV,
+                        out Vector3D D3U,
+                        out Vector3D D3V,
+                        out Vector3D D3UUV,
+                        out Vector3D D3UVV)
     {
         Standard_DomainError_Raise_if(FromUK1 == ToUK2 || FromVK1 == ToVK2, "Geom_BSplineSurface::LocalD3");
 
         double u, v;
         int uindex, vindex;
 
-        BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
-        BSplSLib.D3(u,
+        SurfaceBSplSLib.D3(u,
                     v,
                     uindex,
                     vindex,
@@ -1779,8 +1783,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1800,21 +1804,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The derivative of order Nu in U and Nv in V, evaluated on the given spans.</summary>
-    public gp_Vec LocalDN(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2, int Nu, int Nv)
+    public Vector3D LocalDN(double U, double V, int FromUK1, int ToUK2, int FromVK1, int ToVK2, int Nu, int Nv)
     {
         Standard_DomainError_Raise_if(FromUK1 == ToUK2 || FromVK1 == ToVK2, "Geom_BSplineSurface::LocalDN");
 
         double u, v;
         int uindex, vindex;
 
-        BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
-        uindex = BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myUDeg, myUFlatKnots, U, myUPeriodic, FromUK1, ToUK2, out uindex, out u);
+        uindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myUDeg, uindex, myUMults, myUPeriodic);
 
-        BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
-        vindex = BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(myVDeg, myVFlatKnots, V, myVPeriodic, FromVK1, ToVK2, out vindex, out v);
+        vindex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(myVDeg, vindex, myVMults, myVPeriodic);
 
-        gp_Vec Vn;
-        BSplSLib.DN(u,
+        Vector3D Vn;
+        SurfaceBSplSLib.DN(u,
                     v,
                     Nu,
                     Nv,
@@ -1824,8 +1828,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                     InternalWeights(),
                     myUFlatKnots,
                     myVFlatKnots,
-                    BSplCLib.NoMults(),
-                    BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                     myUDeg,
                     myVDeg,
                     myURational,
@@ -1837,8 +1841,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The pole (UIndex, VIndex).</summary>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
-    public gp_Pnt Pole(int UIndex, int VIndex)
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
+    public Point3D Pole(int UIndex, int VIndex)
     {
         Standard_OutOfRange_Raise_if(UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1
                                          || VIndex > myPoles.RowLength(),
@@ -1847,8 +1851,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles()"/>).</summary>
-    /// <exception cref="Standard_DimensionError">P is not NbUPoles x NbVPoles.</exception>
-    public void Poles(NCollection_Array2<gp_Pnt> P)
+    /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
+    public void Poles(NCollection_Array2<Point3D> P)
     {
         Standard_DimensionError_Raise_if(P.ColLength() != myPoles.ColLength() || P.RowLength() != myPoles.RowLength(),
                                          " ");
@@ -1856,25 +1860,25 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy of the poles, NbUPoles rows by NbVPoles columns, indexed from 1.</summary>
-    public NCollection_Array2<gp_Pnt> Poles() => new NCollection_Array2<gp_Pnt>(myPoles);
+    public NCollection_Array2<Point3D> Poles() => new NCollection_Array2<Point3D>(myPoles);
 
     /// <summary>The U iso-curve (a B-spline curve in V) at U.</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        NCollection_Array1<gp_Pnt> cpoles = new NCollection_Array1<gp_Pnt>(1, myPoles.RowLength());
+        NCollection_Array1<Point3D> cpoles = new NCollection_Array1<Point3D>(1, myPoles.RowLength());
         NCollection_Array1<double> cweights = new NCollection_Array1<double>(1, myPoles.RowLength());
 
         Geom_BSplineCurve C;
 
         if (myURational || myVRational)
         {
-            BSplSLib.Iso(U, true, myPoles, InternalWeights(), myUFlatKnots, BSplCLib.NoMults(), myUDeg, myUPeriodic,
+            SurfaceBSplSLib.Iso(U, true, myPoles, InternalWeights(), myUFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myUDeg, myUPeriodic,
                          cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, cweights, myVKnots, myVMults, myVDeg, myVPeriodic);
         }
         else
         {
-            BSplSLib.Iso(U, true, myPoles, BSplSLib.NoWeights(), myUFlatKnots, BSplCLib.NoMults(), myUDeg,
+            SurfaceBSplSLib.Iso(U, true, myPoles, SurfaceBSplSLib.NoWeights(), myUFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myUDeg,
                          myUPeriodic, cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, myVKnots, myVMults, myVDeg, myVPeriodic);
         }
@@ -1886,21 +1890,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// </summary>
     public Geom_Curve UIso(double U, bool CheckRational)
     {
-        NCollection_Array1<gp_Pnt> cpoles = new NCollection_Array1<gp_Pnt>(1, myPoles.RowLength());
+        NCollection_Array1<Point3D> cpoles = new NCollection_Array1<Point3D>(1, myPoles.RowLength());
         NCollection_Array1<double> cweights = new NCollection_Array1<double>(1, myPoles.RowLength());
 
         Geom_BSplineCurve C;
 
         if (myURational || myVRational)
         {
-            BSplSLib.Iso(U, true, myPoles, InternalWeights(), myUFlatKnots, BSplCLib.NoMults(), myUDeg, myUPeriodic,
+            SurfaceBSplSLib.Iso(U, true, myPoles, InternalWeights(), myUFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myUDeg, myUPeriodic,
                          cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, cweights, myVKnots, myVMults, myVDeg, myVPeriodic,
                                       CheckRational);
         }
         else
         {
-            BSplSLib.Iso(U, true, myPoles, BSplSLib.NoWeights(), myUFlatKnots, BSplCLib.NoMults(), myUDeg,
+            SurfaceBSplSLib.Iso(U, true, myPoles, SurfaceBSplSLib.NoWeights(), myUFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myUDeg,
                          myUPeriodic, cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, myVKnots, myVMults, myVDeg, myVPeriodic);
         }
@@ -1908,7 +1912,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The value of the U knot UIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUKnots].</exception>
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUKnots].</exception>
     public double UKnot(int UIndex)
     {
         Standard_OutOfRange_Raise_if(UIndex < 1 || UIndex > myUKnots.Length(), " ");
@@ -1916,7 +1920,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The value of the V knot VIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">VIndex out of [1, NbVKnots].</exception>
+    /// <exception cref="OutOfRangeException">VIndex out of [1, NbVKnots].</exception>
     public double VKnot(int VIndex)
     {
         Standard_OutOfRange_Raise_if(VIndex < 1 || VIndex > myVKnots.Length(), " ");
@@ -1983,20 +1987,20 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// <summary>The V iso-curve (a B-spline curve in U) at V.</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        NCollection_Array1<gp_Pnt> cpoles = new NCollection_Array1<gp_Pnt>(1, myPoles.ColLength());
+        NCollection_Array1<Point3D> cpoles = new NCollection_Array1<Point3D>(1, myPoles.ColLength());
         NCollection_Array1<double> cweights = new NCollection_Array1<double>(1, myPoles.ColLength());
 
         Geom_BSplineCurve C;
 
         if (myURational || myVRational)
         {
-            BSplSLib.Iso(V, false, myPoles, InternalWeights(), myVFlatKnots, BSplCLib.NoMults(), myVDeg, myVPeriodic,
+            SurfaceBSplSLib.Iso(V, false, myPoles, InternalWeights(), myVFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myVDeg, myVPeriodic,
                          cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, cweights, myUKnots, myUMults, myUDeg, myUPeriodic);
         }
         else
         {
-            BSplSLib.Iso(V, false, myPoles, BSplSLib.NoWeights(), myVFlatKnots, BSplCLib.NoMults(), myVDeg,
+            SurfaceBSplSLib.Iso(V, false, myPoles, SurfaceBSplSLib.NoWeights(), myVFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myVDeg,
                          myVPeriodic, cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, myUKnots, myUMults, myUDeg, myUPeriodic);
         }
@@ -2008,21 +2012,21 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// </summary>
     public Geom_Curve VIso(double V, bool CheckRational)
     {
-        NCollection_Array1<gp_Pnt> cpoles = new NCollection_Array1<gp_Pnt>(1, myPoles.ColLength());
+        NCollection_Array1<Point3D> cpoles = new NCollection_Array1<Point3D>(1, myPoles.ColLength());
         NCollection_Array1<double> cweights = new NCollection_Array1<double>(1, myPoles.ColLength());
 
         Geom_BSplineCurve C;
 
         if (myURational || myVRational)
         {
-            BSplSLib.Iso(V, false, myPoles, InternalWeights(), myVFlatKnots, BSplCLib.NoMults(), myVDeg, myVPeriodic,
+            SurfaceBSplSLib.Iso(V, false, myPoles, InternalWeights(), myVFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myVDeg, myVPeriodic,
                          cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, cweights, myUKnots, myUMults, myUDeg, myUPeriodic,
                                       CheckRational);
         }
         else
         {
-            BSplSLib.Iso(V, false, myPoles, BSplSLib.NoWeights(), myVFlatKnots, BSplCLib.NoMults(), myVDeg,
+            SurfaceBSplSLib.Iso(V, false, myPoles, SurfaceBSplSLib.NoWeights(), myVFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), myVDeg,
                          myVPeriodic, cpoles, cweights);
             C = new Geom_BSplineCurve(cpoles, myUKnots, myUMults, myUDeg, myUPeriodic);
         }
@@ -2060,7 +2064,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Copies the weights into W, all 1 for a non-rational surface (deprecated in OCCT).</summary>
-    /// <exception cref="Standard_DimensionError">W is not NbUPoles x NbVPoles.</exception>
+    /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
     public void Weights(NCollection_Array2<double> W)
     {
         if (!(myURational || myVRational))
@@ -2090,7 +2094,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     public NCollection_Array2<double> WeightsArray() => new NCollection_Array2<double>(myWeights);
 
     /// <summary>Transforms the poles by T.</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -2131,7 +2135,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         myUMults = cmults;
 
         // compute new number of poles;
-        int nbp = BSplCLib.NbPoles(myUDeg, true, myUMults);
+        int nbp = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(myUDeg, true, myUMults);
 
         myPoles.ResizeWithTrim(1, nbp, myPoles.LowerCol(), myPoles.UpperCol(), true);
         if (myURational || myVRational)
@@ -2140,7 +2144,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(nbp, myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(nbp, myPoles.RowLength());
         }
 
         myUPeriodic = true;
@@ -2173,7 +2177,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         myVMults = cmults;
 
         // compute new number of poles;
-        int nbp = BSplCLib.NbPoles(myVDeg, true, myVMults);
+        int nbp = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(myVDeg, true, myVMults);
 
         myPoles.ResizeWithTrim(myPoles.LowerRow(), myPoles.UpperRow(), 1, nbp, true);
         if (myURational || myVRational)
@@ -2182,7 +2186,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), nbp);
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), nbp);
         }
 
         myVPeriodic = true;
@@ -2192,14 +2196,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Makes the U knot Index the origin of a U-periodic surface.</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not U-periodic.</exception>
-    /// <exception cref="Standard_DomainError">Index out of [FirstUKnotIndex, LastUKnotIndex].</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not U-periodic.</exception>
+    /// <exception cref="DomainErrorException">Index out of [FirstUKnotIndex, LastUKnotIndex].</exception>
     internal void SetUOrigin(int Index)
     {
         CheckMutable();
         if (!myUPeriodic)
         {
-            throw new Standard_NoSuchObject("Geom_BSplineSurface::SetUOrigin: surface is not U periodic");
+            throw new NoSuchObjectException("Geom_BSplineSurface::SetUOrigin: surface is not U periodic");
         }
 
         ClearEvalRepresentation();
@@ -2209,7 +2213,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         if ((Index < first) || (Index > last))
         {
-            throw new Standard_DomainError("Geom_BSplineCurve::SetUOrigin: Index out of range");
+            throw new DomainErrorException("Geom_BSplineCurve::SetUOrigin: Index out of range");
         }
 
         int nbknots = myUKnots.Length();
@@ -2243,7 +2247,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         // set the poles and weights
         int nbvp = myPoles.RowLength();
-        NCollection_Array2<gp_Pnt> newpoles = new NCollection_Array2<gp_Pnt>(1, nbpoles, 1, nbvp);
+        NCollection_Array2<Point3D> newpoles = new NCollection_Array2<Point3D>(1, nbpoles, 1, nbvp);
         first = myPoles.LowerRow();
         last = myPoles.UpperRow();
         if (myURational || myVRational)
@@ -2289,7 +2293,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 }
                 k++;
             }
-            myWeights = BSplSLib.UnitWeights(nbpoles, nbvp);
+            myWeights = SurfaceBSplSLib.UnitWeights(nbpoles, nbvp);
         }
 
         myPoles = newpoles;
@@ -2299,14 +2303,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Makes the V knot Index the origin of a V-periodic surface.</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not V-periodic.</exception>
-    /// <exception cref="Standard_DomainError">Index out of [FirstVKnotIndex, LastVKnotIndex].</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not V-periodic.</exception>
+    /// <exception cref="DomainErrorException">Index out of [FirstVKnotIndex, LastVKnotIndex].</exception>
     internal void SetVOrigin(int Index)
     {
         CheckMutable();
         if (!myVPeriodic)
         {
-            throw new Standard_NoSuchObject("Geom_BSplineSurface::SetVOrigin: surface is not V periodic");
+            throw new NoSuchObjectException("Geom_BSplineSurface::SetVOrigin: surface is not V periodic");
         }
 
         ClearEvalRepresentation();
@@ -2316,7 +2320,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         if ((Index < first) || (Index > last))
         {
-            throw new Standard_DomainError("Geom_BSplineCurve::SetVOrigin: Index out of range");
+            throw new DomainErrorException("Geom_BSplineCurve::SetVOrigin: Index out of range");
         }
 
         int nbknots = myVKnots.Length();
@@ -2350,7 +2354,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
         // set the poles and weights
         int nbup = myPoles.ColLength();
-        NCollection_Array2<gp_Pnt> newpoles = new NCollection_Array2<gp_Pnt>(1, nbup, 1, nbpoles);
+        NCollection_Array2<Point3D> newpoles = new NCollection_Array2<Point3D>(1, nbup, 1, nbpoles);
         first = myPoles.LowerCol();
         last = myPoles.UpperCol();
         if (myURational || myVRational)
@@ -2396,7 +2400,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 }
                 k++;
             }
-            myWeights = BSplSLib.UnitWeights(nbup, nbpoles);
+            myWeights = SurfaceBSplSLib.UnitWeights(nbup, nbpoles);
         }
 
         myPoles = newpoles;
@@ -2413,9 +2417,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             ClearEvalRepresentation();
             int NbKnots, NbPoles;
-            BSplCLib.PrepareUnperiodize(myUDeg, myUMults, out NbKnots, out NbPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(myUDeg, myUMults, out NbKnots, out NbPoles);
 
-            NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbPoles, 1, myPoles.RowLength());
+            NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbPoles, 1, myPoles.RowLength());
 
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, NbKnots);
 
@@ -2426,7 +2430,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, NbPoles, 1, myPoles.RowLength());
                 nweights.Init(0.0);
 
-                BSplSLib.Unperiodize(true,
+                SurfaceBSplSLib.Unperiodize(true,
                                      myUDeg,
                                      myUMults,
                                      myUKnots,
@@ -2440,17 +2444,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.Unperiodize(true,
+                SurfaceBSplSLib.Unperiodize(true,
                                      myUDeg,
                                      myUMults,
                                      myUKnots,
                                      myPoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      nmults,
                                      nknots,
                                      npoles,
-                                     BSplSLib.NoWeights());
-                myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+                                     SurfaceBSplSLib.NoWeights());
+                myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
             }
             myPoles = npoles;
             myUMults = nmults;
@@ -2470,9 +2474,9 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             ClearEvalRepresentation();
             int NbKnots, NbPoles;
-            BSplCLib.PrepareUnperiodize(myVDeg, myVMults, out NbKnots, out NbPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(myVDeg, myVMults, out NbKnots, out NbPoles);
 
-            NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength(), 1, NbPoles);
+            NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, myPoles.ColLength(), 1, NbPoles);
 
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, NbKnots);
 
@@ -2483,7 +2487,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                 NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, myPoles.ColLength(), 1, NbPoles);
                 nweights.Init(0.0);
 
-                BSplSLib.Unperiodize(false,
+                SurfaceBSplSLib.Unperiodize(false,
                                      myVDeg,
                                      myVMults,
                                      myVKnots,
@@ -2497,17 +2501,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.Unperiodize(false,
+                SurfaceBSplSLib.Unperiodize(false,
                                      myVDeg,
                                      myVMults,
                                      myVKnots,
                                      myPoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      nmults,
                                      nknots,
                                      npoles,
-                                     BSplSLib.NoWeights());
-                myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+                                     SurfaceBSplSLib.NoWeights());
+                myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
             }
             myPoles = npoles;
             myVMults = nmults;
@@ -2540,7 +2544,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         Geom_BSplineCurve? aBsF = aCUF as Geom_BSplineCurve;
         Geom_BSplineCurve? aBsL = aCUL as Geom_BSplineCurve;
-        return (aBsF is not null && aBsL is not null && aBsF.IsEqual(aBsL, Precision.Confusion()));
+        return (aBsF is not null && aBsL is not null && aBsF.IsEqual(aBsL, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     /// <summary>
@@ -2564,7 +2568,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         Geom_BSplineCurve? aBsF = aCVF as Geom_BSplineCurve;
         Geom_BSplineCurve? aBsL = aCVL as Geom_BSplineCurve;
-        return (aBsF is not null && aBsL is not null && aBsF.IsEqual(aBsL, Precision.Confusion()));
+        return (aBsF is not null && aBsL is not null && aBsF.IsEqual(aBsL, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     /// <summary>True if the surface is periodic in U.</summary>
@@ -2582,7 +2586,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            return BSplCLib.FirstUKnotIndex(myUDeg, myUMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(myUDeg, myUMults);
         }
     }
 
@@ -2595,7 +2599,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            return BSplCLib.FirstUKnotIndex(myVDeg, myVMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(myVDeg, myVMults);
         }
     }
 
@@ -2608,7 +2612,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            return BSplCLib.LastUKnotIndex(myUDeg, myUMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(myUDeg, myUMults);
         }
     }
 
@@ -2621,7 +2625,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            return BSplCLib.LastUKnotIndex(myVDeg, myVMults);
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(myVDeg, myVMults);
         }
     }
 
@@ -2660,7 +2664,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplCLib.Hunt(TheKnots, NewU, out I1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(TheKnots, NewU, out I1);
             I1 = Max(Min(I1, TheKnots.Upper()), TheKnots.Lower());
             while (I1 + 1 <= TheKnots.Upper() && Math.Abs(TheKnots[I1 + 1] - NewU) <= PParametricTolerance)
             {
@@ -2708,7 +2712,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplCLib.Hunt(TheKnots, NewV, out I1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(TheKnots, NewV, out I1);
             I1 = Max(Min(I1, TheKnots.Upper()), TheKnots.Lower());
             while (I1 + 1 <= TheKnots.Upper() && Math.Abs(TheKnots[I1 + 1] - NewV) <= PParametricTolerance)
             {
@@ -2730,8 +2734,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        BSplCLib.Reverse(myUMults);
-        BSplCLib.Reverse(myUKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myUMults);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myUKnots);
         int last;
         if (myUPeriodic)
         {
@@ -2741,10 +2745,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             last = myPoles.UpperRow();
         }
-        BSplSLib.Reverse(myPoles, last, true);
+        SurfaceBSplSLib.Reverse(myPoles, last, true);
         if (myURational || myVRational)
         {
-            BSplSLib.Reverse(myWeights, last, true);
+            SurfaceBSplSLib.Reverse(myWeights, last, true);
         }
         updateUKnots();
     }
@@ -2757,8 +2761,8 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        BSplCLib.Reverse(myVMults);
-        BSplCLib.Reverse(myVKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myVMults);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(myVKnots);
         int last;
         if (myVPeriodic)
         {
@@ -2768,10 +2772,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         {
             last = myPoles.UpperCol();
         }
-        BSplSLib.Reverse(myPoles, last, false);
+        SurfaceBSplSLib.Reverse(myPoles, last, false);
         if (myURational || myVRational)
         {
-            BSplSLib.Reverse(myWeights, last, false);
+            SurfaceBSplSLib.Reverse(myWeights, last, false);
         }
         updateVKnots();
     }
@@ -2780,17 +2784,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     public sealed override double VReversedParameter(double V) => (myVKnots.Value(1) + myVKnots.Value(myVKnots.Length()) - V);
 
     /// <summary>Changes the poles of the column VIndex (rows CPoles.Lower() to Upper()).</summary>
-    internal void SetPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void SetPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetPoleCol: VIndex out of range");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetPoleCol: VIndex out of range");
         }
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.ColLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.ColLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::SetPoleCol: invalid array dimension");
+            throw new ConstructionErrorException("Geom_BSplineSurface::SetPoleCol: invalid array dimension");
         }
 
         ClearEvalRepresentation();
@@ -2803,7 +2807,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles and weights of the column VIndex.</summary>
-    internal void SetPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void SetPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         SetPoleCol(VIndex, CPoles);
@@ -2811,17 +2815,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles of the row UIndex (columns CPoles.Lower() to Upper()).</summary>
-    internal void SetPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void SetPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::SetPoleRow: UIndex out of range");
+            throw new OutOfRangeException("Geom_BSplineSurface::SetPoleRow: UIndex out of range");
         }
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.RowLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.RowLength())
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::SetPoleRow: invalid array dimension");
+            throw new ConstructionErrorException("Geom_BSplineSurface::SetPoleRow: invalid array dimension");
         }
 
         ClearEvalRepresentation();
@@ -2834,7 +2838,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles and weights of the row UIndex.</summary>
-    internal void SetPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void SetPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         SetPoleRow(UIndex, CPoles);
@@ -2843,7 +2847,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
 
     /// <summary>Changes the pole (UIndex, VIndex).</summary>
     /// <remarks>OCCT checks no index (a bad one throws <see cref="IndexOutOfRangeException"/> here).</remarks>
-    internal void SetPole(int UIndex, int VIndex, in gp_Pnt P)
+    internal void SetPole(int UIndex, int VIndex, in Point3D P)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -2852,7 +2856,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the pole (UIndex, VIndex) and its weight.</summary>
-    internal void SetPole(int UIndex, int VIndex, in gp_Pnt P, double Weight)
+    internal void SetPole(int UIndex, int VIndex, in Point3D P, double Weight)
     {
         CheckMutable();
         SetWeight(UIndex, VIndex, Weight);
@@ -2864,10 +2868,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// poles actually moved (UFirstModifiedPole = 0 if none: P is already the point, or the indices don't
     /// influence it).
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">Indices out of the pole grid or not increasing.</exception>
+    /// <exception cref="OutOfRangeException">Indices out of the pole grid or not increasing.</exception>
     internal void MovePoint(double U,
                             double V,
-                            in gp_Pnt P,
+                            in Point3D P,
                             int UIndex1,
                             int UIndex2,
                             int VIndex1,
@@ -2882,17 +2886,17 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             || UIndex1 > UIndex2 || VIndex1 < 1 || VIndex1 > myPoles.UpperCol() || VIndex2 < 1
             || VIndex2 > myPoles.UpperCol() || VIndex1 > VIndex2)
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::MovePoint: Index and #pole mismatch");
+            throw new OutOfRangeException("Geom_BSplineSurface::MovePoint: Index and #pole mismatch");
         }
 
         // OCCT: on a periodic surface, BSplSLib::MovePoint indexes the stored poles (and weights) with indices from the
         // periodic flat knots, which run past the arrays (occt-issues.md; the port throws Standard_OutOfRange)
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.UpperRow(), 1, myPoles.UpperCol());
-        gp_Pnt P0;
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, myPoles.UpperRow(), 1, myPoles.UpperCol());
+        Point3D P0;
         D0(U, V, out P0);
-        gp_Vec Displ = new gp_Vec(P0, P);
+        Vector3D Displ = new Vector3D(P0, P);
         bool rational = (myURational || myVRational);
-        BSplSLib.MovePoint(U,
+        SurfaceBSplSLib.MovePoint(U,
                            V,
                            Displ,
                            UIndex1,
@@ -2929,7 +2933,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>The maximum degree in each direction: 25.</summary>
-    public static int MaxDegree() => BSplCLib.MaxDegree();
+    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>True if the weights vary in the U direction.</summary>
     public bool IsURational() => myURational;
@@ -2938,7 +2942,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     public bool IsVRational() => myVRational;
 
     /// <summary>The lower of the U and V continuities.</summary>
-    public sealed override GeomAbs_Shape Continuity() => ((myUSmooth < myVSmooth) ? myUSmooth : myVSmooth);
+    public sealed override Continuity Continuity() => ((myUSmooth < myVSmooth) ? myUSmooth : myVSmooth);
 
     /// <summary>The number of U knots.</summary>
     public int NbUKnots() => myUKnots.Length();
@@ -2959,16 +2963,16 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     public int VDegree() => myVDeg;
 
     /// <summary>The distribution of the U knots (uniform, quasi-uniform, piecewise Bezier, non-uniform).</summary>
-    public GeomAbs_BSplKnotDistribution UKnotDistribution() => myUKnotSet;
+    public BSplKnotDistribution UKnotDistribution() => myUKnotSet;
 
     /// <summary>The distribution of the V knots.</summary>
-    public GeomAbs_BSplKnotDistribution VKnotDistribution() => myVKnotSet;
+    public BSplKnotDistribution VKnotDistribution() => myVKnotSet;
 
     /// <summary>
     /// Inserts the U knots with the multiplicities Mults (a knot within ParametricTolerance of an existing one
     /// raises its multiplicity: by Mults(i) when Add, to Mults(i) otherwise).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The insertion is invalid (BSplCLib::PrepareInsertKnots).</exception>
+    /// <exception cref="ConstructionErrorException">The insertion is invalid (BSplCLib::PrepareInsertKnots).</exception>
     internal void InsertUKnots(NCollection_Array1<double> Knots,
                                NCollection_Array1<int> Mults,
                                double ParametricTolerance = 0.0,
@@ -2978,7 +2982,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // Check and compute new sizes
         int nbpoles, nbknots;
 
-        if (!BSplCLib.PrepareInsertKnots(myUDeg,
+        if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(myUDeg,
                                          myUPeriodic,
                                          myUKnots,
                                          myUMults,
@@ -2989,7 +2993,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                                          ParametricTolerance,
                                          Add))
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::InsertUKnots");
+            throw new ConstructionErrorException("Geom_BSplineSurface::InsertUKnots");
         }
 
         if (nbpoles == myPoles.ColLength())
@@ -2998,14 +3002,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
 
         ClearEvalRepresentation();
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, nbpoles, 1, myPoles.RowLength());
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, nbpoles, 1, myPoles.RowLength());
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, nbknots);
 
         if (myURational || myVRational)
         {
             NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, nbpoles, 1, myPoles.RowLength());
-            BSplSLib.InsertKnots(true,
+            SurfaceBSplSLib.InsertKnots(true,
                                  myUDeg,
                                  myUPeriodic,
                                  myPoles,
@@ -3024,22 +3028,22 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.InsertKnots(true,
+            SurfaceBSplSLib.InsertKnots(true,
                                  myUDeg,
                                  myUPeriodic,
                                  myPoles,
-                                 BSplSLib.NoWeights(),
+                                 SurfaceBSplSLib.NoWeights(),
                                  myUKnots,
                                  myUMults,
                                  Knots,
                                  Mults,
                                  npoles,
-                                 BSplSLib.NoWeights(),
+                                 SurfaceBSplSLib.NoWeights(),
                                  nknots,
                                  nmults,
                                  ParametricTolerance,
                                  Add);
-            myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
         }
 
         myPoles = npoles;
@@ -3049,7 +3053,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     }
 
     /// <summary>Inserts the V knots (see <see cref="InsertUKnots"/>).</summary>
-    /// <exception cref="Standard_ConstructionError">The insertion is invalid (BSplCLib::PrepareInsertKnots).</exception>
+    /// <exception cref="ConstructionErrorException">The insertion is invalid (BSplCLib::PrepareInsertKnots).</exception>
     internal void InsertVKnots(NCollection_Array1<double> Knots,
                                NCollection_Array1<int> Mults,
                                double ParametricTolerance = 0.0,
@@ -3059,7 +3063,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // Check and compute new sizes
         int nbpoles, nbknots;
 
-        if (!BSplCLib.PrepareInsertKnots(myVDeg,
+        if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(myVDeg,
                                          myVPeriodic,
                                          myVKnots,
                                          myVMults,
@@ -3070,7 +3074,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
                                          ParametricTolerance,
                                          Add))
         {
-            throw new Standard_ConstructionError("Geom_BSplineSurface::InsertVKnots");
+            throw new ConstructionErrorException("Geom_BSplineSurface::InsertVKnots");
         }
 
         if (nbpoles == myPoles.RowLength())
@@ -3079,14 +3083,14 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
 
         ClearEvalRepresentation();
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength(), 1, nbpoles);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, myPoles.ColLength(), 1, nbpoles);
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, nbknots);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, nbknots);
 
         if (myURational || myVRational)
         {
             NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, myPoles.ColLength(), 1, nbpoles);
-            BSplSLib.InsertKnots(false,
+            SurfaceBSplSLib.InsertKnots(false,
                                  myVDeg,
                                  myVPeriodic,
                                  myPoles,
@@ -3105,22 +3109,22 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.InsertKnots(false,
+            SurfaceBSplSLib.InsertKnots(false,
                                  myVDeg,
                                  myVPeriodic,
                                  myPoles,
-                                 BSplSLib.NoWeights(),
+                                 SurfaceBSplSLib.NoWeights(),
                                  myVKnots,
                                  myVMults,
                                  Knots,
                                  Mults,
                                  npoles,
-                                 BSplSLib.NoWeights(),
+                                 SurfaceBSplSLib.NoWeights(),
                                  nknots,
                                  nmults,
                                  ParametricTolerance,
                                  Add);
-            myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
         }
 
         myPoles = npoles;
@@ -3133,7 +3137,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// Lowers the multiplicity of the U knot Index to M (0 removes it), if the surface moves by no more than
     /// Tolerance; returns false and leaves the surface unchanged otherwise.
     /// </summary>
-    /// <exception cref="Standard_OutOfRange">Index is an end knot (non-periodic) or out of range.</exception>
+    /// <exception cref="OutOfRangeException">Index is an end knot (non-periodic) or out of range.</exception>
     internal bool RemoveUKnot(int Index, int M, double Tolerance)
     {
         CheckMutable();
@@ -3149,11 +3153,11 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // that BSplCLib::KnotSequence reads out of range (occt-issues.md; the port throws IndexOutOfRangeException)
         if (!myUPeriodic && (Index <= I1 || Index >= I2))
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveUKnot: invalid Index");
+            throw new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index");
         }
         else if (myUPeriodic && (Index < I1 || Index > I2))
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveUKnot: invalid Index for periodic case");
+            throw new OutOfRangeException("Geom_BSplineSurface::RemoveUKnot: invalid Index for periodic case");
         }
 
         int step = myUMults.Value(Index) - M;
@@ -3162,7 +3166,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             return true;
         }
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength() - step, 1, myPoles.RowLength());
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, myPoles.ColLength() - step, 1, myPoles.RowLength());
         int aNewUKnotLen = (M == 0) ? myUKnots.Length() - 1 : myUKnots.Length();
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, aNewUKnotLen);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, aNewUKnotLen);
@@ -3170,7 +3174,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myURational || myVRational)
         {
             NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, npoles.ColLength(), 1, npoles.RowLength());
-            if (!BSplSLib.RemoveKnot(true,
+            if (!SurfaceBSplSLib.RemoveKnot(true,
                                      Index,
                                      M,
                                      myUDeg,
@@ -3191,24 +3195,24 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            if (!BSplSLib.RemoveKnot(true,
+            if (!SurfaceBSplSLib.RemoveKnot(true,
                                      Index,
                                      M,
                                      myUDeg,
                                      myUPeriodic,
                                      myPoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      myUKnots,
                                      myUMults,
                                      npoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      nknots,
                                      nmults,
                                      Tolerance))
             {
                 return false;
             }
-            myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
         }
 
         ClearEvalRepresentation();
@@ -3236,11 +3240,11 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         // OCCT: the same as RemoveUKnot for the end knots of a periodic surface
         if (!myVPeriodic && (Index <= I1 || Index >= I2))
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveVKnot: invalid Index");
+            throw new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index");
         }
         else if (myVPeriodic && (Index < I1 || Index > I2))
         {
-            throw new Standard_OutOfRange("Geom_BSplineSurface::RemoveVKnot: invalid Index for periodic case");
+            throw new OutOfRangeException("Geom_BSplineSurface::RemoveVKnot: invalid Index for periodic case");
         }
 
         int step = myVMults.Value(Index) - M;
@@ -3249,7 +3253,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
             return true;
         }
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, myPoles.ColLength(), 1, myPoles.RowLength() - step);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, myPoles.ColLength(), 1, myPoles.RowLength() - step);
         int aNewVKnotLen = (M == 0) ? myVKnots.Length() - 1 : myVKnots.Length();
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, aNewVKnotLen);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, aNewVKnotLen);
@@ -3257,7 +3261,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (myURational || myVRational)
         {
             NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, npoles.ColLength(), 1, npoles.RowLength());
-            if (!BSplSLib.RemoveKnot(false,
+            if (!SurfaceBSplSLib.RemoveKnot(false,
                                      Index,
                                      M,
                                      myVDeg,
@@ -3278,24 +3282,24 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         }
         else
         {
-            if (!BSplSLib.RemoveKnot(false,
+            if (!SurfaceBSplSLib.RemoveKnot(false,
                                      Index,
                                      M,
                                      myVDeg,
                                      myVPeriodic,
                                      myPoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      myVKnots,
                                      myVMults,
                                      npoles,
-                                     BSplSLib.NoWeights(),
+                                     SurfaceBSplSLib.NoWeights(),
                                      nknots,
                                      nmults,
                                      Tolerance))
             {
                 return false;
             }
-            myWeights = BSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(npoles.ColLength(), npoles.RowLength());
         }
 
         ClearEvalRepresentation();
@@ -3317,7 +3321,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         if (!myMaxDerivInvOk)
         {
             double aUMaxDerivInv, aVMaxDerivInv;
-            BSplSLib.Resolution(myPoles,
+            SurfaceBSplSLib.Resolution(myPoles,
                                 InternalWeights(),
                                 myUKnots,
                                 myVKnots,
@@ -3345,10 +3349,10 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     //=============================================================================================
 
     /// <summary>The stored poles: shared, don't modify (OCCT's <c>Poles()</c> const reference).</summary>
-    internal NCollection_Array2<gp_Pnt> InternalPoles() => myPoles;
+    internal NCollection_Array2<Point3D> InternalPoles() => myPoles;
 
     /// <summary>The stored weights, or null for a non-rational surface (OCCT's <c>Weights()</c> pointer). Don't modify.</summary>
-    internal NCollection_Array2<double>? InternalWeights() => (myURational || myVRational) ? myWeights : BSplSLib.NoWeights();
+    internal NCollection_Array2<double>? InternalWeights() => (myURational || myVRational) ? myWeights : SurfaceBSplSLib.NoWeights();
 
     /// <summary>The weights, NbUPoles x NbVPoles of them (OCCT's <c>WeightsArray()</c>): shared, don't modify.</summary>
     internal NCollection_Array2<double> InternalWeightsArray() => myWeights;
@@ -3609,42 +3613,42 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPole(int UIndex, int VIndex, in gp_Pnt P)
+    public Geom_BSplineSurface WithPole(int UIndex, int VIndex, in Point3D P)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPole(UIndex, VIndex, P);
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPole(int UIndex, int VIndex, in gp_Pnt P, double Weight)
+    public Geom_BSplineSurface WithPole(int UIndex, int VIndex, in Point3D P, double Weight)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPole(UIndex, VIndex, P, Weight);
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BSplineSurface WithPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPoleCol(VIndex, CPoles);
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BSplineSurface WithPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPoleCol(VIndex, CPoles, CPoleWeights);
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BSplineSurface WithPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPoleRow(UIndex, CPoles);
         return aCopy;
     }
 
-    public Geom_BSplineSurface WithPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BSplineSurface WithPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BSplineSurface aCopy = CopyBSpline();
         aCopy.SetPoleRow(UIndex, CPoles, CPoleWeights);
@@ -3675,7 +3679,7 @@ public class Geom_BSplineSurface : Geom_BoundedSurface
     /// <summary>A copy with the point at (U, V) moved to P (see <see cref="MovePoint"/>).</summary>
     public Geom_BSplineSurface PointMoved(double U,
                                           double V,
-                                          in gp_Pnt P,
+                                          in Point3D P,
                                           int UIndex1,
                                           int UIndex2,
                                           int VIndex1,

@@ -2,14 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_NewtonMinimumTest
 {
     // Quadratic bowl function: f(x,y) = (x-1)^2 + 2*(y-2)^2, minimum at (1, 2) with value 0
-    private sealed class QuadraticBowlWithHessian : math_MultipleVarFunctionWithHessian
+    private sealed class QuadraticBowlWithHessian : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -33,7 +38,7 @@ public class math_NewtonMinimumTest
             return true;
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             Value(theX, out theF);
             Gradient(theX, theG);
@@ -47,9 +52,12 @@ public class math_NewtonMinimumTest
     }
 
     // Rosenbrock function: f(x,y) = (1-x)^2 + 100*(y-x^2)^2
-    private sealed class RosenbrockWithHessian : math_MultipleVarFunctionWithHessian
+    private sealed class RosenbrockWithHessian : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -77,7 +85,7 @@ public class math_NewtonMinimumTest
             return true;
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             double x = theX[1];
             double y = theX[2];
@@ -95,9 +103,12 @@ public class math_NewtonMinimumTest
     }
 
     // 3D quadratic function: f(x,y,z) = (x-1)^2 + 2*(y-2)^2 + 3*(z-3)^2
-    private sealed class Quadratic3DWithHessian : math_MultipleVarFunctionWithHessian
+    private sealed class Quadratic3DWithHessian : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() { return 3; }
+        public override int VariableCount {
+            get
+            { return 3; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -123,7 +134,7 @@ public class math_NewtonMinimumTest
             return true;
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             Value(theX, out theF);
             Gradient(theX, theG);
@@ -138,9 +149,12 @@ public class math_NewtonMinimumTest
     }
 
     // Non-convex function with saddle point: f(x,y) = x^2 - y^2
-    private sealed class SaddleFunction : math_MultipleVarFunctionWithHessian
+    private sealed class SaddleFunction : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -164,7 +178,7 @@ public class math_NewtonMinimumTest
             return true;
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             Value(theX, out theF);
             Gradient(theX, theG);
@@ -190,17 +204,17 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0; // Start at (0, 0)
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for quadratic bowl function");
+        Assert.True(aSolver.IsDone, "Should find minimum for quadratic bowl function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-8);
         Assert.Equal(2.0, aLoc[2], 1.0e-8);
         Assert.Equal(0.0, aSolver.Minimum(), 1.0e-12);
-        Assert.True(aSolver.NbIterations() > 0, "Should have performed some iterations");
-        Assert.True(aSolver.NbIterations() <= 10, "Should converge quickly for quadratic");
+        Assert.True(aSolver.IterationCount > 0, "Should have performed some iterations");
+        Assert.True(aSolver.IterationCount <= 10, "Should converge quickly for quadratic");
     }
 
     [Fact]
@@ -213,10 +227,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.8; // Start closer to minimum
         aStartPoint[2] = 0.8;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-6, 100); // More iterations for challenging function
+        NewtonMinimum aSolver = new(aFunc, 1.0e-6, 100); // More iterations for challenging function
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for Rosenbrock function");
+        Assert.True(aSolver.IsDone, "Should find minimum for Rosenbrock function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 2.0e-1);
@@ -235,10 +249,10 @@ public class math_NewtonMinimumTest
         aStartPoint[2] = 0.0;
         aStartPoint[3] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum for 3D function");
+        Assert.True(aSolver.IsDone, "Should find minimum for 3D function");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-8);
@@ -265,11 +279,11 @@ public class math_NewtonMinimumTest
         aRightBound[1] = 1.5;
         aRightBound[2] = 2.5;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.SetBoundary(aLeftBound, aRightBound);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum with bounds");
+        Assert.True(aSolver.IsDone, "Should find minimum with bounds");
 
         math_Vector aLoc = aSolver.Location();
         Assert.Equal(1.0, aLoc[1], 1.0e-8);
@@ -291,18 +305,18 @@ public class math_NewtonMinimumTest
         aStartPoint[2] = 0.0;
 
         // Loose tolerance
-        math_NewtonMinimum aSolver1 = new(aFunc, 1.0e-3);
+        NewtonMinimum aSolver1 = new(aFunc, 1.0e-3);
         aSolver1.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver1.IsDone(), "Should converge with loose tolerance");
+        Assert.True(aSolver1.IsDone, "Should converge with loose tolerance");
         Assert.Equal(1.0, aSolver1.Location()[1], 1.0e-2);
         Assert.Equal(2.0, aSolver1.Location()[2], 1.0e-2);
 
         // Tight tolerance
-        math_NewtonMinimum aSolver2 = new(aFunc, 1.0e-12);
+        NewtonMinimum aSolver2 = new(aFunc, 1.0e-12);
         aSolver2.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver2.IsDone(), "Should converge with tight tolerance");
+        Assert.True(aSolver2.IsDone, "Should converge with tight tolerance");
         Assert.Equal(1.0, aSolver2.Location()[1], 1.0e-10);
         Assert.Equal(2.0, aSolver2.Location()[2], 1.0e-10);
     }
@@ -318,19 +332,19 @@ public class math_NewtonMinimumTest
         aStartPoint[2] = 0.8;
 
         // Few iterations
-        math_NewtonMinimum aSolver1 = new(aFunc, 1.0e-6, 5);
+        NewtonMinimum aSolver1 = new(aFunc, 1.0e-6, 5);
         aSolver1.Perform(aFunc, aStartPoint);
 
-        if (aSolver1.IsDone())
+        if (aSolver1.IsDone)
         {
-            Assert.True(aSolver1.NbIterations() <= 5, "Should respect iteration limit");
+            Assert.True(aSolver1.IterationCount <= 5, "Should respect iteration limit");
         }
 
         // Many iterations
-        math_NewtonMinimum aSolver2 = new(aFunc, 1.0e-8, 200);
+        NewtonMinimum aSolver2 = new(aFunc, 1.0e-8, 200);
         aSolver2.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver2.IsDone(), "Should converge with many iterations allowed");
+        Assert.True(aSolver2.IsDone, "Should converge with many iterations allowed");
     }
 
     [Fact]
@@ -343,10 +357,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         math_Vector aGrad = aSolver.Gradient();
         Assert.Equal(0.0, aGrad[1], 1.0e-8);
@@ -369,10 +383,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         // Test location output method
         math_Vector aLocOut = new(1, 2);
@@ -391,10 +405,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-8);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-8);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should work with custom convexity");
+        Assert.True(aSolver.IsDone, "Should work with custom convexity");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-8);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-8);
     }
@@ -409,10 +423,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-6, true);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-6, true);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should work with singularity treatment");
+        Assert.True(aSolver.IsDone, "Should work with singularity treatment");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-8);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-8);
     }
@@ -427,7 +441,7 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.1;
         aStartPoint[2] = 0.1;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-6, false);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10, 40, 1.0e-6, false);
         aSolver.Perform(aFunc, aStartPoint);
 
         // Function is not convex, Newton method may not converge
@@ -440,15 +454,15 @@ public class math_NewtonMinimumTest
     {
         // Test state handling before Perform() is called
         QuadraticBowlWithHessian aFunc = new();
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
 
         // Before Perform() is called, solver should report not done
-        Assert.False(aSolver.IsDone(), "Solver should not be done before Perform()");
+        Assert.False(aSolver.IsDone, "Solver should not be done before Perform()");
 
         // In release builds, verify the solver maintains consistent state
-        if (!aSolver.IsDone())
+        if (!aSolver.IsDone)
         {
-            Assert.False(aSolver.IsDone(), "State should be consistent when not done");
+            Assert.False(aSolver.IsDone, "State should be consistent when not done");
         }
     }
 
@@ -462,10 +476,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         // Test with correctly dimensioned vectors
         math_Vector aCorrectVec = new(1, 2); // 2D vector for 2D function
@@ -486,14 +500,14 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 1.001; // Very close to minimum at (1, 2)
         aStartPoint[2] = 1.999;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-12);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-12);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should succeed when starting near minimum");
+        Assert.True(aSolver.IsDone, "Should succeed when starting near minimum");
         Assert.Equal(1.0, aSolver.Location()[1], 1.0e-8);
         Assert.Equal(2.0, aSolver.Location()[2], 1.0e-8);
         Assert.Equal(0.0, aSolver.Minimum(), 1.0e-12);
-        Assert.True(aSolver.NbIterations() <= 5, "Should converge very quickly");
+        Assert.True(aSolver.IterationCount <= 5, "Should converge very quickly");
     }
 
     [Fact]
@@ -506,10 +520,10 @@ public class math_NewtonMinimumTest
         aStartPoint[1] = 0.0;
         aStartPoint[2] = 0.0;
 
-        math_NewtonMinimum aSolver = new(aFunc, 1.0e-10);
+        NewtonMinimum aSolver = new(aFunc, 1.0e-10);
         aSolver.Perform(aFunc, aStartPoint);
 
-        Assert.True(aSolver.IsDone(), "Should find minimum");
+        Assert.True(aSolver.IsDone, "Should find minimum");
 
         // Test that we can access the status without exception
         { aSolver.GetStatus(); }

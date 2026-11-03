@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2024-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Engine.Geometry.Bvh;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's IntPatch_Polyhedron GTest.</summary>
@@ -10,14 +16,14 @@ public class IntPatch_PolyhedronTest
 {
     private static GeomAdaptor_Surface makePlane()
     {
-        gp_Ax3 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        CoordinateSystem anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_Plane aPlane = new(anAxis);
         return new GeomAdaptor_Surface(aPlane, -1.0, 1.0, -1.0, 1.0);
     }
 
     private static GeomAdaptor_Surface makeSphere()
     {
-        gp_Ax3 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        CoordinateSystem anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_SphericalSurface aSphere = new(anAxis, 1.0);
         return new GeomAdaptor_Surface(aSphere);
     }
@@ -106,12 +112,12 @@ public class IntPatch_PolyhedronBVHTest
     public IntPatch_PolyhedronBVHTest()
     {
         // Create a sphere surface
-        gp_Sphere aSphere = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        Sphere aSphere = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         Geom_SphericalSurface aSphereSurf = new(aSphere);
         mySphereAdaptor = new GeomAdaptor_Surface(aSphereSurf);
 
         // Create a cylinder surface
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(0.5, 0, 0), new gp_Dir(0, 0, 1)), 0.8);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 0.8);
         Geom_CylindricalSurface aCylSurf = new(aCyl);
         myCylAdaptor = new GeomAdaptor_Surface(aCylSurf, 0, 2 * M_PI, -1, 1);
     }
@@ -144,8 +150,8 @@ public class IntPatch_PolyhedronBVHTest
         // Check that all boxes are valid
         for (int i = 0; i < aBVH.Size(); ++i)
         {
-            BVH_Box<double, NCollection_Vec3<double>> aBox = aBVH.Box(i);
-            Assert.True(aBox.IsValid(), $"Box {i} is not valid");
+            Box<double, NCollection_Vec3<double>> aBox = aBVH.Box(i);
+            Assert.True(aBox.IsValid, $"Box {i} is not valid");
         }
     }
 
@@ -160,7 +166,7 @@ public class IntPatch_PolyhedronBVHTest
         IntPatch_PolyhedronBVH aBVH = new(aPoly);
 
         // Check that centroids are within the overall bounding box
-        Bnd_Box aBounding = IntPatch_PolyhedronTool.Bounding(aPoly);
+        Box aBounding = IntPatch_PolyhedronTool.Bounding(aPoly);
         aBounding.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax,
                       out double aZmax);
 
@@ -291,7 +297,7 @@ public class IntPatch_PolyhedronBVHTest
     public void NoOverlap()
     {
         // Create a plane far from the sphere
-        gp_Pln aPlane = new(new gp_Pnt(10, 10, 10), new gp_Dir(1, 0, 0));
+        Plane3D aPlane = new(new Point3D(10, 10, 10), new Direction3D(1, 0, 0));
         Geom_Plane aPlaneSurf = new(aPlane);
         GeomAdaptor_Surface aPlaneAdaptor = new(aPlaneSurf, -1, 1, -1, 1);
 

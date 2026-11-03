@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -25,7 +27,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
         public readonly NCollection_Array1<int> UMults, VMults;
         public readonly NCollection_Array1<double> UFlatKnots, VFlatKnots;
         public readonly int NbUPoles, NbVPoles;
-        public readonly NCollection_Array2<gp_Pnt> Poles;
+        public readonly NCollection_Array2<Point3D> Poles;
         public readonly NCollection_Array2<double> AllWeights;
 
         public Surface(Oracle theOracle, int theMaxDegree = 9)
@@ -37,14 +39,14 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
             Rational = theOracle.Int(0, 1) == 1;
             theOracle.BSplineKnots(UDegree, UPeriodic, out UKnots, out UMults);
             theOracle.BSplineKnots(VDegree, VPeriodic, out VKnots, out VMults);
-            NbUPoles = Occt.BSplCLib.NbPoles(UDegree, UPeriodic, UMults);
-            NbVPoles = Occt.BSplCLib.NbPoles(VDegree, VPeriodic, VMults);
-            UFlatKnots = new NCollection_Array1<double>(1, Occt.BSplCLib.KnotSequenceLength(UMults, UDegree, UPeriodic));
-            Occt.BSplCLib.KnotSequence(UKnots, UMults, UDegree, UPeriodic, UFlatKnots);
-            VFlatKnots = new NCollection_Array1<double>(1, Occt.BSplCLib.KnotSequenceLength(VMults, VDegree, VPeriodic));
-            Occt.BSplCLib.KnotSequence(VKnots, VMults, VDegree, VPeriodic, VFlatKnots);
+            NbUPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(UDegree, UPeriodic, UMults);
+            NbVPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(VDegree, VPeriodic, VMults);
+            UFlatKnots = new NCollection_Array1<double>(1, Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(UMults, UDegree, UPeriodic));
+            Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(UKnots, UMults, UDegree, UPeriodic, UFlatKnots);
+            VFlatKnots = new NCollection_Array1<double>(1, Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(VMults, VDegree, VPeriodic));
+            Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(VKnots, VMults, VDegree, VPeriodic, VFlatKnots);
 
-            Poles = new NCollection_Array2<gp_Pnt>(1, NbUPoles, 1, NbVPoles);
+            Poles = new NCollection_Array2<Point3D>(1, NbUPoles, 1, NbVPoles);
             AllWeights = new NCollection_Array2<double>(1, NbUPoles, 1, NbVPoles);
             NCollection_Array1<double> aUWeights = theOracle.Weights(NbUPoles, Rational);
             NCollection_Array1<double> aVWeights = theOracle.Weights(NbVPoles, Rational);
@@ -53,7 +55,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
             {
                 for (int j = 1; j <= NbVPoles; j++)
                 {
-                    Poles[i, j] = new gp_Pnt(theOracle.Real(0, 10), theOracle.Real(0, 10), theOracle.Real(0, 10));
+                    Poles[i, j] = new Point3D(theOracle.Real(0, 10), theOracle.Real(0, 10), theOracle.Real(0, 10));
                     AllWeights[i, j] = !Rational ? 1.0
                                        : aMode == 0 ? theOracle.Real(0.5, 1.5)
                                        : aMode == 1 ? aUWeights[i]
@@ -109,8 +111,8 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
     {
         // As Geom_BSplineSurface::EvalD1/EvalD2: knots with multiplicities, then the flat index
         int anIndex = 0;
-        Occt.BSplCLib.LocateParameter(theDegree, theKnots, theMults, theU, thePeriodic, ref anIndex, out theNewU);
-        theIndex = Occt.BSplCLib.FlatIndex(theDegree, anIndex, theMults, thePeriodic);
+        Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(theDegree, theKnots, theMults, theU, thePeriodic, ref anIndex, out theNewU);
+        theIndex = Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(theDegree, anIndex, theMults, thePeriodic);
     }
 
     [Fact]
@@ -132,8 +134,8 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     // D0: periodic normalization, then BSplSLib::D0 with index 0 on the flat knots
                     double aNU = aU, aNV = aV;
                     aNative.PeriodicNormalization(ref aNU, ref aNV);
-                    Occt.BSplSLib.D0(aNU, aNV, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null, S.UDegree,
-                                     S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out gp_Pnt aP);
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D0(aNU, aNV, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null, S.UDegree,
+                                     S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out Point3D aP);
                     using (N.gp_Pnt aNP = aNative.EvalD0(aU, aV))
                     {
                         anOracle.Same(aNP, aP, "D0");
@@ -142,9 +144,9 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     // D1, D2: located spans
                     Locate(S.UDegree, S.UKnots, S.UMults, S.UPeriodic, aU, out int anUIndex, out double aLU);
                     Locate(S.VDegree, S.VKnots, S.VMults, S.VPeriodic, aV, out int aVIndex, out double aLV);
-                    Occt.BSplSLib.D1(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D1(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP1, out gp_Vec aD1U, out gp_Vec aD1V);
+                                     out Point3D aP1, out Vector3D aD1U, out Vector3D aD1V);
                     using (var aNP1 = new N.gp_Pnt(0, 0, 0))
                     using (var aND1U = new N.gp_Vec(0, 0, 0))
                     using (var aND1V = new N.gp_Vec(0, 0, 0))
@@ -155,10 +157,10 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                         anOracle.Same(aND1V, aD1V, "D1 V");
                     }
 
-                    Occt.BSplSLib.D2(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D2(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP2, out gp_Vec aD2U1, out gp_Vec aD2V1, out gp_Vec aD2UU, out gp_Vec aD2VV,
-                                     out gp_Vec aD2UV);
+                                     out Point3D aP2, out Vector3D aD2U1, out Vector3D aD2V1, out Vector3D aD2UU, out Vector3D aD2VV,
+                                     out Vector3D aD2UV);
                     using (var aNP2 = new N.gp_Pnt(0, 0, 0))
                     using (var aNU1 = new N.gp_Vec(0, 0, 0))
                     using (var aNV1 = new N.gp_Vec(0, 0, 0))
@@ -176,10 +178,10 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     }
 
                     // D3 and DN: the parameters as given, index 0
-                    Occt.BSplSLib.D3(aU, aV, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D3(aU, aV, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP3, out gp_Vec a3U, out gp_Vec a3V, out gp_Vec a3UU, out gp_Vec a3VV,
-                                     out gp_Vec a3UV, out gp_Vec a3UUU, out gp_Vec a3VVV, out gp_Vec a3UUV, out gp_Vec a3UVV);
+                                     out Point3D aP3, out Vector3D a3U, out Vector3D a3V, out Vector3D a3UU, out Vector3D a3VV,
+                                     out Vector3D a3UV, out Vector3D a3UUU, out Vector3D a3VVV, out Vector3D a3UUV, out Vector3D a3UVV);
                     using (var aNP3 = new N.gp_Pnt(0, 0, 0))
                     using (var aN3U = new N.gp_Vec(0, 0, 0))
                     using (var aN3V = new N.gp_Vec(0, 0, 0))
@@ -213,8 +215,8 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                                 continue;
                             }
 
-                            Occt.BSplSLib.DN(aU, aV, nu, nv, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
-                                             S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out gp_Vec aDN);
+                            Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.DN(aU, aV, nu, nv, 0, 0, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                                             S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out Vector3D aDN);
                             using N.gp_Vec aNDN = aNative.EvalDN(aU, aV, nu, nv);
                             anOracle.Same(aNDN, aDN, $"DN({nu},{nv})");
                         }
@@ -245,22 +247,22 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     int aUK2 = aUK1 + 1, aVK2 = aVK1 + 1;
 
                     // As Geom_BSplineSurface::LocalD*: flat knots between two knots, then the flat index
-                    Occt.BSplCLib.LocateParameter(S.UDegree, S.UFlatKnots, aU, S.UPeriodic, aUK1, aUK2, out int anUIndex, out double aLU);
-                    anUIndex = Occt.BSplCLib.FlatIndex(S.UDegree, anUIndex, S.UMults, S.UPeriodic);
-                    Occt.BSplCLib.LocateParameter(S.VDegree, S.VFlatKnots, aV, S.VPeriodic, aVK1, aVK2, out int aVIndex, out double aLV);
-                    aVIndex = Occt.BSplCLib.FlatIndex(S.VDegree, aVIndex, S.VMults, S.VPeriodic);
+                    Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(S.UDegree, S.UFlatKnots, aU, S.UPeriodic, aUK1, aUK2, out int anUIndex, out double aLU);
+                    anUIndex = Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(S.UDegree, anUIndex, S.UMults, S.UPeriodic);
+                    Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(S.VDegree, S.VFlatKnots, aV, S.VPeriodic, aVK1, aVK2, out int aVIndex, out double aLV);
+                    aVIndex = Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(S.VDegree, aVIndex, S.VMults, S.VPeriodic);
 
-                    Occt.BSplSLib.D0(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
-                                     S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out gp_Pnt aP);
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D0(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                                     S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out Point3D aP);
                     using (var aNP = new N.gp_Pnt(0, 0, 0))
                     {
                         aNative.LocalD0(aU, aV, aUK1, aUK2, aVK1, aVK2, aNP);
                         anOracle.Same(aNP, aP, "LocalD0");
                     }
 
-                    Occt.BSplSLib.D1(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D1(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP1, out gp_Vec a1U, out gp_Vec a1V);
+                                     out Point3D aP1, out Vector3D a1U, out Vector3D a1V);
                     using (var aNP = new N.gp_Pnt(0, 0, 0))
                     using (var aNU = new N.gp_Vec(0, 0, 0))
                     using (var aNV = new N.gp_Vec(0, 0, 0))
@@ -271,9 +273,9 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                         anOracle.Same(aNV, a1V, "LocalD1 V");
                     }
 
-                    Occt.BSplSLib.D2(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D2(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP2, out gp_Vec a2U, out gp_Vec a2V, out gp_Vec a2UU, out gp_Vec a2VV, out gp_Vec a2UV);
+                                     out Point3D aP2, out Vector3D a2U, out Vector3D a2V, out Vector3D a2UU, out Vector3D a2VV, out Vector3D a2UV);
                     using (var aNP = new N.gp_Pnt(0, 0, 0))
                     using (var aNU = new N.gp_Vec(0, 0, 0))
                     using (var aNV = new N.gp_Vec(0, 0, 0))
@@ -290,10 +292,10 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                         anOracle.Same(aNUV, a2UV, "LocalD2 UV");
                     }
 
-                    Occt.BSplSLib.D3(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D3(aLU, aLV, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots, null, null,
                                      S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic,
-                                     out gp_Pnt aP3, out gp_Vec a3U, out gp_Vec a3V, out gp_Vec a3UU, out gp_Vec a3VV,
-                                     out gp_Vec a3UV, out gp_Vec a3UUU, out gp_Vec a3VVV, out gp_Vec a3UUV, out gp_Vec a3UVV);
+                                     out Point3D aP3, out Vector3D a3U, out Vector3D a3V, out Vector3D a3UU, out Vector3D a3VV,
+                                     out Vector3D a3UV, out Vector3D a3UUU, out Vector3D a3VVV, out Vector3D a3UUV, out Vector3D a3UVV);
                     using (var aNP = new N.gp_Pnt(0, 0, 0))
                     using (var aNU = new N.gp_Vec(0, 0, 0))
                     using (var aNV = new N.gp_Vec(0, 0, 0))
@@ -319,8 +321,8 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     }
 
                     int aNu = anOracle.Int(0, 3), aNv = anOracle.Int(aNu == 0 ? 1 : 0, 3);
-                    Occt.BSplSLib.DN(aLU, aLV, aNu, aNv, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots,
-                                     null, null, S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out gp_Vec aDN);
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.DN(aLU, aLV, aNu, aNv, anUIndex, aVIndex, S.Poles, R.Weights, S.UFlatKnots, S.VFlatKnots,
+                                     null, null, S.UDegree, S.VDegree, R.URat, R.VRat, S.UPeriodic, S.VPeriodic, out Vector3D aDN);
                     using (N.gp_Vec aNDN = aNative.LocalDN(aU, aV, aUK1, aUK2, aVK1, aVK2, aNu, aNv))
                     {
                         anOracle.Same(aNDN, aDN, $"LocalDN({aNu},{aNv})");
@@ -343,7 +345,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
             Rationality R = RationalityOf(aNative, S);
             double aNU = 0.0, aNV = 0.0;
             aNative.Resolution(1.0, ref aNU, ref aNV);
-            Occt.BSplSLib.Resolution(S.Poles, R.Weights, S.UKnots, S.VKnots, S.UMults, S.VMults, S.UDegree, S.VDegree,
+            Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.Resolution(S.Poles, R.Weights, S.UKnots, S.VKnots, S.UMults, S.VMults, S.UDegree, S.VDegree,
                                      R.URat, R.VRat, S.UPeriodic, S.VPeriodic, 1.0, out double aU, out double aV);
             anOracle.SameRelative(aNU, aU, "Resolution U");
             anOracle.SameRelative(aNV, aV, "Resolution V");
@@ -353,7 +355,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Compares the native surface's poles (and weights when rational) with the port's.</summary>
-    private static void SamePoles(Oracle theOracle, N.Geom_BSplineSurface theNative, NCollection_Array2<gp_Pnt> thePoles,
+    private static void SamePoles(Oracle theOracle, N.Geom_BSplineSurface theNative, NCollection_Array2<Point3D> thePoles,
                                   NCollection_Array2<double>? theWeights, string theWhat)
     {
         theOracle.Same(theNative.NbUPoles(), thePoles.ColLength(), theWhat + " NbUPoles");
@@ -428,16 +430,16 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
 
                 int aNbPolesDir = isU ? S.NbUPoles : S.NbVPoles;
                 if (isIncreasing
-                    && Occt.BSplCLib.PrepareInsertKnots(aDegree, isPeriodic, aKnots, aMults, anAddKnots, anAddMults,
+                    && Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(aDegree, isPeriodic, aKnots, aMults, anAddKnots, anAddMults,
                                                         out int aNbPoles, out int aNbNewKnots, 0.0, true)
                     && aNbPoles != aNbPolesDir)
                 {
                     int aRows = isU ? aNbPoles : S.NbUPoles, aCols = isU ? S.NbVPoles : aNbPoles;
-                    var aNewPoles = new NCollection_Array2<gp_Pnt>(1, aRows, 1, aCols);
+                    var aNewPoles = new NCollection_Array2<Point3D>(1, aRows, 1, aCols);
                     var aNewWeights = isRational ? new NCollection_Array2<double>(1, aRows, 1, aCols) : null;
                     var aNewKnots = new NCollection_Array1<double>(1, aNbNewKnots);
                     var aNewMults = new NCollection_Array1<int>(1, aNbNewKnots);
-                    Occt.BSplSLib.InsertKnots(isU, aDegree, isPeriodic, S.Poles, R.Weights, aKnots, aMults, anAddKnots, anAddMults,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.InsertKnots(isU, aDegree, isPeriodic, S.Poles, R.Weights, aKnots, aMults, anAddKnots, anAddMults,
                                               aNewPoles, aNewWeights, aNewKnots, aNewMults, 0.0, true);
 
                     using N.Geom_BSplineSurface aNative = S.ToNative();
@@ -464,12 +466,12 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                     int aStep = aMults[anIndex] - aMult;
                     int aNbKnotsAfter = aNbKnots - (aMult == 0 ? 1 : 0);
                     int aRows = isU ? S.NbUPoles - aStep : S.NbUPoles, aCols = isU ? S.NbVPoles : S.NbVPoles - aStep;
-                    var aNewPoles = new NCollection_Array2<gp_Pnt>(1, aRows, 1, aCols);
+                    var aNewPoles = new NCollection_Array2<Point3D>(1, aRows, 1, aCols);
                     var aNewWeights = isRational ? new NCollection_Array2<double>(1, aRows, 1, aCols) : null;
                     var aNewKnots = new NCollection_Array1<double>(1, aNbKnotsAfter);
                     var aNewMults = new NCollection_Array1<int>(1, aNbKnotsAfter);
                     double aTolerance = anOracle.Int(0, 1) == 0 ? 1e-7 : 1e3;
-                    bool isRemoved = Occt.BSplSLib.RemoveKnot(isU, anIndex, aMult, aDegree, isPeriodic, S.Poles, R.Weights,
+                    bool isRemoved = Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.RemoveKnot(isU, anIndex, aMult, aDegree, isPeriodic, S.Poles, R.Weights,
                                                               aKnots, aMults, aNewPoles, aNewWeights, aNewKnots, aNewMults,
                                                               aTolerance);
 
@@ -511,16 +513,16 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 if (!isPeriodic)
                 {
                     int aNewDegree = aDegree + anOracle.Int(1, 3);
-                    int aFromK1 = Occt.BSplCLib.FirstUKnotIndex(aDegree, aMults), aToK2 = Occt.BSplCLib.LastUKnotIndex(aDegree, aMults);
+                    int aFromK1 = Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(aDegree, aMults), aToK2 = Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(aDegree, aMults);
                     int aStep = aNewDegree - aDegree;
                     int aRows = isU ? S.NbUPoles + aStep * (aToK2 - aFromK1) : S.NbUPoles;
                     int aCols = isU ? S.NbVPoles : S.NbVPoles + aStep * (aToK2 - aFromK1);
-                    int aNbNewKnots = Occt.BSplCLib.IncreaseDegreeCountKnots(aDegree, aNewDegree, isPeriodic, aMults);
-                    var aNewPoles = new NCollection_Array2<gp_Pnt>(1, aRows, 1, aCols);
+                    int aNbNewKnots = Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegreeCountKnots(aDegree, aNewDegree, isPeriodic, aMults);
+                    var aNewPoles = new NCollection_Array2<Point3D>(1, aRows, 1, aCols);
                     var aNewWeights = isRational ? new NCollection_Array2<double>(1, aRows, 1, aCols) : null;
                     var aNewKnots = new NCollection_Array1<double>(1, aNbNewKnots);
                     var aNewMults = new NCollection_Array1<int>(1, aNbNewKnots);
-                    Occt.BSplSLib.IncreaseDegree(isU, aDegree, aNewDegree, isPeriodic, S.Poles, R.Weights, aKnots, aMults,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.IncreaseDegree(isU, aDegree, aNewDegree, isPeriodic, S.Poles, R.Weights, aKnots, aMults,
                                                  aNewPoles, aNewWeights, aNewKnots, aNewMults);
 
                     using N.Geom_BSplineSurface aNative = S.ToNative();
@@ -531,9 +533,9 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 else
                 {
                     // SetUNotPeriodic/SetVNotPeriodic
-                    Occt.BSplCLib.PrepareUnperiodize(aDegree, aMults, out int aNbKnots, out int aNbPoles);
+                    Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(aDegree, aMults, out int aNbKnots, out int aNbPoles);
                     int aRows = isU ? aNbPoles : S.NbUPoles, aCols = isU ? S.NbVPoles : aNbPoles;
-                    var aNewPoles = new NCollection_Array2<gp_Pnt>(1, aRows, 1, aCols);
+                    var aNewPoles = new NCollection_Array2<Point3D>(1, aRows, 1, aCols);
                     NCollection_Array2<double>? aNewWeights = null;
                     if (isRational)
                     {
@@ -543,7 +545,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
 
                     var aNewKnots = new NCollection_Array1<double>(1, aNbKnots);
                     var aNewMults = new NCollection_Array1<int>(1, aNbKnots);
-                    Occt.BSplSLib.Unperiodize(isU, aDegree, aMults, aKnots, S.Poles, R.Weights, aNewMults, aNewKnots, aNewPoles,
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.Unperiodize(isU, aDegree, aMults, aKnots, S.Poles, R.Weights, aNewMults, aNewKnots, aNewPoles,
                                               aNewWeights);
 
                     using N.Geom_BSplineSurface aNative = S.ToNative();
@@ -597,15 +599,15 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 isNativeThrown = true;
             }
 
-            var aNewPoles = new NCollection_Array2<gp_Pnt>(1, S.NbUPoles, 1, S.NbVPoles);
+            var aNewPoles = new NCollection_Array2<Point3D>(1, S.NbUPoles, 1, S.NbVPoles);
             int aUF = 0, aUL = 0, aVF = 0, aVL = 0;
             try
             {
-                var aDispl = new gp_Vec(Oracle.FromNative(aNP0), Oracle.FromNative(aNTarget));
-                Occt.BSplSLib.MovePoint(aU, aV, aDispl, aUI1, aUI2, aVI1, aVI2, S.UDegree, S.VDegree, R.URat || R.VRat, S.Poles,
+                var aDispl = new Vector3D(Oracle.FromNative(aNP0), Oracle.FromNative(aNTarget));
+                Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.MovePoint(aU, aV, aDispl, aUI1, aUI2, aVI1, aVI2, S.UDegree, S.VDegree, R.URat || R.VRat, S.Poles,
                                         S.AllWeights, S.UFlatKnots, S.VFlatKnots, out aUF, out aUL, out aVF, out aVL, aNewPoles);
             }
-            catch (Standard_OutOfRange) when (!isNativeThrown)
+            catch (OutOfRangeException) when (!isNativeThrown)
             {
                 // The index window misses the poles that act at (U, V): OCCT then reads its basis matrices out of
                 // range unchecked (No_Exception, occt-issues.md), where the port throws. Not comparable.
@@ -650,13 +652,13 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
         {
             int aUDegree = anOracle.Int(1, 12), aVDegree = anOracle.Int(1, 12);
             bool isRational = anOracle.Int(0, 1) == 1;
-            var aPoles = new NCollection_Array2<gp_Pnt>(1, aUDegree + 1, 1, aVDegree + 1);
+            var aPoles = new NCollection_Array2<Point3D>(1, aUDegree + 1, 1, aVDegree + 1);
             var aWeights = new NCollection_Array2<double>(1, aUDegree + 1, 1, aVDegree + 1);
             for (int r = 1; r <= aUDegree + 1; r++)
             {
                 for (int c = 1; c <= aVDegree + 1; c++)
                 {
-                    aPoles[r, c] = new gp_Pnt(anOracle.Real(0, 1), anOracle.Real(0, 1), anOracle.Real(0, 1));
+                    aPoles[r, c] = new Point3D(anOracle.Real(0, 1), anOracle.Real(0, 1), anOracle.Real(0, 1));
                     aWeights[r, c] = isRational ? anOracle.Real(0.5, 1.5) : 1.0;
                 }
             }
@@ -680,16 +682,16 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 for (int jv = 0; jv <= 6; jv++)
                 {
                     double aU = ju / 6.0, aV = jv / 6.0;
-                    Occt.BSplSLib.D0(aU, aV, 1, 1, aPoles, aW, aKnots, aKnots, aUMults, aVMults, aUDegree, aVDegree, aURat, aVRat,
-                                     false, false, out gp_Pnt aP);
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D0(aU, aV, 1, 1, aPoles, aW, aKnots, aKnots, aUMults, aVMults, aUDegree, aVDegree, aURat, aVRat,
+                                     false, false, out Point3D aP);
                     using (N.gp_Pnt aNP = aNative.EvalD0(aU, aV))
                     {
                         anOracle.Same(aNP, aP, "Bezier D0");
                     }
 
                     int aNu = anOracle.Int(0, 3), aNv = anOracle.Int(aNu == 0 ? 1 : 0, 3);
-                    Occt.BSplSLib.DN(aU, aV, aNu, aNv, 0, 0, aPoles, aW, aKnots, aKnots, aUMults, aVMults, aUDegree, aVDegree,
-                                     aURat, aVRat, false, false, out gp_Vec aDN);
+                    Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.DN(aU, aV, aNu, aNv, 0, 0, aPoles, aW, aKnots, aKnots, aUMults, aVMults, aUDegree, aVDegree,
+                                     aURat, aVRat, false, false, out Vector3D aDN);
                     using (N.gp_Vec aNDN = aNative.EvalDN(aU, aV, aNu, aNv))
                     {
                         anOracle.Same(aNDN, aDN, $"Bezier DN({aNu},{aNv})");
@@ -733,13 +735,13 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
             using N.Geom_BSplineSurface aNative = S.ToNative();
             using var anAdaptor = new N.GeomAdaptor_Surface(aNative);
             Rationality R = RationalityOf(aNative, S);
-            BSplSLib_Cache? aCache = null;
+            global::Kerf.Engine.Geometry.Splines.SurfaceCache? aCache = null;
             for (int j = 0; j < 40; j++)
             {
                 double aU = CacheParam(anOracle, S.UKnots, S.UPeriodic), aV = CacheParam(anOracle, S.VKnots, S.VPeriodic);
                 if (aCache is null || !aCache.IsCacheValid(aU, aV))
                 {
-                    aCache ??= new BSplSLib_Cache(S.UDegree, S.UPeriodic, S.UFlatKnots, S.VDegree, S.VPeriodic, S.VFlatKnots,
+                    aCache ??= new global::Kerf.Engine.Geometry.Splines.SurfaceCache(S.UDegree, S.UPeriodic, S.UFlatKnots, S.VDegree, S.VPeriodic, S.VFlatKnots,
                                                   R.Weights);
                     aCache.BuildCache(aU, aV, S.UFlatKnots, S.VFlatKnots, S.Poles, R.Weights);
                 }
@@ -748,14 +750,14 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 {
                     case 0:
                         {
-                            aCache.D0(aU, aV, out gp_Pnt aP);
+                            aCache.D0(aU, aV, out Point3D aP);
                             using N.gp_Pnt aNP = anAdaptor.EvalD0(aU, aV);
                             anOracle.Same(aNP, aP, "Cache D0");
                             break;
                         }
                     case 1:
                         {
-                            aCache.D1(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                            aCache.D1(aU, aV, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
                             using var aNP = new N.gp_Pnt(0, 0, 0);
                             using var aNDU = new N.gp_Vec(0, 0, 0);
                             using var aNDV = new N.gp_Vec(0, 0, 0);
@@ -767,8 +769,8 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                         }
                     default:
                         {
-                            aCache.D2(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV, out gp_Vec aDUU, out gp_Vec aDVV,
-                                      out gp_Vec aDUV);
+                            aCache.D2(aU, aV, out Point3D aP, out Vector3D aDU, out Vector3D aDV, out Vector3D aDUU, out Vector3D aDVV,
+                                      out Vector3D aDUV);
                             using var aNP = new N.gp_Pnt(0, 0, 0);
                             using var aNDU = new N.gp_Vec(0, 0, 0);
                             using var aNDV = new N.gp_Vec(0, 0, 0);
@@ -793,13 +795,13 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
         {
             int aUDegree = anOracle.Int(1, 12), aVDegree = anOracle.Int(1, 12);
             bool isRational = anOracle.Int(0, 1) == 1;
-            var aPoles = new NCollection_Array2<gp_Pnt>(1, aUDegree + 1, 1, aVDegree + 1);
+            var aPoles = new NCollection_Array2<Point3D>(1, aUDegree + 1, 1, aVDegree + 1);
             var aWeights = new NCollection_Array2<double>(1, aUDegree + 1, 1, aVDegree + 1);
             for (int r = 1; r <= aUDegree + 1; r++)
             {
                 for (int c = 1; c <= aVDegree + 1; c++)
                 {
-                    aPoles[r, c] = new gp_Pnt(anOracle.Real(0, 1), anOracle.Real(0, 1), anOracle.Real(0, 1));
+                    aPoles[r, c] = new Point3D(anOracle.Real(0, 1), anOracle.Real(0, 1), anOracle.Real(0, 1));
                     aWeights[r, c] = isRational ? anOracle.Real(0.5, 1.5) : 1.0;
                 }
             }
@@ -809,19 +811,19 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
             using N.Geom_BezierSurface aNative = isRational ? new N.Geom_BezierSurface(aNPoles, aNWeights) : new N.Geom_BezierSurface(aNPoles);
             using var anAdaptor = new N.GeomAdaptor_Surface(aNative);
             NCollection_Array2<double>? aW = aNative.IsURational() || aNative.IsVRational() ? aWeights : null;
-            NCollection_Array1<double> aFlatKnotsU = NCollection_Array1<double>.From(Occt.BSplCLib.FlatBezierKnots(aUDegree));
-            NCollection_Array1<double> aFlatKnotsV = NCollection_Array1<double>.From(Occt.BSplCLib.FlatBezierKnots(aVDegree));
-            BSplSLib_Cache? aCache = null;
+            NCollection_Array1<double> aFlatKnotsU = NCollection_Array1<double>.From(Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aUDegree));
+            NCollection_Array1<double> aFlatKnotsV = NCollection_Array1<double>.From(Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aVDegree));
+            global::Kerf.Engine.Geometry.Splines.SurfaceCache? aCache = null;
             for (int j = 0; j < 30; j++)
             {
                 double aU = anOracle.Real(0, 1), aV = anOracle.Real(0, 1);
                 if (aCache is null)
                 {
-                    aCache = new BSplSLib_Cache(aUDegree, false, aFlatKnotsU, aVDegree, false, aFlatKnotsV, aW);
+                    aCache = new global::Kerf.Engine.Geometry.Splines.SurfaceCache(aUDegree, false, aFlatKnotsU, aVDegree, false, aFlatKnotsV, aW);
                     aCache.BuildCache(aU, aV, aFlatKnotsU, aFlatKnotsV, aPoles, aW);
                 }
 
-                aCache.D1(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                aCache.D1(aU, aV, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
                 using var aNP = new N.gp_Pnt(0, 0, 0);
                 using var aNDU = new N.gp_Vec(0, 0, 0);
                 using var aNDV = new N.gp_Vec(0, 0, 0);
@@ -829,7 +831,7 @@ public class BSplSLibOracleTests(ITestOutputHelper output)
                 anOracle.Same(aNP, aP, "Bezier cache D1 P");
                 anOracle.Same(aNDU, aDU, "Bezier cache D1 U");
                 anOracle.Same(aNDV, aDV, "Bezier cache D1 V");
-                aCache.D0(aU, aV, out gp_Pnt aP0);
+                aCache.D0(aU, aV, out Point3D aP0);
                 using N.gp_Pnt aNP0 = anAdaptor.EvalD0(aU, aV);
                 anOracle.Same(aNP0, aP0, "Bezier cache D0");
             }

@@ -8,7 +8,10 @@
 //                            sort solutions to avoid returning the same
 //                            solution multiple times
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -34,10 +37,10 @@ public class Extrema_ExtCC
     private readonly double[] myInf = new double[2];
     private readonly double[] mySup = new double[2];
     private readonly double[] myTol = new double[2];
-    private gp_Pnt myP1f = new();
-    private gp_Pnt myP1l = new();
-    private gp_Pnt myP2f = new();
-    private gp_Pnt myP2l = new();
+    private Point3D myP1f = new();
+    private Point3D myP1l = new();
+    private Point3D myP2f = new();
+    private Point3D myP2l = new();
     private double mydist11;
     private double mydist12;
     private double mydist21;
@@ -52,8 +55,8 @@ public class Extrema_ExtCC
         myIsParallel = false;
         myC[0] = null;
         myC[1] = null;
-        myInf[0] = myInf[1] = -Precision.Infinite();
-        mySup[0] = mySup[1] = Precision.Infinite();
+        myInf[0] = myInf[1] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        mySup[0] = mySup[1] = global::Kerf.Engine.Foundation.Precision.Infinite();
         myTol[0] = TolC1;
         myTol[1] = TolC2;
         mydist11 = mydist12 = mydist21 = mydist22 = RealFirst();
@@ -114,7 +117,7 @@ public class Extrema_ExtCC
     }
 
     /// <summary>Sets the curve of rank theRank (1 or 2), keeping its range.</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public void SetCurve(int theRank, Adaptor3d_Curve C)
     {
         Standard_OutOfRange_Raise_if(theRank < 1 || theRank > 2, "Extrema_ExtCC::SetCurve()");
@@ -123,7 +126,7 @@ public class Extrema_ExtCC
     }
 
     /// <summary>Sets the curve of rank theRank (1 or 2) on [Uinf, Usup].</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public void SetCurve(int theRank, Adaptor3d_Curve C, double Uinf, double Usup)
     {
         SetCurve(theRank, C);
@@ -131,7 +134,7 @@ public class Extrema_ExtCC
     }
 
     /// <summary>Sets the range of the curve of rank theRank (1 or 2).</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public void SetRange(int theRank, double Uinf, double Usup)
     {
         Standard_OutOfRange_Raise_if(theRank < 1 || theRank > 2, "Extrema_ExtCC::SetRange()");
@@ -141,7 +144,7 @@ public class Extrema_ExtCC
     }
 
     /// <summary>Sets the tolerance of the curve of rank theRank (1 or 2).</summary>
-    /// <exception cref="Standard_OutOfRange">theRank is not 1 or 2.</exception>
+    /// <exception cref="OutOfRangeException">theRank is not 1 or 2.</exception>
     public void SetTolerance(int theRank, double theTol)
     {
         Standard_OutOfRange_Raise_if(theRank < 1 || theRank > 2, "Extrema_ExtCC::SetTolerance()");
@@ -150,7 +153,7 @@ public class Extrema_ExtCC
     }
 
     /// <summary>Computes the extremum distances.</summary>
-    /// <exception cref="Standard_NullObject">A curve is not set.</exception>
+    /// <exception cref="NullObjectException">A curve is not set.</exception>
     public void Perform()
     {
         Standard_NullObject_Raise_if(myC[0] is null || myC[1] is null, "Extrema_ExtCC::Perform()");
@@ -162,8 +165,8 @@ public class Extrema_ExtCC
         mySqDist.Clear();
         myIsParallel = false;
 
-        GeomAbs_CurveType type1 = myC[0]!.GetType();
-        GeomAbs_CurveType type2 = myC[1]!.GetType();
+        CurveKind type1 = myC[0]!.GetType();
+        CurveKind type2 = myC[1]!.GetType();
         double U11, U12, U21, U22, Tol = Min(myTol[0], myTol[1]);
 
         U11 = myInf[0];
@@ -171,24 +174,24 @@ public class Extrema_ExtCC
         U21 = myInf[1];
         U22 = mySup[1];
 
-        if (!Precision.IsInfinite(U11))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U11))
         {
             myP1f = Extrema_CurveTool.Value(myC[0]!, U11);
         }
-        if (!Precision.IsInfinite(U12))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U12))
         {
             myP1l = Extrema_CurveTool.Value(myC[0]!, U12);
         }
-        if (!Precision.IsInfinite(U21))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U21))
         {
             myP2f = Extrema_CurveTool.Value(myC[1]!, U21);
         }
-        if (!Precision.IsInfinite(U22))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U22))
         {
             myP2l = Extrema_CurveTool.Value(myC[1]!, U22);
         }
 
-        if (Precision.IsInfinite(U11) || Precision.IsInfinite(U21))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U11) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U21))
         {
             mydist11 = RealLast();
         }
@@ -196,7 +199,7 @@ public class Extrema_ExtCC
         {
             mydist11 = myP1f.SquareDistance(myP2f);
         }
-        if (Precision.IsInfinite(U11) || Precision.IsInfinite(U22))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U11) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U22))
         {
             mydist12 = RealLast();
         }
@@ -204,7 +207,7 @@ public class Extrema_ExtCC
         {
             mydist12 = myP1f.SquareDistance(myP2l);
         }
-        if (Precision.IsInfinite(U12) || Precision.IsInfinite(U21))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U12) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U21))
         {
             mydist21 = RealLast();
         }
@@ -212,7 +215,7 @@ public class Extrema_ExtCC
         {
             mydist21 = myP1l.SquareDistance(myP2f);
         }
-        if (Precision.IsInfinite(U12) || Precision.IsInfinite(U22))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U12) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U22))
         {
             mydist22 = RealLast();
         }
@@ -225,12 +228,12 @@ public class Extrema_ExtCC
         //- _ExtElC, when one of the curves is a line and the other is elementary,
         //    or there are two circles;
         //- _GenExtCC, in all other cases
-        if ((type1 == GeomAbs_Line && type2 <= GeomAbs_Parabola)
-            || (type2 == GeomAbs_Line && type1 <= GeomAbs_Parabola))
+        if ((type1 == Line && type2 <= Parabola)
+            || (type2 == Line && type1 <= Parabola))
         {
             // analytical case - one curve is always a line
             int anInd1 = 0, anInd2 = 1;
-            GeomAbs_CurveType aType2 = type2;
+            CurveKind aType2 = type2;
             bool isInverse = (type1 > type2);
             if (isInverse)
             {
@@ -241,31 +244,31 @@ public class Extrema_ExtCC
             }
             switch (aType2)
             {
-                case GeomAbs_Line:
+                case Line:
                 {
                     Extrema_ExtElC Xtrem = new(myC[anInd1]!.Line(), myC[anInd2]!.Line(), Tol);
                     PrepareResults(Xtrem, isInverse, U11, U12, U21, U22);
                     break;
                 }
-                case GeomAbs_Circle:
+                case Circle:
                 {
                     Extrema_ExtElC Xtrem = new(myC[anInd1]!.Line(), myC[anInd2]!.Circle(), Tol);
                     PrepareResults(Xtrem, isInverse, U11, U12, U21, U22);
                     break;
                 }
-                case GeomAbs_Ellipse:
+                case Ellipse:
                 {
                     Extrema_ExtElC Xtrem = new(myC[anInd1]!.Line(), myC[anInd2]!.Ellipse());
                     PrepareResults(Xtrem, isInverse, U11, U12, U21, U22);
                     break;
                 }
-                case GeomAbs_Hyperbola:
+                case Hyperbola:
                 {
                     Extrema_ExtElC Xtrem = new(myC[anInd1]!.Line(), myC[anInd2]!.Hyperbola());
                     PrepareResults(Xtrem, isInverse, U11, U12, U21, U22);
                     break;
                 }
-                case GeomAbs_Parabola:
+                case Parabola:
                 {
                     Extrema_ExtElC Xtrem = new(myC[anInd1]!.Line(), myC[anInd2]!.Parabola());
                     PrepareResults(Xtrem, isInverse, U11, U12, U21, U22);
@@ -275,7 +278,7 @@ public class Extrema_ExtCC
                     break;
             }
         }
-        else if (type1 == GeomAbs_Circle && type2 == GeomAbs_Circle)
+        else if (type1 == Circle && type2 == Circle)
         {
             // analytical case - two circles
             bool bIsDone;
@@ -303,46 +306,46 @@ public class Extrema_ExtCC
 
     /// <summary>True if the curves are parallel (lines, circles); then there is one distance and no points, unless
     /// the trimmed ranges made the algorithm choose points.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IsParallel()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return myIsParallel;
     }
 
     /// <summary>The Nth square distance.</summary>
-    /// <exception cref="Standard_OutOfRange">N is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">N is not in 1..NbExt().</exception>
     public double SquareDistance(int N = 1)
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist.Value(N);
     }
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbExt()
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist.Length();
     }
 
     /// <summary>The points of the Nth extremum, on the first and on the second curve.</summary>
-    /// <exception cref="Standard_OutOfRange">N is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">N is not in 1..NbExt().</exception>
     public void Points(int N, out Extrema_POnCurv P1, out Extrema_POnCurv P2)
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         P1 = mypoints.Value(2 * N - 1);
@@ -352,7 +355,7 @@ public class Extrema_ExtCC
     /// <summary>The square distances between the ends of the ranges and the end points (RealLast for an infinite
     /// end).</summary>
     public void TrimmedSquareDistances(out double dist11, out double dist12, out double dist21, out double dist22,
-        out gp_Pnt P11, out gp_Pnt P12, out gp_Pnt P21, out gp_Pnt P22)
+        out Point3D P11, out Point3D P12, out Point3D P21, out Point3D P22)
     {
         dist11 = mydist11;
         dist12 = mydist12;
@@ -385,10 +388,10 @@ public class Extrema_ExtCC
             return;
         }
 
-        GeomAbs_CurveType aType1 = Extrema_CurveTool.GetType(myC[0]!);
-        GeomAbs_CurveType aType2 = Extrema_CurveTool.GetType(myC[1]!);
-        if (((aType1 != GeomAbs_Line) && (aType1 != GeomAbs_Circle))
-            || ((aType2 != GeomAbs_Line) && (aType2 != GeomAbs_Circle)))
+        CurveKind aType1 = Extrema_CurveTool.GetType(myC[0]!);
+        CurveKind aType2 = Extrema_CurveTool.GetType(myC[1]!);
+        if (((aType1 != Line) && (aType1 != Circle))
+            || ((aType2 != Line) && (aType2 != Circle)))
         {
             mySqDist.Append(theSqDist);
             myDone = true;
@@ -401,14 +404,14 @@ public class Extrema_ExtCC
         if (aType1 != aType2)
         {
             // The projection of the circle's location to the trimmed line must exist.
-            bool isReversed = (aType1 != GeomAbs_Circle);
-            gp_Pnt aPonC = !isReversed ? Extrema_CurveTool.Value(myC[0]!, theUt11)
+            bool isReversed = (aType1 != Circle);
+            Point3D aPonC = !isReversed ? Extrema_CurveTool.Value(myC[0]!, theUt11)
                                        : Extrema_CurveTool.Value(myC[1]!, theUt21);
 
-            gp_Lin aL = myC[!isReversed ? 1 : 0]!.Line();
+            Line3D aL = myC[!isReversed ? 1 : 0]!.Line();
             Extrema_ExtPElC ExtPLin = new(aPonC,
                                           aL,
-                                          Precision.Confusion(),
+                                          global::Kerf.Engine.Foundation.Precision.Confusion(),
                                           !isReversed ? theUt21 : theUt11,
                                           !isReversed ? theUt22 : theUt12);
 
@@ -424,13 +427,13 @@ public class Extrema_ExtCC
             return;
         }
 
-        if (aType1 == GeomAbs_Line)
+        if (aType1 == Line)
         {
             // Line - Line
 
             // OCCT declares these two flags as double
-            bool isFirstInfinite = (Precision.IsInfinite(theUt11) && Precision.IsInfinite(theUt12));
-            bool isLastInfinite = (Precision.IsInfinite(theUt21) && Precision.IsInfinite(theUt22));
+            bool isFirstInfinite = (global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt11) && global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt12));
+            bool isLastInfinite = (global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt21) && global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt22));
 
             if (isFirstInfinite || isLastInfinite)
             {
@@ -446,57 +449,57 @@ public class Extrema_ExtCC
 
                 myIsParallel = false;
 
-                gp_Lin aLin1 = myC[0]!.Line();
-                gp_Lin aLin2 = myC[1]!.Line();
+                Line3D aLin1 = myC[0]!.Line();
+                Line3D aLin2 = myC[1]!.Line();
                 bool isOpposite = (aLin1.Direction().Dot(aLin2.Direction()) < 0.0);
 
-                Bnd_Range aRange2 = new(theUt21, theUt22);
-                Bnd_Range aProjRng12 = new();
+                BoundRange aRange2 = new(theUt21, theUt22);
+                BoundRange aProjRng12 = new();
 
-                if (Precision.IsInfinite(theUt11))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt11))
                 {
                     if (isOpposite)
                     {
-                        aProjRng12.Add(Precision.Infinite());
+                        aProjRng12.Add(global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     else
                     {
-                        aProjRng12.Add(-Precision.Infinite());
+                        aProjRng12.Add(-global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                 }
                 else
                 {
-                    gp_Pnt aPonC1 = ElCLib.Value(theUt11, aLin1);
-                    double aPar = ElCLib.Parameter(aLin2, aPonC1);
+                    Point3D aPonC1 = global::Kerf.Engine.Geometry.ElCLib.Value(theUt11, aLin1);
+                    double aPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin2, aPonC1);
                     aProjRng12.Add(aPar);
                 }
 
-                if (Precision.IsInfinite(theUt12))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theUt12))
                 {
                     if (isOpposite)
                     {
-                        aProjRng12.Add(-Precision.Infinite());
+                        aProjRng12.Add(-global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                     else
                     {
-                        aProjRng12.Add(Precision.Infinite());
+                        aProjRng12.Add(global::Kerf.Engine.Foundation.Precision.Infinite());
                     }
                 }
                 else
                 {
-                    gp_Pnt aPonC1 = ElCLib.Value(theUt12, aLin1);
-                    double aPar = ElCLib.Parameter(aLin2, aPonC1);
+                    Point3D aPonC1 = global::Kerf.Engine.Geometry.ElCLib.Value(theUt12, aLin1);
+                    double aPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin2, aPonC1);
                     aProjRng12.Add(aPar);
                 }
 
                 aRange2.Common(aProjRng12);
-                if (aRange2.Delta() > Precision.Confusion())
+                if (aRange2.Delta() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     ClearSolutions();
                     mySqDist.Append(theSqDist);
                     myIsParallel = true;
                 }
-                else if (!aRange2.IsVoid())
+                else if (!aRange2.IsVoid)
                 {
                     // Case like this:
 
@@ -509,10 +512,10 @@ public class Extrema_ExtCC
                     double aPar1 = 0.0, aPar2 = 0.0;
                     aRange2.GetBounds(ref aPar1, ref aPar2);
                     aPar2 = 0.5 * (aPar1 + aPar2);
-                    gp_Pnt aP = ElCLib.Value(aPar2, aLin2);
+                    Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(aPar2, aLin2);
                     Extrema_POnCurv aP2 = new(aPar2, aP);
-                    aPar1 = ElCLib.Parameter(aLin1, aP);
-                    aP = ElCLib.Value(aPar1, aLin1);
+                    aPar1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin1, aP);
+                    aP = global::Kerf.Engine.Geometry.ElCLib.Value(aPar1, aLin1);
                     Extrema_POnCurv aP1 = new(aPar1, aP);
                     mypoints.Append(aP1);
                     mypoints.Append(aP2);
@@ -580,15 +583,15 @@ public class Extrema_ExtCC
             //   the range [V1-PI, V2-PI]. All ranges must be adjusted to correspond
             //   periodic range before checking of intersection.
 
-            gp_Circ aWorkCirc = myC[1]!.Circle();
+            Circle3D aWorkCirc = myC[1]!.Circle();
             double aPeriod = M_PI + M_PI;
-            gp_Vec aVTg1;
-            gp_Pnt aP11;
-            gp_Pnt aP12 = Extrema_CurveTool.Value(myC[0]!, theUt12);
+            Vector3D aVTg1;
+            Point3D aP11;
+            Point3D aP12 = Extrema_CurveTool.Value(myC[0]!, theUt12);
             Extrema_CurveTool.D1(myC[0]!, theUt11, out aP11, out aVTg1);
 
-            Bnd_Range aRange = new(theUt21, theUt22);
-            Bnd_Range aProjRng1 = new();
+            BoundRange aRange = new(theUt21, theUt22);
+            BoundRange aProjRng1 = new();
 
             // Precision of the calculation depends on circles radii
             double aPrecision = Max(Epsilon(myC[0]!.Circle().Radius()), Epsilon(myC[1]!.Circle().Radius()));
@@ -596,18 +599,18 @@ public class Extrema_ExtCC
             // Project arc of the 1st circle between points theUt11 and theUt12 to the
             // 2nd circle. It is necessary to chose correct arc from two possible ones.
 
-            double aPar1 = ElCLib.InPeriod(ElCLib.Parameter(aWorkCirc, aP11), theUt21, theUt21 + aPeriod);
-            gp_Vec aVTg2 = Extrema_CurveTool.DN(myC[1]!, aPar1, 1);
+            double aPar1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(global::Kerf.Engine.Geometry.ElCLib.Parameter(aWorkCirc, aP11), theUt21, theUt21 + aPeriod);
+            Vector3D aVTg2 = Extrema_CurveTool.DN(myC[1]!, aPar1, 1);
 
             // Check if circles have same/opposite directions
             bool isOpposite = (aVTg1.Dot(aVTg2) < 0.0);
 
-            double aPar2 = ElCLib.InPeriod(ElCLib.Parameter(aWorkCirc, aP12), theUt21, theUt21 + aPeriod);
+            double aPar2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(global::Kerf.Engine.Geometry.ElCLib.Parameter(aWorkCirc, aP12), theUt21, theUt21 + aPeriod);
 
             if (isOpposite)
             {
                 // Must be aPar2 < aPar1
-                if ((aRange.Delta() > Precision.Angular()) && ((aPar1 - aPar2) < Precision.Angular()))
+                if ((aRange.Delta() > global::Kerf.Engine.Foundation.Precision.Angular()) && ((aPar1 - aPar2) < global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     aPar2 -= aPeriod;
                 }
@@ -615,7 +618,7 @@ public class Extrema_ExtCC
             else
             {
                 // Must be aPar2 > aPar1
-                if ((aRange.Delta() > Precision.Angular()) && ((aPar2 - aPar1) < Precision.Angular()))
+                if ((aRange.Delta() > global::Kerf.Engine.Foundation.Precision.Angular()) && ((aPar2 - aPar1) < global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     aPar2 += aPeriod;
                 }
@@ -634,7 +637,7 @@ public class Extrema_ExtCC
                 // to be able to find if the concentric arcs ranges are intersected in just one parameter
                 // (lower or upper boundary).
 
-                Bnd_Range aRng = aProjRng1;
+                BoundRange aRng = aProjRng1;
                 aRng.Common(aRange);
 
                 // Cases are possible and processed below:
@@ -650,14 +653,14 @@ public class Extrema_ExtCC
                 //     myIsParallel = TRUE and only the least distance will be returned.
                 // 4. Arcs are not parallel. Then several (or single) extremas will be returned.
 
-                if (aRng.Delta() > Precision.Confusion())
+                if (aRng.Delta() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     double aPar = 0.0;
                     aRng.GetIntermediatePoint(0.5, ref aPar);
-                    gp_Pnt aPCirc2 = ElCLib.Value(aPar, aWorkCirc);
+                    Point3D aPCirc2 = global::Kerf.Engine.Geometry.ElCLib.Value(aPar, aWorkCirc);
                     Extrema_ExtPElC ExtPCir = new(aPCirc2,
                                                   Extrema_CurveTool.Circle(myC[0]!),
-                                                  Precision.Confusion(),
+                                                  global::Kerf.Engine.Foundation.Precision.Confusion(),
                                                   theUt11,
                                                   theUt12);
                     if (ExtPCir.NbExt() < 1)
@@ -691,7 +694,7 @@ public class Extrema_ExtCC
                         // Or
                         //   (Dist1^2 - Dist2^2)^2 <= 4*Dist2^2*Eps^2
 
-                        if (aDeltaSqDist * aDeltaSqDist < 4.0 * aSqD * Precision.SquareConfusion())
+                        if (aDeltaSqDist * aDeltaSqDist < 4.0 * aSqD * global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                         {
                             // New solution is found
                             break;
@@ -699,7 +702,7 @@ public class Extrema_ExtCC
                     }
                     // Nearer solution can be found
                 }
-                else if (!aRng.IsVoid())
+                else if (!aRng.IsVoid)
                 {
                     // Check cases like this:
 
@@ -710,12 +713,12 @@ public class Extrema_ExtCC
 
                     double aPar = 0.0;
                     aRng.GetIntermediatePoint(0.5, ref aPar);
-                    gp_Pnt aPCirc2 = ElCLib.Value(aPar, aWorkCirc);
+                    Point3D aPCirc2 = global::Kerf.Engine.Geometry.ElCLib.Value(aPar, aWorkCirc);
                     Extrema_POnCurv aP2 = new(aPar, aPCirc2);
 
                     Extrema_ExtPElC ExtPCir = new(aPCirc2,
                                                   Extrema_CurveTool.Circle(myC[0]!),
-                                                  Precision.Confusion(),
+                                                  global::Kerf.Engine.Foundation.Precision.Confusion(),
                                                   theUt11,
                                                   theUt12);
 
@@ -844,11 +847,11 @@ public class Extrema_ExtCC
 
                     if (Extrema_CurveTool.IsPeriodic(myC[0]!))
                     {
-                        U = ElCLib.InPeriod(U, Ut11, Ut11 + Extrema_CurveTool.Period(myC[0]!));
+                        U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, Ut11, Ut11 + Extrema_CurveTool.Period(myC[0]!));
                     }
                     if (Extrema_CurveTool.IsPeriodic(myC[1]!))
                     {
-                        U2 = ElCLib.InPeriod(U2, Ut21, Ut21 + Extrema_CurveTool.Period(myC[1]!));
+                        U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, Ut21, Ut21 + Extrema_CurveTool.Period(myC[1]!));
                     }
 
                     if ((U >= Ut11 - RealEpsilon()) && (U <= Ut12 + RealEpsilon())
@@ -902,11 +905,11 @@ public class Extrema_ExtCC
                     // Check points to be into param space.
                     if (Extrema_CurveTool.IsPeriodic(myC[0]!))
                     {
-                        U = ElCLib.InPeriod(U, Ut11, Ut11 + Extrema_CurveTool.Period(myC[0]!));
+                        U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, Ut11, Ut11 + Extrema_CurveTool.Period(myC[0]!));
                     }
                     if (Extrema_CurveTool.IsPeriodic(myC[1]!))
                     {
-                        U2 = ElCLib.InPeriod(U2, Ut21, Ut21 + Extrema_CurveTool.Period(myC[1]!));
+                        U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, Ut21, Ut21 + Extrema_CurveTool.Period(myC[1]!));
                     }
 
                     if ((U >= Ut11 - RealEpsilon()) && (U <= Ut12 + RealEpsilon())

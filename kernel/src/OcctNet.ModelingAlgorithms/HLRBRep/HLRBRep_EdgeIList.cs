@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Sorting and merging of the interferences of an edge, by their parameters.</summary>
@@ -30,7 +32,7 @@ public static class HLRBRep_EdgeIList
     public static void ProcessComplex(NCollection_List<HLRAlgo_Interference> IL, HLRBRep_EdgeInterferenceTool T)
     {
         TopCnx_EdgeFaceTransition transTool = new();
-        gp_Dir TgtE, NormE, TgtI, NormI;
+        Direction3D TgtE, NormE, TgtI, NormI;
         const double TolAng = 0.0001;
         double CurvE, CurvI;
         NCollection_List<HLRAlgo_Interference>.Iterator It1 = new(IL);

@@ -3,11 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A node of the internal triangulation of the polygonal hidden-line removal (to update the outlines).</summary>
 /// <remarks>A working object (a transient), as OCCT's; the nested structs are plain data with public fields.</remarks>
-public class HLRAlgo_PolyInternalNode : Standard_Transient
+public class HLRAlgo_PolyInternalNode : Transient
 {
     /// <summary>The node's first segment, flags and edges (plain data).</summary>
     public struct NodeIndices
@@ -21,18 +25,18 @@ public class HLRAlgo_PolyInternalNode : Standard_Transient
     /// <summary>The node's point, normal, parameters on the surface and on the edges, and scalar (plain data).</summary>
     public struct NodeData
     {
-        public gp_XYZ Point;
-        public gp_XYZ Normal;
-        public gp_XY UV;
+        public Xyz Point;
+        public Xyz Normal;
+        public Xy UV;
         public double PCu1;
         public double PCu2;
         public double Scal;
 
         public NodeData()
         {
-            Point = new gp_XYZ();
-            Normal = new gp_XYZ();
-            UV = new gp_XY();
+            Point = new Xyz();
+            Normal = new Xyz();
+            UV = new Xy();
             PCu1 = 0.0;
             PCu2 = 0.0;
             Scal = 0.0;

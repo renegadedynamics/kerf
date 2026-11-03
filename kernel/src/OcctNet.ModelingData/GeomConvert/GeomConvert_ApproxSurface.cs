@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -46,12 +48,12 @@ public sealed class GeomConvert_ApproxSurface
 
             // Initialisation
 
-            myAdaptor = myAdaptor.UTrim(UStartEnd[0], UStartEnd[1], Precision.PConfusion());
-            myAdaptor = myAdaptor.VTrim(VStartEnd[0], VStartEnd[1], Precision.PConfusion());
+            myAdaptor = myAdaptor.UTrim(UStartEnd[0], UStartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
+            myAdaptor = myAdaptor.VTrim(VStartEnd[0], VStartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             int Order = UOrder + VOrder;
-            gp_Pnt pnt;
-            gp_Vec vect, v1, v2, v3, v4, v5, v6, v7, v8, v9;
+            Point3D pnt;
+            Vector3D vect, v1, v2, v3, v4, v5, v6, v7, v8, v9;
 
             if (FavorIso == 1)
             {
@@ -257,8 +259,8 @@ public sealed class GeomConvert_ApproxSurface
     /// </summary>
     public GeomConvert_ApproxSurface(Geom_Surface Surf,
                                      double Tol3d,
-                                     GeomAbs_Shape UContinuity,
-                                     GeomAbs_Shape VContinuity,
+                                     Continuity UContinuity,
+                                     Continuity VContinuity,
                                      int MaxDegU,
                                      int MaxDegV,
                                      int MaxSegments,
@@ -271,8 +273,8 @@ public sealed class GeomConvert_ApproxSurface
     /// <summary>As the other constructor, for a surface given by an adaptor (which the approximation trims).</summary>
     public GeomConvert_ApproxSurface(Adaptor3d_Surface Surf,
                                      double Tol3d,
-                                     GeomAbs_Shape UContinuity,
-                                     GeomAbs_Shape VContinuity,
+                                     Continuity UContinuity,
+                                     Continuity VContinuity,
                                      int MaxDegU,
                                      int MaxDegV,
                                      int MaxSegments,
@@ -283,8 +285,8 @@ public sealed class GeomConvert_ApproxSurface
 
     private void Approximate(Adaptor3d_Surface theSurf,
                              double theTol3d,
-                             GeomAbs_Shape theUContinuity,
-                             GeomAbs_Shape theVContinuity,
+                             Continuity theUContinuity,
+                             Continuity theVContinuity,
                              int theMaxDegU,
                              int theMaxDegV,
                              int theMaxSegments,
@@ -313,23 +315,23 @@ public sealed class GeomConvert_ApproxSurface
         epsfr.SetValue(1, 4, theTol3d);
 
         // Init of the iso type
-        GeomAbs_IsoType IsoType = GeomAbs_IsoV;
+        IsoType IsoType = IsoV;
         int NbDec;
 
-        NbDec = theSurf.NbUIntervals(GeomAbs_C2);
+        NbDec = theSurf.NbUIntervals(C2);
         NCollection_Array1<double> UDec_C2 = new(1, NbDec + 1);
-        theSurf.UIntervals(UDec_C2, GeomAbs_C2);
-        NbDec = theSurf.NbVIntervals(GeomAbs_C2);
+        theSurf.UIntervals(UDec_C2, C2);
+        NbDec = theSurf.NbVIntervals(C2);
         NCollection_Array1<double> VDec_C2 = new(1, NbDec + 1);
-        theSurf.VIntervals(VDec_C2, GeomAbs_C2);
+        theSurf.VIntervals(VDec_C2, C2);
 
-        NbDec = theSurf.NbUIntervals(GeomAbs_C3);
+        NbDec = theSurf.NbUIntervals(C3);
         NCollection_Array1<double> UDec_C3 = new(1, NbDec + 1);
-        theSurf.UIntervals(UDec_C3, GeomAbs_C3);
+        theSurf.UIntervals(UDec_C3, C3);
 
-        NbDec = theSurf.NbVIntervals(GeomAbs_C3);
+        NbDec = theSurf.NbVIntervals(C3);
         NCollection_Array1<double> VDec_C3 = new(1, NbDec + 1);
-        theSurf.VIntervals(VDec_C3, GeomAbs_C3);
+        theSurf.VIntervals(VDec_C3, C3);
         // Approximation with preferential splitting
         // at C2 discontinuity locations
         AdvApprox_PrefAndRec pUDec = new(UDec_C2, UDec_C3);

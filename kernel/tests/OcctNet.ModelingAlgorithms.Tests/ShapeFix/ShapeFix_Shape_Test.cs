@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -52,9 +53,9 @@ public class ShapeFix_ShapeTest
         aFixer.SetMinTolerance(aMinTolerance);
         aFixer.SetMaxTolerance(aMaxTolerance);
 
-        Assert.Equal(aPrecision, aFixer.Precision(), Precision.Confusion());
-        Assert.Equal(aMinTolerance, aFixer.MinTolerance(), Precision.Confusion());
-        Assert.Equal(aMaxTolerance, aFixer.MaxTolerance(), Precision.Confusion());
+        Assert.Equal(aPrecision, aFixer.Precision(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMinTolerance, aFixer.MinTolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMaxTolerance, aFixer.MaxTolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public class ShapeFix_ShapeTest
         TopoDS_Shape aBox1 = aMakeBox1.Shape();
         Assert.True(aMakeBox1.IsDone());
 
-        var aMakeBox2 = new BRepPrimAPI_MakeBox(new gp_Pnt(20.0, 0.0, 0.0), 5.0, 5.0, 5.0);
+        var aMakeBox2 = new BRepPrimAPI_MakeBox(new Point3D(20.0, 0.0, 0.0), 5.0, 5.0, 5.0);
         TopoDS_Shape aBox2 = aMakeBox2.Shape();
         Assert.True(aMakeBox2.IsDone());
 
@@ -90,17 +91,17 @@ public class ShapeFix_ShapeTest
     {
         // Bowtie quad: vertices ordered so the two diagonals cross -> the wire self-intersects.
         var aPoly = new BRepBuilderAPI_MakePolygon();
-        aPoly.Add(new gp_Pnt(0.0, 0.0, 0.0));
-        aPoly.Add(new gp_Pnt(1.0, 1.0, 0.0));
-        aPoly.Add(new gp_Pnt(1.0, 0.0, 0.0));
-        aPoly.Add(new gp_Pnt(0.0, 1.0, 0.0));
+        aPoly.Add(new Point3D(0.0, 0.0, 0.0));
+        aPoly.Add(new Point3D(1.0, 1.0, 0.0));
+        aPoly.Add(new Point3D(1.0, 0.0, 0.0));
+        aPoly.Add(new Point3D(0.0, 1.0, 0.0));
         aPoly.Close();
         Assert.True(aPoly.IsDone());
 
         var aMakeFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true);
         Assert.True(aMakeFace.IsDone());
 
-        var aMakePrism = new BRepPrimAPI_MakePrism(aMakeFace.Face(), new gp_Vec(0.0, 0.0, 1.0));
+        var aMakePrism = new BRepPrimAPI_MakePrism(aMakeFace.Face(), new Vector3D(0.0, 0.0, 1.0));
         Assert.True(aMakePrism.IsDone());
 
         var aFixer = new ShapeFix_Shape(aMakePrism.Shape());

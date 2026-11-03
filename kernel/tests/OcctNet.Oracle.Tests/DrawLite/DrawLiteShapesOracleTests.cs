@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -260,7 +261,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
             var aDI = new DrawInterpreter(aLog);
             aDI.LoadDrawResources(ResourcesDirectory);
             Assert.Equal("s", aDI.Eval($"restore {{{TclPath(aFile)}}} s"));
-            Assert.True(aDI.GetShape("s").TShape()!.IsFrozen());
+            Assert.True(aDI.GetShape("s").TShape()!.IsFrozen);
 
             var aNS = new N.TopoDS_Shape();
             using (var aBuilder = new N.BRep_Builder())
@@ -339,7 +340,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
 
             CompareValues(anOracle, aNativeTols, aPortTols, $"{aName} tolerance");
             aLog.GetStringBuilder().Clear();
-            Assert.Equal(aDI.Eval("checkmaxtol s -ref " + R(Summary(anAll).Max)), Standard_Stream.FormatReal(Summary(anAll).Max, 17));
+            Assert.Equal(aDI.Eval("checkmaxtol s -ref " + R(Summary(anAll).Max)), StreamUtilities.FormatReal(Summary(anAll).Max, 17));
             Assert.DoesNotContain("Error", aLog.ToString());
 
             // maxtolerance: the counts and the extreme tolerances

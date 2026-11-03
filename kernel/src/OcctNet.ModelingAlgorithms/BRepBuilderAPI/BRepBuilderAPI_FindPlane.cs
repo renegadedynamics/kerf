@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -48,12 +50,12 @@ public sealed class BRepBuilderAPI_FindPlane
         // try to find an analytical curve and calculate points
         bool found = false;
         Geom_Plane? P = null;
-        var points = new NCollection_Sequence<gp_Pnt>();
+        var points = new NCollection_Sequence<Point3D>();
         int nbPnts;
 
         for (ex.Init(S, TopAbs_EDGE); ex.More(); ex.Next())
         {
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(ex.Current()), out TopLoc_Location loc, out double first,
+            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(ex.Current()), out Placement loc, out double first,
                                               out double last);
             if (c3d is not null)
             {
@@ -74,7 +76,7 @@ public sealed class BRepBuilderAPI_FindPlane
                     {
                         found = true;
                         var Co = (Geom_Conic)c3dptr;
-                        P = new Geom_Plane(new gp_Ax3(Co.Position()));
+                        P = new Geom_Plane(new CoordinateSystem(Co.Position()));
                     }
                 }
                 else if (cType == typeof(Geom_BezierCurve))
@@ -92,7 +94,7 @@ public sealed class BRepBuilderAPI_FindPlane
                     nbPnts = 10;
                 }
 
-                gp_Pnt p0 = new();
+                Point3D p0 = new();
                 for (int i = 1; i <= nbPnts; i++)
                 {
                     if (i == 1)
@@ -118,8 +120,8 @@ public sealed class BRepBuilderAPI_FindPlane
             if (points.Length() > 2)
             {
                 double disMax = 0.0;
-                gp_Pnt p0 = points[1];
-                gp_Pnt p1 = new();
+                Point3D p0 = points[1];
+                Point3D p1 = new();
                 for (int i = 2; i <= points.Length(); i++)
                 {
                     double dist = p0.SquareDistance(points[i]);
@@ -132,12 +134,12 @@ public sealed class BRepBuilderAPI_FindPlane
 
                 if (disMax > tol2)
                 {
-                    gp_Vec V1 = new(p0, p1), V3;
+                    Vector3D V1 = new(p0, p1), V3;
                     double proMax = 0.0;
-                    gp_Pnt p2 = p0;
+                    Point3D p2 = p0;
                     for (int j = 2; j <= points.Length(); j++)
                     {
-                        V3 = V1 ^ new gp_Vec(p0, points[j]);
+                        V3 = V1 ^ new Vector3D(p0, points[j]);
                         double pro = V3.SquareMagnitude();
                         if (pro > proMax)
                         {
@@ -148,10 +150,10 @@ public sealed class BRepBuilderAPI_FindPlane
 
                     if (p0.SquareDistance(p2) > tol2)
                     {
-                        gp_Dir D1 = new(V1), D2 = new(new gp_Vec(p0, p2));
-                        if (!D1.IsParallel(D2, Precision.Angular()))
+                        Direction3D D1 = new(V1), D2 = new(new Vector3D(p0, p2));
+                        if (!D1.IsParallel(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            P = new Geom_Plane(new gp_Ax3(p0, D1.Crossed(D2), D1));
+                            P = new Geom_Plane(new CoordinateSystem(p0, D1.Crossed(D2), D1));
                             found = true;
                         }
                     }
@@ -162,7 +164,7 @@ public sealed class BRepBuilderAPI_FindPlane
         if (found)
         {
             // test if all points are on the plane
-            gp_Pln pln = P!.Pln();
+            Plane3D pln = P!.Pln();
             for (int i = 1; i <= points.Length(); i++)
             {
                 if (pln.SquareDistance(points[i]) > tol2)

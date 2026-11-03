@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -46,10 +47,10 @@ public class ShapeUpgrade_FixSmallBezierCurves : ShapeUpgrade_FixSmallCurves
                 Last = l;
             }
             Geom_Curve trc = new Geom_TrimmedCurve(c3d!, First, Last);
-            GeomAbs_Shape aCont = trc.Continuity();
-            if (aCont == GeomAbs_C3 || aCont == GeomAbs_CN)
+            Continuity aCont = trc.Continuity();
+            if (aCont == C3 || aCont == CN)
             {
-                aCont = GeomAbs_C2;
+                aCont = C2;
             }
             try
             {
@@ -94,7 +95,7 @@ public class ShapeUpgrade_FixSmallBezierCurves : ShapeUpgrade_FixSmallCurves
                 Last = l;
             }
             Geom2d_Curve trc2d = new Geom2d_TrimmedCurve(c2d!, First, Last);
-            GeomAbs_Shape aCont = trc2d.Continuity();
+            Continuity aCont = trc2d.Continuity();
             try
             {
                 var AproxCurve2d = new Geom2dConvert_ApproxCurve(trc2d, prec, aCont, 1, 9);
@@ -138,7 +139,7 @@ public class ShapeUpgrade_FixSmallBezierCurves : ShapeUpgrade_FixSmallCurves
                     Last = l;
                 }
                 Geom2d_Curve trc2d = new Geom2d_TrimmedCurve(c2!, First, Last);
-                GeomAbs_Shape aCont = trc2d.Continuity();
+                Continuity aCont = trc2d.Continuity();
                 var AproxCurve2d = new Geom2dConvert_ApproxCurve(trc2d, prec, aCont, 1, 9);
                 try
                 {

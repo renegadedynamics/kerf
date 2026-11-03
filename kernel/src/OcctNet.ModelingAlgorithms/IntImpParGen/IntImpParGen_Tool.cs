@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -54,7 +56,7 @@ internal static class IntImpParGen_Tool
     /// <paramref name="Param1"/>: Head or End when it is within the bound's tolerance (the closer bound in
     /// parameter when it is within both).
     /// </summary>
-    internal static void Determine_Position(out IntRes2d_Position Pos1, in IntRes2d_Domain TheDomain, in gp_Pnt2d Pnt1,
+    internal static void Determine_Position(out IntRes2d_Position Pos1, in IntRes2d_Domain TheDomain, in Point2D Pnt1,
                                          double Param1)
     {
         Pos1 = IntRes2d_Middle;
@@ -88,17 +90,17 @@ internal static class IntImpParGen_Tool
     }
 
     /// <summary>
-    /// <see cref="IntImpParGen.DetermineTransition(IntRes2d_Position, ref gp_Vec2d, in gp_Vec2d, ref IntRes2d_Transition, IntRes2d_Position, ref gp_Vec2d, in gp_Vec2d, ref IntRes2d_Transition, double)"/>
+    /// <see cref="IntImpParGen.DetermineTransition(IntRes2d_Position, ref Vector2D, in Vector2D, ref IntRes2d_Transition, IntRes2d_Position, ref Vector2D, in Vector2D, ref IntRes2d_Transition, double)"/>
     /// with gp::Resolution() on the magnitudes instead of 1e-12 on their squares, and without setting the
     /// positions first.
     /// </summary>
     internal static void Determine_Transition(IntRes2d_Position Pos1,
-                                           ref gp_Vec2d Tan1,
-                                           in gp_Vec2d Norm1,
+                                           ref Vector2D Tan1,
+                                           in Vector2D Norm1,
                                            ref IntRes2d_Transition T1,
                                            IntRes2d_Position Pos2,
-                                           ref gp_Vec2d Tan2,
-                                           in gp_Vec2d Norm2,
+                                           ref Vector2D Tan2,
+                                           in Vector2D Norm2,
                                            ref IntRes2d_Transition T2,
                                            double Tol)
     {
@@ -107,21 +109,21 @@ internal static class IntImpParGen_Tool
         bool courbure2 = true;
         bool decide = true;
 
-        if (Tan1.Magnitude() <= gp.Resolution())
+        if (Tan1.Magnitude() <= Constants.Resolution())
         {
             Tan1 = Norm1;
             courbure1 = false;
-            if (Tan1.Magnitude() <= gp.Resolution())
+            if (Tan1.Magnitude() <= Constants.Resolution())
             { // transition undecided
                 decide = false;
             }
         }
 
-        if (Tan2.Magnitude() <= gp.Resolution())
+        if (Tan2.Magnitude() <= Constants.Resolution())
         {
             Tan2 = Norm2;
             courbure2 = false;
-            if (Tan2.Magnitude() <= gp.Resolution())
+            if (Tan2.Magnitude() <= Constants.Resolution())
             { // transition undecided
                 decide = false;
             }
@@ -147,7 +149,7 @@ internal static class IntImpParGen_Tool
                 }
                 else
                 {
-                    gp_Vec2d Norm = new();
+                    Vector2D Norm = new();
                     Norm.SetCoord(-Tan1.Y(), Tan1.X());
 
                     double Val1, Val2;
@@ -169,7 +171,7 @@ internal static class IntImpParGen_Tool
                         Val2 = Norm.Dot(Norm2);
                     }
 
-                    if (Math.Abs(Val1 - Val2) <= gp.Resolution())
+                    if (Math.Abs(Val1 - Val2) <= Constants.Resolution())
                     {
                         T1.SetValue(true, Pos1, IntRes2d_Unknown, opos);
                         T2.SetValue(true, Pos2, IntRes2d_Unknown, opos);

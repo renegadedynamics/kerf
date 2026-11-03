@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
 using static OcctNet.Foundation.Tests.MathLin_Test_Helpers;
 
 namespace OcctNet.Foundation.Tests;
@@ -11,9 +12,9 @@ internal static class MathLin_Test_Helpers
     internal const double THE_TOLERANCE = 1.0e-10;
 
     // Create identity matrix.
-    internal static math_Matrix CreateIdentity(int theN)
+    internal static Matrix CreateIdentity(int theN)
     {
-        math_Matrix aMat = new(1, theN, 1, theN, 0.0);
+        Matrix aMat = new(1, theN, 1, theN, 0.0);
         for (int i = 1; i <= theN; ++i)
         {
             aMat[i, i] = 1.0;
@@ -22,9 +23,9 @@ internal static class MathLin_Test_Helpers
     }
 
     // Create symmetric positive definite matrix.
-    internal static math_Matrix CreateSPD(int theN)
+    internal static Matrix CreateSPD(int theN)
     {
-        math_Matrix aMat = new(1, theN, 1, theN, 0.0);
+        Matrix aMat = new(1, theN, 1, theN, 0.0);
         for (int i = 1; i <= theN; ++i)
         {
             for (int j = 1; j <= theN; ++j)
@@ -38,9 +39,9 @@ internal static class MathLin_Test_Helpers
 
     // Create random matrix. C's srand/rand are replaced by the MSVC runtime's generator (RAND_MAX = 32767): the
     // values differ from a glibc build of the test, which only needs some matrix.
-    internal static math_Matrix CreateRandom(int theM, int theN, int theSeed = 42)
+    internal static Matrix CreateRandom(int theM, int theN, int theSeed = 42)
     {
-        math_Matrix aMat = new(1, theM, 1, theN);
+        Matrix aMat = new(1, theM, 1, theN);
         uint aState = (uint)theSeed;
         for (int i = 1; i <= theM; ++i)
         {
@@ -66,12 +67,12 @@ internal static class MathLin_Test_Helpers
     }
 
     // Matrix multiplication A*B.
-    internal static math_Matrix MatMul(math_Matrix theA, math_Matrix theB)
+    internal static Matrix MatMul(Matrix theA, Matrix theB)
     {
         int aM = theA.RowNumber();
         int aN = theB.ColNumber();
         int aK = theA.ColNumber();
-        math_Matrix aResult = new(1, aM, 1, aN, 0.0);
+        Matrix aResult = new(1, aM, 1, aN, 0.0);
         for (int i = 1; i <= aM; ++i)
         {
             for (int j = 1; j <= aN; ++j)
@@ -86,11 +87,11 @@ internal static class MathLin_Test_Helpers
     }
 
     // Transpose matrix.
-    internal static math_Matrix Transpose(math_Matrix theMat)
+    internal static Matrix Transpose(Matrix theMat)
     {
         int aM = theMat.RowNumber();
         int aN = theMat.ColNumber();
-        math_Matrix aResult = new(1, aN, 1, aM);
+        Matrix aResult = new(1, aN, 1, aM);
         for (int i = 1; i <= aM; ++i)
         {
             for (int j = 1; j <= aN; ++j)
@@ -107,31 +108,31 @@ public class MathLin_SVD_Test
     [Fact]
     public void BasicDecomposition_2x2()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 2.0;
         aMat[2, 1] = 2.0;
         aMat[2, 2] = 3.0;
 
-        var aResult = MathLin.SVD(aMat);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SVD(aMat);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2, aResult.Rank);
 
         // Verify U * S * V^T = A
-        math_Matrix aU = aResult.U!;
+        Matrix aU = aResult.U!;
         math_Vector aS = aResult.SingularValues!;
-        math_Matrix aV = aResult.V!;
+        Matrix aV = aResult.V!;
 
         // Construct diagonal matrix from singular values
-        math_Matrix aSigma = new(1, 2, 1, 2, 0.0);
+        Matrix aSigma = new(1, 2, 1, 2, 0.0);
         aSigma[1, 1] = aS[1];
         aSigma[2, 2] = aS[2];
 
         // Compute U * Sigma * V^T
-        math_Matrix aUSigma        = MatMul(aU, aSigma);
-        math_Matrix aVt            = Transpose(aV);
-        math_Matrix aReconstructed = MatMul(aUSigma, aVt);
+        Matrix aUSigma        = MatMul(aU, aSigma);
+        Matrix aVt            = Transpose(aV);
+        Matrix aReconstructed = MatMul(aUSigma, aVt);
 
         // Check reconstruction
         for (int i = 1; i <= 2; ++i)
@@ -146,7 +147,7 @@ public class MathLin_SVD_Test
     [Fact]
     public void SingularValues()
     {
-        math_Matrix aMat = new(1, 3, 1, 3);
+        Matrix aMat = new(1, 3, 1, 3);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[1, 3] = 3.0;
@@ -157,9 +158,9 @@ public class MathLin_SVD_Test
         aMat[3, 2] = 8.0;
         aMat[3, 3] = 9.0;
 
-        var aResult = MathLin.SVD(aMat);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SVD(aMat);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Singular values should be non-negative and in descending order
         math_Vector aS = aResult.SingularValues!;
@@ -176,7 +177,7 @@ public class MathLin_SVD_Test
     [Fact]
     public void SolveSystem()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -186,9 +187,9 @@ public class MathLin_SVD_Test
         aB[1] = 9.0;
         aB[2] = 8.0;
 
-        var aResult = MathLin.SolveSVD(aMat, aB);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveSVD(aMat, aB);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Check solution: Ax = b
         math_Vector aX = aResult.Solution!;
@@ -202,19 +203,19 @@ public class MathLin_SVD_Test
     [Fact]
     public void PseudoInverse()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[2, 1] = 3.0;
         aMat[2, 2] = 4.0;
 
-        var aPinv = MathLin.PseudoInverse(aMat);
+        var aPinv = global::Kerf.Engine.Numerics.Linear.MathLin.PseudoInverse(aMat);
 
-        Assert.True(aPinv.IsDone());
+        Assert.True(aPinv.IsDone);
 
         // A * A+ * A = A
-        math_Matrix aTemp  = MatMul(aMat, aPinv.Inverse!);
-        math_Matrix aCheck = MatMul(aTemp, aMat);
+        Matrix aTemp  = MatMul(aMat, aPinv.Inverse!);
+        Matrix aCheck = MatMul(aTemp, aMat);
 
         for (int i = 1; i <= 2; ++i)
         {
@@ -229,12 +230,12 @@ public class MathLin_SVD_Test
     public void ConditionNumber()
     {
         // Well-conditioned identity matrix
-        math_Matrix aI     = CreateIdentity(3);
-        double      aCondI = MathLin.ConditionNumber(aI);
+        Matrix aI     = CreateIdentity(3);
+        double      aCondI = global::Kerf.Engine.Numerics.Linear.MathLin.ConditionNumber(aI);
         Assert.Equal(1.0, aCondI, THE_TOLERANCE);
 
         // Ill-conditioned matrix
-        math_Matrix aHilbert = new(1, 3, 1, 3);
+        Matrix aHilbert = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 3; ++j)
@@ -242,7 +243,7 @@ public class MathLin_SVD_Test
                 aHilbert[i, j] = 1.0 / (i + j - 1);
             }
         }
-        double aCondH = MathLin.ConditionNumber(aHilbert);
+        double aCondH = global::Kerf.Engine.Numerics.Linear.MathLin.ConditionNumber(aHilbert);
         Assert.True(aCondH > 100.0); // Hilbert matrices are ill-conditioned
     }
 }
@@ -252,7 +253,7 @@ public class MathLin_Gauss_Test
     [Fact]
     public void SolveMultiple_ReturnsFullMatrix()
     {
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 4.0;
         aA[1, 2] = 1.0;
         aA[1, 3] = 2.0;
@@ -263,7 +264,7 @@ public class MathLin_Gauss_Test
         aA[3, 2] = 1.0;
         aA[3, 3] = 5.0;
 
-        math_Matrix aXExpected = new(1, 3, 1, 2);
+        Matrix aXExpected = new(1, 3, 1, 2);
         aXExpected[1, 1] = 1.0;
         aXExpected[2, 1] = 2.0;
         aXExpected[3, 1] = -1.0;
@@ -271,13 +272,13 @@ public class MathLin_Gauss_Test
         aXExpected[2, 2] = 0.5;
         aXExpected[3, 2] = 3.0;
 
-        math_Matrix aB = MatMul(aA, aXExpected);
+        Matrix aB = MatMul(aA, aXExpected);
 
-        var aResult = MathLin.SolveMultiple(aA, aB);
-        Assert.True(aResult.IsDone());
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveMultiple(aA, aB);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.Solutions is not null);
 
-        math_Matrix aX = aResult.Solutions!;
+        Matrix aX = aResult.Solutions!;
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -286,7 +287,7 @@ public class MathLin_Gauss_Test
             }
         }
 
-        math_Matrix aCheckB = MatMul(aA, aX);
+        Matrix aCheckB = MatMul(aA, aX);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -299,15 +300,15 @@ public class MathLin_Gauss_Test
     [Fact]
     public void SolveMultiple_DimensionMismatch()
     {
-        math_Matrix aA = new(1, 3, 1, 3, 0.0);
+        Matrix aA = new(1, 3, 1, 3, 0.0);
         for (int i = 1; i <= 3; ++i)
         {
             aA[i, i] = 1.0;
         }
 
-        math_Matrix aBWrong = new(1, 2, 1, 1, 0.0);
-        var        aResult = MathLin.SolveMultiple(aA, aBWrong);
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        Matrix aBWrong = new(1, 2, 1, 1, 0.0);
+        var        aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveMultiple(aA, aBWrong);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 }
 
@@ -316,7 +317,7 @@ public class MathLin_Householder_Test
     [Fact]
     public void SolveQRMultiple_ReturnsFullMatrix()
     {
-        math_Matrix aA = new(1, 3, 1, 2);
+        Matrix aA = new(1, 3, 1, 2);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[2, 1] = 3.0;
@@ -324,19 +325,19 @@ public class MathLin_Householder_Test
         aA[3, 1] = -1.0;
         aA[3, 2] = 1.0;
 
-        math_Matrix aXExpected = new(1, 2, 1, 2);
+        Matrix aXExpected = new(1, 2, 1, 2);
         aXExpected[1, 1] = 2.0;
         aXExpected[2, 1] = -1.0;
         aXExpected[1, 2] = -0.5;
         aXExpected[2, 2] = 3.0;
 
-        math_Matrix aB = MatMul(aA, aXExpected);
+        Matrix aB = MatMul(aA, aXExpected);
 
-        var aResult = MathLin.SolveQRMultiple(aA, aB);
-        Assert.True(aResult.IsDone());
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveQRMultiple(aA, aB);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.Solutions is not null);
 
-        math_Matrix aX = aResult.Solutions!;
+        Matrix aX = aResult.Solutions!;
         for (int i = 1; i <= 2; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -345,7 +346,7 @@ public class MathLin_Householder_Test
             }
         }
 
-        math_Matrix aCheckB = MatMul(aA, aX);
+        Matrix aCheckB = MatMul(aA, aX);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -358,33 +359,33 @@ public class MathLin_Householder_Test
     [Fact]
     public void SolveQRMultiple_DimensionMismatch()
     {
-        math_Matrix aA = new(1, 3, 1, 2, 0.0);
+        Matrix aA = new(1, 3, 1, 2, 0.0);
         aA[1, 1] = 1.0;
         aA[2, 2] = 1.0;
 
-        math_Matrix aBWrong = new(1, 2, 1, 2, 0.0);
-        var        aResult = MathLin.SolveQRMultiple(aA, aBWrong);
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        Matrix aBWrong = new(1, 2, 1, 2, 0.0);
+        var        aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveQRMultiple(aA, aBWrong);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 
     [Fact]
     public void BasicQR_2x2()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[2, 1] = 3.0;
         aMat[2, 2] = 4.0;
 
-        var aResult = MathLin.QR(aMat);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.QR(aMat);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
-        math_Matrix aQ = aResult.Q!;
-        math_Matrix aR = aResult.R!;
+        Matrix aQ = aResult.Q!;
+        Matrix aR = aResult.R!;
 
         // Check Q is orthogonal: Q * Q^T = I
-        math_Matrix aQQt = MatMul(aQ, Transpose(aQ));
+        Matrix aQQt = MatMul(aQ, Transpose(aQ));
         for (int i = 1; i <= 2; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -398,7 +399,7 @@ public class MathLin_Householder_Test
         Assert.Equal(0.0, aR[2, 1], THE_TOLERANCE);
 
         // Check Q * R = A
-        math_Matrix aQR = MatMul(aQ, aR);
+        Matrix aQR = MatMul(aQ, aR);
         for (int i = 1; i <= 2; ++i)
         {
             for (int j = 1; j <= 2; ++j)
@@ -411,7 +412,7 @@ public class MathLin_Householder_Test
     [Fact]
     public void SolveSystem()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -421,9 +422,9 @@ public class MathLin_Householder_Test
         aB[1] = 9.0;
         aB[2] = 8.0;
 
-        var aResult = MathLin.SolveQR(aMat, aB);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveQR(aMat, aB);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Check solution: Ax = b
         math_Vector aX = aResult.Solution!;
@@ -438,7 +439,7 @@ public class MathLin_Householder_Test
     public void Overdetermined()
     {
         // 3x2 system (overdetermined)
-        math_Matrix aMat = new(1, 3, 1, 2);
+        Matrix aMat = new(1, 3, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -451,9 +452,9 @@ public class MathLin_Householder_Test
         aB[2] = 2.0;
         aB[3] = 3.0;
 
-        var aResult = MathLin.SolveQR(aMat, aB);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveQR(aMat, aB);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // This is a least squares solution
         Assert.Equal(2, (aResult.Solution!).Length());
@@ -465,14 +466,14 @@ public class MathLin_Jacobi_Test
     [Fact]
     public void Eigenvalues_Diagonal()
     {
-        math_Matrix aMat = new(1, 3, 1, 3, 0.0);
+        Matrix aMat = new(1, 3, 1, 3, 0.0);
         aMat[1, 1] = 3.0;
         aMat[2, 2] = 1.0;
         aMat[3, 3] = 2.0;
 
-        var aResult = MathLin.Jacobi(aMat, true);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.Jacobi(aMat, true);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         math_Vector aEigenVals = aResult.EigenValues!;
 
@@ -486,15 +487,15 @@ public class MathLin_Jacobi_Test
     [Fact]
     public void Eigenvalues_Symmetric()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
         aMat[2, 2] = 3.0;
 
-        var aResult = MathLin.Jacobi(aMat, true);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.Jacobi(aMat, true);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         math_Vector aEigenVals = aResult.EigenValues!;
 
@@ -506,16 +507,16 @@ public class MathLin_Jacobi_Test
     [Fact]
     public void EigenvectorsOrthogonal()
     {
-        math_Matrix aMat = CreateSPD(3);
+        Matrix aMat = CreateSPD(3);
 
-        var aResult = MathLin.Jacobi(aMat, false);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.Jacobi(aMat, false);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
-        math_Matrix aV = aResult.EigenVectors!;
+        Matrix aV = aResult.EigenVectors!;
 
         // Eigenvectors should be orthogonal: V^T * V = I
-        math_Matrix aVtV = MatMul(Transpose(aV), aV);
+        Matrix aVtV = MatMul(Transpose(aV), aV);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 3; ++j)
@@ -529,24 +530,24 @@ public class MathLin_Jacobi_Test
     [Fact]
     public void SpectralDecomposition()
     {
-        math_Matrix aMat = CreateSPD(3);
+        Matrix aMat = CreateSPD(3);
 
-        var aResult = MathLin.SpectralDecomposition(aMat);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.SpectralDecomposition(aMat);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         math_Vector aD = aResult.EigenValues!;
-        math_Matrix aV = aResult.EigenVectors!;
+        Matrix aV = aResult.EigenVectors!;
 
         // Reconstruct: A = V * D * V^T
-        math_Matrix aDiag = new(1, 3, 1, 3, 0.0);
+        Matrix aDiag = new(1, 3, 1, 3, 0.0);
         for (int i = 1; i <= 3; ++i)
         {
             aDiag[i, i] = aD[i];
         }
 
-        math_Matrix aVD            = MatMul(aV, aDiag);
-        math_Matrix aReconstructed = MatMul(aVD, Transpose(aV));
+        Matrix aVD            = MatMul(aV, aDiag);
+        Matrix aReconstructed = MatMul(aVD, Transpose(aV));
 
         for (int i = 1; i <= 3; ++i)
         {
@@ -560,14 +561,14 @@ public class MathLin_Jacobi_Test
     [Fact]
     public void MatrixSqrt()
     {
-        math_Matrix aMat = CreateSPD(2);
+        Matrix aMat = CreateSPD(2);
 
-        var aSqrt = MathLin.MatrixSqrt(aMat);
+        var aSqrt = global::Kerf.Engine.Numerics.Linear.MathLin.MatrixSqrt(aMat);
 
         Assert.True(aSqrt is not null);
 
         // sqrt(A) * sqrt(A) = A
-        math_Matrix aCheck = MatMul(aSqrt, aSqrt);
+        Matrix aCheck = MatMul(aSqrt, aSqrt);
 
         for (int i = 1; i <= 2; ++i)
         {
@@ -584,7 +585,7 @@ public class MathLin_LeastSquares_Test
     [Fact]
     public void SquareSystem()
     {
-        math_Matrix aMat = new(1, 2, 1, 2);
+        Matrix aMat = new(1, 2, 1, 2);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -594,9 +595,9 @@ public class MathLin_LeastSquares_Test
         aB[1] = 9.0;
         aB[2] = 8.0;
 
-        var aResult = MathLin.LeastSquares(aMat, aB, MathLin.LeastSquaresMethod.QR);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB, global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquaresMethod.QR);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // For square systems, residual should be near zero
         Assert.True(aResult.Residual! < THE_TOLERANCE);
@@ -606,7 +607,7 @@ public class MathLin_LeastSquares_Test
     public void Overdetermined()
     {
         // 4x2 overdetermined system
-        math_Matrix aMat = new(1, 4, 1, 2);
+        Matrix aMat = new(1, 4, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -623,9 +624,9 @@ public class MathLin_LeastSquares_Test
         aB[3] = 4.0;
         aB[4] = 5.0;
 
-        var aResult = MathLin.LeastSquares(aMat, aB, MathLin.LeastSquaresMethod.QR);
+        var aResult = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB, global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquaresMethod.QR);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         math_Vector aX = aResult.Solution!;
 
@@ -640,20 +641,20 @@ public class MathLin_LeastSquares_Test
     [Fact]
     public void MethodComparison()
     {
-        math_Matrix aMat = CreateRandom(5, 3);
+        Matrix aMat = CreateRandom(5, 3);
         math_Vector aB = new(1, 5);
         for (int i = 1; i <= 5; ++i)
         {
             aB[i] = (double)(i);
         }
 
-        var aResultNE  = MathLin.LeastSquares(aMat, aB, MathLin.LeastSquaresMethod.NormalEquations);
-        var aResultQR  = MathLin.LeastSquares(aMat, aB, MathLin.LeastSquaresMethod.QR);
-        var aResultSVD = MathLin.LeastSquares(aMat, aB, MathLin.LeastSquaresMethod.SVD);
+        var aResultNE  = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB, global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquaresMethod.NormalEquations);
+        var aResultQR  = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB, global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquaresMethod.QR);
+        var aResultSVD = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB, global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquaresMethod.SVD);
 
-        Assert.True(aResultNE.IsDone());
-        Assert.True(aResultQR.IsDone());
-        Assert.True(aResultSVD.IsDone());
+        Assert.True(aResultNE.IsDone);
+        Assert.True(aResultQR.IsDone);
+        Assert.True(aResultSVD.IsDone);
 
         // All methods should give similar results
         for (int i = 1; i <= 3; ++i)
@@ -666,7 +667,7 @@ public class MathLin_LeastSquares_Test
     [Fact]
     public void WeightedLeastSquares()
     {
-        math_Matrix aMat = new(1, 3, 1, 2);
+        Matrix aMat = new(1, 3, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -681,17 +682,17 @@ public class MathLin_LeastSquares_Test
 
         // Equal weights
         math_Vector aW1 = new(1, 3, 1.0);
-        var        aResult1 = MathLin.WeightedLeastSquares(aMat, aB, aW1);
+        var        aResult1 = global::Kerf.Engine.Numerics.Linear.MathLin.WeightedLeastSquares(aMat, aB, aW1);
 
         // Higher weight on first two points
         math_Vector aW2 = new(1, 3);
         aW2[1]        = 10.0;
         aW2[2]        = 10.0;
         aW2[3]        = 0.1;
-        var aResult2 = MathLin.WeightedLeastSquares(aMat, aB, aW2);
+        var aResult2 = global::Kerf.Engine.Numerics.Linear.MathLin.WeightedLeastSquares(aMat, aB, aW2);
 
-        Assert.True(aResult1.IsDone());
-        Assert.True(aResult2.IsDone());
+        Assert.True(aResult1.IsDone);
+        Assert.True(aResult2.IsDone);
 
         // Weighted solution should fit first two points better
         // (Different weights should give different solutions)
@@ -702,7 +703,7 @@ public class MathLin_LeastSquares_Test
     public void RegularizedLeastSquares()
     {
         // Ill-conditioned system
-        math_Matrix aMat = new(1, 3, 1, 3);
+        Matrix aMat = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 3; ++j)
@@ -716,11 +717,11 @@ public class MathLin_LeastSquares_Test
         aB[2] = 0.5;
         aB[3] = 0.333;
 
-        var aResultNoReg = MathLin.LeastSquares(aMat, aB);
-        var aResultReg   = MathLin.RegularizedLeastSquares(aMat, aB, 0.01);
+        var aResultNoReg = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB);
+        var aResultReg   = global::Kerf.Engine.Numerics.Linear.MathLin.RegularizedLeastSquares(aMat, aB, 0.01);
 
-        Assert.True(aResultNoReg.IsDone());
-        Assert.True(aResultReg.IsDone());
+        Assert.True(aResultNoReg.IsDone);
+        Assert.True(aResultReg.IsDone);
 
         // Regularized solution should have smaller norm
         double aNormNoReg = VectorNorm(aResultNoReg.Solution!);
@@ -734,7 +735,7 @@ public class MathLin_Test
     [Fact]
     public void CompareWithOldAPI_SVD()
     {
-        math_Matrix aMat = new(1, 3, 1, 3);
+        Matrix aMat = new(1, 3, 1, 3);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[1, 3] = 3.0;
@@ -751,15 +752,15 @@ public class MathLin_Test
         aB[3] = 3.0;
 
         // Old API
-        math_SVD anOldSVD = new(aMat);
+        Svd anOldSVD = new(aMat);
         math_Vector anOldSol = new(1, 3);
         anOldSVD.Solve(aB, anOldSol);
 
         // New API
-        var aNewResult = MathLin.SolveSVD(aMat, aB);
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveSVD(aMat, aB);
 
-        Assert.True(anOldSVD.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSVD.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Solutions should match
         for (int i = 1; i <= 3; ++i)
@@ -771,7 +772,7 @@ public class MathLin_Test
     [Fact]
     public void CompareWithOldAPI_Householder()
     {
-        math_Matrix aMat = new(1, 3, 1, 2);
+        Matrix aMat = new(1, 3, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -785,17 +786,17 @@ public class MathLin_Test
         aB[3] = 4.0;
 
         // Old API
-        math_Matrix aBMat = new(1, 3, 1, 1);
+        Matrix aBMat = new(1, 3, 1, 1);
         aBMat[1, 1] = aB[1];
         aBMat[2, 1] = aB[2];
         aBMat[3, 1] = aB[3];
-        math_Householder anOldHH = new(aMat, aBMat);
+        Householder anOldHH = new(aMat, aBMat);
 
         // New API
-        var aNewResult = MathLin.SolveQR(aMat, aB);
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.SolveQR(aMat, aB);
 
-        Assert.True(anOldHH.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldHH.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Get the old solution using the proper API
         math_Vector anOldSol = new(1, 2);
@@ -811,7 +812,7 @@ public class MathLin_Test
     [Fact]
     public void CompareWithOldAPI_Jacobi()
     {
-        math_Matrix aMat = new(1, 3, 1, 3);
+        Matrix aMat = new(1, 3, 1, 3);
         aMat[1, 1] = 3.0;
         aMat[1, 2] = 1.0;
         aMat[1, 3] = 0.0;
@@ -823,13 +824,13 @@ public class MathLin_Test
         aMat[3, 3] = 3.0;
 
         // Old API
-        math_Jacobi anOldJacobi = new(aMat);
+        Jacobi anOldJacobi = new(aMat);
 
         // New API
-        var aNewResult = MathLin.Jacobi(aMat, true);
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Jacobi(aMat, true);
 
-        Assert.True(anOldJacobi.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldJacobi.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Eigenvalues should match (both sorted descending)
         math_Vector aNewEig = aNewResult.EigenValues!;
@@ -842,7 +843,7 @@ public class MathLin_Test
     [Fact]
     public void CompareWithOldAPI_GaussLeastSquare()
     {
-        math_Matrix aMat = new(1, 4, 1, 2);
+        Matrix aMat = new(1, 4, 1, 2);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 1.0;
         aMat[2, 1] = 1.0;
@@ -859,15 +860,15 @@ public class MathLin_Test
         aB[4] = 5.0;
 
         // Old API
-        math_GaussLeastSquare anOldLS = new(aMat);
+        GaussLeastSquare anOldLS = new(aMat);
         math_Vector anOldSol = new(1, 2);
         anOldLS.Solve(aB, anOldSol);
 
         // New API
-        var aNewResult = MathLin.LeastSquares(aMat, aB);
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.LeastSquares(aMat, aB);
 
-        Assert.True(anOldLS.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldLS.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Solutions should match
         for (int i = 1; i <= 2; ++i)

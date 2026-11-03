@@ -6,8 +6,10 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.StepGeom_PreferredSurfaceCurveRepresentation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -77,7 +79,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
 
         int i;
         double U, U1, U2;
-        gp_Pnt P;
+        Point3D P;
 
         bool isSeam = BRep_Tool.IsClosed(aEdge, aTool.CurrentFace());
 
@@ -161,7 +163,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         if (C is not null)
         {
             C = (Geom_Curve)C.Copy();
-            gp_Trsf Tr1 = CA.Trsf();
+            Transform3D Tr1 = CA.Trsf();
             C.Transform(Tr1);
             // Special treatment is needed for very short edges based on periodic curves.
             // Since edge in STEP does not store its parametric range, parameters are computed
@@ -179,10 +181,10 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 // if range obtained from projection of vertices contradicts with range
                 // of the edge tnen vertices are swapped to keep results correct after import
                 // (see test de step_5 A1)
-                gp_Pnt aP1 = BRep_Tool.Pnt(Vfirst);
-                gp_Pnt aP2 = BRep_Tool.Pnt(Vlast);
+                Point3D aP1 = BRep_Tool.Pnt(Vfirst);
+                Point3D aP2 = BRep_Tool.Pnt(Vlast);
                 var sac = new ShapeAnalysis_Curve();
-                sac.Project(C, aP1, Tolerance(), out gp_Pnt pproj, out U1, false);
+                sac.Project(C, aP1, Tolerance(), out Point3D pproj, out U1, false);
                 sac.Project(C, aP2, Tolerance(), out pproj, out U2, false);
                 double dU = U2 - U1;
                 if (dU <= 0)
@@ -190,8 +192,8 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                     dU += (Math.Ceiling(Math.Abs(dU) / C.Period()) * C.Period());
                 }
 
-                if ((dU > Precision.PConfusion() && dU <= 0.1 * C.Period() && dpar > 0.5 * C.Period())
-                    || (dpar > Precision.PConfusion() && dpar <= 0.1 * C.Period() && dU > 0.5 * C.Period()))
+                if ((dU > global::Kerf.Engine.Foundation.Precision.PConfusion() && dU <= 0.1 * C.Period() && dpar > 0.5 * C.Period())
+                    || (dpar > global::Kerf.Engine.Foundation.Precision.PConfusion() && dpar <= 0.1 * C.Period() && dU > 0.5 * C.Period()))
                 {
                     (V1, V2) = (V2, V1);
                 }
@@ -203,15 +205,15 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 {
                     double aTolV1 = BRep_Tool.Tolerance(Vfirst);
                     double aTolV2 = BRep_Tool.Tolerance(Vlast);
-                    gp_Pnt aP11 = CA.Value(CA.FirstParameter());
-                    gp_Pnt aP12 = CA.Value(CA.LastParameter());
-                    gp_Pnt aPm = CA.Value((CA.FirstParameter() + CA.LastParameter()) * 0.5);
+                    Point3D aP11 = CA.Value(CA.FirstParameter());
+                    Point3D aP12 = CA.Value(CA.LastParameter());
+                    Point3D aPm = CA.Value((CA.FirstParameter() + CA.LastParameter()) * 0.5);
                     double aDist11 = aP11.Distance(aP12);
                     double aDist1m = aP11.Distance(aPm);
                     double aDist2m = aP12.Distance(aPm);
                     double aDistMax = Max(Max(aDist1m, aDist2m), aDist11);
                     bool isSmallCurve = (aDistMax <= aTolV1 || aDistMax <= aTolV2);
-                    if (BRepTools.Compare(Vfirst, Vlast) && isSmallCurve && dpar > Precision.PConfusion()
+                    if (BRepTools.Compare(Vfirst, Vlast) && isSmallCurve && dpar > global::Kerf.Engine.Foundation.Precision.PConfusion()
                         && dpar <= 0.1 * C.Period())
                     {
                         Geom_BSplineCurve aBspl1 = (Geom_BSplineCurve)C.Copy();
@@ -232,12 +234,12 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             // OCCT_DEBUG output left out
             var SA = new BRepAdaptor_Surface(aTool.CurrentFace());
 
-            if ((SA.GetType() == GeomAbs_Plane) && (CA.GetType() == GeomAbs_Line))
+            if ((SA.GetType() == Plane) && (CA.GetType() == Line))
             {
                 U1 = CA.FirstParameter();
                 U2 = CA.LastParameter();
-                gp_Vec V = new gp_Vec(CA.Value(U1), CA.Value(U2));
-                var L = new Geom_Line(CA.Value(U1), new gp_Dir(V));
+                Vector3D V = new Vector3D(CA.Value(U1), CA.Value(U2));
+                var L = new Geom_Line(CA.Value(U1), new Direction3D(V));
                 var MkLine = new GeomToStep_MakeLine(L, theLocalFactors);
                 Gpms = MkLine.Value();
             }
@@ -245,7 +247,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             {
                 // To Be Optimized : create an approximated BSpline
                 //                   using GeomAPI_PointsToBSpline
-                var Points = new NCollection_Array1<gp_Pnt>(1, Nbpt);
+                var Points = new NCollection_Array1<Point3D>(1, Nbpt);
                 var Knots = new NCollection_Array1<double>(1, Nbpt);
                 var Mult = new NCollection_Array1<int>(1, Nbpt);
                 U1 = CA.FirstParameter();
@@ -314,7 +316,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
     public void Init(in TopoDS_Edge aEdge, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aEdge, aTool, FP, new StepData_Factors());
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_TopologicalRepresentationItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeStepEdge::Value() - no result");

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -56,43 +57,43 @@ public static class GccEnt
     }
 
     /// <summary>A line whose solutions may lie on either side.</summary>
-    public static GccEnt_QualifiedLin Unqualified(in gp_Lin2d Line)
+    public static GccEnt_QualifiedLin Unqualified(in Line2D Line)
     {
         return new GccEnt_QualifiedLin(Line, GccEnt_unqualified);
     }
 
     /// <summary>A circle whose solutions may take any position.</summary>
-    public static GccEnt_QualifiedCirc Unqualified(in gp_Circ2d Circle)
+    public static GccEnt_QualifiedCirc Unqualified(in Circle2D Circle)
     {
         return new GccEnt_QualifiedCirc(Circle, GccEnt_unqualified);
     }
 
     /// <summary>A circle that the solutions enclose.</summary>
-    public static GccEnt_QualifiedCirc Enclosing(in gp_Circ2d Circle)
+    public static GccEnt_QualifiedCirc Enclosing(in Circle2D Circle)
     {
         return new GccEnt_QualifiedCirc(Circle, GccEnt_enclosing);
     }
 
     /// <summary>A line whose solutions lie on its left (its inside).</summary>
-    public static GccEnt_QualifiedLin Enclosed(in gp_Lin2d Line)
+    public static GccEnt_QualifiedLin Enclosed(in Line2D Line)
     {
         return new GccEnt_QualifiedLin(Line, GccEnt_enclosed);
     }
 
     /// <summary>A circle that encloses the solutions.</summary>
-    public static GccEnt_QualifiedCirc Enclosed(in gp_Circ2d Circle)
+    public static GccEnt_QualifiedCirc Enclosed(in Circle2D Circle)
     {
         return new GccEnt_QualifiedCirc(Circle, GccEnt_enclosed);
     }
 
     /// <summary>A circle outside the solutions, as they are outside it.</summary>
-    public static GccEnt_QualifiedCirc Outside(in gp_Circ2d Circle)
+    public static GccEnt_QualifiedCirc Outside(in Circle2D Circle)
     {
         return new GccEnt_QualifiedCirc(Circle, GccEnt_outside);
     }
 
     /// <summary>A line whose solutions lie on its right (its outside).</summary>
-    public static GccEnt_QualifiedLin Outside(in gp_Lin2d Line)
+    public static GccEnt_QualifiedLin Outside(in Line2D Line)
     {
         return new GccEnt_QualifiedLin(Line, GccEnt_outside);
     }

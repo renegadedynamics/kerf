@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -12,7 +16,7 @@ namespace Occt;
 /// is a conic or a line not in a plane parallel to the extrusion, with Extrema_GenExtPS otherwise.
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps its handle.</remarks>
-public class Extrema_ExtPExtS : Standard_Transient
+public class Extrema_ExtPExtS : Transient
 {
     private double myuinf;
     private double myusup;
@@ -23,8 +27,8 @@ public class Extrema_ExtPExtS : Standard_Transient
     private readonly Extrema_FuncPSNorm myF = new();
     private Adaptor3d_Curve? myC;
     private GeomAdaptor_SurfaceOfLinearExtrusion? myS;
-    private gp_Vec myDirection = new();
-    private gp_Ax2 myPosition = new();
+    private Vector3D myDirection = new();
+    private Frame3D myPosition = new();
     private readonly Extrema_GenExtPS myExtPS = new();
     private bool myIsAnalyticallyComputable;
     private bool myDone;
@@ -33,21 +37,21 @@ public class Extrema_ExtPExtS : Standard_Transient
     private readonly Extrema_POnSurf[] myPoint = [new(), new(), new(), new()];
 
     // Returns the projection of a point Point on a plane ThePlane along a direction TheDir.
-    private static gp_Pnt ProjectPnt(in gp_Ax2 ThePlane, in gp_Dir TheDir, in gp_Pnt Point)
+    private static Point3D ProjectPnt(in Frame3D ThePlane, in Direction3D TheDir, in Point3D Point)
     {
-        gp_Vec PO = new(Point, ThePlane.Location());
-        double Alpha = PO * new gp_Vec(ThePlane.Direction());
+        Vector3D PO = new(Point, ThePlane.Location());
+        double Alpha = PO * new Vector3D(ThePlane.Direction());
         Alpha /= TheDir * ThePlane.Direction();
-        gp_Pnt P = new();
+        Point3D P = new();
         P.SetXYZ(Point.XYZ() + Alpha * TheDir.XYZ());
         return P;
     }
 
-    private static bool IsOriginalPnt(in gp_Pnt P, Extrema_POnSurf[] Points, int NbPoints)
+    private static bool IsOriginalPnt(in Point3D P, Extrema_POnSurf[] Points, int NbPoints)
     {
         for (int i = 1; i <= NbPoints; i++)
         {
-            if (Points[i - 1].Value().IsEqual(P, Precision.Confusion()))
+            if (Points[i - 1].Value().IsEqual(P, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return false;
             }
@@ -55,7 +59,7 @@ public class Extrema_ExtPExtS : Standard_Transient
         return true;
     }
 
-    private void MakePreciser(ref double U, in gp_Pnt P, bool isMin, in gp_Ax2 OrtogSection)
+    private void MakePreciser(ref double U, in Point3D P, bool isMin, in Frame3D OrtogSection)
     {
         if (U > myusup)
         {
@@ -67,9 +71,9 @@ public class Extrema_ExtPExtS : Standard_Transient
         }
         else
         {
-            gp_Dir aDirection = new(myDirection);
+            Direction3D aDirection = new(myDirection);
             double step = (myusup - myuinf) / 30, D2e, D2next, D2prev;
-            gp_Pnt Pe = ProjectPnt(OrtogSection, aDirection, GetValue(U, myC!)),
+            Point3D Pe = ProjectPnt(OrtogSection, aDirection, GetValue(U, myC!)),
                    Pprev = ProjectPnt(OrtogSection, aDirection, GetValue(U - step, myC!)),
                    Pnext = ProjectPnt(OrtogSection, aDirection, GetValue(U + step, myC!));
             D2e = P.SquareDistance(Pe);
@@ -138,7 +142,7 @@ public class Extrema_ExtPExtS : Standard_Transient
     }
 
     /// <summary>The extrema between P and S on [Umin, Usup] x [Vmin, Vsup].</summary>
-    public Extrema_ExtPExtS(in gp_Pnt theP, GeomAdaptor_SurfaceOfLinearExtrusion theS, double theUmin, double theUsup,
+    public Extrema_ExtPExtS(in Point3D theP, GeomAdaptor_SurfaceOfLinearExtrusion theS, double theUmin, double theUsup,
         double theVmin, double theVsup, double theTolU, double theTolV)
     {
         myuinf = theUmin;
@@ -161,7 +165,7 @@ public class Extrema_ExtPExtS : Standard_Transient
     }
 
     /// <summary>The extrema between P and S on S's whole range.</summary>
-    public Extrema_ExtPExtS(in gp_Pnt theP, GeomAdaptor_SurfaceOfLinearExtrusion theS, double theTolU, double theTolV)
+    public Extrema_ExtPExtS(in Point3D theP, GeomAdaptor_SurfaceOfLinearExtrusion theS, double theTolU, double theTolV)
     {
         myuinf = theS.FirstUParameter();
         myusup = theS.LastUParameter();
@@ -204,9 +208,9 @@ public class Extrema_ExtPExtS : Standard_Transient
         myC = anACurve;
         myS = theS;
         myPosition = GetPosition(myC);
-        myDirection = new gp_Vec(theS.Direction());
+        myDirection = new Vector3D(theS.Direction());
         myIsAnalyticallyComputable = // false;
-            IsCaseAnalyticallyComputable(myC.GetType(), myPosition, new gp_Dir(myDirection));
+            IsCaseAnalyticallyComputable(myC.GetType(), myPosition, new Direction3D(myDirection));
 
         if (!myIsAnalyticallyComputable)
         {
@@ -214,7 +218,7 @@ public class Extrema_ExtPExtS : Standard_Transient
         }
     }
 
-    public void Perform(in gp_Pnt P)
+    public void Perform(in Point3D P)
     {
         const int NbExtMax = 4; // dimension of arrays
                                 // myPoint[] and mySqDist[]
@@ -233,8 +237,8 @@ public class Extrema_ExtPExtS : Standard_Transient
         }
 
         // myDirection is a gp_Vec, which C++ converts implicitly (normalising it again) where a gp_Dir is expected
-        gp_Dir aDirection = new(myDirection);
-        gp_Pnt Pe, Pp = ProjectPnt(myPosition, aDirection, P);
+        Direction3D aDirection = new(myDirection);
+        Point3D Pe, Pp = ProjectPnt(myPosition, aDirection, P);
         Extrema_ExtPElC anExt = new();
         PerformExtPElC(anExt, Pp, myC!, mytolu);
         if (!anExt.IsDone())
@@ -242,9 +246,9 @@ public class Extrema_ExtPExtS : Standard_Transient
             return;
         }
 
-        gp_Ax2 anOrtogSection = new(P, aDirection);
+        Frame3D anOrtogSection = new(P, aDirection);
         double U, V;
-        bool isMin, isSimpleCase = myDirection.IsParallel(new gp_Vec(myPosition.Direction()), Precision.Angular());
+        bool isMin, isSimpleCase = myDirection.IsParallel(new Vector3D(myPosition.Direction()), global::Kerf.Engine.Foundation.Precision.Angular());
         int i, aNbExt = anExt.NbExt();
         math_Vector UV = new(1, 2), Tol = new(1, 2), UVinf = new(1, 2), UVsup = new(1, 2);
         Tol[1] = mytolu;
@@ -262,15 +266,15 @@ public class Extrema_ExtPExtS : Standard_Transient
             if (myC!.IsPeriodic())
             {
                 double U2 = U;
-                ElCLib.AdjustPeriodic(myuinf, myuinf + 2.0 * M_PI, Precision.PConfusion(), ref U, ref U2);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(myuinf, myuinf + 2.0 * M_PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref U, ref U2);
             }
             //////////////////////////////////////////////////
-            gp_Pnt E = POC.Value();
+            Point3D E = POC.Value();
             Pe = ProjectPnt(anOrtogSection, aDirection, E);
 
             if (isSimpleCase)
             {
-                V = new gp_Vec(E, Pe) * myDirection;
+                V = new Vector3D(E, Pe) * myDirection;
                 // modified by NIZHNY-MKK  Thu Sep 18 14:46:14 2003.BEGIN
                 myPoint[myNbExt] = new Extrema_POnSurf(U, V, Pe);
                 mySqDist[myNbExt] = anExt.SquareDistance(i);
@@ -289,10 +293,10 @@ public class Extrema_ExtPExtS : Standard_Transient
                 MakePreciser(ref U, P, isMin, anOrtogSection);
                 E = GetValue(U, myC);
                 Pe = ProjectPnt(anOrtogSection, aDirection, E);
-                V = new gp_Vec(E, Pe) * myDirection;
+                V = new Vector3D(E, Pe) * myDirection;
                 UV[1] = U;
                 UV[2] = V;
-                math_FunctionSetRoot aFSR = new(myF, Tol);
+                FunctionSetRoot aFSR = new(myF, Tol);
                 aFSR.Perform(myF, UV, UVinf, UVsup);
                 int k;
                 for (k = 1; k <= myF.NbExt(); k++)
@@ -320,7 +324,7 @@ public class Extrema_ExtPExtS : Standard_Transient
                 MakePreciser(ref U, P, isMin, anOrtogSection);
                 E = GetValue(U, myC);
                 Pe = ProjectPnt(anOrtogSection, aDirection, E);
-                V = new gp_Vec(E, Pe) * myDirection;
+                V = new Vector3D(E, Pe) * myDirection;
                 UV[1] = U;
                 UV[2] = V;
 
@@ -328,7 +332,7 @@ public class Extrema_ExtPExtS : Standard_Transient
 
                 for (k = 1; k <= myF.NbExt(); k++)
                 {
-                    if (myF.SquareDistance(k) > Precision.Confusion() * Precision.Confusion())
+                    if (myF.SquareDistance(k) > global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         // Additional checking solution: FSR sometimes is wrong
                         // when starting point is far from solution.
@@ -339,21 +343,21 @@ public class Extrema_ExtPExtS : Standard_Transient
                         UV[1] = u;
                         UV[2] = v;
                         myF.Value(UV, Vals);
-                        myS!.D1(u, v, out Pe, out gp_Vec du, out gp_Vec dv);
+                        myS!.D1(u, v, out Pe, out Vector3D du, out Vector3D dv);
                         double mdu = du.Magnitude();
                         double mdv = dv.Magnitude();
                         u = Math.Abs(Vals[1]);
                         v = Math.Abs(Vals[2]);
-                        if (mdu > Precision.PConfusion())
+                        if (mdu > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            if (u / dist / mdu > Precision.PConfusion())
+                            if (u / dist / mdu > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 continue;
                             }
                         }
-                        if (mdv > Precision.PConfusion())
+                        if (mdv > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            if (v / dist / mdv > Precision.PConfusion())
+                            if (v / dist / mdv > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 continue;
                             }
@@ -387,7 +391,7 @@ public class Extrema_ExtPExtS : Standard_Transient
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (myIsAnalyticallyComputable)
         {
@@ -403,7 +407,7 @@ public class Extrema_ExtPExtS : Standard_Transient
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myIsAnalyticallyComputable)
         {
@@ -419,7 +423,7 @@ public class Extrema_ExtPExtS : Standard_Transient
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myIsAnalyticallyComputable)
         {
@@ -431,90 +435,90 @@ public class Extrema_ExtPExtS : Standard_Transient
         }
     }
 
-    private static gp_Ax2 GetPosition(Adaptor3d_Curve C)
+    private static Frame3D GetPosition(Adaptor3d_Curve C)
     {
         switch (C.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 {
-                    gp_Lin L = C.Line();
-                    gp_Pln Pln = new(L.Location(), L.Direction());
+                    Line3D L = C.Line();
+                    Plane3D Pln = new(L.Location(), L.Direction());
                     //: abv 30.05.02: OCC  - use constructor instead of Set...s() to avoid exception
-                    gp_Ax2 Pos = new(Pln.Location(), Pln.Position().Direction(), Pln.Position().XDirection());
+                    Frame3D Pos = new(Pln.Location(), Pln.Position().Direction(), Pln.Position().XDirection());
                     return Pos;
                 }
-            case GeomAbs_Circle:
+            case Circle:
                 return C.Circle().Position();
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 return C.Ellipse().Position();
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 return C.Hyperbola().Position();
-            case GeomAbs_Parabola:
+            case Parabola:
                 return C.Parabola().Position();
             default:
-                return new gp_Ax2();
+                return new Frame3D();
         }
     }
 
-    private static void PerformExtPElC(Extrema_ExtPElC E, in gp_Pnt P, Adaptor3d_Curve C, double Tol)
+    private static void PerformExtPElC(Extrema_ExtPElC E, in Point3D P, Adaptor3d_Curve C, double Tol)
     {
         switch (C.GetType())
         {
-            case GeomAbs_Hyperbola:
-                E.Perform(P, C.Hyperbola(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Hyperbola:
+                E.Perform(P, C.Hyperbola(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
-            case GeomAbs_Line:
-                E.Perform(P, C.Line(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Line:
+                E.Perform(P, C.Line(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
-            case GeomAbs_Circle:
+            case Circle:
                 E.Perform(P, C.Circle(), Tol, 0.0, 2.0 * M_PI);
                 return;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 E.Perform(P, C.Ellipse(), Tol, 0.0, 2.0 * M_PI);
                 return;
-            case GeomAbs_Parabola:
-                E.Perform(P, C.Parabola(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Parabola:
+                E.Perform(P, C.Parabola(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
             default:
                 return;
         }
     }
 
-    private static bool IsCaseAnalyticallyComputable(GeomAbs_CurveType theType, in gp_Ax2 theCurvePos,
-        in gp_Dir theSurfaceDirection)
+    private static bool IsCaseAnalyticallyComputable(CurveKind theType, in Frame3D theCurvePos,
+        in Direction3D theSurfaceDirection)
     {
         // check type
         switch (theType)
         {
-            case GeomAbs_Line:
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
+            case Line:
+            case Circle:
+            case Ellipse:
+            case Hyperbola:
+            case Parabola:
                 break;
             default:
                 return false;
         }
         // check if it is a plane
-        return Math.Abs(theCurvePos.Direction() * theSurfaceDirection) > gp.Resolution();
+        return Math.Abs(theCurvePos.Direction() * theSurfaceDirection) > Constants.Resolution();
     }
 
-    private static gp_Pnt GetValue(double U, Adaptor3d_Curve C)
+    private static Point3D GetValue(double U, Adaptor3d_Curve C)
     {
         switch (C.GetType())
         {
-            case GeomAbs_Line:
-                return ElCLib.Value(U, C.Line());
-            case GeomAbs_Circle:
-                return ElCLib.Value(U, C.Circle());
-            case GeomAbs_Ellipse:
-                return ElCLib.Value(U, C.Ellipse());
-            case GeomAbs_Hyperbola:
-                return ElCLib.Value(U, C.Hyperbola());
-            case GeomAbs_Parabola:
-                return ElCLib.Value(U, C.Parabola());
+            case Line:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, C.Line());
+            case Circle:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, C.Circle());
+            case Ellipse:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, C.Ellipse());
+            case Hyperbola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, C.Hyperbola());
+            case Parabola:
+                return global::Kerf.Engine.Geometry.ElCLib.Value(U, C.Parabola());
             default:
-                return new gp_Pnt();
+                return new Point3D();
         }
     }
 }

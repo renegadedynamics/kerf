@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -370,6 +372,6 @@ public partial struct IntPolyh_StartPoint : IEquatable<IntPolyh_StartPoint>, Int
     public static bool operator !=(in IntPolyh_StartPoint theLeft, in IntPolyh_StartPoint theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"IntPolyh_StartPoint({gp.Format("xyz", x, y, z)}, {gp.Format("uv1", u1, v1)}, {gp.Format("uv2", u2, v2)}, "
-           + $"T {t1}, {t2}; E {e1}, {e2}; {gp.Format("lambda", lambda1, lambda2)}, {gp.Format("angle", angle)}, list {chainlist})";
+        => $"IntPolyh_StartPoint({Constants.Format("xyz", x, y, z)}, {Constants.Format("uv1", u1, v1)}, {Constants.Format("uv2", u2, v2)}, "
+           + $"T {t1}, {t2}; E {e1}, {e2}; {Constants.Format("lambda", lambda1, lambda2)}, {Constants.Format("angle", angle)}, list {chainlist})";
 }

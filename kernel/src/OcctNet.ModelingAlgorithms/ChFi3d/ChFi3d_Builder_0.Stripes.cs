@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -19,7 +21,7 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>Throws when the traces on a common face of two stripes without a common corner cross.</summary>
-    /// <exception cref="StdFail_NotDone">The traces cross: the fillets' radii are too big.</exception>
+    /// <exception cref="NotDoneException">The traces cross: the fillets' radii are too big.</exception>
     internal static void ChFi3d_StripeEdgeInter(ChFiDS_Stripe theStripe1, ChFiDS_Stripe theStripe2,
                                                 TopOpeBRepDS_DataStructure DStr, double tol2d)
     {
@@ -96,10 +98,10 @@ internal static partial class ChFi3d_Builder_0
                                                    aFI1.LastParameter());
                 Geom2dAdaptor_Curve aPCurve2 = new(aFI2.PCurveOnFace()!, aFI2.FirstParameter(),
                                                    aFI2.LastParameter());
-                anIntersector.Perform(aPCurve1, aPCurve2, tol2d, Precision.PConfusion());
+                anIntersector.Perform(aPCurve1, aPCurve2, tol2d, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 if (anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
                 {
-                    throw new StdFail_NotDone("StripeEdgeInter : fillets have too big radiuses");
+                    throw new NotDoneException("StripeEdgeInter : fillets have too big radiuses");
                 }
             }
         }
@@ -109,7 +111,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The index of the stripe's surface data at its end on <paramref name="V1"/> (1 or the last), and the
     /// sense (1 at the start, -1 at the end); 0 when the stripe has no surface data.</summary>
-    /// <exception cref="Standard_ConstructionError"><paramref name="V1"/> is not an end of the spine.</exception>
+    /// <exception cref="ConstructionErrorException"><paramref name="V1"/> is not an end of the spine.</exception>
     internal static int ChFi3d_IndexOfSurfData(in TopoDS_Vertex V1, ChFiDS_Stripe CD, out int sens)
     {
         ChFiDS_Spine spine = CD.Spine()!;
@@ -151,7 +153,7 @@ internal static partial class ChFi3d_Builder_0
             }
             else
             {
-                throw new Standard_ConstructionError("ChFi3d_IndexOfSurfData() - wrong construction parameters");
+                throw new ConstructionErrorException("ChFi3d_IndexOfSurfData() - wrong construction parameters");
             }
         }
         return Index;
@@ -161,7 +163,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The spine's edge at its end on <paramref name="V1"/>, and the sense (1 at the start, -1 at the
     /// end).</summary>
-    /// <exception cref="Standard_ConstructionError"><paramref name="V1"/> is not an end of the spine.</exception>
+    /// <exception cref="ConstructionErrorException"><paramref name="V1"/> is not an end of the spine.</exception>
     internal static TopoDS_Edge ChFi3d_EdgeFromV1(in TopoDS_Vertex V1, ChFiDS_Stripe CD, out int sens)
     {
         ChFiDS_Spine spine = CD.Spine()!;
@@ -198,7 +200,7 @@ internal static partial class ChFi3d_Builder_0
             }
             else
             {
-                throw new Standard_ConstructionError("ChFi3d_IndexOfSurfData() - wrong construction parameters");
+                throw new ConstructionErrorException("ChFi3d_IndexOfSurfData() - wrong construction parameters");
             }
         }
     }
@@ -239,10 +241,10 @@ internal static partial class ChFi3d_Builder_0
             t = step * i;
             t = (1 - t) * f + t * l;
             pc1.Value(t).Coord(out u, out v);
-            gp_Pnt pS1 = S1.Value(u, v);
+            Point3D pS1 = S1.Value(u, v);
             pc2.Value(t).Coord(out u, out v);
-            gp_Pnt pS2 = S2.Value(u, v);
-            gp_Pnt pC = C.Value(t);
+            Point3D pS2 = S2.Value(u, v);
+            Point3D pC = C.Value(t);
             double d = pS1.SquareDistance(pC);
             if (d > distmax)
             {
@@ -260,7 +262,7 @@ internal static partial class ChFi3d_Builder_0
             }
         }
         distmax = 1.5 * Math.Sqrt(distmax);
-        distmax = Math.Max(distmax, Precision.Confusion());
+        distmax = Math.Max(distmax, global::Kerf.Engine.Foundation.Precision.Confusion());
         return distmax;
     }
 

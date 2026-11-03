@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using static Occt.ChFiDS_State;
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -32,27 +35,27 @@ internal sealed partial class BlendRecorder
 
     private void Line(string theText) => gOut.Append(theText).Append('\n');
 
-    private void Pnt(gp_Pnt P)
+    private void Pnt(Point3D P)
     {
         Hex(P.X());
         Hex(P.Y());
         Hex(P.Z());
     }
 
-    private void Vec(gp_Vec V)
+    private void Vec(Vector3D V)
     {
         Hex(V.X());
         Hex(V.Y());
         Hex(V.Z());
     }
 
-    private void Pnt2d(gp_Pnt2d P)
+    private void Pnt2d(Point2D P)
     {
         Hex(P.X());
         Hex(P.Y());
     }
 
-    private void Vec2d(gp_Vec2d V)
+    private void Vec2d(Vector2D V)
     {
         Hex(V.X());
         Hex(V.Y());
@@ -69,7 +72,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void Matrix(string theTag, math_Matrix M)
+    private void Matrix(string theTag, Matrix M)
     {
         Tag(theTag);
         for (int i = M.LowerRow(); i <= M.UpperRow(); i++)
@@ -95,7 +98,7 @@ internal sealed partial class BlendRecorder
 
     internal static Geom_BSplineSurface Patch()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
         {
             { 0.10, -0.20, 0.30, 0.00 },
@@ -107,7 +110,7 @@ internal sealed partial class BlendRecorder
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(3.0 * (i - 1) / 3.0, 3.0 * (j - 1) / 3.0, aZ[i - 1, j - 1]);
+                aPoles[i, j] = new Point3D(3.0 * (i - 1) / 3.0, 3.0 * (j - 1) / 3.0, aZ[i - 1, j - 1]);
             }
         }
 
@@ -122,12 +125,12 @@ internal sealed partial class BlendRecorder
 
     internal static Geom_BSplineSurface Wall()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
         for (int i = 1; i <= 2; i++)
         {
             for (int j = 1; j <= 2; j++)
             {
-                aPoles[i, j] = new gp_Pnt(1.5, -1.0 + 5.0 * (i - 1), -2.0 + 4.0 * (j - 1));
+                aPoles[i, j] = new Point3D(1.5, -1.0 + 5.0 * (i - 1), -2.0 + 4.0 * (j - 1));
             }
         }
 
@@ -144,12 +147,12 @@ internal sealed partial class BlendRecorder
     {
         Geom_Surface aS = theId switch
         {
-            0 => new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))),
-            1 => new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(1, 0, 0))),
-            2 => new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0),
-            3 => new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3.0),
-            4 => new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(5, 0, 0), new gp_Dir(0, 0, 1)), 3.0),
-            5 => new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Math.PI / 6.0, 5.0),
+            0 => new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
+            1 => new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0))),
+            2 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
+            3 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3.0),
+            4 => new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 3.0),
+            5 => new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 6.0, 5.0),
             6 => Patch(),
             _ => Wall(),
         };
@@ -160,12 +163,12 @@ internal sealed partial class BlendRecorder
     {
         return theId switch
         {
-            0 => new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0.0, 10.0),
-            1 => new GeomAdaptor_Curve(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0), 0.0,
+            0 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0.0, 10.0),
+            1 => new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,
                                        2.0 * Math.PI),
-            2 => new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(2.5, Math.Sqrt(2.75), 0), new gp_Dir(0, 0, 1)), -5.0, 5.0),
-            3 => new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(1.5, 0, 0), new gp_Dir(0, 1, 0)), 0.0, 3.0),
-            _ => new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, -1, 1.5), new gp_Dir(1, 0, 0)), -2.0, 12.0),
+            2 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(2.5, Math.Sqrt(2.75), 0), new Direction3D(0, 0, 1)), -5.0, 5.0),
+            3 => new GeomAdaptor_Curve(new Geom_Line(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)), 0.0, 3.0),
+            _ => new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, -1, 1.5), new Direction3D(1, 0, 0)), -2.0, 12.0),
         };
     }
 
@@ -183,12 +186,12 @@ internal sealed partial class BlendRecorder
     // -----------------------------------------------------------------------------------------------------------------
     // Functions
 
-    private bool Solve(math_FunctionSetWithDerivatives F, math_Vector X0, math_Vector Tol, math_Vector Inf,
+    private bool Solve(FunctionSetWithDerivatives F, math_Vector X0, math_Vector Tol, math_Vector Inf,
                        math_Vector Sup, math_Vector Sol)
     {
-        math_FunctionSetRoot aRoot = new(F, Tol, 30);
+        FunctionSetRoot aRoot = new(F, Tol, 30);
         aRoot.Perform(F, X0, Inf, Sup);
-        if (!aRoot.IsDone())
+        if (!aRoot.IsDone)
         {
             Tag("root 0");
             End();
@@ -200,11 +203,11 @@ internal sealed partial class BlendRecorder
         return true;
     }
 
-    private void RecValues(math_FunctionSetWithDerivatives F, math_Vector X)
+    private void RecValues(FunctionSetWithDerivatives F, math_Vector X)
     {
         int n = F.NbEquations(), m = F.NbVariables();
         math_Vector aF = new(1, n);
-        math_Matrix aD = new(1, n, 1, m);
+        Matrix aD = new(1, n, 1, m);
         Tag("dims");
         Int(n);
         Int(m);
@@ -217,7 +220,7 @@ internal sealed partial class BlendRecorder
             End();
             Vector("value", aF);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("value");
         }
@@ -227,7 +230,7 @@ internal sealed partial class BlendRecorder
             F.Derivatives(X, aD);
             Matrix("derivatives", aD);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("derivatives");
         }
@@ -238,7 +241,7 @@ internal sealed partial class BlendRecorder
             Vector("values.f", aF);
             Matrix("values.d", aD);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("values");
         }
@@ -282,7 +285,7 @@ internal sealed partial class BlendRecorder
             Hex(aSize);
             End();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("sectionsize");
         }
@@ -294,7 +297,7 @@ internal sealed partial class BlendRecorder
             Hex(aDist);
             End();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("mindist");
         }
@@ -306,14 +309,14 @@ internal sealed partial class BlendRecorder
             Vector("tol3d", aTol3d);
             Vector("tol1d", aTol1d);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("tol3d");
         }
 
-        int aNbInt = F.NbIntervals(GeomAbs_C1);
+        int aNbInt = F.NbIntervals(C1);
         var aT = new NCollection_Array1<double>(1, aNbInt + 1);
-        F.Intervals(aT, GeomAbs_C1);
+        F.Intervals(aT, C1);
         Tag("intervals");
         for (int i = 1; i <= aNbInt + 1; i++)
         {
@@ -331,12 +334,12 @@ internal sealed partial class BlendRecorder
     private void RecSections(Blend_AppFunction F, in Blend_Point P, int theNbPoles2d)
     {
         F.GetShape(out int aNbPoles, out _, out _, out _);
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
-        var aDPoles = new NCollection_Array1<gp_Vec>(1, aNbPoles);
-        var aD2Poles = new NCollection_Array1<gp_Vec>(1, aNbPoles);
-        var aPoles2d = new NCollection_Array1<gp_Pnt2d>(1, theNbPoles2d);
-        var aDPoles2d = new NCollection_Array1<gp_Vec2d>(1, theNbPoles2d);
-        var aD2Poles2d = new NCollection_Array1<gp_Vec2d>(1, theNbPoles2d);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
+        var aDPoles = new NCollection_Array1<Vector3D>(1, aNbPoles);
+        var aD2Poles = new NCollection_Array1<Vector3D>(1, aNbPoles);
+        var aPoles2d = new NCollection_Array1<Point2D>(1, theNbPoles2d);
+        var aDPoles2d = new NCollection_Array1<Vector2D>(1, theNbPoles2d);
+        var aD2Poles2d = new NCollection_Array1<Vector2D>(1, theNbPoles2d);
         var aW = new NCollection_Array1<double>(1, aNbPoles);
         var aDW = new NCollection_Array1<double>(1, aNbPoles);
         var aD2W = new NCollection_Array1<double>(1, aNbPoles);
@@ -357,7 +360,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("section0");
         }
@@ -389,7 +392,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("section1");
         }
@@ -421,7 +424,7 @@ internal sealed partial class BlendRecorder
 
             End();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("section2");
         }
@@ -452,7 +455,7 @@ internal sealed partial class BlendRecorder
         {
             isSol = F.IsSolution(Sol, 1.0e-6);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("issolution");
             return;
@@ -477,7 +480,7 @@ internal sealed partial class BlendRecorder
                 Int(t1);
                 Int(F.TwistOnS2() ? 1 : 0);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Tag(" X");
             }
@@ -485,7 +488,7 @@ internal sealed partial class BlendRecorder
             End();
         }
 
-        F.Tangent(Sol[1], Sol[2], Sol[3], Sol[4], out gp_Vec aTgF, out gp_Vec aTgL, out gp_Vec aNmF, out gp_Vec aNmL);
+        F.Tangent(Sol[1], Sol[2], Sol[3], Sol[4], out Vector3D aTgF, out Vector3D aTgL, out Vector3D aNmF, out Vector3D aNmL);
         Tag("tangent");
         Vec(aTgF);
         Vec(aTgL);
@@ -526,7 +529,7 @@ internal sealed partial class BlendRecorder
         {
             isSol = F.IsSolution(Sol, 1.0e-6);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("issolution");
             return;
@@ -571,7 +574,7 @@ internal sealed partial class BlendRecorder
             End();
         }
 
-        F.Tangent(Sol[1], Sol[2], out gp_Vec aTgS, out gp_Vec aNmS);
+        F.Tangent(Sol[1], Sol[2], out Vector3D aTgS, out Vector3D aNmS);
         Tag("tangent");
         Vec(aTgS);
         Vec(aNmS);
@@ -606,20 +609,20 @@ internal sealed partial class BlendRecorder
                 aConstRad.Set(1.0, choix);
                 aConstRad.Set(G.FirstParameter(), G.LastParameter());
                 RecFunction(aConstRad, C);
-                gp_Circ aCirc = new();
+                Circle3D aCirc = new();
                 aConstRad.Section(C.W, C.X0[0], C.X0[1], C.X0[2], C.X0[3], out double aPdeb, out double aPfin, ref aCirc);
                 Tag("circle");
                 Pnt(aCirc.Location());
-                Vec(new gp_Vec(aCirc.Axis().Direction()));
-                Vec(new gp_Vec(aCirc.XAxis().Direction()));
+                Vec(new Vector3D(aCirc.Axis().Direction()));
+                Vec(new Vector3D(aCirc.XAxis().Direction()));
                 Hex(aCirc.Radius());
                 Hex(aPdeb);
                 Hex(aPfin);
                 End();
-                gp_Ax1 anAx = aConstRad.AxeRot(C.W);
+                Axis3D anAx = aConstRad.AxeRot(C.W);
                 Tag("axerot");
                 Pnt(anAx.Location());
-                Vec(new gp_Vec(anAx.Direction()));
+                Vec(new Vector3D(anAx.Direction()));
                 End();
 
                 Line($"case evolrad {ip} {choix}");
@@ -659,8 +662,8 @@ internal sealed partial class BlendRecorder
                 Line($"case ruled {ip} {choix}");
                 BlendFunc_Ruled aRuled = new(S1, S2, G);
                 RecFunction(aRuled, C);
-                var aTabP = new NCollection_Array1<gp_Pnt>(1, 5);
-                var aTabV = new NCollection_Array1<gp_Vec>(1, 5);
+                var aTabP = new NCollection_Array1<Point3D>(1, 5);
+                var aTabV = new NCollection_Array1<Vector3D>(1, 5);
                 try
                 {
                     bool isOk = aRuled.GetSection(C.W, C.X0[0], C.X0[1], C.X0[2], C.X0[3], aTabP, aTabV);
@@ -677,7 +680,7 @@ internal sealed partial class BlendRecorder
 
                     End();
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     Fail("getsection");
                 }
@@ -698,7 +701,7 @@ internal sealed partial class BlendRecorder
             Adaptor3d_Surface S1 = Surf(C.S1), S2 = Surf(C.S2);
             Adaptor3d_Curve G = Guide(C.G);
             Adaptor2d_Curve2d R = new Geom2dAdaptor_Curve(
-                new Geom2d_Line(new gp_Pnt2d(I.P0[0], I.P0[1]), new gp_Dir2d(I.D0[0], I.D0[1])), -10.0, 10.0);
+                new Geom2d_Line(new Point2D(I.P0[0], I.P0[1]), new Direction2D(I.D0[0], I.D0[1])), -10.0, 10.0);
             math_Vector X0 = new(1, 4);
             for (int i = 1; i <= 4; i++)
             {
@@ -770,8 +773,8 @@ internal sealed partial class BlendRecorder
                 BlendFunc_CSConstRad aCS = new(S, C, G);
                 aCS.Set(1.0, choix);
                 RecCS(aCS, 3.0, X3);
-                var aTabP = new NCollection_Array1<gp_Pnt>(1, 5);
-                var aTabV = new NCollection_Array1<gp_Vec>(1, 5);
+                var aTabP = new NCollection_Array1<Point3D>(1, 5);
+                var aTabV = new NCollection_Array1<Vector3D>(1, 5);
                 Tag("getsection");
                 bool isOk = aCS.GetSection(3.0, X3[1], X3[2], X3[3], aTabP, aTabV);
                 Int(isOk ? 1 : 0);
@@ -785,11 +788,11 @@ internal sealed partial class BlendRecorder
                 }
 
                 End();
-                gp_Circ aCirc = new();
+                Circle3D aCirc = new();
                 aCS.Section(3.0, X3[1], X3[2], X3[3], out double aPdeb, out double aPfin, ref aCirc);
                 Tag("circle");
                 Pnt(aCirc.Location());
-                Vec(new gp_Vec(aCirc.Axis().Direction()));
+                Vec(new Vector3D(aCirc.Axis().Direction()));
                 Hex(aCirc.Radius());
                 Hex(aPdeb);
                 Hex(aPfin);
@@ -815,7 +818,7 @@ internal sealed partial class BlendRecorder
             double W = theFrom + (theTo - theFrom) * k / 12.0;
             try
             {
-                Sp.D2(W, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2);
+                Sp.D2(W, out Point3D P, out Vector3D V1, out Vector3D V2);
                 Tag("d2");
                 Hex(W);
                 Pnt(P);
@@ -825,14 +828,14 @@ internal sealed partial class BlendRecorder
                 Int(Sp.Index(W, false));
                 Int(Sp.CurrentIndexOfElementarySpine());
                 End();
-                Sp.D1(W, out gp_Pnt Q, out gp_Vec T);
+                Sp.D1(W, out Point3D Q, out Vector3D T);
                 Tag("d1");
                 Pnt(Q);
                 Vec(T);
                 Pnt(Sp.Value(W));
                 End();
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Fail("d2");
             }
@@ -879,21 +882,21 @@ internal sealed partial class BlendRecorder
             Hex(U2);
             Int((int)Sp.GetType());
             End();
-            if (Sp.GetType() == GeomAbs_Line)
+            if (Sp.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
-                gp_Lin L = Sp.Line();
+                Line3D L = Sp.Line();
                 Tag("line");
                 Pnt(L.Location());
-                Vec(new gp_Vec(L.Direction()));
+                Vec(new Vector3D(L.Direction()));
                 End();
             }
-            else if (Sp.GetType() == GeomAbs_Circle)
+            else if (Sp.GetType() == Circle)
             {
-                gp_Circ C = Sp.Circle();
+                Circle3D C = Sp.Circle();
                 Tag("circ");
                 Pnt(C.Location());
-                Vec(new gp_Vec(C.Axis().Direction()));
-                Vec(new gp_Vec(C.XAxis().Direction()));
+                Vec(new Vector3D(C.Axis().Direction()));
+                Vec(new Vector3D(C.XAxis().Direction()));
                 Hex(C.Radius());
                 End();
             }
@@ -920,14 +923,14 @@ internal sealed partial class BlendRecorder
     internal static TopoDS_Face BSplineSolidFace(out Geom_BSplineCurve theCurve)
     {
         Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 4.0), Convert_QuasiAngular);
-        aBS.SetPole(2, new gp_Pnt(aBS.Pole(2).X() * 1.3, aBS.Pole(2).Y() * 0.8, 0.0));
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
+        aBS.SetPole(2, new Point3D(aBS.Pole(2).X() * 1.3, aBS.Pole(2).Y() * 0.8, 0.0));
         double f = aBS.FirstParameter(), l = aBS.LastParameter(), m = 0.4 * f + 0.6 * l;
         BRepBuilderAPI_MakeWire aW = new();
         aW.Add(new BRepBuilderAPI_MakeEdge(aBS, f, m).Edge());
         aW.Add(new BRepBuilderAPI_MakeEdge(aBS, m, l).Edge());
         TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), true).Face();
-        TopoDS_Shape aPrism = new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, 5)).Shape();
+        TopoDS_Shape aPrism = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 5)).Shape();
         TopExp_Explorer anExpF3 = new(aPrism, TopAbs_FACE);
         for (; anExpF3.More(); anExpF3.Next())
         {
@@ -1065,21 +1068,21 @@ internal sealed partial class BlendRecorder
         {
             Line("case elspine");
             Geom_BSplineCurve aBS = GeomConvert.CurveToBSplineCurve(
-                new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 4.0), Convert_QuasiAngular);
+                new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
             aBS.SetPeriodic();
             ChFiDS_ElSpine anEls = new();
             anEls.SetCurve(aBS);
             anEls.FirstParameter(aBS.FirstParameter());
             anEls.LastParameter(aBS.LastParameter());
             anEls.SetPeriodic(true);
-            anEls.SetFirstPointAndTgt(new gp_Pnt(1, 2, 3), new gp_Vec(0, 1, 0));
-            anEls.AddVertexWithTangent(new gp_Ax1(new gp_Pnt(4, 0, 0), new gp_Dir(0, 1, 0)));
+            anEls.SetFirstPointAndTgt(new Point3D(1, 2, 3), new Vector3D(0, 1, 0));
+            anEls.AddVertexWithTangent(new Axis3D(new Point3D(4, 0, 0), new Direction3D(0, 1, 0)));
             Tag("els");
             Hex(anEls.FirstParameter());
             Hex(anEls.LastParameter());
             Hex(anEls.Period());
             Int((int)anEls.Continuity());
-            Int(anEls.NbIntervals(GeomAbs_C2));
+            Int(anEls.NbIntervals(C2));
             Int((int)anEls.GetType());
             Int(anEls.NbVertices());
             Hex(anEls.Resolution(1.0e-3));
@@ -1088,7 +1091,7 @@ internal sealed partial class BlendRecorder
             for (int k = 0; k <= 8; k++)
             {
                 double U = 6.0 * k / 8.0;
-                aCopy.D1(U, out gp_Pnt Q, out gp_Vec W1);
+                aCopy.D1(U, out Point3D Q, out Vector3D W1);
                 Tag("elscopy");
                 Pnt(Q);
                 Vec(W1);
@@ -1099,7 +1102,7 @@ internal sealed partial class BlendRecorder
             for (int k = 0; k <= 8; k++)
             {
                 double U = 6.0 * k / 8.0;
-                anEls.D3(U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3);
+                anEls.D3(U, out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3);
                 Tag("elsd3");
                 Pnt(P);
                 Vec(V1);

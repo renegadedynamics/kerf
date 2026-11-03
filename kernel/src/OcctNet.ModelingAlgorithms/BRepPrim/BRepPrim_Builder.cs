@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -37,9 +38,9 @@ internal sealed class BRepPrim_Builder
     }
 
     /// <summary>Returns in <paramref name="F"/> a Face built with the plane equation <paramref name="P"/>.</summary>
-    public void MakeFace(ref TopoDS_Face F, in gp_Pln P)
+    public void MakeFace(ref TopoDS_Face F, in Plane3D P)
     {
-        myBuilder.MakeFace(ref F, new Geom_Plane(P), Precision.Confusion());
+        myBuilder.MakeFace(ref F, new Geom_Plane(P), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Returns in <paramref name="W"/> an empty Wire.</summary>
@@ -56,48 +57,48 @@ internal sealed class BRepPrim_Builder
     }
 
     /// <summary>Returns in <paramref name="E"/> an Edge built with the line equation <paramref name="L"/>.</summary>
-    public void MakeEdge(ref TopoDS_Edge E, in gp_Lin L)
+    public void MakeEdge(ref TopoDS_Edge E, in Line3D L)
     {
-        myBuilder.MakeEdge(ref E, new Geom_Line(L), Precision.Confusion());
+        myBuilder.MakeEdge(ref E, new Geom_Line(L), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Returns in <paramref name="E"/> an Edge built with the circle equation <paramref name="C"/>.</summary>
-    public void MakeEdge(ref TopoDS_Edge E, in gp_Circ C)
+    public void MakeEdge(ref TopoDS_Edge E, in Circle3D C)
     {
-        myBuilder.MakeEdge(ref E, new Geom_Circle(C), Precision.Confusion());
+        myBuilder.MakeEdge(ref E, new Geom_Circle(C), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Sets the line <paramref name="L"/> as the pcurve of <paramref name="E"/> on the surface of <paramref name="F"/>.</summary>
-    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in gp_Lin2d L)
+    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in Line2D L)
     {
-        myBuilder.UpdateEdge(E, new Geom2d_Line(L), F, Precision.Confusion());
+        myBuilder.UpdateEdge(E, new Geom2d_Line(L), F, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>
     /// Sets the lines <paramref name="L1"/>, <paramref name="L2"/> as the pcurves of <paramref name="E"/> on the closed
     /// surface of <paramref name="F"/>.
     /// </summary>
-    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in gp_Lin2d L1, in gp_Lin2d L2)
+    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in Line2D L1, in Line2D L2)
     {
         TopoDS_Shape aLocalShape = E.Oriented(TopAbs_FORWARD);
         myBuilder.UpdateEdge(TopoDS.Edge(aLocalShape),
                              new Geom2d_Line(L1),
                              new Geom2d_Line(L2),
                              F,
-                             Precision.Confusion());
-        myBuilder.Continuity(E, F, F, GeomAbs_CN);
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
+        myBuilder.Continuity(E, F, F, CN);
     }
 
     /// <summary>Sets the circle <paramref name="C"/> as the pcurve of <paramref name="E"/> on the surface of <paramref name="F"/>.</summary>
-    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in gp_Circ2d C)
+    public void SetPCurve(in TopoDS_Edge E, in TopoDS_Face F, in Circle2D C)
     {
-        myBuilder.UpdateEdge(E, new Geom2d_Circle(C), F, Precision.Confusion());
+        myBuilder.UpdateEdge(E, new Geom2d_Circle(C), F, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Returns in <paramref name="V"/> a Vertex built with the point <paramref name="P"/>.</summary>
-    public void MakeVertex(ref TopoDS_Vertex V, in gp_Pnt P)
+    public void MakeVertex(ref TopoDS_Vertex V, in Point3D P)
     {
-        myBuilder.MakeVertex(ref V, P, Precision.Confusion());
+        myBuilder.MakeVertex(ref V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Reverses the Face <paramref name="F"/>.</summary>
@@ -118,7 +119,7 @@ internal sealed class BRepPrim_Builder
             VV.Reverse();
         }
         myBuilder.Add(E, VV);
-        myBuilder.UpdateVertex(VV, P, E, Precision.Confusion());
+        myBuilder.UpdateVertex(VV, P, E, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>

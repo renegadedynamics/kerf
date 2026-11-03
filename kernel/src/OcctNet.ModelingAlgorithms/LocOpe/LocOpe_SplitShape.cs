@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -146,7 +148,7 @@ public sealed class LocOpe_SplitShape
         {
             TopoDS_Edge edg1 = TopoDS.Edge(itl.Value());
             BRep_Tool.Range(edg1, out f, out l);
-            if (P > f + Precision.PConfusion() && P < l - Precision.PConfusion())
+            if (P > f + global::Kerf.Engine.Foundation.Precision.PConfusion() && P < l - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
             }
@@ -571,7 +573,7 @@ public sealed class LocOpe_SplitShape
                 TopoDS_Edge edg = TopoDS.Edge(ExploW.Current());
                 if (!BRep_Tool.HasContinuity(edg, F, F))
                 {
-                    BB.Continuity(edg, F, F, GeomAbs_CN);
+                    BB.Continuity(edg, F, F, CN);
                 }
             }
         }
@@ -619,7 +621,7 @@ public sealed class LocOpe_SplitShape
                 }
             }
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException && e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // OCCT_DEBUG trace left out: "SpliShape internal problem detected, some faces may be lost"
             return false;
@@ -631,7 +633,7 @@ public sealed class LocOpe_SplitShape
             TopoDS_Edge edg = TopoDS.Edge(exp.Current());
             if (!BRep_Tool.HasContinuity(edg, F, F))
             {
-                B.Continuity(edg, F, F, GeomAbs_CN);
+                B.Continuity(edg, F, F, CN);
             }
         }
         return true;
@@ -665,7 +667,7 @@ public sealed class LocOpe_SplitShape
         TopoDS_Face newFace = TopoDS.Face(aLocalFace);
         newFace.Orientation(TopAbs_FORWARD);
         B.Add(newFace, W);
-        BRepTopAdaptor_FClass2d classif = new(newFace, Precision.PConfusion());
+        BRepTopAdaptor_FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (classif.PerformInfinitePoint() == TopAbs_IN)
         {
             // le wire donne defini un trou
@@ -722,7 +724,7 @@ public sealed class LocOpe_SplitShape
         for (; j < nbP; j++)
         {
             double par2 = aF2 + aStep * j;
-            aCrv2.D1(par2, out gp_Pnt2d aP2d, out gp_Vec2d aV2);
+            aCrv2.D1(par2, out Point2D aP2d, out Vector2D aV2);
 
             proj.Init(aP2d, aCrv1, aF1, aL1);
             // check intermediate points
@@ -731,7 +733,7 @@ public sealed class LocOpe_SplitShape
                 return false;
             }
             double par1 = proj.LowerDistanceParameter();
-            aCrv1.D1(par1, out gp_Pnt2d aP2d1, out gp_Vec2d aV1);
+            aCrv1.D1(par1, out Point2D aP2d1, out Vector2D aV1);
 
             if (!aV1.IsParallel(aV2, aTolAng))
             {
@@ -859,8 +861,8 @@ public sealed class LocOpe_SplitShape
 
             // On recherche l`edge contenant Vlast
             TopoDS_Edge LastEdge = new();
-            gp_Pnt2d pfirst, plast;
-            gp_Vec2d dlast;
+            Point2D pfirst, plast;
+            Vector2D dlast;
             Geom2d_Curve C2d;
             double f, l;
 
@@ -1247,7 +1249,7 @@ public sealed class LocOpe_SplitShape
     {
         if (myShape.IsNull())
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
 
         TopExp_Explorer exp = new(), expw = new(), expf = new();
@@ -1261,7 +1263,7 @@ public sealed class LocOpe_SplitShape
         }
         if (!exp.More())
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         myLeft = new NCollection_List<TopoDS_Shape>(); // OCCT clears the list it returned before
 
@@ -1439,7 +1441,7 @@ public sealed class LocOpe_SplitShape
         return rebuild;
     }
 
-    private static bool SameUV(in gp_Pnt2d P1, in gp_Pnt2d P2, BRepAdaptor_Surface theBAS)
+    private static bool SameUV(in Point2D P1, in Point2D P2, BRepAdaptor_Surface theBAS)
     {
         bool isSame = true;
         if (theBAS.IsUPeriodic())
@@ -1462,7 +1464,7 @@ public sealed class LocOpe_SplitShape
 
         newFace.Orientation(TopAbs_FORWARD);
         B.Add(newFace, W2);
-        BRepTopAdaptor_FClass2d classif = new(newFace, Precision.PConfusion());
+        BRepTopAdaptor_FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         bool Reversed = false;
         if (classif.PerformInfinitePoint() == TopAbs_IN)
         {
@@ -1481,7 +1483,7 @@ public sealed class LocOpe_SplitShape
             // OCCT_DEBUG trace left out ("Edge is not on surface")
             return false;
         }
-        gp_Pnt2d pt2d = C2d.Value(prm);
+        Point2D pt2d = C2d.Value(prm);
         if (!Reversed)
         {
             return (classif.Perform(pt2d) == TopAbs_IN);
@@ -1501,17 +1503,17 @@ public sealed class LocOpe_SplitShape
             TopoDS_Edge edg = TopoDS.Edge(exp.Current());
             double prm;
             Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(edg, F, out double f, out double l)!;
-            if (!Precision.IsNegativeInfinite(f) && !Precision.IsPositiveInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 prm = (f + l) / 2.0;
             }
             else
             {
-                if (Precision.IsNegativeInfinite(f) && Precision.IsPositiveInfinite(l))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
                 {
                     prm = 0.0;
                 }
-                else if (Precision.IsNegativeInfinite(f))
+                else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
                 {
                     prm = l - 1.0;
                 }
@@ -1521,8 +1523,8 @@ public sealed class LocOpe_SplitShape
                 }
             }
 
-            gp_Pnt2d pt2d = C2d.Value(prm);
-            BRepTopAdaptor_FClass2d classif = new(F, Precision.PConfusion());
+            Point2D pt2d = C2d.Value(prm);
+            BRepTopAdaptor_FClass2d classif = new(F, global::Kerf.Engine.Foundation.Precision.PConfusion());
             TopAbs_State stat = classif.Perform(pt2d);
             if (stat == TopAbs_OUT)
             {
@@ -1562,7 +1564,7 @@ public sealed class LocOpe_SplitShape
         return true;
     }
 
-    private static void GetDirection(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out gp_Pnt2d thePnt, out gp_Vec2d theDir,
+    private static void GetDirection(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out Point2D thePnt, out Vector2D theDir,
                                      bool isFirstEnd)
     {
         Geom2d_Curve aC2d = BRep_Tool.CurveOnSurface(theEdge, theFace, out double aFirst, out double aLast)!;
@@ -1574,15 +1576,15 @@ public sealed class LocOpe_SplitShape
         if (takeFirst)
         {
             aC2d.D0(aFirst, out thePnt);
-            gp_Pnt2d aNextPnt = aC2d.Value(aFirst + dpar);
-            theDir = new gp_Vec2d(thePnt, aNextPnt);
+            Point2D aNextPnt = aC2d.Value(aFirst + dpar);
+            theDir = new Vector2D(thePnt, aNextPnt);
         }
 
         else
         {
             aC2d.D0(aLast, out thePnt);
-            gp_Pnt2d aPrevPnt = aC2d.Value(aLast - dpar);
-            theDir = new gp_Vec2d(aPrevPnt, thePnt);
+            Point2D aPrevPnt = aC2d.Value(aLast - dpar);
+            theDir = new Vector2D(aPrevPnt, thePnt);
         }
         if (anOr == TopAbs_REVERSED)
         {
@@ -1594,13 +1596,13 @@ public sealed class LocOpe_SplitShape
                                 in TopoDS_Face F,
                                 NCollection_IndexedMap<TopoDS_Shape> Poss,
                                 ref TopoDS_Edge theResEdge,
-                                ref gp_Pnt2d plst,
-                                ref gp_Vec2d dlst)
+                                ref Point2D plst,
+                                ref Vector2D dlst)
     {
         BRepAdaptor_Surface surf = new(F, false); // no restriction
-        surf.D0(plst.X(), plst.Y(), out gp_Pnt aPlst);
+        surf.D0(plst.X(), plst.Y(), out Point3D aPlst);
 
-        gp_Dir2d ref2d = new(dlst);
+        Direction2D ref2d = new(dlst);
 
         int index = 0, imin = 0;
         double angmax = -Math.PI, ang;
@@ -1609,17 +1611,17 @@ public sealed class LocOpe_SplitShape
         {
             TopoDS_Edge anEdge = TopoDS.Edge(Poss.FindKey(index));
 
-            GetDirection(anEdge, F, out gp_Pnt2d p2d, out gp_Vec2d v2d, true);
+            GetDirection(anEdge, F, out Point2D p2d, out Vector2D v2d, true);
             if (!SameUV(plst, p2d, surf))
             {
                 continue;
             }
 
-            surf.D0(p2d.X(), p2d.Y(), out gp_Pnt aPCur);
+            surf.D0(p2d.X(), p2d.Y(), out Point3D aPCur);
 
             if (!Last.IsSame(anEdge))
             {
-                ang = ref2d.Angle(new gp_Dir2d(v2d));
+                ang = ref2d.Angle(new Direction2D(v2d));
             }
             else
             {
@@ -1671,7 +1673,7 @@ public sealed class LocOpe_SplitShape
         Geom2d_Curve RefCurve = BRep_Tool.CurveOnSurface(RefEdge, theFace, out double RefFirst, out double RefLast)!;
 
         double RefPar = (anOr == TopAbs_FORWARD) ? RefLast : RefFirst;
-        RefCurve.D1(RefPar, out gp_Pnt2d RefPnt, out gp_Vec2d RefVec);
+        RefCurve.D1(RefPar, out Point2D RefPnt, out Vector2D RefVec);
         if (anOr == TopAbs_FORWARD)
         {
             RefVec.Reverse();
@@ -1702,7 +1704,7 @@ public sealed class LocOpe_SplitShape
             }
             Geom2d_Curve aCurve = BRep_Tool.CurveOnSurface(anEdge, theFace, out aFirst, out aLast)!;
             aPar = (anOr == TopAbs_FORWARD) ? aFirst : aLast;
-            aCurve.D1(aPar, out RefPnt, out gp_Vec2d aVec);
+            aCurve.D1(aPar, out RefPnt, out Vector2D aVec);
             if (anOr == TopAbs_REVERSED)
             {
                 aVec.Reverse();

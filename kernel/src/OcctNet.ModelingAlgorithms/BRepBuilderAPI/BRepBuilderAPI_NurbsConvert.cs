@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -80,7 +81,7 @@ public class BRepBuilderAPI_NurbsConvert : BRepBuilderAPI_ModifyShape
                         if (aVTol < anETol)
                         {
                             TopoDS_Vertex aNewVtx = new();
-                            gp_Pnt aVPnt = BRep_Tool.Pnt(aVtx);
+                            Point3D aVPnt = BRep_Tool.Pnt(aVtx);
                             aBB.MakeVertex(ref aNewVtx, aVPnt, anETol + Epsilon(anETol));
                             aNewVtx.Orientation(aVtx.Orientation());
                             myVtxToReplace.Bind(aVtx, aNewVtx);

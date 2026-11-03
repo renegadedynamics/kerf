@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,10 +22,10 @@ namespace Occt;
 /// OCCT: <see cref="Gradient"/> scales G(6) instead of G(4) (occt-issues.md). OCCT's release build writes past
 /// the 4-element vector and returns an unscaled radius derivative; the port throws. <see cref="Values"/> is right.
 /// </remarks>
-public sealed class GeomConvert_FuncCylinderLSDist : math_MultipleVarFunctionWithGradient
+public sealed class GeomConvert_FuncCylinderLSDist : MultipleVarFunctionWithGradient
 {
-    private NCollection_HArray1<gp_XYZ>? myPoints;
-    private gp_Dir myDir = new gp_Dir();
+    private NCollection_HArray1<Xyz>? myPoints;
+    private Direction3D myDir = new Direction3D();
 
     /// <summary>A function without points (set them with <see cref="SetPoints"/>).</summary>
     public GeomConvert_FuncCylinderLSDist()
@@ -25,32 +33,32 @@ public sealed class GeomConvert_FuncCylinderLSDist : math_MultipleVarFunctionWit
     }
 
     /// <summary>The function for thePoints (kept, not copied) and the axis direction theDir.</summary>
-    public GeomConvert_FuncCylinderLSDist(NCollection_HArray1<gp_XYZ> thePoints, in gp_Dir theDir)
+    public GeomConvert_FuncCylinderLSDist(NCollection_HArray1<Xyz> thePoints, in Direction3D theDir)
     {
         myPoints = thePoints;
         myDir = theDir;
     }
 
     /// <summary>Sets the points (kept, not copied).</summary>
-    public void SetPoints(NCollection_HArray1<gp_XYZ> thePoints) => myPoints = thePoints;
+    public void SetPoints(NCollection_HArray1<Xyz> thePoints) => myPoints = thePoints;
 
     /// <summary>Sets the axis direction.</summary>
-    public void SetDir(in gp_Dir theDir) => myDir = theDir;
+    public void SetDir(in Direction3D theDir) => myDir = theDir;
 
     /// <summary>4: the axis location and the radius.</summary>
-    public override int NbVariables() => 4;
+    public override int VariableCount => 4;
 
     /// <summary>The criterion at X.</summary>
     public override bool Value(math_Vector X, out double F)
     {
-        var aLoc = new gp_XYZ(X[1], X[2], X[3]);
+        var aLoc = new Xyz(X[1], X[2], X[3]);
         double anR2 = X[4] * X[4];
         F = 0.0;
         int i;
         for (i = myPoints!.Lower(); i <= myPoints.Upper(); ++i)
         {
-            var aV = new gp_Vec(myPoints.Value(i) - aLoc);
-            double aD2 = aV.CrossSquareMagnitude(new gp_Vec(myDir));
+            var aV = new Vector3D(myPoints.Value(i) - aLoc);
+            double aD2 = aV.CrossSquareMagnitude(new Vector3D(myDir));
             double d = aD2 - anR2;
             F += d * d;
         }
@@ -59,18 +67,18 @@ public sealed class GeomConvert_FuncCylinderLSDist : math_MultipleVarFunctionWit
     }
 
     /// <summary>The gradient at X.</summary>
-    /// <exception cref="Standard_OutOfRange">Always, after OCCT's error described on the class.</exception>
+    /// <exception cref="OutOfRangeException">Always, after OCCT's error described on the class.</exception>
     public override bool Gradient(math_Vector X, math_Vector G)
     {
-        var aLoc = new gp_XYZ(X[1], X[2], X[3]);
+        var aLoc = new Xyz(X[1], X[2], X[3]);
         double anR = X[4], anR2 = anR * anR;
         double x = myDir.X(), y = myDir.Y(), z = myDir.Z();
         G.Init(0.0);
         int i;
         for (i = myPoints!.Lower(); i <= myPoints.Upper(); ++i)
         {
-            var aV = new gp_Vec(myPoints.Value(i) - aLoc);
-            double aD2 = aV.CrossSquareMagnitude(new gp_Vec(myDir));
+            var aV = new Vector3D(myPoints.Value(i) - aLoc);
+            double aD2 = aV.CrossSquareMagnitude(new Vector3D(myDir));
             double d = aD2 - anR2;
             double Dx0 = 2.0 * (aV.Z() * x - aV.X() * z) * z - 2.0 * (aV.X() * y - aV.Y() * x) * y;
             double Dy0 = -2.0 * (aV.Y() * z - aV.Z() * y) * z + 2.0 * (aV.X() * y - aV.Y() * x) * x;
@@ -90,7 +98,7 @@ public sealed class GeomConvert_FuncCylinderLSDist : math_MultipleVarFunctionWit
     /// <summary>The criterion and its gradient at X.</summary>
     public override bool Values(math_Vector X, out double F, math_Vector G)
     {
-        var aLoc = new gp_XYZ(X[1], X[2], X[3]);
+        var aLoc = new Xyz(X[1], X[2], X[3]);
         double anR = X[4], anR2 = anR * anR;
         double x = myDir.X(), y = myDir.Y(), z = myDir.Z();
         F = 0.0;
@@ -98,8 +106,8 @@ public sealed class GeomConvert_FuncCylinderLSDist : math_MultipleVarFunctionWit
         int i;
         for (i = myPoints!.Lower(); i <= myPoints.Upper(); ++i)
         {
-            var aV = new gp_Vec(myPoints.Value(i) - aLoc);
-            double aD2 = aV.CrossSquareMagnitude(new gp_Vec(myDir));
+            var aV = new Vector3D(myPoints.Value(i) - aLoc);
+            double aD2 = aV.CrossSquareMagnitude(new Vector3D(myDir));
             double d = aD2 - anR2;
             double Dx0 = 2.0 * (aV.Z() * x - aV.X() * z) * z - 2.0 * (aV.X() * y - aV.Y() * x) * y;
             double Dy0 = -2.0 * (aV.Y() * z - aV.Z() * y) * z + 2.0 * (aV.X() * y - aV.Y() * x) * x;

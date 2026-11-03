@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -48,7 +51,7 @@ public class BRepCheck_Face : BRepCheck_Result
 
     // OCCT's DataMapOfShapeBox2d: NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> with the default hasher, which
     // compares shapes with operator== (IsEqual: the orientation counts)
-    private static NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> NewDataMapOfShapeBox2d()
+    private static NCollection_DataMap<TopoDS_Shape, Box2d> NewDataMapOfShapeBox2d()
         => new(EqualityComparer<TopoDS_Shape>.Default);
 
     /// <summary>The status list of the face itself, read under the lock in parallel mode.</summary>
@@ -214,12 +217,12 @@ public class BRepCheck_Face : BRepCheck_Result
 
         var aC = new Geom2dAdaptor_Curve();
         double aFirst, aLast;
-        NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> aMapShapeBox2d = NewDataMapOfShapeBox2d();
+        NCollection_DataMap<TopoDS_Shape, Box2d> aMapShapeBox2d = NewDataMapOfShapeBox2d();
         for (exp1.Init(myShape, TopAbs_WIRE); exp1.More(); exp1.Next())
         {
             TopoDS_Wire aWire = TopoDS.Wire(exp1.Current());
             // create 2d boxes for all edges from wire
-            var aBoxW = new Bnd_Box2d();
+            var aBoxW = new Box2d();
             for (exp2.Init(aWire, TopAbs_EDGE); exp2.More(); exp2.Next())
             {
                 TopoDS_Edge anEdge = TopoDS.Edge(exp2.Current());
@@ -235,7 +238,7 @@ public class BRepCheck_Face : BRepCheck_Result
                     aLast = aC.LastParameter();
                 }
 
-                var aBoxE = new Bnd_Box2d();
+                var aBoxE = new Box2d();
                 BndLib_Add2dCurve.Add(aC, aFirst, aLast, 0.0, ref aBoxE);
                 aMapShapeBox2d.Bind(anEdge, aBoxE);
                 aBoxW.Add(aBoxE);
@@ -261,7 +264,7 @@ public class BRepCheck_Face : BRepCheck_Result
 
             TopoDS_Wire wir1 = TopoDS.Wire(exp1.Current());
             // to reduce the number of calls Intersect(wir1,wir2)
-            Bnd_Box2d aBox1 = new(), aBox2 = new();
+            Box2d aBox1 = new(), aBox2 = new();
             if (aMapShapeBox2d.IsBound(wir1))
             {
                 aBox1 = aMapShapeBox2d.Find(wir1);
@@ -276,7 +279,7 @@ public class BRepCheck_Face : BRepCheck_Result
                     aBox2 = aMapShapeBox2d.Find(wir2);
                 }
 
-                if (!aBox1.IsVoid() && !aBox2.IsVoid() && aBox1.IsOut(aBox2))
+                if (!aBox1.IsVoid && !aBox2.IsVoid && aBox1.IsOut(aBox2))
                 {
                     continue;
                 }
@@ -352,12 +355,12 @@ public class BRepCheck_Face : BRepCheck_Result
         var exp2 = new TopExp_Explorer();
 
         TopoDS_Face aForwardFace = TopoDS.Face(myShape.Oriented(TopAbs_FORWARD));
-        NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> aWireBoxMap = NewDataMapOfShapeBox2d();
+        NCollection_DataMap<TopoDS_Shape, Box2d> aWireBoxMap = NewDataMapOfShapeBox2d();
         // Precompute reliable UV bounds for cheap rejection of disjoint wire pairs.
         for (exp1.Init(aForwardFace, TopAbs_WIRE); exp1.More(); exp1.Next())
         {
             TopoDS_Wire aWire = TopoDS.Wire(exp1.Current());
-            var aBox = new Bnd_Box2d();
+            var aBox = new Box2d();
             if (ComputeWireUVBounds(aForwardFace, aWire, ref aBox))
             {
                 aWireBoxMap.Bind(aWire, aBox);
@@ -374,7 +377,7 @@ public class BRepCheck_Face : BRepCheck_Result
             newFace.Orientation(TopAbs_FORWARD);
             B.Add(newFace, wir1);
 
-            var FClass2d = new BRepTopAdaptor_FClass2d(newFace, Precision.PConfusion());
+            var FClass2d = new BRepTopAdaptor_FClass2d(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
             bool WireBienOriente = false;
             if (FClass2d.PerformInfinitePoint() != TopAbs_OUT)
             {
@@ -384,7 +387,7 @@ public class BRepCheck_Face : BRepCheck_Result
                 myMapImb.Bind(wir1.Reversed(), new NCollection_List<TopoDS_Shape>());
             }
 
-            bool hasBox1 = aWireBoxMap.Find(wir1, out Bnd_Box2d aBox1);
+            bool hasBox1 = aWireBoxMap.Find(wir1, out Box2d aBox1);
 
             for (exp2.Init(aForwardFace, TopAbs_WIRE); exp2.More(); exp2.Next())
             {
@@ -394,7 +397,7 @@ public class BRepCheck_Face : BRepCheck_Result
                     continue;
                 }
 
-                bool hasBox2 = aWireBoxMap.Find(wir2, out Bnd_Box2d aBox2);
+                bool hasBox2 = aWireBoxMap.Find(wir2, out Box2d aBox2);
                 // Wires with disjoint UV bounds cannot contain one another.
                 if (hasBox1 && hasBox2 && aBox1.IsOut(aBox2))
                 {
@@ -565,7 +568,7 @@ public class BRepCheck_Face : BRepCheck_Result
                 // port throws if one isn't
                 if (itm == aKeys.Length)
                 {
-                    throw new Standard_NoSuchObject("BRepCheck_Face::OrientationOfWires");
+                    throw new NoSuchObjectException("BRepCheck_Face::OrientationOfWires");
                 }
 
                 if (aKeys[itm].Orientation() == wir.Orientation())
@@ -662,7 +665,7 @@ public class BRepCheck_Face : BRepCheck_Result
     private static bool Intersect(in TopoDS_Wire wir1,
                                   in TopoDS_Wire wir2,
                                   in TopoDS_Face F,
-                                  NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> theMapEdgeBox)
+                                  NCollection_DataMap<TopoDS_Shape, Box2d> theMapEdgeBox)
     {
         double Inter2dTol = 1.0e-10;
         var exp1 = new TopExp_Explorer();
@@ -689,24 +692,24 @@ public class BRepCheck_Face : BRepCheck_Result
         //                 due to performance problem
         var Surf = new BRepAdaptor_Surface(F, false);
 
-        var PntSeq = new NCollection_Sequence<gp_Pnt>();
+        var PntSeq = new NCollection_Sequence<Point3D>();
         int i;
         for (i = 1; i <= CommonVertices.Length(); i++)
         {
             TopoDS_Vertex V = TopoDS.Vertex(CommonVertices[i]);
-            gp_Pnt2d P2d = BRep_Tool.Parameters(V, F);
-            gp_Pnt P = Surf.Value(P2d.X(), P2d.Y());
+            Point2D P2d = BRep_Tool.Parameters(V, F);
+            Point3D P = Surf.Value(P2d.X(), P2d.Y());
             PntSeq.Append(P);
         }
 
         var C1 = new Geom2dAdaptor_Curve();
         var C2 = new Geom2dAdaptor_Curve();
-        gp_Pnt2d pfirst1, plast1, pfirst2, plast2;
+        Point2D pfirst1, plast1, pfirst2, plast2;
         double first1, last1, first2, last2;
         var Inter = new Geom2dInt_GInter();
         var myDomain1 = new IntRes2d_Domain();
         var myDomain2 = new IntRes2d_Domain();
-        Bnd_Box2d Box1 = new(), Box2 = new();
+        Box2d Box1 = new(), Box2 = new();
 
         for (exp1.Init(wir1, TopAbs_EDGE); exp1.More(); exp1.Next())
         {
@@ -729,7 +732,7 @@ public class BRepCheck_Face : BRepCheck_Result
                 Box1 = theMapEdgeBox.Find(edg1);
             }
 
-            if (Box1.IsVoid())
+            if (Box1.IsVoid)
             {
                 BndLib_Add2dCurve.Add(C1, first1, last1, 0.0, ref Box1);
             }
@@ -757,7 +760,7 @@ public class BRepCheck_Face : BRepCheck_Result
                         Box2 = theMapEdgeBox.Find(edg2);
                     }
 
-                    if (Box2.IsVoid())
+                    if (Box2.IsVoid)
                     {
                         BndLib_Add2dCurve.Add(C2, first2, last2, 0.0, ref Box2);
                     }
@@ -790,10 +793,10 @@ public class BRepCheck_Face : BRepCheck_Result
                                         return true;
                                     }
 
-                                    gp_Pnt2d FirstP2d = Inter.Segment(i).FirstPoint().Value();
-                                    gp_Pnt2d LastP2d = Inter.Segment(i).LastPoint().Value();
-                                    gp_Pnt FirstP = Surf.Value(FirstP2d.X(), FirstP2d.Y());
-                                    gp_Pnt LastP = Surf.Value(LastP2d.X(), LastP2d.Y());
+                                    Point2D FirstP2d = Inter.Segment(i).FirstPoint().Value();
+                                    Point2D LastP2d = Inter.Segment(i).LastPoint().Value();
+                                    Point3D FirstP = Surf.Value(FirstP2d.X(), FirstP2d.Y());
+                                    Point3D LastP = Surf.Value(LastP2d.X(), LastP2d.Y());
                                     for (int j = 1; j <= PntSeq.Length(); j++)
                                     {
                                         double tolv = BRep_Tool.Tolerance(TopoDS.Vertex(CommonVertices[j]));
@@ -820,8 +823,8 @@ public class BRepCheck_Face : BRepCheck_Result
                                 int NbCoinc = 0;
                                 for (i = 1; i <= Inter.NbPoints(); i++)
                                 {
-                                    gp_Pnt2d P2d = Inter.Point(i).Value();
-                                    gp_Pnt P = Surf.Value(P2d.X(), P2d.Y());
+                                    Point2D P2d = Inter.Point(i).Value();
+                                    Point3D P = Surf.Value(P2d.X(), P2d.Y());
                                     for (int j = 1; j <= PntSeq.Length(); j++)
                                     {
                                         double tolv = BRep_Tool.Tolerance(TopoDS.Vertex(CommonVertices[j]));
@@ -846,14 +849,14 @@ public class BRepCheck_Face : BRepCheck_Result
         return false;
     }
 
-    private static bool ComputeWireUVBounds(in TopoDS_Face theFace, in TopoDS_Wire theWire, ref Bnd_Box2d theBox)
+    private static bool ComputeWireUVBounds(in TopoDS_Face theFace, in TopoDS_Wire theWire, ref Box2d theBox)
     {
         if (!BRep_Tool.IsClosed(theWire))
         {
             return false;
         }
 
-        var aBox = new Bnd_Box2d();
+        var aBox = new Box2d();
         for (var anExp = new TopExp_Explorer(theWire, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
@@ -865,17 +868,17 @@ public class BRepCheck_Face : BRepCheck_Result
 
             var aCurveAdaptor = new Geom2dAdaptor_Curve(aPCurve);
             // IsInside() uses the original edge range, so a clamped box cannot safely reject the wire.
-            if (Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast)
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast)
                 || aFirst < aCurveAdaptor.FirstParameter() || aLast > aCurveAdaptor.LastParameter())
             {
                 return false;
             }
 
-            BndLib_Add2dCurve.Add(aCurveAdaptor, aFirst, aLast, Precision.PConfusion(), ref aBox);
+            BndLib_Add2dCurve.Add(aCurveAdaptor, aFirst, aLast, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref aBox);
         }
 
-        if (aBox.IsVoid() || aBox.IsOpenXmin() || aBox.IsOpenXmax() || aBox.IsOpenYmin()
-            || aBox.IsOpenYmax())
+        if (aBox.IsVoid || aBox.IsOpenXmin || aBox.IsOpenXmax || aBox.IsOpenYmin
+            || aBox.IsOpenYmax)
         {
             return false;
         }
@@ -898,12 +901,12 @@ public class BRepCheck_Face : BRepCheck_Result
             Geom2d_Curve? aCurve2D = BRep_Tool.CurveOnSurface(anEdge, theFace, out aFirst, out aLast);
 
             // Selects the parameter of point on the curve
-            if (!Precision.IsNegativeInfinite(aFirst) && !Precision.IsPositiveInfinite(aLast))
+            if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFirst) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLast))
             {
                 aParameter = (aFirst + aLast) * 0.5;
 
                 // Edge is skipped if its parametric range is too small
-                if (Math.Abs(aParameter - aFirst) < Precision.PConfusion())
+                if (Math.Abs(aParameter - aFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     continue;
                 }
@@ -917,21 +920,21 @@ public class BRepCheck_Face : BRepCheck_Result
 
                 // Compute start point of edge
                 // OCCT evaluates the 3D curve at the pcurve's first parameter
-                gp_Pnt aPoints0 = aCurve.Value(aFirst);
+                Point3D aPoints0 = aCurve.Value(aFirst);
                 // Compute middle point of edge
-                gp_Pnt aPoints1 = aCurve.Value((aFirst3D + aLast3D) / 2.0);
-                if (aPoints0.Distance(aPoints1) < Precision.Confusion())
+                Point3D aPoints1 = aCurve.Value((aFirst3D + aLast3D) / 2.0);
+                if (aPoints0.Distance(aPoints1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     continue;
                 }
             }
             else
             {
-                if (Precision.IsNegativeInfinite(aFirst) && Precision.IsPositiveInfinite(aLast))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFirst) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLast))
                 {
                     aParameter = 0.0;
                 }
-                else if (Precision.IsNegativeInfinite(aFirst))
+                else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFirst))
                 {
                     aParameter = aLast - 1.0;
                 }
@@ -942,7 +945,7 @@ public class BRepCheck_Face : BRepCheck_Result
             }
 
             // Find point on curve (edge)
-            gp_Pnt2d aPoint2D = aCurve2D!.Value(aParameter);
+            Point2D aPoint2D = aCurve2D!.Value(aParameter);
             // Compute the topological position of a point relative to face
             TopAbs_State aState = FClass2d.Perform(aPoint2D, false);
 
@@ -1027,13 +1030,13 @@ public class BRepCheck_Face : BRepCheck_Result
         double m1 = (l1 + f1) * 0.5;
         double m2 = (l2 + f2) * 0.5;
 
-        gp_Pnt2d p1f = pc1.Value(m1 - d1);
-        gp_Pnt2d p1l = pc1.Value(m1 + d1);
-        gp_Pnt2d p2f = pc2.Value(m2 - d2);
-        gp_Pnt2d p2l = pc2.Value(m2 + d2);
+        Point2D p1f = pc1.Value(m1 - d1);
+        Point2D p1l = pc1.Value(m1 + d1);
+        Point2D p2f = pc2.Value(m2 - d2);
+        Point2D p2l = pc2.Value(m2 + d2);
 
-        var vc1 = new gp_Vec2d(p1f, p1l);
-        var vc2 = new gp_Vec2d(p2f, p2l);
+        var vc1 = new Vector2D(p1f, p1l);
+        var vc2 = new Vector2D(p2f, p2l);
 
         return (vc1 * vc2) < 0.0 || e1or != e2or;
     }

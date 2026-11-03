@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
 
 namespace Occt;
@@ -38,7 +39,7 @@ public static class IntImp_ComputeTangence
     /// then of surface 2.</param>
     /// <param name="TabIso">The isoparametrics, best first (written only when the surfaces are not tangent).</param>
     /// <returns>True if the surfaces are tangent (or a derivative vanishes).</returns>
-    public static bool ComputeTangence(ReadOnlySpan<gp_Vec> DPuv, ReadOnlySpan<double> EpsUV, Span<double> Tgduv,
+    public static bool ComputeTangence(ReadOnlySpan<Vector3D> DPuv, ReadOnlySpan<double> EpsUV, Span<double> Tgduv,
                                        Span<IntImp_ConstIsoparametric> TabIso)
     //                 input arguments:
     // DPuv [0] = derivative in u on caro 1
@@ -82,7 +83,7 @@ public static class IntImp_ComputeTangence
         }
         //
         //-------------------------------------------------
-        gp_Vec N1 = DPuv[0];
+        Vector3D N1 = DPuv[0];
         N1.Cross(DPuv[1]);
         //
         aM2 = N1.SquareMagnitude();
@@ -92,7 +93,7 @@ public static class IntImp_ComputeTangence
         }
         N1.Normalize();
         //-------------------------------------------------
-        gp_Vec N2 = DPuv[2];
+        Vector3D N2 = DPuv[2];
         N2.Cross(DPuv[3]);
         aM2 = N2.SquareMagnitude();
         if (aM2 < aTol2)

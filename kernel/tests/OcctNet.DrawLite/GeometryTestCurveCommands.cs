@@ -2,8 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using Occt;
-using math_Vector = Occt.math_VectorBase<double>;
+using math_Vector = Kerf.Engine.Numerics.VectorBase<double>;
 
 namespace OcctNet.DrawLite;
 
@@ -61,7 +64,7 @@ internal static class GeometryTestCurveCommands
         }
         else
         {
-            S = new Geom_Plane(new gp_Ax3(gp.XOY()));
+            S = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
         }
 
         if (S is not Geom_Plane P)
@@ -99,7 +102,7 @@ internal static class GeometryTestCurveCommands
         }
         else
         {
-            S = new Geom_Plane(new gp_Ax3(gp.XOY()));
+            S = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
         }
 
         if (S is not Geom_Plane P)
@@ -141,7 +144,7 @@ internal static class GeometryTestCurveCommands
             return 1;
         }
 
-        double tolerance = Precision.Confusion();
+        double tolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         GS.Bounds(out double U1, out double U2, out double V1, out double V2);
 
@@ -205,9 +208,9 @@ internal static class GeometryTestCurveCommands
             for (int i = 0; i <= NbPoints + 1; i++)
             {
                 double U = U1 + i * dU;
-                gp_Pnt P1 = GC.Value(U);
-                gp_Pnt2d P2d = G2d.Value(U);
-                gp_Pnt P2 = GS.Value(P2d.X(), P2d.Y());
+                Point3D P1 = GC.Value(U);
+                Point2D P2d = G2d.Value(U);
+                Point3D P2 = GS.Value(P2d.X(), P2d.Y());
                 double Dist = P1.Distance(P2);
                 di.Append(" Parameter = ").Append(U).Append("\tDistance = ").Append(Dist).Append("\n");
                 if (Dist > DistMax)
@@ -254,11 +257,11 @@ internal static class GeometryTestCurveCommands
             Param = false;
         }
 
-        gp_Dir D;
+        Direction3D D;
 
         if (n == 8)
         {
-            D = new gp_Dir(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
+            D = new Direction3D(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
         }
         else
         {
@@ -294,9 +297,9 @@ internal static class GeometryTestCurveCommands
 
     // the polyline through the points as a degree 1 B-spline curve, bound, and its deviation from the curve
     private static void BindPolyline(DrawInterpreter theDI, DrawResult di, string theName, Adaptor3d_Curve theCurve, int nbp,
-                                     Func<int, gp_Pnt> theValue, Func<int, double> theParameter)
+                                     Func<int, Point3D> theValue, Func<int, double> theParameter)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, nbp);
+        var aPoles = new NCollection_Array1<Point3D>(1, nbp);
         var aKnots = new NCollection_Array1<double>(1, nbp);
         var aMults = new NCollection_Array1<int>(1, nbp);
 
@@ -349,7 +352,7 @@ internal static class GeometryTestCurveCommands
     {
         int n = a.Count;
         int aMinPntsNb = 2;
-        double angle = Precision.Angular();
+        double angle = global::Kerf.Engine.Foundation.Precision.Angular();
 
         Adaptor3d_Curve? aHCurve = CurveOrWire(theDI, Arg(a, 2));
         if (aHCurve is null)
@@ -419,7 +422,7 @@ internal static class GeometryTestCurveCommands
         var aT = new math_Vector(1, 1);
         var aFunc = new GCPnts_DistFunctionMV(aFunc1);
 
-        var aFinder = new math_PSO(aFunc, aLowBorder, aUppBorder, aSteps); // Choose 32 best points from 100 above.
+        var aFinder = new Pso(aFunc, aLowBorder, aUppBorder, aSteps); // Choose 32 best points from 100 above.
         aFinder.Perform(aSteps, out double aValue, aT);
         double d;
 
@@ -441,10 +444,10 @@ internal static class GeometryTestCurveCommands
             return Math.Sqrt(-dmin);
         }
 
-        var anOptLoc = new math_BrentMinimum(Precision.PConfusion());
+        var anOptLoc = new BrentMinimum(global::Kerf.Engine.Foundation.Precision.PConfusion());
         anOptLoc.Perform(aFunc1, x1, aT[1], x2);
 
-        if (anOptLoc.IsDone())
+        if (anOptLoc.IsDone)
         {
             d = -anOptLoc.Minimum();
         }

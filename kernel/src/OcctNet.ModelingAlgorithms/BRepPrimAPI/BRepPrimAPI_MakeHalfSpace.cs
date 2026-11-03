@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -21,11 +24,11 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
 {
     private TopoDS_Solid mySolid = new();
 
-    private static gp_Dir getNormalOnFace(in TopoDS_Face theFace, double theU, double theV)
+    private static Direction3D getNormalOnFace(in TopoDS_Face theFace, double theU, double theV)
     {
-        double aPrec = gp.Resolution();
+        double aPrec = Constants.Resolution();
         BRepLProp_SLProps aProps = new(new BRepAdaptor_Surface(theFace), theU, theV, 2, aPrec);
-        gp_Dir aNormal = aProps.Normal();
+        Direction3D aNormal = aProps.Normal();
         if (theFace.Orientation() == TopAbs_REVERSED)
         {
             aNormal.Reverse();
@@ -34,9 +37,9 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
     }
 
     // Get average normal at the point with the given parameter on the edge
-    private static bool getNormalFromEdge(in TopoDS_Shape theShape, in TopoDS_Edge theEdge, double thePar, ref gp_Dir theNormal)
+    private static bool getNormalFromEdge(in TopoDS_Shape theShape, in TopoDS_Edge theEdge, double thePar, ref Direction3D theNormal)
     {
-        gp_XYZ aSum = new();
+        Xyz aSum = new();
         TopExp_Explorer ex = new(theShape, TopAbs_FACE);
         for (; ex.More(); ex.Next())
         {
@@ -47,24 +50,24 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
                 if (ex1.Current().IsSame(theEdge))
                 {
                     Geom2d_Curve? aC2d = BRep_Tool.CurveOnSurface(theEdge, aF, out _, out _);
-                    gp_Pnt2d aP2d = aC2d!.Value(thePar);
-                    gp_Dir aNorm = getNormalOnFace(aF, aP2d.X(), aP2d.Y());
+                    Point2D aP2d = aC2d!.Value(thePar);
+                    Direction3D aNorm = getNormalOnFace(aF, aP2d.X(), aP2d.Y());
                     aSum += aNorm.XYZ();
                 }
             }
         }
-        if (aSum.SquareModulus() > gp.Resolution())
+        if (aSum.SquareModulus() > Constants.Resolution())
         {
-            theNormal = new gp_Dir(aSum);
+            theNormal = new Direction3D(aSum);
             return true;
         }
         return false;
     }
 
     // Get average normal at the point of the vertex
-    private static bool getNormalFromVertex(in TopoDS_Shape theShape, in TopoDS_Vertex theVer, ref gp_Dir theNormal)
+    private static bool getNormalFromVertex(in TopoDS_Shape theShape, in TopoDS_Vertex theVer, ref Direction3D theNormal)
     {
-        gp_XYZ aSum = new();
+        Xyz aSum = new();
         TopExp_Explorer ex = new(theShape, TopAbs_FACE);
         for (; ex.More(); ex.Next())
         {
@@ -74,15 +77,15 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
             {
                 if (ex1.Current().IsSame(theVer))
                 {
-                    gp_Pnt2d aP2d = BRep_Tool.Parameters(theVer, aF);
-                    gp_Dir aNorm = getNormalOnFace(aF, aP2d.X(), aP2d.Y());
+                    Point2D aP2d = BRep_Tool.Parameters(theVer, aF);
+                    Direction3D aNorm = getNormalOnFace(aF, aP2d.X(), aP2d.Y());
                     aSum += aNorm.XYZ();
                 }
             }
         }
-        if (aSum.SquareModulus() > gp.Resolution())
+        if (aSum.SquareModulus() > Constants.Resolution())
         {
-            theNormal = new gp_Dir(aSum);
+            theNormal = new Direction3D(aSum);
             return true;
         }
         return false;
@@ -90,7 +93,7 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
 
     // The nearest normal projection of thePnt on theShape: true if found, with the solution point in theMinPnt and the
     // normal to the shape there in theNormal.
-    private static bool FindExtrema(in gp_Pnt thePnt, in TopoDS_Shape theShape, ref gp_Pnt theMinPnt, ref gp_Dir theNormal)
+    private static bool FindExtrema(in Point3D thePnt, in TopoDS_Shape theShape, ref Point3D theMinPnt, ref Direction3D theNormal)
     {
         TopoDS_Vertex aRefVertex = new BRepBuilderAPI_MakeVertex(thePnt).InternalVertex();
         BRepExtrema_DistShapeShape ext = new(aRefVertex, theShape);
@@ -141,24 +144,24 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
         return false;
     }
 
-    private static bool isOutside(in gp_Pnt thePnt, in gp_Pnt thePonF, in gp_Dir theNormal)
+    private static bool isOutside(in Point3D thePnt, in Point3D thePonF, in Direction3D theNormal)
     {
-        gp_Dir anOppRef = new(thePnt.XYZ() - thePonF.XYZ());
+        Direction3D anOppRef = new(thePnt.XYZ() - thePonF.XYZ());
         double aSca = theNormal * anOppRef;
         // outside if same directions
         return aSca > 0.0;
     }
 
     /// <summary>A half-space bounded by a face, on the side of the reference point.</summary>
-    public BRepPrimAPI_MakeHalfSpace(in TopoDS_Face theFace, in gp_Pnt theRefPnt)
+    public BRepPrimAPI_MakeHalfSpace(in TopoDS_Face theFace, in Point3D theRefPnt)
     {
         // Set the flag is <IsDone> to False.
         NotDone();
 
         TopoDS_Shell aShell = new();
 
-        gp_Pnt aMinPnt = new();
-        gp_Dir aNormal = new();
+        Point3D aMinPnt = new();
+        Direction3D aNormal = new();
         if (FindExtrema(theRefPnt, theFace, ref aMinPnt, ref aNormal))
         {
             bool toReverse = isOutside(theRefPnt, aMinPnt, aNormal);
@@ -179,14 +182,14 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>A half-space bounded by a shell, on the side of the reference point.</summary>
-    public BRepPrimAPI_MakeHalfSpace(in TopoDS_Shell theShell, in gp_Pnt theRefPnt)
+    public BRepPrimAPI_MakeHalfSpace(in TopoDS_Shell theShell, in Point3D theRefPnt)
     {
         // Set the flag is <IsDone> to False.
         NotDone();
 
         // Find the point of the skin closest to the reference point.
-        gp_Pnt aMinPnt = new();
-        gp_Dir aNormal = new();
+        Point3D aMinPnt = new();
+        Direction3D aNormal = new();
         if (FindExtrema(theRefPnt, theShell, ref aMinPnt, ref aNormal))
         {
             bool toReverse = isOutside(theRefPnt, aMinPnt, aNormal);
@@ -205,7 +208,7 @@ public class BRepPrimAPI_MakeHalfSpace : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The half-space as a solid (frozen).</summary>
-    /// <exception cref="StdFail_NotDone">It was not built.</exception>
+    /// <exception cref="NotDoneException">It was not built.</exception>
     public TopoDS_Solid Solid()
     {
         TopoDS_Solid aSolid = InternalSolid();

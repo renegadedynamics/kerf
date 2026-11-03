@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -25,22 +26,22 @@ public class ShapeAnalysis_TransferParametersProjTests
         TopoDS_Face aFace = theFace ?? new();
         if (theFace is null)
         {
-            aB.MakeFace(ref aFace, new Geom_Plane(new gp_Pln()), Tol);
+            aB.MakeFace(ref aFace, new Geom_Plane(new Plane3D()), Tol);
         }
 
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(0.1, 0, 0);
-        aPoles[3] = new gp_Pnt(0.2, 0, 0);
-        aPoles[4] = new gp_Pnt(2, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(0.1, 0, 0);
+        aPoles[3] = new Point3D(0.2, 0, 0);
+        aPoles[4] = new Point3D(2, 0, 0);
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE, new Geom_BezierCurve(aPoles), Tol);
         TopoDS_Vertex aV1 = new(), aV2 = new();
-        aB.MakeVertex(ref aV1, new gp_Pnt(0, 0, 0), Tol);
-        aB.MakeVertex(ref aV2, new gp_Pnt(2, 0, 0), Tol);
+        aB.MakeVertex(ref aV1, new Point3D(0, 0, 0), Tol);
+        aB.MakeVertex(ref aV2, new Point3D(2, 0, 0), Tol);
         aB.Add(anE, aV1.Oriented(TopAbs_FORWARD));
         aB.Add(anE, aV2.Oriented(TopAbs_REVERSED));
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aFace, Tol);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aFace, Tol);
         aB.Range(anE, aFace, 0.0, 2.0);
         aB.Range(anE, 0.0, 1.0, true);
         aB.SameRange(anE, false);
@@ -115,10 +116,10 @@ public class ShapeAnalysis_TransferParametersProjTests
     {
         var aB = new BRep_Builder();
         TopoDS_Vertex aV1 = new(), aV2 = new();
-        aB.MakeVertex(ref aV1, new gp_Pnt(0, 0, 0), Tol);
-        aB.MakeVertex(ref aV2, new gp_Pnt(4, 0, 0), Tol);
+        aB.MakeVertex(ref aV1, new Point3D(0, 0, 0), Tol);
+        aB.MakeVertex(ref aV2, new Point3D(4, 0, 0), Tol);
         TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), Tol);
+        aB.MakeEdge(ref anE, new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), Tol);
         aB.Add(anE, aV1.Oriented(TopAbs_FORWARD));
         aB.Add(anE, aV2.Oriented(TopAbs_REVERSED));
         aB.Range(anE, 0.0, 4.0);
@@ -132,7 +133,7 @@ public class ShapeAnalysis_TransferParametersProjTests
         TopoDS_Edge anE = LineEdge();
         TopoDS_Edge aTo = LineEdge();
         TopoDS_Vertex aV = new();
-        aB.MakeVertex(ref aV, new gp_Pnt(1, 0, 0), Tol);
+        aB.MakeVertex(ref aV, new Point3D(1, 0, 0), Tol);
         aB.UpdateVertex(aV, 1.0, anE, Tol);
         TopoDS_Vertex anInternal = TopoDS.Vertex(aV.Oriented(TopAbs_INTERNAL));
         anE.TShape()!.FreezeGraph();
@@ -141,8 +142,8 @@ public class ShapeAnalysis_TransferParametersProjTests
         TopoDS_Vertex aCopy = ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE);
         Assert.False(aCopy.IsNull());
         Assert.False(aCopy.IsSame(aV));
-        Assert.True(aCopy.TShape()!.IsFrozen());
-        Assert.True(BRep_Tool.Pnt(aCopy).IsEqual(new gp_Pnt(1, 0, 0), 0.0));
+        Assert.True(aCopy.TShape()!.IsFrozen);
+        Assert.True(BRep_Tool.Pnt(aCopy).IsEqual(new Point3D(1, 0, 0), 0.0));
         Assert.True(BRep_Tool.Parameter(aCopy, aTo, out double aPar));
         Assert.Equal(1.0, aPar, 1e-12);
 

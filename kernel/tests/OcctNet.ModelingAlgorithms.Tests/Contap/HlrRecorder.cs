@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using static Occt.Contap_IType;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -35,40 +36,40 @@ internal sealed class HlrRecorder
 
     private void Line(string theText) => gOut.Append(theText).Append('\n');
 
-    private void Pnt(gp_Pnt P)
+    private void Pnt(Point3D P)
     {
         Hex(P.X());
         Hex(P.Y());
         Hex(P.Z());
     }
 
-    private void Dir(gp_Dir D)
+    private void Dir(Direction3D D)
     {
         Hex(D.X());
         Hex(D.Y());
         Hex(D.Z());
     }
 
-    private void Vec(gp_Vec V)
+    private void Vec(Vector3D V)
     {
         Hex(V.X());
         Hex(V.Y());
         Hex(V.Z());
     }
 
-    private void Pnt2d(gp_Pnt2d P)
+    private void Pnt2d(Point2D P)
     {
         Hex(P.X());
         Hex(P.Y());
     }
 
-    private void Vec2d(gp_Vec2d V)
+    private void Vec2d(Vector2D V)
     {
         Hex(V.X());
         Hex(V.Y());
     }
 
-    private void Trsf(gp_Trsf T)
+    private void Trsf(Transform3D T)
     {
         for (int r = 1; r <= 3; r++)
         {
@@ -104,7 +105,7 @@ internal sealed class HlrRecorder
         Tag("full");
         Trsf(P.FullTransformation());
         End();
-        P.Directions(out gp_Vec2d D1, out gp_Vec2d D2, out gp_Vec2d D3);
+        P.Directions(out Vector2D D1, out Vector2D D2, out Vector2D D3);
         Tag("dirs");
         Vec2d(D1);
         Vec2d(D2);
@@ -112,15 +113,15 @@ internal sealed class HlrRecorder
         End();
         for (int i = 0; i < 5; i++)
         {
-            gp_Pnt aP = new(THE_PTS[i, 0], THE_PTS[i, 1], THE_PTS[i, 2]);
-            gp_Pnt2d aP2 = new(-7.0, -7.0);
+            Point3D aP = new(THE_PTS[i, 0], THE_PTS[i, 1], THE_PTS[i, 2]);
+            Point2D aP2 = new(-7.0, -7.0);
             P.Project(aP, ref aP2);
             P.Project(aP, out double X, out double Y, out double Z);
-            gp_Vec aD = new(THE_PTS[(i + 1) % 5, 0] + 0.5, THE_PTS[(i + 2) % 5, 1] - 0.5, 1.0);
-            P.Project(aP, aD, out gp_Pnt2d aP3, out gp_Vec2d aD3);
-            gp_Pnt aT = aP;
+            Vector3D aD = new(THE_PTS[(i + 1) % 5, 0] + 0.5, THE_PTS[(i + 2) % 5, 1] - 0.5, 1.0);
+            P.Project(aP, aD, out Point2D aP3, out Vector2D aD3);
+            Point3D aT = aP;
             P.Transform(ref aT);
-            gp_Vec aTV = aD;
+            Vector3D aTV = aD;
             P.Transform(ref aTV);
             Tag("proj");
             Pnt2d(aP2);
@@ -132,7 +133,7 @@ internal sealed class HlrRecorder
             Pnt(aT);
             Vec(aTV);
             End();
-            gp_Lin aL = P.Shoot(THE_PTS[i, 0], THE_PTS[i, 1]);
+            Line3D aL = P.Shoot(THE_PTS[i, 0], THE_PTS[i, 1]);
             Tag("shoot");
             Pnt(aL.Location());
             Dir(aL.Direction());
@@ -143,25 +144,25 @@ internal sealed class HlrRecorder
     public void RecProjectors()
     {
         RecProjector("identity", new HLRAlgo_Projector());
-        RecProjector("ax2 top", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))));
-        RecProjector("ax2 front", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, -1, 0), new gp_Dir(1, 0, 0))));
-        RecProjector("ax2 axo", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, -1, 1.4142135623730951),
-                                                                 new gp_Dir(1, 1, 0))));
-        RecProjector("ax2 axo0", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 1),
-                                                                  new gp_Dir(1.4142135623730951, -1, 1))));
-        RecProjector("ax2 general", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0.3, -0.7, 0.5),
-                                                                     new gp_Dir(0.7, 0.3, 0.0))));
-        RecProjector("ax2 down", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, -1), new gp_Dir(1, 0, 0))));
-        RecProjector("persp", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0.3, -0.7, 0.5),
-                                                               new gp_Dir(0.7, 0.3, 0.0)), 50.0));
-        RecProjector("persp top", new HLRAlgo_Projector(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)),
+        RecProjector("ax2 top", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))));
+        RecProjector("ax2 front", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))));
+        RecProjector("ax2 axo", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1.4142135623730951),
+                                                                 new Direction3D(1, 1, 0))));
+        RecProjector("ax2 axo0", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1),
+                                                                  new Direction3D(1.4142135623730951, -1, 1))));
+        RecProjector("ax2 general", new HLRAlgo_Projector(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0.3, -0.7, 0.5),
+                                                                     new Direction3D(0.7, 0.3, 0.0))));
+        RecProjector("ax2 down", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))));
+        RecProjector("persp", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, -0.7, 0.5),
+                                                               new Direction3D(0.7, 0.3, 0.0)), 50.0));
+        RecProjector("persp top", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
                                                         20.0));
 
-        gp_Trsf aT = new();
-        aT.SetTransformation(new gp_Ax3(new gp_Pnt(1, -2, 0.5), new gp_Dir(1, 1, 1), new gp_Dir(1, -1, 0)));
-        gp_Trsf aS = new();
-        aS.SetScale(new gp_Pnt(0.5, 0.5, 0.5), 2.5);
-        gp_Trsf aTS = aS * aT;
+        Transform3D aT = new();
+        aT.SetTransformation(new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0)));
+        Transform3D aS = new();
+        aS.SetScale(new Point3D(0.5, 0.5, 0.5), 2.5);
+        Transform3D aTS = aS * aT;
         RecProjector("trsf", new HLRAlgo_Projector(aTS, false, 0.0));
         RecProjector("trsf persp", new HLRAlgo_Projector(aTS, true, 30.0));
         HLRAlgo_Projector aScaled = new(aTS, false, 0.0);
@@ -170,8 +171,8 @@ internal sealed class HlrRecorder
         HLRAlgo_Projector aScaledP = new(aTS, true, 30.0);
         aScaledP.Scaled(true);
         RecProjector("trsf persp scaled", aScaledP);
-        RecProjector("trsf dirs", new HLRAlgo_Projector(aT, false, 0.0, new gp_Vec2d(1, 2), new gp_Vec2d(-3, 0.5),
-                                                        new gp_Vec2d(0.25, 0.75)));
+        RecProjector("trsf dirs", new HLRAlgo_Projector(aT, false, 0.0, new Vector2D(1, 2), new Vector2D(-3, 0.5),
+                                                        new Vector2D(0.25, 0.75)));
         HLRAlgo_Projector aSet = new();
         aSet.Set(aT, true, 12.5);
         RecProjector("set", aSet);
@@ -462,9 +463,9 @@ internal sealed class HlrRecorder
             if (C.NbContours() > 0)
             {
                 Int((int)C.TypeContour());
-                if (C.TypeContour() == GeomAbs_Circle)
+                if (C.TypeContour() == Circle)
                 {
-                    gp_Circ aC = C.Circle();
+                    Circle3D aC = C.Circle();
                     Pnt(aC.Location());
                     Dir(aC.Axis().Direction());
                     Dir(aC.XAxis().Direction());
@@ -474,7 +475,7 @@ internal sealed class HlrRecorder
                 {
                     for (int i = 1; i <= C.NbContours(); i++)
                     {
-                        gp_Lin aL = C.Line(i);
+                        Line3D aL = C.Line(i);
                         Pnt(aL.Location());
                         Dir(aL.Direction());
                     }
@@ -486,11 +487,11 @@ internal sealed class HlrRecorder
 
     public void RecContAna()
     {
-        gp_Sphere aSph = new(new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 5.0);
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(-1, 0, 2), new gp_Dir(0.2, 0.1, 1), new gp_Dir(1, 0, -0.2)), 3.0);
-        gp_Cone aCone = new(new gp_Ax3(new gp_Pnt(0, 1, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 0.4, 2.0);
-        gp_Dir aD1 = new(0.3, -0.4, 0.8), aD2 = new(0, 0, 1), aD3 = new(1, 0, 0);
-        gp_Pnt aEye = new(20, -15, 30), aEyeIn = new(1, 2, 4);
+        Sphere aSph = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 5.0);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(-1, 0, 2), new Direction3D(0.2, 0.1, 1), new Direction3D(1, 0, -0.2)), 3.0);
+        Cone aCone = new(new CoordinateSystem(new Point3D(0, 1, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.4, 2.0);
+        Direction3D aD1 = new(0.3, -0.4, 0.8), aD2 = new(0, 0, 1), aD3 = new(1, 0, 0);
+        Point3D aEye = new(20, -15, 30), aEyeIn = new(1, 2, 4);
         Line("case contana sphere");
         Contap_ContAna C = new();
         C.Perform(aSph, aD1);
@@ -506,7 +507,7 @@ internal sealed class HlrRecorder
         Line("case contana cylinder");
         C.Perform(aCyl, aD1);
         ContAna(C);
-        C.Perform(aCyl, new gp_Dir(0.2, 0.1, 1));
+        C.Perform(aCyl, new Direction3D(0.2, 0.1, 1));
         ContAna(C);
         C.Perform(aCyl, aD3, 0.3);
         ContAna(C);
@@ -554,14 +555,14 @@ internal sealed class HlrRecorder
             {
                 case Contap_Lin:
                 {
-                    gp_Lin aL = L.Line();
+                    Line3D aL = L.Line();
                     Pnt(aL.Location());
                     Dir(aL.Direction());
                     break;
                 }
                 case Contap_Circle:
                 {
-                    gp_Circ aC = L.Circle();
+                    Circle3D aC = L.Circle();
                     Pnt(aC.Location());
                     Dir(aC.Axis().Direction());
                     Dir(aC.XAxis().Direction());
@@ -625,14 +626,14 @@ internal sealed class HlrRecorder
 
     internal static Geom_BSplineSurface Bump()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 5, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 4);
         for (int i = 1; i <= 5; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
                 double x = (i - 1) * 2.5, y = (j - 1) * 3.0;
                 double z = 4.0 * Math.Sin(0.6 * i) * Math.Cos(0.5 * j) + 0.3 * i * j;
-                aPoles[i, j] = new gp_Pnt(x, y, z);
+                aPoles[i, j] = new Point3D(x, y, z);
             }
         }
         NCollection_Array1<double> aUKnots = new(1, 3), aVKnots = new(1, 2);
@@ -653,12 +654,12 @@ internal sealed class HlrRecorder
     private void RecFace(string theName, TopoDS_Face theFace)
     {
         TopoDS_Face aF = TopoDS.Face(theFace.Oriented(TopAbs_FORWARD));
-        BRepTopAdaptor_Tool aTool = new(aF, Precision.PConfusion());
+        BRepTopAdaptor_Tool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
         BRepTopAdaptor_TopolTool aDomain = aTool.GetTopolTool();
         Adaptor3d_Surface aSurface = aTool.GetSurface()!;
 
-        gp_Vec[] aDirs = [new gp_Vec(0.3, -0.4, 0.8), new gp_Vec(1, 0, 0), new gp_Vec(0.6, 0.7, -0.2)];
-        gp_Pnt[] aEyes = [new gp_Pnt(40, -25, 30), new gp_Pnt(-3, 50, 12)];
+        Vector3D[] aDirs = [new Vector3D(0.3, -0.4, 0.8), new Vector3D(1, 0, 0), new Vector3D(0.6, 0.7, -0.2)];
+        Point3D[] aEyes = [new Point3D(40, -25, 30), new Point3D(-3, 50, 12)];
         for (int i = 0; i < 3; i++)
         {
             Line($"case contour {theName} dir {i}");
@@ -667,7 +668,7 @@ internal sealed class HlrRecorder
                 Contap_Contour C = new(aSurface, aDomain, aDirs[i]);
                 Contour(C);
             }
-            catch (Standard_Failure)
+            catch (global::Kerf.Engine.Foundation.FailureException)
             {
                 Line("exception");
             }
@@ -681,7 +682,7 @@ internal sealed class HlrRecorder
                 C.Perform(aSurface, aDomain);
                 Contour(C);
             }
-            catch (Standard_Failure)
+            catch (global::Kerf.Engine.Foundation.FailureException)
             {
                 Line("exception");
             }
@@ -693,7 +694,7 @@ internal sealed class HlrRecorder
             C.Perform(aSurface, aDomain, aDirs[0], 0.15);
             Contour(C);
         }
-        catch (Standard_Failure)
+        catch (global::Kerf.Engine.Foundation.FailureException)
         {
             Line("exception");
         }
@@ -702,23 +703,23 @@ internal sealed class HlrRecorder
     /// <summary>The faces of the contour cases, by name (in the recorder's order).</summary>
     internal static IEnumerable<(string Name, TopoDS_Face Face)> Faces()
     {
-        yield return ("sphere", FirstFace(new BRepPrimAPI_MakeSphere(new gp_Pnt(1, 2, 3), 10.0).Shape(), 1));
-        yield return ("halfsphere", FirstFace(new BRepPrimAPI_MakeSphere(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        yield return ("sphere", FirstFace(new BRepPrimAPI_MakeSphere(new Point3D(1, 2, 3), 10.0).Shape(), 1));
+        yield return ("halfsphere", FirstFace(new BRepPrimAPI_MakeSphere(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                           8.0, 0.0, M_PI / 2.0, M_PI).Shape(), 1));
-        yield return ("cylinder", FirstFace(new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        yield return ("cylinder", FirstFace(new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                           5.0, 20.0).Shape(), 1));
-        yield return ("cylinder part", FirstFace(new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(1, 1, 0), new gp_Dir(0.1, 0.2, 1)),
+        yield return ("cylinder part", FirstFace(new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 1, 0), new Direction3D(0.1, 0.2, 1)),
                                                                                4.0, 12.0, 4.0).Shape(), 1));
-        yield return ("cone", FirstFace(new BRepPrimAPI_MakeCone(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        yield return ("cone", FirstFace(new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                   10.0, 3.0, 15.0).Shape(), 1));
-        yield return ("cone apex", FirstFace(new BRepPrimAPI_MakeCone(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)),
+        yield return ("cone apex", FirstFace(new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
                                                                        6.0, 0.0, 9.0).Shape(), 1));
-        yield return ("torus", FirstFace(new BRepPrimAPI_MakeTorus(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        yield return ("torus", FirstFace(new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     10.0, 3.0).Shape(), 1));
-        yield return ("torus part", FirstFace(new BRepPrimAPI_MakeTorus(new gp_Ax2(new gp_Pnt(2, 0, 1), new gp_Dir(0, 1, 1)),
+        yield return ("torus part", FirstFace(new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(2, 0, 1), new Direction3D(0, 1, 1)),
                                                                          8.0, 2.5, 0.0, M_PI, 4.0).Shape(), 1));
         yield return ("box", FirstFace(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape(), 3));
-        yield return ("bspline", new BRepBuilderAPI_MakeFace(Bump(), Precision.Confusion()).Face());
+        yield return ("bspline", new BRepBuilderAPI_MakeFace(Bump(), global::Kerf.Engine.Foundation.Precision.Confusion()).Face());
     }
 
     public void RecContours()

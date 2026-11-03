@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.IntPatch_IType;
 
@@ -26,15 +27,15 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
     private enum Kind { Plane, Cylinder, Cone, Sphere, Torus }
 
     // A surface position: random or, for the special cases, sharing the axis of the first surface.
-    private static gp_Ax3 RandomAx3(Oracle theO, double theRange)
+    private static CoordinateSystem RandomAx3(Oracle theO, double theRange)
     {
-        gp_Dir aN = Oracle.Settled(theO.Dir());
-        gp_Dir aX = Oracle.Settled(new gp_Dir(new gp_Vec(aN).Crossed(new gp_Vec(theO.Dir()))));
-        return new gp_Ax3(new gp_Pnt(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange),
+        Direction3D aN = Oracle.Settled(theO.Dir());
+        Direction3D aX = Oracle.Settled(new Direction3D(new Vector3D(aN).Crossed(new Vector3D(theO.Dir()))));
+        return new CoordinateSystem(new Point3D(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange),
                                      theO.Real(-theRange, theRange)), aN, aX);
     }
 
-    private static N.Geom_Surface Native(Kind theKind, in gp_Ax3 theAx, double theR, double theAng)
+    private static N.Geom_Surface Native(Kind theKind, in CoordinateSystem theAx, double theR, double theAng)
     {
         using var aP = Oracle.ToNative(theAx.Location());
         using var aN = Oracle.ToNative(theAx.Direction());
@@ -51,7 +52,7 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
     }
 
     // The port's surface on the native surface's own position (null if it doesn't round-trip).
-    private static Geom_Surface? Port(Kind theKind, in gp_Ax3 theAx, N.Geom_Surface theNative, double theR, double theAng)
+    private static Geom_Surface? Port(Kind theKind, in CoordinateSystem theAx, N.Geom_Surface theNative, double theR, double theAng)
     {
         using var anElem = N.Geom_ElementarySurface.DownCast(theNative)!;
         using var aPos = anElem.Position();
@@ -60,7 +61,7 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         using var aX = aPos.XDirection();
         using var aY = aPos.YDirection();
         // The same construction as the native one, from the same values.
-        gp_Ax3 anAx = new(theAx.Location(), theAx.Direction(), theAx.XDirection());
+        CoordinateSystem anAx = new(theAx.Location(), theAx.Direction(), theAx.XDirection());
         double[] aNative = [aLoc.X(), aLoc.Y(), aLoc.Z(), aZ.X(), aZ.Y(), aZ.Z(), aX.X(), aX.Y(), aX.Z(), aY.X(), aY.Y(), aY.Z()];
         double[] aPort = [.. Components(anAx.Location()), .. Components(anAx.Direction()), .. Components(anAx.XDirection()),
                           .. Components(anAx.YDirection())];
@@ -78,11 +79,11 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         };
     }
 
-    private static double[] Components(in gp_Dir theD) => [theD.X(), theD.Y(), theD.Z()];
+    private static double[] Components(in Direction3D theD) => [theD.X(), theD.Y(), theD.Z()];
 
-    private static double[] Components(in gp_Pnt theP) => [theP.X(), theP.Y(), theP.Z()];
+    private static double[] Components(in Point3D theP) => [theP.X(), theP.Y(), theP.Z()];
 
-    private static double[] Components(in gp_Ax2 theA) =>
+    private static double[] Components(in Frame3D theA) =>
         [.. Components(theA.Location()), .. Components(theA.Direction()), .. Components(theA.XDirection())];
 
     private static double[] NativeAx2(N.gp_Ax2 theA)
@@ -180,28 +181,28 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
             var aK1 = (Kind)(i % 5);
             var aK2 = (Kind)((i / 5) % 5);
             int aSpecial = (i / 25) % 5;
-            gp_Ax3 anAx1 = RandomAx3(anO, 1.0);
-            gp_Ax3 anAx2 = RandomAx3(anO, 1.0);
+            CoordinateSystem anAx1 = RandomAx3(anO, 1.0);
+            CoordinateSystem anAx2 = RandomAx3(anO, 1.0);
             double aR1 = Math.Round(anO.Real(0.5, 3), 3), aR2 = Math.Round(anO.Real(0.5, 3), 3);
             double anA1 = anO.Real(0.1, 1.2), anA2 = anO.Real(0.1, 1.2);
             switch (aSpecial)
             {
                 case 1: // coaxial
-                    anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.Direction()) * anO.Real(-2, 2)),
+                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.Direction()) * anO.Real(-2, 2)),
                                        anAx1.Direction(), anAx1.XDirection());
                     break;
                 case 2: // parallel axes
-                    anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.XDirection()) * anO.Real(-2, 2)),
+                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * anO.Real(-2, 2)),
                                        anAx1.Direction(), anAx1.XDirection());
                     break;
                 case 3: // the same location (the apex of a cone with radius 0, the centre of a sphere)
-                    anAx2 = new gp_Ax3(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
+                    anAx2 = new CoordinateSystem(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
                     aR1 = aK1 == Kind.Cone ? 0.0 : aR1;
                     aR2 = aK2 == Kind.Cone ? 0.0 : aR2;
-                    anAx2 = aK1 == Kind.Torus || aK2 == Kind.Torus ? new gp_Ax3(anAx1.Location(), anAx1.Direction(), anAx1.XDirection()) : anAx2;
+                    anAx2 = aK1 == Kind.Torus || aK2 == Kind.Torus ? new CoordinateSystem(anAx1.Location(), anAx1.Direction(), anAx1.XDirection()) : anAx2;
                     break;
                 case 4: // tangent: a cylinder's or sphere's radius reaches the other's location or axis
-                    anAx2 = new gp_Ax3(anAx1.Location().Translated(new gp_Vec(anAx1.XDirection()) * (aR1 + aR2)),
+                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * (aR1 + aR2)),
                                        anAx1.Direction(), anAx1.XDirection());
                     break;
             }

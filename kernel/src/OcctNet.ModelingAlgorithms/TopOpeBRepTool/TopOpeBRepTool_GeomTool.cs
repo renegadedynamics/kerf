@@ -42,8 +42,8 @@ public partial struct TopOpeBRepTool_GeomTool : IEquatable<TopOpeBRepTool_GeomTo
         myCompC3D = CompC3D;
         myCompPC1 = CompPC1;
         myCompPC2 = CompPC2;
-        myTol3d = Precision.Approximation();
-        myTol2d = Precision.PApproximation();
+        myTol3d = global::Kerf.Engine.Foundation.Precision.Approximation();
+        myTol2d = global::Kerf.Engine.Foundation.Precision.PApproximation();
         myNbPntMax = 30;
     }
 

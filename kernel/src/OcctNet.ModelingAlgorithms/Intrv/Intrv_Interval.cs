@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using static Occt.Intrv_Position;
 
 namespace Occt;
@@ -313,5 +314,5 @@ public partial struct Intrv_Interval : IEquatable<Intrv_Interval>
 
     public static bool operator !=(in Intrv_Interval theLeft, in Intrv_Interval theRight) => !theLeft.Equals(theRight);
 
-    public override readonly string ToString() => gp.Format("Intrv_Interval", myStart, myTolStart, myEnd, myTolEnd);
+    public override readonly string ToString() => Constants.Format("Intrv_Interval", myStart, myTolStart, myEnd, myTolEnd);
 }

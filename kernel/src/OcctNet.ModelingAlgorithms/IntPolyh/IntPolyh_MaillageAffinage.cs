@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Bvh;
+using Kerf.Geometry;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
-using IntPolyh_BoxBndTree = Occt.BVH_BoxSet<double, Occt.NCollection_Vec3<double>, int>;
+using IntPolyh_BoxBndTree = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>, int>;
 
 namespace Occt;
 
@@ -26,8 +29,8 @@ public sealed partial class IntPolyh_MaillageAffinage
 
     private readonly Adaptor3d_Surface MaSurface1;
     private readonly Adaptor3d_Surface MaSurface2;
-    private Bnd_Box MyBox1 = new();
-    private Bnd_Box MyBox2 = new();
+    private Box MyBox1 = new();
+    private Box MyBox2 = new();
     private readonly int NbSamplesU1;
     private readonly int NbSamplesU2;
     private readonly int NbSamplesV1;
@@ -91,7 +94,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     // The BVH of the triangles' boxes
 
     /// <summary>Selects the pairs of elements of two BVH box sets whose boxes interfere.</summary>
-    private sealed class IntPolyh_BoxBndTreeSelector : BVH_PairTraverse<double, BVH_Vec3d, IntPolyh_BoxBndTree, double>
+    private sealed class IntPolyh_BoxBndTreeSelector : PairTraverse<double, BVH_Vec3d, IntPolyh_BoxBndTree, double>
     {
         /// <summary>A pair of indices, ordered by the first then the second.</summary>
         internal readonly record struct PairIDs(int ID1, int ID2) : IComparable<PairIDs>
@@ -107,14 +110,14 @@ public sealed partial class IntPolyh_MaillageAffinage
                                         in BVH_Vec3d theCMax2, out double theMetric)
         {
             theMetric = 0.0;
-            return new BVH_Box<double, BVH_Vec3d>(theCMin1, theCMax1).IsOut(theCMin2, theCMax2);
+            return new Box<double, BVH_Vec3d>(theCMin1, theCMax1).IsOut(theCMin2, theCMax2);
         }
 
         public override bool Accept(int theID1, int theID2)
         {
-            if (!myBVHSet1!.Box(theID1).IsOut(myBVHSet2!.Box(theID2)))
+            if (!_bvhSet1!.Box(theID1).IsOut(_bvhSet2!.Box(theID2)))
             {
-                myPairs.Add(new PairIDs(myBVHSet1.Element(theID1), myBVHSet2.Element(theID2)));
+                myPairs.Add(new PairIDs(_bvhSet1.Element(theID1), _bvhSet2.Element(theID2)));
                 return true;
             }
 
@@ -141,7 +144,7 @@ public sealed partial class IntPolyh_MaillageAffinage
                                                 NCollection_IndexedDataMap<int, NCollection_List<int>> theCouples)
     {
         // Use linear builder for BVH construction
-        BVH_LinearBuilder<double, BVH_Vec3d> aLBuilder = new(10);
+        LinearBuilder<double, BVH_Vec3d> aLBuilder = new(10);
 
         // To find the triangles with interfering bounding boxes
         // use the BVH structure
@@ -164,7 +167,7 @@ public sealed partial class IntPolyh_MaillageAffinage
                     continue;
                 }
 
-                aBBTree.Add(j, Bnd_Tools.Bnd2BVH(aT.BoundingBox(aPoints)));
+                aBBTree.Add(j, Tools.Bnd2BVH(aT.BoundingBox(aPoints)));
             }
 
             if (aBBTree.Size() == 0)
@@ -247,11 +250,11 @@ public sealed partial class IntPolyh_MaillageAffinage
         int aNbU, aNbV, iCnt, i, j;
         int aID1, aID2, aJD1, aJD2;
         double aTol, aU, aV, aX, aY, aZ;
-        gp_Pnt aP;
+        Point3D aP;
         //
         aNbU = (SurfID == 1) ? NbSamplesU1 : NbSamplesU2;
         aNbV = (SurfID == 1) ? NbSamplesV1 : NbSamplesV2;
-        ref Bnd_Box aBox = ref (SurfID == 1) ? ref MyBox1 : ref MyBox2;
+        ref Box aBox = ref (SurfID == 1) ? ref MyBox1 : ref MyBox2;
         Adaptor3d_Surface aS = (SurfID == 1) ? MaSurface1 : MaSurface2;
         IntPolyh_Array<IntPolyh_Point> TPoints = (SurfID == 1) ? TPoints1 : TPoints2;
         //
@@ -310,7 +313,7 @@ public sealed partial class IntPolyh_MaillageAffinage
         IntPolyh_Array<IntPolyh_Point> TPoints = (SurfID == 1) ? TPoints1 : TPoints2;
         int aNbU = (SurfID == 1) ? NbSamplesU1 : NbSamplesU2;
         int aNbV = (SurfID == 1) ? NbSamplesV1 : NbSamplesV2;
-        ref Bnd_Box aBox = ref (SurfID == 1) ? ref MyBox1 : ref MyBox2;
+        ref Box aBox = ref (SurfID == 1) ? ref MyBox1 : ref MyBox2;
 
         int aID1 = 0, aID2 = 0;
         DegeneratedIndex(theVPars, aNbV, aS, 1, out int aJD1, out int aJD2);
@@ -334,13 +337,13 @@ public sealed partial class IntPolyh_MaillageAffinage
                 aV = theVPars[j];
 
                 ref readonly IntPolyh_PointNormal aPN = ref thePointsNorm.Value(iCnt);
-                gp_Vec aNorm = aPN.Normal.Multiplied(1.5 * theDeflTol);
+                Vector3D aNorm = aPN.Normal.Multiplied(1.5 * theDeflTol);
                 if (!isShiftFwd)
                 {
                     aNorm.Reverse();
                 }
 
-                gp_Pnt aP = aPN.Point.Translated(aNorm);
+                Point3D aP = aPN.Point.Translated(aNorm);
 
                 ref IntPolyh_Point aIP = ref TPoints[iCnt];
                 aP.Coord(out aX, out aY, out aZ);
@@ -397,7 +400,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     /// of both surfaces by their position against it (<c>PartOfCommon</c>: 0 inside, else bits of the sides they are
     /// out of). The box arguments are not used: the surfaces' own boxes are.
     /// </summary>
-    public void CommonBox(in Bnd_Box B1, in Bnd_Box B2, out double XMin, out double YMin, out double ZMin,
+    public void CommonBox(in Box B1, in Box B2, out double XMin, out double YMin, out double ZMin,
                           out double XMax, out double YMax, out double ZMax)
     {
         _ = B1; // OCCT: the box arguments are not used
@@ -1027,7 +1030,7 @@ public sealed partial class IntPolyh_MaillageAffinage
                                                             IntPolyh_Array<IntPolyh_Triangle> theTriangles,
                                                             IntPolyh_Array<IntPolyh_Edge> theEdges,
                                                             IntPolyh_Array<IntPolyh_Point> thePoints,
-                                                            in Bnd_Box theOppositeBox)
+                                                            in Box theOppositeBox)
     {
         // Find all triangles of the bigger surface with bounding boxes
         // overlapping the bounding box the other surface
@@ -1041,8 +1044,8 @@ public sealed partial class IntPolyh_MaillageAffinage
                 continue;
             }
             //
-            Bnd_Box aBox = aTriangle.BoundingBox(thePoints);
-            if (aBox.IsVoid())
+            Box aBox = aTriangle.BoundingBox(thePoints);
+            if (aBox.IsVoid)
             {
                 continue;
             }
@@ -1835,8 +1838,8 @@ public sealed partial class IntPolyh_MaillageAffinage
     {
         double aDE, aDC;
         //
-        gp_Vec aVE = new(Edge.X(), Edge.Y(), Edge.Z());
-        gp_Vec aVC = new(Cote.X(), Cote.Y(), Cote.Z());
+        Vector3D aVE = new(Edge.X(), Edge.Y(), Edge.Z());
+        Vector3D aVC = new(Cote.X(), Cote.Y(), Cote.Z());
         //
         aDE = aVE.SquareMagnitude();
         aDC = aVC.SquareMagnitude();
@@ -3438,7 +3441,7 @@ public sealed partial class IntPolyh_MaillageAffinage
     // GetFinTE and GetFinTT are left out: OCCT declares them and never defines them.
 
     /// <summary>The box of one surface's points.</summary>
-    public Bnd_Box GetBox(int SurfID) => SurfID == 1 ? MyBox1 : MyBox2;
+    public Box GetBox(int SurfID) => SurfID == 1 ? MyBox1 : MyBox2;
 
     /// <summary>The couples of interfering triangles.</summary>
     public NCollection_List<IntPolyh_Couple> GetCouples() => TTrianglesContacts;
@@ -3519,7 +3522,7 @@ public sealed partial class IntPolyh_MaillageAffinage
         bool bRet;
         int i, aNbP;
         double aU, dU, aU1, aU2, aV, dV, aV1, aV2, aD2;
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
         //
         bRet = false;
         aNbP = 3;

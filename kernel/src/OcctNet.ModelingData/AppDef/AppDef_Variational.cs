@@ -8,8 +8,13 @@
 // Approximation of a MultiLine of points described by the tool MLineTool.
 // with variational criteria (minimisation of a quadratic criterion and of a "fairness" criterion).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics;
+using Kerf.Engine.Numerics.Polynomials;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -55,7 +60,7 @@ public class AppDef_Variational
     private int myMaxSegment;
     private int myNbIterations;
     private double myTolerance;
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private int myNivCont;
     private bool myWithMinMax;
     private bool myWithCutting;
@@ -78,7 +83,7 @@ public class AppDef_Variational
     /// </summary>
     public AppDef_Variational(AppDef_MultiLine SSP, int FirstPoint, int LastPoint,
                               NCollection_HArray1<AppParCurves_ConstraintCouple> TheConstraints, int MaxDegree = 14,
-                              int MaxSegment = 100, GeomAbs_Shape Continuity = GeomAbs_C2, bool WithMinMax = false,
+                              int MaxSegment = 100, Continuity Continuity = C2, bool WithMinMax = false,
                               bool WithCutting = true, double Tolerance = 1.0, int NbIterations = 2)
     {
         mySSP = SSP;
@@ -96,13 +101,13 @@ public class AppDef_Variational
         // Verifications:
         if (myMaxDegree < 1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         myMaxDegree = Min(30, myMaxDegree);
         //
         if (myMaxSegment < 1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         // OCCT's checks that myWithMinMax and myWithCutting are 0 or 1 always pass for a bool: left out.
         //
@@ -111,17 +116,17 @@ public class AppDef_Variational
         myIsDone = false;
         switch (myContinuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 myNivCont = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myNivCont = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 myNivCont = 2;
                 break;
             default:
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
         }
         //
         myNbP2d = AppDef_MyLineTool.NbP2d(SSP);
@@ -142,7 +147,7 @@ public class AppDef_Variational
         myNbPoints = myLastPoint - myFirstPoint + 1;
         if (myNbPoints <= 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         //
         myTabPoints = new NCollection_HArray1<double>(1, myDimension * myNbPoints);
@@ -150,10 +155,10 @@ public class AppDef_Variational
         //  Table of Points initialization
         //
         int ipoint, jp2d, jp3d, index;
-        NCollection_Array1<gp_Pnt> TabP3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, Max(1, myNbP2d));
-        gp_Pnt2d P2d;
-        gp_Pnt P3d;
+        NCollection_Array1<Point3D> TabP3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Point2D> TabP2d = new(1, Max(1, myNbP2d));
+        Point2D P2d;
+        Point3D P3d;
         index = 1;
 
         for (ipoint = myFirstPoint; ipoint <= myLastPoint; ipoint++)
@@ -211,18 +216,18 @@ public class AppDef_Variational
     {
         int ipoint, jp2d, jp3d, index, jndex;
         int CurMultyPoint;
-        NCollection_Array1<gp_Vec> TabV3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, Max(1, myNbP2d));
-        NCollection_Array1<gp_Vec> TabV3dcurv = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Vec2d> TabV2dcurv = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Vector3D> TabV3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Vector2D> TabV2d = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Vector3D> TabV3dcurv = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Vector2D> TabV2dcurv = new(1, Max(1, myNbP2d));
 
-        gp_Vec Vt3d, Vc3d;
-        gp_Vec2d Vt2d, Vc2d;
+        Vector3D Vt3d, Vc3d;
+        Vector2D Vt2d, Vc2d;
 
         myNbConstraints = myConstraints.Length();
         if (myNbConstraints < 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myTypConstraints = new NCollection_HArray1<int>(1, Max(1, 2 * myNbConstraints));
@@ -272,7 +277,7 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV2d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp2d = 1; jp2d <= myNbP2d; jp2d++)
                         {
@@ -288,7 +293,7 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV3d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp3d = 1; jp3d <= myNbP3d; jp3d++)
                         {
@@ -307,7 +312,7 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV3d, TabV2d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp3d = 1; jp3d <= myNbP3d; jp3d++)
                         {
@@ -341,20 +346,20 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV2d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         if (!AppDef_MyLineTool.Curvature(mySSP, ipoint, TabV2dcurv))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp2d = 1; jp2d <= myNbP2d; jp2d++)
                         {
                             Vt2d = TabV2d.Value(jp2d);
                             Vt2d.Normalize();
                             Vc2d = TabV2dcurv.Value(jp2d);
-                            if (Math.Abs(Math.Abs(Vc2d.Angle(Vt2d)) - M_PI / 2.0) > Precision.Angular())
+                            if (Math.Abs(Math.Abs(Vc2d.Angle(Vt2d)) - M_PI / 2.0) > global::Kerf.Engine.Foundation.Precision.Angular())
                             {
-                                throw new Standard_ConstructionError();
+                                throw new ConstructionErrorException();
                             }
                             myTabConstraints.SetValue(jndex++, Vt2d.X());
                             myTabConstraints.SetValue(jndex++, Vt2d.Y());
@@ -368,20 +373,20 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV3d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         if (!AppDef_MyLineTool.Curvature(mySSP, ipoint, TabV3dcurv))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp3d = 1; jp3d <= myNbP3d; jp3d++)
                         {
                             Vt3d = TabV3d.Value(jp3d);
                             Vt3d.Normalize();
                             Vc3d = TabV3dcurv.Value(jp3d);
-                            if (!(Vc3d.Normalized()).IsNormal(Vt3d, Precision.Angular()))
+                            if (!(Vc3d.Normalized()).IsNormal(Vt3d, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
-                                throw new Standard_ConstructionError();
+                                throw new ConstructionErrorException();
                             }
                             myTabConstraints.SetValue(jndex++, Vt3d.X());
                             myTabConstraints.SetValue(jndex++, Vt3d.Y());
@@ -396,20 +401,20 @@ public class AppDef_Variational
                     {
                         if (!AppDef_MyLineTool.Tangency(mySSP, ipoint, TabV3d, TabV2d))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         if (!AppDef_MyLineTool.Curvature(mySSP, ipoint, TabV3dcurv, TabV2dcurv))
                         {
-                            throw new Standard_ConstructionError();
+                            throw new ConstructionErrorException();
                         }
                         for (jp3d = 1; jp3d <= myNbP3d; jp3d++)
                         {
                             Vt3d = TabV3d.Value(jp3d);
                             Vt3d.Normalize();
                             Vc3d = TabV3dcurv.Value(jp3d);
-                            if (!(Vc3d.Normalized()).IsNormal(Vt3d, Precision.Angular()))
+                            if (!(Vc3d.Normalized()).IsNormal(Vt3d, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
-                                throw new Standard_ConstructionError();
+                                throw new ConstructionErrorException();
                             }
                             myTabConstraints.SetValue(jndex++, Vt3d.X());
                             myTabConstraints.SetValue(jndex++, Vt3d.Y());
@@ -424,9 +429,9 @@ public class AppDef_Variational
                             Vt2d = TabV2d.Value(jp2d);
                             Vt2d.Normalize();
                             Vc2d = TabV2dcurv.Value(jp2d);
-                            if (Math.Abs(Math.Abs(Vc2d.Angle(Vt2d)) - M_PI / 2.0) > Precision.Angular())
+                            if (Math.Abs(Math.Abs(Vc2d.Angle(Vt2d)) - M_PI / 2.0) > global::Kerf.Engine.Foundation.Precision.Angular())
                             {
-                                throw new Standard_ConstructionError();
+                                throw new ConstructionErrorException();
                             }
                             myTabConstraints.SetValue(jndex++, Vt2d.X());
                             myTabConstraints.SetValue(jndex++, Vt2d.Y());
@@ -437,7 +442,7 @@ public class AppDef_Variational
                     }
                     break;
                 default:
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
             }
             CurMultyPoint += myNbP3d * 6 + myNbP2d * 2;
         }
@@ -468,7 +473,7 @@ public class AppDef_Variational
     {
         if (!myIsCreated)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         double WQuadratic, WQuality;
@@ -494,12 +499,12 @@ public class AppDef_Variational
 
         int jp2d, jp3d, ipole, NbElem = TheCurve.NbElements();
 
-        NCollection_Array1<gp_Pnt> TabP3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Point3D> TabP3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Point2D> TabP2d = new(1, Max(1, myNbP2d));
         ReadOnlySpan<double> debfin = [-1.0, 1];
 
-        gp_Pnt2d P2d = new();
-        gp_Pnt P3d = new();
+        Point2D P2d = new();
+        Point3D P3d = new();
         {
             NCollection_HArray2<double> PolynomialIntervalsPtr = new(1, NbElem, 1, 2);
 
@@ -528,7 +533,7 @@ public class AppDef_Variational
                 PolynomialIntervalsPtr.SetValue(ii, 1, debfin[0]);
                 PolynomialIntervalsPtr.SetValue(ii, 2, debfin[1]);
             }
-            Convert_CompPolynomialToPoles AConverter = new(NbElem,
+            CompPolynomialToPoles AConverter = new(NbElem,
                                                            myNivCont,
                                                            myDimension,
                                                            myMaxDegree,
@@ -536,7 +541,7 @@ public class AppDef_Variational
                                                            CoeffPtr,
                                                            PolynomialIntervalsPtr,
                                                            IntervallesPtr);
-            if (AConverter.IsDone())
+            if (AConverter.IsDone)
             {
                 NCollection_HArray1<int> Mults;
                 int NbPoles = AConverter.NbPoles();
@@ -607,7 +612,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return new AppParCurves_MultiBSpCurve(myMBSpCurve);
     }
@@ -617,7 +622,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myMaxError;
     }
@@ -627,7 +632,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myMaxErrorIndex;
     }
@@ -637,7 +642,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myCriterium[0];
     }
@@ -646,22 +651,22 @@ public class AppDef_Variational
     /// Writes into <paramref name="mat"/> the distances between the points of the MultiLine and the curves:
     /// mat(curve, point), rows from 1, columns from the matrix's lower column for the first point.
     /// </summary>
-    public void Distance(math_Matrix mat)
+    public void Distance(Matrix mat)
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         int ipoint, jp2d, jp3d, index;
-        NCollection_Array1<gp_Pnt> TabP3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Point3D> TabP3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Point2D> TabP2d = new(1, Max(1, myNbP2d));
         int j0 = mat.LowerCol() - myFirstPoint;
 
-        gp_Pnt2d P2d;
-        gp_Pnt P3d;
+        Point2D P2d;
+        Point3D P3d;
 
-        gp_Pnt Pt3d;
-        gp_Pnt2d Pt2d;
+        Point3D Pt3d;
+        Point2D Pt2d;
 
         for (ipoint = myFirstPoint; ipoint <= myLastPoint; ipoint++)
         {
@@ -702,7 +707,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myAverageError;
     }
@@ -712,7 +717,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myParameters;
     }
@@ -722,7 +727,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myKnots;
     }
@@ -732,7 +737,7 @@ public class AppDef_Variational
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         VFirstOrder = myCriterium[1];
         VSecondOrder = myCriterium[2];
@@ -754,7 +759,7 @@ public class AppDef_Variational
     public int MaxSegment() => myMaxSegment;
 
     /// <summary>The continuity used in the approximation.</summary>
-    public GeomAbs_Shape Continuity() => myContinuity;
+    public Continuity Continuity() => myContinuity;
 
     /// <summary>Whether the approximation minimises the maximum error.</summary>
     public bool WithMinMax() => myWithMinMax;
@@ -830,22 +835,22 @@ public class AppDef_Variational
     /// Sets the continuity (C0, C1 or C2; Standard_ConstructionError otherwise); false, changing nothing, if the
     /// problem would be over-constrained.
     /// </summary>
-    public bool SetContinuity(GeomAbs_Shape C)
+    public bool SetContinuity(Continuity C)
     {
         int NivCont = 0;
         switch (C)
         {
-            case GeomAbs_C0:
+            case C0:
                 NivCont = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 NivCont = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 NivCont = 2;
                 break;
             default:
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
         }
         if (((myMaxDegree - NivCont) * myMaxSegment - myNbPassPoints - 2 * myNbTangPoints - 3 * myNbCurvPoints) < 0)
         {
@@ -912,7 +917,7 @@ public class AppDef_Variational
     {
         if (Percent1 < 0 || Percent2 < 0 || Percent3 < 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         double Total = Percent1 + Percent2 + Percent3;
         myPercent[0] = Percent1 / Total;
@@ -930,11 +935,11 @@ public class AppDef_Variational
     {
         if (Percent < 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (Order < 1 || Order > 3)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myPercent[Order - 1] = Percent;
         double Total = myPercent[0] + myPercent[1] + myPercent[2];
@@ -1366,7 +1371,7 @@ public class AppDef_Variational
 
         NCollection_HArray2<NCollection_HArray1<int>> AssTable;
 
-        math_Matrix H = new(0, MxDeg, 0, MxDeg);
+        Matrix H = new(0, MxDeg, 0, MxDeg);
         math_Vector G = new(0, MxDeg), Sol = new(1, A.NbGlobVar());
 
         int el, dim;
@@ -1886,7 +1891,7 @@ public class AppDef_Variational
 
         mySmoothCriterion.SetWeight(WQuadratic, WQuality, myPercent[0], myPercent[1], myPercent[2]);
 
-        PLib_HermitJacobi TheBase = new(myMaxDegree, myContinuity);
+        HermitJacobi TheBase = new(myMaxDegree, myContinuity);
         FEmTool_Curve TheCurve;
         int NbElem;
         double CurvTol = Eps2 * Length / myNbPoints;
@@ -1933,7 +1938,7 @@ public class AppDef_Variational
 
         if (Length <= Eps1)
         {
-            throw new Standard_ConstructionError("AppDef_Variational::InitParameters");
+            throw new ConstructionErrorException("AppDef_Variational::InitParameters");
         }
 
         for (ipoint = myFirstPoint + 1; ipoint <= myLastPoint - 1; ipoint++)
@@ -2353,7 +2358,7 @@ public class AppDef_Variational
         VScnd.Initialized((Wpnt * VScnd + (Wcnt * Length) * VCnt) * Denom);
     }
 
-    private void InitCutting(PLib_HermitJacobi aBase, double CurvTol, out FEmTool_Curve aCurve)
+    private void InitCutting(HermitJacobi aBase, double CurvTol, out FEmTool_Curve aCurve)
     {
         // Definition of number of elements
         int ORCMx = -1, NCont = 0, i, kk, NbElem;
@@ -2368,7 +2373,7 @@ public class AppDef_Variational
 
         if (ORCMx > myMaxDegree - myNivCont)
         {
-            throw new Standard_ConstructionError("AppDef_Variational::InitCutting");
+            throw new ConstructionErrorException("AppDef_Variational::InitCutting");
         }
 
         int NLibre = Max(myMaxDegree - myNivCont - (myMaxDegree + 1) / 4, myNivCont + 1);
@@ -2383,7 +2388,7 @@ public class AppDef_Variational
 
         if (NbElem > myMaxSegment)
         {
-            throw new Standard_ConstructionError("AppDef_Variational::InitCutting");
+            throw new ConstructionErrorException("AppDef_Variational::InitCutting");
         }
 
         aCurve = new FEmTool_Curve(myDimension, NbElem, aBase, CurvTol);
@@ -2629,7 +2634,7 @@ public class AppDef_Variational
         }
     }
 
-    private static bool NotParallel(in gp_Vec T, out gp_Vec V)
+    private static bool NotParallel(in Vector3D T, out Vector3D V)
     {
         V = T;
         V.SetX(V.X() + 1.0);
@@ -2674,7 +2679,7 @@ public class AppDef_Variational
 
         double t, R1, R2;
 
-        PLib_HermitJacobi myHermitJacobi = Curve.Base();
+        HermitJacobi myHermitJacobi = Curve.Base();
         int Order = myHermitJacobi.NivConstr() + 1;
 
         double UFirst, ULast, coeff, c0, mfact, mfact1;
@@ -2922,9 +2927,9 @@ public class AppDef_Variational
         {
             return false;
         }
-        gp_Vec T = new(), V = new();
-        gp_Vec theta1, theta2 = new();
-        gp_Vec F = new();
+        Vector3D T = new(), V = new();
+        Vector3D theta1, theta2 = new();
+        Vector3D F = new();
         double XX, XY, YY, XZ, YZ, ZZ;
 
         if ((typcon == AppParCurves_TangencyPoint) || (typcon == AppParCurves_CurvaturePoint))

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -147,11 +151,11 @@ public class FEmTool_Assembly
     /// Adds an elementary matrix to the assembly matrix. Throws Standard_DomainError if dimensions
     /// <paramref name="Dimension1"/> and <paramref name="Dimension2"/> are independent.
     /// </summary>
-    public void AddMatrix(int Element, int Dimension1, int Dimension2, math_Matrix Mat)
+    public void AddMatrix(int Element, int Dimension1, int Dimension2, Matrix Mat)
     {
         if (myDepTable[Dimension1, Dimension2] == 0)
         {
-            throw new Standard_DomainError("FEmTool_Assembly::AddMatrix");
+            throw new DomainErrorException("FEmTool_Assembly::AddMatrix");
         }
 
         NCollection_Array1<int> T1 = myRefTable.Value(Dimension1, Element).Array1();
@@ -356,7 +360,7 @@ public class FEmTool_Assembly
     {
         if (!IsSolved)
         {
-            throw new StdFail_NotDone("FEmTool_Assembly::Solution");
+            throw new NotDoneException("FEmTool_Assembly::Solution");
         }
 
         if (G.IsEmpty())

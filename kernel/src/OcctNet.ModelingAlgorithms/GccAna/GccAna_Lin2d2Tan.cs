@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -20,11 +23,11 @@ public sealed class GccAna_Lin2d2Tan
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Lin2d> linsol;
+    private readonly NCollection_Array1<Line2D> linsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<GccEnt_Position> qualifier2;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg2sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -32,11 +35,11 @@ public sealed class GccAna_Lin2d2Tan
 
     private GccAna_Lin2d2Tan(int theSize)
     {
-        linsol = new NCollection_Array1<gp_Lin2d>(1, theSize);
+        linsol = new NCollection_Array1<Line2D>(1, theSize);
         qualifier1 = new NCollection_Array1<GccEnt_Position>(1, theSize);
         qualifier2 = new NCollection_Array1<GccEnt_Position>(1, theSize);
-        pnttg1sol = new NCollection_Array1<gp_Pnt2d>(1, theSize);
-        pnttg2sol = new NCollection_Array1<gp_Pnt2d>(1, theSize);
+        pnttg1sol = new NCollection_Array1<Point2D>(1, theSize);
+        pnttg2sol = new NCollection_Array1<Point2D>(1, theSize);
         par1sol = new NCollection_Array1<double>(1, theSize);
         par2sol = new NCollection_Array1<double>(1, theSize);
         pararg1 = new NCollection_Array1<double>(1, theSize);
@@ -49,7 +52,7 @@ public sealed class GccAna_Lin2d2Tan
     //=========================================================================
 
     /// <summary>The line through two points, if they are at least Tolerance apart (else not done).</summary>
-    public GccAna_Lin2d2Tan(in gp_Pnt2d ThePoint1, in gp_Pnt2d ThePoint2, double Tolerance) : this(1)
+    public GccAna_Lin2d2Tan(in Point2D ThePoint1, in Point2D ThePoint2, double Tolerance) : this(1)
     {
         double Tol = Math.Abs(Tolerance);
         WellDone = false;
@@ -59,15 +62,15 @@ public sealed class GccAna_Lin2d2Tan
         qualifier2[1] = GccEnt_noqualifier;
         if (dist >= Tol)
         {
-            gp_Dir2d dir = new(ThePoint2.X() - ThePoint1.X(), ThePoint2.Y() - ThePoint1.Y());
-            linsol[1] = new gp_Lin2d(ThePoint1, dir);
+            Direction2D dir = new(ThePoint2.X() - ThePoint1.X(), ThePoint2.Y() - ThePoint1.Y());
+            linsol[1] = new Line2D(ThePoint1, dir);
             //   ===================================
             WellDone = true;
             NbrSol = 1;
             pnttg1sol[1] = ThePoint1;
             pnttg2sol[1] = ThePoint2;
-            par1sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
-            par2sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pnttg2sol[NbrSol]);
+            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
+            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pnttg2sol[NbrSol]);
             pararg1[1] = 0.0;
             pararg2[1] = 0.0;
         }
@@ -85,7 +88,7 @@ public sealed class GccAna_Lin2d2Tan
 
     /// <summary>The lines tangent to the qualified circle and through ThePoint.</summary>
     /// <exception cref="GccEnt_BadQualifier">The circle is qualified enclosed, or GccEnt_noqualifier.</exception>
-    public GccAna_Lin2d2Tan(in GccEnt_QualifiedCirc Qualified1, in gp_Pnt2d ThePoint, double Tolerance) : this(2)
+    public GccAna_Lin2d2Tan(in GccEnt_QualifiedCirc Qualified1, in Point2D ThePoint, double Tolerance) : this(2)
     {
         double Tol = Math.Abs(Tolerance);
         WellDone = false;
@@ -95,7 +98,7 @@ public sealed class GccAna_Lin2d2Tan
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d C1 = Qualified1.Qualified();
+        Circle2D C1 = Qualified1.Qualified();
         double R1 = C1.Radius();
 
         if (Qualified1.IsEnclosed())
@@ -109,8 +112,8 @@ public sealed class GccAna_Lin2d2Tan
         }
         else if (Math.Abs(ThePoint.Distance(C1.Location()) - R1) <= Tol)
         {
-            gp_Dir2d dir = new(new gp_Vec2d(C1.Location(), ThePoint));
-            linsol[1] = new gp_Lin2d(ThePoint, new gp_Dir2d(-dir.Y(), dir.X()));
+            Direction2D dir = new(new Vector2D(C1.Location(), ThePoint));
+            linsol[1] = new Line2D(ThePoint, new Direction2D(-dir.Y(), dir.X()));
             //   =====================================================================
             qualifier1[1] = Qualified1.Qualifier();
             qualifier2[1] = GccEnt_noqualifier;
@@ -143,10 +146,10 @@ public sealed class GccAna_Lin2d2Tan
             }
             for (int i = 1; i <= NbrSol; i++)
             {
-                gp_Pnt2d P1 = C1.Location().Rotated(ThePoint, Math.Asin(signe * R1 / dist));
-                gp_Dir2d D1 = new(new gp_Vec2d(P1, ThePoint));
-                P1 = new gp_Pnt2d(P1.XY() + d * D1.XY());
-                linsol[i] = new gp_Lin2d(P1, new gp_Dir2d(new gp_Vec2d(P1, ThePoint)));
+                Point2D P1 = C1.Location().Rotated(ThePoint, Math.Asin(signe * R1 / dist));
+                Direction2D D1 = new(new Vector2D(P1, ThePoint));
+                P1 = new Point2D(P1.XY() + d * D1.XY());
+                linsol[i] = new Line2D(P1, new Direction2D(new Vector2D(P1, ThePoint)));
                 //     ========================================================
                 qualifier1[i] = Qualified1.Qualifier();
                 qualifier2[i] = GccEnt_noqualifier;
@@ -159,10 +162,10 @@ public sealed class GccAna_Lin2d2Tan
 
         for (int i = 1; i <= NbrSol; i++)
         {
-            par1sol[i] = ElCLib.Parameter(linsol[i], pnttg1sol[i]);
-            par2sol[i] = ElCLib.Parameter(linsol[i], pnttg2sol[i]);
+            par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pnttg1sol[i]);
+            par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pnttg2sol[i]);
             // a circle of radius 0 puts the tangency point at its centre
-            pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[i]);
+            pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[i]);
             pararg2[i] = 0.0;
         }
     }
@@ -200,8 +203,8 @@ public sealed class GccAna_Lin2d2Tan
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d C1 = Qualified1.Qualified();
-        gp_Circ2d C2 = Qualified2.Qualified();
+        Circle2D C1 = Qualified1.Qualified();
+        Circle2D C2 = Qualified2.Qualified();
 
         if (Qualified1.IsEnclosed() || Qualified2.IsEnclosed())
         {
@@ -212,7 +215,7 @@ public sealed class GccAna_Lin2d2Tan
         {
             double R1 = C1.Radius();
             double R2 = C2.Radius();
-            gp_Dir2d D1 = new();
+            Direction2D D1 = new();
             int signe = 1;
             double dist = C1.Location().Distance(C2.Location());
             if (Tol < Max(R1, R2) - dist - Min(R1, R2))
@@ -229,14 +232,14 @@ public sealed class GccAna_Lin2d2Tan
                     {
                         if (R1 < R2)
                         {
-                            D1 = new gp_Dir2d(new gp_Vec2d(C2.Location(), C1.Location()));
+                            D1 = new Direction2D(new Vector2D(C2.Location(), C1.Location()));
                         }
                         else
                         {
-                            D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), C2.Location()));
+                            D1 = new Direction2D(new Vector2D(C1.Location(), C2.Location()));
                         }
-                        gp_Pnt2d P1 = new(C1.Location().XY() + R1 * D1.XY());
-                        linsol[1] = new gp_Lin2d(P1, new gp_Dir2d(-D1.Y(), D1.X()));
+                        Point2D P1 = new(C1.Location().XY() + R1 * D1.XY());
+                        linsol[1] = new Line2D(P1, new Direction2D(-D1.Y(), D1.X()));
                         //         =================================================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified2.Qualifier();
@@ -247,15 +250,15 @@ public sealed class GccAna_Lin2d2Tan
                     }
                     else
                     {
-                        gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R1 - R2) / dist));
-                        D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                        P1 = new gp_Pnt2d((C1.Location().XY() + new gp_XY(R1 * D1.Y(), -R1 * D1.X())));
-                        linsol[1] = new gp_Lin2d(P1, D1);
+                        Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R1 - R2) / dist));
+                        D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                        P1 = new Point2D((C1.Location().XY() + new Xy(R1 * D1.Y(), -R1 * D1.X())));
+                        linsol[1] = new Line2D(P1, D1);
                         //         ===========================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         pnttg1sol[1] = P1;
-                        pnttg2sol[1] = new gp_Pnt2d(C2.Location().XY() + new gp_XY(R2 * D1.Y(), -R2 * D1.X()));
+                        pnttg2sol[1] = new Point2D(C2.Location().XY() + new Xy(R2 * D1.Y(), -R2 * D1.X()));
                         WellDone = true;
                         NbrSol = 1;
                     }
@@ -279,9 +282,9 @@ public sealed class GccAna_Lin2d2Tan
                     }
                     else if (Math.Abs(dist - R1 - R2) < Tol && dist > Tol)
                     {
-                        D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), C2.Location()));
-                        gp_Pnt2d P1 = new(C1.Location().XY() + R1 * D1.XY());
-                        linsol[1] = new gp_Lin2d(P1, new gp_Dir2d(-D1.Y(), D1.X()));
+                        D1 = new Direction2D(new Vector2D(C1.Location(), C2.Location()));
+                        Point2D P1 = new(C1.Location().XY() + R1 * D1.XY());
+                        linsol[1] = new Line2D(P1, new Direction2D(-D1.Y(), D1.X()));
                         //          =================================================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
@@ -292,15 +295,15 @@ public sealed class GccAna_Lin2d2Tan
                     }
                     else
                     {
-                        gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R1 + R2) / dist));
-                        D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                        P1 = new gp_Pnt2d(C1.Location().XY() + signe * (new gp_XY(R1 * D1.Y(), -R1 * D1.X())));
-                        linsol[1] = new gp_Lin2d(P1, D1);
+                        Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R1 + R2) / dist));
+                        D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                        P1 = new Point2D(C1.Location().XY() + signe * (new Xy(R1 * D1.Y(), -R1 * D1.X())));
+                        linsol[1] = new Line2D(P1, D1);
                         //         ===========================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         pnttg1sol[1] = P1;
-                        pnttg2sol[1] = new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(-R2 * D1.Y(), R2 * D1.X())));
+                        pnttg2sol[1] = new Point2D(C2.Location().XY() + signe * (new Xy(-R2 * D1.Y(), R2 * D1.X())));
                         WellDone = true;
                         NbrSol = 1;
                     }
@@ -312,34 +315,34 @@ public sealed class GccAna_Lin2d2Tan
                     {
                         if (R1 < R2)
                         {
-                            D1 = new gp_Dir2d(new gp_Vec2d(C2.Location(), C1.Location()));
+                            D1 = new Direction2D(new Vector2D(C2.Location(), C1.Location()));
                         }
                         else
                         {
-                            D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), C2.Location()));
+                            D1 = new Direction2D(new Vector2D(C1.Location(), C2.Location()));
                         }
-                        linsol[1] = new gp_Lin2d(new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY()),
+                        linsol[1] = new Line2D(new Point2D(C1.Location().XY() + R1 * D1.XY()),
                                                  //         =============================================================
-                                                 new gp_Dir2d(D1.Y(), -D1.X()));
+                                                 new Direction2D(D1.Y(), -D1.X()));
                         //                              =========================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        pnttg1sol[1] = new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY());
+                        pnttg1sol[1] = new Point2D(C1.Location().XY() + R1 * D1.XY());
                         pnttg2sol[1] = pnttg1sol[1];
                         WellDone = true;
                         NbrSol = 1;
                     }
                     else
                     {
-                        gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R2 - R1) / dist));
-                        D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                        P1 = new gp_Pnt2d(C1.Location().XY() + new gp_XY(-R1 * D1.Y(), R1 * D1.X()));
-                        linsol[1] = new gp_Lin2d(P1, D1);
+                        Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R2 - R1) / dist));
+                        D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                        P1 = new Point2D(C1.Location().XY() + new Xy(-R1 * D1.Y(), R1 * D1.X()));
+                        linsol[1] = new Line2D(P1, D1);
                         //         ===========================
                         qualifier1[1] = Qualified1.Qualifier();
                         qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         pnttg1sol[1] = P1;
-                        pnttg2sol[1] = new gp_Pnt2d(C2.Location().XY() + (new gp_XY(-R2 * D1.Y(), R2 * D1.X())));
+                        pnttg2sol[1] = new Point2D(C2.Location().XY() + (new Xy(-R2 * D1.Y(), R2 * D1.X())));
                         WellDone = true;
                         NbrSol = 1;
                     }
@@ -363,51 +366,51 @@ public sealed class GccAna_Lin2d2Tan
                         {
                             if (R1 < R2)
                             {
-                                D1 = new gp_Dir2d(new gp_Vec2d(C2.Location(), C1.Location()));
+                                D1 = new Direction2D(new Vector2D(C2.Location(), C1.Location()));
                             }
                             else
                             {
-                                D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), C2.Location()));
+                                D1 = new Direction2D(new Vector2D(C1.Location(), C2.Location()));
                             }
-                            linsol[1] = new gp_Lin2d(new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY()),
+                            linsol[1] = new Line2D(new Point2D(C1.Location().XY() + R1 * D1.XY()),
                                                      //           =============================================================
-                                                     new gp_Dir2d(-D1.Y(), D1.X()));
+                                                     new Direction2D(-D1.Y(), D1.X()));
                             //                                =========================
                             qualifier1[1] = Qualified1.Qualifier();
                             qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            pnttg1sol[1] = new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY());
+                            pnttg1sol[1] = new Point2D(C1.Location().XY() + R1 * D1.XY());
                             pnttg2sol[1] = pnttg1sol[1];
                             WellDone = true;
                             NbrSol = 1;
                         }
                         else
                         {
-                            gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R1 - R2) / dist));
-                            D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                            P1 = new gp_Pnt2d(C1.Location().XY() + new gp_XY(R1 * D1.Y(), -R1 * D1.X()));
-                            linsol[1] = new gp_Lin2d(P1, D1);
+                            Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin((R1 - R2) / dist));
+                            D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                            P1 = new Point2D(C1.Location().XY() + new Xy(R1 * D1.Y(), -R1 * D1.X()));
+                            linsol[1] = new Line2D(P1, D1);
                             //           ===========================
                             qualifier1[1] = Qualified1.Qualifier();
                             qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                             pnttg1sol[1] = P1;
                             pnttg2sol[1] =
-                                new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(R2 * D1.Y(), -R2 * D1.X())));
+                                new Point2D(C2.Location().XY() + signe * (new Xy(R2 * D1.Y(), -R2 * D1.X())));
                             WellDone = true;
                             NbrSol = 1;
                             if (Min(R1, R2) + Max(R1, R2) < dist)
                             {
-                                gp_Pnt2d P2 =
+                                Point2D P2 =
                                     C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R1 + R2) / dist));
-                                gp_Dir2d D2 = new(new gp_Vec2d(C1.Location(), P2));
-                                P2 = new gp_Pnt2d(C1.Location().XY() + signe * (new gp_XY(R1 * D2.Y(), -R1 * D2.X())));
-                                linsol[2] = new gp_Lin2d(P2, D2);
+                                Direction2D D2 = new(new Vector2D(C1.Location(), P2));
+                                P2 = new Point2D(C1.Location().XY() + signe * (new Xy(R1 * D2.Y(), -R1 * D2.X())));
+                                linsol[2] = new Line2D(P2, D2);
                                 //             ===========================
                                 // OCCT: writes the first solution's qualifiers (the second's stay unset) and gives the
                                 // second solution the first's tangency point P1
                                 qualifier1[1] = Qualified1.Qualifier();
                                 qualifier2[1] = Qualified1.Qualifier();
                                 pnttg1sol[2] = P1;
-                                pnttg2sol[2] = new gp_Pnt2d(C2.Location().XY() + (new gp_XY(-R2 * D2.Y(), R2 * D2.X())));
+                                pnttg2sol[2] = new Point2D(C2.Location().XY() + (new Xy(-R2 * D2.Y(), R2 * D2.X())));
                                 NbrSol = 2;
                             }
                         }
@@ -429,51 +432,51 @@ public sealed class GccAna_Lin2d2Tan
                         {
                             if (R1 < R2)
                             {
-                                D1 = new gp_Dir2d(new gp_Vec2d(C2.Location(), C1.Location()));
+                                D1 = new Direction2D(new Vector2D(C2.Location(), C1.Location()));
                             }
                             else
                             {
-                                D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), C2.Location()));
+                                D1 = new Direction2D(new Vector2D(C1.Location(), C2.Location()));
                             }
-                            linsol[1] = new gp_Lin2d(new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY()),
+                            linsol[1] = new Line2D(new Point2D(C1.Location().XY() + R1 * D1.XY()),
                                                      //           =============================================================
-                                                     new gp_Dir2d(D1.Y(), -D1.X()));
+                                                     new Direction2D(D1.Y(), -D1.X()));
                             //                                =========================
                             qualifier1[1] = Qualified1.Qualifier();
                             qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            pnttg1sol[1] = new gp_Pnt2d(C1.Location().XY() + R1 * D1.XY());
+                            pnttg1sol[1] = new Point2D(C1.Location().XY() + R1 * D1.XY());
                             pnttg2sol[1] = pnttg1sol[1];
                             WellDone = true;
                             NbrSol = 1;
                         }
                         else
                         {
-                            gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 - R1) / dist));
-                            D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                            P1 = new gp_Pnt2d(C1.Location().XY() + new gp_XY(-R1 * D1.Y(), R1 * D1.X()));
-                            linsol[1] = new gp_Lin2d(P1, D1);
+                            Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 - R1) / dist));
+                            D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                            P1 = new Point2D(C1.Location().XY() + new Xy(-R1 * D1.Y(), R1 * D1.X()));
+                            linsol[1] = new Line2D(P1, D1);
                             //           ===========================
                             qualifier1[1] = Qualified1.Qualifier();
                             qualifier2[1] = Qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                             pnttg1sol[1] = P1;
                             pnttg2sol[1] =
-                                new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(-R2 * D1.Y(), R2 * D1.X())));
+                                new Point2D(C2.Location().XY() + signe * (new Xy(-R2 * D1.Y(), R2 * D1.X())));
                             WellDone = true;
                             NbrSol = 1;
                             if (Min(R1, R2) + Max(R1, R2) < dist)
                             {
-                                gp_Pnt2d P2 =
+                                Point2D P2 =
                                     C2.Location().Rotated(C1.Location(), Math.Asin(signe * (-R2 - R1) / dist));
-                                gp_Dir2d D2 = new(new gp_Vec2d(C1.Location(), P2));
-                                P2 = new gp_Pnt2d(C1.Location().XY() + signe * (new gp_XY(-R1 * D2.Y(), R1 * D2.X())));
-                                linsol[2] = new gp_Lin2d(P2, D2);
+                                Direction2D D2 = new(new Vector2D(C1.Location(), P2));
+                                P2 = new Point2D(C1.Location().XY() + signe * (new Xy(-R1 * D2.Y(), R1 * D2.X())));
+                                linsol[2] = new Line2D(P2, D2);
                                 //             ===========================
                                 // OCCT: writes the first solution's qualifiers (the second's stay unset)
                                 qualifier1[1] = Qualified1.Qualifier();
                                 qualifier2[1] = Qualified1.Qualifier();
                                 pnttg1sol[2] = P2;
                                 pnttg2sol[2] =
-                                    new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(R2 * D2.Y(), -R2 * D2.X())));
+                                    new Point2D(C2.Location().XY() + signe * (new Xy(R2 * D2.Y(), -R2 * D2.X())));
                                 NbrSol = 2;
                             }
                         }
@@ -486,30 +489,30 @@ public sealed class GccAna_Lin2d2Tan
                 {
                     signe = -signe;
                     NbrSol++;
-                    gp_Pnt2d P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 - R1) / dist));
-                    D1 = new gp_Dir2d(new gp_Vec2d(C1.Location(), P1));
-                    P1 = new gp_Pnt2d(C1.Location().XY() + signe * new gp_XY(-R1 * D1.Y(), R1 * D1.X()));
-                    linsol[NbrSol] = new gp_Lin2d(P1, D1);
+                    Point2D P1 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 - R1) / dist));
+                    D1 = new Direction2D(new Vector2D(C1.Location(), P1));
+                    P1 = new Point2D(C1.Location().XY() + signe * new Xy(-R1 * D1.Y(), R1 * D1.X()));
+                    linsol[NbrSol] = new Line2D(P1, D1);
                     //       ===========================
                     qualifier1[NbrSol] = Qualified1.Qualifier();
                     qualifier2[NbrSol] = Qualified1.Qualifier();
                     pnttg1sol[NbrSol] = P1;
                     pnttg2sol[NbrSol] =
-                        new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(-R2 * D1.Y(), R2 * D1.X())));
+                        new Point2D(C2.Location().XY() + signe * (new Xy(-R2 * D1.Y(), R2 * D1.X())));
                     WellDone = true;
                     if (Min(R1, R2) + Max(R1, R2) < dist)
                     {
-                        gp_Pnt2d P2 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 + R1) / dist));
-                        gp_Dir2d D2 = new(new gp_Vec2d(C1.Location(), P2));
-                        P2 = new gp_Pnt2d(C1.Location().XY() + signe * (new gp_XY(R1 * D2.Y(), -R1 * D2.X())));
+                        Point2D P2 = C2.Location().Rotated(C1.Location(), Math.Asin(signe * (R2 + R1) / dist));
+                        Direction2D D2 = new(new Vector2D(C1.Location(), P2));
+                        P2 = new Point2D(C1.Location().XY() + signe * (new Xy(R1 * D2.Y(), -R1 * D2.X())));
                         NbrSol++;
-                        linsol[NbrSol] = new gp_Lin2d(P2, D2);
+                        linsol[NbrSol] = new Line2D(P2, D2);
                         //         ================================
                         qualifier1[NbrSol] = Qualified1.Qualifier();
                         qualifier2[NbrSol] = Qualified1.Qualifier();
                         pnttg1sol[NbrSol] = P2;
                         pnttg2sol[NbrSol] =
-                            new gp_Pnt2d(C2.Location().XY() + signe * (new gp_XY(-R2 * D2.Y(), R2 * D2.X())));
+                            new Point2D(C2.Location().XY() + signe * (new Xy(-R2 * D2.Y(), R2 * D2.X())));
                     }
                 }
             }
@@ -517,11 +520,11 @@ public sealed class GccAna_Lin2d2Tan
 
         for (int i = 1; i <= NbrSol; i++)
         {
-            par1sol[i] = ElCLib.Parameter(linsol[i], pnttg1sol[i]);
-            par2sol[i] = ElCLib.Parameter(linsol[i], pnttg2sol[i]);
+            par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pnttg1sol[i]);
+            par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[i], pnttg2sol[i]);
             // circles of radius 0 put the tangency points at their centres
-            pararg1[i] = ElCLib.Parameter(C1, pnttg1sol[i]);
-            pararg2[i] = ElCLib.Parameter(C2, pnttg2sol[i]);
+            pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[i]);
+            pararg2[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, pnttg2sol[i]);
         }
     }
 
@@ -538,11 +541,11 @@ public sealed class GccAna_Lin2d2Tan
     }
 
     /// <summary>The solution number Index (OCCT doesn't check IsDone here).</summary>
-    public gp_Lin2d ThisSolution(int Index)
+    public Line2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return linsol[Index];
     }
@@ -552,11 +555,11 @@ public sealed class GccAna_Lin2d2Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -566,15 +569,15 @@ public sealed class GccAna_Lin2d2Tan
     }
 
     /// <summary>The tangency point of the solution number Index with the first argument, and its parameters.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -585,15 +588,15 @@ public sealed class GccAna_Lin2d2Tan
     }
 
     /// <summary>The tangency point of the solution number Index with the second argument, and its parameters.</summary>
-    public void Tangency2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {

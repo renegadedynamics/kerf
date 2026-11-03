@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,48 +16,48 @@ internal static class TCollection_AsciiString
 {
     /// <summary>
     /// C's <c>strtol(text, &amp;end, 10)</c> with a 32-bit <c>long</c> (MSVC's): leading white space, a sign, decimal
-    /// digits; out-of-range values clamp to the <c>long</c> range. <paramref name="theEnd"/> is the number of characters
+    /// digits; out-of-range values clamp to the <c>long</c> range. <paramref name="end"/> is the number of characters
     /// converted, 0 if none.
     /// </summary>
-    internal static int Strtol(string theText, out int theEnd)
+    internal static int Strtol(string text, out int end)
     {
-        theEnd = 0;
+        end = 0;
         int i = 0;
-        int aLength = theText.Length;
-        while (i < aLength && IsSpace(theText[i]))
+        int length = text.Length;
+        while (i < length && IsSpace(text[i]))
         {
             i++;
         }
 
         bool isNegative = false;
-        if (i < aLength && theText[i] is '+' or '-')
+        if (i < length && text[i] is '+' or '-')
         {
-            isNegative = theText[i] == '-';
+            isNegative = text[i] == '-';
             i++;
         }
 
-        int aFirstDigit = i;
-        long aValue = 0;
-        while (i < aLength && theText[i] is >= '0' and <= '9')
+        int firstDigit = i;
+        long value = 0;
+        while (i < length && text[i] is >= '0' and <= '9')
         {
-            if (aValue <= (long)int.MaxValue + 1)
+            if (value <= (long)int.MaxValue + 1)
             {
-                aValue = aValue * 10 + (theText[i] - '0');
+                value = value * 10 + (text[i] - '0');
             }
             i++;
         }
 
-        if (i == aFirstDigit)
+        if (i == firstDigit)
         {
             return 0;
         }
 
-        theEnd = i;
+        end = i;
         if (isNegative)
         {
-            aValue = -aValue;
+            value = -value;
         }
-        return (int)Math.Clamp(aValue, int.MinValue, int.MaxValue);
+        return (int)Math.Clamp(value, int.MinValue, int.MaxValue);
     }
 
     private static bool IsSpace(char theChar) => theChar is ' ' or '\t' or '\n' or '\v' or '\f' or '\r';
@@ -72,7 +74,7 @@ internal static class TCollection_AsciiString
             return value;
         }
 
-        throw new Standard_NumericError("TCollection_AsciiString::IntegerValue");
+        throw new NumericErrorException("TCollection_AsciiString::IntegerValue");
     }
 
     /// <summary>
@@ -97,13 +99,13 @@ internal static class TCollection_AsciiString
     }
 
     /// <summary>
-    /// OCCT's <c>IsRealValue</c>: true if the text starts with a real (strtod); with <paramref name="theToCheckFull"/>,
+    /// OCCT's <c>IsRealValue</c>: true if the text starts with a real (strtod); with <paramref name="toCheckFull"/>,
     /// if the whole text is one.
     /// </summary>
-    internal static bool IsRealValue(string theString, bool theToCheckFull = false)
+    internal static bool IsRealValue(string theString, bool toCheckFull = false)
     {
-        Standard_Stream.Strtod(theString, out int ptr);
-        if (theToCheckFull)
+        StreamUtilities.Strtod(theString, out int ptr);
+        if (toCheckFull)
         {
             return ptr == theString.Length;
         }
@@ -118,59 +120,59 @@ internal static class TCollection_AsciiString
     /// </summary>
     internal static double RealValue(string theString)
     {
-        double value = Standard_Stream.Strtod(theString, out int ptr);
+        double value = StreamUtilities.Strtod(theString, out int ptr);
         if (ptr != 0)
         {
             return value;
         }
 
-        throw new Standard_NumericError("TCollection_AsciiString::RealValue");
+        throw new NumericErrorException("TCollection_AsciiString::RealValue");
     }
 
     /// <summary>
-    /// OCCT's <c>Token</c>: the <paramref name="theWhichOne"/>-th (1-based) run of characters not in
-    /// <paramref name="theSeparators"/>, or "" if there are fewer.
+    /// OCCT's <c>Token</c>: the <paramref name="whichOne"/>-th (1-based) run of characters not in
+    /// <paramref name="separators"/>, or "" if there are fewer.
     /// </summary>
-    internal static string Token(string theString, string theSeparators, int theWhichOne = 1)
+    internal static string Token(string theString, string separators, int whichOne = 1)
     {
         int myLength = theString.Length;
-        int anIndex;
-        int aStringIndex = 0;
-        int aBeginIndex = 0;
-        int anEndIndex = 0;
+        int index;
+        int stringIndex = 0;
+        int beginIndex = 0;
+        int endIndex = 0;
 
-        for (anIndex = 0; anIndex < theWhichOne; anIndex++)
+        for (index = 0; index < whichOne; index++)
         {
-            aBeginIndex = 0;
-            anEndIndex = 0;
-            if (aStringIndex == myLength)
+            beginIndex = 0;
+            endIndex = 0;
+            if (stringIndex == myLength)
             {
                 break;
             }
-            for (; aStringIndex < myLength && anEndIndex == 0; aStringIndex++)
+            for (; stringIndex < myLength && endIndex == 0; stringIndex++)
             {
-                if (theSeparators.Contains(theString[aStringIndex], StringComparison.Ordinal))
+                if (separators.Contains(theString[stringIndex], StringComparison.Ordinal))
                 { // We have a Separator
-                    if (aBeginIndex != 0 && anEndIndex == 0)
+                    if (beginIndex != 0 && endIndex == 0)
                     {
-                        anEndIndex = aStringIndex;
+                        endIndex = stringIndex;
                         break;
                     }
                 }
-                else if (aBeginIndex == 0)
+                else if (beginIndex == 0)
                 { // We have not a Separator
-                    aBeginIndex = aStringIndex + 1;
+                    beginIndex = stringIndex + 1;
                 }
             }
         }
-        if (aBeginIndex == 0)
+        if (beginIndex == 0)
         {
             return "";
         }
-        if (anEndIndex == 0)
+        if (endIndex == 0)
         {
-            anEndIndex = myLength;
+            endIndex = myLength;
         }
-        return theString.Substring(aBeginIndex - 1, anEndIndex - aBeginIndex + 1);
+        return theString.Substring(beginIndex - 1, endIndex - beginIndex + 1);
     }
 }

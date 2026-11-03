@@ -3,19 +3,23 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Converts 2D curves to analytical form within a tolerance, or simplifies them.</summary>
 public static class ShapeCustom_Curve2d
 {
-    private static gp_Lin2d GetLine(in gp_Pnt2d P1, in gp_Pnt2d P2, double c1, out double cf, out double cl)
+    private static Line2D GetLine(in Point2D P1, in Point2D P2, double c1, out double cf, out double cl)
     {
-        gp_Vec2d avec = new gp_Vec2d(P1, P2);
-        gp_Dir2d adir = new gp_Dir2d(avec);
-        gp_Lin2d alin = new gp_Lin2d(P1, adir);
-        alin.SetLocation(ElCLib.Value(c1, alin));
-        cf = ElCLib.Parameter(alin, P1);
-        cl = ElCLib.Parameter(alin, P2);
+        Vector2D avec = new Vector2D(P1, P2);
+        Direction2D adir = new Direction2D(avec);
+        Line2D alin = new Line2D(P1, adir);
+        alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(c1, alin));
+        cf = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, P1);
+        cl = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, P2);
         return alin;
     }
 
@@ -23,7 +27,7 @@ public static class ShapeCustom_Curve2d
     /// True if the poles lie on a line within the tolerance; then <paramref name="Deviation"/> is their largest
     /// distance to it (left unchanged otherwise).
     /// </summary>
-    public static bool IsLinear(NCollection_Array1<gp_Pnt2d> thePoles, double tolerance, ref double Deviation)
+    public static bool IsLinear(NCollection_Array1<Point2D> thePoles, double tolerance, ref double Deviation)
     {
         int nbPoles = thePoles.Length();
         if (nbPoles < 2)
@@ -49,16 +53,16 @@ public static class ShapeCustom_Curve2d
             }
         }
 
-        double dPreci = Precision.PConfusion() * Precision.PConfusion();
+        double dPreci = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (dMax < dPreci)
         {
             return false;
         }
 
         double tol2 = tolerance * tolerance;
-        gp_Vec2d avec = new gp_Vec2d(thePoles[iMax1], thePoles[iMax2]);
-        gp_Dir2d adir = new gp_Dir2d(avec);
-        gp_Lin2d alin = new gp_Lin2d(thePoles[iMax1], adir);
+        Vector2D avec = new Vector2D(thePoles[iMax1], thePoles[iMax2]);
+        Direction2D adir = new Direction2D(avec);
+        Line2D alin = new Line2D(thePoles[iMax1], adir);
 
         double aMax = 0.0;
         for (i = 1; i <= nbPoles; i++)
@@ -93,8 +97,8 @@ public static class ShapeCustom_Curve2d
                                                ref double theDeviation)
     {
         Geom2d_Line? aLine2d = null;
-        gp_Pnt2d P1 = theCurve.Value(c1);
-        gp_Pnt2d P2 = theCurve.Value(c2);
+        Point2D P1 = theCurve.Value(c1);
+        Point2D P2 = theCurve.Value(c2);
         double dPreci = theTolerance * theTolerance;
         if (P1.SquareDistance(P2) < dPreci)
         {
@@ -107,7 +111,7 @@ public static class ShapeCustom_Curve2d
             {
                 return aLine2d; // non
             }
-            gp_Lin2d alin = GetLine(P1, P2, c1, out cf, out cl);
+            Line2D alin = GetLine(P1, P2, c1, out cf, out cl);
             aLine2d = new Geom2d_Line(alin);
             return aLine2d;
         }
@@ -118,7 +122,7 @@ public static class ShapeCustom_Curve2d
             {
                 return aLine2d; // non
             }
-            gp_Lin2d alin = GetLine(P1, P2, c1, out cf, out cl);
+            Line2D alin = GetLine(P1, P2, c1, out cf, out cl);
             aLine2d = new Geom2d_Line(alin);
             return aLine2d;
         }
@@ -139,7 +143,7 @@ public static class ShapeCustom_Curve2d
     {
         // OCCT.NET: copy on write of a frozen curve (decision 974); the copy is given back only if a knot was removed
         Geom2d_BSplineCurve anOriginal = theBSpline2d;
-        Geom2d_BSplineCurve aBSpline2d = anOriginal.IsFrozen() ? (Geom2d_BSplineCurve)anOriginal.Copy() : anOriginal;
+        Geom2d_BSplineCurve aBSpline2d = anOriginal.IsFrozen ? (Geom2d_BSplineCurve)anOriginal.Copy() : anOriginal;
         int aInitNbK;
         int NbK = aInitNbK = aBSpline2d.NbKnots();
         // search knot to remove
@@ -152,17 +156,17 @@ public static class ShapeCustom_Curve2d
             if ((DegMult > 1) && aBSpline2d.IsCN(DegMult))
             {
                 double U = aBSpline2d.Knot(aKnotIndx);
-                gp_Vec2d aVec1 = aBSpline2d.LocalDN(U, aKnotIndx - 1, aKnotIndx, DegMult);
-                gp_Vec2d aVec2 = aBSpline2d.LocalDN(U, aKnotIndx, aKnotIndx + 1, DegMult);
+                Vector2D aVec1 = aBSpline2d.LocalDN(U, aKnotIndx - 1, aKnotIndx, DegMult);
+                Vector2D aVec2 = aBSpline2d.LocalDN(U, aKnotIndx, aKnotIndx + 1, DegMult);
                 // check the derivations are have the "same" angle
-                if (aVec1.IsParallel(aVec2, Precision.Angular()))
+                if (aVec1.IsParallel(aVec2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // remove knot
                     try
                     {
                         aBSpline2d.RemoveKnot(aKnotIndx, aMult - 1, theTolerance);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                     }
                 }

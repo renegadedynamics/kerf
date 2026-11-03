@@ -6,13 +6,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilBuilder_C3;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -161,12 +163,12 @@ public partial class ChFi3d_FilBuilder
         }
 
         double Rdeb = 0.0, Rfin = 0.0, Rdp = 0.0, Rfp = 0.0;
-        gp_Pnt Pdeb = new(), Pfin = new(), Pdp = new(), Pfp = new();
-        gp_Vec Vdeb = new(), Vfin = new(), Vdp = new(), Vfp = new();
+        Point3D Pdeb = new(), Pfin = new(), Pdp = new(), Pfp = new();
+        Vector3D Vdeb = new(), Vfin = new(), Vdp = new(), Vfp = new();
         if (c1pointu)
         {
-            gp_Pnt pbid = new();
-            gp_Vec[] qv = [new(), new(), new()];
+            Point3D pbid = new();
+            Vector3D[] qv = [new(), new(), new()];
             double[] qr = new double[3];
             for (ii = 0; ii <= 2; ii++)
             {
@@ -206,8 +208,8 @@ public partial class ChFi3d_FilBuilder
         // too close, which can stop the work.
         if (!pivdif)
         {
-            gp_Pnt ptestdeb = new(), ptestfin = new();
-            gp_Vec bidvec = new();
+            Point3D ptestdeb = new(), ptestfin = new();
+            Vector3D bidvec = new();
             double bidr = 0.0;
             ChFi3d_ExtrSpineCarac(DStr, CD[deb], i[deb, pivot], p[deb, pivot], jf[deb, fin], sens[deb], out ptestdeb,
                                                         out bidvec, out bidr);
@@ -255,7 +257,7 @@ public partial class ChFi3d_FilBuilder
 
         TopAbs_Orientation OFac = face[pivot].Orientation();
         BRepAdaptor_Surface? Fac = new BRepAdaptor_Surface(face[pivot]);
-        gp_Pnt2d ppp1 = new(), ppp2 = new();
+        Point2D ppp1 = new(), ppp2 = new();
         ChFiDS_FaceInterference bid1 = 
             CD[pivot].SetOfSurfData().Value(i[pivot, deb]).InterferenceOnS1();
         ppp1 = bid1.PCurveOnSurf().Value(bid1.FirstParameter());
@@ -265,22 +267,22 @@ public partial class ChFi3d_FilBuilder
         double uu1 = ppp1.X(), uu2 = ppp2.X(), vv1 = ppp1.Y(), vv2 = ppp2.Y();
         GeomAdaptor_Surface gasurf = new((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(),
                                          uu1, uu2, vv1, vv2);
-        GeomAbs_SurfaceType styp = gasurf.GetType();
-        if (styp == GeomAbs_Cylinder)
+        SurfaceKind styp = gasurf.GetType();
+        if (styp == SurfaceKind.Cylinder)
         {
             double h = vv2 - vv1;
             vv1 -= 0.5 * h;
             vv2 += 0.5 * h;
             gasurf.Load((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(), uu1, uu2, vv1, vv2);
         }
-        else if (styp == GeomAbs_Torus)
+        else if (styp == SurfaceKind.Torus)
         {
             double h = uu2 - uu1;
             uu1 -= 0.1 * h;
             uu2 += 0.1 * h;
             gasurf.Load((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(), uu1, uu2, vv1, vv2);
         }
-        else if (styp == GeomAbs_BezierSurface || styp == GeomAbs_BSplineSurface)
+        else if (styp == BezierSurface || styp == BSplineSurface)
         {
             gasurf.Load((DStr.Surface(CD[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface());
         }
@@ -338,8 +340,8 @@ public partial class ChFi3d_FilBuilder
             }
         }
 
-        gp_Pnt2d pfac1 = new(), pfac2 = new(), psurf1 = new(), psurf2 = new();
-        gp_Vec2d vfac1 = new(), vfac2 = new();
+        Point2D pfac1 = new(), pfac2 = new(), psurf1 = new(), psurf2 = new();
+        Vector2D vfac1 = new(), vfac2 = new();
         CD[deb]
             .SetOfSurfData()
             .Value(i[deb, pivot])
@@ -508,8 +510,8 @@ public partial class ChFi3d_FilBuilder
                     Bfac = ChFi3d_mkbound(Fac, out PCurveOnFace, sens[deb], pfac1, vfac1, sens[fin], pfac2, vfac2, tolapp3d, 2.0e-4);
                 }
                 int kkk = 0;
-                gp_Pnt ppbid = new();
-                gp_Vec vp1 = new(), vp2 = new();
+                Point3D ppbid = new();
+                Vector3D vp1 = new(), vp2 = new();
                 kkk =
                     CD[deb].SetOfSurfData().Value(i[deb, pivot]).Interference(jf[deb, pivot]).LineIndex();
                 DStr.Curve(kkk).Curve().D1(p[deb, pivot], out ppbid, out vp1);
@@ -527,25 +529,25 @@ public partial class ChFi3d_FilBuilder
                     pardeb2 = p[deb, fin];
                     parfin2 = p[fin, deb];
                 }
-                gp_Pnt2d pdeb1 = CD[deb]
+                Point2D pdeb1 = CD[deb]
                                                       .SetOfSurfData()
                                                       .Value(i[deb, pivot])
                                                       .Interference(jf[deb, pivot])
                                                       .PCurveOnSurf()
                                                       .Value(p[deb, pivot]);
-                gp_Pnt2d pdeb2 = CD[deb]
+                Point2D pdeb2 = CD[deb]
                                                       .SetOfSurfData()
                                                       .Value(i[deb, pivot])
                                                       .Interference(jf[deb, fin])
                                                       .PCurveOnSurf()
                                                       .Value(pardeb2);
-                gp_Pnt2d pfin1 = CD[fin]
+                Point2D pfin1 = CD[fin]
                                                       .SetOfSurfData()
                                                       .Value(i[fin, pivot])
                                                       .Interference(jf[fin, pivot])
                                                       .PCurveOnSurf()
                                                       .Value(p[fin, pivot]);
-                gp_Pnt2d pfin2 = CD[fin]
+                Point2D pfin2 = CD[fin]
                                                       .SetOfSurfData()
                                                       .Value(i[fin, pivot])
                                                       .Interference(jf[fin, deb])
@@ -589,7 +591,7 @@ public partial class ChFi3d_FilBuilder
             // -------------------------------------
 
 
-            gp_Pnt2d pp1 = new(), pp2 = new();
+            Point2D pp1 = new(), pp2 = new();
             double parpp1 = 0.0, parpp2 = 0.0;
             int If1 = 0, If2 = 0, Il1 = 0, Il2 = 0, Icf = 0, Icl = 0;
             ChFiDS_CommonPoint Pf1 = coin.VertexFirstOnS1();
@@ -602,7 +604,7 @@ public partial class ChFi3d_FilBuilder
             ChFiDS_CommonPoint Pl2 = coin.VertexLastOnS2();
 
             // OCCT's boxes bf1, bl1, bf2, bl2 and the pointers to them: an array and indices (pbl1 may alias pbf1)
-            Bnd_Box[] bx = [new(), new(), new(), new()];
+            Box[] bx = [new(), new(), new(), new()];
             int pbf1 = 0, pbl1 = 1, pbf2 = 2, pbl2 = 3;
             if (c1pointu)
             {
@@ -939,20 +941,20 @@ internal static class ChFi3d_FilBuilder_C3
         return found;
     }
 
-    internal static bool ToricCorner(in TopoDS_Face F, double rd, double rf, in gp_Vec v)
+    internal static bool ToricCorner(in TopoDS_Face F, double rd, double rf, in Vector3D v)
     {
-        if (Math.Abs(rd - rf) > Precision.Confusion())
+        if (Math.Abs(rd - rf) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
         BRepAdaptor_Surface bs = new(F);
-        if (bs.GetType() != GeomAbs_Plane)
+        if (bs.GetType() != Plane)
         {
             return false;
         }
-        double scal1 = Math.Abs(bs.Plane().Position().XDirection().Dot(new gp_Dir(v)));
-        double scal2 = Math.Abs(bs.Plane().Position().YDirection().Dot(new gp_Dir(v)));
-        return (scal1 <= Precision.Confusion() && scal2 <= Precision.Confusion());
+        double scal1 = Math.Abs(bs.Plane().Position().XDirection().Dot(new Direction3D(v)));
+        double scal2 = Math.Abs(bs.Plane().Position().YDirection().Dot(new Direction3D(v)));
+        return (scal1 <= global::Kerf.Engine.Foundation.Precision.Confusion() && scal2 <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
 

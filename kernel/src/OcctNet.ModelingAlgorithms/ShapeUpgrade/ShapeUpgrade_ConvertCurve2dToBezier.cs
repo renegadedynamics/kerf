@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -29,7 +30,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
 
     private static Geom2d_BezierCurve MakeBezier2d(Geom2d_Curve theCurve2d, double theFirst, double theLast)
     {
-        var poles = new NCollection_Array1<gp_Pnt2d>(1, 2);
+        var poles = new NCollection_Array1<Point2D>(1, 2);
         poles[1] = theCurve2d.Value(theFirst);
         poles[2] = theCurve2d.Value(theLast);
         var bezier = new Geom2d_BezierCurve(poles);
@@ -41,7 +42,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
     {
         mySegments.Clear();
         mySplitParams.Clear();
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double First = mySplitValues!.Value(1);
         double Last = mySplitValues.Value(mySplitValues.Length());
 
@@ -53,11 +54,11 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             Geom2d_Line? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(myCurve,
                                                                          First,
                                                                          Last,
-                                                                         Occt.Precision.Approximation(),
+                                                                         Kerf.Engine.Foundation.Precision.Approximation(),
                                                                          ref tmpF,
                                                                          ref tmpL,
                                                                          ref aDeviation);
-            if (aTmpLine2d is not null && (aDeviation <= Occt.Precision.Approximation()))
+            if (aTmpLine2d is not null && (aDeviation <= Kerf.Engine.Foundation.Precision.Approximation()))
             {
                 Geom2d_BezierCurve bezier = MakeBezier2d(aTmpLine2d, tmpF, tmpL);
                 mySegments.Append(bezier);
@@ -122,14 +123,14 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             if (myCurve is Geom2d_Conic)
             {
                 Geom2d_Curve tcurve = new Geom2d_TrimmedCurve(myCurve, First, Last); // protection against parabols ets
-                var approx = new Geom2dConvert_ApproxCurve(tcurve, Occt.Precision.Approximation(), GeomAbs_C1, 100, 6);
+                var approx = new Geom2dConvert_ApproxCurve(tcurve, Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
                 if (approx.HasResult())
                 {
                     aBSpline2d = approx.Curve()!;
                 }
                 else
                 {
-                    aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, Convert_QuasiAngular);
+                    aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
                 }
 
                 Shift = First - aBSpline2d.FirstParameter();
@@ -138,7 +139,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             }
             else if (myCurve is not Geom2d_BSplineCurve)
             {
-                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(myCurve!, Convert_QuasiAngular);
+                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(myCurve!, QuasiAngular);
             }
             else
             {
@@ -171,7 +172,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
             // PTV 20.12.2001 Try to simplify BSpline Curve
             // OCCT.NET: OCCT simplifies the curve in place (the tool's own copy here, or the approximation's); a frozen
             // curve is simplified on a copy, given back through the ref (decision 974)
-            ShapeCustom_Curve2d.SimplifyBSpline2d(ref aBSpline2d, Occt.Precision.Approximation());
+            ShapeCustom_Curve2d.SimplifyBSpline2d(ref aBSpline2d, Kerf.Engine.Foundation.Precision.Approximation());
 
             var tool = new Geom2dConvert_BSplineCurveToBezierCurve(aBSpline2d, First, Last, precision);
             int nbArcs = tool.NbArcs();
@@ -195,11 +196,11 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
                         Geom2d_Line? aTmpLine2d = ShapeCustom_Curve2d.ConvertToLine2d(aCrv2d,
                                                                                      newFirst,
                                                                                      newLast,
-                                                                                     Occt.Precision.Approximation(),
+                                                                                     Kerf.Engine.Foundation.Precision.Approximation(),
                                                                                      ref tmpF,
                                                                                      ref tmpL,
                                                                                      ref aDeviation);
-                        if (aTmpLine2d is not null && (aDeviation <= Occt.Precision.Approximation()))
+                        if (aTmpLine2d is not null && (aDeviation <= Kerf.Engine.Foundation.Precision.Approximation()))
                         {
                             Geom2d_BezierCurve bezierArc = MakeBezier2d(aBSpline2d, newFirst, newLast);
                             mySegments.Append(bezierArc);
@@ -239,7 +240,7 @@ public class ShapeUpgrade_ConvertCurve2dToBezier : ShapeUpgrade_SplitCurve2d
     /// <summary>Builds the resulting curves: the Bezier segments cut at the splitting values.</summary>
     public override void Build(bool Segment)
     {
-        double prec = Occt.Precision.PConfusion();
+        double prec = Kerf.Engine.Foundation.Precision.PConfusion();
         int nb = mySplitValues!.Length();
         myResultingCurves = new NCollection_HArray1<Geom2d_Curve>(1, nb - 1);
         double prevPar = 0.0;

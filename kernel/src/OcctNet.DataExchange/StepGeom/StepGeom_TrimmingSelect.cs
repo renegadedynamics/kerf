@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -24,7 +25,7 @@ public class StepGeom_TrimmingSelect : StepData_SelectType
     /// 1 -&gt; CartesianPoint
     /// 0 else (i.e. Real)
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

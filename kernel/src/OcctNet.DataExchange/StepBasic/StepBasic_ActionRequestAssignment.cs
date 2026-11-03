@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ActionRequestAssignment
 /// </summary>
-public class StepBasic_ActionRequestAssignment : Standard_Transient
+public class StepBasic_ActionRequestAssignment : Transient
 {
     private StepBasic_VersionedActionRequest theAssignedActionRequest;
 

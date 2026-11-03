@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CertificationAssignment
 /// </summary>
-public class StepBasic_CertificationAssignment : Standard_Transient
+public class StepBasic_CertificationAssignment : Transient
 {
     private StepBasic_Certification theAssignedCertification;
 

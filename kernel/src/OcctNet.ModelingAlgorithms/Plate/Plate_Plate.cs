@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -24,8 +30,8 @@ public class Plate_Plate
     private int order;
     private int n_el;
     private int n_dim;
-    private gp_XYZ[]? solution;
-    private gp_XY[]? points;
+    private Xyz[]? solution;
+    private Xy[]? points;
     private int[]? deru;
     private int[]? derv;
     private bool OK;
@@ -69,7 +75,7 @@ public class Plate_Plate
         {
             if (n_dim > 0 && Ref.solution != null)
             {
-                solution = new gp_XYZ[n_dim];
+                solution = new Xyz[n_dim];
                 for (i = 0; i < n_dim; i++)
                 {
                     Solution(i) = Ref.Solution(i);
@@ -80,7 +86,7 @@ public class Plate_Plate
             {
                 if (Ref.points != null)
                 {
-                    points = new gp_XY[n_el];
+                    points = new Xy[n_el];
                     for (i = 0; i < n_el; i++)
                     {
                         Points(i) = Ref.Points(i);
@@ -132,7 +138,7 @@ public class Plate_Plate
         {
             if (n_dim > 0 && Ref.solution != null)
             {
-                solution = new gp_XYZ[n_dim];
+                solution = new Xyz[n_dim];
                 for (i = 0; i < n_dim; i++)
                 {
                     Solution(i) = Ref.Solution(i);
@@ -143,7 +149,7 @@ public class Plate_Plate
             {
                 if (Ref.points != null)
                 {
-                    points = new gp_XY[n_el];
+                    points = new Xy[n_el];
                     for (i = 0; i < n_el; i++)
                     {
                         Points(i) = Ref.Points(i);
@@ -268,7 +274,7 @@ public class Plate_Plate
         Load(GTConst.LXYZC());
     }
 
-    public void SolveTI(int ord = 4, double anisotropie = 1.0, Message_ProgressRange theProgress = default)
+    public void SolveTI(int ord = 4, double anisotropie = 1.0, ProgressRange theProgress = default)
     {
         int IterationNumber = 0;
         OK = false;
@@ -345,13 +351,13 @@ public class Plate_Plate
         }
     }
 
-    private void SolveTI1(int IterationNumber, Message_ProgressRange theProgress)
+    private void SolveTI1(int IterationNumber, ProgressRange theProgress)
     {
         // computation of square matrix members
 
         n_dim = n_el + order * (order + 1) / 2;
-        math_Matrix mat = new(0, n_dim - 1, 0, n_dim - 1, 0.0);
-        points = new gp_XY[n_el];
+        Matrix mat = new(0, n_dim - 1, 0, n_dim - 1, 0.0);
+        points = new Xy[n_el];
         int i;
         for (i = 0; i < n_el; i++)
         {
@@ -410,8 +416,8 @@ public class Plate_Plate
         double pivot_max = 1.0e-12;
         OK = true;
 
-        using var aScope = new Message_ProgressScope(theProgress, "Plate_Plate::SolveTI1()", 10);
-        math_Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
+        using var aScope = new ProgressScope(theProgress, "Plate_Plate::SolveTI1()", 10);
+        Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
 
         if (aScope.UserBreak())
         {
@@ -419,7 +425,7 @@ public class Plate_Plate
             return;
         }
 
-        if (!algo_gauss.IsDone())
+        if (!algo_gauss.IsDone)
         {
             int nbm = order * (order + 1) / 2;
             for (i = n_el; i < n_el + nbm; i++)
@@ -428,7 +434,7 @@ public class Plate_Plate
             }
             pivot_max = 1.0e-18;
 
-            math_Gauss thealgo = new(mat, pivot_max, aScope.Next(3));
+            Gauss thealgo = new(mat, pivot_max, aScope.Next(3));
 
             if (aScope.UserBreak())
             {
@@ -436,7 +442,7 @@ public class Plate_Plate
                 return;
             }
             algo_gauss = thealgo;
-            OK = algo_gauss.IsDone();
+            OK = algo_gauss.IsDone;
         }
 
         if (OK)
@@ -444,7 +450,7 @@ public class Plate_Plate
             //   computation of the linear system solution for the X, Y and Z coordinates
             math_Vector sec_member = new(0, n_dim - 1, 0.0);
             math_Vector sol = new(0, n_dim - 1);
-            solution = new gp_XYZ[n_dim];
+            solution = new Xyz[n_dim];
 
             for (int icoor = 1; icoor <= 3; icoor++)
             {
@@ -474,7 +480,7 @@ public class Plate_Plate
         }
     }
 
-    private void SolveTI2(int IterationNumber, Message_ProgressRange theProgress)
+    private void SolveTI2(int IterationNumber, ProgressRange theProgress)
     {
         // computation of square matrix members
 
@@ -487,7 +493,7 @@ public class Plate_Plate
         }
 
         int n_dimat = nCC1 + nCC2 + order * (order + 1) / 2;
-        points = new gp_XY[n_el];
+        points = new Xy[n_el];
         deru = new int[n_el];
         derv = new int[n_el];
 
@@ -510,7 +516,7 @@ public class Plate_Plate
             }
         }
 
-        math_Matrix mat = new(0, n_dimat - 1, 0, n_dimat - 1, 0.0);
+        Matrix mat = new(0, n_dimat - 1, 0, n_dimat - 1, 0.0);
 
         fillXYZmatrix(mat, 0, 0, nCC1, nCC2);
 
@@ -518,8 +524,8 @@ public class Plate_Plate
         double pivot_max = 1.0e-12;
         OK = true; // ************ JHH
 
-        using var aScope = new Message_ProgressScope(theProgress, "Plate_Plate::SolveTI2()", 10);
-        math_Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
+        using var aScope = new ProgressScope(theProgress, "Plate_Plate::SolveTI2()", 10);
+        Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
 
         if (aScope.UserBreak())
         {
@@ -527,7 +533,7 @@ public class Plate_Plate
             return;
         }
 
-        if (!algo_gauss.IsDone())
+        if (!algo_gauss.IsDone)
         {
             for (i = nCC1 + nCC2; i < n_dimat; i++)
             {
@@ -535,7 +541,7 @@ public class Plate_Plate
             }
             pivot_max = 1.0e-18;
 
-            math_Gauss thealgo1 = new(mat, pivot_max, aScope.Next(3));
+            Gauss thealgo1 = new(mat, pivot_max, aScope.Next(3));
 
             if (aScope.UserBreak())
             {
@@ -543,7 +549,7 @@ public class Plate_Plate
                 return;
             }
             algo_gauss = thealgo1;
-            OK = algo_gauss.IsDone();
+            OK = algo_gauss.IsDone;
         }
 
         if (OK)
@@ -552,7 +558,7 @@ public class Plate_Plate
             math_Vector sec_member = new(0, n_dimat - 1, 0.0);
             math_Vector sol = new(0, n_dimat - 1);
             n_dim = n_el + order * (order + 1) / 2;
-            solution = new gp_XYZ[n_dim];
+            solution = new Xyz[n_dim];
 
             for (int icoor = 1; icoor <= 3; icoor++)
             {
@@ -620,7 +626,7 @@ public class Plate_Plate
         }
     }
 
-    private void SolveTI3(int IterationNumber, Message_ProgressRange theProgress)
+    private void SolveTI3(int IterationNumber, ProgressRange theProgress)
     {
         // computation of square matrix members
 
@@ -643,7 +649,7 @@ public class Plate_Plate
         int nbm = order * (order + 1) / 2;
         int n_dimsousmat = nCC1 + nCC2 + nbm;
         int n_dimat = 3 * n_dimsousmat + nCC3;
-        points = new gp_XY[n_el];
+        points = new Xy[n_el];
         deru = new int[n_el];
         derv = new int[n_el];
 
@@ -677,7 +683,7 @@ public class Plate_Plate
             }
         }
 
-        math_Matrix mat = new(0, n_dimat - 1, 0, n_dimat - 1, 0.0);
+        Matrix mat = new(0, n_dimat - 1, 0, n_dimat - 1, 0.0);
 
         fillXYZmatrix(mat, 0, 0, nCC1, nCC2);
         fillXYZmatrix(mat, n_dimsousmat, n_dimsousmat, nCC1, nCC2);
@@ -723,7 +729,7 @@ public class Plate_Plate
             for (i2 = 1; i2 <= myLXYZConstraints.Length(); i2++)
             {
 
-                math_Matrix tmpmat = new(1,
+                Matrix tmpmat = new(1,
                                                       myLScalarConstraints[i].GetPPC().Length(),
                                                       1,
                                                       myLXYZConstraints[i2].GetPPC().Length());
@@ -805,7 +811,7 @@ public class Plate_Plate
             for (i2 = 1; i2 <= i; i2++)
             {
 
-                math_Matrix tmpmat = new(1,
+                Matrix tmpmat = new(1,
                                                       myLScalarConstraints[i].GetPPC().Length(),
                                                       1,
                                                       myLScalarConstraints[i2].GetPPC().Length());
@@ -862,8 +868,8 @@ public class Plate_Plate
         double pivot_max = 1.0e-12;
         OK = true; // ************ JHH
 
-        using var aScope = new Message_ProgressScope(theProgress, "Plate_Plate::SolveTI3()", 10);
-        math_Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
+        using var aScope = new ProgressScope(theProgress, "Plate_Plate::SolveTI3()", 10);
+        Gauss algo_gauss = new(mat, pivot_max, aScope.Next(7));
 
         if (aScope.UserBreak())
         {
@@ -871,7 +877,7 @@ public class Plate_Plate
             return;
         }
 
-        if (!algo_gauss.IsDone())
+        if (!algo_gauss.IsDone)
         {
             for (i = nCC1 + nCC2; i < nCC1 + nCC2 + nbm; i++)
             {
@@ -881,7 +887,7 @@ public class Plate_Plate
             }
             pivot_max = 1.0e-18;
 
-            math_Gauss thealgo2 = new(mat, pivot_max, aScope.Next(3));
+            Gauss thealgo2 = new(mat, pivot_max, aScope.Next(3));
 
             if (aScope.UserBreak())
             {
@@ -889,7 +895,7 @@ public class Plate_Plate
                 return;
             }
             algo_gauss = thealgo2;
-            OK = algo_gauss.IsDone();
+            OK = algo_gauss.IsDone;
         }
 
         if (OK)
@@ -898,7 +904,7 @@ public class Plate_Plate
             math_Vector sec_member = new(0, n_dimat - 1, 0.0);
             math_Vector sol = new(0, n_dimat - 1);
             n_dim = n_el + order * (order + 1) / 2;
-            solution = new gp_XYZ[n_dim];
+            solution = new Xyz[n_dim];
 
             int icoor;
             for (icoor = 1; icoor <= 3; icoor++)
@@ -989,7 +995,7 @@ public class Plate_Plate
             {
                 for (int icol = 1; icol <= myLScalarConstraints[i].Coeff().RowLength(); icol++)
                 {
-                    gp_XYZ Vsol = new(0.0, 0.0, 0.0);
+                    Xyz Vsol = new(0.0, 0.0, 0.0);
                     for (int irow = 1; irow <= myLScalarConstraints[i].Coeff().ColLength(); irow++)
                     {
                         Vsol += myLScalarConstraints[i].Coeff()[irow, icol] * sol[ksolS + irow - 1];
@@ -1002,7 +1008,7 @@ public class Plate_Plate
         }
     }
 
-    private void fillXYZmatrix(math_Matrix mat, int i0, int j0, int ncc1, int ncc2)
+    private void fillXYZmatrix(Matrix mat, int i0, int j0, int ncc1, int ncc2)
     {
         int i, j;
         for (i = 0; i < ncc1; i++)
@@ -1056,7 +1062,7 @@ public class Plate_Plate
             for (int i2 = 1; i2 <= i; i2++)
             {
 
-                math_Matrix tmpmat = new(1,
+                Matrix tmpmat = new(1,
                                                       myLXYZConstraints[i].GetPPC().Length(),
                                                       1,
                                                       myLXYZConstraints[i2].GetPPC().Length());
@@ -1180,18 +1186,18 @@ public class Plate_Plate
         maxConstraintOrder = 0;
     }
 
-    public gp_XYZ Evaluate(in gp_XY point2d)
+    public Xyz Evaluate(in Xy point2d)
     {
         if (solution == null)
         {
-            return new gp_XYZ(0, 0, 0);
+            return new Xyz(0, 0, 0);
         }
         if (!OK)
         {
-            return new gp_XYZ(0, 0, 0);
+            return new Xyz(0, 0, 0);
         }
 
-        gp_XYZ valeur = new(0, 0, 0);
+        Xyz valeur = new(0, 0, 0);
 
         int i;
         if (!PolynomialPartOnly)
@@ -1218,18 +1224,18 @@ public class Plate_Plate
         return valeur;
     }
 
-    public gp_XYZ EvaluateDerivative(in gp_XY point2d, int iu, int iv)
+    public Xyz EvaluateDerivative(in Xy point2d, int iu, int iv)
     {
         if (solution == null)
         {
-            return new gp_XYZ(0, 0, 0);
+            return new Xyz(0, 0, 0);
         }
         if (!OK)
         {
-            return new gp_XYZ(0, 0, 0);
+            return new Xyz(0, 0, 0);
         }
 
-        gp_XYZ valeur = new(0, 0, 0);
+        Xyz valeur = new(0, 0, 0);
         int i;
         if (!PolynomialPartOnly)
         {
@@ -1256,10 +1262,10 @@ public class Plate_Plate
     }
 
     /// <summary>The coefficients of the polynomial part of the plate function (a new array).</summary>
-    public NCollection_HArray2<gp_XYZ> CoefPol()
+    public NCollection_HArray2<Xyz> CoefPol()
     {
-        NCollection_HArray2<gp_XYZ> aCoefs =
-            new NCollection_HArray2<gp_XYZ>(0, order - 1, 0, order - 1, new gp_XYZ(0.0, 0.0, 0.0));
+        NCollection_HArray2<Xyz> aCoefs =
+            new NCollection_HArray2<Xyz>(0, order - 1, 0, order - 1, new Xyz(0.0, 0.0, 0.0));
         int i = n_el;
         for (int iu = 0; iu < order; iu++)
         {
@@ -1275,7 +1281,7 @@ public class Plate_Plate
     }
 
     [Obsolete("Use CoefPol() returning handle by value instead")]
-    public void CoefPol(out NCollection_HArray2<gp_XYZ> Coefs)
+    public void CoefPol(out NCollection_HArray2<Xyz> Coefs)
     {
         Coefs = CoefPol();
     }
@@ -1285,7 +1291,7 @@ public class Plate_Plate
         return 2 * order - 3 - maxConstraintOrder;
     }
 
-    private double SolEm(in gp_XY point2d, int iu, int iv)
+    private double SolEm(in Xy point2d, int iu, int iv)
     {
         double U, V;
         int IU, IV;
@@ -1875,7 +1881,7 @@ public class Plate_Plate
         }
     }
 
-    public void UVConstraints(NCollection_Sequence<gp_XY> Seq)
+    public void UVConstraints(NCollection_Sequence<Xy> Seq)
     {
         for (int i = 1; i <= myConstraints.Length(); i++)
         {
@@ -1891,7 +1897,7 @@ public class Plate_Plate
         PolynomialPartOnly = PPOnly;
     }
 
-    private double Polm(in gp_XY point2d, int iu, int iv, int idu, int idv)
+    private double Polm(in Xy point2d, int iu, int iv, int idu, int idv)
     {
         if (idu > iu)
         {
@@ -1936,7 +1942,7 @@ public class Plate_Plate
 
     private ref int Derv(int index) => ref derv![index];
 
-    private ref gp_XYZ Solution(int index) => ref solution![index];
+    private ref Xyz Solution(int index) => ref solution![index];
 
-    private ref gp_XY Points(int index) => ref points![index];
+    private ref Xy Points(int index) => ref points![index];
 }

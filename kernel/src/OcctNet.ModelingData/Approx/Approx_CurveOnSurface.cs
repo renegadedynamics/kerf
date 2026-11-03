@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -49,14 +52,14 @@ public class Approx_CurveOnSurface
             // Parameter is incorrect
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct = fonct.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
-                fonct2d = fonct2d.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
+                fonct = fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
+                fonct2d = fonct2d.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
-            gp_Pnt pnt;
+            Point3D pnt;
 
-            gp_Pnt2d pnt2d;
+            Point2D pnt2d;
 
             switch (Order)
             {
@@ -73,8 +76,8 @@ public class Approx_CurveOnSurface
                 }
                 case 1:
                 {
-                    gp_Vec v1;
-                    gp_Vec2d v21;
+                    Vector3D v1;
+                    Vector2D v21;
                     fonct2d.D1(par, out pnt2d, out v21);
                     fonct.D1(par, out pnt, out v1);
                     Result[0] = v21.X();
@@ -86,8 +89,8 @@ public class Approx_CurveOnSurface
                 }
                 case 2:
                 {
-                    gp_Vec v1, v2;
-                    gp_Vec2d v21, v22;
+                    Vector3D v1, v2;
+                    Vector2D v21, v22;
                     fonct2d.D2(par, out pnt2d, out v21, out v22);
                     fonct.D2(par, out pnt, out v1, out v2);
                     Result[0] = v22.X();
@@ -133,12 +136,12 @@ public class Approx_CurveOnSurface
             // Parameter is incorrect
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct = fonct.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
+                fonct = fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
 
-            gp_Pnt pnt;
+            Point3D pnt;
 
             switch (Order)
             {
@@ -150,7 +153,7 @@ public class Approx_CurveOnSurface
                     break;
                 case 1:
                 {
-                    gp_Vec v1;
+                    Vector3D v1;
                     fonct.D1(par, out pnt, out v1);
                     Result[0] = v1.X();
                     Result[1] = v1.Y();
@@ -159,7 +162,7 @@ public class Approx_CurveOnSurface
                 }
                 case 2:
                 {
-                    gp_Vec v1, v2;
+                    Vector3D v1, v2;
                     fonct.D2(par, out pnt, out v1, out v2);
                     Result[0] = v2.X();
                     Result[1] = v2.Y();
@@ -202,12 +205,12 @@ public class Approx_CurveOnSurface
             // Parameter is incorrect
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct2d = fonct2d.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
+                fonct2d = fonct2d.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
 
-            gp_Pnt2d pnt;
+            Point2D pnt;
 
             switch (Order)
             {
@@ -220,7 +223,7 @@ public class Approx_CurveOnSurface
                 }
                 case 1:
                 {
-                    gp_Vec2d v1;
+                    Vector2D v1;
                     fonct2d.D1(par, out pnt, out v1);
                     Result[0] = v1.X();
                     Result[1] = v1.Y();
@@ -228,7 +231,7 @@ public class Approx_CurveOnSurface
                 }
                 case 2:
                 {
-                    gp_Vec2d v1, v2;
+                    Vector2D v1, v2;
                     fonct2d.D2(par, out pnt, out v1, out v2);
                     Result[0] = v2.X();
                     Result[1] = v2.Y();
@@ -263,7 +266,7 @@ public class Approx_CurveOnSurface
     /// <summary>Approximates at once (calls <see cref="Perform"/>). OCCT deprecates this constructor.</summary>
     [Obsolete("This constructor is deprecated. Use other constructor and perform method instead.")]
     public Approx_CurveOnSurface(Adaptor2d_Curve2d C2D, Adaptor3d_Surface Surf, double First, double Last, double Tol,
-                                 GeomAbs_Shape S, int MaxDegree, int MaxSegments, bool only3d = false,
+                                 Continuity S, int MaxDegree, int MaxSegments, bool only3d = false,
                                  bool only2d = false)
     {
         myC2D = C2D;
@@ -303,8 +306,8 @@ public class Approx_CurveOnSurface
     /// is asked for and the 2D curve is an isoline, the isoline of the surface is taken and the other arguments are
     /// ignored.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">theOnly3d and theOnly2d are both true.</exception>
-    public void Perform(int theMaxSegments, int theMaxDegree, GeomAbs_Shape theContinuity, bool theOnly3d = false,
+    /// <exception cref="ConstructionErrorException">theOnly3d and theOnly2d are both true.</exception>
+    public void Perform(int theMaxSegments, int theMaxDegree, Continuity theContinuity, bool theOnly3d = false,
                         bool theOnly2d = false)
     {
         myIsDone = false;
@@ -315,24 +318,24 @@ public class Approx_CurveOnSurface
 
         if (theOnly3d && theOnly2d)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        GeomAbs_Shape aContinuity = theContinuity;
-        if (aContinuity == GeomAbs_G1)
+        Continuity aContinuity = theContinuity;
+        if (aContinuity == G1)
         {
-            aContinuity = GeomAbs_C1;
+            aContinuity = C1;
         }
-        else if (aContinuity == GeomAbs_G2)
+        else if (aContinuity == G2)
         {
-            aContinuity = GeomAbs_C2;
+            aContinuity = C2;
         }
-        else if (aContinuity > GeomAbs_C2)
+        else if (aContinuity > C2)
         {
-            aContinuity = GeomAbs_C2; // Restriction of AdvApprox_ApproxAFunction
+            aContinuity = C2; // Restriction of AdvApprox_ApproxAFunction
         }
 
-        Adaptor2d_Curve2d TrimmedC2D = myC2D.Trim(myFirst, myLast, Precision.PConfusion());
+        Adaptor2d_Curve2d TrimmedC2D = myC2D.Trim(myFirst, myLast, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         bool isU, isForward;
         double aParam;
@@ -382,25 +385,25 @@ public class Approx_CurveOnSurface
             TolU = mySurf.UResolution(myTol) / 2.0;
             TolV = mySurf.VResolution(myTol) / 2.0;
 
-            if (mySurf.UContinuity() == GeomAbs_C0)
+            if (mySurf.UContinuity() == C0)
             {
-                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, true, Precision.Angular()))
+                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, true, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     TolU = Min(1.0e-3, 1.0e3 * TolU);
                 }
-                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, true, Precision.Confusion()))
+                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, true, global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     TolU = Min(1.0e-3, 1.0e2 * TolU);
                 }
             }
 
-            if (mySurf.VContinuity() == GeomAbs_C0)
+            if (mySurf.VContinuity() == C0)
             {
-                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, false, Precision.Angular()))
+                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, false, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     TolV = Min(1.0e-3, 1.0e3 * TolV);
                 }
-                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, false, Precision.Confusion()))
+                if (!Adaptor3d_HSurfaceTool.IsSurfG1(mySurf, false, global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     TolV = Min(1.0e-3, 1.0e2 * TolV);
                 }
@@ -424,25 +427,25 @@ public class Approx_CurveOnSurface
         {
             CutTool = new AdvApprox_DichoCutting();
         }
-        else if (aContinuity == GeomAbs_C1)
+        else if (aContinuity == C1)
         {
-            int NbInterv_C1 = HCOnS.NbIntervals(GeomAbs_C1);
+            int NbInterv_C1 = HCOnS.NbIntervals(C1);
             NCollection_Array1<double> CutPnts_C1 = new(1, NbInterv_C1 + 1);
-            HCOnS.Intervals(CutPnts_C1, GeomAbs_C1);
-            int NbInterv_C2 = HCOnS.NbIntervals(GeomAbs_C2);
+            HCOnS.Intervals(CutPnts_C1, C1);
+            int NbInterv_C2 = HCOnS.NbIntervals(C2);
             NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-            HCOnS.Intervals(CutPnts_C2, GeomAbs_C2);
+            HCOnS.Intervals(CutPnts_C2, C2);
 
             CutTool = new AdvApprox_PrefAndRec(CutPnts_C1, CutPnts_C2);
         }
         else
         {
-            int NbInterv_C2 = HCOnS.NbIntervals(GeomAbs_C2);
+            int NbInterv_C2 = HCOnS.NbIntervals(C2);
             NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-            HCOnS.Intervals(CutPnts_C2, GeomAbs_C2);
-            int NbInterv_C3 = HCOnS.NbIntervals(GeomAbs_C3);
+            HCOnS.Intervals(CutPnts_C2, C2);
+            int NbInterv_C3 = HCOnS.NbIntervals(C3);
             NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-            HCOnS.Intervals(CutPnts_C3, GeomAbs_C3);
+            HCOnS.Intervals(CutPnts_C3, C3);
 
             CutTool = new AdvApprox_PrefAndRec(CutPnts_C2, CutPnts_C3);
         }
@@ -473,21 +476,21 @@ public class Approx_CurveOnSurface
             int aNbPoles = aApprox.NbPoles();
             if (!theOnly2d)
             {
-                NCollection_Array1<gp_Pnt> Poles = new(1, aNbPoles);
+                NCollection_Array1<Point3D> Poles = new(1, aNbPoles);
                 aApprox.Poles(1, Poles);
                 myCurve3d = new Geom_BSplineCurve(Poles, Knots.Array1(), Mults.Array1(), Degree);
                 myError3d = aApprox.MaxError(3, 1);
             }
             if (!theOnly3d)
             {
-                NCollection_Array1<gp_Pnt2d> Poles2d = new(1, aNbPoles);
+                NCollection_Array1<Point2D> Poles2d = new(1, aNbPoles);
                 NCollection_Array1<double> Poles1dU = new(1, aNbPoles);
                 aApprox.Poles1d(1, Poles1dU);
                 NCollection_Array1<double> Poles1dV = new(1, aNbPoles);
                 aApprox.Poles1d(2, Poles1dV);
                 for (int i = 1; i <= aNbPoles; i++)
                 {
-                    Poles2d.SetValue(i, new gp_Pnt2d(Poles1dU.Value(i), Poles1dV.Value(i)));
+                    Poles2d.SetValue(i, new Point2D(Poles1dU.Value(i), Poles1dV.Value(i)));
                 }
                 myCurve2d = new Geom2d_BSplineCurve(Poles2d, Knots.Array1(), Mults.Array1(), Degree);
 
@@ -545,19 +548,19 @@ public class Approx_CurveOnSurface
 
         // These variables are used to check line state (vertical or horizontal).
         bool isAppropriateType = false;
-        gp_Pnt2d aLoc2d = new();
-        gp_Dir2d aDir2d = new();
+        Point2D aLoc2d = new();
+        Direction2D aDir2d = new();
 
         // Test type.
-        GeomAbs_CurveType aType = theC2D.GetType();
-        if (aType == GeomAbs_Line)
+        CurveKind aType = theC2D.GetType();
+        if (aType == Line)
         {
-            gp_Lin2d aLin2d = theC2D.Line();
+            Line2D aLin2d = theC2D.Line();
             aLoc2d = aLin2d.Location();
             aDir2d = aLin2d.Direction();
             isAppropriateType = true;
         }
-        else if (aType == GeomAbs_BSplineCurve)
+        else if (aType == BSplineCurve)
         {
             Geom2d_BSplineCurve aBSpline2d = theC2D.BSpline();
             if (aBSpline2d.Degree() != 1 || aBSpline2d.NbPoles() != 2)
@@ -568,16 +571,16 @@ public class Approx_CurveOnSurface
             aLoc2d = aBSpline2d.Pole(1);
 
             // Vector should be non-degenerated.
-            gp_Vec2d aVec2d = new(aBSpline2d.Pole(1), aBSpline2d.Pole(2));
-            if (aVec2d.SquareMagnitude() < Precision.Confusion())
+            Vector2D aVec2d = new(aBSpline2d.Pole(1), aBSpline2d.Pole(2));
+            if (aVec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
-            aDir2d = new gp_Dir2d(aVec2d);
+            aDir2d = new Direction2D(aVec2d);
 
             isAppropriateType = true;
         }
-        else if (aType == GeomAbs_BezierCurve)
+        else if (aType == BezierCurve)
         {
             Geom2d_BezierCurve aBezier2d = theC2D.Bezier();
             if (aBezier2d.Degree() != 1 || aBezier2d.NbPoles() != 2)
@@ -588,12 +591,12 @@ public class Approx_CurveOnSurface
             aLoc2d = aBezier2d.Pole(1);
 
             // Vector should be non-degenerated.
-            gp_Vec2d aVec2d = new(aBezier2d.Pole(1), aBezier2d.Pole(2));
-            if (aVec2d.SquareMagnitude() < Precision.Confusion())
+            Vector2D aVec2d = new(aBezier2d.Pole(1), aBezier2d.Pole(2));
+            if (aVec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
-            aDir2d = new gp_Dir2d(aVec2d);
+            aDir2d = new Direction2D(aVec2d);
 
             isAppropriateType = true;
         }
@@ -604,20 +607,20 @@ public class Approx_CurveOnSurface
         }
 
         // Check line to be vertical or horizontal.
-        if (aDir2d.IsParallel(gp.DX2d(), Precision.Angular()))
+        if (aDir2d.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // Horizontal line. V = const.
             theIsU = false;
             theParam = aLoc2d.Y();
-            theIsForward = aDir2d.Dot(gp.DX2d()) > 0.0;
+            theIsForward = aDir2d.Dot(Constants.DX2d()) > 0.0;
             return true;
         }
-        else if (aDir2d.IsParallel(gp.DY2d(), Precision.Angular()))
+        else if (aDir2d.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // Vertical line. U = const.
             theIsU = true;
             theParam = aLoc2d.X();
-            theIsForward = aDir2d.Dot(gp.DY2d()) > 0.0;
+            theIsForward = aDir2d.Dot(Constants.DY2d()) > 0.0;
             return true;
         }
 
@@ -637,7 +640,7 @@ public class Approx_CurveOnSurface
             return false;
         }
 
-        if (mySurf.GetType() == GeomAbs_Sphere)
+        if (mySurf.GetType() == SurfaceKind.Sphere)
         {
             return false;
         }
@@ -646,8 +649,8 @@ public class Approx_CurveOnSurface
         Geom_Surface aSurf = aGeomAdapter.Surface()!;
         Geom_Curve aC3d;
 
-        gp_Pnt2d aF2d = theC2D.Value(theC2D.FirstParameter());
-        gp_Pnt2d aL2d = theC2D.Value(theC2D.LastParameter());
+        Point2D aF2d = theC2D.Value(theC2D.FirstParameter());
+        Point2D aL2d = theC2D.Value(theC2D.LastParameter());
 
         bool isToTrim = true;
         double U1, U2, V1, V2;
@@ -661,9 +664,9 @@ public class Approx_CurveOnSurface
             {
                 return false;
             }
-            else if (Precision.IsInfinite(V1) || Precision.IsInfinite(V2))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
             {
-                if (Math.Abs(aV2Param - aV1Param) < Precision.PConfusion())
+                if (Math.Abs(aV2Param - aV1Param) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -674,7 +677,7 @@ public class Approx_CurveOnSurface
             {
                 aV1Param = Max(aV1Param, V1);
                 aV2Param = Min(aV2Param, V2);
-                if (Math.Abs(aV2Param - aV1Param) < Precision.PConfusion())
+                if (Math.Abs(aV2Param - aV1Param) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -693,9 +696,9 @@ public class Approx_CurveOnSurface
             {
                 return false;
             }
-            else if (Precision.IsInfinite(U1) || Precision.IsInfinite(U2))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
             {
-                if (Math.Abs(aU2Param - aU1Param) < Precision.PConfusion())
+                if (Math.Abs(aU2Param - aU1Param) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -706,7 +709,7 @@ public class Approx_CurveOnSurface
             {
                 aU1Param = Max(aU1Param, U1);
                 aU2Param = Min(aU2Param, U2);
-                if (Math.Abs(aU2Param - aU1Param) < Precision.PConfusion())
+                if (Math.Abs(aU2Param - aU1Param) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -719,9 +722,9 @@ public class Approx_CurveOnSurface
         }
 
         // Convert arbitrary curve type to the b-spline.
-        Geom_BSplineCurve aCurve3d = GeomConvert.CurveToBSplineCurve(aC3d, Convert_QuasiAngular);
+        Geom_BSplineCurve aCurve3d = GeomConvert.CurveToBSplineCurve(aC3d, QuasiAngular);
         // The conversion can return a frozen curve that others share (decision 244): change a copy.
-        if (aCurve3d.IsFrozen())
+        if (aCurve3d.IsFrozen)
         {
             aCurve3d = (Geom_BSplineCurve)aCurve3d.Copy();
         }
@@ -734,7 +737,7 @@ public class Approx_CurveOnSurface
         // Rebuild parameterization for the 3d curve to have the same parameterization with
         // a two-dimensional curve.
         NCollection_Array1<double> aKnots = new(aCurve3d.InternalKnots());
-        BSplCLib.Reparametrize(theC2D.FirstParameter(), theC2D.LastParameter(), aKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(theC2D.FirstParameter(), theC2D.LastParameter(), aKnots);
         aCurve3d.SetKnots(aKnots);
 
         // Evaluate error.
@@ -747,10 +750,10 @@ public class Approx_CurveOnSurface
         {
             double aPar = aParF + ((aParL - aParF) * anIdx) / aNbPnt;
 
-            gp_Pnt2d aPnt2d = theC2D.Value(aPar);
+            Point2D aPnt2d = theC2D.Value(aPar);
 
-            gp_Pnt aPntC3D = aCurve3d.Value(aPar);
-            gp_Pnt aPntC2D = mySurf.Value(aPnt2d.X(), aPnt2d.Y());
+            Point3D aPntC3D = aCurve3d.Value(aPar);
+            Point3D aPntC2D = mySurf.Value(aPnt2d.X(), aPnt2d.Y());
 
             double aSqDeviation = aPntC3D.SquareDistance(aPntC2D);
             myError3d = Max(aSqDeviation, myError3d);

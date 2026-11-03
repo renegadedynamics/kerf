@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -90,7 +91,7 @@ public class ChFi3dBuilderTests
     public void ANoEdgeComputeThrowsAsOcct()
     {
         ChFi3d_FilBuilder aB = new(Box());
-        Standard_Failure e = Assert.Throws<Standard_Failure>(aB.Compute);
+        FailureException e = Assert.Throws<FailureException>(aB.Compute);
         Assert.Equal("There are no suitable edges for chamfer or fillet", e.Message);
     }
 
@@ -109,7 +110,7 @@ public class ChFi3dBuilderTests
         {
             Assert.Equal(ChFiDS_ErrorStatus.ChFiDS_StartsolFailure, aB.StripeStatus(ic));
         }
-        Assert.Throws<Standard_NoSuchObject>(() => aB.Shape());
+        Assert.Throws<NoSuchObjectException>(() => aB.Shape());
     }
 
     [Fact]

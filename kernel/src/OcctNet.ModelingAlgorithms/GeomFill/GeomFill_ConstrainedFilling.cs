@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -33,25 +36,25 @@ public class GeomFill_ConstrainedFilling
     private readonly double[] mig = new double[4];
     private readonly GeomFill_CornerState[] stcor =
         [new GeomFill_CornerState(), new GeomFill_CornerState(), new GeomFill_CornerState(), new GeomFill_CornerState()];
-    private readonly gp_Vec[] v = [new gp_Vec(), new gp_Vec(), new gp_Vec(), new gp_Vec()];
+    private readonly Vector3D[] v = [new Vector3D(), new Vector3D(), new Vector3D(), new Vector3D()];
     private bool appdone;
     private readonly int[] degree = new int[2];
-    private readonly NCollection_HArray1<gp_Pnt>?[] curvpol = new NCollection_HArray1<gp_Pnt>?[4];
-    private readonly NCollection_HArray1<gp_Pnt>?[] tgtepol = new NCollection_HArray1<gp_Pnt>?[4];
+    private readonly NCollection_HArray1<Point3D>?[] curvpol = new NCollection_HArray1<Point3D>?[4];
+    private readonly NCollection_HArray1<Point3D>?[] tgtepol = new NCollection_HArray1<Point3D>?[4];
     private readonly NCollection_HArray1<int>?[] mults = new NCollection_HArray1<int>?[2];
     private readonly NCollection_HArray1<double>?[] knots = new NCollection_HArray1<double>?[2];
     private readonly NCollection_HArray1<double>?[] ab = new NCollection_HArray1<double>?[4];
     private readonly NCollection_HArray1<double>?[] pq = new NCollection_HArray1<double>?[4];
     private readonly double[] dom = new double[4];
-    private readonly NCollection_HArray1<gp_Pnt>?[] ncpol = new NCollection_HArray1<gp_Pnt>?[4];
-    private readonly NCollection_HArray1<gp_Pnt>?[] ntpol = new NCollection_HArray1<gp_Pnt>?[4];
+    private readonly NCollection_HArray1<Point3D>?[] ncpol = new NCollection_HArray1<Point3D>?[4];
+    private readonly NCollection_HArray1<Point3D>?[] ntpol = new NCollection_HArray1<Point3D>?[4];
     private readonly NCollection_HArray1<int>?[] nm = new NCollection_HArray1<int>?[2];
     private readonly NCollection_HArray1<double>?[] nk = new NCollection_HArray1<double>?[2];
     private readonly int[] ibound = new int[2];
     private readonly int[] ctr = new int[2];
     private int nbd3;
-    private NCollection_HArray2<gp_Pnt>? S0;
-    private NCollection_HArray2<gp_Pnt>? S1;
+    private NCollection_HArray2<Point3D>? S0;
+    private NCollection_HArray2<Point3D>? S1;
     private Geom_BSplineSurface? surf;
 
     private static int inqadd(double d1, double d2, Span<double> k, Span<int> m, int deg, double tolk)
@@ -106,8 +109,8 @@ public class GeomFill_ConstrainedFilling
         int i, j;
         GeomFill_Boundary temp;
         rev[0] = false;
-        gp_Pnt pf, pl;
-        gp_Pnt qf, ql;
+        Point3D pf, pl;
+        Point3D qf, ql;
         for (i = 0; i < nb - 1; i++)
         {
             if (!rev[i])
@@ -162,8 +165,8 @@ public class GeomFill_ConstrainedFilling
 
         // flaguer les angles entre tangentes au coins et entre les normales au
         // coins pour les bords contraints.
-        gp_Pnt pbid;
-        gp_Vec tgi, nori, tgn, norn;
+        Point3D pbid;
+        Vector3D tgi, nori, tgn, norn;
         double fi, fn, li, ln;
         for (i = 0; i < nb; i++)
         {
@@ -234,8 +237,8 @@ public class GeomFill_ConstrainedFilling
                 {
                     double fact = 0.5 * 27.0 / 4;
                     tolang *= (Min(mintg[ip], mintg[i]) * fact * fact_normalization);
-                    gp_Vec tgp, dnorp, tgi, dnori, vbid;
-                    gp_Pnt pbid;
+                    Vector3D tgp, dnorp, tgi, dnori, vbid;
+                    Point3D pbid;
                     double fp, lp, fi, li;
                     if (!rev[ip])
                     {
@@ -359,9 +362,9 @@ public class GeomFill_ConstrainedFilling
         // On cree le carreau algorithmique (u,(1-u)) et les champs tangents
         // 1er jus.
         // On cree donc le bord manquant.
-        gp_Pnt p1 = bound[1].Value(1.0);
-        gp_Pnt p2 = bound[2].Value(1.0);
-        gp_Pnt ppp = new(0.5 * (p1.XYZ() + p2.XYZ()));
+        Point3D p1 = bound[1].Value(1.0);
+        Point3D p2 = bound[2].Value(1.0);
+        Point3D ppp = new(0.5 * (p1.XYZ() + p2.XYZ()));
         double t3 = Max(bound[1].Tol3d(), bound[2].Tol3d());
         GeomFill_DegeneratedBound DB = new(ppp, 0.0, 1.0, t3, 10.0);
 
@@ -533,7 +536,7 @@ public class GeomFill_ConstrainedFilling
     {
         if (!appdone)
         {
-            throw new Standard_Failure("GeomFill_ConstrainedFilling::ReBuild Approx non faite");
+            throw new FailureException("GeomFill_ConstrainedFilling::ReBuild Approx non faite");
         }
         MatchKnots();
         PerformS0();
@@ -610,7 +613,7 @@ public class GeomFill_ConstrainedFilling
         ptch!.Bound(ibound[0]).Bounds(out f, out l);
 
         GeomFill_ConstrainedFilling_Eval ev = new(this);
-        AdvApprox_ApproxAFunction app = new(0, 0, nbd3, tol1d, tol2d, tol3d, f, l, GeomAbs_C1, degmax, segmax, ev);
+        AdvApprox_ApproxAFunction app = new(0, 0, nbd3, tol1d, tol2d, tol3d, f, l, C1, degmax, segmax, ev);
 
         if (app.IsDone() || app.HasResult())
         {
@@ -622,15 +625,15 @@ public class GeomFill_ConstrainedFilling
             i3d = 0;
             for (ii = 0; ii <= 1; ii++)
             {
-                curvpol[ibound[ii]] = new NCollection_HArray1<gp_Pnt>(1, nbpol);
-                NCollection_Array1<gp_Pnt> cp = curvpol[ibound[ii]]!.ChangeArray1();
+                curvpol[ibound[ii]] = new NCollection_HArray1<Point3D>(1, nbpol);
+                NCollection_Array1<Point3D> cp = curvpol[ibound[ii]]!.ChangeArray1();
                 if (ctr[ii] != 0)
                 {
                     app.Poles(++i3d, cp);
                 }
                 else
                 {
-                    gp_Pnt ppp = ptch.Bound(ibound[ii]).Value(0.5 * (f + l));
+                    Point3D ppp = ptch.Bound(ibound[ii]).Value(0.5 * (f + l));
                     for (int ij = 1; ij <= nbpol; ij++)
                     {
                         cp[ij] = ppp;
@@ -638,7 +641,7 @@ public class GeomFill_ConstrainedFilling
                 }
                 if (ctr[ii] == 2)
                 {
-                    tgtepol[ibound[ii]] = new NCollection_HArray1<gp_Pnt>(1, nbpol);
+                    tgtepol[ibound[ii]] = new NCollection_HArray1<Point3D>(1, nbpol);
                     app.Poles(++i3d, tgtepol[ibound[ii]]!.ChangeArray1());
                 }
             }
@@ -686,33 +689,33 @@ public class GeomFill_ConstrainedFilling
             NCollection_Array1<double> addk = FirstValues<double>(kadd, nbadd);
             NCollection_Array1<int> addm = FirstValues<int>(madd, nbadd);
             int nbnp, nbnk;
-            if (BSplCLib.PrepareInsertKnots(degree[1], false, knots[1]!.Array1(), mults[1]!.Array1(), addk, addm,
+            if (global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(degree[1], false, knots[1]!.Array1(), mults[1]!.Array1(), addk, addm,
                                             out nbnp, out nbnk, tolk, false))
             {
                 nm[1] = new NCollection_HArray1<int>(1, nbnk);
                 nk[1] = new NCollection_HArray1<double>(1, nbnk);
-                ncpol[1] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                ncpol[3] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                BSplCLib.InsertKnots(degree[1], false, curvpol[1]!.Array1(), BSplCLib.NoWeights(), knots[1]!.Array1(),
-                                     mults[1]!.Array1(), addk, addm, ncpol[1]!.ChangeArray1(), BSplCLib.NoWeights(),
+                ncpol[1] = new NCollection_HArray1<Point3D>(1, nbnp);
+                ncpol[3] = new NCollection_HArray1<Point3D>(1, nbnp);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[1], false, curvpol[1]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), knots[1]!.Array1(),
+                                     mults[1]!.Array1(), addk, addm, ncpol[1]!.ChangeArray1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                      nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
 
-                BSplCLib.InsertKnots(degree[1], false, curvpol[3]!.Array1(), BSplCLib.NoWeights(), knots[1]!.Array1(),
-                                     mults[1]!.Array1(), addk, addm, ncpol[3]!.ChangeArray1(), BSplCLib.NoWeights(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[1], false, curvpol[3]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), knots[1]!.Array1(),
+                                     mults[1]!.Array1(), addk, addm, ncpol[3]!.ChangeArray1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                      nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
                 if (tgtepol[1] is not null)
                 {
-                    ntpol[1] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                    BSplCLib.InsertKnots(degree[1], false, tgtepol[1]!.Array1(), BSplCLib.NoWeights(),
+                    ntpol[1] = new NCollection_HArray1<Point3D>(1, nbnp);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[1], false, tgtepol[1]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                          knots[1]!.Array1(), mults[1]!.Array1(), addk, addm, ntpol[1]!.ChangeArray1(),
-                                         BSplCLib.NoWeights(), nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
+                                         global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
                 }
                 if (tgtepol[3] is not null)
                 {
-                    ntpol[3] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                    BSplCLib.InsertKnots(degree[1], false, tgtepol[3]!.Array1(), BSplCLib.NoWeights(),
+                    ntpol[3] = new NCollection_HArray1<Point3D>(1, nbnp);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[1], false, tgtepol[3]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                          knots[1]!.Array1(), mults[1]!.Array1(), addk, addm, ntpol[3]!.ChangeArray1(),
-                                         BSplCLib.NoWeights(), nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
+                                         global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[1]!.ChangeArray1(), nm[1]!.ChangeArray1(), tolk, false);
                 }
             }
             if (dom[0] != 1.0)
@@ -747,33 +750,33 @@ public class GeomFill_ConstrainedFilling
             NCollection_Array1<double> addk = FirstValues<double>(kadd, nbadd);
             NCollection_Array1<int> addm = FirstValues<int>(madd, nbadd);
             int nbnp, nbnk;
-            if (BSplCLib.PrepareInsertKnots(degree[0], false, knots[0]!.Array1(), mults[0]!.Array1(), addk, addm,
+            if (global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(degree[0], false, knots[0]!.Array1(), mults[0]!.Array1(), addk, addm,
                                             out nbnp, out nbnk, tolk, false))
             {
                 nm[0] = new NCollection_HArray1<int>(1, nbnk);
                 nk[0] = new NCollection_HArray1<double>(1, nbnk);
-                ncpol[0] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                ncpol[2] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                BSplCLib.InsertKnots(degree[0], false, curvpol[0]!.Array1(), BSplCLib.NoWeights(), knots[0]!.Array1(),
-                                     mults[0]!.Array1(), addk, addm, ncpol[0]!.ChangeArray1(), BSplCLib.NoWeights(),
+                ncpol[0] = new NCollection_HArray1<Point3D>(1, nbnp);
+                ncpol[2] = new NCollection_HArray1<Point3D>(1, nbnp);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[0], false, curvpol[0]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), knots[0]!.Array1(),
+                                     mults[0]!.Array1(), addk, addm, ncpol[0]!.ChangeArray1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                      nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
 
-                BSplCLib.InsertKnots(degree[0], false, curvpol[2]!.Array1(), BSplCLib.NoWeights(), knots[0]!.Array1(),
-                                     mults[0]!.Array1(), addk, addm, ncpol[2]!.ChangeArray1(), BSplCLib.NoWeights(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[0], false, curvpol[2]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), knots[0]!.Array1(),
+                                     mults[0]!.Array1(), addk, addm, ncpol[2]!.ChangeArray1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                      nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
                 if (tgtepol[0] is not null)
                 {
-                    ntpol[0] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                    BSplCLib.InsertKnots(degree[0], false, tgtepol[0]!.Array1(), BSplCLib.NoWeights(),
+                    ntpol[0] = new NCollection_HArray1<Point3D>(1, nbnp);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[0], false, tgtepol[0]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                          knots[0]!.Array1(), mults[0]!.Array1(), addk, addm, ntpol[0]!.ChangeArray1(),
-                                         BSplCLib.NoWeights(), nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
+                                         global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
                 }
                 if (tgtepol[2] is not null)
                 {
-                    ntpol[2] = new NCollection_HArray1<gp_Pnt>(1, nbnp);
-                    BSplCLib.InsertKnots(degree[0], false, tgtepol[2]!.Array1(), BSplCLib.NoWeights(),
+                    ntpol[2] = new NCollection_HArray1<Point3D>(1, nbnp);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(degree[0], false, tgtepol[2]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                          knots[0]!.Array1(), mults[0]!.Array1(), addk, addm, ntpol[2]!.ChangeArray1(),
-                                         BSplCLib.NoWeights(), nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
+                                         global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[0]!.ChangeArray1(), nm[0]!.ChangeArray1(), tolk, false);
                 }
             }
             if (dom[1] != 1.0)
@@ -834,26 +837,26 @@ public class GeomFill_ConstrainedFilling
         int i, j;
         int ni = ncpol[0]!.Length();
         int nj = ncpol[1]!.Length();
-        S0 = new NCollection_HArray2<gp_Pnt>(1, ni, 1, nj);
-        NCollection_Array2<gp_Pnt> ss0 = S0.ChangeArray2();
-        gp_XYZ c0 = ptch!.Corner(0).Coord();
-        gp_XYZ c1 = ptch.Corner(1).Coord();
-        gp_XYZ c2 = ptch.Corner(2).Coord();
-        gp_XYZ c3 = ptch.Corner(3).Coord();
+        S0 = new NCollection_HArray2<Point3D>(1, ni, 1, nj);
+        NCollection_Array2<Point3D> ss0 = S0.ChangeArray2();
+        Xyz c0 = ptch!.Corner(0).Coord();
+        Xyz c1 = ptch.Corner(1).Coord();
+        Xyz c2 = ptch.Corner(2).Coord();
+        Xyz c3 = ptch.Corner(3).Coord();
         for (i = 1; i <= ni; i++)
         {
             double ab1 = ab[1]!.Value(i);
             double ab3 = ab[3]!.Value(i);
-            gp_XYZ b0 = ncpol[0]!.Value(i).Coord();
-            gp_XYZ b2 = ncpol[2]!.Value(i).Coord();
+            Xyz b0 = ncpol[0]!.Value(i).Coord();
+            Xyz b2 = ncpol[2]!.Value(i).Coord();
             for (j = 1; j <= nj; j++)
             {
                 double ab0 = ab[0]!.Value(j);
                 double ab2 = ab[2]!.Value(j);
-                gp_XYZ b1 = ncpol[1]!.Value(j).Coord();
-                gp_XYZ b3 = ncpol[3]!.Value(j).Coord();
-                gp_XYZ polij = b0.Multiplied(ab0);
-                gp_XYZ temp = b1.Multiplied(ab1);
+                Xyz b1 = ncpol[1]!.Value(j).Coord();
+                Xyz b3 = ncpol[3]!.Value(j).Coord();
+                Xyz polij = b0.Multiplied(ab0);
+                Xyz temp = b1.Multiplied(ab1);
                 polij.Add(temp);
                 temp = b2.Multiplied(ab2);
                 polij.Add(temp);
@@ -879,8 +882,8 @@ public class GeomFill_ConstrainedFilling
         // tgte[ibound](u) - d/dv (S0(u,vbound)) pour ibound = 0 ou 2
         // tgte[ibound](v) - d/du (S0(ubound,v)) pour ibound = 1 ou 3
         // sur les bords ou tgte est defini.
-        gp_XYZ[]?[] nt = new gp_XYZ[]?[4];
-        NCollection_Array2<gp_Pnt> ss0 = S0!.Array2();
+        Xyz[]?[] nt = new Xyz[]?[4];
+        NCollection_Array2<Point3D> ss0 = S0!.Array2();
         int l, i, j, k;
         int ni = ss0.ColLength();
         int nj = ss0.RowLength();
@@ -896,7 +899,7 @@ public class GeomFill_ConstrainedFilling
                 int nbp = ntpol[i]!.Length();
                 int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
                 bool inci = false;
-                gp_XYZ[] nti = new gp_XYZ[nbp];
+                Xyz[] nti = new Xyz[nbp];
                 nt[i] = nti;
                 switch (i)
                 {
@@ -958,7 +961,7 @@ public class GeomFill_ConstrainedFilling
         // on calcul les termes correctifs pour le melange.
         double coef0 = degree[0] / (nk[0]!.Value(2) - nk[0]!.Value(1));
         double coef1 = degree[1] / (nk[1]!.Value(2) - nk[1]!.Value(1));
-        gp_XYZ vtemp, vtemp0, vtemp1;
+        Xyz vtemp, vtemp0, vtemp1;
         if (nt[0] is not null && nt[3] is not null)
         {
             vtemp0 = nt[0]![0].Multiplied(-1.0);
@@ -1028,12 +1031,12 @@ public class GeomFill_ConstrainedFilling
         //         + pq[2](j)*ntpol[2](i) + pq[3](i)*ntpol[3](j)
         //         - pq[3](i)*pq[0](j)*v[0] - pq[0](j)*pq[1](i)*v[1]
         //         - pq[1](i)*pq[2](j)*v[2] - pq[2](j)*pq[3](i)*v[3]
-        S1 = new NCollection_HArray2<gp_Pnt>(1, ni, 1, nj);
-        NCollection_Array2<gp_Pnt> ss1 = S1.ChangeArray2();
-        gp_XYZ v0 = v[0].XYZ();
-        gp_XYZ v1 = v[1].XYZ();
-        gp_XYZ v2 = v[2].XYZ();
-        gp_XYZ v3 = v[3].XYZ();
+        S1 = new NCollection_HArray2<Point3D>(1, ni, 1, nj);
+        NCollection_Array2<Point3D> ss1 = S1.ChangeArray2();
+        Xyz v0 = v[0].XYZ();
+        Xyz v1 = v[1].XYZ();
+        Xyz v2 = v[2].XYZ();
+        Xyz v3 = v[3].XYZ();
 
         for (i = 1; i <= ni; i++)
         {
@@ -1046,7 +1049,7 @@ public class GeomFill_ConstrainedFilling
             {
                 pq3 = pq[3]!.Value(i);
             }
-            gp_XYZ t0 = new(), t2 = new();
+            Xyz t0 = new(), t2 = new();
             if (nt[0] is not null)
             {
                 t0 = nt[0]![i - 1];
@@ -1066,7 +1069,7 @@ public class GeomFill_ConstrainedFilling
                 {
                     pq2 = -pq[2]!.Value(j);
                 }
-                gp_XYZ t1 = new(), t3 = new();
+                Xyz t1 = new(), t3 = new();
                 if (nt[1] is not null)
                 {
                     t1 = nt[1]![j - 1];
@@ -1076,7 +1079,7 @@ public class GeomFill_ConstrainedFilling
                     t3 = nt[3]![j - 1];
                 }
 
-                gp_XYZ tpolij = new(0.0, 0.0, 0.0), temp;
+                Xyz tpolij = new(0.0, 0.0, 0.0), temp;
                 if (nt[0] is not null)
                 {
                     temp = t0.Multiplied(pq0);
@@ -1125,9 +1128,9 @@ public class GeomFill_ConstrainedFilling
     private void PerformSurface()
     {
         int ni = S0!.ColLength(), nj = S0.RowLength(), i, j;
-        NCollection_Array2<gp_Pnt> temp = new(1, ni, 1, nj);
-        NCollection_Array2<gp_Pnt> t0 = S0.Array2();
-        NCollection_Array2<gp_Pnt> t1 = S1!.Array2();
+        NCollection_Array2<Point3D> temp = new(1, ni, 1, nj);
+        NCollection_Array2<Point3D> t0 = S0.Array2();
+        NCollection_Array2<Point3D> t1 = S1!.Array2();
         for (i = 1; i <= ni; i++)
         {
             for (j = 1; j <= nj; j++)
@@ -1153,11 +1156,11 @@ public class GeomFill_ConstrainedFilling
         for (int iu = 0; iu < 13; iu++)
         {
             double uu = iu * ll;
-            gp_Pnt pbid;
-            gp_Vec tgte;
+            Point3D pbid;
+            Vector3D tgte;
             bou.D1(uu, out pbid, out tgte);
-            gp_Vec norm = bou.Norm(uu);
-            gp_Vec vfield = tgalg[I]!.Value(uu);
+            Vector3D norm = bou.Norm(uu);
+            Vector3D vfield = tgalg[I]!.Value(uu);
             if (iu == 0)
             {
                 pmix = vfield.Dot(tgte.Crossed(norm));
@@ -1185,7 +1188,7 @@ public class GeomFill_ConstrainedFilling
         for (int iu = 0; iu <= 30; iu++)
         {
             double uu = 0.2 + iu * ll;
-            gp_Vec vv = tgalg[I]!.Value(uu);
+            Vector3D vv = tgalg[I]!.Value(uu);
             double temp = vv.SquareMagnitude();
             if (temp < minmag)
             {
@@ -1224,8 +1227,8 @@ public class GeomFill_ConstrainedFilling
                 }
                 break;
             case 1:
-                gp_Pnt pt;
-                gp_Vec vt;
+                Point3D pt;
+                Vector3D vt;
                 if (ctr[0] != 0)
                 {
                     ptch!.Bound(ibound[0]).D1(W, out pt, out vt);
@@ -1288,8 +1291,8 @@ public class GeomFill_ConstrainedFilling
                 enu = true;
                 break;
         }
-        gp_Pnt pbound;
-        gp_Vec vptch;
+        Point3D pbound;
+        Vector3D vptch;
         GeomFill_Boundary bou = ptch!.Bound(I);
         for (int k = 0; k <= nbp; k++)
         {
@@ -1322,8 +1325,8 @@ public class GeomFill_ConstrainedFilling
         {
             return;
         }
-        gp_Pnt p1;
-        gp_Vec d1;
+        Point3D p1;
+        Vector3D d1;
         bool caplisse = false;
         double maxang = 0.0, pmix = 0, pmixcur;
         GeomFill_Boundary bou = ptch!.Bound(I);
@@ -1331,9 +1334,9 @@ public class GeomFill_ConstrainedFilling
         {
             double uu = iu / 30.0;
             bou.D1(uu, out p1, out d1);
-            gp_Vec vtg = tgalg[I]!.Value(uu);
-            gp_Vec vnor = bou.Norm(uu);
-            gp_Vec vcros = d1.Crossed(vnor);
+            Vector3D vtg = tgalg[I]!.Value(uu);
+            Vector3D vnor = bou.Norm(uu);
+            Vector3D vcros = d1.Crossed(vnor);
             vcros.Normalize();
             if (iu == 0)
             {
@@ -1373,19 +1376,19 @@ public class GeomFill_ConstrainedFilling
         bool donor = tgalg[I] is not null;
         int nbp = 30;
         double maxang = 0.0, maxdist = 0.0;
-        gp_Pnt pbound, papp, pbid;
-        gp_Vec vbound, vapp = new();
+        Point3D pbound, papp, pbid;
+        Vector3D vbound, vapp = new();
         GeomFill_Boundary bou = ptch!.Bound(I);
         for (int iu = 0; iu <= nbp; iu++)
         {
             double uu = iu;
             uu /= nbp;
             pbound = bou.Value(uu);
-            BSplCLib.D0(uu, 0, degree[I % 2], false, ncpol[I]!.Array1(), BSplCLib.NoWeights(), nk[I % 2]!.Array1(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(uu, 0, degree[I % 2], false, ncpol[I]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[I % 2]!.Array1(),
                         nm[I % 2]!.Array1(), out papp);
             if (donor)
             {
-                BSplCLib.D0(uu, 0, degree[I % 2], false, ntpol[I]!.Array1(), BSplCLib.NoWeights(), nk[I % 2]!.Array1(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(uu, 0, degree[I % 2], false, ntpol[I]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), nk[I % 2]!.Array1(),
                             nm[I % 2]!.Array1(), out pbid);
                 vapp.SetXYZ(pbid.XYZ());
                 vbound = bou.Norm(uu);
@@ -1450,8 +1453,8 @@ public class GeomFill_ConstrainedFilling
                 duu = 0.0;
                 break;
         }
-        gp_Pnt[] pbound = new gp_Pnt[31], pres = new gp_Pnt[31];
-        gp_Vec[] vbound = new gp_Vec[31], vres = new gp_Vec[31];
+        Point3D[] pbound = new Point3D[31], pres = new Point3D[31];
+        Vector3D[] vbound = new Vector3D[31], vres = new Vector3D[31];
         GeomFill_Boundary bou = ptch!.Bound(I);
         int k;
         for (k = 0; k <= 30; k++)
@@ -1464,7 +1467,7 @@ public class GeomFill_ConstrainedFilling
             else
             {
                 vbound[k] = bou.Norm(ww);
-                gp_Vec V1, V2;
+                Vector3D V1, V2;
                 surf.D1(uu, vv, out pres[k], out V1, out V2);
                 vres[k] = V1.Crossed(V2);
                 if (vres[k].Magnitude() > 1.0e-15 && vbound[k].Magnitude() > 1.0e-15)

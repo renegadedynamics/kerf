@@ -2,15 +2,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Box3d = Occt.BVH_Box<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Occt.BVH_Tree<double, Occt.NCollection_Vec3<double>>;
+using Kerf.Engine.Geometry.Bvh;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
 
 namespace OcctNet.Foundation.Tests;
 
 // Test implementations of BVH_Traverse
 
 /// <summary>Simple traverse implementation that counts all elements.</summary>
-internal sealed class BVH_CountAllElements : BVH_Traverse<double, BVH_Vec3d, double>
+internal sealed class BVH_CountAllElements : Traverse<double, BVH_Vec3d, double>
 {
     private int myAcceptedCount;
 
@@ -32,7 +33,7 @@ internal sealed class BVH_CountAllElements : BVH_Traverse<double, BVH_Vec3d, dou
 }
 
 /// <summary>Traverse that rejects nodes outside a bounding box.</summary>
-internal sealed class BVH_BoxSelector(in Box3d theBox) : BVH_Traverse<double, BVH_Vec3d, double>
+internal sealed class BVH_BoxSelector(in Box3d theBox) : Traverse<double, BVH_Vec3d, double>
 {
     private readonly Box3d myBox = theBox;
     private int myAcceptedCount;
@@ -56,7 +57,7 @@ internal sealed class BVH_BoxSelector(in Box3d theBox) : BVH_Traverse<double, BV
 }
 
 /// <summary>Traverse with distance-based metric and early termination.</summary>
-internal sealed class BVH_DistanceSelector(in BVH_Vec3d thePoint, double theMaxDist) : BVH_Traverse<double, BVH_Vec3d, double>
+internal sealed class BVH_DistanceSelector(in BVH_Vec3d thePoint, double theMaxDist) : Traverse<double, BVH_Vec3d, double>
 {
     private readonly BVH_Vec3d myPoint = thePoint;
     private readonly double myMaxDistSq = theMaxDist * theMaxDist;
@@ -115,7 +116,7 @@ internal sealed class BVH_DistanceSelector(in BVH_Vec3d thePoint, double theMaxD
 }
 
 /// <summary>Traverse with early stopping after finding N elements.</summary>
-internal sealed class BVH_LimitedSelector(int theMaxCount) : BVH_Traverse<double, BVH_Vec3d, double>
+internal sealed class BVH_LimitedSelector(int theMaxCount) : Traverse<double, BVH_Vec3d, double>
 {
     private readonly int myMaxCount = theMaxCount;
     private int myAcceptedCount;
@@ -140,7 +141,7 @@ internal sealed class BVH_LimitedSelector(int theMaxCount) : BVH_Traverse<double
 // Test implementations of BVH_PairTraverse
 
 /// <summary>Simple pair traverse that counts all pairs.</summary>
-internal sealed class BVH_CountAllPairs : BVH_PairTraverse<double, BVH_Vec3d, double>
+internal sealed class BVH_CountAllPairs : PairTraverse<double, BVH_Vec3d, double>
 {
     private int myAcceptedCount;
 
@@ -160,7 +161,7 @@ internal sealed class BVH_CountAllPairs : BVH_PairTraverse<double, BVH_Vec3d, do
 }
 
 /// <summary>Pair traverse that only accepts overlapping boxes.</summary>
-internal sealed class BVH_OverlapDetector : BVH_PairTraverse<double, BVH_Vec3d, double>
+internal sealed class BVH_OverlapDetector : PairTraverse<double, BVH_Vec3d, double>
 {
     private int myOverlapCount;
     private int myRejectCount;
@@ -192,7 +193,7 @@ internal static class BVH_TraverseTestTools
     /// <summary>Creates a simple triangulation for testing.</summary>
     public static Tree3d CreateSimpleTriangulationBVH(int theNumTriangles)
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         for (int i = 0; i < theNumTriangles; ++i)
         {
@@ -204,16 +205,16 @@ internal static class BVH_TraverseTestTools
         }
 
         Tree3d aBVH = new();
-        BVH_BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
+        BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
         aBuilder.Build(aTriangulation, aBVH, aTriangulation.Box());
 
         return aBVH;
     }
 
     /// <summary>Two triangulations of three triangles, at x = 0..3 and x = 100..103.</summary>
-    public static (BVH_Triangulation<double, BVH_Vec3d>, BVH_Triangulation<double, BVH_Vec3d>) CreateSeparatedTriangulations()
+    public static (Triangulation<double, BVH_Vec3d>, Triangulation<double, BVH_Vec3d>) CreateSeparatedTriangulations()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTri1 = new(), aTri2 = new();
+        Triangulation<double, BVH_Vec3d> aTri1 = new(), aTri2 = new();
 
         for (int i = 0; i < 3; ++i)
         {
@@ -391,14 +392,14 @@ public class BVH_PairTraverseTest
         Box3d aBox1 = aTri1.Box();
         Box3d aBox2 = aTri2.Box();
 
-        Assert.True(aBox1.IsValid());
-        Assert.True(aBox2.IsValid());
+        Assert.True(aBox1.IsValid);
+        Assert.True(aBox2.IsValid);
 
-        Assert.Equal(0.0, aBox1.CornerMin().x(), 0.01);
-        Assert.Equal(3.0, aBox1.CornerMax().x(), 0.01);
+        Assert.Equal(0.0, aBox1.CornerMin().X(), 0.01);
+        Assert.Equal(3.0, aBox1.CornerMax().X(), 0.01);
 
-        Assert.Equal(100.0, aBox2.CornerMin().x(), 0.01);
-        Assert.Equal(103.0, aBox2.CornerMax().x(), 0.01);
+        Assert.Equal(100.0, aBox2.CornerMin().X(), 0.01);
+        Assert.Equal(103.0, aBox2.CornerMax().X(), 0.01);
 
         Assert.True(aBox1.IsOut(aBox2));
         Assert.True(aBox2.IsOut(aBox1));
@@ -415,7 +416,7 @@ public class BVH_PairTraverseTest
         Tree3d aBVH1 = new();
         Tree3d aBVH2 = new();
 
-        BVH_BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
+        BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
         aBuilder.Build(aTri1, aBVH1, aTri1.Box());
         aBuilder.Build(aTri2, aBVH2, aTri2.Box());
 
@@ -424,10 +425,10 @@ public class BVH_PairTraverseTest
         BVH_Vec3d aMin2 = aBVH2.MinPoint(0);
         BVH_Vec3d aMax2 = aBVH2.MaxPoint(0);
 
-        Assert.Equal(0.0, aMin1.x(), 0.01);
-        Assert.Equal(3.0, aMax1.x(), 0.01);
-        Assert.Equal(100.0, aMin2.x(), 0.01);
-        Assert.Equal(103.0, aMax2.x(), 0.01);
+        Assert.Equal(0.0, aMin1.X(), 0.01);
+        Assert.Equal(3.0, aMax1.X(), 0.01);
+        Assert.Equal(100.0, aMin2.X(), 0.01);
+        Assert.Equal(103.0, aMax2.X(), 0.01);
 
         Box3d aBox1 = new(aMin1, aMax1);
         Assert.True(aBox1.IsOut(aMin2, aMax2));
@@ -436,8 +437,8 @@ public class BVH_PairTraverseTest
         BVH_Vec4i aData2 = aBVH2.NodeInfoBuffer()[0];
 
         // With 3 triangles, the root is a single leaf node
-        Assert.Equal(1, aData1.x());
-        Assert.Equal(1, aData2.x());
+        Assert.Equal(1, aData1.X());
+        Assert.Equal(1, aData2.X());
     }
 
     [Fact]
@@ -502,7 +503,7 @@ public class BVH_PairTraverseTest
         Tree3d aBVH1 = new();
         Tree3d aBVH2 = new();
 
-        BVH_BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
+        BinnedBuilder<double, BVH_Vec3d> aBuilder = new();
         aBuilder.Build(aTri1, aBVH1, aTri1.Box());
         aBuilder.Build(aTri2, aBVH2, aTri2.Box());
 

@@ -3,14 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
 /// <summary>
 /// The curve of the rolling ball's centre on an edge: a point of the edge EonF of the offset face projected on the
 /// original edge. Only the parameters, D0 (<see cref="EvalD0"/>), the type and a zero-radius circle are defined; the
-/// other members throw <see cref="Standard_NotImplemented"/>, as in OCCT (the base class's).
+/// other members throw <see cref="MethodNotImplementedException"/>, as in OCCT (the base class's).
 /// </summary>
 public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
 {
@@ -18,19 +20,19 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
     private TopoDS_Edge myEonF = new();
     private Geom_Curve? myCurv;
     private Geom_Curve? myConF;
-    private GeomAbs_CurveType myType;
-    private gp_Circ myCirc = new();
+    private CurveKind myType;
+    private Circle3D myCirc = new();
 
     public BiTgte_CurveOnEdge()
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
     public BiTgte_CurveOnEdge(in TopoDS_Edge theEonF, in TopoDS_Edge theEdge)
     {
         myEdge = theEdge;
         myEonF = theEonF;
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         Init(theEonF, theEdge);
     }
 
@@ -65,15 +67,15 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
         GeomAdaptor_Curve Curv = new(myCurv);
         GeomAdaptor_Curve ConF = new(myConF);
 
-        myType = GeomAbs_OtherCurve;
-        if (Curv.GetType() == GeomAbs_Line && ConF.GetType() == GeomAbs_Circle)
+        myType = OtherCurve;
+        if (Curv.GetType() == global::Kerf.Geometry.CurveKind.Line && ConF.GetType() == global::Kerf.Geometry.CurveKind.Circle)
         {
-            gp_Ax1 a1 = Curv.Line().Position();
-            gp_Ax1 a2 = ConF.Circle().Axis();
-            if (a1.IsCoaxial(a2, Precision.Angular(), Precision.Confusion()))
+            Axis3D a1 = Curv.Line().Position();
+            Axis3D a2 = ConF.Circle().Axis();
+            if (a1.IsCoaxial(a2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
-                myType = GeomAbs_Circle;
-                myCirc = new gp_Circ(ConF.Circle().Position(), 0.0);
+                myType = global::Kerf.Geometry.CurveKind.Circle;
+                myCirc = new Circle3D(ConF.Circle().Position(), 0.0);
             }
         }
     }
@@ -82,22 +84,22 @@ public sealed class BiTgte_CurveOnEdge : Adaptor3d_Curve
 
     public override double LastParameter() => myConF!.LastParameter();
 
-    public override gp_Pnt EvalD0(double theU)
+    public override Point3D EvalD0(double theU)
     {
         GeomAPI_ProjectPointOnCurve aProjector = new();
-        gp_Pnt aP = myConF!.Value(theU);
+        Point3D aP = myConF!.Value(theU);
         aProjector.Init(aP, myCurv!);
         return aProjector.NearestPoint();
     }
 
-    public override GeomAbs_CurveType GetType() => myType;
+    public override CurveKind GetType() => myType;
 
-    /// <exception cref="Standard_NoSuchObject">The curve isn't a circle.</exception>
-    public override gp_Circ Circle()
+    /// <exception cref="NoSuchObjectException">The curve isn't a circle.</exception>
+    public override Circle3D Circle()
     {
-        if (myType != GeomAbs_Circle)
+        if (myType != global::Kerf.Geometry.CurveKind.Circle)
         {
-            throw new Standard_NoSuchObject("BiTgte_CurveOnEdge::Circle");
+            throw new NoSuchObjectException("BiTgte_CurveOnEdge::Circle");
         }
 
         return myCirc;

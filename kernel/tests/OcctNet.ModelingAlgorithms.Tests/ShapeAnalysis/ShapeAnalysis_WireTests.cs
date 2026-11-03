@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -14,19 +15,19 @@ public class ShapeAnalysis_WireTests
 {
     private const double Prec = 1e-7;
 
-    private static readonly gp_Pnt A = new(0, 0, 0);
-    private static readonly gp_Pnt B = new(1, 0, 0);
-    private static readonly gp_Pnt C = new(1, 1, 0);
-    private static readonly gp_Pnt D = new(0, 1, 0);
+    private static readonly Point3D A = new(0, 0, 0);
+    private static readonly Point3D B = new(1, 0, 0);
+    private static readonly Point3D C = new(1, 1, 0);
+    private static readonly Point3D D = new(0, 1, 0);
 
-    private static TopoDS_Edge Edge(in gp_Pnt P1, in gp_Pnt P2) => new BRepBuilderAPI_MakeEdge(P1, P2).Edge();
+    private static TopoDS_Edge Edge(in Point3D P1, in Point3D P2) => new BRepBuilderAPI_MakeEdge(P1, P2).Edge();
 
     private static TopoDS_Edge Edge(in TopoDS_Vertex V1, in TopoDS_Vertex V2) => new BRepBuilderAPI_MakeEdge(V1, V2).Edge();
 
-    private static TopoDS_Vertex Vertex(double X, double Y) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(X, Y, 0)).Vertex();
+    private static TopoDS_Vertex Vertex(double X, double Y) => new BRepBuilderAPI_MakeVertex(new Point3D(X, Y, 0)).Vertex();
 
     /// <summary>The plane z = 0 as an infinite face (UV = XY).</summary>
-    private static TopoDS_Face PlaneFace() => new BRepBuilderAPI_MakeFace(new gp_Pln()).Face();
+    private static TopoDS_Face PlaneFace() => new BRepBuilderAPI_MakeFace(new Plane3D()).Face();
 
     /// <summary>The unit square ABCD as four edges sharing their vertices, counter-clockwise.</summary>
     private static TopoDS_Edge[] SquareEdges()
@@ -46,10 +47,10 @@ public class ShapeAnalysis_WireTests
         return aWD;
     }
 
-    private static TopoDS_Wire Polygon(params gp_Pnt[] thePoints)
+    private static TopoDS_Wire Polygon(params Point3D[] thePoints)
     {
         var aMaker = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aMaker.Add(aP);
         }
@@ -154,7 +155,7 @@ public class ShapeAnalysis_WireTests
         {
             // as BRepMesh_ShapeVisitor: non-manifold mode, 2D
             var aWD = new ShapeExtend_WireData(aW, true, false);
-            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, Precision.Confusion());
+            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
             var anOrder = new ShapeAnalysis_WireOrder();
             aSAW.CheckOrder(anOrder, true, false);
             Assert.False(aSAW.LastCheckStatus(ShapeExtend_FAIL));
@@ -179,7 +180,7 @@ public class ShapeAnalysis_WireTests
         {
             TopoDS_Wire aW = ShapeAnalysis.OuterWire(aFace);
             var aWD = new ShapeExtend_WireData(aW, true, false);
-            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, Precision.Confusion());
+            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
             var anOrder = new ShapeAnalysis_WireOrder();
             Assert.True(aSAW.CheckOrder(anOrder, true, false));
             Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
@@ -217,13 +218,13 @@ public class ShapeAnalysis_WireTests
         Assert.Equal(0.0, aSAW.MinDistance3d());
 
         // a gap under the precision: DONE2
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new gp_Pnt(1, 1e-5, 0), C)), aFace, 1e-3);
+        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new Point3D(1, 1e-5, 0), C)), aFace, 1e-3);
         Assert.True(aSAW.CheckConnected(2));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE2));
         Assert.Equal(1e-5, aSAW.MinDistance3d(), 1e-15);
 
         // a gap under prec only: DONE3
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new gp_Pnt(1, 0.1, 0), C)), aFace, 1e-3);
+        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new Point3D(1, 0.1, 0), C)), aFace, 1e-3);
         Assert.True(aSAW.CheckConnected(2, 0.5));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE3));
 
@@ -240,7 +241,7 @@ public class ShapeAnalysis_WireTests
     [Fact]
     public void CheckSmall_DetectsEdgesUnderTheGivenPrecision()
     {
-        var aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(B, new gp_Pnt(5, 0, 0))), PlaneFace(), Prec);
+        var aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(B, new Point3D(5, 0, 0))), PlaneFace(), Prec);
         Assert.False(aSAW.CheckSmall(1, 0.5));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
         Assert.True(aSAW.CheckSmall(1, 2.0));
@@ -269,7 +270,7 @@ public class ShapeAnalysis_WireTests
     [Fact]
     public void Perform_OnAGoodPolygonFace_FindsNothing()
     {
-        TopoDS_Wire aW = Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(0, 3, 0));
+        TopoDS_Wire aW = Polygon(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 3, 0), new Point3D(0, 3, 0));
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aW).Face();
         var aSAW = new ShapeAnalysis_Wire(aW, aFace, Prec);
         Assert.True(aSAW.IsLoaded());
@@ -321,7 +322,7 @@ public class ShapeAnalysis_WireTests
     public void CheckSelfIntersection_FigureEight()
     {
         // (0,0) - (2,2) - (2,0) - (0,2): the first and third edges cross at (1,1)
-        TopoDS_Wire aW = Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 2, 0), new gp_Pnt(2, 0, 0), new gp_Pnt(0, 2, 0));
+        TopoDS_Wire aW = Polygon(new Point3D(0, 0, 0), new Point3D(2, 2, 0), new Point3D(2, 0, 0), new Point3D(0, 2, 0));
         var aSAW = new ShapeAnalysis_Wire(aW, PlaneFace(), Prec);
         Assert.True(aSAW.CheckSelfIntersection());
         Assert.True(aSAW.StatusSelfIntersection(ShapeExtend_DONE3));
@@ -329,11 +330,11 @@ public class ShapeAnalysis_WireTests
         Assert.False(aSAW.StatusSelfIntersection(ShapeExtend_DONE2));
 
         var aPnts2d = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
-        var aPnts3d = new NCollection_Sequence<gp_Pnt>();
+        var aPnts3d = new NCollection_Sequence<Point3D>();
         var anErrors = new NCollection_Sequence<double>();
         Assert.True(aSAW.CheckIntersectingEdges(1, 3, aPnts2d, aPnts3d, anErrors));
         Assert.Equal(1, aPnts3d.Length());
-        Assert.True(aPnts3d.Value(1).Distance(new gp_Pnt(1, 1, 0)) < 1e-9);
+        Assert.True(aPnts3d.Value(1).Distance(new Point3D(1, 1, 0)) < 1e-9);
         Assert.True(anErrors.Value(1) < 1e-9);
         // adjacent edges meet at their common vertex only
         Assert.False(aSAW.CheckIntersectingEdges(2));
@@ -348,26 +349,26 @@ public class ShapeAnalysis_WireTests
     {
         var aB = new BRep_Builder();
         TopoDS_Vertex aV0 = new(), aV = new(), aV2 = new();
-        aB.MakeVertex(ref aV0, new gp_Pnt(0, 0, 0), Prec);
-        aB.MakeVertex(ref aV, new gp_Pnt(1.1, 0, 0), 0.3);
-        aB.MakeVertex(ref aV2, new gp_Pnt(1.2, 1, 0), Prec);
+        aB.MakeVertex(ref aV0, new Point3D(0, 0, 0), Prec);
+        aB.MakeVertex(ref aV, new Point3D(1.1, 0, 0), 0.3);
+        aB.MakeVertex(ref aV2, new Point3D(1.2, 1, 0), Prec);
         TopoDS_Edge anE1 = new(), anE2 = new();
-        aB.MakeEdge(ref anE1, new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), Prec);
+        aB.MakeEdge(ref anE1, new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), Prec);
         aB.Add(anE1, aV0.Oriented(TopAbs_FORWARD));
         aB.Add(anE1, aV.Oriented(TopAbs_REVERSED));
         aB.Range(anE1, 0, 1);
-        aB.MakeEdge(ref anE2, new Geom_Line(new gp_Pnt(1.2, 0, 0), new gp_Dir(0, 1, 0)), Prec);
+        aB.MakeEdge(ref anE2, new Geom_Line(new Point3D(1.2, 0, 0), new Direction3D(0, 1, 0)), Prec);
         aB.Add(anE2, aV.Oriented(TopAbs_FORWARD));
         aB.Add(anE2, aV2.Oriented(TopAbs_REVERSED));
         aB.Range(anE2, 0, 1);
 
         var aSAW = new ShapeAnalysis_Wire(WireData(anE1, anE2), PlaneFace(), Prec);
-        gp_Pnt2d aP1 = new(), aP2 = new();
+        Point2D aP1 = new(), aP2 = new();
         Assert.True(aSAW.CheckLacking(2, 0.05, ref aP1, ref aP2));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
         Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE2));
-        Assert.True(aP1.Distance(new gp_Pnt2d(1, 0)) < 1e-12);
-        Assert.True(aP2.Distance(new gp_Pnt2d(1.2, 0)) < 1e-12);
+        Assert.True(aP1.Distance(new Point2D(1, 0)) < 1e-12);
+        Assert.True(aP2.Distance(new Point2D(1.2, 0)) < 1e-12);
         Assert.Equal(0.2, aSAW.MaxDistance2d(), 1e-12);
         // the vertex tolerance (0.3) covers it
         Assert.False(aSAW.CheckLacking(2));
@@ -428,7 +429,7 @@ public class ShapeAnalysis_WireTests
     [Fact]
     public void CheckSmallArea_Sliver()
     {
-        TopoDS_Wire aSliver = Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(5, 1e-9, 0));
+        TopoDS_Wire aSliver = Polygon(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(5, 1e-9, 0));
         var aSAW = new ShapeAnalysis_Wire(aSliver, PlaneFace(), Prec);
         Assert.True(aSAW.CheckSmallArea(aSliver));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
@@ -459,7 +460,7 @@ public class ShapeAnalysis_WireTests
         Assert.Equal(1.0, aHH);
 
         // far away: FAIL2; not an edge or a wire: FAIL1
-        Assert.False(aSAW.CheckShapeConnect(Edge(new gp_Pnt(5, 5, 0), new gp_Pnt(6, 5, 0))));
+        Assert.False(aSAW.CheckShapeConnect(Edge(new Point3D(5, 5, 0), new Point3D(6, 5, 0))));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL2));
         Assert.False(aSAW.CheckShapeConnect(Vertex(5, 5)));
         Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL1));
@@ -483,10 +484,10 @@ public class ShapeAnalysis_WireTests
         var aSAW = new ShapeAnalysis_Wire();
         Assert.False(aSAW.IsLoaded());
         Assert.Equal(0, aSAW.NbEdges());
-        Assert.Equal(Precision.Confusion(), aSAW.Precision());
-        aSAW.SetSurface(new Geom_Plane(new gp_Pln()));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSAW.Precision());
+        aSAW.SetSurface(new Geom_Plane(new Plane3D()));
         Assert.False(aSAW.Face().IsNull());
-        Assert.True(aSAW.Face().TShape()!.IsFrozen());
+        Assert.True(aSAW.Face().TShape()!.IsFrozen);
         Assert.NotNull(aSAW.Surface());
         aSAW.Load(WireData(SquareEdges()));
         Assert.True(aSAW.IsReady());
@@ -502,12 +503,12 @@ public class ShapeAnalysis_WireTests
     /// </summary>
     internal static TopoDS_Face FaceWithHoles(out TopoDS_Wire theOuter, out TopoDS_Wire theHole1, out TopoDS_Wire theHole2)
     {
-        theOuter = Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0));
-        theHole1 = TopoDS.Wire(Polygon(new gp_Pnt(2, 2, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(4, 4, 0), new gp_Pnt(2, 4, 0)).Reversed());
-        theHole2 = TopoDS.Wire(Polygon(new gp_Pnt(6, 6, 0), new gp_Pnt(8, 6, 0), new gp_Pnt(8, 8, 0), new gp_Pnt(6, 8, 0)).Reversed());
+        theOuter = Polygon(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0));
+        theHole1 = TopoDS.Wire(Polygon(new Point3D(2, 2, 0), new Point3D(4, 2, 0), new Point3D(4, 4, 0), new Point3D(2, 4, 0)).Reversed());
+        theHole2 = TopoDS.Wire(Polygon(new Point3D(6, 6, 0), new Point3D(8, 6, 0), new Point3D(8, 8, 0), new Point3D(6, 8, 0)).Reversed());
         var aB = new BRep_Builder();
         TopoDS_Face aFace = new();
-        aB.MakeFace(ref aFace, new Geom_Plane(new gp_Pln()), Prec);
+        aB.MakeFace(ref aFace, new Geom_Plane(new Plane3D()), Prec);
         aB.Add(aFace, theHole1);
         aB.Add(aFace, theOuter);
         aB.Add(aFace, theHole2);

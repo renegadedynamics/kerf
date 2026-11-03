@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// classes (general signatures ...) It can also be used to build a message in which an object is to be
 /// identified
 /// </summary>
-public abstract class MoniTool_SignText : Standard_Transient
+public abstract class MoniTool_SignText : Transient
 {
 
     /// <summary>
@@ -24,9 +26,9 @@ public abstract class MoniTool_SignText : Standard_Transient
     /// Gives a text as a signature for a transient object alone, i.e. without defined context. By default, calls
     /// Text with undefined context (Null Handle) and if empty, then returns DynamicType
     /// </summary>
-    public virtual string TextAlone(Standard_Transient? ent)
+    public virtual string TextAlone(Transient? ent)
     {
-        Standard_Transient nulctx = null; // no context
+        Transient nulctx = null; // no context
         string atext = Text(ent, nulctx);
         if (atext.Length == 0)
         {
@@ -36,7 +38,7 @@ public abstract class MoniTool_SignText : Standard_Transient
             }
             else
             {
-                atext += ent.DynamicType().Name;
+                atext += ent.DynamicTypeName();
             }
         }
         return atext;
@@ -46,5 +48,5 @@ public abstract class MoniTool_SignText : Standard_Transient
     /// Gives a text as a signature for a transient object in a context If the context is senseless, it can be
     /// given as Null Handle empty result if nothing to give (at least the DynamicType could be sent ?)
     /// </summary>
-    public abstract string Text(Standard_Transient? ent, Standard_Transient? context);
+    public abstract string Text(Transient? ent, Transient? context);
 }

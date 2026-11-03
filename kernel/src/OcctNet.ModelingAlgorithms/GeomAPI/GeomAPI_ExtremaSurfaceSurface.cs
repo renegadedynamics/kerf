@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -47,7 +49,7 @@ public class GeomAPI_ExtremaSurfaceSurface
         GeomAdaptor_Surface TheSurface1 = new(S1);
         GeomAdaptor_Surface TheSurface2 = new(S2);
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         Extrema_ExtSS theExtSS = new(TheSurface1, TheSurface2, Tol, Tol);
 
@@ -79,7 +81,7 @@ public class GeomAPI_ExtremaSurfaceSurface
         GeomAdaptor_Surface TheSurface1 = new(S1, U1min, U1max, V1min, V1max);
         GeomAdaptor_Surface TheSurface2 = new(S2, U2min, U2max, V2min, V2max);
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Extrema_ExtSS theExtSS = new(TheSurface1, TheSurface2, U1min, U1max, V1min, V1max, U2min, U2max, V2min, V2max,
                                      Tol, Tol);
 
@@ -121,7 +123,7 @@ public class GeomAPI_ExtremaSurfaceSurface
     public static explicit operator int(GeomAPI_ExtremaSurfaceSurface theExt) => theExt.NbExtrema();
 
     /// <summary>The points of the extremum of index <paramref name="Index"/>, on the first and second surface.</summary>
-    public void Points(int Index, out gp_Pnt P1, out gp_Pnt P2)
+    public void Points(int Index, out Point3D P1, out Point3D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Points");
 
@@ -154,7 +156,7 @@ public class GeomAPI_ExtremaSurfaceSurface
     public bool IsParallel() => myExtSS.IsParallel();
 
     /// <summary>The points of the nearest extremum. Throws StdFail_NotDone if there is none.</summary>
-    public void NearestPoints(out gp_Pnt P1, out gp_Pnt P2)
+    public void NearestPoints(out Point3D P1, out Point3D P2)
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_ExtremaSurfaceSurface::NearestPoints");
 

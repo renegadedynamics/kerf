@@ -1,5 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_color.py. Argument-type validation is the compiler's
 // job in C#, and Python's repr has no counterpart.
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace Build123d.Tests.Geometry;
@@ -38,7 +39,7 @@ public class ColorTests
     {
         get
         {
-            var rgba = new Quantity_ColorRGBA(1, 0, 0, 1);
+            var rgba = new ColorWithAlpha(1, 0, 0, 1);
             return new()
             {
                 { "Quantity_ColorRGBA", new Color(rgba) },
@@ -77,7 +78,7 @@ public class ColorTests
     {
         get
         {
-            var rgba = new Quantity_ColorRGBA(1, 0, 0, 0.6f);
+            var rgba = new ColorWithAlpha(1, 0, 0, 0.6f);
             return new()
             {
                 { "Quantity_ColorRGBA", new Color(rgba) },

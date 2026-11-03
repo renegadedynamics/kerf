@@ -5,11 +5,13 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilletShape;
 using static Occt.FilletSurf_StatusType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -38,12 +40,12 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         return false;
     }
 
-    private static bool IntPlanEdge(BRepAdaptor_Curve Ed, in gp_Pln P, ref double w, double tol3d)
+    private static bool IntPlanEdge(BRepAdaptor_Curve Ed, in Plane3D P, ref double w, double tol3d)
     {
         bool done = false;
         double f = Ed.FirstParameter();
         double l = Ed.LastParameter();
-        gp_Pnt Or = P.Location();
+        Point3D Or = P.Location();
         Geom_Plane Pln = new(P);
         GeomAdaptor_Surface Plan = new(Pln);
 
@@ -60,7 +62,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             for (iip = 1; iip <= nbp; iip++)
             {
                 IP = Intersection.Point(iip);
-                gp_Pnt pint = IP.Pnt();
+                Point3D pint = IP.Pnt();
                 double d = pint.Distance(Or);
                 if (d < dist)
                 {
@@ -70,12 +72,12 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                 }
             }
         }
-        gp_Pnt pdeb = Ed.Value(f);
-        gp_Pnt pfin = Ed.Value(l);
+        Point3D pdeb = Ed.Value(f);
+        Point3D pfin = Ed.Value(l);
         double u, v;
         // check if the extremities are not solution
-        ElSLib.Parameters(P, pdeb, out u, out v);
-        gp_Pnt projdeb = ElSLib.Value(u, v, P);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(P, pdeb, out u, out v);
+        Point3D projdeb = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, P);
         double dprojdeb = pdeb.Distance(projdeb);
         if (dprojdeb < tol3d)
         {
@@ -87,8 +89,8 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                 dist = d;
             }
         }
-        ElSLib.Parameters(P, pfin, out u, out v);
-        gp_Pnt projfin = ElSLib.Value(u, v, P);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(P, pfin, out u, out v);
+        Point3D projfin = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, P);
         double dprojfin = pfin.Distance(projfin);
         if (dprojfin < tol3d)
         {
@@ -106,8 +108,8 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
     private static bool ComputeEdgeParameter(ChFiDS_Spine Spine, int ind, double pelsp, ref double ped, double tol3d)
     {
         ChFiDS_ElSpine Guide = Spine.ElSpine(ind);
-        Guide.D1(pelsp, out gp_Pnt P, out gp_Vec V);
-        gp_Pln pln = new(P, new gp_Dir(V));
+        Guide.D1(pelsp, out Point3D P, out Vector3D V);
+        Plane3D pln = new(P, new Direction3D(V));
         BRepAdaptor_Curve ed = (BRepAdaptor_Curve)Spine.CurrentElementarySpine(ind).ShallowCopy(); // OCCT: a new adaptor copying it
         return IntPlanEdge(ed, pln, ref ped, tol3d);
     }
@@ -119,7 +121,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         : base(S, FShape, Ta)
     {
         SetParams(Ta, Tapp3d, Tapp2d, Tapp3d, Tapp2d, 1.0e-3);
-        SetContinuity(GeomAbs_C2, Ta);
+        SetContinuity(C2, Ta);
     }
 
     //=======================================================================
@@ -185,7 +187,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
             {
                 return 5;
             }
-            if (BRep_Tool.Continuity(cured, ff1, ff2) != GeomAbs_C0)
+            if (BRep_Tool.Continuity(cured, ff1, ff2) != C0)
             {
                 return 5;
             }
@@ -267,8 +269,8 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
 
         // ElSpine is immediately constructed
         ChFiDS_ElSpine hels = new();
-        sp.D1(sp.FirstParameter(), out gp_Pnt PFirst, out gp_Vec TFirst);
-        sp.D1(sp.LastParameter(), out gp_Pnt PLast, out gp_Vec TLast);
+        sp.D1(sp.FirstParameter(), out Point3D PFirst, out Vector3D TFirst);
+        sp.D1(sp.LastParameter(), out Point3D PLast, out Vector3D TLast);
         hels.FirstParameter(sp.FirstParameter());
         hels.SetFirstPointAndTgt(PFirst, TFirst);
         hels.LastParameter(sp.LastParameter());
@@ -311,13 +313,13 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         ChFiDS_FilSpine fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         BRepBlend_Line lin = null;
         TopAbs_Orientation Or = S1.Face().Orientation();
         if (!fsp.IsConstant())
         {
-            throw new Standard_ConstructionError("PerformSurf : no variable radiuses");
+            throw new ConstructionErrorException("PerformSurf : no variable radiuses");
         }
         // bool maybesingular; //pour scinder les Surfdata singulieres
 
@@ -369,7 +371,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
         done = CompleteData(Data, Func, lin, S1, S2, Or, false, false, false, false);
         if (!done)
         {
-            throw new Standard_Failure("PerformSurf : Failed approximation!");
+            throw new FailureException("PerformSurf : Failed approximation!");
         }
         //  maybesingular = (Func.GetMinimalDistance()<=100*tolapp3d);
         bool ok = false;
@@ -425,7 +427,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                                        ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                        bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
-        throw new Standard_DomainError("BlendFunc_CSConstRad::Section : Not implemented");
+        throw new DomainErrorException("BlendFunc_CSConstRad::Section : Not implemented");
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
@@ -436,7 +438,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                                        ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
                                        bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
     {
-        throw new Standard_DomainError("BlendFunc_CSConstRad::Section : Not implemented");
+        throw new DomainErrorException("BlendFunc_CSConstRad::Section : Not implemented");
     }
 
     internal override void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
@@ -449,7 +451,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
                                        ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1,
                                        bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
     {
-        throw new Standard_DomainError("BlendFunc_CSConstRad::Section : Not implemented");
+        throw new DomainErrorException("BlendFunc_CSConstRad::Section : Not implemented");
     }
 
     internal bool Done()
@@ -718,7 +720,7 @@ internal sealed class FilletSurf_InternalBuilder : ChFi3d_FilBuilder
 
     internal Geom_TrimmedCurve Section(int IndexSurf, int IndexSec)
     {
-        Sect(1, IndexSurf).Value(IndexSec).Get(out gp_Circ c, out double deb, out double fin);
+        Sect(1, IndexSurf).Value(IndexSec).Get(out Circle3D c, out double deb, out double fin);
         Geom_Circle Gc = new(c);
         return new Geom_TrimmedCurve(Gc, deb, fin);
     }

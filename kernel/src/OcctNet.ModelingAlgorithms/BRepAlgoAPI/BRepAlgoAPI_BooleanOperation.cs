@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BOPAlgo_Operation;
 
 namespace Occt;
@@ -77,7 +78,7 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
     public BOPAlgo_Operation Operation() => myOperation;
 
     /// <summary>Performs the Boolean operation.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // Set Not Done status by default
         NotDone();
@@ -119,7 +120,7 @@ public class BRepAlgoAPI_BooleanOperation : BRepAlgoAPI_BuilderAlgo
                 return;
         }
 
-        using var aPS = new Message_ProgressScope(theRange, aPSName, myIsIntersectionNeeded ? 100 : 30);
+        using var aPS = new ProgressScope(theRange, aPSName, myIsIntersectionNeeded ? 100 : 30);
         // If necessary perform intersection of the argument shapes
         if (myIsIntersectionNeeded)
         {

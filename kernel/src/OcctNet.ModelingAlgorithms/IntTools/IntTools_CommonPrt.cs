@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -22,8 +23,8 @@ public sealed class IntTools_CommonPrt
     private double myVertPar2;
     private readonly NCollection_Sequence<IntTools_Range> myRanges2 = new();
     private bool myAllNullFlag;
-    private gp_Pnt myPnt1;
-    private gp_Pnt myPnt2;
+    private Point3D myPnt1;
+    private Point3D myPnt2;
 
     /// <summary>An empty common part, of type <see cref="TopAbs_SHAPE"/>.</summary>
     public IntTools_CommonPrt()
@@ -154,13 +155,13 @@ public sealed class IntTools_CommonPrt
 
     internal void SetAllNullFlag(bool aFlag) => myAllNullFlag = aFlag;
 
-    internal void SetBoundingPoints(in gp_Pnt aP1, in gp_Pnt aP2)
+    internal void SetBoundingPoints(in Point3D aP1, in Point3D aP2)
     {
         myPnt1 = aP1;
         myPnt2 = aP2;
     }
 
-    public void BoundingPoints(out gp_Pnt aP1, out gp_Pnt aP2)
+    public void BoundingPoints(out Point3D aP1, out Point3D aP2)
     {
         aP1 = myPnt1;
         aP2 = myPnt2;

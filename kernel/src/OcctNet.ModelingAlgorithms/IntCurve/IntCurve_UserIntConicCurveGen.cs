@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -19,7 +21,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
     : IntRes2d_Intersection
     where ThePCurveTool : IIntCurve_CurveTool<ThePCurve>
     where TheProjPCur : IIntImpParGen_ProjectOnPCurveTool<ThePCurve>
-    where TheMyImpParTool : math_FunctionWithDerivative,
+    where TheMyImpParTool : FunctionWithDerivative,
                             IIntImpParGen_MyImpParTool<TheMyImpParTool, IntCurve_IConicTool, ThePCurve>
 {
     private double param1inf;
@@ -37,42 +39,42 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
     }
 
     /// <summary>Intersection between a line and a parametric curve.</summary>
-    public IntCurve_UserIntConicCurveGen(in gp_Lin2d Lin1, in IntRes2d_Domain D1, in ThePCurve C2,
+    public IntCurve_UserIntConicCurveGen(in Line2D Lin1, in IntRes2d_Domain D1, in ThePCurve C2,
                                          in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(Lin1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a circle and a parametric curve.</summary>
-    public IntCurve_UserIntConicCurveGen(in gp_Circ2d Circ1, in IntRes2d_Domain D1, in ThePCurve C2,
+    public IntCurve_UserIntConicCurveGen(in Circle2D Circ1, in IntRes2d_Domain D1, in ThePCurve C2,
                                          in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(Circ1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a parabola and a parametric curve.</summary>
-    public IntCurve_UserIntConicCurveGen(in gp_Parab2d Parab1, in IntRes2d_Domain D1, in ThePCurve C2,
+    public IntCurve_UserIntConicCurveGen(in Parabola2D Parab1, in IntRes2d_Domain D1, in ThePCurve C2,
                                          in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(Parab1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between an ellipse and a parametric curve.</summary>
-    public IntCurve_UserIntConicCurveGen(in gp_Elips2d Elips1, in IntRes2d_Domain D1, in ThePCurve C2,
+    public IntCurve_UserIntConicCurveGen(in Ellipse2D Elips1, in IntRes2d_Domain D1, in ThePCurve C2,
                                          in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(Elips1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between the main branch of a hyperbola and a parametric curve.</summary>
-    public IntCurve_UserIntConicCurveGen(in gp_Hypr2d Hyper1, in IntRes2d_Domain D1, in ThePCurve C2,
+    public IntCurve_UserIntConicCurveGen(in Hyperbola2D Hyper1, in IntRes2d_Domain D1, in ThePCurve C2,
                                          in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         Perform(Hyper1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a conic and a parametric curve.</summary>
-    public void Perform(in gp_Lin2d Lin1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
+    public void Perform(in Line2D Lin1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         this.ResetFields();
         int NbInterC2 = ThePCurveTool.NbIntervals(C2);
@@ -82,8 +84,8 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             double D2FirstParam = D2.FirstParameter();
             double D2LastParam  = D2.LastParameter();
             bool   Ok           = true;
-            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -Precision.Infinite();
-            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : Precision.Infinite();
+            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
             param2inf           = ThePCurveTool.FirstParameter(C2);
             param2sup           = ThePCurveTool.LastParameter(C2);
             IntRes2d_Domain DomainC2NumInter = new();
@@ -124,7 +126,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
     /// <summary>Intersection between a conic and a parametric curve.</summary>
-    public void Perform(in gp_Circ2d Circ1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
+    public void Perform(in Circle2D Circ1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         this.ResetFields();
         int NbInterC2 = ThePCurveTool.NbIntervals(C2);
@@ -135,8 +137,8 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             double D2LastParam  = D2.LastParameter();
             bool   Ok           = true;
 
-            param1inf = (D1.HasFirstPoint()) ? D1.FirstParameter() : -Precision.Infinite();
-            param1sup = (D1.HasLastPoint()) ? D1.LastParameter() : Precision.Infinite();
+            param1inf = (D1.HasFirstPoint()) ? D1.FirstParameter() : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup = (D1.HasLastPoint()) ? D1.LastParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
             param2inf = ThePCurveTool.FirstParameter(C2);
             param2sup = ThePCurveTool.LastParameter(C2);
             IntRes2d_Domain DomainC2NumInter = new();
@@ -177,7 +179,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
     /// <summary>Intersection between a conic and a parametric curve.</summary>
-    public void Perform(in gp_Parab2d Parab1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
+    public void Perform(in Parabola2D Parab1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         this.ResetFields();
         int NbInterC2 = ThePCurveTool.NbIntervals(C2);
@@ -187,8 +189,8 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             double D2FirstParam = D2.FirstParameter();
             double D2LastParam  = D2.LastParameter();
             bool   Ok           = true;
-            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -Precision.Infinite();
-            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : Precision.Infinite();
+            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
             param2inf           = ThePCurveTool.FirstParameter(C2);
             param2sup           = ThePCurveTool.LastParameter(C2);
             IntRes2d_Domain DomainC2NumInter = new();
@@ -229,7 +231,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
     /// <summary>Intersection between a conic and a parametric curve.</summary>
-    public void Perform(in gp_Elips2d Elips1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
+    public void Perform(in Ellipse2D Elips1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         this.ResetFields();
         int NbInterC2 = ThePCurveTool.NbIntervals(C2);
@@ -239,8 +241,8 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             double D2FirstParam = D2.FirstParameter();
             double D2LastParam  = D2.LastParameter();
             bool   Ok           = true;
-            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -Precision.Infinite();
-            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : Precision.Infinite();
+            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
             param2inf           = ThePCurveTool.FirstParameter(C2);
             param2sup           = ThePCurveTool.LastParameter(C2);
             IntRes2d_Domain DomainC2NumInter = new();
@@ -281,7 +283,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
     /// <summary>Intersection between a conic and a parametric curve.</summary>
-    public void Perform(in gp_Hypr2d Hyper1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
+    public void Perform(in Hyperbola2D Hyper1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol)
     {
         this.ResetFields();
         int NbInterC2 = ThePCurveTool.NbIntervals(C2);
@@ -291,8 +293,8 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             double D2FirstParam = D2.FirstParameter();
             double D2LastParam  = D2.LastParameter();
             bool   Ok           = true;
-            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -Precision.Infinite();
-            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : Precision.Infinite();
+            param1inf           = (D1.HasFirstPoint()) ? D1.FirstParameter() : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup           = (D1.HasLastPoint()) ? D1.LastParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
             param2inf           = ThePCurveTool.FirstParameter(C2);
             param2sup           = ThePCurveTool.LastParameter(C2);
             IntRes2d_Domain DomainC2NumInter = new();
@@ -338,15 +340,15 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
     //-- Sinon
     //--     Les Resultats sont Copies
     //----------------------------------------------------------------------
-    private void InternalPerform(in gp_Lin2d Lin1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
+    private void InternalPerform(in Line2D Lin1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ2 = ThePCurveTool.GetType(C2);
+        CurveKind typ2 = ThePCurveTool.GetType(C2);
 
         switch (typ2)
         {
 
-            case GeomAbs_Line: {
+            case Line: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Lin1, D1, ThePCurveTool.Line(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -360,7 +362,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Circle: {
+            case Circle: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Lin1, D1, ThePCurveTool.Circle(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -374,7 +376,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Ellipse: {
+            case Ellipse: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Lin1, D1, ThePCurveTool.Ellipse(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -388,7 +390,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Parabola: {
+            case Parabola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Lin1, D1, ThePCurveTool.Parabola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -402,7 +404,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Hyperbola: {
+            case Hyperbola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Lin1, D1, ThePCurveTool.Hyperbola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -434,15 +436,15 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
 
-    private void InternalPerform(in gp_Circ2d Circ1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
+    private void InternalPerform(in Circle2D Circ1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ2 = ThePCurveTool.GetType(C2);
+        CurveKind typ2 = ThePCurveTool.GetType(C2);
 
         switch (typ2)
         {
 
-            case GeomAbs_Line: {
+            case Line: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Line(C2), D2, Circ1, D1, TolConf, Tol);
                 if (Composite)
@@ -456,7 +458,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Circle: {
+            case Circle: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Circ1, D1, ThePCurveTool.Circle(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -470,7 +472,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Ellipse: {
+            case Ellipse: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Circ1, D1, ThePCurveTool.Ellipse(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -484,7 +486,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Parabola: {
+            case Parabola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Circ1, D1, ThePCurveTool.Parabola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -498,7 +500,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Hyperbola: {
+            case Hyperbola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Circ1, D1, ThePCurveTool.Hyperbola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -530,15 +532,15 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
 
-    private void InternalPerform(in gp_Elips2d Elips1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
+    private void InternalPerform(in Ellipse2D Elips1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ2 = ThePCurveTool.GetType(C2);
+        CurveKind typ2 = ThePCurveTool.GetType(C2);
 
         switch (typ2)
         {
 
-            case GeomAbs_Line: {
+            case Line: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Line(C2), D2, Elips1, D1, TolConf, Tol);
                 if (Composite)
@@ -552,7 +554,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Circle: {
+            case Circle: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Circle(C2), D2, Elips1, D1, TolConf, Tol);
                 if (Composite)
@@ -566,7 +568,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Ellipse: {
+            case Ellipse: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Elips1, D1, ThePCurveTool.Ellipse(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -580,7 +582,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Parabola: {
+            case Parabola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Elips1, D1, ThePCurveTool.Parabola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -594,7 +596,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Hyperbola: {
+            case Hyperbola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Elips1, D1, ThePCurveTool.Hyperbola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -626,15 +628,15 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
 
-    private void InternalPerform(in gp_Parab2d Parab1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
+    private void InternalPerform(in Parabola2D Parab1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ2 = ThePCurveTool.GetType(C2);
+        CurveKind typ2 = ThePCurveTool.GetType(C2);
 
         switch (typ2)
         {
 
-            case GeomAbs_Line: {
+            case Line: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Line(C2), D2, Parab1, D1, TolConf, Tol);
                 if (Composite)
@@ -648,7 +650,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Circle: {
+            case Circle: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Circle(C2), D2, Parab1, D1, TolConf, Tol);
                 if (Composite)
@@ -662,7 +664,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Ellipse: {
+            case Ellipse: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Ellipse(C2), D2, Parab1, D1, TolConf, Tol);
                 if (Composite)
@@ -676,7 +678,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Parabola: {
+            case Parabola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Parab1, D1, ThePCurveTool.Parabola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -690,7 +692,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Hyperbola: {
+            case Hyperbola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Parab1, D1, ThePCurveTool.Hyperbola(C2), D2, TolConf, Tol);
                 if (Composite)
@@ -722,15 +724,15 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
 
 
 
-    private void InternalPerform(in gp_Hypr2d Hyper1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
+    private void InternalPerform(in Hyperbola2D Hyper1, in IntRes2d_Domain D1, in ThePCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ2 = ThePCurveTool.GetType(C2);
+        CurveKind typ2 = ThePCurveTool.GetType(C2);
 
         switch (typ2)
         {
 
-            case GeomAbs_Line: {
+            case Line: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Line(C2), D2, Hyper1, D1, TolConf, Tol);
                 if (Composite)
@@ -744,7 +746,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Circle: {
+            case Circle: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Circle(C2), D2, Hyper1, D1, TolConf, Tol);
                 if (Composite)
@@ -758,7 +760,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Ellipse: {
+            case Ellipse: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Ellipse(C2), D2, Hyper1, D1, TolConf, Tol);
                 if (Composite)
@@ -772,7 +774,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Parabola: {
+            case Parabola: {
                 intconiconi.SetReversedParameters(true);
                 intconiconi.Perform(ThePCurveTool.Parabola(C2), D2, Hyper1, D1, TolConf, Tol);
                 if (Composite)
@@ -786,7 +788,7 @@ public class IntCurve_UserIntConicCurveGen<ThePCurve, ThePCurveTool, TheProjPCur
             }
             break;
 
-            case GeomAbs_Hyperbola: {
+            case Hyperbola: {
                 intconiconi.SetReversedParameters(false);
                 intconiconi.Perform(Hyper1, D1, ThePCurveTool.Hyperbola(C2), D2, TolConf, Tol);
                 if (Composite)

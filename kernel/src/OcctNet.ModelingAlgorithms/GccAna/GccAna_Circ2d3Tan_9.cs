@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -23,21 +24,21 @@ public sealed partial class GccAna_Circ2d3Tan
     //      3/ The three points are distinct.                                +
     //      ----------------------------------                                +
     //=========================================================================
-    public GccAna_Circ2d3Tan(in gp_Pnt2d Point1,
-        in gp_Pnt2d Point2,
-        in gp_Pnt2d Point3,
+    public GccAna_Circ2d3Tan(in Point2D Point1,
+        in Point2D Point2,
+        in Point2D Point3,
         double Tolerance)
     {
-        cirsol = new NCollection_Array1<gp_Circ2d>(1, 1);
+        cirsol = new NCollection_Array1<Circle2D>(1, 1);
         qualifier1 = new NCollection_Array1<GccEnt_Position>(1, 1);
         qualifier2 = new NCollection_Array1<GccEnt_Position>(1, 1);
         qualifier3 = new NCollection_Array1<GccEnt_Position>(1, 1);
         TheSame1 = new NCollection_Array1<int>(1, 1);
         TheSame2 = new NCollection_Array1<int>(1, 1);
         TheSame3 = new NCollection_Array1<int>(1, 1);
-        pnttg1sol = new NCollection_Array1<gp_Pnt2d>(1, 1);
-        pnttg2sol = new NCollection_Array1<gp_Pnt2d>(1, 1);
-        pnttg3sol = new NCollection_Array1<gp_Pnt2d>(1, 1);
+        pnttg1sol = new NCollection_Array1<Point2D>(1, 1);
+        pnttg2sol = new NCollection_Array1<Point2D>(1, 1);
+        pnttg3sol = new NCollection_Array1<Point2D>(1, 1);
         par1sol = new NCollection_Array1<double>(1, 1);
         par2sol = new NCollection_Array1<double>(1, 1);
         par3sol = new NCollection_Array1<double>(1, 1);
@@ -45,7 +46,7 @@ public sealed partial class GccAna_Circ2d3Tan
         pararg2 = new NCollection_Array1<double>(1, 1);
         pararg3 = new NCollection_Array1<double>(1, 1);
 
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         WellDone = false;
         NbrSol = 0;
 
@@ -65,7 +66,7 @@ public sealed partial class GccAna_Circ2d3Tan
         {
             NbrSol++;
             WellDone = true;
-            cirsol[1] = new gp_Circ2d(new gp_Ax2d(Point1, dirx), 0.0);
+            cirsol[1] = new Circle2D(new Axis2D(Point1, dirx), 0.0);
             //   ===============================================
             TheSame1[1] = 0;
             TheSame2[1] = 0;
@@ -82,29 +83,29 @@ public sealed partial class GccAna_Circ2d3Tan
         }
         else
         {
-            gp_Lin2d L1 = new();
-            gp_Lin2d L2 = new();
+            Line2D L1 = new();
+            Line2D L2 = new();
             if (dist1 >= Tolerance)
             {
-                L1 = new gp_Lin2d(new gp_Pnt2d((Point1.XY() + Point2.XY()) / 2.0),
-                              new gp_Dir2d(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                L1 = new Line2D(new Point2D((Point1.XY() + Point2.XY()) / 2.0),
+                              new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
             }
             if (dist2 >= Tolerance)
             {
-                L2 = new gp_Lin2d(new gp_Pnt2d((Point1.XY() + Point3.XY()) / 2.0),
-                              new gp_Dir2d(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
+                L2 = new Line2D(new Point2D((Point1.XY() + Point3.XY()) / 2.0),
+                              new Direction2D(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
             }
             if (dist2 <= Tolerance)
             {
-                L2 = new gp_Lin2d(Point1, new gp_Dir2d(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                L2 = new Line2D(Point1, new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
             }
             else if (dist1 <= Tolerance)
             {
-                L1 = new gp_Lin2d(Point1, new gp_Dir2d(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
+                L1 = new Line2D(Point1, new Direction2D(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
             }
             else if (dist3 <= Tolerance)
             {
-                L2 = new gp_Lin2d(Point1, new gp_Dir2d(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                L2 = new Line2D(Point1, new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
             }
             IntAna2d_AnaIntersection Intp = new(L1, L2);
             if (Intp.IsDone())
@@ -115,7 +116,7 @@ public sealed partial class GccAna_Circ2d3Tan
                     {
                         NbrSol++;
                         cirsol[NbrSol] =
-                          new gp_Circ2d(new gp_Ax2d(Intp.Point(i).Value(), dirx),
+                          new Circle2D(new Axis2D(Intp.Point(i).Value(), dirx),
                                     //         ===============================================================
                                     Point1.Distance(Intp.Point(i).Value()));
                         //                                    =======================================
@@ -126,9 +127,9 @@ public sealed partial class GccAna_Circ2d3Tan
                         pnttg1sol[NbrSol] = Point1;
                         pnttg2sol[NbrSol] = Point2;
                         pnttg3sol[NbrSol] = Point3;
-                        par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                        par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                        par3sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
+                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                        par3sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
                         pararg1[NbrSol] = 0.0;
                         pararg2[NbrSol] = 0.0;
                         pararg3[NbrSol] = 0.0;

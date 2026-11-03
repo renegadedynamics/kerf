@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -51,7 +53,7 @@ public class BRepAlgoAPI_Defeaturing : BRepAlgoAPI_Algo
     public NCollection_List<TopoDS_Shape> FacesToRemove() => myFacesToRemove;
 
     /// <summary>Performs the operation.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // Set not done state for the operation
         NotDone();

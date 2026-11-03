@@ -200,7 +200,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
             {
                 // a trimmed curve of it
                 double aF = aPort.FirstParameter(), aL = aPort.LastParameter();
-                if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL) || aPort.IsPeriodic())
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPort.IsPeriodic())
                 {
                     aF = anOracle.Real(-7, 7);
                     aL = aF + anOracle.Real(0.5, 6);

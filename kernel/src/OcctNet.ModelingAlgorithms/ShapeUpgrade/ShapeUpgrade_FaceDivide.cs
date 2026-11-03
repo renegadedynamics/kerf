@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -103,12 +104,12 @@ public class ShapeUpgrade_FaceDivide : ShapeUpgrade_Tool
         }
         TopoDS_Face face = TopoDS.Face(myResult);
 
-        Geom_Surface surf = BRep_Tool.Surface(face, out TopLoc_Location L)!;
+        Geom_Surface surf = BRep_Tool.Surface(face, out Placement L)!;
 
         //  BRepTools::UVBounds(myFace,Uf,Ul,Vf,Vl);
         ShapeAnalysis.GetFaceUVBounds(face, out double Uf, out double Ul, out double Vf, out double Vl);
-        if (Occt.Precision.IsInfinite(Uf) || Occt.Precision.IsInfinite(Ul) || Occt.Precision.IsInfinite(Vf)
-            || Occt.Precision.IsInfinite(Vl))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(Uf) || Kerf.Engine.Foundation.Precision.IsInfinite(Ul) || Kerf.Engine.Foundation.Precision.IsInfinite(Vf)
+            || Kerf.Engine.Foundation.Precision.IsInfinite(Vl))
         {
             return false;
         }

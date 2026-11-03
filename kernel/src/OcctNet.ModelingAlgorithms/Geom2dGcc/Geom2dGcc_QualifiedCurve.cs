@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -97,6 +98,6 @@ public readonly struct Geom2dGcc_QualifiedCurve : IEquatable<Geom2dGcc_Qualified
         => "Geom2dGcc_QualifiedCurve(" + (TheQualified is null
                                        ? "null"
                                        : TheQualified.GetType().ToString() + " "
-                                         + gp.Format("range", TheQualified.FirstParameter(), TheQualified.LastParameter()))
+                                         + Constants.Format("range", TheQualified.FirstParameter(), TheQualified.LastParameter()))
            + ", " + GccEnt.PositionToString(TheQualifier) + ")";
 }

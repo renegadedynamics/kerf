@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -27,7 +29,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     private const string OpenPolyline = "1 W 0 3 0 0 L 10 0 L 10 10 -";
 
     private static (BRepMAT2d_Explorer, BRepMAT2d_BisectingLocus, TopoDS_Face) Compute(string theFace,
-        MAT_Side theSide = MAT_Left, GeomAbs_JoinType theJoin = GeomAbs_Arc, bool theOpen = false)
+        MAT_Side theSide = MAT_Left, JoinKind theJoin = Arc, bool theOpen = false)
     {
         TopoDS_Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
         BRepMAT2d_Explorer anExplo = new(aFace);
@@ -95,7 +97,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
             MAT_Node aN = aG.Node(i);
             Assert.False(aN.Infinite());
             Assert.Equal(aN.PendingNode(), aN.OnBasicElt());
-            gp_Pnt2d aP = aLocus.GeomElt(aN);
+            Point2D aP = aLocus.GeomElt(aN);
             NCollection_Sequence<MAT_BasicElt> aNear = new();
             aN.NearElts(aNear);
             foreach (MAT_BasicElt aBE in aNear)
@@ -105,7 +107,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         }
     }
 
-    private static double DistanceTo(Geom2d_Geometry theElt, gp_Pnt2d theP)
+    private static double DistanceTo(Geom2d_Geometry theElt, Point2D theP)
     {
         if (theElt is Geom2d_CartesianPoint aPnt)
         {
@@ -130,8 +132,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         int aNbCentre = 0;
         for (int i = 1; i <= aG.NumberOfNodes(); i++)
         {
-            gp_Pnt2d aP = aLocus.GeomElt(aG.Node(i));
-            if (aP.Distance(new gp_Pnt2d(5, 5)) < 1.0e-9)
+            Point2D aP = aLocus.GeomElt(aG.Node(i));
+            if (aP.Distance(new Point2D(5, 5)) < 1.0e-9)
             {
                 aNbCentre++;
                 Assert.Equal(5.0, aG.Node(i).Distance(), 1.0e-9);
@@ -145,7 +147,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         {
             Bisector_Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aReverse);
             Assert.IsType<Bisector_BisecAna>(aB.Value().ChangeBasisCurve());
-            gp_Pnt2d aStart = aB.Value().Value(aReverse ? aB.Value().LastParameter() : aB.Value().FirstParameter());
+            Point2D aStart = aB.Value().Value(aReverse ? aB.Value().LastParameter() : aB.Value().FirstParameter());
             Assert.Equal(0.0, aStart.Distance(aLocus.GeomElt(aG.Arc(i).FirstNode())), 1.0e-9);
         }
     }
@@ -237,14 +239,14 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         // An explorer that read nothing has a null shape: OCCT dereferences its null TShape, the port throws
         // Standard_NullObject (TopoDS_Shape.ShapeType).
         BRepMAT2d_Explorer anExplo = new();
-        Assert.Throws<Standard_NullObject>(() => new BRepMAT2d_LinkTopoBilo(anExplo, new BRepMAT2d_BisectingLocus()));
+        Assert.Throws<NullObjectException>(() => new BRepMAT2d_LinkTopoBilo(anExplo, new BRepMAT2d_BisectingLocus()));
     }
 
     [Fact]
     public void FrozenFace_IsNotWritten_AndGivesTheSameLocus()
     {
         TopoDS_Face aFace = MatRecordings.Face("M L 0 0 " + Stadium);
-        Assert.True(aFace.TShape()!.IsFrozen());
+        Assert.True(aFace.TShape()!.IsFrozen);
         string aBefore = Brep(aFace);
         List<string> aFirst = MatRecordings.Run("M L 0 0 " + Stadium);
         BRepMAT2d_Explorer anExplo = new(aFace);
@@ -274,8 +276,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         BRepMAT2d_Explorer anExplo = new(aFace);
         BRepMAT2d_BisectingLocus aLocus = new();
         Exception anE = Assert.ThrowsAny<Exception>(() => aLocus.Compute(anExplo));
-        theOutput.WriteLine(anE.GetType().Name + ": " + anE.Message);
+        theOutput.WriteLine(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + ": " + anE.Message);
         theOutput.WriteLine(anE.StackTrace);
-        Assert.IsNotAssignableFrom<Standard_Failure>(anE);
+        Assert.IsNotAssignableFrom<FailureException>(anE);
     }
 }

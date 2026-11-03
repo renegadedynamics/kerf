@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_EigenValuesSearcherTest
@@ -9,7 +11,7 @@ public class math_EigenValuesSearcherTest
     // Helper function to create a tridiagonal matrix from arrays
     private static void createTridiagonalMatrix(NCollection_Array1<double> theDiagonal,
                                  NCollection_Array1<double> theSubdiagonal,
-                                 math_Matrix theMatrix)
+                                 Matrix theMatrix)
     {
         int aN = theDiagonal.Length();
         theMatrix.Init(0.0);
@@ -29,7 +31,7 @@ public class math_EigenValuesSearcherTest
     }
 
     // Helper function to verify eigenvalue-eigenvector relationship: A*v = lambda*v
-    private static bool verifyEigenPair(math_Matrix theMatrix,
+    private static bool verifyEigenPair(Matrix theMatrix,
                          double theEigenValue,
                          math_Vector theEigenVector,
                          double theTolerance = 1e-12)
@@ -100,10 +102,10 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(1, 0.5);
         aSubdiagonal.SetValue(2, 1.5);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
         // Should not be done due to dimension mismatch
-        Assert.False(searcher.IsDone());
+        Assert.False(searcher.IsDone);
     }
 
     // Test 1x1 matrix (trivial case)
@@ -116,15 +118,15 @@ public class math_EigenValuesSearcherTest
         aDiagonal.SetValue(1, 5.0);
         aSubdiagonal.SetValue(1, 0.0); // Not used for 1x1 matrix
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(1, searcher.Dimension());
-        Assert.Equal(5.0, searcher.EigenValue(1), Precision.Confusion());
+        Assert.Equal(5.0, searcher.EigenValue(1), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         math_Vector eigenvec = searcher.EigenVector(1);
         Assert.Equal(1, eigenvec.Length());
-        Assert.Equal(1.0, eigenvec[1], Precision.Confusion());
+        Assert.Equal(1.0, eigenvec[1], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test 2x2 symmetric tridiagonal matrix
@@ -141,9 +143,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(1, 0.0); // Not used
         aSubdiagonal.SetValue(2, 1.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(2, searcher.Dimension());
 
         // Verify eigenvalues are approximately 0.382 and 4.618
@@ -157,7 +159,7 @@ public class math_EigenValuesSearcherTest
         Assert.Equal(lambda2, eigenvals[1], 1e-10);
 
         // Create original matrix for verification
-        math_Matrix originalMatrix = new(1, 2, 1, 2);
+        Matrix originalMatrix = new(1, 2, 1, 2);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify eigenvalue-eigenvector relationships
@@ -193,13 +195,13 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1.0);
         aSubdiagonal.SetValue(3, 1.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(3, searcher.Dimension());
 
         // Create original matrix for verification
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify all eigenvalue-eigenvector pairs
@@ -242,9 +244,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 0.0);
         aSubdiagonal.SetValue(4, 0.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(4, searcher.Dimension());
 
         // For a diagonal matrix, eigenvalues should be the diagonal elements
@@ -256,10 +258,10 @@ public class math_EigenValuesSearcherTest
 
         eigenvals.Sort();
 
-        Assert.Equal(1.0, eigenvals[0], Precision.Confusion());
-        Assert.Equal(2.0, eigenvals[1], Precision.Confusion());
-        Assert.Equal(3.0, eigenvals[2], Precision.Confusion());
-        Assert.Equal(4.0, eigenvals[3], Precision.Confusion());
+        Assert.Equal(1.0, eigenvals[0], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, eigenvals[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, eigenvals[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, eigenvals[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test identity matrix
@@ -278,15 +280,15 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 0.0);
         aSubdiagonal.SetValue(3, 0.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(3, searcher.Dimension());
 
         // All eigenvalues should be 1.0
         for (int i = 1; i <= 3; i++)
         {
-            Assert.Equal(1.0, searcher.EigenValue(i), Precision.Confusion());
+            Assert.Equal(1.0, searcher.EigenValue(i), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -304,9 +306,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(1, 0.0);
         aSubdiagonal.SetValue(2, 2.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Eigenvalues should be -3 and 1
         List<double> eigenvals = [searcher.EigenValue(1), searcher.EigenValue(2)];
@@ -316,7 +318,7 @@ public class math_EigenValuesSearcherTest
         Assert.Equal(1.0, eigenvals[1], 1e-10);
 
         // Create original matrix for verification
-        math_Matrix originalMatrix = new(1, 2, 1, 2);
+        Matrix originalMatrix = new(1, 2, 1, 2);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 2; i++)
@@ -346,13 +348,13 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, -1.0);
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(5, searcher.Dimension());
 
         // Create original matrix for verification
-        math_Matrix originalMatrix = new(1, 5, 1, 5);
+        Matrix originalMatrix = new(1, 5, 1, 5);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify all eigenvalue-eigenvector pairs
@@ -389,9 +391,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1e-14);
         aSubdiagonal.SetValue(3, 1e-14);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should converge to approximately diagonal values
         List<double> eigenvals = [];
@@ -425,9 +427,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1.0);
         aSubdiagonal.SetValue(3, 1.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
         Assert.Equal(3, searcher.Dimension());
 
         // Eigenvalues should be -Math.Sqrt(2), 0, Math.Sqrt(2)
@@ -459,12 +461,12 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1e3);
         aSubdiagonal.SetValue(3, 2e3);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Create original matrix for verification
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 3; i++)
@@ -495,12 +497,12 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, -0.5);
         aSubdiagonal.SetValue(4, 0.5);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Verify eigenvalue-eigenvector relationships
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 4; i++)
@@ -530,14 +532,14 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 0.0);
         aSubdiagonal.SetValue(4, 0.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // All eigenvalues should be 2.0
         for (int i = 1; i <= 4; i++)
         {
-            Assert.Equal(2.0, searcher.EigenValue(i), Precision.Confusion());
+            Assert.Equal(2.0, searcher.EigenValue(i), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -556,11 +558,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1e-11);
         aSubdiagonal.SetValue(3, 2e-11);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 3; i++)
@@ -592,11 +594,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(4, 1.0);
         aSubdiagonal.SetValue(5, -2.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 5, 1, 5);
+        Matrix originalMatrix = new(1, 5, 1, 5);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify all eigenvalue-eigenvector pairs
@@ -641,11 +643,11 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, 1.0);
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, n, 1, n);
+        Matrix originalMatrix = new(1, n, 1, n);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= n; i++)
@@ -675,11 +677,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 0.8);
         aSubdiagonal.SetValue(4, -0.6);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         List<double> eigenvals = [];
@@ -723,11 +725,11 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, val * Math.Sqrt((double)(i)));
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, n, 1, n);
+        Matrix originalMatrix = new(1, n, 1, n);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify all eigenvalue-eigenvector pairs
@@ -769,11 +771,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 1.0 / 4.0);
         aSubdiagonal.SetValue(4, 1.0 / 5.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 4; i++)
@@ -801,9 +803,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1e-10);
         aSubdiagonal.SetValue(3, 1e-10);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should still find distinct eigenvalues despite near-degeneracy
         List<double> eigenvals = [];
@@ -819,7 +821,7 @@ public class math_EigenValuesSearcherTest
         Assert.Equal(1.0 + 1e-8, eigenvals[1], 1e-7);
         Assert.Equal(1.0 + 2e-8, eigenvals[2], 1e-7);
 
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 3; i++)
@@ -850,12 +852,12 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 2e-15); // Should trigger deflation
         aSubdiagonal.SetValue(4, 3e-15); // Should trigger deflation
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should converge quickly due to deflation
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 4; i++)
@@ -900,12 +902,12 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(4, 2.0);
         aSubdiagonal.SetValue(5, 0.0); // Exact zero - should cause deflation
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should handle block structure correctly
-        math_Matrix originalMatrix = new(1, 5, 1, 5);
+        Matrix originalMatrix = new(1, 5, 1, 5);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 5; i++)
@@ -936,12 +938,12 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, 0.99); // Large off-diagonal elements
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should still converge within maximum iterations
-        math_Matrix originalMatrix = new(1, 6, 1, 6);
+        Matrix originalMatrix = new(1, 6, 1, 6);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 6; i++)
@@ -969,9 +971,9 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1e-75);
         aSubdiagonal.SetValue(3, 1e75);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Should handle extreme values without overflow/underflow
         for (int i = 1; i <= 3; i++)
@@ -1005,11 +1007,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(2, 1.0);
         aSubdiagonal.SetValue(3, 0.0000001); // Very small
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 3; i++)
@@ -1039,11 +1041,11 @@ public class math_EigenValuesSearcherTest
         aSubdiagonal.SetValue(3, 1e-16);
         aSubdiagonal.SetValue(4, 0.0);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 4; i++)
@@ -1075,12 +1077,12 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, value);
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
         // Algorithm should still work correctly
-        math_Matrix originalMatrix = new(1, 5, 1, 5);
+        Matrix originalMatrix = new(1, 5, 1, 5);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 5; i++)
@@ -1110,11 +1112,11 @@ public class math_EigenValuesSearcherTest
             aSubdiagonal.SetValue(i, (double)(i - 1) * 0.1);
         }
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
 
-        Assert.True(searcher.IsDone());
+        Assert.True(searcher.IsDone);
 
-        math_Matrix originalMatrix = new(1, 6, 1, 6);
+        Matrix originalMatrix = new(1, 6, 1, 6);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         // Verify all pairs and orthogonality
@@ -1170,11 +1172,11 @@ public class math_EigenValuesSearcherTest
         // This should be true in floating-point arithmetic due to precision limits
         Assert.Equal(diagSum, testCondition);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
-        Assert.True(searcher.IsDone());
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        Assert.True(searcher.IsDone);
 
         // Should converge efficiently due to deflation
-        math_Matrix originalMatrix = new(1, 3, 1, 3);
+        Matrix originalMatrix = new(1, 3, 1, 3);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 3; i++)
@@ -1216,11 +1218,11 @@ public class math_EigenValuesSearcherTest
         double sum3 = Math.Abs(aDiagonal[3]) + Math.Abs(aDiagonal[4]);
         aSubdiagonal.SetValue(4, sum3 * eps * 0.1);
 
-        math_EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
-        Assert.True(searcher.IsDone());
+        EigenValuesSearcher searcher = new(aDiagonal, aSubdiagonal);
+        Assert.True(searcher.IsDone);
 
         // Verify that algorithm handles the mixed scales correctly
-        math_Matrix originalMatrix = new(1, 4, 1, 4);
+        Matrix originalMatrix = new(1, 4, 1, 4);
         createTridiagonalMatrix(aDiagonal, aSubdiagonal, originalMatrix);
 
         for (int i = 1; i <= 4; i++)

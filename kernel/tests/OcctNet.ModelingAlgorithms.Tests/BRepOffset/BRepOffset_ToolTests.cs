@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -48,7 +50,7 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EdgeVertices_FollowTheOrientation()
     {
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         BRepOffset_Tool.EdgeVertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
         Assert.Equal(0.0, BRep_Tool.Pnt(V1).X(), 1e-12);
         Assert.Equal(1.0, BRep_Tool.Pnt(V2).X(), 1e-12);
@@ -90,7 +92,7 @@ public class BRepOffset_ToolTests
     [Fact]
     public void Gabarit_IsTheLargestSideOfTheBox()
     {
-        Geom_TrimmedCurve aC = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 2, 0)), 0.0, Math.Sqrt(5.0));
+        Geom_TrimmedCurve aC = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 2, 0)), 0.0, Math.Sqrt(5.0));
         Assert.Equal(2.0, BRepOffset_Tool.Gabarit(aC), 1e-6);
     }
 
@@ -208,8 +210,8 @@ public class BRepOffset_ToolTests
     public void EnLargeFace_SurfaceOfRevolutionMovesThePCurves()
     {
         // A skew segment revolved about OZ: a surface of revolution, which EnlargeGeometry extends in V.
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new gp_Pnt(5, 0, 0), new gp_Pnt(5, 3, 10)).Edge();
-        TopoDS_Shape aRevol = BRepTools.ExactCopyForWrite(new BRepPrimAPI_MakeRevol(E, gp.OZ()).Shape(), out _);
+        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
+        TopoDS_Shape aRevol = BRepTools.ExactCopyForWrite(new BRepPrimAPI_MakeRevol(E, Constants.OZ()).Shape(), out _);
         TopoDS_Face F = TopoDS.Face(new TopExp_Explorer(aRevol, TopAbs_FACE).Current());
         Assert.IsType<Geom_SurfaceOfRevolution>(BRep_Tool.Surface(F));
         BRepTools.UVBounds(F, out _, out _, out double FV1, out double FV2);
@@ -230,8 +232,8 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EnLargeFace_LeavesAFrozenFaceAlone()
     {
-        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new gp_Pnt(5, 0, 0), new gp_Pnt(5, 3, 10)).Edge();
-        TopoDS_Shape aRevol = new BRepPrimAPI_MakeRevol(E, gp.OZ()).Shape();
+        TopoDS_Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
+        TopoDS_Shape aRevol = new BRepPrimAPI_MakeRevol(E, Constants.OZ()).Shape();
         TopoDS_Face F = TopoDS.Face(new TopExp_Explorer(aRevol, TopAbs_FACE).Current());
         Geom_Surface? aS = BRep_Tool.Surface(F);
         TopoDS_Face NF = new();
@@ -243,8 +245,8 @@ public class BRepOffset_ToolTests
     [Fact]
     public void Inter3D_InfinitePlanes()
     {
-        TopoDS_Face F1 = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))).InternalFace();
-        TopoDS_Face F2 = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0))).InternalFace();
+        TopoDS_Face F1 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).InternalFace();
+        TopoDS_Face F2 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))).InternalFace();
         NCollection_List<TopoDS_Shape> L1 = new(), L2 = new();
         BRepOffset_Tool.Inter3D(F1, F2, L1, L2, TopAbs_IN, new TopoDS_Edge(), new TopoDS_Face(), new TopoDS_Face());
         Assert.Equal(1, L1.Extent());
@@ -252,7 +254,7 @@ public class BRepOffset_ToolTests
         TopoDS_Edge E = TopoDS.Edge(L1.First());
         Assert.True(E.IsSame(L2.First()));
         BRepAdaptor_Curve aC = new(E);
-        gp_Pnt aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
+        Point3D aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
         Assert.Equal(0.0, aP.X(), 1e-7);
         Assert.Equal(0.0, aP.Z(), 1e-7);
         Assert.NotNull(BRep_Tool.CurveOnSurface(E, F1, out _, out _));
@@ -263,8 +265,8 @@ public class BRepOffset_ToolTests
     public void Inter3D_CrossingFinitePlanes()
     {
         // Finite planar faces: the pave filler's section.
-        TopoDS_Face F1 = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), -5, 5, -5, 5).InternalFace();
-        TopoDS_Face F2 = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), -5, 5, -5, 5).InternalFace();
+        TopoDS_Face F1 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -5, 5, -5, 5).InternalFace();
+        TopoDS_Face F2 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -5, 5, -5, 5).InternalFace();
         NCollection_List<TopoDS_Shape> L1 = new(), L2 = new();
         BRepOffset_Tool.Inter3D(F1, F2, L1, L2, TopAbs_IN, new TopoDS_Edge(), new TopoDS_Face(), new TopoDS_Face());
         Assert.False(L1.IsEmpty());
@@ -274,7 +276,7 @@ public class BRepOffset_ToolTests
         {
             TopoDS_Edge E = TopoDS.Edge(it.Value());
             BRepAdaptor_Curve aC = new(E);
-            gp_Pnt aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
+            Point3D aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
             Assert.Equal(0.0, aP.X(), 1e-7);
             Assert.Equal(0.0, aP.Z(), 1e-7);
             Assert.NotNull(BRep_Tool.CurveOnSurface(E, F1, out _, out _));
@@ -298,7 +300,7 @@ public class BRepOffset_ToolTests
         TopExp.Vertices(E1, out _, out TopoDS_Vertex aV2);
 
         NCollection_List<TopoDS_Shape> LV = new();
-        BRepOffset_Tool.Inter2d(F, E1, E2, LV, Precision.Confusion());
+        BRepOffset_Tool.Inter2d(F, E1, E2, LV, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1, LV.Extent());
         Assert.True(BRep_Tool.Pnt(TopoDS.Vertex(LV.First())).Distance(BRep_Tool.Pnt(aV2)) < 1e-7);
     }

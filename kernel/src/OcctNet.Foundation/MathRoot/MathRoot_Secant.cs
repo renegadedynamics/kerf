@@ -2,92 +2,94 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 public static partial class MathRoot
 {
     /// <summary>Secant method from two initial points (no derivative needed).</summary>
-    public static MathUtils.ScalarResult Secant<Function>(Function theFunc, double theX0, double theX1, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunction
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Secant<Function>(Function func, double x0, double x1, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
 
-        double aX0 = theX0;
-        double aX1 = theX1;
+        double aX0 = x0;
+        double aX1 = x1;
 
         // Evaluate at initial points
-        if (!theFunc.Value(aX0, out double aF0))
+        if (!func.Value(aX0, out double f0))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Value(aX1, out double aF1))
+        if (!func.Value(aX1, out double f1))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if (MathUtils.IsFConverged(aF1, theConfig.FTolerance))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsFConverged(f1, config.FTolerance))
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX1;
-                aResult.Value = aF1;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = aX1;
+                result.Value = f1;
+                return result;
             }
 
             // Secant step
-            double aDenom = aF1 - aF0;
-            if (MathUtils.IsZero(aDenom))
+            double denom = f1 - f0;
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(denom))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aX1;
-                aResult.Value = aF1;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = aX1;
+                result.Value = f1;
+                return result;
             }
 
-            double aXNew = aX1 - aF1 * (aX1 - aX0) / aDenom;
+            double xNew = aX1 - f1 * (aX1 - aX0) / denom;
 
             // Check X convergence
-            if (MathUtils.IsXConverged(aX1, aXNew, theConfig.XTolerance))
+            if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsXConverged(aX1, xNew, config.XTolerance))
             {
-                theFunc.Value(aXNew, out double aFNew);
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aXNew;
-                aResult.Value = aFNew;
-                return aResult;
+                func.Value(xNew, out double fNew);
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = xNew;
+                result.Value = fNew;
+                return result;
             }
 
             // Update for next iteration
             aX0 = aX1;
-            aF0 = aF1;
-            aX1 = aXNew;
+            f0 = f1;
+            aX1 = xNew;
 
-            if (!theFunc.Value(aX1, out aF1))
+            if (!func.Value(aX1, out f1))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aX1;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = aX1;
+                return result;
             }
         }
 
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = aX1;
-        aResult.Value = aF1;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = aX1;
+        result.Value = f1;
+        return result;
     }
 
     /// <summary>Secant method with the second point a small perturbation of theX0.</summary>
-    public static MathUtils.ScalarResult SecantAuto<Function>(Function theFunc, double theX0, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunction
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult SecantAuto<Function>(Function func, double x0, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
         // Create second point by small perturbation
-        double aDelta = (Math.Abs(theX0) > 1.0) ? 0.01 * theX0 : 0.01;
-        return Secant(theFunc, theX0, theX0 + aDelta, theConfig);
+        double delta = (Math.Abs(x0) > 1.0) ? 0.01 * x0 : 0.01;
+        return Secant(func, x0, x0 + delta, config);
     }
 }

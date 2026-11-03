@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// An Integer through a Handle (i.e. managed as TShared)
 /// </summary>
-public class MoniTool_IntVal : Standard_Transient
+public class MoniTool_IntVal : Transient
 {
 
     public MoniTool_IntVal(int val = 0)

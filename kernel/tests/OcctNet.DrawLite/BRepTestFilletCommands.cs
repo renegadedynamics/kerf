@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.ChFi3d_FilletShape;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.DrawLite;
@@ -30,7 +31,7 @@ internal static partial class BRepTestFilletCommands
         public double ta = 1.0e-2;
         public double fl = 1.0e-3;
         public double tapp_angle = 1.0e-2;
-        public GeomAbs_Shape blend_cont = GeomAbs_C1;
+        public Continuity blend_cont = C1;
         public BRepFilletAPI_MakeFillet? Rakk;
         public BRepFilletAPI_MakeFillet? Rake;
         public string name = "";
@@ -66,13 +67,13 @@ internal static partial class BRepTestFilletCommands
             di.Append("internal continuity                 : ");
             switch (s.blend_cont)
             {
-                case GeomAbs_C0:
+                case C0:
                     di.Append("C0\n");
                     break;
-                case GeomAbs_C1:
+                case C1:
                     di.Append("C1\n");
                     break;
-                case GeomAbs_C2:
+                case C2:
                     di.Append("C2\n");
                     break;
                 default:
@@ -92,13 +93,13 @@ internal static partial class BRepTestFilletCommands
         switch (c)
         {
             case '0':
-                s.blend_cont = GeomAbs_C0;
+                s.blend_cont = C0;
                 break;
             case '2':
-                s.blend_cont = GeomAbs_C2;
+                s.blend_cont = C2;
                 break;
             default:
-                s.blend_cont = GeomAbs_C1;
+                s.blend_cont = C1;
                 break;
         }
         return 0;
@@ -306,14 +307,14 @@ internal static partial class BRepTestFilletCommands
         {
             return 1;
         }
-        NCollection_Array1<gp_Pnt2d> uandr = new(1, (narg / 2) - 1);
+        NCollection_Array1<Point2D> uandr = new(1, (narg / 2) - 1);
         TopoDS_Shape aLocalEdge = theDI.GetShape(a[1], TopAbs_EDGE);
         TopoDS_Edge E = TopoDS.Edge(aLocalEdge);
         for (int ii = 1; ii <= (narg / 2) - 1; ii++)
         {
             double Par = theDI.Atof(a[2 * ii]);
             double Rad = theDI.Atof(a[2 * ii + 1]);
-            uandr.SetValue(ii, new gp_Pnt2d(Par, Rad));
+            uandr.SetValue(ii, new Point2D(Par, Rad));
         }
         Rake.Add(uandr, E);
         return 0;

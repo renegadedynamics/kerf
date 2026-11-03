@@ -3,12 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BiTgte_ContactType;
 using static Occt.BRepOffset_Status;
 using static Occt.ChFiDS_TypeOfConcavity;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -81,7 +87,7 @@ public sealed class BiTgte_Blend
         E = new TopoDS_Edge();
         Geom2d_Curve CurC = BRep_Tool.CurveOnSurface(CurE, F, out double f, out double l)!;
         double U = BRep_Tool.Parameter(V, CurE, F);
-        gp_Pnt2d P = CurC.Value(U);
+        Point2D P = CurC.Value(U);
 
         Geom2dAPI_ProjectPointOnCurve Proj = new();
 
@@ -187,153 +193,153 @@ public sealed class BiTgte_Blend
         // try to find the particular case
         // if not found call BRepLib::BuildCurve3d
 
-        TopLoc_Location Loc = new();
-        double Tol = Precision.Confusion();
+        Placement Loc = new();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // Search only isos on analytical surfaces.
         Geom2dAdaptor_Curve C = new(Curve);
         GeomAdaptor_Surface S = new(Surf);
-        GeomAbs_CurveType CTy = C.GetType();
-        GeomAbs_SurfaceType STy = S.GetType();
+        CurveKind CTy = C.GetType();
+        SurfaceKind STy = S.GetType();
         BRep_Builder TheBuilder = new();
 
-        if (STy != GeomAbs_Plane)
+        if (STy != Plane)
         { // if plane buildcurve3d manage KPart
-            if (CTy == GeomAbs_Line)
+            if (CTy == Line)
             {
-                gp_Dir2d D = C.Line().Direction();
-                if (D.IsParallel(gp.DX2d(), Precision.Angular()))
+                Direction2D D = C.Line().Direction();
+                if (D.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso V.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        gp_Pnt2d P = C.Line().Location();
-                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) < Precision.PConfusion())
+                        Point2D P = C.Line().Location();
+                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             TheBuilder.Degenerated(Edge, true);
                         }
                         else
                         {
-                            gp_Sphere Sph = S.Sphere();
-                            gp_Ax3 Axis = Sph.Position();
-                            gp_Circ Ci = ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
-                            gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                            gp_Ax1 AxeRev = new(Axis.Location(), DRev);
+                            Sphere Sph = S.Sphere();
+                            CoordinateSystem Axis = Sph.Position();
+                            Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
+                            Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                            Axis3D AxeRev = new(Axis.Location(), DRev);
                             Ci.Rotate(AxeRev, P.X());
                             Geom_Circle Circle = new(Ci);
-                            if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                            if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 Circle.Reverse();
                             }
                             TheBuilder.UpdateEdge(Edge, Circle, Loc, Tol);
                         }
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        gp_Cylinder Cyl = S.Cylinder();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Cyl.Position();
-                        gp_Circ Ci = ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new(Axis.Location(), DRev);
+                        Cylinder Cyl = S.Cylinder();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Cyl.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Circle, Loc, Tol);
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        gp_Cone Cone = S.Cone();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Cone.Position();
-                        gp_Circ Ci = ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new(Axis.Location(), DRev);
+                        Cone Cone = S.Cone();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Cone.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Circle, Loc, Tol);
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
-                        gp_Torus Tore = S.Torus();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Tore.Position();
-                        gp_Circ Ci = ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new(Axis.Location(), DRev);
+                        Torus Tore = S.Torus();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Tore.Position();
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new(Ci);
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Circle, Loc, Tol);
                     }
                 }
-                else if (D.IsParallel(gp.DY2d(), Precision.Angular()))
+                else if (D.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso U.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        gp_Sphere Sph = S.Sphere();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Ax3 Axis = Sph.Position();
+                        Sphere Sph = S.Sphere();
+                        Point2D P = C.Line().Location();
+                        CoordinateSystem Axis = Sph.Position();
                         // calculate iso 0.
-                        gp_Circ Ci = ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
+                        Circle3D Ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
 
                         // set to sameparameter (rotation of the circle - offset from Y)
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.Direction());
-                        gp_Ax1 AxeRev = new(Axis.Location(), DRev);
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.Direction());
+                        Axis3D AxeRev = new(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.Y());
 
                         // transformation by iso U ( = P.X())
                         DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        AxeRev = new Axis3D(Axis.Location(), DRev);
                         Ci.Rotate(AxeRev, P.X());
                         Geom_Circle Circle = new(Ci);
 
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Circle.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Circle, Loc, Tol);
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        gp_Cylinder Cyl = S.Cylinder();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Lin L = ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
-                        gp_Vec Tr = new(L.Direction());
+                        Cylinder Cyl = S.Cylinder();
+                        Point2D P = C.Line().Location();
+                        Line3D L = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
+                        Vector3D Tr = new(L.Direction());
                         Tr.Multiply(P.Y());
                         L.Translate(Tr);
                         Geom_Line Line = new(L);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Line.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Line, Loc, Tol);
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        gp_Cone Cone = S.Cone();
-                        gp_Pnt2d P = C.Line().Location();
-                        gp_Lin L = ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
-                        gp_Vec Tr = new(L.Direction());
+                        Cone Cone = S.Cone();
+                        Point2D P = C.Line().Location();
+                        Line3D L = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
+                        Vector3D Tr = new(L.Direction());
                         Tr.Multiply(P.Y());
                         L.Translate(Tr);
                         Geom_Line Line = new(L);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Line.Reverse();
                         }
                         TheBuilder.UpdateEdge(Edge, Line, Loc, Tol);
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
                     }
                 }
@@ -364,13 +370,13 @@ public sealed class BiTgte_Blend
 
         public override double LastParameter() => myCurve.LastParameter();
 
-        public override bool Value(double theT, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theT, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt[1] = myCurve.Value(theT);
             return true;
         }
 
-        public override bool D1(double theT, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theT, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
             return false;
         }
@@ -380,7 +386,7 @@ public sealed class BiTgte_Blend
     {
         Geom_Curve C;
 
-        if (HC.GetType() == GeomAbs_Circle)
+        if (HC.GetType() == Circle)
         {
             C = new Geom_Circle(HC.Circle());
             C = new Geom_TrimmedCurve(C, HC.FirstParameter(), HC.LastParameter());
@@ -390,17 +396,17 @@ public sealed class BiTgte_Blend
             MakeCurve_Function F = new(HC);
             int Deg1, Deg2;
             Deg1 = Deg2 = 8;
-            double Tol = Precision.Approximation();
+            double Tol = global::Kerf.Engine.Foundation.Precision.Approximation();
             Approx_FitAndDivide Fit = new(F, Deg1, Deg2, Tol, Tol, true);
             int i;
             int NbCurves = Fit.NbMultiCurves();
             // it is attempted to make the curve at least C1
-            Convert_CompBezierCurvesToBSplineCurve Conv = new();
+            CompBezierCurvesToBSplineCurve Conv = new();
 
             for (i = 1; i <= NbCurves; i++)
             {
                 AppParCurves_MultiCurve MC = Fit.Value(i); // Load the Ith Curve
-                NCollection_Array1<gp_Pnt> Poles = new(1, MC.Degree() + 1); // Return poles
+                NCollection_Array1<Point3D> Poles = new(1, MC.Degree() + 1); // Return poles
                 MC.Curve(1, Poles);
 
                 Conv.AddCurve(Poles);
@@ -408,16 +414,16 @@ public sealed class BiTgte_Blend
 
             Conv.Perform();
 
-            int NbPoles = Conv.NbPoles();
-            int NbKnots = Conv.NbKnots();
-            NCollection_Array1<gp_Pnt> NewPoles = new(1, NbPoles);
+            int NbPoles = Conv.PoleCount;
+            int NbKnots = Conv.KnotCount;
+            NCollection_Array1<Point3D> NewPoles = new(1, NbPoles);
             NCollection_Array1<double> NewKnots = new(1, NbKnots);
             NCollection_Array1<int> NewMults = new(1, NbKnots);
 
             Conv.KnotsAndMults(NewKnots, NewMults);
             Conv.Poles(NewPoles);
 
-            BSplCLib.Reparametrize(HC.FirstParameter(), HC.LastParameter(), NewKnots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(HC.FirstParameter(), HC.LastParameter(), NewKnots);
 
             C = new Geom_BSplineCurve(NewPoles, NewKnots, NewMults, Conv.Degree());
         }
@@ -440,7 +446,7 @@ public sealed class BiTgte_Blend
 
     //=================================================================================================
 
-    private static TopoDS_Vertex FindVertex(in gp_Pnt P, NCollection_Map<TopoDS_Shape> Map, double Tol)
+    private static TopoDS_Vertex FindVertex(in Point3D P, NCollection_Map<TopoDS_Shape> Map, double Tol)
     {
         BRep_Builder B = new();
         // Find in <Map> a vertex which represent the point <P>.
@@ -461,7 +467,7 @@ public sealed class BiTgte_Blend
                     // if OK la Tolerance du Vertex
                     Tol2 = BRep_Tool.Tolerance(VV[i]);
                     Tol2 *= Tol2;
-                    gp_Pnt P1 = BRep_Tool.Pnt(VV[i]);
+                    Point3D P1 = BRep_Tool.Pnt(VV[i]);
                     Dist = P.SquareDistance(P1);
                     if (Dist <= Tol2)
                     {
@@ -489,7 +495,7 @@ public sealed class BiTgte_Blend
     private static TopoDS_Edge MakeDegeneratedEdge(Geom_Curve CC, in TopoDS_Vertex VfOnE)
     {
         BRep_Builder B = new();
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // kill trimmed curves
         Geom_Curve C = CC;
         Geom_TrimmedCurve? CT = C as Geom_TrimmedCurve;
@@ -502,7 +508,7 @@ public sealed class BiTgte_Blend
         TopoDS_Vertex V1 = new(), V2;
         if (VfOnE.IsNull())
         {
-            gp_Pnt P = C.Value(C.FirstParameter());
+            Point3D P = C.Value(C.FirstParameter());
             B.MakeVertex(ref V1, P, Tol);
             V2 = V1;
         }
@@ -581,7 +587,7 @@ public sealed class BiTgte_Blend
             {
                 // Find the sharing of vertices in case of tangent consecutive 3 edges
                 // the second of which is the edge that degenerates the tube.
-                Geom_Curve CET = BRep_Tool.Curve(ET, out TopLoc_Location CLoc, out double ff, out double ll)!;
+                Geom_Curve CET = BRep_Tool.Curve(ET, out Placement CLoc, out double ff, out double ll)!;
                 if (CET.GetType() == typeof(Geom_TrimmedCurve))
                 {
                     CET = ((Geom_TrimmedCurve)CET).BasisCurve();
@@ -726,7 +732,7 @@ public sealed class BiTgte_Blend
     /// <summary>
     /// Computes the blending surfaces, and the resulting shape if <paramref name="BuildShape"/>.
     /// </summary>
-    /// <exception cref="Standard_Failure">The sewing of the shape failed.</exception>
+    /// <exception cref="FailureException">The sewing of the shape failed.</exception>
     public void Perform(bool BuildShape = true)
     {
         myBuildShape = BuildShape;
@@ -770,7 +776,7 @@ public sealed class BiTgte_Blend
         TopoDS_Shape SewedShape = Sew.InternalSewedShape();
         if (SewedShape.IsNull())
         {
-            throw new Standard_Failure("Sewing aux fraises");
+            throw new FailureException("Sewing aux fraises");
         }
 
         // Check if the sewing modified the orientation.
@@ -857,7 +863,7 @@ public sealed class BiTgte_Blend
 
         // Finally construct curves 3d from edges to be transferred
         // since the partition is provided ( A Priori);
-        BRepLib.BuildCurves3d(myResult, Precision.Confusion());
+        BRepLib.BuildCurves3d(myResult, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // OCCT.NET: the caller's faces the blend left alone stand in the result again.
         myResult = myEntry.Finish(myResult);
@@ -927,12 +933,12 @@ public sealed class BiTgte_Blend
     //=================================================================================================
 
     /// <summary>The face generated by the center line <paramref name="CenterLine"/> (frozen).</summary>
-    /// <exception cref="Standard_DomainError">The center line generated no face.</exception>
+    /// <exception cref="DomainErrorException">The center line generated no face.</exception>
     public TopoDS_Face Face(in TopoDS_Shape CenterLine)
     {
         if (!myMapSF.IsBound(CenterLine))
         {
-            throw new Standard_DomainError("BiTgte_Blend::Face");
+            throw new DomainErrorException("BiTgte_Blend::Face");
         }
 
         TopoDS_Face aFace = myMapSF.Find(CenterLine).InternalFace();
@@ -1245,7 +1251,7 @@ public sealed class BiTgte_Blend
         }
         BRepOffset_Inter3d Inter = new(myAsDes, Side, myTol);
 
-        NCollection_DataMap<TopoDS_Shape, Bnd_Box> MapSBox = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<TopoDS_Shape, Box> MapSBox = new(TopTools_ShapeMapHasher.Instance);
         NCollection_Map<TopoDS_Shape> Done = new(TopTools_ShapeMapHasher.Instance);
 
         BRep_Builder B = new();
@@ -1394,7 +1400,7 @@ public sealed class BiTgte_Blend
                     myInitOffsetFace.SetRoot(AS);
                     myInitOffsetFace.Bind(AS, F1);
 
-                    Bnd_Box Box1 = new();
+                    Box Box1 = new();
                     BRepBndLib.Add(F1, ref Box1);
                     MapSBox.Bind(F1, Box1);
 
@@ -1490,7 +1496,7 @@ public sealed class BiTgte_Blend
                         myInitOffsetFace.SetRoot(E);
                         myInitOffsetFace.Bind(E, F1);
 
-                        Bnd_Box Box1 = new();
+                        Box Box1 = new();
                         BRepBndLib.Add(F1, ref Box1);
                         MapSBox.Bind(F1, Box1);
 
@@ -1581,7 +1587,7 @@ public sealed class BiTgte_Blend
                 }
                 NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEmptyMap =
                     new(TopTools_ShapeMapHasher.Instance);
-                BRepOffset_Inter2d.Compute(myAsDes, CurOF, myEdges, myTol, anEmptyMap, aDMVV, new Message_ProgressRange());
+                BRepOffset_Inter2d.Compute(myAsDes, CurOF, myEdges, myTol, anEmptyMap, aDMVV, new ProgressRange());
             }
         }
 
@@ -1620,7 +1626,7 @@ public sealed class BiTgte_Blend
 
             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anEmptyMap =
                 new(TopTools_ShapeMapHasher.Instance);
-            BRepOffset_Inter2d.Compute(myAsDes, CurOF, myEdges, myTol, anEmptyMap, aDMVV, new Message_ProgressRange());
+            BRepOffset_Inter2d.Compute(myAsDes, CurOF, myEdges, myTol, anEmptyMap, aDMVV, new ProgressRange());
         }
         //
         // fuse vertices on edges stored in AsDes
@@ -1630,7 +1636,7 @@ public sealed class BiTgte_Blend
         // unwinding
         // ------------
         BRepOffset_MakeLoops MakeLoops = new();
-        MakeLoops.Build(LOF, myAsDes, myImageOffset, anEmptyImage, new Message_ProgressRange());
+        MakeLoops.Build(LOF, myAsDes, myImageOffset, anEmptyImage, new ProgressRange());
 
         // ------------------------------------------------------------
         // It is possible to unwind edges at least one ancestor which of
@@ -1748,7 +1754,7 @@ public sealed class BiTgte_Blend
 
             TopoDS_Edge OE1 = new(), OE2 = new();
             TopoDS_Face OF1 = new(), OF2 = new();
-            TopLoc_Location Loc;
+            Placement Loc;
             double f1, l1, f2, l2;
 
             bool OF1isEdge = false;
@@ -1849,8 +1855,8 @@ public sealed class BiTgte_Blend
                 {
                     BiTgte_CurveOnEdge ConE = new(CurCutE, OE1);
                     Geom_Curve C = MakeCurve(ConE);
-                    gp_Pnt P1 = C.Value(C.FirstParameter());
-                    gp_Pnt P2 = C.Value(C.LastParameter());
+                    Point3D P1 = C.Value(C.FirstParameter());
+                    Point3D P2 = C.Value(C.LastParameter());
                     VfOnE1 = FindVertex(P1, MapOnV1f, myTol);
                     if (VfOnE1.IsNull())
                     {
@@ -1874,11 +1880,11 @@ public sealed class BiTgte_Blend
                 }
                 else
                 {
-                    gp_Pnt2d P2d;
+                    Point2D P2d;
                     P2d = PC1.Value(f1);
-                    gp_Pnt P1 = GS1!.Value(P2d.X(), P2d.Y());
+                    Point3D P1 = GS1!.Value(P2d.X(), P2d.Y());
                     P2d = PC1.Value(l1);
-                    gp_Pnt P2 = GS1.Value(P2d.X(), P2d.Y());
+                    Point3D P2 = GS1.Value(P2d.X(), P2d.Y());
                     VfOnE1 = FindVertex(P1, MapOnV1f, myTol);
                     VlOnE1 = FindVertex(P2, MapOnV1l, myTol);
                     BRepLib_MakeEdge MKE = new(PC1, GS1, VfOnE1, VlOnE1, f1, l1);
@@ -1899,8 +1905,8 @@ public sealed class BiTgte_Blend
                 {
                     BiTgte_CurveOnEdge ConE = new(CurCutE, OE2);
                     Geom_Curve C = MakeCurve(ConE);
-                    gp_Pnt P1 = C.Value(C.FirstParameter());
-                    gp_Pnt P2 = C.Value(C.LastParameter());
+                    Point3D P1 = C.Value(C.FirstParameter());
+                    Point3D P2 = C.Value(C.LastParameter());
                     VfOnE2 = FindVertex(P1, MapOnV1f, myTol);
                     if (VfOnE2.IsNull())
                     {
@@ -1924,11 +1930,11 @@ public sealed class BiTgte_Blend
                 }
                 else
                 {
-                    gp_Pnt2d P2d;
+                    Point2D P2d;
                     P2d = PC2.Value(f2);
-                    gp_Pnt P1 = GS2!.Value(P2d.X(), P2d.Y());
+                    Point3D P1 = GS2!.Value(P2d.X(), P2d.Y());
                     P2d = PC2.Value(l2);
-                    gp_Pnt P2 = GS2.Value(P2d.X(), P2d.Y());
+                    Point3D P2 = GS2.Value(P2d.X(), P2d.Y());
                     VfOnE2 = FindVertex(P1, MapOnV1f, myTol);
                     VlOnE2 = FindVertex(P2, MapOnV1l, myTol);
                     BRepLib_MakeEdge MKE = new(PC2, GS2, VfOnE2, VlOnE2, f2, l2);
@@ -2001,7 +2007,7 @@ public sealed class BiTgte_Blend
                 E1.Orientation(Orien1);
                 E2.Orientation(Orien2);
 
-                BRepOffset_Offset AnOffset = new(CurCutE, E1, E2, -myRadius, E1f, E1l, myNubs, myTol, GeomAbs_C2);
+                BRepOffset_Offset AnOffset = new(CurCutE, E1, E2, -myRadius, E1f, E1l, myNubs, myTol, C2);
                 myMapSF.Bind(CurCutE, AnOffset);
                 myCenters.Add(CurCutE);
                 B.Add(Co, CurCutE);
@@ -2021,11 +2027,11 @@ public sealed class BiTgte_Blend
                         TopoDS_Edge EOnF1 = TopoDS.Edge(exp.Current());
                         TopExp.Vertices(EOnF1, out V1, out V2);
 
-                        gp_Pnt P1 = BRep_Tool.Pnt(V1);
+                        Point3D P1 = BRep_Tool.Pnt(V1);
                         Projector.Init(P1, GC1!);
                         double U1 = Projector.LowerDistanceParameter();
 
-                        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+                        Point3D P2 = BRep_Tool.Pnt(V2);
                         Projector.Init(P2, GC1!);
                         double U2 = Projector.LowerDistanceParameter();
 
@@ -2052,11 +2058,11 @@ public sealed class BiTgte_Blend
                         TopoDS_Edge EOnF2 = TopoDS.Edge(exp.Current());
                         TopExp.Vertices(EOnF2, out V1, out V2);
 
-                        gp_Pnt P1 = BRep_Tool.Pnt(V1);
+                        Point3D P1 = BRep_Tool.Pnt(V1);
                         Projector.Init(P1, GC2!);
                         double U1 = Projector.LowerDistanceParameter();
 
-                        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+                        Point3D P2 = BRep_Tool.Pnt(V2);
                         Projector.Init(P2, GC2!);
                         double U2 = Projector.LowerDistanceParameter();
 
@@ -2112,7 +2118,7 @@ public sealed class BiTgte_Blend
                 }
             }
 
-            BRepOffset_Offset OFT = new(V, LOE, -myRadius, myNubs, myTol, GeomAbs_C2);
+            BRepOffset_Offset OFT = new(V, LOE, -myRadius, myNubs, myTol, C2);
             myMapSF.Bind(V, OFT);
             myCenters.Add(V);
 
@@ -2224,7 +2230,7 @@ public sealed class BiTgte_Blend
                     // DeboucFace = offset Face unwinded in "Debouc".
                     TopoDS_Face DeboucFace = TopoDS.Face(itLim.Value());
 
-                    Geom_Surface S = BRep_Tool.Surface(CurF, out TopLoc_Location L)!;
+                    Geom_Surface S = BRep_Tool.Surface(CurF, out Placement L)!;
 
                     TopoDS_Face NewF = new();
                     B.MakeFace(ref NewF);
@@ -2323,8 +2329,8 @@ public sealed class BiTgte_Blend
                                     else
                                     {
                                         B.MakeVertex(ref OV1);
-                                        gp_Pnt2d P2d = C2d!.Value(BRep_Tool.Parameter(V1, E, Face));
-                                        S.D0(P2d.X(), P2d.Y(), out gp_Pnt P);
+                                        Point2D P2d = C2d!.Value(BRep_Tool.Parameter(V1, E, Face));
+                                        S.D0(P2d.X(), P2d.Y(), out Point3D P);
                                         P.Transform(L.Transformation());
                                         B.UpdateVertex(OV1, P, BRep_Tool.Tolerance(V1));
                                         bindCreated(V1);
@@ -2338,8 +2344,8 @@ public sealed class BiTgte_Blend
                                     else
                                     {
                                         B.MakeVertex(ref OV2);
-                                        gp_Pnt2d P2d = C2d!.Value(BRep_Tool.Parameter(V2, E, Face));
-                                        S.D0(P2d.X(), P2d.Y(), out gp_Pnt P);
+                                        Point2D P2d = C2d!.Value(BRep_Tool.Parameter(V2, E, Face));
+                                        S.D0(P2d.X(), P2d.Y(), out Point3D P);
                                         P.Transform(L.Transformation());
                                         B.UpdateVertex(OV2, P, BRep_Tool.Tolerance(V2));
                                         bindCreated(V2);
@@ -2400,13 +2406,13 @@ public sealed class BiTgte_Blend
 
     private bool Intersect(in TopoDS_Shape Init,
                            in TopoDS_Face Face,
-                           NCollection_DataMap<TopoDS_Shape, Bnd_Box> MapSBox,
+                           NCollection_DataMap<TopoDS_Shape, Box> MapSBox,
                            BRepOffset_Offset OF1,
                            BRepOffset_Inter3d Inter)
     {
         bool JenRajoute = false;
 
-        Bnd_Box Box1 = MapSBox.Find(Face);
+        Box Box1 = MapSBox.Find(Face);
 
         // -----------------------------------------------
         // intersection with all already created faces.

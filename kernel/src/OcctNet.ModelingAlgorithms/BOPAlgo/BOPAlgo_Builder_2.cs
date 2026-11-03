@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Topology;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -39,7 +42,7 @@ internal sealed class BOPAlgo_PairOfShapeBoolean : BOPAlgo_ParallelAlgo, BOPTool
     //
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -54,15 +57,15 @@ internal sealed class BOPAlgo_PairOfShapeBoolean : BOPAlgo_ParallelAlgo, BOPTool
 /// <summary>Extends BOPAlgo_BuilderFace with its own progress range, for the builder's parallel loop.</summary>
 internal sealed class BOPAlgo_SplitFace : BOPAlgo_BuilderFace, BOPTools_Parallel.ISolver
 {
-    private Message_ProgressRange myRange;
+    private ProgressRange myRange;
 
     //! Sets progress range
-    public void SetProgressRange(Message_ProgressRange theRange) => myRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
 
     // New perform method, using own progress range
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myRange, null, 1);
+        using var aPS = new ProgressScope(myRange, null, 1);
         if (!aPS.More())
         {
             return;
@@ -71,7 +74,7 @@ internal sealed class BOPAlgo_SplitFace : BOPAlgo_BuilderFace, BOPTools_Parallel
     }
 
     //! Disables the range enabled method (private in OCCT; C# can't narrow an override)
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
     }
 }
@@ -113,7 +116,7 @@ internal sealed class BOPAlgo_VFI : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
     //
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -129,9 +132,9 @@ internal sealed class BOPAlgo_VFI : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
 public partial class BOPAlgo_Builder
 {
     /// <summary>Fills the images of the faces: the split faces, the same-domain faces and the internal vertices.</summary>
-    protected void FillImagesFaces(Message_ProgressRange theRange)
+    protected void FillImagesFaces(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Filling splits of faces", 10);
+        using var aPS = new ProgressScope(theRange, "Filling splits of faces", 10);
         BuildSplitFaces(aPS.Next(9));
         if (HasErrors())
         {
@@ -146,7 +149,7 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Builds the split faces of the faces having IN, ON or section pave blocks, or alone vertices.</summary>
-    protected virtual void BuildSplitFaces(Message_ProgressRange theRange)
+    protected virtual void BuildSplitFaces(ProgressRange theRange)
     {
         bool bHasFaceInfo, bIsClosed, bIsDegenerated, bToReverse;
         int i, j, k, aNbS, aNbPBIn, aNbPBOn, aNbPBSc, aNbAV, nSp;
@@ -163,7 +166,7 @@ public partial class BOPAlgo_Builder
         NCollection_List<TopoDS_Shape> aLE = new();
         // (OCCT's unused map aMDE is left out)
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         // Build temporary map of faces images to avoid rebuilding
         // of the faces without any IN or section edges
         NCollection_IndexedDataMap<int, NCollection_List<TopoDS_Shape>> aFacesIm = new();
@@ -426,7 +429,7 @@ public partial class BOPAlgo_Builder
         //
         int aNbBF = aVBF.Length();
         // Set progress range for each task to be run in parallel
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(9), "Splitting faces", aNbBF);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(9), "Splitting faces", aNbBF);
         for (int iF = 0; iF < aNbBF; iF++)
         {
             BOPAlgo_SplitFace aBF = aVBF.ChangeValue(iF);
@@ -484,7 +487,7 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Finds the same-domain faces among the faces having interfered, and makes one represent each group.</summary>
-    protected void FillSameDomainFaces(Message_ProgressRange theRange)
+    protected void FillSameDomainFaces(ProgressRange theRange)
     {
         // It is necessary to analyze all Face/Face intersections
         // and find all faces with equal sets of edges
@@ -495,7 +498,7 @@ public partial class BOPAlgo_Builder
             return;
         }
 
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
 
         // Two distinct faces of one solid cannot be Same-Domain: that would
         // imply a zero-thickness interior in a single operand.
@@ -606,12 +609,12 @@ public partial class BOPAlgo_Builder
             {
                 // At this stage, context should contain adaptor for all intersected faces,
                 // so getting a type of the underlying surface should be done at no cost.
-                if (myContext!.SurfaceAdaptor(TopoDS.Face(aF)).GetType() == GeomAbs_Plane)
+                if (myContext!.SurfaceAdaptor(TopoDS.Face(aF)).GetType() == Plane)
                 {
                     // Check bounding box of the face - it should not be open in any side
-                    Bnd_Box aBox = aSI.Box();
-                    bCheckPlanar = !(aBox.IsOpenXmin() || aBox.IsOpenXmax() || aBox.IsOpenYmin()
-                                     || aBox.IsOpenYmax() || aBox.IsOpenZmin() || aBox.IsOpenZmax());
+                    Box aBox = aSI.Box();
+                    bCheckPlanar = !(aBox.IsOpenXmin || aBox.IsOpenXmax || aBox.IsOpenYmin
+                                     || aBox.IsOpenYmax || aBox.IsOpenZmin || aBox.IsOpenZmax);
                 }
             }
 
@@ -692,7 +695,7 @@ public partial class BOPAlgo_Builder
         aPSOuter.Next();
 
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new Message_ProgressScope(aPSOuter.Next(6), "Checking SD faces", aVPSB.Length()))
+        using (var aPSParallel = new ProgressScope(aPSOuter.Next(6), "Checking SD faces", aVPSB.Length()))
         {
             for (int iPSB = 0; iPSB < aVPSB.Length(); ++iPSB)
             {
@@ -724,7 +727,7 @@ public partial class BOPAlgo_Builder
         // Make blocks of SD faces using the back and forth map
         BOPAlgo_Tools.MakeBlocks(aDMSLS, aMBlocks, TopTools_ShapeMapHasher.Instance);
 
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(3), "Filling same domain faces map", aMBlocks.Extent());
+        using var aPS = new ProgressScope(aPSOuter.Next(3), "Filling same domain faces map", aMBlocks.Extent());
         // Fill same domain faces map
         NCollection_List<NCollection_List<TopoDS_Shape>>.Iterator aItB = new(aMBlocks);
         for (; aItB.More(); aItB.Next(), aPS.Next())
@@ -821,9 +824,9 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Adds the alone vertices of the faces into their splits as internal vertices.</summary>
-    protected void FillInternalVertices(Message_ProgressRange theRange)
+    protected void FillInternalVertices(ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         // Vector of pairs of Vertex/Face for classification of the vertices
         // relatively faces, and adding them as internal into the faces
@@ -874,7 +877,7 @@ public partial class BOPAlgo_Builder
         }
 
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), "Looking for internal shapes", aVVFI.Length()))
+        using (var aPSParallel = new ProgressScope(aPSOuter.Next(), "Looking for internal shapes", aVVFI.Length()))
         {
             for (int iVFI = 0; iVFI < aVVFI.Length(); ++iVFI)
             {
@@ -939,11 +942,11 @@ public partial class BOPAlgo_Builder
     private static TopoDS_Face BuildDraftFace(in TopoDS_Face theFace,
                                              NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theImages,
                                              IntTools_Context theCtx,
-                                             Message_Report theReport)
+                                             Report theReport)
     {
         BRep_Builder aBB = new();
         // Take the information from the original face
-        Geom_Surface? aS = BRep_Tool.Surface(theFace, out TopLoc_Location aLoc);
+        Geom_Surface? aS = BRep_Tool.Surface(theFace, out Placement aLoc);
         double aTol = BRep_Tool.Tolerance(theFace);
         // Make the new face, without any wires
         TopoDS_Face aDraftFace = new();

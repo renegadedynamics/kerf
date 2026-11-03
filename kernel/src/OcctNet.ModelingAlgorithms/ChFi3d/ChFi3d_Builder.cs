@@ -12,6 +12,8 @@ using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 using static Occt.TopOpeBRepDS_Kind;
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -54,7 +56,7 @@ public abstract partial class ChFi3d_Builder
     internal double tolapp3d;
     internal double tolapp2d;
     internal double fleche;
-    internal GeomAbs_Shape myConti;
+    internal Continuity myConti;
     internal ChFiDS_Map myEFMap = new();
     internal ChFiDS_Map myESoMap = new();
     internal ChFiDS_Map myEShMap = new();
@@ -237,7 +239,7 @@ public abstract partial class ChFi3d_Builder
 
         if (myListStripe.IsEmpty())
         {
-            throw new Standard_Failure("There are no suitable edges for chamfer or fillet");
+            throw new FailureException("There are no suitable edges for chamfer or fillet");
         }
 
         Reset();
@@ -568,7 +570,7 @@ public abstract partial class ChFi3d_Builder
         // if it is necessary
         if (IsDone())
         {
-            double SameParTol = Precision.Confusion();
+            double SameParTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             int aNbSurfaces = 0, iF = 0;
             NCollection_List<TopoDS_Shape>.Iterator aIt = new();
             //
@@ -638,7 +640,7 @@ public abstract partial class ChFi3d_Builder
                 }
                 double tolreached = 0.0;
                 double Pardeb = 0.0, Parfin = 0.0;
-                gp_Pnt2d VOnS1 = new(), VOnS2 = new();
+                Point2D VOnS1 = new(), VOnS2 = new();
                 Geom_Curve? C3d = null;
                 Geom2d_Curve? PCurv = null;
                 TopOpeBRepDS_Curve Crv = new();

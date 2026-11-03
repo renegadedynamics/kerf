@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Parabola from Geom and Geom2d to a STEP parabola.</summary>
@@ -20,7 +22,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     /// <summary>A 2D parabola.</summary>
     public GeomToStep_MakeParabola(Geom2d_Parabola C, in StepData_Factors theLocalFactors)
     {
-        gp_Parab2d gpPar;
+        Parabola2D gpPar;
         gpPar = C.Parab2d();
 
         StepGeom_Parabola PStep = new StepGeom_Parabola();
@@ -51,7 +53,7 @@ public sealed class GeomToStep_MakeParabola : GeomToStep_Root
     /// <summary>A 3D parabola, its position and focal length divided by the length factor.</summary>
     public GeomToStep_MakeParabola(Geom_Parabola C, in StepData_Factors theLocalFactors)
     {
-        gp_Parab gpPar;
+        Parabola3D gpPar;
         gpPar = C.Parab();
 
         StepGeom_Parabola PStep = new StepGeom_Parabola();

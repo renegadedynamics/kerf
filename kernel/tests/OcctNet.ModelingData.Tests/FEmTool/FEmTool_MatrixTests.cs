@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -11,13 +15,13 @@ public class FEmTool_MatrixTests
     private static readonly int[] theFirstIndexes = [1, 1, 1, 2, 3, 3, 6];
 
     /// <summary>A random symmetric positive definite matrix with the profile, as a profile matrix and dense.</summary>
-    private static (FEmTool_ProfileMatrix, math_Matrix) MakeSpd(int theSeed)
+    private static (FEmTool_ProfileMatrix, Matrix) MakeSpd(int theSeed)
     {
         Random aRandom = new(theSeed);
         int n = theFirstIndexes.Length;
         FEmTool_ProfileMatrix aProfile = new(NCollection_Array1<int>.From(theFirstIndexes));
         aProfile.Init(0.0);
-        math_Matrix aDense = new(1, n, 1, n, 0.0);
+        Matrix aDense = new(1, n, 1, n, 0.0);
         for (int i = 1; i <= n; i++)
         {
             for (int j = theFirstIndexes[i - 1]; j < i; j++)
@@ -52,7 +56,7 @@ public class FEmTool_MatrixTests
     {
         for (int aSeed = 1; aSeed <= 20; aSeed++)
         {
-            (FEmTool_ProfileMatrix aProfile, math_Matrix aDense) = MakeSpd(aSeed);
+            (FEmTool_ProfileMatrix aProfile, Matrix aDense) = MakeSpd(aSeed);
             int n = aProfile.RowNumber();
             Assert.Equal(n, aProfile.ColNumber());
 
@@ -60,7 +64,7 @@ public class FEmTool_MatrixTests
             math_Vector aX = new(1, n), anExpected = new(1, n);
             Assert.True(aProfile.Decompose());
             aProfile.Solve(aB, aX);
-            math_Gauss aGauss = new(aDense);
+            Gauss aGauss = new(aDense);
             aGauss.Solve(aB, anExpected);
             for (int i = 1; i <= n; i++)
             {
@@ -81,7 +85,7 @@ public class FEmTool_MatrixTests
     [Fact]
     public void ProfileMatrix_profile_and_symmetry()
     {
-        (FEmTool_ProfileMatrix aProfile, math_Matrix aDense) = MakeSpd(7);
+        (FEmTool_ProfileMatrix aProfile, Matrix aDense) = MakeSpd(7);
         for (int i = 1; i <= 7; i++)
         {
             for (int j = 1; j <= 7; j++)
@@ -96,7 +100,7 @@ public class FEmTool_MatrixTests
                 else
                 {
                     int ii = i, jj = j;
-                    Assert.ThrowsAny<Standard_OutOfRange>(() => aProfile.ChangeValue(ii, jj));
+                    Assert.ThrowsAny<OutOfRangeException>(() => aProfile.ChangeValue(ii, jj));
                 }
             }
         }
@@ -112,10 +116,10 @@ public class FEmTool_MatrixTests
         aProfile.ChangeValue(2, 2) = 1;
         aProfile.ChangeValue(3, 3) = 1;
         math_Vector aB = new(1, 3, 1.0), aX = new(1, 3);
-        Assert.ThrowsAny<StdFail_NotDone>(() => aProfile.Solve(aB, aX));
+        Assert.ThrowsAny<NotDoneException>(() => aProfile.Solve(aB, aX));
         Assert.False(aProfile.Decompose()); // not positive definite
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aProfile.Prepare());
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aProfile.Solve(aB, aB, aX, aX));
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Prepare());
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aProfile.Solve(aB, aB, aX, aX));
 
         StringWriter aWriter = new();
         aProfile.OutM(aWriter);
@@ -139,10 +143,10 @@ public class FEmTool_MatrixTests
         return aTable;
     }
 
-    private static math_Matrix ElementMatrix(int theSeed)
+    private static Matrix ElementMatrix(int theSeed)
     {
         Random aRandom = new(theSeed);
-        math_Matrix aM = new(1, 3, 1, 3);
+        Matrix aM = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j < i; j++)
@@ -166,11 +170,11 @@ public class FEmTool_MatrixTests
         anAssembly.GetAssemblyTable(out NCollection_HArray2<NCollection_HArray1<int>> aTable2);
         Assert.Same(aTable, aTable2);
 
-        math_Matrix aDense = new(1, 5, 1, 5, 0.0);
+        Matrix aDense = new(1, 5, 1, 5, 0.0);
         math_Vector aB = new(1, 5, 0.0);
         for (int el = 1; el <= 2; el++)
         {
-            math_Matrix aM = ElementMatrix(el);
+            Matrix aM = ElementMatrix(el);
             math_Vector aV = RandomVector(10 + el, 1, 3);
             anAssembly.AddMatrix(el, 1, 1, aM);
             anAssembly.AddVector(el, 1, aV);
@@ -185,11 +189,11 @@ public class FEmTool_MatrixTests
         }
 
         math_Vector aX = new(1, 5);
-        Assert.ThrowsAny<StdFail_NotDone>(() => anAssembly.Solution(aX));
+        Assert.ThrowsAny<NotDoneException>(() => anAssembly.Solution(aX));
         Assert.True(anAssembly.Solve());
         anAssembly.Solution(aX);
         math_Vector anExpected = new(1, 5);
-        new math_Gauss(aDense).Solve(aB, anExpected);
+        new Gauss(aDense).Solve(aB, anExpected);
         for (int i = 1; i <= 5; i++)
         {
             Assert.Equal(anExpected[i], aX[i], 1e-12);
@@ -203,7 +207,7 @@ public class FEmTool_MatrixTests
         Assert.True(anAssembly.Solve());
         anAssembly.Solution(aX);
 
-        math_Matrix aKkt = new(1, 7, 1, 7, 0.0);
+        Matrix aKkt = new(1, 7, 1, 7, 0.0);
         math_Vector aRhs = new(1, 7, 0.0);
         for (int i = 1; i <= 5; i++)
         {
@@ -220,7 +224,7 @@ public class FEmTool_MatrixTests
         aRhs[6] = 3;
         aRhs[7] = 0.5;
         math_Vector aKktX = new(1, 7);
-        new math_Gauss(aKkt).Solve(aRhs, aKktX);
+        new Gauss(aKkt).Solve(aRhs, aKktX);
         for (int i = 1; i <= 5; i++)
         {
             Assert.Equal(aKktX[i], aX[i], 1e-12);
@@ -260,7 +264,7 @@ public class FEmTool_MatrixTests
         aTable[2, 1][2] = 4;
         FEmTool_Assembly anAssembly = new(aDep, aTable);
         Assert.Equal(4, anAssembly.NbGlobVar());
-        Assert.ThrowsAny<Standard_DomainError>(() => anAssembly.AddMatrix(1, 1, 2, new math_Matrix(1, 2, 1, 2, 0.0)));
+        Assert.ThrowsAny<DomainErrorException>(() => anAssembly.AddMatrix(1, 1, 2, new Matrix(1, 2, 1, 2, 0.0)));
     }
 
     [Fact]

@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Extrema_ExtFlag;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -29,7 +33,7 @@ namespace Occt;
 /// result. Ported code reads the <c>Internal</c> forms, which give the working shapes.
 /// </para>
 /// </remarks>
-public sealed class LocOpe_WiresOnShape : Standard_Transient
+public sealed class LocOpe_WiresOnShape : Transient
 {
     private TopoDS_Shape myShape = new();
     private readonly NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> myMapEF = new(TopTools_ShapeMapHasher.Instance);
@@ -84,7 +88,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
     {
         NCollection_Sequence<TopoDS_Shape> anEdges = new();
         int i = 1, nb = theEdges.Length();
-        NCollection_Array1<Bnd_Box> anEdgeBoxes = new(1, nb);
+        NCollection_Array1<Box> anEdgeBoxes = new(1, nb);
         for (; i <= nb; i++)
         {
             TopoDS_Shape aCurSplit = myWork.Working(theEdges[i]);
@@ -93,9 +97,9 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             {
                 TopoDS_Shape aCurE = anExpE.Current();
 
-                Bnd_Box aBoxE = new();
+                Box aBoxE = new();
                 BRepBndLib.AddClose(aCurE, ref aBoxE);
-                if (aBoxE.IsVoid())
+                if (aBoxE.IsVoid)
                 {
                     continue;
                 }
@@ -113,9 +117,9 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         for (; anExpFaces.More(); anExpFaces.Next(), numF++)
         {
             TopoDS_Face aCurF = TopoDS.Face(anExpFaces.Current());
-            Bnd_Box aBoxF = new();
+            Box aBoxF = new();
             BRepBndLib.Add(aCurF, ref aBoxF);
-            if (aBoxF.IsVoid())
+            if (aBoxF.IsVoid)
             {
                 continue;
             }
@@ -129,8 +133,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                               anAdF.LastUParameter(),
                               anAdF.FirstVParameter(),
                               anAdF.LastVParameter(),
-                              Precision.Confusion(),
-                              Precision.Confusion());
+                              global::Kerf.Engine.Foundation.Precision.Confusion(),
+                              global::Kerf.Engine.Foundation.Precision.Confusion());
             anExtr.SetFlag(Extrema_ExtFlag_MIN);
 
             i = 1;
@@ -155,7 +159,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     anUsedEdges.Add(i);
                     continue;
                 }
-                gp_Pnt aP = aC.Value((aF + aL) * 0.5);
+                Point3D aP = aC.Value((aF + aL) * 0.5);
                 anExtr.Perform(aP);
 
                 if (!anExtr.IsDone() || anExtr.NbExt() == 0)
@@ -163,7 +167,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     continue;
                 }
                 double aTolE = BRep_Tool.Tolerance(TopoDS.Edge(aCurE));
-                double aTol2 = (aTolE + Precision.Confusion()) * (aTolE + Precision.Confusion());
+                double aTol2 = (aTolE + global::Kerf.Engine.Foundation.Precision.Confusion()) * (aTolE + global::Kerf.Engine.Foundation.Precision.Confusion());
                 int n = 1;
                 for (; n <= anExtr.NbExt(); n++)
                 {
@@ -175,8 +179,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     Extrema_POnSurf aPS = anExtr.Point(n);
                     aPS.Parameter(out double aU, out double aV);
 
-                    aCheckStateTool ??= new BRepTopAdaptor_FClass2d(aCurF, Precision.PConfusion());
-                    if (aCheckStateTool.Perform(new gp_Pnt2d(aU, aV)) == TopAbs_IN)
+                    aCheckStateTool ??= new BRepTopAdaptor_FClass2d(aCurF, global::Kerf.Engine.Foundation.Precision.PConfusion());
+                    if (aCheckStateTool.Perform(new Point2D(aU, aV)) == TopAbs_IN)
                     {
                         bind(aCurE, aCurF);
                         anUsedEdges.Add(i);
@@ -240,7 +244,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         }
         else
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
     }
 
@@ -361,12 +365,12 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 double vtx_param = BRep_Tool.Parameter(vtx, edg);
                 BRepAdaptor_Curve2d BAcurve2d = new(edg, fac);
 
-                gp_Pnt2d p2d = BAcurve2d.Curve() is not null
+                Point2D p2d = BAcurve2d.Curve() is not null
                                    ? BAcurve2d.Value(vtx_param)
-                                   : new gp_Pnt2d(Precision.Infinite(), Precision.Infinite());
+                                   : new Point2D(global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
 
                 TopoDS_Edge Epro = new();
-                double prm = Precision.Infinite();
+                double prm = global::Kerf.Engine.Foundation.Precision.Infinite();
                 bool isProjected = myMap.IsBound(vtx);
 
                 // if vertex was already projected on the current edge on the previous face
@@ -401,8 +405,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                         {
                             BRep_Tool.Range(Epro, fac, out double aF1, out double aL1);
                             if (!BRep_Tool.Degenerated(Epro)
-                                && (Math.Abs(prm - aF1) <= Precision.PConfusion()
-                                    || Math.Abs(prm - aL1) <= Precision.PConfusion()))
+                                && (Math.Abs(prm - aF1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                    || Math.Abs(prm - aL1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
                                 myMap.Bind(vtx, vtx2);
                                 theMap.Add(vtx);
@@ -570,7 +574,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             TopoDS_Face aFace = TopoDS.Face(aShape);
             double vtx_param = BRep_Tool.Parameter(V, EdgeFrom);
             BRepAdaptor_Curve2d BAcurve2d = new(EdgeFrom, aFace);
-            gp_Pnt2d p2d = BAcurve2d.Value(vtx_param);
+            Point2D p2d = BAcurve2d.Value(vtx_param);
 
             prm = Project(V, p2d, Ed, aFace);
         }
@@ -590,7 +594,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
     //=================================================================================================
 
-    private static bool Project(in TopoDS_Vertex V, in gp_Pnt2d p2d, in TopoDS_Face F, ref TopoDS_Edge theEdge, ref double param)
+    private static bool Project(in TopoDS_Vertex V, in Point2D p2d, in TopoDS_Face F, ref TopoDS_Edge theEdge, ref double param)
     {
         double aTolV = BRep_Tool.Tolerance(V);
         double dmin = (theEdge.IsNull() ? RealLast() : aTolV * aTolV);
@@ -601,25 +605,25 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
         if (theEdge.IsNull())
         {
-            gp_Pnt toproj = BRep_Tool.Pnt(V);
+            Point3D toproj = BRep_Tool.Pnt(V);
             for (TopExp_Explorer exp = new(F.Oriented(TopAbs_FORWARD), TopAbs_EDGE); exp.More(); exp.Next())
             {
                 TopoDS_Edge edg = TopoDS.Edge(exp.Current());
                 Geom_Curve? C = BRep_Tool.Curve(edg, out double f, out double l);
-                double aCurDist = Precision.Infinite();
-                double aCurPar = Precision.Infinite();
+                double aCurDist = global::Kerf.Engine.Foundation.Precision.Infinite();
+                double aCurPar = global::Kerf.Engine.Foundation.Precision.Infinite();
                 if (C is not null)
                 {
                     aCurPar = Project(V, edg);
-                    if (Precision.IsInfinite(aCurPar))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurPar))
                     {
                         continue;
                     }
-                    C.D0(aCurPar, out gp_Pnt aCurPBound);
+                    C.D0(aCurPar, out Point3D aCurPBound);
                     aCurDist = aCurPBound.SquareDistance(toproj);
                 }
 
-                else if (!Precision.IsInfinite(p2d.X()))
+                else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(p2d.X()))
                 {
                     Geom2d_Curve? aC2d = BRep_Tool.CurveOnSurface(edg, F, out f, out l);
                     if (aC2d is null)
@@ -628,13 +632,13 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     }
 
                     aCurPar = Project(V, p2d, edg, F);
-                    if (Precision.IsInfinite(aCurPar))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurPar))
                     {
                         continue;
                     }
                     Geom2d_Curve PC = BRep_Tool.CurveOnSurface(edg, F, out f, out l)!;
-                    PC.D0(aCurPar, out gp_Pnt2d aPProj);
-                    aSurf.D0(aPProj.X(), aPProj.Y(), out gp_Pnt aCurPBound);
+                    PC.D0(aCurPar, out Point2D aPProj);
+                    aSurf.D0(aPProj.X(), aPProj.Y(), out Point3D aCurPBound);
                     aCurDist = aCurPBound.SquareDistance(toproj);
                 }
 
@@ -651,7 +655,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 return false;
             }
         }
-        else if (Precision.IsInfinite(param))
+        else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(param))
         {
             Geom_Curve? C = BRep_Tool.Curve(theEdge, out _, out _);
             param = (C is not null ? Project(V, theEdge) : Project(V, p2d, theEdge, F));
@@ -669,14 +673,14 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             Geom2d_Curve? aCrvBound = BRep_Tool.CurveOnSurface(theEdge, F, out _, out _);
             if (aCrvBound is not null)
             {
-                aCrvBound.D0(param, out gp_Pnt2d aPBound2d);
+                aCrvBound.D0(param, out Point2D aPBound2d);
 
                 // distance in 2D space recomputed in the 3D space in order to tolerance of vertex
                 // cover gap in 2D space. For consistency with check of the validity in the  BRepCheck_Wire
                 double dumax = 0.01 * (adSurf.LastUParameter() - adSurf.FirstUParameter());
                 double dvmax = 0.01 * (adSurf.LastVParameter() - adSurf.FirstVParameter());
 
-                gp_Pnt2d aPcur = p2d;
+                Point2D aPcur = p2d;
                 double dumin = Math.Abs(aPcur.X() - aPBound2d.X());
                 double dvmin = Math.Abs(aPcur.Y() - aPBound2d.Y());
                 if (dumin > dumax && adSurf.IsUPeriodic())
@@ -689,7 +693,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     aShift = ShapeAnalysis.AdjustToPeriod(aX2, adSurf.FirstUParameter(), adSurf.LastUParameter());
                     aX2 += aShift;
                     dumin = Math.Abs(aX2 - aX1);
-                    if (dumin > dumax && (Math.Abs(dumin - adSurf.UPeriod()) < Precision.PConfusion()))
+                    if (dumin > dumax && (Math.Abs(dumin - adSurf.UPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
                     {
                         aX2 = aX1;
                         dumin = 0.0;
@@ -707,7 +711,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     aShift = ShapeAnalysis.AdjustToPeriod(aY2, adSurf.FirstVParameter(), adSurf.LastVParameter());
                     aY2 += aShift;
                     dvmin = Math.Abs(aY1 - aY2);
-                    if (dvmin > dvmax && (Math.Abs(dvmin - adSurf.VPeriod()) < Precision.Confusion()))
+                    if (dvmin > dvmax && (Math.Abs(dvmin - adSurf.VPeriod()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
                         aY2 = aY1;
                         dvmin = 0.0;
@@ -733,8 +737,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 }
 
                 // added check by 3D the same as in the BRepCheck_Wire::SelfIntersect
-                aSurf.D0(aPBound2d.X(), aPBound2d.Y(), out gp_Pnt aPBound);
-                aSurf.D0(p2d.X(), p2d.Y(), out gp_Pnt aPV2d);
+                aSurf.D0(aPBound2d.X(), aPBound2d.Y(), out Point3D aPBound);
+                aSurf.D0(p2d.X(), p2d.Y(), out Point3D aPV2d);
                 double aDistPoints_3D = aPV2d.SquareDistance(aPBound);
                 double aMaxDist = Max(aDistPoints_3D, aDist3d * aDist3d);
 
@@ -754,23 +758,23 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
     private static double Project(in TopoDS_Vertex V, in TopoDS_Edge theEdge)
     {
-        gp_Pnt toproj = BRep_Tool.Pnt(V);
+        Point3D toproj = BRep_Tool.Pnt(V);
         GeomAPI_ProjectPointOnCurve proj = new();
 
-        Geom_Curve C = BRep_Tool.Curve(theEdge, out TopLoc_Location Loc, out double f, out double l)!;
-        if (!Loc.IsIdentity())
+        Geom_Curve C = BRep_Tool.Curve(theEdge, out Placement Loc, out double f, out double l)!;
+        if (!Loc.IsIdentity)
         {
             Geom_Geometry GG = C.Transformed(Loc.Transformation());
             C = (Geom_Curve)GG;
         }
         proj.Init(toproj, C, f, l);
 
-        return (proj.NbPoints() > 0 ? proj.LowerDistanceParameter() : Precision.Infinite());
+        return (proj.NbPoints() > 0 ? proj.LowerDistanceParameter() : global::Kerf.Engine.Foundation.Precision.Infinite());
     }
 
     //=================================================================================================
 
-    private static double Project(in TopoDS_Vertex V, in gp_Pnt2d p2d, in TopoDS_Edge theEdge, in TopoDS_Face theFace)
+    private static double Project(in TopoDS_Vertex V, in Point2D p2d, in TopoDS_Edge theEdge, in TopoDS_Face theFace)
     {
         _ = V;
         Geom2dAPI_ProjectPointOnCurve proj = new();
@@ -779,20 +783,20 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
         proj.Init(p2d, PC, f, l);
 
-        return proj.NbPoints() > 0 ? proj.LowerDistanceParameter() : Precision.Infinite();
+        return proj.NbPoints() > 0 ? proj.LowerDistanceParameter() : global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     //=================================================================================================
 
     // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy
     private static Geom2d_Curve Translatable(Geom2d_Curve theCurve) =>
-        theCurve.IsFrozen() ? (Geom2d_Curve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom2d_Curve)theCurve.Copy() : theCurve;
 
     private static void PutPCurve(in TopoDS_Edge Edg, in TopoDS_Face Fac)
     {
         BRep_Builder B = new();
 
-        Geom_Surface S = BRep_Tool.Surface(Fac, out TopLoc_Location LocFac)!;
+        Geom_Surface S = BRep_Tool.Surface(Fac, out Placement LocFac)!;
         _ = LocFac;
 
         if (S is Geom_RectangularTrimmedSurface aTrimmed)
@@ -812,13 +816,13 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         Geom2d_Curve? aC2d = BRep_Tool.CurveOnSurface(Edg, Fac, out f, out l);
         if (aC2d is not null)
         {
-            aC2d.D0((f + l) * 0.5, out gp_Pnt2d p2d);
+            aC2d.D0((f + l) * 0.5, out Point2D p2d);
             bool IsIn = true;
-            if ((p2d.X() < Umin - Precision.PConfusion()) || (p2d.X() > Umax + Precision.PConfusion()))
+            if ((p2d.X() < Umin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.X() > Umax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 IsIn = false;
             }
-            if ((p2d.Y() < Vmin - Precision.PConfusion()) || (p2d.Y() > Vmax + Precision.PConfusion()))
+            if ((p2d.Y() < Vmin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.Y() > Vmax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 IsIn = false;
             }
@@ -829,8 +833,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             }
         }
 
-        Geom_Curve C = BRep_Tool.Curve(Edg, out TopLoc_Location Loc, out f, out l)!;
-        if (!Loc.IsIdentity())
+        Geom_Curve C = BRep_Tool.Curve(Edg, out Placement Loc, out f, out l)!;
+        if (!Loc.IsIdentity)
         {
             Geom_Geometry GG = C.Transformed(Loc.Transformation());
             C = (Geom_Curve)GG;
@@ -854,7 +858,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             TolLast = BRep_Tool.Tolerance(V2);
         }
 
-        double tol2d = Precision.Confusion();
+        double tol2d = global::Kerf.Engine.Foundation.Precision.Confusion();
         ShapeConstruct_ProjectCurveOnSurface aToolProj = new();
         aToolProj.Init(S, tol2d);
 
@@ -864,10 +868,10 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             return;
         }
 
-        gp_Pnt2d pf = C2d.Value(f);
-        gp_Pnt2d pl = C2d.Value(l);
-        S.D0(pf.X(), pf.Y(), out gp_Pnt PF);
-        S.D0(pl.X(), pl.Y(), out gp_Pnt PL);
+        Point2D pf = C2d.Value(f);
+        Point2D pl = C2d.Value(l);
+        S.D0(pf.X(), pf.Y(), out Point3D PF);
+        S.D0(pl.X(), pl.Y(), out Point3D PL);
         if (Edg.Orientation() == TopAbs_REVERSED)
         {
             V1 = TopExp.LastVertex(Edg);
@@ -893,8 +897,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             // OCCT: V2 is null here, so BRep_Tool::Tolerance(V2) dereferences a null shape (occt-issues.md)
             double old1 = BRep_Tool.Tolerance(V1);
             double old2 = BRep_Tool.Tolerance(V2);
-            gp_Pnt pnt1 = BRep_Tool.Pnt(V1);
-            gp_Pnt pnt2 = BRep_Tool.Pnt(V2);
+            Point3D pnt1 = BRep_Tool.Pnt(V1);
+            Point3D pnt2 = BRep_Tool.Pnt(V2);
             double tol1 = pnt1.Distance(PF);
             double tol2 = pnt2.Distance(PL);
             B.UpdateVertex(V1, Max(old1, tol1));
@@ -904,7 +908,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         if (S.IsUPeriodic())
         {
             double up = S.UPeriod();
-            double tolu = Precision.PConfusion(); // Epsilon(up);
+            double tolu = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(up);
             int nbtra = 0;
             double theUmin = Min(pf.X(), pl.X());
             double theUmax = Max(pf.X(), pl.X());
@@ -929,14 +933,14 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             if (nbtra != 0)
             {
                 C2d = Translatable(C2d);
-                C2d.Translate(new gp_Vec2d(nbtra * up, 0.0));
+                C2d.Translate(new Vector2D(nbtra * up, 0.0));
             }
         }
 
         if (S.IsVPeriodic())
         {
             double vp = S.VPeriod();
-            double tolv = Precision.PConfusion(); // Epsilon(vp);
+            double tolv = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(vp);
             int nbtra = 0;
             double theVmin = Min(pf.Y(), pl.Y());
             double theVmax = Max(pf.Y(), pl.Y());
@@ -963,7 +967,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             if (nbtra != 0)
             {
                 C2d = Translatable(C2d);
-                C2d.Translate(new gp_Vec2d(0.0, nbtra * vp));
+                C2d.Translate(new Vector2D(0.0, nbtra * vp));
             }
         }
         B.UpdateEdge(Edg, C2d, Fac, BRep_Tool.Tolerance(Edg));
@@ -992,7 +996,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
         if (Lfaces.Extent() != 1 && Lfaces.Extent() != 2)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         // soit bord libre, soit connexite entre 2 faces, eventuellement edge closed
@@ -1007,7 +1011,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         Geom_Curve C;
         double Umin, Umax, Vmin, Vmax;
         double f, l;
-        TopLoc_Location Loc;
+        Placement Loc;
 
         if (!Lfaces.First().IsSame(Lfaces.Last()))
         {
@@ -1032,7 +1036,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
                 BRepTools.UVBounds(Fac, out Umin, out Umax, out Vmin, out Vmax);
                 C = BRep_Tool.Curve(Efrom, out Loc, out f, out l)!;
-                if (!Loc.IsIdentity())
+                if (!Loc.IsIdentity)
                 {
                     Geom_Geometry GG = C.Transformed(Loc.Transformation());
                     C = (Geom_Curve)GG;
@@ -1058,13 +1062,13 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     return;
                 }
 
-                gp_Pnt2d pf = C2d.Value(f);
-                gp_Pnt2d pl = C2d.Value(l);
+                Point2D pf = C2d.Value(f);
+                Point2D pl = C2d.Value(l);
 
                 if (S.IsUPeriodic())
                 {
                     double up = S.UPeriod();
-                    double tolu = Precision.PConfusion(); // Epsilon(up);
+                    double tolu = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(up);
                     int nbtra = 0;
                     double theUmin = Min(pf.X(), pl.X());
                     double theUmax = Max(pf.X(), pl.X());
@@ -1090,14 +1094,14 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     if (nbtra != 0)
                     {
                         C2d = Translatable(C2d);
-                        C2d.Translate(new gp_Vec2d(nbtra * up, 0.0));
+                        C2d.Translate(new Vector2D(nbtra * up, 0.0));
                     }
                 }
 
                 if (S.IsVPeriodic())
                 {
                     double vp = S.VPeriod();
-                    double tolv = Precision.PConfusion(); // Epsilon(vp);
+                    double tolv = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(vp);
                     int nbtra = 0;
                     double theVmin = Min(pf.Y(), pl.Y());
                     double theVmax = Max(pf.Y(), pl.Y());
@@ -1123,7 +1127,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                     if (nbtra != 0)
                     {
                         C2d = Translatable(C2d);
-                        C2d.Translate(new gp_Vec2d(0.0, nbtra * vp));
+                        C2d.Translate(new Vector2D(0.0, nbtra * vp));
                     }
                 }
                 B.UpdateEdge(Efrom, C2d, Fac, BRep_Tool.Tolerance(Efrom));
@@ -1135,7 +1139,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             TopoDS_Face Fac = TopoDS.Face(Lfaces.First());
             if (!BRep_Tool.IsClosed(Eto, Fac))
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
 
             TopoDS_Shape aLocalE = Efrom.Oriented(TopAbs_FORWARD);
@@ -1154,37 +1158,37 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             aLocalF = Fac.Oriented(TopAbs_FORWARD);
             Geom2d_Curve c2dtr = BRep_Tool.CurveOnSurface(TopoDS.Edge(aLocalE), TopoDS.Face(aLocalF), out f, out l)!;
 
-            gp_Pnt2d ptf = c2dtf.Value(f); // sur courbe frw
-            gp_Pnt2d ptr = c2dtr.Value(f); // sur courbe rev
+            Point2D ptf = c2dtf.Value(f); // sur courbe frw
+            Point2D ptr = c2dtr.Value(f); // sur courbe rev
 
             bool isoU = (Math.Abs(ptf.Y() - ptr.Y()) < Epsilon(ptf.X())); // meme V
 
             // Efrom et Eto dans le meme sens???
 
             C = BRep_Tool.Curve(Efrom, out Loc, out f, out l)!;
-            if (!Loc.IsIdentity())
+            if (!Loc.IsIdentity)
             {
                 Geom_Geometry GG = C.Transformed(Loc.Transformation());
                 C = (Geom_Curve)GG;
             }
 
-            C.D1(f, out gp_Pnt pt, out gp_Vec d1f);
+            C.D1(f, out Point3D pt, out Vector3D d1f);
 
             TopoDS_Vertex FirstVertex = TopExp.FirstVertex(Efrom);
             double vtx_param = BRep_Tool.Parameter(FirstVertex, Efrom);
             BRepAdaptor_Curve2d BAcurve2d = new(Efrom, Fac);
-            gp_Pnt2d p2d = BAcurve2d.Value(vtx_param);
+            Point2D p2d = BAcurve2d.Value(vtx_param);
 
             double prmproj = Project(TopExp.FirstVertex(Efrom), p2d, Eto, Fac);
 
             C = BRep_Tool.Curve(Eto, out Loc, out f, out l)!;
-            if (!Loc.IsIdentity())
+            if (!Loc.IsIdentity)
             {
                 Geom_Geometry GG = C.Transformed(Loc.Transformation());
                 C = (Geom_Curve)GG;
             }
 
-            C.D1(prmproj, out pt, out gp_Vec d1t);
+            C.D1(prmproj, out pt, out Vector3D d1t);
 
             double SameOri = (d1t.Dot(d1f) > 0.0) ? 1.0 : 0.0;
 
@@ -1197,7 +1201,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 }
 
                 C = BRep_Tool.Curve(Efrom, out Loc, out f, out l)!;
-                if (!Loc.IsIdentity())
+                if (!Loc.IsIdentity)
                 {
                     Geom_Geometry GG = C.Transformed(Loc.Transformation());
                     C = (Geom_Curve)GG;
@@ -1232,8 +1236,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
             BRep_Tool.Range(Efrom, out f, out l);
 
-            gp_Pnt2d p2f = c2dff!.Value(f);
-            gp_Pnt2d p2r = c2dfr!.Value(f);
+            Point2D p2f = c2dff!.Value(f);
+            Point2D p2r = c2dfr!.Value(f);
 
             if (isoU)
             {
@@ -1241,23 +1245,23 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 {
                     if (Math.Abs(ptf.X() - p2f.X()) > Epsilon(ptf.X()))
                     {
-                        c2dff = (Geom2d_Curve)c2dff.Translated(new gp_Vec2d(ptf.X() - p2f.X(), 0.0));
+                        c2dff = (Geom2d_Curve)c2dff.Translated(new Vector2D(ptf.X() - p2f.X(), 0.0));
                     }
                     if (Math.Abs(ptr.X() - p2r.X()) > Epsilon(ptr.X()))
                     {
-                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new gp_Vec2d(ptr.X() - p2r.X(), 0.0));
+                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new Vector2D(ptr.X() - p2r.X(), 0.0));
                     }
                 }
                 else
                 {
                     if (Math.Abs(ptr.X() - p2f.X()) > Epsilon(ptr.X()))
                     {
-                        c2dff = (Geom2d_Curve)c2dff.Translated(new gp_Vec2d(ptr.X() - p2f.X(), 0.0));
+                        c2dff = (Geom2d_Curve)c2dff.Translated(new Vector2D(ptr.X() - p2f.X(), 0.0));
                     }
 
                     if (Math.Abs(ptf.X() - p2r.X()) > Epsilon(ptf.X()))
                     {
-                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new gp_Vec2d(ptf.X() - p2r.X(), 0.0));
+                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new Vector2D(ptf.X() - p2r.X(), 0.0));
                     }
                 }
 
@@ -1270,22 +1274,22 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 {
                     if (Math.Abs(ptf.Y() - p2f.Y()) > Epsilon(ptf.Y()))
                     {
-                        c2dff = (Geom2d_Curve)c2dff.Translated(new gp_Vec2d(0.0, ptf.Y() - p2f.Y()));
+                        c2dff = (Geom2d_Curve)c2dff.Translated(new Vector2D(0.0, ptf.Y() - p2f.Y()));
                     }
                     if (Math.Abs(ptr.Y() - p2r.Y()) > Epsilon(ptr.Y()))
                     {
-                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new gp_Vec2d(0.0, ptr.Y() - p2r.Y()));
+                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new Vector2D(0.0, ptr.Y() - p2r.Y()));
                     }
                 }
                 else
                 {
                     if (Math.Abs(ptr.Y() - p2f.Y()) > Epsilon(ptr.Y()))
                     {
-                        c2dff = (Geom2d_Curve)c2dff.Translated(new gp_Vec2d(0.0, ptr.Y() - p2f.Y()));
+                        c2dff = (Geom2d_Curve)c2dff.Translated(new Vector2D(0.0, ptr.Y() - p2f.Y()));
                     }
                     if (Math.Abs(ptf.Y() - p2r.Y()) > Epsilon(ptf.Y()))
                     {
-                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new gp_Vec2d(0.0, ptf.Y() - p2r.Y()));
+                        c2dfr = (Geom2d_Curve)c2dfr.Translated(new Vector2D(0.0, ptf.Y() - p2r.Y()));
                     }
                 }
                 // on est bien en V, recalage si periodique en U a faire
@@ -1301,7 +1305,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                                                   NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Splits,
                                                   ref bool isOverlapped)
     {
-        double TolExt = Precision.PConfusion();
+        double TolExt = global::Kerf.Engine.Foundation.Precision.PConfusion();
         int i, j;
 
         BRepAdaptor_Surface anAdSurf = new(theFace, false);
@@ -1310,7 +1314,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
 
         TopoDS_Vertex[] theVertices = new TopoDS_Vertex[2];
         TopExp.Vertices(theEdge, out theVertices[0], out theVertices[1]);
-        gp_Pnt[] thePnt = new gp_Pnt[2];
+        Point3D[] thePnt = new Point3D[2];
         thePnt[0] = BRep_Tool.Pnt(theVertices[0]);
         thePnt[1] = BRep_Tool.Pnt(theVertices[1]);
         double[] aTolV = new double[2];
@@ -1322,22 +1326,22 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         double[] aTolVExt = [ext * aTolV[0] * aTolV[0], ext * aTolV[1] * aTolV[1]];
 
         BRepAdaptor_Curve2d thePCurve = new(theEdge, theFace);
-        Bnd_Box2d theBox = new();
+        Box2d theBox = new();
         BndLib_Add2dCurve.Add(thePCurve, BRep_Tool.Tolerance(theEdge), ref theBox);
 
         double[] thePar = new double[2];
         Geom_Curve theCurve = BRep_Tool.Curve(theEdge, out thePar[0], out thePar[1])!;
         GeomAdaptor_Curve theGAcurve = new(theCurve, thePar[0], thePar[1]);
         double[] aTolV2d = [theGAcurve.Resolution(aTolV[0]), theGAcurve.Resolution(aTolV[1])];
-        aTolV2d[0] = Max(aTolV2d[0], Precision.PConfusion());
-        aTolV2d[1] = Max(aTolV2d[1], Precision.PConfusion());
-        double aDistMax = Precision.Confusion() * Precision.Confusion();
+        aTolV2d[0] = Max(aTolV2d[0], global::Kerf.Engine.Foundation.Precision.PConfusion());
+        aTolV2d[1] = Max(aTolV2d[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
+        double aDistMax = global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion();
         TopExp_Explorer Explo = new(theFace, TopAbs_EDGE);
         for (; Explo.More(); Explo.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(Explo.Current());
             BRepAdaptor_Curve2d aPCurve = new(anEdge, theFace);
-            Bnd_Box2d aBox = new();
+            Box2d aBox = new();
             BndLib_Add2dCurve.Add(aPCurve, BRep_Tool.Tolerance(anEdge), ref aBox);
             if (theBox.IsOut(aBox))
             {
@@ -1345,7 +1349,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             }
 
             Geom_Curve? aCurve = BRep_Tool.Curve(anEdge, out double aFpar, out double aLpar);
-            GeomAdaptor_Curve aGAcurve = new(aCurve ?? throw new Standard_NullObject(), aFpar, aLpar); // OCCT's Load throws on a null curve
+            GeomAdaptor_Curve aGAcurve = new(aCurve ?? throw new NullObjectException(), aFpar, aLpar); // OCCT's Load throws on a null curve
             Extrema_ExtCC anExtrema = new(theGAcurve, aGAcurve, TolExt, TolExt);
 
             if (!anExtrema.IsDone() || anExtrema.NbExt() == 0)
@@ -1364,7 +1368,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             // Check extremity distances
             double[] dists = new double[4];
             anExtrema.TrimmedSquareDistances(out dists[0], out dists[1], out dists[2], out dists[3],
-                                             out gp_Pnt aP11, out gp_Pnt aP12, out gp_Pnt aP21, out gp_Pnt aP22);
+                                             out Point3D aP11, out Point3D aP12, out Point3D aP21, out Point3D aP22);
             for (i = 0; i < 4; ++i)
             {
                 if (i < 2)
@@ -1402,8 +1406,8 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
                 // intersection found in the middle of the edge
                 if (j >= 2) // intersection is inside "theEdge" => split
                 {
-                    gp_Pnt aPoint = aCurve!.Value(anIntPar);
-                    gp_Pnt aPointInt = theCurve.Value(theIntPar);
+                    Point3D aPoint = aCurve!.Value(anIntPar);
+                    Point3D aPointInt = theCurve.Value(theIntPar);
 
                     if (aPointInt.SquareDistance(thePnt[0]) > aTolVExt[0]
                         && aPointInt.SquareDistance(thePnt[1]) > aTolVExt[1]
@@ -1442,9 +1446,9 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
         i = 1;
         while (i < SplitPars.Length())
         {
-            gp_Pnt Pnt1 = theCurve.Value(SplitPars[i]);
-            gp_Pnt Pnt2 = theCurve.Value(SplitPars[i + 1]);
-            if (Pnt1.SquareDistance(Pnt2) <= Precision.Confusion() * Precision.Confusion())
+            Point3D Pnt1 = theCurve.Value(SplitPars[i]);
+            Point3D Pnt2 = theCurve.Value(SplitPars[i + 1]);
+            if (Pnt1.SquareDistance(Pnt2) <= global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 SplitPars.Remove(i + 1);
             }
@@ -1466,7 +1470,7 @@ public sealed class LocOpe_WiresOnShape : Standard_Transient
             if (i <= SplitPars.Length())
             {
                 LastPar = SplitPars[i];
-                gp_Pnt LastPoint = theCurve.Value(LastPar);
+                Point3D LastPoint = theCurve.Value(LastPar);
                 LastVertex = new BRepLib_MakeVertex(LastPoint).InternalVertex();
                 BRep_Builder aB = new();
                 aB.UpdateVertex(LastVertex, Math.Sqrt(aDistMax));

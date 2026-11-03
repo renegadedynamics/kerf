@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -38,7 +40,7 @@ public class GeomFill_Generator : GeomFill_Profiler
         bool isUPeriodic = IsPeriodic();
         bool isVPeriodic = false;
 
-        NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+        NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
         NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
         NCollection_Array1<double> UKnots = new(1, NbUKnots);
         NCollection_Array1<double> VKnots = new(1, NbVKnots);
@@ -53,7 +55,7 @@ public class GeomFill_Generator : GeomFill_Profiler
         for (j = 1; j <= NbVPoles; j++)
         {
             Geom_BSplineCurve Cj = (Geom_BSplineCurve)mySequence[j];
-            NCollection_Array1<gp_Pnt> aPoles = Cj.InternalPoles();
+            NCollection_Array1<Point3D> aPoles = Cj.InternalPoles();
             NCollection_Array1<double> aWeights = Cj.InternalWeightsArray();
             VKnots[j] = (double)(j - 1);
             for (i = 1; i <= NbUPoles; i++)

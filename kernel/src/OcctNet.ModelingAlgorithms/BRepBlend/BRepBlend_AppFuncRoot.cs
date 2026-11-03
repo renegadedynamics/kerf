@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,12 +24,12 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
     private readonly Blend_AppFunction myFunc;
     private readonly math_Vector myTolerance;
     private Blend_Point myPnt = new();
-    private gp_Pnt myBary;
+    private Point3D myBary;
     private readonly math_Vector X1;
     private readonly math_Vector X2;
     private readonly math_Vector XInit;
     private readonly math_Vector Sol;
-    private readonly math_FunctionSetRoot mySolver;
+    private readonly FunctionSetRoot mySolver;
 
     protected BRepBlend_AppFuncRoot(BRepBlend_Line Line, Blend_AppFunction Func, double Tol3d, double Tol2d)
     {
@@ -78,12 +82,12 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
             myBary.SetCoord(0, 0, 0);
         }
 
-        mySolver = new math_FunctionSetRoot(Func, myTolerance, 30);
+        mySolver = new FunctionSetRoot(Func, myTolerance, 30);
     }
 
     /// <summary>The section for v = <paramref name="Param"/>; false if it cannot be computed.</summary>
-    public override bool D0(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weigths)
+    public override bool D0(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weigths)
     {
         bool Ok = true;
         Blend_AppFunction Func = myFunc;
@@ -97,9 +101,9 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
     }
 
     /// <summary>The section and its derivative in v for v = <paramref name="Param"/>; false if it cannot be computed.</summary>
-    public override bool D1(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                            NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<double> Weigths,
+    public override bool D1(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Point2D> Poles2d,
+                            NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths)
     {
         bool Ok = true;
@@ -116,10 +120,10 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
     }
 
     /// <summary>The section and its first two derivatives in v for v = <paramref name="Param"/>.</summary>
-    public override bool D2(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Vec> D2Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
-                            NCollection_Array1<gp_Vec2d> D2Poles2d, NCollection_Array1<double> Weigths,
+    public override bool D2(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Vector3D> D2Poles,
+                            NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
+                            NCollection_Array1<Vector2D> D2Poles2d, NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths, NCollection_Array1<double> D2Weigths)
     {
         bool Ok = true;
@@ -164,12 +168,12 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
         return myFunc.IsRational();
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return myFunc.NbIntervals(S);
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         myFunc.Intervals(T, S);
     }
@@ -213,7 +217,7 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
         mySolver.SetTolerance(myTolerance);
     }
 
-    public override gp_Pnt BarycentreOfSurf()
+    public override Point3D BarycentreOfSurf()
     {
         return myBary;
     }
@@ -287,7 +291,7 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
         Func.GetBounds(X1, X2);
         mySolver.Perform(Func, XInit, X1, X2);
 
-        if (!mySolver.IsDone())
+        if (!mySolver.IsDone)
         {
             return false;
         }
@@ -297,7 +301,7 @@ public abstract class BRepBlend_AppFuncRoot : Approx_SweepFunction
         Point(Func, Param, Sol, ref Pnt);
 
         // (4) Insertion of the point if the calculation seems long.
-        if ((!Trouve) && (mySolver.NbIterations() > 3))
+        if ((!Trouve) && (mySolver.IterationCount > 3))
         {
             // OCCT_DEBUG trace left out.
             myLine.InsertBefore(Index + 1, Pnt);

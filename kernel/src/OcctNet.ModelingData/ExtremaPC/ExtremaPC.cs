@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics.Utilities;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -111,7 +115,7 @@ public static partial class ExtremaPC
         /// <summary>Parameter value on curve.</summary>
         public double Parameter = 0.0;
         /// <summary>Point on curve at parameter.</summary>
-        public gp_Pnt Point;
+        public Point3D Point;
         /// <summary>Square of the distance from query point to curve point.</summary>
         public double SquareDistance = 0.0;
         /// <summary>True if this is a local minimum, false if maximum.</summary>
@@ -245,7 +249,7 @@ public static partial class ExtremaPC
         /// <summary>Tolerance for root finding.</summary>
         public double Tolerance = THE_DEFAULT_TOLERANCE;
         /// <summary>Parameter domain (null = use natural/unbounded).</summary>
-        public MathUtils.Domain1D? Domain;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? Domain;
         /// <summary>Number of samples for numerical methods.</summary>
         public int NbSamples = 32;
         /// <summary>Search mode (MinMax, Min, or Max).</summary>
@@ -274,13 +278,13 @@ public static partial class ExtremaPC
     public interface ICurveEvaluator
     {
         /// <summary>Evaluates the point on the curve at a parameter.</summary>
-        gp_Pnt Value(double theU);
+        Point3D Value(double theU);
 
         /// <summary>Interior extrema between a point and the curve.</summary>
-        Result Perform(in gp_Pnt theP, double theTol, SearchMode theMode = SearchMode.MinMax);
+        Result Perform(in Point3D theP, double theTol, SearchMode theMode = SearchMode.MinMax);
 
         /// <summary>Interior and endpoint extrema between a point and the curve.</summary>
-        Result PerformWithEndpoints(in gp_Pnt theP, double theTol, SearchMode theMode = SearchMode.MinMax);
+        Result PerformWithEndpoints(in Point3D theP, double theTol, SearchMode theMode = SearchMode.MinMax);
     }
 
     /// <summary>
@@ -288,8 +292,8 @@ public static partial class ExtremaPC
     /// (checked against a neighbouring point) and it doesn't duplicate an existing extremum.
     /// </summary>
     internal static void AddEndpointExtrema<CurveEvaluator>(Result theResult,
-                                                            in gp_Pnt theP,
-                                                            in MathUtils.Domain1D theDomain,
+                                                            in Point3D theP,
+                                                            in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain,
                                                             CurveEvaluator theEval,
                                                             double theTol,
                                                             SearchMode theMode)
@@ -305,8 +309,8 @@ public static partial class ExtremaPC
         double theUMax = theDomain.Max;
 
         // Evaluate endpoints
-        gp_Pnt aPtMin = theEval.Value(theUMin);
-        gp_Pnt aPtMax = theEval.Value(theUMax);
+        Point3D aPtMin = theEval.Value(theUMin);
+        Point3D aPtMax = theEval.Value(theUMax);
 
         double aSqDistMin = theP.SquareDistance(aPtMin);
         double aSqDistMax = theP.SquareDistance(aPtMax);
@@ -319,13 +323,13 @@ public static partial class ExtremaPC
         }
 
         // Check if UMin is a local extremum by comparing to neighbor
-        gp_Pnt aNeighborMin = theEval.Value(theUMin + aStep);
+        Point3D aNeighborMin = theEval.Value(theUMin + aStep);
         double aNeighborDistMin = theP.SquareDistance(aNeighborMin);
         bool aIsMinAtUMin = (aSqDistMin <= aNeighborDistMin);
         bool aIsMaxAtUMin = (aSqDistMin >= aNeighborDistMin);
 
         // Check if UMax is a local extremum by comparing to neighbor
-        gp_Pnt aNeighborMax = theEval.Value(theUMax - aStep);
+        Point3D aNeighborMax = theEval.Value(theUMax - aStep);
         double aNeighborDistMax = theP.SquareDistance(aNeighborMax);
         bool aIsMinAtUMax = (aSqDistMax <= aNeighborDistMax);
         bool aIsMaxAtUMax = (aSqDistMax >= aNeighborDistMax);
@@ -390,7 +394,7 @@ public static partial class ExtremaPC
     }
 
     // AddEndpointExtrema's lambda: whether a parameter or point already exists in the result
-    private static bool isDuplicate(Result theResult, double theTol, double theU, in gp_Pnt thePt)
+    private static bool isDuplicate(Result theResult, double theTol, double theU, in Point3D thePt)
     {
         for (int i = 0; i < theResult.Extrema.Length(); ++i)
         {

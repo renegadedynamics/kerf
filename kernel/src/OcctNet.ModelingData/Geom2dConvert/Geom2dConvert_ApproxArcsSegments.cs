@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -51,21 +53,21 @@ public sealed class Geom2dConvert_ApproxArcsSegments
 
         switch (myCurve.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 // Create a single line segment.
                 double aDist = myExt[0].Dist(myExt[1]);
-                if (aDist > Precision.Confusion())
+                if (aDist > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    gp_Ax2d anAx2d = new(new gp_Pnt2d(myExt[0].Point()),
-                                         new gp_Dir2d(new gp_Vec2d(new gp_Pnt2d(myExt[0].Point()), new gp_Pnt2d(myExt[1].Point()))));
+                    Axis2D anAx2d = new(new Point2D(myExt[0].Point()),
+                                         new Direction2D(new Vector2D(new Point2D(myExt[0].Point()), new Point2D(myExt[1].Point()))));
                     Geom2d_Line aLine = new(anAx2d);
                     mySeqCurves.Append(new Geom2d_TrimmedCurve(aLine, 0.0, aDist));
                     myStatus = Status.StatusOK;
                 }
             }
             break;
-            case GeomAbs_Circle:
+            case Circle:
             {
                 // Create a couple of arcs of equal size.
                 Geom2dConvert_PPoint aPP = new(.5 * (myExt[0].Parameter() + myExt[1].Parameter()), myCurve);
@@ -122,8 +124,8 @@ public sealed class Geom2dConvert_ApproxArcsSegments
     {
         Geom2d_Curve? aResult = null;
         double aParaM = (theFirst.Parameter() + theLast.Parameter()) * .5;
-        myCurve.D0(aParaM, out gp_Pnt2d aPointM);
-        GC_MakeArcOfCircle2d aMakeArc1 = new(new gp_Pnt2d(theFirst.Point()), aPointM, new gp_Pnt2d(theLast.Point()));
+        myCurve.D0(aParaM, out Point2D aPointM);
+        GC_MakeArcOfCircle2d aMakeArc1 = new(new Point2D(theFirst.Point()), aPointM, new Point2D(theLast.Point()));
 
         if (aMakeArc1.IsDone())
         {
@@ -140,18 +142,18 @@ public sealed class Geom2dConvert_ApproxArcsSegments
                          out Geom2d_TrimmedCurve? theCurve)
     {
         theCurve = null;
-        gp_XY aP1 = theParam1.Point();
-        gp_XY aP2 = theParam2.Point();
-        gp_XY aVec = isFirst ? theParam1.D1() : -theParam1.D1();
+        Xy aP1 = theParam1.Point();
+        Xy aP2 = theParam2.Point();
+        Xy aVec = isFirst ? theParam1.D1() : -theParam1.D1();
 
         // Detect the sense (CCW means positive)
-        gp_XY aDelta = aP2 - aP1;
+        Xy aDelta = aP2 - aP1;
         double aSense = aVec ^ aDelta;
-        if (aSense > Precision.Angular())
+        if (aSense > global::Kerf.Engine.Foundation.Precision.Angular())
         {
             aSense = 1.0;
         }
-        else if (aSense < -Precision.Angular())
+        else if (aSense < -global::Kerf.Engine.Foundation.Precision.Angular())
         {
             aSense = -1.0;
         }
@@ -161,32 +163,32 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         }
 
         // Find the centre of the circle
-        gp_XY aMiddle = (aP2 + aP1) * 0.5;
+        Xy aMiddle = (aP2 + aP1) * 0.5;
         double prodP1V = aP1 * aVec;
         double prodDeM = aDelta * aMiddle;
         double vprodVD = aVec ^ aDelta;
-        double aResolution = gp.Resolution();
+        double aResolution = Constants.Resolution();
 
         if (vprodVD < -aResolution || vprodVD > aResolution)
         {
-            gp_Pnt2d aCenter = new((prodP1V * aDelta.Y() - prodDeM * aVec.Y()) / vprodVD,
+            Point2D aCenter = new((prodP1V * aDelta.Y() - prodDeM * aVec.Y()) / vprodVD,
                                    (prodDeM * aVec.X() - prodP1V * aDelta.X()) / vprodVD);
-            double aRad = (aCenter.Distance(new gp_Pnt2d(aP1)) + aCenter.Distance(new gp_Pnt2d(aP2))) * 0.5;
-            gp_Ax22d ax22d = new(aCenter, new gp_Dir2d(gp_Dir2d.D.X), new gp_Dir2d(gp_Dir2d.D.Y));
-            gp_Circ2d aCir = new(ax22d, aRad);
+            double aRad = (aCenter.Distance(new Point2D(aP1)) + aCenter.Distance(new Point2D(aP2))) * 0.5;
+            Frame2D ax22d = new(aCenter, new Direction2D(Direction2D.D.X), new Direction2D(Direction2D.D.Y));
+            Circle2D aCir = new(ax22d, aRad);
             Geom2d_Circle Circ = new(aCir);
 
             // calculation parameters first and last points of arc.
             double anAlpha1, anAlpha2;
             if (isFirst)
             {
-                anAlpha1 = ElCLib.Parameter(aCir, new gp_Pnt2d(aP1));
-                anAlpha2 = ElCLib.Parameter(aCir, new gp_Pnt2d(aP2));
+                anAlpha1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCir, new Point2D(aP1));
+                anAlpha2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCir, new Point2D(aP2));
             }
             else
             {
-                anAlpha1 = ElCLib.Parameter(aCir, new gp_Pnt2d(aP2));
-                anAlpha2 = ElCLib.Parameter(aCir, new gp_Pnt2d(aP1));
+                anAlpha1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCir, new Point2D(aP2));
+                anAlpha2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCir, new Point2D(aP1));
                 aSense = -aSense;
             }
 
@@ -206,8 +208,8 @@ public sealed class Geom2dConvert_ApproxArcsSegments
 
             theCurve = new Geom2d_TrimmedCurve(Circ, anAlpha1, anAlpha2);
             // Correct the direction in the opposite point
-            gp_XY aRadV = theParam2.Point() - aCenter.XY();
-            theParam2.SetD1(new gp_XY(-aRadV.Y() * aSense, aRadV.X() * aSense));
+            Xy aRadV = theParam2.Point() - aCenter.XY();
+            theParam2.SetD1(new Xy(-aRadV.Y() * aSense, aRadV.X() * aSense));
             return true;
         }
 
@@ -222,17 +224,17 @@ public sealed class Geom2dConvert_ApproxArcsSegments
     {
         Geom2d_TrimmedCurve? aResult = null;
 
-        gp_XY aSlope = theLast.Point() - theFirst.Point();
-        if (Math.Abs(aSlope.SquareModulus()) < gp.Resolution())
+        Xy aSlope = theLast.Point() - theFirst.Point();
+        if (Math.Abs(aSlope.SquareModulus()) < Constants.Resolution())
         {
             return aResult;
         }
 
-        gp_Dir2d aDirLine = new(aSlope);
+        Direction2D aDirLine = new(aSlope);
 
         if (isCheck)
         {
-            if (theFirst.D1().SquareModulus() < gp.Resolution() || theLast.D1().SquareModulus() < gp.Resolution())
+            if (theFirst.D1().SquareModulus() < Constants.Resolution() || theLast.D1().SquareModulus() < Constants.Resolution())
             {
                 return aResult;
             }
@@ -242,13 +244,13 @@ public sealed class Geom2dConvert_ApproxArcsSegments
             Span<double> absAngle = [0.0, 0.0];
             if (theFirst.IsNotEqual(myExt[0]))
             {
-                double anAng = aDirLine.Angle(new gp_Dir2d(theFirst.D1()));
+                double anAng = aDirLine.Angle(new Direction2D(theFirst.D1()));
                 absAngle[0] = (anAng > 0.0 ? anAng : -anAng);
             }
 
             if (theLast.IsNotEqual(myExt[1]))
             {
-                double anAng = aDirLine.Angle(new gp_Dir2d(theLast.D1()));
+                double anAng = aDirLine.Angle(new Direction2D(theLast.D1()));
                 absAngle[1] = (anAng > 0.0 ? anAng : -anAng);
             }
 
@@ -263,7 +265,7 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         } // end if (isCheck)
 
         // building segment of line
-        GC_MakeSegment2d aMakeSeg = new(new gp_Pnt2d(theFirst.Point()), new gp_Pnt2d(theLast.Point()));
+        GC_MakeSegment2d aMakeSeg = new(new Point2D(theFirst.Point()), new Point2D(theLast.Point()));
         if (aMakeSeg.IsDone())
         {
             Geom2d_TrimmedCurve aCurve = aMakeSeg.Value();
@@ -271,7 +273,7 @@ public sealed class Geom2dConvert_ApproxArcsSegments
             {
                 aResult = aCurve;
                 // correct the derivatives fields in both arguments
-                gp_XY aNewD1 = theLast.Point() - theFirst.Point();
+                Xy aNewD1 = theLast.Point() - theFirst.Point();
                 theFirst.SetD1(aNewD1);
                 theLast.SetD1(aNewD1);
             }
@@ -390,7 +392,7 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         GCPnts_QuasiUniformDeflection aQUDefAlgo = new(myCurve, myTolerance * 0.5);
         bool isUniformDone = aQUDefAlgo.IsDone();
 
-        gp_XY aLastPnt = myExt[0].Point();
+        Xy aLastPnt = myExt[0].Point();
         if (isUniformDone)
         {
             for (i = 1; i <= aQUDefAlgo.NbPoints(); i++)
@@ -413,9 +415,9 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         }
 
         // check if the curve may be linearised
-        gp_XY aDir = myExt[1].Point() - myExt[0].Point();
+        Xy aDir = myExt[1].Point() - myExt[0].Point();
         double aMod2 = aDir.SquareModulus();
-        if (aMod2 > Precision.Confusion())
+        if (aMod2 > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             bool isLinear = true;
             aDir /= Math.Sqrt(aMod2);
@@ -550,7 +552,7 @@ public sealed class Geom2dConvert_ApproxArcsSegments
                     isDone = checkContinuity(mySeqCurves.Last(), aCurve!, myAngleTolerance);
                 }
 
-                if (isDone || aDistance < Precision.Confusion())
+                if (isDone || aDistance < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     // OCCT appends the curve even when makeLine returned a null handle (aDistance below
                     // Confusion); the port's sequence holds non-null curves, so a null one is left out.
@@ -587,34 +589,34 @@ public sealed class Geom2dConvert_ApproxArcsSegments
     // Method for calculation of a biarc.
     private bool calculateBiArcs(ref Geom2dConvert_PPoint theFirstParam, ref Geom2dConvert_PPoint theLastParam)
     {
-        double aResolution = gp.Resolution();
+        double aResolution = Constants.Resolution();
 
         if (theFirstParam.D1().SquareModulus() < aResolution || theLastParam.D1().SquareModulus() < aResolution)
         {
             return false;
         }
 
-        gp_XY aPnt0 = theFirstParam.Point(), aPnt1 = theLastParam.Point();
-        gp_Dir2d aDir0 = new(theFirstParam.D1()), aDir1 = new(theLastParam.D1());
+        Xy aPnt0 = theFirstParam.Point(), aPnt1 = theLastParam.Point();
+        Direction2D aDir0 = new(theFirstParam.D1()), aDir1 = new(theLastParam.D1());
 
         // Try to approximate the curve by a single arc. The criterion for that is
         // more rigid if the curve is the entire input curve
         // (possible pb. connecting with other boundaries)
-        gp_Vec2d aDelta = new(aPnt1 - aPnt0);
-        double anAngle1 = aDelta.Angle(new gp_Vec2d(aDir0));
+        Vector2D aDelta = new(aPnt1 - aPnt0);
+        double anAngle1 = aDelta.Angle(new Vector2D(aDir0));
         if (anAngle1 < 0.0)
         {
             anAngle1 = -anAngle1;
         }
 
-        double anAngle2 = aDelta.Angle(new gp_Vec2d(aDir1));
+        double anAngle2 = aDelta.Angle(new Vector2D(aDir1));
         if (anAngle2 < 0.0)
         {
             anAngle2 = -anAngle2;
         }
 
         // in the case when two angles are equal one arc can be built.
-        double anAngleThreshold = Precision.Angular() * 10.0;
+        double anAngleThreshold = global::Kerf.Engine.Foundation.Precision.Angular() * 10.0;
         if (theFirstParam.IsNotEqual(myExt[0]) || theLastParam.IsNotEqual(myExt[1]))
         {
             anAngleThreshold = myAngleTolerance * 0.1;
@@ -648,10 +650,10 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         aDir1.Reverse();
 
         // Direct calculation of intersection point, replaces a class call below
-        double aProd0 = aPnt0 ^ aDir0.XY(), aProd1 = aPnt1 ^ aDir1.XY(), aProd2 = aDir1 ^ new gp_Dir2d(aDir0.XY()); // C++ converts the gp_XY to a gp_Dir2d implicitly
-        gp_XY aIntPoint = new((aProd0 * aDir1.X() - aProd1 * aDir0.X()) / aProd2,
+        double aProd0 = aPnt0 ^ aDir0.XY(), aProd1 = aPnt1 ^ aDir1.XY(), aProd2 = aDir1 ^ new Direction2D(aDir0.XY()); // C++ converts the gp_XY to a gp_Dir2d implicitly
+        Xy aIntPoint = new((aProd0 * aDir1.X() - aProd1 * aDir0.X()) / aProd2,
                               (aProd0 * aDir1.Y() - aProd1 * aDir0.Y()) / aProd2);
-        gp_XY aDiff0 = aIntPoint - aPnt0, aDiff1 = aIntPoint - aPnt1;
+        Xy aDiff0 = aIntPoint - aPnt0, aDiff1 = aIntPoint - aPnt1;
         if (aDiff0 * aDir0.XY() < 0.0 || aDiff1 * aDir1.XY() < 0.0)
         {
             return false;
@@ -668,10 +670,10 @@ public sealed class Geom2dConvert_ApproxArcsSegments
             return false;
         }
 
-        gp_XY aXY0 = aPnt0 + aDir0.XY() * ad12 * ad1 / (ad12 + ad1 + ad2);
-        gp_XY aXY1 = aPnt1 + aDir1.XY() * ad12 * ad2 / (ad12 + ad1 + ad2);
+        Xy aXY0 = aPnt0 + aDir0.XY() * ad12 * ad1 / (ad12 + ad1 + ad2);
+        Xy aXY1 = aPnt1 + aDir1.XY() * ad12 * ad2 / (ad12 + ad1 + ad2);
 
-        gp_XY aXYmidArc = aXY0 + aB1 * (aXY1 - aXY0);
+        Xy aXYmidArc = aXY0 + aB1 * (aXY1 - aXY0);
         Geom2dConvert_PPoint aParamMidArc =
             getParameter(aXYmidArc, theFirstParam.Parameter(), theLastParam.Parameter(), myCurve);
 
@@ -757,8 +759,8 @@ public sealed class Geom2dConvert_ApproxArcsSegments
             aCurve1 = aTrCurve.BasisCurve();
         }
 
-        gp_Lin2d aLin2d = new();
-        gp_Circ2d aCirc2d = new();
+        Line2D aLin2d = new();
+        Circle2D aCirc2d = new();
         bool isLine = aCurve1 is Geom2d_Line;
         bool isCircle = !isLine;
         if (aCurve1 is Geom2d_Line aGeomLine)
@@ -784,29 +786,29 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         for (; i <= aNbPnts && isLess; i++)
         {
             double aParam = (isUniformDone ? mySeqParams.Value(i).Parameter() : (theFirstParam + i * aParamStep));
-            if (aParam < (theFirstParam - Precision.PConfusion()) || aParam > (theLastParam + Precision.PConfusion()))
+            if (aParam < (theFirstParam - global::Kerf.Engine.Foundation.Precision.PConfusion()) || aParam > (theLastParam + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 continue;
             }
 
             // getting point from adaptor curve by specified parameter.
-            gp_Pnt2d aProjPoint = new(0.0, 0.0);
-            myCurve.D0(aParam, out gp_Pnt2d aPointAdaptor);
+            Point2D aProjPoint = new(0.0, 0.0);
+            myCurve.D0(aParam, out Point2D aPointAdaptor);
             double aParameterCurve;
 
             // getting point from geom curve by specified parameter.
             if (isLine)
             {
-                aParameterCurve = ElCLib.Parameter(aLin2d, aPointAdaptor);
-                aProjPoint = ElCLib.Value(aParameterCurve, aLin2d);
+                aParameterCurve = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin2d, aPointAdaptor);
+                aProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(aParameterCurve, aLin2d);
             }
             else if (isCircle)
             {
-                aParameterCurve = ElCLib.Parameter(aCirc2d, aPointAdaptor);
-                aProjPoint = ElCLib.Value(aParameterCurve, aCirc2d);
+                aParameterCurve = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCirc2d, aPointAdaptor);
+                aProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(aParameterCurve, aCirc2d);
             }
 
-            isLess = (aProjPoint.Distance(aPointAdaptor) < myTolerance + Precision.PConfusion());
+            isLess = (aProjPoint.Distance(aPointAdaptor) < myTolerance + global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
 
         return isLess;
@@ -814,14 +816,14 @@ public sealed class Geom2dConvert_ApproxArcsSegments
 
     private static bool checkContinuity(Geom2d_Curve theCurve1, Geom2d_Curve theCurve2, double theAngleTol)
     {
-        theCurve1.D1(theCurve1.LastParameter(), out _, out gp_Vec2d v11);
-        theCurve2.D1(theCurve2.FirstParameter(), out _, out gp_Vec2d v21);
+        theCurve1.D1(theCurve1.LastParameter(), out _, out Vector2D v11);
+        theCurve2.D1(theCurve2.FirstParameter(), out _, out Vector2D v21);
 
         // check continuity with the specified tolerance.
         return (v11.IsParallel(v21, theAngleTol));
     }
 
-    private static Geom2dConvert_PPoint getParameter(in gp_XY theXY1,
+    private static Geom2dConvert_PPoint getParameter(in Xy theXY1,
                                                      double theFirstParam,
                                                      double theLastParam,
                                                      Adaptor2d_Curve2d theCurve)
@@ -838,24 +840,24 @@ public sealed class Geom2dConvert_ApproxArcsSegments
         {
             aResult = new Geom2dConvert_PPoint(af1, theCurve);
             double adist1 = (theXY1 - aResult.Point()).Modulus();
-            if (adist1 < Precision.Confusion())
+            if (adist1 < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return aResult;
             }
 
             aResult = new Geom2dConvert_PPoint(af2, theCurve);
             double adist2 = (theXY1 - aResult.Point()).Modulus();
-            if (adist2 < Precision.Confusion())
+            if (adist2 < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return aResult;
             }
 
-            if (aMinDist <= adist2 - Precision.Confusion() && aMinDist <= adist1 - Precision.Confusion())
+            if (aMinDist <= adist2 - global::Kerf.Engine.Foundation.Precision.Confusion() && aMinDist <= adist1 - global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 break;
             }
 
-            if (adist1 < adist2 - Precision.Confusion())
+            if (adist1 < adist2 - global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 prevParam = af1;
                 aMinDist = adist1;
@@ -875,7 +877,7 @@ public sealed class Geom2dConvert_ApproxArcsSegments
 
     private static bool isInflectionPoint(double theParam, Adaptor2d_Curve2d theCurve)
     {
-        theCurve.D2(theParam, out _, out gp_Vec2d aD1, out gp_Vec2d aD2);
+        theCurve.D2(theParam, out _, out Vector2D aD1, out Vector2D aD2);
         double aSqMod = aD1.XY().SquareModulus();
         double aCurvature = Math.Abs(aD1.XY() ^ aD2.XY()) / (aSqMod * Math.Sqrt(aSqMod));
         return (aCurvature < MyCurvatureTolerance);
@@ -886,10 +888,10 @@ public sealed class Geom2dConvert_ApproxArcsSegments
                                           Adaptor2d_Curve2d theCurve,
                                           double theAngleTol)
     {
-        theCurve.D2(theParam, out gp_Pnt2d aP1, out gp_Vec2d aD1, out gp_Vec2d aD2);
+        theCurve.D2(theParam, out Point2D aP1, out Vector2D aD1, out Vector2D aD2);
         double aSqMod = aD1.XY().SquareModulus();
         double aCurvature = Math.Abs(aD1.XY() ^ aD2.XY()) / (aSqMod * Math.Sqrt(aSqMod));
-        double aContAngle = Math.Abs(new gp_Vec2d(aP1.XY() - theFirstInfl.Point()).Angle(aD1));
+        double aContAngle = Math.Abs(new Vector2D(aP1.XY() - theFirstInfl.Point()).Angle(aD1));
         aContAngle = Min(aContAngle, Math.Abs(M_PI - aContAngle));
         return (aCurvature < MyCurvatureTolerance && aContAngle < theAngleTol);
     }

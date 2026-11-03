@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -14,8 +16,8 @@ public class BRepOffset_MakeLoopsInter3dTests
 {
     private static TopoDS_Face Square(double theZ)
     {
-        BRepBuilderAPI_MakePolygon aPoly = new(new gp_Pnt(0, 0, theZ), new gp_Pnt(10, 0, theZ),
-                                               new gp_Pnt(10, 10, theZ), new gp_Pnt(0, 10, theZ), true);
+        BRepBuilderAPI_MakePolygon aPoly = new(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ),
+                                               new Point3D(10, 10, theZ), new Point3D(0, 10, theZ), true);
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face();
         return TopoDS.Face(BRepTools.ExactCopyForWrite(aFace, out _));
     }
@@ -50,7 +52,7 @@ public class BRepOffset_MakeLoopsInter3dTests
         aLF.Append(aF);
         BRepAlgo_Image anImage = new();
         BRepOffset_MakeLoops aMakeLoops = new();
-        aMakeLoops.Build(aLF, anAsDes, anImage, new BRepAlgo_Image(), new Message_ProgressRange());
+        aMakeLoops.Build(aLF, anAsDes, anImage, new BRepAlgo_Image(), new ProgressRange());
 
         Assert.True(anImage.HasImage(aF));
         NCollection_List<TopoDS_Shape> aNF = anImage.Image(aF);
@@ -94,7 +96,7 @@ public class BRepOffset_MakeLoopsInter3dTests
         BRepAlgo_Image anInitOffsetEdge = new();
         BRepOffset_Inter3d anInter = new(anAsDes, TopAbs_State.TopAbs_IN, 1.0e-7);
         anInter.ContextIntByArc(aContext, theInSide, anAnalyse, new BRepAlgo_Image(), anInitOffsetEdge,
-                                new Message_ProgressRange());
+                                new ProgressRange());
 
         Assert.True(anInter.TouchedFaces().Contains(aCF));
         NCollection_List<TopoDS_Shape> aLE = anAsDes.Descendant(aCF);

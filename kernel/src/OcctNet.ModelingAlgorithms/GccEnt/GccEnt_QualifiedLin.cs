@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -15,17 +16,17 @@ namespace Occt;
 public readonly struct GccEnt_QualifiedLin : IEquatable<GccEnt_QualifiedLin>
 {
     private readonly GccEnt_Position TheQualifier;
-    private readonly gp_Lin2d TheQualified;
+    private readonly Line2D TheQualified;
 
     /// <summary>Assigns the qualifier to the line.</summary>
-    public GccEnt_QualifiedLin(in gp_Lin2d Qualified, GccEnt_Position Qualifier)
+    public GccEnt_QualifiedLin(in Line2D Qualified, GccEnt_Position Qualifier)
     {
         TheQualified = Qualified;
         TheQualifier = Qualifier;
     }
 
     /// <summary>The line to which the qualifier is assigned.</summary>
-    public gp_Lin2d Qualified()
+    public Line2D Qualified()
     {
         return TheQualified;
     }

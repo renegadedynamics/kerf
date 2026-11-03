@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -27,7 +28,7 @@ public class BRepOffsetAPI_MakePipe : BRepPrimAPI_MakeSweep
     /// <summary>
     /// The pipe of <paramref name="Profile"/> along <paramref name="Spine"/> (corrected Frenet trihedron).
     /// </summary>
-    /// <exception cref="Standard_DomainError">The profile is a solid or a composite solid.</exception>
+    /// <exception cref="DomainErrorException">The profile is a solid or a composite solid.</exception>
     public BRepOffsetAPI_MakePipe(in TopoDS_Wire Spine, in TopoDS_Shape Profile)
     {
         myPipe = new BRepFill_Pipe(Spine, GeneratingShapeForWrite(Profile));
@@ -52,7 +53,7 @@ public class BRepOffsetAPI_MakePipe : BRepPrimAPI_MakeSweep
     internal BRepFill_Pipe Pipe() => myPipe;
 
     /// <summary>Builds the resulting shape (redefined from MakeShape).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myShape = myPipe.InternalShape();
         KeepUnchangedGenerating(ref myShape);

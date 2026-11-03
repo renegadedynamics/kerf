@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -30,7 +34,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     /// say whether the trimmed surface keeps the basis orientation (U1 &lt; U2 with USense true, or U1 &gt; U2 with
     /// USense false), otherwise it is reversed.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// U1 == U2 or V1 == V2, or a non-periodic direction is trimmed outside the bounds of S.
     /// </exception>
     public Geom_RectangularTrimmedSurface(Geom_Surface S,
@@ -74,7 +78,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     /// The part of a copy of S between Param1 and Param2 in U (UTrim true) or in V (UTrim false); the other
     /// direction is not trimmed, unless S is itself trimmed in it. Sense as in the other constructor.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// Param1 == Param2, or the direction is not periodic and is trimmed outside the bounds of S.
     /// </exception>
     public Geom_RectangularTrimmedSurface(Geom_Surface S,
@@ -122,7 +126,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the trim values in both directions (see the first constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">As the first constructor.</exception>
+    /// <exception cref="ConstructionErrorException">As the first constructor.</exception>
     internal void SetTrim(double U1,
                           double U2,
                           double V1,
@@ -135,7 +139,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the trim values in one direction (see the second constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">As the second constructor.</exception>
+    /// <exception cref="ConstructionErrorException">As the second constructor.</exception>
     internal void SetTrim(double Param1, double Param2, bool UTrim, bool Sense = true)
     {
         CheckMutable();
@@ -194,7 +198,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         {
             if (U1 == U2)
             {
-                throw new Standard_ConstructionError("Geom_RectangularTrimmedSurface::U1==U2");
+                throw new ConstructionErrorException("Geom_RectangularTrimmedSurface::U1==U2");
             }
 
             if (basisSurf.IsUPeriodic())
@@ -205,9 +209,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
                 // set uTrim2 in the range uTrim1 , uTrim1 + Period()
                 utrim1 = U1;
                 utrim2 = U2;
-                ElCLib.AdjustPeriodic(Udeb,
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Udeb,
                                       Ufin,
-                                      Min(Math.Abs(utrim2 - utrim1) / 2, Precision.PConfusion()),
+                                      Min(Math.Abs(utrim2 - utrim1) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                                       ref utrim1,
                                       ref utrim2);
             }
@@ -226,9 +230,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
                     utrim2 = U1;
                 }
 
-                if ((Udeb - utrim1 > Precision.PConfusion()) || (utrim2 - Ufin > Precision.PConfusion()))
+                if ((Udeb - utrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (utrim2 - Ufin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
-                    throw new Standard_ConstructionError(
+                    throw new ConstructionErrorException(
                         "Geom_RectangularTrimmedSurface::U parameters out of range");
                 }
             }
@@ -245,7 +249,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         {
             if (V1 == V2)
             {
-                throw new Standard_ConstructionError("Geom_RectangularTrimmedSurface::V1==V2");
+                throw new ConstructionErrorException("Geom_RectangularTrimmedSurface::V1==V2");
             }
 
             if (basisSurf.IsVPeriodic())
@@ -256,9 +260,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
                 // set vTrim2 in the range vTrim1 , vTrim1 + Period()
                 vtrim1 = V1;
                 vtrim2 = V2;
-                ElCLib.AdjustPeriodic(Vdeb,
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Vdeb,
                                       Vfin,
-                                      Min(Math.Abs(vtrim2 - vtrim1) / 2, Precision.PConfusion()),
+                                      Min(Math.Abs(vtrim2 - vtrim1) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                                       ref vtrim1,
                                       ref vtrim2);
             }
@@ -277,9 +281,9 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
                     vtrim2 = V1;
                 }
 
-                if ((Vdeb - vtrim1 > Precision.PConfusion()) || (vtrim2 - Vfin > Precision.PConfusion()))
+                if ((Vdeb - vtrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (vtrim2 - Vfin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
-                    throw new Standard_ConstructionError(
+                    throw new ConstructionErrorException(
                         "Geom_RectangularTrimmedSurface::V parameters out of range");
                 }
             }
@@ -296,7 +300,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy trimmed in both directions (see the first constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">As the first constructor.</exception>
+    /// <exception cref="ConstructionErrorException">As the first constructor.</exception>
     public Geom_RectangularTrimmedSurface WithTrim(double U1,
                                                    double U2,
                                                    double V1,
@@ -310,7 +314,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy trimmed in one direction (see the second constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">As the second constructor.</exception>
+    /// <exception cref="ConstructionErrorException">As the second constructor.</exception>
     public Geom_RectangularTrimmedSurface WithTrim(double Param1, double Param2, bool UTrim, bool Sense = true)
     {
         Geom_RectangularTrimmedSurface aCopy = (Geom_RectangularTrimmedSurface)Copy();
@@ -328,7 +332,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     // OCCT.NET: the basis surface may have been handed out (and frozen) by BasisSurface(); copy it before changing it.
     private void ownBasisSurface()
     {
-        if (basisSurf.IsFrozen())
+        if (basisSurf.IsFrozen)
         {
             basisSurf = (Geom_Surface)basisSurf.Copy();
         }
@@ -372,7 +376,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>The continuity of the basis surface.</summary>
-    public sealed override GeomAbs_Shape Continuity() => basisSurf.Continuity();
+    public sealed override Continuity Continuity() => basisSurf.Continuity();
 
     /// <summary>
     /// The basis surface's closure if U is not trimmed; otherwise true only if the basis is U-periodic and the
@@ -389,8 +393,8 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         {
             double aPeriod = basisSurf.UPeriod();
             double aLength = utrim2 - utrim1;
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
@@ -410,8 +414,8 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         {
             double aPeriod = basisSurf.VPeriod();
             double aLength = vtrim2 - vtrim1;
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
@@ -420,7 +424,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>True if the basis surface is CN in U.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNu(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -428,7 +432,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>True if the basis surface is CN in V.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNv(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -451,12 +455,12 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         }
         double aPeriod = basisSurf.UPeriod();
         double aLength = utrim2 - utrim1;
-        return aLength > Precision.PConfusion()
-               && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion();
+        return aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+               && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>The U period of the basis surface.</summary>
-    /// <exception cref="Standard_NoSuchObject">The basis surface is not U-periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The basis surface is not U-periodic.</exception>
     public sealed override double UPeriod() => basisSurf.UPeriod();
 
     /// <summary>As <see cref="IsUPeriodic"/>, in V.</summary>
@@ -472,12 +476,12 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         }
         double aPeriod = basisSurf.VPeriod();
         double aLength = vtrim2 - vtrim1;
-        return aLength > Precision.PConfusion()
-               && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion();
+        return aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+               && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>The V period of the basis surface.</summary>
-    /// <exception cref="Standard_NoSuchObject">The basis surface is not V-periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The basis surface is not V-periodic.</exception>
     public sealed override double VPeriod() => basisSurf.VPeriod();
 
     /// <summary>The U iso-curve of the basis surface, trimmed in V if V is trimmed.</summary>
@@ -514,7 +518,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         }
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V) => basisSurf.EvalD0(U, V);
+    public sealed override Point3D EvalD0(double U, double V) => basisSurf.EvalD0(U, V);
 
     public sealed override ResD1 EvalD1(double U, double V) => basisSurf.EvalD1(U, V);
 
@@ -523,7 +527,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     public sealed override ResD3 EvalD3(double U, double V) => basisSurf.EvalD3(U, V);
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
@@ -533,7 +537,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>Transforms the basis surface and the trim values (through its TransformParameters).</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ownBasisSurface();
@@ -543,13 +547,13 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
     }
 
     /// <summary>The basis surface's TransformParameters.</summary>
-    public sealed override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public sealed override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
         basisSurf.TransformParameters(ref U, ref V, T);
     }
 
     /// <summary>The basis surface's ParametricTransformation.</summary>
-    public sealed override gp_GTrsf2d ParametricTransformation(in gp_Trsf T) => basisSurf.ParametricTransformation(T);
+    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D T) => basisSurf.ParametricTransformation(T);
 
     /// <summary>A new, unfrozen trimmed surface on a copy of the basis surface.</summary>
     public sealed override Geom_Geometry Copy()
@@ -572,7 +576,7 @@ public class Geom_RectangularTrimmedSurface : Geom_BoundedSurface
         {
             // OCCT returns a null handle here; no constructor leaves both directions untrimmed (the one-direction
             // SetTrim can only add a trimmed direction), so this is unreachable.
-            throw new Standard_ProgramError("Geom_RectangularTrimmedSurface::Copy: not trimmed");
+            throw new ProgramErrorException("Geom_RectangularTrimmedSurface::Copy: not trimmed");
         }
 
         return S;

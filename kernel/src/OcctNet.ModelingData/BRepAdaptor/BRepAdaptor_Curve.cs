@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +29,7 @@ public class BRepAdaptor_Curve : GeomAdaptor_TransformedCurve
     }
 
     /// <summary>The geometry of the edge.</summary>
-    /// <exception cref="Standard_NullObject">The edge has neither a 3D curve nor a curve on a surface.</exception>
+    /// <exception cref="NullObjectException">The edge has neither a 3D curve nor a curve on a surface.</exception>
     public BRepAdaptor_Curve(in TopoDS_Edge E)
     {
         Initialize(E);
@@ -60,17 +66,17 @@ public class BRepAdaptor_Curve : GeomAdaptor_TransformedCurve
         myCurve.Reset();
         myConSurf = null;
         myEdge.Nullify();
-        myTrsf = new gp_Trsf();
+        myTrsf = new Transform3D();
     }
 
     /// <summary>Loads the geometry of the edge.</summary>
-    /// <exception cref="Standard_NullObject">The edge has neither a 3D curve nor a curve on a surface.</exception>
+    /// <exception cref="NullObjectException">The edge has neither a 3D curve nor a curve on a surface.</exception>
     public void Initialize(in TopoDS_Edge E)
     {
         myConSurf = null;
         myEdge = E;
 
-        Geom_Curve? C = BRep_Tool.Curve(E, out TopLoc_Location L, out double pf, out double pl);
+        Geom_Curve? C = BRep_Tool.Curve(E, out Placement L, out double pf, out double pl);
 
         if (C is not null)
         {
@@ -90,7 +96,7 @@ public class BRepAdaptor_Curve : GeomAdaptor_TransformedCurve
             }
             else
             {
-                throw new Standard_NullObject("BRepAdaptor_Curve::No geometry");
+                throw new NullObjectException("BRepAdaptor_Curve::No geometry");
             }
         }
         myTrsf = L.Transformation();
@@ -102,7 +108,7 @@ public class BRepAdaptor_Curve : GeomAdaptor_TransformedCurve
         myConSurf = null;
 
         myEdge = E;
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         Geom2d_Curve? PC = BRep_Tool.CurveOnSurface(E, F, out double pf, out double pl);
 
         GeomAdaptor_Surface HS = new GeomAdaptor_Surface();

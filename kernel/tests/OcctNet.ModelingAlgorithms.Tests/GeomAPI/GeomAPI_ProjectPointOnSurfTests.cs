@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's GeomAPI_ProjectPointOnSurf GTest.</summary>
@@ -13,10 +17,10 @@ public class GeomAPI_ProjectPointOnSurfTest
     [Fact]
     public void Bug867_InitWithTightBoundsNoException()
     {
-        Geom_CylindricalSurface aCyl = new(new gp_Ax3(gp.XOY()), 10.0);
+        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(Constants.XOY()), 10.0);
         Geom_RectangularTrimmedSurface aTrimSurf = new(aCyl, 0.0, 4.0, 0.0, 2.0);
 
-        gp_Pnt aPoint = new(30.0, 30.0, 30.0);
+        Point3D aPoint = new(30.0, 30.0, 30.0);
 
         GeomAPI_ProjectPointOnSurf aProjector = new();
         Exception? anEx = Record.Exception(() =>

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -13,16 +15,16 @@ internal sealed class BRepSweep_Prism
     private readonly BRepSweep_Translation myTranslation;
 
     /// <summary>The prism of base <paramref name="S"/> and vector <paramref name="V"/>; with <paramref name="Copy"/> S is copied.</summary>
-    public BRepSweep_Prism(in TopoDS_Shape S, in gp_Vec V, bool Copy = false, bool Canonize = true)
+    public BRepSweep_Prism(in TopoDS_Shape S, in Vector3D V, bool Copy = false, bool Canonize = true)
     {
         myTranslation = new BRepSweep_Translation(S, NumShape(), Location(V), V, Copy, Canonize);
-        Standard_ConstructionError_Raise_if(V.Magnitude() <= Precision.Confusion(), "BRepSweep_Prism::Constructor");
+        Standard_ConstructionError_Raise_if(V.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Prism::Constructor");
     }
 
     /// <summary>A semi-infinite (<paramref name="Inf"/> false) or infinite prism of base <paramref name="S"/>.</summary>
-    public BRepSweep_Prism(in TopoDS_Shape S, in gp_Dir D, bool Inf = true, bool Copy = false, bool Canonize = true)
+    public BRepSweep_Prism(in TopoDS_Shape S, in Direction3D D, bool Inf = true, bool Copy = false, bool Canonize = true)
     {
-        myTranslation = new BRepSweep_Translation(S, NumShape(Inf), Location(new gp_Vec(D)), new gp_Vec(D), Copy, Canonize);
+        myTranslation = new BRepSweep_Translation(S, NumShape(Inf), Location(new Vector3D(D)), new Vector3D(D), Copy, Canonize);
     }
 
     public TopoDS_Shape Shape() => myTranslation.Shape();
@@ -37,7 +39,7 @@ internal sealed class BRepSweep_Prism
 
     public TopoDS_Shape LastShape(in TopoDS_Shape aGenS) => myTranslation.LastShape(aGenS);
 
-    public gp_Vec Vec() => myTranslation.Vec();
+    public Vector3D Vec() => myTranslation.Vec();
 
     private static Sweep_NumShape NumShape() => new(2, TopAbs_EDGE);
 
@@ -55,11 +57,11 @@ internal sealed class BRepSweep_Prism
         return N;
     }
 
-    private static TopLoc_Location Location(in gp_Vec V)
+    private static Placement Location(in Vector3D V)
     {
-        var gpt = new gp_Trsf();
+        var gpt = new Transform3D();
         gpt.SetTranslation(V);
-        var L = new TopLoc_Location(gpt);
+        var L = new Placement(gpt);
         return L;
     }
 

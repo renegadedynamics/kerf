@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_VectorTest
@@ -62,7 +66,7 @@ public class math_VectorTest
     public void GeometryConstructors()
     {
         // Test gp_XY constructor
-        gp_XY anXY = new(3.5, 4.5);
+        Xy anXY = new(3.5, 4.5);
         math_Vector aVecXY = new(anXY);
         Assert.Equal(2, aVecXY.Length());
         Assert.Equal(1, aVecXY.Lower());
@@ -71,7 +75,7 @@ public class math_VectorTest
         Assert.Equal(4.5, aVecXY[2]);
 
         // Test gp_XYZ constructor
-        gp_XYZ anXYZ = new(1.1, 2.2, 3.3);
+        Xyz anXYZ = new(1.1, 2.2, 3.3);
         math_Vector aVecXYZ = new(anXYZ);
         Assert.Equal(3, aVecXYZ.Length());
         Assert.Equal(1, aVecXYZ.Lower());
@@ -116,10 +120,10 @@ public class math_VectorTest
 
         // Test Norm (should be Math.Sqrt(3^2 + 4^2 + 0^2 + (-2)^2) = Math.Sqrt(29))
         double anExpectedNorm = Math.Sqrt(29.0);
-        Assert.Equal(anExpectedNorm, aVec.Norm(), Precision.Confusion());
+        Assert.Equal(anExpectedNorm, aVec.Norm(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Test Norm2 (should be 29)
-        Assert.Equal(29.0, aVec.Norm2(), Precision.Confusion());
+        Assert.Equal(29.0, aVec.Norm2(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Test Max (should return index 2, value 4.0)
         Assert.Equal(2, aVec.Max());
@@ -138,21 +142,21 @@ public class math_VectorTest
         aVec[3] = 0.0;
 
         double anOriginalNorm = aVec.Norm();
-        Assert.Equal(5.0, anOriginalNorm, Precision.Confusion());
+        Assert.Equal(5.0, anOriginalNorm, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Test Normalized (creates new vector)
         math_Vector aNormalizedVec = aVec.Normalized();
-        Assert.Equal(1.0, aNormalizedVec.Norm(), Precision.Confusion());
-        Assert.Equal(3.0 / 5.0, aNormalizedVec[1], Precision.Confusion());
-        Assert.Equal(4.0 / 5.0, aNormalizedVec[2], Precision.Confusion());
-        Assert.Equal(0.0, aNormalizedVec[3], Precision.Confusion());
+        Assert.Equal(1.0, aNormalizedVec.Norm(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0 / 5.0, aNormalizedVec[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0 / 5.0, aNormalizedVec[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aNormalizedVec[3], global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Original vector should remain unchanged
-        Assert.Equal(5.0, aVec.Norm(), Precision.Confusion());
+        Assert.Equal(5.0, aVec.Norm(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Test Normalize (modifies in-place)
         aVec.Normalize();
-        Assert.Equal(1.0, aVec.Norm(), Precision.Confusion());
+        Assert.Equal(1.0, aVec.Norm(), global::Kerf.Engine.Foundation.Precision.Confusion());
         checkVectorsEqual(aVec, aNormalizedVec);
     }
 
@@ -428,7 +432,7 @@ public class math_VectorTest
     public void VectorMatrixOperations()
     {
         // Create test matrix [2x3]
-        math_Matrix aMat = new(1, 2, 1, 3);
+        Matrix aMat = new(1, 2, 1, 3);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[1, 3] = 3.0;
@@ -472,7 +476,7 @@ public class math_VectorTest
     public void TransposeMatrixOperations()
     {
         // Create test matrix [2x3]
-        math_Matrix aMat = new(1, 2, 1, 3);
+        Matrix aMat = new(1, 2, 1, 3);
         aMat[1, 1] = 1.0;
         aMat[1, 2] = 2.0;
         aMat[1, 3] = 3.0;
@@ -874,7 +878,7 @@ public class math_VectorTest
     {
         int   aLow = 1, aHigh = 6;
         math_Vector aVec = new(aLow, aHigh, 5.0);
-        math_Matrix aMat = new(aLow, aHigh, aLow, aHigh, 4.0);
+        Matrix aMat = new(aLow, aHigh, aLow, aHigh, 4.0);
         math_Vector aResult = new(aLow, aHigh);
 
         aResult.Multiply(aVec, aMat);
@@ -890,7 +894,7 @@ public class math_VectorTest
     {
         int   aLow = 1, aHigh = 6;
         math_Vector aVec = new(aLow, aHigh, 5.0);
-        math_Matrix aMat = new(aLow, aHigh, aLow, aHigh, 4.0);
+        Matrix aMat = new(aLow, aHigh, aLow, aHigh, 4.0);
         math_Vector aResult = new(aLow, aHigh);
 
         // Modify one element to create an asymmetry in the transposed multiply

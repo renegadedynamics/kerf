@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.HatchGen_ErrorStatus;
 
 namespace Occt;
@@ -138,11 +140,11 @@ public sealed class Geom2dHatch_Hatching
     public int NbPoints() => myPoints.Length();
 
     /// <summary>The <paramref name="Index"/>-th intersection point.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is out of range.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is out of range.</exception>
     public HatchGen_PointOnHatching Point(int Index) => myPoints.Value(Index);
 
     /// <summary>The <paramref name="Index"/>-th intersection point, for writing (the same object).</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is out of range.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is out of range.</exception>
     public HatchGen_PointOnHatching ChangePoint(int Index) => myPoints.ChangeValue(Index);
 
     /// <summary>Removes the <paramref name="Index"/>-th intersection point (and the domains, if computed).</summary>
@@ -182,7 +184,7 @@ public sealed class Geom2dHatch_Hatching
     public int NbDomains() => myDomains.Length();
 
     /// <summary>The <paramref name="Index"/>-th domain.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is out of range.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is out of range.</exception>
     public HatchGen_Domain Domain(int Index) => myDomains.Value(Index);
 
     /// <summary>The <paramref name="Index"/>-th domain, for writing (OCCT.NET: ChFi3d_Builder_SpKP's <c>Tri</c> casts the
@@ -205,14 +207,14 @@ public sealed class Geom2dHatch_Hatching
     /// <summary>
     /// A point of the curve for the classification: at its last parameter, else its first, else 0.
     /// </summary>
-    public gp_Pnt2d ClassificationPoint()
+    public Point2D ClassificationPoint()
     {
         double t, a, b;
         a = myCurve.FirstParameter();
         b = myCurve.LastParameter();
-        if (b >= Precision.Infinite())
+        if (b >= global::Kerf.Engine.Foundation.Precision.Infinite())
         {
-            if (a <= -Precision.Infinite())
+            if (a <= -global::Kerf.Engine.Foundation.Precision.Infinite())
             {
                 t = 0;
             }

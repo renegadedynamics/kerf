@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// coordinate system: <c>P(u,v) = O + u*XDir + v*YDir + (u^2/A^2 - v^2/B^2)*ZDir</c>, u and v in (-inf, +inf).
 /// Doubly ruled, neither periodic nor closed. Implicit equation in local coordinates:
 /// <c>X^2/A^2 - Y^2/B^2 - Z = 0</c>. Reversal, transformation and iso curves are not supported (they throw
-/// <see cref="Standard_NotImplemented"/>).
+/// <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
 {
@@ -18,18 +22,18 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
     private double myB; // Semi-axis length B (> 0)
 
     /// <summary>Creates a hyperbolic paraboloid with the given local coordinate system and semi-axes.</summary>
-    /// <exception cref="Standard_ConstructionError">theA &lt;= 0 or theB &lt;= 0.</exception>
-    public GeomEval_HypParaboloidSurface(in gp_Ax3 thePosition, double theA, double theB)
+    /// <exception cref="ConstructionErrorException">theA &lt;= 0 or theB &lt;= 0.</exception>
+    public GeomEval_HypParaboloidSurface(in CoordinateSystem thePosition, double theA, double theB)
     {
         myA = theA;
         myB = theB;
         if (theA <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_HypParaboloidSurface: semi-axis A must be > 0");
+            throw new ConstructionErrorException("GeomEval_HypParaboloidSurface: semi-axis A must be > 0");
         }
         if (theB <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_HypParaboloidSurface: semi-axis B must be > 0");
+            throw new ConstructionErrorException("GeomEval_HypParaboloidSurface: semi-axis B must be > 0");
         }
         pos = thePosition;
     }
@@ -40,32 +44,32 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
     /// <summary>The semi-axis length B.</summary>
     public double SemiAxisB() => myB;
 
-    /// <exception cref="Standard_ConstructionError">theA &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theA &lt;= 0.</exception>
     internal void SetSemiAxisA(double theA)
     {
         CheckMutable();
         if (theA <= 0.0)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_HypParaboloidSurface::SetSemiAxisA: semi-axis A must be > 0");
         }
         myA = theA;
     }
 
-    /// <exception cref="Standard_ConstructionError">theB &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theB &lt;= 0.</exception>
     internal void SetSemiAxisB(double theB)
     {
         CheckMutable();
         if (theB <= 0.0)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_HypParaboloidSurface::SetSemiAxisB: semi-axis B must be > 0");
         }
         myB = theB;
     }
 
     /// <summary>A copy with the semi-axis A set to theA.</summary>
-    /// <exception cref="Standard_ConstructionError">theA &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theA &lt;= 0.</exception>
     public GeomEval_HypParaboloidSurface WithSemiAxisA(double theA)
     {
         GeomEval_HypParaboloidSurface aCopy = (GeomEval_HypParaboloidSurface)Copy();
@@ -74,7 +78,7 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy with the semi-axis B set to theB.</summary>
-    /// <exception cref="Standard_ConstructionError">theB &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theB &lt;= 0.</exception>
     public GeomEval_HypParaboloidSurface WithSemiAxisB(double theB)
     {
         GeomEval_HypParaboloidSurface aCopy = (GeomEval_HypParaboloidSurface)Copy();
@@ -82,39 +86,39 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
         return aCopy;
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::VReversedParameter");
     }
 
     /// <summary>U and V in [-Precision::Infinite(), Precision::Infinite()].</summary>
     public override void Bounds(out double U1, out double U2, out double V1, out double V2)
     {
-        U1 = -Precision.Infinite();
-        U2 = Precision.Infinite();
-        V1 = -Precision.Infinite();
-        V2 = Precision.Infinite();
+        U1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        U2 = global::Kerf.Engine.Foundation.Precision.Infinite();
+        V1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        V2 = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     public override bool IsUClosed() => false;
@@ -125,40 +129,40 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
 
     public override bool IsVPeriodic() => false;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::UIso");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::VIso");
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aA2 = myA * myA;
         double aB2 = myB * myB;
         double aZComp = U * U / aA2 - V * V / aB2;
 
-        return new gp_Pnt(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
+        return new Point3D(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
                           anO.Y() + U * aXDir.Y() + V * aYDir.Y() + aZComp * aZDir.Y(),
                           anO.Z() + U * aXDir.Z() + V * aYDir.Z() + aZComp * aZDir.Z());
     }
 
     public override ResD1 EvalD1(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aA2 = myA * myA;
         double aB2 = myB * myB;
@@ -169,17 +173,17 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
         ResD1 aResult;
 
         // P = O + U*XD + V*YD + (U^2/A^2 - V^2/B^2)*ZD
-        aResult.Point = new gp_Pnt(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
+        aResult.Point = new Point3D(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
                                    anO.Y() + U * aXDir.Y() + V * aYDir.Y() + aZComp * aZDir.Y(),
                                    anO.Z() + U * aXDir.Z() + V * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du = XD + (2U/A^2)*ZD
-        aResult.D1U = new gp_Vec(aXDir.X() + aZdU * aZDir.X(),
+        aResult.D1U = new Vector3D(aXDir.X() + aZdU * aZDir.X(),
                                  aXDir.Y() + aZdU * aZDir.Y(),
                                  aXDir.Z() + aZdU * aZDir.Z());
 
         // dP/dv = YD - (2V/B^2)*ZD
-        aResult.D1V = new gp_Vec(aYDir.X() + aZdV * aZDir.X(),
+        aResult.D1V = new Vector3D(aYDir.X() + aZdV * aZDir.X(),
                                  aYDir.Y() + aZdV * aZDir.Y(),
                                  aYDir.Z() + aZdV * aZDir.Z());
 
@@ -188,10 +192,10 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
 
     public override ResD2 EvalD2(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aA2 = myA * myA;
         double aB2 = myB * myB;
@@ -204,38 +208,38 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
         ResD2 aResult;
 
         // P
-        aResult.Point = new gp_Pnt(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
+        aResult.Point = new Point3D(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
                                    anO.Y() + U * aXDir.Y() + V * aYDir.Y() + aZComp * aZDir.Y(),
                                    anO.Z() + U * aXDir.Z() + V * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du = XD + (2U/A^2)*ZD
-        aResult.D1U = new gp_Vec(aXDir.X() + aZdU * aZDir.X(),
+        aResult.D1U = new Vector3D(aXDir.X() + aZdU * aZDir.X(),
                                  aXDir.Y() + aZdU * aZDir.Y(),
                                  aXDir.Z() + aZdU * aZDir.Z());
 
         // dP/dv = YD - (2V/B^2)*ZD
-        aResult.D1V = new gp_Vec(aYDir.X() + aZdV * aZDir.X(),
+        aResult.D1V = new Vector3D(aYDir.X() + aZdV * aZDir.X(),
                                  aYDir.Y() + aZdV * aZDir.Y(),
                                  aYDir.Z() + aZdV * aZDir.Z());
 
         // d2P/du2 = (2/A^2)*ZD
-        aResult.D2U = new gp_Vec(aZd2U * aZDir.X(), aZd2U * aZDir.Y(), aZd2U * aZDir.Z());
+        aResult.D2U = new Vector3D(aZd2U * aZDir.X(), aZd2U * aZDir.Y(), aZd2U * aZDir.Z());
 
         // d2P/dv2 = -(2/B^2)*ZD
-        aResult.D2V = new gp_Vec(aZd2V * aZDir.X(), aZd2V * aZDir.Y(), aZd2V * aZDir.Z());
+        aResult.D2V = new Vector3D(aZd2V * aZDir.X(), aZd2V * aZDir.Y(), aZd2V * aZDir.Z());
 
         // d2P/dudv = 0
-        aResult.D2UV = new gp_Vec(0.0, 0.0, 0.0);
+        aResult.D2UV = new Vector3D(0.0, 0.0, 0.0);
 
         return aResult;
     }
 
     public override ResD3 EvalD3(double U, double V)
     {
-        gp_Pnt anO = pos.Location();
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Point3D anO = pos.Location();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aA2 = myA * myA;
         double aB2 = myB * myB;
@@ -248,40 +252,40 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
         ResD3 aResult;
 
         // P
-        aResult.Point = new gp_Pnt(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
+        aResult.Point = new Point3D(anO.X() + U * aXDir.X() + V * aYDir.X() + aZComp * aZDir.X(),
                                    anO.Y() + U * aXDir.Y() + V * aYDir.Y() + aZComp * aZDir.Y(),
                                    anO.Z() + U * aXDir.Z() + V * aYDir.Z() + aZComp * aZDir.Z());
 
         // dP/du
-        aResult.D1U = new gp_Vec(aXDir.X() + aZdU * aZDir.X(),
+        aResult.D1U = new Vector3D(aXDir.X() + aZdU * aZDir.X(),
                                  aXDir.Y() + aZdU * aZDir.Y(),
                                  aXDir.Z() + aZdU * aZDir.Z());
 
         // dP/dv
-        aResult.D1V = new gp_Vec(aYDir.X() + aZdV * aZDir.X(),
+        aResult.D1V = new Vector3D(aYDir.X() + aZdV * aZDir.X(),
                                  aYDir.Y() + aZdV * aZDir.Y(),
                                  aYDir.Z() + aZdV * aZDir.Z());
 
         // d2P/du2 = (2/A^2)*ZD
-        aResult.D2U = new gp_Vec(aZd2U * aZDir.X(), aZd2U * aZDir.Y(), aZd2U * aZDir.Z());
+        aResult.D2U = new Vector3D(aZd2U * aZDir.X(), aZd2U * aZDir.Y(), aZd2U * aZDir.Z());
 
         // d2P/dv2 = -(2/B^2)*ZD
-        aResult.D2V = new gp_Vec(aZd2V * aZDir.X(), aZd2V * aZDir.Y(), aZd2V * aZDir.Z());
+        aResult.D2V = new Vector3D(aZd2V * aZDir.X(), aZd2V * aZDir.Y(), aZd2V * aZDir.Z());
 
         // d2P/dudv = 0
-        aResult.D2UV = new gp_Vec(0.0, 0.0, 0.0);
+        aResult.D2UV = new Vector3D(0.0, 0.0, 0.0);
 
         // All 3rd derivatives are zero (polynomial of degree 2)
-        aResult.D3U = new gp_Vec(0.0, 0.0, 0.0);
-        aResult.D3V = new gp_Vec(0.0, 0.0, 0.0);
-        aResult.D3UUV = new gp_Vec(0.0, 0.0, 0.0);
-        aResult.D3UVV = new gp_Vec(0.0, 0.0, 0.0);
+        aResult.D3U = new Vector3D(0.0, 0.0, 0.0);
+        aResult.D3V = new Vector3D(0.0, 0.0, 0.0);
+        aResult.D3UUV = new Vector3D(0.0, 0.0, 0.0);
+        aResult.D3UVV = new Vector3D(0.0, 0.0, 0.0);
 
         return aResult;
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
@@ -289,9 +293,9 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
                 "GeomEval_HypParaboloidSurface::EvalDN: invalid derivative order");
         }
 
-        gp_Dir aXDir = pos.XDirection();
-        gp_Dir aYDir = pos.YDirection();
-        gp_Dir aZDir = pos.Direction();
+        Direction3D aXDir = pos.XDirection();
+        Direction3D aYDir = pos.YDirection();
+        Direction3D aZDir = pos.Direction();
 
         double aA2 = myA * myA;
         double aB2 = myB * myB;
@@ -344,16 +348,16 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
             // else 0 for Nv >= 3
         }
 
-        return new gp_Vec(aXCoeff * aXDir.X() + aYCoeff * aYDir.X() + aZCoeff * aZDir.X(),
+        return new Vector3D(aXCoeff * aXDir.X() + aYCoeff * aYDir.X() + aZCoeff * aZDir.X(),
                           aXCoeff * aXDir.Y() + aYCoeff * aYDir.Y() + aZCoeff * aZDir.Y(),
                           aXCoeff * aXDir.Z() + aYCoeff * aYDir.Z() + aZCoeff * aZDir.Z());
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HypParaboloidSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::Transform");
     }
 
     public override Geom_Geometry Copy() => new GeomEval_HypParaboloidSurface(pos, myA, myB);
@@ -372,7 +376,7 @@ public sealed class GeomEval_HypParaboloidSurface : Geom_ElementarySurface
         // Transform to global coordinates using:
         //   (X_L, Y_L, Z_L)^T = T * (x, y, z, 1)^T
         // where T is the transformation matrix from pos.
-        gp_Trsf aT = new gp_Trsf();
+        Transform3D aT = new Transform3D();
         aT.SetTransformation(pos);
         double T11 = aT.Value(1, 1);
         double T12 = aT.Value(1, 2);

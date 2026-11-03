@@ -2,9 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.BSplCLib_CurveComputation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Occt;
+using static Kerf.Engine.Geometry.Splines.CurveComputation;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Splines;
 
 // BSpline Curve in 2d space
 // **************************
@@ -14,507 +17,507 @@ namespace Occt;
 public static partial class BSplCLib
 {
     /// <summary>
-    /// Reverses the array of poles. <paramref name="L"/> is the index of the new first pole: Poles.Upper() on a
+    /// Reverses the array of poles. <paramref name="l"/> is the index of the new first pole: Poles.Upper() on a
     /// non-periodic curve, (number of flat knots - degree - 1) on a periodic one.
     /// </summary>
-    public static void Reverse(NCollection_Array1<gp_Pnt2d> Poles, int L)
+    public static void Reverse(NCollection_Array1<Point2D> poles, int l)
     {
-        BSplCLib_Reverse(Poles, L);
+        BSplCLib_Reverse(poles, l);
     }
 
     /// <summary>
-    /// Decrements the multiplicity of Knots(Index) to <paramref name="Mult"/> (removes the knot if Mult is 0).
+    /// Decrements the multiplicity of Knots(Index) to <paramref name="mult"/> (removes the knot if Mult is 0).
     /// Returns false, leaving the new arrays unchanged, if a new pole would move by more than
-    /// <paramref name="Tolerance"/>.
+    /// <paramref name="tolerance"/>.
     /// </summary>
-    public static bool RemoveKnot(int Index,
-                                  int Mult,
-                                  int Degree,
-                                  bool Periodic,
-                                  NCollection_Array1<gp_Pnt2d> Poles,
-                                  NCollection_Array1<double>? Weights,
-                                  NCollection_Array1<double> Knots,
-                                  NCollection_Array1<int> Mults,
-                                  NCollection_Array1<gp_Pnt2d> NewPoles,
-                                  NCollection_Array1<double>? NewWeights,
-                                  NCollection_Array1<double> NewKnots,
-                                  NCollection_Array1<int> NewMults,
-                                  double Tolerance)
+    public static bool RemoveKnot(int index,
+                                  int mult,
+                                  int degree,
+                                  bool periodic,
+                                  NCollection_Array1<Point2D> poles,
+                                  NCollection_Array1<double>? weights,
+                                  NCollection_Array1<double> knots,
+                                  NCollection_Array1<int> mults,
+                                  NCollection_Array1<Point2D> newPoles,
+                                  NCollection_Array1<double>? newWeights,
+                                  NCollection_Array1<double> newKnots,
+                                  NCollection_Array1<int> newMults,
+                                  double tolerance)
     {
-        return BSplCLib_RemoveKnot<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Index,
-                                                                           Mult,
-                                                                           Degree,
-                                                                           Periodic,
-                                                                           Poles,
-                                                                           Weights,
-                                                                           Knots,
-                                                                           Mults,
-                                                                           NewPoles,
-                                                                           NewWeights,
-                                                                           NewKnots,
-                                                                           NewMults,
-                                                                           Tolerance);
+        return BSplCLib_RemoveKnot<Point2D, Vector2D, CurveTraits2d>(index,
+                                                                           mult,
+                                                                           degree,
+                                                                           periodic,
+                                                                           poles,
+                                                                           weights,
+                                                                           knots,
+                                                                           mults,
+                                                                           newPoles,
+                                                                           newWeights,
+                                                                           newKnots,
+                                                                           newMults,
+                                                                           tolerance);
     }
 
     /// <summary>
-    /// Inserts the knots <paramref name="AddKnots"/> with multiplicities <paramref name="AddMults"/> (null: 1 each)
-    /// into the curve. Epsilon compares knots; with <paramref name="Add"/> the multiplicities of equal knots are
+    /// Inserts the knots <paramref name="addKnots"/> with multiplicities <paramref name="addMults"/> (null: 1 each)
+    /// into the curve. Epsilon compares knots; with <paramref name="add"/> the multiplicities of equal knots are
     /// added, otherwise the larger is kept. Size the new arrays with PrepareInsertKnots.
     /// </summary>
-    public static void InsertKnots(int Degree,
-                                   bool Periodic,
-                                   NCollection_Array1<gp_Pnt2d> Poles,
-                                   NCollection_Array1<double>? Weights,
-                                   NCollection_Array1<double> Knots,
-                                   NCollection_Array1<int> Mults,
-                                   NCollection_Array1<double> AddKnots,
-                                   NCollection_Array1<int>? AddMults,
-                                   NCollection_Array1<gp_Pnt2d> NewPoles,
-                                   NCollection_Array1<double>? NewWeights,
-                                   NCollection_Array1<double> NewKnots,
-                                   NCollection_Array1<int> NewMults,
-                                   double Epsilon,
-                                   bool Add = true)
+    public static void InsertKnots(int degree,
+                                   bool periodic,
+                                   NCollection_Array1<Point2D> poles,
+                                   NCollection_Array1<double>? weights,
+                                   NCollection_Array1<double> knots,
+                                   NCollection_Array1<int> mults,
+                                   NCollection_Array1<double> addKnots,
+                                   NCollection_Array1<int>? addMults,
+                                   NCollection_Array1<Point2D> newPoles,
+                                   NCollection_Array1<double>? newWeights,
+                                   NCollection_Array1<double> newKnots,
+                                   NCollection_Array1<int> newMults,
+                                   double epsilon,
+                                   bool add = true)
     {
-        BSplCLib_InsertKnots<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                     Periodic,
-                                                                     Poles,
-                                                                     Weights,
-                                                                     Knots,
-                                                                     Mults,
-                                                                     AddKnots,
-                                                                     AddMults,
-                                                                     NewPoles,
-                                                                     NewWeights,
-                                                                     NewKnots,
-                                                                     NewMults,
-                                                                     Epsilon,
-                                                                     Add);
+        BSplCLib_InsertKnots<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                     periodic,
+                                                                     poles,
+                                                                     weights,
+                                                                     knots,
+                                                                     mults,
+                                                                     addKnots,
+                                                                     addMults,
+                                                                     newPoles,
+                                                                     newWeights,
+                                                                     newKnots,
+                                                                     newMults,
+                                                                     epsilon,
+                                                                     add);
     }
 
     /// <summary>
-    /// Inserts the knot <paramref name="U"/> with multiplicity <paramref name="UMult"/> and returns the new poles;
-    /// Knots and Mults are not updated. <paramref name="UIndex"/> is unused.
+    /// Inserts the knot <paramref name="u"/> with multiplicity <paramref name="uMult"/> and returns the new poles;
+    /// Knots and Mults are not updated. <paramref name="uIndex"/> is unused.
     /// </summary>
-    public static void InsertKnot(int UIndex,
-                                  double U,
-                                  int UMult,
-                                  int Degree,
-                                  bool Periodic,
-                                  NCollection_Array1<gp_Pnt2d> Poles,
-                                  NCollection_Array1<double>? Weights,
-                                  NCollection_Array1<double> Knots,
-                                  NCollection_Array1<int> Mults,
-                                  NCollection_Array1<gp_Pnt2d> NewPoles,
-                                  NCollection_Array1<double>? NewWeights)
+    public static void InsertKnot(int uIndex,
+                                  double u,
+                                  int uMult,
+                                  int degree,
+                                  bool periodic,
+                                  NCollection_Array1<Point2D> poles,
+                                  NCollection_Array1<double>? weights,
+                                  NCollection_Array1<double> knots,
+                                  NCollection_Array1<int> mults,
+                                  NCollection_Array1<Point2D> newPoles,
+                                  NCollection_Array1<double>? newWeights)
     {
-        _ = UIndex; // unnamed (unused) in OCCT
-        BSplCLib_InsertKnot<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(0,
-                                                                    U,
-                                                                    UMult,
-                                                                    Degree,
-                                                                    Periodic,
-                                                                    Poles,
-                                                                    Weights,
-                                                                    Knots,
-                                                                    Mults,
-                                                                    NewPoles,
-                                                                    NewWeights);
+        _ = uIndex; // unnamed (unused) in OCCT
+        BSplCLib_InsertKnot<Point2D, Vector2D, CurveTraits2d>(0,
+                                                                    u,
+                                                                    uMult,
+                                                                    degree,
+                                                                    periodic,
+                                                                    poles,
+                                                                    weights,
+                                                                    knots,
+                                                                    mults,
+                                                                    newPoles,
+                                                                    newWeights);
     }
 
     /// <summary>
-    /// Raises the multiplicity of Knots(KnotIndex) to <paramref name="Mult"/> and returns the new poles; Knots and
+    /// Raises the multiplicity of Knots(KnotIndex) to <paramref name="mult"/> and returns the new poles; Knots and
     /// Mults are not updated.
     /// </summary>
-    public static void RaiseMultiplicity(int KnotIndex,
-                                         int Mult,
-                                         int Degree,
-                                         bool Periodic,
-                                         NCollection_Array1<gp_Pnt2d> Poles,
-                                         NCollection_Array1<double>? Weights,
-                                         NCollection_Array1<double> Knots,
-                                         NCollection_Array1<int> Mults,
-                                         NCollection_Array1<gp_Pnt2d> NewPoles,
-                                         NCollection_Array1<double>? NewWeights)
+    public static void RaiseMultiplicity(int knotIndex,
+                                         int mult,
+                                         int degree,
+                                         bool periodic,
+                                         NCollection_Array1<Point2D> poles,
+                                         NCollection_Array1<double>? weights,
+                                         NCollection_Array1<double> knots,
+                                         NCollection_Array1<int> mults,
+                                         NCollection_Array1<Point2D> newPoles,
+                                         NCollection_Array1<double>? newWeights)
     {
-        BSplCLib_RaiseMultiplicity<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(KnotIndex,
-                                                                           Mult,
-                                                                           Degree,
-                                                                           Periodic,
-                                                                           Poles,
-                                                                           Weights,
-                                                                           Knots,
-                                                                           Mults,
-                                                                           NewPoles,
-                                                                           NewWeights);
+        BSplCLib_RaiseMultiplicity<Point2D, Vector2D, CurveTraits2d>(knotIndex,
+                                                                           mult,
+                                                                           degree,
+                                                                           periodic,
+                                                                           poles,
+                                                                           weights,
+                                                                           knots,
+                                                                           mults,
+                                                                           newPoles,
+                                                                           newWeights);
     }
 
     /// <summary>
-    /// Raises the degree of the curve from <paramref name="Degree"/> to <paramref name="NewDegree"/>. Size the new
+    /// Raises the degree of the curve from <paramref name="degree"/> to <paramref name="newDegree"/>. Size the new
     /// knot arrays with IncreaseDegreeCountKnots.
     /// </summary>
-    public static void IncreaseDegree(int Degree,
-                                      int NewDegree,
-                                      bool Periodic,
-                                      NCollection_Array1<gp_Pnt2d> Poles,
-                                      NCollection_Array1<double>? Weights,
-                                      NCollection_Array1<double> Knots,
-                                      NCollection_Array1<int> Mults,
-                                      NCollection_Array1<gp_Pnt2d> NewPoles,
-                                      NCollection_Array1<double>? NewWeights,
-                                      NCollection_Array1<double> NewKnots,
-                                      NCollection_Array1<int> NewMults)
+    public static void IncreaseDegree(int degree,
+                                      int newDegree,
+                                      bool periodic,
+                                      NCollection_Array1<Point2D> poles,
+                                      NCollection_Array1<double>? weights,
+                                      NCollection_Array1<double> knots,
+                                      NCollection_Array1<int> mults,
+                                      NCollection_Array1<Point2D> newPoles,
+                                      NCollection_Array1<double>? newWeights,
+                                      NCollection_Array1<double> newKnots,
+                                      NCollection_Array1<int> newMults)
     {
-        BSplCLib_IncreaseDegree<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                        NewDegree,
-                                                                        Periodic,
-                                                                        Poles,
-                                                                        Weights,
-                                                                        Knots,
-                                                                        Mults,
-                                                                        NewPoles,
-                                                                        NewWeights,
-                                                                        NewKnots,
-                                                                        NewMults);
+        BSplCLib_IncreaseDegree<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                        newDegree,
+                                                                        periodic,
+                                                                        poles,
+                                                                        weights,
+                                                                        knots,
+                                                                        mults,
+                                                                        newPoles,
+                                                                        newWeights,
+                                                                        newKnots,
+                                                                        newMults);
     }
 
     /// <summary>Builds the non-periodic curve identical to a periodic one. Size the arrays with PrepareUnperiodize.</summary>
-    public static void Unperiodize(int Degree,
-                                   NCollection_Array1<int> Mults,
-                                   NCollection_Array1<double> Knots,
-                                   NCollection_Array1<gp_Pnt2d> Poles,
-                                   NCollection_Array1<double>? Weights,
-                                   NCollection_Array1<int> NewMults,
-                                   NCollection_Array1<double> NewKnots,
-                                   NCollection_Array1<gp_Pnt2d> NewPoles,
-                                   NCollection_Array1<double>? NewWeights)
+    public static void Unperiodize(int degree,
+                                   NCollection_Array1<int> mults,
+                                   NCollection_Array1<double> knots,
+                                   NCollection_Array1<Point2D> poles,
+                                   NCollection_Array1<double>? weights,
+                                   NCollection_Array1<int> newMults,
+                                   NCollection_Array1<double> newKnots,
+                                   NCollection_Array1<Point2D> newPoles,
+                                   NCollection_Array1<double>? newWeights)
     {
-        BSplCLib_Unperiodize<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                     Mults,
-                                                                     Knots,
-                                                                     Poles,
-                                                                     Weights,
-                                                                     NewMults,
-                                                                     NewKnots,
-                                                                     NewPoles,
-                                                                     NewWeights);
+        BSplCLib_Unperiodize<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                     mults,
+                                                                     knots,
+                                                                     poles,
+                                                                     weights,
+                                                                     newMults,
+                                                                     newKnots,
+                                                                     newPoles,
+                                                                     newWeights);
     }
 
     /// <summary>Trims the curve to [U1, U2]. Size the arrays with PrepareTrimming.</summary>
-    public static void Trimming(int Degree,
-                                bool Periodic,
-                                NCollection_Array1<double> Knots,
-                                NCollection_Array1<int> Mults,
-                                NCollection_Array1<gp_Pnt2d> Poles,
-                                NCollection_Array1<double>? Weights,
-                                double U1,
-                                double U2,
-                                NCollection_Array1<double> NewKnots,
-                                NCollection_Array1<int> NewMults,
-                                NCollection_Array1<gp_Pnt2d> NewPoles,
-                                NCollection_Array1<double>? NewWeights)
+    public static void Trimming(int degree,
+                                bool periodic,
+                                NCollection_Array1<double> knots,
+                                NCollection_Array1<int> mults,
+                                NCollection_Array1<Point2D> poles,
+                                NCollection_Array1<double>? weights,
+                                double u1,
+                                double u2,
+                                NCollection_Array1<double> newKnots,
+                                NCollection_Array1<int> newMults,
+                                NCollection_Array1<Point2D> newPoles,
+                                NCollection_Array1<double>? newWeights)
     {
-        BSplCLib_Trimming<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                  Periodic,
-                                                                  Knots,
-                                                                  Mults,
-                                                                  Poles,
-                                                                  Weights,
-                                                                  U1,
-                                                                  U2,
-                                                                  NewKnots,
-                                                                  NewMults,
-                                                                  NewPoles,
-                                                                  NewWeights);
+        BSplCLib_Trimming<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                  periodic,
+                                                                  knots,
+                                                                  mults,
+                                                                  poles,
+                                                                  weights,
+                                                                  u1,
+                                                                  u2,
+                                                                  newKnots,
+                                                                  newMults,
+                                                                  newPoles,
+                                                                  newWeights);
     }
 
     /// <summary>
-    /// Copies into <paramref name="LP"/> the Degree + 1 poles (and weights) for the Eval scheme, starting from
+    /// Copies into <paramref name="lp"/> the Degree + 1 poles (and weights) for the Eval scheme, starting from
     /// Poles(Poles.Lower() + Index).
     /// </summary>
-    public static void BuildEval(int Degree,
-                                 int Index,
-                                 NCollection_Array1<gp_Pnt2d> Poles,
-                                 NCollection_Array1<double>? Weights,
-                                 Span<double> LP)
+    public static void BuildEval(int degree,
+                                 int index,
+                                 NCollection_Array1<Point2D> poles,
+                                 NCollection_Array1<double>? weights,
+                                 Span<double> lp)
     {
-        BSplCLib_BuildEval<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                   Index,
-                                                                   Poles,
-                                                                   Weights,
-                                                                   LP);
+        BSplCLib_BuildEval<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                   index,
+                                                                   poles,
+                                                                   weights,
+                                                                   lp);
     }
 
     /// <summary>
-    /// The point at <paramref name="U"/>. <paramref name="Index"/> locates U in the knots (searched when out of
+    /// The point at <paramref name="u"/>. <paramref name="index"/> locates U in the knots (searched when out of
     /// range); pass <c>NoWeights()</c> for a non-rational curve and <c>NoMults()</c> for flat knots.
     /// </summary>
-    public static void D0(double U,
-                          int Index,
-                          int Degree,
-                          bool Periodic,
-                          NCollection_Array1<gp_Pnt2d> Poles,
-                          NCollection_Array1<double>? Weights,
-                          NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults,
-                          out gp_Pnt2d P)
+    public static void D0(double u,
+                          int index,
+                          int degree,
+                          bool periodic,
+                          NCollection_Array1<Point2D> poles,
+                          NCollection_Array1<double>? weights,
+                          NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults,
+                          out Point2D p)
     {
-        BSplCLib_D0<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                            Index,
-                                                            Degree,
-                                                            Periodic,
-                                                            Poles,
-                                                            Weights,
-                                                            Knots,
-                                                            Mults,
-                                                            out P);
+        BSplCLib_D0<Point2D, Vector2D, CurveTraits2d>(u,
+                                                            index,
+                                                            degree,
+                                                            periodic,
+                                                            poles,
+                                                            weights,
+                                                            knots,
+                                                            mults,
+                                                            out p);
     }
 
-    /// <summary>The point and first derivative at <paramref name="U"/> (see D0).</summary>
-    public static void D1(double U,
-                          int Index,
-                          int Degree,
-                          bool Periodic,
-                          NCollection_Array1<gp_Pnt2d> Poles,
-                          NCollection_Array1<double>? Weights,
-                          NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults,
-                          out gp_Pnt2d P,
-                          out gp_Vec2d V)
+    /// <summary>The point and first derivative at <paramref name="u"/> (see D0).</summary>
+    public static void D1(double u,
+                          int index,
+                          int degree,
+                          bool periodic,
+                          NCollection_Array1<Point2D> poles,
+                          NCollection_Array1<double>? weights,
+                          NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults,
+                          out Point2D p,
+                          out Vector2D v)
     {
-        BSplCLib_D1<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                            Index,
-                                                            Degree,
-                                                            Periodic,
-                                                            Poles,
-                                                            Weights,
-                                                            Knots,
-                                                            Mults,
-                                                            out P,
-                                                            out V);
+        BSplCLib_D1<Point2D, Vector2D, CurveTraits2d>(u,
+                                                            index,
+                                                            degree,
+                                                            periodic,
+                                                            poles,
+                                                            weights,
+                                                            knots,
+                                                            mults,
+                                                            out p,
+                                                            out v);
     }
 
-    /// <summary>The point and first two derivatives at <paramref name="U"/> (see D0).</summary>
-    public static void D2(double U,
-                          int Index,
-                          int Degree,
-                          bool Periodic,
-                          NCollection_Array1<gp_Pnt2d> Poles,
-                          NCollection_Array1<double>? Weights,
-                          NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults,
-                          out gp_Pnt2d P,
-                          out gp_Vec2d V1,
-                          out gp_Vec2d V2)
+    /// <summary>The point and first two derivatives at <paramref name="u"/> (see D0).</summary>
+    public static void D2(double u,
+                          int index,
+                          int degree,
+                          bool periodic,
+                          NCollection_Array1<Point2D> poles,
+                          NCollection_Array1<double>? weights,
+                          NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults,
+                          out Point2D p,
+                          out Vector2D v1,
+                          out Vector2D v2)
     {
-        BSplCLib_D2<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                            Index,
-                                                            Degree,
-                                                            Periodic,
-                                                            Poles,
-                                                            Weights,
-                                                            Knots,
-                                                            Mults,
-                                                            out P,
-                                                            out V1,
-                                                            out V2);
+        BSplCLib_D2<Point2D, Vector2D, CurveTraits2d>(u,
+                                                            index,
+                                                            degree,
+                                                            periodic,
+                                                            poles,
+                                                            weights,
+                                                            knots,
+                                                            mults,
+                                                            out p,
+                                                            out v1,
+                                                            out v2);
     }
 
-    /// <summary>The point and first three derivatives at <paramref name="U"/> (see D0).</summary>
-    public static void D3(double U,
-                          int Index,
-                          int Degree,
-                          bool Periodic,
-                          NCollection_Array1<gp_Pnt2d> Poles,
-                          NCollection_Array1<double>? Weights,
-                          NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults,
-                          out gp_Pnt2d P,
-                          out gp_Vec2d V1,
-                          out gp_Vec2d V2,
-                          out gp_Vec2d V3)
+    /// <summary>The point and first three derivatives at <paramref name="u"/> (see D0).</summary>
+    public static void D3(double u,
+                          int index,
+                          int degree,
+                          bool periodic,
+                          NCollection_Array1<Point2D> poles,
+                          NCollection_Array1<double>? weights,
+                          NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults,
+                          out Point2D p,
+                          out Vector2D v1,
+                          out Vector2D v2,
+                          out Vector2D v3)
     {
-        BSplCLib_D3<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                            Index,
-                                                            Degree,
-                                                            Periodic,
-                                                            Poles,
-                                                            Weights,
-                                                            Knots,
-                                                            Mults,
-                                                            out P,
-                                                            out V1,
-                                                            out V2,
-                                                            out V3);
+        BSplCLib_D3<Point2D, Vector2D, CurveTraits2d>(u,
+                                                            index,
+                                                            degree,
+                                                            periodic,
+                                                            poles,
+                                                            weights,
+                                                            knots,
+                                                            mults,
+                                                            out p,
+                                                            out v1,
+                                                            out v2,
+                                                            out v3);
     }
 
-    /// <summary>The derivative of order <paramref name="N"/> at <paramref name="U"/> (see D0).</summary>
-    public static void DN(double U,
-                          int N,
-                          int Index,
-                          int Degree,
-                          bool Periodic,
-                          NCollection_Array1<gp_Pnt2d> Poles,
-                          NCollection_Array1<double>? Weights,
-                          NCollection_Array1<double> Knots,
-                          NCollection_Array1<int>? Mults,
-                          out gp_Vec2d VN)
+    /// <summary>The derivative of order <paramref name="n"/> at <paramref name="u"/> (see D0).</summary>
+    public static void DN(double u,
+                          int n,
+                          int index,
+                          int degree,
+                          bool periodic,
+                          NCollection_Array1<Point2D> poles,
+                          NCollection_Array1<double>? weights,
+                          NCollection_Array1<double> knots,
+                          NCollection_Array1<int>? mults,
+                          out Vector2D vn)
     {
-        BSplCLib_DN<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                            N,
-                                                            Index,
-                                                            Degree,
-                                                            Periodic,
-                                                            Poles,
-                                                            Weights,
-                                                            Knots,
-                                                            Mults,
-                                                            out VN);
+        BSplCLib_DN<Point2D, Vector2D, CurveTraits2d>(u,
+                                                            n,
+                                                            index,
+                                                            degree,
+                                                            periodic,
+                                                            poles,
+                                                            weights,
+                                                            knots,
+                                                            mults,
+                                                            out vn);
     }
 
     /// <summary>
-    /// Solves Matrix . X = B with the LU-factored banded <paramref name="Matrix"/>, B and the result being
-    /// <paramref name="PolesArray"/>. Returns 0 on success.
+    /// Solves Matrix . X = B with the LU-factored banded <paramref name="matrix"/>, B and the result being
+    /// <paramref name="polesArray"/>. Returns 0 on success.
     /// </summary>
-    public static int SolveBandedSystem(math_Matrix Matrix,
-                                        int UpperBandWidth,
-                                        int LowerBandWidth,
-                                        NCollection_Array1<gp_Pnt2d> PolesArray)
+    public static int SolveBandedSystem(Matrix matrix,
+                                        int upperBandWidth,
+                                        int lowerBandWidth,
+                                        NCollection_Array1<Point2D> polesArray)
     {
-        return BSplCLib_SolveBandedSystem<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Matrix,
-                                                                                  UpperBandWidth,
-                                                                                  LowerBandWidth,
-                                                                                  PolesArray);
+        return BSplCLib_SolveBandedSystem<Point2D, Vector2D, CurveTraits2d>(matrix,
+                                                                                  upperBandWidth,
+                                                                                  lowerBandWidth,
+                                                                                  polesArray);
     }
 
     /// <summary>
-    /// Solves Matrix . X = B for rational poles. If <paramref name="HomogeneousFlag"/> is false the poles are
+    /// Solves Matrix . X = B for rational poles. If <paramref name="homogeneousFlag"/> is false the poles are
     /// multiplied by the weights on entry and divided by the interpolated weights at the end; if true, poles and
     /// weights are interpolated as they are.
     /// </summary>
-    public static int SolveBandedSystem(math_Matrix Matrix,
-                                        int UpperBandWidth,
-                                        int LowerBandWidth,
-                                        bool HomogeneousFlag,
-                                        NCollection_Array1<gp_Pnt2d> PolesArray,
-                                        NCollection_Array1<double> WeightsArray)
+    public static int SolveBandedSystem(Matrix matrix,
+                                        int upperBandWidth,
+                                        int lowerBandWidth,
+                                        bool homogeneousFlag,
+                                        NCollection_Array1<Point2D> polesArray,
+                                        NCollection_Array1<double> weightsArray)
     {
-        return BSplCLib_SolveBandedSystem<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Matrix,
-                                                                                  UpperBandWidth,
-                                                                                  LowerBandWidth,
-                                                                                  HomogeneousFlag,
-                                                                                  PolesArray,
-                                                                                  WeightsArray);
+        return BSplCLib_SolveBandedSystem<Point2D, Vector2D, CurveTraits2d>(matrix,
+                                                                                  upperBandWidth,
+                                                                                  lowerBandWidth,
+                                                                                  homogeneousFlag,
+                                                                                  polesArray,
+                                                                                  weightsArray);
     }
 
     /// <summary>
-    /// The point and weight of a rational curve given by flat knots at <paramref name="Parameter"/>; with
-    /// <paramref name="HomogeneousFlag"/> the point is left in homogeneous coordinates (not divided by the weight).
+    /// The point and weight of a rational curve given by flat knots at <paramref name="parameter"/>; with
+    /// <paramref name="homogeneousFlag"/> the point is left in homogeneous coordinates (not divided by the weight).
     /// </summary>
-    public static void Eval(double Parameter,
-                            bool PeriodicFlag,
-                            bool HomogeneousFlag,
-                            ReadOnlySpan<int> ExtrapMode,
-                            int Degree,
-                            NCollection_Array1<double> FlatKnots,
-                            NCollection_Array1<gp_Pnt2d> PolesArray,
-                            NCollection_Array1<double> WeightsArray,
-                            out gp_Pnt2d aPoint,
+    public static void Eval(double parameter,
+                            bool periodicFlag,
+                            bool homogeneousFlag,
+                            ReadOnlySpan<int> extrapMode,
+                            int degree,
+                            NCollection_Array1<double> flatKnots,
+                            NCollection_Array1<Point2D> polesArray,
+                            NCollection_Array1<double> weightsArray,
+                            out Point2D aPoint,
                             out double aWeight)
     {
-        BSplCLib_Eval<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Parameter,
-                                                              PeriodicFlag,
-                                                              HomogeneousFlag,
-                                                              ExtrapMode,
-                                                              Degree,
-                                                              FlatKnots,
-                                                              PolesArray,
-                                                              WeightsArray,
+        BSplCLib_Eval<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                              periodicFlag,
+                                                              homogeneousFlag,
+                                                              extrapMode,
+                                                              degree,
+                                                              flatKnots,
+                                                              polesArray,
+                                                              weightsArray,
                                                               out aPoint,
                                                               out aWeight);
     }
 
     /// <summary>
-    /// The point at <paramref name="Parameter"/> on a span stored as a polynomial cache (see BuildCache) starting
-    /// at <paramref name="CacheParameter"/> with length <paramref name="SpanLenght"/>.
+    /// The point at <paramref name="parameter"/> on a span stored as a polynomial cache (see BuildCache) starting
+    /// at <paramref name="cacheParameter"/> with length <paramref name="spanLenght"/>.
     /// </summary>
-    public static void CacheD0(double Parameter,
-                               int Degree,
-                               double CacheParameter,
-                               double SpanLenght,
-                               NCollection_Array1<gp_Pnt2d> PolesArray,
-                               NCollection_Array1<double>? WeightsArray,
-                               out gp_Pnt2d aPoint)
+    public static void CacheD0(double parameter,
+                               int degree,
+                               double cacheParameter,
+                               double spanLenght,
+                               NCollection_Array1<Point2D> polesArray,
+                               NCollection_Array1<double>? weightsArray,
+                               out Point2D aPoint)
     {
-        BSplCLib_CacheD0<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Parameter,
-                                                                 Degree,
-                                                                 CacheParameter,
-                                                                 SpanLenght,
-                                                                 PolesArray,
-                                                                 WeightsArray,
+        BSplCLib_CacheD0<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                                 degree,
+                                                                 cacheParameter,
+                                                                 spanLenght,
+                                                                 polesArray,
+                                                                 weightsArray,
                                                                  out aPoint);
     }
 
     /// <summary>The point and first derivative from a polynomial cache (see CacheD0).</summary>
-    public static void CacheD1(double Parameter,
-                               int Degree,
-                               double CacheParameter,
-                               double SpanLenght,
-                               NCollection_Array1<gp_Pnt2d> PolesArray,
-                               NCollection_Array1<double>? WeightsArray,
-                               out gp_Pnt2d aPoint,
-                               out gp_Vec2d aVector)
+    public static void CacheD1(double parameter,
+                               int degree,
+                               double cacheParameter,
+                               double spanLenght,
+                               NCollection_Array1<Point2D> polesArray,
+                               NCollection_Array1<double>? weightsArray,
+                               out Point2D aPoint,
+                               out Vector2D aVector)
     {
-        BSplCLib_CacheD1<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Parameter,
-                                                                 Degree,
-                                                                 CacheParameter,
-                                                                 SpanLenght,
-                                                                 PolesArray,
-                                                                 WeightsArray,
+        BSplCLib_CacheD1<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                                 degree,
+                                                                 cacheParameter,
+                                                                 spanLenght,
+                                                                 polesArray,
+                                                                 weightsArray,
                                                                  out aPoint,
                                                                  out aVector);
     }
 
     /// <summary>The point and first two derivatives from a polynomial cache (see CacheD0).</summary>
-    public static void CacheD2(double Parameter,
-                               int Degree,
-                               double CacheParameter,
-                               double SpanLenght,
-                               NCollection_Array1<gp_Pnt2d> PolesArray,
-                               NCollection_Array1<double>? WeightsArray,
-                               out gp_Pnt2d aPoint,
-                               out gp_Vec2d aVector1,
-                               out gp_Vec2d aVector2)
+    public static void CacheD2(double parameter,
+                               int degree,
+                               double cacheParameter,
+                               double spanLenght,
+                               NCollection_Array1<Point2D> polesArray,
+                               NCollection_Array1<double>? weightsArray,
+                               out Point2D aPoint,
+                               out Vector2D aVector1,
+                               out Vector2D aVector2)
     {
-        BSplCLib_CacheD2<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Parameter,
-                                                                 Degree,
-                                                                 CacheParameter,
-                                                                 SpanLenght,
-                                                                 PolesArray,
-                                                                 WeightsArray,
+        BSplCLib_CacheD2<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                                 degree,
+                                                                 cacheParameter,
+                                                                 spanLenght,
+                                                                 polesArray,
+                                                                 weightsArray,
                                                                  out aPoint,
                                                                  out aVector1,
                                                                  out aVector2);
     }
 
     /// <summary>The point and first three derivatives from a polynomial cache (see CacheD0).</summary>
-    public static void CacheD3(double Parameter,
-                               int Degree,
-                               double CacheParameter,
-                               double SpanLenght,
-                               NCollection_Array1<gp_Pnt2d> PolesArray,
-                               NCollection_Array1<double>? WeightsArray,
-                               out gp_Pnt2d aPoint,
-                               out gp_Vec2d aVector1,
-                               out gp_Vec2d aVector2,
-                               out gp_Vec2d aVector3)
+    public static void CacheD3(double parameter,
+                               int degree,
+                               double cacheParameter,
+                               double spanLenght,
+                               NCollection_Array1<Point2D> polesArray,
+                               NCollection_Array1<double>? weightsArray,
+                               out Point2D aPoint,
+                               out Vector2D aVector1,
+                               out Vector2D aVector2,
+                               out Vector2D aVector3)
     {
-        BSplCLib_CacheD3<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Parameter,
-                                                                 Degree,
-                                                                 CacheParameter,
-                                                                 SpanLenght,
-                                                                 PolesArray,
-                                                                 WeightsArray,
+        BSplCLib_CacheD3<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                                 degree,
+                                                                 cacheParameter,
+                                                                 spanLenght,
+                                                                 polesArray,
+                                                                 weightsArray,
                                                                  out aPoint,
                                                                  out aVector1,
                                                                  out aVector2,
@@ -522,224 +525,224 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Stores in <paramref name="CachePoles"/> (and <paramref name="CacheWeights"/>) the polynomial coefficients of
-    /// the span containing <paramref name="U"/>, scaled to the span domain (1 / <paramref name="InverseOfSpanDomain"/>
+    /// Stores in <paramref name="cachePoles"/> (and <paramref name="cacheWeights"/>) the polynomial coefficients of
+    /// the span containing <paramref name="u"/>, scaled to the span domain (1 / <paramref name="inverseOfSpanDomain"/>
     /// in OCCT's naming; the value is used as the span length). Arrays are indexed from 1.
     /// </summary>
-    public static void BuildCache(double U,
-                                  double InverseOfSpanDomain,
-                                  bool PeriodicFlag,
-                                  int Degree,
-                                  NCollection_Array1<double> FlatKnots,
-                                  NCollection_Array1<gp_Pnt2d> Poles,
-                                  NCollection_Array1<double>? Weights,
-                                  NCollection_Array1<gp_Pnt2d> CachePoles,
-                                  NCollection_Array1<double>? CacheWeights)
+    public static void BuildCache(double u,
+                                  double inverseOfSpanDomain,
+                                  bool periodicFlag,
+                                  int degree,
+                                  NCollection_Array1<double> flatKnots,
+                                  NCollection_Array1<Point2D> poles,
+                                  NCollection_Array1<double>? weights,
+                                  NCollection_Array1<Point2D> cachePoles,
+                                  NCollection_Array1<double>? cacheWeights)
     {
-        BSplCLib_BuildCache<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                                    InverseOfSpanDomain,
-                                                                    PeriodicFlag,
-                                                                    Degree,
-                                                                    FlatKnots,
-                                                                    Poles,
-                                                                    Weights,
-                                                                    CachePoles,
-                                                                    CacheWeights);
+        BSplCLib_BuildCache<Point2D, Vector2D, CurveTraits2d>(u,
+                                                                    inverseOfSpanDomain,
+                                                                    periodicFlag,
+                                                                    degree,
+                                                                    flatKnots,
+                                                                    poles,
+                                                                    weights,
+                                                                    cachePoles,
+                                                                    cacheWeights);
     }
 
     /// <summary>
-    /// Stores the polynomial coefficients of the span <paramref name="theSpanIndex"/> into
-    /// <paramref name="theCacheArray"/>, one row per coefficient: the coordinates, then the weight for a rational
+    /// Stores the polynomial coefficients of the span <paramref name="spanIndex"/> into
+    /// <paramref name="cacheArray"/>, one row per coefficient: the coordinates, then the weight for a rational
     /// curve (0 except the first, 1, when the weights are all equal).
     /// </summary>
-    public static void BuildCache(double theParameter,
-                                  double theSpanDomain,
-                                  bool thePeriodicFlag,
-                                  int theDegree,
-                                  int theSpanIndex,
-                                  NCollection_Array1<double> theFlatKnots,
-                                  NCollection_Array1<gp_Pnt2d> thePoles,
-                                  NCollection_Array1<double>? theWeights,
-                                  NCollection_Array2<double> theCacheArray)
+    public static void BuildCache(double parameter,
+                                  double spanDomain,
+                                  bool periodicFlag,
+                                  int degree,
+                                  int spanIndex,
+                                  NCollection_Array1<double> flatKnots,
+                                  NCollection_Array1<Point2D> poles,
+                                  NCollection_Array1<double>? weights,
+                                  NCollection_Array2<double> cacheArray)
     {
-        BSplCLib_BuildCache<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(theParameter,
-                                                                    theSpanDomain,
-                                                                    thePeriodicFlag,
-                                                                    theDegree,
-                                                                    theSpanIndex,
-                                                                    theFlatKnots,
-                                                                    thePoles,
-                                                                    theWeights,
-                                                                    theCacheArray);
+        BSplCLib_BuildCache<Point2D, Vector2D, CurveTraits2d>(parameter,
+                                                                    spanDomain,
+                                                                    periodicFlag,
+                                                                    degree,
+                                                                    spanIndex,
+                                                                    flatKnots,
+                                                                    poles,
+                                                                    weights,
+                                                                    cacheArray);
     }
 
     /// <summary>
-    /// Interpolates the points (in <paramref name="Poles"/> on entry, the poles on return) at
-    /// <paramref name="Parameters"/>, with the contact orders <paramref name="ContactOrderArray"/> (0: the point,
-    /// 1: the first derivative, ...). <paramref name="InversionProblem"/> is 0 on success.
+    /// Interpolates the points (in <paramref name="poles"/> on entry, the poles on return) at
+    /// <paramref name="parameters"/>, with the contact orders <paramref name="contactOrderArray"/> (0: the point,
+    /// 1: the first derivative, ...). <paramref name="inversionProblem"/> is 0 on success.
     /// </summary>
-    public static void Interpolate(int Degree,
-                                   NCollection_Array1<double> FlatKnots,
-                                   NCollection_Array1<double> Parameters,
-                                   NCollection_Array1<int> ContactOrderArray,
-                                   NCollection_Array1<gp_Pnt2d> Poles,
-                                   out int InversionProblem)
+    public static void Interpolate(int degree,
+                                   NCollection_Array1<double> flatKnots,
+                                   NCollection_Array1<double> parameters,
+                                   NCollection_Array1<int> contactOrderArray,
+                                   NCollection_Array1<Point2D> poles,
+                                   out int inversionProblem)
     {
-        BSplCLib_Interpolate<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                     FlatKnots,
-                                                                     Parameters,
-                                                                     ContactOrderArray,
-                                                                     Poles,
-                                                                     out InversionProblem);
+        BSplCLib_Interpolate<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                     flatKnots,
+                                                                     parameters,
+                                                                     contactOrderArray,
+                                                                     poles,
+                                                                     out inversionProblem);
     }
 
     /// <summary>The rational form of Interpolate: the weights are interpolated too.</summary>
-    public static void Interpolate(int Degree,
-                                   NCollection_Array1<double> FlatKnots,
-                                   NCollection_Array1<double> Parameters,
-                                   NCollection_Array1<int> ContactOrderArray,
-                                   NCollection_Array1<gp_Pnt2d> Poles,
-                                   NCollection_Array1<double> Weights,
-                                   out int InversionProblem)
+    public static void Interpolate(int degree,
+                                   NCollection_Array1<double> flatKnots,
+                                   NCollection_Array1<double> parameters,
+                                   NCollection_Array1<int> contactOrderArray,
+                                   NCollection_Array1<Point2D> poles,
+                                   NCollection_Array1<double> weights,
+                                   out int inversionProblem)
     {
-        BSplCLib_Interpolate<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Degree,
-                                                                     FlatKnots,
-                                                                     Parameters,
-                                                                     ContactOrderArray,
-                                                                     Poles,
-                                                                     Weights,
-                                                                     out InversionProblem);
+        BSplCLib_Interpolate<Point2D, Vector2D, CurveTraits2d>(degree,
+                                                                     flatKnots,
+                                                                     parameters,
+                                                                     contactOrderArray,
+                                                                     poles,
+                                                                     weights,
+                                                                     out inversionProblem);
     }
 
     /// <summary>
-    /// Moves the point at <paramref name="U"/> by <paramref name="Displ"/>, changing only the poles between
-    /// <paramref name="Index1"/> and <paramref name="Index2"/>; the poles changed are FirstIndex to LastIndex
+    /// Moves the point at <paramref name="u"/> by <paramref name="displ"/>, changing only the poles between
+    /// <paramref name="index1"/> and <paramref name="index2"/>; the poles changed are FirstIndex to LastIndex
     /// (both 0 when nothing could be done).
     /// </summary>
-    public static void MovePoint(double U,
-                                 in gp_Vec2d Displ,
-                                 int Index1,
-                                 int Index2,
-                                 int Degree,
-                                 NCollection_Array1<gp_Pnt2d> Poles,
-                                 NCollection_Array1<double>? Weights,
-                                 NCollection_Array1<double> FlatKnots,
-                                 out int FirstIndex,
-                                 out int LastIndex,
-                                 NCollection_Array1<gp_Pnt2d> NewPoles)
+    public static void MovePoint(double u,
+                                 in Vector2D displ,
+                                 int index1,
+                                 int index2,
+                                 int degree,
+                                 NCollection_Array1<Point2D> poles,
+                                 NCollection_Array1<double>? weights,
+                                 NCollection_Array1<double> flatKnots,
+                                 out int firstIndex,
+                                 out int lastIndex,
+                                 NCollection_Array1<Point2D> newPoles)
     {
-        BSplCLib_MovePoint<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                                   Displ,
-                                                                   Index1,
-                                                                   Index2,
-                                                                   Degree,
-                                                                   Poles,
-                                                                   Weights,
-                                                                   FlatKnots,
-                                                                   out FirstIndex,
-                                                                   out LastIndex,
-                                                                   NewPoles);
+        BSplCLib_MovePoint<Point2D, Vector2D, CurveTraits2d>(u,
+                                                                   displ,
+                                                                   index1,
+                                                                   index2,
+                                                                   degree,
+                                                                   poles,
+                                                                   weights,
+                                                                   flatKnots,
+                                                                   out firstIndex,
+                                                                   out lastIndex,
+                                                                   newPoles);
     }
 
     /// <summary>
-    /// Moves the point at <paramref name="U"/> by <paramref name="Delta"/> and its derivative by
-    /// <paramref name="DeltaDerivative"/>, keeping the start and end of the curve to the given orders
-    /// (-1: free, 0: the point, 1: the tangent, ...). <paramref name="ErrorStatus"/> is 0 on success.
+    /// Moves the point at <paramref name="u"/> by <paramref name="delta"/> and its derivative by
+    /// <paramref name="deltaDerivative"/>, keeping the start and end of the curve to the given orders
+    /// (-1: free, 0: the point, 1: the tangent, ...). <paramref name="errorStatus"/> is 0 on success.
     /// </summary>
-    public static void MovePointAndTangent(double U,
-                                           in gp_Vec2d Delta,
-                                           in gp_Vec2d DeltaDerivative,
-                                           double Tolerance,
-                                           int Degree,
-                                           int StartingCondition,
-                                           int EndingCondition,
-                                           NCollection_Array1<gp_Pnt2d> Poles,
-                                           NCollection_Array1<double>? Weights,
-                                           NCollection_Array1<double> FlatKnots,
-                                           NCollection_Array1<gp_Pnt2d> NewPoles,
-                                           out int ErrorStatus)
+    public static void MovePointAndTangent(double u,
+                                           in Vector2D delta,
+                                           in Vector2D deltaDerivative,
+                                           double tolerance,
+                                           int degree,
+                                           int startingCondition,
+                                           int endingCondition,
+                                           NCollection_Array1<Point2D> poles,
+                                           NCollection_Array1<double>? weights,
+                                           NCollection_Array1<double> flatKnots,
+                                           NCollection_Array1<Point2D> newPoles,
+                                           out int errorStatus)
     {
-        BSplCLib_MovePointAndTangent<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(U,
-                                                                             Delta,
-                                                                             DeltaDerivative,
-                                                                             Tolerance,
-                                                                             Degree,
-                                                                             StartingCondition,
-                                                                             EndingCondition,
-                                                                             Poles,
-                                                                             Weights,
-                                                                             FlatKnots,
-                                                                             NewPoles,
-                                                                             out ErrorStatus);
+        BSplCLib_MovePointAndTangent<Point2D, Vector2D, CurveTraits2d>(u,
+                                                                             delta,
+                                                                             deltaDerivative,
+                                                                             tolerance,
+                                                                             degree,
+                                                                             startingCondition,
+                                                                             endingCondition,
+                                                                             poles,
+                                                                             weights,
+                                                                             flatKnots,
+                                                                             newPoles,
+                                                                             out errorStatus);
     }
 
     /// <summary>
-    /// The parametric tolerance <paramref name="UTolerance"/> such that |t1 - t0| &lt; UTolerance implies
-    /// |C(t1) - C(t0)| &lt; <paramref name="Tolerance3D"/>.
+    /// The parametric tolerance <paramref name="uTolerance"/> such that |t1 - t0| &lt; UTolerance implies
+    /// |C(t1) - C(t0)| &lt; <paramref name="tolerance3D"/>.
     /// </summary>
-    public static void Resolution(NCollection_Array1<gp_Pnt2d> Poles,
-                                  NCollection_Array1<double>? Weights,
-                                  int NumPoles,
-                                  NCollection_Array1<double> FlatKnots,
-                                  int Degree,
-                                  double Tolerance3D,
-                                  out double UTolerance)
+    public static void Resolution(NCollection_Array1<Point2D> poles,
+                                  NCollection_Array1<double>? weights,
+                                  int numPoles,
+                                  NCollection_Array1<double> flatKnots,
+                                  int degree,
+                                  double tolerance3D,
+                                  out double uTolerance)
     {
-        BSplCLib_Resolution<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(Poles,
-                                                                    Weights,
-                                                                    NumPoles,
-                                                                    FlatKnots,
-                                                                    Degree,
-                                                                    Tolerance3D,
-                                                                    out UTolerance);
+        BSplCLib_Resolution<Point2D, Vector2D, CurveTraits2d>(poles,
+                                                                    weights,
+                                                                    numPoles,
+                                                                    flatKnots,
+                                                                    degree,
+                                                                    tolerance3D,
+                                                                    out uTolerance);
     }
 
     /// <summary>
-    /// Multiplies the B-spline F(t) by the function a(t) (<paramref name="FunctionPtr"/>), assuming F(t)a(t) is
-    /// exactly a B-spline of degree <paramref name="NewDegree"/> on <paramref name="FlatKnots"/> (not checked).
-    /// <paramref name="theStatus"/> is 0, or the pivot index of the failed matrix inversion.
+    /// Multiplies the B-spline F(t) by the function a(t) (<paramref name="functionPtr"/>), assuming F(t)a(t) is
+    /// exactly a B-spline of degree <paramref name="newDegree"/> on <paramref name="flatKnots"/> (not checked).
+    /// <paramref name="status"/> is 0, or the pivot index of the failed matrix inversion.
     /// </summary>
-    public static void FunctionMultiply(BSplCLib_EvaluatorFunction FunctionPtr,
-                                        int BSplineDegree,
-                                        NCollection_Array1<double> BSplineFlatKnots,
-                                        NCollection_Array1<gp_Pnt2d> Poles,
-                                        NCollection_Array1<double> FlatKnots,
-                                        int NewDegree,
-                                        NCollection_Array1<gp_Pnt2d> NewPoles,
-                                        out int theStatus)
+    public static void FunctionMultiply(EvaluatorFunction functionPtr,
+                                        int bSplineDegree,
+                                        NCollection_Array1<double> bSplineFlatKnots,
+                                        NCollection_Array1<Point2D> poles,
+                                        NCollection_Array1<double> flatKnots,
+                                        int newDegree,
+                                        NCollection_Array1<Point2D> newPoles,
+                                        out int status)
     {
-        BSplCLib_FunctionMultiply<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(FunctionPtr,
-                                                                          BSplineDegree,
-                                                                          BSplineFlatKnots,
-                                                                          Poles,
-                                                                          FlatKnots,
-                                                                          NewDegree,
-                                                                          NewPoles,
-                                                                          out theStatus);
+        BSplCLib_FunctionMultiply<Point2D, Vector2D, CurveTraits2d>(functionPtr,
+                                                                          bSplineDegree,
+                                                                          bSplineFlatKnots,
+                                                                          poles,
+                                                                          flatKnots,
+                                                                          newDegree,
+                                                                          newPoles,
+                                                                          out status);
     }
 
     /// <summary>
-    /// Composes the B-spline F(t) with the function a(t) (<paramref name="FunctionPtr"/>), assuming F(a(t)) is
-    /// exactly a B-spline of degree <paramref name="NewDegree"/> on <paramref name="FlatKnots"/> and a(t) maps the
-    /// range of FlatKnots onto that of BSplineFlatKnots (not checked). <paramref name="theStatus"/> is 0, or the
+    /// Composes the B-spline F(t) with the function a(t) (<paramref name="functionPtr"/>), assuming F(a(t)) is
+    /// exactly a B-spline of degree <paramref name="newDegree"/> on <paramref name="flatKnots"/> and a(t) maps the
+    /// range of FlatKnots onto that of BSplineFlatKnots (not checked). <paramref name="status"/> is 0, or the
     /// pivot index of the failed matrix inversion.
     /// </summary>
-    public static void FunctionReparameterise(BSplCLib_EvaluatorFunction FunctionPtr,
-                                              int BSplineDegree,
-                                              NCollection_Array1<double> BSplineFlatKnots,
-                                              NCollection_Array1<gp_Pnt2d> Poles,
-                                              NCollection_Array1<double> FlatKnots,
-                                              int NewDegree,
-                                              NCollection_Array1<gp_Pnt2d> NewPoles,
-                                              out int theStatus)
+    public static void FunctionReparameterise(EvaluatorFunction functionPtr,
+                                              int bSplineDegree,
+                                              NCollection_Array1<double> bSplineFlatKnots,
+                                              NCollection_Array1<Point2D> poles,
+                                              NCollection_Array1<double> flatKnots,
+                                              int newDegree,
+                                              NCollection_Array1<Point2D> newPoles,
+                                              out int status)
     {
-        BSplCLib_FunctionReparameterise<gp_Pnt2d, gp_Vec2d, BSplCLib_CurveTraits2d>(FunctionPtr,
-                                                                                BSplineDegree,
-                                                                                BSplineFlatKnots,
-                                                                                Poles,
-                                                                                FlatKnots,
-                                                                                NewDegree,
-                                                                                NewPoles,
-                                                                                out theStatus);
+        BSplCLib_FunctionReparameterise<Point2D, Vector2D, CurveTraits2d>(functionPtr,
+                                                                                bSplineDegree,
+                                                                                bSplineFlatKnots,
+                                                                                poles,
+                                                                                flatKnots,
+                                                                                newDegree,
+                                                                                newPoles,
+                                                                                out status);
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -94,7 +96,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     private static string? ErrorOf(Exception theException) => theException switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
-        Standard_Failure f => f.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         _ => null,
     };
 
@@ -199,7 +201,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         }
         theStatus = PortStatus(aFix);
         TopoDS_Shape aResult = aFix.Result();
-        Assert.True(aResult.IsNull() || aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.IsNull() || aResult.TShape()!.IsFrozen);
         return aResult;
     }
 
@@ -239,7 +241,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         {
             aPRes = PortFix(TopoDS.Face(aPS), theMode, out aPDone, out aPStatus);
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aPErr = ErrorOf(e);
         }
@@ -435,13 +437,13 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         return aFiles;
     }
 
-    private static N.gp_Ax2 Ax2At(in gp_Ax2 theAx, double theHeight)
+    private static N.gp_Ax2 Ax2At(in Frame3D theAx, double theHeight)
     {
-        gp_Pnt aP = theAx.Location().Translated(new gp_Vec(theAx.Direction()) * theHeight);
+        Point3D aP = theAx.Location().Translated(new Vector3D(theAx.Direction()) * theHeight);
         return new N.gp_Ax2(Oracle.ToNative(aP), Oracle.ToNative(theAx.Direction()), Oracle.ToNative(theAx.XDirection()));
     }
 
-    private static N.TopoDS_Wire CircleWire(in gp_Ax2 theAx, double theHeight, double theRadius, bool theReversed)
+    private static N.TopoDS_Wire CircleWire(in Frame3D theAx, double theHeight, double theRadius, bool theReversed)
     {
         using var aCircle = new N.Geom_Circle(Ax2At(theAx, theHeight), theRadius);
         N.TopoDS_Wire aWire = new N.BRepBuilderAPI_MakeWire(new N.BRepBuilderAPI_MakeEdge(aCircle).Edge()).Wire();
@@ -451,7 +453,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     // A face on a closed surface bounded by 3d circles (no pcurves), as build123d.NET's MakeFaceOnSurface builds it.
     private static N.TopoDS_Shape? SurfaceFace(Oracle theOracle, int theIndex, out string theWhat)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         var anAx3 = new N.gp_Ax3(Oracle.ToNative(anAx.Location()), Oracle.ToNative(anAx.Direction()), Oracle.ToNative(anAx.XDirection()));
         double R = theOracle.Real(1.0, 20.0);
         bool aRev1 = theOracle.Int(0, 3) == 0, aRev2 = theOracle.Bool();
@@ -536,12 +538,12 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     // A planar face from a polygon or arcs and holes, some holes misoriented, as build123d.NET's MakeFaceFromWires.
     private static N.TopoDS_Shape? PlanarFace(Oracle theOracle, out string theWhat)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         double R = theOracle.Real(5.0, 50.0);
         int aNb = theOracle.Int(3, 9);
         N.gp_Pnt Point(double theU, double theV)
         {
-            gp_Pnt aP = anAx.Location().Translated(new gp_Vec(anAx.XDirection()) * theU).Translated(new gp_Vec(anAx.YDirection()) * theV);
+            Point3D aP = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * theU).Translated(new Vector3D(anAx.YDirection()) * theV);
             return Oracle.ToNative(aP);
         }
         bool anOuterReversed = theOracle.Int(0, 3) == 0;

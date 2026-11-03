@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -50,7 +54,7 @@ public sealed class BRepFill_TrimSurfaceTool
     }
 
     // Order the sequence of points by increasing x.
-    private static void Bubble(NCollection_Sequence<gp_Pnt> Seq)
+    private static void Bubble(NCollection_Sequence<Point3D> Seq)
     {
         bool Invert = true;
         int NbPoints = Seq.Length();
@@ -59,8 +63,8 @@ public sealed class BRepFill_TrimSurfaceTool
             Invert = false;
             for (int i = 1; i < NbPoints; i++)
             {
-                gp_Pnt P1 = Seq.Value(i);
-                gp_Pnt P2 = Seq.Value(i + 1);
+                Point3D P1 = Seq.Value(i);
+                Point3D P2 = Seq.Value(i + 1);
                 if (P2.X() < P1.X())
                 {
                     Seq.Exchange(i, i + 1);
@@ -70,12 +74,12 @@ public sealed class BRepFill_TrimSurfaceTool
         }
     }
 
-    private static double EvalPhase(in TopoDS_Edge Edge, in TopoDS_Face Face, GeomAdaptor_Surface GAS, in gp_Ax3 Axis)
+    private static double EvalPhase(in TopoDS_Edge Edge, in TopoDS_Face Face, GeomAdaptor_Surface GAS, in CoordinateSystem Axis)
     {
-        gp_Pnt2d PF1, PF2;
+        Point2D PF1, PF2;
         double VDeg;
         double V = 0.0;
-        BRep_Tool.UVPoints(Edge, Face, out gp_Pnt2d PE1, out gp_Pnt2d _);
+        BRep_Tool.UVPoints(Edge, Face, out Point2D PE1, out Point2D _);
         VDeg = PE1.Y();
         TopExp_Explorer Exp = new(Face, TopAbs_EDGE);
         for (; Exp.More(); Exp.Next())
@@ -87,9 +91,9 @@ public sealed class BRepFill_TrimSurfaceTool
                 break;
             }
         }
-        gp_Pnt P = GAS.Value(0.0, V);
+        Point3D P = GAS.Value(0.0, V);
 
-        if (new gp_Vec(Axis.Location(), P).Dot(new gp_Vec(Axis.XDirection())) < 0.0)
+        if (new Vector3D(Axis.Location(), P).Dot(new Vector3D(Axis.XDirection())) < 0.0)
         {
             return Math.PI;
         }
@@ -99,7 +103,7 @@ public sealed class BRepFill_TrimSurfaceTool
         }
     }
 
-    private static void EvalParameters(in TopoDS_Edge Edge, in TopoDS_Face Face, Geom2d_Curve Bis, NCollection_Sequence<gp_Pnt> Seq)
+    private static void EvalParameters(in TopoDS_Edge Edge, in TopoDS_Face Face, Geom2d_Curve Bis, NCollection_Sequence<Point3D> Seq)
     {
         bool Degener = BRep_Tool.Degenerated(Edge);
         // return curves 3d associated to edges.
@@ -110,7 +114,7 @@ public sealed class BRepFill_TrimSurfaceTool
 
         int NbPoints, NbSegments;
         double U1, U2;
-        gp_Pnt P;
+        Point3D P;
 
         //  modified by NIZHNY-EAP Wed Dec 22 15:00:51 1999 ___BEGIN___
         double Tol = 1.0e-6; // BRepFill_Precision();
@@ -118,7 +122,7 @@ public sealed class BRepFill_TrimSurfaceTool
 
         if (!Degener)
         {
-            Geom_Curve C = BRep_Tool.Curve(Edge, out TopLoc_Location L, out double f, out double l)!;
+            Geom_Curve C = BRep_Tool.Curve(Edge, out Placement L, out double f, out double l)!;
             CT = new Geom_TrimmedCurve(C, f, l);
             CT.Transform(L.Transformation());
             // projection of 3d curves in the plane xOy
@@ -131,7 +135,7 @@ public sealed class BRepFill_TrimSurfaceTool
 
             if (!Intersector.IsDone())
             {
-                throw new StdFail_NotDone("BRepFill_TrimSurfaceTool::IntersectWith");
+                throw new NotDoneException("BRepFill_TrimSurfaceTool::IntersectWith");
             }
 
             NbPoints = Intersector.NbPoints();
@@ -143,11 +147,11 @@ public sealed class BRepFill_TrimSurfaceTool
                 // don't do it rightaway from the beginning in order not to get
                 // extra solutions those would cause *Exception*: incoherent intersection
 
-                GeomAbs_CurveType CType = AC.GetType(), BisType = ABis.GetType();
-                bool canElongateC = CType != GeomAbs_BezierCurve && CType != GeomAbs_BSplineCurve
-                                    && CType != GeomAbs_OffsetCurve && CType != GeomAbs_OtherCurve;
-                bool canElongateBis = BisType != GeomAbs_BezierCurve && BisType != GeomAbs_BSplineCurve
-                                      && BisType != GeomAbs_OffsetCurve && BisType != GeomAbs_OtherCurve;
+                CurveKind CType = AC.GetType(), BisType = ABis.GetType();
+                bool canElongateC = CType != BezierCurve && CType != BSplineCurve
+                                    && CType != OffsetCurve && CType != OtherCurve;
+                bool canElongateBis = BisType != BezierCurve && BisType != BSplineCurve
+                                      && BisType != OffsetCurve && BisType != OtherCurve;
 
                 // OCCT: the down-casts are not checked (a curve that isn't trimmed crashes natively)
                 Geom2d_TrimmedCurve TBis = (Bis as Geom2d_TrimmedCurve)!;
@@ -168,7 +172,7 @@ public sealed class BRepFill_TrimSurfaceTool
 
                 if (!Intersector.IsDone())
                 {
-                    throw new StdFail_NotDone("BRepFill_TrimSurfaceTool::IntersectWith");
+                    throw new NotDoneException("BRepFill_TrimSurfaceTool::IntersectWith");
                 }
 
                 NbPoints = Intersector.NbPoints();
@@ -180,7 +184,7 @@ public sealed class BRepFill_TrimSurfaceTool
                 {
                     U1 = Intersector.Point(i).ParamOnFirst();
                     U2 = Intersector.Point(i).ParamOnSecond();
-                    P = new gp_Pnt(U1, U2, 0.0);
+                    P = new Point3D(U1, U2, 0.0);
                     Seq.Append(P);
                 }
             }
@@ -199,7 +203,7 @@ public sealed class BRepFill_TrimSurfaceTool
                     U2 = Seg.FirstPoint().ParamOnSecond();
                     U2 += Seg.LastPoint().ParamOnSecond();
                     U2 /= 2.0;
-                    P = new gp_Pnt(U1, U2, 0.0);
+                    P = new Point3D(U1, U2, 0.0);
                     Seq.Append(P);
                 }
             }
@@ -208,7 +212,7 @@ public sealed class BRepFill_TrimSurfaceTool
 
             //  modified by NIZHNY-EAP Fri Dec 24 18:47:24 1999 ___BEGIN___
             // Remove double points
-            gp_Pnt P1, P2;
+            Point3D P1, P2;
             for (int i = 1; i < NbPoints; i++)
             {
                 P1 = Seq.Value(i);
@@ -226,23 +230,23 @@ public sealed class BRepFill_TrimSurfaceTool
             // the edge is degenerated : the point and it is found if it is
             // on the bissectrice.
 
-            gp_Pnt P3d = BRep_Tool.Pnt(TopExp.FirstVertex(Edge));
-            gp_Pnt2d P2d = new(P3d.X(), P3d.Y());
+            Point3D P3d = BRep_Tool.Pnt(TopExp.FirstVertex(Edge));
+            Point2D P2d = new(P3d.X(), P3d.Y());
 
             double UBis = Bis.FirstParameter();
-            gp_Pnt2d PBis = Bis.Value(UBis);
+            Point2D PBis = Bis.Value(UBis);
 
             //  modified by NIZHNY-EAP Wed Jan 12 11:41:30 2000 ___BEGIN___
             // inside gp_Pnt2d::Distance
             // Infinite * Infinite => Exception: DefaultNumericError
             // Case encounered: UBis < Precision::Infinite()
             // but PBis.X() > Precision::Infinite()
-            if (Precision.IsPositiveInfinite(Math.Abs(PBis.X()))
-                || Precision.IsPositiveInfinite(Math.Abs(PBis.Y())) || PBis.Distance(P2d) > Tol)
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(PBis.X()))
+                || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(PBis.Y())) || PBis.Distance(P2d) > Tol)
             {
                 //  modified by NIZHNY-EAP Wed Jan 12 11:41:40 2000 ___END___
                 UBis = Bis.LastParameter();
-                if (UBis >= Precision.Infinite())
+                if (UBis >= global::Kerf.Engine.Foundation.Precision.Infinite())
                 {
                     return;
                 }
@@ -257,15 +261,15 @@ public sealed class BRepFill_TrimSurfaceTool
             Geom_Surface GS = BRep_Tool.Surface(Face)!;
             GeomAdaptor_Surface GAS = new(GS);
 
-            gp_Ax3 Axis;
+            CoordinateSystem Axis;
             double Phase = 0.0;
 
             switch (GAS.GetType())
             {
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                     Axis = GAS.Sphere().Position();
                     break;
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                     {
                         //----------------------------------------------------------
                         // if myFace1 is not at the same side of the apex as the point
@@ -275,13 +279,13 @@ public sealed class BRepFill_TrimSurfaceTool
                         Phase = EvalPhase(Edge, Face, GAS, Axis);
                         break;
                     }
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                     Axis = GAS.Torus().Position();
                     break;
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                     Axis = GAS.Cylinder().Position();
                     break;
-                case GeomAbs_SurfaceOfRevolution:
+                case SurfaceOfRevolution:
                     {
                         //----------------------------------------------------------
                         // if myFace1 is not at the same side of the apex as the point
@@ -295,20 +299,20 @@ public sealed class BRepFill_TrimSurfaceTool
                         break;
                     }
                 default:
-                    throw new Standard_NotImplemented(" BRepFill_TrimSurfaceTool");
+                    throw new MethodNotImplementedException(" BRepFill_TrimSurfaceTool");
             }
 
-            gp_Vec2d D12d = Bis.DN(UBis, 1);
-            gp_Vec D1 = new(D12d.X(), D12d.Y(), 0.0);
+            Vector2D D12d = Bis.DN(UBis, 1);
+            Vector3D D1 = new(D12d.X(), D12d.Y(), 0.0);
 
-            double U = Axis.XDirection().AngleWithRef(new gp_Dir(D1), Axis.XDirection() ^ Axis.YDirection());
+            double U = Axis.XDirection().AngleWithRef(new Direction3D(D1), Axis.XDirection() ^ Axis.YDirection());
             U += Phase;
             if (U < 0.0)
             {
                 U += 2 * Math.PI;
             }
 
-            P = new gp_Pnt(Bis.FirstParameter(), U, 0.0);
+            P = new Point3D(Bis.FirstParameter(), U, 0.0);
             Seq.Append(P);
         }
     }
@@ -317,11 +321,11 @@ public sealed class BRepFill_TrimSurfaceTool
     /// The intersections of the bisector with EdgeOnF1 and EdgeOnF2: each point is (parameter on the bisector,
     /// parameter on EdgeOnF1, parameter on EdgeOnF2), by increasing parameter on the bisector.
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The two edges give different numbers of intersections.</exception>
-    public void IntersectWith(in TopoDS_Edge EdgeOnF1, in TopoDS_Edge EdgeOnF2, NCollection_Sequence<gp_Pnt> Points)
+    /// <exception cref="NotDoneException">The two edges give different numbers of intersections.</exception>
+    public void IntersectWith(in TopoDS_Edge EdgeOnF1, in TopoDS_Edge EdgeOnF2, NCollection_Sequence<Point3D> Points)
     {
         Points.Clear();
-        NCollection_Sequence<gp_Pnt> Points2 = new();
+        NCollection_Sequence<Point3D> Points2 = new();
 
         EvalParameters(EdgeOnF1, myFace1, myBis, Points);
         EvalParameters(EdgeOnF2, myFace2, myBis, Points2);
@@ -329,7 +333,7 @@ public sealed class BRepFill_TrimSurfaceTool
         StdFail_NotDone_Raise_if(Points.Length() != Points2.Length(),
                                  "BRepFill_TrimSurfaceTool::IntersectWith: incoherent intersection");
 
-        gp_Pnt PSeq;
+        Point3D PSeq;
         int NbPoints = Points.Length();
         for (int i = 1; i <= NbPoints; i++)
         {
@@ -340,10 +344,10 @@ public sealed class BRepFill_TrimSurfaceTool
     }
 
     /// <summary>True if the vertical line through <paramref name="Point"/> meets one of the two faces.</summary>
-    public bool IsOnFace(in gp_Pnt2d Point)
+    public bool IsOnFace(in Point2D Point)
     {
-        gp_Pnt P = new(Point.X(), Point.Y(), 0.0);
-        gp_Lin Line = new(P, gp.DZ());
+        Point3D P = new(Point.X(), Point.Y(), 0.0);
+        Line3D Line = new(P, Constants.DZ());
 
         BRepIntCurveSurface_Inter Inter = new();
 
@@ -362,9 +366,9 @@ public sealed class BRepFill_TrimSurfaceTool
     }
 
     /// <summary>The parameter of the projection of <paramref name="Point"/> on the edge's curve projected on xOy.</summary>
-    public double ProjOn(in gp_Pnt2d Point, in TopoDS_Edge Edge)
+    public double ProjOn(in Point2D Point, in TopoDS_Edge Edge)
     {
-        Geom_Curve C1 = BRep_Tool.Curve(Edge, out TopLoc_Location L, out double f, out double l)!;
+        Geom_Curve C1 = BRep_Tool.Curve(Edge, out Placement L, out double f, out double l)!;
         Geom_TrimmedCurve CT = new(C1, f, l);
         CT.Transform(L.Transformation());
 
@@ -388,7 +392,7 @@ public sealed class BRepFill_TrimSurfaceTool
                         out Geom_Curve? Curve,
                         out Geom2d_Curve? PCurve1,
                         out Geom2d_Curve? PCurve2,
-                        out GeomAbs_Shape Cont)
+                        out Continuity Cont)
     {
         Geom2d_TrimmedCurve CT = new(myBis, U1, U2);
         BRepFill_MultiLine ML = new(myFace1, myFace2, myEdge1, myEdge2, myInv1, myInv2, CT);

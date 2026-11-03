@@ -1,7 +1,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntImp_ConstIsoparametric;
 using static Occt.IntWalk_StatusDeflection;
 
@@ -143,7 +146,7 @@ public partial class IntWalk_PWalking
             {
                 SvParam[parit] = Param[parit + 1];
             }
-            math_FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
+            FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
             ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, theChoixIso);
 
             if (!myIntersectionOn2S.IsDone())
@@ -268,10 +271,10 @@ public partial class IntWalk_PWalking
 
                                 if (line.NbPoints() >= 1)
                                 {
-                                    gp_Pnt pf = line.Value(1).Value();
-                                    gp_Pnt pl = previousPoint.Value();
+                                    Point3D pf = line.Value(1).Value();
+                                    Point3D pl = previousPoint.Value();
 
-                                    if (pf.Distance(pl) < Precision.Confusion())
+                                    if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         dIncKey++;
                                         if (dIncKey == 5000)
@@ -364,10 +367,10 @@ public partial class IntWalk_PWalking
                                     {
                                         if (line.NbPoints() >= 1)
                                         {
-                                            gp_Pnt pf = line.Value(1).Value();
-                                            gp_Pnt pl = previousPoint.Value();
+                                            Point3D pf = line.Value(1).Value();
+                                            Point3D pl = previousPoint.Value();
 
-                                            if (pf.Distance(pl) < Precision.Confusion())
+                                            if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                             {
                                                 dIncKey++;
                                                 if (dIncKey == 5000)
@@ -469,26 +472,26 @@ public partial class IntWalk_PWalking
                     }
 
                     int afirstindex = (indexofiso < 2) ? 0 : 2;
-                    gp_Vec2d aTangentZoneDir = new(
-                        new gp_Pnt2d(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                        new gp_Pnt2d(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                    Vector2D aTangentZoneDir = new(
+                        new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
+                        new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
 
-                    gp_Dir2d anIsoDir = new(gp_Dir2d.D.Y);
+                    Direction2D anIsoDir = new(Direction2D.D.Y);
 
                     if ((indexofiso == 1) || (indexofiso == 3))
                     {
-                        anIsoDir = new gp_Dir2d(gp_Dir2d.D.X);
+                        anIsoDir = new Direction2D(Direction2D.D.X);
                     }
 
-                    if (aTangentZoneDir.SquareMagnitude() > gp.Resolution())
+                    if (aTangentZoneDir.SquareMagnitude() > Constants.Resolution())
                     {
                         double piquota = M_PI * 0.25;
 
-                        if (Math.Abs(aTangentZoneDir.Angle(new gp_Vec2d(anIsoDir))) > piquota)
+                        if (Math.Abs(aTangentZoneDir.Angle(new Vector2D(anIsoDir))) > piquota)
                         {
                             int ii = 1, nextii = 2;
-                            gp_Vec2d d1 = new(0, 0);
-                            double asqresol = gp.Resolution();
+                            Vector2D d1 = new(0, 0);
+                            double asqresol = Constants.Resolution();
                             asqresol *= asqresol;
 
                             do
@@ -497,9 +500,9 @@ public partial class IntWalk_PWalking
                                                                     out FirstParams[2], out FirstParams[3]);
                                 aSeqOfNewPoint.Value(ii + 1).Parameters(out LastParams[0], out LastParams[1],
                                                                         out LastParams[2], out LastParams[3]);
-                                d1 = new gp_Vec2d(
-                                    new gp_Pnt2d(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                                    new gp_Pnt2d(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                                d1 = new Vector2D(
+                                    new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
+                                    new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
                                 ii++;
                             } while ((d1.SquareMagnitude() < asqresol) && (ii < aSeqOfNewPoint.Length()));
 
@@ -507,7 +510,7 @@ public partial class IntWalk_PWalking
 
                             while (nextii < aSeqOfNewPoint.Length())
                             {
-                                gp_Vec2d nextd1 = new(0, 0);
+                                Vector2D nextd1 = new(0, 0);
                                 int jj = nextii;
 
                                 do
@@ -516,9 +519,9 @@ public partial class IntWalk_PWalking
                                                                         out FirstParams[2], out FirstParams[3]);
                                     aSeqOfNewPoint.Value(jj + 1).Parameters(out LastParams[0], out LastParams[1],
                                                                             out LastParams[2], out LastParams[3]);
-                                    nextd1 = new gp_Vec2d(
-                                        new gp_Pnt2d(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                                        new gp_Pnt2d(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                                    nextd1 = new Vector2D(
+                                        new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
+                                        new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
                                     jj++;
                                 } while ((nextd1.SquareMagnitude() < asqresol) && (jj < aSeqOfNewPoint.Length()));
                                 nextii = jj;
@@ -561,7 +564,7 @@ public partial class IntWalk_PWalking
     {
         const int aNbIterMAX = 60;
         const double aTol = 1.0e-14;
-        double aTolNul = 1.0 / Precision.Infinite();
+        double aTolNul = 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite();
 
         // I.e. if theU1 = 0.0 then Epsilon(theU1) = DBL_MIN (~1.0e-308).
         // Work with this number is impossible: there is a dangerous to
@@ -571,23 +574,23 @@ public partial class IntWalk_PWalking
         double aMinAddValU2 = Math.Max(Epsilon(theInit[3]), aTolNul);
         double aMinAddValV2 = Math.Max(Epsilon(theInit[4]), aTolNul);
 
-        if (theASurf1.GetType() != GeomAbs_BezierSurface && theASurf1.GetType() != GeomAbs_BSplineSurface)
+        if (theASurf1.GetType() != BezierSurface && theASurf1.GetType() != BSplineSurface)
         {
             return true;
         }
-        if (theASurf2.GetType() != GeomAbs_BezierSurface && theASurf2.GetType() != GeomAbs_BSplineSurface)
+        if (theASurf2.GetType() != BezierSurface && theASurf2.GetType() != BSplineSurface)
         {
             return true;
         }
 
         bool aStatus = false;
 
-        theASurf1.D1(theInit[1], theInit[2], out gp_Pnt aP1, out gp_Vec aD1u, out gp_Vec aD1v);
-        theASurf2.D1(theInit[3], theInit[4], out gp_Pnt aP2, out gp_Vec aD2U, out gp_Vec aD2V);
+        theASurf1.D1(theInit[1], theInit[2], out Point3D aP1, out Vector3D aD1u, out Vector3D aD1v);
+        theASurf2.D1(theInit[3], theInit[4], out Point3D aP2, out Vector3D aD2U, out Vector3D aD2V);
 
         double aSQDistPrev = aP1.SquareDistance(aP2);
 
-        gp_Vec aP12 = new(aP1, aP2);
+        Vector3D aP12 = new(aP1, aP2);
 
         double aGradFu = -aP12.Dot(aD1u);
         double aGradFv = -aP12.Dot(aD1v);
@@ -621,8 +624,8 @@ public partial class IntWalk_PWalking
             anAdd = aGradFV * aStepV2;
             double aParV = theInit[4] - Math.CopySign(Math.Max(Math.Abs(anAdd), aMinAddValV2), anAdd);
 
-            theASurf1.D1(aPARu, aPARv, out gp_Pnt aPt1, out aD1u, out aD1v);
-            theASurf2.D1(aParU, aParV, out gp_Pnt aPt2, out aD2U, out aD2V);
+            theASurf1.D1(aPARu, aPARv, out Point3D aPt1, out aD1u, out aD1v);
+            theASurf2.D1(aParU, aParV, out Point3D aPt2, out aD2U, out aD2V);
 
             double aSQDist = aPt1.SquareDistance(aPt2);
 
@@ -651,7 +654,7 @@ public partial class IntWalk_PWalking
                     theASurf1.D1(theInit[1], theInit[2], out aPt1, out aD1u, out aD1v);
                     theASurf2.D1(theInit[3], theInit[4], out aPt2, out aD2U, out aD2V);
 
-                    gp_Vec aPt12 = new(aPt1, aPt2);
+                    Vector3D aPt12 = new(aPt1, aPt2);
                     aGradFu = -aPt12.Dot(aD1u);
                     aGradFv = -aPt12.Dot(aD1v);
                     aGradFU = aPt12.Dot(aD2U);
@@ -679,7 +682,7 @@ public partial class IntWalk_PWalking
     /// Newton's iterations for the projection of theP0 on theASurf from (theU0, theV0) (initialised by the caller).
     /// True if the square distance falls below 1e-14.
     /// </summary>
-    internal bool DistanceMinimizeByExtrema(Adaptor3d_Surface theASurf, in gp_Pnt theP0, ref double theU0,
+    internal bool DistanceMinimizeByExtrema(Adaptor3d_Surface theASurf, in Point3D theP0, ref double theU0,
                                             ref double theV0, double[]? theStep0 = null)
     {
         const double aTol = 1.0e-14;
@@ -691,10 +694,10 @@ public partial class IntWalk_PWalking
         int aNbIter = 10;
         do
         {
-            theASurf.D2(aU, aV, out gp_Pnt aPS, out gp_Vec aD1Su, out gp_Vec aD1Sv, out gp_Vec aD2Su, out gp_Vec aD2Sv,
-                        out gp_Vec _);
+            theASurf.D2(aU, aV, out Point3D aPS, out Vector3D aD1Su, out Vector3D aD1Sv, out Vector3D aD2Su, out Vector3D aD2Sv,
+                        out Vector3D _);
 
-            gp_Vec aVec = new(theP0, aPS);
+            Vector3D aVec = new(theP0, aPS);
 
             double aSQDist = aVec.SquareMagnitude();
 
@@ -747,13 +750,13 @@ public partial class IntWalk_PWalking
 
         // Create new intersector with new tolerance.
         IntWalk_TheInt2S anInt = new(theASurf1, theASurf2, the3DTol);
-        math_FunctionSetRoot aRsnld = new(anInt.Function());
+        FunctionSetRoot aRsnld = new(anInt.Function());
 
         Span<double> aPars = stackalloc double[4];
         for (int i = 1; i <= 4; ++i)
         {
-            if (Math.Abs(thePnt[i] - aLowBorder[i - 1]) < Precision.PConfusion()
-                || Math.Abs(thePnt[i] - aUppBorder[i - 1]) < Precision.PConfusion())
+            if (Math.Abs(thePnt[i] - aLowBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(thePnt[i] - aUppBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 anInt.Perform(thePnt, aRsnld, aLockedDir[i - 1]);
 
@@ -771,16 +774,16 @@ public partial class IntWalk_PWalking
                 Adaptor3d_Surface[] aSurfs = [theASurf1, theASurf2];
                 // Local resolutions
                 double aTol2 = the3DTol * the3DTol;
-                gp_Pnt aP;
+                Point3D aP;
                 int k;
                 for (k = 0; k < 2; ++k)
                 {
                     int iu, iv;
                     iu = 2 * k;
                     iv = iu + 1;
-                    aSurfs[k].D1(aPars[iu], aPars[iv], out gp_Pnt aPInt, out gp_Vec aDU, out gp_Vec aDV);
+                    aSurfs[k].D1(aPars[iu], aPars[iv], out Point3D aPInt, out Vector3D aDU, out Vector3D aDV);
                     double aMod = aDU.Magnitude();
-                    if (aMod > Precision.Confusion())
+                    if (aMod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double aTolU = the3DTol / aMod;
                         if (Math.Abs(aLowBorder[iu] - aPars[iu]) < aTolU)
@@ -801,7 +804,7 @@ public partial class IntWalk_PWalking
                         }
                     }
                     aMod = aDV.Magnitude();
-                    if (aMod > Precision.Confusion())
+                    if (aMod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double aTolV = the3DTol / aMod;
                         if (Math.Abs(aLowBorder[iv] - aPars[iv]) < aTolV)
@@ -832,8 +835,8 @@ public partial class IntWalk_PWalking
                 bool isInDomain = true;
                 for (j = 1; isInDomain && (j <= 4); ++j)
                 {
-                    if ((thePnt[j] - aLowBorder[j - 1] + Precision.PConfusion())
-                            * (thePnt[j] - aUppBorder[j - 1] - Precision.PConfusion())
+                    if ((thePnt[j] - aLowBorder[j - 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
+                            * (thePnt[j] - aUppBorder[j - 1] - global::Kerf.Engine.Foundation.Precision.PConfusion())
                         > 0.0)
                     {
                         isInDomain = false;
@@ -866,12 +869,12 @@ public partial class IntWalk_PWalking
                                theASurf2.LastUParameter(), theASurf2.LastVParameter()];
 
         // Tune solution tolerance according with object size.
-        double aRes1 = Math.Max(Precision.PConfusion() / theASurf1.UResolution(1.0),
-                                Precision.PConfusion() / theASurf1.VResolution(1.0));
-        double aRes2 = Math.Max(Precision.PConfusion() / theASurf2.UResolution(1.0),
-                                Precision.PConfusion() / theASurf2.VResolution(1.0));
+        double aRes1 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf1.UResolution(1.0),
+                                global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf1.VResolution(1.0));
+        double aRes2 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf2.UResolution(1.0),
+                                global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf2.VResolution(1.0));
         double a3DTol = Math.Max(aRes1, aRes2);
-        double aTol = Math.Max(Precision.Confusion(), a3DTol);
+        double aTol = Math.Max(global::Kerf.Engine.Foundation.Precision.Confusion(), a3DTol);
 
         // u1, v1, u2, v2 order is used.
         NCollection_Array1<double> aPnt = new(1, 4);
@@ -917,9 +920,9 @@ public partial class IntWalk_PWalking
             return isOK;
         }
 
-        gp_Pnt aP1 = theASurf1.Value(aPnt[1], aPnt[2]);
-        gp_Pnt aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
-        gp_Pnt aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
+        Point3D aP1 = theASurf1.Value(aPnt[1], aPnt[2]);
+        Point3D aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
+        Point3D aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
 
         double aSQDist = aPInt.SquareDistance(aP1);
         if (aSQDist > aTol * aTol)
@@ -966,7 +969,7 @@ public partial class IntWalk_PWalking
                 for (; aPInd <= aNbPnts; aPInd++)
                 {
                     aP1.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aP1.SquareDistance(aPInt) > Precision.SquareConfusion())
+                    if (aP1.SquareDistance(aPInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -975,7 +978,7 @@ public partial class IntWalk_PWalking
                 for (++aPInd; aPInd <= aNbPnts; aPInd++)
                 {
                     aP2.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aP1.SquareDistance(aP2) > Precision.SquareConfusion())
+                    if (aP1.SquareDistance(aP2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -986,8 +989,8 @@ public partial class IntWalk_PWalking
                     return isOK;
                 }
 
-                gp_XYZ aDir01 = aP1.XYZ() - aPInt.XYZ();
-                gp_XYZ aDir12 = aP2.XYZ() - aP1.XYZ();
+                Xyz aDir01 = aP1.XYZ() - aPInt.XYZ();
+                Xyz aDir12 = aP2.XYZ() - aP1.XYZ();
 
                 if (aDir01.Dot(aDir12) > 0.0)
                 {
@@ -998,7 +1001,7 @@ public partial class IntWalk_PWalking
             }
 
             aP1.SetXYZ(line.Value(1).Value().XYZ());
-            if (aP1.SquareDistance(aPInt) <= Precision.SquareConfusion())
+            if (aP1.SquareDistance(aPInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(1);
             }
@@ -1012,12 +1015,12 @@ public partial class IntWalk_PWalking
             {
                 int aNbPnts = line.NbPoints();
 
-                gp_Pnt aPPrev = new(), aPCurr = new();
+                Point3D aPPrev = new(), aPCurr = new();
                 int aPInd = aNbPnts;
                 for (; aPInd > 0; aPInd--)
                 {
                     aPCurr.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aPCurr.SquareDistance(aPInt) > Precision.SquareConfusion())
+                    if (aPCurr.SquareDistance(aPInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -1026,7 +1029,7 @@ public partial class IntWalk_PWalking
                 for (--aPInd; aPInd > 0; aPInd--)
                 {
                     aPPrev.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aPCurr.SquareDistance(aPPrev) > Precision.SquareConfusion())
+                    if (aPCurr.SquareDistance(aPPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -1037,8 +1040,8 @@ public partial class IntWalk_PWalking
                     return isOK;
                 }
 
-                gp_XYZ aDirPC = aPCurr.XYZ() - aPPrev.XYZ();
-                gp_XYZ aDirCN = aPInt.XYZ() - aPCurr.XYZ();
+                Xyz aDirPC = aPCurr.XYZ() - aPPrev.XYZ();
+                Xyz aDirCN = aPInt.XYZ() - aPCurr.XYZ();
 
                 if (aDirPC.Dot(aDirCN) > 0.0)
                 {
@@ -1050,7 +1053,7 @@ public partial class IntWalk_PWalking
 
             int aNbPntsL = line.NbPoints();
             aP1.SetXYZ(line.Value(aNbPntsL).Value().XYZ());
-            if (aP1.SquareDistance(aPInt) <= Precision.SquareConfusion())
+            if (aP1.SquareDistance(aPInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(aNbPntsL);
             }
@@ -1068,7 +1071,7 @@ public partial class IntWalk_PWalking
     /// </summary>
     public bool PutToBoundary(Adaptor3d_Surface theASurf1, Adaptor3d_Surface theASurf2)
     {
-        double aTolMin = Precision.Confusion();
+        double aTolMin = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         bool hasBeenAdded = false;
 
@@ -1373,8 +1376,8 @@ public partial class IntWalk_PWalking
 
                 if (aStatus)
                 {
-                    gp_Pnt aP1 = theASurf1.Value(aPnt[1], aPnt[2]), aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
-                    gp_Pnt aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
+                    Point3D aP1 = theASurf1.Value(aPnt[1], aPnt[2]), aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
+                    Point3D aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
 
                     double aSQDist1 = aPInt.SquareDistance(aP1), aSQDist2 = aPInt.SquareDistance(aP2);
 

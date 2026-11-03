@@ -5,6 +5,10 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,21 +17,21 @@ namespace Occt;
 /// instance DRAW or an application engine This class provides a common form for this. It also provides a
 /// default implementation (locally recorded variables in a dictionary), but which is aimed to be redefined
 /// </summary>
-public class XSControl_Vars : Standard_Transient
+public class XSControl_Vars : Transient
 {
 
     public XSControl_Vars()
     {
     }
 
-    public virtual void Set(string name, Standard_Transient? val)
+    public virtual void Set(string name, Transient? val)
     {
         thevars.Bind(name, val);
     }
 
-    public virtual Standard_Transient? Get(string name)
+    public virtual Transient? Get(string name)
     {
-        if (!thevars.Find(name, out Standard_Transient val))
+        if (!thevars.Find(name, out Transient val))
         {
             val = null;
         }
@@ -54,17 +58,17 @@ public class XSControl_Vars : Standard_Transient
         return (Get(name) as Geom_Surface);
     }
 
-    public virtual void SetPoint(string name, gp_Pnt val)
+    public virtual void SetPoint(string name, Point3D val)
     {
         Set(name, new Geom_CartesianPoint(val));
     }
 
-    public virtual void SetPoint2d(string name, gp_Pnt2d val)
+    public virtual void SetPoint2d(string name, Point2D val)
     {
         Set(name, new Geom2d_CartesianPoint(val));
     }
 
-    public virtual bool GetPoint(string name, ref gp_Pnt pnt)
+    public virtual bool GetPoint(string name, ref Point3D pnt)
     {
         Geom_CartesianPoint val = Get(name) as Geom_CartesianPoint;
         if (val is null)
@@ -75,7 +79,7 @@ public class XSControl_Vars : Standard_Transient
         return true;
     }
 
-    public virtual bool GetPoint2d(string name, ref gp_Pnt2d pnt)
+    public virtual bool GetPoint2d(string name, ref Point2D pnt)
     {
         Geom2d_CartesianPoint val = Get(name) as Geom2d_CartesianPoint;
         if (val is null)
@@ -102,5 +106,5 @@ public class XSControl_Vars : Standard_Transient
         return sh;
     }
 
-    private NCollection_DataMap<string, Standard_Transient> thevars = new NCollection_DataMap<string, Standard_Transient>();
+    private NCollection_DataMap<string, Transient> thevars = new NCollection_DataMap<string, Transient>();
 }

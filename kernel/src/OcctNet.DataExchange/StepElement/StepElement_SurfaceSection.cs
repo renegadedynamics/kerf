@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceSection
 /// </summary>
-public class StepElement_SurfaceSection : Standard_Transient
+public class StepElement_SurfaceSection : Transient
 {
     private StepElement_MeasureOrUnspecifiedValue theOffset = new StepElement_MeasureOrUnspecifiedValue();
     private StepElement_MeasureOrUnspecifiedValue theNonStructuralMass = new StepElement_MeasureOrUnspecifiedValue();

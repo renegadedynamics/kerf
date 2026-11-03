@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
 using System.Reflection;
 using Occt;
 
@@ -47,9 +48,9 @@ public static class Cases
     /// <summary>The viewer's deflection: 0.1% of the bounding box's diagonal.</summary>
     public static double ViewerDeflection(in TopoDS_Shape theShape)
     {
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         BRepBndLib.Add(theShape, ref aBox, true);
-        double aDiagonal = aBox.IsVoid() ? 0.0 : Math.Sqrt(aBox.SquareExtent());
+        double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         return aDiagonal > 1e-6 ? aDiagonal * 0.1 / 100 : 1e-3;
     }
 

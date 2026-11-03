@@ -6,6 +6,7 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using static Occt.StepToTopoDS_BuilderError;
 using static Occt.TopAbs_ShapeEnum;
@@ -42,7 +43,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (modetol != 0)
         {
             var STU = new ShapeFix_ShapeTolerance();
-            STU.LimitTolerance(S, Occt.Precision.Confusion(), maxtol);
+            STU.LimitTolerance(S, Kerf.Engine.Foundation.Precision.Confusion(), maxtol);
         }
     }
 
@@ -53,7 +54,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     }
 
     // The geometric statistics, written when the trace level is above 2
-    private static void SendStatistics(Message_Messenger.StreamBuffer sout, StepToTopoDS_Tool aTool)
+    private static void SendStatistics(Messenger.StreamBuffer sout, StepToTopoDS_Tool aTool)
     {
         sout.Append("Geometric Statistics : ").Append('\n');
         sout.Append("   Surface Continuity : - C0 : ").Append(aTool.C0Surf()).Append('\n');
@@ -69,9 +70,9 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Translates a manifold_solid_brep into a solid.</summary>
     public void Init(StepShape_ManifoldSolidBrep theManifoldSolid, Transfer_TransientProcess theTP, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
-        using Message_Messenger.StreamBuffer sout = theTP.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = theTP.Messenger().SendInfo();
         StepData_StepModel aStepModel = theTP.Model() as StepData_StepModel;
         // Initialisation of the Tool
 
@@ -120,9 +121,9 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Translates a brep_with_voids into a solid with an outer shell and voids.</summary>
     public void Init(StepShape_BrepWithVoids theBRepWithVoids, Transfer_TransientProcess theTP, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
-        using Message_Messenger.StreamBuffer sout = theTP.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = theTP.Messenger().SendInfo();
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
         var aMap = new NCollection_DataMap<StepShape_TopologicalRepresentationItem, TopoDS_Shape>();
@@ -133,7 +134,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         var aBuilder = new BRep_Builder();
         aBuilder.MakeSolid(ref aSolid);
 
-        using var aPS = new Message_ProgressScope(theProgress, "Shell", theBRepWithVoids.NbVoids() + 1);
+        using var aPS = new ProgressScope(theProgress, "Shell", theBRepWithVoids.NbVoids() + 1);
 
         var aTranShell = new StepToTopoDS_TranslateShell();
         aTranShell.SetPrecision(Precision()); // gka
@@ -203,7 +204,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Translates a faceted_brep into a solid.</summary>
     public void Init(StepShape_FacetedBrep theFB, Transfer_TransientProcess theTP, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
@@ -246,7 +247,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Translates a faceted_brep_and_brep_with_voids into a solid with voids.</summary>
     public void Init(StepShape_FacetedBrepAndBrepWithVoids theFBABWV, Transfer_TransientProcess theTP, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
         // Initialisation of the Tool
         var aTool = new StepToTopoDS_Tool();
@@ -256,7 +257,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         // Start Mapping
         StepShape_ClosedShell aCShell = theFBABWV.Outer() as StepShape_ClosedShell;
 
-        using var aPSRoot = new Message_ProgressScope(theProgress, null, 2);
+        using var aPSRoot = new ProgressScope(theProgress, null, 2);
 
         var aTranShell = new StepToTopoDS_TranslateShell();
         aTranShell.SetPrecision(Precision()); // gka
@@ -281,7 +282,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
 
-        using var aPS = new Message_ProgressScope(aPSRoot.Next(), null, theFBABWV.NbVoids());
+        using var aPS = new ProgressScope(aPSRoot.Next(), null, theFBABWV.NbVoids());
         for (var anIt = new NCollection_Array1<StepShape_OrientedClosedShell>.Iterator(theFBABWV.Voids());
              anIt.More() && aPS.More(); anIt.Next())
         {
@@ -311,9 +312,9 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     /// Translates a shell_based_surface_model into a shell, or a compound of shells when it has several.
     /// </summary>
     public void Init(StepShape_ShellBasedSurfaceModel aSBSM, Transfer_TransientProcess TP, StepToTopoDS_NMTool NMTool,
-                     in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
-        using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
         // Initialisation of the Tool
 
         var myTool = new StepToTopoDS_Tool();
@@ -335,10 +336,10 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         myTranShell.SetPrecision(Precision());
         myTranShell.SetMaxTol(MaxTol());
 
-        using var PS = new Message_ProgressScope(theProgress, "Shell", Nb);
+        using var PS = new ProgressScope(theProgress, "Shell", Nb);
         for (int i = 1; i <= Nb && PS.More(); i++)
         {
-            Message_ProgressRange aRange = PS.Next();
+            ProgressRange aRange = PS.Next();
             aShell = aSBSM.SbsmBoundaryValue(i);
             aOpenShell = aShell?.OpenShell();
             aClosedShell = aShell?.ClosedShell();
@@ -618,7 +619,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
     /// reading actor <paramref name="RA"/> (STEPControl_ActorRead's TransferShape, unit 8F).
     /// </summary>
     public void Init(StepShape_GeometricSet GCS, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
-                     Transfer_ActorOfTransientProcess RA = null, bool isManifold = false, Message_ProgressRange theProgress = default)
+                     Transfer_ActorOfTransientProcess RA = null, bool isManifold = false, ProgressRange theProgress = default)
     {
         // Start Mapping
         TopoDS_Compound S = new TopoDS_Compound();
@@ -629,12 +630,12 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         double preci = Precision(); // gka
         double maxtol = MaxTol();
         int nbElem = GCS.NbElements();
-        using var aPS = new Message_ProgressScope(theProgress, null, nbElem);
+        using var aPS = new ProgressScope(theProgress, null, nbElem);
         for (i = 1; i <= nbElem && aPS.More(); i++)
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             StepShape_GeometricSetSelect aGSS = GCS.ElementsValue(i);
-            Standard_Transient ent = aGSS?.Value();
+            Transient ent = aGSS?.Value();
 
             TopoDS_Shape res = TransferBRep.ShapeResult(TP, ent);
             if (!res.IsNull())
@@ -693,7 +694,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                     }
                     catch (Exception anException) when (CaughtBySignals(anException))
                     {
-                        using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+                        using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
                         sout.Append("StepToTopoDS, GeometricSet, elem ").Append(i).Append(" of ").Append(nbElem).Append(": exception ");
                         sout.Append(Transfer_ProcessForTransient.What(anException)).Append('\n');
                     }
@@ -816,7 +817,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Builds a TopoDS_Solid from a tessellated_solid.</summary>
     public void Init(StepVisual_TessellatedSolid theTSo, Transfer_TransientProcess theTP, bool theReadTessellatedWhenNoBRepOnly,
-                     ref bool theHasGeom, in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     ref bool theHasGeom, in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         var aTranSolid = new StepToTopoDS_TranslateSolid();
         aTranSolid.SetPrecision(Precision());
@@ -848,7 +849,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
     /// <summary>Builds a TopoDS_Shell from a tessellated_shell.</summary>
     public void Init(StepVisual_TessellatedShell theTSh, Transfer_TransientProcess theTP, bool theReadTessellatedWhenNoBRepOnly,
-                     ref bool theHasGeom, in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     ref bool theHasGeom, in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         var aTranShell = new StepToTopoDS_TranslateShell();
         aTranShell.SetPrecision(Precision());
@@ -943,7 +944,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         => Init(theTSS, theTP, ref theHasGeom, new StepData_Factors());
 
     /// <summary>The result of the mapping, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();
@@ -969,6 +970,6 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 internal interface StepToTopoDS_IActorRead
 {
     /// <summary>STEPControl_ActorRead::TransferShape.</summary>
-    Transfer_Binder? TransferShape(Standard_Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
-                                   bool isManifold, bool theUseTrsf, Message_ProgressRange theProgress);
+    Transfer_Binder? TransferShape(Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
+                                   bool isManifold, bool theUseTrsf, ProgressRange theProgress);
 }

@@ -1,6 +1,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntImp_ComputeTangence;
 using static Occt.IntImp_ConstIsoparametric;
 using static Occt.IntWalk_StatusDeflection;
@@ -153,7 +155,7 @@ public partial class IntWalk_PWalking
             return IntWalk_ArretSurPoint;
         }
 
-        gp_Dir TgCourante = myIntersectionOn2S.Direction();
+        Direction3D TgCourante = myIntersectionOn2S.Direction();
 
         double aCosBetweenTangent = TgCourante.Dot(previousd);
 
@@ -198,7 +200,7 @@ public partial class IntWalk_PWalking
 
         double aSqDist = previousPoint.Value().SquareDistance(CurrentPoint.Value());
 
-        if (aSqDist < Precision.SquareConfusion())
+        if (aSqDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             pasInit[0] = Math.Max(pasInit[0], 5.0 * ResoU1);
             pasInit[1] = Math.Max(pasInit[1], 5.0 * ResoV1);
@@ -211,7 +213,7 @@ public partial class IntWalk_PWalking
             }
             // Compute local resolution: for OCC26717
             int iIso = (int)choixIso;
-            if (Math.Abs(pasuv[iIso] - pasInit[iIso]) <= Precision.Confusion())
+            if (Math.Abs(pasuv[iIso] - pasInit[iIso]) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 double CurU, CurV;
                 if (choixIso == IntImp_UIsoparametricOnCaro1 || choixIso == IntImp_VIsoparametricOnCaro1)
@@ -222,10 +224,10 @@ public partial class IntWalk_PWalking
                 {
                     previousPoint.ParametersOnS2(out CurU, out CurV);
                 }
-                gp_Pnt CurPnt = (choixIso == IntImp_UIsoparametricOnCaro1 || choixIso == IntImp_VIsoparametricOnCaro1)
+                Point3D CurPnt = (choixIso == IntImp_UIsoparametricOnCaro1 || choixIso == IntImp_VIsoparametricOnCaro1)
                                     ? Adaptor3d_HSurfaceTool.Value(Caro1, CurU, CurV)
                                     : Adaptor3d_HSurfaceTool.Value(Caro2, CurU, CurV);
-                gp_Pnt OffsetPnt = new();
+                Point3D OffsetPnt = new();
                 switch (choixIso)
                 {
                     case IntImp_UIsoparametricOnCaro1:
@@ -245,7 +247,7 @@ public partial class IntWalk_PWalking
                 }
                 double RefDist = CurPnt.Distance(OffsetPnt);
                 double LocalResol = 0.0;
-                if (RefDist > gp.Resolution())
+                if (RefDist > Constants.Resolution())
                 {
                     LocalResol = pasuv[iIso] * tolconf / RefDist;
                 }
@@ -288,8 +290,8 @@ public partial class IntWalk_PWalking
         //==================================================================================
 
         double tolArea = 100.0;
-        if (ResoU1 < Precision.PConfusion() || ResoV1 < Precision.PConfusion()
-            || ResoU2 < Precision.PConfusion() || ResoV2 < Precision.PConfusion())
+        if (ResoU1 < global::Kerf.Engine.Foundation.Precision.PConfusion() || ResoV1 < global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || ResoU2 < global::Kerf.Engine.Foundation.Precision.PConfusion() || ResoV2 < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             tolArea = tolArea * 2.0;
         }
@@ -305,7 +307,7 @@ public partial class IntWalk_PWalking
         //
         // modified by NIZNHY-PKV Wed Nov 13 12:25:44 2002 f
         //
-        double aMinDiv2 = Precision.Confusion();
+        double aMinDiv2 = global::Kerf.Engine.Foundation.Precision.Confusion();
         aMinDiv2 = aMinDiv2 * aMinDiv2;
         //
         d1 = d;
@@ -354,8 +356,8 @@ public partial class IntWalk_PWalking
                     return (IntWalk_PasTropGrand);
                 }
             }
-            gp_Dir2d Tg2dcourante1 = myIntersectionOn2S.DirectionOnS1();
-            gp_Dir2d Tg2dcourante2 = myIntersectionOn2S.DirectionOnS2();
+            Direction2D Tg2dcourante1 = myIntersectionOn2S.DirectionOnS1();
+            Direction2D Tg2dcourante2 = myIntersectionOn2S.DirectionOnS2();
             Cosi1 = Du1 * Tg2dcourante1.X() + Dv1 * Tg2dcourante1.Y();
             Cosi2 = Du2 * Tg2dcourante2.X() + Dv2 * Tg2dcourante2.Y();
             Ang1 = Math.Abs(previousd1.Angle(Tg2dcourante1));
@@ -721,19 +723,19 @@ public partial class IntWalk_PWalking
                 IntSurf_PntOn2S POn2S1 = line.Value(1);
                 // On S1
                 POn2S1.ParametersOnS1(out u, out v);
-                gp_Pnt2d P1uvS1 = new(u, v);
+                Point2D P1uvS1 = new(u, v);
                 previousPoint.ParametersOnS1(out u, out v);
-                gp_Pnt2d PrevuvS1 = new(u, v);
+                Point2D PrevuvS1 = new(u, v);
                 myIntersectionOn2S.Point().ParametersOnS1(out u, out v);
-                gp_Pnt2d myIntersuvS1 = new(u, v);
+                Point2D myIntersuvS1 = new(u, v);
                 bool close2dS1 = (P1uvS1.XY() - PrevuvS1.XY()).Dot(P1uvS1.XY() - myIntersuvS1.XY()) < 0.0;
                 // On S2
                 POn2S1.ParametersOnS2(out u, out v);
-                gp_Pnt2d P1uvS2 = new(u, v);
+                Point2D P1uvS2 = new(u, v);
                 previousPoint.ParametersOnS2(out u, out v);
-                gp_Pnt2d PrevuvS2 = new(u, v);
+                Point2D PrevuvS2 = new(u, v);
                 myIntersectionOn2S.Point().ParametersOnS2(out u, out v);
-                gp_Pnt2d myIntersuvS2 = new(u, v);
+                Point2D myIntersuvS2 = new(u, v);
                 bool close2dS2 = (P1uvS2.XY() - PrevuvS2.XY()).Dot(P1uvS2.XY() - myIntersuvS2.XY()) < 0.0;
 
                 close = close2dS1 && close2dS2;

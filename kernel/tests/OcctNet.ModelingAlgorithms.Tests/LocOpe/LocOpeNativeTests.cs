@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -91,7 +94,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             return "NULL";
         }
-        if (!theShape.TShape()!.IsFrozen())
+        if (!theShape.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException("a result isn't frozen");
         }
@@ -122,10 +125,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             aLine = theRun();
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException && e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // an access violation natively (decision 977)
-            aLine = "THROW " + (e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : e.GetType().Name);
+            aLine = "THROW " + (e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
         }
         return aLine is null ? null : string.Create(CultureInfo.InvariantCulture, $"{theTool} {theIndex} {aLine}");
     }
@@ -148,7 +151,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             case "PRIM_BOXHOLE":
             {
                 TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-                TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(5, 10, -1), gp.DZ()), 3, 32).Shape();
+                TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 10, -1), Constants.DZ()), 3, 32).Shape();
                 return new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
             }
             case "PRIM_HEXAGON":
@@ -156,7 +159,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 var aPoly = new BRepBuilderAPI_MakePolygon();
                 for (int i = 0; i < 6; i++)
                 {
-                    aPoly.Add(new gp_Pnt(10 * Math.Cos(i * Math.PI / 3), 10 * Math.Sin(i * Math.PI / 3), 0));
+                    aPoly.Add(new Point3D(10 * Math.Cos(i * Math.PI / 3), 10 * Math.Sin(i * Math.PI / 3), 0));
                 }
                 aPoly.Close();
                 return new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Shape();
@@ -202,10 +205,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return aS is Geom_Plane;
     }
 
-    private static bool Middle(in TopoDS_Edge theEdge, out double thePrm, out gp_Pnt thePnt)
+    private static bool Middle(in TopoDS_Edge theEdge, out double thePrm, out Point3D thePnt)
     {
         thePrm = 0;
-        thePnt = new gp_Pnt();
+        thePnt = new Point3D();
         if (BRep_Tool.Degenerated(theEdge))
         {
             return false;
@@ -258,7 +261,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             return "NULL";
         }
-        if (!theShape.TShape()!.IsFrozen())
+        if (!theShape.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException("a result isn't frozen");
         }
@@ -281,7 +284,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 TopoDS_Vertex aV = k == 0 ? aV1 : aV2;
                 if (!aV.IsNull())
                 {
-                    gp_Pnt aP = BRep_Tool.Pnt(aV);
+                    Point3D aP = BRep_Tool.Pnt(aV);
                     anEnds[k] = Q(aP.X()) + Q(aP.Y()) + Q(aP.Z());
                 }
             }
@@ -295,7 +298,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             TopoDS_Vertex aV = TopoDS.Vertex(aMap[i]);
-            gp_Pnt aP = BRep_Tool.Pnt(aV);
+            Point3D aP = BRep_Tool.Pnt(aV);
             aLines.Add($"V {Q(aP.X())}{Q(aP.Y())}{Q(aP.Z())} {Q(BRep_Tool.Tolerance(aV))}");
         }
         aLines.Sort(StringComparer.Ordinal);
@@ -323,7 +326,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         string aRes = " " + theCurves.Length().ToString(CultureInfo.InvariantCulture);
         if (theBary is Geom_Line aLine)
         {
-            gp_Pnt aP = aLine.Lin().Location();
+            Point3D aP = aLine.Lin().Location();
             aRes += $" {D(aP.X())} {D(aP.Y())} {D(aP.Z())}";
         }
         return aRes;
@@ -358,7 +361,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             for (int i = 1; i <= aNbE; i++)
             {
                 TopoDS_Edge anE = TopoDS.Edge(anEMap[i]);
-                if (Middle(anE, out double aPrm, out gp_Pnt aP) && aSplit.CanSplit(anE))
+                if (Middle(anE, out double aPrm, out Point3D aP) && aSplit.CanSplit(anE))
                 {
                     aSplit.Add(new BRepBuilderAPI_MakeVertex(aP).Vertex(), aPrm, anE);
                 }
@@ -400,8 +403,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 }
                 TopoDS_Edge anE1 = anEdges[0];
                 TopoDS_Edge anE2 = anEdges[anEdges.Count / 2];
-                Middle(anE1, out double aPrm1, out gp_Pnt aP1);
-                Middle(anE2, out double aPrm2, out gp_Pnt aP2);
+                Middle(anE1, out double aPrm1, out Point3D aP1);
+                Middle(anE2, out double aPrm2, out Point3D aP2);
                 if (aP1.Distance(aP2) < 1e-3)
                 {
                     return null;
@@ -421,7 +424,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             add(Run("SPLITC", f, () =>
             {
                 BRepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
-                var aUV = new gp_Pnt2d((u1 + u2) / 2, (v1 + v2) / 2);
+                var aUV = new Point2D((u1 + u2) / 2, (v1 + v2) / 2);
                 var aClass = new BRepTopAdaptor_FClass2d(aF, 1e-9);
                 if (aClass.Perform(aUV) != TopAbs_IN)
                 {
@@ -432,10 +435,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 {
                     aSurf = aTrimmed.BasisSurface();
                 }
-                gp_Pln aPln = ((Geom_Plane)aSurf).Pln();
-                gp_Pnt aC = BRep_Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
+                Plane3D aPln = ((Geom_Plane)aSurf).Pln();
+                Point3D aC = BRep_Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
                 double aR = 0.1 * Math.Min(u2 - u1, v2 - v1);
-                var aCirc = new gp_Circ(new gp_Ax2(aC, aPln.Axis().Direction()), aR);
+                var aCirc = new Circle3D(new Frame3D(aC, aPln.Axis().Direction()), aR);
                 TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
                 var aSplit = new LocOpe_SplitShape(S);
                 bool isOk = aSplit.Add(aW, aF);
@@ -485,7 +488,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             TopoDS_Face aF = TopoDS.Face(aFMap[f]);
             add(Run("PRISM", f, () =>
             {
-                var aPrism = new LocOpe_Prism(aF, new gp_Vec(3, 4, 12));
+                var aPrism = new LocOpe_Prism(aF, new Vector3D(3, 4, 12));
                 var aCurves = new NCollection_Sequence<Geom_Curve>();
                 aPrism.Curves(aCurves);
                 return Swept(aPrism.Shape(), aPrism.FirstShape(), aPrism.LastShape(), s => aPrism.Shapes(s), aF)
@@ -493,7 +496,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }));
             add(Run("PRISMT", f, () =>
             {
-                var aPrism = new LocOpe_Prism(aF, new gp_Vec(3, 4, 12), new gp_Vec(1, 1, 1));
+                var aPrism = new LocOpe_Prism(aF, new Vector3D(3, 4, 12), new Vector3D(1, 1, 1));
                 return Swept(aPrism.Shape(), aPrism.FirstShape(), aPrism.LastShape(), s => aPrism.Shapes(s), aF);
             }));
             for (int aDec = 0; aDec <= 1; aDec++)
@@ -504,7 +507,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                     double[] aMin = [1e100, 1e100, 1e100];
                     for (var anExp = new TopExp_Explorer(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
                     {
-                        gp_Pnt aP = BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current()));
+                        Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current()));
                         aMin[0] = Min(aMin[0], aP.X());
                         aMin[1] = Min(aMin[1], aP.Y());
                         aMin[2] = Min(aMin[2], aP.Z());
@@ -513,7 +516,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                     {
                         return null;
                     }
-                    var anAxis = new gp_Ax1(new gp_Pnt(aMin[0] - 5, aMin[1] - 5, aMin[2] - 5), gp.DZ());
+                    var anAxis = new Axis3D(new Point3D(aMin[0] - 5, aMin[1] - 5, aMin[2] - 5), Constants.DZ());
                     var aRevol = new LocOpe_Revol();
                     if (aDec1 == 1)
                     {
@@ -528,7 +531,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }
             add(Run("LFORM", f, () =>
             {
-                var aForm = new LocOpe_LinearForm(aF, new gp_Vec(3, 4, 12), new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+                var aForm = new LocOpe_LinearForm(aF, new Vector3D(3, 4, 12), new Point3D(0, 0, 0), new Point3D(1, 0, 0));
                 return Swept(aForm.Shape(), aForm.FirstShape(), aForm.LastShape(), s => aForm.Shapes(s), aF);
             }));
         }
@@ -579,7 +582,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                     aZMin = Min(aZMin, BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())).Z());
                 }
                 var aDrafts = new LocOpe_SplitDrafts(S);
-                aDrafts.Perform(aF, new BRepBuilderAPI_MakeWire(anE).Wire(), gp.DZ(), new gp_Pln(new gp_Pnt(0, 0, aZMin), gp.DZ()),
+                aDrafts.Perform(aF, new BRepBuilderAPI_MakeWire(anE).Wire(), Constants.DZ(), new Plane3D(new Point3D(0, 0, aZMin), Constants.DZ()),
                                 5 * Math.PI / 180);
                 if (!aDrafts.IsDone())
                 {

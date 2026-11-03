@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,7 +19,7 @@ public class MeshExtractionTests
     private static TopoDS_Shape Meshed(in TopoDS_Shape theShape)
         => new BRepMesh_IncrementalMesh(theShape, Deflection, false, Angle, false).Shape();
 
-    private static gp_XYZ Vec(float[] theBuffer, long theIndex)
+    private static Xyz Vec(float[] theBuffer, long theIndex)
         => new(theBuffer[3 * theIndex], theBuffer[3 * theIndex + 1], theBuffer[3 * theIndex + 2]);
 
     /// <summary>Every triangle's geometric normal (from its winding) agrees with its nodes' normals.</summary>
@@ -26,15 +30,15 @@ public class MeshExtractionTests
             long aFirst = theBuffers.FaceNodes[f];
             for (long t = theBuffers.FaceTriangles[f]; t < theBuffers.FaceTriangles[f + 1]; t += 3)
             {
-                gp_XYZ a = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t]);
-                gp_XYZ b = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t + 1]);
-                gp_XYZ c = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t + 2]);
-                gp_XYZ aWinding = (b - a).Crossed(c - a);
+                Xyz a = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t]);
+                Xyz b = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t + 1]);
+                Xyz c = Vec(theBuffers.Positions, aFirst + theBuffers.Triangles[t + 2]);
+                Xyz aWinding = (b - a).Crossed(c - a);
                 if (aWinding.Modulus() < 1e-12)
                 {
                     continue;
                 }
-                gp_XYZ aNormal = Vec(theBuffers.Normals, aFirst + theBuffers.Triangles[t])
+                Xyz aNormal = Vec(theBuffers.Normals, aFirst + theBuffers.Triangles[t])
                                + Vec(theBuffers.Normals, aFirst + theBuffers.Triangles[t + 1])
                                + Vec(theBuffers.Normals, aFirst + theBuffers.Triangles[t + 2]);
                 Assert.True(aWinding.Dot(aNormal) > 0, $"face {f}, triangle {(t - theBuffers.FaceTriangles[f]) / 3} is wound inward");
@@ -80,8 +84,8 @@ public class MeshExtractionTests
         Assert.Equal(12, MeshExtraction.Edges(aBox).Count);
         Assert.Equal(6, aBuffers.FaceTypes.Length);
         Assert.Equal(12, aBuffers.EdgeTypes.Length);
-        Assert.All(aBuffers.FaceTypes, t => Assert.Equal((int)GeomAbs_SurfaceType.GeomAbs_Plane, t));
-        Assert.All(aBuffers.EdgeTypes, t => Assert.Equal((int)GeomAbs_CurveType.GeomAbs_Line, t));
+        Assert.All(aBuffers.FaceTypes, t => Assert.Equal((int)SurfaceKind.Plane, t));
+        Assert.All(aBuffers.EdgeTypes, t => Assert.Equal((int)CurveKind.Line, t));
         AssertConsistentOffsets(aBuffers);
         AssertWoundOutward(aBuffers);
 
@@ -92,18 +96,18 @@ public class MeshExtractionTests
             aExplored.Add(anExp.Current());
         }
         Assert.Equal(aExplored.Count, aFaces.Count);
-        var aCenter = new gp_XYZ(5, 10, 15);
+        var aCenter = new Xyz(5, 10, 15);
         for (int f = 0; f < 6; f++)
         {
             Assert.True(aExplored[f].IsEqual(aFaces[f]));
-            Poly_Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(aFaces[f]), out _)!;
-            Assert.Equal(aTri.NbNodes(), aBuffers.FaceNodes[f + 1] - aBuffers.FaceNodes[f]);
-            Assert.Equal(3 * aTri.NbTriangles(), aBuffers.FaceTriangles[f + 1] - aBuffers.FaceTriangles[f]);
+            Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(aFaces[f]), out _)!;
+            Assert.Equal(aTri.NodeCount, aBuffers.FaceNodes[f + 1] - aBuffers.FaceNodes[f]);
+            Assert.Equal(3 * aTri.TriangleCount, aBuffers.FaceTriangles[f + 1] - aBuffers.FaceTriangles[f]);
             for (long n = aBuffers.FaceNodes[f]; n < aBuffers.FaceNodes[f + 1]; n++)
             {
                 // A box's face normal is an axis pointing away from the centre
-                gp_XYZ aNormal = Vec(aBuffers.Normals, n);
-                gp_XYZ aFirstNormal = Vec(aBuffers.Normals, aBuffers.FaceNodes[f]);
+                Xyz aNormal = Vec(aBuffers.Normals, n);
+                Xyz aFirstNormal = Vec(aBuffers.Normals, aBuffers.FaceNodes[f]);
                 Assert.True(aNormal.IsEqual(aFirstNormal, 1e-7));
                 Assert.True(aNormal.Dot(Vec(aBuffers.Positions, n) - aCenter) > 0);
                 Assert.Equal(1.0, Math.Abs(aNormal.X()) + Math.Abs(aNormal.Y()) + Math.Abs(aNormal.Z()), 6);
@@ -118,10 +122,10 @@ public class MeshExtractionTests
         MeshBuffers aBuffers = MeshExtraction.Extract(aSphere, Deflection, Angle);
         AssertConsistentOffsets(aBuffers);
         AssertWoundOutward(aBuffers);
-        Assert.Equal((int)GeomAbs_SurfaceType.GeomAbs_Sphere, aBuffers.FaceTypes[0]);
+        Assert.Equal((int)SurfaceKind.Sphere, aBuffers.FaceTypes[0]);
         for (long n = 0; n < aBuffers.FaceNodes[^1]; n++)
         {
-            gp_XYZ aP = Vec(aBuffers.Positions, n);
+            Xyz aP = Vec(aBuffers.Positions, n);
             Assert.Equal(7.0, aP.Modulus(), 4);
             // The surface's normal at the node, not an average of the facets
             Assert.True(Vec(aBuffers.Normals, n).IsEqual(aP / aP.Modulus(), 1e-5), $"node {n}");
@@ -174,25 +178,25 @@ public class MeshExtractionTests
         TopoDS_Shape aCone = Meshed(new BRepPrimAPI_MakeCone(5, 2, 8).Shape());
         MeshBuffers aPlain = MeshExtraction.Extract(aCone, Deflection, Angle);
 
-        var aRotation = new gp_Trsf();
-        aRotation.SetRotation(new gp_Ax1(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 0.5)), 0.8);
-        var aMirror = new gp_Trsf();
-        aMirror.SetMirror(new gp_Ax2(new gp_Pnt(0, 0, 2), new gp_Dir(0.2, 0.1, 1)));
-        foreach (gp_Trsf aTrsf in new[] { aRotation, aMirror })
+        var aRotation = new Transform3D();
+        aRotation.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0.5)), 0.8);
+        var aMirror = new Transform3D();
+        aMirror.SetMirror(new Frame3D(new Point3D(0, 0, 2), new Direction3D(0.2, 0.1, 1)));
+        foreach (Transform3D aTrsf in new[] { aRotation, aMirror })
         {
-            MeshBuffers aMoved = MeshExtraction.Extract(aCone.Moved(new TopLoc_Location(aTrsf)), Deflection, Angle);
+            MeshBuffers aMoved = MeshExtraction.Extract(aCone.Moved(new Placement(aTrsf)), Deflection, Angle);
             AssertConsistentOffsets(aMoved);
             AssertWoundOutward(aMoved);
             Assert.Equal(aPlain.FaceNodes, aMoved.FaceNodes);
             Assert.Equal(aPlain.EdgePoints, aMoved.EdgePoints);
             for (long n = 0; n < aPlain.FaceNodes[^1]; n++)
             {
-                gp_XYZ aExpected = new gp_Pnt(Vec(aPlain.Positions, n)).Transformed(aTrsf).XYZ();
+                Xyz aExpected = new Point3D(Vec(aPlain.Positions, n)).Transformed(aTrsf).XYZ();
                 Assert.True(Vec(aMoved.Positions, n).IsEqual(aExpected, 1e-4));
             }
             for (long p = 0; p < aPlain.EdgePoints[^1]; p++)
             {
-                gp_XYZ aExpected = new gp_Pnt(Vec(aPlain.Points, p)).Transformed(aTrsf).XYZ();
+                Xyz aExpected = new Point3D(Vec(aPlain.Points, p)).Transformed(aTrsf).XYZ();
                 Assert.True(Vec(aMoved.Points, p).IsEqual(aExpected, 1e-4));
             }
         }
@@ -202,19 +206,19 @@ public class MeshExtractionTests
     public void Edges_come_from_polygons_on_triangulation_3D_polygons_or_tangential_deflection()
     {
         // A free circle: the mesher gives it a 3D polygon
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(gp.Origin(), gp.DZ()), 3)).Edge();
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(10, 0, 0), 2, 2, 2).Shape();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(Constants.Origin(), Constants.DZ()), 3)).Edge();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 2, 2, 2).Shape();
         TopoDS_Shape aMeshed = Meshed(TopoDS_Builder.MakeCompound(aBox, aCircle));
         MeshBuffers aBuffers = MeshExtraction.Extract(aMeshed, Deflection, Angle);
         List<TopoDS_Shape> anEdges = MeshExtraction.Edges(aMeshed);
         Assert.Equal(13, anEdges.Count);
-        int aCircleIndex = anEdges.FindIndex(e => BRepAdaptor_Curve_Type(e) == GeomAbs_CurveType.GeomAbs_Circle);
-        Assert.Equal((int)GeomAbs_CurveType.GeomAbs_Circle, aBuffers.EdgeTypes[aCircleIndex]);
-        Poly_Polygon3D aPolygon = BRep_Tool.Polygon3D(TopoDS.Edge(anEdges[aCircleIndex]), out _)!;
-        Assert.Equal(aPolygon.NbNodes(), aBuffers.EdgePoints[aCircleIndex + 1] - aBuffers.EdgePoints[aCircleIndex]);
-        for (int i = 1; i <= aPolygon.NbNodes(); i++)
+        int aCircleIndex = anEdges.FindIndex(e => BRepAdaptor_Curve_Type(e) == CurveKind.Circle);
+        Assert.Equal((int)CurveKind.Circle, aBuffers.EdgeTypes[aCircleIndex]);
+        Polygon3D aPolygon = BRep_Tool.Polygon3D(TopoDS.Edge(anEdges[aCircleIndex]), out _)!;
+        Assert.Equal(aPolygon.NodeCount, aBuffers.EdgePoints[aCircleIndex + 1] - aBuffers.EdgePoints[aCircleIndex]);
+        for (int i = 1; i <= aPolygon.NodeCount; i++)
         {
-            gp_Pnt aP = aPolygon.Nodes().Value(i);
+            Point3D aP = aPolygon.Nodes().Value(i);
             Assert.Equal((float)aP.X(), aBuffers.Points[3 * (aBuffers.EdgePoints[aCircleIndex] + i - 1)]);
         }
 
@@ -237,12 +241,12 @@ public class MeshExtractionTests
         List<TopoDS_Shape> aMeshedEdges = MeshExtraction.Edges(aMeshedCylinder);
         for (int e = 0; e < aMeshedEdges.Count; e++)
         {
-            gp_Pnt aFirst = BRep_Tool.Pnt(TopExp.FirstVertex(TopoDS.Edge(aMeshedEdges[e]), true));
+            Point3D aFirst = BRep_Tool.Pnt(TopExp.FirstVertex(TopoDS.Edge(aMeshedEdges[e]), true));
             Assert.True(Vec(aMeshedBuffers.Points, aMeshedBuffers.EdgePoints[e]).IsEqual(aFirst.XYZ(), 1e-5), $"edge {e}");
         }
     }
 
-    private static GeomAbs_CurveType BRepAdaptor_Curve_Type(in TopoDS_Shape theEdge) => new BRepAdaptor_Curve(TopoDS.Edge(theEdge)).GetType();
+    private static CurveKind BRepAdaptor_Curve_Type(in TopoDS_Shape theEdge) => new BRepAdaptor_Curve(TopoDS.Edge(theEdge)).GetType();
 
     [Fact]
     public void Each_face_and_edge_comes_once_with_its_last_orientation()
@@ -266,8 +270,8 @@ public class MeshExtractionTests
         MeshBuffers aFirst = MeshExtraction.Extract(aShape, Deflection, Angle);
         foreach (TopoDS_Shape aFace in MeshExtraction.Faces(aShape))
         {
-            Poly_Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)!;
-            Assert.False(aTri.HasNormals());
+            Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)!;
+            Assert.False(aTri.HasNormals);
         }
         var aResults = new MeshBuffers[8];
         Parallel.For(0, aResults.Length, i => aResults[i] = MeshExtraction.Extract(aShape, Deflection, Angle));

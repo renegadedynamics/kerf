@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Diagnostics;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -62,46 +63,46 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
     internal static IEnumerable<(string Name, TopoDS_Shape Shape)> Bases()
     {
         yield return ("box", new BRepPrimAPI_MakeBox(10, 20, 30).Shape());
-        yield return ("cylinder", new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 8, 20).Shape());
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-10, -10, 0), 20, 20, 12).Shape();
-        TopoDS_Shape aHole = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(6, 6, -1), new gp_Dir(0, 0, 1)), 2, 14).Shape();
+        yield return ("cylinder", new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 8, 20).Shape());
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-10, -10, 0), 20, 20, 12).Shape();
+        TopoDS_Shape aHole = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(6, 6, -1), new Direction3D(0, 0, 1)), 2, 14).Shape();
         yield return ("box with a hole", new BRepAlgoAPI_Cut(aBox, aHole).Shape());
         var aHexagon = new BRepBuilderAPI_MakePolygon();
         for (int i = 0; i < 6; i++)
         {
-            aHexagon.Add(new gp_Pnt(12 * Math.Cos(i * Math.PI / 3), 12 * Math.Sin(i * Math.PI / 3), 0));
+            aHexagon.Add(new Point3D(12 * Math.Cos(i * Math.PI / 3), 12 * Math.Sin(i * Math.PI / 3), 0));
         }
         aHexagon.Close();
         TopoDS_Face aHexFace = new BRepBuilderAPI_MakeFace(aHexagon.Wire(), true).Face();
-        yield return ("hexagonal prism", new BRepPrimAPI_MakePrism(aHexFace, new gp_Vec(0, 0, 15)).Shape());
+        yield return ("hexagonal prism", new BRepPrimAPI_MakePrism(aHexFace, new Vector3D(0, 0, 15)).Shape());
     }
 
     // A rectangle or a circle around the centre of a planar face, in its plane, of a quarter of its size
     internal static TopoDS_Face? Profile(in TopoDS_Face theFace, bool theCircle)
     {
         var anAdaptor = new BRepAdaptor_Surface(theFace);
-        if (anAdaptor.GetType() != GeomAbs_SurfaceType.GeomAbs_Plane)
+        if (anAdaptor.GetType() != SurfaceKind.Plane)
         {
             return null;
         }
-        gp_Pln aPln = anAdaptor.Plane();
+        Plane3D aPln = anAdaptor.Plane();
         var aProps = new GProp_GProps();
         BRepGProp.SurfaceProperties(theFace, aProps);
-        gp_Pnt aC = aProps.CentreOfMass();
+        Point3D aC = aProps.CentreOfMass();
         double aSize = Math.Sqrt(aProps.Mass()) / 6;
-        gp_Dir aN = aPln.Axis().Direction(), aX = aPln.XAxis().Direction();
+        Direction3D aN = aPln.Axis().Direction(), aX = aPln.XAxis().Direction();
         if (theFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
         {
             aN = aN.Reversed();
         }
-        var aPlane = new gp_Pln(new gp_Ax3(aC, aN, aX));
+        var aPlane = new Plane3D(new CoordinateSystem(aC, aN, aX));
         if (theCircle)
         {
-            TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(aC, aN, aX), aSize)).Edge();
+            TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(aC, aN, aX), aSize)).Edge();
             return new BRepBuilderAPI_MakeFace(aPlane, new BRepBuilderAPI_MakeWire(anEdge).Wire(), true).Face();
         }
-        gp_Dir aY = aN.Crossed(aX);
-        gp_Pnt P(double u, double v) => aC.Translated(new gp_Vec(aX) * u + new gp_Vec(aY) * v);
+        Direction3D aY = aN.Crossed(aX);
+        Point3D P(double u, double v) => aC.Translated(new Vector3D(aX) * u + new Vector3D(aY) * v);
         var aPoly = new BRepBuilderAPI_MakePolygon(P(-aSize, -aSize / 2), P(aSize, -aSize / 2), P(aSize, aSize / 2), P(-aSize, aSize / 2), true);
         return new BRepBuilderAPI_MakeFace(aPlane, aPoly.Wire(), true).Face();
     }
@@ -145,7 +146,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         aLines.Add($"volume {Q(aVolume.Mass())} valid {new BRepCheck_Analyzer(theShape).IsValid()}");
         return string.Join("\n", aLines);
 
-        static string P(gp_Pnt p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
+        static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
     }
 
     private static void CheckDPrism(ShapeFixOracleRun theRun, string theDir, ref int theNumber, string theWhat,

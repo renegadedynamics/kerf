@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -28,7 +29,7 @@ public class DrawBisecCommandsTests(ITestOutputHelper output)
 
         // two lines: two bisecting lines, always named r_1, r_2
         Assert.Equal("There are 2 Solutions.\n", i.Eval("bisec r l1 l2"));
-        gp_Lin2d aL = Geometry<Geom2d_Line>(i, "r_1").Lin2d();
+        Line2D aL = Geometry<Geom2d_Line>(i, "r_1").Lin2d();
         Assert.Equal(Math.Abs(aL.Direction().X()), Math.Abs(aL.Direction().Y()), 1e-15);
         Geometry<Geom2d_Line>(i, "r_2");
 
@@ -52,7 +53,7 @@ public class DrawBisecCommandsTests(ITestOutputHelper output)
 
         // two points: their perpendicular bisector
         Assert.Equal("There is 1 Solution.\n", i.Eval("bisec m p1 p2"));
-        gp_Lin2d aM = Geometry<Geom2d_Line>(i, "m").Lin2d();
+        Line2D aM = Geometry<Geom2d_Line>(i, "m").Lin2d();
         Assert.Equal(1.0, aM.Location().X(), 1e-15);
     }
 

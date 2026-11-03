@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -37,18 +38,18 @@ public class Adaptor3d_TopolToolTests
         public override double LastUParameter() => myU2;
         public override double FirstVParameter() => myV1;
         public override double LastVParameter() => myV2;
-        public override gp_Pnt EvalD0(double theU, double theV) => mySurf.Value(theU, theV);
+        public override Point3D EvalD0(double theU, double theV) => mySurf.Value(theU, theV);
 
-        public override GeomAbs_SurfaceType GetType() => mySurf switch
+        public override SurfaceKind GetType() => mySurf switch
         {
-            Geom_Plane => GeomAbs_Plane,
-            Geom_ConicalSurface => GeomAbs_Cone,
-            Geom_BSplineSurface => GeomAbs_BSplineSurface,
-            Geom_BezierSurface => GeomAbs_BezierSurface,
-            _ => GeomAbs_OtherSurface,
+            Geom_Plane => global::Kerf.Geometry.SurfaceKind.Plane,
+            Geom_ConicalSurface => global::Kerf.Geometry.SurfaceKind.Cone,
+            Geom_BSplineSurface => BSplineSurface,
+            Geom_BezierSurface => BezierSurface,
+            _ => OtherSurface,
         };
 
-        public override gp_Cone Cone() => ((Geom_ConicalSurface)mySurf).Cone();
+        public override Cone Cone() => ((Geom_ConicalSurface)mySurf).Cone();
         public override Geom_BSplineSurface BSpline() => (Geom_BSplineSurface)mySurf;
         public override Geom_BezierSurface Bezier() => (Geom_BezierSurface)mySurf;
         public override int NbUKnots() => BSpline().NbUKnots();
@@ -71,18 +72,18 @@ public class Adaptor3d_TopolToolTests
         }
     }
 
-    private static Geom_Plane Plane() => new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+    private static Geom_Plane Plane() => new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
     /// <summary>A bicubic B-spline surface over [0, 1] x [0, 2], with interior knots, gently waved.</summary>
     private static Geom_BSplineSurface Wave(int theUDeg = 3, int theNbUKnots = 4)
     {
         int nbUPoles = theNbUKnots + theUDeg - 1, nbVPoles = 6;
-        NCollection_Array2<gp_Pnt> poles = new(1, nbUPoles, 1, nbVPoles);
+        NCollection_Array2<Point3D> poles = new(1, nbUPoles, 1, nbVPoles);
         for (int i = 1; i <= nbUPoles; i++)
         {
             for (int j = 1; j <= nbVPoles; j++)
             {
-                poles[i, j] = new gp_Pnt(i, 2.0 * j, Math.Sin(i + 0.7 * j));
+                poles[i, j] = new Point3D(i, 2.0 * j, Math.Sin(i + 0.7 * j));
             }
         }
         NCollection_Array1<double> uKnots = new(1, theNbUKnots);
@@ -111,8 +112,8 @@ public class Adaptor3d_TopolToolTests
         Assert.Null(T.Edge());
 
         // Boundary run anticlockwise: V = Vinf, U = Usup, V = Vsup, U = Uinf; the last two are parameterised by -U, -V.
-        gp_Pnt2d[] starts = [new(0, 1), new(2, 1), new(2, 4), new(0, 4)];
-        gp_Pnt2d[] ends = [new(2, 1), new(2, 4), new(0, 4), new(0, 1)];
+        Point2D[] starts = [new(0, 1), new(2, 1), new(2, 4), new(0, 4)];
+        Point2D[] ends = [new(2, 1), new(2, 4), new(0, 4), new(0, 1)];
         int n = 0;
         for (T.Init(); T.More(); T.Next())
         {
@@ -131,33 +132,33 @@ public class Adaptor3d_TopolToolTests
                 nv++;
             }
             Assert.Equal(2, nv);
-            Assert.Throws<Standard_DomainError>(() => T.Vertex());
+            Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Vertex());
             n++;
         }
         Assert.Equal(4, n);
-        Assert.Throws<Standard_DomainError>(() => T.Value());
-        Assert.Throws<Standard_DomainError>(() => T.Tol3d(new Adaptor3d_HVertex()));
-        Assert.Throws<Standard_DomainError>(() => T.Pnt(new Adaptor3d_HVertex()));
-        Assert.Throws<Standard_NotImplemented>(() => T.Initialize());
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Value());
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Tol3d(new Adaptor3d_HVertex()));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => T.Pnt(new Adaptor3d_HVertex()));
+        Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => T.Initialize());
     }
 
     [Fact]
     public void Classify_and_IsThePointOn_finite_domain()
     {
         Adaptor3d_TopolTool T = new(new TestSurfaceAdaptor(Plane(), 0, 2, 1, 4));
-        Assert.Equal(TopAbs_IN, T.Classify(new gp_Pnt2d(1, 2), 1e-7));
-        Assert.Equal(TopAbs_ON, T.Classify(new gp_Pnt2d(2 + 1e-8, 2), 1e-7));
-        Assert.Equal(TopAbs_OUT, T.Classify(new gp_Pnt2d(2.1, 2), 1e-7));
-        Assert.Equal(TopAbs_OUT, T.Classify(new gp_Pnt2d(1, 0.5), 1e-7));
-        Assert.False(T.IsThePointOn(new gp_Pnt2d(1, 2), 1e-7));
-        Assert.True(T.IsThePointOn(new gp_Pnt2d(1, 4), 1e-7));
-        Assert.False(T.IsThePointOn(new gp_Pnt2d(1, 5), 1e-7));
+        Assert.Equal(TopAbs_IN, T.Classify(new Point2D(1, 2), 1e-7));
+        Assert.Equal(TopAbs_ON, T.Classify(new Point2D(2 + 1e-8, 2), 1e-7));
+        Assert.Equal(TopAbs_OUT, T.Classify(new Point2D(2.1, 2), 1e-7));
+        Assert.Equal(TopAbs_OUT, T.Classify(new Point2D(1, 0.5), 1e-7));
+        Assert.False(T.IsThePointOn(new Point2D(1, 2), 1e-7));
+        Assert.True(T.IsThePointOn(new Point2D(1, 4), 1e-7));
+        Assert.False(T.IsThePointOn(new Point2D(1, 5), 1e-7));
     }
 
     [Fact]
     public void Half_infinite_domain()
     {
-        double inf = Precision.Infinite();
+        double inf = global::Kerf.Engine.Foundation.Precision.Infinite();
         // U in [0, +inf), V in (-inf, 3]: restrictions V = Vsup and U = Uinf.
         Adaptor3d_TopolTool T = new(new TestSurfaceAdaptor(Plane(), 0, inf, -inf, 3));
         Assert.True(T.DomainIsInfinite());
@@ -168,13 +169,13 @@ public class Adaptor3d_TopolToolTests
         }
         Assert.Equal(2, n);
 
-        Assert.Equal(TopAbs_IN, T.Classify(new gp_Pnt2d(1e6, -1e6), 1e-7));
-        Assert.Equal(TopAbs_ON, T.Classify(new gp_Pnt2d(0, -5), 1e-7));
-        Assert.Equal(TopAbs_ON, T.Classify(new gp_Pnt2d(5, 3), 1e-7));
-        Assert.Equal(TopAbs_OUT, T.Classify(new gp_Pnt2d(-1, 0), 1e-7));
-        Assert.Equal(TopAbs_OUT, T.Classify(new gp_Pnt2d(1, 4), 1e-7));
-        Assert.True(T.IsThePointOn(new gp_Pnt2d(0, 0), 1e-7));
-        Assert.False(T.IsThePointOn(new gp_Pnt2d(1, 0), 1e-7));
+        Assert.Equal(TopAbs_IN, T.Classify(new Point2D(1e6, -1e6), 1e-7));
+        Assert.Equal(TopAbs_ON, T.Classify(new Point2D(0, -5), 1e-7));
+        Assert.Equal(TopAbs_ON, T.Classify(new Point2D(5, 3), 1e-7));
+        Assert.Equal(TopAbs_OUT, T.Classify(new Point2D(-1, 0), 1e-7));
+        Assert.Equal(TopAbs_OUT, T.Classify(new Point2D(1, 4), 1e-7));
+        Assert.True(T.IsThePointOn(new Point2D(0, 0), 1e-7));
+        Assert.False(T.IsThePointOn(new Point2D(1, 0), 1e-7));
 
         // The first restriction (V = Vsup, run along -U) has only one finite end.
         T.Init();
@@ -191,30 +192,30 @@ public class Adaptor3d_TopolToolTests
     public void Half_infinite_U_and_V_bounds_differ_at_exactly_bound_plus_Tol()
     {
         // OCCT tests U >= Usup + Tol but V > Vsup + Tol when the lower bound is infinite (occt-issues.md).
-        double inf = Precision.Infinite();
+        double inf = global::Kerf.Engine.Foundation.Precision.Infinite();
         Adaptor3d_TopolTool T = new(new TestSurfaceAdaptor(Plane(), -inf, 1, -inf, 1));
-        Assert.Equal(TopAbs_OUT, T.Classify(new gp_Pnt2d(1.5, 0), 0.5));
-        Assert.Equal(TopAbs_ON, T.Classify(new gp_Pnt2d(0, 1.5), 0.5));
+        Assert.Equal(TopAbs_OUT, T.Classify(new Point2D(1.5, 0), 0.5));
+        Assert.Equal(TopAbs_ON, T.Classify(new Point2D(0, 1.5), 0.5));
     }
 
     [Fact]
     public void Infinite_domain_is_all_IN()
     {
-        double inf = Precision.Infinite();
+        double inf = global::Kerf.Engine.Foundation.Precision.Infinite();
         Adaptor3d_TopolTool T = new(new TestSurfaceAdaptor(Plane(), -inf, inf, -inf, inf));
         T.Init();
         Assert.False(T.More());
-        Assert.Equal(TopAbs_IN, T.Classify(new gp_Pnt2d(1e10, -3), 1e-7));
-        Assert.False(T.IsThePointOn(new gp_Pnt2d(0, 0), 1e-7));
+        Assert.Equal(TopAbs_IN, T.Classify(new Point2D(1e10, -3), 1e-7));
+        Assert.False(T.IsThePointOn(new Point2D(0, 0), 1e-7));
     }
 
     [Fact]
     public void Cone_with_two_restrictions_adds_the_apex_iso()
     {
         // A cone unbounded in V: the restrictions U = Usup and U = Uinf, plus the apex iso.
-        gp_Ax3 ax = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        CoordinateSystem ax = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_ConicalSurface cone = new(ax, Math.PI / 6, 2.0);
-        double inf = Precision.Infinite();
+        double inf = global::Kerf.Engine.Foundation.Precision.Infinite();
         Adaptor3d_TopolTool T = new(new TestSurfaceAdaptor(cone, 0, 2 * Math.PI, -inf, inf));
         int n = 0;
         Adaptor2d_Curve2d? last = null;
@@ -228,16 +229,16 @@ public class Adaptor3d_TopolToolTests
         Assert.Equal(0.0, Ua);
         Assert.Equal(-2.0 / Math.Sin(Math.PI / 6), Va, 1e-12);
         Assert.True(cone.Value(Ua, Va).IsEqual(cone.Cone().Apex(), 1e-12));
-        Assert.True(last!.Value(last.FirstParameter()).IsEqual(new gp_Pnt2d(0, Va), 1e-12));
+        Assert.True(last!.Value(last.FirstParameter()).IsEqual(new Point2D(0, Va), 1e-12));
     }
 
     [Fact]
     public void Identical_ignores_orientation()
     {
         Adaptor3d_TopolTool T = new();
-        Adaptor3d_HVertex A = new(new gp_Pnt2d(1, 1), TopAbs_FORWARD, 1e-8);
-        Adaptor3d_HVertex B = new(new gp_Pnt2d(1, 1 + 1e-9), TopAbs_REVERSED, 1e-8);
-        Adaptor3d_HVertex C = new(new gp_Pnt2d(1, 1.1), TopAbs_FORWARD, 1e-8);
+        Adaptor3d_HVertex A = new(new Point2D(1, 1), TopAbs_FORWARD, 1e-8);
+        Adaptor3d_HVertex B = new(new Point2D(1, 1 + 1e-9), TopAbs_REVERSED, 1e-8);
+        Adaptor3d_HVertex C = new(new Point2D(1, 1.1), TopAbs_FORWARD, 1e-8);
         Assert.True(T.Identical(A, B));
         Assert.False(T.Identical(A, C));
     }
@@ -252,10 +253,10 @@ public class Adaptor3d_TopolToolTests
         Assert.True(P.IsUniformSampling());
 
         // Uniform sample points (no SamplePnts): (Index / NbU, Index mod NbU) on a grid of step 1/(Nb + 1).
-        P.SamplePoint(7, out gp_Pnt2d p2, out gp_Pnt p3);
+        P.SamplePoint(7, out Point2D p2, out Point3D p3);
         Assert.Equal(2.0 / 7, p2.X(), 1e-15);
         Assert.Equal(2.0 / 7, p2.Y(), 1e-15);
-        Assert.True(p3.IsEqual(new gp_Pnt(p2.X(), p2.Y(), 0), 1e-15));
+        Assert.True(p3.IsEqual(new Point3D(p2.X(), p2.Y(), 0), 1e-15));
 
         // B-spline: NbKnots * Degree = 4 * 3 = 12 > 8, so the poles are analysed: 5 + sign changes of the second
         // differences.
@@ -284,7 +285,7 @@ public class Adaptor3d_TopolToolTests
         Assert.Equal(4.0, V[6]);
 
         // With parameters, SamplePoint's index is 1-based, U first.
-        T.SamplePoint(8, out gp_Pnt2d p2, out gp_Pnt p3);
+        T.SamplePoint(8, out Point2D p2, out Point3D p3);
         Assert.Equal(U[2], p2.X());
         Assert.Equal(V[2], p2.Y());
         Assert.Equal(0.0, p3.Z());

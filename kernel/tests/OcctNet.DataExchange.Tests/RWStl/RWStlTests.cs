@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Text;
 using static Occt.TopAbs_ShapeEnum;
@@ -16,20 +21,20 @@ public class RWStlTests
     // DESTL_Provider_Test's CreateTriangulatedFace: a planar face with a two-triangle triangulation
     private static TopoDS_Shape CreateTriangulatedFace()
     {
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, 4);
-        aNodes.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aNodes.SetValue(2, new gp_Pnt(10.0, 0.0, 0.0));
-        aNodes.SetValue(3, new gp_Pnt(10.0, 10.0, 0.0));
-        aNodes.SetValue(4, new gp_Pnt(0.0, 10.0, 0.0));
-        var aTriangles = new NCollection_Array1<Poly_Triangle>(1, 2);
-        aTriangles.SetValue(1, new Poly_Triangle(1, 2, 3));
-        aTriangles.SetValue(2, new Poly_Triangle(1, 3, 4));
-        return FaceWith(new Poly_Triangulation(aNodes, aTriangles), 10.0);
+        var aNodes = new NCollection_Array1<Point3D>(1, 4);
+        aNodes.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aNodes.SetValue(2, new Point3D(10.0, 0.0, 0.0));
+        aNodes.SetValue(3, new Point3D(10.0, 10.0, 0.0));
+        aNodes.SetValue(4, new Point3D(0.0, 10.0, 0.0));
+        var aTriangles = new NCollection_Array1<Triangle1>(1, 2);
+        aTriangles.SetValue(1, new Triangle1(1, 2, 3));
+        aTriangles.SetValue(2, new Triangle1(1, 3, 4));
+        return FaceWith(new Triangulation(aNodes, aTriangles), 10.0);
     }
 
-    private static TopoDS_Shape FaceWith(Poly_Triangulation theTriangulation, double theSize)
+    private static TopoDS_Shape FaceWith(Triangulation theTriangulation, double theSize)
     {
-        var aPlane = new gp_Pln(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0, 0, 1));
+        var aPlane = new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1));
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, theSize, 0.0, theSize).InternalFace();
         new BRep_Builder().UpdateFace(aFace, theTriangulation);
         aFace.TShape()!.FreezeGraph();
@@ -58,7 +63,7 @@ public class RWStlTests
     // DESTL_Provider::Read(stream, shape) with ReadBRep off: RWStl::ReadStream, a face holding the triangulation
     private static TopoDS_Shape ReadFace(byte[] theData)
     {
-        Poly_Triangulation? aTriangulation = RWStl.ReadStream(new MemoryStream(theData));
+        Triangulation? aTriangulation = RWStl.ReadStream(new MemoryStream(theData));
         if (aTriangulation is null)
         {
             return new TopoDS_Shape();
@@ -125,13 +130,13 @@ public class RWStlTests
     [Fact]
     public void MultipleTriangulatedFaces()
     {
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, 3);
-        aNodes.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aNodes.SetValue(2, new gp_Pnt(5.0, 0.0, 0.0));
-        aNodes.SetValue(3, new gp_Pnt(2.5, 5.0, 0.0));
-        var aTriangles = new NCollection_Array1<Poly_Triangle>(1, 1);
-        aTriangles.SetValue(1, new Poly_Triangle(1, 2, 3));
-        TopoDS_Shape aTriangleFace = FaceWith(new Poly_Triangulation(aNodes, aTriangles), 5.0);
+        var aNodes = new NCollection_Array1<Point3D>(1, 3);
+        aNodes.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aNodes.SetValue(2, new Point3D(5.0, 0.0, 0.0));
+        aNodes.SetValue(3, new Point3D(2.5, 5.0, 0.0));
+        var aTriangles = new NCollection_Array1<Triangle1>(1, 1);
+        aTriangles.SetValue(1, new Triangle1(1, 2, 3));
+        TopoDS_Shape aTriangleFace = FaceWith(new Triangulation(aNodes, aTriangles), 5.0);
 
         byte[] aContent1 = Write(CreateTriangulatedFace(), true);
         byte[] aContent2 = Write(aTriangleFace, true);
@@ -154,24 +159,24 @@ public class RWStlTests
     public void Writers_leave_their_input_unchanged_and_readers_publish_frozen_results()
     {
         TopoDS_Shape aFace = CreateTriangulatedFace();
-        Poly_Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)!;
+        Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out _)!;
         string aBefore = Text(aFace);
         Write(aFace, true);
         Write(aFace, false);
         Assert.Equal(aBefore, Text(aFace));
-        Assert.True(aTriangulation.IsFrozen());
+        Assert.True(aTriangulation.IsFrozen);
 
         byte[] aData = Write(aFace, false);
-        Poly_Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aData));
+        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aData));
         Assert.NotNull(aRead);
-        Assert.True(aRead.IsFrozen());
-        Assert.Throws<Standard_ImmutableObject>(() => aRead.SetNode(1, new gp_Pnt()));
-        var aList = new NCollection_Sequence<Poly_Triangulation>();
+        Assert.True(aRead.IsFrozen);
+        Assert.Throws<ImmutableObjectException>(() => aRead.SetNode(1, new Point3D()));
+        var aList = new NCollection_Sequence<Triangulation>();
         RWStl.ReadFile(new MemoryStream(aData), Math.PI / 2, aList);
-        Assert.True(aList.Value(1).IsFrozen());
+        Assert.True(aList.Value(1).IsFrozen);
         TopoDS_Shape aShape = new();
         Assert.True(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aData)));
-        Assert.True(aShape.TShape()!.IsFrozen());
+        Assert.True(aShape.TShape()!.IsFrozen);
     }
 
     private static string Text(in TopoDS_Shape theShape)
@@ -194,17 +199,17 @@ public class RWStlTests
     public void Streams_that_cant_seek_and_streams_read_from_their_position()
     {
         byte[] aData = Write(CreateTriangulatedFace(), false);
-        Poly_Triangulation? aRead = RWStl.ReadFile(new NonSeekableStream(aData));
+        Triangulation? aRead = RWStl.ReadFile(new NonSeekableStream(aData));
         Assert.NotNull(aRead);
-        Assert.Equal(4, aRead.NbNodes());
-        Assert.Equal(2, aRead.NbTriangles());
+        Assert.Equal(4, aRead.NodeCount);
+        Assert.Equal(2, aRead.TriangleCount);
         Assert.NotNull(RWStl.ReadStream(new NonSeekableStream(Write(CreateTriangulatedFace(), true))));
 
         // data after a prefix, read from the stream's position: binary recognised by its content
         var aPrefixed = new MemoryStream([.. "prefix"u8, .. aData]) { Position = 6 };
-        Poly_Triangulation? aFromPosition = RWStl.ReadFile(aPrefixed);
+        Triangulation? aFromPosition = RWStl.ReadFile(aPrefixed);
         Assert.NotNull(aFromPosition);
-        Assert.Equal(2, aFromPosition.NbTriangles());
+        Assert.Equal(2, aFromPosition.TriangleCount);
     }
 
     [Fact]
@@ -254,21 +259,21 @@ public class RWStlTests
     {
         public int myNbNodes, myNbTris, myNbSolids;
 
-        public override int AddNode(in gp_XYZ thePnt) => ++myNbNodes;
+        public override int AddNode(in Xyz thePnt) => ++myNbNodes;
 
         public override void AddTriangle(int theN1, int theN2, int theN3) => ++myNbTris;
 
         public override void AddSolid() => ++myNbSolids;
     }
 
-    private static Poly_Triangulation Grid(int theN)
+    private static Triangulation Grid(int theN)
     {
-        var aMesh = new Poly_Triangulation((theN + 1) * (theN + 1), 2 * theN * theN, false);
+        var aMesh = new Triangulation((theN + 1) * (theN + 1), 2 * theN * theN, false);
         for (int i = 0; i <= theN; ++i)
         {
             for (int j = 0; j <= theN; ++j)
             {
-                aMesh.SetNode(1 + i * (theN + 1) + j, new gp_Pnt(i, j, 0));
+                aMesh.SetNode(1 + i * (theN + 1) + j, new Point3D(i, j, 0));
             }
         }
         int k = 0;
@@ -277,8 +282,8 @@ public class RWStlTests
             for (int j = 0; j < theN; ++j)
             {
                 int a = 1 + i * (theN + 1) + j, b = a + theN + 1;
-                aMesh.SetTriangle(++k, new Poly_Triangle(a, b, b + 1));
-                aMesh.SetTriangle(++k, new Poly_Triangle(a, b + 1, a + 1));
+                aMesh.SetTriangle(++k, new Triangle1(a, b, b + 1));
+                aMesh.SetTriangle(++k, new Triangle1(a, b + 1, a + 1));
             }
         }
         return aMesh;
@@ -287,24 +292,24 @@ public class RWStlTests
     [Fact]
     public void Cancellation_stops_reading_and_writing()
     {
-        Poly_Triangulation aMesh = Grid(30); // 1,800 triangles: the writers check every 1,000
+        Triangulation aMesh = Grid(30); // 1,800 triangles: the writers check every 1,000
         var aBinary = new MemoryStream();
         Assert.True(RWStl.WriteBinary(aMesh, aBinary));
         var anAscii = new MemoryStream();
         Assert.True(RWStl.WriteAscii(aMesh, anAscii));
         // merged nodes: the grid's
-        Poly_Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aBinary.ToArray()));
-        Assert.Equal(31 * 31, aRead!.NbNodes());
+        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aBinary.ToArray()));
+        Assert.Equal(31 * 31, aRead!.NodeCount);
 
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
-        Message_ProgressRange Cancelled() => new Message_ProgressIndicator(aSource.Token).Start();
+        ProgressRange Cancelled() => new ProgressIndicator(aSource.Token).Start();
         Assert.False(RWStl.WriteBinary(aMesh, new MemoryStream(), Cancelled()));
         Assert.False(RWStl.WriteAscii(aMesh, new MemoryStream(), Cancelled()));
         Assert.Null(RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, Cancelled()));
         Assert.Null(RWStl.ReadFile(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
         Assert.Null(RWStl.ReadStream(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
-        var aList = new NCollection_Sequence<Poly_Triangulation>();
+        var aList = new NCollection_Sequence<Triangulation>();
         RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, aList, Cancelled());
         Assert.Equal(0, aList.Length());
     }
@@ -315,7 +320,7 @@ public class RWStlTests
         string aDir = Directory.CreateTempSubdirectory("p8h1-rwstl").FullName;
         try
         {
-            Poly_Triangulation aMesh = Grid(3);
+            Triangulation aMesh = Grid(3);
             string anAscii = Path.Combine(aDir, "a.stl"), aBinary = Path.Combine(aDir, "b.stl");
             Assert.True(RWStl.WriteAscii(aMesh, anAscii));
             Assert.True(RWStl.WriteBinary(aMesh, aBinary));
@@ -323,14 +328,14 @@ public class RWStlTests
             var aStream = new MemoryStream();
             RWStl.WriteAscii(aMesh, aStream);
             Assert.Equal(aStream.ToArray(), File.ReadAllBytes(anAscii));
-            Assert.Equal(18, RWStl.ReadFile(anAscii)!.NbTriangles());
-            Assert.Equal(18, RWStl.ReadAscii(anAscii)!.NbTriangles());
-            Assert.Equal(18, RWStl.ReadBinary(aBinary)!.NbTriangles());
+            Assert.Equal(18, RWStl.ReadFile(anAscii)!.TriangleCount);
+            Assert.Equal(18, RWStl.ReadAscii(anAscii)!.TriangleCount);
+            Assert.Equal(18, RWStl.ReadBinary(aBinary)!.TriangleCount);
             Assert.Null(RWStl.ReadAscii(aBinary));
             Assert.Null(RWStl.ReadFile(Path.Combine(aDir, "none.stl")));
             Assert.False(RWStl.WriteAscii(aMesh, Path.Combine(aDir, "no", "such", "dir.stl")));
             Assert.False(RWStl.WriteAscii(null, Path.Combine(aDir, "c.stl")));
-            Assert.False(RWStl.WriteBinary(new Poly_Triangulation(), new MemoryStream()));
+            Assert.False(RWStl.WriteBinary(new Triangulation(), new MemoryStream()));
 
             TopoDS_Shape aFace = FaceWith(aMesh, 3.0);
             Assert.True(StlAPI.Write(aFace, Path.Combine(aDir, "s.stl"), false));
@@ -350,14 +355,14 @@ public class RWStlTests
     public void Reversed_and_located_faces_are_written_as_placed()
     {
         TopoDS_Shape aFace = CreateTriangulatedFace();
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(0, 0, 5));
-        TopoDS_Shape aMoved = aFace.Moved(new TopLoc_Location(aTrsf)).Reversed();
-        Poly_Triangulation? aRead = RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(0, 0, 5));
+        TopoDS_Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
+        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
         Assert.NotNull(aRead);
         Assert.Equal(5.0, aRead.Node(1).Z());
         // reversed: the triangles turn over (nodes 2 and 3 swapped)
-        Poly_Triangulation? aStraight = RWStl.ReadFile(new MemoryStream(Write(aFace, false)));
+        Triangulation? aStraight = RWStl.ReadFile(new MemoryStream(Write(aFace, false)));
         aStraight!.Triangle(1).Get(out _, out int s2, out int s3);
         aRead.Triangle(1).Get(out _, out int r2, out int r3);
         Assert.Equal(aStraight.Node(s2).X(), aRead.Node(r3).X());

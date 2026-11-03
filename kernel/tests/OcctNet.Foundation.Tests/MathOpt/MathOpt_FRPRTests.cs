@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -104,9 +105,9 @@ public class MathOpt_FRPRTest
 
     // Old API adapter classes
 
-    private sealed class QuadraticFuncOld : math_MultipleVarFunctionWithGradient
+    private sealed class QuadraticFuncOld : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -129,9 +130,9 @@ public class MathOpt_FRPRTest
         }
     }
 
-    private sealed class RosenbrockFuncOld : math_MultipleVarFunctionWithGradient
+    private sealed class RosenbrockFuncOld : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -174,14 +175,14 @@ public class MathOpt_FRPRTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = Vec(5.0, 7.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
-        aConfig.Formula = MathOpt.ConjugateGradientFormula.FletcherReeves;
+        aConfig.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.FletcherReeves;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -193,14 +194,14 @@ public class MathOpt_FRPRTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = Vec(5.0, 7.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
-        aConfig.Formula = MathOpt.ConjugateGradientFormula.PolakRibiere;
+        aConfig.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.PolakRibiere;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -212,13 +213,13 @@ public class MathOpt_FRPRTest
         BoothFunc aFunc = new();
         math_Vector aStart = Vec(0.0, 0.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -230,14 +231,14 @@ public class MathOpt_FRPRTest
         RosenbrockFunc aFunc = new();
         math_Vector aStart = Vec(-1.0, 1.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 2000;
         aConfig.Tolerance = 1.0e-6;
-        aConfig.Formula = MathOpt.ConjugateGradientFormula.PolakRibiere;
+        aConfig.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.PolakRibiere;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-3);
         Assert.Equal(1.0, aResult.Solution![2], 1.0e-3);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
@@ -249,13 +250,13 @@ public class MathOpt_FRPRTest
         SphereFunc aFunc = new();
         math_Vector aStart = Vec(3.0, -2.0, 4.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 3; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], THE_TOLERANCE);
@@ -274,13 +275,13 @@ public class MathOpt_FRPRTest
             aStart[i] = (double)i;
         }
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
 
-        VectorResult aResult = MathOpt.FRPR(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 5; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], THE_TOLERANCE);
@@ -306,13 +307,13 @@ public class MathOpt_FRPRTest
         QuadraticValueOnly aFunc = new();
         math_Vector aStart = Vec(5.0, 7.0);
 
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-6;
 
-        VectorResult aResult = MathOpt.FRPRNumerical(aFunc, aStart, 1.0e-8, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRNumerical(aFunc, aStart, 1.0e-8, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-4);
         Assert.Equal(2.0, aResult.Solution![2], 1.0e-4);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
@@ -326,17 +327,17 @@ public class MathOpt_FRPRTest
         math_Vector aStart = Vec(5.0, 7.0);
 
         // Old API - construct with tolerance and max iterations, then call Perform
-        math_FRPR anOldSolver = new(anOldFunc, 1.0e-8, 100);
+        Frpr anOldSolver = new(anOldFunc, 1.0e-8, 100);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.Tolerance = 1.0e-8;
-        VectorResult aNewResult = MathOpt.FRPR(aNewFunc, aStart, aConfig);
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aNewFunc, aStart, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -352,17 +353,17 @@ public class MathOpt_FRPRTest
         math_Vector aStart = Vec(-1.0, 1.0);
 
         // Old API - construct with tolerance and max iterations, then call Perform
-        math_FRPR anOldSolver = new(anOldFunc, 1.0e-6, 2000);
+        Frpr anOldSolver = new(anOldFunc, 1.0e-6, 2000);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        MathOpt.FRPRConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfig = new();
         aConfig.MaxIterations = 2000;
         aConfig.Tolerance = 1.0e-6;
-        VectorResult aNewResult = MathOpt.FRPR(aNewFunc, aStart, aConfig);
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aNewFunc, aStart, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the minimum (with reasonable tolerance for Rosenbrock)
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], 0.01);
@@ -380,15 +381,15 @@ public class MathOpt_FRPRTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        MathOpt.FRPRConfig aFRPRConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aFRPRConfig = new();
         aFRPRConfig.MaxIterations = 100;
         aFRPRConfig.Tolerance = 1.0e-8;
 
-        VectorResult aFRPRResult = MathOpt.FRPR(aFunc, aStart, aFRPRConfig);
-        VectorResult aBFGSResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aFRPRResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aFRPRConfig);
+        VectorResult aBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aFRPRResult.IsDone());
-        Assert.True(aBFGSResult.IsDone());
+        Assert.True(aFRPRResult.IsDone);
+        Assert.True(aBFGSResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aBFGSResult.Value!.Value, aFRPRResult.Value!.Value, THE_TOLERANCE);
@@ -402,28 +403,28 @@ public class MathOpt_FRPRTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = Vec(5.0, 7.0);
 
-        MathOpt.FRPRConfig aConfigFR = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfigFR = new();
         aConfigFR.MaxIterations = 100;
         aConfigFR.Tolerance = 1.0e-8;
-        aConfigFR.Formula = MathOpt.ConjugateGradientFormula.FletcherReeves;
+        aConfigFR.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.FletcherReeves;
 
-        MathOpt.FRPRConfig aConfigPR = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfigPR = new();
         aConfigPR.MaxIterations = 100;
         aConfigPR.Tolerance = 1.0e-8;
-        aConfigPR.Formula = MathOpt.ConjugateGradientFormula.PolakRibiere;
+        aConfigPR.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.PolakRibiere;
 
-        MathOpt.FRPRConfig aConfigHS = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPRConfig aConfigHS = new();
         aConfigHS.MaxIterations = 100;
         aConfigHS.Tolerance = 1.0e-8;
-        aConfigHS.Formula = MathOpt.ConjugateGradientFormula.HestenesStiefel;
+        aConfigHS.Formula = global::Kerf.Engine.Numerics.Optimisation.MathOpt.ConjugateGradientFormula.HestenesStiefel;
 
-        VectorResult aResultFR = MathOpt.FRPR(aFunc, aStart, aConfigFR);
-        VectorResult aResultPR = MathOpt.FRPR(aFunc, aStart, aConfigPR);
-        VectorResult aResultHS = MathOpt.FRPR(aFunc, aStart, aConfigHS);
+        VectorResult aResultFR = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfigFR);
+        VectorResult aResultPR = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfigPR);
+        VectorResult aResultHS = global::Kerf.Engine.Numerics.Optimisation.MathOpt.FRPR(aFunc, aStart, aConfigHS);
 
-        Assert.True(aResultFR.IsDone());
-        Assert.True(aResultPR.IsDone());
-        Assert.True(aResultHS.IsDone());
+        Assert.True(aResultFR.IsDone);
+        Assert.True(aResultPR.IsDone);
+        Assert.True(aResultHS.IsDone);
 
         // All should find the same minimum
         Assert.Equal(aResultPR.Value!.Value, aResultFR.Value!.Value, THE_TOLERANCE);

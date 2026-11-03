@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -42,7 +43,7 @@ public class ShapeFix_FixSmallFaceTests
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(aResult.IsSame(aBox));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.False(aFix.Context()!.IsRecorded(aBox));
     }
 
@@ -50,7 +51,7 @@ public class ShapeFix_FixSmallFaceTests
     public void FixSpotFace_RemovesATinyFace()
     {
         // a lone face of 1e-6 x 1e-6: a spot at precision 1e-4
-        TopoDS_Face aTiny = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1e-6, 0, 1e-6).Face();
+        TopoDS_Face aTiny = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1e-6, 0, 1e-6).Face();
         TopoDS_Compound aShape = Compound(aTiny);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
@@ -61,7 +62,7 @@ public class ShapeFix_FixSmallFaceTests
         TopoDS_Shape aResult = aFix.Shape();
 
         aSnap.AssertUnchanged(aShape);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(0, Count(aResult, TopAbs_FACE));
         Assert.True(aFix.Context()!.IsRecorded(aTiny)); // the caller's face, removed
     }
@@ -80,7 +81,7 @@ public class ShapeFix_FixSmallFaceTests
         TopoDS_Shape aResult = aFix.Shape();
 
         aSnap.AssertUnchanged(aBox);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.True(Count(aResult, TopAbs_FACE) < 6);
     }
 
@@ -89,7 +90,7 @@ public class ShapeFix_FixSmallFaceTests
     public void FixSpotFace_TinyFaceBesideABox_TheBoxFacesFixed()
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
-        TopoDS_Face aTiny = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(5, 5, 5), new gp_Dir(0, 0, 1)), 0, 1e-6, 0, 1e-6).Face();
+        TopoDS_Face aTiny = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), 0, 1e-6, 0, 1e-6).Face();
         TopoDS_Compound aShape = Compound(aBox, aTiny);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
@@ -100,7 +101,7 @@ public class ShapeFix_FixSmallFaceTests
         TopoDS_Shape aResult = aFix.Shape();
 
         aSnap.AssertUnchanged(aShape);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(6, Count(aResult, TopAbs_FACE));
         Assert.True(aFix.Context()!.IsRecorded(aTiny));
     }

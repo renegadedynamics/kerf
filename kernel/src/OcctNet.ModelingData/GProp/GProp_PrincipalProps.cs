@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,25 +27,25 @@ public partial struct GProp_PrincipalProps : IEquatable<GProp_PrincipalProps>
     private double r1;
     private double r2;
     private double r3;
-    private gp_Vec v1;
-    private gp_Vec v2;
-    private gp_Vec v3;
-    private gp_Pnt g;
+    private Vector3D v1;
+    private Vector3D v2;
+    private Vector3D v3;
+    private Point3D g;
 
     /// <summary>An undefined PrincipalProps.</summary>
     public GProp_PrincipalProps()
     {
         i1 = i2 = i3 = RealLast();
         r1 = r2 = r3 = RealLast();
-        v1 = new gp_Vec(1.0, 0.0, 0.0);
-        v2 = new gp_Vec(0.0, 1.0, 0.0);
-        v3 = new gp_Vec(0.0, 0.0, 1.0);
-        g = new gp_Pnt(RealLast(), RealLast(), RealLast());
+        v1 = new Vector3D(1.0, 0.0, 0.0);
+        v2 = new Vector3D(0.0, 1.0, 0.0);
+        v3 = new Vector3D(0.0, 0.0, 1.0);
+        g = new Point3D(RealLast(), RealLast(), RealLast());
     }
 
     // OCCT: private, a friend of GProp_GProps::PrincipalProperties.
     internal GProp_PrincipalProps(double Ixx, double Iyy, double Izz, double Rxx, double Ryy, double Rzz,
-                                  in gp_Vec Vxx, in gp_Vec Vyy, in gp_Vec Vzz, in gp_Pnt G)
+                                  in Vector3D Vxx, in Vector3D Vyy, in Vector3D Vzz, in Point3D G)
     {
         i1 = Ixx;
         i2 = Iyy;
@@ -105,17 +109,17 @@ public partial struct GProp_PrincipalProps : IEquatable<GProp_PrincipalProps>
     }
 
     /// <summary>The first axis of inertia (undefined if the system has a point of symmetry).</summary>
-    public readonly gp_Vec FirstAxisOfInertia() => v1;
+    public readonly Vector3D FirstAxisOfInertia() => v1;
 
     /// <summary>The second axis of inertia (undefined if the system has a point or an axis of symmetry).</summary>
-    public readonly gp_Vec SecondAxisOfInertia() => v2;
+    public readonly Vector3D SecondAxisOfInertia() => v2;
 
     /// <summary>
     /// The third axis of inertia (undefined if the system has a point or an axis of symmetry). The three axes are
     /// the eigenvectors of the matrix of inertia; the principal axes pass through the centre of mass, parallel to
     /// them.
     /// </summary>
-    public readonly gp_Vec ThirdAxisOfInertia() => v3;
+    public readonly Vector3D ThirdAxisOfInertia() => v3;
 
     /// <summary>The principal radii of gyration, about the three principal axes.</summary>
     public readonly void RadiusOfGyration(out double Rxx, out double Ryy, out double Rzz)
@@ -142,6 +146,6 @@ public partial struct GProp_PrincipalProps : IEquatable<GProp_PrincipalProps>
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("GProp_PrincipalProps", i1, i2, i3, r1, r2, r3, v1.X(), v1.Y(), v1.Z(), v2.X(), v2.Y(), v2.Z(),
+        => Constants.Format("GProp_PrincipalProps", i1, i2, i3, r1, r2, r3, v1.X(), v1.Y(), v1.Z(), v2.X(), v2.Y(), v2.Z(),
                      v3.X(), v3.Y(), v3.Z(), g.X(), g.Y(), g.Z());
 }

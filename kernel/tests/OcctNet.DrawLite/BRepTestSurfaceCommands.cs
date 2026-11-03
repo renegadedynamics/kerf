@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -54,7 +56,7 @@ internal static class BRepTestSurfaceCommands
 
         if (n == 3)
         {
-            res = mkface ? new BRepBuilderAPI_MakeFace(S, Precision.Confusion()).Shape()
+            res = mkface ? new BRepBuilderAPI_MakeFace(S, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
                          : new BRepBuilderAPI_MakeShell(S, Segment).Shape();
         }
         else if (n <= 5)
@@ -76,7 +78,7 @@ internal static class BRepTestSurfaceCommands
         else
         {
             res = mkface
-                ? new BRepBuilderAPI_MakeFace(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), Precision.Confusion()).Shape()
+                ? new BRepBuilderAPI_MakeFace(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
                 : new BRepBuilderAPI_MakeShell(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), Segment).Shape();
         }
 
@@ -98,7 +100,7 @@ internal static class BRepTestSurfaceCommands
         }
 
         // OCCT dereferences the surface without a test
-        Geom_Surface C = BRep_Tool.Surface(TopoDS.Face(S), out TopLoc_Location L) ?? throw new Standard_NullObject();
+        Geom_Surface C = BRep_Tool.Surface(TopoDS.Face(S), out Placement L) ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
         DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation()));
         return 0;
     }
@@ -157,7 +159,7 @@ internal static class BRepTestSurfaceCommands
             lr = aC.LastParameter();
         }
 
-        return !IsPeriodic && (fr - f > Precision.PConfusion() || l - lr > Precision.PConfusion())
+        return !IsPeriodic && (fr - f > global::Kerf.Engine.Foundation.Precision.PConfusion() || l - lr > global::Kerf.Engine.Foundation.Precision.PConfusion())
              ? c
              : new Geom2d_TrimmedCurve(c, f, l);
     }
@@ -206,7 +208,7 @@ internal static class BRepTestSurfaceCommands
 
             // OCCT dereferences the pcurve without a test
             Geom2d_Curve c = BRep_Tool.CurveOnSurface(TopoDS.Edge(SE), TopoDS.Face(SF), out double f, out double l)
-                          ?? throw new Standard_NullObject();
+                          ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
             DrawTrSurf.Set(theDI, a[1], Trimmed(c, f, l));
         }
         else
@@ -267,15 +269,15 @@ internal static class BRepTestSurfaceCommands
             return 1;
         }
 
-        GeomAbs_Shape aRegularity = BRep_Tool.Continuity(TopoDS.Edge(anEdge), TopoDS.Face(aFace1), TopoDS.Face(aFace2));
+        Continuity aRegularity = BRep_Tool.Continuity(TopoDS.Edge(anEdge), TopoDS.Face(aFace1), TopoDS.Face(aFace2));
         string aStrReg = "Regularity of edge : " + aRegularity switch
         {
-            GeomAbs_Shape.GeomAbs_G1 => "G1",
-            GeomAbs_Shape.GeomAbs_C1 => "C1",
-            GeomAbs_Shape.GeomAbs_G2 => "G2",
-            GeomAbs_Shape.GeomAbs_C2 => "C2",
-            GeomAbs_Shape.GeomAbs_C3 => "C3",
-            GeomAbs_Shape.GeomAbs_CN => "CN",
+            Continuity.G1 => "G1",
+            Continuity.C1 => "C1",
+            Continuity.G2 => "G2",
+            Continuity.C2 => "C2",
+            Continuity.C3 => "C3",
+            Continuity.CN => "CN",
             _ => "C0",
         };
         di.Append(aStrReg).Append("\n");
@@ -306,7 +308,7 @@ internal static class BRepTestSurfaceCommands
         }
 
         TopoDS_Face aFace = TopoDS.Face(aS);
-        var aP = new gp_Pnt();
+        var aP = new Point3D();
         DrawTrSurf.GetPoint(theDI, a[2], ref aP);
 
         Extrema_ExtAlgo anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad;
@@ -333,7 +335,7 @@ internal static class BRepTestSurfaceCommands
             }
         }
 
-        Geom_Surface aSurf = BRep_Tool.Surface(aFace, out TopLoc_Location aLoc)!;
+        Geom_Surface aSurf = BRep_Tool.Surface(aFace, out Placement aLoc)!;
         aP = aP.Transformed(aLoc.Transformation().Inverted());
         aSurf.Bounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
 
@@ -346,7 +348,7 @@ internal static class BRepTestSurfaceCommands
         {
             double aDist = aProjPS.LowerDistance();
             aProjPS.LowerDistanceParameters(out double U, out double V);
-            gp_Pnt aPProj = aProjPS.NearestPoint().Transformed(aLoc.Transformation());
+            Point3D aPProj = aProjPS.NearestPoint().Transformed(aLoc.Transformation());
             di.Append("proj dist = ").Append(aDist).Append("\n");
             di.Append("uvproj = ").Append(U).Append(" ").Append(V).Append("\n");
             di.Append("pproj = ").Append(aPProj.X()).Append(" ").Append(aPProj.Y()).Append(" ").Append(aPProj.Z()).Append("\n");

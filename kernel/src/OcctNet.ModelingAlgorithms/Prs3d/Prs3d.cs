@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -19,12 +23,12 @@ public static class Prs3d
     /// <see cref="Prs3d_Drawer.DeviationCoefficient"/>): the largest extent of the box times the coefficient times 4,
     /// at least the confusion tolerance.
     /// </summary>
-    public static double GetDeflection(in gp_XYZ theBndMin, in gp_XYZ theBndMax, double theDeviationCoefficient)
+    public static double GetDeflection(in Xyz theBndMin, in Xyz theBndMax, double theDeviationCoefficient)
     {
-        gp_XYZ aDiag = theBndMax - theBndMin;
+        Xyz aDiag = theBndMax - theBndMin;
         // NCollection_Vec3::maxComp
         double aMaxComp = Math.Max(Math.Max(aDiag.X(), aDiag.Y()), aDiag.Z());
-        return Math.Max(aMaxComp * theDeviationCoefficient * 4.0, Precision.Confusion());
+        return Math.Max(aMaxComp * theDeviationCoefficient * 4.0, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>
@@ -32,17 +36,17 @@ public static class Prs3d
     /// <paramref name="theMaximalChordialDeviation"/> (from <see cref="Prs3d_Drawer.MaximalChordialDeviation"/>) if the
     /// box is void or infinite.
     /// </summary>
-    public static double GetDeflection(in Bnd_Box theBndBox, double theDeviationCoefficient, double theMaximalChordialDeviation)
+    public static double GetDeflection(in Box theBndBox, double theDeviationCoefficient, double theMaximalChordialDeviation)
     {
-        if (theBndBox.IsVoid())
+        if (theBndBox.IsVoid)
         {
             return theMaximalChordialDeviation;
         }
 
-        Bnd_Box aBndBox = theBndBox;
-        if (theBndBox.IsOpen())
+        Box aBndBox = theBndBox;
+        if (theBndBox.IsOpen)
         {
-            if (!theBndBox.HasFinitePart())
+            if (!theBndBox.HasFinitePart)
             {
                 return theMaximalChordialDeviation;
             }
@@ -51,6 +55,6 @@ public static class Prs3d
         }
 
         aBndBox.Get(out double aXMin, out double aYMin, out double aZMin, out double aXMax, out double aYMax, out double aZMax);
-        return GetDeflection(new gp_XYZ(aXMin, aYMin, aZMin), new gp_XYZ(aXMax, aYMax, aZMax), theDeviationCoefficient);
+        return GetDeflection(new Xyz(aXMin, aYMin, aZMin), new Xyz(aXMax, aYMax, aZMax), theDeviationCoefficient);
     }
 }

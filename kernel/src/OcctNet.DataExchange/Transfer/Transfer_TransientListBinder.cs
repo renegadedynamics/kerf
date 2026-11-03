@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,10 +18,10 @@ public class Transfer_TransientListBinder : Transfer_Binder
 {
     public Transfer_TransientListBinder()
     {
-        theres = new NCollection_HSequence<Standard_Transient>();
+        theres = new NCollection_HSequence<Transient>();
     }
 
-    public Transfer_TransientListBinder(NCollection_HSequence<Standard_Transient>? list)
+    public Transfer_TransientListBinder(NCollection_HSequence<Transient>? list)
     {
         theres = list;
     }
@@ -40,18 +42,18 @@ public class Transfer_TransientListBinder : Transfer_Binder
     }
 
     /// <summary>Adds an item to the result list.</summary>
-    public void AddResult(Standard_Transient? Transient)
+    public void AddResult(Transient? Transient)
     {
         theres.Append(Transient);
     }
 
-    public NCollection_HSequence<Standard_Transient>? Result()
+    public NCollection_HSequence<Transient>? Result()
     {
         return theres;
     }
 
     /// <summary>Changes an already defined sub-result.</summary>
-    public void SetResult(int num, Standard_Transient? Transient)
+    public void SetResult(int num, Transient? Transient)
     {
         theres.SetValue(num, Transient);
     }
@@ -61,10 +63,10 @@ public class Transfer_TransientListBinder : Transfer_Binder
         return theres.Length();
     }
 
-    public Standard_Transient? Transient(int num)
+    public Transient? Transient(int num)
     {
         return theres.Value(num);
     }
 
-    private readonly NCollection_HSequence<Standard_Transient>? theres;
+    private readonly NCollection_HSequence<Transient>? theres;
 }

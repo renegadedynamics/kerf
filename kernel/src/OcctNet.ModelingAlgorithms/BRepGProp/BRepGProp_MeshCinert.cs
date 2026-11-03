@@ -3,6 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Meshing;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -17,10 +27,10 @@ public class BRepGProp_MeshCinert : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in gp_Pnt CLocation) => loc = CLocation;
+    public void SetLocation(in Point3D CLocation) => loc = CLocation;
 
     /// <summary>Computes the global properties of the polyline through <paramref name="theNodes"/>.</summary>
-    public void Perform(NCollection_Array1<gp_Pnt> theNodes)
+    public void Perform(NCollection_Array1<Point3D> theNodes)
     {
         double Ix, Iy, Iz, Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
         dim = Ix = Iy = Iz = Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
@@ -31,19 +41,19 @@ public class BRepGProp_MeshCinert : GProp_GProps
         double x, y, z;
         double xloc, yloc, zloc;
         double Upper;
-        gp_XYZ P = new(), D;
+        Xyz P = new(), D;
 
         var GaussP = new math_Vector(1, Order);
         var GaussW = new math_Vector(1, Order);
 
-        math.GaussPoints(Order, GaussP);
-        math.GaussWeights(Order, GaussW);
+        NumericTables.GaussPoints(Order, GaussP);
+        NumericTables.GaussWeights(Order, GaussW);
 
         int nIndex = 0;
         for (nIndex = 1; nIndex < theNodes.Length(); nIndex++)
         {
-            gp_XYZ aP1 = theNodes[nIndex].XYZ();
-            gp_XYZ aP2 = theNodes[nIndex + 1].XYZ();
+            Xyz aP1 = theNodes[nIndex].XYZ();
+            Xyz aP2 = theNodes[nIndex + 1].XYZ();
 
             double dimLocal, IxLocal, IyLocal, IzLocal, IxxLocal, IyyLocal, IzzLocal, IxyLocal, IxzLocal, IyzLocal;
             dimLocal = IxLocal = IyLocal = IzLocal = IxxLocal = IyyLocal = IzzLocal = IxyLocal = IxzLocal = IyzLocal = 0.0;
@@ -52,7 +62,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
 
             int i;
             Upper = (aP2 - aP1).Modulus();
-            if (Upper < gp.Resolution())
+            if (Upper < Constants.Resolution())
             {
                 continue;
             }
@@ -107,11 +117,11 @@ public class BRepGProp_MeshCinert : GProp_GProps
             Iyz += IyzLocal;
         }
 
-        inertia = new gp_Mat(new gp_XYZ(Ixx, -Ixy, -Ixz), new gp_XYZ(-Ixy, Iyy, -Iyz), new gp_XYZ(-Ixz, -Iyz, Izz));
+        inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
 
-        if (Math.Abs(dim) < gp.Resolution())
+        if (Math.Abs(dim) < Constants.Resolution())
         {
-            g = new gp_Pnt(P);
+            g = new Point3D(P);
         }
         else
         {
@@ -123,16 +133,16 @@ public class BRepGProp_MeshCinert : GProp_GProps
     /// The 3D points of a polygon of the edge: its 3D polygon, else its polygon on a triangulation, else its 2D polygon
     /// on a surface (evaluated on the surface), placed by the location; null if the edge has none.
     /// </summary>
-    public static NCollection_HArray1<gp_Pnt>? PreparePolygon(in TopoDS_Edge theE)
+    public static NCollection_HArray1<Point3D>? PreparePolygon(in TopoDS_Edge theE)
     {
-        NCollection_HArray1<gp_Pnt>? thePolyg = null;
-        Poly_Polygon3D? aPolyg = BRep_Tool.Polygon3D(theE, out TopLoc_Location aLoc);
+        NCollection_HArray1<Point3D>? thePolyg = null;
+        Polygon3D? aPolyg = BRep_Tool.Polygon3D(theE, out Placement aLoc);
         if (aPolyg is not null)
         {
-            NCollection_Array1<gp_Pnt> aNodes = aPolyg.Nodes();
-            thePolyg = new NCollection_HArray1<gp_Pnt>(1, aNodes.Length());
+            NCollection_Array1<Point3D> aNodes = aPolyg.Nodes();
+            thePolyg = new NCollection_HArray1<Point3D>(1, aNodes.Length());
             int i;
-            if (aLoc.IsIdentity())
+            if (aLoc.IsIdentity)
             {
                 for (i = 1; i <= aNodes.Length(); ++i)
                 {
@@ -141,7 +151,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
             }
             else
             {
-                gp_Trsf aTr = aLoc.Transformation();
+                Transform3D aTr = aLoc.Transformation();
                 for (i = 1; i <= aNodes.Length(); ++i)
                 {
                     thePolyg.SetValue(i, aNodes.Value(i).Transformed(aTr));
@@ -152,14 +162,14 @@ public class BRepGProp_MeshCinert : GProp_GProps
         }
 
         // Try to get PolygonOnTriangulation
-        BRep_Tool.PolygonOnTriangulation(theE, out Poly_PolygonOnTriangulation? aPOnTri, out Poly_Triangulation? aTri, out aLoc);
+        BRep_Tool.PolygonOnTriangulation(theE, out PolygonOnTriangulation? aPOnTri, out Triangulation? aTri, out aLoc);
         if (aPOnTri is not null)
         {
-            int aNbNodes = aPOnTri.NbNodes();
-            thePolyg = new NCollection_HArray1<gp_Pnt>(1, aNbNodes);
+            int aNbNodes = aPOnTri.NodeCount;
+            thePolyg = new NCollection_HArray1<Point3D>(1, aNbNodes);
             NCollection_Array1<int> aNodeInds = aPOnTri.Nodes();
             int i;
-            if (aLoc.IsIdentity())
+            if (aLoc.IsIdentity)
             {
                 for (i = 1; i <= aNbNodes; ++i)
                 {
@@ -168,7 +178,7 @@ public class BRepGProp_MeshCinert : GProp_GProps
             }
             else
             {
-                gp_Trsf aTr = aLoc.Transformation();
+                Transform3D aTr = aLoc.Transformation();
                 for (i = 1; i <= aNbNodes; ++i)
                 {
                     thePolyg.SetValue(i, aTri!.Node(aNodeInds[i]).Transformed(aTr));
@@ -179,29 +189,29 @@ public class BRepGProp_MeshCinert : GProp_GProps
         }
 
         // Try to get Polygon2D on Surface
-        BRep_Tool.PolygonOnSurface(theE, out Poly_Polygon2D? aPolyg2D, out Geom_Surface? aS, out aLoc);
+        BRep_Tool.PolygonOnSurface(theE, out Polygon2D? aPolyg2D, out Geom_Surface? aS, out aLoc);
         if (aPolyg2D is not null)
         {
-            int aNbNodes = aPolyg2D.NbNodes();
-            thePolyg = new NCollection_HArray1<gp_Pnt>(1, aNbNodes);
-            NCollection_Array1<gp_Pnt2d> aNodes2D = aPolyg2D.Nodes();
+            int aNbNodes = aPolyg2D.NodeCount;
+            thePolyg = new NCollection_HArray1<Point3D>(1, aNbNodes);
+            NCollection_Array1<Point2D> aNodes2D = aPolyg2D.Nodes();
             int i;
-            if (aLoc.IsIdentity())
+            if (aLoc.IsIdentity)
             {
                 for (i = 1; i <= aNbNodes; ++i)
                 {
-                    gp_Pnt2d aP2d = aNodes2D[i];
-                    gp_Pnt aP = aS!.Value(aP2d.X(), aP2d.Y());
+                    Point2D aP2d = aNodes2D[i];
+                    Point3D aP = aS!.Value(aP2d.X(), aP2d.Y());
                     thePolyg.SetValue(i, aP);
                 }
             }
             else
             {
-                gp_Trsf aTr = aLoc.Transformation();
+                Transform3D aTr = aLoc.Transformation();
                 for (i = 1; i <= aNbNodes; ++i)
                 {
-                    gp_Pnt2d aP2d = aNodes2D[i];
-                    gp_Pnt aP = aS!.Value(aP2d.X(), aP2d.Y());
+                    Point2D aP2d = aNodes2D[i];
+                    Point3D aP = aS!.Value(aP2d.X(), aP2d.Y());
                     aP.Transform(aTr);
                     thePolyg.SetValue(i, aP);
                 }

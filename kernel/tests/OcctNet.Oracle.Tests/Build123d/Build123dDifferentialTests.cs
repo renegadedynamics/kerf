@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -275,7 +277,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            theDetail += $"\n  {aDiff}\n  canonical comparison failed: {e.GetType().Name}: {e.Message}";
+            theDetail += $"\n  {aDiff}\n  canonical comparison failed: {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message}";
             return Kind.Different;
         }
         if (aCanon.IsIdentical)
@@ -383,12 +385,12 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             BRepGProp.VolumeProperties(aShape, aVolume);
             var anArea = new GProp_GProps();
             BRepGProp.SurfaceProperties(aShape, anArea);
-            var aBox = new Bnd_Box();
+            var aBox = new Box();
             BRepBndLib.Add(aShape, ref aBox);
             string aBounds = "void";
-            if (!aBox.IsVoid())
+            if (!aBox.IsVoid)
             {
-                gp_Pnt aMin = aBox.CornerMin(), aMax = aBox.CornerMax();
+                Point3D aMin = aBox.CornerMin(), aMax = aBox.CornerMax();
                 aBounds = string.Create(CultureInfo.InvariantCulture, $"{aMin.X():R} {aMin.Y():R} {aMin.Z():R} {aMax.X():R} {aMax.Y():R} {aMax.Z():R}");
             }
             return string.Create(CultureInfo.InvariantCulture,
@@ -396,7 +398,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            return $"unmeasured ({e.GetType().Name})";
+            return $"unmeasured ({Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())})";
         }
     }
 

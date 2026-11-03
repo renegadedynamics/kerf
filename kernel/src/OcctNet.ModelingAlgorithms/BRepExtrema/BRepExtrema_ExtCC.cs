@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The extrema of the distance between two edges.</summary>
@@ -35,8 +37,8 @@ public sealed class BRepExtrema_ExtCC
         double V1, V2;
         var Curv = new BRepAdaptor_Curve(E2);
         myHC = Curv;
-        double Tol = Min(BRep_Tool.Tolerance(E2), Precision.Confusion());
-        Tol = Max(Curv.Resolution(Tol), Precision.PConfusion());
+        double Tol = Min(BRep_Tool.Tolerance(E2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Tol = Max(Curv.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         BRep_Tool.Range(E2, out V1, out V2);
         myExtCC.SetCurve(2, myHC, V1, V2);
         myExtCC.SetTolerance(2, Tol);
@@ -51,8 +53,8 @@ public sealed class BRepExtrema_ExtCC
         double U1, U2;
         var Curv = new BRepAdaptor_Curve(E1);
         BRepAdaptor_Curve HC = Curv;
-        double Tol = Min(BRep_Tool.Tolerance(E1), Precision.Confusion());
-        Tol = Max(Curv.Resolution(Tol), Precision.PConfusion());
+        double Tol = Min(BRep_Tool.Tolerance(E1), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Tol = Max(Curv.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         BRep_Tool.Range(E1, out U1, out U2);
         myExtCC.SetCurve(1, HC, U1, U2);
         myExtCC.SetTolerance(1, Tol);
@@ -82,7 +84,7 @@ public sealed class BRepExtrema_ExtCC
     }
 
     /// <summary>The point on the first edge of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnE1(int N)
+    public Point3D PointOnE1(int N)
     {
         myExtCC.Points(N, out Extrema_POnCurv POnE1, out _);
         return POnE1.Value();
@@ -96,7 +98,7 @@ public sealed class BRepExtrema_ExtCC
     }
 
     /// <summary>The point on the second edge of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnE2(int N)
+    public Point3D PointOnE2(int N)
     {
         myExtCC.Points(N, out _, out Extrema_POnCurv POnE2);
         return POnE2.Value();
@@ -104,6 +106,6 @@ public sealed class BRepExtrema_ExtCC
 
     /// <summary>For trimmed curves, the square distances between their end points.</summary>
     public void TrimmedSquareDistances(out double dist11, out double dist12, out double dist21, out double dist22,
-                                       out gp_Pnt pnt11, out gp_Pnt pnt12, out gp_Pnt pnt21, out gp_Pnt pnt22)
+                                       out Point3D pnt11, out Point3D pnt12, out Point3D pnt21, out Point3D pnt22)
         => myExtCC.TrimmedSquareDistances(out dist11, out dist12, out dist21, out dist22, out pnt11, out pnt12, out pnt21, out pnt22);
 }

@@ -85,7 +85,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return (null, anException.GetType().Name);
+            return (null, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()));
         }
     }
 
@@ -116,7 +116,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return (null, "", anException.GetType().Name + ": " + anException.Message + "\n" + anException.StackTrace);
+            return (null, "", global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message + "\n" + anException.StackTrace);
         }
     }
 
@@ -163,7 +163,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
         catch (Exception anException)
         {
-            return anException.GetType().Name;
+            return global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
         }
     }
 

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +18,7 @@ namespace Occt;
 /// amodifier, entcount); IsForAll () -&gt; can be called, if True, applies on the whole file for (i = 1; i
 /// &lt;= entcount; i ++) nument = ItemNum (i); -&gt; return an entity number
 /// </summary>
-public class IFSelect_AppliedModifiers : Standard_Transient
+public class IFSelect_AppliedModifiers : Transient
 {
 
     /// <summary>

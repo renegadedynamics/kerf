@@ -3,6 +3,8 @@
 // its path, MTL diffuse colours in sRGB, transparency as "Tr".
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 
@@ -52,11 +54,11 @@ public sealed class RWObj_TreeWriter
     /// Writes the tree's OBJ to <paramref name="theObj"/> and its materials to <paramref name="theMtl"/> (if not null),
     /// which the OBJ names as <paramref name="theMtlName"/>. False if cancelled or a stream fails.
     /// </summary>
-    public bool Write(XdeDoc_Tree theTree, Stream theObj, Stream? theMtl, string theMtlName = "model.mtl", Message_ProgressRange theProgress = default)
+    public bool Write(XdeDoc_Tree theTree, Stream theObj, Stream? theMtl, string theMtlName = "model.mtl", ProgressRange theProgress = default)
     {
         ArgumentNullException.ThrowIfNull(theTree);
         ArgumentNullException.ThrowIfNull(theObj);
-        using var aPS = new Message_ProgressScope(theProgress, "Writing OBJ", Options.MeshParameters is null ? 1 : 2);
+        using var aPS = new ProgressScope(theProgress, "Writing OBJ", Options.MeshParameters is null ? 1 : 2);
         XdeDoc_Tree aTree = theTree;
         if (Options.MeshParameters is IMeshTools_Parameters aParams)
         {
@@ -71,8 +73,8 @@ public sealed class RWObj_TreeWriter
         var aConverter = new RWMesh_CoordinateConverter(Options.Scale, Options.ZUpToYUp);
         IReadOnlyList<XdeDoc_FlatItem> anItems = aTree.Flatten(Options.IncludeHidden);
         var aMeshes = new Dictionary<XdeDoc_Product, RWMesh_ProductMesh>(ReferenceEqualityComparer.Instance);
-        var aMaterials = new List<Quantity_ColorRGBA>();
-        var aMaterialIndex = new Dictionary<Quantity_ColorRGBA, int>();
+        var aMaterials = new List<ColorWithAlpha>();
+        var aMaterialIndex = new Dictionary<ColorWithAlpha, int>();
         var anObj = new StringBuilder();
         anObj.Append("# OCCT.NET\n");
         if (theMtl is not null)
@@ -83,7 +85,7 @@ public sealed class RWObj_TreeWriter
         int aNodeBase = 1, aNormalBase = 1;
         string? aCurrentMaterial = null;
         bool hasDefault = false;
-        using var anItemsPS = new Message_ProgressScope(aPS.Next(), "Parts", Math.Max(1, anItems.Count));
+        using var anItemsPS = new ProgressScope(aPS.Next(), "Parts", Math.Max(1, anItems.Count));
         foreach (XdeDoc_FlatItem anItem in anItems)
         {
             if (!anItemsPS.More())
@@ -100,16 +102,16 @@ public sealed class RWObj_TreeWriter
             {
                 continue;
             }
-            gp_Trsf aTrsf = anItem.Location.Transformation();
-            bool isIdentity = anItem.Location.IsIdentity();
+            Transform3D aTrsf = anItem.Location.Transformation();
+            bool isIdentity = anItem.Location.IsIdentity;
             bool isMirrored = aTrsf.VectorialPart().Determinant() < 0.0;
             anObj.Append("o ").Append(objName(anItem)).Append('\n');
-            Quantity_ColorRGBA? aNodeColor = anItem.Style.SurfaceColor ?? anItem.Style.CurveColor;
+            ColorWithAlpha? aNodeColor = anItem.Style.SurfaceColor ?? anItem.Style.CurveColor;
             foreach (RWMesh_ProductMesh.Group aGroup in aMesh.Groups)
             {
                 for (int i = 0; i < aGroup.NbNodes; i++)
                 {
-                    var aP = new gp_Pnt(aGroup.Positions[3 * i], aGroup.Positions[3 * i + 1], aGroup.Positions[3 * i + 2]);
+                    var aP = new Point3D(aGroup.Positions[3 * i], aGroup.Positions[3 * i + 1], aGroup.Positions[3 * i + 2]);
                     if (!isIdentity)
                     {
                         aP = aP.Transformed(aTrsf);
@@ -123,7 +125,7 @@ public sealed class RWObj_TreeWriter
                 {
                     for (int i = 0; i < aGroup.NbNodes; i++)
                     {
-                        var aN = new gp_Dir(aGroup.Normals[3 * i], aGroup.Normals[3 * i + 1], aGroup.Normals[3 * i + 2]);
+                        var aN = new Direction3D(aGroup.Normals[3 * i], aGroup.Normals[3 * i + 1], aGroup.Normals[3 * i + 2]);
                         if (!isIdentity)
                         {
                             aN = aN.Transformed(aTrsf);
@@ -133,7 +135,7 @@ public sealed class RWObj_TreeWriter
                         anObj.Append("vn ").Append(num((float)aX)).Append(' ').Append(num((float)aY)).Append(' ').Append(num((float)aZ)).Append('\n');
                     }
                 }
-                if (theMtl is not null && (aGroup.Color ?? aNodeColor) is Quantity_ColorRGBA aColor)
+                if (theMtl is not null && (aGroup.Color ?? aNodeColor) is ColorWithAlpha aColor)
                 {
                     if (!aMaterialIndex.TryGetValue(aColor, out int aMat))
                     {
@@ -190,8 +192,8 @@ public sealed class RWObj_TreeWriter
                 var aMtl = new StringBuilder("# OCCT.NET\n");
                 for (int i = 0; i < aMaterials.Count; i++)
                 {
-                    Quantity_Color aRgb = aMaterials[i].GetRGB();
-                    aRgb.Values(out double aR, out double aG, out double aB, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+                    Color aRgb = aMaterials[i].GetRGB();
+                    aRgb.Values(out double aR, out double aG, out double aB, ColorSpace.TOC_sRGB);
                     float anAlpha = aMaterials[i].Alpha();
                     aMtl.Append("newmtl mat_").Append(i.ToString(CultureInfo.InvariantCulture)).Append('\n');
                     aMtl.Append("Kd ").Append(num((float)aR)).Append(' ').Append(num((float)aG)).Append(' ').Append(num((float)aB)).Append('\n');
@@ -217,7 +219,7 @@ public sealed class RWObj_TreeWriter
     }
 
     /// <summary>Writes the tree to an OBJ file, with its MTL file of the same name beside it.</summary>
-    public bool Perform(XdeDoc_Tree theTree, string theFilePath, Message_ProgressRange theProgress = default)
+    public bool Perform(XdeDoc_Tree theTree, string theFilePath, ProgressRange theProgress = default)
     {
         string aMtlPath = Path.ChangeExtension(theFilePath, ".mtl");
         using FileStream anObj = File.Create(theFilePath);

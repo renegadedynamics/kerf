@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +30,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     }
 
     // S4181 returns 0 - none, 1 - indirect, 2 - negative cone, 3 - indirect negative cone
-    private static int IsIndirectSurface(ref Geom_Surface S, in TopLoc_Location L)
+    private static int IsIndirectSurface(ref Geom_Surface S, in Placement L)
     {
         int result = 0;
 
@@ -35,8 +43,8 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
         if (TS is Geom_ElementarySurface ES)
         {
             // is the surface indirect ?
-            gp_Trsf t = L.Transformation();
-            bool neg = t.IsNegative();
+            Transform3D t = L.Transformation();
+            bool neg = t.IsNegative;
             bool det = (t.VectorialPart().Determinant() < 0.0);
             bool dir = ES.Position().Direct();
             if ((neg != det) == dir)
@@ -67,7 +75,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     /// </summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -110,7 +118,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
                 return false;
         }
 
-        SendMsg(F, new Message_Msg("DirectModification.NewSurface.MSG0"));
+        SendMsg(F, new Msg("DirectModification.NewSurface.MSG0"));
 
         Tol = BRep_Tool.Tolerance(F);
 
@@ -121,10 +129,10 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     /// True if the edge has a pcurve on an indirect surface (so that the edge is copied): then C is a copy of its 3D
     /// curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         C = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -138,7 +146,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
                 continue;
             }
             Geom_Surface S = GC.Surface()!;
-            TopLoc_Location Loc = GC.Location();
+            Placement Loc = GC.Location();
             if (IsIndirectSurface(ref S, Loc) == 0)
             {
                 continue;
@@ -155,9 +163,9 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
-        P = new gp_Pnt();
+        P = new Point3D();
         Tol = 0.0;
         // 3d points are never modified
         return false;
@@ -176,7 +184,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
 
         Geom_Surface aS = S!;
         int result = IsIndirectSurface(ref aS, L);
@@ -190,30 +198,30 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
 
         if (result != 0)
         {
-            gp_Trsf2d T = new gp_Trsf2d();
+            Transform2D T = new Transform2D();
 
             switch (result)
             {
                 case 1:
                 { // Indirect surface
                     // mirror the PCurve about the V axis
-                    T.SetMirror(gp.OY2d());
+                    T.SetMirror(Constants.OY2d());
                     C = (Geom2d_Curve)C!.Transformed(T);
                     break;
                 }
                 case 2:
                 { // Negative cone
                     // mirror the PCurve about the U and V axis
-                    T.SetMirror(gp.OX2d());
+                    T.SetMirror(Constants.OX2d());
                     C = (Geom2d_Curve)C!.Transformed(T);
-                    T.SetMirror(gp.OY2d());
+                    T.SetMirror(Constants.OY2d());
                     C.Transform(T);
                     break;
                 }
                 case 3:
                 { // Indirect negative cone
                     // mirror the PCurve about the U axis
-                    T.SetMirror(gp.OX2d());
+                    T.SetMirror(Constants.OX2d());
                     C = (Geom2d_Curve)C!.Transformed(T);
                     break;
                 }
@@ -255,7 +263,7 @@ public class ShapeCustom_DirectModification : ShapeCustom_Modification
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,

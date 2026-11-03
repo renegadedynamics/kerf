@@ -7,6 +7,10 @@
 //                        + Utilisation de GeomFill::GetCircle dans Section.
 // Modified 23/06/1997 PMN : Pb de division par 0.
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
 
 namespace Occt;
@@ -25,25 +29,25 @@ public class BlendFunc_CSCircular : Blend_CSFunction
     private readonly Adaptor3d_Curve curv;
     private readonly Adaptor3d_Curve guide;
     private readonly Law_Function law;
-    private gp_Pnt pts;
-    private gp_Pnt ptc;
-    private gp_Pnt2d pt2d;
+    private Point3D pts;
+    private Point3D ptc;
+    private Point2D pt2d;
     private double prmc;
     private double dprmc;
     private bool istangent;
-    private gp_Vec tgs;
-    private gp_Vec2d tg2d;
-    private gp_Vec tgc;
+    private Vector3D tgs;
+    private Vector2D tg2d;
+    private Vector3D tgc;
     private double ray;
     private int choix;
-    private gp_Vec d1gui;
-    private gp_Vec d2gui;
-    private gp_Vec nplan;
+    private Vector3D d1gui;
+    private Vector3D d2gui;
+    private Vector3D nplan;
     private double normtg;
     private double maxang;
     private double minang;
     private BlendFunc_SectionShape mySShape;
-    private Convert_ParameterisationType myTConv;
+    private ParameterisationType myTConv;
 
     public BlendFunc_CSCircular(Adaptor3d_Surface S, Adaptor3d_Curve C, Adaptor3d_Curve CGuide, Law_Function L)
     {
@@ -101,10 +105,10 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         nplan = d1gui.Normalized();
     }
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override void Set(double First, double Last)
     {
-        throw new Standard_NotImplemented("BlendFunc_CSCircular::Set");
+        throw new MethodNotImplementedException("BlendFunc_CSCircular::Set");
     }
 
     public override void GetTolerance(math_Vector Tolerance, double Tol)
@@ -120,14 +124,14 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         SupBound[1] = surf.LastUParameter();
         SupBound[2] = surf.LastVParameter();
 
-        if (!Precision.IsInfinite(InfBound[1]) && !Precision.IsInfinite(SupBound[1]))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[1]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[1]))
         {
             double range = (SupBound[1] - InfBound[1]);
             InfBound[1] -= range;
             SupBound[1] += range;
         }
 
-        if (!Precision.IsInfinite(InfBound[2]) && !Precision.IsInfinite(SupBound[2]))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[2]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[2]))
         {
             double range = (SupBound[2] - InfBound[2]);
             InfBound[2] -= range;
@@ -138,9 +142,9 @@ public class BlendFunc_CSCircular : Blend_CSFunction
     public override bool IsSolution(math_Vector Sol, double Tol)
     {
         math_Vector valsol = new(1, 2), secmember = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
 
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec(), ns, ncrossns, resul = new gp_Vec(), nc;
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), ns, ncrossns, resul = new Vector3D(), nc;
         double norm, ndotns, grosterme;
         double Cosa, Sina, Angle;
 
@@ -150,10 +154,10 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         {
             // Calcul des tangentes
 
-            pt2d = new gp_Pnt2d(Sol[1], Sol[2]);
+            pt2d = new Point2D(Sol[1], Sol[2]);
 
-            surf.D1(Sol[1], Sol[2], out pts, out gp_Vec d1u1, out gp_Vec d1v1);
-            curv.D2(prmc, out ptc, out gp_Vec d1c, out _);
+            surf.D1(Sol[1], Sol[2], out pts, out Vector3D d1u1, out Vector3D d1v1);
+            curv.D2(prmc, out ptc, out Vector3D d1c, out _);
 
             dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
@@ -175,12 +179,12 @@ public class BlendFunc_CSCircular : Blend_CSFunction
             temp -= dprmc * d1c;
 
             ns.SetLinearForm(ndotns / norm, nplan, -1.0 / norm, ns);
-            resul.SetLinearForm(ray, ns, new gp_Vec(ptc, pts));
+            resul.SetLinearForm(ray, ns, new Vector3D(ptc, pts));
 
             secmember[2] = -2.0 * (resul.Dot(temp));
 
-            math_Gauss Resol = new(gradsol);
-            if (Resol.IsDone())
+            Gauss Resol = new(gradsol);
+            if (Resol.IsDone)
             {
                 Resol.Solve(secmember);
 
@@ -234,12 +238,12 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        surf.D1(X[1], X[2], out pts, out gp_Vec d1u1, out gp_Vec d1v1);
+        surf.D1(X[1], X[2], out pts, out Vector3D d1u1, out Vector3D d1v1);
         curv.D1(prmc, out ptc, out _);
 
         F[1] = nplan.XYZ().Dot(pts.XYZ() - ptc.XYZ());
 
-        gp_Vec ns = d1u1.Crossed(d1v1);
+        Vector3D ns = d1u1.Crossed(d1v1);
         double norm = nplan.Crossed(ns).Magnitude();
         if (norm < Eps)
         {
@@ -247,23 +251,23 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         }
 
         ns.SetLinearForm(nplan.Dot(ns) / norm, nplan, -1.0 / norm, ns);
-        gp_Vec vref = new gp_Vec();
-        vref.SetLinearForm(ray, ns, new gp_Vec(ptc, pts));
+        Vector3D vref = new Vector3D();
+        vref.SetLinearForm(ray, ns, new Vector3D(ptc, pts));
 
         F[2] = vref.SquareMagnitude() - ray * ray;
 
-        pt2d = new gp_Pnt2d(X[1], X[2]);
+        pt2d = new Point2D(X[1], X[2]);
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec ns, ncrossns, resul = new gp_Vec(), temp, nsov = new gp_Vec(), vref = new gp_Vec();
+        Vector3D ns, ncrossns, resul = new Vector3D(), temp, nsov = new Vector3D(), vref = new Vector3D();
 
         double norm, ndotns, grosterme;
 
-        surf.D2(X[1], X[2], out pts, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1,
-                out gp_Vec d2uv1);
+        surf.D2(X[1], X[2], out pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
         curv.D1(prmc, out ptc, out _);
 
         D[1, 1] = nplan.Dot(d1u1);
@@ -280,7 +284,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         ndotns = nplan.Dot(ns);
 
         nsov.SetLinearForm(nplan.Dot(ns) / norm, nplan, -1.0 / norm, ns);
-        vref.SetLinearForm(ray, nsov, new gp_Vec(ptc, pts));
+        vref.SetLinearForm(ray, nsov, new Vector3D(ptc, pts));
 
         // Derivee par rapport a u de Ps + ray*ns
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
@@ -298,18 +302,18 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
         D[2, 2] = 2.0 * (resul.Dot(vref));
 
-        pt2d = new gp_Pnt2d(X[1], X[2]);
+        pt2d = new Point2D(X[1], X[2]);
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
-        gp_Vec ns, ncrossns, resul = new gp_Vec(), temp, vref = new gp_Vec(), nsov = new gp_Vec();
+        Vector3D ns, ncrossns, resul = new Vector3D(), temp, vref = new Vector3D(), nsov = new Vector3D();
 
         double norm, ndotns, grosterme;
 
-        surf.D2(X[1], X[2], out pts, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1,
-                out gp_Vec d2uv1);
+        surf.D2(X[1], X[2], out pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
         curv.D1(prmc, out ptc, out _);
 
         ns = d1u1.Crossed(d1v1);
@@ -322,7 +326,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
         ndotns = nplan.Dot(ns);
         nsov.SetLinearForm(ndotns / norm, nplan, -1.0 / norm, ns);
-        vref.SetLinearForm(ray, nsov, new gp_Vec(ptc, pts));
+        vref.SetLinearForm(ray, nsov, new Vector3D(ptc, pts));
 
         F[1] = nplan.XYZ().Dot(pts.XYZ() - ptc.XYZ());
         F[2] = vref.SquareMagnitude() - ray * ray;
@@ -346,21 +350,21 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
         D[2, 2] = 2.0 * (resul.Dot(vref));
 
-        pt2d = new gp_Pnt2d(X[1], X[2]);
+        pt2d = new Point2D(X[1], X[2]);
         return true;
     }
 
-    public override gp_Pnt PointOnS()
+    public override Point3D PointOnS()
     {
         return pts;
     }
 
-    public override gp_Pnt PointOnC()
+    public override Point3D PointOnC()
     {
         return ptc;
     }
 
-    public override gp_Pnt2d Pnt2d()
+    public override Point2D Pnt2d()
     {
         return pt2d;
     }
@@ -375,40 +379,40 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         return istangent;
     }
 
-    public override gp_Vec TangentOnS()
+    public override Vector3D TangentOnS()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_CSCircular::TangentOnS");
+            throw new DomainErrorException("BlendFunc_CSCircular::TangentOnS");
         }
 
         return tgs;
     }
 
-    public override gp_Vec TangentOnC()
+    public override Vector3D TangentOnC()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_CSCircular::TangentOnC");
+            throw new DomainErrorException("BlendFunc_CSCircular::TangentOnC");
         }
 
         return tgc;
     }
 
-    public override gp_Vec2d Tangent2d()
+    public override Vector2D Tangent2d()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_CSCircular::Tangent2d");
+            throw new DomainErrorException("BlendFunc_CSCircular::Tangent2d");
         }
 
         return tg2d;
     }
 
-    public override void Tangent(double U, double V, out gp_Vec TgS, out gp_Vec NmS)
+    public override void Tangent(double U, double V, out Vector3D TgS, out Vector3D NmS)
     {
-        gp_Vec ns;
-        surf.D1(U, V, out _, out gp_Vec d1u, out gp_Vec d1v);
+        Vector3D ns;
+        surf.D1(U, V, out _, out Vector3D d1u, out Vector3D d1v);
         NmS = ns = d1u.Crossed(d1v);
 
         double norm = nplan.Crossed(ns).Magnitude();
@@ -426,16 +430,16 @@ public class BlendFunc_CSCircular : Blend_CSFunction
     }
 
     /// <summary>The circular section at <paramref name="Param"/> through (U, V) and W, with its parameter range.</summary>
-    public void Section(double Param, double U, double V, double W, out double Pdeb, out double Pfin, ref gp_Circ C)
+    public void Section(double Param, double U, double V, double W, out double Pdeb, out double Pfin, ref Circle3D C)
     {
-        gp_Vec ns;
+        Vector3D ns;
         double norm;
-        gp_Pnt Center = new gp_Pnt();
+        Point3D Center = new Point3D();
 
         guide.D1(Param, out _, out d1gui);
         nplan = d1gui.Normalized();
 
-        surf.D1(U, V, out pts, out gp_Vec d1u1, out gp_Vec d1v1);
+        surf.D1(U, V, out pts, out Vector3D d1u1, out Vector3D d1v1);
         ptc = curv.Value(W);
 
         ns = d1u1.Crossed(d1v1);
@@ -450,21 +454,21 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
         if (choix % 2 == 0)
         {
-            C.SetPosition(new gp_Ax2(Center, new gp_Dir(nplan), new gp_Dir(ns)));
+            C.SetPosition(new Frame3D(Center, new Direction3D(nplan), new Direction3D(ns)));
         }
         else
         {
-            C.SetPosition(new gp_Ax2(Center, new gp_Dir(nplan.Reversed()), new gp_Dir(ns)));
+            C.SetPosition(new Frame3D(Center, new Direction3D(nplan.Reversed()), new Direction3D(ns)));
         }
 
         Pdeb = 0.0;
-        Pfin = ElCLib.Parameter(C, ptc);
+        Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, ptc);
     }
 
     /// <summary>Blend_CSFunction's: returns false.</summary>
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weigths, NCollection_Array1<double> DWeigths,
                                  NCollection_Array1<double> D2Weigths)
     {
@@ -475,33 +479,33 @@ public class BlendFunc_CSCircular : Blend_CSFunction
     /// The points and tangents of the section at <paramref name="Param"/> through (U, V), sampled at tabP.Length()
     /// points; false when the tangents cannot be computed. W is not used.
     /// </summary>
-    public bool GetSection(double Param, double U, double V, double W, NCollection_Array1<gp_Pnt> tabP,
-                           NCollection_Array1<gp_Vec> tabV)
+    public bool GetSection(double Param, double U, double V, double W, NCollection_Array1<Point3D> tabP,
+                           NCollection_Array1<Vector3D> tabV)
     {
         int NbPoint = tabP.Length();
         if (NbPoint != tabV.Length() || NbPoint < 2)
         {
-            throw new Standard_RangeError();
+            throw new RangeErrorException();
         }
 
         int i, lowp = tabP.Lower(), lowv = tabV.Lower();
 
-        gp_Vec ns, dnplan = new gp_Vec(), dnw = new gp_Vec(), dn2w = new gp_Vec(), ncrn = new gp_Vec(),
-               dncrn = new gp_Vec(), ns2 = new gp_Vec();
-        gp_Vec ncrossns, resul = new gp_Vec();
-        gp_Vec resulu = new gp_Vec(), resulv = new gp_Vec(), temp = new gp_Vec();
+        Vector3D ns, dnplan = new Vector3D(), dnw = new Vector3D(), dn2w = new Vector3D(), ncrn = new Vector3D(),
+               dncrn = new Vector3D(), ns2 = new Vector3D();
+        Vector3D ncrossns, resul = new Vector3D();
+        Vector3D resulu = new Vector3D(), resulv = new Vector3D(), temp = new Vector3D();
 
         double norm, ndotns, grosterme;
         double lambda, Cosa, Sina;
         double Angle = 0.0, Dangle = 0.0;
         math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
 
         Set(Param);
         dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
-        curv.D2(prmc, out ptc, out gp_Vec d1c, out _);
-        surf.D2(U, V, out pts, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1, out gp_Vec d2uv1);
+        curv.D2(prmc, out ptc, out Vector3D d1c, out _);
+        surf.D2(U, V, out pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1, out Vector3D d2uv1);
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = nplan.Crossed(ns);
@@ -520,7 +524,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
                           grosterme / norm, ns);
 
         temp.SetLinearForm(ray, dnw, -dprmc, d1c);
-        resul.SetLinearForm(ray, ns2, new gp_Vec(ptc, pts));
+        resul.SetLinearForm(ray, ns2, new Vector3D(ptc, pts));
 
         secmember[2] = -2.0 * (resul.Dot(temp));
 
@@ -528,9 +532,9 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         sol[2] = V;
 
         Values(sol, valsol, gradsol);
-        math_Gauss Resol = new(gradsol);
+        Gauss Resol = new(gradsol);
 
-        if (Resol.IsDone())
+        if (Resol.IsDone)
         {
             Resol.Solve(secmember);
 
@@ -628,12 +632,12 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         // On suppose que cela ne depend pas du Rayon!
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return curv.NbIntervals(BlendFunc.NextShape(S));
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         curv.Intervals(T, BlendFunc.NextShape(S));
     }
@@ -671,11 +675,11 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         GeomFill.Mults(myTConv, TMults);
     }
 
-    public override void Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weights)
+    public override void Section(in Blend_Point P, NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weights)
     {
-        gp_Vec ns, ns2;
-        gp_Pnt Center = new gp_Pnt();
+        Vector3D ns, ns2;
+        Point3D Center = new Point3D();
         double norm, u1, v1;
 
         double prm = P.Parameter();
@@ -685,7 +689,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         Set(prm);
 
         P.ParametersOnS(out u1, out v1);
-        surf.D1(u1, v1, out pts, out gp_Vec d1u1, out gp_Vec d1v1);
+        surf.D1(u1, v1, out pts, out Vector3D d1u1, out Vector3D d1v1);
         ptc = curv.Value(prmc);
 
         Poles2d[Poles2d.Lower()].SetCoord(u1, v1);
@@ -707,7 +711,7 @@ public class BlendFunc_CSCircular : Blend_CSFunction
 
         Center.SetXYZ(pts.XYZ() + ray * ns.XYZ());
 
-        ns2 = new gp_Vec(Center, ptc).Normalized();
+        ns2 = new Vector3D(Center, ptc).Normalized();
         if (ray > 0.0)
         {
             ns.Reverse();
@@ -721,20 +725,20 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         GeomFill.GetCircle(myTConv, ns, ns2, nplan, pts, ptc, Math.Abs(ray), Center, Poles, Weights);
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
-        gp_Vec ns, ns2 = new gp_Vec(), dnplan = new gp_Vec(), dnw = new gp_Vec(), dn2w = new gp_Vec();
-        gp_Vec ncrossns;
-        gp_Vec resulu = new gp_Vec(), resulv = new gp_Vec(), temp = new gp_Vec(), tgct = new gp_Vec(),
-               resul = new gp_Vec();
+        Vector3D ns, ns2 = new Vector3D(), dnplan = new Vector3D(), dnw = new Vector3D(), dn2w = new Vector3D();
+        Vector3D ncrossns;
+        Vector3D resulu = new Vector3D(), resulv = new Vector3D(), temp = new Vector3D(), tgct = new Vector3D(),
+               resul = new Vector3D();
 
-        gp_Pnt Center = new gp_Pnt();
+        Point3D Center = new Point3D();
         double norm, ndotns, grosterme;
 
         math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
 
         double prm = P.Parameter();
         int low = Poles.Lower();
@@ -744,10 +748,10 @@ public class BlendFunc_CSCircular : Blend_CSFunction
         Set(prm);
         dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
-        curv.D2(prmc, out ptc, out gp_Vec d1, out _);
+        curv.D2(prmc, out ptc, out Vector3D d1, out _);
         P.ParametersOnS(out sol[1], out sol[2]);
-        surf.D2(sol[1], sol[2], out pts, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1,
-                out gp_Vec d2uv1);
+        surf.D2(sol[1], sol[2], out pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = nplan.Crossed(ns);
@@ -765,14 +769,14 @@ public class BlendFunc_CSCircular : Blend_CSFunction
                           grosterme / norm, ns);
 
         temp.SetLinearForm(ray, dnw, -dprmc, d1);
-        resul.SetLinearForm(ray, ns2, new gp_Vec(ptc, pts));
+        resul.SetLinearForm(ray, ns2, new Vector3D(ptc, pts));
 
         secmember[2] = -2.0 * (resul.Dot(temp));
 
         Values(sol, valsol, gradsol);
-        math_Gauss Resol = new(gradsol);
+        Gauss Resol = new(gradsol);
 
-        if (Resol.IsDone())
+        if (Resol.IsDone)
         {
             Resol.Solve(secmember);
 

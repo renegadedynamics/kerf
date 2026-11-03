@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepRepr_ShapeDefinition : StepData_SelectType
@@ -24,7 +26,7 @@ public class StepRepr_ShapeDefinition : StepData_SelectType
     /// 3 -&gt; ShapeAspectRelationship
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

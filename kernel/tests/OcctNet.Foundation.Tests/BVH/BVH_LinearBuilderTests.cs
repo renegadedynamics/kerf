@@ -2,14 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Box2d = Occt.BVH_Box<double, Occt.NCollection_Vec2<double>>;
-using Box3d = Occt.BVH_Box<double, Occt.NCollection_Vec3<double>>;
-using Builder2d = Occt.BVH_LinearBuilder<double, Occt.NCollection_Vec2<double>>;
-using Builder3d = Occt.BVH_LinearBuilder<double, Occt.NCollection_Vec3<double>>;
-using BoxSet2d = Occt.BVH_BoxSet<double, Occt.NCollection_Vec2<double>>;
-using BoxSet3d = Occt.BVH_BoxSet<double, Occt.NCollection_Vec3<double>>;
-using Tree2d = Occt.BVH_Tree<double, Occt.NCollection_Vec2<double>>;
-using Tree3d = Occt.BVH_Tree<double, Occt.NCollection_Vec3<double>>;
+using Box2d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec2<double>>;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
+using Builder2d = Kerf.Engine.Geometry.Bvh.LinearBuilder<double, Occt.NCollection_Vec2<double>>;
+using Builder3d = Kerf.Engine.Geometry.Bvh.LinearBuilder<double, Occt.NCollection_Vec3<double>>;
+using BoxSet2d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec2<double>>;
+using BoxSet3d = Kerf.Engine.Geometry.Bvh.BoxSet<double, Occt.NCollection_Vec3<double>>;
+using Tree2d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec2<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
 
 namespace OcctNet.Foundation.Tests;
 

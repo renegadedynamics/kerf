@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -29,9 +35,9 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     private bool empty;
     private IntSurf_PntOn2S pint;
     private bool tangent;
-    private gp_Dir d3d;
-    private gp_Dir2d d2d1;
-    private gp_Dir2d d2d2;
+    private Direction3D d3d;
+    private Direction2D d2d1;
+    private Direction2D d2d2;
     private readonly IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> myZerParFunc;
     private readonly double tol;
     private readonly double ua0;
@@ -55,7 +61,7 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     private readonly NCollection_Array1<double> myUvres = new(1, 4);
 
     /// <summary>
-    /// Prepares the search; <see cref="Perform(NCollection_Array1{double}, math_FunctionSetRoot)"/> runs it, with a
+    /// Prepares the search; <see cref="Perform(NCollection_Array1{double}, FunctionSetRoot)"/> runs it, with a
     /// solver built on <see cref="Function"/> once for many points.
     /// </summary>
     public IntImp_Int2S(ThePSurface surf1, ThePSurface surf2, double TolTangency)
@@ -66,9 +72,9 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
         myZerParFunc = new IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool>(surf1, surf2);
         tol = TolTangency * TolTangency;
         pint = new IntSurf_PntOn2S();
-        d3d = new gp_Dir();
-        d2d1 = new gp_Dir2d();
-        d2d2 = new gp_Dir2d();
+        d3d = new Direction3D();
+        d2d1 = new Direction2D();
+        d2d2 = new Direction2D();
 
         ua0 = ThePSurfaceTool.FirstUParameter(surf1); //-- ThePSurfaceTool::UIntervalFirst(surf1);
         va0 = ThePSurfaceTool.FirstVParameter(surf1); //-- ThePSurfaceTool::VIntervalFirst(surf1);
@@ -80,11 +86,11 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
         ub1 = ThePSurfaceTool.LastUParameter(surf2); //-- ThePSurfaceTool::UIntervalLast(surf2);
         vb1 = ThePSurfaceTool.LastVParameter(surf2); //-- ThePSurfaceTool::VIntervalLast(surf2);
 
-        ures1 = ThePSurfaceTool.UResolution(surf1, Precision.Confusion());
-        vres1 = ThePSurfaceTool.VResolution(surf1, Precision.Confusion());
+        ures1 = ThePSurfaceTool.UResolution(surf1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        vres1 = ThePSurfaceTool.VResolution(surf1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ures2 = ThePSurfaceTool.UResolution(surf2, Precision.Confusion());
-        vres2 = ThePSurfaceTool.VResolution(surf2, Precision.Confusion());
+        ures2 = ThePSurfaceTool.UResolution(surf2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        vres2 = ThePSurfaceTool.VResolution(surf2, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Computes the intersection point near <paramref name="Param"/> (u1, v1, u2, v2).</summary>
@@ -92,7 +98,7 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
         : this(surf1, surf2, TolTangency)
     {
         // OCCT leaves tangent uninitialised here; the field's false is never read before Perform writes it.
-        math_FunctionSetRoot Rsnld = new(myZerParFunc, 15); //-- Modif lbr 18 MAI ?????????????
+        FunctionSetRoot Rsnld = new(myZerParFunc, 15); //-- Modif lbr 18 MAI ?????????????
         Perform(Param, Rsnld);
     }
 
@@ -100,7 +106,7 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     /// Searches the intersection point near <paramref name="Param"/> along the isoparametric
     /// <paramref name="ChoixIso"/>, and returns the best isoparametric to find the next point.
     /// </summary>
-    public IntImp_ConstIsoparametric Perform(NCollection_Array1<double> Param, math_FunctionSetRoot Rsnld,
+    public IntImp_ConstIsoparametric Perform(NCollection_Array1<double> Param, FunctionSetRoot Rsnld,
                                              IntImp_ConstIsoparametric ChoixIso)
     {
         math_Vector BornInf = myBornInf, BornSup = myBornSup, Tolerance = myTolerance, UVap = myUVap;
@@ -111,7 +117,7 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
         Rsnld.SetTolerance(Tolerance);
         Rsnld.Perform(myZerParFunc, UVap, BornInf, BornSup);
         BestChoix = ChoixIso;
-        if (Rsnld.IsDone())
+        if (Rsnld.IsDone)
         {
             if (Math.Abs(myZerParFunc.Root()) <= tol)
             { // distance des 2 points
@@ -143,9 +149,9 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     /// Searches the intersection point near <paramref name="Param"/> along the best isoparametric there, staying
     /// within the surfaces' bounds, and returns the best isoparametric to find the next point.
     /// </summary>
-    public IntImp_ConstIsoparametric Perform(NCollection_Array1<double> Param, math_FunctionSetRoot Rsnld)
+    public IntImp_ConstIsoparametric Perform(NCollection_Array1<double> Param, FunctionSetRoot Rsnld)
     {
-        Span<gp_Vec> DPUV = stackalloc gp_Vec[4];
+        Span<Vector3D> DPUV = stackalloc Vector3D[4];
         Span<double> Epsuv = stackalloc double[4];
         NCollection_Array1<double> Duv = new(1, 4);
         Span<double> UVd = stackalloc double[4];
@@ -157,10 +163,10 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
 
         ThePSurfaceTool.D1(Caro1, Param[1], Param[2], out _, out DPUV[0], out DPUV[1]);
         ThePSurfaceTool.D1(Caro2, Param[3], Param[4], out _, out DPUV[2], out DPUV[3]);
-        Epsuv[0] = ThePSurfaceTool.UResolution(Caro1, Precision.Confusion());
-        Epsuv[1] = ThePSurfaceTool.VResolution(Caro1, Precision.Confusion());
-        Epsuv[2] = ThePSurfaceTool.UResolution(Caro2, Precision.Confusion());
-        Epsuv[3] = ThePSurfaceTool.VResolution(Caro2, Precision.Confusion());
+        Epsuv[0] = ThePSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Epsuv[1] = ThePSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Epsuv[2] = ThePSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Epsuv[3] = ThePSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         for (int j = 0; j <= 3; j++)
         {
@@ -300,7 +306,7 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::IsEmpty() ");
+            throw new NotDoneException(" IntImp_Int2S::IsEmpty() ");
         }
         return empty;
     }
@@ -310,11 +316,11 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::Point() ");
+            throw new NotDoneException(" IntImp_Int2S::Point() ");
         }
         if (empty)
         {
-            throw new Standard_DomainError(" IntImp_Int2S::Point() ");
+            throw new DomainErrorException(" IntImp_Int2S::Point() ");
         }
         return pint;
     }
@@ -324,65 +330,65 @@ public class IntImp_Int2S<ThePSurface, ThePSurfaceTool>
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::IsTangent () ");
+            throw new NotDoneException(" IntImp_Int2S::IsTangent () ");
         }
         if (empty)
         {
-            throw new Standard_DomainError(" IntImp_Int2S::IsTangent () ");
+            throw new DomainErrorException(" IntImp_Int2S::IsTangent () ");
         }
         return tangent;
     }
 
     /// <summary>The tangent of the intersection line.</summary>
-    public gp_Dir Direction()
+    public Direction3D Direction()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::Direction () ");
+            throw new NotDoneException(" IntImp_Int2S::Direction () ");
         }
         if (empty)
         {
-            throw new Standard_DomainError(" IntImp_Int2S::Direction () ");
+            throw new DomainErrorException(" IntImp_Int2S::Direction () ");
         }
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative(" IntImp_Int2S::Direction () ");
+            throw new UndefinedDerivativeException(" IntImp_Int2S::Direction () ");
         }
         return d3d;
     }
 
     /// <summary>The tangent in the parametric space of the first surface.</summary>
-    public gp_Dir2d DirectionOnS1()
+    public Direction2D DirectionOnS1()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::DirectionOnS1 () ");
+            throw new NotDoneException(" IntImp_Int2S::DirectionOnS1 () ");
         }
         if (empty)
         {
-            throw new Standard_DomainError(" IntImp_Int2S::DirectionOnS1 () ");
+            throw new DomainErrorException(" IntImp_Int2S::DirectionOnS1 () ");
         }
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative(" IntImp_Int2S::DirectionOnS1 () ");
+            throw new UndefinedDerivativeException(" IntImp_Int2S::DirectionOnS1 () ");
         }
         return d2d1;
     }
 
     /// <summary>The tangent in the parametric space of the second surface.</summary>
-    public gp_Dir2d DirectionOnS2()
+    public Direction2D DirectionOnS2()
     {
         if (!done)
         {
-            throw new StdFail_NotDone(" IntImp_Int2S::DirectionOnS2 () ");
+            throw new NotDoneException(" IntImp_Int2S::DirectionOnS2 () ");
         }
         if (empty)
         {
-            throw new Standard_DomainError(" IntImp_Int2S::DirectionOnS2 () ");
+            throw new DomainErrorException(" IntImp_Int2S::DirectionOnS2 () ");
         }
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative(" IntImp_Int2S::DirectionOnS2 () ");
+            throw new UndefinedDerivativeException(" IntImp_Int2S::DirectionOnS2 () ");
         }
         return d2d2;
     }

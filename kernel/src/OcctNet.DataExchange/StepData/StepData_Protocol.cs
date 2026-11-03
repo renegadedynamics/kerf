@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -21,10 +23,10 @@ public class StepData_Protocol : Interface_Protocol
     //  The base Protocol recognizes UnknownEntity
     private const string thename = "(DEFAULT)";
 
-    private readonly NCollection_DataMap<Standard_Transient, int> thedscnum = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<string, Standard_Transient> thedscnam = new();
-    private readonly NCollection_DataMap<string, Standard_Transient> thepdescr = new();
-    private readonly NCollection_DataMap<string, Standard_Transient> thedscbas = new();
+    private readonly NCollection_DataMap<Transient, int> thedscnum = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_DataMap<string, Transient> thedscnam = new();
+    private readonly NCollection_DataMap<string, Transient> thepdescr = new();
+    private readonly NCollection_DataMap<string, Transient> thedscbas = new();
 
     public StepData_Protocol()
     {
@@ -44,7 +46,7 @@ public class StepData_Protocol : Interface_Protocol
     }
 
     /// <summary>Returns a unique positive number for any recognized entity. Redefined to work by default on both Dynamic and Static types (for Static, redefines CaseNumber of Protocol).</summary>
-    public override int CaseNumber(Standard_Transient? obj)
+    public override int CaseNumber(Transient? obj)
     {
         if (obj is null)
         {
@@ -91,13 +93,13 @@ public class StepData_Protocol : Interface_Protocol
     }
 
     /// <summary>Creates a new Unknown Entity for Step (UndefinedEntity).</summary>
-    public override Standard_Transient? UnknownEntity()
+    public override Transient? UnknownEntity()
     {
         return new StepData_UndefinedEntity();
     }
 
     /// <summary>Returns True if Unknown Entity is (kind of) an UndefinedEntity from StepData.</summary>
-    public override bool IsUnknownEntity(Standard_Transient? ent)
+    public override bool IsUnknownEntity(Transient? ent)
     {
         if (ent is not null)
         {
@@ -131,7 +133,7 @@ public class StepData_Protocol : Interface_Protocol
         {
             thedscnam.Bind(sd.TypeName(), sd);
         }
-        string fonom = Standard.Sprintf("%d", CN);
+        string fonom = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", CN);
         thedscnam.Bind(fonom, adescr);
     }
 
@@ -149,8 +151,8 @@ public class StepData_Protocol : Interface_Protocol
         {
             return dsc;
         }
-        string fonom = Standard.Sprintf("%d", num);
-        if (thedscnam.Find(fonom, out Standard_Transient aTDsc))
+        string fonom = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", num);
+        if (thedscnam.Find(fonom, out Transient aTDsc))
         {
             dsc = aTDsc as StepData_EDescr;
         }
@@ -167,7 +169,7 @@ public class StepData_Protocol : Interface_Protocol
         StepData_EDescr sd = null;
         if (!thedscnam.IsEmpty())
         {
-            if (thedscnam.Find(name, out Standard_Transient aTSd))
+            if (thedscnam.Find(name, out Transient aTSd))
             {
                 return aTSd as StepData_EDescr;
             }
@@ -204,7 +206,7 @@ public class StepData_Protocol : Interface_Protocol
     {
         int i, nb = names.Length();
         StepData_ECDescr cd;
-        foreach (KeyValuePair<Standard_Transient, int> iter in thedscnum) // OCCT.NET: insertion order (decision 1194)
+        foreach (KeyValuePair<Transient, int> iter in thedscnum) // OCCT.NET: insertion order (decision 1194)
         {
             cd = iter.Key as StepData_ECDescr;
             if (cd is null)
@@ -263,7 +265,7 @@ public class StepData_Protocol : Interface_Protocol
         StepData_PDescr sd = null;
         if (!thepdescr.IsEmpty())
         {
-            if (thepdescr.Find(name, out Standard_Transient aTSd))
+            if (thepdescr.Find(name, out Transient aTSd))
             {
                 return aTSd as StepData_PDescr;
             }
@@ -301,7 +303,7 @@ public class StepData_Protocol : Interface_Protocol
         StepData_EDescr sd = null;
         if (!thedscbas.IsEmpty())
         {
-            if (thedscbas.Find(name, out Standard_Transient aTSd))
+            if (thedscbas.Find(name, out Transient aTSd))
             {
                 return aTSd as StepData_EDescr;
             }

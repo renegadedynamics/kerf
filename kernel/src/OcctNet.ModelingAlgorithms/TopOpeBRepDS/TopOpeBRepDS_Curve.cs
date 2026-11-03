@@ -37,7 +37,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
         myFirst = 0.0;
         myLast = 0.0;
         myRangeDefined = false;
-        myTolerance = Precision.Confusion();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsWalk = false;
         myS1 = new TopoDS_Shape();
         myS2 = new TopoDS_Shape();
@@ -275,7 +275,7 @@ public partial struct TopOpeBRepDS_Curve : IEquatable<TopOpeBRepDS_Curve>
 
     /// <inheritdoc/>
     public override readonly string ToString()
-        => "TopOpeBRepDS_Curve(" + (myCurve is null ? "null" : myCurve.GetType().Name) + ", " + myTolerance.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
+        => "TopOpeBRepDS_Curve(" + (myCurve is null ? "null" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(myCurve.GetType())) + ", " + myTolerance.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
            + (myRangeDefined ? ", [" + myFirst.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + ", " + myLast.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + "]" : "")
            + ", index " + myDSIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")";
 }

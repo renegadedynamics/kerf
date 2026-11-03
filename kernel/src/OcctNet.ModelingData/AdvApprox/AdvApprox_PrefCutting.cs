@@ -24,7 +24,7 @@ public class AdvApprox_PrefCutting : AdvApprox_Cutting
     {
         //  Minimum length of a parametric interval: PConfusion()
         //                              for F(U,V): EPS1=1.e-9 (cf. MMEPS1)
-        double lgmin = 10 * Precision.PConfusion();
+        double lgmin = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
         int i;
         double cut, mil = (a + b) / 2, dist = Math.Abs((a - b) / 2);
         cut = mil;

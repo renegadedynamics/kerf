@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -47,8 +51,8 @@ public sealed class BRepFill_ApproxSeewing
         int NbPoints = 50;
         double Dist, dU = (U2 - U1) / (2 * NbPoints - 1);
 
-        NCollection_Array1<gp_Pnt2d> LP = new(1, 2 * NbPoints); // tableau Longueur <-> Param
-        gp_Pnt aPnt1, aPnt2;
+        NCollection_Array1<Point2D> LP = new(1, 2 * NbPoints); // tableau Longueur <-> Param
+        Point3D aPnt1, aPnt2;
         aPnt1 = myML.Value(U1);
 
         for (i = 0; i < 2 * NbPoints; i++)
@@ -56,7 +60,7 @@ public sealed class BRepFill_ApproxSeewing
             aPnt2 = myML.Value(U1 + i * dU);
             Dist = aPnt1.Distance(aPnt2);
             Length += Dist;
-            LP[i + 1] = new gp_Pnt2d(Length, U1 + (i * dU));
+            LP[i + 1] = new Point2D(Length, U1 + (i * dU));
             aPnt1 = aPnt2;
         }
 
@@ -65,8 +69,8 @@ public sealed class BRepFill_ApproxSeewing
 
         AppDef_MultiLine MLS = new(NbPoints);
         AppDef_MultiPointConstraint MP = new(1, 2);
-        gp_Pnt P3d;
-        gp_Pnt2d PF1, PF2;
+        Point3D P3d;
+        Point2D PF1, PF2;
 
         ML.Value3dOnF1OnF2(U1, out P3d, out PF1, out PF2);
         MP.SetPoint(1, P3d);
@@ -111,9 +115,9 @@ public sealed class BRepFill_ApproxSeewing
             NCollection_Array1<int> Mults = new(1, NbPoints);
             Mults.Init(1);
             Mults[1] = Mults[NbPoints] = 2;
-            NCollection_Array1<gp_Pnt> P = new(1, NbPoints);
-            NCollection_Array1<gp_Pnt2d> P1 = new(1, NbPoints);
-            NCollection_Array1<gp_Pnt2d> P2 = new(1, NbPoints);
+            NCollection_Array1<Point3D> P = new(1, NbPoints);
+            NCollection_Array1<Point2D> P1 = new(1, NbPoints);
+            NCollection_Array1<Point2D> P2 = new(1, NbPoints);
 
             double Uf = ML.FirstParameter();
             double Ul = ML.LastParameter();
@@ -148,9 +152,9 @@ public sealed class BRepFill_ApproxSeewing
 
         AppParCurves_MultiBSpCurve MBSp = Fit.SplineValue();
         int NbPoles = MBSp.NbPoles();
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
-        NCollection_Array1<gp_Pnt2d> Poles2d1 = new(1, NbPoles);
-        NCollection_Array1<gp_Pnt2d> Poles2d2 = new(1, NbPoles);
+        NCollection_Array1<Point3D> Poles = new(1, NbPoles);
+        NCollection_Array1<Point2D> Poles2d1 = new(1, NbPoles);
+        NCollection_Array1<Point2D> Poles2d2 = new(1, NbPoles);
 
         MBSp.Curve(1, Poles);
         MBSp.Curve(2, Poles2d1);
@@ -171,7 +175,7 @@ public sealed class BRepFill_ApproxSeewing
     public bool IsDone() => myIsDone;
 
     /// <summary>The 3D curve.</summary>
-    /// <exception cref="StdFail_NotDone">Not done.</exception>
+    /// <exception cref="NotDoneException">Not done.</exception>
     public Geom_Curve Curve()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::Curve");
@@ -179,7 +183,7 @@ public sealed class BRepFill_ApproxSeewing
     }
 
     /// <summary>The pcurve on the first face.</summary>
-    /// <exception cref="StdFail_NotDone">Not done.</exception>
+    /// <exception cref="NotDoneException">Not done.</exception>
     public Geom2d_Curve CurveOnF1()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::CurveOnF1");
@@ -187,7 +191,7 @@ public sealed class BRepFill_ApproxSeewing
     }
 
     /// <summary>The pcurve on the second face.</summary>
-    /// <exception cref="StdFail_NotDone">Not done.</exception>
+    /// <exception cref="NotDoneException">Not done.</exception>
     public Geom2d_Curve CurveOnF2()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "BRepFill_ApproxSeewing::CurveOnF2");

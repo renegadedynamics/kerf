@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -122,7 +123,7 @@ internal static class BRepTestSweepCommands
 
         TopoDS_Shape Volevo = (TopoDS_Shape)new BRepOffsetAPI_MakeEvolved(Base,
                                                                            Prof,
-                                                                           GeomAbs_JoinType.GeomAbs_Arc,
+                                                                           JoinKind.Arc,
                                                                            !hasToComputeAxes,
                                                                            Solid,
                                                                            false,
@@ -152,7 +153,7 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        var V = new gp_Vec(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        var V = new Vector3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
         bool copy = false;
         bool inf = false;
@@ -170,7 +171,7 @@ internal static class BRepTestSweepCommands
         BRepPrimAPI_MakePrism Prism;
         if (inf || sinf)
         {
-            Prism = new BRepPrimAPI_MakePrism(@base, new gp_Dir(V), inf);
+            Prism = new BRepPrimAPI_MakePrism(@base, new Direction3D(V), inf);
         }
         else
         {
@@ -203,9 +204,9 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        var P = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-        var D = new gp_Dir(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
-        var A = new gp_Ax1(P, D);
+        var P = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        var D = new Direction3D(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+        var A = new Axis3D(P, D);
 
         double angle = theDI.Atof(a[9]) * (Math.PI / 180.0);
 

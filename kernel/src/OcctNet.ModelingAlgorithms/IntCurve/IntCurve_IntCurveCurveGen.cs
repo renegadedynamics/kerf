@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -19,7 +21,7 @@ namespace Occt;
 public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool> : IntRes2d_Intersection
     where TheCurveTool : IIntCurve_CurveTool<TheCurve>
     where TheProjPCur : IIntImpParGen_ProjectOnPCurveTool<TheCurve>
-    where TheMyImpParTool : math_FunctionWithDerivative,
+    where TheMyImpParTool : FunctionWithDerivative,
                             IIntImpParGen_MyImpParTool<TheMyImpParTool, IntCurve_IConicTool, TheCurve>
 {
     private double param1inf;
@@ -34,10 +36,10 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
     /// <summary>Empty constructor.</summary>
     public IntCurve_IntCurveCurveGen()
     {
-        param1inf = -Precision.Infinite();
-        param1sup = Precision.Infinite();
-        param2inf = -Precision.Infinite();
-        param2sup = Precision.Infinite();
+        param1inf = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        param1sup = global::Kerf.Engine.Foundation.Precision.Infinite();
+        param2inf = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        param2sup = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>Self-intersection of a curve.</summary>
@@ -124,14 +126,14 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
         double          TolDomain = Tol;
         if (Tol < TolConf)
             TolDomain = TolConf;
-        GeomAbs_CurveType typ = TheCurveTool.GetType(C);
+        CurveKind typ = TheCurveTool.GetType(C);
         switch (typ)
         {
-            case GeomAbs_Ellipse:
-            case GeomAbs_Circle:
-            case GeomAbs_Parabola:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Line:
+            case Ellipse:
+            case Circle:
+            case Parabola:
+            case Hyperbola:
+            case Line:
                 ResetFields();
                 done = true;
                 return;
@@ -139,15 +141,15 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
             default: {
                 double paraminf = TheCurveTool.FirstParameter(C);
                 double paramsup = TheCurveTool.LastParameter(C);
-                if (Precision.IsInfinite(paraminf) && Precision.IsInfinite(paramsup))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(paraminf) && global::Kerf.Engine.Foundation.Precision.IsInfinite(paramsup))
                 {
                     done = false;
                     return;
                 }
                 //
-                if (paraminf > -Precision.Infinite())
+                if (paraminf > -global::Kerf.Engine.Foundation.Precision.Infinite())
                 {
-                    if (paramsup < Precision.Infinite())
+                    if (paramsup < global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         //--         paraminf-----------paramsup
                         D1.SetValues(TheCurveTool.Value(C, paraminf),
@@ -165,7 +167,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 else
                 {
-                    if (paramsup < Precision.Infinite())
+                    if (paramsup < global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         //--    ...-----------------paramsup
                         D1.SetValues(TheCurveTool.Value(C, paramsup), paramsup, TolDomain, false);
@@ -184,14 +186,14 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
     /// <summary>Self-intersection of a curve on a domain (a conic has none).</summary>
     public void Perform(in TheCurve C, in IntRes2d_Domain D, double TolConf, double Tol)
     {
-        GeomAbs_CurveType typ = TheCurveTool.GetType(C);
+        CurveKind typ = TheCurveTool.GetType(C);
         switch (typ)
         {
-            case GeomAbs_Ellipse:
-            case GeomAbs_Circle:
-            case GeomAbs_Parabola:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Line:
+            case Ellipse:
+            case Circle:
+            case Parabola:
+            case Hyperbola:
+            case Line:
                 ResetFields();
                 done = true;
                 return;
@@ -214,12 +216,12 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
     {
         IntRes2d_Domain D1 = new();
 
-        GeomAbs_CurveType typ = TheCurveTool.GetType(C1);
+        CurveKind typ = TheCurveTool.GetType(C1);
         switch (typ)
         {
 
-            case GeomAbs_Ellipse:
-            case GeomAbs_Circle: {
+            case Ellipse:
+            case Circle: {
                 //---------------------------------------------------------------
                 //-- if the curve is a trimmed curve, first and last parameters
                 //-- will be the parameters used to build the domain
@@ -227,8 +229,8 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 double firstparameter = TheCurveTool.FirstParameter(C1);
                 double lastparameter  = TheCurveTool.LastParameter(C1);
 
-                gp_Pnt2d P1 = TheCurveTool.Value(C1, firstparameter);
-                gp_Pnt2d P2 = TheCurveTool.Value(C1, lastparameter);
+                Point2D P1 = TheCurveTool.Value(C1, firstparameter);
+                Point2D P2 = TheCurveTool.Value(C1, lastparameter);
                 D1.SetValues(P1, firstparameter, TolDomain, P2, lastparameter, TolDomain);
                 D1.SetEquivalentParameters(firstparameter, firstparameter + M_PI + M_PI);
                 break;
@@ -236,9 +238,9 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
             default: {
                 double paraminf = TheCurveTool.FirstParameter(C1);
                 double paramsup = TheCurveTool.LastParameter(C1);
-                if (paraminf > -Precision.Infinite())
+                if (paraminf > -global::Kerf.Engine.Foundation.Precision.Infinite())
                 {
-                    if (paramsup < Precision.Infinite())
+                    if (paramsup < global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         //--         paraminf-----------paramsup
                         D1.SetValues(TheCurveTool.Value(C1, paraminf),
@@ -256,7 +258,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 else
                 {
-                    if (paramsup < Precision.Infinite())
+                    if (paramsup < global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         //--    ...-----------------paramsup
                         D1.SetValues(TheCurveTool.Value(C1, paramsup), paramsup, TolDomain, false);
@@ -283,8 +285,8 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
         }
         else
         {
-            param1inf = (D1.HasFirstPoint()) ? (D1.FirstParameter()) : -Precision.Infinite();
-            param1sup = (D1.HasLastPoint()) ? (D1.LastParameter()) : Precision.Infinite();
+            param1inf = (D1.HasFirstPoint()) ? (D1.FirstParameter()) : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param1sup = (D1.HasLastPoint()) ? (D1.LastParameter()) : global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         int nbi2 = TheCurveTool.NbIntervals(C2);
         if (nbi2 > 1)
@@ -294,8 +296,8 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
         }
         else
         {
-            param2inf = (D2.HasFirstPoint()) ? (D2.FirstParameter()) : -Precision.Infinite();
-            param2sup = (D2.HasLastPoint()) ? (D2.LastParameter()) : Precision.Infinite();
+            param2inf = (D2.HasFirstPoint()) ? (D2.FirstParameter()) : -global::Kerf.Engine.Foundation.Precision.Infinite();
+            param2sup = (D2.HasLastPoint()) ? (D2.LastParameter()) : global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         if (nbi1 > 1 || nbi2 > 1)
         {
@@ -323,15 +325,15 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
     private void InternalPerform(in TheCurve C1, in IntRes2d_Domain D1, in TheCurve C2, in IntRes2d_Domain D2, double TolConf, double Tol, bool Composite)
     {
 
-        GeomAbs_CurveType typ1 = TheCurveTool.GetType(C1);
-        GeomAbs_CurveType typ2 = TheCurveTool.GetType(C2);
+        CurveKind typ1 = TheCurveTool.GetType(C1);
+        CurveKind typ2 = TheCurveTool.GetType(C2);
 
         switch (typ1)
         {
-            case GeomAbs_Line:
+            case Line:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi.Perform(TheCurveTool.Line(C1), D1, TheCurveTool.Line(C2), D2, TolConf, Tol);
                         if (Composite)
@@ -345,7 +347,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Line(C1), D1, TheCurveTool.Circle(C2), D2, TolConf, Tol);
@@ -360,7 +362,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Line(C1), D1, TheCurveTool.Ellipse(C2), D2, TolConf, Tol);
@@ -375,7 +377,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Line(C1), D1, TheCurveTool.Parabola(C2), D2, TolConf, Tol);
@@ -390,7 +392,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Line(C1), D1, TheCurveTool.Hyperbola(C2), D2, TolConf, Tol);
@@ -422,10 +424,10 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 break;
 
-            case GeomAbs_Circle:
+            case Circle:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Line(C2), D2, TheCurveTool.Circle(C1), D1, TolConf, Tol);
@@ -440,7 +442,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C1), D1, TheCurveTool.Circle(C2), D2, TolConf, Tol);
@@ -455,7 +457,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C1), D1, TheCurveTool.Ellipse(C2), D2, TolConf, Tol);
@@ -470,7 +472,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C1), D1, TheCurveTool.Parabola(C2), D2, TolConf, Tol);
@@ -485,7 +487,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C1), D1, TheCurveTool.Hyperbola(C2), D2, TolConf, Tol);
@@ -517,10 +519,10 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Line(C2), D2, TheCurveTool.Ellipse(C1), D1, TolConf, Tol);
@@ -536,7 +538,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconiconi.SetReversedParameters(true);
 
                         intconiconi
@@ -552,7 +554,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Ellipse(C1), D1, TheCurveTool.Ellipse(C2), D2, TolConf, Tol);
@@ -567,7 +569,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Ellipse(C1), D1, TheCurveTool.Parabola(C2), D2, TolConf, Tol);
@@ -582,7 +584,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Ellipse(C1), D1, TheCurveTool.Hyperbola(C2), D2, TolConf, Tol);
@@ -613,10 +615,10 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 break;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Line(C2), D2, TheCurveTool.Parabola(C1), D1, TolConf, Tol);
@@ -631,7 +633,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C2), D2, TheCurveTool.Parabola(C1), D1, TolConf, Tol);
@@ -646,7 +648,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Ellipse(C2), D2, TheCurveTool.Parabola(C1), D1, TolConf, Tol);
@@ -661,7 +663,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Parabola(C1), D1, TheCurveTool.Parabola(C2), D2, TolConf, Tol);
@@ -676,7 +678,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi
                             .Perform(TheCurveTool.Parabola(C1), D1, TheCurveTool.Hyperbola(C2), D2, TolConf, Tol);
@@ -707,10 +709,10 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                 }
                 break;
 
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Line(C2), D2, TheCurveTool.Hyperbola(C1), D1, TolConf, Tol);
@@ -725,7 +727,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Circle(C2), D2, TheCurveTool.Hyperbola(C1), D1, TolConf, Tol);
@@ -740,7 +742,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Ellipse(C2), D2, TheCurveTool.Hyperbola(C1), D1, TolConf, Tol);
@@ -755,7 +757,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconiconi.SetReversedParameters(true);
                         intconiconi
                             .Perform(TheCurveTool.Parabola(C2), D2, TheCurveTool.Hyperbola(C1), D1, TolConf, Tol);
@@ -770,7 +772,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconiconi.SetReversedParameters(false);
                         intconiconi.Perform(TheCurveTool.Hyperbola(C1),
                                                                 D1,
@@ -808,7 +810,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
             default:
                 switch (typ2)
                 {
-                    case GeomAbs_Line: {
+                    case Line: {
                         intconicurv.SetReversedParameters(true);
                         intconicurv.Perform(TheCurveTool.Line(C2), D2, C1, D1, TolConf, Tol);
                         if (Composite)
@@ -822,7 +824,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Circle: {
+                    case Circle: {
                         intconicurv.SetReversedParameters(true);
                         intconicurv.Perform(TheCurveTool.Circle(C2), D2, C1, D1, TolConf, Tol);
                         if (Composite)
@@ -836,7 +838,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Ellipse: {
+                    case Ellipse: {
                         intconicurv.SetReversedParameters(true);
                         intconicurv.Perform(TheCurveTool.Ellipse(C2), D2, C1, D1, TolConf, Tol);
                         if (Composite)
@@ -850,7 +852,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Parabola: {
+                    case Parabola: {
                         intconicurv.SetReversedParameters(true);
                         intconicurv.Perform(TheCurveTool.Parabola(C2), D2, C1, D1, TolConf, Tol);
                         if (Composite)
@@ -864,7 +866,7 @@ public class IntCurve_IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheM
                     }
                     break;
 
-                    case GeomAbs_Hyperbola: {
+                    case Hyperbola: {
                         intconicurv.SetReversedParameters(true);
                         intconicurv.Perform(TheCurveTool.Hyperbola(C2), D2, C1, D1, TolConf, Tol);
                         if (Composite)

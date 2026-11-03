@@ -2,6 +2,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The file-static functions of IntPatch_PrmPrmIntersection.cxx (see IntPatch_PrmPrmIntersection.cs).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.Intf_PIType;
 
@@ -32,9 +33,9 @@ public partial class IntPatch_PrmPrmIntersection
             double pntDMin = 1.0e+100;
             int VDMin = 0;
             int WLDMin = 0;
-            gp_Pnt cPV = theWLline.Vertex(ciV).Value();
+            Point3D cPV = theWLline.Vertex(ciV).Value();
             theWLline.Vertex(ciV).Parameters(out aU1, out aV1, out aU2, out aV2);
-            gp_Pnt2d aPCS1 = new(aU1, aV1), aPCS2 = new(aU2, aV2);
+            Point2D aPCS1 = new(aU1, aV1), aPCS2 = new(aU2, aV2);
             int iL;
             for (iL = 1; iL <= theSLin.Length(); iL++)
             {
@@ -49,10 +50,10 @@ public partial class IntPatch_PrmPrmIntersection
                 int tiV;
                 for (tiV = 1; tiV <= tnbV; tiV++)
                 {
-                    gp_Pnt tPV = aWLine.Vertex(tiV).Value();
+                    Point3D tPV = aWLine.Vertex(tiV).Value();
 
                     aWLine.Vertex(tiV).Parameters(out aU1, out aV1, out aU2, out aV2);
-                    gp_Pnt2d aPTS1 = new(aU1, aV1), aPTS2 = new(aU2, aV2);
+                    Point2D aPTS1 = new(aU1, aV1), aPTS2 = new(aU2, aV2);
 
                     double tDistance = cPV.Distance(tPV);
                     double uRs1 = theSurf1.UResolution(tDistance);
@@ -64,7 +65,7 @@ public partial class IntPatch_PrmPrmIntersection
 
                     if (RmaxS1 < theMaxStepS1 && RmaxS2 < theMaxStepS2)
                     {
-                        if (pntDMin > tDistance && tDistance > Precision.PConfusion())
+                        if (pntDMin > tDistance && tDistance > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             double aSqDist1 = aPCS1.SquareDistance(aPTS1),
                                    aSqDist2 = aPCS2.SquareDistance(aPTS2);
@@ -186,7 +187,7 @@ public partial class IntPatch_PrmPrmIntersection
                 }
 
                 IntPatch_Point newVtx = new();
-                gp_Pnt Pnt3dV = aWLine.Vertex(VDMin).Value();
+                Point3D Pnt3dV = aWLine.Vertex(VDMin).Value();
                 newVtx.SetValue(Pnt3dV, theTol, false);
                 newVtx.SetParameters(u21, v21, u22, v22);
                 newVtx.SetParameter(VPold.Value(ciV));
@@ -236,8 +237,8 @@ public partial class IntPatch_PrmPrmIntersection
             double aLPrev = 0.0, aLCurr = 0.0;
             for (int aNbPP = 1; aNbPP < aNbPrevPoints; aNbPP++)
             {
-                gp_Pnt aP1prev = anExistWL.Point(aNbPP).Value(), aP2prev = anExistWL.Point(aNbPP + 1).Value();
-                gp_Pnt aP1curr = thePW.Value(aNbPP).Value(), aP2curr = thePW.Value(aNbPP + 1).Value();
+                Point3D aP1prev = anExistWL.Point(aNbPP).Value(), aP2prev = anExistWL.Point(aNbPP + 1).Value();
+                Point3D aP1curr = thePW.Value(aNbPP).Value(), aP2curr = thePW.Value(aNbPP + 1).Value();
 
                 aLPrev += aP1prev.Distance(aP2prev);
                 aLCurr += aP1curr.Distance(aP2curr);
@@ -262,7 +263,7 @@ public partial class IntPatch_PrmPrmIntersection
         Intf_PIType typ;
         int Adr1, Adr2;
         double Param, u, v;
-        gp_Pnt P = Sp.Pnt();
+        Point3D P = Sp.Pnt();
 
         int Pt1, Pt2, Pt3;
 
@@ -286,16 +287,16 @@ public partial class IntPatch_PrmPrmIntersection
             {
                 double ua, va, ub, vb, uc, vc, ca, cb, cc, cabc;
                 Poly1.Triangle(Adr1, out Pt1, out Pt2, out Pt3);
-                gp_Pnt PA = Poly1.Point(Pt1);
-                gp_Pnt PB = Poly1.Point(Pt2);
-                gp_Pnt PC = Poly1.Point(Pt3);
+                Point3D PA = Poly1.Point(Pt1);
+                Point3D PB = Poly1.Point(Pt2);
+                Point3D PC = Poly1.Point(Pt3);
                 Poly1.Parameters(Pt1, out ua, out va);
                 Poly1.Parameters(Pt2, out ub, out vb);
                 Poly1.Parameters(Pt3, out uc, out vc);
-                gp_Vec Normale = new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, PC));
-                cc = (new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, P))).Dot(Normale);
-                ca = (new gp_Vec(PB, PC).Crossed(new gp_Vec(PB, P))).Dot(Normale);
-                cb = (new gp_Vec(PC, PA).Crossed(new gp_Vec(PC, P))).Dot(Normale);
+                Vector3D Normale = new Vector3D(PA, PB).Crossed(new Vector3D(PA, PC));
+                cc = (new Vector3D(PA, PB).Crossed(new Vector3D(PA, P))).Dot(Normale);
+                ca = (new Vector3D(PB, PC).Crossed(new Vector3D(PB, P))).Dot(Normale);
+                cb = (new Vector3D(PC, PA).Crossed(new Vector3D(PC, P))).Dot(Normale);
                 cabc = ca + cb + cc;
 
                 ca /= cabc;
@@ -333,16 +334,16 @@ public partial class IntPatch_PrmPrmIntersection
             {
                 double ua, va, ub, vb, uc, vc, ca, cb, cc, cabc;
                 Poly2.Triangle(Adr1, out Pt1, out Pt2, out Pt3);
-                gp_Pnt PA = Poly2.Point(Pt1);
-                gp_Pnt PB = Poly2.Point(Pt2);
-                gp_Pnt PC = Poly2.Point(Pt3);
+                Point3D PA = Poly2.Point(Pt1);
+                Point3D PB = Poly2.Point(Pt2);
+                Point3D PC = Poly2.Point(Pt3);
                 Poly2.Parameters(Pt1, out ua, out va);
                 Poly2.Parameters(Pt2, out ub, out vb);
                 Poly2.Parameters(Pt3, out uc, out vc);
-                gp_Vec Normale = new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, PC));
-                cc = (new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, P))).Dot(Normale);
-                ca = (new gp_Vec(PB, PC).Crossed(new gp_Vec(PB, P))).Dot(Normale);
-                cb = (new gp_Vec(PC, PA).Crossed(new gp_Vec(PC, P))).Dot(Normale);
+                Vector3D Normale = new Vector3D(PA, PB).Crossed(new Vector3D(PA, PC));
+                cc = (new Vector3D(PA, PB).Crossed(new Vector3D(PA, P))).Dot(Normale);
+                ca = (new Vector3D(PB, PC).Crossed(new Vector3D(PB, P))).Dot(Normale);
+                cb = (new Vector3D(PC, PA).Crossed(new Vector3D(PC, P))).Dot(Normale);
                 cabc = ca + cb + cc;
 
                 ca /= cabc;
@@ -377,7 +378,7 @@ public partial class IntPatch_PrmPrmIntersection
         Span<double> ux = stackalloc double[4];
         Span<double> uq = stackalloc double[4];
         //
-        aEps = Precision.Confusion();
+        aEps = global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         for (k = 0; k < 4; ++k)
         {
@@ -538,7 +539,7 @@ public partial class IntPatch_PrmPrmIntersection
 
         thePOn2S.Parameters(out double pu1, out double pv1, out double pu2, out double pv2);
 
-        if ((!theWLine.IsOutSurf1Box(new gp_Pnt2d(pu1, pv1))) && (!theWLine.IsOutSurf2Box(new gp_Pnt2d(pu2, pv2)))
+        if ((!theWLine.IsOutSurf1Box(new Point2D(pu1, pv1))) && (!theWLine.IsOutSurf2Box(new Point2D(pu2, pv2)))
             && (!theWLine.IsOutBox(thePOn2S.Value())))
         {
             int NbPntOn2SOnLine = theWLine.NbPnts();
@@ -546,19 +547,19 @@ public partial class IntPatch_PrmPrmIntersection
 
             for (ll = 1; ll < NbPntOn2SOnLine && !isOnLine; ll++)
             {
-                gp_Pnt Pa = theWLine.Point(ll).Value();
-                gp_Pnt Pb = theWLine.Point(ll + 1).Value();
-                gp_Pnt PStart = thePOn2S.Value();
-                gp_Vec AM = new(Pa, PStart);
-                gp_Vec MB = new(PStart, Pb);
+                Point3D Pa = theWLine.Point(ll).Value();
+                Point3D Pb = theWLine.Point(ll + 1).Value();
+                Point3D PStart = thePOn2S.Value();
+                Vector3D AM = new(Pa, PStart);
+                Vector3D MB = new(PStart, Pb);
                 double AMMB = AM.Dot(MB);
 
                 if (AMMB > 0.0)
                 {
-                    gp_Dir ABN = new(Pb.X() - Pa.X(), Pb.Y() - Pa.Y(), Pb.Z() - Pa.Z());
+                    Direction3D ABN = new(Pb.X() - Pa.X(), Pb.Y() - Pa.Y(), Pb.Z() - Pa.Z());
                     double lan = ABN.X() * AM.X() + ABN.Y() * AM.Y() + ABN.Z() * AM.Z();
-                    gp_Vec AH = new(lan * ABN.X(), lan * ABN.Y(), lan * ABN.Z());
-                    gp_Vec HM = new(AM.X() - AH.X(), AM.Y() - AH.Y(), AM.Z() - AH.Z());
+                    Vector3D AH = new(lan * ABN.X(), lan * ABN.Y(), lan * ABN.Z());
+                    Vector3D HM = new(AM.X() - AH.X(), AM.Y() - AH.Y(), AM.Z() - AH.Z());
                     double d = 0.0;
 
                     if (HM.X() < Deflection)

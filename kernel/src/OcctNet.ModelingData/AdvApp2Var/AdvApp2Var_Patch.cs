@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using static Occt.AdvApp2Var_CriterionType;
 
 namespace Occt;
@@ -15,7 +18,7 @@ namespace Occt;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The arrays it returns are
 /// its own (shared: don't modify); they are null until the patch is approximated.
 /// </remarks>
-public class AdvApp2Var_Patch : Standard_Transient
+public class AdvApp2Var_Patch : Transient
 {
     private double myU0;
     private double myU1;
@@ -344,7 +347,7 @@ public class AdvApp2Var_Patch : Standard_Transient
     public bool IsApproximated() => myApprIsDone;
 
     /// <summary>Adds the interpolation of the constraints (isos and nodes) to the patch's polynomial.</summary>
-    /// <exception cref="Standard_ConstructionError">An error in the Fortran.</exception>
+    /// <exception cref="ConstructionErrorException">An error in the Fortran.</exception>
     public void AddConstraints(AdvApp2Var_Context Conditions, AdvApp2Var_Framework Constraints)
     {
         // data stored in the  Context
@@ -431,7 +434,7 @@ public class AdvApp2Var_Patch : Standard_Transient
             AdvApp2Var_ApproxF2var.mma1her_(IORDRV, HermV, ref IERCOD);
             if (IERCOD != 0)
             {
-                throw new Standard_ConstructionError("AdvApp2Var_Patch::AddConstraints : Error in FORTRAN");
+                throw new ConstructionErrorException("AdvApp2Var_Patch::AddConstraints : Error in FORTRAN");
             }
             AdvApp2Var_ApproxF2var.mma2ac2_(NDIMEN, NDegU, NDegV, IORDRV, NCFLMU, NCFV0, IsoV0, NCFV1, IsoV1, HermV,
                                             PATCAN);
@@ -445,7 +448,7 @@ public class AdvApp2Var_Patch : Standard_Transient
             AdvApp2Var_ApproxF2var.mma1her_(IORDRU, HermU, ref IERCOD);
             if (IERCOD != 0)
             {
-                throw new Standard_ConstructionError("AdvApp2Var_Patch::AddConstraints : Error in FORTRAN");
+                throw new ConstructionErrorException("AdvApp2Var_Patch::AddConstraints : Error in FORTRAN");
             }
             AdvApp2Var_ApproxF2var.mma2ac3_(NDIMEN, NDegU, NDegV, IORDRU, NCFLMV, NCFU0, IsoU0, NCFU1, IsoU1, HermU,
                                             PATCAN);
@@ -682,7 +685,7 @@ public class AdvApp2Var_Patch : Standard_Transient
     /// Approximates the discretised patch. <paramref name="NumDec"/> says which cuts are allowed (0 none, 1 or 3 in
     /// U, 2 or 4 in V, 5 both); <see cref="CutSense()"/> then says which one the approximation asks for.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">An error in the Fortran.</exception>
+    /// <exception cref="ConstructionErrorException">An error in the Fortran.</exception>
     public void MakeApprox(AdvApp2Var_Context Conditions, AdvApp2Var_Framework Constraints, int NumDec)
     {
         // data stored in the Context
@@ -824,7 +827,7 @@ public class AdvApp2Var_Patch : Standard_Transient
                                             ref IERCOD);
             if (IERCOD != 0)
             {
-                throw new Standard_ConstructionError("AdvApp2Var_Patch::MakeApprox : Error in FORTRAN");
+                throw new ConstructionErrorException("AdvApp2Var_Patch::MakeApprox : Error in FORTRAN");
             }
             myEquation = HPCAN;
 
@@ -949,8 +952,8 @@ public class AdvApp2Var_Patch : Standard_Transient
     }
 
     /// <summary>The poles of the patch's polynomial on [-1, 1] x [-1, 1], as a Bezier patch.</summary>
-    /// <exception cref="Standard_ConstructionError">Unless the context has one subspace and SSPIndex is 1.</exception>
-    public NCollection_HArray2<gp_Pnt> Poles(int SSPIndex, AdvApp2Var_Context Cond)
+    /// <exception cref="ConstructionErrorException">Unless the context has one subspace and SSPIndex is 1.</exception>
+    public NCollection_HArray2<Point3D> Poles(int SSPIndex, AdvApp2Var_Context Cond)
     {
         NCollection_HArray1<double>? SousEquation;
         if (Cond.TotalNumberSSP() == 1 && SSPIndex == 1)
@@ -959,7 +962,7 @@ public class AdvApp2Var_Patch : Standard_Transient
         }
         else
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Patch::Poles :  SSPIndex out of range");
+            throw new ConstructionErrorException("AdvApp2Var_Patch::Poles :  SSPIndex out of range");
         }
         NCollection_Array1<double> Intervalle = new(1, 2);
         Intervalle.SetValue(1, -1);
@@ -967,17 +970,17 @@ public class AdvApp2Var_Patch : Standard_Transient
         NCollection_Array1<int> NbCoeff = new(1, 2);
         NbCoeff.SetValue(1, myNbCoeffInU);
         NbCoeff.SetValue(2, myNbCoeffInV);
-        Convert_GridPolynomialToPoles Conv = new(Cond.ULimit() - 1,
+        GridPolynomialToPoles Conv = new(Cond.ULimit() - 1,
                                                  Cond.VLimit() - 1,
                                                  NbCoeff,
                                                  SousEquation!.Array1(),
                                                  Intervalle,
                                                  Intervalle);
-        return new NCollection_HArray2<gp_Pnt>(Conv.Poles());
+        return new NCollection_HArray2<Point3D>(Conv.Poles());
     }
 
     /// <summary>The coefficients of the patch's polynomial on [-1, 1] x [-1, 1] (shared: don't modify).</summary>
-    /// <exception cref="Standard_ConstructionError">Unless the context has one subspace and SSPIndex is 1.</exception>
+    /// <exception cref="ConstructionErrorException">Unless the context has one subspace and SSPIndex is 1.</exception>
     public NCollection_HArray1<double>? Coefficients(int SSPIndex, AdvApp2Var_Context Cond)
     {
         NCollection_HArray1<double>? SousEquation;
@@ -987,7 +990,7 @@ public class AdvApp2Var_Patch : Standard_Transient
         }
         else
         {
-            throw new Standard_ConstructionError("AdvApp2Var_Patch::Poles :  SSPIndex out of range");
+            throw new ConstructionErrorException("AdvApp2Var_Patch::Poles :  SSPIndex out of range");
         }
         return SousEquation;
     }

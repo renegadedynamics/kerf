@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_TypeTrans;
 
@@ -19,12 +23,12 @@ public class IntCurvePolyPolyTests
     private static Geom2dAdaptor_Curve Polyline(params (double X, double Y)[] thePnts)
     {
         int n = thePnts.Length;
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, n);
+        NCollection_Array1<Point2D> aPoles = new(1, n);
         NCollection_Array1<double> aKnots = new(1, n);
         NCollection_Array1<int> aMults = new(1, n);
         for (int i = 1; i <= n; i++)
         {
-            aPoles[i] = new gp_Pnt2d(thePnts[i - 1].X, thePnts[i - 1].Y);
+            aPoles[i] = new Point2D(thePnts[i - 1].X, thePnts[i - 1].Y);
             aKnots[i] = i - 1;
             aMults[i] = (i == 1 || i == n) ? 2 : 1;
         }
@@ -33,10 +37,10 @@ public class IntCurvePolyPolyTests
 
     private static Geom2dAdaptor_Curve Bezier(params (double X, double Y)[] thePnts)
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, thePnts.Length);
+        NCollection_Array1<Point2D> aPoles = new(1, thePnts.Length);
         for (int i = 1; i <= thePnts.Length; i++)
         {
-            aPoles[i] = new gp_Pnt2d(thePnts[i - 1].X, thePnts[i - 1].Y);
+            aPoles[i] = new Point2D(thePnts[i - 1].X, thePnts[i - 1].Y);
         }
         return new Geom2dAdaptor_Curve(new Geom2d_BezierCurve(aPoles));
     }
@@ -45,10 +49,10 @@ public class IntCurvePolyPolyTests
     private static Geom2dAdaptor_Curve CubicBSpline(params (double X, double Y)[] thePnts)
     {
         Assert.Equal(5, thePnts.Length);
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 5);
+        NCollection_Array1<Point2D> aPoles = new(1, 5);
         for (int i = 1; i <= 5; i++)
         {
-            aPoles[i] = new gp_Pnt2d(thePnts[i - 1].X, thePnts[i - 1].Y);
+            aPoles[i] = new Point2D(thePnts[i - 1].X, thePnts[i - 1].Y);
         }
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots[1] = 0.0;
@@ -215,8 +219,8 @@ public class IntCurvePolyPolyTests
     [Fact]
     public void TrimmedCircles_TreatedAsParametric_CrossAtKnownPoints()
     {
-        Geom2d_Circle aC1 = new(new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0));
-        Geom2d_Circle aC2 = new(new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(1, 0), new gp_Dir2d(1, 0)), 1.0));
+        Geom2d_Circle aC1 = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
+        Geom2d_Circle aC2 = new(new Circle2D(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 1.0));
         Geom2dAdaptor_Curve c1 = new(new Geom2d_TrimmedCurve(aC1, -2.0, 2.0));
         Geom2dAdaptor_Curve c2 = new(new Geom2d_TrimmedCurve(aC2, 1.0, 5.0));
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
@@ -250,13 +254,13 @@ public class IntCurvePolyPolyTests
         for (int i = 1; i <= anInter.NbPoints(); i++)
         {
             IntRes2d_IntersectionPoint P = anInter.Point(i);
-            Assert.True(P.Value().Distance(new gp_Pnt2d(1, 1)) < 1e-3);
+            Assert.True(P.Value().Distance(new Point2D(1, 1)) < 1e-3);
         }
         for (int i = 1; i <= anInter.NbSegments(); i++)
         {
             IntRes2d_IntersectionSegment S = anInter.Segment(i);
-            Assert.True(S.FirstPoint().Value().Distance(new gp_Pnt2d(1, 1)) < 1e-3);
-            Assert.True(S.LastPoint().Value().Distance(new gp_Pnt2d(1, 1)) < 1e-3);
+            Assert.True(S.FirstPoint().Value().Distance(new Point2D(1, 1)) < 1e-3);
+            Assert.True(S.LastPoint().Value().Distance(new Point2D(1, 1)) < 1e-3);
         }
     }
 
@@ -392,7 +396,7 @@ public class IntCurvePolyPolyTests
     {
         Geom2dInt_TheIntPCurvePCurveOfGInter anInter = new();
         Assert.False(anInter.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anInter.NbPoints());
+        Assert.ThrowsAny<NotDoneException>(() => anInter.NbPoints());
     }
 
     [Fact]
@@ -411,13 +415,13 @@ public class IntCurvePolyPolyTests
         Assert.Equal(0.9, aPoly.ApproxParamOnCurve(15, 0.0), 1e-12);
         Assert.Equal(0.2 + 0.25 * 0.05, aPoly.ApproxParamOnCurve(1, 0.25), 1e-12);
 
-        aPoly.Segment(1, out gp_Pnt2d aBegin, out gp_Pnt2d anEnd);
+        aPoly.Segment(1, out Point2D aBegin, out Point2D anEnd);
         Assert.True(aBegin.Distance(c.Value(0.2)) < 1e-15);
         Assert.True(anEnd.Distance(c.Value(0.25)) < 1e-12);
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aPoly.Segment(15, out _, out _));
+        Assert.ThrowsAny<OutOfRangeException>(() => aPoly.Segment(15, out _, out _));
 
         // The deflection bounds the distance between the curve and its polygon, and the box holds the curve.
-        Bnd_Box2d aBox = aPoly.Bounding();
+        Box2d aBox = aPoly.Bounding();
         for (int i = 0; i <= 700; i++)
         {
             double u = 0.2 + i * 0.001;
@@ -426,8 +430,8 @@ public class IntCurvePolyPolyTests
         double aMaxDev = 0.0;
         for (int s = 1; s <= 14; s++)
         {
-            aPoly.Segment(s, out gp_Pnt2d a, out gp_Pnt2d b);
-            gp_Lin2d L = new(a, new gp_Dir2d(new gp_Vec2d(a, b)));
+            aPoly.Segment(s, out Point2D a, out Point2D b);
+            Line2D L = new(a, new Direction2D(new Vector2D(a, b)));
             aMaxDev = Math.Max(aMaxDev, L.Distance(c.Value(0.2 + (s - 0.5) * 0.05)));
         }
         Assert.True(aMaxDev > 0.0);
@@ -444,12 +448,12 @@ public class IntCurvePolyPolyTests
         aPoly.Closed(true);
         Assert.True(aPoly.Closed());
         Assert.Equal(5, aPoly.NbSegments());
-        aPoly.Segment(5, out gp_Pnt2d aBegin, out gp_Pnt2d anEnd);
+        aPoly.Segment(5, out Point2D aBegin, out Point2D anEnd);
         Assert.Equal(4.0, aBegin.X(), 1e-15);
         Assert.Equal(0.0, anEnd.X(), 1e-15);
         aPoly.SetDeflectionOverEstimation(0.5);
         Assert.Equal(0.5, aPoly.DeflectionOverEstimation());
-        Assert.False(aPoly.Bounding().IsOut(new gp_Pnt2d(2, 0.4)));
+        Assert.False(aPoly.Bounding().IsOut(new Point2D(2, 0.4)));
     }
 
     [Fact]
@@ -476,7 +480,7 @@ public class IntCurvePolyPolyTests
     {
         Geom2dAdaptor_Curve c = Bezier((0, 0), (1, 2), (2, 0));
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aPoly = new(c, 40, Domain(c), Tol);
-        Bnd_Box2d anOther = Bnd_Box2d.FromPoint(new gp_Pnt2d(0.1, 0.0)).Added(new gp_Pnt2d(0.3, 0.6));
+        Box2d anOther = Box2d.FromPoint(new Point2D(0.1, 0.0)).Added(new Point2D(0.3, 0.6));
         aPoly.ComputeWithBox(c, anOther);
         Assert.True(aPoly.NbSegments() < 39);
         Assert.True(aPoly.NbSegments() >= 1);
@@ -484,9 +488,9 @@ public class IntCurvePolyPolyTests
         Assert.True(aPoly.InfParameter() <= 0.06);
 
         Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter aFar = new(c, 40, Domain(c), Tol);
-        aFar.ComputeWithBox(c, Bnd_Box2d.FromPoint(new gp_Pnt2d(10, 10)).Added(new gp_Pnt2d(11, 11)));
+        aFar.ComputeWithBox(c, Box2d.FromPoint(new Point2D(10, 10)).Added(new Point2D(11, 11)));
         Assert.Equal(1, aFar.NbSegments());
-        Assert.True(aFar.Bounding().IsVoid());
+        Assert.True(aFar.Bounding().IsVoid);
     }
 
     [Fact]
@@ -514,11 +518,11 @@ public class IntCurvePolyPolyTests
         X[2] = 0.7;
         math_Vector V = new(1, 2);
         Assert.True(F.Value(X, V));
-        gp_Pnt2d P1 = c1.Value(0.3), P2 = c2.Value(0.7);
+        Point2D P1 = c1.Value(0.3), P2 = c2.Value(0.7);
         Assert.Equal(P1.X() - P2.X(), V[1], 1e-15);
         Assert.Equal(P1.Y() - P2.Y(), V[2], 1e-15);
 
-        math_Matrix D = new(1, 2, 1, 2);
+        Matrix D = new(1, 2, 1, 2);
         Assert.True(F.Derivatives(X, D));
         const double h = 1e-6;
         for (int j = 1; j <= 2; j++)
@@ -539,7 +543,7 @@ public class IntCurvePolyPolyTests
         }
 
         math_Vector V2 = new(1, 2);
-        math_Matrix D2 = new(1, 2, 1, 2);
+        Matrix D2 = new(1, 2, 1, 2);
         Assert.True(F.Values(X, V2, D2));
         for (int i = 1; i <= 2; i++)
         {

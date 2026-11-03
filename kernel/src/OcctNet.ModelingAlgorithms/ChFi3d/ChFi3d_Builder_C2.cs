@@ -6,13 +6,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_C2;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -146,8 +148,8 @@ public partial class ChFi3d_Builder
                 parCP2 = ext.Point(1).Parameter();
             }
         }
-        gp_Pnt psp1 = Hpivot.Value(parCP1);
-        gp_Pnt psp2 = Hpivot.Value(parCP2);
+        Point3D psp1 = Hpivot.Value(parCP1);
+        Point3D psp2 = Hpivot.Value(parCP2);
         double sameparam = (psp1.Distance(psp2) < 10.0 * tolapp3d) ? 1.0 : 0.0; // OCCT: a bool in a double
 
         TopoDS_Face FF1 = TopoDS.Face(DStr.Shape(Fd1.Index(IFaArc1)));
@@ -185,14 +187,14 @@ public partial class ChFi3d_Builder
         {
             // Side common face, calculation of Pardeb.
             ChFi3d_ComputesIntPC(Fd1.Interference(IFaCo1), Fd2.Interference(IFaCo2), HS1, HS2, ref UIntPC1, ref UIntPC2);
-            gp_Pnt2d UV = new();
+            Point2D UV = new();
             UV = Fd1.Interference(IFaCo1).PCurveOnSurf().Value(UIntPC1);
             Pardeb[1] = UV.X();
             Pardeb[2] = UV.Y();
             UV = Fd2.Interference(IFaCo2).PCurveOnSurf().Value(UIntPC2);
             Pardeb[3] = UV.X();
             Pardeb[4] = UV.Y();
-            gp_Pnt PFaCo = HS1.Value(Pardeb[1], Pardeb[2]);
+            Point3D PFaCo = HS1.Value(Pardeb[1], Pardeb[2]);
 
             // Side arc, calculation of Parfin.
             double UIntArc1 = Fd1.Interference(IFaArc1).Parameter(isfirst1);
@@ -266,7 +268,7 @@ public partial class ChFi3d_Builder
             Corner2.SetIndexPoint(Corner1.IndexPoint(isfirst1, IFaCo1), isfirst2, IFaCo2);
             Corner2.SetIndexPoint(Corner1.IndexPoint(isfirst1, IFaArc1), isfirst2, IFaArc2);
             // The tolerances of points are updated.
-            Bnd_Box bco = new(), barc = new();
+            Box bco = new(), barc = new();
             if (IFaCo1 == 1)
             {
                 ChFi3d_EnlargeBox(DStr, Corner1, Fd1, ref bco, ref barc, isfirst1);
@@ -355,14 +357,14 @@ public partial class ChFi3d_Builder
             // the intersection is checked
             ChFi3d_ComputesIntPC(SmaFD.Interference(IFaCoSma), BigFD.Interference(IFaCoBig), SmaHS, BigHS, ref UIntPCSma,
                                                       ref UIntPCBig);
-            gp_Pnt2d UVi = new();
+            Point2D UVi = new();
             UVi = BigFD.Interference(IFaCoBig).PCurveOnSurf().Value(UIntPCBig);
             Pardeb[3] = UVi.X();
             Pardeb[4] = UVi.Y();
             UVi = SmaFD.Interference(IFaCoSma).PCurveOnSurf().Value(UIntPCSma);
             Pardeb[1] = UVi.X();
             Pardeb[2] = UVi.Y();
-            gp_Pnt PFaCo = SmaHS.Value(UVi.X(), UVi.Y());
+            Point3D PFaCo = SmaHS.Value(UVi.X(), UVi.Y());
 
             // Parfin (parameters of point PMil)
             // OCCT holds a reference: it sees the SetParameter below
@@ -405,7 +407,7 @@ public partial class ChFi3d_Builder
             UVi = FiArcSma.PCurveOnSurf().Value(wi);
             Parfin[1] = UVi.X();
             Parfin[2] = UVi.Y();
-            gp_Pnt PMil = SmaHS.Value(Parfin[1], Parfin[2]);
+            Point3D PMil = SmaHS.Value(Parfin[1], Parfin[2]);
 
             double tolreached = 0.0;
             if (!ChFi3d_ComputeCurves(SmaHS, BigHS, Pardeb, Parfin, ref Gc, ref PGc1, ref PGc2, tolapp3d, tol2d,
@@ -479,7 +481,7 @@ public partial class ChFi3d_Builder
             DStr.ChangeSurfaceInterferences(ISurf).Append(Interfc);
 
             // The tolerances of points are updated (beginning).
-            Bnd_Box bco = new(), bmil = new(), barc = new();
+            Box bco = new(), bmil = new(), barc = new();
             if (IFaCoSma == 1)
             {
                 ChFi3d_EnlargeBox(DStr, SmaCD, SmaFD, ref bco, ref bmil, isfirstSma);
@@ -524,7 +526,7 @@ public partial class ChFi3d_Builder
             UVi = SmaFD.Interference(IFaArcSma).PCurveOnFace().Value(wi);
             Pardeb[1] = UVi.X();
             Pardeb[2] = UVi.Y();
-            gp_Pnt2d ppff1 = UVi;
+            Point2D ppff1 = UVi;
 
             // Parfin (parameters of the point cpend)
             double ptg = BigFD.Interference(IFaArcBig).Parameter(isfirstBig);
@@ -541,7 +543,7 @@ public partial class ChFi3d_Builder
             UVi = arc.Value(cpend.ParameterOnArc());
             Parfin[1] = UVi.X();
             Parfin[2] = UVi.Y();
-            gp_Pnt2d ppff2 = UVi;
+            Point2D ppff2 = UVi;
 
             // Intersection.
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;

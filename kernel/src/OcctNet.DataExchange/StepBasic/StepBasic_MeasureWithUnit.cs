@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_MeasureWithUnit : Standard_Transient
+public class StepBasic_MeasureWithUnit : Transient
 {
     private StepBasic_MeasureValueMember valueComponent;
     private StepBasic_Unit unitComponent = new StepBasic_Unit();

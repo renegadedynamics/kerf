@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2014 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -65,20 +68,20 @@ public static partial class IntPatch_WLineTool
         IntPatch_WLine aLocalWLine = new IntPatch_WLine(aPurgedLineOn2S, false);
         aLocalWLine.SetCreatingWayInfo(theWLine.GetCreatingWay());
         int anOldLineIdx = 1, aVertexIdx = 1, anIndexPrev = -1, anIdxOld = -1;
-        gp_Pnt aPPrev = new gp_Pnt(), aPOld = new gp_Pnt();
+        Point3D aPPrev = new Point3D(), aPOld = new Point3D();
         for (i = 1; i <= thePointsHash.Upper(); i++)
         {
             if (thePointsHash[i] == 0)
             {
                 // Point has to be added
 
-                gp_Pnt aP = theWLine.Point(i).Value();
+                Point3D aP = theWLine.Point(i).Value();
                 double aSqDistPrev = aPPrev.SquareDistance(aPOld);
                 double aSqDist = aPPrev.SquareDistance(aP);
 
-                double aRatio = (aSqDistPrev < gp.Resolution()) ? 0.0 : 9.0 * aSqDist / aSqDistPrev;
+                double aRatio = (aSqDistPrev < Constants.Resolution()) ? 0.0 : 9.0 * aSqDist / aSqDistPrev;
 
-                if (theIsOuter || (aRatio < gp.Resolution()) || ((1.0 < aRatio) && (aRatio < 81.0))
+                if (theIsOuter || (aRatio < Constants.Resolution()) || ((1.0 < aRatio) && (aRatio < 81.0))
                     || (i - anIndexPrev <= 1) || (i - anIdxOld <= 1))
                 {
                     // difference in distances is satisfactory
@@ -186,7 +189,7 @@ public static partial class IntPatch_WLineTool
             return theWLine;
         }
 
-        gp_Pnt2d aPntOnF1 = new gp_Pnt2d(), aPntOnF2 = new gp_Pnt2d();
+        Point2D aPntOnF1 = new Point2D(), aPntOnF2 = new Point2D();
         double aX1, aY1, aX2, aY2;
 
         // Iterate over points in walking line and delete which are out of bounds.
@@ -200,8 +203,8 @@ public static partial class IntPatch_WLineTool
             aPntOnF1.SetCoord(aX1, aY1);
             aPntOnF2.SetCoord(aX2, aY2);
 
-            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, Precision.Confusion());
-            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, Precision.Confusion());
+            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
+            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             if (aState1 == TopAbs_OUT || aState2 == TopAbs_OUT)
             {
@@ -239,8 +242,8 @@ public static partial class IntPatch_WLineTool
             aPntOnF1.SetCoord(aX1, aY1);
             aPntOnF2.SetCoord(aX2, aY2);
 
-            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, Precision.Confusion());
-            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, Precision.Confusion());
+            TopAbs_State aState1 = theDom1.Classify(aPntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
+            TopAbs_State aState2 = theDom2.Classify(aPntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             if (aState1 == TopAbs_OUT || aState2 == TopAbs_OUT)
             {
@@ -301,14 +304,14 @@ public static partial class IntPatch_WLineTool
     }
 
     // Check if aNextPnt lies inside of tube build on aBasePnt and aBaseVec. In 2d space.
-    private static bool IsInsideIn2d(in gp_Pnt2d aBasePnt, in gp_Vec2d aBaseVec, in gp_Pnt2d aNextPnt,
+    private static bool IsInsideIn2d(in Point2D aBasePnt, in Vector2D aBaseVec, in Point2D aNextPnt,
                                      double aSquareMaxDist)
     {
-        gp_Vec2d aVec2d = new gp_Vec2d(aBasePnt, aNextPnt);
+        Vector2D aVec2d = new Vector2D(aBasePnt, aNextPnt);
 
         // d*d = (basevec^(nextpnt-basepnt))**2 / basevec**2
         double aSqMag = aBaseVec.SquareMagnitude();
-        if (aSqMag < Precision.SquareComputational())
+        if (aSqMag < global::Kerf.Engine.Foundation.Precision.SquareComputational())
         {
             return false;
         }
@@ -319,13 +322,13 @@ public static partial class IntPatch_WLineTool
     }
 
     // Check if aNextPnt lies inside of tube build on aBasePnt and aBaseVec. In 3d space.
-    private static bool IsInsideIn3d(in gp_Pnt aBasePnt, in gp_Vec aBaseVec, in gp_Pnt aNextPnt, double aSquareMaxDist)
+    private static bool IsInsideIn3d(in Point3D aBasePnt, in Vector3D aBaseVec, in Point3D aNextPnt, double aSquareMaxDist)
     {
-        gp_Vec aVec = new gp_Vec(aBasePnt, aNextPnt);
+        Vector3D aVec = new Vector3D(aBasePnt, aNextPnt);
 
         // d*d = (basevec^(nextpnt-basepnt))**2 / basevec**2
         double aSqMag = aBaseVec.SquareMagnitude();
-        if (aSqMag < Precision.SquareComputational())
+        if (aSqMag < global::Kerf.Engine.Foundation.Precision.SquareComputational())
         {
             return false;
         }
@@ -337,12 +340,12 @@ public static partial class IntPatch_WLineTool
     // Define is surface plane like or not.
     private static bool IsSurfPlaneLike(Adaptor3d_Surface theS)
     {
-        if (theS.GetType() == GeomAbs_Plane)
+        if (theS.GetType() == Plane)
         {
             return true;
         }
 
-        if (theS.GetType() == GeomAbs_BSplineSurface)
+        if (theS.GetType() == BSplineSurface)
         {
             if (theS.UDegree() == 1 && theS.VDegree() == 1)
             {
@@ -378,16 +381,16 @@ public static partial class IntPatch_WLineTool
         theWLine.Point(1).ParametersOnS2(out UonS2[0], out VonS2[0]);
         theWLine.Point(2).ParametersOnS2(out UonS2[1], out VonS2[1]);
 
-        gp_Pnt2d aBase2dPnt1 = new gp_Pnt2d(UonS1[0], VonS1[0]);
-        gp_Pnt2d aBase2dPnt2 = new gp_Pnt2d(UonS2[0], VonS2[0]);
-        gp_Vec2d aBase2dVec1 = new gp_Vec2d(UonS1[1] - UonS1[0], VonS1[1] - VonS1[0]);
-        gp_Vec2d aBase2dVec2 = new gp_Vec2d(UonS2[1] - UonS2[0], VonS2[1] - VonS2[0]);
-        gp_Pnt aBase3dPnt = theWLine.Point(1).Value();
-        gp_Vec aBase3dVec = new gp_Vec(theWLine.Point(1).Value(), theWLine.Point(2).Value());
+        Point2D aBase2dPnt1 = new Point2D(UonS1[0], VonS1[0]);
+        Point2D aBase2dPnt2 = new Point2D(UonS2[0], VonS2[0]);
+        Vector2D aBase2dVec1 = new Vector2D(UonS1[1] - UonS1[0], VonS1[1] - VonS1[0]);
+        Vector2D aBase2dVec2 = new Vector2D(UonS2[1] - UonS2[0], VonS2[1] - VonS2[0]);
+        Point3D aBase3dPnt = theWLine.Point(1).Value();
+        Vector3D aBase3dVec = new Vector3D(theWLine.Point(1).Value(), theWLine.Point(2).Value());
         double aPrevStep = aBase3dVec.SquareMagnitude();
 
         // Choose base tolerance and scale it to pipe algorithm.
-        double aBaseTolerance = Precision.Approximation();
+        double aBaseTolerance = global::Kerf.Engine.Foundation.Precision.Approximation();
         double aResS1Tol = Min(theS1.UResolution(aBaseTolerance), theS1.VResolution(aBaseTolerance));
         double aResS2Tol = Min(theS2.UResolution(aBaseTolerance), theS2.VResolution(aBaseTolerance));
         double aTol1 = aResS1Tol * aResS1Tol;
@@ -403,9 +406,9 @@ public static partial class IntPatch_WLineTool
 
             theWLine.Point(i).ParametersOnS1(out UonS1[2], out VonS1[2]);
             theWLine.Point(i).ParametersOnS2(out UonS2[2], out VonS2[2]);
-            gp_Pnt2d aPnt2dOnS1 = new gp_Pnt2d(UonS1[2], VonS1[2]);
-            gp_Pnt2d aPnt2dOnS2 = new gp_Pnt2d(UonS2[2], VonS2[2]);
-            gp_Pnt aPnt3d = theWLine.Point(i).Value();
+            Point2D aPnt2dOnS1 = new Point2D(UonS1[2], VonS1[2]);
+            Point2D aPnt2dOnS2 = new Point2D(UonS2[2], VonS2[2]);
+            Point3D aPnt3d = theWLine.Point(i).Value();
 
             if (aNewPointsHash[i - 1] != -1 && IsInsideIn2d(aBase2dPnt1, aBase2dVec1, aPnt2dOnS1, aTol1)
                 && IsInsideIn2d(aBase2dPnt2, aBase2dVec2, aPnt2dOnS2, aTol2)
@@ -417,14 +420,14 @@ public static partial class IntPatch_WLineTool
                 // c2d1 - line
                 // c3d - line
                 // c2d2 - geometrically line, but have uneven parametrization -> c2d2 is bspline.
-                gp_XY aPntOnS1_0 = new gp_XY(UonS1[1] - UonS1[0], VonS1[1] - VonS1[0]);
-                gp_XY aPntOnS1_1 = new gp_XY(UonS1[2] - UonS1[1], VonS1[2] - VonS1[1]);
-                gp_XY aPntOnS2_0 = new gp_XY(UonS2[1] - UonS2[0], VonS2[1] - VonS2[0]);
-                gp_XY aPntOnS2_1 = new gp_XY(UonS2[2] - UonS2[1], VonS2[2] - VonS2[1]);
+                Xy aPntOnS1_0 = new Xy(UonS1[1] - UonS1[0], VonS1[1] - VonS1[0]);
+                Xy aPntOnS1_1 = new Xy(UonS1[2] - UonS1[1], VonS1[2] - VonS1[1]);
+                Xy aPntOnS2_0 = new Xy(UonS2[1] - UonS2[0], VonS2[1] - VonS2[0]);
+                Xy aPntOnS2_1 = new Xy(UonS2[2] - UonS2[1], VonS2[2] - VonS2[1]);
 
                 double aSqModS1 = aPntOnS1_1.SquareModulus();
                 double aSqModS2 = aPntOnS2_1.SquareModulus();
-                if (aSqModS1 < Precision.SquareComputational() || aSqModS2 < Precision.SquareComputational())
+                if (aSqModS1 < global::Kerf.Engine.Foundation.Precision.SquareComputational() || aSqModS2 < global::Kerf.Engine.Foundation.Precision.SquareComputational())
                 {
                     continue;
                 }
@@ -441,7 +444,7 @@ public static partial class IntPatch_WLineTool
                     double aSqrRatio = 0.0;
                     if (!isPlanePlane)
                     {
-                        aSqrRatio = (aCurrStep > Precision.SquareComputational()) ? aPrevStep / aCurrStep
+                        aSqrRatio = (aCurrStep > global::Kerf.Engine.Foundation.Precision.SquareComputational()) ? aPrevStep / aCurrStep
                                                                                    : aMaxSqrRatio;
                         if (aSqrRatio < 1.0)
                         {
@@ -480,7 +483,7 @@ public static partial class IntPatch_WLineTool
                 aBase2dVec1.SetCoord(UonS1[1] - UonS1[0], VonS1[1] - VonS1[0]);
                 aBase2dVec2.SetCoord(UonS2[1] - UonS2[0], VonS2[1] - VonS2[0]);
                 aBase3dPnt = theWLine.Point(i - 1).Value();
-                aBase3dVec = new gp_Vec(theWLine.Point(i - 1).Value(), theWLine.Point(i).Value());
+                aBase3dVec = new Vector3D(theWLine.Point(i - 1).Value(), theWLine.Point(i).Value());
 
                 aPrevStep = aBase3dVec.SquareMagnitude();
 
@@ -552,7 +555,7 @@ public static partial class IntPatch_WLineTool
         {
             IntSurf_PntOn2S p1 = theWLine.Point(1);
             IntSurf_PntOn2S p2 = theWLine.Point(2);
-            if (p1.Value().IsEqual(p2.Value(), gp.Resolution()))
+            if (p1.Value().IsEqual(p2.Value(), Constants.Resolution()))
             {
                 return aResult;
             }
@@ -608,7 +611,7 @@ public static partial class IntPatch_WLineTool
                         }
                     }
 
-                    if (p1.Value().IsEqual(p2.Value(), gp.Resolution())
+                    if (p1.Value().IsEqual(p2.Value(), Constants.Resolution())
                         || Math.Abs(UV[0] - UV[4]) + Math.Abs(UV[1] - UV[5]) < 1.0e-16 * aMax
                         || Math.Abs(UV[2] - UV[6]) + Math.Abs(UV[3] - UV[7]) < 1.0e-16 * aMax)
                     {
@@ -653,8 +656,8 @@ public static partial class IntPatch_WLineTool
         // bugs modalg_5 bug24731.
         // Do not run purger when base number of points is too small.
         // (nb is the number of points before the last removal above, as in OCCT.)
-        if (theS1.UContinuity() == GeomAbs_C0 || theS1.VContinuity() == GeomAbs_C0
-            || theS2.UContinuity() == GeomAbs_C0 || theS2.VContinuity() == GeomAbs_C0 || nb < aNbSingleBezier)
+        if (theS1.UContinuity() == C0 || theS1.VContinuity() == C0
+            || theS2.UContinuity() == C0 || theS2.VContinuity() == C0 || nb < aNbSingleBezier)
         {
             return aLocalWLine;
         }
@@ -685,22 +688,22 @@ public static partial class IntPatch_WLineTool
         thePtf.Parameters(out aParF[0], out aParF[1], out aParF[2], out aParF[3]);
         thePtl.Parameters(out aParL[0], out aParL[1], out aParL[2], out aParL[3]);
 
-        Span<Bnd_Range> aBndR = stackalloc Bnd_Range[4];
+        Span<BoundRange> aBndR = stackalloc BoundRange[4];
 
         for (int i = 0; i < 4; i++)
         {
-            aBndR[i] = new Bnd_Range();
+            aBndR[i] = new BoundRange();
             aBndR[i].Add(aParF[i]);
             aBndR[i].Add(aParL[i]);
 
             if (aBndR[i].IsIntersected(theFBound[i], theArrPeriods[i])
-                == Bnd_Range.IntersectStatus.IntersectStatus_In)
+                == BoundRange.IntersectStatus.IntersectStatus_In)
             {
                 return true;
             }
 
             if (aBndR[i].IsIntersected(theLBound[i], theArrPeriods[i])
-                == Bnd_Range.IntersectStatus.IntersectStatus_In)
+                == BoundRange.IntersectStatus.IntersectStatus_In)
             {
                 return true;
             }
@@ -721,7 +724,7 @@ public static partial class IntPatch_WLineTool
                 return true;
             }
 
-            if (aBndR[i].IsIntersected(0.0, theArrPeriods[i]) == Bnd_Range.IntersectStatus.IntersectStatus_In)
+            if (aBndR[i].IsIntersected(0.0, theArrPeriods[i]) == BoundRange.IntersectStatus.IntersectStatus_In)
             {
                 return true;
             }
@@ -747,18 +750,18 @@ public static partial class IntPatch_WLineTool
 
         for (int i = 0; i < 4; i++)
         {
-            Bnd_Range aBR = new Bnd_Range(aMPar[i], aMPar[i]);
-            if (aBR.IsIntersected(theFBound[i], theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out)
+            BoundRange aBR = new BoundRange(aMPar[i], aMPar[i]);
+            if (aBR.IsIntersected(theFBound[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
             {
                 return true;
             }
 
-            if (aBR.IsIntersected(theLBound[i], theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out)
+            if (aBR.IsIntersected(theLBound[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
             {
                 return true;
             }
 
-            if (aBR.IsIntersected(0.0, theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out)
+            if (aBR.IsIntersected(0.0, theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
             {
                 return true;
             }
@@ -769,8 +772,8 @@ public static partial class IntPatch_WLineTool
 
     // Check if joining is possible (see JoinWLines). A global (non-static) function in OCCT's .cxx.
     private static bool CheckArgumentsToJoin(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
-                                             in IntSurf_PntOn2S thePnt, in gp_Pnt theP1, in gp_Pnt theP2,
-                                             in gp_Pnt theP3, double theMinRad)
+                                             in IntSurf_PntOn2S thePnt, in Point3D theP1, in Point3D theP2,
+                                             in Point3D theP3, double theMinRad)
     {
         double aRad = IntPatch_PointLine.CurvatureRadiusOfIntersLine(theS1, theS2, thePnt);
 
@@ -798,14 +801,14 @@ public static partial class IntPatch_WLineTool
         //   2. Modulus of perpendicular (O->theP2) to the segment (theP1->theP3)
         //   is less than 0.01*<modulus of this segment>.
 
-        gp_Vec aV12f = new gp_Vec(theP1, theP2), aV12l = new gp_Vec(theP2, theP3);
+        Vector3D aV12f = new Vector3D(theP1, theP2), aV12l = new Vector3D(theP2, theP3);
 
         if (aV12f.Angle(aV12l) > myMaxConcatAngle)
         {
             return false;
         }
 
-        gp_Vec aV13 = new gp_Vec(theP1, theP3);
+        Vector3D aV13 = new Vector3D(theP1, theP3);
         double aSq13 = aV13.SquareMagnitude();
 
         return (aV12f.CrossSquareMagnitude(aV13) < 1.0e-4 * aSq13 * aSq13);
@@ -859,7 +862,7 @@ public static partial class IntPatch_WLineTool
             {
                 IntSurf_PntOn2S aPntCur = theSPnt.Value(aNPt).PntOn2S();
 
-                if (aPntCur.IsSame(aPntFWL1, Precision.Confusion()) || aPntCur.IsSame(aPntLWL1, Precision.Confusion()))
+                if (aPntCur.IsSame(aPntFWL1, global::Kerf.Engine.Foundation.Precision.Confusion()) || aPntCur.IsSame(aPntLWL1, global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     theSPnt.Remove(aNPt);
                     aNPt--;
@@ -895,7 +898,7 @@ public static partial class IntPatch_WLineTool
                 double aSqDistL = aPntFWL1.Value().SquareDistance(aPntLWL2.Value());
 
                 double aSqMinFDist = Min(aSqDistF, aSqDistL);
-                if (aSqMinFDist < Precision.SquareConfusion())
+                if (aSqMinFDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     bool isFM = (aSqDistF < aSqDistL);
                     IntSurf_PntOn2S aPt1 = aWLine1.Point(2);
@@ -910,7 +913,7 @@ public static partial class IntPatch_WLineTool
                 aSqDistL = aPntLWL1.Value().SquareDistance(aPntLWL2.Value());
 
                 double aSqMinLDist = Min(aSqDistF, aSqDistL);
-                if (aSqMinLDist < Precision.SquareConfusion())
+                if (aSqMinLDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     bool isFM = (aSqDistF < aSqDistL);
                     IntSurf_PntOn2S aPt1 = aWLine1.Point(aNbPntsWL1 - 1);

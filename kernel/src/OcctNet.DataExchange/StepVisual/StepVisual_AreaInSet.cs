@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_AreaInSet : Standard_Transient
+public class StepVisual_AreaInSet : Transient
 {
     private StepVisual_PresentationArea area;
     private StepVisual_PresentationSet inSet;

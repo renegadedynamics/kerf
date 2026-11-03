@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>Modern scalar root finding algorithms.</summary>
 public static partial class MathRoot
@@ -11,150 +13,150 @@ public static partial class MathRoot
     /// Brent's method for root finding: bisection, secant and inverse quadratic interpolation. f(theLower) and
     /// f(theUpper) must have opposite signs.
     /// </summary>
-    public static MathUtils.ScalarResult Brent<Function>(Function theFunc, double theLower, double theUpper, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunction
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Brent<Function>(Function func, double lower, double upper, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
 
-        double aA = theLower;
-        double aB = theUpper;
+        double a = lower;
+        double b = upper;
 
         // Evaluate at endpoints
-        if (!theFunc.Value(aA, out double aFa))
+        if (!func.Value(a, out double fa))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Value(aB, out double aFb))
+        if (!func.Value(b, out double fb))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
 
         // Check that bracket is valid (sign change)
-        if (aFa * aFb > 0.0)
+        if (fa * fb > 0.0)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
         // Ensure |f(a)| >= |f(b)| (b is the better approximation)
-        if (Math.Abs(aFa) < Math.Abs(aFb))
+        if (Math.Abs(fa) < Math.Abs(fb))
         {
-            (aA, aB) = (aB, aA);
-            (aFa, aFb) = (aFb, aFa);
+            (a, b) = (b, a);
+            (fa, fb) = (fb, fa);
         }
 
-        double aC = aA; // Previous iterate
-        double aFc = aFa;
-        double aD = aB - aA; // Step size
-        double aE = aD;      // Previous step size
+        double c = a; // Previous iterate
+        double fc = fa;
+        double d = b - a; // Step size
+        double e = d;      // Previous step size
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
-            double aTol = 2.0 * MathUtils.THE_EPSILON * Math.Abs(aB) + 0.5 * theConfig.XTolerance;
-            double aM = 0.5 * (aC - aB);
+            double tol = 2.0 * global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON * Math.Abs(b) + 0.5 * config.XTolerance;
+            double m = 0.5 * (c - b);
 
-            if (Math.Abs(aFb) < theConfig.FTolerance || aFb == 0.0 || Math.Abs(aM) <= aTol)
+            if (Math.Abs(fb) < config.FTolerance || fb == 0.0 || Math.Abs(m) <= tol)
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aB;
-                aResult.Value = aFb;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = b;
+                result.Value = fb;
+                return result;
             }
 
-            double aS = 0.0; // New approximation
+            double s = 0.0; // New approximation
 
             // Try inverse quadratic interpolation if we have three distinct points
-            if (Math.Abs(aFa - aFc) > MathUtils.THE_ZERO_TOL
-                && Math.Abs(aFb - aFc) > MathUtils.THE_ZERO_TOL)
+            if (Math.Abs(fa - fc) > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL
+                && Math.Abs(fb - fc) > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
                 // Inverse quadratic interpolation
-                aS = aA * aFb * aFc / ((aFa - aFb) * (aFa - aFc))
-                     + aB * aFa * aFc / ((aFb - aFa) * (aFb - aFc))
-                     + aC * aFa * aFb / ((aFc - aFa) * (aFc - aFb));
+                s = a * fb * fc / ((fa - fb) * (fa - fc))
+                     + b * fa * fc / ((fb - fa) * (fb - fc))
+                     + c * fa * fb / ((fc - fa) * (fc - fb));
             }
             else
             {
                 // Secant method
-                aS = aB - aFb * (aB - aA) / (aFb - aFa);
+                s = b - fb * (b - a) / (fb - fa);
             }
 
             // Decide whether to accept the interpolation step
-            bool aUseInterp = false;
+            bool useInterp = false;
 
             // Check if s is between (3a+b)/4 and b
-            double aBound1 = (3.0 * aA + aB) / 4.0;
-            if ((aS > Min(aBound1, aB) && aS < Max(aBound1, aB)))
+            double bound1 = (3.0 * a + b) / 4.0;
+            if ((s > Min(bound1, b) && s < Max(bound1, b)))
             {
                 // Accept interpolation if step is smaller than half the previous step
                 // (ensures convergence rate). Minimum step is enforced later.
-                if (Math.Abs(aS - aB) < Math.Abs(aE) / 2.0)
+                if (Math.Abs(s - b) < Math.Abs(e) / 2.0)
                 {
-                    aUseInterp = true;
+                    useInterp = true;
                 }
             }
 
-            if (!aUseInterp)
+            if (!useInterp)
             {
                 // Bisection step
-                aS = aB + aM;
-                aE = aM;
-                aD = aM;
+                s = b + m;
+                e = m;
+                d = m;
             }
             else
             {
-                aE = aD;
-                aD = aS - aB;
+                e = d;
+                d = s - b;
             }
 
             // Update previous values
-            aA = aB;
-            aFa = aFb;
+            a = b;
+            fa = fb;
 
             // Compute new point, ensuring minimum step
-            if (Math.Abs(aD) > aTol)
+            if (Math.Abs(d) > tol)
             {
-                aB = aS;
+                b = s;
             }
             else
             {
-                aB += (aM > 0.0) ? aTol : -aTol;
+                b += (m > 0.0) ? tol : -tol;
             }
 
             // Evaluate function at new point
-            if (!theFunc.Value(aB, out aFb))
+            if (!func.Value(b, out fb))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aB;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = b;
+                return result;
             }
 
             // Update bracket
-            if (aFb * aFc > 0.0)
+            if (fb * fc > 0.0)
             {
-                aC = aA;
-                aFc = aFa;
-                aD = aB - aA;
-                aE = aD;
+                c = a;
+                fc = fa;
+                d = b - a;
+                e = d;
             }
-            else if (Math.Abs(aFc) < Math.Abs(aFb))
+            else if (Math.Abs(fc) < Math.Abs(fb))
             {
                 // Swap b and c if c is better
-                aA = aB;
-                aFa = aFb;
-                (aB, aC) = (aC, aB);
-                (aFb, aFc) = (aFc, aFb);
+                a = b;
+                fa = fb;
+                (b, c) = (c, b);
+                (fb, fc) = (fc, fb);
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = aB;
-        aResult.Value = aFb;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = b;
+        result.Value = fb;
+        return result;
     }
 }

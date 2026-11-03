@@ -3,11 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// Converts an arc of circle, and its derivatives, into the poles of a polynomial B-spline of degree 7 (one span,
-/// G2 at the ends), as <see cref="GeomFill.GetCircle(Convert_ParameterisationType, in gp_Vec, in gp_Vec, in gp_Vec, in gp_Pnt, in gp_Pnt, double, in gp_Pnt, NCollection_Array1{gp_Pnt}, NCollection_Array1{double})"/>
+/// G2 at the ends), as <see cref="GeomFill.GetCircle(ParameterisationType, in Vector3D, in Vector3D, in Vector3D, in Point3D, in Point3D, double, in Point3D, NCollection_Array1{Point3D}, NCollection_Array1{double})"/>
 /// uses it.
 /// </summary>
 /// <remarks>A working object; <see cref="Init"/> must be called before <c>Section</c>.</remarks>
@@ -15,17 +23,17 @@ public sealed class GeomFill_PolynomialConvertor
 {
     // BH = B * H where B is the monomial-to-BSpline conversion matrix on [-1,1], degree 7,
     // and H is the Hermite coefficients matrix. Both are mathematical constants computed once.
-    private static readonly math_Matrix THE_BH_MATRIX = ComputeBH();
+    private static readonly Matrix THE_BH_MATRIX = ComputeBH();
 
     private readonly int Ordre;
     private bool myinit;
-    private readonly math_Matrix BH;
+    private readonly Matrix BH;
 
     public GeomFill_PolynomialConvertor()
     {
         Ordre = 8;
         myinit = false;
-        BH = new math_Matrix(1, Ordre, 1, Ordre);
+        BH = new Matrix(1, Ordre, 1, Ordre);
     }
 
     /// <summary>Whether <see cref="Init"/> has been called.</summary>
@@ -43,7 +51,7 @@ public sealed class GeomFill_PolynomialConvertor
         myinit = true;
     }
 
-    private static math_Matrix ComputeBH()
+    private static Matrix ComputeBH()
     {
         const int anOrdre = 8;
         NCollection_Array1<double> aCoeffs = new(1, anOrdre * anOrdre);
@@ -58,14 +66,14 @@ public sealed class GeomFill_PolynomialConvertor
             aCoeffs.SetValue(ii + (ii - 1) * anOrdre, 1);
         }
 
-        Convert_CompPolynomialToPoles aConverter = new Convert_CompPolynomialToPoles(anOrdre,
+        CompPolynomialToPoles aConverter = new CompPolynomialToPoles(anOrdre,
                                                                                     anOrdre - 1,
                                                                                     anOrdre - 1,
                                                                                     aCoeffs,
                                                                                     anInter,
                                                                                     aTrueInter);
         NCollection_Array2<double> aPoles = aConverter.Poles();
-        math_Matrix aB = new math_Matrix(1, anOrdre, 1, anOrdre);
+        Matrix aB = new Matrix(1, anOrdre, 1, anOrdre);
         for (int jj = 1; jj <= anOrdre; jj++)
         {
             for (int ii = 1; ii <= anOrdre; ii++)
@@ -83,29 +91,29 @@ public sealed class GeomFill_PolynomialConvertor
             }
         }
 
-        math_Matrix aH = new math_Matrix(1, anOrdre, 1, anOrdre);
-        PLib.HermiteCoefficients(-1, 1, anOrdre / 2 - 1, anOrdre / 2 - 1, aH);
+        Matrix aH = new Matrix(1, anOrdre, 1, anOrdre);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1, 1, anOrdre / 2 - 1, anOrdre / 2 - 1, aH);
         aH.Transpose();
-        return new math_Matrix(aB * aH);
+        return new Matrix(aB * aH);
     }
 
     /// <summary>The poles of the arc of Angle from FirstPnt about Center, around the axis Dir.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Pnt Center, in gp_Vec Dir, double Angle,
-                        NCollection_Array1<gp_Pnt> Poles)
+    public void Section(in Point3D FirstPnt, in Point3D Center, in Vector3D Dir, double Angle,
+                        NCollection_Array1<Point3D> Poles)
     {
         math_Vector Vx = new(1, Ordre), Vy = new(1, Ordre);
         math_Vector Px, Py;
         int ii;
         double Cos_b = Math.Cos(Angle), Sin_b = Math.Sin(Angle);
         double beta, beta2, beta3;
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V2;
         V2 = Dir ^ V1;
         beta = Angle / 2;
         beta2 = beta * beta;
         beta3 = beta * beta2;
 
         // Calcul de la transformation
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
 
         // Calcul des contraintes  -----------
         Vx[1] = 1;
@@ -128,7 +136,7 @@ public sealed class GeomFill_PolynomialConvertor
         // Calcul des poles
         Px = BH * Vx;
         Py = BH * Vy;
-        gp_XYZ pnt = new gp_XYZ();
+        Xyz pnt = new Xyz();
         for (ii = 1; ii <= Ordre; ii++)
         {
             pnt.SetCoord(Px[ii], Py[ii], 0);
@@ -139,16 +147,16 @@ public sealed class GeomFill_PolynomialConvertor
     }
 
     /// <summary>The poles of the arc and their first derivatives.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Vec DFirstPnt, in gp_Pnt Center, in gp_Vec DCenter, in gp_Vec Dir,
-                        in gp_Vec DDir, double Angle, double DAngle, NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Vec> DPoles)
+    public void Section(in Point3D FirstPnt, in Vector3D DFirstPnt, in Point3D Center, in Vector3D DCenter, in Vector3D Dir,
+                        in Vector3D DDir, double Angle, double DAngle, NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Vector3D> DPoles)
     {
         math_Vector Vx = new(1, Ordre), Vy = new(1, Ordre), DVx = new(1, Ordre), DVy = new(1, Ordre);
         math_Vector Px, Py, DPx, DPy;
         int ii;
         double Cos_b = Math.Cos(Angle), Sin_b = Math.Sin(Angle);
         double beta, beta2, beta3, bprim;
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V1Prim, V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V1Prim, V2;
         V2 = Dir ^ V1;
         beta = Angle / 2;
         bprim = DAngle / 2;
@@ -156,10 +164,10 @@ public sealed class GeomFill_PolynomialConvertor
         beta3 = beta * beta2;
 
         // Calcul des  transformations
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
         V1Prim = DFirstPnt - DCenter;
         V2 = (DDir ^ V1) + (Dir ^ V1Prim);
-        gp_Mat MPrim = new gp_Mat(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
+        Matrix3x3 MPrim = new Matrix3x3(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
 
         // Calcul des contraintes  -----------
         Vx[1] = 1;
@@ -202,7 +210,7 @@ public sealed class GeomFill_PolynomialConvertor
         Py = BH * Vy;
         DPx = BH * DVx;
         DPy = BH * DVy;
-        gp_XYZ P = new gp_XYZ(), DP = new gp_XYZ(), aux = new gp_XYZ();
+        Xyz P = new Xyz(), DP = new Xyz(), aux = new Xyz();
 
         for (ii = 1; ii <= Ordre; ii++)
         {
@@ -217,10 +225,10 @@ public sealed class GeomFill_PolynomialConvertor
     }
 
     /// <summary>The poles of the arc and their first and second derivatives.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Vec DFirstPnt, in gp_Vec D2FirstPnt, in gp_Pnt Center,
-                        in gp_Vec DCenter, in gp_Vec D2Center, in gp_Vec Dir, in gp_Vec DDir, in gp_Vec D2Dir,
-                        double Angle, double DAngle, double D2Angle, NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Vec> D2Poles)
+    public void Section(in Point3D FirstPnt, in Vector3D DFirstPnt, in Vector3D D2FirstPnt, in Point3D Center,
+                        in Vector3D DCenter, in Vector3D D2Center, in Vector3D Dir, in Vector3D DDir, in Vector3D D2Dir,
+                        double Angle, double DAngle, double D2Angle, NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Vector3D> D2Poles)
     {
         math_Vector Vx = new(1, Ordre), Vy = new(1, Ordre), DVx = new(1, Ordre), DVy = new(1, Ordre),
                     D2Vx = new(1, Ordre), D2Vy = new(1, Ordre);
@@ -229,7 +237,7 @@ public sealed class GeomFill_PolynomialConvertor
         int ii;
         double aux, Cos_b = Math.Cos(Angle), Sin_b = Math.Sin(Angle);
         double beta, beta2, beta3, bprim, bprim2, bsecn;
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V1Prim, V1Secn, V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V1Prim, V1Secn, V2;
         V2 = Dir ^ V1;
         beta = Angle / 2;
         bprim = DAngle / 2;
@@ -240,17 +248,17 @@ public sealed class GeomFill_PolynomialConvertor
         bprim2 = bprim * bprim;
 
         // Calcul des  transformations
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
         V1Prim = DFirstPnt - DCenter;
         V2 = (DDir ^ V1) + (Dir ^ V1Prim);
 
-        gp_Mat MPrim = new gp_Mat(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
+        Matrix3x3 MPrim = new Matrix3x3(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
         V1Secn = D2FirstPnt - D2Center;
         V2 = DDir ^ V1Prim;
         V2 *= 2;
         V2 += (D2Dir ^ V1) + (Dir ^ V1Secn);
 
-        gp_Mat MSecn = new gp_Mat(V1Secn.X(), V2.X(), 0, V1Secn.Y(), V2.Y(), 0, V1Secn.Z(), V2.Z(), 0);
+        Matrix3x3 MSecn = new Matrix3x3(V1Secn.X(), V2.X(), 0, V1Secn.Y(), V2.Y(), 0, V1Secn.Z(), V2.Z(), 0);
 
         // Calcul des contraintes  -----------
         Vx[1] = 1;
@@ -320,7 +328,7 @@ public sealed class GeomFill_PolynomialConvertor
         D2Px = BH * D2Vx;
         D2Py = BH * D2Vy;
 
-        gp_XYZ P = new gp_XYZ(), DP = new gp_XYZ(), D2P = new gp_XYZ(), auxyz = new gp_XYZ();
+        Xyz P = new Xyz(), DP = new Xyz(), D2P = new Xyz(), auxyz = new Xyz();
         for (ii = 1; ii <= Ordre; ii++)
         {
             P.SetCoord(Px[ii], Py[ii], 0);

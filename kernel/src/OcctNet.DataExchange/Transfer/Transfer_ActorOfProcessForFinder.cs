@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// An actor of a <see cref="Transfer_ProcessForFinder"/>: it recognizes starting objects and transfers them. Actors
 /// form a list (<see cref="SetNext"/>); the "Last" ones (defaults) stay at its end.
 /// </summary>
-public class Transfer_ActorOfProcessForFinder : Standard_Transient
+public class Transfer_ActorOfProcessForFinder : Transient
 {
     public Transfer_ActorOfProcessForFinder()
     {
@@ -34,13 +36,13 @@ public class Transfer_ActorOfProcessForFinder : Standard_Transient
     /// (Default defined as doing nothing; should be deferred).
     /// </summary>
     public virtual Transfer_Binder? Transferring(Transfer_Finder? start, Transfer_ProcessForFinder? TP,
-                                                 Message_ProgressRange theProgress = default)
+                                                 ProgressRange theProgress = default)
     {
         return NullResult();
     }
 
     /// <summary>Prepares and Returns a Binder for a Transient Result. Returns a Null Handle if <paramref name="res"/> is itself Null.</summary>
-    public Transfer_SimpleBinderOfTransient? TransientResult(Standard_Transient? res)
+    public Transfer_SimpleBinderOfTransient? TransientResult(Transient? res)
     {
         Transfer_SimpleBinderOfTransient? binder = null;
         if (res is null)

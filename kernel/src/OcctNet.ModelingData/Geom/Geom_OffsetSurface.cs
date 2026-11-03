@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -24,13 +27,13 @@ namespace Occt;
 /// </remarks>
 public class Geom_OffsetSurface : Geom_Surface
 {
-    private static readonly double MyAngularToleranceForG1 = Precision.Angular();
+    private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 
     private Geom_Surface basisSurf = null!;
     private GeomEval_RepSurfaceDesc.Base? myEvalRep;
     private double offsetValue;
     private Geom_OsculatingSurface? myOscSurf;
-    private GeomAbs_Shape myBasisSurfContinuity;
+    private Continuity myBasisSurfContinuity;
 
     private static GeomEval_RepSurfaceDesc.Base? makeFullSurfaceRep(Geom_Surface? theSurface)
     {
@@ -61,7 +64,7 @@ public class Geom_OffsetSurface : Geom_Surface
     /// The surface at distance theOffset from theSurf along its normal (a copy of theSurf; trimmed and offset
     /// surfaces are flattened, their offsets added).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// The basis surface is C0 and not G1 (only checked for B-spline and swept surfaces), unless isNotCheckC0.
     /// </exception>
     public Geom_OffsetSurface(Geom_Surface theSurf, double theOffset, bool isNotCheckC0 = false)
@@ -109,7 +112,7 @@ public class Geom_OffsetSurface : Geom_Surface
     /// Changes the basis surface (a copy of S, flattened as in the constructor); the evaluation representation is
     /// recomputed, and so are the osculating surfaces of a B-spline or Bezier basis.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">As the constructor.</exception>
+    /// <exception cref="ConstructionErrorException">As the constructor.</exception>
     internal void SetBasisSurface(Geom_Surface S, bool isNotCheckC0 = false)
     {
         CheckMutable();
@@ -136,7 +139,7 @@ public class Geom_OffsetSurface : Geom_Surface
 
         myBasisSurfContinuity = aCheckingSurf.Continuity();
 
-        bool isC0 = !isNotCheckC0 && (myBasisSurfContinuity == GeomAbs_C0);
+        bool isC0 = !isNotCheckC0 && (myBasisSurfContinuity == C0);
 
         // Basis surface must be at least C1
         if (isC0)
@@ -190,14 +193,14 @@ public class Geom_OffsetSurface : Geom_Surface
             //
             if (isUG1 && isVG1)
             {
-                myBasisSurfContinuity = GeomAbs_G1;
+                myBasisSurfContinuity = G1;
                 isC0 = false;
             }
 
             // Raise exception if still C0
             if (isC0)
             {
-                throw new Standard_ConstructionError("Offset with no C1 Surface");
+                throw new ConstructionErrorException("Offset with no C1 Surface");
             }
         }
 
@@ -219,7 +222,7 @@ public class Geom_OffsetSurface : Geom_Surface
             // and stored as a field. It could be used, for example, for iso-curve extraction
             // and also for singularity detection. For osculating surfaces, it is used to
             // detect whether an iso-curve is degenerate.
-            double Tol = Precision.Confusion(); // 0.0001;
+            double Tol = global::Kerf.Engine.Foundation.Precision.Confusion(); // 0.0001;
             myOscSurf = new Geom_OsculatingSurface(aCheckingSurf, Tol);
         }
     }
@@ -247,7 +250,7 @@ public class Geom_OffsetSurface : Geom_Surface
     // changing it.
     private void ownBasisSurface()
     {
-        if (basisSurf.IsFrozen())
+        if (basisSurf.IsFrozen)
         {
             basisSurf = (Geom_Surface)basisSurf.Copy();
         }
@@ -286,26 +289,26 @@ public class Geom_OffsetSurface : Geom_Surface
         basisSurf.Bounds(out U1, out U2, out V1, out V2);
 
     /// <summary>The continuity of the basis surface lowered by one (C0 below C2).</summary>
-    public sealed override GeomAbs_Shape Continuity()
+    public sealed override Continuity Continuity()
     {
         switch (myBasisSurfContinuity)
         {
-            case GeomAbs_C2:
-                return GeomAbs_C1;
-            case GeomAbs_C3:
-                return GeomAbs_C2;
-            case GeomAbs_CN:
-                return GeomAbs_CN;
+            case C2:
+                return C1;
+            case C3:
+                return C2;
+            case CN:
+                return CN;
             default:
                 break;
         }
-        return GeomAbs_C0;
+        return C0;
     }
 
     /// <exception cref="Geom_UndefinedValue">The point is undefined at (U, V).</exception>
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out gp_Pnt aEvalRepResult))
+        if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out Point3D aEvalRepResult))
         {
             return aEvalRepResult;
         }
@@ -315,7 +318,7 @@ public class Geom_OffsetSurface : Geom_Surface
                                                 new Geom_OffsetSurfaceUtils.GeomSurfaceBasis(basisSurf),
                                                 offsetValue,
                                                 myOscSurf,
-                                                out gp_Pnt aP))
+                                                out Point3D aP))
         {
             throw new Geom_UndefinedValue("Geom_OffsetSurface::EvalD0");
         }
@@ -404,13 +407,13 @@ public class Geom_OffsetSurface : Geom_Surface
     /// <exception cref="Geom_UndefinedDerivative">
     /// Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0, or the derivative is undefined at (U, V).
     /// </exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative("Geom_OffsetSurface::EvalDN");
         }
-        if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out gp_Vec aEvalRepResult))
+        if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out Vector3D aEvalRepResult))
         {
             return aEvalRepResult;
         }
@@ -422,7 +425,7 @@ public class Geom_OffsetSurface : Geom_Surface
                                                 new Geom_OffsetSurfaceUtils.GeomSurfaceBasis(basisSurf),
                                                 offsetValue,
                                                 myOscSurf,
-                                                out gp_Vec aResult))
+                                                out Vector3D aResult))
         {
             throw new Geom_UndefinedDerivative("Geom_OffsetSurface::EvalDN");
         }
@@ -449,7 +452,7 @@ public class Geom_OffsetSurface : Geom_Surface
         public override void Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter,
                                       int DerivativeRequest, Span<double> Result, out int ReturnCode)
         {
-            gp_Pnt P;
+            Point3D P;
             if (DerivativeRequest == 0)
             {
                 P = mySurface.Value(myIsoPar, Parameter);
@@ -459,7 +462,7 @@ public class Geom_OffsetSurface : Geom_Surface
             }
             else
             {
-                mySurface.D1(myIsoPar, Parameter, out P, out gp_Vec DU, out gp_Vec DV);
+                mySurface.D1(myIsoPar, Parameter, out P, out Vector3D DU, out Vector3D DV);
                 Result[0] = DV.X();
                 Result[1] = DV.Y();
                 Result[2] = DV.Z();
@@ -482,7 +485,7 @@ public class Geom_OffsetSurface : Geom_Surface
         public override void Evaluate(int Dimension, ReadOnlySpan<double> StartEnd, double Parameter,
                                       int DerivativeRequest, Span<double> Result, out int ReturnCode)
         {
-            gp_Pnt P;
+            Point3D P;
             if (DerivativeRequest == 0)
             {
                 P = mySurface.Value(Parameter, myIsoPar);
@@ -492,7 +495,7 @@ public class Geom_OffsetSurface : Geom_Surface
             }
             else
             {
-                mySurface.D1(Parameter, myIsoPar, out P, out gp_Vec DU, out gp_Vec DV);
+                mySurface.D1(Parameter, myIsoPar, out P, out Vector3D DU, out Vector3D DV);
                 Result[0] = DU.X();
                 Result[1] = DU.Y();
                 Result[2] = DU.Z();
@@ -505,20 +508,20 @@ public class Geom_OffsetSurface : Geom_Surface
     /// The U iso-curve: the equivalent surface's, a translated iso-curve of an extrusion basis, or else a C1
     /// B-spline approximation (degree at most 14, 100 segments, tolerance Precision::Approximation()).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The approximation fails.</exception>
+    /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
     public sealed override Geom_Curve UIso(double UU)
     {
         Geom_Surface? anEquivSurface = directRepSurface(this);
         if (anEquivSurface is null)
         {
             GeomAdaptor_Surface aGAsurf = new GeomAdaptor_Surface(basisSurf);
-            if (aGAsurf.GetType() == GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion)
+            if (aGAsurf.GetType() == SurfaceKind.SurfaceOfExtrusion)
             {
                 Geom_Curve aL = basisSurf.UIso(UU);
 
-                basisSurf.D1(UU, 0.0, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V);
-                gp_Vec aDir = aD1U.Crossed(aD1V);
-                if (aDir.SquareMagnitude() < gp.Resolution())
+                basisSurf.D1(UU, 0.0, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
+                Vector3D aDir = aD1U.Crossed(aD1V);
+                if (aDir.SquareMagnitude() < Constants.Resolution())
                 {
                     return aL;
                 }
@@ -531,9 +534,9 @@ public class Geom_OffsetSurface : Geom_Surface
             const int Num1 = 0, Num2 = 0, Num3 = 1;
             NCollection_HArray1<double>? T1 = null, T2 = null;
             NCollection_HArray1<double> T3 = new(1, Num3);
-            T3.Init(Precision.Approximation());
+            T3.Init(global::Kerf.Engine.Foundation.Precision.Approximation());
             Bounds(out double U1, out double U2, out double V1, out double V2);
-            const GeomAbs_Shape Cont = GeomAbs_C1;
+            const Continuity Cont = C1;
             const int MaxSeg = 100, MaxDeg = 14;
 
             Geom_OffsetSurface_UIsoEvaluator ev = new(this, UU);
@@ -543,7 +546,7 @@ public class Geom_OffsetSurface : Geom_Surface
 
             int NbPoles = Approx.NbPoles();
 
-            NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
+            NCollection_Array1<Point3D> Poles = new(1, NbPoles);
 
             Approx.Poles(1, Poles);
             NCollection_Array1<double> Knots = new(Approx.Knots()!);
@@ -559,7 +562,7 @@ public class Geom_OffsetSurface : Geom_Surface
     /// The V iso-curve: the equivalent surface's, or else a C1 B-spline approximation (degree at most 14, 100
     /// segments, tolerance Precision::Approximation()).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The approximation fails.</exception>
+    /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
     public sealed override Geom_Curve VIso(double VV)
     {
         Geom_Surface? anEquivSurface = directRepSurface(this);
@@ -568,9 +571,9 @@ public class Geom_OffsetSurface : Geom_Surface
             const int Num1 = 0, Num2 = 0, Num3 = 1;
             NCollection_HArray1<double>? T1 = null, T2 = null;
             NCollection_HArray1<double> T3 = new(1, Num3);
-            T3.Init(Precision.Approximation());
+            T3.Init(global::Kerf.Engine.Foundation.Precision.Approximation());
             Bounds(out double U1, out double U2, out double V1, out double V2);
-            const GeomAbs_Shape Cont = GeomAbs_C1;
+            const Continuity Cont = C1;
             const int MaxSeg = 100, MaxDeg = 14;
 
             Geom_OffsetSurface_VIsoEvaluator ev = new(this, VV);
@@ -578,7 +581,7 @@ public class Geom_OffsetSurface : Geom_Surface
 
             Standard_ConstructionError_Raise_if(!Approx.IsDone(), " Geom_OffsetSurface : VIso");
 
-            NCollection_Array1<gp_Pnt> Poles = new(1, Approx.NbPoles());
+            NCollection_Array1<Point3D> Poles = new(1, Approx.NbPoles());
 
             Approx.Poles(1, Poles);
             NCollection_Array1<double> Knots = new(Approx.Knots()!);
@@ -591,7 +594,7 @@ public class Geom_OffsetSurface : Geom_Surface
     }
 
     /// <summary>True if the basis surface is C(N + 1) in U.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNu(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -599,7 +602,7 @@ public class Geom_OffsetSurface : Geom_Surface
     }
 
     /// <summary>True if the basis surface is C(N + 1) in V.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNv(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -713,7 +716,7 @@ public class Geom_OffsetSurface : Geom_Surface
     /// Applies T to the basis surface; the offset is scaled by T.ScaleFactor() (drops the evaluation
     /// representation, as OCCT does).
     /// </summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -726,7 +729,7 @@ public class Geom_OffsetSurface : Geom_Surface
     /// The basis surface's transformed parameters, transformed again by the equivalent surface when there is one
     /// (OCCT's error: see occt-issues.md).
     /// </summary>
-    public sealed override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public sealed override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
         basisSurf.TransformParameters(ref U, ref V, T);
         Geom_Surface? anEquivSurface = directRepSurface(this);
@@ -739,7 +742,7 @@ public class Geom_OffsetSurface : Geom_Surface
     }
 
     /// <summary>The basis surface's parametric transformation.</summary>
-    public sealed override gp_GTrsf2d ParametricTransformation(in gp_Trsf T) => basisSurf.ParametricTransformation(T);
+    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D T) => basisSurf.ParametricTransformation(T);
 
     /// <summary>
     /// An equivalent non-offset surface if there is one: the basis surface itself (frozen) for a zero offset,
@@ -754,7 +757,7 @@ public class Geom_OffsetSurface : Geom_Surface
             return BasisSurface(); // Direct case - no offset
         }
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Geom_Surface? Result = null, Base;
         Type TheType = basisSurf.DynamicType();
         bool IsTrimmed;
@@ -781,14 +784,14 @@ public class Geom_OffsetSurface : Geom_Surface
         {
             Geom_Plane P = (Geom_Plane)Base;
             // Plane normal is already available as Position().Direction().
-            gp_Vec T = new gp_Vec(P.Position().Direction());
+            Vector3D T = new Vector3D(P.Position().Direction());
             T *= offsetValue;
             Result = (Geom_Plane)P.Translated(T);
         }
         else if (TheType == typeof(Geom_CylindricalSurface))
         {
             Geom_CylindricalSurface C = (Geom_CylindricalSurface)Base;
-            gp_Ax3 Axis = C.Position();
+            CoordinateSystem Axis = C.Position();
             double aSign = Axis.Direct() ? 1.0 : -1.0;
             double Radius = C.Radius() + aSign * offsetValue;
             if (Radius >= Tol)
@@ -806,7 +809,7 @@ public class Geom_OffsetSurface : Geom_Surface
         else if (TheType == typeof(Geom_ConicalSurface))
         {
             Geom_ConicalSurface C = (Geom_ConicalSurface)Base;
-            gp_Ax3 anAxis = C.Position();
+            CoordinateSystem anAxis = C.Position();
             double aSign = anAxis.Direct() ? 1.0 : -1.0;
             double anAlpha = C.SemiAngle();
             double aCos = Math.Cos(anAlpha);
@@ -815,7 +818,7 @@ public class Geom_OffsetSurface : Geom_Surface
             if (aRadius >= 0.0)
             {
                 // Translate apex along axis by offset component.
-                gp_Vec aZ = new gp_Vec(anAxis.Direction());
+                Vector3D aZ = new Vector3D(anAxis.Direction());
                 aZ *= -aSign * offsetValue * aSin;
                 anAxis.Translate(aZ);
                 Result = new Geom_ConicalSurface(anAxis, anAlpha, aRadius);
@@ -825,7 +828,7 @@ public class Geom_OffsetSurface : Geom_Surface
         else if (TheType == typeof(Geom_SphericalSurface))
         {
             Geom_SphericalSurface S = (Geom_SphericalSurface)Base;
-            gp_Ax3 Axis = S.Position();
+            CoordinateSystem Axis = S.Position();
             double aSign = Axis.Direct() ? 1.0 : -1.0;
             double Radius = S.Radius() + aSign * offsetValue;
             if (Radius >= Tol)
@@ -845,7 +848,7 @@ public class Geom_OffsetSurface : Geom_Surface
         {
             Geom_ToroidalSurface S = (Geom_ToroidalSurface)Base;
             double MajorRadius = S.MajorRadius();
-            gp_Ax3 Axis = S.Position();
+            CoordinateSystem Axis = S.Position();
             double aSign = Axis.Direct() ? 1.0 : -1.0;
             double MinorRadius = S.MinorRadius() + aSign * offsetValue;
             // Only handle non-self-intersecting torus (MinorRadius <= MajorRadius).
@@ -894,7 +897,7 @@ public class Geom_OffsetSurface : Geom_Surface
     internal Geom_OsculatingSurface? OsculatingSurface() => myOscSurf;
 
     /// <summary>The continuity of the basis surface (G1 for a G1 C0 basis).</summary>
-    public GeomAbs_Shape GetBasisSurfContinuity() => myBasisSurfContinuity;
+    public Continuity GetBasisSurfContinuity() => myBasisSurfContinuity;
 
     // Non-mutating twins (OCCT.NET)
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -194,7 +195,7 @@ internal static class BOPTestUtilityCommands
             {
                 TopoDS_Face aF = TopoDS.Face(exp.Current());
                 BRepAdaptor_Surface aS = new(aF, false);
-                if (aS.GetType() == GeomAbs_SurfaceType.GeomAbs_Plane)
+                if (aS.GetType() == SurfaceKind.Plane)
                 {
                     NCollection_List<TopoDS_Shape> aLE = new();
                     TopExp_Explorer exp1 = new(aF, TopAbs_ShapeEnum.TopAbs_EDGE);

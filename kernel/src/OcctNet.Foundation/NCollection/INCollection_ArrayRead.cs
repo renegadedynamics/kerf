@@ -18,5 +18,5 @@ public interface INCollection_ArrayRead<out T>
     int Upper();
 
     /// <summary>The value at the index.</summary>
-    T Value(int theIndex);
+    T Value(int index);
 }

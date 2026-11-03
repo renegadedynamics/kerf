@@ -81,7 +81,7 @@ public sealed class Geom2dHash_CurveHasher : IEqualityComparer<Geom2d_Curve?>
         }
 
         // Unknown type - hash the type name
-        return GeomHash_HashUtils.Hash(aType.Name);
+        return GeomHash_HashUtils.Hash(global::Kerf.Engine.Foundation.OcctTypeNames.Of(aType));
     }
 
     /// <summary>Compares two objects of the same type with the hasher of that type; null equals only null.</summary>

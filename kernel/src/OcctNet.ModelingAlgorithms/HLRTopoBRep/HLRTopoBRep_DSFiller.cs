@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Contap_IType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -48,7 +51,7 @@ public static class HLRTopoBRep_DSFiller
                 }
                 else
                 {
-                    BRepTopAdaptor_Tool BRT = new(S1, Precision.PConfusion());
+                    BRepTopAdaptor_Tool BRT = new(S1, global::Kerf.Engine.Foundation.Precision.PConfusion());
                     MST.Bind(S1, BRT);
                     Domain = BRT.GetTopolTool();
                     Surface = BRT.GetSurface();
@@ -133,7 +136,7 @@ public static class HLRTopoBRep_DSFiller
                         VL = MakeVertex(PL, tol, DS);
                         double parL = PL.ParameterOnLine();
 
-                        if ((parL - parF) > Precision.PConfusion())
+                        if ((parL - parF) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
 
                             Geom_Curve? C = null;
@@ -162,8 +165,8 @@ public static class HLRTopoBRep_DSFiller
                                     C = new Geom_Circle(Line.Circle());
                                     if (withPCurve)
                                     {
-                                        Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location Loc)!;
-                                        if (!Loc.IsIdentity())
+                                        Geom_Surface S = BRep_Tool.Surface(F, out Placement Loc)!;
+                                        if (!Loc.IsIdentity)
                                         {
                                             S = (Geom_Surface)S.Transformed(Loc.Transformation());
                                         }
@@ -192,7 +195,7 @@ public static class HLRTopoBRep_DSFiller
                                         int nbp = ipL - ipF + 1;
                                         NCollection_Array1<double> knots = new(1, nbp);
                                         NCollection_Array1<int> mults = new(1, nbp);
-                                        NCollection_Array1<gp_Pnt> Points = new(1, nbp);
+                                        NCollection_Array1<Point3D> Points = new(1, nbp);
 
                                         for (int i = 1; i <= nbp; i++)
                                         {
@@ -205,12 +208,12 @@ public static class HLRTopoBRep_DSFiller
 
                                         if (withPCurve)
                                         {
-                                            NCollection_Array1<gp_Pnt2d> Points2d = new(1, nbp);
+                                            NCollection_Array1<Point2D> Points2d = new(1, nbp);
                                             for (int i = 1; i <= nbp; i++)
                                             {
                                                 double u, v;
                                                 Line.Point(i + ipF - 1).ParametersOnS2(out u, out v);
-                                                Points2d.SetValue(i, new gp_Pnt2d(u, v));
+                                                Points2d.SetValue(i, new Point2D(u, v));
                                             }
                                             C2d = new Geom2d_BSplineCurve(Points2d, knots, mults, 1);
                                         }
@@ -222,7 +225,7 @@ public static class HLRTopoBRep_DSFiller
                                         int nbp = ipL - ipF + 1;
                                         NCollection_Array1<double> knots = new(1, nbp);
                                         NCollection_Array1<int> mults = new(1, nbp);
-                                        NCollection_Array1<gp_Pnt> Points = new(1, nbp);
+                                        NCollection_Array1<Point3D> Points = new(1, nbp);
 
                                         double Maxx, Maxy, Maxz, Maxu, Maxv;
                                         double Minx, Miny, Minz, Minu, Minv;
@@ -233,7 +236,7 @@ public static class HLRTopoBRep_DSFiller
                                         {
                                             knots.SetValue(i, (double)i);
                                             mults.SetValue(i, 1);
-                                            gp_Pnt P = Line.Point(i + ipF - 1).Value();
+                                            Point3D P = Line.Point(i + ipF - 1).Value();
                                             if (P.X() < Minx)
                                             {
                                                 Minx = P.X();
@@ -267,7 +270,7 @@ public static class HLRTopoBRep_DSFiller
 
                                         if (withPCurve)
                                         {
-                                            NCollection_Array1<gp_Pnt2d> Points2d = new(1, nbp);
+                                            NCollection_Array1<Point2D> Points2d = new(1, nbp);
                                             for (int i = 1; i <= nbp; i++)
                                             {
                                                 double u, v;
@@ -288,7 +291,7 @@ public static class HLRTopoBRep_DSFiller
                                                 {
                                                     Maxv = v;
                                                 }
-                                                Points2d.SetValue(i, new gp_Pnt2d(u, v));
+                                                Points2d.SetValue(i, new Point2D(u, v));
                                             }
                                             AppC2d = new Geom2d_BSplineCurve(Points2d, knots, mults, 1);
                                         }
@@ -356,13 +359,13 @@ public static class HLRTopoBRep_DSFiller
                                         else
                                         {
                                             AppParCurves_MultiBSpCurve AppVal = Approx.Value(1);
-                                            NCollection_Array1<gp_Pnt> poles3d = new(1, AppVal.NbPoles());
+                                            NCollection_Array1<Point3D> poles3d = new(1, AppVal.NbPoles());
                                             AppVal.Curve(1, poles3d);
                                             C = new Geom_BSplineCurve(poles3d, AppVal.Knots(), AppVal.Multiplicities(),
                                                                       AppVal.Degree());
 
                                             AppParCurves_MultiBSpCurve AppVal2 = Approx.Value(2);
-                                            NCollection_Array1<gp_Pnt2d> poles2d = new(1, AppVal2.NbPoles());
+                                            NCollection_Array1<Point2D> poles2d = new(1, AppVal2.NbPoles());
                                             AppVal2.Curve(2, poles2d);
                                             C2d = new Geom2d_BSplineCurve(poles2d, AppVal2.Knots(),
                                                                           AppVal2.Multiplicities(), AppVal2.Degree());
@@ -375,7 +378,7 @@ public static class HLRTopoBRep_DSFiller
 
                                 case Contap_Restriction:
                                 {
-                                    throw new Standard_ProgramError("HLRTopoBRep_DSFiller::InsertFace : Restriction");
+                                    throw new ProgramErrorException("HLRTopoBRep_DSFiller::InsertFace : Restriction");
                                 }
                             }
 
@@ -436,14 +439,14 @@ public static class HLRTopoBRep_DSFiller
                     {
                         continue;
                     }
-                    gp_Pnt Pnt1 = BRep_Tool.Pnt(aVer[i]);
+                    Point3D Pnt1 = BRep_Tool.Pnt(aVer[i]);
                     for (int j = 0; j < 2; j++)
                     {
                         if (aVer[i].IsSame(aVer2[j]))
                         {
                             continue;
                         }
-                        gp_Pnt Pnt2 = BRep_Tool.Pnt(aVer2[j]);
+                        Point3D Pnt2 = BRep_Tool.Pnt(aVer2[j]);
                         if (Pnt1.SquareDistance(Pnt2) <= SqTol)
                         {
                             BRep_Builder aBB = new();
@@ -474,13 +477,13 @@ public static class HLRTopoBRep_DSFiller
             {
                 TopoDS_Edge E = ((BRepAdaptor_Curve2d)P.Arc()).Edge();
                 double Par = P.ParameterOnArc();
-                gp_Pnt P3d = P.Value();
+                Point3D P3d = P.Value();
 
                 for (DS.InitVertex(E); DS.MoreVertex(); DS.NextVertex())
                 {
                     TopoDS_Vertex curV = DS.Vertex();
                     double curP = DS.Parameter();
-                    gp_Pnt PPP = BRep_Tool.Pnt(curV);
+                    Point3D PPP = BRep_Tool.Pnt(curV);
                     double TTT = BRep_Tool.Tolerance(curV);
                     if (P3d.IsEqual(PPP, TTT))
                     {

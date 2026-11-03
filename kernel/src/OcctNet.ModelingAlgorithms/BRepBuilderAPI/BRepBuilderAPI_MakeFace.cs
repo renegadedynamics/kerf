@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepBuilderAPI_FaceError;
 using static Occt.BRepLib_FaceError;
 
@@ -42,31 +43,31 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Pln P)
+    public BRepBuilderAPI_MakeFace(in Plane3D P)
     {
         myMakeFace = new BRepLib_MakeFace(P);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cylinder C)
+    public BRepBuilderAPI_MakeFace(in Cylinder C)
     {
         myMakeFace = new BRepLib_MakeFace(C);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cone C)
+    public BRepBuilderAPI_MakeFace(in Cone C)
     {
         myMakeFace = new BRepLib_MakeFace(C);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Sphere S)
+    public BRepBuilderAPI_MakeFace(in Sphere S)
     {
         myMakeFace = new BRepLib_MakeFace(S);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Torus T)
+    public BRepBuilderAPI_MakeFace(in Torus T)
     {
         myMakeFace = new BRepLib_MakeFace(T);
         TakeResult();
@@ -78,31 +79,31 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Pln P, double UMin, double UMax, double VMin, double VMax)
+    public BRepBuilderAPI_MakeFace(in Plane3D P, double UMin, double UMax, double VMin, double VMax)
     {
         myMakeFace = new BRepLib_MakeFace(P, UMin, UMax, VMin, VMax);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cylinder C, double UMin, double UMax, double VMin, double VMax)
+    public BRepBuilderAPI_MakeFace(in Cylinder C, double UMin, double UMax, double VMin, double VMax)
     {
         myMakeFace = new BRepLib_MakeFace(C, UMin, UMax, VMin, VMax);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cone C, double UMin, double UMax, double VMin, double VMax)
+    public BRepBuilderAPI_MakeFace(in Cone C, double UMin, double UMax, double VMin, double VMax)
     {
         myMakeFace = new BRepLib_MakeFace(C, UMin, UMax, VMin, VMax);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Sphere S, double UMin, double UMax, double VMin, double VMax)
+    public BRepBuilderAPI_MakeFace(in Sphere S, double UMin, double UMax, double VMin, double VMax)
     {
         myMakeFace = new BRepLib_MakeFace(S, UMin, UMax, VMin, VMax);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Torus T, double UMin, double UMax, double VMin, double VMax)
+    public BRepBuilderAPI_MakeFace(in Torus T, double UMin, double UMax, double VMin, double VMax)
     {
         myMakeFace = new BRepLib_MakeFace(T, UMin, UMax, VMin, VMax);
         TakeResult();
@@ -120,31 +121,31 @@ public class BRepBuilderAPI_MakeFace : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Pln P, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Plane3D P, in TopoDS_Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(P, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cylinder C, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Cylinder C, in TopoDS_Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(C, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Cone C, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Cone C, in TopoDS_Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(C, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Sphere S, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Sphere S, in TopoDS_Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(S, W, Inside);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeFace(in gp_Torus T, in TopoDS_Wire W, bool Inside = true)
+    public BRepBuilderAPI_MakeFace(in Torus T, in TopoDS_Wire W, bool Inside = true)
     {
         myMakeFace = new BRepLib_MakeFace(T, W, Inside);
         TakeResult();

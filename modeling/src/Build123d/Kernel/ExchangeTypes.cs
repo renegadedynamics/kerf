@@ -1,3 +1,4 @@
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -13,14 +14,14 @@ namespace Build123d;
 /// <param name="Location">An assembly's place relative to its parent; null for a part or no move.</param>
 /// <param name="Children">An assembly's children.</param>
 internal sealed record ExchangeNode(string? Name, (double R, double G, double B, double A)? Color, TopoDS_Shape? Shape,
-                                  TopLoc_Location? Location, IReadOnlyList<ExchangeNode> Children)
+                                  Placement? Location, IReadOnlyList<ExchangeNode> Children)
 {
     /// <summary>A part: a shape at its place.</summary>
     public static ExchangeNode Part(TopoDS_Shape shape, string? name = null, (double R, double G, double B, double A)? color = null)
         => new(name, color, shape, null, []);
 
     /// <summary>An assembly of children at a place.</summary>
-    public static ExchangeNode Assembly(IReadOnlyList<ExchangeNode> children, TopLoc_Location? location = null, string? name = null,
+    public static ExchangeNode Assembly(IReadOnlyList<ExchangeNode> children, Placement? location = null, string? name = null,
                                        (double R, double G, double B, double A)? color = null)
         => new(name, color, null, location, children);
 }

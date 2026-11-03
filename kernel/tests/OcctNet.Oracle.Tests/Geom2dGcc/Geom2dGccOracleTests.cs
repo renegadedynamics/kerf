@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using Xunit.Abstractions;
 
@@ -68,7 +70,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
     private static (double X, double Y) RawDir(Oracle theO)
     {
-        gp_XY aV = GeomOracleInputs.RawDir2d(theO);
+        Xy aV = GeomOracleInputs.RawDir2d(theO);
         return (aV.X(), aV.Y());
     }
 
@@ -139,8 +141,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 int aB = theO.Int(0, 3);
                 anA.Basis = BaseArg(theO, aB switch { 0 => Kind.Circle, 1 => Kind.Ellipse, 2 => Kind.Line, _ => Kind.BSpline });
                 Geom2d_Curve aC = BuildPort(anA.Basis);
-                double aFirst = Precision.IsInfinite(aC.FirstParameter()) ? -15 : aC.FirstParameter();
-                double aLast = Precision.IsInfinite(aC.LastParameter()) ? 15 : aC.LastParameter();
+                double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.FirstParameter()) ? -15 : aC.FirstParameter();
+                double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.LastParameter()) ? 15 : aC.LastParameter();
                 double a = theO.Real(aFirst, aLast), b = theO.Real(aFirst, aLast);
                 if (Math.Abs(a - b) < 0.1 * (aLast - aFirst))
                 {
@@ -188,11 +190,11 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         switch (theA.Kind)
         {
             case Kind.Line:
-                return new Geom2d_Line(new gp_Pnt2d(theA.Px, theA.Py), new gp_Dir2d(theA.Dx, theA.Dy));
+                return new Geom2d_Line(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy));
             case Kind.Circle:
-                return new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(theA.Px, theA.Py), new gp_Dir2d(theA.Dx, theA.Dy)), theA.R1, theA.Sense);
+                return new Geom2d_Circle(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.Sense);
             case Kind.Ellipse:
-                return new Geom2d_Ellipse(new gp_Ax2d(new gp_Pnt2d(theA.Px, theA.Py), new gp_Dir2d(theA.Dx, theA.Dy)), theA.R1, theA.R2,
+                return new Geom2d_Ellipse(new Axis2D(new Point2D(theA.Px, theA.Py), new Direction2D(theA.Dx, theA.Dy)), theA.R1, theA.R2,
                                           theA.Sense);
             case Kind.BSpline:
                 return Geom2dOracle.ToPort(theA.BSpline!);
@@ -241,7 +243,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         if (theA.Kind == Kind.Offset)
         {
             Geom2d_Curve anOffset = BuildPort(theA);
-            var aPlane = new Geom_Plane(new gp_Ax3());
+            var aPlane = new Geom_Plane(new CoordinateSystem());
             TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, -50, 50, -50, 50, 1e-7).Face();
             TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(anOffset, BRep_Tool.Surface(aFace)!).Edge();
             string aFile = Path.Combine(myDirectory, $"c{myFileNumber++}.brep");
@@ -270,7 +272,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             }
             double f = 0, l = 0;
             N.Geom2d_Curve aN = N.BRep_Tool.CurveOnSurface(N.TopoDS.Edge(aNLast), N.TopoDS.Face(aFX.Current()), ref f, ref l)!;
-            Assert.True(aP is Geom2d_OffsetCurve, theA.Name + " read as " + aP.GetType().Name);
+            Assert.True(aP is Geom2d_OffsetCurve, theA.Name + " read as " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.GetType()));
             return (aN, aP);
         }
         N.Geom2d_Curve aNative = BuildNative(theA);
@@ -283,7 +285,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             var aPA = new Geom2dAdaptor_Curve(aPort);
             double u = theA.Kind == Kind.Trimmed ? theA.U1 : 0.7;
             using N.gp_Pnt2d aNP = aNA.Value(u);
-            gp_Pnt2d aPP = aPA.Value(u);
+            Point2D aPP = aPA.Value(u);
             if (aNP.X() != aPP.X() || aNP.Y() != aPP.Y())
             {
                 return null;
@@ -295,7 +297,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
     private static double StartParam(Oracle theO, Geom2d_Curve theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
-        if (Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             return theO.Real(-10, 10);
         }
@@ -328,13 +330,13 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             {
                 Throw(theName, anE.IsFault ? "fault" : anE.OcctType);
             }
-            catch (Exception anE) when (anE is Standard_Failure or NullReferenceException or IndexOutOfRangeException)
+            catch (Exception anE) when (anE is global::Kerf.Engine.Foundation.FailureException or NullReferenceException or IndexOutOfRangeException)
             {
                 Throw(theName, anE switch
                 {
                     NullReferenceException => "fault",
                     IndexOutOfRangeException => "Standard_OutOfRange",
-                    _ => anE.GetType().Name,
+                    _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()),
                 });
             }
         }
@@ -345,7 +347,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             D(theName + ".y", theP.Y());
         }
 
-        public void P(string theName, in gp_Pnt2d theP)
+        public void P(string theName, in Point2D theP)
         {
             D(theName + ".x", theP.X());
             D(theName + ".y", theP.Y());
@@ -366,7 +368,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             D(theName + ".r", theC.Radius());
         }
 
-        public void Circ(string theName, in gp_Circ2d theC)
+        public void Circ(string theName, in Circle2D theC)
         {
             P(theName + ".loc", theC.Location());
             D(theName + ".xd.x", theC.XAxis().Direction().X());
@@ -385,7 +387,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             D(theName + ".d.y", aD.Y());
         }
 
-        public void Lin(string theName, in gp_Lin2d theL)
+        public void Lin(string theName, in Line2D theL)
         {
             P(theName + ".loc", theL.Location());
             D(theName + ".d.x", theL.Direction().X());
@@ -395,11 +397,11 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
     internal delegate void NTan(int theI, ref double theParSol, ref double theParArg, N.gp_Pnt2d thePnt);
 
-    internal delegate void PTan(int theI, out double theParSol, out double theParArg, out gp_Pnt2d thePnt);
+    internal delegate void PTan(int theI, out double theParSol, out double theParArg, out Point2D thePnt);
 
     internal delegate void NCen(int theI, ref double theParArg, N.gp_Pnt2d thePnt);
 
-    internal delegate void PCen(int theI, out double theParArg, out gp_Pnt2d thePnt);
+    internal delegate void PCen(int theI, out double theParArg, out Point2D thePnt);
 
     /// <summary>The accessors of one native solver, as the bindings give them.</summary>
     internal sealed record NSolver(Func<bool> IsDone, Func<int> NbSolutions, Action<Rec, int> Solution, NTan[] Tangency,
@@ -463,7 +465,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 int aK = k;
                 theR.Try($"t{k + 1}.{i}", () =>
                 {
-                    theS.Tangency[aK](anI, out double a, out double b, out gp_Pnt2d aP);
+                    theS.Tangency[aK](anI, out double a, out double b, out Point2D aP);
                     theR.D($"t{aK + 1}.{anI}.parsol", a);
                     theR.D($"t{aK + 1}.{anI}.pararg", b);
                     theR.P($"t{aK + 1}.{anI}.pnt", aP);
@@ -478,7 +480,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             {
                 theR.Try($"c3.{i}", () =>
                 {
-                    theS.CenterOn3(anI, out double a, out gp_Pnt2d aP);
+                    theS.CenterOn3(anI, out double a, out Point2D aP);
                     theR.D($"c3.{anI}.pararg", a);
                     theR.P($"c3.{anI}.pnt", aP);
                 });
@@ -493,7 +495,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         r.Circ($"s.{i}", aC);
     };
 
-    private static Action<Rec, int> PCircles(Func<int, gp_Circ2d> theSol) => (r, i) => r.Circ($"s.{i}", theSol(i));
+    private static Action<Rec, int> PCircles(Func<int, Circle2D> theSol) => (r, i) => r.Circ($"s.{i}", theSol(i));
 
     // ---------------------------------------------------------------------------------------------------------------
     // Cases
@@ -935,7 +937,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var aP = new N.gp_Pnt2d(x, y);
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol));
                 }),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new gp_Pnt2d(x, y), tol))),
+                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol))),
             };
         });
         yield return ("Lin2d2Tan(curve, curve, params)", o =>
@@ -967,7 +969,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var aP = new N.gp_Pnt2d(x, y);
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol, u1));
                 }),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new gp_Pnt2d(x, y), tol, u1))),
+                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol, u1))),
             };
         });
 
@@ -997,7 +999,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     }),
                     Port = () => RunPort(() =>
                     {
-                        var aL = new gp_Lin2d(new gp_Pnt2d(x, y), new gp_Dir2d(dx, dy));
+                        var aL = new Line2D(new Point2D(x, y), new Direction2D(dx, dy));
                         return PLin2dTanObl(aWithParam ? new Geom2dGcc_Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, u1, angle)
                                                        : new Geom2dGcc_Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, angle));
                     }),

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class StepBasic_Unit : StepData_SelectType
     /// 1 -&gt; NamedUnit
     /// 2 -&gt; DerivedUnit
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

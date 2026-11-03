@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Converts a closed B-spline curve to its periodic form.</summary>
@@ -63,7 +65,7 @@ public sealed class ShapeCustom_Curve
             if (BSpl.Multiplicity(1) == BSpl.Degree() + 1
                 && BSpl.Multiplicity(BSpl.NbKnots()) == BSpl.Degree() + 1)
             {
-                NCollection_Array1<gp_Pnt> oldPoles = BSpl.InternalPoles();
+                NCollection_Array1<Point3D> oldPoles = BSpl.InternalPoles();
                 NCollection_Array1<double> oldWeights = BSpl.InternalWeightsArray();
                 int nbKnots = BSpl.NbKnots();
                 NCollection_Array1<double> oldKnots = BSpl.InternalKnots();
@@ -100,7 +102,7 @@ public sealed class ShapeCustom_Curve
             {
                 // OCCT.NET: OCCT makes the caller's curve periodic in place; a frozen curve is copied first
                 // (decision 974)
-                if (BSpl.IsFrozen())
+                if (BSpl.IsFrozen)
                 {
                     BSpl = (Geom_BSplineCurve)BSpl.Copy();
                 }

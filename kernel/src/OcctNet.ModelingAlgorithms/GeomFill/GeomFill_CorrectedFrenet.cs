@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_Trihedron;
 
 namespace Occt;
@@ -22,26 +25,26 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     private readonly GeomFill_Frenet frenet;
     private Law_Function? EvolAroundT;
     private Law_Function? TLaw;
-    private gp_Vec AT;
-    private gp_Vec AN;
+    private Vector3D AT;
+    private Vector3D AN;
     private bool isFrenet;
     private readonly bool myForEvaluation;
     private NCollection_HArray1<double>? HArrPoles;
     private NCollection_HArray1<double>? HArrAngle;
-    private NCollection_HArray1<gp_Vec>? HArrTangent;
-    private NCollection_HArray1<gp_Vec>? HArrNormal;
+    private NCollection_HArray1<Vector3D>? HArrTangent;
+    private NCollection_HArray1<Vector3D>? HArrNormal;
 
     private static double ComputeTorsion(double Param, Adaptor3d_Curve aCurve)
     {
         double Torsion;
 
-        aCurve.D3(Param, out gp_Pnt aPoint, out gp_Vec DC1, out gp_Vec DC2, out gp_Vec DC3);
-        gp_Vec DC1crossDC2 = DC1 ^ DC2;
+        aCurve.D3(Param, out Point3D aPoint, out Vector3D DC1, out Vector3D DC2, out Vector3D DC3);
+        Vector3D DC1crossDC2 = DC1 ^ DC2;
         double Norm_DC1crossDC2 = DC1crossDC2.Magnitude();
 
         double DC1DC2DC3 = DC1crossDC2 * DC3; // mixed product
 
-        double Tol = gp.Resolution();
+        double Tol = Constants.Resolution();
         double SquareNorm_DC1crossDC2 = Norm_DC1crossDC2 * Norm_DC1crossDC2;
         if (SquareNorm_DC1crossDC2 <= Tol)
         {
@@ -143,33 +146,33 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     private static bool FindPlane(Adaptor3d_Curve theC, ref Geom_Plane? theP)
     {
         bool found = true;
-        NCollection_HArray1<gp_Pnt>? TabP = null;
+        NCollection_HArray1<Point3D>? TabP = null;
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 found = false;
             }
             break;
 
-            case GeomAbs_Circle:
-                theP = new Geom_Plane(new gp_Ax3(theC.Circle().Position()));
+            case Circle:
+                theP = new Geom_Plane(new CoordinateSystem(theC.Circle().Position()));
                 break;
 
-            case GeomAbs_Ellipse:
-                theP = new Geom_Plane(new gp_Ax3(theC.Ellipse().Position()));
+            case Ellipse:
+                theP = new Geom_Plane(new CoordinateSystem(theC.Ellipse().Position()));
                 break;
 
-            case GeomAbs_Hyperbola:
-                theP = new Geom_Plane(new gp_Ax3(theC.Hyperbola().Position()));
+            case Hyperbola:
+                theP = new Geom_Plane(new CoordinateSystem(theC.Hyperbola().Position()));
                 break;
 
-            case GeomAbs_Parabola:
-                theP = new Geom_Plane(new gp_Ax3(theC.Parabola().Position()));
+            case Parabola:
+                theP = new Geom_Plane(new CoordinateSystem(theC.Parabola().Position()));
                 break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve GC = theC.Bezier();
                 int nbp = GC.NbPoles();
@@ -183,12 +186,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 }
                 else
                 {
-                    TabP = new NCollection_HArray1<gp_Pnt>(GC.InternalPoles());
+                    TabP = new NCollection_HArray1<Point3D>(GC.InternalPoles());
                 }
             }
             break;
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve GC = theC.BSpline();
                 int nbp = GC.NbPoles();
@@ -202,20 +205,20 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 }
                 else
                 {
-                    TabP = new NCollection_HArray1<gp_Pnt>(GC.InternalPoles());
+                    TabP = new NCollection_HArray1<Point3D>(GC.InternalPoles());
                 }
             }
             break;
 
             default:
             { // On utilise un echantillonage
-                int nbp = 15 + theC.NbIntervals(GeomAbs_C3);
+                int nbp = 15 + theC.NbIntervals(C3);
                 double f, l, t, inv;
                 int ii;
                 f = theC.FirstParameter();
                 l = theC.LastParameter();
                 inv = 1.0 / (nbp - 1);
-                TabP = new NCollection_HArray1<gp_Pnt>(1, nbp);
+                TabP = new NCollection_HArray1<Point3D>(1, nbp);
                 for (ii = 1; ii <= nbp; ii++)
                 {
                     t = (f * (nbp - ii) + l * (ii - 1));
@@ -228,14 +231,14 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         if (TabP is not null)
         { // Recherche d'un plan moyen et controle
-            GeomLib.AxeOfInertia(TabP, out gp_Ax2 inertia, out bool issingular);
+            GeomLib.AxeOfInertia(TabP, out Frame3D inertia, out bool issingular);
             if (issingular)
             {
                 found = false;
             }
             else
             {
-                theP = new Geom_Plane(new gp_Ax3(inertia));
+                theP = new Geom_Plane(new CoordinateSystem(inertia));
             }
             if (found)
             {
@@ -244,9 +247,9 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 theP!.Coefficients(out a, out b, out c, out d);
                 for (ii = 1; ii <= TabP.Length() && found; ii++)
                 {
-                    gp_XYZ xyz = TabP.Value(ii).XYZ();
+                    Xyz xyz = TabP.Value(ii).XYZ();
                     dist = a * xyz.X() + b * xyz.Y() + c * xyz.Z() + d;
-                    found = (Math.Abs(dist) <= Precision.Confusion());
+                    found = (Math.Abs(dist) <= global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 return found;
             }
@@ -291,15 +294,15 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         {
             frenet.SetCurve(C);
 
-            GeomAbs_CurveType type;
+            CurveKind type;
             type = C.GetType();
             switch (type)
             {
-                case GeomAbs_Circle:
-                case GeomAbs_Ellipse:
-                case GeomAbs_Hyperbola:
-                case GeomAbs_Parabola:
-                case GeomAbs_Line:
+                case Circle:
+                case Ellipse:
+                case Hyperbola:
+                case Parabola:
+                case Line:
                 {
                     // No probleme isFrenet
                     isFrenet = true;
@@ -320,15 +323,15 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     private void Init()
     {
         EvolAroundT = new Law_Composite();
-        int NbI = frenet.NbIntervals(GeomAbs_C0), i;
+        int NbI = frenet.NbIntervals(C0), i;
         NCollection_Array1<double> T = new(1, NbI + 1);
-        frenet.Intervals(T, GeomAbs_C0);
+        frenet.Intervals(T, C0);
         Law_Function? Func = null;
         // OCC78
         NCollection_Sequence<double> SeqPoles = new(), SeqAngle = new();
-        NCollection_Sequence<gp_Vec> SeqTangent = new(), SeqNormal = new();
+        NCollection_Sequence<Vector3D> SeqTangent = new(), SeqNormal = new();
 
-        gp_Vec Tangent = new(), Normal = new(), BN = new();
+        Vector3D Tangent = new(), Normal = new(), BN = new();
         frenet.D0(myTrimmed!.FirstParameter(), ref Tangent, ref Normal, ref BN);
         int NbStep;
         double StartAng = 0, AvStep, Step;
@@ -361,8 +364,8 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         {
             HArrPoles = new NCollection_HArray1<double>(1, iEnd);
             HArrAngle = new NCollection_HArray1<double>(1, iEnd);
-            HArrTangent = new NCollection_HArray1<gp_Vec>(1, iEnd);
-            HArrNormal = new NCollection_HArray1<gp_Vec>(1, iEnd);
+            HArrTangent = new NCollection_HArray1<Vector3D>(1, iEnd);
+            HArrNormal = new NCollection_HArray1<Vector3D>(1, iEnd);
             for (i = 1; i <= iEnd; i++)
             {
                 HArrPoles[i] = SeqPoles[i];
@@ -374,12 +377,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     }
 
     // Computes the angle law on a span.
-    private bool InitInterval(double First, double Last, double Step, ref double startAng, ref gp_Vec prevTangent,
-                              ref gp_Vec prevNormal, ref gp_Vec aT, ref gp_Vec aN, ref Law_Function? FuncInt,
+    private bool InitInterval(double First, double Last, double Step, ref double startAng, ref Vector3D prevTangent,
+                              ref Vector3D prevNormal, ref Vector3D aT, ref Vector3D aN, ref Law_Function? FuncInt,
                               NCollection_Sequence<double> SeqPoles, NCollection_Sequence<double> SeqAngle,
-                              NCollection_Sequence<gp_Vec> SeqTangent, NCollection_Sequence<gp_Vec> SeqNormal)
+                              NCollection_Sequence<Vector3D> SeqTangent, NCollection_Sequence<Vector3D> SeqNormal)
     {
-        gp_Vec Tangent = new(), Normal = new(), BN = new(), cross;
+        Vector3D Tangent = new(), Normal = new(), BN = new(), cross;
         NCollection_Sequence<double> parameters = new();
         NCollection_Sequence<double> EvolAT = new();
         double Param = First;
@@ -388,12 +391,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         frenet.SetInterval(First, Last); // To have right evaluation at bounds
         GeomFill_SnglrFunc CS = new(myCurve!);
-        Bnd_Box aCurveBoundBox = new();
+        Box aCurveBoundBox = new();
         BndLib_Add3dCurve.Add(CS, First, Last, 1.0e-2, ref aCurveBoundBox);
         double LengthMin = aCurveBoundBox.GetGap() * 1.0e-4;
 
-        aT = new gp_Vec(0, 0, 0);
-        aN = new gp_Vec(0, 0, 0);
+        aT = new Vector3D(0, 0, 0);
+        aN = new Vector3D(0, 0, 0);
 
         double angleAT = 0.0;
         double currStep = Step;
@@ -407,13 +410,13 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         int i = 1;
         double currParam = Param;
-        double DLast = Last - Precision.PConfusion();
+        double DLast = Last - global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         while (Param < Last)
         {
             if (currParam > DLast)
             {
-                if (Math.Abs(DLast - Param) < Precision.SquareConfusion())
+                if (Math.Abs(DLast - Param) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     Param = currParam;
                 }
@@ -439,7 +442,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
                 if (isConst && i > 1)
                 {
-                    if (Math.Abs(angleAT) > Precision.PConfusion())
+                    if (Math.Abs(angleAT) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         isConst = false;
                     }
@@ -451,7 +454,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
                 if (isZero)
                 {
-                    if (Math.Abs(angleAT) > Precision.PConfusion())
+                    if (Math.Abs(angleAT) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         isZero = false;
                     }
@@ -465,12 +468,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 i++;
 
                 // Evaluate the Next step
-                CS.D1(Param, out gp_Pnt PonC, out gp_Vec D1);
+                CS.D1(Param, out Point3D PonC, out Vector3D D1);
                 double L = Math.Max(PonC.XYZ().Modulus() / 2, LengthMin);
                 double norm = D1.Magnitude();
-                if (norm < Precision.Confusion())
+                if (norm < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    norm = Precision.Confusion();
+                    norm = global::Kerf.Engine.Foundation.Precision.Confusion();
                 }
                 currStep = L / norm;
                 if (currStep > Step)
@@ -512,7 +515,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 angleATarr[aParamIndex] = EvolAT[aParamIndex];
             }
 
-            Law_Interpolate lawAT = new(angleATarr, pararr, false, Precision.PConfusion());
+            Law_Interpolate lawAT = new(angleATarr, pararr, false, global::Kerf.Engine.Foundation.Precision.PConfusion());
             lawAT.Perform();
             // Curve() freezes the interpolated law; smoothlaw works on a copy of it.
             Law_BSpline BS = lawAT.Curve();
@@ -524,12 +527,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
     }
 
     // Calculates the angle of rotation of the trihedron's normal relative to the previous one (OCC78).
-    private double CalcAngleAT(in gp_Vec Tangent, in gp_Vec Normal, in gp_Vec prevTangent, in gp_Vec prevNormal)
+    private double CalcAngleAT(in Vector3D Tangent, in Vector3D Normal, in Vector3D prevTangent, in Vector3D prevNormal)
     {
         double angle;
-        gp_Vec Normal_rot, cross;
+        Vector3D Normal_rot, cross;
         angle = Tangent.Angle(prevTangent);
-        if (Math.Abs(angle) > Precision.Angular() && Math.Abs(angle) < M_PI - Precision.Angular())
+        if (Math.Abs(angle) > global::Kerf.Engine.Foundation.Precision.Angular() && Math.Abs(angle) < M_PI - global::Kerf.Engine.Foundation.Precision.Angular())
         {
             cross = Tangent.Crossed(prevTangent).Normalized();
             Normal_rot = Normal + Math.Sin(angle) * cross.Crossed(Normal)
@@ -540,9 +543,9 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
             Normal_rot = Normal;
         }
         double angleAT = Normal_rot.Angle(prevNormal);
-        if (angleAT > Precision.Angular() && M_PI - angleAT > Precision.Angular())
+        if (angleAT > global::Kerf.Engine.Foundation.Precision.Angular() && M_PI - angleAT > global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            if (Normal_rot.Crossed(prevNormal).IsOpposite(prevTangent, Precision.Angular()))
+            if (Normal_rot.Crossed(prevNormal).IsOpposite(prevTangent, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 angleAT = -angleAT;
             }
@@ -596,7 +599,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         }
         //  Calculate differentiation between approximated and local values of AngleAT
         double AngP = TLaw!.Value(Param), AngPo = HArrAngle!.Value(iC), dAng = AngP - AngPo;
-        gp_Vec Tangent = new(), Normal = new(), BN = new();
+        Vector3D Tangent = new(), Normal = new(), BN = new();
         frenet.D0(Param, ref Tangent, ref Normal, ref BN);
         double DAng = CalcAngleAT(Tangent, Normal, HArrTangent!.Value(iC), HArrNormal!.Value(iC));
         double DA = diffAng(DAng, dAng);
@@ -608,7 +611,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return AngP;
     }
 
-    public override bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
         frenet.D0(Param, ref Tangent, ref Normal, ref BiNormal);
         if (isFrenet)
@@ -620,7 +623,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         angleAT = GetAngleAT(Param); // OCC78
 
         // rotation around Tangent
-        gp_Vec cross;
+        Vector3D cross;
         cross = Tangent.Crossed(Normal);
         Normal.SetLinearForm(Math.Sin(angleAT), cross, (1 - Math.Cos(angleAT)), Tangent.Crossed(cross), Normal);
         BiNormal = Tangent.Crossed(Normal);
@@ -628,8 +631,8 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         frenet.D1(Param, ref Tangent, ref DTangent, ref Normal, ref DNormal, ref BiNormal, ref DBiNormal);
         if (isFrenet)
@@ -643,7 +646,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         TLaw!.D1(Param, out angleAT, out d_angleAT);
         angleAT = GetAngleAT(Param); // OCC78
 
-        gp_Vec cross, dcross = new(), tcross, dtcross = new(), aux = new();
+        Vector3D cross, dcross = new(), tcross, dtcross = new(), aux = new();
         sina = Math.Sin(angleAT);
         cosa = Math.Cos(angleAT);
 
@@ -666,9 +669,9 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
         frenet.D2(Param, ref Tangent, ref DTangent, ref D2Tangent, ref Normal, ref DNormal, ref D2Normal, ref BiNormal,
                   ref DBiNormal, ref D2BiNormal);
@@ -682,7 +685,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         TLaw!.D2(Param, out angleAT, out d_angleAT, out d2_angleAT);
         angleAT = GetAngleAT(Param); // OCC78
 
-        gp_Vec cross, dcross = new(), d2cross = new(), tcross, dtcross = new(), d2tcross = new(), aux = new();
+        Vector3D cross, dcross = new(), d2cross = new(), tcross, dtcross = new(), d2tcross = new(), aux = new();
         sina = Math.Sin(angleAT);
         cosa = Math.Cos(angleAT);
         cross = Tangent.Crossed(Normal);
@@ -715,7 +718,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int NbFrenet, NbLaw;
         NbFrenet = frenet.NbIntervals(S);
@@ -736,12 +739,12 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         frenet.Intervals(FrenetInt, S);
         EvolAroundT.Intervals(LawInt, S);
-        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, Precision.PConfusion(), true);
+        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         return Fusion.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int NbFrenet, NbLaw;
         if (isFrenet)
@@ -765,7 +768,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         frenet.Intervals(FrenetInt, S);
         EvolAroundT.Intervals(LawInt, S);
-        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, Precision.PConfusion(), true);
+        GeomLib.FuseIntervals(FrenetInt, LawInt, Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         for (int i = 1; i <= Fusion.Length(); i++)
         {
@@ -779,7 +782,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         frenet.SetInterval(First, Last);
         if (!isFrenet)
         {
-            TLaw = EvolAroundT!.Trim(First, Last, Precision.PConfusion() / 2);
+            TLaw = EvolAroundT!.Trim(First, Last, global::Kerf.Engine.Foundation.Precision.PConfusion() / 2);
         }
     }
 
@@ -799,11 +802,11 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
 
         double Step, u, v, tmin, tmax;
         int NbInt, i, j, k = 1;
-        NbInt = EvolAroundT.NbIntervals(GeomAbs_CN);
+        NbInt = EvolAroundT.NbIntervals(CN);
         NCollection_Array1<double> Int = new(1, NbInt + 1);
-        EvolAroundT.Intervals(Int, GeomAbs_CN);
-        gp_Pnt2d old = new();
-        gp_Vec2d aVec = new(), PrevVec = new();
+        EvolAroundT.Intervals(Int, CN);
+        Point2D old = new();
+        Vector2D aVec = new(), PrevVec = new();
 
         int NbSamples = 10;
         for (i = 1; i <= NbInt; i++)
@@ -816,13 +819,13 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
                 return GeomFill_IsDiscreteTrihedron; // DiscreteTrihedron
             }
 
-            Law_Function trimmedlaw = EvolAroundT.Trim(tmin, tmax, Precision.PConfusion() / 2);
+            Law_Function trimmedlaw = EvolAroundT.Trim(tmin, tmax, global::Kerf.Engine.Foundation.Precision.PConfusion() / 2);
             Step = (Int[i + 1] - Int[i]) / NbSamples;
             for (j = 0; j <= NbSamples; j++)
             {
                 u = tmin + j * Step;
                 v = trimmedlaw.Value(u);
-                gp_Pnt2d point2d = new(u, v);
+                Point2D point2d = new(u, v);
                 if (j != 0)
                 {
                     aVec.SetXY(point2d.XY() - old.XY());
@@ -844,7 +847,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         return GeomFill_IsCorrectedFrenet; // CorrectedFrenet
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         if (isFrenet)
         {
@@ -859,7 +862,7 @@ public class GeomFill_CorrectedFrenet : GeomFill_TrihedronLaw
         }
     }
 
-    public override bool IsConstant() => (myCurve!.GetType() == GeomAbs_Line);
+    public override bool IsConstant() => (myCurve!.GetType() == Line);
 
     public override bool IsOnlyBy3dCurve() => true;
 }

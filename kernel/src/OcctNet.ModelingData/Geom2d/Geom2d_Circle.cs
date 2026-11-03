@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +27,7 @@ public class Geom2d_Circle : Geom2d_Conic
     }
 
     /// <summary>The circle equal to C.</summary>
-    public Geom2d_Circle(in gp_Circ2d C)
+    public Geom2d_Circle(in Circle2D C)
     {
         radius = C.Radius();
         pos = C.Axis();
@@ -33,30 +37,30 @@ public class Geom2d_Circle : Geom2d_Conic
     /// The circle of centre A's origin and radius Radius; A is the X axis, and Sense the orientation (true:
     /// counterclockwise).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">Radius &lt; 0.</exception>
-    public Geom2d_Circle(in gp_Ax2d A, double Radius, bool Sense = true)
+    /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
+    public Geom2d_Circle(in Axis2D A, double Radius, bool Sense = true)
     {
         radius = Radius;
         if (Radius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        pos = new gp_Ax22d(A, Sense);
+        pos = new Frame2D(A, Sense);
     }
 
     /// <summary>The circle of radius Radius in the coordinate system A.</summary>
-    /// <exception cref="Standard_ConstructionError">Radius &lt; 0.</exception>
-    public Geom2d_Circle(in gp_Ax22d A, double Radius)
+    /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
+    public Geom2d_Circle(in Frame2D A, double Radius)
     {
         radius = Radius;
         if (Radius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A;
     }
 
-    internal void SetCirc2d(in gp_Circ2d C)
+    internal void SetCirc2d(in Circle2D C)
     {
         CheckMutable();
         radius = C.Radius();
@@ -68,7 +72,7 @@ public class Geom2d_Circle : Geom2d_Conic
         CheckMutable();
         if (R < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         radius = R;
     }
@@ -77,7 +81,7 @@ public class Geom2d_Circle : Geom2d_Conic
     public double Radius() => radius;
 
     /// <summary>The circle as a gp_Circ2d.</summary>
-    public gp_Circ2d Circ2d() => new gp_Circ2d(pos, radius);
+    public Circle2D Circ2d() => new Circle2D(pos, radius);
 
     /// <summary>2*PI - U.</summary>
     public sealed override double ReversedParameter(double U) => (2.0 * M_PI - U);
@@ -97,41 +101,41 @@ public class Geom2d_Circle : Geom2d_Conic
     /// <summary>True.</summary>
     public sealed override bool IsPeriodic() => true;
 
-    public sealed override gp_Pnt2d EvalD0(double U) => ElCLib.CircleValue(U, pos, radius);
+    public sealed override Point2D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(U, pos, radius);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult;
-        ElCLib.CircleD1(U, pos, radius, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD1(U, pos, radius, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult;
-        ElCLib.CircleD2(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD2(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult;
-        ElCLib.CircleD3(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD3(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
         return aResult;
     }
 
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative();
         }
-        return ElCLib.CircleDN(U, pos, radius, N);
+        return global::Kerf.Engine.Geometry.ElCLib.CircleDN(U, pos, radius, N);
     }
 
     /// <summary>Applies T to the circle: the radius is multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         radius = radius * Math.Abs(T.ScaleFactor());
@@ -141,7 +145,7 @@ public class Geom2d_Circle : Geom2d_Conic
     // Non-mutating twins of the Set methods (OCCT.NET)
 
     /// <summary>A copy equal to C.</summary>
-    public Geom2d_Circle WithCirc2d(in gp_Circ2d C)
+    public Geom2d_Circle WithCirc2d(in Circle2D C)
     {
         Geom2d_Circle aCopy = (Geom2d_Circle)Copy();
         aCopy.SetCirc2d(C);
@@ -149,7 +153,7 @@ public class Geom2d_Circle : Geom2d_Conic
     }
 
     /// <summary>A copy of radius R.</summary>
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     public Geom2d_Circle WithRadius(double R)
     {
         Geom2d_Circle aCopy = (Geom2d_Circle)Copy();

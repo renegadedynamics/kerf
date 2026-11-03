@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using Occt;
 
@@ -99,7 +101,7 @@ public sealed class DrawNumber(double theValue) : DrawDrawable
 
     public override void Whatis(DrawResult theResult) => theResult.Append("numeric");
 
-    public override void Dump(TextWriter theStream) => Standard_Stream.Write(theStream, Value);
+    public override void Dump(TextWriter theStream) => StreamUtilities.Write(theStream, Value);
 
     /// <summary>Draw_Number::Save: scientific, precision 15, width 30.</summary>
     public override void Save(TextWriter theStream) => theStream.Write(DrawFormat.Scientific(Value, 15).PadLeft(30) + "\n");
@@ -131,9 +133,9 @@ public sealed class DrawGeometry : DrawDrawable
         Geom_BSplineSurface => "DrawTrSurf_BSplineSurface",
         Geom_BezierSurface => "DrawTrSurf_BezierSurface",
         Geom_Surface => "DrawTrSurf_Surface",
-        gp_Pnt or gp_Pnt2d => "DrawTrSurf_Point",
-        Poly_Polygon3D => "DrawTrSurf_Polygon3D",
-        Poly_Polygon2D => "DrawTrSurf_Polygon2D",
+        Point3D or Point2D => "DrawTrSurf_Point",
+        global::Kerf.Engine.Meshing.Polygon3D => "DrawTrSurf_Polygon3D",
+        global::Kerf.Engine.Meshing.Polygon2D => "DrawTrSurf_Polygon2D",
         _ => "DrawTrSurf_Triangulation",
     };
 
@@ -142,9 +144,9 @@ public sealed class DrawGeometry : DrawDrawable
         Geom_Curve => " a 3d curve",
         Geom2d_Curve => "2d curve",
         Geom_Surface => "a surface",
-        gp_Pnt or gp_Pnt2d => "point",
-        Poly_Polygon3D => "polygon3D",
-        Poly_Polygon2D => "polygon2D",
+        Point3D or Point2D => "point",
+        global::Kerf.Engine.Meshing.Polygon3D => "polygon3D",
+        global::Kerf.Engine.Meshing.Polygon2D => "polygon2D",
         _ => "triangulation",
     });
 
@@ -161,22 +163,22 @@ public sealed class DrawGeometry : DrawDrawable
             case Geom_Surface aSurface:
                 GeomTools_SurfaceSet.PrintSurface(aSurface, theStream);
                 break;
-            case gp_Pnt aPoint:
+            case Point3D aPoint:
                 theStream.Write(string.Create(CultureInfo.InvariantCulture,
                                               $"Point : {DrawFormat.Scientific(aPoint.X(), 15)}, {DrawFormat.Scientific(aPoint.Y(), 15)}, {DrawFormat.Scientific(aPoint.Z(), 15)}\n"));
                 break;
-            case gp_Pnt2d aPoint:
+            case Point2D aPoint:
                 theStream.Write(string.Create(CultureInfo.InvariantCulture,
                                               $"Point 2d : {DrawFormat.Scientific(aPoint.X(), 15)}, {DrawFormat.Scientific(aPoint.Y(), 15)}\n"));
                 break;
-            case Poly_Polygon3D aPolygon:
-                Poly.Dump(aPolygon, theStream);
+            case global::Kerf.Engine.Meshing.Polygon3D aPolygon:
+                global::Kerf.Engine.Meshing.Poly.Dump(aPolygon, theStream);
                 break;
-            case Poly_Polygon2D aPolygon:
-                Poly.Dump(aPolygon, theStream);
+            case global::Kerf.Engine.Meshing.Polygon2D aPolygon:
+                global::Kerf.Engine.Meshing.Poly.Dump(aPolygon, theStream);
                 break;
-            case Poly_Triangulation aTriangulation:
-                Poly.Dump(aTriangulation, theStream);
+            case global::Kerf.Engine.Meshing.Triangulation aTriangulation:
+                global::Kerf.Engine.Meshing.Poly.Dump(aTriangulation, theStream);
                 break;
         }
     }
@@ -194,20 +196,20 @@ public sealed class DrawGeometry : DrawDrawable
             case Geom_Surface aSurface:
                 GeomTools_SurfaceSet.PrintSurface(aSurface, theStream, true);
                 break;
-            case gp_Pnt aPoint:
+            case Point3D aPoint:
                 theStream.Write($"1 {DrawFormat.Scientific(aPoint.X(), 15)} {DrawFormat.Scientific(aPoint.Y(), 15)} {DrawFormat.Scientific(aPoint.Z(), 15)}\n");
                 break;
-            case gp_Pnt2d aPoint:
+            case Point2D aPoint:
                 theStream.Write($"0 {DrawFormat.Scientific(aPoint.X(), 15)} {DrawFormat.Scientific(aPoint.Y(), 15)}\n");
                 break;
-            case Poly_Polygon3D aPolygon:
-                Poly.Write(aPolygon, theStream);
+            case global::Kerf.Engine.Meshing.Polygon3D aPolygon:
+                global::Kerf.Engine.Meshing.Poly.Write(aPolygon, theStream);
                 break;
-            case Poly_Polygon2D aPolygon:
-                Poly.Write(aPolygon, theStream);
+            case global::Kerf.Engine.Meshing.Polygon2D aPolygon:
+                global::Kerf.Engine.Meshing.Poly.Write(aPolygon, theStream);
                 break;
-            case Poly_Triangulation aTriangulation:
-                Poly.Write(aTriangulation, theStream);
+            case global::Kerf.Engine.Meshing.Triangulation aTriangulation:
+                global::Kerf.Engine.Meshing.Poly.Write(aTriangulation, theStream);
                 break;
         }
     }
@@ -241,31 +243,31 @@ public sealed class DrawGeometry : DrawDrawable
             case "DrawTrSurf_Point":
             {
                 int anIs3d = 0;
-                Standard_Stream.Read(theStream, ref anIs3d);
+                StreamUtilities.Read(theStream, ref anIs3d);
                 // C++'s >> into a double, as GeomTools::GetReal reads
                 GeomTools.GetReal(theStream, out double x);
                 GeomTools.GetReal(theStream, out double y);
                 if (anIs3d != 0)
                 {
                     GeomTools.GetReal(theStream, out double z);
-                    aGeometry = new gp_Pnt(x, y, z);
+                    aGeometry = new Point3D(x, y, z);
                 }
                 else
                 {
-                    aGeometry = new gp_Pnt2d(x, y);
+                    aGeometry = new Point2D(x, y);
                 }
 
                 break;
             }
 
             case "DrawTrSurf_Polygon3D":
-                aGeometry = Poly.ReadPolygon3D(theStream);
+                aGeometry = global::Kerf.Engine.Meshing.Poly.ReadPolygon3D(theStream);
                 break;
             case "DrawTrSurf_Polygon2D":
-                aGeometry = Poly.ReadPolygon2D(theStream);
+                aGeometry = global::Kerf.Engine.Meshing.Poly.ReadPolygon2D(theStream);
                 break;
             case "DrawTrSurf_Triangulation":
-                aGeometry = Poly.ReadTriangulation(theStream);
+                aGeometry = global::Kerf.Engine.Meshing.Poly.ReadTriangulation(theStream);
                 break;
             default:
                 return null;

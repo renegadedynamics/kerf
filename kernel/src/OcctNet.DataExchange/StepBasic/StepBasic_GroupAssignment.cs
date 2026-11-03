@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity GroupAssignment
 /// </summary>
-public class StepBasic_GroupAssignment : Standard_Transient
+public class StepBasic_GroupAssignment : Transient
 {
     private StepBasic_Group theAssignedGroup;
 

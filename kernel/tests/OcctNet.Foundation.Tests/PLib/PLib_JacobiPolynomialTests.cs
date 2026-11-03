@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Numerics.Polynomials;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -13,9 +14,9 @@ public class PLibJacobiPolynomialTest
     public void ConstructorAndBasicProperties()
     {
         // Test with different constraint orders
-        PLib_JacobiPolynomial aJacC0 = new(10, GeomAbs_C0);
-        PLib_JacobiPolynomial aJacC1 = new(15, GeomAbs_C1);
-        PLib_JacobiPolynomial aJacC2 = new(20, GeomAbs_C2);
+        JacobiPolynomial aJacC0 = new(10, C0);
+        JacobiPolynomial aJacC1 = new(15, C1);
+        JacobiPolynomial aJacC2 = new(20, C2);
 
         // Test WorkDegree property
         Assert.Equal(10, aJacC0.WorkDegree());
@@ -34,23 +35,23 @@ public class PLibJacobiPolynomialTest
     {
         // Test minimum valid WorkDegree for each constraint order
         // For C0: WorkDegree >= 2 to get myDegree >= 0
-        PLib_JacobiPolynomial aJacMinC0 = new(2, GeomAbs_C0);
+        JacobiPolynomial aJacMinC0 = new(2, C0);
         Assert.Equal(2, aJacMinC0.WorkDegree());
 
         // For C1: WorkDegree >= 4 to get myDegree >= 0
-        PLib_JacobiPolynomial aJacMinC1 = new(4, GeomAbs_C1);
+        JacobiPolynomial aJacMinC1 = new(4, C1);
         Assert.Equal(4, aJacMinC1.WorkDegree());
 
         // For C2: WorkDegree >= 6 to get myDegree >= 0
-        PLib_JacobiPolynomial aJacMinC2 = new(6, GeomAbs_C2);
+        JacobiPolynomial aJacMinC2 = new(6, C2);
         Assert.Equal(6, aJacMinC2.WorkDegree());
 
         // Test reasonable maximum WorkDegree
-        PLib_JacobiPolynomial aJacMax = new(30, GeomAbs_C0);
+        JacobiPolynomial aJacMax = new(30, C0);
         Assert.Equal(30, aJacMax.WorkDegree());
 
         // Test reasonable high degrees
-        PLib_JacobiPolynomial aJacHigh = new(25, GeomAbs_C0);
+        JacobiPolynomial aJacHigh = new(25, C0);
         Assert.True(aJacHigh.WorkDegree() > 20, "High degree should be supported");
     }
 
@@ -58,7 +59,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void GaussIntegrationPoints()
     {
-        PLib_JacobiPolynomial aJac = new(10, GeomAbs_C0);
+        JacobiPolynomial aJac = new(10, C0);
 
         // Test various numbers of Gauss points (only valid values supported by OCCT)
         int[] aGaussNumbers = [8, 10, 15, 20, 25, 30, 40, 50, 61];
@@ -104,7 +105,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void GaussIntegrationWeights()
     {
-        PLib_JacobiPolynomial aJac = new(8, GeomAbs_C1);
+        JacobiPolynomial aJac = new(8, C1);
 
         int aNbGauss = 15; // Must be > degree for valid computation
         NCollection_Array2<double> aWeights = new(0, aNbGauss / 2, 0, aJac.WorkDegree());
@@ -121,7 +122,7 @@ public class PLibJacobiPolynomialTest
         {
             for (int j = aWeights.LowerCol(); j <= aWeights.UpperCol(); j++)
             {
-                Assert.False(Precision.IsInfinite(aWeights[i, j]), $"Weight should be finite at ({i},{j})");
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aWeights[i, j]), $"Weight should be finite at ({i},{j})");
             }
         }
     }
@@ -130,7 +131,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void MaxValue()
     {
-        PLib_JacobiPolynomial aJac = new(10, GeomAbs_C0);
+        JacobiPolynomial aJac = new(10, C0);
 
         int aTabSize = aJac.WorkDegree() - 2 * (aJac.NivConstr() + 1);
         if (aTabSize > 0)
@@ -143,7 +144,7 @@ public class PLibJacobiPolynomialTest
             for (int i = aTabMax.Lower(); i <= aTabMax.Upper(); i++)
             {
                 Assert.True(aTabMax[i] > 0.0, $"Max value should be positive at index {i}");
-                Assert.False(Precision.IsInfinite(aTabMax[i]), $"Max value should be finite at index {i}");
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aTabMax[i]), $"Max value should be finite at index {i}");
             }
         }
     }
@@ -152,7 +153,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void BasisFunctionD0()
     {
-        PLib_JacobiPolynomial aJac = new(6, GeomAbs_C0);
+        JacobiPolynomial aJac = new(6, C0);
 
         // Calculate actual number of basis functions
         int aDegree = aJac.WorkDegree() - 2 * (aJac.NivConstr() + 1);
@@ -169,7 +170,7 @@ public class PLibJacobiPolynomialTest
             // Basic sanity checks
             for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
             {
-                Assert.False(Precision.IsInfinite(aBasisValue[i]),
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]),
                              $"Basis value should be finite at index {i}, U={aU}");
             }
         }
@@ -179,7 +180,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void BasisFunctionDerivatives()
     {
-        PLib_JacobiPolynomial aJac = new(8, GeomAbs_C1);
+        JacobiPolynomial aJac = new(8, C1);
 
         // Calculate actual number of basis functions (same as MaxValue test pattern)
         int aDegree = aJac.WorkDegree() - 2 * (aJac.NivConstr() + 1);
@@ -199,10 +200,10 @@ public class PLibJacobiPolynomialTest
         // Verify all values are finite
         for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
         {
-            Assert.False(Precision.IsInfinite(aBasisValue[i]), $"Basis value should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD1[i]), $"First derivative should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD2[i]), $"Second derivative should be finite at {i}");
-            Assert.False(Precision.IsInfinite(aBasisD3[i]), $"Third derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]), $"Basis value should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD1[i]), $"First derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD2[i]), $"Second derivative should be finite at {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisD3[i]), $"Third derivative should be finite at {i}");
         }
     }
 
@@ -211,7 +212,7 @@ public class PLibJacobiPolynomialTest
     public void CoefficientConversion()
     {
         const int aWorkDegree = 6; // Use smaller degree that works well with ToCoefficients
-        PLib_JacobiPolynomial aJac = new(aWorkDegree, GeomAbs_C0);
+        JacobiPolynomial aJac = new(aWorkDegree, C0);
 
         const int aDimension = 1;
         int aDegree = aJac.WorkDegree() - 2 * (aJac.NivConstr() + 1); // Use computational degree
@@ -234,7 +235,7 @@ public class PLibJacobiPolynomialTest
         // Verify output is finite
         for (int i = aCoefficients.Lower(); i <= aCoefficients.Upper(); i++)
         {
-            Assert.False(Precision.IsInfinite(aCoefficients[i]), $"Converted coefficient should be finite at index {i}");
+            Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCoefficients[i]), $"Converted coefficient should be finite at index {i}");
         }
     }
 
@@ -242,7 +243,7 @@ public class PLibJacobiPolynomialTest
     [Fact]
     public void DegreeReduction()
     {
-        PLib_JacobiPolynomial aJac = new(10, GeomAbs_C0);
+        JacobiPolynomial aJac = new(10, C0);
 
         const int aDimension = 1;
         const int aMaxDegree = 8;
@@ -262,14 +263,14 @@ public class PLibJacobiPolynomialTest
         Assert.True(aNewDegree <= aMaxDegree, "New degree should not exceed max degree");
         Assert.True(aNewDegree >= 0, "New degree should be non-negative");
         Assert.True(aMaxError >= 0.0, "Max error should be non-negative");
-        Assert.False(Precision.IsInfinite(aMaxError), "Max error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aMaxError), "Max error should be finite");
     }
 
     // Test error estimation
     [Fact]
     public void ErrorEstimation()
     {
-        PLib_JacobiPolynomial aJac = new(8, GeomAbs_C1);
+        JacobiPolynomial aJac = new(8, C1);
 
         const int aDimension = 1;
 
@@ -286,16 +287,16 @@ public class PLibJacobiPolynomialTest
         double aMaxErr = aJac.MaxError(aDimension, aCoeff.AsSpan(1), aNewDegree);
 
         Assert.True(aMaxErr >= 0.0, "Max error should be non-negative");
-        Assert.False(Precision.IsInfinite(aMaxErr), "Max error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aMaxErr), "Max error should be finite");
 
         // Test AverageError
         double aAvgErr = aJac.AverageError(aDimension, aCoeff.AsSpan(1), aNewDegree);
 
         Assert.True(aAvgErr >= 0.0, "Average error should be non-negative");
-        Assert.False(Precision.IsInfinite(aAvgErr), "Average error should be finite");
+        Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aAvgErr), "Average error should be finite");
 
         // Average error should typically be <= max error
-        Assert.True(aAvgErr <= aMaxErr + Precision.Confusion(),
+        Assert.True(aAvgErr <= aMaxErr + global::Kerf.Engine.Foundation.Precision.Confusion(),
                     "Average error should not exceed max error significantly");
     }
 
@@ -304,7 +305,7 @@ public class PLibJacobiPolynomialTest
     public void StressTests()
     {
         // Test with maximum degree
-        PLib_JacobiPolynomial aJacMax = new(30, GeomAbs_C2);
+        JacobiPolynomial aJacMax = new(30, C2);
 
         // Calculate actual number of basis functions
         int aDegree = aJacMax.WorkDegree() - 2 * (aJacMax.NivConstr() + 1);
@@ -325,7 +326,7 @@ public class PLibJacobiPolynomialTest
             // Verify basis values are finite
             for (int i = aBasisValue.Lower(); i <= aBasisValue.Upper(); i++)
             {
-                Assert.False(Precision.IsInfinite(aBasisValue[i]), "Basis value should be finite");
+                Assert.False(global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasisValue[i]), "Basis value should be finite");
             }
         }
     }

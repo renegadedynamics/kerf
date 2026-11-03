@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Convert_ConeToBSplineSurfaceTest
@@ -9,39 +15,39 @@ public class Convert_ConeToBSplineSurfaceTest
     [Fact]
     public void FullCone()
     {
-        gp_Cone aCone = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
-        Convert_ConeToBSplineSurface aConv = new(aCone, 0.0, 10.0);
+        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 3.0);
+        ConeToBSplineSurface aConv = new(aCone, 0.0, 10.0);
 
         Assert.Equal(2, aConv.UDegree());
         Assert.Equal(1, aConv.VDegree());
-        Assert.True(aConv.IsUPeriodic());
-        Assert.False(aConv.IsVPeriodic());
-        Assert.True(aConv.NbUPoles() > 0);
-        Assert.True(aConv.NbVPoles() > 0);
+        Assert.True(aConv.IsUPeriodic);
+        Assert.False(aConv.IsVPeriodic);
+        Assert.True(aConv.UPoleCount > 0);
+        Assert.True(aConv.VPoleCount > 0);
     }
 
     [Fact]
     public void TrimmedCone()
     {
-        gp_Cone aCone = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
+        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 4.0, 2.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = 0.0, aV2 = 5.0;
-        Convert_ConeToBSplineSurface aConv = new(aCone, aU1, aU2, aV1, aV2);
+        ConeToBSplineSurface aConv = new(aCone, aU1, aU2, aV1, aV2);
 
-        Assert.False(aConv.IsUPeriodic());
-        Assert.False(aConv.IsVPeriodic());
+        Assert.False(aConv.IsUPeriodic);
+        Assert.False(aConv.IsVPeriodic);
     }
 
     [Fact]
     public void WeightsArePositive()
     {
-        gp_Cone aCone = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), M_PI / 6.0, 1.0);
-        Convert_ConeToBSplineSurface aConv = new(aCone, 0.0, 5.0);
+        Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 6.0, 1.0);
+        ConeToBSplineSurface aConv = new(aCone, 0.0, 5.0);
 
         NCollection_Array2<double> aWeights = aConv.Weights();
-        for (int i = 1; i <= aConv.NbUPoles(); ++i)
+        for (int i = 1; i <= aConv.UPoleCount; ++i)
         {
-            for (int j = 1; j <= aConv.NbVPoles(); ++j)
+            for (int j = 1; j <= aConv.VPoleCount; ++j)
             {
                 Assert.True(aWeights[i, j] > 0.0);
             }
@@ -53,9 +59,9 @@ public class Convert_ConeToBSplineSurfaceTest
     {
         double aSemiAngle = M_PI / 6.0;
         double aRadius = 3.0;
-        gp_Ax3 anAx3 = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        gp_Cone aCone = new(anAx3, aSemiAngle, aRadius);
-        Convert_ConeToBSplineSurface aConv = new(aCone, 0.0, M_PI, 0.0, 10.0);
+        CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Cone aCone = new(anAx3, aSemiAngle, aRadius);
+        ConeToBSplineSurface aConv = new(aCone, 0.0, M_PI, 0.0, 10.0);
 
         double aTol = 1.0e-10;
         NCollection_Array1<double> aUK = aConv.UKnots();
@@ -69,7 +75,7 @@ public class Convert_ConeToBSplineSurfaceTest
             for (int j = 0; j <= 4; ++j)
             {
                 double aV = aVMin + j * (aVMax - aVMin) / 4.0;
-                BSplSLib.D0(aU,
+                SurfaceBSplSLib.D0(aU,
                             aV,
                             0,
                             0,
@@ -85,7 +91,7 @@ public class Convert_ConeToBSplineSurfaceTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aPnt);
+                            out Point3D aPnt);
 
                 // Verify the point lies on the cone:
                 // For a cone with axis Z, semi-angle a, reference radius R:

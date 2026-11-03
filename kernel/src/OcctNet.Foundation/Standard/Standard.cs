@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Occt;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// OCCT's free functions on reals and integers (<c>RealSmall()</c>, <c>Square()</c>, <c>IsOdd()</c>, ...).
@@ -23,7 +25,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_OutOfRange(message);
+            throw new OutOfRangeException(message);
         }
     }
 
@@ -32,7 +34,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_ConstructionError(message);
+            throw new ConstructionErrorException(message);
         }
     }
 
@@ -41,7 +43,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_DomainError(message);
+            throw new DomainErrorException(message);
         }
     }
 
@@ -50,7 +52,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_DimensionError(message);
+            throw new DimensionErrorException(message);
         }
     }
 
@@ -59,7 +61,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NullValue(message);
+            throw new NullValueException(message);
         }
     }
 
@@ -68,7 +70,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NullObject(message);
+            throw new NullObjectException(message);
         }
     }
 
@@ -77,7 +79,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NotImplemented(message);
+            throw new MethodNotImplementedException(message);
         }
     }
 
@@ -86,7 +88,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new StdFail_NotDone(message);
+            throw new NotDoneException(message);
         }
     }
 
@@ -95,7 +97,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_RangeError(message);
+            throw new RangeErrorException(message);
         }
     }
 
@@ -104,7 +106,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_DimensionMismatch(message);
+            throw new DimensionMismatchException(message);
         }
     }
 
@@ -113,7 +115,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NoSuchObject(message);
+            throw new NoSuchObjectException(message);
         }
     }
 
@@ -122,7 +124,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NumericError(message);
+            throw new NumericErrorException(message);
         }
     }
 
@@ -131,7 +133,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NegativeValue(message);
+            throw new NegativeValueException(message);
         }
     }
 
@@ -140,7 +142,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_TypeMismatch(message);
+            throw new TypeMismatchException(message);
         }
     }
 
@@ -149,7 +151,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_ProgramError(message);
+            throw new ProgramErrorException(message);
         }
     }
 
@@ -158,7 +160,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_DivideByZero(message);
+            throw new ZeroDivisorException(message);
         }
     }
 
@@ -167,7 +169,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_NoMoreObject(message);
+            throw new NoMoreObjectException(message);
         }
     }
 
@@ -176,7 +178,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new Standard_MultiplyDefined(message);
+            throw new MultiplyDefinedException(message);
         }
     }
 
@@ -185,7 +187,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new StdFail_InfiniteSolutions(message);
+            throw new InfiniteSolutionsException(message);
         }
     }
 
@@ -194,7 +196,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new StdFail_UndefinedDerivative(message);
+            throw new UndefinedDerivativeException(message);
         }
     }
 
@@ -203,7 +205,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new gp_VectorWithNullMagnitude(message);
+            throw new NullVectorException(message);
         }
     }
 
@@ -212,7 +214,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new math_NotSquare(message);
+            throw new NotSquareException(message);
         }
     }
 
@@ -221,7 +223,7 @@ public static class Standard
     {
         if (condition)
         {
-            throw new math_SingularMatrix(message);
+            throw new SingularMatrixException(message);
         }
     }
 
@@ -251,123 +253,123 @@ public static class Standard
 
     public static int RealSize() => 64;
 
-    public static double IntToReal(int theValue) => theValue;
+    public static double IntToReal(int value) => value;
 
     /// <summary>True when the values differ by less than <see cref="RealSmall"/>.</summary>
-    public static bool IsEqual(double theValue1, double theValue2) => Math.Abs(theValue1 - theValue2) < RealSmall();
+    public static bool IsEqual(double value1, double value2) => Math.Abs(value1 - value2) < RealSmall();
 
-    /// <summary>The distance from <paramref name="theValue"/> to the next double away from zero.</summary>
-    public static double Epsilon(double theValue)
-        => theValue >= 0.0
-               ? NextAfter(theValue, RealLast()) - theValue
-               : theValue - NextAfter(theValue, RealFirst()); // as OCCT: 0 for RealLast() and RealFirst() (decision 1080)
+    /// <summary>The distance from <paramref name="value"/> to the next double away from zero.</summary>
+    public static double Epsilon(double value)
+        => value >= 0.0
+               ? NextAfter(value, RealLast()) - value
+               : value - NextAfter(value, RealFirst()); // as OCCT: 0 for RealLast() and RealFirst() (decision 1080)
 
-    public static double ACos(double theValue) => Math.Acos(theValue);
+    public static double ACos(double value) => Math.Acos(value);
 
-    public static double ASin(double theValue) => Math.Asin(theValue);
+    public static double ASin(double value) => Math.Asin(value);
 
-    public static double ATan(double theValue) => Math.Atan(theValue);
+    public static double ATan(double value) => Math.Atan(value);
 
     /// <summary><c>std::atan2(theX, theY)</c>: OCCT names the first argument X, but it is the numerator.</summary>
-    public static double ATan2(double theX, double theY) => Math.Atan2(theX, theY);
+    public static double ATan2(double x, double y) => Math.Atan2(x, y);
 
-    public static double ATanh(double theValue) => Math.Atanh(theValue);
+    public static double ATanh(double value) => Math.Atanh(value);
 
-    public static double ACosh(double theValue) => Math.Acosh(theValue);
+    public static double ACosh(double value) => Math.Acosh(value);
 
-    public static double ASinh(double theValue) => Math.Asinh(theValue);
+    public static double ASinh(double value) => Math.Asinh(value);
 
-    public static double Cos(double theValue) => Math.Cos(theValue);
+    public static double Cos(double value) => Math.Cos(value);
 
-    public static double Sin(double theValue) => Math.Sin(theValue);
+    public static double Sin(double value) => Math.Sin(value);
 
-    public static double Tan(double theValue) => Math.Tan(theValue);
+    public static double Tan(double value) => Math.Tan(value);
 
-    public static double Cosh(double theValue) => Math.Cosh(theValue);
+    public static double Cosh(double value) => Math.Cosh(value);
 
-    public static double Sinh(double theValue) => Math.Sinh(theValue);
+    public static double Sinh(double value) => Math.Sinh(value);
 
-    public static double Tanh(double theValue) => Math.Tanh(theValue);
+    public static double Tanh(double value) => Math.Tanh(value);
 
-    public static double Exp(double theValue) => Math.Exp(theValue);
+    public static double Exp(double value) => Math.Exp(value);
 
-    public static double Log(double theValue) => Math.Log(theValue);
+    public static double Log(double value) => Math.Log(value);
 
-    public static double Log10(double theValue) => Math.Log10(theValue);
+    public static double Log10(double value) => Math.Log10(value);
 
-    public static double Sqrt(double theValue) => Math.Sqrt(theValue);
+    public static double Sqrt(double value) => Math.Sqrt(value);
 
-    public static double Pow(double theValue, double thePower) => Math.Pow(theValue, thePower);
+    public static double Pow(double value, double power) => Math.Pow(value, power);
 
-    public static double Abs(double theValue) => Math.Abs(theValue);
+    public static double Abs(double value) => Math.Abs(value);
 
-    public static double Ceiling(double theValue) => Math.Ceiling(theValue);
+    public static double Ceiling(double value) => Math.Ceiling(value);
 
-    public static double Floor(double theValue) => Math.Floor(theValue);
+    public static double Floor(double value) => Math.Floor(value);
 
-    public static double IntegerPart(double theValue) => Math.Truncate(theValue);
+    public static double IntegerPart(double value) => Math.Truncate(value);
 
-    public static double RealPart(double theValue) => Math.Abs(Math.Truncate(theValue) - theValue);
+    public static double RealPart(double value) => Math.Abs(Math.Truncate(value) - value);
 
     /// <summary>Rounds half away from zero, as <c>std::round</c>.</summary>
-    public static double Round(double theValue) => Math.Round(theValue, MidpointRounding.AwayFromZero);
+    public static double Round(double value) => Math.Round(value, MidpointRounding.AwayFromZero);
 
-    public static double NextAfter(double theValue, double theDirection)
+    public static double NextAfter(double value, double direction)
     {
-        if (double.IsNaN(theValue) || double.IsNaN(theDirection))
+        if (double.IsNaN(value) || double.IsNaN(direction))
         {
             return double.NaN;
         }
 
-        if (theValue == theDirection)
+        if (value == direction)
         {
-            return theDirection;
+            return direction;
         }
 
-        return theDirection > theValue ? Math.BitIncrement(theValue) : Math.BitDecrement(theValue);
+        return direction > value ? Math.BitIncrement(value) : Math.BitDecrement(value);
     }
 
     /// <summary>The magnitude of the first argument with the sign of the second (<c>std::copysign</c>).</summary>
-    public static double Sign(double theMagnitude, double theSign) => Math.CopySign(theMagnitude, theSign);
+    public static double Sign(double magnitude, double sign) => Math.CopySign(magnitude, sign);
 
-    public static double Square(double theValue) => theValue * theValue;
+    public static double Square(double value) => value * value;
 
-    public static double Max(double theValue1, double theValue2) => theValue1 < theValue2 ? theValue2 : theValue1;
+    public static double Max(double value1, double value2) => value1 < value2 ? value2 : value1;
 
-    public static double Min(double theValue1, double theValue2) => theValue2 < theValue1 ? theValue2 : theValue1;
+    public static double Min(double value1, double value2) => value2 < value1 ? value2 : value1;
 
-    public static int RealToInt(double theValue)
-        => theValue < int.MinValue ? int.MinValue
-           : theValue > int.MaxValue ? int.MaxValue
-           : (int)theValue;
+    public static int RealToInt(double value)
+        => value < int.MinValue ? int.MinValue
+           : value > int.MaxValue ? int.MaxValue
+           : (int)value;
 
     // Standard_ShortReal.hxx
 
     /// <summary>The largest float (FLT_MAX).</summary>
     public static float ShortRealLast() => float.MaxValue;
 
-    public static float RealToShortReal(double theValue)
-        => theValue < -float.MaxValue ? -float.MaxValue
-           : theValue > float.MaxValue ? float.MaxValue
-           : (float)theValue;
+    public static float RealToShortReal(double value)
+        => value < -float.MaxValue ? -float.MaxValue
+           : value > float.MaxValue ? float.MaxValue
+           : (float)value;
 
     // Standard_Integer.hxx
 
-    public static int Abs(int theValue) => theValue < 0 ? -theValue : theValue;
+    public static int Abs(int value) => value < 0 ? -value : value;
 
     /// <summary>As C++ <c>% 2 == 0</c>.</summary>
-    public static bool IsEven(int theValue) => theValue % 2 == 0;
+    public static bool IsEven(int value) => value % 2 == 0;
 
     /// <summary>As C++ <c>% 2 == 1</c>, so false for negative odd numbers, exactly as OCCT.</summary>
-    public static bool IsOdd(int theValue) => theValue % 2 == 1;
+    public static bool IsOdd(int value) => value % 2 == 1;
 
-    public static int Max(int theValue1, int theValue2) => theValue1 < theValue2 ? theValue2 : theValue1;
+    public static int Max(int value1, int value2) => value1 < value2 ? value2 : value1;
 
-    public static int Min(int theValue1, int theValue2) => theValue2 < theValue1 ? theValue2 : theValue1;
+    public static int Min(int value1, int value2) => value2 < value1 ? value2 : value1;
 
-    public static int Modulus(int theValue, int theDivisor) => theValue % theDivisor;
+    public static int Modulus(int value, int divisor) => value % divisor;
 
-    public static int Square(int theValue) => theValue * theValue;
+    public static int Square(int value) => value * value;
 
     public static int IntegerFirst() => int.MinValue;
 
@@ -391,54 +393,54 @@ public static class Standard
     /// C's <c>sprintf(buffer, theFormat, ...)</c> as Microsoft's C runtime writes it, invariant culture: the text with
     /// each conversion (<c>%[flags][width][.precision]type</c>) replaced by the next argument; <c>%%</c> is a percent sign.
     /// </summary>
-    internal static string Sprintf(string theFormat, params object[] theArgs)
+    internal static string Sprintf(string format, params object[] theArgs)
     {
-        var aResult = new System.Text.StringBuilder();
-        int anArg = 0;
-        for (int i = 0; i < theFormat.Length; i++)
+        var result = new System.Text.StringBuilder();
+        int arg = 0;
+        for (int i = 0; i < format.Length; i++)
         {
-            char aChar = theFormat[i];
+            char aChar = format[i];
             if (aChar != '%')
             {
-                aResult.Append(aChar);
+                result.Append(aChar);
                 continue;
             }
-            if (i + 1 < theFormat.Length && theFormat[i + 1] == '%')
+            if (i + 1 < format.Length && format[i + 1] == '%')
             {
-                aResult.Append('%');
+                result.Append('%');
                 i++;
                 continue;
             }
             int j = i + 1;
-            while (j < theFormat.Length && "-+ #0123456789.hlLzjt".IndexOf(theFormat[j]) >= 0)
+            while (j < format.Length && "-+ #0123456789.hlLzjt".IndexOf(format[j]) >= 0)
             {
                 j++;
             }
-            string aConversion = theFormat.Substring(i, Math.Min(j + 1, theFormat.Length) - i);
-            object aValue = anArg < theArgs.Length ? theArgs[anArg] : "";
-            if (aConversion.EndsWith('c'))
+            string conversion = format.Substring(i, Math.Min(j + 1, format.Length) - i);
+            object value = arg < theArgs.Length ? theArgs[arg] : "";
+            if (conversion.EndsWith('c'))
             {
                 // %c: the character, as a one-character string
-                aConversion = aConversion[..^1] + "s";
-                aValue = aValue is char aCharArg ? aCharArg.ToString() : ((char)Convert.ToInt32(aValue, System.Globalization.CultureInfo.InvariantCulture)).ToString();
+                conversion = conversion[..^1] + "s";
+                value = value is char charArg ? charArg.ToString() : ((char)Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture)).ToString();
             }
-            aResult.Append(Message_Msg.Sprintf(aConversion, aValue));
-            anArg++;
+            result.Append(Msg.Sprintf(conversion, value));
+            arg++;
             i = j;
         }
-        return aResult.ToString();
+        return result.ToString();
     }
 
     /// <summary>
     /// The character at an index of a C string: the string's character, or the terminating null character at or past
     /// its end, so that ported code reading <c>s[i]</c> on a <c>const char*</c> keeps C's behaviour.
     /// </summary>
-    internal static char CStringChar(string theString, int theIndex) =>
-        theIndex >= 0 && theIndex < theString.Length ? theString[theIndex] : '\0';
+    internal static char CStringChar(string theString, int index) =>
+        index >= 0 && index < theString.Length ? theString[index] : '\0';
 
     /// <summary>C's <c>atoi</c>: the integer the text starts with (after white space), 0 if none.</summary>
-    internal static int atoi(string theText) => TCollection_AsciiString.Strtol(theText, out _);
+    internal static int Atoi(string text) => TCollection_AsciiString.Strtol(text, out _);
 
     /// <summary>OCCT's <c>Atof</c> (C's <c>strtod</c> in the C locale): the real the text starts with, 0 if none.</summary>
-    internal static double Atof(string theText) => Standard_Stream.Strtod(theText, out _);
+    internal static double Atof(string text) => StreamUtilities.Strtod(text, out _);
 }

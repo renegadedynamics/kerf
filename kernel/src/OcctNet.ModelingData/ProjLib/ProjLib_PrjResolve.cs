@@ -6,6 +6,12 @@
 // Created on: 1997-11-06
 // Created by: Roman BORISOV
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,19 +27,19 @@ public class ProjLib_PrjResolve
     private readonly Adaptor3d_Curve myCurve;
     private readonly Adaptor3d_Surface mySurface;
     private bool myDone;
-    private gp_Pnt2d mySolution;
+    private Point2D mySolution;
     private readonly int myFix;
 
-    /// <exception cref="Standard_ConstructionError"><paramref name="Fix"/> is not 1, 2 or 3.</exception>
+    /// <exception cref="ConstructionErrorException"><paramref name="Fix"/> is not 1, 2 or 3.</exception>
     public ProjLib_PrjResolve(Adaptor3d_Curve C, Adaptor3d_Surface S, int Fix)
     {
         myDone = false;
         myFix = Fix;
         if (myFix > 3 || myFix < 1)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        mySolution = new gp_Pnt2d(0.0, 0.0);
+        mySolution = new Point2D(0.0, 0.0);
         myCurve = C;
         mySurface = S;
     }
@@ -50,16 +56,16 @@ public class ProjLib_PrjResolve
     public void Perform(double t,
                         double U,
                         double V,
-                        in gp_Pnt2d Tol2d,
-                        in gp_Pnt2d Inf,
-                        in gp_Pnt2d Sup,
+                        in Point2D Tol2d,
+                        in Point2D Inf,
+                        in Point2D Sup,
                         double FuncTol = -1,
                         bool StrictInside = false)
     {
         _ = StrictInside;
         myDone = false;
         double FixVal = 0.0;
-        gp_Pnt2d ExtInf = new(0.0, 0.0), ExtSup = new(0.0, 0.0);
+        Point2D ExtInf = new(0.0, 0.0), ExtSup = new(0.0, 0.0);
         double ExtU = 10 * Tol2d.X(), ExtV = 10 * Tol2d.Y();
         math_Vector Tol = new(1, 2), Start = new(1, 2), BInf = new(1, 2), BSup = new(1, 2);
 
@@ -99,15 +105,15 @@ public class ProjLib_PrjResolve
         //    if (!S1.IsDone()) { return; }
         //  }
         //  else {
-        math_NewtonFunctionSetRoot SR = new(F, Tol, FuncTol);
+        NewtonFunctionSetRoot SR = new(F, Tol, FuncTol);
         SR.Perform(F, Start, BInf, BSup);
         //    if (!SR.IsDone()) { return; }
-        if (!SR.IsDone())
+        if (!SR.IsDone)
         {
-            math_FunctionSetRoot S1 = new(F, Tol);
+            FunctionSetRoot S1 = new(F, Tol);
             S1.Perform(F, Start, BInf, BSup);
 
-            if (!S1.IsDone())
+            if (!S1.IsDone)
             {
                 return;
             }
@@ -152,7 +158,7 @@ public class ProjLib_PrjResolve
 
             F.Value(X, FVal);
 
-            if (!SR.IsDone())
+            if (!SR.IsDone)
             {
                 if ((FVal[1] * FVal[1] + FVal[2] * FVal[2]) > FuncTol)
                 {
@@ -166,12 +172,12 @@ public class ProjLib_PrjResolve
     public bool IsDone() => myDone;
 
     /// <summary>The point of the extremum distance in the free variables.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    public gp_Pnt2d Solution()
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    public Point2D Solution()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySolution;
     }

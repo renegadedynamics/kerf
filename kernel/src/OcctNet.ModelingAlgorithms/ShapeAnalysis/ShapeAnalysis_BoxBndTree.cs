@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -15,17 +19,17 @@ namespace Occt;
 /// A working object for ported code (decision 21). <c>Accept</c> reads the wires of the sequence it is given; it
 /// writes nothing into shapes.
 /// </remarks>
-public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, Bnd_Box>.Selector
+public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Selector
 {
-    private Bnd_Box myFBox;
-    private Bnd_Box myLBox;
+    private Box myFBox;
+    private Box myLBox;
     private readonly NCollection_HArray1<TopoDS_Shape> mySeq;
     private readonly bool myShared;
     private int myNb;
     private TopoDS_Vertex myFVertex;
     private TopoDS_Vertex myLVertex;
-    private gp_Pnt myFPnt;
-    private gp_Pnt myLPnt;
+    private Point3D myFPnt;
+    private Point3D myLPnt;
     private readonly NCollection_Map<int> myList = new();
     private double myTol;
     private double myMin3d;
@@ -42,17 +46,17 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
         myMin3d = 1e-7;
         myArrIndices = new NCollection_Array1<int>(1, 2);
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        myFBox = new Bnd_Box();
-        myLBox = new Bnd_Box();
+        myFBox = new Box();
+        myLBox = new Box();
         myFVertex = new TopoDS_Vertex();
         myLVertex = new TopoDS_Vertex();
-        myFPnt = new gp_Pnt();
-        myLPnt = new gp_Pnt();
+        myFPnt = new Point3D();
+        myLPnt = new Point3D();
         myArrIndices.Init(0);
     }
 
     /// <summary>Sets the boxes of the current wire's first and last vertices.</summary>
-    public void DefineBoxes(in Bnd_Box theFBox, in Bnd_Box theLBox)
+    public void DefineBoxes(in Box theFBox, in Box theLBox)
     {
         myFBox = theFBox;
         myLBox = theLBox;
@@ -68,7 +72,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
     }
 
     /// <summary>Sets the current wire's first and last points.</summary>
-    public void DefinePnt(in gp_Pnt theFPnt, in gp_Pnt theLPnt)
+    public void DefinePnt(in Point3D theFPnt, in Point3D theLPnt)
     {
         myFPnt = theFPnt;
         myLPnt = theLPnt;
@@ -85,7 +89,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
     public void LoadList(int elem) => myList.Add(elem);
 
     /// <summary>Clears the stop flag.</summary>
-    public void SetStop() => myStop = false;
+    public void SetStop() => _stop = false;
 
     /// <summary>Sets the tolerance of the distance mode.</summary>
     public void SetTolerance(double theTol)
@@ -105,7 +109,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
     public bool LastCheckStatus(ShapeExtend_Status theStatus) => ShapeExtend.DecodeStatus(myStatus, theStatus);
 
     /// <summary>True if the box is out of both end boxes.</summary>
-    public override bool Reject(in Bnd_Box theBnd)
+    public override bool Reject(in Box theBnd)
     {
         bool fch = myFBox.IsOut(theBnd);
         bool lch = myLBox.IsOut(theBnd);
@@ -120,7 +124,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
     {
         if (theObj < 1 || theObj > mySeq.Length())
         {
-            throw new Standard_NoSuchObject("ShapeAnalysis_BoxBndTreeSelector::Accept : no such object for current index");
+            throw new NoSuchObjectException("ShapeAnalysis_BoxBndTreeSelector::Accept : no such object for current index");
         }
         bool IsAccept = false;
         if (myList.Contains(theObj))
@@ -175,20 +179,20 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
                 SetNb(theObj);
                 if (myArrIndices[Last] != 0)
                 {
-                    myStop = true;
+                    _stop = true;
                 }
                 return true;
             }
             else
             {
-                myStop = false;
+                _stop = false;
             }
         }
 
         else
         {
-            gp_Pnt p1 = BRep_Tool.Pnt(V1);
-            gp_Pnt p2 = BRep_Tool.Pnt(V2);
+            Point3D p1 = BRep_Tool.Pnt(V1);
+            Point3D p2 = BRep_Tool.Pnt(V2);
 
             double tailhead, tailtail, headhead, headtail;
             tailhead = p1.Distance(myLPnt);
@@ -235,7 +239,7 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : NCollection_UBTree<int, B
 
             if (min3d == 0 && minInd == Last)
             {
-                myStop = true;
+                _stop = true;
             }
 
             if (dm1 > dm2)

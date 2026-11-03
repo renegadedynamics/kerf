@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>The "gradient of gradient" of a blend function: NbRow × NbCol × NbMat values, indexed from 1.</summary>
@@ -43,7 +45,7 @@ public sealed class BlendFunc_Tensor
     public ref double this[int Row, int Col, int Mat] => ref Tab[Mat + nbmat * (Col - 1) + nbmtcl * (Row - 1)];
 
     /// <summary>The matrix <paramref name="M"/>(i, j) = Σk T(i, j, k) · <paramref name="Right"/>(k).</summary>
-    public void Multiply(math_Vector Right, math_Matrix M)
+    public void Multiply(math_Vector Right, Matrix M)
     {
         int i, j, k;
         double Somme;

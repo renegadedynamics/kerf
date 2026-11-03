@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2001-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.GeomConvert_ConvType;
 
 namespace Occt;
@@ -21,22 +24,22 @@ public sealed class GeomConvert_CurveToAnaCurve
     private Geom_Curve? myCurve;
     private double myGap;
     private GeomConvert_ConvType myConvType;
-    private GeomAbs_CurveType myTarget;
+    private CurveKind myTarget;
 
     /// <summary>An empty converter (MinGap, target line); <see cref="Init"/> gives it a curve.</summary>
     public GeomConvert_CurveToAnaCurve()
     {
-        myGap = Precision.Infinite();
+        myGap = global::Kerf.Engine.Foundation.Precision.Infinite();
         myConvType = GeomConvert_MinGap;
-        myTarget = GeomAbs_Line;
+        myTarget = Line;
     }
 
     /// <summary>A converter of C (MinGap, target line).</summary>
     public GeomConvert_CurveToAnaCurve(Geom_Curve C)
     {
-        myGap = Precision.Infinite();
+        myGap = global::Kerf.Engine.Foundation.Precision.Infinite();
         myConvType = GeomConvert_MinGap;
-        myTarget = GeomAbs_Line;
+        myTarget = Line;
         myCurve = C;
     }
 
@@ -44,7 +47,7 @@ public sealed class GeomConvert_CurveToAnaCurve
     public void Init(Geom_Curve C)
     {
         myCurve = C;
-        myGap = Precision.Infinite();
+        myGap = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>
@@ -89,7 +92,7 @@ public sealed class GeomConvert_CurveToAnaCurve
     /// True if the points lie within tolerance of the line through the two farthest apart; Deviation is then the
     /// largest distance. False (Deviation unchanged) for fewer than 2 points or all points confused.
     /// </summary>
-    public static bool IsLinear(NCollection_Array1<gp_Pnt> aPoles,
+    public static bool IsLinear(NCollection_Array1<Point3D> aPoles,
                                 double tolerance,
                                 ref double Deviation)
     {
@@ -117,15 +120,15 @@ public sealed class GeomConvert_CurveToAnaCurve
             }
         }
 
-        if (dMax < Precision.SquareConfusion())
+        if (dMax < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return false;
         }
 
         double tol2 = tolerance * tolerance;
-        var avec = new gp_Vec(aPoles[iMax1], aPoles[iMax2]);
-        var adir = new gp_Dir(avec);
-        var alin = new gp_Lin(aPoles[iMax1], adir);
+        var avec = new Vector3D(aPoles[iMax1], aPoles[iMax2]);
+        var adir = new Direction3D(avec);
+        var alin = new Line3D(aPoles[iMax1], adir);
 
         double aMax = 0.0;
         for (i = 1; i <= nbPoles; i++)
@@ -148,13 +151,13 @@ public sealed class GeomConvert_CurveToAnaCurve
     }
 
     /// <summary>The line from P1 through P2; cf and cl are the parameters of P1 and P2 on it.</summary>
-    public static gp_Lin GetLine(in gp_Pnt P1, in gp_Pnt P2, out double cf, out double cl)
+    public static Line3D GetLine(in Point3D P1, in Point3D P2, out double cf, out double cl)
     {
-        var avec = new gp_Vec(P1, P2);
-        var adir = new gp_Dir(avec);
-        var alin = new gp_Lin(P1, adir);
-        cf = ElCLib.Parameter(alin, P1);
-        cl = ElCLib.Parameter(alin, P2);
+        var avec = new Vector3D(P1, P2);
+        var adir = new Direction3D(avec);
+        var alin = new Line3D(P1, adir);
+        cf = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, P1);
+        cl = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, P2);
         return alin;
     }
 
@@ -185,9 +188,9 @@ public sealed class GeomConvert_CurveToAnaCurve
             return line;
         }
 
-        gp_Pnt P1 = curve.Value(c1);
-        gp_Pnt P2 = curve.Value(c2);
-        if (P1.SquareDistance(P2) < Precision.SquareConfusion())
+        Point3D P1 = curve.Value(c1);
+        Point3D P2 = curve.Value(c2);
+        if (P1.SquareDistance(P2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return line;
         }
@@ -195,13 +198,13 @@ public sealed class GeomConvert_CurveToAnaCurve
         cf = c1;
         cl = c2;
 
-        NCollection_HArray1<gp_Pnt> Poles;
+        NCollection_HArray1<Point3D> Poles;
         int nbPoles;
         Geom_BSplineCurve? bsc = curve as Geom_BSplineCurve;
         if (bsc is not null)
         {
             nbPoles = bsc.NbPoles();
-            Poles = new NCollection_HArray1<gp_Pnt>(bsc.InternalPoles());
+            Poles = new NCollection_HArray1<Point3D>(bsc.InternalPoles());
         }
         else
         {
@@ -209,12 +212,12 @@ public sealed class GeomConvert_CurveToAnaCurve
             if (bzc is not null)
             {
                 nbPoles = bzc.NbPoles();
-                Poles = new NCollection_HArray1<gp_Pnt>(bzc.InternalPoles());
+                Poles = new NCollection_HArray1<Point3D>(bzc.InternalPoles());
             }
             else
             {
                 nbPoles = 23;
-                Poles = new NCollection_HArray1<gp_Pnt>(1, nbPoles);
+                Poles = new NCollection_HArray1<Point3D>(1, nbPoles);
                 double dt = (c2 - c1) / (nbPoles - 1);
                 Poles.SetValue(1, P1);
                 Poles.SetValue(nbPoles, P2);
@@ -231,7 +234,7 @@ public sealed class GeomConvert_CurveToAnaCurve
             return line; // non
         }
 
-        gp_Lin alin = GetLine(P1, P2, out cf, out cl);
+        Line3D alin = GetLine(P1, P2, out cf, out cl);
         line = new Geom_Line(alin);
         return line;
     }
@@ -240,13 +243,13 @@ public sealed class GeomConvert_CurveToAnaCurve
     /// The circle through P0, P1 and P2, its X axis towards P0. False (Circ unchanged) for points beyond
     /// sqrt(Precision::Infinite()), aligned points or a null radius.
     /// </summary>
-    public static bool GetCircle(ref gp_Circ crc,
-                                 in gp_Pnt P0,
-                                 in gp_Pnt P1,
-                                 in gp_Pnt P2)
+    public static bool GetCircle(ref Circle3D crc,
+                                 in Point3D P0,
+                                 in Point3D P1,
+                                 in Point3D P2)
     {
         //  Control if points are not aligned (should be done by MakeCirc
-        double aMaxCoord = Math.Sqrt(Precision.Infinite());
+        double aMaxCoord = Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Infinite());
         if (Math.Abs(P0.X()) > aMaxCoord || Math.Abs(P0.Y()) > aMaxCoord || Math.Abs(P0.Z()) > aMaxCoord)
         {
             return false;
@@ -270,16 +273,16 @@ public sealed class GeomConvert_CurveToAnaCurve
         }
 
         crc = mkc.Value();
-        if (crc.Radius() < gp.Resolution())
+        if (crc.Radius() < Constants.Resolution())
         {
             return false;
         }
 
         //  Align to P0
-        gp_Pnt PC = crc.Location();
-        gp_Ax2 axe = crc.Position();
-        var VX = new gp_Vec(PC, P0);
-        axe.SetXDirection(new gp_Dir(VX));
+        Point3D PC = crc.Location();
+        Frame3D axe = crc.Position();
+        var VX = new Vector3D(PC, P0);
+        axe.SetXDirection(new Direction3D(VX));
         crc.SetPosition(axe);
         return true;
     }
@@ -306,14 +309,14 @@ public sealed class GeomConvert_CurveToAnaCurve
         }
 
         Geom_Circle? circ = null;
-        gp_Pnt P0, P1, P2;
+        Point3D P0, P1, P2;
         double ca = (c1 + c1 + c2) / 3;
         double cb = (c1 + c2 + c2) / 3;
         P0 = c3d.Value(c1);
         P1 = c3d.Value(ca);
         P2 = c3d.Value(cb);
 
-        var crc = new gp_Circ();
+        var crc = new Circle3D();
         if (!GetCircle(ref crc, P0, P1, P2))
         {
             return circ;
@@ -326,7 +329,7 @@ public sealed class GeomConvert_CurveToAnaCurve
         for (i = 0; i <= 20; i++)
         {
             double u = c1 + (du * i);
-            gp_Pnt PP = c3d.Value(u);
+            Point3D PP = c3d.Value(u);
             double dist = crc.Distance(PP);
             if (dist > tol)
             {
@@ -344,28 +347,28 @@ public sealed class GeomConvert_CurveToAnaCurve
         // defining the parameters
         double PI2 = 2 * M_PI;
 
-        cf = ElCLib.Parameter(crc, c3d.Value(c1));
-        cf = ElCLib.InPeriod(cf, 0.0, PI2);
+        cf = global::Kerf.Engine.Geometry.ElCLib.Parameter(crc, c3d.Value(c1));
+        cf = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cf, 0.0, PI2);
 
         // first parameter should be closed to zero
 
-        if (Math.Abs(cf) < Precision.PConfusion() || Math.Abs(PI2 - cf) < Precision.PConfusion())
+        if (Math.Abs(cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(PI2 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             cf = 0.0;
         }
 
-        double cm = ElCLib.Parameter(crc, c3d.Value((c1 + c2) / 2.0));
-        cm = ElCLib.InPeriod(cm, cf, cf + PI2);
+        double cm = global::Kerf.Engine.Geometry.ElCLib.Parameter(crc, c3d.Value((c1 + c2) / 2.0));
+        cm = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cm, cf, cf + PI2);
 
-        cl = ElCLib.Parameter(crc, c3d.Value(c2));
-        cl = ElCLib.InPeriod(cl, cm, cm + PI2);
+        cl = global::Kerf.Engine.Geometry.ElCLib.Parameter(crc, c3d.Value(c2));
+        cl = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cl, cm, cm + PI2);
 
         circ = new Geom_Circle(crc);
         return circ;
     }
 
-    private static bool IsArrayPntPlanar(NCollection_HArray1<gp_Pnt> HAP,
-                                         ref gp_Dir Norm,
+    private static bool IsArrayPntPlanar(NCollection_HArray1<Point3D> HAP,
+                                         ref Direction3D Norm,
                                          double prec)
     {
         int size = HAP.Length();
@@ -374,9 +377,9 @@ public sealed class GeomConvert_CurveToAnaCurve
             return false;
         }
 
-        gp_Pnt P1 = HAP.Value(1);
-        gp_Pnt P2 = HAP.Value(2);
-        gp_Pnt P3 = HAP.Value(3);
+        Point3D P1 = HAP.Value(1);
+        Point3D P2 = HAP.Value(2);
+        Point3D P3 = HAP.Value(3);
         double dist1 = P1.Distance(P2);
         double dist2 = P1.Distance(P3);
         if (dist1 < prec || dist2 < prec)
@@ -384,25 +387,25 @@ public sealed class GeomConvert_CurveToAnaCurve
             return false;
         }
 
-        var V1 = new gp_Vec(P1, P2);
-        var V2 = new gp_Vec(P1, P3);
+        var V1 = new Vector3D(P1, P2);
+        var V2 = new Vector3D(P1, P3);
         if (V1.IsParallel(V2, prec))
         {
             return false;
         }
 
-        gp_Vec NV = V1.Crossed(V2);
+        Vector3D NV = V1.Crossed(V2);
 
         int i;
         for (i = 1; i <= 3; ++i)
         {
-            if (Precision.IsInfinite(NV.Coord(i)))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(NV.Coord(i)))
             {
                 return false;
             }
         }
 
-        if (NV.Magnitude() < gp.Resolution())
+        if (NV.Magnitude() < Constants.Resolution())
         {
             return false;
         }
@@ -411,14 +414,14 @@ public sealed class GeomConvert_CurveToAnaCurve
         {
             for (i = 4; i <= size; i++)
             {
-                gp_Pnt PN = HAP.Value(i);
+                Point3D PN = HAP.Value(i);
                 dist1 = P1.Distance(PN);
-                if (dist1 < prec || Precision.IsInfinite(dist1))
+                if (dist1 < prec || global::Kerf.Engine.Foundation.Precision.IsInfinite(dist1))
                 {
                     return false;
                 }
 
-                var VN = new gp_Vec(P1, PN);
+                var VN = new Vector3D(P1, PN);
                 if (!NV.IsNormal(VN, prec))
                 {
                     return false;
@@ -426,7 +429,7 @@ public sealed class GeomConvert_CurveToAnaCurve
             }
         }
 
-        Norm = new gp_Dir(NV);
+        Norm = new Direction3D(NV);
         return true;
     }
 
@@ -438,8 +441,8 @@ public sealed class GeomConvert_CurveToAnaCurve
                                         double f,
                                         bool IsParab,
                                         bool IsEllip,
-                                        ref gp_Pnt Center,
-                                        ref gp_Dir MainAxis,
+                                        ref Point3D Center,
+                                        ref Direction3D MainAxis,
                                         ref double Rmin,
                                         ref double Rmax)
     {
@@ -499,7 +502,7 @@ public sealed class GeomConvert_CurveToAnaCurve
             double aprim = (a + c + auxil) / 2.0;
             double cprim = (a + c - auxil) / 2.0;
 
-            if (Math.Abs(aprim) < gp.Resolution() || Math.Abs(cprim) < gp.Resolution())
+            if (Math.Abs(aprim) < Constants.Resolution() || Math.Abs(cprim) < Constants.Resolution())
             {
                 return false;
             }
@@ -578,13 +581,13 @@ public sealed class GeomConvert_CurveToAnaCurve
         }
 
         Geom_Curve? res = null;
-        double prec = Precision.PConfusion();
+        double prec = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         double AF, BF, CF, DF, EF, Q1, Q2, Q3, c2n;
         int i;
 
-        gp_Pnt PStart = c3d.Value(c1);
-        gp_Pnt PEnd = c3d.Value(c2);
+        Point3D PStart = c3d.Value(c1);
+        Point3D PEnd = c3d.Value(c2);
 
         bool IsClos = PStart.Distance(PEnd) < prec;
         if (IsClos)
@@ -597,48 +600,48 @@ public sealed class GeomConvert_CurveToAnaCurve
         }
 
         //
-        var aBC = new gp_XYZ();
-        var AP = new NCollection_HArray1<gp_Pnt>(1, 5);
+        var aBC = new Xyz();
+        var AP = new NCollection_HArray1<Point3D>(1, 5);
         AP.SetValue(1, PStart);
         aBC += PStart.XYZ();
         double dc = (c2n - c1) / 4;
         for (i = 1; i < 5; i++)
         {
-            gp_Pnt aP = c3d.Value(c1 + dc * i);
+            Point3D aP = c3d.Value(c1 + dc * i);
             AP.SetValue(i + 1, aP);
             aBC += aP.XYZ();
         }
 
         aBC /= 5;
         aBC *= -1;
-        var aTrans = new gp_Vec(aBC);
+        var aTrans = new Vector3D(aBC);
         for (i = 1; i <= 5; ++i)
         {
             AP[i].Translate(aTrans);
         }
 
-        var ndir = new gp_Dir();
+        var ndir = new Direction3D();
         if (!IsArrayPntPlanar(AP, ref ndir, prec))
         {
             return res;
         }
 
-        if (Math.Abs(ndir.X()) < gp.Resolution() && Math.Abs(ndir.Y()) < gp.Resolution()
-            && Math.Abs(ndir.Z()) < gp.Resolution())
+        if (Math.Abs(ndir.X()) < Constants.Resolution() && Math.Abs(ndir.Y()) < Constants.Resolution()
+            && Math.Abs(ndir.Z()) < Constants.Resolution())
         {
             return res;
         }
 
-        var AX = new gp_Ax3(new gp_Pnt(0, 0, 0), ndir);
-        var Tr = new gp_Trsf();
+        var AX = new CoordinateSystem(new Point3D(0, 0, 0), ndir);
+        var Tr = new Transform3D();
         Tr.SetTransformation(AX);
-        gp_Trsf Tr2 = Tr.Inverted();
+        Transform3D Tr2 = Tr.Inverted();
 
-        var Dt = new math_Matrix(1, 5, 1, 5);
+        var Dt = new Matrix(1, 5, 1, 5);
         math_Vector F = new(1, 5), Sl = new(1, 5);
 
         double XN, YN, ZN = 0.0;
-        gp_Pnt PT, PP;
+        Point3D PT, PP;
         for (i = 1; i <= 5; i++)
         {
             PT = AP.Value(i).Transformed(Tr);
@@ -651,8 +654,8 @@ public sealed class GeomConvert_CurveToAnaCurve
             F[i] = -1.0;
         }
 
-        var aSolver = new math_Gauss(Dt);
-        if (!aSolver.IsDone())
+        var aSolver = new Gauss(Dt);
+        if (!aSolver.IsDone)
         {
             return res;
         }
@@ -670,8 +673,8 @@ public sealed class GeomConvert_CurveToAnaCurve
         Q3 = AF + CF;
 
         double Rmax = 0.0, Rmin = 0.0;
-        var Center = new gp_Pnt();
-        var MainAxis = new gp_Dir();
+        var Center = new Point3D();
+        var MainAxis = new Direction3D();
         bool IsParab = false, IsEllip = false;
 
         if (Q2 > 0 && Q1 * Q3 < 0)
@@ -681,24 +684,24 @@ public sealed class GeomConvert_CurveToAnaCurve
             if (ConicDefinition(AF, BF, CF, DF, EF, 1.0, IsParab, IsEllip, ref Center, ref MainAxis, ref Rmin, ref Rmax))
             {
                 // create ellipse
-                if (Rmax - Rmin < Precision.Confusion())
+                if (Rmax - Rmin < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return res; // really it is circle, which must be recognized in other method
                 }
 
                 aTrans *= -1;
                 Center.SetZ(ZN);
-                gp_Pnt NewCenter = Center.Transformed(Tr2);
-                var Ptmp = new gp_Pnt(Center.X() + MainAxis.X() * 10,
+                Point3D NewCenter = Center.Transformed(Tr2);
+                var Ptmp = new Point3D(Center.X() + MainAxis.X() * 10,
                                       Center.Y() + MainAxis.Y() * 10,
                                       Center.Z() + MainAxis.Z() * 10);
-                gp_Pnt NewPtmp = Ptmp.Transformed(Tr2);
-                var NewMainAxis = new gp_Dir(NewPtmp.X() - NewCenter.X(),
+                Point3D NewPtmp = Ptmp.Transformed(Tr2);
+                var NewMainAxis = new Direction3D(NewPtmp.X() - NewCenter.X(),
                                              NewPtmp.Y() - NewCenter.Y(),
                                              NewPtmp.Z() - NewCenter.Z());
-                var ax2 = new gp_Ax2(NewCenter, ndir, NewMainAxis);
+                var ax2 = new Frame3D(NewCenter, ndir, NewMainAxis);
 
-                var anEllipse = new gp_Elips(ax2, Rmax, Rmin);
+                var anEllipse = new Ellipse3D(ax2, Rmax, Rmin);
                 anEllipse.Translate(aTrans);
                 var gell = new Geom_Ellipse(anEllipse);
 
@@ -708,7 +711,7 @@ public sealed class GeomConvert_CurveToAnaCurve
                 for (i = 1; i <= 20; i++)
                 {
                     PP = c3d.Value(c1 + i * dc);
-                    double aPar = ElCLib.Parameter(anEllipse, PP);
+                    double aPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(anEllipse, PP);
                     double dist = gell.Value(aPar).Distance(PP);
                     if (dist > tol)
                     {
@@ -724,21 +727,21 @@ public sealed class GeomConvert_CurveToAnaCurve
                 Deviation = param2;
 
                 double PI2 = 2 * M_PI;
-                cf = ElCLib.Parameter(anEllipse, c3d.Value(c1));
-                cf = ElCLib.InPeriod(cf, 0.0, PI2);
+                cf = global::Kerf.Engine.Geometry.ElCLib.Parameter(anEllipse, c3d.Value(c1));
+                cf = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cf, 0.0, PI2);
 
                 // first parameter should be closed to zero
 
-                if (Math.Abs(cf) < Precision.PConfusion() || Math.Abs(PI2 - cf) < Precision.PConfusion())
+                if (Math.Abs(cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(PI2 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     cf = 0.0;
                 }
 
-                double cm = ElCLib.Parameter(anEllipse, c3d.Value((c1 + c2) / 2.0));
-                cm = ElCLib.InPeriod(cm, cf, cf + PI2);
+                double cm = global::Kerf.Engine.Geometry.ElCLib.Parameter(anEllipse, c3d.Value((c1 + c2) / 2.0));
+                cm = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cm, cf, cf + PI2);
 
-                cl = ElCLib.Parameter(anEllipse, c3d.Value(c2));
-                cl = ElCLib.InPeriod(cl, cm, cm + PI2);
+                cl = global::Kerf.Engine.Geometry.ElCLib.Parameter(anEllipse, c3d.Value(c2));
+                cl = global::Kerf.Engine.Geometry.ElCLib.InPeriod(cl, cm, cm + PI2);
 
                 res = gell;
             }
@@ -762,7 +765,7 @@ public sealed class GeomConvert_CurveToAnaCurve
                                            out double cl,
                                            ref double theGap,
                                            GeomConvert_ConvType theConvType = GeomConvert_MinGap,
-                                           GeomAbs_CurveType theTarget = GeomAbs_Line)
+                                           CurveKind theTarget = Line)
     {
         cf = c1;
         cl = c2;
@@ -773,9 +776,9 @@ public sealed class GeomConvert_CurveToAnaCurve
             return c3d;
         }
 
-        gp_Pnt P1 = c3d.Value(c1);
-        gp_Pnt P2 = c3d.Value(c2);
-        gp_Pnt P3 = c3d.Value(c1 + (c2 - c1) / 2);
+        Point3D P1 = c3d.Value(c1);
+        Point3D P2 = c3d.Value(c2);
+        Point3D P3 = c3d.Value(c1 + (c2 - c1) / 2);
         Span<double> d = [RealLast(), RealLast(), RealLast()];
         Span<double> fp = [0.0, 0.0, 0.0];
         Span<double> lp = [0.0, 0.0, 0.0];
@@ -789,7 +792,7 @@ public sealed class GeomConvert_CurveToAnaCurve
         if (theConvType == GeomConvert_Target)
         {
             theGap = RealLast();
-            if (theTarget == GeomAbs_Line)
+            if (theTarget == Line)
             {
                 newc3d[0] = ComputeLine(c3d, tolerance, c1, c2, ref fp[0], ref lp[0], ref theGap);
                 cf = fp[0];
@@ -797,7 +800,7 @@ public sealed class GeomConvert_CurveToAnaCurve
                 return newc3d[0];
             }
 
-            if (theTarget == GeomAbs_Circle)
+            if (theTarget == Circle)
             {
                 newc3d[1] = ComputeCircle(c3d, tolerance, c1, c2, ref fp[1], ref lp[1], ref theGap);
                 cf = fp[1];
@@ -805,7 +808,7 @@ public sealed class GeomConvert_CurveToAnaCurve
                 return newc3d[1];
             }
 
-            if (theTarget == GeomAbs_Ellipse)
+            if (theTarget == Ellipse)
             {
                 newc3d[2] = ComputeEllipse(c3d, tolerance, c1, c2, ref fp[2], ref lp[2], ref theGap);
                 cf = fp[2];
@@ -866,7 +869,7 @@ public sealed class GeomConvert_CurveToAnaCurve
             d[0] = RealLast();
             newc3d[0] = ComputeLine(c3d, tolerance, c1, c2, ref fp[0], ref lp[0], ref d[0]);
             double tol = Min(tolerance, d[0]);
-            if (!Precision.IsInfinite(c1) && !Precision.IsInfinite(c2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(c1) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(c2))
             {
                 d[1] = RealLast();
                 newc3d[1] = ComputeCircle(c3d, tol, c1, c2, ref fp[1], ref lp[1], ref d[1]);
@@ -917,8 +920,8 @@ public sealed class GeomConvert_CurveToAnaCurve
     public void SetConvType(GeomConvert_ConvType theConvType) => myConvType = theConvType;
 
     /// <summary>The target curve type (for GeomConvert_Target).</summary>
-    public GeomAbs_CurveType GetTarget() => myTarget;
+    public CurveKind GetTarget() => myTarget;
 
     /// <summary>Sets the target curve type.</summary>
-    public void SetTarget(GeomAbs_CurveType theTarget) => myTarget = theTarget;
+    public void SetTarget(CurveKind theTarget) => myTarget = theTarget;
 }

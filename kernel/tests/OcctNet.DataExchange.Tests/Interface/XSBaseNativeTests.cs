@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -52,7 +53,7 @@ public class XSBaseNativeTests
 
     private static string B(bool theValue) => theValue ? "1" : "0";
 
-    private static string G(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+    private static string G(double theValue) => StreamUtilities.FormatReal(theValue, 6);
 
     private void FloatWriters(List<string> theOut)
     {
@@ -123,7 +124,7 @@ public class XSBaseNativeTests
                             aBuf.SetInitial(anInit);
                             theOut.Add($"LB init {anInit}");
                         }
-                        catch (Standard_Failure)
+                        catch (FailureException)
                         {
                             theOut.Add($"LB init {anInit} failed");
                         }
@@ -291,7 +292,7 @@ public class XSBaseNativeTests
             aTV.Print(aPrint);
             theOut.Add($"LIB {aName} {aPrint.ToString().Replace('\n', '|')}");
         }
-        theOut.Add($"MSG XSTEP_1 [{Message_MsgFile.Msg("XSTEP_1")}]");
+        theOut.Add($"MSG XSTEP_1 [{MsgFile.Msg("XSTEP_1")}]");
     }
 
     private void Msgs(List<string> theOut)
@@ -435,7 +436,7 @@ public class XSBaseNativeTests
                     int aValue = ((Interface_IntVal)aList.Value(i)!).Value();
                     aVals.Append(' ').Append(aValue);
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     aVals.Append(" !");
                 }

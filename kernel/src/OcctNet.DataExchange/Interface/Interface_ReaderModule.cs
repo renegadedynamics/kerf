@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +16,7 @@ namespace Occt;
 /// GeneralModule has formerly recognized the Type read from FileReaderData as a positive Case Number, then
 /// the ReaderModule reads it according to this Case Number
 /// </summary>
-public abstract class Interface_ReaderModule : Standard_Transient
+public abstract class Interface_ReaderModule : Transient
 {
 
     /// <summary>
@@ -28,7 +30,7 @@ public abstract class Interface_ReaderModule : Standard_Transient
     /// created In case of Error or Warning, fills &lt;ach&gt; with messages Remark that the Case Number comes
     /// from translating a record
     /// </summary>
-    public abstract void Read(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Standard_Transient? ent);
+    public abstract void Read(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Transient? ent);
 
     /// <summary>
     /// Specific operator (create+read) defaulted to do nothing. It can be redefined when it is not possible to
@@ -37,7 +39,7 @@ public abstract class Interface_ReaderModule : Standard_Transient
     /// defined, Copy has nothing to do. Returns True if it has produced something, false else. If nothing was
     /// produced, &lt;ach&gt; should be filled : it will be treated as "Unrecognized case" by reader tool.
     /// </summary>
-    public virtual bool NewRead(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, ref Standard_Transient? ent)
+    public virtual bool NewRead(int casenum, Interface_FileReaderData? data, int num, ref Interface_Check? ach, ref Transient? ent)
     {
         return false;
     }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -141,12 +142,12 @@ public partial struct TopOpeBRepDS_Transition : IEquatable<TopOpeBRepDS_Transiti
     public readonly TopAbs_ShapeEnum ShapeAfter() => myShapeAfter;
 
     /// <summary>The index of the shape before and after.</summary>
-    /// <exception cref="Standard_Failure">The indices before and after differ.</exception>
+    /// <exception cref="FailureException">The indices before and after differ.</exception>
     public readonly int Index()
     {
         if (myIndexAfter != myIndexBefore)
         {
-            throw new Standard_Failure("Transition::Index() on different shapes");
+            throw new FailureException("Transition::Index() on different shapes");
         }
         return myIndexBefore;
     }

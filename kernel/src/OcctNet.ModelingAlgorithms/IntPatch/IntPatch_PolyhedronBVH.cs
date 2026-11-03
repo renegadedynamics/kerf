@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2024-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.BVH_Constants;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Geometry.Bvh;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Bvh.Constants;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 
 namespace Occt;
@@ -17,21 +20,21 @@ namespace Occt;
 /// and reorders its own index map when the tree is built. Indices of the set are 0-based;
 /// <see cref="OriginalIndex"/> gives the polyhedron's 1-based triangle index.
 /// </remarks>
-public class IntPatch_PolyhedronBVH : BVH_PrimitiveSet<double, BVH_Vec3d>
+public class IntPatch_PolyhedronBVH : PrimitiveSet<double, BVH_Vec3d>
 {
     private IntPatch_Polyhedron? myPoly;                            //!< Reference to the wrapped polyhedron
     private readonly NCollection_DynamicArray<int> myIndexMap = new(); //!< Maps current indices to original 1-based indices
 
     /// <summary>An empty BVH set.</summary>
     public IntPatch_PolyhedronBVH()
-        : base(new BVH_LinearBuilder<double, BVH_Vec3d>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
+        : base(new LinearBuilder<double, BVH_Vec3d>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         myPoly = null;
     }
 
     /// <summary>The BVH set of the given polyhedron (which must stay valid while the set is used).</summary>
     public IntPatch_PolyhedronBVH(IntPatch_Polyhedron thePoly)
-        : base(new BVH_LinearBuilder<double, BVH_Vec3d>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
+        : base(new LinearBuilder<double, BVH_Vec3d>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         myPoly = null;
         Init(thePoly);
@@ -48,12 +51,12 @@ public class IntPatch_PolyhedronBVH : BVH_PrimitiveSet<double, BVH_Vec3d>
         // by only including triangles with valid boxes in the index mapping.
         // This matches the behavior of the former Bnd_BoundSortBox-based approach,
         // which never matched void boxes.
-        NCollection_HArray1<Bnd_Box> aCompBnd = IntPatch_PolyhedronTool.ComponentsBounding(thePoly);
+        NCollection_HArray1<Box> aCompBnd = IntPatch_PolyhedronTool.ComponentsBounding(thePoly);
 
         myIndexMap.Clear();
         for (int anIdx = 1; anIdx <= aNbTriangles; ++anIdx)
         {
-            if (!aCompBnd.Value(anIdx).IsVoid())
+            if (!aCompBnd.Value(anIdx).IsVoid)
             {
                 myIndexMap.Append(anIdx); // Store 1-based original index
             }
@@ -82,9 +85,9 @@ public class IntPatch_PolyhedronBVH : BVH_PrimitiveSet<double, BVH_Vec3d>
     }
 
     /// <summary>The box of the triangle of index <paramref name="theIndex"/> (0-based, after reordering).</summary>
-    public override BVH_Box<double, BVH_Vec3d> Box(int theIndex)
+    public override Box<double, BVH_Vec3d> Box(int theIndex)
     {
-        BVH_Box<double, BVH_Vec3d> aBox = new();
+        Box<double, BVH_Vec3d> aBox = new();
 
         if (myPoly is null || theIndex < 0 || theIndex >= Size())
         {
@@ -98,8 +101,8 @@ public class IntPatch_PolyhedronBVH : BVH_PrimitiveSet<double, BVH_Vec3d>
         // These boxes include deflection enlargement, matching the behavior
         // of the former Bnd_BoundSortBox-based approach. Degenerate triangles
         // (with void boxes) are already excluded during Init().
-        NCollection_HArray1<Bnd_Box> aCompBnd = IntPatch_PolyhedronTool.ComponentsBounding(myPoly);
-        Bnd_Box aBndBox = aCompBnd.Value(anOrigIdx);
+        NCollection_HArray1<Box> aCompBnd = IntPatch_PolyhedronTool.ComponentsBounding(myPoly);
+        Box aBndBox = aCompBnd.Value(anOrigIdx);
 
         aBndBox.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax,
                     out double aZmax);
@@ -125,9 +128,9 @@ public class IntPatch_PolyhedronBVH : BVH_PrimitiveSet<double, BVH_Vec3d>
         IntPatch_PolyhedronTool.Triangle(myPoly, anOrigIdx, out int aP1, out int aP2, out int aP3);
 
         // Get vertex coordinates
-        gp_Pnt aPnt1 = IntPatch_PolyhedronTool.Point(myPoly, aP1);
-        gp_Pnt aPnt2 = IntPatch_PolyhedronTool.Point(myPoly, aP2);
-        gp_Pnt aPnt3 = IntPatch_PolyhedronTool.Point(myPoly, aP3);
+        Point3D aPnt1 = IntPatch_PolyhedronTool.Point(myPoly, aP1);
+        Point3D aPnt2 = IntPatch_PolyhedronTool.Point(myPoly, aP2);
+        Point3D aPnt3 = IntPatch_PolyhedronTool.Point(myPoly, aP3);
 
         // Compute centroid coordinate along specified axis
         switch (theAxis)

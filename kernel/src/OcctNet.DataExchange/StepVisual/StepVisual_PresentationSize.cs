@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_PresentationSize : Standard_Transient
+public class StepVisual_PresentationSize : Transient
 {
     private StepVisual_PresentationSizeAssignmentSelect unit = new StepVisual_PresentationSizeAssignmentSelect();
     private StepVisual_PlanarBox size;

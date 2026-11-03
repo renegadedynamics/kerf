@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Unit tests of BRepAlgo_Image and BRepAlgo_AsDes, the offset algorithms' records of shapes (unit 5O1).</summary>
 public class BRepAlgo_ImageAsDesTests
 {
-    private static TopoDS_Shape V(double x) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, 0, 0)).Vertex();
+    private static TopoDS_Shape V(double x) => new BRepBuilderAPI_MakeVertex(new Point3D(x, 0, 0)).Vertex();
 
     private static List<TopoDS_Shape> Items(NCollection_List<TopoDS_Shape> theList)
     {
@@ -41,8 +45,8 @@ public class BRepAlgo_ImageAsDesTests
         Assert.Equal([d, c], Items(anImage.Image(a)));
         Assert.False(anImage.HasImage(b));
 
-        Assert.Throws<Standard_ConstructionError>(() => anImage.Bind(a, b));
-        Assert.Throws<Standard_ConstructionError>(() => anImage.Add(b, c));
+        Assert.Throws<ConstructionErrorException>(() => anImage.Bind(a, b));
+        Assert.Throws<ConstructionErrorException>(() => anImage.Add(b, c));
     }
 
     [Fact]
@@ -100,7 +104,7 @@ public class BRepAlgo_ImageAsDesTests
 
         anAsDes.Remove(e4);
         Assert.Equal([e1], Items(anAsDes.Descendant(f1)));
-        Assert.Throws<Standard_ConstructionError>(() => anAsDes.Remove(f1));
+        Assert.Throws<ConstructionErrorException>(() => anAsDes.Remove(f1));
         Assert.Empty(Items(anAsDes.Descendant(e1)));
     }
 }

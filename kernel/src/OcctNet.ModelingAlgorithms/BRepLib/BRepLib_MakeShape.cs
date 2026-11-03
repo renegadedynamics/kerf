@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 using static Occt.BRepLib_ShapeModification;
 
@@ -31,7 +32,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
     }
 
     /// <summary>The result (frozen). Builds it if the command isn't done, then checks that it is.</summary>
-    /// <exception cref="StdFail_NotDone">The command is not done.</exception>
+    /// <exception cref="NotDoneException">The command is not done.</exception>
     public TopoDS_Shape Shape()
     {
         TopoDS_Shape aShape = InternalShape();
@@ -69,7 +70,7 @@ public abstract class BRepLib_MakeShape : BRepLib_Command
     /// </summary>
     private protected void UnfreezeResult()
     {
-        if (myShape.IsNull() || !myShape.TShape()!.IsFrozen())
+        if (myShape.IsNull() || !myShape.TShape()!.IsFrozen)
         {
             return;
         }

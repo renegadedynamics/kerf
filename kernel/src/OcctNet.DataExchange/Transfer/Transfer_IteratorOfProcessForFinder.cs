@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An iterator on the results of a <see cref="Transfer_ProcessForFinder"/>, with their starting objects if asked.</summary>
@@ -23,12 +25,12 @@ public class Transfer_IteratorOfProcessForFinder : Transfer_TransferIterator
     }
 
     /// <summary>Adds a Binder to the iteration list (construction) with no corresponding Starting Object.</summary>
-    /// <exception cref="Standard_NoSuchObject">The iterator was created with starting objects.</exception>
+    /// <exception cref="NoSuchObjectException">The iterator was created with starting objects.</exception>
     public void Add(Transfer_Binder? binder)
     {
         if (thestarts is not null)
         {
-            throw new Standard_NoSuchObject(
+            throw new NoSuchObjectException(
                 "Transfer_IteratorOfProcessForFinder : Add, Starting Object required not provided");
         }
         AddItem(binder);
@@ -90,12 +92,12 @@ public class Transfer_IteratorOfProcessForFinder : Transfer_TransferIterator
     }
 
     /// <summary>Returns corresponding Starting Object.</summary>
-    /// <exception cref="Standard_NoSuchObject">No starting objects were asked.</exception>
+    /// <exception cref="NoSuchObjectException">No starting objects were asked.</exception>
     public Transfer_Finder? Starting()
     {
         if (thestarts is null)
         {
-            throw new Standard_NoSuchObject("TransferIterator : No Starting defined at all");
+            throw new NoSuchObjectException("TransferIterator : No Starting defined at all");
         }
         return thestarts.Value(thecurr);
     }

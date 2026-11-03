@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>General module to read and write HeaderSection entities.</summary>
@@ -81,7 +83,7 @@ public class RWHeaderSection_ReadWriteModule : StepData_ReadWriteModule
 
     // -- Reading of a file --
 
-    public override void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient? ent)
+    public override void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Transient? ent)
     {
         if (CN == 0)
         {
@@ -157,7 +159,7 @@ public class RWHeaderSection_ReadWriteModule : StepData_ReadWriteModule
 
     // -- Writing of a file --
 
-    public override void WriteStep(int CN, StepData_StepWriter SW, Standard_Transient? ent)
+    public override void WriteStep(int CN, StepData_StepWriter SW, Transient? ent)
     {
         if (CN == 0)
         {

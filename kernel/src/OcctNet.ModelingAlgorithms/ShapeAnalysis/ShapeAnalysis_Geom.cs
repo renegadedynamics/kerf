@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Analysis of geometric entities: the plane nearest a set of points, a transformation from a 3x4 matrix.</summary>
@@ -12,7 +16,7 @@ public static class ShapeAnalysis_Geom
     /// Builds a plane out of a set of points. Returns in <paramref name="theMaxDist"/> the largest distance between the
     /// plane and the points. <paramref name="thePln"/> is written only when the result is true.
     /// </summary>
-    public static bool NearestPlane(NCollection_Array1<gp_Pnt> thePnts, ref gp_Pln thePln, out double theMaxDist)
+    public static bool NearestPlane(NCollection_Array1<Point3D> thePnts, ref Plane3D thePln, out double theMaxDist)
     {
         GProp_PEquation anEq = new(thePnts, 0.0);
         if (anEq.GetType() == GProp_PEquation.Type.None)
@@ -39,7 +43,7 @@ public static class ShapeAnalysis_Geom
                 }
                 else
                 {
-                    thePln = new gp_Pln(anEq.Barycentre(), new gp_Dir(anEq.PrincipalAxis(1)));
+                    thePln = new Plane3D(anEq.Barycentre(), new Direction3D(anEq.PrincipalAxis(1)));
                 }
                 break;
             }
@@ -51,7 +55,7 @@ public static class ShapeAnalysis_Geom
                 }
                 else
                 {
-                    thePln = new gp_Pln(anEq.Barycentre(), new gp_Dir(anEq.PrincipalAxis(2)));
+                    thePln = new Plane3D(anEq.Barycentre(), new Direction3D(anEq.PrincipalAxis(2)));
                 }
                 break;
             }
@@ -63,7 +67,7 @@ public static class ShapeAnalysis_Geom
                 }
                 else
                 {
-                    thePln = new gp_Pln(anEq.Barycentre(), new gp_Dir(anEq.PrincipalAxis(3)));
+                    thePln = new Plane3D(anEq.Barycentre(), new Direction3D(anEq.PrincipalAxis(3)));
                 }
                 break;
             }
@@ -90,18 +94,18 @@ public static class ShapeAnalysis_Geom
     /// translation. False if the vectorial part isn't a similarity within <paramref name="prec"/>. A null matrix gives
     /// the identity.
     /// </summary>
-    public static bool PositionTrsf(NCollection_HArray2<double>? coefs, out gp_Trsf trsf, double unit, double prec)
+    public static bool PositionTrsf(NCollection_HArray2<double>? coefs, out Transform3D trsf, double unit, double prec)
     {
         bool result = true;
 
-        trsf = new gp_Trsf();
+        trsf = new Transform3D();
 
         if (coefs is null)
         {
             return true;
         }
 
-        gp_GTrsf gtrsf = new();
+        GeneralTransform3D gtrsf = new();
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 4; j++)
@@ -110,9 +114,9 @@ public static class ShapeAnalysis_Geom
             }
         }
 
-        gp_XYZ v1 = new(gtrsf.Value(1, 1), gtrsf.Value(2, 1), gtrsf.Value(3, 1));
-        gp_XYZ v2 = new(gtrsf.Value(1, 2), gtrsf.Value(2, 2), gtrsf.Value(3, 2));
-        gp_XYZ v3 = new(gtrsf.Value(1, 3), gtrsf.Value(2, 3), gtrsf.Value(3, 3));
+        Xyz v1 = new(gtrsf.Value(1, 1), gtrsf.Value(2, 1), gtrsf.Value(3, 1));
+        Xyz v2 = new(gtrsf.Value(1, 2), gtrsf.Value(2, 2), gtrsf.Value(3, 2));
+        Xyz v3 = new(gtrsf.Value(1, 3), gtrsf.Value(2, 3), gtrsf.Value(3, 3));
         double m1 = v1.Modulus();
         double m2 = v2.Modulus();
         double m3 = v3.Modulus();
@@ -138,10 +142,10 @@ public static class ShapeAnalysis_Geom
         if (v1.X() != 1 || v1.Y() != 0 || v1.Z() != 0 || v2.X() != 0 || v2.Y() != 1 || v2.Z() != 0
             || v3.X() != 0 || v3.Y() != 0 || v3.Z() != 1)
         {
-            gp_Dir d1 = new(v1);
-            gp_Dir d2 = new(v2);
-            gp_Dir d3 = new(v3);
-            gp_Ax3 axes = new(new gp_Pnt(0, 0, 0), d3, d1);
+            Direction3D d1 = new(v1);
+            Direction3D d2 = new(v2);
+            Direction3D d3 = new(v3);
+            CoordinateSystem axes = new(new Point3D(0, 0, 0), d3, d1);
             d3.Cross(d1);
             if (d3.Dot(d2) < 0)
             {
@@ -152,9 +156,9 @@ public static class ShapeAnalysis_Geom
 
         if (Math.Abs(mm - 1.0) > prec)
         {
-            trsf.SetScale(new gp_Pnt(0, 0, 0), mm); // OCCT: SetScale resets the transformation, dropping the rotation set above (occt-issues.md)
+            trsf.SetScale(new Point3D(0, 0, 0), mm); // OCCT: SetScale resets the transformation, dropping the rotation set above (occt-issues.md)
         }
-        gp_Vec tp = new(gtrsf.TranslationPart());
+        Vector3D tp = new(gtrsf.TranslationPart());
         if (unit != 1.0)
         {
             tp.Multiply(unit);

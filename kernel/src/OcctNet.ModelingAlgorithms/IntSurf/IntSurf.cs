@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
 
@@ -20,31 +21,31 @@ public static class IntSurf
     /// The transitions are <c>ref</c>, as OCCT's references: an in or out transition keeps the situation and
     /// opposite flag the caller's object had.
     /// </remarks>
-    public static void MakeTransition(in gp_Vec TgFirst, in gp_Vec TgSecond, in gp_Dir Normale,
+    public static void MakeTransition(in Vector3D TgFirst, in Vector3D TgSecond, in Direction3D Normale,
                                       ref IntSurf_Transition TFirst, ref IntSurf_Transition TSecond)
     {
         // Compute the mixed product of normal, tangent 1, tangent 2
         // to get the type of transition.
 
-        gp_Vec pvect = TgSecond.Crossed(TgFirst);
+        Vector3D pvect = TgSecond.Crossed(TgFirst);
 
         double NTgSecond = TgSecond.Magnitude();
         double NTgFirst = TgFirst.Magnitude();
-        double NTgSecondNTgFirstAngular = NTgSecond * NTgFirst * Precision.Angular();
+        double NTgSecondNTgFirstAngular = NTgSecond * NTgFirst * global::Kerf.Engine.Foundation.Precision.Angular();
 
-        if (NTgFirst <= Precision.Confusion())
+        if (NTgFirst <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             TFirst.SetValue(true, IntSurf_Undecided);
             TSecond.SetValue(true, IntSurf_Undecided);
         }
-        else if ((NTgSecond <= Precision.Confusion()) || (pvect.Magnitude() <= NTgSecondNTgFirstAngular))
+        else if ((NTgSecond <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (pvect.Magnitude() <= NTgSecondNTgFirstAngular))
         {
             TFirst.SetValue(true, IntSurf_Unknown, TgFirst.Dot(TgSecond) < 0.0);
             TSecond.SetValue(true, IntSurf_Unknown, TgFirst.Dot(TgSecond) < 0.0);
         }
         else
         {
-            double yu = pvect.Dot(new gp_Vec(Normale));
+            double yu = pvect.Dot(new Vector3D(Normale));
             yu /= NTgSecond * NTgFirst;
             if (yu > 0.0001)
             {

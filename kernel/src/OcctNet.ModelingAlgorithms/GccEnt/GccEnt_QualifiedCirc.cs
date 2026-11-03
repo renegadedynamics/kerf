@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -14,18 +15,18 @@ namespace Occt;
 /// <remarks>A value: OCCT gives it no setters. <c>default</c> is an unqualified circle of radius 0 at the origin.</remarks>
 public readonly struct GccEnt_QualifiedCirc : IEquatable<GccEnt_QualifiedCirc>
 {
-    private readonly gp_Circ2d TheQualified;
+    private readonly Circle2D TheQualified;
     private readonly GccEnt_Position TheQualifier;
 
     /// <summary>Assigns the qualifier to the circle.</summary>
-    public GccEnt_QualifiedCirc(in gp_Circ2d Qualified, GccEnt_Position Qualifier)
+    public GccEnt_QualifiedCirc(in Circle2D Qualified, GccEnt_Position Qualifier)
     {
         TheQualified = Qualified;
         TheQualifier = Qualifier;
     }
 
     /// <summary>The circle to which the qualifier is assigned.</summary>
-    public gp_Circ2d Qualified()
+    public Circle2D Qualified()
     {
         return TheQualified;
     }

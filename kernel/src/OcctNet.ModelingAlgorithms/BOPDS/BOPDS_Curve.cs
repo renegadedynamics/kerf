@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +21,7 @@ public class BOPDS_Curve
     protected IntTools_Curve myCurve = new();
     protected NCollection_List<BOPDS_PaveBlock> myPaveBlocks = new();
     protected NCollection_List<int> myTechnoVertices = new();
-    protected Bnd_Box myBox = new();
+    protected Box myBox = new();
     protected double myTolerance;
 
     public BOPDS_Curve()
@@ -41,11 +43,11 @@ public class BOPDS_Curve
 
     public IntTools_Curve Curve() => myCurve;
 
-    internal void SetBox(in Bnd_Box theBox) => myBox = theBox;
+    internal void SetBox(in Box theBox) => myBox = theBox;
 
-    public Bnd_Box Box() => myBox;
+    public Box Box() => myBox;
 
-    internal ref Bnd_Box ChangeBox() => ref myBox;
+    internal ref Box ChangeBox() => ref myBox;
 
     /// <summary>Replaces the pave blocks by those of the list.</summary>
     internal void SetPaveBlocks(NCollection_List<BOPDS_PaveBlock> theLPB)

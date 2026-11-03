@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GProp_ValueType;
 
 namespace Occt;
@@ -18,17 +21,17 @@ namespace Occt;
 /// location; otherwise they are the four coefficients of the plane, its constant shifted to the location. OCCT keeps
 /// a copy of the face and a pointer to the caller's coefficients; the port keeps a copy of both.
 /// </remarks>
-public class BRepGProp_UFunction : math_Function
+public class BRepGProp_UFunction : Function
 {
     private readonly BRepGProp_Face mySurface;
-    private readonly gp_Pnt myVertex;
+    private readonly Point3D myVertex;
     private readonly double[] myCoeffs;
     private double myVParam;
     private GProp_ValueType myValueType;
     private readonly bool myIsByPoint;
 
     /// <summary>The integrand on the face, with the location point, the mode and the coefficients (see the remarks).</summary>
-    public BRepGProp_UFunction(BRepGProp_Face theSurface, in gp_Pnt theVertex, bool IsByPoint, ReadOnlySpan<double> theCoeffs)
+    public BRepGProp_UFunction(BRepGProp_Face theSurface, in Point3D theVertex, bool IsByPoint, ReadOnlySpan<double> theCoeffs)
     {
         mySurface = new BRepGProp_Face(theSurface);
         myVertex = theVertex;
@@ -50,7 +53,7 @@ public class BRepGProp_UFunction : math_Function
         // Volume computation
         if (myValueType == GProp_Mass)
         {
-            gp_XYZ aPMP0;
+            Xyz aPMP0;
             double aTmpPar1 = 0.0;
             double aTmpPar2 = 0.0;
 
@@ -78,9 +81,9 @@ public class BRepGProp_UFunction : math_Function
 
     // Returns the value for volume computation; thePMP0 is PSurf(X, Y) minus the location; theS and theD1 are set in
     // the plane mode only (OCCT leaves them unchanged by point)
-    private double VolumeValue(double X, out gp_XYZ thePMP0, ref double theS, ref double theD1)
+    private double VolumeValue(double X, out Xyz thePMP0, ref double theS, ref double theD1)
     {
-        mySurface.Normal(X, myVParam, out gp_Pnt aPnt, out gp_Vec aNorm);
+        mySurface.Normal(X, myVParam, out Point3D aPnt, out Vector3D aNorm);
 
         thePMP0 = aPnt.XYZ().Subtracted(myVertex.XYZ());
 
@@ -101,7 +104,7 @@ public class BRepGProp_UFunction : math_Function
     // Returns a value for the center of mass computation
     private bool CenterMassValue(double X, out double F)
     {
-        gp_XYZ aPmP0;
+        Xyz aPmP0;
         double aS = 0.0;
         double aD1 = 0.0;
 
@@ -152,7 +155,7 @@ public class BRepGProp_UFunction : math_Function
     // Computes the value of inertia
     private bool InertiaValue(double X, out double F)
     {
-        gp_XYZ aPmP0;
+        Xyz aPmP0;
         double aS = 0.0;
         double aD1 = 0.0;
         double aParam1;

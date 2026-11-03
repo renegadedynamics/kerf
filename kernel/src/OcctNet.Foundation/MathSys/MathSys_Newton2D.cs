@@ -2,7 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Engine.Foundation.Std;
+
+using Occt;
+
+namespace Kerf.Engine.Numerics.Systems;
 
 // The C++ function contract `bool operator()(double u, double v, double f[2], double j[2][2]) const` is the
 // interface INewton2DFunction, whose Invoke takes the arrays by `ref` as std_array2 values, so a functor writes
@@ -16,18 +20,18 @@ public static partial class MathSys
     public interface INewton2DFunction
     {
         /// <summary>Computes F(u, v) into theF and the Jacobian into theJ (theJ[i][j] = dF_i/dx_j); false on failure.</summary>
-        bool Invoke(double theU, double theV, ref std_array2<double> theF, ref std_array2<std_array2<double>> theJ);
+        bool Invoke(double u, double v, ref Array2<double> f, ref Array2<Array2<double>> j);
     }
 
     /// <summary>A 2x2 system with a symmetric Jacobian, for <see cref="Solve2DSymmetric"/>.</summary>
     public interface INewton2DSymmetricFunction
     {
         /// <summary>Computes F and the Jacobian's elements J11, J12 (= J21) and J22; false on failure.</summary>
-        bool ValueAndJacobian(double theU, double theV, out double theF1, out double theF2,
-                              out double theJ11, out double theJ12, out double theJ22);
+        bool ValueAndJacobian(double u, double v, out double f1, out double f2,
+                              out double j11, out double j12, out double j22);
 
         /// <summary>Computes F only; false on failure.</summary>
-        bool Value(double theU, double theV, out double theF1, out double theF2);
+        bool Value(double u, double v, out double f1, out double f2);
     }
 
     internal static partial class detail
@@ -38,251 +42,251 @@ public static partial class MathSys
         internal const double THE_ARMIJO_C1 = 1.0e-4;
 
         /// <summary>C++'s std::clamp: theLo if theV &lt; theLo, theHi if theHi &lt; theV, else theV.</summary>
-        internal static double std_clamp(double theV, double theLo, double theHi)
+        internal static double std_clamp(double v, double lo, double hi)
         {
-            return theV < theLo ? theLo : theHi < theV ? theHi : theV;
+            return v < lo ? lo : hi < v ? hi : v;
         }
 
         /// <summary>Check that NewtonOptions fields are positive and valid.</summary>
-        internal static bool IsOptionsValid(NewtonOptions theOptions)
+        internal static bool IsOptionsValid(NewtonOptions options)
         {
-            return theOptions.FTolerance > 0.0 && theOptions.XTolerance > 0.0 && theOptions.MaxIterations > 0
-                   && theOptions.MaxStepRatio > 0.0 && theOptions.SoftBoundsExtension >= 0.0;
+            return options.FTolerance > 0.0 && options.XTolerance > 0.0 && options.MaxIterations > 0
+                   && options.MaxStepRatio > 0.0 && options.SoftBoundsExtension >= 0.0;
         }
 
         /// <summary>Check that the bounds have valid (min &lt;= max) ranges.</summary>
-        internal static bool IsBoundsValid2D(in NewtonBoundsN2 theBounds)
+        internal static bool IsBoundsValid2D(in NewtonBoundsN2 bounds)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return true;
             }
-            return theBounds.Min[0] <= theBounds.Max[0] && theBounds.Min[1] <= theBounds.Max[1];
+            return bounds.Min[0] <= bounds.Max[0] && bounds.Min[1] <= bounds.Max[1];
         }
 
         /// <summary>Return the largest domain extent across both dimensions (min 1.0).</summary>
-        internal static double MaxDomainSize2D(in NewtonBoundsN2 theBounds)
+        internal static double MaxDomainSize2D(in NewtonBoundsN2 bounds)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return 1.0;
             }
 
-            double aDU = theBounds.Max[0] - theBounds.Min[0];
-            double aDV = theBounds.Max[1] - theBounds.Min[1];
-            return Max(1.0, Max(aDU, aDV));
+            double du = bounds.Max[0] - bounds.Min[0];
+            double dv = bounds.Max[1] - bounds.Min[1];
+            return Max(1.0, Max(du, dv));
         }
 
         /// <summary>Clamp solution array to bounds, optionally extending by soft-bounds ratio.</summary>
-        internal static void Clamp2D(ref std_array2<double> theX,
-                                     in NewtonBoundsN2 theBounds,
-                                     bool theUseSoftBounds,
-                                     double theSoftExtRatio)
+        internal static void Clamp2D(ref Array2<double> x,
+                                     in NewtonBoundsN2 bounds,
+                                     bool useSoftBounds,
+                                     double softExtRatio)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return;
             }
 
-            double aExtU =
-              theUseSoftBounds ? (theBounds.Max[0] - theBounds.Min[0]) * theSoftExtRatio : 0.0;
-            double aExtV =
-              theUseSoftBounds ? (theBounds.Max[1] - theBounds.Min[1]) * theSoftExtRatio : 0.0;
+            double extU =
+              useSoftBounds ? (bounds.Max[0] - bounds.Min[0]) * softExtRatio : 0.0;
+            double extV =
+              useSoftBounds ? (bounds.Max[1] - bounds.Min[1]) * softExtRatio : 0.0;
 
-            double aUMin = theBounds.Min[0] - aExtU;
-            double aUMax = theBounds.Max[0] + aExtU;
-            double aVMin = theBounds.Min[1] - aExtV;
-            double aVMax = theBounds.Max[1] + aExtV;
+            double uMin = bounds.Min[0] - extU;
+            double uMax = bounds.Max[0] + extU;
+            double vMin = bounds.Min[1] - extV;
+            double vMax = bounds.Max[1] + extV;
 
-            theX[0] = std_clamp(theX[0], aUMin, aUMax);
-            theX[1] = std_clamp(theX[1], aVMin, aVMax);
+            x[0] = std_clamp(x[0], uMin, uMax);
+            x[1] = std_clamp(x[1], vMin, vMax);
         }
 
         /// <summary>
         /// Solve a 2x2 symmetric system by eigenvalue decomposition (SVD fallback); more robust than Cramer's rule
         /// for ill-conditioned matrices. theDU and theDV are written only on success.
         /// </summary>
-        internal static bool SolveSymmetric2x2SVD(double theJ11,
-                                                  double theJ12,
-                                                  double theJ22,
-                                                  double theF1,
-                                                  double theF2,
-                                                  ref double theDU,
-                                                  ref double theDV,
-                                                  double theTol = 1.0e-15)
+        internal static bool SolveSymmetric2x2SVD(double j11,
+                                                  double j12,
+                                                  double j22,
+                                                  double f1,
+                                                  double f2,
+                                                  ref double du,
+                                                  ref double dv,
+                                                  double tol = 1.0e-15)
         {
-            double aTrace = theJ11 + theJ22;
-            double aDiff = (theJ11 - theJ22) * 0.5;
-            double aDiscrim = Math.Sqrt(aDiff * aDiff + theJ12 * theJ12);
+            double trace = j11 + j22;
+            double diff = (j11 - j22) * 0.5;
+            double discrim = Math.Sqrt(diff * diff + j12 * j12);
 
-            double aLambda1 = aTrace * 0.5 + aDiscrim;
-            double aLambda2 = aTrace * 0.5 - aDiscrim;
+            double lambda1 = trace * 0.5 + discrim;
+            double lambda2 = trace * 0.5 - discrim;
 
-            double aMinLambda = Max(Math.Abs(aLambda1), Math.Abs(aLambda2)) * theTol;
-            if (Math.Abs(aLambda1) < aMinLambda && Math.Abs(aLambda2) < aMinLambda)
+            double minLambda = Max(Math.Abs(lambda1), Math.Abs(lambda2)) * tol;
+            if (Math.Abs(lambda1) < minLambda && Math.Abs(lambda2) < minLambda)
             {
                 return false;
             }
 
-            double aV1x = 0.0;
-            double aV1y = 0.0;
-            if (Math.Abs(theJ12) > Math.Abs(aDiff))
+            double v1x = 0.0;
+            double v1y = 0.0;
+            if (Math.Abs(j12) > Math.Abs(diff))
             {
-                double aLen1 = Math.Sqrt(theJ12 * theJ12 + (aLambda1 - theJ11) * (aLambda1 - theJ11));
-                if (aLen1 < theTol)
+                double len1 = Math.Sqrt(j12 * j12 + (lambda1 - j11) * (lambda1 - j11));
+                if (len1 < tol)
                 {
                     return false;
                 }
 
-                aV1x = theJ12 / aLen1;
-                aV1y = (aLambda1 - theJ11) / aLen1;
+                v1x = j12 / len1;
+                v1y = (lambda1 - j11) / len1;
             }
             else
             {
-                double aLen1 = Math.Sqrt((aLambda1 - theJ22) * (aLambda1 - theJ22) + theJ12 * theJ12);
-                if (aLen1 < theTol)
+                double len1 = Math.Sqrt((lambda1 - j22) * (lambda1 - j22) + j12 * j12);
+                if (len1 < tol)
                 {
                     return false;
                 }
 
-                aV1x = (aLambda1 - theJ22) / aLen1;
-                aV1y = theJ12 / aLen1;
+                v1x = (lambda1 - j22) / len1;
+                v1y = j12 / len1;
             }
 
-            double aV2x = -aV1y;
-            double aV2y = aV1x;
+            double v2x = -v1y;
+            double v2y = v1x;
 
-            double aB1 = aV1x * (-theF1) + aV1y * (-theF2);
-            double aB2 = aV2x * (-theF1) + aV2y * (-theF2);
+            double b1 = v1x * (-f1) + v1y * (-f2);
+            double b2 = v2x * (-f1) + v2y * (-f2);
 
-            double aX1 = (Math.Abs(aLambda1) > aMinLambda) ? aB1 / aLambda1 : 0.0;
-            double aX2 = (Math.Abs(aLambda2) > aMinLambda) ? aB2 / aLambda2 : 0.0;
+            double x1 = (Math.Abs(lambda1) > minLambda) ? b1 / lambda1 : 0.0;
+            double x2 = (Math.Abs(lambda2) > minLambda) ? b2 / lambda2 : 0.0;
 
-            theDU = aV1x * aX1 + aV2x * aX2;
-            theDV = aV1y * aX1 + aV2y * aX2;
+            du = v1x * x1 + v2x * x2;
+            dv = v1y * x1 + v2y * x2;
             return true;
         }
     }
 
     /// <summary>Solve a general 2x2 nonlinear system by Newton iteration.</summary>
-    public static NewtonResultN2 Solve2D<Function>(Function theFunc,
-                                                   in std_array2<double> theX0,
-                                                   in NewtonBoundsN2 theBounds,
-                                                   NewtonOptions? theOptions = null)
+    public static NewtonResultN2 Solve2D<Function>(Function func,
+                                                   in Array2<double> x0,
+                                                   in NewtonBoundsN2 bounds,
+                                                   NewtonOptions? options = null)
         where Function : INewton2DFunction
     {
-        theOptions ??= new NewtonOptions();
-        NewtonResultN2 aRes = new();
-        aRes.X = theX0;
+        options ??= new NewtonOptions();
+        NewtonResultN2 res = new();
+        res.X = x0;
 
-        if (!detail.IsOptionsValid(theOptions) || !detail.IsBoundsValid2D(theBounds))
+        if (!detail.IsOptionsValid(options) || !detail.IsBoundsValid2D(bounds))
         {
-            aRes.Status = MathUtils.Status.InvalidInput;
-            return aRes;
+            res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return res;
         }
 
         // OCCT: Solve2D clamps to the hard bounds and ignores AllowSoftBounds, which Solve2DSymmetric, Solve3D and
         // Solve4D honour.
-        detail.Clamp2D(ref aRes.X, theBounds, false, 0.0);
+        detail.Clamp2D(ref res.X, bounds, false, 0.0);
 
-        double aTolSq = theOptions.FTolerance * theOptions.FTolerance;
-        double aMaxStep = theOptions.MaxStepRatio * detail.MaxDomainSize2D(theBounds);
+        double tolSq = options.FTolerance * options.FTolerance;
+        double maxStep = options.MaxStepRatio * detail.MaxDomainSize2D(bounds);
 
-        for (int anIter = 0; anIter < theOptions.MaxIterations; ++anIter)
+        for (int iter = 0; iter < options.MaxIterations; ++iter)
         {
-            aRes.NbIterations = anIter + 1;
+            res.NbIterations = iter + 1;
 
-            std_array2<double> aF = default;
-            std_array2<std_array2<double>> aJ = default;
-            if (!theFunc.Invoke(aRes.X[0], aRes.X[1], ref aF, ref aJ))
+            Array2<double> f = default;
+            Array2<Array2<double>> j = default;
+            if (!func.Invoke(res.X[0], res.X[1], ref f, ref j))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
-            double aFNormSq = aF[0] * aF[0] + aF[1] * aF[1];
-            aRes.ResidualNorm = Math.Sqrt(aFNormSq);
+            double fNormSq = f[0] * f[0] + f[1] * f[1];
+            res.ResidualNorm = Math.Sqrt(fNormSq);
 
-            if (aFNormSq <= aTolSq)
+            if (fNormSq <= tolSq)
             {
-                aRes.Status = MathUtils.Status.OK;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                return res;
             }
 
-            double aDU = 0.0;
-            double aDV = 0.0;
+            double du = 0.0;
+            double dv = 0.0;
 
-            double aDet = aJ[0][0] * aJ[1][1] - aJ[0][1] * aJ[1][0];
-            if (Math.Abs(aDet) < detail.THE_SINGULAR_DET_TOL)
+            double det = j[0][0] * j[1][1] - j[0][1] * j[1][0];
+            if (Math.Abs(det) < detail.THE_SINGULAR_DET_TOL)
             {
-                double aGradU = aJ[0][0] * aF[0] + aJ[1][0] * aF[1];
-                double aGradV = aJ[0][1] * aF[0] + aJ[1][1] * aF[1];
-                double aGradSq = aGradU * aGradU + aGradV * aGradV;
-                if (aGradSq < detail.THE_CRITICAL_GRAD_SQ)
+                double gradU = j[0][0] * f[0] + j[1][0] * f[1];
+                double gradV = j[0][1] * f[0] + j[1][1] * f[1];
+                double gradSq = gradU * gradU + gradV * gradV;
+                if (gradSq < detail.THE_CRITICAL_GRAD_SQ)
                 {
-                    aRes.Status = MathUtils.Status.Singular;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.Singular;
+                    return res;
                 }
 
-                double aAlpha = Min(1.0, Math.Sqrt(aFNormSq / aGradSq) * 0.1);
-                aDU = -aAlpha * aGradU;
-                aDV = -aAlpha * aGradV;
+                double alpha = Min(1.0, Math.Sqrt(fNormSq / gradSq) * 0.1);
+                du = -alpha * gradU;
+                dv = -alpha * gradV;
             }
             else
             {
-                double aInvDet = 1.0 / aDet;
-                aDU = (-aF[0] * aJ[1][1] + aF[1] * aJ[0][1]) * aInvDet;
-                aDV = (-aF[1] * aJ[0][0] + aF[0] * aJ[1][0]) * aInvDet;
+                double invDet = 1.0 / det;
+                du = (-f[0] * j[1][1] + f[1] * j[0][1]) * invDet;
+                dv = (-f[1] * j[0][0] + f[0] * j[1][0]) * invDet;
             }
 
-            double aStepNormSq = aDU * aDU + aDV * aDV;
-            double aStepNorm = Math.Sqrt(aStepNormSq);
-            if (aStepNorm > aMaxStep)
+            double stepNormSq = du * du + dv * dv;
+            double stepNorm = Math.Sqrt(stepNormSq);
+            if (stepNorm > maxStep)
             {
-                double aScale = aMaxStep / aStepNorm;
-                aDU *= aScale;
-                aDV *= aScale;
+                double scale = maxStep / stepNorm;
+                du *= scale;
+                dv *= scale;
             }
 
-            std_array2<double> aNewX = std_array2<double>.Of(aRes.X[0] + aDU, aRes.X[1] + aDV);
-            detail.Clamp2D(ref aNewX, theBounds, false, 0.0);
+            Array2<double> newX = Array2<double>.Of(res.X[0] + du, res.X[1] + dv);
+            detail.Clamp2D(ref newX, bounds, false, 0.0);
 
-            aRes.StepNorm = Math.Sqrt((aNewX[0] - aRes.X[0]) * (aNewX[0] - aRes.X[0])
-                                      + (aNewX[1] - aRes.X[1]) * (aNewX[1] - aRes.X[1]));
-            aRes.X = aNewX;
+            res.StepNorm = Math.Sqrt((newX[0] - res.X[0]) * (newX[0] - res.X[0])
+                                      + (newX[1] - res.X[1]) * (newX[1] - res.X[1]));
+            res.X = newX;
 
-            double aScaleRef = Max(1.0, Max(Math.Abs(aRes.X[0]), Math.Abs(aRes.X[1])));
-            if (aRes.StepNorm <= theOptions.XTolerance * aScaleRef)
+            double scaleRef = Max(1.0, Max(Math.Abs(res.X[0]), Math.Abs(res.X[1])));
+            if (res.StepNorm <= options.XTolerance * scaleRef)
             {
-                std_array2<double> aCheckF = default;
-                std_array2<std_array2<double>> aCheckJ = default;
-                if (!theFunc.Invoke(aRes.X[0], aRes.X[1], ref aCheckF, ref aCheckJ))
+                Array2<double> checkF = default;
+                Array2<Array2<double>> checkJ = default;
+                if (!func.Invoke(res.X[0], res.X[1], ref checkF, ref checkJ))
                 {
-                    aRes.Status = MathUtils.Status.NumericalError;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return res;
                 }
 
-                aRes.ResidualNorm = Math.Sqrt(aCheckF[0] * aCheckF[0] + aCheckF[1] * aCheckF[1]);
-                aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                           : MathUtils.Status.MaxIterations;
-                return aRes;
+                res.ResidualNorm = Math.Sqrt(checkF[0] * checkF[0] + checkF[1] * checkF[1]);
+                res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                           : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+                return res;
             }
         }
 
         // Braced: C# doesn't allow the loop's local names again in the enclosing block.
         {
-            std_array2<double> aF = default;
-            std_array2<std_array2<double>> aJ = default;
-            if (!theFunc.Invoke(aRes.X[0], aRes.X[1], ref aF, ref aJ))
+            Array2<double> f = default;
+            Array2<Array2<double>> j = default;
+            if (!func.Invoke(res.X[0], res.X[1], ref f, ref j))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
-            aRes.ResidualNorm = Math.Sqrt(aF[0] * aF[0] + aF[1] * aF[1]);
-            aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                       : MathUtils.Status.MaxIterations;
-            return aRes;
+            res.ResidualNorm = Math.Sqrt(f[0] * f[0] + f[1] * f[1]);
+            res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                       : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+            return res;
         }
     }
 
@@ -290,188 +294,188 @@ public static partial class MathSys
     /// Solve a 2x2 system with symmetric Jacobian by robust Newton iteration (SVD fallback for a singular
     /// Jacobian, Armijo line search on 0.5*||F||^2 when enabled).
     /// </summary>
-    public static NewtonResultN2 Solve2DSymmetric<Function>(Function theFunc,
-                                                            in std_array2<double> theX0,
-                                                            in NewtonBoundsN2 theBounds,
-                                                            NewtonOptions? theOptions = null)
+    public static NewtonResultN2 Solve2DSymmetric<Function>(Function func,
+                                                            in Array2<double> x0,
+                                                            in NewtonBoundsN2 bounds,
+                                                            NewtonOptions? options = null)
         where Function : INewton2DSymmetricFunction
     {
-        theOptions ??= new NewtonOptions();
-        NewtonResultN2 aRes = new();
-        aRes.X = theX0;
+        options ??= new NewtonOptions();
+        NewtonResultN2 res = new();
+        res.X = x0;
 
-        if (!detail.IsOptionsValid(theOptions) || !detail.IsBoundsValid2D(theBounds))
+        if (!detail.IsOptionsValid(options) || !detail.IsBoundsValid2D(bounds))
         {
-            aRes.Status = MathUtils.Status.InvalidInput;
-            return aRes;
+            res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return res;
         }
 
-        detail.Clamp2D(ref aRes.X, theBounds, theOptions.AllowSoftBounds, theOptions.SoftBoundsExtension);
+        detail.Clamp2D(ref res.X, bounds, options.AllowSoftBounds, options.SoftBoundsExtension);
 
-        double aTolSq = theOptions.FTolerance * theOptions.FTolerance;
-        double aMaxStep = theOptions.MaxStepRatio * detail.MaxDomainSize2D(theBounds);
+        double tolSq = options.FTolerance * options.FTolerance;
+        double maxStep = options.MaxStepRatio * detail.MaxDomainSize2D(bounds);
 
-        for (int anIter = 0; anIter < theOptions.MaxIterations; ++anIter)
+        for (int iter = 0; iter < options.MaxIterations; ++iter)
         {
-            aRes.NbIterations = anIter + 1;
+            res.NbIterations = iter + 1;
 
-            if (!theFunc.ValueAndJacobian(aRes.X[0], aRes.X[1], out double aF1, out double aF2, out double aJ11, out double aJ12, out double aJ22))
+            if (!func.ValueAndJacobian(res.X[0], res.X[1], out double f1, out double f2, out double j11, out double j12, out double j22))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
-            double aFNormSq = aF1 * aF1 + aF2 * aF2;
-            aRes.ResidualNorm = Math.Sqrt(aFNormSq);
+            double fNormSq = f1 * f1 + f2 * f2;
+            res.ResidualNorm = Math.Sqrt(fNormSq);
 
-            if (aFNormSq <= aTolSq)
+            if (fNormSq <= tolSq)
             {
-                aRes.Status = MathUtils.Status.OK;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                return res;
             }
 
-            double aDU = 0.0;
-            double aDV = 0.0;
+            double du = 0.0;
+            double dv = 0.0;
 
-            double aDet = aJ11 * aJ22 - aJ12 * aJ12;
-            if (Math.Abs(aDet) < detail.THE_SINGULAR_DET_TOL)
+            double det = j11 * j22 - j12 * j12;
+            if (Math.Abs(det) < detail.THE_SINGULAR_DET_TOL)
             {
-                if (!detail.SolveSymmetric2x2SVD(aJ11, aJ12, aJ22, aF1, aF2, ref aDU, ref aDV))
+                if (!detail.SolveSymmetric2x2SVD(j11, j12, j22, f1, f2, ref du, ref dv))
                 {
-                    double aGradU = aJ11 * aF1 + aJ12 * aF2;
-                    double aGradV = aJ12 * aF1 + aJ22 * aF2;
-                    double aGradSq = aGradU * aGradU + aGradV * aGradV;
-                    if (aGradSq < detail.THE_CRITICAL_GRAD_SQ)
+                    double gradU = j11 * f1 + j12 * f2;
+                    double gradV = j12 * f1 + j22 * f2;
+                    double gradSq = gradU * gradU + gradV * gradV;
+                    if (gradSq < detail.THE_CRITICAL_GRAD_SQ)
                     {
-                        aRes.Status = MathUtils.Status.Singular;
-                        return aRes;
+                        res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.Singular;
+                        return res;
                     }
 
-                    double aAlpha = Min(1.0, Math.Sqrt(aFNormSq / aGradSq) * 0.1);
-                    aDU = -aAlpha * aGradU;
-                    aDV = -aAlpha * aGradV;
+                    double alpha = Min(1.0, Math.Sqrt(fNormSq / gradSq) * 0.1);
+                    du = -alpha * gradU;
+                    dv = -alpha * gradV;
                 }
             }
             else
             {
-                double aInvDet = 1.0 / aDet;
-                aDU = (-aF1 * aJ22 + aF2 * aJ12) * aInvDet;
-                aDV = (-aF2 * aJ11 + aF1 * aJ12) * aInvDet;
+                double invDet = 1.0 / det;
+                du = (-f1 * j22 + f2 * j12) * invDet;
+                dv = (-f2 * j11 + f1 * j12) * invDet;
             }
 
-            double aStepNormSq = aDU * aDU + aDV * aDV;
-            double aStepNorm = Math.Sqrt(aStepNormSq);
-            if (aStepNorm > aMaxStep)
+            double stepNormSq = du * du + dv * dv;
+            double stepNorm = Math.Sqrt(stepNormSq);
+            if (stepNorm > maxStep)
             {
-                double aScale = aMaxStep / aStepNorm;
-                aDU *= aScale;
-                aDV *= aScale;
+                double scale = maxStep / stepNorm;
+                du *= scale;
+                dv *= scale;
             }
 
             // Merit function for line search is phi = 0.5 * ||F||^2.
             // Its gradient is grad(phi) = J^T * F, so directional derivative is grad(phi) . dX.
-            double aGradPhiU = aJ11 * aF1 + aJ12 * aF2;
-            double aGradPhiV = aJ12 * aF1 + aJ22 * aF2;
-            double aDirDeriv = aGradPhiU * aDU + aGradPhiV * aDV;
+            double gradPhiU = j11 * f1 + j12 * f2;
+            double gradPhiV = j12 * f1 + j22 * f2;
+            double dirDeriv = gradPhiU * du + gradPhiV * dv;
 
-            std_array2<double> aNewX = aRes.X;
-            double aNewResidualNorm = -1.0;
+            Array2<double> newX = res.X;
+            double newResidualNorm = -1.0;
 
-            if (theOptions.EnableLineSearch)
+            if (options.EnableLineSearch)
             {
-                if (aDirDeriv >= 0.0)
+                if (dirDeriv >= 0.0)
                 {
                     // Armijo backtracking requires a descent direction for phi; non-negative derivative cannot
                     // provide sufficient decrease.
-                    aRes.Status = MathUtils.Status.NonDescentDirection;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NonDescentDirection;
+                    return res;
                 }
 
-                double aPhi0 = 0.5 * aFNormSq;
-                double aAlpha = 1.0;
+                double phi0 = 0.5 * fNormSq;
+                double alpha = 1.0;
                 bool isAccepted = false;
 
                 for (int k = 0; k < detail.THE_LINE_SEARCH_MAX; ++k)
                 {
-                    aNewX[0] = aRes.X[0] + aAlpha * aDU;
-                    aNewX[1] = aRes.X[1] + aAlpha * aDV;
-                    detail.Clamp2D(ref aNewX,
-                                   theBounds,
-                                   theOptions.AllowSoftBounds,
-                                   theOptions.AllowSoftBounds ? theOptions.SoftBoundsExtension : 0.0);
+                    newX[0] = res.X[0] + alpha * du;
+                    newX[1] = res.X[1] + alpha * dv;
+                    detail.Clamp2D(ref newX,
+                                   bounds,
+                                   options.AllowSoftBounds,
+                                   options.AllowSoftBounds ? options.SoftBoundsExtension : 0.0);
 
-                    if (!theFunc.Value(aNewX[0], aNewX[1], out double aTryF1, out double aTryF2))
+                    if (!func.Value(newX[0], newX[1], out double tryF1, out double tryF2))
                     {
-                        aAlpha *= 0.5;
+                        alpha *= 0.5;
                         continue;
                     }
 
-                    double aTryFNormSq = aTryF1 * aTryF1 + aTryF2 * aTryF2;
-                    double aTryPhi = 0.5 * aTryFNormSq;
-                    double aArmijoBound = aPhi0 + detail.THE_ARMIJO_C1 * aAlpha * aDirDeriv;
-                    if (aTryPhi <= aArmijoBound)
+                    double tryFNormSq = tryF1 * tryF1 + tryF2 * tryF2;
+                    double tryPhi = 0.5 * tryFNormSq;
+                    double armijoBound = phi0 + detail.THE_ARMIJO_C1 * alpha * dirDeriv;
+                    if (tryPhi <= armijoBound)
                     {
                         isAccepted = true;
-                        aNewResidualNorm = Math.Sqrt(aTryFNormSq);
+                        newResidualNorm = Math.Sqrt(tryFNormSq);
                         break;
                     }
 
-                    aAlpha *= 0.5;
+                    alpha *= 0.5;
                 }
 
                 if (!isAccepted)
                 {
-                    aRes.Status = MathUtils.Status.NonDescentDirection;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NonDescentDirection;
+                    return res;
                 }
             }
             else
             {
-                aNewX[0] += aDU;
-                aNewX[1] += aDV;
-                detail.Clamp2D(ref aNewX,
-                               theBounds,
-                               theOptions.AllowSoftBounds,
-                               theOptions.AllowSoftBounds ? theOptions.SoftBoundsExtension : 0.0);
+                newX[0] += du;
+                newX[1] += dv;
+                detail.Clamp2D(ref newX,
+                               bounds,
+                               options.AllowSoftBounds,
+                               options.AllowSoftBounds ? options.SoftBoundsExtension : 0.0);
             }
 
-            aRes.StepNorm = Math.Sqrt((aNewX[0] - aRes.X[0]) * (aNewX[0] - aRes.X[0])
-                                      + (aNewX[1] - aRes.X[1]) * (aNewX[1] - aRes.X[1]));
-            aRes.X = aNewX;
+            res.StepNorm = Math.Sqrt((newX[0] - res.X[0]) * (newX[0] - res.X[0])
+                                      + (newX[1] - res.X[1]) * (newX[1] - res.X[1]));
+            res.X = newX;
 
-            if (aNewResidualNorm >= 0.0)
+            if (newResidualNorm >= 0.0)
             {
-                aRes.ResidualNorm = aNewResidualNorm;
+                res.ResidualNorm = newResidualNorm;
             }
 
-            double aScaleRef = Max(1.0, Max(Math.Abs(aRes.X[0]), Math.Abs(aRes.X[1])));
-            if (aRes.StepNorm <= theOptions.XTolerance * aScaleRef)
+            double scaleRef = Max(1.0, Max(Math.Abs(res.X[0]), Math.Abs(res.X[1])));
+            if (res.StepNorm <= options.XTolerance * scaleRef)
             {
-                if (!theFunc.Value(aRes.X[0], aRes.X[1], out double aCheckF1, out double aCheckF2))
+                if (!func.Value(res.X[0], res.X[1], out double checkF1, out double checkF2))
                 {
-                    aRes.Status = MathUtils.Status.NumericalError;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return res;
                 }
 
-                aRes.ResidualNorm = Math.Sqrt(aCheckF1 * aCheckF1 + aCheckF2 * aCheckF2);
-                aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                           : MathUtils.Status.MaxIterations;
-                return aRes;
+                res.ResidualNorm = Math.Sqrt(checkF1 * checkF1 + checkF2 * checkF2);
+                res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                           : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+                return res;
             }
         }
 
         // Braced: C# doesn't allow the loop's local names again in the enclosing block.
         {
-            if (!theFunc.Value(aRes.X[0], aRes.X[1], out double aF1, out double aF2))
+            if (!func.Value(res.X[0], res.X[1], out double f1, out double f2))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
-            aRes.ResidualNorm = Math.Sqrt(aF1 * aF1 + aF2 * aF2);
-            aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                       : MathUtils.Status.MaxIterations;
-            return aRes;
+            res.ResidualNorm = Math.Sqrt(f1 * f1 + f2 * f2);
+            res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                       : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+            return res;
         }
     }
 }

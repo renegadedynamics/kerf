@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.ChFi2d_ConstructionError;
 
@@ -13,10 +15,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class ChFi2d_BuilderTests
 {
     // A frozen planar face on the closed polygon of the points, as a caller holds it.
-    private static TopoDS_Face Polygon(params gp_Pnt[] thePoints)
+    private static TopoDS_Face Polygon(params Point3D[] thePoints)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aPoly.Add(aP);
         }
@@ -25,7 +27,7 @@ public class ChFi2d_BuilderTests
     }
 
     private static TopoDS_Face Square(double theSize = 10.0) =>
-        Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(theSize, 0, 0), new gp_Pnt(theSize, theSize, 0), new gp_Pnt(0, theSize, 0));
+        Polygon(new Point3D(0, 0, 0), new Point3D(theSize, 0, 0), new Point3D(theSize, theSize, 0), new Point3D(0, theSize, 0));
 
     private static List<TopoDS_Shape> Sub(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
     {
@@ -52,7 +54,7 @@ public class ChFi2d_BuilderTests
         {
             TopoDS_Edge aFillet = aMaker.AddFillet(TopoDS.Vertex(aV), 2.0);
             Assert.Equal(ChFi2d_IsDone, aMaker.Status());
-            Assert.True(aFillet.TShape()!.IsFrozen());
+            Assert.True(aFillet.TShape()!.IsFrozen);
         }
         aMaker.Build();
         Assert.True(aMaker.IsDone());
@@ -107,7 +109,7 @@ public class ChFi2d_BuilderTests
                                              .First(e => !e.IsSame(E1) && !e.IsSame(E2)));
         Assert.False(aMaker.IsModified(anUntouched));
         // OCCT's Modified reads the history with Find: an edge without descendant throws
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => aMaker.Modified(anUntouched));
+        Assert.ThrowsAny<NoSuchObjectException>(() => aMaker.Modified(anUntouched));
         // the untouched edges are the caller's own
         Assert.Contains(Sub(aResult, TopAbs_ShapeEnum.TopAbs_EDGE), e => e.IsSame(anUntouched));
     }
@@ -141,7 +143,7 @@ public class ChFi2d_BuilderTests
         TopoDS_Face aSquare = Square();
         var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
         // a vertex not on the face
-        aMaker.AddFillet(new BRepBuilderAPI_MakeVertex(new gp_Pnt(5, 5, 0)).Vertex(), 1.0);
+        aMaker.AddFillet(new BRepBuilderAPI_MakeVertex(new Point3D(5, 5, 0)).Vertex(), 1.0);
         Assert.Equal(ChFi2d_ConnexionError, aMaker.Status());
         // a radius too large for the edges
         TopoDS_Vertex aV = TopoDS.Vertex(Sub(aSquare, TopAbs_ShapeEnum.TopAbs_VERTEX)[0]);
@@ -149,7 +151,7 @@ public class ChFi2d_BuilderTests
         Assert.Equal(ChFi2d_ComputationError, aMaker.Status());
         aMaker.Build();
         Assert.False(aMaker.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aMaker.Shape());
+        Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
         // a chamfer distance not positive
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMap = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(aSquare, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, aMap);
@@ -163,10 +165,10 @@ public class ChFi2d_BuilderTests
         Assert.Equal(ChFi2d_NotAuthorized, aMaker.Status());
 
         // two collinear edges are tangent
-        TopoDS_Face aFlat = Polygon(new gp_Pnt(0, 0, 0), new gp_Pnt(5, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0));
+        TopoDS_Face aFlat = Polygon(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
         var aFlatMaker = new BRepFilletAPI_MakeFillet2d(aFlat);
         TopoDS_Vertex aMid = TopoDS.Vertex(Sub(aFlat, TopAbs_ShapeEnum.TopAbs_VERTEX)
-                                           .First(v => BRep_Tool.Pnt(TopoDS.Vertex(v)).Distance(new gp_Pnt(5, 0, 0)) < 1e-9));
+                                           .First(v => BRep_Tool.Pnt(TopoDS.Vertex(v)).Distance(new Point3D(5, 0, 0)) < 1e-9));
         aFlatMaker.AddFillet(aMid, 1.0);
         Assert.Equal(ChFi2d_TangencyError, aFlatMaker.Status());
     }
@@ -235,27 +237,27 @@ public class ChFi2d_BuilderTests
     [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {
-        TopoDS_Edge E1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
-        TopoDS_Edge E2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0)).Edge();
-        var aPln = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        TopoDS_Edge E1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        TopoDS_Edge E2 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 0, 0), new Point3D(10, 10, 0)).Edge();
+        var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
         // segments with a common point: the analytical algorithm
         var aFillet = new ChFi2d_FilletAPI(E1, E2, aPln);
         Assert.True(aFillet.Perform(2.0));
-        Assert.Equal(1, aFillet.NbResults(new gp_Pnt(10, 0, 0)));
+        Assert.Equal(1, aFillet.NbResults(new Point3D(10, 0, 0)));
         TopoDS_Edge M1 = new(), M2 = new();
-        TopoDS_Edge anArc = aFillet.Result(new gp_Pnt(10, 0, 0), ref M1, ref M2);
+        TopoDS_Edge anArc = aFillet.Result(new Point3D(10, 0, 0), ref M1, ref M2);
         var aCurve = new BRepAdaptor_Curve(anArc);
-        Assert.Equal(GeomAbs_CurveType.GeomAbs_Circle, aCurve.GetType());
+        Assert.Equal(CurveKind.Circle, aCurve.GetType());
         Assert.Equal(2.0, aCurve.Circle().Radius(), 1.0e-12);
-        Assert.True(aCurve.Circle().Location().IsEqual(new gp_Pnt(8, 2, 0), 1.0e-12));
+        Assert.True(aCurve.Circle().Location().IsEqual(new Point3D(8, 2, 0), 1.0e-12));
         Assert.Equal(8.0, new BRepAdaptor_Curve(M1).LastParameter() - new BRepAdaptor_Curve(M1).FirstParameter(), 1.0e-12);
 
         // apart by a gap: the iterative algorithm
-        TopoDS_Edge E3 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(10, 1.0e-3, 0), new gp_Pnt(10, 10, 0)).Edge();
+        TopoDS_Edge E3 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 1.0e-3, 0), new Point3D(10, 10, 0)).Edge();
         var anIterative = new ChFi2d_FilletAlgo(E1, E3, aPln);
         Assert.True(anIterative.Perform(2.0));
-        TopoDS_Edge anArc2 = anIterative.Result(new gp_Pnt(10, 0, 0), ref M1, ref M2);
+        TopoDS_Edge anArc2 = anIterative.Result(new Point3D(10, 0, 0), ref M1, ref M2);
         Assert.Equal(2.0, new BRepAdaptor_Curve(anArc2).Circle().Radius(), 1.0e-12);
 
         // a chamfer of lengths 1 and 3
@@ -263,13 +265,13 @@ public class ChFi2d_BuilderTests
         Assert.True(aChamfer.Perform());
         TopoDS_Edge aSegment = aChamfer.Result(ref M1, ref M2, 1.0, 3.0);
         var aSeg = new BRepAdaptor_Curve(aSegment);
-        Assert.True(aSeg.Value(aSeg.FirstParameter()).IsEqual(new gp_Pnt(9, 0, 0), 1.0e-12));
-        Assert.True(aSeg.Value(aSeg.LastParameter()).IsEqual(new gp_Pnt(10, 3, 0), 1.0e-12));
+        Assert.True(aSeg.Value(aSeg.FirstParameter()).IsEqual(new Point3D(9, 0, 0), 1.0e-12));
+        Assert.True(aSeg.Value(aSeg.LastParameter()).IsEqual(new Point3D(10, 3, 0), 1.0e-12));
         // too long for the edge
         Assert.True(aChamfer.Result(ref M1, ref M2, 20.0, 1.0).IsNull());
 
         // the analytical algorithm needs two edges
-        Assert.ThrowsAny<Standard_TypeMismatch>(() => new ChFi2d_AnaFilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new ChFi2d_FilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
+        Assert.ThrowsAny<TypeMismatchException>(() => new ChFi2d_AnaFilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
+        Assert.ThrowsAny<ConstructionErrorException>(() => new ChFi2d_FilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
     }
 }

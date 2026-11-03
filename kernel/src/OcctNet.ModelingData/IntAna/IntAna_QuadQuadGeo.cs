@@ -10,6 +10,10 @@
 //--          analytical methods must be called.
 //----------------------------------------------------------------------
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntAna_ResultType;
 
 namespace Occt;
@@ -26,14 +30,14 @@ public class IntAna_QuadQuadGeo
     private bool done;
     private int nbint;
     private IntAna_ResultType typeres;
-    private gp_Pnt pt1;
-    private gp_Pnt pt2;
-    private gp_Pnt pt3;
-    private gp_Pnt pt4;
-    private gp_Dir dir1 = new();
-    private gp_Dir dir2 = new();
-    private gp_Dir dir3 = new();
-    private gp_Dir dir4 = new();
+    private Point3D pt1;
+    private Point3D pt2;
+    private Point3D pt3;
+    private Point3D pt4;
+    private Direction3D dir1 = new();
+    private Direction3D dir2 = new();
+    private Direction3D dir3 = new();
+    private Direction3D dir4 = new();
     private double param1;
     private double param2;
     private double param3;
@@ -47,7 +51,7 @@ public class IntAna_QuadQuadGeo
     private double myEPSILON_CYLINDER_DELTA_DISTANCE;
     private double myEPSILON_AXES_PARA;
     private bool myCommonGen;
-    private gp_Pnt myPChar;
+    private Point3D myPChar;
 
     //=======================================================================
     // class :  AxeOperator
@@ -55,9 +59,9 @@ public class IntAna_QuadQuadGeo
     //=======================================================================
     private sealed class AxeOperator
     {
-        private gp_Pnt ptintersect;
-        private readonly gp_Ax1 Axe1;
-        private readonly gp_Ax1 Axe2;
+        private Point3D ptintersect;
+        private readonly Axis3D Axe1;
+        private readonly Axis3D Axe2;
         private readonly double thedistance;
         private readonly bool theparallel;
         private readonly bool thecoplanar;
@@ -66,22 +70,22 @@ public class IntAna_QuadQuadGeo
         private readonly double myEPSILON_DISTANCE;
         private readonly double myEPSILON_AXES_PARA;
 
-        public AxeOperator(in gp_Ax1 A1, in gp_Ax1 A2)
-            : this(A1, A2, 1.0e-14, Precision.Angular())
+        public AxeOperator(in Axis3D A1, in Axis3D A2)
+            : this(A1, A2, 1.0e-14, global::Kerf.Engine.Foundation.Precision.Angular())
         {
         }
 
-        public AxeOperator(in gp_Ax1 A1, in gp_Ax1 A2, double theEpsDistance, double theEpsAxesPara)
+        public AxeOperator(in Axis3D A1, in Axis3D A2, double theEpsDistance, double theEpsAxesPara)
         {
             Axe1 = A1;
             Axe2 = A2;
             myEPSILON_DISTANCE = theEpsDistance;
             myEPSILON_AXES_PARA = theEpsAxesPara;
             //---------------------------------------------------------------------
-            gp_Dir V1 = Axe1.Direction();
-            gp_Dir V2 = Axe2.Direction();
-            gp_Pnt P1 = Axe1.Location();
-            gp_Pnt P2 = Axe2.Location();
+            Direction3D V1 = Axe1.Direction();
+            Direction3D V2 = Axe2.Direction();
+            Point3D P1 = Axe1.Location();
+            Point3D P2 = Axe2.Location();
             //
             RefineDir(ref V1);
             RefineDir(ref V2);
@@ -91,15 +95,15 @@ public class IntAna_QuadQuadGeo
             //--- check if the two axis are parallel
             theparallel = V1.IsParallel(V2, myEPSILON_AXES_PARA);
             //--- Distance between the two axis
-            gp_XYZ perp = A1.Direction().XYZ().Crossed(A2.Direction().XYZ());
+            Xyz perp = A1.Direction().XYZ().Crossed(A2.Direction().XYZ());
             if (theparallel)
             {
-                gp_Lin L1 = new(A1);
+                Line3D L1 = new(A1);
                 thedistance = L1.Distance(A2.Location());
             }
             else
             {
-                thedistance = Math.Abs(new gp_Vec(perp.Normalized()).Dot(new gp_Vec(Axe1.Location(), Axe2.Location())));
+                thedistance = Math.Abs(new Vector3D(perp.Normalized()).Dot(new Vector3D(Axe1.Location(), Axe2.Location())));
             }
             //--- check if Axis are Coplanar
             double D33;
@@ -160,11 +164,11 @@ public class IntAna_QuadQuadGeo
             dist = 0.0;
             Param1 = 0.0;
             Param2 = 0.0;
-            gp_Vec O1O2 = new(Axe1.Location(), Axe2.Location());
-            gp_Dir U1 = Axe1.Direction(); //-- just to see.
-            gp_Dir U2 = Axe2.Direction();
+            Vector3D O1O2 = new(Axe1.Location(), Axe2.Location());
+            Direction3D U1 = Axe1.Direction(); //-- just to see.
+            Direction3D U2 = Axe2.Direction();
 
-            gp_Dir N = U1.Crossed(U2);
+            Direction3D N = U1.Crossed(U2);
             double D = Det33(U1.X(), U2.X(), N.X(), U1.Y(), U2.Y(), N.Y(), U1.Z(), U2.Z(), N.Z());
             if (D != 0.0)
             {
@@ -179,7 +183,7 @@ public class IntAna_QuadQuadGeo
             }
         }
 
-        public gp_Pnt PtIntersect() => ptintersect;
+        public Point3D PtIntersect() => ptintersect;
 
         public bool Coplanar() => thecoplanar;
 
@@ -213,7 +217,7 @@ public class IntAna_QuadQuadGeo
     // function : DirToAx2
     // purpose  : returns a gp_Ax2 where D is the main direction
     //=======================================================================
-    private static gp_Ax2 DirToAx2(in gp_Pnt P, in gp_Dir D)
+    private static Frame3D DirToAx2(in Point3D P, in Direction3D D)
     {
         double x = D.X();
         double ax = Math.Abs(x);
@@ -223,15 +227,15 @@ public class IntAna_QuadQuadGeo
         double az = Math.Abs(z);
         if ((ax == 0.0) || ((ax < ay) && (ax < az)))
         {
-            return (new gp_Ax2(P, D, new gp_Dir(new gp_Vec(0.0, -z, y))));
+            return (new Frame3D(P, D, new Direction3D(new Vector3D(0.0, -z, y))));
         }
         else if ((ay == 0.0) || ((ay < ax) && (ay < az)))
         {
-            return (new gp_Ax2(P, D, new gp_Dir(new gp_Vec(-z, 0.0, x))));
+            return (new Frame3D(P, D, new Direction3D(new Vector3D(-z, 0.0, x))));
         }
         else
         {
-            return (new gp_Ax2(P, D, new gp_Dir(new gp_Vec(-y, x, 0.0))));
+            return (new Frame3D(P, D, new Direction3D(new Vector3D(-y, x, 0.0))));
         }
     }
 
@@ -239,37 +243,37 @@ public class IntAna_QuadQuadGeo
     // function : EstimDist
     // purpose  : returns a minimal distance from apex to any solution
     //=======================================================================
-    private static double EstimDist(in gp_Cone theCon1, in gp_Cone theCon2)
+    private static double EstimDist(in Cone theCon1, in Cone theCon2)
     {
         // It is supposed that axes of cones are coplanar and
         // distance between them > Precision::Confusion()
-        gp_Pnt aPA1 = theCon1.Apex(), aPA2 = theCon2.Apex();
+        Point3D aPA1 = theCon1.Apex(), aPA2 = theCon2.Apex();
 
-        gp_Pnt aP3 = aPA1.Translated(new gp_Vec(theCon1.Position().Direction()));
+        Point3D aP3 = aPA1.Translated(new Vector3D(theCon1.Position().Direction()));
 
         gce_MakePln aMkPln = new(aPA1, aPA2, aP3);
         if (!aMkPln.IsDone())
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        gp_Pln aPln = aMkPln.Value();
+        Plane3D aPln = aMkPln.Value();
 
-        gp_Lin anAx1 = new(aPA1, theCon1.Position().Direction());
-        gp_Lin2d anAx12d = ProjLib.Project(aPln, anAx1);
-        Span<gp_Lin2d> Lines1 = [new gp_Lin2d(), new gp_Lin2d()];
+        Line3D anAx1 = new(aPA1, theCon1.Position().Direction());
+        Line2D anAx12d = ProjLib.Project(aPln, anAx1);
+        Span<Line2D> Lines1 = [new Line2D(), new Line2D()];
         double anAng1 = theCon1.SemiAngle();
         Lines1[0] = anAx12d.Rotated(anAx12d.Location(), anAng1);
         Lines1[1] = anAx12d.Rotated(anAx12d.Location(), -anAng1);
         //
-        gp_Lin anAx2 = new(aPA2, theCon2.Position().Direction());
-        gp_Lin2d anAx22d = ProjLib.Project(aPln, anAx2);
-        Span<gp_Lin2d> Lines2 = [new gp_Lin2d(), new gp_Lin2d()];
+        Line3D anAx2 = new(aPA2, theCon2.Position().Direction());
+        Line2D anAx22d = ProjLib.Project(aPln, anAx2);
+        Span<Line2D> Lines2 = [new Line2D(), new Line2D()];
         double anAng2 = theCon2.SemiAngle();
         Lines2[0] = anAx22d.Rotated(anAx22d.Location(), anAng2);
         Lines2[1] = anAx22d.Rotated(anAx22d.Location(), -anAng2);
 
-        Span<double> aMinDist = [Precision.Infinite(), Precision.Infinite()];
+        Span<double> aMinDist = [global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite()];
         int i, j, k;
         IntAna2d_AnaIntersection anInter = new();
         for (i = 0; i < 2; ++i)
@@ -302,10 +306,10 @@ public class IntAna_QuadQuadGeo
         done = false;
         nbint = 0;
         typeres = IntAna_Empty;
-        pt1 = new gp_Pnt(0, 0, 0);
-        pt2 = new gp_Pnt(0, 0, 0);
-        pt3 = new gp_Pnt(0, 0, 0);
-        pt4 = new gp_Pnt(0, 0, 0);
+        pt1 = new Point3D(0, 0, 0);
+        pt2 = new Point3D(0, 0, 0);
+        pt3 = new Point3D(0, 0, 0);
+        pt4 = new Point3D(0, 0, 0);
         param1 = 0;
         param2 = 0;
         param3 = 0;
@@ -313,7 +317,7 @@ public class IntAna_QuadQuadGeo
         param1bis = 0;
         param2bis = 0;
         myCommonGen = false;
-        myPChar = new gp_Pnt(0, 0, 0);
+        myPChar = new Point3D(0, 0, 0);
         InitTolerances();
     }
 
@@ -321,18 +325,18 @@ public class IntAna_QuadQuadGeo
     protected void InitTolerances()
     {
         myEPSILON_DISTANCE = 1.0e-14;
-        myEPSILON_ANGLE_CONE = Precision.Angular();
-        myEPSILON_MINI_CIRCLE_RADIUS = 0.01 * Precision.Confusion();
+        myEPSILON_ANGLE_CONE = global::Kerf.Engine.Foundation.Precision.Angular();
+        myEPSILON_MINI_CIRCLE_RADIUS = 0.01 * global::Kerf.Engine.Foundation.Precision.Confusion();
         myEPSILON_CYLINDER_DELTA_RADIUS = 1.0e-13;
-        myEPSILON_CYLINDER_DELTA_DISTANCE = Precision.Confusion();
-        myEPSILON_AXES_PARA = Precision.Angular();
+        myEPSILON_CYLINDER_DELTA_DISTANCE = global::Kerf.Engine.Foundation.Precision.Confusion();
+        myEPSILON_AXES_PARA = global::Kerf.Engine.Foundation.Precision.Angular();
     }
 
     /// <summary>
     /// The intersection between two planes. TolAng is the angular tolerance below which the planes are parallel;
     /// Tol the distance below which parallel planes are identical.
     /// </summary>
-    public IntAna_QuadQuadGeo(in gp_Pln P1, in gp_Pln P2, double TolAng, double Tol)
+    public IntAna_QuadQuadGeo(in Plane3D P1, in Plane3D P2, double TolAng, double Tol)
         : this()
     {
         Perform(P1, P2, TolAng, Tol);
@@ -342,7 +346,7 @@ public class IntAna_QuadQuadGeo
     /// Intersects two planes. TolAng is the angular tolerance below which the planes are parallel; Tol the distance
     /// below which parallel planes are identical.
     /// </summary>
-    public void Perform(in gp_Pln P1, in gp_Pln P2, double TolAng, double Tol)
+    public void Perform(in Plane3D P1, in Plane3D P2, double TolAng, double Tol)
     {
         double A1, B1, C1, D1, A2, B2, C2, D2, dist1, dist2, aMVD;
         //
@@ -352,12 +356,12 @@ public class IntAna_QuadQuadGeo
         P1.Coefficients(out A1, out B1, out C1, out D1);
         P2.Coefficients(out A2, out B2, out C2, out D2);
         //
-        gp_Vec aVN1 = new(A1, B1, C1);
-        gp_Vec aVN2 = new(A2, B2, C2);
-        gp_Vec vd = aVN1.Crossed(aVN2);
+        Vector3D aVN1 = new(A1, B1, C1);
+        Vector3D aVN2 = new(A2, B2, C2);
+        Vector3D vd = aVN1.Crossed(aVN2);
         //
-        gp_Pnt aLocP1 = P1.Location();
-        gp_Pnt aLocP2 = P2.Location();
+        Point3D aLocP1 = P1.Location();
+        Point3D aLocP2 = P2.Location();
         //
         dist1 = A2 * aLocP1.X() + B2 * aLocP1.Y() + C2 * aLocP1.Z() + D2;
         dist2 = A1 * aLocP2.X() + B1 * aLocP2.Y() + C1 * aLocP2.Z() + D1;
@@ -383,8 +387,8 @@ public class IntAna_QuadQuadGeo
             par1 = dist1 / denom;
             par2 = -dist2 / denom;
 
-            gp_Vec inter1 = aVN1.Crossed(vd);
-            gp_Vec inter2 = aVN2.Crossed(vd);
+            Vector3D inter1 = aVN1.Crossed(vd);
+            Vector3D inter2 = aVN2.Crossed(vd);
 
             X1 = aLocP1.X() + par1 * inter1.X();
             Y1 = aLocP1.Y() + par1 * inter1.Y();
@@ -393,8 +397,8 @@ public class IntAna_QuadQuadGeo
             Y2 = aLocP2.Y() + par2 * inter2.Y();
             Z2 = aLocP2.Z() + par2 * inter2.Z();
 
-            pt1 = new gp_Pnt((X1 + X2) * 0.5, (Y1 + Y2) * 0.5, (Z1 + Z2) * 0.5);
-            dir1 = new gp_Dir(vd);
+            pt1 = new Point3D((X1 + X2) * 0.5, (Y1 + Y2) * 0.5, (Z1 + Z2) * 0.5);
+            dir1 = new Direction3D(vd);
             typeres = IntAna_Line;
             nbint = 1;
             //
@@ -426,8 +430,8 @@ public class IntAna_QuadQuadGeo
                     IntAna_IntConicQuad aICQ = new();
                     //
                     // 1.
-                    gp_Dir aDN1 = new(aVN1);
-                    gp_Lin aL1 = new(pt1, aDN1);
+                    Direction3D aDN1 = new(aVN1);
+                    Line3D aL1 = new(pt1, aDN1);
                     //
                     aICQ.Perform(aL1, P1, TolAng, Tol);
                     bIsDone = aICQ.IsDone();
@@ -436,11 +440,11 @@ public class IntAna_QuadQuadGeo
                         return;
                     }
                     //
-                    gp_Pnt aPnt1 = aICQ.Point(1);
+                    Point3D aPnt1 = aICQ.Point(1);
                     //----------------------------------
                     // 2.
-                    gp_Dir aDL2 = dir1.Crossed(aDN1);
-                    gp_Lin aL2 = new(aPnt1, aDL2);
+                    Direction3D aDL2 = dir1.Crossed(aDN1);
+                    Line3D aL2 = new(aPnt1, aDL2);
                     //
                     aICQ.Perform(aL2, P2, TolAng, Tol);
                     bIsDone = aICQ.IsDone();
@@ -455,7 +459,7 @@ public class IntAna_QuadQuadGeo
                         return;
                     }
                     //
-                    gp_Pnt aPnt2 = aICQ.Point(1);
+                    Point3D aPnt2 = aICQ.Point(1);
                     //
                     pt1 = aPnt2;
                 }
@@ -469,7 +473,7 @@ public class IntAna_QuadQuadGeo
     /// parallel to the plane. Tol decides between a circle and an ellipse (the circle when the ellipse is within Tol
     /// of it). H, the height of the cylinder, helps decide whether the plane and the cylinder are parallel.
     /// </summary>
-    public IntAna_QuadQuadGeo(in gp_Pln P, in gp_Cylinder Cl, double Tolang, double Tol, double H = 0)
+    public IntAna_QuadQuadGeo(in Plane3D P, in Cylinder Cl, double Tolang, double Tol, double H = 0)
         : this()
     {
         Perform(P, Cl, Tolang, Tol, H);
@@ -480,20 +484,20 @@ public class IntAna_QuadQuadGeo
     /// plane. Tol decides between a circle and an ellipse. H, the height of the cylinder, helps decide whether the
     /// plane and the cylinder are parallel.
     /// </summary>
-    public void Perform(in gp_Pln P, in gp_Cylinder Cl, double Tolang, double Tol, double H = 0)
+    public void Perform(in Plane3D P, in Cylinder Cl, double Tolang, double Tol, double H = 0)
     {
         done = false;
         double dist, radius;
         double A, B, C, D;
         double X, Y, Z;
         double sint, cost, h;
-        gp_XYZ axex, axey, omega = new();
+        Xyz axex, axey, omega = new();
 
         param2bis = 0.0;
         radius = Cl.Radius();
 
-        gp_Lin axec = new(Cl.Axis());
-        gp_XYZ normp = P.Axis().Direction().XYZ();
+        Line3D axec = new(Cl.Axis());
+        Xyz normp = P.Axis().Direction().XYZ();
 
         P.Coefficients(out A, out B, out C, out D);
         axec.Location().Coord(out X, out Y, out Z);
@@ -504,8 +508,8 @@ public class IntAna_QuadQuadGeo
         double toltang = Tol;
         bool newparams = false;
 
-        gp_Vec ldv = new(axec.Direction());
-        gp_Vec npv = new(normp);
+        Vector3D ldv = new(axec.Direction());
+        Vector3D npv = new(normp);
         double dA = Math.Abs(ldv.Angle(npv));
         if (dA > (M_PI / 4.0))
         {
@@ -551,18 +555,18 @@ public class IntAna_QuadQuadGeo
 
                 if (newparams)
                 {
-                    gp_XYZ omegaXYZ = new(X, Y, Z);
-                    gp_XYZ omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
+                    Xyz omegaXYZ = new(X, Y, Z);
+                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
                     double Xt, Yt, Zt, distt;
                     omegaXYZtrnsl.Coord(out Xt, out Yt, out Zt);
                     distt = A * Xt + B * Yt + C * Zt + D;
-                    gp_XYZ omega1 = new(omegaXYZtrnsl.X() - distt * A,
+                    Xyz omega1 = new(omegaXYZtrnsl.X() - distt * A,
                                         omegaXYZtrnsl.Y() - distt * B,
                                         omegaXYZtrnsl.Z() - distt * C);
-                    gp_Pnt ppt1 = new();
+                    Point3D ppt1 = new();
                     ppt1.SetXYZ(omega1);
-                    gp_Vec vv1 = new(pt1, ppt1);
-                    gp_Dir dd1 = new(vv1);
+                    Vector3D vv1 = new(pt1, ppt1);
+                    Direction3D dd1 = new(vv1);
                     dir1 = dd1;
                 }
                 else
@@ -581,24 +585,24 @@ public class IntAna_QuadQuadGeo
 
                 if (newparams)
                 {
-                    gp_XYZ omegaXYZ = new(X, Y, Z);
-                    gp_XYZ omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
+                    Xyz omegaXYZ = new(X, Y, Z);
+                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
                     double Xt, Yt, Zt, distt, ht;
                     omegaXYZtrnsl.Coord(out Xt, out Yt, out Zt);
                     distt = A * Xt + B * Yt + C * Zt + D;
                     double anSqrtArg = radius * radius - distt * distt;
                     ht = (anSqrtArg > 0.0) ? Math.Sqrt(anSqrtArg) : 0.0;
 
-                    gp_XYZ omega1 = new(omegaXYZtrnsl.X() - distt * A,
+                    Xyz omega1 = new(omegaXYZtrnsl.X() - distt * A,
                                         omegaXYZtrnsl.Y() - distt * B,
                                         omegaXYZtrnsl.Z() - distt * C);
-                    gp_Pnt ppt1 = new(), ppt2 = new();
+                    Point3D ppt1 = new(), ppt2 = new();
                     ppt1.SetXYZ(omega1 - ht * axey);
                     ppt2.SetXYZ(omega1 + ht * axey);
-                    gp_Vec vv1 = new(pt1, ppt1);
-                    gp_Vec vv2 = new(pt2, ppt2);
-                    gp_Dir dd1 = new(vv1);
-                    gp_Dir dd2 = new(vv2);
+                    Vector3D vv1 = new(pt1, ppt1);
+                    Vector3D vv2 = new(pt2, ppt2);
+                    Direction3D dd1 = new(vv1);
+                    Direction3D dd2 = new(vv2);
                     dir1 = dd1;
                     dir2 = dd2;
                 }
@@ -660,14 +664,14 @@ public class IntAna_QuadQuadGeo
     /// axis is parallel or perpendicular to the plane and whether a generatrix is parallel to it; Tol the distance
     /// below which the apex is in the plane.
     /// </summary>
-    public IntAna_QuadQuadGeo(in gp_Pln P, in gp_Cone Co, double Tolang, double Tol)
+    public IntAna_QuadQuadGeo(in Plane3D P, in Cone Co, double Tolang, double Tol)
         : this()
     {
         Perform(P, Co, Tolang, Tol);
     }
 
     /// <summary>Intersects a plane and a cone (see the constructor for the tolerances).</summary>
-    public void Perform(in gp_Pln P, in gp_Cone Co, double Tolang, double Tol)
+    public void Perform(in Plane3D P, in Cone Co, double Tolang, double Tol)
     {
         done = false;
         nbint = 0;
@@ -676,16 +680,16 @@ public class IntAna_QuadQuadGeo
         double X, Y, Z;
         double dist, sint, cost, sina, cosa, angl, costa;
         double dh;
-        gp_XYZ axex, axey;
+        Xyz axex, axey;
 
-        gp_Lin axec = new(Co.Axis());
+        Line3D axec = new(Co.Axis());
         P.Coefficients(out A, out B, out C, out D);
-        gp_Pnt apex = Co.Apex();
+        Point3D apex = Co.Apex();
 
         apex.Coord(out X, out Y, out Z);
         dist = A * X + B * Y + C * Z + D; // signed distance from cone apex to plane
 
-        gp_XYZ normp = P.Axis().Direction().XYZ();
+        Xyz normp = P.Axis().Direction().XYZ();
         if (!P.Direct())
         { //-- lbr 14 Jan 97
             normp.Reverse();
@@ -720,7 +724,7 @@ public class IntAna_QuadQuadGeo
             { // plane parallel to the generatrix
                 typeres = IntAna_Line;
                 nbint = 1;
-                gp_XYZ ptonaxe = apex.XYZ() + 10.0 * (Co.Axis().Direction().XYZ());
+                Xyz ptonaxe = apex.XYZ() + 10.0 * (Co.Axis().Direction().XYZ());
                 // point on the axis of the cone on the positive z side
 
                 dist = A * ptonaxe.X() + B * ptonaxe.Y() + C * ptonaxe.Z() + D;
@@ -759,7 +763,7 @@ public class IntAna_QuadQuadGeo
                 nbint = 2;
                 pt1.SetXYZ(apex.XYZ() - dist * normp);
                 pt2 = pt1;
-                dir1 = new gp_Dir(normp);
+                dir1 = new Direction3D(normp);
                 dir2.SetXYZ(axex);
                 param1 = param2 = Math.Abs(dist / Math.Tan(angl));
                 param1bis = param2bis = Math.Abs(dist);
@@ -768,7 +772,7 @@ public class IntAna_QuadQuadGeo
             {
                 IntAna_IntConicQuad inter = new(axec, P, Tolang); // we necessarily have 1 point.
 
-                gp_Pnt center = inter.Point(1);
+                Point3D center = inter.Point(1);
 
                 // Depending on the position of the intersection relative to the apex
                 // of the cone, we change the x axis to -x and y to -y. The parameter of the apex
@@ -789,7 +793,7 @@ public class IntAna_QuadQuadGeo
                     deltacenter = distance / 2.0 / cosa;
                     axex.Normalize();
                     pt1.SetXYZ(center.XYZ() - deltacenter * axex);
-                    dir1 = new gp_Dir(normp);
+                    dir1 = new Direction3D(normp);
                     dir2.SetXYZ(axex);
                     param1 = deltacenter * sina * sina;
                 }
@@ -811,7 +815,7 @@ public class IntAna_QuadQuadGeo
                     deltacenter = sint * sina * sina * distance / (sina * sina - cost * cost);
                     pt1.SetXYZ(center.XYZ() - deltacenter * axex);
                     pt2 = pt1;
-                    dir1 = new gp_Dir(normp);
+                    dir1 = new Direction3D(normp);
                     dir2.SetXYZ(axex);
                     param1 = param2 = cost * sina * cosa * distance / (sina * sina - cost * cost);
                     param1bis = param2bis = cost * sina * distance / Math.Sqrt(sina * sina - cost * cost);
@@ -824,7 +828,7 @@ public class IntAna_QuadQuadGeo
                     deltacenter = sint * sina * sina * distance / (cost * cost - sina * sina);
                     axex.Normalize();
                     pt1.SetXYZ(center.XYZ() + deltacenter * axex);
-                    dir1 = new gp_Dir(normp);
+                    dir1 = new Direction3D(normp);
                     dir2.SetXYZ(axex);
                     param1 = radius;
                     param1bis = cost * sina * distance / Math.Sqrt(cost * cost - sina * sina);
@@ -866,14 +870,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a plane and a sphere.</summary>
-    public IntAna_QuadQuadGeo(in gp_Pln P, in gp_Sphere S)
+    public IntAna_QuadQuadGeo(in Plane3D P, in Sphere S)
         : this()
     {
         Perform(P, S);
     }
 
     /// <summary>Intersects a plane and a sphere.</summary>
-    public void Perform(in gp_Pln P, in gp_Sphere S)
+    public void Perform(in Plane3D P, in Sphere S)
     {
         done = false;
         double A, B, C, D, dist, radius;
@@ -916,14 +920,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between two cylinders.</summary>
-    public IntAna_QuadQuadGeo(in gp_Cylinder Cyl1, in gp_Cylinder Cyl2, double Tol)
+    public IntAna_QuadQuadGeo(in Cylinder Cyl1, in Cylinder Cyl2, double Tol)
         : this()
     {
         Perform(Cyl1, Cyl2, Tol);
     }
 
     /// <summary>Intersects two cylinders.</summary>
-    public void Perform(in gp_Cylinder Cyl1, in gp_Cylinder Cyl2, double Tol)
+    public void Perform(in Cylinder Cyl1, in Cylinder Cyl2, double Tol)
     {
         done = true;
         //---------------------------- Parallel axes -------------------------
@@ -958,12 +962,12 @@ public class IntAna_QuadQuadGeo
             }
             else
             { //-- DistA1A2 > Tol
-                gp_Pnt P1 = Cyl1.Location();
-                gp_Pnt P2t = Cyl2.Location();
-                gp_Pnt P2 = new();
+                Point3D P1 = Cyl1.Location();
+                Point3D P2t = Cyl2.Location();
+                Point3D P2 = new();
                 //-- P2t is projected on the plane (P1,DirCylX,DirCylY)
-                gp_Dir DirCyl = Cyl1.Position().Direction();
-                double ProjP2OnDirCyl1 = new gp_Vec(DirCyl).Dot(new gp_Vec(P1, P2t));
+                Direction3D DirCyl = Cyl1.Position().Direction();
+                double ProjP2OnDirCyl1 = new Vector3D(DirCyl).Dot(new Vector3D(P1, P2t));
 
                 // P2 is a projection the location of the 2nd cylinder on the base
                 // of the 1st cylinder
@@ -1033,7 +1037,7 @@ public class IntAna_QuadQuadGeo
                     bool isTangent = ((4.0 * aR1R1 * aSin2) < Tol * Tol);
 
                     // Normalized vector P1P2
-                    gp_Vec DirA1A2 = new((P2.XYZ() - P1.XYZ()) / DistA1A2);
+                    Vector3D DirA1A2 = new((P2.XYZ() - P1.XYZ()) / DistA1A2);
 
                     if (isTangent)
                     {
@@ -1053,14 +1057,14 @@ public class IntAna_QuadQuadGeo
                         // two intersection points).
                         // 2. Intercept the segment from P1 along direction,
                         // determined in the preview paragraph and having R1 length
-                        gp_Dir aXDir = Cyl1.Position().XDirection(), aYDir = Cyl1.Position().YDirection();
-                        gp_Vec aR1Xdir = new(R1 * aXDir.XYZ()), aR1Ydir = new(R1 * aYDir.XYZ());
+                        Direction3D aXDir = Cyl1.Position().XDirection(), aYDir = Cyl1.Position().YDirection();
+                        Vector3D aR1Xdir = new(R1 * aXDir.XYZ()), aR1Ydir = new(R1 * aYDir.XYZ());
 
                         // Source 2D-coordinates of the P1P2 vector normalized
                         // in coordinate system, based on the X- and Y-directions
                         // of the 1st cylinder in the plane of the 1st cylinder base
                         //(P1 is the origin of the coordinate system).
-                        double aDx = DirA1A2.Dot(new gp_Vec(aXDir)), aDy = DirA1A2.Dot(new gp_Vec(aYDir));
+                        double aDx = DirA1A2.Dot(new Vector3D(aXDir)), aDy = DirA1A2.Dot(new Vector3D(aYDir));
 
                         // New coordinate (after rotation) of the P1P2 vector normalized.
                         double aNewDx = aDx * aCos - aDy * aSin, aNewDy = aDy * aCos + aDx * aSin;
@@ -1103,8 +1107,8 @@ public class IntAna_QuadQuadGeo
                 //-- and identical radius
                 typeres = IntAna_Ellipse;
                 nbint = 2;
-                gp_Dir DirCyl1 = Cyl1.Position().Direction();
-                gp_Dir DirCyl2 = Cyl2.Position().Direction();
+                Direction3D DirCyl1 = Cyl1.Position().Direction();
+                Direction3D DirCyl2 = Cyl2.Position().Direction();
                 pt1 = pt2 = A1A2.PtIntersect();
 
                 double A = DirCyl1.Angle(DirCyl2);
@@ -1118,10 +1122,10 @@ public class IntAna_QuadQuadGeo
                     return;
                 }
 
-                gp_Vec dircyl1 = new(DirCyl1);
-                gp_Vec dircyl2 = new(DirCyl2);
-                dir1 = new gp_Dir(dircyl1.Added(dircyl2));
-                dir2 = new gp_Dir(dircyl1.Subtracted(dircyl2));
+                Vector3D dircyl1 = new(DirCyl1);
+                Vector3D dircyl2 = new(DirCyl2);
+                dir1 = new Direction3D(dircyl1.Added(dircyl2));
+                dir2 = new Direction3D(dircyl1.Subtracted(dircyl2));
 
                 param2 = Cyl1.Radius() / A;
                 param1 = Cyl1.Radius() / B;
@@ -1147,18 +1151,18 @@ public class IntAna_QuadQuadGeo
                     typeres = IntAna_Point;
                     double d, p1, p2;
 
-                    gp_Dir D1 = Cyl1.Axis().Direction();
-                    gp_Dir D2 = Cyl2.Axis().Direction();
+                    Direction3D D1 = Cyl1.Axis().Direction();
+                    Direction3D D2 = Cyl2.Axis().Direction();
                     A1A2.Distance(out d, out p1, out p2);
-                    gp_Pnt P = Cyl1.Axis().Location();
-                    gp_Pnt P1 = new(P.X() - p1 * D1.X(), P.Y() - p1 * D1.Y(), P.Z() - p1 * D1.Z());
+                    Point3D P = Cyl1.Axis().Location();
+                    Point3D P1 = new(P.X() - p1 * D1.X(), P.Y() - p1 * D1.Y(), P.Z() - p1 * D1.Z());
 
                     P = Cyl2.Axis().Location();
 
-                    gp_Pnt P2 = new(P.X() - p2 * D2.X(), P.Y() - p2 * D2.Y(), P.Z() - p2 * D2.Z());
+                    Point3D P2 = new(P.X() - p2 * D2.X(), P.Y() - p2 * D2.Y(), P.Z() - p2 * D2.Z());
 
-                    gp_Vec P1P2 = new(P1, P2);
-                    D1 = new gp_Dir(P1P2);
+                    Vector3D P1P2 = new(P1, P2);
+                    D1 = new Direction3D(P1P2);
                     p1 = Cyl1.Radius();
 
                     pt1.SetCoord(P1.X() + p1 * D1.X(), P1.Y() + p1 * D1.Y(), P1.Z() + p1 * D1.Z());
@@ -1173,23 +1177,23 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a cylinder and a cone (only when they are coaxial).</summary>
-    public IntAna_QuadQuadGeo(in gp_Cylinder Cyl, in gp_Cone Con, double Tol)
+    public IntAna_QuadQuadGeo(in Cylinder Cyl, in Cone Con, double Tol)
         : this()
     {
         Perform(Cyl, Con, Tol);
     }
 
     /// <summary>Intersects a cylinder and a cone (only when they are coaxial). Tol is not used.</summary>
-    public void Perform(in gp_Cylinder Cyl, in gp_Cone Con, double Tol)
+    public void Perform(in Cylinder Cyl, in Cone Con, double Tol)
     {
         _ = Tol;
         done = true;
         AxeOperator A1A2 = new(Cyl.Axis(), Con.Axis());
         if (A1A2.Same())
         {
-            gp_Pnt Pt = Con.Apex();
+            Point3D Pt = Con.Apex();
             double dist = Cyl.Radius() / (Math.Tan(Con.SemiAngle()));
-            gp_Dir dir = Cyl.Position().Direction();
+            Direction3D dir = Cyl.Position().Direction();
             pt1.SetCoord(Pt.X() + dist * dir.X(), Pt.Y() + dist * dir.Y(), Pt.Z() + dist * dir.Z());
             pt2.SetCoord(Pt.X() - dist * dir.X(), Pt.Y() - dist * dir.Y(), Pt.Z() - dist * dir.Z());
             dir1 = dir2 = dir;
@@ -1204,18 +1208,18 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a cylinder and a sphere (only when the center is on the axis).</summary>
-    public IntAna_QuadQuadGeo(in gp_Cylinder Cyl, in gp_Sphere Sph, double Tol)
+    public IntAna_QuadQuadGeo(in Cylinder Cyl, in Sphere Sph, double Tol)
         : this()
     {
         Perform(Cyl, Sph, Tol);
     }
 
     /// <summary>Intersects a cylinder and a sphere (only when the center is on the axis). Tol is not used.</summary>
-    public void Perform(in gp_Cylinder Cyl, in gp_Sphere Sph, double Tol)
+    public void Perform(in Cylinder Cyl, in Sphere Sph, double Tol)
     {
         _ = Tol;
         done = true;
-        gp_Pnt Pt = Sph.Location();
+        Point3D Pt = Sph.Location();
         AxeOperator A1A2 = new(Cyl.Axis(), Sph.Position().Axis());
         if ((A1A2.Intersect() && Pt.Distance(A1A2.PtIntersect()) == 0.0) || (A1A2.Same()))
         {
@@ -1226,7 +1230,7 @@ public class IntAna_QuadQuadGeo
             else
             {
                 double dist = Math.Sqrt(Sph.Radius() * Sph.Radius() - Cyl.Radius() * Cyl.Radius());
-                gp_Dir dir = Cyl.Position().Direction();
+                Direction3D dir = Cyl.Position().Direction();
                 dir1 = dir2 = dir;
                 typeres = IntAna_Circle;
                 pt1.SetCoord(Pt.X() + dist * dir.X(), Pt.Y() + dist * dir.Y(), Pt.Z() + dist * dir.Z());
@@ -1247,19 +1251,19 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between two cones.</summary>
-    public IntAna_QuadQuadGeo(in gp_Cone Con1, in gp_Cone Con2, double Tol)
+    public IntAna_QuadQuadGeo(in Cone Con1, in Cone Con2, double Tol)
         : this()
     {
         Perform(Con1, Con2, Tol);
     }
 
     /// <summary>Intersects two cones.</summary>
-    public void Perform(in gp_Cone Con1, in gp_Cone Con2, double Tol)
+    public void Perform(in Cone Con1, in Cone Con2, double Tol)
     {
         done = true;
         //
         double tg1, tg2, aDA1A2, aTol2;
-        gp_Pnt aPApex1, aPApex2;
+        Point3D aPApex1, aPApex2;
 
         double TOL_APEX_CONF = 1.0e-10;
 
@@ -1303,9 +1307,9 @@ public class IntAna_QuadQuadGeo
         {
             //-- two circles
             double x;
-            gp_Pnt P = Con1.Apex();
-            gp_Dir D = Con1.Position().Direction();
-            double d = new gp_Vec(D).Dot(new gp_Vec(P, Con2.Apex()));
+            Point3D P = Con1.Apex();
+            Direction3D D = Con1.Position().Direction();
+            double d = new Vector3D(D).Dot(new Vector3D(P, Con2.Apex()));
 
             if (Math.Abs(tg1 - tg2) > myEPSILON_ANGLE_CONE)
             {
@@ -1348,34 +1352,34 @@ public class IntAna_QuadQuadGeo
         else if ((Math.Abs(tg1 - tg2) < aTolAng) && (A1A2.Parallel()))
         {
             double DistA1A2 = A1A2.Distance();
-            gp_Dir DA1 = Con1.Position().Direction();
-            gp_Vec O1O2 = new(Con1.Apex(), Con2.Apex());
-            gp_Dir O1O2n = new(O1O2); // normalization of the vector before projection
-            double O1O2_DA1 = new gp_Vec(DA1).Dot(new gp_Vec(O1O2n));
+            Direction3D DA1 = Con1.Position().Direction();
+            Vector3D O1O2 = new(Con1.Apex(), Con2.Apex());
+            Direction3D O1O2n = new(O1O2); // normalization of the vector before projection
+            double O1O2_DA1 = new Vector3D(DA1).Dot(new Vector3D(O1O2n));
 
-            gp_Vec O1_Proj_A2 = new(O1O2n.X() - O1O2_DA1 * DA1.X(),
+            Vector3D O1_Proj_A2 = new(O1O2n.X() - O1O2_DA1 * DA1.X(),
                                     O1O2n.Y() - O1O2_DA1 * DA1.Y(),
                                     O1O2n.Z() - O1O2_DA1 * DA1.Z());
-            gp_Dir DB1 = new(O1_Proj_A2);
+            Direction3D DB1 = new(O1_Proj_A2);
 
-            double yO1O2 = O1O2.Dot(new gp_Vec(DA1));
+            double yO1O2 = O1O2.Dot(new Vector3D(DA1));
             double ABSTG1 = Math.Abs(tg1);
             double X2 = (DistA1A2 / ABSTG1 - yO1O2) * 0.5;
             double X1 = X2 + yO1O2;
 
-            gp_Pnt P1 = new(Con1.Apex().X() + X1 * (DA1.X() + ABSTG1 * DB1.X()),
+            Point3D P1 = new(Con1.Apex().X() + X1 * (DA1.X() + ABSTG1 * DB1.X()),
                             Con1.Apex().Y() + X1 * (DA1.Y() + ABSTG1 * DB1.Y()),
                             Con1.Apex().Z() + X1 * (DA1.Z() + ABSTG1 * DB1.Z()));
 
-            gp_Pnt MO1O2 = new(0.5 * (Con1.Apex().X() + Con2.Apex().X()),
+            Point3D MO1O2 = new(0.5 * (Con1.Apex().X() + Con2.Apex().X()),
                                0.5 * (Con1.Apex().Y() + Con2.Apex().Y()),
                                0.5 * (Con1.Apex().Z() + Con2.Apex().Z()));
-            gp_Vec P1MO1O2 = new(P1, MO1O2);
+            Vector3D P1MO1O2 = new(P1, MO1O2);
 
-            gp_Dir DA1_X_DB1 = DA1.Crossed(DB1);
-            gp_Dir OrthoPln = DA1_X_DB1.Crossed(new gp_Dir(P1MO1O2));
+            Direction3D DA1_X_DB1 = DA1.Crossed(DB1);
+            Direction3D OrthoPln = DA1_X_DB1.Crossed(new Direction3D(P1MO1O2));
 
-            IntAna_QuadQuadGeo INTER_QUAD_PLN = new(new gp_Pln(P1, OrthoPln), Con1, Tol, Tol);
+            IntAna_QuadQuadGeo INTER_QUAD_PLN = new(new Plane3D(P1, OrthoPln), Con1, Tol, Tol);
             if (INTER_QUAD_PLN.IsDone())
             {
                 switch (INTER_QUAD_PLN.TypeInter())
@@ -1383,7 +1387,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Ellipse:
                     {
                         typeres = IntAna_Ellipse;
-                        gp_Elips E = INTER_QUAD_PLN.Ellipse(1);
+                        Ellipse3D E = INTER_QUAD_PLN.Ellipse(1);
                         pt1 = E.Location();
                         dir1 = E.Position().Direction();
                         dir2 = E.Position().XDirection();
@@ -1395,7 +1399,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Circle:
                     {
                         typeres = IntAna_Circle;
-                        gp_Circ C = INTER_QUAD_PLN.Circle(1);
+                        Circle3D C = INTER_QUAD_PLN.Circle(1);
                         pt1 = C.Location();
                         dir1 = C.Position().XDirection();
                         dir2 = C.Position().YDirection();
@@ -1406,7 +1410,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Hyperbola:
                     {
                         typeres = IntAna_Hyperbola;
-                        gp_Hypr H = INTER_QUAD_PLN.Hyperbola(1);
+                        Hyperbola3D H = INTER_QUAD_PLN.Hyperbola(1);
                         pt1 = pt2 = H.Location();
                         dir1 = H.Position().Direction();
                         dir2 = H.Position().XDirection();
@@ -1418,7 +1422,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Line:
                     {
                         typeres = IntAna_Line;
-                        gp_Lin H = INTER_QUAD_PLN.Line(1);
+                        Line3D H = INTER_QUAD_PLN.Line(1);
                         pt1 = pt2 = H.Location();
                         dir1 = dir2 = H.Position().Direction();
                         param1 = param2 = 0.0;
@@ -1444,9 +1448,9 @@ public class IntAna_QuadQuadGeo
             double aGamma, aBeta1, aBeta2;
             double aD1, aR1, aTgBeta1, aTgBeta2, aHalfPI;
             double aCosGamma, aSinGamma, aDx, aR2, aRD2, aD2;
-            gp_Pnt2d aP0 = new(), aPA1 = new(), aP1 = new(), aPA2;
-            gp_Vec2d aVAx2 = new();
-            gp_Ax1 aAx1, aAx2;
+            Point2D aP0 = new(), aPA1 = new(), aP1 = new(), aPA2;
+            Vector2D aVAx2 = new();
+            Axis3D aAx1, aAx2;
             //
             // Preliminary analysis. Determination of iRet
             //
@@ -1478,13 +1482,13 @@ public class IntAna_QuadQuadGeo
             //
             // PA2
             aVAx2.SetCoord(aCosGamma, aSinGamma);
-            gp_Dir2d aDAx2 = new(aVAx2);
-            gp_Lin2d aLAx2 = new(aP0, aDAx2);
+            Direction2D aDAx2 = new(aVAx2);
+            Line2D aLAx2 = new(aP0, aDAx2);
             _ = aLAx2;
             //
-            gp_Vec2d aV = new(aP0, aP1);
+            Vector2D aV = new(aP0, aP1);
             aDx = aVAx2.Dot(aV);
-            aPA2 = aP0.Translated(aDx * new gp_Vec2d(aDAx2));
+            aPA2 = aP0.Translated(aDx * new Vector2D(aDAx2));
             //
             // aR2
             aDx = aPA2.Distance(aP0);
@@ -1508,9 +1512,9 @@ public class IntAna_QuadQuadGeo
             // Finding the solution in 3D
             //
             double aDa;
-            gp_Pnt aQApex1, aQA1 = new(), aQA2 = new(), aQX, aQX1, aQX2;
-            gp_Dir aD3Ax1, aD3Ax2;
-            gp_Lin aLin;
+            Point3D aQApex1, aQA1 = new(), aQA2 = new(), aQX, aQX1, aQX2;
+            Direction3D aD3Ax1, aD3Ax2;
+            Line3D aLin;
             IntAna_QuadQuadGeo aIntr = new();
             //
             aQApex1 = Con1.Apex();
@@ -1532,8 +1536,8 @@ public class IntAna_QuadQuadGeo
                           aQApex1.Y() + aD2 * aD3Ax2.Y(),
                           aQApex1.Z() + aD2 * aD3Ax2.Z());
             //
-            gp_Pln aPln1 = new(aQA1, aD3Ax1);
-            gp_Pln aPln2 = new(aQA2, aD3Ax2);
+            Plane3D aPln1 = new(aQA1, aD3Ax1);
+            Plane3D aPln2 = new(aQA2, aD3Ax2);
             //
             aIntr.Perform(aPln1, aPln2, Tol, Tol);
             if (!aIntr.IsDone() || 0 == aIntr.NbSolutions())
@@ -1543,10 +1547,10 @@ public class IntAna_QuadQuadGeo
             }
             //
             aLin = aIntr.Line(1);
-            gp_Dir aDLin = aLin.Direction();
-            gp_Vec aVLin = new(aDLin);
-            gp_Pnt aOrig = aLin.Location();
-            gp_Vec aVr = new(aQA1, aOrig);
+            Direction3D aDLin = aLin.Direction();
+            Vector3D aVLin = new(aDLin);
+            Point3D aOrig = aLin.Location();
+            Vector3D aVr = new(aQA1, aOrig);
             aDx = aVLin.Dot(aVr);
             aQX = aOrig.Translated(aDx * aVLin);
             //
@@ -1564,8 +1568,8 @@ public class IntAna_QuadQuadGeo
                 // one line
                 nbint = 1;
                 pt1 = aQApex1;
-                gp_Vec aVX = new(aQApex1, aQX);
-                dir1 = new gp_Dir(aVX);
+                Vector3D aVX = new(aQApex1, aQX);
+                dir1 = new Direction3D(aVX);
             }
             else
             { // iRet=2
@@ -1578,10 +1582,10 @@ public class IntAna_QuadQuadGeo
                 //
                 pt1 = aQApex1;
                 pt2 = aQApex1;
-                gp_Vec aVX1 = new(aQApex1, aQX1);
-                dir1 = new gp_Dir(aVX1);
-                gp_Vec aVX2 = new(aQApex1, aQX2);
-                dir2 = new gp_Dir(aVX2);
+                Vector3D aVX1 = new(aQApex1, aQX1);
+                dir1 = new Direction3D(aVX1);
+                Vector3D aVX2 = new(aQApex1, aQX2);
+                dir2 = new Direction3D(aVX2);
             }
         } // else if (aDA1A2<aTol2) {
         // Case when cones have common generatrix
@@ -1589,16 +1593,16 @@ public class IntAna_QuadQuadGeo
         {
             // Check if apex of one cone belongs another one
             double u, v, tol2 = Tol * Tol;
-            ElSLib.Parameters(Con2, aPApex1, out u, out v);
-            gp_Pnt p = ElSLib.Value(u, v, Con2);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Con2, aPApex1, out u, out v);
+            Point3D p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, Con2);
             if (aPApex1.SquareDistance(p) > tol2)
             {
                 typeres = IntAna_NoGeometricSolution;
                 return;
             }
             //
-            ElSLib.Parameters(Con1, aPApex2, out u, out v);
-            p = ElSLib.Value(u, v, Con1);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Con1, aPApex2, out u, out v);
+            p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, Con1);
             if (aPApex2.SquareDistance(p) > tol2)
             {
                 typeres = IntAna_NoGeometricSolution;
@@ -1609,26 +1613,26 @@ public class IntAna_QuadQuadGeo
             myCommonGen = true;
 
             // common generatrix of cones
-            gp_Lin aGen = new(aPApex1, new gp_Dir(new gp_Vec(aPApex1, aPApex2)));
+            Line3D aGen = new(aPApex1, new Direction3D(new Vector3D(aPApex1, aPApex2)));
 
             // Intersection point of axes
-            gp_Pnt aPAxeInt = A1A2.PtIntersect();
+            Point3D aPAxeInt = A1A2.PtIntersect();
 
             // Characteristic point of intersection curve
-            u = ElCLib.Parameter(aGen, aPAxeInt);
-            myPChar = ElCLib.Value(u, aGen);
+            u = global::Kerf.Engine.Geometry.ElCLib.Parameter(aGen, aPAxeInt);
+            myPChar = global::Kerf.Engine.Geometry.ElCLib.Value(u, aGen);
 
             // Other generatrixes of cones laying in maximal plane
-            gp_Lin aGen1 = aGen.Rotated(Con1.Axis(), M_PI);
-            gp_Lin aGen2 = aGen.Rotated(Con2.Axis(), M_PI);
+            Line3D aGen1 = aGen.Rotated(Con1.Axis(), M_PI);
+            Line3D aGen2 = aGen.Rotated(Con2.Axis(), M_PI);
             //
             // Intersection point of generatrixes
-            gp_Dir aN; // solution plane normal
-            gp_Dir aD1 = aGen1.Direction();
+            Direction3D aN; // solution plane normal
+            Direction3D aD1 = aGen1.Direction();
 
-            gp_Dir aD2 = aD1.Crossed(aGen.Direction());
+            Direction3D aD2 = aD1.Crossed(aGen.Direction());
 
-            if (aD1.IsParallel(aGen2.Direction(), Precision.Angular()))
+            if (aD1.IsParallel(aGen2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 aN = aD1.Crossed(aD2);
             }
@@ -1640,22 +1644,22 @@ public class IntAna_QuadQuadGeo
             }
             else
             {
-                gp_Dir D1 = aGen1.Position().Direction();
-                gp_Dir D2 = aGen2.Position().Direction();
-                gp_Pnt O1 = aGen1.Location();
-                gp_Pnt O2 = aGen2.Location();
+                Direction3D D1 = aGen1.Position().Direction();
+                Direction3D D2 = aGen2.Position().Direction();
+                Point3D O1 = aGen1.Location();
+                Point3D O2 = aGen2.Location();
                 double D1DotD2 = D1.Dot(D2);
                 double aSin = 1.0 - D1DotD2 * D1DotD2;
-                gp_Vec O1O2 = new(O1, O2);
-                double U2 = (D1.XYZ() * (O1O2.Dot(new gp_Vec(D1))) - (O1O2.XYZ())).Dot(D2.XYZ());
+                Vector3D O1O2 = new(O1, O2);
+                double U2 = (D1.XYZ() * (O1O2.Dot(new Vector3D(D1))) - (O1O2.XYZ())).Dot(D2.XYZ());
                 U2 /= aSin;
-                gp_Pnt aPGint = ElCLib.Value(U2, aGen2);
+                Point3D aPGint = global::Kerf.Engine.Geometry.ElCLib.Value(U2, aGen2);
 
-                aD1 = new gp_Dir(new gp_Vec(aPGint, myPChar));
+                aD1 = new Direction3D(new Vector3D(aPGint, myPChar));
                 aN = aD1.Crossed(aD2);
             }
             // Plane that must contain intersection curves
-            gp_Pln anIntPln = new(myPChar, aN);
+            Plane3D anIntPln = new(myPChar, aN);
 
             IntAna_QuadQuadGeo INTER_QUAD_PLN = new(anIntPln, Con1, Tol, Tol);
 
@@ -1666,7 +1670,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Ellipse:
                     {
                         typeres = IntAna_Ellipse;
-                        gp_Elips E = INTER_QUAD_PLN.Ellipse(1);
+                        Ellipse3D E = INTER_QUAD_PLN.Ellipse(1);
                         pt1 = E.Location();
                         dir1 = E.Position().Direction();
                         dir2 = E.Position().XDirection();
@@ -1678,7 +1682,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Circle:
                     {
                         typeres = IntAna_Circle;
-                        gp_Circ C = INTER_QUAD_PLN.Circle(1);
+                        Circle3D C = INTER_QUAD_PLN.Circle(1);
                         pt1 = C.Location();
                         dir1 = C.Position().XDirection();
                         dir2 = C.Position().YDirection();
@@ -1689,7 +1693,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Parabola:
                     {
                         typeres = IntAna_Parabola;
-                        gp_Parab Prb = INTER_QUAD_PLN.Parabola(1);
+                        Parabola3D Prb = INTER_QUAD_PLN.Parabola(1);
                         pt1 = Prb.Location();
                         dir1 = Prb.Position().Direction();
                         dir2 = Prb.Position().XDirection();
@@ -1700,7 +1704,7 @@ public class IntAna_QuadQuadGeo
                     case IntAna_Hyperbola:
                     {
                         typeres = IntAna_Hyperbola;
-                        gp_Hypr H = INTER_QUAD_PLN.Hyperbola(1);
+                        Hyperbola3D H = INTER_QUAD_PLN.Hyperbola(1);
                         pt1 = pt2 = H.Location();
                         dir1 = H.Position().Direction();
                         dir2 = H.Position().XDirection();
@@ -1722,30 +1726,30 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a sphere and a cone (only when the center is on the axis).</summary>
-    public IntAna_QuadQuadGeo(in gp_Sphere Sph, in gp_Cone Con, double Tol)
+    public IntAna_QuadQuadGeo(in Sphere Sph, in Cone Con, double Tol)
         : this()
     {
         Perform(Sph, Con, Tol);
     }
 
     /// <summary>Intersects a sphere and a cone (only when the center is on the axis). Tol is not used.</summary>
-    public void Perform(in gp_Sphere Sph, in gp_Cone Con, double Tol)
+    public void Perform(in Sphere Sph, in Cone Con, double Tol)
     {
         _ = Tol;
         //
         done = true;
         //
         AxeOperator A1A2 = new(Con.Axis(), Sph.Position().Axis());
-        gp_Pnt Pt = Sph.Location();
+        Point3D Pt = Sph.Location();
         //
         if ((A1A2.Intersect() && (Pt.Distance(A1A2.PtIntersect()) == 0.0)) || A1A2.Same())
         {
-            gp_Pnt ConApex = Con.Apex();
+            Point3D ConApex = Con.Apex();
             double dApexSphCenter = Pt.Distance(ConApex);
-            gp_Dir ConDir;
+            Direction3D ConDir;
             if (dApexSphCenter > RealEpsilon())
             {
-                ConDir = new gp_Dir(new gp_Vec(ConApex, Pt));
+                ConDir = new Direction3D(new Vector3D(ConApex, Pt));
             }
             else
             {
@@ -1759,12 +1763,12 @@ public class IntAna_QuadQuadGeo
             //-- x: Roots of    (x**2 + y**2 = Rad**2)
             //--                tga = y / (x+dApexSphCenter)
             double tgatga = tga * tga;
-            math_DirectPolynomialRoots Eq = new(1.0 + tgatga,
+            DirectPolynomialRoots Eq = new(1.0 + tgatga,
                                                 2.0 * tgatga * dApexSphCenter,
                                                 -Rad * Rad + dApexSphCenter * dApexSphCenter * tgatga);
-            if (Eq.IsDone())
+            if (Eq.IsDone)
             {
-                int nbsol = Eq.NbSolutions();
+                int nbsol = Eq.SolutionCount;
                 if (nbsol == 0)
                 {
                     typeres = IntAna_Empty;
@@ -1820,18 +1824,18 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between two spheres.</summary>
-    public IntAna_QuadQuadGeo(in gp_Sphere Sph1, in gp_Sphere Sph2, double Tol)
+    public IntAna_QuadQuadGeo(in Sphere Sph1, in Sphere Sph2, double Tol)
         : this()
     {
         Perform(Sph1, Sph2, Tol);
     }
 
     /// <summary>Intersects two spheres.</summary>
-    public void Perform(in gp_Sphere Sph1, in gp_Sphere Sph2, double Tol)
+    public void Perform(in Sphere Sph1, in Sphere Sph2, double Tol)
     {
         done = true;
-        gp_Pnt O1 = Sph1.Location();
-        gp_Pnt O2 = Sph2.Location();
+        Point3D O1 = Sph1.Location();
+        Point3D O2 = Sph2.Location();
         double dO1O2 = O1.Distance(O2);
         double R1 = Sph1.Radius();
         double R2 = Sph2.Radius();
@@ -1860,7 +1864,7 @@ public class IntAna_QuadQuadGeo
             {
                 return;
             }
-            gp_Dir Dir = new(new gp_Vec(O1, O2));
+            Direction3D Dir = new(new Vector3D(O1, O2));
             double t = Rmax - dO1O2 - Rmin;
 
             //----------------------------------------------------------------------
@@ -1932,14 +1936,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a plane and a torus.</summary>
-    public IntAna_QuadQuadGeo(in gp_Pln Pln, in gp_Torus Tor, double Tol)
+    public IntAna_QuadQuadGeo(in Plane3D Pln, in Torus Tor, double Tol)
         : this()
     {
         Perform(Pln, Tor, Tol);
     }
 
     /// <summary>Intersects a plane and a torus (only a plane normal to the axis, or containing it).</summary>
-    public void Perform(in gp_Pln Pln, in gp_Torus Tor, double Tol)
+    public void Perform(in Plane3D Pln, in Torus Tor, double Tol)
     {
         done = true;
         //
@@ -1953,8 +1957,8 @@ public class IntAna_QuadQuadGeo
             return;
         }
         //
-        gp_Ax1 aPlnAx = Pln.Axis();
-        gp_Ax1 aTorAx = Tor.Axis();
+        Axis3D aPlnAx = Pln.Axis();
+        Axis3D aTorAx = Tor.Axis();
         //
         bool bParallel, bNormal;
         //
@@ -1968,7 +1972,7 @@ public class IntAna_QuadQuadGeo
         //
         double aDist;
         //
-        gp_Pnt aTorLoc = aTorAx.Location();
+        Point3D aTorLoc = aTorAx.Location();
         if (bParallel)
         {
             double aDt, X, Y, Z, A, B, C, D, aDR, aTolNum;
@@ -2021,21 +2025,21 @@ public class IntAna_QuadQuadGeo
             dir2 = dir1 = aPlnAx.Direction();
             nbint = 2;
             //
-            gp_Dir aDir = aTorAx.Direction() ^ dir1;
+            Direction3D aDir = aTorAx.Direction() ^ dir1;
             pt1.SetXYZ(aTorLoc.XYZ() + aRMaj * aDir.XYZ());
             pt2.SetXYZ(aTorLoc.XYZ() - aRMaj * aDir.XYZ());
         }
     }
 
     /// <summary>The intersection between a cylinder and a torus.</summary>
-    public IntAna_QuadQuadGeo(in gp_Cylinder Cyl, in gp_Torus Tor, double Tol)
+    public IntAna_QuadQuadGeo(in Cylinder Cyl, in Torus Tor, double Tol)
         : this()
     {
         Perform(Cyl, Tor, Tol);
     }
 
     /// <summary>Intersects a cylinder and a torus (only when they are coaxial).</summary>
-    public void Perform(in gp_Cylinder Cyl, in gp_Torus Tor, double Tol)
+    public void Perform(in Cylinder Cyl, in Torus Tor, double Tol)
     {
         done = true;
         //
@@ -2049,11 +2053,11 @@ public class IntAna_QuadQuadGeo
             return;
         }
         //
-        gp_Ax1 aCylAx = Cyl.Axis();
-        gp_Ax1 aTorAx = Tor.Axis();
+        Axis3D aCylAx = Cyl.Axis();
+        Axis3D aTorAx = Tor.Axis();
         //
-        gp_Lin aLin = new(aTorAx);
-        gp_Pnt aLocCyl = Cyl.Location();
+        Line3D aLin = new(aTorAx);
+        Point3D aLocCyl = Cyl.Location();
         //
         if (!aTorAx.IsParallel(aCylAx, myEPSILON_AXES_PARA)
             || (aLin.Distance(aLocCyl) > myEPSILON_DISTANCE))
@@ -2074,7 +2078,7 @@ public class IntAna_QuadQuadGeo
         typeres = IntAna_Circle;
         //
         double aDist = Math.Sqrt(Math.Abs(aRMin * aRMin - (aRCyl - aRMaj) * (aRCyl - aRMaj)));
-        gp_XYZ aTorLoc = aTorAx.Location().XYZ();
+        Xyz aTorLoc = aTorAx.Location().XYZ();
         //
         dir1 = aTorAx.Direction();
         pt1.SetXYZ(aTorLoc + aDist * dir1.XYZ());
@@ -2090,14 +2094,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a cone and a torus.</summary>
-    public IntAna_QuadQuadGeo(in gp_Cone Con, in gp_Torus Tor, double Tol)
+    public IntAna_QuadQuadGeo(in Cone Con, in Torus Tor, double Tol)
         : this()
     {
         Perform(Con, Tor, Tol);
     }
 
     /// <summary>Intersects a cone and a torus (only when they are coaxial).</summary>
-    public void Perform(in gp_Cone Con, in gp_Torus Tor, double Tol)
+    public void Perform(in Cone Con, in Torus Tor, double Tol)
     {
         done = true;
         //
@@ -2111,11 +2115,11 @@ public class IntAna_QuadQuadGeo
             return;
         }
         //
-        gp_Ax1 aConAx = Con.Axis();
-        gp_Ax1 aTorAx = Tor.Axis();
+        Axis3D aConAx = Con.Axis();
+        Axis3D aTorAx = Tor.Axis();
         //
-        gp_Lin aLin = new(aTorAx);
-        gp_Pnt aConApex = Con.Apex();
+        Line3D aLin = new(aTorAx);
+        Point3D aConApex = Con.Apex();
         //
         if (!aTorAx.IsParallel(aConAx, myEPSILON_AXES_PARA)
             || (aLin.Distance(aConApex) > myEPSILON_DISTANCE))
@@ -2127,19 +2131,19 @@ public class IntAna_QuadQuadGeo
         double anAngle, aDist, aDt;
         Span<double> aParam = stackalloc double[4];
         int i;
-        gp_Pnt aTorLoc, aPCT = new(), aPN = new();
-        Span<gp_Pnt> aPt = stackalloc gp_Pnt[4];
-        Span<gp_Dir> aDir = [new gp_Dir(), new gp_Dir(), new gp_Dir(), new gp_Dir()];
+        Point3D aTorLoc, aPCT = new(), aPN = new();
+        Span<Point3D> aPt = stackalloc Point3D[4];
+        Span<Direction3D> aDir = [new Direction3D(), new Direction3D(), new Direction3D(), new Direction3D()];
         //
         anAngle = Con.SemiAngle();
         aTorLoc = aTorAx.Location();
         //
         aPN.SetXYZ(aTorLoc.XYZ() + aRMaj * Tor.YAxis().Direction().XYZ());
-        gp_Dir aDN = new(new gp_Vec(aTorLoc, aPN));
-        gp_Ax1 anAxCLRot = new(aConApex, aDN);
-        gp_Lin aConL = aLin.Rotated(anAxCLRot, anAngle);
-        gp_Dir aDL = aConL.Position().Direction();
-        gp_Dir aXDir = Tor.XAxis().Direction();
+        Direction3D aDN = new(new Vector3D(aTorLoc, aPN));
+        Axis3D anAxCLRot = new(aConApex, aDN);
+        Line3D aConL = aLin.Rotated(anAxCLRot, anAngle);
+        Direction3D aDL = aConL.Position().Direction();
+        Direction3D aXDir = Tor.XAxis().Direction();
         //
         typeres = IntAna_Empty;
         //
@@ -2159,11 +2163,11 @@ public class IntAna_QuadQuadGeo
             //
             typeres = IntAna_Circle;
             //
-            gp_XYZ aPh = aPCT.XYZ() - aDist * aConL.Normal(aPCT).Direction().XYZ();
+            Xyz aPh = aPCT.XYZ() - aDist * aConL.Normal(aPCT).Direction().XYZ();
             aDt = Math.Sqrt(Math.Abs(aRMin * aRMin - aDist * aDist));
             //
-            gp_Pnt aP = new();
-            gp_XYZ aDVal = aDt * aDL.XYZ();
+            Point3D aP = new();
+            Xyz aDVal = aDt * aDL.XYZ();
             aP.SetXYZ(aPh + aDVal);
             aParam[nbint] = aLin.Distance(aP);
             aPt[nbint].SetXYZ(aP.XYZ() - aParam[nbint] * aXDir.XYZ());
@@ -2218,14 +2222,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between a sphere and a torus.</summary>
-    public IntAna_QuadQuadGeo(in gp_Sphere Sph, in gp_Torus Tor, double Tol)
+    public IntAna_QuadQuadGeo(in Sphere Sph, in Torus Tor, double Tol)
         : this()
     {
         Perform(Sph, Tor, Tol);
     }
 
     /// <summary>Intersects a sphere and a torus (only when the center is on the axis).</summary>
-    public void Perform(in gp_Sphere Sph, in gp_Torus Tor, double Tol)
+    public void Perform(in Sphere Sph, in Torus Tor, double Tol)
     {
         done = true;
         //
@@ -2239,9 +2243,9 @@ public class IntAna_QuadQuadGeo
             return;
         }
         //
-        gp_Ax1 aTorAx = Tor.Axis();
-        gp_Lin aLin = new(aTorAx);
-        gp_Pnt aSphLoc = Sph.Location();
+        Axis3D aTorAx = Tor.Axis();
+        Line3D aLin = new(aTorAx);
+        Point3D aSphLoc = Sph.Location();
         //
         if (aLin.Distance(aSphLoc) > myEPSILON_DISTANCE)
         {
@@ -2250,13 +2254,13 @@ public class IntAna_QuadQuadGeo
         }
         //
         double aRSph, aDist;
-        gp_Pnt aTorLoc = new();
+        Point3D aTorLoc = new();
         //
-        gp_Dir aXDir = Tor.XAxis().Direction();
+        Direction3D aXDir = Tor.XAxis().Direction();
         aTorLoc.SetXYZ(aTorAx.Location().XYZ() + aRMaj * aXDir.XYZ());
         aRSph = Sph.Radius();
         //
-        gp_Vec aVec12 = new(aTorLoc, aSphLoc);
+        Vector3D aVec12 = new(aTorLoc, aSphLoc);
         aDist = aVec12.Magnitude();
         if (((aDist - Tol) > (aRMin + aRSph)) || ((aDist + Tol) < Math.Abs(aRMin - aRSph)))
         {
@@ -2271,12 +2275,12 @@ public class IntAna_QuadQuadGeo
         anAlpha = 0.5 * (aRMin * aRMin - aRSph * aRSph + aDist * aDist) / aDist;
         aBeta = Math.Sqrt(Math.Abs(aRMin * aRMin - anAlpha * anAlpha));
         //
-        gp_Dir aDir12 = new(aVec12);
-        gp_XYZ aPh = aTorLoc.XYZ() + anAlpha * aDir12.XYZ();
-        gp_Dir aDC = Tor.YAxis().Direction() ^ aDir12;
+        Direction3D aDir12 = new(aVec12);
+        Xyz aPh = aTorLoc.XYZ() + anAlpha * aDir12.XYZ();
+        Direction3D aDC = Tor.YAxis().Direction() ^ aDir12;
         //
-        gp_Pnt aP = new();
-        gp_XYZ aDVal = aBeta * aDC.XYZ();
+        Point3D aP = new();
+        Xyz aDVal = aBeta * aDC.XYZ();
         aP.SetXYZ(aPh + aDVal);
         param1 = aLin.Distance(aP);
         pt1.SetXYZ(aP.XYZ() - param1 * aXDir.XYZ());
@@ -2293,14 +2297,14 @@ public class IntAna_QuadQuadGeo
     }
 
     /// <summary>The intersection between two tori.</summary>
-    public IntAna_QuadQuadGeo(in gp_Torus Tor1, in gp_Torus Tor2, double Tol)
+    public IntAna_QuadQuadGeo(in Torus Tor1, in Torus Tor2, double Tol)
         : this()
     {
         Perform(Tor1, Tor2, Tol);
     }
 
     /// <summary>Intersects two tori (only when they are coaxial).</summary>
-    public void Perform(in gp_Torus Tor1, in gp_Torus Tor2, double Tol)
+    public void Perform(in Torus Tor1, in Torus Tor2, double Tol)
     {
         done = true;
         //
@@ -2311,13 +2315,13 @@ public class IntAna_QuadQuadGeo
         aRMin2 = Tor2.MinorRadius();
         aRMaj2 = Tor2.MajorRadius();
         //
-        gp_Ax1 anAx1 = Tor1.Axis();
-        gp_Ax1 anAx2 = Tor2.Axis();
+        Axis3D anAx1 = Tor1.Axis();
+        Axis3D anAx2 = Tor2.Axis();
         //
-        gp_Pnt aLoc1 = anAx1.Location();
-        gp_Pnt aLoc2 = anAx2.Location();
+        Point3D aLoc1 = anAx1.Location();
+        Point3D aLoc2 = anAx2.Location();
         //
-        gp_Lin aL1 = new(anAx1);
+        Line3D aL1 = new(anAx1);
         if (!anAx1.IsParallel(anAx2, myEPSILON_AXES_PARA) || (aL1.Distance(aLoc2) > myEPSILON_DISTANCE))
         {
             typeres = IntAna_NoGeometricSolution;
@@ -2338,13 +2342,13 @@ public class IntAna_QuadQuadGeo
         }
         //
         double aDist;
-        gp_Pnt aP1 = new(), aP2 = new();
+        Point3D aP1 = new(), aP2 = new();
         //
-        gp_Dir aXDir1 = Tor1.XAxis().Direction();
+        Direction3D aXDir1 = Tor1.XAxis().Direction();
         aP1.SetXYZ(aLoc1.XYZ() + aRMaj1 * aXDir1.XYZ());
         aP2.SetXYZ(aLoc2.XYZ() + aRMaj2 * aXDir1.XYZ());
         //
-        gp_Vec aV12 = new(aP1, aP2);
+        Vector3D aV12 = new(aP1, aP2);
         aDist = aV12.Magnitude();
         if (((aDist - Tol) > (aRMin1 + aRMin2)) || ((aDist + Tol) < Math.Abs(aRMin1 - aRMin2)))
         {
@@ -2359,12 +2363,12 @@ public class IntAna_QuadQuadGeo
         anAlpha = 0.5 * (aRMin1 * aRMin1 - aRMin2 * aRMin2 + aDist * aDist) / aDist;
         aBeta = Math.Sqrt(Math.Abs(aRMin1 * aRMin1 - anAlpha * anAlpha));
         //
-        gp_Dir aDir12 = new(aV12);
-        gp_XYZ aPh = aP1.XYZ() + anAlpha * aDir12.XYZ();
-        gp_Dir aDC = Tor1.YAxis().Direction() ^ aDir12;
+        Direction3D aDir12 = new(aV12);
+        Xyz aPh = aP1.XYZ() + anAlpha * aDir12.XYZ();
+        Direction3D aDC = Tor1.YAxis().Direction() ^ aDir12;
         //
-        gp_Pnt aP = new();
-        gp_XYZ aDVal = aBeta * aDC.XYZ();
+        Point3D aP = new();
+        Xyz aDVal = aBeta * aDC.XYZ();
         aP.SetXYZ(aPh + aDVal);
         param1 = aL1.Distance(aP);
         pt1.SetXYZ(aP.XYZ() - param1 * aXDir1.XYZ());
@@ -2384,45 +2388,45 @@ public class IntAna_QuadQuadGeo
     public bool IsDone() => done;
 
     /// <summary>The type of intersection.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public IntAna_ResultType TypeInter()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return typeres;
     }
 
     /// <summary>The number of solutions.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbSolutions()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return nbint;
     }
 
     /// <summary>The point solution of range n (for a Point or PointAndCircle result).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">n is out of range.</exception>
-    public gp_Pnt Point(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">n is out of range.</exception>
+    public Point3D Point(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (n > nbint || n < 1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (typeres == IntAna_PointAndCircle)
         {
             if (n != 1)
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
             if (param1 == 0.0)
             {
@@ -2440,87 +2444,87 @@ public class IntAna_QuadQuadGeo
         }
 
         // WNT (what can you expect from MicroSoft ?)
-        return new gp_Pnt(0, 0, 0);
+        return new Point3D(0, 0, 0);
     }
 
     /// <summary>The line solution of range n.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">n is out of range, or the result is not lines.</exception>
-    public gp_Lin Line(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">n is out of range, or the result is not lines.</exception>
+    public Line3D Line(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if ((n > nbint) || (n < 1) || (typeres != IntAna_Line))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (n == 1)
         {
-            return (new gp_Lin(pt1, dir1));
+            return (new Line3D(pt1, dir1));
         }
         else
         {
-            return (new gp_Lin(pt2, dir2));
+            return (new Line3D(pt2, dir2));
         }
     }
 
     /// <summary>The circle solution of range n.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">n is out of range, or the result is not circles.</exception>
-    public gp_Circ Circle(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">n is out of range, or the result is not circles.</exception>
+    public Circle3D Circle(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (typeres == IntAna_PointAndCircle)
         {
             if (n != 1)
             {
-                throw new Standard_DomainError();
+                throw new DomainErrorException();
             }
             if (param2 == 0.0)
             {
-                return (new gp_Circ(DirToAx2(pt1, dir1), param1));
+                return (new Circle3D(DirToAx2(pt1, dir1), param1));
             }
-            return (new gp_Circ(DirToAx2(pt2, dir2), param2));
+            return (new Circle3D(DirToAx2(pt2, dir2), param2));
         }
         else if ((n > nbint) || (n < 1) || (typeres != IntAna_Circle))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (n == 1)
         {
-            return (new gp_Circ(DirToAx2(pt1, dir1), param1));
+            return (new Circle3D(DirToAx2(pt1, dir1), param1));
         }
         else if (n == 2)
         {
-            return (new gp_Circ(DirToAx2(pt2, dir2), param2));
+            return (new Circle3D(DirToAx2(pt2, dir2), param2));
         }
         else if (n == 3)
         {
-            return (new gp_Circ(DirToAx2(pt3, dir3), param3));
+            return (new Circle3D(DirToAx2(pt3, dir3), param3));
         }
         else
         {
-            return (new gp_Circ(DirToAx2(pt4, dir4), param4));
+            return (new Circle3D(DirToAx2(pt4, dir4), param4));
         }
     }
 
     /// <summary>The ellipse solution of range n.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">n is out of range, or the result is not ellipses.</exception>
-    public gp_Elips Ellipse(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">n is out of range, or the result is not ellipses.</exception>
+    public Ellipse3D Ellipse(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if ((n > nbint) || (n < 1) || (typeres != IntAna_Ellipse))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (n == 1)
@@ -2532,8 +2536,8 @@ public class IntAna_QuadQuadGeo
                 R1 = R2;
                 R2 = aTmp;
             }
-            gp_Ax2 anAx2 = new(pt1, dir1, dir2);
-            gp_Elips anElips = new(anAx2, R1, R2);
+            Frame3D anAx2 = new(pt1, dir1, dir2);
+            Ellipse3D anElips = new(anAx2, R1, R2);
             return anElips;
         }
         else
@@ -2545,53 +2549,53 @@ public class IntAna_QuadQuadGeo
                 R1 = R2;
                 R2 = aTmp;
             }
-            gp_Ax2 anAx2 = new(pt2, dir2, dir1);
-            gp_Elips anElips = new(anAx2, R1, R2);
+            Frame3D anAx2 = new(pt2, dir2, dir1);
+            Ellipse3D anElips = new(anAx2, R1, R2);
             return anElips;
         }
     }
 
     /// <summary>The parabola solution (n must be 1).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">The result is not a parabola.</exception>
-    /// <exception cref="Standard_OutOfRange">n is not 1.</exception>
-    public gp_Parab Parabola(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">The result is not a parabola.</exception>
+    /// <exception cref="OutOfRangeException">n is not 1.</exception>
+    public Parabola3D Parabola(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (typeres != IntAna_Parabola)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if ((n > nbint) || (n != 1))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        return (new gp_Parab(new gp_Ax2(pt1, dir1, dir2), param1));
+        return (new Parabola3D(new Frame3D(pt1, dir1, dir2), param1));
     }
 
     /// <summary>The hyperbola solution of range n.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">n is out of range, or the result is not hyperbolas.</exception>
-    public gp_Hypr Hyperbola(int n)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">n is out of range, or the result is not hyperbolas.</exception>
+    public Hyperbola3D Hyperbola(int n)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if ((n > nbint) || (n < 1) || (typeres != IntAna_Hyperbola))
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (n == 1)
         {
-            return (new gp_Hypr(new gp_Ax2(pt1, dir1, dir2), param1, param1bis));
+            return (new Hyperbola3D(new Frame3D(pt1, dir1, dir2), param1, param1bis));
         }
         else
         {
-            return (new gp_Hypr(new gp_Ax2(pt2, dir1, dir2.Reversed()), param2, param2bis));
+            return (new Hyperbola3D(new Frame3D(pt2, dir1, dir2.Reversed()), param2, param2bis));
         }
     }
 
@@ -2599,11 +2603,11 @@ public class IntAna_QuadQuadGeo
     public bool HasCommonGen() => myCommonGen;
 
     /// <summary>The characteristic point of the intersection of two cones with a common generatrix.</summary>
-    public gp_Pnt PChar() => myPChar;
+    public Point3D PChar() => myPChar;
 
     //=================================================================================================
 
-    private static void RefineDir(ref gp_Dir aDir)
+    private static void RefineDir(ref Direction3D aDir)
     {
         int k, m, n;
         Span<double> aC = stackalloc double[3];

@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
@@ -207,7 +209,7 @@ public class IntPatch_RLine : IntPatch_PointLine
     {
         if (!fipt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indf);
     }
@@ -217,7 +219,7 @@ public class IntPatch_RLine : IntPatch_PointLine
     {
         if (!lapt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indl);
     }
@@ -232,7 +234,7 @@ public class IntPatch_RLine : IntPatch_PointLine
     {
         if ((theIndex < 1) || (theIndex > NbVertex()))
         {
-            throw new Standard_OutOfRange("Cannot delete not existing vertex");
+            throw new OutOfRangeException("Cannot delete not existing vertex");
         }
         svtx.Remove(theIndex);
     }
@@ -245,7 +247,7 @@ public class IntPatch_RLine : IntPatch_PointLine
     {
         if (curv is null)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return curv.NbPoints();
     }
@@ -255,7 +257,7 @@ public class IntPatch_RLine : IntPatch_PointLine
     {
         if (curv is null)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return curv.Value(Index);
     }
@@ -265,11 +267,11 @@ public class IntPatch_RLine : IntPatch_PointLine
 
     public override IntSurf_LineOn2S? Curve() => (curv);
 
-    public override bool IsOutSurf1Box(in gp_Pnt2d theP) => curv!.IsOutSurf1Box(theP);
+    public override bool IsOutSurf1Box(in Point2D theP) => curv!.IsOutSurf1Box(theP);
 
-    public override bool IsOutSurf2Box(in gp_Pnt2d theP) => curv!.IsOutSurf2Box(theP);
+    public override bool IsOutSurf2Box(in Point2D theP) => curv!.IsOutSurf2Box(theP);
 
-    public override bool IsOutBox(in gp_Pnt theP) => curv!.IsOutBox(theP);
+    public override bool IsOutBox(in Point3D theP) => curv!.IsOutBox(theP);
 
     public override void ClearVertexes() => svtx.Clear();
 

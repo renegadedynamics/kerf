@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -25,14 +27,14 @@ public readonly struct IntCurveSurface_TheHSurfaceTool
 
     public static double LastVParameter(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.LastVParameter(S);
 
-    public static int NbUIntervals(in Adaptor3d_Surface S, GeomAbs_Shape Sh) => Adaptor3d_HSurfaceTool.NbUIntervals(S, Sh);
+    public static int NbUIntervals(in Adaptor3d_Surface S, Continuity Sh) => Adaptor3d_HSurfaceTool.NbUIntervals(S, Sh);
 
-    public static int NbVIntervals(in Adaptor3d_Surface S, GeomAbs_Shape Sh) => Adaptor3d_HSurfaceTool.NbVIntervals(S, Sh);
+    public static int NbVIntervals(in Adaptor3d_Surface S, Continuity Sh) => Adaptor3d_HSurfaceTool.NbVIntervals(S, Sh);
 
-    public static void UIntervals(in Adaptor3d_Surface S, NCollection_Array1<double> T, GeomAbs_Shape Sh) =>
+    public static void UIntervals(in Adaptor3d_Surface S, NCollection_Array1<double> T, Continuity Sh) =>
         Adaptor3d_HSurfaceTool.UIntervals(S, T, Sh);
 
-    public static void VIntervals(in Adaptor3d_Surface S, NCollection_Array1<double> T, GeomAbs_Shape Sh) =>
+    public static void VIntervals(in Adaptor3d_Surface S, NCollection_Array1<double> T, Continuity Sh) =>
         Adaptor3d_HSurfaceTool.VIntervals(S, T, Sh);
 
     public static Adaptor3d_Surface UTrim(in Adaptor3d_Surface S, double First, double Last, double Tol) =>
@@ -53,33 +55,33 @@ public readonly struct IntCurveSurface_TheHSurfaceTool
 
     public static double VPeriod(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.VPeriod(S);
 
-    public static gp_Pnt Value(in Adaptor3d_Surface S, double U, double V) => Adaptor3d_HSurfaceTool.Value(S, U, V);
+    public static Point3D Value(in Adaptor3d_Surface S, double U, double V) => Adaptor3d_HSurfaceTool.Value(S, U, V);
 
-    public static void D0(in Adaptor3d_Surface S, double U, double V, out gp_Pnt P) =>
+    public static void D0(in Adaptor3d_Surface S, double U, double V, out Point3D P) =>
         Adaptor3d_HSurfaceTool.D0(S, U, V, out P);
 
-    public static void D1(in Adaptor3d_Surface S, double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V) =>
+    public static void D1(in Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V) =>
         Adaptor3d_HSurfaceTool.D1(S, U, V, out P, out D1U, out D1V);
 
     public static double UResolution(in Adaptor3d_Surface S, double R3d) => Adaptor3d_HSurfaceTool.UResolution(S, R3d);
 
     public static double VResolution(in Adaptor3d_Surface S, double R3d) => Adaptor3d_HSurfaceTool.VResolution(S, R3d);
 
-    public static GeomAbs_SurfaceType GetType(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.GetType(S);
+    public static SurfaceKind GetType(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.GetType(S);
 
-    public static gp_Pln Plane(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Plane(S);
+    public static Plane3D Plane(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Plane(S);
 
-    public static gp_Cylinder Cylinder(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Cylinder(S);
+    public static Cylinder Cylinder(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Cylinder(S);
 
-    public static gp_Cone Cone(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Cone(S);
+    public static Cone Cone(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Cone(S);
 
-    public static gp_Torus Torus(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Torus(S);
+    public static Torus Torus(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Torus(S);
 
-    public static gp_Sphere Sphere(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Sphere(S);
+    public static Sphere Sphere(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Sphere(S);
 
-    public static gp_Ax1 AxeOfRevolution(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.AxeOfRevolution(S);
+    public static Axis3D AxeOfRevolution(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.AxeOfRevolution(S);
 
-    public static gp_Dir Direction(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Direction(S);
+    public static Direction3D Direction(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.Direction(S);
 
     public static Adaptor3d_Curve BasisCurve(in Adaptor3d_Surface S) => Adaptor3d_HSurfaceTool.BasisCurve(S);
 

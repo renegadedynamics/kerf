@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -22,8 +26,8 @@ public class BRepMeshCoreTests
         Assert.Equal(2, aPair.Extent());
         Assert.Equal(5, aPair.FirstIndex());
         Assert.Equal(7, aPair.LastIndex());
-        Assert.Throws<Standard_OutOfRange>(() => aPair.Appended(9));
-        Assert.Throws<Standard_OutOfRange>(() => aPair.Index(3));
+        Assert.Throws<OutOfRangeException>(() => aPair.Appended(9));
+        Assert.Throws<OutOfRangeException>(() => aPair.Index(3));
         BRepMesh_PairOfIndex aRemoved = aPair.IndexRemoved(1);
         Assert.Equal(1, aRemoved.Extent());
         Assert.Equal(7, aRemoved.FirstIndex());
@@ -68,7 +72,7 @@ public class BRepMeshCoreTests
         Assert.Equal([1, 2, 3], e.ToArray());
         Assert.Equal([true, false, true], o.ToArray());
 
-        BRepMesh_Vertex aVertex = new(new gp_XY(1.0, 2.0), 7, BRepMesh_Frontier);
+        BRepMesh_Vertex aVertex = new(new Xy(1.0, 2.0), 7, BRepMesh_Frontier);
         BRepMesh_Vertex aNear = new(1.0 + 1e-10, 2.0, BRepMesh_Free);
         Assert.True(aVertex.IsEqual(aNear));
         Assert.False(aVertex.Equals(aNear));
@@ -99,19 +103,19 @@ public class BRepMeshCoreTests
     public void CircleTool_selects_the_circles_containing_a_point()
     {
         BRepMesh_CircleTool aTool = new();
-        aTool.SetMinMaxSize(new gp_XY(-10, -10), new gp_XY(10, 10));
+        aTool.SetMinMaxSize(new Xy(-10, -10), new Xy(10, 10));
         aTool.SetCellSize(1.0, 1.0);
-        Assert.True(aTool.Bind(1, new gp_XY(0, 0), new gp_XY(2, 0), new gp_XY(0, 2)));
-        Assert.True(aTool.Bind(2, new gp_XY(5, 5), new gp_XY(6, 5), new gp_XY(5, 6)));
-        Assert.False(aTool.Bind(3, new gp_XY(0, 0), new gp_XY(1, 1), new gp_XY(2, 2)));
+        Assert.True(aTool.Bind(1, new Xy(0, 0), new Xy(2, 0), new Xy(0, 2)));
+        Assert.True(aTool.Bind(2, new Xy(5, 5), new Xy(6, 5), new Xy(5, 6)));
+        Assert.False(aTool.Bind(3, new Xy(0, 0), new Xy(1, 1), new Xy(2, 2)));
         aTool.MocBind(3);
 
-        Assert.Equal([1], aTool.Select(new gp_XY(1.0, 1.0)));
-        Assert.Equal([2], aTool.Select(new gp_XY(5.4, 5.4)));
-        Assert.Empty(aTool.Select(new gp_XY(-5.0, 5.0)));
+        Assert.Equal([1], aTool.Select(new Xy(1.0, 1.0)));
+        Assert.Equal([2], aTool.Select(new Xy(5.4, 5.4)));
+        Assert.Empty(aTool.Select(new Xy(-5.0, 5.0)));
 
         aTool.Delete(1);
-        Assert.Empty(aTool.Select(new gp_XY(1.0, 1.0)));
+        Assert.Empty(aTool.Select(new Xy(1.0, 1.0)));
     }
 
     // ---- Data structure
@@ -218,15 +222,15 @@ public class BRepMeshCoreTests
         // The links: link 3 (4-5) moves to index 1.
         Assert.Equal(1, aStructure.NbLinks());
         BRepMesh_Edge aLink = aStructure.GetLink(1);
-        Assert.Equal(new gp_XY(3, 9), aStructure.GetNode(aLink.FirstNode()).Coord());
-        Assert.Equal(new gp_XY(4, 16), aStructure.GetNode(aLink.LastNode()).Coord());
+        Assert.Equal(new Xy(3, 9), aStructure.GetNode(aLink.FirstNode()).Coord());
+        Assert.Equal(new Xy(4, 16), aStructure.GetNode(aLink.LastNode()).Coord());
         Assert.Equal((1, 3), (aLink.FirstNode(), aLink.LastNode()));
 
         // OCCT: BRepMesh_VertexTool::RemoveLast deletes vertex Extent() but doesn't shrink the vector, so the second
         // RemoveLast of clearDeletedNodes deletes vertex 5 again instead of vertex 4: node 4 is left live, a duplicate of
         // the node moved to index 1, and NbNodes() stays 5 (occt-issues.md, unit 4B).
         Assert.Equal(5, aStructure.NbNodes());
-        Assert.Equal(new gp_XY(3, 9), aStructure.GetNode(4).Coord());
+        Assert.Equal(new Xy(3, 9), aStructure.GetNode(4).Coord());
         Assert.Equal(BRepMesh_Free, aStructure.GetNode(4).Movability());
         Assert.Equal(BRepMesh_Deleted, aStructure.GetNode(5).Movability());
     }
@@ -291,35 +295,35 @@ public class BRepMeshCoreTests
     public void Classifier_with_a_hole()
     {
         BRepMesh_Classifier aClassifier = new();
-        NCollection_Sequence<gp_Pnt2d> anOuter = new();
+        NCollection_Sequence<Point2D> anOuter = new();
         foreach ((double x, double y) in new[] { (0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0) })
         {
-            anOuter.Append(new gp_Pnt2d(x, y));
+            anOuter.Append(new Point2D(x, y));
         }
 
-        NCollection_Sequence<gp_Pnt2d> aHole = new();
+        NCollection_Sequence<Point2D> aHole = new();
         foreach ((double x, double y) in new[] { (1.0, 1.0), (1.0, 3.0), (3.0, 3.0), (3.0, 1.0) })
         {
-            aHole.Append(new gp_Pnt2d(x, y));
+            aHole.Append(new Point2D(x, y));
         }
 
         aClassifier.RegisterWire(anOuter, (1e-7, 1e-7), (0.0, 4.0), (0.0, 4.0));
         aClassifier.RegisterWire(aHole, (1e-7, 1e-7), (0.0, 4.0), (0.0, 4.0));
 
-        Assert.Equal(TopAbs_State.TopAbs_IN, aClassifier.Perform(new gp_Pnt2d(0.5, 0.5)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new gp_Pnt2d(2.0, 2.0)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new gp_Pnt2d(5.0, 2.0)));
-        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new gp_Pnt2d(0.0, 2.0)));
+        Assert.Equal(TopAbs_State.TopAbs_IN, aClassifier.Perform(new Point2D(0.5, 0.5)));
+        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(2.0, 2.0)));
+        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(5.0, 2.0)));
+        Assert.Equal(TopAbs_State.TopAbs_OUT, aClassifier.Perform(new Point2D(0.0, 2.0)));
     }
 
     [Fact]
     public void Triangulator_triangulates_a_polygon_with_a_hole()
     {
-        NCollection_DynamicArray<gp_XYZ> aXYZs = new();
+        NCollection_DynamicArray<Xyz> aXYZs = new();
         // The outer square (indices 0..3) and the hole (4..7), in the plane Z = 1, counter-clockwise and clockwise.
         foreach ((double x, double y) in new[] { (0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0), (1.0, 1.0), (1.0, 3.0), (3.0, 3.0), (3.0, 1.0) })
         {
-            aXYZs.Append(new gp_XYZ(x, y, 1.0));
+            aXYZs.Append(new Xyz(x, y, 1.0));
         }
 
         NCollection_Sequence<int> anOuter = new();
@@ -334,22 +338,22 @@ public class BRepMeshCoreTests
         aWires.Append(anOuter);
         aWires.Append(aHole);
 
-        NCollection_List<Poly_Triangle> aTriangles = new();
-        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, gp.DZ()).Perform(aTriangles));
+        NCollection_List<Triangle1> aTriangles = new();
+        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
         Assert.Equal(8, aTriangles.Extent());
 
-        NCollection_Array1<gp_Pnt> aNodes = new(1, 8);
+        NCollection_Array1<Point3D> aNodes = new(1, 8);
         for (int i = 0; i < 8; ++i)
         {
-            aNodes[i + 1] = new gp_Pnt(aXYZs[i]);
+            aNodes[i + 1] = new Point3D(aXYZs[i]);
         }
 
-        Poly_Triangulation aPoly = BRepMesh_Triangulator.ToPolyTriangulation(aNodes, aTriangles);
+        Triangulation aPoly = BRepMesh_Triangulator.ToPolyTriangulation(aNodes, aTriangles);
         double anArea = 0.0;
-        for (int i = 1; i <= aPoly.NbTriangles(); ++i)
+        for (int i = 1; i <= aPoly.TriangleCount; ++i)
         {
             aPoly.Triangle(i).Get(out int n1, out int n2, out int n3);
-            gp_XYZ a = aPoly.Node(n1).XYZ(), b = aPoly.Node(n2).XYZ(), c = aPoly.Node(n3).XYZ();
+            Xyz a = aPoly.Node(n1).XYZ(), b = aPoly.Node(n2).XYZ(), c = aPoly.Node(n3).XYZ();
             anArea += 0.5 * (b - a).Crossed(c - a).Modulus();
         }
 
@@ -359,10 +363,10 @@ public class BRepMeshCoreTests
     [Fact]
     public void Triangulator_simple_wires()
     {
-        NCollection_DynamicArray<gp_XYZ> aXYZs = new();
+        NCollection_DynamicArray<Xyz> aXYZs = new();
         foreach ((double x, double y) in new[] { (0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0) })
         {
-            aXYZs.Append(new gp_XYZ(x, y, 0.0));
+            aXYZs.Append(new Xyz(x, y, 0.0));
         }
 
         NCollection_Sequence<int> aWire = new();
@@ -373,9 +377,9 @@ public class BRepMeshCoreTests
 
         NCollection_List<NCollection_Sequence<int>> aWires = new();
         aWires.Append(aWire);
-        NCollection_List<Poly_Triangle> aTriangles = new();
-        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, gp.DZ()).Perform(aTriangles));
+        NCollection_List<Triangle1> aTriangles = new();
+        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
         // The diagonals are equal: d24 < d13 is false, and the inner-corner check keeps the diagonal 1-3.
-        Assert.Equal([new Poly_Triangle(1, 2, 3), new Poly_Triangle(3, 4, 1)], aTriangles);
+        Assert.Equal([new Triangle1(1, 2, 3), new Triangle1(3, 4, 1)], aTriangles);
     }
 }

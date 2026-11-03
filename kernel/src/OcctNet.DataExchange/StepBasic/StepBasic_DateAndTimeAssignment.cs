@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_DateAndTimeAssignment : Standard_Transient
+public class StepBasic_DateAndTimeAssignment : Transient
 {
     private StepBasic_DateAndTime assignedDateAndTime;
     private StepBasic_DateTimeRole role;

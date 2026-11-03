@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -21,14 +24,14 @@ namespace Occt;
 /// </remarks>
 public class HelixBRep_BuilderHelix
 {
-    protected gp_Ax3 myAxis3 = new();
+    protected CoordinateSystem myAxis3 = new();
     protected NCollection_HArray1<double>? myDiams;
     protected NCollection_HArray1<double>? myHeights;
     protected NCollection_HArray1<double>? myPitches;
     protected NCollection_HArray1<bool>? myIsPitches;
     protected double myTolerance;
     protected double myTolReached;
-    protected GeomAbs_Shape myContinuity;
+    protected Continuity myContinuity;
     protected int myMaxDegree;
     protected int myMaxSegments;
     protected int myErrorStatus;
@@ -39,9 +42,9 @@ public class HelixBRep_BuilderHelix
     /// <summary>A builder with no parameters (error status 1), about the global Z axis.</summary>
     public HelixBRep_BuilderHelix()
     {
-        gp_Pnt aP0 = new(0.0, 0.0, 0);
+        Point3D aP0 = new(0.0, 0.0, 0);
         // Initialize coordinate system and data arrays
-        myAxis3.SetDirection(gp.DZ());
+        myAxis3.SetDirection(Constants.DZ());
         myAxis3.SetLocation(aP0);
         myDiams = null;
         myHeights = null;
@@ -52,7 +55,7 @@ public class HelixBRep_BuilderHelix
 
         // Initialize approximation parameters
         myTolerance = 0.0001;
-        myContinuity = GeomAbs_Shape.GeomAbs_C1;
+        myContinuity = Continuity.C1;
         myMaxDegree = 8;
         myMaxSegments = 1000;
         // Initialize status variables
@@ -66,8 +69,8 @@ public class HelixBRep_BuilderHelix
     /// Sets the parameters of a general composite helix: np + 1 diameters, and np heights, pitches and flags (true:
     /// the pitch is a pitch; false: it is a number of turns).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               NCollection_Array1<double> theDiams,
                               NCollection_Array1<double> theHeights,
                               NCollection_Array1<double> thePitches,
@@ -88,7 +91,7 @@ public class HelixBRep_BuilderHelix
         if (myNParts != theHeights.Length() || myNParts != thePitches.Length()
             || myNParts != bIsPitches.Length())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "HelixBRep_BuilderHelix::SetParameters: wrong array dimension");
         }
 
@@ -107,8 +110,8 @@ public class HelixBRep_BuilderHelix
     }
 
     /// <summary>Sets the parameters of a pure (cylindrical) helix of diameter <paramref name="theDiam"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               double theDiam,
                               NCollection_Array1<double> theHeights,
                               NCollection_Array1<double> thePitches,
@@ -124,8 +127,8 @@ public class HelixBRep_BuilderHelix
     /// Sets the parameters of a pure spiral: the diameter changes linearly with the height from
     /// <paramref name="theDiam1"/> to <paramref name="theDiam2"/>.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               double theDiam1,
                               double theDiam2,
                               NCollection_Array1<double> theHeights,
@@ -160,8 +163,8 @@ public class HelixBRep_BuilderHelix
     /// Sets the parameters of a general composite helix by pitches and numbers of turns: np + 1 diameters, np pitches
     /// and np numbers of turns.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               NCollection_Array1<double> theDiams,
                               NCollection_Array1<double> thePitches,
                               NCollection_Array1<double> theNbTurns)
@@ -170,7 +173,7 @@ public class HelixBRep_BuilderHelix
 
         if (aNbParts != thePitches.Length() || aNbParts != theNbTurns.Length())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "HelixBRep_BuilderHelix::SetParameters: wrong array dimension");
         }
 
@@ -188,8 +191,8 @@ public class HelixBRep_BuilderHelix
     }
 
     /// <summary>Sets the parameters of a pure helix by pitches and numbers of turns.</summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               double theDiam,
                               NCollection_Array1<double> thePitches,
                               NCollection_Array1<double> theNbTurns)
@@ -198,7 +201,7 @@ public class HelixBRep_BuilderHelix
 
         if (aNbParts != theNbTurns.Length())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "HelixBRep_BuilderHelix::SetParameters: wrong array dimension");
         }
 
@@ -216,8 +219,8 @@ public class HelixBRep_BuilderHelix
     }
 
     /// <summary>Sets the parameters of a pure spiral by pitches and numbers of turns.</summary>
-    /// <exception cref="Standard_ConstructionError">The arrays' lengths don't match.</exception>
-    public void SetParameters(in gp_Ax3 theAxis,
+    /// <exception cref="ConstructionErrorException">The arrays' lengths don't match.</exception>
+    public void SetParameters(in CoordinateSystem theAxis,
                               double theDiam1,
                               double theDiam2,
                               NCollection_Array1<double> thePitches,
@@ -227,7 +230,7 @@ public class HelixBRep_BuilderHelix
 
         if (aNbParts != theNbTurns.Length())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "HelixBRep_BuilderHelix::SetParameters: wrong array dimension");
         }
 
@@ -245,7 +248,7 @@ public class HelixBRep_BuilderHelix
     }
 
     /// <summary>Sets the approximation's tolerance, maximum degree and continuity.</summary>
-    public void SetApproxParameters(double aTolerance, int aMaxDegree, GeomAbs_Shape aCont)
+    public void SetApproxParameters(double aTolerance, int aMaxDegree, Continuity aCont)
     {
         myTolerance = aTolerance;
         myMaxDegree = aMaxDegree;
@@ -272,9 +275,9 @@ public class HelixBRep_BuilderHelix
 
         NCollection_List<TopoDS_Shape> anLst = new();
 
-        gp_Ax1 anAxis = myAxis3.Axis();
-        gp_Pnt aPStart = myAxis3.Location();
-        aPStart.Translate(.5 * myDiams!.Value(1) * new gp_Vec(myAxis3.XDirection()));
+        Axis3D anAxis = myAxis3.Axis();
+        Point3D aPStart = myAxis3.Location();
+        aPStart.Translate(.5 * myDiams!.Value(1) * new Vector3D(myAxis3.XDirection()));
         bool bIsClockwise = myAxis3.Direct();
 
         double aHeight;
@@ -309,7 +312,7 @@ public class HelixBRep_BuilderHelix
 
             aPStart = BRep_Tool.Pnt(V2);
 
-            anAxis.SetLocation(anAxis.Location().Translated(aHeight * new gp_Vec(anAxis.Direction())));
+            anAxis.SetLocation(anAxis.Location().Translated(aHeight * new Vector3D(anAxis.Direction())));
 
             anLst.Append(aPart);
             // aBB.Add(myShape, aPart);
@@ -328,8 +331,8 @@ public class HelixBRep_BuilderHelix
         myShape = aMkWire.InternalShape();
     }
 
-    private void BuildPart(in gp_Ax1 theAxis,
-                           in gp_Pnt thePStart,
+    private void BuildPart(in Axis3D theAxis,
+                           in Point3D thePStart,
                            double theHeight,
                            double thePitch,
                            double theTaperAngle,
@@ -366,7 +369,7 @@ public class HelixBRep_BuilderHelix
             return;
         }
         //
-        gp_Lin aLin = new(theAxis);
+        Line3D aLin = new(theAxis);
         aDist = aLin.Distance(thePStart);
         if (aDist < aTolPrec)
         {
@@ -378,15 +381,15 @@ public class HelixBRep_BuilderHelix
         double aAngleStart = 0.0;
 
         // const bool bIsOutWard = theTaperAngle > 0.0;
-        gp_Dir aDir = theAxis.Direction();
-        gp_Vec aVec1 = new(aDir);
-        gp_Pnt aM0 = theAxis.Location();
-        gp_Vec aVec = new(aM0, thePStart);
+        Direction3D aDir = theAxis.Direction();
+        Vector3D aVec1 = new(aDir);
+        Point3D aM0 = theAxis.Location();
+        Vector3D aVec = new(aM0, thePStart);
         aDM = aVec1.Dot(aVec);
-        gp_Pnt aM1 = aM0.Translated(aDM * aVec1);
-        gp_Vec aVecX = new(aM1, thePStart);
-        gp_Dir aDirX = new(aVecX);
-        gp_Ax2 aAx2 = new(aM1, aDir, aDirX);
+        Point3D aM1 = aM0.Translated(aDM * aVec1);
+        Vector3D aVecX = new(aM1, thePStart);
+        Direction3D aDirX = new(aVecX);
+        Frame3D aAx2 = new(aM1, aDir, aDirX);
         //
         aTwoPI = 2.0 * M_PI;
         aC1 = thePitch / aTwoPI;
@@ -399,7 +402,7 @@ public class HelixBRep_BuilderHelix
         bool bIsDone;
         int iErr, aNbC, i;
         HelixGeom_BuilderHelix aBH = new();
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
         BRep_Builder aBB = new();
         BRepBuilderAPI_MakeEdge aBME = new();
         TopoDS_Vertex aV1 = new(), aV2 = new();
@@ -541,8 +544,8 @@ public class HelixBRep_BuilderHelix
 
         Geom_BSplineCurve aCNext = (BRep_Tool.Curve(theNext, out f2, out l2) as Geom_BSplineCurve)!;
 
-        gp_Pnt P1, P2;
-        gp_Vec V1, V2;
+        Point3D P1, P2;
+        Vector3D V1, V2;
 
         aCPrev.D1(l1, out P1, out V1);
         aCNext.D1(f2, out P2, out V2);

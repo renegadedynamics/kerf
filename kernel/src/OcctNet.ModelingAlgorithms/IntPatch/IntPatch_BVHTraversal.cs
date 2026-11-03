@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2024-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bvh;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// A working object (decision 21): <see cref="Pairs"/> returns its own array. The pairs are not sorted (OCCT doesn't
 /// sort them), so their order is the traversal's, which IntPatch_InterferencePolyhedron's section lines depend on.
 /// </remarks>
-public class IntPatch_BVHTraversal : BVH_PairTraverse<double, BVH_Vec3d, double>
+public class IntPatch_BVHTraversal : PairTraverse<double, BVH_Vec3d, double>
 {
     /// <summary>A pair of triangle indices (both 1-based, the polyhedra's own indices).</summary>
     public readonly record struct TrianglePair(int First = 0, int Second = 0);
@@ -55,8 +56,8 @@ public class IntPatch_BVHTraversal : BVH_PairTraverse<double, BVH_Vec3d, double>
         }
 
         // Get BVH trees (builds them if necessary)
-        BVH_Tree<double, BVH_Vec3d>? aBVH1 = theSet1.BVH();
-        BVH_Tree<double, BVH_Vec3d>? aBVH2 = theSet2.BVH();
+        Tree<double, BVH_Vec3d>? aBVH1 = theSet1.BVH();
+        Tree<double, BVH_Vec3d>? aBVH2 = theSet2.BVH();
 
         if (aBVH1 is null || aBVH2 is null)
         {
@@ -81,15 +82,15 @@ public class IntPatch_BVHTraversal : BVH_PairTraverse<double, BVH_Vec3d, double>
 
         // AABB overlap test: reject if boxes don't overlap
         // Two boxes overlap if and only if they overlap on all three axes
-        if (theCMin1.x() > theCMax2.x() || theCMax1.x() < theCMin2.x())
+        if (theCMin1.X() > theCMax2.X() || theCMax1.X() < theCMin2.X())
         {
             return true; // No overlap on X axis
         }
-        if (theCMin1.y() > theCMax2.y() || theCMax1.y() < theCMin2.y())
+        if (theCMin1.Y() > theCMax2.Y() || theCMax1.Y() < theCMin2.Y())
         {
             return true; // No overlap on Y axis
         }
-        if (theCMin1.z() > theCMax2.z() || theCMax1.z() < theCMin2.z())
+        if (theCMin1.Z() > theCMax2.Z() || theCMax1.Z() < theCMin2.Z())
         {
             return true; // No overlap on Z axis
         }

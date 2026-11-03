@@ -1,3 +1,5 @@
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -27,14 +29,14 @@ public class IntTools_ShrunkRangeTests
         Assert.False(aSR.IsDone());
         Assert.False(aSR.IsSplittable());
         Assert.Equal(0.0, aSR.Length());
-        Assert.True(aSR.BndBox().IsVoid());
+        Assert.True(aSR.BndBox().IsVoid);
         Assert.Null(aSR.Context());
     }
 
     [Fact]
     public void StraightEdge()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         IntTools_ShrunkRange aSR = Perform(anEdge);
         Assert.True(aSR.IsDone());
         Assert.True(aSR.IsSplittable());
@@ -57,7 +59,7 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void CircularEdge()
     {
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
         IntTools_ShrunkRange aSR = Perform(anEdge);
         Assert.True(aSR.IsDone());
@@ -75,7 +77,7 @@ public class IntTools_ShrunkRangeTests
     {
         // a 1e-3 edge of tolerance 2.6e-4: the shrunk range is 1e-3 - 2 * (2.6e-4 + 1e-7) = 4.798e-4 long, less than
         // the 2 * TolE + 2 * Confusion = 5.202e-4 needed to split it once
-        BRepBuilderAPI_MakeEdge aMaker = new(new gp_Pnt(0, 0, 0), new gp_Pnt(1.0e-3, 0, 0));
+        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         TopoDS_Edge anEdge = aMaker.InternalEdge();
         new BRep_Builder().UpdateEdge(anEdge, 2.6e-4);
         IntTools_ShrunkRange aSR = Perform(anEdge);
@@ -88,7 +90,7 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void ShortEdgeWithSmallerTolerance_Splittable()
     {
-        BRepBuilderAPI_MakeEdge aMaker = new(new gp_Pnt(0, 0, 0), new gp_Pnt(1.0e-3, 0, 0));
+        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         TopoDS_Edge anEdge = aMaker.InternalEdge();
         new BRep_Builder().UpdateEdge(anEdge, 2.0e-4);
         IntTools_ShrunkRange aSR = Perform(anEdge);
@@ -99,19 +101,19 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void EdgeCoveredByItsVertices_NotDone()
     {
-        BRepBuilderAPI_MakeEdge aMaker = new(new gp_Pnt(0, 0, 0), new gp_Pnt(1.0e-3, 0, 0));
+        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         TopoDS_Edge anEdge = aMaker.InternalEdge();
         new BRep_Builder().UpdateEdge(anEdge, 6.0e-4);
         IntTools_ShrunkRange aSR = Perform(anEdge);
         Assert.False(aSR.IsDone());
         Assert.False(aSR.IsSplittable());
-        Assert.True(aSR.BndBox().IsVoid());
+        Assert.True(aSR.BndBox().IsVoid);
     }
 
     [Fact]
     public void TooShortRange_NotDone()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         TopExp.Vertices(anEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
         IntTools_ShrunkRange aSR = new();
         aSR.SetData(anEdge, 5.0, 5.0 + 1.0e-10, aV1, aV2);
@@ -122,7 +124,7 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void SetShrunkRange_AddsToTheBox()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         TopExp.Vertices(anEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
         IntTools_ShrunkRange aSR = new();
         aSR.SetData(anEdge, 0.0, 10.0, aV1, aV2);

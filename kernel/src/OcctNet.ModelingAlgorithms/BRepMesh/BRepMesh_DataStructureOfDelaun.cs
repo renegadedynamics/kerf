@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Collections;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
@@ -25,7 +29,7 @@ namespace Occt;
 ///   as the C++ <c>const BRepMesh_PairOfIndex&amp;</c> does.</item>
 /// </list>
 /// </remarks>
-public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
+public sealed class BRepMesh_DataStructureOfDelaun : Transient
 {
     private readonly BRepMesh_VertexTool myNodes;
     private readonly NCollection_DataMap<int, LinkedListOfInteger> myNodeLinks;
@@ -568,15 +572,15 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
                 int aNodesNb = theMeshData.NbNodes();
                 for (int i = 1; i <= aNodesNb; ++i)
                 {
-                    gp_XY aNode = theMeshData.GetNode(i).Coord();
-                    gp_Pnt aPnt = new(aNode.X(), aNode.Y(), 0.0);
+                    Xy aNode = theMeshData.GetNode(i).Coord();
+                    Point3D aPnt = new(aNode.X(), aNode.Y(), 0.0);
                     aBuilder.Add(aMesh, new BRepBuilderAPI_MakeVertex(aPnt).Shape());
                 }
             }
             else
             {
                 NCollection_PackedMapOfInteger.Iterator aLinksIt = new(theMeshData.LinksOfDomain());
-                Span<gp_Pnt> aPnt = stackalloc gp_Pnt[2];
+                Span<Point3D> aPnt = stackalloc Point3D[2];
                 for (; aLinksIt.More(); aLinksIt.Next())
                 {
                     BRepMesh_Edge aLink = theMeshData.GetLink(aLinksIt.Key());
@@ -584,11 +588,11 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
                     {
                         int aNodeId = (i == 0) ? aLink.FirstNode() : aLink.LastNode();
 
-                        gp_XY aNode = theMeshData.GetNode(aNodeId).Coord();
-                        aPnt[i] = new gp_Pnt(aNode.X(), aNode.Y(), 0.0);
+                        Xy aNode = theMeshData.GetNode(aNodeId).Coord();
+                        aPnt[i] = new Point3D(aNode.X(), aNode.Y(), 0.0);
                     }
 
-                    if (aPnt[0].SquareDistance(aPnt[1]) < Precision.SquareConfusion())
+                    if (aPnt[0].SquareDistance(aPnt[1]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         continue;
                     }
@@ -602,7 +606,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
                 return "Error: write failed";
             }
         }
-        catch (Standard_Failure anException)
+        catch (FailureException anException)
         {
             return anException.Message;
         }
@@ -635,11 +639,11 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
         /// <summary>Whether the list is empty.</summary>
         public bool IsEmpty() => myFirst is null;
 
-        /// <summary>The first item; throws <see cref="Standard_NoSuchObject"/> on an empty list.</summary>
-        public int First() => myFirst is not null ? myFirst.Value : throw new Standard_NoSuchObject("NCollection_List::First");
+        /// <summary>The first item; throws <see cref="NoSuchObjectException"/> on an empty list.</summary>
+        public int First() => myFirst is not null ? myFirst.Value : throw new NoSuchObjectException("NCollection_List::First");
 
-        /// <summary>The last item; throws <see cref="Standard_NoSuchObject"/> on an empty list.</summary>
-        public int Last() => myLast is not null ? myLast.Value : throw new Standard_NoSuchObject("NCollection_List::Last");
+        /// <summary>The last item; throws <see cref="NoSuchObjectException"/> on an empty list.</summary>
+        public int Last() => myLast is not null ? myLast.Value : throw new NoSuchObjectException("NCollection_List::Last");
 
         /// <summary>Appends an item.</summary>
         public void Append(int theItem)
@@ -783,7 +787,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
 
         private void ReSize(long N)
         {
-            long newBuck = NCollection_Primes.NextPrimeForMap(N);
+            long newBuck = Primes.NextPrimeForMap(N);
             if (newBuck <= myNbBuckets)
             {
                 if (myData1 is null)
@@ -881,7 +885,7 @@ public sealed class BRepMesh_DataStructureOfDelaun : Standard_Transient
             {
                 if (aNode.Index != theIndex)
                 {
-                    throw new Standard_DomainError("NCollection_IndexedDataMap::Substitute : Attempt to substitute existing key");
+                    throw new DomainErrorException("NCollection_IndexedDataMap::Substitute : Attempt to substitute existing key");
                 }
 
                 aNode.Key = theKey1;

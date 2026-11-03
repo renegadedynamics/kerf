@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.MAT_Side;
 
 namespace Occt;
@@ -11,7 +12,7 @@ namespace Occt;
 /// its neighbours on each side at each node.</summary>
 /// <remarks>OCCT keeps the neighbouring arcs as raw pointers; the port keeps references. The setters are internal.
 /// </remarks>
-public sealed class MAT_Arc : Standard_Transient
+public sealed class MAT_Arc : Transient
 {
     private int arcIndex;
     private int geomIndex;
@@ -65,7 +66,7 @@ public sealed class MAT_Arc : Standard_Transient
         }
         else
         {
-            throw new Standard_DomainError("MAT_Arc::TheOtherNode");
+            throw new DomainErrorException("MAT_Arc::TheOtherNode");
         }
     }
 
@@ -94,7 +95,7 @@ public sealed class MAT_Arc : Standard_Transient
                 return secondArcRight is not null;
             }
         }
-        throw new Standard_DomainError("MAT_Arc::HasNeighbour");
+        throw new DomainErrorException("MAT_Arc::HasNeighbour");
     }
 
     /// <summary>The neighbour of the arc on aSide at aNode (null if none).</summary>
@@ -122,7 +123,7 @@ public sealed class MAT_Arc : Standard_Transient
                 return secondArcRight;
             }
         }
-        throw new Standard_DomainError("MAT_Arc::Neighbour");
+        throw new DomainErrorException("MAT_Arc::Neighbour");
     }
 
     internal void SetIndex(int anInteger) => arcIndex = anInteger;
@@ -175,7 +176,7 @@ public sealed class MAT_Arc : Standard_Transient
             }
             else
             {
-                throw new Standard_DomainError("MAT_Arc::SetNeighbour");
+                throw new DomainErrorException("MAT_Arc::SetNeighbour");
             }
         }
         else
@@ -190,7 +191,7 @@ public sealed class MAT_Arc : Standard_Transient
             }
             else
             {
-                throw new Standard_DomainError("MAT_Arc::SetNeighbour");
+                throw new DomainErrorException("MAT_Arc::SetNeighbour");
             }
         }
     }

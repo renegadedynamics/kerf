@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.GeomFill_PipeError;
 using static Occt.GeomFill_Trihedron;
@@ -16,12 +20,12 @@ public class GeomFill_SweepTests
 {
     private static Geom_BSplineCurve Path3d(double theWiggle = 2.0)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 5);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(10, theWiggle, 1);
-        aPoles[3] = new gp_Pnt(20, -theWiggle, 2);
-        aPoles[4] = new gp_Pnt(30, theWiggle, 0.5);
-        aPoles[5] = new gp_Pnt(40, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 5);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(10, theWiggle, 1);
+        aPoles[3] = new Point3D(20, -theWiggle, 2);
+        aPoles[4] = new Point3D(30, theWiggle, 0.5);
+        aPoles[5] = new Point3D(40, 0, 0);
         NCollection_Array1<double> aK = new(1, 3);
         NCollection_Array1<int> aM = new(1, 3);
         aK[1] = 0;
@@ -34,11 +38,11 @@ public class GeomFill_SweepTests
 
     private static Geom_BSplineCurve ConvexPlanarPath()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 5);
+        NCollection_Array1<Point3D> aPoles = new(1, 5);
         for (int i = 1; i <= 5; i++)
         {
             double anA = 0.3 * (i - 1);
-            aPoles[i] = new gp_Pnt(20 * Math.Sin(anA), 20 - 20 * Math.Cos(anA), 0);
+            aPoles[i] = new Point3D(20 * Math.Sin(anA), 20 - 20 * Math.Cos(anA), 0);
         }
         NCollection_Array1<double> aK = new(1, 2);
         NCollection_Array1<int> aM = new(1, 2);
@@ -50,17 +54,17 @@ public class GeomFill_SweepTests
 
     private static Geom_Circle CircleAtStart(Geom_Curve thePath, double theRadius)
     {
-        thePath.D1(thePath.FirstParameter(), out gp_Pnt aP, out gp_Vec aT);
-        return new Geom_Circle(new gp_Ax2(aP, new gp_Dir(aT)), theRadius);
+        thePath.D1(thePath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        return new Geom_Circle(new Frame3D(aP, new Direction3D(aT)), theRadius);
     }
 
-    private static Geom_BSplineCurve OpenSection(gp_Pnt theCentre)
+    private static Geom_BSplineCurve OpenSection(Point3D theCentre)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = theCentre.Translated(new gp_Vec(0, -1, 0));
-        aPoles[2] = theCentre.Translated(new gp_Vec(0, -0.3, 1));
-        aPoles[3] = theCentre.Translated(new gp_Vec(0, 0.3, 1));
-        aPoles[4] = theCentre.Translated(new gp_Vec(0, 1, 0));
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = theCentre.Translated(new Vector3D(0, -1, 0));
+        aPoles[2] = theCentre.Translated(new Vector3D(0, -0.3, 1));
+        aPoles[3] = theCentre.Translated(new Vector3D(0, 0.3, 1));
+        aPoles[4] = theCentre.Translated(new Vector3D(0, 1, 0));
         NCollection_Array1<double> aK = new(1, 2);
         NCollection_Array1<int> aM = new(1, 2);
         aK[1] = 0;
@@ -79,43 +83,43 @@ public class GeomFill_SweepTests
         Geom_BSplineCurve aPath = Path3d();
         GeomFill_CurveAndTrihedron aLoc = new(new GeomFill_Frenet());
         aLoc.SetCurve(new GeomAdaptor_Curve(aPath));
-        Geom_BSplineCurve aSect = OpenSection(new gp_Pnt(0, 0, 0));
+        Geom_BSplineCurve aSect = OpenSection(new Point3D(0, 0, 0));
         GeomFill_UniformSection aSec = new(aSect, 0, 2);
         GeomFill_SweepFunction aF = new(aSec, aLoc, 0, 0, 1);
         aF.SectionShape(out int aNb, out _, out _);
-        NCollection_Array1<gp_Pnt> aP = new(1, aNb), aP0 = new(1, aNb);
-        NCollection_Array1<gp_Vec> aD = new(1, aNb), aD2 = new(1, aNb);
+        NCollection_Array1<Point3D> aP = new(1, aNb), aP0 = new(1, aNb);
+        NCollection_Array1<Vector3D> aD = new(1, aNb), aD2 = new(1, aNb);
         NCollection_Array1<double> aW = new(1, aNb), aDW = new(1, aNb), aD2W = new(1, aNb);
-        NCollection_Array1<gp_Pnt2d> aP2 = new(1, 1);
-        NCollection_Array1<gp_Vec2d> aV2 = new(1, 1), aV22 = new(1, 1);
+        NCollection_Array1<Point2D> aP2 = new(1, 1);
+        NCollection_Array1<Vector2D> aV2 = new(1, 1), aV22 = new(1, 1);
         double v = 0.7, h = 1e-6;
 
         Assert.True(aF.D0(v, 0, 2, aP, aP2, aW));
-        gp_Mat M = new();
-        gp_Vec V = new();
+        Matrix3x3 M = new();
+        Vector3D V = new();
         aLoc.D0(v, ref M, ref V);
         for (int i = 1; i <= aNb; i++)
         {
-            gp_XYZ aXYZ = M * aSect.Pole(i).XYZ() + V.XYZ();
-            Assert.True(new gp_Pnt(aXYZ).Distance(aP[i]) < 1e-12);
+            Xyz aXYZ = M * aSect.Pole(i).XYZ() + V.XYZ();
+            Assert.True(new Point3D(aXYZ).Distance(aP[i]) < 1e-12);
         }
 
         // D1 and D2 against central differences
-        NCollection_Array1<gp_Pnt> aPm = new(1, aNb), aPp = new(1, aNb);
-        NCollection_Array1<gp_Vec> aDm = new(1, aNb), aDp = new(1, aNb);
+        NCollection_Array1<Point3D> aPm = new(1, aNb), aPp = new(1, aNb);
+        NCollection_Array1<Vector3D> aDm = new(1, aNb), aDp = new(1, aNb);
         aF.D1(v - h, 0, 2, aPm, aDm, aP2, aV2, aW, aDW);
         aF.D1(v + h, 0, 2, aPp, aDp, aP2, aV2, aW, aDW);
         Assert.True(aF.D2(v, 0, 2, aP0, aD, aD2, aP2, aV2, aV22, aW, aDW, aD2W));
         for (int i = 1; i <= aNb; i++)
         {
-            gp_Vec aFD = new gp_Vec(aPm[i], aPp[i]) / (2 * h);
+            Vector3D aFD = new Vector3D(aPm[i], aPp[i]) / (2 * h);
             Assert.True((aFD - aD[i]).Magnitude() < 1e-5 * (1 + aD[i].Magnitude()));
-            gp_Vec aFD2 = (aDp[i] - aDm[i]) / (2 * h);
+            Vector3D aFD2 = (aDp[i] - aDm[i]) / (2 * h);
             Assert.True((aFD2 - aD2[i]).Magnitude() < 1e-3 * (1 + aD2[i].Magnitude()));
         }
 
         // a constant section: the location's intervals
-        Assert.Equal(aLoc.NbIntervals(GeomAbs_C2), aF.NbIntervals(GeomAbs_C2));
+        Assert.Equal(aLoc.NbIntervals(C2), aF.NbIntervals(C2));
         Assert.Equal(0, aF.Nb2dCurves());
         Assert.False(aF.IsRational());
     }
@@ -128,7 +132,7 @@ public class GeomFill_SweepTests
     public void Sweep_recognises_elementary_surfaces()
     {
         // a straight path and a circle: a cylinder
-        Geom_TrimmedCurve aLine = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 10);
+        Geom_TrimmedCurve aLine = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10);
         GeomFill_Pipe aPipe = new(aLine, CircleAtStart(aLine, 2), GeomFill_IsCorrectedFrenet);
         aPipe.Perform(1e-4, false);
         Assert.True(aPipe.IsDone());
@@ -137,7 +141,7 @@ public class GeomFill_SweepTests
         Assert.Equal(0.0, aPipe.ErrorOnSurf());
 
         // a circular path and a circle off the axis: a torus, with the sections as u-isos
-        Geom_TrimmedCurve anArc = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 8), 0, 2);
+        Geom_TrimmedCurve anArc = new(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 8), 0, 2);
         aPipe = new GeomFill_Pipe(anArc, CircleAtStart(anArc, 1.5), GeomFill_IsCorrectedFrenet);
         aPipe.Perform(1e-4, false);
         Assert.True(aPipe.IsDone());
@@ -146,7 +150,7 @@ public class GeomFill_SweepTests
         Assert.IsType<Geom_ToroidalSurface>(aTor.BasisSurface());
 
         // a straight path and an ellipse: an extrusion
-        Geom_Ellipse anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 3, 1);
+        Geom_Ellipse anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3, 1);
         aPipe = new GeomFill_Pipe(aLine, anEllipse, GeomFill_IsCorrectedFrenet);
         aPipe.Perform(1e-4, false);
         var anExt = Assert.IsType<Geom_RectangularTrimmedSurface>(aPipe.Surface());
@@ -167,29 +171,29 @@ public class GeomFill_SweepTests
         aPath.Freeze();
         GeomFill_CurveAndTrihedron aLoc = new(new GeomFill_CorrectedFrenet());
         aLoc.SetCurve(new GeomAdaptor_Curve(aPath));
-        Geom_BSplineCurve aSect = OpenSection(new gp_Pnt(0, 0, 0));
+        Geom_BSplineCurve aSect = OpenSection(new Point3D(0, 0, 0));
         aSect.Freeze();
         Law_Linear aLaw = new();
         aLaw.Set(0, 1, 2, 2);
         GeomFill_Sweep aSweep = new(aLoc);
-        aSweep.Build(new GeomFill_EvolvedSection(aSect, aLaw), GeomFill_Location, GeomAbs_C2, 10, 30);
+        aSweep.Build(new GeomFill_EvolvedSection(aSect, aLaw), GeomFill_Location, C2, 10, 30);
         Assert.True(aSweep.IsDone());
-        Assert.False(aSweep.InternalSurface()!.IsFrozen());
+        Assert.False(aSweep.InternalSurface()!.IsFrozen);
         Geom_Surface aS = aSweep.Surface()!;
-        Assert.True(aS.IsFrozen());
+        Assert.True(aS.IsFrozen);
         Assert.Same(aS, aSweep.Surface());
-        Assert.True(aSweep.Restriction(true)!.IsFrozen());
-        Assert.True(aSweep.Restriction(false)!.IsFrozen());
+        Assert.True(aSweep.Restriction(true)!.IsFrozen);
+        Assert.True(aSweep.Restriction(false)!.IsFrozen);
         Assert.Equal(0, aSweep.NumberOfTrace());
-        Assert.Throws<Standard_OutOfRange>(() => aSweep.Trace(1));
-        Assert.Throws<Standard_OutOfRange>(() => aSweep.ErrorOnTrace(1, out _, out _));
+        Assert.Throws<OutOfRangeException>(() => aSweep.Trace(1));
+        Assert.Throws<OutOfRangeException>(() => aSweep.ErrorOnTrace(1, out _, out _));
         aSweep.ErrorOnRestriction(true, out double aU, out double aV);
         Assert.Equal(0.0, aU);
         Assert.Equal(0.0, aV);
 
         // the surface's iso-v at the start is the scaled section placed at the path's start
         aS.Bounds(out double u1, out double u2, out double v1, out _);
-        gp_Pnt aP0 = aS.Value(u1, v1);
+        Point3D aP0 = aS.Value(u1, v1);
         Assert.True(aP0.Distance(aPath.Value(0)) < 5);
         Assert.True(aSweep.ErrorOnSurface() < 1e-4);
         Assert.True(u2 > u1);
@@ -202,29 +206,29 @@ public class GeomFill_SweepTests
     [Fact]
     public void EvolvedSection_scales_the_section_by_the_law()
     {
-        Geom_BSplineCurve aSect = OpenSection(new gp_Pnt(1, 2, 3));
+        Geom_BSplineCurve aSect = OpenSection(new Point3D(1, 2, 3));
         Law_S aLaw = new();
         aLaw.Set(0, 1, 3, 2);
         GeomFill_EvolvedSection aSec = new(aSect, aLaw);
         aSec.SectionShape(out int aNb, out int aNbK, out int aDeg);
         Assert.Equal((4, 2, 3), (aNb, aNbK, aDeg));
-        NCollection_Array1<gp_Pnt> aP = new(1, aNb);
-        NCollection_Array1<gp_Vec> aD = new(1, aNb), aD2 = new(1, aNb);
+        NCollection_Array1<Point3D> aP = new(1, aNb);
+        NCollection_Array1<Vector3D> aD = new(1, aNb), aD2 = new(1, aNb);
         NCollection_Array1<double> aW = new(1, aNb), aDW = new(1, aNb), aD2W = new(1, aNb);
         Assert.True(aSec.D2(1.3, aP, aD, aD2, aW, aDW, aD2W));
         aLaw.D2(1.3, out double f, out double df, out double d2f);
         for (int i = 1; i <= aNb; i++)
         {
-            Assert.True(aP[i].Distance(new gp_Pnt(aSect.Pole(i).XYZ() * f)) < 1e-12);
-            Assert.True((aD[i] - new gp_Vec(aSect.Pole(i).XYZ() * df)).Magnitude() < 1e-12);
-            Assert.True((aD2[i] - new gp_Vec(aSect.Pole(i).XYZ() * d2f)).Magnitude() < 1e-12);
+            Assert.True(aP[i].Distance(new Point3D(aSect.Pole(i).XYZ() * f)) < 1e-12);
+            Assert.True((aD[i] - new Vector3D(aSect.Pole(i).XYZ() * df)).Magnitude() < 1e-12);
+            Assert.True((aD2[i] - new Vector3D(aSect.Pole(i).XYZ() * d2f)).Magnitude() < 1e-12);
             Assert.Equal(0.0, aDW[i]);
         }
         Assert.False(aSec.IsVPeriodic());
         Assert.Null(aSec.BSplineSurface());
         double anErr = 1;
         Assert.False(aSec.IsConstant(ref anErr));
-        Assert.Throws<StdFail_NotDone>(() => aSec.ConstantSection());
+        Assert.Throws<NotDoneException>(() => aSec.ConstantSection());
         aSec.GetDomain(out double d1, out double d2);
         Assert.Equal((0.0, 3.0), (d1, d2));
         aSec.SetInterval(1, 2);
@@ -233,7 +237,7 @@ public class GeomFill_SweepTests
         Assert.True(aSec.MaximalSection() > 0);
 
         // a non-B-spline section is converted; the caller's curve is kept as it was
-        Geom_Circle aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
+        Geom_Circle aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         aCircle.Freeze();
         GeomFill_EvolvedSection aSec2 = new(aCircle, aLaw);
         Assert.True(aSec2.IsRational());
@@ -249,8 +253,8 @@ public class GeomFill_SweepTests
     public void NSections_reparametrises_a_copy_of_the_callers_curves()
     {
         // OCCT calls SetKnots on the caller's B-spline sections; the port reparametrises copies (decisions.md)
-        Geom_BSplineCurve aS1 = OpenSection(new gp_Pnt(0, 0, 0));
-        Geom_BSplineCurve aS2 = OpenSection(new gp_Pnt(5, 0, 0));
+        Geom_BSplineCurve aS1 = OpenSection(new Point3D(0, 0, 0));
+        Geom_BSplineCurve aS2 = OpenSection(new Point3D(5, 0, 0));
         aS1.Freeze();
         NCollection_Sequence<Geom_Curve> aSeq = new();
         aSeq.Append(aS1);
@@ -264,7 +268,7 @@ public class GeomFill_SweepTests
         Assert.Same(aS1, aSeq[1]);
 
         Geom_BSplineSurface aSurf = aLaw.BSplineSurface()!;
-        Assert.True(aSurf.IsFrozen());
+        Assert.True(aSurf.IsFrozen);
         Assert.Same(aSurf, aLaw.InternalBSplineSurface());
         aSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 10.0, 0.0, 1.0), (u1, u2, v1, v2));
@@ -272,8 +276,8 @@ public class GeomFill_SweepTests
 
         // the sections are the v-isos at their parameters
         aLaw.SectionShape(out int aNb, out _, out _);
-        NCollection_Array1<gp_Pnt> aP = new(1, aNb), aPm = new(1, aNb), aPp = new(1, aNb);
-        NCollection_Array1<gp_Vec> aD = new(1, aNb), aD2 = new(1, aNb), aDm = new(1, aNb), aDp = new(1, aNb);
+        NCollection_Array1<Point3D> aP = new(1, aNb), aPm = new(1, aNb), aPp = new(1, aNb);
+        NCollection_Array1<Vector3D> aD = new(1, aNb), aD2 = new(1, aNb), aDm = new(1, aNb), aDp = new(1, aNb);
         NCollection_Array1<double> aW = new(1, aNb), aDW = new(1, aNb), aD2W = new(1, aNb);
         Assert.True(aLaw.D0(0, aP, aW));
         Assert.True(aSurf.Value(5, 0).Distance(aS1.Value(0.5)) < 1e-5);
@@ -285,7 +289,7 @@ public class GeomFill_SweepTests
         Assert.True(aLaw.D2(v, aP, aD, aD2, aW, aDW, aD2W));
         for (int i = 1; i <= aNb; i++)
         {
-            Assert.True((new gp_Vec(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-5 * (1 + aD[i].Magnitude()));
+            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-5 * (1 + aD[i].Magnitude()));
             Assert.True(((aDp[i] - aDm[i]) / (2 * h) - aD2[i]).Magnitude() < 1e-3 * (1 + aD2[i].Magnitude()));
         }
     }
@@ -293,10 +297,10 @@ public class GeomFill_SweepTests
     [Fact]
     public void NSections_recognises_constant_and_conical_laws()
     {
-        gp_Ax2 anAx = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         NCollection_Sequence<Geom_Curve> aSeq = new();
         aSeq.Append(new Geom_Circle(anAx, 2));
-        aSeq.Append(new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 5)), 2));
+        aSeq.Append(new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 5)), 2));
         NCollection_Sequence<double> aPar = new();
         aPar.Append(0);
         aPar.Append(5);
@@ -310,39 +314,39 @@ public class GeomFill_SweepTests
         Geom_Curve aConst = aLaw.ConstantSection();
         Assert.NotSame(aSeq[1], aConst);
 
-        aSeq[2] = new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 5)), 4);
+        aSeq[2] = new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 5)), 4);
         aLaw = new GeomFill_NSections(aSeq, aPar, 0, 2 * M_PI, 0, 5);
         Assert.False(aLaw.IsConstant(ref anErr));
         Assert.True(aLaw.IsConicalLaw(ref anErr));
         Assert.Equal(3.0, ((Geom_Circle)aLaw.CirclSection(2.5)).Radius(), 1e-12);
 
         // three sections: neither
-        aSeq.Append(new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 9)), 1));
+        aSeq.Append(new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 9)), 1));
         aPar.Append(9);
         aLaw = new GeomFill_NSections(aSeq, aPar, 0, 2 * M_PI, 0, 9);
         Assert.False(aLaw.IsConicalLaw(ref anErr));
-        Assert.Throws<StdFail_NotDone>(() => aLaw.CirclSection(1));
+        Assert.Throws<NotDoneException>(() => aLaw.CirclSection(1));
     }
 
     [Fact]
     public void NSections_cuts_a_reference_surface()
     {
         NCollection_Sequence<Geom_Curve> aSeq = new();
-        aSeq.Append(OpenSection(new gp_Pnt(0, 0, 0)));
-        aSeq.Append(OpenSection(new gp_Pnt(5, 0, 0)));
+        aSeq.Append(OpenSection(new Point3D(0, 0, 0)));
+        aSeq.Append(OpenSection(new Point3D(5, 0, 0)));
         NCollection_Sequence<double> aPar = new();
         aPar.Append(0);
         aPar.Append(1);
         GeomFill_NSections aFirst = new(aSeq, aPar, 0, 1, 0, 1);
         Geom_BSplineSurface aRef = aFirst.BSplineSurface()!;
-        NCollection_Sequence<gp_Trsf> aTrsfs = new();
+        NCollection_Sequence<Transform3D> aTrsfs = new();
         GeomFill_NSections aCut = new(aSeq, aTrsfs, aPar, 0.25, 0.75, 0, 1, aRef);
         Geom_BSplineSurface aS = aCut.BSplineSurface()!;
         aS.Bounds(out double u1, out double u2, out _, out _);
         Assert.Equal(0.25, u1, 1e-12);
         Assert.Equal(0.75, u2, 1e-12);
         Assert.NotSame(aRef, aS);
-        Assert.True(aRef.IsFrozen());
+        Assert.True(aRef.IsFrozen);
     }
 
     //==================================================================================================
@@ -350,14 +354,14 @@ public class GeomFill_SweepTests
     //==================================================================================================
 
     [Theory]
-    [InlineData(Convert_QuasiAngular, 0.5)]
-    [InlineData(Convert_QuasiAngular, 4.0)]
-    [InlineData(Convert_Polynomial, 1.0)]
-    [InlineData(Convert_TgtThetaOver2, 1.0)]
-    [InlineData(Convert_TgtThetaOver2, 4.5)] // GetCircle's angles are in ]-pi/2, 3pi/2]
-    public void GetCircle_gives_the_arc_and_its_derivatives(Convert_ParameterisationType theConv, double theAngle)
+    [InlineData(QuasiAngular, 0.5)]
+    [InlineData(QuasiAngular, 4.0)]
+    [InlineData(Polynomial, 1.0)]
+    [InlineData(TgtThetaOver2, 1.0)]
+    [InlineData(TgtThetaOver2, 4.5)] // GetCircle's angles are in ]-pi/2, 3pi/2]
+    public void GetCircle_gives_the_arc_and_its_derivatives(ParameterisationType theConv, double theAngle)
     {
-        Convert_ParameterisationType aConv = theConv;
+        ParameterisationType aConv = theConv;
         GeomFill.GetShape(theAngle, out int aNbP, out int aNbK, out int aDeg, ref aConv);
         NCollection_Array1<double> aK = new(1, aNbK);
         NCollection_Array1<int> aM = new(1, aNbK);
@@ -365,16 +369,16 @@ public class GeomFill_SweepTests
         GeomFill.Mults(aConv, aM);
 
         double aR = 2;
-        gp_Pnt aC = new(1, 2, 3);
-        gp_Dir aN = new(0.1, 0.2, 1);
-        gp_Ax2 anAx = new(aC, aN);
-        gp_Vec aX = new(anAx.XDirection()), aY = new(anAx.YDirection());
+        Point3D aC = new(1, 2, 3);
+        Direction3D aN = new(0.1, 0.2, 1);
+        Frame3D anAx = new(aC, aN);
+        Vector3D aX = new(anAx.XDirection()), aY = new(anAx.YDirection());
 
         // the arc of theAngle at time t, its first point turning with t
-        void Arc(double t, out gp_Vec ns1, out gp_Vec ns2, out gp_Pnt P1, out gp_Pnt P2)
+        void Arc(double t, out Vector3D ns1, out Vector3D ns2, out Point3D P1, out Point3D P2)
         {
-            gp_Vec u1 = aX * Math.Cos(t) + aY * Math.Sin(t);
-            gp_Vec u2 = aX * Math.Cos(t + theAngle) + aY * Math.Sin(t + theAngle);
+            Vector3D u1 = aX * Math.Cos(t) + aY * Math.Sin(t);
+            Vector3D u2 = aX * Math.Cos(t + theAngle) + aY * Math.Sin(t + theAngle);
             // GetCircle's "normals" run from the centre to the ends: it builds the interior poles as
             // pts1 + R ((cos a - 1) ns1 + sin a (nplan ^ ns1))
             ns1 = u1;
@@ -384,42 +388,42 @@ public class GeomFill_SweepTests
         }
 
         double t0 = 0.3, h = 1e-6;
-        Arc(t0, out gp_Vec n1, out gp_Vec n2, out gp_Pnt p1, out gp_Pnt p2);
-        NCollection_Array1<gp_Pnt> aP = new(1, aNbP);
+        Arc(t0, out Vector3D n1, out Vector3D n2, out Point3D p1, out Point3D p2);
+        NCollection_Array1<Point3D> aP = new(1, aNbP);
         NCollection_Array1<double> aW = new(1, aNbP);
-        GeomFill.GetCircle(aConv, n1, n2, new gp_Vec(aN), p1, p2, aR, aC, aP, aW);
+        GeomFill.GetCircle(aConv, n1, n2, new Vector3D(aN), p1, p2, aR, aC, aP, aW);
         Geom_BSplineCurve anArc = new(aP, aW, aK, aM, aDeg);
         for (int i = 0; i <= 10; i++)
         {
             double u = anArc.FirstParameter() + (anArc.LastParameter() - anArc.FirstParameter()) * i / 10;
             // exact for the rational conversions; the polynomial one approximates the circle
-            Assert.Equal(aR, anArc.Value(u).Distance(aC), theConv == Convert_Polynomial ? 1e-6 : 1e-9);
+            Assert.Equal(aR, anArc.Value(u).Distance(aC), theConv == Polynomial ? 1e-6 : 1e-9);
         }
         Assert.True(anArc.StartPoint().Distance(p1) < 1e-9);
         Assert.True(anArc.EndPoint().Distance(p2) < 1e-9);
 
         // the first derivatives against differences: the arc turns about the normal at unit speed
-        Arc(t0 - h, out gp_Vec m1, out gp_Vec m2, out gp_Pnt q1m, out gp_Pnt q2m);
-        Arc(t0 + h, out gp_Vec pl1, out gp_Vec pl2, out gp_Pnt q1p, out gp_Pnt q2p);
-        gp_Vec dn1 = (pl1 - m1) / (2 * h), dn2 = (pl2 - m2) / (2 * h);
-        gp_Vec t1 = new gp_Vec(q1m, q1p) / (2 * h), t2 = new gp_Vec(q2m, q2p) / (2 * h);
-        NCollection_Array1<gp_Vec> aD = new(1, aNbP);
+        Arc(t0 - h, out Vector3D m1, out Vector3D m2, out Point3D q1m, out Point3D q2m);
+        Arc(t0 + h, out Vector3D pl1, out Vector3D pl2, out Point3D q1p, out Point3D q2p);
+        Vector3D dn1 = (pl1 - m1) / (2 * h), dn2 = (pl2 - m2) / (2 * h);
+        Vector3D t1 = new Vector3D(q1m, q1p) / (2 * h), t2 = new Vector3D(q2m, q2p) / (2 * h);
+        NCollection_Array1<Vector3D> aD = new(1, aNbP);
         NCollection_Array1<double> aDW = new(1, aNbP);
-        Assert.True(GeomFill.GetCircle(aConv, n1, n2, dn1, dn2, new gp_Vec(aN), new gp_Vec(0, 0, 0), p1, p2, t1, t2, aR,
-                                       0, aC, new gp_Vec(0, 0, 0), aP, aD, aW, aDW));
-        NCollection_Array1<gp_Pnt> aPm = new(1, aNbP), aPp = new(1, aNbP);
+        Assert.True(GeomFill.GetCircle(aConv, n1, n2, dn1, dn2, new Vector3D(aN), new Vector3D(0, 0, 0), p1, p2, t1, t2, aR,
+                                       0, aC, new Vector3D(0, 0, 0), aP, aD, aW, aDW));
+        NCollection_Array1<Point3D> aPm = new(1, aNbP), aPp = new(1, aNbP);
         NCollection_Array1<double> aWm = new(1, aNbP), aWp = new(1, aNbP);
-        GeomFill.GetCircle(aConv, m1, m2, new gp_Vec(aN), q1m, q2m, aR, aC, aPm, aWm);
-        GeomFill.GetCircle(aConv, pl1, pl2, new gp_Vec(aN), q1p, q2p, aR, aC, aPp, aWp);
+        GeomFill.GetCircle(aConv, m1, m2, new Vector3D(aN), q1m, q2m, aR, aC, aPm, aWm);
+        GeomFill.GetCircle(aConv, pl1, pl2, new Vector3D(aN), q1p, q2p, aR, aC, aPp, aWp);
         for (int i = 1; i <= aNbP; i++)
         {
-            Assert.True((new gp_Vec(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-4);
+            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-4);
             Assert.Equal((aWp[i] - aWm[i]) / (2 * h), aDW[i], 1e-4);
         }
 
         Assert.True(GeomFill.GetTolerance(aConv, 0.5, aR, 0.01, 1e-4) > 0);
         NCollection_Array1<double> aMinW = new(1, aNbP);
-        if (aConv != Convert_TgtThetaOver2_3 || aNbP == 7)
+        if (aConv != TgtThetaOver2_3 || aNbP == 7)
         {
             GeomFill.GetMinimalWeights(aConv, 0.2, theAngle, aMinW);
             for (int i = 1; i <= aNbP; i++)
@@ -440,38 +444,38 @@ public class GeomFill_SweepTests
         Assert.False(aP.Initialized());
         aP.Init();
         Assert.True(aP.Initialized());
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 8);
-        aP.Section(new gp_Pnt(1, 0, 0), new gp_Pnt(0, 0, 0), new gp_Vec(0, 0, 1), M_PI / 2, aPoles);
-        Assert.True(aPoles[1].Distance(new gp_Pnt(1, 0, 0)) < 1e-12);
-        Assert.True(aPoles[8].Distance(new gp_Pnt(0, 1, 0)) < 1e-12);
+        NCollection_Array1<Point3D> aPoles = new(1, 8);
+        aP.Section(new Point3D(1, 0, 0), new Point3D(0, 0, 0), new Vector3D(0, 0, 1), M_PI / 2, aPoles);
+        Assert.True(aPoles[1].Distance(new Point3D(1, 0, 0)) < 1e-12);
+        Assert.True(aPoles[8].Distance(new Point3D(0, 1, 0)) < 1e-12);
     }
 
     [Fact]
     public void Surface_rules_between_two_curves()
     {
         // two parallel segments: a plane
-        Geom_TrimmedCurve aL1 = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 4);
-        Geom_TrimmedCurve aL2 = new(new Geom_Line(new gp_Pnt(0, 3, 0), new gp_Dir(1, 0, 0)), 0, 4);
+        Geom_TrimmedCurve aL1 = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 4);
+        Geom_TrimmedCurve aL2 = new(new Geom_Line(new Point3D(0, 3, 0), new Direction3D(1, 0, 0)), 0, 4);
         var aPlane = Assert.IsType<Geom_RectangularTrimmedSurface>(GeomFill.Surface(aL1, aL2));
         Assert.IsType<Geom_Plane>(aPlane.BasisSurface());
-        Assert.True(aPlane.IsFrozen());
+        Assert.True(aPlane.IsFrozen);
 
         // coaxial circles: a cylinder, a cone
-        gp_Ax2 anAx = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_Circle aC1 = new(anAx, 2);
-        var aCyl = (Geom_RectangularTrimmedSurface)GeomFill.Surface(aC1, new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 3)), 2))!;
+        var aCyl = (Geom_RectangularTrimmedSurface)GeomFill.Surface(aC1, new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 3)), 2))!;
         Assert.IsType<Geom_CylindricalSurface>(aCyl.BasisSurface());
-        var aCone = (Geom_RectangularTrimmedSurface)GeomFill.Surface(aC1, new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 3)), 3))!;
+        var aCone = (Geom_RectangularTrimmedSurface)GeomFill.Surface(aC1, new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 3)), 3))!;
         Assert.IsType<Geom_ConicalSurface>(aCone.BasisSurface());
         aCone.Bounds(out _, out _, out double aV1, out double aV2);
-        gp_Pnt aTop = aCone.Value(0, Math.Abs(aV1) > Math.Abs(aV2) ? aV1 : aV2);
+        Point3D aTop = aCone.Value(0, Math.Abs(aV1) > Math.Abs(aV2) ? aV1 : aV2);
         Assert.Equal(3.0, aTop.Z(), 1e-9);
-        Assert.Equal(3.0, new gp_Pnt(aTop.X(), aTop.Y(), 0).Distance(new gp_Pnt(0, 0, 0)), 1e-9);
+        Assert.Equal(3.0, new Point3D(aTop.X(), aTop.Y(), 0).Distance(new Point3D(0, 0, 0)), 1e-9);
 
         // otherwise: GeomFill_Generator's B-spline surface
-        Geom_Surface aRuled = GeomFill.Surface(Path3d(), OpenSection(new gp_Pnt(0, 5, 0)))!;
+        Geom_Surface aRuled = GeomFill.Surface(Path3d(), OpenSection(new Point3D(0, 5, 0)))!;
         Assert.IsType<Geom_BSplineSurface>(aRuled);
-        Assert.True(aRuled.IsFrozen());
+        Assert.True(aRuled.IsFrozen);
     }
 
     //==================================================================================================
@@ -481,11 +485,11 @@ public class GeomFill_SweepTests
     private static (Geom_BSplineCurve Path, Geom_BSplineCurve C1, Geom_BSplineCurve C2) EdgeCurves(double theR)
     {
         Geom_BSplineCurve aPath = Path3d(0.5);
-        NCollection_Array1<gp_Pnt> aP1 = new(1, aPath.NbPoles()), aP2 = new(1, aPath.NbPoles());
+        NCollection_Array1<Point3D> aP1 = new(1, aPath.NbPoles()), aP2 = new(1, aPath.NbPoles());
         for (int i = 1; i <= aPath.NbPoles(); i++)
         {
-            aP1[i] = aPath.Pole(i).Translated(new gp_Vec(0, theR, 0));
-            aP2[i] = aPath.Pole(i).Translated(new gp_Vec(0, 0, theR));
+            aP1[i] = aPath.Pole(i).Translated(new Vector3D(0, theR, 0));
+            aP2[i] = aPath.Pole(i).Translated(new Vector3D(0, 0, theR));
         }
         return (aPath,
                 new Geom_BSplineCurve(aP1, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree()),
@@ -506,9 +510,9 @@ public class GeomFill_SweepTests
         NCollection_Array1<int> aM = new(1, aNbK);
         aF.Knots(aK);
         aF.Mults(aM);
-        NCollection_Array1<gp_Pnt> aP = new(1, aNbP);
+        NCollection_Array1<Point3D> aP = new(1, aNbP);
         NCollection_Array1<double> aW = new(1, aNbP);
-        NCollection_Array1<gp_Pnt2d> aP2 = new(1, 1);
+        NCollection_Array1<Point2D> aP2 = new(1, 1);
         double v = 0.8;
         Assert.True(aF.D0(v, 0, 2, aP, aP2, aW));
         Geom_BSplineCurve anArc = new(aP, aW, aK, aM, aDeg);
@@ -519,7 +523,7 @@ public class GeomFill_SweepTests
 
         // trimmed to a sub-interval, the same sections
         aF.SetInterval(0.5, 1.5);
-        NCollection_Array1<gp_Pnt> aQ = new(1, aNbP);
+        NCollection_Array1<Point3D> aQ = new(1, aNbP);
         aF.D0(v, 0.5, 1.5, aQ, aP2, aW);
         for (int i = 1; i <= aNbP; i++)
         {
@@ -530,8 +534,8 @@ public class GeomFill_SweepTests
     [Fact]
     public void SweepSectionGenerator_moves_the_sections_along_the_path()
     {
-        Geom_TrimmedCurve anArc = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 8), 0, 2);
-        GeomFill_SweepSectionGenerator aGen = new(anArc, OpenSection(new gp_Pnt(8, 0, 0)));
+        Geom_TrimmedCurve anArc = new(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 8), 0, 2);
+        GeomFill_SweepSectionGenerator aGen = new(anArc, OpenSection(new Point3D(8, 0, 0)));
         aGen.Perform();
         aGen.GetShape(out int aNbP, out _, out _, out int aNb2d);
         Assert.Equal(0, aNb2d);
@@ -539,16 +543,16 @@ public class GeomFill_SweepTests
         Assert.True(aNbS >= 21);
         Assert.Equal(0.0, aGen.Parameter(1));
         Assert.Equal(2.0, aGen.Parameter(aNbS));
-        NCollection_Array1<gp_Pnt> aP = new(1, aNbP);
+        NCollection_Array1<Point3D> aP = new(1, aNbP);
         NCollection_Array1<double> aW = new(1, aNbP);
-        NCollection_Array1<gp_Pnt2d> aP2 = new(1, 1);
+        NCollection_Array1<Point2D> aP2 = new(1, 1);
         aGen.Section(aNbS, aP, aP2, aW);
         // the last section is the first one rotated by 2 radians about the circle's axis
-        gp_Trsf aRot = new();
-        aRot.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
-        Geom_BSplineCurve aFirst = OpenSection(new gp_Pnt(8, 0, 0));
+        Transform3D aRot = new();
+        aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        Geom_BSplineCurve aFirst = OpenSection(new Point3D(8, 0, 0));
         Assert.True(aP[1].Distance(aFirst.Pole(1).Transformed(aRot)) < 1e-9);
-        Assert.Throws<Standard_RangeError>(() => aGen.Transformation(aNbS));
+        Assert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));
     }
 
     //==================================================================================================
@@ -561,18 +565,18 @@ public class GeomFill_SweepTests
         Geom_BSplineCurve aPath = Path3d();
         aPath.Freeze();
         GeomFill_Pipe aPipe = new(aPath, 1.5);
-        aPipe.Perform(1e-4, false, GeomAbs_C2);
+        aPipe.Perform(1e-4, false, C2);
         Assert.True(aPipe.IsDone());
         Assert.Equal(GeomFill_PipeOk, aPipe.GetStatus());
         Geom_Surface aS = aPipe.Surface()!;
-        Assert.True(aS.IsFrozen());
+        Assert.True(aS.IsFrozen);
         aS.Bounds(out double u1, out double u2, out double v1, out double v2);
         GeomAPI_ProjectPointOnCurve aProj = new();
         for (int i = 0; i <= 4; i++)
         {
             for (int j = 0; j <= 4; j++)
             {
-                gp_Pnt aP = aS.Value(u1 + (u2 - u1) * i / 4, v1 + (v2 - v1) * j / 4);
+                Point3D aP = aS.Value(u1 + (u2 - u1) * i / 4, v1 + (v2 - v1) * j / 4);
                 aProj.Init(aP, aPath);
                 Assert.Equal(1.5, aProj.LowerDistance(), 1e-3);
             }
@@ -602,8 +606,8 @@ public class GeomFill_SweepTests
         anEvolving.Perform(1e-4, false);
         Assert.True(anEvolving.IsDone());
 
-        aPath.D1(aPath.LastParameter(), out gp_Pnt anEnd, out gp_Vec anEndT);
-        Geom_Circle aS4 = new(new gp_Ax2(anEnd, new gp_Dir(anEndT)), 2);
+        aPath.D1(aPath.LastParameter(), out Point3D anEnd, out Vector3D anEndT);
+        Geom_Circle aS4 = new(new Frame3D(anEnd, new Direction3D(anEndT)), 2);
         aS4.Freeze();
         NCollection_Sequence<Geom_Curve> aSeq = new();
         aSeq.Append(aS1);
@@ -612,7 +616,7 @@ public class GeomFill_SweepTests
         aN.Perform(1e-4, false);
         Assert.True(aN.IsDone());
 
-        GeomFill_Pipe aDir = new(aPath, aS3, new gp_Dir(0, 0, 1));
+        GeomFill_Pipe aDir = new(aPath, aS3, new Direction3D(0, 0, 1));
         aDir.Perform(1e-4, false);
         Assert.True(aDir.IsDone());
 
@@ -621,7 +625,7 @@ public class GeomFill_SweepTests
         aC1.Freeze();
         aC2.Freeze();
         GeomFill_Pipe anEdge = new(aP, aC1, aC2, 2);
-        anEdge.Perform(1e-4, false, GeomAbs_C2);
+        anEdge.Perform(1e-4, false, C2);
         Assert.True(anEdge.IsDone());
         anEdge = new GeomFill_Pipe(aP, aC1, aC2, 2);
         anEdge.Perform(true);
@@ -643,25 +647,25 @@ public class GeomFill_SweepTests
         // the old algorithm of a polynomial pipe on an edge: the generator's shape is the quasi-angular one
         (Geom_BSplineCurve aP, Geom_BSplineCurve aC1, Geom_BSplineCurve aC2) = EdgeCurves(2);
         aPipe = new GeomFill_Pipe(aP, aC1, aC2, 2);
-        Assert.Throws<Standard_OutOfRange>(() => aPipe.Perform(true, true));
+        Assert.Throws<OutOfRangeException>(() => aPipe.Perform(true, true));
 
         // N sections at one parameter of the path
         NCollection_Sequence<Geom_Curve> aSeq = new();
         aSeq.Append(CircleAtStart(aPath, 1));
         aSeq.Append(CircleAtStart(aPath, 2));
-        Assert.Throws<Standard_ConstructionError>(() => new GeomFill_Pipe(aPath, aSeq));
+        Assert.Throws<ConstructionErrorException>(() => new GeomFill_Pipe(aPath, aSeq));
 
         // an option the pipe doesn't build
-        Assert.Throws<Standard_ConstructionError>(() => new GeomFill_Pipe(aPath, CircleAtStart(aPath, 1), GeomFill_IsGuideAC));
+        Assert.Throws<ConstructionErrorException>(() => new GeomFill_Pipe(aPath, CircleAtStart(aPath, 1), GeomFill_IsGuideAC));
     }
 
     [Fact]
     public void Pipe_on_an_edge_recognises_cylinders_and_tori()
     {
         // three parallel lines: a cylinder
-        Geom_TrimmedCurve aPath = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 5);
-        Geom_TrimmedCurve aC1 = new(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 0, 5);
-        Geom_TrimmedCurve aC2 = new(new Geom_Line(new gp_Pnt(0, 2, 0), new gp_Dir(0, 0, 1)), 0, 5);
+        Geom_TrimmedCurve aPath = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 5);
+        Geom_TrimmedCurve aC1 = new(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0, 5);
+        Geom_TrimmedCurve aC2 = new(new Geom_Line(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), 0, 5);
         GeomFill_Pipe aPipe = new(aPath, aC1, aC2, 2);
         aPipe.Perform(true);
         Assert.True(aPipe.IsDone());
@@ -670,10 +674,10 @@ public class GeomFill_SweepTests
         Assert.False(aPipe.ExchangeUV());
 
         // three coaxial arcs: a torus
-        gp_Ax2 anAx = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         Geom_TrimmedCurve anArc = new(new Geom_Circle(anAx, 10), 0, 1);
         Geom_TrimmedCurve anArc1 = new(new Geom_Circle(anAx, 12), 0, 1);
-        Geom_TrimmedCurve anArc2 = new(new Geom_Circle(anAx.Translated(new gp_Vec(0, 0, 2)), 10), 0, 1);
+        Geom_TrimmedCurve anArc2 = new(new Geom_Circle(anAx.Translated(new Vector3D(0, 0, 2)), 10), 0, 1);
         aPipe = new GeomFill_Pipe(anArc, anArc1, anArc2, 2);
         aPipe.Perform(true);
         Assert.True(aPipe.IsDone());
@@ -686,16 +690,16 @@ public class GeomFill_SweepTests
     public void Pipe_with_a_guide()
     {
         Geom_BSplineCurve aPath = Path3d(0.5);
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aPath.NbPoles());
+        NCollection_Array1<Point3D> aPoles = new(1, aPath.NbPoles());
         for (int i = 1; i <= aPath.NbPoles(); i++)
         {
-            aPoles[i] = aPath.Pole(i).Translated(new gp_Vec(0, 3, 0));
+            aPoles[i] = aPath.Pole(i).Translated(new Vector3D(0, 3, 0));
         }
         Geom_BSplineCurve aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree());
         foreach (bool byACR in new[] { false, true })
         {
             GeomFill_Pipe aPipe = new(aPath, new GeomAdaptor_Curve(aGuide), CircleAtStart(aPath, 3), byACR, false);
-            aPipe.Perform(1e-4, false, GeomAbs_C2, 11, 30);
+            aPipe.Perform(1e-4, false, C2, 11, 30);
             Assert.True(aPipe.IsDone());
         }
     }

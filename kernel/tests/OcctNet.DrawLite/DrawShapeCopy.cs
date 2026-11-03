@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -83,7 +84,7 @@ internal static class DrawShapeCopy
                 aCopy.NaturalRestriction(aFace.NaturalRestriction());
                 if (aFace.NbTriangulations() > 0)
                 {
-                    aCopy.Triangulations(new NCollection_List<Poly_Triangulation>(aFace.Triangulations()), aFace.ActiveTriangulation());
+                    aCopy.Triangulations(new NCollection_List<Triangulation>(aFace.Triangulations()), aFace.ActiveTriangulation());
                 }
 
                 return aCopy;

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiKPart_ComputeData_ChAsymPlnCon;
 using static Occt.TopAbs_Orientation;
@@ -33,10 +34,10 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
     /// on the cone, computed by <see cref="ChFiKPart_ComputeData_ChAsymPlnCon"/>.</summary>
     /// <remarks>The older direct construction OCCT keeps commented out after the function is not ported.</remarks>
     internal static bool ChFiKPart_MakeChamfer(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData Data,
-                                               ChFiDS_ChamfMode theMode, in gp_Pln Pln, in gp_Cone Con,
+                                               ChFiDS_ChamfMode theMode, in Plane3D Pln, in Cone Con,
                                                double fu, double lu, TopAbs_Orientation Or1,
                                                TopAbs_Orientation Or2, double theDis1, double theDis2,
-                                               in gp_Circ Spine, double First, TopAbs_Orientation Ofpl,
+                                               in Circle3D Spine, double First, TopAbs_Orientation Ofpl,
                                                bool plandab)
     {
         double angcon = Con.SemiAngle();
@@ -63,24 +64,24 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
         double sincon = Math.Abs(Math.Sin(angcon));
         double angle;
         bool IsResol;
-        gp_Ax3 PosPl = Pln.Position();
-        gp_Dir Dpl = PosPl.XDirection().Crossed(PosPl.YDirection());
+        CoordinateSystem PosPl = Pln.Position();
+        Direction3D Dpl = PosPl.XDirection().Crossed(PosPl.YDirection());
         if (Or1 == TopAbs_REVERSED)
         {
             Dpl.Reverse();
         }
         // compute the origin of the conical chamfer PtPl
-        gp_Pnt Or = Con.Location();
+        Point3D Or = Con.Location();
         double u, v;
-        ElSLib.PlaneParameters(PosPl, Or, out u, out v);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(PosPl, Or, out u, out v);
         // (OCCT_DEBUG pt2dPln left out)
-        ElSLib.PlaneD0(u, v, PosPl, out Or);
-        ElCLib.D1(First, Spine, out gp_Pnt PtSp, out gp_Vec DSp);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneD0(u, v, PosPl, out Or);
+        global::Kerf.Engine.Geometry.ElCLib.D1(First, Spine, out Point3D PtSp, out Vector3D DSp);
         // (OCCT_DEBUG Dx left out)
         // compute the normal to the cone in PtSp
-        ElSLib.Parameters(Con, PtSp, out u, out v);
-        ElSLib.D1(u, v, Con, out gp_Pnt PtCon, out gp_Vec deru, out gp_Vec derv);
-        gp_Dir Dcon = new(deru.Crossed(derv));
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(Con, PtSp, out u, out v);
+        global::Kerf.Engine.Geometry.ElSLib.D1(u, v, Con, out Point3D PtCon, out Vector3D deru, out Vector3D derv);
+        Direction3D Dcon = new(deru.Crossed(derv));
         if (Or2 == TopAbs_REVERSED)
         {
             Dcon.Reverse();
@@ -88,7 +89,7 @@ internal static class ChFiKPart_ComputeData_ChPlnCon
         bool ouvert = (Dpl.Dot(Dcon) >= 0.0);
         if (!ouvert)
         {
-            if (Math.Abs(Dis1 - Dis2 * sincon) > Precision.Confusion())
+            if (Math.Abs(Dis1 - Dis2 * sincon) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 double abscos = Math.Abs(Dis2 - Dis1 * sincon);
                 angle = Math.Atan((Dis1 * Math.Cos(angcon)) / abscos);

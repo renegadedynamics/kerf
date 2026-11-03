@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,12 +30,12 @@ public sealed class IntCurveSurface_TheInterferenceOfHInter
     {
     }
 
-    public IntCurveSurface_TheInterferenceOfHInter(in gp_Lin theLin, IntCurveSurface_ThePolyhedronOfHInter thePolyh)
+    public IntCurveSurface_TheInterferenceOfHInter(in Line3D theLin, IntCurveSurface_ThePolyhedronOfHInter thePolyh)
         : base(theLin, thePolyh)
     {
     }
 
-    public IntCurveSurface_TheInterferenceOfHInter(NCollection_Array1<gp_Lin> theLins,
+    public IntCurveSurface_TheInterferenceOfHInter(NCollection_Array1<Line3D> theLins,
                                                    IntCurveSurface_ThePolyhedronOfHInter thePolyh)
         : base(theLins, thePolyh)
     {
@@ -39,20 +43,20 @@ public sealed class IntCurveSurface_TheInterferenceOfHInter
 
     public IntCurveSurface_TheInterferenceOfHInter(IntCurveSurface_ThePolygonOfHInter thePolyg,
                                                    IntCurveSurface_ThePolyhedronOfHInter thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+                                                   BoundSortBox theBoundSB)
         : base(thePolyg, thePolyh, theBoundSB)
     {
     }
 
-    public IntCurveSurface_TheInterferenceOfHInter(in gp_Lin theLin, IntCurveSurface_ThePolyhedronOfHInter thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+    public IntCurveSurface_TheInterferenceOfHInter(in Line3D theLin, IntCurveSurface_ThePolyhedronOfHInter thePolyh,
+                                                   BoundSortBox theBoundSB)
         : base(theLin, thePolyh, theBoundSB)
     {
     }
 
-    public IntCurveSurface_TheInterferenceOfHInter(NCollection_Array1<gp_Lin> theLins,
+    public IntCurveSurface_TheInterferenceOfHInter(NCollection_Array1<Line3D> theLins,
                                                    IntCurveSurface_ThePolyhedronOfHInter thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+                                                   BoundSortBox theBoundSB)
         : base(theLins, thePolyh, theBoundSB)
     {
     }
@@ -63,5 +67,5 @@ public sealed class IntCurveSurface_TheInterferenceOfHInter
 
     static IntCurveSurface_TheInterferenceOfHInter IIntCurveSurface_TheInterference<IntCurveSurface_TheInterferenceOfHInter, IntCurveSurface_ThePolygonOfHInter, IntCurveSurface_ThePolyhedronOfHInter>.Create(
         IntCurveSurface_ThePolygonOfHInter thePolyg, IntCurveSurface_ThePolyhedronOfHInter thePolyh,
-        Bnd_BoundSortBox theBoundSB) => new(thePolyg, thePolyh, theBoundSB);
+        BoundSortBox theBoundSB) => new(thePolyg, thePolyh, theBoundSB);
 }

@@ -4,6 +4,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -28,10 +36,10 @@ public sealed class IntTools_SurfaceRangeLocalizeData
     private double myMinRangeU;
     private double myMinRangeV;
     private NCollection_Map<IntTools_SurfaceRangeSample> myMapRangeOut = new();
-    private NCollection_DataMap<IntTools_SurfaceRangeSample, Bnd_Box> myMapBox = new();
+    private NCollection_DataMap<IntTools_SurfaceRangeSample, Box> myMapBox = new();
     private NCollection_HArray1<double>? myUParams;
     private NCollection_HArray1<double>? myVParams;
-    private NCollection_HArray2<gp_Pnt>? myGridPoints;
+    private NCollection_HArray2<Point3D>? myGridPoints;
     private int myUIndMin;
     private int myUIndMax;
     private int myVIndMin;
@@ -80,7 +88,7 @@ public sealed class IntTools_SurfaceRangeLocalizeData
         myMapRangeOut.Clear();
         myMapRangeOut = new NCollection_Map<IntTools_SurfaceRangeSample>(Other.myMapRangeOut);
         myMapBox.Clear();
-        myMapBox = new NCollection_DataMap<IntTools_SurfaceRangeSample, Bnd_Box>(Other.myMapBox);
+        myMapBox = new NCollection_DataMap<IntTools_SurfaceRangeSample, Box>(Other.myMapBox);
         myDeflection = Other.myDeflection;
         myUIndMin = Other.myUIndMin;
         myUIndMax = Other.myUIndMax;
@@ -119,12 +127,12 @@ public sealed class IntTools_SurfaceRangeLocalizeData
         //   myMapBox.UnBind(theRange);
     }
 
-    public void AddBox(in IntTools_SurfaceRangeSample theRange, in Bnd_Box theBox) => myMapBox.Bind(theRange, theBox);
+    public void AddBox(in IntTools_SurfaceRangeSample theRange, in Box theBox) => myMapBox.Bind(theRange, theBox);
 
     /// <summary>The box of the range, and true, if recorded; otherwise false, the box left as it was.</summary>
-    public bool FindBox(in IntTools_SurfaceRangeSample theRange, ref Bnd_Box theBox)
+    public bool FindBox(in IntTools_SurfaceRangeSample theRange, ref Box theBox)
     {
-        if (myMapBox.Find(theRange, out Bnd_Box aBox))
+        if (myMapBox.Find(theRange, out Box aBox))
         {
             theBox = aBox;
             return true;
@@ -203,10 +211,10 @@ public sealed class IntTools_SurfaceRangeLocalizeData
 
     public double GetVParam(int theIndex) => myVParams!.Value(theIndex);
 
-    public void SetGridPoint(int theUIndex, int theVIndex, in gp_Pnt thePoint) =>
+    public void SetGridPoint(int theUIndex, int theVIndex, in Point3D thePoint) =>
         myGridPoints!.SetValue(theUIndex, theVIndex, thePoint);
 
-    public gp_Pnt GetGridPoint(int theUIndex, int theVIndex) => myGridPoints!.Value(theUIndex, theVIndex);
+    public Point3D GetGridPoint(int theUIndex, int theVIndex) => myGridPoints!.Value(theUIndex, theVIndex);
 
     /// <summary>
     /// Sets the frame: the grid indices strictly inside [<paramref name="theUMin"/>, <paramref name="theUMax"/>] ×
@@ -280,14 +288,14 @@ public sealed class IntTools_SurfaceRangeLocalizeData
     public int GetNBVPointsInFrame() => myVIndMax - myVIndMin + 1;
 
     /// <summary>The grid point at the indices in the frame; the origin if outside.</summary>
-    public gp_Pnt GetPointInFrame(int theUIndex, int theVIndex)
+    public Point3D GetPointInFrame(int theUIndex, int theVIndex)
     {
         int aFrmUInd = theUIndex + myUIndMin - 1;
         int aFrmVInd = theVIndex + myVIndMin - 1;
 
         if (myGridPoints is null || aFrmUInd > myUIndMax || aFrmVInd > myVIndMax)
         {
-            return gp.Origin();
+            return Constants.Origin();
         }
 
         return myGridPoints.Value(aFrmUInd, aFrmVInd);
@@ -300,7 +308,7 @@ public sealed class IntTools_SurfaceRangeLocalizeData
 
         if (myUParams is null || aFrmInd > myUIndMax)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         return myUParams.Value(aFrmInd);
@@ -313,7 +321,7 @@ public sealed class IntTools_SurfaceRangeLocalizeData
 
         if (myVParams is null || aFrmInd > myVIndMax)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         return myVParams.Value(aFrmInd);
@@ -334,5 +342,5 @@ public sealed class IntTools_SurfaceRangeLocalizeData
     }
 
     // OCCT's NCollection_HArray2<gp_Pnt>(1, NbU, 1, NbV): default-constructed points.
-    private static NCollection_HArray2<gp_Pnt> NewGrid(int theNbU, int theNbV) => new(1, theNbU, 1, theNbV);
+    private static NCollection_HArray2<Point3D> NewGrid(int theNbU, int theNbV) => new(1, theNbU, 1, theNbV);
 }

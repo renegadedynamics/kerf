@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Intf_PIType;
 
 namespace Occt;
@@ -27,8 +29,8 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
     private readonly double[,] dpOpT = new double[3, 3];
     private readonly double[,] dpOeT = new double[3, 3];
     private readonly double[,] deOpT = new double[3, 3];
-    private readonly gp_XYZ[] voo = new gp_XYZ[3];
-    private readonly gp_XYZ[] vtt = new gp_XYZ[3];
+    private readonly Xyz[] voo = new Xyz[3];
+    private readonly Xyz[] vtt = new Xyz[3];
     private double Incidence;
 
     /// <summary>An empty interference of polyhedra.</summary>
@@ -160,14 +162,14 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
         Intf.PlaneEquation(IntPatch_PolyhedronTool.Point(FirstPol, OI[0]),
                            IntPatch_PolyhedronTool.Point(FirstPol, OI[1]),
                            IntPatch_PolyhedronTool.Point(FirstPol, OI[2]),
-                           out gp_XYZ ONor, // Normal vector.
+                           out Xyz ONor, // Normal vector.
                            out double Odp); // Polar Distance.
 
         // Equation of the triangle plane of the tool
         Intf.PlaneEquation(IntPatch_PolyhedronTool.Point(SeconPol, TI[0]),
                            IntPatch_PolyhedronTool.Point(SeconPol, TI[1]),
                            IntPatch_PolyhedronTool.Point(SeconPol, TI[2]),
-                           out gp_XYZ TNor, // Normal vector.
+                           out Xyz TNor, // Normal vector.
                            out double Tdp); // Polar distance.
 
         // Scalar product of two normalized vectors -> cosinus of the angle
@@ -392,8 +394,8 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
             }
 
             // Singularite EDGE EDGE
-            gp_Pnt piO = new();
-            gp_XYZ piT = new();
+            Point3D piO = new();
+            Xyz piT = new();
             double lg;
             for (iObj = 0; iObj < 3; iObj++)
             {
@@ -418,7 +420,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                                         if (div > floatGap || div < -floatGap)
                                         {
                                             parO[iObj] = dpOeT[inext, iToo] / div;
-                                            piO = new gp_Pnt((IntPatch_PolyhedronTool.Point(FirstPol, OI[inext]).XYZ())
+                                            piO = new Point3D((IntPatch_PolyhedronTool.Point(FirstPol, OI[inext]).XYZ())
                                                              + (voo[iObj].Reversed() * parO[iObj]));
                                         }
                                         else
@@ -432,7 +434,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                                         if (div > floatGap || div < -floatGap)
                                         {
                                             parO[iObj] = dpOeT[iObj, iToo] / (dpOeT[iObj, iToo] - dpOeT[inext, iToo]);
-                                            piO = new gp_Pnt((IntPatch_PolyhedronTool.Point(FirstPol, OI[iObj]).XYZ())
+                                            piO = new Point3D((IntPatch_PolyhedronTool.Point(FirstPol, OI[iObj]).XYZ())
                                                              + (voo[iObj] * parO[iObj]));
                                         }
                                         else
@@ -507,7 +509,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                     if (lg > 0.0 && lg < 1.0)
                     {
                         parO[iObj] = lg;
-                        piO = new gp_Pnt((IntPatch_PolyhedronTool.Point(FirstPol, OI[iObj]).XYZ())
+                        piO = new Point3D((IntPatch_PolyhedronTool.Point(FirstPol, OI[iObj]).XYZ())
                                          + (voo[iObj] * parO[iObj]));
                         if (OI[iObj] > OI[inext])
                         {
@@ -539,7 +541,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                     if (lg > 0.0 && lg < 1.0)
                     {
                         parT[iToo] = lg;
-                        piO = new gp_Pnt((IntPatch_PolyhedronTool.Point(SeconPol, TI[iToo]).XYZ())
+                        piO = new Point3D((IntPatch_PolyhedronTool.Point(SeconPol, TI[iToo]).XYZ())
                                          + (vtt[iToo] * parT[iToo]));
                         if (TI[iToo] > TI[jnext])
                         {
@@ -572,7 +574,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                 // Sort the <nbpiOT> sections points along the intersection between the
                 // two triangles :
 
-                gp_XYZ dir = ONor ^ TNor;
+                Xyz dir = ONor ^ TNor;
                 double[] d = new double[nbpiOT];
                 int iPi, iPs;
                 for (iPi = 0; iPi < nbpiOT; iPi++)
@@ -974,8 +976,8 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                         {
                             parO[nbpInt] = dpOeT[nob, nou] / (dpOeT[nob, nou] - dpOeT[nob2, nou]);
                             parT[nbpInt] = deOpT[nob, nou] / (deOpT[nob, nou] - deOpT[nob, nou2]);
-                            gp_Pnt lepi = IntPatch_PolyhedronTool.Point(SeconPol, TI[nou])
-                                            .Translated(new gp_Vec(vtt[nou] * parT[nbpInt]));
+                            Point3D lepi = IntPatch_PolyhedronTool.Point(SeconPol, TI[nou])
+                                            .Translated(new Vector3D(vtt[nou] * parT[nbpInt]));
                             if (OI[nob] > OI[nob2])
                             {
                                 parO[nbpInt] = 1.0 - parO[nbpInt];
@@ -1057,8 +1059,8 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                       - IntPatch_PolyhedronTool.Point(SeconPol, TI[n1]).XYZ();
         }
 
-        gp_XYZ vvec = (voo[0] ^ voo[1]) + (voo[1] ^ voo[2]) + (voo[2] ^ voo[0]);
-        gp_XYZ vnorT = (vtt[0] ^ vtt[1]) + (vtt[1] ^ vtt[2]) + (vtt[2] ^ vtt[0]);
+        Xyz vvec = (voo[0] ^ voo[1]) + (voo[1] ^ voo[2]) + (voo[2] ^ voo[0]);
+        Xyz vnorT = (vtt[0] ^ vtt[1]) + (vtt[1] ^ vtt[2]) + (vtt[2] ^ vtt[0]);
         if (vnorT.Modulus() > vvec.Modulus())
         {
             vvec = vnorT;
@@ -1068,14 +1070,14 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
         {
             for (n2 = 0; n2 < 3; n2++)
             {
-                gp_XYZ vto = IntPatch_PolyhedronTool.Point(FirstPol, OI[n1]).XYZ()
+                Xyz vto = IntPatch_PolyhedronTool.Point(FirstPol, OI[n1]).XYZ()
                              - IntPatch_PolyhedronTool.Point(SeconPol, TI[n2]).XYZ();
                 dpOpT[n1, n2] = vto.Modulus();
 
                 lg = vtt[n2].Modulus();
                 if (lg > 1e-16)
                 { //-- RealEpsilon()
-                    gp_XYZ vv = vto ^ vtt[n2];
+                    Xyz vv = vto ^ vtt[n2];
                     lg = (vvec * vv) > 0.0 ? lg : -lg;
                     dpOeT[n1, n2] = vv.Modulus() / lg;
                 }
@@ -1087,7 +1089,7 @@ public class IntPatch_InterferencePolyhedron : Intf_Interference
                 lg = voo[n1].Modulus();
                 if (lg > 1e-16)
                 { //-- RealEpsilon())
-                    gp_XYZ vv = vto ^ voo[n1];
+                    Xyz vv = vto ^ voo[n1];
                     lg = (vvec * vv) > 0.0 ? -lg : lg;
                     deOpT[n1, n2] = vv.Modulus() / lg;
                 }

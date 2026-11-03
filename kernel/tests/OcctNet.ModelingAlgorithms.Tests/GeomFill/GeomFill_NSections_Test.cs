@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's GeomFill_NSections GTest (suite GeomFill_NSectionsTest).</summary>
@@ -10,9 +12,9 @@ public class GeomFill_NSections_Test
     // Builds a simple degree-1 BSpline line segment from (0,0,0) to (1,0,0).
     private static Geom_BSplineCurve makeSimpleLinearCurve()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 2);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 0.0, 0.0);
+        NCollection_Array1<Point3D> aPoles = new(1, 2);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 0.0, 0.0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;

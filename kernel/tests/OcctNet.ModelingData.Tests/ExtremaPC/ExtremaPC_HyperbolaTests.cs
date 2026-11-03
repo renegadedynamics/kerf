@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Hyperbola_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_HyperbolaTest
@@ -17,8 +19,8 @@ public class ExtremaPC_HyperbolaTest
     public void PointOnMajorAxis_Outside()
     {
         // Hyperbola with a=20, b=10
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(50.0, 0.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(50.0, 0.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -36,8 +38,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOnMajorAxis_AtVertex()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -51,8 +53,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOnMajorAxis_BetweenBranches()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 0.0, 0.0); // Center
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 0.0, 0.0); // Center
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -71,8 +73,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOffAxis_FirstQuadrant()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 15.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 15.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -82,7 +84,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify the point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         double aExpectedSq = aPoint.SquareDistance(aPtOnHyper);
         Assert.Equal(aExpectedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -90,8 +92,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOffAxis_FourthQuadrant()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, -15.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, -15.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -101,7 +103,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
 
@@ -112,8 +114,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointInsideAsymptotes()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(25.0, 5.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(25.0, 5.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -123,7 +125,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
 
         // Distance should be less than distance to center (sqrt(25^2+5^2) = 25.5)
@@ -137,8 +139,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointAbovePlane()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 0.0, 5.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 0.0, 5.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -154,8 +156,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointBelowPlane()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, -8.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(20.0, 0.0, -8.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -174,11 +176,11 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void BoundsPositive()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, -20.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, -20.0, 0.0);
 
         // Create evaluator with positive parameter domain [0, 10]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new MathUtils.Domain1D(0.0, 10.0));
+        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 10.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -194,11 +196,11 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void BoundsNegative()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 20.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 20.0, 0.0);
 
         // Create evaluator with negative parameter domain [-10, 0]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new MathUtils.Domain1D(-10.0, 0.0));
+        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-10.0, 0.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -214,11 +216,11 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void NarrowBounds()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 10.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 10.0, 0.0);
 
         // Create evaluator with narrow domain [0.5, 1.5]
-        ExtremaPC_Hyperbola anEval = new(aHyperbola, new MathUtils.Domain1D(0.5, 1.5));
+        ExtremaPC_Hyperbola anEval = new(aHyperbola, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.5, 1.5));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -239,8 +241,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void SmallSemiAxes()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0, 1.0);
-        gp_Pnt aPoint = new(5.0, 2.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 1.0);
+        Point3D aPoint = new(5.0, 2.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -250,7 +252,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -258,8 +260,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void LargeSemiAxes()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 200.0, 100.0);
-        gp_Pnt aPoint = new(300.0, 100.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 200.0, 100.0);
+        Point3D aPoint = new(300.0, 100.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -269,15 +271,15 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
     }
 
     [Fact]
     public void NearlyRectangular()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 10.0);
-        gp_Pnt aPoint = new(20.0, 15.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 10.0);
+        Point3D aPoint = new(20.0, 15.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -287,7 +289,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -299,8 +301,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOnHyperbola_AtVertex()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = ElCLib.Value(0.0, aHyperbola);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, aHyperbola);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -314,8 +316,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOnHyperbola_Positive()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = ElCLib.Value(1.5, aHyperbola);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(1.5, aHyperbola);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -329,8 +331,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void PointOnHyperbola_Negative()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = ElCLib.Value(-2.0, aHyperbola);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(-2.0, aHyperbola);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -348,8 +350,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void HyperbolaWithOffset()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(120.0, 200.0, 50.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(120.0, 200.0, 50.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -364,8 +366,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void HyperbolaWithOffset_PointOff()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(150.0, 210.0, 50.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(150.0, 210.0, 50.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -375,7 +377,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
         Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
@@ -387,8 +389,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void HyperbolaInYZPlane()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 20.0, 10.0);
-        gp_Pnt aPoint = new(5.0, 30.0, 10.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 20.0, 10.0);
+        Point3D aPoint = new(5.0, 30.0, 10.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -398,7 +400,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
 
         // Distance should include X component (out of plane)
@@ -408,8 +410,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void HyperbolaInXZPlane()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 5.0, 10.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 5.0, 10.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -419,7 +421,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnHyper = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
 
         // Distance should include Y component (out of plane)
@@ -433,8 +435,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void VerifyProjectedPoint()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(35.0, 20.0, 0.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(35.0, 20.0, 0.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -444,7 +446,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify the projected point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnCurve = ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
+        Point3D aPtOnCurve = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
         Assert.Equal(aPtOnCurve.X(), aResult[aMinIdx].Point.X(), THE_TOL);
         Assert.Equal(aPtOnCurve.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
         Assert.Equal(aPtOnCurve.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
@@ -453,8 +455,8 @@ public class ExtremaPC_HyperbolaTest
     [Fact]
     public void VerifyDistanceConsistency()
     {
-        gp_Hypr aHyperbola = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(40.0, 25.0, 3.0);
+        Hyperbola3D aHyperbola = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(40.0, 25.0, 3.0);
 
         ExtremaPC_Hyperbola anEval = new(aHyperbola);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);

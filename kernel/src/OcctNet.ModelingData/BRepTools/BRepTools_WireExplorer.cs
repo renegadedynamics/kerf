@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -89,9 +93,9 @@ public sealed class BRepTools_WireExplorer
         {
             // For the faces based on Cone, BSpline and Bezier compute the
             // UV bounds to precise the UV tolerance values
-            GeomAbs_SurfaceType aSurfType = new BRepAdaptor_Surface(F, false).GetType();
-            if (aSurfType == GeomAbs_Cone || aSurfType == GeomAbs_BSplineSurface
-                || aSurfType == GeomAbs_BezierSurface)
+            SurfaceKind aSurfType = new BRepAdaptor_Surface(F, false).GetType();
+            if (aSurfType == SurfaceKind.Cone || aSurfType == BSplineSurface
+                || aSurfType == BezierSurface)
             {
                 BRepTools.UVBounds(F, out UMin, out UMax, out VMin, out VMax);
             }
@@ -122,7 +126,7 @@ public sealed class BRepTools_WireExplorer
 
         if (!myFace.IsNull())
         {
-            Geom_Surface? aSurf = BRep_Tool.Surface(myFace, out TopLoc_Location aL);
+            Geom_Surface? aSurf = BRep_Tool.Surface(myFace, out Placement aL);
             GeomAdaptor_Surface aGAS = new GeomAdaptor_Surface(aSurf!);
             var anExp = new TopExp_Explorer(W, TopAbs_VERTEX);
             for (; anExp.More(); anExp.Next())
@@ -130,7 +134,7 @@ public sealed class BRepTools_WireExplorer
                 TopoDS_Vertex aV = TopoDS.Vertex(anExp.Current());
                 dfVertToler = Max(BRep_Tool.Tolerance(aV), dfVertToler);
             }
-            if (dfVertToler < Precision.Confusion())
+            if (dfVertToler < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 // Use tolerance of edges
                 for (var it0 = new TopoDS_Iterator(W); it0.More(); it0.Next())
@@ -138,7 +142,7 @@ public sealed class BRepTools_WireExplorer
                     dfVertToler = Max(BRep_Tool.Tolerance(TopoDS.Edge(it0.Value())), dfVertToler);
                 }
 
-                if (dfVertToler < Precision.Confusion())
+                if (dfVertToler < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     // empty wire
                     return;
@@ -148,13 +152,13 @@ public sealed class BRepTools_WireExplorer
             myTolV = 2.0 * aGAS.VResolution(dfVertToler);
 
             // uresolution for cone with infinite vmin vmax is too small.
-            if (aGAS.GetType() == GeomAbs_Cone)
+            if (aGAS.GetType() == SurfaceKind.Cone)
             {
-                aGAS.D1(UMin, VMin, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V);
+                aGAS.D1(UMin, VMin, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
                 double tol1, tol2, maxtol = .0005 * (UMax - UMin);
                 double a = aD1U.Magnitude();
 
-                if (a <= Precision.Confusion())
+                if (a <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     tol1 = maxtol;
                 }
@@ -165,7 +169,7 @@ public sealed class BRepTools_WireExplorer
 
                 aGAS.D1(UMin, VMax, out aP, out aD1U, out aD1V);
                 a = aD1U.Magnitude();
-                if (a <= Precision.Confusion())
+                if (a <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     tol2 = maxtol;
                 }
@@ -177,12 +181,12 @@ public sealed class BRepTools_WireExplorer
                 myTolU = 2.0 * Max(tol1, tol2);
             }
 
-            if (aGAS.GetType() == GeomAbs_BSplineSurface || aGAS.GetType() == GeomAbs_BezierSurface)
+            if (aGAS.GetType() == BSplineSurface || aGAS.GetType() == BezierSurface)
             {
                 double maxTol = Max(myTolU, myTolV);
-                aGAS.D1((UMax - UMin) / 2.0, (VMax - VMin) / 2.0, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                aGAS.D1((UMax - UMin) / 2.0, (VMax - VMin) / 2.0, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
                 double mod = Math.Sqrt(aDU * aDU + aDV * aDV);
-                if (mod > gp.Resolution())
+                if (mod > Constants.Resolution())
                 {
                     if (mod * maxTol / dfVertToler < 1.5)
                     {
@@ -250,14 +254,14 @@ public sealed class BRepTools_WireExplorer
 
                 if (Eori == TopAbs_FORWARD)
                 {
-                    if (aF == -Precision.Infinite())
+                    if (aF == -global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         anInfEmap.Add(E);
                     }
                 }
                 else
                 { // Eori == TopAbs_REVERSED
-                    if (aL == Precision.Infinite())
+                    if (aL == global::Kerf.Engine.Foundation.Precision.Infinite())
                     {
                         anInfEmap.Add(E);
                     }
@@ -302,8 +306,8 @@ public sealed class BRepTools_WireExplorer
                     TopAbs_Orientation anOri = anEdge.Orientation();
 
                     BRep_Tool.Range(anEdge, out double aF, out double aL);
-                    if ((anOri == TopAbs_FORWARD && aF == -Precision.Infinite())
-                        || (anOri == TopAbs_REVERSED && aL == Precision.Infinite()))
+                    if ((anOri == TopAbs_FORWARD && aF == -global::Kerf.Engine.Foundation.Precision.Infinite())
+                        || (anOri == TopAbs_REVERSED && aL == global::Kerf.Engine.Foundation.Precision.Infinite()))
                     {
                         myEdge = anEdge;
                         myVertex = new TopoDS_Vertex();
@@ -417,9 +421,9 @@ public sealed class BRepTools_WireExplorer
                     aNextLPar = aPar21;
                 }
 
-                gp_Pnt2d aPPrev = aPrevPC.Value(aPrevPar);
-                gp_Pnt2d aPNextF = aNextPC.Value(aNextFPar);
-                gp_Pnt2d aPNextL = aNextPC.Value(aNextLPar);
+                Point2D aPPrev = aPrevPC.Value(aPrevPar);
+                Point2D aPNextF = aNextPC.Value(aNextFPar);
+                Point2D aPNextL = aNextPC.Value(aNextLPar);
 
                 if (aPPrev.SquareDistance(aPNextF) > aPPrev.SquareDistance(aPNextL))
                 {
@@ -488,7 +492,7 @@ public sealed class BRepTools_WireExplorer
                 //       edge is REVERSED - point with MIN parameter on PCurve.
 
                 // Get 2D point equals to < myVertex > in 2D for current edge.
-                gp_Pnt2d PRef;
+                Point2D PRef;
                 if (myEdge.Orientation() == TopAbs_REVERSED)
                 {
                     aPCurve.D0(dfFPar, out PRef);
@@ -503,10 +507,10 @@ public sealed class BRepTools_WireExplorer
                 bool isrevese = (myEdge.Orientation() == TopAbs_REVERSED);
                 double dfMPar = GetNextParamOnPC(aPCurve, PRef, dfFPar, dfLPar, myTolU, myTolV, isrevese);
 
-                aPCurve.D0(dfMPar, out gp_Pnt2d PRefm);
+                aPCurve.D0(dfMPar, out Point2D PRefm);
                 // Get vector from PRef to PRefm
-                gp_Vec2d anERefDir = new gp_Vec2d(PRef, PRefm);
-                if (anERefDir.SquareMagnitude() < gp.Resolution())
+                Vector2D anERefDir = new Vector2D(PRef, PRefm);
+                if (anERefDir.SquareMagnitude() < Constants.Resolution())
                 {
                     myEdge = new TopoDS_Edge();
                     return;
@@ -551,7 +555,7 @@ public sealed class BRepTools_WireExplorer
                             continue;
                         }
 
-                        gp_Pnt2d aPEb, aPEe;
+                        Point2D aPEb, aPEe;
                         if (aVert1.IsSame(aVert2) == isDegenerated)
                         {
                             if (E.Orientation() == TopAbs_REVERSED)
@@ -563,7 +567,7 @@ public sealed class BRepTools_WireExplorer
                                 aPCurve.D0(dfFPar, out aPEb);
                             }
 
-                            if (Math.Abs(dfLPar - dfFPar) > Precision.PConfusion())
+                            if (Math.Abs(dfLPar - dfFPar) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 isrevese = (E.Orientation() == TopAbs_REVERSED);
                                 isrevese = !isrevese;
@@ -571,10 +575,10 @@ public sealed class BRepTools_WireExplorer
                                     GetNextParamOnPC(aPCurve, aPEb, dfFPar, dfLPar, myTolU, myTolV, isrevese);
 
                                 aPCurve.D0(aEPm, out aPEe);
-                                if (aPEb.SquareDistance(aPEe) <= gp.Resolution())
+                                if (aPEb.SquareDistance(aPEe) <= Constants.Resolution())
                                 {
                                     // seems to be very short curve
-                                    aPCurve.D1(aEPm, out aPEe, out gp_Vec2d aD);
+                                    aPCurve.D1(aEPm, out aPEe, out Vector2D aD);
                                     if (E.Orientation() == TopAbs_REVERSED)
                                     {
                                         aPEe.SetXY(aPEb.XY() - aD.XY());
@@ -584,21 +588,21 @@ public sealed class BRepTools_WireExplorer
                                         aPEe.SetXY(aPEb.XY() + aD.XY());
                                     }
 
-                                    if (aPEb.SquareDistance(aPEe) <= gp.Resolution())
+                                    if (aPEb.SquareDistance(aPEe) <= Constants.Resolution())
                                     {
                                         it.Next();
                                         k++;
                                         continue;
                                     }
                                 }
-                                gp_Vec2d anEDir = new gp_Vec2d(aPEb, aPEe);
+                                Vector2D anEDir = new Vector2D(aPEb, aPEe);
                                 dfCurAngle = Math.Abs(anEDir.Angle(anERefDir));
                             }
 
                             if (dfCurAngle <= dfMinAngle)
                             {
                                 double d = PRef.SquareDistance(aPEb);
-                                if (d <= Precision.PConfusion())
+                                if (d <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                                 {
                                     d = 0.0;
                                 }
@@ -658,7 +662,7 @@ public sealed class BRepTools_WireExplorer
     public TopoDS_Edge Current() => myEdge;
 
     /// <summary>The orientation of the vertex connecting the current edge to the previous one, in the current edge.</summary>
-    /// <exception cref="Standard_NoSuchObject">The vertex isn't in the current edge.</exception>
+    /// <exception cref="NoSuchObjectException">The vertex isn't in the current edge.</exception>
     public TopAbs_Orientation Orientation()
     {
         if (myVertex.IsNull() && !myEdge.IsNull())
@@ -676,7 +680,7 @@ public sealed class BRepTools_WireExplorer
             }
             it.Next();
         }
-        throw new Standard_NoSuchObject("BRepTools_WireExplorer::Orientation");
+        throw new NoSuchObjectException("BRepTools_WireExplorer::Orientation");
     }
 
     /// <summary>The vertex connecting the current edge to the previous one.</summary>
@@ -729,7 +733,7 @@ public sealed class BRepTools_WireExplorer
     }
 
     private static double GetNextParamOnPC(Geom2d_Curve aPC,
-                                           in gp_Pnt2d aPRef,
+                                           in Point2D aPRef,
                                            double fP,
                                            double lP,
                                            double tolU,
@@ -745,7 +749,7 @@ public sealed class BRepTools_WireExplorer
             while (!nextPntOnEdge && startPar < lP)
             {
                 startPar += dP;
-                aPC.D0(startPar, out gp_Pnt2d pnt);
+                aPC.D0(startPar, out Point2D pnt);
                 if (Math.Abs(aPRef.X() - pnt.X()) < tolU && Math.Abs(aPRef.Y() - pnt.Y()) < tolV)
                 {
                     continue;
@@ -775,7 +779,7 @@ public sealed class BRepTools_WireExplorer
             while (!nextPntOnEdge && startPar > fP)
             {
                 startPar -= dP;
-                aPC.D0(startPar, out gp_Pnt2d pnt);
+                aPC.D0(startPar, out Point2D pnt);
                 if (Math.Abs(aPRef.X() - pnt.X()) < tolU && Math.Abs(aPRef.Y() - pnt.Y()) < tolV)
                 {
                     continue;

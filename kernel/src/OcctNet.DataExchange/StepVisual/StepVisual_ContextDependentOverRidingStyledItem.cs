@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepVisual_ContextDependentOverRidingStyledItem : StepVisual_OverRidingStyledItem
@@ -19,7 +21,7 @@ public class StepVisual_ContextDependentOverRidingStyledItem : StepVisual_OverRi
     {
     }
 
-    public void Init(TCollection_HAsciiString aName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> aStyles, Standard_Transient aItem, StepVisual_StyledItem aOverRiddenStyle, NCollection_HArray1<StepVisual_StyleContextSelect> aStyleContext)
+    public void Init(TCollection_HAsciiString aName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> aStyles, Transient aItem, StepVisual_StyledItem aOverRiddenStyle, NCollection_HArray1<StepVisual_StyleContextSelect> aStyleContext)
     {
         // --- classe own fields ---
         styleContext = aStyleContext;

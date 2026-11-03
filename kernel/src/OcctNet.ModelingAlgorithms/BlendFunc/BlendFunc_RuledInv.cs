@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The ruled blend function with one end on a surface's boundary.</summary>
@@ -63,14 +69,14 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             InfBound[4] = surf2.FirstVParameter();
             SupBound[3] = surf2.LastUParameter();
             SupBound[4] = surf2.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -83,14 +89,14 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             InfBound[4] = surf1.FirstVParameter();
             SupBound[3] = surf1.LastUParameter();
             SupBound[4] = surf1.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -109,13 +115,13 @@ public class BlendFunc_RuledInv : Blend_FuncInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        curv.D1(X[2], out gp_Pnt ptcur, out gp_Vec d1cur);
-        gp_XYZ nplan = d1cur.Normalized().XYZ();
+        curv.D1(X[2], out Point3D ptcur, out Vector3D d1cur);
+        Xyz nplan = d1cur.Normalized().XYZ();
         double theD = -(nplan.Dot(ptcur.XYZ()));
-        gp_Pnt2d pt2d = csurf!.Value(X[1]);
+        Point2D pt2d = csurf!.Value(X[1]);
 
-        gp_Pnt pts1, pts2;
-        gp_Vec d1u1, d1v1, d1u2, d1v2;
+        Point3D pts1, pts2;
+        Vector3D d1u1, d1v1, d1u2, d1v2;
         if (first)
         {
             surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
@@ -127,10 +133,10 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             surf2.D1(pt2d.X(), pt2d.Y(), out pts2, out d1u2, out d1v2);
         }
 
-        gp_XYZ temp = pts2.XYZ() - pts1.XYZ();
+        Xyz temp = pts2.XYZ() - pts1.XYZ();
 
-        gp_XYZ ns1 = d1u1.Crossed(d1v1).XYZ();
-        gp_XYZ ns2 = d1u2.Crossed(d1v2).XYZ();
+        Xyz ns1 = d1u1.Crossed(d1v1).XYZ();
+        Xyz ns2 = d1u2.Crossed(d1v2).XYZ();
         double norm1 = nplan.Crossed(ns1).Modulus();
         double norm2 = nplan.Crossed(ns2).Modulus();
         ns1.SetLinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
@@ -145,41 +151,41 @@ public class BlendFunc_RuledInv : Blend_FuncInv
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         return ComputeDerivatives(X, null, D);
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         return ComputeDerivatives(X, F, D);
     }
 
     // OCCT's Derivatives and Values share their code: Values also computes F (where marked).
-    private bool ComputeDerivatives(math_Vector X, math_Vector? F, math_Matrix D)
+    private bool ComputeDerivatives(math_Vector X, math_Vector? F, Matrix D)
     {
-        curv.D2(X[2], out gp_Pnt ptcur, out gp_Vec d1cur, out gp_Vec d2cur);
+        curv.D2(X[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
         double normtgcur = d1cur.Magnitude();
-        gp_Vec nplan = d1cur.Normalized();
+        Vector3D nplan = d1cur.Normalized();
         double theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
-        gp_Vec dnplan = new gp_Vec();
+        Vector3D dnplan = new Vector3D();
         dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
 
-        gp_Pnt pts1, pts2;
-        gp_Vec d1u1, d1v1, d1u2, d1v2;
-        gp_Vec d2u1, d2v1, d2u2, d2v2, d2uv1, d2uv2;
-        gp_Vec dpdt = new gp_Vec(), p1p2;
+        Point3D pts1, pts2;
+        Vector3D d1u1, d1v1, d1u2, d1v2;
+        Vector3D d2u1, d2v1, d2u2, d2v2, d2uv1, d2uv2;
+        Vector3D dpdt = new Vector3D(), p1p2;
 
         if (first)
         {
             surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             surf2.D2(X[3], X[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
             dpdt.SetLinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
-            p1p2 = new gp_Vec(pts1, pts2);
+            p1p2 = new Vector3D(pts1, pts2);
             D[1, 1] = dpdt.Dot(nplan);
             D[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
             D[1, 3] = 0.0;
@@ -194,7 +200,7 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             surf1.D2(X[3], X[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
             dpdt.SetLinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
-            p1p2 = new gp_Vec(pts1, pts2);
+            p1p2 = new Vector3D(pts1, pts2);
             D[1, 1] = 0.0;
             D[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
             D[1, 3] = d1u1.Dot(nplan);
@@ -205,25 +211,25 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             D[2, 4] = 0.0;
         }
 
-        gp_Vec ns1 = d1u1.Crossed(d1v1);
-        gp_Vec ns2 = d1u2.Crossed(d1v2);
-        gp_Vec ncrossns1 = nplan.Crossed(ns1);
-        gp_Vec ncrossns2 = nplan.Crossed(ns2);
+        Vector3D ns1 = d1u1.Crossed(d1v1);
+        Vector3D ns2 = d1u2.Crossed(d1v2);
+        Vector3D ncrossns1 = nplan.Crossed(ns1);
+        Vector3D ncrossns2 = nplan.Crossed(ns2);
         double norm1 = ncrossns1.Magnitude();
         double norm2 = ncrossns2.Magnitude();
 
         double ndotns1 = nplan.Dot(ns1);
         double ndotns2 = nplan.Dot(ns2);
 
-        gp_Vec nor1 = new gp_Vec(), nor2 = new gp_Vec();
+        Vector3D nor1 = new Vector3D(), nor2 = new Vector3D();
         nor1.SetLinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
         nor2.SetLinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
 
         if (F is not null)
         {
             // Values only
-            F[1] = (nplan.Dot(new gp_Vec(pts1.XYZ()))) + theD;
-            F[2] = (nplan.Dot(new gp_Vec(pts2.XYZ()))) + theD;
+            F[1] = (nplan.Dot(new Vector3D(pts1.XYZ()))) + theD;
+            F[2] = (nplan.Dot(new Vector3D(pts2.XYZ()))) + theD;
 
             F[3] = p1p2.Dot(nor1);
             F[4] = p1p2.Dot(nor2);
@@ -242,7 +248,7 @@ public class BlendFunc_RuledInv : Blend_FuncInv
             D[4, 4] = -(d1v1.Dot(nor2));
         }
 
-        gp_Vec resul1 = new gp_Vec(), resul2 = new gp_Vec(), temp;
+        Vector3D resul1 = new Vector3D(), resul2 = new Vector3D(), temp;
         double grosterme;
 
         // Derivee de nor1 par rapport a u1

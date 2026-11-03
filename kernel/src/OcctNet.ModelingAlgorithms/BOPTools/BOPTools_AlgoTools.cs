@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -619,8 +622,8 @@ public static partial class BOPTools_AlgoTools
 
         // All edges of the face are on the solid.
         // Get point inside the face and classify it relatively solid.
-        gp_Pnt aP3D = new();
-        gp_Pnt2d aP2D = new();
+        Point3D aP3D = new();
+        Point2D aP2D = new();
         int iErr = BOPTools_AlgoTools3D.PointInFace(theF, ref aP3D, ref aP2D, theContext);
         if (iErr != 0)
         {
@@ -650,7 +653,7 @@ public static partial class BOPTools_AlgoTools
     public static TopAbs_State ComputeState(in TopoDS_Vertex theV, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
     {
         TopAbs_State aState;
-        gp_Pnt aP3D;
+        Point3D aP3D;
         //
         aP3D = BRep_Tool.Pnt(theV);
         aState = ComputeState(aP3D, theRef, theTol, theContext);
@@ -666,7 +669,7 @@ public static partial class BOPTools_AlgoTools
         double aT = 0.0;
         TopAbs_State aState;
         Geom_Curve? aC3D;
-        gp_Pnt aP3D;
+        Point3D aP3D;
         //
         aC3D = BRep_Tool.Curve(theE, out double aT1, out double aT2);
         //
@@ -685,8 +688,8 @@ public static partial class BOPTools_AlgoTools
             bool bF2Inf, bL2Inf;
             double dT = 10.0;
             //
-            bF2Inf = Precision.IsNegativeInfinite(aT1);
-            bL2Inf = Precision.IsPositiveInfinite(aT2);
+            bF2Inf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aT1);
+            bL2Inf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aT2);
             //
             if (bF2Inf && !bL2Inf)
             {
@@ -713,7 +716,7 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>The state of the point relative to the solid, by the context's solid classifier.</summary>
-    public static TopAbs_State ComputeState(in gp_Pnt theP, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
+    public static TopAbs_State ComputeState(in Point3D theP, in TopoDS_Solid theRef, double theTol, IntTools_Context theContext)
     {
         TopAbs_State aState;
         //
@@ -920,9 +923,9 @@ public static partial class BOPTools_AlgoTools
     {
         bool bRet, bIsComputed;
         double aT, aAngle, aTwoPI, aAngleMin, aDt3D;
-        gp_Pnt aPx;
-        gp_Dir aDBF, aDBF2, aDTF;
-        gp_Vec aVTgt = new();
+        Point3D aPx;
+        Direction3D aDBF, aDBF2, aDTF;
+        Vector3D aVTgt = new();
         TopAbs_Orientation aOr;
         Geom_Curve aC3D;
         Geom_Plane aPL;
@@ -936,7 +939,7 @@ public static partial class BOPTools_AlgoTools
         aC3D.D0(aT, out aPx);
         //
         BOPTools_AlgoTools2D.EdgeTangent(theE1, aT, ref aVTgt);
-        gp_Dir aDTgt = new(aVTgt), aDTgt2;
+        Direction3D aDTgt = new(aVTgt), aDTgt2;
         aOr = theE1.Orientation();
         //
         aPL = new Geom_Plane(aPx, aDTgt);
@@ -945,14 +948,14 @@ public static partial class BOPTools_AlgoTools
         //
         bool bSmallFaces = false;
         aDt3D = MinStep3D(theE1, theF1, theLCSOff, aPx, theContext, ref bSmallFaces);
-        bIsComputed = GetFaceDir(theE1, theF1, aPx, aT, aDTgt, bSmallFaces, out gp_Dir aDN1, out aDBF, theContext, aProjPL, aDt3D);
+        bIsComputed = GetFaceDir(theE1, theF1, aPx, aT, aDTgt, bSmallFaces, out Direction3D aDN1, out aDBF, theContext, aProjPL, aDt3D);
         // OCCT_DEBUG only: a message when the bi-normal direction is incorrect.
         //
         aDTF = aDN1 ^ aDBF;
         //
         // The difference between faces should be obvious enough
         // to guarantee the correctness of the classification
-        double anAngleCriteria = Precision.Confusion();
+        double anAngleCriteria = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         bRet = true;
         aIt.Initialize(theLCSOff);
@@ -968,7 +971,7 @@ public static partial class BOPTools_AlgoTools
             // Angle
             aAngle = AngleWithRef(aDBF, aDBF2, aDTF);
             //
-            if (Math.Abs(aAngle) < Precision.Angular())
+            if (Math.Abs(aAngle) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 if (aF2 == theF1)
                 {
@@ -1042,7 +1045,7 @@ public static partial class BOPTools_AlgoTools
     /// edges' tolerances and the fuzzy value.
     /// </summary>
     public static bool AreFacesSameDomain(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext) =>
-        AreFacesSameDomain(theF1, theF2, theContext, Precision.Confusion());
+        AreFacesSameDomain(theF1, theF2, theContext, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="AreFacesSameDomain(in TopoDS_Face, in TopoDS_Face, IntTools_Context)"/>
     public static bool AreFacesSameDomain(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext, double theFuzz)
@@ -1053,8 +1056,8 @@ public static partial class BOPTools_AlgoTools
         // and check its validity for the second face.
         // If valid - the faces are same domain.
 
-        gp_Pnt aP1 = new();
-        gp_Pnt2d aP2D1 = new();
+        Point3D aP1 = new();
+        Point2D aP2D1 = new();
         // Find point inside the first face
         int iErr = BOPTools_AlgoTools3D.PointInFace(theF1, ref aP1, ref aP2D1, theContext);
 
@@ -1102,7 +1105,7 @@ public static partial class BOPTools_AlgoTools
         }
 
         // Checking criteria
-        double aTol = aTolF1 + aTolF2 + Max(theFuzz, Precision.Confusion());
+        double aTol = aTolF1 + aTolF2 + Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Project and classify the point on second face
         bFacesSD = theContext.IsValidPointForFace(aP1, theF2, aTol);
@@ -1117,7 +1120,7 @@ public static partial class BOPTools_AlgoTools
     public static int Sense(in TopoDS_Face theF1, in TopoDS_Face theF2, IntTools_Context theContext)
     {
         int iSense = 0;
-        gp_Dir aDNF1, aDNF2;
+        Direction3D aDNF1, aDNF2;
         TopoDS_Edge aE1 = new(), aE2 = new();
         TopExp_Explorer aExp = new();
         //
@@ -1215,7 +1218,7 @@ public static partial class BOPTools_AlgoTools
     /// adds a <see cref="BOPAlgo_AlertUnableToOrientTheShape"/> warning (with both shapes) to the report.
     /// </summary>
     public static bool IsSplitToReverseWithWarn(in TopoDS_Shape theSplit, in TopoDS_Shape theShape, IntTools_Context? theContext,
-                                                Message_Report? theReport = null)
+                                                Report? theReport = null)
     {
         bool isToReverse = IsSplitToReverse(theSplit, theShape, theContext, out int anErr);
         if (anErr != 0 && theReport is not null)
@@ -1226,7 +1229,7 @@ public static partial class BOPTools_AlgoTools
             new BRep_Builder().MakeCompound(ref aWC);
             new BRep_Builder().Add(aWC, theSplit);
             new BRep_Builder().Add(aWC, theShape);
-            theReport.AddAlert(Message_Warning, new BOPAlgo_AlertUnableToOrientTheShape(aWC));
+            theReport.AddAlert(Warning, new BOPAlgo_AlertUnableToOrientTheShape(aWC));
         }
         return isToReverse;
     }
@@ -1258,8 +1261,8 @@ public static partial class BOPTools_AlgoTools
         //
         bool bDone = false;
         // Find the point inside the split face
-        gp_Pnt aPFSp = new();
-        gp_Pnt2d aP2DFSp = new();
+        Point3D aPFSp = new();
+        Point2D aP2DFSp = new();
         //
         // Error status
         int iErr;
@@ -1293,7 +1296,7 @@ public static partial class BOPTools_AlgoTools
         }
         //
         // Compute normal direction of the split face
-        gp_Dir aDNFSp = new();
+        Direction3D aDNFSp = new();
         bDone = BOPTools_AlgoTools3D.GetNormalToSurface(aSFSp, aP2DFSp.X(), aP2DFSp.Y(), ref aDNFSp);
         if (!bDone)
         {
@@ -1320,7 +1323,7 @@ public static partial class BOPTools_AlgoTools
         aProjector.LowerDistanceParameters(out double aU, out double aV);
         //
         // Compute normal direction for the original face in this point
-        gp_Dir aDNFOr = new();
+        Direction3D aDNFOr = new();
         bDone = BOPTools_AlgoTools3D.GetNormalToSurface(aSFOr, aU, aV, ref aDNFOr);
         if (!bDone)
         {
@@ -1391,7 +1394,7 @@ public static partial class BOPTools_AlgoTools
         {
             double aTm = f + i * aDT;
             // Compute tangent vector on split edge
-            gp_Vec aVSpTgt = new();
+            Vector3D aVSpTgt = new();
             if (!BOPTools_AlgoTools2D.EdgeTangent(theESp, aTm, ref aVSpTgt))
             {
                 // Unable to compute the tangent vector on the split edge
@@ -1411,7 +1414,7 @@ public static partial class BOPTools_AlgoTools
             }
 
             // Compute tangent vector on original edge
-            gp_Vec aVOrTgt = new();
+            Vector3D aVOrTgt = new();
             if (!BOPTools_AlgoTools2D.EdgeTangent(theEOr, aTmOr, ref aVOrTgt))
             {
                 // Unable to compute the tangent vector on the original edge
@@ -1442,7 +1445,7 @@ public static partial class BOPTools_AlgoTools
         double aX1, aY1, aX0, aY0;
         TopAbs_Orientation aOr;
 
-        gp_Pnt2d aP2D0, aP2D1;
+        Point2D aP2D0, aP2D1;
         Geom2d_Curve? aC2D;
         TopoDS_Face aF, aFF;
         TopoDS_Iterator aItW = new();
@@ -1641,14 +1644,14 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>0 if the point is within the vertex's tolerance plus <paramref name="aTolP2"/> (and Confusion), else 1.</summary>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in gp_Pnt aP2, double aTolP2)
+    public static int ComputeVV(in TopoDS_Vertex aV1, in Point3D aP2, double aTolP2)
     {
         double aTolV1, aTolSum, aTolSum2, aD2;
-        gp_Pnt aP1;
+        Point3D aP1;
         //
         aTolV1 = BRep_Tool.Tolerance(aV1);
 
-        aTolSum = aTolV1 + aTolP2 + Precision.Confusion();
+        aTolSum = aTolV1 + aTolP2 + global::Kerf.Engine.Foundation.Precision.Confusion();
         aTolSum2 = aTolSum * aTolSum;
         //
         aP1 = BRep_Tool.Pnt(aV1);
@@ -1662,14 +1665,14 @@ public static partial class BOPTools_AlgoTools
     }
 
     /// <summary>0 if the vertices are within the sum of their tolerances and the fuzzy value, else 1.</summary>
-    public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2) => ComputeVV(aV1, aV2, Precision.Confusion());
+    public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2) => ComputeVV(aV1, aV2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="ComputeVV(in TopoDS_Vertex, in TopoDS_Vertex)"/>
     public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2, double aFuzz)
     {
         double aTolV1, aTolV2, aTolSum, aTolSum2, aD2;
-        gp_Pnt aP1, aP2;
-        double aFuzz1 = (aFuzz > Precision.Confusion() ? aFuzz : Precision.Confusion());
+        Point3D aP1, aP2;
+        double aFuzz1 = (aFuzz > global::Kerf.Engine.Foundation.Precision.Confusion() ? aFuzz : global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         aTolV1 = BRep_Tool.Tolerance(aV1);
         aTolV2 = BRep_Tool.Tolerance(aV2);
@@ -1701,7 +1704,7 @@ public static partial class BOPTools_AlgoTools
         else if (aNb > 1)
         {
             double aNTol = 0.0;
-            gp_Pnt aNC = new();
+            Point3D aNC = new();
             BRepLib.BoundingVertex(aLV, ref aNC, ref aNTol);
             BRep_Builder aBB = new();
             aBB.MakeVertex(ref aVnew, aNC, aNTol);
@@ -1832,15 +1835,15 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The angle from theD1 to theD2, signed by the reference direction (a pseudo-angle: pi/2 (1 - cos)).
-    private static double AngleWithRef(in gp_Dir theD1, in gp_Dir theD2, in gp_Dir theDRef)
+    private static double AngleWithRef(in Direction3D theD1, in Direction3D theD2, in Direction3D theDRef)
     {
         double aCosinus, aSinus, aBeta, aHalfPI, aScPr;
-        gp_XYZ aXYZ;
+        Xyz aXYZ;
         //
         aHalfPI = 0.5 * M_PI;
         //
-        gp_XYZ aXYZ1 = theD1.XYZ();
-        gp_XYZ aXYZ2 = theD2.XYZ();
+        Xyz aXYZ1 = theD1.XYZ();
+        Xyz aXYZ2 = theD2.XYZ();
         aXYZ = aXYZ1.Crossed(aXYZ2);
         aSinus = aXYZ.Modulus();
         aCosinus = theD1 * theD2;
@@ -1871,7 +1874,7 @@ public static partial class BOPTools_AlgoTools
     {
         bool bFlag;
         double ULD, VLD;
-        gp_Pnt2d aP2D = new();
+        Point2D aP2D = new();
         //
         aShrR.Range(out double f1, out double l1);
         double dt = 0.0075, k; // dt=0.001,  k;
@@ -1880,7 +1883,7 @@ public static partial class BOPTools_AlgoTools
         l1 = l1 - k;
         //
         // Treatment P11
-        PointOnEdge(aE1, f1, out gp_Pnt aP11);
+        PointOnEdge(aE1, f1, out Point3D aP11);
         //
         GeomAPI_ProjectPointOnSurf aProjector = aContext.ProjPS(aF);
         aProjector.Perform(aP11);
@@ -1902,7 +1905,7 @@ public static partial class BOPTools_AlgoTools
         }
         //
         // Treatment P12
-        PointOnEdge(aE1, l1, out gp_Pnt aP12);
+        PointOnEdge(aE1, l1, out Point3D aP12);
         //
         aProjector.Perform(aP12);
         //
@@ -1999,18 +2002,18 @@ public static partial class BOPTools_AlgoTools
     // The bi-normal direction aDB of the face at the point aP of the edge (and its normal aDN).
     private static bool GetFaceDir(in TopoDS_Edge aE,
                                    in TopoDS_Face aF,
-                                   in gp_Pnt aP,
+                                   in Point3D aP,
                                    double aT,
-                                   in gp_Dir aDTgt,
+                                   in Direction3D aDTgt,
                                    bool theSmallFaces,
-                                   out gp_Dir aDN,
-                                   out gp_Dir aDB,
+                                   out Direction3D aDN,
+                                   out Direction3D aDB,
                                    IntTools_Context theContext,
                                    GeomAPI_ProjectPointOnSurf aProjPL,
                                    double aDt)
     {
         double aTolE;
-        gp_Pnt aPx = new();
+        Point3D aPx = new();
         //
         BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, aT, out aDN, theContext);
         if (aF.Orientation() == TopAbs_REVERSED)
@@ -2036,7 +2039,7 @@ public static partial class BOPTools_AlgoTools
                 return false;
             }
             aPx = aProjPL.NearestPoint();
-            gp_Vec aVec = new(aP, aPx);
+            Vector3D aVec = new(aP, aPx);
             aDB.SetXYZ(aVec.XYZ());
         }
         //
@@ -2046,9 +2049,9 @@ public static partial class BOPTools_AlgoTools
     // Finds a point in the face in the direction aDB: intersects the face with the circle of radius aDt at aP in the
     // plane of aProjPL, iterating projections.
     private static bool FindPointInFace(in TopoDS_Face aF,
-                                        in gp_Pnt aP,
-                                        ref gp_Dir aDB,
-                                        ref gp_Pnt aPOut,
+                                        in Point3D aP,
+                                        ref Direction3D aDB,
+                                        ref Point3D aPOut,
                                         IntTools_Context theContext,
                                         GeomAPI_ProjectPointOnSurf aProjPL,
                                         double aDt,
@@ -2057,9 +2060,9 @@ public static partial class BOPTools_AlgoTools
         int aNbItMax;
         double aDist, aDTol, aPM, anEps;
         bool bRet;
-        gp_Pnt aP1 = new(), aPS;
+        Point3D aP1 = new(), aPS;
         //
-        aDTol = Precision.Angular();
+        aDTol = global::Kerf.Engine.Foundation.Precision.Angular();
         aPM = aP.XYZ().Modulus();
         if (aPM > 1000.0)
         {
@@ -2067,7 +2070,7 @@ public static partial class BOPTools_AlgoTools
         }
         bRet = false;
         aNbItMax = 15;
-        anEps = Precision.SquareConfusion();
+        anEps = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         //
         GeomAPI_ProjectPointOnSurf aProj = theContext.ProjPS(aF);
         //
@@ -2106,7 +2109,7 @@ public static partial class BOPTools_AlgoTools
             aProjPL.Perform(aPOut);
             aPOut = aProjPL.NearestPoint();
             //
-            gp_Vec aV = new(aPS, aPOut);
+            Vector3D aV = new(aPS, aPOut);
             if (aV.SquareMagnitude() < anEps)
             {
                 return bRet;
@@ -2122,7 +2125,7 @@ public static partial class BOPTools_AlgoTools
     private static double MinStep3D(in TopoDS_Edge theE1,
                                     in TopoDS_Face theF1,
                                     NCollection_List<BOPTools_CoupleOfShape> theLCS,
-                                    in gp_Pnt aP,
+                                    in Point3D aP,
                                     IntTools_Context theContext,
                                     ref bool theSmallFaces)
     {
@@ -2156,27 +2159,27 @@ public static partial class BOPTools_AlgoTools
             // try to compute the minimal 3D step
             BRepAdaptor_Surface aBAS = theContext.SurfaceAdaptor(aF);
             double aR = 0.0;
-            GeomAbs_SurfaceType aSType = aBAS.GetType();
+            SurfaceKind aSType = aBAS.GetType();
             switch (aSType)
             {
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                     {
                         aR = aBAS.Cylinder().Radius();
                         break;
                     }
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                     {
-                        gp_Lin aL = new(aBAS.Cone().Axis());
+                        Line3D aL = new(aBAS.Cone().Axis());
                         aR = aL.Distance(aP);
                         break;
                     }
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                     {
                         aDtMin = Max(aDtMin, 5.0e-4);
                         aR = aBAS.Sphere().Radius();
                         break;
                     }
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                     {
                         aR = aBAS.Torus().MajorRadius();
                         break;
@@ -2188,7 +2191,7 @@ public static partial class BOPTools_AlgoTools
             //
             if (aR > 100.0)
             {
-                double d = 10 * Precision.PConfusion();
+                double d = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
                 aDtMin = Max(aDtMin, Math.Sqrt(d * d + 2 * d * aR));
             }
         }

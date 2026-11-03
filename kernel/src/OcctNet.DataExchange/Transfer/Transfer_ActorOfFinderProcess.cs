@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,20 +28,20 @@ public class Transfer_ActorOfFinderProcess : Transfer_ActorOfProcessForFinder
     }
 
     public override Transfer_Binder? Transferring(Transfer_Finder? ent, Transfer_ProcessForFinder? TP,
-                                                  Message_ProgressRange theProgress = default)
+                                                  ProgressRange theProgress = default)
     {
         return Transfer(ent, TP as Transfer_FinderProcess, theProgress);
     }
 
     public virtual Transfer_Binder? Transfer(Transfer_Finder? fnd, Transfer_FinderProcess? FP,
-                                             Message_ProgressRange theProgress = default)
+                                             ProgressRange theProgress = default)
     {
         Transfer_TransientMapper? tm = fnd as Transfer_TransientMapper;
         if (tm is null)
         {
             return NullResult();
         }
-        Standard_Transient? res = TransferTransient(tm.Value(), FP, theProgress);
+        Transient? res = TransferTransient(tm.Value(), FP, theProgress);
         if (res is null)
         {
             return NullResult();
@@ -47,10 +49,10 @@ public class Transfer_ActorOfFinderProcess : Transfer_ActorOfProcessForFinder
         return TransientResult(res);
     }
 
-    public virtual Standard_Transient? TransferTransient(Standard_Transient? ent, Transfer_FinderProcess? FP,
-                                                         Message_ProgressRange theProgress = default)
+    public virtual Transient? TransferTransient(Transient? ent, Transfer_FinderProcess? FP,
+                                                         ProgressRange theProgress = default)
     {
-        Standard_Transient? nulres = null;
+        Transient? nulres = null;
         return nulres;
     }
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 using static Occt.Interface_ParamType;
 
@@ -24,18 +25,18 @@ public class InterfaceTests
         Assert.Equal(3, anIter.NbEntities());
         Assert.Equal(2, anIter.NbTyped(typeof(ToyEntity)));
         Assert.Equal(2, anIter.Typed(typeof(ToyEntity)).NbEntities());
-        var aSeen = new List<Standard_Transient>();
+        var aSeen = new List<Transient>();
         for (anIter.Start(); anIter.More(); anIter.Next())
         {
             aSeen.Add(anIter.Value()!);
         }
         Assert.Equal([a, u, b], aSeen);
-        Assert.Throws<Standard_NoSuchObject>(() => anIter.Value());
+        Assert.Throws<NoSuchObjectException>(() => anIter.Value());
         anIter.SelectType(typeof(ToyEntity), false);
         Assert.Equal(1, anIter.NbEntities());
         Assert.Same(u, anIter.Content()!.Value(1));
 
-        var aList = new NCollection_HSequence<Standard_Transient>();
+        var aList = new NCollection_HSequence<Transient>();
         aList.Append(a);
         var aShared = new Interface_EntityIterator(aList); // over the list, not a copy
         aList.Append(b);
@@ -70,7 +71,7 @@ public class InterfaceTests
         aList.Remove(2);
         Assert.Equal(7, aList.NbEntities());
         Assert.Same(anEnts[2], aList.Value(2));
-        Assert.Throws<Standard_NullObject>(() => aList.Append(null));
+        Assert.Throws<NullObjectException>(() => aList.Append(null));
     }
 
     [Fact]
@@ -137,7 +138,7 @@ public class InterfaceTests
 
         // a message from the loaded resources
         Interface_StaticSet.LoadMessages();
-        var aMsg = new Message_Msg("XSTEP_21");
+        var aMsg = new Msg("XSTEP_21");
         aMsg.Arg(3);
         aCheck.SendFail(aMsg);
         Assert.Equal(1, aCheck.NbFails());
@@ -189,7 +190,7 @@ public class InterfaceTests
         Assert.Same(anEnt, aContent.ParamEntity(2));
         Assert.Equal("'txt'", aContent.ParamValue(3)!.ToCString());
         Assert.Equal(Interface_ParamText, aContent.ParamType(3));
-        Assert.True(aContent.ParamData(2, out Interface_ParamType aType, out Standard_Transient? aRef, out _));
+        Assert.True(aContent.ParamData(2, out Interface_ParamType aType, out Transient? aRef, out _));
         Assert.Equal(Interface_ParamIdent, aType);
         Assert.Same(anEnt, aRef);
         aContent.SetLiteral(2, Interface_ParamReal, new TCollection_HAsciiString("1.5"));
@@ -239,8 +240,8 @@ public class InterfaceTests
         Assert.Equal(12, new TCollection_HAsciiString("12abc").IntegerValue());
         Assert.True(new TCollection_HAsciiString("1.5e3").IsRealValue());
         Assert.Equal("1e+20", new TCollection_HAsciiString(1.0e20).ToCString());
-        Assert.Throws<Standard_NullObject>(() => s.IsSameString(null));
-        Assert.Throws<Standard_OutOfRange>(() => s.Value(0));
+        Assert.Throws<NullObjectException>(() => s.IsSameString(null));
+        Assert.Throws<OutOfRangeException>(() => s.Value(0));
     }
 
     [Fact]
@@ -282,9 +283,9 @@ public class InterfaceTests
 
         public override bool IsSuitableModel(Interface_InterfaceModel? model) => false;
 
-        public override Standard_Transient? UnknownEntity() => null;
+        public override Transient? UnknownEntity() => null;
 
-        public override bool IsUnknownEntity(Standard_Transient? ent) => false;
+        public override bool IsUnknownEntity(Transient? ent) => false;
     }
 
     [Fact]
@@ -309,7 +310,7 @@ public class InterfaceTests
         aBuf.Add("abc");
         Assert.Equal(5, aBuf.Length());
         Assert.Equal("  abc", aBuf.Moved().ToCString());
-        Assert.Throws<Standard_OutOfRange>(() => aBuf.SetInitial(20));
+        Assert.Throws<OutOfRangeException>(() => aBuf.SetInitial(20));
     }
 
     [Fact]

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Extends the default range splitter to generate the internal nodes of a cylindrical surface.</summary>
@@ -29,7 +31,7 @@ public class BRepMesh_CylinderRangeSplitter : BRepMesh_DefaultRangeSplitter
     }
 
     /// <summary>The nodes of a grid along U over the face's range (OCCT leaves the V subdivision out).</summary>
-    public override NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public override NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         (double first, double second) aRangeU = GetRangeU();
         (double first, double second) aRangeV = GetRangeV();
@@ -52,7 +54,7 @@ public class BRepMesh_CylinderRangeSplitter : BRepMesh_DefaultRangeSplitter
         double Du = su / (nbU + 1);
         double Dv = sv / (nbV + 1);
 
-        NCollection_List<gp_Pnt2d> aNodes = new();
+        NCollection_List<Point2D> aNodes = new();
 
         double aPasMaxV = aRangeV.second - Dv * 0.5;
         double aPasMaxU = aRangeU.second - Du * 0.5;
@@ -60,7 +62,7 @@ public class BRepMesh_CylinderRangeSplitter : BRepMesh_DefaultRangeSplitter
         {
             for (double aPasU = aRangeU.first + Du; aPasU < aPasMaxU; aPasU += Du)
             {
-                aNodes.Append(new gp_Pnt2d(aPasU, aPasV));
+                aNodes.Append(new Point2D(aPasU, aPasV));
             }
         }
 

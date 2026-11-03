@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -45,7 +47,7 @@ public class ChFi3dBuilder0Tests
 
         // a point that is not a vertex is a new point of the data structure
         ChFiDS_CommonPoint Q = new();
-        Q.SetPoint(new gp_Pnt(1, 2, 3));
+        Q.SetPoint(new Point3D(1, 2, 3));
         Q.SetTolerance(1.0e-4);
         int ip = ChFi3d_IndexPointInDS(Q, DS);
         Assert.Equal(1, DS.NbPoints());
@@ -56,10 +58,10 @@ public class ChFi3dBuilder0Tests
     public void ReparamPcurvSegmentsAFrozenCurveOnACopy()
     {
         // OCCT segments the B-spline in place; a frozen one (an intersection's result) is left as it is
-        NCollection_Array1<gp_Pnt2d> p = new(1, 3);
-        p[1] = new gp_Pnt2d(0, 0);
-        p[2] = new gp_Pnt2d(1, 2);
-        p[3] = new gp_Pnt2d(3, 1);
+        NCollection_Array1<Point2D> p = new(1, 3);
+        p[1] = new Point2D(0, 0);
+        p[2] = new Point2D(1, 2);
+        p[3] = new Point2D(3, 1);
         NCollection_Array1<double> k = new(1, 2);
         k[1] = 0.0;
         k[2] = 1.0;
@@ -92,7 +94,7 @@ public class ChFi3dBuilder0Tests
         Assert.Equal(TopAbs_REVERSED, I.Transition().Orientation(TopAbs_State.TopAbs_IN));
         Assert.Equal(TopOpeBRepDS_POINT, ChFi3d_FilPointInDS(TopAbs_FORWARD, 3, 7, 1.5).GeometryType());
 
-        Geom2d_Line L = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line L = new(new Point2D(0, 0), new Direction2D(1, 0));
         TopOpeBRepDS_SurfaceCurveInterference S = ChFi3d_FilCurveInDS(4, 2, L, TopAbs_FORWARD);
         Assert.Equal(TopOpeBRepDS_SURFACE, S.SupportType());
         Assert.Equal(2, S.Support());
@@ -115,10 +117,10 @@ public class ChFi3dBuilder0Tests
         TopExp_Explorer exe = new(F, TopAbs_EDGE);
         TopoDS_Edge E = TopoDS.Edge(exe.Current());
         TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex _);
-        gp_Pnt P = BRep_Tool.Pnt(V1);
+        Point3D P = BRep_Tool.Pnt(V1);
         BRepAdaptor_Curve2d anArc = new(E, F);
         BRepBlend_Extremity SP = new(P, 0.0, 0.0, 2.5, 1.0e-6);
-        SP.SetTangent(new gp_Vec(0, 0, 1));
+        SP.SetTangent(new Vector3D(0, 0, 1));
         IntSurf_Transition T = new();
         SP.AddArc(anArc, BRep_Tool.Parameter(V1, E), T, T);
         ChFiDS_CommonPoint CP = new();
@@ -128,7 +130,7 @@ public class ChFi3dBuilder0Tests
         Assert.True(CP.IsOnArc());
         Assert.True(CP.Arc().IsSame(E));
         Assert.Equal(2.5, CP.Parameter());
-        Assert.True(CP.Vector().IsEqual(new gp_Vec(0, 0, -1), 1.0e-15, 1.0e-15));
+        Assert.True(CP.Vector().IsEqual(new Vector3D(0, 0, -1), 1.0e-15, 1.0e-15));
         Assert.Equal(TopAbs.Reverse(TopAbs.Compose(TopAbs_FORWARD, E.Orientation())), CP.TransitionOnArc());
         Assert.True(CP.Tolerance() >= BRep_Tool.Tolerance(V1));
     }
@@ -138,10 +140,10 @@ public class ChFi3dBuilder0Tests
     {
         Assert.Equal(0.5, ChFi3d_InPeriod(0.5 + 2 * Math.PI, 0.0, 2 * Math.PI, 1.0e-9), 14);
         Assert.Equal(0.0, ChFi3d_InPeriod(-1.0e-12, 0.0, 2 * Math.PI, 1.0e-9));
-        ChFi3d_Boite(new gp_Pnt2d(3, 1), new gp_Pnt2d(-1, 4), out double mu, out double Mu, out double mv,
+        ChFi3d_Boite(new Point2D(3, 1), new Point2D(-1, 4), out double mu, out double Mu, out double mv,
                      out double Mv);
         Assert.Equal((-1.0, 3.0, 1.0, 4.0), (mu, Mu, mv, Mv));
-        ChFi3d_Boite(new gp_Pnt2d(3, 1), new gp_Pnt2d(-1, 4), new gp_Pnt2d(5, 0), new gp_Pnt2d(0, 2), out double Du,
+        ChFi3d_Boite(new Point2D(3, 1), new Point2D(-1, 4), new Point2D(5, 0), new Point2D(0, 2), out double Du,
                      out double Dv, out mu, out Mu, out mv, out Mv);
         Assert.Equal((6.0, 4.0, -1.0, 5.0, 0.0, 4.0), (Du, Dv, mu, Mu, mv, Mv));
         // the pivot: the sections of the other two fillets do not cross on its opposite face
@@ -165,7 +167,7 @@ public class ChFi3dBuilder0Tests
         Sp.SetRadius(1.0);
         Assert.True(ChFi3d_KParticular(Sp, 1, new BRepAdaptor_Surface(F1), new BRepAdaptor_Surface(F2)));
         // an evolving radius is not particular
-        Sp.SetRadius(new gp_XY(0.0, 2.0), 1);
+        Sp.SetRadius(new Xy(0.0, 2.0), 1);
         Assert.False(ChFi3d_KParticular(Sp, 1, new BRepAdaptor_Surface(F1), new BRepAdaptor_Surface(F2)));
     }
 }

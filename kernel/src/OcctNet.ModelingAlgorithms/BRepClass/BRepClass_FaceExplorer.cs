@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -43,20 +45,20 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
         myCurEdgePar = Probing_Start;
         myMaxTolerance = 0.1;
         myUseBndBox = false;
-        myUMin = Precision.Infinite();
-        myUMax = -Precision.Infinite();
-        myVMin = Precision.Infinite();
-        myVMax = -Precision.Infinite();
+        myUMin = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myUMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        myVMin = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myVMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
         myFace.Orientation(TopAbs_FORWARD);
     }
 
     /// <summary>Computes the UV bounds of the face.</summary>
     protected void ComputeFaceBounds()
     {
-        Geom_Surface aSurface = BRep_Tool.Surface(myFace, out TopLoc_Location _)!;
+        Geom_Surface aSurface = BRep_Tool.Surface(myFace, out Placement _)!;
         aSurface.Bounds(out myUMin, out myUMax, out myVMin, out myVMax);
-        if (Precision.IsInfinite(myUMin) || Precision.IsInfinite(myUMax)
-            || Precision.IsInfinite(myVMin) || Precision.IsInfinite(myVMax))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMax)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMax))
         {
             BRepTools.UVBounds(myFace, out myUMin, out myUMax, out myVMin, out myVMax);
         }
@@ -66,22 +68,22 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     /// Checks the point, and moves it if it is too far from the face's UV box: to the line from the box's centre to
     /// the point. Returns true if the point was not changed.
     /// </summary>
-    public bool CheckPoint(ref gp_Pnt2d thePoint)
+    public bool CheckPoint(ref Point2D thePoint)
     {
         if (myUMin > myUMax)
         {
             ComputeFaceBounds();
         }
 
-        if (Precision.IsInfinite(myUMin) || Precision.IsInfinite(myUMax)
-            || Precision.IsInfinite(myVMin) || Precision.IsInfinite(myVMax))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myUMax)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myVMax))
         {
             return true;
         }
 
-        gp_Pnt2d aCenterPnt = new((myUMin + myUMax) / 2, (myVMin + myVMax) / 2);
+        Point2D aCenterPnt = new((myUMin + myUMax) / 2, (myVMin + myVMax) / 2);
         double aDistance = aCenterPnt.Distance(thePoint);
-        if (Precision.IsInfinite(aDistance))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aDistance))
         {
             thePoint.SetCoord(myUMin - (myUMax - myUMin), myVMin - (myVMax - myVMin));
             return false;
@@ -91,9 +93,9 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
             double anEpsilon = Epsilon(aDistance);
             if (anEpsilon > Max(myUMax - myUMin, myVMax - myVMin))
             {
-                gp_Vec2d aLinVec = new(aCenterPnt, thePoint);
-                gp_Dir2d aLinDir = new(aLinVec);
-                thePoint = new gp_Pnt2d(aCenterPnt.XY() + aLinDir.XY() * (2.0 * anEpsilon));
+                Vector2D aLinVec = new(aCenterPnt, thePoint);
+                Direction2D aLinDir = new(aLinVec);
+                thePoint = new Point2D(aCenterPnt.XY() + aLinDir.XY() * (2.0 * anEpsilon));
                 return false;
             }
         }
@@ -102,13 +104,13 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     }
 
     /// <summary>True if the point is outside a bounding volume of the face: always false.</summary>
-    public virtual bool Reject(in gp_Pnt2d P) => false;
+    public virtual bool Reject(in Point2D P) => false;
 
     /// <summary>
     /// A half-line from <paramref name="P"/> in <paramref name="L"/>, with in <paramref name="Par"/> the parameter up
     /// to which it meets the face's boundary at least once. Starts again from the first edge.
     /// </summary>
-    public bool Segment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+    public bool Segment(in Point2D P, out Line2D L, out double Par)
     {
         myCurEdgeInd = 1;
         myCurEdgePar = Probing_Start;
@@ -117,18 +119,18 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     }
 
     /// <summary>Another half-line from <paramref name="P"/> (see <see cref="Segment"/>): each call gives another one.</summary>
-    public bool OtherSegment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+    public bool OtherSegment(in Point2D P, out Line2D L, out double Par)
     {
         var anExpF = new TopExp_Explorer(myFace, TopAbs_EDGE);
         int i;
         double aFPar;
         double aLPar;
         Geom2d_Curve? aC2d;
-        double aTolParConf2 = Precision.PConfusion() * Precision.PConfusion();
-        gp_Pnt2d aPOnC;
+        double aTolParConf2 = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
+        Point2D aPOnC;
         double aParamIn;
         // C++ leaves L and Par unwritten for the edges it skips; they are written before every return
-        L = new gp_Lin2d();
+        L = new Line2D();
         Par = 0.0;
 
         for (i = 1; anExpF.More(); anExpF.Next(), i++)
@@ -150,9 +152,9 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                 if (aC2d is not null)
                 {
                     // Treatment of infinite cases.
-                    if (Precision.IsNegativeInfinite(aFPar))
+                    if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFPar))
                     {
-                        if (Precision.IsPositiveInfinite(aLPar))
+                        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLPar))
                         {
                             aFPar = -1.0;
                             aLPar = 1.0;
@@ -162,7 +164,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                             aFPar = aLPar - 1.0;
                         }
                     }
-                    else if (Precision.IsPositiveInfinite(aLPar))
+                    else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLPar))
                     {
                         aLPar = aFPar + 1.0;
                     }
@@ -171,13 +173,13 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                     {
                         aParamIn = myCurEdgePar * aFPar + (1.0 - myCurEdgePar) * aLPar;
 
-                        aC2d.D1(aParamIn, out aPOnC, out gp_Vec2d aTanVec);
+                        aC2d.D1(aParamIn, out aPOnC, out Vector2D aTanVec);
                         Par = aPOnC.SquareDistance(P);
 
                         if (Par > aTolParConf2)
                         {
-                            gp_Vec2d aLinVec = new(P, aPOnC);
-                            gp_Dir2d aLinDir = new(aLinVec);
+                            Vector2D aLinVec = new(P, aPOnC);
+                            Direction2D aLinDir = new(aLinVec);
 
                             double aTanMod = aTanVec.SquareMagnitude();
                             if (aTanMod < aTolParConf2)
@@ -186,7 +188,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                             }
 
                             aTanVec /= Math.Sqrt(aTanMod);
-                            double aSinA = aTanVec.Crossed(new gp_Vec2d(aLinDir.XY()));
+                            double aSinA = aTanVec.Crossed(new Vector2D(aLinDir.XY()));
                             const double SmallAngle = 0.001;
                             bool isSmallAngle = false;
                             if (Math.Abs(aSinA) < SmallAngle)
@@ -203,11 +205,11 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                                 }
                             }
 
-                            L = new gp_Lin2d(P, aLinDir);
+                            L = new Line2D(P, aLinDir);
 
                             // Check if ends of a curve lie on a line.
                             aC2d.D0(aFPar, out aPOnC);
-                            gp_Pnt2d aFPOnC = aPOnC;
+                            Point2D aFPOnC = aPOnC;
                             if (L.SquareDistance(aPOnC) > aTolParConf2)
                             {
                                 aC2d.D0(aLPar, out aPOnC);
@@ -221,7 +223,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
                                         aProj.Init(P, aC2d, aFPar, aLPar);
                                         if (aProj.NbPoints() > 0)
                                         {
-                                            gp_Pnt2d aLPOnC = aPOnC;
+                                            Point2D aLPOnC = aPOnC;
                                             double aFDist = P.SquareDistance(aFPOnC);
                                             double aLDist = P.SquareDistance(aLPOnC);
                                             double aMinDist = aProj.LowerDistance();
@@ -249,7 +251,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
 
                                                 aLinVec.SetXY((aPOnC.XY() - P.XY()));
                                                 aLinDir.SetXY(aLinVec.XY());
-                                                L = new gp_Lin2d(P, aLinDir);
+                                                L = new Line2D(P, aLinDir);
                                             }
                                         }
                                     }
@@ -277,7 +279,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
 
         // nothing found, return an horizontal line
         Par = RealLast();
-        L = new gp_Lin2d(P, new gp_Dir2d(gp_Dir2d.D.X));
+        L = new Line2D(P, new Direction2D(Direction2D.D.X));
 
         return false;
     }
@@ -292,7 +294,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     public void NextWire() => myWExplorer.Next();
 
     /// <summary>True if the wire's bounding volume doesn't meet the segment: always false.</summary>
-    public virtual bool RejectWire(in gp_Lin2d L, double Par) => false;
+    public virtual bool RejectWire(in Line2D L, double Par) => false;
 
     /// <summary>Starts an exploration of the edges of the current wire.</summary>
     public void InitEdges()
@@ -309,7 +311,7 @@ public class BRepClass_FaceExplorer : ITopClass_FaceExplorer<BRepClass_Edge>
     public void NextEdge() => myEExplorer.Next();
 
     /// <summary>True if the edge's bounding volume doesn't meet the segment: always false.</summary>
-    public virtual bool RejectEdge(in gp_Lin2d L, double Par) => false;
+    public virtual bool RejectEdge(in Line2D L, double Par) => false;
 
     /// <summary>
     /// Writes the current edge of the current wire into <paramref name="E"/>, with its orientation. As in OCCT, the

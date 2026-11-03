@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -38,7 +39,7 @@ public class XSControl_Utils
     /// </summary>
     public void TraceLine(string line)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         sout.Append(line).Append('\n');
     }
 
@@ -46,9 +47,9 @@ public class XSControl_Utils
     /// Just prints a line or a set of lines into the current Trace File. &lt;lines&gt; can be a HAscii String
     /// (produces a print without ending line) or a HSequence (one new line per item)
     /// </summary>
-    public void TraceLines(Standard_Transient? lines)
+    public void TraceLines(Transient? lines)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         int i, nb;
         if (lines is NCollection_HSequence<TCollection_HAsciiString> linha)
         {
@@ -77,7 +78,7 @@ public class XSControl_Utils
         }
     }
 
-    public bool IsKind(Standard_Transient? item, Type? what)
+    public bool IsKind(Transient? item, Type? what)
     {
         if (item is null)
         {
@@ -95,7 +96,7 @@ public class XSControl_Utils
     /// not a type, the Name of its DynamicType If it is Null, an empty string If &lt;nopk&gt; is False (D),
     /// gives complete name If &lt;nopk&gt; is True, returns class name without package
     /// </summary>
-    public string TypeName(Standard_Transient? item, bool nopk = false)
+    public string TypeName(Transient? item, bool nopk = false)
     {
         if (item is null)
         {
@@ -103,7 +104,7 @@ public class XSControl_Utils
         }
         // OCCT first takes the item as a Standard_Type itself: a System.Type is never a Standard_Transient
         Type atype = item.DynamicType();
-        string tn = atype.Name;
+        string tn = global::Kerf.Engine.Foundation.OcctTypeNames.Of(atype);
         if (!nopk)
         {
             return tn;
@@ -118,9 +119,9 @@ public class XSControl_Utils
         return tn;
     }
 
-    public Standard_Transient? TraValue(Standard_Transient? seqval, int num)
+    public Transient? TraValue(Transient? seqval, int num)
     {
-        Standard_Transient val = null;
+        Transient val = null;
         if (num < 1)
         {
             return val;
@@ -137,7 +138,7 @@ public class XSControl_Utils
             }
             return val;
         }
-        if (seqval is NCollection_HSequence<Standard_Transient> seqt)
+        if (seqval is NCollection_HSequence<Transient> seqt)
         {
             if (num <= seqt.Length())
             {
@@ -149,12 +150,12 @@ public class XSControl_Utils
         return val;
     }
 
-    public NCollection_HSequence<Standard_Transient> NewSeqTra()
+    public NCollection_HSequence<Transient> NewSeqTra()
     {
-        return new NCollection_HSequence<Standard_Transient>();
+        return new NCollection_HSequence<Transient>();
     }
 
-    public void AppendTra(NCollection_HSequence<Standard_Transient>? seqval, Standard_Transient? traval)
+    public void AppendTra(NCollection_HSequence<Transient>? seqval, Transient? traval)
     {
         seqval.Append(traval);
     }
@@ -191,7 +192,7 @@ public class XSControl_Utils
         return strcon;
     }
 
-    public string CStrValue(Standard_Transient? list, int num)
+    public string CStrValue(Transient? list, int num)
     {
         if (list is NCollection_HSequence<TCollection_HAsciiString> linha)
         {
@@ -463,7 +464,7 @@ public class XSControl_Utils
     /// Transient but can process a Shape, such as viewing functions) or a HShape (according to hs) Default is a
     /// HShape
     /// </summary>
-    public Standard_Transient ShapeBinder(TopoDS_Shape shape, bool hs = true)
+    public Transient ShapeBinder(TopoDS_Shape shape, bool hs = true)
     {
         if (hs)
         {
@@ -478,7 +479,7 @@ public class XSControl_Utils
     /// <summary>
     /// From a Transient, returns a Shape. In fact, recognizes ShapeBinder ShapeMapper and HShape
     /// </summary>
-    public TopoDS_Shape BinderShape(Standard_Transient? tr)
+    public TopoDS_Shape BinderShape(Transient? tr)
     {
         TopoDS_Shape sh = default;
         if (tr is Transfer_Binder sb)
@@ -496,7 +497,7 @@ public class XSControl_Utils
         return sh;
     }
 
-    public int SeqLength(Standard_Transient? seqval)
+    public int SeqLength(Transient? seqval)
     {
         if (seqval is null)
         {
@@ -510,7 +511,7 @@ public class XSControl_Utils
         {
             return seqa.Length();
         }
-        if (seqval is NCollection_HSequence<Standard_Transient> seqt)
+        if (seqval is NCollection_HSequence<Transient> seqt)
         {
             return seqt.Length();
         }
@@ -526,10 +527,10 @@ public class XSControl_Utils
         return 0;
     }
 
-    public Standard_Transient? SeqToArr(Standard_Transient? seqval, int first = 1)
+    public Transient? SeqToArr(Transient? seqval, int first = 1)
     {
         int i, lng;
-        Standard_Transient val = null;
+        Transient val = null;
         if (seqval is null)
         {
             return val;
@@ -545,24 +546,24 @@ public class XSControl_Utils
             }
             return arrs;
         }
-        if (seqval is NCollection_HSequence<Standard_Transient> seqt)
+        if (seqval is NCollection_HSequence<Transient> seqt)
         {
             lng = seqt.Length();
-            NCollection_HArray1<Standard_Transient> arrt =
-                new NCollection_HArray1<Standard_Transient>(first, lng - first + 1);
+            NCollection_HArray1<Transient> arrt =
+                new NCollection_HArray1<Transient>(first, lng - first + 1);
             for (i = 1; i <= lng; i++)
             {
                 arrt.SetValue(i - first + 1, seqt.Value(i));
             }
             return arrt;
         }
-        throw new Standard_TypeMismatch("XSControl_Utils::SeqToArr");
+        throw new TypeMismatchException("XSControl_Utils::SeqToArr");
     }
 
-    public Standard_Transient? ArrToSeq(Standard_Transient? arrval)
+    public Transient? ArrToSeq(Transient? arrval)
     {
         int i, first, last;
-        Standard_Transient val = null;
+        Transient val = null;
         if (arrval is null)
         {
             return val;
@@ -579,19 +580,19 @@ public class XSControl_Utils
             }
             return seqs;
         }
-        if (arrval is NCollection_HArray1<Standard_Transient> arrt)
+        if (arrval is NCollection_HArray1<Transient> arrt)
         {
             first = arrt.Lower();
             last = arrt.Upper();
-            NCollection_HSequence<Standard_Transient> seqt =
-                new NCollection_HSequence<Standard_Transient>();
+            NCollection_HSequence<Transient> seqt =
+                new NCollection_HSequence<Transient>();
             for (i = first; i <= last; i++)
             {
                 seqt.Append(arrt.Value(i));
             }
             return seqt;
         }
-        throw new Standard_TypeMismatch("XSControl_Utils::ArrToSeq");
+        throw new TypeMismatchException("XSControl_Utils::ArrToSeq");
     }
 
     public int SeqIntValue(NCollection_HSequence<int>? seqval, int num)

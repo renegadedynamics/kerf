@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Intf_PIType;
 
 namespace Occt;
@@ -20,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
 {
-    private gp_Pnt myPnt;
+    private Point3D myPnt;
     private Intf_PIType DimenObje;
     private int IndexO1;
     private int IndexO2;
@@ -33,7 +35,7 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
 
     public Intf_SectionPoint()
     {
-        myPnt = new gp_Pnt(0.0, 0.0, 0.0);
+        myPnt = new Point3D(0.0, 0.0, 0.0);
         DimenObje = Intf_EXTERNAL;
         IndexO1 = 0;
         IndexO2 = 0;
@@ -49,7 +51,7 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
     /// A section point with the respective dimensions (vertex, edge or face) of the concerned arguments and their
     /// addresses in the topological structure.
     /// </summary>
-    public Intf_SectionPoint(in gp_Pnt Where,
+    public Intf_SectionPoint(in Point3D Where,
                              Intf_PIType Dim1,
                              int Addr1,
                              int Addr2,
@@ -76,7 +78,7 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
     /// A 2D section point with the respective dimensions (vertex or edge) of the concerned arguments and their
     /// addresses in the topological structure.
     /// </summary>
-    public Intf_SectionPoint(in gp_Pnt2d Where,
+    public Intf_SectionPoint(in Point2D Where,
                              Intf_PIType Dim1,
                              int Addr1,
                              double Param1,
@@ -85,7 +87,7 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
                              double Param2,
                              double Incid)
     {
-        myPnt = new gp_Pnt(Where.X(), Where.Y(), 0.0);
+        myPnt = new Point3D(Where.X(), Where.Y(), 0.0);
         DimenObje = Dim1;
         IndexO1 = 0;
         IndexO2 = Addr1;
@@ -98,7 +100,7 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
     }
 
     /// <summary>The location of the section point.</summary>
-    public readonly gp_Pnt Pnt() => myPnt;
+    public readonly Point3D Pnt() => myPnt;
 
     /// <summary>The cumulated parameter of the section point on the first element.</summary>
     public readonly double ParamOnFirst() => (IndexO2 - 1) + ParamObje;
@@ -283,5 +285,5 @@ public partial struct Intf_SectionPoint : IEquatable<Intf_SectionPoint>
     public override readonly string ToString()
         => $"Intf_SectionPoint({DimenObje} {IndexO1} {IndexO2} {ParamObje.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}, "
            + $"{DimenTool} {IndexT1} {IndexT2} {ParamTool.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}, "
-           + gp.Format("at", myPnt.X(), myPnt.Y(), myPnt.Z(), Incide) + ")";
+           + Constants.Format("at", myPnt.X(), myPnt.Y(), myPnt.Z(), Incide) + ")";
 }

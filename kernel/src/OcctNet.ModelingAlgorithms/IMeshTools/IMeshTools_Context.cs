@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -46,7 +48,7 @@ public class IMeshTools_Context : IMeshData_Shape
         }
 
         // Discretize edges of a model.
-        return myEdgeDiscret.Perform(myModel, myParameters, new Message_ProgressRange());
+        return myEdgeDiscret.Perform(myModel, myParameters, new ProgressRange());
     }
 
     /// <summary>Heals the model built by <see cref="DiscretizeEdges"/> with the healer, if any; true on success.</summary>
@@ -59,7 +61,7 @@ public class IMeshTools_Context : IMeshData_Shape
 
         return myModelHealer is null
                  ? true
-                 : myModelHealer.Perform(myModel, myParameters, new Message_ProgressRange());
+                 : myModelHealer.Perform(myModel, myParameters, new ProgressRange());
     }
 
     /// <summary>
@@ -75,11 +77,11 @@ public class IMeshTools_Context : IMeshData_Shape
 
         return myPreProcessor is null
                  ? true
-                 : myPreProcessor.Perform(myModel, myParameters, new Message_ProgressRange());
+                 : myPreProcessor.Perform(myModel, myParameters, new ProgressRange());
     }
 
     /// <summary>Meshes the model's faces with the face discretizer; true on success.</summary>
-    public virtual bool DiscretizeFaces(Message_ProgressRange theRange)
+    public virtual bool DiscretizeFaces(ProgressRange theRange)
     {
         if (myModel is null || myFaceDiscret is null)
         {
@@ -100,7 +102,7 @@ public class IMeshTools_Context : IMeshData_Shape
 
         return myPostProcessor is null
                  ? true
-                 : myPostProcessor.Perform(myModel, myParameters, new Message_ProgressRange());
+                 : myPostProcessor.Perform(myModel, myParameters, new ProgressRange());
     }
 
     /// <summary>Cleans the temporary data: the model, if the parameters ask for it.</summary>

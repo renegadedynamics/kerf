@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,20 +23,20 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 {
     private const double TOLTANGENCY = 0.0000000001;
 
-    private gp_Pnt2d MyParOnS1;
-    private gp_Pnt2d MyParOnS2;
-    private gp_Pnt MyPnt;
-    private gp_Vec2d MyTguv1;
-    private gp_Vec2d MyTguv2;
-    private gp_Vec MyTg;
+    private Point2D MyParOnS1;
+    private Point2D MyParOnS2;
+    private Point3D MyPnt;
+    private Vector2D MyTguv1;
+    private Vector2D MyTguv2;
+    private Vector3D MyTg;
     private bool MyIsTangent;
     private bool MyHasBeenComputed;
-    private gp_Pnt2d MyParOnS1bis;
-    private gp_Pnt2d MyParOnS2bis;
-    private gp_Pnt MyPntbis;
-    private gp_Vec2d MyTguv1bis;
-    private gp_Vec2d MyTguv2bis;
-    private gp_Vec MyTgbis;
+    private Point2D MyParOnS1bis;
+    private Point2D MyParOnS2bis;
+    private Point3D MyPntbis;
+    private Vector2D MyTguv1bis;
+    private Vector2D MyTguv2bis;
+    private Vector3D MyTgbis;
     private bool MyIsTangentbis;
     private bool MyHasBeenComputedbis;
     private readonly IntImp_Int2S<ThePSurface, ThePSurfaceTool> MyIntersectionOn2S;
@@ -43,20 +47,20 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
     public ApproxInt_PrmPrmSvSurfaces(ThePSurface Surf1, ThePSurface Surf2)
     {
-        MyParOnS1 = new gp_Pnt2d();
-        MyParOnS2 = new gp_Pnt2d();
-        MyPnt = new gp_Pnt();
-        MyTguv1 = new gp_Vec2d();
-        MyTguv2 = new gp_Vec2d();
-        MyTg = new gp_Vec();
+        MyParOnS1 = new Point2D();
+        MyParOnS2 = new Point2D();
+        MyPnt = new Point3D();
+        MyTguv1 = new Vector2D();
+        MyTguv2 = new Vector2D();
+        MyTg = new Vector3D();
         MyIsTangent = false;
         MyHasBeenComputed = false;
-        MyParOnS1bis = new gp_Pnt2d();
-        MyParOnS2bis = new gp_Pnt2d();
-        MyPntbis = new gp_Pnt();
-        MyTguv1bis = new gp_Vec2d();
-        MyTguv2bis = new gp_Vec2d();
-        MyTgbis = new gp_Vec();
+        MyParOnS1bis = new Point2D();
+        MyParOnS2bis = new Point2D();
+        MyPntbis = new Point3D();
+        MyTguv1bis = new Vector2D();
+        MyTguv2bis = new Vector2D();
+        MyTgbis = new Vector3D();
         MyIsTangentbis = false;
         MyHasBeenComputedbis = false;
         MyIntersectionOn2S = new IntImp_Int2S<ThePSurface, ThePSurfaceTool>(Surf1, Surf2, TOLTANGENCY);
@@ -65,8 +69,8 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     /// <summary>
     /// Computes the point on the curve, the 3D and 2D tangents of the curve and the parameters on the surfaces.
     /// </summary>
-    public override bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref gp_Pnt P,
-                                 ref gp_Vec Tg, ref gp_Vec2d Tguv1, ref gp_Vec2d Tguv2)
+    public override bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref Point3D P,
+                                 ref Vector3D Tg, ref Vector2D Tguv1, ref Vector2D Tguv2)
     {
         double tu1 = u1;
         double tu2 = u2;
@@ -98,12 +102,12 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
                 && (MyParOnS2bis.Y() == v2))
             {
                 // C# forbids a nested local named as a later outer one (TV): OCCT's TV is TV0 here
-                gp_Vec TV0 = MyTg;
-                gp_Vec2d TV1 = MyTguv1;
-                gp_Vec2d TV2 = MyTguv2;
-                gp_Pnt TP = MyPnt;
-                gp_Pnt2d TP1 = MyParOnS1;
-                gp_Pnt2d TP2 = MyParOnS2;
+                Vector3D TV0 = MyTg;
+                Vector2D TV1 = MyTguv1;
+                Vector2D TV2 = MyTguv2;
+                Point3D TP = MyPnt;
+                Point2D TP1 = MyParOnS1;
+                Point2D TP2 = MyParOnS2;
                 bool TB = MyIsTangent;
 
                 MyTg = MyTgbis;
@@ -133,7 +137,7 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         Param[2] = v1;
         Param[3] = u2;
         Param[4] = v2;
-        math_FunctionSetRoot Rsnld = new(MyIntersectionOn2S.Function());
+        FunctionSetRoot Rsnld = new(MyIntersectionOn2S.Function());
         MyIntersectionOn2S.Perform(Param, Rsnld);
         if (!MyIntersectionOn2S.IsDone())
         {
@@ -159,9 +163,9 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
             MyHasBeenComputed = MyHasBeenComputedbis = false;
             return (false);
         }
-        MyTg = Tg = new gp_Vec(MyIntersectionOn2S.Direction());
-        MyTguv1 = Tguv1 = new gp_Vec2d(MyIntersectionOn2S.DirectionOnS1());
-        MyTguv2 = Tguv2 = new gp_Vec2d(MyIntersectionOn2S.DirectionOnS2());
+        MyTg = Tg = new Vector3D(MyIntersectionOn2S.Direction());
+        MyTguv1 = Tguv1 = new Vector2D(MyIntersectionOn2S.DirectionOnS1());
+        MyTguv2 = Tguv2 = new Vector2D(MyIntersectionOn2S.DirectionOnS2());
 
         //----------------------------------------------------------------------
         //-- If ( Tg ) TU and TV are normalised
@@ -185,7 +189,7 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         MyTg = Tg;
 
         double DeltaU, DeltaV;
-        gp_Vec TU, TV;
+        Vector3D TU, TV;
         double TUTV, TgTU, TgTV, TUTU, TVTV, DIS;
         //------------------------------------------------------------
         //-- Tguv1
@@ -198,7 +202,7 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         TgTU = Tg.Dot(TU);
         TgTV = Tg.Dot(TV);
         DIS = TUTU * TVTV - TUTV * TUTV;
-        if (Math.Abs(DIS) < Precision.Angular())
+        if (Math.Abs(DIS) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             MyIsTangent = false;
             MyHasBeenComputed = MyHasBeenComputedbis = false;
@@ -222,7 +226,7 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         TgTU = Tg.Dot(TU);
         TgTV = Tg.Dot(TV);
         DIS = TUTU * TVTV - TUTV * TUTV;
-        if (Math.Abs(DIS) < Precision.Angular())
+        if (Math.Abs(DIS) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             MyIsTangent = false;
             MyHasBeenComputed = MyHasBeenComputedbis = false;
@@ -238,11 +242,11 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return (true);
     }
 
-    public override void Pnt(double u1, double v1, double u2, double v2, ref gp_Pnt P)
+    public override void Pnt(double u1, double v1, double u2, double v2, ref Point3D P)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -254,9 +258,9 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     /// <summary>Computes the point on the curve and the parameters on the surfaces.</summary>
     public override bool SeekPoint(double u1, double v1, double u2, double v2, ref IntSurf_PntOn2S Point)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -270,11 +274,11 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return true;
     }
 
-    public override bool Tangency(double u1, double v1, double u2, double v2, ref gp_Vec T)
+    public override bool Tangency(double u1, double v1, double u2, double v2, ref Vector3D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -284,11 +288,11 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return (t);
     }
 
-    public override bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref gp_Vec2d T)
+    public override bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref Vector2D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -298,11 +302,11 @@ public class ApproxInt_PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return (t);
     }
 
-    public override bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref gp_Vec2d T)
+    public override bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref Vector2D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;

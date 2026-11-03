@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using Occt;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.STEPControl_StepModelType;
@@ -146,7 +148,7 @@ internal static class XSDRAWSTEPCommands
                     var aTmpStream = new StringWriter();
                     sr.Model()!.Print(sr.RootForTransfer(i), aTmpStream);
                     di.Append(aTmpStream.ToString());
-                    di.Append(" Type:").Append(sr.RootForTransfer(i)!.DynamicType().Name).Append("\n");
+                    di.Append(" Type:").Append(sr.RootForTransfer(i)!.DynamicTypeName()).Append("\n");
                 }
 
                 theDI.Output.Write("Mode (0 End, 1 root n0 1, 2 one root/n0, 3 one entity/n0, 4 Selection) : ");
@@ -160,7 +162,7 @@ internal static class XSDRAWSTEPCommands
             }
             if (modepri == 4)
             {
-                NCollection_HSequence<Standard_Transient>? list;
+                NCollection_HSequence<Transient>? list;
 
                 //  Selection, nommee ou via tcl. tcl : raccourcis admis
                 //   * donne xst-transferrable-roots
@@ -327,7 +329,7 @@ internal static class XSDRAWSTEPCommands
         var mktrans = new StepToTopoDS_MakeTransformed();
         if (mktrans.Compute(ax1!, ax2!, aFactors))
         {
-            var loc = new TopLoc_Location(mktrans.Transformation());
+            var loc = new Placement(mktrans.Transformation());
             theDI.SetShape(argv[2], shape.Moved(loc));
             di.Append("Transformed Shape as ").Append(argv[2]).Append("\n");
         }

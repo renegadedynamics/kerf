@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.InteropServices;
 
 namespace Occt;
@@ -22,7 +23,7 @@ namespace Occt;
 /// geometry never change again, and it is <see cref="Locked()"/>: OCCT's own guards then refuse to modify it.
 /// </para>
 /// </remarks>
-public abstract class TopoDS_TShape : Standard_Transient
+public abstract class TopoDS_TShape : Transient
 {
     /// <summary>
     /// Bit layout of the compact state: bits 0-3 store the TopAbs_ShapeEnum value, bits 4-11 the flags, bits 12-15
@@ -65,7 +66,7 @@ public abstract class TopoDS_TShape : Standard_Transient
     }
 
     /// <summary>The locked flag. A frozen TShape is always locked (docs/phase3-design.md, section 4.3).</summary>
-    public bool Locked() => (myState & (ushort)BitLayout.Bit_Locked) != 0 || IsFrozen();
+    public bool Locked() => (myState & (ushort)BitLayout.Bit_Locked) != 0 || IsFrozen;
 
     /// <summary>
     /// The stored locked bit, without the frozen state: what the shape sets write to files, so files carry OCCT's
@@ -170,7 +171,7 @@ public abstract class TopoDS_TShape : Standard_Transient
     /// </summary>
     public void FreezeGraph()
     {
-        if (IsFrozen())
+        if (IsFrozen)
         {
             return;
         }
@@ -187,7 +188,7 @@ public abstract class TopoDS_TShape : Standard_Transient
             if (aTop.Children.MoveNext())
             {
                 TopoDS_TShape? aChild = aTop.Children.Current.TShape();
-                if (aChild is not null && !aChild.IsFrozen() && anOnStack.Add(aChild))
+                if (aChild is not null && !aChild.IsFrozen && anOnStack.Add(aChild))
                 {
                     aStack.Add(new FreezeFrame(aChild));
                 }

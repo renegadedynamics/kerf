@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -26,7 +28,7 @@ public class TopLocOracleTests(ITestOutputHelper output)
         for (int aRound = 0; aRound < Rounds; aRound++)
         {
             var aNatives = new List<N.TopLoc_Location>();
-            var aPorts = new List<TopLoc_Location>();
+            var aPorts = new List<Placement>();
             try
             {
                 // A few elementary locations, each with its own datum. A location also appears twice through a
@@ -34,24 +36,24 @@ public class TopLocOracleTests(ITestOutputHelper output)
                 int aBase = anOracle.Int(2, 4);
                 for (int i = 0; i < aBase; i++)
                 {
-                    (N.gp_Trsf aNT, gp_Trsf aT) = RandomRigidTrsf(anOracle);
+                    (N.gp_Trsf aNT, Transform3D aT) = RandomRigidTrsf(anOracle);
                     using (aNT)
                     {
                         aNatives.Add(new N.TopLoc_Location(aNT));
-                        aPorts.Add(new TopLoc_Location(aT));
+                        aPorts.Add(new Placement(aT));
                     }
                 }
 
                 aNatives.Add(new N.TopLoc_Location(aNatives[0]));
                 aPorts.Add(aPorts[0]);
                 aNatives.Add(new N.TopLoc_Location());
-                aPorts.Add(new TopLoc_Location());
+                aPorts.Add(new Placement());
 
                 for (int aStep = 0; aStep < Steps; aStep++)
                 {
                     int a = aRandom.Next(aPorts.Count), b = aRandom.Next(aPorts.Count);
                     N.TopLoc_Location aNA = aNatives[a], aNB = aNatives[b];
-                    TopLoc_Location aA = aPorts[a], aB = aPorts[b];
+                    Placement aA = aPorts[a], aB = aPorts[b];
                     switch (aRandom.Next(6))
                     {
                         case 0:
@@ -132,11 +134,11 @@ public class TopLocOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < 500; i++)
         {
-            (N.gp_Trsf aNT, gp_Trsf aT) = RandomRigidTrsf(anOracle);
+            (N.gp_Trsf aNT, Transform3D aT) = RandomRigidTrsf(anOracle);
             using (aNT)
             {
                 using var aNL = new N.TopLoc_Location(aNT);
-                var aL = new TopLoc_Location(aT);
+                var aL = new Placement(aT);
                 CompareLocation(anOracle, aNL, aL, "location");
 
                 int aPower = anOracle.Int(-5, 5);
@@ -147,7 +149,7 @@ public class TopLocOracleTests(ITestOutputHelper output)
                 CompareLocation(anOracle, aNInv, aL.Inverted(), "inverted location");
 
                 // Applying the location to a point
-                gp_Pnt aP = anOracle.Pnt();
+                Point3D aP = anOracle.Pnt();
                 using var aNP = Oracle.ToNative(aP);
                 using var aNTrsf = aNPow.Transformation();
                 using var aNMoved = aNP.Transformed(aNTrsf);
@@ -159,10 +161,10 @@ public class TopLocOracleTests(ITestOutputHelper output)
         anOracle.Report("TopLoc_Location of a transformation");
     }
 
-    private static int Length(in TopLoc_Location theLocation)
+    private static int Length(in Placement theLocation)
     {
         int aLength = 0;
-        for (TopLoc_Location aL = theLocation; !aL.IsIdentity(); aL = aL.NextLocation())
+        for (Placement aL = theLocation; !aL.IsIdentity; aL = aL.NextLocation())
         {
             aLength++;
         }
@@ -171,7 +173,7 @@ public class TopLocOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Compares the transformations and the chains of powers of two locations.</summary>
-    private static void CompareLocation(Oracle theOracle, N.TopLoc_Location theNative, in TopLoc_Location thePort, string theWhat)
+    private static void CompareLocation(Oracle theOracle, N.TopLoc_Location theNative, in Placement thePort, string theWhat)
     {
         using (N.gp_Trsf aNTrsf = theNative.Transformation())
         {
@@ -179,13 +181,13 @@ public class TopLocOracleTests(ITestOutputHelper output)
         }
 
         N.TopLoc_Location aNative = new N.TopLoc_Location(theNative);
-        TopLoc_Location aPort = thePort;
+        Placement aPort = thePort;
         try
         {
             while (true)
             {
-                theOracle.Same(aNative.IsIdentity(), aPort.IsIdentity(), $"{theWhat}: IsIdentity");
-                if (aPort.IsIdentity())
+                theOracle.Same(aNative.IsIdentity(), aPort.IsIdentity, $"{theWhat}: IsIdentity");
+                if (aPort.IsIdentity)
                 {
                     break;
                 }
@@ -204,40 +206,40 @@ public class TopLocOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A random rigid transformation (a datum's transformation), with its native twin.</summary>
-    private static (N.gp_Trsf Native, gp_Trsf Port) RandomRigidTrsf(Oracle theOracle)
+    private static (N.gp_Trsf Native, Transform3D Port) RandomRigidTrsf(Oracle theOracle)
     {
         var aNative = new N.gp_Trsf();
         switch (theOracle.Int(0, 3))
         {
             case 0:
             {
-                gp_Ax1 anAxis = theOracle.Ax1();
+                Axis3D anAxis = theOracle.Ax1();
                 double anAngle = theOracle.Angle();
                 using var aNAxis = Oracle.ToNative(anAxis);
                 aNative.SetRotation(aNAxis, anAngle);
-                return (aNative, gp_Trsf.Rotation(anAxis, anAngle));
+                return (aNative, Transform3D.Rotation(anAxis, anAngle));
             }
             case 1:
             {
-                gp_Vec aV = theOracle.Vec();
+                Vector3D aV = theOracle.Vec();
                 using var aNV = Oracle.ToNative(aV);
                 aNative.SetTranslation(aNV);
-                return (aNative, gp_Trsf.Translation(aV));
+                return (aNative, Transform3D.Translation(aV));
             }
             case 2:
             {
-                gp_Ax3 aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
+                CoordinateSystem aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
                 using var aNFrom = Oracle.ToNative(aFrom);
                 using var aNTo = Oracle.ToNative(aTo);
                 aNative.SetDisplacement(aNFrom, aNTo);
-                return (aNative, gp_Trsf.Displacement(aFrom, aTo));
+                return (aNative, Transform3D.Displacement(aFrom, aTo));
             }
             default:
             {
-                gp_Ax2 aPlane = theOracle.Ax2();
+                Frame3D aPlane = theOracle.Ax2();
                 using var aNPlane = Oracle.ToNative(aPlane);
                 aNative.SetMirror(aNPlane);
-                return (aNative, gp_Trsf.Mirror(aPlane));
+                return (aNative, Transform3D.Mirror(aPlane));
             }
         }
     }

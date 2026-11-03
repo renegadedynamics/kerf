@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Security.Cryptography;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -39,7 +40,7 @@ internal static class TopoStepRecorder
     }
 
     // The item's translation: "NOTDONE", "EXC" or the BRep text's hash and length (null: not an item translated)
-    private static string? Translate(Standard_Transient theEnt, Transfer_TransientProcess theTP, out string? theText)
+    private static string? Translate(Transient theEnt, Transfer_TransientProcess theTP, out string? theText)
     {
         theText = null;
         var aBuilder = new StepToTopoDS_Builder();
@@ -105,7 +106,7 @@ internal static class TopoStepRecorder
         var aLines = new List<string>();
         for (int i = 1; i <= theModel.NbEntities(); i++)
         {
-            Standard_Transient anEnt = theModel.Value(i)!;
+            Transient anEnt = theModel.Value(i)!;
             var aTP = new Transfer_TransientProcess(theModel.NbEntities());
             aTP.SetModel(theModel);
             string? aRes, aText = null;
@@ -123,7 +124,7 @@ internal static class TopoStepRecorder
                 continue;
             }
 
-            aLines.Add($"I {i} {anEnt.GetType().Name} {aRes}{Checks(aTP)}");
+            aLines.Add($"I {i} {Kerf.Engine.Foundation.OcctTypeNames.Of(anEnt.GetType())} {aRes}{Checks(aTP)}");
             if (theTexts is not null && aText is not null)
             {
                 theTexts[i] = aText;
@@ -136,7 +137,7 @@ internal static class TopoStepRecorder
     // ---------------------------------------------------------------------------------------------------------
     // TopoDSToStep
 
-    public static List<string> Written(Standard_Transient theEnt)
+    public static List<string> Written(Transient theEnt)
     {
         StepData_Protocol aProtocol = Protocol();
         var aModel = new StepData_StepModel();
@@ -169,7 +170,7 @@ internal static class TopoStepRecorder
     }
 
     private static void Convert(List<string> theLines, List<string>? theDump, string theOp, int theIndex, string theTag,
-                                Func<Transfer_FinderProcess, (bool Done, Standard_Transient? Value)> theMaker)
+                                Func<Transfer_FinderProcess, (bool Done, Transient? Value)> theMaker)
     {
         string aRes;
         List<string> aWritten = [];

@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -39,7 +41,7 @@ public sealed class GeomLib_MakeCurvefromApprox
                                      " GeomLib_MakeCurvefromApprox : Curve2d");
         StdFail_NotDone_Raise_if(!IsDone(), " GeomLib_MakeCurvefromApprox : Curve2d");
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, myApprox.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Knots = new(1, myApprox.NbKnots());
         NCollection_Array1<int> Mults = new(1, myApprox.NbKnots());
 
@@ -61,7 +63,7 @@ public sealed class GeomLib_MakeCurvefromApprox
         StdFail_NotDone_Raise_if(!IsDone() && !myApprox.HasResult(),
                                  " GeomLib_MakeCurvefromApprox : Curve2d");
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, myApprox.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Weigths = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Knots = new(1, myApprox.NbKnots());
         NCollection_Array1<int> Mults = new(1, myApprox.NbKnots());
@@ -93,7 +95,7 @@ public sealed class GeomLib_MakeCurvefromApprox
         StdFail_NotDone_Raise_if(!IsDone() && !myApprox.HasResult(),
                                  " GeomLib_MakeCurvefromApprox : Curve2d");
 
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, myApprox.NbPoles());
+        NCollection_Array1<Point2D> Poles = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Poles1d1 = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Poles1d2 = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Knots = new(1, myApprox.NbKnots());
@@ -123,7 +125,7 @@ public sealed class GeomLib_MakeCurvefromApprox
         StdFail_NotDone_Raise_if(!IsDone() && !myApprox.HasResult(),
                                  " GeomLib_MakeCurvefromApprox : Curve");
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, myApprox.NbPoles());
+        NCollection_Array1<Point3D> Poles = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Knots = new(1, myApprox.NbKnots());
         NCollection_Array1<int> Mults = new(1, myApprox.NbKnots());
 
@@ -144,7 +146,7 @@ public sealed class GeomLib_MakeCurvefromApprox
                                      " GeomLib_MakeCurvefromApprox : Curve3d");
         StdFail_NotDone_Raise_if(!IsDone(), " GeomLib_MakeCurvefromApprox : Curve3d");
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, myApprox.NbPoles());
+        NCollection_Array1<Point3D> Poles = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Weigths = new(1, myApprox.NbPoles());
         NCollection_Array1<double> Knots = new(1, myApprox.NbKnots());
         NCollection_Array1<int> Mults = new(1, myApprox.NbKnots());

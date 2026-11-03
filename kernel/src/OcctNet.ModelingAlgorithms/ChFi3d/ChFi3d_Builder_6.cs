@@ -4,13 +4,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_6;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -81,13 +83,13 @@ public partial class ChFi3d_Builder
         {
             Crv3d1 = Surfcoin.VIso(VFirst);
         }
-        gp_Pnt2d pd1 = new(UFirst, VFirst), pf1 = new(ULast, VFirst);
-        gp_Lin2d lfil1 = new(pd1, new gp_Dir2d(new gp_Vec2d(pd1, pf1)));
+        Point2D pd1 = new(UFirst, VFirst), pf1 = new(ULast, VFirst);
+        Line2D lfil1 = new(pd1, new Direction2D(new Vector2D(pd1, pf1)));
         Geom2d_Curve? PCurveOnSurf = new Geom2d_Line(lfil1);
         TopAbs_Orientation tra1 = TopAbs_FORWARD, orsurf = Or;
         double x = 0.0, y = 0.0, w = 0.5 * (UFirst + ULast);
-        gp_Pnt p = new();
-        gp_Vec du = new(), dv = new();
+        Point3D p = new();
+        Vector3D du = new(), dv = new();
         Geom2d_Curve? c2dtrim = null;
         double tolreached = 1.0e-5;
         if (PC1 is not null)
@@ -97,9 +99,9 @@ public partial class ChFi3d_Builder
             ChFi3d_SameParameter(hcS1, ref c2dtrim, S1, tolapp3d, out tolreached);
             c2dtrim.Value(w).Coord(out x, out y);
             S1.D1(x, y, out p, out du, out dv);
-            gp_Vec nf = du.Crossed(dv);
+            Vector3D nf = du.Crossed(dv);
             Surfcoin.D1(w, VFirst, out p, out du, out dv);
-            gp_Vec ns = du.Crossed(dv);
+            Vector3D ns = du.Crossed(dv);
             if (nf.Dot(ns) > 0.0)
             {
                 tra1 = TopAbs_REVERSED;
@@ -120,8 +122,8 @@ public partial class ChFi3d_Builder
         {
             Crv3d2 = Surfcoin.VIso(VLast);
         }
-        gp_Pnt2d pd2 = new(UFirst, VLast), pf2 = new(ULast, VLast);
-        gp_Lin2d lfil2 = new(pd2, new gp_Dir2d(new gp_Vec2d(pd2, pf2)));
+        Point2D pd2 = new(UFirst, VLast), pf2 = new(ULast, VLast);
+        Line2D lfil2 = new(pd2, new Direction2D(new Vector2D(pd2, pf2)));
         PCurveOnSurf = new Geom2d_Line(lfil2);
         TopAbs_Orientation tra2 = TopAbs_FORWARD;
         if (PC2 is not null)
@@ -131,9 +133,9 @@ public partial class ChFi3d_Builder
             ChFi3d_SameParameter(hcS2, ref c2dtrim, S2, tolapp3d, out tolreached);
             c2dtrim.Value(w).Coord(out x, out y);
             S2.D1(x, y, out p, out du, out dv);
-            gp_Vec np = du.Crossed(dv);
+            Vector3D np = du.Crossed(dv);
             Surfcoin.D1(w, VLast, out p, out du, out dv);
-            gp_Vec ns = du.Crossed(dv);
+            Vector3D ns = du.Crossed(dv);
             if (np.Dot(ns) < 0.0)
             {
                 tra2 = TopAbs_REVERSED;
@@ -249,7 +251,7 @@ public partial class ChFi3d_Builder
         NCollection_Array1<double> kv = approx.SurfVKnots();
         double larg = (kv[kv.Upper()] - kv[kv.Lower()]);
         NCollection_Array1<double> kku = ku; // OCCT casts the constness away: the same array
-        BSplCLib.Reparametrize(0.0, larg, kku);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, larg, kku);
         Geom_BSplineSurface? Surf = new Geom_BSplineSurface(approx.SurfPoles(), approx.SurfWeights(), kku, kv,
                                                             approx.SurfUMults(), approx.SurfVMults(),
                                                             approx.UDegree(), approx.VDegree());
@@ -261,10 +263,10 @@ public partial class ChFi3d_Builder
 
         Geom_BoundedSurface? aBndSurf = Surf;
         bool ext1 = false, ext2 = false;
-        double eps = Max(tolget3d, 2.0 * Precision.Confusion());
+        double eps = Max(tolget3d, 2.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
         if (length1 > eps)
         {
-            gp_Pnt P11 = new(), P21 = new();
+            Point3D P11 = new(), P21 = new();
             P11 = Surf.Pole(1, 1);
             P21 = Surf.Pole(Surf.NbUPoles(), 1);
             if (P11.Distance(P21) > eps)
@@ -276,7 +278,7 @@ public partial class ChFi3d_Builder
         }
         if (length2 > eps)
         {
-            gp_Pnt P12 = new(), P22 = new();
+            Point3D P12 = new(), P22 = new();
             P12 = Surf.Pole(1, Surf.NbVPoles());
             P22 = Surf.Pole(Surf.NbUPoles(), Surf.NbVPoles());
             if (P12.Distance(P22) > eps)
@@ -291,7 +293,7 @@ public partial class ChFi3d_Builder
         // Correction of surface on extremities
         if (!ext1)
         {
-            gp_Pnt P11 = new(), P21 = new();
+            Point3D P11 = new(), P21 = new();
             P11 = lin.StartPointOnFirst().Value();
             P21 = lin.StartPointOnSecond().Value();
             Surf.SetPole(1, 1, P11);
@@ -299,7 +301,7 @@ public partial class ChFi3d_Builder
         }
         if (!ext2)
         {
-            gp_Pnt P12 = new(), P22 = new();
+            Point3D P12 = new(), P22 = new();
             P12 = lin.EndPointOnFirst().Value();
             P22 = lin.EndPointOnSecond().Value();
             Surf.SetPole(1, Surf.NbVPoles(), P12);
@@ -328,8 +330,8 @@ public partial class ChFi3d_Builder
 
         // The SurfData is filled in what concerns S1,
         Geom_Curve? Crv3d1 = Surf.UIso(Uon1);
-        gp_Pnt2d pori1 = new(Uon1, 0.0);
-        gp_Lin2d lfil1 = new(pori1, gp.DY2d());
+        Point2D pori1 = new(Uon1, 0.0);
+        Line2D lfil1 = new(pori1, Constants.DY2d());
         Geom2d_Curve? PCurveOnSurf = new Geom2d_Line(lfil1);
         Geom2d_Curve? PCurveOnFace = null;
         PCurveOnFace = new Geom2d_BSplineCurve(approx.Curve2dPoles(ion1), approx.Curves2dKnots(), approx.Curves2dMults(),
@@ -394,8 +396,8 @@ public partial class ChFi3d_Builder
 
         // SurfData is filled in what concerns S2,
         Geom_Curve? Crv3d2 = Surf.UIso(Uon2);
-        gp_Pnt2d pori2 = new(Uon2, 0.0);
-        gp_Lin2d lfil2 = new(pori2, gp.DY2d());
+        Point2D pori2 = new(Uon2, 0.0);
+        Line2D lfil2 = new(pori2, Constants.DY2d());
         PCurveOnSurf = new Geom2d_Line(lfil2);
         if (S2 is not null)
         {
@@ -491,9 +493,9 @@ public partial class ChFi3d_Builder
         {
             double aDeltav = aDelta / aDenom;
             double aParam = VFirst + aDeltav;
-            gp_Pnt2d PUV = PCurveOnFace.Value(aParam);
-            gp_Pnt P = new();
-            gp_Vec Du1 = new(), Du2 = new(), Dv1 = new(), Dv2 = new();
+            Point2D PUV = PCurveOnFace.Value(aParam);
+            Point3D P = new();
+            Vector3D Du1 = new(), Du2 = new(), Dv1 = new(), Dv2 = new();
 
             Sref.D1(PUV.X(), PUV.Y(), out P, out Du1, out Dv1);
             Du1.Cross(Dv1);
@@ -1932,9 +1934,9 @@ internal static class ChFi3d_Builder_6
         bool found = false;
         //(1) It is checked if the provided parameters are good
         //    if pcurves have the same parameters as the spine.
-        gp_Pnt2d point = Carc.Value(prefarc);
+        Point2D point = Carc.Value(prefarc);
         double distini = point.Distance(Ctg.Value(preftg));
-        if (distini <= Precision.PConfusion())
+        if (distini <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             parc = prefarc;
             ptg = preftg;
@@ -1946,9 +1948,9 @@ internal static class ChFi3d_Builder_6
             IntRes2d_IntersectionPoint int2d = new();
             Geom2dInt_GInter Intersection = new();
             int nbpt = 0, nbseg = 0;
-            Intersection.Perform(new Geom2dAdaptor_Curve(Ctg), Carc, Precision.PIntersection(), Precision.PIntersection());
+            Intersection.Perform(new Geom2dAdaptor_Curve(Ctg), Carc, global::Kerf.Engine.Foundation.Precision.PIntersection(), global::Kerf.Engine.Foundation.Precision.PIntersection());
 
-            double dist = Precision.Infinite(), p1, p2;
+            double dist = global::Kerf.Engine.Foundation.Precision.Infinite(), p1, p2;
             if (Intersection.IsDone())
             {
                 if (!Intersection.IsEmpty())
@@ -2004,8 +2006,8 @@ internal static class ChFi3d_Builder_6
 
     internal static bool CompBlendPoint(in TopoDS_Vertex V, in TopoDS_Edge E, double W, in TopoDS_Face F1, in TopoDS_Face F2, ref Blend_Point BP)
     {
-        gp_Pnt2d P1 = new(), P2 = new();
-        gp_Pnt P3d = new();
+        Point2D P1 = new(), P2 = new();
+        Point3D P3d = new();
         double param = 0.0, f = 0.0, l = 0.0;
         Geom2d_Curve? pc = null;
 
@@ -2039,14 +2041,14 @@ internal static class ChFi3d_Builder_6
             {
                 BRepBlend_Extremity BE = new();
                 BP.ParametersOnS1(out U, out V);
-                BE.SetValue(BP.PointOnS1(), U, V, Precision.Confusion());
+                BE.SetValue(BP.PointOnS1(), U, V, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Line.SetStartPoints(BE, Line.StartPointOnSecond());
             }
             if (Line.StartPointOnSecond().ParameterOnGuide() < tguide)
             {
                 BRepBlend_Extremity BE = new();
                 BP.ParametersOnS2(out U, out V);
-                BE.SetValue(BP.PointOnS2(), U, V, Precision.Confusion());
+                BE.SetValue(BP.PointOnS2(), U, V, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Line.SetStartPoints(Line.StartPointOnFirst(), BE);
             }
         }
@@ -2058,14 +2060,14 @@ internal static class ChFi3d_Builder_6
             {
                 BRepBlend_Extremity BE = new();
                 BP.ParametersOnS1(out U, out V);
-                BE.SetValue(BP.PointOnS1(), U, V, Precision.Confusion());
+                BE.SetValue(BP.PointOnS1(), U, V, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Line.SetEndPoints(BE, Line.EndPointOnSecond());
             }
             if (Line.EndPointOnSecond().ParameterOnGuide() > tguide)
             {
                 BRepBlend_Extremity BE = new();
                 BP.ParametersOnS2(out U, out V);
-                BE.SetValue(BP.PointOnS2(), U, V, Precision.Confusion());
+                BE.SetValue(BP.PointOnS2(), U, V, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Line.SetEndPoints(Line.EndPointOnFirst(), BE);
             }
         }

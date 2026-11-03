@@ -5,26 +5,28 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A container for a map of already translated (geometric) objects, keyed by reference.</summary>
-public class Transfer_MapContainer : Standard_Transient
+public class Transfer_MapContainer : Transient
 {
     public Transfer_MapContainer()
     {
     }
 
     /// <summary>Set map already translated geometry objects (a copy of it, as C++'s assignment).</summary>
-    public void SetMapObjects(NCollection_DataMap<Standard_Transient, Standard_Transient?> theMapObjects)
+    public void SetMapObjects(NCollection_DataMap<Transient, Transient?> theMapObjects)
     {
-        myMapObj = new NCollection_DataMap<Standard_Transient, Standard_Transient?>(theMapObjects);
+        myMapObj = new NCollection_DataMap<Transient, Transient?>(theMapObjects);
     }
 
     /// <summary>Get map already translated geometry objects (the container's own map, which callers may edit).</summary>
-    public NCollection_DataMap<Standard_Transient, Standard_Transient?> GetMapObjects()
+    public NCollection_DataMap<Transient, Transient?> GetMapObjects()
     {
         return myMapObj;
     }
 
-    private NCollection_DataMap<Standard_Transient, Standard_Transient?> myMapObj = new(ReferenceEqualityComparer.Instance);
+    private NCollection_DataMap<Transient, Transient?> myMapObj = new(ReferenceEqualityComparer.Instance);
 }

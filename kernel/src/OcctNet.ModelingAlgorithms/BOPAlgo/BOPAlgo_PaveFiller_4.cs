@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -78,7 +79,7 @@ internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parall
     //
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -87,7 +88,7 @@ internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parall
         {
             myFlag = myContext!.ComputeVF(myV, myF, ref myT1, ref myT2, ref myTolVNew, myFuzzyValue);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertIntersectionFailed());
         }
@@ -97,14 +98,14 @@ internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parall
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>The vertex/face interferences.</summary>
-    protected virtual void PerformVF(Message_ProgressRange theRange)
+    protected virtual void PerformVF(ProgressRange theRange)
     {
         myIterator!.Initialize(TopAbs_VERTEX, TopAbs_FACE);
         int iSize = myIterator.ExpectedLength();
         //
         int nV, nF;
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         if (myGlue == BOPAlgo_GlueFull)
         {
             // there is no need to intersect vertices with faces in this mode
@@ -187,7 +188,7 @@ public partial class BOPAlgo_PaveFiller
         } // for (; myIterator->More(); myIterator->Next()) {
         //
         aNbVF = aVVF.Length();
-        using (var aPS = new Message_ProgressScope(aPSOuter.Next(9), "Performing Vertex-Face intersection", aNbVF))
+        using (var aPS = new ProgressScope(aPSOuter.Next(9), "Performing Vertex-Face intersection", aNbVF))
         {
             for (k = 0; k < aNbVF; k++)
             {

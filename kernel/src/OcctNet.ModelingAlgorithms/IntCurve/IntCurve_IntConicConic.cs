@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -43,42 +45,42 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     }
 
     /// <summary>Intersection between two lines.</summary>
-    public IntCurve_IntConicConic(in gp_Lin2d L1, in IntRes2d_Domain D1, in gp_Lin2d L2, in IntRes2d_Domain D2,
+    public IntCurve_IntConicConic(in Line2D L1, in IntRes2d_Domain D1, in Line2D L2, in IntRes2d_Domain D2,
                                   double TolConf, double Tol)
     {
         Perform(L1, D1, L2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a line and a circle.</summary>
-    public IntCurve_IntConicConic(in gp_Lin2d L1, in IntRes2d_Domain D1, in gp_Circ2d C2, in IntRes2d_Domain D2,
+    public IntCurve_IntConicConic(in Line2D L1, in IntRes2d_Domain D1, in Circle2D C2, in IntRes2d_Domain D2,
                                   double TolConf, double Tol)
     {
         Perform(L1, D1, C2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a line and an ellipse.</summary>
-    public IntCurve_IntConicConic(in gp_Lin2d L, in IntRes2d_Domain DL, in gp_Elips2d E, in IntRes2d_Domain DE,
+    public IntCurve_IntConicConic(in Line2D L, in IntRes2d_Domain DL, in Ellipse2D E, in IntRes2d_Domain DE,
                                   double TolConf, double Tol)
     {
         Perform(L, DL, E, DE, TolConf, Tol);
     }
 
     /// <summary>Intersection between a line and a parabola.</summary>
-    public IntCurve_IntConicConic(in gp_Lin2d L, in IntRes2d_Domain DL, in gp_Parab2d P, in IntRes2d_Domain DP,
+    public IntCurve_IntConicConic(in Line2D L, in IntRes2d_Domain DL, in Parabola2D P, in IntRes2d_Domain DP,
                                   double TolConf, double Tol)
     {
         Perform(L, DL, P, DP, TolConf, Tol);
     }
 
     /// <summary>Intersection between a line and a hyperbola.</summary>
-    public IntCurve_IntConicConic(in gp_Lin2d L, in IntRes2d_Domain DL, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public IntCurve_IntConicConic(in Line2D L, in IntRes2d_Domain DL, in Hyperbola2D H, in IntRes2d_Domain DH,
                                   double TolConf, double Tol)
     {
         Perform(L, DL, H, DH, TolConf, Tol);
     }
 
     /// <summary>Intersection between two circles.</summary>
-    public IntCurve_IntConicConic(in gp_Circ2d C1, in IntRes2d_Domain D1, in gp_Circ2d C2, in IntRes2d_Domain D2,
+    public IntCurve_IntConicConic(in Circle2D C1, in IntRes2d_Domain D1, in Circle2D C2, in IntRes2d_Domain D2,
                                   double TolConf, double Tol)
     {
         SetReversedParameters(false);
@@ -86,63 +88,63 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     }
 
     /// <summary>Intersection between a circle and an ellipse.</summary>
-    public IntCurve_IntConicConic(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Elips2d E, in IntRes2d_Domain DE,
+    public IntCurve_IntConicConic(in Circle2D C, in IntRes2d_Domain DC, in Ellipse2D E, in IntRes2d_Domain DE,
                                   double TolConf, double Tol)
     {
         Perform(C, DC, E, DE, TolConf, Tol);
     }
 
     /// <summary>Intersection between a circle and a parabola.</summary>
-    public IntCurve_IntConicConic(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Parab2d P, in IntRes2d_Domain DP,
+    public IntCurve_IntConicConic(in Circle2D C, in IntRes2d_Domain DC, in Parabola2D P, in IntRes2d_Domain DP,
                                   double TolConf, double Tol)
     {
         Perform(C, DC, P, DP, TolConf, Tol);
     }
 
     /// <summary>Intersection between a circle and a hyperbola.</summary>
-    public IntCurve_IntConicConic(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public IntCurve_IntConicConic(in Circle2D C, in IntRes2d_Domain DC, in Hyperbola2D H, in IntRes2d_Domain DH,
                                   double TolConf, double Tol)
     {
         Perform(C, DC, H, DH, TolConf, Tol);
     }
 
     /// <summary>Intersection between two ellipses.</summary>
-    public IntCurve_IntConicConic(in gp_Elips2d E1, in IntRes2d_Domain D1, in gp_Elips2d E2, in IntRes2d_Domain D2,
+    public IntCurve_IntConicConic(in Ellipse2D E1, in IntRes2d_Domain D1, in Ellipse2D E2, in IntRes2d_Domain D2,
                                   double TolConf, double Tol)
     {
         Perform(E1, D1, E2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between an ellipse and a parabola.</summary>
-    public IntCurve_IntConicConic(in gp_Elips2d E, in IntRes2d_Domain DE, in gp_Parab2d P, in IntRes2d_Domain DP,
+    public IntCurve_IntConicConic(in Ellipse2D E, in IntRes2d_Domain DE, in Parabola2D P, in IntRes2d_Domain DP,
                                   double TolConf, double Tol)
     {
         Perform(E, DE, P, DP, TolConf, Tol);
     }
 
     /// <summary>Intersection between an ellipse and a hyperbola.</summary>
-    public IntCurve_IntConicConic(in gp_Elips2d E, in IntRes2d_Domain DE, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public IntCurve_IntConicConic(in Ellipse2D E, in IntRes2d_Domain DE, in Hyperbola2D H, in IntRes2d_Domain DH,
                                   double TolConf, double Tol)
     {
         Perform(E, DE, H, DH, TolConf, Tol);
     }
 
     /// <summary>Intersection between two parabolas.</summary>
-    public IntCurve_IntConicConic(in gp_Parab2d P1, in IntRes2d_Domain D1, in gp_Parab2d P2, in IntRes2d_Domain D2,
+    public IntCurve_IntConicConic(in Parabola2D P1, in IntRes2d_Domain D1, in Parabola2D P2, in IntRes2d_Domain D2,
                                   double TolConf, double Tol)
     {
         Perform(P1, D1, P2, D2, TolConf, Tol);
     }
 
     /// <summary>Intersection between a parabola and a hyperbola.</summary>
-    public IntCurve_IntConicConic(in gp_Parab2d P, in IntRes2d_Domain DP, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public IntCurve_IntConicConic(in Parabola2D P, in IntRes2d_Domain DP, in Hyperbola2D H, in IntRes2d_Domain DH,
                                   double TolConf, double Tol)
     {
         Perform(P, DP, H, DH, TolConf, Tol);
     }
 
     /// <summary>Intersection between two hyperbolas.</summary>
-    public IntCurve_IntConicConic(in gp_Hypr2d H1, in IntRes2d_Domain DH1, in gp_Hypr2d H2, in IntRes2d_Domain DH2,
+    public IntCurve_IntConicConic(in Hyperbola2D H1, in IntRes2d_Domain DH1, in Hyperbola2D H2, in IntRes2d_Domain DH2,
                                   double TolConf, double Tol)
     {
         Perform(H1, DH1, H2, DH2, TolConf, Tol);
@@ -156,10 +158,10 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     private static bool SET_BOUNDED_DOMAIN(in IntRes2d_Domain domain,
                                            ref double binf,
                                            ref double tolinf,
-                                           ref gp_Pnt2d Pntinf,
+                                           ref Point2D Pntinf,
                                            ref double bsup,
                                            ref double tolsup,
-                                           ref gp_Pnt2d Pntsup)
+                                           ref Point2D Pntsup)
     {
         if (domain.HasFirstPoint())
         {
@@ -189,7 +191,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a line and a parabola.</summary>
-    public void Perform(in gp_Lin2d L, in IntRes2d_Domain DL, in gp_Parab2d P, in IntRes2d_Domain DP, double TolConf,
+    public void Perform(in Line2D L, in IntRes2d_Domain DL, in Parabola2D P, in IntRes2d_Domain DP, double TolConf,
                         double Tol)
     {
         this.ResetFields();
@@ -199,8 +201,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         PCurve.SetAccuracy(20);
         Inter.SetReversedParameters(ReversedParameters());
 
-        double binf = Precision.Infinite();
-        double bsup = -Precision.Infinite();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite();
+        double bsup = -global::Kerf.Engine.Foundation.Precision.Infinite();
         double maxtol = (Tol > TolConf) ? Tol : TolConf;
         if (maxtol < 1.0e-7)
         {
@@ -208,21 +210,21 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
         bool wasSet = false;
 
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        Point2D Pntinf = new(), Pntsup = new();
         IntAna2d_AnaIntersection theIntAna2d = new();
 
         maxtol *= 100.0;
         //  if(maxtol<0.000001) maxtol = 0.000001;
 
         // OCCT offsets the line by (maxtol Dy, maxtol Dx), which is not normal to it (as is).
-        gp_Vec2d Offset = new(maxtol * L.Direction().Y(), maxtol * L.Direction().X());
-        gp_Lin2d Lp = L.Translated(Offset);
+        Vector2D Offset = new(maxtol * L.Direction().Y(), maxtol * L.Direction().X());
+        Line2D Lp = L.Translated(Offset);
         theIntAna2d.Perform(P, new IntAna2d_Conic(Lp));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
 
         Offset.Reverse();
-        gp_Lin2d Lm = L.Translated(Offset);
+        Line2D Lm = L.Translated(Offset);
         theIntAna2d.Perform(P, new IntAna2d_Conic(Lm));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
@@ -295,7 +297,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a line and a hyperbola.</summary>
-    public void Perform(in gp_Lin2d L, in IntRes2d_Domain DL, in gp_Hypr2d H, in IntRes2d_Domain DH, double TolConf,
+    public void Perform(in Line2D L, in IntRes2d_Domain DL, in Hyperbola2D H, in IntRes2d_Domain DH, double TolConf,
                         double Tol)
     {
         this.ResetFields();
@@ -305,8 +307,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
         Inter.SetReversedParameters(ReversedParameters());
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         if (Tol > TolConf)
         {
             maxtol = Tol;
@@ -320,14 +322,14 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         {
             maxtol = 0.000001;
         }
-        gp_Vec2d Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
-        gp_Hypr2d Hp = H.Translated(Offset);
+        Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
+        Hyperbola2D Hp = H.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Hp, new IntAna2d_Conic(L));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
-        gp_Hypr2d Hm = H.Translated(Offset);
+        Hyperbola2D Hm = H.Translated(Offset);
         theIntAna2d.Perform(Hm, new IntAna2d_Conic(L));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
@@ -387,7 +389,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a circle and a parabola.</summary>
-    public void Perform(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Parab2d P, in IntRes2d_Domain DP, double TolConf,
+    public void Perform(in Circle2D C, in IntRes2d_Domain DC, in Parabola2D P, in IntRes2d_Domain DP, double TolConf,
                         double Tol)
     {
         this.ResetFields();
@@ -402,10 +404,10 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
             D.SetEquivalentParameters(DC.FirstParameter(), DC.FirstParameter() + M_PI + M_PI);
         }
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         maxtol = C.Radius() / 10.0;
-        gp_Circ2d Cp = C;
+        Circle2D Cp = C;
         Cp.SetRadius(C.Radius() + maxtol);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(P, new IntAna2d_Conic(Cp));
@@ -474,7 +476,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a circle and an ellipse.</summary>
-    public void Perform(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Elips2d E, in IntRes2d_Domain DE, double TolConf,
+    public void Perform(in Circle2D C, in IntRes2d_Domain DC, in Ellipse2D E, in IntRes2d_Domain DE, double TolConf,
                         double Tol)
     {
         this.ResetFields();
@@ -518,7 +520,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a circle and a hyperbola.</summary>
-    public void Perform(in gp_Circ2d C, in IntRes2d_Domain DC, in gp_Hypr2d H, in IntRes2d_Domain DH, double TolConf,
+    public void Perform(in Circle2D C, in IntRes2d_Domain DC, in Hyperbola2D H, in IntRes2d_Domain DH, double TolConf,
                         double Tol)
     {
         this.ResetFields();
@@ -532,17 +534,17 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         {
             D.SetEquivalentParameters(DC.FirstParameter(), DC.FirstParameter() + M_PI + M_PI);
         }
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         maxtol = C.Radius() / 10.0;
-        gp_Vec2d Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
-        gp_Hypr2d Hp = H.Translated(Offset);
+        Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
+        Hyperbola2D Hp = H.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Hp, new IntAna2d_Conic(C));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
-        gp_Hypr2d Hm = H.Translated(Offset);
+        Hyperbola2D Hm = H.Translated(Offset);
         theIntAna2d.Perform(Hm, new IntAna2d_Conic(C));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
@@ -602,7 +604,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between two parabolas.</summary>
-    public void Perform(in gp_Parab2d P1, in IntRes2d_Domain DP1, in gp_Parab2d P2, in IntRes2d_Domain DP2,
+    public void Perform(in Parabola2D P1, in IntRes2d_Domain DP1, in Parabola2D P2, in IntRes2d_Domain DP2,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -611,8 +613,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         PCurve.SetAccuracy(20);
         Inter.SetReversedParameters(ReversedParameters());
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         if (Tol > TolConf)
         {
             maxtol = Tol;
@@ -626,14 +628,14 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         {
             maxtol = 0.000001;
         }
-        gp_Vec2d Offset = new(maxtol * P2.MirrorAxis().Direction().X(), maxtol * P2.MirrorAxis().Direction().Y());
-        gp_Parab2d Pp = P2.Translated(Offset);
+        Vector2D Offset = new(maxtol * P2.MirrorAxis().Direction().X(), maxtol * P2.MirrorAxis().Direction().Y());
+        Parabola2D Pp = P2.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Pp, new IntAna2d_Conic(P1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P2, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
         Offset.Reverse();
-        gp_Parab2d Pm = P2.Translated(Offset);
+        Parabola2D Pm = P2.Translated(Offset);
         theIntAna2d.Perform(Pm, new IntAna2d_Conic(P1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, P2, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
@@ -693,7 +695,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between an ellipse and a parabola.</summary>
-    public void Perform(in gp_Elips2d E, in IntRes2d_Domain DE, in gp_Parab2d P, in IntRes2d_Domain DP,
+    public void Perform(in Ellipse2D E, in IntRes2d_Domain DE, in Parabola2D P, in IntRes2d_Domain DP,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -710,8 +712,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
         //-- std::cout<<" Parab Elips "<<std::endl;
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         if (Tol > TolConf)
         {
             maxtol = Tol;
@@ -722,7 +724,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         }
 
         maxtol = E.MinorRadius() / 10.0;
-        gp_Elips2d Ep = E;
+        Ellipse2D Ep = E;
         Ep.SetMajorRadius(E.MajorRadius() + maxtol);
         Ep.SetMinorRadius(E.MinorRadius() + maxtol);
         IntAna2d_AnaIntersection theIntAna2d = new();
@@ -796,7 +798,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between a parabola and a hyperbola.</summary>
-    public void Perform(in gp_Parab2d P, in IntRes2d_Domain DP, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public void Perform(in Parabola2D P, in IntRes2d_Domain DP, in Hyperbola2D H, in IntRes2d_Domain DH,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -804,8 +806,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         IntCurve_PConic PCurve = new(H);
         Inter.SetReversedParameters(ReversedParameters());
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         if (Tol > TolConf)
         {
             maxtol = Tol;
@@ -819,14 +821,14 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         {
             maxtol = 0.000001;
         }
-        gp_Vec2d Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
-        gp_Hypr2d Hp = H.Translated(Offset);
+        Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
+        Hyperbola2D Hp = H.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Hp, new IntAna2d_Conic(P));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
-        gp_Hypr2d Hm = H.Translated(Offset);
+        Hyperbola2D Hm = H.Translated(Offset);
         theIntAna2d.Perform(Hm, new IntAna2d_Conic(P));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
@@ -886,7 +888,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between two ellipses.</summary>
-    public void Perform(in gp_Elips2d E1, in IntRes2d_Domain DE1, in gp_Elips2d E2, in IntRes2d_Domain DE2,
+    public void Perform(in Ellipse2D E1, in IntRes2d_Domain DE1, in Ellipse2D E2, in IntRes2d_Domain DE2,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -930,7 +932,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between an ellipse and a hyperbola.</summary>
-    public void Perform(in gp_Elips2d E, in IntRes2d_Domain DE, in gp_Hypr2d H, in IntRes2d_Domain DH,
+    public void Perform(in Ellipse2D E, in IntRes2d_Domain DE, in Hyperbola2D H, in IntRes2d_Domain DH,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -945,17 +947,17 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
             DEModif.SetEquivalentParameters(DE.FirstParameter(), DE.FirstParameter() + M_PI + M_PI);
         }
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         maxtol = E.MinorRadius() / 10.0;
-        gp_Vec2d Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
-        gp_Hypr2d Hp = H.Translated(Offset);
+        Vector2D Offset = new(maxtol * H.XAxis().Direction().X(), maxtol * H.XAxis().Direction().Y());
+        Hyperbola2D Hp = H.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Hp, new IntAna2d_Conic(E));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
-        gp_Hypr2d Hm = H.Translated(Offset);
+        Hyperbola2D Hm = H.Translated(Offset);
         theIntAna2d.Perform(Hm, new IntAna2d_Conic(E));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
@@ -1020,7 +1022,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
     //=================================================================================================
 
     /// <summary>Intersection between two hyperbolas.</summary>
-    public void Perform(in gp_Hypr2d H1, in IntRes2d_Domain DH1, in gp_Hypr2d H2, in IntRes2d_Domain DH2,
+    public void Perform(in Hyperbola2D H1, in IntRes2d_Domain DH1, in Hyperbola2D H2, in IntRes2d_Domain DH2,
                         double TolConf, double Tol)
     {
         this.ResetFields();
@@ -1030,8 +1032,8 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
         Inter.SetReversedParameters(ReversedParameters());
 
-        double binf = Precision.Infinite(), bsup = -Precision.Infinite(), maxtol;
-        gp_Pnt2d Pntinf = new(), Pntsup = new();
+        double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
+        Point2D Pntinf = new(), Pntsup = new();
         if (Tol > TolConf)
         {
             maxtol = Tol;
@@ -1045,14 +1047,14 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
         {
             maxtol = 0.000001;
         }
-        gp_Vec2d Offset = new(maxtol * H2.XAxis().Direction().X(), maxtol * H2.XAxis().Direction().Y());
-        gp_Hypr2d Hp = H2.Translated(Offset);
+        Vector2D Offset = new(maxtol * H2.XAxis().Direction().X(), maxtol * H2.XAxis().Direction().Y());
+        Hyperbola2D Hp = H2.Translated(Offset);
         IntAna2d_AnaIntersection theIntAna2d = new();
         theIntAna2d.Perform(Hp, new IntAna2d_Conic(H1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H2, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
         Offset.Reverse();
-        gp_Hypr2d Hm = H2.Translated(Offset);
+        Hyperbola2D Hm = H2.Translated(Offset);
         theIntAna2d.Perform(Hm, new IntAna2d_Conic(H1));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref Pntinf, ref bsup, ref Pntsup, H2, maxtol,
                                 PARAM_MAX_ON_HYPERBOLA);
@@ -1111,10 +1113,10 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
     private static void SetBinfBsupFromIntAna2d(IntAna2d_AnaIntersection theIntAna2d,
                                                 ref double binf,
-                                                ref gp_Pnt2d Pntinf,
+                                                ref Point2D Pntinf,
                                                 ref double bsup,
-                                                ref gp_Pnt2d Pntsup,
-                                                in gp_Parab2d PR,
+                                                ref Point2D Pntsup,
+                                                in Parabola2D PR,
                                                 double maxtol,
                                                 double LIMITE)
     {
@@ -1128,7 +1130,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
                     if (Math.Abs(param) < LIMITE)
                     {
-                        ElCLib.D1(param, PR, out _, out gp_Vec2d V);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(param, PR, out _, out Vector2D V);
                         double NormeD1 = V.Magnitude();
                         double dparam = 100.0 * maxtol / NormeD1;
                         if (dparam < 1e-3)
@@ -1140,13 +1142,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
                         if (param < binf)
                         {
                             binf = param;
-                            Pntinf = ElCLib.Value(param, PR);
+                            Pntinf = global::Kerf.Engine.Geometry.ElCLib.Value(param, PR);
                         }
                         param += dparam + dparam;
                         if (param > bsup)
                         {
                             bsup = param;
-                            Pntsup = ElCLib.Value(param, PR);
+                            Pntsup = global::Kerf.Engine.Geometry.ElCLib.Value(param, PR);
                         }
                     }
                 }
@@ -1156,10 +1158,10 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
     private static void SetBinfBsupFromIntAna2d(IntAna2d_AnaIntersection theIntAna2d,
                                                 ref double binf,
-                                                ref gp_Pnt2d Pntinf,
+                                                ref Point2D Pntinf,
                                                 ref double bsup,
-                                                ref gp_Pnt2d Pntsup,
-                                                in gp_Hypr2d H,
+                                                ref Point2D Pntsup,
+                                                in Hyperbola2D H,
                                                 double maxtol,
                                                 double LIMITE)
     {
@@ -1173,7 +1175,7 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
 
                     if (Math.Abs(param) < LIMITE)
                     {
-                        ElCLib.D1(param, H, out _, out gp_Vec2d V);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(param, H, out _, out Vector2D V);
                         double NormeD1 = V.Magnitude();
                         double dparam = 100.0 * maxtol / NormeD1;
                         if (dparam < 1e-3)
@@ -1185,13 +1187,13 @@ public sealed partial class IntCurve_IntConicConic : IntRes2d_Intersection
                         if (param < binf)
                         {
                             binf = param;
-                            Pntinf = ElCLib.Value(param, H);
+                            Pntinf = global::Kerf.Engine.Geometry.ElCLib.Value(param, H);
                         }
                         param += dparam + dparam;
                         if (param > bsup)
                         {
                             bsup = param;
-                            Pntsup = ElCLib.Value(param, H);
+                            Pntsup = global::Kerf.Engine.Geometry.ElCLib.Value(param, H);
                         }
                     }
                 }

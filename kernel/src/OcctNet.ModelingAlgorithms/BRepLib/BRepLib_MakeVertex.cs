@@ -3,12 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Makes a vertex at a point, with the default precision (<see cref="BRepLib.Precision()"/>).</summary>
 public class BRepLib_MakeVertex : BRepLib_MakeShape
 {
-    public BRepLib_MakeVertex(in gp_Pnt P)
+    public BRepLib_MakeVertex(in Point3D P)
     {
         var B = new BRep_Builder();
         TopoDS_Vertex V = new();

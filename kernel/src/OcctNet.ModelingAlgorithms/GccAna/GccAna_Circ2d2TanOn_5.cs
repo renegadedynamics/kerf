@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -21,9 +22,9 @@ public sealed partial class GccAna_Circ2d2TanOn
     //=========================================================================
 
     /// <summary>The circles through two points with their centre on a line.</summary>
-    public GccAna_Circ2d2TanOn(in gp_Pnt2d Point1,
-                               in gp_Pnt2d Point2,
-                               in gp_Lin2d OnLine,
+    public GccAna_Circ2d2TanOn(in Point2D Point1,
+                               in Point2D Point2,
+                               in Line2D OnLine,
                                double Tolerance)
         : this(2)
     {
@@ -32,7 +33,7 @@ public sealed partial class GccAna_Circ2d2TanOn
         WellDone = false;
         NbrSol = 0;
 
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double dist = Point1.Distance(Point2);
         if (dist < Math.Abs(Tolerance))
         {
@@ -40,8 +41,8 @@ public sealed partial class GccAna_Circ2d2TanOn
         }
         else
         {
-            gp_Lin2d L1 = new(new gp_Pnt2d((Point1.XY() + Point2.XY()) / 2.0),
-                              new gp_Dir2d(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+            Line2D L1 = new(new Point2D((Point1.XY() + Point2.XY()) / 2.0),
+                              new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
             IntAna2d_AnaIntersection Intp = new(L1, OnLine);
             if (Intp.IsDone())
             {
@@ -50,8 +51,8 @@ public sealed partial class GccAna_Circ2d2TanOn
                     for (int i = 1; i <= Intp.NbPoints(); i++)
                     {
                         NbrSol++;
-                        gp_Ax2d axe = new(Intp.Point(i).Value(), dirx);
-                        cirsol[NbrSol] = new gp_Circ2d(axe, Point1.Distance(Intp.Point(i).Value()));
+                        Axis2D axe = new(Intp.Point(i).Value(), dirx);
+                        cirsol[NbrSol] = new Circle2D(axe, Point1.Distance(Intp.Point(i).Value()));
                         //        ====================================================================
                         qualifier1[NbrSol] = GccEnt_noqualifier;
                         qualifier2[NbrSol] = GccEnt_noqualifier;
@@ -60,9 +61,9 @@ public sealed partial class GccAna_Circ2d2TanOn
                         pntcen[NbrSol] = cirsol[NbrSol].Location();
                         pararg1[NbrSol] = 0.0;
                         pararg2[NbrSol] = 0.0;
-                        par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                        par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                        parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                        parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
                     }
                 }
                 WellDone = true;

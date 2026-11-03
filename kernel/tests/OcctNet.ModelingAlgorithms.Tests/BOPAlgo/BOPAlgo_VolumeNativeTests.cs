@@ -92,7 +92,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         public bool HasDS;
         public readonly BOPAlgo_CellsBuilder Cells = new();
         public bool RunParallel;
-        public double Fuzzy = Precision.Confusion();
+        public double Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
         public BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
 
         public TopoDS_Shape Resolve(string theText)
@@ -124,18 +124,18 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         }
     }
 
-    private static string Alerts(Message_Report theReport, Message_Gravity theGravity)
+    private static string Alerts(global::Kerf.Engine.Foundation.Report theReport, global::Kerf.Engine.Foundation.Gravity theGravity)
     {
         StringBuilder aB = new();
-        foreach (Message_Alert anAlert in theReport.GetAlerts(theGravity))
+        foreach (global::Kerf.Engine.Foundation.Alert anAlert in theReport.GetAlerts(theGravity))
         {
             aB.Append(' ').Append(anAlert.GetMessageKey());
         }
         return aB.ToString();
     }
 
-    private static string Outcome(Message_Report theReport)
-        => "errors" + Alerts(theReport, Message_Gravity.Message_Fail) + "\nwarnings" + Alerts(theReport, Message_Gravity.Message_Warning) + "\n";
+    private static string Outcome(global::Kerf.Engine.Foundation.Report theReport)
+        => "errors" + Alerts(theReport, global::Kerf.Engine.Foundation.Gravity.Fail) + "\nwarnings" + Alerts(theReport, global::Kerf.Engine.Foundation.Gravity.Warning) + "\n";
 
     private static string ShapeOut(TopoDS_Shape theS)
     {
@@ -187,7 +187,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 theS.Objects.Clear();
                 theS.Tools.Clear();
                 theS.RunParallel = false;
-                theS.Fuzzy = Precision.Confusion();
+                theS.Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
                 theS.Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
                 return "";
             case "bfuzzyvalue":
@@ -404,9 +404,9 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             {
                 anOut = Run(aS, aCall, theParallel);
             }
-            catch (Standard_Failure anE)
+            catch (global::Kerf.Engine.Foundation.FailureException anE)
             {
-                anOut = "throws " + anE.GetType().Name + "\n";
+                anOut = "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + "\n";
             }
             anOutputs.Add(anOut);
         }

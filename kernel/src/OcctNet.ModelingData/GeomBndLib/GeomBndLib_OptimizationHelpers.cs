@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace Occt;
 
@@ -39,7 +41,7 @@ internal static class GeomBndLib_OptimizationHelpers
                 theF = 0.0;
                 return false;
             }
-            gp_Pnt aP = myCurve.Value(theX);
+            Point3D aP = myCurve.Value(theX);
             theF = mySign * aP.Coord(myCoordIdx);
             return true;
         }
@@ -62,7 +64,7 @@ internal static class GeomBndLib_OptimizationHelpers
                 theF = 0.0;
                 return false;
             }
-            gp_Pnt aP = myCurve.Value(theX[1]);
+            Point3D aP = myCurve.Value(theX[1]);
             theF = mySign * aP.Coord(myCoordIdx);
             return true;
         }
@@ -87,7 +89,7 @@ internal static class GeomBndLib_OptimizationHelpers
                 theF = 0.0;
                 return false;
             }
-            gp_Pnt2d aP = myCurve.Value(theX);
+            Point2D aP = myCurve.Value(theX);
             theF = mySign * aP.Coord(myCoordIdx);
             return true;
         }
@@ -110,7 +112,7 @@ internal static class GeomBndLib_OptimizationHelpers
                 theF = 0.0;
                 return false;
             }
-            gp_Pnt2d aP = myCurve.Value(theX[1]);
+            Point2D aP = myCurve.Value(theX[1]);
             theF = mySign * aP.Coord(myCoordIdx);
             return true;
         }
@@ -168,7 +170,7 @@ internal static class GeomBndLib_OptimizationHelpers
         {
             if (theX[1] >= myUMin && theX[1] <= myUMax && theX[2] >= myVMin && theX[2] <= myVMax)
             {
-                gp_Pnt aP = mySurf.Value(theX[1], theX[2]);
+                Point3D aP = mySurf.Value(theX[1], theX[2]);
                 theF = mySign * aP.Coord(myCoordIdx);
             }
             else
@@ -202,7 +204,7 @@ internal static class GeomBndLib_OptimizationHelpers
                 {
                     v0 = theX[2];
                 }
-                gp_Pnt aP = mySurf.Value(u0, v0);
+                Point3D aP = mySurf.Value(u0, v0);
                 theF = mySign * aP.Coord(myCoordIdx) + aUPen + aVPen;
             }
             return true;
@@ -230,7 +232,7 @@ internal static class GeomBndLib_OptimizationHelpers
         double aSign = theIsMin ? 1.0 : -1.0;
         double extr = aSign * theExtr0;
 
-        double uTol = Max(theCurve.Resolution(theTol), Precision.PConfusion());
+        double uTol = Max(theCurve.Resolution(theTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         double Du = (theCurve.LastParameter() - theCurve.FirstParameter());
 
         double reltol = uTol / Max(Math.Abs(theUMin), Math.Abs(theUMax));
@@ -242,7 +244,7 @@ internal static class GeomBndLib_OptimizationHelpers
         if (theUMax - theUMin < 0.01 * Du)
         {
             CurveCoordFunc aFunc0 = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
-            ScalarResult anOptLoc0 = MathOpt.Brent(aFunc0, theUMin, theUMax, aBrentCfg);
+            ScalarResult anOptLoc0 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc0, theUMin, theUMax, aBrentCfg);
             if (anOptLoc0.Status == Status.OK || anOptLoc0.Status == Status.MaxIterations)
             {
                 if (anOptLoc0.Value.HasValue)
@@ -260,8 +262,8 @@ internal static class GeomBndLib_OptimizationHelpers
         aUppBorder[1] = theUMax;
 
         CurveCoordMVarFunc aFunc = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
-        MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
-        VectorResult aPsoRes = MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
+        VectorResult aPsoRes = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
 
         math_Vector aT = new(1, 1);
         if (aPsoRes.Status == Status.OK || aPsoRes.Status == Status.MaxIterations)
@@ -286,7 +288,7 @@ internal static class GeomBndLib_OptimizationHelpers
 
         CurveCoordFunc aFunc1 = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
         double aStep = Min(0.1 * Du, (theUMax - theUMin) / (aNbParticles + 1));
-        ScalarResult anOptLoc = MathOpt.Brent(aFunc1,
+        ScalarResult anOptLoc = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc1,
                                               Max(aT[1] - aStep, theUMin),
                                               Min(aT[1] + aStep, theUMax),
                                               aBrentCfg);
@@ -321,7 +323,7 @@ internal static class GeomBndLib_OptimizationHelpers
         double aSign = theIsMin ? 1.0 : -1.0;
         double extr = aSign * theExtr0;
 
-        double uTol = Max(theCurve.Resolution(theTol), Precision.PConfusion());
+        double uTol = Max(theCurve.Resolution(theTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         double Du = (theCurve.LastParameter() - theCurve.FirstParameter());
 
         double reltol = uTol / Max(Math.Abs(theUMin), Math.Abs(theUMax));
@@ -334,7 +336,7 @@ internal static class GeomBndLib_OptimizationHelpers
         if (theUMax - theUMin < 0.01 * Du)
         {
             Curve2dCoordFunc aFunc0 = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
-            ScalarResult anOptLoc0 = MathOpt.Brent(aFunc0, theUMin, theUMax, aBrentCfg);
+            ScalarResult anOptLoc0 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc0, theUMin, theUMax, aBrentCfg);
             if (anOptLoc0.Status == Status.OK || anOptLoc0.Status == Status.MaxIterations)
             {
                 if (anOptLoc0.Value.HasValue)
@@ -352,8 +354,8 @@ internal static class GeomBndLib_OptimizationHelpers
         aUppBorder[1] = theUMax;
 
         Curve2dCoordMVarFunc aFunc = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
-        MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
-        VectorResult aPsoRes = MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
+        VectorResult aPsoRes = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
 
         math_Vector aT = new(1, 1);
         if (aPsoRes.Status == Status.OK || aPsoRes.Status == Status.MaxIterations)
@@ -378,7 +380,7 @@ internal static class GeomBndLib_OptimizationHelpers
 
         double aStep = Min(0.1 * Du, (theUMax - theUMin) / (aNbParticles + 1));
         Curve2dCoordFunc aFunc1 = new(theCurve, theUMin, theUMax, theCoordIdx, aSign);
-        ScalarResult anOptLoc = MathOpt.Brent(aFunc1,
+        ScalarResult anOptLoc = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc1,
                                               Max(aT[1] - aStep, theUMin),
                                               Min(aT[1] + aStep, theUMax),
                                               aBrentCfg);
@@ -436,8 +438,8 @@ internal static class GeomBndLib_OptimizationHelpers
         int aNbParticles = aNbU * aNbV;
 
         SurfCoordFunc aFunc = new(theSurf, theUMin, theUMax, theVMin, theVMax, theCoordIdx, aSign);
-        MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
-        VectorResult aPsoRes = MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPsoCfg = new(aNbParticles);
+        VectorResult aPsoRes = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLowBorder, aUppBorder, aPsoCfg);
 
         math_Vector aT = new(1, 2);
         if (aPsoRes.Status == Status.OK || aPsoRes.Status == Status.MaxIterations)
@@ -462,7 +464,7 @@ internal static class GeomBndLib_OptimizationHelpers
             aT[2] = (theVMin + theVMax) / 2.0;
         }
 
-        math_Matrix aDir = new(1, 2, 1, 2, 0.0);
+        Matrix aDir = new(1, 2, 1, 2, 0.0);
         aDir[1, 1] = 1.0;
         aDir[2, 2] = 1.0;
 
@@ -471,7 +473,7 @@ internal static class GeomBndLib_OptimizationHelpers
         aPowellCfg.FTolerance = theTol;
         aPowellCfg.MaxIterations = 200;
 
-        VectorResult powell = MathOpt.PowellWithDirections(aFunc, aT, aDir, aPowellCfg);
+        VectorResult powell = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PowellWithDirections(aFunc, aT, aDir, aPowellCfg);
 
         if (powell.Status == Status.OK || powell.Status == Status.MaxIterations)
         {

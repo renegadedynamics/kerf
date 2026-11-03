@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,20 +25,20 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
     public Geom2d_Hyperbola? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNb);
+        NCollection_Array1<Point2D> aResult = new(1, aNb);
 
-        gp_Hypr2d aHypr = myGeom.Hypr2d();
-        gp_Pnt2d aCenter = aHypr.Location();
-        gp_Dir2d aXDir = aHypr.XAxis().Direction();
-        gp_Dir2d aYDir = aHypr.YAxis().Direction();
+        Hyperbola2D aHypr = myGeom.Hypr2d();
+        Point2D aCenter = aHypr.Location();
+        Direction2D aXDir = aHypr.XAxis().Direction();
+        Direction2D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -54,7 +56,7 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
             double sinhU = Math.Sinh(u);
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt2d(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                             new Point2D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                           aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY));
         }
         return aResult;
@@ -71,10 +73,10 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Hypr2d aHypr = myGeom.Hypr2d();
-        gp_Pnt2d aCenter = aHypr.Location();
-        gp_Dir2d aXDir = aHypr.XAxis().Direction();
-        gp_Dir2d aYDir = aHypr.YAxis().Direction();
+        Hyperbola2D aHypr = myGeom.Hypr2d();
+        Point2D aCenter = aHypr.Location();
+        Direction2D aXDir = aHypr.XAxis().Direction();
+        Direction2D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -95,9 +97,9 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
             // D1 = MajorR * sinh(u) * XDir + MinorR * cosh(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD1
             {
-                Point = new gp_Pnt2d(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point2D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                      aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY),
-                D1 = new gp_Vec2d(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector2D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                   aMajR * sinhU * aXY + aMinR * coshU * aYY),
             };
         }
@@ -115,10 +117,10 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Hypr2d aHypr = myGeom.Hypr2d();
-        gp_Pnt2d aCenter = aHypr.Location();
-        gp_Dir2d aXDir = aHypr.XAxis().Direction();
-        gp_Dir2d aYDir = aHypr.YAxis().Direction();
+        Hyperbola2D aHypr = myGeom.Hypr2d();
+        Point2D aCenter = aHypr.Location();
+        Direction2D aXDir = aHypr.XAxis().Direction();
+        Direction2D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -138,11 +140,11 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
             // D2 = MajorR * cosh(u) * XDir + MinorR * sinh(u) * YDir = (P - Center)
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD2
             {
-                Point = new gp_Pnt2d(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point2D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                      aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY),
-                D1 = new gp_Vec2d(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector2D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                   aMajR * sinhU * aXY + aMinR * coshU * aYY),
-                D2 = new gp_Vec2d(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                D2 = new Vector2D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                   aMajR * coshU * aXY + aMinR * sinhU * aYY),
             };
         }
@@ -160,10 +162,10 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Hypr2d aHypr = myGeom.Hypr2d();
-        gp_Pnt2d aCenter = aHypr.Location();
-        gp_Dir2d aXDir = aHypr.XAxis().Direction();
-        gp_Dir2d aYDir = aHypr.YAxis().Direction();
+        Hyperbola2D aHypr = myGeom.Hypr2d();
+        Point2D aCenter = aHypr.Location();
+        Direction2D aXDir = aHypr.XAxis().Direction();
+        Direction2D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -183,13 +185,13 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
             // D3 = MajorR * sinh(u) * XDir + MinorR * cosh(u) * YDir = D1
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD3
             {
-                Point = new gp_Pnt2d(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point2D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                      aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY),
-                D1 = new gp_Vec2d(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector2D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                   aMajR * sinhU * aXY + aMinR * coshU * aYY),
-                D2 = new gp_Vec2d(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                D2 = new Vector2D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                   aMajR * coshU * aXY + aMinR * sinhU * aYY),
-                D3 = new gp_Vec2d(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D3 = new Vector2D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                   aMajR * sinhU * aXY + aMinR * coshU * aYY),
             };
         }
@@ -197,19 +199,19 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative at all grid points; derivatives cycle with period 2.</summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
+        NCollection_Array1<Vector2D> aResult = new(1, aNb);
 
-        gp_Hypr2d aHypr = myGeom.Hypr2d();
-        gp_Dir2d aXDir = aHypr.XAxis().Direction();
-        gp_Dir2d aYDir = aHypr.YAxis().Direction();
+        Hyperbola2D aHypr = myGeom.Hypr2d();
+        Direction2D aXDir = aHypr.XAxis().Direction();
+        Direction2D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -233,13 +235,13 @@ public sealed class Geom2dGridEval_Hyperbola : Geom2dGridEval.ICurveEvaluator
             if (isOdd)
             {
                 aResult.SetValue(i - theParams.Lower() + 1,
-                                 new gp_Vec2d(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                                 new Vector2D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                               aMajR * sinhU * aXY + aMinR * coshU * aYY));
             }
             else
             {
                 aResult.SetValue(i - theParams.Lower() + 1,
-                                 new gp_Vec2d(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                                 new Vector2D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                               aMajR * coshU * aXY + aMinR * sinhU * aYY));
             }
         }

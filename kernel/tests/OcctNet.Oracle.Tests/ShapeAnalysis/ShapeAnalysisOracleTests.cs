@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -45,16 +48,16 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     private static N.gp_Pnt NPnt(Oracle theOracle, double theMin = -10, double theMax = 10)
         => new(theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax));
 
-    private static gp_Pnt FromN(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
+    private static Point3D FromN(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
 
-    private static gp_Pnt2d FromN(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
+    private static Point2D FromN(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
     private static N.TColgp_Array1OfPnt NPoles(Oracle theOracle, int theNb)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, theNb);
+        var aPoles = new NCollection_Array1<Point3D>(1, theNb);
         for (int i = 1; i <= theNb; i++)
         {
-            aPoles[i] = new gp_Pnt(theOracle.Real(-5, 5), theOracle.Real(-5, 5), theOracle.Real(-5, 5));
+            aPoles[i] = new Point3D(theOracle.Real(-5, 5), theOracle.Real(-5, 5), theOracle.Real(-5, 5));
         }
 
         return Oracle.ToNative(aPoles);
@@ -76,10 +79,10 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         }
 
         aNb -= aDegree + 1;
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNb);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNb);
         for (int i = 1; i <= aNb; i++)
         {
-            aPoles[i] = new gp_Pnt(theOracle.Real(-5, 5), theOracle.Real(-5, 5), theOracle.Real(-5, 5));
+            aPoles[i] = new Point3D(theOracle.Real(-5, 5), theOracle.Real(-5, 5), theOracle.Real(-5, 5));
         }
 
         NCollection_Array1<double>? aWeights = theOracle.Bool() ? theOracle.Weights(aNb, true) : null;
@@ -159,10 +162,10 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                     }
 
                     aNb -= aDegree + 1;
-                    var aPoles = new NCollection_Array1<gp_Pnt>(1, aNb);
+                    var aPoles = new NCollection_Array1<Point3D>(1, aNb);
                     for (int i = 1; i <= aNb; i++)
                     {
-                        aPoles[i] = new gp_Pnt(theOracle.Real(-5, 5), theOracle.Real(-5, 5), 0);
+                        aPoles[i] = new Point3D(theOracle.Real(-5, 5), theOracle.Real(-5, 5), 0);
                     }
 
                     using N.Geom_BSplineCurve aBasis = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDegree, false);
@@ -218,9 +221,9 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             for (int k = 0; k < 8; k++)
             {
                 double t = f + (l - f) * anOracle.Real(-0.1, 1.1);
-                gp_Pnt aP = aPC.Value(t);
+                Point3D aP = aPC.Value(t);
                 double anOff = k % 4 == 0 ? 0 : anOracle.Real(0, k % 4 == 1 ? 1e-5 : 3);
-                aP = aP.Translated(new gp_Vec(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-1, 1)) * anOff);
+                aP = aP.Translated(new Vector3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-1, 1)) * anOff);
                 if (k == 7 && aWhat == "circle")
                 {
                     aP = ((Geom_Circle)(aPC is Geom_TrimmedCurve aT ? aT.BasisCurve() : aPC)).Location(); // on the axis
@@ -234,7 +237,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 using var aNProj = new N.gp_Pnt();
                 double aNParam = 0;
                 double aND = aNSAC.Project(aNC, aNP, aPreci, aNProj, ref aNParam, anAdjust);
-                double aPD = aSAC.Project(aPC, aP, aPreci, out gp_Pnt aPProj, out double aPParam, anAdjust);
+                double aPD = aSAC.Project(aPC, aP, aPreci, out Point3D aPProj, out double aPParam, anAdjust);
                 anOracle.Same(aND, aPD, aStep + ", Project");
                 anOracle.Same(aNParam, aPParam, aStep + ", Project param");
                 anOracle.Same(aNProj, aPProj, aStep + ", Project point");
@@ -297,11 +300,11 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             foreach (bool aGiven in new[] { false, true })
             {
                 double aPreci = anOracle.Bool() ? 0 : 1e-3;
-                gp_XYZ aNormal = aGiven ? new gp_XYZ(0, 0, 1) : new gp_XYZ();
+                Xyz aNormal = aGiven ? new Xyz(0, 0, 1) : new Xyz();
                 using var aNNormal = new N.gp_XYZ(aNormal.X(), aNormal.Y(), aNormal.Z());
                 anOracle.Same(N.ShapeAnalysis_Curve.IsPlanar(aNC, aNNormal, aPreci), ShapeAnalysis_Curve.IsPlanar(aPC, ref aNormal, aPreci),
                               $"{aCase}, IsPlanar");
-                anOracle.Same(new gp_XYZ(aNNormal.X(), aNNormal.Y(), aNNormal.Z()), aNormal, $"{aCase}, IsPlanar normal");
+                anOracle.Same(new Xyz(aNNormal.X(), aNNormal.Y(), aNNormal.Z()), aNormal, $"{aCase}, IsPlanar normal");
             }
 
             double aClosedPreci = anOracle.Bool() ? -1 : anOracle.Real(1e-7, 10);
@@ -326,21 +329,21 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             {
                 double x = anOracle.Real(-5, 5), y = anOracle.Real(-5, 5);
                 N.gp_Dir2d aND;
-                gp_Dir2d aPD;
+                Direction2D aPD;
                 switch (anOracle.Int(0, 2))
                 {
                     case 0:
                     {
                         double s = anOracle.Bool() ? 1 : -1;
                         aND = new N.gp_Dir2d(0, s);
-                        aPD = new gp_Dir2d(0, s);
+                        aPD = new Direction2D(0, s);
                         break;
                     }
                     case 1:
                     {
                         double s = anOracle.Bool() ? 1 : -1;
                         aND = new N.gp_Dir2d(s, 0);
-                        aPD = new gp_Dir2d(s, 0);
+                        aPD = new Direction2D(s, 0);
                         break;
                     }
                     default:
@@ -350,7 +353,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
                 using N.gp_Pnt2d aNP = new(x, y);
                 var aNL = new N.Geom2d_Line(aNP, aND);
-                var aPL = new Geom2d_Line(new gp_Pnt2d(x, y), aPD);
+                var aPL = new Geom2d_Line(new Point2D(x, y), aPD);
                 aND.Dispose();
                 if (anOracle.Bool())
                 {
@@ -461,12 +464,12 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 case 7:
                 {
                     int aNU = theOracle.Int(2, 5), aNV = theOracle.Int(2, 5);
-                    var aPoles = new NCollection_Array2<gp_Pnt>(1, aNU, 1, aNV);
+                    var aPoles = new NCollection_Array2<Point3D>(1, aNU, 1, aNV);
                     for (int i = 1; i <= aNU; i++)
                     {
                         for (int j = 1; j <= aNV; j++)
                         {
-                            aPoles[i, j] = new gp_Pnt(i + theOracle.Real(-0.4, 0.4), j + theOracle.Real(-0.4, 0.4), theOracle.Real(-1, 1));
+                            aPoles[i, j] = new Point3D(i + theOracle.Real(-0.4, 0.4), j + theOracle.Real(-0.4, 0.4), theOracle.Real(-1, 1));
                         }
                     }
 
@@ -492,15 +495,15 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                         aNV += aVM[i];
                     }
 
-                    var aPoles = new NCollection_Array2<gp_Pnt>(1, aNU, 1, aNV);
-                    var anApex = new gp_Pnt(0, aNV / 2.0, theOracle.Real(1, 3));
+                    var aPoles = new NCollection_Array2<Point3D>(1, aNU, 1, aNV);
+                    var anApex = new Point3D(0, aNV / 2.0, theOracle.Real(1, 3));
                     for (int i = 1; i <= aNU; i++)
                     {
                         for (int j = 1; j <= aNV; j++)
                         {
                             aPoles[i, j] = aDeg && i == 1
                                 ? anApex
-                                : new gp_Pnt(i + theOracle.Real(-0.4, 0.4), j + theOracle.Real(-0.4, 0.4), theOracle.Real(-1, 1));
+                                : new Point3D(i + theOracle.Real(-0.4, 0.4), j + theOracle.Real(-0.4, 0.4), theOracle.Real(-1, 1));
                         }
                     }
 
@@ -515,12 +518,12 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                     // an offset of a smooth Bezier surface or of a cylinder
                     if (theOracle.Bool())
                     {
-                        var aPoles = new NCollection_Array2<gp_Pnt>(1, 3, 1, 3);
+                        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 3);
                         for (int i = 1; i <= 3; i++)
                         {
                             for (int j = 1; j <= 3; j++)
                             {
-                                aPoles[i, j] = new gp_Pnt(i * 2, j * 2, theOracle.Real(-0.5, 0.5));
+                                aPoles[i, j] = new Point3D(i * 2, j * 2, theOracle.Real(-0.5, 0.5));
                             }
                         }
 
@@ -584,7 +587,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             theOracle.Same(aNSAS.NbSingularities(aPreci), aSAS.NbSingularities(aPreci), $"{theCase}, NbSingularities({aPreci})");
         }
 
-        var aSingular = new List<gp_Pnt>();
+        var aSingular = new List<Point3D>();
         for (int num = 1; num <= 5; num++)
         {
             double aNPreci = 0, aNF = 0, aNL = 0, aPPreci = 0, aPF = 0, aPL = 0;
@@ -592,8 +595,8 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             using var aNP = new N.gp_Pnt();
             using var aNF2 = new N.gp_Pnt2d();
             using var aNL2 = new N.gp_Pnt2d();
-            gp_Pnt aPP = new gp_Pnt();
-            gp_Pnt2d aPF2 = new gp_Pnt2d(), aPL2 = new gp_Pnt2d();
+            Point3D aPP = new Point3D();
+            Point2D aPF2 = new Point2D(), aPL2 = new Point2D();
             bool aNOk = aNSAS.Singularity(num, ref aNPreci, aNP, aNF2, aNL2, ref aNF, ref aNL, ref aNU);
             bool aPOk = aSAS.Singularity(num, ref aPPreci, ref aPP, ref aPF2, ref aPL2, ref aPF, ref aPL, ref aPU);
             string aWhat = $"{theCase}, Singularity({num})";
@@ -631,9 +634,9 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
         for (int k = 0; k < 8; k++)
         {
             double u = theU1 + (theU2 - theU1) * theOracle.Real(-0.05, 1.05), v = theV1 + (theV2 - theV1) * theOracle.Real(-0.05, 1.05);
-            gp_Pnt aP = theP.Value(u, v);
+            Point3D aP = theP.Value(u, v);
             double anOff = k % 4 == 0 ? 0 : theOracle.Real(0, k % 4 == 1 ? 1e-5 : 2);
-            aP = aP.Translated(new gp_Vec(theOracle.Real(-1, 1), theOracle.Real(-1, 1), theOracle.Real(-1, 1)) * anOff);
+            aP = aP.Translated(new Vector3D(theOracle.Real(-1, 1), theOracle.Real(-1, 1), theOracle.Real(-1, 1)) * anOff);
             if (k == 7 && aSingular.Count > 0)
             {
                 aP = aSingular[theOracle.Int(0, aSingular.Count - 1)];
@@ -651,7 +654,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
             theOracle.Same(aNSAS.Gap(), aSAS.Gap(), aStep + ", ValueOfUV gap");
 
-            var aPrev = new gp_Pnt2d(u + (theU2 - theU1) * theOracle.Real(-0.03, 0.03), v + (theV2 - theV1) * theOracle.Real(-0.03, 0.03));
+            var aPrev = new Point2D(u + (theU2 - theU1) * theOracle.Real(-0.03, 0.03), v + (theV2 - theV1) * theOracle.Real(-0.03, 0.03));
             double aMaxPreci = theOracle.Bool() ? -1 : 1e-3;
             using (N.gp_Pnt2d aNPrev = Oracle.ToNative(aPrev))
             using (N.gp_Pnt2d aNUV = aNSAS.NextValueOfUV(aNPrev, aNP, aPreci, aMaxPreci))
@@ -674,7 +677,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
             using var aNF = new N.gp_Pnt2d();
             using var aNL = new N.gp_Pnt2d();
-            gp_Pnt2d aPF = new gp_Pnt2d(), aPL = new gp_Pnt2d();
+            Point2D aPF = new Point2D(), aPL = new Point2D();
             double aNFP = 0, aNLP = 0, aPFP = 0, aPLP = 0;
             bool aNOk = aNSAS.DegeneratedValues(aNP, aDegPreci, aNF, aNL, ref aNFP, ref aNLP);
             bool aPOk = aSAS.DegeneratedValues(aP, aDegPreci, ref aPF, ref aPL, ref aPFP, ref aPLP);
@@ -690,8 +693,8 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
             theOracle.Same(aNSAS.Gap(), aSAS.Gap(), aStep + ", DegeneratedValues gap");
 
-            var aResult = new gp_Pnt2d(u, v);
-            var aNeighbour = new gp_Pnt2d(u + 0.1, v + 0.1);
+            var aResult = new Point2D(u, v);
+            var aNeighbour = new Point2D(u + 0.1, v + 0.1);
             using N.gp_Pnt2d aNResult = Oracle.ToNative(aResult);
             using N.gp_Pnt2d aNNeighbour = Oracle.ToNative(aNeighbour);
             theOracle.Same(aNSAS.ProjectDegenerated(aNP, aDegPreci, aNNeighbour, aNResult),
@@ -699,24 +702,24 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             theOracle.Same(aNResult, aResult, aStep + ", ProjectDegenerated result");
 
             // a straight pcurve: along a boundary or across
-            var aA = new gp_Pnt2d(k % 2 == 0 ? theU1 : u, theV1 + (theV2 - theV1) * theOracle.Real(0, 0.5));
-            var aB = new gp_Pnt2d(k % 2 == 0 ? theU1 : u + 0.3, theV1 + (theV2 - theV1) * theOracle.Real(0.5, 1));
+            var aA = new Point2D(k % 2 == 0 ? theU1 : u, theV1 + (theV2 - theV1) * theOracle.Real(0, 0.5));
+            var aB = new Point2D(k % 2 == 0 ? theU1 : u + 0.3, theV1 + (theV2 - theV1) * theOracle.Real(0.5, 1));
             using N.gp_Pnt2d aNA = Oracle.ToNative(aA), aNB = Oracle.ToNative(aB);
             double aTol = theOracle.Bool() ? 1e-7 : 1e-2;
             theOracle.Same(aNSAS.IsDegenerated(aNA, aNB, aTol, 10), aSAS.IsDegenerated(aA, aB, aTol, 10), aStep + ", IsDegenerated(p2d)");
         }
 
         // the iso boxes
-        (Func<N.Bnd_Box> N, Func<Bnd_Box> P, string What)[] aBoxes =
+        (Func<N.Bnd_Box> N, Func<Box> P, string What)[] aBoxes =
         [
             (aNSAS.GetBoxUF, aSAS.GetBoxUF, "UF"), (aNSAS.GetBoxUL, aSAS.GetBoxUL, "UL"),
             (aNSAS.GetBoxVF, aSAS.GetBoxVF, "VF"), (aNSAS.GetBoxVL, aSAS.GetBoxVL, "VL"),
         ];
-        foreach ((Func<N.Bnd_Box> aNGet, Func<Bnd_Box> aPGet, string aWhat) in aBoxes)
+        foreach ((Func<N.Bnd_Box> aNGet, Func<Box> aPGet, string aWhat) in aBoxes)
         {
             using N.Bnd_Box aNBox = aNGet();
-            Bnd_Box aPBox = aPGet();
-            theOracle.Same(aNBox.IsVoid(), aPBox.IsVoid(), $"{theCase}, box {aWhat} void");
+            Box aPBox = aPGet();
+            theOracle.Same(aNBox.IsVoid(), aPBox.IsVoid, $"{theCase}, box {aWhat} void");
             if (!aNBox.IsVoid())
             {
                 double x0 = 0, y0 = 0, z0 = 0, x1 = 0, y1 = 0, z1 = 0;

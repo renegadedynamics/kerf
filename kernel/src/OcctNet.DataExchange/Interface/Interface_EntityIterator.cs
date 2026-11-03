@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -27,7 +29,7 @@ public class Interface_EntityIterator
     /// <summary>
     /// Defines an iterator on a list, directly i.e. without copying it
     /// </summary>
-    public Interface_EntityIterator(NCollection_HSequence<Standard_Transient>? list)
+    public Interface_EntityIterator(NCollection_HSequence<Transient>? list)
     {
         thecurr = new Interface_IntVal();
         thecurr.CValue() = 0;
@@ -37,11 +39,11 @@ public class Interface_EntityIterator
     /// <summary>
     /// Gets a list of entities and adds its to the iteration list
     /// </summary>
-    public void AddList(NCollection_HSequence<Standard_Transient>? list)
+    public void AddList(NCollection_HSequence<Transient>? list)
     {
         if (thelist is null)
         {
-            thelist = new NCollection_HSequence<Standard_Transient>();
+            thelist = new NCollection_HSequence<Transient>();
         }
         if (thecurr is null)
         {
@@ -54,7 +56,7 @@ public class Interface_EntityIterator
     /// <summary>
     /// Adds to the iteration list a defined entity
     /// </summary>
-    public void AddItem(Standard_Transient? anentity)
+    public void AddItem(Transient? anentity)
     {
         if (anentity is null)
         {
@@ -66,7 +68,7 @@ public class Interface_EntityIterator
         }
         if (thelist is null)
         {
-            thelist = new NCollection_HSequence<Standard_Transient>();
+            thelist = new NCollection_HSequence<Transient>();
         }
         thecurr.CValue() = 0;
         thelist.Append(anentity);
@@ -75,7 +77,7 @@ public class Interface_EntityIterator
     /// <summary>
     /// same as AddItem (kept for compatibility)
     /// </summary>
-    public void GetOneItem(Standard_Transient? anentity)
+    public void GetOneItem(Transient? anentity)
     {
         AddItem(anentity);
     }
@@ -91,8 +93,8 @@ public class Interface_EntityIterator
             return;
         }
         int i, n = thelist.Length();
-        NCollection_HSequence<Standard_Transient> nlist =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> nlist =
+            new NCollection_HSequence<Transient>();
         for (i = 1; i <= n; i++)
         {
             if (thelist.Value(i).IsKind(atype) == keep)
@@ -203,16 +205,16 @@ public class Interface_EntityIterator
     /// <summary>
     /// Returns the current Entity iterated, to be used by Interface tools
     /// </summary>
-    public Standard_Transient? Value()
+    public Transient? Value()
     {
         //  NbEntity not (we don't know how it is implemented after all)
         if (thelist is null)
         {
-            throw new Standard_NoSuchObject("Interface_EntityIterator");
+            throw new NoSuchObjectException("Interface_EntityIterator");
         }
         if (thecurr.Value() < 1 || thecurr.Value() > thelist.Length())
         {
-            throw new Standard_NoSuchObject("Interface_EntityIterator");
+            throw new NoSuchObjectException("Interface_EntityIterator");
         }
         return thelist.Value(thecurr.Value());
     }
@@ -221,7 +223,7 @@ public class Interface_EntityIterator
     /// Returns the content of the Iterator, accessed through a Handle to be used by a frontal-engine logic
     /// Returns an empty Sequence if the Iterator is empty Calls Start if not yet done
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? Content()
+    public NCollection_HSequence<Transient>? Content()
     {
         if (thecurr is not null && thecurr.Value() == 0)
         {
@@ -229,7 +231,7 @@ public class Interface_EntityIterator
         }
         if (thelist is null)
         {
-            return new NCollection_HSequence<Standard_Transient>(); // empty
+            return new NCollection_HSequence<Transient>(); // empty
         }
         return thelist;
     }
@@ -253,10 +255,10 @@ public class Interface_EntityIterator
             thecurr = new Interface_IntVal();
         }
         thecurr.CValue() = 0;
-        thelist = new NCollection_HSequence<Standard_Transient>();
+        thelist = new NCollection_HSequence<Transient>();
     }
 
 
     private Interface_IntVal? thecurr;
-    private NCollection_HSequence<Standard_Transient>? thelist;
+    private NCollection_HSequence<Transient>? thelist;
 }

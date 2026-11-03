@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepGeom_Axis2Placement : StepData_SelectType
@@ -23,7 +25,7 @@ public class StepGeom_Axis2Placement : StepData_SelectType
     /// 2 -&gt; Axis2Placement3d
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

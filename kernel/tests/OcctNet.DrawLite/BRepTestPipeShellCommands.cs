@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepBuilderAPI_PipeError;
@@ -76,9 +77,9 @@ internal static class BRepTestPipeShellCommands
         bool ByACR = false;
         bool rotate = false;
         double Radius = theDI.Atof(a[4]);
-        ProfileCurve!.D1(aSpFirst, out gp_Pnt ctr, out gp_Vec norm);
-        var xAxisStart = new gp_Vec(ctr, SpineCurve!.Value(aSpFirst));
-        var aAx2Start = new gp_Ax2(ctr, new gp_Dir(norm), new gp_Dir(xAxisStart));
+        ProfileCurve!.D1(aSpFirst, out Point3D ctr, out Vector3D norm);
+        var xAxisStart = new Vector3D(ctr, SpineCurve!.Value(aSpFirst));
+        var aAx2Start = new Frame3D(ctr, new Direction3D(norm), new Direction3D(xAxisStart));
         var cStart = new Geom_Circle(aAx2Start, Radius);
         int k = 5;
         if (n > k)
@@ -98,13 +99,13 @@ internal static class BRepTestPipeShellCommands
         }
 
         double Accuracy = aPipe.ErrorOnSurf();
-        theDI.Output.WriteLine("Accuracy of approximation = " + Standard_Stream.FormatReal(Accuracy, 6));
+        theDI.Output.WriteLine("Accuracy of approximation = " + global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(Accuracy, 6));
 
         Geom_Surface? Sur = aPipe.Surface();
         TopoDS_Face F = new();
         if (Sur is not null)
         {
-            F = new BRepBuilderAPI_MakeFace(Sur, Precision.Confusion()).Face();
+            F = new BRepBuilderAPI_MakeFace(Sur, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
         }
         theDI.SetShape(a[1], F);
         return 0;
@@ -440,7 +441,7 @@ internal static class BRepTestPipeShellCommands
                 di.Append("bad arguments !\n");
                 return 1;
             }
-            var D = new gp_Dir(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var D = new Direction3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             Sweep.SetMode(D);
         }
         else if (a[1] == "-FX")
@@ -450,16 +451,16 @@ internal static class BRepTestPipeShellCommands
                 di.Append("bad arguments !\n");
                 return 1;
             }
-            var D = new gp_Dir(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var D = new Direction3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             if (n == 8)
             {
-                var DN = new gp_Dir(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
-                var Axe = new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), D, DN);
+                var DN = new Direction3D(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
+                var Axe = new Frame3D(new Point3D(0.0, 0.0, 0.0), D, DN);
                 Sweep.SetMode(Axe);
             }
             else
             {
-                var Axe = new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), D);
+                var Axe = new Frame3D(new Point3D(0.0, 0.0, 0.0), D);
                 Sweep.SetMode(Axe);
             }
         }
@@ -593,14 +594,14 @@ internal static class BRepTestPipeShellCommands
                 else
                 { // law of interpolation
                     int ii, L = nbreal / 2;
-                    var ParAndRad = new NCollection_Array1<gp_Pnt2d>(1, L);
+                    var ParAndRad = new NCollection_Array1<Point2D>(1, L);
                     for (ii = 1; ii <= L; ii++, cur += 2)
                     {
                         ParAndRad[ii].SetX(theDI.Atof(a[cur]));
                         ParAndRad[ii].SetY(theDI.Atof(a[cur + 1]));
                     }
                     thelaw = new Law_Interpol();
-                    thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y() - ParAndRad[L].Y()) < Precision.Confusion());
+                    thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y() - ParAndRad[L].Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
             }
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.TopAbs_Orientation;
 
@@ -30,17 +31,17 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
             double anEdgeTol = Math.Pow(10, anOracle.Real(-6, -2));
 
             // a counter-clockwise triangle on z = 0
-            var aP = new gp_Pnt[3];
+            var aP = new Point3D[3];
             do
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    aP[i] = new gp_Pnt(anOracle.Real(-10, 10), anOracle.Real(-10, 10), 0);
+                    aP[i] = new Point3D(anOracle.Real(-10, 10), anOracle.Real(-10, 10), 0);
                 }
             }
-            while (Math.Abs(new gp_Vec(aP[0], aP[1]).Crossed(new gp_Vec(aP[0], aP[2])).Z()) < 10);
+            while (Math.Abs(new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z()) < 10);
 
-            if (new gp_Vec(aP[0], aP[1]).Crossed(new gp_Vec(aP[0], aP[2])).Z() < 0)
+            if (new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z() < 0)
             {
                 (aP[1], aP[2]) = (aP[2], aP[1]);
             }
@@ -52,7 +53,7 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
             using var aNX = new N.gp_Dir(1, 0, 0);
             using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
             var aNPlane = new N.Geom_Plane(aNAx3);
-            var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+            var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
             var aNF = new N.TopoDS_Face();
             aNB.MakeFace(aNF, aNPlane, anEdgeTol);
             TopoDS_Face aF = new();
@@ -76,7 +77,7 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
             bool isPortValid = true;
             for (int i = 0; i < 3; i++)
             {
-                gp_Pnt aP1 = aP[i], aP2 = aP[(i + 1) % 3];
+                Point3D aP1 = aP[i], aP2 = aP[(i + 1) % 3];
                 double dx = aP2.X() - aP1.X(), dy = aP2.Y() - aP1.Y();
                 double aLength = aP1.Distance(aP2);
 
@@ -106,8 +107,8 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
 
                 aNB.Add(aNW, aNE);
 
-                var aLine = new Geom_Line(aP1, new gp_Dir(dx, dy, 0));
-                var aPCurve = new Geom2d_Line(new gp_Pnt2d(u0, v0), new gp_Dir2d(du, dv));
+                var aLine = new Geom_Line(aP1, new Direction3D(dx, dy, 0));
+                var aPCurve = new Geom2d_Line(new Point2D(u0, v0), new Direction2D(du, dv));
                 TopoDS_Edge anE = new();
                 aB.MakeEdge(ref anE, aLine, anEdgeTol);
                 aB.Add(anE, aV[i].Oriented(TopAbs_FORWARD));

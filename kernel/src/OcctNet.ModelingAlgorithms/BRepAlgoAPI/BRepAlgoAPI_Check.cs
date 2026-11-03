@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
@@ -41,7 +42,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
 
     /// <summary>Checks a single shape, on small edges and self-interference unless told not to.</summary>
     public BRepAlgoAPI_Check(in TopoDS_Shape theS, bool bTestSE = true, bool bTestSI = true,
-                             Message_ProgressRange theRange = default)
+                             ProgressRange theRange = default)
     {
         myS1 = theS;
         myTestSE = bTestSE;
@@ -55,7 +56,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     /// of the given type.
     /// </summary>
     public BRepAlgoAPI_Check(in TopoDS_Shape theS1, in TopoDS_Shape theS2, BOPAlgo_Operation theOp = BOPAlgo_UNKNOWN,
-                             bool bTestSE = true, bool bTestSI = true, Message_ProgressRange theRange = default)
+                             bool bTestSE = true, bool bTestSI = true, ProgressRange theRange = default)
     {
         myS1 = theS1;
         myS2 = theS2;
@@ -88,7 +89,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
     }
 
     /// <summary>Performs the check.</summary>
-    public void Perform(Message_ProgressRange theRange = default)
+    public void Perform(ProgressRange theRange = default)
     {
         // Check the incompatibility of shapes types, small edges and self-interference
         BOPAlgo_ArgumentAnalyzer anAnalyzer = new();
@@ -103,7 +104,7 @@ public class BRepAlgoAPI_Check : BOPAlgo_Options
         anAnalyzer.SetRunParallel(myRunParallel);
         anAnalyzer.SetFuzzyValue(myFuzzyValue);
         // Perform the check
-        using var aPS = new Message_ProgressScope(theRange, "Checking shapes", 1);
+        using var aPS = new ProgressScope(theRange, "Checking shapes", 1);
         anAnalyzer.Perform(aPS.Next());
         if (UserBreak(aPS))
         {

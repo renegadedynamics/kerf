@@ -3,9 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using Occt;
+using static Kerf.Geometry.Continuity;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Polynomials;
 
 /// <summary>
 /// Polynomial functions library: evaluation of polynomials and of their derivatives, rational derivatives,
@@ -29,156 +34,156 @@ public static class PLib
     // *********************************
 
     /// <summary>Copies the coordinates of the poles into FP.</summary>
-    public static void SetPoles(NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double> FP)
+    public static void SetPoles(NCollection_Array1<Point2D> poles, NCollection_Array1<double> fp)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            ref readonly gp_Pnt2d P = ref Poles[i];
-            FP[j] = P.Coord(1);
+            ref readonly Point2D p = ref poles[i];
+            fp[j] = p.Coord(1);
             j++;
-            FP[j] = P.Coord(2);
+            fp[j] = p.Coord(2);
             j++;
         }
     }
 
     /// <summary>Copies the coordinates of the poles, multiplied by their weights, and the weights into FP.</summary>
-    public static void SetPoles(NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double> Weights, NCollection_Array1<double> FP)
+    public static void SetPoles(NCollection_Array1<Point2D> poles, NCollection_Array1<double> weights, NCollection_Array1<double> fp)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            double w = Weights[i];
-            ref readonly gp_Pnt2d P = ref Poles[i];
-            FP[j] = P.Coord(1) * w;
+            double w = weights[i];
+            ref readonly Point2D p = ref poles[i];
+            fp[j] = p.Coord(1) * w;
             j++;
-            FP[j] = P.Coord(2) * w;
+            fp[j] = p.Coord(2) * w;
             j++;
-            FP[j] = w;
+            fp[j] = w;
             j++;
         }
     }
 
     /// <summary>Gets the coordinates of the poles from FP.</summary>
-    public static void GetPoles(NCollection_Array1<double> FP, NCollection_Array1<gp_Pnt2d> Poles)
+    public static void GetPoles(NCollection_Array1<double> fp, NCollection_Array1<Point2D> poles)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            ref gp_Pnt2d P = ref Poles[i];
-            P.SetCoord(1, FP[j]);
+            ref Point2D p = ref poles[i];
+            p.SetCoord(1, fp[j]);
             j++;
-            P.SetCoord(2, FP[j]);
+            p.SetCoord(2, fp[j]);
             j++;
         }
     }
 
     /// <summary>Gets the coordinates of the poles and their weights from FP (homogeneous coordinates).</summary>
-    public static void GetPoles(NCollection_Array1<double> FP, NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double> Weights)
+    public static void GetPoles(NCollection_Array1<double> fp, NCollection_Array1<Point2D> poles, NCollection_Array1<double> weights)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            double w = FP[j + 2];
-            Weights[i] = w;
-            ref gp_Pnt2d P = ref Poles[i];
-            P.SetCoord(1, FP[j] / w);
+            double w = fp[j + 2];
+            weights[i] = w;
+            ref Point2D p = ref poles[i];
+            p.SetCoord(1, fp[j] / w);
             j++;
-            P.SetCoord(2, FP[j] / w);
+            p.SetCoord(2, fp[j] / w);
             j++;
             j++;
         }
     }
 
     /// <summary>Copies the coordinates of the poles into FP.</summary>
-    public static void SetPoles(NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> FP)
+    public static void SetPoles(NCollection_Array1<Point3D> poles, NCollection_Array1<double> fp)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            ref readonly gp_Pnt P = ref Poles[i];
-            FP[j] = P.Coord(1);
+            ref readonly Point3D p = ref poles[i];
+            fp[j] = p.Coord(1);
             j++;
-            FP[j] = P.Coord(2);
+            fp[j] = p.Coord(2);
             j++;
-            FP[j] = P.Coord(3);
+            fp[j] = p.Coord(3);
             j++;
         }
     }
 
     /// <summary>Copies the coordinates of the poles, multiplied by their weights, and the weights into FP.</summary>
-    public static void SetPoles(NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> Weights, NCollection_Array1<double> FP)
+    public static void SetPoles(NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights, NCollection_Array1<double> fp)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            double w = Weights[i];
-            ref readonly gp_Pnt P = ref Poles[i];
-            FP[j] = P.Coord(1) * w;
+            double w = weights[i];
+            ref readonly Point3D p = ref poles[i];
+            fp[j] = p.Coord(1) * w;
             j++;
-            FP[j] = P.Coord(2) * w;
+            fp[j] = p.Coord(2) * w;
             j++;
-            FP[j] = P.Coord(3) * w;
+            fp[j] = p.Coord(3) * w;
             j++;
-            FP[j] = w;
+            fp[j] = w;
             j++;
         }
     }
 
     /// <summary>Gets the coordinates of the poles from FP.</summary>
-    public static void GetPoles(NCollection_Array1<double> FP, NCollection_Array1<gp_Pnt> Poles)
+    public static void GetPoles(NCollection_Array1<double> fp, NCollection_Array1<Point3D> poles)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            ref gp_Pnt P = ref Poles[i];
-            P.SetCoord(1, FP[j]);
+            ref Point3D p = ref poles[i];
+            p.SetCoord(1, fp[j]);
             j++;
-            P.SetCoord(2, FP[j]);
+            p.SetCoord(2, fp[j]);
             j++;
-            P.SetCoord(3, FP[j]);
+            p.SetCoord(3, fp[j]);
             j++;
         }
     }
 
     /// <summary>Gets the coordinates of the poles and their weights from FP (homogeneous coordinates).</summary>
-    public static void GetPoles(NCollection_Array1<double> FP, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> Weights)
+    public static void GetPoles(NCollection_Array1<double> fp, NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights)
     {
-        int j = FP.Lower();
-        int PLower = Poles.Lower();
-        int PUpper = Poles.Upper();
+        int j = fp.Lower();
+        int pLower = poles.Lower();
+        int pUpper = poles.Upper();
 
-        for (int i = PLower; i <= PUpper; i++)
+        for (int i = pLower; i <= pUpper; i++)
         {
-            double w = FP[j + 3];
-            Weights[i] = w;
-            ref gp_Pnt P = ref Poles[i];
-            P.SetCoord(1, FP[j] / w);
+            double w = fp[j + 3];
+            weights[i] = w;
+            ref Point3D p = ref poles[i];
+            p.SetCoord(1, fp[j] / w);
             j++;
-            P.SetCoord(2, FP[j] / w);
+            p.SetCoord(2, fp[j] / w);
             j++;
-            P.SetCoord(3, FP[j] / w);
+            p.SetCoord(3, fp[j] / w);
             j++;
             j++;
         }
@@ -191,48 +196,48 @@ public static class PLib
 
     private static int[] BuildBinom()
     {
-        const int aSize = BinomMaxDegree + 1;
-        int[] aBinom = new int[aSize * aSize];
+        const int size = BinomMaxDegree + 1;
+        int[] binom = new int[size * size];
         // Initialize first row: C(0,0) = 1
-        aBinom[0] = 1;
+        binom[0] = 1;
 
         // Build Pascal's triangle row by row
         for (int i = 1; i <= BinomMaxDegree; ++i)
         {
             // First and last elements are always 1
-            aBinom[i * aSize] = 1;
-            aBinom[i * aSize + i] = 1;
+            binom[i * size] = 1;
+            binom[i * size + i] = 1;
 
             // Use recurrence relation for middle elements
             for (int j = 1; j < i; ++j)
             {
-                aBinom[i * aSize + j] = aBinom[(i - 1) * aSize + j - 1] + aBinom[(i - 1) * aSize + j];
+                binom[i * size + j] = binom[(i - 1) * size + j - 1] + binom[(i - 1) * size + j];
             }
         }
-        return aBinom;
+        return binom;
     }
 
     /// <summary>Returns the binomial coefficient C(N, P). N must be &lt;= <see cref="BSplCLib.MaxDegree"/>.</summary>
-    public static double Bin(int N, int P)
+    public static double Bin(int n, int p)
     {
-        Standard_OutOfRange_Raise_if(N < 0 || N > BSplCLib.MaxDegree(),
+        Standard_OutOfRange_Raise_if(n < 0 || n > global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree(),
                                      "PLib::Bin: degree N is out of supported range [0, 25]");
-        Standard_OutOfRange_Raise_if(P < 0 || P > N,
+        Standard_OutOfRange_Raise_if(p < 0 || p > n,
                                      "PLib::Bin: parameter P is out of valid range [0, N]");
 
-        return (double)THE_BINOM[N * (BinomMaxDegree + 1) + P];
+        return (double)THE_BINOM[n * (BinomMaxDegree + 1) + p];
     }
 
     /// <summary>
-    /// Computes the derivatives of a ratio at order <paramref name="N"/> in dimension <paramref name="Dimension"/>.
-    /// <paramref name="Ders"/> holds the input derivatives from 0 to min(N, Degree), each as
-    /// x(1), ..., x(Dimension), w; higher orders are taken as 0. If <paramref name="All"/> is false, only the
-    /// derivative of order N is computed into <paramref name="RDers"/> (Dimension values); otherwise all orders
+    /// Computes the derivatives of a ratio at order <paramref name="n"/> in dimension <paramref name="dimension"/>.
+    /// <paramref name="ders"/> holds the input derivatives from 0 to min(N, Degree), each as
+    /// x(1), ..., x(Dimension), w; higher orders are taken as 0. If <paramref name="all"/> is false, only the
+    /// derivative of order N is computed into <paramref name="rDers"/> (Dimension values); otherwise all orders
     /// 0 to N (Dimension * (N + 1) values).
     /// </summary>
-    public static void RationalDerivative(int Degree, int N, int Dimension, ReadOnlySpan<double> Ders, Span<double> RDers, bool All = true)
+    public static void RationalDerivative(int degree, int n, int dimension, ReadOnlySpan<double> ders, Span<double> rDers, bool all = true)
     {
-        int DerivativeRequest = N;
+        int derivativeRequest = n;
         //
         // Our purpose is to compute f = (u/v) derivated N = DerivativeRequest times
         //
@@ -270,181 +275,181 @@ public static class PLib
         //  u (1)     u (2) ....   u  (Dimension)     v (1)
         //
         //
-        double Inverse;
-        ReadOnlySpan<double> PolesArray = Ders;
-        scoped Span<double> RationalArray = RDers;
+        double inverse;
+        ReadOnlySpan<double> polesArray = ders;
+        scoped Span<double> rationalArray = rDers;
         scoped Span<double> derivative_storage = default;
-        double Factor;
-        int ii, Index, OtherIndex, Index1, Index2, jj;
-        if (Dimension == 3)
+        double factor;
+        int ii, index, otherIndex, index1, index2, jj;
+        if (dimension == 3)
         {
-            int DeRequest1 = DerivativeRequest + 1;
-            int MinDegRequ = DerivativeRequest;
-            if (MinDegRequ > Degree)
+            int deRequest1 = derivativeRequest + 1;
+            int minDegRequ = derivativeRequest;
+            if (minDegRequ > degree)
             {
-                MinDegRequ = Degree;
+                minDegRequ = degree;
             }
-            Span<double> binomial_array = DeRequest1 <= 128 ? stackalloc double[DeRequest1] : new double[DeRequest1];
+            Span<double> binomial_array = deRequest1 <= 128 ? stackalloc double[deRequest1] : new double[deRequest1];
 
-            for (ii = 0; ii < DeRequest1; ii++)
+            for (ii = 0; ii < deRequest1; ii++)
             {
                 binomial_array[ii] = 1.0e0;
             }
-            if (!All)
+            if (!all)
             {
-                int DimDeRequ1 = (DeRequest1 << 1) + DeRequest1;
-                derivative_storage = DimDeRequ1 <= 128 ? stackalloc double[DimDeRequ1] : new double[DimDeRequ1];
-                RationalArray = derivative_storage;
+                int dimDeRequ1 = (deRequest1 << 1) + deRequest1;
+                derivative_storage = dimDeRequ1 <= 128 ? stackalloc double[dimDeRequ1] : new double[dimDeRequ1];
+                rationalArray = derivative_storage;
             }
 
-            Inverse = 1.0e0 / PolesArray[3];
-            Index = 0;
-            Index2 = -6;
-            OtherIndex = 0;
+            inverse = 1.0e0 / polesArray[3];
+            index = 0;
+            index2 = -6;
+            otherIndex = 0;
 
-            for (ii = 0; ii <= MinDegRequ; ii++)
+            for (ii = 0; ii <= minDegRequ; ii++)
             {
-                Index2 += 3;
-                Index1 = Index2;
-                RationalArray[Index] = PolesArray[OtherIndex];
-                Index++;
-                OtherIndex++;
-                RationalArray[Index] = PolesArray[OtherIndex];
-                Index++;
-                OtherIndex++;
-                RationalArray[Index] = PolesArray[OtherIndex];
-                Index -= 2;
-                OtherIndex += 2;
+                index2 += 3;
+                index1 = index2;
+                rationalArray[index] = polesArray[otherIndex];
+                index++;
+                otherIndex++;
+                rationalArray[index] = polesArray[otherIndex];
+                index++;
+                otherIndex++;
+                rationalArray[index] = polesArray[otherIndex];
+                index -= 2;
+                otherIndex += 2;
 
                 for (jj = ii - 1; jj >= 0; jj--)
                 {
-                    Factor = binomial_array[jj] * PolesArray[((ii - jj) << 2) + 3];
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index -= 2;
-                    Index1 -= 5;
+                    factor = binomial_array[jj] * polesArray[((ii - jj) << 2) + 3];
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index -= 2;
+                    index1 -= 5;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
                 {
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
             }
 
-            for (ii = MinDegRequ + 1; ii <= DerivativeRequest; ii++)
+            for (ii = minDegRequ + 1; ii <= derivativeRequest; ii++)
             {
-                Index2 += 3;
-                Index1 = Index2;
-                RationalArray[Index] = 0.0e0;
-                Index++;
-                RationalArray[Index] = 0.0e0;
-                Index++;
-                RationalArray[Index] = 0.0e0;
-                Index -= 2;
+                index2 += 3;
+                index1 = index2;
+                rationalArray[index] = 0.0e0;
+                index++;
+                rationalArray[index] = 0.0e0;
+                index++;
+                rationalArray[index] = 0.0e0;
+                index -= 2;
 
-                for (jj = ii - 1; jj >= ii - MinDegRequ; jj--)
+                for (jj = ii - 1; jj >= ii - minDegRequ; jj--)
                 {
-                    Factor = binomial_array[jj] * PolesArray[((ii - jj) << 2) + 3];
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index -= 2;
-                    Index1 -= 5;
+                    factor = binomial_array[jj] * polesArray[((ii - jj) << 2) + 3];
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index -= 2;
+                    index1 -= 5;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
                 {
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
             }
 
-            if (!All)
+            if (!all)
             {
-                RationalArray = RDers;
-                int DimDeRequ = (DerivativeRequest << 1) + DerivativeRequest;
-                RationalArray[0] = derivative_storage[DimDeRequ];
-                DimDeRequ++;
-                RationalArray[1] = derivative_storage[DimDeRequ];
-                DimDeRequ++;
-                RationalArray[2] = derivative_storage[DimDeRequ];
+                rationalArray = rDers;
+                int dimDeRequ = (derivativeRequest << 1) + derivativeRequest;
+                rationalArray[0] = derivative_storage[dimDeRequ];
+                dimDeRequ++;
+                rationalArray[1] = derivative_storage[dimDeRequ];
+                dimDeRequ++;
+                rationalArray[2] = derivative_storage[dimDeRequ];
             }
         }
         else
         {
             int kk;
-            int Dimension1 = Dimension + 1;
-            int Dimension2 = Dimension << 1;
-            int DeRequest1 = DerivativeRequest + 1;
-            int MinDegRequ = DerivativeRequest;
-            if (MinDegRequ > Degree)
+            int dimension1 = dimension + 1;
+            int dimension2 = dimension << 1;
+            int deRequest1 = derivativeRequest + 1;
+            int minDegRequ = derivativeRequest;
+            if (minDegRequ > degree)
             {
-                MinDegRequ = Degree;
+                minDegRequ = degree;
             }
-            Span<double> binomial_array = DeRequest1 <= 128 ? stackalloc double[DeRequest1] : new double[DeRequest1];
+            Span<double> binomial_array = deRequest1 <= 128 ? stackalloc double[deRequest1] : new double[deRequest1];
 
-            for (ii = 0; ii < DeRequest1; ii++)
+            for (ii = 0; ii < deRequest1; ii++)
             {
                 binomial_array[ii] = 1.0e0;
             }
-            if (!All)
+            if (!all)
             {
-                int DimDeRequ1 = Dimension * DeRequest1;
-                derivative_storage = DimDeRequ1 <= 128 ? stackalloc double[DimDeRequ1] : new double[DimDeRequ1];
-                RationalArray = derivative_storage;
+                int dimDeRequ1 = dimension * deRequest1;
+                derivative_storage = dimDeRequ1 <= 128 ? stackalloc double[dimDeRequ1] : new double[dimDeRequ1];
+                rationalArray = derivative_storage;
             }
 
-            Inverse = 1.0e0 / PolesArray[Dimension];
-            Index = 0;
-            Index2 = -Dimension2;
-            OtherIndex = 0;
+            inverse = 1.0e0 / polesArray[dimension];
+            index = 0;
+            index2 = -dimension2;
+            otherIndex = 0;
 
-            for (ii = 0; ii <= MinDegRequ; ii++)
+            for (ii = 0; ii <= minDegRequ; ii++)
             {
-                Index2 += Dimension;
-                Index1 = Index2;
+                index2 += dimension;
+                index1 = index2;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] = PolesArray[OtherIndex];
-                    Index++;
-                    OtherIndex++;
+                    rationalArray[index] = polesArray[otherIndex];
+                    index++;
+                    otherIndex++;
                 }
-                Index -= Dimension;
-                ++OtherIndex;
+                index -= dimension;
+                ++otherIndex;
 
                 for (jj = ii - 1; jj >= 0; jj--)
                 {
-                    Factor = binomial_array[jj] * PolesArray[(ii - jj) * Dimension1 + Dimension];
+                    factor = binomial_array[jj] * polesArray[(ii - jj) * dimension1 + dimension];
 
-                    for (kk = 0; kk < Dimension; kk++)
+                    for (kk = 0; kk < dimension; kk++)
                     {
-                        RationalArray[Index] -= Factor * RationalArray[Index1];
-                        Index++;
-                        Index1++;
+                        rationalArray[index] -= factor * rationalArray[index1];
+                        index++;
+                        index1++;
                     }
-                    Index -= Dimension;
-                    Index1 -= Dimension2;
+                    index -= dimension;
+                    index1 -= dimension2;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
@@ -452,37 +457,37 @@ public static class PLib
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] *= Inverse;
-                    Index++;
+                    rationalArray[index] *= inverse;
+                    index++;
                 }
             }
 
-            for (ii = MinDegRequ + 1; ii <= DerivativeRequest; ii++)
+            for (ii = minDegRequ + 1; ii <= derivativeRequest; ii++)
             {
-                Index2 += Dimension;
-                Index1 = Index2;
+                index2 += dimension;
+                index1 = index2;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] = 0.0e0;
-                    Index++;
+                    rationalArray[index] = 0.0e0;
+                    index++;
                 }
-                Index -= Dimension;
+                index -= dimension;
 
-                for (jj = ii - 1; jj >= ii - MinDegRequ; jj--)
+                for (jj = ii - 1; jj >= ii - minDegRequ; jj--)
                 {
-                    Factor = binomial_array[jj] * PolesArray[(ii - jj) * Dimension1 + Dimension];
+                    factor = binomial_array[jj] * polesArray[(ii - jj) * dimension1 + dimension];
 
-                    for (kk = 0; kk < Dimension; kk++)
+                    for (kk = 0; kk < dimension; kk++)
                     {
-                        RationalArray[Index] -= Factor * RationalArray[Index1];
-                        Index++;
-                        Index1++;
+                        rationalArray[index] -= factor * rationalArray[index1];
+                        index++;
+                        index1++;
                     }
-                    Index -= Dimension;
-                    Index1 -= Dimension2;
+                    index -= dimension;
+                    index1 -= dimension2;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
@@ -490,37 +495,37 @@ public static class PLib
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] *= Inverse;
-                    Index++;
+                    rationalArray[index] *= inverse;
+                    index++;
                 }
             }
 
-            if (!All)
+            if (!all)
             {
-                RationalArray = RDers;
-                int DimDeRequ = Dimension * DerivativeRequest;
+                rationalArray = rDers;
+                int dimDeRequ = dimension * derivativeRequest;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[kk] = derivative_storage[DimDeRequ];
-                    DimDeRequ++;
+                    rationalArray[kk] = derivative_storage[dimDeRequ];
+                    dimDeRequ++;
                 }
             }
         }
     }
 
     /// <summary>
-    /// Computes <paramref name="DerivativesRequest"/> derivatives of a ratio from the derivatives of the
-    /// homogeneous poles (<paramref name="PolesDerivatives"/>, (DerivativesRequest + 1) * Dimension values) and of
-    /// the weights (<paramref name="WeightsDerivatives"/>, DerivativesRequest + 1 values). The result and the poles
+    /// Computes <paramref name="derivativesRequest"/> derivatives of a ratio from the derivatives of the
+    /// homogeneous poles (<paramref name="polesDerivatives"/>, (DerivativesRequest + 1) * Dimension values) and of
+    /// the weights (<paramref name="weightsDerivatives"/>, DerivativesRequest + 1 values). The result and the poles
     /// derivatives may be the same array: the overwrite is non-destructive within the algorithm.
     /// </summary>
-    public static void RationalDerivatives(int DerivativesRequest, int Dimension, ReadOnlySpan<double> PolesDerivatives,
-                                           ReadOnlySpan<double> WeightsDerivatives, Span<double> RationalDerivates)
+    public static void RationalDerivatives(int derivativesRequest, int dimension, ReadOnlySpan<double> polesDerivatives,
+                                           ReadOnlySpan<double> weightsDerivatives, Span<double> rationalDerivates)
     {
-        int DerivativeRequest = DerivativesRequest;
+        int derivativeRequest = derivativesRequest;
         //
         // Our purpose is to compute f = (u/v) derivated N times
         //
@@ -545,95 +550,95 @@ public static class PLib
         // make arrays for the binomial since computing it each time could
         // raize a performance issue
         //
-        double Inverse;
-        ReadOnlySpan<double> PolesArray = PolesDerivatives;
-        ReadOnlySpan<double> WeightsArray = WeightsDerivatives;
-        Span<double> RationalArray = RationalDerivates;
-        double Factor;
+        double inverse;
+        ReadOnlySpan<double> polesArray = polesDerivatives;
+        ReadOnlySpan<double> weightsArray = weightsDerivatives;
+        Span<double> rationalArray = rationalDerivates;
+        double factor;
 
-        int ii, Index, Index1, Index2, jj;
-        int DeRequest1 = DerivativeRequest + 1;
+        int ii, index, index1, index2, jj;
+        int deRequest1 = derivativeRequest + 1;
 
-        Span<double> binomial_array = DeRequest1 <= 128 ? stackalloc double[DeRequest1] : new double[DeRequest1];
+        Span<double> binomial_array = deRequest1 <= 128 ? stackalloc double[deRequest1] : new double[deRequest1];
 
-        for (ii = 0; ii < DeRequest1; ii++)
+        for (ii = 0; ii < deRequest1; ii++)
         {
             binomial_array[ii] = 1.0e0;
         }
-        Inverse = 1.0e0 / WeightsArray[0];
-        if (Dimension == 3)
+        inverse = 1.0e0 / weightsArray[0];
+        if (dimension == 3)
         {
-            Index = 0;
-            Index2 = -6;
+            index = 0;
+            index2 = -6;
 
-            for (ii = 0; ii < DeRequest1; ii++)
+            for (ii = 0; ii < deRequest1; ii++)
             {
-                Index2 += 3;
-                Index1 = Index2;
-                RationalArray[Index] = PolesArray[Index];
-                Index++;
-                RationalArray[Index] = PolesArray[Index];
-                Index++;
-                RationalArray[Index] = PolesArray[Index];
-                Index -= 2;
+                index2 += 3;
+                index1 = index2;
+                rationalArray[index] = polesArray[index];
+                index++;
+                rationalArray[index] = polesArray[index];
+                index++;
+                rationalArray[index] = polesArray[index];
+                index -= 2;
 
                 for (jj = ii - 1; jj >= 0; jj--)
                 {
-                    Factor = binomial_array[jj] * WeightsArray[ii - jj];
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index++;
-                    Index1++;
-                    RationalArray[Index] -= Factor * RationalArray[Index1];
-                    Index -= 2;
-                    Index1 -= 5;
+                    factor = binomial_array[jj] * weightsArray[ii - jj];
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index++;
+                    index1++;
+                    rationalArray[index] -= factor * rationalArray[index1];
+                    index -= 2;
+                    index1 -= 5;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
                 {
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
-                RationalArray[Index] *= Inverse;
-                Index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
+                rationalArray[index] *= inverse;
+                index++;
             }
         }
         else
         {
             int kk;
-            int Dimension2 = Dimension << 1;
-            Index = 0;
-            Index2 = -Dimension2;
+            int dimension2 = dimension << 1;
+            index = 0;
+            index2 = -dimension2;
 
-            for (ii = 0; ii < DeRequest1; ii++)
+            for (ii = 0; ii < deRequest1; ii++)
             {
-                Index2 += Dimension;
-                Index1 = Index2;
+                index2 += dimension;
+                index1 = index2;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] = PolesArray[Index];
-                    Index++;
+                    rationalArray[index] = polesArray[index];
+                    index++;
                 }
-                Index -= Dimension;
+                index -= dimension;
 
                 for (jj = ii - 1; jj >= 0; jj--)
                 {
-                    Factor = binomial_array[jj] * WeightsArray[ii - jj];
+                    factor = binomial_array[jj] * weightsArray[ii - jj];
 
-                    for (kk = 0; kk < Dimension; kk++)
+                    for (kk = 0; kk < dimension; kk++)
                     {
-                        RationalArray[Index] -= Factor * RationalArray[Index1];
-                        Index++;
-                        Index1++;
+                        rationalArray[index] -= factor * rationalArray[index1];
+                        index++;
+                        index1++;
                     }
-                    Index -= Dimension;
-                    Index1 -= Dimension2;
+                    index -= dimension;
+                    index1 -= dimension2;
                 }
 
                 for (jj = ii; jj >= 1; jj--)
@@ -641,10 +646,10 @@ public static class PLib
                     binomial_array[jj] += binomial_array[jj - 1];
                 }
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    RationalArray[Index] *= Inverse;
-                    Index++;
+                    rationalArray[index] *= inverse;
+                    index++;
                 }
             }
         }
@@ -684,241 +689,241 @@ public static class PLib
     }
 
     // Evaluation of only value using local variables (register-friendly). Writes to output only at the end.
-    private static void eval_poly0<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                         int theDegree, double thePar)
+    private static void eval_poly0<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                         int degree, double par)
         where TDim : struct, IEvalDim
     {
         int dim = TDim.N;
-        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        ReadOnlySpan<double> aTop = coeffs.Slice(top, dim);
         double l0 = aTop[0];
         double l1 = dim > 1 ? aTop[1] : 0.0;
         double l2 = dim > 2 ? aTop[2] : 0.0;
         double l3 = dim > 3 ? aTop[3] : 0.0;
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
             aCoeffs -= dim;
-            l0 = l0 * thePar + theCoeffs[aCoeffs];
-            if (dim > 1) l1 = l1 * thePar + theCoeffs[aCoeffs + 1];
-            if (dim > 2) l2 = l2 * thePar + theCoeffs[aCoeffs + 2];
-            if (dim > 3) l3 = l3 * thePar + theCoeffs[aCoeffs + 3];
+            l0 = l0 * par + coeffs[aCoeffs];
+            if (dim > 1) l1 = l1 * par + coeffs[aCoeffs + 1];
+            if (dim > 2) l2 = l2 * par + coeffs[aCoeffs + 2];
+            if (dim > 3) l3 = l3 * par + coeffs[aCoeffs + 3];
         }
 
-        Span<double> aRes = theResult.Slice(0, dim);
-        aRes[0] = l0;
-        if (dim > 1) aRes[1] = l1;
-        if (dim > 2) aRes[2] = l2;
-        if (dim > 3) aRes[3] = l3;
+        Span<double> res = result.Slice(0, dim);
+        res[0] = l0;
+        if (dim > 1) res[1] = l1;
+        if (dim > 2) res[2] = l2;
+        if (dim > 3) res[3] = l3;
     }
 
     // Evaluation of value and first derivative using local variables.
-    private static void eval_poly1<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                         int theDegree, double thePar)
+    private static void eval_poly1<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                         int degree, double par)
         where TDim : struct, IEvalDim
     {
         int dim = TDim.N;
-        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        ReadOnlySpan<double> aTop = coeffs.Slice(top, dim);
         double v0 = aTop[0], d0 = 0.0;
         double v1 = dim > 1 ? aTop[1] : 0.0, d1 = 0.0;
         double v2 = dim > 2 ? aTop[2] : 0.0, d2 = 0.0;
         double v3 = dim > 3 ? aTop[3] : 0.0, d3 = 0.0;
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
             aCoeffs -= dim;
-            d0 = d0 * thePar + v0;
-            v0 = v0 * thePar + theCoeffs[aCoeffs];
+            d0 = d0 * par + v0;
+            v0 = v0 * par + coeffs[aCoeffs];
             if (dim > 1)
             {
-                d1 = d1 * thePar + v1;
-                v1 = v1 * thePar + theCoeffs[aCoeffs + 1];
+                d1 = d1 * par + v1;
+                v1 = v1 * par + coeffs[aCoeffs + 1];
             }
             if (dim > 2)
             {
-                d2 = d2 * thePar + v2;
-                v2 = v2 * thePar + theCoeffs[aCoeffs + 2];
+                d2 = d2 * par + v2;
+                v2 = v2 * par + coeffs[aCoeffs + 2];
             }
             if (dim > 3)
             {
-                d3 = d3 * thePar + v3;
-                v3 = v3 * thePar + theCoeffs[aCoeffs + 3];
+                d3 = d3 * par + v3;
+                v3 = v3 * par + coeffs[aCoeffs + 3];
             }
         }
 
-        Span<double> aRes = theResult.Slice(0, 2 * dim);
-        aRes[0] = v0;
-        aRes[dim] = d0;
+        Span<double> res = result.Slice(0, 2 * dim);
+        res[0] = v0;
+        res[dim] = d0;
         if (dim > 1)
         {
-            aRes[1] = v1;
-            aRes[dim + 1] = d1;
+            res[1] = v1;
+            res[dim + 1] = d1;
         }
         if (dim > 2)
         {
-            aRes[2] = v2;
-            aRes[dim + 2] = d2;
+            res[2] = v2;
+            res[dim + 2] = d2;
         }
         if (dim > 3)
         {
-            aRes[3] = v3;
-            aRes[dim + 3] = d3;
+            res[3] = v3;
+            res[dim + 3] = d3;
         }
     }
 
     // Evaluation of value and first and second derivatives using local variables.
-    private static void eval_poly2<TDim>(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                         int theDegree, double thePar)
+    private static void eval_poly2<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                         int degree, double par)
         where TDim : struct, IEvalDim
     {
         int dim = TDim.N;
-        ReadOnlySpan<double> aTop = theCoeffs.Slice(theTop, dim);
+        ReadOnlySpan<double> aTop = coeffs.Slice(top, dim);
         double v0 = aTop[0], d0 = 0.0, s0 = 0.0;
         double v1 = dim > 1 ? aTop[1] : 0.0, d1 = 0.0, s1 = 0.0;
         double v2 = dim > 2 ? aTop[2] : 0.0, d2 = 0.0, s2 = 0.0;
         double v3 = dim > 3 ? aTop[3] : 0.0, d3 = 0.0, s3 = 0.0;
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
             aCoeffs -= dim;
-            s0 = s0 * thePar + d0 * 2.0;
-            d0 = d0 * thePar + v0;
-            v0 = v0 * thePar + theCoeffs[aCoeffs];
+            s0 = s0 * par + d0 * 2.0;
+            d0 = d0 * par + v0;
+            v0 = v0 * par + coeffs[aCoeffs];
             if (dim > 1)
             {
-                s1 = s1 * thePar + d1 * 2.0;
-                d1 = d1 * thePar + v1;
-                v1 = v1 * thePar + theCoeffs[aCoeffs + 1];
+                s1 = s1 * par + d1 * 2.0;
+                d1 = d1 * par + v1;
+                v1 = v1 * par + coeffs[aCoeffs + 1];
             }
             if (dim > 2)
             {
-                s2 = s2 * thePar + d2 * 2.0;
-                d2 = d2 * thePar + v2;
-                v2 = v2 * thePar + theCoeffs[aCoeffs + 2];
+                s2 = s2 * par + d2 * 2.0;
+                d2 = d2 * par + v2;
+                v2 = v2 * par + coeffs[aCoeffs + 2];
             }
             if (dim > 3)
             {
-                s3 = s3 * thePar + d3 * 2.0;
-                d3 = d3 * thePar + v3;
-                v3 = v3 * thePar + theCoeffs[aCoeffs + 3];
+                s3 = s3 * par + d3 * 2.0;
+                d3 = d3 * par + v3;
+                v3 = v3 * par + coeffs[aCoeffs + 3];
             }
         }
 
-        Span<double> aRes = theResult.Slice(0, 3 * dim);
-        aRes[0] = v0;
-        aRes[dim] = d0;
-        aRes[2 * dim] = s0;
+        Span<double> res = result.Slice(0, 3 * dim);
+        res[0] = v0;
+        res[dim] = d0;
+        res[2 * dim] = s0;
         if (dim > 1)
         {
-            aRes[1] = v1;
-            aRes[dim + 1] = d1;
-            aRes[2 * dim + 1] = s1;
+            res[1] = v1;
+            res[dim + 1] = d1;
+            res[2 * dim + 1] = s1;
         }
         if (dim > 2)
         {
-            aRes[2] = v2;
-            aRes[dim + 2] = d2;
-            aRes[2 * dim + 2] = s2;
+            res[2] = v2;
+            res[dim + 2] = d2;
+            res[2 * dim + 2] = s2;
         }
         if (dim > 3)
         {
-            aRes[3] = v3;
-            aRes[dim + 3] = d3;
-            aRes[2 * dim + 3] = s3;
+            res[3] = v3;
+            res[dim + 3] = d3;
+            res[2 * dim + 3] = s3;
         }
     }
 
     // Runtime evaluations, for dimension > 4
 
     // Evaluation of only value. theCoeffs starts at the highest-degree coefficient (index theTop).
-    private static void eval_poly0_runtime(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                           int theDegree, double thePar, int theDimension)
+    private static void eval_poly0_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                           int degree, double par, int dimension)
     {
-        for (int i = 0; i < theDimension; ++i)
+        for (int i = 0; i < dimension; ++i)
         {
-            theResult[i] = theCoeffs[theTop + i];
+            result[i] = coeffs[top + i];
         }
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
-            aCoeffs -= theDimension;
-            for (int i = 0; i < theDimension; ++i)
+            aCoeffs -= dimension;
+            for (int i = 0; i < dimension; ++i)
             {
-                theResult[i] = theResult[i] * thePar + theCoeffs[aCoeffs + i];
+                result[i] = result[i] * par + coeffs[aCoeffs + i];
             }
         }
     }
 
     // Evaluation of value + 1st derivative
-    private static void eval_poly1_runtime(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                           int theDegree, double thePar, int theDimension)
+    private static void eval_poly1_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                           int degree, double par, int dimension)
     {
-        Span<double> aRes0 = theResult.Slice(0, theDimension);
-        Span<double> aRes1 = theResult.Slice(theDimension, theDimension);
+        Span<double> res0 = result.Slice(0, dimension);
+        Span<double> res1 = result.Slice(dimension, dimension);
 
-        for (int i = 0; i < theDimension; ++i)
+        for (int i = 0; i < dimension; ++i)
         {
-            aRes0[i] = theCoeffs[theTop + i];
-            aRes1[i] = 0.0;
+            res0[i] = coeffs[top + i];
+            res1[i] = 0.0;
         }
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
-            aCoeffs -= theDimension;
-            ReadOnlySpan<double> aC = theCoeffs.Slice(aCoeffs, theDimension);
-            for (int i = 0; i < theDimension; ++i)
+            aCoeffs -= dimension;
+            ReadOnlySpan<double> c = coeffs.Slice(aCoeffs, dimension);
+            for (int i = 0; i < dimension; ++i)
             {
-                double aVal = aRes0[i];
-                aRes1[i] = aRes1[i] * thePar + aVal;
-                aRes0[i] = aVal * thePar + aC[i];
+                double val = res0[i];
+                res1[i] = res1[i] * par + val;
+                res0[i] = val * par + c[i];
             }
         }
     }
 
     // Evaluation of value + 1st + 2nd derivatives
-    private static void eval_poly2_runtime(Span<double> theResult, ReadOnlySpan<double> theCoeffs, int theTop,
-                                           int theDegree, double thePar, int theDimension)
+    private static void eval_poly2_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+                                           int degree, double par, int dimension)
     {
-        Span<double> aRes0 = theResult.Slice(0, theDimension);
-        Span<double> aRes1 = theResult.Slice(theDimension, theDimension);
-        Span<double> aRes2 = theResult.Slice(2 * theDimension, theDimension);
+        Span<double> res0 = result.Slice(0, dimension);
+        Span<double> res1 = result.Slice(dimension, dimension);
+        Span<double> res2 = result.Slice(2 * dimension, dimension);
 
-        for (int i = 0; i < theDimension; ++i)
+        for (int i = 0; i < dimension; ++i)
         {
-            aRes0[i] = theCoeffs[theTop + i];
-            aRes1[i] = 0.0;
-            aRes2[i] = 0.0;
+            res0[i] = coeffs[top + i];
+            res1[i] = 0.0;
+            res2[i] = 0.0;
         }
 
-        int aCoeffs = theTop;
-        for (int aDeg = 0; aDeg < theDegree; ++aDeg)
+        int aCoeffs = top;
+        for (int deg = 0; deg < degree; ++deg)
         {
-            aCoeffs -= theDimension;
-            ReadOnlySpan<double> aC = theCoeffs.Slice(aCoeffs, theDimension);
-            for (int i = 0; i < theDimension; ++i)
+            aCoeffs -= dimension;
+            ReadOnlySpan<double> c = coeffs.Slice(aCoeffs, dimension);
+            for (int i = 0; i < dimension; ++i)
             {
-                double aD1 = aRes1[i];
-                double aVal = aRes0[i];
-                aRes2[i] = aRes2[i] * thePar + aD1 * 2.0;
-                aRes1[i] = aD1 * thePar + aVal;
-                aRes0[i] = aVal * thePar + aC[i];
+                double d1 = res1[i];
+                double val = res0[i];
+                res2[i] = res2[i] * par + d1 * 2.0;
+                res1[i] = d1 * par + val;
+                res0[i] = val * par + c[i];
             }
         }
     }
 
     /// <summary>
     /// Horner's method with synthetic division for derivatives: evaluates the polynomial of degree
-    /// <paramref name="Degree"/> and dimension <paramref name="Dimension"/> and its derivatives up to
-    /// <paramref name="DerivativeOrder"/> at <paramref name="U"/>. <paramref name="PolynomialCoeff"/> holds
-    /// c0(1..Dimension), c1(1..Dimension), ..., cDegree(1..Dimension); <paramref name="Results"/> receives
+    /// <paramref name="degree"/> and dimension <paramref name="dimension"/> and its derivatives up to
+    /// <paramref name="derivativeOrder"/> at <paramref name="u"/>. <paramref name="polynomialCoeff"/> holds
+    /// c0(1..Dimension), c1(1..Dimension), ..., cDegree(1..Dimension); <paramref name="results"/> receives
     /// f(1..Dimension), f'(1..Dimension), ..., one row of Dimension values per order.
     /// </summary>
-    public static void EvalPolynomial(double U, int DerivativeOrder, int Degree, int Dimension,
-                                      ReadOnlySpan<double> PolynomialCoeff, Span<double> Results)
+    public static void EvalPolynomial(double u, int derivativeOrder, int degree, int dimension,
+                                      ReadOnlySpan<double> polynomialCoeff, Span<double> results)
     //
     // the polynomial coefficients are assumed to be stored as follows :
     //                                                      0
@@ -937,65 +942,65 @@ public static class PLib
     //  where d is the Degree
     //
     {
-        double Par = U;
-        int DerivativeRequest = DerivativeOrder;
-        int aCoeffs = Degree * Dimension;
-        Span<double> aRes = Results;
+        double par = u;
+        int derivativeRequest = derivativeOrder;
+        int coeffs = degree * dimension;
+        Span<double> res = results;
 
-        switch (DerivativeRequest)
+        switch (derivativeRequest)
         {
             case 1:
                 {
-                    switch (Dimension)
+                    switch (dimension)
                     {
-                        case 1: eval_poly1<EvalDim1>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 2: eval_poly1<EvalDim2>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 3: eval_poly1<EvalDim3>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 4: eval_poly1<EvalDim4>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        default: eval_poly1_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension); break;
+                        case 1: eval_poly1<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 2: eval_poly1<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 3: eval_poly1<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 4: eval_poly1<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
+                        default: eval_poly1_runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
                     }
                     break;
                 }
             case 2:
                 {
-                    switch (Dimension)
+                    switch (dimension)
                     {
-                        case 1: eval_poly2<EvalDim1>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 2: eval_poly2<EvalDim2>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 3: eval_poly2<EvalDim3>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        case 4: eval_poly2<EvalDim4>(aRes, PolynomialCoeff, aCoeffs, Degree, Par); break;
-                        default: eval_poly2_runtime(aRes, PolynomialCoeff, aCoeffs, Degree, Par, Dimension); break;
+                        case 1: eval_poly2<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 2: eval_poly2<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 3: eval_poly2<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 4: eval_poly2<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
+                        default: eval_poly2_runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
                     }
                     break;
                 }
             default:
                 {
                     // General case for DerivativeRequest > 2 (and 0)
-                    int aResSize = (1 + DerivativeRequest) * Dimension;
-                    for (int i = 0; i < aResSize; ++i)
+                    int resSize = (1 + derivativeRequest) * dimension;
+                    for (int i = 0; i < resSize; ++i)
                     {
-                        aRes[i] = 0.0;
+                        res[i] = 0.0;
                     }
 
-                    for (int aDeg = 0; aDeg <= Degree; ++aDeg)
+                    for (int deg = 0; deg <= degree; ++deg)
                     {
-                        int aPtr = aResSize - Dimension;
+                        int ptr = resSize - dimension;
                         // Calculating derivatives of the polynomial
-                        for (int aDeriv = DerivativeRequest; aDeriv > 0; --aDeriv)
+                        for (int deriv = derivativeRequest; deriv > 0; --deriv)
                         {
-                            int anOriginal = aPtr - Dimension;
-                            for (int ind = 0; ind < Dimension; ++ind)
+                            int original = ptr - dimension;
+                            for (int ind = 0; ind < dimension; ++ind)
                             {
-                                aRes[aPtr + ind] = aRes[aPtr + ind] * Par + aRes[anOriginal + ind] * aDeriv;
+                                res[ptr + ind] = res[ptr + ind] * par + res[original + ind] * deriv;
                             }
-                            aPtr = anOriginal;
+                            ptr = original;
                         }
                         // Calculating the value of the polynomial
-                        for (int ind = 0; ind < Dimension; ++ind)
+                        for (int ind = 0; ind < dimension; ++ind)
                         {
-                            aRes[aPtr + ind] = aRes[aPtr + ind] * Par + PolynomialCoeff[aCoeffs + ind];
+                            res[ptr + ind] = res[ptr + ind] * par + polynomialCoeff[coeffs + ind];
                         }
-                        aCoeffs -= Dimension;
+                        coeffs -= dimension;
                     }
                     break;
                 }
@@ -1003,63 +1008,63 @@ public static class PLib
     }
 
     /// <summary>
-    /// <see cref="EvalPolynomial"/> with no derivative. <paramref name="DegreeDimension"/> is Degree * Dimension,
+    /// <see cref="EvalPolynomial"/> with no derivative. <paramref name="degreeDimension"/> is Degree * Dimension,
     /// the index of the highest-degree coefficient.
     /// </summary>
-    public static void NoDerivativeEvalPolynomial(double U, int Degree, int Dimension, int DegreeDimension,
-                                                  ReadOnlySpan<double> PolynomialCoeff, Span<double> Results)
+    public static void NoDerivativeEvalPolynomial(double u, int degree, int dimension, int degreeDimension,
+                                                  ReadOnlySpan<double> polynomialCoeff, Span<double> results)
     {
-        switch (Dimension)
+        switch (dimension)
         {
-            case 1: eval_poly0<EvalDim1>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
-            case 2: eval_poly0<EvalDim2>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
-            case 3: eval_poly0<EvalDim3>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
-            case 4: eval_poly0<EvalDim4>(Results, PolynomialCoeff, DegreeDimension, Degree, U); break;
-            default: eval_poly0_runtime(Results, PolynomialCoeff, DegreeDimension, Degree, U, Dimension); break;
+            case 1: eval_poly0<EvalDim1>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 2: eval_poly0<EvalDim2>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 3: eval_poly0<EvalDim3>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 4: eval_poly0<EvalDim4>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            default: eval_poly0_runtime(results, polynomialCoeff, degreeDimension, degree, u, dimension); break;
         }
     }
 
     /// <summary>
-    /// Evaluates the derivative of orders <paramref name="UDerivativeOrder"/> in U and
-    /// <paramref name="VDerivativeOrder"/> in V of a polynomial of two variables at (U, V), applying
+    /// Evaluates the derivative of orders <paramref name="uDerivativeOrder"/> in U and
+    /// <paramref name="vDerivativeOrder"/> in V of a polynomial of two variables at (U, V), applying
     /// <see cref="EvalPolynomial"/> twice. The coefficients are stored c00, c10, ..., cm0, c01, ..., cmn (each of
-    /// Dimension values, m = UDegree, n = VDegree); <paramref name="Results"/> receives Dimension values.
+    /// Dimension values, m = UDegree, n = VDegree); <paramref name="results"/> receives Dimension values.
     /// </summary>
-    public static void EvalPoly2Var(double U, double V, int UDerivativeOrder, int VDerivativeOrder, int UDegree,
-                                    int VDegree, int Dimension, ReadOnlySpan<double> PolynomialCoeff, Span<double> Results)
+    public static void EvalPoly2Var(double u, double v, int uDerivativeOrder, int vDerivativeOrder, int uDegree,
+                                    int vDegree, int dimension, ReadOnlySpan<double> polynomialCoeff, Span<double> results)
     {
-        double UParameter = U, VParameter = V;
-        int UDerivativeRequest = UDerivativeOrder, VDerivativeRequest = VDerivativeOrder;
-        int Udim = (VDegree + 1) * Dimension, index = Udim * UDerivativeRequest;
+        double uParameter = u, vParameter = v;
+        int uDerivativeRequest = uDerivativeOrder, vDerivativeRequest = vDerivativeOrder;
+        int udim = (vDegree + 1) * dimension, index = udim * uDerivativeRequest;
         // Note: OCCT allocates both work arrays as NCollection_Array1
-        int aCurveSize = Udim * (UDerivativeRequest + 1);
-        int aPointSize = Dimension * (VDerivativeRequest + 1);
-        Span<double> Result = aCurveSize <= 128 ? stackalloc double[aCurveSize] : new double[aCurveSize];
-        Span<double> Digit = aPointSize <= 128 ? stackalloc double[aPointSize] : new double[aPointSize];
-        Span<double> ResultArray = Results;
+        int curveSize = udim * (uDerivativeRequest + 1);
+        int pointSize = dimension * (vDerivativeRequest + 1);
+        Span<double> result = curveSize <= 128 ? stackalloc double[curveSize] : new double[curveSize];
+        Span<double> digit = pointSize <= 128 ? stackalloc double[pointSize] : new double[pointSize];
+        Span<double> resultArray = results;
 
-        PLib.EvalPolynomial(UParameter, UDerivativeRequest, UDegree, Udim, PolynomialCoeff, Result);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(uParameter, uDerivativeRequest, uDegree, udim, polynomialCoeff, result);
 
-        PLib.EvalPolynomial(VParameter, VDerivativeRequest, VDegree, Dimension, Result[index..], Digit);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(vParameter, vDerivativeRequest, vDegree, dimension, result[index..], digit);
 
-        index = Dimension * VDerivativeRequest;
+        index = dimension * vDerivativeRequest;
 
-        for (int i = 0; i < Dimension; i++)
+        for (int i = 0; i < dimension; i++)
         {
-            ResultArray[i] = Digit[index + i];
+            resultArray[i] = digit[index + i];
         }
     }
 
     /// <summary>
-    /// Lagrange interpolation of <paramref name="Degree"/> + 1 points of dimension <paramref name="Dimension"/>
-    /// (<paramref name="ValueArray"/>) at the parameters <paramref name="ParameterArray"/>, with derivatives up to
-    /// <paramref name="DerivativeOrder"/>, into <paramref name="Results"/> (one row of Dimension values per order).
+    /// Lagrange interpolation of <paramref name="degree"/> + 1 points of dimension <paramref name="dimension"/>
+    /// (<paramref name="valueArray"/>) at the parameters <paramref name="parameterArray"/>, with derivatives up to
+    /// <paramref name="derivativeOrder"/>, into <paramref name="results"/> (one row of Dimension values per order).
     /// Returns 0, or 1 if two parameters are equal.
     /// </summary>
-    public static int EvalLagrange(double U, int DerivativeOrder, int Degree, int Dimension,
-                                   ReadOnlySpan<double> ValueArray, ReadOnlySpan<double> ParameterArray, Span<double> Results)
+    public static int EvalLagrange(double u, int derivativeOrder, int degree, int dimension,
+                                   ReadOnlySpan<double> valueArray, ReadOnlySpan<double> parameterArray, Span<double> results)
     {
-        double Parameter = U;
+        double parameter = u;
         //
         // the points  are assumed to be stored as follows in the Values array :
         //
@@ -1082,50 +1087,50 @@ public static class PLib
         //  [0]   is assign to first  point
         //  [1]   is assign to second point
         //
-        int ii, jj, kk, Index, Index1, ReturnCode = 0;
-        int local_request = DerivativeOrder;
+        int ii, jj, kk, index, index1, returnCode = 0;
+        int local_request = derivativeOrder;
         double difference;
-        ReadOnlySpan<double> PointsArray = ValueArray;
-        Span<double> ResultArray = Results;
+        ReadOnlySpan<double> pointsArray = valueArray;
+        Span<double> resultArray = results;
 
-        if (local_request >= Degree)
+        if (local_request >= degree)
         {
-            local_request = Degree;
+            local_request = degree;
         }
-        int aSize = (Degree + 1) * Dimension;
-        Span<double> divided_differences_array = aSize <= 128 ? stackalloc double[aSize] : new double[aSize];
+        int size = (degree + 1) * dimension;
+        Span<double> divided_differences_array = size <= 128 ? stackalloc double[size] : new double[size];
         //
         //  Build the divided differences array
         //
 
-        for (ii = 0; ii < (Degree + 1) * Dimension; ii++)
+        for (ii = 0; ii < (degree + 1) * dimension; ii++)
         {
-            divided_differences_array[ii] = PointsArray[ii];
+            divided_differences_array[ii] = pointsArray[ii];
         }
 
-        for (ii = Degree; ii >= 0; ii--)
+        for (ii = degree; ii >= 0; ii--)
         {
 
-            for (jj = Degree; jj > Degree - ii; jj--)
+            for (jj = degree; jj > degree - ii; jj--)
             {
-                Index = jj * Dimension;
-                Index1 = Index - Dimension;
+                index = jj * dimension;
+                index1 = index - dimension;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    divided_differences_array[Index + kk] -= divided_differences_array[Index1 + kk];
+                    divided_differences_array[index + kk] -= divided_differences_array[index1 + kk];
                 }
-                difference = ParameterArray[jj] - ParameterArray[jj - Degree - 1 + ii];
+                difference = parameterArray[jj] - parameterArray[jj - degree - 1 + ii];
                 if (Math.Abs(difference) < RealSmall())
                 {
-                    ReturnCode = 1;
+                    returnCode = 1;
                     goto FINISH;
                 }
                 difference = 1.0e0 / difference;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    divided_differences_array[Index + kk] *= difference;
+                    divided_differences_array[index + kk] *= difference;
                 }
             }
         }
@@ -1139,55 +1144,55 @@ public static class PLib
         // The ith slot in the divided_differences_array is [t1,t2,...,ti+1]
         //
         //
-        Index = Degree * Dimension;
+        index = degree * dimension;
 
-        for (kk = 0; kk < Dimension; kk++)
+        for (kk = 0; kk < dimension; kk++)
         {
-            ResultArray[kk] = divided_differences_array[Index + kk];
+            resultArray[kk] = divided_differences_array[index + kk];
         }
 
-        for (ii = Dimension; ii < (local_request + 1) * Dimension; ii++)
+        for (ii = dimension; ii < (local_request + 1) * dimension; ii++)
         {
-            ResultArray[ii] = 0.0e0;
+            resultArray[ii] = 0.0e0;
         }
 
-        for (ii = Degree; ii >= 1; ii--)
+        for (ii = degree; ii >= 1; ii--)
         {
-            difference = Parameter - ParameterArray[ii - 1];
+            difference = parameter - parameterArray[ii - 1];
 
             for (jj = local_request; jj > 0; jj--)
             {
-                Index = jj * Dimension;
-                Index1 = Index - Dimension;
+                index = jj * dimension;
+                index1 = index - dimension;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    ResultArray[Index + kk] *= difference;
-                    ResultArray[Index + kk] += ResultArray[Index1 + kk] * (double)jj;
+                    resultArray[index + kk] *= difference;
+                    resultArray[index + kk] += resultArray[index1 + kk] * (double)jj;
                 }
             }
-            Index = (ii - 1) * Dimension;
+            index = (ii - 1) * dimension;
 
-            for (kk = 0; kk < Dimension; kk++)
+            for (kk = 0; kk < dimension; kk++)
             {
-                ResultArray[kk] *= difference;
-                ResultArray[kk] += divided_differences_array[Index + kk];
+                resultArray[kk] *= difference;
+                resultArray[kk] += divided_differences_array[index + kk];
             }
         }
     FINISH:
-        return (ReturnCode);
+        return (returnCode);
     }
 
     /// <summary>
-    /// Cubic Hermite interpolation of two points (<paramref name="ValueArray"/>) and their derivatives
-    /// (<paramref name="DerivativeArray"/>) at the two parameters <paramref name="ParameterArray"/>, with
-    /// derivatives up to <paramref name="DerivativeOrder"/>, into <paramref name="Results"/>. Returns 0.
+    /// Cubic Hermite interpolation of two points (<paramref name="valueArray"/>) and their derivatives
+    /// (<paramref name="derivativeArray"/>) at the two parameters <paramref name="parameterArray"/>, with
+    /// derivatives up to <paramref name="derivativeOrder"/>, into <paramref name="results"/>. Returns 0.
     /// </summary>
-    public static int EvalCubicHermite(double U, int DerivativeOrder, int Dimension, ReadOnlySpan<double> ValueArray,
-                                       ReadOnlySpan<double> DerivativeArray, ReadOnlySpan<double> ParameterArray,
-                                       Span<double> Results)
+    public static int EvalCubicHermite(double u, int derivativeOrder, int dimension, ReadOnlySpan<double> valueArray,
+                                       ReadOnlySpan<double> derivativeArray, ReadOnlySpan<double> parameterArray,
+                                       Span<double> results)
     {
-        double Parameter = U;
+        double parameter = u;
         //
         // the points  are assumed to be stored as follows in the Values array :
         //
@@ -1208,29 +1213,29 @@ public static class PLib
         //  [0]   is assign to first  point
         //  [1]   is assign to last   point
         //
-        int ii, jj, kk, pp, Index, Index1, Degree, ReturnCode;
-        int local_request = DerivativeOrder;
+        int ii, jj, kk, pp, index, index1, degree, returnCode;
+        int local_request = derivativeOrder;
 
-        ReturnCode = 0;
-        Degree = 3;
-        Span<double> ParametersArray = stackalloc double[4];
+        returnCode = 0;
+        degree = 3;
+        Span<double> parametersArray = stackalloc double[4];
         double difference;
         double inverse;
-        ReadOnlySpan<double> FirstLast = ParameterArray;
-        ReadOnlySpan<double> PointsArray = ValueArray;
-        ReadOnlySpan<double> DerivativesArray = DerivativeArray;
-        Span<double> ResultArray = Results;
+        ReadOnlySpan<double> firstLast = parameterArray;
+        ReadOnlySpan<double> pointsArray = valueArray;
+        ReadOnlySpan<double> derivativesArray = derivativeArray;
+        Span<double> resultArray = results;
 
-        if (local_request >= Degree)
+        if (local_request >= degree)
         {
-            local_request = Degree;
+            local_request = degree;
         }
-        int aSize = (Degree + 1) * Dimension;
-        Span<double> divided_differences_array = aSize <= 128 ? stackalloc double[aSize] : new double[aSize];
+        int size = (degree + 1) * dimension;
+        Span<double> divided_differences_array = size <= 128 ? stackalloc double[size] : new double[size];
 
         for (ii = 0, jj = 0; ii < 2; ii++, jj += 2)
         {
-            ParametersArray[jj] = ParametersArray[jj + 1] = FirstLast[ii];
+            parametersArray[jj] = parametersArray[jj + 1] = firstLast[ii];
         }
         //
         //  Build the divided differences array
@@ -1239,34 +1244,34 @@ public static class PLib
         // initialise it at the stage 2 of the building algorithm
         // for divided differences
         //
-        inverse = FirstLast[1] - FirstLast[0];
+        inverse = firstLast[1] - firstLast[0];
         inverse = 1.0e0 / inverse;
 
-        for (ii = 0, jj = Dimension, kk = 2 * Dimension, pp = 3 * Dimension; ii < Dimension;
+        for (ii = 0, jj = dimension, kk = 2 * dimension, pp = 3 * dimension; ii < dimension;
              ii++, jj++, kk++, pp++)
         {
-            divided_differences_array[ii] = PointsArray[ii];
-            divided_differences_array[kk] = inverse * (PointsArray[jj] - PointsArray[ii]);
-            divided_differences_array[jj] = DerivativesArray[ii];
-            divided_differences_array[pp] = DerivativesArray[jj];
+            divided_differences_array[ii] = pointsArray[ii];
+            divided_differences_array[kk] = inverse * (pointsArray[jj] - pointsArray[ii]);
+            divided_differences_array[jj] = derivativesArray[ii];
+            divided_differences_array[pp] = derivativesArray[jj];
         }
 
-        for (ii = 1; ii <= Degree; ii++)
+        for (ii = 1; ii <= degree; ii++)
         {
 
-            for (jj = Degree; jj >= ii + 1; jj--)
+            for (jj = degree; jj >= ii + 1; jj--)
             {
-                Index = jj * Dimension;
-                Index1 = Index - Dimension;
+                index = jj * dimension;
+                index1 = index - dimension;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    divided_differences_array[Index + kk] -= divided_differences_array[Index1 + kk];
+                    divided_differences_array[index + kk] -= divided_differences_array[index1 + kk];
                 }
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    divided_differences_array[Index + kk] *= inverse;
+                    divided_differences_array[index + kk] *= inverse;
                 }
             }
         }
@@ -1280,120 +1285,120 @@ public static class PLib
         // The ith slot in the divided_differences_array is [t1,t2,...,ti+1]
         //
         //
-        Index = Degree * Dimension;
+        index = degree * dimension;
 
-        for (kk = 0; kk < Dimension; kk++)
+        for (kk = 0; kk < dimension; kk++)
         {
-            ResultArray[kk] = divided_differences_array[Index + kk];
+            resultArray[kk] = divided_differences_array[index + kk];
         }
 
-        for (ii = Dimension; ii < (local_request + 1) * Dimension; ii++)
+        for (ii = dimension; ii < (local_request + 1) * dimension; ii++)
         {
-            ResultArray[ii] = 0.0e0;
+            resultArray[ii] = 0.0e0;
         }
 
-        for (ii = Degree; ii >= 1; ii--)
+        for (ii = degree; ii >= 1; ii--)
         {
-            difference = Parameter - ParametersArray[ii - 1];
+            difference = parameter - parametersArray[ii - 1];
 
             for (jj = local_request; jj > 0; jj--)
             {
-                Index = jj * Dimension;
-                Index1 = Index - Dimension;
+                index = jj * dimension;
+                index1 = index - dimension;
 
-                for (kk = 0; kk < Dimension; kk++)
+                for (kk = 0; kk < dimension; kk++)
                 {
-                    ResultArray[Index + kk] *= difference;
-                    ResultArray[Index + kk] += ResultArray[Index1 + kk] * (double)jj;
+                    resultArray[index + kk] *= difference;
+                    resultArray[index + kk] += resultArray[index1 + kk] * (double)jj;
                 }
             }
-            Index = (ii - 1) * Dimension;
+            index = (ii - 1) * dimension;
 
-            for (kk = 0; kk < Dimension; kk++)
+            for (kk = 0; kk < dimension; kk++)
             {
-                ResultArray[kk] *= difference;
-                ResultArray[kk] += divided_differences_array[Index + kk];
+                resultArray[kk] *= difference;
+                resultArray[kk] += divided_differences_array[index + kk];
             }
         }
         //  FINISH :
-        return (ReturnCode);
+        return (returnCode);
     }
 
     /// <summary>
     /// Computes the coefficients of the Hermite polynomials on [FirstParameter, LastParameter] with constraints of
-    /// orders <paramref name="FirstOrder"/> and <paramref name="LastOrder"/> at the ends, one polynomial per row of
-    /// <paramref name="MatrixCoefs"/> (rows and columns from 1). Returns false on invalid input or a singular system.
+    /// orders <paramref name="firstOrder"/> and <paramref name="lastOrder"/> at the ends, one polynomial per row of
+    /// <paramref name="matrixCoefs"/> (rows and columns from 1). Returns false on invalid input or a singular system.
     /// </summary>
-    public static bool HermiteCoefficients(double FirstParameter, double LastParameter, int FirstOrder, int LastOrder,
-                                           math_Matrix MatrixCoefs)
+    public static bool HermiteCoefficients(double firstParameter, double lastParameter, int firstOrder, int lastOrder,
+                                           Matrix matrixCoefs)
     {
-        int NbCoeff = FirstOrder + LastOrder + 2;
-        Span<int> Ordre = stackalloc int[2];
+        int nbCoeff = firstOrder + lastOrder + 2;
+        Span<int> ordre = stackalloc int[2];
         int ii, jj, pp, cote, iof = 0;
-        double Prod, TBorne = FirstParameter;
-        math_Vector Coeff = new(1, NbCoeff), B = new(1, NbCoeff, 0.0);
-        math_Matrix MAT = new(1, NbCoeff, 1, NbCoeff, 0.0);
+        double prod, tBorne = firstParameter;
+        math_Vector coeff = new(1, nbCoeff), b = new(1, nbCoeff, 0.0);
+        Matrix mat = new(1, nbCoeff, 1, nbCoeff, 0.0);
 
         // Test de validites
 
-        if ((FirstOrder < 0) || (LastOrder < 0))
+        if ((firstOrder < 0) || (lastOrder < 0))
         {
             return false;
         }
-        double D1 = Math.Abs(FirstParameter), D2 = Math.Abs(LastParameter);
-        if (D1 > 100 || D2 > 100)
+        double d1 = Math.Abs(firstParameter), d2 = Math.Abs(lastParameter);
+        if (d1 > 100 || d2 > 100)
         {
             return false;
         }
-        D2 += D1;
-        if (D2 < 0.01)
+        d2 += d1;
+        if (d2 < 0.01)
         {
             return false;
         }
-        if (Math.Abs(LastParameter - FirstParameter) / D2 < 0.01)
+        if (Math.Abs(lastParameter - firstParameter) / d2 < 0.01)
         {
             return false;
         }
 
         // Calcul de la matrice a inverser (MAT)
 
-        Ordre[0] = FirstOrder + 1;
-        Ordre[1] = LastOrder + 1;
+        ordre[0] = firstOrder + 1;
+        ordre[1] = lastOrder + 1;
 
         for (cote = 0; cote <= 1; cote++)
         {
-            Coeff.Init(1);
+            coeff.Init(1);
 
-            for (pp = 1; pp <= Ordre[cote]; pp++)
+            for (pp = 1; pp <= ordre[cote]; pp++)
             {
                 ii = pp + iof;
-                Prod = 1;
+                prod = 1;
 
-                for (jj = pp; jj <= NbCoeff; jj++)
+                for (jj = pp; jj <= nbCoeff; jj++)
                 {
                     //        tout se passe dans les 3 lignes suivantes
-                    MAT[ii, jj] = Coeff[jj] * Prod;
-                    Coeff[jj] *= jj - pp;
-                    Prod *= TBorne;
+                    mat[ii, jj] = coeff[jj] * prod;
+                    coeff[jj] *= jj - pp;
+                    prod *= tBorne;
                 }
             }
-            TBorne = LastParameter;
-            iof = Ordre[0];
+            tBorne = lastParameter;
+            iof = ordre[0];
         }
 
         // resolution du systemes
-        math_Gauss ResolCoeff = new(MAT, 1.0e-10);
-        if (!ResolCoeff.IsDone())
+        Gauss resolCoeff = new(mat, 1.0e-10);
+        if (!resolCoeff.IsDone)
         {
             return false;
         }
 
-        for (ii = 1; ii <= NbCoeff; ii++)
+        for (ii = 1; ii <= nbCoeff; ii++)
         {
-            B[ii] = 1;
-            ResolCoeff.Solve(B, Coeff);
-            MatrixCoefs.SetRow(ii, Coeff);
-            B[ii] = 0;
+            b[ii] = 1;
+            resolCoeff.Solve(b, coeff);
+            matrixCoefs.SetRow(ii, coeff);
+            b[ii] = 0;
         }
         return true;
     }
@@ -1402,87 +1407,87 @@ public static class PLib
     /// Converts the coefficients of a polynomial curve (and of its weights, or <see cref="NoWeights"/>) in the
     /// canonical base into poles (and weights) in the Bernstein base.
     /// </summary>
-    public static void CoefficientsPoles(NCollection_Array1<gp_Pnt> Coefs, NCollection_Array1<double>? WCoefs,
-                                         NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double>? WPoles)
+    public static void CoefficientsPoles(NCollection_Array1<Point3D> coefs, NCollection_Array1<double>? wCoefs,
+                                         NCollection_Array1<Point3D> poles, NCollection_Array1<double>? wPoles)
     {
-        NCollection_Array1<double> tempC = new(1, 3 * Coefs.Length());
-        PLib.SetPoles(Coefs, tempC);
-        NCollection_Array1<double> tempP = new(1, 3 * Poles.Length());
-        PLib.SetPoles(Coefs, tempP); // OCCT fills tempP from Coefs, not Poles; only its size comes from Poles
-        PLib.CoefficientsPoles(3, tempC, WCoefs, tempP, WPoles);
-        PLib.GetPoles(tempP, Poles);
+        NCollection_Array1<double> tempC = new(1, 3 * coefs.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coefs, tempC);
+        NCollection_Array1<double> tempP = new(1, 3 * poles.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coefs, tempP); // OCCT fills tempP from Coefs, not Poles; only its size comes from Poles
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(3, tempC, wCoefs, tempP, wPoles);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.GetPoles(tempP, poles);
     }
 
-    /// <inheritdoc cref="CoefficientsPoles(NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/>
-    public static void CoefficientsPoles(NCollection_Array1<gp_Pnt2d> Coefs, NCollection_Array1<double>? WCoefs,
-                                         NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double>? WPoles)
+    /// <inheritdoc cref="CoefficientsPoles(NCollection_Array1{Point3D}, NCollection_Array1{double}?, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/>
+    public static void CoefficientsPoles(NCollection_Array1<Point2D> coefs, NCollection_Array1<double>? wCoefs,
+                                         NCollection_Array1<Point2D> poles, NCollection_Array1<double>? wPoles)
     {
-        NCollection_Array1<double> tempC = new(1, 2 * Coefs.Length());
-        PLib.SetPoles(Coefs, tempC);
-        NCollection_Array1<double> tempP = new(1, 2 * Poles.Length());
-        PLib.SetPoles(Coefs, tempP); // OCCT fills tempP from Coefs, not Poles; only its size comes from Poles
-        PLib.CoefficientsPoles(2, tempC, WCoefs, tempP, WPoles);
-        PLib.GetPoles(tempP, Poles);
+        NCollection_Array1<double> tempC = new(1, 2 * coefs.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coefs, tempC);
+        NCollection_Array1<double> tempP = new(1, 2 * poles.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coefs, tempP); // OCCT fills tempP from Coefs, not Poles; only its size comes from Poles
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(2, tempC, wCoefs, tempP, wPoles);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.GetPoles(tempP, poles);
     }
 
-    /// <inheritdoc cref="CoefficientsPoles(NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/>
-    public static void CoefficientsPoles(NCollection_Array1<double> Coefs, NCollection_Array1<double>? WCoefs,
-                                         NCollection_Array1<double> Poles, NCollection_Array1<double>? WPoles)
+    /// <inheritdoc cref="CoefficientsPoles(NCollection_Array1{Point3D}, NCollection_Array1{double}?, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/>
+    public static void CoefficientsPoles(NCollection_Array1<double> coefs, NCollection_Array1<double>? wCoefs,
+                                         NCollection_Array1<double> poles, NCollection_Array1<double>? wPoles)
     {
-        PLib.CoefficientsPoles(1, Coefs, WCoefs, Poles, WPoles);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(1, coefs, wCoefs, poles, wPoles);
     }
 
     /// <summary>
     /// Converts the coefficients of a polynomial curve of dimension <paramref name="dim"/> (flat array) into poles
     /// in the Bernstein base.
     /// </summary>
-    public static void CoefficientsPoles(int dim, NCollection_Array1<double> Coefs, NCollection_Array1<double>? WCoefs,
-                                         NCollection_Array1<double> Poles, NCollection_Array1<double>? WPoles)
+    public static void CoefficientsPoles(int dim, NCollection_Array1<double> coefs, NCollection_Array1<double>? wCoefs,
+                                         NCollection_Array1<double> poles, NCollection_Array1<double>? wPoles)
     {
-        NCollection_Array1<double>? Weights = WPoles;
-        bool rat = WCoefs != null;
-        int loc = Coefs.Lower();
-        int lop = Poles.Lower();
+        NCollection_Array1<double>? weights = wPoles;
+        bool rat = wCoefs != null;
+        int loc = coefs.Lower();
+        int lop = poles.Lower();
         int lowc = 0;
         int lowp = 0;
-        int upc = Coefs.Upper();
-        int upp = Poles.Upper();
+        int upc = coefs.Upper();
+        int upp = poles.Upper();
         int upwc = 0;
         int upwp = 0;
-        int reflen = Coefs.Length() / dim;
+        int reflen = coefs.Length() / dim;
         int i, j, k;
         // Les Extremites.
         if (rat)
         {
-            lowc = WCoefs!.Lower();
-            lowp = Weights!.Lower();
-            upwc = WCoefs.Upper();
-            upwp = Weights.Upper();
+            lowc = wCoefs!.Lower();
+            lowp = weights!.Lower();
+            upwc = wCoefs.Upper();
+            upwp = weights.Upper();
         }
 
         for (i = 0; i < dim; i++)
         {
-            Poles[lop + i] = Coefs[loc + i];
-            Poles[upp - i] = Coefs[upc - i];
+            poles[lop + i] = coefs[loc + i];
+            poles[upp - i] = coefs[upc - i];
         }
         if (rat)
         {
-            Weights![lowp] = WCoefs![lowc];
-            Weights[upwp] = WCoefs[upwc];
+            weights![lowp] = wCoefs![lowc];
+            weights[upwp] = wCoefs[upwc];
         }
 
-        double Cnp;
+        double cnp;
         for (i = 2; i < reflen; i++)
         {
-            Cnp = PLib.Bin(reflen - 1, i - 1);
+            cnp = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(reflen - 1, i - 1);
             if (rat)
             {
-                Weights![lowp + i - 1] = WCoefs![lowc + i - 1] / Cnp;
+                weights![lowp + i - 1] = wCoefs![lowc + i - 1] / cnp;
             }
 
             for (j = 0; j < dim; j++)
             {
-                Poles[lop + dim * (i - 1) + j] = Coefs[loc + dim * (i - 1) + j] / Cnp;
+                poles[lop + dim * (i - 1) + j] = coefs[loc + dim * (i - 1) + j] / cnp;
             }
         }
 
@@ -1493,12 +1498,12 @@ public static class PLib
             {
                 if (rat)
                 {
-                    Weights![lowp + j] += Weights[lowp + j - 1];
+                    weights![lowp + j] += weights[lowp + j - 1];
                 }
 
                 for (k = 0; k < dim; k++)
                 {
-                    Poles[lop + dim * j + k] += Poles[lop + dim * (j - 1) + k];
+                    poles[lop + dim * j + k] += poles[lop + dim * (j - 1) + k];
                 }
             }
         }
@@ -1510,66 +1515,66 @@ public static class PLib
 
                 for (j = 0; j < dim; j++)
                 {
-                    Poles[lop + dim * (i - 1) + j] /= Weights![lowp + i - 1];
+                    poles[lop + dim * (i - 1) + j] /= weights![lowp + i - 1];
                 }
             }
         }
     }
 
     /// <summary>
-    /// Reparametrises the polynomial curve (power-basis coefficients <paramref name="Coeffs"/>, weights or
+    /// Reparametrises the polynomial curve (power-basis coefficients <paramref name="coeffs"/>, weights or
     /// <see cref="NoWeights"/>) so that [U1, U2] becomes [0, 1]: the change of variable u = U1 + v * (U2 - U1).
     /// </summary>
-    public static void Trimming(double U1, double U2, NCollection_Array1<gp_Pnt> Coeffs, NCollection_Array1<double>? WCoeffs)
+    public static void Trimming(double u1, double u2, NCollection_Array1<Point3D> coeffs, NCollection_Array1<double>? wCoeffs)
     {
-        NCollection_Array1<double> temp = new(1, 3 * Coeffs.Length());
-        PLib.SetPoles(Coeffs, temp);
-        PLib.Trimming(U1, U2, 3, temp, WCoeffs);
-        PLib.GetPoles(temp, Coeffs);
+        NCollection_Array1<double> temp = new(1, 3 * coeffs.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coeffs, temp);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(u1, u2, 3, temp, wCoeffs);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.GetPoles(temp, coeffs);
     }
 
-    /// <inheritdoc cref="Trimming(double, double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/>
-    public static void Trimming(double U1, double U2, NCollection_Array1<gp_Pnt2d> Coeffs, NCollection_Array1<double>? WCoeffs)
+    /// <inheritdoc cref="Trimming(double, double, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/>
+    public static void Trimming(double u1, double u2, NCollection_Array1<Point2D> coeffs, NCollection_Array1<double>? wCoeffs)
     {
-        NCollection_Array1<double> temp = new(1, 2 * Coeffs.Length());
-        PLib.SetPoles(Coeffs, temp);
-        PLib.Trimming(U1, U2, 2, temp, WCoeffs);
-        PLib.GetPoles(temp, Coeffs);
+        NCollection_Array1<double> temp = new(1, 2 * coeffs.Length());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.SetPoles(coeffs, temp);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(u1, u2, 2, temp, wCoeffs);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.GetPoles(temp, coeffs);
     }
 
-    /// <inheritdoc cref="Trimming(double, double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/>
-    public static void Trimming(double U1, double U2, NCollection_Array1<double> Coeffs, NCollection_Array1<double>? WCoeffs)
+    /// <inheritdoc cref="Trimming(double, double, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/>
+    public static void Trimming(double u1, double u2, NCollection_Array1<double> coeffs, NCollection_Array1<double>? wCoeffs)
     {
-        PLib.Trimming(U1, U2, 1, Coeffs, WCoeffs);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(u1, u2, 1, coeffs, wCoeffs);
     }
 
     /// <summary>
     /// Reparametrises the polynomial curve of dimension <paramref name="dim"/> (flat array) so that [U1, U2]
-    /// becomes [0, 1]. Throws <see cref="Standard_Failure"/> if the weights don't match the coefficients.
+    /// becomes [0, 1]. Throws <see cref="FailureException"/> if the weights don't match the coefficients.
     /// </summary>
-    public static void Trimming(double U1, double U2, int dim, NCollection_Array1<double> Coeffs, NCollection_Array1<double>? WCoeffs)
+    public static void Trimming(double u1, double u2, int dim, NCollection_Array1<double> coeffs, NCollection_Array1<double>? wCoeffs)
     {
-        NCollection_Array1<double> Coefs = Coeffs;
-        NCollection_Array1<double>? WCoefs = WCoeffs;
+        NCollection_Array1<double> coefs = coeffs;
+        NCollection_Array1<double>? wCoefs = wCoeffs;
 
         // principe :
         // on fait le changement de variable v = (u-U1) / (U2-U1)
         // on exprime u = f(v) que l'on remplace dans l'expression polynomiale
         // decomposee sous la forme du schema iteratif de horner.
 
-        double lsp = U2 - U1;
+        double lsp = u2 - u1;
         int indc, indw = 0;
-        int upc = Coefs.Upper() - dim + 1, upw = 0;
-        int len = Coefs.Length() / dim;
-        bool rat = WCoefs != null;
+        int upc = coefs.Upper() - dim + 1, upw = 0;
+        int len = coefs.Length() / dim;
+        bool rat = wCoefs != null;
 
         if (rat)
         {
-            if (len != WCoefs!.Length())
+            if (len != wCoefs!.Length())
             {
-                throw new Standard_Failure("PLib::Trimming : nbcoefs/dim != nbweights !!!");
+                throw new FailureException("PLib::Trimming : nbcoefs/dim != nbweights !!!");
             }
-            upw = WCoefs.Upper();
+            upw = wCoefs.Upper();
         }
         len--;
 
@@ -1585,11 +1590,11 @@ public static class PLib
 
             for (j = 0; j < dim; j++)
             {
-                Coefs[indc - dim + j] += U1 * Coefs[indc + j];
+                coefs[indc - dim + j] += u1 * coefs[indc + j];
             }
             if (rat)
             {
-                WCoefs![indw - 1] += U1 * WCoefs[indw];
+                wCoefs![indw - 1] += u1 * wCoefs[indw];
             }
 
             // calcul des coefficients intermediaires :
@@ -1600,12 +1605,12 @@ public static class PLib
 
                 for (int k = 0; k < dim; k++)
                 {
-                    Coefs[indc - dim + k] = U1 * Coefs[indc + k] + lsp * Coefs[indc - dim + k];
+                    coefs[indc - dim + k] = u1 * coefs[indc + k] + lsp * coefs[indc - dim + k];
                 }
                 if (rat)
                 {
                     indw++;
-                    WCoefs![indw - 1] = U1 * WCoefs[indw] + lsp * WCoefs[indw - 1];
+                    wCoefs![indw - 1] = u1 * wCoefs[indw] + lsp * wCoefs[indw - 1];
                 }
             }
 
@@ -1613,11 +1618,11 @@ public static class PLib
 
             for (j = 0; j < dim; j++)
             {
-                Coefs[upc + j] *= lsp;
+                coefs[upc + j] *= lsp;
             }
             if (rat)
             {
-                WCoefs![upw] *= lsp;
+                wCoefs![upw] *= lsp;
             }
         }
     }
@@ -1629,94 +1634,94 @@ public static class PLib
     // Modified: 21/10/1996 by PMN :  PolesCoefficient (PRO5852).
     // on ne bidouille plus les u et v c'est a l'appelant de savoir ce qu'il
     // fait avec BuildCache ou plus simplement d'utiliser PolesCoefficients
-    public static void CoefficientsPoles(NCollection_Array2<gp_Pnt> Coefs, NCollection_Array2<double>? WCoefs,
-                                         NCollection_Array2<gp_Pnt> Poles, NCollection_Array2<double>? WPoles)
+    public static void CoefficientsPoles(NCollection_Array2<Point3D> coefs, NCollection_Array2<double>? wCoefs,
+                                         NCollection_Array2<Point3D> poles, NCollection_Array2<double>? wPoles)
     {
-        NCollection_Array2<double>? Weights = WPoles;
-        bool rat = (WCoefs != null);
-        int LowerRow = Poles.LowerRow();
-        int UpperRow = Poles.UpperRow();
-        int LowerCol = Poles.LowerCol();
-        int UpperCol = Poles.UpperCol();
-        int ColLength = Poles.ColLength();
-        int RowLength = Poles.RowLength();
+        NCollection_Array2<double>? weights = wPoles;
+        bool rat = (wCoefs != null);
+        int lowerRow = poles.LowerRow();
+        int upperRow = poles.UpperRow();
+        int lowerCol = poles.LowerCol();
+        int upperCol = poles.UpperCol();
+        int colLength = poles.ColLength();
+        int rowLength = poles.RowLength();
 
         // Bidouille pour retablir u et v pour les coefs calcules
         // par buildcache
         //  bool inv = false; //ColLength != Coefs.ColLength();
 
-        int Row, Col;
-        double W, Cnp;
+        int row, col;
+        double w, cnp;
 
-        int I1, I2;
-        int NPoleu, NPolev;
-        gp_XYZ Temp = new();
+        int i1, i2;
+        int nPoleu, nPolev;
+        Xyz temp = new();
 
-        for (NPoleu = LowerRow; NPoleu <= UpperRow; NPoleu++)
+        for (nPoleu = lowerRow; nPoleu <= upperRow; nPoleu++)
         {
-            Poles[NPoleu, LowerCol] = Coefs[NPoleu, LowerCol];
+            poles[nPoleu, lowerCol] = coefs[nPoleu, lowerCol];
             if (rat)
             {
-                Weights![NPoleu, LowerCol] = WCoefs![NPoleu, LowerCol];
+                weights![nPoleu, lowerCol] = wCoefs![nPoleu, lowerCol];
             }
 
-            for (Col = LowerCol + 1; Col <= UpperCol - 1; Col++)
+            for (col = lowerCol + 1; col <= upperCol - 1; col++)
             {
-                Cnp = PLib.Bin(RowLength - 1, Col - LowerCol);
-                Temp = Coefs[NPoleu, Col].XYZ();
-                Temp.Divide(Cnp);
-                Poles[NPoleu, Col].SetXYZ(Temp);
+                cnp = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(rowLength - 1, col - lowerCol);
+                temp = coefs[nPoleu, col].XYZ();
+                temp.Divide(cnp);
+                poles[nPoleu, col].SetXYZ(temp);
                 if (rat)
                 {
-                    Weights![NPoleu, Col] = WCoefs![NPoleu, Col] / Cnp;
+                    weights![nPoleu, col] = wCoefs![nPoleu, col] / cnp;
                 }
             }
-            Poles[NPoleu, UpperCol] = Coefs[NPoleu, UpperCol];
+            poles[nPoleu, upperCol] = coefs[nPoleu, upperCol];
             if (rat)
             {
-                Weights![NPoleu, UpperCol] = WCoefs![NPoleu, UpperCol];
+                weights![nPoleu, upperCol] = wCoefs![nPoleu, upperCol];
             }
 
-            for (I1 = 1; I1 <= RowLength - 1; I1++)
+            for (i1 = 1; i1 <= rowLength - 1; i1++)
             {
 
-                for (I2 = UpperCol; I2 >= LowerCol + I1; I2--)
+                for (i2 = upperCol; i2 >= lowerCol + i1; i2--)
                 {
-                    Temp.SetLinearForm(Poles[NPoleu, I2].XYZ(), Poles[NPoleu, I2 - 1].XYZ());
-                    Poles[NPoleu, I2].SetXYZ(Temp);
+                    temp.SetLinearForm(poles[nPoleu, i2].XYZ(), poles[nPoleu, i2 - 1].XYZ());
+                    poles[nPoleu, i2].SetXYZ(temp);
                     if (rat)
                     {
-                        Weights![NPoleu, I2] += Weights[NPoleu, I2 - 1];
+                        weights![nPoleu, i2] += weights[nPoleu, i2 - 1];
                     }
                 }
             }
         }
 
-        for (NPolev = LowerCol; NPolev <= UpperCol; NPolev++)
+        for (nPolev = lowerCol; nPolev <= upperCol; nPolev++)
         {
 
-            for (Row = LowerRow + 1; Row <= UpperRow - 1; Row++)
+            for (row = lowerRow + 1; row <= upperRow - 1; row++)
             {
-                Cnp = PLib.Bin(ColLength - 1, Row - LowerRow);
-                Temp = Poles[Row, NPolev].XYZ();
-                Temp.Divide(Cnp);
-                Poles[Row, NPolev].SetXYZ(Temp);
+                cnp = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(colLength - 1, row - lowerRow);
+                temp = poles[row, nPolev].XYZ();
+                temp.Divide(cnp);
+                poles[row, nPolev].SetXYZ(temp);
                 if (rat)
                 {
-                    Weights![Row, NPolev] /= Cnp;
+                    weights![row, nPolev] /= cnp;
                 }
             }
 
-            for (I1 = 1; I1 <= ColLength - 1; I1++)
+            for (i1 = 1; i1 <= colLength - 1; i1++)
             {
 
-                for (I2 = UpperRow; I2 >= LowerRow + I1; I2--)
+                for (i2 = upperRow; i2 >= lowerRow + i1; i2--)
                 {
-                    Temp.SetLinearForm(Poles[I2, NPolev].XYZ(), Poles[I2 - 1, NPolev].XYZ());
-                    Poles[I2, NPolev].SetXYZ(Temp);
+                    temp.SetLinearForm(poles[i2, nPolev].XYZ(), poles[i2 - 1, nPolev].XYZ());
+                    poles[i2, nPolev].SetXYZ(temp);
                     if (rat)
                     {
-                        Weights![I2, NPolev] += Weights[I2 - 1, NPolev];
+                        weights![i2, nPolev] += weights[i2 - 1, nPolev];
                     }
                 }
             }
@@ -1724,165 +1729,165 @@ public static class PLib
         if (rat)
         {
 
-            for (Row = LowerRow; Row <= UpperRow; Row++)
+            for (row = lowerRow; row <= upperRow; row++)
             {
 
-                for (Col = LowerCol; Col <= UpperCol; Col++)
+                for (col = lowerCol; col <= upperCol; col++)
                 {
-                    W = Weights![Row, Col];
-                    Temp = Poles[Row, Col].XYZ();
-                    Temp.Divide(W);
-                    Poles[Row, Col].SetXYZ(Temp);
+                    w = weights![row, col];
+                    temp = poles[row, col].XYZ();
+                    temp.Divide(w);
+                    poles[row, col].SetXYZ(temp);
                 }
             }
         }
     }
 
-    /// <summary>Applies <see cref="Trimming(double, double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/> to every column (the U direction) of a polynomial surface.</summary>
-    public static void UTrimming(double U1, double U2, NCollection_Array2<gp_Pnt> Coeffs, NCollection_Array2<double>? WCoeffs)
+    /// <summary>Applies <see cref="Trimming(double, double, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/> to every column (the U direction) of a polynomial surface.</summary>
+    public static void UTrimming(double u1, double u2, NCollection_Array2<Point3D> coeffs, NCollection_Array2<double>? wCoeffs)
     {
-        bool rat = WCoeffs != null;
-        int lr = Coeffs.LowerRow();
-        int ur = Coeffs.UpperRow();
-        int lc = Coeffs.LowerCol();
-        int uc = Coeffs.UpperCol();
-        NCollection_Array1<gp_Pnt> Temp = new(lr, ur);
-        NCollection_Array1<double> Temw = new(lr, ur);
+        bool rat = wCoeffs != null;
+        int lr = coeffs.LowerRow();
+        int ur = coeffs.UpperRow();
+        int lc = coeffs.LowerCol();
+        int uc = coeffs.UpperCol();
+        NCollection_Array1<Point3D> temp = new(lr, ur);
+        NCollection_Array1<double> temw = new(lr, ur);
 
         for (int icol = lc; icol <= uc; icol++)
         {
             int irow;
             for (irow = lr; irow <= ur; irow++)
             {
-                Temp[irow] = Coeffs[irow, icol];
+                temp[irow] = coeffs[irow, icol];
                 if (rat)
                 {
-                    Temw[irow] = WCoeffs![irow, icol];
+                    temw[irow] = wCoeffs![irow, icol];
                 }
             }
             if (rat)
             {
-                PLib.Trimming(U1, U2, Temp, Temw);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(u1, u2, temp, temw);
             }
             else
             {
-                PLib.Trimming(U1, U2, Temp, PLib.NoWeights());
+                global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(u1, u2, temp, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             }
 
             for (irow = lr; irow <= ur; irow++)
             {
-                Coeffs[irow, icol] = Temp[irow];
+                coeffs[irow, icol] = temp[irow];
                 if (rat)
                 {
-                    WCoeffs![irow, icol] = Temw[irow];
+                    wCoeffs![irow, icol] = temw[irow];
                 }
             }
         }
     }
 
-    /// <summary>Applies <see cref="Trimming(double, double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?)"/> to every row (the V direction) of a polynomial surface.</summary>
-    public static void VTrimming(double V1, double V2, NCollection_Array2<gp_Pnt> Coeffs, NCollection_Array2<double>? WCoeffs)
+    /// <summary>Applies <see cref="Trimming(double, double, NCollection_Array1{Point3D}, NCollection_Array1{double}?)"/> to every row (the V direction) of a polynomial surface.</summary>
+    public static void VTrimming(double v1, double v2, NCollection_Array2<Point3D> coeffs, NCollection_Array2<double>? wCoeffs)
     {
-        bool rat = WCoeffs != null;
-        int lr = Coeffs.LowerRow();
-        int ur = Coeffs.UpperRow();
-        int lc = Coeffs.LowerCol();
-        int uc = Coeffs.UpperCol();
-        NCollection_Array1<gp_Pnt> Temp = new(lc, uc);
-        NCollection_Array1<double> Temw = new(lc, uc);
+        bool rat = wCoeffs != null;
+        int lr = coeffs.LowerRow();
+        int ur = coeffs.UpperRow();
+        int lc = coeffs.LowerCol();
+        int uc = coeffs.UpperCol();
+        NCollection_Array1<Point3D> temp = new(lc, uc);
+        NCollection_Array1<double> temw = new(lc, uc);
 
         for (int irow = lr; irow <= ur; irow++)
         {
             int icol;
             for (icol = lc; icol <= uc; icol++)
             {
-                Temp[icol] = Coeffs[irow, icol];
+                temp[icol] = coeffs[irow, icol];
                 if (rat)
                 {
-                    Temw[icol] = WCoeffs![irow, icol];
+                    temw[icol] = wCoeffs![irow, icol];
                 }
             }
             if (rat)
             {
-                PLib.Trimming(V1, V2, Temp, Temw);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(v1, v2, temp, temw);
             }
             else
             {
-                PLib.Trimming(V1, V2, Temp, PLib.NoWeights());
+                global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(v1, v2, temp, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             }
 
             for (icol = lc; icol <= uc; icol++)
             {
-                Coeffs[irow, icol] = Temp[icol];
+                coeffs[irow, icol] = temp[icol];
                 if (rat)
                 {
-                    WCoeffs![irow, icol] = Temw[icol];
+                    wCoeffs![irow, icol] = temw[icol];
                 }
             }
         }
     }
 
     /// <summary>
-    /// Computes the coefficients (canonical base, in <paramref name="Coefficients"/> from index 0) of the polynomial
-    /// of dimension <paramref name="Dimension"/> that meets the constraints <paramref name="FirstConstr"/> (orders 0
-    /// to FirstOrder, at FirstParameter) and <paramref name="LastConstr"/> (orders 0 to LastOrder, at LastParameter).
+    /// Computes the coefficients (canonical base, in <paramref name="coefficients"/> from index 0) of the polynomial
+    /// of dimension <paramref name="dimension"/> that meets the constraints <paramref name="firstConstr"/> (orders 0
+    /// to FirstOrder, at FirstParameter) and <paramref name="lastConstr"/> (orders 0 to LastOrder, at LastParameter).
     /// The constraint arrays are indexed (1..Dimension, 0..order). Orders are at most 2.
     /// </summary>
-    public static bool HermiteInterpolate(int Dimension, double FirstParameter, double LastParameter, int FirstOrder,
-                                          int LastOrder, NCollection_Array2<double> FirstConstr,
-                                          NCollection_Array2<double> LastConstr, NCollection_Array1<double> Coefficients)
+    public static bool HermiteInterpolate(int dimension, double firstParameter, double lastParameter, int firstOrder,
+                                          int lastOrder, NCollection_Array2<double> firstConstr,
+                                          NCollection_Array2<double> lastConstr, NCollection_Array1<double> coefficients)
     {
         // double Pattern[3][6]
-        Span<double> Pattern = stackalloc double[3 * 6];
+        Span<double> pattern = stackalloc double[3 * 6];
 
         // portage HP : il faut les initialiser 1 par 1
 
-        Pattern[0 * 6 + 0] = 1;
-        Pattern[0 * 6 + 1] = 1;
-        Pattern[0 * 6 + 2] = 1;
-        Pattern[0 * 6 + 3] = 1;
-        Pattern[0 * 6 + 4] = 1;
-        Pattern[0 * 6 + 5] = 1;
-        Pattern[1 * 6 + 0] = 0;
-        Pattern[1 * 6 + 1] = 1;
-        Pattern[1 * 6 + 2] = 2;
-        Pattern[1 * 6 + 3] = 3;
-        Pattern[1 * 6 + 4] = 4;
-        Pattern[1 * 6 + 5] = 5;
-        Pattern[2 * 6 + 0] = 0;
-        Pattern[2 * 6 + 1] = 0;
-        Pattern[2 * 6 + 2] = 2;
-        Pattern[2 * 6 + 3] = 6;
-        Pattern[2 * 6 + 4] = 12;
-        Pattern[2 * 6 + 5] = 20;
+        pattern[0 * 6 + 0] = 1;
+        pattern[0 * 6 + 1] = 1;
+        pattern[0 * 6 + 2] = 1;
+        pattern[0 * 6 + 3] = 1;
+        pattern[0 * 6 + 4] = 1;
+        pattern[0 * 6 + 5] = 1;
+        pattern[1 * 6 + 0] = 0;
+        pattern[1 * 6 + 1] = 1;
+        pattern[1 * 6 + 2] = 2;
+        pattern[1 * 6 + 3] = 3;
+        pattern[1 * 6 + 4] = 4;
+        pattern[1 * 6 + 5] = 5;
+        pattern[2 * 6 + 0] = 0;
+        pattern[2 * 6 + 1] = 0;
+        pattern[2 * 6 + 2] = 2;
+        pattern[2 * 6 + 3] = 6;
+        pattern[2 * 6 + 4] = 12;
+        pattern[2 * 6 + 5] = 20;
 
-        math_Matrix A = new(0, FirstOrder + LastOrder + 1, 0, FirstOrder + LastOrder + 1);
+        Matrix a = new(0, firstOrder + lastOrder + 1, 0, firstOrder + lastOrder + 1);
         //  The initialisation of the matrix A
         int irow;
-        for (irow = 0; irow <= FirstOrder; irow++)
+        for (irow = 0; irow <= firstOrder; irow++)
         {
-            double FirstVal = 1.0;
+            double firstVal = 1.0;
 
-            for (int icol = 0; icol <= FirstOrder + LastOrder + 1; icol++)
+            for (int icol = 0; icol <= firstOrder + lastOrder + 1; icol++)
             {
-                A[irow, icol] = Pattern[irow * 6 + icol] * FirstVal;
+                a[irow, icol] = pattern[irow * 6 + icol] * firstVal;
                 if (irow <= icol)
                 {
-                    FirstVal *= FirstParameter;
+                    firstVal *= firstParameter;
                 }
             }
         }
 
-        for (irow = 0; irow <= LastOrder; irow++)
+        for (irow = 0; irow <= lastOrder; irow++)
         {
-            double LastVal = 1.0;
+            double lastVal = 1.0;
 
-            for (int icol = 0; icol <= FirstOrder + LastOrder + 1; icol++)
+            for (int icol = 0; icol <= firstOrder + lastOrder + 1; icol++)
             {
-                A[irow + FirstOrder + 1, icol] = Pattern[irow * 6 + icol] * LastVal;
+                a[irow + firstOrder + 1, icol] = pattern[irow * 6 + icol] * lastVal;
                 if (irow <= icol)
                 {
-                    LastVal *= LastParameter;
+                    lastVal *= lastParameter;
                 }
             }
         }
@@ -1901,37 +1906,37 @@ public static class PLib
         //  If FirstOrder=1 then 3th row and 6th column are missing
         //  If FirstOrder=LastOrder=0 then 2,3,5,6th rows and 3,4,5,6th columns are missing
 
-        math_Gauss Equations = new(A);
+        Gauss equations = new(a);
 
-        for (int idim = 1; idim <= Dimension; idim++)
+        for (int idim = 1; idim <= dimension; idim++)
         {
-            math_Vector B = new(0, FirstOrder + LastOrder + 1);
+            math_Vector b = new(0, firstOrder + lastOrder + 1);
             int icol;
-            for (icol = 0; icol <= FirstOrder; icol++)
+            for (icol = 0; icol <= firstOrder; icol++)
             {
-                B[icol] = FirstConstr[idim, icol];
+                b[icol] = firstConstr[idim, icol];
             }
 
-            for (icol = 0; icol <= LastOrder; icol++)
+            for (icol = 0; icol <= lastOrder; icol++)
             {
-                B[FirstOrder + 1 + icol] = LastConstr[idim, icol];
+                b[firstOrder + 1 + icol] = lastConstr[idim, icol];
             }
 
             //  The solving of equations system A * X = B. Then B = X
             // Note: OCCT checks IsDone only after Solve, which (with its checks on, as in the port) throws
             // StdFail_NotDone first when A is singular
-            Equations.Solve(B);
+            equations.Solve(b);
 
-            if (!Equations.IsDone())
+            if (!equations.IsDone)
             {
                 return false;
             }
 
             //  the filling of the Coefficients
 
-            for (icol = 0; icol <= FirstOrder + LastOrder + 1; icol++)
+            for (icol = 0; icol <= firstOrder + lastOrder + 1; icol++)
             {
-                Coefficients[Dimension * icol + idim - 1] = B[icol];
+                coefficients[dimension * icol + idim - 1] = b[icol];
             }
         }
         return true;
@@ -1940,10 +1945,10 @@ public static class PLib
     /// <summary>
     /// Computes the number of Gauss points and the working degree for a Jacobi approximation with the given
     /// constraint order (C0, C1 or C2), maximum degree and precision code (-5 to -1, 1 to 4).
-    /// Throws <see cref="Standard_ConstructionError"/> on invalid arguments.
+    /// Throws <see cref="ConstructionErrorException"/> on invalid arguments.
     /// </summary>
-    public static void JacobiParameters(GeomAbs_Shape ConstraintOrder, int MaxDegree, int Code, out int NbGaussPoints,
-                                        out int WorkDegree)
+    public static void JacobiParameters(Continuity constraintOrder, int maxDegree, int code, out int nbGaussPoints,
+                                        out int workDegree)
     {
         // ConstraintOrder: Ordre de contrainte aux extremites :
         //            C0 = contraintes de passage aux bornes;
@@ -1967,254 +1972,254 @@ public static class PLib
 
         // The possible values of NbGaussPoints
 
-        const int NDEG8 = 8, NDEG10 = 10, NDEG15 = 15, NDEG20 = 20, NDEG25 = 25, NDEG30 = 30, NDEG40 = 40,
-                  NDEG50 = 50, NDEG61 = 61;
+        const int ndeg8 = 8, ndeg10 = 10, ndeg15 = 15, ndeg20 = 20, ndeg25 = 25, ndeg30 = 30, ndeg40 = 40,
+                  ndeg50 = 50, ndeg61 = 61;
 
-        int NivConstr = 0;
-        switch (ConstraintOrder)
+        int nivConstr = 0;
+        switch (constraintOrder)
         {
-            case GeomAbs_C0:
-                NivConstr = 0;
+            case C0:
+                nivConstr = 0;
                 break;
-            case GeomAbs_C1:
-                NivConstr = 1;
+            case C1:
+                nivConstr = 1;
                 break;
-            case GeomAbs_C2:
-                NivConstr = 2;
+            case C2:
+                nivConstr = 2;
                 break;
             default:
-                throw new Standard_ConstructionError("Invalid ConstraintOrder");
+                throw new ConstructionErrorException("Invalid ConstraintOrder");
         }
-        if (MaxDegree < 2 * NivConstr + 1)
+        if (maxDegree < 2 * nivConstr + 1)
         {
-            throw new Standard_ConstructionError("Invalid MaxDegree");
+            throw new ConstructionErrorException("Invalid MaxDegree");
         }
 
-        if (Code >= 1)
+        if (code >= 1)
         {
-            WorkDegree = MaxDegree + 9;
+            workDegree = maxDegree + 9;
         }
         else
         {
-            WorkDegree = MaxDegree + 6;
+            workDegree = maxDegree + 6;
         }
 
         //---> Nbre mini de points necessaires.
-        int IPMIN = 0;
-        if (WorkDegree < NDEG8)
+        int ipmin = 0;
+        if (workDegree < ndeg8)
         {
-            IPMIN = NDEG8;
+            ipmin = ndeg8;
         }
-        else if (WorkDegree < NDEG10)
+        else if (workDegree < ndeg10)
         {
-            IPMIN = NDEG10;
+            ipmin = ndeg10;
         }
-        else if (WorkDegree < NDEG15)
+        else if (workDegree < ndeg15)
         {
-            IPMIN = NDEG15;
+            ipmin = ndeg15;
         }
-        else if (WorkDegree < NDEG20)
+        else if (workDegree < ndeg20)
         {
-            IPMIN = NDEG20;
+            ipmin = ndeg20;
         }
-        else if (WorkDegree < NDEG25)
+        else if (workDegree < ndeg25)
         {
-            IPMIN = NDEG25;
+            ipmin = ndeg25;
         }
-        else if (WorkDegree < NDEG30)
+        else if (workDegree < ndeg30)
         {
-            IPMIN = NDEG30;
+            ipmin = ndeg30;
         }
-        else if (WorkDegree < NDEG40)
+        else if (workDegree < ndeg40)
         {
-            IPMIN = NDEG40;
+            ipmin = ndeg40;
         }
-        else if (WorkDegree < NDEG50)
+        else if (workDegree < ndeg50)
         {
-            IPMIN = NDEG50;
+            ipmin = ndeg50;
         }
-        else if (WorkDegree < NDEG61)
+        else if (workDegree < ndeg61)
         {
-            IPMIN = NDEG61;
+            ipmin = ndeg61;
         }
         else
         {
-            throw new Standard_ConstructionError("Invalid MaxDegree");
+            throw new ConstructionErrorException("Invalid MaxDegree");
         }
         // ---> Nbre de points voulus.
-        int IWANT = 0;
-        switch (Code)
+        int iwant = 0;
+        switch (code)
         {
             case -5:
-                IWANT = NDEG8;
+                iwant = ndeg8;
                 break;
             case -4:
-                IWANT = NDEG10;
+                iwant = ndeg10;
                 break;
             case -3:
-                IWANT = NDEG15;
+                iwant = ndeg15;
                 break;
             case -2:
-                IWANT = NDEG20;
+                iwant = ndeg20;
                 break;
             case -1:
-                IWANT = NDEG25;
+                iwant = ndeg25;
                 break;
             case 1:
-                IWANT = NDEG30;
+                iwant = ndeg30;
                 break;
             case 2:
-                IWANT = NDEG40;
+                iwant = ndeg40;
                 break;
             case 3:
-                IWANT = NDEG50;
+                iwant = ndeg50;
                 break;
             case 4:
-                IWANT = NDEG61;
+                iwant = ndeg61;
                 break;
             default:
-                throw new Standard_ConstructionError("Invalid Code");
+                throw new ConstructionErrorException("Invalid Code");
         }
         //-->  NbGaussPoints est le nombre de points de discretisation de la fonction,
         //     il ne peut prendre que les valeurs 8,10,15,20,25,30,40,50 ou 61.
         //     NbGaussPoints doit etre superieur strictement a WorkDegree.
-        NbGaussPoints = Max(IPMIN, IWANT);
+        nbGaussPoints = Max(ipmin, iwant);
         //  NbGaussPoints +=2;
     }
 
     /// <summary>Translates a constraint order (C0, C1, C2) into 0, 1, 2.</summary>
-    public static int NivConstr(GeomAbs_Shape ConstraintOrder)
+    public static int NivConstr(Continuity constraintOrder)
     {
-        int NivConstr = 0;
-        switch (ConstraintOrder)
+        int nivConstr = 0;
+        switch (constraintOrder)
         {
-            case GeomAbs_C0:
-                NivConstr = 0;
+            case C0:
+                nivConstr = 0;
                 break;
-            case GeomAbs_C1:
-                NivConstr = 1;
+            case C1:
+                nivConstr = 1;
                 break;
-            case GeomAbs_C2:
-                NivConstr = 2;
+            case C2:
+                nivConstr = 2;
                 break;
             default:
-                throw new Standard_ConstructionError("Invalid ConstraintOrder");
+                throw new ConstructionErrorException("Invalid ConstraintOrder");
         }
-        return NivConstr;
+        return nivConstr;
     }
 
     /// <summary>Translates 0, 1, 2 into a constraint order (C0, C1, C2).</summary>
-    public static GeomAbs_Shape ConstraintOrder(int NivConstr)
+    public static Continuity ConstraintOrder(int nivConstr)
     {
-        GeomAbs_Shape ConstraintOrder = GeomAbs_C0;
-        switch (NivConstr)
+        Continuity constraintOrder = C0;
+        switch (nivConstr)
         {
             case 0:
-                ConstraintOrder = GeomAbs_C0;
+                constraintOrder = C0;
                 break;
             case 1:
-                ConstraintOrder = GeomAbs_C1;
+                constraintOrder = C1;
                 break;
             case 2:
-                ConstraintOrder = GeomAbs_C2;
+                constraintOrder = C2;
                 break;
             default:
-                throw new Standard_ConstructionError("Invalid NivConstr");
+                throw new ConstructionErrorException("Invalid NivConstr");
         }
-        return ConstraintOrder;
+        return constraintOrder;
     }
 
     /// <summary>
     /// Computes the length of the polynomial curve (coefficients as for <see cref="EvalPolynomial"/>) between
-    /// <paramref name="U1"/> and <paramref name="U2"/> by Gauss integration.
+    /// <paramref name="u1"/> and <paramref name="u2"/> by Gauss integration.
     /// </summary>
-    public static void EvalLength(int Degree, int Dimension, ReadOnlySpan<double> PolynomialCoeff, double U1, double U2,
-                                  out double Length)
+    public static void EvalLength(int degree, int dimension, ReadOnlySpan<double> polynomialCoeff, double u1, double u2,
+                                  out double length)
     {
         int i, j, idim, degdim;
-        double C1, C2, Sum, Tran, X1, X2, Der1, Der2, D1, D2, DD;
+        double c1, c2, sum, tran, x1, x2, der1, der2, d1, d2, dd;
 
-        ReadOnlySpan<double> PolynomialArray = PolynomialCoeff;
+        ReadOnlySpan<double> polynomialArray = polynomialCoeff;
 
-        int NbGaussPoints = 4 * Min((Degree / 4) + 1, 10);
+        int nbGaussPoints = 4 * Min((degree / 4) + 1, 10);
 
-        math_Vector GaussPoints = new(1, NbGaussPoints);
-        math.GaussPoints(NbGaussPoints, GaussPoints);
+        math_Vector gaussPoints = new(1, nbGaussPoints);
+        NumericTables.GaussPoints(nbGaussPoints, gaussPoints);
 
-        math_Vector GaussWeights = new(1, NbGaussPoints);
-        math.GaussWeights(NbGaussPoints, GaussWeights);
+        math_Vector gaussWeights = new(1, nbGaussPoints);
+        NumericTables.GaussWeights(nbGaussPoints, gaussWeights);
 
-        C1 = (U2 + U1) / 2.0;
-        C2 = (U2 - U1) / 2.0;
+        c1 = (u2 + u1) / 2.0;
+        c2 = (u2 - u1) / 2.0;
 
         //-----------------------------------------------------------
         //****** Integration - Boucle sur les intervalles de GAUSS **
         //-----------------------------------------------------------
 
-        Sum = 0;
+        sum = 0;
 
-        for (j = 1; j <= NbGaussPoints / 2; j++)
+        for (j = 1; j <= nbGaussPoints / 2; j++)
         {
             // Integration en tenant compte de la symetrie
-            Tran = C2 * GaussPoints[j];
-            X1 = C1 + Tran;
-            X2 = C1 - Tran;
+            tran = c2 * gaussPoints[j];
+            x1 = c1 + tran;
+            x2 = c1 - tran;
 
             //****** Derivation sur la dimension de l'espace **
 
-            degdim = Degree * Dimension;
-            Der1 = Der2 = 0.0;
-            for (idim = 0; idim < Dimension; idim++)
+            degdim = degree * dimension;
+            der1 = der2 = 0.0;
+            for (idim = 0; idim < dimension; idim++)
             {
-                D1 = D2 = Degree * PolynomialArray[idim + degdim];
-                for (i = Degree - 1; i >= 1; i--)
+                d1 = d2 = degree * polynomialArray[idim + degdim];
+                for (i = degree - 1; i >= 1; i--)
                 {
-                    DD = i * PolynomialArray[idim + i * Dimension];
-                    D1 = D1 * X1 + DD;
-                    D2 = D2 * X2 + DD;
+                    dd = i * polynomialArray[idim + i * dimension];
+                    d1 = d1 * x1 + dd;
+                    d2 = d2 * x2 + dd;
                 }
-                Der1 += D1 * D1;
-                Der2 += D2 * D2;
+                der1 += d1 * d1;
+                der2 += d2 * d2;
             }
 
             //****** Integration **
 
-            Sum += GaussWeights[j] * C2 * (Math.Sqrt(Der1) + Math.Sqrt(Der2));
+            sum += gaussWeights[j] * c2 * (Math.Sqrt(der1) + Math.Sqrt(der2));
 
             //****** Fin de boucle dur les intervalles de GAUSS **
         }
-        Length = Sum;
+        length = sum;
     }
 
     /// <summary>
-    /// Computes the length of the polynomial curve between <paramref name="U1"/> and <paramref name="U2"/>,
-    /// subdividing until two successive estimates differ by at most <paramref name="Tol"/> (or 13 iterations);
-    /// <paramref name="Error"/> is that last difference.
+    /// Computes the length of the polynomial curve between <paramref name="u1"/> and <paramref name="u2"/>,
+    /// subdividing until two successive estimates differ by at most <paramref name="tol"/> (or 13 iterations);
+    /// <paramref name="error"/> is that last difference.
     /// </summary>
-    public static void EvalLength(int Degree, int Dimension, ReadOnlySpan<double> PolynomialCoeff, double U1, double U2,
-                                  double Tol, out double Length, out double Error)
+    public static void EvalLength(int degree, int dimension, ReadOnlySpan<double> polynomialCoeff, double u1, double u2,
+                                  double tol, out double length, out double error)
     {
         int i;
-        int NbSubInt = 1,  // Current number of subintervals
-          MaxNbIter = 13, // Max number of iterations
-          NbIter = 1;  // Current number of iterations
-        double dU, OldLen, LenI;
+        int nbSubInt = 1,  // Current number of subintervals
+          maxNbIter = 13, // Max number of iterations
+          nbIter = 1;  // Current number of iterations
+        double dU, oldLen, lenI;
 
-        PLib.EvalLength(Degree, Dimension, PolynomialCoeff, U1, U2, out Length);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(degree, dimension, polynomialCoeff, u1, u2, out length);
 
         do
         {
-            OldLen = Length;
-            Length = 0.0;
-            NbSubInt *= 2;
-            dU = (U2 - U1) / NbSubInt;
-            for (i = 1; i <= NbSubInt; i++)
+            oldLen = length;
+            length = 0.0;
+            nbSubInt *= 2;
+            dU = (u2 - u1) / nbSubInt;
+            for (i = 1; i <= nbSubInt; i++)
             {
-                PLib.EvalLength(Degree, Dimension, PolynomialCoeff, U1 + (i - 1) * dU, U1 + i * dU, out LenI);
-                Length += LenI;
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(degree, dimension, polynomialCoeff, u1 + (i - 1) * dU, u1 + i * dU, out lenI);
+                length += lenI;
             }
-            NbIter++;
-            Error = Math.Abs(OldLen - Length);
-        } while (Error > Tol && NbIter <= MaxNbIter);
+            nbIter++;
+            error = Math.Abs(oldLen - length);
+        } while (error > tol && nbIter <= maxNbIter);
     }
 }

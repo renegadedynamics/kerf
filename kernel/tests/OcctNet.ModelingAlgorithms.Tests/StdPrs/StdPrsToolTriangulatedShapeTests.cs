@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Engine.Meshing;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -56,19 +62,19 @@ public class StdPrsToolTriangulatedShapeTests
     [Fact]
     public void Prs3d_deflection_is_four_times_the_coefficient_of_the_largest_extent()
     {
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         Assert.Equal(0.25, Prs3d.GetDeflection(aBox, 0.001, 0.25)); // void
         aBox.Update(0.0, 0.0, 0.0, 10.0, 20.0, 30.0);
         Assert.Equal(30.0 * 0.001 * 4.0, Prs3d.GetDeflection(aBox, 0.001, 0.25));
-        Assert.Equal(Precision.Confusion(), Prs3d.GetDeflection(aBox, 1e-12, 0.25));
-        Assert.Equal(30.0 * 0.001 * 4.0, Prs3d.GetDeflection(new gp_XYZ(0.0, 0.0, 0.0), new gp_XYZ(10.0, 20.0, 30.0), 0.001));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), Prs3d.GetDeflection(aBox, 1e-12, 0.25));
+        Assert.Equal(30.0 * 0.001 * 4.0, Prs3d.GetDeflection(new Xyz(0.0, 0.0, 0.0), new Xyz(10.0, 20.0, 30.0), 0.001));
     }
 
     [Fact]
     public void The_deflection_is_relative_to_the_bounding_box_and_stored_in_the_drawer()
     {
         TopoDS_Shape aShape = Box();
-        var aBndBox = new Bnd_Box();
+        var aBndBox = new Box();
         BRepBndLib.Add(aShape, ref aBndBox, false);
         aBndBox.Get(out _, out _, out double aZMin, out _, out _, out double aZMax);
 
@@ -107,9 +113,9 @@ public class StdPrsToolTriangulatedShapeTests
         var anExpectedFaces = new TopExp_Explorer(anExpected, TopAbs_ShapeEnum.TopAbs_FACE);
         for (; aFaces.More(); aFaces.Next(), anExpectedFaces.Next())
         {
-            Poly_Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFaces.Current()), out _)!;
-            Poly_Triangulation anExpectedTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpectedFaces.Current()), out _)!;
-            Assert.Equal(anExpectedTriangulation.NbTriangles(), aTriangulation.NbTriangles());
+            Triangulation aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFaces.Current()), out _)!;
+            Triangulation anExpectedTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpectedFaces.Current()), out _)!;
+            Assert.Equal(anExpectedTriangulation.TriangleCount, aTriangulation.TriangleCount);
             Assert.Equal(anExpectedTriangulation.Deflection(), aTriangulation.Deflection());
         }
 

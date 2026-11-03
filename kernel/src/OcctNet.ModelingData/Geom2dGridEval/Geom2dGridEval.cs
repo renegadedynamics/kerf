@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ public static class Geom2dGridEval
     public interface ICurveEvaluator
     {
         /// <summary>Points at all parameters (1-based), or an empty array.</summary>
-        NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams);
+        NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams);
 
         /// <summary>Points and first derivatives at all parameters (1-based), or an empty array.</summary>
         NCollection_Array1<Geom2d_Curve.ResD1> EvaluateGridD1(NCollection_Array1<double> theParams);
@@ -32,6 +34,6 @@ public static class Geom2dGridEval
         NCollection_Array1<Geom2d_Curve.ResD3> EvaluateGridD3(NCollection_Array1<double> theParams);
 
         /// <summary>The derivative of order <paramref name="theN"/> (N &gt;= 1) at all parameters (1-based).</summary>
-        NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN);
+        NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN);
     }
 }

@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AppBlend_Debug;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Approx_ParametrizationType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -43,17 +46,17 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     private int udeg;
     private int vdeg;
     private bool knownp;
-    private NCollection_HArray2<gp_Pnt>? tabPoles;
+    private NCollection_HArray2<Point3D>? tabPoles;
     private NCollection_HArray2<double>? tabWeights;
     private NCollection_HArray1<double>? tabUKnots;
     private NCollection_HArray1<double>? tabVKnots;
     private NCollection_HArray1<int>? tabUMults;
     private NCollection_HArray1<int>? tabVMults;
-    private readonly NCollection_Sequence<NCollection_HArray1<gp_Pnt2d>> seqPoles2d = new();
+    private readonly NCollection_Sequence<NCollection_HArray1<Point2D>> seqPoles2d = new();
     private double tol3dreached;
     private double tol2dreached;
     private Approx_ParametrizationType paramtype;
-    private GeomAbs_Shape continuity;
+    private Continuity continuity;
     private readonly double[] critweights = new double[3];
 
     public AppBlend_AppSurf()
@@ -70,7 +73,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         tol3dreached = 0.0;
         tol2dreached = 0.0;
         paramtype = Approx_ChordLength;
-        continuity = GeomAbs_C2;
+        continuity = C2;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
         critweights[2] = 0.4;
@@ -90,7 +93,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         tol3dreached = 0.0;
         tol2dreached = 0.0;
         paramtype = Approx_ChordLength;
-        continuity = GeomAbs_C2;
+        continuity = C2;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
         critweights[2] = 0.4;
@@ -105,7 +108,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         tol2d = Tol2d;
         nbit = NbIt;
         knownp = KnownParameters;
-        continuity = GeomAbs_C2;
+        continuity = C2;
         paramtype = Approx_ChordLength;
         critweights[0] = 0.4;
         critweights[1] = 0.2;
@@ -125,7 +128,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (W1 < 0 || W2 < 0 || W3 < 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         critweights[0] = W1;
         critweights[1] = W2;
@@ -133,12 +136,12 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     }
 
     /// <summary>The continuity of the spline and smoothing approximations.</summary>
-    public void SetContinuity(GeomAbs_Shape TheCont)
+    public void SetContinuity(Continuity TheCont)
     {
         continuity = TheCont;
     }
 
-    public GeomAbs_Shape Continuity() => continuity;
+    public Continuity Continuity() => continuity;
 
     /// <summary>The type of parametrisation of the approximation.</summary>
     public void SetParType(Approx_ParametrizationType ParType)
@@ -176,7 +179,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         AppParCurves_Constraint Cfirst, Clast;
 
         double mytol3d, mytol2d;
-        gp_XYZ newDv = new();
+        Xyz newDv = new();
 
         seqPoles2d.Clear();
 
@@ -192,16 +195,16 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         F.Knots(tabUKnots.ChangeArray1());
         F.Mults(tabUMults.ChangeArray1());
 
-        NCollection_Array1<gp_Pnt> tabAppP = new(1, NbUPoles);
-        NCollection_Array1<gp_Vec> tabAppV = new(1, NbUPoles);
+        NCollection_Array1<Point3D> tabAppP = new(1, NbUPoles);
+        NCollection_Array1<Vector3D> tabAppV = new(1, NbUPoles);
 
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, Max(1, NbPoles2d));
-        NCollection_Array1<gp_Vec2d> tabV2d = new(1, Max(1, NbPoles2d));
+        NCollection_Array1<Point2D> tabP2d = new(1, Max(1, NbPoles2d));
+        NCollection_Array1<Vector2D> tabV2d = new(1, Max(1, NbPoles2d));
 
         NCollection_Array1<double> tabW = new(1, NbUPoles), tabDW = new(1, NbUPoles);
 
-        NCollection_Array1<gp_Pnt2d> tabAppP2d = new(1, NbPoles2d + NbUPoles); // points2d + poids
-        NCollection_Array1<gp_Vec2d> tabAppV2d = new(1, NbPoles2d + NbUPoles);
+        NCollection_Array1<Point2D> tabAppP2d = new(1, NbPoles2d + NbUPoles); // points2d + poids
+        NCollection_Array1<Vector2D> tabAppV2d = new(1, NbPoles2d + NbUPoles);
 
         AppParCurves_MultiBSpCurve multC;
 
@@ -401,15 +404,15 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                     UseSquares = true;
                 }
                 AppDef_BSplineCompute theapprox = new(dmin, dmax, tol3d, tol2d, nbit, true, paramtype, UseSquares);
-                if (continuity == GeomAbs_C0)
+                if (continuity == C0)
                 {
                     theapprox.SetContinuity(0);
                 }
-                if (continuity == GeomAbs_C1)
+                if (continuity == C1)
                 {
                     theapprox.SetContinuity(1);
                 }
-                else if (continuity == GeomAbs_C2)
+                else if (continuity == C2)
                 {
                     theapprox.SetContinuity(2);
                 }
@@ -491,7 +494,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 {
                     Variation.Approximate();
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     return;
                 }
@@ -512,7 +515,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         vdeg = multC.Degree();
         NbVPoles = multC.NbPoles();
 
-        tabPoles = new NCollection_HArray2<gp_Pnt>(1, NbUPoles, 1, NbVPoles);
+        tabPoles = new NCollection_HArray2<Point3D>(1, NbUPoles, 1, NbVPoles);
         tabWeights = new NCollection_HArray2<double>(1, NbUPoles, 1, NbVPoles);
         NCollection_Array1<double> aVKnots = multC.Knots();
         tabVKnots = new NCollection_HArray1<double>(aVKnots.Lower(), aVKnots.Upper());
@@ -520,15 +523,15 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         if (knownp && !UseSmoothing)
         {
-            BSplCLib.Reparametrize(F.Parameter(Lin.Point(1)), F.Parameter(Lin.Point(NbPoint)), tabVKnots.ChangeArray1());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(F.Parameter(Lin.Point(1)), F.Parameter(Lin.Point(NbPoint)), tabVKnots.ChangeArray1());
         }
 
         NCollection_Array1<int> aVMults = multC.Multiplicities();
         tabVMults = new NCollection_HArray1<int>(aVMults.Lower(), aVMults.Upper());
         tabVMults.ChangeArray1().Assign(aVMults);
 
-        NCollection_Array1<gp_Pnt> newtabP = new(1, NbVPoles);
-        NCollection_HArray1<gp_Pnt2d> newtabP2d = new(1, NbVPoles);
+        NCollection_Array1<Point3D> newtabP = new(1, NbVPoles);
+        NCollection_HArray1<Point2D> newtabP2d = new(1, NbVPoles);
         for (j = 1; j <= NbUPoles; j++)
         {
             multC.Curve(j, newtabP);
@@ -539,7 +542,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 // les poles par leurs poids respectifs
                 tabPoles[j, k].SetXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
                 double aWeight = newtabP2d.Value(k).X();
-                if (aWeight < gp.Resolution())
+                if (aWeight < Constants.Resolution())
                 {
                     done = false;
                     return;
@@ -550,7 +553,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         for (j = 1; j <= NbPoles2d; j++)
         {
-            newtabP2d = new NCollection_HArray1<gp_Pnt2d>(1, NbVPoles);
+            newtabP2d = new NCollection_HArray1<Point2D>(1, NbVPoles);
             multC.Curve(NbUPoles + j, newtabP2d.ChangeArray1());
             seqPoles2d.Append(newtabP2d);
         }
@@ -575,7 +578,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         AppParCurves_Constraint Cfirst = AppParCurves_NoConstraint, Clast = AppParCurves_NoConstraint;
 
         double mytol3d = 0.0, mytol2d = 0.0;
-        gp_XYZ newDv = new();
+        Xyz newDv = new();
 
         seqPoles2d.Clear();
 
@@ -589,14 +592,14 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         F.Knots(tabUKnots.ChangeArray1());
         F.Mults(tabUMults.ChangeArray1());
 
-        NCollection_Array1<gp_Pnt> tabAppP = new(1, NbUPoles);
-        NCollection_Array1<gp_Vec> tabAppV = new(1, NbUPoles);
+        NCollection_Array1<Point3D> tabAppP = new(1, NbUPoles);
+        NCollection_Array1<Vector3D> tabAppV = new(1, NbUPoles);
         double X, Y, Z, DX, DY, DZ;
         X = Y = Z = RealLast();
         DX = DY = DZ = RealFirst();
 
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, Max(1, NbPoles2d));
-        NCollection_Array1<gp_Vec2d> tabV2d = new(1, Max(1, NbPoles2d));
+        NCollection_Array1<Point2D> tabP2d = new(1, Max(1, NbPoles2d));
+        NCollection_Array1<Vector2D> tabV2d = new(1, Max(1, NbPoles2d));
         NCollection_Array1<double> X2d = new(1, Max(1, NbPoles2d));
         X2d.Init(RealLast());
         NCollection_Array1<double> Y2d = new(1, Max(1, NbPoles2d));
@@ -608,8 +611,8 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         NCollection_Array1<double> tabW = new(1, NbUPoles), tabDW = new(1, NbUPoles);
 
-        NCollection_Array1<gp_Pnt2d> tabAppP2d = new(1, NbPoles2d + NbUPoles); // points2d + poids
-        NCollection_Array1<gp_Vec2d> tabAppV2d = new(1, NbPoles2d + NbUPoles);
+        NCollection_Array1<Point2D> tabAppP2d = new(1, NbPoles2d + NbUPoles); // points2d + poids
+        NCollection_Array1<Vector2D> tabAppV2d = new(1, NbPoles2d + NbUPoles);
 
         // On calcule les boites de chaque ligne (box for all lines)
         for (i = 1; i <= NbPointTot; i++)
@@ -925,8 +928,8 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 if (knownp && theapprox.NbMultiCurves() > 1)
                 {
                     // OCCT: the poles of curve Index (the piece's number), not of the first curve (occt-issues.md)
-                    gp_Pnt aFirstPole = mucu.Pole(Index, 1);
-                    gp_Pnt aLastPole = mucu.Pole(Index, mucu.NbPoles());
+                    Point3D aFirstPole = mucu.Pole(Index, 1);
+                    Point3D aLastPole = mucu.Pole(Index, mucu.NbPoles());
                     aPoleDistSeq.Append(aFirstPole.Distance(aLastPole));
                     aWholeDist += aPoleDistSeq.Last();
                 }
@@ -951,7 +954,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         vdeg = multC.Degree();
         NbVPoles = multC.NbPoles();
 
-        tabPoles = new NCollection_HArray2<gp_Pnt>(1, NbUPoles, 1, NbVPoles);
+        tabPoles = new NCollection_HArray2<Point3D>(1, NbUPoles, 1, NbVPoles);
         tabWeights = new NCollection_HArray2<double>(1, NbUPoles, 1, NbVPoles);
         NCollection_Array1<double> aVKnots = multC.Knots();
         tabVKnots = new NCollection_HArray1<double>(aVKnots.Lower(), aVKnots.Upper());
@@ -962,7 +965,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
             //  modified by EAP Fri Jan  4 12:07:30 2002 ___BEGIN___
             if (aParamSeq.Length() != tabVKnots.Length())
             {
-                BSplCLib.Reparametrize(F.Parameter(Lin.Point(1)), F.Parameter(Lin.Point(Lin.NbPoints())),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(F.Parameter(Lin.Point(1)), F.Parameter(Lin.Point(Lin.NbPoints())),
                                        tabVKnots.ChangeArray1());
             }
             else
@@ -980,8 +983,8 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         tabVMults = new NCollection_HArray1<int>(aVMults.Lower(), aVMults.Upper());
         tabVMults.ChangeArray1().Assign(aVMults);
 
-        NCollection_Array1<gp_Pnt> newtabP = new(1, NbVPoles);
-        NCollection_HArray1<gp_Pnt2d> newtabP2d = new(1, NbVPoles);
+        NCollection_Array1<Point3D> newtabP = new(1, NbVPoles);
+        NCollection_HArray1<Point2D> newtabP2d = new(1, NbVPoles);
         for (j = 1; j <= NbUPoles; j++)
         {
             multC.Curve(j, newtabP);
@@ -992,7 +995,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
                 // les poles par leurs poids respectifs
                 tabPoles[j, k].SetXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
                 double aWeight = newtabP2d.Value(k).X();
-                if (aWeight < gp.Resolution())
+                if (aWeight < Constants.Resolution())
                 {
                     done = false;
                     return;
@@ -1003,7 +1006,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
 
         for (j = 1; j <= NbPoles2d; j++)
         {
-            newtabP2d = new NCollection_HArray1<gp_Pnt2d>(1, NbVPoles);
+            newtabP2d = new NCollection_HArray1<Point2D>(1, NbVPoles);
             multC.Curve(NbUPoles + j, newtabP2d.ChangeArray1());
             seqPoles2d.Append(newtabP2d);
         }
@@ -1018,7 +1021,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         UDegree = udeg;
         VDegree = vdeg;
@@ -1028,13 +1031,13 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         NbVKnots = tabVKnots!.Length();
     }
 
-    public override void Surface(NCollection_Array2<gp_Pnt> TPoles, NCollection_Array2<double> TWeights,
+    public override void Surface(NCollection_Array2<Point3D> TPoles, NCollection_Array2<double> TWeights,
                                  NCollection_Array1<double> TUKnots, NCollection_Array1<double> TVKnots,
                                  NCollection_Array1<int> TUMults, NCollection_Array1<int> TVMults)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         TPoles.Assign(tabPoles!.Array2());
         TWeights.Assign(tabWeights!.Array2());
@@ -1048,7 +1051,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return udeg;
     }
@@ -1057,16 +1060,16 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return vdeg;
     }
 
-    public override NCollection_Array2<gp_Pnt> SurfPoles()
+    public override NCollection_Array2<Point3D> SurfPoles()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabPoles!.Array2();
     }
@@ -1075,7 +1078,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabWeights!.Array2();
     }
@@ -1084,7 +1087,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabUKnots!.Array1();
     }
@@ -1093,7 +1096,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabVKnots!.Array1();
     }
@@ -1102,7 +1105,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabUMults!.Array1();
     }
@@ -1111,7 +1114,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tabVMults!.Array1();
     }
@@ -1120,7 +1123,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return seqPoles2d.Length();
     }
@@ -1129,11 +1132,11 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         Degree = vdeg;
         // OCCT: the number of U poles, where the 2d curves have the V poles (occt-issues.md)
@@ -1141,16 +1144,16 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
         NbKnots = tabVKnots!.Length();
     }
 
-    public override void Curve2d(int Index, NCollection_Array1<gp_Pnt2d> TPoles, NCollection_Array1<double> TKnots,
+    public override void Curve2d(int Index, NCollection_Array1<Point2D> TPoles, NCollection_Array1<double> TKnots,
                                  NCollection_Array1<int> TMults)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         TPoles.Assign(seqPoles2d[Index].Array1());
         TKnots.Assign(tabVKnots!.Array1());
@@ -1161,24 +1164,24 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return vdeg;
     }
 
-    public override NCollection_Array1<gp_Pnt2d> Curve2dPoles(int Index)
+    public override NCollection_Array1<Point2D> Curve2dPoles(int Index)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return seqPoles2d[Index].Array1();
     }
@@ -1187,11 +1190,11 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tabVKnots!.Array1();
     }
@@ -1200,11 +1203,11 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (seqPoles2d.Length() == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return tabVMults!.Array1();
     }
@@ -1213,7 +1216,7 @@ public class AppBlend_AppSurf<TheSectionGenerator, TheLine, ThePoint> : AppBlend
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         Tol3d = tol3dreached;
         Tol2d = tol2dreached;

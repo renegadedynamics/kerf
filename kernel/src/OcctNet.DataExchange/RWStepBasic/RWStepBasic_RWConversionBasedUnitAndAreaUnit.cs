@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -36,8 +38,8 @@ internal class RWStepBasic_RWConversionBasedUnitAndAreaUnit
         data.ReadString(num, 1, "name", ach, ref aName);
 
         // --- field : conversionFactor ---
-        Standard_Transient aConversionFactor = null;
-        data.ReadEntity(num, 2, "conversion_factor", ach, typeof(Standard_Transient), ref aConversionFactor);
+        Transient aConversionFactor = null;
+        data.ReadEntity(num, 2, "conversion_factor", ach, typeof(Transient), ref aConversionFactor);
         num = data.NextForComplex(num);
 
         if (!data.CheckNbParams(num, 1, ach, "named_unit"))

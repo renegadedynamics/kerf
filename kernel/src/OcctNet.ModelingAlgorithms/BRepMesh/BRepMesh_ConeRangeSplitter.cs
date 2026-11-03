@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Extends the default range splitter to generate the internal nodes of a conical surface.</summary>
@@ -27,7 +29,7 @@ public class BRepMesh_ConeRangeSplitter : BRepMesh_DefaultRangeSplitter
         (double first, double second) aRangeU = GetRangeU();
         (double first, double second) aRangeV = GetRangeV();
 
-        gp_Cone aCone = GetDFace().GetSurface().Cone();
+        Cone aCone = GetDFace().GetSurface().Cone();
         double aRefR = aCone.RefRadius();
         double aSAng = aCone.SemiAngle();
         double aRadius = Max(Math.Abs(aRefR + aRangeV.first * Math.Sin(aSAng)),
@@ -54,14 +56,14 @@ public class BRepMesh_ConeRangeSplitter : BRepMesh_DefaultRangeSplitter
     }
 
     /// <summary>The nodes of a regular grid over the face's range, with the steps of <see cref="GetSplitSteps"/>.</summary>
-    public override NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public override NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         (double first, double second) aRangeU = GetRangeU();
         (double first, double second) aRangeV = GetRangeV();
 
         (double first, double second) aSteps = GetSplitSteps(theParameters, out (int first, int second) _);
 
-        NCollection_List<gp_Pnt2d> aNodes = new();
+        NCollection_List<Point2D> aNodes = new();
 
         double aPasMaxV = aRangeV.second - aSteps.second * 0.5;
         double aPasMaxU = aRangeU.second - aSteps.first * 0.5;
@@ -69,7 +71,7 @@ public class BRepMesh_ConeRangeSplitter : BRepMesh_DefaultRangeSplitter
         {
             for (double aPasU = aRangeU.first + aSteps.first; aPasU < aPasMaxU; aPasU += aSteps.first)
             {
-                aNodes.Append(new gp_Pnt2d(aPasU, aPasV));
+                aNodes.Append(new Point2D(aPasU, aPasV));
             }
         }
 

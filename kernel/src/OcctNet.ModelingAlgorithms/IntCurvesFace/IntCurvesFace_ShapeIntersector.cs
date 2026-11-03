@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -53,7 +54,7 @@ public class IntCurvesFace_ShapeIntersector
     /// Intersects the segment [<paramref name="theParMin"/>, <paramref name="theParMax"/>] of the line
     /// <paramref name="theL"/> (they may be ∓RealLast) with the loaded faces.
     /// </summary>
-    public void Perform(in gp_Lin theL, double theParMin, double theParMax)
+    public void Perform(in Line3D theL, double theParMin, double theParMax)
     {
         myIsDone = false;
         for (int i = 1; i <= myNbFaces; ++i)
@@ -65,10 +66,10 @@ public class IntCurvesFace_ShapeIntersector
     }
 
     /// <summary>
-    /// As <see cref="Perform(in gp_Lin, double, double)"/>, but each face is intersected only up to the nearest
+    /// As <see cref="Perform(in Line3D, double, double)"/>, but each face is intersected only up to the nearest
     /// point found so far; the faces met first are tried first at the next call.
     /// </summary>
-    public void PerformNearest(in gp_Lin theL, double theParMin, double theParMax)
+    public void PerformNearest(in Line3D theL, double theParMin, double theParMax)
     {
         int i = 0;
         if (myNbFaces > 2)
@@ -186,7 +187,7 @@ public class IntCurvesFace_ShapeIntersector
     }
 
     /// <summary>The <paramref name="I"/>-th point.</summary>
-    public gp_Pnt Pnt(int I)
+    public Point3D Pnt(int I)
     {
         IntCurvesFace_Intersector anIntAdaptor = myIntersector[myIndexFace[myIndexPt[I]]];
         return anIntAdaptor.Pnt(myIndexIntPnt[myIndexPt[I]]);

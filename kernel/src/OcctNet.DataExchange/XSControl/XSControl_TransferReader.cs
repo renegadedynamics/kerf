@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_PrintCount;
 
 using static Occt.Interface_CheckStatus;
@@ -21,7 +22,7 @@ namespace Occt;
 /// Hence, final results (which intermediates and checks) are recorded as ResultFromModel and can be queried
 /// individually. Some more direct access are given for results which are Transient or Shapes
 /// </summary>
-public class XSControl_TransferReader : Standard_Transient
+public class XSControl_TransferReader : Transient
 {
     //  ****    UTILITAIRE DE STATISTIQUES GENERALES
 
@@ -82,13 +83,13 @@ public class XSControl_TransferReader : Standard_Transient
         return stat;
     }
 
-    private static void PrintPercent(Message_Messenger sout, string mess, int nb, int nl)
+    private static void PrintPercent(Messenger sout, string mess, int nb, int nl)
     {
         if (nb <= 0 || nl == 0)
         {
             return;
         }
-        using Message_Messenger.StreamBuffer aSender = sout.SendInfo();
+        using Messenger.StreamBuffer aSender = sout.SendInfo();
         aSender.Append("******      ").Append(mess).Append(": ");
         if (nb == nl)
         {
@@ -188,7 +189,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Sets a Context : according to receiving appli, to be interpreted by the Actor
     /// </summary>
-    public void SetContext(string name, Standard_Transient? ctx)
+    public void SetContext(string name, Transient? ctx)
     {
         myContext.Bind(name, ctx);
     }
@@ -197,7 +198,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns the Context attached to a name, if set and if it is Kind of the type, else a Null Handle Returns
     /// True if OK, False if no Context
     /// </summary>
-    public bool GetContext(string name, Type? type, ref Standard_Transient? ctx)
+    public bool GetContext(string name, Type? type, ref Transient? ctx)
     {
         if (myContext.IsEmpty())
         {
@@ -226,7 +227,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns (modifiable) the whole definition of Context Rather for internal use (ex.: preparing and setting
     /// in once)
     /// </summary>
-    public NCollection_DataMap<string, Standard_Transient>? Context()
+    public NCollection_DataMap<string, Transient>? Context()
     {
         return myContext;
     }
@@ -250,15 +251,15 @@ public class XSControl_TransferReader : Standard_Transient
     }
 
     // C++'s assignment of a map: theTarget becomes a copy of theSource (OCCT.NET).
-    internal static void AssignContext(NCollection_DataMap<string, Standard_Transient> theTarget,
-                                       NCollection_DataMap<string, Standard_Transient> theSource)
+    internal static void AssignContext(NCollection_DataMap<string, Transient> theTarget,
+                                       NCollection_DataMap<string, Transient> theSource)
     {
         if (ReferenceEquals(theTarget, theSource))
         {
             return;
         }
         theTarget.Clear();
-        foreach (KeyValuePair<string, Standard_Transient> anItem in theSource)
+        foreach (KeyValuePair<string, Transient> anItem in theSource)
         {
             theTarget.Bind(anItem.Key, anItem.Value);
         }
@@ -320,7 +321,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Records a final result of transferring an entity This result is recorded as a ResultFromModel, taken from
     /// the TransientProcess Returns True if a result is available, False else
     /// </summary>
-    public bool RecordResult(Standard_Transient? ent)
+    public bool RecordResult(Transient? ent)
     {
         if (myModel is null || myTP is null)
         {
@@ -356,7 +357,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns True if a final result is recorded for an entity Remark that it can bring no effective result if
     /// transfer has completely failed (FinalResult brings only fail messages ...)
     /// </summary>
-    public bool IsRecorded(Standard_Transient? ent)
+    public bool IsRecorded(Transient? ent)
     {
         if (myModel is null)
         {
@@ -378,7 +379,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns True if a final result is recorded AND BRINGS AN EFFECTIVE RESULT (else, it brings only fail
     /// messages)
     /// </summary>
-    public bool HasResult(Standard_Transient? ent)
+    public bool HasResult(Transient? ent)
     {
         if (myModel is null)
         {
@@ -404,10 +405,10 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns the list of entities to which a final result is attached (i.e. processed by RecordResult)
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? RecordedList()
+    public NCollection_HSequence<Transient>? RecordedList()
     {
-        NCollection_HSequence<Standard_Transient> li =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> li =
+            new NCollection_HSequence<Transient>();
         if (myModel is null)
         {
             return li;
@@ -431,7 +432,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// not implemented) It is not an error, but it gives a specific status : Skipped Returns True if done, False
     /// if &lt;ent&gt; is not in starting model
     /// </summary>
-    public bool Skip(Standard_Transient? ent)
+    public bool Skip(Transient? ent)
     {
         if (myModel is null || myTP is null)
         {
@@ -449,7 +450,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns True if an entity is noted as skipped
     /// </summary>
-    public bool IsSkipped(Standard_Transient? ent)
+    public bool IsSkipped(Transient? ent)
     {
         if (myModel is null)
         {
@@ -471,7 +472,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns True if an entity has been asked for transfert, hence it is marked, as : Recorded (a computation
     /// has ran, with or without an effective result), or Skipped (case ignored)
     /// </summary>
-    public bool IsMarked(Standard_Transient? ent)
+    public bool IsMarked(Transient? ent)
     {
         if (myModel is null)
         {
@@ -496,7 +497,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns the final result recorded for an entity, as such
     /// </summary>
-    public Transfer_ResultFromModel? FinalResult(Standard_Transient? ent)
+    public Transfer_ResultFromModel? FinalResult(Transient? ent)
     {
         Transfer_ResultFromModel res = null;
         if (myModel is null)
@@ -519,7 +520,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns the label attached to an entity recorded for final, or an empty string if not recorded
     /// </summary>
-    public string FinalEntityLabel(Standard_Transient? ent)
+    public string FinalEntityLabel(Transient? ent)
     {
         Transfer_ResultFromModel resu = FinalResult(ent);
         if (resu is null)
@@ -533,7 +534,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns the number attached to the entity recorded for final, or zero if not recorded (looks in the
     /// ResultFromModel)
     /// </summary>
-    public int FinalEntityNumber(Standard_Transient? ent)
+    public int FinalEntityNumber(Transient? ent)
     {
         Transfer_ResultFromModel resu = FinalResult(ent);
         if (resu is null)
@@ -564,9 +565,9 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns the resulting object as a Transient Null Handle if no result or result not transient
     /// </summary>
-    public Standard_Transient? TransientResult(Standard_Transient? ent)
+    public Transient? TransientResult(Transient? ent)
     {
-        Standard_Transient tres = null;
+        Transient tres = null;
         Transfer_ResultFromModel res = FinalResult(ent);
         if (res is null)
         {
@@ -592,7 +593,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Returns the resulting object as a Shape Null Shape if no result or result not a shape
     /// </summary>
-    public TopoDS_Shape ShapeResult(Standard_Transient? ent)
+    public TopoDS_Shape ShapeResult(Transient? ent)
     {
         TopoDS_Shape tres = default; // DOIT RESTER null
         Transfer_ResultFromModel res = FinalResult(ent);
@@ -624,7 +625,7 @@ public class XSControl_TransferReader : Standard_Transient
             ShapeFix.EncodeRegularity(sh, tolang);
             return sh;
         }
-        if (sh.TShape()!.IsFrozen())
+        if (sh.TShape()!.IsFrozen)
         {
             sh = BRepLib.RegularityEncoded(sh, tolang);
             return sh;
@@ -639,7 +640,7 @@ public class XSControl_TransferReader : Standard_Transient
 
     private static void encodeRegularityAround(in TopoDS_Shape theShape, double theTolAng)
     {
-        if (theShape.TShape()!.IsFrozen())
+        if (theShape.TShape()!.IsFrozen)
         {
             return;
         }
@@ -660,7 +661,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// simple internal strip, 10 for all but final result, 11 for all : just label, status and filename are kept
     /// Returns True when done, False if nothing was to clear
     /// </summary>
-    public bool ClearResult(Standard_Transient? ent, int mode)
+    public bool ClearResult(Transient? ent, int mode)
     {
         if (myModel is null)
         {
@@ -698,9 +699,9 @@ public class XSControl_TransferReader : Standard_Transient
     /// be, either a transient object (result itself) or a binder. For a binder of shape, calls
     /// EntityFromShapeResult Returns a Null Handle if &lt;res&gt; not recorded
     /// </summary>
-    public Standard_Transient? EntityFromResult(Standard_Transient? res, int mode = 0)
+    public Transient? EntityFromResult(Transient? res, int mode = 0)
     {
-        Standard_Transient nulh = null;
+        Transient nulh = null;
         //  case of the shape
         XSControl_Utils xu = new XSControl_Utils();
         TopoDS_Shape sh = xu.BinderShape(res);
@@ -765,7 +766,7 @@ public class XSControl_TransferReader : Standard_Transient
                 {
                     return nulh;
                 }
-                NCollection_HSequence<Standard_Transient> list =
+                NCollection_HSequence<Transient> list =
                     rec.Results(mode - 2);
                 int ir, nr = list.Length();
                 for (ir = 1; ir <= nr; ir++)
@@ -791,9 +792,9 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns an entity from which a given shape result was produced Returns a Null Handle if &lt;res&gt; not
     /// recorded or not a Shape
     /// </summary>
-    public Standard_Transient? EntityFromShapeResult(TopoDS_Shape res, int mode = 0)
+    public Transient? EntityFromShapeResult(TopoDS_Shape res, int mode = 0)
     {
-        Standard_Transient nulh = null, samesh = null, partner = null;
+        Transient nulh = null, samesh = null, partner = null;
         if (res.IsNull())
         {
             return nulh;
@@ -814,7 +815,7 @@ public class XSControl_TransferReader : Standard_Transient
                     {
                         continue;
                     }
-                    Standard_Transient ent = myTP.Mapped(i);
+                    Transient ent = myTP.Mapped(i);
                     TopoDS_Shape sh = TransferBRep.ShapeResult(myTP, ent);
                     if (!sh.IsNull())
                     {
@@ -859,7 +860,7 @@ public class XSControl_TransferReader : Standard_Transient
                     continue;
                 }
 
-                NCollection_HSequence<Standard_Transient> list =
+                NCollection_HSequence<Transient> list =
                     rec.Results(mode - 2);
                 int ir, nr = list.Length();
                 for (ir = 1; ir <= nr; ir++)
@@ -885,10 +886,10 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns the list of entities from which some shapes were produced : it corresponds to a loop on
     /// EntityFromShapeResult, but is optimised
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? EntitiesFromShapeList(NCollection_HSequence<TopoDS_Shape>? res, int mode = 0)
+    public NCollection_HSequence<Transient>? EntitiesFromShapeList(NCollection_HSequence<TopoDS_Shape>? res, int mode = 0)
     {
-        NCollection_HSequence<Standard_Transient> lt =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> lt =
+            new NCollection_HSequence<Transient>();
         if (res is null)
         {
             return lt;
@@ -945,7 +946,7 @@ public class XSControl_TransferReader : Standard_Transient
                     continue;
                 }
 
-                NCollection_HSequence<Standard_Transient> list =
+                NCollection_HSequence<Transient> list =
                     rec.Results(mode - 2);
                 int ir, nr = list.Length();
                 for (ir = 1; ir <= nr; ir++)
@@ -975,7 +976,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// (TransientProcess) &lt;level&gt; : 0 for &lt;ent&gt; only (D) 1 for &lt;ent&gt; and its immediate
     /// subtransfers, if any 2 for &lt;ent&gt; and subtransferts at all levels
     /// </summary>
-    public Interface_CheckIterator CheckList(Standard_Transient? ent, int level = 0)
+    public Interface_CheckIterator CheckList(Transient? ent, int level = 0)
     {
         Interface_CheckIterator chl = new Interface_CheckIterator();
         if (myModel is null || ent is null)
@@ -997,7 +998,7 @@ public class XSControl_TransferReader : Standard_Transient
             }
         }
         //  Check-List on a LIST ...
-        else if (ent is NCollection_HSequence<Standard_Transient> list)
+        else if (ent is NCollection_HSequence<Transient> list)
         {
             int i, nb = list.Length();
             for (i = 1; i <= nb; i++)
@@ -1056,7 +1057,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns True if an entity (with a final result) has checks : - failsonly = False : any kind of check
     /// message - failsonly = True : fails only Returns False if &lt;ent&gt; is not recorded
     /// </summary>
-    public bool HasChecks(Standard_Transient? ent, bool failsonly)
+    public bool HasChecks(Transient? ent, bool failsonly)
     {
         Transfer_ResultFromModel resu = FinalResult(ent);
         if (resu is null)
@@ -1084,10 +1085,10 @@ public class XSControl_TransferReader : Standard_Transient
     /// &lt;check&gt; = 2 , entities with fail &lt;result&gt; : if True, only entities with an attached result
     /// Remark : result True and check=0 will give an empty list
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? CheckedList(Standard_Transient? ent, Interface_CheckStatus withcheck = Interface_CheckAny, bool level = true)
+    public NCollection_HSequence<Transient>? CheckedList(Transient? ent, Interface_CheckStatus withcheck = Interface_CheckAny, bool level = true)
     {
-        NCollection_HSequence<Standard_Transient> res =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> res =
+            new NCollection_HSequence<Transient>();
         if (ent is null)
         {
             return res;
@@ -1105,7 +1106,7 @@ public class XSControl_TransferReader : Standard_Transient
                 }
             }
         }
-        else if (ent is NCollection_HSequence<Standard_Transient> list)
+        else if (ent is NCollection_HSequence<Transient> list)
         {
             int i, nb = list.Length();
             for (i = 1; i <= nb; i++)
@@ -1154,7 +1155,7 @@ public class XSControl_TransferReader : Standard_Transient
         actor = Actor();
         myTP.SetActor(actor); // Set properly
         myTP.SetErrorHandle(true);
-        NCollection_DataMap<string, Standard_Transient> aTPContext = myTP.Context();
+        NCollection_DataMap<string, Transient> aTPContext = myTP.Context();
         AssignContext(aTPContext, myContext); // C++'s map assignment: a copy
         return true;
     }
@@ -1163,7 +1164,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Tells if an entity is recognized as a valid candidate for Transfer. Calls method Recognize from the Actor
     /// (if known)
     /// </summary>
-    public bool Recognize(Standard_Transient? ent)
+    public bool Recognize(Transient? ent)
     {
         if (myActor is null)
         {
@@ -1177,7 +1178,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Returns count of transferred entities, ok or with fails (0/1) If &lt;rec&gt; is True (D), the result is
     /// recorded by RecordResult
     /// </summary>
-    public int TransferOne(Standard_Transient? ent, bool rec = true, Message_ProgressRange theProgress = default)
+    public int TransferOne(Transient? ent, bool rec = true, ProgressRange theProgress = default)
     {
         if (myActor is null || myModel is null)
         {
@@ -1192,7 +1193,7 @@ public class XSControl_TransferReader : Standard_Transient
             }
         }
 
-        using Message_Messenger.StreamBuffer sout = myTP.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = myTP.Messenger().SendInfo();
         int level = myTP.TraceLevel();
 
         Transfer_TransferOutput TP = new Transfer_TransferOutput(myTP, myModel);
@@ -1232,7 +1233,7 @@ public class XSControl_TransferReader : Standard_Transient
 
         //  only difference between TransferRoots and TransferOne
         int res = 0;
-        Standard_Transient obj = ent;
+        Transient obj = ent;
         TP.Transfer(obj, theProgress);
         if (theProgress.UserBreak())
         {
@@ -1265,7 +1266,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// Read Returns count of transferred entities, ok or with fails (0/1) If &lt;rec&gt; is True (D), the
     /// results are recorded by RecordResult
     /// </summary>
-    public int TransferList(NCollection_HSequence<Standard_Transient>? list, bool rec = true, Message_ProgressRange theProgress = default)
+    public int TransferList(NCollection_HSequence<Transient>? list, bool rec = true, ProgressRange theProgress = default)
     {
         if (myActor is null || myModel is null)
         {
@@ -1319,8 +1320,8 @@ public class XSControl_TransferReader : Standard_Transient
         //  only difference between TransferRoots and TransferOne
         int res = 0;
         nb = list.Length();
-        Standard_Transient obj = null;
-        Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, nb);
+        Transient obj = null;
+        ProgressScope aPS = new ProgressScope(theProgress, null, nb);
         for (i = 1; i <= nb && aPS.More(); i++)
         {
             obj = list.Value(i);
@@ -1352,7 +1353,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// (determined by the Graph &lt;G&gt;), using the selected Actor for Read Returns the count of performed
     /// root transfers (i.e. 0 if none) or -1 if no actor is defined
     /// </summary>
-    public int TransferRoots(Interface_Graph G, Message_ProgressRange theProgress = default)
+    public int TransferRoots(Interface_Graph G, ProgressRange theProgress = default)
     {
         if (myModel != G.Model())
         {
@@ -1407,7 +1408,7 @@ public class XSControl_TransferReader : Standard_Transient
         int i, n = myTP.NbMapped();
         for (i = 1; i <= n; i++)
         {
-            Standard_Transient ent = myTP.Mapped(i);
+            Transient ent = myTP.Mapped(i);
             Transfer_Binder bnd = myTP.MapItem(i);
             if (bnd is null)
             {
@@ -1429,7 +1430,7 @@ public class XSControl_TransferReader : Standard_Transient
     /// <summary>
     /// Clears the results attached to an entity if &lt;ents&gt; equates the starting model, clears all results
     /// </summary>
-    public void TransferClear(Standard_Transient? ent, int level = 0)
+    public void TransferClear(Transient? ent, int level = 0)
     {
         if (myTP is null)
         {
@@ -1477,7 +1478,7 @@ public class XSControl_TransferReader : Standard_Transient
             sout.Write('\n');
             return;
         }
-        NCollection_HSequence<Standard_Transient> list = RecordedList();
+        NCollection_HSequence<Transient> list = RecordedList();
         int i, nb = list.Length();
         IFSelect_SignatureList counter = null;
         if (mode > 2)
@@ -1495,7 +1496,7 @@ public class XSControl_TransferReader : Standard_Transient
         sout.Write(" : entities n0s : ");
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient ent = list.Value(i);
+            Transient ent = list.Value(i);
             if (mode == 0)
             {
                 sout.Write("  ");
@@ -1543,10 +1544,10 @@ public class XSControl_TransferReader : Standard_Transient
     /// from last Clear If &lt;roots&gt; is True , considers only roots of transfer If &lt;roots&gt; is False,
     /// considers all entities bound with result
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? LastTransferList(bool roots)
+    public NCollection_HSequence<Transient>? LastTransferList(bool roots)
     {
-        NCollection_HSequence<Standard_Transient> li =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> li =
+            new NCollection_HSequence<Transient>();
         if (myTP is null)
         {
             return li;
@@ -1597,7 +1598,7 @@ public class XSControl_TransferReader : Standard_Transient
             {
                 return myShapeResult;
             }
-            NCollection_HSequence<Standard_Transient> li = RecordedList();
+            NCollection_HSequence<Transient> li = RecordedList();
             myShapeResult = new NCollection_HSequence<TopoDS_Shape>();
             int i, nb = myModel.NbEntities();
             TopoDS_Shape sh;
@@ -1630,14 +1631,14 @@ public class XSControl_TransferReader : Standard_Transient
     /// </summary>
     public static void PrintStatsProcess(Transfer_TransientProcess? TP, int what, int mode = 0)
     {
-        NCollection_HSequence<Standard_Transient> list = null; // null
+        NCollection_HSequence<Transient> list = null; // null
         XSControl_TransferReader.PrintStatsOnList(TP, list, what, mode);
     }
 
     /// <summary>
     /// Works as PrintStatsProcess, but displays data only on the entities which are in &lt;list&gt; (filter)
     /// </summary>
-    public static void PrintStatsOnList(Transfer_TransientProcess? TP, NCollection_HSequence<Standard_Transient>? list, int what, int mode = 0)
+    public static void PrintStatsOnList(Transfer_TransientProcess? TP, NCollection_HSequence<Transient>? list, int what, int mode = 0)
     {
         // OCCT: one stream buffer of TP's messenger (made before TP is tested), sent when the function returns
         if (TP is null)
@@ -1658,7 +1659,7 @@ public class XSControl_TransferReader : Standard_Transient
         }
     }
 
-    internal static void PrintStatsOnList(Transfer_TransientProcess TP, NCollection_HSequence<Standard_Transient>? list,
+    internal static void PrintStatsOnList(Transfer_TransientProcess TP, NCollection_HSequence<Transient>? list,
                                          int what, int mode, TextWriter sout)
     {
         string mess = "";
@@ -1781,7 +1782,7 @@ public class XSControl_TransferReader : Standard_Transient
             {
                 nbi++;
                 Transfer_Binder binder = itrp.Value();
-                Standard_Transient ent = itrp.Starting();
+                Transient ent = itrp.Starting();
                 if (binder is null)
                 {
                     nbnr++;
@@ -1963,10 +1964,10 @@ public class XSControl_TransferReader : Standard_Transient
     private string myFileName = "";
     private Interface_InterfaceModel? myModel;
     private Interface_HGraph? myGraph;
-    private NCollection_DataMap<string, Standard_Transient> myContext = new NCollection_DataMap<string, Standard_Transient>();
+    private NCollection_DataMap<string, Transient> myContext = new NCollection_DataMap<string, Transient>();
     private Transfer_ActorOfTransientProcess? myActor;
     private Transfer_TransientProcess? myTP;
-    private NCollection_DataMap<int, Standard_Transient> myResults = new NCollection_DataMap<int, Standard_Transient>();
+    private NCollection_DataMap<int, Transient> myResults = new NCollection_DataMap<int, Transient>();
     private Interface_StaticSet? myStatics;
     private NCollection_HSequence<TopoDS_Shape>? myShapeResult;
 }

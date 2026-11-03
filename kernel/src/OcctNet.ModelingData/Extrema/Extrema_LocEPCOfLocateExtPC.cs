@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -31,14 +37,14 @@ public class Extrema_LocEPCOfLocateExtPC
     }
 
     /// <summary>The extremum between theP and theC nearest theU0, on the curve's whole range.</summary>
-    public Extrema_LocEPCOfLocateExtPC(in gp_Pnt theP, Adaptor3d_Curve theC, double theU0, double theTolU)
+    public Extrema_LocEPCOfLocateExtPC(in Point3D theP, Adaptor3d_Curve theC, double theU0, double theTolU)
     {
         Initialize(theC, Extrema_CurveTool.FirstParameter(theC), Extrema_CurveTool.LastParameter(theC), theTolU);
         Perform(theP, theU0);
     }
 
     /// <summary>The extremum between theP and theC nearest theU0, on [theUmin, theUsup].</summary>
-    public Extrema_LocEPCOfLocateExtPC(in gp_Pnt theP, Adaptor3d_Curve theC, double theU0, double theUmin,
+    public Extrema_LocEPCOfLocateExtPC(in Point3D theP, Adaptor3d_Curve theC, double theU0, double theUmin,
         double theUsup, double theTolU)
     {
         Initialize(theC, theUmin, theUsup, theTolU);
@@ -56,11 +62,11 @@ public class Extrema_LocEPCOfLocateExtPC
     }
 
     /// <summary>Searches the extremum for theP from the parameter theU0.</summary>
-    public void Perform(in gp_Pnt theP, double theU0)
+    public void Perform(in Point3D theP, double theU0)
     {
         myF.SetPoint(theP);
-        math_FunctionRoot S = new(myF, theU0, mytolU, myumin, myusup);
-        myDone = S.IsDone();
+        FunctionRoot S = new(myF, theU0, mytolU, myumin, myusup);
+        myDone = S.IsDone;
         if (myDone)
         {
             double uu;
@@ -84,34 +90,34 @@ public class Extrema_LocEPCOfLocateExtPC
     public bool IsDone() => myDone;
 
     /// <summary>The square distance of the extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double SquareDistance()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.SquareDistance(1);
     }
 
     /// <summary>True if the extremum is a minimum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IsMin()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.IsMin(1);
     }
 
     /// <summary>The point of the extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public Extrema_POnCurv Point()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.Point(1);
     }

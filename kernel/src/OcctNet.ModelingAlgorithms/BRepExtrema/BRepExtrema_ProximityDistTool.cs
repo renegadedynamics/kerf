@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2022-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using BVH_PrjState = Occt.BVH_Tools<double, Occt.NCollection_Vec3<double>>.BVH_PrjStateInTriangle;
+using Kerf.Engine.Geometry.Bvh;
+using Kerf.Engine.Meshing;
+using BVH_PrjState = Kerf.Engine.Geometry.Bvh.Tools<double, Occt.NCollection_Vec3<double>>.BVH_PrjStateInTriangle;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -15,7 +17,7 @@ namespace Occt;
 /// perpendicular one). Results are approximate and depend on the tessellations.
 /// </summary>
 /// <remarks>A working object (decision 21), used by <see cref="BRepExtrema_ProximityValueTool"/>.</remarks>
-public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH_Vec3d, BRepExtrema_TriangleSet>
+public class BRepExtrema_ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, BRepExtrema_TriangleSet>
 {
     /// <summary>The status of a proximity point: on the border or inside its shape.</summary>
     public enum ProxPnt_Status
@@ -36,7 +38,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
         public PrjState()
         {
             myTrgIdx = 0;
-            myPrjState = BVH_PrjState.BVH_PrjStateInTriangle_INNER;
+            myPrjState = BVH_PrjState.PrjStateInTriangle_INNER;
             myNumberOfFirstNode = 0;
             myNumberOfLastNode = 0;
         }
@@ -141,23 +143,23 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
         int aVtxStep = Max(myNbSamples1 <= 0 ? 1 : aVtxSize / myNbSamples1, 1);
         for (int aVtxIdx = 0; aVtxIdx < aVtxSize; aVtxIdx += aVtxStep)
         {
-            myDistance = double.MaxValue;
+            _distance = double.MaxValue;
             myMinDistance = double.MaxValue;
-            myIsDone = false;
+            _isDone = false;
             SetObject(theVertices1[aVtxIdx]);
 
             ComputeDistance();
 
-            if (!IsDone() && myProxDist < 0.0)
+            if (!IsDone && myProxDist < 0.0)
             {
                 return;
             }
 
-            if (IsDone() && myDistance > myProxDist)
+            if (IsDone && _distance > myProxDist)
             {
                 myPnt1 = theVertices1[aVtxIdx];
                 myPnt2 = myExtremaPoint;
-                myProxDist = myDistance;
+                myProxDist = _distance;
                 myProxVtxIdx1 = aVtxIdx;
                 myIsProxVtx1FromAddSet = theIsAdditionalSet;
                 myProxPrjState = myExtPrjState;
@@ -173,9 +175,9 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
         goThroughtSet1(mySet1!.GetVertices(), false);
         goThroughtSet1(myAddVertices1, true);
 
-        myIsDone = myProxDist > -1.0;
+        _isDone = myProxDist > -1.0;
 
-        if (myIsDone)
+        if (_isDone)
         {
             DefineStatusProxPnt();
         }
@@ -205,11 +207,11 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
     /// <summary>Rejects a node by its bounding box.</summary>
     public override bool RejectNode(in BVH_Vec3d theCornerMin, in BVH_Vec3d theCornerMax, out double theMetric)
     {
-        theMetric = Math.Sqrt(BVH_Tools<double, BVH_Vec3d>.PointBoxSquareDistance(myObject, theCornerMin, theCornerMax));
+        theMetric = Math.Sqrt(Tools<double, BVH_Vec3d>.PointBoxSquareDistance(_object, theCornerMin, theCornerMax));
 
-        double aMaxMetric = Math.Sqrt(pointBoxSquareMaxDistance(myObject, theCornerMin, theCornerMax));
+        double aMaxMetric = Math.Sqrt(pointBoxSquareMaxDistance(_object, theCornerMin, theCornerMax));
 
-        return theMetric > myDistance || aMaxMetric < myProxDist;
+        return theMetric > _distance || aMaxMetric < myProxDist;
     }
 
     /// <summary>Accepts a leaf element (a triangle of the second set).</summary>
@@ -221,7 +223,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
 
         mySet2!.GetVertices(theTrgIdx, out BVH_Vec3d aTrgVert1, out BVH_Vec3d aTrgVert2, out BVH_Vec3d aTrgVert3);
 
-        BVH_Vec3d aNearestPnt = BVH_Tools<double, BVH_Vec3d>.PointTriangleProjection(myObject,
+        BVH_Vec3d aNearestPnt = Tools<double, BVH_Vec3d>.PointTriangleProjection(_object,
                                                                                     aTrgVert1,
                                                                                     aTrgVert2,
                                                                                     aTrgVert3,
@@ -230,17 +232,17 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
                                                                                     ref aNumberOfLastNode);
 
         var aPrjState = new PrjState(theTrgIdx, aBVH_PrjState, aNumberOfFirstNode, aNumberOfLastNode);
-        BVH_Vec3d aDirect = myObject - aNearestPnt;
+        BVH_Vec3d aDirect = _object - aNearestPnt;
         double aSqDistance = aDirect.Dot(aDirect);
 
-        if (aSqDistance > Precision.SquareConfusion()) // point belongs to triangle
+        if (aSqDistance > global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // point belongs to triangle
         {
             BVH_Vec3d aAB = aTrgVert2 - aTrgVert1;
 
             BVH_Vec3d aNorm;
             if (aTrgVert2.IsEqual(aTrgVert3)) // is this degenerate triangle (= segment)
             {
-                BVH_Vec3d aAP = myObject - aTrgVert1;
+                BVH_Vec3d aAP = _object - aTrgVert1;
                 aNorm = BVH_Vec3d.Cross(BVH_Vec3d.Cross(aAP, aAB), aAB);
             }
             else
@@ -254,10 +256,10 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
             // check if the distance is under perpendicular
             BVH_Vec3d aCrossCross = BVH_Vec3d.Cross(aDirect, aNorm);
             double aCrossCrossSqLen = aCrossCross.Dot(aCrossCross);
-            if (aCrossCrossSqLen > Precision.SquareConfusion() * aSqDistance * aNormSqLen)
+            if (aCrossCrossSqLen > global::Kerf.Engine.Foundation.Precision.SquareConfusion() * aSqDistance * aNormSqLen)
             {
                 // the distance is not under perpendicular
-                if (myMinDistance - Math.Sqrt(aSqDistance) > Precision.Confusion())
+                if (myMinDistance - Math.Sqrt(aSqDistance) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     myMinDistance = Math.Sqrt(aSqDistance);
                     myMinDistPoint = aNearestPnt;
@@ -269,9 +271,9 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
         }
 
         // the distance is under perpendicular
-        if (myDistance - Math.Sqrt(aSqDistance) > Precision.Confusion())
+        if (_distance - Math.Sqrt(aSqDistance) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            myDistance = Math.Sqrt(aSqDistance);
+            _distance = Math.Sqrt(aSqDistance);
             myExtremaPoint = aNearestPnt;
             myExtPrjState = aPrjState;
 
@@ -287,27 +289,27 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
     /// </summary>
     protected new double ComputeDistance()
     {
-        myIsDone = Select() > 0;
+        _isDone = Select() > 0;
 
-        if (!myIsDone)
+        if (!_isDone)
         {
             if (myMinDistance < double.MaxValue)
             {
                 myExtremaPoint = myMinDistPoint;
                 myExtPrjState = myMinPrjState;
-                myIsDone = true;
+                _isDone = true;
             }
 
-            myDistance = myMinDistance;
+            _distance = myMinDistance;
         }
 
-        return myDistance;
+        return _distance;
     }
 
     /// <summary>True if the node is on the border of the triangulation.</summary>
-    public static bool IsNodeOnBorder(int theNodeIdx, Poly_Triangulation theTr)
+    public static bool IsNodeOnBorder(int theNodeIdx, Triangulation theTr)
     {
-        var aPolyConnect = new Poly_Connect(theTr);
+        var aPolyConnect = new Connect(theTr);
 
         int aContTrg; // index of triangle containing exploring node
         Span<int> aContTrgNodes = stackalloc int[3];
@@ -338,9 +340,9 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
     }
 
     /// <summary>True if the edge (given by the numbers of its nodes in the triangle) is on the border.</summary>
-    public static bool IsEdgeOnBorder(int theTrgIdx, int theFirstEdgeNodeIdx, int theSecondEdgeNodeIdx, Poly_Triangulation theTr)
+    public static bool IsEdgeOnBorder(int theTrgIdx, int theFirstEdgeNodeIdx, int theSecondEdgeNodeIdx, Triangulation theTr)
     {
-        var aPolyConnect = new Poly_Connect(theTr);
+        var aPolyConnect = new Connect(theTr);
 
         Span<int> aAdjTrg = stackalloc int[3];
         aPolyConnect.Triangles(theTrgIdx, out aAdjTrg[0], out aAdjTrg[1], out aAdjTrg[2]); // indices of adjacent triangles
@@ -377,7 +379,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
             int aVtxSize = aVertices1.Size();
             int aLastIdx = aVtxSize - 1;
 
-            if ((aVertices1[0] - aVertices1[aLastIdx]).Modulus() < Precision.Confusion()) // if closed
+            if ((aVertices1[0] - aVertices1[aLastIdx]).Modulus() < global::Kerf.Engine.Foundation.Precision.Confusion()) // if closed
             {
                 myPntStatus1 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
                 return;
@@ -397,7 +399,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
             int aNodeIdx = mySet1.GetVtxIdxInShape(myProxVtxIdx1) + 1;
 
             TopoDS_Face aF = TopoDS.Face(myShapeList1[aFaceID1]);
-            Poly_Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
+            Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
 
             if (IsNodeOnBorder(aNodeIdx, aTr))
             {
@@ -417,7 +419,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
 
         if (myShapeList2[aFaceID2].ShapeType() == TopAbs_EDGE)
         {
-            if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_INNER)
+            if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {
                 return;
             }
@@ -427,7 +429,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
                 int aVtxSize = aVertices2.Size();
                 int aLastIdx = aVtxSize - 1;
 
-                if ((aVertices2[0] - aVertices2[aLastIdx]).Modulus() < Precision.Confusion()) // if closed
+                if ((aVertices2[0] - aVertices2[aLastIdx]).Modulus() < global::Kerf.Engine.Foundation.Precision.Confusion()) // if closed
                 {
                     myPntStatus2 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
                     return;
@@ -438,7 +440,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
                 int aFirstNodeNum = myProxPrjState.GetNumberOfFirstNode();
                 int aFirstVtxIdx = aVtxIndicesOfTrg[aFirstNodeNum];
 
-                if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_VERTEX)
+                if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_VERTEX)
                 {
                     if (aFirstVtxIdx == 0 || aFirstVtxIdx == aLastIdx)
                     {
@@ -449,7 +451,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
                         myPntStatus2 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
                     }
                 }
-                else if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_EDGE)
+                else if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_EDGE)
                 {
                     int aLastNodeNum = myProxPrjState.GetNumberOfLastNode();
                     int aLastVtxIdx = aVtxIndicesOfTrg[aLastNodeNum];
@@ -468,18 +470,18 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
         }
         else if (myShapeList2[aFaceID2].ShapeType() == TopAbs_FACE)
         {
-            if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_INNER)
+            if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {
                 myPntStatus2 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
             }
             else
             {
                 TopoDS_Face aF = TopoDS.Face(myShapeList2[aFaceID2]);
-                Poly_Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
+                Triangulation aTr = BRep_Tool.Triangulation(aF, out _)!;
 
                 mySet2.GetVtxIndices(aTrgIdx, out NCollection_Array1<int> aVtxIndicesOfTrg);
 
-                if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_VERTEX)
+                if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_VERTEX)
                 {
                     int aNodeNum = myProxPrjState.GetNumberOfFirstNode();
                     int aNodeIdx = mySet2.GetVtxIdxInShape(aVtxIndicesOfTrg[aNodeNum]) + 1;
@@ -493,7 +495,7 @@ public class BRepExtrema_ProximityDistTool : BVH_Distance<double, BVH_Vec3d, BVH
                         myPntStatus2 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
                     }
                 }
-                else if (myProxPrjState.GetPrjState() == BVH_PrjState.BVH_PrjStateInTriangle_EDGE)
+                else if (myProxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_EDGE)
                 {
                     int aTrgIdxInShape = mySet2.GetTrgIdxInShape(aTrgIdx) + 1;
 

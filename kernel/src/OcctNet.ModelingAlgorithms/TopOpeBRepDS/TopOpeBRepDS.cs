@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -116,7 +117,7 @@ public static class TopOpeBRepDS
     }
 
     /// <summary>The two-letter name of a shape type.</summary>
-    /// <exception cref="Standard_ProgramError">The type is TopAbs_SHAPE.</exception>
+    /// <exception cref="ProgramErrorException">The type is TopAbs_SHAPE.</exception>
     public static string SPrint(TopAbs_ShapeEnum t) => SPrint(ShapeToKind(t));
 
     /// <summary>A shape type and index.</summary>
@@ -193,7 +194,7 @@ public static class TopOpeBRepDS
     }
 
     /// <summary>The kind of a shape type.</summary>
-    /// <exception cref="Standard_ProgramError">The type is TopAbs_SHAPE.</exception>
+    /// <exception cref="ProgramErrorException">The type is TopAbs_SHAPE.</exception>
     public static TopOpeBRepDS_Kind ShapeToKind(TopAbs_ShapeEnum S)
     {
         TopOpeBRepDS_Kind res = TopOpeBRepDS_SOLID; // bidon
@@ -224,7 +225,7 @@ public static class TopOpeBRepDS
                 res = TopOpeBRepDS_COMPOUND;
                 break;
             default:
-                throw new Standard_ProgramError("TopOpeBRepDS::ShapeToKind");
+                throw new ProgramErrorException("TopOpeBRepDS::ShapeToKind");
         }
         return res;
     }
@@ -265,7 +266,7 @@ public static class TopOpeBRepDS
                 res = TopAbs_COMPOUND;
                 break;
             default:
-                throw new Standard_ProgramError("TopOpeBRepDS::KindToShape");
+                throw new ProgramErrorException("TopOpeBRepDS::KindToShape");
         }
         return res;
     }

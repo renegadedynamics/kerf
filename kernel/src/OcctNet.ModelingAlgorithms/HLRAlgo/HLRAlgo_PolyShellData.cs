@@ -3,11 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>The face data of a shell for the polygonal hidden-line removal, its hiding faces and its segments.</summary>
 /// <remarks>A working object (a transient), as OCCT's.</remarks>
-public class HLRAlgo_PolyShellData : Standard_Transient
+public class HLRAlgo_PolyShellData : Transient
 {
     /// <summary>The shell's min-max indices (plain data).</summary>
     public struct ShellIndices
@@ -28,7 +32,7 @@ public class HLRAlgo_PolyShellData : Standard_Transient
     }
 
     /// <summary>Adds the segments' projected points and the faces' hiding nodes to <paramref name="theBox"/>.</summary>
-    public void UpdateGlobalMinMax(ref Bnd_Box theBox)
+    public void UpdateGlobalMinMax(ref Box theBox)
     {
         for (NCollection_List<HLRAlgo_BiPoint>.Iterator it = new(mySegList); it.More(); it.Next())
         {

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -44,20 +46,20 @@ public class BRepPrimAPI_MakeTorus : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A torus on the axes.</summary>
-    public BRepPrimAPI_MakeTorus(in gp_Ax2 Axes, double R1, double R2)
+    public BRepPrimAPI_MakeTorus(in Frame3D Axes, double R1, double R2)
     {
         myTorus = new BRepPrim_Torus(Axes, R1, R2);
     }
 
     /// <summary>A torus pipe segment on the axes.</summary>
-    public BRepPrimAPI_MakeTorus(in gp_Ax2 Axes, double R1, double R2, double angle)
+    public BRepPrimAPI_MakeTorus(in Frame3D Axes, double R1, double R2, double angle)
     {
         myTorus = new BRepPrim_Torus(Axes, R1, R2);
         myTorus.Angle(angle);
     }
 
     /// <summary>A torus ring segment on the axes.</summary>
-    public BRepPrimAPI_MakeTorus(in gp_Ax2 Axes, double R1, double R2, double angle1, double angle2)
+    public BRepPrimAPI_MakeTorus(in Frame3D Axes, double R1, double R2, double angle1, double angle2)
     {
         myTorus = new BRepPrim_Torus(Axes, R1, R2);
         myTorus.VMin(angle1);
@@ -65,7 +67,7 @@ public class BRepPrimAPI_MakeTorus : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A torus ring and pipe segment on the axes.</summary>
-    public BRepPrimAPI_MakeTorus(in gp_Ax2 Axes, double R1, double R2, double angle1, double angle2, double angle)
+    public BRepPrimAPI_MakeTorus(in Frame3D Axes, double R1, double R2, double angle1, double angle2, double angle)
     {
         myTorus = new BRepPrim_Torus(Axes, R1, R2);
         myTorus.VMin(angle1);

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ public class MoniTool_TransientElem : MoniTool_Element
     /// Creates a TransientElem with a Value. This Value can then not be changed. It is used by the Hasher to
     /// compute the HashCode, which will then be stored for an immediate reading.
     /// </summary>
-    public MoniTool_TransientElem(Standard_Transient? akey)
+    public MoniTool_TransientElem(Transient? akey)
     {
         theval = akey;
         // OCCT.NET: std::hash of the handle (its address) is the object's identity hash
@@ -30,7 +32,7 @@ public class MoniTool_TransientElem : MoniTool_Element
     /// <summary>
     /// Returns the contained value
     /// </summary>
-    public Standard_Transient? Value()
+    public Transient? Value()
     {
         return theval;
     }
@@ -75,5 +77,5 @@ public class MoniTool_TransientElem : MoniTool_Element
         return MoniTool_DataInfo.TypeName(theval);
     }
 
-    private Standard_Transient? theval;
+    private Transient? theval;
 }

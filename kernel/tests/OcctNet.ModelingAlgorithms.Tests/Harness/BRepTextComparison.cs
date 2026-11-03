@@ -8,6 +8,8 @@
 // the oracle (or a recorded file), and call Compare(native, port). A case is "bytes-identical" when
 // IsIdenticalMaskingFree holds; FreeFlagDifferences is reported apart. Otherwise fall back to CanonicalShapeComparer.
 
+using Kerf.Engine.Foundation;
+
 namespace OcctNet.TestHarness;
 
 /// <summary>The result of comparing two BRep texts.</summary>
@@ -41,7 +43,7 @@ internal sealed class BRepTextDiff
 /// <summary>BRep text of shapes, and its comparison with the Free flag masked (decision 581).</summary>
 internal static class BRepTextComparison
 {
-    /// <summary>The shape's BRep text, as <see cref="BRepTools.Write(in TopoDS_Shape, TextWriter, Message_ProgressRange)"/> writes it.</summary>
+    /// <summary>The shape's BRep text, as <see cref="BRepTools.Write(in TopoDS_Shape, TextWriter, ProgressRange)"/> writes it.</summary>
     public static string Write(TopoDS_Shape theShape)
     {
         using var aWriter = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);

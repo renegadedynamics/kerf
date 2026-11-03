@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_EditValue;
 using static Occt.Interface_ParamType;
 
@@ -18,7 +19,7 @@ namespace Occt;
 /// it is not Complete Two methods give the correspondence between this Number and the Rank in the EditForm :
 /// RankFromNumber and NumberFromRank
 /// </summary>
-public class IFSelect_EditForm : Standard_Transient
+public class IFSelect_EditForm : Transient
 {
     private static void PrintList(NCollection_HSequence<TCollection_HAsciiString>? list, TextWriter S, bool alsolist)
     {
@@ -60,8 +61,8 @@ public class IFSelect_EditForm : Standard_Transient
         thekeepst = false;
         thelabel = label;
         thenums = new NCollection_Array1<int>(0, 1);
-        theorigs = new NCollection_Array1<Standard_Transient>(0, (undoable ? editor.NbValues() : 0));
-        themodifs = new NCollection_Array1<Standard_Transient>(0, (@readonly ? 0 : editor.NbValues()));
+        theorigs = new NCollection_Array1<Transient>(0, (undoable ? editor.NbValues() : 0));
+        themodifs = new NCollection_Array1<Transient>(0, (@readonly ? 0 : editor.NbValues()));
         thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : editor.NbValues()));
         theeditor = editor;
         thetouched = 0;
@@ -78,8 +79,8 @@ public class IFSelect_EditForm : Standard_Transient
         thekeepst = false;
         thelabel = label;
         thenums = new NCollection_Array1<int>(0, nums.Length());
-        theorigs = new NCollection_Array1<Standard_Transient>(0, (undoable ? nums.Length() : 0));
-        themodifs = new NCollection_Array1<Standard_Transient>(0, (@readonly ? 0 : nums.Length()));
+        theorigs = new NCollection_Array1<Transient>(0, (undoable ? nums.Length() : 0));
+        themodifs = new NCollection_Array1<Transient>(0, (@readonly ? 0 : nums.Length()));
         thestatus = new NCollection_Array1<int>(0, (@readonly ? 0 : nums.Length()));
         theeditor = editor;
         thetouched = 0;
@@ -120,13 +121,13 @@ public class IFSelect_EditForm : Standard_Transient
         theloaded = false;
     }
 
-    public void SetData(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public void SetData(Transient? ent, Interface_InterfaceModel? model)
     {
         theent = ent;
         themodel = model;
     }
 
-    public void SetEntity(Standard_Transient? ent)
+    public void SetEntity(Transient? ent)
     {
         theent = ent;
     }
@@ -136,7 +137,7 @@ public class IFSelect_EditForm : Standard_Transient
         themodel = model;
     }
 
-    public Standard_Transient? Entity()
+    public Transient? Entity()
     {
         return theent;
     }
@@ -289,7 +290,7 @@ public class IFSelect_EditForm : Standard_Transient
     /// &lt;model&gt; may be null, according to the kind of Editor. Shortcuts are available for these cases, but
     /// they finally call LoadData (hence, just ignore non-used args)
     /// </summary>
-    public virtual bool LoadData(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public virtual bool LoadData(Transient? ent, Interface_InterfaceModel? model)
     {
         thetouched = 0;
         if (!theeditor.Load(this, ent, model))
@@ -304,7 +305,7 @@ public class IFSelect_EditForm : Standard_Transient
     /// <summary>
     /// Shortcut for LoadData when &lt;model&gt; is not used
     /// </summary>
-    public bool LoadEntity(Standard_Transient? ent)
+    public bool LoadEntity(Transient? ent)
     {
         thetouched = 0;
         Interface_InterfaceModel model = null;
@@ -323,7 +324,7 @@ public class IFSelect_EditForm : Standard_Transient
     public bool LoadModel(Interface_InterfaceModel? model)
     {
         thetouched = 0;
-        Standard_Transient ent = null;
+        Transient ent = null;
         if (!theeditor.Load(this, ent, model))
         {
             return false;
@@ -341,7 +342,7 @@ public class IFSelect_EditForm : Standard_Transient
     {
         thetouched = 0;
         Interface_InterfaceModel model = null;
-        Standard_Transient ent = null;
+        Transient ent = null;
         if (!theeditor.Load(this, ent, model))
         {
             return false;
@@ -675,7 +676,7 @@ public class IFSelect_EditForm : Standard_Transient
                 else
                 {
                     S.Write("*****  No loaded Model. Loaded object : type ");
-                    S.Write(theent.DynamicType().Name);
+                    S.Write(theent.DynamicTypeName());
                 }
             }
             else
@@ -848,7 +849,7 @@ public class IFSelect_EditForm : Standard_Transient
     /// <summary>
     /// Applies modifications to data Default uses Editor. Can be redefined
     /// </summary>
-    public virtual bool ApplyData(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public virtual bool ApplyData(Transient? ent, Interface_InterfaceModel? model)
     {
         return theeditor.Apply(this, ent, model);
     }
@@ -878,11 +879,11 @@ public class IFSelect_EditForm : Standard_Transient
     private bool thekeepst;
     private string thelabel = "";
     private NCollection_Array1<int> thenums;
-    private NCollection_Array1<Standard_Transient> theorigs;
-    private NCollection_Array1<Standard_Transient> themodifs;
+    private NCollection_Array1<Transient> theorigs;
+    private NCollection_Array1<Transient> themodifs;
     private NCollection_Array1<int> thestatus;
     private IFSelect_Editor? theeditor;
-    private Standard_Transient? theent;
+    private Transient? theent;
     private Interface_InterfaceModel? themodel;
     private int thetouched;
 }

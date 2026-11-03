@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity EffectivityAssignment
 /// </summary>
-public class StepBasic_EffectivityAssignment : Standard_Transient
+public class StepBasic_EffectivityAssignment : Transient
 {
     private StepBasic_Effectivity theAssignedEffectivity;
 

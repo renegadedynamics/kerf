@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.LocalAnalysis_StatusErrorType;
 
 namespace Occt;
@@ -18,7 +20,7 @@ namespace Occt;
 /// A working object (decision 21): the constructors with surfaces compute; the constructor with tolerances only
 /// leaves the analysis to <see cref="ComputeAnalysis"/>, which may be called again on the same object
 /// (GeomPlate_BuildPlateSurface does, in a loop) and keeps what earlier calls set. The queries but
-/// <see cref="IsDone"/> and <see cref="StatusError"/> throw <see cref="StdFail_NotDone"/> when an analysis failed.
+/// <see cref="IsDone"/> and <see cref="StatusError"/> throw <see cref="NotDoneException"/> when an analysis failed.
 /// </para>
 /// <para>
 /// OCCT leaves <see cref="StatusError"/> uninitialised until an analysis fails, and <see cref="ContinuityStatus"/>
@@ -45,7 +47,7 @@ public class LocalAnalysis_SurfaceContinuity
     private double myZETA2;
     private double myZETA;
     private double myAlpha;
-    private GeomAbs_Shape myTypeCont;
+    private Continuity myTypeCont;
     private readonly double myepsC0;
     private readonly double myepsnul;
     private readonly double myepsC1;
@@ -64,7 +66,7 @@ public class LocalAnalysis_SurfaceContinuity
 
     private void SurfC1(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
     {
-        gp_Vec V1u, V2u, V1v, V2v;
+        Vector3D V1u, V2u, V1v, V2v;
         double norm1u, norm2u, norm1v, norm2v, angu, angv;
 
         V1u = Surf1.D1U();
@@ -124,7 +126,7 @@ public class LocalAnalysis_SurfaceContinuity
 
     private void SurfC2(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2)
     {
-        gp_Vec V11u, V12u, V21u, V22u, V11v, V12v, V21v, V22v;
+        Vector3D V11u, V12u, V21u, V22u, V11v, V12v, V21v, V22v;
         double norm11u, norm12u, norm21u, norm22u, norm11v, norm12v, norm21v, norm22v;
         double ang;
         V11u = Surf1.D1U();
@@ -222,8 +224,8 @@ public class LocalAnalysis_SurfaceContinuity
     {
         if (Surf1.IsNormalDefined() && Surf2.IsNormalDefined())
         {
-            gp_Dir D1 = Surf1.Normal();
-            gp_Dir D2 = Surf2.Normal();
+            Direction3D D1 = Surf1.Normal();
+            Direction3D D2 = Surf2.Normal();
             double ang = D1.Angle(D2);
             if (ang > M_PI / 2)
             {
@@ -249,16 +251,16 @@ public class LocalAnalysis_SurfaceContinuity
         if (Surf1.IsCurvatureDefined() && Surf2.IsCurvatureDefined())
         {
             // OCCT passes DMIN as CurvatureDirections' MaxD and DMAX as its MinD; MCD below is symmetric in them
-            Surf1.CurvatureDirections(out gp_Dir DMIN1, out gp_Dir DMAX1);
-            Surf2.CurvatureDirections(out gp_Dir DMIN2, out gp_Dir DMAX2);
+            Surf1.CurvatureDirections(out Direction3D DMIN1, out Direction3D DMAX1);
+            Surf2.CurvatureDirections(out Direction3D DMIN2, out Direction3D DMAX2);
             DMIN1.Coord(out x1, out y1, out z1);
             DMAX1.Coord(out x2, out y2, out z2);
-            var MCD1 = new gp_Dir((Math.Abs(x1) + Math.Abs(x2)) / 2,
+            var MCD1 = new Direction3D((Math.Abs(x1) + Math.Abs(x2)) / 2,
                                   (Math.Abs(y1) + Math.Abs(y2)) / 2,
                                   (Math.Abs(z1) + Math.Abs(z2)) / 2);
             DMIN2.Coord(out x1, out y1, out z1);
             DMAX2.Coord(out x2, out y2, out z2);
-            var MCD2 = new gp_Dir((Math.Abs(x1) + Math.Abs(x2)) / 2,
+            var MCD2 = new Direction3D((Math.Abs(x1) + Math.Abs(x2)) / 2,
                                   (Math.Abs(y1) + Math.Abs(y2)) / 2,
                                   (Math.Abs(z1) + Math.Abs(z2)) / 2);
 
@@ -304,28 +306,28 @@ public class LocalAnalysis_SurfaceContinuity
 
     /// <summary>Analyses the continuity of the order between the points of the two surfaces' local properties.</summary>
     /// <remarks>The properties must have been computed to the order's derivative (2 for C2 and G2, 1 for C1 and G1).</remarks>
-    public void ComputeAnalysis(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2, GeomAbs_Shape Order)
+    public void ComputeAnalysis(GeomLProp_SLProps Surf1, GeomLProp_SLProps Surf2, Continuity Order)
     {
         myTypeCont = Order;
         switch (Order)
         {
-            case GeomAbs_C0:
+            case C0:
                 SurfC0(Surf1, Surf2);
                 break;
-            case GeomAbs_C1:
+            case C1:
                 SurfC0(Surf1, Surf2);
                 SurfC1(Surf1, Surf2);
                 break;
-            case GeomAbs_C2:
+            case C2:
                 SurfC0(Surf1, Surf2);
                 SurfC1(Surf1, Surf2);
                 SurfC2(Surf1, Surf2);
                 break;
-            case GeomAbs_G1:
+            case G1:
                 SurfC0(Surf1, Surf2);
                 SurfG1(Surf1, Surf2);
                 break;
-            case GeomAbs_G2:
+            case G2:
                 SurfC0(Surf1, Surf2);
                 SurfG1(Surf1, Surf2);
                 SurfG2(Surf1, Surf2);
@@ -346,7 +348,7 @@ public class LocalAnalysis_SurfaceContinuity
     /// curvature.
     /// </remarks>
     public LocalAnalysis_SurfaceContinuity(Geom_Surface Surf1, double u1, double v1, Geom_Surface Surf2, double u2,
-                                           double v2, GeomAbs_Shape Order, double EpsNul = 0.001, double EpsC0 = 0.001,
+                                           double v2, Continuity Order, double EpsNul = 0.001, double EpsC0 = 0.001,
                                            double EpsC1 = 0.001, double EpsC2 = 0.001, double EpsG1 = 0.001,
                                            double Percent = 0.01, double Maxlen = 10000)
     {
@@ -368,7 +370,7 @@ public class LocalAnalysis_SurfaceContinuity
     /// <paramref name="U"/> is outside either curve's range.
     /// </summary>
     public LocalAnalysis_SurfaceContinuity(Geom2d_Curve curv1, Geom2d_Curve curv2, double U, Geom_Surface Surf1,
-                                           Geom_Surface Surf2, GeomAbs_Shape Order, double EpsNul = 0.001,
+                                           Geom_Surface Surf2, Continuity Order, double EpsNul = 0.001,
                                            double EpsC0 = 0.001, double EpsC1 = 0.001, double EpsC2 = 0.001,
                                            double EpsG1 = 0.001, double Percent = 0.01, double Maxlen = 10000)
     {
@@ -395,8 +397,8 @@ public class LocalAnalysis_SurfaceContinuity
         }
         else
         {
-            gp_Pnt2d pt1 = curv1.Value(U);
-            gp_Pnt2d pt2 = curv2.Value(U);
+            Point2D pt1 = curv1.Value(U);
+            Point2D pt2 = curv2.Value(U);
 
             pt1.Coord(out double u1, out double v1);
             pt2.Coord(out double u2, out double v2);
@@ -405,18 +407,18 @@ public class LocalAnalysis_SurfaceContinuity
     }
 
     // The switch both constructors with surfaces repeat in OCCT (decision 742's pattern)
-    private void Analyse(Geom_Surface Surf1, double u1, double v1, Geom_Surface Surf2, double u2, double v2, GeomAbs_Shape Ordre)
+    private void Analyse(Geom_Surface Surf1, double u1, double v1, Geom_Surface Surf2, double u2, double v2, Continuity Ordre)
     {
         switch (Ordre)
         {
-            case GeomAbs_C0:
+            case C0:
             {
                 var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 0, myepsnul);
                 var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 0, myepsnul);
                 SurfC0(Surfa1, Surfa2);
                 break;
             }
-            case GeomAbs_C1:
+            case C1:
             {
                 var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 1, myepsnul);
                 var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 1, myepsnul);
@@ -424,7 +426,7 @@ public class LocalAnalysis_SurfaceContinuity
                 SurfC1(Surfa1, Surfa2);
                 break;
             }
-            case GeomAbs_C2:
+            case C2:
             {
                 var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 2, myepsnul);
                 var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 2, myepsnul);
@@ -433,7 +435,7 @@ public class LocalAnalysis_SurfaceContinuity
                 SurfC2(Surfa1, Surfa2);
                 break;
             }
-            case GeomAbs_G1:
+            case G1:
             {
                 var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 1, myepsnul);
                 var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 1, myepsnul);
@@ -441,7 +443,7 @@ public class LocalAnalysis_SurfaceContinuity
                 SurfG1(Surfa1, Surfa2);
                 break;
             }
-            case GeomAbs_G2:
+            case G2:
             {
                 var Surfa1 = new GeomLProp_SLProps(Surf1, u1, v1, 2, myepsnul);
                 var Surfa2 = new GeomLProp_SLProps(Surf2, u2, v2, 2, myepsnul);
@@ -459,7 +461,7 @@ public class LocalAnalysis_SurfaceContinuity
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
     }
 
@@ -578,7 +580,7 @@ public class LocalAnalysis_SurfaceContinuity
         }
     }
 
-    public GeomAbs_Shape ContinuityStatus()
+    public Continuity ContinuityStatus()
     {
         CheckDone();
         return (myTypeCont);

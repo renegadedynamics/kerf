@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,21 +12,21 @@ namespace Occt;
 /// <typeparam name="TheCurve">The curve.</typeparam>
 public interface IIntCurve_CurveTool<TheCurve> : IIntImpParGen_ParTool<TheCurve>
 {
-    static abstract GeomAbs_CurveType GetType(in TheCurve C);
+    static abstract CurveKind GetType(in TheCurve C);
 
-    static abstract gp_Lin2d Line(in TheCurve C);
+    static abstract Line2D Line(in TheCurve C);
 
-    static abstract gp_Circ2d Circle(in TheCurve C);
+    static abstract Circle2D Circle(in TheCurve C);
 
-    static abstract gp_Elips2d Ellipse(in TheCurve C);
+    static abstract Ellipse2D Ellipse(in TheCurve C);
 
-    static abstract gp_Parab2d Parabola(in TheCurve C);
+    static abstract Parabola2D Parabola(in TheCurve C);
 
-    static abstract gp_Hypr2d Hyperbola(in TheCurve C);
+    static abstract Hyperbola2D Hyperbola(in TheCurve C);
 
-    static abstract void D0(in TheCurve C, double U, out gp_Pnt2d P);
+    static abstract void D0(in TheCurve C, double U, out Point2D P);
 
-    static abstract void D1(in TheCurve C, double U, out gp_Pnt2d P, out gp_Vec2d T);
+    static abstract void D1(in TheCurve C, double U, out Point2D P, out Vector2D T);
 
     static abstract double FirstParameter(in TheCurve C);
 

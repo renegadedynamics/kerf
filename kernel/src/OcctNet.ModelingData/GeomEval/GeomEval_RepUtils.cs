@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,19 +24,19 @@ internal static class GeomEval_RepUtils
         }
         if (theDesc.Representation is null)
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: null Representation");
+            throw new ProgramErrorException("SetEvalRepresentation: null Representation");
         }
         if (theDesc.GetKind() == GeomEval_RepCurveDesc.Base.Kind.Mapped)
         {
             GeomEval_RepCurveDesc.Mapped aMapped = (GeomEval_RepCurveDesc.Mapped)theDesc;
             if (!aMapped.ParamMap.IsValid())
             {
-                throw new Standard_ProgramError("SetEvalRepresentation: invalid parameter map");
+                throw new ProgramErrorException("SetEvalRepresentation: invalid parameter map");
             }
         }
         if (ReferenceEquals(theDesc.Representation, theOwner))
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: invalid descriptor chain");
+            throw new ProgramErrorException("SetEvalRepresentation: invalid descriptor chain");
         }
     }
 
@@ -44,19 +48,19 @@ internal static class GeomEval_RepUtils
         }
         if (theDesc.Representation is null)
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: null Representation");
+            throw new ProgramErrorException("SetEvalRepresentation: null Representation");
         }
         if (theDesc.GetKind() == GeomEval_RepSurfaceDesc.Base.Kind.Mapped)
         {
             GeomEval_RepSurfaceDesc.Mapped aMapped = (GeomEval_RepSurfaceDesc.Mapped)theDesc;
             if (!aMapped.ParamMap.IsValid())
             {
-                throw new Standard_ProgramError("SetEvalRepresentation: invalid parameter map");
+                throw new ProgramErrorException("SetEvalRepresentation: invalid parameter map");
             }
         }
         if (ReferenceEquals(theDesc.Representation, theOwner))
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: invalid descriptor chain");
+            throw new ProgramErrorException("SetEvalRepresentation: invalid descriptor chain");
         }
     }
 
@@ -150,9 +154,9 @@ internal static class GeomEval_RepUtils
 
     // Curves
 
-    internal static bool TryEvalCurveD0(GeomEval_RepCurveDesc.Base? theDesc, double theU, out gp_Pnt theResult)
+    internal static bool TryEvalCurveD0(GeomEval_RepCurveDesc.Base? theDesc, double theU, out Point3D theResult)
     {
-        theResult = new gp_Pnt();
+        theResult = new Point3D();
         if (theDesc is null)
         {
             return false;
@@ -278,9 +282,9 @@ internal static class GeomEval_RepUtils
         return false;
     }
 
-    internal static bool TryEvalCurveDN(GeomEval_RepCurveDesc.Base? theDesc, double theU, int theN, out gp_Vec theResult)
+    internal static bool TryEvalCurveDN(GeomEval_RepCurveDesc.Base? theDesc, double theU, int theN, out Vector3D theResult)
     {
-        theResult = new gp_Vec();
+        theResult = new Vector3D();
         if (theDesc is null || theN < 1)
         {
             return false;
@@ -316,9 +320,9 @@ internal static class GeomEval_RepUtils
 
     // Surfaces
 
-    internal static bool TryEvalSurfaceD0(GeomEval_RepSurfaceDesc.Base? theDesc, double theU, double theV, out gp_Pnt theResult)
+    internal static bool TryEvalSurfaceD0(GeomEval_RepSurfaceDesc.Base? theDesc, double theU, double theV, out Point3D theResult)
     {
-        theResult = new gp_Pnt();
+        theResult = new Point3D();
         if (theDesc is null)
         {
             return false;
@@ -448,9 +452,9 @@ internal static class GeomEval_RepUtils
     }
 
     internal static bool TryEvalSurfaceDN(GeomEval_RepSurfaceDesc.Base? theDesc, double theU, double theV,
-                                          int theNu, int theNv, out gp_Vec theResult)
+                                          int theNu, int theNv, out Vector3D theResult)
     {
-        theResult = new gp_Vec();
+        theResult = new Vector3D();
         int aTotalOrder = theNu + theNv;
         if (theDesc is null || theNu < 0 || theNv < 0 || aTotalOrder < 1)
         {
@@ -487,9 +491,9 @@ internal static class GeomEval_RepUtils
 
     // Mapped curves
 
-    internal static bool TryEvalCurveD0Mapped(GeomEval_RepCurveDesc.Mapped theDesc, double theU, out gp_Pnt theResult)
+    internal static bool TryEvalCurveD0Mapped(GeomEval_RepCurveDesc.Mapped theDesc, double theU, out Point3D theResult)
     {
-        theResult = new gp_Pnt();
+        theResult = new Point3D();
         double aURep = theDesc.ParamMap.Map(theU);
         if (theDesc.Domain.HasValue && !theDesc.Domain.Value.Contains(aURep))
         {
@@ -550,15 +554,15 @@ internal static class GeomEval_RepUtils
         return true;
     }
 
-    internal static bool TryEvalCurveDNMapped(GeomEval_RepCurveDesc.Mapped theDesc, double theU, int theN, out gp_Vec theResult)
+    internal static bool TryEvalCurveDNMapped(GeomEval_RepCurveDesc.Mapped theDesc, double theU, int theN, out Vector3D theResult)
     {
-        theResult = new gp_Vec();
+        theResult = new Vector3D();
         double aURep = theDesc.ParamMap.Map(theU);
         if (theDesc.Domain.HasValue && !theDesc.Domain.Value.Contains(aURep))
         {
             return false;
         }
-        gp_Vec aRepVec = theDesc.Representation!.EvalDN(aURep, theN);
+        Vector3D aRepVec = theDesc.Representation!.EvalDN(aURep, theN);
         double aScaleN = Math.Pow(theDesc.ParamMap.Scale, theN);
         theResult = aRepVec * aScaleN;
         return true;
@@ -566,9 +570,9 @@ internal static class GeomEval_RepUtils
 
     // Mapped surfaces
 
-    internal static bool TryEvalSurfaceD0Mapped(GeomEval_RepSurfaceDesc.Mapped theDesc, double theU, double theV, out gp_Pnt theResult)
+    internal static bool TryEvalSurfaceD0Mapped(GeomEval_RepSurfaceDesc.Mapped theDesc, double theU, double theV, out Point3D theResult)
     {
-        theResult = new gp_Pnt();
+        theResult = new Point3D();
         double aURep = 0.0;
         double aVRep = 0.0;
         theDesc.ParamMap.Map(theU, theV, out aURep, out aVRep);
@@ -686,9 +690,9 @@ internal static class GeomEval_RepUtils
     }
 
     internal static bool TryEvalSurfaceDNMapped(GeomEval_RepSurfaceDesc.Mapped theDesc, double theU, double theV,
-                                                int theNu, int theNv, out gp_Vec theResult)
+                                                int theNu, int theNv, out Vector3D theResult)
     {
-        theResult = new gp_Vec();
+        theResult = new Vector3D();
         double aURep = 0.0;
         double aVRep = 0.0;
         theDesc.ParamMap.Map(theU, theV, out aURep, out aVRep);
@@ -703,7 +707,7 @@ internal static class GeomEval_RepUtils
             aNuRep = theNv;
             aNvRep = theNu;
         }
-        gp_Vec aRepVec = theDesc.Representation!.EvalDN(aURep, aVRep, aNuRep, aNvRep);
+        Vector3D aRepVec = theDesc.Representation!.EvalDN(aURep, aVRep, aNuRep, aNvRep);
         double aScale = Math.Pow(theDesc.ParamMap.ScaleU, aNuRep) * Math.Pow(theDesc.ParamMap.ScaleV, aNvRep);
         theResult = aRepVec * aScale;
         return true;

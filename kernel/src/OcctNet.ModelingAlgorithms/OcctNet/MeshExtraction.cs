@@ -2,6 +2,9 @@
 // An OCCT.NET addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -16,7 +19,7 @@ namespace OcctNet;
 /// <para>
 /// The shape is meshed first (<see cref="BRepMesh_IncrementalMesh"/>); extraction only reads it, so it is safe from any
 /// thread on a frozen shape, and a shape shared by several callers is never written. Native OCCT computes the nodal
-/// normals into the face's own triangulation (<see cref="BRepLib_ToolTriangulatedShape.ComputeNormals(in TopoDS_Face, Poly_Triangulation?)"/>);
+/// normals into the face's own triangulation (<see cref="BRepLib_ToolTriangulatedShape.ComputeNormals(in TopoDS_Face, Triangulation?)"/>);
 /// here they are computed on an unattached copy (phase3-design section 5), with the same values.
 /// </para>
 /// <para>
@@ -48,16 +51,16 @@ public static class MeshExtraction
         TopExp.MapShapesAndAncestors(theRoot, TopAbs_EDGE, TopAbs_FACE, anEdgeFaces);
 
         // Sizes first, so each buffer is allocated once at its final length
-        var aTris = new Poly_Triangulation?[theFaces.Count];
-        var aLocations = new TopLoc_Location[theFaces.Count];
+        var aTris = new Triangulation?[theFaces.Count];
+        var aLocations = new Placement[theFaces.Count];
         long aNbNodes = 0, aNbIndices = 0;
         for (int i = 0; i < theFaces.Count; i++)
         {
             aTris[i] = BRep_Tool.Triangulation(TopoDS.Face(theFaces[i]), out aLocations[i]);
             if (aTris[i] is { } aTri)
             {
-                aNbNodes += aTri.NbNodes();
-                aNbIndices += 3L * aTri.NbTriangles();
+                aNbNodes += aTri.NodeCount;
+                aNbIndices += 3L * aTri.TriangleCount;
             }
         }
 
@@ -134,7 +137,7 @@ public static class MeshExtraction
 
         public long IndexCount => myIndices;
 
-        public void AddFace(in TopoDS_Face theFace, Poly_Triangulation? theTri, in TopLoc_Location theLocation)
+        public void AddFace(in TopoDS_Face theFace, Triangulation? theTri, in Placement theLocation)
         {
             FaceNodes[myFace] = NodeCount;
             FaceTriangles[myFace] = myIndices;
@@ -145,18 +148,18 @@ public static class MeshExtraction
             }
 
             // The surface's normals at the nodes, on a copy: the face's own triangulation is never written
-            Poly_Triangulation aTri = BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri)!;
-            gp_Trsf aTrsf = theLocation.Transformation();
+            Triangulation aTri = BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri)!;
+            Transform3D aTrsf = theLocation.Transformation();
             bool isReversed = theFace.Orientation() == TopAbs_REVERSED;
             // Winding follows the surface's natural normal: flipped for a reversed face, and again by a mirroring location
-            bool toFlip = isReversed != aTrsf.IsNegative();
-            for (int i = 1; i <= aTri.NbNodes(); ++i)
+            bool toFlip = isReversed != aTrsf.IsNegative;
+            for (int i = 1; i <= aTri.NodeCount; ++i)
             {
-                gp_Pnt aP = aTri.Node(i).Transformed(aTrsf);
+                Point3D aP = aTri.Node(i).Transformed(aTrsf);
                 Positions[myNodeFloats] = (float)aP.X();
                 Positions[myNodeFloats + 1] = (float)aP.Y();
                 Positions[myNodeFloats + 2] = (float)aP.Z();
-                gp_Dir aN = aTri.Normal(i).Transformed(aTrsf);
+                Direction3D aN = aTri.Normal(i).Transformed(aTrsf);
                 if (isReversed)
                 {
                     aN = aN.Reversed();
@@ -166,7 +169,7 @@ public static class MeshExtraction
                 Normals[myNodeFloats + 2] = (float)aN.Z();
                 myNodeFloats += 3;
             }
-            for (int i = 1; i <= aTri.NbTriangles(); ++i)
+            for (int i = 1; i <= aTri.TriangleCount; ++i)
             {
                 aTri.Triangle(i).Get(out int a, out int b, out int c);
                 Triangles[myIndices] = a - 1;
@@ -176,7 +179,7 @@ public static class MeshExtraction
             }
         }
 
-        private void AddPoint(in gp_Pnt theP)
+        private void AddPoint(in Point3D theP)
         {
             myPoints.Add((float)theP.X());
             myPoints.Add((float)theP.Y());
@@ -197,18 +200,18 @@ public static class MeshExtraction
             {
                 foreach (TopoDS_Shape aShape in aFaces)
                 {
-                    Poly_Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aShape), out TopLoc_Location aLocation);
+                    Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(aShape), out Placement aLocation);
                     if (aTri is null)
                     {
                         continue;
                     }
-                    Poly_PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(theEdge, aTri, aLocation);
+                    PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(theEdge, aTri, aLocation);
                     if (aPolygon is null)
                     {
                         continue;
                     }
-                    gp_Trsf aTrsf = aLocation.Transformation();
-                    for (int i = 1; i <= aPolygon.NbNodes(); ++i)
+                    Transform3D aTrsf = aLocation.Transformation();
+                    for (int i = 1; i <= aPolygon.NodeCount; ++i)
                     {
                         AddPoint(aTri.Node(aPolygon.Node(i)).Transformed(aTrsf));
                     }
@@ -219,12 +222,12 @@ public static class MeshExtraction
             // A free edge's own polygon, from the mesher
             if (!isDone)
             {
-                Poly_Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out TopLoc_Location aLocation);
+                Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out Placement aLocation);
                 if (aPolygon is not null)
                 {
-                    gp_Trsf aTrsf = aLocation.Transformation();
-                    NCollection_Array1<gp_Pnt> aNodes = aPolygon.Nodes();
-                    for (int i = 1; i <= aPolygon.NbNodes(); ++i)
+                    Transform3D aTrsf = aLocation.Transformation();
+                    NCollection_Array1<Point3D> aNodes = aPolygon.Nodes();
+                    for (int i = 1; i <= aPolygon.NodeCount; ++i)
                     {
                         AddPoint(aNodes.Value(i).Transformed(aTrsf));
                     }
@@ -302,7 +305,7 @@ public sealed class MeshBuffers
     /// <summary>Each face's first triangle index (three per triangle), then the total.</summary>
     public long[] FaceTriangles { get; }
 
-    /// <summary>Each face's <see cref="GeomAbs_SurfaceType"/>.</summary>
+    /// <summary>Each face's <see cref="SurfaceKind"/>.</summary>
     public int[] FaceTypes { get; }
 
     /// <summary>The edges' polylines, x, y, z per point, with their locations applied.</summary>
@@ -311,6 +314,6 @@ public sealed class MeshBuffers
     /// <summary>Each edge's first point, then the total.</summary>
     public long[] EdgePoints { get; }
 
-    /// <summary>Each edge's <see cref="GeomAbs_CurveType"/>.</summary>
+    /// <summary>Each edge's <see cref="CurveKind"/>.</summary>
     public int[] EdgeTypes { get; }
 }

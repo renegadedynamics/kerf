@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class MathRoot_ComparisonTest
@@ -14,7 +16,7 @@ public class MathRoot_ComparisonTest
     // ============================================================================
 
     // f(x) = x^2 - 2, f'(x) = 2x
-    private sealed class SqrtTwoFuncOld : math_FunctionWithDerivative
+    private sealed class SqrtTwoFuncOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -37,7 +39,7 @@ public class MathRoot_ComparisonTest
     }
 
     // f(x) = cos(x) - x, f'(x) = -sin(x) - 1
-    private sealed class CosMinusXFuncOld : math_FunctionWithDerivative
+    private sealed class CosMinusXFuncOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -60,7 +62,7 @@ public class MathRoot_ComparisonTest
     }
 
     // f(x) = sin(x), f'(x) = cos(x)
-    private sealed class SinFuncOld : math_FunctionWithDerivative
+    private sealed class SinFuncOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -83,7 +85,7 @@ public class MathRoot_ComparisonTest
     }
 
     // f(x) = x^3 - x - 2, f'(x) = 3x^2 - 1
-    private sealed class CubicFuncOld : math_FunctionWithDerivative
+    private sealed class CubicFuncOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -106,7 +108,7 @@ public class MathRoot_ComparisonTest
     }
 
     // f(x) = e^x - 3, f'(x) = e^x
-    private sealed class ExpMinusThreeFuncOld : math_FunctionWithDerivative
+    private sealed class ExpMinusThreeFuncOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -132,7 +134,7 @@ public class MathRoot_ComparisonTest
     // Function structs for new API (simple structs with Value/Values methods)
     // ============================================================================
 
-    private readonly struct SqrtTwoFuncNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct SqrtTwoFuncNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -148,7 +150,7 @@ public class MathRoot_ComparisonTest
         }
     }
 
-    private readonly struct CosMinusXFuncNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct CosMinusXFuncNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -164,7 +166,7 @@ public class MathRoot_ComparisonTest
         }
     }
 
-    private readonly struct SinFuncNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct SinFuncNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -180,7 +182,7 @@ public class MathRoot_ComparisonTest
         }
     }
 
-    private readonly struct CubicFuncNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct CubicFuncNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -196,7 +198,7 @@ public class MathRoot_ComparisonTest
         }
     }
 
-    private readonly struct ExpMinusThreeFuncNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct ExpMinusThreeFuncNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -222,13 +224,13 @@ public class MathRoot_ComparisonTest
         SqrtTwoFuncOld anOldFunc = new();
         SqrtTwoFuncNew aNewFunc = new();
 
-        math_BissecNewton anOldSolver = new(THE_TOLERANCE);
+        BissecNewton anOldSolver = new(THE_TOLERANCE);
         anOldSolver.Perform(anOldFunc, 1.0, 2.0, 100);
 
-        MathUtils.ScalarResult aNewResult = MathRoot.BisectionNewton(aNewFunc, 1.0, 2.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.BisectionNewton(aNewFunc, 1.0, 2.0);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Sqrt(2.0), anOldSolver.Root(), THE_TOLERANCE);
@@ -240,13 +242,13 @@ public class MathRoot_ComparisonTest
         CosMinusXFuncOld anOldFunc = new();
         CosMinusXFuncNew aNewFunc = new();
 
-        math_BissecNewton anOldSolver = new(THE_TOLERANCE);
+        BissecNewton anOldSolver = new(THE_TOLERANCE);
         anOldSolver.Perform(anOldFunc, 0.0, 1.0, 100);
 
-        MathUtils.ScalarResult aNewResult = MathRoot.BisectionNewton(aNewFunc, 0.0, 1.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.BisectionNewton(aNewFunc, 0.0, 1.0);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Verify both find the same root
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
@@ -262,13 +264,13 @@ public class MathRoot_ComparisonTest
         SinFuncOld anOldFunc = new();
         SinFuncNew aNewFunc = new();
 
-        math_BissecNewton anOldSolver = new(THE_TOLERANCE);
+        BissecNewton anOldSolver = new(THE_TOLERANCE);
         anOldSolver.Perform(anOldFunc, 2.0, 4.0, 100);
 
-        MathUtils.ScalarResult aNewResult = MathRoot.BisectionNewton(aNewFunc, 2.0, 4.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.BisectionNewton(aNewFunc, 2.0, 4.0);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(THE_PI, aNewResult.Root.Value, THE_TOLERANCE);
@@ -280,13 +282,13 @@ public class MathRoot_ComparisonTest
         CubicFuncOld anOldFunc = new();
         CubicFuncNew aNewFunc = new();
 
-        math_BissecNewton anOldSolver = new(THE_TOLERANCE);
+        BissecNewton anOldSolver = new(THE_TOLERANCE);
         anOldSolver.Perform(anOldFunc, 1.0, 2.0, 100);
 
-        MathUtils.ScalarResult aNewResult = MathRoot.BisectionNewton(aNewFunc, 1.0, 2.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.BisectionNewton(aNewFunc, 1.0, 2.0);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
     }
@@ -301,15 +303,15 @@ public class MathRoot_ComparisonTest
         SqrtTwoFuncOld anOldFunc = new();
         SqrtTwoFuncNew aNewFunc = new();
 
-        math_NewtonFunctionRoot anOldSolver = new(anOldFunc, 1.5, THE_TOLERANCE, THE_TOLERANCE, 100);
+        NewtonFunctionRoot anOldSolver = new(anOldFunc, 1.5, THE_TOLERANCE, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
         aConfig.FTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Newton(aNewFunc, 1.5, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Newton(aNewFunc, 1.5, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Sqrt(2.0), aNewResult.Root.Value, THE_TOLERANCE);
@@ -321,15 +323,15 @@ public class MathRoot_ComparisonTest
         ExpMinusThreeFuncOld anOldFunc = new();
         ExpMinusThreeFuncNew aNewFunc = new();
 
-        math_NewtonFunctionRoot anOldSolver = new(anOldFunc, 1.0, THE_TOLERANCE, THE_TOLERANCE, 100);
+        NewtonFunctionRoot anOldSolver = new(anOldFunc, 1.0, THE_TOLERANCE, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
         aConfig.FTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Newton(aNewFunc, 1.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Newton(aNewFunc, 1.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Log(3.0), aNewResult.Root.Value, THE_TOLERANCE);
@@ -341,15 +343,15 @@ public class MathRoot_ComparisonTest
         CosMinusXFuncOld anOldFunc = new();
         CosMinusXFuncNew aNewFunc = new();
 
-        math_NewtonFunctionRoot anOldSolver = new(anOldFunc, 0.5, THE_TOLERANCE, THE_TOLERANCE, 100);
+        NewtonFunctionRoot anOldSolver = new(anOldFunc, 0.5, THE_TOLERANCE, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
         aConfig.FTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Newton(aNewFunc, 0.5, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Newton(aNewFunc, 0.5, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
     }
@@ -364,14 +366,14 @@ public class MathRoot_ComparisonTest
         SqrtTwoFuncOld anOldFunc = new();
         SqrtTwoFuncNew aNewFunc = new();
 
-        math_BracketedRoot anOldSolver = new(anOldFunc, 1.0, 2.0, THE_TOLERANCE, 100);
+        BracketedRoot anOldSolver = new(anOldFunc, 1.0, 2.0, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Brent(aNewFunc, 1.0, 2.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aNewFunc, 1.0, 2.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Sqrt(2.0), aNewResult.Root.Value, THE_TOLERANCE);
@@ -383,14 +385,14 @@ public class MathRoot_ComparisonTest
         CosMinusXFuncOld anOldFunc = new();
         CosMinusXFuncNew aNewFunc = new();
 
-        math_BracketedRoot anOldSolver = new(anOldFunc, 0.0, 1.0, THE_TOLERANCE, 100);
+        BracketedRoot anOldSolver = new(anOldFunc, 0.0, 1.0, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Brent(aNewFunc, 0.0, 1.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aNewFunc, 0.0, 1.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
     }
@@ -401,14 +403,14 @@ public class MathRoot_ComparisonTest
         SinFuncOld anOldFunc = new();
         SinFuncNew aNewFunc = new();
 
-        math_BracketedRoot anOldSolver = new(anOldFunc, 2.0, 4.0, THE_TOLERANCE, 100);
+        BracketedRoot anOldSolver = new(anOldFunc, 2.0, 4.0, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Brent(aNewFunc, 2.0, 4.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aNewFunc, 2.0, 4.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(THE_PI, aNewResult.Root.Value, THE_TOLERANCE);
@@ -420,14 +422,14 @@ public class MathRoot_ComparisonTest
         ExpMinusThreeFuncOld anOldFunc = new();
         ExpMinusThreeFuncNew aNewFunc = new();
 
-        math_BracketedRoot anOldSolver = new(anOldFunc, 0.0, 2.0, THE_TOLERANCE, 100);
+        BracketedRoot anOldSolver = new(anOldFunc, 0.0, 2.0, THE_TOLERANCE, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.Brent(aNewFunc, 0.0, 2.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aNewFunc, 0.0, 2.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Log(3.0), aNewResult.Root.Value, THE_TOLERANCE);
@@ -443,14 +445,14 @@ public class MathRoot_ComparisonTest
         SqrtTwoFuncOld anOldFunc = new();
         SqrtTwoFuncNew aNewFunc = new();
 
-        math_FunctionRoot anOldSolver = new(anOldFunc, 1.5, THE_TOLERANCE, 1.0, 2.0, 100);
+        FunctionRoot anOldSolver = new(anOldFunc, 1.5, THE_TOLERANCE, 1.0, 2.0, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.NewtonBounded(aNewFunc, 1.5, 1.0, 2.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.NewtonBounded(aNewFunc, 1.5, 1.0, 2.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(Math.Sqrt(2.0), aNewResult.Root.Value, THE_TOLERANCE);
@@ -462,14 +464,14 @@ public class MathRoot_ComparisonTest
         SinFuncOld anOldFunc = new();
         SinFuncNew aNewFunc = new();
 
-        math_FunctionRoot anOldSolver = new(anOldFunc, 3.0, THE_TOLERANCE, 2.0, 4.0, 100);
+        FunctionRoot anOldSolver = new(anOldFunc, 3.0, THE_TOLERANCE, 2.0, 4.0, 100);
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = THE_TOLERANCE;
-        MathUtils.ScalarResult aNewResult = MathRoot.NewtonBounded(aNewFunc, 3.0, 2.0, 4.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.NewtonBounded(aNewFunc, 3.0, 2.0, 4.0, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Root!.Value, anOldSolver.Root(), THE_TOLERANCE);
         Assert.Equal(THE_PI, aNewResult.Root.Value, THE_TOLERANCE);
@@ -484,14 +486,14 @@ public class MathRoot_ComparisonTest
     {
         SqrtTwoFuncNew aFunc = new();
 
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.MaxIterations = 100;
 
-        MathUtils.ScalarResult aNewtonResult = MathRoot.Newton(aFunc, 1.5, aConfig);
-        MathUtils.ScalarResult aBrentResult = MathRoot.Brent(aFunc, 1.0, 2.0, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewtonResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Newton(aFunc, 1.5, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aBrentResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aFunc, 1.0, 2.0, aConfig);
 
-        Assert.True(aNewtonResult.IsDone());
-        Assert.True(aBrentResult.IsDone());
+        Assert.True(aNewtonResult.IsDone);
+        Assert.True(aBrentResult.IsDone);
 
         // Newton should typically converge faster for smooth functions
         Assert.True(aNewtonResult.NbIterations <= aBrentResult.NbIterations);
@@ -505,7 +507,7 @@ public class MathRoot_ComparisonTest
     // ============================================================================
 
     // f(x) = x^3 at x=0 has derivative near zero
-    private sealed class CubicNearZeroOld : math_FunctionWithDerivative
+    private sealed class CubicNearZeroOld : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -527,7 +529,7 @@ public class MathRoot_ComparisonTest
         }
     }
 
-    private readonly struct CubicNearZeroNew : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private readonly struct CubicNearZeroNew : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theF)
         {
@@ -550,13 +552,13 @@ public class MathRoot_ComparisonTest
         CubicNearZeroNew aNewFunc = new();
 
         // Old API - Brent (more robust for this case)
-        math_BracketedRoot anOldSolver = new(anOldFunc, 0.0, 1.0, THE_TOLERANCE, 100);
+        BracketedRoot anOldSolver = new(anOldFunc, 0.0, 1.0, THE_TOLERANCE, 100);
 
         // New API - Brent
-        MathUtils.ScalarResult aNewResult = MathRoot.Brent(aNewFunc, 0.0, 1.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewResult = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aNewFunc, 0.0, 1.0);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Root should be at 0.1 (cube root of 0.001)
         Assert.Equal(0.1, anOldSolver.Root(), 1.0e-6);

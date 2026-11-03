@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepGeom_SurfacePatch : Standard_Transient
+public class StepGeom_SurfacePatch : Transient
 {
     private StepGeom_BoundedSurface parentSurface;
     private StepGeom_TransitionCode uTransition;

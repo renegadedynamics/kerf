@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>OCCT's instantiation of the BFGS minimisation of the B-spline gradient over the <see cref="ApproxInt_MultiLine{TheLine}"/> of BRepApprox_ApproxLine: <see cref="AppParCurves_BSpGradient_BFGS{MultiLine, ToolLine}"/>.</summary>
@@ -13,7 +15,7 @@ namespace Occt;
 public sealed class BRepApprox_BSpGradient_BFGSOfMyBSplGradientOfTheComputeLineOfApprox : AppParCurves_BSpGradient_BFGS<ApproxInt_MultiLine<BRepApprox_ApproxLine>, ApproxInt_MultiLineTool<BRepApprox_ApproxLine>>
 {
     /// <summary>As the base constructor.</summary>
-    public BRepApprox_BSpGradient_BFGSOfMyBSplGradientOfTheComputeLineOfApprox(math_MultipleVarFunctionWithGradient F,
+    public BRepApprox_BSpGradient_BFGSOfMyBSplGradientOfTheComputeLineOfApprox(MultipleVarFunctionWithGradient F,
                                                                    math_Vector StartingPoint, double Tolerance3d,
                                                                    double Tolerance2d, double Eps,
                                                                    int NbIterations = 200)

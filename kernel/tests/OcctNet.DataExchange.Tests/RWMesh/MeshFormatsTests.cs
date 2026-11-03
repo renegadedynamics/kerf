@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.IO.Compression;
@@ -290,7 +293,7 @@ public class MeshFormatsTests
         using var aCancel = new CancellationTokenSource();
         aCancel.Cancel();
         XdeDoc_Tree aTree = SampleTree();
-        Message_ProgressRange aRange() => new Message_ProgressIndicator(aCancel.Token).Start();
+        ProgressRange aRange() => new ProgressIndicator(aCancel.Token).Start();
         Assert.False(new RWGltf_TreeWriter().WriteGlb(aTree, new MemoryStream(), aRange()));
         Assert.False(new RWObj_TreeWriter().Write(aTree, new MemoryStream(), new MemoryStream(), "m.mtl", aRange()));
         Assert.False(new RW3mf_TreeWriter().Write(aTree, new MemoryStream(), aRange()));
@@ -330,7 +333,7 @@ public class MeshFormatsTests
     /// <summary>OBJ read back: the world triangles of its faces (with or without normals), the materials used.</summary>
     internal static (List<string> Triangles, List<string> Materials, int NbVertices) ParseObj(string theObj)
     {
-        var aVertices = new List<gp_Pnt>();
+        var aVertices = new List<Point3D>();
         var aTriangles = new List<string>();
         var aMaterials = new List<string>();
         foreach (string aLine in theObj.Split('\n'))
@@ -345,7 +348,7 @@ public class MeshFormatsTests
             switch (aParts[0])
             {
                 case "v":
-                    aVertices.Add(new gp_Pnt(d(1), d(2), d(3)));
+                    aVertices.Add(new Point3D(d(1), d(2), d(3)));
                     break;
                 case "f":
                     Assert.Equal(4, aParts.Length);
@@ -479,7 +482,7 @@ public class MeshFormatsTests
             var aPoints = aMesh.Element(theCore + "vertices")!.Elements().Select(v =>
             {
                 double x = (double)v.Attribute("x")!, y = (double)v.Attribute("y")!, z = (double)v.Attribute("z")!;
-                return new gp_Pnt(x * theMatrix[0] + y * theMatrix[3] + z * theMatrix[6] + theMatrix[9],
+                return new Point3D(x * theMatrix[0] + y * theMatrix[3] + z * theMatrix[6] + theMatrix[9],
                                   x * theMatrix[1] + y * theMatrix[4] + z * theMatrix[7] + theMatrix[10],
                                   x * theMatrix[2] + y * theMatrix[5] + z * theMatrix[8] + theMatrix[11]);
             }).ToList();
@@ -548,7 +551,7 @@ public class MeshFormatsTests
 
         // winding: the box's triangles turn outwards (positive volume)
         XElement aBox = anObjects[0];
-        var aPoints = aBox.Descendants(theCore + "vertex").Select(v => new gp_XYZ((double)v.Attribute("x")!, (double)v.Attribute("y")!, (double)v.Attribute("z")!)).ToList();
+        var aPoints = aBox.Descendants(theCore + "vertex").Select(v => new Xyz((double)v.Attribute("x")!, (double)v.Attribute("y")!, (double)v.Attribute("z")!)).ToList();
         double aVolume = aBox.Descendants(theCore + "triangle").Sum(t =>
             aPoints[(int)t.Attribute("v1")!].Dot(aPoints[(int)t.Attribute("v2")!].Crossed(aPoints[(int)t.Attribute("v3")!])) / 6.0);
         Assert.Equal(6000.0, aVolume, 6);
@@ -580,7 +583,7 @@ public class MeshFormatsTests
         Assert.True(aRoot.Product.IsAssembly);
         Assert.Equal(new[] { "LanternPole_Body", "LanternPole_Chain", "LanternPole_Lantern" }, aRoot.Product.Components.Select(c => c.DisplayName));
         Assert.All(aRoot.Product.Components, c => Assert.Equal(TopAbs_ShapeEnum.TopAbs_FACE, c.Product.Shape.ShapeType()));
-        Assert.True(aRoot.Shape.TShape()!.IsFrozen());
+        Assert.True(aRoot.Shape.TShape()!.IsFrozen);
     }
 
     [Fact]

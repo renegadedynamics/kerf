@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.ChFiDS_ChamfMethod;
 using static Occt.ChFiDS_ChamfMode;
 
@@ -36,12 +37,12 @@ public sealed class ChFiDS_ChamfSpine : ChFiDS_Spine
         myMode = ChFiDS_ClassicChamfer;
     }
 
-    /// <summary>The distance of a symmetric chamfer; throws <see cref="Standard_Failure"/> otherwise.</summary>
+    /// <summary>The distance of a symmetric chamfer; throws <see cref="FailureException"/> otherwise.</summary>
     public void GetDist(out double Dis)
     {
         if (mChamf != ChFiDS_Sym)
         {
-            throw new Standard_Failure("Chamfer is not symmetric");
+            throw new FailureException("Chamfer is not symmetric");
         }
 
         Dis = d1;
@@ -54,12 +55,12 @@ public sealed class ChFiDS_ChamfSpine : ChFiDS_Spine
         d1 = Dis;
     }
 
-    /// <summary>The distances of a two-distance chamfer; throws <see cref="Standard_Failure"/> otherwise.</summary>
+    /// <summary>The distances of a two-distance chamfer; throws <see cref="FailureException"/> otherwise.</summary>
     public void Dists(out double Dis1, out double Dis2)
     {
         if (mChamf != ChFiDS_TwoDist)
         {
-            throw new Standard_Failure("Chamfer is not a Two Dists Chamfer");
+            throw new FailureException("Chamfer is not a Two Dists Chamfer");
         }
 
         Dis1 = d1;
@@ -74,13 +75,13 @@ public sealed class ChFiDS_ChamfSpine : ChFiDS_Spine
         d2 = Dis2;
     }
 
-    /// <summary>The distance and angle of a distance-angle chamfer; throws <see cref="Standard_Failure"/> otherwise
+    /// <summary>The distance and angle of a distance-angle chamfer; throws <see cref="FailureException"/> otherwise
     /// (with OCCT's message).</summary>
     public void GetDistAngle(out double Dis, out double Angle)
     {
         if (mChamf != ChFiDS_DistAngle)
         {
-            throw new Standard_Failure("Chamfer is not a Two Dists Chamfer");
+            throw new FailureException("Chamfer is not a Two Dists Chamfer");
         }
 
         Dis = d1;

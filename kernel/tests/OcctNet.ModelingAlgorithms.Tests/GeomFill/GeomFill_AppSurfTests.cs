@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,10 +16,10 @@ public class GeomFill_AppSurfTests
     {
         int aNbK = theKnots.Length;
         int aNbP = aNbK + 2;
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbP);
         for (int i = 1; i <= aNbP; i++)
         {
-            aPoles[i] = new gp_Pnt(i - 1.0, theH, theWave * Math.Sin(i + theH));
+            aPoles[i] = new Point3D(i - 1.0, theH, theWave * Math.Sin(i + theH));
         }
         NCollection_Array1<double> aKnots = new(1, aNbK);
         NCollection_Array1<int> aMults = new(1, aNbK);
@@ -47,8 +48,8 @@ public class GeomFill_AppSurfTests
         {
             aP.AddCurve(aC);
         }
-        Assert.Throws<StdFail_NotDone>(() => aP.Degree());
-        aP.Perform(Precision.PConfusion());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Degree());
+        aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         Assert.Equal(3, aP.Degree());
         Assert.False(aP.IsPeriodic());
@@ -70,9 +71,9 @@ public class GeomFill_AppSurfTests
         }
 
         // the arrays must have the profile's lengths
-        Assert.Throws<Standard_DomainError>(() => aP.Poles(1, new NCollection_Array1<gp_Pnt>(1, 2)));
-        Assert.Throws<Standard_DomainError>(() => aP.Poles(5, new NCollection_Array1<gp_Pnt>(1, aP.NbPoles())));
-        Assert.Throws<Standard_DomainError>(() => aP.KnotsAndMults(new NCollection_Array1<double>(1, 2), aM));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(1, new NCollection_Array1<Point3D>(1, 2)));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.Poles(5, new NCollection_Array1<Point3D>(1, aP.NbPoles())));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.KnotsAndMults(new NCollection_Array1<double>(1, 2), aM));
     }
 
     [Fact]
@@ -90,13 +91,13 @@ public class GeomFill_AppSurfTests
         }
         // handed out before Perform: frozen; Perform then changes copies (decision 844)
         Geom_Curve aBefore = aP.Curve(1);
-        Assert.True(aBefore.IsFrozen());
+        Assert.True(aBefore.IsFrozen);
         int aNbPolesBefore = ((Geom_BSplineCurve)aBefore).NbPoles();
-        aP.Perform(Precision.PConfusion());
+        aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.Equal(aNbPolesBefore, ((Geom_BSplineCurve)aBefore).NbPoles());
         Assert.NotSame(aBefore, aP.Curve(1));
-        Assert.True(aP.Curve(1).IsFrozen());
-        Assert.False(aP.InternalCurve(2).IsFrozen());
+        Assert.True(aP.Curve(1).IsFrozen);
+        Assert.False(aP.InternalCurve(2).IsFrozen);
         Assert.Equal(4, ((Geom_BSplineCurve)aCurves[3]).NbPoles());
         Assert.NotSame(aCurves[0], aP.Curve(1));
     }
@@ -108,11 +109,11 @@ public class GeomFill_AppSurfTests
         // pole count of periodic curves; BSplCLib::InsertKnots then writes past its arrays natively (occt-issues.md).
         static Geom_BSplineCurve Loop(double theH, int theNbPoles, int theDeg)
         {
-            NCollection_Array1<gp_Pnt> aPoles = new(1, theNbPoles);
+            NCollection_Array1<Point3D> aPoles = new(1, theNbPoles);
             for (int i = 1; i <= theNbPoles; i++)
             {
                 double t = 2 * Math.PI * (i - 1) / theNbPoles;
-                aPoles[i] = new gp_Pnt(Math.Cos(t), theH, Math.Sin(t));
+                aPoles[i] = new Point3D(Math.Cos(t), theH, Math.Sin(t));
             }
             NCollection_Array1<double> aKnots = new(1, theNbPoles + 1);
             NCollection_Array1<int> aMults = new(1, theNbPoles + 1);
@@ -129,7 +130,7 @@ public class GeomFill_AppSurfTests
         aP.AddCurve(Loop(3.0, 6, 1));
         aP.AddCurve(Loop(7.0, 7, 1));
         Assert.True(aP.IsPeriodic());
-        Assert.ThrowsAny<Standard_RangeError>(() => aP.Perform(Precision.PConfusion()));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion()));
     }
 
     [Fact]
@@ -142,9 +143,9 @@ public class GeomFill_AppSurfTests
             aGen.AddCurve(aC);
         }
         Assert.Null(aGen.Surface());
-        aGen.Perform(Precision.PConfusion());
+        aGen.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         Geom_BSplineSurface aS = (Geom_BSplineSurface)aGen.Surface()!;
-        Assert.True(aS.IsFrozen());
+        Assert.True(aS.IsFrozen);
         Assert.Same(aS, aGen.Surface());
         Assert.Equal(3, aS.UDegree());
         Assert.Equal(1, aS.VDegree());
@@ -159,9 +160,9 @@ public class GeomFill_AppSurfTests
             }
         }
         // between two sections the surface is the segment joining them
-        gp_Pnt aMid = aS.Value(0.3, 1.5);
-        gp_Pnt aA = aCurves[1].Value(0.3), aB = aCurves[2].Value(0.3);
-        Assert.True(aMid.Distance(new gp_Pnt((aA.XYZ() + aB.XYZ()) * 0.5)) < 1e-12);
+        Point3D aMid = aS.Value(0.3, 1.5);
+        Point3D aA = aCurves[1].Value(0.3), aB = aCurves[2].Value(0.3);
+        Assert.True(aMid.Distance(new Point3D((aA.XYZ() + aB.XYZ()) * 0.5)) < 1e-12);
     }
 
     [Fact]
@@ -173,17 +174,17 @@ public class GeomFill_AppSurfTests
         {
             aSec.AddCurve(aC);
         }
-        aSec.Perform(Precision.PConfusion());
+        aSec.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         aSec.GetShape(out int aNbPoles, out int aNbKnots, out int aDegree, out int aNbPoles2d);
         Assert.Equal((aSec.NbPoles(), aSec.NbKnots(), 3, 0), (aNbPoles, aNbKnots, aDegree, aNbPoles2d));
 
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
-        NCollection_Array1<gp_Vec> aDPoles = new(1, aNbPoles);
-        NCollection_Array1<gp_Pnt2d> aPoles2d = new(1, 1);
-        NCollection_Array1<gp_Vec2d> aDPoles2d = new(1, 1);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Vector3D> aDPoles = new(1, aNbPoles);
+        NCollection_Array1<Point2D> aPoles2d = new(1, 1);
+        NCollection_Array1<Vector2D> aDPoles2d = new(1, 1);
         NCollection_Array1<double> aW = new(1, aNbPoles), aDW = new(1, aNbPoles);
         Assert.False(aSec.Section(2, aPoles, aDPoles, aPoles2d, aDPoles2d, aW, aDW));
-        NCollection_Array1<gp_Pnt> aExpected = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aExpected = new(1, aNbPoles);
         aSec.Poles(2, aExpected);
         Assert.Equal(aExpected.AsSpan().ToArray(), aPoles.AsSpan().ToArray());
         Assert.All(aW.AsSpan().ToArray(), w => Assert.Equal(1.0, w));
@@ -202,7 +203,7 @@ public class GeomFill_AppSurfTests
         {
             aZero.SetValue(i, 10.0 * i);
         }
-        Assert.ThrowsAny<Standard_RangeError>(() => aSec.SetParam(aZero));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aSec.SetParam(aZero));
     }
 
     [Fact]
@@ -222,7 +223,7 @@ public class GeomFill_AppSurfTests
         {
             aSec.AddCurve(aC);
         }
-        aSec.Perform(Precision.PConfusion());
+        aSec.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         NCollection_HArray1<double> aParams = new(1, aCurves.Count);
         double[] aV = [0.0, 2.0, 4.0, 7.0];
         for (int i = 1; i <= aCurves.Count; i++)
@@ -246,7 +247,7 @@ public class GeomFill_AppSurfTests
     {
         (GeomFill_SectionGenerator aSec, GeomFill_Line aLine, List<Geom_Curve> aCurves) = Approximation();
         GeomFill_AppSurf anApp = new(2, 8, 1e-7, 1e-7, theWay == 2 ? 2 : 0, KnownParameters: true);
-        anApp.SetContinuity(GeomAbs_C2);
+        anApp.SetContinuity(C2);
         switch (theWay)
         {
             case 0: anApp.Perform(aLine, aSec); break;
@@ -259,7 +260,7 @@ public class GeomFill_AppSurfTests
         Assert.Equal((3, aSec.NbPoles(), aSec.NbKnots()), (ud, nup, nuk));
         Assert.Equal((anApp.VDegree(), anApp.SurfVKnots().Length(), anApp.SurfPoles().RowLength()), (vd, nvk, nvp));
         Assert.Equal(0, anApp.NbCurves2d());
-        Assert.Throws<Standard_DomainError>(() => anApp.Curves2dDegree());
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.Curves2dDegree());
 
         Geom_BSplineSurface aS = Surface(anApp);
         double[] aV = [0.0, 2.0, 4.0, 7.0];
@@ -287,7 +288,7 @@ public class GeomFill_AppSurfTests
         }
 
         // the copy into the caller's arrays
-        NCollection_Array2<gp_Pnt> aP = new(1, nup, 1, nvp);
+        NCollection_Array2<Point3D> aP = new(1, nup, 1, nvp);
         NCollection_Array2<double> aW = new(1, nup, 1, nvp);
         NCollection_Array1<double> aUK = new(1, nuk), aVK = new(1, nvk);
         NCollection_Array1<int> aUM = new(1, nuk), aVM = new(1, nvk);
@@ -301,18 +302,18 @@ public class GeomFill_AppSurfTests
     {
         GeomFill_AppSurf anApp = new();
         Assert.False(anApp.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anApp.UDegree());
-        Assert.Throws<StdFail_NotDone>(() => anApp.SurfPoles());
-        Assert.Throws<StdFail_NotDone>(() => anApp.TolReached(out _, out _));
-        Assert.Throws<Standard_DomainError>(() => anApp.SetCriteriumWeight(1, -1, 1));
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.UDegree());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.SurfPoles());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.TolReached(out _, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.SetCriteriumWeight(1, -1, 1));
         anApp.SetCriteriumWeight(0.1, 0.2, 0.7);
         anApp.CriteriumWeight(out double w1, out double w2, out double w3);
         Assert.Equal((0.1, 0.2, 0.7), (w1, w2, w3));
-        anApp.SetContinuity(GeomAbs_C1);
+        anApp.SetContinuity(C1);
         anApp.SetParType(Approx_ParametrizationType.Approx_Centripetal);
         anApp.Init(3, 8, 1e-5, 1e-5, 0);
         // Init restores the defaults
-        Assert.Equal(GeomAbs_C2, anApp.Continuity());
+        Assert.Equal(C2, anApp.Continuity());
         Assert.Equal(Approx_ParametrizationType.Approx_ChordLength, anApp.ParType());
         anApp.CriteriumWeight(out w1, out w2, out w3);
         Assert.Equal((0.4, 0.2, 0.4), (w1, w2, w3));
@@ -333,7 +334,7 @@ public class GeomFill_AppSurfTests
         }
         GeomFill_AppSurf anApp = new(3, 8, 1e-6, 1e-6, 0);
         anApp.Perform(aLine, aSec, true);
-        NCollection_Array2<gp_Pnt> aFirst = new(anApp.SurfPoles());
+        NCollection_Array2<Point3D> aFirst = new(anApp.SurfPoles());
         anApp.Perform(aLine, aSec, true);
         Assert.Equal(aFirst.AsSpan().ToArray(), anApp.SurfPoles().AsSpan().ToArray());
     }

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -31,7 +33,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     private struct NewFaceData
     {
         public Geom_Surface? myOffsetS;
-        public TopLoc_Location myL;
+        public Placement myL;
         public double myTol;
         public bool myRevWires;
         public bool myRevFace;
@@ -40,13 +42,13 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     private struct NewEdgeData
     {
         public Geom_Curve? myOffsetC; // Resulting curve.
-        public TopLoc_Location myL;
+        public Placement myL;
         public double myTol;
     }
 
     private struct NewVertexData
     {
-        public gp_Pnt myP;
+        public Point3D myP;
         public double myTol;
     }
 
@@ -89,7 +91,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     /// </summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -98,7 +100,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
         {
             // OCCT.NET: OCCT leaves the outputs unset
             S = null;
-            L = new TopLoc_Location();
+            L = new Placement();
             Tol = 0.0;
             RevWires = RevFace = false;
             return false;
@@ -118,13 +120,13 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>True if the edge has been modified: <paramref name="C"/> is its new 3D curve.</summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         if (!myEdgeInfo.IsBound(E))
         {
             // OCCT.NET: OCCT leaves the outputs unset
             C = null;
-            L = new TopLoc_Location();
+            L = new Placement();
             Tol = 0.0;
             return false;
         }
@@ -141,12 +143,12 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>True if the vertex has been modified: <paramref name="P"/> is its new point.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
         if (!myVertexInfo.IsBound(V))
         {
             // OCCT.NET: OCCT leaves the outputs unset
-            P = new gp_Pnt();
+            P = new Point3D();
             Tol = 0.0;
             return false;
         }
@@ -201,7 +203,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>The continuity of the original edge between the original faces.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,
@@ -277,7 +279,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
 
         // aStatus is set by BRepOffset::Surface(), could be used to check result...
         aNFD.myOffsetS = BRepOffset.Surface(aS, aMult * myOffsetValue, out BRepOffset_Status aStatus, true);
-        aNFD.myL = new TopLoc_Location(); // Null transformation.
+        aNFD.myL = new Placement(); // Null transformation.
 
         // Save offset surface in map.
         myFaceInfo.Bind(theFace, aNFD);
@@ -372,7 +374,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
         // Get offset points for founded end.
         // Set result vertex position as barycenter of founded points.
 
-        gp_Pnt aCurrPnt = BRep_Tool.Pnt(theVertex);
+        Point3D aCurrPnt = BRep_Tool.Pnt(theVertex);
 
         NCollection_List<TopoDS_Shape> aEdgesList = theVertexEdgeMap[theIdx];
 
@@ -382,7 +384,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
         }
 
         // Array to store offset points.
-        var anOffsetPointVec = new NCollection_DynamicArray<gp_Pnt>();
+        var anOffsetPointVec = new NCollection_DynamicArray<Point3D>();
 
         double aMaxEdgeTol = 0.0;
 
@@ -406,8 +408,8 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
                 continue;
             }
 
-            gp_Pnt aPntF = aC3d.Value(aF);
-            gp_Pnt aPntL = aC3d.Value(aL);
+            Point3D aPntF = aC3d.Value(aF);
+            Point3D aPntL = aC3d.Value(aL);
 
             double aSqDistF = aPntF.SquareDistance(aCurrPnt);
             double aSqDistL = aPntL.SquareDistance(aCurrPnt);
@@ -423,14 +425,14 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
             // Compute point on offset edge.
             NewEdgeData aNED = myEdgeInfo.Find(aCurrEdge);
             Geom_Curve anOffsetCurve = aNED.myOffsetC!;
-            gp_Pnt anOffsetPoint = anOffsetCurve.Value(aMinParam);
+            Point3D anOffsetPoint = anOffsetCurve.Value(aMinParam);
             anOffsetPointVec.Append(anOffsetPoint);
 
             // Handle situation when edge is closed.
             TopExp.Vertices(aCurrEdge, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
             if (aV1.IsSame(aV2))
             {
-                gp_Pnt anOffsetPointLast = anOffsetCurve.Value(aMaxParam);
+                Point3D anOffsetPointLast = anOffsetCurve.Value(aMaxParam);
                 anOffsetPointVec.Append(anOffsetPointLast);
             }
 
@@ -439,7 +441,7 @@ public sealed class BRepOffset_SimpleOffset : BRepTools_Modification
 
         // NCollection_DynamicArray starts from 0 by default.
         // It's better to use lower() and upper() in this case instead of direct indexes range.
-        gp_Pnt aCenter = new(0.0, 0.0, 0.0);
+        Point3D aCenter = new(0.0, 0.0, 0.0);
         for (int i = anOffsetPointVec.Lower(); i <= anOffsetPointVec.Upper(); ++i)
         {
             aCenter.SetXYZ(aCenter.XYZ() + anOffsetPointVec.Value(i).XYZ());

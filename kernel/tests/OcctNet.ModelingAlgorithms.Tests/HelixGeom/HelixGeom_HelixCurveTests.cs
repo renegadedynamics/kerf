@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixGeom_HelixCurve_Test.cxx (HelixGeomTest).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -18,20 +20,20 @@ public class HelixGeom_HelixCurveTests
         double aParam = M_PI / 2.0;
 
         // Test D1
-        aHelix.D1(aParam, out gp_Pnt aP, out gp_Vec aV1);
+        aHelix.D1(aParam, out Point3D aP, out Vector3D aV1);
         Assert.Equal(0.0, aP.X(), 1e-15);
         Assert.Equal(2.0, aP.Y(), 1e-15);
         Assert.True(aV1.Magnitude() > 0.0);
 
         // Test D2
-        aHelix.D2(aParam, out aP, out aV1, out gp_Vec aV2);
+        aHelix.D2(aParam, out aP, out aV1, out Vector3D aV2);
         Assert.Equal(0.0, aP.X(), 1e-15);
         Assert.Equal(2.0, aP.Y(), 1e-15);
         Assert.True(aV2.Magnitude() > 0.0);
 
         // Test DN
-        gp_Vec aVN1 = aHelix.DN(aParam, 1);
-        gp_Vec aVN2 = aHelix.DN(aParam, 2);
+        Vector3D aVN1 = aHelix.DN(aParam, 1);
+        Vector3D aVN2 = aHelix.DN(aParam, 2);
 
         Assert.Equal(aV1.X(), aVN1.X(), 1e-15);
         Assert.Equal(aV1.Y(), aVN1.Y(), 1e-15);
@@ -48,16 +50,16 @@ public class HelixGeom_HelixCurveTests
         var aHelix = new HelixGeom_HelixCurve();
 
         // Test invalid parameter range (T1 >= T2)
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aHelix.Load(2.0, 1.0, 5.0, 2.0, 0.0, true));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(2.0, 1.0, 5.0, 2.0, 0.0, true));
 
         // Test negative pitch
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aHelix.Load(0.0, 2.0 * M_PI, -1.0, 2.0, 0.0, true));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, -1.0, 2.0, 0.0, true));
 
         // Test negative radius
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, -1.0, 0.0, true));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, -1.0, 0.0, true));
 
         // Test invalid taper angle
-        Assert.ThrowsAny<Standard_ConstructionError>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, M_PI / 2.0, true));
+        Assert.ThrowsAny<ConstructionErrorException>(() => aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, M_PI / 2.0, true));
     }
 
     [Fact]
@@ -66,8 +68,8 @@ public class HelixGeom_HelixCurveTests
         var aHelix = new HelixGeom_HelixCurve();
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, false); // Counter-clockwise
 
-        gp_Pnt aP0 = aHelix.Value(0.0);
-        gp_Pnt aP1 = aHelix.Value(M_PI / 2.0);
+        Point3D aP0 = aHelix.Value(0.0);
+        Point3D aP1 = aHelix.Value(M_PI / 2.0);
 
         Assert.Equal(2.0, aP0.X(), 1e-15);
         Assert.Equal(0.0, aP0.Y(), 1e-15);
@@ -83,24 +85,24 @@ public class HelixGeom_HelixCurveTests
         aHelix.Load(0.0, 4.0 * M_PI, 10.0, 3.0, 0.0, true);
 
         // Test continuity
-        Assert.Equal(GeomAbs_CN, aHelix.Continuity());
+        Assert.Equal(CN, aHelix.Continuity());
 
         // Test intervals
-        Assert.Equal(1, aHelix.NbIntervals(GeomAbs_C0));
-        Assert.Equal(1, aHelix.NbIntervals(GeomAbs_C1));
-        Assert.Equal(1, aHelix.NbIntervals(GeomAbs_C2));
+        Assert.Equal(1, aHelix.NbIntervals(C0));
+        Assert.Equal(1, aHelix.NbIntervals(C1));
+        Assert.Equal(1, aHelix.NbIntervals(C2));
 
         // Test intervals array
         NCollection_Array1<double> anIntervals = new(1, 2);
-        aHelix.Intervals(anIntervals, GeomAbs_C0);
+        aHelix.Intervals(anIntervals, C0);
         Assert.Equal(0.0, anIntervals[1]);
         Assert.Equal(4.0 * M_PI, anIntervals[2]);
 
         // Test not implemented methods
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aHelix.Resolution(1.0));
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aHelix.IsClosed());
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aHelix.IsPeriodic());
-        Assert.ThrowsAny<Standard_DomainError>(() => aHelix.Period());
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.Resolution(1.0));
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsClosed());
+        Assert.ThrowsAny<MethodNotImplementedException>(() => aHelix.IsPeriodic());
+        Assert.ThrowsAny<DomainErrorException>(() => aHelix.Period());
     }
 
     [Fact]
@@ -109,7 +111,7 @@ public class HelixGeom_HelixCurveTests
         var aBuilder = new HelixGeom_BuilderHelixCoil();
 
         aBuilder.SetTolerance(myTolerance);
-        aBuilder.SetApproxParameters(GeomAbs_C2, 8, 100);
+        aBuilder.SetApproxParameters(C2, 8, 100);
         // Reduced parameter range and taper angle
         aBuilder.SetCurveParameters(0.0, 2.0 * M_PI, 20.0, 5.0, 0.05, true);
 
@@ -146,7 +148,7 @@ public class HelixGeom_HelixCurveTests
 
         int aResult = HelixGeom_Tools.ApprCurve3D(aHAdaptor,
                                                   myTolerance,
-                                                  GeomAbs_C1,
+                                                  C1,
                                                   50, // Max segments
                                                   6,  // Max degree
                                                   ref aBSpline,
@@ -162,13 +164,13 @@ public class HelixGeom_HelixCurveTests
         {
             double aParam = aHelix.FirstParameter() + i * (aHelix.LastParameter() - aHelix.FirstParameter()) / aNbSamples;
 
-            gp_Pnt aOrigPnt = aHelix.Value(aParam);
+            Point3D aOrigPnt = aHelix.Value(aParam);
 
             // Map parameter to B-spline parameter space
             double aBSplineParam = aBSpline.FirstParameter()
                                    + i * (aBSpline.LastParameter() - aBSpline.FirstParameter()) / aNbSamples;
 
-            aBSpline.D0(aBSplineParam, out gp_Pnt aApproxPnt);
+            aBSpline.D0(aBSplineParam, out Point3D aApproxPnt);
 
             double aDistance = aOrigPnt.Distance(aApproxPnt);
             Assert.True(aDistance <= aMaxError * 2); // Allow some margin
@@ -185,7 +187,7 @@ public class HelixGeom_HelixCurveTests
         // Test C0 continuity
         Geom_BSplineCurve? aBSplineC0 = null;
         double aMaxErrorC0 = 0;
-        int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, GeomAbs_C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
+        int aResultC0 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C0, 30, 4, ref aBSplineC0, ref aMaxErrorC0);
 
         Assert.Equal(0, aResultC0);
         Assert.NotNull(aBSplineC0);
@@ -193,7 +195,7 @@ public class HelixGeom_HelixCurveTests
         // Test C2 continuity
         Geom_BSplineCurve? aBSplineC2 = null;
         double aMaxErrorC2 = 0;
-        int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, GeomAbs_C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
+        int aResultC2 = HelixGeom_Tools.ApprCurve3D(aHAdaptor, myTolerance, C2, 30, 6, ref aBSplineC2, ref aMaxErrorC2);
 
         Assert.Equal(0, aResultC2);
         Assert.NotNull(aBSplineC2);
@@ -213,9 +215,9 @@ public class HelixGeom_HelixCurveTests
         Assert.Equal(0, aBuilder.ErrorStatus());
 
         // Check default approximation parameters
-        aBuilder.ApproxParameters(out GeomAbs_Shape aCont, out int aMaxDegree, out int aMaxSeg);
+        aBuilder.ApproxParameters(out Continuity aCont, out int aMaxDegree, out int aMaxSeg);
 
-        Assert.Equal(GeomAbs_C2, aCont);
+        Assert.Equal(C2, aCont);
         Assert.Equal(8, aMaxDegree);
         Assert.Equal(150, aMaxSeg);
 
@@ -253,7 +255,7 @@ public class HelixGeom_HelixCurveTests
     {
         var aHelix = new HelixGeom_HelixCurve();
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.1, true);
-        gp_Pnt aTapered = aHelix.Value(2.0 * M_PI);
+        Point3D aTapered = aHelix.Value(2.0 * M_PI);
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
         Assert.Equal(aTapered, aHelix.Value(2.0 * M_PI));
         var aFresh = new HelixGeom_HelixCurve();
@@ -269,7 +271,7 @@ public class HelixGeom_HelixCurveTests
         aBuilder.SetCurveParameters(0.0, 6.0 * M_PI, 10.0, 5.0, 0.0, true);
         aBuilder.Perform();
         var aFirst = aBuilder.Curves();
-        Assert.All(aFirst, c => Assert.True(c.IsFrozen()));
+        Assert.All(aFirst, c => Assert.True(c.IsFrozen));
         Assert.Same(aFirst[0], aBuilder.Curves()[0]);
         aBuilder.Perform();
         Assert.NotSame(aFirst[0], aBuilder.Curves()[0]);

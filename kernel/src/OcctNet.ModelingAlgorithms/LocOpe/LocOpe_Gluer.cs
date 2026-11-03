@@ -4,8 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.LocOpe_Operation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -83,7 +85,7 @@ public sealed class LocOpe_Gluer
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         TopoDS_Shape aLocalFace = Fnew.Oriented(exp.Current().Orientation());
@@ -98,7 +100,7 @@ public sealed class LocOpe_Gluer
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         aLocalFace = Fbase.Oriented(exp.Current().Orientation());
@@ -144,7 +146,7 @@ public sealed class LocOpe_Gluer
     {
         if (myMapEE.IsBound(Enew) && !myMapEE[Enew].IsSame(Ebase))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myMapEE.Bind(Enew, Ebase);
     }
@@ -160,7 +162,7 @@ public sealed class LocOpe_Gluer
         }
         if (mySb.IsNull() || mySn.IsNull() || myMapEF.IsEmpty() || myOpe == LocOpe_INVALID)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         // OCCT.NET: the basis shape and the new shape as worked on (their copies if frozen); the bindings are mapped
@@ -270,8 +272,8 @@ public sealed class LocOpe_Gluer
             {
                 TopoDS_Face fac1 = TopoDS.Face(LL.First());
                 TopoDS_Face fac2 = TopoDS.Face(LL.Last());
-                GeomAbs_Shape thecont = BRep_Tool.Continuity(edg, fac1, fac2);
-                if (thecont >= GeomAbs_G1)
+                Continuity thecont = BRep_Tool.Continuity(edg, fac1, fac2);
+                if (thecont >= G1)
                 {
                     // on essaie de recoder
                     int ind2 = theMapEF2.FindIndex(edg);
@@ -315,11 +317,11 @@ public sealed class LocOpe_Gluer
                         if (LocOpe.TgtFaces(edg, fac1, fac2))
                         {
                             myTgtEdges.Append(edg);
-                            GeomAbs_Shape thecont = BRep_Tool.Continuity(edg, fac1, fac2);
-                            if (thecont < GeomAbs_G1)
+                            Continuity thecont = BRep_Tool.Continuity(edg, fac1, fac2);
+                            if (thecont < G1)
                             {
                                 BRep_Builder B = new();
-                                B.Continuity(edg, fac1, fac2, GeomAbs_G1);
+                                B.Continuity(edg, fac1, fac2, G1);
                             }
                         }
                     }
@@ -361,7 +363,7 @@ public sealed class LocOpe_Gluer
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -380,7 +382,7 @@ public sealed class LocOpe_Gluer
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         TopoDS_Shape aF = myWork.Copied(F);
         if (myDescF.IsBound(aF))
@@ -418,12 +420,12 @@ public sealed class LocOpe_Gluer
 
         // Find a point on Sb
         TopExp_Explorer exp = new();
-        gp_Vec n1, n2;
+        Vector3D n1, n2;
 
         // Initialize extrema projector once for the target surface
         GeomAdaptor_Surface GAS = new(Sb);
-        double TolU = GAS.UResolution(Precision.Confusion());
-        double TolV = GAS.VResolution(Precision.Confusion());
+        double TolU = GAS.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
+        double TolV = GAS.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         Extrema_ExtPS anExtPS = new();
         anExtPS.Initialize(GAS,
                            GAS.FirstUParameter(),
@@ -438,26 +440,26 @@ public sealed class LocOpe_Gluer
         {
             TopoDS_Edge edg = TopoDS.Edge(exp.Current());
             Geom2d_Curve C2d = BRep_Tool.CurveOnSurface(edg, Fn, out double f, out double l)!;
-            if (Precision.IsNegativeInfinite(f) && Precision.IsPositiveInfinite(l))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 f = -100.0;
                 l = 100.0;
             }
-            else if (Precision.IsNegativeInfinite(f))
+            else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
             {
                 f = l - 200.0;
             }
-            else if (Precision.IsPositiveInfinite(l))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
             {
                 l = f + 200.0;
             }
             double deltau = (l - f) / 20.0;
             for (int i = 1; i <= 21; i++)
             {
-                C2d.D0(f + (i - 1) * deltau, out gp_Pnt2d ptvtx);
-                Sn.D1(ptvtx.X(), ptvtx.Y(), out gp_Pnt pvt, out gp_Vec d1u, out gp_Vec d1v);
+                C2d.D0(f + (i - 1) * deltau, out Point2D ptvtx);
+                Sn.D1(ptvtx.X(), ptvtx.Y(), out Point3D pvt, out Vector3D d1u, out Vector3D d1v);
                 n1 = d1u.Crossed(d1v);
-                if (n1.Magnitude() > Precision.Confusion())
+                if (n1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     n1.Normalize();
                     if (Fn.Orientation() == TopAbs_REVERSED)
@@ -484,7 +486,7 @@ public sealed class LocOpe_Gluer
                             anExtPS.Point(jmin).Parameter(out double uu, out double vv);
                             Sb.D1(uu, vv, out pvt, out d1u, out d1v);
                             n2 = d1u.Crossed(d1v);
-                            if (n2.Magnitude() > Precision.Confusion())
+                            if (n2.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 n2.Normalize();
                                 if (Fb.Orientation() == TopAbs_REVERSED)

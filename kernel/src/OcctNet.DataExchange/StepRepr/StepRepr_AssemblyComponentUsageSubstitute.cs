@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepRepr_AssemblyComponentUsageSubstitute : Standard_Transient
+public class StepRepr_AssemblyComponentUsageSubstitute : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDef;

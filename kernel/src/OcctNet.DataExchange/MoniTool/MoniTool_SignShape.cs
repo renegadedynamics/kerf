@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -27,7 +29,7 @@ public class MoniTool_SignShape : MoniTool_SignText
     /// <summary>
     /// Returns for a HShape, the string of its ShapeEnum The Model is absolutely useless (may be null)
     /// </summary>
-    public override string Text(Standard_Transient? ent, Standard_Transient? context)
+    public override string Text(Transient? ent, Transient? context)
     {
         if (ent is null)
         {
@@ -36,7 +38,7 @@ public class MoniTool_SignShape : MoniTool_SignText
         TopoDS_HShape HS = (ent as TopoDS_HShape);
         if (HS is null)
         {
-            return ent.DynamicType().Name;
+            return ent.DynamicTypeName();
         }
         TopoDS_Shape sh = HS.Shape();
         if (sh.IsNull())

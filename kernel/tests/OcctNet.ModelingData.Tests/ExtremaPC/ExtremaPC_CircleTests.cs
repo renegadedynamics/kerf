@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Circle_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_CircleTest
@@ -19,10 +21,10 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOutside_OnXAxis()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
-        ExtremaPC_Circle anEval = new(aCircle, new MathUtils.Domain1D(0.0, THE_2PI));
+        ExtremaPC_Circle anEval = new(aCircle, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, THE_2PI));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -46,8 +48,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOutside_OnYAxis()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.0, 25.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.0, 25.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -69,8 +71,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOutside_Diagonal()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(20.0, 20.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(20.0, 20.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -93,8 +95,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointInside_OnXAxis()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(3.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(3.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -115,8 +117,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointInside_OnYAxis()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.0, 5.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.0, 5.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -137,8 +139,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointInside_NearCenter()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.1, 0.1, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.1, 0.1, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -160,8 +162,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointAtCenter_Degenerate()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -174,8 +176,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointNearCenter_NotDegenerate()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(1e-8, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(1e-8, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, 1e-12);
@@ -206,8 +208,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointAbovePlane()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 5.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(20.0, 0.0, 5.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -225,8 +227,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointBelowPlane()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.0, 15.0, -7.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.0, 15.0, -7.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -244,8 +246,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOnAxis_Degenerate()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(0.0, 0.0, 15.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(0.0, 0.0, 15.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -263,8 +265,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PartialArc_FirstQuadrant()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -280,8 +282,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PartialArc_SecondQuadrant()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(-20.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(-20.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -297,8 +299,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PartialArc_ExtremaOutsideRange()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         // Arc from PI/2 to 3*PI/2 (left half of circle)
@@ -328,8 +330,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void CircleWithOffset()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1)), 15.0);
-        gp_Pnt aPoint = new(130.0, 200.0, 50.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 15.0);
+        Point3D aPoint = new(130.0, 200.0, 50.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -347,8 +349,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void CircleInYZPlane()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 10.0);
-        gp_Pnt aPoint = new(5.0, 20.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 10.0);
+        Point3D aPoint = new(5.0, 20.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -366,8 +368,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void CircleInXZPlane()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 10.0);
-        gp_Pnt aPoint = new(20.0, 3.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 10.0);
+        Point3D aPoint = new(20.0, 3.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -385,8 +387,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void SmallRadius()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0.001);
-        gp_Pnt aPoint = new(0.01, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.001);
+        Point3D aPoint = new(0.01, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -403,8 +405,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void LargeRadius()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1000.0);
-        gp_Pnt aPoint = new(1500.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1000.0);
+        Point3D aPoint = new(1500.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -425,8 +427,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOnCircle()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(10.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(10.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -444,8 +446,8 @@ public class ExtremaPC_CircleTest
     [Fact]
     public void PointOnCircle_AtPi()
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        gp_Pnt aPoint = new(-10.0, 0.0, 0.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Point3D aPoint = new(-10.0, 0.0, 0.0);
 
         ExtremaPC_Circle anEval = new(aCircle);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);

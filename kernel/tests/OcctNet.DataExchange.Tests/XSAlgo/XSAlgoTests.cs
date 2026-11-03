@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using OcctNet.DataExchange.Tests.Interface;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -127,7 +128,7 @@ public class XSAlgoTests
         TopoDS_Shape aResult = aProcessor.ProcessShape(aBox, new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
                                                                                                ShapeProcess.Operation.DirectFaces));
         Assert.Equal(aBefore, XSAlgoNativeTests.BRepHash(aBox));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_FACE, aProcessor.GetContext()!.GetDetalisation());
         Assert.True(aProcessor.GetContext()!.IsNonManifold());
         Assert.True(aProcessor.ProcessShape(new TopoDS_Shape(), new ShapeProcess.OperationsFlags()).IsNull());
@@ -146,17 +147,17 @@ public class XSAlgoTests
     {
         Interface_StaticSet aStatics = XSAlgoNativeTests.StepStatics();
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
-        Standard_Transient? anInfo = null;
+        Transient? anInfo = null;
         XSAlgo_AlgoContainer aContainer = Occt.XSAlgo.AlgoContainer();
         TopoDS_Shape aResult = aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "read.step.sequence", ref anInfo,
                                                        aStatics);
         var aContext = Assert.IsType<ShapeProcess_ShapeContext>(anInfo);
         Assert.Equal(TopAbs_VERTEX, aContext.GetDetalisation());
         Assert.Equal("0.001", aContext.ResourceManager()!.Value("Runtime.Tolerance"));
-        Assert.True(aResult.IsSame(aBox) || aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.IsSame(aBox) || aResult.TShape()!.IsFrozen);
 
         // the context is reused
-        Standard_Transient? aSame = anInfo;
+        Transient? aSame = anInfo;
         aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "write.none", ref anInfo, aStatics, default, true);
         Assert.Same(aSame, anInfo);
         Assert.True(aContext.IsNonManifold());
@@ -171,6 +172,6 @@ public class XSAlgoTests
         // and not on a published shape
         var aFace2 = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
         var anEdge2 = TopoDS.Edge(new TopExp_Explorer(aFace2, TopAbs_EDGE).Current());
-        Assert.ThrowsAny<Standard_Failure>(() => aContainer.CheckPCurve(anEdge2, aFace2, 1e-3, false, aStatics));
+        Assert.ThrowsAny<FailureException>(() => aContainer.CheckPCurve(anEdge2, aFace2, 1e-3, false, aStatics));
     }
 }

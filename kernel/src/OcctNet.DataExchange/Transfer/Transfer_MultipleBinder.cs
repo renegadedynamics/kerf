@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -35,7 +37,7 @@ public class Transfer_MultipleBinder : Transfer_Binder
     /// <summary>Returns the Type permitted for Results, i.e. here Transient.</summary>
     public override Type? ResultType()
     {
-        return typeof(Standard_Transient);
+        return typeof(Transient);
     }
 
     /// <summary>Returns "(list)".</summary>
@@ -47,11 +49,11 @@ public class Transfer_MultipleBinder : Transfer_Binder
     //  ....        Multiple Result Management        ....
 
     /// <summary>Adds a new Item to the Multiple Result.</summary>
-    public void AddResult(Standard_Transient? res)
+    public void AddResult(Transient? res)
     {
         if (themulres is null)
         {
-            themulres = new NCollection_HSequence<Standard_Transient>();
+            themulres = new NCollection_HSequence<Transient>();
         }
         themulres.Append(res);
     }
@@ -63,26 +65,26 @@ public class Transfer_MultipleBinder : Transfer_Binder
     }
 
     /// <summary>Returns the value of the recorded result n0 <paramref name="num"/>.</summary>
-    public Standard_Transient? ResultValue(int num)
+    public Transient? ResultValue(int num)
     {
         return themulres.Value(num);
     }
 
     /// <summary>Returns the Multiple Result, if it is defined (at least one Item). Else, returns an empty sequence.</summary>
-    public NCollection_HSequence<Standard_Transient> MultipleResult()
+    public NCollection_HSequence<Transient> MultipleResult()
     {
         if (themulres is not null)
         {
             return themulres;
         }
-        return new NCollection_HSequence<Standard_Transient>();
+        return new NCollection_HSequence<Transient>();
     }
 
     /// <summary>Defines a Binding with a Multiple Result, given as a Sequence.</summary>
-    public void SetMultipleResult(NCollection_HSequence<Standard_Transient>? mulres)
+    public void SetMultipleResult(NCollection_HSequence<Transient>? mulres)
     {
         themulres = mulres;
     }
 
-    private NCollection_HSequence<Standard_Transient>? themulres;
+    private NCollection_HSequence<Transient>? themulres;
 }

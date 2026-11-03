@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -9,9 +10,9 @@ namespace Occt;
 public partial class BOPAlgo_Builder
 {
     /// <summary>Fills the images of the vertices: each vertex to its same-domain vertex.</summary>
-    protected void FillImagesVertices(Message_ProgressRange theRange)
+    protected void FillImagesVertices(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Filling splits of vertices", myDS!.ShapesSD().Extent());
+        using var aPS = new ProgressScope(theRange, "Filling splits of vertices", myDS!.ShapesSD().Extent());
         // the DS's integer map iterates in OCCT's order (decision 784)
         NCollection_IntDataMap<int>.Iterator aIt = new(myDS.ShapesSD());
         for (; aIt.More(); aIt.Next(), aPS.Next())
@@ -39,10 +40,10 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Fills the images of the edges: the edges of their (real) pave blocks.</summary>
-    protected void FillImagesEdges(Message_ProgressRange theRange)
+    protected void FillImagesEdges(ProgressRange theRange)
     {
         int i, aNbS = myDS!.NbSourceShapes();
-        using var aPS = new Message_ProgressScope(theRange, "Filling splits of edges", aNbS);
+        using var aPS = new ProgressScope(theRange, "Filling splits of edges", aNbS);
         for (i = 0; i < aNbS; ++i, aPS.Next())
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
@@ -136,12 +137,12 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Fills the images of the containers (wires, shells, compsolids) of the given type.</summary>
-    protected void FillImagesContainers(TopAbs_ShapeEnum theType, Message_ProgressRange theRange)
+    protected void FillImagesContainers(TopAbs_ShapeEnum theType, ProgressRange theRange)
     {
         int i, aNbS;
         //
         aNbS = myDS!.NbSourceShapes();
-        using var aPS = new Message_ProgressScope(theRange, "Building splits of containers", 1);
+        using var aPS = new ProgressScope(theRange, "Building splits of containers", 1);
         for (i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
@@ -158,13 +159,13 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Fills the images of the compounds.</summary>
-    protected void FillImagesCompounds(Message_ProgressRange theRange)
+    protected void FillImagesCompounds(ProgressRange theRange)
     {
         int i, aNbS;
         NCollection_Map<TopoDS_Shape> aMFP = new(TopTools_ShapeMapHasher.Instance);
         //
         aNbS = myDS!.NbSourceShapes();
-        using var aPS = new Message_ProgressScope(theRange, "Building splits of compounds", aNbS);
+        using var aPS = new ProgressScope(theRange, "Building splits of compounds", aNbS);
         for (i = 0; i < aNbS; ++i, aPS.Next())
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);

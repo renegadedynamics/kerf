@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -130,7 +131,7 @@ public static class ShapeProcess
     /// must be loaded already, including the description of the sequence (<c>seq.exec.op</c>). True if an operator
     /// succeeded.
     /// </summary>
-    public static bool Perform(ShapeProcess_Context context, string seq, Message_ProgressRange theProgress = default)
+    public static bool Perform(ShapeProcess_Context context, string seq, ProgressRange theProgress = default)
     {
         using var aSequenceScope = new ScopeLock(context, seq);
 
@@ -141,8 +142,8 @@ public static class ShapeProcess
             // OCCT_DEBUG: an error message to std::cout, left out
             if (context.TraceLevel() > 0)
             {
-                var SMSG3 = new Message_Msg("SP.Sequence.Warn.NoSeq"); // Sequence %s not found
-                context.Messenger().Send(SMSG3.Arg(seq).Get(), Message_Warning);
+                var SMSG3 = new Msg("SP.Sequence.Warn.NoSeq"); // Sequence %s not found
+                context.Messenger().Send(SMSG3.Arg(seq).Get(), Warning);
             }
             return false;
         }
@@ -162,7 +163,7 @@ public static class ShapeProcess
         // put a message
         if (context.TraceLevel() >= 2)
         {
-            var SMSG0 = new Message_Msg("SP.Sequence.Info.Seq"); // Sequence of operators: %s
+            var SMSG0 = new Msg("SP.Sequence.Info.Seq"); // Sequence of operators: %s
             string Seq = "";
             for (int i1 = 1; i1 <= sequenceOfOperators.Length(); i1++)
             {
@@ -173,7 +174,7 @@ public static class ShapeProcess
                 Seq += sequenceOfOperators.Value(i1);
             }
             SMSG0.Arg(Seq);
-            context.Messenger().Send(SMSG0.Get(), Message_Info);
+            context.Messenger().Send(SMSG0.Get(), Info);
         }
 
         // iterate on operators in the sequence
@@ -182,25 +183,25 @@ public static class ShapeProcess
         aShapeContext?.InternalBeginWrite();
         try
         {
-            using var aPS = new Message_ProgressScope(theProgress, null, sequenceOfOperators.Length());
+            using var aPS = new ProgressScope(theProgress, null, sequenceOfOperators.Length());
             for (i = 1; i <= sequenceOfOperators.Length() && aPS.More(); i++)
             {
                 oper = sequenceOfOperators.Value(i);
-                Message_ProgressRange aRange = aPS.Next();
+                ProgressRange aRange = aPS.Next();
 
                 if (context.TraceLevel() >= 2)
                 {
-                    var SMSG5 = new Message_Msg("SP.Sequence.Info.Operator"); // Operator %d/%d: %s
+                    var SMSG5 = new Msg("SP.Sequence.Info.Operator"); // Operator %d/%d: %s
                     SMSG5.Arg(i).Arg(sequenceOfOperators.Length()).Arg(oper);
-                    context.Messenger().Send(SMSG5.Get(), Message_Alarm);
+                    context.Messenger().Send(SMSG5.Get(), Alarm);
                 }
 
                 if (!FindOperator(oper, out ShapeProcess_Operator? op))
                 {
                     if (context.TraceLevel() > 0)
                     {
-                        var SMSG1 = new Message_Msg("SP.Sequence.Error.NoOp"); // Operator %s not found
-                        context.Messenger().Send(SMSG1.Arg(oper).Get(), Message_Alarm);
+                        var SMSG1 = new Msg("SP.Sequence.Error.NoOp"); // Operator %s not found
+                        context.Messenger().Send(SMSG1.Arg(oper).Get(), Alarm);
                     }
                     continue;
                 }
@@ -215,9 +216,9 @@ public static class ShapeProcess
                 }
                 catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                 {
-                    var SMSG2 = new Message_Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
+                    var SMSG2 = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
                     SMSG2.Arg(oper).Arg(What(anException));
-                    context.Messenger().Send(SMSG2.Get(), Message_Alarm);
+                    context.Messenger().Send(SMSG2.Get(), Alarm);
                 }
             }
         }
@@ -236,7 +237,7 @@ public static class ShapeProcess
     /// performed.
     /// </summary>
     public static bool Perform(ShapeProcess_Context? theContext, OperationsFlags theOperations,
-                               Message_ProgressRange theProgress = default)
+                               ProgressRange theProgress = default)
     {
         if (theContext is null)
         {
@@ -254,10 +255,10 @@ public static class ShapeProcess
         aShapeContext?.InternalBeginWrite();
         try
         {
-            using var aProgressScope = new Message_ProgressScope(theProgress, null, anOperators.Count);
+            using var aProgressScope = new ProgressScope(theProgress, null, anOperators.Count);
             foreach ((string anOperationName, ShapeProcess_Operator anOperation) in anOperators)
             {
-                Message_ProgressRange aProgressRange = aProgressScope.Next();
+                ProgressRange aProgressRange = aProgressScope.Next();
                 using var anOperationScope = new ScopeLock(theContext, anOperationName); // Set operation scope.
                 try
                 {
@@ -265,9 +266,9 @@ public static class ShapeProcess
                 }
                 catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
                 {
-                    var aMessage = new Message_Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
+                    var aMessage = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
                     aMessage.Arg(anOperationName).Arg(What(anException));
-                    theContext.Messenger().Send(aMessage.Get(), Message_Alarm);
+                    theContext.Messenger().Send(aMessage.Get(), Alarm);
                 }
             }
         }

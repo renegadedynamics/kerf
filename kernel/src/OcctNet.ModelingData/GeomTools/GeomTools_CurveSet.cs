@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <see cref="Write"/> writes exactly what OCCT writes (17 significant digits, <c>'\n'</c> line ends);
-/// <see cref="Read"/> reads OCCT's files, following C++'s stream extraction (<see cref="Standard_Stream"/>). The curves
+/// <see cref="Read"/> reads OCCT's files, following C++'s stream extraction (<see cref="StreamUtilities"/>). The curves
 /// that <see cref="Read"/> creates are frozen: the set shares them with whoever asks for them. A curve that can't be
 /// read (its constructor throws) is stored as null, as in OCCT, which stores one null entry however many fail.
 /// </remarks>
@@ -67,11 +71,11 @@ public class GeomTools_CurveSet
         return S is null ? 0 : myMap.FindIndex(S);
     }
 
-    private static void Out(TextWriter OS, double theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, double theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static void Out(TextWriter OS, int theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, int theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static void Print(in gp_Pnt P, TextWriter OS, bool compact)
+    private static void Print(in Point3D P, TextWriter OS, bool compact)
     {
         Out(OS, P.X());
         if (!compact)
@@ -91,7 +95,7 @@ public class GeomTools_CurveSet
         OS.Write(" ");
     }
 
-    private static void Print(in gp_Dir D, TextWriter OS, bool compact)
+    private static void Print(in Direction3D D, TextWriter OS, bool compact)
     {
         Out(OS, D.X());
         if (!compact)
@@ -123,7 +127,7 @@ public class GeomTools_CurveSet
             OS.Write("Line");
         }
 
-        gp_Lin C = L.Lin();
+        Line3D C = L.Lin();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -156,7 +160,7 @@ public class GeomTools_CurveSet
             OS.Write("Circle");
         }
 
-        gp_Circ C = CC.Circ();
+        Circle3D C = CC.Circ();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -207,7 +211,7 @@ public class GeomTools_CurveSet
             OS.Write("Ellipse");
         }
 
-        gp_Elips C = E.Elips();
+        Ellipse3D C = E.Elips();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -265,7 +269,7 @@ public class GeomTools_CurveSet
             OS.Write("Parabola");
         }
 
-        gp_Parab C = P.Parab();
+        Parabola3D C = P.Parab();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -316,7 +320,7 @@ public class GeomTools_CurveSet
             OS.Write("Hyperbola");
         }
 
-        gp_Hypr C = H.Hypr();
+        Hyperbola3D C = H.Hypr();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -403,7 +407,7 @@ public class GeomTools_CurveSet
             if (!compact)
             {
                 OS.Write("\n  ");
-                OS.Write(Standard_Stream.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                OS.Write(StreamUtilities.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 OS.Write(" : ");
             }
 
@@ -512,7 +516,7 @@ public class GeomTools_CurveSet
             if (!compact)
             {
                 OS.Write("\n  ");
-                OS.Write(Standard_Stream.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                OS.Write(StreamUtilities.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 OS.Write(" : ");
             }
             else
@@ -540,7 +544,7 @@ public class GeomTools_CurveSet
             if (!compact)
             {
                 OS.Write("\n  ");
-                OS.Write(Standard_Stream.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                OS.Write(StreamUtilities.Setw(2, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 OS.Write(" : ");
             }
 
@@ -622,7 +626,7 @@ public class GeomTools_CurveSet
 
     /// <summary>
     /// Writes the curve; if <paramref name="compact"/>, in the format <see cref="ReadCurve"/> reads, otherwise as a
-    /// readable dump. Reals are written at the writer's precision (<see cref="Standard_Stream.Precision(TextWriter)"/>,
+    /// readable dump. Reals are written at the writer's precision (<see cref="StreamUtilities.Precision(TextWriter)"/>,
     /// 6 unless set). An unknown curve type goes to <see cref="GeomTools.GetUndefinedTypeHandler"/>.
     /// </summary>
     public static void PrintCurve(Geom_Curve C, TextWriter OS, bool compact = false)
@@ -683,7 +687,7 @@ public class GeomTools_CurveSet
 
         for (i = 1; i <= nbsurf; i++)
         {
-            OS.Write(Standard_Stream.Setw(4, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            OS.Write(StreamUtilities.Setw(4, i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             OS.Write(" : ");
             // OCCT dereferences a null curve here (one that couldn't be read)
             PrintCurve(Curve(i)!, OS, false);
@@ -694,36 +698,36 @@ public class GeomTools_CurveSet
     /// Writes the set in the format <see cref="Read"/> reads: "Curves", the count, then each curve, at 17
     /// significant digits (the writer's precision is restored afterwards).
     /// </summary>
-    public void Write(TextWriter OS, Message_ProgressRange theProgress = default)
+    public void Write(TextWriter OS, ProgressRange theProgress = default)
     {
-        int prec = Standard_Stream.Precision(OS, 17);
+        int prec = StreamUtilities.Precision(OS, 17);
 
         int i, nbcurve = myMap.Extent();
         OS.Write("Curves ");
         Out(OS, nbcurve);
         OS.Write("\n");
-        using var aPS = new Message_ProgressScope(theProgress, "3D Curves", nbcurve);
+        using var aPS = new ProgressScope(theProgress, "3D Curves", nbcurve);
         for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
         {
             // OCCT dereferences a null curve here (one that couldn't be read)
             PrintCurve(Curve(i)!, OS, true);
         }
 
-        Standard_Stream.Precision(OS, prec);
+        StreamUtilities.Precision(OS, prec);
     }
 
     // operator>> of the points, directions and curves
 
-    private static void ReadPnt(TextReader IS, out gp_Pnt P)
+    private static void ReadPnt(TextReader IS, out Point3D P)
     {
         double X, Y, Z;
         GeomTools.GetReal(IS, out X);
         GeomTools.GetReal(IS, out Y);
         GeomTools.GetReal(IS, out Z);
-        P = new gp_Pnt(X, Y, Z);
+        P = new Point3D(X, Y, Z);
     }
 
-    private static void ReadDir(TextReader IS, ref gp_Dir D)
+    private static void ReadDir(TextReader IS, ref Direction3D D)
     {
         double X, Y, Z;
         GeomTools.GetReal(IS, out X);
@@ -734,8 +738,8 @@ public class GeomTools_CurveSet
 
     private static Geom_Line ReadLine(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir AX = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D AX = new(Direction3D.D.X);
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         return new Geom_Line(P, AX);
@@ -743,21 +747,21 @@ public class GeomTools_CurveSet
 
     private static Geom_Circle ReadCircle(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
         double R;
         ReadPnt(IS, out P);
         ReadDir(IS, ref A);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R);
-        return new Geom_Circle(new gp_Ax2(P, A, AX), R);
+        return new Geom_Circle(new Frame3D(P, A, AX), R);
     }
 
     private static Geom_Ellipse ReadEllipse(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
         double R1, R2;
         ReadPnt(IS, out P);
         ReadDir(IS, ref A);
@@ -765,26 +769,26 @@ public class GeomTools_CurveSet
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
         GeomTools.GetReal(IS, out R2);
-        return new Geom_Ellipse(new gp_Ax2(P, A, AX), R1, R2);
+        return new Geom_Ellipse(new Frame3D(P, A, AX), R1, R2);
     }
 
     private static Geom_Parabola ReadParabola(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
         double R1;
         ReadPnt(IS, out P);
         ReadDir(IS, ref A);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
-        return new Geom_Parabola(new gp_Ax2(P, A, AX), R1);
+        return new Geom_Parabola(new Frame3D(P, A, AX), R1);
     }
 
     private static Geom_Hyperbola ReadHyperbola(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
         double R1, R2;
         ReadPnt(IS, out P);
         ReadDir(IS, ref A);
@@ -792,22 +796,22 @@ public class GeomTools_CurveSet
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
         GeomTools.GetReal(IS, out R2);
-        return new Geom_Hyperbola(new gp_Ax2(P, A, AX), R1, R2);
+        return new Geom_Hyperbola(new Frame3D(P, A, AX), R1, R2);
     }
 
     private static Geom_BezierCurve ReadBezier(TextReader IS)
     {
         bool rational = false;
-        Standard_Stream.Read(IS, ref rational);
+        StreamUtilities.Read(IS, ref rational);
 
         // poles and weights
         int i = 0, degree = 0;
-        Standard_Stream.Read(IS, ref degree);
+        StreamUtilities.Read(IS, ref degree);
 
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(degree + 1L, 0), 6, "Bezier poles");
-        var poles = new NCollection_Array1<gp_Pnt>(1, degree + 1);
+        StreamUtilities.CheckCount(IS, Math.Max(degree + 1L, 0), 6, "Bezier poles");
+        var poles = new NCollection_Array1<Point3D>(1, degree + 1);
         var weights = new NCollection_Array1<double>(1, degree + 1);
 
         for (i = 1; i <= degree + 1; i++)
@@ -830,20 +834,20 @@ public class GeomTools_CurveSet
     private static Geom_BSplineCurve ReadBSpline(TextReader IS)
     {
         bool rational = false, periodic = false;
-        Standard_Stream.Read(IS, ref rational);
-        Standard_Stream.Read(IS, ref periodic);
+        StreamUtilities.Read(IS, ref rational);
+        StreamUtilities.Read(IS, ref periodic);
 
         // poles and weights
         int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
-        Standard_Stream.Read(IS, ref degree);
-        Standard_Stream.Read(IS, ref nbpoles);
-        Standard_Stream.Read(IS, ref nbknots);
+        StreamUtilities.Read(IS, ref degree);
+        StreamUtilities.Read(IS, ref nbpoles);
+        StreamUtilities.Read(IS, ref nbknots);
 
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(nbpoles, 0), 6, "B-spline poles");
-        Standard_Stream.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
-        var poles = new NCollection_Array1<gp_Pnt>(1, nbpoles);
+        StreamUtilities.CheckCount(IS, Math.Max(nbpoles, 0), 6, "B-spline poles");
+        StreamUtilities.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
+        var poles = new NCollection_Array1<Point3D>(1, nbpoles);
         var weights = new NCollection_Array1<double>(1, nbpoles);
 
         for (i = 1; i <= nbpoles; i++)
@@ -861,7 +865,7 @@ public class GeomTools_CurveSet
         for (i = 1; i <= nbknots; i++)
         {
             GeomTools.GetReal(IS, out knots[i]);
-            Standard_Stream.Read(IS, ref mults[i]);
+            StreamUtilities.Read(IS, ref mults[i]);
         }
 
         if (rational)
@@ -886,7 +890,7 @@ public class GeomTools_CurveSet
     {
         double p;
         GeomTools.GetReal(IS, out p);
-        gp_Dir D = new(gp_Dir.D.X);
+        Direction3D D = new(Direction3D.D.X);
         ReadDir(IS, ref D);
         Geom_Curve? BC = ReadCurve(IS);
         return new Geom_OffsetCurve(BC!, p, D);
@@ -907,7 +911,7 @@ public class GeomTools_CurveSet
         using var aNesting = GeomTools.Nesting();
         try
         {
-            Standard_Stream.Read(IS, ref ctype);
+            StreamUtilities.Read(IS, ref ctype);
             switch (ctype)
             {
                 case LINE:
@@ -955,7 +959,7 @@ public class GeomTools_CurveSet
                     break;
             }
         }
-        catch (Standard_Failure anException) when (anException is not Storage_StreamFormatError)
+        catch (FailureException anException) when (anException is not StreamFormatErrorException)
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_CurveSet::ReadCurve(..)!!!"
         }
@@ -972,12 +976,12 @@ public class GeomTools_CurveSet
     /// Clears nothing and reads a set written by <see cref="Write"/>, adding its curves (frozen) to this one. Writes
     /// "Not a Curve table" to the console, as OCCT does, if the text doesn't start with "Curves".
     /// </summary>
-    public void Read(TextReader IS, Message_ProgressRange theProgress = default)
+    public void Read(TextReader IS, ProgressRange theProgress = default)
     {
         // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
         char[] buffer = new char[255];
-        bool isRead = Standard_Stream.ReadWord(IS, buffer);
-        if (!isRead || Standard_Stream.CString(buffer) != "Curves")
+        bool isRead = StreamUtilities.ReadWord(IS, buffer);
+        if (!isRead || StreamUtilities.CString(buffer) != "Curves")
         {
             Console.Out.Write("Not a Curve table" + "\n");
             return;
@@ -985,10 +989,10 @@ public class GeomTools_CurveSet
 
         // OCCT's nbcurve is uninitialised if the count can't be read
         int i, nbcurve = 0;
-        Standard_Stream.Read(IS, ref nbcurve);
+        StreamUtilities.Read(IS, ref nbcurve);
         // OCCT.NET: untrusted input: an object takes at least 2 characters
-        Standard_Stream.CheckCount(IS, Math.Max(nbcurve, 0), 2, "curves");
-        using var aPS = new Message_ProgressScope(theProgress, "3D Curves", nbcurve);
+        StreamUtilities.CheckCount(IS, Math.Max(nbcurve, 0), 2, "curves");
+        using var aPS = new ProgressScope(theProgress, "3D Curves", nbcurve);
         for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
         {
             Geom_Curve? C = ReadCurve(IS);

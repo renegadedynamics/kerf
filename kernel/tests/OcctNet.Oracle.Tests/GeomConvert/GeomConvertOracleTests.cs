@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -87,7 +89,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         int aKind = theO.Int(0, theMaxKind);
         (N.Geom_Curve aN, Geom_Curve aP, double aRange) = RandomCurve(theO, aKind);
         double aF = aP.FirstParameter(), aL = aP.LastParameter();
-        bool isUnbounded = Precision.IsInfinite(aF) || Precision.IsInfinite(aL);
+        bool isUnbounded = global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
         if (aKind == 9 || (!isUnbounded && theO.Bool()))
         {
             return (aN, aP, CurveKinds[aKind]);
@@ -127,7 +129,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         {
             (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = RandomInputCurve(anOracle);
             using N.Geom_Curve aNCOwned = aNC;
-            var aParam = (Convert_ParameterisationType)anOracle.Int(0, 7);
+            var aParam = (ParameterisationType)anOracle.Int(0, 7);
             N.Geom_BSplineCurve? aN = null;
             Geom_BSplineCurve? aP = null;
             Exception? aNErr = Catch(() => aN = N.GeomConvert.CurveToBSplineCurve(aNC, (N.Convert_ParameterisationType)(int)aParam));
@@ -140,7 +142,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             }
 
             using N.Geom_BSplineCurve aNOwned = aN!;
-            Assert.False(aP!.IsFrozen());
+            Assert.False(aP!.IsFrozen);
             SameBSplineCurve(anOracle, aN!, aP, aWhat);
         }
 
@@ -165,8 +167,8 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             var aTrimmed = new Geom_TrimmedCurve(aPB, aU1, aU2, aSense);
             using N.Geom_BSplineCurve aNative =
                 N.GeomConvert.CurveToBSplineCurve(aNTrimmed, N.Convert_ParameterisationType.Convert_RationalC1)!;
-            Geom_BSplineCurve aPort = GeomConvert.CurveToBSplineCurve(aTrimmed, Convert_ParameterisationType.Convert_RationalC1);
-            SameBSplineCurve(anOracle, aNative, aPort, $"{aPB.GetType().Name} {aU2 - aU1}");
+            Geom_BSplineCurve aPort = GeomConvert.CurveToBSplineCurve(aTrimmed, ParameterisationType.RationalC1);
+            SameBSplineCurve(anOracle, aNative, aPort, $"{Kerf.Engine.Foundation.OcctTypeNames.Of(aPB.GetType())} {aU2 - aU1}");
         }
 
         anOracle.Report("GeomConvert::CurveToBSplineCurve, long RationalC1 arcs");
@@ -335,7 +337,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 
             aCounts[aWhat] = aCounts.GetValueOrDefault(aWhat) + 1;
             using N.Geom_BSplineSurface aNOwned = aN!;
-            Assert.False(aP!.IsFrozen());
+            Assert.False(aP!.IsFrozen);
             SameBSplineSurface(anOracle, aN!, aP, aWhat);
         }
 
@@ -385,7 +387,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 
             aNbApprox += isApprox ? 1 : 0;
             using N.Geom_BSplineSurface aNOwned = aN!;
-            Assert.False(aP!.IsFrozen());
+            Assert.False(aP!.IsFrozen);
             SameBSplineSurface(anOracle, aN!, aP, aWhat);
         }
 
@@ -404,15 +406,15 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         {
             (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = RandomInputCurve(anOracle);
             using N.Geom_Curve aNCOwned = aNC;
-            if (Precision.IsInfinite(aPC.FirstParameter()) || Precision.IsInfinite(aPC.LastParameter()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter()))
             {
                 continue;
             }
 
             double aTol = Math.Pow(10, -anOracle.Real(2, 11));
             int anOrderIndex = anOracle.Int(0, 2);
-            GeomAbs_Shape anOrder = anOrderIndex == 0 ? GeomAbs_Shape.GeomAbs_C0
-                                    : anOrderIndex == 1 ? GeomAbs_Shape.GeomAbs_C1 : GeomAbs_Shape.GeomAbs_C2;
+            Continuity anOrder = anOrderIndex == 0 ? Continuity.C0
+                                    : anOrderIndex == 1 ? Continuity.C1 : Continuity.C2;
             // mostly degrees of at least 2 * order + 1 (AdvApprox raises lower ones)
             int aMaxSeg = anOracle.Int(1, 12);
             int aMaxDeg = anOracle.Int(0, 9) == 0 ? anOracle.Int(1, 14) : anOracle.Int(2 * anOrderIndex + 1, 14);
@@ -457,7 +459,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 
             using N.Geom_BSplineCurve aNCurve = aN.Curve()!;
             Geom_BSplineCurve aPCurve = aP.Curve()!;
-            Assert.True(aPCurve.IsFrozen());
+            Assert.True(aPCurve.IsFrozen);
             Assert.Same(aPCurve, aP.Curve());
             SameBSplineCurve(anOracle, aNCurve, aPCurve, aWhat);
         }
@@ -488,7 +490,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNB, Geom_Curve aPB, double aRange) = RandomCurve(anOracle, aKind);
             using N.Geom_Curve aNBOwned = aNB;
             double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
-            if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL) || aPB.IsPeriodic())
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic())
             {
                 aF = anOracle.Real(-aRange, aRange);
                 aL = aF + anOracle.Real(0.2, aPB.IsPeriodic() && aKind != 7 ? 2 * Math.PI : aRange);
@@ -503,7 +505,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
                 aCuts[k] = aF + (aL - aF) * (k + anOracle.Real(-0.3, 0.3)) / aNbPieces;
             }
 
-            var aParam = (Convert_ParameterisationType)anOracle.Int(0, 7);
+            var aParam = (ParameterisationType)anOracle.Int(0, 7);
             var aNPieces = new List<N.Geom_TrimmedCurve>();
             var aPPieces = new List<Geom_TrimmedCurve>();
             for (int k = 0; k < aNbPieces; k++)
@@ -559,7 +561,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
                 {
                     // BSplineCurve() hands out the current curve frozen; a later Add must not change it
                     Geom_BSplineCurve aPCurve = aP!.BSplineCurve()!;
-                    Assert.True(aPCurve.IsFrozen());
+                    Assert.True(aPCurve.IsFrozen);
                     using N.Geom_BSplineCurve aNCurve = aN!.BSplineCurve()!;
                     SameBSplineCurve(anOracle, aNCurve, aPCurve, aStepWhat);
                     isHandedOut = true;

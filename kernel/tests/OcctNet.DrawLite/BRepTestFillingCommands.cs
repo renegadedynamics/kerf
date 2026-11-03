@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -133,14 +135,14 @@ internal static class BRepTestFillingCommands
             MW.Add(E);
             if (!MW.IsDone())
             {
-                throw new Standard_Failure("mkWire is over ");
+                throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
         }
         TopoDS_Wire W;
         W = MW.Wire();
         if (!(W.Closed()))
         {
-            throw new Standard_Failure("Wire is not closed");
+            throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
         var MF = new BRepBuilderAPI_MakeFace(Henri.Surface()!, W, true);
         theDI.SetShape(a[1], MF.Face());
@@ -212,7 +214,7 @@ internal static class BRepTestFillingCommands
 
         for (i = 1; i <= NbPointConstraint; i++)
         {
-            var P1 = new gp_Pnt();
+            var P1 = new Point3D();
 
             if (DrawTrSurf.GetPoint(theDI, At(a, Indice), ref P1))
             {
@@ -244,8 +246,8 @@ internal static class BRepTestFillingCommands
         double seuil;
 
         GeomPlate_Surface gpPlate = Henri.Surface()!;
-        var S2d = new NCollection_Sequence<gp_XY>();
-        var S3d = new NCollection_Sequence<gp_XYZ>();
+        var S2d = new NCollection_Sequence<Xy>();
+        var S3d = new NCollection_Sequence<Xyz>();
         S2d.Clear();
         S3d.Clear();
         Henri.Disc2dContour(4, S2d);
@@ -257,7 +259,7 @@ internal static class BRepTestFillingCommands
 
         Henri.Surface()!.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
-        var MF = new BRepBuilderAPI_MakeFace(Surf, Umin, Umax, Vmin, Vmax, Precision.Confusion());
+        var MF = new BRepBuilderAPI_MakeFace(Surf, Umin, Umax, Vmin, Vmax, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         theDI.SetShape(a[1], MF.Face());
         return 0;
@@ -326,8 +328,8 @@ internal static class BRepTestFillingCommands
         }
         else if (CritOrder >= 0)
         {
-            var S2d = new NCollection_Sequence<gp_XY>();
-            var S3d = new NCollection_Sequence<gp_XYZ>();
+            var S2d = new NCollection_Sequence<Xy>();
+            var S3d = new NCollection_Sequence<Xyz>();
             S2d.Clear();
             S3d.Clear();
             double seuil;
@@ -375,14 +377,14 @@ internal static class BRepTestFillingCommands
             MW.Add(E);
             if (!MW.IsDone())
             {
-                throw new Standard_Failure("mkWire is over ");
+                throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
         }
         TopoDS_Wire W;
         W = MW.Wire();
         if (!(W.Closed()))
         {
-            throw new Standard_Failure("Wire is not closed");
+            throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
         var MF = new BRepBuilderAPI_MakeFace(support!, W, true);
         theDI.SetShape(a[1], MF.Face());
@@ -415,7 +417,7 @@ internal static class BRepTestFillingCommands
         int i = (InitFace.IsNull()) ? 5 : 6, k;
         TopoDS_Edge E;
         TopoDS_Face F;
-        var Point = new gp_Pnt();
+        var Point = new Point3D();
         int Order;
         for (k = 1; k <= NbBounds; k++)
         {
@@ -434,7 +436,7 @@ internal static class BRepTestFillingCommands
 
             if (!E.IsNull() && !F.IsNull())
             {
-                MakeFilling.Add(E, F, (GeomAbs_Shape)Order);
+                MakeFilling.Add(E, F, (Continuity)Order);
             }
             else if (E.IsNull())
             {
@@ -445,12 +447,12 @@ internal static class BRepTestFillingCommands
                 }
                 else
                 {
-                    MakeFilling.Add(F, (GeomAbs_Shape)Order);
+                    MakeFilling.Add(F, (Continuity)Order);
                 }
             }
             else
             {
-                MakeFilling.Add(E, (GeomAbs_Shape)Order);
+                MakeFilling.Add(E, (Continuity)Order);
             }
         }
         for (k = 1; k <= NbConstraints; k++)
@@ -471,11 +473,11 @@ internal static class BRepTestFillingCommands
 
             if (F.IsNull())
             {
-                MakeFilling.Add(E, (GeomAbs_Shape)Order, false);
+                MakeFilling.Add(E, (Continuity)Order, false);
             }
             else
             {
-                MakeFilling.Add(E, F, (GeomAbs_Shape)Order, false);
+                MakeFilling.Add(E, F, (Continuity)Order, false);
             }
         }
         for (k = 1; k <= NbPoints; k++)
@@ -496,7 +498,7 @@ internal static class BRepTestFillingCommands
                 }
                 Order = theDI.Atoi(At(a, i++));
 
-                MakeFilling.Add(U, V, F, (GeomAbs_Shape)Order);
+                MakeFilling.Add(U, V, F, (Continuity)Order);
             }
         }
 

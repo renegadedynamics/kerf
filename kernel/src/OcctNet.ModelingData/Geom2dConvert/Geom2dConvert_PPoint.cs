@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A point on a curve: its parameter, its 2D coordinates and its first derivative (the tangent).</summary>
@@ -15,23 +19,23 @@ namespace Occt;
 public partial struct Geom2dConvert_PPoint : IEquatable<Geom2dConvert_PPoint>
 {
     private double myParameter; // Parameter value
-    private gp_Pnt2d myPoint; // Point location
-    private gp_Vec2d myD1; // derivatives by parameter (components of the tangent).
+    private Point2D myPoint; // Point location
+    private Vector2D myD1; // derivatives by parameter (components of the tangent).
 
     /// <summary>The empty point: parameter RealLast(), point and derivative zero.</summary>
     public Geom2dConvert_PPoint()
     {
         myParameter = RealLast();
-        myPoint = new gp_Pnt2d(0.0, 0.0);
-        myD1 = new gp_Vec2d(0.0, 0.0);
+        myPoint = new Point2D(0.0, 0.0);
+        myD1 = new Vector2D(0.0, 0.0);
     }
 
     /// <summary>The point of parameter theParameter at thePoint, with derivative theD1.</summary>
-    public Geom2dConvert_PPoint(double theParameter, in gp_XY thePoint, in gp_XY theD1)
+    public Geom2dConvert_PPoint(double theParameter, in Xy thePoint, in Xy theD1)
     {
         myParameter = theParameter;
-        myPoint = new gp_Pnt2d(thePoint);
-        myD1 = new gp_Vec2d(theD1);
+        myPoint = new Point2D(thePoint);
+        myD1 = new Vector2D(theD1);
     }
 
     /// <summary>The point of theAdaptor at theParameter, with its first derivative.</summary>
@@ -48,15 +52,15 @@ public partial struct Geom2dConvert_PPoint : IEquatable<Geom2dConvert_PPoint>
     public readonly double Parameter() => myParameter;
 
     /// <summary>The point.</summary>
-    public readonly gp_XY Point() => myPoint.XY();
+    public readonly Xy Point() => myPoint.XY();
 
     /// <summary>The first derivative.</summary>
-    public readonly gp_XY D1() => myD1.XY();
+    public readonly Xy D1() => myD1.XY();
 
-    internal void SetD1(in gp_XY theD1) => myD1.SetXY(theD1);
+    internal void SetD1(in Xy theD1) => myD1.SetXY(theD1);
 
     /// <summary>A copy with the derivative theD1.</summary>
-    public readonly Geom2dConvert_PPoint WithD1(in gp_XY theD1)
+    public readonly Geom2dConvert_PPoint WithD1(in Xy theD1)
     {
         Geom2dConvert_PPoint aCopy = this;
         aCopy.SetD1(theD1);
@@ -68,11 +72,11 @@ public partial struct Geom2dConvert_PPoint : IEquatable<Geom2dConvert_PPoint>
     /// <c>operator!=</c> is its negation.)
     /// </summary>
     public readonly bool IsEqual(in Geom2dConvert_PPoint theOther) =>
-        Math.Abs(myParameter - theOther.Parameter()) <= Precision.PConfusion();
+        Math.Abs(myParameter - theOther.Parameter()) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
 
     // OCCT's operator!=, as it is written (the exact negation of IsEqual but for NaN).
     internal readonly bool IsNotEqual(in Geom2dConvert_PPoint theOther) =>
-        Math.Abs(myParameter - theOther.Parameter()) > Precision.PConfusion();
+        Math.Abs(myParameter - theOther.Parameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion();
 
     public readonly bool Equals(Geom2dConvert_PPoint other) =>
         myParameter.Equals(other.myParameter) && myPoint.Equals(other.myPoint) && myD1.Equals(other.myD1);

@@ -4,6 +4,10 @@
 // and colours, the node hierarchy, glTF's Y-up turned Z-up and the metres turned into the model's unit.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
@@ -59,7 +63,7 @@ public sealed class RWGltf_TreeReader
     /// <paramref name="theResolver"/> from their URIs (unescaped), and refused if it is null or gives null. Null on
     /// an error (see <see cref="Error"/>) or if cancelled.
     /// </summary>
-    public XdeDoc_Tree? Read(Stream theStream, Func<string, Stream?>? theResolver = null, Message_ProgressRange theProgress = default)
+    public XdeDoc_Tree? Read(Stream theStream, Func<string, Stream?>? theResolver = null, ProgressRange theProgress = default)
     {
         ArgumentNullException.ThrowIfNull(theStream);
         Error = null;
@@ -90,7 +94,7 @@ public sealed class RWGltf_TreeReader
     /// <summary>
     /// Reads a glTF file; its external buffers are read from files in its folder (or below it) only.
     /// </summary>
-    public XdeDoc_Tree? ReadFile(string theFilePath, Message_ProgressRange theProgress = default)
+    public XdeDoc_Tree? ReadFile(string theFilePath, ProgressRange theProgress = default)
     {
         string aFolder = Path.GetFullPath(Path.GetDirectoryName(Path.GetFullPath(theFilePath)) ?? ".");
         string aPrefix = aFolder.EndsWith(Path.DirectorySeparatorChar) ? aFolder : aFolder + Path.DirectorySeparatorChar;
@@ -142,9 +146,9 @@ public sealed class RWGltf_TreeReader
         private long myBufferTotal;
         private long myTriangles;
         private readonly Dictionary<int, XdeDoc_Product?> myMeshProducts = [];
-        private Message_ProgressScope? myPS;
+        private ProgressScope? myPS;
 
-        public XdeDoc_Tree? Read(byte[] theData, Message_ProgressRange theProgress)
+        public XdeDoc_Tree? Read(byte[] theData, ProgressRange theProgress)
         {
             ReadOnlySpan<byte> aJson = theData;
             if (theData.Length >= 4 && BinaryPrimitives.ReadUInt32LittleEndian(theData) == 0x46546C67)
@@ -169,7 +173,7 @@ public sealed class RWGltf_TreeReader
             int[] aRootNodes = sceneRoots(aNodes, aParents);
 
             int aNbMeshes = array(myRoot, "meshes").Length;
-            using var aPS = new Message_ProgressScope(theProgress, "Reading glTF", Math.Max(1, aNbMeshes));
+            using var aPS = new ProgressScope(theProgress, "Reading glTF", Math.Max(1, aNbMeshes));
             myPS = aPS;
             var aRoots = new List<XdeDoc_Instance>();
             foreach (int aNode in aRootNodes)
@@ -402,13 +406,13 @@ public sealed class RWGltf_TreeReader
             {
                 aMatrix = multiply(thePending, aMatrix);
             }
-            TopLoc_Location aLocation = new();
+            Placement aLocation = new();
             double[]? aBake = null;
-            if (rigid(aMatrix, out gp_Trsf aTrsf, out bool isIdentity))
+            if (rigid(aMatrix, out Transform3D aTrsf, out bool isIdentity))
             {
                 if (!isIdentity)
                 {
-                    aLocation = new TopLoc_Location(aTrsf);
+                    aLocation = new Placement(aTrsf);
                 }
             }
             else
@@ -503,9 +507,9 @@ public sealed class RWGltf_TreeReader
         }
 
         // A rigid motion (orthonormal, not mirroring) as a gp_Trsf
-        private static bool rigid(double[] theM, out gp_Trsf theTrsf, out bool isIdentity)
+        private static bool rigid(double[] theM, out Transform3D theTrsf, out bool isIdentity)
         {
-            theTrsf = new gp_Trsf();
+            theTrsf = new Transform3D();
             isIdentity = false;
             const double aTol = 1e-6;
             for (int i = 0; i < 3; i++)
@@ -552,7 +556,7 @@ public sealed class RWGltf_TreeReader
                 myPS?.Next();
             }
             string? aName = text(aMesh, "name");
-            var aFaces = new List<(TopoDS_Face Face, Quantity_ColorRGBA? Color)>();
+            var aFaces = new List<(TopoDS_Face Face, ColorWithAlpha? Color)>();
             int aPrimIndex = 0;
             foreach (JsonElement aPrim in array(aMesh, "primitives"))
             {
@@ -560,14 +564,14 @@ public sealed class RWGltf_TreeReader
                 {
                     throw new FormatError($"Mesh {theMesh}: a primitive isn't an object");
                 }
-                Poly_Triangulation? aTri = triangulation(theMesh, aPrimIndex++, aPrim, theBake);
+                Triangulation? aTri = triangulation(theMesh, aPrimIndex++, aPrim, theBake);
                 if (aTri is null)
                 {
                     continue;
                 }
                 TopoDS_Face aFace = new();
                 new BRep_Builder().MakeFace(ref aFace, aTri);
-                Quantity_ColorRGBA? aColor = aPrim.TryGetProperty("material", out _) ? materialColor(index(aPrim, "material")) : null;
+                ColorWithAlpha? aColor = aPrim.TryGetProperty("material", out _) ? materialColor(index(aPrim, "material")) : null;
                 aFaces.Add((aFace, aColor));
             }
 
@@ -582,7 +586,7 @@ public sealed class RWGltf_TreeReader
                 TopoDS_Compound aCompound = new();
                 aBuilder.MakeCompound(ref aCompound);
                 var aSubs = new List<XdeDoc_SubShape>();
-                foreach ((TopoDS_Face aFace, Quantity_ColorRGBA? aColor) in aFaces)
+                foreach ((TopoDS_Face aFace, ColorWithAlpha? aColor) in aFaces)
                 {
                     aBuilder.Add(aCompound, aFace);
                     if (aColor is not null)
@@ -599,7 +603,7 @@ public sealed class RWGltf_TreeReader
             return aProduct;
         }
 
-        private Quantity_ColorRGBA materialColor(int theMaterial)
+        private ColorWithAlpha materialColor(int theMaterial)
         {
             JsonElement aMaterial = element(array(myRoot, "materials"), theMaterial, "Material");
             double[] aFactor = [1, 1, 1, 1];
@@ -614,10 +618,10 @@ public sealed class RWGltf_TreeReader
                 aFactor = numbers(aSpecGloss, "diffuseFactor", 4) ?? aFactor;
             }
             float clamp(double v) => (float)Math.Clamp(v, 0.0, 1.0);
-            return new Quantity_ColorRGBA(clamp(aFactor[0]), clamp(aFactor[1]), clamp(aFactor[2]), clamp(aFactor[3]));
+            return new ColorWithAlpha(clamp(aFactor[0]), clamp(aFactor[1]), clamp(aFactor[2]), clamp(aFactor[3]));
         }
 
-        private Poly_Triangulation? triangulation(int theMesh, int thePrim, JsonElement thePrimitive, double[]? theBake)
+        private Triangulation? triangulation(int theMesh, int thePrim, JsonElement thePrimitive, double[]? theBake)
         {
             long aMode = integer(thePrimitive, "mode", 4);
             if (aMode is not (4 or 5 or 6))
@@ -691,7 +695,7 @@ public sealed class RWGltf_TreeReader
                             + theBake[8] * (theBake[1] * theBake[6] - theBake[5] * theBake[2]);
                 isMirrored = aDet < 0.0;
             }
-            var aTri = new Poly_Triangulation(aNbNodes, aTriangles.Count, false, aNormals is not null);
+            var aTri = new Triangulation(aNbNodes, aTriangles.Count, false, aNormals is not null);
             for (int i = 0; i < aNbNodes; i++)
             {
                 double aX = aPositions[3 * i], aY = aPositions[3 * i + 1], aZ = aPositions[3 * i + 2];
@@ -702,7 +706,7 @@ public sealed class RWGltf_TreeReader
                                     theBake[1] * aX + theBake[5] * aY + theBake[9] * aZ + theBake[13],
                                     theBake[2] * aX + theBake[6] * aY + theBake[10] * aZ + theBake[14]);
                 }
-                aTri.SetNode(i + 1, new gp_Pnt(aX, aY, aZ));
+                aTri.SetNode(i + 1, new Point3D(aX, aY, aZ));
                 if (aNormals is not null)
                 {
                     double aNx = aNormals[3 * i], aNy = aNormals[3 * i + 1], aNz = aNormals[3 * i + 2];
@@ -725,7 +729,7 @@ public sealed class RWGltf_TreeReader
             for (int i = 0; i < aTriangles.Count; i++)
             {
                 (int a, int b, int c) = aTriangles[i];
-                aTri.SetTriangle(i + 1, isMirrored ? new Poly_Triangle(a + 1, c + 1, b + 1) : new Poly_Triangle(a + 1, b + 1, c + 1));
+                aTri.SetTriangle(i + 1, isMirrored ? new Triangle1(a + 1, c + 1, b + 1) : new Triangle1(a + 1, b + 1, c + 1));
             }
             return aTri;
         }

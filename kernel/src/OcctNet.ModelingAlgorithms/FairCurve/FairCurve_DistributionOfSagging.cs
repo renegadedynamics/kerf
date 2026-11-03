@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The sagging (flexion) distribution of a batten: its local bending energy and its derivatives.</summary>
@@ -16,7 +22,7 @@ public class FairCurve_DistributionOfSagging : FairCurve_DistributionOfEnergy
     /// </summary>
     public FairCurve_DistributionOfSagging(int BSplOrder,
                                            NCollection_HArray1<double> FlatKnots,
-                                           NCollection_HArray1<gp_Pnt2d> Poles,
+                                           NCollection_HArray1<Point2D> Poles,
                                            int DerivativeOrder,
                                            FairCurve_BattenLaw Law,
                                            int NbValAux = 0)
@@ -31,19 +37,19 @@ public class FairCurve_DistributionOfSagging : FairCurve_DistributionOfEnergy
     {
         bool Ok = true;
         int ier, ii, jj, kk;
-        gp_XY CPrim = new(0.0, 0.0), CSecn = new(0.0, 0.0);
+        Xy CPrim = new(0.0, 0.0), CSecn = new(0.0, 0.0);
         int LastGradientIndex, FirstNonZero, LastZero;
 
         // (0.0) initialisations generales
         Flexion.Init(0.0);
-        math_Matrix Base = new(1,
+        Matrix Base = new(1,
                                4,
                                1,
                                MyBSplOrder); // On shouhaite utiliser la derive premieres
                                              // Dans EvalBsplineBasis C" <=> DerivOrder = 3
                                              // et il faut ajouter 1 rang dans la matrice Base => 4 rang
 
-        ier = BSplCLib.EvalBsplineBasis(2,
+        ier = global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(2,
                                         MyBSplOrder,
                                         MyFlatKnots.Array1(),
                                         TParam[TParam.Lower()],

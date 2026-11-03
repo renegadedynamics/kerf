@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Diagnostics;
 using Occt;
 
@@ -39,7 +40,7 @@ internal static class BRepTestExtremaCommands
             return 1;
         }
 
-        gp_Pnt P1 = new(), P2 = new();
+        Point3D P1 = new(), P2 = new();
         if (!BRepExtrema_Poly.Distance(S1, S2, ref P1, ref P2, out double D))
         {
             return 1;
@@ -61,7 +62,7 @@ internal static class BRepTestExtremaCommands
         string ns1 = a[2], ns2 = a[3], ns0 = a[1];
         TopoDS_Shape S1 = theDI.GetShape(ns1), S2 = theDI.GetShape(ns2);
 
-        double aDeflection = Precision.Confusion();
+        double aDeflection = global::Kerf.Engine.Foundation.Precision.Confusion();
         int anIndex = 4;
         if (n >= 5 && !a[4].StartsWith('-'))
         {
@@ -101,8 +102,8 @@ internal static class BRepTestExtremaCommands
 
             for (int i1 = 1; i1 <= dst.NbSolution(); i1++)
             {
-                gp_Pnt P1 = dst.PointOnShape1(i1);
-                gp_Pnt P2 = dst.PointOnShape2(i1);
+                Point3D P1 = dst.PointOnShape1(i1);
+                Point3D P2 = dst.PointOnShape2(i1);
                 string aName = i1 == 1 ? ns0 : ns0 + i1.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 TopoDS_Shape aSolution = dst.Value() <= 1.0e-9
                                        ? new BRepLib_MakeVertex(P1).Vertex()
@@ -170,7 +171,7 @@ internal static class BRepTestExtremaCommands
             else if (aFlag == "-value")
             {
                 isValue = true;
-                aTool.SetTolerance(Precision.Infinite());
+                aTool.SetTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
             }
             else if (aFlag == "-profile")
             {

@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -22,17 +23,17 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
     private readonly GeomFill_TrihedronLaw myLaw;
     private Adaptor3d_Curve? myCurve;
     private Adaptor3d_Curve? myTrimmed;
-    private gp_Pnt Point;
-    private gp_Vec V1;
-    private gp_Vec V2;
-    private gp_Vec V3;
-    private gp_Mat Trans;
+    private Point3D Point;
+    private Vector3D V1;
+    private Vector3D V2;
+    private Vector3D V3;
+    private Matrix3x3 Trans;
 
     public GeomFill_CurveAndTrihedron(GeomFill_TrihedronLaw Trihedron)
     {
         myLaw = Trihedron;
         myCurve = null;
-        Trans = new gp_Mat();
+        Trans = new Matrix3x3();
         Trans.SetIdentity();
         WithTrans = false;
     }
@@ -56,10 +57,10 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
 
     public override Adaptor3d_Curve? GetCurve() => myCurve;
 
-    public override void SetTrsf(in gp_Mat Transfo)
+    public override void SetTrsf(in Matrix3x3 Transfo)
     {
         Trans = Transfo;
-        gp_Mat Aux = new gp_Mat();
+        Matrix3x3 Aux = new Matrix3x3();
         Aux.SetIdentity();
         Aux -= Trans;
 
@@ -76,7 +77,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         }
     }
 
-    public override bool D0(double Param, ref gp_Mat M, ref gp_Vec V)
+    public override bool D0(double Param, ref Matrix3x3 M, ref Vector3D V)
     {
         bool Ok;
         myTrimmed!.D0(Param, out Point);
@@ -93,7 +94,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         return Ok;
     }
 
-    public override bool D0(double Param, ref gp_Mat M, ref gp_Vec V, NCollection_Array1<gp_Pnt2d> Poles2d)
+    public override bool D0(double Param, ref Matrix3x3 M, ref Vector3D V, NCollection_Array1<Point2D> Poles2d)
     {
         bool Ok;
         myTrimmed!.D0(Param, out Point);
@@ -110,14 +111,14 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         return Ok;
     }
 
-    public override bool D1(double Param, ref gp_Mat M, ref gp_Vec V, ref gp_Mat DM, ref gp_Vec DV,
-                            NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d)
+    public override bool D1(double Param, ref Matrix3x3 M, ref Vector3D V, ref Matrix3x3 DM, ref Vector3D DV,
+                            NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d)
     {
         bool Ok;
         myTrimmed!.D1(Param, out Point, out DV);
         V.SetXYZ(Point.XYZ());
 
-        gp_Vec DV1 = new gp_Vec(), DV2 = new gp_Vec(), DV3 = new gp_Vec();
+        Vector3D DV1 = new Vector3D(), DV2 = new Vector3D(), DV3 = new Vector3D();
         Ok = myLaw.D1(Param, ref V1, ref DV1, ref V2, ref DV2, ref V3, ref DV3);
         M.SetCols(V2.XYZ(), V3.XYZ(), V1.XYZ());
         DM.SetCols(DV2.XYZ(), DV3.XYZ(), DV1.XYZ());
@@ -131,16 +132,16 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         return Ok;
     }
 
-    public override bool D2(double Param, ref gp_Mat M, ref gp_Vec V, ref gp_Mat DM, ref gp_Vec DV, ref gp_Mat D2M,
-                            ref gp_Vec D2V, NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
-                            NCollection_Array1<gp_Vec2d> D2Poles2d)
+    public override bool D2(double Param, ref Matrix3x3 M, ref Vector3D V, ref Matrix3x3 DM, ref Vector3D DV, ref Matrix3x3 D2M,
+                            ref Vector3D D2V, NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
+                            NCollection_Array1<Vector2D> D2Poles2d)
     {
         bool Ok;
         myTrimmed!.D2(Param, out Point, out DV, out D2V);
         V.SetXYZ(Point.XYZ());
 
-        gp_Vec DV1 = new gp_Vec(), DV2 = new gp_Vec(), DV3 = new gp_Vec();
-        gp_Vec D2V1 = new gp_Vec(), D2V2 = new gp_Vec(), D2V3 = new gp_Vec();
+        Vector3D DV1 = new Vector3D(), DV2 = new Vector3D(), DV3 = new Vector3D();
+        Vector3D D2V1 = new Vector3D(), D2V2 = new Vector3D(), D2V3 = new Vector3D();
         Ok = myLaw.D2(Param, ref V1, ref DV1, ref D2V1, ref V2, ref DV2, ref D2V2, ref V3, ref DV3, ref D2V3);
 
         M.SetCols(V2.XYZ(), V3.XYZ(), V1.XYZ());
@@ -156,7 +157,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         return Ok;
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int Nb_Sec, Nb_Law;
         Nb_Sec = myTrimmed!.NbIntervals(S);
@@ -177,11 +178,11 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int Nb_Sec, Nb_Law;
         Nb_Sec = myTrimmed!.NbIntervals(S);
@@ -204,7 +205,7 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (int ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];
@@ -232,11 +233,11 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
     /// <summary>1: the trihedrons are normed.</summary>
     public override double GetMaximalNorm() => 1.0;
 
-    public override void GetAverageLaw(ref gp_Mat AM, ref gp_Vec AV)
+    public override void GetAverageLaw(ref Matrix3x3 AM, ref Vector3D AV)
     {
         int ii;
         double U, delta;
-        gp_Vec V = new gp_Vec();
+        Vector3D V = new Vector3D();
 
         myLaw.GetAverageLaw(ref V1, ref V2, ref V3);
         // OCCT: the columns are (tangent, normal, binormal) here, but (normal, binormal, tangent) in D0, D1 and D2.
@@ -255,10 +256,10 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
 
     public override bool IsTranslation(ref double Error)
     {
-        GeomAbs_CurveType Type;
+        CurveKind Type;
         Error = 0;
         Type = myCurve!.GetType();
-        if (Type == GeomAbs_Line)
+        if (Type == Line)
         {
             return myLaw.IsConstant() || myLaw.IsOnlyBy3dCurve();
         }
@@ -267,17 +268,17 @@ public class GeomFill_CurveAndTrihedron : GeomFill_LocationLaw
 
     public override bool IsRotation(ref double Error)
     {
-        GeomAbs_CurveType Type;
+        CurveKind Type;
         Error = 0;
         Type = myCurve!.GetType();
-        if (Type == GeomAbs_Circle)
+        if (Type == Circle)
         {
             return myLaw.IsOnlyBy3dCurve();
         }
         return false;
     }
 
-    public override void Rotation(ref gp_Pnt Centre)
+    public override void Rotation(ref Point3D Centre)
     {
         Centre = myCurve!.Circle().Location();
     }

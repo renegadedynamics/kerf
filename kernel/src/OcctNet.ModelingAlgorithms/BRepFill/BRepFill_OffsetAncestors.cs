@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -62,7 +63,7 @@ public sealed class BRepFill_OffsetAncestors
     public bool HasAncestor(in TopoDS_Edge S1) => myMap.IsBound(S1);
 
     /// <summary>The ancestor of the edge <paramref name="S1"/> of the parallel.</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="Perform"/> hasn't run.</exception>
+    /// <exception cref="NotDoneException"><see cref="Perform"/> hasn't run.</exception>
     public TopoDS_Shape Ancestor(in TopoDS_Edge S1)
     {
         StdFail_NotDone_Raise_if(!myIsPerform,

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 
@@ -32,15 +33,15 @@ public class DrawGeometryCommandsTests
     {
         DrawInterpreter i = New();
         i.Eval("line l 1 2 3 0 0 1; line l2 1 2 1 1");
-        Assert.Equal(new gp_Pnt(1, 2, 3), Geometry<Geom_Line>(i, "l").Lin().Location());
+        Assert.Equal(new Point3D(1, 2, 3), Geometry<Geom_Line>(i, "l").Lin().Location());
         Assert.Equal("\n\n*********** Dump of l *************\nLine\n  Origin :1, 2, 3 \n  Axis   :0, 0, 1 \n\n", i.Eval("dump l"));
         Assert.Equal(1 / Math.Sqrt(2), Geometry<Geom2d_Line>(i, "l2").Direction().X());
 
         i.Eval("circle c 0 0 0 5; circle c2 1 1 2; circle c3 0 0 0 1 0 0 3; circle c4 0 0 0 0 0 1 0 1 0 4; circle c5 1 1 0 1 7");
         Assert.Equal(5, Geometry<Geom_Circle>(i, "c").Radius());
         Assert.Equal(2, Geometry<Geom2d_Circle>(i, "c2").Radius());
-        Assert.Equal(new gp_Dir(1, 0, 0), Geometry<Geom_Circle>(i, "c3").Axis().Direction());
-        Assert.Equal(new gp_Dir(0, 1, 0), Geometry<Geom_Circle>(i, "c4").XAxis().Direction());
+        Assert.Equal(new Direction3D(1, 0, 0), Geometry<Geom_Circle>(i, "c3").Axis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), Geometry<Geom_Circle>(i, "c4").XAxis().Direction());
         Assert.Equal(7, Geometry<Geom2d_Circle>(i, "c5").Radius());
         // gp_Ax2(P, N) computes the X direction by cross products: a negative zero, which Draw prints as -0
         Assert.Equal("\n\n*********** Dump of c *************\nCircle\n  Center :0, 0, 0 \n  Axis   :0, 0, 1 \n  XAxis  :1, 0, -0 \n  YAxis  :-0, 1, 0 \n  Radius :5\n\n", i.Eval("dump c"));
@@ -109,18 +110,18 @@ public class DrawGeometryCommandsTests
         i.Eval("circle c 0 0 0 2");
         i.Eval("cvalue c pi/2 x y z dx dy dz d2x d2y d2z");
         var aCircle = Geometry<Geom_Circle>(i, "c");
-        aCircle.D2(Math.PI / 2, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2);
+        aCircle.D2(Math.PI / 2, out Point3D P, out Vector3D V1, out Vector3D V2);
         Assert.Equal(new[] { P.X(), P.Y(), P.Z(), V1.X(), V1.Y(), V1.Z(), V2.X(), V2.Y(), V2.Z() },
                      new[] { "x", "y", "z", "dx", "dy", "dz", "d2x", "d2y", "d2z" }.Select(n => Number(i, n)));
 
         // the last word is a point when the count says so
         i.Eval("cvalue c 0 p");
-        Assert.Equal(new gp_Pnt(2, 0, 0), Assert.IsType<gp_Pnt>(Geometry(i, "p")));
+        Assert.Equal(new Point3D(2, 0, 0), Assert.IsType<Point3D>(Geometry(i, "p")));
         i.Eval("coord p a b cc");
         Assert.Equal(2, Number(i, "a"));
         i.Eval("cvalue c 0 x y z dx dy dz q");
         Assert.Equal(2, Number(i, "dy"));
-        Assert.IsType<gp_Pnt>(Geometry(i, "q"));
+        Assert.IsType<Point3D>(Geometry(i, "q"));
         Assert.Equal("", Error(i, "cvalue c 0 x y z dx dy"));
         Assert.Equal("", Error(i, "cvalue nothing 0 p"));
 
@@ -128,7 +129,7 @@ public class DrawGeometryCommandsTests
         i.Eval("2dcvalue c2 0 x y dx dy d2x d2y");
         Assert.Equal([3.0, 0, 0, 3, -3, 0], new[] { "x", "y", "dx", "dy", "d2x", "d2y" }.Select(n => Number(i, n)));
         i.Eval("2dcvalue c2 0 p2");
-        Assert.IsType<gp_Pnt2d>(Geometry(i, "p2"));
+        Assert.IsType<Point2D>(Geometry(i, "p2"));
         i.Eval("coord p2 u v");
         Assert.Equal(3, Number(i, "u"));
         Assert.Equal("", Error(i, "coord p2 u v w"));
@@ -142,12 +143,12 @@ public class DrawGeometryCommandsTests
         i.Eval("line l 0 0 0 1 0 0; circle c2 0 0 1");
         var aLine = Geometry<Geom_Line>(i, "l");
         i.Eval("reverse l c2");
-        Assert.Equal(new gp_Dir(-1, 0, 0), Geometry<Geom_Line>(i, "l").Lin().Direction());
-        Assert.Equal(new gp_Dir(1, 0, 0), aLine.Lin().Direction());
-        Assert.Equal(new gp_Dir2d(0, -1), Geometry<Geom2d_Circle>(i, "c2").Position().YDirection());
+        Assert.Equal(new Direction3D(-1, 0, 0), Geometry<Geom_Line>(i, "l").Lin().Direction());
+        Assert.Equal(new Direction3D(1, 0, 0), aLine.Lin().Direction());
+        Assert.Equal(new Direction2D(0, -1), Geometry<Geom2d_Circle>(i, "c2").Position().YDirection());
 
         i.Eval("beziercurve bz 3 0 0 0 1 1 0 2 0 0; segment bz 0.25 0.75");
-        Assert.Equal(new gp_Pnt(0.5, 0.375, 0), Geometry<Geom_BezierCurve>(i, "bz").StartPoint());
+        Assert.Equal(new Point3D(0.5, 0.375, 0), Geometry<Geom_BezierCurve>(i, "bz").StartPoint());
         i.Eval("bsplinecurve bs 1 3 0 2 1 1 2 2 0 0 0 1 1 1 0 1 2 0 0 1; segment bs 0.5 1.5");
         Assert.Equal(0.5, Geometry<Geom_BSplineCurve>(i, "bs").FirstParameter());
         Assert.Equal("", Error(i, "segment l 0 1"));
@@ -155,9 +156,9 @@ public class DrawGeometryCommandsTests
         i.Eval("pbsplinecurve pbs 1 3 0 1 1 1 2 1 0 0 0 1 1 0 0 1 0 1 0 1");
         // OCCT's setorigin changes a 3D curve and then fails: its else goes with the 2D test
         Assert.Equal("", Error(i, "setorigin pbs 2"));
-        Assert.Equal(new gp_Pnt(1, 0, 0), Geometry<Geom_BSplineCurve>(i, "pbs").Pole(1));
+        Assert.Equal(new Point3D(1, 0, 0), Geometry<Geom_BSplineCurve>(i, "pbs").Pole(1));
         i.Eval("2dpbsplinecurve ps2 1 3 0 1 1 1 2 1 0 0 1 1 0 1 0 1 1; setorigin ps2 2");
-        Assert.Equal(new gp_Pnt2d(1, 0), Geometry<Geom2d_BSplineCurve>(i, "ps2").Pole(1));
+        Assert.Equal(new Point2D(1, 0), Geometry<Geom2d_BSplineCurve>(i, "ps2").Pole(1));
     }
 
     [Fact]
@@ -165,9 +166,9 @@ public class DrawGeometryCommandsTests
     {
         DrawInterpreter i = New();
         i.Eval("plane p; plane p1 1 2 3; plane p2 0 0 0 1 0 0; plane p3 0 0 0 0 0 1 0 1 0");
-        Assert.Equal(new gp_Pnt(1, 2, 3), Geometry<Geom_Plane>(i, "p1").Location());
-        Assert.Equal(new gp_Dir(1, 0, 0), Geometry<Geom_Plane>(i, "p2").Axis().Direction());
-        Assert.Equal(new gp_Dir(0, 1, 0), Geometry<Geom_Plane>(i, "p3").Position().XDirection());
+        Assert.Equal(new Point3D(1, 2, 3), Geometry<Geom_Plane>(i, "p1").Location());
+        Assert.Equal(new Direction3D(1, 0, 0), Geometry<Geom_Plane>(i, "p2").Axis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), Geometry<Geom_Plane>(i, "p3").Position().XDirection());
         Assert.Equal("\n\n*********** Dump of p *************\nPlane\n  Origin :0, 0, 0 \n  Axis   :0, 0, 1 \n  XAxis  :1, 0, -0 \n  YAxis  :-0, 1, 0 \n\n", i.Eval("dump p"));
 
         i.Eval("cylinder cy 3; sphere sp 1 1 1 2; cone co 0 0 0 0 0 1 30 5; torus to 0 0 0 0 0 1 1 0 0 10 2");
@@ -189,7 +190,7 @@ public class DrawGeometryCommandsTests
         DrawInterpreter i = New();
         i.Eval("beziersurf bz 2 2 0 0 0 1 0 0 0 1 0 1 1 1");
         var aBz = Geometry<Geom_BezierSurface>(i, "bz");
-        Assert.Equal(new gp_Pnt(1, 0, 0), aBz.Pole(2, 1));
+        Assert.Equal(new Point3D(1, 0, 0), aBz.Pole(2, 1));
         Assert.Equal("DrawTrSurf_BezierSurface", i.GetDrawable("bz")!.TypeName);
         i.Eval("beziersurf bzw 2 2 0 0 0 1 1 0 0 2 0 1 0 1 1 1 1 1");
         Assert.True(Geometry<Geom_BezierSurface>(i, "bzw").IsURational());
@@ -197,7 +198,7 @@ public class DrawGeometryCommandsTests
 
         i.Eval("bsplinesurf bs 1 2 0 2 1 2 1 2 0 2 1 2 0 0 0 1 1 0 0 1 0 1 0 1 1 1 1 1");
         var aBs = Geometry<Geom_BSplineSurface>(i, "bs");
-        Assert.Equal(new gp_Pnt(0, 1, 0), aBs.Pole(1, 2));
+        Assert.Equal(new Point3D(0, 1, 0), aBs.Pole(1, 2));
         Assert.Equal("DrawTrSurf_BSplineSurface", i.GetDrawable("bs")!.TypeName);
         i.Eval("upbsplinesurf ub 1 4 0 1 1 1 2 1 3 1 1 2 0 2 1 2 "
                + "0 0 0 1 1 0 0 1 0 1 0 1 0 0 1 1 1 0 1 1 0 1 1 1");
@@ -218,7 +219,7 @@ public class DrawGeometryCommandsTests
         DrawInterpreter i = New();
         i.Eval("circle c 0 0 0 1; line l 2 0 0 0 0 1; circle c2 0 0 1");
         i.Eval("extsurf ex c 0 0 1; revsurf rv l 0 0 0 0 0 1");
-        Assert.Equal(new gp_Dir(0, 0, 1), Geometry<Geom_SurfaceOfLinearExtrusion>(i, "ex").Direction());
+        Assert.Equal(new Direction3D(0, 0, 1), Geometry<Geom_SurfaceOfLinearExtrusion>(i, "ex").Direction());
         Assert.IsType<Geom_SurfaceOfRevolution>(Geometry(i, "rv"));
         Assert.Equal("", Error(i, "revsurf x l 0 0 0 0"));
         Assert.Equal("", Error(i, "extsurf x nothing 0 0 1"));
@@ -263,12 +264,12 @@ public class DrawGeometryCommandsTests
 
         i.Eval("svalue s 0 0 x y z du1 du2 du3 dv1 dv2 dv3 a b c d e f g h k");
         var aSphere = Geometry<Geom_SphericalSurface>(i, "s");
-        aSphere.D2(0, 0, out gp_Pnt P, out gp_Vec DU, out gp_Vec DV, out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV);
+        aSphere.D2(0, 0, out Point3D P, out Vector3D DU, out Vector3D DV, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
         Assert.Equal(new[] { P.X(), P.Y(), P.Z(), DU.X(), DU.Y(), DU.Z(), DV.X(), DV.Y(), DV.Z(), D2U.X(), D2U.Y(), D2U.Z(),
                       D2V.X(), D2V.Y(), D2V.Z(), D2UV.X(), D2UV.Y(), D2UV.Z() },
                      new[] { "x", "y", "z", "du1", "du2", "du3", "dv1", "dv2", "dv3", "a", "b", "c", "d", "e", "f", "g", "h", "k" }.Select(n => Number(i, n)));
         i.Eval("svalue s 0 0 pt");
-        Assert.Equal(new gp_Pnt(2, 0, 0), Assert.IsType<gp_Pnt>(Geometry(i, "pt")));
+        Assert.Equal(new Point3D(2, 0, 0), Assert.IsType<Point3D>(Geometry(i, "pt")));
         i.Eval("svalue s 0 0 x y");
         Assert.Equal("", Error(i, "svalue s 0 0"));
         i.Eval("sderivative s 0 0 1 0 dx dy dz");
@@ -291,10 +292,10 @@ public class DrawGeometryCommandsTests
         Assert.StartsWith("Invalid parameters!\nUsage:\n", Error(i, "parameters s"));
 
         i.Eval("plane p; ureverse p");
-        Assert.Equal(new gp_Dir(-1, 0, 0), Geometry<Geom_Plane>(i, "p").Position().XDirection());
+        Assert.Equal(new Direction3D(-1, 0, 0), Geometry<Geom_Plane>(i, "p").Position().XDirection());
         i.Eval("plane q; vreverse q");
         // Geom_Plane::VReverse reverses the Y direction only: the frame becomes indirect
-        Assert.Equal(new gp_Dir(0, -1, 0), Geometry<Geom_Plane>(i, "q").Position().YDirection());
+        Assert.Equal(new Direction3D(0, -1, 0), Geometry<Geom_Plane>(i, "q").Position().YDirection());
         Assert.False(Geometry<Geom_Plane>(i, "q").Position().Direct());
     }
 
@@ -303,7 +304,7 @@ public class DrawGeometryCommandsTests
     {
         DrawInterpreter i = New();
         i.Eval("bsplinecurve bs 2 2 0 3 1 3 0 0 0 1 1 1 0 1 2 0 0 1");
-        Assert.True(Geometry<Geom_BSplineCurve>(i, "bs").IsFrozen());
+        Assert.True(Geometry<Geom_BSplineCurve>(i, "bs").IsFrozen);
         i.Eval("copy bs bs2");
         Assert.Equal(i.Eval("dump bs").Replace("bs ", "bs2 ", StringComparison.Ordinal), i.Eval("dump bs2"));
     }

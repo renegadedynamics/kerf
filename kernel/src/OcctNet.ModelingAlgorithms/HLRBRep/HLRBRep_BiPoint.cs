@@ -2,14 +2,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A 3D segment of a polygonal hidden-line result, with the shape it comes from and its kind (smooth, sewn, outline, internal).</summary>
 /// <remarks>A C++ value class, so a struct. The setters are internal, with <c>With</c> twins.</remarks>
 public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 {
-    private gp_Pnt myP1;
-    private gp_Pnt myP2;
+    private Point3D myP1;
+    private Point3D myP2;
     private TopoDS_Shape myShape;
     private bool myRg1Line;
     private bool myRgNLine;
@@ -18,8 +20,8 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 
     public HLRBRep_BiPoint()
     {
-        myP1 = new gp_Pnt();
-        myP2 = new gp_Pnt();
+        myP1 = new Point3D();
+        myP2 = new Point3D();
         myShape = new TopoDS_Shape();
         myRg1Line = false;
         myRgNLine = false;
@@ -29,8 +31,8 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
 
     public HLRBRep_BiPoint(double x1, double y1, double z1, double x2, double y2, double z2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
-        myP1 = new gp_Pnt(x1, y1, z1);
-        myP2 = new gp_Pnt(x2, y2, z2);
+        myP1 = new Point3D(x1, y1, z1);
+        myP2 = new Point3D(x2, y2, z2);
         myShape = S;
         myRg1Line = reg1;
         myRgNLine = regn;
@@ -38,9 +40,9 @@ public partial struct HLRBRep_BiPoint : IEquatable<HLRBRep_BiPoint>
         myIntLine = intl;
     }
 
-    public readonly gp_Pnt P1() => myP1;
+    public readonly Point3D P1() => myP1;
 
-    public readonly gp_Pnt P2() => myP2;
+    public readonly Point3D P2() => myP2;
 
     public readonly TopoDS_Shape Shape() => myShape;
 

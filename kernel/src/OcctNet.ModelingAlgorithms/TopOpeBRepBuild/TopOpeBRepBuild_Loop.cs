@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Occt;
 /// <see cref="TopOpeBRepBuild_BlockIterator"/>.
 /// </summary>
 /// <remarks><c>Dump</c> is left out (decision 493).</remarks>
-public class TopOpeBRepBuild_Loop : Standard_Transient
+public class TopOpeBRepBuild_Loop : Transient
 {
     protected bool myIsShape;
     protected TopoDS_Shape myShape = new();

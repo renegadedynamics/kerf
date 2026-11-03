@@ -2,6 +2,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +26,7 @@ namespace Occt;
 /// OCCT's anonymous-namespace functions are internal static methods. Its views without copying are kept where they
 /// are written through (<see cref="toMatrix"/> shares the parameter table, as OCCT's math_Matrix over
 /// <c>&amp;ChangeFirst()</c>); OCCT's read-only Array1 views over a linear vector are copies (the same values). Every
-/// <c>std::sort</c> goes through <see cref="std_sort"/>, so that ties keep MSVC's order (decision 491).
+/// <c>std::sort</c> goes through <see cref="Sorting"/>, so that ties keep MSVC's order (decision 491).
 /// </remarks>
 internal static class GordonUtilities
 {
@@ -45,12 +57,12 @@ internal static class GordonUtilities
         public NCollection_LinearVector<Contact> Candidates = new();
     }
 
-    private readonly struct DoubleLess : std_heap.ILess<double>
+    private readonly struct DoubleLess : Heap.ILess<double>
     {
         public bool Less(double theLeft, double theRight) => theLeft < theRight;
     }
 
-    private readonly struct ContactLess : std_heap.ILess<Contact>
+    private readonly struct ContactLess : Heap.ILess<Contact>
     {
         public bool Less(Contact theLeft, Contact theRight)
         {
@@ -66,7 +78,7 @@ internal static class GordonUtilities
         }
     }
 
-    private readonly struct OrderedCurveLess : std_heap.ILess<OrderedCurve>
+    private readonly struct OrderedCurveLess : Heap.ILess<OrderedCurve>
     {
         public bool Less(OrderedCurve theLeft, OrderedCurve theRight) => theLeft.Rank < theRight.Rank;
     }
@@ -84,14 +96,14 @@ internal static class GordonUtilities
     /// <summary>Returns a parameter comparison tolerance scaled by the interval length.</summary>
     internal static double parameterResolution(double theFirst, double theLast)
     {
-        return Precision.PIntersection(Max(Math.Abs(theLast - theFirst), 1.0));
+        return global::Kerf.Engine.Foundation.Precision.PIntersection(Max(Math.Abs(theLast - theFirst), 1.0));
     }
 
     /// <summary>Returns a network tolerance converted to the given parameter range.</summary>
     internal static double boundaryParameterResolution(double theFirst, double theLast, double theTolerance)
     {
         double aRange = Max(Math.Abs(theLast - theFirst), 1.0);
-        return Precision.Parametric(Max(theTolerance, Precision.Approximation())) * aRange;
+        return global::Kerf.Engine.Foundation.Precision.Parametric(Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Approximation())) * aRange;
     }
 
     /// <summary>Appends a clamped parameter candidate.</summary>
@@ -108,7 +120,7 @@ internal static class GordonUtilities
             return;
         }
 
-        std_sort.sort(theParameters.AsSpan(), new DoubleLess());
+        Sorting.Sort(theParameters.AsSpan(), new DoubleLess());
         double aTol = parameterResolution(0.0, 1.0);
         int aWriteIdx = 0;
         for (int aReadIdx = 1; aReadIdx < theParameters.Size(); ++aReadIdx)
@@ -164,11 +176,11 @@ internal static class GordonUtilities
     }
 
     /// <summary>Wraps a parameter table into a math matrix without copying its storage: writes go to the table.</summary>
-    internal static math_Matrix toMatrix(NCollection_Array2<double> theParams)
+    internal static Matrix toMatrix(NCollection_Array2<double> theParams)
     {
         (double[] aData, int anOffset) = theParams.Storage();
         NCollection_Array1<double> aView = new(aData, anOffset, 1, theParams.Size());
-        return new math_Matrix(aView, 1, 1, theParams.ColLength(), 1, theParams.RowLength());
+        return new Matrix(aView, 1, 1, theParams.ColLength(), 1, theParams.RowLength());
     }
 
     /// <summary>Expands a periodic B-spline period into explicit non-periodic storage.</summary>
@@ -183,18 +195,18 @@ internal static class GordonUtilities
         {
             double aFirst = theCurve.FirstParameter();
             double aLast = theCurve.LastParameter();
-            if (aLast <= aFirst + Precision.PConfusion())
+            if (aLast <= aFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
 
-            theCurve.Segment(aFirst, aLast, Precision.PConfusion());
+            theCurve.Segment(aFirst, aLast, global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (theCurve.IsPeriodic())
             {
                 theCurve.SetNotPeriodic();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -213,7 +225,7 @@ internal static class GordonUtilities
             }
 
             NCollection_Array1<double> aKnots = new(aCurve.InternalKnots());
-            BSplCLib.Reparametrize(0.0, 1.0, aKnots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aKnots);
             aCurve.SetKnots(aKnots);
         }
         return true;
@@ -233,7 +245,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns average values of matrix columns.</summary>
-    internal static math_Vector columnMeans(math_Matrix theParams)
+    internal static math_Vector columnMeans(Matrix theParams)
     {
         math_Vector aOnes = new(theParams.LowerRow(), theParams.UpperRow(), 1.0);
         math_Vector aSums = theParams.Transposed().Multiplied(aOnes);
@@ -242,7 +254,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns average values of matrix rows.</summary>
-    internal static math_Vector rowMeans(math_Matrix theParams)
+    internal static math_Vector rowMeans(Matrix theParams)
     {
         math_Vector aOnes = new(theParams.LowerCol(), theParams.UpperCol(), 1.0);
         math_Vector aSums = theParams.Multiplied(aOnes);
@@ -256,8 +268,8 @@ internal static class GordonUtilities
     {
         GeomAdaptor_Curve aProfileAdaptor = new(theProfile);
         GeomAdaptor_Curve aGuideAdaptor = new(theGuide);
-        gp_Pnt aProfilePoint = aProfileAdaptor.EvalD0(theProfileParam);
-        gp_Pnt aGuidePoint = aGuideAdaptor.EvalD0(theGuideParam);
+        Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParam);
+        Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParam);
         double aGap = aProfilePoint.Distance(aGuidePoint);
         if (aGap > theTolerance)
         {
@@ -281,7 +293,7 @@ internal static class GordonUtilities
 
     /// <summary>Converts two close extrema points to an exact curve-parameter contact.</summary>
     internal static void appendExtremaContact(Geom_BSplineCurve theProfile, Geom_BSplineCurve theGuide,
-                                              in gp_Pnt theProfilePoint, in gp_Pnt theGuidePoint, double theTolerance,
+                                              in Point3D theProfilePoint, in Point3D theGuidePoint, double theTolerance,
                                               ContactSet theContacts)
     {
         if (theProfilePoint.Distance(theGuidePoint) > theTolerance)
@@ -289,7 +301,7 @@ internal static class GordonUtilities
             return;
         }
 
-        gp_Pnt aSharedPoint = new((theProfilePoint.XYZ() + theGuidePoint.XYZ()) * 0.5);
+        Point3D aSharedPoint = new((theProfilePoint.XYZ() + theGuidePoint.XYZ()) * 0.5);
 
         double aProfileParam;
         double aGuideParam = 0.0;
@@ -339,34 +351,34 @@ internal static class GordonUtilities
         double aProfileLast = theProfile.LastParameter();
         double aGuideFirst = theGuide.FirstParameter();
         double aGuideLast = theGuide.LastParameter();
-        if (aProfileLast <= aProfileFirst + Precision.PConfusion()
-            || aGuideLast <= aGuideFirst + Precision.PConfusion())
+        if (aProfileLast <= aProfileFirst + global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || aGuideLast <= aGuideFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return true;
         }
 
         GeomAdaptor_Curve aProfileAdaptor = new(theProfile);
         GeomAdaptor_Curve aGuideAdaptor = new(theGuide);
-        gp_Pnt aP0 = aProfileAdaptor.EvalD0(aProfileFirst);
-        gp_Pnt aP1 = aProfileAdaptor.EvalD0(aProfileLast);
-        gp_Pnt aQ0 = aGuideAdaptor.EvalD0(aGuideFirst);
-        gp_Pnt aQ1 = aGuideAdaptor.EvalD0(aGuideLast);
+        Point3D aP0 = aProfileAdaptor.EvalD0(aProfileFirst);
+        Point3D aP1 = aProfileAdaptor.EvalD0(aProfileLast);
+        Point3D aQ0 = aGuideAdaptor.EvalD0(aGuideFirst);
+        Point3D aQ1 = aGuideAdaptor.EvalD0(aGuideLast);
 
-        gp_XYZ aU = aP1.XYZ() - aP0.XYZ();
-        gp_XYZ aV = aQ1.XYZ() - aQ0.XYZ();
-        gp_XYZ aW = aP0.XYZ() - aQ0.XYZ();
+        Xyz aU = aP1.XYZ() - aP0.XYZ();
+        Xyz aV = aQ1.XYZ() - aQ0.XYZ();
+        Xyz aW = aP0.XYZ() - aQ0.XYZ();
         double aA = aU.SquareModulus();
         double aB = aU.Dot(aV);
         double aC = aV.SquareModulus();
         double aD = aU.Dot(aW);
         double aE = aV.Dot(aW);
-        if (aA <= gp.Resolution() || aC <= gp.Resolution())
+        if (aA <= Constants.Resolution() || aC <= Constants.Resolution())
         {
             return true;
         }
 
         double aDenom = aA * aC - aB * aB;
-        if (Math.Abs(aDenom) <= gp.Resolution())
+        if (Math.Abs(aDenom) <= Constants.Resolution())
         {
             return false;
         }
@@ -404,13 +416,13 @@ internal static class GordonUtilities
         GeomAPI_ExtremaCurveCurve anExtrema = new(theProfile, theGuide);
         for (int anExtIdx = 1; anExtIdx <= anExtrema.NbExtrema(); ++anExtIdx)
         {
-            anExtrema.Points(anExtIdx, out gp_Pnt aProfilePoint, out gp_Pnt aGuidePoint);
+            anExtrema.Points(anExtIdx, out Point3D aProfilePoint, out Point3D aGuidePoint);
             appendExtremaContact(theProfile, theGuide, aProfilePoint, aGuidePoint, theTolerance, aContacts);
         }
 
         {
-            gp_Pnt aProfilePoint = new();
-            gp_Pnt aGuidePoint = new();
+            Point3D aProfilePoint = new();
+            Point3D aGuidePoint = new();
             if (anExtrema.TotalNearestPoints(ref aProfilePoint, ref aGuidePoint))
             {
                 appendExtremaContact(theProfile, theGuide, aProfilePoint, aGuidePoint, theTolerance, aContacts);
@@ -418,7 +430,7 @@ internal static class GordonUtilities
         }
 
         appendBoundaryContacts(theProfile, theGuide, theTolerance, aContacts);
-        std_sort.sort(aContacts.Candidates.AsSpan(), new ContactLess());
+        Sorting.Sort(aContacts.Candidates.AsSpan(), new ContactLess());
         return aContacts;
     }
 
@@ -487,7 +499,7 @@ internal static class GordonUtilities
         }
 
         int isDone = 1; // std::atomic<bool>
-        OSD_Parallel.For(0, aNbPairs, thePairIdx =>
+        OsdParallel.For(0, aNbPairs, thePairIdx =>
         {
             if (Volatile.Read(ref isDone) == 0)
             {
@@ -532,7 +544,7 @@ internal static class GordonUtilities
                                                NCollection_Array2<double> theGuideParams, double theTolerance,
                                                ref bool theIsUClosed, ref bool theIsVClosed)
     {
-        double aTol = Max(theTolerance, Precision.Confusion());
+        double aTol = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Boundary snaps are done before validation so closed seams use exact end parameters.
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
@@ -559,21 +571,21 @@ internal static class GordonUtilities
             for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
             {
                 GeomAdaptor_Curve aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
-                gp_Pnt aProfilePoint = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aGuideIdx));
-                gp_Pnt aGuidePoint = aGuideAdaptor.EvalD0(theGuideParams.At(aProfileIdx, aGuideIdx));
+                Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aGuideIdx));
+                Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParams.At(aProfileIdx, aGuideIdx));
                 if (aProfilePoint.Distance(aGuidePoint) > aTol)
                 {
                     return false;
                 }
                 if (aGuideIdx == 0 || aGuideIdx == aLastGuide)
                 {
-                    gp_Pnt aOppositePoint =
+                    Point3D aOppositePoint =
                       aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide - aGuideIdx));
                     aUGap = Max(aUGap, aProfilePoint.Distance(aOppositePoint));
                 }
                 if (aProfileIdx == 0 || aProfileIdx == aLastProfile)
                 {
-                    gp_Pnt aOppositePoint =
+                    Point3D aOppositePoint =
                       aGuideAdaptor.EvalD0(theGuideParams.At(aLastProfile - aProfileIdx, aGuideIdx));
                     aVGap = Max(aVGap, aGuidePoint.Distance(aOppositePoint));
                 }
@@ -610,7 +622,7 @@ internal static class GordonUtilities
             anOrder.Append(new OrderedCurve(aRankIdx - theRanks.Lower(), theRanks[aRankIdx]));
         }
 
-        std_sort.sort(anOrder.AsSpan(), new OrderedCurveLess());
+        Sorting.Sort(anOrder.AsSpan(), new OrderedCurveLess());
         double aTol = parameterResolution(0.0, 1.0);
         if (anOrder.Size() > 2 && Math.Abs(anOrder.Value(0).Rank - anOrder.Value(1).Rank) <= aTol)
         {
@@ -638,7 +650,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Checks that every row and column advances in its own curve parameter direction.</summary>
-    internal static bool isMonotoneLayout(math_Matrix theProfileParams, math_Matrix theGuideParams)
+    internal static bool isMonotoneLayout(Matrix theProfileParams, Matrix theGuideParams)
     {
         double aTol = parameterResolution(0.0, 1.0);
 
@@ -673,15 +685,15 @@ internal static class GordonUtilities
                                                       NCollection_Array2<double> theProfileParams,
                                                       NCollection_Array2<double> theGuideParams, double theTolerance)
     {
-        double aTol = Max(theTolerance, Precision.Confusion());
+        double aTol = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         int aLastGuide = theGuides.Size() - 1;
         int aLastProf = theProfiles.Size() - 1;
         bool isURepeated = true;
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
             GeomAdaptor_Curve aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
-            gp_Pnt aFirst = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, 0));
-            gp_Pnt aLast = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide));
+            Point3D aFirst = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, 0));
+            Point3D aLast = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide));
             if (aFirst.Distance(aLast) > aTol)
             {
                 isURepeated = false;
@@ -701,8 +713,8 @@ internal static class GordonUtilities
         for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
         {
             GeomAdaptor_Curve aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
-            gp_Pnt aFirst = aGuideAdaptor.EvalD0(theGuideParams.At(0, aGuideIdx));
-            gp_Pnt aLast = aGuideAdaptor.EvalD0(theGuideParams.At(aLastProf, aGuideIdx));
+            Point3D aFirst = aGuideAdaptor.EvalD0(theGuideParams.At(0, aGuideIdx));
+            Point3D aLast = aGuideAdaptor.EvalD0(theGuideParams.At(aLastProf, aGuideIdx));
             if (aFirst.Distance(aLast) > aTol)
             {
                 isVRepeated = false;
@@ -744,7 +756,7 @@ internal static class GordonUtilities
                                                bool theHasPreviousProfile, bool theHasPreviousGuide,
                                                double theTolerance)
     {
-        double aScore = theContact.Gap / Max(theTolerance, Precision.Confusion())
+        double aScore = theContact.Gap / Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion())
                         + Math.Abs(theProfileParam - theProfileTarget)
                         + Math.Abs(theGuideParam - theGuideTarget);
         if (theHasPreviousProfile)
@@ -772,13 +784,13 @@ internal static class GordonUtilities
           theIsForward ? theLastParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theLastParameter;
         Geom_Curve.ResD1 aFirstD1 = theCurve.EvalD1(aFirstRawParameter);
         Geom_Curve.ResD1 aLastD1 = theCurve.EvalD1(aLastRawParameter);
-        if (aFirstD1.Point.Distance(aLastD1.Point) > Max(theTolerance, Precision.Confusion()))
+        if (aFirstD1.Point.Distance(aLastD1.Point) > Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return false;
         }
 
-        gp_Vec aFirstTangent = aFirstD1.D1;
-        gp_Vec aLastTangent = aLastD1.D1;
+        Vector3D aFirstTangent = aFirstD1.D1;
+        Vector3D aLastTangent = aLastD1.D1;
         if (!theIsForward)
         {
             aFirstTangent.Reverse();
@@ -786,7 +798,7 @@ internal static class GordonUtilities
         }
         double aFirstMagnitude = aFirstTangent.Magnitude();
         double aLastMagnitude = aLastTangent.Magnitude();
-        if (aFirstMagnitude <= gp.Resolution() || aLastMagnitude <= gp.Resolution())
+        if (aFirstMagnitude <= Constants.Resolution() || aLastMagnitude <= Constants.Resolution())
         {
             return false;
         }
@@ -848,8 +860,8 @@ internal static class GordonUtilities
             }
 
             if ((hasTangentMatch
-                 && (aTangentMismatch < aBestTangentMismatch - Precision.Angular()
-                     || (Math.Abs(aTangentMismatch - aBestTangentMismatch) <= Precision.Angular() && aScore < aBest)))
+                 && (aTangentMismatch < aBestTangentMismatch - global::Kerf.Engine.Foundation.Precision.Angular()
+                     || (Math.Abs(aTangentMismatch - aBestTangentMismatch) <= global::Kerf.Engine.Foundation.Precision.Angular() && aScore < aBest)))
                 || (!hasTangentMatch && aBestTangentMismatch == RealLast() && aScore < aBest))
             {
                 aBestTangentMismatch = hasTangentMatch ? aTangentMismatch : RealLast();
@@ -874,8 +886,8 @@ internal static class GordonUtilities
             return false;
         }
 
-        math_Matrix aProfileParamMatrix = toMatrix(theProfileParams);
-        math_Matrix aGuideParamMatrix = toMatrix(theGuideParams);
+        Matrix aProfileParamMatrix = toMatrix(theProfileParams);
+        Matrix aGuideParamMatrix = toMatrix(theGuideParams);
 
         NCollection_LinearVector<OrderedCurve> aProfileOrder = orderedCurves(rowMeans(aGuideParamMatrix));
         NCollection_LinearVector<OrderedCurve> aGuideOrder = orderedCurves(columnMeans(aProfileParamMatrix));
@@ -886,8 +898,8 @@ internal static class GordonUtilities
                                                         theProfileParams.LowerCol(), theProfileParams.UpperCol());
         NCollection_Array2<double> aGuideParams = new(theGuideParams.LowerRow(), theGuideParams.UpperRow(),
                                                       theGuideParams.LowerCol(), theGuideParams.UpperCol());
-        math_Matrix aProfileParamResult = toMatrix(aProfileParams);
-        math_Matrix aGuideParamResult = toMatrix(aGuideParams);
+        Matrix aProfileParamResult = toMatrix(aProfileParams);
+        Matrix aGuideParamResult = toMatrix(aGuideParams);
 
         NCollection_LinearVector<bool> aProfileForward = new();
         for (int aProfileIdx = 0; aProfileIdx < aProfileOrder.Size(); ++aProfileIdx)
@@ -961,7 +973,7 @@ internal static class GordonUtilities
     }
 
     /// <summary>Monotone scalar map converting target parameters back to the source curve.</summary>
-    internal sealed class ScalarLaw : BSplCLib_EvaluatorFunction
+    internal sealed class ScalarLaw : EvaluatorFunction
     {
         private readonly NCollection_LinearVector<double> mySource = new();
         private readonly NCollection_LinearVector<double> myTarget = new();
@@ -979,8 +991,8 @@ internal static class GordonUtilities
             for (int aParamIdx = 1; aParamIdx <= theNbValues; ++aParamIdx)
             {
                 if (!mySource.IsEmpty()
-                    && (theSource[aParamIdx] <= mySource.Last() + Precision.PConfusion()
-                        || theTarget[aParamIdx] <= myTarget.Last() + Precision.PConfusion()))
+                    && (theSource[aParamIdx] <= mySource.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || theTarget[aParamIdx] <= myTarget.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     return false;
                 }
@@ -1069,7 +1081,7 @@ internal static class GordonUtilities
         {
             double aSourceKnot = aCurveKnots.At(aKnotIdx);
             while (aConstraintIdx <= theNbConstraints
-                   && theSourceParams[aConstraintIdx] < aSourceKnot - Precision.PConfusion())
+                   && theSourceParams[aConstraintIdx] < aSourceKnot - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aNewKnotValues.Append(theTargetParams[aConstraintIdx]);
                 aNewKnotMults.Append(aDegree);
@@ -1079,7 +1091,7 @@ internal static class GordonUtilities
             double aTargetKnot = theTargetParams[theNbConstraints];
             for (int aParamIdx = 1; aParamIdx < theNbConstraints; ++aParamIdx)
             {
-                if (aSourceKnot <= theSourceParams[aParamIdx + 1] + Precision.PConfusion())
+                if (aSourceKnot <= theSourceParams[aParamIdx + 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     double aSourceFirst = theSourceParams[aParamIdx];
                     double aSourceLast = theSourceParams[aParamIdx + 1];
@@ -1094,7 +1106,7 @@ internal static class GordonUtilities
 
             int aMultiplicity = aCurveMults.At(aKnotIdx);
             if (aConstraintIdx <= theNbConstraints
-                && Math.Abs(theSourceParams[aConstraintIdx] - aSourceKnot) <= Precision.PConfusion())
+                && Math.Abs(theSourceParams[aConstraintIdx] - aSourceKnot) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 if (aConstraintIdx > 1 && aConstraintIdx < theNbConstraints)
                 {
@@ -1108,17 +1120,17 @@ internal static class GordonUtilities
 
         NCollection_Array1<double> aNewKnots = toOneBasedArrayView(aNewKnotValues);
         NCollection_Array1<int> aNewMults = toOneBasedArrayView(aNewKnotMults);
-        int aNbNewPoles = BSplCLib.NbPoles(aDegree, false, aNewMults);
+        int aNbNewPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDegree, false, aNewMults);
         NCollection_Array1<double> aSourceFlatKnots = new(1, theCurve.NbPoles() + aDegree + 1);
         NCollection_Array1<double> aTargetFlatKnots = new(1, aNbNewPoles + aDegree + 1);
-        BSplCLib.KnotSequence(aCurveKnots, aCurveMults, aSourceFlatKnots);
-        BSplCLib.KnotSequence(aNewKnots, aNewMults, aTargetFlatKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aCurveKnots, aCurveMults, aSourceFlatKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aNewKnots, aNewMults, aTargetFlatKnots);
 
         int aStatus;
         if (!theCurve.IsRational())
         {
-            NCollection_Array1<gp_Pnt> aNewPoles = new(1, aNbNewPoles);
-            BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, theCurve.InternalPoles(),
+            NCollection_Array1<Point3D> aNewPoles = new(1, aNbNewPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, theCurve.InternalPoles(),
                                             aTargetFlatKnots, aDegree, aNewPoles, out aStatus);
             if (aStatus != 0)
             {
@@ -1128,12 +1140,12 @@ internal static class GordonUtilities
             return theResult is not null;
         }
 
-        NCollection_Array1<gp_Pnt> aCurvePoles = theCurve.InternalPoles();
+        NCollection_Array1<Point3D> aCurvePoles = theCurve.InternalPoles();
         NCollection_Array1<double> aCurveWeights = theCurve.InternalWeightsArray();
         NCollection_Array1<double> aHomogeneousPoles = new(1, 4 * theCurve.NbPoles());
         for (int aPoleIdx = 0; aPoleIdx < aCurvePoles.Size(); ++aPoleIdx)
         {
-            gp_Pnt aPole = aCurvePoles.At(aPoleIdx);
+            Point3D aPole = aCurvePoles.At(aPoleIdx);
             double aWeight = aCurveWeights.At(aPoleIdx);
             int aHomogeneousIdx = 4 * aPoleIdx;
             aHomogeneousPoles.ChangeAt(aHomogeneousIdx) = aPole.X() * aWeight;
@@ -1143,20 +1155,20 @@ internal static class GordonUtilities
         }
 
         NCollection_Array1<double> aNewHomogeneousPoles = new(1, 4 * aNbNewPoles);
-        BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, 4, aHomogeneousPoles.AsSpan(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, 4, aHomogeneousPoles.AsSpan(),
                                         aTargetFlatKnots, aDegree, aNewHomogeneousPoles.AsSpan(), out aStatus);
         if (aStatus != 0)
         {
             return false;
         }
 
-        NCollection_Array1<gp_Pnt> aNewPoles2 = new(1, aNbNewPoles);
+        NCollection_Array1<Point3D> aNewPoles2 = new(1, aNbNewPoles);
         NCollection_Array1<double> aNewWeights = new(1, aNbNewPoles);
         for (int aPoleIdx = 0; aPoleIdx < aNewPoles2.Size(); ++aPoleIdx)
         {
             int aHomogeneousIdx = 4 * aPoleIdx;
             double aWeight = aNewHomogeneousPoles.At(aHomogeneousIdx + 3);
-            if (aWeight <= gp.Resolution())
+            if (aWeight <= Constants.Resolution())
             {
                 return false;
             }
@@ -1264,13 +1276,13 @@ internal static class GordonUtilities
 
         GeomAdaptor_Curve aCurveAdaptor = new(aCurve);
         NCollection_LinearVector<double> aSamples = samplingParameters(theTargetParams, aCurve.NbPoles());
-        NCollection_LinearVector<gp_Pnt> aPoints = new();
+        NCollection_LinearVector<Point3D> aPoints = new();
         NCollection_LinearVector<double> aParameters = new();
         for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
         {
             double aTargetParam = aSamples.Value(aSampleIdx);
-            gp_Pnt aPoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
-            if (!aPoints.IsEmpty() && aPoint.Distance(aPoints.Last()) <= Precision.Confusion())
+            Point3D aPoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
+            if (!aPoints.IsEmpty() && aPoint.Distance(aPoints.Last()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -1285,7 +1297,7 @@ internal static class GordonUtilities
             return false;
         }
 
-        NCollection_Array1<gp_Pnt> aPointArray = toOneBasedArrayView(aPoints);
+        NCollection_Array1<Point3D> aPointArray = toOneBasedArrayView(aPoints);
         NCollection_Array1<double> aParamArray = toOneBasedArrayView(aParameters);
 
         GeomLib_Interpolate anInterpolator = new(interpolationDegree(), aNbPoints, aPointArray, aParamArray);
@@ -1305,8 +1317,8 @@ internal static class GordonUtilities
         for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
         {
             double aTargetParam = aSamples.Value(aSampleIdx);
-            gp_Pnt aSourcePoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
-            gp_Pnt aNewPoint = aNewCurveAdaptor.EvalD0(aTargetParam);
+            Point3D aSourcePoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
+            Point3D aNewPoint = aNewCurveAdaptor.EvalD0(aTargetParam);
             theMaxDeviation = Max(theMaxDeviation, aSourcePoint.Distance(aNewPoint));
         }
         return theCurve is not null;
@@ -1320,8 +1332,8 @@ internal static class GordonUtilities
                                             bool theAllowApproximateRational, ref bool theDidApproximate,
                                             ref double theMaxDeviation)
     {
-        math_Matrix aProfileParams = toMatrix(theProfileParams);
-        math_Matrix aGuideParams = toMatrix(theGuideParams);
+        Matrix aProfileParams = toMatrix(theProfileParams);
+        Matrix aGuideParams = toMatrix(theGuideParams);
 
         math_Vector aProfileTargets = columnMeans(aProfileParams);
         math_Vector aGuideTargets = rowMeans(aGuideParams);
@@ -1335,7 +1347,7 @@ internal static class GordonUtilities
             {
                 anOldProfileParams[aCol] = aProfileParams[aProfileRow, aCol];
                 isAlreadyTarget = isAlreadyTarget
-                                  && Math.Abs(anOldProfileParams[aCol] - aProfileTargets[aCol]) <= Precision.PConfusion();
+                                  && Math.Abs(anOldProfileParams[aCol] - aProfileTargets[aCol]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
             if (isAlreadyTarget)
             {
@@ -1361,7 +1373,7 @@ internal static class GordonUtilities
             {
                 anOldGuideParams[aRow] = aGuideParams[aRow, aGuideCol];
                 isAlreadyTarget = isAlreadyTarget
-                                  && Math.Abs(anOldGuideParams[aRow] - aGuideTargets[aRow]) <= Precision.PConfusion();
+                                  && Math.Abs(anOldGuideParams[aRow] - aGuideTargets[aRow]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
             if (isAlreadyTarget)
             {
@@ -1381,10 +1393,10 @@ internal static class GordonUtilities
     }
 
     /// <summary>Evaluates the validated profile parameters into a guide/profile point grid.</summary>
-    internal static NCollection_Array2<gp_Pnt> contactPointGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    internal static NCollection_Array2<Point3D> contactPointGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
                                                                 NCollection_Array2<double> theProfileParams)
     {
-        NCollection_Array2<gp_Pnt> aPoints = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
+        NCollection_Array2<Point3D> aPoints = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
             GeomAdaptor_Curve aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
@@ -1406,9 +1418,9 @@ internal static class GordonUtilities
         }
 
         ReadOnlySpan<int> anExtrapMode = [theCurve.Degree(), theCurve.Degree()];
-        BSplCLib.Eval(theParameter, theCurve.IsPeriodic(), false, anExtrapMode, theCurve.Degree(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(theParameter, theCurve.IsPeriodic(), false, anExtrapMode, theCurve.Degree(),
                       theCurve.InternalKnotSequence(), theCurve.InternalPoles(), theCurve.InternalWeightsArray(),
-                      out gp_Pnt _, out double aWeight);
+                      out Point3D _, out double aWeight);
         return aWeight;
     }
 
@@ -1505,7 +1517,7 @@ internal static class GordonUtilities
         public double MaxReparametrizationDeviation() => myMaxReparametrizationDeviation;
 
         /// <summary>Returns the validated contact points in guide/profile grid order.</summary>
-        public NCollection_Array2<gp_Pnt> IntersectionPoints() => contactPointGrid(myProfiles, myProfileParams);
+        public NCollection_Array2<Point3D> IntersectionPoints() => contactPointGrid(myProfiles, myProfileParams);
 
         /// <summary>Returns rational contact weights in guide/profile grid order.</summary>
         public NCollection_Array2<double> IntersectionWeights() => contactWeightGrid(myProfiles, myProfileParams);

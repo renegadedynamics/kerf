@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.HatchGen_ErrorStatus;
 using static Occt.HatchGen_IntersectionType;
 using static Occt.IntRes2d_Position;
@@ -689,8 +691,8 @@ public class Geom2dHatch_Hatcher
         bool SegmentBegin = false;
         bool SegmentEnd = false;
 
-        gp_Dir2d Tangente2d, Normale2d;
-        gp_Dir Tangente = new(), Normale = new();
+        Direction2D Tangente2d, Normale2d;
+        Direction3D Tangente = new(), Normale = new();
         double Courbure;
 
         Geom2dAdaptor_Curve CurveH = HatchingCurve(Point.Index());
@@ -700,7 +702,7 @@ public class Geom2dHatch_Hatcher
         myIntersector.LocalGeometry(CurveH, Point.Parameter(), out Tangente2d, out Normale2d, out Courbure);
 
         Tangente.SetCoord(Tangente2d.X(), Tangente2d.Y(), 0.0);
-        if (Courbure < Precision.Confusion())
+        if (Courbure < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Normale.SetCoord(-Tangente2d.Y(), Tangente2d.X(), 0.0);
         }
@@ -851,7 +853,7 @@ public class Geom2dHatch_Hatcher
             }
             Normale.SetCoord(Normale2d.X(), Normale2d.Y(), 0.0);
 
-            ComplexTransition.Compare(Precision.Angular(),
+            ComplexTransition.Compare(global::Kerf.Engine.Foundation.Precision.Angular(),
                                       Tangente,
                                       Normale,
                                       Courbure,
@@ -1595,7 +1597,7 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>The number of domains of the <paramref name="IndH"/>-th hatching.</summary>
-    /// <exception cref="StdFail_NotDone">The domains are not computed.</exception>
+    /// <exception cref="NotDoneException">The domains are not computed.</exception>
     public int NbDomains(int IndH)
     {
         Geom2dHatch_Hatching Hatching = myHatchings.Find(IndH);
@@ -1604,7 +1606,7 @@ public class Geom2dHatch_Hatcher
     }
 
     /// <summary>The <paramref name="IDom"/>-th domain of the <paramref name="IndH"/>-th hatching.</summary>
-    /// <exception cref="StdFail_NotDone">The domains are not computed.</exception>
+    /// <exception cref="NotDoneException">The domains are not computed.</exception>
     public HatchGen_Domain Domain(int IndH, int IDom)
     {
         Geom2dHatch_Hatching Hatching = myHatchings.Find(IndH);

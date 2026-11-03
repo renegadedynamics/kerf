@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -18,7 +19,7 @@ public class BOPTools_AlgoTools2DTests
         for (int i = 0; i <= 100; ++i)
         {
             double aT = theT1 + (theT2 - theT1) * i / 100.0;
-            gp_Pnt2d aUV = theC2D.Value(aT);
+            Point2D aUV = theC2D.Value(aT);
             aMax = Math.Max(aMax, theC3D.Value(aT).Distance(theS.Value(aUV.X(), aUV.Y())));
         }
         return aMax;
@@ -46,7 +47,7 @@ public class BOPTools_AlgoTools2DTests
                     Geom2d_Curve? aStored = BRep_Tool.CurveOnSurface(aE, aF, out double aF1, out double aL1);
                     Assert.NotNull(aStored);
                     BRep_Tool.Range(aE, out double aR1, out double aR2);
-                    bool aLong = aR2 - aR1 >= Precision.PConfusion();
+                    bool aLong = aR2 - aR1 >= global::Kerf.Engine.Foundation.Precision.PConfusion();
                     Assert.Equal(aLong, BOPTools_AlgoTools2D.HasCurveOnSurface(aE, aF));
 
                     BOPTools_AlgoTools2D.CurveOnSurface(aE, aF, out Geom2d_Curve? aC, out double aFirst, out double aLast, out double aTol);
@@ -57,7 +58,7 @@ public class BOPTools_AlgoTools2DTests
 
                     double aT = BOPTools_AlgoTools2D.IntermediatePoint(aFirst, aLast);
                     BOPTools_AlgoTools2D.PointOnSurface(aE, aF, aT, out double aU, out double aV, new IntTools_Context());
-                    Assert.Equal(aStored!.Value(aT), new gp_Pnt2d(aU, aV));
+                    Assert.Equal(aStored!.Value(aT), new Point2D(aU, aV));
                     _ = aName;
                 }
             }
@@ -70,18 +71,18 @@ public class BOPTools_AlgoTools2DTests
         TopoDS_Shape aBox = BOPToolsTestShapes.Box();
         foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(aBox))
         {
-            gp_Vec aTau = new();
+            Vector3D aTau = new();
             Assert.True(BOPTools_AlgoTools2D.EdgeTangent(aE, 0.5, ref aTau));
             Assert.Equal(1.0, aTau.Magnitude(), 1.0e-15);
-            gp_Pnt aP1 = BRep_Tool.Pnt(TopExp.FirstVertex(aE, true));
-            gp_Pnt aP2 = BRep_Tool.Pnt(TopExp.LastVertex(aE, true));
-            Assert.True(aTau.IsParallel(new gp_Vec(aP1, aP2), 1.0e-12) && aTau.Dot(new gp_Vec(aP1, aP2)) > 0);
+            Point3D aP1 = BRep_Tool.Pnt(TopExp.FirstVertex(aE, true));
+            Point3D aP2 = BRep_Tool.Pnt(TopExp.LastVertex(aE, true));
+            Assert.True(aTau.IsParallel(new Vector3D(aP1, aP2), 1.0e-12) && aTau.Dot(new Vector3D(aP1, aP2)) > 0);
         }
         // the sphere's degenerated edges: false, output kept
         TopoDS_Edge aDeg = BOPToolsTestShapes.Edges(BOPToolsTestShapes.Sphere()).First(e => BRep_Tool.Degenerated(e));
-        gp_Vec aKeep = new(1, 2, 3);
+        Vector3D aKeep = new(1, 2, 3);
         Assert.False(BOPTools_AlgoTools2D.EdgeTangent(aDeg, 0.5, ref aKeep));
-        Assert.Equal(new gp_Vec(1, 2, 3), aKeep);
+        Assert.Equal(new Vector3D(1, 2, 3), aKeep);
     }
 
     [Fact]
@@ -126,9 +127,9 @@ public class BOPTools_AlgoTools2DTests
         TopoDS_Face aConF = FaceOfType<Geom_ConicalSurface>(BOPToolsTestShapes.Cone());
         (TopoDS_Face Face, Geom_Curve Curve, double T1, double T2)[] aCases =
         [
-            (aCylF, new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1)), 2.0), 0.5, 2.0),
-            (aSphF, new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 3.0), 0.3, 1.2),
-            (aTorF, new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 1.5), new gp_Dir(0, 0, 1)), 5.0), 1.0, 5.0),
+            (aCylF, new Geom_Circle(new Frame3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 2.0), 0.5, 2.0),
+            (aSphF, new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 3.0), 0.3, 1.2),
+            (aTorF, new Geom_Circle(new Frame3D(new Point3D(0, 0, 1.5), new Direction3D(0, 0, 1)), 5.0), 1.0, 5.0),
             (aConF, BRep_Tool.Curve(BOPToolsTestShapes.Edges(aConF).First(e => BRep_Tool.IsClosed(e, aConF)), out _, out _)!, 0.5, 3.5),
         ];
         foreach ((TopoDS_Face aF, Geom_Curve aC3D, double aT1, double aT2) in aCases)
@@ -142,7 +143,7 @@ public class BOPTools_AlgoTools2DTests
 
             // the pcurve's middle point is inside the face's UV bounds
             BRepTools.UVBounds(aF, out double aU1, out double aU2, out double aV1, out double aV2);
-            gp_Pnt2d aMid = aC2D!.Value(0.5 * (aT1 + aT2));
+            Point2D aMid = aC2D!.Value(0.5 * (aT1 + aT2));
             Assert.InRange(aMid.X(), aU1 - 1.0e-9, aU2 + 1.0e-9);
             Assert.InRange(aMid.Y(), aV1 - 1.0e-9, aV2 + 1.0e-9);
 
@@ -154,7 +155,7 @@ public class BOPTools_AlgoTools2DTests
             Assert.Equal(aC2D.Value(aT2), aC2DC.Value(aT2));
         }
         // the whole-range overload on a trimmed curve
-        Geom_TrimmedCurve aTrim = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 3), new gp_Dir(0, 0, 1)), 2.0), 1.0, 2.5);
+        Geom_TrimmedCurve aTrim = new(new Geom_Circle(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), 2.0), 1.0, 2.5);
         BOPTools_AlgoTools2D.MakePCurveOnFace(aCylF, aTrim, out Geom2d_Curve? aPC, out double aTolW);
         Assert.True(Deviation(aTrim, aPC!, BRep_Tool.Surface(aCylF)!, 1.0, 2.5) < 1.0e-6);
         Assert.True(aTolW < 1.0e-6);
@@ -165,7 +166,7 @@ public class BOPTools_AlgoTools2DTests
     {
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(2, 5).InternalShape();
         TopoDS_Face aF = FaceOfType<Geom_CylindricalSurface>(aCyl);
-        Geom_Circle aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 2.5), new gp_Dir(0, 0, 1)), 2.0);
+        Geom_Circle aCircle = new(new Frame3D(new Point3D(0, 0, 2.5), new Direction3D(0, 0, 1)), 2.0);
         TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aCircle, 0.5, 2.0).InternalShape());
         Assert.False(BOPTools_AlgoTools2D.HasCurveOnSurface(aE, aF));
 
@@ -182,7 +183,7 @@ public class BOPTools_AlgoTools2DTests
 
         // a frozen edge is written into: it throws (plan 2.3)
         TopoDS_Edge aFrozen = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aCircle, 0.5, 2.0).Shape());
-        Assert.ThrowsAny<Standard_DomainError>(() => BOPTools_AlgoTools2D.BuildPCurveForEdgeOnFace(aFrozen, aF));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => BOPTools_AlgoTools2D.BuildPCurveForEdgeOnFace(aFrozen, aF));
     }
 
     [Fact]
@@ -202,19 +203,19 @@ public class BOPTools_AlgoTools2DTests
         TopoDS_Face aF = FaceOfType<Geom_CylindricalSurface>(BOPToolsTestShapes.Cylinder());
         foreach (int k in new[] { -2, -1, 1, 3 })
         {
-            Geom2d_Line aL = new(new gp_Pnt2d(1.0 + k * 2 * Math.PI, 0.0), new gp_Dir2d(0, 1));
+            Geom2d_Line aL = new(new Point2D(1.0 + k * 2 * Math.PI, 0.0), new Direction2D(0, 1));
             BOPTools_AlgoTools2D.AdjustPCurveOnFace(aF, 1.0, 4.0, aL, out Geom2d_Curve? aA);
             Assert.NotSame(aL, aA);
             Assert.Equal(1.0, aA!.Value(2.0).X(), 1.0e-12);
             Assert.Equal(2.0, aA.Value(2.0).Y(), 1.0e-12);
         }
         // in range: the curve itself
-        Geom2d_Line aIn = new(new gp_Pnt2d(1.0, 0.0), new gp_Dir2d(0, 1));
+        Geom2d_Line aIn = new(new Point2D(1.0, 0.0), new Direction2D(0, 1));
         BOPTools_AlgoTools2D.AdjustPCurveOnFace(aF, 1.0, 4.0, aIn, out Geom2d_Curve? aSame, new IntTools_Context());
         Assert.Same(aIn, aSame);
         // the 3D-curve overload takes its range
-        Geom_TrimmedCurve aC3D = new(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 1.0, 4.0);
-        Geom2d_Line aOut = new(new gp_Pnt2d(1.0 + 2 * Math.PI, 0.0), new gp_Dir2d(0, 1));
+        Geom_TrimmedCurve aC3D = new(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 1.0, 4.0);
+        Geom2d_Line aOut = new(new Point2D(1.0 + 2 * Math.PI, 0.0), new Direction2D(0, 1));
         BOPTools_AlgoTools2D.AdjustPCurveOnFace(aF, aC3D, aOut, out Geom2d_Curve? aA2);
         Assert.Equal(1.0, aA2!.Value(2.0).X(), 1.0e-12);
     }
@@ -224,7 +225,7 @@ public class BOPTools_AlgoTools2DTests
     {
         TopoDS_Face aF = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Torus())[0];
         TopoDS_Edge anOld = BOPToolsTestShapes.Edges(BOPToolsTestShapes.Cone())[0];
-        TopoDS_Edge aNew = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).InternalShape());
+        TopoDS_Edge aNew = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).InternalShape());
         Assert.Equal(1, BOPTools_AlgoTools2D.AttachExistingPCurve(anOld, aNew, aF, new IntTools_Context()));
     }
 

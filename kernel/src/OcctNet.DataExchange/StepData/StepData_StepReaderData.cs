@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using static Occt.Interface_ParamType;
 using static Occt.Resource_FormatType;
@@ -107,7 +108,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             return theStr[theWhere - 1];
         }
-        throw new Standard_OutOfRange("TCollection_ExtendedString::Value : parameter theWhere");
+        throw new OutOfRangeException("TCollection_ExtendedString::Value : parameter theWhere");
     }
 
     private static void ExtSetValue(StringBuilder theStr, int theWhere, char theWhat)
@@ -117,14 +118,14 @@ public class StepData_StepReaderData : Interface_FileReaderData
             theStr[theWhere - 1] = theWhat;
             return;
         }
-        throw new Standard_OutOfRange("TCollection_ExtendedString::SetValue : parameter theWhere");
+        throw new OutOfRangeException("TCollection_ExtendedString::SetValue : parameter theWhere");
     }
 
     private static void ExtSetValue(StringBuilder theStr, int theWhere, string theWhat)
     {
         if (theWhere < 1 || theWhere > theStr.Length + 1)
         {
-            throw new Standard_OutOfRange("TCollection_ExtendedString::SetValue : parameter theWhere");
+            throw new OutOfRangeException("TCollection_ExtendedString::SetValue : parameter theWhere");
         }
         if (theWhat.Length <= 0)
         {
@@ -157,7 +158,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     {
         if (theHowMany < 0 || theHowMany > theStr.Length)
         {
-            throw new Standard_OutOfRange("TCollection_ExtendedString::Trunc : parameter 'theHowMany'");
+            throw new OutOfRangeException("TCollection_ExtendedString::Trunc : parameter 'theHowMany'");
         }
         theStr.Length = theHowMany;
     }
@@ -423,20 +424,20 @@ public class StepData_StepReaderData : Interface_FileReaderData
         int numlst;
         type ??= ""; // OCCT.NET: a record whose type the parser never set (decision 1178)
         ident ??= "";
-        if (Standard.CStringChar(type, 0) != '(')
+        if (global::Kerf.Engine.Foundation.Standard.CStringChar(type, 0) != '(')
         {
             thenbents++; // total number of proper file terms
         }
         thetypes.ChangeValue(num) = thenametypes.Add(type);
-        if (Standard.CStringChar(ident, 0) == '$')
+        if (global::Kerf.Engine.Foundation.Standard.CStringChar(ident, 0) == '$')
         {
             if (ident.Length > 2)
             {
-                numlst = Standard.atoi(ident.Substring(1));
+                numlst = global::Kerf.Engine.Foundation.Standard.Atoi(ident.Substring(1));
             }
             else
             {
-                numlst = Standard.CStringChar(ident, 1) - 48;
+                numlst = global::Kerf.Engine.Foundation.Standard.CStringChar(ident, 1) - 48;
             }
             if (thelastn < numlst)
             {
@@ -444,9 +445,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
             }
             theidents.SetValue(num, -2 - numlst);
         }
-        else if (Standard.CStringChar(ident, 0) == '#')
+        else if (global::Kerf.Engine.Foundation.Standard.CStringChar(ident, 0) == '#')
         {
-            numlst = Standard.atoi(ident.Substring(1));
+            numlst = global::Kerf.Engine.Foundation.Standard.Atoi(ident.Substring(1));
             theidents.SetValue(num, numlst);
             if (numlst == 0 && num > thenbhead)
             {
@@ -475,7 +476,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                                     break;
                                 }
                             }
-                            using (Message_Messenger.StreamBuffer sout = Message.SendTrace())
+                            using (Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendTrace())
                             {
                                 sout.Append("  ***  Incorrect record ").Append(num).Append(" (on ").Append(NbRecords()).Append(" -> ")
                                     .Append(num * 100 / NbRecords()).Append(" % in File)  ***");
@@ -510,20 +511,20 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (atype == Interface_ParamSub)
         {
             int numid = 0;
-            if (Standard.CStringChar(aval, 2) != '\0')
+            if (global::Kerf.Engine.Foundation.Standard.CStringChar(aval, 2) != '\0')
             {
-                numid = Standard.atoi(aval.Substring(1));
+                numid = global::Kerf.Engine.Foundation.Standard.Atoi(aval.Substring(1));
                 AddParam(num, aval, atype, numid);
             }
             else
             {
-                numid = Standard.CStringChar(aval, 1) - 48; // -48 ('0') -1 (adresse [] depuis 0)
+                numid = global::Kerf.Engine.Foundation.Standard.CStringChar(aval, 1) - 48; // -48 ('0') -1 (adresse [] depuis 0)
                 AddParam(num, aval, atype, numid);
             }
         }
         else if (atype == Interface_ParamIdent)
         {
-            int numid = Standard.atoi(aval.Substring(1));
+            int numid = global::Kerf.Engine.Foundation.Standard.Atoi(aval.Substring(1));
             AddParam(num, aval, atype, numid);
         }
         else
@@ -637,21 +638,21 @@ public class StepData_StepReaderData : Interface_FileReaderData
         //  Not in alphabetical order: loop
         string txtmes;
         string errmess = "Parameter n0.%d (%s) not a LIST";
-        txtmes = Standard.Sprintf(errmess, num0, name);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, name);
         for (n = num0; n > 0; n = NextForComplex(n))
         {
             if (RecordType(n) == name)
             {
                 num = n;
                 errmess = "Complex Record n0.%d, member type %s not in alphabetic order";
-                txtmes = Standard.Sprintf(errmess, num0, name);
+                txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, name);
                 ach.AddWarning(txtmes, errmess);
                 return false;
             }
         }
         num = 0;
         errmess = "Complex Record n0.%d, member type %s not found";
-        txtmes = Standard.Sprintf(errmess, num0, name);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, name);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -671,21 +672,21 @@ public class StepData_StepReaderData : Interface_FileReaderData
         // entities are not in alphabetical order
         string txtmes;
         string errmess = "Parameter n0.%d (%s) not a LIST";
-        txtmes = Standard.Sprintf(errmess, num0, theName);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, theName);
         for (n = num0; n > 0; n = NextForComplex(n))
         {
             if (RecordType(n) == theName || RecordType(n) == theShortName)
             {
                 num = n;
                 errmess = "Complex Record n0.%d, member type %s not in alphabetic order";
-                txtmes = Standard.Sprintf(errmess, num0, theName);
+                txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, theName);
                 ach.AddWarning(txtmes, errmess);
                 return false;
             }
         }
         num = 0;
         errmess = "Complex Record n0.%d, member type %s not found";
-        txtmes = Standard.Sprintf(errmess, num0, theName);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, num0, theName);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -712,7 +713,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             errmess = "Count of Parameters is not %d for %s";
         }
-        txtmes = Standard.Sprintf(errmess, nbreq, mess);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nbreq, mess);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -732,7 +733,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             if (aNbParams == 0)
             {
                 string anErrMess = "Parameter n0.%d (%s) is an empty LIST";
-                txtmes = Standard.Sprintf(anErrMess, nump, mess);
+                txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(anErrMess, nump, mess);
                 ach.AddWarning(txtmes, anErrMess);
             }
             return true;
@@ -745,7 +746,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             return false;
         }
         string errmess = "Parameter n0.%d (%s) not a LIST";
-        txtmes = Standard.Sprintf(errmess, nump, mess);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -767,14 +768,14 @@ public class StepData_StepReaderData : Interface_FileReaderData
             return 0; // empty list = Handle Null
         }
         string rectyp = RecordType(numsub);
-        if (nbp == 1 && Standard.CStringChar(rectyp, 0) != '(')
+        if (nbp == 1 && global::Kerf.Engine.Foundation.Standard.CStringChar(rectyp, 0) != '(')
         {
             //  it's a type with one parameter -> SelectNamed
             //  cf ReadSelect but here, we are already on the parameter content
             StepData_SelectNamed sn = new StepData_SelectNamed();
             val = sn;
             sn.SetName(rectyp);
-            Standard_Transient aSN = sn;
+            Transient aSN = sn;
             if (ReadAny(numsub, 1, mess, ach, descr, ref aSN))
             {
                 return sn.Kind();
@@ -788,7 +789,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         Interface_FileParameter FP0 = Param(numsub, 1);
         Interface_ParamType FT, FT0 = FP0.ParamType();
         string str = FP0.CValue();
-        NCollection_HArray1<Standard_Transient> htr = null;
+        NCollection_HArray1<Transient> htr = null;
         NCollection_HArray1<int> hin = null;
         NCollection_HArray1<double> hre = null;
         NCollection_HArray1<TCollection_HAsciiString> hst = null;
@@ -844,7 +845,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         }
         else
         {
-            htr = new NCollection_HArray1<Standard_Transient>(1, nbp);
+            htr = new NCollection_HArray1<Transient>(1, nbp);
             val = htr;
         }
         //  Attention: if variable type, will need to change approach -> htr
@@ -862,7 +863,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                         kod = 0;
                         break;
                     }
-                    hin.SetValue(ip, Standard.atoi(str));
+                    hin.SetValue(ip, global::Kerf.Engine.Foundation.Standard.Atoi(str));
                     break;
                 }
                 case 2:
@@ -927,7 +928,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 }
                 case 7:
                 {
-                    Standard_Transient ent = BoundEntity(FP.EntityNumber());
+                    Transient ent = BoundEntity(FP.EntityNumber());
                     htr.SetValue(ip, ent);
                     break;
                 }
@@ -942,7 +943,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             //    Need to pass to transient ...
             if (htr is null)
             {
-                htr = new NCollection_HArray1<Standard_Transient>(1, nbp);
+                htr = new NCollection_HArray1<Transient>(1, nbp);
                 val = htr;
                 int jp;
                 if (hin is not null)
@@ -980,7 +981,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 case Interface_ParamInteger:
                 {
                     StepData_SelectInt sin = new StepData_SelectInt();
-                    sin.SetInteger(Standard.atoi(str));
+                    sin.SetInteger(global::Kerf.Engine.Foundation.Standard.Atoi(str));
                     htr.SetValue(ip, sin);
                     break;
                 }
@@ -1004,7 +1005,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     // PTV 16.09.2000
                     // set the default value of StepData_Logical
                     StepData_Logical slog = StepData_LUnknown;
-                    if (Standard.CStringChar(str, 0) == '.' && Standard.CStringChar(str, 2) == '.' && Standard.CStringChar(str, 3) == '\0')
+                    if (global::Kerf.Engine.Foundation.Standard.CStringChar(str, 0) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 2) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 3) == '\0')
                     {
                         if (str[1] == 'F')
                         {
@@ -1056,7 +1057,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     }
                     // OCCT: a sub-list's value is a handle; the port's lists are not Standard_Transient (decision 17),
                     // so a list of lists keeps only its select members and strings
-                    htr.SetValue(ip, sub as Standard_Transient);
+                    htr.SetValue(ip, sub as Transient);
                     break;
                 }
                 case Interface_ParamHexa:
@@ -1078,7 +1079,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// </summary>
     public bool ReadMember(int num, int nump, string mess, Interface_Check ach, ref StepData_SelectMember? val)
     {
-        Standard_Transient v = val;
+        Transient v = val;
         StepData_PDescr nuldescr = null;
         if (v is null)
         {
@@ -1092,7 +1093,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         //   changement -> refus
         string txtmes;
         string errmess = "Parameter n0.%d (%s) : does not match SELECT clause";
-        txtmes = Standard.Sprintf(errmess, nump, mess);
+        txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -1123,7 +1124,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 OK = false;
                 break;
             case Interface_ParamInteger:
-                fild.SetInteger(Standard.atoi(str));
+                fild.SetInteger(global::Kerf.Engine.Foundation.Standard.Atoi(str));
                 break;
             case Interface_ParamReal:
                 fild.SetReal(Fastof(str));
@@ -1221,7 +1222,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// is not a SelectMember, val itself is returned a new ref. For a Select with a Name, val must then be a
     /// SelectNamed.
     /// </summary>
-    public bool ReadAny(int num, int nump, string mess, Interface_Check ach, StepData_PDescr? descr, ref Standard_Transient? val)
+    public bool ReadAny(int num, int nump, string mess, Interface_Check ach, StepData_PDescr? descr, ref Transient? val)
     {
         Interface_FileParameter FP = Param(num, nump);
         string str = FP.CValue();
@@ -1240,7 +1241,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     return true;
                 }
                 StepData_SelectInt sin = new StepData_SelectInt();
-                sin.SetInteger(Standard.atoi(str));
+                sin.SetInteger(global::Kerf.Engine.Foundation.Standard.Atoi(str));
                 val = sin;
                 return true;
             }
@@ -1281,7 +1282,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 // PTV 16.09.2000
                 // set the default value of StepData_Logical
                 StepData_Logical slog = StepData_LUnknown;
-                if (Standard.CStringChar(str, 0) == '.' && Standard.CStringChar(str, 2) == '.' && Standard.CStringChar(str, 3) == '\0')
+                if (global::Kerf.Engine.Foundation.Standard.CStringChar(str, 0) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 2) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 3) == '\0')
                 {
                     if (str[1] == 'F')
                     {
@@ -1352,7 +1353,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     return false; // empty list = Handle Null
                 }
                 string rectyp = RecordType(numsub);
-                if (nbp == 1 && Standard.CStringChar(rectyp, 0) != '(')
+                if (nbp == 1 && global::Kerf.Engine.Foundation.Standard.CStringChar(rectyp, 0) != '(')
                 {
                     //  SelectNamed because Field !!!
                     // skl 15.01.2003 (for members with array of real)
@@ -1375,7 +1376,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                                     {
                                         continue;
                                     }
-                                    Standard_Transient asr = new StepData_SelectReal();
+                                    Transient asr = new StepData_SelectReal();
                                     if (!ReadAny(numsub2, i, mess, ach, descr, ref asr))
                                     {
                                         continue;
@@ -1517,7 +1518,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             return true;
         }
-        string txtmes = Standard.Sprintf(errmess, nump, mess);
+        string txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
         ach.AddFail(txtmes, errmess);
         return false;
     }
@@ -1553,7 +1554,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// returned status is False and ent is Null if parameter is not an Entity, ent remains Not Null is parameter is an
     /// Entity but is not Kind of required type.
     /// </summary>
-    public bool ReadEntity(int num, int nump, string mess, Interface_Check ach, Type atype, ref Standard_Transient? ent)
+    public bool ReadEntity(int num, int nump, string mess, Interface_Check ach, Type atype, ref Transient? ent)
     {
         string errmess = null; // Null if no error
         if (nump > 0 && nump <= NbParams(num))
@@ -1564,7 +1565,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             {
                 if (nent > 0)
                 {
-                    Standard_Transient entent = BoundEntity(nent);
+                    Transient entent = BoundEntity(nent);
                     if (entent is null || !atype.IsInstanceOfType(entent))
                     {
                         errmess = "Parameter n0.%d (%s) : Entity has illegal type";
@@ -1596,9 +1597,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
     }
 
     /// <summary>Safe variant for arbitrary type of argument.</summary>
-    public bool ReadEntity<T>(int num, int nump, string mess, Interface_Check ach, Type atype, ref T? ent) where T : Standard_Transient
+    public bool ReadEntity<T>(int num, int nump, string mess, Interface_Check ach, Type atype, ref T? ent) where T : Transient
     {
-        Standard_Transient anEnt = ent;
+        Transient anEnt = ent;
         return ReadEntity(num, nump, mess, ach, atype, ref anEnt) && (ent = anEnt as T) is not null;
     }
 
@@ -1614,7 +1615,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             {
                 if (nent > 0)
                 {
-                    Standard_Transient entent = BoundEntity(nent);
+                    Transient entent = BoundEntity(nent);
                     if (!sel.Matches(entent))
                     {
                         errmess = "Parameter n0.%d (%s) : Entity has illegal type";
@@ -1641,7 +1642,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             else
             {
                 // Remaining case: we are actually interested in the SelectMember ...
-                Standard_Transient sm = sel.NewMember();
+                Transient sm = sel.NewMember();
                 // SelectMember which performs this role. Can be specialized
                 if (!ReadAny(num, nump, mess, ach, sel.Description(), ref sm))
                 {
@@ -1675,7 +1676,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             Interface_FileParameter FP = Param(num, nump);
             if (FP.ParamType() == Interface_ParamInteger)
             {
-                val = Standard.atoi(FP.CValue());
+                val = global::Kerf.Engine.Foundation.Standard.Atoi(FP.CValue());
             }
             else if (FP.ParamType() == Interface_ParamReal)
             {
@@ -1840,7 +1841,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     public void FailEnumValue(int num, int nump, string mess, Interface_Check ach)
     {
         string errmess = "Parameter n0.%d (%s) : Incorrect Enumeration Value";
-        string txtmes = Standard.Sprintf(errmess, nump, mess);
+        string txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
         ach.AddFail(txtmes, errmess);
     }
 
@@ -1910,7 +1911,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 if (mustbetyped)
                 {
                     errmess = "Parameter n0.%d (%s) : single, not typed";
-                    txtmes = Standard.Sprintf(errmess, nump, mess);
+                    txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
                     ach.AddFail(txtmes, errmess);
                     return false;
                 }
@@ -1955,7 +1956,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             errmess = "Parameter n0.%d (%s) absent";
         }
-        string txtmes = Standard.Sprintf(errmess, nump, mess);
+        string txtmes = global::Kerf.Engine.Foundation.Standard.Sprintf(errmess, nump, mess);
         if (warn)
         {
             ach.AddWarning(txtmes, errmess);
@@ -2026,7 +2027,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             {
                 continue;
             }
-            int ixp = Standard.atoi(FP.CValue().Substring(1));
+            int ixp = global::Kerf.Engine.Foundation.Standard.Atoi(FP.CValue().Substring(1));
             if (ixp == id)
             {
                 return FP.EntityNumber();
@@ -2068,7 +2069,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// </summary>
     public void SetEntityNumbers(bool withmap = true)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendTrace();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendTrace();
         //   Initial pass: Direct resolution by Map
         //   if everything passes (no collision), OK. Otherwise, other passes to plan
         //   We resolve sub-lists at the same time
@@ -2121,7 +2122,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     int numsub = FP.EntityNumber();
                     if (numsub > thelastn)
                     {
-                        using (Message_Messenger.StreamBuffer anInfo = Message.SendInfo())
+                        using (Messenger.StreamBuffer anInfo = global::Kerf.Engine.Foundation.Message.SendInfo())
                         {
                             anInfo.Append("Bad Sub.N0, Record ").Append(num).Append(" Param ").Append(na).Append(":$").Append(numsub).Append('\n');
                         }
@@ -2153,7 +2154,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                             continue; // pbmap: we will find ourselves again
                         }
                         //  ...  Build the Check  ...
-                        string failmess = Standard.Sprintf("Unresolved Reference, Ent.Id.#%d Param.n0 %d (Id.#%d)", ident, na, id);
+                        string failmess = global::Kerf.Engine.Foundation.Standard.Sprintf("Unresolved Reference, Ent.Id.#%d Param.n0 %d (Id.#%d)", ident, na, id);
                         thecheck.AddFail(failmess, "Unresolved Reference");
                         //  ...  And output a more complete message
                         sout.Append("*** ERR StepReaderData *** Entite #").Append(ident).Append("\n    Type:").Append(RecordType(num))
@@ -2247,7 +2248,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                         if (errorscope)
                         {
                             //  We are inside: report it
-                            string ligne = Standard.Sprintf("Ident defined SEVERAL TIMES : #%d", ident);
+                            string ligne = global::Kerf.Engine.Foundation.Standard.Sprintf("Ident defined SEVERAL TIMES : #%d", ident);
                             thecheck.AddFail(ligne, "Ident defined SEVERAL TIMES : #%d");
                             sout.Append("StepReaderData : SetEntityNumbers, ").Append(ligne).Append('\n');
                         }
@@ -2537,7 +2538,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                             }
                         }
                         //  ...  Build the Check  ...
-                        string failmess = Standard.Sprintf("Unresolved Reference, Ent.n0 %d (Id.#%d) Param.n0 %d (Id.#%d)", nument, ident, na, id);
+                        string failmess = global::Kerf.Engine.Foundation.Standard.Sprintf("Unresolved Reference, Ent.n0 %d (Id.#%d) Param.n0 %d (Id.#%d)", nument, ident, na, id);
                         thecheck.AddFail(failmess, "Unresolved Reference");
                         //  ...  And output a more complete message
                         sout.Append("*** ERR StepReaderData *** Entite ").Append(nument).Append(", a ").Append((nr * 100) / nbseq)

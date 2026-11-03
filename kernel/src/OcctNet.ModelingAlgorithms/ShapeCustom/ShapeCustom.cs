@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -36,7 +39,7 @@ public static class ShapeCustom
             // (decision 973)
             aResult = theModifier.InternalModifiedShape(theShape);
         }
-        catch (Standard_NoSuchObject)
+        catch (NoSuchObjectException)
         {
             // the sub shape isn't in the map
             aResult = new TopoDS_Shape();
@@ -89,7 +92,7 @@ public static class ShapeCustom
                                              BRepTools_Modification M,
                                              NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> context,
                                              BRepTools_Modifier MD,
-                                             Message_ProgressRange theProgress = default,
+                                             ProgressRange theProgress = default,
                                              ShapeBuild_ReShape? aReShape = null)
     {
         TopoDS_Shape aResult = InternalApplyModifier(S, M, context, MD, theProgress, aReShape);
@@ -106,7 +109,7 @@ public static class ShapeCustom
                                                        BRepTools_Modification M,
                                                        NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> context,
                                                        BRepTools_Modifier MD,
-                                                       Message_ProgressRange theProgress = default,
+                                                       ProgressRange theProgress = default,
                                                        ShapeBuild_ReShape? aReShape = null)
     {
         // protect against INTERNAL/EXTERNAL shapes
@@ -120,16 +123,16 @@ public static class ShapeCustom
             BRep_Builder B = new BRep_Builder();
             B.MakeCompound(ref C);
 
-            SF.Location(new TopLoc_Location());
+            SF.Location(new Placement());
             int aShapeCount = SF.NbChildren();
-            using var aPS = new Message_ProgressScope(theProgress, "Applying Modifier For Solids", aShapeCount);
+            using var aPS = new ProgressScope(theProgress, "Applying Modifier For Solids", aShapeCount);
             for (var it = new TopoDS_Iterator(SF); it.More() && aPS.More(); it.Next())
             {
-                Message_ProgressRange aRange = aPS.Next();
+                ProgressRange aRange = aPS.Next();
 
                 TopoDS_Shape shape = it.Value();
                 TopoDS_Shape aShapeNoLoc = it.Value();
-                aShapeNoLoc.Location(new TopLoc_Location());
+                aShapeNoLoc.Location(new Placement());
 
                 TopoDS_Shape res;
                 if (context.Find(aShapeNoLoc, out res))
@@ -170,7 +173,7 @@ public static class ShapeCustom
             return C;
         }
 
-        using var aPS2 = new Message_ProgressScope(theProgress, "Modify the Shape", 1);
+        using var aPS2 = new ProgressScope(theProgress, "Modify the Shape", 1);
         // Modify the shape
         MD.Init(SF);
         MD.Perform(M, aPS2.Next());
@@ -186,7 +189,7 @@ public static class ShapeCustom
 
         if (!SF.IsSame(aResult))
         {
-            context.Bind(S.Located(new TopLoc_Location()), aResult.Located(new TopLoc_Location()));
+            context.Bind(S.Located(new Placement()), aResult.Located(new Placement()));
         }
 
         if (aReShape is not null)
@@ -211,8 +214,8 @@ public static class ShapeCustom
     public static TopoDS_Shape ScaleShape(in TopoDS_Shape S, double scale)
     {
         // Create a modification description
-        gp_Trsf T = new gp_Trsf();
-        T.SetScale(new gp_Pnt(0, 0, 0), scale);
+        Transform3D T = new Transform3D();
+        T.SetScale(new Point3D(0, 0, 0), scale);
         ShapeCustom_TrsfModification TM = new ShapeCustom_TrsfModification(T);
         var context = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         BRepTools_Modifier MD = new BRepTools_Modifier();
@@ -230,8 +233,8 @@ public static class ShapeCustom
                                                   double Tol2d,
                                                   int MaxDegree,
                                                   int MaxNbSegment,
-                                                  GeomAbs_Shape Continuity3d,
-                                                  GeomAbs_Shape Continuity2d,
+                                                  Continuity Continuity3d,
+                                                  Continuity Continuity2d,
                                                   bool Degree,
                                                   bool Rational,
                                                   ShapeCustom_RestrictionParameters aParameters)

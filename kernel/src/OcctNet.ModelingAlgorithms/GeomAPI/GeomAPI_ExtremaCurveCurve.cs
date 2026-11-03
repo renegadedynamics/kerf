@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class GeomAPI_ExtremaCurveCurve
     private bool myTotalExt;
     private bool myIsInfinite;
     private double myTotalDist;
-    private readonly gp_Pnt[] myTotalPoints = [new gp_Pnt(), new gp_Pnt()];
+    private readonly Point3D[] myTotalPoints = [new Point3D(), new Point3D()];
     private readonly double[] myTotalPars = new double[2];
 
     /// <summary>An empty algorithm, to be initialised with <c>Init</c>.</summary>
@@ -55,7 +57,7 @@ public class GeomAPI_ExtremaCurveCurve
     {
         myTotalExt = false;
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myC1.Load(C1);
         myC2.Load(C2);
         myExtCC.Initialize(myC1, myC2, Tol, Tol);
@@ -86,7 +88,7 @@ public class GeomAPI_ExtremaCurveCurve
     {
         myTotalExt = false;
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // OCCT loads the whole curves, not the ranges: the Total methods then report the curves' natural end
         // parameters (u11, u12, ...) with the ranges' end points, and project onto the whole curves
         myC1.Load(C1);
@@ -131,7 +133,7 @@ public class GeomAPI_ExtremaCurveCurve
     public static explicit operator int(GeomAPI_ExtremaCurveCurve theExt) => theExt.myExtCC.NbExt();
 
     /// <summary>The points of the extremum of index <paramref name="Index"/>, on the first and second curve.</summary>
-    public void Points(int Index, out gp_Pnt P1, out gp_Pnt P2)
+    public void Points(int Index, out Point3D P1, out Point3D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Points");
 
@@ -164,7 +166,7 @@ public class GeomAPI_ExtremaCurveCurve
     public bool IsParallel() => myExtCC.IsParallel();
 
     /// <summary>The points of the nearest extremum. Throws StdFail_NotDone if there is none.</summary>
-    public void NearestPoints(out gp_Pnt P1, out gp_Pnt P2)
+    public void NearestPoints(out Point3D P1, out Point3D P2)
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_ExtremaCurveCurve::NearestPoints");
 
@@ -197,7 +199,7 @@ public class GeomAPI_ExtremaCurveCurve
     /// The points of the minimal distance between the curves, end points included. False (and the outputs unchanged)
     /// if both curves are infinite and parallel.
     /// </summary>
-    public bool TotalNearestPoints(ref gp_Pnt P1, ref gp_Pnt P2)
+    public bool TotalNearestPoints(ref Point3D P1, ref Point3D P2)
     {
         if (!myTotalExt)
         {
@@ -258,8 +260,8 @@ public class GeomAPI_ExtremaCurveCurve
         double u21 = myC2.FirstParameter();
         double u22 = myC2.LastParameter();
 
-        bool infinite = Precision.IsInfinite(u11) && Precision.IsInfinite(u12) && Precision.IsInfinite(u21)
-                        && Precision.IsInfinite(u22);
+        bool infinite = global::Kerf.Engine.Foundation.Precision.IsInfinite(u11) && global::Kerf.Engine.Foundation.Precision.IsInfinite(u12) && global::Kerf.Engine.Foundation.Precision.IsInfinite(u21)
+                        && global::Kerf.Engine.Foundation.Precision.IsInfinite(u22);
 
         myIsInfinite = false;
 
@@ -268,7 +270,7 @@ public class GeomAPI_ExtremaCurveCurve
             myIsInfinite = true;
 
             // calculate distance between any suitable point on C1 and C2
-            gp_Pnt PonC1 = myC1.Value(0.0);
+            Point3D PonC1 = myC1.Value(0.0);
             GeomAPI_ProjectPointOnCurve proj = new(PonC1, myC2.Curve()!);
             myTotalDist = proj.LowerDistance();
 
@@ -283,14 +285,14 @@ public class GeomAPI_ExtremaCurveCurve
             Parameters(myIndex, out myTotalPars[0], out myTotalPars[1]);
             myTotalDist = Math.Sqrt(myExtCC.SquareDistance(myIndex));
 
-            if (myTotalDist <= Precision.Confusion())
+            if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return;
             }
         }
 
         myExtCC.TrimmedSquareDistances(out double d11, out double d12, out double d21, out double d22,
-                                       out gp_Pnt P11, out gp_Pnt P12, out gp_Pnt P21, out gp_Pnt P22);
+                                       out Point3D P11, out Point3D P12, out Point3D P21, out Point3D P22);
 
         // OCCT compares every end distance with this first total distance, never updated, so a later end pair
         // nearer than it but farther than an earlier one replaces the better pair
@@ -304,7 +306,7 @@ public class GeomAPI_ExtremaCurveCurve
             myTotalPars[0] = u11;
             myTotalPars[1] = u21;
 
-            if (myTotalDist <= Precision.Confusion())
+            if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return;
             }
@@ -318,7 +320,7 @@ public class GeomAPI_ExtremaCurveCurve
             myTotalPars[0] = u11;
             myTotalPars[1] = u22;
 
-            if (myTotalDist <= Precision.Confusion())
+            if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return;
             }
@@ -332,7 +334,7 @@ public class GeomAPI_ExtremaCurveCurve
             myTotalPars[0] = u12;
             myTotalPars[1] = u21;
 
-            if (myTotalDist <= Precision.Confusion())
+            if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return;
             }
@@ -346,14 +348,14 @@ public class GeomAPI_ExtremaCurveCurve
             myTotalPars[0] = u12;
             myTotalPars[1] = u22;
 
-            if (myTotalDist <= Precision.Confusion())
+            if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return;
             }
         }
 
         // calculate distances between extremities one curve and other curve
-        if (!Precision.IsInfinite(u11))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u11))
         {
             GeomAPI_ProjectPointOnCurve proj = new(P11, myC2.Curve()!, u21, u22);
 
@@ -368,7 +370,7 @@ public class GeomAPI_ExtremaCurveCurve
                     myTotalPoints[1] = proj.NearestPoint();
                     myTotalPars[1] = proj.LowerDistanceParameter();
 
-                    if (myTotalDist <= Precision.Confusion())
+                    if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return;
                     }
@@ -376,7 +378,7 @@ public class GeomAPI_ExtremaCurveCurve
             }
         }
 
-        if (!Precision.IsInfinite(u12))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u12))
         {
             GeomAPI_ProjectPointOnCurve proj = new(P12, myC2.Curve()!, u21, u22);
 
@@ -391,7 +393,7 @@ public class GeomAPI_ExtremaCurveCurve
                     myTotalPoints[1] = proj.NearestPoint();
                     myTotalPars[1] = proj.LowerDistanceParameter();
 
-                    if (myTotalDist <= Precision.Confusion())
+                    if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return;
                     }
@@ -399,7 +401,7 @@ public class GeomAPI_ExtremaCurveCurve
             }
         }
 
-        if (!Precision.IsInfinite(u21))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u21))
         {
             GeomAPI_ProjectPointOnCurve proj = new(P21, myC1.Curve()!, u11, u12);
 
@@ -414,7 +416,7 @@ public class GeomAPI_ExtremaCurveCurve
                     myTotalPoints[1] = P21;
                     myTotalPars[1] = u21;
 
-                    if (myTotalDist <= Precision.Confusion())
+                    if (myTotalDist <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return;
                     }
@@ -422,7 +424,7 @@ public class GeomAPI_ExtremaCurveCurve
             }
         }
 
-        if (!Precision.IsInfinite(u22))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u22))
         {
             GeomAPI_ProjectPointOnCurve proj = new(P22, myC1.Curve()!, u11, u12);
 

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.StepGeom_TrimmingPreference;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -17,7 +19,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
 {
     private const int Nbpt = 23;
 
-    private NCollection_HSequence<Standard_Transient> myResult;
+    private NCollection_HSequence<Transient> myResult;
     private TopoDSToStep_BuilderError myError;
 
     public TopoDSToStep_WireframeBuilder()
@@ -39,8 +41,8 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool T, in StepData_Factors theLocalFactors)
     {
         _ = T;
-        var itemList = new NCollection_HSequence<Standard_Transient>();
-        var aPmsMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+        var itemList = new NCollection_HSequence<Transient>();
+        var aPmsMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
         done = GetTrimmedCurveFromShape(aShape, aPmsMap, ref itemList, theLocalFactors);
         myResult = itemList;
     }
@@ -50,8 +52,8 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     public TopoDSToStep_BuilderError Error() => myError;
 
     /// <summary>The curves made.</summary>
-    /// <exception cref="StdFail_NotDone">The build wasn't done.</exception>
-    public NCollection_HSequence<Standard_Transient> Value()
+    /// <exception cref="NotDoneException">The build wasn't done.</exception>
+    public NCollection_HSequence<Transient> Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_WireframeBuilder::Value() - no result");
         return myResult;
@@ -82,8 +84,8 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curve of an edge (on a face, which may be null), into the list.</summary>
-    public bool GetTrimmedCurveFromEdge(in TopoDS_Edge theEdge, in TopoDS_Face theFace, NCollection_DataMap<TopoDS_Shape, Standard_Transient> theMap,
-                                        ref NCollection_HSequence<Standard_Transient> theCurveList, in StepData_Factors theLocalFactors)
+    public bool GetTrimmedCurveFromEdge(in TopoDS_Edge theEdge, in TopoDS_Face theFace, NCollection_DataMap<TopoDS_Shape, Transient> theMap,
+                                        ref NCollection_HSequence<Transient> theCurveList, in StepData_Factors theLocalFactors)
     {
         if (theEdge.Orientation() == TopAbs_INTERNAL || theEdge.Orientation() == TopAbs_EXTERNAL)
         {
@@ -97,7 +99,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
 
         // resulting curve
         StepGeom_Curve aSGC = null;
-        if (theMap.Find(anEdge, out Standard_Transient aTransient))
+        if (theMap.Find(anEdge, out Transient aTransient))
         {
             aSGC = aTransient as StepGeom_Curve; // OCCT: found, then made again
         }
@@ -107,7 +109,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
         {
             aCA.Initialize(anEdge);
         }
-        catch (Standard_NullObject)
+        catch (NullObjectException)
         {
             return false;
         }
@@ -117,7 +119,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
         for (var anExp = new TopExp_Explorer(anEdge, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
             TopoDS_Vertex aVertex = TopoDS.Vertex(anExp.Value());
-            gp_Pnt aGpP = BRep_Tool.Pnt(aVertex);
+            Point3D aGpP = BRep_Tool.Pnt(aVertex);
             if (aVertex.Orientation() == TopAbs_FORWARD)
             {
                 aVFirst = aVertex;
@@ -156,7 +158,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             double aTrim1 = aCA.FirstParameter();
             double aTrim2 = aCA.LastParameter();
 
-            if (aVFirst.IsNull() && aVLast.IsNull() && Precision.IsInfinite(aFirst) && Precision.IsInfinite(aLast))
+            if (aVFirst.IsNull() && aVLast.IsNull() && global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) && global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
             {
                 var aCurveMaker = new GeomToStep_MakeCurve(aC, theLocalFactors);
                 if (aCurveMaker.IsDone())
@@ -203,12 +205,12 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             // these are computed after ! (U1 and U2) -> cf and cl instead
             if (aIPlan)
             {
-                gp_Pnt aPnt1 = aCA.Value(aCA.FirstParameter()), aPnt2 = aCA.Value(aCA.LastParameter());
-                gp_Vec aV = new gp_Vec(aPnt1, aPnt2);
+                Point3D aPnt1 = aCA.Value(aCA.FirstParameter()), aPnt2 = aCA.Value(aCA.LastParameter());
+                Vector3D aV = new Vector3D(aPnt1, aPnt2);
                 double aLength = aV.Magnitude();
-                if (aLength >= Precision.Confusion())
+                if (aLength >= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    var aL = new Geom_Line(aPnt1, new gp_Dir(aV));
+                    var aL = new Geom_Line(aPnt1, new Direction3D(aV));
                     var aGTSML = new GeomToStep_MakeLine(aL, theLocalFactors);
                     aSGC = aGTSML.Value();
                     aSGC = MakeTrimmedCurve(aGTSML.Value(), aSGCP1, aSGCP2, 0, aLength, true);
@@ -217,7 +219,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
             }
             else
             {
-                var aPoints = new NCollection_Array1<gp_Pnt>(1, Nbpt);
+                var aPoints = new NCollection_Array1<Point3D>(1, Nbpt);
                 var aKnots = new NCollection_Array1<double>(1, Nbpt);
                 var aMult = new NCollection_Array1<int>(1, Nbpt);
                 double aU1 = aCA.FirstParameter();
@@ -225,7 +227,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
                 for (int i = 1; i <= Nbpt; i++)
                 {
                     double aU = aU1 + (i - 1) * (aU2 - aU1) / (Nbpt - 1);
-                    gp_Pnt aP = aCA.Value(aU);
+                    Point3D aP = aCA.Value(aU);
                     aPoints.SetValue(i, aP);
                     aKnots.SetValue(i, aU);
                     aMult.SetValue(i, 1);
@@ -252,8 +254,8 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curves of a face's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromFace(in TopoDS_Face aFace, NCollection_DataMap<TopoDS_Shape, Standard_Transient> aMap,
-                                        ref NCollection_HSequence<Standard_Transient> aCurveList, in StepData_Factors theLocalFactors)
+    public bool GetTrimmedCurveFromFace(in TopoDS_Face aFace, NCollection_DataMap<TopoDS_Shape, Transient> aMap,
+                                        ref NCollection_HSequence<Transient> aCurveList, in StepData_Factors theLocalFactors)
     {
         TopoDS_Shape curShape;
         TopoDS_Edge curEdge;
@@ -274,8 +276,8 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
     }
 
     /// <summary>Extracts the trimmed curves of a shape's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromShape(in TopoDS_Shape aShape, NCollection_DataMap<TopoDS_Shape, Standard_Transient> aMap,
-                                         ref NCollection_HSequence<Standard_Transient> aCurveList, in StepData_Factors theLocalFactors)
+    public bool GetTrimmedCurveFromShape(in TopoDS_Shape aShape, NCollection_DataMap<TopoDS_Shape, Transient> aMap,
+                                         ref NCollection_HSequence<Transient> aCurveList, in StepData_Factors theLocalFactors)
     {
         var It = new TopoDS_Iterator();
         bool result = false; // szv#4:S4163:12Mar99 `done` hid one from this, initialisation needed

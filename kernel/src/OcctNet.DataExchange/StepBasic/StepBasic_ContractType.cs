@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ContractType
 /// </summary>
-public class StepBasic_ContractType : Standard_Transient
+public class StepBasic_ContractType : Transient
 {
     private TCollection_HAsciiString theDescription;
 

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepData_Logical;
 
 namespace Occt;
@@ -30,19 +31,19 @@ namespace Occt;
 /// </remarks>
 public abstract class StepData_SelectType
 {
-    private Standard_Transient thevalue;
+    private Transient thevalue;
 
     /// <summary>
     /// Recognizes the Type of an Entity. Returns a positive Number which identifies the Type in the definition List
     /// of the SelectType. Returns Zero if its Type in not in this List.
     /// </summary>
-    public abstract int CaseNum(Standard_Transient? ent);
+    public abstract int CaseNum(Transient? ent);
 
     /// <summary>
     /// Returns True if the Type of an Entity complies with the definition list of the SelectType. Also checks for a
     /// SelectMember. Default Implementation looks for CaseNum or CaseMem positive.
     /// </summary>
-    public bool Matches(Standard_Transient? ent)
+    public bool Matches(Transient? ent)
     {
         if (CaseNum(ent) > 0)
         {
@@ -63,8 +64,8 @@ public abstract class StepData_SelectType
     /// Stores an Entity. This allows to define a specific SelectType class with one read method per member Type,
     /// which returns the Value casted with the good Type.
     /// </summary>
-    /// <exception cref="Standard_TypeMismatch">The entity does not match the select (an undefined entity always does).</exception>
-    public void SetValue(Standard_Transient? ent)
+    /// <exception cref="TypeMismatchException">The entity does not match the select (an undefined entity always does).</exception>
+    public void SetValue(Transient? ent)
     {
         if (ent is null)
         {
@@ -76,7 +77,7 @@ public abstract class StepData_SelectType
         }
         else if (!Matches(ent))
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetValue");
+            throw new TypeMismatchException("StepData : SelectType, SetValue");
         }
         else
         {
@@ -97,7 +98,7 @@ public abstract class StepData_SelectType
     }
 
     /// <summary>Returns the Stored Entity. Can be used to define specific read methods (see above).</summary>
-    public Standard_Transient? Value()
+    public Transient? Value()
     {
         return thevalue;
     }
@@ -113,7 +114,7 @@ public abstract class StepData_SelectType
     {
         if (thevalue is null)
         {
-            return typeof(Standard_Transient);
+            return typeof(Transient);
         }
         return thevalue.DynamicType();
     }
@@ -206,14 +207,14 @@ public abstract class StepData_SelectType
     {
         if (thevalue is not StepData_SelectMember sm)
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetInt");
+            throw new TypeMismatchException("StepData : SelectType, SetInt");
         }
         sm.SetInt(val);
     }
 
     //  **********   Types Immediats : Differents Cas  ***********
 
-    private static StepData_SelectMember SelectVal(Standard_Transient thevalue, string name, int mode)
+    private static StepData_SelectMember SelectVal(Transient thevalue, string name, int mode)
     {
         StepData_SelectMember sm = thevalue as StepData_SelectMember;
         if (sm is not null)
@@ -222,7 +223,7 @@ public abstract class StepData_SelectType
             {
                 if (!sm.SetName(name))
                 {
-                    throw new Standard_TypeMismatch("StepData : SelectType, SetInteger");
+                    throw new TypeMismatchException("StepData : SelectType, SetInteger");
                 }
             }
         }
@@ -266,7 +267,7 @@ public abstract class StepData_SelectType
         sm.SetInteger(val);
         if (CaseMem(sm) == 0)
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetInteger");
+            throw new TypeMismatchException("StepData : SelectType, SetInteger");
         }
         thevalue = sm;
     }
@@ -286,7 +287,7 @@ public abstract class StepData_SelectType
         sm.SetBoolean(val);
         if (CaseMem(sm) == 0)
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetBoolean");
+            throw new TypeMismatchException("StepData : SelectType, SetBoolean");
         }
         thevalue = sm;
     }
@@ -306,7 +307,7 @@ public abstract class StepData_SelectType
         sm.SetLogical(val);
         if (CaseMem(sm) == 0)
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetLogical");
+            throw new TypeMismatchException("StepData : SelectType, SetLogical");
         }
         thevalue = sm;
     }
@@ -326,7 +327,7 @@ public abstract class StepData_SelectType
         sm.SetReal(val);
         if (CaseMem(sm) == 0)
         {
-            throw new Standard_TypeMismatch("StepData : SelectType, SetReal");
+            throw new TypeMismatchException("StepData : SelectType, SetReal");
         }
         thevalue = sm;
     }

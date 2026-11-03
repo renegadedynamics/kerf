@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -110,13 +112,13 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         theStatus = aFix.Perform();
         theDone1 = aFix.Status(ShapeExtend_DONE1);
         theDone2 = aFix.Status(ShapeExtend_DONE2);
-        return theShape.TShape()!.IsFrozen() ? aFix.Shape() : aFix.InternalShape();
+        return theShape.TShape()!.IsFrozen ? aFix.Shape() : aFix.InternalShape();
     }
 
     private static string? ErrorOf(Exception theException) => theException switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
-        Standard_Failure f => f.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         _ => null,
     };
 
@@ -161,7 +163,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPRes = PortFixShape(isFrozen ? aPS : aUS, thePrecision, theMaxTol, out aPStatus, out aPD1, out aPD2);
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
                 aPErr = ErrorOf(e);
             }
@@ -270,7 +272,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private static N.gp_Pnt P(in gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
+    private static N.gp_Pnt P(in Point3D theP) => new(theP.X(), theP.Y(), theP.Z());
 
     // A random wire as a sketch makes it: lines, arcs and B-splines around a loop in a random plane, each edge with
     // its own vertices, the ends moved apart by a gap; sometimes with tiny edges, shuffled, reversed or open.
@@ -279,16 +281,16 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         int aNb = theOracle.Int(3, 8);
         double[] aGaps = [0.0, 0.0, 1.0e-8, 1.0e-6, 1.0e-5, 1.0e-4, 1.0e-3, 1.0e-2];
         double aGap = aGaps[theIndex % aGaps.Length];
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         double aRadius = theOracle.Real(1.0, 50.0);
-        var aPoints = new gp_Pnt[aNb];
+        var aPoints = new Point3D[aNb];
         for (int i = 0; i < aNb; i++)
         {
             double anAngle = 2.0 * Math.PI * (i + 0.3 * theOracle.Real(-1.0, 1.0)) / aNb;
             double r = aRadius * theOracle.Real(0.6, 1.4);
-            gp_Pnt aP = anAx.Location();
-            aP = aP.Translated(new gp_Vec(anAx.XDirection()) * (r * Math.Cos(anAngle)));
-            aP = aP.Translated(new gp_Vec(anAx.YDirection()) * (r * Math.Sin(anAngle)));
+            Point3D aP = anAx.Location();
+            aP = aP.Translated(new Vector3D(anAx.XDirection()) * (r * Math.Cos(anAngle)));
+            aP = aP.Translated(new Vector3D(anAx.YDirection()) * (r * Math.Sin(anAngle)));
             aPoints[i] = aP;
         }
         bool isOpen = theOracle.Int(0, 4) == 0;
@@ -303,7 +305,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         if (isPolygon)
         {
             using var aPoly = new N.BRepBuilderAPI_MakePolygon();
-            foreach (gp_Pnt aP in aPoints)
+            foreach (Point3D aP in aPoints)
             {
                 aPoly.Add(P(aP));
             }
@@ -319,26 +321,26 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         else
         {
             int aNbEdges = isOpen ? aNb - 1 : aNb;
-            gp_Pnt aPrevEnd = aPoints[0];
+            Point3D aPrevEnd = aPoints[0];
             for (int i = 0; i < aNbEdges; i++)
             {
-                gp_Pnt aStart = aPrevEnd;
-                gp_Pnt anEnd = aPoints[(i + 1) % aNb];
+                Point3D aStart = aPrevEnd;
+                Point3D anEnd = aPoints[(i + 1) % aNb];
                 if (aGap > 0.0)
                 {
-                    anEnd = anEnd.Translated(new gp_Vec(theOracle.Dir()) * aGap);
+                    anEnd = anEnd.Translated(new Vector3D(theOracle.Dir()) * aGap);
                 }
                 if (i == aNbEdges - 1 && !isOpen)
                 {
-                    anEnd = aPoints[0].Translated(new gp_Vec(theOracle.Dir()) * aGap);
+                    anEnd = aPoints[0].Translated(new Vector3D(theOracle.Dir()) * aGap);
                 }
                 N.TopoDS_Edge? anEdge = null;
                 int aKind = theOracle.Int(0, 9);
-                gp_Pnt aMid = new gp_Pnt((aStart.XYZ() + anEnd.XYZ()) * 0.5);
-                gp_Vec aSide = new gp_Vec(anAx.Direction()).Crossed(new gp_Vec(aStart, anEnd));
+                Point3D aMid = new Point3D((aStart.XYZ() + anEnd.XYZ()) * 0.5);
+                Vector3D aSide = new Vector3D(anAx.Direction()).Crossed(new Vector3D(aStart, anEnd));
                 if (aKind >= 7 && aSide.Magnitude() > 1.0e-6)
                 {
-                    gp_Pnt aBulge = aMid.Translated(aSide.Normalized() * (aStart.Distance(anEnd) * theOracle.Real(-0.3, 0.3)));
+                    Point3D aBulge = aMid.Translated(aSide.Normalized() * (aStart.Distance(anEnd) * theOracle.Real(-0.3, 0.3)));
                     try
                     {
                         if (aKind == 9)
@@ -369,7 +371,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
                 anEdges.Add(anEdge);
                 if (isTiny && i == 0)
                 {
-                    gp_Pnt aTinyEnd = anEnd.Translated(new gp_Vec(theOracle.Dir()) * theOracle.Real(1.0e-8, 1.0e-4));
+                    Point3D aTinyEnd = anEnd.Translated(new Vector3D(theOracle.Dir()) * theOracle.Real(1.0e-8, 1.0e-4));
                     anEdges.Add(new N.BRepBuilderAPI_MakeEdge(P(anEnd), P(aTinyEnd)).Edge());
                     anEnd = aTinyEnd;
                 }

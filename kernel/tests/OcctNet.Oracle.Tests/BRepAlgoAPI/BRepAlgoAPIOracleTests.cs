@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -325,7 +326,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
                 }
                 foreach (int aDegree in aDegrees)
                 {
-                    using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+                    using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
                     {
                         aPortRuns++;
                         string aPar = Record(BooleanOracleTests.RunPort(aCase, aPArgs, true));

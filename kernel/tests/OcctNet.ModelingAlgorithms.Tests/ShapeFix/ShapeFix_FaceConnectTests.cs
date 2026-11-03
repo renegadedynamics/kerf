@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -18,8 +19,8 @@ public class ShapeFix_FaceConnectTests
     // Two unit squares side by side, each with its own edges (theGap apart along x = 1), in one frozen shell.
     private static TopoDS_Shell TwoSquares(double theGap, out TopoDS_Face theF1, out TopoDS_Face theF2)
     {
-        theF1 = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).Face();
-        theF2 = new BRepBuilderAPI_MakeFace(new gp_Pln(), 1 + theGap, 2, 0, 1).Face();
+        theF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
+        theF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + theGap, 2, 0, 1).Face();
         var aB = new BRep_Builder();
         var aShell = new TopoDS_Shell();
         aB.MakeShell(ref aShell);
@@ -55,7 +56,7 @@ public class ShapeFix_FaceConnectTests
         TopoDS_Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
 
         aSnap.AssertUnchanged(aShell);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aResult, TopAbs_FACE));
         Assert.Equal(7, Count(aResult, TopAbs_EDGE)); // the edges at x = 1 sewn into one
         Assert.Equal(6, Count(aResult, TopAbs_VERTEX));

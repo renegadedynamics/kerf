@@ -4,11 +4,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.AdvApp2Var_CriterionRepartition;
 using static Occt.AdvApp2Var_CriterionType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -53,9 +57,9 @@ public class AdvApp2Var_ApproxAFunc2Var
     private readonly double myLastParInU;
     private readonly double myFirstParInV;
     private readonly double myLastParInV;
-    private readonly GeomAbs_IsoType myFavoriteIso;
-    private readonly GeomAbs_Shape myContInU;
-    private readonly GeomAbs_Shape myContInV;
+    private readonly IsoType myFavoriteIso;
+    private readonly Continuity myContInU;
+    private readonly Continuity myContInV;
     private int myPrecisionCode;
     private readonly int myMaxDegInU;
     private readonly int myMaxDegInV;
@@ -83,7 +87,7 @@ public class AdvApp2Var_ApproxAFunc2Var
     private double myCriterionError;
 
     /// <summary>Approximates <paramref name="Func"/> (see the class remarks for the arguments).</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// A continuity other than C0, C1 or C2, or an approximation that fails (discretisation, curve or surface
     /// approximation error).
     /// </exception>
@@ -100,9 +104,9 @@ public class AdvApp2Var_ApproxAFunc2Var
                                       double LastInU,
                                       double FirstInV,
                                       double LastInV,
-                                      GeomAbs_IsoType FavorIso,
-                                      GeomAbs_Shape ContInU,
-                                      GeomAbs_Shape ContInV,
+                                      IsoType FavorIso,
+                                      Continuity ContInU,
+                                      Continuity ContInV,
                                       int PrecisCode,
                                       int MaxDegInU,
                                       int MaxDegInV,
@@ -142,7 +146,7 @@ public class AdvApp2Var_ApproxAFunc2Var
     }
 
     /// <summary>Approximates <paramref name="Func"/> under the criterion <paramref name="Crit"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// A continuity other than C0, C1 or C2, or an approximation that fails.
     /// </exception>
     public AdvApp2Var_ApproxAFunc2Var(int Num1DSS,
@@ -158,9 +162,9 @@ public class AdvApp2Var_ApproxAFunc2Var
                                       double LastInU,
                                       double FirstInV,
                                       double LastInV,
-                                      GeomAbs_IsoType FavorIso,
-                                      GeomAbs_Shape ContInU,
-                                      GeomAbs_Shape ContInV,
+                                      IsoType FavorIso,
+                                      Continuity ContInU,
+                                      Continuity ContInV,
                                       int PrecisCode,
                                       int MaxDegInU,
                                       int MaxDegInV,
@@ -206,10 +210,10 @@ public class AdvApp2Var_ApproxAFunc2Var
         int ifav, iu = 0, iv = 0, ndu, ndv;
         switch (myFavoriteIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 ifav = 1;
                 break;
-            case GeomAbs_IsoV:
+            case IsoV:
                 ifav = 2;
                 break;
             default:
@@ -218,41 +222,41 @@ public class AdvApp2Var_ApproxAFunc2Var
         }
         switch (myContInU)
         {
-            case GeomAbs_C0:
+            case C0:
                 iu = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 iu = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 iu = 2;
                 break;
             default:
-                throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : UContinuity Error");
+                throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : UContinuity Error");
         }
         switch (myContInV)
         {
-            case GeomAbs_C0:
+            case C0:
                 iv = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 iv = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 iv = 2;
                 break;
             default:
-                throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : VContinuity Error");
+                throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : VContinuity Error");
         }
         ndu = Max(myMaxDegInU + 1, 2 * iu + 2);
         ndv = Max(myMaxDegInV + 1, 2 * iv + 2);
         if (ndu < 2 * iu + 2)
         {
-            throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : UMaxDegree Error");
+            throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : UMaxDegree Error");
         }
         if (ndv < 2 * iv + 2)
         {
-            throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : VMaxDegree Error");
+            throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : VMaxDegree Error");
         }
         myPrecisionCode = Max(0, Min(myPrecisionCode, 3));
         AdvApp2Var_Context Conditions = new(ifav,
@@ -292,13 +296,13 @@ public class AdvApp2Var_ApproxAFunc2Var
 
         AdvApp2Var_Network Result = new(Net, TheU, TheV);
 
-        gp_XY UV1 = new(myFirstParInU, myFirstParInV);
+        Xy UV1 = new(myFirstParInU, myFirstParInV);
         AdvApp2Var_Node C1 = new(UV1, iu, iv);
-        gp_XY UV2 = new(myLastParInU, myFirstParInV);
+        Xy UV2 = new(myLastParInU, myFirstParInV);
         AdvApp2Var_Node C2 = new(UV2, iu, iv);
-        gp_XY UV4 = new(myLastParInU, myLastParInV);
+        Xy UV4 = new(myLastParInU, myLastParInV);
         AdvApp2Var_Node C4 = new(UV4, iu, iv);
-        gp_XY UV3 = new(myFirstParInU, myLastParInV);
+        Xy UV3 = new(myFirstParInU, myLastParInV);
         AdvApp2Var_Node C3 = new(UV3, iu, iv);
         NCollection_Sequence<AdvApp2Var_Node> Bag = new();
         Bag.Append(C1);
@@ -306,7 +310,7 @@ public class AdvApp2Var_ApproxAFunc2Var
         Bag.Append(C3);
         Bag.Append(C4);
 
-        AdvApp2Var_Iso V0 = new(GeomAbs_IsoV,
+        AdvApp2Var_Iso V0 = new(IsoV,
                                 myFirstParInV,
                                 myFirstParInU,
                                 myLastParInU,
@@ -315,7 +319,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                                 1,
                                 iu,
                                 iv);
-        AdvApp2Var_Iso V1 = new(GeomAbs_IsoV,
+        AdvApp2Var_Iso V1 = new(IsoV,
                                 myLastParInV,
                                 myFirstParInU,
                                 myLastParInU,
@@ -324,7 +328,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                                 2,
                                 iu,
                                 iv);
-        AdvApp2Var_Iso U0 = new(GeomAbs_IsoU,
+        AdvApp2Var_Iso U0 = new(IsoU,
                                 myFirstParInU,
                                 myFirstParInU,
                                 myLastParInU,
@@ -333,7 +337,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                                 3,
                                 iu,
                                 iv);
-        AdvApp2Var_Iso U1 = new(GeomAbs_IsoU,
+        AdvApp2Var_Iso U1 = new(IsoU,
                                 myLastParInU,
                                 myFirstParInU,
                                 myLastParInU,
@@ -408,7 +412,7 @@ public class AdvApp2Var_ApproxAFunc2Var
             if (!myResult[FirstNA].IsDiscretised())
             {
                 myHasResult = myDone = false;
-                throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Surface Discretisation Error");
+                throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Surface Discretisation Error");
             }
 
             // calculate the number and the type of authorized cuts
@@ -475,7 +479,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                         else
                         {
                             myHasResult = myDone = false;
-                            throw new Standard_ConstructionError(
+                            throw new ConstructionErrorException(
                                 "AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
                         }
                         break;
@@ -498,7 +502,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                         break;
                     default:
                         myHasResult = myDone = false;
-                        throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
+                        throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
                 }
             }
         }
@@ -528,7 +532,7 @@ public class AdvApp2Var_ApproxAFunc2Var
             if (!myResult[FirstNA].IsDiscretised())
             {
                 myHasResult = myDone = false;
-                throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Surface Discretisation Error");
+                throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Surface Discretisation Error");
             }
 
             // calculate the number and type of authorized cuts
@@ -626,7 +630,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                         else
                         {
                             myHasResult = myDone = false;
-                            throw new Standard_ConstructionError(
+                            throw new ConstructionErrorException(
                                 "AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
                         }
                         break;
@@ -649,7 +653,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                         break;
                     default:
                         myHasResult = myDone = false;
-                        throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
+                        throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Surface Approximation Error");
                 }
             }
         }
@@ -698,7 +702,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                 // Approximation is not satisfactory
                 NbU = myResult.NbPatchInU();
                 NbV = myResult.NbPatchInV();
-                if (anIso.Type() == GeomAbs_IsoV)
+                if (anIso.Type() == IsoV)
                 {
                     NbPatch = (NbU + 1) * NbV;
                     more = UChoice.Value(anIso.T0(), anIso.T1(), out dec);
@@ -712,7 +716,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                 if (NbPatch <= myMaxPatches && more)
                 {
                     // It is possible to cut iso
-                    if (anIso.Type() == GeomAbs_IsoV)
+                    if (anIso.Type() == IsoV)
                     {
                         myResult.UpdateInU(dec);
                         myConstraints.UpdateInU(dec);
@@ -736,7 +740,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                     else
                     {
                         myHasResult = myDone = false;
-                        throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Curve Approximation Error");
+                        throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Curve Approximation Error");
                     }
                 }
             }
@@ -787,7 +791,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                 // Approximation is not satisfactory
                 NbU = myResult.NbPatchInU();
                 NbV = myResult.NbPatchInV();
-                if (anIso.Type() == GeomAbs_IsoV)
+                if (anIso.Type() == IsoV)
                 {
                     NbPatch = (NbU + 1) * NbV;
                     more = UChoice.Value(anIso.T0(), anIso.T1(), out dec);
@@ -804,7 +808,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                 if (NbPatch <= myMaxPatches && more)
                 {
                     // It is possible to cut iso
-                    if (anIso.Type() == GeomAbs_IsoV)
+                    if (anIso.Type() == IsoV)
                     {
                         myResult.UpdateInU(dec);
                         myConstraints.UpdateInU(dec);
@@ -828,7 +832,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                     else
                     {
                         myHasResult = myDone = false;
-                        throw new Standard_ConstructionError("AdvApp2Var_ApproxAFunc2Var : Curve Approximation Error");
+                        throw new ConstructionErrorException("AdvApp2Var_ApproxAFunc2Var : Curve Approximation Error");
                     }
                 }
             }
@@ -973,7 +977,7 @@ public class AdvApp2Var_ApproxAFunc2Var
             }
 
             // Conversion into poles
-            Convert_GridPolynomialToPoles CvP = new(myResult.NbPatchInU(),
+            GridPolynomialToPoles CvP = new(myResult.NbPatchInU(),
                                                     myResult.NbPatchInV(),
                                                     iu,
                                                     iv,
@@ -985,7 +989,7 @@ public class AdvApp2Var_ApproxAFunc2Var
                                                     Vint1.Array1(),
                                                     Uint2.Array1(),
                                                     Vint2.Array1());
-            if (!CvP.IsDone())
+            if (!CvP.IsDone)
             {
                 myDone = false;
             }
@@ -1028,13 +1032,13 @@ public class AdvApp2Var_ApproxAFunc2Var
         theArray is null ? null : new NCollection_HArray1<double>(theArray);
 
     /// <summary>The maximum errors of the subspaces of dimension <paramref name="Dimension"/>: a copy, or null.</summary>
-    /// <exception cref="Standard_OutOfRange">A dimension other than 1, 2 or 3.</exception>
+    /// <exception cref="OutOfRangeException">A dimension other than 1, 2 or 3.</exception>
     public NCollection_HArray1<double>? MaxError(int Dimension)
     {
         NCollection_HArray1<double>? EPtr = null;
         if (Dimension < 1 || Dimension > 3)
         {
-            throw new Standard_OutOfRange(
+            throw new OutOfRangeException(
                 "AdvApp2Var_ApproxAFunc2Var::MaxError : Dimension must be equal to 1,2 or 3 !");
         }
         switch (Dimension)
@@ -1053,13 +1057,13 @@ public class AdvApp2Var_ApproxAFunc2Var
     }
 
     /// <summary>The average errors of the subspaces of dimension <paramref name="Dimension"/>: a copy, or null.</summary>
-    /// <exception cref="Standard_OutOfRange">A dimension other than 1, 2 or 3.</exception>
+    /// <exception cref="OutOfRangeException">A dimension other than 1, 2 or 3.</exception>
     public NCollection_HArray1<double>? AverageError(int Dimension)
     {
         NCollection_HArray1<double>? EPtr = null;
         if (Dimension < 1 || Dimension > 3)
         {
-            throw new Standard_OutOfRange(
+            throw new OutOfRangeException(
                 "AdvApp2Var_ApproxAFunc2Var::AverageError : Dimension must be equal to 1,2 or 3 !");
         }
         switch (Dimension)
@@ -1078,13 +1082,13 @@ public class AdvApp2Var_ApproxAFunc2Var
     }
 
     /// <summary>The maximum errors on the U frontiers (dimension 3 only is computed): a copy, or null.</summary>
-    /// <exception cref="Standard_OutOfRange">A dimension other than 1, 2 or 3.</exception>
+    /// <exception cref="OutOfRangeException">A dimension other than 1, 2 or 3.</exception>
     public NCollection_HArray1<double>? UFrontError(int Dimension)
     {
         NCollection_HArray1<double>? EPtr = null;
         if (Dimension < 1 || Dimension > 3)
         {
-            throw new Standard_OutOfRange(
+            throw new OutOfRangeException(
                 "AdvApp2Var_ApproxAFunc2Var::UFrontError : Dimension must be equal to 1,2 or 3 !");
         }
         switch (Dimension)
@@ -1103,13 +1107,13 @@ public class AdvApp2Var_ApproxAFunc2Var
     }
 
     /// <summary>The maximum errors on the V frontiers (dimension 3 only is computed): a copy, or null.</summary>
-    /// <exception cref="Standard_OutOfRange">A dimension other than 1, 2 or 3.</exception>
+    /// <exception cref="OutOfRangeException">A dimension other than 1, 2 or 3.</exception>
     public NCollection_HArray1<double>? VFrontError(int Dimension)
     {
         NCollection_HArray1<double>? EPtr = null;
         if (Dimension <= 0 || Dimension > 3)
         {
-            throw new Standard_OutOfRange(
+            throw new OutOfRangeException(
                 "AdvApp2Var_ApproxAFunc2Var::VFrontError : Dimension must be equal to 1,2 or 3 !");
         }
         switch (Dimension)
@@ -1128,56 +1132,56 @@ public class AdvApp2Var_ApproxAFunc2Var
     }
 
     /// <summary>The maximum error of the surface <paramref name="SSPIndex"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">Unless Dimension is 3 and SSPIndex 1.</exception>
+    /// <exception cref="OutOfRangeException">Unless Dimension is 3 and SSPIndex 1.</exception>
     public double MaxError(int Dimension, int SSPIndex)
     {
         if (Dimension != 3 || SSPIndex != 1)
         {
-            throw new Standard_OutOfRange("AdvApp2Var_ApproxAFunc2Var::MaxError: ONE Surface 3D only !");
+            throw new OutOfRangeException("AdvApp2Var_ApproxAFunc2Var::MaxError: ONE Surface 3D only !");
         }
         return my3DMaxError!.Value(SSPIndex);
     }
 
     /// <summary>The average error of the surface <paramref name="SSPIndex"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">Unless Dimension is 3 and SSPIndex 1.</exception>
+    /// <exception cref="OutOfRangeException">Unless Dimension is 3 and SSPIndex 1.</exception>
     public double AverageError(int Dimension, int SSPIndex)
     {
         if (Dimension != 3 || SSPIndex != 1)
         {
-            throw new Standard_OutOfRange("AdvApp2Var_ApproxAFunc2Var::AverageError : ONE Surface 3D only !");
+            throw new OutOfRangeException("AdvApp2Var_ApproxAFunc2Var::AverageError : ONE Surface 3D only !");
         }
         return my3DAverageError!.Value(SSPIndex);
     }
 
     /// <summary>The maximum error on the U frontiers of the surface <paramref name="SSPIndex"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">Unless Dimension is 3 and SSPIndex 1.</exception>
+    /// <exception cref="OutOfRangeException">Unless Dimension is 3 and SSPIndex 1.</exception>
     public double UFrontError(int Dimension, int SSPIndex)
     {
         if (Dimension != 3 || SSPIndex != 1)
         {
-            throw new Standard_OutOfRange("AdvApp2Var_ApproxAFunc2Var::UFrontError : ONE Surface 3D only !");
+            throw new OutOfRangeException("AdvApp2Var_ApproxAFunc2Var::UFrontError : ONE Surface 3D only !");
         }
         return my3DUFrontError!.Value(SSPIndex);
     }
 
     /// <summary>The maximum error on the V frontiers of the surface <paramref name="SSPIndex"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">Unless Dimension is 3 and SSPIndex 1.</exception>
+    /// <exception cref="OutOfRangeException">Unless Dimension is 3 and SSPIndex 1.</exception>
     public double VFrontError(int Dimension, int SSPIndex)
     {
         if (Dimension != 3 || SSPIndex != 1)
         {
-            throw new Standard_OutOfRange("AdvApp2Var_ApproxAFunc2Var::VFrontError : ONE Surface 3D only !");
+            throw new OutOfRangeException("AdvApp2Var_ApproxAFunc2Var::VFrontError : ONE Surface 3D only !");
         }
         return my3DVFrontError!.Value(SSPIndex);
     }
 
     /// <summary>The maximum value of the criterion over the patches.</summary>
-    /// <exception cref="Standard_OutOfRange">Unless Dimension is 3 and SSPIndex 1.</exception>
+    /// <exception cref="OutOfRangeException">Unless Dimension is 3 and SSPIndex 1.</exception>
     public double CritError(int Dimension, int SSPIndex)
     {
         if (Dimension != 3 || SSPIndex != 1)
         {
-            throw new Standard_OutOfRange("AdvApp2Var_ApproxAFunc2Var::CritError: ONE Surface 3D only !");
+            throw new OutOfRangeException("AdvApp2Var_ApproxAFunc2Var::CritError: ONE Surface 3D only !");
         }
         return myCriterionError;
     }

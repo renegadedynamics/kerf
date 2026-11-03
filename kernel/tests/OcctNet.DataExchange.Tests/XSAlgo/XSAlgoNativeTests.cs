@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -117,9 +118,9 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         var aTexts = new List<string>();
         if (theMessages is not null)
         {
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Message_Msg>> anItem in theMessages.MapShape())
+            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Msg>> anItem in theMessages.MapShape())
             {
-                for (var aMsg = new NCollection_List<Message_Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
+                for (var aMsg = new NCollection_List<Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
                 {
                     aTexts.Add(aMsg.Value().Value());
                 }
@@ -178,7 +179,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     private static string Record(string theRun, in TopoDS_Shape theInput, in TopoDS_Shape theResult,
                                  ShapeProcess_ShapeContext? theContext, ulong theMerge)
     {
-        if (!theResult.IsNull() && !theResult.IsSame(theInput) && !theResult.TShape()!.IsFrozen())
+        if (!theResult.IsNull() && !theResult.IsSame(theInput) && !theResult.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theRun}: the result isn't frozen");
         }
@@ -196,9 +197,9 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         {
             return theBody();
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
-            return $"{theRun} THROW {e.GetType().Name}";
+            return $"{theRun} THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}";
         }
     }
 
@@ -276,7 +277,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         TopoDS_Shape anInput = theInput;
         return Run(theRun, () =>
         {
-            Standard_Transient? anInfo = null;
+            Transient? anInfo = null;
             TopoDS_Shape aResult = Occt.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
                                                                            theSeq, ref anInfo, theStatics);
             ulong aMerge = MergeTP(Keys(anInput), theTP => Occt.XSAlgo.AlgoContainer().MergeTransferInfo(theTP, anInfo, 1));
@@ -349,7 +350,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     }
 
     // C's %.17g
-    private static string G17(double theValue) => Standard_Stream.FormatReal(theValue, 17);
+    private static string G17(double theValue) => StreamUtilities.FormatReal(theValue, 17);
 
     [Fact]
     public void ShapeProcessor_AlgoContainer_and_CheckPCurve_AsNativeOCCT()

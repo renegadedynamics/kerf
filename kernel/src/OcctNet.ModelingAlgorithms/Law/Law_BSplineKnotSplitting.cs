@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,12 +16,12 @@ public sealed class Law_BSplineKnotSplitting
     private readonly NCollection_HArray1<int> splitIndexes;
 
     /// <summary>Locates the knots that split the curve into arcs of continuity ContinuityRange.</summary>
-    /// <exception cref="Standard_RangeError">ContinuityRange is negative.</exception>
+    /// <exception cref="RangeErrorException">ContinuityRange is negative.</exception>
     public Law_BSplineKnotSplitting(Law_BSpline BasisCurve, int ContinuityRange)
     {
         if (ContinuityRange < 0)
         {
-            throw new Standard_RangeError();
+            throw new RangeErrorException();
         }
 
         int FirstIndex = BasisCurve.FirstUKnotIndex();
@@ -37,7 +39,7 @@ public sealed class Law_BSplineKnotSplitting
             int NbKnots = BasisCurve.NbKnots();
             NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, NbKnots);
             BasisCurve.Multiplicities(Mults);
-            int Mmax = BSplCLib.MaxKnotMult(Mults, FirstIndex, LastIndex);
+            int Mmax = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(Mults, FirstIndex, LastIndex);
             if (Degree - Mmax >= ContinuityRange)
             {
                 splitIndexes = new NCollection_HArray1<int>(1, 2);
@@ -84,7 +86,7 @@ public sealed class Law_BSplineKnotSplitting
     }
 
     /// <summary>The knot index of the split Index.</summary>
-    /// <exception cref="Standard_RangeError">Index is outside [1, NbSplits()].</exception>
+    /// <exception cref="RangeErrorException">Index is outside [1, NbSplits()].</exception>
     public int SplitValue(int Index)
     {
         Standard_RangeError_Raise_if(Index < 1 || Index > splitIndexes.Length(), " ");

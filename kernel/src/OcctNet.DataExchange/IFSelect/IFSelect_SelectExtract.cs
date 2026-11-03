@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -43,7 +45,7 @@ public abstract class IFSelect_SelectExtract : IFSelect_SelectDeduct
         int rank = 0;
         for (inputer.Start(); inputer.More(); inputer.Next())
         {
-            Standard_Transient ent = inputer.Value();
+            Transient ent = inputer.Value();
             rank++;
             if (SortInGraph(rank, ent, G) == thesort)
             {
@@ -59,13 +61,13 @@ public abstract class IFSelect_SelectExtract : IFSelect_SelectDeduct
     /// Hence, the Entity to check is "model-&gt;Value(num)" (but an InterfaceModel allows other checks) This
     /// method is specific to each class of SelectExtract
     /// </summary>
-    public abstract bool Sort(int rank, Standard_Transient? ent, Interface_InterfaceModel? model);
+    public abstract bool Sort(int rank, Transient? ent, Interface_InterfaceModel? model);
 
     /// <summary>
     /// Works as Sort but works on the Graph Default directly calls Sort, but it can be redefined If SortInGraph
     /// is redefined, Sort should be defined even if not called (to avoid deferred methods in a final class)
     /// </summary>
-    public virtual bool SortInGraph(int rank, Standard_Transient? ent, Interface_Graph G)
+    public virtual bool SortInGraph(int rank, Transient? ent, Interface_Graph G)
     {
         return Sort(rank, ent, G.Model());
     }

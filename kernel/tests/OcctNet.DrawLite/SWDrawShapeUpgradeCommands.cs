@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -84,8 +85,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         bool   anConBS         = false;
         bool   isAllowInternal = false;
         bool   isSafeInputMode = true;
-        double aLinTol         = Precision.Confusion();
-        double aAngTol         = Precision.Angular();
+        double aLinTol         = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double aAngTol         = global::Kerf.Engine.Foundation.Precision.Angular();
         var    aKeepShapes     = new List<TopoDS_Shape>();
 
         if (n > 3)
@@ -267,8 +268,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         double aDx = theDI.Atof(argv[3]);
         double aDy = theDI.Atof(argv[4]);
         double aDz = theDI.Atof(argv[5]);
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(aDx, aDy, aDz));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(aDx, aDy, aDz));
         var builderTransform = new BRepBuilderAPI_Transform(aTrsf);
         builderTransform.Perform(aShape, true);
         TopoDS_Shape aNewShape = builderTransform.Shape();

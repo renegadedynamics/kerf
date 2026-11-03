@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_EditValue;
 
 namespace Occt;
@@ -68,7 +69,7 @@ public class IFSelect_ParamEditor : IFSelect_Editor
         return TypedValue(num).HStringValue();
     }
 
-    public override bool Load(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Load(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model)
     {
         int i, nb = NbValues();
         for (i = 1; i <= nb; i++)
@@ -79,7 +80,7 @@ public class IFSelect_ParamEditor : IFSelect_Editor
         return true;
     }
 
-    public override bool Apply(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Apply(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model)
     {
         int i, nb = NbValues();
         for (i = 1; i <= nb; i++)

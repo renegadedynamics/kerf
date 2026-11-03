@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Line_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_LineTest
@@ -20,10 +22,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOnLine_AtOrigin()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(0.0, 0.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(0.0, 0.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -38,10 +40,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOnLine_Positive()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(5.0, 0.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(5.0, 0.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -55,10 +57,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOnLine_Negative()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(-7.5, 0.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(-7.5, 0.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -72,10 +74,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOffLine_YOffset()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(5.0, 3.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(5.0, 3.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -89,10 +91,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOffLine_ZOffset()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(5.0, 0.0, 4.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(5.0, 0.0, 4.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -106,10 +108,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void PointOffLine_YZOffset()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(5.0, 3.0, 4.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(5.0, 3.0, 4.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -128,11 +130,11 @@ public class ExtremaPC_LineTest
     [Fact]
     public void ProjectionOutsideBounds_Left()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(-50.0, 3.0, 4.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(-50.0, 3.0, 4.0);
 
         // Domain [0, 100] - projection at -50 is outside bounds (left of 0)
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -145,11 +147,11 @@ public class ExtremaPC_LineTest
     [Fact]
     public void ProjectionOutsideBounds_Right()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(150.0, 3.0, 4.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(150.0, 3.0, 4.0);
 
         // Domain [0, 100] - projection at 150 is outside bounds (right of 100)
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -162,11 +164,11 @@ public class ExtremaPC_LineTest
     [Fact]
     public void ProjectionAtLowerBound()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(10.0, 5.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(10.0, 5.0, 0.0);
 
         // Domain [10, 100] - projection at 10 is exactly at lower bound
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(10.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(10.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -179,10 +181,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void ProjectionAtUpperBound()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(100.0, 5.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(100.0, 5.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -195,10 +197,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void NarrowBounds()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(50.0, 1.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(50.0, 1.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -215,10 +217,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineAlongY()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0));
-        gp_Pnt aPoint = new(3.0, 5.0, 4.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(0, 1, 0));
+        Point3D aPoint = new(3.0, 5.0, 4.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -232,10 +234,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineAlongZ()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        gp_Pnt aPoint = new(3.0, 4.0, 10.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        Point3D aPoint = new(3.0, 4.0, 10.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -249,10 +251,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineDiagonal_XY()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 1, 0));
-        gp_Pnt aPoint = new(5.0, 5.0, 3.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 1, 0));
+        Point3D aPoint = new(5.0, 5.0, 3.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -268,10 +270,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineDiagonal_XYZ()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 1, 1));
-        gp_Pnt aPoint = new(3.0, 3.0, 3.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 1, 1));
+        Point3D aPoint = new(3.0, 3.0, 3.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -287,10 +289,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineWithOffset_XAxis()
     {
-        gp_Lin aLine = new(new gp_Pnt(10, 20, 30), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(15.0, 20.0, 30.0);
+        Line3D aLine = new(new Point3D(10, 20, 30), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(15.0, 20.0, 30.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -304,10 +306,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LineWithOffset_PointOff()
     {
-        gp_Lin aLine = new(new gp_Pnt(10, 20, 30), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(15.0, 23.0, 34.0);
+        Line3D aLine = new(new Point3D(10, 20, 30), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(15.0, 23.0, 34.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -325,10 +327,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void NegativeParameters()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(-25.0, 0.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(-25.0, 0.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -341,11 +343,11 @@ public class ExtremaPC_LineTest
     [Fact]
     public void NegativeBoundsClamp()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(-5.0, 1.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(-5.0, 1.0, 0.0);
 
         // Domain [-50, -10] - projection at -5 is outside (right of -10), clamps to -10
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-50.0, -10.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-50.0, -10.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -362,11 +364,11 @@ public class ExtremaPC_LineTest
     [Fact]
     public void LargeCoordinates()
     {
-        gp_Lin aLine = new(new gp_Pnt(1e6, 1e6, 1e6), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(1e6 + 100.0, 1e6 + 3.0, 1e6 + 4.0);
+        Line3D aLine = new(new Point3D(1e6, 1e6, 1e6), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(1e6 + 100.0, 1e6 + 3.0, 1e6 + 4.0);
 
         // Use domain [-100, 200] so projection at 100 is inside bounds
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 200.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 200.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -380,10 +382,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void SmallCoordinates()
     {
-        gp_Lin aLine = new(new gp_Pnt(1e-6, 1e-6, 1e-6), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(1e-6 + 1e-3, 1e-6 + 3e-4, 1e-6 + 4e-4);
+        Line3D aLine = new(new Point3D(1e-6, 1e-6, 1e-6), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(1e-6 + 1e-3, 1e-6 + 3e-4, 1e-6 + 4e-4);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -401,10 +403,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void VerifyProjectedPoint()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(7.0, 5.0, 0.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(7.0, 5.0, 0.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -412,7 +414,7 @@ public class ExtremaPC_LineTest
 
         // Verify the minimum point (projected point)
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aExpectedPt = new(7.0, 0.0, 0.0);
+        Point3D aExpectedPt = new(7.0, 0.0, 0.0);
         Assert.Equal(aExpectedPt.X(), aResult[aMinIdx].Point.X(), THE_TOL);
         Assert.Equal(aExpectedPt.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
         Assert.Equal(aExpectedPt.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
@@ -421,10 +423,10 @@ public class ExtremaPC_LineTest
     [Fact]
     public void VerifyDistanceConsistency()
     {
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(10.0, 6.0, 8.0);
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(10.0, 6.0, 8.0);
 
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(-100.0, 100.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(-100.0, 100.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -445,11 +447,11 @@ public class ExtremaPC_LineTest
     public void EndpointsAsMaxima()
     {
         // For a line segment with projection inside, endpoints should be local maxima
-        gp_Lin aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        gp_Pnt aPoint = new(5.0, 1.0, 0.0); // Point above line at X=5
+        Line3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Point3D aPoint = new(5.0, 1.0, 0.0); // Point above line at X=5
 
         // Domain [0, 10] for specific endpoint checks
-        ExtremaPC_Line anEval = new(aLine, new MathUtils.Domain1D(0.0, 10.0));
+        ExtremaPC_Line anEval = new(aLine, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(0.0, 10.0));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());

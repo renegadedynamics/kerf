@@ -3,10 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using static Occt.CSLib_DerivativeStatus;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Engine.Geometry.DerivativeStatus;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.HLRAlgo_PolyMask;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -30,7 +35,7 @@ namespace Occt;
 /// (<see cref="Hide"/>, <see cref="Show"/>) are the caller's own edges and faces.
 /// </para>
 /// </remarks>
-public class HLRBRep_PolyAlgo : Standard_Transient
+public class HLRBRep_PolyAlgo : Transient
 {
     // Node flags of the internal triangulation (OCCT's file-scope enum)
     private const int NMsk_Vert = 1;
@@ -256,7 +261,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         theIsoledF = false;
         theIsoledE = false;
         TopExp_Explorer aFaceIter = new();
-        TopLoc_Location aLoc;
+        Placement aLoc;
 
         for (TopExp_Explorer aShellIter = new(theShape, TopAbs_SHELL); aShellIter.More(); aShellIter.Next())
         {
@@ -317,18 +322,18 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         NCollection_Array1<HLRAlgo_PolyInternalData?> thePID, NCollection_Map<TopoDS_Shape> theShapeMap1,
         NCollection_Map<TopoDS_Shape> theShapeMap2)
     {
-        TopLoc_Location aLoc;
+        Placement aLoc;
         TopExp_Explorer aFaceExp = new(), anEdgeExp = new();
         int aNbFaceShell = 0;
         bool isClosed = false;
-        gp_Trsf aProjTrsf = myProj.Transformation();
+        Transform3D aProjTrsf = myProj.Transformation();
         {
-            gp_XYZ aTrsfVec = aProjTrsf.TranslationPart();
+            Xyz aTrsfVec = aProjTrsf.TranslationPart();
             TLoc[0] = aTrsfVec.X();
             TLoc[1] = aTrsfVec.Y();
             TLoc[2] = aTrsfVec.Z();
 
-            gp_Mat aTrsfMat = aProjTrsf.VectorialPart();
+            Matrix3x3 aTrsfMat = aProjTrsf.VectorialPart();
             TMat[0, 0] = aTrsfMat.Value(1, 1);
             TMat[0, 1] = aTrsfMat.Value(1, 2);
             TMat[0, 2] = aTrsfMat.Value(1, 3);
@@ -340,13 +345,13 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             TMat[2, 2] = aTrsfMat.Value(3, 3);
         }
         {
-            gp_Trsf aTrsfInv = myProj.InvertedTransformation();
-            gp_XYZ aTrsfInvVec = aTrsfInv.TranslationPart();
+            Transform3D aTrsfInv = myProj.InvertedTransformation();
+            Xyz aTrsfInvVec = aTrsfInv.TranslationPart();
             TILo[0] = aTrsfInvVec.X();
             TILo[1] = aTrsfInvVec.Y();
             TILo[2] = aTrsfInvVec.Z();
 
-            gp_Mat aTrsfInvMat = aTrsfInv.VectorialPart();
+            Matrix3x3 aTrsfInvMat = aTrsfInv.VectorialPart();
             TIMa[0, 0] = aTrsfInvMat.Value(1, 1);
             TIMa[0, 1] = aTrsfInvMat.Value(1, 2);
             TIMa[0, 2] = aTrsfInvMat.Value(1, 3);
@@ -435,7 +440,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             for (; aFaceExp.More(); aFaceExp.Next())
             {
                 TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current());
-                Poly_Triangulation? aTr = BRep_Tool.Triangulation(aFace, out aLoc);
+                Triangulation? aTr = BRep_Tool.Triangulation(aFace, out aLoc);
                 if (aTr is not null)
                 {
                     if (theShapeMap2.Add(aFace))
@@ -443,15 +448,15 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                         iFace++;
                         int aFaceIndex = myFMap.FindIndex(aFace);
                         bool isReversed = aFace.Orientation() == TopAbs_REVERSED;
-                        gp_Trsf aTT = aLoc.Transformation();
+                        Transform3D aTT = aLoc.Transformation();
                         aTT.PreMultiply(aProjTrsf);
                         {
-                            gp_XYZ aTTrsfVec = aTT.TranslationPart();
+                            Xyz aTTrsfVec = aTT.TranslationPart();
                             TTLo[0] = aTTrsfVec.X();
                             TTLo[1] = aTTrsfVec.Y();
                             TTLo[2] = aTTrsfVec.Z();
 
-                            gp_Mat aTTrsfMat = aTT.VectorialPart();
+                            Matrix3x3 aTTrsfMat = aTT.VectorialPart();
                             TTMa[0, 0] = aTTrsfMat.Value(1, 1);
                             TTMa[0, 1] = aTTrsfMat.Value(1, 2);
                             TTMa[0, 2] = aTTrsfMat.Value(1, 3);
@@ -462,8 +467,8 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                             TTMa[2, 1] = aTTrsfMat.Value(3, 2);
                             TTMa[2, 2] = aTTrsfMat.Value(3, 3);
                         }
-                        int aNbNodes = aTr.NbNodes();
-                        int aNbTris = aTr.NbTriangles();
+                        int aNbNodes = aTr.NodeCount;
+                        int aNbTris = aTr.TriangleCount;
                         thePD.SetValue(aFaceIndex, new HLRAlgo_PolyData());
                         aPsd.PolyData().SetValue(iFace, thePD.Value(aFaceIndex));
                         thePID.SetValue(aFaceIndex, new HLRAlgo_PolyInternalData(aNbNodes, aNbTris));
@@ -476,7 +481,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                                 aSurf = aRectTrimSurf.BasisSurface();
                             }
                             GeomAdaptor_Surface aSurfAdapt = new(aSurf);
-                            aPid.Planar(aSurfAdapt.GetType() == GeomAbs_Plane);
+                            aPid.Planar(aSurfAdapt.GetType() == Plane);
                         }
                         else
                         {
@@ -488,7 +493,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                         NCollection_Array1<HLRAlgo_PolyInternalNode?> aPINod = aPid.PINod();
                         for (int aTriIter = 1; aTriIter <= aNbTris; ++aTriIter)
                         {
-                            Poly_Triangle aPolyTri = aTr.Triangle(aTriIter);
+                            Triangle1 aPolyTri = aTr.Triangle(aTriIter);
                             ref HLRAlgo_TriangleData aTriData = ref aTData[aTriIter];
                             aTriData.Flags = 0;
                             if (isReversed)
@@ -503,7 +508,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
 
                         for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
                         {
-                            gp_Pnt aPnt = aTr.Node(aNodeIter);
+                            Point3D aPnt = aTr.Node(aNodeIter);
                             HLRAlgo_PolyInternalNode aPolyINode = aPINod[aNodeIter]!;
                             ref HLRAlgo_PolyInternalNode.NodeData aNod1RValues = ref aPolyINode.Data();
                             ref HLRAlgo_PolyInternalNode.NodeIndices aNodIndices = ref aPolyINode.Indices();
@@ -513,7 +518,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                             TTMultiply(ref aNod1RValues.Point);
                         }
                         aPid.UpdateLinks(aTData, aPISeg, aPINod);
-                        if (aTr.HasUVNodes())
+                        if (aTr.HasUVNodes)
                         {
                             bool hasSurf = BRep_Tool.IsGeometric(aFace);
                             myBSurf.Initialize(aFace, false);
@@ -523,16 +528,16 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                                     aPINod[aNodeIter]!;
                                 ref HLRAlgo_PolyInternalNode.NodeIndices aNodIndices = ref aPolyINode.Indices();
                                 ref HLRAlgo_PolyInternalNode.NodeData aNod1RValues = ref aPolyINode.Data();
-                                if (aTr.HasUVNodes())
+                                if (aTr.HasUVNodes)
                                 {
                                     aNod1RValues.UV = aTr.UVNode(aNodeIter).XY();
                                 }
-                                if (aTr.HasNormals())
+                                if (aTr.HasNormals)
                                 {
                                     aNod1RValues.Normal = aTr.Normal(aNodeIter).XYZ();
                                 }
 
-                                if ((aTr.HasNormals() || (hasSurf && aTr.HasUVNodes())) && Normal(aNodeIter,
+                                if ((aTr.HasNormals || (hasSurf && aTr.HasUVNodes)) && Normal(aNodeIter,
                                     ref aNodIndices, ref aNod1RValues, aTData, aPISeg, aPINod, false))
                                 {
                                     aNodIndices.Flag |= NMsk_Norm;
@@ -623,21 +628,21 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         NCollection_Array1<HLRAlgo_PolyInternalSegment> thePISeg, NCollection_Array1<HLRAlgo_PolyInternalNode?> thePINod,
         bool theToOrient)
     {
-        if (theNod1RValues.Normal.SquareModulus() < Precision.Confusion())
+        if (theNod1RValues.Normal.SquareModulus() < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            gp_Vec aD1U, aD1V;
-            gp_Pnt aPnt;
-            CSLib_DerivativeStatus aStatus = CSLib_D1IsNull;
+            Vector3D aD1U, aD1V;
+            Point3D aPnt;
+            DerivativeStatus aStatus = D1IsNull;
             myBSurf.D1(theNod1RValues.UV.X(), theNod1RValues.UV.Y(), out aPnt, out aD1U, out aD1V);
-            gp_Dir aNorm = new();
-            CSLib.Normal(aD1U, aD1V, Precision.Angular(), out aStatus, ref aNorm);
-            if (aStatus != CSLib_Done)
+            Direction3D aNorm = new();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, global::Kerf.Engine.Foundation.Precision.Angular(), out aStatus, ref aNorm);
+            if (aStatus != Done)
             {
-                gp_Vec aD2U, aD2V, aD2UV;
+                Vector3D aD2U, aD2V, aD2UV;
                 bool isOK = false;
-                CSLib_NormalStatus aNromStatus;
+                NormalStatus aNromStatus;
                 myBSurf.D2(theNod1RValues.UV.X(), theNod1RValues.UV.Y(), out aPnt, out aD1U, out aD1V, out aD2U, out aD2V, out aD2UV);
-                CSLib.Normal(aD1U, aD1V, aD2U, aD2V, aD2UV, Precision.Angular(), out isOK, out aNromStatus, ref aNorm);
+                global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, aD2U, aD2V, aD2UV, global::Kerf.Engine.Foundation.Precision.Angular(), out isOK, out aNromStatus, ref aNorm);
                 if (!isOK)
                 {
                     return false;
@@ -648,7 +653,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
 
         TMultiply(ref theNod1RValues.Normal, myProj.Perspective());
 
-        gp_XYZ anAverNorm = new();
+        Xyz anAverNorm = new();
         if (AverageNormal(theNodeIndex, ref theNodIndices, theTriData, thePISeg, thePINod, ref anAverNorm))
         {
             if (theNod1RValues.Normal * anAverNorm < 0)
@@ -656,7 +661,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod1RValues.Normal.Reverse();
             }
 
-            gp_XYZ anEyeDir = new(0.0, 0.0, -1.0);
+            Xyz anEyeDir = new(0.0, 0.0, -1.0);
             if (myProj.Perspective())
             {
                 anEyeDir.SetCoord(theNod1RValues.Point.X(), theNod1RValues.Point.Y(),
@@ -672,7 +677,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         else
         {
             theNod1RValues.Scal = 0;
-            theNod1RValues.Normal = new gp_XYZ(1.0, 0.0, 0.0);
+            theNod1RValues.Normal = new Xyz(1.0, 0.0, 0.0);
         }
         if (theNod1RValues.Scal > 0)
         {
@@ -776,7 +781,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         ref HLRAlgo_PolyInternalNode.NodeData aNod1RValues = ref thePINod.Value(aTriangle.Node1)!.Data();
         ref HLRAlgo_PolyInternalNode.NodeData aNod2RValues = ref thePINod.Value(aTriangle.Node2)!.Data();
         ref HLRAlgo_PolyInternalNode.NodeData aNod3RValues = ref thePINod.Value(aTriangle.Node3)!.Data();
-        gp_XYZ aD1 = aNod2RValues.Point - aNod1RValues.Point;
+        Xyz aD1 = aNod2RValues.Point - aNod1RValues.Point;
         double aD1Norm = aD1.Modulus();
         if (aD1Norm < 1.0e-10)
         {
@@ -791,7 +796,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         }
         else
         {
-            gp_XYZ aD2 = aNod3RValues.Point - aNod2RValues.Point;
+            Xyz aD2 = aNod3RValues.Point - aNod2RValues.Point;
             double aD2Norm = aD2.Modulus();
             if (aD2Norm < 1.0e-10)
             {
@@ -806,7 +811,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             }
             else
             {
-                gp_XYZ aD3 = aNod1RValues.Point - aNod3RValues.Point;
+                Xyz aD3 = aNod1RValues.Point - aNod3RValues.Point;
                 double aD3Norm = aD3.Modulus();
                 if (aD3Norm < 1.0e-10)
                 {
@@ -821,7 +826,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 }
                 else
                 {
-                    gp_XYZ aDN = (1 / (aD1Norm * aD2Norm)) * (aD1 ^ aD2);
+                    Xyz aDN = (1 / (aD1Norm * aD2Norm)) * (aD1 ^ aD2);
                     double aDNNorm = aDN.Modulus();
                     if (aDNNorm > 1.0e-10)
                     {
@@ -843,8 +848,8 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         double X1, Y1, Z1, X2, Y2, Z2;
         double XTI1, YTI1, ZTI1, XTI2, YTI2, ZTI2;
         double U1 = 0.0, U2 = 0.0;
-        Poly_PolygonOnTriangulation?[] aHPol = new Poly_PolygonOnTriangulation?[2];
-        TopLoc_Location aLoc;
+        PolygonOnTriangulation?[] aHPol = new PolygonOnTriangulation?[2];
+        Placement aLoc;
         myBCurv.Initialize(theEdge);
         if (theIsConnex)
         {
@@ -854,7 +859,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 NCollection_List<TopoDS_Shape>.Iterator itn = new(theLS);
                 TopoDS_Face aF1 = TopoDS.Face(itn.Value());
                 int i1 = myFMap.FindIndex(aF1);
-                Poly_Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
+                Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
                 aHPol[0] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
                 HLRAlgo_PolyInternalData pid1 = thePID.Value(i1)!;
                 if (aHPol[0] is not null)
@@ -964,7 +969,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 NCollection_List<TopoDS_Shape>.Iterator itn = new(theLS);
                 TopoDS_Face aF1 = TopoDS.Face(itn.Value());
                 int i1 = myFMap.FindIndex(aF1);
-                Poly_Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
+                Triangulation? aTr1 = BRep_Tool.Triangulation(aF1, out aLoc);
                 aHPol[0] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr1, aLoc);
                 itn.Next();
                 TopoDS_Face aF2 = TopoDS.Face(itn.Value());
@@ -973,9 +978,9 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 {
                     theEdge.Reverse();
                 }
-                Poly_Triangulation? aTr2 = BRep_Tool.Triangulation(aF2, out aLoc);
+                Triangulation? aTr2 = BRep_Tool.Triangulation(aF2, out aLoc);
                 aHPol[1] = BRep_Tool.PolygonOnTriangulation(theEdge, aTr2, aLoc);
-                GeomAbs_Shape rg = BRep_Tool.Continuity(theEdge, aF1, aF2);
+                Continuity rg = BRep_Tool.Continuity(theEdge, aF1, aF2);
                 HLRAlgo_PolyInternalData pid1 = thePID.Value(i1)!;
                 HLRAlgo_PolyInternalData pid2 = thePID.Value(i2)!;
                 if (aHPol[0] is not null && aHPol[1] is not null)
@@ -1125,19 +1130,19 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         }
         else
         { // no connexity
-            Poly_Polygon3D? aPolyg = BRep_Tool.Polygon3D(theEdge, out aLoc);
+            Polygon3D? aPolyg = BRep_Tool.Polygon3D(theEdge, out aLoc);
             if (aPolyg is not null)
             {
-                NCollection_Array1<gp_Pnt> aPol = aPolyg.Nodes();
-                gp_Trsf aTT = aLoc.Transformation();
-                gp_Trsf aProjTrsf = myProj.Transformation();
+                NCollection_Array1<Point3D> aPol = aPolyg.Nodes();
+                Transform3D aTT = aLoc.Transformation();
+                Transform3D aProjTrsf = myProj.Transformation();
                 aTT.PreMultiply(aProjTrsf);
                 {
-                    gp_XYZ aTTrsfVec = aTT.TranslationPart();
+                    Xyz aTTrsfVec = aTT.TranslationPart();
                     TTLo[0] = aTTrsfVec.X();
                     TTLo[1] = aTTrsfVec.Y();
                     TTLo[2] = aTTrsfVec.Z();
-                    gp_Mat aTTrsfMat = aTT.VectorialPart();
+                    Matrix3x3 aTTrsfMat = aTT.VectorialPart();
                     TTMa[0, 0] = aTTrsfMat.Value(1, 1);
                     TTMa[0, 1] = aTTrsfMat.Value(1, 2);
                     TTMa[0, 2] = aTTrsfMat.Value(1, 3);
@@ -1149,7 +1154,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                     TTMa[2, 2] = aTTrsfMat.Value(3, 3);
                 }
                 int aNbPol1 = aPol.Upper();
-                gp_XYZ aP1 = aPol[1].XYZ();
+                Xyz aP1 = aPol[1].XYZ();
                 X2 = aP1.X();
                 Y2 = aP1.Y();
                 Z2 = aP1.Z();
@@ -1167,7 +1172,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                     XTI1 = XTI2;
                     YTI1 = YTI2;
                     ZTI1 = ZTI2;
-                    gp_XYZ aP2 = aPol[jPol].XYZ();
+                    Xyz aP2 = aPol[jPol].XYZ();
                     X2 = aP2.X();
                     Y2 = aP2.Y();
                     Z2 = aP2.Z();
@@ -1210,7 +1215,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
     private void Interpolation(NCollection_List<HLRAlgo_BiPoint> theList, ref double theX1, ref double theY1,
         ref double theZ1, ref double theX2, ref double theY2, ref double theZ2, ref double theXTI1, ref double theYTI1,
         ref double theZTI1, ref double theXTI2, ref double theYTI2, ref double theZTI2, int theIEdge, ref double theU1,
-        ref double theU2, GeomAbs_Shape theRg, ref HLRAlgo_PolyInternalNode.NodeIndices theNod11Indices,
+        ref double theU2, Continuity theRg, ref HLRAlgo_PolyInternalNode.NodeIndices theNod11Indices,
         ref HLRAlgo_PolyInternalNode.NodeData theNod11RValues, ref HLRAlgo_PolyInternalNode.NodeIndices theNod12Indices,
         ref HLRAlgo_PolyInternalNode.NodeData theNod12RValues, int theI1p1, int theI1p2, int theI1,
         HLRAlgo_PolyInternalData thePid1, ref NCollection_Array1<HLRAlgo_TriangleData> theTData1,
@@ -1228,11 +1233,11 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         double X4 = 0.0, Y4 = 0.0, Z4 = 0.0, XTI4 = 0.0, YTI4 = 0.0, ZTI4 = 0.0, coef4 = 0.0, U4 = 0.0;
         //  gp_Pnt P3, PT3, P4, PT4;
         int flag = 0;
-        if (theRg >= GeomAbs_G1)
+        if (theRg >= G1)
         {
             flag += 1;
         }
-        if (theRg >= GeomAbs_G2)
+        if (theRg >= G2)
         {
             flag += 2;
         }
@@ -1310,7 +1315,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         if (NewNode(ref theNod1RValues, ref theNod2RValues, ref theCoef3, ref themP3P1))
         {
             theU3 = theU1 + (theU2 - theU1) * theCoef3;
-            gp_Pnt aP3 = myBCurv.Value(theU3);
+            Point3D aP3 = myBCurv.Value(theU3);
             theXTI3 = theX3 = aP3.X();
             theYTI3 = theY3 = aP3.Y();
             theZTI3 = theZ3 = aP3.Z();
@@ -1353,7 +1358,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI1 = theYTI3;
                 theZTI1 = theZTI3;
                 theU1 = theU3;
-                theNod11RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod11RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod11Indices.Edg1 == theIEdge)
                 {
                     theNod11RValues.PCu1 = theU3;
@@ -1366,8 +1371,8 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod11Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI1p1, ref theNod11Indices, theTData1, thePISeg1, thePINod1);
                 ref HLRAlgo_BiPoint.PointsT aPoints = ref theList.ChangeFirst().Points();
-                aPoints.PntP2 = new gp_XYZ(theX3, theY3, theZ3);
-                aPoints.Pnt2 = new gp_XYZ(theXTI3, theYTI3, theZTI3);
+                aPoints.PntP2 = new Xyz(theX3, theY3, theZ3);
+                aPoints.Pnt2 = new Xyz(theXTI3, theYTI3, theZTI3);
             }
         }
         if (anIns3 && !themP3P1) // P2 ---> P3
@@ -1384,7 +1389,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI2 = theYTI3;
                 theZTI2 = theZTI3;
                 theU2 = theU3;
-                theNod12RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod12RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod12Indices.Edg1 == theIEdge)
                 {
                     theNod12RValues.PCu1 = theU3;
@@ -1461,7 +1466,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI1 = theYTI3;
                 theZTI1 = theZTI3;
                 theU1 = theU3;
-                theNod11RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod11RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod11Indices.Edg1 == theIEdge)
                 {
                     theNod11RValues.PCu1 = theU3;
@@ -1473,7 +1478,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod11RValues.Scal = 0;
                 theNod11Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI1p1, ref theNod11Indices, theTData1, thePISeg1, thePINod1);
-                theNod21RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod21RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod21Indices.Edg1 == theIEdge)
                 {
                     theNod21RValues.PCu1 = theU3;
@@ -1486,8 +1491,8 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod21Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI2p1, ref theNod21Indices, theTData2, thePISeg2, thePINod2);
                 ref HLRAlgo_BiPoint.PointsT aPoints = ref theList.ChangeFirst().Points();
-                aPoints.PntP2 = new gp_XYZ(theX3, theY3, theZ3);
-                aPoints.Pnt2 = new gp_XYZ(theXTI3, theYTI3, theZTI3);
+                aPoints.PntP2 = new Xyz(theX3, theY3, theZ3);
+                aPoints.Pnt2 = new Xyz(theXTI3, theYTI3, theZTI3);
             }
         }
         if (anIns3 && !themP3P1) // P2 ---> P3
@@ -1506,7 +1511,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI2 = theYTI3;
                 theZTI2 = theZTI3;
                 theU2 = theU3;
-                theNod12RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod12RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod12Indices.Edg1 == theIEdge)
                 {
                     theNod12RValues.PCu1 = theU3;
@@ -1518,7 +1523,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod12RValues.Scal = 0;
                 theNod12Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI1p2, ref theNod12Indices, theTData1, thePISeg1, thePINod1);
-                theNod22RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod22RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod22Indices.Edg1 == theIEdge)
                 {
                     theNod22RValues.PCu1 = theU3;
@@ -1610,7 +1615,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI1 = theYTI3;
                 theZTI1 = theZTI3;
                 theU1 = theU3;
-                theNod11RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod11RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod11Indices.Edg1 == theIEdge)
                 {
                     theNod11RValues.PCu1 = theU3;
@@ -1622,7 +1627,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod11RValues.Scal = 0;
                 theNod11Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI1p1, ref theNod11Indices, theTData1, thePISeg1, thePINod1);
-                theNod21RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+                theNod21RValues.Point = new Xyz(theX3, theY3, theZ3);
                 if (theNod21Indices.Edg1 == theIEdge)
                 {
                     theNod21RValues.PCu1 = theU3;
@@ -1635,8 +1640,8 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod21Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI2p1, ref theNod21Indices, theTData2, thePISeg2, thePINod2);
                 ref HLRAlgo_BiPoint.PointsT aPoints = ref theList.ChangeFirst().Points();
-                aPoints.PntP2 = new gp_XYZ(theX3, theY3, theZ3);
-                aPoints.Pnt2 = new gp_XYZ(theXTI3, theYTI3, theZTI3);
+                aPoints.PntP2 = new Xyz(theX3, theY3, theZ3);
+                aPoints.Pnt2 = new Xyz(theXTI3, theYTI3, theZTI3);
             }
         }
         if (anIns4 && !themP4P1) // P2 ---> P4
@@ -1655,7 +1660,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theYTI2 = theYTI4;
                 theZTI2 = theZTI4;
                 theU2 = theU4;
-                theNod12RValues.Point = new gp_XYZ(theX4, theY4, theZ4);
+                theNod12RValues.Point = new Xyz(theX4, theY4, theZ4);
                 if (theNod12Indices.Edg1 == theIEdge)
                 {
                     theNod12RValues.PCu1 = theU4;
@@ -1667,7 +1672,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theNod12RValues.Scal = 0;
                 theNod12Indices.Flag |= NMsk_OutL;
                 UpdateAroundNode(theI1p2, ref theNod12Indices, theTData1, thePISeg1, thePINod1);
-                theNod22RValues.Point = new gp_XYZ(theX4, theY4, theZ4);
+                theNod22RValues.Point = new Xyz(theX4, theY4, theZ4);
                 if (theNod22Indices.Edg1 == theIEdge)
                 {
                     theNod22RValues.PCu1 = theU4;
@@ -1779,11 +1784,11 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         NCollection_Array1<HLRAlgo_PolyInternalSegment> aPISeg2 = null!;
         NCollection_Array1<HLRAlgo_PolyInternalNode?> aPINod2 = null!;
 
-        TopLoc_Location aLoc;
+        Placement aLoc;
         bool mP3P1 = false;
         double aU3 = 0.0, aV3 = 0.0, aCoef3 = 0.0, X3 = 0.0, Y3 = 0.0, Z3 = 0.0;
 
-        gp_Trsf aProjTrsf = myProj.Transformation();
+        Transform3D aProjTrsf = myProj.Transformation();
 
         int aNbFaces = myFMap.Extent();
         for (int aFaceIter = 1; aFaceIter <= aNbFaces; ++aFaceIter)
@@ -1803,13 +1808,13 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             myBSurf.Initialize(aFace, false);
             myGSurf = BRep_Tool.Surface(aFace, out aLoc);
             {
-                gp_Trsf aTT = aLoc.Transformation();
+                Transform3D aTT = aLoc.Transformation();
                 aTT.PreMultiply(aProjTrsf);
-                gp_XYZ aTTrsfVec = aTT.TranslationPart();
+                Xyz aTTrsfVec = aTT.TranslationPart();
                 TTLo[0] = aTTrsfVec.X();
                 TTLo[1] = aTTrsfVec.Y();
                 TTLo[2] = aTTrsfVec.Z();
-                gp_Mat aTTrsfMat = aTT.VectorialPart();
+                Matrix3x3 aTTrsfMat = aTT.VectorialPart();
                 TTMa[0, 0] = aTTrsfMat.Value(1, 1);
                 TTMa[0, 1] = aTTrsfMat.Value(1, 2);
                 TTMa[0, 2] = aTTrsfMat.Value(1, 3);
@@ -1850,7 +1855,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                             UVNode(ref aNod1RValues, ref aNod2RValues, aCoef3, ref aU3, ref aV3);
                             if (myGSurf is not null)
                             {
-                                gp_Pnt aPT3 = myGSurf.Value(aU3, aV3);
+                                Point3D aPT3 = myGSurf.Value(aU3, aV3);
                                 X3 = aPT3.X();
                                 Y3 = aPT3.Y();
                                 Z3 = aPT3.Z();
@@ -1859,7 +1864,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                             {
                                 // simple averaging - this could be improved
                                 double aCoef2 = 1.0 - aCoef3;
-                                gp_Pnt aPT3 = new gp_Pnt(aCoef2 * aNod1RValues.Point + aCoef3 * aNod2RValues.Point);
+                                Point3D aPT3 = new Point3D(aCoef2 * aNod1RValues.Point + aCoef3 * aNod2RValues.Point);
                                 X3 = aPT3.X();
                                 Y3 = aPT3.Y();
                                 Z3 = aPT3.Z();
@@ -2248,10 +2253,10 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         double aCoef2 = 1.0 - theCoef1;
         if (theIsFirst)
         {
-            theNod1RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+            theNod1RValues.Point = new Xyz(theX3, theY3, theZ3);
             theNod1RValues.UV = aCoef2 * theNod1RValues.UV + theCoef1 * theNod2RValues.UV;
             theNod1RValues.Scal = theNod1RValues.Scal * aCoef2 + theNod2RValues.Scal * theCoef1;
-            gp_XYZ aXYZ = aCoef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
+            Xyz aXYZ = aCoef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
             double aNorm = aXYZ.Modulus();
             if (aNorm > 0)
             {
@@ -2259,16 +2264,16 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             }
             else
             {
-                theNod1RValues.Normal = new gp_XYZ(1.0, 0.0, 0.0);
+                theNod1RValues.Normal = new Xyz(1.0, 0.0, 0.0);
             }
             UpdateAroundNode(theIp1, ref theNod1Indices, theTData, thePISeg, thePINod);
         }
         else
         {
-            theNod2RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+            theNod2RValues.Point = new Xyz(theX3, theY3, theZ3);
             theNod2RValues.UV = aCoef2 * theNod1RValues.UV + theCoef1 * theNod2RValues.UV;
             theNod2RValues.Scal = theNod1RValues.Scal * aCoef2 + theNod2RValues.Scal * theCoef1;
-            gp_XYZ aXYZ = aCoef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
+            Xyz aXYZ = aCoef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
             double aNorm = aXYZ.Modulus();
             if (aNorm > 0)
             {
@@ -2276,7 +2281,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             }
             else
             {
-                theNod2RValues.Normal = new gp_XYZ(1.0, 0.0, 0.0);
+                theNod2RValues.Normal = new Xyz(1.0, 0.0, 0.0);
             }
             UpdateAroundNode(theIp2, ref theNod2Indices, theTData, thePISeg, thePINod);
         }
@@ -2399,7 +2404,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 theTriangle.Flags &= ~HLRAlgo_PolyMask_FMskSide;
                 theTriangle.Flags &= ~HLRAlgo_PolyMask_FMskBack;
             }
-            gp_XYZ aD12 = theNod2RValues.Point - theNod1RValues.Point;
+            Xyz aD12 = theNod2RValues.Point - theNod1RValues.Point;
             double aD12Norm = aD12.Modulus();
             if (aD12Norm <= 1.0e-10)
             {
@@ -2409,7 +2414,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
             }
             else
             {
-                gp_XYZ aD23 = theNod3RValues.Point - theNod2RValues.Point;
+                Xyz aD23 = theNod3RValues.Point - theNod2RValues.Point;
                 double aD23Norm = aD23.Modulus();
                 if (aD23Norm < 1.0e-10)
                 {
@@ -2419,7 +2424,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                 }
                 else
                 {
-                    gp_XYZ aD31 = theNod1RValues.Point - theNod3RValues.Point;
+                    Xyz aD31 = theNod1RValues.Point - theNod3RValues.Point;
                     double aD31Norm = aD31.Modulus();
                     if (aD31Norm < 1.0e-10)
                     {
@@ -2431,7 +2436,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                     {
                         aD12 *= 1 / aD12Norm;
                         aD23 *= 1 / aD23Norm;
-                        gp_XYZ aD = aD12 ^ aD23;
+                        Xyz aD = aD12 ^ aD23;
                         double aDNorm = aD.Modulus();
                         if (aDNorm < 1.0e-5)
                         {
@@ -2544,7 +2549,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         ref HLRAlgo_PolyInternalNode.NodeData theNod2RValues, double theCoef1, ref double theU3, ref double theV3)
     {
         double aCoef2 = 1.0 - theCoef1;
-        gp_XY aUV3 = aCoef2 * theNod1RValues.UV + theCoef1 * theNod2RValues.UV;
+        Xy aUV3 = aCoef2 * theNod1RValues.UV + theCoef1 * theNod2RValues.UV;
         theU3 = aUV3.X();
         theV3 = aUV3.Y();
     }
@@ -2764,10 +2769,10 @@ public class HLRBRep_PolyAlgo : Standard_Transient
 
             int aNbNodes = aPid.NbPINod();
             int aNbTris = aPid.NbTData();
-            NCollection_HArray1<gp_XYZ> aHNodes = new NCollection_HArray1<gp_XYZ>(1, aNbNodes);
+            NCollection_HArray1<Xyz> aHNodes = new NCollection_HArray1<Xyz>(1, aNbNodes);
             NCollection_HArray1<HLRAlgo_TriangleData> aHTData =
                 new NCollection_HArray1<HLRAlgo_TriangleData>(1, aNbTris);
-            NCollection_Array1<gp_XYZ> aNodes = aHNodes.ChangeArray1();
+            NCollection_Array1<Xyz> aNodes = aHNodes.ChangeArray1();
             NCollection_Array1<HLRAlgo_TriangleData> aTrian = aHTData.ChangeArray1();
             NCollection_Array1<HLRAlgo_TriangleData> aTData = aPid.TData();
             NCollection_Array1<HLRAlgo_PolyInternalNode?> aPINod = aPid.PINod();
@@ -2907,7 +2912,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
                     if (aMap.Contains(myFMap.FindKey(aIndices.ShapeIndex)))
                     {
                         ref HLRAlgo_BiPoint.PointsT aPoints = ref aBP.Points();
-                        aBuilder.Add(aResult, new BRepLib_MakeEdge(new gp_Pnt(aPoints.Pnt1), new gp_Pnt(aPoints.Pnt2)).InternalEdge());
+                        aBuilder.Add(aResult, new BRepLib_MakeEdge(new Point3D(aPoints.Pnt1), new Point3D(aPoints.Pnt2)).InternalEdge());
                     }
                 }
             }
@@ -2917,17 +2922,17 @@ public class HLRBRep_PolyAlgo : Standard_Transient
         return aResult;
     }
 
-    private void TMultiply(ref gp_XYZ thePoint, bool VecPartOnly = false)
+    private void TMultiply(ref Xyz thePoint, bool VecPartOnly = false)
     {
         TMultiply(ref thePoint.ChangeCoord(1), ref thePoint.ChangeCoord(2), ref thePoint.ChangeCoord(3), VecPartOnly);
     }
 
-    private void TTMultiply(ref gp_XYZ thePoint, bool VecPartOnly = false)
+    private void TTMultiply(ref Xyz thePoint, bool VecPartOnly = false)
     {
         TTMultiply(ref thePoint.ChangeCoord(1), ref thePoint.ChangeCoord(2), ref thePoint.ChangeCoord(3), VecPartOnly);
     }
 
-    private void TIMultiply(ref gp_XYZ thePoint, bool VecPartOnly = false)
+    private void TIMultiply(ref Xyz thePoint, bool VecPartOnly = false)
     {
         TIMultiply(ref thePoint.ChangeCoord(1), ref thePoint.ChangeCoord(2), ref thePoint.ChangeCoord(3), VecPartOnly);
     }
@@ -2935,7 +2940,7 @@ public class HLRBRep_PolyAlgo : Standard_Transient
     private bool AverageNormal(int theINode, ref HLRAlgo_PolyInternalNode.NodeIndices theNodeIndices,
                                NCollection_Array1<HLRAlgo_TriangleData> theTData,
                                NCollection_Array1<HLRAlgo_PolyInternalSegment> thePISeg,
-                               NCollection_Array1<HLRAlgo_PolyInternalNode?> thePINod, ref gp_XYZ theNormal)
+                               NCollection_Array1<HLRAlgo_PolyInternalNode?> thePINod, ref Xyz theNormal)
     {
         return AverageNormal(theINode, ref theNodeIndices, theTData, thePISeg, thePINod, ref theNormal.ChangeCoord(1),
                              ref theNormal.ChangeCoord(2), ref theNormal.ChangeCoord(3));

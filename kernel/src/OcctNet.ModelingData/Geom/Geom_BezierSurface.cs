@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -27,7 +31,7 @@ namespace Occt;
 /// </remarks>
 public class Geom_BezierSurface : Geom_BoundedSurface
 {
-    private NCollection_Array2<gp_Pnt> myPoles = new NCollection_Array2<gp_Pnt>();
+    private NCollection_Array2<Point3D> myPoles = new NCollection_Array2<Point3D>();
     private NCollection_Array2<double> myWeights = new NCollection_Array2<double>();
     private GeomEval_RepSurfaceDesc.Base? myEvalRep;
     private bool myURational = false;
@@ -88,10 +92,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void AddPoleCol(NCollection_Array2<gp_Pnt> Poles,
-                                   NCollection_Array1<gp_Pnt> PoleCol,
+    private static void AddPoleCol(NCollection_Array2<Point3D> Poles,
+                                   NCollection_Array1<Point3D> PoleCol,
                                    int AfterIndex,
-                                   NCollection_Array2<gp_Pnt> NewPoles)
+                                   NCollection_Array2<Point3D> NewPoles)
     {
         int InsertIndex = AfterIndex + NewPoles.LowerCol();
         int Offset = NewPoles.LowerRow() - PoleCol.Lower();
@@ -126,12 +130,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void AddRatPoleCol(NCollection_Array2<gp_Pnt> Poles,
+    private static void AddRatPoleCol(NCollection_Array2<Point3D> Poles,
                                       NCollection_Array2<double> Weights,
-                                      NCollection_Array1<gp_Pnt> PoleCol,
+                                      NCollection_Array1<Point3D> PoleCol,
                                       NCollection_Array1<double> PoleWeightCol,
                                       int AfterIndex,
-                                      NCollection_Array2<gp_Pnt> NewPoles,
+                                      NCollection_Array2<Point3D> NewPoles,
                                       NCollection_Array2<double> NewWeights)
     {
         int InsertIndex = AfterIndex + NewPoles.LowerCol();
@@ -172,10 +176,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void AddPoleRow(NCollection_Array2<gp_Pnt> Poles,
-                                   NCollection_Array1<gp_Pnt> PoleRow,
+    private static void AddPoleRow(NCollection_Array2<Point3D> Poles,
+                                   NCollection_Array1<Point3D> PoleRow,
                                    int AfterIndex,
-                                   NCollection_Array2<gp_Pnt> NewPoles)
+                                   NCollection_Array2<Point3D> NewPoles)
     {
         int InsertIndex = AfterIndex + NewPoles.LowerRow();
         int Offset = NewPoles.LowerCol() - PoleRow.Lower();
@@ -210,12 +214,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void AddRatPoleRow(NCollection_Array2<gp_Pnt> Poles,
+    private static void AddRatPoleRow(NCollection_Array2<Point3D> Poles,
                                       NCollection_Array2<double> Weights,
-                                      NCollection_Array1<gp_Pnt> PoleRow,
+                                      NCollection_Array1<Point3D> PoleRow,
                                       NCollection_Array1<double> PoleWeightRow,
                                       int AfterIndex,
-                                      NCollection_Array2<gp_Pnt> NewPoles,
+                                      NCollection_Array2<Point3D> NewPoles,
                                       NCollection_Array2<double> NewWeights)
     {
         int InsertIndex = AfterIndex + NewPoles.LowerRow();
@@ -256,7 +260,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void DeletePoleCol(NCollection_Array2<gp_Pnt> Poles, int Index, NCollection_Array2<gp_Pnt> NewPoles)
+    private static void DeletePoleCol(NCollection_Array2<Point3D> Poles, int Index, NCollection_Array2<Point3D> NewPoles)
     {
         int Offset = 0;
         int RowIndex;
@@ -277,10 +281,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void DeleteRatPoleCol(NCollection_Array2<gp_Pnt> Poles,
+    private static void DeleteRatPoleCol(NCollection_Array2<Point3D> Poles,
                                          NCollection_Array2<double> Weights,
                                          int Index,
-                                         NCollection_Array2<gp_Pnt> NewPoles,
+                                         NCollection_Array2<Point3D> NewPoles,
                                          NCollection_Array2<double> NewWeights)
     {
         int Offset = 0;
@@ -303,7 +307,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void DeletePoleRow(NCollection_Array2<gp_Pnt> Poles, int Index, NCollection_Array2<gp_Pnt> NewPoles)
+    private static void DeletePoleRow(NCollection_Array2<Point3D> Poles, int Index, NCollection_Array2<Point3D> NewPoles)
     {
         int Offset = 0;
         int ColIndex;
@@ -324,10 +328,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void DeleteRatPoleRow(NCollection_Array2<gp_Pnt> Poles,
+    private static void DeleteRatPoleRow(NCollection_Array2<Point3D> Poles,
                                          NCollection_Array2<double> Weights,
                                          int Index,
-                                         NCollection_Array2<gp_Pnt> NewPoles,
+                                         NCollection_Array2<Point3D> NewPoles,
                                          NCollection_Array2<double> NewWeights)
     {
         int Offset = 0;
@@ -353,10 +357,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     /// <summary>A copy of theOther (OCCT's copy constructor).</summary>
     public Geom_BezierSurface(Geom_BezierSurface theOther)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(theOther.myPoles);
+        myPoles = new NCollection_Array2<Point3D>(theOther.myPoles);
         myWeights = (theOther.myURational || theOther.myVRational)
                       ? new NCollection_Array2<double>(theOther.myWeights)
-                      : BSplSLib.UnitWeights(theOther.myPoles.ColLength(), theOther.myPoles.RowLength());
+                      : SurfaceBSplSLib.UnitWeights(theOther.myPoles.ColLength(), theOther.myPoles.RowLength());
         myEvalRep = GeomEval_RepUtils.CloneSurfaceDesc(theOther.myEvalRep);
         myURational = theOther.myURational;
         myVRational = theOther.myVRational;
@@ -366,15 +370,15 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A non-rational Bezier surface on the given poles.</summary>
-    /// <exception cref="Standard_ConstructionError">Fewer than 2 or more than MaxDegree() + 1 poles in a direction.</exception>
-    public Geom_BezierSurface(NCollection_Array2<gp_Pnt> SurfacePoles)
+    /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles in a direction.</exception>
+    public Geom_BezierSurface(NCollection_Array2<Point3D> SurfacePoles)
     {
         myMaxDerivInvOk = false;
         int NbUPoles = SurfacePoles.ColLength();
         int NbVPoles = SurfacePoles.RowLength();
         if (NbUPoles < 2 || NbUPoles > MaxDegree() + 1 || NbVPoles < 2 || NbVPoles > MaxDegree() + 1)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myURational = false;
@@ -385,11 +389,11 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A rational Bezier surface (non-rational if the weights are all equal in each direction).</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// Fewer than 2 or more than MaxDegree() + 1 poles in a direction, weights of a different size, or a weight not
     /// greater than gp::Resolution().
     /// </exception>
-    public Geom_BezierSurface(NCollection_Array2<gp_Pnt> SurfacePoles, NCollection_Array2<double> PoleWeights)
+    public Geom_BezierSurface(NCollection_Array2<Point3D> SurfacePoles, NCollection_Array2<double> PoleWeights)
     {
         myMaxDerivInvOk = false;
         int NbUPoles = SurfacePoles.ColLength();
@@ -397,7 +401,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         if (NbUPoles < 2 || NbUPoles > MaxDegree() + 1 || NbVPoles < 2 || NbVPoles > MaxDegree() + 1
             || NbVPoles != PoleWeights.RowLength() || NbUPoles != PoleWeights.ColLength())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int Col = PoleWeights.LowerCol();
@@ -406,9 +410,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             int Row = PoleWeights.LowerRow();
             while (Row <= PoleWeights.UpperRow())
             {
-                if (PoleWeights[Row, Col] <= gp.Resolution())
+                if (PoleWeights[Row, Col] <= Constants.Resolution())
                 {
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
                 }
                 Row++;
             }
@@ -455,7 +459,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>The maximum degree in each direction: 25.</summary>
-    public static int MaxDegree() => BSplCLib.MaxDegree();
+    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Exchanges the U and V parametric directions; the poles grid is transposed.</summary>
     internal void ExchangeUV()
@@ -466,7 +470,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         int LC = myPoles.LowerCol();
         int UC = myPoles.UpperCol();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(LC, UC, LR, UR);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(LC, UC, LR, UR);
         NCollection_Array2<double> nweights = new NCollection_Array2<double>();
         bool rat = (myURational || myVRational);
         if (rat)
@@ -493,21 +497,21 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(UC - LC + 1, UR - LR + 1);
+            myWeights = SurfaceBSplSLib.UnitWeights(UC - LC + 1, UR - LR + 1);
         }
         (myURational, myVRational) = (myVRational, myURational);
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Raises the degrees to UDeg and VDeg.</summary>
-    /// <exception cref="Standard_ConstructionError">A degree lower than the current one or above MaxDegree().</exception>
+    /// <exception cref="ConstructionErrorException">A degree lower than the current one or above MaxDegree().</exception>
     internal void Increase(int UDeg, int VDeg)
     {
         CheckMutable();
         if (UDeg < UDegree() || UDeg > Geom_BezierSurface.MaxDegree() || VDeg < VDegree()
             || VDeg > Geom_BezierSurface.MaxDegree())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int oldUDeg = UDegree();
@@ -521,14 +525,14 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
         if (IncUDeg > 0)
         {
-            NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, UDeg + 1, 1, oldVDeg + 1);
+            NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, UDeg + 1, 1, oldVDeg + 1);
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, 2);
             NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, 2);
             if (myURational || myVRational)
             {
                 NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, UDeg + 1, 1, VDegree() + 1);
 
-                BSplSLib.IncreaseDegree(true,
+                SurfaceBSplSLib.IncreaseDegree(true,
                                         oldUDeg,
                                         UDeg,
                                         false,
@@ -544,16 +548,16 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.IncreaseDegree(true,
+                SurfaceBSplSLib.IncreaseDegree(true,
                                         oldUDeg,
                                         UDeg,
                                         false,
                                         myPoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         InternalUKnots(),
                                         InternalUMultiplicities(),
                                         npoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         nknots,
                                         nmults);
             }
@@ -562,7 +566,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
         if (IncVDeg > 0)
         {
-            NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, UDeg + 1, 1, VDeg + 1);
+            NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, UDeg + 1, 1, VDeg + 1);
             NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, 2);
             NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, 2);
             // OCCT passes UKnots() as the V knots: the Bezier knots are (0, 1) in both directions.
@@ -570,7 +574,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             {
                 NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, UDeg + 1, 1, VDeg + 1);
 
-                BSplSLib.IncreaseDegree(false,
+                SurfaceBSplSLib.IncreaseDegree(false,
                                         oldVDeg,
                                         VDeg,
                                         false,
@@ -586,16 +590,16 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.IncreaseDegree(false,
+                SurfaceBSplSLib.IncreaseDegree(false,
                                         oldVDeg,
                                         VDeg,
                                         false,
                                         myPoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         InternalUKnots(),
                                         InternalVMultiplicities(),
                                         npoles,
-                                        BSplSLib.NoWeights(),
+                                        SurfaceBSplSLib.NoWeights(),
                                         nknots,
                                         nmults);
             }
@@ -607,35 +611,35 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             Rational(myWeights, out myURational, out myVRational);
             if (!(myURational || myVRational))
             {
-                myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+                myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
             }
         }
         else
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Inserts a column of poles after the column VIndex (weight 1 if the surface is rational).</summary>
-    /// <exception cref="Standard_OutOfRange">VIndex out of [1, NbVPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">CPoles.Length() != NbUPoles.</exception>
-    internal void InsertPoleColAfter(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    /// <exception cref="OutOfRangeException">VIndex out of [1, NbVPoles].</exception>
+    /// <exception cref="ConstructionErrorException">CPoles.Length() != NbUPoles.</exception>
+    internal void InsertPoleColAfter(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Length() != myPoles.ColLength())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles, 1, NbVPoles + 1);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles, 1, NbVPoles + 1);
 
         if (myURational || myVRational)
         {
@@ -648,32 +652,32 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         else
         {
             AddPoleCol(myPoles, CPoles, VIndex, npoles);
-            myWeights = BSplSLib.UnitWeights(NbUPoles, NbVPoles + 1);
+            myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles, NbVPoles + 1);
         }
         myPoles = npoles;
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Inserts a column of weighted poles after the column VIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">VIndex out of [1, NbVPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">Bad lengths, or a weight not greater than gp::Resolution().</exception>
-    internal void InsertPoleColAfter(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    /// <exception cref="OutOfRangeException">VIndex out of [1, NbVPoles].</exception>
+    /// <exception cref="ConstructionErrorException">Bad lengths, or a weight not greater than gp::Resolution().</exception>
+    internal void InsertPoleColAfter(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Length() != myPoles.ColLength() || CPoleWeights.Length() != CPoles.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         int Index = CPoleWeights.Lower();
         while (Index <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[Index] <= gp.Resolution())
+            if (CPoleWeights[Index] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
             Index++;
         }
@@ -687,7 +691,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             myWeights = new NCollection_Array2<double>(myWeights);
         }
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles, 1, NbVPoles + 1);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles, 1, NbVPoles + 1);
         NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, NbUPoles, 1, NbVPoles + 1);
 
         AddRatPoleCol(myPoles, myWeights, CPoles, CPoleWeights, VIndex, npoles, nweights);
@@ -696,44 +700,44 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!(myURational || myVRational))
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Inserts a column of poles before the column VIndex.</summary>
-    internal void InsertPoleColBefore(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void InsertPoleColBefore(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         InsertPoleColAfter(VIndex - 1, CPoles);
     }
 
     /// <summary>Inserts a column of weighted poles before the column VIndex.</summary>
-    internal void InsertPoleColBefore(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void InsertPoleColBefore(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         InsertPoleColAfter(VIndex - 1, CPoles, CPoleWeights);
     }
 
     /// <summary>Inserts a row of poles after the row UIndex (weight 1 if the surface is rational).</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">CPoles.Length() != NbVPoles.</exception>
-    internal void InsertPoleRowAfter(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUPoles].</exception>
+    /// <exception cref="ConstructionErrorException">CPoles.Length() != NbVPoles.</exception>
+    internal void InsertPoleRowAfter(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Length() != myPoles.RowLength())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles + 1, 1, NbVPoles);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles + 1, 1, NbVPoles);
 
         if (myURational || myVRational)
         {
@@ -746,32 +750,32 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         else
         {
             AddPoleRow(myPoles, CPoles, UIndex, npoles);
-            myWeights = BSplSLib.UnitWeights(NbUPoles + 1, NbVPoles);
+            myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles + 1, NbVPoles);
         }
         myPoles = npoles;
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Inserts a row of weighted poles after the row UIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">Bad lengths, or a weight not greater than gp::Resolution().</exception>
-    internal void InsertPoleRowAfter(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUPoles].</exception>
+    /// <exception cref="ConstructionErrorException">Bad lengths, or a weight not greater than gp::Resolution().</exception>
+    internal void InsertPoleRowAfter(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Length() != myPoles.RowLength() || CPoleWeights.Length() != CPoles.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         int Index = CPoleWeights.Lower();
         while (Index <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[Index] <= gp.Resolution())
+            if (CPoleWeights[Index] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
             Index++;
         }
@@ -785,7 +789,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             myWeights = new NCollection_Array2<double>(myWeights);
         }
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles + 1, 1, NbVPoles);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles + 1, 1, NbVPoles);
         NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, NbUPoles + 1, 1, NbVPoles);
 
         AddRatPoleRow(myPoles, myWeights, CPoles, CPoleWeights, UIndex, npoles, nweights);
@@ -794,44 +798,44 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!(myURational || myVRational))
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Inserts a row of poles before the row UIndex.</summary>
-    internal void InsertPoleRowBefore(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void InsertPoleRowBefore(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         InsertPoleRowAfter(UIndex - 1, CPoles);
     }
 
     /// <summary>Inserts a row of weighted poles before the row UIndex.</summary>
-    internal void InsertPoleRowBefore(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void InsertPoleRowBefore(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         InsertPoleRowAfter(UIndex - 1, CPoles, CPoleWeights);
     }
 
     /// <summary>Removes the column of poles VIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">VIndex out of [1, NbVPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">Only 2 columns are left.</exception>
+    /// <exception cref="OutOfRangeException">VIndex out of [1, NbVPoles].</exception>
+    /// <exception cref="ConstructionErrorException">Only 2 columns are left.</exception>
     internal void RemovePoleCol(int VIndex)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myPoles.RowLength() <= 2)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles, 1, NbVPoles - 1);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles, 1, NbVPoles - 1);
 
         if (myURational || myVRational)
         {
@@ -844,37 +848,37 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             }
             else
             {
-                myWeights = BSplSLib.UnitWeights(NbUPoles, NbVPoles - 1);
+                myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles, NbVPoles - 1);
             }
         }
         else
         {
             DeletePoleCol(myPoles, VIndex, npoles);
-            myWeights = BSplSLib.UnitWeights(NbUPoles, NbVPoles - 1);
+            myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles, NbVPoles - 1);
         }
         myPoles = npoles;
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Removes the row of poles UIndex.</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUPoles].</exception>
-    /// <exception cref="Standard_ConstructionError">Only 2 rows are left.</exception>
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUPoles].</exception>
+    /// <exception cref="ConstructionErrorException">Only 2 rows are left.</exception>
     internal void RemovePoleRow(int UIndex)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myPoles.ColLength() <= 2)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
 
-        NCollection_Array2<gp_Pnt> npoles = new NCollection_Array2<gp_Pnt>(1, NbUPoles - 1, 1, NbVPoles);
+        NCollection_Array2<Point3D> npoles = new NCollection_Array2<Point3D>(1, NbUPoles - 1, 1, NbVPoles);
 
         if (myURational || myVRational)
         {
@@ -887,13 +891,13 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             }
             else
             {
-                myWeights = BSplSLib.UnitWeights(NbUPoles - 1, NbVPoles);
+                myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles - 1, NbVPoles);
             }
         }
         else
         {
             DeletePoleRow(myPoles, UIndex, npoles);
-            myWeights = BSplSLib.UnitWeights(NbUPoles - 1, NbVPoles);
+            myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles - 1, NbVPoles);
         }
         myPoles = npoles;
         myMaxDerivInvOk = false;
@@ -911,7 +915,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         int aMinDegree = UDegree() <= VDegree() ? UDegree() : VDegree();
         int aMaxDegree = UDegree() > VDegree() ? UDegree() : VDegree();
 
-        NCollection_Array2<gp_Pnt> aCoefs = new NCollection_Array2<gp_Pnt>(1, aMaxDegree + 1, 1, aMinDegree + 1);
+        NCollection_Array2<Point3D> aCoefs = new NCollection_Array2<Point3D>(1, aMaxDegree + 1, 1, aMinDegree + 1);
         NCollection_Array2<double> aWCoefs = new NCollection_Array2<double>();
         if (rat)
         {
@@ -925,7 +929,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
         if (rat)
         {
-            BSplSLib.BuildCache(uparameter_11,
+            SurfaceBSplSLib.BuildCache(uparameter_11,
                                 vparameter_11,
                                 uspanlenght_11,
                                 vspanlenght_11,
@@ -944,7 +948,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.BuildCache(uparameter_11,
+            SurfaceBSplSLib.BuildCache(uparameter_11,
                                 vparameter_11,
                                 uspanlenght_11,
                                 vspanlenght_11,
@@ -957,16 +961,16 @@ public class Geom_BezierSurface : Geom_BoundedSurface
                                 InternalUKnotSequence(),
                                 InternalVKnotSequence(),
                                 myPoles,
-                                BSplSLib.NoWeights(),
+                                SurfaceBSplSLib.NoWeights(),
                                 aCoefs,
-                                BSplSLib.NoWeights());
+                                SurfaceBSplSLib.NoWeights());
         }
 
         // When udeg <= vdeg, u and v are interchanged in the coefficients,
         // so everything needs to be transposed.
         if (UDegree() <= VDegree())
         {
-            NCollection_Array2<gp_Pnt> aTransposed = new NCollection_Array2<gp_Pnt>(1, UDegree() + 1, 1, VDegree() + 1);
+            NCollection_Array2<Point3D> aTransposed = new NCollection_Array2<Point3D>(1, UDegree() + 1, 1, VDegree() + 1);
             for (int ii = 1; ii <= UDegree() + 1; ii++)
             {
                 for (int jj = 1; jj <= VDegree() + 1; jj++)
@@ -994,28 +998,28 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         double ufirst = 2 * (U1 - 0.5), ulast = 2 * (U2 - 0.5), vfirst = 2 * (V1 - 0.5), vlast = 2 * (V2 - 0.5);
         if (rat)
         {
-            PLib.UTrimming(ufirst, ulast, aCoefs, aWCoefs);
-            PLib.VTrimming(vfirst, vlast, aCoefs, aWCoefs);
-            PLib.CoefficientsPoles(aCoefs, aWCoefs, myPoles, myWeights);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.UTrimming(ufirst, ulast, aCoefs, aWCoefs);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.VTrimming(vfirst, vlast, aCoefs, aWCoefs);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(aCoefs, aWCoefs, myPoles, myWeights);
         }
         else
         {
-            PLib.UTrimming(ufirst, ulast, aCoefs, PLib.NoWeights2());
-            PLib.VTrimming(vfirst, vlast, aCoefs, PLib.NoWeights2());
-            PLib.CoefficientsPoles(aCoefs, PLib.NoWeights2(), myPoles, PLib.NoWeights2());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.UTrimming(ufirst, ulast, aCoefs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.VTrimming(vfirst, vlast, aCoefs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(aCoefs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2(), myPoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights2());
         }
 
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Changes the pole (UIndex, VIndex).</summary>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
-    internal void SetPole(int UIndex, int VIndex, in gp_Pnt P)
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
+    internal void SetPole(int UIndex, int VIndex, in Point3D P)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         // OCCT: keeps the evaluation representation, as every edit but Transform, UReverse and VReverse does
         // (Geom_BSplineSurface clears it): the surface goes on evaluating the old shape (occt-issues.md)
@@ -1024,18 +1028,18 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the pole (UIndex, VIndex) and its weight.</summary>
-    /// <exception cref="Standard_ConstructionError">Weight not greater than gp::Resolution().</exception>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
-    internal void SetPole(int UIndex, int VIndex, in gp_Pnt P, double Weight)
+    /// <exception cref="ConstructionErrorException">Weight not greater than gp::Resolution().</exception>
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
+    internal void SetPole(int UIndex, int VIndex, in Point3D P, double Weight)
     {
         CheckMutable();
-        if (Weight <= gp.Resolution())
+        if (Weight <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError("Geom_BezierSurface::SetPole");
+            throw new ConstructionErrorException("Geom_BezierSurface::SetPole");
         }
         if (UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange("Geom_BezierSurface::SetPole");
+            throw new OutOfRangeException("Geom_BezierSurface::SetPole");
         }
 
         myPoles[UIndex, VIndex] = P;
@@ -1044,19 +1048,19 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles and weights of the column VIndex.</summary>
-    internal void SetPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void SetPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.ColLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.ColLength() || CPoleWeights.Lower() != CPoles.Lower()
             || CPoleWeights.Upper() != CPoles.Upper())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int I;
@@ -1068,18 +1072,18 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles of the column VIndex (rows CPoles.Lower() to Upper()).</summary>
-    internal void SetPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void SetPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.ColLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.ColLength())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (int I = CPoles.Lower(); I <= CPoles.Upper(); I++)
@@ -1090,17 +1094,17 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles of the row UIndex (columns CPoles.Lower() to Upper()).</summary>
-    internal void SetPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    internal void SetPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.RowLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.RowLength())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (int I = CPoles.Lower(); I <= CPoles.Upper(); I++)
@@ -1111,18 +1115,18 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the poles and weights of the row UIndex.</summary>
-    internal void SetPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    internal void SetPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (CPoles.Lower() < 1 || CPoles.Lower() > myPoles.RowLength() || CPoles.Upper() < 1
             || CPoles.Upper() > myPoles.RowLength() || CPoleWeights.Lower() != CPoles.Lower()
             || CPoleWeights.Upper() != CPoles.Upper())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int I;
@@ -1136,19 +1140,19 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Changes the weight of the pole (UIndex, VIndex); the rationality flags are recomputed.</summary>
-    /// <exception cref="Standard_ConstructionError">Weight not greater than gp::Resolution().</exception>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
+    /// <exception cref="ConstructionErrorException">Weight not greater than gp::Resolution().</exception>
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     internal void SetWeight(int UIndex, int VIndex, double Weight)
     {
         CheckMutable();
-        if (Weight <= gp.Resolution())
+        if (Weight <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError("Geom_BezierSurface::SetWeight");
+            throw new ConstructionErrorException("Geom_BezierSurface::SetWeight");
         }
 
         if (UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         // compute new rationality
@@ -1156,7 +1160,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         if (!wasrat)
         {
             // a weight of 1. does not turn to rational
-            if (Math.Abs(Weight - 1.0) <= gp.Resolution())
+            if (Math.Abs(Weight - 1.0) <= Constants.Resolution())
             {
                 return;
             }
@@ -1165,13 +1169,13 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             myWeights = new NCollection_Array2<double>(myWeights);
         }
 
-        if (Math.Abs(Weight - myWeights[UIndex, VIndex]) > gp.Resolution())
+        if (Math.Abs(Weight - myWeights[UIndex, VIndex]) > Constants.Resolution())
         {
             myWeights[UIndex, VIndex] = Weight;
             Rational(myWeights, out myURational, out myVRational);
             if (!(myURational || myVRational))
             {
-                myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+                myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
             }
         }
 
@@ -1184,12 +1188,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         CheckMutable();
         if (VIndex < 1 || VIndex > myPoles.RowLength())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (CPoleWeights.Length() != myPoles.ColLength())
         {
-            throw new Standard_ConstructionError("Geom_BezierSurface::SetWeightCol");
+            throw new ConstructionErrorException("Geom_BezierSurface::SetWeightCol");
         }
 
         int I;
@@ -1205,9 +1209,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         I = CPoleWeights.Lower();
         while (I <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[I] <= gp.Resolution())
+            if (CPoleWeights[I] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
             myWeights[I, VIndex] = CPoleWeights[I];
             I++;
@@ -1216,7 +1220,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!(myURational || myVRational))
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         myMaxDerivInvOk = false;
@@ -1228,12 +1232,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         CheckMutable();
         if (UIndex < 1 || UIndex > myPoles.ColLength())
         {
-            throw new Standard_OutOfRange("Geom_BezierSurface::SetWeightRow");
+            throw new OutOfRangeException("Geom_BezierSurface::SetWeightRow");
         }
         if (CPoleWeights.Lower() < 1 || CPoleWeights.Lower() > myPoles.RowLength() || CPoleWeights.Upper() < 1
             || CPoleWeights.Upper() > myPoles.RowLength())
         {
-            throw new Standard_ConstructionError("Geom_BezierSurface::SetWeightRow");
+            throw new ConstructionErrorException("Geom_BezierSurface::SetWeightRow");
         }
 
         int I;
@@ -1249,9 +1253,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         I = CPoleWeights.Lower();
         while (I <= CPoleWeights.Upper())
         {
-            if (CPoleWeights[I] <= gp.Resolution())
+            if (CPoleWeights[I] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
             myWeights[UIndex, I] = CPoleWeights[I];
             I++;
@@ -1260,7 +1264,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         Rational(myWeights, out myURational, out myVRational);
         if (!(myURational || myVRational))
         {
-            myWeights = BSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
+            myWeights = SurfaceBSplSLib.UnitWeights(myPoles.ColLength(), myPoles.RowLength());
         }
 
         myMaxDerivInvOk = false;
@@ -1270,7 +1274,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     protected internal sealed override void UReverse()
     {
         CheckMutable();
-        gp_Pnt Pol;
+        Point3D Pol;
         int Row, Col;
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
@@ -1314,7 +1318,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     protected internal sealed override void VReverse()
     {
         CheckMutable();
-        gp_Pnt Pol;
+        Point3D Pol;
         int Row, Col;
         int NbUPoles = myPoles.ColLength();
         int NbVPoles = myPoles.RowLength();
@@ -1364,21 +1368,21 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>CN.</summary>
-    public sealed override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public sealed override Continuity Continuity() => CN;
 
     /// <summary>The point of parameters (U, V).</summary>
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aEvalRepResult;
+        Point3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
-        gp_Pnt P;
+        Point3D P;
         if (myURational || myVRational)
         {
-            BSplSLib.D0(U,
+            SurfaceBSplSLib.D0(U,
                         V,
                         1,
                         1,
@@ -1398,12 +1402,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.D0(U,
+            SurfaceBSplSLib.D0(U,
                         V,
                         1,
                         1,
                         myPoles,
-                        BSplSLib.NoWeights(),
+                        SurfaceBSplSLib.NoWeights(),
                         InternalUKnots(),
                         InternalUKnots(),
                         InternalUMultiplicities(),
@@ -1431,7 +1435,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         ResD1 aResult;
         if (myURational || myVRational)
         {
-            BSplSLib.D1(U,
+            SurfaceBSplSLib.D1(U,
                         V,
                         1,
                         1,
@@ -1453,12 +1457,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.D1(U,
+            SurfaceBSplSLib.D1(U,
                         V,
                         1,
                         1,
                         myPoles,
-                        BSplSLib.NoWeights(),
+                        SurfaceBSplSLib.NoWeights(),
                         InternalUKnots(),
                         InternalUKnots(),
                         InternalUMultiplicities(),
@@ -1489,7 +1493,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         if (myURational || myVRational)
         {
             //-- WARNING: pay attention to the ORDER of arguments in BSPLSLIB
-            BSplSLib.D2(U,
+            SurfaceBSplSLib.D2(U,
                         V,
                         1,
                         1,
@@ -1515,12 +1519,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         else
         {
             //-- WARNING: pay attention to the ORDER of arguments in BSPLSLIB
-            BSplSLib.D2(U,
+            SurfaceBSplSLib.D2(U,
                         V,
                         1,
                         1,
                         myPoles,
-                        BSplSLib.NoWeights(),
+                        SurfaceBSplSLib.NoWeights(),
                         InternalUKnots(),
                         InternalUKnots(),
                         InternalUMultiplicities(),
@@ -1553,7 +1557,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         ResD3 aResult;
         if (myURational || myVRational)
         {
-            BSplSLib.D3(U,
+            SurfaceBSplSLib.D3(U,
                         V,
                         0,
                         0,
@@ -1582,12 +1586,12 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.D3(U,
+            SurfaceBSplSLib.D3(U,
                         V,
                         0,
                         0,
                         myPoles,
-                        BSplSLib.NoWeights(),
+                        SurfaceBSplSLib.NoWeights(),
                         InternalUKnots(),
                         InternalUKnots(),
                         InternalUMultiplicities(),
@@ -1614,9 +1618,9 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
-        gp_Vec aEvalRepResult;
+        Vector3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out aEvalRepResult))
         {
             return aEvalRepResult;
@@ -1627,10 +1631,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             throw new Geom_UndefinedDerivative();
         }
 
-        gp_Vec Derivative;
+        Vector3D Derivative;
         if (myURational || myVRational)
         {
-            BSplSLib.DN(U,
+            SurfaceBSplSLib.DN(U,
                         V,
                         Nu,
                         Nv,
@@ -1652,14 +1656,14 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.DN(U,
+            SurfaceBSplSLib.DN(U,
                         V,
                         Nu,
                         Nv,
                         0,
                         0,
                         myPoles,
-                        BSplSLib.NoWeights(),
+                        SurfaceBSplSLib.NoWeights(),
                         InternalUKnots(),
                         InternalUKnots(),
                         InternalUMultiplicities(),
@@ -1682,8 +1686,8 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     public int NbVPoles() => myPoles.RowLength();
 
     /// <summary>The pole (UIndex, VIndex).</summary>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
-    public gp_Pnt Pole(int UIndex, int VIndex)
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
+    public Point3D Pole(int UIndex, int VIndex)
     {
         Standard_OutOfRange_Raise_if(UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1
                                          || VIndex > myPoles.RowLength(),
@@ -1692,8 +1696,8 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles()"/>).</summary>
-    /// <exception cref="Standard_DimensionError">P is not NbUPoles x NbVPoles.</exception>
-    public void Poles(NCollection_Array2<gp_Pnt> P)
+    /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
+    public void Poles(NCollection_Array2<Point3D> P)
     {
         Standard_DimensionError_Raise_if(P.RowLength() != myPoles.RowLength() || P.ColLength() != myPoles.ColLength(),
                                          " ");
@@ -1701,7 +1705,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy of the poles, NbUPoles rows by NbVPoles columns, indexed from 1.</summary>
-    public NCollection_Array2<gp_Pnt> Poles() => new NCollection_Array2<gp_Pnt>(myPoles);
+    public NCollection_Array2<Point3D> Poles() => new NCollection_Array2<Point3D>(myPoles);
 
     /// <summary>The degree in U: NbUPoles - 1.</summary>
     public int UDegree() => (myPoles.ColLength() - 1);
@@ -1710,11 +1714,11 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     public sealed override Geom_Curve UIso(double U)
     {
         Geom_BezierCurve UIsoCurve;
-        NCollection_Array1<gp_Pnt> VCurvePoles = new NCollection_Array1<gp_Pnt>(1, myPoles.RowLength());
+        NCollection_Array1<Point3D> VCurvePoles = new NCollection_Array1<Point3D>(1, myPoles.RowLength());
         if (myURational || myVRational)
         {
             NCollection_Array1<double> VCurveWeights = new NCollection_Array1<double>(1, myPoles.RowLength());
-            BSplSLib.Iso(U,
+            SurfaceBSplSLib.Iso(U,
                          true,
                          myPoles,
                          myWeights,
@@ -1735,16 +1739,16 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.Iso(U,
+            SurfaceBSplSLib.Iso(U,
                          true,
                          myPoles,
-                         BSplSLib.NoWeights(),
+                         SurfaceBSplSLib.NoWeights(),
                          InternalUKnots(),
                          InternalUMultiplicities(),
                          (myPoles.ColLength() - 1),
                          false,
                          VCurvePoles,
-                         PLib.NoWeights());
+                         global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             UIsoCurve = new Geom_BezierCurve(VCurvePoles);
         }
         return UIsoCurve;
@@ -1758,11 +1762,11 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     {
         Geom_BezierCurve VIsoCurve;
         // OCCT passes UKnots() as the V knots: the Bezier knots are (0, 1) in both directions.
-        NCollection_Array1<gp_Pnt> VCurvePoles = new NCollection_Array1<gp_Pnt>(1, myPoles.ColLength());
+        NCollection_Array1<Point3D> VCurvePoles = new NCollection_Array1<Point3D>(1, myPoles.ColLength());
         if (myVRational || myURational)
         {
             NCollection_Array1<double> VCurveWeights = new NCollection_Array1<double>(1, myPoles.ColLength());
-            BSplSLib.Iso(V,
+            SurfaceBSplSLib.Iso(V,
                          false,
                          myPoles,
                          myWeights,
@@ -1783,23 +1787,23 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         }
         else
         {
-            BSplSLib.Iso(V,
+            SurfaceBSplSLib.Iso(V,
                          false,
                          myPoles,
-                         BSplSLib.NoWeights(),
+                         SurfaceBSplSLib.NoWeights(),
                          InternalUKnots(),
                          InternalVMultiplicities(),
                          (myPoles.RowLength() - 1),
                          false,
                          VCurvePoles,
-                         PLib.NoWeights());
+                         global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             VIsoCurve = new Geom_BezierCurve(VCurvePoles);
         }
         return VIsoCurve;
     }
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>
-    /// <exception cref="Standard_OutOfRange">An index out of the pole grid.</exception>
+    /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
     public double Weight(int UIndex, int VIndex)
     {
         Standard_OutOfRange_Raise_if(UIndex < 1 || UIndex > myPoles.ColLength() || VIndex < 1
@@ -1816,7 +1820,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>Copies the weights into W, all 1 for a non-rational surface (deprecated in OCCT).</summary>
-    /// <exception cref="Standard_DimensionError">W is not NbUPoles x NbVPoles.</exception>
+    /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
     public void Weights(NCollection_Array2<double> W)
     {
         Standard_DimensionError_Raise_if(W.RowLength() != myPoles.RowLength() || W.ColLength() != myPoles.ColLength(),
@@ -1851,7 +1855,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     public bool IsVRational() => myVRational;
 
     /// <summary>Transforms the poles by T.</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         for (int I = 1; I <= myPoles.ColLength(); I++)
@@ -1874,7 +1878,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         int j = myPoles.LowerCol();
         while (Closed && j <= myPoles.UpperCol())
         {
-            Closed = (myPoles[Lower, j].Distance(myPoles[Upper, j]) <= Precision.Confusion());
+            Closed = (myPoles[Lower, j].Distance(myPoles[Upper, j]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             j++;
         }
         return Closed;
@@ -1889,7 +1893,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         int i = myPoles.LowerRow();
         while (Closed && i <= myPoles.UpperRow())
         {
-            Closed = (myPoles[i, Lower].Distance(myPoles[i, Upper]) <= Precision.Confusion());
+            Closed = (myPoles[i, Lower].Distance(myPoles[i, Upper]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             i++;
         }
         return Closed;
@@ -1912,7 +1916,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             double aUMaxDerivInv, aVMaxDerivInv;
             if (myURational || myVRational)
             {
-                BSplSLib.Resolution(myPoles,
+                SurfaceBSplSLib.Resolution(myPoles,
                                     myWeights,
                                     InternalUKnots(),
                                     InternalUKnots(),
@@ -1930,8 +1934,8 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             }
             else
             {
-                BSplSLib.Resolution(myPoles,
-                                    BSplSLib.NoWeights(),
+                SurfaceBSplSLib.Resolution(myPoles,
+                                    SurfaceBSplSLib.NoWeights(),
                                     InternalUKnots(),
                                     InternalUKnots(),
                                     InternalUMultiplicities(),
@@ -1958,7 +1962,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     public sealed override Geom_Geometry Copy() => new Geom_BezierSurface(this);
 
     /// <summary>Sets the poles and weights (null: non-rational) of a new surface.</summary>
-    protected void init(NCollection_Array2<gp_Pnt> thePoles, NCollection_Array2<double>? theWeights)
+    protected void init(NCollection_Array2<Point3D> thePoles, NCollection_Array2<double>? theWeights)
     {
         CheckMutable();
         int NbUPoles = thePoles.ColLength();
@@ -1974,14 +1978,14 @@ public class Geom_BezierSurface : Geom_BoundedSurface
             Rational(myWeights, out myURational, out myVRational);
             if (!(myURational || myVRational))
             {
-                myWeights = BSplSLib.UnitWeights(NbUPoles, NbVPoles);
+                myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles, NbVPoles);
             }
         }
         else
         {
             myURational = false;
             myVRational = false;
-            myWeights = BSplSLib.UnitWeights(NbUPoles, NbVPoles);
+            myWeights = SurfaceBSplSLib.UnitWeights(NbUPoles, NbVPoles);
         }
 
         myMaxDerivInvOk = false;
@@ -2000,7 +2004,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
     private static NCollection_Array1<int>[] CreateMults()
     {
-        int aMaxSize = BSplCLib.MaxDegree() + 1;
+        int aMaxSize = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1;
         NCollection_Array1<int>[] anArr = new NCollection_Array1<int>[aMaxSize];
         for (int i = 0; i < aMaxSize; ++i)
         {
@@ -2011,11 +2015,11 @@ public class Geom_BezierSurface : Geom_BoundedSurface
 
     private static NCollection_Array1<double>?[] CreateFlatKnots()
     {
-        int aMaxSize = BSplCLib.MaxDegree() + 1;
+        int aMaxSize = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1;
         NCollection_Array1<double>?[] anArr = new NCollection_Array1<double>?[aMaxSize];
-        for (int i = 1; i <= BSplCLib.MaxDegree(); ++i)
+        for (int i = 1; i <= global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree(); ++i)
         {
-            anArr[i] = NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(i));
+            anArr[i] = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(i));
         }
         return anArr;
     }
@@ -2077,10 +2081,10 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     //=============================================================================================
 
     /// <summary>The stored poles: shared, don't modify (OCCT's <c>Poles()</c> const reference).</summary>
-    internal NCollection_Array2<gp_Pnt> InternalPoles() => myPoles;
+    internal NCollection_Array2<Point3D> InternalPoles() => myPoles;
 
     /// <summary>The stored weights, or null for a non-rational surface (OCCT's <c>Weights()</c> pointer). Don't modify.</summary>
-    internal NCollection_Array2<double>? InternalWeights() => (myURational || myVRational) ? myWeights : BSplSLib.NoWeights();
+    internal NCollection_Array2<double>? InternalWeights() => (myURational || myVRational) ? myWeights : SurfaceBSplSLib.NoWeights();
 
     /// <summary>The weights, NbUPoles x NbVPoles of them (OCCT's <c>WeightsArray()</c>): shared, don't modify.</summary>
     internal NCollection_Array2<double> InternalWeightsArray() => myWeights;
@@ -2104,7 +2108,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a column of poles inserted after VIndex.</summary>
-    public Geom_BezierSurface PoleColInsertedAfter(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface PoleColInsertedAfter(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleColAfter(VIndex, CPoles);
@@ -2112,7 +2116,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a column of weighted poles inserted after VIndex.</summary>
-    public Geom_BezierSurface PoleColInsertedAfter(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface PoleColInsertedAfter(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleColAfter(VIndex, CPoles, CPoleWeights);
@@ -2120,7 +2124,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a column of poles inserted before VIndex.</summary>
-    public Geom_BezierSurface PoleColInsertedBefore(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface PoleColInsertedBefore(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleColBefore(VIndex, CPoles);
@@ -2128,7 +2132,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a column of weighted poles inserted before VIndex.</summary>
-    public Geom_BezierSurface PoleColInsertedBefore(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface PoleColInsertedBefore(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleColBefore(VIndex, CPoles, CPoleWeights);
@@ -2136,7 +2140,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a row of poles inserted after UIndex.</summary>
-    public Geom_BezierSurface PoleRowInsertedAfter(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface PoleRowInsertedAfter(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleRowAfter(UIndex, CPoles);
@@ -2144,7 +2148,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a row of weighted poles inserted after UIndex.</summary>
-    public Geom_BezierSurface PoleRowInsertedAfter(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface PoleRowInsertedAfter(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleRowAfter(UIndex, CPoles, CPoleWeights);
@@ -2152,7 +2156,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a row of poles inserted before UIndex.</summary>
-    public Geom_BezierSurface PoleRowInsertedBefore(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface PoleRowInsertedBefore(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleRowBefore(UIndex, CPoles);
@@ -2160,7 +2164,7 @@ public class Geom_BezierSurface : Geom_BoundedSurface
     }
 
     /// <summary>A copy with a row of weighted poles inserted before UIndex.</summary>
-    public Geom_BezierSurface PoleRowInsertedBefore(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface PoleRowInsertedBefore(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.InsertPoleRowBefore(UIndex, CPoles, CPoleWeights);
@@ -2191,42 +2195,42 @@ public class Geom_BezierSurface : Geom_BoundedSurface
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPole(int UIndex, int VIndex, in gp_Pnt P)
+    public Geom_BezierSurface WithPole(int UIndex, int VIndex, in Point3D P)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPole(UIndex, VIndex, P);
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPole(int UIndex, int VIndex, in gp_Pnt P, double Weight)
+    public Geom_BezierSurface WithPole(int UIndex, int VIndex, in Point3D P, double Weight)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPole(UIndex, VIndex, P, Weight);
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface WithPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPoleCol(VIndex, CPoles);
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPoleCol(int VIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface WithPoleCol(int VIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPoleCol(VIndex, CPoles, CPoleWeights);
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles)
+    public Geom_BezierSurface WithPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPoleRow(UIndex, CPoles);
         return aCopy;
     }
 
-    public Geom_BezierSurface WithPoleRow(int UIndex, NCollection_Array1<gp_Pnt> CPoles, NCollection_Array1<double> CPoleWeights)
+    public Geom_BezierSurface WithPoleRow(int UIndex, NCollection_Array1<Point3D> CPoles, NCollection_Array1<double> CPoleWeights)
     {
         Geom_BezierSurface aCopy = CopyBezier();
         aCopy.SetPoleRow(UIndex, CPoles, CPoleWeights);

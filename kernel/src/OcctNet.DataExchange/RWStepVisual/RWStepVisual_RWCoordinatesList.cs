@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -31,7 +33,7 @@ internal class RWStepVisual_RWCoordinatesList
         int nbP = 0;
         data.ReadInteger(num, 2, "number_points", ach, ref nbP);
 
-        NCollection_HArray1<gp_XYZ> aPoints = null; // = new NCollection_HArray1<gp_XYZ>(1, nbP);
+        NCollection_HArray1<Xyz> aPoints = null; // = new NCollection_HArray1<gp_XYZ>(1, nbP);
         int nsub2 = 0;
         if (data.ReadSubList(num, 3, "items", ach, ref nsub2))
         {
@@ -40,10 +42,10 @@ internal class RWStepVisual_RWCoordinatesList
             {
                 return;
             }
-            aPoints = new NCollection_HArray1<gp_XYZ>(1, nb2);
+            aPoints = new NCollection_HArray1<Xyz>(1, nb2);
             for (int i = 1; i <= nb2; i++)
             {
-                gp_XYZ aXYZ = new gp_XYZ(0.0, 0.0, 0.0);
+                Xyz aXYZ = new Xyz(0.0, 0.0, 0.0);
                 int nsub3 = 0;
                 if (data.ReadSubList(nsub2, i, "coordinates", ach, ref nsub3))
                 {
@@ -84,7 +86,7 @@ internal class RWStepVisual_RWCoordinatesList
         for (int i = 1; i <= ent.Points().Length(); i++)
         {
             SW.OpenSub();
-            gp_XYZ aPoint = ent.Points().Value(i);
+            Xyz aPoint = ent.Points().Value(i);
             SW.Send(aPoint.X());
             SW.Send(aPoint.Y());
             SW.Send(aPoint.Z());

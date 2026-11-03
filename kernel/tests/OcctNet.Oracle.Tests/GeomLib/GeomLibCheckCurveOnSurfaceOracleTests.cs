@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -45,16 +46,16 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
             // Try to estimate by sample points
             int nbint = 22;
             double dt = (last - first) / nbint;
-            dt = Math.Max(dt, Precision.Confusion());
+            dt = Math.Max(dt, global::Kerf.Engine.Foundation.Precision.Confusion());
             double d, dmax = 0.0;
             int cnt = 0;
             double t = first;
             for (; t <= last; t += dt)
             {
                 cnt++;
-                gp_Pnt2d aP2d = C2d.Value(t);
-                gp_Pnt aPC = C3d.Value(t);
-                gp_Pnt aPS = S.Value(aP2d.X(), aP2d.Y());
+                Point2D aP2d = C2d.Value(t);
+                Point3D aPC = C3d.Value(t);
+                Point3D aPS = S.Value(aP2d.X(), aP2d.Y());
                 d = aPS.SquareDistance(aPC);
                 if (d > dmax)
                 {
@@ -64,9 +65,9 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
             if (cnt < nbint + 1)
             {
                 t = last;
-                gp_Pnt2d aP2d = C2d.Value(t);
-                gp_Pnt aPC = C3d.Value(t);
-                gp_Pnt aPS = S.Value(aP2d.X(), aP2d.Y());
+                Point2D aP2d = C2d.Value(t);
+                Point3D aPC = C3d.Value(t);
+                Point3D aPS = S.Value(aP2d.X(), aP2d.Y());
                 d = aPS.SquareDistance(aPC);
                 if (d > dmax)
                 {
@@ -95,7 +96,7 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
             N.Geom2d_Curve aNC2;
             Geom2d_Curve aPC2;
             double aF, aL;
-            (N.gp_Ax3 aNAx3, gp_Ax3 aAx3) = GeomOracleInputs.Ax3s(anOracle);
+            (N.gp_Ax3 aNAx3, CoordinateSystem aAx3) = GeomOracleInputs.Ax3s(anOracle);
             using (aNAx3)
             {
                 if (aKind == 1)
@@ -120,15 +121,15 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 {
                     for (int i = 0; i < aSpec.Poles.Length; i++)
                     {
-                        aSpec.Poles[i] = new gp_Pnt2d(aSpec.Poles[i].X() * 0.3, aSpec.Poles[i].Y());
+                        aSpec.Poles[i] = new Point2D(aSpec.Poles[i].X() * 0.3, aSpec.Poles[i].Y());
                     }
                 }
                 double aNoise = anOracle.Int(0, 3) == 0 ? 0.0 : anOracle.Real(0.0, 0.5);
-                NCollection_Array1<gp_Pnt> aPoles3d = new(1, aSpec.Poles.Length);
+                NCollection_Array1<Point3D> aPoles3d = new(1, aSpec.Poles.Length);
                 for (int i = 0; i < aSpec.Poles.Length; i++)
                 {
-                    gp_Pnt aP = aPS.Value(aSpec.Poles[i].X(), aSpec.Poles[i].Y());
-                    aPoles3d[i + 1] = new gp_Pnt(aP.X() + aNoise * anOracle.Real(-1, 1),
+                    Point3D aP = aPS.Value(aSpec.Poles[i].X(), aSpec.Poles[i].Y());
+                    aPoles3d[i + 1] = new Point3D(aP.X() + aNoise * anOracle.Real(-1, 1),
                                                  aP.Y() + aNoise * anOracle.Real(-1, 1),
                                                  aP.Z() + aNoise * anOracle.Real(-1, 1));
                 }
@@ -154,7 +155,7 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
             else if (aKind == 2)
             {
                 // A 2D circle or ellipse against a 3D circle: the elementary (trigonometric) path
-                (N.gp_Ax2d aNAx2d, gp_Ax2d aAx2d) = GeomOracleInputs.Ax2ds(anOracle);
+                (N.gp_Ax2d aNAx2d, Axis2D aAx2d) = GeomOracleInputs.Ax2ds(anOracle);
                 double aR = anOracle.Real(0.5, 5.0);
                 using (aNAx2d)
                 {
@@ -170,7 +171,7 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                         aPC2 = new Geom2d_Ellipse(aAx2d, aR, aMinor);
                     }
                 }
-                (N.gp_Ax2 aNAx2, gp_Ax2 aAx2) = GeomOracleInputs.Ax2s(anOracle);
+                (N.gp_Ax2 aNAx2, Frame3D aAx2) = GeomOracleInputs.Ax2s(anOracle);
                 double aR3 = anOracle.Real(0.5, 5.0);
                 using (aNAx2)
                 {
@@ -183,13 +184,13 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
             else
             {
                 // Two lines: the end-point path
-                (N.gp_Ax2d aNAx2d, gp_Ax2d aAx2d) = GeomOracleInputs.Ax2ds(anOracle);
+                (N.gp_Ax2d aNAx2d, Axis2D aAx2d) = GeomOracleInputs.Ax2ds(anOracle);
                 using (aNAx2d)
                 {
                     aNC2 = new N.Geom2d_Line(aNAx2d);
                     aPC2 = new Geom2d_Line(aAx2d);
                 }
-                (N.gp_Ax1 aNAx1, gp_Ax1 aAx1) = GeomOracleInputs.Ax1s(anOracle);
+                (N.gp_Ax1 aNAx1, Axis3D aAx1) = GeomOracleInputs.Ax1s(anOracle);
                 using (aNAx1)
                 {
                     aNC = new N.Geom_Line(aNAx1);

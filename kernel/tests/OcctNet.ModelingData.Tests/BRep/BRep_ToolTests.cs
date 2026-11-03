@@ -1,7 +1,11 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRep_Tool_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -16,7 +20,7 @@ public class BRep_ToolTests
     private static TopoDS_Shape MakeBox() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
 
     private static TopoDS_Edge FullCircleEdge() =>
-        FullCircleEdge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0));
+        FullCircleEdge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0));
 
     private static TopoDS_Edge FullCircleEdge(Geom_Circle aCircle) => new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
 
@@ -27,12 +31,12 @@ public class BRep_ToolTests
         var anExp = new TopExp_Explorer(aBox, TopAbs_VERTEX);
         Assert.True(anExp.More());
         TopoDS_Vertex aVertex = TopoDS.Vertex(anExp.Current());
-        gp_Pnt aPnt = BRep_Tool.Pnt(aVertex);
+        Point3D aPnt = BRep_Tool.Pnt(aVertex);
 
         // The point coordinates should be within the box bounds [0,10] x [0,20] x [0,30]
-        Assert.True(aPnt.X() >= -Precision.Confusion() && aPnt.X() <= 10.0 + Precision.Confusion());
-        Assert.True(aPnt.Y() >= -Precision.Confusion() && aPnt.Y() <= 20.0 + Precision.Confusion());
-        Assert.True(aPnt.Z() >= -Precision.Confusion() && aPnt.Z() <= 30.0 + Precision.Confusion());
+        Assert.True(aPnt.X() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.X() <= 10.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aPnt.Y() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Y() <= 20.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aPnt.Z() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Z() <= 30.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -88,7 +92,7 @@ public class BRep_ToolTests
     [Fact]
     public void IsClosed_LineEdge()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0)).Edge();
         Assert.False(BRep_Tool.IsClosed(anEdge));
     }
 
@@ -103,10 +107,10 @@ public class BRep_ToolTests
     [Fact]
     public void CurveOnPlane_RejectsEdgeRangeOutsideBoundedCurve()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt(0.5, 0.25, 0.0));
-        aPoles.SetValue(3, new gp_Pnt(1.0, 0.0, 0.0));
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, new Point3D(0.5, 0.25, 0.0));
+        aPoles.SetValue(3, new Point3D(1.0, 0.0, 0.0));
         var aCurve = new Geom_BezierCurve(aPoles);
         TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).InternalEdge();
 
@@ -114,9 +118,9 @@ public class BRep_ToolTests
         const double THE_EDGE_LAST = 0.999997326850354;
         new BRep_Builder().Range(anEdge, THE_EDGE_FIRST, THE_EDGE_LAST, true);
 
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
         Geom2d_Curve? aPCurve =
-            BRep_Tool.CurveOnSurface(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast, out bool isStored);
+            BRep_Tool.CurveOnSurface(anEdge, aPlane, new Placement(), out double aFirst, out double aLast, out bool isStored);
         Assert.Null(aPCurve);
         Assert.False(isStored);
         Assert.Equal(THE_EDGE_FIRST, aFirst);
@@ -126,15 +130,15 @@ public class BRep_ToolTests
     [Fact]
     public void CurveOnPlane_ProjectsShiftedPeriodicRange()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0);
         TopoDS_Edge anEdge = FullCircleEdge(aCircle);
 
         double aRangeFirst = aCircle.Period();
         double aRangeLast = 2.0 * aCircle.Period();
         new BRep_Builder().Range(anEdge, aRangeFirst, aRangeLast, true);
 
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
         Assert.NotNull(aPCurve);
         Assert.Equal(aRangeFirst, aFirst);
         Assert.Equal(aRangeLast, aLast);
@@ -144,16 +148,16 @@ public class BRep_ToolTests
     [Fact]
     public void CurveOnPlane_ProjectsPeriodicEdgeBuiltFromEqualParameters()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)), 1.0);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0);
         var anEdgeMaker = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, 0.0);
         Assert.True(anEdgeMaker.IsDone());
         TopoDS_Edge anEdge = anEdgeMaker.Edge();
 
         BRep_Tool.Range(anEdge, out double aEdgeFirst, out double aEdgeLast);
-        Assert.Equal(aCircle.Period(), aEdgeLast - aEdgeFirst, Precision.PConfusion());
+        Assert.Equal(aCircle.Period(), aEdgeLast - aEdgeFirst, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
         Assert.NotNull(aPCurve);
         Assert.Equal(aEdgeFirst, aFirst);
         Assert.Equal(aEdgeLast, aLast);
@@ -165,8 +169,8 @@ public class BRep_ToolTests
         TopoDS_Edge anEdge = FullCircleEdge();
         new BRep_Builder().Range(anEdge, 0.0, 0.0, true);
 
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
         Assert.Null(aPCurve);
         Assert.Equal(0.0, aFirst);
         Assert.Equal(0.0, aLast);
@@ -177,15 +181,15 @@ public class BRep_ToolTests
     [Fact]
     public void CurveOnPlane_projects_an_edge_without_a_pcurve()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new TopLoc_Location(), out double aFirst, out double aLast);
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        Geom2d_Curve? aPCurve = BRep_Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
         Assert.NotNull(aPCurve);
-        Assert.True(aPCurve.Value(aFirst).Distance(new gp_Pnt2d(0, 0)) < 1e-12);
-        Assert.True(aPCurve.Value(aLast).Distance(new gp_Pnt2d(1, 0)) < 1e-12);
+        Assert.True(aPCurve.Value(aFirst).Distance(new Point2D(0, 0)) < 1e-12);
+        Assert.True(aPCurve.Value(aLast).Distance(new Point2D(1, 0)) < 1e-12);
         // not a plane: null without projecting
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0);
-        Assert.Null(BRep_Tool.CurveOnSurface(anEdge, aCyl, new TopLoc_Location(), out _, out _));
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
+        Assert.Null(BRep_Tool.CurveOnSurface(anEdge, aCyl, new Placement(), out _, out _));
     }
 
     [Fact]
@@ -206,12 +210,12 @@ public class BRep_ToolTests
                 Assert.Equal(l3, l);
                 foreach (double t in new[] { f, (f + l) / 2, l })
                 {
-                    gp_Pnt2d aUV = aPC.Value(t);
+                    Point2D aUV = aPC.Value(t);
                     Assert.True(aSurf.Value(aUV.X(), aUV.Y()).Distance(aC.Value(t)) < 1e-12);
                 }
 
                 // the UV points stored with the pcurve are its ends (computed by SetRange)
-                BRep_Tool.UVPoints(anEdge, aFace, out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+                BRep_Tool.UVPoints(anEdge, aFace, out Point2D aP1, out Point2D aP2);
                 Assert.True(aP1.Distance(aPC.Value(f)) < 1e-15 && aP2.Distance(aPC.Value(l)) < 1e-15);
             }
         }
@@ -237,13 +241,13 @@ public class BRep_ToolTests
         TopoDS_Face aFace = TopoDS.Face(aFaceExp.Current());
         var aVExp = new TopExp_Explorer(aFace, TopAbs_VERTEX);
         TopoDS_Vertex aV = TopoDS.Vertex(aVExp.Current());
-        gp_Pnt2d aUV = BRep_Tool.Parameters(aV, aFace);
+        Point2D aUV = BRep_Tool.Parameters(aV, aFace);
         Assert.True(BRep_Tool.Surface(aFace)!.Value(aUV.X(), aUV.Y()).Distance(BRep_Tool.Pnt(aV)) < 1e-12);
 
         // a vertex not on the edge has no parameter
-        TopoDS_Vertex aFar = TestShapes.Vertex(new gp_Pnt(100, 100, 100));
+        TopoDS_Vertex aFar = TestShapes.Vertex(new Point3D(100, 100, 100));
         Assert.False(BRep_Tool.Parameter(aFar, anEdge, out _));
-        Assert.Throws<Standard_NoSuchObject>(() => BRep_Tool.Parameter(aFar, anEdge));
+        Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => BRep_Tool.Parameter(aFar, anEdge));
     }
 
     [Fact]
@@ -282,11 +286,11 @@ public class BRep_ToolTests
     {
         // an edge built at a location keeps its curve in its own coordinates; the tool composes them
         var aBuilder = new BRep_Builder();
-        var aLoc = new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(5, 0, 0)));
+        var aLoc = new Placement(Transform3D.Translation(new Vector3D(5, 0, 0)));
         TopoDS_Edge anEdge = new();
-        var aLine = new Geom_Line(new gp_Pnt(), new gp_Dir(1, 0, 0));
+        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
         aBuilder.MakeEdge(ref anEdge, aLine, aLoc, 1e-7);
-        Geom_Curve? aC = BRep_Tool.Curve(anEdge, out TopLoc_Location aL, out _, out _);
+        Geom_Curve? aC = BRep_Tool.Curve(anEdge, out Placement aL, out _, out _);
         Assert.Same(aLine, aC);
         Assert.Equal(aLoc, aL);
         // the placed curve is a transformed copy
@@ -296,14 +300,14 @@ public class BRep_ToolTests
 
         // moving the edge composes its location with the representation's
         TopoDS_Edge aMoved = TopoDS.Edge(anEdge.Moved(aLoc));
-        BRep_Tool.Curve(aMoved, out TopLoc_Location aL2, out _, out _);
+        BRep_Tool.Curve(aMoved, out Placement aL2, out _, out _);
         Assert.Equal(aLoc * aLoc, aL2);
 
         // a pcurve stored for a face at a location is found from the moved edge on the moved face
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
         TopoDS_Face aFace = new();
         aBuilder.MakeFace(ref aFace, aPlane, 1e-7);
-        var aPC = new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        var aPC = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
         aBuilder.UpdateEdge(anEdge, aPC, aFace, 1e-7);
         Assert.Same(aPC, BRep_Tool.CurveOnSurface(anEdge, aFace, out _, out _));
         TopoDS_Face aMovedFace = TopoDS.Face(aFace.Moved(aLoc));
@@ -313,7 +317,7 @@ public class BRep_ToolTests
         Geom2d_Curve? aProjected = BRep_Tool.CurveOnSurface(anEdge, aMovedFace, out double aFirst, out _, out bool isStored);
         Assert.NotNull(aProjected);
         Assert.False(isStored);
-        Assert.True(aProjected.Value(aFirst).Distance(new gp_Pnt2d(aFirst, 0)) < 1e-12);
+        Assert.True(aProjected.Value(aFirst).Distance(new Point2D(aFirst, 0)) < 1e-12);
     }
 
     [Fact]
@@ -332,7 +336,7 @@ public class BRep_ToolTests
         aBuilder.UpdateEdge(anEdge, 0.1); // tolerances only grow
         Assert.Equal(0.25, BRep_Tool.Tolerance(anEdge));
         Assert.Equal(0.25, BRep_Tool.MaxTolerance(aBox, TopAbs_EDGE));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.MaxTolerance(aBox, TopAbs_VERTEX));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.MaxTolerance(aBox, TopAbs_VERTEX));
         Assert.Equal(0.0, BRep_Tool.MaxTolerance(aBox, TopAbs_WIRE));
 
         // the continuity between the two faces of the edge
@@ -341,11 +345,11 @@ public class BRep_ToolTests
         NCollection_List<TopoDS_Shape> aList = aFaces.FindFromKey(anEdge);
         TopoDS_Face aF1 = TopoDS.Face(aList.First()), aF2 = TopoDS.Face(aList.Last());
         Assert.False(BRep_Tool.HasContinuity(anEdge));
-        Assert.Equal(GeomAbs_C0, BRep_Tool.Continuity(anEdge, aF1, aF2));
-        aBuilder.Continuity(anEdge, aF1, aF2, GeomAbs_G1);
+        Assert.Equal(C0, BRep_Tool.Continuity(anEdge, aF1, aF2));
+        aBuilder.Continuity(anEdge, aF1, aF2, G1);
         Assert.True(BRep_Tool.HasContinuity(anEdge) && BRep_Tool.HasContinuity(anEdge, aF2, aF1));
-        Assert.Equal(GeomAbs_G1, BRep_Tool.Continuity(anEdge, aF2, aF1));
-        Assert.Equal(GeomAbs_G1, BRep_Tool.MaxContinuity(anEdge));
+        Assert.Equal(G1, BRep_Tool.Continuity(anEdge, aF2, aF1));
+        Assert.Equal(G1, BRep_Tool.MaxContinuity(anEdge));
 
         // degenerated edges get a null 3D curve
         aBuilder.Degenerated(anEdge, true);
@@ -388,42 +392,42 @@ public class BRep_ToolTests
     public void Polygons_and_triangulations()
     {
         var aBuilder = new BRep_Builder();
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, 2);
-        aNodes[1] = new gp_Pnt(0, 0, 0);
-        aNodes[2] = new gp_Pnt(1, 0, 0);
-        var aPoly = new Poly_Polygon3D(aNodes);
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var aNodes = new NCollection_Array1<Point3D>(1, 2);
+        aNodes[1] = new Point3D(0, 0, 0);
+        aNodes[2] = new Point3D(1, 0, 0);
+        var aPoly = new Polygon3D(aNodes);
         aBuilder.UpdateEdge(anEdge, aPoly);
-        Assert.Same(aPoly, BRep_Tool.Polygon3D(anEdge, out TopLoc_Location aL));
-        Assert.True(aL.IsIdentity());
-        Assert.True(aPoly.IsFrozen());
-        aBuilder.UpdateEdge(anEdge, (Poly_Polygon3D?)null);
+        Assert.Same(aPoly, BRep_Tool.Polygon3D(anEdge, out Placement aL));
+        Assert.True(aL.IsIdentity);
+        Assert.True(aPoly.IsFrozen);
+        aBuilder.UpdateEdge(anEdge, (Polygon3D?)null);
         Assert.Null(BRep_Tool.Polygon3D(anEdge, out _));
 
         // a face with only a triangulation, and an edge's polygon on it
-        var aTri = new Poly_Triangulation(3, 1, false);
-        aTri.SetNode(1, new gp_Pnt(0, 0, 0));
-        aTri.SetNode(2, new gp_Pnt(1, 0, 0));
-        aTri.SetNode(3, new gp_Pnt(0, 1, 0));
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        var aTri = new Triangulation(3, 1, false);
+        aTri.SetNode(1, new Point3D(0, 0, 0));
+        aTri.SetNode(2, new Point3D(1, 0, 0));
+        aTri.SetNode(3, new Point3D(0, 1, 0));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         TopoDS_Face aFace = new();
         aBuilder.MakeFace(ref aFace, aTri);
         Assert.False(BRep_Tool.IsGeometric(aFace));
         Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _));
-        Assert.True(aTri.IsFrozen());
-        Assert.Equal(Poly_MeshPurpose.Poly_MeshPurpose_Active, aTri.MeshPurpose());
+        Assert.True(aTri.IsFrozen);
+        Assert.Equal(MeshPurpose.MeshPurpose_Active, aTri.MeshPurpose());
         var aPolyNodes = new NCollection_Array1<int>(1, 2);
         aPolyNodes[1] = 1;
         aPolyNodes[2] = 2;
-        var aPolyOnTri = new Poly_PolygonOnTriangulation(aPolyNodes);
-        aBuilder.UpdateEdge(anEdge, aPolyOnTri, aTri, new TopLoc_Location());
-        Assert.Same(aPolyOnTri, BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new TopLoc_Location()));
-        BRep_Tool.PolygonOnTriangulation(anEdge, out Poly_PolygonOnTriangulation? aP, out Poly_Triangulation? aT, out _);
+        var aPolyOnTri = new PolygonOnTriangulation(aPolyNodes);
+        aBuilder.UpdateEdge(anEdge, aPolyOnTri, aTri, new Placement());
+        Assert.Same(aPolyOnTri, BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
+        BRep_Tool.PolygonOnTriangulation(anEdge, out PolygonOnTriangulation? aP, out Triangulation? aT, out _);
         Assert.Same(aPolyOnTri, aP);
         Assert.Same(aTri, aT);
-        Assert.False(BRep_Tool.IsClosed(anEdge, aTri, new TopLoc_Location()));
-        Assert.Null(BRep_Tool.Triangulation(aFace, out _, Poly_MeshPurpose.Poly_MeshPurpose_Calculation));
-        Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _, Poly_MeshPurpose.Poly_MeshPurpose_AnyFallback));
+        Assert.False(BRep_Tool.IsClosed(anEdge, aTri, new Placement()));
+        Assert.Null(BRep_Tool.Triangulation(aFace, out _, MeshPurpose.MeshPurpose_Calculation));
+        Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _, MeshPurpose.MeshPurpose_AnyFallback));
     }
 
     [Fact]
@@ -433,20 +437,20 @@ public class BRep_ToolTests
         // location, where the one-polygon form stores L relative to the edge: on a face at a location, the pair isn't
         // found again
         var aBuilder = new BRep_Builder();
-        var aLoc = new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(0, 0, 1)));
+        var aLoc = new Placement(Transform3D.Translation(new Vector3D(0, 0, 1)));
         TopoDS_Face aFace = new();
-        aBuilder.MakeFace(ref aFace, new Geom_CylindricalSurface(new gp_Ax3(gp.XOY()), 1.0), aLoc, 1e-7);
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 0, 1));
-        var aP1 = new Poly_Polygon2D(2);
-        var aP2 = new Poly_Polygon2D(2);
+        aBuilder.MakeFace(ref aFace, new Geom_CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0), aLoc, 1e-7);
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 0, 1));
+        var aP1 = new Polygon2D(2);
+        var aP2 = new Polygon2D(2);
         aBuilder.UpdateEdge(anEdge, aP1, aP2, aFace);
         Assert.Null(BRep_Tool.PolygonOnSurface(anEdge, aFace));
-        BRep_Tool.PolygonOnSurface(anEdge, out Poly_Polygon2D? aFound, out _, out TopLoc_Location aL);
+        BRep_Tool.PolygonOnSurface(anEdge, out Polygon2D? aFound, out _, out Placement aL);
         Assert.Same(aP1, aFound);
-        Assert.True(aL.IsIdentity());
+        Assert.True(aL.IsIdentity);
 
-        var aSingle = new Poly_Polygon2D(2);
-        TopoDS_Edge anOther = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 0, 1));
+        var aSingle = new Polygon2D(2);
+        TopoDS_Edge anOther = TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 0, 1));
         aBuilder.UpdateEdge(anOther, aSingle, aFace);
         Assert.Same(aSingle, BRep_Tool.PolygonOnSurface(anOther, aFace));
     }
@@ -458,11 +462,11 @@ public class BRep_ToolTests
         // so the edges after it keep their old UV points
         var aBuilder = new BRep_Builder();
         TopoDS_Face aFace = new();
-        aBuilder.MakeFace(ref aFace, new Geom_Plane(new gp_Ax3(gp.XOY())), 1e-7);
-        TopoDS_Edge aLocked = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
-        TopoDS_Edge aStale = TestShapes.Edge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0));
-        aBuilder.UpdateEdge(aStale, new Geom2d_Line(new gp_Pnt2d(1, 0), new gp_Dir2d(0, 1)), aFace, 1e-7);
-        BRep_Tool.SetUVPoints(aStale, aFace, new gp_Pnt2d(9, 9), new gp_Pnt2d(9, 9));
+        aBuilder.MakeFace(ref aFace, new Geom_Plane(new CoordinateSystem(Constants.XOY())), 1e-7);
+        TopoDS_Edge aLocked = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
+        TopoDS_Edge aStale = TestShapes.Edge(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        aBuilder.UpdateEdge(aStale, new Geom2d_Line(new Point2D(1, 0), new Direction2D(0, 1)), aFace, 1e-7);
+        BRep_Tool.SetUVPoints(aStale, aFace, new Point2D(9, 9), new Point2D(9, 9));
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
         aBuilder.Add(aWire, aLocked);
@@ -470,7 +474,7 @@ public class BRep_ToolTests
         aBuilder.Add(aFace, aWire);
 
         BRepTools.UpdateFaceUVPoints(aFace);
-        BRep_Tool.UVPoints(aStale, aFace, out gp_Pnt2d aP1, out _);
+        BRep_Tool.UVPoints(aStale, aFace, out Point2D aP1, out _);
         Assert.Equal(9.0, aP1.X());
 
         // with the locked edge after it, the stale edge is updated

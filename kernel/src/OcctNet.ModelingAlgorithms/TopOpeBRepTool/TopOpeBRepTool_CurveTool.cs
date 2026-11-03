@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -63,32 +65,32 @@ public sealed class TopOpeBRepTool_CurveTool
     // ConvertProjector: not ported (the Booleans' intersection lines; plan 2.11).
 
     /// <summary>The pcurve of a projected curve, as a Geom2d curve of its type (OCCT's file-level <c>MakePCurve</c>).</summary>
-    /// <exception cref="Standard_NotImplemented">The projection is of another type.</exception>
+    /// <exception cref="MethodNotImplementedException">The projection is of another type.</exception>
     internal static Geom2d_Curve MakePCurve(ProjLib_ProjectedCurve PC)
     {
         Geom2d_Curve C2D;
         switch (PC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 C2D = new Geom2d_Line(PC.Line());
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 C2D = new Geom2d_Circle(PC.Circle());
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 C2D = new Geom2d_Ellipse(PC.Ellipse());
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 C2D = new Geom2d_Parabola(PC.Parabola());
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 C2D = new Geom2d_Hyperbola(PC.Hyperbola());
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 C2D = PC.BSpline();
                 break;
             default:
-                throw new Standard_NotImplemented("CurveTool::MakePCurve");
+                throw new MethodNotImplementedException("CurveTool::MakePCurve");
         }
         return C2D;
     }
@@ -135,11 +137,11 @@ public sealed class TopOpeBRepTool_CurveTool
         double f = GAC.FirstParameter();
         double l = GAC.LastParameter();
         double t = (f + l) * .5;
-        gp_Pnt2d pC2D = C2D.Value(t);
+        Point2D pC2D = C2D.Value(t);
         double u2 = pC2D.X();
         double v2 = pC2D.Y();
 
-        if (BAS.GetType() == GeomAbs_Sphere)
+        if (BAS.GetType() == SurfaceKind.Sphere)
         {
             // MSV: consider quasiperiodic shift of pcurve
             double VFirst = BAS.FirstVParameter();
@@ -150,16 +152,16 @@ public sealed class TopOpeBRepTool_CurveTool
             {
                 Geom2d_Curve PCT = (Geom2d_Curve)C2D.Copy();
                 // make mirror relative to the isoline of apex -PI/2 or PI/2
-                gp_Trsf2d aTrsf = new();
-                gp_Pnt2d po = new(0, -M_PI / 2);
+                Transform2D aTrsf = new();
+                Point2D po = new(0, -M_PI / 2);
                 if (maxcond)
                 {
                     po.SetY(M_PI / 2);
                 }
-                aTrsf.SetMirror(new gp_Ax2d(po, new gp_Dir2d(gp_Dir2d.D.X)));
+                aTrsf.SetMirror(new Axis2D(po, new Direction2D(Direction2D.D.X)));
                 PCT.Transform(aTrsf);
                 // add translation along U direction on PI
-                gp_Vec2d vec = new(M_PI, 0);
+                Vector2D vec = new(M_PI, 0);
                 double UFirst = BAS.FirstUParameter();
                 if (u2 - UFirst - M_PI > -1e-7)
                 {
@@ -202,7 +204,7 @@ public sealed class TopOpeBRepTool_CurveTool
         if (du != 0.0 || dv != 0.0)
         {
             Geom2d_Curve PCT = (Geom2d_Curve)C2D.Copy();
-            PCT.Translate(new gp_Vec2d(du, dv));
+            PCT.Translate(new Vector2D(du, dv));
             C2D = PCT;
         }
 

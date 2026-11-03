@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -77,7 +78,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
     public static string? ErrorOf(Exception theException) => theException switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
-        Standard_Failure f => f.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         _ => null,
     };
 
@@ -127,7 +128,7 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
             }
             return;
         }
-        if (!aPRes.TShape()!.IsFrozen())
+        if (!aPRes.TShape()!.IsFrozen)
         {
             Differences.Add($"{theWhat}: the port's result isn't frozen");
         }
@@ -353,7 +354,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.Shape();
             aPStatus = Status(isDone, aFix.Status);
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }
@@ -388,7 +389,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
             aPRes = aFix.SolidFromShell(TopoDS.Shell(aPS));
             aPStatus = $"{aFix.Status(ShapeExtend_DONE2)}";
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }

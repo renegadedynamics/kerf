@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -10,7 +16,7 @@ public class GProp_ElementaryTests
 {
     private const double Tol = 1e-9;
 
-    private static void AssertMat(gp_Mat theMat, double theXX, double theYY, double theZZ,
+    private static void AssertMat(Matrix3x3 theMat, double theXX, double theYY, double theZZ,
                                   double theXY = 0.0, double theXZ = 0.0, double theYZ = 0.0, double theTol = Tol)
     {
         Assert.Equal(theXX, theMat.Value(1, 1), theTol);
@@ -24,7 +30,7 @@ public class GProp_ElementaryTests
         Assert.Equal(theYZ, theMat.Value(3, 2), theTol);
     }
 
-    private static void AssertPnt(gp_Pnt theP, double theX, double theY, double theZ, double theTol = Tol)
+    private static void AssertPnt(Point3D theP, double theX, double theY, double theZ, double theTol = Tol)
     {
         Assert.Equal(theX, theP.X(), theTol);
         Assert.Equal(theY, theP.Y(), theTol);
@@ -36,7 +42,7 @@ public class GProp_ElementaryTests
     [Fact]
     public void HOperator_PointMass()
     {
-        GProp.HOperator(new gp_Pnt(1.0, 2.0, 3.0), gp.Origin(), 2.0, out gp_Mat aH);
+        GProp.HOperator(new Point3D(1.0, 2.0, 3.0), Constants.Origin(), 2.0, out Matrix3x3 aH);
         AssertMat(aH, 2.0 * 13.0, 2.0 * 10.0, 2.0 * 5.0, -4.0, -6.0, -12.0);
     }
 
@@ -45,36 +51,36 @@ public class GProp_ElementaryTests
     {
         // Two unit points composed through systems with different reference points.
         var aP1 = new GProp_PGProps();
-        aP1.AddPoint(new gp_Pnt(1.0, 0.0, 0.0));
+        aP1.AddPoint(new Point3D(1.0, 0.0, 0.0));
         var aP2 = new GProp_PGProps();
-        aP2.AddPoint(new gp_Pnt(-1.0, 0.0, 0.0));
+        aP2.AddPoint(new Point3D(-1.0, 0.0, 0.0));
 
-        var aSystem = new GProp_GProps(new gp_Pnt(5.0, 5.0, 5.0));
+        var aSystem = new GProp_GProps(new Point3D(5.0, 5.0, 5.0));
         aSystem.Add(aP1, 2.0);
         aSystem.Add(aP2, 2.0);
 
         Assert.Equal(4.0, aSystem.Mass(), Tol);
         AssertPnt(aSystem.CentreOfMass(), 0.0, 0.0, 0.0);
         AssertMat(aSystem.MatrixOfInertia(), 0.0, 4.0, 4.0);
-        Assert.Equal(4.0, aSystem.MomentOfInertia(new gp_Ax1(gp.Origin(), new gp_Dir(0.0, 0.0, 1.0))), Tol);
-        Assert.Equal(1.0, aSystem.RadiusOfGyration(new gp_Ax1(gp.Origin(), new gp_Dir(0.0, 1.0, 0.0))), Tol);
+        Assert.Equal(4.0, aSystem.MomentOfInertia(new Axis3D(Constants.Origin(), new Direction3D(0.0, 0.0, 1.0))), Tol);
+        Assert.Equal(1.0, aSystem.RadiusOfGyration(new Axis3D(Constants.Origin(), new Direction3D(0.0, 1.0, 0.0))), Tol);
         // About a parallel axis through (0, 3, 0): 4 + 4 * 9.
-        Assert.Equal(40.0, aSystem.MomentOfInertia(new gp_Ax1(new gp_Pnt(0.0, 3.0, 0.0), new gp_Dir(0.0, 0.0, 1.0))), Tol);
+        Assert.Equal(40.0, aSystem.MomentOfInertia(new Axis3D(new Point3D(0.0, 3.0, 0.0), new Direction3D(0.0, 0.0, 1.0))), Tol);
         aSystem.StaticMoments(out double aIx, out double aIy, out double aIz);
         Assert.Equal(0.0, aIx, Tol);
         Assert.Equal(0.0, aIy, Tol);
         Assert.Equal(0.0, aIz, Tol);
 
-        Assert.ThrowsAny<Standard_DomainError>(() => aSystem.Add(aP1, 0.0));
+        Assert.ThrowsAny<DomainErrorException>(() => aSystem.Add(aP1, 0.0));
     }
 
     [Fact]
     public void Copy_IsIndependent()
     {
         var aP = new GProp_PGProps();
-        aP.AddPoint(new gp_Pnt(1.0, 2.0, 3.0));
+        aP.AddPoint(new Point3D(1.0, 2.0, 3.0));
         var aCopy = new GProp_GProps(aP);
-        aP.AddPoint(new gp_Pnt(3.0, 2.0, 1.0));
+        aP.AddPoint(new Point3D(3.0, 2.0, 1.0));
         Assert.Equal(1.0, aCopy.Mass());
         AssertPnt(aCopy.CentreOfMass(), 1.0, 2.0, 3.0);
     }
@@ -83,13 +89,13 @@ public class GProp_ElementaryTests
     public void PrincipalProperties_Symmetries()
     {
         // Six points on the axes: a centre of symmetry.
-        var aPnts = new NCollection_Array1<gp_Pnt>(1, 6);
-        aPnts[1] = new gp_Pnt(1.0, 0.0, 0.0);
-        aPnts[2] = new gp_Pnt(-1.0, 0.0, 0.0);
-        aPnts[3] = new gp_Pnt(0.0, 1.0, 0.0);
-        aPnts[4] = new gp_Pnt(0.0, -1.0, 0.0);
-        aPnts[5] = new gp_Pnt(0.0, 0.0, 1.0);
-        aPnts[6] = new gp_Pnt(0.0, 0.0, -1.0);
+        var aPnts = new NCollection_Array1<Point3D>(1, 6);
+        aPnts[1] = new Point3D(1.0, 0.0, 0.0);
+        aPnts[2] = new Point3D(-1.0, 0.0, 0.0);
+        aPnts[3] = new Point3D(0.0, 1.0, 0.0);
+        aPnts[4] = new Point3D(0.0, -1.0, 0.0);
+        aPnts[5] = new Point3D(0.0, 0.0, 1.0);
+        aPnts[6] = new Point3D(0.0, 0.0, -1.0);
         GProp_PrincipalProps aPP = new GProp_PGProps(aPnts).PrincipalProperties();
         Assert.True(aPP.HasSymmetryPoint());
         Assert.True(aPP.HasSymmetryAxis());
@@ -101,13 +107,13 @@ public class GProp_ElementaryTests
         Assert.Equal(Math.Sqrt(4.0 / 6.0), aR1, Tol);
 
         // A rotated rectangle of points: no symmetry axis, principal axes along the rectangle.
-        var aRot = new gp_Trsf();
-        aRot.SetRotation(new gp_Ax1(gp.Origin(), new gp_Dir(0.0, 0.0, 1.0)), 0.3);
-        var aRect = new NCollection_Array1<gp_Pnt>(1, 4);
-        aRect[1] = new gp_Pnt(2.0, 1.0, 0.0).Transformed(aRot);
-        aRect[2] = new gp_Pnt(-2.0, 1.0, 0.0).Transformed(aRot);
-        aRect[3] = new gp_Pnt(2.0, -1.0, 0.0).Transformed(aRot);
-        aRect[4] = new gp_Pnt(-2.0, -1.0, 0.0).Transformed(aRot);
+        var aRot = new Transform3D();
+        aRot.SetRotation(new Axis3D(Constants.Origin(), new Direction3D(0.0, 0.0, 1.0)), 0.3);
+        var aRect = new NCollection_Array1<Point3D>(1, 4);
+        aRect[1] = new Point3D(2.0, 1.0, 0.0).Transformed(aRot);
+        aRect[2] = new Point3D(-2.0, 1.0, 0.0).Transformed(aRot);
+        aRect[3] = new Point3D(2.0, -1.0, 0.0).Transformed(aRot);
+        aRect[4] = new Point3D(-2.0, -1.0, 0.0).Transformed(aRot);
         aPP = new GProp_PGProps(aRect).PrincipalProperties();
         Assert.False(aPP.HasSymmetryAxis());
         Assert.False(aPP.HasSymmetryPoint());
@@ -117,8 +123,8 @@ public class GProp_ElementaryTests
         Assert.Equal(4.0, aMoments[0], Tol);  // about the long axis: 4 * 1
         Assert.Equal(16.0, aMoments[1], Tol); // about the short axis: 4 * 4
         Assert.Equal(20.0, aMoments[2], Tol); // about z
-        gp_Vec aLong = new gp_Vec(1.0, 0.0, 0.0).Transformed(aRot);
-        gp_Vec[] anAxes = [aPP.FirstAxisOfInertia(), aPP.SecondAxisOfInertia(), aPP.ThirdAxisOfInertia()];
+        Vector3D aLong = new Vector3D(1.0, 0.0, 0.0).Transformed(aRot);
+        Vector3D[] anAxes = [aPP.FirstAxisOfInertia(), aPP.SecondAxisOfInertia(), aPP.ThirdAxisOfInertia()];
         double[] aRaw = [aI1, aI2, aI3];
         for (int i = 0; i < 3; i++)
         {
@@ -135,7 +141,7 @@ public class GProp_ElementaryTests
         var aPP = new GProp_PrincipalProps();
         aPP.Moments(out double aI1, out _, out _);
         Assert.Equal(RealLast(), aI1);
-        Assert.Equal(new gp_Vec(0.0, 1.0, 0.0), aPP.SecondAxisOfInertia());
+        Assert.Equal(new Vector3D(0.0, 1.0, 0.0), aPP.SecondAxisOfInertia());
         Assert.Equal(aPP, new GProp_PrincipalProps());
     }
 
@@ -149,13 +155,13 @@ public class GProp_ElementaryTests
     public void Circle_Full()
     {
         const double R = 2.0;
-        var aCirc = new gp_Circ(gp.XOY(), R);
-        var aProps = new GProp_CelGProps(aCirc, gp.Origin());
+        var aCirc = new Circle3D(Constants.XOY(), R);
+        var aProps = new GProp_CelGProps(aCirc, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
         // The right matrix is diag(pi R^3, pi R^3, 2 pi R^3). OCCT builds P V L (eigenvectors scaled by their
         // values) instead of P V L V^T P^T, and math_Jacobi sorts the values, so the columns come out permuted.
-        gp_Mat aMat = aProps.MatrixOfInertia();
+        Matrix3x3 aMat = aProps.MatrixOfInertia();
         double aR3 = R * R * R;
         Assert.Equal(2.0 * Math.PI * aR3, aMat.Value(1, 3), Tol);
         Assert.Equal(Math.PI * aR3, aMat.Value(2, 1), Tol);
@@ -167,8 +173,8 @@ public class GProp_ElementaryTests
     public void Circle_QuarterArc()
     {
         const double R = 3.0;
-        var aCirc = new gp_Circ(gp.XOY(), R);
-        var aProps = new GProp_CelGProps(aCirc, 0.0, Math.PI / 2.0, gp.Origin());
+        var aCirc = new Circle3D(Constants.XOY(), R);
+        var aProps = new GProp_CelGProps(aCirc, 0.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(Math.PI * R / 2.0, aProps.Mass(), Tol);
         // Centroid of a quarter arc: 2R/pi on each axis.
         AssertPnt(aProps.CentreOfMass(), 2.0 * R / Math.PI, 2.0 * R / Math.PI, 0.0);
@@ -179,20 +185,20 @@ public class GProp_ElementaryTests
     {
         // OCCT stores the absolute centre in g, which GProp_GProps reads as relative to the location point, so the
         // centre of mass comes out shifted by the location.
-        var aCirc = new gp_Circ(gp.XOY(), 1.0);
-        var aProps = new GProp_CelGProps(aCirc, new gp_Pnt(1.0, 2.0, 3.0));
+        var aCirc = new Circle3D(Constants.XOY(), 1.0);
+        var aProps = new GProp_CelGProps(aCirc, new Point3D(1.0, 2.0, 3.0));
         AssertPnt(aProps.CentreOfMass(), 1.0, 2.0, 3.0);
     }
 
     [Fact]
     public void Line_Segment()
     {
-        var aLin = new gp_Lin(new gp_Pnt(1.0, 2.0, 3.0), new gp_Dir(1.0, 0.0, 0.0));
-        var aProps = new GProp_CelGProps(aLin, 0.0, 6.0, gp.Origin());
+        var aLin = new Line3D(new Point3D(1.0, 2.0, 3.0), new Direction3D(1.0, 0.0, 0.0));
+        var aProps = new GProp_CelGProps(aLin, 0.0, 6.0, Constants.Origin());
         Assert.Equal(6.0, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 4.0, 2.0, 3.0);
         // Thin rod of length L = 6 along x through (., 2, 3): central moments 0, L^3/12 + ..., about the centre.
-        gp_Mat aMat = aProps.MatrixOfInertia();
+        Matrix3x3 aMat = aProps.MatrixOfInertia();
         Assert.Equal(0.0, aMat.Value(1, 1), Tol);
         Assert.Equal(18.0, aMat.Value(2, 2), Tol);
         Assert.Equal(0.0, aMat.Value(1, 2), Tol);
@@ -206,8 +212,8 @@ public class GProp_ElementaryTests
     {
         const double R = 2.0;
         const double H = 5.0;
-        var aCyl = new gp_Cylinder(new gp_Ax3(gp.XOY()), R);
-        var aProps = new GProp_SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, gp.Origin());
+        var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
+        var aProps = new GProp_SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * R * H, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
     }
@@ -216,8 +222,8 @@ public class GProp_ElementaryTests
     public void Sphere_Area()
     {
         const double R = 1.5;
-        var aSph = new gp_Sphere(new gp_Ax3(gp.XOY()), R);
-        var aProps = new GProp_SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, gp.Origin());
+        var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
+        var aProps = new GProp_SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(4.0 * Math.PI * R * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
 
@@ -232,8 +238,8 @@ public class GProp_ElementaryTests
     {
         const double RMaj = 4.0;
         const double RMin = 1.0;
-        var aTor = new gp_Torus(new gp_Ax3(gp.XOY()), RMaj, RMin);
-        var aProps = new GProp_SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, gp.Origin());
+        var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
+        var aProps = new GProp_SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(4.0 * Math.PI * Math.PI * RMaj * RMin, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
     }
@@ -245,8 +251,8 @@ public class GProp_ElementaryTests
         const double R = 1.0;
         const double L = 2.0;
         double t = Math.PI / 6.0;
-        var aCone = new gp_Cone(new gp_Ax3(gp.XOY()), t, R);
-        var aProps = new GProp_SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, gp.Origin());
+        var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
+        var aProps = new GProp_SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
         // The area is pi (R + R2) L; OCCT multiplies it by cos(t).
         double aR2 = R + L * Math.Sin(t);
         Assert.Equal(Math.PI * (R + aR2) * L * Math.Cos(t), aProps.Mass(), Tol);
@@ -257,8 +263,8 @@ public class GProp_ElementaryTests
     {
         const double R = 2.0;
         const double H = 3.0;
-        var aCyl = new gp_Cylinder(new gp_Ax3(gp.XOY()), R);
-        var aProps = new GProp_VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, gp.Origin());
+        var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
+        var aProps = new GProp_VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
         double aM = Math.PI * R * R * H;
         Assert.Equal(aM, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
@@ -270,8 +276,8 @@ public class GProp_ElementaryTests
     public void Sphere_Volume()
     {
         const double R = 2.0;
-        var aSph = new gp_Sphere(new gp_Ax3(gp.XOY()), R);
-        var aProps = new GProp_VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, gp.Origin());
+        var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
+        var aProps = new GProp_VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
         Assert.Equal(4.0 / 3.0 * Math.PI * R * R * R, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
     }
@@ -281,16 +287,16 @@ public class GProp_ElementaryTests
     {
         const double RMaj = 3.0;
         const double RMin = 1.0;
-        var aTor = new gp_Torus(new gp_Ax3(gp.XOY()), RMaj, RMin);
-        var aProps = new GProp_VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, gp.Origin());
+        var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
+        var aProps = new GProp_VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(2.0 * Math.PI * Math.PI * RMaj * RMin * RMin, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
 
         // Half a torus (Teta in [0, pi]): the surface class puts the centre at y = 2 RMaj / pi; the volume class
         // reads cos(Alpha2) and sin(Alpha2) for Teta2, so with Alpha2 = 2 pi its centre stays at y = 0.
-        var aHalfS = new GProp_SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, gp.Origin());
+        var aHalfS = new GProp_SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(2.0 * RMaj / Math.PI, aHalfS.CentreOfMass().Y(), Tol);
-        var aHalfV = new GProp_VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, gp.Origin());
+        var aHalfV = new GProp_VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
         Assert.Equal(0.0, aHalfV.CentreOfMass().Y(), Tol);
     }
 
@@ -300,8 +306,8 @@ public class GProp_ElementaryTests
         const double R = 1.0;
         const double L = 2.0;
         double t = Math.PI / 6.0;
-        var aCone = new gp_Cone(new gp_Ax3(gp.XOY()), t, R);
-        var aProps = new GProp_VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, gp.Origin());
+        var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
+        var aProps = new GProp_VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
         // The frustum's volume is pi h (R^2 + R R2 + R2^2) / 3 with h = L cos(t); OCCT computes
         // pi L^2 cos(t) sin(t) (2R + L sin(t)), the lateral area's formula times L sin(t).
         double aExpected = Math.PI * L * L * Math.Cos(t) * Math.Sin(t) * (2.0 * R + L * Math.Sin(t));

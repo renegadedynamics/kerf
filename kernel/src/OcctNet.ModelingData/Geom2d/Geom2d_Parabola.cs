@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,40 +29,40 @@ public class Geom2d_Parabola : Geom2d_Conic
     }
 
     /// <summary>The parabola equal to Prb.</summary>
-    public Geom2d_Parabola(in gp_Parab2d Prb)
+    public Geom2d_Parabola(in Parabola2D Prb)
     {
         focalLength = Prb.Focal();
         pos = Prb.Axis();
     }
 
     /// <summary>The parabola whose axis of symmetry is MirrorAxis; Sense gives the orientation.</summary>
-    /// <exception cref="Standard_ConstructionError">Focal &lt; 0.</exception>
-    public Geom2d_Parabola(in gp_Ax2d MirrorAxis, double Focal, bool Sense = true)
+    /// <exception cref="ConstructionErrorException">Focal &lt; 0.</exception>
+    public Geom2d_Parabola(in Axis2D MirrorAxis, double Focal, bool Sense = true)
     {
         focalLength = Focal;
         if (Focal < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        pos = new gp_Ax22d(MirrorAxis, Sense);
+        pos = new Frame2D(MirrorAxis, Sense);
     }
 
     /// <summary>The parabola of focal length Focal in the coordinate system Axis.</summary>
-    /// <exception cref="Standard_ConstructionError">Focal &lt; 0.</exception>
-    public Geom2d_Parabola(in gp_Ax22d Axis, double Focal)
+    /// <exception cref="ConstructionErrorException">Focal &lt; 0.</exception>
+    public Geom2d_Parabola(in Frame2D Axis, double Focal)
     {
         focalLength = Focal;
         if (Focal < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = Axis;
     }
 
     /// <summary>The parabola of directrix D and focus F.</summary>
-    public Geom2d_Parabola(in gp_Ax2d D, in gp_Pnt2d F)
+    public Geom2d_Parabola(in Axis2D D, in Point2D F)
     {
-        gp_Parab2d Prb = new gp_Parab2d(D, F);
+        Parabola2D Prb = new Parabola2D(D, F);
         pos = Prb.Axis();
         focalLength = Prb.Focal();
     }
@@ -66,12 +72,12 @@ public class Geom2d_Parabola : Geom2d_Conic
         CheckMutable();
         if (Focal < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         focalLength = Focal;
     }
 
-    internal void SetParab2d(in gp_Parab2d Prb)
+    internal void SetParab2d(in Parabola2D Prb)
     {
         CheckMutable();
         focalLength = Prb.Focal();
@@ -79,16 +85,16 @@ public class Geom2d_Parabola : Geom2d_Conic
     }
 
     /// <summary>The parabola as a gp_Parab2d.</summary>
-    public gp_Parab2d Parab2d() => new gp_Parab2d(pos, focalLength);
+    public Parabola2D Parab2d() => new Parabola2D(pos, focalLength);
 
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double U) => (-U);
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -Precision.Infinite();
+    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => Precision.Infinite();
+    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
     public sealed override bool IsClosed() => false;
@@ -97,9 +103,9 @@ public class Geom2d_Parabola : Geom2d_Conic
     public sealed override bool IsPeriodic() => false;
 
     /// <summary>The directrix: parallel to the Y axis, at the focal distance on the negative side of the apex.</summary>
-    public gp_Ax2d Directrix()
+    public Axis2D Directrix()
     {
-        gp_Parab2d Prb = new gp_Parab2d(pos, focalLength);
+        Parabola2D Prb = new Parabola2D(pos, focalLength);
         return Prb.Directrix();
     }
 
@@ -107,12 +113,12 @@ public class Geom2d_Parabola : Geom2d_Conic
     public sealed override double Eccentricity() => 1.0;
 
     /// <summary>The focus.</summary>
-    public gp_Pnt2d Focus()
+    public Point2D Focus()
     {
-        gp_XY Pxy = pos.XDirection().XY();
+        Xy Pxy = pos.XDirection().XY();
         Pxy.Multiply(focalLength);
         Pxy.Add(pos.Location().XY());
-        return new gp_Pnt2d(Pxy);
+        return new Point2D(Pxy);
     }
 
     /// <summary>The focal length: the distance from the apex to the focus.</summary>
@@ -121,42 +127,42 @@ public class Geom2d_Parabola : Geom2d_Conic
     /// <summary>The parameter: the distance from the focus to the directrix, 2 * Focal().</summary>
     public double Parameter() => 2.0 * focalLength;
 
-    public sealed override gp_Pnt2d EvalD0(double U) => ElCLib.ParabolaValue(U, pos, focalLength);
+    public sealed override Point2D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(U, pos, focalLength);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult;
-        ElCLib.ParabolaD1(U, pos, focalLength, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.ParabolaD1(U, pos, focalLength, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult;
-        ElCLib.ParabolaD2(U, pos, focalLength, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(U, pos, focalLength, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult = new ResD3();
-        ElCLib.ParabolaD2(U, pos, focalLength, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(U, pos, focalLength, out aResult.Point, out aResult.D1, out aResult.D2);
         aResult.D3.SetCoord(0.0, 0.0);
         return aResult;
     }
 
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative();
         }
-        return ElCLib.ParabolaDN(U, pos, focalLength, N);
+        return global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(U, pos, focalLength, N);
     }
 
     /// <summary>Applies T to the parabola: the focal length is multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         focalLength *= Math.Abs(T.ScaleFactor());
@@ -164,9 +170,9 @@ public class Geom2d_Parabola : Geom2d_Conic
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf2d T)
+    public sealed override double TransformedParameter(double U, in Transform2D T)
     {
-        if (Precision.IsInfinite(U))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U))
         {
             return U;
         }
@@ -174,12 +180,12 @@ public class Geom2d_Parabola : Geom2d_Conic
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf2d T) => Math.Abs(T.ScaleFactor());
+    public sealed override double ParametricTransformation(in Transform2D T) => Math.Abs(T.ScaleFactor());
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 
     /// <summary>A copy of focal length Focal.</summary>
-    /// <exception cref="Standard_ConstructionError">Focal &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">Focal &lt; 0.</exception>
     public Geom2d_Parabola WithFocal(double Focal)
     {
         Geom2d_Parabola aCopy = (Geom2d_Parabola)Copy();
@@ -188,7 +194,7 @@ public class Geom2d_Parabola : Geom2d_Conic
     }
 
     /// <summary>A copy equal to Prb.</summary>
-    public Geom2d_Parabola WithParab2d(in gp_Parab2d Prb)
+    public Geom2d_Parabola WithParab2d(in Parabola2D Prb)
     {
         Geom2d_Parabola aCopy = (Geom2d_Parabola)Copy();
         aCopy.SetParab2d(Prb);

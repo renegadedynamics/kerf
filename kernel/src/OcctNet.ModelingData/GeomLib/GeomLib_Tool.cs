@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
 
 namespace Occt;
@@ -25,7 +28,7 @@ public static class GeomLib_Tool
     /// The parameter U of a 3D point on a 3D curve, or at a distance at most MaxDist. Returns false (U = 0) if the
     /// point is farther or the computation fails.
     /// </summary>
-    public static bool Parameter(Geom_Curve? Curve, in gp_Pnt Point, double MaxDist, out double U)
+    public static bool Parameter(Geom_Curve? Curve, in Point3D Point, double MaxDist, out double U)
     {
         U = 0.0;
         if (Curve is null)
@@ -76,7 +79,7 @@ public static class GeomLib_Tool
     /// The parameters U, V of a 3D point on a surface, or at a distance at most MaxDist. Returns false (U = V = 0)
     /// if the point is farther or the computation fails.
     /// </summary>
-    public static bool Parameters(Geom_Surface? Surface, in gp_Pnt Point, double MaxDist, out double U, out double V)
+    public static bool Parameters(Geom_Surface? Surface, in Point3D Point, double MaxDist, out double U, out double V)
     {
         U = 0.0;
         V = 0.0;
@@ -131,7 +134,7 @@ public static class GeomLib_Tool
     /// The parameter U of a 2D point on a 2D curve, or at a distance at most MaxDist. Returns false (U = 0) if the
     /// point is farther or the computation fails.
     /// </summary>
-    public static bool Parameter(Geom2d_Curve? Curve, in gp_Pnt2d Point, double MaxDist, out double U)
+    public static bool Parameter(Geom2d_Curve? Curve, in Point2D Point, double MaxDist, out double U)
     {
         U = 0.0;
         if (Curve is null)
@@ -179,7 +182,7 @@ public static class GeomLib_Tool
     /// Target function to compute deviation of the source 2D-curve. It is one-variate function. Its parameter is a
     /// parameter on the curve. Deviation is a maximal distance between any point in the curve and the given line.
     /// </summary>
-    private sealed class FuncSolveDeviation : math_MultipleVarFunction
+    private sealed class FuncSolveDeviation : MultipleVarFunction
     {
         //! The curve (OCCT copies the adaptor; the port keeps the caller's, which it only evaluates)
         private readonly Geom2dAdaptor_Curve myCurve;
@@ -191,42 +194,42 @@ public static class GeomLib_Tool
         private readonly bool myIsValid;
 
         //! Sets the given line
-        private readonly gp_XY myPRef, myDirRef;
+        private readonly Xy myPRef, myDirRef;
 
         //! Last computed point in the curve
-        private gp_Pnt2d myPointOnCurve = new();
+        private Point2D myPointOnCurve = new();
 
         //! Always directed from myPointOnCurve to the line
-        private gp_Vec2d myVecCurvLine = new();
+        private Vector2D myVecCurvLine = new();
 
         //! Constructor. Initializes the curve and the line going through two given points.
-        public FuncSolveDeviation(Geom2dAdaptor_Curve theCurve, in gp_XY thePf, in gp_XY thePl)
+        public FuncSolveDeviation(Geom2dAdaptor_Curve theCurve, in Xy thePf, in Xy thePl)
         {
             myCurve = theCurve;
             myPRef = thePf;
             myDirRef = thePl - thePf;
             mySqMod = myDirRef.SquareModulus();
-            myIsValid = (mySqMod > Precision.SquarePConfusion());
+            myIsValid = (mySqMod > global::Kerf.Engine.Foundation.Precision.SquarePConfusion());
         }
 
         //! Compute additional parameters depending on the argument of *this
         public void UpdateFields(double theParam)
         {
             myCurve.D0(theParam, out myPointOnCurve);
-            gp_XY aVt = myPointOnCurve.XY() - myPRef;
-            myVecCurvLine = new gp_Vec2d(aVt.Dot(myDirRef) * myDirRef / mySqMod - aVt);
+            Xy aVt = myPointOnCurve.XY() - myPRef;
+            myVecCurvLine = new Vector2D(aVt.Dot(myDirRef) * myDirRef / mySqMod - aVt);
         }
 
         //! Returns value of *this (square deviation) and its 1st and 2nd derivative.
         public void ValueAndDerives(double theParam, out double theVal, out double theD1, out double theD2)
         {
-            gp_Vec2d aD1;
-            gp_Vec2d aD2;
+            Vector2D aD1;
+            Vector2D aD2;
             myCurve.D2(theParam, out myPointOnCurve, out aD1, out aD2);
 
-            gp_XY aVt = myPointOnCurve.XY() - myPRef;
+            Xy aVt = myPointOnCurve.XY() - myPRef;
             // C++ converts myDirRef to gp_Vec2d for gp_Vec2d::Crossed
-            gp_Vec2d aDirRef = new(myDirRef);
+            Vector2D aDirRef = new(myDirRef);
             theVal = aVt.Crossed(myDirRef);
             theD1 = aD1.Crossed(aDirRef);
             theD2 = 2.0 * (theD1 * theD1 + theVal * aD2.Crossed(aDirRef));
@@ -237,19 +240,19 @@ public static class GeomLib_Tool
         //! Returns TRUE if the function has been initializes correctly.
         public bool IsValid() => myIsValid;
 
-        public override int NbVariables() => 1;
+        public override int VariableCount => 1;
 
         //! Returns last computed Point in the given curve.
-        public gp_Pnt2d PointOnCurve() => myPointOnCurve;
+        public Point2D PointOnCurve() => myPointOnCurve;
 
         //! Returns last computed vector directed from some point on the curve to the given line.
-        public gp_Vec2d VecCurveLine() => myVecCurvLine;
+        public Vector2D VecCurveLine() => myVecCurvLine;
 
         //! Returns the given line
-        public void GetLine(ref gp_Lin2d theLine)
+        public void GetLine(ref Line2D theLine)
         {
-            theLine.SetDirection(new gp_Dir2d(myDirRef));
-            theLine.SetLocation(new gp_Pnt2d(myPRef));
+            theLine.SetDirection(new Direction2D(myDirRef));
+            theLine.SetLocation(new Point2D(myPRef));
         }
 
         //! Returns value of *this (square deviation)
@@ -275,9 +278,9 @@ public static class GeomLib_Tool
                                           double theStartParameter, int theNbIters = 100)
     {
         double aPrm = 0.0;
-        gp_Pnt2d aPnt = new();
-        gp_Vec2d aVec = new();
-        gp_Lin2d aLin = new();
+        Point2D aPnt = new();
+        Vector2D aVec = new();
+        Line2D aLin = new();
         return ComputeDeviation(theCurve, theFPar, theLPar, theStartParameter, theNbIters, ref aPrm, ref aPnt,
                                 ref aVec, ref aLin, false);
     }
@@ -290,8 +293,8 @@ public static class GeomLib_Tool
     /// </summary>
     public static double ComputeDeviation(Geom2dAdaptor_Curve theCurve, double theFPar, double theLPar,
                                           double theStartParameter, int theNbIters, ref double thePrmOnCurve,
-                                          ref gp_Pnt2d thePtOnCurve, ref gp_Vec2d theVecCurvLine,
-                                          ref gp_Lin2d theLine)
+                                          ref Point2D thePtOnCurve, ref Vector2D theVecCurvLine,
+                                          ref Line2D theLine)
     {
         return ComputeDeviation(theCurve, theFPar, theLPar, theStartParameter, theNbIters, ref thePrmOnCurve,
                                 ref thePtOnCurve, ref theVecCurvLine, ref theLine, true);
@@ -300,8 +303,8 @@ public static class GeomLib_Tool
     // OCCT's body; theOutputs says whether its optional pointers are given (all of them, or none).
     private static double ComputeDeviation(Geom2dAdaptor_Curve theCurve, double theFPar, double theLPar,
                                            double theStartParameter, int theNbIters, ref double thePrmOnCurve,
-                                           ref gp_Pnt2d thePtOnCurve, ref gp_Vec2d theVecCurvLine,
-                                           ref gp_Lin2d theLine, bool theOutputs)
+                                           ref Point2D thePtOnCurve, ref Vector2D theVecCurvLine,
+                                           ref Line2D theLine, bool theOutputs)
     {
         // Computed maximal deflection
         if ((theStartParameter < theFPar) || (theStartParameter > theLPar))
@@ -309,8 +312,8 @@ public static class GeomLib_Tool
             return -1.0;
         }
 
-        gp_Pnt2d aPf = theCurve.Value(theFPar);
-        gp_Pnt2d aPl = theCurve.Value(theLPar);
+        Point2D aPf = theCurve.Value(theFPar);
+        Point2D aPl = theCurve.Value(theLPar);
 
         FuncSolveDeviation aFunc = new(theCurve, aPf.XY(), aPl.XY());
 
@@ -324,7 +327,7 @@ public static class GeomLib_Tool
             aFunc.GetLine(ref theLine);
         }
 
-        double aTolDefl = Precision.PConfusion();
+        double aTolDefl = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         double aD1 = 0.0;
         double aD2 = 0.0;
@@ -334,7 +337,7 @@ public static class GeomLib_Tool
         aFunc.ValueAndDerives(aU0, out aSqDefl, out aD1, out aD2);
         for (int anItr = 1; anItr <= theNbIters; anItr++)
         {
-            if (Math.Abs(aD2) < Precision.PConfusion())
+            if (Math.Abs(aD2) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
             }
@@ -359,7 +362,7 @@ public static class GeomLib_Tool
                 }
             }
 
-            if (Math.Abs(aU0 - aU1) < Precision.PConfusion())
+            if (Math.Abs(aU0 - aU1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
             }
@@ -396,8 +399,8 @@ public static class GeomLib_Tool
                                           int theNbSubIntervals, int theNbIters, ref double thePrmOnCurve)
     {
         // Computed maximal deflection
-        gp_Pnt2d aPf = theCurve.Value(theFPar);
-        gp_Pnt2d aPl = theCurve.Value(theLPar);
+        Point2D aPf = theCurve.Value(theFPar);
+        Point2D aPl = theCurve.Value(theLPar);
 
         FuncSolveDeviation aFunc = new(theCurve, aPf.XY(), aPl.XY());
 
@@ -409,7 +412,7 @@ public static class GeomLib_Tool
         math_Vector aLPar = new(1, 1, theLPar);
         math_Vector aStep = new(1, 1, (theLPar - theFPar) / (10.0 * theNbSubIntervals));
         math_Vector anOutputPnt = new(1, 1, theFPar);
-        math_PSO aMPSO = new(aFunc, aFPar, aLPar, aStep, theNbSubIntervals, theNbIters);
+        Pso aMPSO = new(aFunc, aFPar, aLPar, aStep, theNbSubIntervals, theNbIters);
 
         double aSqDefl;
         aMPSO.Perform(aStep, out aSqDefl, anOutputPnt, theNbIters);

@@ -3,11 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The common interface of the meshing algorithms made by the mesh factories.</summary>
 /// <remarks>A working object: the shape is set, then <see cref="Perform"/> meshes it.</remarks>
-public abstract class BRepMesh_DiscretRoot : Standard_Transient
+public abstract class BRepMesh_DiscretRoot : Transient
 {
     protected TopoDS_Shape myShape;
     protected bool myIsDone;
@@ -29,7 +31,7 @@ public abstract class BRepMesh_DiscretRoot : Standard_Transient
     public bool IsDone() => myIsDone;
 
     /// <summary>Computes the triangulation of the shape.</summary>
-    public abstract void Perform(Message_ProgressRange theRange = default);
+    public abstract void Perform(ProgressRange theRange = default);
 
     /// <summary>Sets the IsDone flag.</summary>
     protected void setDone() => myIsDone = true;

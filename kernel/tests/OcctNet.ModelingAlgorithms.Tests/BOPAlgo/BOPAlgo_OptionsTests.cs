@@ -2,10 +2,11 @@
 
 // Tests of BOPAlgo_Options, BOPAlgo_Algo and the alerts (no GTests in OCCT).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.BOPAlgo_Operation;
-using static Occt.Message_Gravity;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPAlgo;
 
@@ -14,7 +15,7 @@ internal sealed class TestBOPAlgo : BOPAlgo_Algo
 {
     public NCollection_Array1<double>? Steps;
 
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(global::Kerf.Engine.Foundation.ProgressRange theRange = default)
     {
         BOPAlgo_PISteps aSteps = new(4);
         analyzeProgress(100.0, aSteps);
@@ -35,7 +36,7 @@ internal sealed class TestBOPAlgo : BOPAlgo_Algo
         theSteps.SetStep(3, 3.0);
     }
 
-    public bool TestUserBreak(Message_ProgressScope thePS) => UserBreak(thePS);
+    public bool TestUserBreak(global::Kerf.Engine.Foundation.ProgressScope thePS) => UserBreak(thePS);
 }
 
 public class BOPAlgo_OptionsTests
@@ -46,7 +47,7 @@ public class BOPAlgo_OptionsTests
         BOPAlgo_Options anOptions = new();
         Assert.False(BOPAlgo_Options.GetParallelMode());
         Assert.False(anOptions.RunParallel());
-        Assert.Equal(Precision.Confusion(), anOptions.FuzzyValue());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anOptions.FuzzyValue());
         Assert.False(anOptions.UseOBB());
         Assert.False(anOptions.HasErrors());
         Assert.False(anOptions.HasWarnings());
@@ -65,15 +66,15 @@ public class BOPAlgo_OptionsTests
         Assert.Equal(1.0e-3, anOptions.FuzzyValue());
         // the fuzzy value is at least Precision::Confusion()
         anOptions.SetFuzzyValue(1.0e-12);
-        Assert.Equal(Precision.Confusion(), anOptions.FuzzyValue());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anOptions.FuzzyValue());
         anOptions.SetFuzzyValue(-1.0);
-        Assert.Equal(Precision.Confusion(), anOptions.FuzzyValue());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anOptions.FuzzyValue());
     }
 
     [Fact]
     public void ErrorsAndWarnings()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         BOPAlgo_Options anOptions = new();
         anOptions.AddWarning(new BOPAlgo_AlertTooSmallEdge(anEdge));
         Assert.True(anOptions.HasWarnings());
@@ -86,8 +87,8 @@ public class BOPAlgo_OptionsTests
         Assert.True(anOptions.HasErrors());
         Assert.True(anOptions.HasError(typeof(BOPAlgo_AlertSelfInterferingShape)));
         Assert.False(anOptions.HasError(typeof(TopoDS_AlertWithShape)));
-        Assert.Equal(2, anOptions.GetReport().GetAlerts(Message_Fail).Extent());
-        var anAlert = Assert.IsType<BOPAlgo_AlertSelfInterferingShape>(anOptions.GetReport().GetAlerts(Message_Fail).First());
+        Assert.Equal(2, anOptions.GetReport().GetAlerts(Fail).Extent());
+        var anAlert = Assert.IsType<BOPAlgo_AlertSelfInterferingShape>(anOptions.GetReport().GetAlerts(Fail).First());
         Assert.True(anAlert.GetShape().IsSame(anEdge));
 
         StringWriter anErrors = new();
@@ -120,7 +121,7 @@ public class BOPAlgo_OptionsTests
     public void UserBreak_AddsTheAlert()
     {
         TestBOPAlgo anAlgo = new();
-        using (Message_ProgressScope aScope = new(new Message_ProgressIndicator().Start(), "test", 1))
+        using (global::Kerf.Engine.Foundation.ProgressScope aScope = new(new global::Kerf.Engine.Foundation.ProgressIndicator().Start(), "test", 1))
         {
             Assert.False(anAlgo.TestUserBreak(aScope));
         }
@@ -128,7 +129,7 @@ public class BOPAlgo_OptionsTests
 
         using CancellationTokenSource aSource = new();
         aSource.Cancel();
-        using (Message_ProgressScope aScope = new(new Message_ProgressIndicator(aSource.Token).Start(), "test", 1))
+        using (global::Kerf.Engine.Foundation.ProgressScope aScope = new(new global::Kerf.Engine.Foundation.ProgressIndicator(aSource.Token).Start(), "test", 1))
         {
             Assert.True(anAlgo.TestUserBreak(aScope));
         }
@@ -158,10 +159,10 @@ public class BOPAlgo_OptionsTests
     public void MessageTexts()
     {
         _ = new BOPAlgo_Options();
-        Assert.True(Message_MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"));
+        Assert.True(global::Kerf.Engine.Foundation.MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"));
         Assert.Equal("Some of the arguments are self-interfering shapes",
-                     Message_MsgFile.Msg(new BOPAlgo_AlertSelfInterferingShape(new TopoDS_Shape()).GetMessageKey()));
-        Assert.Equal("Unable to make closed edge on face.", Message_MsgFile.Msg("BOPAlgo_AlertUnableToMakeClosedEdgeOnFace"));
+                     global::Kerf.Engine.Foundation.MsgFile.Msg(new BOPAlgo_AlertSelfInterferingShape(new TopoDS_Shape()).GetMessageKey()));
+        Assert.Equal("Unable to make closed edge on face.", global::Kerf.Engine.Foundation.MsgFile.Msg("BOPAlgo_AlertUnableToMakeClosedEdgeOnFace"));
     }
 
     [Fact]

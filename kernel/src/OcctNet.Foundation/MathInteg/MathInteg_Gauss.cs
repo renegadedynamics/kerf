@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Integration;
 
 // C++ code names MathUtils' types through MathInteg (MathInteg::IntegResult, MathInteg::IntegConfig,
 // MathInteg::Status) by `using namespace MathUtils`; C# can't re-export them, so callers write MathUtils.IntegResult.
@@ -13,183 +14,183 @@ namespace Occt;
 public static partial class MathInteg
 {
     /// <summary>Fixed-order Gauss-Legendre integration of theFunc over [theLower, theUpper] (theNbPoints &gt;= 1).</summary>
-    public static IntegResult Gauss<Function>(Function theFunc, double theLower, double theUpper, int theNbPoints = 15)
+    public static IntegResult Gauss<Function>(Function func, double lower, double upper, int nbPoints = 15)
         where Function : IScalarFunction
     {
-        IntegResult aResult = new();
-        if (theNbPoints < 1)
+        IntegResult result = new();
+        if (nbPoints < 1)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        math_Vector aPoints = new(1, theNbPoints);
-        math_Vector aWeights = new(1, theNbPoints);
+        math_Vector points = new(1, nbPoints);
+        math_Vector weights = new(1, nbPoints);
 
-        if (!MathUtils.GetGaussPointsAndWeights(theNbPoints, aPoints, aWeights))
+        if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.GetGaussPointsAndWeights(nbPoints, points, weights))
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        double aHalfLen = 0.5 * (theUpper - theLower);
-        double aMid = 0.5 * (theUpper + theLower);
+        double halfLen = 0.5 * (upper - lower);
+        double mid = 0.5 * (upper + lower);
 
-        double aSum = 0.0;
-        for (int i = 1; i <= theNbPoints; ++i)
+        double sum = 0.0;
+        for (int i = 1; i <= nbPoints; ++i)
         {
-            double aX = aMid + aHalfLen * aPoints[i];
-            if (!theFunc.Value(aX, out double aF))
+            double x = mid + halfLen * points[i];
+            if (!func.Value(x, out double f))
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
-            aSum += aWeights[i] * aF;
+            sum += weights[i] * f;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aHalfLen * aSum;
-        aResult.NbPoints = theNbPoints;
-        aResult.NbIterations = 1;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = halfLen * sum;
+        result.NbPoints = nbPoints;
+        result.NbIterations = 1;
+        return result;
     }
 
     /// <summary>
     /// Adaptive Gauss-Legendre integration: compares two orders (InitialOrder and min(MaxOrder, 2*InitialOrder))
     /// and bisects recursively, up to MaxIterations levels, until they agree within Tolerance.
     /// </summary>
-    public static IntegResult GaussAdaptive<Function>(Function theFunc, double theLower, double theUpper, IntegConfig? theConfig = null)
+    public static IntegResult GaussAdaptive<Function>(Function func, double lower, double upper, IntegConfig? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new IntegConfig();
-        IntegResult aResult = new();
+        config ??= new IntegConfig();
+        IntegResult result = new();
 
-        if (theConfig.InitialOrder < 1 || theConfig.MaxOrder < theConfig.InitialOrder
-            || theConfig.MaxOrder > 61 || theConfig.MaxIterations < 1)
+        if (config.InitialOrder < 1 || config.MaxOrder < config.InitialOrder
+            || config.MaxOrder > 61 || config.MaxIterations < 1)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aCoarseOrder = theConfig.InitialOrder;
-        int aFineOrder = Min(theConfig.MaxOrder, Min(61, 2 * aCoarseOrder));
-        if (aFineOrder == aCoarseOrder)
+        int coarseOrder = config.InitialOrder;
+        int fineOrder = Min(config.MaxOrder, Min(61, 2 * coarseOrder));
+        if (fineOrder == coarseOrder)
         {
-            if (aCoarseOrder > 1)
+            if (coarseOrder > 1)
             {
-                aCoarseOrder -= 1;
+                coarseOrder -= 1;
             }
-            else if (theConfig.MaxOrder > 1)
+            else if (config.MaxOrder > 1)
             {
-                aFineOrder = 2;
+                fineOrder = 2;
             }
         }
 
-        IntegResult aCoarse = Gauss(theFunc, theLower, theUpper, aCoarseOrder);
-        if (!aCoarse.IsDone())
+        IntegResult coarse = Gauss(func, lower, upper, coarseOrder);
+        if (!coarse.IsDone)
         {
-            return aCoarse;
+            return coarse;
         }
 
-        IntegResult aFine = Gauss(theFunc, theLower, theUpper, aFineOrder);
-        if (!aFine.IsDone())
+        IntegResult fine = Gauss(func, lower, upper, fineOrder);
+        if (!fine.IsDone)
         {
-            return aFine;
+            return fine;
         }
 
-        double aError = Math.Abs(aFine.Value!.Value - aCoarse.Value!.Value);
-        double aScale = Max(Math.Abs(aFine.Value.Value), 1.0e-15);
+        double error = Math.Abs(fine.Value!.Value - coarse.Value!.Value);
+        double scale = Max(Math.Abs(fine.Value.Value), 1.0e-15);
 
-        if (aError < theConfig.Tolerance * aScale)
+        if (error < config.Tolerance * scale)
         {
-            aResult.Status = Status.OK;
-            aResult.Value = aFine.Value.Value;
-            aResult.AbsoluteError = aError;
-            aResult.RelativeError = aError / aScale;
-            aResult.NbPoints = aFineOrder;
-            aResult.NbIterations = 1;
-            return aResult;
+            result.Status = Status.OK;
+            result.Value = fine.Value.Value;
+            result.AbsoluteError = error;
+            result.RelativeError = error / scale;
+            result.NbPoints = fineOrder;
+            result.NbIterations = 1;
+            return result;
         }
 
-        if (theConfig.MaxIterations <= 1)
+        if (config.MaxIterations <= 1)
         {
-            aResult.Status = Status.MaxIterations;
-            aResult.Value = aFine.Value.Value;
-            aResult.AbsoluteError = aError;
-            aResult.RelativeError = aError / aScale;
-            aResult.NbPoints = aFineOrder;
-            aResult.NbIterations = 1;
-            return aResult;
+            result.Status = Status.MaxIterations;
+            result.Value = fine.Value.Value;
+            result.AbsoluteError = error;
+            result.RelativeError = error / scale;
+            result.NbPoints = fineOrder;
+            result.NbIterations = 1;
+            return result;
         }
 
-        double aMid = 0.5 * (theLower + theUpper);
+        double mid = 0.5 * (lower + upper);
 
-        IntegConfig aSubConfig = new(theConfig);
-        aSubConfig.MaxIterations = theConfig.MaxIterations - 1;
+        IntegConfig subConfig = new(config);
+        subConfig.MaxIterations = config.MaxIterations - 1;
 
-        IntegResult aLeft = GaussAdaptive(theFunc, theLower, aMid, aSubConfig);
-        if (!aLeft.IsDone())
+        IntegResult left = GaussAdaptive(func, lower, mid, subConfig);
+        if (!left.IsDone)
         {
-            aResult.Status = aLeft.Status;
-            aResult.Value = aLeft.Value;
-            return aResult;
+            result.Status = left.Status;
+            result.Value = left.Value;
+            return result;
         }
 
-        IntegResult aRight = GaussAdaptive(theFunc, aMid, theUpper, aSubConfig);
-        if (!aRight.IsDone())
+        IntegResult right = GaussAdaptive(func, mid, upper, subConfig);
+        if (!right.IsDone)
         {
-            aResult.Status = aRight.Status;
-            aResult.Value = aLeft.Value!.Value + (aRight.Value.HasValue ? aRight.Value.Value : 0.0);
-            return aResult;
+            result.Status = right.Status;
+            result.Value = left.Value!.Value + (right.Value.HasValue ? right.Value.Value : 0.0);
+            return result;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aLeft.Value!.Value + aRight.Value!.Value;
-        aResult.AbsoluteError = aLeft.AbsoluteError!.Value + aRight.AbsoluteError!.Value;
-        aResult.RelativeError = aResult.AbsoluteError.Value / Max(Math.Abs(aResult.Value.Value), 1.0e-15);
-        aResult.NbPoints = aLeft.NbPoints + aRight.NbPoints;
-        aResult.NbIterations = Max(aLeft.NbIterations, aRight.NbIterations) + 1;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = left.Value!.Value + right.Value!.Value;
+        result.AbsoluteError = left.AbsoluteError!.Value + right.AbsoluteError!.Value;
+        result.RelativeError = result.AbsoluteError.Value / Max(Math.Abs(result.Value.Value), 1.0e-15);
+        result.NbPoints = left.NbPoints + right.NbPoints;
+        result.NbIterations = Max(left.NbIterations, right.NbIterations) + 1;
+        return result;
     }
 
     /// <summary>Composite Gauss-Legendre rule: theNbIntervals equal subintervals, theNbPoints points each.</summary>
-    public static IntegResult GaussComposite<Function>(Function theFunc, double theLower, double theUpper, int theNbIntervals, int theNbPoints = 7)
+    public static IntegResult GaussComposite<Function>(Function func, double lower, double upper, int nbIntervals, int nbPoints = 7)
         where Function : IScalarFunction
     {
-        IntegResult aResult = new();
+        IntegResult result = new();
 
-        if (theNbIntervals < 1)
+        if (nbIntervals < 1)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        double aH = (theUpper - theLower) / theNbIntervals;
-        double aSum = 0.0;
-        int aTotalPoints = 0;
+        double h = (upper - lower) / nbIntervals;
+        double sum = 0.0;
+        int totalPoints = 0;
 
-        for (int i = 0; i < theNbIntervals; ++i)
+        for (int i = 0; i < nbIntervals; ++i)
         {
-            double aA = theLower + i * aH;
-            double aB = aA + aH;
+            double a = lower + i * h;
+            double b = a + h;
 
-            IntegResult aSubResult = Gauss(theFunc, aA, aB, theNbPoints);
-            if (!aSubResult.IsDone())
+            IntegResult subResult = Gauss(func, a, b, nbPoints);
+            if (!subResult.IsDone)
             {
-                aResult.Status = aSubResult.Status;
-                aResult.Value = aSum;
-                aResult.NbPoints = aTotalPoints;
-                return aResult;
+                result.Status = subResult.Status;
+                result.Value = sum;
+                result.NbPoints = totalPoints;
+                return result;
             }
 
-            aSum += aSubResult.Value!.Value;
-            aTotalPoints += aSubResult.NbPoints;
+            sum += subResult.Value!.Value;
+            totalPoints += subResult.NbPoints;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aSum;
-        aResult.NbPoints = aTotalPoints;
-        aResult.NbIterations = 1;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = sum;
+        result.NbPoints = totalPoints;
+        result.NbIterations = 1;
+        return result;
     }
 }

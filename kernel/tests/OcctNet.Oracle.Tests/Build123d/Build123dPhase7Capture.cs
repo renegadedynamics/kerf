@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -174,9 +176,9 @@ internal static partial class Build123dPhase7Capture
     internal static string ErrorOf(Exception e) => e switch
     {
         N.OcctException o => o.Message.IndexOf(':') is int c and > 0 ? o.Message[..c] : o.Message,
-        Standard_Failure f => f.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
         NullReferenceException => "OSD_Exception_ACCESS_VIOLATION",
-        _ => e.GetType().Name,
+        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()),
     };
 
     private static string Index(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS)
@@ -416,7 +418,7 @@ internal static partial class Build123dPhase7Capture
                         aClosing.Append(aFaces[i]);
                     }
                     aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, BRepOffset_Mode.BRepOffset_Skin, a.Inter, false,
-                                             (GeomAbs_JoinType)a.Join, a.RemoveIntEdges);
+                                             (JoinKind)a.Join, a.RemoveIntEdges);
                     aMT.Build();
                     string aStatus = $"done={aMT.IsDone()} error={(int)aMT.MakeOffset().Error()}";
                     TopoDS_Shape aRes = aMT.Shape();
@@ -432,7 +434,7 @@ internal static partial class Build123dPhase7Capture
                     }
                     else
                     {
-                        aMO.Initialize(theOps[0], a.Value, a.Tol, BRepOffset_Mode.BRepOffset_Skin, a.Inter, false, (GeomAbs_JoinType)a.Join,
+                        aMO.Initialize(theOps[0], a.Value, a.Tol, BRepOffset_Mode.BRepOffset_Skin, a.Inter, false, (JoinKind)a.Join,
                                        a.Thickening, a.RemoveIntEdges);
                     }
                     aMO.MakeOffsetShape();
@@ -446,8 +448,8 @@ internal static partial class Build123dPhase7Capture
                     var anIn = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
                     TopExp.MapShapes(theOps[0], anIn);
                     var aDraft = new BRepOffsetAPI_DraftAngle(theOps[0]);
-                    var aDir = new gp_Dir(a.Dir![0], a.Dir[1], a.Dir[2]);
-                    var aPln = new gp_Pln(new gp_Pnt(a.PlnLoc![0], a.PlnLoc[1], a.PlnLoc[2]), aDir);
+                    var aDir = new Direction3D(a.Dir![0], a.Dir[1], a.Dir[2]);
+                    var aPln = new Plane3D(new Point3D(a.PlnLoc![0], a.PlnLoc[1], a.PlnLoc[2]), aDir);
                     for (int k = 0; k < a.Faces!.Length; k++)
                     {
                         aDraft.Add(TopoDS.Face(aFaces[a.Faces[k]]), aDir, a.Angles![k], aPln, true);
@@ -522,13 +524,13 @@ internal static partial class Build123dPhase7Capture
                 }
                 default:
                 {
-                    TopoDS_Shape aRes = ShapeCustom.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, GeomAbs_Shape.GeomAbs_C0,
-                                                                       GeomAbs_Shape.GeomAbs_C0, true, !a.Nurbs, new ShapeCustom_RestrictionParameters());
+                    TopoDS_Shape aRes = ShapeCustom.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, Continuity.C0,
+                                                                       Continuity.C0, true, !a.Nurbs, new ShapeCustom_RestrictionParameters());
                     return new P7Port(null, "", aRes, "");
                 }
             }
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
             return new P7Port(ErrorOf(e), "", null, "");
         }

@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_LocalTime : Standard_Transient
+public class StepBasic_LocalTime : Transient
 {
     private int hourComponent;
     private int minuteComponent;

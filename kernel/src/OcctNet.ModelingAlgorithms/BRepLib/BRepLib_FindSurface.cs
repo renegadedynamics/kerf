@@ -3,7 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -27,9 +32,9 @@ public class BRepLib_FindSurface
     private double myTolerance;
     private double myTolReached;
     private bool isExisted;
-    private TopLoc_Location myLocation = new();
+    private Placement myLocation = new();
 
-    private static double Controle(NCollection_Sequence<gp_Pnt> thePoints, Geom_Plane thePlane)
+    private static double Controle(NCollection_Sequence<Point3D> thePoints, Geom_Plane thePlane)
     {
         double dfMaxDist = 0.0;
         double dist;
@@ -37,7 +42,7 @@ public class BRepLib_FindSurface
         thePlane.Coefficients(out double a, out double b, out double c, out double d);
         for (ii = 1; ii <= thePoints.Length(); ii++)
         {
-            gp_XYZ xyz = thePoints[ii].XYZ();
+            Xyz xyz = thePoints[ii].XYZ();
             dist = Math.Abs(a * xyz.X() + b * xyz.Y() + c * xyz.Z() + d);
             if (dist > dfMaxDist)
             {
@@ -53,11 +58,11 @@ public class BRepLib_FindSurface
     private static bool Is2DConnected(in TopoDS_Edge theEdge1,
                                       in TopoDS_Edge theEdge2,
                                       Geom_Surface theSurface,
-                                      in TopLoc_Location theLocation)
+                                      in Placement theLocation)
     {
         double f, l;
         Geom2d_Curve? aCurve;
-        gp_Pnt2d p1, p2;
+        Point2D p1, p2;
 
         // get 2D points
         aCurve = BRep_Tool.CurveOnSurface(theEdge1, theSurface, theLocation, out f, out l);
@@ -76,7 +81,7 @@ public class BRepLib_FindSurface
 
     // Return true if edges of theShape form a closed wire in
     // parametric space of theSurface
-    private static bool Is2DClosed(in TopoDS_Shape theShape, Geom_Surface theSurface, in TopLoc_Location theLocation)
+    private static bool Is2DClosed(in TopoDS_Shape theShape, Geom_Surface theSurface, in Placement theLocation)
     {
         try
         {
@@ -88,7 +93,7 @@ public class BRepLib_FindSurface
             }
             TopoDS_Wire aWire = TopoDS.Wire(aWireExp.Current());
             // a tmp face
-            TopoDS_Face aTmpFace = new BRepLib_MakeFace(theSurface, Precision.PConfusion()).InternalFace();
+            TopoDS_Face aTmpFace = new BRepLib_MakeFace(theSurface, global::Kerf.Engine.Foundation.Precision.PConfusion()).InternalFace();
 
             // check topological closeness using wire explorer, if the wire is not closed
             // the 1st and the last vertices of wire are different
@@ -117,7 +122,7 @@ public class BRepLib_FindSurface
             TopoDS_Vertex aV2 = TopExp.LastVertex(aLastEdge, true);
             return (aV1.IsSame(aV2) && Is2DConnected(aLastEdge, aFisrtEdge, theSurface, theLocation));
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -154,9 +159,9 @@ public class BRepLib_FindSurface
 
         int aNbP = Max(theDegree, 1);
 
-        for (int i = 1; (i < theKnots.Length()) && (theKnots[i] < (theParMax - Precision.PConfusion())); ++i)
+        for (int i = 1; (i < theKnots.Length()) && (theKnots[i] < (theParMax - global::Kerf.Engine.Foundation.Precision.PConfusion())); ++i)
         {
-            if (theKnots[i + 1] < theParMin + Precision.PConfusion())
+            if (theKnots[i + 1] < theParMin + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 continue;
             }
@@ -165,12 +170,12 @@ public class BRepLib_FindSurface
             for (int k = 1; k <= aNbP; ++k)
             {
                 double aPar = theKnots[i] + k * aStep;
-                if (aPar > theParMax - Precision.PConfusion())
+                if (aPar > theParMax - global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     break;
                 }
 
-                if (aPar > aPrevPar + Precision.PConfusion())
+                if (aPar > aPrevPar + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     theParams.Append(aPar);
                     aPrevPar = aPar;
@@ -182,11 +187,11 @@ public class BRepLib_FindSurface
 
     private static void fillPoints(BRepAdaptor_Curve theCurve,
                                    NCollection_DynamicArray<double> theParams,
-                                   NCollection_Sequence<gp_Pnt> thePoints,
+                                   NCollection_Sequence<Point3D> thePoints,
                                    NCollection_Sequence<double> theWeights)
     {
         double aDistPrev = 0.0, aDistNext;
-        gp_Pnt aPPrev = theCurve.Value(theParams[0]), aPNext = new();
+        Point3D aPPrev = theCurve.Value(theParams[0]), aPNext = new();
 
         for (int iP = 1; iP <= theParams.Length(); ++iP)
         {
@@ -244,7 +249,7 @@ public class BRepLib_FindSurface
         double f = 0, l = 0, ff = 0, ll = 0;
         Geom2d_Curve? PC = null, aPPC = null;
         Geom_Surface? SS = null;
-        var L = new TopLoc_Location();
+        var L = new Placement();
         int i = 0, j;
 
         // iterate on the surfaces of the first edge
@@ -320,7 +325,7 @@ public class BRepLib_FindSurface
         //                    2. Minimizing the weighed sum of squared deviations
         //                       compute coefficients of the sought plane.
 
-        var aPoints = new NCollection_Sequence<gp_Pnt>();
+        var aPoints = new NCollection_Sequence<Point3D>();
         var aWeight = new NCollection_Sequence<double>();
 
         // ======================= Step #1
@@ -341,7 +346,7 @@ public class BRepLib_FindSurface
             var aParams = new NCollection_DynamicArray<double>();
             switch (c.GetType())
             {
-                case GeomAbs_BezierCurve:
+                case BezierCurve:
                 {
                     Geom_BezierCurve GC = c.Bezier();
                     var aKnots = new NCollection_Array1<double>(1, 2);
@@ -351,34 +356,34 @@ public class BRepLib_FindSurface
                     fillParams(aKnots, GC.Degree(), dfUf, dfUl, aParams);
                     break;
                 }
-                case GeomAbs_BSplineCurve:
+                case BSplineCurve:
                 {
                     Geom_BSplineCurve GC = c.BSpline();
                     fillParams(GC.InternalKnots(), GC.Degree(), dfUf, dfUl, aParams);
                     break;
                 }
-                case GeomAbs_Line:
+                case Line:
                 {
                     // Two points on a straight segment
                     aParams.Append(dfUf);
                     aParams.Append(dfUl);
                     break;
                 }
-                case GeomAbs_Circle:
-                case GeomAbs_Ellipse:
-                case GeomAbs_Hyperbola:
-                case GeomAbs_Parabola:
+                case Circle:
+                case Ellipse:
+                case Hyperbola:
+                case Parabola:
                 default:
                 {
                     // Four points on other analytical curves
-                    if (c.GetType() is GeomAbs_Circle or GeomAbs_Ellipse or GeomAbs_Hyperbola or GeomAbs_Parabola)
+                    if (c.GetType() is Circle or Ellipse or Hyperbola or Parabola)
                     {
                         iNbPoints = 4;
                     }
                     // Put some points on other curves
                     if (iNbPoints == 0)
                     {
-                        iNbPoints = 15 + c.NbIntervals(GeomAbs_Shape.GeomAbs_C3);
+                        iNbPoints = 15 + c.NbIntervals(Continuity.C3);
                     }
 
                     var aBounds = new NCollection_Array1<double>(1, 2);
@@ -402,11 +407,11 @@ public class BRepLib_FindSurface
         // ======================= Step #2
         myLocation.Identity();
         int iPoint;
-        var aMat = new math_Matrix(1, 3, 1, 3, 0.0);
+        var aMat = new Matrix(1, 3, 1, 3, 0.0);
         var aVec = new math_Vector(1, 3, 0.0);
         // Find the barycenter and normalize weights
         double dfMaxWeight = 0.0;
-        var aBaryCenter = new gp_XYZ(0.0, 0.0, 0.0);
+        var aBaryCenter = new Xyz(0.0, 0.0, 0.0);
         double dfSumWeight = 0.0;
         for (iPoint = 1; iPoint <= aPoints.Length(); iPoint++)
         {
@@ -423,7 +428,7 @@ public class BRepLib_FindSurface
         // Fill the matrix and the right vector
         for (iPoint = 1; iPoint <= aPoints.Length(); iPoint++)
         {
-            gp_XYZ p = aPoints[iPoint].XYZ() - aBaryCenter;
+            Xyz p = aPoints[iPoint].XYZ() - aBaryCenter;
             double w = aWeight[iPoint] / dfMaxWeight;
             aMat[1, 1] += w * p.X() * p.X();
             aMat[1, 2] += w * p.X() * p.Y();
@@ -438,9 +443,9 @@ public class BRepLib_FindSurface
         aMat[3, 1] = aMat[1, 3];
         aMat[3, 2] = aMat[2, 3];
         //
-        var anEignval = new math_Jacobi(aMat);
+        var anEignval = new Jacobi(aMat);
         math_Vector anEVals;
-        bool isSolved = anEignval.IsDone();
+        bool isSolved = anEignval.IsDone;
         int isol = 0;
         if (isSolved)
         {
@@ -498,14 +503,14 @@ public class BRepLib_FindSurface
                     var aVec2 = new math_Vector(1, 3, 0.0);
                     anEignval.Vector(ind[0], aVec1);
                     anEignval.Vector(ind[1], aVec2);
-                    var aV1 = new gp_Vec(aVec1[1], aVec1[2], aVec1[3]);
-                    var aV2 = new gp_Vec(aVec2[1], aVec2[2], aVec2[3]);
-                    gp_Vec aN0 = aV1 ^ aV2;
+                    var aV1 = new Vector3D(aVec1[1], aVec1[2], aVec1[3]);
+                    var aV2 = new Vector3D(aVec2[1], aVec2[2], aVec2[3]);
+                    Vector3D aN0 = aV1 ^ aV2;
                     aVec[1] = aN0.X();
                     aVec[2] = aN0.Y();
                     aVec[3] = aN0.Z();
                 }
-                if (aVec.Norm2() < gp.Resolution())
+                if (aVec.Norm2() < Constants.Resolution())
                 {
                     isSolved = false;
                 }
@@ -526,8 +531,8 @@ public class BRepLib_FindSurface
                 aVec[i] = 0.0;
             }
         }
-        var aN = new gp_Vec(aVec[1], aVec[2], aVec[3]);
-        var aPlane = new Geom_Plane(new gp_Pnt(aBaryCenter), new gp_Dir(aN));
+        var aN = new Vector3D(aVec[1], aVec[2], aVec[3]);
+        var aPlane = new Geom_Plane(new Point3D(aBaryCenter), new Direction3D(aN));
         myTolReached = Controle(aPoints, aPlane);
         const double aWeakness = 5.0;
         if (myTolReached <= myTolerance || (Tol < 0 && myTolReached < myTolerance * aWeakness))
@@ -537,13 +542,13 @@ public class BRepLib_FindSurface
             if (S.ShapeType() == TopAbs_WIRE && S.Closed())
             {
                 TopoDS_Wire aW = TopoDS.Wire(S);
-                TopoDS_Face aTmpFace = new BRepLib_MakeFace(mySurface, Precision.Confusion()).InternalFace();
+                TopoDS_Face aTmpFace = new BRepLib_MakeFace(mySurface, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
                 var BB = new BRep_Builder();
                 BB.Add(aTmpFace, aW);
                 var FClass = new BRepTopAdaptor_FClass2d(aTmpFace, 0.0);
                 if (FClass.PerformInfinitePoint() == TopAbs_IN)
                 {
-                    gp_Dir aNorm = aPlane.Position().Direction();
+                    Direction3D aNorm = aPlane.Position().Direction();
                     aNorm.Reverse();
                     mySurface = new Geom_Plane(aPlane.Position().Location(), aNorm);
                 }
@@ -586,7 +591,7 @@ public class BRepLib_FindSurface
     }
 
     /// <summary>The location of the surface (of an existing surface; identity for a fitted plane).</summary>
-    public TopLoc_Location Location()
+    public Placement Location()
     {
         return myLocation;
     }

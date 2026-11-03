@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -210,7 +212,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
             var B = new BRep_Builder();
             var sae = new ShapeAnalysis_Edge();
             var sbe = new ShapeBuild_Edge();
-            double preci = Occt.Precision.PConfusion();
+            double preci = Kerf.Engine.Foundation.Precision.PConfusion();
             for (var exp = new TopExp_Explorer(myResult, TopAbs_FACE); exp.More(); exp.Next())
             {
                 TopoDS_Face face = TopoDS.Face(exp.Current());
@@ -243,16 +245,16 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                                     sbe.SetRange3d(edge, 0, 1);
                                 }
                                 { // gka fix against small edges ; merging ends of 3d curves
-                                    gp_Pnt p1 = bezier3d.Value(first);
-                                    gp_Pnt p2 = bezier3d.Value(last);
-                                    gp_Pnt p1v = BRep_Tool.Pnt(V1);
-                                    gp_Pnt p2v = BRep_Tool.Pnt(V2);
-                                    if (p1.Distance(p1v) > Occt.Precision.Confusion())
+                                    Point3D p1 = bezier3d.Value(first);
+                                    Point3D p2 = bezier3d.Value(last);
+                                    Point3D p1v = BRep_Tool.Pnt(V1);
+                                    Point3D p2v = BRep_Tool.Pnt(V2);
+                                    if (p1.Distance(p1v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = mutable3d(bezier3d);
                                         bezier3d.SetPole(1, p1v);
                                     }
-                                    if (p2.Distance(p2v) > Occt.Precision.Confusion())
+                                    if (p2.Distance(p2v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = mutable3d(bezier3d);
                                         bezier3d.SetPole(bezier3d.NbPoles(), p2v);
@@ -427,50 +429,50 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
                         l1 = bezier.LastParameter();
                         f2 = beziernext.FirstParameter();
                         l2 = beziernext.LastParameter();
-                        gp_Pnt2d p2d1 = bezier.Value(f1);
-                        gp_Pnt2d p2d2 = bezier.Value(l1);
-                        gp_Pnt2d p2d1next = beziernext.Value(f2);
-                        gp_Pnt2d p2d2next = beziernext.Value(l2);
+                        Point2D p2d1 = bezier.Value(f1);
+                        Point2D p2d2 = bezier.Value(l1);
+                        Point2D p2d1next = beziernext.Value(f2);
+                        Point2D p2d2next = beziernext.Value(l2);
 
-                        void setPoles(int theIndex, int theIndexNext, in gp_Pnt2d thePnt)
+                        void setPoles(int theIndex, int theIndexNext, in Point2D thePnt)
                         {
-                            gp_Pnt2d aPnt = thePnt;
+                            Point2D aPnt = thePnt;
                             change(edge, bezier!, b => b.SetPole(theIndex, aPnt));
                             change(edgenext, beziernext!, b => b.SetPole(theIndexNext, aPnt));
                         }
 
                         if (edge.Orientation() == TopAbs_FORWARD && edgenext.Orientation() == TopAbs_FORWARD)
                         {
-                            if (p2d2.Distance(p2d1next) > Occt.Precision.PConfusion())
+                            if (p2d2.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                var pmid = new gp_Pnt2d(0.5 * (p2d2.XY() + p2d1next.XY()));
+                                var pmid = new Point2D(0.5 * (p2d2.XY() + p2d1next.XY()));
                                 setPoles(bezier.NbPoles(), 1, pmid);
                             }
                         }
 
                         if (edge.Orientation() == TopAbs_FORWARD && edgenext.Orientation() == TopAbs_REVERSED)
                         {
-                            if (p2d2.Distance(p2d2next) > Occt.Precision.PConfusion())
+                            if (p2d2.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                var pmid = new gp_Pnt2d(0.5 * (p2d2.XY() + p2d2next.XY()));
+                                var pmid = new Point2D(0.5 * (p2d2.XY() + p2d2next.XY()));
                                 setPoles(bezier.NbPoles(), beziernext.NbPoles(), pmid);
                             }
                         }
 
                         if (edge.Orientation() == TopAbs_REVERSED && edgenext.Orientation() == TopAbs_FORWARD)
                         {
-                            if (p2d1.Distance(p2d1next) > Occt.Precision.PConfusion())
+                            if (p2d1.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                var pmid = new gp_Pnt2d(0.5 * (p2d1.XY() + p2d1next.XY()));
+                                var pmid = new Point2D(0.5 * (p2d1.XY() + p2d1next.XY()));
                                 setPoles(1, 1, pmid);
                             }
                         }
 
                         if (edge.Orientation() == TopAbs_REVERSED && edgenext.Orientation() == TopAbs_REVERSED)
                         {
-                            if (p2d1.Distance(p2d2next) > Occt.Precision.PConfusion())
+                            if (p2d1.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                var pmid = new gp_Pnt2d(0.5 * (p2d1.XY() + p2d2next.XY()));
+                                var pmid = new Point2D(0.5 * (p2d1.XY() + p2d2next.XY()));
                                 setPoles(1, beziernext.NbPoles(), pmid);
                             }
                         }
@@ -487,7 +489,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     // OCCT.NET: a 3D Bezier curve OCCT changes in place: the curve itself if ported code owns it, else a copy (the
     // edge's curve is frozen once attached); OCCT's following UpdateEdge attaches it.
     private static Geom_BezierCurve mutable3d(Geom_BezierCurve theCurve) =>
-        theCurve.IsFrozen() ? (Geom_BezierCurve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom_BezierCurve)theCurve.Copy() : theCurve;
 
     // OCCT.NET: changes a pcurve as OCCT does in place. A frozen curve (attached to the edge) is changed on a copy,
     // which then replaces the curve in the edge's representations, where OCCT's change would show; a curve that isn't
@@ -495,7 +497,7 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     private static Geom2d_BezierCurve changed2d(in TopoDS_Edge theEdge, in TopoDS_Edge theOther, Geom2d_BezierCurve theCurve,
                                                 Action<Geom2d_BezierCurve> theChange)
     {
-        if (!theCurve.IsFrozen())
+        if (!theCurve.IsFrozen)
         {
             theChange(theCurve);
             return theCurve;
@@ -561,11 +563,11 @@ public class ShapeUpgrade_ShapeConvertToBezier : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>The message sent for a converted face.</summary>
-    protected override Message_Msg GetFaceMsg() => new("ShapeDivide.FaceConvertToBezier.MSG0");
+    protected override Msg GetFaceMsg() => new("ShapeDivide.FaceConvertToBezier.MSG0");
 
     /// <summary>The message sent for a converted free wire.</summary>
-    protected override Message_Msg GetWireMsg() => new("ShapeDivide.WireConvertToBezier.MSG0");
+    protected override Msg GetWireMsg() => new("ShapeDivide.WireConvertToBezier.MSG0");
 
     /// <summary>The message sent for a converted free edge.</summary>
-    protected override Message_Msg GetEdgeMsg() => new("ShapeDivide.EdgeConvertToBezier.MSG0");
+    protected override Msg GetEdgeMsg() => new("ShapeDivide.EdgeConvertToBezier.MSG0");
 }

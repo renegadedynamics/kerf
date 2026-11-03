@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_SpecPntType;
 
 namespace Occt;
@@ -20,7 +24,7 @@ namespace Occt;
 public static class IntPatch_SpecialPoints
 {
     /// <summary>The function whose zero is an intersection point lying on a seam (isoline) of the quadric.</summary>
-    private sealed class FuncPreciseSeam : math_FunctionSetWithDerivatives
+    private sealed class FuncPreciseSeam : FunctionSetWithDerivatives
     {
         private readonly Adaptor3d_Surface myQSurf;
         private readonly Adaptor3d_Surface myPSurf;
@@ -51,12 +55,12 @@ public static class IntPatch_SpecialPoints
                 int anIndX = theX.Lower(), anIndF = theF.Lower();
                 Span<double> aUV = [myIsoParameter, myIsoParameter];
                 aUV[mySeamCoordInd] = theX[anIndX + 2];
-                gp_Pnt aP1 = myPSurf.Value(theX[anIndX], theX[anIndX + 1]);
-                gp_Pnt aP2 = myQSurf.Value(aUV[0], aUV[1]);
+                Point3D aP1 = myPSurf.Value(theX[anIndX], theX[anIndX + 1]);
+                Point3D aP2 = myQSurf.Value(aUV[0], aUV[1]);
 
                 (aP1.XYZ() - aP2.XYZ()).Coord(out theF[anIndF], out theF[anIndF + 1], out theF[anIndF + 2]);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -64,7 +68,7 @@ public static class IntPatch_SpecialPoints
             return true;
         }
 
-        public override bool Derivatives(math_Vector theX, math_Matrix theD)
+        public override bool Derivatives(math_Vector theX, Matrix theD)
         {
             try
             {
@@ -73,8 +77,8 @@ public static class IntPatch_SpecialPoints
                 aUV[mySeamCoordInd] = theX[anIndX + 2];
 
                 // 0 for U-coordinate, 1 - for V one
-                myPSurf.D1(theX[anIndX], theX[anIndX + 1], out _, out gp_Vec aD10, out gp_Vec aD11);
-                myQSurf.D1(aUV[0], aUV[1], out _, out gp_Vec aD20, out gp_Vec aD21);
+                myPSurf.D1(theX[anIndX], theX[anIndX + 1], out _, out Vector3D aD10, out Vector3D aD11);
+                myQSurf.D1(aUV[0], aUV[1], out _, out Vector3D aD20, out Vector3D aD21);
 
                 // d/dX1
                 aD10.Coord(out theD[anIndRD, anIndCD], out theD[anIndRD + 1, anIndCD], out theD[anIndRD + 2, anIndCD]);
@@ -88,7 +92,7 @@ public static class IntPatch_SpecialPoints
                                                                     out theD[anIndRD + 1, anIndCD + 2],
                                                                     out theD[anIndRD + 2, anIndCD + 2]);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -96,7 +100,7 @@ public static class IntPatch_SpecialPoints
             return true;
         }
 
-        public override bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public override bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             if (!Value(theX, theF))
             {
@@ -113,32 +117,32 @@ public static class IntPatch_SpecialPoints
     }
 
     // Computes tangent having the given parameter. See calling method(s) for detailed information.
-    private static gp_XYZ GetTangent(double theConeSemiAngle, double theParameter)
+    private static Xyz GetTangent(double theConeSemiAngle, double theParameter)
     {
         double aW2 = theParameter * theParameter;
         double aCosUn = (1.0 - aW2) / (1.0 + aW2);
         double aSinUn = 2.0 * theParameter / (1.0 + aW2);
 
         double aTanA = Math.Tan(theConeSemiAngle);
-        return new gp_XYZ(aTanA * aCosUn, aTanA * aSinUn, 1.0);
+        return new Xyz(aTanA * aCosUn, aTanA * aSinUn, 1.0);
     }
 
     // Checks if thePt is in theSurf (with given tolerance). Returns the foot of projection (theProjPt) and its
     // parameters on theSurf.
-    private static bool IsPointOnSurface(Adaptor3d_Surface theSurf, in gp_Pnt thePt, double theTol,
-                                         ref gp_Pnt theProjPt, ref double theUpar, ref double theVpar)
+    private static bool IsPointOnSurface(Adaptor3d_Surface theSurf, in Point3D thePt, double theTol,
+                                         ref Point3D theProjPt, ref double theUpar, ref double theVpar)
     {
         bool aRetVal = false;
 
         switch (theSurf.GetType())
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_SurfaceOfExtrusion:
-            case GeomAbs_SurfaceOfRevolution:
+            case Plane:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
+            case SurfaceOfExtrusion:
+            case SurfaceOfRevolution:
             {
                 Extrema_ExtPS anExtr = new(thePt, theSurf, theSurf.UResolution(theTol), theSurf.VResolution(theTol),
                                            Extrema_ExtFlag.Extrema_ExtFlag_MIN);
@@ -166,7 +170,7 @@ public static class IntPatch_SpecialPoints
                     }
                     else
                     {
-                        theProjPt = new gp_Pnt(anExtr.Point(anExtrIndex).Value().XYZ());
+                        theProjPt = new Point3D(anExtr.Point(anExtrIndex).Value().XYZ());
                         anExtr.Point(anExtrIndex).Parameter(out theUpar, out theVpar);
                         aRetVal = true;
                     }
@@ -184,7 +188,7 @@ public static class IntPatch_SpecialPoints
                 else
                 {
                     anExtr.Point().Parameter(out theUpar, out theVpar);
-                    theProjPt = new gp_Pnt(anExtr.Point().Value().XYZ());
+                    theProjPt = new Point3D(anExtr.Point().Value().XYZ());
                     aRetVal = true;
                 }
             }
@@ -220,7 +224,7 @@ public static class IntPatch_SpecialPoints
         // Quadric point
         double aUquad = 0.0, aVquad = 0.0;
 
-        theQSurf.D0(aUquad, aVquad, out gp_Pnt aPQuad);
+        theQSurf.D0(aUquad, aVquad, out Point3D aPQuad);
 
         Extrema_GenLocateExtPS anExtr = new(thePSurf);
         anExtr.Perform(aPQuad, aU0, aV0);
@@ -236,15 +240,15 @@ public static class IntPatch_SpecialPoints
         }
 
         anExtr.Point().Parameter(out aU0, out aV0);
-        gp_Pnt aP0 = anExtr.Point().Value();
+        Point3D aP0 = anExtr.Point().Value();
 
         if (theIsReversed)
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
         }
         else
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
         }
 
         AdjustPointAndVertex(theRefPt, anArrOfPeriod, ref theAddedPoint);
@@ -269,10 +273,10 @@ public static class IntPatch_SpecialPoints
 
         FuncPreciseSeam aF = new(theQSurf, thePSurf, theIsU, theIsoParameter);
 
-        math_FunctionSetRoot aSRF = new(aF, theToler);
+        FunctionSetRoot aSRF = new(aF, theToler);
         aSRF.Perform(aF, theInitPoint, theInfBound, theSupBound);
 
-        if (!aSRF.IsDone())
+        if (!aSRF.IsDone)
         {
             return false;
         }
@@ -286,16 +290,16 @@ public static class IntPatch_SpecialPoints
         // On quadric
         double aUquad = theIsU ? 0.0 : aRoots[3];
         double aVquad = theIsU ? aRoots[3] : 0.0;
-        gp_Pnt aPQuad = theQSurf.Value(aUquad, aVquad);
-        gp_Pnt aP0 = thePSurf.Value(aU0, aV0);
+        Point3D aPQuad = theQSurf.Value(aUquad, aVquad);
+        Point3D aP0 = thePSurf.Value(aU0, aV0);
 
         if (theIsReversed)
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
         }
         else
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
         }
 
         AdjustPointAndVertex(theRefPt, anArrOfPeriod, ref theAddedPoint);
@@ -305,16 +309,16 @@ public static class IntPatch_SpecialPoints
     /// <summary>
     /// Computes the "special point" on a sphere (the U parameter at a pole), in [0, 2*PI]; the caller adjusts it.
     /// </summary>
-    internal static bool ProcessSphere(in IntSurf_PntOn2S thePtIso, in gp_Vec theDUofPSurf, in gp_Vec theDVofPSurf,
+    internal static bool ProcessSphere(in IntSurf_PntOn2S thePtIso, in Vector3D theDUofPSurf, in Vector3D theDVofPSurf,
                                        bool theIsReversed, double theVquad, ref double theUquad,
                                        out bool theIsIsoChoosen)
     {
         theIsIsoChoosen = false;
 
         // Vector with {cos(Uq), sin(Uq)} coordinates. It is always normalized.
-        gp_Vec2d aV1 = new();
+        Vector2D aV1 = new();
 
-        if ((Math.Abs(theDUofPSurf.Z()) < Precision.PConfusion()) && (Math.Abs(theDVofPSurf.Z()) < Precision.PConfusion()))
+        if ((Math.Abs(theDUofPSurf.Z()) < global::Kerf.Engine.Foundation.Precision.PConfusion()) && (Math.Abs(theDVofPSurf.Z()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             // Example of this case is an intersection of a plane with a sphere when the plane tangents the sphere in
             // some pole (i.e. only one intersection point, not line). In this case, U-coordinate of the sphere is
@@ -365,21 +369,21 @@ public static class IntPatch_SpecialPoints
     /// <summary>
     /// Computes the "special point" on a cone (the U parameter at the apex), in [0, 2*PI]; the caller adjusts it.
     /// </summary>
-    internal static bool ProcessCone(in IntSurf_PntOn2S thePtIso, in gp_Vec theDUofPSurf, in gp_Vec theDVofPSurf,
-                                     in gp_Cone theCone, bool theIsReversed, ref double theUquad,
+    internal static bool ProcessCone(in IntSurf_PntOn2S thePtIso, in Vector3D theDUofPSurf, in Vector3D theDVofPSurf,
+                                     in Cone theCone, bool theIsReversed, ref double theUquad,
                                      out bool theIsIsoChoosen)
     {
         theIsIsoChoosen = false;
 
         // A plane tangent to 2nd (intersected) surface. Its normal.
-        gp_XYZ aTgPlaneZ = theDUofPSurf.Crossed(theDVofPSurf).XYZ();
+        Xyz aTgPlaneZ = theDUofPSurf.Crossed(theDVofPSurf).XYZ();
         double aSqModTg = aTgPlaneZ.SquareModulus();
-        if (aSqModTg < Precision.SquareConfusion())
+        if (aSqModTg < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             theIsIsoChoosen = true;
         }
 
-        gp_XYZ[] aTgILine = new gp_XYZ[2];
+        Xyz[] aTgILine = new Xyz[2];
         int aNbTangent = !theIsIsoChoosen
                              ? GetTangentToIntLineForCone(theCone.SemiAngle(), aTgPlaneZ.Divided(Math.Sqrt(aSqModTg)),
                                                           aTgILine)
@@ -402,7 +406,7 @@ public static class IntPatch_SpecialPoints
                 thePtIso.ParametersOnS1(out aUIso, out aVIso);
             }
 
-            aUIso = ElCLib.InPeriod(aUIso, 0.0, aPeriod);
+            aUIso = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aUIso, 0.0, aPeriod);
 
             // Sought U-parameter in the apex point
 
@@ -411,9 +415,9 @@ public static class IntPatch_SpecialPoints
             for (int anIdx = 0; anIdx < aNbTangent; anIdx++)
             {
                 // Vector {cos(a), sin(a)}
-                gp_Vec2d aVecCS = new(aTgILine[anIdx].X(), aTgILine[anIdx].Y());
+                Vector2D aVecCS = new(aTgILine[anIdx].X(), aTgILine[anIdx].Y());
                 double aSqMod = aVecCS.SquareMagnitude();
-                if (aSqMod < Precision.SquareConfusion())
+                if (aSqMod < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     theIsIsoChoosen = true;
                     break;
@@ -444,7 +448,7 @@ public static class IntPatch_SpecialPoints
                 }
 
                 // Select the parameter the nearest to aUIso
-                anUq = ElCLib.InPeriod(anUq, 0.0, aPeriod);
+                anUq = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anUq, 0.0, aPeriod);
                 double aDelta = Math.Abs(anUq - aUIso);
                 if (aDelta > M_PI)
                 {
@@ -487,7 +491,7 @@ public static class IntPatch_SpecialPoints
     /// intersection with the plane through the apex of normal <paramref name="thePlnNormal"/> (normalized). Returns
     /// their number.
     /// </summary>
-    internal static int GetTangentToIntLineForCone(double theConeSemiAngle, in gp_XYZ thePlnNormal, gp_XYZ[] theResult)
+    internal static int GetTangentToIntLineForCone(double theConeSemiAngle, in Xyz thePlnNormal, Xyz[] theResult)
     {
         double aNullTol = Epsilon(1.0);
         double aTanA = Math.Tan(theConeSemiAngle);
@@ -546,7 +550,7 @@ public static class IntPatch_SpecialPoints
         // On parametric
         double aU0, aV0;
         // aPQuad is Pole
-        gp_Pnt aP0 = new();
+        Point3D aP0 = new();
         double aUquad, aVquad;
         if (theIsReversed)
         {
@@ -559,23 +563,23 @@ public static class IntPatch_SpecialPoints
 
         aUquad = 0.0;
 
-        if (theQSurf.GetType() == GeomAbs_Sphere)
+        if (theQSurf.GetType() == SurfaceKind.Sphere)
         {
             aVquad = Math.CopySign(M_PI_2, aVquad);
         }
-        else if (theQSurf.GetType() == GeomAbs_Cone)
+        else if (theQSurf.GetType() == SurfaceKind.Cone)
         {
-            gp_Cone aCo = theQSurf.Cone();
+            Cone aCo = theQSurf.Cone();
             double aRadius = aCo.RefRadius();
             double aSemiAngle = aCo.SemiAngle();
             aVquad = -aRadius / Math.Sin(aSemiAngle);
         }
         else
         {
-            throw new Standard_TypeMismatch("IntPatch_SpecialPoints::AddSingularPole(),Unsupported quadric with Pole");
+            throw new TypeMismatchException("IntPatch_SpecialPoints::AddSingularPole(),Unsupported quadric with Pole");
         }
 
-        theQSurf.D0(aUquad, aVquad, out gp_Pnt aPQuad);
+        theQSurf.D0(aUquad, aVquad, out Point3D aPQuad);
         double aTol = theVertex.Tolerance();
         if (theIsReqRefCheck && (aPQuad.SquareDistance(theVertex.Value()) >= aTol * aTol))
         {
@@ -591,14 +595,14 @@ public static class IntPatch_SpecialPoints
 
         if (theIsReversed)
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
         }
         else
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
         }
 
-        bool isSame = theAddedPoint.IsSame(theVertex.PntOn2S(), Precision.Confusion());
+        bool isSame = theAddedPoint.IsSame(theVertex.PntOn2S(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Found pole does not exist in the Walking-line. It must be added there (with correct 2D-parameters).
 
@@ -606,11 +610,11 @@ public static class IntPatch_SpecialPoints
         // The algorithm depends on the type of the quadric (sphere or cone). The derivatives of thePSurf are
         // transformed into the coordinate system of the quadric.
 
-        thePSurf.D1(aU0, aV0, out _, out gp_Vec aVecDu, out gp_Vec aVecDv);
+        thePSurf.D1(aU0, aV0, out _, out Vector3D aVecDu, out Vector3D aVecDv);
 
         // Transforms parametric surface in coordinate-system of the quadric
-        gp_Trsf aTr = new();
-        aTr.SetTransformation((theQSurf.GetType() == GeomAbs_Sphere) ? theQSurf.Sphere().Position()
+        Transform3D aTr = new();
+        aTr.SetTransformation((theQSurf.GetType() == SurfaceKind.Sphere) ? theQSurf.Sphere().Position()
                                                                       : theQSurf.Cone().Position());
 
         // Derivatives of transformed thePSurf
@@ -619,7 +623,7 @@ public static class IntPatch_SpecialPoints
 
         bool isIsoChoosen;
 
-        if (theQSurf.GetType() == GeomAbs_Sphere)
+        if (theQSurf.GetType() == SurfaceKind.Sphere)
         {
             if (!ProcessSphere(thePtIso, aVecDu, aVecDv, theIsReversed, aVquad, ref aUquad, out isIsoChoosen))
             {
@@ -636,11 +640,11 @@ public static class IntPatch_SpecialPoints
 
         if (theIsReversed)
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aU0, aV0, aUquad, aVquad);
         }
         else
         {
-            theAddedPoint.SetValue(new gp_Pnt(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
+            theAddedPoint.SetValue(new Point3D(0.5 * (aP0.XYZ() + aPQuad.XYZ())), aUquad, aVquad, aU0, aV0);
         }
 
         if (isSame)
@@ -685,12 +689,12 @@ public static class IntPatch_SpecialPoints
             return false;
         }
 
-        if (theNewPoint.IsSame(theRefPt, Precision.Confusion(), theTol2D))
+        if (theNewPoint.IsSame(theRefPt, global::Kerf.Engine.Foundation.Precision.Confusion(), theTol2D))
         {
             return false;
         }
 
-        if ((theSPType == IntPatch_SPntPole) && (theQSurf.GetType() == GeomAbs_Cone))
+        if ((theSPType == IntPatch_SPntPole) && (theQSurf.GetType() == SurfaceKind.Cone))
         {
             // Check if the condition b) is satisfied. Repeat the same steps as in AddSingularPole.
 
@@ -708,10 +712,10 @@ public static class IntPatch_SpecialPoints
                 theNewPoint.Parameters(out aUquad, out aVquad, out aU0, out aV0);
             }
 
-            thePSurf.D1(aU0, aV0, out _, out gp_Vec aVecDu, out gp_Vec aVecDv);
+            thePSurf.D1(aU0, aV0, out _, out Vector3D aVecDu, out Vector3D aVecDv);
 
             // Transforms parametric surface in coordinate-system of the quadric
-            gp_Trsf aTr = new();
+            Transform3D aTr = new();
             aTr.SetTransformation(theQSurf.Cone().Position());
 
             // Derivatives of transformed thePSurf

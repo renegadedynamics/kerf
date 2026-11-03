@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// the intersections of the curve and the quadric.
 /// </summary>
 public sealed class IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter
-    : math_FunctionWithDerivative,
+    : FunctionWithDerivative,
       IIntCurveSurface_TheQuadCurvFunc<IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter, Adaptor3d_Curve>
 {
     private readonly IntSurf_Quadric myQuadric;
@@ -34,16 +38,16 @@ public sealed class IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter
 
     public override bool Derivative(double Param, out double D)
     {
-        IntCurveSurface_TheHCurveTool.D1(myCurve, Param, out gp_Pnt P, out gp_Vec T);
+        IntCurveSurface_TheHCurveTool.D1(myCurve, Param, out Point3D P, out Vector3D T);
         D = T.Dot(myQuadric.Gradient(P));
         return (true);
     }
 
     public override bool Values(double Param, out double F, out double D)
     {
-        IntCurveSurface_TheHCurveTool.D1(myCurve, Param, out gp_Pnt P, out gp_Vec T);
+        IntCurveSurface_TheHCurveTool.D1(myCurve, Param, out Point3D P, out Vector3D T);
         F = 0.0;
-        gp_Vec Grad = new();
+        Vector3D Grad = new();
         myQuadric.ValAndGrad(P, ref F, ref Grad);
         D = T.Dot(Grad);
         return (true);

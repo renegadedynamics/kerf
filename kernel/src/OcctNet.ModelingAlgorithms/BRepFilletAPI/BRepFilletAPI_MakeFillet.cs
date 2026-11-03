@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.ChFi3d_FilletShape;
 using static Occt.TopAbs_ShapeEnum;
@@ -59,7 +62,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// Changes the continuity of the fillet surfaces (C0, C1 or C2; C1 by default) and the G1 tolerance between the
     /// fillets and their support faces.
     /// </summary>
-    public void SetContinuity(GeomAbs_Shape InternalContinuity, double AngularTolerance)
+    public void SetContinuity(Continuity InternalContinuity, double AngularTolerance)
     {
         myBuilder.SetContinuity(InternalContinuity, AngularTolerance);
     }
@@ -122,7 +125,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// Adds a fillet contour whose radius interpolates the pairs <paramref name="UandR"/>: X a relative parameter on
     /// the spine in [0, 1], Y the radius there.
     /// </summary>
-    public void Add(NCollection_Array1<gp_Pnt2d> UandR, in TopoDS_Edge E)
+    public void Add(NCollection_Array1<Point2D> UandR, in TopoDS_Edge E)
     {
         myBuilder.Add(E);
         int IC = myBuilder.Contains(E, out int IinC);
@@ -137,7 +140,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// <summary>Sets the radius <paramref name="Radius"/> along the contour <paramref name="IC"/>.</summary>
     public void SetRadius(double Radius, int IC, int IinC)
     {
-        gp_XY FirstUandR = new(0.0, Radius), LastUandR = new(1.0, Radius);
+        Xy FirstUandR = new(0.0, Radius), LastUandR = new(1.0, Radius);
         myBuilder.SetRadius(FirstUandR, IC, IinC);
         myBuilder.SetRadius(LastUandR, IC, IinC);
     }
@@ -152,7 +155,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     {
         double r1, r2;
 
-        if (Math.Abs(R1 - R2) < Precision.Confusion())
+        if (Math.Abs(R1 - R2) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             r1 = r2 = (R1 + R2) * 0.5;
         }
@@ -161,7 +164,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
             r1 = R1;
             r2 = R2;
         }
-        gp_XY FirstUandR = new(0.0, r1), LastUandR = new(1.0, r2);
+        Xy FirstUandR = new(0.0, r1), LastUandR = new(1.0, r2);
         myBuilder.SetRadius(FirstUandR, IC, IinC);
         myBuilder.SetRadius(LastUandR, IC, IinC);
     }
@@ -180,7 +183,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     /// Sets a radius interpolating the pairs <paramref name="UandR"/> (X a relative parameter on the contour, Y the
     /// radius) along the contour <paramref name="IC"/>.
     /// </summary>
-    public void SetRadius(NCollection_Array1<gp_Pnt2d> UandR, int IC, int IinC)
+    public void SetRadius(NCollection_Array1<Point2D> UandR, int IC, int IinC)
     {
         if (UandR.Length() == 1)
         {
@@ -198,7 +201,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
             {
                 double Ucur = UandR[i].X();
                 Ucur = (Ucur - Uf) / (Ul - Uf);
-                gp_XY newUandR = new(Ucur, UandR[i].Y());
+                Xy newUandR = new(Ucur, UandR[i].Y());
                 myBuilder.SetRadius(newUandR, IC, IinC);
             }
         }
@@ -406,7 +409,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>Builds the fillets of all the contours; the result is <see cref="BRepBuilderAPI_MakeShape.Shape"/>.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myBuilder.Compute();
         if (myBuilder.IsDone())
@@ -594,7 +597,7 @@ public class BRepFilletAPI_MakeFillet : BRepFilletAPI_LocalOperation
     //=================================================================================================
 
     /// <summary>The partial result (frozen).</summary>
-    /// <exception cref="Standard_NoSuchObject">There is none (<see cref="HasResult"/> is false).</exception>
+    /// <exception cref="NoSuchObjectException">There is none (<see cref="HasResult"/> is false).</exception>
     public TopoDS_Shape BadShape()
     {
         return myBuilder.BadShape();

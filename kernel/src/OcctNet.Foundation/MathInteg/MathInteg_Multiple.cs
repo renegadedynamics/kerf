@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Multi-dimensional Gauss-Legendre integration.</summary>
 public static partial class MathInteg
@@ -19,9 +20,9 @@ public static partial class MathInteg
         {
         }
 
-        public MultipleConfig(MultipleConfig theOther)
+        public MultipleConfig(MultipleConfig other)
         {
-            MaxOrder = theOther.MaxOrder;
+            MaxOrder = other.MaxOrder;
         }
     }
 
@@ -29,115 +30,115 @@ public static partial class MathInteg
     /// Gauss-Legendre integration of a function of theNVars variables over the box [theLower, theUpper], with
     /// theOrder points per variable (clamped to [1, MaxOrder]): tensor product of 1D rules.
     /// </summary>
-    public static IntegResult GaussMultiple<Func>(Func theFunc,
-                                                  int theNVars,
-                                                  math_Vector theLower,
-                                                  math_Vector theUpper,
-                                                  math_IntegerVector theOrder,
-                                                  MultipleConfig? theConfig = null)
+    public static IntegResult GaussMultiple<Func>(Func func,
+                                                  int nVars,
+                                                  math_Vector lower,
+                                                  math_Vector upper,
+                                                  math_IntegerVector order,
+                                                  MultipleConfig? config = null)
         where Func : IVectorFunction
     {
-        theConfig ??= new MultipleConfig();
-        IntegResult aResult = new();
+        config ??= new MultipleConfig();
+        IntegResult result = new();
 
         // Validate inputs
-        if (theNVars <= 0 || theLower.Length() != theNVars || theUpper.Length() != theNVars
-            || theOrder.Length() != theNVars)
+        if (nVars <= 0 || lower.Length() != nVars || upper.Length() != nVars
+            || order.Length() != nVars)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aLowerL = theLower.Lower();
-        int aLowerU = theUpper.Lower();
-        int aLowerOr = theOrder.Lower();
+        int lowerL = lower.Lower();
+        int lowerU = upper.Lower();
+        int lowerOr = order.Lower();
 
         // Find maximum order and clamp orders
-        math_IntegerVector aOrd = new(0, theNVars - 1);
-        int aMaxOrder = 0;
-        for (int i = 0; i < theNVars; ++i)
+        math_IntegerVector ord = new(0, nVars - 1);
+        int maxOrder = 0;
+        for (int i = 0; i < nVars; ++i)
         {
-            aOrd[i] = Min(theOrder[i + aLowerOr], theConfig.MaxOrder);
-            aOrd[i] = Max(aOrd[i], 1);
-            if (aOrd[i] > aMaxOrder)
+            ord[i] = Min(order[i + lowerOr], config.MaxOrder);
+            ord[i] = Max(ord[i], 1);
+            if (ord[i] > maxOrder)
             {
-                aMaxOrder = aOrd[i];
+                maxOrder = ord[i];
             }
         }
 
         // Compute midpoints and half-widths for coordinate transformation
-        math_Vector aXm = new(0, theNVars - 1);
-        math_Vector aXr = new(0, theNVars - 1);
-        for (int i = 0; i < theNVars; ++i)
+        math_Vector xm = new(0, nVars - 1);
+        math_Vector xr = new(0, nVars - 1);
+        for (int i = 0; i < nVars; ++i)
         {
-            aXm[i] = 0.5 * (theLower[i + aLowerL] + theUpper[i + aLowerU]);
-            aXr[i] = 0.5 * (theUpper[i + aLowerU] - theLower[i + aLowerL]);
+            xm[i] = 0.5 * (lower[i + lowerL] + upper[i + lowerU]);
+            xr[i] = 0.5 * (upper[i + lowerU] - lower[i + lowerL]);
         }
 
         // Get Gauss points and weights for each variable
-        NCollection_DynamicArray<math_Vector> aGaussPoints = new();
-        NCollection_DynamicArray<math_Vector> aGaussWeights = new();
+        NCollection_DynamicArray<math_Vector> gaussPoints = new();
+        NCollection_DynamicArray<math_Vector> gaussWeights = new();
 
-        for (int i = 0; i < theNVars; ++i)
+        for (int i = 0; i < nVars; ++i)
         {
-            aGaussPoints.Append(new math_Vector(0, aOrd[i] - 1));
-            aGaussWeights.Append(new math_Vector(0, aOrd[i] - 1));
+            gaussPoints.Append(new math_Vector(0, ord[i] - 1));
+            gaussWeights.Append(new math_Vector(0, ord[i] - 1));
 
-            math_Vector aGP = new(1, aOrd[i]);
-            math_Vector aGW = new(1, aOrd[i]);
-            if (!GetOrderedGaussPointsAndWeights(aOrd[i], aGP, aGW))
+            math_Vector gp = new(1, ord[i]);
+            math_Vector gw = new(1, ord[i]);
+            if (!GetOrderedGaussPointsAndWeights(ord[i], gp, gw))
             {
-                aResult.Status = Status.InvalidInput;
-                return aResult;
+                result.Status = Status.InvalidInput;
+                return result;
             }
 
-            for (int k = 0; k < aOrd[i]; ++k)
+            for (int k = 0; k < ord[i]; ++k)
             {
-                aGaussPoints.ChangeValue(i)[k] = aGP[k + 1];
-                aGaussWeights.ChangeValue(i)[k] = aGW[k + 1];
+                gaussPoints.ChangeValue(i)[k] = gp[k + 1];
+                gaussWeights.ChangeValue(i)[k] = gw[k + 1];
             }
         }
 
         // Recursive integration
-        double aVal = 0.0;
-        math_Vector aX = new(1, theNVars);
-        math_Vector aDx = new(1, theNVars);
+        double val = 0.0;
+        math_Vector x = new(1, nVars);
+        math_Vector dx = new(1, nVars);
 
         // Index array for iteration
-        math_IntegerVector aInc = new(0, theNVars - 1, 0);
+        math_IntegerVector inc = new(0, nVars - 1, 0);
 
         // C++'s recursive std::function lambda is a recursive local function
-        bool aRecurse(int theN)
+        bool aRecurse(int n)
         {
-            if (theN == theNVars)
+            if (n == nVars)
             {
                 // Compute function value at current Gauss point
-                for (int j = 0; j < theNVars; ++j)
+                for (int j = 0; j < nVars; ++j)
                 {
-                    aDx[j + 1] = aXr[j] * aGaussPoints.Value(j)[aInc[j]];
-                    aX[j + 1] = aXm[j] + aDx[j + 1];
+                    dx[j + 1] = xr[j] * gaussPoints.Value(j)[inc[j]];
+                    x[j + 1] = xm[j] + dx[j + 1];
                 }
 
-                if (!theFunc.Value(aX, out double aF1))
+                if (!func.Value(x, out double f1))
                 {
                     return false;
                 }
 
                 // Compute product of weights
-                double aWeight = 1.0;
-                for (int j = 0; j < theNVars; ++j)
+                double weight = 1.0;
+                for (int j = 0; j < nVars; ++j)
                 {
-                    aWeight *= aGaussWeights.Value(j)[aInc[j]];
+                    weight *= gaussWeights.Value(j)[inc[j]];
                 }
 
-                aVal += aWeight * aF1;
+                val += weight * f1;
                 return true;
             }
 
             // Iterate over Gauss points for variable theN
-            for (aInc[theN] = 0; aInc[theN] < aOrd[theN]; ++aInc[theN])
+            for (inc[n] = 0; inc[n] < ord[n]; ++inc[n])
             {
-                if (!aRecurse(theN + 1))
+                if (!aRecurse(n + 1))
                 {
                     return false;
                 }
@@ -147,26 +148,26 @@ public static partial class MathInteg
 
         if (!aRecurse(0))
         {
-            aResult.Status = Status.NotConverged;
-            return aResult;
+            result.Status = Status.NotConverged;
+            return result;
         }
 
         // Scale by half-widths
-        for (int i = 0; i < theNVars; ++i)
+        for (int i = 0; i < nVars; ++i)
         {
-            aVal *= aXr[i];
+            val *= xr[i];
         }
 
-        aResult.Value = aVal;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Value = val;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Gauss-Legendre multiple integration with the same order for all variables.</summary>
-    public static IntegResult GaussMultipleUniform<Func>(Func theFunc, int theNVars, math_Vector theLower, math_Vector theUpper, int theOrder)
+    public static IntegResult GaussMultipleUniform<Func>(Func func, int nVars, math_Vector lower, math_Vector upper, int order)
         where Func : IVectorFunction
     {
-        math_IntegerVector aOrders = new(0, theNVars - 1, theOrder);
-        return GaussMultiple(theFunc, theNVars, theLower, theUpper, aOrders);
+        math_IntegerVector orders = new(0, nVars - 1, order);
+        return GaussMultiple(func, nVars, lower, upper, orders);
     }
 }

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,9 +16,9 @@ namespace Occt;
 /// tangent to a circle and a curve), normalised by an average square distance between them.
 /// </summary>
 /// <remarks>OCCT copies the adaptor; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
+public sealed class Geom2dGcc_FunctionTanCirCu : FunctionWithDerivative
 {
-    private readonly gp_Circ2d TheCirc;
+    private readonly Circle2D TheCirc;
     private readonly Geom2dAdaptor_Curve Curve;
     private readonly double myWeight;
 
@@ -43,7 +49,7 @@ public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
     //                      by an average square distance between the circle  +
     //                      and the curve.                                    +
     //=========================================================================
-    public Geom2dGcc_FunctionTanCirCu(in gp_Circ2d Circ, Geom2dAdaptor_Curve Curv)
+    public Geom2dGcc_FunctionTanCirCu(in Circle2D Circ, Geom2dAdaptor_Curve Curv)
     {
         Curve   = Curv;
         TheCirc = Circ;
@@ -53,7 +59,7 @@ public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
         double aLast   = Geom2dGcc_CurveTool.LastParameter(Curve);
         double aStep   = (aLast - aFirst) / aNbSamp;
         double anX     = aFirst + aStep / 2.0;
-        gp_XY  aLoc    = new(0.0, 0.0);
+        Xy  aLoc    = new(0.0, 0.0);
 
         while (anX <= aLast)
         {
@@ -65,9 +71,9 @@ public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
 
     public override bool Value(double X, out double Fval)
     {
-        Geom2dGcc_CurveTool.D1(Curve, X, out gp_Pnt2d Point, out gp_Vec2d Vect1);
+        Geom2dGcc_CurveTool.D1(Curve, X, out Point2D Point, out Vector2D Vect1);
         double   NormeD1      = Vect1.Magnitude();
-        gp_Vec2d TheDirection = new(TheCirc.Location(), Point);
+        Vector2D TheDirection = new(TheCirc.Location(), Point);
         double   squaredir    = TheDirection.Dot(TheDirection);
         double   R            = TheCirc.Radius();
         Fval =
@@ -78,9 +84,9 @@ public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
 
     public override bool Derivative(double X, out double Deriv)
     {
-        Geom2dGcc_CurveTool.D2(Curve, X, out gp_Pnt2d Point, out gp_Vec2d Vect1, out gp_Vec2d Vect2);
+        Geom2dGcc_CurveTool.D2(Curve, X, out Point2D Point, out Vector2D Vect1, out Vector2D Vect2);
         double   NormeD1      = Vect1.SquareMagnitude();
-        gp_Vec2d TheDirection = new(TheCirc.Location(), Point);
+        Vector2D TheDirection = new(TheCirc.Location(), Point);
         double   cp1dott      = TheDirection.Dot(Vect1);
         Deriv =
           -2.0 * (cp1dott / NormeD1) * ((TheDirection.Dot(Vect2)) - cp1dott * Vect1.Dot(Vect2) / NormeD1);
@@ -90,9 +96,9 @@ public sealed class Geom2dGcc_FunctionTanCirCu : math_FunctionWithDerivative
 
     public override bool Values(double X, out double Fval, out double Deriv)
     {
-        Geom2dGcc_CurveTool.D2(Curve, X, out gp_Pnt2d Point, out gp_Vec2d Vect1, out gp_Vec2d Vect2);
+        Geom2dGcc_CurveTool.D2(Curve, X, out Point2D Point, out Vector2D Vect1, out Vector2D Vect2);
         double   NormeD1      = Vect1.SquareMagnitude();
-        gp_Vec2d TheDirection = new(TheCirc.Location(), Point);
+        Vector2D TheDirection = new(TheCirc.Location(), Point);
         double   squaredir    = TheDirection.SquareMagnitude();
         double   cp1dott      = TheDirection.Dot(Vect1);
         double   R            = TheCirc.Radius();

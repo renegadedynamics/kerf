@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_TypeTrans;
 
@@ -52,62 +54,62 @@ public abstract class IntRes2d_Intersection
     public bool IsDone() => done;
 
     /// <summary>True if there is no intersection between the given arguments.</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="IsDone"/> is false.</exception>
+    /// <exception cref="NotDoneException"><see cref="IsDone"/> is false.</exception>
     public bool IsEmpty()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return ((lpnt.Length() == 0) && (lseg.Length() == 0));
     }
 
     /// <summary>The number of intersection points between the two curves.</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="IsDone"/> is false.</exception>
+    /// <exception cref="NotDoneException"><see cref="IsDone"/> is false.</exception>
     public int NbPoints()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return lpnt.Length();
     }
 
     /// <summary>The intersection point of range <paramref name="N"/> (1 to <see cref="NbPoints"/>).</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="IsDone"/> is false.</exception>
-    /// <exception cref="Standard_OutOfRange"><paramref name="N"/> is out of range.</exception>
+    /// <exception cref="NotDoneException"><see cref="IsDone"/> is false.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="N"/> is out of range.</exception>
     public IntRes2d_IntersectionPoint Point(int N)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return lpnt[N];
     }
 
     /// <summary>The number of intersection segments between the two curves.</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="IsDone"/> is false.</exception>
+    /// <exception cref="NotDoneException"><see cref="IsDone"/> is false.</exception>
     public int NbSegments()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return lseg.Length();
     }
 
     /// <summary>The intersection segment of range <paramref name="N"/> (1 to <see cref="NbSegments"/>).</summary>
-    /// <exception cref="StdFail_NotDone"><see cref="IsDone"/> is false.</exception>
-    /// <exception cref="Standard_OutOfRange"><paramref name="N"/> is out of range.</exception>
+    /// <exception cref="NotDoneException"><see cref="IsDone"/> is false.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="N"/> is out of range.</exception>
     public IntRes2d_IntersectionSegment Segment(int N)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return lseg[N];
@@ -171,7 +173,7 @@ public abstract class IntRes2d_Intersection
                 double PParamOnSecond = P.ParamOnSecond();
                 IntRes2d_Transition T1 = P.TransitionOfFirst();
                 IntRes2d_Transition T2 = P.TransitionOfSecond();
-                gp_Pnt2d Pt = P.Value();
+                Point2D Pt = P.Value();
 
                 InternalVerifyPosition(ref T1,
                                        ref T2,
@@ -202,7 +204,7 @@ public abstract class IntRes2d_Intersection
                 double P1PParamOnSecond = P1.ParamOnSecond();
                 IntRes2d_Transition P1T1 = P1.TransitionOfFirst();
                 IntRes2d_Transition P1T2 = P1.TransitionOfSecond();
-                gp_Pnt2d P1Pt = P1.Value();
+                Point2D P1Pt = P1.Value();
 
                 InternalVerifyPosition(ref P1T1,
                                        ref P1T2,
@@ -219,7 +221,7 @@ public abstract class IntRes2d_Intersection
                 double P2PParamOnSecond = P2.ParamOnSecond();
                 IntRes2d_Transition P2T1 = P2.TransitionOfFirst();
                 IntRes2d_Transition P2T2 = P2.TransitionOfSecond();
-                gp_Pnt2d P2Pt = P2.Value();
+                Point2D P2Pt = P2.Value();
 
                 bool Opposite = Other.lseg[i].IsOpposite();
 

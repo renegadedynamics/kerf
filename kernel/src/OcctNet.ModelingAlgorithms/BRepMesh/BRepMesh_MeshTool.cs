@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace Occt;
@@ -12,25 +15,25 @@ namespace Occt;
 /// Delaunay's criterion, and erasing triangles and free links.
 /// </summary>
 /// <remarks>A working object, as OCCT's: it writes into the structure it is given.</remarks>
-public sealed class BRepMesh_MeshTool : Standard_Transient
+public sealed class BRepMesh_MeshTool : Transient
 {
     /// <summary>Classifies nodes against the line of a constraint link.</summary>
     public sealed class NodeClassifier
     {
         private readonly BRepMesh_DataStructureOfDelaun myStructure;
-        private gp_Lin2d myConstraint;
+        private Line2D myConstraint;
         private readonly bool mySign;
 
         /// <summary>A classifier against the line of the link, oriented from its first node to its last.</summary>
         public NodeClassifier(in BRepMesh_Edge theConstraint, BRepMesh_DataStructureOfDelaun theStructure)
         {
             myStructure = theStructure;
-            myConstraint = new gp_Lin2d();
+            myConstraint = new Line2D();
             BRepMesh_Vertex aVertex1 = myStructure.GetNode(theConstraint.FirstNode());
             BRepMesh_Vertex aVertex2 = myStructure.GetNode(theConstraint.LastNode());
 
-            myConstraint.SetLocation(new gp_Pnt2d(aVertex1.Coord()));
-            myConstraint.SetDirection(new gp_Dir2d(new gp_Vec2d(new gp_Pnt2d(aVertex1.Coord()), new gp_Pnt2d(aVertex2.Coord()))));
+            myConstraint.SetLocation(new Point2D(aVertex1.Coord()));
+            myConstraint.SetDirection(new Direction2D(new Vector2D(new Point2D(aVertex1.Coord()), new Point2D(aVertex2.Coord()))));
             mySign = myConstraint.Direction().X() > 0;
         }
 
@@ -38,11 +41,11 @@ public sealed class BRepMesh_MeshTool : Standard_Transient
         public bool IsAbove(int theNodeIndex)
         {
             BRepMesh_Vertex aVertex = myStructure.GetNode(theNodeIndex);
-            gp_Vec2d aNodeVec = new(myConstraint.Location(), new gp_Pnt2d(aVertex.Coord()));
-            if (aNodeVec.SquareMagnitude() > gp.Resolution())
+            Vector2D aNodeVec = new(myConstraint.Location(), new Point2D(aVertex.Coord()));
+            if (aNodeVec.SquareMagnitude() > Constants.Resolution())
             {
-                double aCross = aNodeVec.Crossed(new gp_Vec2d(myConstraint.Direction()));
-                if (Math.Abs(aCross) > gp.Resolution())
+                double aCross = aNodeVec.Crossed(new Vector2D(myConstraint.Direction()));
+                if (Math.Abs(aCross) > Constants.Resolution())
                 {
                     return mySign ? aCross < 0.0 : aCross > 0.0;
                 }
@@ -82,16 +85,16 @@ public sealed class BRepMesh_MeshTool : Standard_Transient
             BRepMesh_Triangle aTri = myStructure.GetElement(aIt.Key());
             myStructure.ElementNodes(aTri, aNodes);
 
-            gp_XY aV1 = myStructure.GetNode(aNodes[0]).Coord();
-            gp_XY aV2 = myStructure.GetNode(aNodes[1]).Coord();
-            gp_XY aV3 = myStructure.GetNode(aNodes[2]).Coord();
+            Xy aV1 = myStructure.GetNode(aNodes[0]).Coord();
+            Xy aV2 = myStructure.GetNode(aNodes[1]).Coord();
+            Xy aV3 = myStructure.GetNode(aNodes[2]).Coord();
 
-            BRepBuilderAPI_MakePolygon aPoly = new(new gp_Pnt(aV1.X(), aV1.Y(), 0.0),
-                                                   new gp_Pnt(aV2.X(), aV2.Y(), 0.0),
-                                                   new gp_Pnt(aV3.X(), aV3.Y(), 0.0),
+            BRepBuilderAPI_MakePolygon aPoly = new(new Point3D(aV1.X(), aV1.Y(), 0.0),
+                                                   new Point3D(aV2.X(), aV2.Y(), 0.0),
+                                                   new Point3D(aV3.X(), aV3.Y(), 0.0),
                                                    true);
 
-            BRepBuilderAPI_MakeFace aFaceBuilder = new(new gp_Pln(new gp_Ax3(gp.XOY())), aPoly.Wire());
+            BRepBuilderAPI_MakeFace aFaceBuilder = new(new Plane3D(new CoordinateSystem(Constants.XOY())), aPoly.Wire());
             aBuilder.Add(aResult, aFaceBuilder.Shape());
         }
 
@@ -344,14 +347,14 @@ public sealed class BRepMesh_MeshTool : Standard_Transient
         bool isOk = BRepMesh_CircleTool.MakeCircle(aVertex0.Coord(),
                                                    aVertex1.Coord(),
                                                    aVertex2.Coord(),
-                                                   out gp_XY aLocation,
+                                                   out Xy aLocation,
                                                    out double aRadius);
 
         if (isOk)
         {
             BRepMesh_Vertex aVertex = myStructure.GetNode(thePoint);
             double aDist = (aVertex.Coord() - aLocation).SquareModulus() - (aRadius * aRadius);
-            return (aDist < Precision.SquareConfusion());
+            return (aDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
         }
 
         return false;

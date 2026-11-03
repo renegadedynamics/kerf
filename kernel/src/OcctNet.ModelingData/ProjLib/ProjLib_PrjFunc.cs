@@ -6,6 +6,12 @@
 // Created on: 1997-11-06
 // Created by: Roman BORISOV
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +23,7 @@ namespace Occt;
 /// the function. <see cref="Values"/> remembers the last point it was evaluated at, which
 /// <see cref="Solution"/> returns.
 /// </remarks>
-public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
+public class ProjLib_PrjFunc : FunctionSetWithDerivatives
 {
     private readonly Adaptor3d_Curve myCurve;
     private readonly Adaptor3d_Surface mySurface;
@@ -27,7 +33,7 @@ public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
     private readonly int myFix;
     private readonly double myNorm;
 
-    /// <exception cref="Standard_ConstructionError"><paramref name="Fix"/> is not 1, 2 or 3.</exception>
+    /// <exception cref="ConstructionErrorException"><paramref name="Fix"/> is not 1, 2 or 3.</exception>
     public ProjLib_PrjFunc(Adaptor3d_Curve C, double FixVal, Adaptor3d_Surface S, int Fix)
     {
         myCurve = C;
@@ -50,7 +56,7 @@ public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
                 myV = FixVal;
                 break;
             default:
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
         }
     }
 
@@ -62,17 +68,17 @@ public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        math_Matrix D = new(1, 2, 1, 2);
+        Matrix D = new(1, 2, 1, 2);
         return Values(X, F, D);
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         math_Vector F = new(1, 2);
         return Values(X, F, D);
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         double u = 0.0, v = 0.0, t = 0.0;
         switch (myFix)
@@ -97,12 +103,12 @@ public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
         /*  if(X(1) > mySup.X() || X(1) < myInf.X()) return false;
           if(X(2) > mySup.Y() || X(2) < myInf.Y()) return false;
         */
-        gp_Pnt S, C;
-        gp_Vec DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DC1_t;
+        Point3D S, C;
+        Vector3D DS1_u, DS1_v, DS2_u, DS2_uv, DS2_v, DC1_t;
         myCurve.D1(t, out C, out DC1_t);
         mySurface.D2(u, v, out S, out DS1_u, out DS1_v, out DS2_u, out DS2_v, out DS2_uv);
 
-        gp_Vec V = new(C, S);
+        Vector3D V = new(C, S);
 
         F[1] = V * DS1_u * myNorm;
         F[2] = V * DS1_v * myNorm;
@@ -140,18 +146,18 @@ public class ProjLib_PrjFunc : math_FunctionSetWithDerivatives
     /// The point of the last evaluation in the two free variables: (u, v) for Fix 1, (t, v) for Fix 2, (t, u) for
     /// Fix 3.
     /// </summary>
-    public gp_Pnt2d Solution()
+    public Point2D Solution()
     {
         switch (myFix)
         {
             case 1:
-                return new gp_Pnt2d(myU, myV);
+                return new Point2D(myU, myV);
             case 2:
-                return new gp_Pnt2d(myt, myV);
+                return new Point2D(myt, myV);
             case 3:
-                return new gp_Pnt2d(myt, myU);
+                return new Point2D(myt, myU);
         }
         // For NT, even if we never reach this point.
-        return new gp_Pnt2d(0.0, 0.0);
+        return new Point2D(0.0, 0.0);
     }
 }

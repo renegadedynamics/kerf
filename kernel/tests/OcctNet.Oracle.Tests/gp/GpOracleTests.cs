@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -15,7 +17,7 @@ public class GpOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Dir aD1 = anOracle.Dir(), aD2 = anOracle.Dir(), aRef = anOracle.Dir();
+            Direction3D aD1 = anOracle.Dir(), aD2 = anOracle.Dir(), aRef = anOracle.Dir();
             using var aN1 = Oracle.ToNative(aD1);
             using var aN2 = Oracle.ToNative(aD2);
             using var aNRef = Oracle.ToNative(aRef);
@@ -32,14 +34,14 @@ public class GpOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Pnt aP = anOracle.Pnt();
-            gp_Dir aV = anOracle.Dir();
+            Point3D aP = anOracle.Pnt();
+            Direction3D aV = anOracle.Dir();
             using var aNP = Oracle.ToNative(aP);
             using var aNV = Oracle.ToNative(aV);
 
             // OCCT's own choice of X direction from a main direction alone
             using var aNAx2 = new N.gp_Ax2(aNP, aNV);
-            var anAx2 = new gp_Ax2(aP, aV);
+            var anAx2 = new Frame3D(aP, aV);
             using (var aNX = aNAx2.XDirection())
             using (var aNY = aNAx2.YDirection())
             {
@@ -48,19 +50,19 @@ public class GpOracleTests(ITestOutputHelper output)
             }
 
             using var aNAx3 = new N.gp_Ax3(aNP, aNV);
-            var anAx3 = new gp_Ax3(aP, aV);
+            var anAx3 = new CoordinateSystem(aP, aV);
             using (var aNX = aNAx3.XDirection())
             {
                 anOracle.Same(Oracle.FromNative(aNX.XYZ()), anAx3.XDirection().XYZ(), "Ax3 X");
             }
 
             // Changing the main direction of a possibly left-handed system
-            gp_Ax3 aSystem = anOracle.Ax3();
-            gp_Dir aNewDir = anOracle.Dir();
+            CoordinateSystem aSystem = anOracle.Ax3();
+            Direction3D aNewDir = anOracle.Dir();
             using var aNSystem = Oracle.ToNative(aSystem);
             using var aNNewDir = Oracle.ToNative(aNewDir);
             aNSystem.SetDirection(aNNewDir);
-            gp_Ax3 aChanged = aSystem.WithDirection(aNewDir);
+            CoordinateSystem aChanged = aSystem.WithDirection(aNewDir);
             anOracle.Same(aNSystem.Direct(), aChanged.Direct(), "Direct");
             using (var aNX = aNSystem.XDirection())
             using (var aNY = aNSystem.YDirection())
@@ -79,17 +81,17 @@ public class GpOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Trsf aNative, gp_Trsf aPort, string aKind) = RandomTrsf(anOracle);
+            (N.gp_Trsf aNative, Transform3D aPort, string aKind) = RandomTrsf(anOracle);
             using (aNative)
             {
                 anOracle.Same(aNative, aPort, aKind);
 
-                gp_Pnt aP = anOracle.Pnt();
+                Point3D aP = anOracle.Pnt();
                 using var aNP = Oracle.ToNative(aP);
                 using var aNTransformed = aNP.Transformed(aNative);
                 anOracle.Same(Oracle.FromNative(aNTransformed).XYZ(), aP.Transformed(aPort).XYZ(), $"{aKind} applied to a point");
 
-                gp_Dir aD = anOracle.Dir();
+                Direction3D aD = anOracle.Dir();
                 using var aND = Oracle.ToNative(aD);
                 using var aNDTransformed = aND.Transformed(aNative);
                 using var aNDXYZ = aNDTransformed.XYZ();
@@ -106,8 +108,8 @@ public class GpOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Trsf aN1, gp_Trsf aT1, string aKind1) = RandomTrsf(anOracle);
-            (N.gp_Trsf aN2, gp_Trsf aT2, string aKind2) = RandomTrsf(anOracle);
+            (N.gp_Trsf aN1, Transform3D aT1, string aKind1) = RandomTrsf(anOracle);
+            (N.gp_Trsf aN2, Transform3D aT2, string aKind2) = RandomTrsf(anOracle);
             using (aN1)
             using (aN2)
             {
@@ -136,22 +138,22 @@ public class GpOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Vec anAxis = anOracle.Vec();
+            Vector3D anAxis = anOracle.Vec();
             double anAngle = anOracle.Angle();
             using var aNAxis = Oracle.ToNative(anAxis);
             using var aNQ = new N.gp_Quaternion(aNAxis, anAngle);
-            var aQ = new gp_Quaternion(anAxis, anAngle);
+            var aQ = new Quaternion3(anAxis, anAngle);
 
             using var aNMat = aNQ.GetMatrix();
             anOracle.Same(Oracle.FromNative(aNMat), aQ.GetMatrix(), "GetMatrix");
 
             // and back from the matrix, through each branch of SetMatrix
             using var aNFromMat = new N.gp_Quaternion(aNMat);
-            var aFromMat = new gp_Quaternion(aQ.GetMatrix());
+            var aFromMat = new Quaternion3(aQ.GetMatrix());
             anOracle.Same(aNFromMat.X(), aFromMat.X(), "SetMatrix x");
             anOracle.Same(aNFromMat.W(), aFromMat.W(), "SetMatrix w");
 
-            var aSequence = (gp_EulerSequence)anOracle.Int(0, 25);
+            var aSequence = (EulerSequence)anOracle.Int(0, 25);
             double aNA = 0, aNB = 0, aNG = 0;
             aNQ.GetEulerAngles((N.gp_EulerSequence)(int)aSequence, ref aNA, ref aNB, ref aNG);
             aQ.GetEulerAngles(aSequence, out double anA, out double aB, out double aG);
@@ -161,7 +163,7 @@ public class GpOracleTests(ITestOutputHelper output)
 
             using var aNEuler = new N.gp_Quaternion();
             aNEuler.SetEulerAngles((N.gp_EulerSequence)(int)aSequence, anA, aB, aG);
-            var anEuler = gp_Quaternion.FromEulerAngles(aSequence, anA, aB, aG);
+            var anEuler = Quaternion3.FromEulerAngles(aSequence, anA, aB, aG);
             anOracle.Same(aNEuler.X(), anEuler.X(), "SetEulerAngles x");
             anOracle.Same(aNEuler.Y(), anEuler.Y(), "SetEulerAngles y");
             anOracle.Same(aNEuler.Z(), anEuler.Z(), "SetEulerAngles z");
@@ -172,75 +174,75 @@ public class GpOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>One of gp_Trsf's kinds, made the same way natively and in the port.</summary>
-    private static (N.gp_Trsf Native, gp_Trsf Port, string Kind) RandomTrsf(Oracle theOracle)
+    private static (N.gp_Trsf Native, Transform3D Port, string Kind) RandomTrsf(Oracle theOracle)
     {
         var aNative = new N.gp_Trsf();
         switch (theOracle.Int(0, 8))
         {
             case 0:
             {
-                gp_Ax1 anAxis = theOracle.Ax1();
+                Axis3D anAxis = theOracle.Ax1();
                 double anAngle = theOracle.Angle();
                 using var aNAxis = Oracle.ToNative(anAxis);
                 aNative.SetRotation(aNAxis, anAngle);
-                return (aNative, gp_Trsf.Rotation(anAxis, anAngle), "rotation");
+                return (aNative, Transform3D.Rotation(anAxis, anAngle), "rotation");
             }
             case 1:
             {
-                gp_Vec aV = theOracle.Vec();
+                Vector3D aV = theOracle.Vec();
                 using var aNV = Oracle.ToNative(aV);
                 aNative.SetTranslation(aNV);
-                return (aNative, gp_Trsf.Translation(aV), "translation");
+                return (aNative, Transform3D.Translation(aV), "translation");
             }
             case 2:
             {
-                gp_Pnt aP = theOracle.Pnt();
+                Point3D aP = theOracle.Pnt();
                 double aS = theOracle.Real(-3, 3);
                 using var aNP = Oracle.ToNative(aP);
                 aNative.SetScale(aNP, aS);
-                return (aNative, gp_Trsf.Scale(aP, aS), "scale");
+                return (aNative, Transform3D.Scale(aP, aS), "scale");
             }
             case 3:
             {
-                gp_Pnt aP = theOracle.Pnt();
+                Point3D aP = theOracle.Pnt();
                 using var aNP = Oracle.ToNative(aP);
                 aNative.SetMirror(aNP);
-                return (aNative, gp_Trsf.Mirror(aP), "point mirror");
+                return (aNative, Transform3D.Mirror(aP), "point mirror");
             }
             case 4:
             {
-                gp_Ax1 anAxis = theOracle.Ax1();
+                Axis3D anAxis = theOracle.Ax1();
                 using var aNAxis = Oracle.ToNative(anAxis);
                 aNative.SetMirror(aNAxis);
-                return (aNative, gp_Trsf.Mirror(anAxis), "axis mirror");
+                return (aNative, Transform3D.Mirror(anAxis), "axis mirror");
             }
             case 5:
             {
-                gp_Ax2 aPlane = theOracle.Ax2();
+                Frame3D aPlane = theOracle.Ax2();
                 using var aNPlane = Oracle.ToNative(aPlane);
                 aNative.SetMirror(aNPlane);
-                return (aNative, gp_Trsf.Mirror(aPlane), "plane mirror");
+                return (aNative, Transform3D.Mirror(aPlane), "plane mirror");
             }
             case 6:
             {
-                gp_Ax3 aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
+                CoordinateSystem aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
                 using var aNFrom = Oracle.ToNative(aFrom);
                 using var aNTo = Oracle.ToNative(aTo);
                 aNative.SetTransformation(aNFrom, aNTo);
-                return (aNative, gp_Trsf.Transformation(aFrom, aTo), "transformation");
+                return (aNative, Transform3D.Transformation(aFrom, aTo), "transformation");
             }
             case 7:
             {
-                gp_Ax3 aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
+                CoordinateSystem aFrom = theOracle.Ax3(), aTo = theOracle.Ax3();
                 using var aNFrom = Oracle.ToNative(aFrom);
                 using var aNTo = Oracle.ToNative(aTo);
                 aNative.SetDisplacement(aNFrom, aNTo);
-                return (aNative, gp_Trsf.Displacement(aFrom, aTo), "displacement");
+                return (aNative, Transform3D.Displacement(aFrom, aTo), "displacement");
             }
             default:
             {
                 // A general matrix: SetValues extracts the scale and orthogonalises
-                var aRotation = gp_Trsf.Rotation(theOracle.Ax1(), theOracle.Angle()).WithScaleFactor(theOracle.Real(0.5, 2));
+                var aRotation = Transform3D.Rotation(theOracle.Ax1(), theOracle.Angle()).WithScaleFactor(theOracle.Real(0.5, 2));
                 double[] a = new double[12];
                 for (int r = 1; r <= 3; r++)
                 {
@@ -251,7 +253,7 @@ public class GpOracleTests(ITestOutputHelper output)
                 }
 
                 aNative.SetValues(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]);
-                return (aNative, gp_Trsf.Values(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]), "values");
+                return (aNative, Transform3D.Values(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]), "values");
             }
         }
     }

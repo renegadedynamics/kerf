@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The root of the STEP to topology translators: their state (done), precision and maximum tolerance.</summary>
@@ -16,7 +18,7 @@ public class StepToTopoDS_Root
     protected StepToTopoDS_Root()
     {
         done = false;
-        myPrecision = myMaxTol = Occt.Precision.Confusion();
+        myPrecision = myMaxTol = Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     public bool IsDone() => done;
@@ -37,6 +39,6 @@ public class StepToTopoDS_Root
     /// (decisions 1183, 1201).
     /// </summary>
     internal static bool CaughtBySignals(Exception theException)
-        => theException is not OutOfMemoryException and not OperationCanceledException and not Standard_ImmutableObject
+        => theException is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException
                            and not TopoDS_LockedShape;
 }

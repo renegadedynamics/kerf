@@ -1,36 +1,42 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Plate's constraint classes and derivative values.</summary>
 public class Plate_ConstraintsTests
 {
-    private static readonly gp_XYZ s_zero = new(0.0, 0.0, 0.0);
+    private static readonly Xyz s_zero = new(0.0, 0.0, 0.0);
 
     [Fact]
     public void PinpointConstraint_IsAValue()
     {
-        var a = new Plate_PinpointConstraint(new gp_XY(1.0, 2.0), new gp_XYZ(3.0, 4.0, 5.0), 1, 2);
-        Assert.Equal(new gp_XY(1.0, 2.0), a.Pnt2d());
-        Assert.Equal(new gp_XYZ(3.0, 4.0, 5.0), a.Value());
+        var a = new Plate_PinpointConstraint(new Xy(1.0, 2.0), new Xyz(3.0, 4.0, 5.0), 1, 2);
+        Assert.Equal(new Xy(1.0, 2.0), a.Pnt2d());
+        Assert.Equal(new Xyz(3.0, 4.0, 5.0), a.Value());
         Assert.Equal((1, 2), (a.Idu(), a.Idv()));
-        Assert.Equal(a, new Plate_PinpointConstraint(new gp_XY(1.0, 2.0), new gp_XYZ(3.0, 4.0, 5.0), 1, 2));
-        Assert.NotEqual(a, new Plate_PinpointConstraint(new gp_XY(1.0, 2.0), new gp_XYZ(3.0, 4.0, 5.0), 1, 1));
+        Assert.Equal(a, new Plate_PinpointConstraint(new Xy(1.0, 2.0), new Xyz(3.0, 4.0, 5.0), 1, 2));
+        Assert.NotEqual(a, new Plate_PinpointConstraint(new Xy(1.0, 2.0), new Xyz(3.0, 4.0, 5.0), 1, 1));
         Assert.Equal(new Plate_PinpointConstraint(), default);
-        Assert.Equal((0, 0), (new Plate_PinpointConstraint(new gp_XY(), s_zero).Idu(), new Plate_PinpointConstraint(new gp_XY(), s_zero).Idv()));
+        Assert.Equal((0, 0), (new Plate_PinpointConstraint(new Xy(), s_zero).Idu(), new Plate_PinpointConstraint(new Xy(), s_zero).Idv()));
     }
 
     [Fact]
     public void Derivatives_AreValues()
     {
-        var d1 = new Plate_D1(new gp_XYZ(1.0, 0.0, 0.0), new gp_XYZ(0.0, 1.0, 0.0));
-        Assert.Equal(new gp_XYZ(1.0, 0.0, 0.0), d1.DU());
-        Assert.Equal(new gp_XYZ(0.0, 1.0, 0.0), d1.DV());
+        var d1 = new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0));
+        Assert.Equal(new Xyz(1.0, 0.0, 0.0), d1.DU());
+        Assert.Equal(new Xyz(0.0, 1.0, 0.0), d1.DV());
         Assert.Equal(d1, new Plate_D1(d1));
-        var d2 = new Plate_D2(s_zero, new gp_XYZ(1.0, 1.0, 1.0), s_zero);
+        var d2 = new Plate_D2(s_zero, new Xyz(1.0, 1.0, 1.0), s_zero);
         Assert.Equal(d2, new Plate_D2(d2));
         Assert.NotEqual(d2, new Plate_D2(s_zero, s_zero, s_zero));
-        var d3 = new Plate_D3(s_zero, s_zero, s_zero, new gp_XYZ(0.0, 0.0, 2.0));
+        var d3 = new Plate_D3(s_zero, s_zero, s_zero, new Xyz(0.0, 0.0, 2.0));
         Assert.Equal(d3, new Plate_D3(d3));
     }
 
@@ -38,8 +44,8 @@ public class Plate_ConstraintsTests
     public void LinearXYZConstraint_FromArrays()
     {
         var aPPC = new NCollection_Array1<Plate_PinpointConstraint>(1, 2);
-        aPPC[1] = new Plate_PinpointConstraint(new gp_XY(0.0, 0.0), s_zero);
-        aPPC[2] = new Plate_PinpointConstraint(new gp_XY(1.0, 0.0), s_zero);
+        aPPC[1] = new Plate_PinpointConstraint(new Xy(0.0, 0.0), s_zero);
+        aPPC[2] = new Plate_PinpointConstraint(new Xy(1.0, 0.0), s_zero);
         var aCoeff = new NCollection_Array1<double>(5, 6);
         aCoeff[5] = 1.0;
         aCoeff[6] = -1.0;
@@ -56,8 +62,8 @@ public class Plate_ConstraintsTests
         a2.Init(0.5);
         var aC2 = new Plate_LinearXYZConstraint(aPPC, a2);
         Assert.Equal(2, aC2.Coeff().ColLength());
-        Assert.Throws<Standard_DimensionMismatch>(() => new Plate_LinearXYZConstraint(aPPC, new NCollection_Array1<double>(1, 3)));
-        Assert.Throws<Standard_DimensionMismatch>(() => new Plate_LinearXYZConstraint(aPPC, new NCollection_Array2<double>(1, 2, 1, 3)));
+        Assert.Throws<DimensionMismatchException>(() => new Plate_LinearXYZConstraint(aPPC, new NCollection_Array1<double>(1, 3)));
+        Assert.Throws<DimensionMismatchException>(() => new Plate_LinearXYZConstraint(aPPC, new NCollection_Array2<double>(1, 2, 1, 3)));
 
         var aC3 = new Plate_LinearXYZConstraint(2, 3);
         Assert.Equal(0.0, aC3.Coeff()[2, 3]);
@@ -67,21 +73,21 @@ public class Plate_ConstraintsTests
     [Fact]
     public void LinearScalarConstraint_FromArrays()
     {
-        var aP = new Plate_PinpointConstraint(new gp_XY(0.5, 0.5), new gp_XYZ(1.0, 2.0, 3.0));
-        var aC = new Plate_LinearScalarConstraint(aP, new gp_XYZ(0.0, 0.0, 1.0));
+        var aP = new Plate_PinpointConstraint(new Xy(0.5, 0.5), new Xyz(1.0, 2.0, 3.0));
+        var aC = new Plate_LinearScalarConstraint(aP, new Xyz(0.0, 0.0, 1.0));
         Assert.Equal(aP, aC.GetPPC()[1]);
-        Assert.Equal(new gp_XYZ(0.0, 0.0, 1.0), aC.Coeff()[1, 1]);
+        Assert.Equal(new Xyz(0.0, 0.0, 1.0), aC.Coeff()[1, 1]);
 
         var aPPC = new NCollection_Array1<Plate_PinpointConstraint>(1, 2);
-        var aCoeff = new NCollection_Array1<gp_XYZ>(1, 2);
-        aCoeff[2] = new gp_XYZ(1.0, 0.0, 0.0);
+        var aCoeff = new NCollection_Array1<Xyz>(1, 2);
+        aCoeff[2] = new Xyz(1.0, 0.0, 0.0);
         var aC2 = new Plate_LinearScalarConstraint(aPPC, aCoeff);
-        Assert.Equal(new gp_XYZ(1.0, 0.0, 0.0), aC2.Coeff()[1, 2]);
-        Assert.Throws<Standard_DimensionMismatch>(() => new Plate_LinearScalarConstraint(aPPC, new NCollection_Array2<gp_XYZ>(1, 1, 1, 3)));
+        Assert.Equal(new Xyz(1.0, 0.0, 0.0), aC2.Coeff()[1, 2]);
+        Assert.Throws<DimensionMismatchException>(() => new Plate_LinearScalarConstraint(aPPC, new NCollection_Array2<Xyz>(1, 1, 1, 3)));
         var aC3 = new Plate_LinearScalarConstraint(2, 1);
-        aC3.SetCoeff(2, 1, new gp_XYZ(0.0, 1.0, 0.0));
+        aC3.SetCoeff(2, 1, new Xyz(0.0, 1.0, 0.0));
         aC3.SetPPC(1, aP);
-        Assert.Equal(new gp_XYZ(0.0, 1.0, 0.0), aC3.Coeff()[2, 1]);
+        Assert.Equal(new Xyz(0.0, 1.0, 0.0), aC3.Coeff()[2, 1]);
         Assert.Equal(s_zero, aC3.Coeff()[1, 1]);
         Assert.Equal(aP, aC3.GetPPC()[1]);
     }
@@ -89,35 +95,35 @@ public class Plate_ConstraintsTests
     [Fact]
     public void LineConstraint_HasTwoNormalsOfTheLine()
     {
-        var aDir = new gp_Dir(1.0, 2.0, 3.0);
-        var aC = new Plate_LineConstraint(new gp_XY(0.2, 0.3), new gp_Lin(new gp_Pnt(1.0, 1.0, 1.0), aDir), 0, 1);
+        var aDir = new Direction3D(1.0, 2.0, 3.0);
+        var aC = new Plate_LineConstraint(new Xy(0.2, 0.3), new Line3D(new Point3D(1.0, 1.0, 1.0), aDir), 0, 1);
         Plate_LinearScalarConstraint aL = aC.LSC();
         Assert.Equal((2, 1), (aL.Coeff().ColLength(), aL.Coeff().RowLength()));
-        gp_XYZ n1 = aL.Coeff()[1, 1], n2 = aL.Coeff()[2, 1];
+        Xyz n1 = aL.Coeff()[1, 1], n2 = aL.Coeff()[2, 1];
         Assert.Equal(1.0, n1.Modulus(), 1.0e-15);
         Assert.Equal(1.0, n2.Modulus(), 1.0e-15);
         Assert.Equal(0.0, n1 * aDir.XYZ(), 1.0e-15);
         Assert.Equal(0.0, n2 * aDir.XYZ(), 1.0e-15);
         Assert.Equal(0.0, n1 * n2, 1.0e-15);
         Assert.Equal((0, 1), (aL.GetPPC()[1].Idu(), aL.GetPPC()[1].Idv()));
-        Assert.Equal(new gp_XYZ(1.0, 1.0, 1.0), aL.GetPPC()[1].Value());
+        Assert.Equal(new Xyz(1.0, 1.0, 1.0), aL.GetPPC()[1].Value());
     }
 
     [Fact]
     public void PlaneConstraint_HasThePlaneNormal()
     {
-        var aC = new Plate_PlaneConstraint(new gp_XY(0.2, 0.3), new gp_Pln(new gp_Pnt(0.0, 0.0, 4.0), new gp_Dir(0.0, 0.0, 1.0)));
-        Assert.Equal(new gp_XYZ(0.0, 0.0, 1.0), aC.LSC().Coeff()[1, 1]);
-        Assert.Equal(new gp_XYZ(0.0, 0.0, 4.0), aC.LSC().GetPPC()[1].Value());
+        var aC = new Plate_PlaneConstraint(new Xy(0.2, 0.3), new Plane3D(new Point3D(0.0, 0.0, 4.0), new Direction3D(0.0, 0.0, 1.0)));
+        Assert.Equal(new Xyz(0.0, 0.0, 1.0), aC.LSC().Coeff()[1, 1]);
+        Assert.Equal(new Xyz(0.0, 0.0, 4.0), aC.LSC().GetPPC()[1].Value());
     }
 
     [Fact]
     public void GlobalTranslationConstraint_Coefficients()
     {
-        var aSeq = new NCollection_Sequence<gp_XY>();
+        var aSeq = new NCollection_Sequence<Xy>();
         for (int i = 0; i < 4; i++)
         {
-            aSeq.Append(new gp_XY(i, 1.0));
+            aSeq.Append(new Xy(i, 1.0));
         }
         Plate_LinearXYZConstraint aL = new Plate_GlobalTranslationConstraint(aSeq).LXYZC();
         for (int i = 1; i <= 3; i++)
@@ -130,22 +136,22 @@ public class Plate_ConstraintsTests
     }
 
     // A target tangent plane tilted from the surface's (the xy plane)
-    private static readonly Plate_D1 s_flat = new(new gp_XYZ(1.0, 0.0, 0.0), new gp_XYZ(0.0, 1.0, 0.0));
-    private static readonly Plate_D1 s_tilted = new(new gp_XYZ(1.0, 0.0, 0.3), new gp_XYZ(0.0, 1.0, -0.2));
-    private static readonly Plate_D2 s_d2s = new(new gp_XYZ(0.0, 0.0, 0.1), s_zero, s_zero);
-    private static readonly Plate_D2 s_d2t = new(s_zero, new gp_XYZ(0.0, 0.0, 0.2), new gp_XYZ(0.1, 0.0, 0.0));
+    private static readonly Plate_D1 s_flat = new(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0));
+    private static readonly Plate_D1 s_tilted = new(new Xyz(1.0, 0.0, 0.3), new Xyz(0.0, 1.0, -0.2));
+    private static readonly Plate_D2 s_d2s = new(new Xyz(0.0, 0.0, 0.1), s_zero, s_zero);
+    private static readonly Plate_D2 s_d2t = new(s_zero, new Xyz(0.0, 0.0, 0.2), new Xyz(0.1, 0.0, 0.0));
     private static readonly Plate_D3 s_d3s = new(s_zero, s_zero, s_zero, s_zero);
-    private static readonly Plate_D3 s_d3t = new(new gp_XYZ(0.0, 0.0, 1.0), s_zero, s_zero, s_zero);
+    private static readonly Plate_D3 s_d3t = new(new Xyz(0.0, 0.0, 1.0), s_zero, s_zero, s_zero);
 
     [Fact]
     public void GtoCConstraint_MakesTheSurfaceTangentToTheTarget()
     {
-        var p = new gp_XY(0.4, 0.6);
+        var p = new Xy(0.4, 0.6);
         var aG1 = new Plate_GtoCConstraint(p, s_flat, s_tilted);
         Assert.Equal(2, aG1.nb_PPC());
         Assert.Equal(s_flat, aG1.D1SurfInit());
         // the corrected derivatives lie in the target's tangent plane
-        gp_XYZ aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
+        Xyz aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
         Assert.Equal(0.0, (s_flat.DU() + aG1.GetPPC(0).Value()) * aN, 1.0e-15);
         Assert.Equal(0.0, (s_flat.DV() + aG1.GetPPC(1).Value()) * aN, 1.0e-15);
         Assert.Equal((1, 0), (aG1.GetPPC(0).Idu(), aG1.GetPPC(0).Idv()));
@@ -153,7 +159,7 @@ public class Plate_ConstraintsTests
 
         Assert.Equal(5, new Plate_GtoCConstraint(p, s_flat, s_tilted, s_d2s, s_d2t).nb_PPC());
         Assert.Equal(9, new Plate_GtoCConstraint(p, s_flat, s_tilted, s_d2s, s_d2t, s_d3s, s_d3t).nb_PPC());
-        var aNP = new gp_XYZ(1.0, 0.0, 0.0);
+        var aNP = new Xyz(1.0, 0.0, 0.0);
         Assert.Equal(2, new Plate_GtoCConstraint(p, s_flat, s_tilted, aNP).nb_PPC());
         Assert.Equal(5, new Plate_GtoCConstraint(p, s_flat, s_tilted, s_d2s, s_d2t, aNP).nb_PPC());
         var aG3 = new Plate_GtoCConstraint(p, s_flat, s_tilted, s_d2s, s_d2t, s_d3s, s_d3t);
@@ -171,21 +177,21 @@ public class Plate_ConstraintsTests
     [Fact]
     public void GtoCConstraint_DegenerateOrOrthogonalNormals_GiveNoConstraint()
     {
-        var p = new gp_XY(0.0, 0.0);
-        var aDegenerate = new Plate_D1(new gp_XYZ(1.0, 0.0, 0.0), new gp_XYZ(2.0, 0.0, 0.0));
+        var p = new Xy(0.0, 0.0);
+        var aDegenerate = new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(2.0, 0.0, 0.0));
         Assert.Equal(0, new Plate_GtoCConstraint(p, s_flat, aDegenerate).nb_PPC());
         Assert.Equal(0, new Plate_GtoCConstraint(p, aDegenerate, s_flat).nb_PPC());
-        var anOrthogonal = new Plate_D1(new gp_XYZ(1.0, 0.0, 0.0), new gp_XYZ(0.0, 0.0, 1.0));
+        var anOrthogonal = new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 0.0, 1.0));
         Assert.Equal(0, new Plate_GtoCConstraint(p, s_flat, anOrthogonal).nb_PPC());
     }
 
     [Fact]
     public void FreeGtoCConstraint_ImposesNormalComponents()
     {
-        var p = new gp_XY(0.4, 0.6);
+        var p = new Xy(0.4, 0.6);
         var aG1 = new Plate_FreeGtoCConstraint(p, s_flat, s_tilted);
         Assert.Equal((0, 2), (aG1.nb_PPC(), aG1.nb_LSC()));
-        gp_XYZ aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
+        Xyz aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
         Assert.True(aG1.LSC(0).Coeff()[1, 1].IsEqual(aN, 1.0e-15));
         Assert.Equal(s_flat.DU() * -1.0, aG1.LSC(0).GetPPC()[1].Value());
 
@@ -197,12 +203,12 @@ public class Plate_ConstraintsTests
         // an incremental load rotates the target's normal part of the way towards the surface's
         var aHalf = new Plate_FreeGtoCConstraint(p, s_flat, s_tilted, 0.5);
         Assert.Equal(2, aHalf.nb_LSC());
-        gp_XYZ aNHalf = aHalf.LSC(0).Coeff()[1, 1];
+        Xyz aNHalf = aHalf.LSC(0).Coeff()[1, 1];
         double aAngleFull = Math.Acos(aN.Z()), aAngleHalf = Math.Acos(aNHalf.Z());
         Assert.True(aAngleHalf < aAngleFull && aAngleHalf > 0.0);
 
         // a degenerate surface normal: the G1 constraints only
-        var aDegenerate = new Plate_D1(new gp_XYZ(1.0, 0.0, 0.0), new gp_XYZ(2.0, 0.0, 0.0));
+        var aDegenerate = new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(2.0, 0.0, 0.0));
         var aDeg = new Plate_FreeGtoCConstraint(p, aDegenerate, s_tilted, s_d2s, s_d2t);
         Assert.Equal((0, 2), (aDeg.nb_PPC(), aDeg.nb_LSC()));
         Assert.Equal((0, 0), (new Plate_FreeGtoCConstraint(p, aDegenerate, s_tilted, s_d2s, s_d2t, 0.5).nb_PPC(),
@@ -213,27 +219,27 @@ public class Plate_ConstraintsTests
     public void GtoCConstraint_InAPlate_MakesItTangent()
     {
         var aPlate = new Plate_Plate();
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(0.0, 0.0), s_zero));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(1.0, 0.0), s_zero));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(0.0, 1.0), s_zero));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(1.0, 1.0), s_zero));
-        var p = new gp_XY(0.5, 0.5);
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(0.0, 0.0), s_zero));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(1.0, 0.0), s_zero));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(0.0, 1.0), s_zero));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(1.0, 1.0), s_zero));
+        var p = new Xy(0.5, 0.5);
         aPlate.Load(new Plate_PinpointConstraint(p, s_zero));
         var aG = new Plate_GtoCConstraint(p, s_flat, s_tilted);
         aPlate.Load(aG);
         aPlate.SolveTI(3);
         Assert.True(aPlate.IsDone());
         // the surface (the xy plane plus the deformation) is tangent to the target there
-        gp_XYZ aDu = s_flat.DU() + aPlate.EvaluateDerivative(p, 1, 0);
-        gp_XYZ aDv = s_flat.DV() + aPlate.EvaluateDerivative(p, 0, 1);
-        gp_XYZ aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
+        Xyz aDu = s_flat.DU() + aPlate.EvaluateDerivative(p, 1, 0);
+        Xyz aDv = s_flat.DV() + aPlate.EvaluateDerivative(p, 0, 1);
+        Xyz aN = (s_tilted.DU() ^ s_tilted.DV()).Normalized();
         Assert.Equal(0.0, aDu * aN, 1.0e-9);
         Assert.Equal(0.0, aDv * aN, 1.0e-9);
 
         var aFree = new Plate_Plate();
-        aFree.Load(new Plate_PinpointConstraint(new gp_XY(0.0, 0.0), s_zero));
-        aFree.Load(new Plate_PinpointConstraint(new gp_XY(1.0, 0.0), s_zero));
-        aFree.Load(new Plate_PinpointConstraint(new gp_XY(0.0, 1.0), s_zero));
+        aFree.Load(new Plate_PinpointConstraint(new Xy(0.0, 0.0), s_zero));
+        aFree.Load(new Plate_PinpointConstraint(new Xy(1.0, 0.0), s_zero));
+        aFree.Load(new Plate_PinpointConstraint(new Xy(0.0, 1.0), s_zero));
         aFree.Load(new Plate_PinpointConstraint(p, s_zero));
         aFree.Load(new Plate_FreeGtoCConstraint(p, s_flat, s_tilted));
         aFree.SolveTI(3);

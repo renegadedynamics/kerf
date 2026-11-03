@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepGProp_Gauss.BRepGProp_GaussType;
 
 namespace Occt;
@@ -16,35 +17,35 @@ public class BRepGProp_Sinert : GProp_GProps
     public BRepGProp_Sinert() => myEpsilon = 0.0;
 
     /// <summary>The global properties of the face over its natural bounds, inertia at <paramref name="SLocation"/>.</summary>
-    public BRepGProp_Sinert(BRepGProp_Face S, in gp_Pnt SLocation)
+    public BRepGProp_Sinert(BRepGProp_Face S, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S);
     }
 
     /// <summary>The global properties of the face bounded by its edges (<paramref name="D"/>), inertia at <paramref name="SLocation"/>.</summary>
-    public BRepGProp_Sinert(BRepGProp_Face S, BRepGProp_Domain D, in gp_Pnt SLocation)
+    public BRepGProp_Sinert(BRepGProp_Face S, BRepGProp_Domain D, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S, D);
     }
 
     /// <summary>The global properties of the face over its natural bounds, adaptively to the relative error <paramref name="Eps"/>.</summary>
-    public BRepGProp_Sinert(BRepGProp_Face S, in gp_Pnt SLocation, double Eps)
+    public BRepGProp_Sinert(BRepGProp_Face S, in Point3D SLocation, double Eps)
     {
         SetLocation(SLocation);
         Perform(S, Eps);
     }
 
     /// <summary>The global properties of the face bounded by its edges, adaptively to the relative error <paramref name="Eps"/>.</summary>
-    public BRepGProp_Sinert(BRepGProp_Face S, BRepGProp_Domain D, in gp_Pnt SLocation, double Eps)
+    public BRepGProp_Sinert(BRepGProp_Face S, BRepGProp_Domain D, in Point3D SLocation, double Eps)
     {
         SetLocation(SLocation);
         Perform(S, D, Eps);
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in gp_Pnt SLocation) => loc = SLocation;
+    public void SetLocation(in Point3D SLocation) => loc = SLocation;
 
     /// <summary>Computes the global properties of the face over its natural bounds.</summary>
     public void Perform(BRepGProp_Face S)

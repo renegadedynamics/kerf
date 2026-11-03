@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -52,7 +54,7 @@ public class Transfer_TransferDispatch : Interface_CopyTool
     /// Copies an Entity by calling the method Transferring from the TransferProcess. If this called produces a Null
     /// Binder, then the standard, inherited Copy is called.
     /// </summary>
-    public override bool Copy(Standard_Transient? entfrom, ref Standard_Transient? entto, bool mapped, bool errstat)
+    public override bool Copy(Transient? entfrom, ref Transient? entto, bool mapped, bool errstat)
     {
         // OCCT.NET fix (decision 1207): the entity Transfer_ActorDispatch is copying gets the standard copy. OCCT asks
         // the process again, which calls the same actor again: an endless recursion (a stack overflow)
@@ -74,5 +76,5 @@ public class Transfer_TransferDispatch : Interface_CopyTool
     }
 
     // The entity Transfer_ActorDispatch.Transfer is copying (decision 1207)
-    internal Standard_Transient? myDispatched;
+    internal Transient? myDispatched;
 }

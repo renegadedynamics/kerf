@@ -3,13 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An edge of the contour seen by MAT2d_Mat2d's algorithm: its number, its two bisectors, the distance
 /// and index of the intersection point of its bisectors.</summary>
 /// <remarks>A working object of MAT2d_Mat2d (decision 21): the setters are internal. OCCT's Dump does nothing and is
 /// left out.</remarks>
-public sealed class MAT_Edge : Standard_Transient
+public sealed class MAT_Edge : Transient
 {
     private int theedgenumber;
     private MAT_Bisector? thefirstbisector;

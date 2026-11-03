@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Line from Geom and Geom2d (and Lin and Lin2d from gp) to a STEP line.</summary>
@@ -22,14 +24,14 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D line, its location divided by the length factor.</summary>
-    public GeomToStep_MakeLine(in gp_Lin L, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeLine(in Line3D L, in StepData_Factors theLocalFactors)
     {
         Make(new GeomToStep_MakeCartesianPoint(L.Location(), theLocalFactors.LengthFactor()),
-             new GeomToStep_MakeVector(new gp_Vec(L.Direction()), theLocalFactors));
+             new GeomToStep_MakeVector(new Vector3D(L.Direction()), theLocalFactors));
     }
 
     /// <summary>A 3D line (default factors).</summary>
-    public GeomToStep_MakeLine(in gp_Lin L) : this(L, new StepData_Factors())
+    public GeomToStep_MakeLine(in Line3D L) : this(L, new StepData_Factors())
     {
     }
 
@@ -38,14 +40,14 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D line.</summary>
-    public GeomToStep_MakeLine(in gp_Lin2d L, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeLine(in Line2D L, in StepData_Factors theLocalFactors)
     {
         Make(new GeomToStep_MakeCartesianPoint(L.Location(), theLocalFactors.LengthFactor()),
-             new GeomToStep_MakeVector(new gp_Vec2d(L.Direction()), theLocalFactors));
+             new GeomToStep_MakeVector(new Vector2D(L.Direction()), theLocalFactors));
     }
 
     /// <summary>A 2D line.</summary>
-    public GeomToStep_MakeLine(in gp_Lin2d L) : this(L, new StepData_Factors())
+    public GeomToStep_MakeLine(in Line2D L) : this(L, new StepData_Factors())
     {
     }
 
@@ -56,10 +58,10 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     /// <summary>A 3D line, its location divided by the length factor.</summary>
     public GeomToStep_MakeLine(Geom_Line Gline, in StepData_Factors theLocalFactors)
     {
-        gp_Lin L;
+        Line3D L;
         L = Gline.Lin();
         Make(new GeomToStep_MakeCartesianPoint(L.Location(), theLocalFactors.LengthFactor()),
-             new GeomToStep_MakeVector(new gp_Vec(L.Direction()), theLocalFactors));
+             new GeomToStep_MakeVector(new Vector3D(L.Direction()), theLocalFactors));
     }
 
     /// <summary>A 3D line (default factors).</summary>
@@ -74,10 +76,10 @@ public sealed class GeomToStep_MakeLine : GeomToStep_Root
     /// <summary>A 2D line.</summary>
     public GeomToStep_MakeLine(Geom2d_Line Gline, in StepData_Factors theLocalFactors)
     {
-        gp_Lin2d L;
+        Line2D L;
         L = Gline.Lin2d();
         Make(new GeomToStep_MakeCartesianPoint(L.Location(), theLocalFactors.LengthFactor()),
-             new GeomToStep_MakeVector(new gp_Vec2d(L.Direction()), theLocalFactors));
+             new GeomToStep_MakeVector(new Vector2D(L.Direction()), theLocalFactors));
     }
 
     /// <summary>A 2D line.</summary>

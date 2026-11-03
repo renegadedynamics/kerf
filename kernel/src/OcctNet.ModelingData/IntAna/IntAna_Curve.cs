@@ -21,7 +21,10 @@
 //--       be carried out.
 //----------------------------------------------------------------------
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -64,10 +67,10 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     private bool RestrictedSup;
     private bool firstbounded;
     private bool lastbounded;
-    private GeomAbs_SurfaceType typequadric;
+    private SurfaceKind typequadric;
     private double RCyl;
     private double Angle;
-    private gp_Ax3 Ax3;
+    private CoordinateSystem Ax3;
 
     // Trim boundaries
     private double myFirstParameter, myLastParameter;
@@ -102,10 +105,10 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
         RestrictedSup = false;
         firstbounded = false;
         lastbounded = false;
-        typequadric = GeomAbs_OtherSurface;
+        typequadric = OtherSurface;
         RCyl = 0.0;
         Angle = 0.0;
-        Ax3 = new gp_Ax3();
+        Ax3 = new CoordinateSystem();
         myFirstParameter = 0.0;
         myLastParameter = 0.0;
     }
@@ -116,7 +119,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     //=================================================================================================
 
     /// <summary>Sets the parameters used to compute points and derivatives on the curve (cone and quadric).</summary>
-    internal void SetConeQuadValues(in gp_Cone Cone,
+    internal void SetConeQuadValues(in Cone Cone,
                                     double Qxx,
                                     double Qyy,
                                     double Qzz,
@@ -139,7 +142,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
         Angle = Cone.SemiAngle();
         double UnSurTgAngle = 1.0 / (Math.Tan(Cone.SemiAngle()));
 
-        typequadric = GeomAbs_Cone;
+        typequadric = global::Kerf.Geometry.SurfaceKind.Cone;
 
         TwoCurves = twocurves;         //-- two Z values for the same parameter
         TakeZPositive = takezpositive; //-- Take the positive Z on the curve
@@ -183,7 +186,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     //=================================================================================================
 
     /// <summary>Sets the parameters used to compute points and derivatives on the curve (cylinder and quadric).</summary>
-    internal void SetCylinderQuadValues(in gp_Cylinder Cyl,
+    internal void SetCylinderQuadValues(in Cylinder Cyl,
                                         double Qxx,
                                         double Qyy,
                                         double Qzz,
@@ -202,7 +205,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     {
         Ax3 = Cyl.Position();
         RCyl = Cyl.Radius();
-        typequadric = GeomAbs_Cylinder;
+        typequadric = SurfaceKind.Cylinder;
 
         TwoCurves = twocurves;         //-- two Z values for the same parameter
         TakeZPositive = takezpositive; //-- Take the positive Z on the curve
@@ -244,7 +247,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     public readonly bool IsOpen() => (RestrictedInf && RestrictedSup);
 
     /// <summary>The parametric domain of the curve.</summary>
-    /// <exception cref="Standard_DomainError">The domain is not bounded (an empty curve).</exception>
+    /// <exception cref="DomainErrorException">The domain is not bounded (an empty curve).</exception>
     public readonly void Domain(out double theFirst, out double theLast)
     {
         if (RestrictedInf && RestrictedSup)
@@ -254,7 +257,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
         }
         else
         {
-            throw new Standard_DomainError("IntAna_Curve::Domain");
+            throw new DomainErrorException("IntAna_Curve::Domain");
         }
     }
 
@@ -305,7 +308,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
             || (Theta > (DomainSup + DomainSup - DomainInf) * aRelTolp))
         {
             SigneSqrtDis = 0.0;
-            throw new Standard_DomainError("IntAna_Curve::Domain");
+            throw new DomainErrorException("IntAna_Curve::Domain");
         }
 
         if (Math.Abs(Theta - DomainSup) < aDT)
@@ -364,9 +367,9 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
             aDiscriminant = 0.0;
         }
 
-        if (Math.Abs(A) <= Precision.PConfusion())
+        if (Math.Abs(A) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            if (Math.Abs(B) <= Precision.PConfusion())
+            if (Math.Abs(B) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 Param2 = 0.0;
             }
@@ -383,8 +386,8 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     }
 
     /// <summary>The point at parameter theta on the curve.</summary>
-    /// <exception cref="Standard_DomainError">theta is outside the domain.</exception>
-    public readonly gp_Pnt Value(double theta)
+    /// <exception cref="DomainErrorException">theta is outside the domain.</exception>
+    public readonly Point3D Value(double theta)
     {
         double A, B, C, U, V, sint, cost, SigneSqrtDis;
         //
@@ -398,8 +401,8 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     /// The point and the first derivative (a finite difference) at parameter theta on the curve. Returns false, with
     /// a null vector, where the derivative can't be computed.
     /// </summary>
-    /// <exception cref="Standard_DomainError">theta is outside the domain.</exception>
-    public readonly bool D1u(double theta, out gp_Pnt Pt, out gp_Vec Vec)
+    /// <exception cref="DomainErrorException">theta is outside the domain.</exception>
+    public readonly bool D1u(double theta, out Point3D Pt, out Vector3D Vec)
     {
         //-- To detect the case where the computation is impossible
         double A, B, C, U, V, sint, cost, SigneSqrtDis;
@@ -410,7 +413,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
         InternalUVValue(theta, out U, out V, out A, out B, out C, out cost, out sint, ref SigneSqrtDis);
         //
         Pt = Value(theta);
-        Vec = new gp_Vec(); // OCCT leaves the vector unchanged when it returns false
+        Vec = new Vector3D(); // OCCT leaves the vector unchanged when it returns false
         if (Math.Abs(A) < 1.0e-7 || Math.Abs(SigneSqrtDis) < 1.0e-10)
         {
             return (false);
@@ -425,7 +428,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
             dtheta = -dtheta;
             theta2 = theta + dtheta;
         }
-        gp_Pnt P2 = Value(theta2);
+        Point3D P2 = Value(theta2);
         dtheta = 1.0 / dtheta;
         Vec.SetCoord((P2.X() - Pt.X()) * dtheta, (P2.Y() - Pt.Y()) * dtheta, (P2.Z() - Pt.Z()) * dtheta);
 
@@ -444,27 +447,27 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     /// Appends to theParams the parameters of the point theP on the curve, in ascending order. Nothing is appended
     /// if the "projection" is impossible.
     /// </summary>
-    public readonly void FindParameter(in gp_Pnt theP, NCollection_List<double> theParams)
+    public readonly void FindParameter(in Point3D theP, NCollection_List<double> theParams)
     {
         double aPIpPI = M_PI + M_PI, anEpsAng = 1.0e-8,
                InternalPrecision = 1.0e-8; // precision of internal algorithm of values computation
-        double aSqTolPrecision = Precision.SquareConfusion(); //for boundary points to check their coincidence with others
+        double aSqTolPrecision = global::Kerf.Engine.Foundation.Precision.SquareConfusion(); //for boundary points to check their coincidence with others
 
         double aTheta = 0.0;
         //
         switch (typequadric)
         {
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 {
                     double aZ;
-                    ElSLib.CylinderParameters(Ax3, RCyl, theP, out aTheta, out aZ);
+                    global::Kerf.Engine.Geometry.ElSLib.CylinderParameters(Ax3, RCyl, theP, out aTheta, out aZ);
                 }
                 break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 {
                     double aZ;
-                    ElSLib.ConeParameters(Ax3, RCyl, Angle, theP, out aTheta, out aZ);
+                    global::Kerf.Engine.Geometry.ElSLib.ConeParameters(Ax3, RCyl, Angle, theP, out aTheta, out aZ);
                 }
                 break;
 
@@ -512,14 +515,14 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
                 continue;
             }
 
-            if (i != 0 && (aParams[i] - aParams[i - 1]) < Precision.PConfusion())
+            if (i != 0 && (aParams[i] - aParams[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 continue;
             }
 
             double U, V, A, B, C, sint, cost, SigneSqrtDis = 0.0;
             InternalUVValue(aParams[i], out U, out V, out A, out B, out C, out cost, out sint, ref SigneSqrtDis);
-            gp_Pnt aP = InternalValue(U, V);
+            Point3D aP = InternalValue(U, V);
 
             double aSqTol;
             if (aParams[i] == aTheta || (TwoCurves && aParams[i] == DomainSup + DomainSup - aTheta))
@@ -538,7 +541,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
         }
     }
 
-    private readonly gp_Pnt InternalValue(double U, double _V)
+    private readonly Point3D InternalValue(double U, double _V)
     {
         //-- std::cout<<" ["<<U<<","<<V<<"]";
         double V = _V;
@@ -553,7 +556,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
 
         switch (typequadric)
         {
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 {
                     //------------------------------------------------
                     //-- Parametrage : X = V * std::cos(U)              ---
@@ -561,25 +564,25 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
                     //--               Z = (V-RCyl) / std::tan(SemiAngle)--
                     //------------------------------------------------
                     //-- Angle Vaut Cone.SemiAngle()
-                    return (ElSLib.ConeValue(U, (V - RCyl) / Math.Sin(Angle), Ax3, RCyl, Angle));
+                    return (global::Kerf.Engine.Geometry.ElSLib.ConeValue(U, (V - RCyl) / Math.Sin(Angle), Ax3, RCyl, Angle));
                 }
 
-            case GeomAbs_Cylinder:
-                return (ElSLib.CylinderValue(U, V, Ax3, RCyl));
-            case GeomAbs_Sphere:
-                return (ElSLib.SphereValue(U, V, Ax3, RCyl));
+            case SurfaceKind.Cylinder:
+                return (global::Kerf.Engine.Geometry.ElSLib.CylinderValue(U, V, Ax3, RCyl));
+            case SurfaceKind.Sphere:
+                return (global::Kerf.Engine.Geometry.ElSLib.SphereValue(U, V, Ax3, RCyl));
             default:
-                return (new gp_Pnt(0.0, 0.0, 0.0));
+                return (new Point3D(0.0, 0.0, 0.0));
         }
     }
 
     /// <summary>Trims this curve.</summary>
-    /// <exception cref="Standard_DomainError">theLast &lt;= theFirst.</exception>
+    /// <exception cref="DomainErrorException">theLast &lt;= theFirst.</exception>
     internal void SetDomain(double theFirst, double theLast)
     {
         if (theLast <= theFirst)
         {
-            throw new Standard_DomainError("IntAna_Curve::Domain");
+            throw new DomainErrorException("IntAna_Curve::Domain");
         }
         //
         myFirstParameter = theFirst;
@@ -589,7 +592,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     // Non-mutating twins (docs/translation-rules.md, section 3)
 
     /// <summary>A copy set by <see cref="SetConeQuadValues"/>.</summary>
-    public readonly IntAna_Curve WithConeQuadValues(in gp_Cone Cone, double Qxx, double Qyy, double Qzz, double Qxy,
+    public readonly IntAna_Curve WithConeQuadValues(in Cone Cone, double Qxx, double Qyy, double Qzz, double Qxy,
                                                     double Qxz, double Qyz, double Qx, double Qy, double Qz, double Q1,
                                                     double TOL, double DomInf, double DomSup, bool twocurves,
                                                     bool takezpositive)
@@ -601,7 +604,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     }
 
     /// <summary>A copy set by <see cref="SetCylinderQuadValues"/>.</summary>
-    public readonly IntAna_Curve WithCylinderQuadValues(in gp_Cylinder Cyl, double Qxx, double Qyy, double Qzz,
+    public readonly IntAna_Curve WithCylinderQuadValues(in Cylinder Cyl, double Qxx, double Qyy, double Qzz,
                                                         double Qxy, double Qxz, double Qyz, double Qx, double Qy,
                                                         double Qz, double Q1, double TOL, double DomInf, double DomSup,
                                                         bool twocurves, bool takezpositive)
@@ -629,7 +632,7 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
     }
 
     /// <summary>A copy trimmed to [theFirst, theLast].</summary>
-    /// <exception cref="Standard_DomainError">theLast &lt;= theFirst.</exception>
+    /// <exception cref="DomainErrorException">theLast &lt;= theFirst.</exception>
     public readonly IntAna_Curve WithDomain(double theFirst, double theLast)
     {
         IntAna_Curve aCopy = this;
@@ -676,6 +679,6 @@ public partial struct IntAna_Curve : IEquatable<IntAna_Curve>
 
     /// <summary>The surface type, radius, angle, domain and trim of the curve.</summary>
     public override readonly string ToString()
-        => gp.Format("IntAna_Curve(" + typequadric + ")", RCyl, Angle, DomainInf, DomainSup, myFirstParameter,
+        => Constants.Format("IntAna_Curve(" + typequadric + ")", RCyl, Angle, DomainInf, DomainSup, myFirstParameter,
                      myLastParameter);
 }

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -101,8 +103,8 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
             if (C is Geom2d_Circle)
             {
                 Geom2d_Circle theC2d = C as Geom2d_Circle;
-                gp_Circ2d C2d = theC2d.Circ2d();
-                if (!C2d.IsDirect())
+                Circle2D C2d = theC2d.Circ2d();
+                if (!C2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
                     Geom2d_BSplineCurve aBSplineCurve2d = Geom2dConvert.CurveToBSplineCurve(theC2d);
@@ -120,8 +122,8 @@ public sealed class GeomToStep_MakeCurve : GeomToStep_Root
             else if (C is Geom2d_Ellipse)
             {
                 Geom2d_Ellipse theE2d = C as Geom2d_Ellipse;
-                gp_Elips2d E2d = theE2d.Elips2d();
-                if (!E2d.IsDirect())
+                Ellipse2D E2d = theE2d.Elips2d();
+                if (!E2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
                     Geom2d_BSplineCurve aBSplineCurve2d = Geom2dConvert.CurveToBSplineCurve(theE2d);

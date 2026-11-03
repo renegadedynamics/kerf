@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: LU decomposition, linear systems, determinant and inverse.</summary>
 public static partial class MathLin
@@ -12,9 +13,9 @@ public static partial class MathLin
     /// <summary>Result for LU decomposition.</summary>
     public struct LUResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Combined L and U matrices.</summary>
-        public math_Matrix? LU;
+        public Matrix? LU;
         /// <summary>Pivot indices.</summary>
         public math_IntegerVector? Pivot;
         public double? Determinant;
@@ -25,378 +26,378 @@ public static partial class MathLin
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(LUResult theResult) => theResult.IsDone();
+        public static explicit operator bool(LUResult result) => result.IsDone;
 
-        public static bool operator true(LUResult theResult) => theResult.IsDone();
+        public static bool operator true(LUResult result) => result.IsDone;
 
-        public static bool operator false(LUResult theResult) => !theResult.IsDone();
+        public static bool operator false(LUResult result) => !result.IsDone;
     }
 
     /// <summary>
     /// LU decomposition of a square matrix with partial (implicitly scaled) pivoting: A = L*U, L with unit diagonal,
     /// stored together. Pivots smaller than theMinPivot are treated as singular.
     /// </summary>
-    public static LUResult LU(math_Matrix theA, double theMinPivot = 1.0e-20)
+    public static LUResult LU(Matrix a, double minPivot = 1.0e-20)
     {
-        LUResult aResult = new();
+        LUResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aRowCount = aRowUpper - aRowLower + 1;
-        int aColCount = aColUpper - aColLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int rowCount = rowUpper - rowLower + 1;
+        int colCount = colUpper - colLower + 1;
 
         // Check for square matrix
-        if (aRowCount != aColCount)
+        if (rowCount != colCount)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Initialize LU matrix as copy of A
-        aResult.LU = new math_Matrix(theA);
-        aResult.Pivot = new math_IntegerVector(aRowLower, aRowUpper);
-        aResult.Sign = 1;
+        result.LU = new Matrix(a);
+        result.Pivot = new math_IntegerVector(rowLower, rowUpper);
+        result.Sign = 1;
 
-        math_Matrix aLU = aResult.LU;
-        math_IntegerVector aPivot = aResult.Pivot;
+        Matrix lu = result.LU;
+        math_IntegerVector pivot = result.Pivot;
 
         // Scaling factors for implicit pivoting
-        math_Vector aScale = new(aRowLower, aRowUpper);
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        math_Vector scale = new(rowLower, rowUpper);
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            double aMax = 0.0;
-            for (int j = aColLower; j <= aColUpper; ++j)
+            double max = 0.0;
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                double aAbs = Math.Abs(aLU[i, j]);
-                if (aAbs > aMax)
+                double abs = Math.Abs(lu[i, j]);
+                if (abs > max)
                 {
-                    aMax = aAbs;
+                    max = abs;
                 }
             }
-            if (aMax < theMinPivot)
+            if (max < minPivot)
             {
-                aResult.Status = Status.NumericalError; // Singular matrix
-                return aResult;
+                result.Status = Status.NumericalError; // Singular matrix
+                return result;
             }
-            aScale[i] = 1.0 / aMax;
+            scale[i] = 1.0 / max;
         }
 
         // Crout's algorithm with partial pivoting
         // OCCT: k and i are row indexes, also used as column indexes below (aLU(i, k), aLU(k, k)): wrong or out of
         // range when LowerCol differs from LowerRow.
-        for (int k = aRowLower; k <= aRowUpper; ++k)
+        for (int k = rowLower; k <= rowUpper; ++k)
         {
             // Find pivot
-            double aMaxScaled = 0.0;
-            int aPivotRow = k;
+            double maxScaled = 0.0;
+            int pivotRow = k;
 
-            for (int i = k; i <= aRowUpper; ++i)
+            for (int i = k; i <= rowUpper; ++i)
             {
-                double aScaled = aScale[i] * Math.Abs(aLU[i, k]);
-                if (aScaled > aMaxScaled)
+                double scaled = scale[i] * Math.Abs(lu[i, k]);
+                if (scaled > maxScaled)
                 {
-                    aMaxScaled = aScaled;
-                    aPivotRow = i;
+                    maxScaled = scaled;
+                    pivotRow = i;
                 }
             }
 
             // Swap rows if needed
-            if (aPivotRow != k)
+            if (pivotRow != k)
             {
-                for (int j = aColLower; j <= aColUpper; ++j)
+                for (int j = colLower; j <= colUpper; ++j)
                 {
-                    (aLU[aPivotRow, j], aLU[k, j]) = (aLU[k, j], aLU[aPivotRow, j]);
+                    (lu[pivotRow, j], lu[k, j]) = (lu[k, j], lu[pivotRow, j]);
                 }
-                aResult.Sign = -aResult.Sign;
-                (aScale[aPivotRow], aScale[k]) = (aScale[k], aScale[aPivotRow]);
+                result.Sign = -result.Sign;
+                (scale[pivotRow], scale[k]) = (scale[k], scale[pivotRow]);
             }
-            aPivot[k] = aPivotRow;
+            pivot[k] = pivotRow;
 
             // Check for singular matrix
-            if (Math.Abs(aLU[k, k]) < theMinPivot)
+            if (Math.Abs(lu[k, k]) < minPivot)
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
 
             // Eliminate below diagonal
-            for (int i = k + 1; i <= aRowUpper; ++i)
+            for (int i = k + 1; i <= rowUpper; ++i)
             {
-                aLU[i, k] /= aLU[k, k];
-                double aFactor = aLU[i, k];
-                for (int j = k + 1; j <= aColUpper; ++j)
+                lu[i, k] /= lu[k, k];
+                double factor = lu[i, k];
+                for (int j = k + 1; j <= colUpper; ++j)
                 {
-                    aLU[i, j] -= aFactor * aLU[k, j];
+                    lu[i, j] -= factor * lu[k, j];
                 }
             }
         }
 
         // Compute determinant
-        aResult.Determinant = (double)aResult.Sign;
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        result.Determinant = (double)result.Sign;
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            aResult.Determinant *= aLU[i, i];
+            result.Determinant *= lu[i, i];
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Solve linear system AX = B using LU decomposition. B must have A's row bounds.</summary>
-    public static LinearResult Solve(math_Matrix theA, math_Vector theB, double theMinPivot = 1.0e-20)
+    public static LinearResult Solve(Matrix a, math_Vector b, double minPivot = 1.0e-20)
     {
-        LinearResult aResult = new();
+        LinearResult result = new();
 
         // Perform LU decomposition
-        LUResult aLURes = LU(theA, theMinPivot);
-        if (!aLURes.IsDone())
+        LUResult luRes = LU(a, minPivot);
+        if (!luRes.IsDone)
         {
-            aResult.Status = aLURes.Status;
-            return aResult;
+            result.Status = luRes.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
 
         // Check dimensions
-        if (theB.Lower() != aRowLower || theB.Upper() != aRowUpper)
+        if (b.Lower() != rowLower || b.Upper() != rowUpper)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        math_Matrix aLU = aLURes.LU!;
-        math_IntegerVector aPivot = aLURes.Pivot!;
+        Matrix lu = luRes.LU!;
+        math_IntegerVector pivot = luRes.Pivot!;
 
         // Copy B to working vector (we modify it in-place like the legacy algorithm)
-        math_Vector aX = new(theB);
+        math_Vector x = new(b);
 
         // Forward substitution with in-place permutation (matches legacy LU_Solve)
         // OCCT: 0 means "no non-zero yet", so with a row range starting at 0 or below a first non-zero at index 0
         // is lost and the substitution is wrong; the matrix's row indexes are also used as column indexes.
-        int aFirstNonZero = 0;
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        int firstNonZero = 0;
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            int aPivotIdx = aPivot[i];
-            double aSum = aX[aPivotIdx];
-            aX[aPivotIdx] = aX[i]; // Swap elements in-place
+            int pivotIdx = pivot[i];
+            double sum = x[pivotIdx];
+            x[pivotIdx] = x[i]; // Swap elements in-place
 
-            if (aFirstNonZero != 0)
+            if (firstNonZero != 0)
             {
-                for (int j = aFirstNonZero; j < i; ++j)
+                for (int j = firstNonZero; j < i; ++j)
                 {
-                    aSum -= aLU[i, j] * aX[j];
+                    sum -= lu[i, j] * x[j];
                 }
             }
-            else if (!MathUtils.IsZero(aSum))
+            else if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(sum))
             {
-                aFirstNonZero = i;
+                firstNonZero = i;
             }
-            aX[i] = aSum;
+            x[i] = sum;
         }
 
         // Back substitution (solve Ux = y)
-        for (int i = aRowUpper; i >= aRowLower; --i)
+        for (int i = rowUpper; i >= rowLower; --i)
         {
-            double aSum = aX[i];
-            for (int j = i + 1; j <= aRowUpper; ++j)
+            double sum = x[i];
+            for (int j = i + 1; j <= rowUpper; ++j)
             {
-                aSum -= aLU[i, j] * aX[j];
+                sum -= lu[i, j] * x[j];
             }
-            aX[i] = aSum / aLU[i, i];
+            x[i] = sum / lu[i, i];
         }
 
-        aResult.Status = Status.OK;
-        aResult.Solution = aX;
-        aResult.Determinant = aLURes.Determinant;
-        return aResult;
+        result.Status = Status.OK;
+        result.Solution = x;
+        result.Determinant = luRes.Determinant;
+        return result;
     }
 
     /// <summary>Solve multiple linear systems AX = B, one per column of B. B must have A's row bounds.</summary>
-    public static LinearMultipleResult SolveMultiple(math_Matrix theA, math_Matrix theB, double theMinPivot = 1.0e-20)
+    public static LinearMultipleResult SolveMultiple(Matrix a, Matrix b, double minPivot = 1.0e-20)
     {
-        LinearMultipleResult aResult = new();
+        LinearMultipleResult result = new();
 
         // Perform LU decomposition
-        LUResult aLURes = LU(theA, theMinPivot);
-        if (!aLURes.IsDone())
+        LUResult luRes = LU(a, minPivot);
+        if (!luRes.IsDone)
         {
-            aResult.Status = aLURes.Status;
-            return aResult;
+            result.Status = luRes.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
 
         // Check dimensions
-        if (theB.LowerRow() != aRowLower || theB.UpperRow() != aRowUpper)
+        if (b.LowerRow() != rowLower || b.UpperRow() != rowUpper)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        math_Matrix aLU = aLURes.LU!;
-        math_IntegerVector aPivot = aLURes.Pivot!;
+        Matrix lu = luRes.LU!;
+        math_IntegerVector pivot = luRes.Pivot!;
 
         // Solve for each column of B
-        math_Matrix aX = new(aRowLower, aRowUpper, theB.LowerCol(), theB.UpperCol());
+        Matrix x = new(rowLower, rowUpper, b.LowerCol(), b.UpperCol());
 
-        for (int col = theB.LowerCol(); col <= theB.UpperCol(); ++col)
+        for (int col = b.LowerCol(); col <= b.UpperCol(); ++col)
         {
             // Extract column as working vector
-            math_Vector aWork = new(aRowLower, aRowUpper);
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            math_Vector work = new(rowLower, rowUpper);
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                aWork[i] = theB[i, col];
+                work[i] = b[i, col];
             }
 
             // Forward substitution with in-place permutation
             // OCCT: as in Solve, 0 doubles as "no non-zero yet".
-            int aFirstNonZero = 0;
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            int firstNonZero = 0;
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                int aPivotIdx = aPivot[i];
-                double aSum = aWork[aPivotIdx];
-                aWork[aPivotIdx] = aWork[i]; // Swap elements in-place
+                int pivotIdx = pivot[i];
+                double sum = work[pivotIdx];
+                work[pivotIdx] = work[i]; // Swap elements in-place
 
-                if (aFirstNonZero != 0)
+                if (firstNonZero != 0)
                 {
-                    for (int j = aFirstNonZero; j < i; ++j)
+                    for (int j = firstNonZero; j < i; ++j)
                     {
-                        aSum -= aLU[i, j] * aWork[j];
+                        sum -= lu[i, j] * work[j];
                     }
                 }
-                else if (!MathUtils.IsZero(aSum))
+                else if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(sum))
                 {
-                    aFirstNonZero = i;
+                    firstNonZero = i;
                 }
-                aWork[i] = aSum;
+                work[i] = sum;
             }
 
             // Back substitution
-            for (int i = aRowUpper; i >= aRowLower; --i)
+            for (int i = rowUpper; i >= rowLower; --i)
             {
-                double aSum = aWork[i];
-                for (int j = i + 1; j <= aRowUpper; ++j)
+                double sum = work[i];
+                for (int j = i + 1; j <= rowUpper; ++j)
                 {
-                    aSum -= aLU[i, j] * aWork[j];
+                    sum -= lu[i, j] * work[j];
                 }
-                aWork[i] = aSum / aLU[i, i];
+                work[i] = sum / lu[i, i];
             }
 
             // Copy result to output matrix
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                aX[i, col] = aWork[i];
+                x[i, col] = work[i];
             }
         }
 
-        aResult.Status = Status.OK;
-        aResult.Determinant = aLURes.Determinant;
-        aResult.Solutions = aX;
-        return aResult;
+        result.Status = Status.OK;
+        result.Determinant = luRes.Determinant;
+        result.Solutions = x;
+        return result;
     }
 
     /// <summary>Compute determinant of matrix A (0 with the LU's status if it fails).</summary>
-    public static LinearResult Determinant(math_Matrix theA, double theMinPivot = 1.0e-20)
+    public static LinearResult Determinant(Matrix a, double minPivot = 1.0e-20)
     {
-        LinearResult aResult = new();
+        LinearResult result = new();
 
-        LUResult aLURes = LU(theA, theMinPivot);
-        if (!aLURes.IsDone())
+        LUResult luRes = LU(a, minPivot);
+        if (!luRes.IsDone)
         {
-            aResult.Status = aLURes.Status;
-            aResult.Determinant = 0.0;
-            return aResult;
+            result.Status = luRes.Status;
+            result.Determinant = 0.0;
+            return result;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Determinant = aLURes.Determinant;
-        return aResult;
+        result.Status = Status.OK;
+        result.Determinant = luRes.Determinant;
+        return result;
     }
 
     /// <summary>Compute inverse of matrix A.</summary>
-    public static InverseResult Invert(math_Matrix theA, double theMinPivot = 1.0e-20)
+    public static InverseResult Invert(Matrix a, double minPivot = 1.0e-20)
     {
-        InverseResult aResult = new();
+        InverseResult result = new();
 
         // Perform LU decomposition
-        LUResult aLURes = LU(theA, theMinPivot);
-        if (!aLURes.IsDone())
+        LUResult luRes = LU(a, minPivot);
+        if (!luRes.IsDone)
         {
-            aResult.Status = aLURes.Status;
-            return aResult;
+            result.Status = luRes.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
 
-        math_Matrix aLU = aLURes.LU!;
-        math_IntegerVector aPivot = aLURes.Pivot!;
+        Matrix lu = luRes.LU!;
+        math_IntegerVector pivot = luRes.Pivot!;
 
         // Compute inverse column by column using LU_Solve approach
-        math_Matrix aInv = new(aRowLower, aRowUpper, aColLower, aColUpper, 0.0);
-        math_Vector aCol = new(aRowLower, aRowUpper);
+        Matrix inv = new(rowLower, rowUpper, colLower, colUpper, 0.0);
+        math_Vector aCol = new(rowLower, rowUpper);
 
-        for (int col = aColLower; col <= aColUpper; ++col)
+        for (int col = colLower; col <= colUpper; ++col)
         {
             // Initialize column as unit vector
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
                 aCol[i] = 0.0;
             }
-            aCol[col - aColLower + aRowLower] = 1.0;
+            aCol[col - colLower + rowLower] = 1.0;
 
             // Forward substitution with in-place permutation
             // OCCT: as in Solve, 0 doubles as "no non-zero yet".
-            int aFirstNonZero = 0;
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            int firstNonZero = 0;
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                int aPivotIdx = aPivot[i];
-                double aSum = aCol[aPivotIdx];
-                aCol[aPivotIdx] = aCol[i]; // Swap elements in-place
+                int pivotIdx = pivot[i];
+                double sum = aCol[pivotIdx];
+                aCol[pivotIdx] = aCol[i]; // Swap elements in-place
 
-                if (aFirstNonZero != 0)
+                if (firstNonZero != 0)
                 {
-                    for (int j = aFirstNonZero; j < i; ++j)
+                    for (int j = firstNonZero; j < i; ++j)
                     {
-                        aSum -= aLU[i, j] * aCol[j];
+                        sum -= lu[i, j] * aCol[j];
                     }
                 }
-                else if (!MathUtils.IsZero(aSum))
+                else if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(sum))
                 {
-                    aFirstNonZero = i;
+                    firstNonZero = i;
                 }
-                aCol[i] = aSum;
+                aCol[i] = sum;
             }
 
             // Back substitution
-            for (int i = aRowUpper; i >= aRowLower; --i)
+            for (int i = rowUpper; i >= rowLower; --i)
             {
-                double aSum = aCol[i];
-                for (int j = i + 1; j <= aRowUpper; ++j)
+                double sum = aCol[i];
+                for (int j = i + 1; j <= rowUpper; ++j)
                 {
-                    aSum -= aLU[i, j] * aCol[j];
+                    sum -= lu[i, j] * aCol[j];
                 }
-                aCol[i] = aSum / aLU[i, i];
+                aCol[i] = sum / lu[i, i];
             }
 
             // Copy result to inverse matrix
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                aInv[i, col] = aCol[i];
+                inv[i, col] = aCol[i];
             }
         }
 
-        aResult.Status = Status.OK;
-        aResult.Inverse = aInv;
-        aResult.Determinant = aLURes.Determinant;
-        return aResult;
+        result.Status = Status.OK;
+        result.Inverse = inv;
+        result.Determinant = luRes.Determinant;
+        return result;
     }
 }

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Law_Interpolate and Law_Interpol: interpolation through values, with and without tangents, periodic or not.</summary>
@@ -32,11 +36,11 @@ public class Law_InterpolateTests
         }
         var anInter = new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9);
         Assert.False(anInter.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anInter.Curve());
+        Assert.Throws<NotDoneException>(() => anInter.Curve());
         anInter.Perform();
         Assert.True(anInter.IsDone());
         Law_BSpline aCurve = anInter.Curve();
-        Assert.True(aCurve.IsFrozen());
+        Assert.True(aCurve.IsFrozen);
         Assert.Equal(theDegree, aCurve.Degree());
         for (int i = 0; i < theNb; i++)
         {
@@ -105,7 +109,7 @@ public class Law_InterpolateTests
         aCurve.D1(0.0, out _, out double D0);
         aCurve.D1(4.0, out _, out double D4);
         Assert.Equal(D0, D4, 1.0e-10);
-        Assert.Throws<Standard_ConstructionError>(() => new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9)
+        Assert.Throws<ConstructionErrorException>(() => new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9)
                                                         .Load(new NCollection_Array1<double>(1, 3), new NCollection_HArray1<bool>(1, 3)));
     }
 
@@ -120,17 +124,17 @@ public class Law_InterpolateTests
         Assert.Equal(7.0, aCurve.LastParameter());
         Assert.Equal(3.0, aCurve.Value(2.0), 1.0e-12);
         Assert.Equal(2.0, aCurve.Value(3.0), 1.0e-12);
-        Assert.Throws<Standard_ConstructionError>(() => new Law_Interpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
+        Assert.Throws<ConstructionErrorException>(() => new Law_Interpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
     }
 
     [Fact]
     public void Law_Interpol_SetAndSetInRelative()
     {
-        var aPnts = new NCollection_Array1<gp_Pnt2d>(1, 4);
-        aPnts[1] = new gp_Pnt2d(0.0, 1.0);
-        aPnts[2] = new gp_Pnt2d(1.0, 2.0);
-        aPnts[3] = new gp_Pnt2d(2.0, 1.5);
-        aPnts[4] = new gp_Pnt2d(4.0, 3.0);
+        var aPnts = new NCollection_Array1<Point2D>(1, 4);
+        aPnts[1] = new Point2D(0.0, 1.0);
+        aPnts[2] = new Point2D(1.0, 2.0);
+        aPnts[3] = new Point2D(2.0, 1.5);
+        aPnts[4] = new Point2D(4.0, 3.0);
         var aLaw = new Law_Interpol();
         aLaw.Set(aPnts);
         for (int i = 1; i <= 4; i++)
@@ -153,7 +157,7 @@ public class Law_InterpolateTests
         Assert.Equal(0.5, D, 1.0e-10);
 
         // periodic: the last value is the first
-        aPnts[4] = new gp_Pnt2d(4.0, 1.0);
+        aPnts[4] = new Point2D(4.0, 1.0);
         aLaw.Set(aPnts, true);
         Assert.True(aLaw.Curve()!.IsPeriodic());
         Assert.Equal(1.0, aLaw.Value(4.0), 1.0e-7);

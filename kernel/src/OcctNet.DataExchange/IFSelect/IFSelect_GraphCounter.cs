@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -42,7 +44,7 @@ public class IFSelect_GraphCounter : IFSelect_SignCounter
     /// Adds a list of entities in the context given by the graph Default takes the count of entities selected by
     /// the applied selection, when it is given each entity of the list Can be redefined
     /// </summary>
-    public override void AddWithGraph(NCollection_HSequence<Standard_Transient>? list, Interface_Graph graph)
+    public override void AddWithGraph(NCollection_HSequence<Transient>? list, Interface_Graph graph)
     {
         if (theapplied is null)
         {
@@ -56,7 +58,7 @@ public class IFSelect_GraphCounter : IFSelect_SignCounter
         int i, nb = list.Length();
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient ent = list.Value(i);
+            Transient ent = list.Value(i);
             theapplied.Alternate().SetEntity(ent);
             Interface_EntityIterator iter = theapplied.UniqueResult(graph);
             int n = iter.NbEntities();

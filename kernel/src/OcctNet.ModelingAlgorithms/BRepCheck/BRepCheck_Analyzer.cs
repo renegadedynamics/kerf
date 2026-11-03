@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -26,7 +27,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// OCCT catches <c>Standard_Failure</c> around each check, with OCC_CATCH_SIGNALS turning access violations into
-/// failures, and records <see cref="BRepCheck_CheckFail"/>. The port catches <see cref="Standard_Failure"/> and the
+/// failures, and records <see cref="BRepCheck_CheckFail"/>. The port catches <see cref="FailureException"/> and the
 /// .NET exceptions that stand for those signals (null references, invalid casts of handles, indices out of range,
 /// integer division by zero).
 /// </para>
@@ -68,7 +69,7 @@ public class BRepCheck_Analyzer
     {
         if (theShape.IsNull())
         {
-            throw new Standard_NullObject("BRepCheck_Analyzer::Init() - NULL shape");
+            throw new NullObjectException("BRepCheck_Analyzer::Init() - NULL shape");
         }
 
         myShape = theShape;
@@ -151,13 +152,13 @@ public class BRepCheck_Analyzer
 
     /// <summary>
     /// The check of <paramref name="theSubS"/>, a sub-shape of the checked shape (null for compounds and
-    /// compsolids). Throws <see cref="Standard_NoSuchObject"/> for a shape that isn't a sub-shape.
+    /// compsolids). Throws <see cref="NoSuchObjectException"/> for a shape that isn't a sub-shape.
     /// </summary>
     public BRepCheck_Result? Result(in TopoDS_Shape theSubS) => myMap.FindFromKey(theSubS);
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception theException)
-        => theException is Standard_Failure
+        => theException is FailureException
                or NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
@@ -226,7 +227,7 @@ public class BRepCheck_Analyzer
         int aMapSize = myMap.Extent();
         const int aMinTaskSize = 10;
         // OSD_ThreadPool::DefaultPool()->NbThreads() is the number of logical processors
-        int aNbThreads = OSD_Parallel.NbLogicalProcessors();
+        int aNbThreads = OsdParallel.LogicalProcessorCount;
         int aNbTasks = aNbThreads * 10;
         int aTaskSize = (int)Math.Ceiling((double)aMapSize / aNbTasks);
         if (aTaskSize < aMinTaskSize)
@@ -262,7 +263,7 @@ public class BRepCheck_Analyzer
         }
 
         var aParallelAnalyzer = new BRepCheck_ParallelAnalyzer(aArrayOfArray, myMap);
-        OSD_Parallel.For(0, aArrayOfArray.Length(), aParallelAnalyzer.Perform, !myIsParallel);
+        OsdParallel.For(0, aArrayOfArray.Length(), aParallelAnalyzer.Perform, !myIsParallel);
     }
 
     private bool ValidSub(in TopoDS_Shape S, TopAbs_ShapeEnum SubType)

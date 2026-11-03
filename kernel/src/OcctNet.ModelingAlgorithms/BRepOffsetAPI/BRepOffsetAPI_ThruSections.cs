@@ -3,11 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.Approx_ParametrizationType;
 using static Occt.BRepFill_ThruSectionErrorStatus;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -50,7 +53,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     private bool myDegen1;
     private bool myDegen2;
     private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myEdgeFace = new(TopTools_ShapeMapHasher.Instance);
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private Approx_ParametrizationType myParamType;
     private int myDegMax;
     private readonly double[] myCritWeights = new double[3];
@@ -67,7 +70,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     //=======================================================================
     private static double PreciseUpar(double anUpar, Geom_BSplineSurface aSurface)
     {
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         aSurface.LocateU(anUpar, Tol, out int i1, out int i2);
         double U1 = aSurface.UKnot(i1);
@@ -164,7 +167,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     {
         if (shell.IsNull())
         {
-            throw new StdFail_NotDone("Thrusections is not build");
+            throw new NotDoneException("Thrusections is not build");
         }
         bool B = shell.Closed();
         BRep_Builder BB = new();
@@ -207,7 +210,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
 
         // verify the orientation the solid
         BRepClass3d_SolidClassifier clas3d = new(solid);
-        clas3d.PerformInfinitePoint(Precision.Confusion());
+        clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
         if (clas3d.State() == TopAbs_IN)
         {
             BB.MakeSolid(ref solid);
@@ -238,7 +241,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
         //----------------------------
         myParamType = Approx_ChordLength;
         myDegMax = 8;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myCritWeights[0] = .4;
         myCritWeights[1] = .2;
         myCritWeights[2] = .4;
@@ -261,7 +264,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
         //----------------------------
         myParamType = Approx_ChordLength;
         myDegMax = 6; // OCCT: 8 in the constructor (occt-issues.md)
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myCritWeights[0] = .4;
         myCritWeights[1] = .2;
         myCritWeights[2] = .4;
@@ -314,7 +317,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>Builds the loft.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // OCCT.NET: the working sections are the caller's, copied at once when they hold frozen shapes (decision 937)
         myCopy = null;
@@ -546,7 +549,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
                 CreateSmoothed();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             NotDone();
             return;
@@ -599,7 +602,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
 
                 // verify the orientation of the solid
                 BRepClass3d_SolidClassifier clas3d = new(solid);
-                clas3d.PerformInfinitePoint(Precision.Confusion());
+                clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (clas3d.State() == TopAbs_IN)
                 {
                     B.MakeSolid(ref solid);
@@ -869,7 +872,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             }
 
             // make the face
-            B.MakeFace(ref face, surface, Precision.Confusion());
+            B.MakeFace(ref face, surface, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             // make the wire
             B.MakeWire(ref W);
@@ -887,7 +890,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             }
             else
             {
-                B.MakeEdge(ref edge1, surface.VIso(f2), Precision.Confusion());
+                B.MakeEdge(ref edge1, surface.VIso(f2), global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             v1f.Orientation(TopAbs_FORWARD);
             B.Add(edge1, v1f);
@@ -917,7 +920,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
                 }
                 else
                 {
-                    B.MakeEdge(ref edge2, surface.VIso(l2), Precision.Confusion());
+                    B.MakeEdge(ref edge2, surface.VIso(l2), global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 v2f.Orientation(TopAbs_FORWARD);
                 B.Add(edge2, v2f);
@@ -930,7 +933,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             // --- edge 3
             if (i == 1)
             {
-                B.MakeEdge(ref edge3, surface.UIso(f1), Precision.Confusion());
+                B.MakeEdge(ref edge3, surface.UIso(f1), global::Kerf.Engine.Foundation.Precision.Confusion());
                 v1f.Orientation(TopAbs_FORWARD);
                 B.Add(edge3, v1f);
                 v2f.Orientation(TopAbs_REVERSED);
@@ -954,7 +957,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             }
             else
             {
-                B.MakeEdge(ref edge4, surface.UIso(l1), Precision.Confusion());
+                B.MakeEdge(ref edge4, surface.UIso(l1), global::Kerf.Engine.Foundation.Precision.Confusion());
                 v1l.Orientation(TopAbs_FORWARD);
                 B.Add(edge4, v1l);
                 v2l.Orientation(TopAbs_REVERSED);
@@ -971,46 +974,46 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             if (vClosed)
             {
                 B.UpdateEdge(edge1,
-                             new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X)),
-                             new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X)),
+                             new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X)),
+                             new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge1, face, f1, l1);
             }
             else
             {
                 B.UpdateEdge(edge1,
-                             new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X)),
+                             new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge1, face, f1, l1);
                 B.UpdateEdge(edge2,
-                             new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X)),
+                             new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge2, face, f1, l1);
             }
 
             if (uClosed && nbEdges == 1)
             {
                 B.UpdateEdge(edge3,
-                             new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
-                             new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                             new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)),
+                             new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge3, face, f2, l2);
             }
             else
             {
                 B.UpdateEdge(edge3,
-                             new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                             new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge3, face, f2, l2);
                 B.UpdateEdge(edge4,
-                             new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                             new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)),
                              face,
-                             Precision.Confusion());
+                             global::Kerf.Engine.Foundation.Precision.Confusion());
                 B.Range(edge4, face, f2, l2);
             }
             B.Add(face, W);
@@ -1045,7 +1048,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
 
                 // verify the orientation the solid
                 BRepClass3d_SolidClassifier clas3d = new(solid);
-                clas3d.PerformInfinitePoint(Precision.Confusion());
+                clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (clas3d.State() == TopAbs_IN)
                 {
                     B.MakeSolid(ref solid);
@@ -1146,7 +1149,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             aMults[1] = 2;
             aMults[2] = 2;
 
-            NCollection_Array1<gp_Pnt> aPoles = new(1, 2);
+            NCollection_Array1<Point3D> aPoles = new(1, 2);
             TopExp.Vertices(theEdge, out TopoDS_Vertex vl, out TopoDS_Vertex vf);
             aPoles[1] = BRep_Tool.Pnt(vf);
             aPoles[2] = BRep_Tool.Pnt(vl);
@@ -1156,7 +1159,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
         else
         {
             // get the curve of the edge
-            Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out double aFirst, out double aLast);
+            Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out Placement aLoc, out double aFirst, out double aLast);
             if (aCurve is null)
             {
                 return null;
@@ -1171,7 +1174,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             if (aTrimCurve.BasisCurve() is Geom_Conic)
             {
                 Geom_Curve aCurveTrimmed = aTrimCurve; // to avoid ambiguity
-                GeomConvert_ApproxCurve anAppr = new(aCurveTrimmed, Precision.Confusion(), GeomAbs_C1, 16, 14);
+                GeomConvert_ApproxCurve anAppr = new(aCurveTrimmed, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
                 if (anAppr.HasResult())
                 {
                     aBSCurve = anAppr.InternalCurve();
@@ -1185,14 +1188,14 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             }
 
             // apply transformation if needed
-            if (!aLoc.IsIdentity())
+            if (!aLoc.IsIdentity)
             {
                 aBSCurve.Transform(aLoc.Transformation());
             }
 
             // reparameterize to [0,1]
             NCollection_Array1<double> aKnots = new(aBSCurve.InternalKnots());
-            BSplCLib.Reparametrize(0.0, 1.0, aKnots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aKnots);
             aBSCurve.SetKnots(aKnots);
         }
 
@@ -1226,7 +1229,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             jdeb++;
             TopoDS_Edge edge = TopoDS.Edge(shapes[1]);
             TopExp.Vertices(edge, out vl, out vf);
-            NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+            NCollection_Array1<Point3D> Extremities = new(1, 2);
             Extremities[1] = BRep_Tool.Pnt(vf);
             Extremities[2] = BRep_Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
@@ -1270,7 +1273,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
                 {
                     // read the edge
                     TopoDS_Edge aNextEdge = TopoDS.Edge(shapes[(j - 1) * NbEdges + i]);
-                    double aTolV = Precision.Confusion();
+                    double aTolV = global::Kerf.Engine.Foundation.Precision.Confusion();
                     TopExp.Vertices(aNextEdge, out vf, out vl);
                     aTolV = Max(aTolV, BRep_Tool.Tolerance(vf));
                     aTolV = Max(aTolV, BRep_Tool.Tolerance(vl));
@@ -1301,7 +1304,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
         {
             TopoDS_Edge edge = TopoDS.Edge(shapes[NbSects * NbEdges]);
             TopExp.Vertices(edge, out vl, out vf);
-            NCollection_Array1<gp_Pnt> Extremities = new(1, 2);
+            NCollection_Array1<Point3D> Extremities = new(1, 2);
             Extremities[1] = BRep_Tool.Pnt(vf);
             Extremities[2] = BRep_Tool.Pnt(vl);
             NCollection_Array1<double> Bounds = new(1, 2);
@@ -1314,7 +1317,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             section.AddCurve(BSPoint);
         }
 
-        section.Perform(Precision.PConfusion());
+        section.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         GeomFill_Line line = new(NbSects);
 
         int nbIt = 3;
@@ -1565,7 +1568,7 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
             BRepAdaptor_Surface BAsurf = new(FirstFace, false);
             TopoDS_Vertex FirstVertex = new();
             TopExp.MapShapesAndAncestors(FirstFace, TopAbs_VERTEX, TopAbs_EDGE, VEmap);
-            if (myDegen1 && BAsurf.GetType() == GeomAbs_Plane)
+            if (myDegen1 && BAsurf.GetType() == Plane)
             {
                 // There are only 3 edges in the face in this case:
                 // we take 1-st or 3-rd edge
@@ -1729,13 +1732,13 @@ public class BRepOffsetAPI_ThruSections : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>Sets the continuity of the smoothed surfaces (C2 by default).</summary>
-    public void SetContinuity(GeomAbs_Shape TheCont)
+    public void SetContinuity(Continuity TheCont)
     {
         myContinuity = TheCont;
     }
 
     /// <summary>The continuity of the smoothed surfaces.</summary>
-    public GeomAbs_Shape Continuity()
+    public Continuity Continuity()
     {
         return myContinuity;
     }

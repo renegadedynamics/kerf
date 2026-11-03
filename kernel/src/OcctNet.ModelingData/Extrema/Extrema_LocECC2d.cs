@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -63,10 +67,10 @@ public class Extrema_LocECC2d
         Uusup[1] = Usup;
         Uusup[2] = Vsup;
 
-        math_FunctionSetRoot S = new(F, Tol);
+        FunctionSetRoot S = new(F, Tol);
         S.Perform(F, Start, Uuinf, Uusup);
 
-        if (S.IsDone() && F.NbExt() > 0)
+        if (S.IsDone && F.NbExt() > 0)
         {
             mySqDist = F.SquareDistance(1);
             F.Points(1, out myPoint1, out myPoint2);
@@ -86,23 +90,23 @@ public class Extrema_LocECC2d
     public bool IsDone() => myDone;
 
     /// <summary>The square distance of the extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double SquareDistance()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist;
     }
 
     /// <summary>The points of the extremum, on the first and on the second curve.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public void Point(out Extrema_POnCurv2d theP1, out Extrema_POnCurv2d theP2)
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         theP1 = myPoint1;
         theP2 = myPoint2;

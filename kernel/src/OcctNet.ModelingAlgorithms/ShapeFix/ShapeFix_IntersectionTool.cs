@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntRes2d_Position;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -44,18 +47,18 @@ public sealed class ShapeFix_IntersectionTool
     //: h0 abv 29 May 98: PRO10105 1949: like in BRepCheck, point is to be taken
     // from 3d curve (but only if edge is SameParameter)
     //=======================================================================
-    private static gp_Pnt GetPointOnEdge(in TopoDS_Edge edge, ShapeAnalysis_Surface surf, Geom2dAdaptor_Curve Crv2d,
+    private static Point3D GetPointOnEdge(in TopoDS_Edge edge, ShapeAnalysis_Surface surf, Geom2dAdaptor_Curve Crv2d,
                                          double param)
     {
         if (BRep_Tool.SameParameter(edge))
         {
-            Geom_Curve? ConS = BRep_Tool.Curve(edge, out TopLoc_Location L, out _, out _);
+            Geom_Curve? ConS = BRep_Tool.Curve(edge, out Placement L, out _, out _);
             if (ConS is not null)
             {
                 return ConS.Value(param).Transformed(L.Transformation());
             }
         }
-        gp_Pnt2d aP2d = Crv2d.Value(param);
+        Point2D aP2d = Crv2d.Value(param);
         return surf.Adaptor3d()!.Value(aP2d.X(), aP2d.Y());
     }
 
@@ -82,8 +85,8 @@ public sealed class ShapeFix_IntersectionTool
             return false;
         }
         // check distance between edge and new vertex
-        gp_Pnt          P1;
-        TopLoc_Location L;
+        Point3D          P1;
+        Placement L;
         if (BRep_Tool.SameParameter(edge) && !BRep_Tool.Degenerated(edge))
         {
             Geom_Curve? c3d = BRep_Tool.Curve(edge, out L, out _, out _);
@@ -92,7 +95,7 @@ public sealed class ShapeFix_IntersectionTool
                 return false;
             }
             P1 = c3d.Value(param);
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 P1 = P1.Transformed(L.Transformation());
             }
@@ -102,12 +105,12 @@ public sealed class ShapeFix_IntersectionTool
             Geom_Surface? surf = BRep_Tool.Surface(face, out L);
             var           sas  = new ShapeAnalysis_Surface(surf);
             P1                 = sas.Value(c2d!.Value(param));
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 P1 = P1.Transformed(L.Transformation());
             }
         }
-        gp_Pnt P2 = BRep_Tool.Pnt(vert);
+        Point3D P2 = BRep_Tool.Pnt(vert);
         if (P1.Distance(P2) > preci)
         {
             // return false;
@@ -165,14 +168,14 @@ public sealed class ShapeFix_IntersectionTool
     /// </summary>
     internal bool CutEdge(in TopoDS_Edge edge, double pend, double cut, in TopoDS_Face face, ref bool iscutline)
     {
-        if (Math.Abs(cut - pend) < 10.0 * Precision.PConfusion())
+        if (Math.Abs(cut - pend) < 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
         double aRange = Math.Abs(cut - pend);
         BRep_Tool.Range(edge, out double a, out double b);
 
-        if (aRange < 10.0 * Precision.PConfusion())
+        if (aRange < 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -189,13 +192,13 @@ public sealed class ShapeFix_IntersectionTool
                     {
                         var B0 = new BRep_Builder();
                         B0.Range(edge, Min(pend, cut), Max(pend, cut));
-                        if (Math.Abs(pend - lp) < Precision.PConfusion())
+                        if (Math.Abs(pend - lp) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         { // cut from the beginning
                             double cut3d = (cut - fp) * (b - a) / (lp - fp);
                             B0.Range(edge, a + cut3d, b, true);
                             iscutline = true;
                         }
-                        else if (Math.Abs(pend - fp) < Precision.PConfusion())
+                        else if (Math.Abs(pend - fp) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         { // cut from the end
                             double cut3d = (lp - cut) * (b - a) / (lp - fp);
                             B0.Range(edge, a, b - cut3d, true);
@@ -210,11 +213,11 @@ public sealed class ShapeFix_IntersectionTool
         }
 
         // det-study on 03/12/01 checking the old and new ranges
-        if (Math.Abs(Math.Abs(a - b) - aRange) < Precision.PConfusion())
+        if (Math.Abs(Math.Abs(a - b) - aRange) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
-        if (aRange < 10.0 * Precision.PConfusion())
+        if (aRange < 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -231,7 +234,7 @@ public sealed class ShapeFix_IntersectionTool
     //           and e2[param,b] using vertex vert
     //=======================================================================
     private bool SplitEdge1(ShapeExtend_WireData sewd, in TopoDS_Face face, int num, double param,
-                            in TopoDS_Vertex vert, double preci, NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes)
+                            in TopoDS_Vertex vert, double preci, NCollection_DataMap<TopoDS_Shape, Box2d> boxes)
     {
         // Standard_ASSERT_RETURN: "Edge index out of range"
         if (!(num > 0 && num <= sewd.NbEdges()))
@@ -270,11 +273,11 @@ public sealed class ShapeFix_IntersectionTool
 
         // change boxes
         boxes.UnBind(edge);
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         var           sae = new ShapeAnalysis_Edge();
         if (sae.PCurve(newE1, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
         {
-            var    box    = new Bnd_Box2d();
+            var    box    = new Box2d();
             var    gac    = new Geom2dAdaptor_Curve();
             double aFirst = c2d!.FirstParameter();
             double aLast  = c2d.LastParameter();
@@ -287,12 +290,12 @@ public sealed class ShapeFix_IntersectionTool
             {
                 gac.Load(c2d, cf, cl);
             }
-            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            BndLib_Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
             boxes.Bind(newE1, box);
         }
         if (sae.PCurve(newE2, S, L, out c2d, out cf, out cl, false))
         {
-            var    box    = new Bnd_Box2d();
+            var    box    = new Box2d();
             var    gac    = new Geom2dAdaptor_Curve();
             double aFirst = c2d!.FirstParameter();
             double aLast  = c2d.LastParameter();
@@ -305,7 +308,7 @@ public sealed class ShapeFix_IntersectionTool
             {
                 gac.Load(c2d, cf, cl);
             }
-            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            BndLib_Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
             boxes.Bind(newE2, box);
         }
 
@@ -319,7 +322,7 @@ public sealed class ShapeFix_IntersectionTool
     //                     (remove segment (param1,param2) from edge)
     //=======================================================================
     private bool SplitEdge2(ShapeExtend_WireData sewd, in TopoDS_Face face, int num, double param1, double param2,
-                            in TopoDS_Vertex vert, double preci, NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes)
+                            in TopoDS_Vertex vert, double preci, NCollection_DataMap<TopoDS_Shape, Box2d> boxes)
     {
         TopoDS_Edge edge  = sewd.Edge(num);
         TopoDS_Edge newE1 = new(), newE2 = new();
@@ -388,10 +391,10 @@ public sealed class ShapeFix_IntersectionTool
 
         // change boxes
         boxes.UnBind(edge);
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         if (sae.PCurve(newE1, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
         {
-            var    box    = new Bnd_Box2d();
+            var    box    = new Box2d();
             var    gac    = new Geom2dAdaptor_Curve();
             double aFirst = c2d!.FirstParameter();
             double aLast  = c2d.LastParameter();
@@ -404,12 +407,12 @@ public sealed class ShapeFix_IntersectionTool
             {
                 gac.Load(c2d, cf, cl);
             }
-            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            BndLib_Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
             boxes.Bind(newE1, box);
         }
         if (sae.PCurve(newE2, S, L, out c2d, out cf, out cl, false))
         {
-            var    box    = new Bnd_Box2d();
+            var    box    = new Box2d();
             var    gac    = new Geom2dAdaptor_Curve();
             double aFirst = c2d!.FirstParameter();
             double aLast  = c2d.LastParameter();
@@ -422,7 +425,7 @@ public sealed class ShapeFix_IntersectionTool
             {
                 gac.Load(c2d, cf, cl);
             }
-            BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+            BndLib_Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
             boxes.Bind(newE2, box);
         }
 
@@ -430,7 +433,7 @@ public sealed class ShapeFix_IntersectionTool
     }
 
     private bool UnionVertexes(ShapeExtend_WireData sewd, ref TopoDS_Edge edge1, ref TopoDS_Edge edge2, int num2,
-                               NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes, in Bnd_Box2d B2)
+                               NCollection_DataMap<TopoDS_Shape, Box2d> boxes, in Box2d B2)
     {
         // union vertexes
         bool          res  = false;
@@ -438,13 +441,13 @@ public sealed class ShapeFix_IntersectionTool
         var           sae  = new ShapeAnalysis_Edge();
         var           B    = new BRep_Builder();
         TopoDS_Vertex V1F  = sae.FirstVertex(edge1);
-        gp_Pnt        PV1F = BRep_Tool.Pnt(V1F);
+        Point3D        PV1F = BRep_Tool.Pnt(V1F);
         TopoDS_Vertex V1L  = sae.LastVertex(edge1);
-        gp_Pnt        PV1L = BRep_Tool.Pnt(V1L);
+        Point3D        PV1L = BRep_Tool.Pnt(V1L);
         TopoDS_Vertex V2F  = sae.FirstVertex(edge2);
-        gp_Pnt        PV2F = BRep_Tool.Pnt(V2F);
+        Point3D        PV2F = BRep_Tool.Pnt(V2F);
         TopoDS_Vertex V2L  = sae.LastVertex(edge2);
-        gp_Pnt        PV2L = BRep_Tool.Pnt(V2L);
+        Point3D        PV2L = BRep_Tool.Pnt(V2L);
         double        d11  = PV1F.Distance(PV2F);
         double        d12  = PV1F.Distance(PV2L);
         double        d21  = PV1L.Distance(PV2F);
@@ -769,19 +772,19 @@ public sealed class ShapeFix_IntersectionTool
         return res;
     }
 
-    private static Bnd_Box2d CreateBoxes2d(ShapeExtend_WireData sewd, in TopoDS_Face face,
-                                           NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes)
+    private static Box2d CreateBoxes2d(ShapeExtend_WireData sewd, in TopoDS_Face face,
+                                           NCollection_DataMap<TopoDS_Shape, Box2d> boxes)
     {
         // create box2d for edges from wire
-        var           aTotalBox = new Bnd_Box2d();
-        Geom_Surface? S         = BRep_Tool.Surface(face, out TopLoc_Location L);
+        var           aTotalBox = new Box2d();
+        Geom_Surface? S         = BRep_Tool.Surface(face, out Placement L);
         var           sae       = new ShapeAnalysis_Edge();
         for (int i = 1; i <= sewd.NbEdges(); i++)
         {
             TopoDS_Edge E = sewd.Edge(i);
             if (sae.PCurve(E, S, L, out Geom2d_Curve? c2d, out double cf, out double cl, false))
             {
-                var    box    = new Bnd_Box2d();
+                var    box    = new Box2d();
                 var    gac    = new Geom2dAdaptor_Curve();
                 double aFirst = c2d!.FirstParameter();
                 double aLast  = c2d.LastParameter();
@@ -794,7 +797,7 @@ public sealed class ShapeFix_IntersectionTool
                 {
                     gac.Load(c2d, cf, cl);
                 }
-                BndLib_Add2dCurve.Add(gac, Precision.Confusion(), ref box);
+                BndLib_Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
                 boxes.Bind(E, box);
                 aTotalBox.Add(box);
             }
@@ -842,20 +845,20 @@ public sealed class ShapeFix_IntersectionTool
 
     private bool FindVertAndSplitEdge(double param1, in TopoDS_Edge edge1, in TopoDS_Edge edge2, Geom2d_Curve Crv1,
                                       ref double MaxTolVert, ref int num1, ShapeExtend_WireData sewd,
-                                      in TopoDS_Face face, NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes,
+                                      in TopoDS_Face face, NCollection_DataMap<TopoDS_Shape, Box2d> boxes,
                                       bool aTmpKey)
     {
         // find needed vertex from edge2 and split edge1 using it
         var           sae       = new ShapeAnalysis_Edge();
         var           sas       = new ShapeAnalysis_Surface(BRep_Tool.Surface(face));
-        gp_Pnt        pi1       = GetPointOnEdge(edge1, sas, new Geom2dAdaptor_Curve(Crv1), param1);
+        Point3D        pi1       = GetPointOnEdge(edge1, sas, new Geom2dAdaptor_Curve(Crv1), param1);
         var           B         = new BRep_Builder();
         TopoDS_Vertex V;
         double        tolV;
         TopoDS_Vertex V1        = sae.FirstVertex(edge2);
-        gp_Pnt        PV1       = BRep_Tool.Pnt(V1);
+        Point3D        PV1       = BRep_Tool.Pnt(V1);
         TopoDS_Vertex V2        = sae.LastVertex(edge2);
-        gp_Pnt        PV2       = BRep_Tool.Pnt(V2);
+        Point3D        PV2       = BRep_Tool.Pnt(V2);
         TopoDS_Vertex V11       = sae.FirstVertex(edge1);
         TopoDS_Vertex V12       = sae.LastVertex(edge1);
         bool          NeedSplit = true;
@@ -921,7 +924,7 @@ public sealed class ShapeFix_IntersectionTool
         // step 1 : intersection of adjacent edges
 
         // step 2 : intersection of non-adjacent edges
-        var boxes = new NCollection_DataMap<TopoDS_Shape, Bnd_Box2d>(TopTools_ShapeMapHasher.Instance);
+        var boxes = new NCollection_DataMap<TopoDS_Shape, Box2d>(TopTools_ShapeMapHasher.Instance);
         _       = CreateBoxes2d(sewd, face, boxes);
         var sas = new ShapeAnalysis_Surface(BRep_Tool.Surface(face));
 
@@ -953,8 +956,8 @@ public sealed class ShapeFix_IntersectionTool
                 {
                     continue;
                 }
-                Bnd_Box2d B1 = boxes.Find(edge1);
-                Bnd_Box2d B2 = boxes.Find(edge2);
+                Box2d B1 = boxes.Find(edge1);
+                Box2d B2 = boxes.Find(edge2);
                 if (!B1.IsOut(B2))
                 {
                     // intersection is possible...
@@ -986,17 +989,17 @@ public sealed class ShapeFix_IntersectionTool
                         {
                             double        param1 = IP.ParamOnFirst();
                             double        param2 = IP.ParamOnSecond();
-                            gp_Pnt        pi1    = GetPointOnEdge(edge1, sas, C1, param1);
-                            gp_Pnt        pi2    = GetPointOnEdge(edge2, sas, C2, param2);
+                            Point3D        pi1    = GetPointOnEdge(edge1, sas, C1, param1);
+                            Point3D        pi2    = GetPointOnEdge(edge2, sas, C2, param2);
                             var           B      = new BRep_Builder();
                             TopoDS_Vertex V      = new();
                             double        tolV   = 0;
                             // analysis for edge1
                             bool          ModifE1 = false;
                             TopoDS_Vertex VF1     = sae.FirstVertex(edge1);
-                            gp_Pnt        PVF1    = BRep_Tool.Pnt(VF1);
+                            Point3D        PVF1    = BRep_Tool.Pnt(VF1);
                             TopoDS_Vertex VL1     = sae.LastVertex(edge1);
-                            gp_Pnt        PVL1    = BRep_Tool.Pnt(VL1);
+                            Point3D        PVL1    = BRep_Tool.Pnt(VL1);
                             double        dist1   = pi1.Distance(PVF1);
                             double        dist2   = pi1.Distance(PVL1);
                             double        distmin = Min(dist1, dist2);
@@ -1024,14 +1027,14 @@ public sealed class ShapeFix_IntersectionTool
                                     NbCut++;
                                 }
                                 // not needed split edge, if one of parts is too small
-                                ModifE1 = ModifE1 || distmin < Precision.Confusion();
+                                ModifE1 = ModifE1 || distmin < global::Kerf.Engine.Foundation.Precision.Confusion();
                             }
                             // analysis for edge2
                             bool          ModifE2 = false;
                             TopoDS_Vertex VF2     = sae.FirstVertex(edge2);
-                            gp_Pnt        PVF2    = BRep_Tool.Pnt(VF2);
+                            Point3D        PVF2    = BRep_Tool.Pnt(VF2);
                             TopoDS_Vertex VL2     = sae.LastVertex(edge2);
-                            gp_Pnt        PVL2    = BRep_Tool.Pnt(VL2);
+                            Point3D        PVL2    = BRep_Tool.Pnt(VL2);
                             dist1                 = pi2.Distance(PVF2);
                             dist2                 = pi2.Distance(PVL2);
                             distmin               = Min(dist1, dist2);
@@ -1059,7 +1062,7 @@ public sealed class ShapeFix_IntersectionTool
                                     NbCut++;
                                 }
                                 // not needed split edge, if one of parts is too small
-                                ModifE2 = ModifE2 || distmin < Precision.Confusion();
+                                ModifE2 = ModifE2 || distmin < global::Kerf.Engine.Foundation.Precision.Confusion();
                             }
                             if (ModifE1 && !ModifE2)
                             {
@@ -1081,8 +1084,8 @@ public sealed class ShapeFix_IntersectionTool
                             }
                             if (!ModifE1 && !ModifE2)
                             {
-                                var P0 = new gp_Pnt((pi1.X() + pi2.X()) / 2, (pi1.Y() + pi2.Y()) / 2, (pi1.Z() + pi2.Z()) / 2);
-                                tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, Precision.Confusion());
+                                var P0 = new Point3D((pi1.X() + pi2.X()) / 2, (pi1.Y() + pi2.Y()) / 2, (pi1.Z() + pi2.Z()) / 2);
+                                tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 B.MakeVertex(ref V, P0, tolV);
                                 MaxTolVert        = Max(MaxTolVert, tolV);
                                 bool isEdgeSplit2 = SplitEdge1(sewd, face, num2, param2, V, tolV, boxes);
@@ -1151,10 +1154,10 @@ public sealed class ShapeFix_IntersectionTool
                             IntRes2d_IntersectionPoint IPL         = IS.LastPoint();
                             double                     p12         = IPL.ParamOnFirst();
                             double                     p22         = IPL.ParamOnSecond();
-                            gp_Pnt                     Pnt11       = GetPointOnEdge(edge1, sas, C1, p11);
-                            gp_Pnt                     Pnt12       = GetPointOnEdge(edge1, sas, C1, p12);
-                            gp_Pnt                     Pnt21       = GetPointOnEdge(edge2, sas, C2, p21);
-                            gp_Pnt                     Pnt22       = GetPointOnEdge(edge2, sas, C2, p22);
+                            Point3D                     Pnt11       = GetPointOnEdge(edge1, sas, C1, p11);
+                            Point3D                     Pnt12       = GetPointOnEdge(edge1, sas, C1, p12);
+                            Point3D                     Pnt21       = GetPointOnEdge(edge2, sas, C2, p21);
+                            Point3D                     Pnt22       = GetPointOnEdge(edge2, sas, C2, p22);
                             // next string commented by skl 29.12.2004 for OCC7624
                             // if( Pnt11.Distance(Pnt21)>myPreci || Pnt12.Distance(Pnt22)>myPreci ) continue;
                             if (Pnt11.Distance(Pnt21) > MaxTolVert || Pnt12.Distance(Pnt22) > MaxTolVert)
@@ -1163,9 +1166,9 @@ public sealed class ShapeFix_IntersectionTool
                             }
                             // analysis for edge1
                             TopoDS_Vertex V1  = sae.FirstVertex(edge1);
-                            gp_Pnt        PV1 = BRep_Tool.Pnt(V1);
+                            Point3D        PV1 = BRep_Tool.Pnt(V1);
                             TopoDS_Vertex V2  = sae.LastVertex(edge1);
-                            gp_Pnt        PV2 = BRep_Tool.Pnt(V2);
+                            Point3D        PV2 = BRep_Tool.Pnt(V2);
                             double        dist1   = Pnt11.Distance(PV1);
                             double        dist2   = Pnt12.Distance(PV1);
                             double        maxdist = Max(dist1, dist2);
@@ -1242,9 +1245,9 @@ public sealed class ShapeFix_IntersectionTool
                             }
                             // analysis for edge2
                             TopoDS_Vertex V12  = sae.FirstVertex(edge2);
-                            gp_Pnt        PV12 = BRep_Tool.Pnt(V12);
+                            Point3D        PV12 = BRep_Tool.Pnt(V12);
                             TopoDS_Vertex V22  = sae.LastVertex(edge2);
-                            gp_Pnt        PV22 = BRep_Tool.Pnt(V22);
+                            Point3D        PV22 = BRep_Tool.Pnt(V22);
                             dist1   = Pnt21.Distance(PV12);
                             dist2   = Pnt22.Distance(PV12);
                             maxdist = Max(dist1, dist2);
@@ -1341,9 +1344,9 @@ public sealed class ShapeFix_IntersectionTool
                             {
                                 double param1 = (p11 + p12) / 2;
                                 double param2 = (p21 + p22) / 2;
-                                gp_Pnt Pnt10  = GetPointOnEdge(edge1, sas, C1, param1);
-                                gp_Pnt Pnt20  = GetPointOnEdge(edge2, sas, C2, param2);
-                                var    P0     = new gp_Pnt((Pnt10.X() + Pnt20.X()) / 2,
+                                Point3D Pnt10  = GetPointOnEdge(edge1, sas, C1, param1);
+                                Point3D Pnt20  = GetPointOnEdge(edge2, sas, C2, param2);
+                                var    P0     = new Point3D((Pnt10.X() + Pnt20.X()) / 2,
                                                            (Pnt10.Y() + Pnt20.Y()) / 2,
                                                            (Pnt10.Z() + Pnt20.Z()) / 2);
                                 dist1           = Max(Pnt11.Distance(P0), Pnt12.Distance(P0));
@@ -1372,16 +1375,16 @@ public sealed class ShapeFix_IntersectionTool
                                     //  segment is big and we have to split each intersecting edge
                                     //  on 3 edges --> middle edge - edge based on segment
                                     //  after we can remove edges made from segment
-                                    var P01 = new gp_Pnt((Pnt11.X() + Pnt21.X()) / 2,
+                                    var P01 = new Point3D((Pnt11.X() + Pnt21.X()) / 2,
                                                          (Pnt11.Y() + Pnt21.Y()) / 2,
                                                          (Pnt11.Z() + Pnt21.Z()) / 2);
-                                    var P02 = new gp_Pnt((Pnt12.X() + Pnt22.X()) / 2,
+                                    var P02 = new Point3D((Pnt12.X() + Pnt22.X()) / 2,
                                                          (Pnt12.Y() + Pnt22.Y()) / 2,
                                                          (Pnt12.Z() + Pnt22.Z()) / 2);
                                     double tolV1 = Max(Pnt11.Distance(P01), Pnt21.Distance(P01));
-                                    tolV1        = Max(tolV1, Precision.Confusion()) * 1.00001;
+                                    tolV1        = Max(tolV1, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                     double tolV2 = Max(Pnt12.Distance(P02), Pnt22.Distance(P02));
-                                    tolV2        = Max(tolV2, Precision.Confusion()) * 1.00001;
+                                    tolV2        = Max(tolV2, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                     if (tolV1 > MaxTolVert || tolV2 > MaxTolVert)
                                     {
                                         continue;
@@ -1688,14 +1691,14 @@ public sealed class ShapeFix_IntersectionTool
         var  sas    = new ShapeAnalysis_Surface(BRep_Tool.Surface(face));
 
         // precompute edge boxes for all wires
-        var aSeqWirEdgeBoxes = new NCollection_Sequence<NCollection_DataMap<TopoDS_Shape, Bnd_Box2d>>();
-        var aSeqWirBoxes     = new NCollection_Sequence<Bnd_Box2d>();
+        var aSeqWirEdgeBoxes = new NCollection_Sequence<NCollection_DataMap<TopoDS_Shape, Box2d>>();
+        var aSeqWirBoxes     = new NCollection_Sequence<Box2d>();
         for (int n = 1; n <= SeqWir.Length(); n++)
         {
             TopoDS_Wire aWire  = TopoDS.Wire(SeqWir.Value(n));
             var         aSewd  = new ShapeExtend_WireData(aWire);
-            var         aBoxes = new NCollection_DataMap<TopoDS_Shape, Bnd_Box2d>(TopTools_ShapeMapHasher.Instance);
-            Bnd_Box2d   aTotalBox = CreateBoxes2d(aSewd, face, aBoxes);
+            var         aBoxes = new NCollection_DataMap<TopoDS_Shape, Box2d>(TopTools_ShapeMapHasher.Instance);
+            Box2d   aTotalBox = CreateBoxes2d(aSewd, face, aBoxes);
             aSeqWirEdgeBoxes.Append(aBoxes);
             aSeqWirBoxes.Append(aTotalBox);
         }
@@ -1704,15 +1707,15 @@ public sealed class ShapeFix_IntersectionTool
         {
             TopoDS_Wire wire1 = TopoDS.Wire(SeqWir.Value(n1));
             var         sewd1 = new ShapeExtend_WireData(wire1);
-            NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes1 = aSeqWirEdgeBoxes.ChangeValue(n1);
-            Bnd_Box2d aBox1 = aSeqWirBoxes[n1];
+            NCollection_DataMap<TopoDS_Shape, Box2d> boxes1 = aSeqWirEdgeBoxes.ChangeValue(n1);
+            Box2d aBox1 = aSeqWirBoxes[n1];
             for (int n2 = n1 + 1; n2 <= SeqWir.Length(); n2++)
             {
                 TopoDS_Wire wire2 = TopoDS.Wire(SeqWir.Value(n2));
                 var         sewd2 = new ShapeExtend_WireData(wire2);
-                NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> boxes2 = aSeqWirEdgeBoxes.ChangeValue(n2);
-                Bnd_Box2d aBox2 = aSeqWirBoxes[n2];
-                if (!aBox1.IsVoid() && !aBox2.IsVoid() && aBox1.IsOut(aBox2))
+                NCollection_DataMap<TopoDS_Shape, Box2d> boxes2 = aSeqWirEdgeBoxes.ChangeValue(n2);
+                Box2d aBox2 = aSeqWirBoxes[n2];
+                if (!aBox1.IsVoid && !aBox2.IsVoid && aBox1.IsOut(aBox2))
                 {
                     continue;
                 }
@@ -1741,8 +1744,8 @@ public sealed class ShapeFix_IntersectionTool
                         {
                             continue;
                         }
-                        Bnd_Box2d B1 = boxes1.Find(edge1);
-                        Bnd_Box2d B2 = boxes2.Find(edge2);
+                        Box2d B1 = boxes1.Find(edge1);
+                        Box2d B2 = boxes2.Find(edge2);
                         if (!B1.IsOut(B2))
                         {
                             // intersection is possible...
@@ -1775,14 +1778,14 @@ public sealed class ShapeFix_IntersectionTool
                                     // create new vertex and split both edges
                                     double        param1 = IP.ParamOnFirst();
                                     double        param2 = IP.ParamOnSecond();
-                                    gp_Pnt        pi1    = GetPointOnEdge(edge1, sas, C1, param1);
-                                    gp_Pnt        pi2    = GetPointOnEdge(edge2, sas, C2, param2);
-                                    var           P0     = new gp_Pnt((pi1.X() + pi2.X()) / 2,
+                                    Point3D        pi1    = GetPointOnEdge(edge1, sas, C1, param1);
+                                    Point3D        pi2    = GetPointOnEdge(edge2, sas, C2, param2);
+                                    var           P0     = new Point3D((pi1.X() + pi2.X()) / 2,
                                                                       (pi1.Y() + pi2.Y()) / 2,
                                                                       (pi1.Z() + pi2.Z()) / 2);
                                     var           B      = new BRep_Builder();
                                     TopoDS_Vertex V      = new();
-                                    double tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, Precision.Confusion());
+                                    double tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     B.MakeVertex(ref V, P0, tolV);
                                     MaxTolVert        = Max(MaxTolVert, tolV);
                                     bool isSplitEdge2 = SplitEdge1(sewd2, face, num2, param2, V, tolV, boxes2);
@@ -1851,16 +1854,16 @@ public sealed class ShapeFix_IntersectionTool
                                     IntRes2d_IntersectionPoint IPL         = IS.LastPoint();
                                     double                     p12         = IPL.ParamOnFirst();
                                     double                     p22         = IPL.ParamOnSecond();
-                                    gp_Pnt                     Pnt11       = GetPointOnEdge(edge1, sas, C1, p11);
-                                    gp_Pnt                     Pnt12       = GetPointOnEdge(edge1, sas, C1, p12);
-                                    gp_Pnt                     Pnt21       = GetPointOnEdge(edge2, sas, C2, p21);
-                                    gp_Pnt                     Pnt22       = GetPointOnEdge(edge2, sas, C2, p22);
+                                    Point3D                     Pnt11       = GetPointOnEdge(edge1, sas, C1, p11);
+                                    Point3D                     Pnt12       = GetPointOnEdge(edge1, sas, C1, p12);
+                                    Point3D                     Pnt21       = GetPointOnEdge(edge2, sas, C2, p21);
+                                    Point3D                     Pnt22       = GetPointOnEdge(edge2, sas, C2, p22);
 
                                     // analysis for edge1
                                     TopoDS_Vertex V1      = sae.FirstVertex(edge1);
-                                    gp_Pnt        PV1     = BRep_Tool.Pnt(V1);
+                                    Point3D        PV1     = BRep_Tool.Pnt(V1);
                                     TopoDS_Vertex V2      = sae.LastVertex(edge1);
-                                    gp_Pnt        PV2     = BRep_Tool.Pnt(V2);
+                                    Point3D        PV2     = BRep_Tool.Pnt(V2);
                                     double        dist1   = Pnt11.Distance(PV1);
                                     double        dist2   = Pnt12.Distance(PV1);
                                     double        maxdist = Max(dist1, dist2);
@@ -1935,9 +1938,9 @@ public sealed class ShapeFix_IntersectionTool
 
                                     // analysis for edge2
                                     TopoDS_Vertex V12  = sae.FirstVertex(edge2);
-                                    gp_Pnt        PV12 = BRep_Tool.Pnt(V12);
+                                    Point3D        PV12 = BRep_Tool.Pnt(V12);
                                     TopoDS_Vertex V22  = sae.LastVertex(edge2);
-                                    gp_Pnt        PV22 = BRep_Tool.Pnt(V22);
+                                    Point3D        PV22 = BRep_Tool.Pnt(V22);
                                     dist1   = Pnt21.Distance(PV12);
                                     dist2   = Pnt22.Distance(PV12);
                                     maxdist = Max(dist1, dist2);
@@ -2025,16 +2028,16 @@ public sealed class ShapeFix_IntersectionTool
                                         {
                                             // segment is big and we have to split each intersecting edge
                                             // on 3 edges --> middle edge - edge based on segment
-                                            var P01 = new gp_Pnt((Pnt11.X() + Pnt21.X()) / 2,
+                                            var P01 = new Point3D((Pnt11.X() + Pnt21.X()) / 2,
                                                                  (Pnt11.Y() + Pnt21.Y()) / 2,
                                                                  (Pnt11.Z() + Pnt21.Z()) / 2);
-                                            var P02 = new gp_Pnt((Pnt12.X() + Pnt22.X()) / 2,
+                                            var P02 = new Point3D((Pnt12.X() + Pnt22.X()) / 2,
                                                                  (Pnt12.Y() + Pnt22.Y()) / 2,
                                                                  (Pnt12.Z() + Pnt22.Z()) / 2);
                                             double tolV1 = Max(Pnt11.Distance(P01), Pnt21.Distance(P01));
-                                            tolV1        = Max(tolV1, Precision.Confusion()) * 1.00001;
+                                            tolV1        = Max(tolV1, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                             double tolV2 = Max(Pnt12.Distance(P02), Pnt22.Distance(P02));
-                                            tolV2        = Max(tolV2, Precision.Confusion()) * 1.00001;
+                                            tolV2        = Max(tolV2, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                             if (tolV1 > MaxTolVert || tolV2 > MaxTolVert)
                                             {
                                                 continue;
@@ -2239,13 +2242,13 @@ public sealed class ShapeFix_IntersectionTool
                                         else
                                         {
                                             // split each intersecting edge on two edges
-                                            var P0 = new gp_Pnt((Pnt11.X() + Pnt12.X()) / 2,
+                                            var P0 = new Point3D((Pnt11.X() + Pnt12.X()) / 2,
                                                                 (Pnt11.Y() + Pnt12.Y()) / 2,
                                                                 (Pnt11.Z() + Pnt12.Z()) / 2);
                                             double param1 = (p11 + p12) / 2;
                                             double param2 = (p21 + p22) / 2;
-                                            gp_Pnt Pnt10  = GetPointOnEdge(edge1, sas, C1, param1);
-                                            gp_Pnt Pnt20  = GetPointOnEdge(edge2, sas, C2, param2);
+                                            Point3D Pnt10  = GetPointOnEdge(edge1, sas, C1, param1);
+                                            Point3D Pnt20  = GetPointOnEdge(edge2, sas, C2, param2);
                                             dist1         = Max(Pnt11.Distance(P0), Pnt12.Distance(Pnt10));
                                             dist2         = Max(Pnt21.Distance(P0), Pnt22.Distance(Pnt10));
                                             double tolV   = Max(dist1, dist2);
@@ -2281,14 +2284,14 @@ public sealed class ShapeFix_IntersectionTool
                     wire1 = sewd1.InternalWire();
                     // recompute boxes for wire1
                     boxes1.Clear();
-                    Bnd_Box2d aNewBox1 = CreateBoxes2d(sewd1, face, boxes1);
+                    Box2d aNewBox1 = CreateBoxes2d(sewd1, face, boxes1);
                     aSeqWirBoxes.SetValue(n1, aNewBox1);
                     SeqWir.SetValue(n2, sewd2.InternalWire());
                     myContext.Replace(wire2, sewd2.InternalWire());
                     // wire2 = sewd2->Wire(): a local not read afterwards
                     // recompute boxes for wire2
                     boxes2.Clear();
-                    Bnd_Box2d aNewBox2 = CreateBoxes2d(sewd2, face, boxes2);
+                    Box2d aNewBox2 = CreateBoxes2d(sewd2, face, boxes2);
                     aSeqWirBoxes.SetValue(n2, aNewBox2);
                 }
             }

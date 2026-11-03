@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,21 +24,21 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
     public Geom_Circle? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt> aResult = new(1, aNb);
+        NCollection_Array1<Point3D> aResult = new(1, aNb);
 
         // Extract circle data from geometry
-        gp_Circ aCirc = myGeom.Circ();
-        gp_Pnt aCenter = aCirc.Location();
-        gp_Dir aXDir = aCirc.Position().XDirection();
-        gp_Dir aYDir = aCirc.Position().YDirection();
+        Circle3D aCirc = myGeom.Circ();
+        Point3D aCenter = aCirc.Location();
+        Direction3D aXDir = aCirc.Position().XDirection();
+        Direction3D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         // Pre-extract coordinates for performance
@@ -58,7 +60,7 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
 
             // P = C + R * (cos(u) * X + sin(u) * Y)
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                             new Point3D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                         aCY + aRadius * (cosU * aXY + sinU * aYY),
                                         aCZ + aRadius * (cosU * aXZ + sinU * aYZ)));
         }
@@ -77,10 +79,10 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
         NCollection_Array1<Geom_Curve.ResD1> aResult = new(1, aNb);
 
         // Extract circle data from geometry
-        gp_Circ aCirc = myGeom.Circ();
-        gp_Pnt aCenter = aCirc.Location();
-        gp_Dir aXDir = aCirc.Position().XDirection();
-        gp_Dir aYDir = aCirc.Position().YDirection();
+        Circle3D aCirc = myGeom.Circ();
+        Point3D aCenter = aCirc.Location();
+        Direction3D aXDir = aCirc.Position().XDirection();
+        Direction3D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         // Pre-extract coordinates for performance
@@ -104,10 +106,10 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
             // D1 = R * (-sin(u) * X + cos(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD1
             {
-                Point = new gp_Pnt(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point3D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                    aCY + aRadius * (cosU * aXY + sinU * aYY),
                                    aCZ + aRadius * (cosU * aXZ + sinU * aYZ)),
-                D1 = new gp_Vec(aRadius * (-sinU * aXX + cosU * aYX),
+                D1 = new Vector3D(aRadius * (-sinU * aXX + cosU * aYX),
                                 aRadius * (-sinU * aXY + cosU * aYY),
                                 aRadius * (-sinU * aXZ + cosU * aYZ)),
             };
@@ -127,10 +129,10 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
         NCollection_Array1<Geom_Curve.ResD2> aResult = new(1, aNb);
 
         // Extract circle data from geometry
-        gp_Circ aCirc = myGeom.Circ();
-        gp_Pnt aCenter = aCirc.Location();
-        gp_Dir aXDir = aCirc.Position().XDirection();
-        gp_Dir aYDir = aCirc.Position().YDirection();
+        Circle3D aCirc = myGeom.Circ();
+        Point3D aCenter = aCirc.Location();
+        Direction3D aXDir = aCirc.Position().XDirection();
+        Direction3D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         // Pre-extract coordinates for performance
@@ -155,13 +157,13 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
             // D2 = R * (-cos(u) * X - sin(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD2
             {
-                Point = new gp_Pnt(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point3D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                    aCY + aRadius * (cosU * aXY + sinU * aYY),
                                    aCZ + aRadius * (cosU * aXZ + sinU * aYZ)),
-                D1 = new gp_Vec(aRadius * (-sinU * aXX + cosU * aYX),
+                D1 = new Vector3D(aRadius * (-sinU * aXX + cosU * aYX),
                                 aRadius * (-sinU * aXY + cosU * aYY),
                                 aRadius * (-sinU * aXZ + cosU * aYZ)),
-                D2 = new gp_Vec(aRadius * (-cosU * aXX - sinU * aYX),
+                D2 = new Vector3D(aRadius * (-cosU * aXX - sinU * aYX),
                                 aRadius * (-cosU * aXY - sinU * aYY),
                                 aRadius * (-cosU * aXZ - sinU * aYZ)),
             };
@@ -181,10 +183,10 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
         NCollection_Array1<Geom_Curve.ResD3> aResult = new(1, aNb);
 
         // Extract circle data from geometry
-        gp_Circ aCirc = myGeom.Circ();
-        gp_Pnt aCenter = aCirc.Location();
-        gp_Dir aXDir = aCirc.Position().XDirection();
-        gp_Dir aYDir = aCirc.Position().YDirection();
+        Circle3D aCirc = myGeom.Circ();
+        Point3D aCenter = aCirc.Location();
+        Direction3D aXDir = aCirc.Position().XDirection();
+        Direction3D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         // Pre-extract coordinates for performance
@@ -210,16 +212,16 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
             // D3 = R * (sin(u) * X - cos(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD3
             {
-                Point = new gp_Pnt(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point3D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                    aCY + aRadius * (cosU * aXY + sinU * aYY),
                                    aCZ + aRadius * (cosU * aXZ + sinU * aYZ)),
-                D1 = new gp_Vec(aRadius * (-sinU * aXX + cosU * aYX),
+                D1 = new Vector3D(aRadius * (-sinU * aXX + cosU * aYX),
                                 aRadius * (-sinU * aXY + cosU * aYY),
                                 aRadius * (-sinU * aXZ + cosU * aYZ)),
-                D2 = new gp_Vec(aRadius * (-cosU * aXX - sinU * aYX),
+                D2 = new Vector3D(aRadius * (-cosU * aXX - sinU * aYX),
                                 aRadius * (-cosU * aXY - sinU * aYY),
                                 aRadius * (-cosU * aXZ - sinU * aYZ)),
-                D3 = new gp_Vec(aRadius * (sinU * aXX - cosU * aYX),
+                D3 = new Vector3D(aRadius * (sinU * aXX - cosU * aYX),
                                 aRadius * (sinU * aXY - cosU * aYY),
                                 aRadius * (sinU * aXZ - cosU * aYZ)),
             };
@@ -228,19 +230,19 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative (N &gt;= 1) at all grid points; the derivatives cycle with period 4.</summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec> aResult = new(1, aNb);
+        NCollection_Array1<Vector3D> aResult = new(1, aNb);
 
-        gp_Circ aCirc = myGeom.Circ();
-        gp_Dir aXDir = aCirc.Position().XDirection();
-        gp_Dir aYDir = aCirc.Position().YDirection();
+        Circle3D aCirc = myGeom.Circ();
+        Direction3D aXDir = aCirc.Position().XDirection();
+        Direction3D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         double aXX = aXDir.X();
@@ -285,7 +287,7 @@ public sealed class GeomGridEval_Circle : GeomGridEval.ICurveEvaluator
             }
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Vec(aRadius * (aCoeffX * aXX + aCoeffY * aYX),
+                             new Vector3D(aRadius * (aCoeffX * aXX + aCoeffY * aYX),
                                         aRadius * (aCoeffX * aXY + aCoeffY * aYY),
                                         aRadius * (aCoeffX * aXZ + aCoeffY * aYZ)));
         }

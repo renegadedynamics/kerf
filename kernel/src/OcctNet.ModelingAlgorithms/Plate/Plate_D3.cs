@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>The third derivatives (DUUU, DUUV, DUVV, DVVV) of a surface at a point, as the G3 constraints of a plate
@@ -11,12 +13,12 @@ namespace Occt;
 /// Plate_FreeGtoCConstraint read the fields, which are internal here.</remarks>
 public struct Plate_D3 : IEquatable<Plate_D3>
 {
-    internal gp_XYZ Duuu;
-    internal gp_XYZ Duuv;
-    internal gp_XYZ Duvv;
-    internal gp_XYZ Dvvv;
+    internal Xyz Duuu;
+    internal Xyz Duuv;
+    internal Xyz Duvv;
+    internal Xyz Dvvv;
 
-    public Plate_D3(in gp_XYZ duuu, in gp_XYZ duuv, in gp_XYZ duvv, in gp_XYZ dvvv)
+    public Plate_D3(in Xyz duuu, in Xyz duuv, in Xyz duvv, in Xyz dvvv)
     {
         Duuu = duuu;
         Duuv = duuv;

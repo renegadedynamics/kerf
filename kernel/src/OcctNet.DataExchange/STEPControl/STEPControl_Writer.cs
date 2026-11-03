@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.STEPControl_StepModelType;
 
@@ -104,7 +105,7 @@ public class STEPControl_Writer
     /// STEPControlStd_GeometricCurveSet translates a shape into a STEP geometric_curve_set entity.
     /// </summary>
     public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode, bool compgraph = true,
-                                          Message_ProgressRange theProgress = default)
+                                          ProgressRange theProgress = default)
     {
         StepData_StepModel aStepModel = thesession.Model() as StepData_StepModel;
         if (aStepModel is not null)
@@ -119,7 +120,7 @@ public class STEPControl_Writer
     /// Translates shape sh to a STEP entity, with the given parameters (which the model takes).
     /// </summary>
     public IFSelect_ReturnStatus Transfer(TopoDS_Shape sh, STEPControl_StepModelType mode, in DESTEP_Parameters theParams,
-                                          bool compgraph = true, Message_ProgressRange theProgress = default)
+                                          bool compgraph = true, ProgressRange theProgress = default)
     {
         int mws = -1;
         switch (mode)

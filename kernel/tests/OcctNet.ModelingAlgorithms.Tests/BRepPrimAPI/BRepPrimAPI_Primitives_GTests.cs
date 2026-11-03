@@ -7,6 +7,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -82,7 +83,7 @@ public class BRepPrimAPI_MakeBoxTest
         TopoDS_Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone());
 
-        Assert.Equal(aWidth * aHeight * aDepth, PrimitiveGTestHelpers.Volume(aShape), Precision.Confusion());
+        Assert.Equal(aWidth * aHeight * aDepth, PrimitiveGTestHelpers.Volume(aShape), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -98,14 +99,14 @@ public class BRepPrimAPI_MakeBoxTest
         GProp_GProps aProps = new();
         BRepGProp.SurfaceProperties(aShape, aProps);
         double anExpectedArea = 2.0 * (aW * aH + aW * aD + aH * aD);
-        Assert.Equal(anExpectedArea, aProps.Mass(), Precision.Confusion());
+        Assert.Equal(anExpectedArea, aProps.Mass(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void TwoCornerPoints()
     {
-        gp_Pnt aP1 = new(1.0, 2.0, 3.0);
-        gp_Pnt aP2 = new(4.0, 6.0, 8.0);
+        Point3D aP1 = new(1.0, 2.0, 3.0);
+        Point3D aP2 = new(4.0, 6.0, 8.0);
         BRepPrimAPI_MakeBox aBox = new(aP1, aP2);
         TopoDS_Shape aShape = aBox.Shape();
         Assert.True(aBox.IsDone(), "Box from two corner points failed");
@@ -115,7 +116,7 @@ public class BRepPrimAPI_MakeBoxTest
         Assert.True(anAnalyzer.IsValid(), "Box from two points is not valid");
 
         // Volume = (4-1)*(6-2)*(8-3) = 3*4*5 = 60
-        Assert.Equal(60.0, PrimitiveGTestHelpers.Volume(aShape), Precision.Confusion());
+        Assert.Equal(60.0, PrimitiveGTestHelpers.Volume(aShape), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public class BRepPrimAPI_MakeConeTest
     [Fact]
     public void FullCone()
     {
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), 5.0, 0.0, 10.0);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 0.0, 10.0);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Full cone creation failed");
         Assert.False(aShape.IsNull(), "Resulting shape is null");
@@ -147,7 +148,7 @@ public class BRepPrimAPI_MakeConeTest
     [Fact]
     public void TruncatedCone()
     {
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), 5.0, 2.0, 10.0);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Truncated cone creation failed");
         Assert.False(aShape.IsNull(), "Resulting shape is null");
@@ -159,7 +160,7 @@ public class BRepPrimAPI_MakeConeTest
     [Fact]
     public void FullConeFaceCount()
     {
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), 5.0, 0.0, 10.0);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 0.0, 10.0);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
@@ -170,7 +171,7 @@ public class BRepPrimAPI_MakeConeTest
     [Fact]
     public void TruncatedConeFaceCount()
     {
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), 5.0, 2.0, 10.0);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
@@ -184,19 +185,19 @@ public class BRepPrimAPI_MakeConeTest
         const double aR1 = 5.0;
         const double aR2 = 2.0;
         const double aH = 10.0;
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), aR1, aR2, aH);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), aR1, aR2, aH);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone());
 
         // V = PI * H / 3 * (R1^2 + R1*R2 + R2^2)
         double anExpectedVolume = M_PI * aH / 3.0 * (aR1 * aR1 + aR1 * aR2 + aR2 * aR2);
-        Assert.Equal(anExpectedVolume, PrimitiveGTestHelpers.Volume(aShape), Precision.Confusion());
+        Assert.Equal(anExpectedVolume, PrimitiveGTestHelpers.Volume(aShape), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void PartialCone()
     {
-        BRepPrimAPI_MakeCone aCone = new(new gp_Ax2(), 5.0, 2.0, 10.0, M_PI);
+        BRepPrimAPI_MakeCone aCone = new(new Frame3D(), 5.0, 2.0, 10.0, M_PI);
         TopoDS_Shape aShape = aCone.Shape();
         Assert.True(aCone.IsDone(), "Partial cone creation failed");
         Assert.False(aShape.IsNull(), "Resulting shape is null");
@@ -341,12 +342,12 @@ public class BRepPrimAPI_MakeSphereTest
 
         GProp_GProps aProps = new();
         BRepGProp.VolumeProperties(aShape, aProps);
-        gp_Pnt aCOM = aProps.CentreOfMass();
+        Point3D aCOM = aProps.CentreOfMass();
 
         // Center of mass of full sphere should be at origin
-        Assert.Equal(0.0, aCOM.X(), Precision.Confusion());
-        Assert.Equal(0.0, aCOM.Y(), Precision.Confusion());
-        Assert.Equal(0.0, aCOM.Z(), Precision.Confusion());
+        Assert.Equal(0.0, aCOM.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCOM.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCOM.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }
 
@@ -356,7 +357,7 @@ public class BRepPrimAPI_MakeTorusTest
     private static bool createAndCheckPartialTorus(double theR1, double theR2, double theAngle1, double theAngle2,
                                                    double theAngle = 2.0 * M_PI)
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, theR1, theR2, theAngle1, theAngle2, theAngle);
         TopoDS_Shape aShape = aMakeTorus.Shape();
         if (!aMakeTorus.IsDone() || aShape.IsNull())
@@ -429,7 +430,7 @@ public class BRepPrimAPI_MakeTorusTest
         Assert.Equal(R2, aTorusSurf.MinorRadius(), 1e-10);
 
         // At V = PI/2 (top of tube), Z should be +R2
-        aTorusSurf.D0(0.0, M_PI_2, out gp_Pnt aPnt);
+        aTorusSurf.D0(0.0, M_PI_2, out Point3D aPnt);
         Assert.Equal(R2, aPnt.Z(), 1e-10);
 
         // At V = -PI/2 (bottom of tube), Z should be -R2
@@ -447,7 +448,7 @@ public class BRepPrimAPI_MakeTorusTest
         const double angle2 = M_PI_2;  // +90 degrees
         const double angle = 2.094;    // ~120 degrees
 
-        gp_Ax2 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2, angle);
         TopoDS_Shape aShape = aMakeTorus.Shape();
 
@@ -481,7 +482,7 @@ public class BRepPrimAPI_MakeTorusTest
         const double angle2 = 3.0 * M_PI_2; // 270 degrees
         const double angle = M_PI / 4.0;    // 45 degrees
 
-        gp_Ax2 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2, angle);
         TopoDS_Shape aShape = aMakeTorus.Shape();
 
@@ -588,7 +589,7 @@ public class BRepPrimAPI_MakeTorusTest
         const double angle1 = 0.0;  // 0 degrees
         const double angle2 = M_PI; // 180 degrees
 
-        gp_Ax2 anAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anAxis = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
         // Full revolution (2*PI) - no sides
         BRepPrimAPI_MakeTorus aMakeTorus = new(anAxis, R1, R2, angle1, angle2);
@@ -650,7 +651,7 @@ public class BRepPrimAPI_MakeWedgeTest
 
         // Volume = dy * dz * (dx + ltx) / 2
         double anExpectedVolume = aDy * aDz * (aDx + aLtx) / 2.0;
-        Assert.Equal(anExpectedVolume, PrimitiveGTestHelpers.Volume(aShape), Precision.Confusion());
+        Assert.Equal(anExpectedVolume, PrimitiveGTestHelpers.Volume(aShape), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

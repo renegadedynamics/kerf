@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -10,19 +14,19 @@ namespace OcctNet.ModelingData.Tests;
 public class Geom_OffsetSurfacePortTests
 {
     private static Geom_CylindricalSurface Cylinder(double theR = 2.0) =>
-        new(new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)), theR);
+        new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), theR);
 
     /// <summary>A bicubic B-spline dome whose iso-curve V = 0 collapses to the apex (0, 0, 2).</summary>
     private static Geom_BSplineSurface Dome()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             double anAng = 0.3 + 0.7 * (i - 1);
             for (int j = 1; j <= 4; j++)
             {
                 double aR = (j - 1) * 1.5;
-                aPoles[i, j] = j == 1 ? new gp_Pnt(0, 0, 2) : new gp_Pnt(aR * Math.Cos(anAng), aR * Math.Sin(anAng), 2 - 0.6 * (j - 1));
+                aPoles[i, j] = j == 1 ? new Point3D(0, 0, 2) : new Point3D(aR * Math.Cos(anAng), aR * Math.Sin(anAng), 2 - 0.6 * (j - 1));
             }
         }
         var aKnots = NCollection_Array1<double>.From([0.0, 1.0]);
@@ -35,14 +39,14 @@ public class Geom_OffsetSurfacePortTests
     {
         Geom_BSplineSurface aDome = Dome();
         Geom_OffsetSurface anOff = new(aDome, 0.5);
-        Assert.False(aDome.IsFrozen()); // the constructor copies the caller's surface
+        Assert.False(aDome.IsFrozen); // the constructor copies the caller's surface
         Geom_Surface aBasis = anOff.BasisSurface();
-        Assert.True(aBasis.IsFrozen());
+        Assert.True(aBasis.IsFrozen);
         Assert.Same(aBasis, anOff.BasisSurface());
-        Assert.Throws<Standard_ImmutableObject>(() => aBasis.UReverse());
+        Assert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
 
-        gp_Pnt aBefore = aBasis.Value(0.3, 0.6);
-        gp_Pnt anExpected = anOff.Value(0.3, 0.6);
+        Point3D aBefore = aBasis.Value(0.3, 0.6);
+        Point3D anExpected = anOff.Value(0.3, 0.6);
         double aU = anOff.UReversedParameter(0.3);
         anOff.UReverse();
         Assert.NotSame(aBasis, anOff.BasisSurface());
@@ -51,9 +55,9 @@ public class Geom_OffsetSurfacePortTests
         Assert.Equal(-0.5, anOff.Offset());
 
         Geom_Surface aBasis2 = anOff.BasisSurface();
-        anOff.Transform(gp_Trsf.Translation(new gp_Vec(1, 2, 3)));
+        anOff.Transform(Transform3D.Translation(new Vector3D(1, 2, 3)));
         Assert.NotSame(aBasis2, anOff.BasisSurface());
-        Assert.True(anOff.Value(aU, 0.6).IsEqual(anExpected.Translated(new gp_Vec(1, 2, 3)), 1e-12));
+        Assert.True(anOff.Value(aU, 0.6).IsEqual(anExpected.Translated(new Vector3D(1, 2, 3)), 1e-12));
     }
 
     [Fact]
@@ -61,14 +65,14 @@ public class Geom_OffsetSurfacePortTests
     {
         Geom_OffsetSurface anOff = new(Cylinder(), 1.0);
         anOff.Freeze();
-        Assert.Throws<Standard_ImmutableObject>(() => anOff.SetOffsetValue(2.0));
-        Assert.Throws<Standard_ImmutableObject>(() => anOff.SetBasisSurface(Cylinder()));
-        Assert.Throws<Standard_ImmutableObject>(() => anOff.UReverse());
-        Assert.Throws<Standard_ImmutableObject>(() => anOff.Transform(new gp_Trsf()));
-        Assert.Throws<Standard_ImmutableObject>(() => anOff.ClearEvalRepresentation());
+        Assert.Throws<ImmutableObjectException>(() => anOff.SetOffsetValue(2.0));
+        Assert.Throws<ImmutableObjectException>(() => anOff.SetBasisSurface(Cylinder()));
+        Assert.Throws<ImmutableObjectException>(() => anOff.UReverse());
+        Assert.Throws<ImmutableObjectException>(() => anOff.Transform(new Transform3D()));
+        Assert.Throws<ImmutableObjectException>(() => anOff.ClearEvalRepresentation());
 
         Geom_OffsetSurface aCopy = anOff.WithOffsetValue(2.0);
-        Assert.False(aCopy.IsFrozen());
+        Assert.False(aCopy.IsFrozen);
         Assert.Equal(2.0, aCopy.Offset());
         Assert.Equal(1.0, anOff.Offset());
         Assert.True(aCopy.HasEvalRepresentation()); // the equivalent cylinder of radius 4
@@ -89,7 +93,7 @@ public class Geom_OffsetSurfacePortTests
         Geom_OffsetSurface anOff = new(Cylinder(), 0.0);
         Geom_Surface? anEquiv = anOff.Surface();
         Assert.Same(anOff.BasisSurface(), anEquiv);
-        Assert.True(anEquiv!.IsFrozen());
+        Assert.True(anEquiv!.IsFrozen);
     }
 
     [Fact]
@@ -133,7 +137,7 @@ public class Geom_OffsetSurfacePortTests
         Geom_BSplineSurface? anOsc = null;
         Assert.True(anOff.UOsculatingSurface(0.5, 0.0, ref isOpposite, ref anOsc));
         Assert.NotNull(anOsc);
-        Assert.True(anOsc!.IsFrozen());
+        Assert.True(anOsc!.IsFrozen);
         Assert.False(isOpposite);
         bool isOppositeV = false;
         Geom_BSplineSurface? anOscV = null;
@@ -142,10 +146,10 @@ public class Geom_OffsetSurfacePortTests
 
         // At the apex the offset point is the limit of the regular ones along the iso-curve U = 0.5 (the dome is
         // cone-like there, so the limit depends on U)
-        gp_Pnt anApex = anOff.Value(0.5, 0.0);
+        Point3D anApex = anOff.Value(0.5, 0.0);
         Assert.True(anApex.IsEqual(anOff.Value(0.5, 1e-7), 1e-5));
-        Assert.False(anApex.IsEqual(new gp_Pnt(0, 0, 2), 0.39));
-        anOff.D1(0.5, 0.0, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V);
+        Assert.False(anApex.IsEqual(new Point3D(0, 0, 2), 0.39));
+        anOff.D1(0.5, 0.0, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
         Assert.True(aP.IsEqual(anApex, 1e-12));
         Assert.True(aD1V.Magnitude() > 0.1);
 
@@ -159,21 +163,21 @@ public class Geom_OffsetSurfacePortTests
     [Fact]
     public void C0_Basis_Is_Rejected_Unless_Not_Checked()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 3, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[3, 1] = new gp_Pnt(1, 1, 0);
-        aPoles[1, 2] = new gp_Pnt(0, 0, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 0, 1);
-        aPoles[3, 2] = new gp_Pnt(1, 1, 1);
+        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 0);
+        aPoles[3, 1] = new Point3D(1, 1, 0);
+        aPoles[1, 2] = new Point3D(0, 0, 1);
+        aPoles[2, 2] = new Point3D(1, 0, 1);
+        aPoles[3, 2] = new Point3D(1, 1, 1);
         var aUKnots = NCollection_Array1<double>.From([0.0, 1.0, 2.0]);
         var aUMults = NCollection_Array1<int>.From([2, 1, 2]);
         var aVKnots = NCollection_Array1<double>.From([0.0, 1.0]);
         var aVMults = NCollection_Array1<int>.From([2, 2]);
         Geom_BSplineSurface aCorner = new(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1); // a sharp corner at U = 1
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_OffsetSurface(aCorner, 0.1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_OffsetSurface(aCorner, 0.1));
         Geom_OffsetSurface anOff = new(aCorner, 0.1, true);
-        Assert.Equal(GeomAbs_Shape.GeomAbs_C0, anOff.GetBasisSurfContinuity());
+        Assert.Equal(Continuity.C0, anOff.GetBasisSurfContinuity());
     }
 
     [Fact]
@@ -182,10 +186,10 @@ public class Geom_OffsetSurfacePortTests
         // OCCT (occt-issues.md): the parameters are transformed by the basis surface, then again by the
         // equivalent surface. For a plane and a scale of 2, U and V are scaled by 4; without the equivalent
         // surface (after a reversal drops it), by 2.
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)));
         Geom_OffsetSurface anOff = new(aPlane, 1.0);
-        gp_Trsf aScale = new();
-        aScale.SetScale(new gp_Pnt(), 2.0);
+        Transform3D aScale = new();
+        aScale.SetScale(new Point3D(), 2.0);
         double U = 1.5, V = -0.5;
         anOff.TransformParameters(ref U, ref V, aScale);
         Assert.Equal((6.0, -2.0), (U, V));

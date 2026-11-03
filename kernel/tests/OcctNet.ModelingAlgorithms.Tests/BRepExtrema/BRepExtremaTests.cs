@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepExtrema_SupportType;
@@ -18,16 +22,16 @@ public class BRepExtremaTests
 {
     private const double Tol = 1.0e-9;
 
-    private static TopoDS_Vertex V(double x, double y, double z) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, y, z)).Vertex();
+    private static TopoDS_Vertex V(double x, double y, double z) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, z)).Vertex();
 
     private static TopoDS_Edge E(double x1, double y1, double z1, double x2, double y2, double z2)
-        => new BRepBuilderAPI_MakeEdge(new gp_Pnt(x1, y1, z1), new gp_Pnt(x2, y2, z2)).Edge();
+        => new BRepBuilderAPI_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     // A square [x0, x0 + s] x [y0, y0 + s] in the plane z = z0, normal +Z.
     private static TopoDS_Face Square(double x0, double y0, double z0, double s)
-        => new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(x0, y0, z0), new gp_Dir(0, 0, 1)), 0, s, 0, s).Face();
+        => new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(x0, y0, z0), new Direction3D(0, 0, 1)), 0, s, 0, s).Face();
 
-    private static void AssertPnt(in gp_Pnt theExpected, in gp_Pnt theActual, double theTol = Tol)
+    private static void AssertPnt(in Point3D theExpected, in Point3D theActual, double theTol = Tol)
     {
         Assert.Equal(theExpected.X(), theActual.X(), theTol);
         Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
@@ -49,7 +53,7 @@ public class BRepExtremaTests
         Assert.Equal(BRepExtrema_IsVertex, aD.SupportTypeShape2(1));
         Assert.True(aD.SupportOnShape1(1).IsSame(a));
         Assert.True(aD.SupportOnShape2(1).IsSame(b));
-        AssertPnt(new gp_Pnt(3, 4, 0), aD.PointOnShape2(1));
+        AssertPnt(new Point3D(3, 4, 0), aD.PointOnShape2(1));
         Assert.ThrowsAny<BRepExtrema_UnCompatibleShape>(() => aD.ParOnEdgeS1(1, out _));
         Assert.ThrowsAny<BRepExtrema_UnCompatibleShape>(() => aD.ParOnFaceS2(1, out _, out _));
     }
@@ -67,13 +71,13 @@ public class BRepExtremaTests
         Assert.True(aD.SupportOnShape2(1).IsSame(anEdge));
         aD.ParOnEdgeS2(1, out double t);
         Assert.Equal(4.0, t, Tol);
-        AssertPnt(new gp_Pnt(4, 0, 0), aD.PointOnShape2(1));
+        AssertPnt(new Point3D(4, 0, 0), aD.PointOnShape2(1));
 
         // beyond the end: the nearest point is the edge's vertex
         var aD2 = new BRepExtrema_DistShapeShape(anEdge, V(13, 4, 0));
         Assert.Equal(5.0, aD2.Value(), Tol);
         Assert.Equal(BRepExtrema_IsVertex, aD2.SupportTypeShape1(1));
-        AssertPnt(new gp_Pnt(10, 0, 0), aD2.PointOnShape1(1));
+        AssertPnt(new Point3D(10, 0, 0), aD2.PointOnShape1(1));
     }
 
     [Fact]
@@ -89,7 +93,7 @@ public class BRepExtremaTests
         aD.ParOnFaceS1(1, out double u, out double v);
         Assert.Equal(2.0, u, Tol);
         Assert.Equal(3.0, v, Tol);
-        AssertPnt(new gp_Pnt(2, 3, 0), aD.PointOnShape1(1));
+        AssertPnt(new Point3D(2, 3, 0), aD.PointOnShape1(1));
     }
 
     [Fact]
@@ -106,8 +110,8 @@ public class BRepExtremaTests
         aD.ParOnEdgeS2(1, out double t2);
         Assert.Equal(6.0, t1, Tol);
         Assert.Equal(5.0, t2, Tol);
-        AssertPnt(new gp_Pnt(1, 0, 0), aD.PointOnShape1(1));
-        AssertPnt(new gp_Pnt(1, 0, 2), aD.PointOnShape2(1));
+        AssertPnt(new Point3D(1, 0, 0), aD.PointOnShape1(1));
+        AssertPnt(new Point3D(1, 0, 2), aD.PointOnShape2(1));
     }
 
     [Fact]
@@ -145,7 +149,7 @@ public class BRepExtremaTests
         var aD = new BRepExtrema_DistShapeShape(E(2, 2, 1, 5, 5, 4), aF);
         Assert.True(aD.IsDone());
         Assert.Equal(1.0, aD.Value(), Tol);
-        AssertPnt(new gp_Pnt(2, 2, 0), aD.PointOnShape2(1));
+        AssertPnt(new Point3D(2, 2, 0), aD.PointOnShape2(1));
 
         // a segment through the face: distance 0, on the edge and in the face
         var aD2 = new BRepExtrema_DistShapeShape(E(3, 4, -1, 3, 4, 1), aF);
@@ -197,8 +201,8 @@ public class BRepExtremaTests
     public void TwoBoxes_SingleAndMultiThread_Agree_AndInputsUnchanged()
     {
         TopoDS_Solid aBox1 = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        TopoDS_Shape aBox2 = TestShapes.Frozen(TestShapes.Box(1, 1, 1)).Moved(new TopLoc_Location(
-            new gp_Trsf().WithTranslation(new gp_Vec(3, 0.5, 1))));
+        TopoDS_Shape aBox2 = TestShapes.Frozen(TestShapes.Box(1, 1, 1)).Moved(new Placement(
+            new Transform3D().WithTranslation(new Vector3D(3, 0.5, 1))));
         var aSnap1 = ShapeSnapshot.Of(aBox1);
         var aSnap2 = ShapeSnapshot.Of(aBox2);
 
@@ -232,10 +236,10 @@ public class BRepExtremaTests
     public void SerialFallback_GivesTheSingleThreadSolutions()
     {
         TopoDS_Shape aBox1 = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        TopoDS_Shape aBox2 = TestShapes.Frozen(TestShapes.Box(1, 1, 1)).Moved(new TopLoc_Location(
-            new gp_Trsf().WithTranslation(new gp_Vec(3, 0.5, 1))));
-        TopoDS_Shape aBox3 = TestShapes.Frozen(TestShapes.Box(2, 2, 2)).Moved(new TopLoc_Location(
-            new gp_Trsf().WithTranslation(new gp_Vec(-1, -1, 4))));
+        TopoDS_Shape aBox2 = TestShapes.Frozen(TestShapes.Box(1, 1, 1)).Moved(new Placement(
+            new Transform3D().WithTranslation(new Vector3D(3, 0.5, 1))));
+        TopoDS_Shape aBox3 = TestShapes.Frozen(TestShapes.Box(2, 2, 2)).Moved(new Placement(
+            new Transform3D().WithTranslation(new Vector3D(-1, -1, 4))));
         TopoDS_Shape aCompound = TopoDS_Builder.MakeCompound(aBox2, aBox3);
         foreach ((TopoDS_Shape aS1, TopoDS_Shape aS2) in new[] { (aBox1, aBox2), (aBox1, aCompound), (aCompound, aBox1) })
         {
@@ -244,7 +248,7 @@ public class BRepExtremaTests
             aFallback.SetMultiThread(true);
             aFallback.LoadS1(aS1);
             aFallback.LoadS2(aS2);
-            using (OSD_Parallel.ForceSerialScope())
+            using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
             {
                 Assert.True(aFallback.Perform());
             }
@@ -264,11 +268,11 @@ public class BRepExtremaTests
     [Fact]
     public void LocatedShapes()
     {
-        var aT = new gp_Trsf().WithRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Math.PI / 2);
-        TopoDS_Shape anEdge = E(0, 0, 0, 10, 0, 0).Moved(new TopLoc_Location(aT)); // now along +Y
+        var aT = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 2);
+        TopoDS_Shape anEdge = E(0, 0, 0, 10, 0, 0).Moved(new Placement(aT)); // now along +Y
         var aD = new BRepExtrema_DistShapeShape(anEdge, V(3, 4, 0));
         Assert.Equal(3.0, aD.Value(), Tol);
-        AssertPnt(new gp_Pnt(0, 4, 0), aD.PointOnShape1(1));
+        AssertPnt(new Point3D(0, 4, 0), aD.PointOnShape1(1));
         aD.ParOnEdgeS1(1, out double t);
         Assert.Equal(4.0, t, Tol);
         Assert.True(aD.SupportOnShape1(1).IsEqual(anEdge));
@@ -289,16 +293,16 @@ public class BRepExtremaTests
     [Fact]
     public void InfiniteEdge_IsTrimmed_AndTheSupportIsFrozen()
     {
-        var aLine = new Geom_Line(new gp_Pnt(0, 0, 5), new gp_Dir(1, 0, 0));
+        var aLine = new Geom_Line(new Point3D(0, 0, 5), new Direction3D(1, 0, 0));
         TopoDS_Edge anInfinite = new BRepBuilderAPI_MakeEdge(aLine).Edge();
         TopoDS_Edge aFinite = E(3, -1, 0, 3, 1, 0);
         var aD = new BRepExtrema_DistShapeShape(anInfinite, aFinite);
         Assert.True(aD.IsDone());
         Assert.Equal(5.0, aD.Value(), Tol);
-        AssertPnt(new gp_Pnt(3, 0, 5), aD.PointOnShape1(1));
+        AssertPnt(new Point3D(3, 0, 5), aD.PointOnShape1(1));
         TopoDS_Shape aSupport = aD.SupportOnShape1(1);
         Assert.False(aSupport.IsSame(anInfinite)); // a trimmed copy, built by DistanceSS
-        Assert.True(aSupport.TShape()!.IsFrozen());
+        Assert.True(aSupport.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -306,8 +310,8 @@ public class BRepExtremaTests
     {
         var anEmpty = new BRepExtrema_DistShapeShape();
         Assert.False(anEmpty.Perform());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anEmpty.Value());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anEmpty.SupportOnShape1(1));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.Value());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SupportOnShape1(1));
 
         var aD = new BRepExtrema_DistShapeShape(V(0, 0, 0), V(1, 0, 0));
         var aText = new StringWriter();
@@ -353,8 +357,8 @@ public class BRepExtremaTests
     public void DistanceSS_SkipsPairsBeyondTheReference()
     {
         TopoDS_Vertex a = V(0, 0, 0), b = V(3, 0, 0);
-        var aBox1 = new Bnd_Box();
-        var aBox2 = new Bnd_Box();
+        var aBox1 = new Box();
+        var aBox2 = new Box();
         BRepBndLib.Add(a, ref aBox1);
         BRepBndLib.Add(b, ref aBox2);
         var aFar = new BRepExtrema_DistanceSS(a, b, aBox1, aBox2, 1.0);
@@ -371,7 +375,7 @@ public class BRepExtremaTests
     // The two triangles of a unit square at height z, as a face without surface.
     private static TopoDS_Face MeshSquare(double z, double x0 = 0)
         => TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
-            [new gp_Pnt(x0, 0, z), new gp_Pnt(x0 + 1, 0, z), new gp_Pnt(x0 + 1, 1, z), new gp_Pnt(x0, 1, z)],
+            [new Point3D(x0, 0, z), new Point3D(x0 + 1, 0, z), new Point3D(x0 + 1, 1, z), new Point3D(x0, 1, z)],
             (1, 2, 3), (1, 3, 4)));
 
     [Fact]
@@ -380,7 +384,7 @@ public class BRepExtremaTests
         var aShapes = new NCollection_DynamicArray<TopoDS_Shape>();
         aShapes.Append(MeshSquare(0));
         aShapes.Append(MeshSquare(1));
-        aShapes.Append(TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new gp_Pnt(0, 0, 2), new gp_Pnt(1, 0, 2), new gp_Pnt(2, 0, 2))));
+        aShapes.Append(TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(0, 0, 2), new Point3D(1, 0, 2), new Point3D(2, 0, 2))));
         var aSet = new BRepExtrema_TriangleSet(aShapes);
         Assert.Equal(6, aSet.Size()); // 2 + 2 triangles, 2 segments
         Assert.Equal(11, aSet.GetVertices().Size());
@@ -417,7 +421,7 @@ public class BRepExtremaTests
 
         // tolerance zero: crossing triangles
         TopoDS_Face aVertical = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
-            [new gp_Pnt(0.5, -1, -1), new gp_Pnt(0.5, 2, -1), new gp_Pnt(0.5, 0.5, 1)], (1, 2, 3)));
+            [new Point3D(0.5, -1, -1), new Point3D(0.5, 2, -1), new Point3D(0.5, 0.5, 1)], (1, 2, 3)));
         var aCross = new BRepExtrema_ShapeProximity(a, aVertical, 0.0);
         aCross.Perform();
         Assert.True(aCross.OverlapSubShapes1().IsBound(0));
@@ -431,7 +435,7 @@ public class BRepExtremaTests
         BRepGPropTestShapes.AttachQuadMeshes(aBox1);
         TestShapes.Frozen(aBox1);
         TopoDS_Face aTop = TopFace(aBox1);
-        TopoDS_Face aTop2 = TopoDS.Face(aTop.Moved(new TopLoc_Location(new gp_Trsf().WithTranslation(new gp_Vec(0, 0, 1)))));
+        TopoDS_Face aTop2 = TopoDS.Face(aTop.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(0, 0, 1)))));
 
         var aProx = new BRepExtrema_ShapeProximity(aTop, aTop2);
         aProx.Perform();
@@ -444,7 +448,7 @@ public class BRepExtremaTests
     {
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(theBox))
         {
-            var aBox = new Bnd_Box();
+            var aBox = new Box();
             BRepBndLib.Add(aF, ref aBox);
             aBox.Get(out _, out _, out double aZmin, out _, out _, out _);
             if (aZmin > 0.5)
@@ -460,7 +464,7 @@ public class BRepExtremaTests
     {
         TopoDS_Face a = MeshSquare(0);
         TopoDS_Face aVertical = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
-            [new gp_Pnt(0.5, -1, -1), new gp_Pnt(0.5, 2, -1), new gp_Pnt(0.5, 0.5, 1)], (1, 2, 3)));
+            [new Point3D(0.5, -1, -1), new Point3D(0.5, 2, -1), new Point3D(0.5, 0.5, 1)], (1, 2, 3)));
         var aSelf = new BRepExtrema_SelfIntersection(TopoDS_Builder.MakeCompound(a, aVertical));
         aSelf.Perform();
         Assert.True(aSelf.IsDone());
@@ -476,11 +480,11 @@ public class BRepExtremaTests
     [Fact]
     public void Poly_Distance()
     {
-        gp_Pnt p1 = new(), p2 = new();
+        Point3D p1 = new(), p2 = new();
         Assert.True(BRepExtrema_Poly.Distance(MeshSquare(0), MeshSquare(2, 3), ref p1, ref p2, out double aDist));
         Assert.Equal(Math.Sqrt(8.0), aDist, Tol);
-        AssertPnt(new gp_Pnt(1, 0, 0), p1);
-        AssertPnt(new gp_Pnt(3, 0, 2), p2);
+        AssertPnt(new Point3D(1, 0, 0), p1);
+        AssertPnt(new Point3D(3, 0, 2), p2);
         Assert.False(BRepExtrema_Poly.Distance(Square(0, 0, 0, 1), MeshSquare(2), ref p1, ref p2, out _));
     }
 
@@ -495,29 +499,29 @@ public class BRepExtremaTests
     }
 
     // A segment edge with a 3D polygon of the given number of evenly spaced nodes.
-    private static TopoDS_Edge PolygonSegment(in gp_Pnt theP1, in gp_Pnt theP2, int theNbNodes)
+    private static TopoDS_Edge PolygonSegment(in Point3D theP1, in Point3D theP2, int theNbNodes)
     {
         TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(theP1, theP2).InternalEdge();
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, theNbNodes);
+        var aNodes = new NCollection_Array1<Point3D>(1, theNbNodes);
         for (int i = 1; i <= theNbNodes; i++)
         {
             double t = (double)(i - 1) / (theNbNodes - 1);
-            aNodes[i] = new gp_Pnt(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
+            aNodes[i] = new Point3D(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
         }
-        new BRep_Builder().UpdateEdge(anEdge, new Poly_Polygon3D(aNodes));
+        new BRep_Builder().UpdateEdge(anEdge, new Polygon3D(aNodes));
         return TestShapes.Frozen(anEdge);
     }
 
     // A unit square face at height z (plane surface) with an n x n grid triangulation.
     private static TopoDS_Face GridSquare(double z, int n)
     {
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).InternalFace();
-        var aTri = new Poly_Triangulation((n + 1) * (n + 1), 2 * n * n, false);
+        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, z), new Direction3D(0, 0, 1)), 0, 1, 0, 1).InternalFace();
+        var aTri = new Triangulation((n + 1) * (n + 1), 2 * n * n, false);
         for (int j = 0; j <= n; j++)
         {
             for (int i = 0; i <= n; i++)
             {
-                aTri.SetNode(j * (n + 1) + i + 1, new gp_Pnt((double)i / n, (double)j / n, z));
+                aTri.SetNode(j * (n + 1) + i + 1, new Point3D((double)i / n, (double)j / n, z));
             }
         }
         int k = 1;
@@ -526,8 +530,8 @@ public class BRepExtremaTests
             for (int i = 0; i < n; i++)
             {
                 int a = j * (n + 1) + i + 1, b = a + 1, c = a + n + 2, d = a + n + 1;
-                aTri.SetTriangle(k++, new Poly_Triangle(a, b, c));
-                aTri.SetTriangle(k++, new Poly_Triangle(a, c, d));
+                aTri.SetTriangle(k++, new Triangle1(a, b, c));
+                aTri.SetTriangle(k++, new Triangle1(a, c, d));
             }
         }
         new BRep_Builder().UpdateFace(aF, aTri);
@@ -538,8 +542,8 @@ public class BRepExtremaTests
     public void ProximityValue_EdgesWithRefinement()
     {
         // the second edge's polygon is coarser: it is refined to the first's step
-        TopoDS_Edge e1 = PolygonSegment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), 11);
-        TopoDS_Edge e2 = PolygonSegment(new gp_Pnt(0, 1, 0), new gp_Pnt(10, 1, 0), 3);
+        TopoDS_Edge e1 = PolygonSegment(new Point3D(0, 0, 0), new Point3D(10, 0, 0), 11);
+        TopoDS_Edge e2 = PolygonSegment(new Point3D(0, 1, 0), new Point3D(10, 1, 0), 3);
         var aProx = new BRepExtrema_ShapeProximity(e1, e2);
         aProx.Perform();
         Assert.True(aProx.IsDone());
@@ -577,7 +581,7 @@ public class BRepExtremaTests
         Assert.True(aTool.IsDone());
         Assert.Equal(aTool.Distance(), aTol);
         Assert.Equal(0.5, aTol, Tol);
-        aTool.ProximityPoints(out gp_Pnt p1, out gp_Pnt p2);
+        aTool.ProximityPoints(out Point3D p1, out Point3D p2);
         Assert.Equal(0.5, p1.Distance(p2), Tol);
     }
 
@@ -600,7 +604,7 @@ public class BRepExtremaTests
     // ------------------------------------------------------------------ OCCT issues, pinned (occt-issues.md)
 
     private static TopoDS_Face MeshTriangle(double z)
-        => TestShapes.Frozen(BRepGPropTestShapes.MeshFace([new gp_Pnt(0, 0, z), new gp_Pnt(1, 0, z), new gp_Pnt(0, 1, z)], (1, 2, 3)));
+        => TestShapes.Frozen(BRepGPropTestShapes.MeshFace([new Point3D(0, 0, z), new Point3D(1, 0, z), new Point3D(0, 1, z)], (1, 2, 3)));
 
     [Fact]
     public void OcctIssue_TriangleSet_InitAgainKeepsTheFirstShapesVertexIds()
@@ -649,7 +653,7 @@ public class BRepExtremaTests
     {
         TopoDS_Face aCoarse = GridSquare(0, 1), aFine = GridSquare(0.5, 2);
         var aProx = new BRepExtrema_ShapeProximity(aCoarse, aFine);
-        Assert.Equal(Precision.Infinite(), aProx.Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aProx.Tolerance());
         aProx.Perform();
         Assert.Equal(0.5, aProx.Tolerance(), Tol);
     }

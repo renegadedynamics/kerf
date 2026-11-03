@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -36,7 +37,7 @@ public sealed class BRepTools_Substitution
     /// disappears from its ancestors). A FORWARD item of <paramref name="NS"/> takes the orientation of
     /// <paramref name="OS"/> in its ancestors; another is reversed.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The shape is already replaced.</exception>
+    /// <exception cref="ConstructionErrorException">The shape is already replaced.</exception>
     public void Substitute(in TopoDS_Shape OS, NCollection_List<TopoDS_Shape> NS)
     {
         Standard_ConstructionError_Raise_if(IsCopied(OS), "BRepTools_CutClue::Substitute");
@@ -158,7 +159,7 @@ public sealed class BRepTools_Substitution
     }
 
     /// <summary>The shapes substituted for <paramref name="S"/>, frozen.</summary>
-    /// <exception cref="Standard_NoSuchObject">The shape hasn't been replaced.</exception>
+    /// <exception cref="NoSuchObjectException">The shape hasn't been replaced.</exception>
     public ISchematiqList<TopoDS_Shape> Copy(in TopoDS_Shape S)
     {
         NCollection_List<TopoDS_Shape> aList = InternalCopy(S);

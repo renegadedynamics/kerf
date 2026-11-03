@@ -27,9 +27,9 @@ public class MathPoly_LaguerreTest
     [Fact]
     public void Quintic_FiveDistinctRoots()
     {
-        var aResult = MathPoly.Quintic(1.0, -15.0, 85.0, -225.0, 274.0, -120.0);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Quintic(1.0, -15.0, 85.0, -225.0, 274.0, -120.0);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(4, aResult.NbRoots); // PolyResult has max 4 roots
 
         // Check that roots 1, 2, 3, 4 are found (5 might be cut off)
@@ -46,9 +46,9 @@ public class MathPoly_LaguerreTest
     public void Sextic_SixDistinctRoots()
     {
         // (x-1)(x-2)(x-3)(x-4)(x-5)(x-6) = x^6 - 21x^5 + 175x^4 - 735x^3 + 1624x^2 - 1764x + 720
-        var aResult = MathPoly.Sextic(1.0, -21.0, 175.0, -735.0, 1624.0, -1764.0, 720.0);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Sextic(1.0, -21.0, 175.0, -735.0, 1624.0, -1764.0, 720.0);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(4, aResult.NbRoots); // PolyResult has max 4 roots
 
         for (int i = 0; i < aResult.NbRoots; ++i)
@@ -66,9 +66,9 @@ public class MathPoly_LaguerreTest
         // (x-1)(x-2)(x-3)(x-4)(x-5)(x-6)
         double[] aCoeffs = [720.0, -1764.0, 1624.0, -735.0, 175.0, -21.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 6);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 6);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(6, aResult.NbRoots);
 
         for (int i = 0; i < aResult.NbRoots; ++i)
@@ -83,9 +83,9 @@ public class MathPoly_LaguerreTest
     {
         double[] aCoeffs = [0.0, 4.0, 0.0, -5.0, 0.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 5);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 5);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(5, aResult.NbRoots);
 
         // Should find roots: -2, -1, 0, 1, 2
@@ -101,9 +101,9 @@ public class MathPoly_LaguerreTest
     {
         double[] aCoeffs = [-36.0, 0.0, 49.0, 0.0, -14.0, 0.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 6);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 6);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(6, aResult.NbRoots);
 
         Assert.Equal(-3.0, aResult.Roots[0], THE_TOL);
@@ -121,9 +121,9 @@ public class MathPoly_LaguerreTest
         // + 118124x^2 - 109584x + 40320
         double[] aCoeffs = [40320.0, -109584.0, 118124.0, -67284.0, 22449.0, -4536.0, 546.0, -36.0, 1.0];
 
-        var aResult = MathPoly.Octic(aCoeffs);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Octic(aCoeffs);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(8, aResult.NbRoots); // Eight real roots: 1, 2, 3, 4, 5, 6, 7, 8
 
         for (int i = 0; i < aResult.NbRoots; ++i)
@@ -139,9 +139,9 @@ public class MathPoly_LaguerreTest
         // (x-1)(x-2)(x-3)(x-4)(x-5) = x^5 - 15x^4 + 85x^3 - 225x^2 + 274x - 120
         double[] aCoeffs = [-120.0, 274.0, -225.0, 85.0, -15.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 5);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 5);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(5, aResult.NbRoots);
 
         // Check roots are 1, 2, 3, 4, 5
@@ -158,9 +158,9 @@ public class MathPoly_LaguerreTest
         // (x-1)(x-2)(x-3)(x-4) = x^4 - 10x^3 + 35x^2 - 50x + 24
         double[] aCoeffs = [24.0, -50.0, 35.0, -10.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 4);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 4);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(4, aResult.NbRoots);
 
         Assert.Equal(1.0, aResult.Roots[0], THE_TOL);
@@ -175,9 +175,9 @@ public class MathPoly_LaguerreTest
         // Well-behaved polynomial with known real roots: (x-1)(x-2)(x-3)(x-4)(x-5)(x-6)
         double[] aCoeffs = [720.0, -1764.0, 1624.0, -735.0, 175.0, -21.0, 1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 6);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 6);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(6, aResult.NbRoots);
 
         // Verify each real root
@@ -205,9 +205,9 @@ public class MathPoly_LaguerreTest
                             -55.0,
                             1.0];
 
-        var aResult = MathPoly.Laguerre(aCoeffs, 10);
+        var aResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 10);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(10, aResult.NbRoots);
 
         // Verify roots are 1, 2, ..., 10
@@ -225,12 +225,12 @@ public class MathPoly_LaguerreTest
         double[] aCoeffs = [24.0, -50.0, 35.0, -10.0, 1.0]; // (x-1)(x-2)(x-3)(x-4)
 
         // Laguerre
-        var aLagResult = MathPoly.Laguerre(aCoeffs, 4);
-        Assert.True(aLagResult.IsDone());
+        var aLagResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Laguerre(aCoeffs, 4);
+        Assert.True(aLagResult.IsDone);
 
         // Quartic
-        var aQuartResult = MathPoly.Quartic(1.0, -10.0, 35.0, -50.0, 24.0);
-        Assert.True(aQuartResult.IsDone());
+        var aQuartResult = global::Kerf.Engine.Numerics.Polynomials.MathPoly.Quartic(1.0, -10.0, 35.0, -50.0, 24.0);
+        Assert.True(aQuartResult.IsDone);
 
         Assert.Equal(aQuartResult.NbRoots, aLagResult.NbRoots);
 

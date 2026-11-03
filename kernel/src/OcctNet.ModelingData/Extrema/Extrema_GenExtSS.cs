@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +23,7 @@ namespace Occt;
 public class Extrema_GenExtSS
 {
     // This class represents distance objective function for surface / surface.
-    private sealed class Extrema_FuncDistSS : math_MultipleVarFunctionWithGradient
+    private sealed class Extrema_FuncDistSS : MultipleVarFunctionWithGradient
     {
         private readonly Adaptor3d_Surface myS1;
         private readonly Adaptor3d_Surface myS2;
@@ -28,7 +34,7 @@ public class Extrema_GenExtSS
             myS2 = S2;
         }
 
-        public override int NbVariables() => 4;
+        public override int VariableCount => 4;
 
         public override bool Value(math_Vector X, out double F)
         {
@@ -38,10 +44,10 @@ public class Extrema_GenExtSS
 
         public override bool Gradient(math_Vector X, math_Vector G)
         {
-            myS1.D1(X[1], X[2], out gp_Pnt P1, out gp_Vec Du1s1, out gp_Vec Dv1s1);
-            myS2.D1(X[3], X[4], out gp_Pnt P2, out gp_Vec Du2s2, out gp_Vec Dv2s2);
+            myS1.D1(X[1], X[2], out Point3D P1, out Vector3D Du1s1, out Vector3D Dv1s1);
+            myS2.D1(X[3], X[4], out Point3D P2, out Vector3D Du2s2, out Vector3D Dv2s2);
 
-            gp_Vec P1P2 = new(P2, P1);
+            Vector3D P1P2 = new(P2, P1);
 
             G[1] = P1P2.Dot(Du1s1);
             G[2] = P1P2.Dot(Dv1s1);
@@ -55,10 +61,10 @@ public class Extrema_GenExtSS
         {
             F = myS1.Value(X[1], X[2]).SquareDistance(myS2.Value(X[3], X[4]));
 
-            myS1.D1(X[1], X[2], out gp_Pnt P1, out gp_Vec Du1s1, out gp_Vec Dv1s1);
-            myS2.D1(X[3], X[4], out gp_Pnt P2, out gp_Vec Du2s2, out gp_Vec Dv2s2);
+            myS1.D1(X[1], X[2], out Point3D P1, out Vector3D Du1s1, out Vector3D Dv1s1);
+            myS2.D1(X[3], X[4], out Point3D P2, out Vector3D Du2s2, out Vector3D Dv2s2);
 
-            gp_Vec P1P2 = new(P2, P1);
+            Vector3D P1P2 = new(P2, P1);
 
             G[1] = P1P2.Dot(Du1s1);
             G[2] = P1P2.Dot(Dv1s1);
@@ -83,8 +89,8 @@ public class Extrema_GenExtSS
     private double myv2sup;
     private int myusample;
     private int myvsample;
-    private NCollection_HArray2<gp_Pnt>? mypoints1;
-    private NCollection_HArray2<gp_Pnt>? mypoints2;
+    private NCollection_HArray2<Point3D>? mypoints1;
+    private NCollection_HArray2<Point3D>? mypoints2;
     private double mytol1;
     private double mytol2;
     private readonly Extrema_FuncExtSS myF;
@@ -146,8 +152,8 @@ public class Extrema_GenExtSS
         double V2sup, double Tol2)
     {
         myS2 = S2;
-        mypoints1 = new NCollection_HArray2<gp_Pnt>(0, NbU + 1, 0, NbV + 1);
-        mypoints2 = new NCollection_HArray2<gp_Pnt>(0, NbU + 1, 0, NbV + 1);
+        mypoints1 = new NCollection_HArray2<Point3D>(0, NbU + 1, 0, NbV + 1);
+        mypoints2 = new NCollection_HArray2<Point3D>(0, NbU + 1, 0, NbV + 1);
         myusample = NbU;
         myvsample = NbV;
         myu2min = U2min;
@@ -185,7 +191,7 @@ public class Extrema_GenExtSS
         // Use batch grid evaluation for optimized surface point computation
         GeomGridEval_Surface anEvaluator = new(myS2);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
 
         for (int NoU = 1; NoU <= myusample; NoU++)
         {
@@ -211,7 +217,7 @@ public class Extrema_GenExtSS
     {
         if (myS2 is null)
         {
-            throw new StdFail_NotDone("Extrema_GenExtSS: the second surface is not initialized");
+            throw new NotDoneException("Extrema_GenExtSS: the second surface is not initialized");
         }
         myF.Initialize(S1, myS2);
         myu1min = U1min;
@@ -222,7 +228,7 @@ public class Extrema_GenExtSS
 
         double U1, V1, U2, V2;
         int NoU1, NoV1, NoU2, NoV2;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
 
         // Parametrage de l echantillon sur S1
 
@@ -262,7 +268,7 @@ public class Extrema_GenExtSS
         // Use batch grid evaluation for optimized surface point computation
         GeomGridEval_Surface anEvaluator = new(S1);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aU1Params, aV1Params);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aU1Params, aV1Params);
 
         for (NoU1 = 1; NoU1 <= myusample; NoU1++)
         {
@@ -337,9 +343,9 @@ public class Extrema_GenExtSS
         UV[4] = V20 + (N2Vmin - 1) * PasV2;
 
         Extrema_FuncDistSS aGFSS = new(S1, myS2);
-        math_BFGS aBFGSSolver = new(4);
+        Bfgs aBFGSSolver = new(4);
         aBFGSSolver.Perform(aGFSS, UV);
-        if (aBFGSSolver.IsDone())
+        if (aBFGSSolver.IsDone)
         {
             aBFGSSolver.Location(UV);
 
@@ -357,7 +363,7 @@ public class Extrema_GenExtSS
             UV[3] = U20 + (N2Umin - 1) * PasU2;
             UV[4] = V20 + (N2Vmin - 1) * PasV2;
 
-            math_FunctionSetRoot SR1 = new(myF, Tol);
+            FunctionSetRoot SR1 = new(myF, Tol);
             SR1.Perform(myF, UV, UVinf, UVsup);
         }
 
@@ -369,7 +375,7 @@ public class Extrema_GenExtSS
         // It is impossible to compute max distance in the same manner,
         // since for the distance functional for max have bad definition.
         // So, for max computation old approach is used.
-        math_FunctionSetRoot SR2 = new(myF, Tol);
+        FunctionSetRoot SR2 = new(myF, Tol);
         SR2.Perform(myF, UV, UVinf, UVsup);
 
         myDone = true;
@@ -383,7 +389,7 @@ public class Extrema_GenExtSS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.NbExt();
     }
@@ -393,7 +399,7 @@ public class Extrema_GenExtSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.SquareDistance(N);
@@ -404,7 +410,7 @@ public class Extrema_GenExtSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.PointOnS1(N);
@@ -415,7 +421,7 @@ public class Extrema_GenExtSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.PointOnS2(N);

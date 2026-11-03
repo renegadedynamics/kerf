@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>OCCT's hasher of gp_Ax2 (axis placements), composed of the point and direction hashers.</summary>
@@ -11,7 +13,7 @@ internal readonly struct GeomHash_AxisPlacement(double theCompTolerance, double 
     public readonly double HashTolerance = theHashTolerance;
 
     // Hashes the axis placement by location, axis direction, and X direction.
-    public ulong Hash(in gp_Ax2 theAxisPlacement)
+    public ulong Hash(in Frame3D theAxisPlacement)
     {
         var aPointHasher = new GeomHash_PointHasher(CompTolerance, HashTolerance);
         var aDirectionHasher = new GeomHash_DirectionHasher(CompTolerance, HashTolerance);
@@ -25,7 +27,7 @@ internal readonly struct GeomHash_AxisPlacement(double theCompTolerance, double 
     }
 
     // Compares two axis placements.
-    public bool IsEqual(in gp_Ax2 theAxisPlacement1, in gp_Ax2 theAxisPlacement2)
+    public bool IsEqual(in Frame3D theAxisPlacement1, in Frame3D theAxisPlacement2)
     {
         var aPointHasher = new GeomHash_PointHasher(CompTolerance, HashTolerance);
         var aDirectionHasher = new GeomHash_DirectionHasher(CompTolerance, HashTolerance);

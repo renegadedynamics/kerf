@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.IntPatch_IType;
 
@@ -141,7 +143,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     {
         if (!fipt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indf);
     }
@@ -151,7 +153,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     {
         if (!lapt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indl);
     }
@@ -161,7 +163,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     {
         if (!fipt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         Indfirst = indf;
         return svtx.Value(indf);
@@ -172,7 +174,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     {
         if (!lapt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         Indlast = indl;
         return svtx.Value(indl);
@@ -186,11 +188,11 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
 
     public override IntSurf_LineOn2S Curve() => (curv);
 
-    public override bool IsOutSurf1Box(in gp_Pnt2d theP) => curv.IsOutSurf1Box(theP);
+    public override bool IsOutSurf1Box(in Point2D theP) => curv.IsOutSurf1Box(theP);
 
-    public override bool IsOutSurf2Box(in gp_Pnt2d theP) => curv.IsOutSurf2Box(theP);
+    public override bool IsOutSurf2Box(in Point2D theP) => curv.IsOutSurf2Box(theP);
 
-    public override bool IsOutBox(in gp_Pnt theP) => curv.IsOutBox(theP);
+    public override bool IsOutBox(in Point3D theP) => curv.IsOutBox(theP);
 
     public void SetPeriod(double pu1, double pv1, double pu2, double pv2)
     {
@@ -234,7 +236,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     {
         if ((theIndex < 1) || (theIndex > NbVertex()))
         {
-            throw new Standard_OutOfRange("Cannot delete not existing vertex");
+            throw new OutOfRangeException("Cannot delete not existing vertex");
         }
         svtx.Remove(theIndex);
     }
@@ -326,7 +328,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
         POn2S.SetValue(u1, v1, u2, v2);
     }
 
-    private static bool CompareVertexAndPoint(in gp_Pnt V, in gp_Pnt P, double Tol)
+    private static bool CompareVertexAndPoint(in Point3D V, in Point3D P, double Tol)
     {
         double aSQDist = V.SquareDistance(P);
         double aSQTol = Tol * Tol;
@@ -416,8 +418,8 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
             vtx1.ParametersOnS2(out u1, out v1);
             vtx2.ParametersOnS2(out u2, out v2);
         }
-        tolU = Precision.PConfusion();
-        tolV = Precision.PConfusion();
+        tolU = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        tolV = global::Kerf.Engine.Foundation.Precision.PConfusion();
         return (Math.Abs(u1 - u2) <= tolU && Math.Abs(v1 - v2) <= tolV);
     }
 
@@ -721,7 +723,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
 
         //----------------------------------------------------
         //-- On detecte les points confondus dans la LineOn2S
-        double dmini = Precision.SquareConfusion();
+        double dmini = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         for (i = 2; (i <= nbponline) && (nbponline > 2); i++)
         {
             IntSurf_PntOn2S aPnt1 = curv.Value(i - 1);
@@ -750,7 +752,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
         //----------------------------------------------------
         for (i = 1; i <= nbvtx; i++)
         {
-            gp_Pnt P = svtx.Value(i).Value();
+            Point3D P = svtx.Value(i).Value();
             double vTol = svtx.Value(i).Tolerance();
             indicevertex = svtx.Value(i).ParameterOnLine();
             indicevertexonline = (int)indicevertex;
@@ -1087,7 +1089,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
                 IntPatch_Point V = svtx.Value(i);
                 // jgv: to avoid loops
                 // double vTol = V.Tolerance();
-                if (CompareVertexAndPoint(V.Value(), curv.Value(1).Value(), Precision.Confusion() /*vTol*/))
+                if (CompareVertexAndPoint(V.Value(), curv.Value(1).Value(), global::Kerf.Engine.Foundation.Precision.Confusion() /*vTol*/))
                 {
                     vtx = V;
                     vtx.SetParameters(pu1, pv1, pu2, pv2);
@@ -1116,7 +1118,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
                 IntPatch_Point V = svtx.Value(i);
                 // jgv: to avoid loops
                 // double vTol = V.Tolerance();
-                if (CompareVertexAndPoint(V.Value(), curv.Value(nbponline).Value(), Precision.Confusion() /*vTol*/))
+                if (CompareVertexAndPoint(V.Value(), curv.Value(nbponline).Value(), global::Kerf.Engine.Foundation.Precision.Confusion() /*vTol*/))
                 {
                     vtx = V;
                     vtx.SetParameters(pu1, pv1, pu2, pv2);
@@ -1328,7 +1330,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
                     // and so only when that rank is at most the number of vertices (reproduced).
                     if (pol >= 1 && pol <= aNbVertex)
                     {
-                        gp_Pnt aV = theLine.Vertex(pol).Value();
+                        Point3D aV = theLine.Vertex(pol).Value();
                         theOut.Write("----> IntSurf_PntOn2S : " + R(polr) + ", Pnt (" + R(aV.X()) + "," + R(aV.Y())
                                      + "," + R(aV.Z()) + ")" + '\n');
                     }
@@ -1337,7 +1339,7 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
             case 1:
                 for (int i = 1; i <= aNbPoints; i++)
                 {
-                    gp_Pnt aP = theLine.Point(i).Value();
+                    Point3D aP = theLine.Point(i).Value();
                     theOut.Write($"point p{i.ToString(CultureInfo.InvariantCulture)} {F(aP.X())} {F(aP.Y())} {F(aP.Z())}\n");
                 }
                 break;
@@ -1367,5 +1369,5 @@ public class IntPatch_WLine : IntPatch_PointLine, IApproxInt_WLine<IntPatch_WLin
     }
 
     // std::cout << double: six significant digits.
-    private static string R(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+    private static string R(double theValue) => StreamUtilities.FormatReal(theValue, 6);
 }

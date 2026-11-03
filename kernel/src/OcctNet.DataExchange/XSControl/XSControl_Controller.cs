@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -18,7 +19,7 @@ namespace Occt;
 /// call (method Recorded) It does not manage the produced data, but the Actors make the link between the
 /// norm and the application
 /// </summary>
-public abstract class XSControl_Controller : Standard_Transient
+public abstract class XSControl_Controller : Transient
 {
     // OCCT's dictionary of the recorded controllers (a file static "listad"): process-wide, filled once by the
     // norms' initialisations (Record, AutoRecord) before the sessions select them, under a lock (decision 1222).
@@ -27,7 +28,7 @@ public abstract class XSControl_Controller : Standard_Transient
 
     private static IFSelect_ReturnStatus TransferFinder(Transfer_ActorOfFinderProcess? theActor, Transfer_Finder theMapper,
                                                         Transfer_FinderProcess theFP, Interface_InterfaceModel? theModel,
-                                                        int theModeTrans, Message_ProgressRange theProgress)
+                                                        int theModeTrans, ProgressRange theProgress)
     {
         if (theActor is null)
         {
@@ -50,7 +51,7 @@ public abstract class XSControl_Controller : Standard_Transient
             bindtr = (binder as Transfer_SimpleBinderOfTransient);
             if (bindtr is not null)
             {
-                Standard_Transient ent = bindtr.Result();
+                Transient ent = bindtr.Result();
                 if (ent is not null)
                 {
                     stat = IFSelect_RetDone;
@@ -104,15 +105,15 @@ public abstract class XSControl_Controller : Standard_Transient
         {
             if (listad.IsBound(theName))
             {
-                Standard_Transient thisadapt = this;
-                Standard_Transient newadapt = listad.ChangeFind(theName);
+                Transient thisadapt = this;
+                Transient newadapt = listad.ChangeFind(theName);
                 if (newadapt.IsKind(thisadapt.DynamicType()))
                 {
                     return;
                 }
                 if (!(thisadapt.IsKind(newadapt.DynamicType())) && thisadapt != newadapt)
                 {
-                    throw new Standard_DomainError("XSControl_Controller : Record");
+                    throw new DomainErrorException("XSControl_Controller : Record");
                 }
             }
             listad.Bind(theName, this);
@@ -277,7 +278,7 @@ public abstract class XSControl_Controller : Standard_Transient
     /// Tells if &lt;obj&gt; (an application object) is a valid candidate for a transfer to a Model. By default,
     /// asks the ActorWrite if known (through a TransientMapper). Can be redefined
     /// </summary>
-    public virtual bool RecognizeWriteTransient(Standard_Transient? obj, int modetrans = 0)
+    public virtual bool RecognizeWriteTransient(Transient? obj, int modetrans = 0)
     {
         if (myAdaptorWrite is null)
         {
@@ -294,7 +295,7 @@ public abstract class XSControl_Controller : Standard_Transient
     /// Fail (e.g. exception raised) -1 bad conditions , -2 bad model or null model For type of object not
     /// recognized : should return 1
     /// </summary>
-    public virtual IFSelect_ReturnStatus TransferWriteTransient(Standard_Transient? theObj, Transfer_FinderProcess? theFP, Interface_InterfaceModel? theModel, int theModeTrans = 0, Message_ProgressRange theProgress = default)
+    public virtual IFSelect_ReturnStatus TransferWriteTransient(Transient? theObj, Transfer_FinderProcess? theFP, Interface_InterfaceModel? theModel, int theModeTrans = 0, ProgressRange theProgress = default)
     {
         if (theObj is null)
         {
@@ -326,7 +327,7 @@ public abstract class XSControl_Controller : Standard_Transient
     /// ActorWrite; can be redefined as necessary Returned value is a status, as follows : Done OK , Void : No
     /// Result , Fail : Fail (e.g. exception) Error : bad conditions , bad model or null model
     /// </summary>
-    public virtual IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, Transfer_FinderProcess? FP, Interface_InterfaceModel? model, int modetrans = 0, Message_ProgressRange theProgress = default)
+    public virtual IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, Transfer_FinderProcess? FP, Interface_InterfaceModel? model, int modetrans = 0, ProgressRange theProgress = default)
     {
         if (shape.IsNull())
         {
@@ -349,7 +350,7 @@ public abstract class XSControl_Controller : Standard_Transient
     /// is to be called at Create time, the recorded items will be used by Customise Warning : if &lt;name&gt;
     /// conflicts, the last recorded item is kept
     /// </summary>
-    public void AddSessionItem(Standard_Transient? theItem, string theName, bool toApply = false)
+    public void AddSessionItem(Transient? theItem, string theName, bool toApply = false)
     {
         if (theItem is null || CStringChar(theName, 0) == '\0')
         {
@@ -365,9 +366,9 @@ public abstract class XSControl_Controller : Standard_Transient
     /// <summary>
     /// Returns an item given its name to record in a Session If &lt;name&gt; is unknown, returns a Null Handle
     /// </summary>
-    public Standard_Transient? SessionItem(string theName)
+    public Transient? SessionItem(string theName)
     {
-        Standard_Transient item = null;
+        Transient item = null;
         if (!myAdaptorSession.IsEmpty())
         {
             item = myAdaptorSession.Find(theName);
@@ -388,7 +389,7 @@ public abstract class XSControl_Controller : Standard_Transient
     public virtual void Customise(XSControl_WorkSession WS)
     {
         Interface_StaticSet aStatics = WS.Statics();
-        NCollection_DynamicArray<Standard_Transient> aParams = new NCollection_DynamicArray<Standard_Transient>();
+        NCollection_DynamicArray<Transient> aParams = new NCollection_DynamicArray<Transient>();
         NCollection_DynamicArray<int> aParamUses = new NCollection_DynamicArray<int>();
         for (int ip = 0; ip < myParamNames.Length(); ip++)
         {
@@ -406,7 +407,7 @@ public abstract class XSControl_Controller : Standard_Transient
         // General
         if (!myAdaptorSession.IsEmpty())
         {
-            foreach (KeyValuePair<string, Standard_Transient> iter in myAdaptorSession)
+            foreach (KeyValuePair<string, Transient> iter in myAdaptorSession)
             {
                 WS.AddNamedItem(iter.Key, iter.Value);
             }
@@ -490,7 +491,7 @@ public abstract class XSControl_Controller : Standard_Transient
         int i, nb = myAdaptorApplied.Length();
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient anitem = myAdaptorApplied.Value(i);
+            Transient anitem = myAdaptorApplied.Value(i);
             TCollection_HAsciiString name = WS.Name(anitem);
             WS.SetAppliedModifier((anitem as IFSelect_GeneralModifier), WS.ShareOut());
         }
@@ -506,7 +507,7 @@ public abstract class XSControl_Controller : Standard_Transient
         WS.AddNamedItem("xst-static-params", paramform);
     }
 
-    public NCollection_DataMap<string, Standard_Transient> AdaptorSession()
+    public NCollection_DataMap<string, Transient> AdaptorSession()
     {
         return myAdaptorSession;
     }
@@ -558,8 +559,8 @@ public abstract class XSControl_Controller : Standard_Transient
     protected Interface_Protocol? myAdaptorProtocol;
     protected Transfer_ActorOfTransientProcess? myAdaptorRead;
     protected Transfer_ActorOfFinderProcess? myAdaptorWrite;
-    protected NCollection_DataMap<string, Standard_Transient> myAdaptorSession = new NCollection_DataMap<string, Standard_Transient>();
-    private NCollection_Sequence<Standard_Transient> myAdaptorApplied = new NCollection_Sequence<Standard_Transient>();
+    protected NCollection_DataMap<string, Transient> myAdaptorSession = new NCollection_DataMap<string, Transient>();
+    private NCollection_Sequence<Transient> myAdaptorApplied = new NCollection_Sequence<Transient>();
     private NCollection_DynamicArray<string> myParamNames = new NCollection_DynamicArray<string>(); // OCCT: myParams, the statics
     private NCollection_DynamicArray<int> myParamUses = new NCollection_DynamicArray<int>();
     private NCollection_HArray1<TCollection_HAsciiString>? myModeWriteShapeN;

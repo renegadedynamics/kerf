@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -24,7 +28,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <summary>The ellipse equal to E.</summary>
-    public Geom2d_Ellipse(in gp_Elips2d E)
+    public Geom2d_Ellipse(in Ellipse2D E)
     {
         majorRadius = E.MajorRadius();
         minorRadius = E.MinorRadius();
@@ -32,32 +36,32 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <summary>The ellipse whose major axis is MajorAxis; Sense gives the orientation (true: counterclockwise).</summary>
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; MinorRadius or MinorRadius &lt; 0.</exception>
-    public Geom2d_Ellipse(in gp_Ax2d MajorAxis, double MajorRadius, double MinorRadius, bool Sense = true)
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; MinorRadius or MinorRadius &lt; 0.</exception>
+    public Geom2d_Ellipse(in Axis2D MajorAxis, double MajorRadius, double MinorRadius, bool Sense = true)
     {
         majorRadius = MajorRadius;
         minorRadius = MinorRadius;
         if (MajorRadius < MinorRadius || MinorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
-        pos = new gp_Ax22d(MajorAxis, Sense);
+        pos = new Frame2D(MajorAxis, Sense);
     }
 
     /// <summary>The ellipse in the coordinate system Axis, whose X axis is the major axis.</summary>
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; MinorRadius or MinorRadius &lt; 0.</exception>
-    public Geom2d_Ellipse(in gp_Ax22d Axis, double MajorRadius, double MinorRadius)
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; MinorRadius or MinorRadius &lt; 0.</exception>
+    public Geom2d_Ellipse(in Frame2D Axis, double MajorRadius, double MinorRadius)
     {
         majorRadius = MajorRadius;
         minorRadius = MinorRadius;
         if (MajorRadius < MinorRadius || MinorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = Axis;
     }
 
-    internal void SetElips2d(in gp_Elips2d E)
+    internal void SetElips2d(in Ellipse2D E)
     {
         CheckMutable();
         majorRadius = E.MajorRadius();
@@ -70,7 +74,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
         CheckMutable();
         if (MajorRadius < minorRadius)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -83,7 +87,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
         CheckMutable();
         if (MinorRadius < 0 || majorRadius < MinorRadius)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -92,24 +96,24 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <summary>The ellipse as a gp_Elips2d.</summary>
-    public gp_Elips2d Elips2d() => new gp_Elips2d(pos, majorRadius, minorRadius);
+    public Ellipse2D Elips2d() => new Ellipse2D(pos, majorRadius, minorRadius);
 
     /// <summary>2*PI - U.</summary>
     public sealed override double ReversedParameter(double U) => (2.0 * M_PI - U);
 
     /// <summary>The first directrix: parallel to the Y axis at distance MajorRadius/e from the centre, on the positive X side.</summary>
-    /// <exception cref="Standard_ConstructionError">The eccentricity is 0 (a circle).</exception>
-    public gp_Ax2d Directrix1()
+    /// <exception cref="ConstructionErrorException">The eccentricity is 0 (a circle).</exception>
+    public Axis2D Directrix1()
     {
-        gp_Elips2d Ev = new gp_Elips2d(pos, majorRadius, minorRadius);
+        Ellipse2D Ev = new Ellipse2D(pos, majorRadius, minorRadius);
         return Ev.Directrix1();
     }
 
     /// <summary>The second directrix, the symmetric of the first about the Y axis.</summary>
-    /// <exception cref="Standard_ConstructionError">The eccentricity is 0 (a circle).</exception>
-    public gp_Ax2d Directrix2()
+    /// <exception cref="ConstructionErrorException">The eccentricity is 0 (a circle).</exception>
+    public Axis2D Directrix2()
     {
-        gp_Elips2d Ev = new gp_Elips2d(pos, majorRadius, minorRadius);
+        Ellipse2D Ev = new Ellipse2D(pos, majorRadius, minorRadius);
         return Ev.Directrix2();
     }
 
@@ -130,18 +134,18 @@ public class Geom2d_Ellipse : Geom2d_Conic
     public double Focal() => 2.0 * Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public gp_Pnt2d Focus1()
+    public Point2D Focus1()
     {
         double C = Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
-        return new gp_Pnt2d(pos.Location().X() + C * pos.XDirection().X(),
+        return new Point2D(pos.Location().X() + C * pos.XDirection().X(),
                             pos.Location().Y() + C * pos.XDirection().Y());
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public gp_Pnt2d Focus2()
+    public Point2D Focus2()
     {
         double C = Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
-        return new gp_Pnt2d(pos.Location().X() - C * pos.XDirection().X(),
+        return new Point2D(pos.Location().X() - C * pos.XDirection().X(),
                             pos.Location().Y() - C * pos.XDirection().Y());
     }
 
@@ -176,26 +180,26 @@ public class Geom2d_Ellipse : Geom2d_Conic
     /// <summary>True.</summary>
     public sealed override bool IsPeriodic() => true;
 
-    public sealed override gp_Pnt2d EvalD0(double U) => ElCLib.EllipseValue(U, pos, majorRadius, minorRadius);
+    public sealed override Point2D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.EllipseValue(U, pos, majorRadius, minorRadius);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult;
-        ElCLib.EllipseD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult;
-        ElCLib.EllipseD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult;
-        ElCLib.EllipseD3(U,
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD3(U,
                          pos,
                          majorRadius,
                          minorRadius,
@@ -207,17 +211,17 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative();
         }
-        return ElCLib.EllipseDN(U, pos, majorRadius, minorRadius, N);
+        return global::Kerf.Engine.Geometry.ElCLib.EllipseDN(U, pos, majorRadius, minorRadius, N);
     }
 
     /// <summary>Applies T to the ellipse: the radii are multiplied by |T.ScaleFactor()|.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         majorRadius = majorRadius * Math.Abs(T.ScaleFactor());
@@ -228,7 +232,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
     // Non-mutating twins of the Set methods (OCCT.NET)
 
     /// <summary>A copy equal to E.</summary>
-    public Geom2d_Ellipse WithElips2d(in gp_Elips2d E)
+    public Geom2d_Ellipse WithElips2d(in Ellipse2D E)
     {
         Geom2d_Ellipse aCopy = (Geom2d_Ellipse)Copy();
         aCopy.SetElips2d(E);
@@ -236,7 +240,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <summary>A copy with the major radius MajorRadius.</summary>
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; MinorRadius().</exception>
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; MinorRadius().</exception>
     public Geom2d_Ellipse WithMajorRadius(double MajorRadius)
     {
         Geom2d_Ellipse aCopy = (Geom2d_Ellipse)Copy();
@@ -245,7 +249,7 @@ public class Geom2d_Ellipse : Geom2d_Conic
     }
 
     /// <summary>A copy with the minor radius MinorRadius.</summary>
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0 or MajorRadius() &lt; MinorRadius.</exception>
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or MajorRadius() &lt; MinorRadius.</exception>
     public Geom2d_Ellipse WithMinorRadius(double MinorRadius)
     {
         Geom2d_Ellipse aCopy = (Geom2d_Ellipse)Copy();

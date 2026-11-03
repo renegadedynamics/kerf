@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -42,7 +43,7 @@ public class ShapeFix_ShapeToleranceTests
     {
         // OCCT: in WIRE mode only the vertices' changes make the result true
         TopoDS_Shape aW = BRepTools.ExactCopyForWrite(
-            new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0), true).Wire(), out _);
+            new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire(), out _);
         var aTool = new ShapeFix_ShapeTolerance();
         aTool.SetTolerance(aW, 1e-3, TopAbs_VERTEX);
         Assert.False(aTool.LimitTolerance(aW, 1e-4, 1e-2, TopAbs_WIRE)); // edges raised from 1e-7, not counted
@@ -71,7 +72,7 @@ public class ShapeFix_ShapeToleranceTests
 
         TopoDS_Shape aRes = aTool.WithTolerance(aBox, 0.5, TopAbs_FACE);
         aSnap.AssertUnchanged(aBox);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
         Assert.All(Subs(aRes, TopAbs_FACE), f => Assert.Equal(0.5, BRep_Tool.Tolerance(TopoDS.Face(f))));
         // the edges didn't change: they are the caller's
         var aEdges = new HashSet<object>(Subs(aBox, TopAbs_EDGE).Select(e => (object)e.TShape()!), ReferenceEqualityComparer.Instance);

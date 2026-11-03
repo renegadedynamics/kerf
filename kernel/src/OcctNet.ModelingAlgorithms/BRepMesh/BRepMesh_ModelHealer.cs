@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using static Occt.IMeshData_Status;
 
@@ -44,7 +47,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
     /// <summary>Heals the model; false without a model.</summary>
     protected override bool performInternal(IMeshData_Model? theModel,
                                             in IMeshTools_Parameters theParameters,
-                                            Message_ProgressRange theRange)
+                                            ProgressRange theRange)
     {
         _ = theRange;
         myModel = theModel;
@@ -59,7 +62,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
         // self-intersecting polygon, which cannot be fixed.
         // As result the face will not be triangulated at all.
         // E.g. see "Test mesh standard_mesh C7", the face #17.
-        myParameters.MinSize = Precision.Confusion();
+        myParameters.MinSize = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         myFaceIntersectingEdges =
             new NCollection_DataMap<IMeshData_Face, NCollection_Map<IMeshData_Edge>?>(ReferenceEqualityComparer.Instance);
@@ -69,7 +72,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
         }
 
         // TODO: Here we can process edges in order to remove close discrete points.
-        OSD_Parallel.For(0, myModel.FacesNb(), process, !isParallel());
+        OsdParallel.For(0, myModel.FacesNb(), process, !isParallel());
         amplifyEdges();
 
         foreach (KeyValuePair<IMeshData_Face, NCollection_Map<IMeshData_Edge>?> aFaceIt in myFaceIntersectingEdges)
@@ -98,7 +101,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
         while (aAmpIt++ < aIterNb && popEdgesToUpdate(aEdgesToUpdate))
         {
             // Try to update discretization by decreasing deflection of problematic edges.
-            OSD_Parallel.ForEach(aEdgesToUpdate,
+            OsdParallel.ForEach(aEdgesToUpdate,
                                  anEdgeAmplifier.Process,
                                  !myParameters.InParallel || aEdgesToUpdate.Size() <= 1,
                                  aEdgesToUpdate.Size());
@@ -112,7 +115,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
                 }
             }
 
-            OSD_Parallel.ForEach(aFacesToCheck,
+            OsdParallel.ForEach(aFacesToCheck,
                                  process,
                                  !myParameters.InParallel || aFacesToCheck.Size() <= 1,
                                  aFacesToCheck.Size());
@@ -288,13 +291,13 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
             return aVertex1_2;
         }
 
-        gp_Pnt aPnt1_1 = BRep_Tool.Pnt(aVertex1_1);
-        gp_Pnt aPnt1_2 = BRep_Tool.Pnt(aVertex1_2);
+        Point3D aPnt1_1 = BRep_Tool.Pnt(aVertex1_1);
+        Point3D aPnt1_2 = BRep_Tool.Pnt(aVertex1_2);
         double aTol1_1 = BRep_Tool.Tolerance(aVertex1_1);
         double aTol1_2 = BRep_Tool.Tolerance(aVertex1_2);
 
-        gp_Pnt aPnt2_1 = BRep_Tool.Pnt(aVertex2_1);
-        gp_Pnt aPnt2_2 = BRep_Tool.Pnt(aVertex2_2);
+        Point3D aPnt2_1 = BRep_Tool.Pnt(aVertex2_1);
+        Point3D aPnt2_2 = BRep_Tool.Pnt(aVertex2_2);
         double aTol2_1 = BRep_Tool.Tolerance(aVertex2_1);
         double aTol2_2 = BRep_Tool.Tolerance(aVertex2_2);
 
@@ -358,7 +361,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
 
         // Connect closest points first. This can help to identify
         // which ends should be connected in case of gap.
-        if (aPrevSqDist - aNextSqDist > gp.Resolution())
+        if (aPrevSqDist - aNextSqDist > Constants.Resolution())
         {
             adjustSamePoints(ref aCurrNextUV,
                              ref aNextUV,
@@ -412,7 +415,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
     {
         double aSqDist1 = closestPoint(theFirstPnt1, theFirstPnt2, theSecondPnt2, out PntRef aCurrPrevUV1);
         double aSqDist2 = closestPoint(theSecondPnt1, theFirstPnt2, theSecondPnt2, out PntRef aCurrPrevUV2);
-        if (aSqDist1 - aSqDist2 < gp.Resolution())
+        if (aSqDist1 - aSqDist2 < Constants.Resolution())
         {
             theClosestPnt1 = theFirstPnt1;
             theClosestPnt2 = aCurrPrevUV1;
@@ -454,9 +457,9 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
     }
 
     // Returns True if some of two vertcies is within tolerance of reference one.
-    private static bool isInToleranceWithSomeOf(in gp_Pnt theRefPoint,
-                                                in gp_Pnt thePoint1,
-                                                in gp_Pnt thePoint2,
+    private static bool isInToleranceWithSomeOf(in Point3D theRefPoint,
+                                                in Point3D thePoint1,
+                                                in Point3D thePoint2,
                                                 double theTol)
     {
         double aSqTol = theTol * theTol;
@@ -478,7 +481,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
         }
 
         // The point, for reading and writing (*ptr).
-        public ref gp_Pnt2d Value() => ref myPCurve.GetPoint(myIndex);
+        public ref Point2D Value() => ref myPCurve.GetPoint(myIndex);
 
         public bool Equals(PntRef theOther) => ReferenceEquals(myPCurve, theOther.myPCurve) && myIndex == theOther.myIndex;
 
@@ -509,7 +512,7 @@ public class BRepMesh_ModelHealer : IMeshTools_ModelAlgo
             int aPointsNb = aDEdge.GetCurve().ParametersNb();
 
             aDEdge.Clear(true);
-            aDEdge.SetDeflection(Max(aDEdge.GetDeflection() / 3.0, Precision.Confusion()));
+            aDEdge.SetDeflection(Max(aDEdge.GetDeflection() / 3.0, global::Kerf.Engine.Foundation.Precision.Confusion()));
 
             for (int aPCurveIt = 0; aPCurveIt < aDEdge.PCurvesNb(); ++aPCurveIt)
             {

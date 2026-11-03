@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,21 +18,21 @@ namespace Occt;
 /// OCCT. At least five points are taken. OCCT's empty <c>Dump</c> is left out.
 /// </remarks>
 public sealed class HLRBRep_ThePolygonOfInterCSurf
-    : IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, gp_Lin>
+    : IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, Line3D>
 {
-    private Bnd_Box TheBnd = new();
+    private Box TheBnd = new();
     private double TheDeflection;
     private readonly int NbPntIn;
-    private readonly NCollection_Array1<gp_Pnt> ThePnts;
+    private readonly NCollection_Array1<Point3D> ThePnts;
     private bool ClosedPolygon;
     private readonly double Binf;
     private readonly double Bsup;
     private NCollection_HArray1<double>? myParams;
 
     /// <summary>A polygon of <paramref name="NbPnt"/> points (at least 5) over the whole curve.</summary>
-    public HLRBRep_ThePolygonOfInterCSurf(gp_Lin Curve, int NbPnt)
+    public HLRBRep_ThePolygonOfInterCSurf(Line3D Curve, int NbPnt)
     {
-        ThePnts = new NCollection_Array1<gp_Pnt>(1, (NbPnt < 5) ? 5 : NbPnt);
+        ThePnts = new NCollection_Array1<Point3D>(1, (NbPnt < 5) ? 5 : NbPnt);
         ClosedPolygon = false;
         NbPntIn = (NbPnt < 5) ? 5 : NbPnt;
         Binf = HLRBRep_LineTool.FirstParameter(Curve);
@@ -37,9 +41,9 @@ public sealed class HLRBRep_ThePolygonOfInterCSurf
     }
 
     /// <summary>A polygon of <paramref name="NbPnt"/> points (at least 5) between the parameters <paramref name="U1"/> and <paramref name="U2"/>.</summary>
-    public HLRBRep_ThePolygonOfInterCSurf(gp_Lin Curve, double U1, double U2, int NbPnt)
+    public HLRBRep_ThePolygonOfInterCSurf(Line3D Curve, double U1, double U2, int NbPnt)
     {
-        ThePnts = new NCollection_Array1<gp_Pnt>(1, (NbPnt < 5) ? 5 : NbPnt);
+        ThePnts = new NCollection_Array1<Point3D>(1, (NbPnt < 5) ? 5 : NbPnt);
         ClosedPolygon = false;
         Binf = U1;
         Bsup = U2;
@@ -48,9 +52,9 @@ public sealed class HLRBRep_ThePolygonOfInterCSurf
     }
 
     /// <summary>A polygon through the points of the curve at the parameters <paramref name="Upars"/>.</summary>
-    public HLRBRep_ThePolygonOfInterCSurf(gp_Lin Curve, NCollection_Array1<double> Upars)
+    public HLRBRep_ThePolygonOfInterCSurf(Line3D Curve, NCollection_Array1<double> Upars)
     {
-        ThePnts = new NCollection_Array1<gp_Pnt>(1, Upars.Length());
+        ThePnts = new NCollection_Array1<Point3D>(1, Upars.Length());
         ClosedPolygon = false;
         Binf = Upars[Upars.Lower()];
         Bsup = Upars[Upars.Upper()];
@@ -58,17 +62,17 @@ public sealed class HLRBRep_ThePolygonOfInterCSurf
         Init(Curve, Upars);
     }
 
-    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, gp_Lin>.Create(
-        in gp_Lin Curve, int NbPnt) => new(Curve, NbPnt);
+    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, Line3D>.Create(
+        in Line3D Curve, int NbPnt) => new(Curve, NbPnt);
 
-    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, gp_Lin>.Create(
-        in gp_Lin Curve, double U1, double U2, int NbPnt) => new(Curve, U1, U2, NbPnt);
+    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, Line3D>.Create(
+        in Line3D Curve, double U1, double U2, int NbPnt) => new(Curve, U1, U2, NbPnt);
 
-    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, gp_Lin>.Create(
-        in gp_Lin Curve, NCollection_Array1<double> Upars) => new(Curve, Upars);
+    static HLRBRep_ThePolygonOfInterCSurf IIntCurveSurface_ThePolygon<HLRBRep_ThePolygonOfInterCSurf, Line3D>.Create(
+        in Line3D Curve, NCollection_Array1<double> Upars) => new(Curve, Upars);
 
     /// <summary>The bounding box of the polygon.</summary>
-    public Bnd_Box Bounding() => TheBnd;
+    public Box Bounding() => TheBnd;
 
     public double DeflectionOverEstimation() => TheDeflection;
 
@@ -86,10 +90,10 @@ public sealed class HLRBRep_ThePolygonOfInterCSurf
     public int NbSegments() => NbPntIn - 1;
 
     /// <summary>The first point of the segment of range <paramref name="theIndex"/>.</summary>
-    public gp_Pnt BeginOfSeg(int theIndex) => ThePnts[theIndex];
+    public Point3D BeginOfSeg(int theIndex) => ThePnts[theIndex];
 
     /// <summary>The last point of the segment of range <paramref name="theIndex"/>.</summary>
-    public gp_Pnt EndOfSeg(int theIndex) => ThePnts[theIndex + 1];
+    public Point3D EndOfSeg(int theIndex) => ThePnts[theIndex + 1];
 
     /// <summary>The parameter on the curve of the first point of the polygon.</summary>
     public double InfParameter() => Binf;
@@ -101,16 +105,16 @@ public sealed class HLRBRep_ThePolygonOfInterCSurf
     public double ApproxParamOnCurve(int Index, double ParamOnLine) =>
         IntCurveSurface_PolygonUtils.ApproxParamOnCurve(Index, ParamOnLine, Binf, Bsup, NbPntIn, myParams);
 
-    private void Init(gp_Lin Curve)
+    private void Init(Line3D Curve)
     {
-        IntCurveSurface_PolygonUtils.InitUniform<gp_Lin, HLRBRep_LineTool>(
+        IntCurveSurface_PolygonUtils.InitUniform<Line3D, HLRBRep_LineTool>(
             Curve, Binf, Bsup, NbPntIn, ThePnts, ref TheBnd, out TheDeflection);
         ClosedPolygon = false;
     }
 
-    private void Init(gp_Lin Curve, NCollection_Array1<double> Upars)
+    private void Init(Line3D Curve, NCollection_Array1<double> Upars)
     {
-        IntCurveSurface_PolygonUtils.InitWithParams<gp_Lin, HLRBRep_LineTool>(
+        IntCurveSurface_PolygonUtils.InitWithParams<Line3D, HLRBRep_LineTool>(
             Curve, Upars, NbPntIn, ThePnts, ref TheBnd, out TheDeflection, out NCollection_HArray1<double> aParams);
         myParams = aParams;
         ClosedPolygon = false;

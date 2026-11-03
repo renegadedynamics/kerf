@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Convert_CylinderToBSplineSurfaceTest
@@ -9,41 +15,41 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void FullCylinder()
     {
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 3.0);
-        Convert_CylinderToBSplineSurface aConv = new(aCyl, 0.0, 10.0);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 3.0);
+        CylinderToBSplineSurface aConv = new(aCyl, 0.0, 10.0);
 
         Assert.Equal(2, aConv.UDegree());
         Assert.Equal(1, aConv.VDegree());
-        Assert.True(aConv.IsUPeriodic());
-        Assert.False(aConv.IsVPeriodic());
-        Assert.True(aConv.NbUPoles() > 0);
-        Assert.True(aConv.NbVPoles() > 0);
+        Assert.True(aConv.IsUPeriodic);
+        Assert.False(aConv.IsVPeriodic);
+        Assert.True(aConv.UPoleCount > 0);
+        Assert.True(aConv.VPoleCount > 0);
     }
 
     [Fact]
     public void TrimmedCylinder()
     {
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 2.0);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 2.0);
         double aU1 = 0.0, aU2 = M_PI;
         double aV1 = -5.0, aV2 = 5.0;
-        Convert_CylinderToBSplineSurface aConv = new(aCyl, aU1, aU2, aV1, aV2);
+        CylinderToBSplineSurface aConv = new(aCyl, aU1, aU2, aV1, aV2);
 
-        Assert.False(aConv.IsUPeriodic());
-        Assert.False(aConv.IsVPeriodic());
-        Assert.True(aConv.NbUPoles() > 0);
-        Assert.True(aConv.NbVPoles() > 0);
+        Assert.False(aConv.IsUPeriodic);
+        Assert.False(aConv.IsVPeriodic);
+        Assert.True(aConv.UPoleCount > 0);
+        Assert.True(aConv.VPoleCount > 0);
     }
 
     [Fact]
     public void WeightsArePositive()
     {
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 1.0);
-        Convert_CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
+        CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
 
         NCollection_Array2<double> aWeights = aConv.Weights();
-        for (int i = 1; i <= aConv.NbUPoles(); ++i)
+        for (int i = 1; i <= aConv.UPoleCount; ++i)
         {
-            for (int j = 1; j <= aConv.NbVPoles(); ++j)
+            for (int j = 1; j <= aConv.VPoleCount; ++j)
             {
                 Assert.True(aWeights[i, j] > 0.0);
             }
@@ -53,16 +59,16 @@ public class Convert_CylinderToBSplineSurfaceTest
     [Fact]
     public void KnotsAreMonotonic()
     {
-        gp_Cylinder aCyl = new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)), 1.0);
-        Convert_CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
+        Cylinder aCyl = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 1.0);
+        CylinderToBSplineSurface aConv = new(aCyl, 0.0, 1.0);
 
         NCollection_Array1<double> aUKnots = aConv.UKnots();
-        for (int i = 2; i <= aConv.NbUKnots(); ++i)
+        for (int i = 2; i <= aConv.UKnotCount; ++i)
         {
             Assert.True(aUKnots[i] > aUKnots[i - 1]);
         }
         NCollection_Array1<double> aVKnots = aConv.VKnots();
-        for (int i = 2; i <= aConv.NbVKnots(); ++i)
+        for (int i = 2; i <= aConv.VKnotCount; ++i)
         {
             Assert.True(aVKnots[i] > aVKnots[i - 1]);
         }
@@ -73,9 +79,9 @@ public class Convert_CylinderToBSplineSurfaceTest
     {
         double aRadius = 3.0;
         double aV1 = -5.0, aV2 = 5.0;
-        gp_Ax3 anAx3 = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        gp_Cylinder aCyl = new(anAx3, aRadius);
-        Convert_CylinderToBSplineSurface aConv = new(aCyl, 0.0, M_PI, aV1, aV2);
+        CoordinateSystem anAx3 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Cylinder aCyl = new(anAx3, aRadius);
+        CylinderToBSplineSurface aConv = new(aCyl, 0.0, M_PI, aV1, aV2);
 
         double aTol = 1.0e-10;
         // Sample 5x5 grid of BSpline parameters within the domain
@@ -90,7 +96,7 @@ public class Convert_CylinderToBSplineSurfaceTest
             for (int j = 0; j <= 4; ++j)
             {
                 double aV = aVMin + j * (aVMax - aVMin) / 4.0;
-                BSplSLib.D0(aU,
+                SurfaceBSplSLib.D0(aU,
                             aV,
                             0,
                             0,
@@ -106,7 +112,7 @@ public class Convert_CylinderToBSplineSurfaceTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aPnt);
+                            out Point3D aPnt);
 
                 // Verify the point lies on the cylinder: distance from Z axis = R
                 double aDistFromAxis = Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y());

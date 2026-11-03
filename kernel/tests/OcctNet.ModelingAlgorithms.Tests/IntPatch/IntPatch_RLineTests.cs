@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -10,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntPatch_RLineTests
 {
     private static Adaptor2d_Curve2d Arc(double y) =>
-        new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(0, y), new gp_Dir2d(1, 0)), -100, 100);
+        new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, y), new Direction2D(1, 0)), -100, 100);
 
     private static IntPatch_Point OnArc(Adaptor2d_Curve2d theArc, bool theOnFirst, double theParamOnLine,
                                         double theParamOnArc)
@@ -30,8 +32,8 @@ public class IntPatch_RLineTests
         Assert.Equal(IntSurf_Outside, aR.SituationS2());
         Assert.False(aR.IsArcOnS1() || aR.IsArcOnS2());
         Assert.False(aR.HasPolygon());
-        Assert.Throws<Standard_DomainError>(() => aR.NbPnts());
-        Assert.Throws<Standard_DomainError>(() => aR.Point(1));
+        Assert.Throws<DomainErrorException>(() => aR.NbPnts());
+        Assert.Throws<DomainErrorException>(() => aR.Point(1));
         Assert.Null(aR.Curve());
 
         IntSurf_LineOn2S aCurve = IntPatch_WLineTests.StraightLine(3);
@@ -88,7 +90,7 @@ public class IntPatch_RLineTests
         Assert.Equal(1.0, aR.FirstPoint().ParameterOnLine());
         Assert.Same(anOther, aR.LastPoint().ArcOnS1());
 
-        Assert.Throws<Standard_OutOfRange>(() => aR.RemoveVertex(5));
+        Assert.Throws<OutOfRangeException>(() => aR.RemoveVertex(5));
         aR.ChangeVertex(2).SetParameter(2.5);
         Assert.Equal(2.5, aR.Vertex(2).ParameterOnLine());
         aR.Replace(2, IntPatch_WLineTests.Vtx(0, 9));
@@ -99,7 +101,7 @@ public class IntPatch_RLineTests
     public void Dump_needs_the_polygon()
     {
         IntPatch_RLine aR = new(false);
-        Assert.Throws<Standard_DomainError>(() => aR.Dump(0, new StringWriter()));
+        Assert.Throws<DomainErrorException>(() => aR.Dump(0, new StringWriter()));
         aR.Add(IntPatch_WLineTests.StraightLine(2));
         StringWriter aOut = new();
         aR.Dump(2, aOut);

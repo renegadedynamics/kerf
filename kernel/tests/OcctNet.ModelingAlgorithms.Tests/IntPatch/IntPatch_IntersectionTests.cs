@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -18,20 +19,20 @@ public class IntPatch_IntersectionTests
 {
     private const double Tol = 1.0e-7;
 
-    private static GeomAdaptor_Surface Plane(gp_Pnt theP, gp_Dir theN, double theB = 2) =>
+    private static GeomAdaptor_Surface Plane(Point3D theP, Direction3D theN, double theB = 2) =>
         new(new Geom_Plane(theP, theN), -theB, theB, -theB, theB);
 
     // A bicubic patch over [0, 1] x [0, 1], z = 0.2 + 0.1 x with a bump in the middle.
     private static GeomAdaptor_Surface Patch(double theDz = 0.0)
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
                 double x = (i - 1) / 3.0, y = (j - 1) / 3.0;
                 double aBump = (i == 2 || i == 3) && (j == 2 || j == 3) ? 0.05 : 0.0;
-                aPoles[i, j] = new gp_Pnt(x, y, 0.2 + 0.1 * x + aBump + theDz * (y - 0.5));
+                aPoles[i, j] = new Point3D(x, y, 0.2 + 0.1 * x + aBump + theDz * (y - 0.5));
             }
         }
         var aKnots = new NCollection_Array1<double>(1, 2);
@@ -89,34 +90,34 @@ public class IntPatch_IntersectionTests
     {
         var anInt = new IntPatch_Intersection();
         Assert.False(anInt.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anInt.IsEmpty());
-        Assert.Throws<StdFail_NotDone>(() => anInt.NbLines());
-        Assert.Throws<StdFail_NotDone>(() => anInt.NbPnts());
-        Assert.Throws<StdFail_NotDone>(() => anInt.TangentFaces());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.IsEmpty());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.NbLines());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.NbPnts());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.TangentFaces());
     }
 
     [Fact]
     public void Two_planes_give_a_line()
     {
-        GeomAdaptor_Surface aP1 = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        GeomAdaptor_Surface aP2 = Plane(new gp_Pnt(0, 0, 0.5), new gp_Dir(1, 0, 1));
+        GeomAdaptor_Surface aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        GeomAdaptor_Surface aP2 = Plane(new Point3D(0, 0, 0.5), new Direction3D(1, 0, 1));
         IntPatch_Intersection anInt = Run(aP1, aP2);
         Assert.True(anInt.IsDone());
         Assert.False(anInt.IsEmpty());
         Assert.False(anInt.TangentFaces());
         Assert.Equal(1, anInt.NbLines());
         Assert.Equal(IntPatch_Lin, anInt.Line(1).ArcType());
-        gp_Lin aL = ((IntPatch_GLine)anInt.Line(1)).Line();
-        Assert.True(aL.Direction().IsParallel(new gp_Dir(0, 1, 0), 1.0e-12));
-        Assert.Equal(0.0, aL.Distance(new gp_Pnt(0.5, 0, 0)), 1.0e-12);
+        Line3D aL = ((IntPatch_GLine)anInt.Line(1)).Line();
+        Assert.True(aL.Direction().IsParallel(new Direction3D(0, 1, 0), 1.0e-12));
+        Assert.Equal(0.0, aL.Distance(new Point3D(0.5, 0, 0)), 1.0e-12);
         Assert.Same(anInt.SequenceOfLine().Value(1), anInt.Line(1));
     }
 
     [Fact]
     public void Coincident_planes_are_tangent_faces()
     {
-        GeomAdaptor_Surface aP1 = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        GeomAdaptor_Surface aP2 = Plane(new gp_Pnt(1, 1, 0), new gp_Dir(0, 0, -1));
+        GeomAdaptor_Surface aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        GeomAdaptor_Surface aP2 = Plane(new Point3D(1, 1, 0), new Direction3D(0, 0, -1));
         IntPatch_Intersection anInt = Run(aP1, aP2);
         Assert.True(anInt.IsDone());
         Assert.True(anInt.TangentFaces());
@@ -126,26 +127,26 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Parallel_planes_are_empty()
     {
-        IntPatch_Intersection anInt = Run(Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
-                                          Plane(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)));
+        IntPatch_Intersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+                                          Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
         Assert.True(anInt.IsDone());
         Assert.True(anInt.IsEmpty());
         Assert.Equal(0, anInt.NbLines());
-        Assert.Throws<Standard_DomainError>(() => anInt.OppositeFaces());
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInt.OppositeFaces());
     }
 
     [Fact]
     public void Plane_and_cylinder_give_conics()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
-                                                                                  new gp_Dir(0, 0, 1)), 1),
+        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
+                                                                                  new Direction3D(0, 0, 1)), 1),
                                            0, 2 * M_PI, -3, 3);
-        IntPatch_Intersection anInt = Run(Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 2), 5), aCyl);
+        IntPatch_Intersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 1, 2), 5), aCyl);
         Assert.True(anInt.IsDone());
         Assert.Equal(1, anInt.NbLines());
         Assert.Equal(IntPatch_Ellipse, anInt.Line(1).ArcType());
 
-        IntPatch_Intersection aLines = Run(Plane(new gp_Pnt(0.5, 0, 0), new gp_Dir(1, 0, 0), 5), aCyl);
+        IntPatch_Intersection aLines = Run(Plane(new Point3D(0.5, 0, 0), new Direction3D(1, 0, 0), 5), aCyl);
         Assert.Equal(2, aLines.NbLines());
         Assert.Equal(IntPatch_Lin, aLines.Line(1).ArcType());
         Assert.Equal(IntPatch_Lin, aLines.Line(2).ArcType());
@@ -154,7 +155,7 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Plane_and_patch_walk_without_post_processing()
     {
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.24), new gp_Dir(0, 0, 1)), aPatch = Patch();
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
         IntPatch_Intersection anInt = Run(aPln, aPatch, thePostProc: false);
         Assert.True(anInt.IsDone());
         Assert.False(anInt.IsEmpty());
@@ -184,8 +185,8 @@ public class IntPatch_IntersectionTests
     public void Analytic_pairs_go_to_the_parametric_intersector_when_not_geomint()
     {
         // isGeomInt false: two planes through IntPatch_PrmPrmIntersection, a walking line.
-        GeomAdaptor_Surface aP1 = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), 1);
-        GeomAdaptor_Surface aP2 = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1), 1);
+        GeomAdaptor_Surface aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), 1);
+        GeomAdaptor_Surface aP2 = Plane(new Point3D(0, 0, 0), new Direction3D(1, 0, 1), 1);
         var anInt = new IntPatch_Intersection();
         anInt.Perform(aP1, new Adaptor3d_TopolTool(aP1), aP2, new Adaptor3d_TopolTool(aP2), Tol, Tol,
                       isGeomInt: false, theIsReqToPostWLProc: false);
@@ -198,16 +199,16 @@ public class IntPatch_IntersectionTests
     {
         // A cone of semi-angle 0.01 cut by a plane across its axis: treated as Bezier (TreatAsBiParametric), so
         // plane/cone goes through ImpPrm and gives walking lines, not a conic.
-        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     0.01, 1), 0, 2 * M_PI, -2, 2);
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.5), new gp_Dir(1, 0, 0), 3);
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0.5), new Direction3D(1, 0, 0), 3);
         IntPatch_Intersection anInt = Run(aPln, aCone, thePostProc: false);
         Assert.True(anInt.IsDone());
         Assert.False(anInt.IsEmpty());
         Assert.True(CheckWalkingLines(anInt, aPln, aCone) >= 1);
 
         // A plane normal to the cone's axis keeps it analytic: a circle.
-        IntPatch_Intersection aCircle = Run(Plane(new gp_Pnt(0, 0, 0.5), new gp_Dir(0, 0, 1), 3), aCone);
+        IntPatch_Intersection aCircle = Run(Plane(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1), 3), aCone);
         Assert.Equal(1, aCircle.NbLines());
         Assert.Equal(IntPatch_Circle, aCircle.Line(1).ArcType());
     }
@@ -215,7 +216,7 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Self_intersection_of_quadrics_is_empty()
     {
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var anInt = new IntPatch_Intersection(aPln, new Adaptor3d_TopolTool(aPln), Tol, Tol);
         Assert.True(anInt.IsDone());
         Assert.True(anInt.IsEmpty());
@@ -247,7 +248,7 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Start_point_with_a_plane()
     {
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.24), new gp_Dir(0, 0, 1)), aPatch = Patch();
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
         var anInt = new IntPatch_Intersection();
         anInt.SetTolerances(Tol, Tol, 0.05, 0.01);
         anInt.Perform(aPln, new Adaptor3d_TopolTool(aPln), aPatch, new Adaptor3d_TopolTool(aPatch), 0.0, 0.0, 0.5,
@@ -259,7 +260,7 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Plane_and_patch_purged()
     {
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0.24), new gp_Dir(0, 0, 1)), aPatch = Patch();
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
         IntPatch_Intersection anInt = Run(aPln, aPatch);
         Assert.True(anInt.IsDone());
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
@@ -268,11 +269,11 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Sphere_and_cylinder_analytic_lines_become_walking_lines()
     {
-        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
-                                                                                  new gp_Dir(0, 0, 1)), 1),
+        var aCyl = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
+                                                                                  new Direction3D(0, 0, 1)), 1),
                                            0, 2 * M_PI, -3, 3);
-        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(1, 0, 0),
-                                                                                new gp_Dir(0, 0, 1)), 2));
+        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(1, 0, 0),
+                                                                                new Direction3D(0, 0, 1)), 2));
         IntPatch_Intersection anInt = Run(aCyl, aSph);
         Assert.True(anInt.IsDone());
         Assert.True(CheckWalkingLines(anInt, aCyl, aSph) >= 1);
@@ -286,11 +287,11 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Two_cylinders_walking_lines_joined()
     {
-        var aC1 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
-                                                                                 new gp_Dir(0, 0, 1)), 1),
+        var aC1 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
+                                                                                 new Direction3D(0, 0, 1)), 1),
                                           0, 2 * M_PI, -3, 3);
-        var aC2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
-                                                                                 new gp_Dir(1, 0, 0)), 0.8),
+        var aC2 = new GeomAdaptor_Surface(new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
+                                                                                 new Direction3D(1, 0, 0)), 0.8),
                                           0, 2 * M_PI, -3, 3);
         IntPatch_Intersection anInt = Run(aC1, aC2);
         Assert.True(anInt.IsDone());
@@ -300,20 +301,20 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void CheckSingularPoints_finds_the_pole_near_a_plane()
     {
-        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0),
-                                                                                new gp_Dir(0, 0, 1)), 1));
+        var aSph = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
+                                                                                new Direction3D(0, 0, 1)), 1));
         var aD = new Adaptor3d_TopolTool(aSph);
-        GeomAdaptor_Surface aNear = Plane(new gp_Pnt(0, 0, 1 + 5.0e-6), new gp_Dir(0, 0, 1));
+        GeomAdaptor_Surface aNear = Plane(new Point3D(0, 0, 1 + 5.0e-6), new Direction3D(0, 0, 1));
         Assert.True(IntPatch_Intersection.CheckSingularPoints(aSph, aD, aNear, out double aDist));
         Assert.Equal(5.0e-6, aDist, 1.0e-9);
         Assert.Equal(0.0001, IntPatch_Intersection.DefineUVMaxStep(aSph, aD, aNear, new Adaptor3d_TopolTool(aNear)));
 
-        GeomAdaptor_Surface aFar = Plane(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1));
+        GeomAdaptor_Surface aFar = Plane(new Point3D(0, 0, 2), new Direction3D(0, 0, 1));
         Assert.Equal(0.001, IntPatch_Intersection.DefineUVMaxStep(aSph, aD, aFar, new Adaptor3d_TopolTool(aFar)));
 
         // The same surface: not singular, infinite distance.
         Assert.False(IntPatch_Intersection.CheckSingularPoints(aSph, aD, aSph, out double aSame));
-        Assert.True(Precision.IsInfinite(aSame));
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aSame));
 
         // A plane has no singular boundary.
         Assert.False(IntPatch_Intersection.CheckSingularPoints(aFar, new Adaptor3d_TopolTool(aFar), aSph, out _));
@@ -322,9 +323,9 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void PrepareSurfaces_splits_a_flat_cone_at_its_apex()
     {
-        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        var aCone = new GeomAdaptor_Surface(new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     M_PI / 2 - 1.0e-9, 0), 0, 2 * M_PI, -1, 1);
-        GeomAdaptor_Surface aPln = Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        GeomAdaptor_Surface aPln = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aV1 = new NCollection_DynamicArray<Adaptor3d_Surface>();
         var aV2 = new NCollection_DynamicArray<Adaptor3d_Surface>();
         IntPatch_Intersection.PrepareSurfaces(aCone, new Adaptor3d_TopolTool(aCone), aPln, new Adaptor3d_TopolTool(aPln),
@@ -338,7 +339,7 @@ public class IntPatch_IntersectionTests
         Assert.Same(aPln, aV2[0]);
 
         // A cone of ordinary angle is kept whole.
-        var aCone2 = new GeomAdaptor_Surface(new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)),
+        var aCone2 = new GeomAdaptor_Surface(new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                      M_PI / 6, 0), 0, 2 * M_PI, -1, 1);
         var aV3 = new NCollection_DynamicArray<Adaptor3d_Surface>();
         var aV4 = new NCollection_DynamicArray<Adaptor3d_Surface>();

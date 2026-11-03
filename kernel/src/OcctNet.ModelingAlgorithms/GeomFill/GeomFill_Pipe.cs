@@ -4,8 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.GeomFill_PipeError;
 using static Occt.GeomFill_Trihedron;
@@ -50,7 +53,7 @@ public sealed class GeomFill_Pipe
         Geom_Curve C1 = Seq1.Value(1);
         double f = C1.FirstParameter(), l = C1.LastParameter();
         int iP, NP = 21;
-        NCollection_Array1<gp_Pnt> Tab = new(1, NP);
+        NCollection_Array1<Point3D> Tab = new(1, NP);
         double u = f, h = Math.Abs(f - l) / 20.0;
         for (iP = 1; iP <= NP; iP++)
         {
@@ -61,8 +64,8 @@ public sealed class GeomFill_Pipe
                 u = l;
             }
         }
-        gp_Ax2 AxeRef, Axe;
-        gp_Pnt Pos;
+        Frame3D AxeRef, Axe;
+        Point3D Pos;
         bool sing;
         GeomLib.AxeOfInertia(Tab, out AxeRef, out sing);
 
@@ -74,20 +77,20 @@ public sealed class GeomFill_Pipe
 
         Pos = AxeRef.Location();
         double alpha1, alpha2, alpha3;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         u = (f + l - h) / 2 - h;
         C1.D0(u, out P1);
         u += h;
         C1.D0(u, out P2);
-        alpha1 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        alpha1 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
         P1 = P2;
         u += h;
         C1.D0(u, out P2);
-        alpha2 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        alpha2 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
         P1 = P2;
         u += h;
         C1.D0(u, out P2);
-        alpha3 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+        alpha3 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
         Seq2.Append(C1);
 
         for (int iseq = 2; iseq <= Seq1.Length(); iseq++)
@@ -120,21 +123,21 @@ public sealed class GeomFill_Pipe
             C2.D0(u, out P1);
             u += h;
             C2.D0(u, out P2);
-            beta1 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+            beta1 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
             P1 = P2;
             u += h;
             C2.D0(u, out P2);
-            beta2 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+            beta2 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
             P1 = P2;
             u += h;
             C2.D0(u, out P2);
-            beta3 = new gp_Vec(Pos, P1).AngleWithRef(new gp_Vec(Pos, P2), new gp_Vec(AxeRef.Direction()));
+            beta3 = new Vector3D(Pos, P1).AngleWithRef(new Vector3D(Pos, P2), new Vector3D(AxeRef.Direction()));
 
             // meme sens ?
             bool ok = true,
-                 pasnul1 = (Math.Abs(alpha1) > Precision.Confusion()) && (Math.Abs(beta1) > Precision.Confusion()),
-                 pasnul2 = (Math.Abs(alpha2) > Precision.Confusion()) && (Math.Abs(beta2) > Precision.Confusion()),
-                 pasnul3 = (Math.Abs(alpha3) > Precision.Confusion()) && (Math.Abs(beta3) > Precision.Confusion());
+                 pasnul1 = (Math.Abs(alpha1) > global::Kerf.Engine.Foundation.Precision.Confusion()) && (Math.Abs(beta1) > global::Kerf.Engine.Foundation.Precision.Confusion()),
+                 pasnul2 = (Math.Abs(alpha2) > global::Kerf.Engine.Foundation.Precision.Confusion()) && (Math.Abs(beta2) > global::Kerf.Engine.Foundation.Precision.Confusion()),
+                 pasnul3 = (Math.Abs(alpha3) > global::Kerf.Engine.Foundation.Precision.Confusion()) && (Math.Abs(beta3) > global::Kerf.Engine.Foundation.Precision.Confusion());
             if (pasnul1 && pasnul2 && pasnul3)
             {
                 if (alpha1 * beta1 > 0.0)
@@ -213,7 +216,7 @@ public sealed class GeomFill_Pipe
     }
 
     /// <summary>A pipe of the constant section FirstSect along Path, with the fixed binormal Dir.</summary>
-    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, in gp_Dir Dir)
+    public GeomFill_Pipe(Geom_Curve Path, Geom_Curve FirstSect, in Direction3D Dir)
     {
         myStatus = GeomFill_PipeNotOk;
         myExchUV = false;
@@ -296,7 +299,7 @@ public sealed class GeomFill_Pipe
         TheLoc.SetCurve(myAdpPath);
 
         GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(TheLoc, FirstSect);
-        Place.Perform(Precision.Confusion());
+        Place.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // loi de section
         mySec = new GeomFill_UniformSection(Place.Section(false), myAdpPath.FirstParameter(),
@@ -332,8 +335,8 @@ public sealed class GeomFill_Pipe
 
         // Nouvelle methode
         myAdpPath = new GeomAdaptor_Curve(Path);
-        Geom_Circle C = new Geom_Circle(gp.XOY(), Radius);
-        C.Rotate(gp.OZ(), M_PI / 2.0);
+        Geom_Circle C = new Geom_Circle(Constants.XOY(), Radius);
+        C.Rotate(Constants.OZ(), M_PI / 2.0);
 
         mySec = new GeomFill_UniformSection(C, Path.FirstParameter(), Path.LastParameter());
         GeomFill_CorrectedFrenet TLaw = new GeomFill_CorrectedFrenet();
@@ -367,8 +370,8 @@ public sealed class GeomFill_Pipe
             case GeomFill_IsFixed:
                 {
                     double Eps = 1.0e-9;
-                    gp_Vec V1 = new gp_Vec(0, 0, 1), V2 = new gp_Vec(0, 1, 0);
-                    gp_Dir D;
+                    Vector3D V1 = new Vector3D(0, 0, 1), V2 = new Vector3D(0, 1, 0);
+                    Direction3D D;
                     GeomLProp_CLProps CP = new GeomLProp_CLProps(Path, param, 2, Eps);
                     if (CP.IsTangentDefined())
                     {
@@ -383,8 +386,8 @@ public sealed class GeomFill_Pipe
                         }
                         else
                         {
-                            gp_Pnt P0 = new gp_Pnt(0.0, 0.0, 0.0);
-                            gp_Ax2 Axe = new gp_Ax2(P0, D);
+                            Point3D P0 = new Point3D(0.0, 0.0, 0.0);
+                            Frame3D Axe = new Frame3D(P0, D);
                             D = Axe.XDirection();
                             V2.SetXYZ(D.XYZ());
                             V2.Normalize();
@@ -400,12 +403,12 @@ public sealed class GeomFill_Pipe
                     myLoc = new GeomFill_CurveAndTrihedron(TLaw);
                     myLoc.SetCurve(myAdpPath);
                     GeomFill_SectionPlacement Place0 = new GeomFill_SectionPlacement(myLoc, FirstSect);
-                    Place0.Perform(Precision.Confusion());
+                    Place0.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
                     double ponsec = Place0.ParameterOnSection();
 
                     double Eps = 1.0e-9;
-                    gp_Vec V = new gp_Vec(0, 1, 0);
-                    gp_Dir D;
+                    Vector3D V = new Vector3D(0, 1, 0);
+                    Direction3D D;
                     GeomLProp_CLProps CP = new GeomLProp_CLProps(FirstSect, ponsec, 2, Eps);
                     if (CP.IsTangentDefined())
                     {
@@ -418,20 +421,20 @@ public sealed class GeomFill_Pipe
                         }
                         else
                         {
-                            gp_Pnt P0 = new gp_Pnt(0.0, 0.0, 0.0);
-                            gp_Ax2 Axe = new gp_Ax2(P0, D);
+                            Point3D P0 = new Point3D(0.0, 0.0, 0.0);
+                            Frame3D Axe = new Frame3D(P0, D);
                             D = Axe.XDirection();
                             V.SetXYZ(D.XYZ());
                             V.Normalize();
                         }
                     }
-                    TLaw = new GeomFill_ConstantBiNormal(new gp_Dir(V));
+                    TLaw = new GeomFill_ConstantBiNormal(new Direction3D(V));
                     break;
                 }
 
             default:
                 {
-                    throw new Standard_ConstructionError("GeomFill::Init : Unknown Option");
+                    throw new ConstructionErrorException("GeomFill::Init : Unknown Option");
                 }
         }
 
@@ -440,7 +443,7 @@ public sealed class GeomFill_Pipe
             myLoc = new GeomFill_CurveAndTrihedron(TLaw);
             myLoc.SetCurve(myAdpPath);
             GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
-            Place.Perform(Precision.Confusion());
+            Place.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
             param = Place.ParameterOnPath();
             Sect = Place.Section(false);
 
@@ -462,26 +465,26 @@ public sealed class GeomFill_Pipe
         myLoc = new GeomFill_CurveAndTrihedron(TLaw);
         myLoc.SetCurve(myAdpPath);
         GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
-        Place.Perform(myAdpPath, Precision.Confusion());
+        Place.Perform(myAdpPath, global::Kerf.Engine.Foundation.Precision.Confusion());
         Sect = Place.Section(false);
 
         mySec = new GeomFill_UniformSection(Sect, myAdpPath.FirstParameter(), myAdpPath.LastParameter());
     }
 
-    public void Init(Geom_Curve Path, Geom_Curve FirstSect, in gp_Dir Direction)
+    public void Init(Geom_Curve Path, Geom_Curve FirstSect, in Direction3D Direction)
     {
         Init();
 
         Geom_Curve Sect;
         myAdpPath = new GeomAdaptor_Curve((Geom_Curve)Path.Copy());
-        gp_Vec V = new gp_Vec();
+        Vector3D V = new Vector3D();
         V.SetXYZ(Direction.XYZ());
-        GeomFill_ConstantBiNormal TLaw = new GeomFill_ConstantBiNormal(new gp_Dir(V));
+        GeomFill_ConstantBiNormal TLaw = new GeomFill_ConstantBiNormal(new Direction3D(V));
 
         myLoc = new GeomFill_CurveAndTrihedron(TLaw);
         myLoc.SetCurve(myAdpPath);
         GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, FirstSect);
-        Place.Perform(Precision.Confusion());
+        Place.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
         Sect = Place.Section(false);
 
         mySec = new GeomFill_UniformSection(Sect, Path.FirstParameter(), Path.LastParameter());
@@ -508,7 +511,7 @@ public sealed class GeomFill_Pipe
             for (i = 1; i <= NSections.Length(); i++)
             {
                 GeomFill_SectionPlacement Place = new GeomFill_SectionPlacement(myLoc, NSections[i]);
-                Place.Perform(Precision.Confusion());
+                Place.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
                 SeqP.Append(Place.ParameterOnPath());
                 SeqC.Append(Place.Section(false));
             }
@@ -540,9 +543,9 @@ public sealed class GeomFill_Pipe
             }
             for (i = 1; i < NSections.Length(); i++)
             {
-                if (Math.Abs(SeqP.Value(i + 1) - SeqP.Value(i)) < Precision.PConfusion())
+                if (Math.Abs(SeqP.Value(i + 1) - SeqP.Value(i)) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    throw new Standard_ConstructionError("GeomFill_Pipe::Init with NSections : invalid parameters");
+                    throw new ConstructionErrorException("GeomFill_Pipe::Init with NSections : invalid parameters");
                 }
             }
 
@@ -583,10 +586,10 @@ public sealed class GeomFill_Pipe
             SeqP.Clear();
             // sequence of sections
             GeomFill_SectionPlacement Pl1 = new GeomFill_SectionPlacement(myLoc, FirstSect);
-            Pl1.Perform(first, Precision.Confusion());
+            Pl1.Perform(first, global::Kerf.Engine.Foundation.Precision.Confusion());
             SeqC.Append(Pl1.Section(false));
             GeomFill_SectionPlacement Pl2 = new GeomFill_SectionPlacement(myLoc, LastSect);
-            Pl2.Perform(first, Precision.Confusion());
+            Pl2.Perform(first, global::Kerf.Engine.Foundation.Precision.Confusion());
             SeqC.Append(Pl2.Section(false));
             // sequence of associated parameters
             SeqP.Append(first);
@@ -646,7 +649,7 @@ public sealed class GeomFill_Pipe
     /// Builds the pipe: a particular case where one is detected, else an approximation to Tol with the continuity
     /// Conti, at most degree MaxDegree and NbMaxSegment spans.
     /// </summary>
-    public void Perform(double Tol, bool Polynomial, GeomAbs_Shape Conti = GeomAbs_C1, int DegMax = 11,
+    public void Perform(double Tol, bool Polynomial, Continuity Conti = C1, int DegMax = 11,
                         int NbMaxSegment = 30)
     {
         if (myStatus == GeomFill_ImpossibleContact)
@@ -654,28 +657,28 @@ public sealed class GeomFill_Pipe
             return;
         }
 
-        GeomAbs_Shape TheConti;
+        Continuity TheConti;
         switch (Conti)
         {
-            case GeomAbs_C0:
+            case C0:
                 {
-                    TheConti = GeomAbs_C0;
+                    TheConti = C0;
                 }
                 break;
-            case GeomAbs_G1:
-            case GeomAbs_C1:
+            case G1:
+            case C1:
                 {
-                    TheConti = GeomAbs_C1;
+                    TheConti = C1;
                 }
                 break;
-            case GeomAbs_G2:
-            case GeomAbs_C2:
+            case G2:
+            case C2:
                 {
-                    TheConti = GeomAbs_C2;
+                    TheConti = C2;
                 }
                 break;
             default:
-                TheConti = GeomAbs_C2; // On ne sait pas faire mieux !
+                TheConti = C2; // On ne sait pas faire mieux !
                 break;
         }
         Approx_SweepFunction? Func;
@@ -744,18 +747,18 @@ public sealed class GeomFill_Pipe
     {
         bool Ok = false;
         // -------    Cas du Cylindre  --------------------------
-        if (myAdpPath!.GetType() == GeomAbs_Line && myAdpFirstSect!.GetType() == GeomAbs_Line
-            && myAdpLastSect!.GetType() == GeomAbs_Line)
+        if (myAdpPath!.GetType() == Line && myAdpFirstSect!.GetType() == Line
+            && myAdpLastSect!.GetType() == Line)
         {
             // try to generate a cylinder.
-            gp_Ax1 A0 = myAdpPath.Line().Position();
-            gp_Ax1 A1 = myAdpFirstSect.Line().Position();
-            gp_Ax1 A2 = myAdpLastSect.Line().Position();
+            Axis3D A0 = myAdpPath.Line().Position();
+            Axis3D A1 = myAdpFirstSect.Line().Position();
+            Axis3D A2 = myAdpLastSect.Line().Position();
             // direction must be the same.
-            gp_Dir D0 = A0.Direction();
-            gp_Dir D1 = A1.Direction();
-            gp_Dir D2 = A2.Direction();
-            if (!D0.IsEqual(D1, Precision.Angular()) || !D1.IsEqual(D2, Precision.Angular()))
+            Direction3D D0 = A0.Direction();
+            Direction3D D1 = A1.Direction();
+            Direction3D D2 = A2.Direction();
+            if (!D0.IsEqual(D1, global::Kerf.Engine.Foundation.Precision.Angular()) || !D1.IsEqual(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return Ok;
             }
@@ -764,34 +767,34 @@ public sealed class GeomFill_Pipe
             double L0 = myAdpPath.LastParameter() - myAdpPath.FirstParameter();
             double L1 = myAdpFirstSect.LastParameter() - myAdpFirstSect.FirstParameter();
             double L2 = myAdpLastSect.LastParameter() - myAdpLastSect.FirstParameter();
-            if (Math.Abs(L1 - L0) > Precision.Confusion() || Math.Abs(L2 - L0) > Precision.Confusion())
+            if (Math.Abs(L1 - L0) > global::Kerf.Engine.Foundation.Precision.Confusion() || Math.Abs(L2 - L0) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return Ok;
             }
 
             // the first points must be normal to the path.
-            gp_Pnt P0 = myAdpPath.Value(myAdpPath.FirstParameter());
-            gp_Pnt P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
-            gp_Pnt P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
-            gp_Dir V1 = new gp_Dir(new gp_Vec(P0, P1));
-            gp_Dir V2 = new gp_Dir(new gp_Vec(P0, P2));
-            if (Math.Abs(V1.Dot(D0)) > Precision.Confusion() || Math.Abs(V2.Dot(D0)) > Precision.Confusion())
+            Point3D P0 = myAdpPath.Value(myAdpPath.FirstParameter());
+            Point3D P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
+            Point3D P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
+            Direction3D V1 = new Direction3D(new Vector3D(P0, P1));
+            Direction3D V2 = new Direction3D(new Vector3D(P0, P2));
+            if (Math.Abs(V1.Dot(D0)) > global::Kerf.Engine.Foundation.Precision.Confusion() || Math.Abs(V2.Dot(D0)) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return Ok;
             }
 
             // the result is a cylindrical surface.
-            gp_Dir X = V1, Y = V2, ZRef;
+            Direction3D X = V1, Y = V2, ZRef;
             ZRef = X.Crossed(Y);
 
-            gp_Ax3 Axis = new gp_Ax3(A0.Location(), D0, X);
+            CoordinateSystem Axis = new CoordinateSystem(A0.Location(), D0, X);
             if (ZRef.Dot(D0) < 0.0)
             {
                 Axis.YReverse();
             }
 
             // rotate the surface to set the iso U = 0 not in the result.
-            Axis.Rotate(new gp_Ax1(P0, ZRef), -M_PI / 2.0);
+            Axis.Rotate(new Axis3D(P0, ZRef), -M_PI / 2.0);
 
             mySurface = new Geom_CylindricalSurface(Axis, myRadius);
             double Alpha = V1.AngleWithRef(V2, ZRef);
@@ -804,8 +807,8 @@ public sealed class GeomFill_Pipe
             myStatus = GeomFill_PipeOk;
         }
         // -----------    Cas du tore  ----------------------------------
-        else if (myAdpPath.GetType() == GeomAbs_Circle && myAdpFirstSect!.GetType() == GeomAbs_Circle
-                 && myAdpLastSect!.GetType() == GeomAbs_Circle)
+        else if (myAdpPath.GetType() == Circle && myAdpFirstSect!.GetType() == Circle
+                 && myAdpLastSect!.GetType() == Circle)
         {
             // try to generate a toroidal surface.
             // les 3 cercles doivent avoir meme angle d'ouverture
@@ -813,52 +816,52 @@ public sealed class GeomFill_Pipe
             double Alp1 = myAdpFirstSect.FirstParameter() - myAdpFirstSect.LastParameter();
             double Alp2 = myAdpLastSect.FirstParameter() - myAdpLastSect.LastParameter();
 
-            if (Math.Abs(Alp0 - Alp1) > Precision.Angular() || Math.Abs(Alp0 - Alp2) > Precision.Angular())
+            if (Math.Abs(Alp0 - Alp1) > global::Kerf.Engine.Foundation.Precision.Angular() || Math.Abs(Alp0 - Alp2) > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return Ok;
             }
 
-            gp_Ax2 A0 = myAdpPath.Circle().Position();
-            gp_Ax2 A1 = myAdpFirstSect.Circle().Position();
-            gp_Ax2 A2 = myAdpLastSect.Circle().Position();
-            gp_Dir D0 = A0.Direction();
-            gp_Dir D1 = A1.Direction();
-            gp_Dir D2 = A2.Direction();
-            gp_Pnt P0 = myAdpPath.Value(myAdpPath.FirstParameter());
-            gp_Pnt P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
-            gp_Pnt P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
+            Frame3D A0 = myAdpPath.Circle().Position();
+            Frame3D A1 = myAdpFirstSect.Circle().Position();
+            Frame3D A2 = myAdpLastSect.Circle().Position();
+            Direction3D D0 = A0.Direction();
+            Direction3D D1 = A1.Direction();
+            Direction3D D2 = A2.Direction();
+            Point3D P0 = myAdpPath.Value(myAdpPath.FirstParameter());
+            Point3D P1 = myAdpFirstSect.Value(myAdpFirstSect.FirstParameter());
+            Point3D P2 = myAdpLastSect.Value(myAdpLastSect.FirstParameter());
 
             // les 3 directions doivent etre egales.
-            if (!D0.IsEqual(D1, Precision.Angular()) || !D1.IsEqual(D2, Precision.Angular()))
+            if (!D0.IsEqual(D1, global::Kerf.Engine.Foundation.Precision.Angular()) || !D1.IsEqual(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return Ok;
             }
 
             // les 3 ax1 doivent etre confondus.
-            gp_Lin L = new gp_Lin(A0.Axis());
-            if (!L.Contains(A1.Location(), Precision.Confusion()) || !L.Contains(A2.Location(), Precision.Confusion()))
+            Line3D L = new Line3D(A0.Axis());
+            if (!L.Contains(A1.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()) || !L.Contains(A2.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return Ok;
             }
 
             // les 3 premiers points doivent etre dans la meme section.
-            gp_Dir V1 = new gp_Dir(new gp_Vec(P0, P1));
-            gp_Dir V2 = new gp_Dir(new gp_Vec(P0, P2));
-            gp_Circ Ci = myAdpPath.Circle();
-            gp_Vec YRef = ElCLib.CircleDN(myAdpPath.FirstParameter(), A0, Ci.Radius(), 1);
-            if (Math.Abs(V1.Dot(new gp_Dir(YRef))) > Precision.Confusion()
-                || Math.Abs(V2.Dot(new gp_Dir(YRef))) > Precision.Confusion())
+            Direction3D V1 = new Direction3D(new Vector3D(P0, P1));
+            Direction3D V2 = new Direction3D(new Vector3D(P0, P2));
+            Circle3D Ci = myAdpPath.Circle();
+            Vector3D YRef = global::Kerf.Engine.Geometry.ElCLib.CircleDN(myAdpPath.FirstParameter(), A0, Ci.Radius(), 1);
+            if (Math.Abs(V1.Dot(new Direction3D(YRef))) > global::Kerf.Engine.Foundation.Precision.Confusion()
+                || Math.Abs(V2.Dot(new Direction3D(YRef))) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return Ok;
             }
 
             // OK it`s a Toroidal Surface !!  OUF !!
-            gp_Torus T = new gp_Torus(new gp_Ax3(A0), Ci.Radius(), myRadius);
-            gp_Vec XRef = new gp_Vec(A0.Location(), P0);
+            Torus T = new Torus(new CoordinateSystem(A0), Ci.Radius(), myRadius);
+            Vector3D XRef = new Vector3D(A0.Location(), P0);
             // au maximum on fait un tore d`ouverture en V = PI
-            double VV1 = V1.AngleWithRef(new gp_Dir(XRef), new gp_Dir(YRef));
-            double VV2 = V2.AngleWithRef(new gp_Dir(XRef), new gp_Dir(YRef));
-            double deltaV = V2.AngleWithRef(V1, new gp_Dir(YRef));
+            double VV1 = V1.AngleWithRef(new Direction3D(XRef), new Direction3D(YRef));
+            double VV2 = V2.AngleWithRef(new Direction3D(XRef), new Direction3D(YRef));
+            double deltaV = V2.AngleWithRef(V1, new Direction3D(YRef));
             if (deltaV < 0.0)
             {
                 T.VReverse();
@@ -886,7 +889,7 @@ public sealed class GeomFill_Pipe
 
         if (myType != 4)
         {
-            throw new Standard_ConstructionError("GeomFill_Pipe");
+            throw new ConstructionErrorException("GeomFill_Pipe");
         }
         GeomFill_SweepSectionGenerator Section = new GeomFill_SweepSectionGenerator(myAdpPath!, myAdpFirstSect!,
                                                                                     myAdpLastSect!, myRadius);
@@ -895,8 +898,8 @@ public sealed class GeomFill_Pipe
 
         GeomFill_Line Line = new GeomFill_Line(Section.NbSections());
         int NbIt = 0;
-        double T3d = Precision.Approximation();
-        double T2d = Precision.PApproximation();
+        double T3d = global::Kerf.Engine.Foundation.Precision.Approximation();
+        double T2d = global::Kerf.Engine.Foundation.Precision.PApproximation();
         GeomFill_AppSweep App = new GeomFill_AppSweep(4, 8, T3d, T2d, NbIt, WithParameters);
 
         App.Perform(Line, Section, 30);

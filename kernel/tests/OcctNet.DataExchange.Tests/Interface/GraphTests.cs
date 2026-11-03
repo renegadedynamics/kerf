@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static OcctNet.DataExchange.Tests.Interface.ToyNorm;
 
 namespace OcctNet.DataExchange.Tests.Interface;
@@ -258,7 +259,7 @@ public class GraphTests
         Assert.Equal("A'", aCopyA.Name);
         Assert.Equal("B' C'", string.Join(" ", aCopyA.Refs.Select(r => r.Name)));
         Assert.Same(aCopyA.Refs[1], aCopyA.Refs[0].Refs[0]); // C copied once
-        Assert.True(aTool.Search(B, out Standard_Transient? aCopyB));
+        Assert.True(aTool.Search(B, out Transient? aCopyB));
         Assert.Same(aCopyA.Refs[0], aCopyB);
 
         var aNewModel = new ToyModel();

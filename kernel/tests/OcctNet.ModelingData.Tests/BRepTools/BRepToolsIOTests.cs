@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
 
@@ -28,7 +32,7 @@ public class BRepToolsIOTests
     internal static TopoDS_Shape Read(string theText)
     {
         var aReader = new StringReader(theText);
-        Standard_Stream.SetInputLength(aReader, theText.Length);
+        StreamUtilities.SetInputLength(aReader, theText.Length);
         BRepTools.Read(out TopoDS_Shape aShape, aReader);
         return aShape;
     }
@@ -44,7 +48,7 @@ public class BRepToolsIOTests
     public void A_vertex_is_written_as_OCCT_writes_it()
     {
         TopoDS_Vertex aV = new();
-        theBuilder.MakeVertex(ref aV, new gp_Pnt(1, 2.5, -3), 1e-7);
+        theBuilder.MakeVertex(ref aV, new Point3D(1, 2.5, -3), 1e-7);
         Assert.Equal("\nCASCADE Topology V3, (c) Open Cascade\n"
                      + "Locations 0\n"
                      + "Curve2ds 0\n"
@@ -72,7 +76,7 @@ public class BRepToolsIOTests
     [Fact]
     public void An_edge_records_its_flags_curve_and_range()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(3, 4, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(3, 4, 0));
         string aText = Write(anEdge);
         // the edge: tolerance, SameParameter, SameRange, Degenerated; its 3D curve: index, location, range
         Assert.Contains("\nEd\n 1e-07 1 1 0\n1  1 0 0 5\n0\n", aText, StringComparison.Ordinal);
@@ -84,24 +88,24 @@ public class BRepToolsIOTests
     [Fact]
     public void Locations_are_written_elementary_then_complex()
     {
-        var aT1 = new gp_Trsf();
-        aT1.SetTranslation(new gp_Vec(1, 2, 3));
-        var aT2 = new gp_Trsf();
-        aT2.SetRotation(new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)), Math.PI / 2);
-        var aL1 = new TopLoc_Location(aT1);
-        var aL2 = new TopLoc_Location(aT2);
-        TopLoc_Location aComplex = aL1 * aL2.Powered(2);
+        var aT1 = new Transform3D();
+        aT1.SetTranslation(new Vector3D(1, 2, 3));
+        var aT2 = new Transform3D();
+        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), Math.PI / 2);
+        var aL1 = new Placement(aT1);
+        var aL2 = new Placement(aT2);
+        Placement aComplex = aL1 * aL2.Powered(2);
 
         var aSet = new TopTools_LocationSet();
-        Assert.Equal(0, aSet.Add(new TopLoc_Location()));
+        Assert.Equal(0, aSet.Add(new Placement()));
         int anIndex = aSet.Add(aComplex);
         Assert.Equal(3, anIndex);
         Assert.Equal(anIndex, aSet.Add(aComplex));
         // a product's right-hand factor is its first item (TopLoc_Location::Multiplied prepends), added first
         Assert.Equal(1, aSet.Index(aL2));
         Assert.Equal(2, aSet.Index(aL1));
-        Assert.True(aSet.Location(4).IsIdentity());
-        Assert.True(aSet.Location(0).IsIdentity());
+        Assert.True(aSet.Location(4).IsIdentity);
+        Assert.True(aSet.Location(0).IsIdentity);
 
         var aWriter = new StringWriter();
         aSet.Write(aWriter);
@@ -117,7 +121,7 @@ public class BRepToolsIOTests
                      + "              0               0               1               3 \n"
                      + "2  1 2 2 1 0\n",
                      aText);
-        Assert.Equal(6, Standard_Stream.Precision(aWriter));
+        Assert.Equal(6, StreamUtilities.Precision(aWriter));
 
         var aRead = new TopTools_LocationSet();
         aRead.Read(new StringReader(aText));
@@ -125,7 +129,7 @@ public class BRepToolsIOTests
         Assert.True(aRead.Location(3).Transformation().TranslationPart().IsEqual(aComplex.Transformation().TranslationPart(), 1e-14));
         Assert.Equal(2, aRead.Location(3).FirstPower());
         Assert.Equal(1, aRead.Location(3).NextLocation().FirstPower());
-        Assert.True(aRead.Location(3).NextLocation().NextLocation().IsIdentity());
+        Assert.True(aRead.Location(3).NextLocation().NextLocation().IsIdentity);
 
         var aDump = new StringWriter();
         aRead.Dump(aDump);
@@ -194,36 +198,36 @@ public class BRepToolsIOTests
             TopoDS_Shape aRead = Read(Write(aShape, TopTools_FormatVersion_VERSION_3, true, true));
             foreach (TopoDS_Shape aSub in SubShapes(aRead))
             {
-                Assert.True(aSub.TShape()!.IsFrozen(), aName);
+                Assert.True(aSub.TShape()!.IsFrozen, aName);
                 Assert.True(aSub.Locked(), aName);
                 Assert.False(aSub.TShape()!.LockedFlag(), aName);
                 if (aSub.TShape() is BRep_TEdge aTE)
                 {
                     foreach (BRep_CurveRepresentation aCR in aTE.CurveRepresentations())
                     {
-                        Assert.True(aCR.IsFrozen());
+                        Assert.True(aCR.IsFrozen);
                         if (aCR.IsCurve3D() && aCR.Curve3D() is { } aC)
                         {
-                            Assert.True(aC.IsFrozen());
+                            Assert.True(aC.IsFrozen);
                         }
 
                         if (aCR.IsCurveOnSurface())
                         {
-                            Assert.True(aCR.PCurve()!.IsFrozen());
-                            Assert.True(aCR.Surface()!.IsFrozen());
+                            Assert.True(aCR.PCurve()!.IsFrozen);
+                            Assert.True(aCR.Surface()!.IsFrozen);
                         }
 
                         if (aCR.IsPolygonOnTriangulation())
                         {
-                            Assert.True(aCR.PolygonOnTriangulation()!.IsFrozen());
-                            Assert.True(aCR.Triangulation()!.IsFrozen());
+                            Assert.True(aCR.PolygonOnTriangulation()!.IsFrozen);
+                            Assert.True(aCR.Triangulation()!.IsFrozen);
                         }
                     }
                 }
                 else if (aSub.TShape() is BRep_TFace aTF)
                 {
-                    Assert.True(aTF.Surface() is null || aTF.Surface()!.IsFrozen());
-                    Assert.True(aTF.Triangulation() is null || aTF.Triangulation()!.IsFrozen());
+                    Assert.True(aTF.Surface() is null || aTF.Surface()!.IsFrozen);
+                    Assert.True(aTF.Triangulation() is null || aTF.Triangulation()!.IsFrozen);
                 }
             }
         }
@@ -262,7 +266,7 @@ public class BRepToolsIOTests
             for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
             {
                 TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-                BRep_Tool.UVPoints(anEdge, aF, out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+                BRep_Tool.UVPoints(anEdge, aF, out Point2D aP1, out Point2D aP2);
                 Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anEdge, aF, out double aFirst, out double aLast)!;
                 Assert.True(aP1.Distance(aPC.Value(aFirst)) < 1e-12, aWhich);
                 Assert.True(aP2.Distance(aPC.Value(aLast)) < 1e-12, aWhich);
@@ -281,13 +285,13 @@ public class BRepToolsIOTests
         Assert.DoesNotContain("Triangulations 0\n", aWithout, StringComparison.Ordinal);
         Assert.True(aWith.Length > aWithout.Length);
         // version 2 has no normals
-        Assert.False(BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aV2)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!.HasNormals());
+        Assert.False(BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aV2)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!.HasNormals);
 
-        Poly_Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aWith)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!;
-        Assert.True(aTri.HasNormals());
-        Assert.True(aTri.HasUVNodes());
+        Triangulation aTri = BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aWith)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!;
+        Assert.True(aTri.HasNormals);
+        Assert.True(aTri.HasUVNodes);
         aTri = BRep_Tool.Triangulation(TopoDS.Face(SubShapes(Read(aWithout)).First(s => s.ShapeType() == TopAbs_FACE)), out _)!;
-        Assert.False(aTri.HasNormals());
+        Assert.False(aTri.HasNormals);
 
         // a face with only a triangulation is always written with its triangulation and normals
         TopoDS_Shape anOnly = BinTestShapes.TriangulationOnlyFace();
@@ -337,9 +341,9 @@ public class BRepToolsIOTests
         Assert.True(Read("hello\nworld\n").IsNull());
         Assert.True(Read("").IsNull());
         // a version line longer than getline's 99 characters ends the search, as in C++
-        Assert.True(Read(new string('x', 150) + "\n" + Write(TestShapes.Vertex(new gp_Pnt()))).IsNull());
+        Assert.True(Read(new string('x', 150) + "\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull());
         // lines before the version line are skipped
-        Assert.False(Read("anything\n" + Write(TestShapes.Vertex(new gp_Pnt()))).IsNull());
+        Assert.False(Read("anything\n" + Write(TestShapes.Vertex(new Point3D()))).IsNull());
     }
 
     [Fact]
@@ -365,7 +369,7 @@ public class BRepToolsIOTests
         Assert.Equal(anIndex, aSet.Index(aBox));
         Assert.True(aSet.Shape(anIndex).IsSame(aBox));
         Assert.Equal(0, aSet.Add(new TopoDS_Shape()));
-        Assert.Equal(anIndex, aSet.Add(aBox.Moved(new TopLoc_Location(new gp_Trsf()))));
+        Assert.Equal(anIndex, aSet.Add(aBox.Moved(new Placement(new Transform3D()))));
 
         var anExtent = new StringWriter();
         aSet.DumpExtent(anExtent);
@@ -419,9 +423,9 @@ public class BRepToolsIOTests
     {
         TopoDS_Shape aShape = TestShapes.Frozen(BinTestShapes.MeshedBox(true, false));
         var aWriter = new StringWriter();
-        Standard_Stream.Precision(aWriter, 9);
+        StreamUtilities.Precision(aWriter, 9);
         BRepTools.Write(aShape, aWriter);
-        Assert.Equal(9, Standard_Stream.Precision(aWriter));
+        Assert.Equal(9, StreamUtilities.Precision(aWriter));
         Assert.Equal(aWriter.ToString(), Write(aShape));
     }
 }

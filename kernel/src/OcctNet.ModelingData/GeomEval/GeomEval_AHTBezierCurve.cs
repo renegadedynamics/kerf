@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -12,17 +15,17 @@ namespace Occt;
 /// {1, t, ..., t^k, sinh(alpha*t), cosh(alpha*t), sin(beta*t), cos(beta*t)}, where the hyperbolic pair is present
 /// when alpha &gt; 0 and the trigonometric pair when beta &gt; 0. The number of poles must equal the number of
 /// basis functions, algDegree + 1 + 2*(alpha&gt;0) + 2*(beta&gt;0). The parameter range is [0, 1].
-/// Reversal and transformation are not supported (they throw <see cref="Standard_NotImplemented"/>).
+/// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
 {
     // The numerators (N) and denominators (W) of the derivatives up to the order evaluated.
     private struct PolyEvalData
     {
-        public gp_XYZ N0;
-        public gp_XYZ N1;
-        public gp_XYZ N2;
-        public gp_XYZ N3;
+        public Xyz N0;
+        public Xyz N1;
+        public Xyz N2;
+        public Xyz N3;
         public double W0;
         public double W1;
         public double W2;
@@ -51,7 +54,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
 
     // The C++ template evalPolynomialNonRational<theMaxOrder>.
     private static void evalPolynomialNonRational(int theMaxOrder,
-                                                  NCollection_Array1<gp_Pnt> thePoles,
+                                                  NCollection_Array1<Point3D> thePoles,
                                                   int theDegree,
                                                   double theU,
                                                   out PolyEvalData theData)
@@ -80,7 +83,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
 
     // The C++ template evalPolynomialRational<theMaxOrder>.
     private static void evalPolynomialRational(int theMaxOrder,
-                                               NCollection_Array1<gp_Pnt> thePoles,
+                                               NCollection_Array1<Point3D> thePoles,
                                                NCollection_Array1<double> theWeights,
                                                int theDegree,
                                                double theU,
@@ -121,7 +124,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
     // The C++ template evalMixedAHT<theMaxOrder, theIsRational>.
     private static void evalMixedAHT(int theMaxOrder,
                                      bool theIsRational,
-                                     NCollection_Array1<gp_Pnt> thePoles,
+                                     NCollection_Array1<Point3D> thePoles,
                                      NCollection_Array1<double> theWeights,
                                      int theAlgDegree,
                                      double theAlpha,
@@ -141,7 +144,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         double aPowM3 = 0.0;
         for (int k = 0; k <= theAlgDegree; ++k)
         {
-            gp_XYZ aPole = thePoles.Value(aPoleIdx++).XYZ();
+            Xyz aPole = thePoles.Value(aPoleIdx++).XYZ();
             double aB0 = aPow;
             double aB1 = 0.0;
             double aB2 = 0.0;
@@ -211,8 +214,8 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             double aAlpha2 = theAlpha * theAlpha;
             double aAlpha3 = aAlpha2 * theAlpha;
 
-            gp_XYZ aPoleSinh = thePoles.Value(aPoleIdx++).XYZ();
-            gp_XYZ aPoleCosh = thePoles.Value(aPoleIdx++).XYZ();
+            Xyz aPoleSinh = thePoles.Value(aPoleIdx++).XYZ();
+            Xyz aPoleCosh = thePoles.Value(aPoleIdx++).XYZ();
             double aWiSinh = 1.0;
             double aWiCosh = 1.0;
             if (theIsRational)
@@ -284,8 +287,8 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             double aBeta2 = theBeta * theBeta;
             double aBeta3 = aBeta2 * theBeta;
 
-            gp_XYZ aPoleSin = thePoles.Value(aPoleIdx++).XYZ();
-            gp_XYZ aPoleCos = thePoles.Value(aPoleIdx++).XYZ();
+            Xyz aPoleSin = thePoles.Value(aPoleIdx++).XYZ();
+            Xyz aPoleCos = thePoles.Value(aPoleIdx++).XYZ();
             double aWiSin = 1.0;
             double aWiCos = 1.0;
             if (theIsRational)
@@ -350,7 +353,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         }
     }
 
-    private NCollection_Array1<gp_Pnt> myPoles;
+    private NCollection_Array1<Point3D> myPoles;
     private NCollection_Array1<double> myWeights;
     private int myAlgDegree;
     private double myAlpha;
@@ -366,11 +369,11 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
     /// <param name="theAlgDegree">The degree of the polynomial part (&gt;= 0).</param>
     /// <param name="theAlpha">The hyperbolic frequency (&gt;= 0; 0 leaves the hyperbolic pair out).</param>
     /// <param name="theBeta">The trigonometric frequency (&gt;= 0; 0 leaves the trigonometric pair out).</param>
-    /// <exception cref="Standard_ConstructionError">A parameter is out of range or the number of poles is wrong.</exception>
-    public GeomEval_AHTBezierCurve(NCollection_Array1<gp_Pnt> thePoles, int theAlgDegree, double theAlpha,
+    /// <exception cref="ConstructionErrorException">A parameter is out of range or the number of poles is wrong.</exception>
+    public GeomEval_AHTBezierCurve(NCollection_Array1<Point3D> thePoles, int theAlgDegree, double theAlpha,
                                      double theBeta)
     {
-        myPoles = new NCollection_Array1<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array1<Point3D>(thePoles);
         // OCCT: a non-rational curve has one weight, left uninitialised (0 here), which Weights() returns.
         myWeights = new NCollection_Array1<double>(1, 1);
         myAlgDegree = theAlgDegree;
@@ -379,20 +382,20 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         myRational = false;
         if (theAlgDegree < 0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: algebraic degree must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: algebraic degree must be >= 0");
         }
         if (theAlpha < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: alpha must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: alpha must be >= 0");
         }
         if (theBeta < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: beta must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: beta must be >= 0");
         }
         int aDim = basisDimension(theAlgDegree, theAlpha, theBeta);
         if (thePoles.Length() != aDim)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierCurve: NbPoles must equal basisDimension");
         }
     }
@@ -403,11 +406,11 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
     /// <param name="theAlgDegree">The degree of the polynomial part (&gt;= 0).</param>
     /// <param name="theAlpha">The hyperbolic frequency (&gt;= 0).</param>
     /// <param name="theBeta">The trigonometric frequency (&gt;= 0).</param>
-    /// <exception cref="Standard_ConstructionError">A parameter is out of range or an array has the wrong size.</exception>
-    public GeomEval_AHTBezierCurve(NCollection_Array1<gp_Pnt> thePoles, NCollection_Array1<double> theWeights,
+    /// <exception cref="ConstructionErrorException">A parameter is out of range or an array has the wrong size.</exception>
+    public GeomEval_AHTBezierCurve(NCollection_Array1<Point3D> thePoles, NCollection_Array1<double> theWeights,
                                      int theAlgDegree, double theAlpha, double theBeta)
     {
-        myPoles = new NCollection_Array1<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array1<Point3D>(thePoles);
         myWeights = new NCollection_Array1<double>(theWeights);
         myAlgDegree = theAlgDegree;
         myAlpha = theAlpha;
@@ -415,38 +418,38 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         myRational = true;
         if (theAlgDegree < 0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: algebraic degree must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: algebraic degree must be >= 0");
         }
         if (theAlpha < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: alpha must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: alpha must be >= 0");
         }
         if (theBeta < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: beta must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierCurve: beta must be >= 0");
         }
         int aDim = basisDimension(theAlgDegree, theAlpha, theBeta);
         if (thePoles.Length() != aDim)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierCurve: NbPoles must equal basisDimension");
         }
         if (theWeights.Length() != thePoles.Length())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierCurve: weights array size must match poles array size");
         }
         for (int anIdx = theWeights.Lower(); anIdx <= theWeights.Upper(); ++anIdx)
         {
             if (theWeights.Value(anIdx) <= 0.0)
             {
-                throw new Standard_ConstructionError("GeomEval_AHTBezierCurve: all weights must be > 0");
+                throw new ConstructionErrorException("GeomEval_AHTBezierCurve: all weights must be > 0");
             }
         }
     }
 
     /// <summary>The poles (a copy, indexed from 0).</summary>
-    public PackedList<gp_Pnt> Poles() => myPoles.ToPackedList();
+    public PackedList<Point3D> Poles() => myPoles.ToPackedList();
 
     /// <summary>The weights (a copy, indexed from 0). A non-rational curve has one weight, 0, as OCCT's.</summary>
     public PackedList<double> Weights() => myWeights.ToPackedList();
@@ -467,22 +470,22 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
     public bool IsRational() => myRational;
 
     /// <summary>The start point C(0).</summary>
-    public override gp_Pnt StartPoint() => EvalD0(0.0);
+    public override Point3D StartPoint() => EvalD0(0.0);
 
     /// <summary>The end point C(1).</summary>
-    public override gp_Pnt EndPoint() => EvalD0(1.0);
+    public override Point3D EndPoint() => EvalD0(1.0);
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void Reverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_AHTBezierCurve::Reverse");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierCurve::Reverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double ReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_AHTBezierCurve::ReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierCurve::ReversedParameter");
     }
 
     /// <summary>0.</summary>
@@ -492,15 +495,15 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
     public override double LastParameter() => 1.0;
 
     /// <summary>True if the start and end points coincide (within Precision::Confusion()).</summary>
-    public override bool IsClosed() => StartPoint().Distance(EndPoint()) <= Precision.Confusion();
+    public override bool IsClosed() => StartPoint().Distance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Confusion();
 
     public override bool IsPeriodic() => false;
 
-    public override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public override Continuity Continuity() => CN;
 
     public override bool IsCN(int N) => true;
 
-    public override gp_Pnt EvalD0(double U)
+    public override Point3D EvalD0(double U)
     {
         if (myAlpha <= 0.0 && myBeta <= 0.0)
         {
@@ -508,22 +511,22 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             if (!myRational)
             {
                 evalPolynomialNonRational(0, myPoles, myAlgDegree, U, out aPoly);
-                return new gp_Pnt(aPoly.N0);
+                return new Point3D(aPoly.N0);
             }
 
             evalPolynomialRational(0, myPoles, myWeights, myAlgDegree, U, out aPoly);
-            return new gp_Pnt(aPoly.N0 / aPoly.W0);
+            return new Point3D(aPoly.N0 / aPoly.W0);
         }
 
         PolyEvalData aMixed;
         if (!myRational)
         {
             evalMixedAHT(0, false, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
-            return new gp_Pnt(aMixed.N0);
+            return new Point3D(aMixed.N0);
         }
 
         evalMixedAHT(0, true, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
-        return new gp_Pnt(aMixed.N0 / aMixed.W0);
+        return new Point3D(aMixed.N0 / aMixed.W0);
     }
 
     public override ResD1 EvalD1(double U)
@@ -535,15 +538,15 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             if (!myRational)
             {
                 evalPolynomialNonRational(1, myPoles, myAlgDegree, U, out aPoly);
-                aPolyResult.Point = new gp_Pnt(aPoly.N0);
-                aPolyResult.D1 = new gp_Vec(aPoly.N1);
+                aPolyResult.Point = new Point3D(aPoly.N0);
+                aPolyResult.D1 = new Vector3D(aPoly.N1);
                 return aPolyResult;
             }
 
             evalPolynomialRational(1, myPoles, myWeights, myAlgDegree, U, out aPoly);
             double aPolyInvW = 1.0 / aPoly.W0;
-            aPolyResult.Point = new gp_Pnt(aPoly.N0 * aPolyInvW);
-            aPolyResult.D1 = new gp_Vec((aPoly.N1 * aPoly.W0 - aPoly.N0 * aPoly.W1) * (aPolyInvW * aPolyInvW));
+            aPolyResult.Point = new Point3D(aPoly.N0 * aPolyInvW);
+            aPolyResult.D1 = new Vector3D((aPoly.N1 * aPoly.W0 - aPoly.N0 * aPoly.W1) * (aPolyInvW * aPolyInvW));
             return aPolyResult;
         }
 
@@ -552,15 +555,15 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         if (!myRational)
         {
             evalMixedAHT(1, false, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
-            aResult.Point = new gp_Pnt(aMixed.N0);
-            aResult.D1 = new gp_Vec(aMixed.N1);
+            aResult.Point = new Point3D(aMixed.N0);
+            aResult.D1 = new Vector3D(aMixed.N1);
             return aResult;
         }
 
         evalMixedAHT(1, true, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
         double aInvW = 1.0 / aMixed.W0;
-        aResult.Point = new gp_Pnt(aMixed.N0 * aInvW);
-        aResult.D1 = new gp_Vec((aMixed.N1 * aMixed.W0 - aMixed.N0 * aMixed.W1) * (aInvW * aInvW));
+        aResult.Point = new Point3D(aMixed.N0 * aInvW);
+        aResult.D1 = new Vector3D((aMixed.N1 * aMixed.W0 - aMixed.N0 * aMixed.W1) * (aInvW * aInvW));
         return aResult;
     }
 
@@ -573,19 +576,19 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             if (!myRational)
             {
                 evalPolynomialNonRational(2, myPoles, myAlgDegree, U, out aPoly);
-                aPolyResult.Point = new gp_Pnt(aPoly.N0);
-                aPolyResult.D1 = new gp_Vec(aPoly.N1);
-                aPolyResult.D2 = new gp_Vec(aPoly.N2);
+                aPolyResult.Point = new Point3D(aPoly.N0);
+                aPolyResult.D1 = new Vector3D(aPoly.N1);
+                aPolyResult.D2 = new Vector3D(aPoly.N2);
                 return aPolyResult;
             }
 
             evalPolynomialRational(2, myPoles, myWeights, myAlgDegree, U, out aPoly);
             double aPolyInvW = 1.0 / aPoly.W0;
-            gp_XYZ aPolyC = aPoly.N0 * aPolyInvW;
-            gp_XYZ aPolyCD1 = (aPoly.N1 * aPoly.W0 - aPoly.N0 * aPoly.W1) * (aPolyInvW * aPolyInvW);
-            aPolyResult.Point = new gp_Pnt(aPolyC);
-            aPolyResult.D1 = new gp_Vec(aPolyCD1);
-            aPolyResult.D2 = new gp_Vec((aPoly.N2 - aPolyCD1 * (2.0 * aPoly.W1) - aPolyC * aPoly.W2) * aPolyInvW);
+            Xyz aPolyC = aPoly.N0 * aPolyInvW;
+            Xyz aPolyCD1 = (aPoly.N1 * aPoly.W0 - aPoly.N0 * aPoly.W1) * (aPolyInvW * aPolyInvW);
+            aPolyResult.Point = new Point3D(aPolyC);
+            aPolyResult.D1 = new Vector3D(aPolyCD1);
+            aPolyResult.D2 = new Vector3D((aPoly.N2 - aPolyCD1 * (2.0 * aPoly.W1) - aPolyC * aPoly.W2) * aPolyInvW);
             return aPolyResult;
         }
 
@@ -594,20 +597,20 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         if (!myRational)
         {
             evalMixedAHT(2, false, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
-            aResult.Point = new gp_Pnt(aMixed.N0);
-            aResult.D1 = new gp_Vec(aMixed.N1);
-            aResult.D2 = new gp_Vec(aMixed.N2);
+            aResult.Point = new Point3D(aMixed.N0);
+            aResult.D1 = new Vector3D(aMixed.N1);
+            aResult.D2 = new Vector3D(aMixed.N2);
             return aResult;
         }
 
         evalMixedAHT(2, true, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
         double aInvW = 1.0 / aMixed.W0;
-        gp_XYZ aC = aMixed.N0 * aInvW;
-        gp_XYZ aCD1 = (aMixed.N1 * aMixed.W0 - aMixed.N0 * aMixed.W1) * (aInvW * aInvW);
+        Xyz aC = aMixed.N0 * aInvW;
+        Xyz aCD1 = (aMixed.N1 * aMixed.W0 - aMixed.N0 * aMixed.W1) * (aInvW * aInvW);
 
-        aResult.Point = new gp_Pnt(aC);
-        aResult.D1 = new gp_Vec(aCD1);
-        aResult.D2 = new gp_Vec((aMixed.N2 - aCD1 * (2.0 * aMixed.W1) - aC * aMixed.W2) * aInvW);
+        aResult.Point = new Point3D(aC);
+        aResult.D1 = new Vector3D(aCD1);
+        aResult.D2 = new Vector3D((aMixed.N2 - aCD1 * (2.0 * aMixed.W1) - aC * aMixed.W2) * aInvW);
         return aResult;
     }
 
@@ -620,25 +623,25 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             if (!myRational)
             {
                 evalPolynomialNonRational(3, myPoles, myAlgDegree, U, out aPoly);
-                aPolyResult.Point = new gp_Pnt(aPoly.N0);
-                aPolyResult.D1 = new gp_Vec(aPoly.N1);
-                aPolyResult.D2 = new gp_Vec(aPoly.N2);
-                aPolyResult.D3 = new gp_Vec(aPoly.N3);
+                aPolyResult.Point = new Point3D(aPoly.N0);
+                aPolyResult.D1 = new Vector3D(aPoly.N1);
+                aPolyResult.D2 = new Vector3D(aPoly.N2);
+                aPolyResult.D3 = new Vector3D(aPoly.N3);
                 return aPolyResult;
             }
 
             evalPolynomialRational(3, myPoles, myWeights, myAlgDegree, U, out aPoly);
             double aPolyInvW = 1.0 / aPoly.W0;
-            gp_XYZ aPolyC = aPoly.N0 * aPolyInvW;
-            gp_XYZ aPolyCD1 = (aPoly.N1 - aPolyC * aPoly.W1) * aPolyInvW;
-            gp_XYZ aPolyCD2 = (aPoly.N2 - aPolyCD1 * (2.0 * aPoly.W1) - aPolyC * aPoly.W2) * aPolyInvW;
-            gp_XYZ aPolyCD3 =
+            Xyz aPolyC = aPoly.N0 * aPolyInvW;
+            Xyz aPolyCD1 = (aPoly.N1 - aPolyC * aPoly.W1) * aPolyInvW;
+            Xyz aPolyCD2 = (aPoly.N2 - aPolyCD1 * (2.0 * aPoly.W1) - aPolyC * aPoly.W2) * aPolyInvW;
+            Xyz aPolyCD3 =
                 (aPoly.N3 - aPolyCD2 * (3.0 * aPoly.W1) - aPolyCD1 * (3.0 * aPoly.W2) - aPolyC * aPoly.W3) * aPolyInvW;
 
-            aPolyResult.Point = new gp_Pnt(aPolyC);
-            aPolyResult.D1 = new gp_Vec(aPolyCD1);
-            aPolyResult.D2 = new gp_Vec(aPolyCD2);
-            aPolyResult.D3 = new gp_Vec(aPolyCD3);
+            aPolyResult.Point = new Point3D(aPolyC);
+            aPolyResult.D1 = new Vector3D(aPolyCD1);
+            aPolyResult.D2 = new Vector3D(aPolyCD2);
+            aPolyResult.D3 = new Vector3D(aPolyCD3);
             return aPolyResult;
         }
 
@@ -647,34 +650,34 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         if (!myRational)
         {
             evalMixedAHT(3, false, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
-            aResult.Point = new gp_Pnt(aMixed.N0);
-            aResult.D1 = new gp_Vec(aMixed.N1);
-            aResult.D2 = new gp_Vec(aMixed.N2);
-            aResult.D3 = new gp_Vec(aMixed.N3);
+            aResult.Point = new Point3D(aMixed.N0);
+            aResult.D1 = new Vector3D(aMixed.N1);
+            aResult.D2 = new Vector3D(aMixed.N2);
+            aResult.D3 = new Vector3D(aMixed.N3);
             return aResult;
         }
 
         evalMixedAHT(3, true, myPoles, myWeights, myAlgDegree, myAlpha, myBeta, U, out aMixed);
         double aInvW = 1.0 / aMixed.W0;
-        gp_XYZ aC = aMixed.N0 * aInvW;
-        gp_XYZ aCD1 = (aMixed.N1 - aC * aMixed.W1) * aInvW;
-        gp_XYZ aCD2 = (aMixed.N2 - aCD1 * (2.0 * aMixed.W1) - aC * aMixed.W2) * aInvW;
-        gp_XYZ aCD3 =
+        Xyz aC = aMixed.N0 * aInvW;
+        Xyz aCD1 = (aMixed.N1 - aC * aMixed.W1) * aInvW;
+        Xyz aCD2 = (aMixed.N2 - aCD1 * (2.0 * aMixed.W1) - aC * aMixed.W2) * aInvW;
+        Xyz aCD3 =
             (aMixed.N3 - aCD2 * (3.0 * aMixed.W1) - aCD1 * (3.0 * aMixed.W2) - aC * aMixed.W3) * aInvW;
 
-        aResult.Point = new gp_Pnt(aC);
-        aResult.D1 = new gp_Vec(aCD1);
-        aResult.D2 = new gp_Vec(aCD2);
-        aResult.D3 = new gp_Vec(aCD3);
+        aResult.Point = new Point3D(aC);
+        aResult.D1 = new Vector3D(aCD1);
+        aResult.D2 = new Vector3D(aCD2);
+        aResult.D3 = new Vector3D(aCD3);
         return aResult;
     }
 
-    /// <exception cref="Standard_RangeError">N &lt; 1.</exception>
-    public override gp_Vec EvalDN(double U, int N)
+    /// <exception cref="RangeErrorException">N &lt; 1.</exception>
+    public override Vector3D EvalDN(double U, int N)
     {
         if (N < 1)
         {
-            throw new Standard_RangeError("GeomEval_AHTBezierCurve::EvalDN: N must be >= 1");
+            throw new RangeErrorException("GeomEval_AHTBezierCurve::EvalDN: N must be >= 1");
         }
 
         // For low orders, delegate to explicit implementations.
@@ -696,7 +699,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         if (!myRational)
         {
             int aPoleIdx = aPoleLow;
-            gp_XYZ aSum = new(0.0, 0.0, 0.0);
+            Xyz aSum = new(0.0, 0.0, 0.0);
 
             for (int k = 0; k <= myAlgDegree; ++k)
             {
@@ -759,12 +762,12 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
                 aSum += myPoles.Value(aPoleIdx++).XYZ() * (aBetaPow * aCosN);
             }
 
-            return new gp_Vec(aSum);
+            return new Vector3D(aSum);
         }
 
         // C++: NCollection_LocalArray<double, 16> and <gp_XYZ, 16>.
         Span<double> aWDerivs = N + 1 <= 16 ? stackalloc double[16] : new double[N + 1];
-        Span<gp_XYZ> aCDerivs = N + 1 <= 16 ? stackalloc gp_XYZ[16] : new gp_XYZ[N + 1];
+        Span<Xyz> aCDerivs = N + 1 <= 16 ? stackalloc Xyz[16] : new Xyz[N + 1];
 
         int aWeightLow = myWeights.Lower();
         int aPolyCount = myAlgDegree + 1;
@@ -772,10 +775,10 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         int aTrigIdx = aHyperIdx + (myAlpha > 0.0 ? 2 : 0);
 
         // The C++ pointers to the poles, null when unused.
-        gp_XYZ aPoleSinh = new();
-        gp_XYZ aPoleCosh = new();
-        gp_XYZ aPoleSin = new();
-        gp_XYZ aPoleCos = new();
+        Xyz aPoleSinh = new();
+        Xyz aPoleCosh = new();
+        Xyz aPoleSin = new();
+        Xyz aPoleCos = new();
         double aWiSinh = 0.0;
         double aWiCosh = 0.0;
         double aWiSin = 0.0;
@@ -810,12 +813,12 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
         double aInvW0 = 0.0;
         for (int d = 0; d <= N; ++d)
         {
-            gp_XYZ aNd = new(0.0, 0.0, 0.0);
+            Xyz aNd = new(0.0, 0.0, 0.0);
             double aWd = 0.0;
 
             for (int k = 0; k <= myAlgDegree; ++k)
             {
-                gp_XYZ aPole = myPoles.Value(aPoleLow + k).XYZ();
+                Xyz aPole = myPoles.Value(aPoleLow + k).XYZ();
                 double aWi = myWeights.Value(aWeightLow + k);
                 double aBasisD = 0.0;
                 if (d <= k)
@@ -878,7 +881,7 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             }
             else
             {
-                gp_XYZ aSum = aNd;
+                Xyz aSum = aNd;
                 double aBinom = 1.0;
                 for (int j = 1; j <= d; ++j)
                 {
@@ -891,14 +894,14 @@ public sealed class GeomEval_AHTBezierCurve : Geom_BoundedCurve
             aAlphaPow2 *= myAlpha;
             aBetaPow2 *= myBeta;
         }
-        return new gp_Vec(aCDerivs[N]);
+        return new Vector3D(aCDerivs[N]);
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_AHTBezierCurve::Transform");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierCurve::Transform");
     }
 
     public override Geom_Geometry Copy()

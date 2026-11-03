@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -25,7 +26,7 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
         TApp3d = 1.0e-4;
         TolApp2d = 1.0e-5;
         Fleche = 1.0e-3;
-        InternalContinuity = GeomAbs_Shape.GeomAbs_C1;
+        InternalContinuity = Continuity.C1;
         AngularTolerance = 1.0e-2;
     }
 
@@ -51,7 +52,7 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
     public double Fleche;
 
     /// <summary><c>SetContinuity</c>'s continuity of the fillet surfaces (GeomAbs_C1 by default).</summary>
-    public GeomAbs_Shape InternalContinuity;
+    public Continuity InternalContinuity;
 
     /// <summary><c>SetContinuity</c>'s G1 tolerance between the fillets and their faces (1e-2 by default).</summary>
     public double AngularTolerance;

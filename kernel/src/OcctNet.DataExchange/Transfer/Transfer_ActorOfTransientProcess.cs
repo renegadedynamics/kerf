@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,16 +19,16 @@ public class Transfer_ActorOfTransientProcess : Transfer_ActorOfProcessForTransi
     {
     }
 
-    public override Transfer_Binder? Transferring(Standard_Transient? ent, Transfer_ProcessForTransient? TP,
-                                                  Message_ProgressRange theProgress = default)
+    public override Transfer_Binder? Transferring(Transient? ent, Transfer_ProcessForTransient? TP,
+                                                  ProgressRange theProgress = default)
     {
         return Transfer(ent, TP as Transfer_TransientProcess, theProgress);
     }
 
-    public virtual Transfer_Binder? Transfer(Standard_Transient? start, Transfer_TransientProcess? TP,
-                                             Message_ProgressRange theProgress = default)
+    public virtual Transfer_Binder? Transfer(Transient? start, Transfer_TransientProcess? TP,
+                                             ProgressRange theProgress = default)
     {
-        Standard_Transient? res = TransferTransient(start, TP, theProgress);
+        Transient? res = TransferTransient(start, TP, theProgress);
         if (res is null)
         {
             return NullResult();
@@ -34,10 +36,10 @@ public class Transfer_ActorOfTransientProcess : Transfer_ActorOfProcessForTransi
         return TransientResult(res);
     }
 
-    public virtual Standard_Transient? TransferTransient(Standard_Transient? ent, Transfer_TransientProcess? TP,
-                                                         Message_ProgressRange theProgress = default)
+    public virtual Transient? TransferTransient(Transient? ent, Transfer_TransientProcess? TP,
+                                                         ProgressRange theProgress = default)
     {
-        Standard_Transient? nulres = null;
+        Transient? nulres = null;
         return nulres;
     }
 

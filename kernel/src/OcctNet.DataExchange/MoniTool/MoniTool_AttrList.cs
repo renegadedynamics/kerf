@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.MoniTool_ValueType;
 
 namespace Occt;
@@ -28,14 +29,14 @@ public class MoniTool_AttrList
     /// </summary>
     public MoniTool_AttrList(MoniTool_AttrList other)
     {
-        theattrib = new NCollection_DataMap<string, Standard_Transient>(other.AttrList());
+        theattrib = new NCollection_DataMap<string, Transient>(other.AttrList());
 
     }
 
     /// <summary>
     /// Adds an attribute with a given name (replaces the former one with the same name if already exists)
     /// </summary>
-    public void SetAttribute(string name, Standard_Transient? val)
+    public void SetAttribute(string name, Transient? val)
     {
         theattrib.Bind(name, val);
     }
@@ -56,7 +57,7 @@ public class MoniTool_AttrList
     /// Returns an attribute from its name, filtered by a type If no attribute has this name, or if it is not
     /// kind of this type, &lt;val&gt; is Null and returned value is False Else, it is True
     /// </summary>
-    public bool GetAttribute(string name, Type? type, out Standard_Transient? val)
+    public bool GetAttribute(string name, Type? type, out Transient? val)
     {
         if (theattrib.IsEmpty())
         {
@@ -80,9 +81,9 @@ public class MoniTool_AttrList
     /// Returns an attribute from its name. Null Handle if not recorded (whatever Transient, Integer, Real ...)
     /// Integer is recorded as IntVal Real is recorded as RealVal Text is recorded as HAsciiString
     /// </summary>
-    public Standard_Transient? Attribute(string name)
+    public Transient? Attribute(string name)
     {
-        Standard_Transient atr = null;
+        Transient atr = null;
         if (theattrib.IsEmpty())
         {
             return atr;
@@ -100,7 +101,7 @@ public class MoniTool_AttrList
     /// </summary>
     public MoniTool_ValueType AttributeType(string name)
     {
-        Standard_Transient atr = Attribute(name);
+        Transient atr = Attribute(name);
         if (atr is null)
         {
             return MoniTool_ValueVoid;
@@ -241,7 +242,7 @@ public class MoniTool_AttrList
     /// <summary>
     /// Returns the exhaustive list of attributes
     /// </summary>
-    public NCollection_DataMap<string, Standard_Transient> AttrList()
+    public NCollection_DataMap<string, Transient> AttrList()
     {
         return theattrib;
     }
@@ -253,7 +254,7 @@ public class MoniTool_AttrList
     /// </summary>
     public void SameAttributes(MoniTool_AttrList other)
     {
-        theattrib = new NCollection_DataMap<string, Standard_Transient>(other.AttrList());
+        theattrib = new NCollection_DataMap<string, Transient>(other.AttrList());
     }
 
     /// <summary>
@@ -266,22 +267,22 @@ public class MoniTool_AttrList
     /// </summary>
     public void GetAttributes(MoniTool_AttrList other, string fromname = "", bool copied = true)
     {
-        NCollection_DataMap<string, Standard_Transient> list =
+        NCollection_DataMap<string, Transient> list =
             other.AttrList();
         if (list.IsEmpty())
         {
             return;
         }
 
-        foreach (KeyValuePair<string, Standard_Transient> iter in list)
+        foreach (KeyValuePair<string, Transient> iter in list)
         {
             string name = iter.Key;
             if (!name.StartsWith(fromname))
             {
                 continue;
             }
-            Standard_Transient atr = iter.Value;
-            Standard_Transient newatr = atr;
+            Transient atr = iter.Value;
+            Transient newatr = atr;
 
             //    Copy ? according type
             if (copied)
@@ -314,5 +315,5 @@ public class MoniTool_AttrList
         }
     }
 
-    private NCollection_DataMap<string, Standard_Transient> theattrib = new();
+    private NCollection_DataMap<string, Transient> theattrib = new();
 }

@@ -2,7 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -81,8 +81,8 @@ public class MathOpt_1D_BrentTest
     public void SimpleParabola()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -91,8 +91,8 @@ public class MathOpt_1D_BrentTest
     public void ParabolaWithNegativeMinimum()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc2 aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 5.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 5.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -101,8 +101,8 @@ public class MathOpt_1D_BrentTest
     public void CosineMinimum()
     {
         MathOpt_1D_TestFunctions.CosFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 2.0, 4.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 2.0, 4.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(MathOpt_1D_TestFunctions.THE_PI, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -112,8 +112,8 @@ public class MathOpt_1D_BrentTest
     {
         MathOpt_1D_TestFunctions.QuarticFunc aFunc = new();
         // Search for right minimum at x = 1
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 2.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 2.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -123,8 +123,8 @@ public class MathOpt_1D_BrentTest
     {
         MathOpt_1D_TestFunctions.QuarticFunc aFunc = new();
         // Search for left minimum at x = -1
-        ScalarResult aResult = MathOpt.Brent(aFunc, -2.0, 0.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, -2.0, 0.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(-1.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -133,8 +133,8 @@ public class MathOpt_1D_BrentTest
     public void CoshLikeMinimum()
     {
         MathOpt_1D_TestFunctions.CoshLikeFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, -5.0, 5.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, -5.0, 5.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -143,8 +143,8 @@ public class MathOpt_1D_BrentTest
     public void NarrowInterval()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 2.9, 3.1);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 2.9, 3.1);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 
@@ -152,8 +152,8 @@ public class MathOpt_1D_BrentTest
     public void WideInterval()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, -100.0, 100.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, -100.0, 100.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 
@@ -165,8 +165,8 @@ public class MathOpt_1D_BrentTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.MaxIterations = 200;
 
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0, aConfig);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, 1.0e-9);
     }
 
@@ -174,8 +174,8 @@ public class MathOpt_1D_BrentTest
     public void NonSmoothFunction()
     {
         MathOpt_1D_TestFunctions.AbsShiftedFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 5.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 5.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Root!.Value, 1.0e-6); // Lower tolerance for non-smooth
         Assert.Equal(1.0, aResult.Value!.Value, 1.0e-6);
     }
@@ -189,8 +189,8 @@ public class MathOpt_1D_GoldenTest
     public void SimpleParabola()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Golden(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -199,8 +199,8 @@ public class MathOpt_1D_GoldenTest
     public void CosineMinimum()
     {
         MathOpt_1D_TestFunctions.CosFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Golden(aFunc, 2.0, 4.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 2.0, 4.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(MathOpt_1D_TestFunctions.THE_PI, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -209,8 +209,8 @@ public class MathOpt_1D_GoldenTest
     public void QuarticMinimum()
     {
         MathOpt_1D_TestFunctions.QuarticFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Golden(aFunc, 0.0, 2.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 0.0, 2.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -219,8 +219,8 @@ public class MathOpt_1D_GoldenTest
     public void CoshLikeMinimum()
     {
         MathOpt_1D_TestFunctions.CoshLikeFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Golden(aFunc, -5.0, 5.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, -5.0, 5.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -234,8 +234,8 @@ public class MathOpt_1D_BrentWithBracketTest
     public void SimpleParabola()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.BrentWithBracket(aFunc, 0.0, 1.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BrentWithBracket(aFunc, 0.0, 1.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
         Assert.Equal(1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -244,8 +244,8 @@ public class MathOpt_1D_BrentWithBracketTest
     public void StartNearMinimum()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.BrentWithBracket(aFunc, 2.5, 0.5);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BrentWithBracket(aFunc, 2.5, 0.5);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 
@@ -255,8 +255,8 @@ public class MathOpt_1D_BrentWithBracketTest
         MathOpt_1D_TestFunctions.CoshLikeFunc aFunc = new();
         // Start from a point closer to the minimum with a small step
         // The algorithm expands to find a bracket containing the minimum
-        ScalarResult aResult = MathOpt.BrentWithBracket(aFunc, 0.1, 0.2);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BrentWithBracket(aFunc, 0.1, 0.2);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 }
@@ -269,11 +269,11 @@ public partial class MathOpt_1D_ComparisonTest
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
 
-        ScalarResult aBrent = MathOpt.Brent(aFunc, 0.0, 10.0);
-        ScalarResult aGolden = MathOpt.Golden(aFunc, 0.0, 10.0);
+        ScalarResult aBrent = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        ScalarResult aGolden = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 0.0, 10.0);
 
-        Assert.True(aBrent.IsDone());
-        Assert.True(aGolden.IsDone());
+        Assert.True(aBrent.IsDone);
+        Assert.True(aGolden.IsDone);
 
         Assert.Equal(aGolden.Root!.Value, aBrent.Root!.Value, MathOpt_1D_TestFunctions.THE_TOLERANCE);
         Assert.Equal(aGolden.Value!.Value, aBrent.Value!.Value, MathOpt_1D_TestFunctions.THE_TOLERANCE);
@@ -286,11 +286,11 @@ public partial class MathOpt_1D_ComparisonTest
         Config aConfig = new();
         aConfig.MaxIterations = 200;
 
-        ScalarResult aBrent = MathOpt.Brent(aFunc, 0.0, 10.0, aConfig);
-        ScalarResult aGolden = MathOpt.Golden(aFunc, 0.0, 10.0, aConfig);
+        ScalarResult aBrent = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0, aConfig);
+        ScalarResult aGolden = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 0.0, 10.0, aConfig);
 
-        Assert.True(aBrent.IsDone());
-        Assert.True(aGolden.IsDone());
+        Assert.True(aBrent.IsDone);
+        Assert.True(aGolden.IsDone);
 
         // Brent typically converges faster due to parabolic interpolation
         Assert.True(aBrent.NbIterations <= aGolden.NbIterations);
@@ -334,8 +334,8 @@ public class MathOpt_1D_RobustnessTest
     {
         // f(x) = x^2 on [0, 10] - minimum at x = 0
         SquareFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 
@@ -344,8 +344,8 @@ public class MathOpt_1D_RobustnessTest
     {
         // f(x) = (10 - x)^2 on [0, 10] - minimum at x = 10
         ShiftedSquareFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(10.0, aResult.Root!.Value, THE_TOLERANCE);
     }
 
@@ -354,8 +354,8 @@ public class MathOpt_1D_RobustnessTest
     {
         // f(x) = (x - 5)^4 - very flat near minimum
         FlatQuarticFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.Equal(5.0, aResult.Root!.Value, 1.0e-5); // Lower tolerance for flat function
     }
 }
@@ -366,7 +366,7 @@ public class MathOpt_1D_BoolConversionTest
     public void SuccessfulResultIsTrue()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
         Assert.True((bool)aResult);
     }
 }
@@ -377,8 +377,8 @@ public class MathOpt_1D_IterationTest
     public void BrentConvergesQuickly()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Brent(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Brent(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.NbIterations < 50);
     }
 
@@ -386,8 +386,8 @@ public class MathOpt_1D_IterationTest
     public void GoldenConverges()
     {
         MathOpt_1D_TestFunctions.ParabolaFunc aFunc = new();
-        ScalarResult aResult = MathOpt.Golden(aFunc, 0.0, 10.0);
-        Assert.True(aResult.IsDone());
+        ScalarResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Golden(aFunc, 0.0, 10.0);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.NbIterations < 100);
     }
 }

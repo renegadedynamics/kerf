@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class HermitTest
@@ -10,10 +12,10 @@ public class HermitTest
     // with weights that produce distinct endpoint weight values.
     private static Geom_BSplineCurve MakeRationalBSpline3D(double theW1, double theW2, double theW3)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.0, 0.0);
 
         NCollection_Array1<double> aWeights = new(1, 3);
         aWeights[1] = theW1;
@@ -34,10 +36,10 @@ public class HermitTest
     // Helper to create a simple rational BSpline 2D curve (degree 2, 3 poles).
     private static Geom2d_BSplineCurve MakeRationalBSpline2D(double theW1, double theW2, double theW3)
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt2d(0.0, 0.0);
-        aPoles[2] = new gp_Pnt2d(1.0, 1.0);
-        aPoles[3] = new gp_Pnt2d(2.0, 0.0);
+        NCollection_Array1<Point2D> aPoles = new(1, 3);
+        aPoles[1] = new Point2D(0.0, 0.0);
+        aPoles[2] = new Point2D(1.0, 1.0);
+        aPoles[3] = new Point2D(2.0, 0.0);
 
         NCollection_Array1<double> aWeights = new(1, 3);
         aWeights[1] = theW1;
@@ -68,8 +70,8 @@ public class HermitTest
 
         // The result a(u) * D(u) should have value 1 at endpoints
         // For uniform weights D(u)=1 everywhere, so a(0)=1, a(1)=1
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(1.0, aP0.Y(), 1.0e-6);
         Assert.Equal(1.0, aP1.Y(), 1.0e-6);
@@ -86,8 +88,8 @@ public class HermitTest
         Assert.NotNull(aResult);
 
         // a(0) should be 1/w(0) = 0.5, a(1) should be 1/w(1) = 1/3
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(0.5, aP0.Y(), 1.0e-4);
         Assert.Equal(1.0 / 3.0, aP1.Y(), 1.0e-4);
@@ -103,8 +105,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         // a(u)*D(u) = 1 at endpoints => a(0) = 1/w(0) = 2, a(1) = 1/w(1) = 0.2
         Assert.Equal(1.0 / 0.5, aP0.Y(), 1.0e-4);
@@ -121,8 +123,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(1.0 / 5.0, aP0.Y(), 1.0e-4);
         Assert.Equal(1.0 / 0.5, aP1.Y(), 1.0e-4);
@@ -152,8 +154,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(1.0, aP0.Y(), 1.0e-6);
         Assert.Equal(1.0, aP1.Y(), 1.0e-6);
@@ -168,8 +170,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(0.5, aP0.Y(), 1.0e-4);
         Assert.Equal(1.0 / 3.0, aP1.Y(), 1.0e-4);
@@ -185,8 +187,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         Assert.Equal(1.0 / 0.5, aP0.Y(), 1.0e-4);
         Assert.Equal(1.0 / 5.0, aP1.Y(), 1.0e-4);
@@ -234,8 +236,8 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        gp_Pnt2d aP0 = aResult.Value(aResult.FirstParameter());
-        gp_Pnt2d aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter());
+        Point2D aP1 = aResult.Value(aResult.LastParameter());
 
         // Both endpoints should yield the same value: 1/w = 0.5
         Assert.Equal(0.5, aP0.Y(), 1.0e-4);
@@ -249,7 +251,7 @@ public class HermitTest
         Geom_BSplineCurve aBS = MakeRationalBSpline3D(2.0, 1.5, 3.0);
         aBS.Freeze();
         Geom2d_BSplineCurve aResult = Hermit.Solution(aBS);
-        Assert.False(aResult.IsFrozen());
+        Assert.False(aResult.IsFrozen);
         Assert.Equal(2, aBS.NbKnots());
     }
 }

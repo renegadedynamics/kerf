@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -47,14 +49,14 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
     /// Returns 0 if OK, 1 if Read Error, -1 if File not opened
     /// </summary>
     public override int ReadFile(string name, ref Interface_InterfaceModel model, Interface_Protocol protocol,
-                                 Message_ProgressRange theProgress = default)
+                                 ProgressRange theProgress = default)
     {
         return ReadFile(name, model, protocol, theProgress, null);
     }
 
-    /// <summary>As <see cref="ReadFile(string, ref Interface_InterfaceModel, Interface_Protocol, Message_ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadFile(string, ref Interface_InterfaceModel, Interface_Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
     public int ReadFile(string name, Interface_InterfaceModel model, Interface_Protocol protocol,
-                        Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+                        ProgressRange theProgress, StepFile_ReadLimits theLimits)
     {
         StepData_Protocol stepro = protocol as StepData_Protocol;
         if (stepro is null)
@@ -70,14 +72,14 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
     /// case of Error Returns 0 if OK, 1 if Read Error, -1 if File not opened
     /// </summary>
     public override int ReadStream(string theName, Stream theIStream, ref Interface_InterfaceModel model, Interface_Protocol protocol,
-                                   Message_ProgressRange theProgress = default)
+                                   ProgressRange theProgress = default)
     {
         return ReadStream(theName, theIStream, model, protocol, theProgress, null);
     }
 
-    /// <summary>As <see cref="ReadStream(string, Stream, ref Interface_InterfaceModel, Interface_Protocol, Message_ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    /// <summary>As <see cref="ReadStream(string, Stream, ref Interface_InterfaceModel, Interface_Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
     public int ReadStream(string theName, Stream theIStream, Interface_InterfaceModel model, Interface_Protocol protocol,
-                          Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+                          ProgressRange theProgress, StepFile_ReadLimits theLimits)
     {
         StepData_Protocol stepro = protocol as StepData_Protocol;
         if (stepro is null)
@@ -95,7 +97,7 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
     public override bool WriteFile(IFSelect_ContextWrite ctx)
     {
         //  Preparation
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         StepData_StepModel stepmodel = ctx.Model() as StepData_StepModel;
         StepData_Protocol stepro = ctx.Protocol() as StepData_Protocol;
         if (stepmodel is null || stepro is null)
@@ -201,7 +203,7 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
     /// type; level 1 displays the entity itself, and level 2 displays the entity plus its shared ones (one sub-level:
     /// immediately shared entities)
     /// </summary>
-    public override void DumpEntity(Interface_InterfaceModel model, Interface_Protocol protocol, Standard_Transient entity, TextWriter S,
+    public override void DumpEntity(Interface_InterfaceModel model, Interface_Protocol protocol, Transient entity, TextWriter S,
                                     int level)
     {
         int nument = model.Number(entity);
@@ -210,7 +212,7 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
             return;
         }
         bool iserr = model.IsRedefinedContent(nument);
-        Standard_Transient ent, con;
+        Transient ent, con;
         ent = entity;
         S.Write(" --- (STEP) Entity ");
         model.Print(entity, S);
@@ -225,7 +227,7 @@ public class StepSelect_WorkLibrary : IFSelect_WorkLibrary
         }
 
         //  On attaque le dump : d abord cas de l Erreur
-        S.Write(" Type cdl : " + entity.DynamicType().Name + "\n");
+        S.Write(" Type cdl : " + entity.DynamicTypeName() + "\n");
         if (iserr)
         {
             S.Write(" ***  NOT WELL LOADED : CONTENT FROM FILE  ***\n");

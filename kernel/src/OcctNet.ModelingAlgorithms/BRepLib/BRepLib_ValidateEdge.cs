@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -126,8 +128,8 @@ public class BRepLib_ValidateEdge
         int aControlPointsNumber = (myControlPointsNumber < 1) ? 1 : myControlPointsNumber;
         bool anIsProjection =
             (!mySameParameter
-             || Math.Abs(anOtherFirstParam - aReferenceFirstParam) > Precision.PConfusion()
-             || Math.Abs(anOtherLastParam - aReferenceLastParam) > Precision.PConfusion());
+             || Math.Abs(anOtherFirstParam - aReferenceFirstParam) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+             || Math.Abs(anOtherLastParam - aReferenceLastParam) > global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         if (!anIsProjection)
         {
@@ -135,8 +137,8 @@ public class BRepLib_ValidateEdge
             {
                 double aControlPointParam =
                     ((aControlPointsNumber - i) * aReferenceFirstParam + i * aReferenceLastParam) / aControlPointsNumber;
-                gp_Pnt aReferencePoint = myReferenceCurve.Value(aControlPointParam);
-                gp_Pnt anOtherPoint = myOtherCurve.Value(aControlPointParam);
+                Point3D aReferencePoint = myReferenceCurve.Value(aControlPointParam);
+                Point3D anOtherPoint = myOtherCurve.Value(aControlPointParam);
                 double aSquareDistance = aReferencePoint.SquareDistance(anOtherPoint);
                 if (aSquareDistance > aMaxSquareDistance)
                 {
@@ -153,8 +155,8 @@ public class BRepLib_ValidateEdge
         }
         else
         {
-            gp_Pnt aReferencePoint = myReferenceCurve.Value(aReferenceFirstParam);
-            gp_Pnt anOtherPoint = myOtherCurve.Value(anOtherFirstParam);
+            Point3D aReferencePoint = myReferenceCurve.Value(aReferenceFirstParam);
+            Point3D anOtherPoint = myOtherCurve.Value(anOtherFirstParam);
             double aSquareDistance = aReferencePoint.SquareDistance(anOtherPoint);
             if (aSquareDistance > aMaxSquareDistance)
             {
@@ -186,19 +188,19 @@ public class BRepLib_ValidateEdge
             aReferenceExtrema.Initialize(myReferenceCurve,
                                          aReferenceFirstParam,
                                          aReferenceLastParam,
-                                         myReferenceCurve.Resolution(Precision.Confusion()));
+                                         myReferenceCurve.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
             anOtherExtrema.Initialize(myOtherCurve,
                                       anOtherFirstParam,
                                       anOtherLastParam,
-                                      myOtherCurve.Resolution(Precision.Confusion()));
+                                      myOtherCurve.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
             for (int i = 1; i < aControlPointsNumber; i++)
             {
                 double aReferenceParam =
                     ((aControlPointsNumber - i) * aReferenceFirstParam + i * aReferenceLastParam) / aControlPointsNumber;
-                gp_Pnt aReferenceExtremaPoint = myReferenceCurve.Value(aReferenceParam);
+                Point3D aReferenceExtremaPoint = myReferenceCurve.Value(aReferenceParam);
                 double anOtherParam =
                     ((aControlPointsNumber - i) * anOtherFirstParam + i * anOtherLastParam) / aControlPointsNumber;
-                gp_Pnt anOtherExtremaPoint = myOtherCurve.Value(anOtherParam);
+                Point3D anOtherExtremaPoint = myOtherCurve.Value(anOtherParam);
 
                 aReferenceExtrema.Perform(anOtherExtremaPoint, aReferenceParam);
                 if (aReferenceExtrema.IsDone())

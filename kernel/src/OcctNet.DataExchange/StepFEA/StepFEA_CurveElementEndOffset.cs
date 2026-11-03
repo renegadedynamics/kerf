@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementEndOffset
 /// </summary>
-public class StepFEA_CurveElementEndOffset : Standard_Transient
+public class StepFEA_CurveElementEndOffset : Transient
 {
     private StepFEA_CurveElementEndCoordinateSystem theCoordinateSystem = new StepFEA_CurveElementEndCoordinateSystem();
     private NCollection_HArray1<double> theOffsetVector;

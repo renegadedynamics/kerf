@@ -62,14 +62,14 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
 
         // create face
         var B = new BRep_Builder();
-        B.MakeFace(ref myFace, Surf, Occt.Precision.Confusion());
+        B.MakeFace(ref myFace, Surf, Kerf.Engine.Foundation.Precision.Confusion());
 
         // add natural bound if implicit
         if (CBS.ImplicitOuter())
         {
             if (Surf is Geom_BoundedSurface)
             {
-                var mf = new BRepBuilderAPI_MakeFace(Surf, Occt.Precision.Confusion());
+                var mf = new BRepBuilderAPI_MakeFace(Surf, Kerf.Engine.Foundation.Precision.Confusion());
                 myFace = mf.InternalFace();
             }
             else

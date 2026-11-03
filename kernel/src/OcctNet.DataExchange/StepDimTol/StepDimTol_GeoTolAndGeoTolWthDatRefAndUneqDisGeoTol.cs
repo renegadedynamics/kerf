@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepDimTol_GeoTolAndGeoTolWthDatRefAndUneqDisGeoTol : StepDimTol_GeoTolAndGeoTolWthDatRef
@@ -16,13 +18,13 @@ public class StepDimTol_GeoTolAndGeoTolWthDatRefAndUneqDisGeoTol : StepDimTol_Ge
     {
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType, StepDimTol_UnequallyDisposedGeometricTolerance theUDGT)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType, StepDimTol_UnequallyDisposedGeometricTolerance theUDGT)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theGTWDR, theType);
         myUnequallyDisposedGeometricTolerance = theUDGT;
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType, StepDimTol_UnequallyDisposedGeometricTolerance theUDGT)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType, StepDimTol_UnequallyDisposedGeometricTolerance theUDGT)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect, theGTWDR, theType);
         myUnequallyDisposedGeometricTolerance = theUDGT;

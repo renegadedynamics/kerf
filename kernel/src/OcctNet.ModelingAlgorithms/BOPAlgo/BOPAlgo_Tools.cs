@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -226,7 +230,7 @@ public static partial class BOPAlgo_Tools
         //
         const int aNbPnt = 11;
         double aTol, aT, aT1, aT2, aDt;
-        gp_Pnt aP;
+        Point3D aP;
         //
         Geom_Curve aC3D = BRep_Tool.Curve(aEOr, out aT1, out aT2)!;
         //
@@ -389,9 +393,9 @@ public static partial class BOPAlgo_Tools
         // to find all pairs of connected edges with the same cross product.
 
         // Try to compute the plane in which the edge is located
-        NCollection_IndexedDataMap<TopoDS_Shape, gp_Pln> aDMEdgePln = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<TopoDS_Shape, Plane3D> aDMEdgePln = new(TopTools_ShapeMapHasher.Instance);
         // Compute the tangent direction for the edges for which the plane is not defined
-        NCollection_IndexedDataMap<TopoDS_Shape, gp_Dir> aDMEdgeTgt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<TopoDS_Shape, Direction3D> aDMEdgeTgt = new(TopTools_ShapeMapHasher.Instance);
         //
         // edges for which the plane is not found
         NCollection_Map<TopoDS_Shape> aMEdgesNoUniquePlane = new(TopTools_ShapeMapHasher.Instance);
@@ -406,17 +410,17 @@ public static partial class BOPAlgo_Tools
             TopoDS_Edge aE = TopoDS.Edge(aExp.Current());
             BRepAdaptor_Curve aBAC = new(aE);
             //
-            gp_Pln aPln = new();
+            Plane3D aPln = new();
             if (FindPlane(aBAC, ref aPln))
             {
                 aDMEdgePln.Add(aE, aPln);
             }
             else
             {
-                gp_Vec aVT = new();
+                Vector3D aVT = new();
                 if (FindEdgeTangent(aBAC, ref aVT))
                 {
-                    aDMEdgeTgt.Add(aE, new gp_Dir(aVT));
+                    aDMEdgeTgt.Add(aE, new Direction3D(aVT));
                     aBB.Add(aLEdges, aE);
                     aMEdgesNoUniquePlane.Add(aE);
                 }
@@ -425,7 +429,7 @@ public static partial class BOPAlgo_Tools
         //
         // to avoid processing of the same edges in the same plane store
         // the processed planes into a list and use it as a fence map
-        NCollection_List<gp_Dir> aLPFence = new();
+        NCollection_List<Direction3D> aLPFence = new();
         //
         // used edges
         NCollection_Map<TopoDS_Shape> aMEFence = new(TopTools_ShapeMapHasher.Instance);
@@ -440,8 +444,8 @@ public static partial class BOPAlgo_Tools
                 continue;
             }
             //
-            gp_Pln aPlnI = aDMEdgePln[i];
-            gp_Dir aDI = aPlnI.Position().Direction();
+            Plane3D aPlnI = aDMEdgePln[i];
+            Direction3D aDI = aPlnI.Position().Direction();
             //
             aLPFence.Append(aDI);
             //
@@ -454,7 +458,7 @@ public static partial class BOPAlgo_Tools
             // look for other edges with the plane parallel to current one
             for (j = i + 1; j <= aNbPlanes; ++j)
             {
-                gp_Dir aDJ = aDMEdgePln[j].Position().Direction();
+                Direction3D aDJ = aDMEdgePln[j].Position().Direction();
                 if (aDI.IsParallel(aDJ, theAngTol))
                 {
                     TopoDS_Shape aEJ = aDMEdgePln.FindKey(j);
@@ -470,7 +474,7 @@ public static partial class BOPAlgo_Tools
             //
             for (j = 1; j <= aNbEdges; ++j)
             {
-                gp_Dir aDJ = aDMEdgeTgt[j];
+                Direction3D aDJ = aDMEdgeTgt[j];
                 if (aDI.IsNormal(aDJ, theAngTol))
                 {
                     aBB.Add(aCEPln, aDMEdgeTgt.FindKey(j));
@@ -502,7 +506,7 @@ public static partial class BOPAlgo_Tools
                 if (!bAddBlock)
                 {
                     // check if the edges are forming a wire
-                    gp_Pln aPln = new();
+                    Plane3D aPln = new();
                     bAddBlock = FindPlane(aCBE, ref aPln, aDMEdgeTgt, aMEdgesNoUniquePlane);
                 }
                 //
@@ -537,7 +541,7 @@ public static partial class BOPAlgo_Tools
             for (; aItLEI1.More(); aItLEI1.Next())
             {
                 TopoDS_Shape aEI1 = aItLEI1.Value();
-                gp_Dir aDI1 = aDMEdgeTgt.FindFromKey(aEI1);
+                Direction3D aDI1 = aDMEdgeTgt.FindFromKey(aEI1);
                 //
                 NCollection_List<TopoDS_Shape>.Iterator aItLEI2 = new(aLEI);
                 for (; aItLEI2.More(); aItLEI2.Next())
@@ -548,17 +552,17 @@ public static partial class BOPAlgo_Tools
                         continue;
                     }
                     //
-                    gp_Dir aDI2 = aDMEdgeTgt.FindFromKey(aEI2);
+                    Direction3D aDI2 = aDMEdgeTgt.FindFromKey(aEI2);
                     //
                     if (aDI1.IsParallel(aDI2, theAngTol))
                     {
                         continue;
                     }
                     //
-                    gp_Dir aDNI = aDI1 ^ aDI2;
+                    Direction3D aDNI = aDI1 ^ aDI2;
                     //
                     // check if this normal direction has not been checked yet
-                    NCollection_List<gp_Dir>.Iterator aItLPln = new(aLPFence);
+                    NCollection_List<Direction3D>.Iterator aItLPln = new(aLPFence);
                     for (; aItLPln.More(); aItLPln.Next())
                     {
                         if (aDNI.IsParallel(aItLPln.Value(), theAngTol))
@@ -581,7 +585,7 @@ public static partial class BOPAlgo_Tools
                     // iterate on all other edges to find all edges lying in the plane parallel to current one
                     for (j = 1; j <= aNbEdges; ++j)
                     {
-                        gp_Dir aDJ = aDMEdgeTgt[j];
+                        Direction3D aDJ = aDMEdgeTgt[j];
                         if (aDNI.IsNormal(aDJ, theAngTol))
                         {
                             aMEPln.Add(aDMEdgeTgt.FindKey(j));
@@ -636,9 +640,9 @@ public static partial class BOPAlgo_Tools
         const double aMax = 1.0e+8;
         //
         // map to store the tangent vectors for the edges
-        NCollection_IndexedDataMap<TopoDS_Shape, gp_Dir> aDMEdgeTgt = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<TopoDS_Shape, Direction3D> aDMEdgeTgt = new(TopTools_ShapeMapHasher.Instance);
         // maps to store the planes found for the wires
-        NCollection_IndexedDataMap<TopoDS_Shape, gp_Pln> aDMWirePln = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<TopoDS_Shape, Plane3D> aDMWirePln = new(TopTools_ShapeMapHasher.Instance);
         // map to store the tolerance for the wire
         NCollection_DataMap<TopoDS_Shape, double> aDMWireTol = new(TopTools_ShapeMapHasher.Instance);
         // edges for which the plane is not found
@@ -649,7 +653,7 @@ public static partial class BOPAlgo_Tools
         for (; aExpW.More(); aExpW.Next())
         {
             TopoDS_Wire aWire = TopoDS.Wire(aExpW.Current());
-            gp_Pln aPlane = new();
+            Plane3D aPlane = new();
             if (FindPlane(aWire, ref aPlane, aDMEdgeTgt, aMEdgesNoUniquePlane))
             {
                 aDMWirePln.Add(aWire, aPlane);
@@ -667,7 +671,7 @@ public static partial class BOPAlgo_Tools
                 continue;
             }
             //
-            gp_Pln aPlnI = aDMWirePln[i];
+            Plane3D aPlnI = aDMWirePln[i];
             //
             NCollection_List<TopoDS_Shape> aLW = new();
             aLW.Append(aWireI);
@@ -685,7 +689,7 @@ public static partial class BOPAlgo_Tools
                 }
                 //
                 // check if the planes are the same
-                gp_Pln aPlnJ = aDMWirePln[j];
+                Plane3D aPlnJ = aDMWirePln[j];
                 // check direction of the planes
                 if (!aPlnI.Position().Direction().IsParallel(aPlnJ.Position().Direction(), theAngTol))
                 {
@@ -744,7 +748,7 @@ public static partial class BOPAlgo_Tools
                     aBB.Add(aRFaces, aFSp);
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue;
             }
@@ -763,7 +767,7 @@ public static partial class BOPAlgo_Tools
     private static void MakeWires(NCollection_IndexedMap<TopoDS_Shape> theEdges,
                                   TopoDS_Compound theWires,
                                   bool theCheckUniquePlane,
-                                  NCollection_IndexedDataMap<TopoDS_Shape, gp_Dir> theDMEdgeTgt,
+                                  NCollection_IndexedDataMap<TopoDS_Shape, Direction3D> theDMEdgeTgt,
                                   NCollection_Map<TopoDS_Shape> theMEdgesNoUniquePlane)
     {
         TopoDS_Compound aCE = new();
@@ -785,7 +789,7 @@ public static partial class BOPAlgo_Tools
             //
             if (theCheckUniquePlane)
             {
-                gp_Pln aPln = new();
+                Plane3D aPln = new();
                 if (!FindPlane(aCBE, ref aPln, theDMEdgeTgt, theMEdgesNoUniquePlane))
                 {
                     continue;
@@ -805,35 +809,35 @@ public static partial class BOPAlgo_Tools
 
     // Finds the tangent for the edge using the map (OCCT's file-static FindEdgeTangent); theTgt is written on success.
     private static bool FindEdgeTangent(in TopoDS_Edge theEdge,
-                                        NCollection_IndexedDataMap<TopoDS_Shape, gp_Dir> theDMEdgeTgt,
-                                        ref gp_Dir theTgt)
+                                        NCollection_IndexedDataMap<TopoDS_Shape, Direction3D> theDMEdgeTgt,
+                                        ref Direction3D theTgt)
     {
         int anIndex = theDMEdgeTgt.FindIndex(theEdge);
         if (anIndex == 0)
         {
-            gp_Vec aVTE = new();
+            Vector3D aVTE = new();
             BRepAdaptor_Curve aBAC = new(theEdge);
             if (!FindEdgeTangent(aBAC, ref aVTE))
             {
                 return false;
             }
-            anIndex = theDMEdgeTgt.Add(theEdge, new gp_Dir(aVTE));
+            anIndex = theDMEdgeTgt.Add(theEdge, new Direction3D(aVTE));
         }
         theTgt = theDMEdgeTgt[anIndex];
         return true;
     }
 
     // Finds the tangent for the edge (OCCT's file-static FindEdgeTangent).
-    private static bool FindEdgeTangent(BRepAdaptor_Curve theCurve, ref gp_Vec theTangent)
+    private static bool FindEdgeTangent(BRepAdaptor_Curve theCurve, ref Vector3D theTangent)
     {
         if (!theCurve.Is3DCurve())
         {
             return false;
         }
         // for the line the tangent is defined by the direction
-        if (theCurve.GetType() == GeomAbs_CurveType.GeomAbs_Line)
+        if (theCurve.GetType() == CurveKind.Line)
         {
-            theTangent = new gp_Vec(theCurve.Line().Position().Direction());
+            theTangent = new Vector3D(theCurve.Line().Position().Direction());
             return true;
         }
         //
@@ -844,8 +848,8 @@ public static partial class BOPAlgo_Tools
         //
         for (aT = aT1 + aDt; aT <= aT2; aT += aDt)
         {
-            theCurve.D1(aT, out gp_Pnt _, out theTangent);
-            if (theTangent.Magnitude() > Precision.Confusion())
+            theCurve.D1(aT, out Point3D _, out theTangent);
+            if (theTangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
@@ -855,7 +859,7 @@ public static partial class BOPAlgo_Tools
     }
 
     // Finds the plane in which the edge is located (OCCT's file-static FindPlane); thePlane is written on success.
-    private static bool FindPlane(BRepAdaptor_Curve theCurve, ref gp_Pln thePlane)
+    private static bool FindPlane(BRepAdaptor_Curve theCurve, ref Plane3D thePlane)
     {
         if (!theCurve.Is3DCurve())
         {
@@ -863,22 +867,22 @@ public static partial class BOPAlgo_Tools
         }
         //
         bool bFound = true;
-        gp_Vec aVN = new();
+        Vector3D aVN = new();
         switch (theCurve.GetType())
         {
-            case GeomAbs_CurveType.GeomAbs_Line:
+            case CurveKind.Line:
                 return false;
-            case GeomAbs_CurveType.GeomAbs_Circle:
-                aVN = new gp_Vec(theCurve.Circle().Position().Direction());
+            case CurveKind.Circle:
+                aVN = new Vector3D(theCurve.Circle().Position().Direction());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Ellipse:
-                aVN = new gp_Vec(theCurve.Ellipse().Position().Direction());
+            case CurveKind.Ellipse:
+                aVN = new Vector3D(theCurve.Ellipse().Position().Direction());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Hyperbola:
-                aVN = new gp_Vec(theCurve.Hyperbola().Position().Direction());
+            case CurveKind.Hyperbola:
+                aVN = new Vector3D(theCurve.Hyperbola().Position().Direction());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Parabola:
-                aVN = new gp_Vec(theCurve.Parabola().Position().Direction());
+            case CurveKind.Parabola:
+                aVN = new Vector3D(theCurve.Parabola().Position().Direction());
                 break;
             default:
             {
@@ -890,14 +894,14 @@ public static partial class BOPAlgo_Tools
                 double aDt = (aT2 - aT1) / aNbP;
                 //
                 aT = aT1;
-                theCurve.D1(aT, out gp_Pnt _, out gp_Vec aV1);
+                theCurve.D1(aT, out Point3D _, out Vector3D aV1);
                 //
                 for (aT = aT1 + aDt; aT <= aT2; aT += aDt)
                 {
-                    theCurve.D1(aT, out gp_Pnt _, out gp_Vec aV2);
+                    theCurve.D1(aT, out Point3D _, out Vector3D aV2);
                     //
                     aVN = aV1 ^ aV2;
-                    if (aVN.Magnitude() > Precision.Confusion())
+                    if (aVN.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         bFound = true;
                         break;
@@ -909,15 +913,15 @@ public static partial class BOPAlgo_Tools
         //
         if (bFound)
         {
-            thePlane = new gp_Pln(theCurve.Value(theCurve.FirstParameter()), new gp_Dir(aVN));
+            thePlane = new Plane3D(theCurve.Value(theCurve.FirstParameter()), new Direction3D(aVN));
         }
         return bFound;
     }
 
     // Finds the plane in which the wire is located (OCCT's file-static FindPlane); thePlane is written on success.
     private static bool FindPlane(in TopoDS_Shape theWire,
-                                  ref gp_Pln thePlane,
-                                  NCollection_IndexedDataMap<TopoDS_Shape, gp_Dir> theDMEdgeTgt,
+                                  ref Plane3D thePlane,
+                                  NCollection_IndexedDataMap<TopoDS_Shape, Direction3D> theDMEdgeTgt,
                                   NCollection_Map<TopoDS_Shape> theMEdgesNoUniquePlane)
     {
         TopExp_Explorer aExpE1 = new(theWire, TopAbs_EDGE);
@@ -933,7 +937,7 @@ public static partial class BOPAlgo_Tools
             TopoDS_Edge aE1 = TopoDS.Edge(aExpE1.Current());
             //
             // find tangent for the first edge
-            gp_Dir aDTE1 = new();
+            Direction3D aDTE1 = new();
             if (!FindEdgeTangent(aE1, theDMEdgeTgt, ref aDTE1))
             {
                 continue;
@@ -950,21 +954,21 @@ public static partial class BOPAlgo_Tools
                 }
                 //
                 // find tangent for the second edge
-                gp_Dir aDTE2 = new();
+                Direction3D aDTE2 = new();
                 if (!FindEdgeTangent(aE2, theDMEdgeTgt, ref aDTE2))
                 {
                     continue;
                 }
                 //
-                if (aDTE1.IsParallel(aDTE2, Precision.Angular()))
+                if (aDTE1.IsParallel(aDTE2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     continue;
                 }
                 //
-                gp_Dir aDN = aDTE1 ^ aDTE2;
+                Direction3D aDN = aDTE1 ^ aDTE2;
                 //
                 TopoDS_Iterator aItV = new(aE1);
-                thePlane = new gp_Pln(BRep_Tool.Pnt(TopoDS.Vertex(aItV.Value())), aDN);
+                thePlane = new Plane3D(BRep_Tool.Pnt(TopoDS.Vertex(aItV.Value())), aDN);
                 return true;
             }
         }
@@ -997,7 +1001,7 @@ public static partial class BOPAlgo_Tools
         public BOPAlgo_PairVerticesSelector()
         {
             myVertices = null;
-            myFuzzyValue = Precision.Confusion();
+            myFuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
         //! Sets the map of vertices with tolerances
@@ -1011,23 +1015,23 @@ public static partial class BOPAlgo_Tools
         {
             if (!RejectElement(theID1, theID2))
             {
-                int anID1 = myBVHSet1!.Element(theID1);
+                int anID1 = _bvhSet1!.Element(theID1);
                 TopoDS_Vertex aV1 = TopoDS.Vertex(myVertices!.FindKey(anID1));
                 double aTolV1 = BRep_Tool.Tolerance(aV1);
                 if (aTolV1 < myVertices.FindFromIndex(anID1))
                 {
                     aTolV1 = myVertices.FindFromIndex(anID1);
                 }
-                gp_Pnt aP1 = BRep_Tool.Pnt(aV1);
+                Point3D aP1 = BRep_Tool.Pnt(aV1);
 
-                int anID2 = myBVHSet1.Element(theID2);
+                int anID2 = _bvhSet1.Element(theID2);
                 TopoDS_Vertex aV2 = TopoDS.Vertex(myVertices.FindKey(anID2));
                 double aTolV2 = BRep_Tool.Tolerance(aV2);
                 if (aTolV2 < myVertices.FindFromIndex(anID2))
                 {
                     aTolV2 = myVertices.FindFromIndex(anID2);
                 }
-                gp_Pnt aP2 = BRep_Tool.Pnt(aV2);
+                Point3D aP2 = BRep_Tool.Pnt(aV2);
 
                 double aTolSum2 = aTolV1 + aTolV2 + myFuzzyValue;
                 aTolSum2 *= aTolSum2;
@@ -1078,10 +1082,10 @@ public static partial class BOPAlgo_Tools
             }
 
             // Build bnd box for vertex
-            Bnd_Box aBox = new();
+            Box aBox = new();
             aBox.Add(BRep_Tool.Pnt(aV));
             aBox.SetGap(aTol + aTolAdd);
-            aBBTree.Add(i, Bnd_Tools.Bnd2BVH(aBox));
+            aBBTree.Add(i, Tools.Bnd2BVH(aBox));
         }
 
         aBBTree.Build();
@@ -1140,7 +1144,7 @@ public static partial class BOPAlgo_Tools
     private sealed class BOPAlgo_ShapeBox
     {
         private TopoDS_Shape myShape = new();
-        private Bnd_Box myBox = new();
+        private Box myBox = new();
 
         //! Sets the shape
         public void SetShape(in TopoDS_Shape theS) => myShape = theS;
@@ -1149,10 +1153,10 @@ public static partial class BOPAlgo_Tools
         public TopoDS_Shape Shape() => myShape;
 
         //! Sets the bounding box
-        public void SetBox(in Bnd_Box theBox) => myBox = theBox;
+        public void SetBox(in Box theBox) => myBox = theBox;
 
         //! Returns the bounding box
-        public Bnd_Box Box() => myBox;
+        public Box Box() => myBox;
     }
 
     /// <summary>
@@ -1162,7 +1166,7 @@ public static partial class BOPAlgo_Tools
     private sealed class BOPAlgo_FillIn3DParts : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
     {
         private TopoDS_Solid mySolid = new();                                   //! Solid
-        private Bnd_Box myBoxS = new();                                         // Bounding box of the solid
+        private Box myBoxS = new();                                         // Bounding box of the solid
         private NCollection_List<TopoDS_Shape> myOwnIF = new();                 //! Own INTERNAL faces of the solid
         private readonly NCollection_List<TopoDS_Shape> myInFaces = new();      //! Faces classified as IN
 
@@ -1187,10 +1191,10 @@ public static partial class BOPAlgo_Tools
         public TopoDS_Solid Solid() => mySolid;
 
         //! Sets the box for the solid
-        public void SetBoxS(in Bnd_Box theBox) => myBoxS = theBox;
+        public void SetBoxS(in Box theBox) => myBoxS = theBox;
 
         //! Returns the solid's box
-        public Bnd_Box BoxS() => myBoxS;
+        public Box BoxS() => myBoxS;
 
         //! Sets own INTERNAL faces of the solid
         public void SetOwnIF(NCollection_List<TopoDS_Shape> theLIF) => myOwnIF = new NCollection_List<TopoDS_Shape>(theLIF);
@@ -1216,7 +1220,7 @@ public static partial class BOPAlgo_Tools
         //! Performs the classification
         public override void Perform()
         {
-            using var aPSOuter = new Message_ProgressScope(myProgressRange, null, 2);
+            using var aPSOuter = new ProgressScope(myProgressRange, null, 2);
             if (UserBreak(aPSOuter))
             {
                 return;
@@ -1226,7 +1230,7 @@ public static partial class BOPAlgo_Tools
 
             // 1. Select boxes of faces that are not out of aBoxS
             BOPTools_BoxTreeSelector aSelector = new();
-            aSelector.SetBox(Bnd_Tools.Bnd2BVH(myBoxS));
+            aSelector.SetBox(Tools.Bnd2BVH(myBoxS));
             aSelector.SetBVHSet(myBBTree!);
             //
             if (aSelector.Select() == 0)
@@ -1315,7 +1319,7 @@ public static partial class BOPAlgo_Tools
             // Per-iteration list for connexity block faces
             NCollection_List<TopoDS_Shape> aLCBF = new();
 
-            using var aPSLoop = new Message_ProgressScope(aPSOuter.Next(), null, aNbFP);
+            using var aPSLoop = new ProgressScope(aPSOuter.Next(), null, aNbFP);
             for (k = 0; k < aNbFP; ++k, aPSLoop.Next())
             {
                 if (UserBreak(aPSLoop))
@@ -1338,7 +1342,7 @@ public static partial class BOPAlgo_Tools
                 TopoDS_Face aFaceToClassify = new();
                 MakeConnexityBlock(aFP, aMSE, aMEFP, aMFDone, aLCBF, ref aFaceToClassify);
 
-                if (!myBoxS.IsWhole())
+                if (!myBoxS.IsWhole)
                 {
                     // First, try fast classification of the whole block by additional
                     // check on bounding boxes - check that bounding boxes of all vertices
@@ -1352,7 +1356,7 @@ public static partial class BOPAlgo_Tools
                         for (; anExpV.More() && !bOut; anExpV.Next())
                         {
                             TopoDS_Vertex aV = TopoDS.Vertex(anExpV.Current());
-                            Bnd_Box aBBV = new();
+                            Box aBBV = new();
                             aBBV.Add(BRep_Tool.Pnt(aV));
                             aBBV.SetGap(BRep_Tool.Tolerance(aV));
                             bOut = myBoxS.IsOut(aBBV);
@@ -1379,7 +1383,7 @@ public static partial class BOPAlgo_Tools
                 bool bIsIN = BOPTools_AlgoTools.IsInternalFace(aFaceToClassify,
                                                                mySolid,
                                                                aMEFDS,
-                                                               Precision.Confusion(),
+                                                               global::Kerf.Engine.Foundation.Precision.Confusion(),
                                                                myContext!);
                 if (bIsIN)
                 {
@@ -1490,14 +1494,14 @@ public static partial class BOPAlgo_Tools
                                      bool theRunParallel,
                                      IntTools_Context theContext,
                                      NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theInParts,
-                                     NCollection_DataMap<TopoDS_Shape, Bnd_Box>? theShapeBoxMap = null,
+                                     NCollection_DataMap<TopoDS_Shape, Box>? theShapeBoxMap = null,
                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>? theSolidsIF = null,
-                                     Message_ProgressRange theRange = default)
+                                     ProgressRange theRange = default)
     {
-        theShapeBoxMap ??= new NCollection_DataMap<TopoDS_Shape, Bnd_Box>(TopTools_ShapeMapHasher.Instance);
+        theShapeBoxMap ??= new NCollection_DataMap<TopoDS_Shape, Box>(TopTools_ShapeMapHasher.Instance);
         theSolidsIF ??= new NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
 
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
 
         // Fill the vector of shape box with faces and its bounding boxes
         NCollection_DynamicArray<BOPAlgo_ShapeBox> aVSB = new(256);
@@ -1516,14 +1520,14 @@ public static partial class BOPAlgo_Tools
             aSB.SetShape(aF);
 
             // Get bounding box for the face
-            if (theShapeBoxMap.Find(aF, out Bnd_Box pBox))
+            if (theShapeBoxMap.Find(aF, out Box pBox))
             {
                 aSB.SetBox(pBox);
             }
             else
             {
                 // Build the bounding box
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 BRepBndLib.Add(aF, ref aBox);
                 aSB.SetBox(aBox);
             }
@@ -1536,7 +1540,7 @@ public static partial class BOPAlgo_Tools
         aBBTree.SetSize(aNbF);
         for (int i = 0; i < aNbF; ++i)
         {
-            aBBTree.Add(i, Bnd_Tools.Bnd2BVH(aVSB[i].Box()));
+            aBBTree.Add(i, Tools.Bnd2BVH(aVSB[i].Box()));
         }
 
         // Shake tree filler
@@ -1554,16 +1558,16 @@ public static partial class BOPAlgo_Tools
             aFIP.SetSolid(aSolid);
 
             // Get bounding box for the solid
-            if (theShapeBoxMap.Find(aSolid, out Bnd_Box pBox))
+            if (theShapeBoxMap.Find(aSolid, out Box pBox))
             {
                 aFIP.SetBoxS(pBox);
             }
             else
             {
                 // Build the bounding box
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 BRepBndLib.Add(aSolid, ref aBox);
-                if (!aBox.IsWhole())
+                if (!aBox.IsWhole)
                 {
                     if (BOPTools_AlgoTools.IsInvertedSolid(aSolid))
                     {
@@ -1586,7 +1590,7 @@ public static partial class BOPAlgo_Tools
         aPSOuter.Next();
         // Set progress range for each task to be run in parallel
         int aNbS = aVFIP.Length();
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(9), "Classification of faces relatively solids", aNbS);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(9), "Classification of faces relatively solids", aNbS);
         for (int iFS = 0; iFS < aNbS; ++iFS)
         {
             aVFIP.ChangeValue(iFS).SetProgressRange(aPSParallel.Next());
@@ -1698,7 +1702,7 @@ public static partial class BOPAlgo_Tools
             for (; itLP.More();)
             {
                 TopoDS_Shape aPart = itLP.Value();
-                TopAbs_State aState = BOPTools_AlgoTools.ComputeStateByOnePoint(aPart, aSd, Precision.Confusion(), theContext);
+                TopAbs_State aState = BOPTools_AlgoTools.ComputeStateByOnePoint(aPart, aSd, global::Kerf.Engine.Foundation.Precision.Confusion(), theContext);
                 if (aState == TopAbs_State.TopAbs_IN)
                 {
                     if (aPart.ShapeType() == TopAbs_FACE)
@@ -1770,14 +1774,14 @@ public static partial class BOPAlgo_Tools
     /// for more accurate computations. Returns true if the boxes are far from the point relative to their size
     /// (<paramref name="theCriteria"/>), false otherwise (the transformation is then left unchanged).
     /// </summary>
-    public static bool TrsfToPoint(in Bnd_Box theBox1, in Bnd_Box theBox2, ref gp_Trsf theTrsf, in gp_Pnt thePoint,
+    public static bool TrsfToPoint(in Box theBox1, in Box theBox2, ref Transform3D theTrsf, in Point3D thePoint,
                                    double theCriteria = 1.0e+5)
     {
         // Unify two boxes
-        Bnd_Box aBox = theBox1;
+        Box aBox = theBox1;
         aBox.Add(theBox2);
 
-        gp_XYZ aBCenter = (aBox.CornerMin().XYZ() + aBox.CornerMax().XYZ()) / 2.0;
+        Xyz aBCenter = (aBox.CornerMin().XYZ() + aBox.CornerMax().XYZ()) / 2.0;
         double aPBDist = (thePoint.XYZ() - aBCenter).Modulus();
         if (aPBDist < theCriteria)
         {
@@ -1790,11 +1794,11 @@ public static partial class BOPAlgo_Tools
             return false;
         }
 
-        theTrsf.SetTranslation(new gp_Vec(aBox.CornerMin(), thePoint));
+        theTrsf.SetTranslation(new Vector3D(aBox.CornerMin(), thePoint));
         return true;
     }
 
-    /// <summary><see cref="TrsfToPoint(in Bnd_Box, in Bnd_Box, ref gp_Trsf, in gp_Pnt, double)"/> to the origin.</summary>
-    public static bool TrsfToPoint(in Bnd_Box theBox1, in Bnd_Box theBox2, ref gp_Trsf theTrsf) =>
-        TrsfToPoint(theBox1, theBox2, ref theTrsf, new gp_Pnt(0.0, 0.0, 0.0));
+    /// <summary><see cref="TrsfToPoint(in Box, in Box, ref Transform3D, in Point3D, double)"/> to the origin.</summary>
+    public static bool TrsfToPoint(in Box theBox1, in Box theBox2, ref Transform3D theTrsf) =>
+        TrsfToPoint(theBox1, theBox2, ref theTrsf, new Point3D(0.0, 0.0, 0.0));
 }

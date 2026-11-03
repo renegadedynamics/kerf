@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -500,7 +501,7 @@ internal static class BOPTestBOPCommands
             for (int i = 1; i <= aNbPoints; i++)
             {
                 IntTools_PntOn2Faces aPi = aSPs[i];
-                gp_Pnt aP = aPi.P1().Pnt();
+                Point3D aP = aPi.P1().Pnt();
                 string nameP = aNp + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 DrawTrSurf.Set(theDI, nameP, aP);
                 di.Append(nameP).Append(" ");

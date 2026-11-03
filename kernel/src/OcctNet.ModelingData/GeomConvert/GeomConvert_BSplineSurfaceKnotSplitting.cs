@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +20,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
     /// Determines the U and V knots at which BasisSurface is less than UContinuityRange (resp.
     /// VContinuityRange) times continuously differentiable. A range of 0 keeps only the end knots.
     /// </summary>
-    /// <exception cref="Standard_RangeError">A negative continuity range.</exception>
+    /// <exception cref="RangeErrorException">A negative continuity range.</exception>
     /// <remarks>
     /// OCCT: when the surface is already of continuity VContinuityRange in V, the V result is written into the U
     /// split indices (see occt-issues.md); NbVSplits, VSplitValue and Splitting then throw.
@@ -29,7 +31,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
     {
         if (UContinuityRange < 0 || VContinuityRange < 0)
         {
-            throw new Standard_RangeError();
+            throw new RangeErrorException();
         }
 
         int FirstUIndex = BasisSurface.FirstUKnotIndex();
@@ -49,7 +51,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
         else
         {
             NCollection_Array1<int> UMults = BasisSurface.InternalUMultiplicities();
-            int Mmax = BSplCLib.MaxKnotMult(UMults, FirstUIndex, LastUIndex);
+            int Mmax = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(UMults, FirstUIndex, LastUIndex);
             if (UDegree - Mmax >= UContinuityRange)
             {
                 usplitIndexes = new NCollection_HArray1<int>(1, 2);
@@ -93,7 +95,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
         else
         {
             NCollection_Array1<int> VMults = BasisSurface.InternalVMultiplicities();
-            int Mmax = BSplCLib.MaxKnotMult(VMults, FirstVIndex, LastVIndex);
+            int Mmax = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(VMults, FirstVIndex, LastVIndex);
             if (VDegree - Mmax >= VContinuityRange)
             {
                 // OCCT writes the V end indices into the U split indices; the V ones stay null
@@ -153,7 +155,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
     }
 
     /// <summary>The knot index of the U split UIndex.</summary>
-    /// <exception cref="Standard_RangeError">UIndex out of [1, NbUSplits].</exception>
+    /// <exception cref="RangeErrorException">UIndex out of [1, NbUSplits].</exception>
     public int USplitValue(int UIndex)
     {
         Standard_RangeError_Raise_if(UIndex < 1 || UIndex > usplitIndexes!.Length(), " ");
@@ -161,7 +163,7 @@ public sealed class GeomConvert_BSplineSurfaceKnotSplitting
     }
 
     /// <summary>The knot index of the V split VIndex.</summary>
-    /// <exception cref="Standard_RangeError">VIndex out of [1, NbVSplits].</exception>
+    /// <exception cref="RangeErrorException">VIndex out of [1, NbVSplits].</exception>
     public int VSplitValue(int VIndex)
     {
         Standard_RangeError_Raise_if(VIndex < 1 || VIndex > vsplitIndexes!.Length(), " ");

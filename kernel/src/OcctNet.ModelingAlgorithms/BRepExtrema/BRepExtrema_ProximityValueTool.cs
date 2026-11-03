@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2022-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 using ProxPnt_Status = Occt.BRepExtrema_ProximityDistTool.ProxPnt_Status;
 using static Occt.TopAbs_ShapeEnum;
@@ -12,34 +18,34 @@ namespace Occt;
 /// <summary>
 /// The CellFilter inspector of gp_XYZ points in 3D space, used to find coincident points within a tolerance.
 /// </summary>
-public sealed class BRepExtrema_VertexInspector : INCollection_CellFilter_Inspector<int, gp_XYZ>
+public sealed class BRepExtrema_VertexInspector : ICellFilterInspector<int, Xyz>
 {
     private double myTol;
     private bool myIsNeedAdd;
-    private readonly NCollection_DynamicArray<gp_XYZ> myPoints = new();
-    private gp_XYZ myCurrent;
+    private readonly NCollection_DynamicArray<Xyz> myPoints = new();
+    private Xyz myCurrent;
 
     public static int Dimension => 3;
 
-    public static double Coord(int i, gp_XYZ thePnt) => thePnt.Coord(i + 1);
+    public static double Coord(int i, Xyz thePnt) => thePnt.Coord(i + 1);
 
-    public static gp_XYZ Shift(in gp_XYZ thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol, thePnt.Z() + theTol);
+    public static Xyz Shift(in Xyz thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol, thePnt.Z() + theTol);
 
     /// <summary>An inspector with the square tolerance Precision::SquareConfusion().</summary>
     public BRepExtrema_VertexInspector()
     {
-        myTol = Precision.SquareConfusion();
+        myTol = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         myIsNeedAdd = true;
     }
 
     /// <summary>Keeps a point to compare with.</summary>
-    public void Add(in gp_XYZ thePnt) => myPoints.Append(thePnt);
+    public void Add(in Xyz thePnt) => myPoints.Append(thePnt);
 
     /// <summary>Sets the (square) tolerance of the comparison of coordinates.</summary>
     public void SetTol(double theTol) => myTol = theTol;
 
     /// <summary>Sets the point to search coincidences for.</summary>
-    public void SetCurrent(in gp_XYZ theCurPnt)
+    public void SetCurrent(in Xyz theCurPnt)
     {
         myCurrent = theCurPnt;
         myIsNeedAdd = true;
@@ -55,11 +61,11 @@ public sealed class BRepExtrema_VertexInspector : INCollection_CellFilter_Inspec
     /// OCCT: each call sets the flag again before comparing, so only the last target inspected decides
     /// (occt-issues.md).
     /// </remarks>
-    public NCollection_CellFilter_Action Inspect(int theTarget)
+    public CellFilterAction Inspect(int theTarget)
     {
         myIsNeedAdd = true; // OCCT: reset for every target, so a coincidence found before a later target is forgotten
 
-        gp_XYZ aPnt = myPoints.Value(theTarget - 1);
+        Xyz aPnt = myPoints.Value(theTarget - 1);
         double aDx, aDy, aDz;
         aDx = myCurrent.X() - aPnt.X();
         aDy = myCurrent.Y() - aPnt.Y();
@@ -70,7 +76,7 @@ public sealed class BRepExtrema_VertexInspector : INCollection_CellFilter_Inspec
             myIsNeedAdd = false;
         }
 
-        return NCollection_CellFilter_Action.CellFilter_Keep;
+        return CellFilterAction.CellFilter_Keep;
     }
 }
 
@@ -99,7 +105,7 @@ public sealed class BRepExtrema_ProximityValueTool
     private int myNbNodes2; //!< Number of nodes in triangulation of the 2nd shape.
     private double myStep1; //!< Step for getting vertices on the 1st shape.
     private double myStep2; //!< Step for getting vertices on the 2nd shape.
-    private readonly NCollection_CellFilter<BRepExtrema_VertexInspector, int, gp_XYZ> myCells = new();
+    private readonly CellFilter<BRepExtrema_VertexInspector, int, Xyz> myCells = new();
     private BRepExtrema_VertexInspector myInspector = new();
     private TopAbs_ShapeEnum myShapeType1; //!< 1st shape type.
     private TopAbs_ShapeEnum myShapeType2; //!< 2nd shape type.
@@ -107,7 +113,7 @@ public sealed class BRepExtrema_ProximityValueTool
     private bool myIsDone; //!< State of the algorithm
     private int myNbSamples1; //!< Number of samples points on the first shape
     private int myNbSamples2; //!< Number of samples points on the second shape
-    private gp_Pnt myPnt1, myPnt2; //!< Proximity points
+    private Point3D myPnt1, myPnt2; //!< Proximity points
     private ProxPnt_Status myPntStatus1, myPntStatus2; //!< Proximity points' status
 
     /// <summary>An uninitialized proximity tool.</summary>
@@ -158,7 +164,7 @@ public sealed class BRepExtrema_ProximityValueTool
     public double Distance() => myDistance;
 
     /// <summary>The points of the two sets giving the proximity distance.</summary>
-    public void ProximityPoints(out gp_Pnt thePoint1, out gp_Pnt thePoint2)
+    public void ProximityPoints(out Point3D thePoint1, out Point3D thePoint2)
     {
         thePoint1 = myPnt1;
         thePoint2 = myPnt2;
@@ -219,15 +225,15 @@ public sealed class BRepExtrema_ProximityValueTool
             theShapeType = TopAbs_FACE;
             TopoDS_Face aF = TopoDS.Face(theShape);
 
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aF, out _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(aF, out _);
 
             if (aTriangulation is null)
             {
                 return false;
             }
 
-            theNbNodes = aTriangulation.NbNodes();
-            int aNbTrg = aTriangulation.NbTriangles();
+            theNbNodes = aTriangulation.NodeCount;
+            int aNbTrg = aTriangulation.TriangleCount;
             theStep = calcFaceRefinementStep(aF, aNbTrg);
         }
         else if (theShape.ShapeType() == TopAbs_EDGE)
@@ -235,14 +241,14 @@ public sealed class BRepExtrema_ProximityValueTool
             theShapeType = TopAbs_EDGE;
             TopoDS_Edge aE = TopoDS.Edge(theShape);
 
-            Poly_Polygon3D? aPolygon = BRep_Tool.Polygon3D(aE, out _);
+            Polygon3D? aPolygon = BRep_Tool.Polygon3D(aE, out _);
 
             if (aPolygon is null)
             {
                 return false;
             }
 
-            theNbNodes = aPolygon.NbNodes();
+            theNbNodes = aPolygon.NodeCount;
             theStep = calcEdgeRefinementStep(aE, theNbNodes);
         }
         else
@@ -250,7 +256,7 @@ public sealed class BRepExtrema_ProximityValueTool
             return false;
         }
 
-        if (theStep < Precision.Confusion())
+        if (theStep < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
@@ -307,7 +313,7 @@ public sealed class BRepExtrema_ProximityValueTool
                                                               theShapeList2);
         aProxDistTool.Perform();
 
-        if (!aProxDistTool.IsDone())
+        if (!aProxDistTool.IsDone)
         {
             return -1.0;
         }
@@ -329,7 +335,7 @@ public sealed class BRepExtrema_ProximityValueTool
     {
         var aBAC = new BRepAdaptor_Curve(theEdge);
 
-        if (!aBAC.Is3DCurve() || theStep < Precision.Confusion())
+        if (!aBAC.Is3DCurve() || theStep < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
@@ -348,7 +354,7 @@ public sealed class BRepExtrema_ProximityValueTool
         for (int aVertIdx = 2; aVertIdx < aNbNodes; ++aVertIdx) // don't add extreme points
         {
             double aPar = aGCPnts.Parameter(aVertIdx);
-            gp_Pnt aP = aBAC.Value(aPar);
+            Point3D aP = aBAC.Value(aPar);
 
             theAddVertices.Append(new BVH_Vec3d(aP.X(), aP.Y(), aP.Z()));
             theAddStatuses.Append(ProxPnt_Status.ProxPnt_Status_MIDDLE);
@@ -362,18 +368,18 @@ public sealed class BRepExtrema_ProximityValueTool
     // purpose  : Splits the triangle into two ones recursively, halving the longest side
     //           until the area of the current triangle > input step
     //=======================================================================
-    private void doRecurTrgSplit(ReadOnlySpan<gp_Pnt> theTrg,
+    private void doRecurTrgSplit(ReadOnlySpan<Point3D> theTrg,
                                  ReadOnlySpan<ProxPnt_Status> theEdgesStatus,
                                  double theTol,
                                  double theStep,
                                  NCollection_LinearVector<BVH_Vec3d> theAddVertices,
                                  NCollection_DynamicArray<ProxPnt_Status> theAddStatuses)
     {
-        gp_XYZ aTrgSide1 = theTrg[1].Coord() - theTrg[0].Coord();
-        gp_XYZ aTrgSide2 = theTrg[2].Coord() - theTrg[0].Coord();
+        Xyz aTrgSide1 = theTrg[1].Coord() - theTrg[0].Coord();
+        Xyz aTrgSide2 = theTrg[2].Coord() - theTrg[0].Coord();
         double aTrgArea = 0.5 * aTrgSide1.CrossMagnitude(aTrgSide2);
 
-        if (aTrgArea - theStep < Precision.SquareConfusion())
+        if (aTrgArea - theStep < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return;
         }
@@ -383,10 +389,10 @@ public sealed class BRepExtrema_ProximityValueTool
                                    theTrg[2].Distance(theTrg[0])];
 
         int aBisectedEdgeIdx = aD[0] > aD[1] ? (aD[0] > aD[2] ? 0 : 2) : (aD[1] > aD[2] ? 1 : 2);
-        var aCenterOfMaxSide = new gp_Pnt(theTrg[aBisectedEdgeIdx].Coord());
+        var aCenterOfMaxSide = new Point3D(theTrg[aBisectedEdgeIdx].Coord());
         aCenterOfMaxSide.BaryCenter(0.5, theTrg[(aBisectedEdgeIdx + 1) % 3], 0.5);
 
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         aBox.Add(aCenterOfMaxSide);
         aBox.Enlarge(theTol);
         myInspector.SetCurrent(aCenterOfMaxSide.Coord());
@@ -401,8 +407,8 @@ public sealed class BRepExtrema_ProximityValueTool
             myCells.Add(theAddVertices.Size(), aBox.CornerMin().XYZ(), aBox.CornerMax().XYZ());
         }
 
-        Span<gp_Pnt> aTrg1 = [theTrg[0], theTrg[1], theTrg[2]];
-        Span<gp_Pnt> aTrg2 = [theTrg[0], theTrg[1], theTrg[2]];
+        Span<Point3D> aTrg1 = [theTrg[0], theTrg[1], theTrg[2]];
+        Span<Point3D> aTrg2 = [theTrg[0], theTrg[1], theTrg[2]];
         Span<ProxPnt_Status> aEdgesStatus1 = [theEdgesStatus[0], theEdgesStatus[1], theEdgesStatus[2]];
         Span<ProxPnt_Status> aEdgesStatus2 = [theEdgesStatus[0], theEdgesStatus[1], theEdgesStatus[2]];
         switch (aBisectedEdgeIdx)
@@ -425,9 +431,9 @@ public sealed class BRepExtrema_ProximityValueTool
         doRecurTrgSplit(aTrg2, aEdgesStatus2, theTol, theStep, theAddVertices, theAddStatuses);
     }
 
-    private static double getModelRange(in TopLoc_Location theLocation, Poly_Triangulation theTr)
+    private static double getModelRange(in Placement theLocation, Triangulation theTr)
     {
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         theTr.MinMax(ref aBox, theLocation.Transformation());
         double aXm = 0.0, aYm = 0.0, aZm = 0.0, aXM = 0.0, aYM = 0.0, aZM = 0.0;
         aBox.Get(out aXm, out aYm, out aZm, out aXM, out aYM, out aZM);
@@ -438,25 +444,25 @@ public sealed class BRepExtrema_ProximityValueTool
         return aRange;
     }
 
-    private static void getNodesOfTrg(int theTriIdx, in TopLoc_Location theLocation, Poly_Triangulation theTr, Span<gp_Pnt> theTrg)
+    private static void getNodesOfTrg(int theTriIdx, in Placement theLocation, Triangulation theTr, Span<Point3D> theTrg)
     {
         theTr.Triangle(theTriIdx).Get(out int aVtxIdx1, out int aVtxIdx2, out int aVtxIdx3);
 
-        gp_Pnt aVtx1 = theTr.Node(aVtxIdx1);
+        Point3D aVtx1 = theTr.Node(aVtxIdx1);
         aVtx1.Transform(theLocation.Transformation());
         theTrg[0] = aVtx1;
 
-        gp_Pnt aVtx2 = theTr.Node(aVtxIdx2);
+        Point3D aVtx2 = theTr.Node(aVtxIdx2);
         aVtx2.Transform(theLocation.Transformation());
         theTrg[1] = aVtx2;
 
-        gp_Pnt aVtx3 = theTr.Node(aVtxIdx3);
+        Point3D aVtx3 = theTr.Node(aVtxIdx3);
         aVtx3.Transform(theLocation.Transformation());
         theTrg[2] = aVtx3;
     }
 
     // Gets status of triangle edges - on the border or middle of the face
-    private static void getEdgesStatus(int theTriIdx, Poly_Triangulation theTr, Span<ProxPnt_Status> theEdgesStatus1)
+    private static void getEdgesStatus(int theTriIdx, Triangulation theTr, Span<ProxPnt_Status> theEdgesStatus1)
     {
         for (int j = 0; j < 3; j++)
         {
@@ -483,9 +489,9 @@ public sealed class BRepExtrema_ProximityValueTool
                                            NCollection_LinearVector<BVH_Vec3d> theAddVertices,
                                            NCollection_DynamicArray<ProxPnt_Status> theAddStatuses)
     {
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        Poly_Triangulation? aTr = BRep_Tool.Triangulation(theFace, out TopLoc_Location aLocation);
+        Triangulation? aTr = BRep_Tool.Triangulation(theFace, out Placement aLocation);
 
         if (aTr is null)
         {
@@ -494,9 +500,9 @@ public sealed class BRepExtrema_ProximityValueTool
 
         myCells.Reset(Max(aTol, getModelRange(aLocation, aTr) / IntegerLast()));
 
-        Span<gp_Pnt> aTrg = stackalloc gp_Pnt[3];
+        Span<Point3D> aTrg = stackalloc Point3D[3];
         Span<ProxPnt_Status> aEdgesStatus = stackalloc ProxPnt_Status[3];
-        for (int aTriIdx = 1; aTriIdx <= aTr.NbTriangles(); ++aTriIdx)
+        for (int aTriIdx = 1; aTriIdx <= aTr.TriangleCount; ++aTriIdx)
         {
             getNodesOfTrg(aTriIdx, aLocation, aTr, aTrg);
             getEdgesStatus(aTriIdx, aTr, aEdgesStatus);
@@ -651,16 +657,16 @@ public sealed class BRepExtrema_ProximityValueTool
         if (aProximityDist1 < aProximityDist2)
         {
             myDistance = aProximityDist1;
-            myPnt1 = new gp_Pnt(aP1_1.x(), aP1_1.y(), aP1_1.z());
-            myPnt2 = new gp_Pnt(aP1_2.x(), aP1_2.y(), aP1_2.z());
+            myPnt1 = new Point3D(aP1_1.X(), aP1_1.Y(), aP1_1.Z());
+            myPnt2 = new Point3D(aP1_2.X(), aP1_2.Y(), aP1_2.Z());
             myPntStatus1 = aPointStatus1_1;
             myPntStatus2 = aPointStatus1_2;
         }
         else
         {
             myDistance = aProximityDist2;
-            myPnt1 = new gp_Pnt(aP2_1.x(), aP2_1.y(), aP2_1.z());
-            myPnt2 = new gp_Pnt(aP2_2.x(), aP2_2.y(), aP2_2.z());
+            myPnt1 = new Point3D(aP2_1.X(), aP2_1.Y(), aP2_1.Z());
+            myPnt2 = new Point3D(aP2_2.X(), aP2_2.Y(), aP2_2.Z());
             myPntStatus1 = aPointStatus2_1;
             myPntStatus2 = aPointStatus2_2;
         }

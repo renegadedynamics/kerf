@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -90,13 +92,13 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
     };
 
     /// <summary>A printer keeping what the messenger prints (every gravity), as the recorder's.</summary>
-    internal sealed class StringPrinter : Message_Printer
+    internal sealed class StringPrinter : Printer
     {
         public readonly StringBuilder Text = new();
 
-        public StringPrinter() => myTraceLevel = Message_Gravity.Message_Trace;
+        public StringPrinter() => _traceLevel = Gravity.Trace;
 
-        protected override void send(string theString, Message_Gravity theGravity)
+        protected override void SendCore(string theString, Gravity theGravity)
         {
             Text.Append(theString).Append('\n');
         }
@@ -106,7 +108,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
                                  StringPrinter thePrinter)
     {
         TopoDS_Shape aRes = theContext.Result();
-        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen())
+        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException($"{theRun}: the result isn't frozen");
         }
@@ -121,7 +123,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         var aSig = new StringBuilder();
         void Sign(in TopoDS_Shape theKey)
         {
-            TopoDS_Shape aKey = theKey.Located(new TopLoc_Location());
+            TopoDS_Shape aKey = theKey.Located(new Placement());
             aSig.Append(aMap.Find(aKey, out TopoDS_Shape aValue) ? TypeChar(aValue) : '-');
         }
         Sign(theInput);
@@ -138,9 +140,9 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         var aTexts = new List<string>();
         if (theContext.Messages() is ShapeExtend_MsgRegistrator aMessages)
         {
-            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Message_Msg>> anItem in aMessages.MapShape())
+            foreach (KeyValuePair<TopoDS_Shape, NCollection_List<Msg>> anItem in aMessages.MapShape())
             {
-                for (var aMsg = new NCollection_List<Message_Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
+                for (var aMsg = new NCollection_List<Msg>.Iterator(anItem.Value); aMsg.More(); aMsg.Next())
                 {
                     aTexts.Add(aMsg.Value().Value());
                 }
@@ -171,10 +173,10 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             return theBody();
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException && e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception e) when (e is FailureException or NullReferenceException && e is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // an access violation natively (decision 977)
-            return $"{theRun} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : e.GetType().Name)}";
+            return $"{theRun} THROW {(e is NullReferenceException ? "OSD_Exception_ACCESS_VIOLATION" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()))}";
         }
     }
 
@@ -195,7 +197,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             var aPrinter = new StringPrinter();
             var aContext = new ShapeProcess_ShapeContext(aShape, theRsc, "", aDir);
-            aContext.SetMessenger(new Message_Messenger(aPrinter));
+            aContext.SetMessenger(new Messenger(aPrinter));
             bool isDone = ShapeProcess.Perform(aContext, theSeq);
             return Record(theSeq, aShape, aContext, isDone, aPrinter);
         });
@@ -209,7 +211,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             var aPrinter = new StringPrinter();
             var aContext = new ShapeProcess_ShapeContext(aShape, "");
-            aContext.SetMessenger(new Message_Messenger(aPrinter));
+            aContext.SetMessenger(new Messenger(aPrinter));
             bool isDone = ShapeProcess.Perform(aContext, new ShapeProcess.OperationsFlags(theOperation));
             return Record(aRun, aShape, aContext, isDone, aPrinter);
         });

@@ -5,6 +5,8 @@
 
 // Lpa, le 3/12/91
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -39,7 +41,7 @@ public class AppDef_MultiLine
     {
         if (NbMult < 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         tabMult = new NCollection_HArray1<AppDef_MultiPointConstraint>(1, NbMult);
@@ -57,7 +59,7 @@ public class AppDef_MultiLine
     }
 
     /// <summary>A MultiLine of one line of 3d points, without tangents.</summary>
-    public AppDef_MultiLine(NCollection_Array1<gp_Pnt> tabP3d)
+    public AppDef_MultiLine(NCollection_Array1<Point3D> tabP3d)
     {
         tabMult = new NCollection_HArray1<AppDef_MultiPointConstraint>(1, tabP3d.Length());
         int i, Lower = tabP3d.Lower();
@@ -70,7 +72,7 @@ public class AppDef_MultiLine
     }
 
     /// <summary>A MultiLine of one line of 2d points, without tangents.</summary>
-    public AppDef_MultiLine(NCollection_Array1<gp_Pnt2d> tabP2d)
+    public AppDef_MultiLine(NCollection_Array1<Point2D> tabP2d)
     {
         tabMult = new NCollection_HArray1<AppDef_MultiPointConstraint>(1, tabP2d.Length());
         int i, Lower = tabP2d.Lower();
@@ -98,7 +100,7 @@ public class AppDef_MultiLine
     {
         if ((Index <= 0) || (Index > tabMult!.Length()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabMult.SetValue(Index, MPoint);
     }
@@ -111,7 +113,7 @@ public class AppDef_MultiLine
     {
         if ((Index <= 0) || (Index > tabMult!.Length()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabMult.Value(Index);
     }

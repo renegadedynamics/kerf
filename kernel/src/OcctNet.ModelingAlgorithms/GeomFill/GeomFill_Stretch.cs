@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,21 +18,21 @@ public class GeomFill_Stretch : GeomFill_Filling
     {
     }
 
-    public GeomFill_Stretch(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                            NCollection_Array1<gp_Pnt> P4)
+    public GeomFill_Stretch(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                            NCollection_Array1<Point3D> P4)
     {
         Init(P1, P2, P3, P4);
     }
 
-    public GeomFill_Stretch(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                            NCollection_Array1<gp_Pnt> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
+    public GeomFill_Stretch(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                            NCollection_Array1<Point3D> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
                             NCollection_Array1<double> W3, NCollection_Array1<double> W4)
     {
         Init(P1, P2, P3, P4, W1, W2, W3, W4);
     }
 
-    public void Init(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                     NCollection_Array1<gp_Pnt> P4)
+    public void Init(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                     NCollection_Array1<Point3D> P4)
     {
         Standard_DomainError_Raise_if(P1.Length() != P3.Length() || P2.Length() != P4.Length(), " ");
 
@@ -41,7 +43,7 @@ public class GeomFill_Stretch : GeomFill_Filling
 
         double NU = NPolU - 1;
         double NV = NPolV - 1;
-        myPoles = new NCollection_HArray2<gp_Pnt>(1, NPolU, 1, NPolV);
+        myPoles = new NCollection_HArray2<Point3D>(1, NPolU, 1, NPolV);
 
         // The boundaries are not modified
         int i, j, k;
@@ -62,7 +64,7 @@ public class GeomFill_Stretch : GeomFill_Filling
             {
                 PU = (i - 1) / NU;
                 PU1 = 1 - PU;
-                gp_Pnt P = new();
+                Point3D P = new();
                 for (k = 1; k <= 3; k++)
                 {
                     P.SetCoord(k, PV1 * P1[i].Coord(k) + PV * P3[i].Coord(k) + PU * P2[j].Coord(k) + PU1 * P4[j].Coord(k)
@@ -74,8 +76,8 @@ public class GeomFill_Stretch : GeomFill_Filling
         }
     }
 
-    public void Init(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                     NCollection_Array1<gp_Pnt> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
+    public void Init(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                     NCollection_Array1<Point3D> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
                      NCollection_Array1<double> W3, NCollection_Array1<double> W4)
     {
         Standard_DomainError_Raise_if(W1.Length() != W3.Length() || W2.Length() != W4.Length(), " ");

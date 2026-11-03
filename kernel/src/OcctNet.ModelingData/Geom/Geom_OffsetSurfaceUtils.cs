@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.CSLib_NormalStatus;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.NormalStatus;
 
 namespace Occt;
 
@@ -39,7 +41,7 @@ internal static class Geom_OffsetSurfaceUtils
 
         Geom_Surface.ResD3 EvalD3(double theU, double theV);
 
-        gp_Vec EvalDN(double theU, double theV, int theNu, int theNv);
+        Vector3D EvalDN(double theU, double theV, int theNu, int theNv);
     }
 
     /// <summary>A Geom surface as basis (Geom_OffsetSurface).</summary>
@@ -62,7 +64,7 @@ internal static class Geom_OffsetSurfaceUtils
 
         public Geom_Surface.ResD3 EvalD3(double theU, double theV) => mySurf.EvalD3(theU, theV);
 
-        public gp_Vec EvalDN(double theU, double theV, int theNu, int theNv) => mySurf.EvalDN(theU, theV, theNu, theNv);
+        public Vector3D EvalDN(double theU, double theV, int theNu, int theNv) => mySurf.EvalDN(theU, theV, theNu, theNv);
     }
 
     /// <summary>A surface adaptor as basis (GeomAdaptor_Surface, bounded by the adaptor's parameter range).</summary>
@@ -85,7 +87,7 @@ internal static class Geom_OffsetSurfaceUtils
 
         public Geom_Surface.ResD3 EvalD3(double theU, double theV) => mySurf.EvalD3(theU, theV);
 
-        public gp_Vec EvalDN(double theU, double theV, int theNu, int theNv) => mySurf.EvalDN(theU, theV, theNu, theNv);
+        public Vector3D EvalDN(double theU, double theV, int theNu, int theNv) => mySurf.EvalDN(theU, theV, theNu, theNv);
     }
 
     /// <summary>Default tolerance for normal magnitude check.</summary>
@@ -111,17 +113,17 @@ internal static class Geom_OffsetSurfaceUtils
     }
 
     /// <summary>True if any coordinate is infinite.</summary>
-    internal static bool IsInfiniteCoord(in gp_Vec theVec)
+    internal static bool IsInfiniteCoord(in Vector3D theVec)
     {
-        return Precision.IsInfinite(theVec.X()) || Precision.IsInfinite(theVec.Y()) || Precision.IsInfinite(theVec.Z());
+        return global::Kerf.Engine.Foundation.Precision.IsInfinite(theVec.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theVec.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theVec.Z());
     }
 
     /// <summary>True if the normal magnitude is below the tolerance (singular case).</summary>
-    internal static bool IsSingular(in gp_Vec theD1U, in gp_Vec theD1V, double theTol = THE_D1_MAGNITUDE_TOL)
+    internal static bool IsSingular(in Vector3D theD1U, in Vector3D theD1V, double theTol = THE_D1_MAGNITUDE_TOL)
     {
         // Normalize derivatives before normal calculation for stability
-        gp_Vec aD1U = theD1U;
-        gp_Vec aD1V = theD1V;
+        Vector3D aD1U = theD1U;
+        Vector3D aD1V = theD1V;
         double aD1UNorm2 = aD1U.SquareMagnitude();
         double aD1VNorm2 = aD1V.SquareMagnitude();
         if (aD1UNorm2 > 1.0)
@@ -133,17 +135,17 @@ internal static class Geom_OffsetSurfaceUtils
             aD1V /= Math.Sqrt(aD1VNorm2);
         }
 
-        gp_Vec aNorm = aD1U.Crossed(aD1V);
+        Vector3D aNorm = aD1U.Crossed(aD1V);
         return aNorm.SquareMagnitude() <= theTol * theTol;
     }
 
     /// <summary>The normalized normal in the non-singular case; false if singular.</summary>
-    internal static bool ComputeNormal(in gp_Vec theD1U, in gp_Vec theD1V, out gp_Vec theNormal,
+    internal static bool ComputeNormal(in Vector3D theD1U, in Vector3D theD1V, out Vector3D theNormal,
                                        double theTol = THE_D1_MAGNITUDE_TOL)
     {
         // Normalize derivatives before normal calculation for stability
-        gp_Vec aD1U = theD1U;
-        gp_Vec aD1V = theD1V;
+        Vector3D aD1U = theD1U;
+        Vector3D aD1V = theD1V;
         double aD1UNorm2 = aD1U.SquareMagnitude();
         double aD1VNorm2 = aD1V.SquareMagnitude();
         if (aD1UNorm2 > 1.0)
@@ -165,12 +167,12 @@ internal static class Geom_OffsetSurfaceUtils
     }
 
     /// <summary>dN/du for a non-singular offset surface.</summary>
-    internal static gp_Vec ComputeDNormalU(in gp_Vec theD1U, in gp_Vec theD1V, in gp_Vec theD2U, in gp_Vec theD2UV,
-                                           in gp_Vec theNormal)
+    internal static Vector3D ComputeDNormalU(in Vector3D theD1U, in Vector3D theD1V, in Vector3D theD2U, in Vector3D theD2UV,
+                                           in Vector3D theNormal)
     {
         double aScale = (theD1U ^ theD1V).Dot(theNormal);
 
-        gp_Vec aN1U = new gp_Vec();
+        Vector3D aN1U = new Vector3D();
         aN1U.SetX(theD2U.Y() * theD1V.Z() + theD1U.Y() * theD2UV.Z() - theD2U.Z() * theD1V.Y()
                   - theD1U.Z() * theD2UV.Y());
         aN1U.SetY(-(theD2U.X() * theD1V.Z() + theD1U.X() * theD2UV.Z() - theD2U.Z() * theD1V.X()
@@ -185,12 +187,12 @@ internal static class Geom_OffsetSurfaceUtils
     }
 
     /// <summary>dN/dv for a non-singular offset surface.</summary>
-    internal static gp_Vec ComputeDNormalV(in gp_Vec theD1U, in gp_Vec theD1V, in gp_Vec theD2V, in gp_Vec theD2UV,
-                                           in gp_Vec theNormal)
+    internal static Vector3D ComputeDNormalV(in Vector3D theD1U, in Vector3D theD1V, in Vector3D theD2V, in Vector3D theD2UV,
+                                           in Vector3D theNormal)
     {
         double aScale = (theD1U ^ theD1V).Dot(theNormal);
 
-        gp_Vec aN1V = new gp_Vec();
+        Vector3D aN1V = new Vector3D();
         aN1V.SetX(theD2UV.Y() * theD1V.Z() + theD2V.Z() * theD1U.Y() - theD2UV.Z() * theD1V.Y()
                   - theD2V.Y() * theD1U.Z());
         aN1V.SetY(-(theD2UV.X() * theD1V.Z() + theD2V.Z() * theD1U.X() - theD2UV.Z() * theD1V.X()
@@ -207,10 +209,10 @@ internal static class Geom_OffsetSurfaceUtils
     /// <summary>
     /// The offset point in the non-singular case: theValue is the basis point on input. False if singular.
     /// </summary>
-    internal static bool CalculateD0(ref gp_Pnt theValue, in gp_Vec theD1U, in gp_Vec theD1V, double theOffset,
+    internal static bool CalculateD0(ref Point3D theValue, in Vector3D theD1U, in Vector3D theD1V, double theOffset,
                                      double theSign = 1.0)
     {
-        if (!ComputeNormal(theD1U, theD1V, out gp_Vec aNorm))
+        if (!ComputeNormal(theD1U, theD1V, out Vector3D aNorm))
         {
             return false;
         }
@@ -222,10 +224,10 @@ internal static class Geom_OffsetSurfaceUtils
     /// The offset point and first derivatives in the non-singular case: the inputs are the basis surface's.
     /// False if singular.
     /// </summary>
-    internal static bool CalculateD1(ref gp_Pnt theValue, ref gp_Vec theD1U, ref gp_Vec theD1V, in gp_Vec theD2U,
-                                     in gp_Vec theD2V, in gp_Vec theD2UV, double theOffset, double theSign = 1.0)
+    internal static bool CalculateD1(ref Point3D theValue, ref Vector3D theD1U, ref Vector3D theD1V, in Vector3D theD2U,
+                                     in Vector3D theD2V, in Vector3D theD2UV, double theOffset, double theSign = 1.0)
     {
-        if (!ComputeNormal(theD1U, theD1V, out gp_Vec aNorm))
+        if (!ComputeNormal(theD1U, theD1V, out Vector3D aNorm))
         {
             return false;
         }
@@ -234,8 +236,8 @@ internal static class Geom_OffsetSurfaceUtils
         theValue.SetXYZ(theValue.XYZ() + theOffset * theSign * aNorm.XYZ());
 
         // Compute normal derivatives
-        gp_Vec aN1U = ComputeDNormalU(theD1U, theD1V, theD2U, theD2UV, aNorm);
-        gp_Vec aN1V = ComputeDNormalV(theD1U, theD1V, theD2V, theD2UV, aNorm);
+        Vector3D aN1U = ComputeDNormalU(theD1U, theD1V, theD2U, theD2UV, aNorm);
+        Vector3D aN1V = ComputeDNormalV(theD1U, theD1V, theD2V, theD2UV, aNorm);
 
         theD1U += theOffset * theSign * aN1U;
         theD1V += theOffset * theSign * aN1V;
@@ -257,14 +259,14 @@ internal static class Geom_OffsetSurfaceUtils
                                                     bool theAlongU,
                                                     bool theAlongV,
                                                     Geom_BSplineSurface? theOscSurf,
-                                                    NCollection_Array2<gp_Vec> theDerNUV,
-                                                    NCollection_Array2<gp_Vec> theDerSurf)
+                                                    NCollection_Array2<Vector3D> theDerNUV,
+                                                    NCollection_Array2<Vector3D> theDerSurf)
         where TBasis : struct, IBasisSurface
     {
         if (theAlongU || theAlongV)
         {
             theMaxOrder = 0;
-            NCollection_Array2<gp_Vec> DerSurfL = new(0, theMaxOrder + theNU + 1, 0, theMaxOrder + theNV + 1);
+            NCollection_Array2<Vector3D> DerSurfL = new(0, theMaxOrder + theNU + 1, 0, theMaxOrder + theNV + 1);
             switch (theMinOrder)
             {
                 case 1:
@@ -310,14 +312,14 @@ internal static class Geom_OffsetSurfaceUtils
                     {
                         if (i + j > theMinOrder)
                         {
-                            gp_Vec aOscDN = theOscSurf!.EvalDN(theU, theV, i, j);
-                            gp_Vec aBasisDN = theBasisSurf.EvalDN(theU, theV, i, j);
+                            Vector3D aOscDN = theOscSurf!.EvalDN(theU, theV, i, j);
+                            Vector3D aBasisDN = theBasisSurf.EvalDN(theU, theV, i, j);
                             DerSurfL.SetValue(i, j, aOscDN);
                             theDerSurf.SetValue(i, j, aBasisDN);
                             if (i != j && j <= theNU + 1)
                             {
-                                gp_Vec aBasisDNji = theBasisSurf.EvalDN(theU, theV, j, i);
-                                gp_Vec aOscDNji = theOscSurf.EvalDN(theU, theV, j, i);
+                                Vector3D aBasisDNji = theBasisSurf.EvalDN(theU, theV, j, i);
+                                Vector3D aOscDNji = theOscSurf.EvalDN(theU, theV, j, i);
                                 theDerSurf.SetValue(j, i, aBasisDNji);
                                 DerSurfL.SetValue(j, i, aOscDNji);
                             }
@@ -333,14 +335,14 @@ internal static class Geom_OffsetSurfaceUtils
                     {
                         if (i + j > theMinOrder)
                         {
-                            gp_Vec aOscDN = theOscSurf!.EvalDN(theU, theV, i, j);
-                            gp_Vec aBasisDN = theBasisSurf.EvalDN(theU, theV, i, j);
+                            Vector3D aOscDN = theOscSurf!.EvalDN(theU, theV, i, j);
+                            Vector3D aBasisDN = theBasisSurf.EvalDN(theU, theV, i, j);
                             DerSurfL.SetValue(i, j, aOscDN);
                             theDerSurf.SetValue(i, j, aBasisDN);
                             if (i != j && i <= theNV + 1)
                             {
-                                gp_Vec aBasisDNji = theBasisSurf.EvalDN(theU, theV, j, i);
-                                gp_Vec aOscDNji = theOscSurf.EvalDN(theU, theV, j, i);
+                                Vector3D aBasisDNji = theBasisSurf.EvalDN(theU, theV, j, i);
+                                Vector3D aOscDNji = theOscSurf.EvalDN(theU, theV, j, i);
                                 theDerSurf.SetValue(j, i, aBasisDNji);
                                 DerSurfL.SetValue(j, i, aOscDNji);
                             }
@@ -354,11 +356,11 @@ internal static class Geom_OffsetSurfaceUtils
                 {
                     if (theAlongU)
                     {
-                        theDerNUV.SetValue(i, j, CSLib.DNNUV(i, j, DerSurfL, theDerSurf));
+                        theDerNUV.SetValue(i, j, global::Kerf.Engine.Geometry.CSLib.DNNUV(i, j, DerSurfL, theDerSurf));
                     }
                     if (theAlongV)
                     {
-                        theDerNUV.SetValue(i, j, CSLib.DNNUV(i, j, theDerSurf, DerSurfL));
+                        theDerNUV.SetValue(i, j, global::Kerf.Engine.Geometry.CSLib.DNNUV(i, j, theDerSurf, DerSurfL));
                     }
                 }
             }
@@ -371,11 +373,11 @@ internal static class Geom_OffsetSurfaceUtils
                 {
                     if (i + j > theMinOrder)
                     {
-                        gp_Vec aDN = theBasisSurf.EvalDN(theU, theV, i, j);
+                        Vector3D aDN = theBasisSurf.EvalDN(theU, theV, i, j);
                         theDerSurf.SetValue(i, j, aDN);
                         if (i != j && j <= theDerSurf.UpperRow() && i <= theDerSurf.UpperCol())
                         {
-                            gp_Vec aDNji = theBasisSurf.EvalDN(theU, theV, j, i);
+                            Vector3D aDNji = theBasisSurf.EvalDN(theU, theV, j, i);
                             theDerSurf.SetValue(j, i, aDNji);
                         }
                     }
@@ -385,7 +387,7 @@ internal static class Geom_OffsetSurfaceUtils
             {
                 for (int j = 0; j <= theMaxOrder + theNV; j++)
                 {
-                    theDerNUV.SetValue(i, j, CSLib.DNNUV(i, j, theDerSurf));
+                    theDerNUV.SetValue(i, j, global::Kerf.Engine.Geometry.CSLib.DNNUV(i, j, theDerSurf));
                 }
             }
         }
@@ -402,8 +404,8 @@ internal static class Geom_OffsetSurfaceUtils
                                                    double theUMax,
                                                    double theVMin,
                                                    double theVMax,
-                                                   ref gp_Vec theDU,
-                                                   ref gp_Vec theDV,
+                                                   ref Vector3D theDU,
+                                                   ref Vector3D theDV,
                                                    double theSquareTol,
                                                    in TBasis theBasisSurf)
         where TBasis : struct, IBasisSurface
@@ -419,7 +421,7 @@ internal static class Geom_OffsetSurfaceUtils
             double aStep;
             if (isReplaceDV)
             {
-                aStep = Precision.Confusion() * theDU.Magnitude();
+                aStep = global::Kerf.Engine.Foundation.Precision.Confusion() * theDU.Magnitude();
                 if (aStep > theUMax - theUMin)
                 {
                     aStep = (theUMax - theUMin) / 100.0;
@@ -427,7 +429,7 @@ internal static class Geom_OffsetSurfaceUtils
             }
             else
             {
-                aStep = Precision.Confusion() * theDV.Magnitude();
+                aStep = global::Kerf.Engine.Foundation.Precision.Confusion() * theDV.Magnitude();
                 if (aStep > theVMax - theVMin)
                 {
                     aStep = (theVMax - theVMin) / 100.0;
@@ -489,8 +491,8 @@ internal static class Geom_OffsetSurfaceUtils
                                     double theVMax,
                                     bool theIsUPeriodic,
                                     bool theIsVPeriodic,
-                                    in gp_Vec theD1U,
-                                    in gp_Vec theD1V)
+                                    in Vector3D theD1U,
+                                    in Vector3D theD1V)
     {
         // Check if either U or V is singular (normally one of them is)
         bool isUSingular = (theD1U.SquareMagnitude() < THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL);
@@ -509,7 +511,7 @@ internal static class Geom_OffsetSurfaceUtils
         // fail if center is overpassed.
         double aDU = theU - theUStart;
         double aDV = theV - theVStart;
-        double aStep = Math.Max(2.0 * Math.Sqrt(aDU * aDU + aDV * aDV), Precision.PConfusion());
+        double aStep = Math.Max(2.0 * Math.Sqrt(aDU * aDU + aDV * aDV), global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (aStep >= aDist)
         {
             return false;
@@ -542,9 +544,9 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            ref gp_Pnt theValue,
-                                            in gp_Vec theD1U,
-                                            in gp_Vec theD1V)
+                                            ref Point3D theValue,
+                                            in Vector3D theD1U,
+                                            in Vector3D theD1V)
         where TBasis : struct, IBasisSurface
     {
         double aUStart = theU;
@@ -554,8 +556,8 @@ internal static class Geom_OffsetSurfaceUtils
         bool isVPer = theBasisSurf.IsVPeriodic();
 
         // Use pre-computed D1 for first iteration
-        gp_Vec aD1U = theD1U;
-        gp_Vec aD1V = theD1V;
+        Vector3D aD1U = theD1U;
+        Vector3D aD1V = theD1V;
         bool isFirstIteration = true;
 
         for (;;)
@@ -588,8 +590,8 @@ internal static class Geom_OffsetSurfaceUtils
             Geom_BSplineSurface? aOscSurf = null;
             queryOsculating(theOscQuery, theU, theV, ref aOscInfo, ref aOscSurf);
 
-            NCollection_Array2<gp_Vec> aDerNUV = new(0, aMaxOrder, 0, aMaxOrder);
-            NCollection_Array2<gp_Vec> aDerSurf = new(0, aMaxOrder + 1, 0, aMaxOrder + 1);
+            NCollection_Array2<Vector3D> aDerNUV = new(0, aMaxOrder, 0, aMaxOrder);
+            NCollection_Array2<Vector3D> aDerSurf = new(0, aMaxOrder + 1, 0, aMaxOrder + 1);
 
             aDerSurf.SetValue(1, 0, aD1U);
             aDerSurf.SetValue(0, 1, aD1V);
@@ -612,8 +614,8 @@ internal static class Geom_OffsetSurfaceUtils
                 }
             }
 
-            gp_Dir aNormal = new gp_Dir();
-            CSLib.Normal(aMaxOrder,
+            Direction3D aNormal = new Direction3D();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                          aDerNUV,
                          THE_D1_MAGNITUDE_TOL,
                          theU,
@@ -622,16 +624,16 @@ internal static class Geom_OffsetSurfaceUtils
                          aUMax,
                          aVMin,
                          aVMax,
-                         out CSLib_NormalStatus aNStatus,
+                         out NormalStatus aNStatus,
                          ref aNormal,
                          out _,
                          out _);
 
             // Handle CSLib_InfinityOfSolutions by replacing zero derivative
-            if (aNStatus == CSLib_InfinityOfSolutions)
+            if (aNStatus == InfinityOfSolutions)
             {
-                gp_Vec aNewDU = aD1U;
-                gp_Vec aNewDV = aD1V;
+                Vector3D aNewDU = aD1U;
+                Vector3D aNewDV = aD1V;
                 if (ReplaceDerivative(theU,
                                       theV,
                                       aUMin,
@@ -643,11 +645,11 @@ internal static class Geom_OffsetSurfaceUtils
                                       THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL,
                                       theBasisSurf))
                 {
-                    CSLib.Normal(aNewDU, aNewDV, THE_D1_MAGNITUDE_TOL, out aNStatus, ref aNormal);
+                    global::Kerf.Engine.Geometry.CSLib.Normal(aNewDU, aNewDV, THE_D1_MAGNITUDE_TOL, out aNStatus, ref aNormal);
                 }
             }
 
-            if (aNStatus == CSLib_Defined)
+            if (aNStatus == Defined)
             {
                 theValue.SetXYZ(theValue.XYZ() + theOffset * aOscInfo.Sign() * aNormal.XYZ());
                 return true;
@@ -668,7 +670,7 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Pnt theValue)
+                                            out Point3D theValue)
         where TBasis : struct, IBasisSurface
     {
         Geom_Surface.ResD1 aBasisD1 = theBasisSurf.EvalD1(theU, theV);
@@ -685,12 +687,12 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            ref gp_Pnt theValue,
-                                            ref gp_Vec theD1U,
-                                            ref gp_Vec theD1V,
-                                            in gp_Vec theD2U,
-                                            in gp_Vec theD2V,
-                                            in gp_Vec theD2UV)
+                                            ref Point3D theValue,
+                                            ref Vector3D theD1U,
+                                            ref Vector3D theD1V,
+                                            in Vector3D theD2U,
+                                            in Vector3D theD2V,
+                                            in Vector3D theD2UV)
         where TBasis : struct, IBasisSurface
     {
         double aUStart = theU;
@@ -700,9 +702,9 @@ internal static class Geom_OffsetSurfaceUtils
         bool isVPer = theBasisSurf.IsVPeriodic();
 
         // Use pre-computed D2 for first iteration
-        gp_Vec aD2U = theD2U;
-        gp_Vec aD2V = theD2V;
-        gp_Vec aD2UV = theD2UV;
+        Vector3D aD2U = theD2U;
+        Vector3D aD2V = theD2V;
+        Vector3D aD2UV = theD2UV;
         bool isFirstIteration = true;
 
         for (;;)
@@ -726,8 +728,8 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Check if singular by normalizing derivatives and computing cross product
-            gp_Vec aD1U = theD1U;
-            gp_Vec aD1V = theD1V;
+            Vector3D aD1U = theD1U;
+            Vector3D aD1V = theD1V;
             double aD1UNorm2 = aD1U.SquareMagnitude();
             double aD1VNorm2 = aD1V.SquareMagnitude();
             if (aD1UNorm2 > 1.0)
@@ -741,7 +743,7 @@ internal static class Geom_OffsetSurfaceUtils
 
             bool isSingular = false;
             const int aMaxOrder = 3;
-            gp_Vec aNorm = aD1U.Crossed(aD1V);
+            Vector3D aNorm = aD1U.Crossed(aD1V);
 
             // Query osculating surface only if singular
             OsculatingInfo aOscInfo = default;
@@ -762,7 +764,7 @@ internal static class Geom_OffsetSurfaceUtils
                 theValue.SetXYZ(theValue.XYZ() + theOffset * aSign * aNorm.XYZ());
 
                 // Compute normal derivatives using inline formulas
-                gp_Vec aN0 = new gp_Vec(aNorm.XYZ()), aN1U = new gp_Vec(), aN1V = new gp_Vec();
+                Vector3D aN0 = new Vector3D(aNorm.XYZ()), aN1U = new Vector3D(), aN1V = new Vector3D();
                 double aScale = (theD1U ^ theD1V).Dot(aN0);
                 aN1U.SetX(aD2U.Y() * theD1V.Z() + theD1U.Y() * aD2UV.Z() - aD2U.Z() * theD1V.Y()
                           - theD1U.Z() * aD2UV.Y());
@@ -793,8 +795,8 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Singular case - use higher order derivatives
-            NCollection_Array2<gp_Vec> aDerNUV = new(0, aMaxOrder + 1, 0, aMaxOrder + 1);
-            NCollection_Array2<gp_Vec> aDerSurf = new(0, aMaxOrder + 2, 0, aMaxOrder + 2);
+            NCollection_Array2<Vector3D> aDerNUV = new(0, aMaxOrder + 1, 0, aMaxOrder + 1);
+            NCollection_Array2<Vector3D> aDerSurf = new(0, aMaxOrder + 2, 0, aMaxOrder + 2);
 
             aDerSurf.SetValue(1, 0, theD1U);
             aDerSurf.SetValue(0, 1, theD1V);
@@ -819,8 +821,8 @@ internal static class Geom_OffsetSurfaceUtils
                 }
             }
 
-            gp_Dir aNormal = new gp_Dir();
-            CSLib.Normal(aMaxOrder,
+            Direction3D aNormal = new Direction3D();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                          aDerNUV,
                          THE_D1_MAGNITUDE_TOL,
                          theU,
@@ -829,16 +831,16 @@ internal static class Geom_OffsetSurfaceUtils
                          aUMax,
                          aVMin,
                          aVMax,
-                         out CSLib_NormalStatus aNStatus,
+                         out NormalStatus aNStatus,
                          ref aNormal,
                          out int aOrderU,
                          out int aOrderV);
 
             // Handle CSLib_InfinityOfSolutions by replacing zero derivative
-            if (aNStatus == CSLib_InfinityOfSolutions)
+            if (aNStatus == InfinityOfSolutions)
             {
-                gp_Vec aNewDU = theD1U;
-                gp_Vec aNewDV = theD1V;
+                Vector3D aNewDU = theD1U;
+                Vector3D aNewDV = theD1V;
                 if (ReplaceDerivative(theU,
                                       theV,
                                       aUMin,
@@ -869,7 +871,7 @@ internal static class Geom_OffsetSurfaceUtils
                             return false;
                         }
                     }
-                    CSLib.Normal(aMaxOrder,
+                    global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                                  aDerNUV,
                                  THE_D1_MAGNITUDE_TOL,
                                  theU,
@@ -885,13 +887,13 @@ internal static class Geom_OffsetSurfaceUtils
                 }
             }
 
-            if (aNStatus == CSLib_Defined)
+            if (aNStatus == Defined)
             {
                 // Compute offset point
                 theValue.SetXYZ(theValue.XYZ() + theOffset * aSign * aNormal.XYZ());
                 // Compute D1 using CSLib
-                theD1U = CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV);
-                theD1V = CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV);
+                theD1U = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV);
+                theD1V = global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV);
 
                 theD1U.Multiply(theOffset * aSign);
                 theD1U.Add(aDerSurf[1, 0]);
@@ -915,9 +917,9 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Pnt theValue,
-                                            out gp_Vec theD1U,
-                                            out gp_Vec theD1V)
+                                            out Point3D theValue,
+                                            out Vector3D theD1U,
+                                            out Vector3D theD1V)
         where TBasis : struct, IBasisSurface
     {
         Geom_Surface.ResD2 aBasisD2 = theBasisSurf.EvalD2(theU, theV);
@@ -946,16 +948,16 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            ref gp_Pnt theValue,
-                                            ref gp_Vec theD1U,
-                                            ref gp_Vec theD1V,
-                                            ref gp_Vec theD2U,
-                                            ref gp_Vec theD2V,
-                                            ref gp_Vec theD2UV,
-                                            in gp_Vec theD3U,
-                                            in gp_Vec theD3V,
-                                            in gp_Vec theD3UUV,
-                                            in gp_Vec theD3UVV)
+                                            ref Point3D theValue,
+                                            ref Vector3D theD1U,
+                                            ref Vector3D theD1V,
+                                            ref Vector3D theD2U,
+                                            ref Vector3D theD2V,
+                                            ref Vector3D theD2UV,
+                                            in Vector3D theD3U,
+                                            in Vector3D theD3V,
+                                            in Vector3D theD3UUV,
+                                            in Vector3D theD3UVV)
         where TBasis : struct, IBasisSurface
     {
         double aUStart = theU;
@@ -965,10 +967,10 @@ internal static class Geom_OffsetSurfaceUtils
         bool isVPer = theBasisSurf.IsVPeriodic();
 
         // Use pre-computed D3 for first iteration
-        gp_Vec aD3U = theD3U;
-        gp_Vec aD3V = theD3V;
-        gp_Vec aD3UUV = theD3UUV;
-        gp_Vec aD3UVV = theD3UVV;
+        Vector3D aD3U = theD3U;
+        Vector3D aD3V = theD3V;
+        Vector3D aD3UUV = theD3UUV;
+        Vector3D aD3UVV = theD3UVV;
         bool isFirstIteration = true;
 
         for (;;)
@@ -996,23 +998,23 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Check if singular using CSLib::Normal
-            gp_Dir aNormal = new gp_Dir();
-            CSLib.Normal(theD1U, theD1V, THE_D1_MAGNITUDE_TOL, out CSLib_NormalStatus aNStatus, ref aNormal);
+            Direction3D aNormal = new Direction3D();
+            global::Kerf.Engine.Geometry.CSLib.Normal(theD1U, theD1V, THE_D1_MAGNITUDE_TOL, out NormalStatus aNStatus, ref aNormal);
 
             // MaxOrder = 0 for non-singular, 3 for singular
-            int aMaxOrder = (aNStatus == CSLib_Defined) ? 0 : 3;
+            int aMaxOrder = (aNStatus == Defined) ? 0 : 3;
 
             // Get osculating surface info
             OsculatingInfo aOscInfo = default;
             Geom_BSplineSurface? aOscSurf = null;
-            if (aNStatus != CSLib_Defined)
+            if (aNStatus != Defined)
             {
                 queryOsculating(theOscQuery, theU, theV, ref aOscInfo, ref aOscSurf);
             }
 
             // Setup derivative arrays
-            NCollection_Array2<gp_Vec> aDerNUV = new(0, aMaxOrder + 2, 0, aMaxOrder + 2);
-            NCollection_Array2<gp_Vec> aDerSurf = new(0, aMaxOrder + 3, 0, aMaxOrder + 3);
+            NCollection_Array2<Vector3D> aDerNUV = new(0, aMaxOrder + 2, 0, aMaxOrder + 2);
+            NCollection_Array2<Vector3D> aDerSurf = new(0, aMaxOrder + 3, 0, aMaxOrder + 3);
 
             aDerSurf.SetValue(1, 0, theD1U);
             aDerSurf.SetValue(0, 1, theD1V);
@@ -1043,7 +1045,7 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Compute normal using CSLib (second call with MaxOrder)
-            CSLib.Normal(aMaxOrder,
+            global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                          aDerNUV,
                          THE_D1_MAGNITUDE_TOL,
                          theU,
@@ -1057,7 +1059,7 @@ internal static class Geom_OffsetSurfaceUtils
                          out int aOrderU,
                          out int aOrderV);
 
-            if (aNStatus == CSLib_Defined)
+            if (aNStatus == Defined)
             {
                 double aSign = theOffset * aOscInfo.Sign();
 
@@ -1065,21 +1067,21 @@ internal static class Geom_OffsetSurfaceUtils
                 theValue.SetXYZ(theValue.XYZ() + aSign * aNormal.XYZ());
 
                 // Compute D1 using CSLib::DNNormal
-                theD1U = aDerSurf[1, 0].Added(CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD1V = aDerSurf[0, 1].Added(CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD1U = aDerSurf[1, 0].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD1V = aDerSurf[0, 1].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
 
                 // For D2, re-fetch from basis surface
-                gp_Vec aDN20 = theBasisSurf.EvalDN(theU, theV, 2, 0);
-                gp_Vec aDN02 = theBasisSurf.EvalDN(theU, theV, 0, 2);
-                gp_Vec aDN11 = theBasisSurf.EvalDN(theU, theV, 1, 1);
+                Vector3D aDN20 = theBasisSurf.EvalDN(theU, theV, 2, 0);
+                Vector3D aDN02 = theBasisSurf.EvalDN(theU, theV, 0, 2);
+                Vector3D aDN11 = theBasisSurf.EvalDN(theU, theV, 1, 1);
                 theD2U = aDN20;
                 theD2V = aDN02;
                 theD2UV = aDN11;
 
                 // Add offset corrections using CSLib::DNNormal
-                theD2U.Add(CSLib.DNNormal(2, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD2V.Add(CSLib.DNNormal(0, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD2UV.Add(CSLib.DNNormal(1, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2UV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
                 return true;
             }
 
@@ -1101,12 +1103,12 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Pnt theValue,
-                                            out gp_Vec theD1U,
-                                            out gp_Vec theD1V,
-                                            out gp_Vec theD2U,
-                                            out gp_Vec theD2V,
-                                            out gp_Vec theD2UV)
+                                            out Point3D theValue,
+                                            out Vector3D theD1U,
+                                            out Vector3D theD1V,
+                                            out Vector3D theD2U,
+                                            out Vector3D theD2V,
+                                            out Vector3D theD2UV)
         where TBasis : struct, IBasisSurface
     {
         Geom_Surface.ResD3 aBasisD3 = theBasisSurf.EvalD3(theU, theV);
@@ -1142,16 +1144,16 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Pnt theValue,
-                                            out gp_Vec theD1U,
-                                            out gp_Vec theD1V,
-                                            out gp_Vec theD2U,
-                                            out gp_Vec theD2V,
-                                            out gp_Vec theD2UV,
-                                            out gp_Vec theD3U,
-                                            out gp_Vec theD3V,
-                                            out gp_Vec theD3UUV,
-                                            out gp_Vec theD3UVV)
+                                            out Point3D theValue,
+                                            out Vector3D theD1U,
+                                            out Vector3D theD1V,
+                                            out Vector3D theD2U,
+                                            out Vector3D theD2V,
+                                            out Vector3D theD2UV,
+                                            out Vector3D theD3U,
+                                            out Vector3D theD3V,
+                                            out Vector3D theD3UUV,
+                                            out Vector3D theD3UVV)
         where TBasis : struct, IBasisSurface
     {
         double aUStart = theU;
@@ -1180,24 +1182,24 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Check if singular using CSLib::Normal
-            gp_Dir aNormal = new gp_Dir();
-            CSLib.Normal(theD1U, theD1V, THE_D1_MAGNITUDE_TOL, out CSLib_NormalStatus aNStatus, ref aNormal);
+            Direction3D aNormal = new Direction3D();
+            global::Kerf.Engine.Geometry.CSLib.Normal(theD1U, theD1V, THE_D1_MAGNITUDE_TOL, out NormalStatus aNStatus, ref aNormal);
 
             // MaxOrder = 0 for non-singular, 3 for singular
-            int aMaxOrder = (aNStatus == CSLib_Defined) ? 0 : 3;
+            int aMaxOrder = (aNStatus == Defined) ? 0 : 3;
 
             // Get osculating surface info
             OsculatingInfo aOscInfo = default;
             Geom_BSplineSurface? aOscSurf = null;
-            if (aNStatus != CSLib_Defined)
+            if (aNStatus != Defined)
             {
                 queryOsculating(theOscQuery, theU, theV, ref aOscInfo, ref aOscSurf);
             }
 
             // Setup derivative arrays
             // For D3: DerNUV needs (aMaxOrder + 4), DerSurf needs (aMaxOrder + 5)
-            NCollection_Array2<gp_Vec> aDerNUV = new(0, aMaxOrder + 3, 0, aMaxOrder + 3);
-            NCollection_Array2<gp_Vec> aDerSurf = new(0, aMaxOrder + 4, 0, aMaxOrder + 4);
+            NCollection_Array2<Vector3D> aDerNUV = new(0, aMaxOrder + 3, 0, aMaxOrder + 3);
+            NCollection_Array2<Vector3D> aDerSurf = new(0, aMaxOrder + 4, 0, aMaxOrder + 4);
 
             aDerSurf.SetValue(1, 0, theD1U);
             aDerSurf.SetValue(0, 1, theD1V);
@@ -1228,7 +1230,7 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Compute normal using CSLib (second call with MaxOrder)
-            CSLib.Normal(aMaxOrder,
+            global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                          aDerNUV,
                          THE_D1_MAGNITUDE_TOL,
                          theU,
@@ -1242,7 +1244,7 @@ internal static class Geom_OffsetSurfaceUtils
                          out int aOrderU,
                          out int aOrderV);
 
-            if (aNStatus == CSLib_Defined)
+            if (aNStatus == Defined)
             {
                 double aSign = theOffset * aOscInfo.Sign();
 
@@ -1250,17 +1252,17 @@ internal static class Geom_OffsetSurfaceUtils
                 theValue.SetXYZ(theValue.XYZ() + aSign * aNormal.XYZ());
 
                 // Compute D1 using CSLib::DNNormal
-                theD1U = aDerSurf[1, 0].Added(CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD1V = aDerSurf[0, 1].Added(CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD1U = aDerSurf[1, 0].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD1V = aDerSurf[0, 1].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
 
                 // For D2 and D3, re-fetch from basis surface
-                gp_Vec aDN20 = theBasisSurf.EvalDN(theU, theV, 2, 0);
-                gp_Vec aDN02 = theBasisSurf.EvalDN(theU, theV, 0, 2);
-                gp_Vec aDN11 = theBasisSurf.EvalDN(theU, theV, 1, 1);
-                gp_Vec aDN30 = theBasisSurf.EvalDN(theU, theV, 3, 0);
-                gp_Vec aDN03 = theBasisSurf.EvalDN(theU, theV, 0, 3);
-                gp_Vec aDN21 = theBasisSurf.EvalDN(theU, theV, 2, 1);
-                gp_Vec aDN12 = theBasisSurf.EvalDN(theU, theV, 1, 2);
+                Vector3D aDN20 = theBasisSurf.EvalDN(theU, theV, 2, 0);
+                Vector3D aDN02 = theBasisSurf.EvalDN(theU, theV, 0, 2);
+                Vector3D aDN11 = theBasisSurf.EvalDN(theU, theV, 1, 1);
+                Vector3D aDN30 = theBasisSurf.EvalDN(theU, theV, 3, 0);
+                Vector3D aDN03 = theBasisSurf.EvalDN(theU, theV, 0, 3);
+                Vector3D aDN21 = theBasisSurf.EvalDN(theU, theV, 2, 1);
+                Vector3D aDN12 = theBasisSurf.EvalDN(theU, theV, 1, 2);
                 theD2U = aDN20;
                 theD2V = aDN02;
                 theD2UV = aDN11;
@@ -1270,13 +1272,13 @@ internal static class Geom_OffsetSurfaceUtils
                 theD3UVV = aDN12;
 
                 // Add offset corrections using CSLib::DNNormal
-                theD2U.Add(CSLib.DNNormal(2, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD2V.Add(CSLib.DNNormal(0, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD2UV.Add(CSLib.DNNormal(1, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD3U.Add(CSLib.DNNormal(3, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD3V.Add(CSLib.DNNormal(0, 3, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD3UUV.Add(CSLib.DNNormal(2, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
-                theD3UVV.Add(CSLib.DNNormal(1, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD2UV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD3U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(3, 0, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD3V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 3, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD3UUV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 1, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theD3UVV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 2, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
                 return true;
             }
 
@@ -1300,12 +1302,12 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Vec theResult,
-                                            in gp_Vec theD1U,
-                                            in gp_Vec theD1V)
+                                            out Vector3D theResult,
+                                            in Vector3D theD1U,
+                                            in Vector3D theD1V)
         where TBasis : struct, IBasisSurface
     {
-        theResult = new gp_Vec();
+        theResult = new Vector3D();
         double aUStart = theU;
         double aVStart = theV;
         theBasisSurf.Bounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
@@ -1313,8 +1315,8 @@ internal static class Geom_OffsetSurfaceUtils
         bool isVPer = theBasisSurf.IsVPeriodic();
 
         // Use pre-computed D1 for first iteration
-        gp_Vec aD1U = theD1U;
-        gp_Vec aD1V = theD1V;
+        Vector3D aD1U = theD1U;
+        Vector3D aD1V = theD1V;
         bool isFirstIteration = true;
 
         for (;;)
@@ -1334,13 +1336,13 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Check if singular to determine MaxOrder
-            gp_Dir aNormal = new gp_Dir();
-            CSLib.Normal(aD1U, aD1V, THE_D1_MAGNITUDE_TOL, out CSLib_NormalStatus aNStatus, ref aNormal);
+            Direction3D aNormal = new Direction3D();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, THE_D1_MAGNITUDE_TOL, out NormalStatus aNStatus, ref aNormal);
 
-            int aMaxOrder = (aNStatus == CSLib_Defined) ? 0 : 3;
+            int aMaxOrder = (aNStatus == Defined) ? 0 : 3;
 
-            NCollection_Array2<gp_Vec> aDerNUV = new(0, aMaxOrder + theNu, 0, aMaxOrder + theNv);
-            NCollection_Array2<gp_Vec> aDerSurf = new(0, aMaxOrder + theNu + 1, 0, aMaxOrder + theNv + 1);
+            NCollection_Array2<Vector3D> aDerNUV = new(0, aMaxOrder + theNu, 0, aMaxOrder + theNv);
+            NCollection_Array2<Vector3D> aDerSurf = new(0, aMaxOrder + theNu + 1, 0, aMaxOrder + theNv + 1);
 
             aDerSurf.SetValue(1, 0, aD1U);
             aDerSurf.SetValue(0, 1, aD1V);
@@ -1348,7 +1350,7 @@ internal static class Geom_OffsetSurfaceUtils
             // Check osculating surface only in singular case
             OsculatingInfo aOscInfo = default;
             Geom_BSplineSurface? aOscSurf = null;
-            if (aNStatus != CSLib_Defined)
+            if (aNStatus != Defined)
             {
                 queryOsculating(theOscQuery, theU, theV, ref aOscInfo, ref aOscSurf);
             }
@@ -1372,7 +1374,7 @@ internal static class Geom_OffsetSurfaceUtils
             }
 
             // Compute normal with CSLib
-            CSLib.Normal(aMaxOrder,
+            global::Kerf.Engine.Geometry.CSLib.Normal(aMaxOrder,
                          aDerNUV,
                          THE_D1_MAGNITUDE_TOL,
                          theU,
@@ -1386,14 +1388,14 @@ internal static class Geom_OffsetSurfaceUtils
                          out int aOrderU,
                          out int aOrderV);
 
-            if (aNStatus == CSLib_Defined)
+            if (aNStatus == Defined)
             {
                 double aSign = theOffset * aOscInfo.Sign();
 
                 // Compute DN result: basis DN + offset * DNNormal
-                gp_Vec aBasisDN = theBasisSurf.EvalDN(theU, theV, theNu, theNv);
+                Vector3D aBasisDN = theBasisSurf.EvalDN(theU, theV, theNu, theNv);
                 theResult = aBasisDN;
-                theResult.Add(CSLib.DNNormal(theNu, theNv, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
+                theResult.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(theNu, theNv, aDerNUV, aOrderU, aOrderV).Multiplied(aSign));
                 return true;
             }
 
@@ -1414,7 +1416,7 @@ internal static class Geom_OffsetSurfaceUtils
                                             in TBasis theBasisSurf,
                                             double theOffset,
                                             Geom_OsculatingSurface? theOscQuery,
-                                            out gp_Vec theResult)
+                                            out Vector3D theResult)
         where TBasis : struct, IBasisSurface
     {
         Geom_Surface.ResD1 aBasisD1 = theBasisSurf.EvalD1(theU, theV);

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 /// <remarks>A working object (OCCT's value class, decision 1185). Its map iterates in the order of binding.</remarks>
 public sealed class TopoDSToStep_Tool
 {
-    private NCollection_DataMap<TopoDS_Shape, Standard_Transient> myDataMap = new(TopTools_ShapeMapHasher.Instance);
+    private NCollection_DataMap<TopoDS_Shape, Transient> myDataMap = new(TopTools_ShapeMapHasher.Instance);
     private bool myFacetedContext;
     private double myLowestTol;
     private TopoDS_Shell myCurrentShell = new TopoDS_Shell();
@@ -33,7 +35,7 @@ public sealed class TopoDSToStep_Tool
         myPCurveMode = theModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0;
     }
 
-    public TopoDSToStep_Tool(NCollection_DataMap<TopoDS_Shape, Standard_Transient> M, bool FacetedContext, int theSurfCurveMode)
+    public TopoDSToStep_Tool(NCollection_DataMap<TopoDS_Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
     {
         myLowestTol = 0.0;
         myReversedSurface = false;
@@ -41,9 +43,9 @@ public sealed class TopoDSToStep_Tool
     }
 
     /// <summary>Initializes the tool with a copy of the map.</summary>
-    public void Init(NCollection_DataMap<TopoDS_Shape, Standard_Transient> M, bool FacetedContext, int theSurfCurveMode)
+    public void Init(NCollection_DataMap<TopoDS_Shape, Transient> M, bool FacetedContext, int theSurfCurveMode)
     {
-        myDataMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(M);
+        myDataMap = new NCollection_DataMap<TopoDS_Shape, Transient>(M);
         myFacetedContext = FacetedContext;
         myPCurveMode = theSurfCurveMode;
     }
@@ -120,7 +122,7 @@ public sealed class TopoDSToStep_Tool
     public bool SurfaceReversed() => myReversedSurface;
 
     /// <summary>The map of the shapes and their entities (the tool's own: read it, don't change it).</summary>
-    public NCollection_DataMap<TopoDS_Shape, Standard_Transient> Map() => myDataMap;
+    public NCollection_DataMap<TopoDS_Shape, Transient> Map() => myDataMap;
 
     /// <summary>The mode for writing pcurves (write.surfacecurve.mode).</summary>
     public int PCurveMode() => myPCurveMode;

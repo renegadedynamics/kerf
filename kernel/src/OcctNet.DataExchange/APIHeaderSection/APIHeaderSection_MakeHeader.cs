@@ -96,7 +96,7 @@ public class APIHeaderSection_MakeHeader
         org.SetValue(1, org1);
         fn.SetOrganization(org);
 
-        string procver = Standard.Sprintf(Interface_Version.XSTEP_PROCESSOR_VERSION, "STEP");
+        string procver = global::Kerf.Engine.Foundation.Standard.Sprintf(Interface_Version.XSTEP_PROCESSOR_VERSION, "STEP");
         TCollection_HAsciiString pv = new TCollection_HAsciiString(procver);
         fn.SetPreprocessorVersion(pv);
 

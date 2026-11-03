@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -17,43 +18,43 @@ public static class GeomAdaptor
     /// Builds a Geom curve from a curve adaptor: a new line, conic, or a copy of the Bezier or B-spline curve,
     /// trimmed to the adaptor's bounds when they differ from the curve's.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The adaptor's type is not one of those.</exception>
+    /// <exception cref="DomainErrorException">The adaptor's type is not one of those.</exception>
     public static Geom_Curve MakeCurve(Adaptor3d_Curve HC)
     {
         Geom_Curve C;
 
         switch (HC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 C = new Geom_Line(HC.Line());
                 break;
 
-            case GeomAbs_Circle:
+            case Circle:
                 C = new Geom_Circle(HC.Circle());
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 C = new Geom_Ellipse(HC.Ellipse());
                 break;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 C = new Geom_Parabola(HC.Parabola());
                 break;
 
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 C = new Geom_Hyperbola(HC.Hyperbola());
                 break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 C = (Geom_BezierCurve)HC.Bezier().Copy();
                 break;
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 C = (Geom_BSplineCurve)HC.BSpline().Copy();
                 break;
 
             default:
-                throw new Standard_DomainError("GeomAdaptor::MakeCurve : OtherCurve");
+                throw new DomainErrorException("GeomAdaptor::MakeCurve : OtherCurve");
         }
 
         // trim the curve if necassary.
@@ -70,56 +71,56 @@ public static class GeomAdaptor
     /// Bezier or B-spline surface, trimmed to the adaptor's bounds when they differ from the surface's (and
     /// theTrimFlag).
     /// </summary>
-    /// <exception cref="Standard_DomainError">The adaptor's type is GeomAbs_OtherSurface.</exception>
+    /// <exception cref="DomainErrorException">The adaptor's type is GeomAbs_OtherSurface.</exception>
     public static Geom_Surface MakeSurface(Adaptor3d_Surface HS, bool theTrimFlag = true)
     {
         Geom_Surface S;
 
         switch (HS.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 S = new Geom_Plane(HS.Plane());
                 break;
 
-            case GeomAbs_Cylinder:
+            case Cylinder:
                 S = new Geom_CylindricalSurface(HS.Cylinder());
                 break;
 
-            case GeomAbs_Cone:
+            case Cone:
                 S = new Geom_ConicalSurface(HS.Cone());
                 break;
 
-            case GeomAbs_Sphere:
+            case Sphere:
                 S = new Geom_SphericalSurface(HS.Sphere());
                 break;
 
-            case GeomAbs_Torus:
+            case Torus:
                 S = new Geom_ToroidalSurface(HS.Torus());
                 break;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 S = (Geom_BezierSurface)HS.Bezier().Copy();
                 break;
 
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 S = (Geom_BSplineSurface)HS.BSpline().Copy();
                 break;
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 S = new Geom_SurfaceOfRevolution(MakeCurve(HS.BasisCurve()), HS.AxeOfRevolution());
                 break;
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 S = new Geom_SurfaceOfLinearExtrusion(MakeCurve(HS.BasisCurve()), HS.Direction());
                 break;
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
                 S = new Geom_OffsetSurface(MakeSurface(HS.BasisSurface()), HS.OffsetValue());
                 break;
 
-            case GeomAbs_OtherSurface:
+            case OtherSurface:
             default:
-                throw new Standard_DomainError("GeomAdaptor::MakeSurface : OtherSurface");
+                throw new DomainErrorException("GeomAdaptor::MakeSurface : OtherSurface");
         }
 
         if (!theTrimFlag)

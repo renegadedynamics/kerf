@@ -92,14 +92,14 @@ internal sealed partial class BOPTestObjects
     {
         RunParallel = false;
         NonDestructive = false;
-        FuzzyValue = Precision.Confusion();
+        FuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
         DrawWarnShapes = false;
         CheckInverted = true;
         UseOBB = false;
         UnifyEdges = false;
         UnifyFaces = false;
-        Angular = Precision.Angular();
+        Angular = global::Kerf.Engine.Foundation.Precision.Angular();
     }
 
     /// <summary>
@@ -107,16 +107,16 @@ internal sealed partial class BOPTestObjects
     /// message text), with the shapes of the alerts of that type saved as <c>ws_i_j</c>/<c>es_i_j</c> when
     /// <c>bdrawwarnshapes</c> is on.
     /// </summary>
-    public static void ReportAlerts(DrawInterpreter theDI, DrawResult di, Message_Report theReport)
+    public static void ReportAlerts(DrawInterpreter theDI, DrawResult di, global::Kerf.Engine.Foundation.Report theReport)
     {
         // first report warnings, then errors
-        Message_Gravity[] anAlertTypes = [Message_Gravity.Message_Warning, Message_Gravity.Message_Fail];
+        global::Kerf.Engine.Foundation.Gravity[] anAlertTypes = [global::Kerf.Engine.Foundation.Gravity.Warning, global::Kerf.Engine.Foundation.Gravity.Fail];
         string[] aMsgType = ["Warning: ", "Error: "];
         for (int iGravity = 0; iGravity < 2; iGravity++)
         {
             // report shapes for the same type of alert together
             HashSet<Type> aPassedTypes = [];
-            List<Message_Alert> aList = [.. theReport.GetAlerts(anAlertTypes[iGravity])];
+            List<global::Kerf.Engine.Foundation.Alert> aList = [.. theReport.GetAlerts(anAlertTypes[iGravity])];
             for (int aIt = 0; aIt < aList.Count; ++aIt)
             {
                 // check that this type of warnings has not yet been processed
@@ -127,7 +127,7 @@ internal sealed partial class BOPTestObjects
                 }
 
                 // get alert message
-                Message_Msg aMsg = new(aList[aIt].GetMessageKey());
+                global::Kerf.Engine.Foundation.Msg aMsg = new(aList[aIt].GetMessageKey());
                 string aText = aMsgType[iGravity] + aMsg.Get();
 
                 // collect all shapes if any attached to this alert

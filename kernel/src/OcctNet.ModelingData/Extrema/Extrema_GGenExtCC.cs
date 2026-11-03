@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +17,7 @@ namespace Occt;
 internal static class Extrema_GGenExtCC
 {
     // Comparator, used in std::sort.
-    internal static bool Extrema_GGenExtCC_comp(in gp_XY theA, in gp_XY theB)
+    internal static bool Extrema_GGenExtCC_comp(in Xy theA, in Xy theB)
     {
         if (theA.X() < theB.X())
         {
@@ -32,7 +38,7 @@ internal static class Extrema_GGenExtCC
 
     /// <summary>The comparator as a <see cref="Comparison{T}"/>. The points are sorted by (X, Y); two points that
     /// compare equal are identical (NaN excepted), so the result does not depend on the sort algorithm.</summary>
-    internal static int Extrema_GGenExtCC_Compare(gp_XY theA, gp_XY theB) =>
+    internal static int Extrema_GGenExtCC_Compare(Xy theA, Xy theB) =>
         Extrema_GGenExtCC_comp(theA, theB) ? -1 : (Extrema_GGenExtCC_comp(theB, theA) ? 1 : 0);
 
     /// <summary>Splits the intervals theInts into theNbInts: one interval evenly, otherwise by halving the longest
@@ -88,45 +94,45 @@ internal static class Extrema_GGenExtCC
     }
 
     /// <summary>The inspector of the cell filter that drops solutions closer than the tolerance to a kept one.</summary>
-    internal struct Extrema_GGenExtCC_PointsInspector : INCollection_CellFilter_Inspector<gp_XY, gp_XY>
+    internal struct Extrema_GGenExtCC_PointsInspector : ICellFilterInspector<Xy, Xy>
     {
         public static int Dimension => 2;
 
-        public static double Coord(int i, gp_XY thePnt) => thePnt.Coord(i + 1);
+        public static double Coord(int i, Xy thePnt) => thePnt.Coord(i + 1);
 
-        public static gp_XY Shift(in gp_XY thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol);
+        public static Xy Shift(in Xy thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol);
 
         private readonly double myTol;
-        private gp_XY myCurrent;
+        private Xy myCurrent;
         private bool myIsFind;
 
         public Extrema_GGenExtCC_PointsInspector(double theTol)
         {
             myTol = theTol * theTol;
             myIsFind = false;
-            myCurrent = new gp_XY();
+            myCurrent = new Xy();
         }
 
         public void ClearFind() => myIsFind = false;
 
         public readonly bool isFind() => myIsFind;
 
-        public void SetCurrent(in gp_XY theCurPnt) => myCurrent = theCurPnt;
+        public void SetCurrent(in Xy theCurPnt) => myCurrent = theCurPnt;
 
-        public NCollection_CellFilter_Action Inspect(gp_XY theObject)
+        public CellFilterAction Inspect(Xy theObject)
         {
-            gp_XY aPt = myCurrent.Subtracted(theObject);
+            Xy aPt = myCurrent.Subtracted(theObject);
             double aSQDist = aPt.SquareModulus();
             if (aSQDist < myTol)
             {
                 myIsFind = true;
             }
-            return NCollection_CellFilter_Action.CellFilter_Keep;
+            return CellFilterAction.CellFilter_Keep;
         }
     }
 
     /// <summary>The least square distance from theP to the curve of theProjTool (RealLast if there is no extremum).</summary>
-    internal static double Extrema_GGenExtCC_ProjPOnC(in gp_Pnt theP, Extrema_ExtPC theProjTool)
+    internal static double Extrema_GGenExtCC_ProjPOnC(in Point3D theP, Extrema_ExtPC theProjTool)
     {
         double aDist = RealLast();
         theProjTool.Perform(theP);
@@ -145,7 +151,7 @@ internal static class Extrema_GGenExtCC
     }
 
     /// <summary>The least square distance from theP to the curve of theProjTool (RealLast if there is no extremum).</summary>
-    internal static double Extrema_GGenExtCC_ProjPOnC(in gp_Pnt2d theP, Extrema_ExtPC2d theProjTool)
+    internal static double Extrema_GGenExtCC_ProjPOnC(in Point2D theP, Extrema_ExtPC2d theProjTool)
     {
         double aDist = RealLast();
         theProjTool.Perform(theP);

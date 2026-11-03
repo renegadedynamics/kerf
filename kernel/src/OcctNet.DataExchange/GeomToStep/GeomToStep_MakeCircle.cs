@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Circle from Geom and Geom2d (and Circ from gp) to a STEP circle.</summary>
@@ -18,13 +20,13 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D circle, its position and radius divided by the length factor.</summary>
-    public GeomToStep_MakeCircle(in gp_Circ C, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeCircle(in Circle3D C, in StepData_Factors theLocalFactors)
     {
         Make(C, theLocalFactors);
     }
 
     /// <summary>A 3D circle (default factors).</summary>
-    public GeomToStep_MakeCircle(in gp_Circ C) : this(C, new StepData_Factors())
+    public GeomToStep_MakeCircle(in Circle3D C) : this(C, new StepData_Factors())
     {
     }
 
@@ -36,7 +38,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     /// <summary>A 3D circle, its position and radius divided by the length factor.</summary>
     public GeomToStep_MakeCircle(Geom_Circle Cer, in StepData_Factors theLocalFactors)
     {
-        gp_Circ C;
+        Circle3D C;
         C = Cer.Circ();
         Make(C, theLocalFactors);
     }
@@ -54,7 +56,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     /// <summary>A 2D circle.</summary>
     public GeomToStep_MakeCircle(Geom2d_Circle Cer, in StepData_Factors theLocalFactors)
     {
-        gp_Circ2d C2d;
+        Circle2D C2d;
         C2d = Cer.Circ2d();
 
         StepGeom_Circle CStep = new StepGeom_Circle();
@@ -78,7 +80,7 @@ public sealed class GeomToStep_MakeCircle : GeomToStep_Root
     }
 
     // GeomToStep_MakeCircle_gen.pxx, the body OCCT includes in the 3D constructors
-    private void Make(in gp_Circ C, in StepData_Factors theLocalFactors)
+    private void Make(in Circle3D C, in StepData_Factors theLocalFactors)
     {
         StepGeom_Circle CStep = new StepGeom_Circle();
         StepGeom_Axis2Placement Ax2 = new StepGeom_Axis2Placement();

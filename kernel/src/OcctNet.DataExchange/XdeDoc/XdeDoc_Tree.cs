@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Collections.Immutable;
 
 namespace Occt;
@@ -160,20 +162,20 @@ public sealed class XdeDoc_Tree
         var aPath = new List<XdeDoc_Instance>();
         foreach (XdeDoc_Instance aRoot in Roots)
         {
-            flatten(aRoot, new TopLoc_Location(), XdeDoc_Style.Default, aPath, aResult, includeHidden);
+            flatten(aRoot, new Placement(), XdeDoc_Style.Default, aPath, aResult, includeHidden);
         }
         return aResult;
     }
 
     private void flatten(XdeDoc_Instance theInstance,
-                         TopLoc_Location theParentLocation,
+                         Placement theParentLocation,
                          XdeDoc_Style theParentStyle,
                          List<XdeDoc_Instance> thePath,
                          List<XdeDoc_FlatItem> theResult,
                          bool includeHidden)
     {
         XdeDoc_Product aProduct = theInstance.Product;
-        TopLoc_Location aLocation = theParentLocation.Multiplied(theInstance.Location);
+        Placement aLocation = theParentLocation.Multiplied(theInstance.Location);
         XdeDoc_Style aStyle = theParentStyle.Merged(aProduct.Attributes).Merged(theInstance.Attributes);
         if (IsInHiddenLayer(aProduct.Attributes) || IsInHiddenLayer(theInstance.Attributes))
         {
@@ -217,11 +219,11 @@ public sealed class XdeDoc_Tree
     /// sharing what meshing leaves unchanged: faces already meshed, and products whose faces all are. Sub-shape
     /// attributes follow their sub-shapes into the meshed parts. Null if cancelled.
     /// </summary>
-    public XdeDoc_Tree? Meshed(in IMeshTools_Parameters theParameters, Message_ProgressRange theProgress = default)
+    public XdeDoc_Tree? Meshed(in IMeshTools_Parameters theParameters, ProgressRange theProgress = default)
     {
         var aParts = Products().Where(p => !p.IsAssembly).ToList();
         var aMap = new Dictionary<XdeDoc_Product, XdeDoc_Product>(ReferenceEqualityComparer.Instance);
-        using (var aPS = new Message_ProgressScope(theProgress, "Meshing", Math.Max(1, aParts.Count)))
+        using (var aPS = new ProgressScope(theProgress, "Meshing", Math.Max(1, aParts.Count)))
         {
             foreach (XdeDoc_Product aPart in aParts)
             {

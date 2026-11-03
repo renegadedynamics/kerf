@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -27,10 +28,10 @@ public class ShapeAnalysis_FreeBoundsTest
     {
         var aBuilder = new BRep_Builder();
         TopoDS_Vertex aVertex1 = new(), aVertex2 = new(), aVertex3 = new(), aNonManifoldVertex = new();
-        aBuilder.MakeVertex(ref aVertex1, new gp_Pnt(0.0, 0.0, 0.0), Precision.Confusion());
-        aBuilder.MakeVertex(ref aVertex2, new gp_Pnt(1.0, 0.0, 0.0), Precision.Confusion());
-        aBuilder.MakeVertex(ref aVertex3, new gp_Pnt(0.0, 1.0, 0.0), Precision.Confusion());
-        aBuilder.MakeVertex(ref aNonManifoldVertex, new gp_Pnt(2.0, -1.0, 0.0), Precision.Confusion());
+        aBuilder.MakeVertex(ref aVertex1, new Point3D(0.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBuilder.MakeVertex(ref aVertex2, new Point3D(1.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBuilder.MakeVertex(ref aVertex3, new Point3D(0.0, 1.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBuilder.MakeVertex(ref aNonManifoldVertex, new Point3D(2.0, -1.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         var anEdgeMaker1 = new BRepBuilderAPI_MakeEdge(aVertex1, aVertex2);
         var anEdgeMaker2 = new BRepBuilderAPI_MakeEdge(aVertex2, aVertex3);
@@ -100,7 +101,7 @@ public class ShapeAnalysis_FreeBoundsTest
         Assert.Equal(theHasClosedLoop, hasClosedLoop);
     }
 
-    internal static TopoDS_Face MakeSquareFace(in gp_Pnt theA, in gp_Pnt theB, in gp_Pnt theC, in gp_Pnt theD)
+    internal static TopoDS_Face MakeSquareFace(in Point3D theA, in Point3D theB, in Point3D theC, in Point3D theD)
     {
         var aMakeWire = new BRepBuilderAPI_MakeWire();
         aMakeWire.Add(new BRepBuilderAPI_MakeEdge(theA, theB).Edge());
@@ -128,7 +129,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.Loop, aData.InternalWire);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -140,7 +141,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.InternalWire, aData.Loop);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -152,7 +153,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.InternalWire, aData.ExternalWire);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 2, 1, 1, false);
     }
 
@@ -164,7 +165,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.EmptyWire, aData.InternalWire, aData.Loop);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -176,7 +177,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.EmptyWire);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 0, 0, 0, 0, false);
     }
 
@@ -196,7 +197,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aMixedWire);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 4, 1, 0, false);
     }
 
@@ -208,7 +209,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.Edge1, aData.Edge2, aData.Edge3, aData.InternalEdge);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -220,7 +221,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.InternalEdge, aData.Edge1, aData.Edge2, aData.Edge3);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -232,7 +233,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<TopoDS_Shape> anInput = Seq(aData.Edge1, aData.Edge2, aData.Edge3, aData.ExternalEdge);
 
         NCollection_HSequence<TopoDS_Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, Precision.Confusion(), true);
+            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -240,8 +241,8 @@ public class ShapeAnalysis_FreeBoundsTest
     [Fact]
     public void SingleFaceNoCrash()
     {
-        TopoDS_Face aFace = MakeSquareFace(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(1.0, 0.0, 0.0),
-                                           new gp_Pnt(1.0, 1.0, 0.0), new gp_Pnt(0.0, 1.0, 0.0));
+        TopoDS_Face aFace = MakeSquareFace(new Point3D(0.0, 0.0, 0.0), new Point3D(1.0, 0.0, 0.0),
+                                           new Point3D(1.0, 1.0, 0.0), new Point3D(0.0, 1.0, 0.0));
 
         var aFreeBounds = new ShapeAnalysis_FreeBounds(aFace, 0.01, true, true);
         _ = aFreeBounds.GetClosedWires();
@@ -252,10 +253,10 @@ public class ShapeAnalysis_FreeBoundsTest
     [Fact]
     public void TwoDisjointFacesNoCrash()
     {
-        TopoDS_Face aFaceA = MakeSquareFace(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(1.0, 0.0, 0.0),
-                                            new gp_Pnt(1.0, 1.0, 0.0), new gp_Pnt(0.0, 1.0, 0.0));
-        TopoDS_Face aFaceB = MakeSquareFace(new gp_Pnt(5.0, 5.0, 0.0), new gp_Pnt(6.0, 5.0, 0.0),
-                                            new gp_Pnt(6.0, 6.0, 0.0), new gp_Pnt(5.0, 6.0, 0.0));
+        TopoDS_Face aFaceA = MakeSquareFace(new Point3D(0.0, 0.0, 0.0), new Point3D(1.0, 0.0, 0.0),
+                                            new Point3D(1.0, 1.0, 0.0), new Point3D(0.0, 1.0, 0.0));
+        TopoDS_Face aFaceB = MakeSquareFace(new Point3D(5.0, 5.0, 0.0), new Point3D(6.0, 5.0, 0.0),
+                                            new Point3D(6.0, 6.0, 0.0), new Point3D(5.0, 6.0, 0.0));
 
         var aBuilder = new BRep_Builder();
         TopoDS_Compound aCompound = new();

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -39,8 +41,8 @@ internal class RWStepDimTol_RWStraightnessTolerance
         TCollection_HAsciiString aGeometricTolerance_Description = null;
         data.ReadString(num, 2, "geometric_tolerance.description", ach, ref aGeometricTolerance_Description);
 
-        Standard_Transient aGeometricTolerance_Magnitude = null;
-        data.ReadEntity(num, 3, "geometric_tolerance.magnitude", ach, typeof(Standard_Transient), ref aGeometricTolerance_Magnitude);
+        Transient aGeometricTolerance_Magnitude = null;
+        data.ReadEntity(num, 3, "geometric_tolerance.magnitude", ach, typeof(Transient), ref aGeometricTolerance_Magnitude);
 
         StepDimTol_GeometricToleranceTarget aGeometricTolerance_TolerancedShapeAspect = new StepDimTol_GeometricToleranceTarget();
         data.ReadEntity(num, 4, "geometric_tolerance.toleranced_shape_aspect", ach, aGeometricTolerance_TolerancedShapeAspect);

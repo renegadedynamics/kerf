@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -31,7 +33,7 @@ public class IFGraph_Articulations : Interface_GraphContent
     /// <summary>
     /// adds an entity and its shared ones to the list
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent)
+    public void GetFromEntity(Transient? ent)
     {
         thegraph.GetFromEntity(ent, true);
     }
@@ -93,7 +95,7 @@ public class IFGraph_Articulations : Interface_GraphContent
         for (Interface_EntityIterator iter = thegraph.Shareds(thegraph.Entity(num)); iter.More();
                   iter.Next())
         {
-            Standard_Transient ent = iter.Value();
+            Transient ent = iter.Value();
             int nument = thegraph.EntityNumber(ent);
             if (!thegraph.IsPresent(num))
             {

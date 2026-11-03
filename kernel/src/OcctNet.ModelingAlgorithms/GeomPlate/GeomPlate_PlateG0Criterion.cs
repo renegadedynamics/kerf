@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AdvApp2Var_CriterionRepartition;
 using static Occt.AdvApp2Var_CriterionType;
 
@@ -15,15 +17,15 @@ namespace Occt;
 /// <remarks>The criterion keeps copies of the caller's sequences, as OCCT's.</remarks>
 public class GeomPlate_PlateG0Criterion : AdvApp2Var_Criterion
 {
-    private readonly NCollection_Sequence<gp_XY> myData;
-    private readonly NCollection_Sequence<gp_XYZ> myXYZ;
+    private readonly NCollection_Sequence<Xy> myData;
+    private readonly NCollection_Sequence<Xyz> myXYZ;
 
-    public GeomPlate_PlateG0Criterion(NCollection_Sequence<gp_XY> Data, NCollection_Sequence<gp_XYZ> G0Data, double Maximum,
+    public GeomPlate_PlateG0Criterion(NCollection_Sequence<Xy> Data, NCollection_Sequence<Xyz> G0Data, double Maximum,
                                       AdvApp2Var_CriterionType Type = AdvApp2Var_Absolute,
                                       AdvApp2Var_CriterionRepartition Repart = AdvApp2Var_Regular)
     {
-        myData = new NCollection_Sequence<gp_XY>(Data);
-        myXYZ = new NCollection_Sequence<gp_XYZ>(G0Data);
+        myData = new NCollection_Sequence<Xy>(Data);
+        myXYZ = new NCollection_Sequence<Xyz>(G0Data);
         myMaxValue = Maximum;
         myType = Type;
         myRepartition = Repart;
@@ -69,14 +71,14 @@ public class GeomPlate_PlateG0Criterion : AdvApp2Var_Criterion
         int i, NbCtr = myData.Length();
         for (i = 1; i <= NbCtr; i++)
         {
-            gp_XY P2d = myData.Value(i);
-            gp_Pnt P3d = new gp_Pnt();
+            Xy P2d = myData.Value(i);
+            Point3D P3d = new Point3D();
             if (UInt[0] < P2d.X() && P2d.X() < UInt[1] && VInt[0] < P2d.Y() && P2d.Y() < VInt[1])
             {
                 //   u,v recadres sur (-1,1)
                 up = (2 * P2d.X() - UInt[0] - UInt[1]) / (UInt[1] - UInt[0]);
                 vp = (2 * P2d.Y() - VInt[0] - VInt[1]) / (VInt[1] - VInt[0]);
-                PLib.EvalPoly2Var(up, vp, 0, 0, NbCoeff[0] - 1, NbCoeff[1] - 1, 3, Coeffs, Digit);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPoly2Var(up, vp, 0, 0, NbCoeff[0] - 1, NbCoeff[1] - 1, 3, Coeffs, Digit);
 
                 P3d.SetCoord(1, Digit[0]);
                 P3d.SetCoord(2, Digit[1]);

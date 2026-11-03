@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using System.Numerics;
 
 namespace Occt;
@@ -24,283 +25,283 @@ public sealed class NCollection_PackedMapOfInteger
 
     private sealed class PackedMapNode
     {
-        private PackedMapNode? myNext;
-        private uint myMask;
-        private uint myData;
+        private PackedMapNode? _next;
+        private uint _mask;
+        private uint _data;
 
-        public PackedMapNode(uint theMask, uint theData, PackedMapNode? thePtr)
+        public PackedMapNode(uint mask, uint data, PackedMapNode? ptr)
         {
-            myNext = thePtr;
-            myMask = theMask;
-            myData = theData;
+            _next = ptr;
+            _mask = mask;
+            _data = data;
         }
 
-        public uint Mask() => myMask;
+        public uint Mask() => _mask;
 
-        public PackedMapNode(int theValue, PackedMapNode? thePtr)
+        public PackedMapNode(int value, PackedMapNode? ptr)
         {
-            myNext = thePtr;
-            myMask = (uint)theValue & MASK_HIGH;
-            myData = 1u << (int)((uint)theValue & MASK_LOW);
+            _next = ptr;
+            _mask = (uint)value & MASK_HIGH;
+            _data = 1u << (int)((uint)value & MASK_LOW);
         }
 
-        public uint Data() => myData;
+        public uint Data() => _data;
 
-        public int Key() => (int)(myMask & MASK_HIGH);
+        public int Key() => (int)(_mask & MASK_HIGH);
 
-        public bool HasValues() => myData != 0;
+        public bool HasValues() => _data != 0;
 
-        public bool HasValue(int theValue) => (myData & (1u << (int)((uint)theValue & MASK_LOW))) != 0;
+        public bool HasValue(int value) => (_data & (1u << (int)((uint)value & MASK_LOW))) != 0;
 
-        public bool AddValue(int theValue)
+        public bool AddValue(int value)
         {
-            uint aValBit = 1u << (int)((uint)theValue & MASK_LOW);
-            if ((myData & aValBit) == 0)
+            uint valBit = 1u << (int)((uint)value & MASK_LOW);
+            if ((_data & valBit) == 0)
             {
-                myData ^= aValBit;
-                ++myMask;
+                _data ^= valBit;
+                ++_mask;
                 return true;
             }
 
             return false;
         }
 
-        public bool DelValue(int theValue)
+        public bool DelValue(int value)
         {
-            uint aValBit = 1u << (int)((uint)theValue & MASK_LOW);
-            if ((myData & aValBit) != 0)
+            uint valBit = 1u << (int)((uint)value & MASK_LOW);
+            if ((_data & valBit) != 0)
             {
-                myData ^= aValBit;
-                myMask--;
+                _data ^= valBit;
+                _mask--;
                 return true;
             }
 
             return false;
         }
 
-        public PackedMapNode? Next() => myNext;
+        public PackedMapNode? Next() => _next;
 
-        public void SetNext(PackedMapNode? theNext) => myNext = theNext;
+        public void SetNext(PackedMapNode? next) => _next = next;
 
-        public long HashCode(long theUpper) => (myMask >> MaskLowBits) % theUpper + 1;
+        public long HashCode(long upper) => (_mask >> MaskLowBits) % upper + 1;
 
-        public bool IsEqual(uint theOther) => (myMask >> MaskLowBits) == theOther;
+        public bool IsEqual(uint other) => (_mask >> MaskLowBits) == other;
     }
 
     /// <summary>Iterates the values in OCCT's order: by bucket, then by block in a bucket, then ascending in a block.</summary>
     public sealed class Iterator
     {
-        private PackedMapNode?[]? myBuckets;
-        private PackedMapNode? myNode;
-        private long myNbBuckets;
-        private long myBucket;
-        private uint myIntMask; // all bits set above the iterated position
-        private int myKey;      // currently iterated key
+        private PackedMapNode?[]? _buckets;
+        private PackedMapNode? _node;
+        private long _nbBuckets;
+        private long _bucket;
+        private uint _intMask; // all bits set above the iterated position
+        private int _key;      // currently iterated key
 
         public Iterator()
         {
-            myIntMask = ~0u;
+            _intMask = ~0u;
         }
 
-        public Iterator(NCollection_PackedMapOfInteger theMap) => Initialize(theMap);
+        public Iterator(NCollection_PackedMapOfInteger map) => Initialize(map);
 
         /// <summary>Re-initializes with the same or another map.</summary>
-        public void Initialize(NCollection_PackedMapOfInteger theMap)
+        public void Initialize(NCollection_PackedMapOfInteger map)
         {
-            myBuckets = theMap.myData1;
-            myBucket = 0;
-            myNode = null;
-            myNbBuckets = theMap.myData1 is not null ? theMap.myNbBuckets : 0;
-            findFirst();
+            _buckets = map._data1;
+            _bucket = 0;
+            _node = null;
+            _nbBuckets = map._data1 is not null ? map._nbBuckets : 0;
+            FindFirst();
 
-            myIntMask = ~0u;
-            myKey = myNode is not null ? findNext(myNode, ref myIntMask) : 0;
+            _intMask = ~0u;
+            _key = _node is not null ? FindNext(_node, ref _intMask) : 0;
         }
 
         /// <summary>Restarts the iteration.</summary>
         public void Reset()
         {
-            myBucket = 0;
-            myNode = null;
-            findFirst();
+            _bucket = 0;
+            _node = null;
+            FindFirst();
 
-            myIntMask = ~0u;
-            myKey = myNode is not null ? findNext(myNode, ref myIntMask) : 0;
+            _intMask = ~0u;
+            _key = _node is not null ? FindNext(_node, ref _intMask) : 0;
         }
 
         /// <summary>The iterated value.</summary>
         public int Key()
         {
-            Standard_NoSuchObject_Raise_if(myIntMask == ~0u, "NCollection_PackedMap::Iterator::Key");
-            return myKey;
+            Standard_NoSuchObject_Raise_if(_intMask == ~0u, "NCollection_PackedMap::Iterator::Key");
+            return _key;
         }
 
-        public bool More() => myNode is not null;
+        public bool More() => _node is not null;
 
         public void Next()
         {
-            for (; myNode is not null; next())
+            for (; _node is not null; Advance())
             {
-                myKey = findNext(myNode, ref myIntMask);
-                if (myIntMask != ~0u)
+                _key = FindNext(_node, ref _intMask);
+                if (_intMask != ~0u)
                 {
                     break;
                 }
             }
         }
 
-        private void findFirst()
+        private void FindFirst()
         {
-            if (myBuckets is null)
+            if (_buckets is null)
             {
                 return;
             }
 
-            for (; myBucket <= myNbBuckets; ++myBucket)
+            for (; _bucket <= _nbBuckets; ++_bucket)
             {
-                myNode = myBuckets[myBucket];
-                if (myNode is not null)
+                _node = _buckets[_bucket];
+                if (_node is not null)
                 {
                     return;
                 }
             }
         }
 
-        private void next()
+        private void Advance()
         {
-            if (myBuckets is null)
+            if (_buckets is null)
             {
                 return;
             }
 
-            if (myNode is not null)
+            if (_node is not null)
             {
-                myNode = myNode.Next();
-                if (myNode is not null)
+                _node = _node.Next();
+                if (_node is not null)
                 {
                     return;
                 }
             }
 
-            ++myBucket;
-            while (myBucket <= myNbBuckets)
+            ++_bucket;
+            while (_bucket <= _nbBuckets)
             {
-                myNode = myBuckets[myBucket];
-                if (myNode is not null)
+                _node = _buckets[_bucket];
+                if (_node is not null)
                 {
                     return;
                 }
 
-                ++myBucket;
+                ++_bucket;
             }
         }
     }
 
-    private PackedMapNode?[]? myData1;
-    private long myNbBuckets;
-    private int myNbPackedMapNodes;
-    private int myExtent;
+    private PackedMapNode?[]? _data1;
+    private long _nbBuckets;
+    private int _nbPackedMapNodes;
+    private int _extent;
 
-    public NCollection_PackedMapOfInteger(int theNbBuckets = 1)
+    public NCollection_PackedMapOfInteger(int nbBuckets = 1)
     {
-        myNbBuckets = theNbBuckets < 1 ? 1 : theNbBuckets;
+        _nbBuckets = nbBuckets < 1 ? 1 : nbBuckets;
     }
 
     /// <summary>The number of values.</summary>
-    public int Extent() => myExtent;
+    public int Extent() => _extent;
 
-    public int Size() => myExtent;
+    public int Size() => _extent;
 
-    public bool IsEmpty() => myNbPackedMapNodes == 0;
+    public bool IsEmpty() => _nbPackedMapNodes == 0;
 
-    public long NbBuckets() => myNbBuckets;
+    public long NbBuckets() => _nbBuckets;
 
-    public void ReSize(long theNbBuckets)
+    public void ReSize(long nbBuckets)
     {
-        long aNewBuck = NCollection_Primes.NextPrimeForMap(theNbBuckets < 0 ? 0 : theNbBuckets);
-        if (aNewBuck <= myNbBuckets)
+        long newBuck = Primes.NextPrimeForMap(nbBuckets < 0 ? 0 : nbBuckets);
+        if (newBuck <= _nbBuckets)
         {
             if (!IsEmpty())
             {
                 return;
             }
 
-            aNewBuck = myNbBuckets;
+            newBuck = _nbBuckets;
         }
 
-        var aNewData = new PackedMapNode?[aNewBuck + 1];
-        if (myData1 is not null)
+        var newData = new PackedMapNode?[newBuck + 1];
+        if (_data1 is not null)
         {
-            PackedMapNode?[] anOldData = myData1;
-            for (long i = 0; i <= myNbBuckets; ++i)
+            PackedMapNode?[] oldData = _data1;
+            for (long i = 0; i <= _nbBuckets; ++i)
             {
-                for (PackedMapNode? p = anOldData[i]; p is not null;)
+                for (PackedMapNode? p = oldData[i]; p is not null;)
                 {
-                    long k = p.HashCode(aNewBuck);
+                    long k = p.HashCode(newBuck);
                     PackedMapNode? q = p.Next();
-                    p.SetNext(aNewData[k]);
-                    aNewData[k] = p;
+                    p.SetNext(newData[k]);
+                    newData[k] = p;
                     p = q;
                 }
             }
         }
 
-        myNbBuckets = aNewBuck;
-        myData1 = aNewData;
+        _nbBuckets = newBuck;
+        _data1 = newData;
     }
 
-    /// <summary>Makes this map a copy of <paramref name="theOther"/>, node by node, as OCCT's <c>Assign</c>.</summary>
-    public NCollection_PackedMapOfInteger Assign(NCollection_PackedMapOfInteger theOther)
+    /// <summary>Makes this map a copy of <paramref name="other"/>, node by node, as OCCT's <c>Assign</c>.</summary>
+    public NCollection_PackedMapOfInteger Assign(NCollection_PackedMapOfInteger other)
     {
-        if (!ReferenceEquals(this, theOther))
+        if (!ReferenceEquals(this, other))
         {
             Clear();
-            if (!theOther.IsEmpty())
+            if (!other.IsEmpty())
             {
-                ReSize(theOther.myNbPackedMapNodes);
-                long nBucketsSrc = theOther.myNbBuckets;
-                long nBuckets = myNbBuckets;
+                ReSize(other._nbPackedMapNodes);
+                long nBucketsSrc = other._nbBuckets;
+                long nBuckets = _nbBuckets;
                 for (long i = 0; i <= nBucketsSrc; ++i)
                 {
-                    for (PackedMapNode? p = theOther.myData1![i]; p is not null;)
+                    for (PackedMapNode? p = other._data1![i]; p is not null;)
                     {
-                        long aHashCode = p.HashCode(nBuckets);
-                        myData1![aHashCode] = new PackedMapNode(p.Mask(), p.Data(), myData1[aHashCode]);
-                        ++myNbPackedMapNodes;
+                        long hashCode = p.HashCode(nBuckets);
+                        _data1![hashCode] = new PackedMapNode(p.Mask(), p.Data(), _data1[hashCode]);
+                        ++_nbPackedMapNodes;
                         p = p.Next();
                     }
                 }
             }
-            myExtent = theOther.myExtent;
+            _extent = other._extent;
         }
         return this;
     }
 
     public void Clear()
     {
-        myNbPackedMapNodes = 0;
-        myData1 = null;
-        myExtent = 0;
+        _nbPackedMapNodes = 0;
+        _data1 = null;
+        _extent = 0;
     }
 
     /// <summary>Adds the value; false if it was already there.</summary>
-    public bool Add(int theKey)
+    public bool Add(int key)
     {
         if (Resizable())
         {
-            ReSize(myNbPackedMapNodes);
+            ReSize(_nbPackedMapNodes);
         }
 
-        uint aKeyInt = packedKeyIndex(theKey);
-        long aHashCode = hashCode(aKeyInt, myNbBuckets);
-        PackedMapNode? aBucketHead = myData1![aHashCode];
-        for (PackedMapNode? p = aBucketHead; p is not null; p = p.Next())
+        uint keyInt = PackedKeyIndex(key);
+        long hashCode = global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
+        PackedMapNode? bucketHead = _data1![hashCode];
+        for (PackedMapNode? p = bucketHead; p is not null; p = p.Next())
         {
-            if (p.IsEqual(aKeyInt))
+            if (p.IsEqual(keyInt))
             {
-                if (p.AddValue(theKey))
+                if (p.AddValue(key))
                 {
-                    ++myExtent;
+                    ++_extent;
                     return true;
                 }
 
@@ -308,25 +309,25 @@ public sealed class NCollection_PackedMapOfInteger
             }
         }
 
-        myData1[aHashCode] = new PackedMapNode(theKey, aBucketHead);
-        ++myNbPackedMapNodes;
-        ++myExtent;
+        _data1[hashCode] = new PackedMapNode(key, bucketHead);
+        ++_nbPackedMapNodes;
+        ++_extent;
         return true;
     }
 
-    public bool Contains(int theKey)
+    public bool Contains(int key)
     {
         if (IsEmpty())
         {
             return false;
         }
 
-        uint aKeyInt = packedKeyIndex(theKey);
-        for (PackedMapNode? p = myData1![hashCode(aKeyInt, myNbBuckets)]; p is not null;)
+        uint keyInt = PackedKeyIndex(key);
+        for (PackedMapNode? p = _data1![global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets)]; p is not null;)
         {
-            if (p.IsEqual(aKeyInt))
+            if (p.IsEqual(keyInt))
             {
-                return p.HasValue(theKey);
+                return p.HasValue(key);
             }
 
             p = p.Next();
@@ -336,40 +337,40 @@ public sealed class NCollection_PackedMapOfInteger
     }
 
     /// <summary>Removes the value; false if it wasn't there.</summary>
-    public bool Remove(int theKey)
+    public bool Remove(int key)
     {
         if (IsEmpty())
         {
             return false;
         }
 
-        uint aKeyInt = packedKeyIndex(theKey);
-        long aBucket = hashCode(aKeyInt, myNbBuckets);
-        PackedMapNode? p = myData1![aBucket];
+        uint keyInt = PackedKeyIndex(key);
+        long bucket = global::Occt.NCollection_PackedMapOfInteger.HashCode(keyInt, _nbBuckets);
+        PackedMapNode? p = _data1![bucket];
         PackedMapNode? q = null;
         while (p is not null)
         {
-            if (p.IsEqual(aKeyInt))
+            if (p.IsEqual(keyInt))
             {
-                bool aResult = p.DelValue(theKey);
-                if (aResult)
+                bool result = p.DelValue(key);
+                if (result)
                 {
-                    --myExtent;
+                    --_extent;
                     if (!p.HasValues())
                     {
-                        --myNbPackedMapNodes;
+                        --_nbPackedMapNodes;
                         if (q is not null)
                         {
                             q.SetNext(p.Next());
                         }
                         else
                         {
-                            myData1[aBucket] = p.Next();
+                            _data1[bucket] = p.Next();
                         }
                     }
                 }
 
-                return aResult;
+                return result;
             }
 
             q = p;
@@ -380,29 +381,29 @@ public sealed class NCollection_PackedMapOfInteger
     }
 
     // Returns TRUE if resizing the map should be considered.
-    private bool Resizable() => IsEmpty() || (myNbPackedMapNodes > myNbBuckets);
+    private bool Resizable() => IsEmpty() || (_nbPackedMapNodes > _nbBuckets);
 
     // Return an integer index for specified key.
-    private static uint packedKeyIndex(int theKey) => (uint)theKey >> MaskLowBits;
+    private static uint PackedKeyIndex(int key) => (uint)key >> MaskLowBits;
 
     // Compute hash code for a key index.
-    private static long hashCode(uint theKeyIndex, long theNbBuckets) => theKeyIndex % theNbBuckets + 1;
+    private static long HashCode(uint keyIndex, long nbBuckets) => keyIndex % nbBuckets + 1;
 
     // Find the lowest non-zero bit under the given mask. Outputs the new mask that does not contain the detected bit.
-    private static int findNext(PackedMapNode theNode, ref uint theMask)
+    private static int FindNext(PackedMapNode node, ref uint mask)
     {
-        uint val = theNode.Data() & theMask;
+        uint val = node.Data() & mask;
         int nZeros = 0;
         if (val == 0)
         {
-            theMask = ~0u; // void, nothing to do
+            mask = ~0u; // void, nothing to do
         }
         else
         {
             nZeros = BitOperations.TrailingZeroCount(val);
-            theMask = (~0u << nZeros) << 1;
+            mask = (~0u << nZeros) << 1;
         }
 
-        return nZeros + theNode.Key();
+        return nZeros + node.Key();
     }
 }

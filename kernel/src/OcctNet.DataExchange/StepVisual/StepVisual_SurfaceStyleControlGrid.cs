@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_SurfaceStyleControlGrid : Standard_Transient
+public class StepVisual_SurfaceStyleControlGrid : Transient
 {
     private StepVisual_CurveStyle styleOfControlGrid;
 

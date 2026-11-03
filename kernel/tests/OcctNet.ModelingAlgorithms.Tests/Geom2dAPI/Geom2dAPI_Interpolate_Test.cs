@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's Geom2dAPI_Interpolate GTest.</summary>
@@ -13,22 +15,22 @@ public class Geom2dAPI_InterpolateTest
     [Fact]
     public void OCC28594_InterpolateWithAndWithoutTangentScale()
     {
-        NCollection_HArray1<gp_Pnt2d> aPoints = new(1, 6);
-        NCollection_Array1<gp_Pnt2d> aPointsArray = aPoints.ChangeArray1();
-        aPointsArray[1] = new gp_Pnt2d(-30.4, 8);
-        aPointsArray[2] = new gp_Pnt2d(-16.689912, 17.498217);
-        aPointsArray[3] = new gp_Pnt2d(-23.803064, 24.748543);
-        aPointsArray[4] = new gp_Pnt2d(-16.907466, 32.919615);
-        aPointsArray[5] = new gp_Pnt2d(-8.543829, 26.549421);
-        aPointsArray[6] = new gp_Pnt2d(0, 39.200000);
+        NCollection_HArray1<Point2D> aPoints = new(1, 6);
+        NCollection_Array1<Point2D> aPointsArray = aPoints.ChangeArray1();
+        aPointsArray[1] = new Point2D(-30.4, 8);
+        aPointsArray[2] = new Point2D(-16.689912, 17.498217);
+        aPointsArray[3] = new Point2D(-23.803064, 24.748543);
+        aPointsArray[4] = new Point2D(-16.907466, 32.919615);
+        aPointsArray[5] = new Point2D(-8.543829, 26.549421);
+        aPointsArray[6] = new Point2D(0, 39.200000);
 
-        NCollection_Array1<gp_Vec2d> aTangents = new(1, 6);
-        aTangents[1] = new gp_Vec2d(0.3, 0.4);
-        aTangents[2] = new gp_Vec2d(0, 0);
-        aTangents[3] = new gp_Vec2d(0, 0);
-        aTangents[4] = new gp_Vec2d(0, 0);
-        aTangents[5] = new gp_Vec2d(0, 0);
-        aTangents[6] = new gp_Vec2d(1, 0);
+        NCollection_Array1<Vector2D> aTangents = new(1, 6);
+        aTangents[1] = new Vector2D(0.3, 0.4);
+        aTangents[2] = new Vector2D(0, 0);
+        aTangents[3] = new Vector2D(0, 0);
+        aTangents[4] = new Vector2D(0, 0);
+        aTangents[5] = new Vector2D(0, 0);
+        aTangents[6] = new Vector2D(1, 0);
 
         NCollection_HArray1<bool> aTangentFlags = new(1, 6);
         NCollection_Array1<bool> aTangentFlagsArray = aTangentFlags.ChangeArray1();
@@ -40,7 +42,7 @@ public class Geom2dAPI_InterpolateTest
         aTangentFlagsArray[6] = true;
 
         // Interpolation with tangent scale
-        Geom2dAPI_Interpolate anInterpWithScale = new(aPoints, false, Precision.Confusion());
+        Geom2dAPI_Interpolate anInterpWithScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInterpWithScale.Load(aTangents, aTangentFlags);
         anInterpWithScale.Perform();
         Assert.True(anInterpWithScale.IsDone());
@@ -48,7 +50,7 @@ public class Geom2dAPI_InterpolateTest
         Assert.NotNull(aCurveWithScale);
 
         // Interpolation without tangent scale
-        Geom2dAPI_Interpolate anInterpWithoutScale = new(aPoints, false, Precision.Confusion());
+        Geom2dAPI_Interpolate anInterpWithoutScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInterpWithoutScale.Load(aTangents, aTangentFlags, false);
         anInterpWithoutScale.Perform();
         Assert.True(anInterpWithoutScale.IsDone());
@@ -56,11 +58,11 @@ public class Geom2dAPI_InterpolateTest
         Assert.NotNull(aCurveWithoutScale);
 
         // Both curves must pass through all given points
-        double aTol = Precision.Confusion() * 10;
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion() * 10;
         for (int anIndex = 1; anIndex <= aPoints.Length(); ++anIndex)
         {
-            gp_Pnt2d aPtOnCurveWithScale = aCurveWithScale.EvalD0(aCurveWithScale.Knot(anIndex));
-            gp_Pnt2d aPt = aPointsArray[anIndex];
+            Point2D aPtOnCurveWithScale = aCurveWithScale.EvalD0(aCurveWithScale.Knot(anIndex));
+            Point2D aPt = aPointsArray[anIndex];
             Assert.Equal(aPt.X(), aPtOnCurveWithScale.X(), aTol);
             Assert.Equal(aPt.Y(), aPtOnCurveWithScale.Y(), aTol);
         }

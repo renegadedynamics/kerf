@@ -5,6 +5,7 @@
 // base colour, blended if transparent).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
@@ -41,7 +42,7 @@ public sealed class RWGltf_TreeWriter
     public RWGltf_WriteOptions Options { get; }
 
     /// <summary>Writes the tree as binary glTF (<c>.glb</c>). False if cancelled or the stream fails.</summary>
-    public bool WriteGlb(XdeDoc_Tree theTree, Stream theStream, Message_ProgressRange theProgress = default)
+    public bool WriteGlb(XdeDoc_Tree theTree, Stream theStream, ProgressRange theProgress = default)
     {
         ArgumentNullException.ThrowIfNull(theTree);
         ArgumentNullException.ThrowIfNull(theStream);
@@ -81,7 +82,7 @@ public sealed class RWGltf_TreeWriter
     /// JSON refers to as <paramref name="theBinUri"/> (a relative URI, such as "model.bin"). Without triangles nothing
     /// is written to <paramref name="theBin"/> and the JSON has no buffer. False if cancelled or a stream fails.
     /// </summary>
-    public bool WriteGltf(XdeDoc_Tree theTree, Stream theJson, Stream theBin, string theBinUri, Message_ProgressRange theProgress = default)
+    public bool WriteGltf(XdeDoc_Tree theTree, Stream theJson, Stream theBin, string theBinUri, ProgressRange theProgress = default)
     {
         ArgumentNullException.ThrowIfNull(theTree);
         ArgumentNullException.ThrowIfNull(theJson);
@@ -114,7 +115,7 @@ public sealed class RWGltf_TreeWriter
     /// Writes the tree to a file: binary if its extension is <c>.glb</c>, otherwise JSON with the buffer in a
     /// <c>.bin</c> file of the same name beside it.
     /// </summary>
-    public bool Perform(XdeDoc_Tree theTree, string theFilePath, Message_ProgressRange theProgress = default)
+    public bool Perform(XdeDoc_Tree theTree, string theFilePath, ProgressRange theProgress = default)
     {
         if (string.Equals(Path.GetExtension(theFilePath), ".glb", StringComparison.OrdinalIgnoreCase))
         {
@@ -165,7 +166,7 @@ public sealed class RWGltf_TreeWriter
         public readonly MemoryStream Bin = new();
         public readonly List<BufferView> BufferViews = [];
         public readonly List<Accessor> Accessors = [];
-        public readonly List<Quantity_ColorRGBA> Materials = [];
+        public readonly List<ColorWithAlpha> Materials = [];
         public readonly List<Mesh> Meshes = [];
         public readonly List<Node> Nodes = [];
         public readonly List<int> SceneNodes = [];
@@ -284,8 +285,8 @@ public sealed class RWGltf_TreeWriter
                     aW.WriteStartArray("materials");
                     for (int i = 0; i < Materials.Count; i++)
                     {
-                        Quantity_ColorRGBA aColor = Materials[i];
-                        Quantity_Color aRgb = aColor.GetRGB();
+                        ColorWithAlpha aColor = Materials[i];
+                        Color aRgb = aColor.GetRGB();
                         aW.WriteStartObject();
                         aW.WriteString("name", "mat_" + i.ToString(System.Globalization.CultureInfo.InvariantCulture));
                         aW.WriteStartObject("pbrMetallicRoughness");
@@ -367,9 +368,9 @@ public sealed class RWGltf_TreeWriter
     // A part's accessors: per group, its position, normal and index accessors
     private sealed record PartAccessors(RWMesh_ProductMesh Mesh, List<(int Position, int Normal, int Indices)> Groups);
 
-    private Model? build(XdeDoc_Tree theTree, string? theBinUri, Message_ProgressRange theProgress)
+    private Model? build(XdeDoc_Tree theTree, string? theBinUri, ProgressRange theProgress)
     {
-        using var aPS = new Message_ProgressScope(theProgress, "Writing glTF", Options.MeshParameters is null ? 1 : 2);
+        using var aPS = new ProgressScope(theProgress, "Writing glTF", Options.MeshParameters is null ? 1 : 2);
         XdeDoc_Tree aTree = theTree;
         if (Options.MeshParameters is IMeshTools_Parameters aParams)
         {
@@ -385,15 +386,15 @@ public sealed class RWGltf_TreeWriter
         var aConverter = new RWMesh_CoordinateConverter(aUnit, Options.ZUpToYUp);
         var aModel = new Model { BinUri = theBinUri, Generator = Options.Generator };
         var aParts = new Dictionary<XdeDoc_Product, PartAccessors>(ReferenceEqualityComparer.Instance);
-        var aMeshes = new Dictionary<(XdeDoc_Product, Quantity_ColorRGBA?), int>();
-        var aMaterials = new Dictionary<Quantity_ColorRGBA, int>();
+        var aMeshes = new Dictionary<(XdeDoc_Product, ColorWithAlpha?), int>();
+        var aMaterials = new Dictionary<ColorWithAlpha, int>();
         int aNbParts = aTree.Products().Count(p => !p.IsAssembly);
-        using var aPartsPS = new Message_ProgressScope(aPS.Next(), "Meshes", Math.Max(1, aNbParts));
+        using var aPartsPS = new ProgressScope(aPS.Next(), "Meshes", Math.Max(1, aNbParts));
         bool isCancelled = false;
 
-        int materialOf(Quantity_ColorRGBA? theColor)
+        int materialOf(ColorWithAlpha? theColor)
         {
-            if (theColor is not Quantity_ColorRGBA aColor)
+            if (theColor is not ColorWithAlpha aColor)
             {
                 return -1;
             }
@@ -431,7 +432,7 @@ public sealed class RWGltf_TreeWriter
 
         int meshOf(XdeDoc_Product thePart, XdeDoc_Style theStyle)
         {
-            Quantity_ColorRGBA? aNodeColor = theStyle.SurfaceColor ?? theStyle.CurveColor;
+            ColorWithAlpha? aNodeColor = theStyle.SurfaceColor ?? theStyle.CurveColor;
             if (aMeshes.TryGetValue((thePart, aNodeColor), out int aKnown))
             {
                 return aKnown;
@@ -446,7 +447,7 @@ public sealed class RWGltf_TreeWriter
             for (int i = 0; i < anAccessors.Groups.Count; i++)
             {
                 (int aPos, int aNormal, int anIndices) = anAccessors.Groups[i];
-                Quantity_ColorRGBA? aColor = anAccessors.Mesh.Groups[i].Color ?? aNodeColor;
+                ColorWithAlpha? aColor = anAccessors.Mesh.Groups[i].Color ?? aNodeColor;
                 aPrimitives.Add(new Primitive(aPos, aNormal, anIndices, materialOf(aColor)));
             }
             aModel.Meshes.Add(new Mesh(thePart.Name, aPrimitives));
@@ -470,7 +471,7 @@ public sealed class RWGltf_TreeWriter
             var aNode = new Node
             {
                 Name = theInstance.DisplayName,
-                Matrix = theInstance.Location.IsIdentity() ? null : aConverter.MapMatrix(theInstance.Location.Transformation()),
+                Matrix = theInstance.Location.IsIdentity ? null : aConverter.MapMatrix(theInstance.Location.Transformation()),
             };
             aModel.Nodes.Add(aNode);
             int anIndex = aModel.Nodes.Count - 1;

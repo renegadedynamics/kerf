@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using Occt;
 using Ops = Build123d.Operations;
 
@@ -13,7 +14,7 @@ public class ErrorContextTests
     [Fact]
     public void APrimitiveSaysWhatItWasMaking()
     {
-        var e = Assert.ThrowsAny<Standard_Failure>(() => new Box(0, 1, 1));
+        var e = Assert.ThrowsAny<FailureException>(() => new Box(0, 1, 1));
         Assert.Equal("Standard_DomainError", e.OcctType);
     }
 
@@ -31,8 +32,8 @@ public class ErrorContextTests
             "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location((5.0, 0.0, 0.0))), 0, Axis.Y),
             _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine((0, 0, 0), (0, 0, 1e-9))),
         };
-        var e = Assert.ThrowsAny<Standard_Failure>(make);
-        Assert.StartsWith(e.OcctType, e.GetType().Name);
+        var e = Assert.ThrowsAny<FailureException>(make);
+        Assert.StartsWith(e.OcctType, Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
     }
 
     [Fact]
@@ -41,7 +42,7 @@ public class ErrorContextTests
         // build123d's own messages stand, with OCCT's failure inside
         var fillet = Assert.Throws<ArgumentException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
         Assert.Contains("Failed creating a fillet with radius of 5.0 on 12 of 12 edges", fillet.Message);
-        Assert.IsAssignableFrom<Standard_Failure>(fillet.InnerException);
+        Assert.IsAssignableFrom<FailureException>(fillet.InnerException);
     }
 
     [Fact]

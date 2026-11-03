@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using ProxPnt_Status = Occt.BRepExtrema_ProximityDistTool.ProxPnt_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -29,8 +30,8 @@ public sealed class BRepExtrema_ShapeProximity
     private BRepExtrema_TriangleSet myElementSet2;
     private int myNbSamples1;
     private int myNbSamples2;
-    private gp_Pnt myProxPoint1;
-    private gp_Pnt myProxPoint2;
+    private Point3D myProxPoint1;
+    private Point3D myProxPoint2;
     private ProxPnt_Status myProxPntStatus1, myProxPntStatus2;
     private readonly BRepExtrema_OverlapTool myOverlapTool = new();
     private readonly BRepExtrema_ProximityValueTool myProxValTool = new();
@@ -96,10 +97,10 @@ public sealed class BRepExtrema_ShapeProximity
     public BRepExtrema_TriangleSet ElementSet2() => myElementSet2;
 
     /// <summary>The point of the first shape giving the proximity value.</summary>
-    public gp_Pnt ProximityPoint1() => myProxPoint1;
+    public Point3D ProximityPoint1() => myProxPoint1;
 
     /// <summary>The point of the second shape giving the proximity value.</summary>
-    public gp_Pnt ProximityPoint2() => myProxPoint2;
+    public Point3D ProximityPoint2() => myProxPoint2;
 
     /// <summary>The status of the point of the first shape giving the proximity value.</summary>
     public ProxPnt_Status ProxPntStatus1() => myProxPntStatus1;
@@ -134,7 +135,7 @@ public sealed class BRepExtrema_ShapeProximity
     {
         myIsInitS1 = initSubShapes(theShape1, myShapeList1, ref myElementSet1);
 
-        if (myTolerance == Precision.Infinite())
+        if (myTolerance == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             myProxValTool.MarkDirty();
         }
@@ -151,7 +152,7 @@ public sealed class BRepExtrema_ShapeProximity
     {
         myIsInitS2 = initSubShapes(theShape2, myShapeList2, ref myElementSet2);
 
-        if (myTolerance == Precision.Infinite())
+        if (myTolerance == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             myProxValTool.MarkDirty();
         }
@@ -166,7 +167,7 @@ public sealed class BRepExtrema_ShapeProximity
     /// <summary>Searches for overlapped faces, or computes the proximity value when the tolerance is infinite.</summary>
     public void Perform()
     {
-        if (myTolerance == Precision.Infinite())
+        if (myTolerance == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             if (!myIsInitS1 || !myIsInitS2 || myProxValTool.IsDone())
             {

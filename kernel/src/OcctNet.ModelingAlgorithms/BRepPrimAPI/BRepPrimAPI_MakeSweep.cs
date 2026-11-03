@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The root of the sweep algorithms (prisms and revolutions): the shapes at the bottom and the top of the sweep.</summary>
@@ -65,7 +67,7 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
 
     private static bool HasFrozen(TopoDS_TShape theTShape, HashSet<TopoDS_TShape> theVisited)
     {
-        if (theTShape.IsFrozen())
+        if (theTShape.IsFrozen)
         {
             return true;
         }
@@ -73,7 +75,7 @@ public abstract class BRepPrimAPI_MakeSweep : BRepBuilderAPI_MakeShape
         {
             return false;
         }
-        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theTShape, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD));
+        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theTShape, new Placement(), TopAbs_Orientation.TopAbs_FORWARD));
              anIt.More(); anIt.Next())
         {
             if (HasFrozen(anIt.Value().TShape()!, theVisited))

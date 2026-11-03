@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Runtime.InteropServices;
 
 namespace Occt;
@@ -21,10 +23,10 @@ namespace Occt;
 public class GeomAPI_Interpolate
 {
     private readonly double myTolerance;
-    private readonly NCollection_HArray1<gp_Pnt> myPoints;
+    private readonly NCollection_HArray1<Point3D> myPoints;
     private bool myIsDone;
     private Geom_BSplineCurve? myCurve;
-    private NCollection_HArray1<gp_Vec> myTangents;
+    private NCollection_HArray1<Vector3D> myTangents;
     private NCollection_HArray1<bool> myTangentFlags;
     private NCollection_HArray1<double> myParameters;
     private readonly bool myPeriodic;
@@ -32,7 +34,7 @@ public class GeomAPI_Interpolate
 
     //=================================================================================================
 
-    private static bool CheckPoints(NCollection_Array1<gp_Pnt> PointArray, double Tolerance)
+    private static bool CheckPoints(NCollection_Array1<Point3D> PointArray, double Tolerance)
     {
         int ii;
         double tolerance_squared = Tolerance * Tolerance, distance_squared;
@@ -47,7 +49,7 @@ public class GeomAPI_Interpolate
 
     //=================================================================================================
 
-    private static bool CheckTangents(NCollection_Array1<gp_Vec> Tangents, NCollection_Array1<bool> TangentFlags,
+    private static bool CheckTangents(NCollection_Array1<Vector3D> Tangents, NCollection_Array1<bool> TangentFlags,
                                       double Tolerance)
     {
         int ii, index;
@@ -83,7 +85,7 @@ public class GeomAPI_Interpolate
 
     //=================================================================================================
 
-    private static void BuildParameters(bool PeriodicFlag, NCollection_Array1<gp_Pnt> PointsArray,
+    private static void BuildParameters(bool PeriodicFlag, NCollection_Array1<Point3D> PointsArray,
                                         out NCollection_HArray1<double> ParametersPtr)
     {
         int ii, index;
@@ -111,12 +113,12 @@ public class GeomAPI_Interpolate
     }
 
     // The start of the coordinates of PointsArray(theIndex) and the following points (OCCT's double* cast).
-    private static ReadOnlySpan<double> Coordinates(NCollection_Array1<gp_Pnt> PointsArray, int theIndex)
-        => MemoryMarshal.Cast<gp_Pnt, double>(PointsArray.AsSpan(theIndex));
+    private static ReadOnlySpan<double> Coordinates(NCollection_Array1<Point3D> PointsArray, int theIndex)
+        => MemoryMarshal.Cast<Point3D, double>(PointsArray.AsSpan(theIndex));
 
     //=================================================================================================
 
-    private static void BuildPeriodicTangent(NCollection_Array1<gp_Pnt> PointsArray, NCollection_Array1<gp_Vec> TangentsArray,
+    private static void BuildPeriodicTangent(NCollection_Array1<Point3D> PointsArray, NCollection_Array1<Vector3D> TangentsArray,
                                              NCollection_Array1<bool> TangentFlags,
                                              NCollection_Array1<double> ParametersArray)
     {
@@ -124,11 +126,11 @@ public class GeomAPI_Interpolate
         ReadOnlySpan<double> point_array, parameter_array;
         Span<double> eval_result = stackalloc double[6];
 
-        gp_Vec a_vector = new();
+        Vector3D a_vector = new();
 
         if (PointsArray.Length() < 3)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!TangentFlags.Value(1))
@@ -141,7 +143,7 @@ public class GeomAPI_Interpolate
             point_array = Coordinates(PointsArray, PointsArray.Lower());
             parameter_array = ParametersArray.AsSpan(1);
             TangentFlags.SetValue(1, true);
-            PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 3, point_array, parameter_array, eval_result);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 3, point_array, parameter_array, eval_result);
             for (ii = 1; ii <= 3; ii++)
             {
                 a_vector.SetCoord(ii, eval_result[3 + ii - 1]);
@@ -152,20 +154,20 @@ public class GeomAPI_Interpolate
 
     //=================================================================================================
 
-    private static void BuildTangents(NCollection_Array1<gp_Pnt> PointsArray, NCollection_Array1<gp_Vec> TangentsArray,
+    private static void BuildTangents(NCollection_Array1<Point3D> PointsArray, NCollection_Array1<Vector3D> TangentsArray,
                                       NCollection_Array1<bool> TangentFlags, NCollection_Array1<double> ParametersArray)
     {
         int ii, degree;
         ReadOnlySpan<double> point_array, parameter_array;
         Span<double> eval_result = stackalloc double[6];
 
-        gp_Vec a_vector = new();
+        Vector3D a_vector = new();
 
         degree = 3;
 
         if (PointsArray.Length() < 3)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (PointsArray.Length() == 3)
         {
@@ -176,7 +178,7 @@ public class GeomAPI_Interpolate
             point_array = Coordinates(PointsArray, PointsArray.Lower());
             parameter_array = ParametersArray.AsSpan(1);
             TangentFlags.SetValue(1, true);
-            PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 3, point_array, parameter_array, eval_result);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 3, point_array, parameter_array, eval_result);
             for (ii = 1; ii <= 3; ii++)
             {
                 a_vector.SetCoord(ii, eval_result[3 + ii - 1]);
@@ -188,7 +190,7 @@ public class GeomAPI_Interpolate
             point_array = Coordinates(PointsArray, PointsArray.Upper() - degree);
             TangentFlags.SetValue(TangentFlags.Upper(), true);
             parameter_array = ParametersArray.AsSpan(ParametersArray.Upper() - degree);
-            PLib.EvalLagrange(ParametersArray.Value(ParametersArray.Upper()), 1, degree, 3, point_array, parameter_array,
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(ParametersArray.Upper()), 1, degree, 3, point_array, parameter_array,
                               eval_result);
             for (ii = 1; ii <= 3; ii++)
             {
@@ -199,7 +201,7 @@ public class GeomAPI_Interpolate
     }
 
     // Scales the given tangents so that they have the length of the derivative of the Lagrange interpolation.
-    private static void ScaleTangents(NCollection_Array1<gp_Pnt> PointsArray, NCollection_Array1<gp_Vec> TangentsArray,
+    private static void ScaleTangents(NCollection_Array1<Point3D> PointsArray, NCollection_Array1<Vector3D> TangentsArray,
                                       NCollection_Array1<bool> TangentFlags, NCollection_Array1<double> ParametersArray)
     {
         int ii, jj, degree = 0, index, num_points;
@@ -208,7 +210,7 @@ public class GeomAPI_Interpolate
         double ratio;
         Span<double> eval_result = stackalloc double[6];
 
-        gp_Vec a_vector = new();
+        Vector3D a_vector = new();
 
         num_points = PointsArray.Length();
         if (num_points == 2)
@@ -227,7 +229,7 @@ public class GeomAPI_Interpolate
             {
                 point_array = Coordinates(PointsArray, index);
                 parameter_array = ParametersArray.AsSpan(index);
-                PLib.EvalLagrange(ParametersArray.Value(ii), 1, degree, 3, point_array, parameter_array, eval_result);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(ii), 1, degree, 3, point_array, parameter_array, eval_result);
                 value[0] = value[1] = 0.0e0;
                 for (jj = 1; jj <= 3; jj++)
                 {
@@ -256,7 +258,7 @@ public class GeomAPI_Interpolate
     /// Prepares the interpolation of <paramref name="PointsPtr"/> at chord-length parameters. Throws
     /// Standard_ConstructionError if two consecutive points are closer than <paramref name="Tolerance"/>.
     /// </summary>
-    public GeomAPI_Interpolate(NCollection_HArray1<gp_Pnt> PointsPtr, bool PeriodicFlag, double Tolerance)
+    public GeomAPI_Interpolate(NCollection_HArray1<Point3D> PointsPtr, bool PeriodicFlag, double Tolerance)
     {
         myTolerance = Tolerance;
         myPoints = PointsPtr;
@@ -266,12 +268,12 @@ public class GeomAPI_Interpolate
 
         int ii;
         bool result = CheckPoints(PointsPtr.Array1(), Tolerance);
-        myTangents = new NCollection_HArray1<gp_Vec>(myPoints.Lower(), myPoints.Upper());
+        myTangents = new NCollection_HArray1<Vector3D>(myPoints.Lower(), myPoints.Upper());
         myTangentFlags = new NCollection_HArray1<bool>(myPoints.Lower(), myPoints.Upper());
 
         if (!result)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         BuildParameters(PeriodicFlag, PointsPtr.Array1(), out myParameters);
 
@@ -285,7 +287,7 @@ public class GeomAPI_Interpolate
     /// Prepares the interpolation of <paramref name="PointsPtr"/> at <paramref name="ParametersPtr"/> (one more
     /// parameter than points when periodic). Throws Standard_ConstructionError on close points or parameters.
     /// </summary>
-    public GeomAPI_Interpolate(NCollection_HArray1<gp_Pnt> PointsPtr, NCollection_HArray1<double> ParametersPtr,
+    public GeomAPI_Interpolate(NCollection_HArray1<Point3D> PointsPtr, NCollection_HArray1<double> ParametersPtr,
                                bool PeriodicFlag, double Tolerance)
     {
         myTolerance = Tolerance;
@@ -303,21 +305,21 @@ public class GeomAPI_Interpolate
         {
             if ((PointsPtr.Length()) + 1 != ParametersPtr.Length())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
-        myTangents = new NCollection_HArray1<gp_Vec>(myPoints.Lower(), myPoints.Upper());
+        myTangents = new NCollection_HArray1<Vector3D>(myPoints.Lower(), myPoints.Upper());
         myTangentFlags = new NCollection_HArray1<bool>(myPoints.Lower(), myPoints.Upper());
 
         if (!result)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         result = CheckParameters(ParametersPtr.Array1());
         if (!result)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (ii = myPoints.Lower(); ii <= myPoints.Upper(); ii++)
@@ -330,7 +332,7 @@ public class GeomAPI_Interpolate
     /// Assigns tangents to the points whose flag is set (one tangent and one flag per point), scaled to the
     /// chord-length derivative unless <paramref name="Scale"/> is false. The flags array is kept.
     /// </summary>
-    public void Load(NCollection_Array1<gp_Vec> Tangents, NCollection_HArray1<bool> TangentFlagsPtr, bool Scale = true)
+    public void Load(NCollection_Array1<Vector3D> Tangents, NCollection_HArray1<bool> TangentFlagsPtr, bool Scale = true)
     {
         bool result;
         int ii;
@@ -338,12 +340,12 @@ public class GeomAPI_Interpolate
         myTangentFlags = TangentFlagsPtr;
         if (Tangents.Length() != myPoints.Length() || TangentFlagsPtr.Length() != myPoints.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         result = CheckTangents(Tangents, TangentFlagsPtr.Array1(), myTolerance);
         if (result)
         {
-            myTangents = new NCollection_HArray1<gp_Vec>(Tangents.Lower(), Tangents.Upper());
+            myTangents = new NCollection_HArray1<Vector3D>(Tangents.Lower(), Tangents.Upper());
             for (ii = Tangents.Lower(); ii <= Tangents.Upper(); ii++)
             {
                 myTangents.SetValue(ii, Tangents.Value(ii));
@@ -356,7 +358,7 @@ public class GeomAPI_Interpolate
         }
         else
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
     }
 
@@ -364,7 +366,7 @@ public class GeomAPI_Interpolate
     /// Assigns the tangents at the first and last points, scaled to the chord-length derivative unless
     /// <paramref name="Scale"/> is false.
     /// </summary>
-    public void Load(in gp_Vec InitialTangent, in gp_Vec FinalTangent, bool Scale = true)
+    public void Load(in Vector3D InitialTangent, in Vector3D FinalTangent, bool Scale = true)
     {
         bool result;
         myTangentRequest = true;
@@ -375,7 +377,7 @@ public class GeomAPI_Interpolate
         result = CheckTangents(myTangents.Array1(), myTangentFlags.Array1(), myTolerance);
         if (!result)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (Scale)
@@ -404,7 +406,7 @@ public class GeomAPI_Interpolate
 
         double period;
 
-        gp_Pnt a_point = new();
+        Point3D a_point = new();
 
         num_points = myPoints.Length();
         period = myParameters.Value(myParameters.Upper()) - myParameters.Value(myParameters.Lower());
@@ -447,7 +449,7 @@ public class GeomAPI_Interpolate
             NCollection_Array1<double> flatknots = new(1, num_poles + degree + 1);
             NCollection_Array1<int> mults = new(1, num_distinct_knots);
             NCollection_Array1<int> contact_order_array = new(1, num_poles);
-            NCollection_Array1<gp_Pnt> poles = new(1, num_poles);
+            NCollection_Array1<Point3D> poles = new(1, num_poles);
 
             for (ii = 1; ii <= half_order; ii++)
             {
@@ -554,10 +556,10 @@ public class GeomAPI_Interpolate
 
             poles.SetValue(num_poles, myPoints.Value(1));
 
-            BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
             if (inversion_problem == 0)
             {
-                NCollection_Array1<gp_Pnt> newpoles = new(poles, 1, 1, num_poles - 2);
+                NCollection_Array1<Point3D> newpoles = new(poles, 1, 1, num_poles - 2);
                 myCurve = new Geom_BSplineCurve(newpoles, myParameters.Array1(), mults, degree, myPeriodic);
                 myIsDone = true;
             }
@@ -569,7 +571,7 @@ public class GeomAPI_Interpolate
         int degree, ii, jj, index, index1, index2, index3, mult_index, inversion_problem, num_points,
             num_distinct_knots, num_poles;
 
-        gp_Pnt a_point = new();
+        Point3D a_point = new();
 
         num_points = num_distinct_knots = num_poles = myPoints.Length();
         if (num_poles == 2 && !myTangentRequest)
@@ -602,7 +604,7 @@ public class GeomAPI_Interpolate
         NCollection_Array1<int> mults = new(1, num_distinct_knots);
         NCollection_Array1<double> knots = new(1, num_distinct_knots);
         NCollection_Array1<int> contact_order_array = new(1, num_poles);
-        NCollection_Array1<gp_Pnt> poles = new(1, num_poles);
+        NCollection_Array1<Point3D> poles = new(1, num_poles);
 
         for (ii = 1; ii <= degree + 1; ii++)
         {
@@ -637,7 +639,7 @@ public class GeomAPI_Interpolate
                 {
                     poles.SetValue(ii, myPoints.Value(ii));
                 }
-                BSplCLib.Interpolate(degree, flatknots, myParameters.Array1(), contact_order_array, poles,
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, myParameters.Array1(), contact_order_array, poles,
                                      out inversion_problem);
                 if (inversion_problem == 0)
                 {
@@ -738,7 +740,7 @@ public class GeomAPI_Interpolate
 
                 poles.SetValue(num_poles, myPoints.Value(num_points));
 
-                BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, poles, out inversion_problem);
                 if (inversion_problem == 0)
                 {
                     myCurve = new Geom_BSplineCurve(poles, myParameters.Array1(), mults, degree);
@@ -753,7 +755,7 @@ public class GeomAPI_Interpolate
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone(" ");
+            throw new NotDoneException(" ");
         }
         myCurve!.Freeze();
         return myCurve;

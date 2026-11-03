@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
-using static Occt.Convert_ParameterisationType;
-using static Occt.CSLib_NormalStatus;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Engine.Geometry.NormalStatus;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -28,7 +31,7 @@ public static class BlendFunc
     /// and the conversion that makes them (left unchanged for <see cref="BlendFunc_Linear"/>).
     /// </summary>
     public static void GetShape(BlendFunc_SectionShape SShape, double MaxAng, out int NbPoles, out int NbKnots,
-                                out int Degree, ref Convert_ParameterisationType TConv)
+                                out int Degree, ref ParameterisationType TConv)
     {
         NbPoles = 0;
         NbKnots = 0;
@@ -43,14 +46,14 @@ public static class BlendFunc
                     Degree = 2;
                     if (NbSpan == 1)
                     {
-                        TConv = Convert_TgtThetaOver2_1;
+                        TConv = TgtThetaOver2_1;
                     }
                     else
                     { // QuasiAngular affin d'etre C1 (et meme beaucoup plus)
                         NbPoles = 7;
                         NbKnots = 2;
                         Degree = 6;
-                        TConv = Convert_QuasiAngular;
+                        TConv = QuasiAngular;
                     }
                 }
                 break;
@@ -59,7 +62,7 @@ public static class BlendFunc
                     NbPoles = 7;
                     NbKnots = 2;
                     Degree = 6;
-                    TConv = Convert_QuasiAngular;
+                    TConv = QuasiAngular;
                 }
                 break;
             case BlendFunc_Polynomial:
@@ -67,7 +70,7 @@ public static class BlendFunc
                     NbPoles = 8;
                     NbKnots = 2;
                     Degree = 7;
-                    TConv = Convert_Polynomial;
+                    TConv = Polynomial;
                 }
                 break;
             case BlendFunc_Linear:
@@ -87,7 +90,7 @@ public static class BlendFunc
     //=======================================================================
 
     /// <summary>The smallest weights of the sections between the angles <paramref name="MinAng"/> and <paramref name="MaxAng"/>.</summary>
-    public static void GetMinimalWeights(BlendFunc_SectionShape SShape, Convert_ParameterisationType TConv,
+    public static void GetMinimalWeights(BlendFunc_SectionShape SShape, ParameterisationType TConv,
                                          double MinAng, double MaxAng, NCollection_Array1<double> Weights)
     {
         switch (SShape)
@@ -101,12 +104,12 @@ public static class BlendFunc
             case BlendFunc_Rational:
             case BlendFunc_QuasiAngular:
                 {
-                    gp_Ax2 popAx2 = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
-                    gp_Circ C = new gp_Circ(popAx2, 1);
+                    Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
+                    Circle3D C = new Circle3D(popAx2, 1);
                     Geom_TrimmedCurve Sect1 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, MaxAng);
                     Geom_BSplineCurve CtoBspl = GeomConvert.CurveToBSplineCurve(Sect1, TConv);
                     Weights.Assign(CtoBspl.InternalWeightsArray());
-                    double angle_min = Max(Precision.PConfusion(), MinAng);
+                    double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), MinAng);
                     Geom_TrimmedCurve Sect2 = new Geom_TrimmedCurve(new Geom_Circle(C), 0.0, angle_min);
                     CtoBspl = GeomConvert.CurveToBSplineCurve(Sect2, TConv);
                     NCollection_Array1<double> poids = CtoBspl.InternalWeightsArray();
@@ -123,28 +126,28 @@ public static class BlendFunc
     }
 
     /// <summary>The next level of continuity.</summary>
-    public static GeomAbs_Shape NextShape(GeomAbs_Shape S)
+    public static Continuity NextShape(Continuity S)
     {
         switch (S)
         {
-            case GeomAbs_C0:
-                return GeomAbs_C1;
-            case GeomAbs_C1:
-                return GeomAbs_C2;
-            case GeomAbs_C2:
-                return GeomAbs_C3;
+            case C0:
+                return C1;
+            case C1:
+                return C2;
+            case C2:
+                return C3;
             default:
                 break;
         }
 
-        return GeomAbs_CN;
+        return CN;
     }
 
     /// <summary>
     /// The normal of <paramref name="Surf"/> at <paramref name="p2d"/> from its higher derivatives, where the first
     /// ones are parallel (a singular point); false when it is not defined.
     /// </summary>
-    public static bool ComputeNormal(Adaptor3d_Surface Surf, in gp_Pnt2d p2d, ref gp_Vec Normal)
+    public static bool ComputeNormal(Adaptor3d_Surface Surf, in Point2D p2d, ref Vector3D Normal)
     {
         const int MaxOrder = 3;
         double U = p2d.X();
@@ -152,7 +155,7 @@ public static class BlendFunc
 
         int i, j;
 
-        NCollection_Array2<gp_Vec> DerSurf = new(0, MaxOrder + 1, 0, MaxOrder + 1);
+        NCollection_Array2<Vector3D> DerSurf = new(0, MaxOrder + 1, 0, MaxOrder + 1);
         for (i = 1; i <= MaxOrder + 1; i++)
         {
             DerSurf.SetValue(i, 0, Surf.DN(U, V, i, 0));
@@ -166,23 +169,23 @@ public static class BlendFunc
             }
         }
 
-        NCollection_Array2<gp_Vec> DerNUV = new(0, MaxOrder, 0, MaxOrder);
+        NCollection_Array2<Vector3D> DerNUV = new(0, MaxOrder, 0, MaxOrder);
         for (i = 0; i <= MaxOrder; i++)
         {
             for (j = 0; j <= MaxOrder; j++)
             {
-                DerNUV.SetValue(i, j, CSLib.DNNUV(i, j, DerSurf));
+                DerNUV.SetValue(i, j, global::Kerf.Engine.Geometry.CSLib.DNNUV(i, j, DerSurf));
             }
         }
 
-        gp_Dir thenormal = new gp_Dir();
+        Direction3D thenormal = new Direction3D();
         double Umin = Surf.FirstUParameter();
         double Umax = Surf.LastUParameter();
         double Vmin = Surf.FirstVParameter();
         double Vmax = Surf.LastVParameter(); // szv: was FirstVParameter!
-        CSLib.Normal(MaxOrder, DerNUV, 1.0e-9, U, V, Umin, Umax, Vmin, Vmax, out CSLib_NormalStatus stat,
+        global::Kerf.Engine.Geometry.CSLib.Normal(MaxOrder, DerNUV, 1.0e-9, U, V, Umin, Umax, Vmin, Vmax, out NormalStatus stat,
                      ref thenormal, out _, out _);
-        if (stat == CSLib_Defined)
+        if (stat == Defined)
         {
             Normal.SetXYZ(thenormal.XYZ());
             return true;
@@ -192,8 +195,8 @@ public static class BlendFunc
     }
 
     /// <summary>As <see cref="ComputeNormal"/>, with the normal's derivatives in U and V.</summary>
-    public static bool ComputeDNormal(Adaptor3d_Surface Surf, in gp_Pnt2d p2d, ref gp_Vec Normal, ref gp_Vec DNu,
-                                      ref gp_Vec DNv)
+    public static bool ComputeDNormal(Adaptor3d_Surface Surf, in Point2D p2d, ref Vector3D Normal, ref Vector3D DNu,
+                                      ref Vector3D DNv)
     {
         const int MaxOrder = 3;
         double U = p2d.X();
@@ -201,7 +204,7 @@ public static class BlendFunc
 
         int i, j;
 
-        NCollection_Array2<gp_Vec> DerSurf = new(0, MaxOrder + 1, 0, MaxOrder + 1);
+        NCollection_Array2<Vector3D> DerSurf = new(0, MaxOrder + 1, 0, MaxOrder + 1);
         for (i = 1; i <= MaxOrder + 1; i++)
         {
             DerSurf.SetValue(i, 0, Surf.DN(U, V, i, 0));
@@ -215,27 +218,27 @@ public static class BlendFunc
             }
         }
 
-        NCollection_Array2<gp_Vec> DerNUV = new(0, MaxOrder, 0, MaxOrder);
+        NCollection_Array2<Vector3D> DerNUV = new(0, MaxOrder, 0, MaxOrder);
         for (i = 0; i <= MaxOrder; i++)
         {
             for (j = 0; j <= MaxOrder; j++)
             {
-                DerNUV.SetValue(i, j, CSLib.DNNUV(i, j, DerSurf));
+                DerNUV.SetValue(i, j, global::Kerf.Engine.Geometry.CSLib.DNNUV(i, j, DerSurf));
             }
         }
 
-        gp_Dir thenormal = new gp_Dir();
+        Direction3D thenormal = new Direction3D();
         double Umin = Surf.FirstUParameter();
         double Umax = Surf.LastUParameter();
         double Vmin = Surf.FirstVParameter();
         double Vmax = Surf.LastVParameter(); // szv: was FirstVParameter!
-        CSLib.Normal(MaxOrder, DerNUV, 1.0e-9, U, V, Umin, Umax, Vmin, Vmax, out CSLib_NormalStatus stat,
+        global::Kerf.Engine.Geometry.CSLib.Normal(MaxOrder, DerNUV, 1.0e-9, U, V, Umin, Umax, Vmin, Vmax, out NormalStatus stat,
                      ref thenormal, out int OrderU, out int OrderV);
-        if (stat == CSLib_Defined)
+        if (stat == Defined)
         {
             Normal.SetXYZ(thenormal.XYZ());
-            DNu = CSLib.DNNormal(1, 0, DerNUV, OrderU, OrderV);
-            DNv = CSLib.DNNormal(0, 1, DerNUV, OrderU, OrderV);
+            DNu = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, DerNUV, OrderU, OrderV);
+            DNv = global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, DerNUV, OrderU, OrderV);
             return true;
         }
 

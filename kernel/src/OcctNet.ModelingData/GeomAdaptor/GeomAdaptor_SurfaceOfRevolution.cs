@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -17,31 +19,31 @@ namespace Occt;
 public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
 {
     private Adaptor3d_Curve? myBasisCurve; // revolved curve
-    private gp_Ax1 myAxis; // axis of revolution
+    private Axis3D myAxis; // axis of revolution
     private bool myHaveAxis; // whether axis of revolution is initialized
-    private gp_Ax3 myAxeRev; // auxiliary trihedron according to the curve position
+    private CoordinateSystem myAxeRev; // auxiliary trihedron according to the curve position
 
     /// <summary>An adaptor without a curve or axis.</summary>
     public GeomAdaptor_SurfaceOfRevolution()
     {
         myHaveAxis = false;
-        myAxeRev = new gp_Ax3();
+        myAxeRev = new CoordinateSystem();
     }
 
     /// <summary>The revolution of C, the axis to be loaded.</summary>
     public GeomAdaptor_SurfaceOfRevolution(Adaptor3d_Curve C)
     {
         myHaveAxis = false;
-        myAxeRev = new gp_Ax3();
+        myAxeRev = new CoordinateSystem();
         Load(C);
     }
 
     /// <summary>The revolution of C about V.</summary>
-    /// <exception cref="Standard_ConstructionError">The axis and the meridian are confused.</exception>
-    public GeomAdaptor_SurfaceOfRevolution(Adaptor3d_Curve C, in gp_Ax1 V)
+    /// <exception cref="ConstructionErrorException">The axis and the meridian are confused.</exception>
+    public GeomAdaptor_SurfaceOfRevolution(Adaptor3d_Curve C, in Axis3D V)
     {
         myHaveAxis = false;
-        myAxeRev = new gp_Ax3();
+        myAxeRev = new CoordinateSystem();
         Load(C);
         Load(V);
     }
@@ -91,13 +93,13 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
     }
 
     /// <summary>Changes the axis of revolution (the curve must be loaded).</summary>
-    /// <exception cref="Standard_ConstructionError">The axis and the meridian are confused.</exception>
-    public void Load(in gp_Ax1 V)
+    /// <exception cref="ConstructionErrorException">The axis and the meridian are confused.</exception>
+    public void Load(in Axis3D V)
     {
         myHaveAxis = true;
         myAxis = V;
 
-        mySurfaceType = GeomAbs_SurfaceOfRevolution;
+        mySurfaceType = SurfaceOfRevolution;
 
         // Populate revolution surface data for fast evaluation
         RevolutionData aRevData = new RevolutionData();
@@ -106,12 +108,12 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
         mySurfaceData = aRevData;
 
         // Eval myAxeRev : axe of revolution ( Determination de Ox).
-        gp_Pnt P, Q;
-        gp_Pnt O = myAxis.Location();
-        gp_Dir Ox;
-        gp_Dir Oz = myAxis.Direction();
+        Point3D P, Q;
+        Point3D O = myAxis.Location();
+        Direction3D Ox;
+        Direction3D Oz = myAxis.Direction();
         bool yrev = false;
-        if (myBasisCurve!.GetType() == GeomAbs_Line)
+        if (myBasisCurve!.GetType() == Line)
         {
             if ((myBasisCurve.Line().Direction()).Dot(Oz) < 0.0)
             {
@@ -120,7 +122,7 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
             }
         }
 
-        if (myBasisCurve.GetType() == GeomAbs_Circle)
+        if (myBasisCurve.GetType() == Circle)
         {
             Q = P = (myBasisCurve.Circle()).Location();
         }
@@ -128,18 +130,18 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
         {
             double First = myBasisCurve.FirstParameter();
             P = Value(0.0, 0.0); // which does not mean much
-            if (GetType() == GeomAbs_Cone)
+            if (GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                if (new gp_Lin(myAxis).Distance(P) <= Precision.Confusion())
+                if (new Line3D(myAxis).Distance(P) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    Q = ElCLib.Value(1.0, myBasisCurve.Line());
+                    Q = global::Kerf.Engine.Geometry.ElCLib.Value(1.0, myBasisCurve.Line());
                 }
                 else
                 {
                     Q = P;
                 }
             }
-            else if (Precision.IsInfinite(First))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(First))
             {
                 Q = P;
             }
@@ -149,11 +151,11 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
             }
         }
 
-        gp_Dir DZ = myAxis.Direction();
-        O.SetXYZ(O.XYZ() + (new gp_Vec(O, P) * new gp_Vec(DZ)) * DZ.XYZ());
-        if (new gp_Lin(myAxis).Distance(Q) > Precision.Confusion())
+        Direction3D DZ = myAxis.Direction();
+        O.SetXYZ(O.XYZ() + (new Vector3D(O, P) * new Vector3D(DZ)) * DZ.XYZ());
+        if (new Line3D(myAxis).Distance(Q) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            Ox = new gp_Dir(Q.XYZ() - O.XYZ());
+            Ox = new Direction3D(Q.XYZ() - O.XYZ());
         }
         else
         {
@@ -161,32 +163,32 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
             double Last = myBasisCurve.LastParameter();
             int Ratio = 1;
             double Dist;
-            gp_Pnt PP;
+            Point3D PP;
             do
             {
                 PP = myBasisCurve.Value(First + (Last - First) / Ratio);
-                Dist = new gp_Lin(myAxis).Distance(PP);
+                Dist = new Line3D(myAxis).Distance(PP);
                 Ratio++;
-            } while (Dist < Precision.Confusion() && Ratio < 100);
+            } while (Dist < global::Kerf.Engine.Foundation.Precision.Confusion() && Ratio < 100);
 
             if (Ratio >= 100)
             {
-                throw new Standard_ConstructionError("Adaptor3d_SurfaceOfRevolution : Axe and meridian are confused");
+                throw new ConstructionErrorException("Adaptor3d_SurfaceOfRevolution : Axe and meridian are confused");
             }
             // C++: (Oz ^ gp_Vec(...)) ^ Oz, with the vector converted to a gp_Dir (normalised), and gp_Dir's
             // operator^ normalising each product.
-            Ox = (Oz ^ new gp_Dir(new gp_Vec(PP.XYZ() - O.XYZ()))) ^ Oz;
+            Ox = (Oz ^ new Direction3D(new Vector3D(PP.XYZ() - O.XYZ()))) ^ Oz;
         }
 
-        myAxeRev = new gp_Ax3(O, Oz, Ox);
+        myAxeRev = new CoordinateSystem(O, Oz, Ox);
 
         if (yrev)
         {
             myAxeRev.YReverse();
         }
-        else if (myBasisCurve.GetType() == GeomAbs_Circle)
+        else if (myBasisCurve.GetType() == Circle)
         {
-            gp_Dir DC = (myBasisCurve.Circle()).Axis().Direction();
+            Direction3D DC = (myBasisCurve.Circle()).Axis().Direction();
             if ((Ox.Crossed(Oz)).Dot(DC) < 0.0)
             {
                 myAxeRev.ZReverse();
@@ -194,7 +196,7 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
         }
     }
 
-    public override gp_Ax1 AxeOfRevolution() => myAxis;
+    public override Axis3D AxeOfRevolution() => myAxis;
 
     public override double FirstUParameter() => 0.0;
 
@@ -204,27 +206,27 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
 
     public override double LastVParameter() => myBasisCurve!.LastParameter();
 
-    public override GeomAbs_Shape UContinuity() => GeomAbs_CN;
+    public override Continuity UContinuity() => CN;
 
-    public override GeomAbs_Shape VContinuity() => myBasisCurve!.Continuity();
+    public override Continuity VContinuity() => myBasisCurve!.Continuity();
 
-    public override int NbUIntervals(GeomAbs_Shape S) => 1;
+    public override int NbUIntervals(Continuity S) => 1;
 
-    public override int NbVIntervals(GeomAbs_Shape S) => myBasisCurve!.NbIntervals(S);
+    public override int NbVIntervals(Continuity S) => myBasisCurve!.NbIntervals(S);
 
-    public override void UIntervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void UIntervals(NCollection_Array1<double> T, Continuity S)
     {
         T[T.Lower()] = 0.0;
         T[T.Lower() + 1] = 2 * Math.PI;
     }
 
-    public override void VIntervals(NCollection_Array1<double> T, GeomAbs_Shape S) => myBasisCurve!.Intervals(T, S);
+    public override void VIntervals(NCollection_Array1<double> T, Continuity S) => myBasisCurve!.Intervals(T, S);
 
     /// <summary>The whole surface again: only [0, 2*PI] is accepted.</summary>
-    /// <exception cref="Standard_OutOfRange">First or Last differ from 0 or 2*PI by more than Precision::PConfusion().</exception>
+    /// <exception cref="OutOfRangeException">First or Last differ from 0 or 2*PI by more than Precision::PConfusion().</exception>
     public override Adaptor3d_Surface UTrim(double First, double Last, double Tol)
     {
-        double Eps = Precision.PConfusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Standard_OutOfRange_Raise_if(Math.Abs(First) > Eps || Math.Abs(Last - 2.0 * Math.PI) > Eps,
                                      "GeomAdaptor_SurfaceOfRevolution : UTrim : Parameters out of range");
 
@@ -252,7 +254,7 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
 
     public override double VPeriod() => myBasisCurve!.Period();
 
-    public override double UResolution(double R3d) => Precision.Parametric(R3d);
+    public override double UResolution(double R3d) => global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
 
     public override double VResolution(double R3d) => myBasisCurve!.Resolution(R3d);
 
@@ -260,96 +262,96 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
     /// GeomAbs_Plane, Cylinder or Cone for a line (normal to, parallel to or crossing the axis), GeomAbs_Sphere or
     /// Torus for a circle coplanar with the axis; GeomAbs_SurfaceOfRevolution otherwise.
     /// </summary>
-    public override GeomAbs_SurfaceType GetType()
+    public override SurfaceKind GetType()
     {
-        double TolConf = Precision.Confusion();
-        double TolAng = Precision.Angular();
-        double TolConeSemiAng = Precision.Confusion();
+        double TolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double TolAng = global::Kerf.Engine.Foundation.Precision.Angular();
+        double TolConeSemiAng = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         switch (myBasisCurve!.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
-                gp_Ax1 Axe = myBasisCurve.Line().Position();
+                Axis3D Axe = myBasisCurve.Line().Position();
 
                 if (myAxis.IsParallel(Axe, TolAng))
                 {
-                    gp_Pnt P = Value(0.0, 0.0);
-                    double R = new gp_Vec(myAxeRev.Location(), P) * new gp_Vec(myAxeRev.XDirection());
+                    Point3D P = Value(0.0, 0.0);
+                    double R = new Vector3D(myAxeRev.Location(), P) * new Vector3D(myAxeRev.XDirection());
                     if (R > TolConf)
                     {
-                        return GeomAbs_Cylinder;
+                        return global::Kerf.Geometry.SurfaceKind.Cylinder;
                     }
                 }
                 else if (myAxis.IsNormal(Axe, TolAng))
                 {
-                    return GeomAbs_Plane;
+                    return global::Kerf.Geometry.SurfaceKind.Plane;
                 }
                 else
                 {
                     double uf = myBasisCurve.FirstParameter();
                     double ul = myBasisCurve.LastParameter();
-                    bool istrim = (!Precision.IsInfinite(uf) && !Precision.IsInfinite(ul));
+                    bool istrim = (!global::Kerf.Engine.Foundation.Precision.IsInfinite(uf) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(ul));
                     if (istrim)
                     {
-                        gp_Pnt pf = myBasisCurve.Value(uf);
-                        gp_Pnt pl = myBasisCurve.Value(ul);
+                        Point3D pf = myBasisCurve.Value(uf);
+                        Point3D pl = myBasisCurve.Value(ul);
                         double len = pf.Distance(pl);
                         // Compute the distance projected onto the axis.
-                        gp_Vec vlin = new gp_Vec(pf, pl);
-                        gp_Vec vaxe = new gp_Vec(myAxis.Direction());
+                        Vector3D vlin = new Vector3D(pf, pl);
+                        Vector3D vaxe = new Vector3D(myAxis.Direction());
                         double projlen = Math.Abs(vaxe.Dot(vlin));
                         if ((len - projlen) <= TolConf)
                         {
-                            gp_Pnt P = Value(0.0, 0.0);
-                            double R = new gp_Vec(myAxeRev.Location(), P) * new gp_Vec(myAxeRev.XDirection());
+                            Point3D P = Value(0.0, 0.0);
+                            double R = new Vector3D(myAxeRev.Location(), P) * new Vector3D(myAxeRev.XDirection());
                             if (R > TolConf)
                             {
-                                return GeomAbs_Cylinder;
+                                return global::Kerf.Geometry.SurfaceKind.Cylinder;
                             }
                         }
                         else if (projlen <= TolConf)
                         {
-                            return GeomAbs_Plane;
+                            return global::Kerf.Geometry.SurfaceKind.Plane;
                         }
                     }
-                    gp_Vec V = new gp_Vec(myAxis.Location(), myBasisCurve.Line().Location());
-                    gp_Vec W = new gp_Vec(Axe.Direction());
-                    gp_Vec AxisDir = new gp_Vec(myAxis.Direction());
+                    Vector3D V = new Vector3D(myAxis.Location(), myBasisCurve.Line().Location());
+                    Vector3D W = new Vector3D(Axe.Direction());
+                    Vector3D AxisDir = new Vector3D(myAxis.Direction());
                     double proj = Math.Abs(W.Dot(AxisDir));
                     if (Math.Abs(V.DotCross(AxisDir, W)) <= TolConf
                         && (proj >= TolConeSemiAng && proj <= 1.0 - TolConeSemiAng))
                     {
-                        return GeomAbs_Cone;
+                        return global::Kerf.Geometry.SurfaceKind.Cone;
                     }
                 }
                 break;
             } // case GeomAbs_Line:
             //
-            case GeomAbs_Circle:
+            case Circle:
             {
                 double MajorRadius, aR;
-                gp_Lin aLin = new gp_Lin(myAxis);
+                Line3D aLin = new Line3D(myAxis);
                 //
-                gp_Circ C = myBasisCurve.Circle();
-                gp_Pnt aLC = C.Location();
+                Circle3D C = myBasisCurve.Circle();
+                Point3D aLC = C.Location();
                 aR = C.Radius();
                 //
 
                 if (!C.Position().IsCoplanar(myAxis, TolConf, TolAng))
                 {
-                    return GeomAbs_SurfaceOfRevolution;
+                    return SurfaceOfRevolution;
                 }
                 else if (aLin.Distance(aLC) <= TolConf)
                 {
-                    return GeomAbs_Sphere;
+                    return global::Kerf.Geometry.SurfaceKind.Sphere;
                 }
                 else
                 {
                     MajorRadius = aLin.Distance(aLC);
                     if (MajorRadius > aR)
                     {
-                        return GeomAbs_Torus;
+                        return global::Kerf.Geometry.SurfaceKind.Torus;
                     }
                 }
                 break;
@@ -359,109 +361,109 @@ public class GeomAdaptor_SurfaceOfRevolution : GeomAdaptor_Surface
                 break;
         }
 
-        return GeomAbs_SurfaceOfRevolution;
+        return SurfaceOfRevolution;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a plane.</exception>
-    public override gp_Pln Plane()
+    /// <exception cref="NoSuchObjectException">The surface is not a plane.</exception>
+    public override Plane3D Plane()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_Plane, "GeomAdaptor_SurfaceOfRevolution:Plane");
+        Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Plane, "GeomAdaptor_SurfaceOfRevolution:Plane");
 
-        gp_Ax3 Axe = myAxeRev;
-        gp_Pnt aPonCurve = Value(0.0, 0.0);
+        CoordinateSystem Axe = myAxeRev;
+        Point3D aPonCurve = Value(0.0, 0.0);
         double aDot = (aPonCurve.XYZ() - myAxis.Location().XYZ()).Dot(myAxis.Direction().XYZ());
 
-        gp_Pnt P = new gp_Pnt(myAxis.Location().XYZ() + aDot * myAxis.Direction().XYZ());
+        Point3D P = new Point3D(myAxis.Location().XYZ() + aDot * myAxis.Direction().XYZ());
         Axe.SetLocation(P);
-        if (Axe.XDirection().Dot(myBasisCurve!.Line().Direction()) >= -Precision.Confusion())
+        if (Axe.XDirection().Dot(myBasisCurve!.Line().Direction()) >= -global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Axe.XReverse();
         }
 
-        return new gp_Pln(Axe);
+        return new Plane3D(Axe);
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a cylinder.</exception>
-    public override gp_Cylinder Cylinder()
+    /// <exception cref="NoSuchObjectException">The surface is not a cylinder.</exception>
+    public override Cylinder Cylinder()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_Cylinder, "GeomAdaptor_SurfaceOfRevolution::Cylinder");
+        Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cylinder, "GeomAdaptor_SurfaceOfRevolution::Cylinder");
 
-        gp_Pnt P = Value(0.0, 0.0);
-        double R = new gp_Vec(myAxeRev.Location(), P) * new gp_Vec(myAxeRev.XDirection());
-        return new gp_Cylinder(myAxeRev, R);
+        Point3D P = Value(0.0, 0.0);
+        double R = new Vector3D(myAxeRev.Location(), P) * new Vector3D(myAxeRev.XDirection());
+        return new Cylinder(myAxeRev, R);
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a cone.</exception>
-    public override gp_Cone Cone()
+    /// <exception cref="NoSuchObjectException">The surface is not a cone.</exception>
+    public override Cone Cone()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_Cone, "GeomAdaptor_SurfaceOfRevolution:Cone");
+        Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cone, "GeomAdaptor_SurfaceOfRevolution:Cone");
 
-        gp_Ax3 Axe = myAxeRev;
-        gp_Dir ldir = (myBasisCurve!.Line()).Direction();
+        CoordinateSystem Axe = myAxeRev;
+        Direction3D ldir = (myBasisCurve!.Line()).Direction();
         double Angle = (Axe.Direction()).Angle(ldir);
-        gp_Pnt P0 = Value(0.0, 0.0);
+        Point3D P0 = Value(0.0, 0.0);
         double R = (Axe.Location()).Distance(P0);
-        if (R >= Precision.Confusion())
+        if (R >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            gp_Pnt O = Axe.Location();
-            gp_Vec OP0 = new gp_Vec(O, P0);
-            double t = OP0.Dot(new gp_Vec(Axe.XDirection()));
+            Point3D O = Axe.Location();
+            Vector3D OP0 = new Vector3D(O, P0);
+            double t = OP0.Dot(new Vector3D(Axe.XDirection()));
             t /= ldir.Dot(Axe.XDirection());
-            OP0.Add(-t * new gp_Vec(ldir));
-            if (OP0.Dot(new gp_Vec(Axe.Direction())) > 0.0)
+            OP0.Add(-t * new Vector3D(ldir));
+            if (OP0.Dot(new Vector3D(Axe.Direction())) > 0.0)
             {
                 Angle = -Angle;
             }
         }
-        return new gp_Cone(Axe, Angle, R);
+        return new Cone(Axe, Angle, R);
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a sphere.</exception>
-    public override gp_Sphere Sphere()
+    /// <exception cref="NoSuchObjectException">The surface is not a sphere.</exception>
+    public override Sphere Sphere()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_Sphere, "GeomAdaptor_SurfaceOfRevolution:Sphere");
+        Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Sphere, "GeomAdaptor_SurfaceOfRevolution:Sphere");
 
-        gp_Circ C = myBasisCurve!.Circle();
-        gp_Ax3 Axe = myAxeRev;
+        Circle3D C = myBasisCurve!.Circle();
+        CoordinateSystem Axe = myAxeRev;
         Axe.SetLocation(C.Location());
-        return new gp_Sphere(Axe, C.Radius());
+        return new Sphere(Axe, C.Radius());
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a torus.</exception>
-    public override gp_Torus Torus()
+    /// <exception cref="NoSuchObjectException">The surface is not a torus.</exception>
+    public override Torus Torus()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_Torus, "GeomAdaptor_SurfaceOfRevolution:Torus");
+        Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Torus, "GeomAdaptor_SurfaceOfRevolution:Torus");
 
-        gp_Circ C = myBasisCurve!.Circle();
-        double MajorRadius = new gp_Lin(myAxis).Distance(C.Location());
-        return new gp_Torus(myAxeRev, MajorRadius, C.Radius());
+        Circle3D C = myBasisCurve!.Circle();
+        double MajorRadius = new Line3D(myAxis).Distance(C.Location());
+        return new Torus(myAxeRev, MajorRadius, C.Radius());
     }
 
     public override int VDegree() => myBasisCurve!.Degree();
 
     public override int NbVPoles() => myBasisCurve!.NbPoles();
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
-    public override int NbVKnots() => throw new Standard_NoSuchObject("GeomAdaptor_SurfaceOfRevolution::NbVKnots");
+    /// <exception cref="NoSuchObjectException">Always.</exception>
+    public override int NbVKnots() => throw new NoSuchObjectException("GeomAdaptor_SurfaceOfRevolution::NbVKnots");
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
+    /// <exception cref="NoSuchObjectException">Always.</exception>
     public override bool IsURational() =>
-        throw new Standard_NoSuchObject("GeomAdaptor_SurfaceOfRevolution::IsURational");
+        throw new NoSuchObjectException("GeomAdaptor_SurfaceOfRevolution::IsURational");
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
+    /// <exception cref="NoSuchObjectException">Always.</exception>
     public override bool IsVRational() =>
-        throw new Standard_NoSuchObject("GeomAdaptor_SurfaceOfRevolution::IsVRational");
+        throw new NoSuchObjectException("GeomAdaptor_SurfaceOfRevolution::IsVRational");
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
+    /// <exception cref="NoSuchObjectException">Always.</exception>
     public override Geom_BezierSurface Bezier() =>
-        throw new Standard_NoSuchObject("GeomAdaptor_SurfaceOfRevolution::Bezier");
+        throw new NoSuchObjectException("GeomAdaptor_SurfaceOfRevolution::Bezier");
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
+    /// <exception cref="NoSuchObjectException">Always.</exception>
     public override Geom_BSplineSurface BSpline() =>
-        throw new Standard_NoSuchObject("GeomAdaptor_SurfaceOfRevolution::BSpline");
+        throw new NoSuchObjectException("GeomAdaptor_SurfaceOfRevolution::BSpline");
 
     /// <summary>The trihedron of the revolution: the axis, with X towards the curve.</summary>
-    public gp_Ax3 Axis() => myAxeRev;
+    public CoordinateSystem Axis() => myAxeRev;
 
     /// <summary>The revolved curve (the adaptor given to Load).</summary>
     public override Adaptor3d_Curve BasisCurve() => myBasisCurve!;

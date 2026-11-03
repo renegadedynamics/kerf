@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Makes a manifold_solid_brep from a closed shell or from a solid's outer shell.</summary>
@@ -14,12 +16,12 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     private StepVisual_TessellatedItem theTessellatedItem;
 
     private static (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) MakeManifoldSolidBrep(
-        in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors, Message_ProgressRange theProgress)
+        in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors, ProgressRange theProgress)
     {
         StepShape_ManifoldSolidBrep theManifoldSolidBrep = null;
         StepVisual_TessellatedItem aTessItem = null;
 
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         var aTool = new TopoDSToStep_Tool(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -61,7 +63,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
 
     /// <summary>A manifold_solid_brep from a shell.</summary>
     public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
-                                              Message_ProgressRange theProgress = default)
+                                              ProgressRange theProgress = default)
     {
         (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) aResult = MakeManifoldSolidBrep(aShell, FP, theLocalFactors, theProgress);
         done = aResult.Item1 is not null || aResult.Item2 is not null;
@@ -85,7 +87,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
 
     /// <summary>A manifold_solid_brep from a solid holding only one closed shell.</summary>
     public TopoDSToStep_MakeManifoldSolidBrep(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
-                                              Message_ProgressRange theProgress = default)
+                                              ProgressRange theProgress = default)
     {
         TopoDS_Shell aOuterShell = BRepClass3d.OuterShell(aSolid);
         if (!aOuterShell.IsNull())
@@ -132,7 +134,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     {
     }
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_ManifoldSolidBrep Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeManifoldSolidBrep::Value() - no result");
@@ -140,7 +142,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     }
 
     /// <summary>The tessellated item made, the optional result.</summary>
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepVisual_TessellatedItem TessellatedValue()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeManifoldSolidBrep::TessellatedValue() - no result");

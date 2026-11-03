@@ -157,8 +157,8 @@ public class MAT_TListTests
     {
         MAT_Bisector aB = new();
         Assert.Equal(-1, aB.BisectorNumber());
-        Assert.Equal(Precision.Infinite(), aB.FirstParameter());
-        Assert.Equal(Precision.Infinite(), aB.SecondParameter());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aB.FirstParameter());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aB.SecondParameter());
         Assert.True(aB.List().IsEmpty());
         MAT_Bisector aC1 = new(), aC2 = new();
         aB.AddBisector(aC1);
@@ -178,17 +178,17 @@ public class MAT_TListTests
         anArc.SetFirstNode(aN1);
         anArc.SetSecondNode(aN2);
         Assert.Same(aN2, anArc.TheOtherNode(aN1));
-        Assert.Throws<Standard_DomainError>(() => anArc.TheOtherNode(new MAT_Node(3, anArc, 1.0)));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.TheOtherNode(new MAT_Node(3, anArc, 1.0)));
         Assert.False(anArc.HasNeighbour(aN2, MAT_Side.MAT_Left));
         anArc.SetNeighbour(MAT_Side.MAT_Left, aN2, anOther);
         Assert.True(anArc.HasNeighbour(aN2, MAT_Side.MAT_Left));
         Assert.Same(anOther, anArc.Neighbour(aN2, MAT_Side.MAT_Left));
         Assert.Null(anArc.Neighbour(aN2, MAT_Side.MAT_Right));
-        Assert.Throws<Standard_DomainError>(() => anArc.Neighbour(new MAT_Node(3, anArc, 1.0), MAT_Side.MAT_Left));
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anArc.Neighbour(new MAT_Node(3, anArc, 1.0), MAT_Side.MAT_Left));
         Assert.True(aN1.OnBasicElt());
         Assert.True(aN1.PendingNode());
-        Assert.False(new MAT_Node(0, anArc, Precision.Infinite()).OnBasicElt());
-        Assert.True(new MAT_Node(0, anArc, Precision.Infinite()).Infinite());
+        Assert.False(new MAT_Node(0, anArc, global::Kerf.Engine.Foundation.Precision.Infinite()).OnBasicElt());
+        Assert.True(new MAT_Node(0, anArc, global::Kerf.Engine.Foundation.Precision.Infinite()).Infinite());
     }
 
     [Fact]

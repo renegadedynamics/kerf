@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The mapping of ConicalSurface from Geom to a STEP conical_surface.</summary>
@@ -33,7 +35,7 @@ public sealed class GeomToStep_MakeConicalSurface : GeomToStep_Root
         aSemiAngle = CS.SemiAngle();
         if (aSemiAngle < 0.0 || aSemiAngle > M_PI / 2.0)
         {
-            throw new Standard_DomainError("Conicalsurface not STEP conformant");
+            throw new DomainErrorException("Conicalsurface not STEP conformant");
         }
 
         TCollection_HAsciiString name = new TCollection_HAsciiString("");

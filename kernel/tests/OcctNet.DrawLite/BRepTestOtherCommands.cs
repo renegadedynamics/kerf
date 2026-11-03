@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -241,8 +242,8 @@ internal static class BRepTestOtherCommands
         if (indshape < n - 1)
         {
             // atof: a word that isn't a number reads as 0
-            double preci = Standard_Stream.Strtod(a[n - 1], out _);
-            if (preci >= Precision.Confusion())
+            double preci = global::Kerf.Engine.Foundation.StreamUtilities.Strtod(a[n - 1], out _);
+            if (preci >= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 tol = preci;
             }
@@ -252,7 +253,7 @@ internal static class BRepTestOtherCommands
         var aComp = new TopoDS_Compound();
         aB.MakeCompound(ref aComp);
 
-        void AddPoint(in gp_Pnt curp)
+        void AddPoint(in Point3D curp)
         {
             var aV = new TopoDS_Vertex();
             aB.MakeVertex(ref aV, curp, 0);
@@ -331,10 +332,10 @@ internal static class BRepTestOtherCommands
         BRepTools.UVBounds(aF, out double aUMin, out double aUMax, out double aVMin, out double aVMax);
         //
         // TCollection_AsciiString(double): %g
-        di.Append(Standard_Stream.FormatReal(aUMin, 6)).Append("\n");
-        di.Append(Standard_Stream.FormatReal(aUMax, 6)).Append("\n");
-        di.Append(Standard_Stream.FormatReal(aVMin, 6)).Append("\n");
-        di.Append(Standard_Stream.FormatReal(aVMax, 6)).Append("\n");
+        di.Append(global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(aUMin, 6)).Append("\n");
+        di.Append(global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(aUMax, 6)).Append("\n");
+        di.Append(global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(aVMin, 6)).Append("\n");
+        di.Append(global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(aVMax, 6)).Append("\n");
         //
         return 0;
     }

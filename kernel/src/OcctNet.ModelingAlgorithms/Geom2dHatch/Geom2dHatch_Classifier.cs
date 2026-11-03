@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Classifies a 2D point against the elements of a hatcher (<see cref="Geom2dHatch_Elements"/>).</summary>
@@ -28,7 +32,7 @@ public class Geom2dHatch_Classifier
     }
 
     /// <summary>Classifies <paramref name="P"/> with the tolerance <paramref name="Tol"/> against the elements <paramref name="F"/>.</summary>
-    public Geom2dHatch_Classifier(Geom2dHatch_Elements F, in gp_Pnt2d P, double Tol)
+    public Geom2dHatch_Classifier(Geom2dHatch_Elements F, in Point2D P, double Tol)
     {
         myEdgeParameter = 0.0;
         rejected = false;
@@ -37,7 +41,7 @@ public class Geom2dHatch_Classifier
     }
 
     /// <summary>Classifies <paramref name="P"/> with the tolerance <paramref name="Tol"/> against the elements <paramref name="F"/>.</summary>
-    public void Perform(Geom2dHatch_Elements F, in gp_Pnt2d P, double Tol)
+    public void Perform(Geom2dHatch_Elements F, in Point2D P, double Tol)
     {
         TopClass_FaceClassifier.Perform(out rejected,
                                         ref nowires,
@@ -60,11 +64,11 @@ public class Geom2dHatch_Classifier
     public bool NoWires() => nowires;
 
     /// <summary>The element curve that decided the classification; when the state is ON, the one holding the point.</summary>
-    /// <exception cref="Standard_DomainError">The point was rejected.</exception>
+    /// <exception cref="DomainErrorException">The point was rejected.</exception>
     public Geom2dAdaptor_Curve Edge() => TopClass_FaceClassifier.Edge(rejected, myEdge);
 
     /// <summary>The parameter on <see cref="Edge"/> that decided the classification.</summary>
-    /// <exception cref="Standard_DomainError">The point was rejected.</exception>
+    /// <exception cref="DomainErrorException">The point was rejected.</exception>
     public double EdgeParameter() => TopClass_FaceClassifier.EdgeParameter(rejected, myEdgeParameter);
 
     /// <summary>The position of the point on <see cref="Edge"/>.</summary>

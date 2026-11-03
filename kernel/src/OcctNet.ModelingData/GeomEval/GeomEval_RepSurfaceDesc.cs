@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -34,13 +36,13 @@ public static class GeomEval_RepSurfaceDesc
         }
 
         public readonly bool IsIdentity() =>
-            Math.Abs(ScaleU - 1.0) < Precision.Confusion()
-            && Math.Abs(ScaleV - 1.0) < Precision.Confusion()
-            && Math.Abs(OffsetU) < Precision.Confusion()
-            && Math.Abs(OffsetV) < Precision.Confusion() && !SwapUV;
+            Math.Abs(ScaleU - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()
+            && Math.Abs(ScaleV - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()
+            && Math.Abs(OffsetU) < global::Kerf.Engine.Foundation.Precision.Confusion()
+            && Math.Abs(OffsetV) < global::Kerf.Engine.Foundation.Precision.Confusion() && !SwapUV;
 
         public readonly bool IsValid() =>
-            Math.Abs(ScaleU) > Precision.Confusion() && Math.Abs(ScaleV) > Precision.Confusion();
+            Math.Abs(ScaleU) > global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(ScaleV) > global::Kerf.Engine.Foundation.Precision.Confusion();
 
         public readonly void Map(double theU, double theV, out double theURep, out double theVRep)
         {
@@ -75,12 +77,12 @@ public static class GeomEval_RepSurfaceDesc
         }
 
         public readonly bool Contains(double theU, double theV) =>
-            (theU >= UFirst - Precision.Confusion()) && (theU <= ULast + Precision.Confusion())
-            && (theV >= VFirst - Precision.Confusion()) && (theV <= VLast + Precision.Confusion());
+            (theU >= UFirst - global::Kerf.Engine.Foundation.Precision.Confusion()) && (theU <= ULast + global::Kerf.Engine.Foundation.Precision.Confusion())
+            && (theV >= VFirst - global::Kerf.Engine.Foundation.Precision.Confusion()) && (theV <= VLast + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Abstract base descriptor: the representation and a kind tag for dispatch.</summary>
-    public abstract class Base : Standard_Transient
+    public abstract class Base : Transient
     {
         /// <summary>Descriptor kind for switch-based dispatch.</summary>
         public enum Kind

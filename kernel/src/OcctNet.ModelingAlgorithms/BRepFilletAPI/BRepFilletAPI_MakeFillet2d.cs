@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 
@@ -197,7 +198,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     /// <summary>
     /// The chamfered or filleted edge built from the edge <paramref name="E"/> of the face (frozen).
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="E"/> has no descendant.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="E"/> has no descendant.</exception>
     public TopoDS_Edge DescendantEdge(in TopoDS_Edge E)
     {
         return myMakeChFi2d.DescendantEdge(E);
@@ -218,7 +219,7 @@ public class BRepFilletAPI_MakeFillet2d : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Updates the result and sets the Done flag (if <see cref="Status"/> is ChFi2d_IsDone).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // test if the operation is done
         if (Status() == ChFi2d_IsDone)

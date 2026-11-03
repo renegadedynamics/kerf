@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepRepr_RepresentationMap : Standard_Transient
+public class StepRepr_RepresentationMap : Transient
 {
     private StepRepr_RepresentationItem mappingOrigin;
     private StepRepr_Representation mappedRepresentation;

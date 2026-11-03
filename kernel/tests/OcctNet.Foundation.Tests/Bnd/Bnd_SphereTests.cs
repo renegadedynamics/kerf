@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Bnd_SphereTest
@@ -9,12 +13,12 @@ public class Bnd_SphereTest
     [Fact]
     public void DefaultConstructor()
     {
-        Bnd_Sphere aSphere = new();
+        BoundingSphere aSphere = new();
         GTest.ExpectDoubleEq(aSphere.Center().X(), 0.0);
         GTest.ExpectDoubleEq(aSphere.Center().Y(), 0.0);
         GTest.ExpectDoubleEq(aSphere.Center().Z(), 0.0);
         GTest.ExpectDoubleEq(aSphere.Radius(), 0.0);
-        Assert.False(aSphere.IsValid());
+        Assert.False(aSphere.IsValid);
         Assert.Equal(0, aSphere.U());
         Assert.Equal(0, aSphere.V());
     }
@@ -22,8 +26,8 @@ public class Bnd_SphereTest
     [Fact]
     public void ParameterizedConstructor()
     {
-        gp_XYZ aCenter = new(1.0, 2.0, 3.0);
-        Bnd_Sphere aSphere = new(aCenter, 5.0, 10, 20);
+        Xyz aCenter = new(1.0, 2.0, 3.0);
+        BoundingSphere aSphere = new(aCenter, 5.0, 10, 20);
         GTest.ExpectDoubleEq(aSphere.Center().X(), 1.0);
         GTest.ExpectDoubleEq(aSphere.Center().Y(), 2.0);
         GTest.ExpectDoubleEq(aSphere.Center().Z(), 3.0);
@@ -35,20 +39,20 @@ public class Bnd_SphereTest
     [Fact]
     public void Validity()
     {
-        Bnd_Sphere aSphere = new();
-        Assert.False(aSphere.IsValid());
+        BoundingSphere aSphere = new();
+        Assert.False(aSphere.IsValid);
         aSphere.SetValid(true);
-        Assert.True(aSphere.IsValid());
+        Assert.True(aSphere.IsValid);
         aSphere.SetValid(false);
-        Assert.False(aSphere.IsValid());
+        Assert.False(aSphere.IsValid);
     }
 
     [Fact]
     public void Distance()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 1.0, 0, 0);
-        gp_XYZ aPoint = new(3.0, 4.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 1.0, 0, 0);
+        Xyz aPoint = new(3.0, 4.0, 0.0);
         double aDist = aSphere.Distance(aPoint);
         GTest.ExpectDoubleEq(aDist, 5.0);
     }
@@ -56,18 +60,18 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareDistance()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 1.0, 0, 0);
-        gp_XYZ aPoint = new(3.0, 4.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 1.0, 0, 0);
+        Xyz aPoint = new(3.0, 4.0, 0.0);
         GTest.ExpectDoubleEq(aSphere.SquareDistance(aPoint), 25.0);
     }
 
     [Fact]
     public void Distances_PointOutside()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 2.0, 0, 0);
-        gp_XYZ aPoint = new(5.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 2.0, 0, 0);
+        Xyz aPoint = new(5.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.Distances(aPoint, out aMin, out aMax);
         GTest.ExpectDoubleEq(aMin, 3.0);
@@ -77,9 +81,9 @@ public class Bnd_SphereTest
     [Fact]
     public void Distances_PointInside()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 5.0, 0, 0);
-        gp_XYZ aPoint = new(1.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 5.0, 0, 0);
+        Xyz aPoint = new(1.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.Distances(aPoint, out aMin, out aMax);
         GTest.ExpectDoubleEq(aMin, 0.0);
@@ -89,9 +93,9 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareDistances_PointOutside()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 2.0, 0, 0);
-        gp_XYZ aPoint = new(5.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 2.0, 0, 0);
+        Xyz aPoint = new(5.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.SquareDistances(aPoint, out aMin, out aMax);
         // d^2 = 25, r^2 = 4
@@ -103,9 +107,9 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareDistances_PointInside()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 5.0, 0, 0);
-        gp_XYZ aPoint = new(1.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 5.0, 0, 0);
+        Xyz aPoint = new(1.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.SquareDistances(aPoint, out aMin, out aMax);
         // d^2 = 1, r^2 = 25
@@ -117,9 +121,9 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareDistances_PointAtCenter()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 3.0, 0, 0);
-        gp_XYZ aPoint = new(0.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 3.0, 0, 0);
+        Xyz aPoint = new(0.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.SquareDistances(aPoint, out aMin, out aMax);
         // d^2 = 0, r^2 = 9
@@ -131,9 +135,9 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareDistances_PointOnSurface()
     {
-        gp_XYZ aCenter = new(0.0, 0.0, 0.0);
-        Bnd_Sphere aSphere = new(aCenter, 3.0, 0, 0);
-        gp_XYZ aPoint = new(3.0, 0.0, 0.0);
+        Xyz aCenter = new(0.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(aCenter, 3.0, 0, 0);
+        Xyz aPoint = new(3.0, 0.0, 0.0);
         double       aMin = 0.0, aMax = 0.0;
         aSphere.SquareDistances(aPoint, out aMin, out aMax);
         // d^2 = 9, r^2 = 9
@@ -145,10 +149,10 @@ public class Bnd_SphereTest
     [Fact]
     public void Project()
     {
-        gp_XYZ aCenter = new(1.0, 2.0, 3.0);
-        Bnd_Sphere aSphere = new(aCenter, 5.0, 0, 0);
-        gp_XYZ aNode = new(10.0, 20.0, 30.0);
-        gp_XYZ aProjNode = new();
+        Xyz aCenter = new(1.0, 2.0, 3.0);
+        BoundingSphere aSphere = new(aCenter, 5.0, 0, 0);
+        Xyz aNode = new(10.0, 20.0, 30.0);
+        Xyz aProjNode = new();
         double       aDist    = 0.0;
         bool         anInside = false;
         bool   isOk     = aSphere.Project(aNode, out aProjNode, out aDist, out anInside);
@@ -162,8 +166,8 @@ public class Bnd_SphereTest
     [Fact]
     public void Add_EnclosingSphere()
     {
-        Bnd_Sphere aSphere1 = new(new gp_XYZ(0.0, 0.0, 0.0), 10.0, 0, 0);
-        Bnd_Sphere aSphere2 = new(new gp_XYZ(1.0, 0.0, 0.0), 2.0, 0, 0);
+        BoundingSphere aSphere1 = new(new Xyz(0.0, 0.0, 0.0), 10.0, 0, 0);
+        BoundingSphere aSphere2 = new(new Xyz(1.0, 0.0, 0.0), 2.0, 0, 0);
         aSphere1.Add(aSphere2);
         // aSphere1 already encloses aSphere2, should remain unchanged
         GTest.ExpectDoubleEq(aSphere1.Radius(), 10.0);
@@ -172,8 +176,8 @@ public class Bnd_SphereTest
     [Fact]
     public void Add_EnclosedBySphere()
     {
-        Bnd_Sphere aSphere1 = new(new gp_XYZ(0.0, 0.0, 0.0), 2.0, 0, 0);
-        Bnd_Sphere aSphere2 = new(new gp_XYZ(0.0, 0.0, 0.0), 10.0, 0, 0);
+        BoundingSphere aSphere1 = new(new Xyz(0.0, 0.0, 0.0), 2.0, 0, 0);
+        BoundingSphere aSphere2 = new(new Xyz(0.0, 0.0, 0.0), 10.0, 0, 0);
         aSphere1.Add(aSphere2);
         // aSphere2 encloses aSphere1, should take aSphere2
         GTest.ExpectDoubleEq(aSphere1.Radius(), 10.0);
@@ -182,8 +186,8 @@ public class Bnd_SphereTest
     [Fact]
     public void Add_PartialOverlap()
     {
-        Bnd_Sphere aSphere1 = new(new gp_XYZ(0.0, 0.0, 0.0), 3.0, 0, 0);
-        Bnd_Sphere aSphere2 = new(new gp_XYZ(5.0, 0.0, 0.0), 3.0, 0, 0);
+        BoundingSphere aSphere1 = new(new Xyz(0.0, 0.0, 0.0), 3.0, 0, 0);
+        BoundingSphere aSphere2 = new(new Xyz(5.0, 0.0, 0.0), 3.0, 0, 0);
         aSphere1.Add(aSphere2);
         // Combined radius should be (5 + 3 + 3) / 2 = 5.5
         GTest.ExpectDoubleEq(aSphere1.Radius(), 5.5);
@@ -192,24 +196,24 @@ public class Bnd_SphereTest
     [Fact]
     public void IsOut_Separated()
     {
-        Bnd_Sphere aSphere1 = new(new gp_XYZ(0.0, 0.0, 0.0), 1.0, 0, 0);
-        Bnd_Sphere aSphere2 = new(new gp_XYZ(10.0, 0.0, 0.0), 1.0, 0, 0);
+        BoundingSphere aSphere1 = new(new Xyz(0.0, 0.0, 0.0), 1.0, 0, 0);
+        BoundingSphere aSphere2 = new(new Xyz(10.0, 0.0, 0.0), 1.0, 0, 0);
         Assert.True(aSphere1.IsOut(aSphere2));
     }
 
     [Fact]
     public void IsOut_Overlapping()
     {
-        Bnd_Sphere aSphere1 = new(new gp_XYZ(0.0, 0.0, 0.0), 3.0, 0, 0);
-        Bnd_Sphere aSphere2 = new(new gp_XYZ(4.0, 0.0, 0.0), 3.0, 0, 0);
+        BoundingSphere aSphere1 = new(new Xyz(0.0, 0.0, 0.0), 3.0, 0, 0);
+        BoundingSphere aSphere2 = new(new Xyz(4.0, 0.0, 0.0), 3.0, 0, 0);
         Assert.False(aSphere1.IsOut(aSphere2));
     }
 
     [Fact]
     public void IsOut_PointWithMaxDist()
     {
-        Bnd_Sphere aSphere = new(new gp_XYZ(0.0, 0.0, 0.0), 5.0, 0, 0);
-        gp_XYZ aPoint = new(20.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(new Xyz(0.0, 0.0, 0.0), 5.0, 0, 0);
+        Xyz aPoint = new(20.0, 0.0, 0.0);
         double       aMaxDist = 100.0;
         aSphere.SetValid(true);
         Assert.False(aSphere.IsOut(aPoint, ref aMaxDist));
@@ -220,8 +224,8 @@ public class Bnd_SphereTest
     [Fact]
     public void IsOut_PointTooFar()
     {
-        Bnd_Sphere aSphere = new(new gp_XYZ(0.0, 0.0, 0.0), 1.0, 0, 0);
-        gp_XYZ aPoint = new(20.0, 0.0, 0.0);
+        BoundingSphere aSphere = new(new Xyz(0.0, 0.0, 0.0), 1.0, 0, 0);
+        Xyz aPoint = new(20.0, 0.0, 0.0);
         double       aMaxDist = 10.0;
         Assert.True(aSphere.IsOut(aPoint, ref aMaxDist));
     }
@@ -229,7 +233,7 @@ public class Bnd_SphereTest
     [Fact]
     public void SquareExtent()
     {
-        Bnd_Sphere aSphere = new(new gp_XYZ(0.0, 0.0, 0.0), 3.0, 0, 0);
+        BoundingSphere aSphere = new(new Xyz(0.0, 0.0, 0.0), 3.0, 0, 0);
         GTest.ExpectDoubleEq(aSphere.SquareExtent(), 36.0);
     }
 }

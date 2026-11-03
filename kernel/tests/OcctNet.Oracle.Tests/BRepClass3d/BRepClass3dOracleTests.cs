@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -32,16 +33,16 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
 
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ClassificationScenes.Scene(anOracle, aScene);
             List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aFaces = ClassificationScenes.Explore(aShape, TopAbs_FACE);
-            List<gp_Pnt> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape.P, 25, 4);
+            List<Point3D> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape.P, 25, 4);
             string aWhat = $"scene {aScene} ({ClassificationScenes.Name(aScene)})";
 
             using var aNC = new N.BRepClass3d_SolidClassifier();
             aNC.Load(aShape.N);
             var aPC = new BRepClass3d_SolidClassifier();
             aPC.Load(aShape.P);
-            foreach (gp_Pnt aP in aPoints)
+            foreach (Point3D aP in aPoints)
             {
-                double aTol = anOracle.Bool() ? Precision.Confusion() : 1e-3;
+                double aTol = anOracle.Bool() ? global::Kerf.Engine.Foundation.Precision.Confusion() : 1e-3;
                 using var aNP = Oracle.ToNative(aP);
                 aNC.Perform(aNP, aTol);
                 aPC.Perform(aP, aTol);
@@ -70,7 +71,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             }
 
             // a classifier made with the point, and the infinite point
-            gp_Pnt aFirst = aPoints[0];
+            Point3D aFirst = aPoints[0];
             using (var aNP = Oracle.ToNative(aFirst))
             using (var aNC2 = new N.BRepClass3d_SolidClassifier(aShape.N, aNP, 1e-7))
             {

@@ -3,11 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// The extremum distances between two elementary surfaces. OCCT implements only two planes; the other pairs throw
-/// <see cref="Standard_NotImplemented"/>.
+/// <see cref="MethodNotImplementedException"/>.
 /// </summary>
 /// <remarks>An algorithm object: construct it with the surfaces, or empty and call <c>Perform</c>.</remarks>
 public class Extrema_ExtElSS
@@ -27,15 +31,15 @@ public class Extrema_ExtElSS
     }
 
     /// <summary>The distances between 2 planes. These planes can be parallel.</summary>
-    public Extrema_ExtElSS(in gp_Pln S1, in gp_Pln S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Plane3D S1, in Plane3D S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Pln S1, in gp_Pln S2)
+    public void Perform(in Plane3D S1, in Plane3D S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
 
-        if ((S1.Axis().Direction()).IsParallel(S2.Axis().Direction(), Precision.Angular()))
+        if ((S1.Axis().Direction()).IsParallel(S2.Axis().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             myIsPar = true;
             myNbExt = 1;
@@ -45,58 +49,58 @@ public class Extrema_ExtElSS
     }
 
     /// <summary>The distances between a plane and a sphere (not implemented in OCCT).</summary>
-    public Extrema_ExtElSS(in gp_Pln S1, in gp_Sphere S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Plane3D S1, in Sphere S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Pln S1, in gp_Sphere S2)
+    public void Perform(in Plane3D S1, in Sphere S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between 2 spheres (not implemented in OCCT).</summary>
-    public Extrema_ExtElSS(in gp_Sphere S1, in gp_Sphere S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Sphere S1, in Sphere S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Sphere S1, in gp_Sphere S2)
+    public void Perform(in Sphere S1, in Sphere S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a sphere and a cylinder (not implemented in OCCT).</summary>
-    public Extrema_ExtElSS(in gp_Sphere S1, in gp_Cylinder S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Sphere S1, in Cylinder S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Sphere S1, in gp_Cylinder S2)
+    public void Perform(in Sphere S1, in Cylinder S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a sphere and a cone (not implemented in OCCT).</summary>
-    public Extrema_ExtElSS(in gp_Sphere S1, in gp_Cone S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Sphere S1, in Cone S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Sphere S1, in gp_Cone S2)
+    public void Perform(in Sphere S1, in Cone S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The distances between a sphere and a torus (not implemented in OCCT).</summary>
-    public Extrema_ExtElSS(in gp_Sphere S1, in gp_Torus S2) => Perform(S1, S2);
+    public Extrema_ExtElSS(in Sphere S1, in Torus S2) => Perform(S1, S2);
 
-    public void Perform(in gp_Sphere S1, in gp_Torus S2)
+    public void Perform(in Sphere S1, in Torus S2)
     {
         myDone = true;
         myIsPar = false;
         myNbExt = 0;
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>True if the distances are found.</summary>
@@ -107,7 +111,7 @@ public class Extrema_ExtElSS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }
@@ -117,7 +121,7 @@ public class Extrema_ExtElSS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -127,7 +131,7 @@ public class Extrema_ExtElSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist!.Value(N);
@@ -139,7 +143,7 @@ public class Extrema_ExtElSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         // OCCT: no Perform fills myPOnS1 and myPOnS2, so this dereferences null handles

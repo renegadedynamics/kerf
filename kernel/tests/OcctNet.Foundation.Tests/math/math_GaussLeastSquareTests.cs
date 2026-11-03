@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_GaussLeastSquareTest
@@ -14,15 +16,15 @@ public class math_GaussLeastSquareTest
         // Simple 2x2 system: 2x + y = 5, x + 2y = 4
         // Solution: x = 2, y = 1
 
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 2.0;
         A[1, 2] = 1.0;
         A[2, 1] = 1.0;
         A[2, 2] = 2.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 2);
         B[1] = 5.0;
@@ -44,7 +46,7 @@ public class math_GaussLeastSquareTest
         // x + 2y = 5
         // Least squares solution approximately: x = 1.4, y = 1.6
 
-        math_Matrix A = new(1, 3, 1, 2);
+        Matrix A = new(1, 3, 1, 2);
         A[1, 1] = 1.0;
         A[1, 2] = 1.0; // x + y = 3
         A[2, 1] = 2.0;
@@ -52,9 +54,9 @@ public class math_GaussLeastSquareTest
         A[3, 1] = 1.0;
         A[3, 2] = 2.0; // x + 2y = 5
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 3);
         B[1] = 3.0;
@@ -77,12 +79,12 @@ public class math_GaussLeastSquareTest
         // Single variable system: 2x = 4
         // Solution: x = 2
 
-        math_Matrix A = new(1, 1, 1, 1);
+        Matrix A = new(1, 1, 1, 1);
         A[1, 1] = 2.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 1);
         B[1] = 4.0;
@@ -102,7 +104,7 @@ public class math_GaussLeastSquareTest
         // x + y + 2z = 6
         // Solution: x = 3, y = 2, z = 1
 
-        math_Matrix A = new(1, 3, 1, 3);
+        Matrix A = new(1, 3, 1, 3);
         A[1, 1] = 2.0;
         A[1, 2] = 1.0;
         A[1, 3] = 1.0;
@@ -113,9 +115,9 @@ public class math_GaussLeastSquareTest
         A[3, 2] = 1.0;
         A[3, 3] = 2.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 3);
         B[1] = 8.0;
@@ -134,7 +136,7 @@ public class math_GaussLeastSquareTest
     public void IdentityMatrix()
     {
         // Identity matrix test
-        math_Matrix A = new(1, 3, 1, 3);
+        Matrix A = new(1, 3, 1, 3);
         A[1, 1] = 1.0;
         A[1, 2] = 0.0;
         A[1, 3] = 0.0;
@@ -145,9 +147,9 @@ public class math_GaussLeastSquareTest
         A[3, 2] = 0.0;
         A[3, 3] = 1.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 3);
         B[1] = 5.0;
@@ -166,15 +168,15 @@ public class math_GaussLeastSquareTest
     public void CustomMinPivot()
     {
         // Test with custom minimum pivot
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 1.0;
         A[1, 2] = 0.0;
         A[2, 1] = 0.0;
         A[2, 2] = 1.0;
 
-        math_GaussLeastSquare solver = new(A, 1.0e-15); // Custom min pivot
+        GaussLeastSquare solver = new(A, 1.0e-15); // Custom min pivot
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 2);
         B[1] = 2.0;
@@ -191,15 +193,15 @@ public class math_GaussLeastSquareTest
     public void LargeDiagonalValues()
     {
         // Test with large diagonal values
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 100.0;
         A[1, 2] = 1.0;
         A[2, 1] = 1.0;
         A[2, 2] = 100.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 2);
         B[1] = 101.0; // 100x + y = 101
@@ -217,15 +219,15 @@ public class math_GaussLeastSquareTest
     public void ScaledSystem()
     {
         // Test system with scaled coefficients
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 0.001;
         A[1, 2] = 0.002;
         A[2, 1] = 0.003;
         A[2, 2] = 0.004;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 2);
         B[1] = 0.005;
@@ -243,7 +245,7 @@ public class math_GaussLeastSquareTest
     public void RectangularMatrix()
     {
         // 4x2 matrix (more equations than unknowns)
-        math_Matrix A = new(1, 4, 1, 2);
+        Matrix A = new(1, 4, 1, 2);
         A[1, 1] = 1.0;
         A[1, 2] = 1.0;
         A[2, 1] = 1.0;
@@ -253,9 +255,9 @@ public class math_GaussLeastSquareTest
         A[4, 1] = 2.0;
         A[4, 2] = 2.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 4);
         B[1] = 3.0;
@@ -279,7 +281,7 @@ public class math_GaussLeastSquareTest
         // Fit a quadratic polynomial to points: (0,1), (1,4), (2,9), (3,16)
         // Expected: y = x^2 + 1 (approximately), so coefficients [1, 0, 1]
 
-        math_Matrix A = new(1, 4, 1, 3);
+        Matrix A = new(1, 4, 1, 3);
         // Each row: [1, x, x^2] for fitting y = a + bx + cx^2
         A[1, 1] = 1.0;
         A[1, 2] = 0.0;
@@ -294,9 +296,9 @@ public class math_GaussLeastSquareTest
         A[4, 2] = 3.0;
         A[4, 3] = 9.0; // x = 3
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 4);
         B[1] = 1.0;  // y(0) = 1
@@ -320,7 +322,7 @@ public class math_GaussLeastSquareTest
         // Fit a line to points: (1,2), (2,4), (3,6)
         // Expected: y = 2x, so coefficients [0, 2]
 
-        math_Matrix A = new(1, 3, 1, 2);
+        Matrix A = new(1, 3, 1, 2);
         // Each row: [1, x] for fitting y = a + bx
         A[1, 1] = 1.0;
         A[1, 2] = 1.0; // x = 1
@@ -329,9 +331,9 @@ public class math_GaussLeastSquareTest
         A[3, 1] = 1.0;
         A[3, 2] = 3.0; // x = 3
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 3);
         B[1] = 2.0; // y(1) = 2
@@ -350,7 +352,7 @@ public class math_GaussLeastSquareTest
     public void NoisyData()
     {
         // Fit line to noisy data around y = x + 1
-        math_Matrix A = new(1, 5, 1, 2);
+        Matrix A = new(1, 5, 1, 2);
         A[1, 1] = 1.0;
         A[1, 2] = 1.0; // x = 1
         A[2, 1] = 1.0;
@@ -362,9 +364,9 @@ public class math_GaussLeastSquareTest
         A[5, 1] = 1.0;
         A[5, 2] = 5.0; // x = 5
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 5);
         B[1] = 2.1; // y = 1*1 + 1 = 2 with noise
@@ -385,15 +387,15 @@ public class math_GaussLeastSquareTest
     public void ZeroRightHandSide()
     {
         // Test with zero right-hand side
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 1.0;
         A[1, 2] = 0.0;
         A[2, 1] = 0.0;
         A[2, 2] = 1.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector B = new(1, 2);
         B[1] = 0.0;
@@ -410,15 +412,15 @@ public class math_GaussLeastSquareTest
     public void MultipleRightHandSides()
     {
         // Test solving multiple systems with same matrix
-        math_Matrix A = new(1, 2, 1, 2);
+        Matrix A = new(1, 2, 1, 2);
         A[1, 1] = 2.0;
         A[1, 2] = 1.0;
         A[2, 1] = 1.0;
         A[2, 2] = 2.0;
 
-        math_GaussLeastSquare solver = new(A);
+        GaussLeastSquare solver = new(A);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // First system
         math_Vector B1 = new(1, 2);

@@ -5,10 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>This class is intended to describe the authorized form for an entity, either Simple or Plex.</summary>
-public abstract class StepData_EDescr : Standard_Transient
+public abstract class StepData_EDescr : Transient
 {
     /// <summary>Tells if a ESDescr matches a step type: exact or super type.</summary>
     public abstract bool Matches(string steptype);

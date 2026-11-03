@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,19 +19,19 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     private double radius;
 
     /// <summary>A sphere of radius Radius whose local coordinate system is A3.</summary>
-    /// <exception cref="Standard_ConstructionError">Radius &lt; 0.</exception>
-    public Geom_SphericalSurface(in gp_Ax3 A3, double Radius)
+    /// <exception cref="ConstructionErrorException">Radius &lt; 0.</exception>
+    public Geom_SphericalSurface(in CoordinateSystem A3, double Radius)
     {
         radius = Radius;
         if (Radius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A3;
     }
 
     /// <summary>A sphere from a gp sphere.</summary>
-    public Geom_SphericalSurface(in gp_Sphere S)
+    public Geom_SphericalSurface(in Sphere S)
     {
         radius = S.Radius();
         pos = S.Position();
@@ -64,18 +68,18 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     /// <summary>False.</summary>
     public sealed override bool IsVPeriodic() => false;
 
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     internal void SetRadius(double R)
     {
         CheckMutable();
         if (R < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         radius = R;
     }
 
-    internal void SetSphere(in gp_Sphere S)
+    internal void SetSphere(in Sphere S)
     {
         CheckMutable();
         radius = S.Radius();
@@ -83,7 +87,7 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy of radius R.</summary>
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     public Geom_SphericalSurface WithRadius(double R)
     {
         Geom_SphericalSurface aCopy = (Geom_SphericalSurface)Copy();
@@ -92,7 +96,7 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy that is the sphere S.</summary>
-    public Geom_SphericalSurface WithSphere(in gp_Sphere S)
+    public Geom_SphericalSurface WithSphere(in Sphere S)
     {
         Geom_SphericalSurface aCopy = (Geom_SphericalSurface)Copy();
         aCopy.SetSphere(S);
@@ -123,7 +127,7 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
                              out double C3,
                              out double D)
     {
-        gp_Trsf T = new gp_Trsf();
+        Transform3D T = new Transform3D();
         T.SetTransformation(pos);
         double T11 = T.Value(1, 1);
         double T12 = T.Value(1, 2);
@@ -149,24 +153,24 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
         D = T14 * T14 + T24 * T24 + T34 * T34 - radius * radius;
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aP;
-        ElSLib.SphereD0(U, V, pos, radius, out aP);
+        Point3D aP;
+        global::Kerf.Engine.Geometry.ElSLib.SphereD0(U, V, pos, radius, out aP);
         return aP;
     }
 
     public sealed override ResD1 EvalD1(double U, double V)
     {
         ResD1 aResult;
-        ElSLib.SphereD1(U, V, pos, radius, out aResult.Point, out aResult.D1U, out aResult.D1V);
+        global::Kerf.Engine.Geometry.ElSLib.SphereD1(U, V, pos, radius, out aResult.Point, out aResult.D1U, out aResult.D1V);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U, double V)
     {
         ResD2 aResult;
-        ElSLib.SphereD2(U,
+        global::Kerf.Engine.Geometry.ElSLib.SphereD2(U,
                         V,
                         pos,
                         radius,
@@ -182,7 +186,7 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     public sealed override ResD3 EvalD3(double U, double V)
     {
         ResD3 aResult;
-        ElSLib.SphereD3(U,
+        global::Kerf.Engine.Geometry.ElSLib.SphereD3(U,
                         V,
                         pos,
                         radius,
@@ -200,22 +204,22 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
-        return ElSLib.SphereDN(U, V, pos, radius, Nu, Nv);
+        return global::Kerf.Engine.Geometry.ElSLib.SphereDN(U, V, pos, radius, Nu, Nv);
     }
 
     /// <summary>The non-persistent gp sphere with the same geometry.</summary>
-    public gp_Sphere Sphere() => new gp_Sphere(pos, radius);
+    public Sphere Sphere() => new Sphere(pos, radius);
 
     /// <summary>The U iso-parametric half circle (a Geom_TrimmedCurve on a Geom_Circle, in [-PI/2, PI/2]).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        Geom_Circle GC = new Geom_Circle(ElSLib.SphereUIso(pos, radius, U));
+        Geom_Circle GC = new Geom_Circle(global::Kerf.Engine.Geometry.ElSLib.SphereUIso(pos, radius, U));
         Geom_TrimmedCurve iso = new Geom_TrimmedCurve(GC, -M_PI / 2.0, M_PI / 2);
         return iso;
     }
@@ -223,14 +227,14 @@ public class Geom_SphericalSurface : Geom_ElementarySurface
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        Geom_Circle GC = new Geom_Circle(ElSLib.SphereVIso(pos, radius, V));
+        Geom_Circle GC = new Geom_Circle(global::Kerf.Engine.Geometry.ElSLib.SphereVIso(pos, radius, V));
         return GC;
     }
 
     /// <summary>The volume, 4 * PI * R**3 / 3.</summary>
     public double Volume() => (4.0 * M_PI * radius * radius * radius) / 3.0;
 
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         radius = radius * Math.Abs(T.ScaleFactor());

@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +19,7 @@ namespace Occt;
 /// </summary>
 public class BinTools_LocationSet
 {
-    private readonly NCollection_IndexedMap<TopLoc_Location> myMap = new();
+    private readonly NCollection_IndexedMap<Placement> myMap = new();
 
     /// <summary>An empty set of locations.</summary>
     public BinTools_LocationSet()
@@ -25,9 +33,9 @@ public class BinTools_LocationSet
     }
 
     /// <summary>Adds the location (once), after its datums, and returns its index; 0 for the identity.</summary>
-    public int Add(in TopLoc_Location L)
+    public int Add(in Placement L)
     {
-        if (L.IsIdentity())
+        if (L.IsIdentity)
         {
             return 0;
         }
@@ -38,22 +46,22 @@ public class BinTools_LocationSet
             return n;
         }
 
-        TopLoc_Location N = L;
+        Placement N = L;
         do
         {
-            myMap.Add(new TopLoc_Location(N.FirstDatum()));
+            myMap.Add(new Placement(N.FirstDatum()));
             N = N.NextLocation();
-        } while (!N.IsIdentity());
+        } while (!N.IsIdentity);
 
         return myMap.Add(L);
     }
 
     /// <summary>The location of index I; the identity for 0.</summary>
-    public TopLoc_Location Location(int I)
+    public Placement Location(int I)
     {
         if (I == 0)
         {
-            return new TopLoc_Location();
+            return new Placement();
         }
         else
         {
@@ -62,9 +70,9 @@ public class BinTools_LocationSet
     }
 
     /// <summary>The index of the location; 0 for the identity or a location not in the set.</summary>
-    public int Index(in TopLoc_Location L)
+    public int Index(in Placement L)
     {
-        if (L.IsIdentity())
+        if (L.IsIdentity)
         {
             return 0;
         }
@@ -76,10 +84,10 @@ public class BinTools_LocationSet
     public int NbLocations() => myMap.Extent();
 
     // operator<<(Standard_OStream&, const gp_Trsf&)
-    internal static void Write(Stream OS, in gp_Trsf T)
+    internal static void Write(Stream OS, in Transform3D T)
     {
-        gp_XYZ V = T.TranslationPart();
-        gp_Mat M = T.VectorialPart();
+        Xyz V = T.TranslationPart();
+        Matrix3x3 M = T.VectorialPart();
 
         BinTools.PutReal(OS, M[1, 1]);
         BinTools.PutReal(OS, M[1, 2]);
@@ -96,7 +104,7 @@ public class BinTools_LocationSet
     }
 
     // operator>>(Standard_IStream&, gp_Trsf&)
-    private static void Read(Stream IS, ref gp_Trsf T)
+    private static void Read(Stream IS, ref Transform3D T)
     {
         BinTools.GetReal(IS, out double V10);
         BinTools.GetReal(IS, out double V11);
@@ -127,12 +135,12 @@ public class BinTools_LocationSet
         {
             for (i = 1; i <= nbLoc; i++)
             {
-                TopLoc_Location L = myMap[i];
+                Placement L = myMap[i];
 
-                TopLoc_Location L2 = L.NextLocation();
-                bool simple = L2.IsIdentity();
+                Placement L2 = L.NextLocation();
+                bool simple = L2.IsIdentity;
                 int p = L.FirstPower();
-                TopLoc_Location L1 = new(L.FirstDatum());
+                Placement L1 = new(L.FirstDatum());
                 bool elementary = (simple && p == 1);
                 if (elementary)
                 {
@@ -144,9 +152,9 @@ public class BinTools_LocationSet
                     OS.WriteByte(2); // 2
                     BinTools.PutInteger(OS, myMap.FindIndex(L1));
                     BinTools.PutInteger(OS, p);
-                    while (!L2.IsIdentity())
+                    while (!L2.IsIdentity)
                     {
-                        L1 = new TopLoc_Location(L2.FirstDatum());
+                        L1 = new Placement(L2.FirstDatum());
                         p = L2.FirstPower();
                         L2 = L2.NextLocation();
                         BinTools.PutInteger(OS, myMap.FindIndex(L1));
@@ -164,7 +172,7 @@ public class BinTools_LocationSet
     }
 
     /// <summary>Clears the set and reads one written by <see cref="Write(Stream)"/>.</summary>
-    /// <exception cref="Standard_Failure">The stream doesn't hold a location table.</exception>
+    /// <exception cref="FailureException">The stream doesn't hold a location table.</exception>
     public void Read(Stream IS)
     {
         myMap.Clear();
@@ -174,7 +182,7 @@ public class BinTools_LocationSet
         string? buffer = BinTools.ReadWord(IS);
         if (buffer is null || buffer != "Locations")
         {
-            throw new Standard_Failure("BinTools_LocationSet::Read: Not a location table" + "\n");
+            throw new FailureException("BinTools_LocationSet::Read: Not a location table" + "\n");
         }
 
         int i, nbLoc;
@@ -183,8 +191,8 @@ public class BinTools_LocationSet
         // OCCT.NET: untrusted input: a location takes at least 1 + 4 bytes
         BinTools.CheckCount(IS, nbLoc, 5, "locations");
 
-        TopLoc_Location L = new();
-        gp_Trsf T = new();
+        Placement L = new();
+        Transform3D T = new();
 
         try
         {
@@ -194,28 +202,28 @@ public class BinTools_LocationSet
                 if (aTypLoc == 1)
                 {
                     Read(IS, ref T);
-                    L = new TopLoc_Location(T);
+                    L = new Placement(T);
                 }
                 else if (aTypLoc == 2)
                 {
-                    L = new TopLoc_Location();
+                    L = new Placement();
                     BinTools.GetInteger(IS, out l1); // Index
                     while (l1 != 0)
                     {
                         BinTools.GetInteger(IS, out p);
                         // OCCT.NET: untrusted input: OCCT reads outside its map
                         BinTools.CheckIndex(l1, 1, myMap.Extent(), "location");
-                        TopLoc_Location L1 = myMap[l1];
+                        Placement L1 = myMap[l1];
                         L = BinTools.PoweredTimes(L1, p, L);
                         BinTools.GetInteger(IS, out l1);
                     }
                 }
                 else
                 {
-                    throw new Standard_Failure("Unexpected location's type = " + (char)aTypLoc + "\n");
+                    throw new FailureException("Unexpected location's type = " + (char)aTypLoc + "\n");
                 }
 
-                if (!L.IsIdentity())
+                if (!L.IsIdentity)
                 {
                     myMap.Add(L);
                 }

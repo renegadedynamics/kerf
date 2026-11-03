@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.gce_ErrorType;
 
 namespace Occt;
@@ -16,14 +18,14 @@ public sealed class GC_MakeCircle : GC_Root
     private Geom_Circle? TheCircle;
 
     /// <summary>A circle from the gp_Circ C.</summary>
-    public GC_MakeCircle(in gp_Circ C)
+    public GC_MakeCircle(in Circle3D C)
     {
         TheError = gce_Done;
         TheCircle = new Geom_Circle(C);
     }
 
     /// <summary>A circle of radius Radius in the plane of A2; fails with gce_NegativeRadius if Radius is negative.</summary>
-    public GC_MakeCircle(in gp_Ax2 A2, double Radius)
+    public GC_MakeCircle(in Frame3D A2, double Radius)
     {
         if (Radius < 0.0)
         {
@@ -32,21 +34,21 @@ public sealed class GC_MakeCircle : GC_Root
         else
         {
             TheError = gce_Done;
-            TheCircle = new Geom_Circle(new gp_Circ(A2, Radius));
+            TheCircle = new Geom_Circle(new Circle3D(A2, Radius));
         }
     }
 
     /// <summary>A circle coaxial to Circ through Point.</summary>
-    public GC_MakeCircle(in gp_Circ Circ, in gp_Pnt Point)
+    public GC_MakeCircle(in Circle3D Circ, in Point3D Point)
     {
         // gce_MakeCirc(Circ, Point) always succeeds, so its implicit conversion can't throw.
-        gp_Circ C = new gce_MakeCirc(Circ, Point).Value();
+        Circle3D C = new gce_MakeCirc(Circ, Point).Value();
         TheCircle = new Geom_Circle(C);
         TheError = gce_Done;
     }
 
     /// <summary>A circle coaxial to Circ at the signed distance Dist; fails with gce_NegativeRadius.</summary>
-    public GC_MakeCircle(in gp_Circ Circ, double Dist)
+    public GC_MakeCircle(in Circle3D Circ, double Dist)
     {
         gce_MakeCirc C = new gce_MakeCirc(Circ, Dist);
         TheError = C.Status();
@@ -57,7 +59,7 @@ public sealed class GC_MakeCircle : GC_Root
     }
 
     /// <summary>A circle through three points; fails with the status of gce_MakeCirc.</summary>
-    public GC_MakeCircle(in gp_Pnt P1, in gp_Pnt P2, in gp_Pnt P3)
+    public GC_MakeCircle(in Point3D P1, in Point3D P2, in Point3D P3)
     {
         gce_MakeCirc C = new gce_MakeCirc(P1, P2, P3);
         TheError = C.Status();
@@ -68,7 +70,7 @@ public sealed class GC_MakeCircle : GC_Root
     }
 
     /// <summary>A circle of center Point, normal Norm and radius Radius.</summary>
-    public GC_MakeCircle(in gp_Pnt Point, in gp_Dir Norm, double Radius)
+    public GC_MakeCircle(in Point3D Point, in Direction3D Norm, double Radius)
     {
         gce_MakeCirc C = new gce_MakeCirc(Point, Norm, Radius);
         TheError = C.Status();
@@ -79,7 +81,7 @@ public sealed class GC_MakeCircle : GC_Root
     }
 
     /// <summary>A circle of center Point, with its axis through PtAxis, and radius Radius.</summary>
-    public GC_MakeCircle(in gp_Pnt Point, in gp_Pnt PtAxis, double Radius)
+    public GC_MakeCircle(in Point3D Point, in Point3D PtAxis, double Radius)
     {
         gce_MakeCirc C = new gce_MakeCirc(Point, PtAxis, Radius);
         TheError = C.Status();
@@ -90,7 +92,7 @@ public sealed class GC_MakeCircle : GC_Root
     }
 
     /// <summary>A circle of axis Axis and radius Radius.</summary>
-    public GC_MakeCircle(in gp_Ax1 Axis, double Radius)
+    public GC_MakeCircle(in Axis3D Axis, double Radius)
     {
         gce_MakeCirc C = new gce_MakeCirc(Axis, Radius);
         TheError = C.Status();
@@ -101,7 +103,7 @@ public sealed class GC_MakeCircle : GC_Root
     }
 
     /// <summary>The constructed circle (frozen).</summary>
-    /// <exception cref="StdFail_NotDone">No circle was constructed.</exception>
+    /// <exception cref="NotDoneException">No circle was constructed.</exception>
     public Geom_Circle Value()
     {
         StdFail_NotDone_Raise_if(TheError != gce_Done, "GC_MakeCircle::Value() - no result");

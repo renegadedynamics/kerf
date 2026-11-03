@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -32,16 +34,16 @@ public static partial class ShapeConstruct
     /// converted by GeomConvert if the approximation fails.
     /// </summary>
     public static Geom_BSplineCurve? ConvertCurveToBSpline(Geom_Curve C3D, double First, double Last, double Tol3d,
-                                                           GeomAbs_Shape Continuity, int MaxSegments, int MaxDegree)
+                                                           Continuity Continuity, int MaxSegments, int MaxDegree)
     {
         Geom_BSplineCurve? aResult = InternalConvertCurveToBSpline(C3D, First, Last, Tol3d, Continuity, MaxSegments, MaxDegree);
         aResult?.Freeze();
         return aResult;
     }
 
-    /// <summary>The 3D <see cref="ConvertCurveToBSpline(Geom_Curve, double, double, double, GeomAbs_Shape, int, int)"/> without freezing (ported code).</summary>
+    /// <summary>The 3D <see cref="ConvertCurveToBSpline(Geom_Curve, double, double, double, Continuity, int, int)"/> without freezing (ported code).</summary>
     internal static Geom_BSplineCurve? InternalConvertCurveToBSpline(Geom_Curve C3D, double First, double Last, double Tol3d,
-                                                                     GeomAbs_Shape Continuity, int MaxSegments, int MaxDegree)
+                                                                     Continuity Continuity, int MaxSegments, int MaxDegree)
     {
         int MaxDeg = MaxDegree;
         Geom_BSplineCurve? aBSpline;
@@ -66,12 +68,12 @@ public static partial class ShapeConstruct
                 }
                 else
                 {
-                    aBSpline = GeomConvert.CurveToBSplineCurve(C3D, Convert_QuasiAngular);
+                    aBSpline = GeomConvert.CurveToBSplineCurve(C3D, QuasiAngular);
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
-                aBSpline = GeomConvert.CurveToBSplineCurve(C3D, Convert_QuasiAngular);
+                aBSpline = GeomConvert.CurveToBSplineCurve(C3D, QuasiAngular);
             }
         }
         return aBSpline;
@@ -83,7 +85,7 @@ public static partial class ShapeConstruct
     /// (Geom2dConvert), a B-spline returned as it is.
     /// </summary>
     public static Geom2d_BSplineCurve? ConvertCurveToBSpline(Geom2d_Curve C2D, double First, double Last, double Tol2d,
-                                                             GeomAbs_Shape Continuity, int MaxSegments, int MaxDegree)
+                                                             Continuity Continuity, int MaxSegments, int MaxDegree)
     {
         Geom2d_BSplineCurve? aResult = InternalConvertCurveToBSpline(C2D, First, Last, Tol2d, Continuity, MaxSegments, MaxDegree);
         aResult?.Freeze();
@@ -92,7 +94,7 @@ public static partial class ShapeConstruct
 
     /// <summary>The 2D <c>ConvertCurveToBSpline</c> without freezing (ported code).</summary>
     internal static Geom2d_BSplineCurve? InternalConvertCurveToBSpline(Geom2d_Curve C2D, double First, double Last,
-                                                                       double Tol2d, GeomAbs_Shape Continuity,
+                                                                       double Tol2d, Continuity Continuity,
                                                                        int MaxSegments, int MaxDegree)
     {
         Geom2d_BSplineCurve? aBSpline2d;
@@ -106,12 +108,12 @@ public static partial class ShapeConstruct
             }
             else
             {
-                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, Convert_QuasiAngular);
+                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
             }
         }
         else if (C2D is not Geom2d_BSplineCurve)
         {
-            aBSpline2d = Geom2dConvert.CurveToBSplineCurve(C2D, Convert_QuasiAngular);
+            aBSpline2d = Geom2dConvert.CurveToBSplineCurve(C2D, QuasiAngular);
         }
         else
         {
@@ -133,7 +135,7 @@ public static partial class ShapeConstruct
     /// takes the UV limits and degree as arguments.
     /// </remarks>
     public static Geom_BSplineSurface? ConvertSurfaceToBSpline(Geom_Surface surf, double UF, double UL, double VF, double VL,
-                                                               double Tol3d, GeomAbs_Shape Continuity, int MaxSegments,
+                                                               double Tol3d, Continuity Continuity, int MaxSegments,
                                                                int MaxDegree)
     {
         Geom_BSplineSurface? aResult = InternalConvertSurfaceToBSpline(surf, UF, UL, VF, VL, Tol3d, Continuity, MaxSegments,
@@ -144,7 +146,7 @@ public static partial class ShapeConstruct
 
     /// <summary><see cref="ConvertSurfaceToBSpline"/> without freezing (ported code).</summary>
     internal static Geom_BSplineSurface? InternalConvertSurfaceToBSpline(Geom_Surface surf, double UF, double UL, double VF,
-                                                                         double VL, double Tol3d, GeomAbs_Shape Continuity,
+                                                                         double VL, double Tol3d, Continuity Continuity,
                                                                          int MaxSegments, int MaxDegree)
     {
         Geom_Surface S = surf;
@@ -165,20 +167,20 @@ public static partial class ShapeConstruct
             Geom_Curve basis = extr.BasisCurve();
             // gp_Dir direction = extr->Direction(); // direction not used (skl)
 
-            GeomAbs_Shape cnt = (Continuity > GeomAbs_C2 ? GeomAbs_C2 : Continuity);
+            Continuity cnt = (Continuity > C2 ? C2 : Continuity);
             Geom_BSplineCurve bspl = InternalConvertCurveToBSpline(basis, UF, UL, Tol3d, cnt, MaxSegments, MaxDegree)!;
 
-            gp_Trsf shiftF = new(), shiftL = new();
+            Transform3D shiftF = new(), shiftL = new();
             shiftF.SetTranslation(extr.Value(UF, 0), extr.Value(UF, VF));
             shiftL.SetTranslation(extr.Value(UF, 0), extr.Value(UF, VL));
 
             int nbPoles = bspl.NbPoles();
-            NCollection_Array1<gp_Pnt> poles = bspl.InternalPoles();
+            NCollection_Array1<Point3D> poles = bspl.InternalPoles();
             NCollection_Array1<double> weights = bspl.InternalWeightsArray();
             NCollection_Array1<double> knots = bspl.InternalKnots();
             NCollection_Array1<int> mults = bspl.InternalMultiplicities();
 
-            NCollection_Array2<gp_Pnt> resPoles = new(1, nbPoles, 1, 2);
+            NCollection_Array2<Point3D> resPoles = new(1, nbPoles, 1, 2);
             NCollection_Array2<double> resWeigth = new(1, nbPoles, 1, 2);
             for (int j = 1; j <= nbPoles; j++)
             {
@@ -204,10 +206,10 @@ public static partial class ShapeConstruct
             Geom_Curve basis = revol.BasisCurve();
             if (basis is Geom_OffsetCurve)
             {
-                GeomAbs_Shape cnt = basis.Continuity();
-                cnt = (cnt > GeomAbs_C2 ? GeomAbs_C2 : cnt);
+                Continuity cnt = basis.Continuity();
+                cnt = (cnt > C2 ? C2 : cnt);
                 Geom_BSplineCurve bspl = InternalConvertCurveToBSpline(basis, VF, VL, Tol3d, cnt, MaxSegments, MaxDegree)!;
-                gp_Ax1 axis = revol.Axis();
+                Axis3D axis = revol.Axis();
                 Geom_SurfaceOfRevolution newRevol = new(bspl, axis);
                 S = newRevol;
             }
@@ -215,11 +217,11 @@ public static partial class ShapeConstruct
 
         Geom_Surface aSurface = new Geom_RectangularTrimmedSurface(S, UF, UL, VF, VL);
         Geom_BSplineSurface? errSpl = null;
-        for (int cnt = (int)(Continuity > GeomAbs_C3 ? GeomAbs_C3 : Continuity); cnt >= 0;)
+        for (int cnt = (int)(Continuity > C3 ? C3 : Continuity); cnt >= 0;)
         {
             try
             {
-                GeomAbs_Shape aCont = (GeomAbs_Shape)cnt;
+                Continuity aCont = (Continuity)cnt;
                 GeomConvert_ApproxSurface anApprox = new(aSurface, Tol3d / 2, aCont, aCont, MaxDegree, MaxDegree, MaxSegments, 0);
                 bool Done = anApprox.IsDone();
                 if (anApprox.MaxError() <= Tol3d && Done)
@@ -235,7 +237,7 @@ public static partial class ShapeConstruct
                     break;
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // OCCT: once the continuity is C0, a failure retries C0 without end
                 if (cnt > 0)
@@ -369,7 +371,7 @@ public static partial class ShapeConstruct
             // the documentation. No caller in OCCT reads it.
             return (i <= edges.Length());
         }
-        catch (Standard_Failure) when (!theEdge.IsNull() && !theEdge.TShape()!.IsFrozen())
+        catch (FailureException) when (!theEdge.IsNull() && !theEdge.TShape()!.IsFrozen)
         {
             // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
         }
@@ -404,7 +406,7 @@ public static partial class ShapeConstruct
     // OCCT's SegmentCurve template: segments the (unfrozen) B-spline to [first, last] when its range is wider.
     private static void SegmentCurve(Geom_BSplineCurve curve, double first, double last)
     {
-        if (curve.FirstParameter() < first - Precision.PConfusion() || curve.LastParameter() > last + Precision.PConfusion())
+        if (curve.FirstParameter() < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter() > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (curve.IsPeriodic())
             {
@@ -419,7 +421,7 @@ public static partial class ShapeConstruct
 
     private static void SegmentCurve(Geom2d_BSplineCurve curve, double first, double last)
     {
-        if (curve.FirstParameter() < first - Precision.PConfusion() || curve.LastParameter() > last + Precision.PConfusion())
+        if (curve.FirstParameter() < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter() > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (curve.IsPeriodic())
             {
@@ -433,14 +435,14 @@ public static partial class ShapeConstruct
     }
 
     // OCCT's GetReversedParameters template, for the 3D and 2D points.
-    private static void GetReversedParameters(in gp_Pnt p11, in gp_Pnt p12, in gp_Pnt p21, in gp_Pnt p22, out bool isRev1,
+    private static void GetReversedParameters(in Point3D p11, in Point3D p12, in Point3D p21, in Point3D p22, out bool isRev1,
                                               out bool isRev2)
     {
         GetReversedParameters(p11.Distance(p21), p12.Distance(p21), p11.Distance(p22), p22.Distance(p12), out isRev1,
                               out isRev2);
     }
 
-    private static void GetReversedParameters(in gp_Pnt2d p11, in gp_Pnt2d p12, in gp_Pnt2d p21, in gp_Pnt2d p22,
+    private static void GetReversedParameters(in Point2D p11, in Point2D p12, in Point2D p21, in Point2D p22,
                                               out bool isRev1, out bool isRev2)
     {
         GetReversedParameters(p11.Distance(p21), p12.Distance(p21), p11.Distance(p22), p22.Distance(p12), out isRev1,
@@ -455,7 +457,7 @@ public static partial class ShapeConstruct
 
         double Dmin1 = Min(d11, d21);
         double Dmin2 = Min(d12, d22);
-        if (Math.Abs(Dmin1 - Dmin2) <= Precision.Confusion() || Dmin2 > Dmin1)
+        if (Math.Abs(Dmin1 - Dmin2) <= global::Kerf.Engine.Foundation.Precision.Confusion() || Dmin2 > Dmin1)
         {
             isRev1 = (d11 < d21);
         }
@@ -500,8 +502,8 @@ public static partial class ShapeConstruct
         ShapeConstruct_Curve scc = new();
         bool After = true;
         // the copies (or new curves) are unfrozen, so the segmenting and pole moves below edit only them
-        Geom_BSplineCurve? bsplc1 = scc.InternalConvertToBSpline(c3d1, first1, last1, Precision.Confusion());
-        Geom_BSplineCurve? bsplc2 = scc.InternalConvertToBSpline(c3d2, first2, last2, Precision.Confusion());
+        Geom_BSplineCurve? bsplc1 = scc.InternalConvertToBSpline(c3d1, first1, last1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Geom_BSplineCurve? bsplc2 = scc.InternalConvertToBSpline(c3d2, first2, last2, global::Kerf.Engine.Foundation.Precision.Confusion());
         //  newf = first1;
         //  newl = last1 + last2 - first2;
 
@@ -514,11 +516,11 @@ public static partial class ShapeConstruct
         SegmentCurve(bsplc2, first2, last2);
 
         // regression on file 866026_M-f276-f311.brep bug OCC482
-        gp_Pnt pp11 = bsplc1.Pole(1);
-        gp_Pnt pp12 = bsplc1.Pole(bsplc1.NbPoles());
+        Point3D pp11 = bsplc1.Pole(1);
+        Point3D pp12 = bsplc1.Pole(bsplc1.NbPoles());
 
-        gp_Pnt pp21 = bsplc2.Pole(1);
-        gp_Pnt pp22 = bsplc2.Pole(bsplc2.NbPoles());
+        Point3D pp21 = bsplc2.Pole(1);
+        Point3D pp22 = bsplc2.Pole(bsplc2.NbPoles());
 
         GetReversedParameters(pp11, pp12, pp21, pp22, out isRev1, out isRev2);
 
@@ -531,11 +533,11 @@ public static partial class ShapeConstruct
             bsplc2.Reverse();
         }
 
-        gp_Pnt pmid = new(0.5 * (bsplc1.Pole(bsplc1.NbPoles()).XYZ() + bsplc2.Pole(1).XYZ()));
+        Point3D pmid = new(0.5 * (bsplc1.Pole(bsplc1.NbPoles()).XYZ() + bsplc2.Pole(1).XYZ()));
         bsplc1.SetPole(bsplc1.NbPoles(), pmid);
         bsplc2.SetPole(1, pmid);
         GeomConvert_CompCurveToBSplineCurve connect3d = new(bsplc1);
-        if (!connect3d.Add(bsplc2, Precision.Confusion(), After, false))
+        if (!connect3d.Add(bsplc2, global::Kerf.Engine.Foundation.Precision.Confusion(), After, false))
         {
             return false;
         }
@@ -577,8 +579,8 @@ public static partial class ShapeConstruct
         ShapeConstruct_Curve scc = new();
         bool After = true;
 
-        Geom2d_BSplineCurve? bsplc12d = scc.InternalConvertToBSpline(c2d1, first1, last1, Precision.Confusion());
-        Geom2d_BSplineCurve? bsplc22d = scc.InternalConvertToBSpline(c2d2, first2, last2, Precision.Confusion());
+        Geom2d_BSplineCurve? bsplc12d = scc.InternalConvertToBSpline(c2d1, first1, last1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Geom2d_BSplineCurve? bsplc22d = scc.InternalConvertToBSpline(c2d2, first2, last2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (bsplc12d is null || bsplc22d is null)
         {
@@ -588,11 +590,11 @@ public static partial class ShapeConstruct
         SegmentCurve(bsplc12d, first1, last1);
         SegmentCurve(bsplc22d, first2, last2);
         // gka protection against crossing seem on second face
-        gp_Pnt2d pp112d = new(bsplc12d.Pole(1).XY());
-        gp_Pnt2d pp122d = new(bsplc12d.Pole(bsplc12d.NbPoles()).XY());
+        Point2D pp112d = new(bsplc12d.Pole(1).XY());
+        Point2D pp122d = new(bsplc12d.Pole(bsplc12d.NbPoles()).XY());
 
-        gp_Pnt2d pp212d = new(bsplc22d.Pole(1).XY());
-        gp_Pnt2d pp222d = new(bsplc22d.Pole(bsplc22d.NbPoles()).XY());
+        Point2D pp212d = new(bsplc22d.Pole(1).XY());
+        Point2D pp222d = new(bsplc22d.Pole(bsplc22d.NbPoles()).XY());
 
         GetReversedParameters(pp112d, pp122d, pp212d, pp222d, out isRev1, out isRev2);
 
@@ -612,19 +614,19 @@ public static partial class ShapeConstruct
         // protection against invalid topology Housing(sam1296.brep(face 707) - bugmergeedges4.brep)
         if (isError)
         {
-            gp_Pnt2d pp1 = bsplc12d.Value(bsplc12d.FirstParameter());
-            gp_Pnt2d pp2 = bsplc12d.Value(bsplc12d.LastParameter());
-            gp_Pnt2d pp3 = bsplc12d.Value((bsplc12d.FirstParameter() + bsplc12d.LastParameter()) * 0.5);
+            Point2D pp1 = bsplc12d.Value(bsplc12d.FirstParameter());
+            Point2D pp2 = bsplc12d.Value(bsplc12d.LastParameter());
+            Point2D pp3 = bsplc12d.Value((bsplc12d.FirstParameter() + bsplc12d.LastParameter()) * 0.5);
 
             double leng = pp1.Distance(pp2);
-            bool isCircle = (leng < pp1.Distance(pp3) + Precision.PConfusion());
+            bool isCircle = (leng < pp1.Distance(pp3) + global::Kerf.Engine.Foundation.Precision.PConfusion());
             if ((pp1.Distance(bsplc22d.Pole(1)) < leng) && !isCircle)
             {
                 return false;
             }
         }
         //-------------------------------------------------------
-        gp_Pnt2d pmid1 = new(0.5 * (bsplc12d.Pole(bsplc12d.NbPoles()).XY() + bsplc22d.Pole(1).XY()));
+        Point2D pmid1 = new(0.5 * (bsplc12d.Pole(bsplc12d.NbPoles()).XY() + bsplc22d.Pole(1).XY()));
         bsplc12d.SetPole(bsplc12d.NbPoles(), pmid1);
         bsplc22d.SetPole(1, pmid1);
 
@@ -632,13 +634,13 @@ public static partial class ShapeConstruct
         // second curve before merging; this is quite not suitable
         // Use 3d tool instead
         //      Geom2dConvert_CompCurveToBSplineCurve connect2d(bsplc12d);
-        gp_Pnt vPnt = new(0, 0, 0);
-        gp_Vec vDir = new(0, 0, 1);
-        gp_Pln vPln = new(vPnt, new gp_Dir(vDir));
+        Point3D vPnt = new(0, 0, 0);
+        Vector3D vDir = new(0, 0, 1);
+        Plane3D vPln = new(vPnt, new Direction3D(vDir));
         Geom_BSplineCurve? bspl1 = GeomAPI.To3d(bsplc12d, vPln) as Geom_BSplineCurve;
         Geom_BSplineCurve? bspl2 = GeomAPI.To3d(bsplc22d, vPln) as Geom_BSplineCurve;
         GeomConvert_CompCurveToBSplineCurve connect2d = new(bspl1!);
-        if (!connect2d.Add(bspl2!, Precision.PConfusion(), After, false))
+        if (!connect2d.Add(bspl2!, global::Kerf.Engine.Foundation.Precision.PConfusion(), After, false))
         {
             return false;
         }

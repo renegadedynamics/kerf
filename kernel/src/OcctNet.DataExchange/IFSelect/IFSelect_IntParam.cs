@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +18,7 @@ namespace Occt;
 /// HAsciiString, it then suffices to get its Handle. For an Integer, an IntParam can designate (by its name)
 /// a Static : each time its value is required or set, the Static is acknowledged
 /// </summary>
-public class IFSelect_IntParam : Standard_Transient
+public class IFSelect_IntParam : Transient
 {
 
     /// <summary>

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_SecurityClassificationItem : StepAP214_ApprovalItem
@@ -43,7 +45,7 @@ public class StepAP214_SecurityClassificationItem : StepAP214_ApprovalItem
     /// 22 -&gt; VersionedActionRequest
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

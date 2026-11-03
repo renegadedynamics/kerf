@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -48,15 +49,15 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
     {
         var anAdaptor = new Geom2dAdaptor_Curve(theCurve);
         var aNumericInf = new GeomLProp_NumericCurInf2d();
-        GeomAbs_CurveType aCurveType = anAdaptor.GetType();
+        CurveKind aCurveType = anAdaptor.GetType();
 
         switch (aCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
                 double aUFirst = anAdaptor.FirstParameter();
                 double aULast = anAdaptor.LastParameter();
@@ -65,7 +66,7 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
                 ReadOnlySpan<bool> aIsMin = [true, false, true, false];
                 for (int i = 0; i < 4; ++i)
                 {
-                    double aU = ElCLib.InPeriod(aQuarterPts[i], aUFirst, aUFPlus2PI);
+                    double aU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aQuarterPts[i], aUFirst, aUFPlus2PI);
                     if (aUFirst <= aU && aU <= aULast)
                     {
                         AddExtCur(aU, aIsMin[i]);
@@ -74,7 +75,7 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
 
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
                 double aUFirst = anAdaptor.FirstParameter();
                 double aULast = anAdaptor.LastParameter();
@@ -85,7 +86,7 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
 
                 break;
             }
-            case GeomAbs_Parabola:
+            case Parabola:
             {
                 double aUFirst = anAdaptor.FirstParameter();
                 double aULast = anAdaptor.LastParameter();
@@ -96,8 +97,8 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
 
                 break;
             }
-            case GeomAbs_BSplineCurve:
-                if (anAdaptor.Continuity() >= GeomAbs_C3)
+            case BSplineCurve:
+                if (anAdaptor.Continuity() >= C3)
                 {
                     aNumericInf.PerformCurExt(theCurve, this);
                     myIsDone = aNumericInf.IsDone();
@@ -105,9 +106,9 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
                 else
                 {
                     myIsDone = true;
-                    int aNbIntervals = anAdaptor.NbIntervals(GeomAbs_C3);
+                    int aNbIntervals = anAdaptor.NbIntervals(C3);
                     var aParams = new NCollection_Array1<double>(1, aNbIntervals + 1);
-                    anAdaptor.Intervals(aParams, GeomAbs_C3);
+                    anAdaptor.Intervals(aParams, C3);
                     for (int i = 1; i <= aNbIntervals; i++)
                     {
                         aNumericInf.PerformCurExt(theCurve, aParams[i], aParams[i + 1], this);
@@ -143,23 +144,23 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
     private void performInf(Geom2d_Curve theCurve)
     {
         var anAdaptor = new Geom2dAdaptor_Curve(theCurve);
-        GeomAbs_CurveType aCurveType = anAdaptor.GetType();
+        CurveKind aCurveType = anAdaptor.GetType();
         var aNumericInf = new GeomLProp_NumericCurInf2d();
 
         switch (aCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 break;
-            case GeomAbs_BSplineCurve:
-                if (anAdaptor.Continuity() >= GeomAbs_C3)
+            case BSplineCurve:
+                if (anAdaptor.Continuity() >= C3)
                 {
                     aNumericInf.PerformInf(theCurve, this);
                     myIsDone = aNumericInf.IsDone();
@@ -167,9 +168,9 @@ public class GeomLProp_CurAndInf2d : LProp_CurAndInf
                 else
                 {
                     myIsDone = true;
-                    int aNbIntervals = anAdaptor.NbIntervals(GeomAbs_C3);
+                    int aNbIntervals = anAdaptor.NbIntervals(C3);
                     var aParams = new NCollection_Array1<double>(1, aNbIntervals + 1);
-                    anAdaptor.Intervals(aParams, GeomAbs_C3);
+                    anAdaptor.Intervals(aParams, C3);
 
                     for (int i = 1; i <= aNbIntervals; i++)
                     {

@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -13,7 +14,7 @@ namespace Occt;
 /// made, a message registrator, the basic precision and the minimal and maximal tolerances allowed.
 /// </summary>
 /// <remarks>A working object (decision 21). The context is the caller's working object, shared by reference.</remarks>
-public class ShapeFix_Root : Standard_Transient
+public class ShapeFix_Root : Transient
 {
     /// <summary>The shape the messages are attached to by default.</summary>
     protected TopoDS_Shape myShape;
@@ -28,7 +29,7 @@ public class ShapeFix_Root : Standard_Transient
     public ShapeFix_Root()
     {
         myShape     = new TopoDS_Shape();
-        myPrecision = myMinTol = myMaxTol = Occt.Precision.Confusion();
+        myPrecision = myMinTol = myMaxTol = Kerf.Engine.Foundation.Precision.Confusion();
         myMsgReg    = new ShapeExtend_BasicMsgRegistrator();
     }
 
@@ -100,37 +101,37 @@ public class ShapeFix_Root : Standard_Transient
     public double LimitTolerance(double toler) => Min(myMaxTol, toler);
 
     /// <summary>Sends a message to be attached to the shape, through the message registrator.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Message_Msg message, Message_Gravity gravity = Message_Info)
+    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
     {
         myMsgReg?.Send(shape, message, gravity);
     }
 
     /// <summary>Sends a message to be attached to the shape the tool works on.</summary>
-    public void SendMsg(Message_Msg message, Message_Gravity gravity = Message_Info)
+    public void SendMsg(Msg message, Gravity gravity = Info)
     {
         SendMsg(myShape, message, gravity);
     }
 
     /// <summary>Sends a warning to be attached to the shape.</summary>
-    public void SendWarning(in TopoDS_Shape shape, Message_Msg message)
+    public void SendWarning(in TopoDS_Shape shape, Msg message)
     {
-        SendMsg(shape, message, Message_Warning);
+        SendMsg(shape, message, Warning);
     }
 
     /// <summary>Sends a warning to be attached to the shape the tool works on.</summary>
-    public void SendWarning(Message_Msg message)
+    public void SendWarning(Msg message)
     {
         SendWarning(myShape, message);
     }
 
     /// <summary>Sends a fail to be attached to the shape.</summary>
-    public void SendFail(in TopoDS_Shape shape, Message_Msg message)
+    public void SendFail(in TopoDS_Shape shape, Msg message)
     {
-        SendMsg(shape, message, Message_Fail);
+        SendMsg(shape, message, Fail);
     }
 
     /// <summary>Sends a fail to be attached to the shape the tool works on.</summary>
-    public void SendFail(Message_Msg message)
+    public void SendFail(Msg message)
     {
         SendFail(myShape, message);
     }

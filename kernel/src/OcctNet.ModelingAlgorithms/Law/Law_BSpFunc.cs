@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -20,7 +22,7 @@ public class Law_BSpFunc : Law_Function
     private double first;
     private double last;
 
-    private static double PosTol => Precision.PConfusion() / 2;
+    private static double PosTol => global::Kerf.Engine.Foundation.Precision.PConfusion() / 2;
 
     public Law_BSpFunc()
     {
@@ -37,9 +39,9 @@ public class Law_BSpFunc : Law_Function
         last = Last;
     }
 
-    public override GeomAbs_Shape Continuity() => curv!.Continuity();
+    public override Continuity Continuity() => curv!.Continuity();
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int myNbIntervals = 1;
         if (S > Continuity())
@@ -47,26 +49,26 @@ public class Law_BSpFunc : Law_Function
             int Cont;
             switch (S)
             {
-                case GeomAbs_G1:
-                case GeomAbs_G2:
-                    throw new Standard_DomainError("Law_BSpFunc::NbIntervals");
-                case GeomAbs_C0:
+                case G1:
+                case G2:
+                    throw new DomainErrorException("Law_BSpFunc::NbIntervals");
+                case C0:
                     myNbIntervals = 1;
                     break;
-                case GeomAbs_C1:
-                case GeomAbs_C2:
-                case GeomAbs_C3:
-                case GeomAbs_CN:
+                case C1:
+                case C2:
+                case C3:
+                case CN:
                 {
-                    if (S == GeomAbs_C1)
+                    if (S == C1)
                     {
                         Cont = 1;
                     }
-                    else if (S == GeomAbs_C2)
+                    else if (S == C2)
                     {
                         Cont = 2;
                     }
-                    else if (S == GeomAbs_C3)
+                    else if (S == C3)
                     {
                         Cont = 3;
                     }
@@ -87,15 +89,15 @@ public class Law_BSpFunc : Law_Function
                     NCollection_Array1<int> TM = new NCollection_Array1<int>(1, Nb);
                     curv.Knots(TK);
                     curv.Multiplicities(TM);
-                    BSplCLib.LocateParameter(curv.Degree(), TK, TM, first, curv.IsPeriodic(), 1, Nb, out Index1,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(curv.Degree(), TK, TM, first, curv.IsPeriodic(), 1, Nb, out Index1,
                                              out newFirst);
-                    BSplCLib.LocateParameter(curv.Degree(), TK, TM, last, curv.IsPeriodic(), 1, Nb, out Index2,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(curv.Degree(), TK, TM, last, curv.IsPeriodic(), 1, Nb, out Index2,
                                              out newLast);
-                    if (Math.Abs(newFirst - TK[Index1 + 1]) < Precision.PConfusion())
+                    if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Index1++;
                     }
-                    if (newLast - TK[Index2] > Precision.PConfusion())
+                    if (newLast - TK[Index2] > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Index2++;
                     }
@@ -116,7 +118,7 @@ public class Law_BSpFunc : Law_Function
         return myNbIntervals;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int myNbIntervals = 1;
         if (S > Continuity())
@@ -124,26 +126,26 @@ public class Law_BSpFunc : Law_Function
             int Cont;
             switch (S)
             {
-                case GeomAbs_G1:
-                case GeomAbs_G2:
-                    throw new Standard_DomainError("Law_BSpFunc_Curve::Intervals");
-                case GeomAbs_C0:
+                case G1:
+                case G2:
+                    throw new DomainErrorException("Law_BSpFunc_Curve::Intervals");
+                case C0:
                     myNbIntervals = 1;
                     break;
-                case GeomAbs_C1:
-                case GeomAbs_C2:
-                case GeomAbs_C3:
-                case GeomAbs_CN:
+                case C1:
+                case C2:
+                case C3:
+                case CN:
                 {
-                    if (S == GeomAbs_C1)
+                    if (S == C1)
                     {
                         Cont = 1;
                     }
-                    else if (S == GeomAbs_C2)
+                    else if (S == C2)
                     {
                         Cont = 2;
                     }
-                    else if (S == GeomAbs_C3)
+                    else if (S == C3)
                     {
                         Cont = 3;
                     }
@@ -164,15 +166,15 @@ public class Law_BSpFunc : Law_Function
                     NCollection_Array1<int> TM = new NCollection_Array1<int>(1, Nb);
                     curv.Knots(TK);
                     curv.Multiplicities(TM);
-                    BSplCLib.LocateParameter(curv.Degree(), TK, TM, first, curv.IsPeriodic(), 1, Nb, out Index1,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(curv.Degree(), TK, TM, first, curv.IsPeriodic(), 1, Nb, out Index1,
                                              out newFirst);
-                    BSplCLib.LocateParameter(curv.Degree(), TK, TM, last, curv.IsPeriodic(), 1, Nb, out Index2,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(curv.Degree(), TK, TM, last, curv.IsPeriodic(), 1, Nb, out Index2,
                                              out newLast);
-                    if (Math.Abs(newFirst - TK[Index1 + 1]) < Precision.PConfusion())
+                    if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Index1++;
                     }
-                    if (newLast - TK[Index2] > Precision.PConfusion())
+                    if (newLast - TK[Index2] > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Index2++;
                     }

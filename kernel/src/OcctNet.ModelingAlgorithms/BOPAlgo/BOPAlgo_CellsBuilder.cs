@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -60,14 +61,14 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
     /// <summary>All split parts of the arguments, unfrozen, for ported code.</summary>
     internal TopoDS_Shape InternalGetAllParts() => myAllParts;
 
-    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
         // Avoid filling history after GF operation as later
         // in this method the result shape will be nullified
         bool isHistory = HasHistory();
         SetToFillHistory(false);
         // Perform splitting of the arguments
-        using var aPS = new Message_ProgressScope(theRange, "Performing MakeCells operation", 1);
+        using var aPS = new ProgressScope(theRange, "Performing MakeCells operation", 1);
         base.PerformInternal1(theFiller, aPS.Next());
         if (HasErrors())
         {
@@ -215,7 +216,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
     // compound holding the same parts (a published result never changes).
     private void UnfreezeResult()
     {
-        if (myShape.TShape() is { } aTShape && aTShape.IsFrozen())
+        if (myShape.TShape() is { } aTShape && aTShape.IsFrozen)
         {
             BRep_Builder aBB = new();
             TopoDS_Compound aC = new();
@@ -298,7 +299,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
         {
             if (bChanged)
             {
-                PrepareHistory(new Message_ProgressRange());
+                PrepareHistory(new ProgressRange());
             }
         }
         else
@@ -334,7 +335,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
         //
         if (!theUpdate)
         {
-            PrepareHistory(new Message_ProgressRange());
+            PrepareHistory(new ProgressRange());
         }
         else
         {
@@ -435,7 +436,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
         {
             myShape = aResult;
             //
-            PrepareHistory(new Message_ProgressRange());
+            PrepareHistory(new ProgressRange());
         }
     }
 
@@ -451,7 +452,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
         myShapeMaterial.Clear();
         myMapModified.Clear();
         //
-        PrepareHistory(new Message_ProgressRange());
+        PrepareHistory(new ProgressRange());
     }
 
     /// <summary>Removes the internal boundaries between the parts of the same material.</summary>
@@ -630,7 +631,7 @@ public class BOPAlgo_CellsBuilder : BOPAlgo_Builder
             //
             myShape = aResult;
             //
-            PrepareHistory(new Message_ProgressRange());
+            PrepareHistory(new ProgressRange());
         }
     }
 

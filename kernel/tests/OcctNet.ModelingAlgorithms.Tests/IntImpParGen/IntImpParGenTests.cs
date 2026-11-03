@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -13,31 +16,31 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntImpParGenTests
 {
     /// <summary>The circle of center <c>C</c> and radius <c>R</c>, as an implicit curve (counterclockwise from +X).</summary>
-    public readonly struct TestCircleTool(gp_Pnt2d C, double R) : IIntImpParGen_ImpTool
+    public readonly struct TestCircleTool(Point2D C, double R) : IIntImpParGen_ImpTool
     {
-        public gp_Pnt2d Value(double U) => new(C.X() + R * Math.Cos(U), C.Y() + R * Math.Sin(U));
+        public Point2D Value(double U) => new(C.X() + R * Math.Cos(U), C.Y() + R * Math.Sin(U));
 
-        public void D1(double U, out gp_Pnt2d P, out gp_Vec2d T)
+        public void D1(double U, out Point2D P, out Vector2D T)
         {
             P = Value(U);
-            T = new gp_Vec2d(-R * Math.Sin(U), R * Math.Cos(U));
+            T = new Vector2D(-R * Math.Sin(U), R * Math.Cos(U));
         }
 
-        public void D2(double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N)
+        public void D2(double U, out Point2D P, out Vector2D T, out Vector2D N)
         {
             D1(U, out P, out T);
-            N = new gp_Vec2d(-R * Math.Cos(U), -R * Math.Sin(U));
+            N = new Vector2D(-R * Math.Cos(U), -R * Math.Sin(U));
         }
 
-        public double Distance(in gp_Pnt2d P) => P.Distance(C) - R;
+        public double Distance(in Point2D P) => P.Distance(C) - R;
 
-        public gp_Vec2d GradDistance(in gp_Pnt2d P)
+        public Vector2D GradDistance(in Point2D P)
         {
-            gp_Vec2d aV = new(C, P);
+            Vector2D aV = new(C, P);
             return aV.Divided(aV.Magnitude());
         }
 
-        public double FindParameter(in gp_Pnt2d P)
+        public double FindParameter(in Point2D P)
         {
             double aU = Math.Atan2(P.Y() - C.Y(), P.X() - C.X());
             return aU < 0 ? aU + 2 * Math.PI : aU;
@@ -45,9 +48,9 @@ public class IntImpParGenTests
     }
 
     /// <summary>The segment <c>P0 + t V</c>.</summary>
-    public readonly record struct TestSegment(gp_Pnt2d P0, gp_Vec2d V)
+    public readonly record struct TestSegment(Point2D P0, Vector2D V)
     {
-        public gp_Pnt2d Value(double t) => new(P0.X() + t * V.X(), P0.Y() + t * V.Y());
+        public Point2D Value(double t) => new(P0.X() + t * V.X(), P0.Y() + t * V.Y());
     }
 
     public readonly struct TestSegmentTool : IIntImpParGen_ParTool<TestSegment>,
@@ -57,25 +60,25 @@ public class IntImpParGenTests
 
         public static int NbSamples(in TestSegment C, double U0, double U1) => 10;
 
-        public static gp_Pnt2d Value(in TestSegment C, double X) => C.Value(X);
+        public static Point2D Value(in TestSegment C, double X) => C.Value(X);
 
-        public static void D2(in TestSegment C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N)
+        public static void D2(in TestSegment C, double U, out Point2D P, out Vector2D T, out Vector2D N)
         {
             P = C.Value(U);
             T = C.V;
-            N = new gp_Vec2d(0, 0);
+            N = new Vector2D(0, 0);
         }
 
-        public static double FindParameter(in TestSegment C, in gp_Pnt2d Pnt, double Tol)
-            => new gp_Vec2d(C.P0, Pnt).Dot(C.V) / C.V.SquareMagnitude();
+        public static double FindParameter(in TestSegment C, in Point2D Pnt, double Tol)
+            => new Vector2D(C.P0, Pnt).Dot(C.V) / C.V.SquareMagnitude();
 
-        public static double FindParameter(in TestSegment C, in gp_Pnt2d Pnt, double LowParameter,
+        public static double FindParameter(in TestSegment C, in Point2D Pnt, double LowParameter,
                                            double HighParameter, double Tol)
             => FindParameter(C, Pnt, Tol);
     }
 
     /// <summary>The signed distance to the circle of the point at a parameter on the segment.</summary>
-    public sealed class TestImpParTool : math_FunctionWithDerivative,
+    public sealed class TestImpParTool : FunctionWithDerivative,
                                          IIntImpParGen_MyImpParTool<TestImpParTool, TestCircleTool, TestSegment>
     {
         private readonly TestCircleTool myImp;
@@ -119,7 +122,7 @@ public class IntImpParGenTests
         }
     }
 
-    private static readonly TestCircleTool theUnitCircle = new(new gp_Pnt2d(0, 0), 1);
+    private static readonly TestCircleTool theUnitCircle = new(new Point2D(0, 0), 1);
 
     private static IntRes2d_Domain CircleDomain()
         => new IntRes2d_Domain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(2 * Math.PI), 2 * Math.PI, 1e-7)
@@ -131,10 +134,10 @@ public class IntImpParGenTests
     [Fact]
     public void DetermineTransition_Crossing()
     {
-        gp_Vec2d aTan1 = new(0, 1), aTan2 = new(1, 0);
+        Vector2D aTan1 = new(0, 1), aTan2 = new(1, 0);
         IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new gp_Vec2d(-1, 0), ref aT1,
-                                         IntRes2d_Head, ref aTan2, new gp_Vec2d(0, 0), ref aT2, 1e-7);
+        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(-1, 0), ref aT1,
+                                         IntRes2d_Head, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         // Tan1 ^ Tan2 < 0: the first curve goes in, the second out
         Assert.Equal(IntRes2d_In, aT1.TransitionType());
         Assert.Equal(IntRes2d_Out, aT2.TransitionType());
@@ -151,20 +154,20 @@ public class IntImpParGenTests
     public void DetermineTransition_TouchByCurvature()
     {
         // A circle of curvature 1 touching a straight line from above: tangents (1,0), the circle's normal (0,1).
-        gp_Vec2d aTan1 = new(1, 0), aTan2 = new(1, 0);
+        Vector2D aTan1 = new(1, 0), aTan2 = new(1, 0);
         IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new gp_Vec2d(0, 1), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new gp_Vec2d(0, 0), ref aT2, 1e-7);
+        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(0, 1), ref aT1,
+                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         Assert.Equal(IntRes2d_Touch, aT1.TransitionType());
         Assert.Equal(IntRes2d_Inside, aT1.Situation());
         Assert.Equal(IntRes2d_Outside, aT2.Situation());
         Assert.False(aT1.IsOpposite());
 
         // both straight and tangent: touch, situation unknown; the opposite flag from the tangents
-        aTan1 = new gp_Vec2d(1, 0);
-        aTan2 = new gp_Vec2d(-2, 0);
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new gp_Vec2d(0, 0), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new gp_Vec2d(0, 0), ref aT2, 1e-7);
+        aTan1 = new Vector2D(1, 0);
+        aTan2 = new Vector2D(-2, 0);
+        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(0, 0), ref aT1,
+                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         Assert.Equal(IntRes2d_Unknown, aT1.Situation());
         Assert.True(aT2.IsOpposite());
 
@@ -176,16 +179,16 @@ public class IntImpParGenTests
     [Fact]
     public void DetermineTransition_ZeroTangentUsesNormalOrIsUndecided()
     {
-        gp_Vec2d aTan1 = new(0, 0), aTan2 = new(1, 0);
+        Vector2D aTan1 = new(0, 0), aTan2 = new(1, 0);
         IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new gp_Vec2d(0, 1), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new gp_Vec2d(0, 0), ref aT2, 1e-7);
-        Assert.Equal(new gp_Vec2d(0, 1), aTan1); // the normal replaced the null tangent
+        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new Vector2D(0, 1), ref aT1,
+                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Assert.Equal(new Vector2D(0, 1), aTan1); // the normal replaced the null tangent
         Assert.Equal(IntRes2d_In, aT1.TransitionType()); // (0,1) ^ (1,0) < 0
 
-        aTan1 = new gp_Vec2d(0, 0);
-        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new gp_Vec2d(0, 0), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new gp_Vec2d(0, 0), ref aT2, 1e-7);
+        aTan1 = new Vector2D(0, 0);
+        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new Vector2D(0, 0), ref aT1,
+                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         Assert.Equal(IntRes2d_Undecided, aT1.TransitionType());
         Assert.Equal(IntRes2d_Undecided, aT2.TransitionType());
     }
@@ -193,16 +196,16 @@ public class IntImpParGenTests
     [Fact]
     public void DeterminePositionAndNormalize()
     {
-        var aDom = new IntRes2d_Domain(new gp_Pnt2d(0, 0), 0, 0.1, new gp_Pnt2d(1, 0), 1, 0.1);
-        IntImpParGen.DeterminePosition(out IntRes2d_Position aPos, aDom, new gp_Pnt2d(0.05, 0), 0.05);
+        var aDom = new IntRes2d_Domain(new Point2D(0, 0), 0, 0.1, new Point2D(1, 0), 1, 0.1);
+        IntImpParGen.DeterminePosition(out IntRes2d_Position aPos, aDom, new Point2D(0.05, 0), 0.05);
         Assert.Equal(IntRes2d_Head, aPos);
-        IntImpParGen.DeterminePosition(out aPos, aDom, new gp_Pnt2d(0.5, 0), 0.5);
+        IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(0.5, 0), 0.5);
         Assert.Equal(IntRes2d_Middle, aPos);
-        IntImpParGen.DeterminePosition(out aPos, aDom, new gp_Pnt2d(1, 0.05), 1);
+        IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(1, 0.05), 1);
         Assert.Equal(IntRes2d_End, aPos);
         // within both tolerances: the closer bound in parameter
-        var aShort = new IntRes2d_Domain(new gp_Pnt2d(0, 0), 0, 1, new gp_Pnt2d(0.5, 0), 0.5, 1);
-        IntImpParGen.DeterminePosition(out aPos, aShort, new gp_Pnt2d(0.3, 0), 0.3);
+        var aShort = new IntRes2d_Domain(new Point2D(0, 0), 0, 1, new Point2D(0.5, 0), 0.5, 1);
+        IntImpParGen.DeterminePosition(out aPos, aShort, new Point2D(0.3, 0), 0.3);
         Assert.Equal(IntRes2d_End, aPos);
 
         IntRes2d_Domain aClosed = CircleDomain();
@@ -218,7 +221,7 @@ public class IntImpParGenTests
     [Fact]
     public void Intersector_SegmentCrossingCircle()
     {
-        var aSeg = new TestSegment(new gp_Pnt2d(-2, 0.5), new gp_Vec2d(4, 0));
+        var aSeg = new TestSegment(new Point2D(-2, 0.5), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
 
         Assert.True(anInter.IsDone());
@@ -245,7 +248,7 @@ public class IntImpParGenTests
     [Fact]
     public void Intersector_ReversedParameters()
     {
-        var aSeg = new TestSegment(new gp_Pnt2d(-2, 0.5), new gp_Vec2d(4, 0));
+        var aSeg = new TestSegment(new Point2D(-2, 0.5), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
         var aReversed = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
         aReversed.SetReversedParameters(true);
@@ -261,7 +264,7 @@ public class IntImpParGenTests
     public void Intersector_SegmentEndingOnCircle()
     {
         // The segment ends at (0, 1), on the circle: one point, at the End of the segment.
-        var aSeg = new TestSegment(new gp_Pnt2d(0, 0), new gp_Vec2d(0, 1));
+        var aSeg = new TestSegment(new Point2D(0, 0), new Vector2D(0, 1));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
         Assert.True(anInter.IsDone());
         Assert.Equal(1, anInter.NbPoints());
@@ -274,13 +277,13 @@ public class IntImpParGenTests
     [Fact]
     public void Intersector_NoIntersectionAndBadDomain()
     {
-        var aSeg = new TestSegment(new gp_Pnt2d(-2, 3), new gp_Vec2d(4, 0));
+        var aSeg = new TestSegment(new Point2D(-2, 3), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
         Assert.True(anInter.IsDone());
         Assert.True(anInter.IsEmpty());
 
         // the parametric curve's domain must be bounded on both sides
-        Assert.ThrowsAny<Standard_ConstructionError>(
+        Assert.ThrowsAny<ConstructionErrorException>(
             () => new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, new IntRes2d_Domain(), 1e-9, 1e-9));
     }
 
@@ -290,7 +293,7 @@ public class IntImpParGenTests
         // An open arc of the circle from 0 to pi/2: only the exit point at pi/6 is on it.
         var anArc = new IntRes2d_Domain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(Math.PI / 2),
                                         Math.PI / 2, 1e-7);
-        var aSeg = new TestSegment(new gp_Pnt2d(-2, 0.5), new gp_Vec2d(4, 0));
+        var aSeg = new TestSegment(new Point2D(-2, 0.5), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, anArc, aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
         Assert.Equal(1, anInter.NbPoints());
         Assert.Equal(Math.PI / 6, anInter.Point(1).ParamOnFirst(), 9);

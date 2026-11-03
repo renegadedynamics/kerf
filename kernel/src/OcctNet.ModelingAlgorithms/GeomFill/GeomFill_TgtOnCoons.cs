@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +24,7 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
         ibound = I;
     }
 
-    public override gp_Vec Value(double W)
+    public override Vector3D Value(double W)
     {
         double U = 0.0, V = 0.0, bid = 0.0;
         switch (ibound)
@@ -41,7 +43,7 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
                 break;
         }
 
-        gp_Vec tgk = new();
+        Vector3D tgk = new();
 
         switch (ibound)
         {
@@ -57,14 +59,14 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
                 break;
         }
 
-        gp_Vec n = myK.Bound(ibound).Norm(W);
+        Vector3D n = myK.Bound(ibound).Norm(W);
         double scal = tgk.Dot(n);
         n.Multiply(-scal);
         tgk.Add(n);
         return tgk;
     }
 
-    public override gp_Vec D1(double W)
+    public override Vector3D D1(double W)
     {
         double U = 0.0, V = 0.0, bid = 0.0;
         switch (ibound)
@@ -83,7 +85,7 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
                 break;
         }
 
-        gp_Vec tgsc = new(), dtgsc;
+        Vector3D tgsc = new(), dtgsc;
 
         switch (ibound)
         {
@@ -100,25 +102,25 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
         }
         dtgsc = myK.DUV(U, V);
 
-        gp_Vec n, dn;
+        Vector3D n, dn;
         myK.Bound(ibound).D1Norm(W, out n, out dn);
 
         double scal = tgsc.Dot(n);
-        gp_Vec scaln = n.Multiplied(-scal);
+        Vector3D scaln = n.Multiplied(-scal);
         tgsc.Add(scaln);
 
-        gp_Vec scaldn = dn.Multiplied(-scal);
+        Vector3D scaldn = dn.Multiplied(-scal);
 
         double scal2 = -dtgsc.Dot(n) - tgsc.Dot(dn);
-        gp_Vec temp = n.Multiplied(scal2);
+        Vector3D temp = n.Multiplied(scal2);
 
         temp.Add(scaldn);
-        gp_Vec dtpur = dtgsc.Added(temp);
+        Vector3D dtpur = dtgsc.Added(temp);
 
         return dtpur;
     }
 
-    public override void D1(double W, out gp_Vec T, out gp_Vec DT)
+    public override void D1(double W, out Vector3D T, out Vector3D DT)
     {
         double U = 0.0, V = 0.0, bid = 0.0;
         switch (ibound)
@@ -137,7 +139,7 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
                 break;
         }
 
-        gp_Vec tgsc = new(), dtgsc;
+        Vector3D tgsc = new(), dtgsc;
 
         switch (ibound)
         {
@@ -154,17 +156,17 @@ public class GeomFill_TgtOnCoons : GeomFill_TgtField
         }
         dtgsc = myK.DUV(U, V);
 
-        gp_Vec n, dn;
+        Vector3D n, dn;
         myK.Bound(ibound).D1Norm(W, out n, out dn);
 
         double scal = tgsc.Dot(n);
-        gp_Vec scaln = n.Multiplied(-scal);
+        Vector3D scaln = n.Multiplied(-scal);
         T = tgsc.Added(scaln);
 
-        gp_Vec scaldn = dn.Multiplied(-scal);
+        Vector3D scaldn = dn.Multiplied(-scal);
 
         double scal2 = -dtgsc.Dot(n) - tgsc.Dot(dn);
-        gp_Vec temp = n.Multiplied(scal2);
+        Vector3D temp = n.Multiplied(scal2);
 
         temp.Add(scaldn);
         DT = dtgsc.Added(temp);

@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.FairCurve_AnalysisCode;
 
 namespace Occt;
@@ -27,10 +30,10 @@ public class FairCurve_EnergyOfMVC : FairCurve_Energy
     /// The energy of the curve of order <paramref name="BSplOrder"/> over <paramref name="FlatKnots"/> and
     /// <paramref name="Poles"/> (kept, and written by each evaluation). Angles are measured from the Ox axis.
     /// </summary>
-    /// <exception cref="Standard_DomainError"><paramref name="PhysicalRatio"/> is not in [0, 1].</exception>
+    /// <exception cref="DomainErrorException"><paramref name="PhysicalRatio"/> is not in [0, 1].</exception>
     public FairCurve_EnergyOfMVC(int BSplOrder,
                                  NCollection_HArray1<double> FlatKnots,
-                                 NCollection_HArray1<gp_Pnt2d> Poles,
+                                 NCollection_HArray1<Point2D> Poles,
                                  int ContrOrder1,
                                  int ContrOrder2,
                                  FairCurve_BattenLaw Law,
@@ -142,15 +145,15 @@ public class FairCurve_EnergyOfMVC : FairCurve_Energy
                 Debut[1] = (ii - 1) * Delta;
                 Fin[1] = ii * Delta;
 
-                math_GaussSetIntegration SumTension = new(MyTension, Debut, Fin, MyOrder);
-                Ok = SumTension.IsDone();
+                GaussSetIntegration SumTension = new(MyTension, Debut, Fin, MyOrder);
+                Ok = SumTension.IsDone;
                 if (!Ok)
                 {
                     return Ok;
                 }
 
-                math_GaussSetIntegration SumJerk = new(MyJerk, Debut, Fin, MyOrder);
-                Ok = SumJerk.IsDone();
+                GaussSetIntegration SumJerk = new(MyJerk, Debut, Fin, MyOrder);
+                Ok = SumJerk.IsDone;
                 if (!Ok)
                 {
                     return Ok;
@@ -167,22 +170,22 @@ public class FairCurve_EnergyOfMVC : FairCurve_Energy
                 Debut[1] = (ii - 1) * Delta;
                 Fin[1] = ii * Delta;
 
-                math_GaussSetIntegration SumTension = new(MyTension, Debut, Fin, MyOrder);
-                Ok = SumTension.IsDone();
+                GaussSetIntegration SumTension = new(MyTension, Debut, Fin, MyOrder);
+                Ok = SumTension.IsDone;
                 if (!Ok)
                 {
                     return Ok;
                 }
 
-                math_GaussSetIntegration SumSagging = new(MySagging, Debut, Fin, MyOrder);
-                Ok = SumSagging.IsDone();
+                GaussSetIntegration SumSagging = new(MySagging, Debut, Fin, MyOrder);
+                Ok = SumSagging.IsDone;
                 if (!Ok)
                 {
                     return Ok;
                 }
 
-                math_GaussSetIntegration SumJerk = new(MyJerk, Debut, Fin, MyOrder);
-                Ok = SumJerk.IsDone();
+                GaussSetIntegration SumJerk = new(MyJerk, Debut, Fin, MyOrder);
+                Ok = SumJerk.IsDone;
                 if (!Ok)
                 {
                     return Ok;

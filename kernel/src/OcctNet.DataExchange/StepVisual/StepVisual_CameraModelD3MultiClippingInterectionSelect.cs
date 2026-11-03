@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepVisual_CameraModelD3MultiClippingInterectionSelect : StepData_SelectType
@@ -23,7 +25,7 @@ public class StepVisual_CameraModelD3MultiClippingInterectionSelect : StepData_S
     /// 2 -&gt; CameraModelD3MultiClippingUnion
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

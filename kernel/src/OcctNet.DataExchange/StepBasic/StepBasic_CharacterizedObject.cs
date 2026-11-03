@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CharacterizedObject
 /// </summary>
-public class StepBasic_CharacterizedObject : Standard_Transient
+public class StepBasic_CharacterizedObject : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -16,16 +19,16 @@ public class GeomFill_LocationGuideTests
     private static (GeomFill_LocationGuide Law, TestFixedGuideTrihedron Tri) Guided()
     {
         var aGuide = new GeomAdaptor_Curve(
-            new Geom_Line(new gp_Pnt(2 * Math.Cos(Theta), 2 * Math.Sin(Theta), 0), new gp_Dir(0, 0, 1)), -1, 5);
-        var aTri = new TestFixedGuideTrihedron(aGuide, new gp_Vec(0, 0, 1), new gp_Vec(1, 0, 0));
+            new Geom_Line(new Point3D(2 * Math.Cos(Theta), 2 * Math.Sin(Theta), 0), new Direction3D(0, 0, 1)), -1, 5);
+        var aTri = new TestFixedGuideTrihedron(aGuide, new Vector3D(0, 0, 1), new Vector3D(1, 0, 0));
         var aLaw = new GeomFill_LocationGuide(aTri);
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(gp.OZ()), 0, 4)));
+        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(Constants.OZ()), 0, 4)));
         return (aLaw, aTri);
     }
 
     // The section: the radial segment [0, 3] along X, which the rotation must turn onto the guide.
     private static GeomFill_UniformSection Segment() =>
-        new(new Geom_TrimmedCurve(new Geom_Line(gp.OX()), 0, 3), 0, 4);
+        new(new Geom_TrimmedCurve(new Geom_Line(Constants.OX()), 0, 3), 0, 4);
 
     [Fact]
     public void WithoutRotation_IsTheTrihedron()
@@ -33,11 +36,11 @@ public class GeomFill_LocationGuideTests
         (GeomFill_LocationGuide aLaw, TestFixedGuideTrihedron aTri) = Guided();
         Assert.Equal(1, aTri.NbOrigine);
         Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
-        gp_Mat M = new();
-        gp_Vec V = new();
+        Matrix3x3 M = new();
+        Vector3D V = new();
         Assert.True(aLaw.D0(1.5, ref M, ref V));
-        Assert.Equal(new gp_Mat(new gp_XYZ(1, 0, 0), new gp_XYZ(0, 1, 0), new gp_XYZ(0, 0, 1)), M);
-        Assert.Equal(new gp_XYZ(0, 0, 1.5), V.XYZ());
+        Assert.Equal(new Matrix3x3(new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(0, 0, 1)), M);
+        Assert.Equal(new Xyz(0, 0, 1.5), V.XYZ());
 
         // the guide is trimmed a hundredth beyond its ends (it isn't periodic)
         Assert.Equal(-1.06, aLaw.Guide().FirstParameter(), 1e-12);
@@ -46,15 +49,15 @@ public class GeomFill_LocationGuideTests
         double anError = 0;
         Assert.False(aLaw.IsTranslation(ref anError));
         Assert.False(aLaw.IsRotation(ref anError));
-        gp_Pnt aCentre = new();
-        Assert.Throws<Standard_NotImplemented>(() => aLaw.Rotation(ref aCentre));
+        Point3D aCentre = new();
+        Assert.Throws<MethodNotImplementedException>(() => aLaw.Rotation(ref aCentre));
     }
 
     [Fact]
     public void ComputeAutomaticLaw_GivesTheDistanceToTheGuide()
     {
         (GeomFill_LocationGuide aLaw, _) = Guided();
-        Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ComputeAutomaticLaw(out NCollection_HArray1<gp_Pnt2d> aParAndRad));
+        Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ComputeAutomaticLaw(out NCollection_HArray1<Point2D> aParAndRad));
         Assert.Equal(21, aParAndRad.Length());
         Assert.Equal(0.0, aParAndRad[1].X());
         Assert.Equal(4.0, aParAndRad[21].X());
@@ -75,33 +78,33 @@ public class GeomFill_LocationGuideTests
 
         foreach (double t in new[] { 0.0, 0.33, 2.0, 3.9 })
         {
-            gp_Mat M = new();
-            gp_Vec V = new();
+            Matrix3x3 M = new();
+            Vector3D V = new();
             Assert.True(aLaw.D0(t, ref M, ref V));
             // the normal column now points at the guide; the tangent is unchanged
-            AssertNear(new gp_XYZ(Math.Cos(Theta), Math.Sin(Theta), 0), M.Column(1), 1e-6, $"normal at {t}");
-            Assert.Equal(new gp_XYZ(0, 0, 1), M.Column(3));
-            var aPoles = new NCollection_Array1<gp_Pnt2d>(1, 1);
-            gp_Mat M2 = new();
+            AssertNear(new Xyz(Math.Cos(Theta), Math.Sin(Theta), 0), M.Column(1), 1e-6, $"normal at {t}");
+            Assert.Equal(new Xyz(0, 0, 1), M.Column(3));
+            var aPoles = new NCollection_Array1<Point2D>(1, 1);
+            Matrix3x3 M2 = new();
             Assert.True(aLaw.D0(t, ref M2, ref V, aPoles));
             Assert.Equal(M, M2);
         }
 
         // the derivatives are not computed with a rotation (commented out in OCCT)
-        var P = new NCollection_Array1<gp_Pnt2d>(1, 1);
-        var DP = new NCollection_Array1<gp_Vec2d>(1, 1);
-        gp_Mat Mx = new(), DMx = new(), D2Mx = new();
-        gp_Vec Vx = new(), DVx = new(), D2Vx = new();
+        var P = new NCollection_Array1<Point2D>(1, 1);
+        var DP = new NCollection_Array1<Vector2D>(1, 1);
+        Matrix3x3 Mx = new(), DMx = new(), D2Mx = new();
+        Vector3D Vx = new(), DVx = new(), D2Vx = new();
         Assert.False(aLaw.D1(1, ref Mx, ref Vx, ref DMx, ref DVx, P, DP));
         Assert.False(aLaw.D2(1, ref Mx, ref Vx, ref DMx, ref DVx, ref D2Mx, ref D2Vx, P, DP, DP));
 
         Assert.IsType<Geom_TrimmedCurve>(aLaw.Section());
 
         aLaw.EraseRotation();
-        gp_Mat M3 = new();
-        gp_Vec V3 = new();
+        Matrix3x3 M3 = new();
+        Vector3D V3 = new();
         Assert.True(aLaw.D0(1, ref M3, ref V3));
-        Assert.Equal(new gp_XYZ(1, 0, 0), M3.Column(1));
+        Assert.Equal(new Xyz(1, 0, 0), M3.Column(1));
     }
 
     [Fact]
@@ -111,7 +114,7 @@ public class GeomFill_LocationGuideTests
         double aLastAngle = 0;
         aLaw.Set(Segment(), true, 0, 4, 0, ref aLastAngle);
         // OCCT: the copy computes its rotation before it has a path
-        Assert.Throws<Standard_ConstructionError>(() => aLaw.Copy());
+        Assert.Throws<ConstructionErrorException>(() => aLaw.Copy());
 
         aLaw.EraseRotation();
         var aCopy = (GeomFill_LocationGuide)aLaw.Copy();
@@ -122,16 +125,16 @@ public class GeomFill_LocationGuideTests
     public void D2_WithATransformation_DoesNotApplyItAsInOcct()
     {
         (GeomFill_LocationGuide aLaw, _) = Guided();
-        gp_Mat aTrsf = new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        Matrix3x3 aTrsf = new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         aLaw.SetTrsf(aTrsf);
-        var P = new NCollection_Array1<gp_Pnt2d>(1, 1);
-        var DP = new NCollection_Array1<gp_Vec2d>(1, 1);
-        gp_Mat M0 = new(), M1 = new(), DM1 = new(), M2 = new(), DM2 = new(), D2M2 = new();
-        gp_Vec V = new(), DV = new(), D2V = new();
+        var P = new NCollection_Array1<Point2D>(1, 1);
+        var DP = new NCollection_Array1<Vector2D>(1, 1);
+        Matrix3x3 M0 = new(), M1 = new(), DM1 = new(), M2 = new(), DM2 = new(), D2M2 = new();
+        Vector3D V = new(), DV = new(), D2V = new();
         Assert.True(aLaw.D0(1, ref M0, ref V));
         Assert.True(aLaw.D1(1, ref M1, ref V, ref DM1, ref DV, P, DP));
         Assert.True(aLaw.D2(1, ref M2, ref V, ref DM2, ref DV, ref D2M2, ref D2V, P, DP, DP));
-        gp_Mat anM = new(new gp_XYZ(1, 0, 0), new gp_XYZ(0, 1, 0), new gp_XYZ(0, 0, 1));
+        Matrix3x3 anM = new(new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(0, 0, 1));
         Assert.Equal(anM * aTrsf, M0);
         Assert.Equal(anM * aTrsf, M1);
         Assert.Equal(anM, M2);
@@ -141,9 +144,9 @@ public class GeomFill_LocationGuideTests
     public void Intervals_Tolerance_Average()
     {
         (GeomFill_LocationGuide aLaw, _) = Guided();
-        Assert.Equal(1, aLaw.NbIntervals(GeomAbs_Shape.GeomAbs_C2));
+        Assert.Equal(1, aLaw.NbIntervals(Continuity.C2));
         var T = new NCollection_Array1<double>(1, 2);
-        aLaw.Intervals(T, GeomAbs_Shape.GeomAbs_C2);
+        aLaw.Intervals(T, Continuity.C2);
         Assert.Equal((0.0, 4.0), (T[1], T[2]));
         aLaw.SetInterval(1, 3);
         aLaw.GetInterval(out double f, out double l);
@@ -156,10 +159,10 @@ public class GeomFill_LocationGuideTests
         Assert.Equal(1e-5, aTolV);
         aLaw.SetTolerance(1e-4, 1e-5);
 
-        gp_Mat AM = new();
-        gp_Vec AV = new();
+        Matrix3x3 AM = new();
+        Vector3D AV = new();
         aLaw.GetAverageLaw(ref AM, ref AV);
         // OCCT: 22 points a tenth of [1, 3] apart, so the average is at z = 1 + 2.1 * 2 / 2
-        AssertNear(new gp_XYZ(0, 0, 1 + 0.2 * 21 / 2), AV.XYZ(), 1e-12, "AV");
+        AssertNear(new Xyz(0, 0, 1 + 0.2 * 21 / 2), AV.XYZ(), 1e-12, "AV");
     }
 }

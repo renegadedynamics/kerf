@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -99,7 +101,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         Geom_Curve? aCurve = null;
         if (aStored is not null)
         {
-            gp_Pnt aP = aStored.Value(0.5 * (aF + aL));
+            Point3D aP = aStored.Value(0.5 * (aF + aL));
             foreach (Geom_Curve aC in theCandidates)
             {
                 if (aC.GetType() == aStored.GetType()
@@ -109,7 +111,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                     break;
                 }
             }
-            Assert.True(aCurve is not null, $"{theWhat}: no curve of the port matches the stored {aStored.GetType().Name}");
+            Assert.True(aCurve is not null, $"{theWhat}: no curve of the port matches the stored {Kerf.Engine.Foundation.OcctTypeNames.Of(aStored.GetType())}");
         }
         return new EdgeData(aCurve, aF, aL, N.BRep_Tool.Tolerance(theEdge), N.BRep_Tool.Degenerated(theEdge),
                             N.BRep_Tool.IsGeometric(theEdge));
@@ -135,16 +137,16 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         return (u1, u2, v1, v2);
     }
 
-    private static List<(gp_Pnt P, double Tol)> Vertices(N.TopoDS_Shape theShape)
+    private static List<(Point3D P, double Tol)> Vertices(N.TopoDS_Shape theShape)
     {
-        var aList = new List<(gp_Pnt, double)>();
+        var aList = new List<(Point3D, double)>();
         using var anExp = new N.TopExp_Explorer(theShape, N.TopAbs_ShapeEnum.TopAbs_VERTEX);
         for (; anExp.More(); anExp.Next())
         {
             using N.TopoDS_Shape aS = anExp.Current();
             using N.TopoDS_Vertex aV = N.TopoDS.Vertex(aS);
             using N.gp_Pnt aP = N.BRep_Tool.Pnt(aV);
-            aList.Add((new gp_Pnt(aP.X(), aP.Y(), aP.Z()), N.BRep_Tool.Tolerance(aV)));
+            aList.Add((new Point3D(aP.X(), aP.Y(), aP.Z()), N.BRep_Tool.Tolerance(aV)));
         }
         return aList;
     }
@@ -155,7 +157,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     private static (double First, double Last) CurveRange(Oracle theO, Geom_Curve theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
-        if (Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);
@@ -174,7 +176,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
 
     private static (double First, double Last) SurfaceRange(Oracle theO, double theFirst, double theLast)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);
@@ -229,7 +231,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             if (theWhole)
             {
                 theWhat = $"{SurfaceKinds[theKind]} whole";
-                if (Precision.IsInfinite(u1) || Precision.IsInfinite(u2) || Precision.IsInfinite(v1) || Precision.IsInfinite(v2))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2))
                 {
                     return null;
                 }
@@ -285,41 +287,41 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             Geom_Surface Base = OS.BasisSurface();
             if (Base.GetType() == typeof(Geom_SurfaceOfLinearExtrusion))
             {
-                S = Precision.IsInfinite(umin) || Precision.IsInfinite(umax)
+                S = global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
                       ? new Geom_RectangularTrimmedSurface(OS, UMin, UMax, VMin, VMax)
                       : new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
             }
             else if (Base.GetType() == typeof(Geom_SurfaceOfRevolution))
             {
-                if (Precision.IsInfinite(vmin) || Precision.IsInfinite(vmax))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                 {
                     S = new Geom_RectangularTrimmedSurface(OS, VMin, VMax, false);
                 }
             }
         }
-        double epsilon = Precision.PConfusion();
+        double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (S.IsUPeriodic())
         {
-            ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(umin, umax, epsilon, ref UMin, ref UMax);
         }
         if (S.IsVPeriodic())
         {
-            ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vmin, vmax, epsilon, ref VMin, ref VMax);
         }
         var anIsos = new List<Geom_Curve>();
-        if (!Precision.IsNegativeInfinite(UMin))
+        if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(UMin))
         {
             anIsos.Add(S.UIso(UMin));
         }
-        if (!Precision.IsPositiveInfinite(UMax))
+        if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(UMax))
         {
             anIsos.Add(S.UIso(UMax));
         }
-        if (!Precision.IsNegativeInfinite(VMin))
+        if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin))
         {
             anIsos.Add(S.VIso(VMin));
         }
-        if (!Precision.IsPositiveInfinite(VMax))
+        if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax))
         {
             anIsos.Add(S.VIso(VMax));
         }
@@ -330,19 +332,19 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     // ---------------------------------------------------------------------------------------------------------
     // Comparison
 
-    private static void SameBox(Oracle theO, N.Bnd_Box theN, in Bnd_Box theP, string theWhat, double theTol = Oracle.Tolerance)
+    private static void SameBox(Oracle theO, N.Bnd_Box theN, in Box theP, string theWhat, double theTol = Oracle.Tolerance)
     {
-        theO.Same(theN.IsVoid(), theP.IsVoid(), theWhat + " IsVoid");
+        theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
         if (theN.IsVoid())
         {
             return;
         }
-        theO.Same(theN.IsOpenXmin(), theP.IsOpenXmin(), theWhat + " IsOpenXmin");
-        theO.Same(theN.IsOpenXmax(), theP.IsOpenXmax(), theWhat + " IsOpenXmax");
-        theO.Same(theN.IsOpenYmin(), theP.IsOpenYmin(), theWhat + " IsOpenYmin");
-        theO.Same(theN.IsOpenYmax(), theP.IsOpenYmax(), theWhat + " IsOpenYmax");
-        theO.Same(theN.IsOpenZmin(), theP.IsOpenZmin(), theWhat + " IsOpenZmin");
-        theO.Same(theN.IsOpenZmax(), theP.IsOpenZmax(), theWhat + " IsOpenZmax");
+        theO.Same(theN.IsOpenXmin(), theP.IsOpenXmin, theWhat + " IsOpenXmin");
+        theO.Same(theN.IsOpenXmax(), theP.IsOpenXmax, theWhat + " IsOpenXmax");
+        theO.Same(theN.IsOpenYmin(), theP.IsOpenYmin, theWhat + " IsOpenYmin");
+        theO.Same(theN.IsOpenYmax(), theP.IsOpenYmax, theWhat + " IsOpenYmax");
+        theO.Same(theN.IsOpenZmin(), theP.IsOpenZmin, theWhat + " IsOpenZmin");
+        theO.Same(theN.IsOpenZmax(), theP.IsOpenZmax, theWhat + " IsOpenZmax");
         theO.Same(theN.GetXMin(), theP.GetXMin(), theWhat + " Xmin", theTol);
         theO.Same(theN.GetXMax(), theP.GetXMax(), theWhat + " Xmax", theTol);
         theO.Same(theN.GetYMin(), theP.GetYMin(), theWhat + " Ymin", theTol);
@@ -352,29 +354,29 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         theO.Same(theN.GetGap(), theP.GetGap(), theWhat + " Gap", theTol);
     }
 
-    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in Bnd_OBB theP, string theWhat, double theTol)
+    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in OrientedBox theP, string theWhat, double theTol)
     {
-        theO.Same(theN.IsVoid(), theP.IsVoid(), theWhat + " IsVoid");
+        theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
         if (theN.IsVoid())
         {
             return;
         }
-        theO.Same(theN.IsAABox(), theP.IsAABox(), theWhat + " IsAABox");
+        theO.Same(theN.IsAABox(), theP.IsAABox, theWhat + " IsAABox");
         using (N.gp_XYZ aC = theN.Center())
         {
-            theO.Same(new gp_XYZ(aC.X(), aC.Y(), aC.Z()), theP.Center(), theWhat + " Center", theTol);
+            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aC.X(), aC.Y(), aC.Z()), theP.Center(), theWhat + " Center", theTol);
         }
         using (N.gp_XYZ aX = theN.XDirection())
         {
-            theO.Same(new gp_XYZ(aX.X(), aX.Y(), aX.Z()), theP.XDirection(), theWhat + " XDirection", theTol);
+            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aX.X(), aX.Y(), aX.Z()), theP.XDirection(), theWhat + " XDirection", theTol);
         }
         using (N.gp_XYZ aY = theN.YDirection())
         {
-            theO.Same(new gp_XYZ(aY.X(), aY.Y(), aY.Z()), theP.YDirection(), theWhat + " YDirection", theTol);
+            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aY.X(), aY.Y(), aY.Z()), theP.YDirection(), theWhat + " YDirection", theTol);
         }
         using (N.gp_XYZ aZ = theN.ZDirection())
         {
-            theO.Same(new gp_XYZ(aZ.X(), aZ.Y(), aZ.Z()), theP.ZDirection(), theWhat + " ZDirection", theTol);
+            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aZ.X(), aZ.Y(), aZ.Z()), theP.ZDirection(), theWhat + " ZDirection", theTol);
         }
         theO.Same(theN.XHSize(), theP.XHSize(), theWhat + " XHSize", theTol);
         theO.Same(theN.YHSize(), theP.YHSize(), theWhat + " YHSize", theTol);
@@ -385,18 +387,18 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     // The port's side of BRepBndLib
 
     /// <summary>BRepAdaptor_Curve(E): the edge's curve on its range, transformed by its location.</summary>
-    private static GeomAdaptor_TransformedCurve EdgeAdaptor(EdgeData theE, in gp_Trsf theLoc)
+    private static GeomAdaptor_TransformedCurve EdgeAdaptor(EdgeData theE, in Transform3D theLoc)
         => new(theE.Curve!, theE.First, theE.Last, theLoc);
 
     /// <summary>BRepBndLib::Add of a face or an edge (no triangulation), moved by theLoc.</summary>
     private static void PortAdd(Geom_Surface? theSurf, (double U1, double U2, double V1, double V2) theUV, double theFaceTol,
-                                List<EdgeData> theEdges, in gp_Trsf theLoc, ref Bnd_Box theB)
+                                List<EdgeData> theEdges, in Transform3D theLoc, ref Box theB)
     {
         if (theSurf is not null)
         {
             // BS.Initialize(F, false) to read the type, then BS.Initialize(F) (UV bounds)
             var aBSAll = new GeomAdaptor_TransformedSurface(theSurf, theLoc);
-            if (aBSAll.GetType() != GeomAbs_SurfaceType.GeomAbs_Plane)
+            if (aBSAll.GetType() != SurfaceKind.Plane)
             {
                 var aBS = new GeomAdaptor_TransformedSurface(theSurf, theUV.U1, theUV.U2, theUV.V1, theUV.V2, theLoc);
                 BndLib_AddSurface.Add(aBS, theFaceTol, ref theB);
@@ -424,26 +426,26 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// <summary>BRepBndLib.cxx's CanUseEdges.</summary>
     private static bool CanUseEdges(Adaptor3d_Surface BS)
     {
-        GeomAbs_SurfaceType aST = BS.GetType();
-        if (aST == GeomAbs_SurfaceType.GeomAbs_Plane || aST == GeomAbs_SurfaceType.GeomAbs_Cylinder
-            || aST == GeomAbs_SurfaceType.GeomAbs_Cone || aST == GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion)
+        SurfaceKind aST = BS.GetType();
+        if (aST == SurfaceKind.Plane || aST == SurfaceKind.Cylinder
+            || aST == SurfaceKind.Cone || aST == SurfaceKind.SurfaceOfExtrusion)
         {
             return true;
         }
-        else if (aST == GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution)
+        else if (aST == SurfaceKind.SurfaceOfRevolution)
         {
-            return BS.BasisCurve().GetType() == GeomAbs_CurveType.GeomAbs_Line;
+            return BS.BasisCurve().GetType() == CurveKind.Line;
         }
-        else if (aST == GeomAbs_SurfaceType.GeomAbs_OffsetSurface)
+        else if (aST == SurfaceKind.OffsetSurface)
         {
             return CanUseEdges(BS.BasisSurface());
         }
-        else if (aST == GeomAbs_SurfaceType.GeomAbs_BSplineSurface)
+        else if (aST == SurfaceKind.BSplineSurface)
         {
             Geom_BSplineSurface aBSpl = BS.BSpline();
             return (aBSpl.UDegree() == 1 && aBSpl.NbUKnots() == 2) || (aBSpl.VDegree() == 1 && aBSpl.NbVKnots() == 2);
         }
-        else if (aST == GeomAbs_SurfaceType.GeomAbs_BezierSurface)
+        else if (aST == SurfaceKind.BezierSurface)
         {
             Geom_BezierSurface aBz = BS.Bezier();
             return aBz.UDegree() == 1 || aBz.VDegree() == 1;
@@ -454,45 +456,45 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// <summary>BRepBndLib_1.cxx's IsLinear.</summary>
     private static bool IsLinear(Adaptor3d_Curve theC)
     {
-        GeomAbs_CurveType aCT = theC.GetType();
-        if (aCT == GeomAbs_CurveType.GeomAbs_OffsetCurve)
+        CurveKind aCT = theC.GetType();
+        if (aCT == CurveKind.OffsetCurve)
         {
             return IsLinear(new GeomAdaptor_Curve(theC.OffsetCurve().BasisCurve()));
         }
-        if (aCT == GeomAbs_CurveType.GeomAbs_BSplineCurve || aCT == GeomAbs_CurveType.GeomAbs_BezierCurve)
+        if (aCT == CurveKind.BSplineCurve || aCT == CurveKind.BezierCurve)
         {
-            return theC.Degree() == 1 && theC.Continuity() != GeomAbs_Shape.GeomAbs_C0;
+            return theC.Degree() == 1 && theC.Continuity() != Continuity.C0;
         }
-        return aCT == GeomAbs_CurveType.GeomAbs_Line;
+        return aCT == CurveKind.Line;
     }
 
     /// <summary>BRepBndLib_1.cxx's IsPlanar.</summary>
     private static bool IsPlanar(Adaptor3d_Surface theS)
     {
-        GeomAbs_SurfaceType aST = theS.GetType();
-        if (aST == GeomAbs_SurfaceType.GeomAbs_OffsetSurface)
+        SurfaceKind aST = theS.GetType();
+        if (aST == SurfaceKind.OffsetSurface)
         {
             return IsPlanar(theS.BasisSurface());
         }
-        if (aST == GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion)
+        if (aST == SurfaceKind.SurfaceOfExtrusion)
         {
             return IsLinear(theS.BasisCurve());
         }
-        if (aST == GeomAbs_SurfaceType.GeomAbs_BSplineSurface || aST == GeomAbs_SurfaceType.GeomAbs_BezierSurface)
+        if (aST == SurfaceKind.BSplineSurface || aST == SurfaceKind.BezierSurface)
         {
             if (theS.UDegree() != 1 || theS.VDegree() != 1)
             {
                 return false;
             }
-            return theS.UContinuity() != GeomAbs_Shape.GeomAbs_C0 && theS.VContinuity() != GeomAbs_Shape.GeomAbs_C0;
+            return theS.UContinuity() != Continuity.C0 && theS.VContinuity() != Continuity.C0;
         }
-        return aST == GeomAbs_SurfaceType.GeomAbs_Plane;
+        return aST == SurfaceKind.Plane;
     }
 
     /// <summary>BRepBndLib_1.cxx's IsWCS.</summary>
-    private static int IsWCS(in gp_Dir theDir)
+    private static int IsWCS(in Direction3D theDir)
     {
-        double aToler = Precision.Angular() * Precision.Angular();
+        double aToler = global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular();
         double aX = theDir.X(), aY = theDir.Y(), aZ = theDir.Z();
         double aVx = aY * aY + aZ * aZ, aVy = aX * aX + aZ * aZ, aVz = aX * aX + aY * aY;
         if (aVz < aToler)
@@ -510,33 +512,33 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         return 0;
     }
 
-    private static gp_Dir ToDir(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
+    private static Direction3D ToDir(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
     /// <summary>
     /// The port's side of BRepBndLib::AddOBB (no triangulation, not optimal, shape tolerances): the vertices when
     /// the shape is linear or planar with linear edges (CheckPoints), else ComputePCA with native mass properties.
     /// </summary>
-    private Bnd_OBB PortOBB(N.TopoDS_Shape theShape, Geom_Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
+    private OrientedBox PortOBB(N.TopoDS_Shape theShape, Geom_Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
                                    double theFaceTol, List<EdgeData> theEdges, bool theIsFace)
     {
         // PointsForOBB with triangulation allowed but absent
         bool aPointsOnly;
         if (theIsFace)
         {
-            aPointsOnly = IsPlanar(new GeomAdaptor_TransformedSurface(theSurf!, new gp_Trsf()))
-                          && theEdges.TrueForAll(e => !e.Geometric || IsLinear(EdgeAdaptor(e, new gp_Trsf())));
+            aPointsOnly = IsPlanar(new GeomAdaptor_TransformedSurface(theSurf!, new Transform3D()))
+                          && theEdges.TrueForAll(e => !e.Geometric || IsLinear(EdgeAdaptor(e, new Transform3D())));
         }
         else
         {
-            aPointsOnly = IsLinear(EdgeAdaptor(theEdges[0], new gp_Trsf()));
+            aPointsOnly = IsLinear(EdgeAdaptor(theEdges[0], new Transform3D()));
         }
 
-        var anOBB = new Bnd_OBB();
+        var anOBB = new OrientedBox();
         if (aPointsOnly)
         {
             PointsOnlyCases++;
-            List<(gp_Pnt P, double Tol)> aVerts = Vertices(theShape);
-            var aPnts = new NCollection_Array1<gp_Pnt>(0, aVerts.Count - 1);
+            List<(Point3D P, double Tol)> aVerts = Vertices(theShape);
+            var aPnts = new NCollection_Array1<Point3D>(0, aVerts.Count - 1);
             var aTols = new NCollection_Array1<double>(0, aVerts.Count - 1);
             for (int i = 0; i < aVerts.Count; i++)
             {
@@ -562,7 +564,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             }
             aGCommon.Add(aG);
         }
-        gp_Trsf aTrsf = new();
+        Transform3D aTrsf = new();
         using (N.GProp_PrincipalProps aPP = aGCommon.PrincipalProperties())
         using (N.gp_Vec aV1 = aPP.FirstAxisOfInertia())
         using (N.gp_Vec aV2 = aPP.SecondAxisOfInertia())
@@ -573,40 +575,40 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             int anIdx2 = IsWCS(ToDir(aV2));
             if (anIdx1 == 0 || anIdx2 == 0)
             {
-                gp_Ax3 aLocCoordSys = new(new gp_Pnt(aCM.X(), aCM.Y(), aCM.Z()), ToDir(aV3), ToDir(aV1));
+                CoordinateSystem aLocCoordSys = new(new Point3D(aCM.X(), aCM.Y(), aCM.Z()), ToDir(aV3), ToDir(aV1));
                 aTrsf.SetTransformation(aLocCoordSys);
             }
         }
 
         // BRepBndLib::Add of the moved shape
-        Bnd_Box aShapeBox = new();
+        Box aShapeBox = new();
         PortAdd(theSurf, theUV, theFaceTol, theEdges, aTrsf, ref aShapeBox);
-        if (aShapeBox.IsVoid())
+        if (aShapeBox.IsVoid)
         {
             return anOBB;
         }
 
-        gp_Pnt aPMin = aShapeBox.CornerMin();
-        gp_Pnt aPMax = aShapeBox.CornerMax();
-        gp_XYZ aXDir = new(1, 0, 0);
-        gp_XYZ aYDir = new(0, 1, 0);
-        gp_XYZ aZDir = new(0, 0, 1);
-        gp_XYZ aCenter = (aPMin.XYZ() + aPMax.XYZ()) / 2.0;
-        gp_XYZ anOBBHSize = (aPMax.XYZ() - aPMin.XYZ()) / 2.0;
-        bool anIdentity = aTrsf.Form() == gp_TrsfForm.gp_Identity;
+        Point3D aPMin = aShapeBox.CornerMin();
+        Point3D aPMax = aShapeBox.CornerMax();
+        global::Kerf.Engine.Geometry.Xyz aXDir = new(1, 0, 0);
+        global::Kerf.Engine.Geometry.Xyz aYDir = new(0, 1, 0);
+        global::Kerf.Engine.Geometry.Xyz aZDir = new(0, 0, 1);
+        global::Kerf.Engine.Geometry.Xyz aCenter = (aPMin.XYZ() + aPMax.XYZ()) / 2.0;
+        global::Kerf.Engine.Geometry.Xyz anOBBHSize = (aPMax.XYZ() - aPMin.XYZ()) / 2.0;
+        bool anIdentity = aTrsf.Form() == TransformForm.Identity;
         if (!anIdentity)
         {
             aTrsf.Invert();
             aTrsf.Transforms(ref aCenter);
-            gp_Mat aMat = aTrsf.HVectorialPart();
-            aXDir = new gp_XYZ(aMat.Value(1, 1), aMat.Value(2, 1), aMat.Value(3, 1));
-            aYDir = new gp_XYZ(aMat.Value(1, 2), aMat.Value(2, 2), aMat.Value(3, 2));
-            aZDir = new gp_XYZ(aMat.Value(1, 3), aMat.Value(2, 3), aMat.Value(3, 3));
+            Matrix3x3 aMat = aTrsf.HVectorialPart();
+            aXDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 1), aMat.Value(2, 1), aMat.Value(3, 1));
+            aYDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 2), aMat.Value(2, 2), aMat.Value(3, 2));
+            aZDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 3), aMat.Value(2, 3), aMat.Value(3, 3));
         }
-        anOBB.SetCenter(new gp_Pnt(aCenter));
-        anOBB.SetXComponent(new gp_Dir(aXDir), anOBBHSize.X());
-        anOBB.SetYComponent(new gp_Dir(aYDir), anOBBHSize.Y());
-        anOBB.SetZComponent(new gp_Dir(aZDir), anOBBHSize.Z());
+        anOBB.SetCenter(new Point3D(aCenter));
+        anOBB.SetXComponent(new Direction3D(aXDir), anOBBHSize.X());
+        anOBB.SetYComponent(new Direction3D(aYDir), anOBBHSize.Y());
+        anOBB.SetZComponent(new Direction3D(aZDir), anOBBHSize.Z());
         anOBB.SetAABox(anIdentity);
         return anOBB;
     }
@@ -648,7 +650,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             return false;
         }
         double aU1 = theU1, aU2 = theU2;
-        ElCLib.AdjustPeriodic(aBS.FirstParameter(), aBS.LastParameter(), Precision.PConfusion(), ref aU1, ref aU2);
+        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aBS.FirstParameter(), aBS.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref aU1, ref aU2);
         double aPeriod = aBS.LastParameter() - aBS.FirstParameter();
         double aMinDiff = Math.Min(Math.Abs(aU2 - aU1), Math.Min(Math.Abs(aU2 - aPeriod - aU1), Math.Abs(aU1 - aPeriod - aU2)));
         return aMinDiff == 0.0;
@@ -715,8 +717,8 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
 
                 using var aNB = new N.Bnd_Box();
                 N.BRepBndLib.Add(aNE, aNB, false);
-                Bnd_Box aPB = new();
-                PortAdd(null, default, 0, [anE], new gp_Trsf(), ref aPB);
+                Box aPB = new();
+                PortAdd(null, default, 0, [anE], new Transform3D(), ref aPB);
                 SameBox(anOracle, aNB, aPB, aW);
 
                 // useTriangulation = true: the edge has no polygon, so the same path
@@ -752,10 +754,10 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                     N.BRepBndLib.AddOptimal(aNE, aNB, false, aUseTol);
 
                     // aLocBox from BndLib_Add3dCurve::AddOptimal, then B.Update(aLocBox.Get())
-                    Bnd_Box aLocBox = new();
-                    BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new gp_Trsf()), aUseTol ? anE.Tolerance : 0.0, ref aLocBox);
-                    Bnd_Box aPB = new();
-                    if (!aLocBox.IsVoid())
+                    Box aLocBox = new();
+                    BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref aLocBox);
+                    Box aPB = new();
+                    if (!aLocBox.IsVoid)
                     {
                         aLocBox.Get(out double x, out double y, out double z, out double X, out double Y, out double Z);
                         aPB.Update(x, y, z, X, Y, Z);
@@ -794,15 +796,15 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 var anUV = UVBounds(aNF);
                 double aTolF = N.BRep_Tool.Tolerance(aNF);
-                if (new GeomAdaptor_TransformedSurface(aSurf, new gp_Trsf()).GetType() == GeomAbs_SurfaceType.GeomAbs_Plane)
+                if (new GeomAdaptor_TransformedSurface(aSurf, new Transform3D()).GetType() == SurfaceKind.Plane)
                 {
                     aPlanes++;
                 }
 
                 using var aNB = new N.Bnd_Box();
                 N.BRepBndLib.Add(aNF, aNB, false);
-                Bnd_Box aPB = new();
-                PortAdd(aSurf, anUV, aTolF, anEdges, new gp_Trsf(), ref aPB);
+                Box aPB = new();
+                PortAdd(aSurf, anUV, aTolF, anEdges, new Transform3D(), ref aPB);
                 SameBox(anOracle, aNB, aPB, aW);
                 aCases++;
                 aPerKind[aKind]++;
@@ -831,7 +833,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                     continue;
                 }
                 CheckFaceSurface(aNF, aSurf, aW);
-                var aBS = new GeomAdaptor_TransformedSurface(aSurf, new gp_Trsf()); // BS.Initialize(F, false)
+                var aBS = new GeomAdaptor_TransformedSurface(aSurf, new Transform3D()); // BS.Initialize(F, false)
                 bool aCanUseEdges = CanUseEdges(aBS);
                 if (!aCanUseEdges && !N.BRep_Tool.NaturalRestriction(aNF))
                 {
@@ -847,7 +849,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                     using var aNB = new N.Bnd_Box();
                     N.BRepBndLib.AddOptimal(aNF, aNB, false, aUseTol);
 
-                    Bnd_Box aLocBox = new();
+                    Box aLocBox = new();
                     if (aCanUseEdges)
                     {
                         Assert.NotEmpty(anEdges);
@@ -857,8 +859,8 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                             {
                                 continue;
                             }
-                            Bnd_Box anEBox = new();
-                            BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new gp_Trsf()), aUseTol ? anE.Tolerance : 0.0, ref anEBox);
+                            Box anEBox = new();
+                            BndLib_Add3dCurve.AddOptimal(EdgeAdaptor(anE, new Transform3D()), aUseTol ? anE.Tolerance : 0.0, ref anEBox);
                             aLocBox.Add(anEBox);
                         }
                     }
@@ -869,8 +871,8 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                         BndLib_AddSurface.AddOptimal(aBS, aBS.FirstUParameter(), aBS.LastUParameter(),
                                                      aBS.FirstVParameter(), aBS.LastVParameter(), aTol, ref aLocBox);
                     }
-                    Bnd_Box aPB = new();
-                    if (!aLocBox.IsVoid())
+                    Box aPB = new();
+                    if (!aLocBox.IsVoid)
                     {
                         aLocBox.Get(out double x, out double y, out double z, out double X, out double Y, out double Z);
                         aPB.Update(x, y, z, X, Y, Z);
@@ -912,7 +914,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 using var aNOBB = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aNE, aNOBB);
-                Bnd_OBB aPOBB = PortOBB(aNE, null, default, 0, [anE], false);
+                OrientedBox aPOBB = PortOBB(aNE, null, default, 0, [anE], false);
                 SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance);
                 anEdges++;
             }
@@ -935,7 +937,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 using var aNOBB = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aNF, aNOBB);
-                Bnd_OBB aPOBB = PortOBB(aNF, aSurf, UVBounds(aNF), N.BRep_Tool.Tolerance(aNF), anEdgeList, true);
+                OrientedBox aPOBB = PortOBB(aNF, aSurf, UVBounds(aNF), N.BRep_Tool.Tolerance(aNF), anEdgeList, true);
                 SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance);
                 aFaces++;
             }

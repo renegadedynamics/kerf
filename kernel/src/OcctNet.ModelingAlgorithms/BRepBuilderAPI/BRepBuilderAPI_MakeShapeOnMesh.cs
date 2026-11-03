@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -10,7 +14,7 @@ namespace Occt;
 /// <summary>
 /// Builds a shape from a triangulation: a compound of planar faces, one per triangle, sharing their vertices (one per
 /// mesh node) and edges (one per mesh link). Degenerate triangles (repeated nodes, or two nodes closer than
-/// <see cref="gp.Resolution"/>) are skipped.
+/// <see cref="Constants.Resolution"/>) are skipped.
 /// </summary>
 /// <remarks>
 /// The result is published frozen by <see cref="BRepBuilderAPI_MakeShape.Shape"/>; the triangulation is only read.
@@ -18,10 +22,10 @@ namespace Occt;
 /// </remarks>
 public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
 {
-    private readonly Poly_Triangulation? myMesh;
+    private readonly Triangulation? myMesh;
 
     /// <summary>Sets the mesh to process.</summary>
-    public BRepBuilderAPI_MakeShapeOnMesh(Poly_Triangulation? theMesh)
+    public BRepBuilderAPI_MakeShapeOnMesh(Triangulation? theMesh)
     {
         myMesh = theMesh;
     }
@@ -49,7 +53,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Builds the shape on the mesh. Does nothing for a null or empty mesh, or on a user break.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // Generally, this method guarantees topology sharing by mapping mesh primitives
         // into topological counterparts.
@@ -57,17 +61,17 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
         // mesh edges  -> topological edges
 
         // Cannot reconstruct anything from null or empty mesh.
-        if (myMesh is null || myMesh.NbNodes() == 0 || myMesh.NbTriangles() == 0)
+        if (myMesh is null || myMesh.NodeCount == 0 || myMesh.TriangleCount == 0)
         {
             return;
         }
 
-        int aNbNodes = myMesh.NbNodes();
-        int aNbTriangles = myMesh.NbTriangles();
+        int aNbNodes = myMesh.NodeCount;
+        int aNbTriangles = myMesh.TriangleCount;
 
         // We are going to have three loops: iterate once over nodes and iterate twice
         // over triangles of input mesh.
-        using var aPS = new Message_ProgressScope(theRange, "Per-facet shape construction", (double)aNbNodes + 2.0 * aNbTriangles);
+        using var aPS = new ProgressScope(theRange, "Per-facet shape construction", (double)aNbNodes + 2.0 * aNbTriangles);
 
         // Build shared vertices.
         var aPnt2VertexMap = new NCollection_IndexedDataMap<int, TopoDS_Vertex>();
@@ -80,7 +84,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
                 return;
             }
 
-            gp_Pnt aP = myMesh.Node(i);
+            Point3D aP = myMesh.Node(i);
             TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(aP).InternalVertex();
             aPnt2VertexMap.Add(i, aV);
         }
@@ -95,7 +99,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
                 return;
             }
 
-            Poly_Triangle aTriangle = myMesh.Triangle(i);
+            Triangle1 aTriangle = myMesh.Triangle(i);
             aTriangle.Get(out int anIdx0, out int anIdx1, out int anIdx2);
 
             // Skip degenerated triangles.
@@ -104,13 +108,13 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
                 continue;
             }
 
-            gp_Pnt aP1 = myMesh.Node(anIdx0);
-            gp_Pnt aP2 = myMesh.Node(anIdx1);
-            gp_Pnt aP3 = myMesh.Node(anIdx2);
+            Point3D aP1 = myMesh.Node(anIdx0);
+            Point3D aP2 = myMesh.Node(anIdx1);
+            Point3D aP3 = myMesh.Node(anIdx2);
             double aD1 = aP1.SquareDistance(aP2);
             double aD2 = aP1.SquareDistance(aP3);
             double aD3 = aP2.SquareDistance(aP3);
-            if (aD1 < gp.Resolution() || aD2 < gp.Resolution() || aD3 < gp.Resolution())
+            if (aD1 < Constants.Resolution() || aD2 < Constants.Resolution() || aD3 < Constants.Resolution())
             {
                 continue;
             }
@@ -165,7 +169,7 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
                 return;
             }
 
-            Poly_Triangle aTriangle = myMesh.Triangle(i);
+            Triangle1 aTriangle = myMesh.Triangle(i);
             aTriangle.Get(out int anIdx0, out int anIdx1, out int anIdx2);
 
             var aMeshEdge1 = new Edge(anIdx0, anIdx1);
@@ -211,10 +215,10 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             // within BRepBuilderAPI_MakeFace.
             var aC1 = new BRepAdaptor_Curve(aTEdge1);
             var aC2 = new BRepAdaptor_Curve(aTEdge2);
-            gp_Dir aD1 = aC1.Line().Direction();
-            gp_Dir aD2 = aC2.Line().Direction();
-            gp_XYZ aN = aD1.XYZ().Crossed(aD2.XYZ());
-            if (aN.SquareModulus() < Precision.SquareConfusion())
+            Direction3D aD1 = aC1.Line().Direction();
+            Direction3D aD2 = aC2.Line().Direction();
+            Xyz aN = aD1.XYZ().Crossed(aD2.XYZ());
+            if (aN.SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
@@ -226,8 +230,8 @@ public class BRepBuilderAPI_MakeShapeOnMesh : BRepBuilderAPI_MakeShape
             {
                 aN.Reverse();
             }
-            var aNorm = new gp_Dir(aN);
-            var aPln = new gp_Pln(myMesh.Node(anIdx0), aNorm);
+            var aNorm = new Direction3D(aN);
+            var aPln = new Plane3D(myMesh.Node(anIdx0), aNorm);
 
             var aFaceMaker = new BRepBuilderAPI_MakeFace(aPln, aWire);
             TopoDS_Face aFace = aFaceMaker.InternalFace();

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -26,7 +29,7 @@ internal static class BRepTestFillet2DCommands
     private static char At(string theWord, int theIndex) => theIndex < theWord.Length ? theWord[theIndex] : '\0';
 
     // C's atof (OCCT's Atof): the number at the start of the word, 0 when there is none
-    private static double CAtof(string theWord) => Standard_Stream.Strtod(theWord, out _);
+    private static double CAtof(string theWord) => StreamUtilities.Strtod(theWord, out _);
 
     //=================================================================================================
 
@@ -215,17 +218,17 @@ internal static class BRepTestFillet2DCommands
     // purpose  : Find a common (or the most close) point of two edges.
     //=======================================================================
 
-    private static gp_Pnt findCommonPoint(in TopoDS_Shape E1, in TopoDS_Shape E2)
+    private static Point3D findCommonPoint(in TopoDS_Shape E1, in TopoDS_Shape E2)
     {
         TopExp.Vertices(TopoDS.Edge(E1), out TopoDS_Vertex v11, out TopoDS_Vertex v12);
         TopExp.Vertices(TopoDS.Edge(E2), out TopoDS_Vertex v21, out TopoDS_Vertex v22);
 
-        gp_Pnt p11 = BRep_Tool.Pnt(v11);
-        gp_Pnt p12 = BRep_Tool.Pnt(v12);
-        gp_Pnt p21 = BRep_Tool.Pnt(v21);
-        gp_Pnt p22 = BRep_Tool.Pnt(v22);
+        Point3D p11 = BRep_Tool.Pnt(v11);
+        Point3D p12 = BRep_Tool.Pnt(v12);
+        Point3D p21 = BRep_Tool.Pnt(v21);
+        Point3D p22 = BRep_Tool.Pnt(v22);
 
-        gp_Pnt common = new();
+        Point3D common = new();
         double d1121 = p11.SquareDistance(p21);
         double d1122 = p11.SquareDistance(p22);
         double d1221 = p12.SquareDistance(p21);
@@ -250,7 +253,7 @@ internal static class BRepTestFillet2DCommands
         return common;
     }
 
-    private static gp_Pnt findCommonPoint(in TopoDS_Shape W)
+    private static Point3D findCommonPoint(in TopoDS_Shape W)
     {
         // The common point for two edges inside a wire
         // is a sharing vertex of two edges.
@@ -263,7 +266,7 @@ internal static class BRepTestFillet2DCommands
                 return BRep_Tool.Pnt(TopoDS.Vertex(aExp.Current()));
             }
         }
-        return gp.Origin(); // not found
+        return Constants.Origin(); // not found
     }
 
     //=======================================================================
@@ -307,7 +310,7 @@ internal static class BRepTestFillet2DCommands
 
         // Algo.
         var algo = new ChFi2d_FilletAPI();
-        gp_Pln plane = hPlane.Pln();
+        Plane3D plane = hPlane.Pln();
         if (n == 5)
         {
             TopoDS_Edge e1 = TopoDS.Edge(E1);
@@ -327,7 +330,7 @@ internal static class BRepTestFillet2DCommands
         }
 
         // Find a common point of the edges.
-        gp_Pnt common = n == 5 ? findCommonPoint(E1, E2) : findCommonPoint(W);
+        Point3D common = n == 5 ? findCommonPoint(E1, E2) : findCommonPoint(W);
 
         // Get the number of solutions (usually it is equal to 1).
         int nbSolutions = algo.NbResults(common);

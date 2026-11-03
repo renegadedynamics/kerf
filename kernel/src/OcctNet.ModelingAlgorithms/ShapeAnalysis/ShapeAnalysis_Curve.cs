@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -21,12 +25,12 @@ public sealed class ShapeAnalysis_Curve
     // narrows the start and end parameters to the segment around the closest point, even if no distance below
     // aProjDistance was found.
     private static void ProjectOnSegments(Adaptor3d_Curve theCurve,
-                                          in gp_Pnt       thePoint,
+                                          in Point3D       thePoint,
                                           int             theSegmentCount,
                                           ref double      aStartParam,
                                           ref double      anEndParam,
                                           ref double      aProjDistance,
-                                          ref gp_Pnt      aProjPoint,
+                                          ref Point3D      aProjPoint,
                                           ref double      aProjParam)
     {
         // We consider <nbseg> points on [uMin,uMax]
@@ -44,7 +48,7 @@ public sealed class ShapeAnalysis_Curve
         for (int i = 0; i <= theSegmentCount; i++)
         {
             double aCurrentParam      = aStartParam + (aParamStep * i);
-            gp_Pnt aCurrentPoint      = theCurve.Value(aCurrentParam);
+            Point3D aCurrentPoint      = theCurve.Value(aCurrentParam);
             double aCurrentSqDistance = aCurrentPoint.SquareDistance(thePoint);
             if (aCurrentSqDistance < aMinSqDistance)
             {
@@ -69,7 +73,7 @@ public sealed class ShapeAnalysis_Curve
     /// <paramref name="proj"/> with its parameter in <paramref name="param"/>. If the distance to an end of a bounded
     /// curve is within <paramref name="preci"/> (when <paramref name="AdjustToEnds"/>), that end is taken.
     /// </summary>
-    public double Project(Geom_Curve C3D, in gp_Pnt P3D, double preci, out gp_Pnt proj, out double param,
+    public double Project(Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
                           bool AdjustToEnds = true)
     {
         double uMin = C3D.FirstParameter();
@@ -85,7 +89,7 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve restricted to [cf, cl] (see the overload without bounds).</summary>
-    public double Project(Geom_Curve C3D, in gp_Pnt P3D, double preci, out gp_Pnt proj, out double param, double cf,
+    public double Project(Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param, double cf,
                           double cl, bool AdjustToEnds = true)
     {
         double distmin;
@@ -96,9 +100,9 @@ public sealed class ShapeAnalysis_Curve
         if (C3D is Geom_BoundedCurve)
         {
             //:j8 abv 10 Dec 98: tr10_r0501_db.stp #9423: protection against densing of points near one end
-            double prec     = (AdjustToEnds ? preci : Precision.Confusion());
-            gp_Pnt LowBound = GAC.Value(uMin);
-            gp_Pnt HigBound = GAC.Value(uMax);
+            double prec     = (AdjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
+            Point3D LowBound = GAC.Value(uMin);
+            Point3D HigBound = GAC.Value(uMax);
             distmin = LowBound.Distance(P3D);
             if (distmin <= prec)
             {
@@ -134,22 +138,22 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve given by an adaptor (see the Geom_Curve overload).</summary>
-    public double Project(Adaptor3d_Curve C3D, in gp_Pnt P3D, double preci, out gp_Pnt proj, out double param,
+    public double Project(Adaptor3d_Curve C3D, in Point3D P3D, double preci, out Point3D proj, out double param,
                           bool AdjustToEnds = true)
     {
         double uMin = C3D.FirstParameter();
         double uMax = C3D.LastParameter();
 
-        if (Precision.IsInfinite(uMin) && Precision.IsInfinite(uMax))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uMin) && global::Kerf.Engine.Foundation.Precision.IsInfinite(uMax))
         {
             return ProjectAct(C3D, P3D, preci, out proj, out param);
         }
 
-        double distmin_L = Precision.Infinite(), distmin_H = Precision.Infinite();
+        double distmin_L = global::Kerf.Engine.Foundation.Precision.Infinite(), distmin_H = global::Kerf.Engine.Foundation.Precision.Infinite();
         //:j8 abv 10 Dec 98: tr10_r0501_db.stp #9423: protection against densing of points near one end
-        double prec     = (AdjustToEnds ? preci : Precision.Confusion());
-        gp_Pnt LowBound = C3D.Value(uMin);
-        gp_Pnt HigBound = C3D.Value(uMax);
+        double prec     = (AdjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point3D LowBound = C3D.Value(uMin);
+        Point3D HigBound = C3D.Value(uMax);
         distmin_L = LowBound.Distance(P3D);
         distmin_H = HigBound.Distance(P3D);
 
@@ -168,7 +172,7 @@ public sealed class ShapeAnalysis_Curve
         }
 
         double distProj = ProjectAct(C3D, P3D, preci, out proj, out param);
-        if (distProj < distmin_L + Precision.Confusion() && distProj < distmin_H + Precision.Confusion())
+        if (distProj < distmin_L + global::Kerf.Engine.Foundation.Precision.Confusion() && distProj < distmin_H + global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return distProj;
         }
@@ -194,10 +198,10 @@ public sealed class ShapeAnalysis_Curve
     /// OCCT reads the caller's <paramref name="theProjPoint"/> before writing it when Extrema finds nothing, but that
     /// value can't reach the result; the port starts it at the origin.
     /// </remarks>
-    public double ProjectAct(Adaptor3d_Curve theCurve, in gp_Pnt thePoint, double theTolerance,
-                             out gp_Pnt theProjPoint, out double theProjParam)
+    public double ProjectAct(Adaptor3d_Curve theCurve, in Point3D thePoint, double theTolerance,
+                             out Point3D theProjPoint, out double theProjParam)
     {
-        theProjPoint = new gp_Pnt();
+        theProjPoint = new Point3D();
         bool OK = false;
         theProjParam = 0.0;
         try
@@ -230,7 +234,7 @@ public sealed class ShapeAnalysis_Curve
                 }
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             OK = false;
         }
@@ -241,18 +245,18 @@ public sealed class ShapeAnalysis_Curve
         bool   anIsClosedCurve = false;
         double aCurvePeriod    = 0.0;
         // Distance between the point and the projection point.
-        double aProjDistance = Precision.Infinite();
-        double aModMin       = Precision.Infinite();
+        double aProjDistance = global::Kerf.Engine.Foundation.Precision.Infinite();
+        double aModMin       = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         // Remember the computed values.
         // These values will be used in case the projection is not successful.
         double aComputedParam = theProjParam;
-        gp_Pnt aComputedProj  = theProjPoint;
+        Point3D aComputedProj  = theProjPoint;
 
         // PTV 29.05.2002 remember the old solution, cause it could be better
         bool   anIsHaveOldSolution = false;
         double anOldParam          = 0.0;
-        gp_Pnt anOldProj           = new gp_Pnt();
+        Point3D anOldProj           = new Point3D();
         if (OK)
         {
             anIsHaveOldSolution = true;
@@ -282,19 +286,19 @@ public sealed class ShapeAnalysis_Curve
 
             switch (theCurve.GetType())
             {
-                case GeomAbs_Circle:
+                case Circle:
                 {
-                    gp_Circ aCirc = theCurve.Circle();
+                    Circle3D aCirc = theCurve.Circle();
                     theProjPoint = aCirc.Position().Location();
-                    if (aCirc.Radius() <= gp.Resolution() || thePoint.SquareDistance(theProjPoint) <= gp.Resolution())
+                    if (aCirc.Radius() <= Constants.Resolution() || thePoint.SquareDistance(theProjPoint) <= Constants.Resolution())
                     {
                         theProjParam = theCurve.FirstParameter();
-                        theProjPoint = new gp_Pnt(theProjPoint.XYZ() + aCirc.XAxis().Direction().XYZ() * aCirc.Radius());
+                        theProjPoint = new Point3D(theProjPoint.XYZ() + aCirc.XAxis().Direction().XYZ() * aCirc.Radius());
                     }
                     else
                     {
-                        theProjParam = ElCLib.Parameter(aCirc, thePoint);
-                        theProjPoint = ElCLib.Value(theProjParam, aCirc);
+                        theProjParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCirc, thePoint);
+                        theProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(theProjParam, aCirc);
                     }
 
                     anIsClosedCurve = true;
@@ -302,31 +306,31 @@ public sealed class ShapeAnalysis_Curve
                     break;
                 }
 
-                case GeomAbs_Hyperbola:
+                case Hyperbola:
                 {
-                    theProjParam = ElCLib.Parameter(theCurve.Hyperbola(), thePoint);
-                    theProjPoint = ElCLib.Value(theProjParam, theCurve.Hyperbola());
+                    theProjParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCurve.Hyperbola(), thePoint);
+                    theProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(theProjParam, theCurve.Hyperbola());
                     break;
                 }
 
-                case GeomAbs_Parabola:
+                case Parabola:
                 {
-                    theProjParam = ElCLib.Parameter(theCurve.Parabola(), thePoint);
-                    theProjPoint = ElCLib.Value(theProjParam, theCurve.Parabola());
+                    theProjParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCurve.Parabola(), thePoint);
+                    theProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(theProjParam, theCurve.Parabola());
                     break;
                 }
 
-                case GeomAbs_Line:
+                case Line:
                 {
-                    theProjParam = ElCLib.Parameter(theCurve.Line(), thePoint);
-                    theProjPoint = ElCLib.Value(theProjParam, theCurve.Line());
+                    theProjParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCurve.Line(), thePoint);
+                    theProjPoint = global::Kerf.Engine.Geometry.ElCLib.Value(theProjParam, theCurve.Line());
                     break;
                 }
 
-                case GeomAbs_Ellipse:
+                case Ellipse:
                 {
-                    theProjParam    = ElCLib.Parameter(theCurve.Ellipse(), thePoint);
-                    theProjPoint    = ElCLib.Value(theProjParam, theCurve.Ellipse());
+                    theProjParam    = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCurve.Ellipse(), thePoint);
+                    theProjPoint    = global::Kerf.Engine.Geometry.ElCLib.Value(theProjParam, theCurve.Ellipse());
                     anIsClosedCurve = true;
                     aCurvePeriod    = 2.0 * M_PI;
                     break;
@@ -338,7 +342,7 @@ public sealed class ShapeAnalysis_Curve
                     // Here this algorithm tries to find the closest point on the curve
                     // by evaluating the distance between the point and the curve
                     // at several points within the parameter range.
-                    aProjDistance = Precision.Infinite();
+                    aProjDistance = global::Kerf.Engine.Foundation.Precision.Infinite();
                     ProjectOnSegments(theCurve, thePoint, 25, ref uMin, ref uMax, ref aProjDistance, ref theProjPoint,
                                       ref theProjParam);
                     if (aProjDistance <= theTolerance)
@@ -418,19 +422,19 @@ public sealed class ShapeAnalysis_Curve
     /// Projects a point on a curve restricted to [cf, cl] by a Newton search from the previous parameter
     /// <paramref name="paramPrev"/>; where it fails, as <c>Project</c> on the adaptor with AdjustToEnds false.
     /// </summary>
-    public double NextProject(double paramPrev, Geom_Curve C3D, in gp_Pnt P3D, double preci, out gp_Pnt proj,
+    public double NextProject(double paramPrev, Geom_Curve C3D, in Point3D P3D, double preci, out Point3D proj,
                               out double param, double cf, double cl, bool AdjustToEnds = true)
     {
         double uMin    = (cf < cl ? cf : cl);
         double uMax    = (cf < cl ? cl : cf);
-        double distmin = Precision.Infinite();
+        double distmin = global::Kerf.Engine.Foundation.Precision.Infinite();
         var    GAC     = new GeomAdaptor_Curve(C3D, uMin, uMax);
         if (C3D is Geom_BoundedCurve)
         {
             //:j8 abv 10 Dec 98: tr10_r0501_db.stp #9423: protection against densing of points near one end
-            double prec     = (AdjustToEnds ? preci : Precision.Confusion());
-            gp_Pnt LowBound = GAC.Value(uMin);
-            gp_Pnt HigBound = GAC.Value(uMax);
+            double prec     = (AdjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
+            Point3D LowBound = GAC.Value(uMin);
+            Point3D HigBound = GAC.Value(uMax);
             distmin = LowBound.Distance(P3D);
             if (distmin <= prec)
             {
@@ -461,7 +465,7 @@ public sealed class ShapeAnalysis_Curve
     }
 
     /// <summary>Projects a point on a curve given by an adaptor, by Newton from <paramref name="paramPrev"/>.</summary>
-    public double NextProject(double paramPrev, Adaptor3d_Curve C3D, in gp_Pnt P3D, double preci, out gp_Pnt proj,
+    public double NextProject(double paramPrev, Adaptor3d_Curve C3D, in Point3D P3D, double preci, out Point3D proj,
                               out double param)
     {
         double uMin = C3D.FirstParameter();
@@ -485,7 +489,7 @@ public sealed class ShapeAnalysis_Curve
     /// <remarks>
     /// Where the range is reversed on a curve that isn't closed, OCCT reverses the curve in place
     /// (<c>Geom_Curve::Reverse</c>). The port does too, so on a frozen curve that case throws
-    /// <see cref="Standard_ImmutableObject"/>: pass a copy.
+    /// <see cref="ImmutableObjectException"/>: pass a copy.
     /// </remarks>
     public bool ValidateRange(Geom_Curve theCurve, ref double First, ref double Last, double preci)
     {
@@ -520,7 +524,7 @@ public sealed class ShapeAnalysis_Curve
         if (ShapeAnalysis_Curve.IsPeriodic(theCurve))
         {
             // OCCT: on a trimmed (or offset) periodic curve, [cf, cl] is the trimmed range, not the period
-            ElCLib.AdjustPeriodic(cf, cl, Precision.PConfusion(), ref First, ref Last); //:a7 abv 11 Feb 98: preci -> PConfusion()
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref First, ref Last); //:a7 abv 11 Feb 98: preci -> PConfusion()
         }
         else if (First < Last)
         {
@@ -533,12 +537,12 @@ public sealed class ShapeAnalysis_Curve
             // DANGER: 3D precision applied to a 1D space
 
             // Last = cf instead of Last = cl
-            if (Math.Abs(Last - cf) < Precision.PConfusion() /*preci*/)
+            if (Math.Abs(Last - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
             {
                 Last = cl;
                 // First = cl instead of First = cf
             }
-            else if (Math.Abs(First - cl) < Precision.PConfusion() /*preci*/)
+            else if (Math.Abs(First - cl) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
             {
                 First = cf;
 
@@ -572,12 +576,12 @@ public sealed class ShapeAnalysis_Curve
             if (aBSpline.StartPoint().Distance(aBSpline.EndPoint()) <= preci)
             {
                 // Last = cf instead of Last = cl
-                if (Math.Abs(Last - cf) < Precision.PConfusion() /*preci*/)
+                if (Math.Abs(Last - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
                 {
                     Last = cl;
                     // First = cl instead of First = cf
                 }
-                else if (Math.Abs(First - cl) < Precision.PConfusion() /*preci*/)
+                else if (Math.Abs(First - cl) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
                 {
                     First = cf;
                 }
@@ -617,8 +621,8 @@ public sealed class ShapeAnalysis_Curve
             // pdn 11.01.99 #144 bm1_pe_t4 protection of exceptions in draw
             if (First == Last)
             {
-                First -= Precision.PConfusion();
-                Last  += Precision.PConfusion();
+                First -= global::Kerf.Engine.Foundation.Precision.PConfusion();
+                Last  += global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
 
             return false;
@@ -628,8 +632,8 @@ public sealed class ShapeAnalysis_Curve
     }
 
     // search for extremum using Newton (OCCT returns int, with the values true and false)
-    private static bool SearchForExtremum(Geom2d_Curve C2d, double First, double Last, in gp_Vec2d dir, ref double par,
-                                          ref gp_Pnt2d res)
+    private static bool SearchForExtremum(Geom2d_Curve C2d, double First, double Last, in Vector2D dir, ref double par,
+                                          ref Point2D res)
     {
         double prevpar;
         int    nbOut = 0;
@@ -637,7 +641,7 @@ public sealed class ShapeAnalysis_Curve
         {
             prevpar = par;
 
-            C2d.D2(par, out res, out gp_Vec2d D1, out gp_Vec2d D2);
+            C2d.D2(par, out res, out Vector2D D1, out Vector2D D2);
             double Det = (D2 * dir);
             if (Math.Abs(Det) < 1e-10)
             {
@@ -645,7 +649,7 @@ public sealed class ShapeAnalysis_Curve
             }
 
             par -= (D1 * dir) / Det;
-            if (Math.Abs(par - prevpar) < Precision.PConfusion())
+            if (Math.Abs(par - prevpar) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
@@ -679,7 +683,7 @@ public sealed class ShapeAnalysis_Curve
     /// when <paramref name="Exact"/>, the ends of each interval of C2 continuity and the extrema in X and Y found on
     /// it by Newton (a work-around for BndLib's inexact bounds).
     /// </summary>
-    public void FillBndBox(Geom2d_Curve C2d, double First, double Last, int NPoints, bool Exact, ref Bnd_Box2d Box)
+    public void FillBndBox(Geom2d_Curve C2d, double First, double Last, int NPoints, bool Exact, ref Box2d Box)
     {
         if (!Exact)
         {
@@ -688,7 +692,7 @@ public sealed class ShapeAnalysis_Curve
             for (int i = 0; i <= nseg; i++)
             {
                 double   par = First + i * step;
-                gp_Pnt2d pnt = C2d.Value(par);
+                Point2D pnt = C2d.Value(par);
                 Box.Add(pnt);
             }
 
@@ -697,13 +701,13 @@ public sealed class ShapeAnalysis_Curve
 
         // We should solve the task on intervals of C2 continuity.
         var anAC  = new Geom2dAdaptor_Curve(C2d, First, Last);
-        int nbInt = anAC.NbIntervals(GeomAbs_C2);
+        int nbInt = anAC.NbIntervals(C2);
         // If we have only 1 interval then use input NPoints parameter to get samples.
         int nbSamples = (nbInt < 2 ? NPoints - 1 : nbInt);
         var aParams   = new NCollection_Array1<double>(1, nbSamples + 1);
         if (nbSamples == nbInt)
         {
-            anAC.Intervals(aParams, GeomAbs_C2);
+            anAC.Intervals(aParams, C2);
         }
         else
         {
@@ -717,21 +721,21 @@ public sealed class ShapeAnalysis_Curve
         for (int i = 1; i <= nbSamples + 1; i++)
         {
             double   aPar1 = aParams[i];
-            gp_Pnt2d aPnt  = C2d.Value(aPar1);
+            Point2D aPnt  = C2d.Value(aPar1);
             Box.Add(aPnt);
             if (i <= nbSamples)
             {
                 double   aPar2   = aParams[i + 1];
                 double   par     = (aPar1 + aPar2) * 0.5;
-                gp_Pnt2d pextr   = new gp_Pnt2d();
+                Point2D pextr   = new Point2D();
                 double   parextr = par;
-                if (SearchForExtremum(C2d, aPar1, aPar2, new gp_Vec2d(1, 0), ref parextr, ref pextr))
+                if (SearchForExtremum(C2d, aPar1, aPar2, new Vector2D(1, 0), ref parextr, ref pextr))
                 {
                     Box.Add(pextr);
                 }
 
                 parextr = par;
-                if (SearchForExtremum(C2d, aPar1, aPar2, new gp_Vec2d(0, 1), ref parextr, ref pextr))
+                if (SearchForExtremum(C2d, aPar1, aPar2, new Vector2D(0, 1), ref parextr, ref pextr))
                 {
                     Box.Add(pextr);
                 }
@@ -756,15 +760,15 @@ public sealed class ShapeAnalysis_Curve
                 return theCurveIndice;
             }
 
-            gp_Pnt2d StartBC1 = BC1.StartPoint();
-            gp_Pnt2d EndBC1   = BC1.EndPoint();
-            var      VecBC1   = new gp_Vec2d(StartBC1, EndBC1);
-            if (VecBC1.SquareMagnitude() < gp.Resolution())
+            Point2D StartBC1 = BC1.StartPoint();
+            Point2D EndBC1   = BC1.EndPoint();
+            var      VecBC1   = new Vector2D(StartBC1, EndBC1);
+            if (VecBC1.SquareMagnitude() < Constants.Resolution())
             {
                 return theCurveIndice;
             }
 
-            L1 = new Geom2d_Line(StartBC1, new gp_Dir2d(VecBC1));
+            L1 = new Geom2d_Line(StartBC1, new Direction2D(VecBC1));
         }
 
         Geom2d_Line? L2 = C2 as Geom2d_Line;
@@ -776,23 +780,23 @@ public sealed class ShapeAnalysis_Curve
                 return theCurveIndice;
             }
 
-            gp_Pnt2d StartBC2 = BC2.StartPoint();
-            gp_Pnt2d EndBC2   = BC2.EndPoint();
-            var      VecBC2   = new gp_Vec2d(StartBC2, EndBC2);
-            if (VecBC2.SquareMagnitude() < gp.Resolution())
+            Point2D StartBC2 = BC2.StartPoint();
+            Point2D EndBC2   = BC2.EndPoint();
+            var      VecBC2   = new Vector2D(StartBC2, EndBC2);
+            if (VecBC2.SquareMagnitude() < Constants.Resolution())
             {
                 return theCurveIndice;
             }
 
-            L2 = new Geom2d_Line(StartBC2, new gp_Dir2d(VecBC2));
+            L2 = new Geom2d_Line(StartBC2, new Direction2D(VecBC2));
         }
 
         bool UdirPos, UdirNeg, VdirPos, VdirNeg;
         UdirPos = UdirNeg = VdirPos = VdirNeg = false;
 
-        gp_Dir2d theDir  = L1.Direction();
-        gp_Pnt2d theLoc1 = L1.Location();
-        gp_Pnt2d theLoc2 = L2.Location();
+        Direction2D theDir  = L1.Direction();
+        Point2D theLoc1 = L1.Location();
+        Point2D theLoc2 = L2.Location();
 
         if (theDir.X() > 0.0)
         {
@@ -864,10 +868,10 @@ public sealed class ShapeAnalysis_Curve
     //%11 pdn 12.01.98
     // Static methods for IsPlanar
 
-    private static gp_XYZ GetAnyNormal(in gp_XYZ orig)
+    private static Xyz GetAnyNormal(in Xyz orig)
     {
-        var Norm = new gp_XYZ();
-        if (Math.Abs(orig.Z()) < Precision.Confusion())
+        var Norm = new Xyz();
+        if (Math.Abs(orig.Z()) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Norm.SetCoord(0, 0, 1);
         }
@@ -875,7 +879,7 @@ public sealed class ShapeAnalysis_Curve
         {
             Norm.SetCoord(orig.Z(), 0, -orig.X());
             double nrm = Norm.Modulus();
-            if (nrm < Precision.Confusion())
+            if (nrm < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Norm.SetCoord(0, 0, 1);
             }
@@ -888,7 +892,7 @@ public sealed class ShapeAnalysis_Curve
         return Norm;
     }
 
-    private static void AppendControlPoles(NCollection_Sequence<gp_Pnt> seq, Geom_Curve curve)
+    private static void AppendControlPoles(NCollection_Sequence<Point3D> seq, Geom_Curve curve)
     {
         if (curve is Geom_Line)
         {
@@ -914,7 +918,7 @@ public sealed class ShapeAnalysis_Curve
                     AppendControlPoles(seq, bslp);
                     done = true;
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                 }
             }
@@ -927,7 +931,7 @@ public sealed class ShapeAnalysis_Curve
                     AppendControlPoles(seq, bz);
                     done = true;
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                 }
             }
@@ -947,7 +951,7 @@ public sealed class ShapeAnalysis_Curve
         }
         else if (curve is Geom_BSplineCurve BSpline)
         {
-            NCollection_Array1<gp_Pnt> Poles = BSpline.InternalPoles();
+            NCollection_Array1<Point3D> Poles = BSpline.InternalPoles();
             for (int i = 1; i <= Poles.Length(); i++)
             {
                 seq.Append(Poles[i]);
@@ -955,7 +959,7 @@ public sealed class ShapeAnalysis_Curve
         }
         else if (curve is Geom_BezierCurve Bezier)
         {
-            NCollection_Array1<gp_Pnt> Poles = Bezier.InternalPoles();
+            NCollection_Array1<Point3D> Poles = Bezier.InternalPoles();
             for (int i = 1; i <= Poles.Length(); i++)
             {
                 seq.Append(Poles[i]);
@@ -968,28 +972,28 @@ public sealed class ShapeAnalysis_Curve
     /// If <paramref name="Normal"/> is zero on input, the plane's normal is computed and returned in it; otherwise
     /// the points are checked against that normal.
     /// </summary>
-    public static bool IsPlanar(NCollection_Array1<gp_Pnt> pnts, ref gp_XYZ Normal, double preci = 0)
+    public static bool IsPlanar(NCollection_Array1<Point3D> pnts, ref Xyz Normal, double preci = 0)
     {
-        double precision = (preci > 0.0) ? preci : Precision.Confusion();
+        double precision = (preci > 0.0) ? preci : global::Kerf.Engine.Foundation.Precision.Confusion();
         bool   noNorm    = (Normal.SquareModulus() == 0);
 
         if (pnts.Length() < 3)
         {
-            gp_XYZ N1 = pnts[1].XYZ() - pnts[2].XYZ();
+            Xyz N1 = pnts[1].XYZ() - pnts[2].XYZ();
             if (noNorm)
             {
                 Normal = GetAnyNormal(N1);
                 return true;
             }
 
-            return Math.Abs(N1 * Normal) < Precision.Confusion();
+            return Math.Abs(N1 * Normal) < global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
-        gp_XYZ aMaxDir = new gp_XYZ();
+        Xyz aMaxDir = new Xyz();
         if (noNorm)
         {
             // define a center point
-            var aCenter = new gp_XYZ(0, 0, 0);
+            var aCenter = new Xyz(0, 0, 0);
             int i       = 1;
             for (; i <= pnts.Length(); i++)
             {
@@ -1003,13 +1007,13 @@ public sealed class ShapeAnalysis_Curve
 
             for (i = 1; i < pnts.Length(); i++)
             {
-                gp_XYZ aTmpDir = pnts[i + 1].XYZ() - aCenter;
+                Xyz aTmpDir = pnts[i + 1].XYZ() - aCenter;
                 if (aTmpDir.SquareModulus() > aMaxDir.SquareModulus())
                 {
                     aMaxDir = aTmpDir;
                 }
 
-                gp_XYZ aDelta = (pnts[i].XYZ() - aCenter) ^ (pnts[i + 1].XYZ() - aCenter);
+                Xyz aDelta = (pnts[i].XYZ() - aCenter) ^ (pnts[i + 1].XYZ() - aCenter);
                 if (Normal * aDelta < 0)
                 {
                     aDelta *= -1;
@@ -1021,7 +1025,7 @@ public sealed class ShapeAnalysis_Curve
 
         // check if points are linear
         double nrm = Normal.Modulus();
-        if (nrm < Precision.Confusion())
+        if (nrm < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Normal = GetAnyNormal(aMaxDir);
             return true;
@@ -1052,34 +1056,34 @@ public sealed class ShapeAnalysis_Curve
     /// B-spline and Bezier curves by their poles, complex curves by their segments' control points; false for any
     /// other curve. See the overload on points for <paramref name="Normal"/>.
     /// </summary>
-    public static bool IsPlanar(Geom_Curve curve, ref gp_XYZ Normal, double preci = 0)
+    public static bool IsPlanar(Geom_Curve curve, ref Xyz Normal, double preci = 0)
     {
-        double precision = (preci > 0.0) ? preci : Precision.Confusion();
+        double precision = (preci > 0.0) ? preci : global::Kerf.Engine.Foundation.Precision.Confusion();
         bool   noNorm    = (Normal.SquareModulus() == 0);
 
         if (curve is Geom_Line Line)
         {
-            gp_XYZ N1 = Line.Position().Direction().XYZ();
+            Xyz N1 = Line.Position().Direction().XYZ();
             if (noNorm)
             {
                 Normal = GetAnyNormal(N1);
                 return true;
             }
 
-            return Math.Abs(N1 * Normal) < Precision.Confusion();
+            return Math.Abs(N1 * Normal) < global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
         if (curve is Geom_Conic Conic)
         {
-            gp_XYZ N1 = Conic.Axis().Direction().XYZ();
+            Xyz N1 = Conic.Axis().Direction().XYZ();
             if (noNorm)
             {
                 Normal = N1;
                 return true;
             }
 
-            gp_XYZ aVecMul = N1 ^ Normal;
-            return aVecMul.SquareModulus() < Precision.SquareConfusion();
+            Xyz aVecMul = N1 ^ Normal;
+            return aVecMul.SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         }
 
         if (curve is Geom_TrimmedCurve Trimmed)
@@ -1104,14 +1108,14 @@ public sealed class ShapeAnalysis_Curve
 
         if (curve is ShapeExtend_ComplexCurve Complex)
         {
-            var sequence = new NCollection_Sequence<gp_Pnt>();
+            var sequence = new NCollection_Sequence<Point3D>();
             int i;
             for (i = 1; i <= Complex.NbCurves(); i++)
             {
                 AppendControlPoles(sequence, Complex.Curve(i));
             }
 
-            var Poles = new NCollection_Array1<gp_Pnt>(1, sequence.Length());
+            var Poles = new NCollection_Array1<Point3D>(1, sequence.Length());
             for (i = 1; i <= sequence.Length(); i++)
             {
                 Poles[i] = sequence[i];
@@ -1128,7 +1132,7 @@ public sealed class ShapeAnalysis_Curve
     /// circles, knots × degree on B-splines, poles + 3 on Bezier curves, else 100 per parameter range). Returns false
     /// if the curve's parameter range is empty.
     /// </summary>
-    public static bool GetSamplePoints(Geom_Curve curve, double first, double last, NCollection_Sequence<gp_Pnt> seq)
+    public static bool GetSamplePoints(Geom_Curve curve, double first, double last, NCollection_Sequence<Point3D> seq)
     {
         double adelta = curve.LastParameter() - curve.FirstParameter();
         if (adelta == 0)
@@ -1182,7 +1186,7 @@ public sealed class ShapeAnalysis_Curve
     /// Appends to <paramref name="seq"/> sample points of a pcurve on [first, last], distributed as
     /// BRepTopAdaptor_FClass2d does. Returns true.
     /// </summary>
-    public static bool GetSamplePoints(Geom2d_Curve curve, double first, double last, NCollection_Sequence<gp_Pnt2d> seq)
+    public static bool GetSamplePoints(Geom2d_Curve curve, double first, double last, NCollection_Sequence<Point2D> seq)
     {
         //: abv 05.06.02: TUBE.stp
         // Use the same distribution of points as BRepTopAdaptor_FClass2d for consistency
@@ -1215,13 +1219,13 @@ public sealed class ShapeAnalysis_Curve
             return true;
         }
 
-        double prec = Max(preci, Precision.Confusion());
+        double prec = Max(preci, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double f, l;
         f = theCurve.FirstParameter();
         l = theCurve.LastParameter();
 
-        if (Precision.IsInfinite(f) || Precision.IsInfinite(l))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(f) || global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
         {
             return false;
         }

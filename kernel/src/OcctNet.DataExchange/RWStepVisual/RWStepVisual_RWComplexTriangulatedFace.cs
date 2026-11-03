@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -90,12 +92,12 @@ internal class RWStepVisual_RWComplexTriangulatedFace
             }
         }
 
-        NCollection_HArray1<Standard_Transient> aTriangleStrips = null;
+        NCollection_HArray1<Transient> aTriangleStrips = null;
         int sub7 = 0;
         if (theData.ReadSubList(theNum, 7, "triangle_strips", theCheck, ref sub7))
         {
             int nb0 = theData.NbParams(sub7);
-            aTriangleStrips = new NCollection_HArray1<Standard_Transient>(1, nb0);
+            aTriangleStrips = new NCollection_HArray1<Transient>(1, nb0);
             for (int i0 = 1; i0 <= nb0; i0++)
             {
                 int nbj0 = theData.NbParams(theData.ParamNumber(sub7, i0));
@@ -115,12 +117,12 @@ internal class RWStepVisual_RWComplexTriangulatedFace
             }
         }
 
-        NCollection_HArray1<Standard_Transient> aTriangleFans = null;
+        NCollection_HArray1<Transient> aTriangleFans = null;
         int sub8 = 0;
         if (theData.ReadSubList(theNum, 8, "triangle_fans", theCheck, ref sub8))
         {
             int nb0 = theData.NbParams(sub8);
-            aTriangleFans = new NCollection_HArray1<Standard_Transient>(1, nb0);
+            aTriangleFans = new NCollection_HArray1<Transient>(1, nb0);
             for (int i0 = 1; i0 <= nb0; i0++)
             {
                 int nbj0 = theData.NbParams(theData.ParamNumber(sub8, i0));

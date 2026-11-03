@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -11,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BOPAlgo_BuilderFaceTests
 {
-    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, y, 0)).Vertex();
+    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
 
     private static TopoDS_Edge E(in TopoDS_Vertex a, in TopoDS_Vertex b) => new BRepBuilderAPI_MakeEdge(a, b).Edge();
 
@@ -111,7 +112,7 @@ public class BOPAlgo_BuilderFaceTests
     {
         (TopoDS_Face aF, _) = SplitSquare();
         NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(5, 5, 0), new gp_Dir(0, 0, 1)), 2)).Edge();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 5, 0), new Direction3D(0, 0, 1)), 2)).Edge();
         AddTwice(aLE, aCircle);
 
         BOPAlgo_BuilderFace aBF = Build(aF, aLE);
@@ -233,7 +234,7 @@ public class BOPAlgo_BuilderFaceTests
         (TopoDS_Face aF, TopoDS_Edge aMiddle) = SplitSquare();
         NCollection_List<TopoDS_Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, aMiddle);
-        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(2.5, 5, 0), new gp_Dir(0, 0, 1)), 1)).Edge();
+        TopoDS_Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(2.5, 5, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         AddTwice(aLE, aCircle);
 
         BOPAlgo_BuilderFace aSerial = Build(aF, aLE);

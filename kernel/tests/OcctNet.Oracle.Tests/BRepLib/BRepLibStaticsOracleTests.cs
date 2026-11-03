@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Text;
 using Xunit.Abstractions;
 
@@ -53,24 +55,24 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
 
     private enum SurfaceKind { Plane, Cylinder, BSpline }
 
-    private sealed record EdgeSpec(bool HasCurve, gp_Pnt2d A, gp_Pnt2d B, double Bend, double F3, double L3, double PF, double PL,
-                                   double Tol, double TolV1, double TolV2, gp_Vec Move1, gp_Vec Move2,
-                                   gp_Pnt2d[]? Poles2d, bool SameRangeFlag, bool SameParameterFlag);
+    private sealed record EdgeSpec(bool HasCurve, Point2D A, Point2D B, double Bend, double F3, double L3, double PF, double PL,
+                                   double Tol, double TolV1, double TolV2, Vector3D Move1, Vector3D Move2,
+                                   Point2D[]? Poles2d, bool SameRangeFlag, bool SameParameterFlag);
 
-    private sealed record SceneSpec(SurfaceKind Kind, gp_Ax3 Ax, double Radius, NCollection_Array2<gp_Pnt>? Poles, double FaceTol,
+    private sealed record SceneSpec(SurfaceKind Kind, CoordinateSystem Ax, double Radius, NCollection_Array2<Point3D>? Poles, double FaceTol,
                                     EdgeSpec[] Edges);
 
-    private static gp_Ax3 Ax3(Oracle theO)
+    private static CoordinateSystem Ax3(Oracle theO)
     {
         // exact axes (a permutation of the global ones), so that both sides hold the same numbers
-        gp_Dir[] aDirs = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(-1, 0, 0), new(0, -1, 0), new(0, 0, -1)];
+        Direction3D[] aDirs = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(-1, 0, 0), new(0, -1, 0), new(0, 0, -1)];
         while (true)
         {
-            gp_Dir aN = aDirs[theO.Int(0, 5)];
-            gp_Dir aX = aDirs[theO.Int(0, 5)];
+            Direction3D aN = aDirs[theO.Int(0, 5)];
+            Direction3D aX = aDirs[theO.Int(0, 5)];
             if (Math.Abs(aN.Dot(aX)) < 0.5)
             {
-                return new gp_Ax3(new gp_Pnt(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10)), aN, aX);
+                return new CoordinateSystem(new Point3D(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10)), aN, aX);
             }
         }
     }
@@ -108,17 +110,17 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
     private static SceneSpec NewScene(Oracle theO)
     {
         var aKind = (SurfaceKind)theO.Int(0, 2);
-        gp_Ax3 anAx = Ax3(theO);
+        CoordinateSystem anAx = Ax3(theO);
         double aRadius = theO.Real(1, 5);
-        NCollection_Array2<gp_Pnt>? aPoles = null;
+        NCollection_Array2<Point3D>? aPoles = null;
         if (aKind == SurfaceKind.BSpline)
         {
-            aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+            aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
             for (int i = 1; i <= 4; i++)
             {
                 for (int j = 1; j <= 4; j++)
                 {
-                    aPoles[i, j] = new gp_Pnt(3 * i + theO.Real(-0.5, 0.5), 3 * j + theO.Real(-0.5, 0.5), theO.Real(-2, 2));
+                    aPoles[i, j] = new Point3D(3 * i + theO.Real(-0.5, 0.5), 3 * j + theO.Real(-0.5, 0.5), theO.Real(-2, 2));
                 }
             }
         }
@@ -129,13 +131,13 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         var anEdges = new EdgeSpec[aNbEdges];
         for (int k = 0; k < aNbEdges; k++)
         {
-            gp_Pnt2d anA, aB;
+            Point2D anA, aB;
             double aF3, aL3;
             switch (aKind)
             {
                 case SurfaceKind.Plane:
-                    anA = new gp_Pnt2d(theO.Real(-5, 5), theO.Real(-5, 5));
-                    aB = new gp_Pnt2d(theO.Real(-5, 5), theO.Real(-5, 5));
+                    anA = new Point2D(theO.Real(-5, 5), theO.Real(-5, 5));
+                    aB = new Point2D(theO.Real(-5, 5), theO.Real(-5, 5));
                     aF3 = theO.Real(-3, 3);
                     aL3 = aF3 + theO.Real(0.5, 10);
                     break;
@@ -143,8 +145,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     {
                         // an arc of the iso v: the circle's parameter is u
                         double u0 = theO.Real(0, 3), v = theO.Real(-3, 3);
-                        anA = new gp_Pnt2d(u0, v);
-                        aB = new gp_Pnt2d(u0 + theO.Real(0.3, 3), v);
+                        anA = new Point2D(u0, v);
+                        aB = new Point2D(u0 + theO.Real(0.3, 3), v);
                         aF3 = anA.X();
                         aL3 = aB.X();
                         break;
@@ -153,8 +155,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     {
                         // a stretch of the iso u: the B-spline's parameter is v
                         double u0 = theO.Real(0.05, 0.95), v0 = theO.Real(0, 0.4);
-                        anA = new gp_Pnt2d(u0, v0);
-                        aB = new gp_Pnt2d(u0, v0 + theO.Real(0.2, 0.6));
+                        anA = new Point2D(u0, v0);
+                        aB = new Point2D(u0, v0 + theO.Real(0.2, 0.6));
                         aF3 = anA.Y();
                         aL3 = aB.Y();
                         break;
@@ -164,25 +166,25 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             bool isSameRange = theO.Bool();
             double aPF = isSameRange ? aF3 : theO.Real(-2, 2);
             double aPL = isSameRange ? aL3 : aPF + theO.Real(0.5, 5);
-            gp_Pnt2d[]? aPoles2d = null;
+            Point2D[]? aPoles2d = null;
             if (!isWithCurves)
             {
                 // a pcurve alone: a cubic in the domain (from A to B through two random points)
-                aPoles2d = new gp_Pnt2d[4];
+                aPoles2d = new Point2D[4];
                 aPoles2d[0] = anA;
                 aPoles2d[3] = aB;
                 for (int i = 1; i <= 2; i++)
                 {
-                    gp_Pnt2d aM = new(anA.X() + (aB.X() - anA.X()) * i / 3.0, anA.Y() + (aB.Y() - anA.Y()) * i / 3.0);
+                    Point2D aM = new(anA.X() + (aB.X() - anA.X()) * i / 3.0, anA.Y() + (aB.Y() - anA.Y()) * i / 3.0);
                     double aD = aKind == SurfaceKind.BSpline ? 0.05 : 0.5;
-                    aPoles2d[i] = new gp_Pnt2d(aM.X() + theO.Real(-aD, aD), aM.Y() + theO.Real(-aD, aD));
+                    aPoles2d[i] = new Point2D(aM.X() + theO.Real(-aD, aD), aM.Y() + theO.Real(-aD, aD));
                 }
             }
             double aMove = theO.Int(0, 2) == 0 ? Math.Pow(10, theO.Real(-6, -3)) : 0;
             anEdges[k] = new EdgeSpec(isWithCurves, anA, aB, theO.Real(0.1, 0.9), aF3, aL3, aPF, aPL,
                                       Math.Pow(10, theO.Real(-7, -4)), Math.Pow(10, theO.Real(-7, -3)), Math.Pow(10, theO.Real(-7, -3)),
-                                      new gp_Vec(aMove * theO.Real(-1, 1), aMove * theO.Real(-1, 1), aMove * theO.Real(-1, 1)),
-                                      new gp_Vec(0, 0, 0), aPoles2d, isSameRange && theO.Bool(), theO.Int(0, 3) == 0);
+                                      new Vector3D(aMove * theO.Real(-1, 1), aMove * theO.Real(-1, 1), aMove * theO.Real(-1, 1)),
+                                      new Vector3D(0, 0, 0), aPoles2d, isSameRange && theO.Bool(), theO.Int(0, 3) == 0);
         }
         _ = aSurf;
         return aScene with { Edges = anEdges };
@@ -222,8 +224,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 {
                     case SurfaceKind.Plane:
                         {
-                            gp_Pnt aPA = aSurf.Value(anE.A.X(), anE.A.Y()), aPB = aSurf.Value(anE.B.X(), anE.B.Y());
-                            var aPoles = NCollection_Array1<gp_Pnt>.From([aPA, aPB]);
+                            Point3D aPA = aSurf.Value(anE.A.X(), anE.A.Y()), aPB = aSurf.Value(anE.B.X(), anE.B.Y());
+                            var aPoles = NCollection_Array1<Point3D>.From([aPA, aPB]);
                             var aKnots = NCollection_Array1<double>.From([anE.F3, anE.L3]);
                             var aMults = NCollection_Array1<int>.From([2, 2]);
                             aC = new Geom_BSplineCurve(aPoles, aKnots, aMults, 1);
@@ -233,8 +235,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     case SurfaceKind.Cylinder:
                         {
                             // the iso v: a circle on the cylinder's exact axes
-                            gp_Ax2 anAx2 = theS.Ax.Ax2();
-                            anAx2.SetLocation(new gp_Pnt(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
+                            Frame3D anAx2 = theS.Ax.Ax2();
+                            anAx2.SetLocation(new Point3D(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
                             aC = new Geom_Circle(anAx2, theS.Radius);
                             using var aNAx2 = Oracle.ToNative(anAx2);
                             aNC = new N.Geom_Circle(aNAx2, theS.Radius);
@@ -243,7 +245,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     default:
                         {
                             var anIso = (Geom_BSplineCurve)((Geom_BSplineSurface)aSurf).UIso(anE.A.X());
-                            var aPoles = new NCollection_Array1<gp_Pnt>(1, anIso.NbPoles());
+                            var aPoles = new NCollection_Array1<Point3D>(1, anIso.NbPoles());
                             anIso.Poles(aPoles);
                             var aKnots = new NCollection_Array1<double>(1, anIso.NbKnots());
                             anIso.Knots(aKnots);
@@ -266,17 +268,17 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             }
 
             // the pcurve: a bent quadratic along A B, or the cubic
-            NCollection_Array1<gp_Pnt2d> aPoles2d;
+            NCollection_Array1<Point2D> aPoles2d;
             int aDegree;
             if (anE.Poles2d is null)
             {
-                gp_Pnt2d aMid = new(anE.A.X() + anE.Bend * (anE.B.X() - anE.A.X()), anE.A.Y() + anE.Bend * (anE.B.Y() - anE.A.Y()));
-                aPoles2d = NCollection_Array1<gp_Pnt2d>.From([anE.A, aMid, anE.B]);
+                Point2D aMid = new(anE.A.X() + anE.Bend * (anE.B.X() - anE.A.X()), anE.A.Y() + anE.Bend * (anE.B.Y() - anE.A.Y()));
+                aPoles2d = NCollection_Array1<Point2D>.From([anE.A, aMid, anE.B]);
                 aDegree = 2;
             }
             else
             {
-                aPoles2d = NCollection_Array1<gp_Pnt2d>.From(anE.Poles2d);
+                aPoles2d = NCollection_Array1<Point2D>.From(anE.Poles2d);
                 aDegree = 3;
             }
             var aKnots2d = NCollection_Array1<double>.From([anE.PF, anE.PL]);
@@ -287,8 +289,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             aB.UpdateEdge(aPE, aPC, aT.PFace, anE.Tol);
 
             // the vertices at the ends, moved
-            gp_Pnt aP1 = aSurf.Value(anE.A.X(), anE.A.Y()).Translated(anE.Move1);
-            gp_Pnt aP2 = aSurf.Value(anE.B.X(), anE.B.Y()).Translated(anE.Move2);
+            Point3D aP1 = aSurf.Value(anE.A.X(), anE.A.Y()).Translated(anE.Move1);
+            Point3D aP2 = aSurf.Value(anE.B.X(), anE.B.Y()).Translated(anE.Move2);
             var aNV1 = new N.TopoDS_Vertex();
             var aNV2 = new N.TopoDS_Vertex();
             TopoDS_Vertex aV1 = new(), aV2 = new();
@@ -340,7 +342,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
 
     private int myCompared;
     private int myThrown;
-    private GeomAbs_Shape myCont;
+    private Continuity myCont;
     private int myMaxDeg;
     private int myMaxSeg;
 
@@ -362,7 +364,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     throw new InvalidOperationException($"native OCCT threw on operation {theOp}");
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return true;
         }
@@ -436,7 +438,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         break;
                     case 4:
                         {
-                            var aCont = (GeomAbs_Shape)(2 * anOracle.Int(0, 2));
+                            var aCont = (Continuity)(2 * anOracle.Int(0, 2));
                             myCont = aCont;
                             myMaxDeg = anOracle.Int(6, 14);
                             myMaxSeg = anOracle.Bool() ? 0 : anOracle.Int(30, 50);
@@ -504,7 +506,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 {
                     aNEx = anEx;
                 }
-                catch (Standard_Failure anEx)
+                catch (FailureException anEx)
                 {
                     aPEx = anEx;
                 }
@@ -572,7 +574,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             break;
                         case 3:
                         {
-                            var aCont = (GeomAbs_Shape)(2 * anOracle.Int(0, 2));
+                            var aCont = (Continuity)(2 * anOracle.Int(0, 2));
                             int aMaxDeg = anOracle.Int(6, 14);
                             int aMaxSeg = anOracle.Bool() ? 0 : anOracle.Int(30, 50);
                             bool aNOk = N.BRepLib.BuildCurves3d(aT.NFace, aTol, (N.GeomAbs_Shape)(int)aCont, aMaxDeg, aMaxSeg);
@@ -593,7 +595,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 }
 
                 Assert.Equal(aBefore, PortText(aT.PFace));
-                Assert.True(aResult.TShape()!.IsFrozen());
+                Assert.True(aResult.TShape()!.IsFrozen);
                 for (var anExp = new TopExp_Explorer(aT.PFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
                 {
                     anEdges++;

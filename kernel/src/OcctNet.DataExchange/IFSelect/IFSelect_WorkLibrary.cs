@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +17,7 @@ namespace Occt;
 /// service is provided, it can produce, according the norm, either a parcel of a file for an entity, or any
 /// other kind of information relevant for the norm,
 /// </summary>
-public abstract class IFSelect_WorkLibrary : Standard_Transient
+public abstract class IFSelect_WorkLibrary : Transient
 {
 
     /// <summary>
@@ -28,7 +30,7 @@ public abstract class IFSelect_WorkLibrary : Standard_Transient
     /// OCCT.NET: <paramref name="theProgress"/> (not in OCCT) lets a library report and cancel the read (plan 2.7).
     /// </remarks>
     public abstract int ReadFile(string name, ref Interface_InterfaceModel? model, Interface_Protocol? protocol,
-                                 Message_ProgressRange theProgress = default);
+                                 ProgressRange theProgress = default);
 
     /// <summary>
     /// Interface to read a data from the specified stream. @param model is the resulting Model, which has to be
@@ -40,7 +42,7 @@ public abstract class IFSelect_WorkLibrary : Standard_Transient
     /// library report and cancel the read (plan 2.7).
     /// </remarks>
     public virtual int ReadStream(string theName, Stream theIStream, ref Interface_InterfaceModel? model, Interface_Protocol? protocol,
-                                  Message_ProgressRange theProgress = default)
+                                  ProgressRange theProgress = default)
     {
         return 1;
     }
@@ -81,12 +83,12 @@ public abstract class IFSelect_WorkLibrary : Standard_Transient
     /// identify, number ... entities. &lt;level&gt; is to be interpreted for each norm (because of the formats
     /// which can be very different)
     /// </summary>
-    public abstract void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Standard_Transient? entity, TextWriter S, int level);
+    public abstract void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Transient? entity, TextWriter S, int level);
 
     /// <summary>
     /// Calls deferred DumpEntity with the recorded default level
     /// </summary>
-    public void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Standard_Transient? entity, TextWriter S)
+    public void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Transient? entity, TextWriter S)
     {
         if (thelevhlp is null)
         {

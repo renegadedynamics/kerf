@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -12,13 +18,13 @@ public class IntPolyhTests
     // A bicubic B-spline surface on [x0, x0 + L] x [y0, y0 + L] with 5 x 5 poles, z = f(x, y) at the poles
     private static GeomAdaptor_Surface MakeBSpline(double x0, double y0, double L, Func<double, double, double> f)
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 5, 1, 5);
+        NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; i++)
         {
             for (int j = 1; j <= 5; j++)
             {
                 double x = x0 + L * (i - 1) / 4.0, y = y0 + L * (j - 1) / 4.0;
-                aPoles[i, j] = new gp_Pnt(x, y, f(x, y));
+                aPoles[i, j] = new Point3D(x, y, f(x, y));
             }
         }
 
@@ -36,13 +42,13 @@ public class IntPolyhTests
     // A vertical B-spline surface x = x(y, z), as the image of the (y, z) square
     private static GeomAdaptor_Surface MakeVerticalBSpline(Func<double, double, double> theX, double y0, double z0, double L)
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 5, 1, 5);
+        NCollection_Array2<Point3D> aPoles = new(1, 5, 1, 5);
         for (int i = 1; i <= 5; i++)
         {
             for (int j = 1; j <= 5; j++)
             {
                 double y = y0 + L * (i - 1) / 4.0, z = z0 + L * (j - 1) / 4.0;
-                aPoles[i, j] = new gp_Pnt(theX(y, z), y, z);
+                aPoles[i, j] = new Point3D(theX(y, z), y, z);
             }
         }
 
@@ -158,7 +164,7 @@ public class IntPolyhTests
             int aNb = aMaillage.StartingPointsResearch(aCouple.FirstValue(), aCouple.SecondValue(), ref aSP1, ref aSP2);
             if (aNb >= 1)
             {
-                gp_Pnt aP = new(aSP1.X(), aSP1.Y(), aSP1.Z());
+                Point3D aP = new(aSP1.X(), aSP1.Y(), aSP1.Z());
                 Assert.False(aT1.CachedBoundingBox().IsOut(aP));
                 Assert.False(aT2.CachedBoundingBox().IsOut(aP));
                 Assert.Equal(aCouple.FirstValue(), aSP1.T1());
@@ -177,7 +183,7 @@ public class IntPolyhTests
             Assert.Equal(aFirst, CouplesFingerprint(Triangulate(aS1, aS2, 10)));
         }
 
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             Assert.Equal(aFirst, CouplesFingerprint(Triangulate(aS1, aS2, 10)));
         }
@@ -190,7 +196,7 @@ public class IntPolyhTests
             Assert.Equal(aLines, Fingerprint(new IntPolyh_Intersection(aT1, aT2)));
         }
 
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             Assert.Equal(aLines, Fingerprint(new IntPolyh_Intersection(aS1, aS2)));
         }
@@ -212,7 +218,7 @@ public class IntPolyhTests
             {
                 anInter.GetLinePoint(iL, iP, out double x, out double y, out double z, out double u1, out double v1,
                                      out double u2, out double v2, out double anAngle);
-                gp_Pnt aP = new(x, y, z);
+                Point3D aP = new(x, y, z);
                 // The points are on the triangulations, within their deflection of the surfaces
                 Assert.True(aS1.Value(u1, v1).Distance(aP) < 0.05, $"line {iL} point {iP} off the first surface");
                 Assert.True(aS2.Value(u2, v2).Distance(aP) < 0.05, $"line {iL} point {iP} off the second surface");
@@ -258,7 +264,7 @@ public class IntPolyhTests
         IntPolyh_MaillageAffinage aMaillage = Triangulate(aFlat, aWall, 10);
         Assert.Equal(0, aMaillage.GetCouples().Extent());
         IntPolyh_Array<IntPolyh_Triangle> aTriangles = aMaillage.GetArrayOfTriangles(1);
-        List<Bnd_Box> aBoxes = [];
+        List<Box> aBoxes = [];
         for (int i = 0; i < aTriangles.NbItems(); ++i)
         {
             aBoxes.Add(aTriangles.Value(i).CachedBoundingBox());

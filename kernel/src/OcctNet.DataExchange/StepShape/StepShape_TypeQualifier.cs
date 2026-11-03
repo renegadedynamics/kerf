@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepShape_TypeQualifier : Standard_Transient
+public class StepShape_TypeQualifier : Transient
 {
     private TCollection_HAsciiString theName;
 

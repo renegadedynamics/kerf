@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity Certification
 /// </summary>
-public class StepBasic_Certification : Standard_Transient
+public class StepBasic_Certification : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString thePurpose;

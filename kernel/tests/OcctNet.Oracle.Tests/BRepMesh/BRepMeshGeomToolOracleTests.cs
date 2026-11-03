@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -53,9 +55,9 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
     private static N.TopoDS_Shape NativeEdge(Oracle theO, out bool theIsConic)
     {
         using var aNP = new N.gp_Pnt(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10));
-        gp_Dir aZ = theO.Dir();
-        gp_Dir aRef = theO.Dir();
-        gp_Dir aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new gp_Dir(1, 0, 0), 0.1) ? new gp_Dir(0, 1, 0) : new gp_Dir(1, 0, 0)) : aRef);
+        Direction3D aZ = theO.Dir();
+        Direction3D aRef = theO.Dir();
+        Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
         using var aNZ = new N.gp_Dir(aZ.X(), aZ.Y(), aZ.Z());
         using var aNX = new N.gp_Dir(aX.X(), aX.Y(), aX.Z());
         using var aNAx2 = new N.gp_Ax2(aNP, aNZ, aNX);
@@ -106,29 +108,29 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
 
             TopoDS_Edge anEdge = TopoDS.Edge(PortRead(aF1));
             TopoDS_Edge aMeshed = TopoDS.Edge(PortRead(aF2));
-            Poly_Polygon3D aPoly = BRep_Tool.Polygon3D(aMeshed, out _)!;
+            Polygon3D aPoly = BRep_Tool.Polygon3D(aMeshed, out _)!;
             Assert.NotNull(aPoly);
 
             // The edge's deflection (BRepMesh_Deflection), as the mesher's parameters are completed
             // (BRepMesh_IncrementalMesh::initParameters).
             var aParams = new IMeshTools_Parameters { Deflection = aDeflection, Angle = anAngle };
-            aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * aDeflection, Precision.Confusion());
+            aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * aDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
             var aDEdge = new BRepMeshData_Edge(anEdge);
             BRepMesh_Deflection.ComputeDeflection(aDEdge, 0.0, aParams);
             anOracle.Same(aPoly.Deflection(), aDEdge.GetDeflection(), $"edge {i} deflection");
 
             // The tessellation (BRepMesh_CurveTessellator's GCPnts_TangentialDeflection) through BRepMesh_GeomTool.
             var aCurve = new BRepAdaptor_Curve(anEdge);
-            double aLinDef = Math.Max(0.5 * aDEdge.GetDeflection(), Precision.Confusion());
-            double anAngDef = Math.Max(0.5 * aDEdge.GetAngularDeflection(), Precision.Angular());
+            double aLinDef = Math.Max(0.5 * aDEdge.GetDeflection(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            double anAngDef = Math.Max(0.5 * aDEdge.GetAngularDeflection(), global::Kerf.Engine.Foundation.Precision.Angular());
             var aTool = new BRepMesh_GeomTool(aCurve, aCurve.FirstParameter(), aCurve.LastParameter(), aLinDef, anAngDef,
                                               isConic ? 4 : 2, aParams.MinSize);
-            anOracle.Same(aPoly.NbNodes(), aTool.NbPoints(), $"edge {i} points");
+            anOracle.Same(aPoly.NodeCount, aTool.NbPoints(), $"edge {i} points");
             NCollection_Array1<double> aParameters = aPoly.Parameters()!;
-            NCollection_Array1<gp_Pnt> aNodes = aPoly.Nodes();
+            NCollection_Array1<Point3D> aNodes = aPoly.Nodes();
             for (int k = 1; k <= aTool.NbPoints(); k++)
             {
-                aTool.Value(k, 0.0, out double aParam, out gp_Pnt aPnt, out _);
+                aTool.Value(k, 0.0, out double aParam, out Point3D aPnt, out _);
                 anOracle.Same(aParameters[k], aParam, $"edge {i} parameter {k}");
                 if (k > 1 && k < aTool.NbPoints()) // the ends are the vertices' points
                 {

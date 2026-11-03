@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -53,41 +57,41 @@ public class BRepOffsetAPI_MakeFilling : BRepBuilderAPI_MakeShape
 
     /// <summary>Adds a boundary edge (or, with <paramref name="IsBound"/> false, a free edge) with no support face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge Constr, GeomAbs_Shape Order, bool IsBound = true)
+    public int Add(in TopoDS_Edge Constr, Continuity Order, bool IsBound = true)
     {
         return myFilling.Add(Constr, Order, IsBound);
     }
 
     /// <summary>Adds an edge with its support face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Edge Constr, in TopoDS_Face Support, GeomAbs_Shape Order, bool IsBound = true)
+    public int Add(in TopoDS_Edge Constr, in TopoDS_Face Support, Continuity Order, bool IsBound = true)
     {
         return myFilling.Add(Constr, Support, Order, IsBound);
     }
 
     /// <summary>Adds a free constraint: a face bounding a gap in the boundary.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in TopoDS_Face Support, GeomAbs_Shape Order)
+    public int Add(in TopoDS_Face Support, Continuity Order)
     {
         return myFilling.Add(Support, Order);
     }
 
     /// <summary>Adds a point the filling passes through.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(in gp_Pnt Point)
+    public int Add(in Point3D Point)
     {
         return myFilling.Add(Point);
     }
 
     /// <summary>Adds a point constraint on a face.</summary>
     /// <returns>The index of the constraint.</returns>
-    public int Add(double U, double V, in TopoDS_Face Support, GeomAbs_Shape Order)
+    public int Add(double U, double V, in TopoDS_Face Support, Continuity Order)
     {
         return myFilling.Add(U, V, Support, Order);
     }
 
     /// <summary>Builds the filling (OCCT ignores the progress range).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myFilling.Build();
         myShape = myFilling.InternalFace();

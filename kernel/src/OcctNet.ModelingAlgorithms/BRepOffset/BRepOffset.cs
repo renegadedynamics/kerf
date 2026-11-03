@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.BRepOffset_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -20,7 +22,7 @@ public static class BRepOffset
     public static Geom_Surface Surface(Geom_Surface Surface, double Offset, out BRepOffset_Status theStatus,
                                        bool allowC0 = false)
     {
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         theStatus = BRepOffset_Good;
         Geom_Surface? Result = null;
@@ -30,7 +32,7 @@ public static class BRepOffset
         if (TheType == typeof(Geom_Plane))
         {
             Geom_Plane P = (Geom_Plane)Surface;
-            gp_Vec T = new(P.Position().XDirection() ^ P.Position().YDirection());
+            Vector3D T = new(P.Position().XDirection() ^ P.Position().YDirection());
             T *= Offset;
             Result = P.Translated(T) as Geom_Plane;
         }
@@ -38,7 +40,7 @@ public static class BRepOffset
         {
             Geom_CylindricalSurface C = (Geom_CylindricalSurface)Surface;
             double Radius = C.Radius();
-            gp_Ax3 Axis = C.Position();
+            CoordinateSystem Axis = C.Position();
             if (Axis.Direct())
             {
                 Radius += Offset;
@@ -53,7 +55,7 @@ public static class BRepOffset
             }
             else if (Radius <= -Tol)
             {
-                Axis.Rotate(new gp_Ax1(Axis.Location(), Axis.Direction()), M_PI);
+                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
                 Result = new Geom_CylindricalSurface(Axis, Math.Abs(Radius));
                 theStatus = BRepOffset_Reversed;
             }
@@ -67,20 +69,20 @@ public static class BRepOffset
             Geom_ConicalSurface C = (Geom_ConicalSurface)Surface;
             double Alpha = C.SemiAngle();
             double Radius = C.RefRadius() + Offset * Math.Cos(Alpha);
-            gp_Ax3 Axis = C.Position();
+            CoordinateSystem Axis = C.Position();
             if (Radius >= 0.0)
             {
-                gp_Vec Z = new(Axis.Direction());
+                Vector3D Z = new(Axis.Direction());
                 Z *= -Offset * Math.Sin(Alpha);
                 Axis.Translate(Z);
             }
             else
             {
                 Radius = -Radius;
-                gp_Vec Z = new(Axis.Direction());
+                Vector3D Z = new(Axis.Direction());
                 Z *= -Offset * Math.Sin(Alpha);
                 Axis.Translate(Z);
-                Axis.Rotate(new gp_Ax1(Axis.Location(), Axis.Direction()), M_PI);
+                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
                 Alpha = -Alpha;
             }
             Result = new Geom_ConicalSurface(Axis, Alpha, Radius);
@@ -89,7 +91,7 @@ public static class BRepOffset
         {
             Geom_SphericalSurface S = (Geom_SphericalSurface)Surface;
             double Radius = S.Radius();
-            gp_Ax3 Axis = S.Position();
+            CoordinateSystem Axis = S.Position();
             if (Axis.Direct())
             {
                 Radius += Offset;
@@ -104,7 +106,7 @@ public static class BRepOffset
             }
             else if (Radius <= -Tol)
             {
-                Axis.Rotate(new gp_Ax1(Axis.Location(), Axis.Direction()), M_PI);
+                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
                 Axis.ZReverse();
                 Result = new Geom_SphericalSurface(Axis, -Radius);
                 theStatus = BRepOffset_Reversed;
@@ -119,7 +121,7 @@ public static class BRepOffset
             Geom_ToroidalSurface S = (Geom_ToroidalSurface)Surface;
             double MajorRadius = S.MajorRadius();
             double MinorRadius = S.MinorRadius();
-            gp_Ax3 Axis = S.Position();
+            CoordinateSystem Axis = S.Position();
             if (MinorRadius < MajorRadius)
             { // A FINIR
                 if (Axis.Direct())
@@ -193,7 +195,7 @@ public static class BRepOffset
         }
 
         // find singularities (vertices of degenerated edges)
-        NCollection_List<gp_Pnt> aDegenPnt = new();
+        NCollection_List<Point3D> aDegenPnt = new();
         NCollection_List<double> aDegenTol = new();
         for (TopExp_Explorer anExp = new(theFace, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
@@ -216,7 +218,7 @@ public static class BRepOffset
         if (aType == typeof(Geom_BSplineSurface))
         {
             Geom_BSplineSurface aBSpline = (Geom_BSplineSurface)theSurface;
-            NCollection_Array2<gp_Pnt> aPoles = aBSpline.InternalPoles();
+            NCollection_Array2<Point3D> aPoles = aBSpline.InternalPoles();
 
             Geom_BSplineSurface? aCopy = null;
 
@@ -229,13 +231,13 @@ public static class BRepOffset
             for (int iSide = 0; iSide < 4; iSide++)
             {
                 // compute center of gravity of side poles
-                gp_XYZ aSum = new();
+                Xyz aSum = new();
                 for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
                 {
                     aSum += aPoles[RowStart[iSide] + iPole * RowStep[iSide], ColStart[iSide] + iPole * ColStep[iSide]]
                         .XYZ();
                 }
-                gp_Pnt aCenter = new(aSum / NbSteps[iSide]);
+                Point3D aCenter = new(aSum / NbSteps[iSide]);
 
                 // determine if all poles of the side fit into:
                 bool isCollapsed = true; // aCenter precisely (with gp::Resolution())
@@ -247,12 +249,12 @@ public static class BRepOffset
                 }
                 for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
                 {
-                    gp_Pnt aPole = aPoles[RowStart[iSide] + iPole * RowStep[iSide],
+                    Point3D aPole = aPoles[RowStart[iSide] + iPole * RowStep[iSide],
                                           ColStart[iSide] + iPole * ColStep[iSide]];
 
                     // distance from CG
                     double aDistCG = aCenter.Distance(aPole);
-                    if (aDistCG > gp.Resolution())
+                    if (aDistCG > Constants.Resolution())
                     {
                         isCollapsed = false;
                     }
@@ -262,7 +264,7 @@ public static class BRepOffset
                     }
 
                     // distances from degenerated points
-                    NCollection_List<gp_Pnt>.Iterator aDegPntIt = new(aDegenPnt);
+                    NCollection_List<Point3D>.Iterator aDegPntIt = new(aDegenPnt);
                     NCollection_List<double>.Iterator aDegTolIt = new(aDegenTol);
                     for (int iDegen = 0; iDegen < isDegenerated.Length;
                          aDegPntIt.Next(), aDegTolIt.Next(), ++iDegen)
@@ -283,7 +285,7 @@ public static class BRepOffset
                 if (!isSingular)
                 {
                     int aNbFit = 0;
-                    NCollection_List<gp_Pnt>.Iterator aDegPntIt = new(aDegenPnt);
+                    NCollection_List<Point3D>.Iterator aDegPntIt = new(aDegenPnt);
                     NCollection_List<double>.Iterator aDegTolIt = new(aDegenTol);
                     for (int iDegen = 0; iDegen < isDegenerated.Length; ++iDegen)
                     {

@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>The 2D polygons of IntPatch_RstInt: an arc's (IntPatch_PolyArc) and a line's (IntPatch_PolyLine).</summary>
 public class IntPatch_PolygonTests
 {
-    private static Bnd_Box2d Box(double x0, double y0, double x1, double y1)
+    private static Box2d Box(double x0, double y0, double x1, double y1)
     {
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aBox.Update(x0, y0, x1, y1);
         return aBox;
     }
@@ -15,7 +19,7 @@ public class IntPatch_PolygonTests
     [Fact]
     public void PolyArc_on_a_half_circle()
     {
-        Geom2dAdaptor_Curve aCircle = new(new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0));
+        Geom2dAdaptor_Curve aCircle = new(new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         IntPatch_PolyArc aPoly = new(aCircle, 10, 0.0, Math.PI, Box(-1, 0, 1, 1));
 
         Assert.Equal(10, aPoly.NbPoints());
@@ -25,13 +29,13 @@ public class IntPatch_PolygonTests
         {
             double t = (i - 1) * (Math.PI / 9);
             Assert.Equal(t, aPoly.Parameter(i), 1e-15);
-            Assert.True(aPoly.Point(i).Distance(new gp_Pnt2d(Math.Cos(t), Math.Sin(t))) < 1e-15);
+            Assert.True(aPoly.Point(i).Distance(new Point2D(Math.Cos(t), Math.Sin(t))) < 1e-15);
         }
         // The deflection: 1.2 times the largest sagitta of a chord, 1 - cos(pi / 18).
         Assert.Equal(1.2 * (1 - Math.Cos(Math.PI / 18)), aPoly.Error(), 1e-12);
         Assert.Equal(aPoly.Error(), aPoly.DeflectionOverEstimation());
 
-        aPoly.Segment(2, out gp_Pnt2d aB, out gp_Pnt2d aE);
+        aPoly.Segment(2, out Point2D aB, out Point2D aE);
         Assert.Equal(aPoly.Point(2), aB);
         Assert.Equal(aPoly.Point(3), aE);
 
@@ -40,14 +44,14 @@ public class IntPatch_PolygonTests
 
         // A full circle is closed; infinite bounds or one sample are refused.
         Assert.True(new IntPatch_PolyArc(aCircle, 12, 0.0, 2 * Math.PI, Box(-1, -1, 1, 1)).Closed());
-        Assert.Throws<Standard_ConstructionError>(() => new IntPatch_PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new IntPatch_PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
     }
 
     [Fact]
     public void PolyArc_resamples_the_part_near_the_other_polygon()
     {
         // A long segment whose middle only is near the box: the polygon is resampled between the indices around it.
-        Geom2dAdaptor_Curve aLine = new(new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)));
+        Geom2dAdaptor_Curve aLine = new(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)));
         IntPatch_PolyArc aPoly = new(aLine, 11, 0.0, 1000.0, Box(499, -0.5, 501, 0.5));
         Assert.Equal(11, aPoly.NbPoints());
         Assert.True(aPoly.Parameter(1) > 0.0 && aPoly.Parameter(11) < 1000.0);
@@ -60,16 +64,16 @@ public class IntPatch_PolygonTests
         IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(3), false);
         IntPatch_PolyLine aPoly = new();
         double anInit = aPoly.Error();
-        Assert.Equal(Precision.PConfusion() * 100.0, anInit);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0, anInit);
         aPoly.SetWLine(true, aW);
         Assert.Equal(3, aPoly.NbPoints());
-        Assert.Equal(new gp_Pnt2d(0 + 1e-7 * (0 - 1), 0), aPoly.Point(1));
-        Assert.Equal(new gp_Pnt2d(1, 0), aPoly.Point(2));
-        Assert.Equal(new gp_Pnt2d(2 + 1e-7 * (2 - 1), 0), aPoly.Point(3));
+        Assert.Equal(new Point2D(0 + 1e-7 * (0 - 1), 0), aPoly.Point(1));
+        Assert.Equal(new Point2D(1, 0), aPoly.Point(2));
+        Assert.Equal(new Point2D(2 + 1e-7 * (2 - 1), 0), aPoly.Point(3));
         Assert.Equal(anInit, aPoly.Error()); // collinear: no deflection
 
         aPoly.SetWLine(false, aW); // on S2: v = 1
-        Assert.Equal(new gp_Pnt2d(1, 1), aPoly.Point(2));
+        Assert.Equal(new Point2D(1, 1), aPoly.Point(2));
     }
 
     [Fact]
@@ -80,7 +84,7 @@ public class IntPatch_PolygonTests
         {
             double t = k * Math.PI / 8;
             IntSurf_PntOn2S aP = new();
-            aP.SetValue(new gp_Pnt(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), 0, 0);
+            aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), 0, 0);
             aCurve.Add(aP);
         }
         IntPatch_RLine aR = new(false);
@@ -91,7 +95,7 @@ public class IntPatch_PolygonTests
         double aSagitta = 1 - Math.Cos(Math.PI / 16);
         Assert.InRange(aPoly.Error(), 0.5 * aSagitta, 2 * aSagitta);
         aPoly.ResetError();
-        Assert.Equal(Precision.PConfusion() * 100.0, aPoly.Error());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0, aPoly.Error());
 
         StringWriter aOut = new();
         aPoly.Dump(aOut);

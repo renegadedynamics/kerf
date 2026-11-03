@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
 /// <summary>
@@ -16,7 +20,7 @@ public static class BRepAlgoAPI_CutTests_1
         public void ComplexProfileReversedReversedVariation3_J1()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 f 0 -50 y -100 x 150 y 100"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -26,10 +30,10 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 100.0) // y 100
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -39,7 +43,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -56,7 +60,7 @@ public static class BRepAlgoAPI_CutTests_1
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
             TopoDS_Shape aPrism3 =
-                BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -3)); // Note: -3, not -30!
+                BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -3)); // Note: -3, not -30!
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 53000.0);
@@ -68,11 +72,11 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create base prism
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create first tool prism
             TopoDS_Shape aPrism2 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(25, 25, 50), 50, 75, -30);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(25, 25, 50), 50, 75, -30);
 
             // First cut operation
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -81,7 +85,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create second tool prism
             TopoDS_Shape aPrism3 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(100, 150, 50), 50, 75, -30);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(100, 150, 50), 50, 75, -30);
 
             // Second cut operation
             BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
@@ -90,7 +94,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create third tool prism
             TopoDS_Shape aPrism4 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(50, -75, 50), 75, 100, -30);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(50, -75, 50), 75, 100, -30);
 
             // Final cut operation
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -103,10 +107,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 75 x 50 y -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -116,7 +120,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -75.0) // y -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -134,7 +138,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Second cut operation: "bcut po2 po1 pr3"
             BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
@@ -152,10 +156,10 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -30));
 
             // Apply translation: "ttranslate pr4 -10 0 0"
-            aPrism4 = BOPTest_Utilities.TranslateShape(aPrism4, new gp_Vec(-10, 0, 0));
+            aPrism4 = BOPTest_Utilities.TranslateShape(aPrism4, new Vector3D(-10, 0, 0));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -168,10 +172,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 y -75 x 50 y 75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -182,7 +186,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 100 -150 y -75 x 50 y 75"
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
@@ -195,7 +199,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -218,7 +222,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -231,10 +235,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 75 x 50 y -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -244,7 +248,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -75.0) // y -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // Create profile p3: "profile p3 o 0 0 50 f 100 150 y 75 x 50 y -75"
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
@@ -256,7 +260,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -75.0) // y -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -278,7 +282,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -291,10 +295,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 75 x 50 y -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -304,7 +308,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -75.0) // y -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 100 -150 y -75 x 50 y 75"
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
@@ -316,7 +320,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -338,7 +342,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -351,10 +355,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 y -75 x 50 y 75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -365,7 +369,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 100 -150 y -75 x 50 y 75"
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
@@ -377,7 +381,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -399,7 +403,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -412,10 +416,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -425,7 +429,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -433,7 +437,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 y 100 x 75 y -100"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -10), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -10), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -443,7 +447,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -456,10 +460,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -469,7 +473,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -477,7 +481,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 x 75 y 100 x -75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -10), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -10), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -487,7 +491,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -500,10 +504,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -513,7 +517,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -521,7 +525,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 y -100 x 75 y 100"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -531,7 +535,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 100.0) // y 100
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -544,10 +548,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -557,7 +561,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -565,7 +569,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 x 75 y -100 x -75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -575,7 +579,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -587,7 +591,7 @@ public static class BRepAlgoAPI_CutTests_1
         public void SameOrientedProfileReversedObjectForwardTool_K3()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -597,10 +601,10 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 200.0) // y 200
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -611,7 +615,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -619,7 +623,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 y 100 x 75 y -100"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -10), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -10), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -629,7 +633,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -641,7 +645,7 @@ public static class BRepAlgoAPI_CutTests_1
         public void SameOrientedProfileReversedObjectReversedTool_K4()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -651,10 +655,10 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 200.0) // y 200
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.P, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0), // p 0 0 -1 1 0 0
@@ -665,7 +669,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -673,7 +677,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 x 75 y 100 x -75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -10), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -10), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -683,7 +687,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -696,10 +700,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -709,7 +713,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -717,7 +721,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 y -100 x 75 y 100"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -727,7 +731,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 100.0) // y 100
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -740,10 +744,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -753,7 +757,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -761,7 +765,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 x 75 y -100 x -75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, -10.0), // o 0 0 -10
@@ -771,7 +775,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -784,10 +788,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 175 y 250 x -175"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 175, 250, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 175, 250, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 75 x 50 y -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -797,7 +801,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -75.0) // y -75
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -805,7 +809,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate1 = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 20 f 100 -150 y -75 x 50 y 75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 20.0), // o 0 0 20
@@ -815,7 +819,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 75.0) // y 75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Second cut operation: "bcut po2 po1 pr3"
             BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
@@ -823,7 +827,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 o 0 0 25 f 50 75 x 75 y 100 x -75"
-            gp_Pln aPlane4 = new(new gp_Pnt(0, 0, 25), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane4 = new(new Point3D(0, 0, 25), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps4 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 25.0), // o 0 0 25
@@ -833,7 +837,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile4 = BOPTest_Utilities.CreateProfile(aPlane4, aProfileOps4);
-            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new gp_Vec(0, 0, -5));
+            TopoDS_Shape aPrism4 = BOPTest_Utilities.CreatePrism(aProfile4, new Vector3D(0, 0, -5));
 
             // Final cut operation: "bcut result po2 pr4"
             TopoDS_Shape aResult = PerformCut(aIntermediate2, aPrism4);
@@ -846,10 +850,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -859,7 +863,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -867,7 +871,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 50 -125 x 75 y -50 x -75"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -877,7 +881,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -75.0) // x -75
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -890,10 +894,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -903,7 +907,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -911,7 +915,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 25 -125 x 50 y -50 x -50"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -921,7 +925,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -50.0) // x -50
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -934,10 +938,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -947,7 +951,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -955,7 +959,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 50 25 x 25 y -280 x -25"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -965,7 +969,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.X, -25.0) // x -25
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -978,10 +982,10 @@ public static class BRepAlgoAPI_CutTests_1
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
             TopoDS_Shape aPrism1 =
-                BOPTest_Utilities.CreateRectangularPrism(new gp_Pnt(0, 0, 40), 150, 200, -40);
+                BOPTest_Utilities.CreateRectangularPrism(new Point3D(0, 0, 40), 150, 200, -40);
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -991,7 +995,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, -100.0) // y -100
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -999,7 +1003,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 20 f 50 255 y -280 x 25 y 280"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, 20), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane3 = new(new Point3D(0, 0, 20), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 20.0), // o 0 0 20
@@ -1009,7 +1013,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.Y, 280.0) // y 280
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, 30));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, 30));
 
             // Final cut operation: "bcut result po1 pr3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -1021,16 +1025,16 @@ public static class BRepAlgoAPI_CutTests_1
         public void RolexCaseForwardForward_L3()
         {
             // Create profile f1: "profile f1 c 60 360"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.C, 60.0, 360.0) // c 60 360
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, 20));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, 20));
 
             // Create profile f2: "profile f2 o 0 0 20 f 10 -20 c 40 360"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 20), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 20), new Direction3D(Direction3D.D.Z));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 20.0), // o 0 0 20
@@ -1038,7 +1042,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.C, 40.0, 360.0) // c 40 360
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -6));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -6));
 
             // First cut operation: "bcut r1 p1 p2"
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -1046,7 +1050,7 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile f3: "profile f3 p 0 0 -1 1 0 0 o 0 0 23 f 50 -10 c -30 360"
-            gp_Pln aPlane3 = new(new gp_Pnt(0, 0, -1), new gp_Dir(gp_Dir.D.X));
+            Plane3D aPlane3 = new(new Point3D(0, 0, -1), new Direction3D(Direction3D.D.X));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps3 =
             [
                 new(BOPTest_Utilities.ProfileCmd.O, 0.0, 0.0, 23.0), // o 0 0 23
@@ -1054,7 +1058,7 @@ public static class BRepAlgoAPI_CutTests_1
                 new(BOPTest_Utilities.ProfileCmd.C, -30.0, 360.0) // c -30 360
             ];
             TopoDS_Shape aProfile3 = BOPTest_Utilities.CreateProfile(aPlane3, aProfileOps3);
-            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new gp_Vec(0, 0, -9));
+            TopoDS_Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -9));
 
             // Final cut operation: "bcut result r1 p3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -1069,9 +1073,9 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aCylinder1 = BOPTest_Utilities.CreateCylinder(60.0, 20.0);
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
-            gp_Trsf aTrsf2 = new();
-            aTrsf2.SetTranslation(new gp_Vec(0, 0, 20));
-            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new TopLoc_Location(aTrsf2));
+            Transform3D aTrsf2 = new();
+            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
             BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
@@ -1080,9 +1084,9 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f3: "profile f3 p 0 0 -1 1 0 0 o 0 0 14 f 50 -10 c -30 360"
             // This represents a cylinder at z=14 with radius 30 and height 9
-            gp_Trsf aTrsf3 = new();
-            aTrsf3.SetTranslation(new gp_Vec(0, 0, 14));
-            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new TopLoc_Location(aTrsf3));
+            Transform3D aTrsf3 = new();
+            aTrsf3.SetTranslation(new Vector3D(0, 0, 14));
+            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aCylinder3);
@@ -1097,9 +1101,9 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aCylinder1 = BOPTest_Utilities.CreateCylinder(60.0, 20.0);
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
-            gp_Trsf aTrsf2 = new();
-            aTrsf2.SetTranslation(new gp_Vec(0, 0, 20));
-            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new TopLoc_Location(aTrsf2));
+            Transform3D aTrsf2 = new();
+            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
             BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
@@ -1108,9 +1112,9 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f3: "profile f3 o 0 0 23 f 50 10 c 30 360"
             // This represents a cylinder at z=23 with radius 30 and height -9
-            gp_Trsf aTrsf3 = new();
-            aTrsf3.SetTranslation(new gp_Vec(0, 0, 23));
-            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new TopLoc_Location(aTrsf3));
+            Transform3D aTrsf3 = new();
+            aTrsf3.SetTranslation(new Vector3D(0, 0, 23));
+            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aCylinder3);
@@ -1125,9 +1129,9 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aCylinder1 = BOPTest_Utilities.CreateCylinder(60.0, 20.0);
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
-            gp_Trsf aTrsf2 = new();
-            aTrsf2.SetTranslation(new gp_Vec(0, 0, 20));
-            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new TopLoc_Location(aTrsf2));
+            Transform3D aTrsf2 = new();
+            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
             BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
@@ -1136,9 +1140,9 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f3: "profile f3 o 0 0 14 f 50 10 c 30 360"
             // This represents a cylinder at z=14 with radius 30 and height 9
-            gp_Trsf aTrsf3 = new();
-            aTrsf3.SetTranslation(new gp_Vec(0, 0, 14));
-            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new TopLoc_Location(aTrsf3));
+            Transform3D aTrsf3 = new();
+            aTrsf3.SetTranslation(new Vector3D(0, 0, 14));
+            TopoDS_Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
             TopoDS_Shape aResult = PerformCut(aIntermediate, aCylinder3);
@@ -1153,9 +1157,9 @@ public static class BRepAlgoAPI_CutTests_1
             TopoDS_Shape aCylinder1 = BOPTest_Utilities.CreateCylinder(20.0, 100.0);
 
             // Create cylinder c2: "pcylinder c2 20 100; ttranslate c2 0 0 50"
-            gp_Trsf aTrsf = new();
-            aTrsf.SetTranslation(new gp_Vec(0, 0, 50));
-            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(20.0, 100.0).Moved(new TopLoc_Location(aTrsf));
+            Transform3D aTrsf = new();
+            aTrsf.SetTranslation(new Vector3D(0, 0, 50));
+            TopoDS_Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(20.0, 100.0).Moved(new Placement(aTrsf));
 
             // Cut operation: "bcut result c1 c2"
             TopoDS_Shape aResult = PerformCut(aCylinder1, aCylinder2);
@@ -1167,10 +1171,10 @@ public static class BRepAlgoAPI_CutTests_1
         public void ComplexFaceBasedOperation_L9()
         {
             // Create box b1: "box b1 10 10 10"
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 10.0, 10.0, 10.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 10.0, 10.0, 10.0);
 
             // Create box b2: "box b2 5 5 5; ttranslate b2 0 0 10"
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 10), 5.0, 5.0, 5.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 10), 5.0, 5.0, 5.0);
 
             // For this test, we'll approximate the complex face-based operation
             // The original TCL does complex face extraction and sewing operations
@@ -1187,10 +1191,10 @@ public static class BRepAlgoAPI_CutTests_1
         public void ComplexFaceBasedCompSolidOperation_M1()
         {
             // Create box b1: "box b1 10 10 10"
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 10.0, 10.0, 10.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 10.0, 10.0, 10.0);
 
             // Create box b2: "box b2 5 5 5; ttranslate b2 2 2 10"
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(2, 2, 10), 5.0, 5.0, 5.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(2, 2, 10), 5.0, 5.0, 5.0);
 
             // For this complex test involving face exploding and sewing, we'll approximate with a simpler cut
             // operation The original test does: explode faces, cut specific faces, then sew into CompSolid
@@ -1206,15 +1210,15 @@ public static class BRepAlgoAPI_CutTests_1
         public void BoxCutCylinderThenCutByBox_M2()
         {
             // Create box b: "box b 10 10 10"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 10.0, 10.0, 10.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 10.0, 10.0, 10.0);
 
             // Copy box: "copy b c"
             TopoDS_Shape aBoxCopy = aBox;
 
             // Create cylinder: "pcylinder s 2 4; ttranslate s 5 5 -2"
-            gp_Trsf aTrsf = new();
-            aTrsf.SetTranslation(new gp_Vec(5, 5, -2));
-            TopoDS_Shape aCylinder = BOPTest_Utilities.CreateCylinder(2.0, 4.0).Moved(new TopLoc_Location(aTrsf));
+            Transform3D aTrsf = new();
+            aTrsf.SetTranslation(new Vector3D(5, 5, -2));
+            TopoDS_Shape aCylinder = BOPTest_Utilities.CreateCylinder(2.0, 4.0).Moved(new Placement(aTrsf));
 
             // First cut operation: "bcut rr c s"
             TopoDS_Shape aIntermediate = PerformCut(aBoxCopy, aCylinder);

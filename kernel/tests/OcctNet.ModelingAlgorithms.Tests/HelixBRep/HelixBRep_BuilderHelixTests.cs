@@ -1,14 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixBRep_BuilderHelix_Test.cxx (TKHelixTest).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 public class HelixBRep_BuilderHelixTests
 {
-    private readonly gp_Ax3 myAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+    private readonly CoordinateSystem myAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
     private const double myTolerance = 1.0e-4;
 
     // EXPECT_DOUBLE_EQ: equal within 4 units in the last place
@@ -48,11 +49,11 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0.0, aHelix.FirstParameter());
         Assert.Equal(2.0 * M_PI, aHelix.LastParameter());
         // Test point calculation
-        gp_Pnt aP0 = aHelix.Value(0.0);
+        Point3D aP0 = aHelix.Value(0.0);
         Assert.Equal(1.0, aP0.X()); // RStart = 1.0 by default
         Assert.Equal(0.0, aP0.Y());
         Assert.Equal(0.0, aP0.Z());
-        gp_Pnt aP1 = aHelix.Value(M_PI);
+        Point3D aP1 = aHelix.Value(M_PI);
         Assert.Equal(-1.0, aP1.X());
         Assert.Equal(0.0, aP1.Y(), 1e-15);
         Assert.Equal(M_PI / (2.0 * M_PI), aP1.Z()); // Pitch / (2*PI) * t
@@ -66,12 +67,12 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0.0, aHelix.FirstParameter());
         Assert.Equal(4.0 * M_PI, aHelix.LastParameter());
         // Test point at start
-        gp_Pnt aP0 = aHelix.Value(0.0);
+        Point3D aP0 = aHelix.Value(0.0);
         Assert.Equal(5.0, aP0.X()); // RStart = 5.0
         Assert.Equal(0.0, aP0.Y());
         Assert.Equal(0.0, aP0.Z());
         // Test point at end (2 full turns)
-        gp_Pnt aP1 = aHelix.Value(4.0 * M_PI);
+        Point3D aP1 = aHelix.Value(4.0 * M_PI);
         AssertDoubleEq(5.0, aP1.X());
         Assert.Equal(0.0, aP1.Y(), 1e-14);
         AssertDoubleEq(20.0, aP1.Z()); // 2 turns * pitch(10)
@@ -84,10 +85,10 @@ public class HelixBRep_BuilderHelixTests
         double aTaperAngle = 0.1; // Small taper angle
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, aTaperAngle, true);
         // At start
-        gp_Pnt aP0 = aHelix.Value(0.0);
+        Point3D aP0 = aHelix.Value(0.0);
         Assert.Equal(2.0, aP0.X());
         // At end - radius should be larger due to taper
-        gp_Pnt aP1 = aHelix.Value(2.0 * M_PI);
+        Point3D aP1 = aHelix.Value(2.0 * M_PI);
         double aExpectedRadius = 2.0 + (5.0 / (2.0 * M_PI)) * Math.Tan(aTaperAngle) * (2.0 * M_PI);
         AssertDoubleEq(aExpectedRadius, aP1.X());
     }
@@ -106,8 +107,8 @@ public class HelixBRep_BuilderHelixTests
         Geom_Curve aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
-        aCurve.D0(aCurve.FirstParameter(), out gp_Pnt aP1);
-        aCurve.D0(aCurve.LastParameter(), out gp_Pnt aP2);
+        aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
+        aCurve.D0(aCurve.LastParameter(), out Point3D aP2);
         Assert.Equal(2.0, aP1.X(), myTolerance);
         Assert.Equal(0.0, aP1.Y(), myTolerance);
         Assert.Equal(0.0, aP1.Z(), myTolerance);
@@ -121,7 +122,7 @@ public class HelixBRep_BuilderHelixTests
     public void HelixGeomBuilderHelix_SingleCoil()
     {
         var aBuilder = new HelixGeom_BuilderHelix();
-        gp_Ax2 aPosition = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
         aBuilder.SetCurveParameters(0.0, 2.0 * M_PI, 10.0, 5.0, 0.0, true);
@@ -134,7 +135,7 @@ public class HelixBRep_BuilderHelixTests
     public void HelixGeomBuilderHelix_MultipleCoils()
     {
         var aBuilder = new HelixGeom_BuilderHelix();
-        gp_Ax2 aPosition = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
         // 3 full turns
@@ -157,7 +158,7 @@ public class HelixBRep_BuilderHelixTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = true; // Pitch mode
         aBuilder.SetParameters(myAxis, 100.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aResult = aBuilder.Shape();
@@ -187,7 +188,7 @@ public class HelixBRep_BuilderHelixTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = true;
         aBuilder.SetParameters(myAxis, 100.0, 20.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aResult = aBuilder.Shape();
@@ -221,7 +222,7 @@ public class HelixBRep_BuilderHelixTests
         aIsPitches[2] = true;
         aIsPitches[3] = true;
         aBuilder.SetParameters(myAxis, aDiams, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aResult = aBuilder.Shape();
@@ -242,7 +243,7 @@ public class HelixBRep_BuilderHelixTests
         NCollection_Array1<double> aNbTurns = new(1, 1);
         aNbTurns[1] = 5.0; // 5 turns
         aBuilder.SetParameters(myAxis, 100.0, aPitches, aNbTurns);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         TopoDS_Shape aResult = aBuilder.Shape();
@@ -282,7 +283,7 @@ public class HelixBRep_BuilderHelixTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = true;
         aBuilder.SetParameters(myAxis, 100.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.NotEqual(0, aBuilder.ErrorStatus()); // Should have error
     }
@@ -298,7 +299,7 @@ public class HelixBRep_BuilderHelixTests
         NCollection_Array1<bool> aIsPitches = new(1, 1);
         aIsPitches[1] = true;
         aBuilder.SetParameters(myAxis, 100.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(myTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(myTolerance, 8, C1);
         aBuilder.Perform();
         Assert.NotEqual(0, aBuilder.ErrorStatus()); // Should have error
     }
@@ -316,7 +317,7 @@ public class HelixBRep_BuilderHelixTests
         aIsPitches[1] = true;
         double aVeryTightTolerance = 1.0e-8;
         aBuilder.SetParameters(myAxis, 100.0, aHeights, aPitches, aIsPitches);
-        aBuilder.SetApproxParameters(aVeryTightTolerance, 8, GeomAbs_C1);
+        aBuilder.SetApproxParameters(aVeryTightTolerance, 8, C1);
         aBuilder.Perform();
         if (aBuilder.ErrorStatus() == 0)
         {

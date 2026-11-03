@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.HatchGen_IntersectionType;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
@@ -16,7 +18,7 @@ public class HatchGenTests
     {
         IntRes2d_Transition aTrsH = new(false, IntRes2d_Middle, theOnHatching);
         IntRes2d_Transition aTrsE = new(false, thePosE, theOnHatching == IntRes2d_In ? IntRes2d_Out : IntRes2d_In);
-        return new IntRes2d_IntersectionPoint(new gp_Pnt2d(1, 2), 0.25, 0.75, aTrsH, aTrsE, false);
+        return new IntRes2d_IntersectionPoint(new Point2D(1, 2), 0.25, 0.75, aTrsH, aTrsE, false);
     }
 
     [Fact]
@@ -48,14 +50,14 @@ public class HatchGenTests
         // A touch inside at the middle of the element: IN on both sides, tangent
         IntRes2d_Transition aTrsH = new(true, IntRes2d_Middle, IntRes2d_Inside, false);
         IntRes2d_Transition aTrsE = new(true, IntRes2d_Middle, IntRes2d_Inside, false);
-        HatchGen_PointOnElement aPntE = new(new IntRes2d_IntersectionPoint(new gp_Pnt2d(), 0.0, 1.0, aTrsH, aTrsE, false));
+        HatchGen_PointOnElement aPntE = new(new IntRes2d_IntersectionPoint(new Point2D(), 0.0, 1.0, aTrsH, aTrsE, false));
         Assert.Equal(HatchGen_TANGENT, aPntE.IntersectionType());
         Assert.Equal(TopAbs_IN, aPntE.StateBefore());
         Assert.Equal(TopAbs_IN, aPntE.StateAfter());
 
         // Undecided
         IntRes2d_Transition anUndecided = new(IntRes2d_Head);
-        HatchGen_PointOnElement aPntU = new(new IntRes2d_IntersectionPoint(new gp_Pnt2d(), 0.0, 1.0, anUndecided, anUndecided, false));
+        HatchGen_PointOnElement aPntU = new(new IntRes2d_IntersectionPoint(new Point2D(), 0.0, 1.0, anUndecided, anUndecided, false));
         Assert.Equal(HatchGen_UNDETERMINED, aPntU.IntersectionType());
         Assert.Equal(TopAbs_UNKNOWN, aPntU.StateBefore());
         Assert.Equal(TopAbs_FORWARD, aPntU.Position());
@@ -112,7 +114,7 @@ public class HatchGenTests
         HatchGen_Domain aDomain = new(aP, true);
         Assert.True(aDomain.HasFirstPoint());
         Assert.False(aDomain.HasSecondPoint());
-        Assert.Throws<Standard_DomainError>(() => aDomain.SecondPoint());
+        Assert.Throws<DomainErrorException>(() => aDomain.SecondPoint());
         aP.SetParameter(9.0); // the domain has its copy
         Assert.Equal(1.5, aDomain.FirstPoint().Parameter());
 

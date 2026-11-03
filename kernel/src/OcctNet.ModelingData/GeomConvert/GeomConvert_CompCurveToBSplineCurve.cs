@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Occt;
 
@@ -15,20 +17,20 @@ public sealed class GeomConvert_CompCurveToBSplineCurve
 {
     private Geom_BSplineCurve? myCurve;
     private double myTol;
-    private readonly Convert_ParameterisationType myType;
+    private readonly ParameterisationType myType;
 
     /// <summary>An empty concatenation; theParameterisation is used to convert the conics added.</summary>
-    public GeomConvert_CompCurveToBSplineCurve(Convert_ParameterisationType theParameterisation = Convert_TgtThetaOver2)
+    public GeomConvert_CompCurveToBSplineCurve(ParameterisationType theParameterisation = TgtThetaOver2)
     {
-        myTol = Precision.Confusion();
+        myTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         myType = theParameterisation;
     }
 
     /// <summary>A concatenation starting with BasisCurve; Parameterisation is used to convert conics.</summary>
     public GeomConvert_CompCurveToBSplineCurve(Geom_BoundedCurve BasisCurve,
-                                               Convert_ParameterisationType Parameterisation = Convert_TgtThetaOver2)
+                                               ParameterisationType Parameterisation = TgtThetaOver2)
     {
-        myTol = Precision.Confusion();
+        myTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         myType = Parameterisation;
         if (BasisCurve is Geom_BSplineCurve)
         {
@@ -73,10 +75,10 @@ public sealed class GeomConvert_CompCurveToBSplineCurve
         // Use actual curve endpoints instead of poles for proper G0 continuity check.
         // G0 continuity (positional continuity) requires curves to share endpoints.
         // For non-clamped or periodic B-splines, first/last poles may not coincide with endpoints.
-        gp_Pnt aCurveStart = myCurve.StartPoint();
-        gp_Pnt aCurveEnd = myCurve.EndPoint();
-        gp_Pnt aBsStart = Bs.StartPoint();
-        gp_Pnt aBsEnd = Bs.EndPoint();
+        Point3D aCurveStart = myCurve.StartPoint();
+        Point3D aCurveEnd = myCurve.EndPoint();
+        Point3D aBsStart = Bs.StartPoint();
+        Point3D aBsEnd = Bs.EndPoint();
 
         avant = ((aCurveStart.Distance(aBsStart) < myTol) || (aCurveStart.Distance(aBsEnd) < myTol));
         apres = ((aCurveEnd.Distance(aBsStart) < myTol) || (aCurveEnd.Distance(aBsEnd) < myTol));
@@ -96,7 +98,7 @@ public sealed class GeomConvert_CompCurveToBSplineCurve
 
         // The private Add may raise the degree of the current curve in place: a curve handed out by
         // BSplineCurve() (frozen) is copied first, so it never changes.
-        if ((apres || avant) && myCurve.IsFrozen())
+        if ((apres || avant) && myCurve.IsFrozen)
         {
             myCurve = (Geom_BSplineCurve)myCurve.Copy();
         }
@@ -153,7 +155,7 @@ public sealed class GeomConvert_CompCurveToBSplineCurve
         int NbP1 = FirstCurve.NbPoles(), NbP2 = SecondCurve.NbPoles();
         int NbK1 = FirstCurve.NbKnots(), NbK2 = SecondCurve.NbKnots();
         NCollection_Array1<double> Noeuds = new(1, NbK1 + NbK2 - 1);
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbP1 + NbP2 - 1);
+        NCollection_Array1<Point3D> Poles = new(1, NbP1 + NbP2 - 1);
         NCollection_Array1<double> Poids = new(1, NbP1 + NbP2 - 1);
         NCollection_Array1<int> Mults = new(1, NbK1 + NbK2 - 1);
 
@@ -163,12 +165,12 @@ public sealed class GeomConvert_CompCurveToBSplineCurve
             L1 = FirstCurve.DN(FirstCurve.LastParameter(), 1).Magnitude();
             L2 = SecondCurve.DN(SecondCurve.FirstParameter(), 1).Magnitude();
 
-            if ((L1 > Precision.Confusion()) && (L2 > Precision.Confusion()))
+            if ((L1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (L2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = L1 / L2;
             }
 
-            if ((Ratio < Precision.Confusion()) || (Ratio > 1 / Precision.Confusion()))
+            if ((Ratio < global::Kerf.Engine.Foundation.Precision.Confusion()) || (Ratio > 1 / global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = 1;
             }

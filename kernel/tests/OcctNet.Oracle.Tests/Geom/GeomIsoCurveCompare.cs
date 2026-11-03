@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 
+using Kerf.Geometry;
+
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>
@@ -50,7 +52,7 @@ internal static class GeomIsoCurveCompare
         return "another curve";
     }
 
-    private static void SameDir(Oracle theOracle, N.gp_Dir theN, in gp_Dir theP, string theWhat)
+    private static void SameDir(Oracle theOracle, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
         theOracle.Same(theN.X(), theP.X(), theWhat + " X");
         theOracle.Same(theN.Y(), theP.Y(), theWhat + " Y");
@@ -60,7 +62,7 @@ internal static class GeomIsoCurveCompare
     /// <summary>The class and the definition of the curve.</summary>
     private static void SameDefinition(Oracle theOracle, N.Geom_Curve theN, Geom_Curve theP, string theWhat)
     {
-        Assert.True(NativeKind(theN) == theP.GetType().Name, $"{theWhat}: native {NativeKind(theN)}, port {theP.GetType().Name}");
+        Assert.True(NativeKind(theN) == global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType()), $"{theWhat}: native {NativeKind(theN)}, port {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())}");
         switch (theP)
         {
             case Geom_Line aLine:
@@ -149,8 +151,8 @@ internal static class GeomIsoCurveCompare
         using var aNV1 = new N.gp_Vec();
         using var aNV2 = new N.gp_Vec();
         using var aNV3 = new N.gp_Vec();
-        gp_Pnt P = new();
-        gp_Vec V1 = new(), V2 = new(), V3 = new();
+        Point3D P = new();
+        Vector3D V1 = new(), V2 = new(), V3 = new();
         Exception? aNErr = Catch(() => theN.D3(U, aNP, aNV1, aNV2, aNV3));
         Exception? aPErr = Catch(() => theP.D3(U, out P, out V1, out V2, out V3));
         Assert.True((aNErr is null) == (aPErr is null), $"{theWhat} D3({U}): native {aNErr?.Message ?? "ok"}, port {aPErr?.ToString() ?? "ok"}");
@@ -226,7 +228,7 @@ internal static class GeomIsoCurveCompare
             theOracle.Same(theN.IsCN(k), theP.IsCN(k), theWhat + " IsCN");
         }
 
-        if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             aF = -20;
             aL = 20;
@@ -250,7 +252,7 @@ internal static class GeomIsoCurveCompare
         {
             double aF = aU ? aU1 : aV1, aL = aU ? aU2 : aV2;
             var aParams = new List<double>();
-            if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
             {
                 aParams.Add(theOracle.Real(-20, 20));
                 aParams.Add(theOracle.Real(-20, 20));

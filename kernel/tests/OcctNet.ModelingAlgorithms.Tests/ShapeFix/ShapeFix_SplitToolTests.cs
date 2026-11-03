@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -12,18 +13,18 @@ public class ShapeFix_SplitToolTests
     {
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
-        aB.MakeFace(ref aF, new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))), 1e-7);
+        aB.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), 1e-7);
         return aF;
     }
 
-    private static TopoDS_Edge Segment() => TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
+    private static TopoDS_Edge Segment() => TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
 
     [Fact]
     public void SplitEdge_AtAParameter()
     {
         TopoDS_Face aF = PlaneFace();
         TopoDS_Edge anE = Segment();
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt(4, 0, 0));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(4, 0, 0));
         TopoDS_Edge aE1 = new(), aE2 = new();
         var aTool = new ShapeFix_SplitTool();
         Assert.True(aTool.SplitEdge(anE, 4.0, aV, aF, ref aE1, ref aE2, 1e-7, 1e-9));
@@ -43,7 +44,7 @@ public class ShapeFix_SplitToolTests
     public void SplitEdge_RaisesAFarVertex()
     {
         TopoDS_Edge anE = Segment();
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt(4, 0.01, 0));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(4, 0.01, 0));
         TopoDS_Edge aE1 = new(), aE2 = new();
         Assert.True(new ShapeFix_SplitTool().SplitEdge(anE, 4.0, aV, PlaneFace(), ref aE1, ref aE2, 1e-7, 1e-9));
         Assert.True(BRep_Tool.Tolerance(aV) >= 0.01 - 1e-12);
@@ -67,8 +68,8 @@ public class ShapeFix_SplitToolTests
     {
         TopoDS_Face aF = PlaneFace();
         TopoDS_Edge anE = Segment();
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(2, 0, 0));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new gp_Pnt(6, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(2, 0, 0));
+        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(6, 0, 0));
         var aSeq = new NCollection_Sequence<TopoDS_Shape>();
         int aNum = -1;
         var aContext = new ShapeBuild_ReShape();

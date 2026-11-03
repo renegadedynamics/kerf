@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Buffers.Binary;
 using System.Text;
 
@@ -42,11 +46,11 @@ public static class RWStl
     // RWStl.cxx's Reader: collects the nodes and triangles into a triangulation
     private class Reader : RWStl_Reader
     {
-        private readonly NCollection_DynamicArray<gp_XYZ> myNodes = new();
-        private readonly NCollection_DynamicArray<Poly_Triangle> myTriangles = new();
+        private readonly NCollection_DynamicArray<Xyz> myNodes = new();
+        private readonly NCollection_DynamicArray<Triangle1> myTriangles = new();
 
         //! Add new node
-        public override int AddNode(in gp_XYZ thePnt)
+        public override int AddNode(in Xyz thePnt)
         {
             myNodes.Append(thePnt);
             return myNodes.Length();
@@ -55,21 +59,21 @@ public static class RWStl
         //! Add new triangle
         public override void AddTriangle(int theNode1, int theNode2, int theNode3)
         {
-            myTriangles.Append(new Poly_Triangle(theNode1, theNode2, theNode3));
+            myTriangles.Append(new Triangle1(theNode1, theNode2, theNode3));
         }
 
         //! Creates Poly_Triangulation from collected data
-        public Poly_Triangulation? GetTriangulation()
+        public Triangulation? GetTriangulation()
         {
             if (myTriangles.IsEmpty())
             {
                 return null;
             }
 
-            var aPoly = new Poly_Triangulation(myNodes.Length(), myTriangles.Length(), false);
+            var aPoly = new Triangulation(myNodes.Length(), myTriangles.Length(), false);
             for (int aNodeIter = 0; aNodeIter < myNodes.Length(); ++aNodeIter)
             {
-                aPoly.SetNode(aNodeIter + 1, new gp_Pnt(myNodes[aNodeIter]));
+                aPoly.SetNode(aNodeIter + 1, new Point3D(myNodes[aNodeIter]));
             }
 
             for (int aTriIter = 0; aTriIter < myTriangles.Length(); ++aTriIter)
@@ -93,7 +97,7 @@ public static class RWStl
         //! Add triangulation to triangulation list for multi-domain case
         public override void AddSolid()
         {
-            if (GetTriangulation() is Poly_Triangulation aCurrentTri)
+            if (GetTriangulation() is Triangulation aCurrentTri)
             {
                 myTriangulationList.Append(aCurrentTri);
             }
@@ -101,27 +105,27 @@ public static class RWStl
         }
 
         //! Returns triangulation list for multi-domain case
-        public NCollection_Sequence<Poly_Triangulation> ChangeTriangulationList() => myTriangulationList;
+        public NCollection_Sequence<Triangulation> ChangeTriangulationList() => myTriangulationList;
 
-        private readonly NCollection_Sequence<Poly_Triangulation> myTriangulationList = new();
+        private readonly NCollection_Sequence<Triangulation> myTriangulationList = new();
     }
 
     // The port publishes the triangulations it reads frozen
-    private static Poly_Triangulation? Published(Poly_Triangulation? theTriangulation)
+    private static Triangulation? Published(Triangulation? theTriangulation)
     {
         theTriangulation?.Freeze();
         return theTriangulation;
     }
 
     // The port's: no result after a user break or past a limit (decision 1169)
-    private static bool Stopped(RWStl_Reader theReader, in Message_ProgressRange theProgress)
+    private static bool Stopped(RWStl_Reader theReader, in ProgressRange theProgress)
         => theReader.LimitExceeded() || theProgress.UserBreak();
 
     /// <summary>
     /// Reads an STL file (format recognised from its content; the domains of a multi-domain file make one
     /// triangulation), merging nodes regardless of the angle. Null on an error with nothing read.
     /// </summary>
-    public static Poly_Triangulation? ReadFile(string theFile, Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadFile(string theFile, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
         => ReadFile(theFile, Math.PI / 2.0, theProgress, theLimits);
 
     /// <summary>
@@ -129,7 +133,7 @@ public static class RWStl
     /// <paramref name="theMergeAngle"/> (radians; 90 degrees merges regardless of the angle). Null on an error with
     /// nothing read.
     /// </summary>
-    public static Poly_Triangulation? ReadFile(string theFile, double theMergeAngle, Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadFile(string theFile, double theMergeAngle, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new Reader();
         aReader.SetMergeAngle(theMergeAngle);
@@ -141,10 +145,10 @@ public static class RWStl
     }
 
     /// <summary>
-    /// <see cref="ReadFile(string, double, Message_ProgressRange, RWStl_ReadLimits)"/> on the data of a stream from
+    /// <see cref="ReadFile(string, double, ProgressRange, RWStl_ReadLimits)"/> on the data of a stream from
     /// its position (an addition).
     /// </summary>
-    public static Poly_Triangulation? ReadFile(Stream theStream, double theMergeAngle = Math.PI / 2.0, Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadFile(Stream theStream, double theMergeAngle = Math.PI / 2.0, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new Reader();
         aReader.SetMergeAngle(theMergeAngle);
@@ -157,8 +161,8 @@ public static class RWStl
     /// Reads an STL file into one triangulation per domain (solid) of a multi-domain file, into
     /// <paramref name="theTriangList"/> (cleared first). Empty after a user break or past a limit.
     /// </summary>
-    public static void ReadFile(string theFile, double theMergeAngle, NCollection_Sequence<Poly_Triangulation> theTriangList,
-                                Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static void ReadFile(string theFile, double theMergeAngle, NCollection_Sequence<Triangulation> theTriangList,
+                                ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new MultiDomainReader();
         aReader.SetMergeAngle(theMergeAngle);
@@ -168,11 +172,11 @@ public static class RWStl
     }
 
     /// <summary>
-    /// <see cref="ReadFile(string, double, NCollection_Sequence{Poly_Triangulation}, Message_ProgressRange, RWStl_ReadLimits)"/>
+    /// <see cref="ReadFile(string, double, NCollection_Sequence{Triangulation}, ProgressRange, RWStl_ReadLimits)"/>
     /// on the data of a stream from its position (an addition).
     /// </summary>
-    public static void ReadFile(Stream theStream, double theMergeAngle, NCollection_Sequence<Poly_Triangulation> theTriangList,
-                                Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static void ReadFile(Stream theStream, double theMergeAngle, NCollection_Sequence<Triangulation> theTriangList,
+                                ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new MultiDomainReader();
         aReader.SetMergeAngle(theMergeAngle);
@@ -181,14 +185,14 @@ public static class RWStl
         TakeDomains(aReader, theTriangList, theProgress);
     }
 
-    private static void TakeDomains(MultiDomainReader theReader, NCollection_Sequence<Poly_Triangulation> theTriangList, in Message_ProgressRange theProgress)
+    private static void TakeDomains(MultiDomainReader theReader, NCollection_Sequence<Triangulation> theTriangList, in ProgressRange theProgress)
     {
         theTriangList.Clear();
         if (Stopped(theReader, theProgress))
         {
             return;
         }
-        NCollection_Sequence<Poly_Triangulation> aList = theReader.ChangeTriangulationList();
+        NCollection_Sequence<Triangulation> aList = theReader.ChangeTriangulationList();
         for (int i = 1; i <= aList.Length(); ++i)
         {
             theTriangList.Append(Published(aList.Value(i))!);
@@ -196,7 +200,7 @@ public static class RWStl
     }
 
     /// <summary>Reads a binary STL file (one domain). Null on an error or a user break.</summary>
-    public static Poly_Triangulation? ReadBinary(string thePath, Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadBinary(string thePath, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         using FileStream? aStream = RWStl_Reader.OpenFile(thePath);
         if (aStream is null)
@@ -208,7 +212,7 @@ public static class RWStl
     }
 
     /// <summary>Reads an ASCII STL file (one domain). Null on an error or a user break.</summary>
-    public static Poly_Triangulation? ReadAscii(string thePath, Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadAscii(string thePath, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         using FileStream? aStream = RWStl_Reader.OpenFile(thePath);
         if (aStream is null)
@@ -219,13 +223,13 @@ public static class RWStl
     }
 
     /// <summary>Reads binary STL from a stream (one domain). Null on an error or a user break.</summary>
-    public static Poly_Triangulation? ReadBinaryStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                       Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadBinaryStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
+                                                       ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new Reader();
         aReader.SetMergeAngle(theMergeAngle);
         aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        Standard_IStream? aStream = aReader.OpenStream(theStream);
+        InputStream? aStream = aReader.OpenStream(theStream);
         if (aStream is null || !aReader.ReadBinary(aStream, theProgress))
         {
             return null;
@@ -234,13 +238,13 @@ public static class RWStl
     }
 
     /// <summary>Reads ASCII STL from a stream (one domain). Null on an error or a user break.</summary>
-    public static Poly_Triangulation? ReadAsciiStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                      Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadAsciiStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
+                                                      ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         var aReader = new Reader();
         aReader.SetMergeAngle(theMergeAngle);
         aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        Standard_IStream? aStream = aReader.OpenStream(theStream);
+        InputStream? aStream = aReader.OpenStream(theStream);
         if (aStream is null)
         {
             return null;
@@ -251,7 +255,7 @@ public static class RWStl
         long theEnd = aStream.TellG();
         aStream.SeekG(0);
 
-        var aBuffer = new Standard_ReadLineBuffer(THE_BUFFER_SIZE);
+        var aBuffer = new ReadLineBuffer(THE_BUFFER_SIZE);
         if (!aReader.ReadAscii(aStream, aBuffer, theEnd, theProgress))
         {
             return null;
@@ -261,11 +265,11 @@ public static class RWStl
 
     /// <summary>
     /// Reads STL from a stream, ASCII if it starts with "solid", binary otherwise (a binary file whose header starts
-    /// with "solid" fails: <see cref="ReadFile(Stream, double, Message_ProgressRange, RWStl_ReadLimits)"/> recognises
+    /// with "solid" fails: <see cref="ReadFile(Stream, double, ProgressRange, RWStl_ReadLimits)"/> recognises
     /// it). One domain. Null on an error or a user break.
     /// </summary>
-    public static Poly_Triangulation? ReadStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                 Message_ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
+                                                 ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
     {
         ArgumentNullException.ThrowIfNull(theStream);
         if (!theStream.CanSeek)
@@ -274,7 +278,7 @@ public static class RWStl
             // into memory anyway)
             var aReader = new Reader();
             aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-            Standard_IStream? aCopy = aReader.OpenStream(theStream);
+            InputStream? aCopy = aReader.OpenStream(theStream);
             if (aCopy is null)
             {
                 return null;
@@ -301,9 +305,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation to a binary STL file. False if it is null or empty, or on an error.</summary>
-    public static bool WriteBinary(Poly_Triangulation? theMesh, string thePath, Message_ProgressRange theProgress = default)
+    public static bool WriteBinary(Triangulation? theMesh, string thePath, ProgressRange theProgress = default)
     {
-        if (theMesh is null || theMesh.NbTriangles() <= 0)
+        if (theMesh is null || theMesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -321,9 +325,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation to an ASCII STL file. False if it is null or empty, or on an error.</summary>
-    public static bool WriteAscii(Poly_Triangulation? theMesh, string thePath, Message_ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? theMesh, string thePath, ProgressRange theProgress = default)
     {
-        if (theMesh is null || theMesh.NbTriangles() <= 0)
+        if (theMesh is null || theMesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -341,9 +345,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation as ASCII STL to a stream (bytes, LF line ends).</summary>
-    public static bool WriteAscii(Poly_Triangulation? theMesh, Stream theStream, Message_ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? theMesh, Stream theStream, ProgressRange theProgress = default)
     {
-        if (theMesh is null || theMesh.NbTriangles() <= 0)
+        if (theMesh is null || theMesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -362,9 +366,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation as ASCII STL to a text writer.</summary>
-    public static bool WriteAscii(Poly_Triangulation? theMesh, TextWriter theStream, Message_ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? theMesh, TextWriter theStream, ProgressRange theProgress = default)
     {
-        if (theMesh is null || theMesh.NbTriangles() <= 0)
+        if (theMesh is null || theMesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -374,20 +378,20 @@ public static class RWStl
             // note that space after 'solid' is necessary for many systems
             theStream.Write("solid \n");
 
-            int NBTriangles = theMesh.NbTriangles();
-            using var aPS = new Message_ProgressScope(theProgress, "Triangles", NBTriangles);
+            int NBTriangles = theMesh.TriangleCount;
+            using var aPS = new ProgressScope(theProgress, "Triangles", NBTriangles);
 
             for (int aTriIter = 1; aTriIter <= NBTriangles; ++aTriIter)
             {
-                Poly_Triangle aTriangle = theMesh.Triangle(aTriIter);
+                Triangle1 aTriangle = theMesh.Triangle(aTriIter);
                 aTriangle.Get(out int anElem0, out int anElem1, out int anElem2);
-                gp_Pnt aP1 = theMesh.Node(anElem0);
-                gp_Pnt aP2 = theMesh.Node(anElem1);
-                gp_Pnt aP3 = theMesh.Node(anElem2);
-                var aVec1 = new gp_Vec(aP1, aP2);
-                var aVec2 = new gp_Vec(aP1, aP3);
-                gp_Vec aVNorm = aVec1.Crossed(aVec2);
-                if (aVNorm.SquareMagnitude() > gp.Resolution())
+                Point3D aP1 = theMesh.Node(anElem0);
+                Point3D aP2 = theMesh.Node(anElem1);
+                Point3D aP3 = theMesh.Node(anElem2);
+                var aVec1 = new Vector3D(aP1, aP2);
+                var aVec2 = new Vector3D(aP1, aP3);
+                Vector3D aVNorm = aVec1.Crossed(aVec2);
+                if (aVNorm.SquareMagnitude() > Constants.Resolution())
                 {
                     aVNorm.Normalize();
                 }
@@ -429,9 +433,9 @@ public static class RWStl
         }
     }
 
-    private static string E12(double theValue) => Standard_Stream.FormatScientific(theValue, 12);
+    private static string E12(double theValue) => StreamUtilities.FormatScientific(theValue, 12);
 
-    private static void WriteVertex(TextWriter theStream, in gp_Pnt theP)
+    private static void WriteVertex(TextWriter theStream, in Point3D theP)
     {
         theStream.Write("     vertex ");
         theStream.Write(E12(theP.X()));
@@ -443,9 +447,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation as binary STL to a stream (OCCT's 80-byte header, then the facets).</summary>
-    public static bool WriteBinary(Poly_Triangulation? theMesh, Stream theStream, Message_ProgressRange theProgress = default)
+    public static bool WriteBinary(Triangulation? theMesh, Stream theStream, ProgressRange theProgress = default)
     {
-        if (theMesh is null || theMesh.NbTriangles() <= 0)
+        if (theMesh is null || theMesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -457,8 +461,8 @@ public static class RWStl
             Encoding.ASCII.GetBytes(THE_HEADER, aHeader);
             theStream.Write(aHeader);
 
-            int aNBTriangles = theMesh.NbTriangles();
-            using var aPS = new Message_ProgressScope(theProgress, "Triangles", aNBTriangles);
+            int aNBTriangles = theMesh.TriangleCount;
+            using var aPS = new ProgressScope(theProgress, "Triangles", aNBTriangles);
             const int aNbChunkTriangles = 4096;
             const int aChunkSize = aNbChunkTriangles * THE_STL_SIZEOF_FACET;
             byte[] aData = new byte[aChunkSize];
@@ -470,15 +474,15 @@ public static class RWStl
             int aByteCount = 0;
             for (int aTriIter = 1; aTriIter <= aNBTriangles; ++aTriIter)
             {
-                Poly_Triangle aTriangle = theMesh.Triangle(aTriIter);
+                Triangle1 aTriangle = theMesh.Triangle(aTriIter);
                 aTriangle.Get(out int id0, out int id1, out int id2);
-                gp_Pnt aP1 = theMesh.Node(id0);
-                gp_Pnt aP2 = theMesh.Node(id1);
-                gp_Pnt aP3 = theMesh.Node(id2);
-                var aVec1 = new gp_Vec(aP1, aP2);
-                var aVec2 = new gp_Vec(aP1, aP3);
-                gp_Vec aVNorm = aVec1.Crossed(aVec2);
-                if (aVNorm.SquareMagnitude() > gp.Resolution())
+                Point3D aP1 = theMesh.Node(id0);
+                Point3D aP2 = theMesh.Node(id1);
+                Point3D aP3 = theMesh.Node(id2);
+                var aVec1 = new Vector3D(aP1, aP2);
+                var aVec2 = new Vector3D(aP1, aP3);
+                Vector3D aVNorm = aVec1.Crossed(aVec2);
+                if (aVNorm.SquareMagnitude() > Constants.Resolution())
                 {
                     aVNorm.Normalize();
                 }

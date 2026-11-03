@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.StepGeom_TransitionCode;
 
@@ -193,8 +194,8 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                         var MkEdge = new BRepBuilderAPI_MakeEdge(c3d, c3d.FirstParameter(), c3d.LastParameter());
                         if (MkEdge.IsDone())
                         {
-                            if (Occt.Precision.IsNegativeInfinite(c3d.FirstParameter())
-                                || Occt.Precision.IsPositiveInfinite(c3d.LastParameter()))
+                            if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c3d.FirstParameter())
+                                || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c3d.LastParameter()))
                             {
                                 myInfiniteSegment = true;
                                 TP.AddWarning(CC, "Segment with infinite parameters");
@@ -224,8 +225,8 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                             var MkEdge = new BRepBuilderAPI_MakeEdge(c2d, Surf, c2d.FirstParameter(), c2d.LastParameter());
                             if (MkEdge.IsDone())
                             {
-                                if (Occt.Precision.IsNegativeInfinite(c2d.FirstParameter())
-                                    || Occt.Precision.IsPositiveInfinite(c2d.LastParameter()))
+                                if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c2d.FirstParameter())
+                                    || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c2d.LastParameter()))
                                 {
                                     myInfiniteSegment = true;
                                     TP.AddWarning(CC, "Segment with infinite parameters");
@@ -237,7 +238,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                         else
                         {
                             var B = new BRep_Builder();
-                            TopLoc_Location L = new TopLoc_Location();
+                            Placement L = new Placement();
                             B.UpdateEdge(edge1, c2d, Surf, L, 0.0);
                             B.Range(edge1, Surf, L, c2d.FirstParameter(), c2d.LastParameter());
                             B.SameRange(edge1, false);

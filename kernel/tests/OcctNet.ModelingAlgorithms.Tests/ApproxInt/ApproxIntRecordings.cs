@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -216,7 +217,7 @@ internal static class ApproxIntRecordings
         IntSurf_LineOn2S aLin = new();
         foreach (double[] p in theLine.Points)
         {
-            aLin.Add(new IntSurf_PntOn2S().WithValue(new gp_Pnt(p[0], p[1], p[2]), p[3], p[4], p[5], p[6]));
+            aLin.Add(new IntSurf_PntOn2S().WithValue(new Point3D(p[0], p[1], p[2]), p[3], p[4], p[5], p[6]));
         }
         return new IntPatch_WLine(aLin, false);
     }
@@ -225,16 +226,16 @@ internal static class ApproxIntRecordings
     internal static BRepApprox_ApproxLine MakeCurvesLine(Line theLine)
     {
         int n = theLine.Points.Length;
-        NCollection_Array1<gp_Pnt> p3 = new(1, n);
-        NCollection_Array1<gp_Pnt2d> pa = new(1, n), pb = new(1, n);
+        NCollection_Array1<Point3D> p3 = new(1, n);
+        NCollection_Array1<Point2D> pa = new(1, n), pb = new(1, n);
         NCollection_Array1<double> kn = new(1, n);
         NCollection_Array1<int> mu = new(1, n);
         for (int i = 1; i <= n; i++)
         {
             double[] p = theLine.Points[i - 1];
-            p3[i] = new gp_Pnt(p[0], p[1], p[2]);
-            pa[i] = new gp_Pnt2d(p[3], p[4]);
-            pb[i] = new gp_Pnt2d(p[5], p[6]);
+            p3[i] = new Point3D(p[0], p[1], p[2]);
+            pa[i] = new Point2D(p[3], p[4]);
+            pb[i] = new Point2D(p[5], p[6]);
             kn[i] = i;
             mu[i] = 1;
         }

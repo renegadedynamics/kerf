@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
@@ -158,7 +160,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
                 aFF.PrepareLines3D(aV.Prepare == 2);
             }
         }
-        catch (Standard_Failure)
+        catch (global::Kerf.Engine.Foundation.FailureException)
         {
             return aRec.Append("out throws\n").ToString();
         }
@@ -170,8 +172,8 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         NCollection_Sequence<IntTools_PntOn2Faces> aPoints = aFF.Points();
         aRec.Append(CultureInfo.InvariantCulture,
                     $"out done {(aFF.TangentFaces() ? 1 : 0)} {aLines.Length()} {aPoints.Length()}\n");
-        Geom_Plane aP1 = new(new gp_Pln());
-        Geom_Plane aP2 = new(new gp_Pln(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)));
+        Geom_Plane aP1 = new(new Plane3D());
+        Geom_Plane aP2 = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
         BRep_Builder aBB = new();
         for (int i = 1; i <= aLines.Length(); i++)
         {
@@ -187,11 +189,11 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
             }
             if (aIC.FirstCurve2d() is not null)
             {
-                aBB.UpdateEdge(anE, aIC.FirstCurve2d(), aP1, new TopLoc_Location(), 1.0e-7);
+                aBB.UpdateEdge(anE, aIC.FirstCurve2d(), aP1, new Placement(), 1.0e-7);
             }
             if (aIC.SecondCurve2d() is not null)
             {
-                aBB.UpdateEdge(anE, aIC.SecondCurve2d(), aP2, new TopLoc_Location(), 1.0e-7);
+                aBB.UpdateEdge(anE, aIC.SecondCurve2d(), aP2, new Placement(), 1.0e-7);
             }
             StringWriter aWriter = new() { NewLine = "\n" };
             BRepTools.Write(anE, aWriter, true, true, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
@@ -201,17 +203,17 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
             if (aIC.Curve() is Geom_Curve aC3)
             {
                 aRec.Append(Samples("s3", aC3.FirstParameter(), aC3.LastParameter(),
-                                    t => { gp_Pnt p = aC3.Value(t); return [p.X(), p.Y(), p.Z()]; }));
+                                    t => { Point3D p = aC3.Value(t); return [p.X(), p.Y(), p.Z()]; }));
             }
             if (aIC.FirstCurve2d() is Geom2d_Curve aC1)
             {
                 aRec.Append(Samples("s1", aC1.FirstParameter(), aC1.LastParameter(),
-                                    t => { gp_Pnt2d p = aC1.Value(t); return [p.X(), p.Y()]; }));
+                                    t => { Point2D p = aC1.Value(t); return [p.X(), p.Y()]; }));
             }
             if (aIC.SecondCurve2d() is Geom2d_Curve aC2)
             {
                 aRec.Append(Samples("s2", aC2.FirstParameter(), aC2.LastParameter(),
-                                    t => { gp_Pnt2d p = aC2.Value(t); return [p.X(), p.Y()]; }));
+                                    t => { Point2D p = aC2.Value(t); return [p.X(), p.Y()]; }));
             }
         }
         for (int i = 1; i <= aPoints.Length(); i++)
@@ -264,8 +266,8 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
 
     private static string Samples(string theTag, double theF, double theL, Func<double, double[]> theValue)
     {
-        double aF = Precision.IsInfinite(theF) ? -10.0 : theF;
-        double aL = Precision.IsInfinite(theL) ? 10.0 : theL;
+        double aF = global::Kerf.Engine.Foundation.Precision.IsInfinite(theF) ? -10.0 : theF;
+        double aL = global::Kerf.Engine.Foundation.Precision.IsInfinite(theL) ? 10.0 : theL;
         StringBuilder aS = new(theTag);
         for (int k = 0; k <= 8; k++)
         {

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -71,34 +73,34 @@ public class AdvApprox_ApproxAFunctionTests
     {
         NCollection_Array1<double> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles1d(theIndex, aPoles);
-        BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
                     theApprox.Multiplicities(), out double aP);
         return aP;
     }
 
-    private static gp_Pnt2d Eval2d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
+    private static Point2D Eval2d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, theApprox.NbPoles());
+        NCollection_Array1<Point2D> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles2d(theIndex, aPoles);
-        BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
-                    theApprox.Multiplicities(), out gp_Pnt2d aP);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
+                    theApprox.Multiplicities(), out Point2D aP);
         return aP;
     }
 
-    private static gp_Pnt Eval3d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
+    private static Point3D Eval3d(AdvApprox_ApproxAFunction theApprox, int theIndex, double theU)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, theApprox.NbPoles());
+        NCollection_Array1<Point3D> aPoles = new(1, theApprox.NbPoles());
         theApprox.Poles(theIndex, aPoles);
-        BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
-                    theApprox.Multiplicities(), out gp_Pnt aP);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(theU, 0, theApprox.Degree(), false, aPoles, null, theApprox.Knots()!,
+                    theApprox.Multiplicities(), out Point3D aP);
         return aP;
     }
 
     [Theory]
-    [InlineData(GeomAbs_C0)]
-    [InlineData(GeomAbs_C1)]
-    [InlineData(GeomAbs_C2)]
-    public void Polynomial_is_reproduced(GeomAbs_Shape theContinuity)
+    [InlineData(C0)]
+    [InlineData(C1)]
+    [InlineData(C2)]
+    public void Polynomial_is_reproduced(Continuity theContinuity)
     {
         Evaluator aF = new(Cubic);
         AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, theContinuity, 10, 5, aF);
@@ -129,7 +131,7 @@ public class AdvApprox_ApproxAFunctionTests
         const double aTol = 1e-7;
         Evaluator aF = new((t, d, r) => r[0] = SinD(t, d));
         AdvApprox_ApproxAFunction anApprox =
-            new(1, 0, 0, Tol(aTol), null, null, 0.0, 2 * Math.PI, GeomAbs_C1, 8, 20, aF);
+            new(1, 0, 0, Tol(aTol), null, null, 0.0, 2 * Math.PI, C1, 8, 20, aF);
 
         Assert.True(anApprox.IsDone());
         Assert.True(anApprox.MaxError(1, 1) <= aTol);
@@ -159,7 +161,7 @@ public class AdvApprox_ApproxAFunctionTests
             r[5] = d switch { 0 => 0.5 * t, 1 => 0.5, _ => 0 };
         });
         AdvApprox_ApproxAFunction anApprox =
-            new(1, 1, 1, Tol(1e-6), Tol(1e-5), Tol(1e-4), 0.0, 3.0, GeomAbs_C2, 11, 30, aF);
+            new(1, 1, 1, Tol(1e-6), Tol(1e-5), Tol(1e-4), 0.0, 3.0, C2, 11, 30, aF);
 
         Assert.True(anApprox.IsDone());
         Assert.Equal(1, anApprox.NumSubSpaces(1));
@@ -177,8 +179,8 @@ public class AdvApprox_ApproxAFunctionTests
         {
             double t = 3.0 * i / 300;
             anErr1 = Math.Max(anErr1, Math.Abs(Eval1d(anApprox, 1, t) - Math.Exp(t)));
-            anErr2 = Math.Max(anErr2, Eval2d(anApprox, 1, t).Distance(new gp_Pnt2d(2 * Math.Cos(t), 2 * Math.Sin(t))));
-            anErr3 = Math.Max(anErr3, Eval3d(anApprox, 1, t).Distance(new gp_Pnt(Math.Cos(t), Math.Sin(t), 0.5 * t)));
+            anErr2 = Math.Max(anErr2, Eval2d(anApprox, 1, t).Distance(new Point2D(2 * Math.Cos(t), 2 * Math.Sin(t))));
+            anErr3 = Math.Max(anErr3, Eval3d(anApprox, 1, t).Distance(new Point3D(Math.Cos(t), Math.Sin(t), 0.5 * t)));
         }
         Assert.True(anErr1 <= 1e-6, $"1D error {anErr1}");
         Assert.True(anErr2 <= 1e-5, $"2D error {anErr2}");
@@ -186,10 +188,10 @@ public class AdvApprox_ApproxAFunctionTests
     }
 
     [Theory]
-    [InlineData(GeomAbs_C0, 0)]
-    [InlineData(GeomAbs_C1, 1)]
-    [InlineData(GeomAbs_C2, 2)]
-    public void Result_has_the_requested_continuity(GeomAbs_Shape theContinuity, int theOrder)
+    [InlineData(C0, 0)]
+    [InlineData(C1, 1)]
+    [InlineData(C2, 2)]
+    public void Result_has_the_requested_continuity(Continuity theContinuity, int theOrder)
     {
         Evaluator aF = new((t, d, r) => r[0] = SinD(3 * t, d) * Math.Pow(3, d));
         AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-8), null, null, 0.0, 4.0, theContinuity, 7, 50, aF);
@@ -217,7 +219,7 @@ public class AdvApprox_ApproxAFunctionTests
         });
         AdvApprox_PrefCutting aCut = new(NCollection_Array1<double>.From([0.7]));
         AdvApprox_ApproxAFunction anApprox =
-            new(1, 0, 0, Tol(1e-10), null, null, 0.0, 2.0, GeomAbs_C1, 6, 10, aF, aCut);
+            new(1, 0, 0, Tol(1e-10), null, null, 0.0, 2.0, C1, 6, 10, aF, aCut);
 
         Assert.True(anApprox.IsDone());
         NCollection_HArray1<double> aKnots = anApprox.Knots()!;
@@ -232,7 +234,7 @@ public class AdvApprox_ApproxAFunctionTests
     public void Accessors_return_copies()
     {
         Evaluator aF = new(Cubic);
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, GeomAbs_C1, 10, 5, aF);
+        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
 
         NCollection_HArray1<double> aKnots = anApprox.Knots()!;
         aKnots[1] = 42;
@@ -251,23 +253,23 @@ public class AdvApprox_ApproxAFunctionTests
         Assert.Null(anApprox.Poles());
         Assert.Null(anApprox.MaxError(2));
         Assert.Null(anApprox.AverageError(3));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anApprox.MaxError(4));
-        Assert.ThrowsAny<Standard_ConstructionError>(() => anApprox.NumSubSpaces(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
+        Assert.ThrowsAny<ConstructionErrorException>(() => anApprox.NumSubSpaces(0));
     }
 
     [Fact]
     public void Invalid_input_throws_and_evaluation_errors_give_no_result()
     {
         Evaluator aF = new(Cubic);
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => new AdvApprox_ApproxAFunction(0, 0, 0, null, null, null, 0, 1, GeomAbs_C1, 5, 5, aF));
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 1, 0, GeomAbs_C1, 5, 5, aF));
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 0, 1, GeomAbs_G1, 5, 5, aF));
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => new AdvApprox_ApproxAFunction(0, 0, 0, null, null, null, 0, 1, C1, 5, 5, aF));
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 1, 0, C1, 5, 5, aF));
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => new AdvApprox_ApproxAFunction(1, 0, 0, Tol(1e-6), null, null, 0, 1, G1, 5, 5, aF));
 
         AdvApprox_ApproxAFunction anApprox =
-            new(1, 0, 0, Tol(1e-6), null, null, 0, 1, GeomAbs_C1, 5, 5, new FailingEvaluator());
+            new(1, 0, 0, Tol(1e-6), null, null, 0, 1, C1, 5, 5, new FailingEvaluator());
         Assert.False(anApprox.IsDone());
         Assert.False(anApprox.HasResult());
         Assert.Equal(0, anApprox.NbPoles());
@@ -279,7 +281,7 @@ public class AdvApprox_ApproxAFunctionTests
     {
         // Too few segments for the tolerance: the best result is kept, flagged by the error
         Evaluator aF = new((t, d, r) => r[0] = SinD(10 * t, d) * Math.Pow(10, d));
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-12), null, null, 0, 3, GeomAbs_C1, 5, 2, aF);
+        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-12), null, null, 0, 3, C1, 5, 2, aF);
         Assert.True(anApprox.HasResult());
         Assert.True(anApprox.MaxError(1, 1) > 1e-12);
         Assert.True(anApprox.NbKnots() <= 3);
@@ -321,7 +323,7 @@ public class AdvApprox_ApproxAFunctionTests
     public void Dump_writes_the_errors()
     {
         Evaluator aF = new(Cubic);
-        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, GeomAbs_C1, 10, 5, aF);
+        AdvApprox_ApproxAFunction anApprox = new(1, 0, 0, Tol(1e-9), null, null, 0.0, 2.0, C1, 10, 5, aF);
         StringWriter aWriter = new();
         anApprox.Dump(aWriter);
         Assert.StartsWith("Dump of ApproxAFunction\nError(s) 1d = \n   ", aWriter.ToString());

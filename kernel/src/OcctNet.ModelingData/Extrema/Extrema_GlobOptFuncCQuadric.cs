@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2020-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -17,17 +19,17 @@ namespace Occt;
 /// without a surface leave it unset until <see cref="LoadQuad"/>. Outside the parameter range <see cref="Value"/>
 /// returns false and writes 0 (decision 221).
 /// </remarks>
-public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
+public class Extrema_GlobOptFuncCQuadric : MultipleVarFunction
 {
     private readonly Adaptor3d_Curve myC;
     private Adaptor3d_Surface? myS;
-    private GeomAbs_SurfaceType mySType;
-    private gp_Pln myPln = new();
-    private gp_Cone myCone = new();
-    private gp_Cylinder myCylinder = new();
-    private gp_Sphere mySphere = new();
-    private gp_Torus myTorus = new();
-    private readonly gp_Pnt[] myPTrim = [new(), new(), new(), new()];
+    private SurfaceKind mySType;
+    private Plane3D myPln = new();
+    private Cone myCone = new();
+    private Cylinder myCylinder = new();
+    private Sphere mySphere = new();
+    private Torus myTorus = new();
+    private readonly Point3D[] myPTrim = [new(), new(), new(), new()];
     // Boundaries
     private readonly double myTf;
     private readonly double myTl;
@@ -40,39 +42,39 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
     {
         double u, v;
         //
-        gp_Pnt aCP = myC.Value(ct);
+        Point3D aCP = myC.Value(ct);
         switch (mySType)
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(myPln, aCP, out u, out v);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln, aCP, out u, out v);
                 break;
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(myCylinder, aCP, out u, out v);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myCylinder, aCP, out u, out v);
                 break;
-            case GeomAbs_Cone:
-                ElSLib.Parameters(myCone, aCP, out u, out v);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myCone, aCP, out u, out v);
                 break;
-            case GeomAbs_Sphere:
-                ElSLib.Parameters(mySphere, aCP, out u, out v);
+            case SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(mySphere, aCP, out u, out v);
                 break;
-            case GeomAbs_Torus:
-                ElSLib.Parameters(myTorus, aCP, out u, out v);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myTorus, aCP, out u, out v);
                 break;
             default:
-                F = Precision.Infinite();
+                F = global::Kerf.Engine.Foundation.Precision.Infinite();
                 return;
         }
         //
-        if (mySType != GeomAbs_Plane)
+        if (mySType != Plane)
         {
-            if (myUl > 2.0 * M_PI + Precision.PConfusion())
+            if (myUl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 u += 2.0 * M_PI;
             }
         }
-        if (mySType == GeomAbs_Torus)
+        if (mySType == SurfaceKind.Torus)
         {
-            if (myVl > 2.0 * M_PI + Precision.PConfusion())
+            if (myVl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 v += 2.0 * M_PI;
             }
@@ -81,7 +83,7 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         F = RealLast();
         if (u >= myUf && u <= myUl && v >= myVf && v <= myVl)
         {
-            gp_Pnt aPS = myS!.Value(u, v);
+            Point3D aPS = myS!.Value(u, v);
             F = Min(F, aCP.SquareDistance(aPS));
         }
         int i;
@@ -136,19 +138,19 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         //
         if (myS.IsUPeriodic())
         {
-            double aTMax = 2.0 * M_PI + Precision.PConfusion();
-            if (myUf > aTMax || myUf < -Precision.PConfusion() || Math.Abs(myUl - myUf) > aTMax)
+            double aTMax = 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion();
+            if (myUf > aTMax || myUf < -global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(myUl - myUf) > aTMax)
             {
-                ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myUl - myUf) / 2, Precision.PConfusion()),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myUl - myUf) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                     ref myUf, ref myUl);
             }
         }
         if (myS.IsVPeriodic())
         {
-            double aTMax = 2.0 * M_PI + Precision.PConfusion();
-            if (myVf > aTMax || myVf < -Precision.PConfusion() || Math.Abs(myVl - myVf) > aTMax)
+            double aTMax = 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion();
+            if (myVf > aTMax || myVf < -global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(myVl - myVf) > aTMax)
             {
-                ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myVl - myVf) / 2, Precision.PConfusion()),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myVl - myVf) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                     ref myVf, ref myVl);
             }
         }
@@ -159,19 +161,19 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         mySType = S.GetType();
         switch (mySType)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 myPln = myS.Plane();
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 myCylinder = myS.Cylinder();
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 myCone = myS.Cone();
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 mySphere = myS.Sphere();
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 myTorus = myS.Torus();
                 break;
             default:
@@ -179,7 +181,7 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         }
     }
 
-    public override int NbVariables() => 1;
+    public override int VariableCount => 1;
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -190,7 +192,7 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         }
 
         value(ct, out F);
-        return !Precision.IsInfinite(F);
+        return !global::Kerf.Engine.Foundation.Precision.IsInfinite(F);
     }
 
     /// <summary>The parameters on the quadric (written to theUV) for the point of the curve at theCT.</summary>
@@ -202,23 +204,23 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         // points  myPTrim[]
         ReadOnlySpan<double> uext = [myUf, myUl, myUl, myUf];
         ReadOnlySpan<double> vext = [myVf, myVf, myVl, myVl];
-        gp_Pnt aCP = myC.Value(theCT[1]);
+        Point3D aCP = myC.Value(theCT[1]);
         switch (mySType)
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(myPln, aCP, out u, out v);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln, aCP, out u, out v);
                 break;
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(myCylinder, aCP, out u, out v);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myCylinder, aCP, out u, out v);
                 break;
-            case GeomAbs_Cone:
-                ElSLib.Parameters(myCone, aCP, out u, out v);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myCone, aCP, out u, out v);
                 break;
-            case GeomAbs_Sphere:
-                ElSLib.Parameters(mySphere, aCP, out u, out v);
+            case SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(mySphere, aCP, out u, out v);
                 break;
-            case GeomAbs_Torus:
-                ElSLib.Parameters(myTorus, aCP, out u, out v);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(myTorus, aCP, out u, out v);
                 break;
             default:
                 theUV[1] = myUf;
@@ -226,16 +228,16 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
                 return;
         }
         //
-        if (mySType != GeomAbs_Plane)
+        if (mySType != Plane)
         {
-            if (myUl > 2.0 * M_PI + Precision.PConfusion())
+            if (myUl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 u += 2.0 * M_PI;
             }
         }
-        if (mySType == GeomAbs_Torus)
+        if (mySType == SurfaceKind.Torus)
         {
-            if (myVl > 2.0 * M_PI + Precision.PConfusion())
+            if (myVl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 v += 2.0 * M_PI;
             }
@@ -244,7 +246,7 @@ public class Extrema_GlobOptFuncCQuadric : math_MultipleVarFunction
         double F = RealLast();
         if (u >= myUf && u <= myUl && v >= myVf && v <= myVl)
         {
-            gp_Pnt aPS = myS!.Value(u, v);
+            Point3D aPS = myS!.Value(u, v);
             F = aCP.SquareDistance(aPS);
         }
         int i;

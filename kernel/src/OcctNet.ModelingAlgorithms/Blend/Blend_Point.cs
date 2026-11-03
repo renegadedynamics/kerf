@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,10 +23,10 @@ namespace Occt;
 /// </remarks>
 public partial struct Blend_Point : IEquatable<Blend_Point>
 {
-    private gp_Pnt pt1;
-    private gp_Pnt pt2;
-    private gp_Vec tg1;
-    private gp_Vec tg2;
+    private Point3D pt1;
+    private Point3D pt2;
+    private Vector3D tg1;
+    private Vector3D tg2;
     private double prm;
     private double u1;
     private double v1;
@@ -45,8 +51,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A point on two surfaces with its tangents.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                       in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d, in gp_Vec2d Tg22d)
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                       in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d, in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -69,7 +75,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A tangency point on two surfaces.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2)
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2)
     {
         pt1 = P1;
         pt2 = P2;
@@ -86,8 +92,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A point on a surface and a curve with its tangents.</summary>
-    public Blend_Point(in gp_Pnt Ps, in gp_Pnt Pc, double Param, double U, double V, double W, in gp_Vec Tgs,
-                       in gp_Vec Tgc, in gp_Vec2d Tg2d)
+    public Blend_Point(in Point3D Ps, in Point3D Pc, double Param, double U, double V, double W, in Vector3D Tgs,
+                       in Vector3D Tgc, in Vector2D Tg2d)
     {
         pt1 = Ps;
         pt2 = Pc;
@@ -107,7 +113,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A tangency point on a surface and a curve.</summary>
-    public Blend_Point(in gp_Pnt Ps, in gp_Pnt Pc, double Param, double U, double V, double W)
+    public Blend_Point(in Point3D Ps, in Point3D Pc, double Param, double U, double V, double W)
     {
         pt1 = Ps;
         pt2 = Pc;
@@ -123,8 +129,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A point on a surface and a restriction with its tangents.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                       double PC, in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d, in gp_Vec2d Tg22d)
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                       double PC, in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d, in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -148,7 +154,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A tangency point on a surface and a restriction.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
                        double PC)
     {
         pt1 = P1;
@@ -167,8 +173,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A point on two restrictions with its tangents.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                       double PC1, double PC2, in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d, in gp_Vec2d Tg22d)
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                       double PC1, double PC2, in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d, in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -193,7 +199,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     }
 
     /// <summary>A tangency point on two restrictions.</summary>
-    public Blend_Point(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
+    public Blend_Point(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
                        double PC1, double PC2)
     {
         pt1 = P1;
@@ -212,8 +218,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         istgt = true;
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                           in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d, in gp_Vec2d Tg22d)
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                           in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d, in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -235,7 +241,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         vtg22d = Tg22d.Y();
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2)
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2)
     {
         pt1 = P1;
         pt2 = P2;
@@ -251,8 +257,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         istgt = true;
     }
 
-    internal void SetValue(in gp_Pnt Ps, in gp_Pnt Pc, double Param, double U, double V, double W, in gp_Vec Tgs,
-                           in gp_Vec Tgc, in gp_Vec2d Tg2d)
+    internal void SetValue(in Point3D Ps, in Point3D Pc, double Param, double U, double V, double W, in Vector3D Tgs,
+                           in Vector3D Tgc, in Vector2D Tg2d)
     {
         pt1 = Ps;
         pt2 = Pc;
@@ -271,7 +277,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         vtg12d = Tg2d.Y();
     }
 
-    internal void SetValue(in gp_Pnt Ps, in gp_Pnt Pc, double Param, double U, double V, double W)
+    internal void SetValue(in Point3D Ps, in Point3D Pc, double Param, double U, double V, double W)
     {
         pt1 = Ps;
         pt2 = Pc;
@@ -286,8 +292,8 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         istgt = true;
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                           double PC, in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d, in gp_Vec2d Tg22d)
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                           double PC, in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d, in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -310,7 +316,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         vtg22d = Tg22d.Y();
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
                            double PC)
     {
         pt1 = P1;
@@ -328,9 +334,9 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         istgt = true;
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
-                           double PC1, double PC2, in gp_Vec Tg1, in gp_Vec Tg2, in gp_Vec2d Tg12d,
-                           in gp_Vec2d Tg22d)
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
+                           double PC1, double PC2, in Vector3D Tg1, in Vector3D Tg2, in Vector2D Tg12d,
+                           in Vector2D Tg22d)
     {
         pt1 = P1;
         pt2 = P2;
@@ -354,7 +360,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         vtg22d = Tg22d.Y();
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double U1, double V1, double U2, double V2,
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double U1, double V1, double U2, double V2,
                            double PC1, double PC2)
     {
         pt1 = P1;
@@ -373,7 +379,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         istgt = true;
     }
 
-    internal void SetValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double PC1, double PC2)
+    internal void SetValue(in Point3D P1, in Point3D P2, double Param, double PC1, double PC2)
     {
         pt1 = P1;
         pt2 = P2;
@@ -396,7 +402,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     /// A copy that is a tangency point on two curves only (the twin of the five-argument <c>SetValue</c>; the
     /// constructors are the twins of the others).
     /// </summary>
-    public readonly Blend_Point WithValue(in gp_Pnt P1, in gp_Pnt P2, double Param, double PC1, double PC2)
+    public readonly Blend_Point WithValue(in Point3D P1, in Point3D P2, double Param, double PC1, double PC2)
     {
         Blend_Point aCopy = this;
         aCopy.SetValue(P1, P2, Param, PC1, PC2);
@@ -423,86 +429,86 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
         return istgt;
     }
 
-    public readonly gp_Pnt PointOnS1()
+    public readonly Point3D PointOnS1()
     {
         return pt1;
     }
 
-    public readonly gp_Pnt PointOnS2()
+    public readonly Point3D PointOnS2()
     {
         return pt2;
     }
 
-    /// <summary>The parameters on the first surface; throws <see cref="Standard_DomainError"/> if there are none.</summary>
+    /// <summary>The parameters on the first surface; throws <see cref="DomainErrorException"/> if there are none.</summary>
     public readonly void ParametersOnS1(out double U1, out double V1)
     {
         if (!hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         U1 = u1;
         V1 = v1;
     }
 
-    /// <summary>The parameters on the second surface; throws <see cref="Standard_DomainError"/> if there are none.</summary>
+    /// <summary>The parameters on the second surface; throws <see cref="DomainErrorException"/> if there are none.</summary>
     public readonly void ParametersOnS2(out double U2, out double V2)
     {
         if (!hass2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         U2 = u2;
         V2 = v2;
     }
 
-    public readonly gp_Vec TangentOnS1()
+    public readonly Vector3D TangentOnS1()
     {
         if (istgt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg1;
     }
 
-    public readonly gp_Vec TangentOnS2()
+    public readonly Vector3D TangentOnS2()
     {
         if (istgt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg2;
     }
 
-    public readonly gp_Vec2d Tangent2dOnS1()
+    public readonly Vector2D Tangent2dOnS1()
     {
         if (istgt || !hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
-        return new gp_Vec2d(utg12d, vtg12d);
+        return new Vector2D(utg12d, vtg12d);
     }
 
-    public readonly gp_Vec2d Tangent2dOnS2()
+    public readonly Vector2D Tangent2dOnS2()
     {
         if (istgt || !hass2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
-        return new gp_Vec2d(utg22d, vtg22d);
+        return new Vector2D(utg22d, vtg22d);
     }
 
-    public readonly gp_Pnt PointOnS()
+    public readonly Point3D PointOnS()
     {
         return pt1;
     }
 
-    public readonly gp_Pnt PointOnC()
+    public readonly Point3D PointOnC()
     {
         return pt2;
     }
@@ -511,7 +517,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     {
         if (!hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         U1 = u1;
@@ -522,48 +528,48 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     {
         if (!hasc2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return pc2;
     }
 
-    public readonly gp_Vec TangentOnS()
+    public readonly Vector3D TangentOnS()
     {
         if (istgt || !hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg1;
     }
 
-    public readonly gp_Vec TangentOnC()
+    public readonly Vector3D TangentOnC()
     {
         if (istgt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg2;
     }
 
-    public readonly gp_Vec2d Tangent2d()
+    public readonly Vector2D Tangent2d()
     {
         if (istgt || !hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
-        return new gp_Vec2d(utg12d, vtg12d);
+        return new Vector2D(utg12d, vtg12d);
     }
 
-    public readonly gp_Pnt PointOnC1()
+    public readonly Point3D PointOnC1()
     {
         return pt1;
     }
 
-    public readonly gp_Pnt PointOnC2()
+    public readonly Point3D PointOnC2()
     {
         return pt2;
     }
@@ -572,7 +578,7 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     {
         if (!hasc1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return pc1;
@@ -582,27 +588,27 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     {
         if (!hasc2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return pc2;
     }
 
-    public readonly gp_Vec TangentOnC1()
+    public readonly Vector3D TangentOnC1()
     {
         if (istgt || !hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg1;
     }
 
-    public readonly gp_Vec TangentOnC2()
+    public readonly Vector3D TangentOnC2()
     {
         if (istgt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tg2;
@@ -641,5 +647,5 @@ public partial struct Blend_Point : IEquatable<Blend_Point>
     public static bool operator !=(in Blend_Point theLeft, in Blend_Point theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("Blend_Point", prm, pt1.X(), pt1.Y(), pt1.Z(), pt2.X(), pt2.Y(), pt2.Z(), u1, v1, u2, v2, pc1, pc2);
+        => Constants.Format("Blend_Point", prm, pt1.X(), pt1.Y(), pt1.Z(), pt2.X(), pt2.Y(), pt2.Z(), u1, v1, u2, v2, pc1, pc2);
 }

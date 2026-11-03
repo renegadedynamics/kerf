@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -26,7 +29,7 @@ namespace Occt;
 /// </remarks>
 public class Geom2d_BezierCurve : Geom2d_BoundedCurve
 {
-    private NCollection_Array1<gp_Pnt2d> myPoles = new NCollection_Array1<gp_Pnt2d>();
+    private NCollection_Array1<Point2D> myPoles = new NCollection_Array1<Point2D>();
     private NCollection_Array1<double> myWeights = new NCollection_Array1<double>();
     private Geom2dEval_RepCurveDesc.Base? myEvalRep;
     private bool myRational = false;
@@ -41,7 +44,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     internal Geom2dEval_RepCurveDesc.Base? EvalRepresentation() => myEvalRep;
 
     /// <summary>Attaches an evaluation representation (null detaches it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     internal void SetEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         CheckMutable();
@@ -62,7 +65,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         bool rat = false;
         for (i = 1; i < n; i++)
         {
-            rat = Math.Abs(W[i] - W[i + 1]) > gp.Resolution();
+            rat = Math.Abs(W[i] - W[i + 1]) > Constants.Resolution();
             if (rat)
             {
                 break;
@@ -72,13 +75,13 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The non-rational Bezier curve of poles CurvePoles.</summary>
-    /// <exception cref="Standard_ConstructionError">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
-    public Geom2d_BezierCurve(NCollection_Array1<gp_Pnt2d> CurvePoles)
+    /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
+    public Geom2d_BezierCurve(NCollection_Array1<Point2D> CurvePoles)
     {
         int nbpoles = CurvePoles.Length();
         if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve.MaxDegree() + 1))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         // init non rational
         init(CurvePoles, null);
@@ -88,29 +91,29 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     /// The rational Bezier curve of poles CurvePoles and weights PoleWeights (non-rational if all the weights
     /// are equal).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// Fewer than 2 or more than MaxDegree() + 1 poles, a weight count different from the pole count, or a
     /// weight not above gp::Resolution().
     /// </exception>
-    public Geom2d_BezierCurve(NCollection_Array1<gp_Pnt2d> CurvePoles, NCollection_Array1<double> PoleWeights)
+    public Geom2d_BezierCurve(NCollection_Array1<Point2D> CurvePoles, NCollection_Array1<double> PoleWeights)
     {
         int nbpoles = CurvePoles.Length();
         if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve.MaxDegree() + 1))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (PoleWeights.Length() != nbpoles)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (int i = 1; i <= nbpoles; i++)
         {
             // OCCT: indexes the weights from 1 whatever their lower bound (occt-issues.md).
-            if (PoleWeights[i] <= gp.Resolution())
+            if (PoleWeights[i] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
 
@@ -128,9 +131,9 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     /// <summary>A copy of theOther (its evaluation representation deep-copied), not frozen.</summary>
     public Geom2d_BezierCurve(Geom2d_BezierCurve theOther)
     {
-        myPoles = new NCollection_Array1<gp_Pnt2d>(theOther.myPoles);
+        myPoles = new NCollection_Array1<Point2D>(theOther.myPoles);
         myWeights = theOther.myRational ? new NCollection_Array1<double>(theOther.myWeights)
-                                        : BSplCLib.UnitWeights(theOther.myPoles.Length());
+                                        : global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(theOther.myPoles.Length());
         myEvalRep = Geom2dEval_RepUtils.CloneCurveDesc(theOther.myEvalRep);
         myRational = theOther.myRational;
         myClosed = theOther.myClosed;
@@ -138,7 +141,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Raises the degree to Degree, keeping the shape of the curve.</summary>
-    /// <exception cref="Standard_ConstructionError">Degree is below the current degree or above MaxDegree().</exception>
+    /// <exception cref="ConstructionErrorException">Degree is below the current degree or above MaxDegree().</exception>
     internal void Increase(int Deg)
     {
         CheckMutable();
@@ -150,14 +153,14 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         Standard_ConstructionError_Raise_if(Deg < Degree() || Deg > Geom2d_BezierCurve.MaxDegree(),
                                             "Geom2d_BezierCurve::Increase");
 
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, Deg + 1);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, Deg + 1);
         NCollection_Array1<double> nknots = new NCollection_Array1<double>(1, 2);
         NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, 2);
 
         if (IsRational())
         {
             NCollection_Array1<double> nweights = new NCollection_Array1<double>(1, Deg + 1);
-            BSplCLib.IncreaseDegree(Degree(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree(),
                                     Deg,
                                     false,
                                     myPoles,
@@ -172,15 +175,15 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         }
         else
         {
-            BSplCLib.IncreaseDegree(Degree(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree(),
                                     Deg,
                                     false,
                                     myPoles,
-                                    BSplCLib.NoWeights(),
+                                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                     InternalKnots(),
                                     InternalMultiplicities(),
                                     npoles,
-                                    BSplCLib.NoWeights(),
+                                    global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                     nknots,
                                     nmults);
             init(npoles, null);
@@ -188,20 +191,20 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>The maximum degree of a Bezier curve: 25.</summary>
-    public static int MaxDegree() => BSplCLib.MaxDegree();
+    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Inserts the pole P (with the weight Weight) after the pole of index Index (0 inserts first).</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// The curve already has MaxDegree() poles, or Weight is not above gp::Resolution().
     /// </exception>
-    /// <exception cref="Standard_OutOfRange">Index is outside [0, NbPoles()].</exception>
-    internal void InsertPoleAfter(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    /// <exception cref="OutOfRangeException">Index is outside [0, NbPoles()].</exception>
+    internal void InsertPoleAfter(int Index, in Point2D P, double Weight = 1.0)
     {
         CheckMutable();
         int nbpoles = NbPoles();
 
         Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve.MaxDegree()
-                                              || Weight <= gp.Resolution(),
+                                              || Weight <= Constants.Resolution(),
                                             "Geom2d_BezierCurve::InsertPoleAfter");
 
         Standard_OutOfRange_Raise_if(Index < 0 || Index > nbpoles, "Geom2d_BezierCurve::InsertPoleAfter");
@@ -209,7 +212,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         int i;
 
         // Insert the pole
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles + 1);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles + 1);
 
         for (i = 1; i <= Index; i++)
         {
@@ -224,7 +227,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         }
 
         // Insert the weight
-        bool rat = IsRational() || Math.Abs(Weight - 1.0) > gp.Resolution();
+        bool rat = IsRational() || Math.Abs(Weight - 1.0) > Constants.Resolution();
 
         if (rat)
         {
@@ -265,19 +268,19 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Inserts the pole P (with the weight Weight) before the pole of index Index.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// The curve already has MaxDegree() poles, or Weight is not above gp::Resolution().
     /// </exception>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles() + 1].</exception>
-    internal void InsertPoleBefore(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles() + 1].</exception>
+    internal void InsertPoleBefore(int Index, in Point2D P, double Weight = 1.0)
     {
         CheckMutable();
         InsertPoleAfter(Index - 1, P, Weight);
     }
 
     /// <summary>Removes the pole of index Index.</summary>
-    /// <exception cref="Standard_ConstructionError">The curve has only 2 poles.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">The curve has only 2 poles.</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
     internal void RemovePole(int Index)
     {
         CheckMutable();
@@ -290,7 +293,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         int i;
 
         // Remove the pole
-        NCollection_Array1<gp_Pnt2d> npoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles - 1);
+        NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, nbpoles - 1);
 
         for (i = 1; i < Index; i++)
         {
@@ -329,7 +332,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     protected internal sealed override void Reverse()
     {
         CheckMutable();
-        gp_Pnt2d P;
+        Point2D P;
         int i, nbpoles = NbPoles();
 
         // reverse poles
@@ -366,13 +369,13 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     internal void Segment(double U1, double U2)
     {
         CheckMutable();
-        myClosed = (Math.Abs(Value(U1).Distance(Value(U2))) <= gp.Resolution());
+        myClosed = (Math.Abs(Value(U1).Distance(Value(U2))) <= Constants.Resolution());
 
-        NCollection_Array1<gp_Pnt2d> coeffs = new NCollection_Array1<gp_Pnt2d>(1, myPoles.Length());
+        NCollection_Array1<Point2D> coeffs = new NCollection_Array1<Point2D>(1, myPoles.Length());
         if (IsRational())
         {
             NCollection_Array1<double> wcoeffs = new NCollection_Array1<double>(1, myPoles.Length());
-            BSplCLib.BuildCache(0.0,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildCache(0.0,
                                 1.0,
                                 false,
                                 Degree(),
@@ -381,29 +384,29 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
                                 myWeights,
                                 coeffs,
                                 wcoeffs);
-            PLib.Trimming(U1, U2, coeffs, wcoeffs);
-            PLib.CoefficientsPoles(coeffs, wcoeffs, myPoles, myWeights);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(U1, U2, coeffs, wcoeffs);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(coeffs, wcoeffs, myPoles, myWeights);
         }
         else
         {
-            BSplCLib.BuildCache(0.0,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildCache(0.0,
                                 1.0,
                                 false,
                                 Degree(),
                                 InternalKnotSequence(),
                                 myPoles,
-                                BSplCLib.NoWeights(),
+                                global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                 coeffs,
-                                BSplCLib.NoWeights());
-            PLib.Trimming(U1, U2, coeffs, PLib.NoWeights());
-            PLib.CoefficientsPoles(coeffs, PLib.NoWeights(), myPoles, PLib.NoWeights());
+                                global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.Trimming(U1, U2, coeffs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(coeffs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), myPoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
         }
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Replaces the pole of index Index by P.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    internal void SetPole(int Index, in gp_Pnt2d P)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    internal void SetPole(int Index, in Point2D P)
     {
         CheckMutable();
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoles(), "Geom2d_BezierCurve::SetPole");
@@ -411,15 +414,15 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
 
         if (Index == 1 || Index == myPoles.Length())
         {
-            myClosed = (myPoles[1].Distance(myPoles[NbPoles()]) <= gp.Resolution());
+            myClosed = (myPoles[1].Distance(myPoles[NbPoles()]) <= Constants.Resolution());
         }
         myMaxDerivInvOk = false;
     }
 
     /// <summary>Replaces the pole of index Index by P, and its weight by Weight.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    /// <exception cref="Standard_ConstructionError">Weight is not above gp::Resolution().</exception>
-    internal void SetPole(int Index, in gp_Pnt2d P, double Weight)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">Weight is not above gp::Resolution().</exception>
+    internal void SetPole(int Index, in Point2D P, double Weight)
     {
         CheckMutable();
         SetPole(Index, P);
@@ -427,22 +430,22 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Changes the weight of the pole of index Index; the curve may become rational or non-rational.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    /// <exception cref="Standard_ConstructionError">Weight is not above gp::Resolution().</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="ConstructionErrorException">Weight is not above gp::Resolution().</exception>
     internal void SetWeight(int Index, double Weight)
     {
         CheckMutable();
         int nbpoles = NbPoles();
 
         Standard_OutOfRange_Raise_if(Index < 1 || Index > nbpoles, "Geom2d_BezierCurve::SetWeight");
-        Standard_ConstructionError_Raise_if(Weight <= gp.Resolution(), "Geom2d_BezierCurve::SetWeight");
+        Standard_ConstructionError_Raise_if(Weight <= Constants.Resolution(), "Geom2d_BezierCurve::SetWeight");
 
         // compute new rationality
         bool wasrat = IsRational();
         if (!wasrat)
         {
             // a weight of 1. does not turn to rational
-            if (Math.Abs(Weight - 1.0) <= gp.Resolution())
+            if (Math.Abs(Weight - 1.0) <= Constants.Resolution())
             {
                 return;
             }
@@ -457,7 +460,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         if (wasrat && !Rational(myWeights))
         {
             myRational = false;
-            myWeights = BSplCLib.UnitWeights(nbpoles);
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(nbpoles);
         }
         else
         {
@@ -480,20 +483,20 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public bool IsRational() => myRational;
 
     /// <summary>CN.</summary>
-    public sealed override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public sealed override Continuity Continuity() => CN;
 
     /// <summary>The degree: NbPoles() - 1.</summary>
     public int Degree() => myPoles.Length() - 1;
 
-    public sealed override gp_Pnt2d EvalD0(double U)
+    public sealed override Point2D EvalD0(double U)
     {
-        gp_Pnt2d aEvalRepResult;
+        Point2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveD0(myEvalRep, U, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
-        gp_Pnt2d P;
-        BSplCLib.D0(U, myPoles, InternalWeights(), out P);
+        Point2D P;
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(U, myPoles, InternalWeights(), out P);
         return P;
     }
 
@@ -505,7 +508,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD1 aResult;
-        BSplCLib.D1(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1);
         return aResult;
     }
 
@@ -517,7 +520,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD2 aResult;
-        BSplCLib.D2(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
@@ -529,29 +532,29 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             return aEvalRepResult;
         }
         ResD3 aResult;
-        BSplCLib.D3(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(U, myPoles, InternalWeights(), out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
         return aResult;
     }
 
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom2d_UndefinedDerivative();
         }
-        gp_Vec2d aEvalRepResult;
+        Vector2D aEvalRepResult;
         if (Geom2dEval_RepUtils.TryEvalCurveDN(myEvalRep, U, N, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
-        gp_Vec2d V;
-        BSplCLib.DN(U, N, 0, Degree(), false, myPoles, InternalWeights(), InternalKnots(), InternalMultiplicities(), out V);
+        Vector2D V;
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(U, N, 0, Degree(), false, myPoles, InternalWeights(), InternalKnots(), InternalMultiplicities(), out V);
         return V;
     }
 
     /// <summary>The last pole.</summary>
-    public sealed override gp_Pnt2d EndPoint() => myPoles[myPoles.Upper()];
+    public sealed override Point2D EndPoint() => myPoles[myPoles.Upper()];
 
     /// <summary>0.</summary>
     public sealed override double FirstParameter() => 0.0;
@@ -563,32 +566,32 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public int NbPoles() => myPoles.Length();
 
     /// <summary>The pole of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
-    public gp_Pnt2d Pole(int Index)
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
+    public Point2D Pole(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myPoles.Length(), "Geom2d_BezierCurve::Pole");
         return myPoles[Index];
     }
 
     /// <summary>Copies the poles into P (indexed as P is).</summary>
-    /// <exception cref="Standard_DimensionError">P's length is not NbPoles().</exception>
-    public void Poles(NCollection_Array1<gp_Pnt2d> P)
+    /// <exception cref="DimensionErrorException">P's length is not NbPoles().</exception>
+    public void Poles(NCollection_Array1<Point2D> P)
     {
         Standard_DimensionError_Raise_if(P.Length() != myPoles.Length(), "Geom2d_BezierCurve::Poles");
         P.Assign(myPoles);
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public PackedList<gp_Pnt2d> Poles() => myPoles.ToPackedList();
+    public PackedList<Point2D> Poles() => myPoles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
-    internal NCollection_Array1<gp_Pnt2d> InternalPoles() => myPoles;
+    internal NCollection_Array1<Point2D> InternalPoles() => myPoles;
 
     /// <summary>The first pole.</summary>
-    public sealed override gp_Pnt2d StartPoint() => myPoles[1];
+    public sealed override Point2D StartPoint() => myPoles[1];
 
     /// <summary>The weight of the pole of index Index (1 if the curve is not rational).</summary>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbPoles()].</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
     public double Weight(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > myPoles.Length(), "Geom2d_BezierCurve::Weight");
@@ -603,7 +606,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Copies the weights into W (ones if the curve is not rational).</summary>
-    /// <exception cref="Standard_DimensionError">W's length is not NbPoles().</exception>
+    /// <exception cref="DimensionErrorException">W's length is not NbPoles().</exception>
     public void Weights(NCollection_Array1<double> W)
     {
         int nbpoles = NbPoles();
@@ -625,7 +628,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     public PackedList<double>? Weights() => myRational ? myWeights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
-    internal NCollection_Array1<double>? InternalWeights() => myRational ? myWeights : BSplCLib.NoWeights();
+    internal NCollection_Array1<double>? InternalWeights() => myRational ? myWeights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights();
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
     public PackedList<double> WeightsArray() => myWeights.ToPackedList();
@@ -634,7 +637,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     internal NCollection_Array1<double> InternalWeightsArray() => myWeights;
 
     /// <summary>Applies T to the poles; the evaluation representation is dropped.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         int nbpoles = NbPoles();
@@ -658,7 +661,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
         if (!Volatile.Read(ref myMaxDerivInvOk))
         {
             double aMaxDerivInv;
-            BSplCLib.Resolution(myPoles,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Resolution(myPoles,
                                 InternalWeights(),
                                 myPoles.Length(),
                                 InternalKnotSequence(),
@@ -691,7 +694,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
 
     private static NCollection_Array1<int>[] buildMults()
     {
-        int THE_MAX_SIZE = BSplCLib.MaxDegree() + 1;
+        int THE_MAX_SIZE = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1;
         NCollection_Array1<int>[] anArr = new NCollection_Array1<int>[THE_MAX_SIZE];
         for (int i = 0; i < THE_MAX_SIZE; ++i)
         {
@@ -702,12 +705,12 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
 
     private static NCollection_Array1<double>[] buildFlatKnots()
     {
-        int THE_MAX_SIZE = BSplCLib.MaxDegree() + 1;
+        int THE_MAX_SIZE = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1;
         NCollection_Array1<double>[] anArr = new NCollection_Array1<double>[THE_MAX_SIZE];
         anArr[0] = new NCollection_Array1<double>();
-        for (int i = 1; i <= BSplCLib.MaxDegree(); ++i)
+        for (int i = 1; i <= global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree(); ++i)
         {
-            anArr[i] = NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(i));
+            anArr[i] = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(i));
         }
         return anArr;
     }
@@ -730,11 +733,11 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>Sets the poles and weights (null: non-rational), resetting the caches and the evaluation representation.</summary>
-    protected void init(NCollection_Array1<gp_Pnt2d> thePoles, NCollection_Array1<double>? theWeights)
+    protected void init(NCollection_Array1<Point2D> thePoles, NCollection_Array1<double>? theWeights)
     {
         int nbpoles = thePoles.Length();
         // closed ?
-        myClosed = thePoles[thePoles.Lower()].Distance(thePoles[thePoles.Upper()]) <= gp.Resolution();
+        myClosed = thePoles[thePoles.Lower()].Distance(thePoles[thePoles.Upper()]) <= Constants.Resolution();
 
         // set fields
         myPoles.Resize(1, nbpoles, false);
@@ -752,13 +755,13 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
             myRational = Rational(myWeights);
             if (!myRational)
             {
-                myWeights = BSplCLib.UnitWeights(nbpoles);
+                myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(nbpoles);
             }
         }
         else
         {
             myRational = false;
-            myWeights = BSplCLib.UnitWeights(nbpoles);
+            myWeights = global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(nbpoles);
         }
 
         myMaxDerivInv = 0.0;
@@ -777,7 +780,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted after the pole of index Index.</summary>
-    public Geom2d_BezierCurve PoleInsertedAfter(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    public Geom2d_BezierCurve PoleInsertedAfter(int Index, in Point2D P, double Weight = 1.0)
     {
         Geom2d_BezierCurve aCopy = new Geom2d_BezierCurve(this);
         aCopy.InsertPoleAfter(Index, P, Weight);
@@ -785,7 +788,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted before the pole of index Index.</summary>
-    public Geom2d_BezierCurve PoleInsertedBefore(int Index, in gp_Pnt2d P, double Weight = 1.0)
+    public Geom2d_BezierCurve PoleInsertedBefore(int Index, in Point2D P, double Weight = 1.0)
     {
         Geom2d_BezierCurve aCopy = new Geom2d_BezierCurve(this);
         aCopy.InsertPoleBefore(Index, P, Weight);
@@ -809,7 +812,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    public Geom2d_BezierCurve WithPole(int Index, in gp_Pnt2d P)
+    public Geom2d_BezierCurve WithPole(int Index, in Point2D P)
     {
         Geom2d_BezierCurve aCopy = new Geom2d_BezierCurve(this);
         aCopy.SetPole(Index, P);
@@ -817,7 +820,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight Weight.</summary>
-    public Geom2d_BezierCurve WithPole(int Index, in gp_Pnt2d P, double Weight)
+    public Geom2d_BezierCurve WithPole(int Index, in Point2D P, double Weight)
     {
         Geom2d_BezierCurve aCopy = new Geom2d_BezierCurve(this);
         aCopy.SetPole(Index, P, Weight);
@@ -833,7 +836,7 @@ public class Geom2d_BezierCurve : Geom2d_BoundedCurve
     }
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
-    /// <exception cref="Standard_ProgramError">The descriptor is invalid.</exception>
+    /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
     public Geom2d_BezierCurve WithEvalRepresentation(Geom2dEval_RepCurveDesc.Base? theDesc)
     {
         Geom2d_BezierCurve aCopy = new Geom2d_BezierCurve(this);

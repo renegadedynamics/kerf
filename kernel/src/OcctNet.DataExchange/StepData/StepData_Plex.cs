@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A Plex (for Complex) Entity is defined as a list of Simple Members ("external mapping"). The types of these members must be in alphabetic order.</summary>
 public class StepData_Plex : StepData_Described
 {
-    private readonly NCollection_Sequence<Standard_Transient> themembers = new();
+    private readonly NCollection_Sequence<Transient> themembers = new();
 
     /// <summary>Creates a Plex (empty). The complete creation is made by the ECDescr itself (see method NewEntity).</summary>
     public StepData_Plex(StepData_ECDescr descr) : base(descr)

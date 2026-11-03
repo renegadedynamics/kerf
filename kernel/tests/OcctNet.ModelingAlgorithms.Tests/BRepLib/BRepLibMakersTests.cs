@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepLib_EdgeError;
 using static Occt.BRepLib_FaceError;
@@ -20,12 +22,12 @@ public class BRepLibMakersTests
 {
     private const double Conf = 1e-7;
 
-    private static TopoDS_Vertex V(double x, double y, double z) => new BRepLib_MakeVertex(new gp_Pnt(x, y, z)).Vertex();
+    private static TopoDS_Vertex V(double x, double y, double z) => new BRepLib_MakeVertex(new Point3D(x, y, z)).Vertex();
 
     private static TopoDS_Edge E(in TopoDS_Vertex v1, in TopoDS_Vertex v2) => new BRepLib_MakeEdge(v1, v2).Edge();
 
     private static TopoDS_Edge E(double x1, double y1, double z1, double x2, double y2, double z2)
-        => new BRepLib_MakeEdge(new gp_Pnt(x1, y1, z1), new gp_Pnt(x2, y2, z2)).Edge();
+        => new BRepLib_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     private static int Count(in TopoDS_Shape S, TopAbs_ShapeEnum T)
     {
@@ -44,7 +46,7 @@ public class BRepLibMakersTests
         return n;
     }
 
-    private static void AssertPoint(in gp_Pnt theExpected, in gp_Pnt theActual, double theTol = 1e-12)
+    private static void AssertPoint(in Point3D theExpected, in Point3D theActual, double theTol = 1e-12)
         => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} != {theActual}");
 
     // ---------------------------------------------------------------- vertices
@@ -52,11 +54,11 @@ public class BRepLibMakersTests
     [Fact]
     public void MakeVertex_is_a_frozen_vertex_at_the_point_with_the_default_precision()
     {
-        var aMV = new BRepLib_MakeVertex(new gp_Pnt(1, 2, 3));
+        var aMV = new BRepLib_MakeVertex(new Point3D(1, 2, 3));
         Assert.True(aMV.IsDone());
         TopoDS_Vertex aV = aMV.Vertex();
-        Assert.True(aV.TShape()!.IsFrozen());
-        Assert.Equal(new gp_Pnt(1, 2, 3), BRep_Tool.Pnt(aV));
+        Assert.True(aV.TShape()!.IsFrozen);
+        Assert.Equal(new Point3D(1, 2, 3), BRep_Tool.Pnt(aV));
         Assert.Equal(BRepLib.Precision(), BRep_Tool.Tolerance(aV));
         Assert.Equal(aV, (TopoDS_Vertex)aMV);
         Assert.Equal((TopoDS_Shape)aV, aMV.Shape());
@@ -65,12 +67,12 @@ public class BRepLibMakersTests
     [Fact]
     public void Internal_accessors_do_not_freeze()
     {
-        var aME = new BRepLib_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        var aME = new BRepLib_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         TopoDS_Edge anE = aME.InternalEdge();
-        Assert.False(anE.TShape()!.IsFrozen());
-        Assert.False(aME.InternalVertex1().TShape()!.IsFrozen());
-        Assert.True(aME.Vertex1().TShape()!.IsFrozen());
-        Assert.True(anE.TShape()!.IsFrozen()); // Vertex1 publishes the edge with it
+        Assert.False(anE.TShape()!.IsFrozen);
+        Assert.False(aME.InternalVertex1().TShape()!.IsFrozen);
+        Assert.True(aME.Vertex1().TShape()!.IsFrozen);
+        Assert.True(anE.TShape()!.IsFrozen); // Vertex1 publishes the edge with it
     }
 
     // ---------------------------------------------------------------- edges
@@ -78,18 +80,18 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_from_two_points_is_a_segment_parametrised_by_length()
     {
-        var aME = new BRepLib_MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 3, 4));
+        var aME = new BRepLib_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 3, 4));
         Assert.True(aME.IsDone());
         Assert.Equal(BRepLib_EdgeDone, aME.Error());
         TopoDS_Edge anE = aME.Edge();
-        Assert.True(anE.TShape()!.IsFrozen());
+        Assert.True(anE.TShape()!.IsFrozen);
         Geom_Curve? aC = BRep_Tool.Curve(anE, out double f, out double l);
         Assert.IsType<Geom_Line>(aC);
         Assert.Equal(0.0, f);
         Assert.Equal(5.0, l);
         TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        Assert.Equal(new gp_Pnt(1, 0, 0), BRep_Tool.Pnt(aV1));
-        Assert.Equal(new gp_Pnt(1, 3, 4), BRep_Tool.Pnt(aV2));
+        Assert.Equal(new Point3D(1, 0, 0), BRep_Tool.Pnt(aV1));
+        Assert.Equal(new Point3D(1, 3, 4), BRep_Tool.Pnt(aV2));
         Assert.True(aV1.IsSame(aME.Vertex1()));
         Assert.Equal(TopAbs_FORWARD, aME.Vertex1().Orientation());
         Assert.Equal(TopAbs_REVERSED, aME.Vertex2().Orientation());
@@ -114,44 +116,44 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_through_identical_points_fails()
     {
-        var aME = new BRepLib_MakeEdge(new gp_Pnt(1, 1, 1), new gp_Pnt(1, 1, 1));
+        var aME = new BRepLib_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
         Assert.False(aME.IsDone());
         Assert.Equal(BRepLib_LineThroughIdenticPoints, aME.Error());
-        Assert.Throws<StdFail_NotDone>(() => aME.Edge());
-        Assert.Throws<StdFail_NotDone>(() => aME.Vertex1());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Edge());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Vertex1());
     }
 
     [Fact]
     public void Edge_on_a_line_between_parameters_reorders_them()
     {
-        var aL = new gp_Lin(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0));
+        var aL = new Line3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0));
         TopoDS_Edge anE = new BRepLib_MakeEdge(aL, 3.0, -2.0).Edge();
         BRep_Tool.Range(anE, out double f, out double l);
         Assert.Equal(-2.0, f);
         Assert.Equal(3.0, l);
         TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
-        Assert.Equal(new gp_Pnt(0, -2, 0), BRep_Tool.Pnt(aV1));
-        Assert.Equal(new gp_Pnt(0, 3, 0), BRep_Tool.Pnt(aV2));
+        Assert.Equal(new Point3D(0, -2, 0), BRep_Tool.Pnt(aV1));
+        Assert.Equal(new Point3D(0, 3, 0), BRep_Tool.Pnt(aV2));
     }
 
     [Fact]
     public void Edge_on_a_whole_line_is_infinite_without_vertices()
     {
-        var aME = new BRepLib_MakeEdge(new gp_Lin(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)));
+        var aME = new BRepLib_MakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         Assert.True(aME.IsDone());
         TopoDS_Edge anE = aME.Edge();
         Assert.True(aME.Vertex1().IsNull());
         Assert.True(aME.Vertex2().IsNull());
         Assert.Equal(0, Count(anE, TopAbs_VERTEX));
         BRep_Tool.Range(anE, out double f, out double l);
-        Assert.True(Precision.IsNegativeInfinite(f));
-        Assert.True(Precision.IsPositiveInfinite(l));
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f));
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l));
     }
 
     [Fact]
     public void Edge_on_a_whole_circle_is_closed_with_one_vertex()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aME = new BRepLib_MakeEdge(aCirc);
         TopoDS_Edge anE = aME.Edge();
         Assert.True(anE.Closed());
@@ -167,8 +169,8 @@ public class BRepLibMakersTests
     [Fact]
     public void Arc_of_circle_between_points_projects_them()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
-        var aME = new BRepLib_MakeEdge(aCirc, new gp_Pnt(0, 2, 0), new gp_Pnt(-2, 0, 0));
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aME = new BRepLib_MakeEdge(aCirc, new Point3D(0, 2, 0), new Point3D(-2, 0, 0));
         Assert.True(aME.IsDone());
         BRep_Tool.Range(aME.Edge(), out double f, out double l);
         Assert.Equal(Math.PI / 2, f, 1e-12);
@@ -178,7 +180,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Arc_of_circle_with_parameters_adjusts_them_into_the_period()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         TopoDS_Edge anE = new BRepLib_MakeEdge(aCirc, 7.0, 8.0).Edge();
         BRep_Tool.Range(anE, out double f, out double l);
         Assert.Equal(7.0 - 2 * Math.PI, f, 1e-12);
@@ -188,8 +190,8 @@ public class BRepLibMakersTests
     [Fact]
     public void Point_off_the_curve_fails_its_projection()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
-        var aME = new BRepLib_MakeEdge(aCirc, new gp_Pnt(0, 2.1, 0), new gp_Pnt(-2, 0, 0));
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
+        var aME = new BRepLib_MakeEdge(aCirc, new Point3D(0, 2.1, 0), new Point3D(-2, 0, 0));
         Assert.False(aME.IsDone());
         Assert.Equal(BRepLib_PointProjectionFailed, aME.Error());
     }
@@ -197,26 +199,26 @@ public class BRepLibMakersTests
     [Fact]
     public void Ellipse_hyperbola_and_parabola_arcs()
     {
-        var anAx = new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1));
-        TopoDS_Edge anEl = new BRepLib_MakeEdge(new gp_Elips(anAx, 3, 1), 0.0, 1.0).Edge();
+        var anAx = new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
+        TopoDS_Edge anEl = new BRepLib_MakeEdge(new Ellipse3D(anAx, 3, 1), 0.0, 1.0).Edge();
         Assert.IsType<Geom_Ellipse>(BRep_Tool.Curve(anEl, out _, out _));
-        TopoDS_Edge aHy = new BRepLib_MakeEdge(new gp_Hypr(anAx, 3, 1), -1.0, 1.0).Edge();
+        TopoDS_Edge aHy = new BRepLib_MakeEdge(new Hyperbola3D(anAx, 3, 1), -1.0, 1.0).Edge();
         Assert.IsType<Geom_Hyperbola>(BRep_Tool.Curve(aHy, out _, out _));
-        TopoDS_Edge aPa = new BRepLib_MakeEdge(new gp_Parab(anAx, 0.5), -2.0, 2.0).Edge();
+        TopoDS_Edge aPa = new BRepLib_MakeEdge(new Parabola3D(anAx, 0.5), -2.0, 2.0).Edge();
         Assert.IsType<Geom_Parabola>(BRep_Tool.Curve(aPa, out double f, out double l));
         Assert.Equal(-2.0, f);
         Assert.Equal(2.0, l);
         TopExp.Vertices(aHy, out TopoDS_Vertex aV1, out _);
-        AssertPoint(new Geom_Hyperbola(new gp_Hypr(anAx, 3, 1)).Value(-1.0), BRep_Tool.Pnt(aV1));
+        AssertPoint(new Geom_Hyperbola(new Hyperbola3D(anAx, 3, 1)).Value(-1.0), BRep_Tool.Pnt(aV1));
     }
 
     private static Geom_BSplineCurve BSpline()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(3, 2, 1);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(3, 2, 1);
+        aPoles[4] = new Point3D(4, 0, 0);
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0.0;
         aKnots[2] = 1.0;
@@ -233,7 +235,7 @@ public class BRepLibMakersTests
         var aME = new BRepLib_MakeEdge(aC, 0.25, 0.75);
         TopoDS_Edge anE = aME.Edge();
         Assert.Same(aC, BRep_Tool.Curve(anE, out double f, out double l));
-        Assert.True(aC.IsFrozen()); // frozen when the edge took it
+        Assert.True(aC.IsFrozen); // frozen when the edge took it
         Assert.Equal(0.25, f);
         Assert.Equal(0.75, l);
         AssertPoint(aC.Value(0.25), BRep_Tool.Pnt(aME.Vertex1()));
@@ -260,7 +262,7 @@ public class BRepLibMakersTests
     public void Vertex_away_from_its_parameter_fails()
     {
         TopoDS_Vertex aV1 = V(0, 0, 0), aV2 = V(5, 1, 0);
-        var aME = new BRepLib_MakeEdge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), aV1, aV2, 0.0, 5.0);
+        var aME = new BRepLib_MakeEdge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, aV2, 0.0, 5.0);
         Assert.Equal(BRepLib_DifferentsPointAndParameter, aME.Error());
         Assert.False(aME.IsDone());
     }
@@ -269,15 +271,15 @@ public class BRepLibMakersTests
     public void Vertex_at_an_infinite_parameter_fails()
     {
         TopoDS_Vertex aV1 = V(0, 0, 0);
-        var aME = new BRepLib_MakeEdge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), aV1, new TopoDS_Vertex(),
-                                       -Precision.Infinite(), 0.0);
+        var aME = new BRepLib_MakeEdge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, new TopoDS_Vertex(),
+                                       -global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0);
         Assert.Equal(BRepLib_PointWithInfiniteParameter, aME.Error());
     }
 
     [Fact]
     public void Different_vertices_on_a_closed_curve_fail()
     {
-        var aCirc = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        var aCirc = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         TopoDS_Vertex aV1 = V(1, 0, 0), aV2 = V(1, 0, 0);
         var aME = new BRepLib_MakeEdge(aCirc, aV1, aV2, 0.0, 2 * Math.PI);
         Assert.Equal(BRepLib_DifferentPointsOnClosedCurve, aME.Error());
@@ -286,7 +288,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Tiny_closed_curve_with_one_vertex_is_degenerated()
     {
-        var aCirc = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1e-8);
+        var aCirc = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1e-8);
         TopoDS_Vertex aV = V(1e-8, 0, 0);
         var aME = new BRepLib_MakeEdge(aCirc, aV, aV, 0.0, 2 * Math.PI);
         Assert.True(aME.IsDone());
@@ -296,30 +298,30 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_on_a_surface_has_a_pcurve_and_no_3d_curve()
     {
-        var aPlane = new Geom_Plane(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1));
-        var aL = new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0));
+        var aPlane = new Geom_Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1));
+        var aL = new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 0));
         var aME = new BRepLib_MakeEdge(aL, aPlane, 0.0, 2.0);
         TopoDS_Edge anE = aME.Edge();
         Assert.Null(BRep_Tool.Curve(anE, out _, out _));
-        Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, aPlane, new TopLoc_Location(), out double f, out double l);
+        Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, aPlane, new Placement(), out double f, out double l);
         Assert.Same(aL, aPC);
         Assert.Equal(0.0, f);
         Assert.Equal(2.0, l);
-        Assert.Equal(new gp_Pnt(3, 1, 1), BRep_Tool.Pnt(aME.Vertex2()));
+        Assert.Equal(new Point3D(3, 1, 1), BRep_Tool.Pnt(aME.Vertex2()));
         Assert.Equal(TopAbs_FORWARD, anE.Orientation());
 
         // reversed parameters reverse the edge
-        TopoDS_Edge aR = new BRepLib_MakeEdge(new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0)), aPlane, 2.0, 0.0).Edge();
+        TopoDS_Edge aR = new BRepLib_MakeEdge(new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 0)), aPlane, 2.0, 0.0).Edge();
         Assert.Equal(TopAbs_REVERSED, aR.Orientation());
     }
 
     [Fact]
     public void Init_after_a_public_read_makes_a_new_edge()
     {
-        var aME = new BRepLib_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        var aME = new BRepLib_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         TopoDS_Edge aFirst = aME.Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
-        aME.Init(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 0.0, 2.0);
+        aME.Init(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 0.0, 2.0);
         TopoDS_Edge aSecond = aME.Edge();
         Assert.False(aFirst.IsSame(aSecond));
         aSnap.AssertUnchanged(aFirst);
@@ -330,32 +332,32 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge2d_between_points_is_a_pcurve_on_the_default_plane()
     {
-        var aME = new BRepLib_MakeEdge2d(new gp_Pnt2d(1, 1), new gp_Pnt2d(4, 5));
+        var aME = new BRepLib_MakeEdge2d(new Point2D(1, 1), new Point2D(4, 5));
         Assert.True(aME.IsDone());
         Assert.Equal(BRepLib_EdgeDone, aME.Error());
         TopoDS_Edge anE = aME.Edge();
-        Assert.True(anE.TShape()!.IsFrozen());
-        Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, BRepLib.Plane(), new TopLoc_Location(), out double f, out double l);
+        Assert.True(anE.TShape()!.IsFrozen);
+        Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, BRepLib.Plane(), new Placement(), out double f, out double l);
         Assert.IsType<Geom2d_Line>(aPC);
         Assert.Equal(0.0, f);
         Assert.Equal(5.0, l);
-        Assert.Equal(new gp_Pnt(4, 5, 0), BRep_Tool.Pnt(aME.Vertex2()));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aME.Vertex1()));
+        Assert.Equal(new Point3D(4, 5, 0), BRep_Tool.Pnt(aME.Vertex2()));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(aME.Vertex1()));
     }
 
     [Fact]
     public void Edge2d_whole_circle_is_closed()
     {
-        var aME = new BRepLib_MakeEdge2d(new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.5));
+        var aME = new BRepLib_MakeEdge2d(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.5));
         Assert.True(aME.IsDone());
         Assert.True(aME.Vertex1().IsSame(aME.Vertex2()));
-        Assert.Equal(new gp_Pnt(1.5, 0, 0), BRep_Tool.Pnt(aME.Vertex1()));
+        Assert.Equal(new Point3D(1.5, 0, 0), BRep_Tool.Pnt(aME.Vertex1()));
     }
 
     [Fact]
     public void Edge2d_through_identical_points_fails()
     {
-        var aME = new BRepLib_MakeEdge2d(new gp_Pnt2d(1, 1), new gp_Pnt2d(1, 1));
+        var aME = new BRepLib_MakeEdge2d(new Point2D(1, 1), new Point2D(1, 1));
         Assert.Equal(BRepLib_LineThroughIdenticPoints, aME.Error());
         Assert.False(aME.IsDone());
     }
@@ -371,7 +373,7 @@ public class BRepLibMakersTests
         var aMW = new BRepLib_MakeWire(e1, e2);
         Assert.Equal(BRepLib_WireDone, aMW.Error());
         TopoDS_Wire aW = aMW.Wire();
-        Assert.True(aW.TShape()!.IsFrozen());
+        Assert.True(aW.TShape()!.IsFrozen);
         Assert.False(aW.Closed());
         Assert.True(aMW.Edge().IsSame(e2));
         Assert.True(aMW.Vertex().IsSame(b));
@@ -393,7 +395,7 @@ public class BRepLibMakersTests
         aMW.Add(E(5, 0, 0, 6, 0, 0));
         Assert.Equal(BRepLib_DisconnectedWire, aMW.Error());
         Assert.False(aMW.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => aMW.Wire());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aMW.Wire());
     }
 
     [Fact]
@@ -447,7 +449,7 @@ public class BRepLibMakersTests
         // the shared vertex moved half way and grew to cover both
         TopExp.Vertices(TopoDS.Edge(anExp.Current()), out _, out TopoDS_Vertex aMid, true);
         Assert.Equal(1.25e-7, BRep_Tool.Tolerance(aMid), 1e-15);
-        AssertPoint(new gp_Pnt(1 + 2.5e-8, 0, 0), BRep_Tool.Pnt(aMid), 1e-15);
+        AssertPoint(new Point3D(1 + 2.5e-8, 0, 0), BRep_Tool.Pnt(aMid), 1e-15);
     }
 
     [Fact]
@@ -513,7 +515,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Wire_of_a_frozen_wire_and_an_edge()
     {
-        TopoDS_Wire aW0 = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0)).Wire();
+        TopoDS_Wire aW0 = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aW0);
         var aMW = new BRepLib_MakeWire(aW0, E(1, 1, 0, 0, 0, 0));
         Assert.True(aMW.IsDone());
@@ -526,44 +528,44 @@ public class BRepLibMakersTests
     [Fact]
     public void Polygon_open_then_closed()
     {
-        var aMP = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0), new gp_Pnt(2, 2, 0));
+        var aMP = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0));
         Assert.True(aMP.IsDone());
         TopoDS_Wire aOpen = aMP.Wire();
         Assert.False(aOpen.Closed());
         Assert.Equal(2, Count(aOpen, TopAbs_EDGE));
-        Assert.Equal(new gp_Pnt(0, 0, 0), BRep_Tool.Pnt(aMP.FirstVertex()));
-        Assert.Equal(new gp_Pnt(2, 2, 0), BRep_Tool.Pnt(aMP.LastVertex()));
+        Assert.Equal(new Point3D(0, 0, 0), BRep_Tool.Pnt(aMP.FirstVertex()));
+        Assert.Equal(new Point3D(2, 2, 0), BRep_Tool.Pnt(aMP.LastVertex()));
         aMP.Close();
         TopoDS_Wire aClosed = aMP.Wire();
         Assert.True(aClosed.Closed());
         Assert.Equal(3, Count(aClosed, TopAbs_EDGE));
         Assert.False(aOpen.Closed()); // published before: unchanged
         Assert.Equal(2, Count(aOpen, TopAbs_EDGE));
-        Assert.True(aMP.Edge().TShape()!.IsFrozen());
+        Assert.True(aMP.Edge().TShape()!.IsFrozen);
     }
 
     [Fact]
     public void Polygon_of_four_points_closed()
     {
-        TopoDS_Wire aW = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0),
-                                                 new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0),
+                                                 new Point3D(0, 1, 0), true).Wire();
         Assert.True(aW.Closed());
         Assert.Equal(4, Count(aW, TopAbs_EDGE));
         Assert.Equal(4, Count(aW, TopAbs_VERTEX));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(TopoDS.Edge(new TopExp_Explorer(aW, TopAbs_EDGE).Current())));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(TopoDS.Edge(new TopExp_Explorer(aW, TopAbs_EDGE).Current())));
     }
 
     [Fact]
     public void Polygon_skips_a_repeated_point_and_closes_on_the_first()
     {
         var aMP = new BRepLib_MakePolygon();
-        aMP.Add(new gp_Pnt(0, 0, 0));
-        aMP.Add(new gp_Pnt(1, 0, 0));
+        aMP.Add(new Point3D(0, 0, 0));
+        aMP.Add(new Point3D(1, 0, 0));
         Assert.True(aMP.Added());
-        aMP.Add(new gp_Pnt(1, 0, 0));
+        aMP.Add(new Point3D(1, 0, 0));
         Assert.False(aMP.Added());
-        aMP.Add(new gp_Pnt(1, 1, 0));
-        aMP.Add(new gp_Pnt(0, 0, 0));
+        aMP.Add(new Point3D(1, 1, 0));
+        aMP.Add(new Point3D(0, 0, 0));
         Assert.True(aMP.Added());
         TopoDS_Wire aW = aMP.Wire();
         Assert.True(aW.Closed());
@@ -590,11 +592,11 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_plane_has_no_wire()
     {
-        var aMF = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)));
+        var aMF = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
         Assert.True(aMF.IsDone());
         Assert.Equal(BRepLib_FaceDone, aMF.Error());
         TopoDS_Face aF = aMF.Face();
-        Assert.True(aF.TShape()!.IsFrozen());
+        Assert.True(aF.TShape()!.IsFrozen);
         Assert.Equal(0, Count(aF, TopAbs_WIRE));
         Assert.True(BRep_Tool.NaturalRestriction(aF));
         Assert.IsType<Geom_Plane>(BRep_Tool.Surface(aF));
@@ -603,7 +605,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_bounded_plane_has_a_wire_of_four_iso_edges()
     {
-        var aPln = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopoDS_Face aF = new BRepLib_MakeFace(aPln, 0, 2, 0, 3).Face();
         Assert.Equal(1, Count(aF, TopAbs_WIRE));
         Assert.Equal(4, Count(aF, TopAbs_EDGE));
@@ -622,7 +624,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_cylinder_band_has_a_seam()
     {
-        var aCyl = new gp_Cylinder(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aCyl = new Cylinder(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         TopoDS_Face aF = new BRepLib_MakeFace(aCyl, 0, 2 * Math.PI, 0, 5).Face();
         Assert.Equal(3, Count(aF, TopAbs_EDGE));
         Assert.Equal(4, CountOccurrences(aF, TopAbs_EDGE));
@@ -640,7 +642,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_sphere_has_degenerated_poles()
     {
-        TopoDS_Face aF = new BRepLib_MakeFace(new gp_Sphere(new gp_Ax3(new gp_Pnt(1, 1, 1), new gp_Dir(0, 0, 1)), 3.0)).Face();
+        TopoDS_Face aF = new BRepLib_MakeFace(new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 3.0)).Face();
         int aDegenerated = 0;
         for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
@@ -659,7 +661,7 @@ public class BRepLibMakersTests
     public void Face_on_a_cone_from_its_apex_is_degenerated_there()
     {
         double aSemi = Math.PI / 6;
-        var aCone = new gp_Cone(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), aSemi, 1.0);
+        var aCone = new Cone(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemi, 1.0);
         double vApex = -1.0 / Math.Sin(aSemi);
         TopoDS_Face aF = new BRepLib_MakeFace(aCone, 0, 2 * Math.PI, vApex, 1.0).Face();
         int aDegenerated = 0;
@@ -676,23 +678,23 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_parameters_out_of_range()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[1, 2] = new gp_Pnt(0, 1, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 1);
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[1, 2] = new Point3D(0, 1, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 0);
+        aPoles[2, 2] = new Point3D(1, 1, 1);
         var aS = new Geom_BezierSurface(aPoles);
-        var aBad = new BRepLib_MakeFace(aS, 2.0, 0.5, 0, 1, Precision.Confusion());
+        var aBad = new BRepLib_MakeFace(aS, 2.0, 0.5, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(BRepLib_ParametersOutOfRange, aBad.Error());
         Assert.False(aBad.IsDone());
-        var aGood = new BRepLib_MakeFace(aS, 0.25, 0.75, 0, 1, Precision.Confusion());
+        var aGood = new BRepLib_MakeFace(aS, 0.25, 0.75, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aGood.IsDone());
         Assert.Equal(4, Count(aGood.Face(), TopAbs_EDGE));
     }
 
     private static TopoDS_Wire Square(double x0, double y0, double s, bool theCcw)
     {
-        var aP = new[] { new gp_Pnt(x0, y0, 0), new gp_Pnt(x0 + s, y0, 0), new gp_Pnt(x0 + s, y0 + s, 0), new gp_Pnt(x0, y0 + s, 0) };
+        var aP = new[] { new Point3D(x0, y0, 0), new Point3D(x0 + s, y0, 0), new Point3D(x0 + s, y0 + s, 0), new Point3D(x0, y0 + s, 0) };
         if (!theCcw)
         {
             Array.Reverse(aP);
@@ -703,7 +705,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_plane_from_a_wire_is_oriented_to_bound_a_finite_area()
     {
-        var aPln = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         foreach (bool aCcw in new[] { true, false })
         {
             TopoDS_Wire aW = Square(0, 0, 1, aCcw);
@@ -726,7 +728,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_with_a_hole_and_Add_after_a_public_read()
     {
-        var aPln = new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aMF = new BRepLib_MakeFace(aPln, Square(0, 0, 4, true));
         TopoDS_Face aOuterOnly = aMF.Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aOuterOnly);
@@ -737,16 +739,16 @@ public class BRepLibMakersTests
         aSnap.AssertUnchanged(aOuterOnly);
         Assert.Equal(1, Count(aOuterOnly, TopAbs_WIRE));
 
-        var aFC = new BRepClass_FaceClassifier(aF, new gp_Pnt2d(1.5, 1.5), 1e-7);
+        var aFC = new BRepClass_FaceClassifier(aF, new Point2D(1.5, 1.5), 1e-7);
         Assert.Equal(TopAbs_OUT, aFC.State());
-        aFC.Perform(aF, new gp_Pnt2d(0.5, 0.5), 1e-7);
+        aFC.Perform(aF, new Point2D(0.5, 0.5), 1e-7);
         Assert.Equal(TopAbs_IN, aFC.State());
     }
 
     [Fact]
     public void Face_loaded_from_a_face_is_a_new_face_with_the_same_wires()
     {
-        TopoDS_Face aF0 = new BRepLib_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Square(0, 0, 4, true)).Face();
+        TopoDS_Face aF0 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Square(0, 0, 4, true)).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aF0);
         TopoDS_Wire aHole = Square(1, 1, 1, false);
         TopoDS_Face aF = new BRepLib_MakeFace(aF0, aHole).Face();
@@ -759,10 +761,10 @@ public class BRepLibMakersTests
     [Fact]
     public void IsDegenerated_on_circles_and_poles()
     {
-        Assert.True(BRepLib_MakeFace.IsDegenerated(new Geom_Circle(new gp_Ax2(), 1e-9), 1e-7, out double aTol));
-        Assert.Equal(Precision.Confusion(), aTol);
-        Assert.False(BRepLib_MakeFace.IsDegenerated(new Geom_Circle(new gp_Ax2(), 1.0), 1e-7, out _));
-        Assert.False(BRepLib_MakeFace.IsDegenerated(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 1e-7, out _));
+        Assert.True(BRepLib_MakeFace.IsDegenerated(new Geom_Circle(new Frame3D(), 1e-9), 1e-7, out double aTol));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aTol);
+        Assert.False(BRepLib_MakeFace.IsDegenerated(new Geom_Circle(new Frame3D(), 1.0), 1e-7, out _));
+        Assert.False(BRepLib_MakeFace.IsDegenerated(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1e-7, out _));
     }
 
     // ---------------------------------------------------------------- faces through BRepLib's statics
@@ -776,7 +778,7 @@ public class BRepLibMakersTests
         Assert.True(aMF.IsDone());
         Assert.Equal(BRepLib_FaceDone, aMF.Error());
         TopoDS_Face aF = aMF.Face();
-        Assert.True(aF.TShape()!.IsFrozen());
+        Assert.True(aF.TShape()!.IsFrozen);
         aSnap.AssertUnchanged(aW);
 
         // the statics changed nothing but the vertices' rounding guard on the copy: the face holds the caller's wire
@@ -803,7 +805,7 @@ public class BRepLibMakersTests
     {
         // two squares side by side, sharing the edge x = 1
         var aV = new TopoDS_Vertex[6];
-        gp_Pnt[] aP = [new(0, 0, 0), new(1, 0, 0), new(2, 0, 0), new(2, 1, 0), new(1, 1, 0), new(0, 1, 0)];
+        Point3D[] aP = [new(0, 0, 0), new(1, 0, 0), new(2, 0, 0), new(2, 1, 0), new(1, 1, 0), new(0, 1, 0)];
         for (int i = 0; i < 6; i++)
         {
             aV[i] = TestShapes.Vertex(aP[i]);
@@ -830,19 +832,19 @@ public class BRepLibMakersTests
         // a square whose last vertex is 1e-4 off its edges' ends: UpdateTolerances raises that vertex, and the two
         // edges holding it are rebuilt around the new vertex; the other two edges and vertices stay the caller's
         var aV = new TopoDS_Vertex[4];
-        gp_Pnt[] aP = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0)];
+        Point3D[] aP = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0)];
         for (int i = 0; i < 4; i++)
         {
             aV[i] = TestShapes.Vertex(aP[i]);
         }
         var aB = new BRep_Builder();
         TopoDS_Vertex aOff = new();
-        aB.MakeVertex(ref aOff, new gp_Pnt(0, 1.0001, 0), Precision.Confusion());
+        aB.MakeVertex(ref aOff, new Point3D(0, 1.0001, 0), global::Kerf.Engine.Foundation.Precision.Confusion());
         var anEdges = new[]
         {
             TestShapes.Edge(aV[0], aV[1]), TestShapes.Edge(aV[1], aV[2]),
-            TestShapes.Edge(new Geom_Line(aP[2], new gp_Dir(-1, 0, 0)), 0, 1, aV[2], aOff),
-            TestShapes.Edge(new Geom_Line(aP[3], new gp_Dir(0, -1, 0)), 0, 1, aOff, aV[0]),
+            TestShapes.Edge(new Geom_Line(aP[2], new Direction3D(-1, 0, 0)), 0, 1, aV[2], aOff),
+            TestShapes.Edge(new Geom_Line(aP[3], new Direction3D(0, -1, 0)), 0, 1, aOff, aV[0]),
         };
         var aWire = new BRepLib_MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
                                          TestShapes.Frozen(anEdges[2]), TestShapes.Frozen(anEdges[3])).Wire();
@@ -863,15 +865,15 @@ public class BRepLibMakersTests
         Assert.Single(aH.Modified(anEdges[2]));
         TopoDS_Vertex aNewOff = TopoDS.Vertex(Assert.Single(aH.Modified(aOff)));
         Assert.Equal(1e-4, BRep_Tool.Tolerance(aNewOff), 1e-9);
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aOff));
-        Assert.True(aF.TShape()!.IsFrozen());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(aOff));
+        Assert.True(aF.TShape()!.IsFrozen);
     }
 
     [Fact]
     public void Face_from_a_wire_that_is_not_planar_fails()
     {
-        TopoDS_Wire aW = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0.5),
-                                                 new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+                                                 new Point3D(0, 1, 0), true).Wire();
         var aMF = new BRepLib_MakeFace(aW);
         Assert.False(aMF.IsDone());
         Assert.Equal(BRepLib_NotPlanar, aMF.Error());
@@ -880,9 +882,9 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_an_offset_surface_is_made_same_parameter()
     {
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var anOffset = new Geom_OffsetSurface(aCyl, 0.5);
-        var aMF = new BRepLib_MakeFace(anOffset, 0, Math.PI, 0, 3, Precision.Confusion());
+        var aMF = new BRepLib_MakeFace(anOffset, 0, Math.PI, 0, 3, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aMF.IsDone());
         TopoDS_Face aF = aMF.Face();
         Assert.Equal(4, Count(aF, TopAbs_EDGE));
@@ -899,12 +901,12 @@ public class BRepLibMakersTests
     private static Geom_BSplineSurface SurfaceWithAC1Knot()
     {
         // cubic in U with a double interior knot (C1 there), linear in V
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 6, 1, 2);
+        var aPoles = new NCollection_Array2<Point3D>(1, 6, 1, 2);
         for (int i = 1; i <= 6; i++)
         {
             for (int j = 1; j <= 2; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, 3 * j, (i % 2) * 0.5 + 0.1 * j);
+                aPoles[i, j] = new Point3D(i, 3 * j, (i % 2) * 0.5 + 0.1 * j);
             }
         }
         var aUKnots = new NCollection_Array1<double>(1, 3);
@@ -932,7 +934,7 @@ public class BRepLibMakersTests
         Assert.True(aMS.IsDone());
         Assert.Equal(BRepLib_ShellDone, aMS.Error());
         TopoDS_Shell aSh = aMS.Shell();
-        Assert.True(aSh.TShape()!.IsFrozen());
+        Assert.True(aSh.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aSh, TopAbs_FACE));
         Assert.Equal(7, Count(aSh, TopAbs_EDGE)); // the shared edge once
         Assert.Equal(6, Count(aSh, TopAbs_VERTEX));
@@ -956,7 +958,7 @@ public class BRepLibMakersTests
             var aFS = Assert.IsType<Geom_BSplineSurface>(BRep_Tool.Surface(TopoDS.Face(anExp.Current())));
             Assert.Equal(2, aFS.NbUKnots());
         }
-        Assert.False(aS.IsFrozen()); // the caller's surface is only copied
+        Assert.False(aS.IsFrozen); // the caller's surface is only copied
     }
 
     [Fact]
@@ -979,7 +981,7 @@ public class BRepLibMakersTests
         var aMS = new BRepLib_MakeSolid(aShell);
         Assert.True(aMS.IsDone());
         TopoDS_Solid aS1 = aMS.Solid();
-        Assert.True(aS1.TShape()!.IsFrozen());
+        Assert.True(aS1.TShape()!.IsFrozen);
         Assert.Equal(1, Count(aS1, TopAbs_SHELL));
         TopoDS_Shell aShell2 = TopoDS.Shell(new TopoDS_Iterator(TestShapes.Frozen(TestShapes.Box(0.5, 0.5, 0.5))).Value());
         aMS.Add(aShell2);
@@ -1042,14 +1044,14 @@ public class BRepLibMakersTests
             var aFS = new BRepLib_FindSurface(aW);
             Assert.True(aFS.Found());
             Assert.False(aFS.Existed());
-            Assert.True(aFS.Location().IsIdentity());
-            Assert.Equal(Precision.Confusion(), aFS.Tolerance());
+            Assert.True(aFS.Location().IsIdentity);
+            Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aFS.Tolerance());
             Assert.True(aFS.ToleranceReached() < 1e-15);
             var aPlane = Assert.IsType<Geom_Plane>(aFS.Surface());
-            Assert.True(aPlane.IsFrozen());
-            gp_Dir aN = aPlane.Position().Direction();
+            Assert.True(aPlane.IsFrozen);
+            Direction3D aN = aPlane.Position().Direction();
             Assert.Equal(aCcw ? 1.0 : -1.0, aN.Z(), 1e-12);
-            AssertPoint(new gp_Pnt(1, 1, 0), aPlane.Position().Location(), 1e-12);
+            AssertPoint(new Point3D(1, 1, 0), aPlane.Position().Location(), 1e-12);
             aSnap.AssertUnchanged(aW);
         }
     }
@@ -1057,8 +1059,8 @@ public class BRepLibMakersTests
     [Fact]
     public void FindSurface_rejects_a_non_planar_polygon_unless_the_tolerance_allows_it()
     {
-        TopoDS_Wire aW = new BRepLib_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0.1),
-                                                 new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.1),
+                                                 new Point3D(0, 1, 0), true).Wire();
         var aFS = new BRepLib_FindSurface(aW);
         Assert.False(aFS.Found());
         Assert.True(aFS.ToleranceReached() > 0.01);
@@ -1076,7 +1078,7 @@ public class BRepLibMakersTests
         var aFS = new BRepLib_FindSurface(aW, -1, true);
         Assert.True(aFS.Found());
         Assert.True(aFS.Existed());
-        Assert.Same(BRep_Tool.Surface(aF, out TopLoc_Location aLoc), aFS.Surface());
+        Assert.Same(BRep_Tool.Surface(aF, out Placement aLoc), aFS.Surface());
         Assert.True(aLoc.IsEqual(aFS.Location()));
 
         // the cylinder's wire has pcurves on a cylinder only

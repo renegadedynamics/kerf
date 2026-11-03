@@ -2,12 +2,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Engine.Foundation;
+
+using Occt;
+
+namespace Kerf.Engine.Numerics.Polynomials;
 
 // Pre-computed Jacobi polynomial coefficients, generated from OCCT's PLib_JacobiPolynomial_Coeffs.pxx with every
 // literal copied as written. OCCT's lookup table of pointers (PrecomputedCoefficients[3][31]) becomes a switch
 // returning spans over the constant arrays, which allocates nothing.
-public sealed partial class PLib_JacobiPolynomial
+public sealed partial class JacobiPolynomial
 {
     // Coefficient cache structure using spans over variable-sized arrays
     private readonly ref struct JacobiCoefficientsCache
@@ -18,23 +22,23 @@ public sealed partial class PLib_JacobiPolynomial
         public readonly ReadOnlySpan<double> Denom;
         public readonly int Degree;
 
-        public JacobiCoefficientsCache(ReadOnlySpan<double> theTNorm, ReadOnlySpan<double> theCofA,
-                                       ReadOnlySpan<double> theCofB, ReadOnlySpan<double> theDenom, int theDegree)
+        public JacobiCoefficientsCache(ReadOnlySpan<double> tNorm, ReadOnlySpan<double> cofA,
+                                       ReadOnlySpan<double> cofB, ReadOnlySpan<double> denom, int degree)
         {
-            TNorm = theTNorm;
-            CofA = theCofA;
-            CofB = theCofB;
-            Denom = theDenom;
-            Degree = theDegree;
+            TNorm = tNorm;
+            CofA = cofA;
+            CofB = cofB;
+            Denom = denom;
+            Degree = degree;
         }
     }
 
     // Fast lookup function - returns the pre-computed data for [NivConstr 0-2][Degree 0-30]
-    private static JacobiCoefficientsCache GetJacobiCoefficients(int theNivConstr, int theDegree)
+    private static JacobiCoefficientsCache GetJacobiCoefficients(int nivConstr, int degree)
     {
-        Standard_OutOfRange_Raise_if(theNivConstr < 0 || theNivConstr > 2 || theDegree < 0 || theDegree > 30,
+        Standard_OutOfRange_Raise_if(nivConstr < 0 || nivConstr > 2 || degree < 0 || degree > 30,
                                      "PLib_JacobiPolynomial: no coefficients for this constraint order and degree");
-        return (theNivConstr * 31 + theDegree) switch
+        return (nivConstr * 31 + degree) switch
         {
             0 => new(TNorm_C0_D0, CofA_C0_D0, CofB_C0_D0, Denom_C0_D0, 0),
             1 => new(TNorm_C0_D1, CofA_C0_D1, CofB_C0_D1, Denom_C0_D1, 1),
@@ -129,7 +133,7 @@ public sealed partial class PLib_JacobiPolynomial
             90 => new(TNorm_C2_D28, CofA_C2_D28, CofB_C2_D28, Denom_C2_D28, 28),
             91 => new(TNorm_C2_D29, CofA_C2_D29, CofB_C2_D29, Denom_C2_D29, 29),
             92 => new(TNorm_C2_D30, CofA_C2_D30, CofB_C2_D30, Denom_C2_D30, 30),
-            _ => throw new Standard_OutOfRange(),
+            _ => throw new OutOfRangeException(),
         };
     }
 

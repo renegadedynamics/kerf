@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -41,19 +43,19 @@ public class HLRBRep_PolyHLRToShape
         myBiPntHid.Clear();
         TopoDS_Shape S;
         bool reg1, regn, outl, intl;
-        gp_Trsf T = myAlgo.Projector().Transformation();
+        Transform3D T = myAlgo.Projector().Transformation();
         HLRAlgo_EdgeStatus status = new();
 
         for (myAlgo.InitHide(); myAlgo.MoreHide(); myAlgo.NextHide())
         {
             ref HLRAlgo_BiPoint.PointsT aPoints = ref myAlgo.Hide(status, out S, out reg1, out regn, out outl, out intl);
-            gp_XYZ aSta = aPoints.Pnt1;
-            gp_XYZ aEnd = aPoints.Pnt2;
+            Xyz aSta = aPoints.Pnt1;
+            Xyz aEnd = aPoints.Pnt2;
             T.Transforms(ref aSta);
             T.Transforms(ref aEnd);
-            gp_XY aSta2D = new(aSta.X(), aSta.Y());
-            gp_XY aEnd2D = new(aEnd.X(), aEnd.Y());
-            gp_XY aD = aEnd2D - aSta2D;
+            Xy aSta2D = new(aSta.X(), aSta.Y());
+            Xy aEnd2D = new(aEnd.X(), aEnd.Y());
+            Xy aD = aEnd2D - aSta2D;
             if (aD.Modulus() > 1.0e-10)
             {
                 for (It.InitVisible(status); It.MoreVisible(); It.NextVisible())
@@ -190,8 +192,8 @@ public class HLRBRep_PolyHLRToShape
                 }
                 if (todraw)
                 {
-                    gp_Pnt2d FirstP2d = BP.P1();
-                    gp_Pnt2d LastP2d = BP.P2();
+                    Point2D FirstP2d = BP.P1();
+                    Point2D LastP2d = BP.P2();
                     if (FirstP2d.SquareDistance(LastP2d) > 1.0e-20)
                     {
                         B.Add(Result, new BRepLib_MakeEdge2d(BP.P1(), BP.P2()).InternalEdge());
@@ -202,7 +204,7 @@ public class HLRBRep_PolyHLRToShape
         }
         else
         {
-            gp_Trsf T = myAlgo!.Projector().Transformation();
+            Transform3D T = myAlgo!.Projector().Transformation();
             TopoDS_Shape SBP;
 
             for (myAlgo.InitShow(); myAlgo.MoreShow(); myAlgo.NextShow())
@@ -233,15 +235,15 @@ public class HLRBRep_PolyHLRToShape
                 }
                 if (todraw)
                 {
-                    gp_XYZ aSta = aPoints.Pnt1, aEnd = aPoints.Pnt2;
+                    Xyz aSta = aPoints.Pnt1, aEnd = aPoints.Pnt2;
                     T.Transforms(ref aSta);
                     T.Transforms(ref aEnd);
-                    gp_XY aSta2D = new(aSta.X(), aSta.Y());
-                    gp_XY aEnd2D = new(aEnd.X(), aEnd.Y());
-                    gp_XY aD = aEnd2D - aSta2D;
+                    Xy aSta2D = new(aSta.X(), aSta.Y());
+                    Xy aEnd2D = new(aEnd.X(), aEnd.Y());
+                    Xy aD = aEnd2D - aSta2D;
                     if (aD.SquareModulus() > 1.0e-20)
                     {
-                        B.Add(Result, new BRepLib_MakeEdge2d(new gp_Pnt2d(aSta2D), new gp_Pnt2d(aEnd2D)).InternalEdge());
+                        B.Add(Result, new BRepLib_MakeEdge2d(new Point2D(aSta2D), new Point2D(aEnd2D)).InternalEdge());
                         added = true;
                     }
                 }

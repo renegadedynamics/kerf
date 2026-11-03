@@ -4,9 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -23,14 +24,14 @@ namespace Occt;
 public sealed class HLRBRep_Surface
 {
     private readonly BRepAdaptor_Surface mySurf;
-    private GeomAbs_SurfaceType myType;
+    private SurfaceKind myType;
     private StrongBox<HLRAlgo_Projector>? myProj;
 
     /// <summary>Creates an undefined surface.</summary>
     public HLRBRep_Surface()
     {
         mySurf = new BRepAdaptor_Surface();
-        myType = GeomAbs_OtherSurface;
+        myType = OtherSurface;
         myProj = null;
     }
 
@@ -56,23 +57,23 @@ public sealed class HLRBRep_Surface
     public void Surface(in TopoDS_Face F)
     {
         mySurf.Initialize(F, true);
-        GeomAbs_SurfaceType typ = HLRBRep_BSurfaceTool.GetType(mySurf);
+        SurfaceKind typ = HLRBRep_BSurfaceTool.GetType(mySurf);
         switch (typ)
         {
 
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 // unchanged type
                 myType = typ;
                 break;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 if (HLRBRep_BSurfaceTool.UDegree(mySurf) == 1 && HLRBRep_BSurfaceTool.VDegree(mySurf) == 1)
                 {
-                    myType = GeomAbs_Plane;
+                    myType = global::Kerf.Geometry.SurfaceKind.Plane;
                 }
                 else
                 {
@@ -81,19 +82,19 @@ public sealed class HLRBRep_Surface
                 break;
 
             default:
-                myType = GeomAbs_OtherSurface;
+                myType = OtherSurface;
                 break;
         }
     }
 
     /// <summary>Returns true if all the poles project on the same line (an iso row or column), or on a plane.</summary>
-    private bool SideRowsOfPoles(double tol, int nbuPoles, int nbvPoles, NCollection_Array2<gp_Pnt> Pnt)
+    private bool SideRowsOfPoles(double tol, int nbuPoles, int nbvPoles, NCollection_Array2<Point3D> Pnt)
     {
         int iu, iv;
         double x0, y0, x, y, z;
         bool result;
         double tole = (double)tol;
-        gp_Trsf T = Proj().Transformation();
+        Transform3D T = Proj().Transformation();
 
         for (iu = 1; iu <= nbuPoles; iu++)
         {
@@ -137,7 +138,7 @@ public sealed class HLRBRep_Surface
         }
 
         // Are the Poles in a Side Plane ?
-        NCollection_Array1<gp_Pnt> p = new(1, nbuPoles * nbvPoles);
+        NCollection_Array1<Point3D> p = new(1, nbuPoles * nbvPoles);
         int i = 0;
 
         for (iu = 1; iu <= nbuPoles; iu++)
@@ -161,16 +162,16 @@ public sealed class HLRBRep_Surface
     /// <summary>Returns true if the surface is seen edge-on (its projection has no area).</summary>
     public bool IsSide(double tolF, double toler)
     {
-        gp_Pnt Pt;
-        gp_Vec D;
+        Point3D Pt;
+        Vector3D D;
         double r;
 
-        if (myType == GeomAbs_Plane)
+        if (myType == global::Kerf.Geometry.SurfaceKind.Plane)
         {
-            gp_Pln Pl = Plane();
-            gp_Ax1 A = Pl.Axis();
+            Plane3D Pl = Plane();
+            Axis3D A = Pl.Axis();
             Pt = A.Location();
-            D = new gp_Vec(A.Direction());
+            D = new Vector3D(A.Direction());
             Pt.Transform(Proj().Transformation());
             D.Transform(Proj().Transformation());
             if (Proj().Perspective())
@@ -183,32 +184,32 @@ public sealed class HLRBRep_Surface
             }
             return Abs(r) < toler;
         }
-        else if (myType == GeomAbs_Cylinder)
+        else if (myType == global::Kerf.Geometry.SurfaceKind.Cylinder)
         {
             if (Proj().Perspective())
             {
                 return false;
             }
-            gp_Cylinder Cyl = HLRBRep_BSurfaceTool.Cylinder(mySurf);
-            gp_Ax1 A = Cyl.Axis();
-            D = new gp_Vec(A.Direction());
+            Cylinder Cyl = HLRBRep_BSurfaceTool.Cylinder(mySurf);
+            Axis3D A = Cyl.Axis();
+            D = new Vector3D(A.Direction());
             D.Transform(Proj().Transformation());
             r = Sqrt(D.X() * D.X() + D.Y() * D.Y());
             return r < toler;
         }
-        else if (myType == GeomAbs_Cone)
+        else if (myType == global::Kerf.Geometry.SurfaceKind.Cone)
         {
             if (!Proj().Perspective())
             {
                 return false;
             }
-            gp_Cone Con = HLRBRep_BSurfaceTool.Cone(mySurf);
+            Cone Con = HLRBRep_BSurfaceTool.Cone(mySurf);
             Pt = Con.Apex();
             Pt.Transform(Proj().Transformation());
             double tol = 0.001;
-            return Pt.IsEqual(new gp_Pnt(0, 0, Proj().Focus()), tol);
+            return Pt.IsEqual(new Point3D(0, 0, Proj().Focus()), tol);
         }
-        else if (myType == GeomAbs_BezierSurface)
+        else if (myType == BezierSurface)
         {
             if (Proj().Perspective())
             {
@@ -216,8 +217,8 @@ public sealed class HLRBRep_Surface
             }
             int nu = HLRBRep_BSurfaceTool.NbUPoles(mySurf);
             int nv = HLRBRep_BSurfaceTool.NbVPoles(mySurf);
-            NCollection_Array2<gp_Pnt> Pnt = new(1, nu, 1, nv);
-            NCollection_Array2<gp_Pnt> aSrcPoles = HLRBRep_BSurfaceTool.Bezier(mySurf).InternalPoles();
+            NCollection_Array2<Point3D> Pnt = new(1, nu, 1, nv);
+            NCollection_Array2<Point3D> aSrcPoles = HLRBRep_BSurfaceTool.Bezier(mySurf).InternalPoles();
             for (int iu = 1; iu <= nu; iu++)
             {
                 for (int iv = 1; iv <= nv; iv++)
@@ -227,7 +228,7 @@ public sealed class HLRBRep_Surface
             }
             return SideRowsOfPoles(tolF, nu, nv, Pnt);
         }
-        else if (myType == GeomAbs_BSplineSurface)
+        else if (myType == BSplineSurface)
         {
             if (Proj().Perspective())
             {
@@ -235,8 +236,8 @@ public sealed class HLRBRep_Surface
             }
             int nu = HLRBRep_BSurfaceTool.NbUPoles(mySurf);
             int nv = HLRBRep_BSurfaceTool.NbVPoles(mySurf);
-            NCollection_Array2<gp_Pnt> Pnt = new(1, nu, 1, nv);
-            NCollection_Array2<gp_Pnt> aSrcPoles = HLRBRep_BSurfaceTool.BSpline(mySurf).InternalPoles();
+            NCollection_Array2<Point3D> Pnt = new(1, nu, 1, nv);
+            NCollection_Array2<Point3D> aSrcPoles = HLRBRep_BSurfaceTool.BSpline(mySurf).InternalPoles();
             for (int iu = 1; iu <= nu; iu++)
             {
                 for (int iv = 1; iv <= nv; iv++)
@@ -258,14 +259,14 @@ public sealed class HLRBRep_Surface
     /// </summary>
     public bool IsAbove(bool back, HLRBRep_Curve A, double tol)
     {
-        bool planar = (myType == GeomAbs_Plane);
+        bool planar = (myType == global::Kerf.Geometry.SurfaceKind.Plane);
         if (planar)
         {
-            gp_Pln Pl = Plane();
+            Plane3D Pl = Plane();
             double a, b, c, d;
             Pl.Coefficients(out a, out b, out c, out d);
             double u, u1, u2, dd, x, y, z;
-            gp_Pnt P;
+            Point3D P;
             u1 = A.Parameter3d(A.FirstParameter());
             u2 = A.Parameter3d(A.LastParameter());
             u = u1;
@@ -280,7 +281,7 @@ public sealed class HLRBRep_Surface
             {
                 return false;
             }
-            if (A.GetType() != GeomAbs_Line)
+            if (A.GetType() != Line)
             {
                 int nbPnt = 30;
                 double step = (u2 - u1) / (nbPnt + 1);
@@ -328,13 +329,13 @@ public sealed class HLRBRep_Surface
 
     public double LastVParameter() => HLRBRep_BSurfaceTool.LastVParameter(mySurf);
 
-    public GeomAbs_Shape UContinuity() => HLRBRep_BSurfaceTool.UContinuity(mySurf);
+    public Continuity UContinuity() => HLRBRep_BSurfaceTool.UContinuity(mySurf);
 
-    public GeomAbs_Shape VContinuity() => HLRBRep_BSurfaceTool.VContinuity(mySurf);
+    public Continuity VContinuity() => HLRBRep_BSurfaceTool.VContinuity(mySurf);
 
-    public int NbUIntervals(GeomAbs_Shape S) => HLRBRep_BSurfaceTool.NbUIntervals(mySurf, S);
+    public int NbUIntervals(Continuity S) => HLRBRep_BSurfaceTool.NbUIntervals(mySurf, S);
 
-    public int NbVIntervals(GeomAbs_Shape S) => HLRBRep_BSurfaceTool.NbVIntervals(mySurf, S);
+    public int NbVIntervals(Continuity S) => HLRBRep_BSurfaceTool.NbVIntervals(mySurf, S);
 
     public bool IsUClosed() => HLRBRep_BSurfaceTool.IsUClosed(mySurf);
 
@@ -349,50 +350,50 @@ public sealed class HLRBRep_Surface
     public double VPeriod() => HLRBRep_BSurfaceTool.VPeriod(mySurf);
 
     /// <summary>The point of parameters (U, V).</summary>
-    public gp_Pnt Value(double U, double V)
+    public Point3D Value(double U, double V)
     {
-        D0(U, V, out gp_Pnt P);
+        D0(U, V, out Point3D P);
         return P;
     }
 
-    public void D0(double U, double V, out gp_Pnt P)
+    public void D0(double U, double V, out Point3D P)
     {
         HLRBRep_BSurfaceTool.D0(mySurf, U, V, out P);
     }
 
-    public void D1(double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V)
+    public void D1(double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V)
     {
         HLRBRep_BSurfaceTool.D1(mySurf, U, V, out P, out D1U, out D1V);
     }
 
-    public void D2(double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V, out gp_Vec D2U, out gp_Vec D2V,
-                   out gp_Vec D2UV)
+    public void D2(double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V, out Vector3D D2U, out Vector3D D2V,
+                   out Vector3D D2UV)
     {
         HLRBRep_BSurfaceTool.D2(mySurf, U, V, out P, out D1U, out D1V, out D2U, out D2V, out D2UV);
     }
 
-    public void D3(double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V, out gp_Vec D2U, out gp_Vec D2V,
-                   out gp_Vec D2UV, out gp_Vec D3U, out gp_Vec D3V, out gp_Vec D3UUV, out gp_Vec D3UVV)
+    public void D3(double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V, out Vector3D D2U, out Vector3D D2V,
+                   out Vector3D D2UV, out Vector3D D3U, out Vector3D D3V, out Vector3D D3UUV, out Vector3D D3UVV)
     {
         HLRBRep_BSurfaceTool.D3(mySurf, U, V, out P, out D1U, out D1V, out D2U, out D2V, out D2UV, out D3U, out D3V,
                                 out D3UUV, out D3UVV);
     }
 
-    public gp_Vec DN(double U, double V, int Nu, int Nv) => HLRBRep_BSurfaceTool.DN(mySurf, U, V, Nu, Nv);
+    public Vector3D DN(double U, double V, int Nu, int Nv) => HLRBRep_BSurfaceTool.DN(mySurf, U, V, Nu, Nv);
 
     /// <summary>The type of the projected surface.</summary>
-    public new GeomAbs_SurfaceType GetType() => myType;
+    public new SurfaceKind GetType() => myType;
 
     /// <summary>The plane: the adaptor's, or for a Bezier surface of degree 1, the tangent plane at (0.5, 0.5).</summary>
-    public gp_Pln Plane()
+    public Plane3D Plane()
     {
-        GeomAbs_SurfaceType typ = HLRBRep_BSurfaceTool.GetType(mySurf);
+        SurfaceKind typ = HLRBRep_BSurfaceTool.GetType(mySurf);
         switch (typ)
         {
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
-                D1(0.5, 0.5, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V);
-                return new gp_Pln(P, new gp_Dir(D1U.Crossed(D1V)));
+                D1(0.5, 0.5, out Point3D P, out Vector3D D1U, out Vector3D D1V);
+                return new Plane3D(P, new Direction3D(D1U.Crossed(D1V)));
             }
 
             default:
@@ -400,13 +401,13 @@ public sealed class HLRBRep_Surface
         }
     }
 
-    public gp_Cylinder Cylinder() => HLRBRep_BSurfaceTool.Cylinder(mySurf);
+    public Cylinder Cylinder() => HLRBRep_BSurfaceTool.Cylinder(mySurf);
 
-    public gp_Cone Cone() => HLRBRep_BSurfaceTool.Cone(mySurf);
+    public Cone Cone() => HLRBRep_BSurfaceTool.Cone(mySurf);
 
-    public gp_Sphere Sphere() => HLRBRep_BSurfaceTool.Sphere(mySurf);
+    public Sphere Sphere() => HLRBRep_BSurfaceTool.Sphere(mySurf);
 
-    public gp_Torus Torus() => HLRBRep_BSurfaceTool.Torus(mySurf);
+    public Torus Torus() => HLRBRep_BSurfaceTool.Torus(mySurf);
 
     public int UDegree() => HLRBRep_BSurfaceTool.UDegree(mySurf);
 
@@ -420,5 +421,5 @@ public sealed class HLRBRep_Surface
 
     public int NbVKnots() => HLRBRep_BSurfaceTool.NbVKnots(mySurf);
 
-    public gp_Ax1 Axis() => HLRBRep_BSurfaceTool.AxeOfRevolution(mySurf);
+    public Axis3D Axis() => HLRBRep_BSurfaceTool.AxeOfRevolution(mySurf);
 }

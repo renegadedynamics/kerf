@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.FairCurve_AnalysisCode;
 
 namespace Occt;
@@ -27,10 +31,10 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
     /// <paramref name="Slope"/> and physical ratio <paramref name="PhysicalRatio"/> (0: pure variation of curvature;
     /// 1: a physical batten). Curvatures start at 0, the other parameters as FairCurve_Batten's.
     /// </summary>
-    /// <exception cref="Standard_NullValue">P1 and P2 are confused (within Precision::Confusion).</exception>
-    /// <exception cref="Standard_NegativeValue"><paramref name="Heigth"/> is not positive.</exception>
-    public FairCurve_MinimalVariation(in gp_Pnt2d P1,
-                                      in gp_Pnt2d P2,
+    /// <exception cref="NullValueException">P1 and P2 are confused (within Precision::Confusion).</exception>
+    /// <exception cref="NegativeValueException"><paramref name="Heigth"/> is not positive.</exception>
+    public FairCurve_MinimalVariation(in Point2D P1,
+                                      in Point2D P2,
                                       double Heigth,
                                       double Slope = 0,
                                       double PhysicalRatio = 0)
@@ -57,7 +61,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
     }
 
     /// <summary>Sets the physical ratio: 0 minimises the variation of curvature only, 1 is a physical batten.</summary>
-    /// <exception cref="Standard_DomainError"><paramref name="Ratio"/> is not in [0, 1].</exception>
+    /// <exception cref="DomainErrorException"><paramref name="Ratio"/> is not in [0, 1].</exception>
     public void SetPhysicalRatio(double Ratio)
     {
         Standard_DomainError_Raise_if(Ratio < 0 || Ratio > 1,
@@ -153,7 +157,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
                 }
             }
 
-            gp_Vec2d DeltaP1 = new(OldP1, NewP1), DeltaP2 = new(OldP2, NewP2);
+            Vector2D DeltaP1 = new(OldP1, NewP1), DeltaP2 = new(OldP2, NewP2);
             if (Ratio == 1)
             {
                 End = true;
@@ -201,8 +205,8 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         return Ok;
     }
 
-    private bool Compute(in gp_Vec2d DeltaP1,
-                         in gp_Vec2d DeltaP2,
+    private bool Compute(in Vector2D DeltaP1,
+                         in Vector2D DeltaP2,
                          double DeltaAngle1,
                          double DeltaAngle2,
                          double DeltaCurvature1,
@@ -221,21 +225,21 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         knots[1] = 0;
         knots[2] = 1;
         NCollection_Array1<int> mults = new(1, 2);
-        NCollection_Array1<gp_Pnt2d> HermitePoles = new(1, L);
-        NCollection_Array1<gp_Pnt2d> Interpolation = new(1, L);
-        NCollection_HArray1<gp_Pnt2d> NPoles = new(1, Poles.Length());
+        NCollection_Array1<Point2D> HermitePoles = new(1, L);
+        NCollection_Array1<Point2D> Interpolation = new(1, L);
+        NCollection_HArray1<Point2D> NPoles = new(1, Poles.Length());
 
         // Polynomes of Hermite
-        math_Matrix HermiteCoef = new(1, L, 1, L);
-        Ok = PLib.HermiteCoefficients(0, 1, NewConstraintOrder1, NewConstraintOrder2, HermiteCoef);
+        Matrix HermiteCoef = new(1, L, 1, L);
+        Ok = global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0, 1, NewConstraintOrder1, NewConstraintOrder2, HermiteCoef);
         if (!Ok)
         {
             return false;
         }
 
         // Definition of constraints of interpolation
-        NCollection_Array1<gp_XY> ADelta = new(1, L);
-        gp_Vec2d VOld = new(OldP1, OldP2), VNew = new(-(OldP1.XY() + DeltaP1.XY()) + (OldP2.XY() + DeltaP2.XY()));
+        NCollection_Array1<Xy> ADelta = new(1, L);
+        Vector2D VOld = new(OldP1, OldP2), VNew = new(-(OldP1.XY() + DeltaP1.XY()) + (OldP2.XY() + DeltaP2.XY()));
         double DAngleRef = VNew.Angle(VOld);
         double DAngle1 = DeltaAngle1 - DAngleRef,
                DAngle2 = DAngleRef - DeltaAngle2; // Correction of Delta by the Delta induced by the points.
@@ -245,9 +249,9 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         if (NewConstraintOrder1 > 0)
         {
             // rotation of the derivative premiereDeltaAngle1
-            gp_Vec2d OldDerive = new(Poles.Value(Poles.Lower()), Poles.Value(Poles.Lower() + 1));
+            Vector2D OldDerive = new(Poles.Value(Poles.Lower()), Poles.Value(Poles.Lower() + 1));
             double aKnotGapL = Knots.Value(Knots.Lower() + 1) - Knots.Value(Knots.Lower());
-            if (Math.Abs(aKnotGapL) > Precision.Computational())
+            if (Math.Abs(aKnotGapL) > global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 OldDerive *= Degree / aKnotGapL;
             }
@@ -257,10 +261,10 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
             if (NewConstraintOrder1 > 1)
             {
                 // rotation of the second derivative + adding
-                gp_Vec2d OldSeconde = new(Poles.Value(Poles.Lower()).XY() + Poles.Value(Poles.Lower() + 2).XY()
+                Vector2D OldSeconde = new(Poles.Value(Poles.Lower()).XY() + Poles.Value(Poles.Lower() + 2).XY()
                                           - 2 * Poles.Value(Poles.Lower() + 1).XY());
                 double aKnotGapLSq = aKnotGapL * aKnotGapL;
-                if (Math.Abs(aKnotGapLSq) > Precision.SquareComputational())
+                if (Math.Abs(aKnotGapLSq) > global::Kerf.Engine.Foundation.Precision.SquareComputational())
                 {
                     OldSeconde *= Degree * (Degree - 1) / aKnotGapLSq;
                 }
@@ -275,9 +279,9 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         kk += 1;
         if (NewConstraintOrder2 > 0)
         {
-            gp_Vec2d OldDerive = new(Poles.Value(Poles.Upper() - 1), Poles.Value(Poles.Upper()));
+            Vector2D OldDerive = new(Poles.Value(Poles.Upper() - 1), Poles.Value(Poles.Upper()));
             double aKnotGapU = Knots.Value(Knots.Upper()) - Knots.Value(Knots.Upper() - 1);
-            if (Math.Abs(aKnotGapU) > Precision.Computational())
+            if (Math.Abs(aKnotGapU) > global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 OldDerive *= Degree / aKnotGapU;
             }
@@ -286,10 +290,10 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
             if (NewConstraintOrder2 > 1)
             {
                 // rotation of the second derivative + adding
-                gp_Vec2d OldSeconde = new(Poles.Value(Poles.Upper()).XY() + Poles.Value(Poles.Upper() - 2).XY()
+                Vector2D OldSeconde = new(Poles.Value(Poles.Upper()).XY() + Poles.Value(Poles.Upper() - 2).XY()
                                           - 2 * Poles.Value(Poles.Upper() - 1).XY());
                 double aKnotGapUSq = aKnotGapU * aKnotGapU;
-                if (Math.Abs(aKnotGapUSq) > Precision.SquareComputational())
+                if (Math.Abs(aKnotGapUSq) > global::Kerf.Engine.Foundation.Precision.SquareComputational())
                 {
                     OldSeconde *= Degree * (Degree - 1) / aKnotGapUSq;
                 }
@@ -302,7 +306,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         }
 
         // Interpolation
-        gp_XY AuxXY = new(0, 0);
+        Xy AuxXY = new(0, 0);
         for (ii = 1; ii <= L; ii++)
         {
             AuxXY.SetCoord(0.0, 0);
@@ -313,7 +317,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
             Interpolation[ii].SetXY(AuxXY);
         }
         // Conversion into BSpline of the same structure as the current batten.
-        PLib.CoefficientsPoles(Interpolation, PLib.NoWeights(), HermitePoles, PLib.NoWeights());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(Interpolation, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), HermitePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
 
         mults.Init(L);
 
@@ -339,7 +343,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
           Rho1 = OldCurvature1 + DeltaCurvature1, Rho2 = OldCurvature2 + DeltaCurvature2,
           Dist = NPoles.Value(NPoles.Upper()).Distance(NPoles.Value(NPoles.Lower())),
           LReference = SlidingOfReference(Dist, Alph1, Alph2);
-        gp_Vec2d Ox = new(1, 0),
+        Vector2D Ox = new(1, 0),
           P1P2 = new(NPoles.Value(NPoles.Upper()).Coord() - NPoles.Value(NPoles.Lower()).Coord());
 
         // Angles corresponding to axis ox
@@ -380,7 +384,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
                                          Angle2,
                                          Rho1,
                                          Rho2);
-        math_Vector VInit = new(1, EMVC.NbVariables());
+        math_Vector VInit = new(1, EMVC.VariableCount);
 
         // The value below gives an idea about the smallest value of the criterion of flexion.
         double VConvex = 0.01 * Math.Pow(NewHeight / SlidingLength, 3);
@@ -398,11 +402,11 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
                                       NbIterations,
                                       VConvex);
         Newton.Perform(EMVC, VInit);
-        Ok = Newton.IsDone();
+        Ok = Newton.IsDone;
 
         if (Ok)
         {
-            gp_Vec2d Tangente = new(), PseudoNormale = new();
+            Vector2D Tangente = new(), PseudoNormale = new();
             Poles = NPoles;
             Newton.Location(VInit);
 
@@ -490,7 +494,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
         Ok = EMVC.Variable(VInit);
 
         // Processing of non convergence
-        if (!Newton.IsConverged())
+        if (!Newton.IsConverged)
         {
             ACode = FairCurve_NotConverged;
         }
@@ -526,7 +530,7 @@ public class FairCurve_MinimalVariation : FairCurve_Batten
             }
 
             NewBS.InsertKnots(NKnots.Array1(), NMults.Array1(), 1.0e-10);
-            NCollection_HArray1<gp_Pnt2d> NewNPoles = new(NewBS.InternalPoles());
+            NCollection_HArray1<Point2D> NewNPoles = new(NewBS.InternalPoles());
             NMults = new NCollection_HArray1<int>(NewBS.InternalMultiplicities());
             NKnots = new NCollection_HArray1<double>(NewBS.InternalKnots());
             NCollection_HArray1<double> FKnots = new(NewBS.InternalKnotSequence());

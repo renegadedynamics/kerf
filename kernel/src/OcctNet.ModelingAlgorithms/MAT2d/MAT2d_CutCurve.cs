@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Cuts a curve at its extrema of curvature and its inflections, giving a trimmed curve per interval.
@@ -30,9 +34,9 @@ public sealed class MAT2d_CutCurve
         GeomLProp_CurAndInf2d Sommets = new();
         Geom2d_TrimmedCurve TrimC;
         double UF, UL, UC;
-        gp_Pnt2d PF, PL, PC;
-        double PTol = Precision.PConfusion() * 10;
-        double Tol = Precision.Confusion() * 10;
+        Point2D PF, PL, PC;
+        double PTol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion() * 10;
         bool YaCut = false;
         Sommets.Perform(C);
 
@@ -77,7 +81,7 @@ public sealed class MAT2d_CutCurve
     {
         if (UnModified())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return theCurves.Length();
     }
@@ -87,11 +91,11 @@ public sealed class MAT2d_CutCurve
     {
         if (UnModified())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (Index < 1 || Index > theCurves.Length())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return (Geom2d_TrimmedCurve)theCurves.Value(Index);
     }

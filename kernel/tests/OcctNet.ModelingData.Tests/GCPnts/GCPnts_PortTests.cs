@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -16,37 +18,37 @@ public class GCPnts_PortTests
 
     private static Geom_BSplineCurve BSpline3d(bool theComposite = true)
     {
-        gp_Pnt[] aPoles = new gp_Pnt[s_X.Length];
+        Point3D[] aPoles = new Point3D[s_X.Length];
         for (int i = 0; i < aPoles.Length; i++)
         {
-            aPoles[i] = new gp_Pnt(s_X[i], s_Y[i], 0.0);
+            aPoles[i] = new Point3D(s_X[i], s_Y[i], 0.0);
         }
         return theComposite
-            ? new Geom_BSplineCurve(NCollection_Array1<gp_Pnt>.From(aPoles), NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
+            ? new Geom_BSplineCurve(NCollection_Array1<Point3D>.From(aPoles), NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                 NCollection_Array1<int>.From([4, 1, 3, 4]), 3)
-            : new Geom_BSplineCurve(NCollection_Array1<gp_Pnt>.From(aPoles[..4]), NCollection_Array1<double>.From([0.0, 1.0]),
+            : new Geom_BSplineCurve(NCollection_Array1<Point3D>.From(aPoles[..4]), NCollection_Array1<double>.From([0.0, 1.0]),
                 NCollection_Array1<int>.From([4, 4]), 3);
     }
 
     private static Geom2d_BSplineCurve BSpline2d(bool theComposite = true)
     {
-        gp_Pnt2d[] aPoles = new gp_Pnt2d[s_X.Length];
+        Point2D[] aPoles = new Point2D[s_X.Length];
         for (int i = 0; i < aPoles.Length; i++)
         {
-            aPoles[i] = new gp_Pnt2d(s_X[i], s_Y[i]);
+            aPoles[i] = new Point2D(s_X[i], s_Y[i]);
         }
         return theComposite
-            ? new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From(aPoles), NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
+            ? new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From(aPoles), NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                 NCollection_Array1<int>.From([4, 1, 3, 4]), 3)
-            : new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From(aPoles[..4]), NCollection_Array1<double>.From([0.0, 1.0]),
+            : new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From(aPoles[..4]), NCollection_Array1<double>.From([0.0, 1.0]),
                 NCollection_Array1<int>.From([4, 4]), 3);
     }
 
     private static TestGeomAdaptor_Curve Ellipse3d() =>
-        new(new Geom_Ellipse(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 1)), 5.0, 2.0), 0.3, 5.0);
+        new(new Geom_Ellipse(new Frame3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 1)), 5.0, 2.0), 0.3, 5.0);
 
     private static TestGeom2dAdaptor_Curve Ellipse2d() =>
-        new(new Geom2d_Ellipse(new gp_Ax22d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 5.0, 2.0), 0.3, 5.0);
+        new(new Geom2d_Ellipse(new Frame2D(new Point2D(1, 2), new Direction2D(1, 0)), 5.0, 2.0), 0.3, 5.0);
 
     // The length of the curve between two parameters by a fine polygon, split at the integer parameters (the knots of
     // the B-spline, where it may have a corner).
@@ -58,10 +60,10 @@ public class GCPnts_PortTests
             return PolygonLength(theC, theU1, aKnot, theNb) + PolygonLength(theC, aKnot, theU2, theNb);
         }
         double aL = 0.0;
-        gp_Pnt aPrev = theC.Value(theU1);
+        Point3D aPrev = theC.Value(theU1);
         for (int i = 1; i <= theNb; i++)
         {
-            gp_Pnt aP = theC.Value(theU1 + (theU2 - theU1) * i / theNb);
+            Point3D aP = theC.Value(theU1 + (theU2 - theU1) * i / theNb);
             aL += aPrev.Distance(aP);
             aPrev = aP;
         }
@@ -71,12 +73,12 @@ public class GCPnts_PortTests
     // The largest distance between the curve and the chord between two parameters, sampled.
     private static double Sag(Adaptor3d_Curve theC, double theU1, double theU2, int theNb = 50)
     {
-        gp_Pnt aP1 = theC.Value(theU1), aP2 = theC.Value(theU2);
+        Point3D aP1 = theC.Value(theU1), aP2 = theC.Value(theU2);
         if (aP1.Distance(aP2) < 1e-12)
         {
             return 0.0;
         }
-        gp_Lin aChord = new(aP1, new gp_Dir(new gp_Vec(aP1, aP2)));
+        Line3D aChord = new(aP1, new Direction3D(new Vector3D(aP1, aP2)));
         double aMax = 0.0;
         for (int i = 1; i < theNb; i++)
         {
@@ -89,7 +91,7 @@ public class GCPnts_PortTests
     public void Length_BSpline_MatchesPolygon()
     {
         TestGeomAdaptor_Curve aC = new(BSpline3d());
-        Assert.True(aC.NbIntervals(GeomAbs_CN) > 1);
+        Assert.True(aC.NbIntervals(CN) > 1);
         // The default length uses a Gauss rule of fixed order (OCCT), close to the polygon; with a tolerance it is adaptive.
         Assert.Equal(PolygonLength(aC, 0.0, 3.0), GCPnts_AbscissaPoint.Length(aC), 1e-7);
         Assert.Equal(PolygonLength(aC, 0.0, 3.0), GCPnts_AbscissaPoint.Length(aC, 1e-12), 1e-9);
@@ -126,10 +128,10 @@ public class GCPnts_PortTests
     [Fact]
     public void AbscissaPoint_ZeroLength_Throws()
     {
-        TestGeomAdaptor_Curve aC = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 1.0, 1.0);
-        Assert.Throws<Standard_ConstructionError>(() => new GCPnts_AbscissaPoint(aC, 1.0, 1.0));
+        TestGeomAdaptor_Curve aC = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1.0, 1.0);
+        Assert.Throws<ConstructionErrorException>(() => new GCPnts_AbscissaPoint(aC, 1.0, 1.0));
         Assert.False(new GCPnts_AbscissaPoint().IsDone());
-        Assert.Throws<StdFail_NotDone>(() => new GCPnts_AbscissaPoint().Parameter());
+        Assert.Throws<NotDoneException>(() => new GCPnts_AbscissaPoint().Parameter());
     }
 
     [Fact]
@@ -164,14 +166,14 @@ public class GCPnts_PortTests
         {
             Assert.Equal(aStep, GCPnts_AbscissaPoint.Length(aC, anUA.Parameter(i), anUA.Parameter(i + 1)), 1e-5);
         }
-        Assert.Throws<Standard_ConstructionError>(() => new GCPnts_UniformAbscissa(aC, 1));
-        Assert.Throws<StdFail_NotDone>(() => new GCPnts_UniformAbscissa().NbPoints());
+        Assert.Throws<ConstructionErrorException>(() => new GCPnts_UniformAbscissa(aC, 1));
+        Assert.Throws<NotDoneException>(() => new GCPnts_UniformAbscissa().NbPoints());
     }
 
     [Fact]
     public void UniformAbscissa_Circle_IsLengthParametrized()
     {
-        TestGeomAdaptor_Curve aC = new(new Geom_Circle(new gp_Ax2(), 2.0), 0.0, 2 * M_PI);
+        TestGeomAdaptor_Curve aC = new(new Geom_Circle(new Frame3D(), 2.0), 0.0, 2 * M_PI);
         GCPnts_UniformAbscissa anUA = new(aC, 8);
         Assert.Equal(8, anUA.NbPoints());
         for (int i = 1; i <= 8; i++)
@@ -234,7 +236,7 @@ public class GCPnts_PortTests
     {
         foreach (Adaptor3d_Curve aC in new Adaptor3d_Curve[] { new TestGeomAdaptor_Curve(BSpline3d()), Ellipse3d() })
         {
-            foreach (GeomAbs_Shape aCont in new[] { GeomAbs_C0, GeomAbs_C1, GeomAbs_C2 })
+            foreach (Continuity aCont in new[] { C0, C1, C2 })
             {
                 GCPnts_QuasiUniformDeflection aQUD = new(aC, 0.01, aCont);
                 Assert.True(aQUD.IsDone());
@@ -255,11 +257,11 @@ public class GCPnts_PortTests
     [Fact]
     public void QuasiUniformDeflection_SymmetricS_IsNotSplit()
     {
-        NCollection_Array1<gp_Pnt> aPoles = NCollection_Array1<gp_Pnt>.From(
-            [new gp_Pnt(4, 3, 0), new gp_Pnt(5, 0, 0), new gp_Pnt(6, 2, 0), new gp_Pnt(7, -1, 0)]);
+        NCollection_Array1<Point3D> aPoles = NCollection_Array1<Point3D>.From(
+            [new Point3D(4, 3, 0), new Point3D(5, 0, 0), new Point3D(6, 2, 0), new Point3D(7, -1, 0)]);
         TestGeomAdaptor_Curve aC = new(new Geom_BSplineCurve(aPoles, NCollection_Array1<double>.From([2.0, 3.0]),
             NCollection_Array1<int>.From([4, 4]), 3));
-        foreach (GeomAbs_Shape aCont in new[] { GeomAbs_C0, GeomAbs_C1 })
+        foreach (Continuity aCont in new[] { C0, C1 })
         {
             GCPnts_QuasiUniformDeflection aQUD = new(aC, 0.01, aCont);
             Assert.Equal(2, aQUD.NbPoints());
@@ -270,13 +272,13 @@ public class GCPnts_PortTests
     [Fact]
     public void Deflections_Line_And_Circle()
     {
-        TestGeomAdaptor_Curve aLine = new(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), -1.0, 4.0);
+        TestGeomAdaptor_Curve aLine = new(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), -1.0, 4.0);
         Assert.Equal(2, new GCPnts_UniformDeflection(aLine, 0.1).NbPoints());
         Assert.Equal(2, new GCPnts_QuasiUniformDeflection(aLine, 0.1).NbPoints());
         Assert.Equal(5, new GCPnts_TangentialDeflection(aLine, 0.1, 0.1, 5).NbPoints());
 
         // Circle: N = (int)(range / (2 acos(1 - d / R))) + 2 points.
-        TestGeomAdaptor_Curve aCircle = new(new Geom_Circle(new gp_Ax2(), 10.0), 0.0, M_PI);
+        TestGeomAdaptor_Curve aCircle = new(new Geom_Circle(new Frame3D(), 10.0), 0.0, M_PI);
         int aNb = (int)(M_PI / (2.0 * Math.Acos(1.0 - 0.1 / 10.0))) + 2;
         Assert.Equal(aNb, new GCPnts_UniformDeflection(aCircle, 0.1).NbPoints());
         Assert.Equal(aNb, new GCPnts_QuasiUniformDeflection(aCircle, 0.1).NbPoints());
@@ -303,24 +305,24 @@ public class GCPnts_PortTests
     [Fact]
     public void TangentialDeflection_Circle_AddPoint_ArcAngularStep()
     {
-        TestGeomAdaptor_Curve aC = new(new Geom_Circle(new gp_Ax2(), 2.0), 0.0, 2 * M_PI);
+        TestGeomAdaptor_Curve aC = new(new Geom_Circle(new Frame3D(), 2.0), 0.0, 2 * M_PI);
         GCPnts_TangentialDeflection aTD = new(aC, 0.5, 0.01);
         double aStep = GCPnts_TangentialDeflection.ArcAngularStep(2.0, 0.01, 0.5, 1e-7);
         Assert.Equal(2.0 * Math.Acos(1.0 - 0.01 / 2.0), aStep, 1e-15);
         Assert.Equal((int)Math.Ceiling(2 * M_PI / aStep) + 1, aTD.NbPoints());
 
         int aNb = aTD.NbPoints();
-        gp_Pnt aP = aC.Value(0.05);
+        Point3D aP = aC.Value(0.05);
         Assert.Equal(2, aTD.AddPoint(aP, 0.05));
         Assert.Equal(aNb + 1, aTD.NbPoints());
-        Assert.Equal(2, aTD.AddPoint(new gp_Pnt(9, 9, 9), 0.05, false));
+        Assert.Equal(2, aTD.AddPoint(new Point3D(9, 9, 9), 0.05, false));
         Assert.True(aTD.Value(2).IsEqual(aP, 0.0));
-        Assert.Equal(2, aTD.AddPoint(new gp_Pnt(9, 9, 9), 0.05));
-        Assert.True(aTD.Value(2).IsEqual(new gp_Pnt(9, 9, 9), 0.0));
+        Assert.Equal(2, aTD.AddPoint(new Point3D(9, 9, 9), 0.05));
+        Assert.True(aTD.Value(2).IsEqual(new Point3D(9, 9, 9), 0.0));
         Assert.Equal(aNb + 2, aTD.AddPoint(aP, 10.0));
 
-        Assert.Throws<Standard_ConstructionError>(() => new GCPnts_TangentialDeflection(aC, 0.5, 0.0));
-        Assert.Throws<Standard_ConstructionError>(() => GCPnts_TangentialDeflection.ArcAngularStep(-1.0, 0.1, 0.1, 0.0));
+        Assert.Throws<ConstructionErrorException>(() => new GCPnts_TangentialDeflection(aC, 0.5, 0.0));
+        Assert.Throws<ConstructionErrorException>(() => GCPnts_TangentialDeflection.ArcAngularStep(-1.0, 0.1, 0.1, 0.0));
     }
 
     [Fact]
@@ -340,7 +342,7 @@ public class GCPnts_PortTests
         }
         Assert.Equal(1.0, aPrev);
         Assert.True(aNb > 3);
-        Assert.Throws<Standard_OutOfRange>(() => anIt.Next());
+        Assert.Throws<OutOfRangeException>(() => anIt.Next());
     }
 
     // The 2D instantiations are generated from the 3D ones: on a planar curve built from the same numbers they must
@@ -370,7 +372,7 @@ public class GCPnts_PortTests
 
             GCPnts_UniformDeflection aU3 = new(aC3, 0.005), aU2 = new(aC2, 0.005);
             AssertSame(aU3.NbPoints(), aU3.Parameter, aU3.Value, aU2.NbPoints(), aU2.Parameter, aU2.Value);
-            GCPnts_QuasiUniformDeflection aD3 = new(aC3, 0.005, GeomAbs_C2), aD2 = new(aC2, 0.005, GeomAbs_C2);
+            GCPnts_QuasiUniformDeflection aD3 = new(aC3, 0.005, C2), aD2 = new(aC2, 0.005, C2);
             AssertSame(aD3.NbPoints(), aD3.Parameter, aD3.Value, aD2.NbPoints(), aD2.Parameter, aD2.Value);
             GCPnts_TangentialDeflection aT3 = new(aC3, 0.1, 0.005), aT2 = new(aC2, 0.1, 0.005);
             AssertSame(aT3.NbPoints(), aT3.Parameter, aT3.Value, aT2.NbPoints(), aT2.Parameter, aT2.Value);
@@ -386,8 +388,8 @@ public class GCPnts_PortTests
         }
     }
 
-    private static void AssertSame(int theNb3, Func<int, double> theParam3, Func<int, gp_Pnt> thePnt3,
-        int theNb2, Func<int, double> theParam2, Func<int, gp_Pnt> thePnt2)
+    private static void AssertSame(int theNb3, Func<int, double> theParam3, Func<int, Point3D> thePnt3,
+        int theNb2, Func<int, double> theParam2, Func<int, Point3D> thePnt2)
     {
         Assert.Equal(theNb3, theNb2);
         for (int i = 1; i <= theNb3; i++)

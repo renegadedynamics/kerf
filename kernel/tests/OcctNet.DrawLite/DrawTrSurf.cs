@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -42,10 +44,10 @@ internal static class DrawTrSurf
     }
 
     /// <summary>DrawTrSurf::Set(name, gp_Pnt).</summary>
-    public static void Set(DrawInterpreter theDI, string theName, in gp_Pnt thePoint) => theDI.SetDrawable(theName, DrawGeometry.Of(thePoint));
+    public static void Set(DrawInterpreter theDI, string theName, in Point3D thePoint) => theDI.SetDrawable(theName, DrawGeometry.Of(thePoint));
 
     /// <summary>DrawTrSurf::Set(name, gp_Pnt2d).</summary>
-    public static void Set(DrawInterpreter theDI, string theName, in gp_Pnt2d thePoint) => theDI.SetDrawable(theName, DrawGeometry.Of(thePoint));
+    public static void Set(DrawInterpreter theDI, string theName, in Point2D thePoint) => theDI.SetDrawable(theName, DrawGeometry.Of(thePoint));
 
     // a batten (DrawFairCurve_Batten derives from DrawTrSurf_BSplineCurve2d) and a qualified curve
     // (GeometryTest_DrawableQualifiedCurve2d, from DrawTrSurf_Curve2d) are their curves
@@ -88,11 +90,11 @@ internal static class DrawTrSurf
     public static Geom_BSplineSurface? GetBSplineSurface(DrawInterpreter theDI, string theName) => Geometry(theDI, theName) as Geom_BSplineSurface;
 
     /// <summary>DrawTrSurf::GetPoint: true and the point when the name is a 3D point; the point is left otherwise.</summary>
-    public static bool GetPoint(DrawInterpreter theDI, string theName, ref gp_Pnt P) => BOPTestClassifyCommands.GetPoint(theDI, theName, ref P);
+    public static bool GetPoint(DrawInterpreter theDI, string theName, ref Point3D P) => BOPTestClassifyCommands.GetPoint(theDI, theName, ref P);
 
     /// <summary>DrawTrSurf::GetPoint2d.</summary>
-    public static bool GetPoint2d(DrawInterpreter theDI, string theName, ref gp_Pnt2d P) => BOPTestClassifyCommands.GetPoint2d(theDI, theName, ref P);
+    public static bool GetPoint2d(DrawInterpreter theDI, string theName, ref Point2D P) => BOPTestClassifyCommands.GetPoint2d(theDI, theName, ref P);
 
     /// <summary>DrawTrSurf::GetTriangulation.</summary>
-    public static Poly_Triangulation? GetTriangulation(DrawInterpreter theDI, string theName) => Geometry(theDI, theName) as Poly_Triangulation;
+    public static Triangulation? GetTriangulation(DrawInterpreter theDI, string theName) => Geometry(theDI, theName) as Triangulation;
 }

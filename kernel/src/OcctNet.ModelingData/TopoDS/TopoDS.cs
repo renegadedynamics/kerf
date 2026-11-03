@@ -2,18 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
 
 /// <summary>
 /// Narrows a <see cref="TopoDS_Shape"/> to one of the eight shape types, checking the type: <c>TopoDS.Edge(S)</c>
-/// throws <see cref="Standard_TypeMismatch"/> unless S is null or an edge.
+/// throws <see cref="TypeMismatchException"/> unless S is null or an edge.
 /// </summary>
 public static class TopoDS
 {
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Vertex.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type VERTEX.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type VERTEX.</exception>
     public static TopoDS_Vertex Vertex(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX,
@@ -22,7 +23,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Edge.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type EDGE.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type EDGE.</exception>
     public static TopoDS_Edge Edge(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_EDGE,
@@ -31,7 +32,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Wire.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type WIRE.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type WIRE.</exception>
     public static TopoDS_Wire Wire(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_WIRE,
@@ -40,7 +41,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Face.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type FACE.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type FACE.</exception>
     public static TopoDS_Face Face(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE,
@@ -49,7 +50,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Shell.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type SHELL.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type SHELL.</exception>
     public static TopoDS_Shell Shell(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_SHELL,
@@ -58,7 +59,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Solid.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type SOLID.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type SOLID.</exception>
     public static TopoDS_Solid Solid(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_SOLID,
@@ -67,7 +68,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_CompSolid.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type COMPSOLID.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type COMPSOLID.</exception>
     public static TopoDS_CompSolid CompSolid(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_COMPSOLID,
@@ -76,7 +77,7 @@ public static class TopoDS
     }
 
     /// <summary>Casts <paramref name="theShape"/> to a TopoDS_Compound.</summary>
-    /// <exception cref="Standard_TypeMismatch">The shape is neither null nor of type COMPOUND.</exception>
+    /// <exception cref="TypeMismatchException">The shape is neither null nor of type COMPOUND.</exception>
     public static TopoDS_Compound Compound(in TopoDS_Shape theShape)
     {
         Standard_TypeMismatch_Raise_if(theShape.IsNull() ? false : theShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_COMPOUND,

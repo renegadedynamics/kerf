@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -44,7 +46,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// As SetList but with only one entity If &lt;ent&gt; is Null, the list is said as being set but is empty
     /// </summary>
-    public void SetEntity(Standard_Transient? ent)
+    public void SetEntity(Transient? ent)
     {
         theitems.Clear();
         theset = true;
@@ -60,7 +62,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// the list is said as being set, but it is empty To use it as an alternate input, one shot : - SetList or
     /// SetEntity to define the input list - RootResult to get it - then Clear to drop it
     /// </summary>
-    public void SetList(NCollection_HSequence<Standard_Transient>? list)
+    public void SetList(NCollection_HSequence<Transient>? list)
     {
         theitems.Clear();
         theset = true;
@@ -78,7 +80,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Adds an item. Returns True if Done, False if &lt;item&gt; is already in the selected list
     /// </summary>
-    public bool Add(Standard_Transient? item)
+    public bool Add(Transient? item)
     {
         if (item is null)
         {
@@ -99,7 +101,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Removes an item. Returns True if Done, False if &lt;item&gt; was not in the selected list
     /// </summary>
-    public bool Remove(Standard_Transient? item)
+    public bool Remove(Transient? item)
     {
         if (item is null)
         {
@@ -120,7 +122,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// Toggles status of an item : adds it if not pointed or removes it if already pointed. Returns the new
     /// status (Pointed or not)
     /// </summary>
-    public bool Toggle(Standard_Transient? item)
+    public bool Toggle(Transient? item)
     {
         if (item is null)
         {
@@ -148,7 +150,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Adds all the items defined in a list. Returns True if at least one item has been added, False else
     /// </summary>
-    public bool AddList(NCollection_HSequence<Standard_Transient>? list)
+    public bool AddList(NCollection_HSequence<Transient>? list)
     {
         //   Optimized with a Map
         bool res = false;
@@ -157,7 +159,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
             return res;
         }
         int i, nb = theitems.Length(), nl = list.Length();
-        NCollection_Map<Standard_Transient> deja = new NCollection_Map<Standard_Transient>();
+        NCollection_Map<Transient> deja = new NCollection_Map<Transient>();
         for (i = 1; i <= nb; i++)
         {
             deja.Add(theitems.Value(i));
@@ -177,7 +179,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Removes all the items defined in a list. Returns True if at least one item has been removed, False else
     /// </summary>
-    public bool RemoveList(NCollection_HSequence<Standard_Transient>? list)
+    public bool RemoveList(NCollection_HSequence<Transient>? list)
     {
         bool res = false;
         if (list is null)
@@ -196,7 +198,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// Toggles status of all the items defined in a list : adds it if not pointed or removes it if already
     /// pointed.
     /// </summary>
-    public bool ToggleList(NCollection_HSequence<Standard_Transient>? list)
+    public bool ToggleList(NCollection_HSequence<Transient>? list)
     {
         bool res = true;
         if (list is null)
@@ -214,7 +216,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Returns the rank of an item in the selected list, or 0.
     /// </summary>
-    public int Rank(Standard_Transient? item)
+    public int Rank(Transient? item)
     {
         if (item is null)
         {
@@ -241,9 +243,9 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     /// <summary>
     /// Returns an item given its rank, or a Null Handle
     /// </summary>
-    public Standard_Transient? Item(int num)
+    public Transient? Item(int num)
     {
-        Standard_Transient item = null;
+        Transient item = null;
         if (num <= 0 || num > theitems.Length())
         {
             return item;
@@ -260,8 +262,8 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
         int nb = theitems.Length();
         for (int i = nb; i > 0; i--)
         {
-            Standard_Transient enfr = theitems.Value(i);
-            if (!control.Search(enfr, out Standard_Transient ento))
+            Transient enfr = theitems.Value(i);
+            if (!control.Search(enfr, out Transient ento))
             {
                 theitems.Remove(i);
             }
@@ -284,7 +286,7 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
         int nb = theitems.Length();
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient item = theitems.Value(i);
+            Transient item = theitems.Value(i);
             if (G.EntityNumber(item) > 0)
             {
                 result.GetOneItem(item);
@@ -302,5 +304,5 @@ public class IFSelect_SelectPointed : IFSelect_SelectBase
     }
 
     private bool theset;
-    private NCollection_Sequence<Standard_Transient> theitems = new NCollection_Sequence<Standard_Transient>();
+    private NCollection_Sequence<Transient> theitems = new NCollection_Sequence<Transient>();
 }

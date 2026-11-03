@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -12,30 +14,30 @@ namespace Occt;
 /// </summary>
 public static class GeomLProp
 {
-    private static int GeomAbsToInteger(GeomAbs_Shape gcont)
+    private static int GeomAbsToInteger(Continuity gcont)
     {
         int cont = 0;
         switch (gcont)
         {
-            case GeomAbs_C0:
+            case C0:
                 cont = 0;
                 break;
-            case GeomAbs_G1:
+            case G1:
                 cont = 1;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 cont = 2;
                 break;
-            case GeomAbs_G2:
+            case G2:
                 cont = 3;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 cont = 4;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 cont = 5;
                 break;
-            case GeomAbs_CN:
+            case CN:
                 cont = 6;
                 break;
         }
@@ -48,7 +50,7 @@ public static class GeomLProp
     /// the linear and angular tolerances tl and ta used to compare the derivatives: C0, G1, C1 or C2. Throws
     /// Standard_Failure if the points at u1 and u2 are not confused.
     /// </summary>
-    public static GeomAbs_Shape Continuity(Geom_Curve C1,
+    public static Continuity Continuity(Geom_Curve C1,
                                            Geom_Curve C2,
                                            double u1,
                                            double u2,
@@ -57,14 +59,14 @@ public static class GeomLProp
                                            double tl,
                                            double ta)
     {
-        GeomAbs_Shape cont = GeomAbs_C0;
+        Continuity cont = C0;
         int index1, index2;
         double tolerance;
         bool fini = false;
-        gp_Vec d1, d2;
-        gp_Dir dir1, dir2;
+        Vector3D d1, d2;
+        Direction3D dir1, dir2;
         int cont1, cont2;
-        GeomAbs_Shape gcont1 = C1.Continuity(), gcont2 = C2.Continuity();
+        Continuity gcont1 = C1.Continuity(), gcont2 = C2.Continuity();
         cont1 = GeomAbsToInteger(gcont1);
         cont2 = GeomAbsToInteger(gcont2);
 
@@ -148,7 +150,7 @@ public static class GeomLProp
         var clp2 = new GeomLProp_CLProps(C2, u2, n2, tl);
         if (!(clp1.Value().IsEqual(clp2.Value(), tl)))
         {
-            throw new Standard_Failure("Courbes non jointives");
+            throw new FailureException("Courbes non jointives");
         }
 
         int min = Min(n1, n2);
@@ -168,7 +170,7 @@ public static class GeomLProp
 
             if (d1.IsEqual(d2, tl, ta))
             {
-                cont = GeomAbs_C1;
+                cont = global::Kerf.Geometry.Continuity.C1;
             }
             else if (clp1.IsTangentDefined() && clp2.IsTangentDefined())
             {
@@ -186,7 +188,7 @@ public static class GeomLProp
 
                 if (dir1.IsEqual(dir2, ta))
                 {
-                    cont = GeomAbs_G1;
+                    cont = G1;
                 }
 
                 fini = true;
@@ -203,7 +205,7 @@ public static class GeomLProp
             d2 = clp2.D2();
             if (d1.IsEqual(d2, tl, ta))
             {
-                cont = GeomAbs_C2;
+                cont = global::Kerf.Geometry.Continuity.C2;
             }
         }
 
@@ -214,8 +216,8 @@ public static class GeomLProp
     /// <see cref="Continuity(Geom_Curve, Geom_Curve, double, double, bool, bool, double, double)"/> with the
     /// tolerances Precision::Confusion() and Precision::Angular().
     /// </summary>
-    public static GeomAbs_Shape Continuity(Geom_Curve C1, Geom_Curve C2, double u1, double u2, bool r1, bool r2)
+    public static Continuity Continuity(Geom_Curve C1, Geom_Curve C2, double u1, double u2, bool r1, bool r2)
     {
-        return Continuity(C1, C2, u1, u2, r1, r2, Precision.Confusion(), Precision.Angular());
+        return Continuity(C1, C2, u1, u2, r1, r2, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular());
     }
 }

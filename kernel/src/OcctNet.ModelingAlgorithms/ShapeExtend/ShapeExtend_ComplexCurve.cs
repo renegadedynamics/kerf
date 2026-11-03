@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -34,7 +35,7 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
     public abstract double LocalToGlobal(int index, double Ulocal);
 
     /// <summary>Applies the transformation to each curve.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
         for (int i = 1; i <= NbCurves(); i++)
@@ -58,13 +59,13 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
     public override bool IsPeriodic() => false;
 
     /// <summary>Returns GeomAbs_C0.</summary>
-    public override GeomAbs_Shape Continuity() => GeomAbs_C0;
+    public override Continuity Continuity() => C0;
 
     /// <summary>Returns false if N &gt; 0.</summary>
     public override bool IsCN(int N) => N <= 0;
 
     /// <summary>The point at U: found on the segment holding U, at its local parameter.</summary>
-    public override gp_Pnt EvalD0(double U)
+    public override Point3D EvalD0(double U)
     {
         int anInd = LocateParameter(U, out double UOut);
         return Curve(anInd).EvalD0(UOut);
@@ -97,10 +98,10 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
         return aResult;
     }
 
-    public override gp_Vec EvalDN(double U, int N)
+    public override Vector3D EvalDN(double U, int N)
     {
         int    anInd   = LocateParameter(U, out double UOut);
-        gp_Vec aResult = Curve(anInd).EvalDN(UOut, N);
+        Vector3D aResult = Curve(anInd).EvalDN(UOut, N);
         if (N != 0)
         {
             TransformDN(ref aResult, anInd, N);
@@ -134,7 +135,7 @@ public abstract class ShapeExtend_ComplexCurve : Geom_Curve
     }
 
     /// <summary>Transforms the derivative according to its order.</summary>
-    protected void TransformDN(ref gp_Vec V, int ind, int N)
+    protected void TransformDN(ref Vector3D V, int ind, int N)
     {
         double fact = GetScaleFactor(ind);
         for (int i = 1; i <= N; i++)

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -92,7 +93,7 @@ internal static class DrawTrSurfCommands
             return 1;
         }
 
-        var T = new gp_Trsf();
+        var T = new Transform3D();
         int last = n - 1;
         if (a[0] == "pscale")
         {
@@ -103,7 +104,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var P = new gp_Pnt(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             T.SetScale(P, s);
         }
         else if (a[0][1..] == "mirror")
@@ -113,7 +114,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var P = new gp_Pnt(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             if (a[0][0] == 'p')
             {
                 T.SetMirror(P);
@@ -126,16 +127,16 @@ internal static class DrawTrSurfCommands
                     return 1;
                 }
 
-                var O = new gp_Pnt(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+                var O = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
                 last -= 3;
-                var D = new gp_Dir(P.X(), P.Y(), P.Z());
+                var D = new Direction3D(P.X(), P.Y(), P.Z());
                 if (a[0][0] == 'l')
                 {
-                    T.SetMirror(new gp_Ax1(O, D));
+                    T.SetMirror(new Axis3D(O, D));
                 }
                 else if (a[0][0] == 's')
                 {
-                    var Pl = new gp_Pln(O, D);
+                    var Pl = new Plane3D(O, D);
                     T.SetMirror(Pl.Position().Ax2());
                 }
             }
@@ -147,7 +148,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var V = new gp_Vec(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var V = new Vector3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 3;
             T.SetTranslation(V);
         }
@@ -160,11 +161,11 @@ internal static class DrawTrSurfCommands
 
             double ang = theDI.Atof(a[last]) * (Math.PI / 180.0);
             last--;
-            var D = new gp_Dir(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var D = new Direction3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 3;
-            var P = new gp_Pnt(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 3;
-            T.SetRotation(new gp_Ax1(P, D), ang);
+            T.SetRotation(new Axis3D(P, D), ang);
         }
 
         for (int i = 1; i <= last; i++)
@@ -176,7 +177,7 @@ internal static class DrawTrSurfCommands
             }
             else
             {
-                var P = new gp_Pnt();
+                var P = new Point3D();
                 if (DrawTrSurf.GetPoint(theDI, a[i], ref P))
                 {
                     DrawTrSurf.Set(theDI, a[i], P.Transformed(T));
@@ -197,7 +198,7 @@ internal static class DrawTrSurfCommands
             return 1;
         }
 
-        var T = new gp_Trsf2d();
+        var T = new Transform2D();
         int last = n - 1;
         if (a[0] == "2dpscale")
         {
@@ -208,7 +209,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var P = new gp_Pnt2d(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             T.SetScale(P, s);
         }
         else if (a[0] is "2dpmirror" or "2dlmirror")
@@ -218,7 +219,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var P = new gp_Pnt2d(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             if (a[0] == "2dpmirror")
             {
                 T.SetMirror(P);
@@ -231,10 +232,10 @@ internal static class DrawTrSurfCommands
                     return 1;
                 }
 
-                var O = new gp_Pnt2d(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+                var O = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
                 last -= 2;
-                var D = new gp_Dir2d(P.X(), P.Y());
-                T.SetMirror(new gp_Ax2d(O, D));
+                var D = new Direction2D(P.X(), P.Y());
+                T.SetMirror(new Axis2D(O, D));
             }
         }
         else if (a[0] == "2dtranslate")
@@ -244,7 +245,7 @@ internal static class DrawTrSurfCommands
                 return 1;
             }
 
-            var V = new gp_Vec2d(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var V = new Vector2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 2;
             T.SetTranslation(V);
         }
@@ -257,7 +258,7 @@ internal static class DrawTrSurfCommands
 
             double ang = theDI.Atof(a[last]) * (Math.PI / 180.0);
             last--;
-            var P = new gp_Pnt2d(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
+            var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 2;
             T.SetRotation(P, ang);
         }
@@ -271,7 +272,7 @@ internal static class DrawTrSurfCommands
             }
             else
             {
-                var P = new gp_Pnt2d();
+                var P = new Point2D();
                 if (DrawTrSurf.GetPoint2d(theDI, a[i], ref P))
                 {
                     DrawTrSurf.Set(theDI, a[i], P.Transformed(T));

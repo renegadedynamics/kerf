@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bvh;
+
 namespace OcctNet.Foundation.Tests;
 
 public class BVH_BuildQueueTest
@@ -11,16 +13,16 @@ public class BVH_BuildQueueTest
     [Fact]
     public void DefaultConstructor()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         Assert.Equal(0, aQueue.Size());
-        Assert.False(aQueue.HasBusyThreads());
+        Assert.False(aQueue.HasBusyThreads);
     }
 
     [Fact]
     public void EnqueueSingle()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(42);
 
@@ -30,7 +32,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void EnqueueMultiple()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(1);
         aQueue.Enqueue(2);
@@ -42,19 +44,19 @@ public class BVH_BuildQueueTest
     [Fact]
     public void FetchFromEmptyQueue()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
         bool wasBusy = false;
         int aResult = aQueue.Fetch(ref wasBusy);
 
         Assert.Equal(-1, aResult);
         Assert.False(wasBusy);
-        Assert.False(aQueue.HasBusyThreads());
+        Assert.False(aQueue.HasBusyThreads);
     }
 
     [Fact]
     public void FetchSingleItem()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
         aQueue.Enqueue(42);
 
         bool wasBusy = false;
@@ -62,14 +64,14 @@ public class BVH_BuildQueueTest
 
         Assert.Equal(42, aResult);
         Assert.True(wasBusy);
-        Assert.True(aQueue.HasBusyThreads()); // Thread became busy
+        Assert.True(aQueue.HasBusyThreads); // Thread became busy
         Assert.Equal(0, aQueue.Size());
     }
 
     [Fact]
     public void FetchFIFOOrder()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(10);
         aQueue.Enqueue(20);
@@ -93,35 +95,35 @@ public class BVH_BuildQueueTest
     [Fact]
     public void ThreadCountTracking()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(1);
         aQueue.Enqueue(2);
 
-        Assert.False(aQueue.HasBusyThreads());
+        Assert.False(aQueue.HasBusyThreads);
 
         bool wasBusy = false;
 
         // First fetch - thread becomes busy
         aQueue.Fetch(ref wasBusy);
         Assert.True(wasBusy);
-        Assert.True(aQueue.HasBusyThreads());
+        Assert.True(aQueue.HasBusyThreads);
 
         // Second fetch while already busy
         aQueue.Fetch(ref wasBusy);
         Assert.True(wasBusy);
-        Assert.True(aQueue.HasBusyThreads());
+        Assert.True(aQueue.HasBusyThreads);
 
         // Fetch from empty queue while busy
         aQueue.Fetch(ref wasBusy);
         Assert.False(wasBusy);
-        Assert.False(aQueue.HasBusyThreads());
+        Assert.False(aQueue.HasBusyThreads);
     }
 
     [Fact]
     public void AlternatingEnqueueFetch()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(1);
         Assert.Equal(1, aQueue.Size());
@@ -140,7 +142,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void LargeQueue()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         const int aCount = 1000;
         for (int i = 0; i < aCount; ++i)
@@ -162,7 +164,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void NegativeValues()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(-1);
         aQueue.Enqueue(-100);
@@ -180,7 +182,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void ConcurrentEnqueue()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         const int aThreadCount = 4;
         const int aItemsPerThread = 100;
@@ -211,7 +213,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void ConcurrentFetch()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         const int aItemCount = 400;
         for (int i = 0; i < aItemCount; ++i)
@@ -262,7 +264,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void ConcurrentEnqueueAndFetch()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         const int aProducerCount = 2;
         const int aConsumerCount = 2;
@@ -330,7 +332,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void RepeatedFetchFromEmpty()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
         bool wasBusy = false;
 
         for (int i = 0; i < 10; ++i)
@@ -340,13 +342,13 @@ public class BVH_BuildQueueTest
             Assert.False(wasBusy);
         }
 
-        Assert.False(aQueue.HasBusyThreads());
+        Assert.False(aQueue.HasBusyThreads);
     }
 
     [Fact]
     public void EnqueueZero()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(0);
         Assert.Equal(1, aQueue.Size());
@@ -359,7 +361,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void DuplicateValues()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         aQueue.Enqueue(5);
         aQueue.Enqueue(5);
@@ -376,7 +378,7 @@ public class BVH_BuildQueueTest
     [Fact]
     public void SingleThreadWorkflow()
     {
-        BVH_BuildQueue aQueue = new();
+        BuildQueue aQueue = new();
 
         // Simulate single-threaded BVH building workflow
         aQueue.Enqueue(0); // Root node

@@ -2,6 +2,8 @@
 // 583). Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 public partial class ShapeFix_Edge
@@ -34,10 +36,10 @@ public partial class ShapeFix_Edge
     }
 
     /// <summary>The edge without its pcurve on the surface if inconsistent (<c>FixRemovePCurve</c>), frozen.</summary>
-    public TopoDS_Edge RemovePCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location,
+    public TopoDS_Edge RemovePCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in Placement location,
                                          out bool theIsDone)
     {
-        TopLoc_Location aLoc = location;
+        Placement aLoc = location;
         return fixedOnCopy(edge, e => FixRemovePCurve(e, surface, aLoc), out theIsDone);
     }
 
@@ -57,10 +59,10 @@ public partial class ShapeFix_Edge
     }
 
     /// <summary>The edge with its missing pcurve(s) on the surface added (<c>FixAddPCurve</c>), frozen.</summary>
-    public TopoDS_Edge AddPCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location, bool isSeam,
+    public TopoDS_Edge AddPCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
                                       out bool theIsDone, double prec = 0.0)
     {
-        TopLoc_Location aLoc = location;
+        Placement aLoc = location;
         return fixedOnCopy(edge, e => FixAddPCurve(e, surface, aLoc, isSeam, prec), out theIsDone);
     }
 
@@ -79,10 +81,10 @@ public partial class ShapeFix_Edge
     /// The edge with its missing pcurve(s) on the surface added, with an analyser of the surface
     /// (<c>FixAddPCurve</c>), frozen.
     /// </summary>
-    public TopoDS_Edge AddPCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location, bool isSeam,
+    public TopoDS_Edge AddPCurveFixed(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
                                       ShapeAnalysis_Surface surfana, out bool theIsDone, double prec = 0.0)
     {
-        TopLoc_Location aLoc = location;
+        Placement aLoc = location;
         return fixedOnCopy(edge, e => FixAddPCurve(e, surface, aLoc, isSeam, surfana, prec), out theIsDone);
     }
 
@@ -113,10 +115,10 @@ public partial class ShapeFix_Edge
     }
 
     /// <summary>The edge with its pcurve on the surface reversed if needed (<c>FixReversed2d</c>), frozen.</summary>
-    public TopoDS_Edge Reversed2dFixed(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location,
+    public TopoDS_Edge Reversed2dFixed(in TopoDS_Edge edge, Geom_Surface surface, in Placement location,
                                        out bool theIsDone)
     {
-        TopLoc_Location aLoc = location;
+        Placement aLoc = location;
         return fixedOnCopy(edge, e => FixReversed2d(e, surface, aLoc), out theIsDone);
     }
 

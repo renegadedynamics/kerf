@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -52,15 +54,15 @@ public static class StdPrs_ToolTriangulatedShape
             return theDrawer.MaximalChordialDeviation();
         }
 
-        var aBndBox = new Bnd_Box();
+        var aBndBox = new Box();
         BRepBndLib.Add(theShape, ref aBndBox, false);
-        if (aBndBox.IsVoid())
+        if (aBndBox.IsVoid)
         {
             return theDrawer.MaximalChordialDeviation();
         }
-        else if (aBndBox.IsOpen())
+        else if (aBndBox.IsOpen)
         {
-            if (!aBndBox.HasFinitePart())
+            if (!aBndBox.HasFinitePart)
             {
                 return theDrawer.MaximalChordialDeviation();
             }

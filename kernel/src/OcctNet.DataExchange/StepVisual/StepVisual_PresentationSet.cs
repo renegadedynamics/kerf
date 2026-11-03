@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_PresentationSet : Standard_Transient
+public class StepVisual_PresentationSet : Transient
 {
     /// <summary>
     /// Returns a PresentationSet

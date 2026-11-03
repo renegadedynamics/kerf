@@ -4,10 +4,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -144,7 +147,7 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The bounds in u and v of the two points.</summary>
-    internal static void ChFi3d_Boite(in gp_Pnt2d p1, in gp_Pnt2d p2, out double mu, out double Mu, out double mv,
+    internal static void ChFi3d_Boite(in Point2D p1, in Point2D p2, out double mu, out double Mu, out double mv,
                                       out double Mv)
     {
         mu = Math.Min(p1.X(), p2.X());
@@ -159,7 +162,7 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The bounds in u and v of the four points, and their spans.</summary>
-    internal static void ChFi3d_Boite(in gp_Pnt2d p1, in gp_Pnt2d p2, in gp_Pnt2d p3, in gp_Pnt2d p4, out double Du,
+    internal static void ChFi3d_Boite(in Point2D p1, in Point2D p2, in Point2D p3, in Point2D p4, out double Du,
                                       out double Dv, out double mu, out double Mu, out double mv, out double Mv)
     {
         double a, b;
@@ -213,7 +216,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Sets the tolerance of the point <paramref name="IP"/> to half again the diagonal of
     /// <paramref name="box"/>.</summary>
-    internal static void ChFi3d_SetPointTolerance(TopOpeBRepDS_DataStructure DStr, in Bnd_Box box, int IP)
+    internal static void ChFi3d_SetPointTolerance(TopOpeBRepDS_DataStructure DStr, in Box box, int IP)
     {
         double a, b, c, d, e, f, vtol;
         box.Get(out a, out b, out c, out d, out e, out f);
@@ -231,7 +234,7 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>Adds the points of <paramref name="C"/> at <paramref name="wd"/> and <paramref name="wf"/> to the
     /// boxes.</summary>
-    internal static void ChFi3d_EnlargeBox(Geom_Curve C, double wd, double wf, ref Bnd_Box box1, ref Bnd_Box box2)
+    internal static void ChFi3d_EnlargeBox(Geom_Curve C, double wd, double wf, ref Box box1, ref Box box2)
     {
         box1.Add(C.Value(wd));
         box2.Add(C.Value(wf));
@@ -242,7 +245,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>Adds the points of <paramref name="PC"/> on <paramref name="S"/> at <paramref name="wd"/> and
     /// <paramref name="wf"/> to the boxes.</summary>
     internal static void ChFi3d_EnlargeBox(Adaptor3d_Surface S, Geom2d_Curve PC, double wd, double wf,
-                                           ref Bnd_Box box1, ref Bnd_Box box2)
+                                           ref Box box1, ref Box box2)
     {
         double u, v;
         PC.Value(wd).Coord(out u, out v);
@@ -256,7 +259,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>Adds the point of <paramref name="E"/> at <paramref name="w"/>, by its 3D curve and its pcurves on
     /// the faces <paramref name="LF"/>, to the box.</summary>
     internal static void ChFi3d_EnlargeBox(in TopoDS_Edge E, NCollection_List<TopoDS_Shape> LF, double w,
-                                           ref Bnd_Box box)
+                                           ref Box box)
     {
         BRepAdaptor_Curve BC = new(E);
         box.Add(BC.Value(w));
@@ -276,7 +279,7 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>Adds the extremities of the surface data <paramref name="sd"/> (and of the stripe's end curve) to the
     /// boxes of its two sides.</summary>
     internal static void ChFi3d_EnlargeBox(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe? st, ChFiDS_SurfData sd,
-                                           ref Bnd_Box b1, ref Bnd_Box b2, bool isfirst)
+                                           ref Box b1, ref Box b2, bool isfirst)
     {
         double u, v;
         ChFiDS_CommonPoint cp1 = sd.Vertex(isfirst, 1);
@@ -436,9 +439,9 @@ internal static partial class ChFi3d_Builder_0
     //=======================================================================
 
     /// <summary>The continuity across an edge: CN on a seam of a cone, a sphere or a torus, else G1.</summary>
-    internal static GeomAbs_Shape ChFi3d_evalconti(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
+    internal static Continuity ChFi3d_evalconti(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2)
     {
-        GeomAbs_Shape cont = GeomAbs_G1;
+        Continuity cont = G1;
         if (!F1.IsSame(F2))
         {
             return cont;
@@ -446,12 +449,12 @@ internal static partial class ChFi3d_Builder_0
         TopoDS_Face F = F1;
         F.Orientation(TopAbs_FORWARD);
         BRepAdaptor_Surface S = new(F, false);
-        GeomAbs_SurfaceType typ = S.GetType();
-        if (typ != GeomAbs_Cone && typ != GeomAbs_Sphere && typ != GeomAbs_Torus)
+        SurfaceKind typ = S.GetType();
+        if (typ != SurfaceKind.Cone && typ != SurfaceKind.Sphere && typ != SurfaceKind.Torus)
         {
             return cont;
         }
-        return GeomAbs_CN;
+        return CN;
     }
 
     // modified by NIZNHY-PKV Wed Dec 15 11:22:35 2010f
@@ -473,13 +476,13 @@ internal static partial class ChFi3d_Builder_0
         //
         bool bIsPlane1, bIsPlane2;
         double aPA;
-        GeomAbs_CurveType aCT;
-        GeomAbs_SurfaceType aST1, aST2;
+        CurveKind aCT;
+        SurfaceKind aST1, aST2;
         //
         aST1 = S1.GetType();
         aST2 = S2.GetType();
-        bIsPlane1 = (aST1 == GeomAbs_Plane);
-        bIsPlane2 = (aST2 == GeomAbs_Plane);
+        bIsPlane1 = (aST1 == Plane);
+        bIsPlane2 = (aST2 == Plane);
         if (!(bIsPlane1 || bIsPlane2))
         {
             return !bRet;
@@ -490,46 +493,46 @@ internal static partial class ChFi3d_Builder_0
         aST1 = aS1.GetType();
         aST2 = aS2.GetType();
         //
-        if (aST2 != GeomAbs_Plane && aST2 != GeomAbs_Cylinder && aST2 != GeomAbs_Cone)
+        if (aST2 != Plane && aST2 != SurfaceKind.Cylinder && aST2 != SurfaceKind.Cone)
         {
             return !bRet;
         }
         //
         BRepAdaptor_Curve bc = Spine.CurrentElementarySpine(IE);
         aCT = bc.GetType();
-        if (aCT != GeomAbs_Line && aCT != GeomAbs_Circle)
+        if (aCT != Line && aCT != Circle)
         {
             return !bRet;
         }
         //
-        aPA = Precision.Angular();
+        aPA = global::Kerf.Engine.Foundation.Precision.Angular();
         //
-        if (aST2 == GeomAbs_Plane)
+        if (aST2 == Plane)
         {
-            if (aCT == GeomAbs_Line)
+            if (aCT == Line)
             {
                 return bRet;
             }
         }
-        else if (aST2 == GeomAbs_Cylinder)
+        else if (aST2 == SurfaceKind.Cylinder)
         {
-            gp_Dir aD1 = aS1.Plane().Axis().Direction();
-            gp_Dir aD2 = aS2.Cylinder().Axis().Direction();
+            Direction3D aD1 = aS1.Plane().Axis().Direction();
+            Direction3D aD2 = aS2.Cylinder().Axis().Direction();
             //
-            if (aCT == GeomAbs_Line && aD1.IsNormal(aD2, aPA))
+            if (aCT == Line && aD1.IsNormal(aD2, aPA))
             {
                 return bRet;
             }
-            else if (aCT == GeomAbs_Circle && aD1.IsParallel(aD2, aPA))
+            else if (aCT == Circle && aD1.IsParallel(aD2, aPA))
             {
                 return bRet;
             }
         }
-        else if (aST2 == GeomAbs_Cone)
+        else if (aST2 == SurfaceKind.Cone)
         {
-            gp_Dir aD1 = aS1.Plane().Axis().Direction();
-            gp_Dir aD2 = aS2.Cone().Axis().Direction();
-            if (aCT == GeomAbs_Circle && aD1.IsParallel(aD2, aPA))
+            Direction3D aD1 = aS1.Plane().Axis().Direction();
+            Direction3D aD2 = aS2.Cone().Axis().Direction();
+            if (aCT == Circle && aD1.IsParallel(aD2, aPA))
             {
                 return bRet;
             }
@@ -594,7 +597,7 @@ internal static partial class ChFi3d_Builder_0
                 CW = Intersection.Point(iip).W();
                 if (C.IsPeriodic())
                 {
-                    CW = ElCLib.InPeriod(CW, uf - tolc, uf - tolc + C.Period());
+                    CW = global::Kerf.Engine.Geometry.ElCLib.InPeriod(CW, uf - tolc, uf - tolc + C.Period());
                 }
                 if (uf - tolc <= CW && ul + tolc >= CW)
                 {
@@ -631,32 +634,32 @@ internal static partial class ChFi3d_Builder_0
     /// <summary>The point, the guide's tangent and the radius at the parameter <paramref name="p"/> of the side
     /// <paramref name="jf"/> of the surface data <paramref name="i"/> of the stripe.</summary>
     internal static void ChFi3d_ExtrSpineCarac(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe cd, int i, double p,
-                                               int jf, int sens, out gp_Pnt P, out gp_Vec V, out double R)
+                                               int jf, int sens, out Point3D P, out Vector3D V, out double R)
     {
         // check if it is necessary to add D1,D2 and DR
         // Attention for approximated surfaces it is assumed that e
         // the parameters of the pcurve are the same as of
         // elspine used for its construction.
         Geom_Surface fffil = DStr.Surface(cd.SetOfSurfData()!.Value(i).Surf()).Surface()!;
-        gp_Pnt2d pp = cd.SetOfSurfData()!.Value(i).Interference(jf).PCurveOnSurf()!.Value(p);
+        Point2D pp = cd.SetOfSurfData()!.Value(i).Interference(jf).PCurveOnSurf()!.Value(p);
         GeomAdaptor_Surface gs = new(fffil);
         P = fffil.Value(pp.X(), pp.Y());
-        gp_Pnt Pbid;
-        gp_Vec Vbid;
+        Point3D Pbid;
+        Vector3D Vbid;
         switch (gs.GetType())
         {
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder cyl = gs.Cylinder();
+                Cylinder cyl = gs.Cylinder();
                 R = cyl.Radius();
-                ElSLib.D1(pp.X(), pp.Y(), cyl, out Pbid, out Vbid, out V);
+                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X(), pp.Y(), cyl, out Pbid, out Vbid, out V);
             }
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
-                gp_Torus tor = gs.Torus();
+                Torus tor = gs.Torus();
                 R = tor.MinorRadius();
-                ElSLib.D1(pp.X(), pp.Y(), tor, out Pbid, out V, out Vbid);
+                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X(), pp.Y(), tor, out Pbid, out V, out Vbid);
             }
                 break;
             default:
@@ -702,27 +705,27 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The circular guide of a corner from the points and tangents at the ends of the two fillets' guides,
     /// or null when they turn the same way.</summary>
-    internal static Geom_Circle? ChFi3d_CircularSpine(ref double WFirst, ref double WLast, in gp_Pnt Pdeb,
-                                                      in gp_Vec Vdeb, in gp_Pnt Pfin, in gp_Vec Vfin, double rad)
+    internal static Geom_Circle? ChFi3d_CircularSpine(ref double WFirst, ref double WLast, in Point3D Pdeb,
+                                                      in Vector3D Vdeb, in Point3D Pfin, in Vector3D Vfin, double rad)
     {
-        gp_Circ ccc = new();
-        gp_Pln Pl1 = new(Pdeb, new gp_Dir(Vdeb)), Pl2 = new(Pfin, new gp_Dir(Vfin));
-        IntAna_QuadQuadGeo LInt = new(Pl1, Pl2, Precision.Angular(), Precision.Confusion());
-        gp_Lin li;
+        Circle3D ccc = new();
+        Plane3D Pl1 = new(Pdeb, new Direction3D(Vdeb)), Pl2 = new(Pfin, new Direction3D(Vfin));
+        IntAna_QuadQuadGeo LInt = new(Pl1, Pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Line3D li;
         if (LInt.IsDone())
         {
             li = LInt.Line(1);
-            gp_Pnt cendeb = ElCLib.Value(ElCLib.Parameter(li, Pdeb), li);
-            gp_Pnt cenfin = ElCLib.Value(ElCLib.Parameter(li, Pfin), li);
-            gp_Vec vvdeb = new(cendeb, Pdeb);
-            gp_Vec vvfin = new(cenfin, Pfin);
-            gp_Dir dddeb = new(vvdeb);
-            gp_Dir ddfin = new(vvfin);
+            Point3D cendeb = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(li, Pdeb), li);
+            Point3D cenfin = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(li, Pfin), li);
+            Vector3D vvdeb = new(cendeb, Pdeb);
+            Vector3D vvfin = new(cenfin, Pfin);
+            Direction3D dddeb = new(vvdeb);
+            Direction3D ddfin = new(vvfin);
             if (Vdeb.Crossed(vvdeb).Dot(Vfin.Crossed(vvfin)) > 0.0)
             {
                 return null;
             }
-            gp_Ax2 circax2 = new(cendeb, dddeb ^ ddfin, dddeb);
+            Frame3D circax2 = new(cendeb, dddeb ^ ddfin, dddeb);
             ccc.SetPosition(circax2);
             ccc.SetRadius(rad);
             WFirst = 0.0;
@@ -742,9 +745,9 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The cubic Bézier guide of a corner from the points and tangents at the ends of the two fillets'
     /// guides; scales <paramref name="vd"/> and <paramref name="vf"/>.</summary>
-    internal static Geom_BezierCurve ChFi3d_Spine(in gp_Pnt pd, ref gp_Vec vd, in gp_Pnt pf, ref gp_Vec vf, double R)
+    internal static Geom_BezierCurve ChFi3d_Spine(in Point3D pd, ref Vector3D vd, in Point3D pf, ref Vector3D vf, double R)
     {
-        NCollection_Array1<gp_Pnt> pol = new(1, 4);
+        NCollection_Array1<Point3D> pol = new(1, 4);
         double fac = 0.5 * Math.Tan((Math.PI - vd.Angle(vf)) * 0.5);
         pol[1] = pd;
         vd.Multiply(fac * R);
@@ -791,7 +794,7 @@ internal static partial class ChFi3d_Builder_0
             face = TopoDS.Face(DStr.Shape(fd1.Index(jf1)));
             if (face.IsNull())
             {
-                throw new Standard_NullObject("ChFi3d_IsInFront : Trying to check orientation of NULL face");
+                throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             OrSave1 = cd1.Orientation(jf1);
             Or = OrFace1 = face.Orientation();
@@ -799,7 +802,7 @@ internal static partial class ChFi3d_Builder_0
             TopoDS_Shape shape2 = DStr.Shape(fd2.Index(jf2));
             if (shape2.IsNull())
             {
-                throw new Standard_NullObject("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
+                throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
             OrFace2 = shape2.Orientation();
             visavis = true;
@@ -808,7 +811,7 @@ internal static partial class ChFi3d_Builder_0
             int kf1 = jf1, kf2 = jf2;
             double pref1 = fd1.Interference(kf1).Parameter(isf1);
             double pref2 = fd2.Interference(kf2).Parameter(isf2);
-            gp_Pnt2d P2d = new();
+            Point2D P2d = new();
             if (Check2dDistance)
             {
                 P2d = BRep_Tool.Parameters(Vtx, face);
@@ -848,7 +851,7 @@ internal static partial class ChFi3d_Builder_0
             face = TopoDS.Face(DStr.Shape(fd1.Index(jf1)));
             if (face.IsNull())
             {
-                throw new Standard_NullObject("ChFi3d_IsInFront : Trying to check orientation of NULL face");
+                throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             OrSave1 = cd1.Orientation(jf1);
             Or = OrFace1 = face.Orientation();
@@ -856,7 +859,7 @@ internal static partial class ChFi3d_Builder_0
             TopoDS_Shape shape2 = DStr.Shape(fd2.Index(jf2));
             if (shape2.IsNull())
             {
-                throw new Standard_NullObject("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
+                throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
             OrFace2 = shape2.Orientation();
             visavis = true;
@@ -865,7 +868,7 @@ internal static partial class ChFi3d_Builder_0
             int kf1 = jf1, kf2 = jf2;
             double pref1 = fd1.Interference(kf1).Parameter(isf1);
             double pref2 = fd2.Interference(kf2).Parameter(isf2);
-            gp_Pnt2d P2d = new();
+            Point2D P2d = new();
             if (Check2dDistance)
             {
                 P2d = BRep_Tool.Parameters(vtx, face);
@@ -921,7 +924,7 @@ internal static partial class ChFi3d_Builder_0
     /// <paramref name="V3d"/> on the tangent plane spanned by <paramref name="D1u"/> and <paramref name="D1v"/>
     /// (least squares).
     /// </summary>
-    internal static void ChFi3d_Coefficient(in gp_Vec V3d, in gp_Vec D1u, in gp_Vec D1v, out double DU, out double DV)
+    internal static void ChFi3d_Coefficient(in Vector3D V3d, in Vector3D D1u, in Vector3D D1v, out double DU, out double DV)
     {
         double AA = D1u.SquareMagnitude();
         double BB = D1u.Dot(D1v);

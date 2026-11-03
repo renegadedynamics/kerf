@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: QR decomposition by Householder reflections.</summary>
 public static partial class MathLin
@@ -12,11 +13,11 @@ public static partial class MathLin
     /// <summary>Result for QR decomposition using Householder reflections.</summary>
     public struct QRResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Orthogonal matrix Q (m x m).</summary>
-        public math_Matrix? Q;
+        public Matrix? Q;
         /// <summary>Upper triangular matrix R (m x n).</summary>
-        public math_Matrix? R;
+        public Matrix? R;
         /// <summary>Numerical rank.</summary>
         public int Rank = 0;
 
@@ -24,295 +25,295 @@ public static partial class MathLin
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(QRResult theResult) => theResult.IsDone();
+        public static explicit operator bool(QRResult result) => result.IsDone;
 
-        public static bool operator true(QRResult theResult) => theResult.IsDone();
+        public static bool operator true(QRResult result) => result.IsDone;
 
-        public static bool operator false(QRResult theResult) => !theResult.IsDone();
+        public static bool operator false(QRResult result) => !result.IsDone;
     }
 
     /// <summary>QR decomposition A = Q * R of an m x n matrix (m &gt;= n) by Householder reflections.</summary>
-    public static QRResult QR(math_Matrix theA, double theTolerance = 1.0e-20)
+    public static QRResult QR(Matrix a, double tolerance = 1.0e-20)
     {
-        QRResult aResult = new();
+        QRResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1; // Number of rows
-        int aN = aColUpper - aColLower + 1; // Number of columns
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1; // Number of rows
+        int n = colUpper - colLower + 1; // Number of columns
 
-        if (aM < aN)
+        if (m < n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Working copy of A that will become R
-        math_Matrix aR = new(aRowLower, aRowUpper, aColLower, aColUpper);
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        Matrix r = new(rowLower, rowUpper, colLower, colUpper);
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            for (int j = aColLower; j <= aColUpper; ++j)
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aR[i, j] = theA[i, j];
+                r[i, j] = a[i, j];
             }
         }
 
         // Q starts as identity
-        math_Matrix aQ = new(aRowLower, aRowUpper, aRowLower, aRowUpper, 0.0);
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        Matrix q = new(rowLower, rowUpper, rowLower, rowUpper, 0.0);
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            aQ[i, i] = 1.0;
+            q[i, i] = 1.0;
         }
 
         // Householder vector storage
-        math_Vector aV = new(aRowLower, aRowUpper);
+        math_Vector v = new(rowLower, rowUpper);
 
-        aResult.Rank = 0;
+        result.Rank = 0;
 
         // Apply Householder reflections to each column
-        for (int j = aColLower; j <= aColUpper; ++j)
+        for (int j = colLower; j <= colUpper; ++j)
         {
-            int aJOffset = j - aColLower;
+            int jOffset = j - colLower;
 
             // Compute norm of column below diagonal
-            double aNorm = 0.0;
-            for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+            double norm = 0.0;
+            for (int i = rowLower + jOffset; i <= rowUpper; ++i)
             {
-                aNorm += MathUtils.Sqr(aR[i, j]);
+                norm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(r[i, j]);
             }
-            aNorm = Math.Sqrt(aNorm);
+            norm = Math.Sqrt(norm);
 
-            if (aNorm < theTolerance)
+            if (norm < tolerance)
             {
                 // Column is essentially zero, skip
                 continue;
             }
 
-            ++aResult.Rank;
+            ++result.Rank;
 
             // Compute Householder vector v
-            double aAlpha = aR[aRowLower + aJOffset, j];
-            double aBeta = (aAlpha >= 0.0) ? -aNorm : aNorm;
+            double alpha = r[rowLower + jOffset, j];
+            double beta = (alpha >= 0.0) ? -norm : norm;
 
             // v = [0,...,0, x_j - beta, x_{j+1}, ..., x_m]
-            for (int i = aRowLower; i < aRowLower + aJOffset; ++i)
+            for (int i = rowLower; i < rowLower + jOffset; ++i)
             {
-                aV[i] = 0.0;
+                v[i] = 0.0;
             }
-            aV[aRowLower + aJOffset] = aAlpha - aBeta;
-            for (int i = aRowLower + aJOffset + 1; i <= aRowUpper; ++i)
+            v[rowLower + jOffset] = alpha - beta;
+            for (int i = rowLower + jOffset + 1; i <= rowUpper; ++i)
             {
-                aV[i] = aR[i, j];
+                v[i] = r[i, j];
             }
 
             // Compute tau = 2 / (v^T v)
-            double aVNormSq = 0.0;
-            for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+            double vNormSq = 0.0;
+            for (int i = rowLower + jOffset; i <= rowUpper; ++i)
             {
-                aVNormSq += MathUtils.Sqr(aV[i]);
+                vNormSq += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(v[i]);
             }
 
-            if (aVNormSq < MathUtils.THE_ZERO_TOL)
+            if (vNormSq < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
                 continue;
             }
 
-            double aTau = 2.0 / aVNormSq;
+            double tau = 2.0 / vNormSq;
 
             // Apply H = I - tau * v * v^T to remaining columns of R
             // R := H * R
-            for (int k = j; k <= aColUpper; ++k)
+            for (int k = j; k <= colUpper; ++k)
             {
                 // Compute v^T * R(:,k)
-                double aVdotRk = 0.0;
-                for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+                double vdotRk = 0.0;
+                for (int i = rowLower + jOffset; i <= rowUpper; ++i)
                 {
-                    aVdotRk += aV[i] * aR[i, k];
+                    vdotRk += v[i] * r[i, k];
                 }
 
                 // R(:,k) := R(:,k) - tau * (v^T * R(:,k)) * v
-                for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+                for (int i = rowLower + jOffset; i <= rowUpper; ++i)
                 {
-                    aR[i, k] -= aTau * aVdotRk * aV[i];
+                    r[i, k] -= tau * vdotRk * v[i];
                 }
             }
 
             // Apply H to Q: Q := Q * H = Q - tau * Q * v * v^T
-            for (int k = aRowLower; k <= aRowUpper; ++k)
+            for (int k = rowLower; k <= rowUpper; ++k)
             {
                 // Compute Q(k,:) * v
-                double aQkV = 0.0;
-                for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+                double qkV = 0.0;
+                for (int i = rowLower + jOffset; i <= rowUpper; ++i)
                 {
-                    aQkV += aQ[k, i] * aV[i];
+                    qkV += q[k, i] * v[i];
                 }
 
                 // Q(k,:) := Q(k,:) - tau * (Q(k,:) * v) * v^T
-                for (int i = aRowLower + aJOffset; i <= aRowUpper; ++i)
+                for (int i = rowLower + jOffset; i <= rowUpper; ++i)
                 {
-                    aQ[k, i] -= aTau * aQkV * aV[i];
+                    q[k, i] -= tau * qkV * v[i];
                 }
             }
         }
 
         // Zero out below-diagonal elements of R for cleanliness
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            for (int j = aColLower; j < aColLower + (i - aRowLower) && j <= aColUpper; ++j)
+            for (int j = colLower; j < colLower + (i - rowLower) && j <= colUpper; ++j)
             {
-                aR[i, j] = 0.0;
+                r[i, j] = 0.0;
             }
         }
 
-        aResult.Q = aQ;
-        aResult.R = aR;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Q = q;
+        result.R = r;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Least squares solution of Ax = b (m x n, m &gt;= n) by QR decomposition.</summary>
     /// <remarks>On a singular R the result has status Singular and a partly filled Solution, as in OCCT.</remarks>
-    public static LinearResult SolveQR(math_Matrix theA, math_Vector theB, double theTolerance = 1.0e-20)
+    public static LinearResult SolveQR(Matrix a, math_Vector b, double tolerance = 1.0e-20)
     {
-        LinearResult aResult = new();
+        LinearResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aM)
+        if (b.Length() != m)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Perform QR decomposition
-        QRResult aQR = QR(theA, theTolerance);
-        if (!aQR.IsDone())
+        QRResult qr = QR(a, tolerance);
+        if (!qr.IsDone)
         {
-            aResult.Status = aQR.Status;
-            return aResult;
+            result.Status = qr.Status;
+            return result;
         }
 
-        math_Matrix aQ = aQR.Q!;
-        math_Matrix aR = aQR.R!;
+        Matrix q = qr.Q!;
+        Matrix r = qr.R!;
 
         // Compute c = Q^T * b
-        math_Vector aC = new(aRowLower, aRowUpper, 0.0);
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        math_Vector c = new(rowLower, rowUpper, 0.0);
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            double aSum = 0.0;
-            for (int k = aRowLower; k <= aRowUpper; ++k)
+            double sum = 0.0;
+            for (int k = rowLower; k <= rowUpper; ++k)
             {
-                aSum += aQ[k, i] * theB[theB.Lower() + k - aRowLower];
+                sum += q[k, i] * b[b.Lower() + k - rowLower];
             }
-            aC[i] = aSum;
+            c[i] = sum;
         }
 
         // Back substitution: R[1:n, 1:n] * x = c[1:n]
-        math_Vector aSolution = new(aColLower, aColUpper, 0.0);
-        aResult.Solution = aSolution;
+        math_Vector solution = new(colLower, colUpper, 0.0);
+        result.Solution = solution;
 
-        for (int i = aColUpper; i >= aColLower; --i)
+        for (int i = colUpper; i >= colLower; --i)
         {
-            int aIOffset = i - aColLower;
-            double aDiag = aR[aRowLower + aIOffset, i];
+            int iOffset = i - colLower;
+            double diag = r[rowLower + iOffset, i];
 
-            if (Math.Abs(aDiag) < theTolerance)
+            if (Math.Abs(diag) < tolerance)
             {
-                aResult.Status = Status.Singular;
-                return aResult;
+                result.Status = Status.Singular;
+                return result;
             }
 
-            double aSum = aC[aRowLower + aIOffset];
-            for (int k = i + 1; k <= aColUpper; ++k)
+            double sum = c[rowLower + iOffset];
+            for (int k = i + 1; k <= colUpper; ++k)
             {
-                aSum -= aR[aRowLower + aIOffset, k] * aSolution[k];
+                sum -= r[rowLower + iOffset, k] * solution[k];
             }
-            aSolution[i] = aSum / aDiag;
+            solution[i] = sum / diag;
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Least squares solutions for multiple right-hand sides (B is m x p) by QR decomposition.</summary>
-    public static LinearMultipleResult SolveQRMultiple(math_Matrix theA, math_Matrix theB, double theTolerance = 1.0e-20)
+    public static LinearMultipleResult SolveQRMultiple(Matrix a, Matrix b, double tolerance = 1.0e-20)
     {
-        LinearMultipleResult aResult = new();
+        LinearMultipleResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
 
         // Check dimensions
-        if (theB.RowNumber() != theA.RowNumber())
+        if (b.RowNumber() != a.RowNumber())
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Perform QR decomposition
-        QRResult aQR = QR(theA, theTolerance);
-        if (!aQR.IsDone())
+        QRResult qr = QR(a, tolerance);
+        if (!qr.IsDone)
         {
-            aResult.Status = aQR.Status;
-            return aResult;
+            result.Status = qr.Status;
+            return result;
         }
 
-        math_Matrix aQ = aQR.Q!;
-        math_Matrix aR = aQR.R!;
+        Matrix q = qr.Q!;
+        Matrix r = qr.R!;
 
         // Solve for each column of B
-        math_Matrix aX = new(aColLower, aColUpper, theB.LowerCol(), theB.UpperCol(), 0.0);
+        Matrix x = new(colLower, colUpper, b.LowerCol(), b.UpperCol(), 0.0);
 
-        for (int j = theB.LowerCol(); j <= theB.UpperCol(); ++j)
+        for (int j = b.LowerCol(); j <= b.UpperCol(); ++j)
         {
             // Compute c = Q^T * b_j
-            math_Vector aC = new(aRowLower, aRowUpper, 0.0);
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            math_Vector c = new(rowLower, rowUpper, 0.0);
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
-                double aSum = 0.0;
-                for (int k = aRowLower; k <= aRowUpper; ++k)
+                double sum = 0.0;
+                for (int k = rowLower; k <= rowUpper; ++k)
                 {
-                    int aBRow = theB.LowerRow() + (k - aRowLower);
-                    aSum += aQ[k, i] * theB[aBRow, j];
+                    int bRow = b.LowerRow() + (k - rowLower);
+                    sum += q[k, i] * b[bRow, j];
                 }
-                aC[i] = aSum;
+                c[i] = sum;
             }
 
             // Back substitution: R[1:n,1:n] * x_j = c[1:n]
-            for (int i = aColUpper; i >= aColLower; --i)
+            for (int i = colUpper; i >= colLower; --i)
             {
-                int aIOffset = i - aColLower;
-                int aRRow = aRowLower + aIOffset;
-                double aDiag = aR[aRRow, i];
+                int iOffset = i - colLower;
+                int rRow = rowLower + iOffset;
+                double diag = r[rRow, i];
 
-                if (Math.Abs(aDiag) < theTolerance)
+                if (Math.Abs(diag) < tolerance)
                 {
-                    aResult.Status = Status.Singular;
-                    return aResult;
+                    result.Status = Status.Singular;
+                    return result;
                 }
 
-                double aSum = aC[aRRow];
-                for (int k = i + 1; k <= aColUpper; ++k)
+                double sum = c[rRow];
+                for (int k = i + 1; k <= colUpper; ++k)
                 {
-                    aSum -= aR[aRRow, k] * aX[k, j];
+                    sum -= r[rRow, k] * x[k, j];
                 }
-                aX[i, j] = aSum / aDiag;
+                x[i, j] = sum / diag;
             }
         }
 
-        aResult.Solutions = aX;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Solutions = x;
+        result.Status = Status.OK;
+        return result;
     }
 }

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -158,13 +160,13 @@ public sealed class TopOpeBRepBuild_BlockBuilder
     }
 
     /// <summary>The current element of <paramref name="BI"/>.</summary>
-    /// <exception cref="Standard_Failure">The iterator is at its end.</exception>
+    /// <exception cref="FailureException">The iterator is at its end.</exception>
     public TopoDS_Shape Element(in TopOpeBRepBuild_BlockIterator BI)
     {
         bool isbound = BI.More();
         if (!isbound)
         {
-            throw new Standard_Failure("OutOfRange");
+            throw new FailureException("OutOfRange");
         }
 
         int index = BI.Value();
@@ -173,13 +175,13 @@ public sealed class TopOpeBRepBuild_BlockBuilder
     }
 
     /// <summary>The element of index <paramref name="index"/>.</summary>
-    /// <exception cref="Standard_Failure">There is none.</exception>
+    /// <exception cref="FailureException">There is none.</exception>
     public TopoDS_Shape Element(int index)
     {
         bool isbound = myOrientedShapeMapIsValid.IsBound(index);
         if (!isbound)
         {
-            throw new Standard_Failure("OutOfRange");
+            throw new FailureException("OutOfRange");
         }
 
         TopoDS_Shape E = myOrientedShapeMap.FindKey(index);
@@ -187,13 +189,13 @@ public sealed class TopOpeBRepBuild_BlockBuilder
     }
 
     /// <summary>The index of the element <paramref name="E"/>.</summary>
-    /// <exception cref="Standard_Failure">It isn't an element.</exception>
+    /// <exception cref="FailureException">It isn't an element.</exception>
     public int Element(in TopoDS_Shape E)
     {
         bool isbound = myOrientedShapeMap.Contains(E);
         if (!isbound)
         {
-            throw new Standard_Failure("OutOfRange");
+            throw new FailureException("OutOfRange");
         }
 
         int I = myOrientedShapeMap.FindIndex(E);

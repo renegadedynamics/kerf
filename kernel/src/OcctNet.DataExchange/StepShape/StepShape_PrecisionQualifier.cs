@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepShape_PrecisionQualifier : Standard_Transient
+public class StepShape_PrecisionQualifier : Transient
 {
     private int thePrecisionValue;
 

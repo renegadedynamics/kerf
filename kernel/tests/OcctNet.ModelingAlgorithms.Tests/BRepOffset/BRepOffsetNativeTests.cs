@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
@@ -73,7 +74,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
         return ($"{theHead} {aNb}", theText.Length > 0 && theText[^1] != '\n' ? theText + "\n" : theText);
     }
 
-    private static (string, string) Throw(Exception theE) => ("THROW " + theE.GetType().Name, "");
+    private static (string, string) Throw(Exception theE) => ("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()), "");
 
     // The port's records for the native header theHead on theShape (one, or two for ANA: the types and EXPLODE)
     private static List<(string Head, string Body)> Port(string theHead, in TopoDS_Shape theShape)
@@ -117,7 +118,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     }
                     aRes.Add((anExplode.ToString(), ""));
                 }
-                catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -132,10 +133,10 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 {
                     var anOff = new BRepOffset_Offset(TopoDS.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
                     TopoDS_Face aF = anOff.Face();
-                    Assert.True(aF.TShape()!.IsFrozen());
+                    Assert.True(aF.TShape()!.IsFrozen);
                     aRes.Add(Block("STATUS " + ((int)anOff.Status()).ToString(CultureInfo.InvariantCulture), Text(aF)));
                 }
-                catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
                 {
                     aRes.Add(Throw(e));
                 }
@@ -153,12 +154,12 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     if (aMaker.IsDone())
                     {
                         TopoDS_Shape aR = aMaker.GetResultShape();
-                        Assert.True(aR.TShape()!.IsFrozen());
+                        Assert.True(aR.TShape()!.IsFrozen);
                         aText = Text(aR);
                     }
                     aRes.Add(Block($"DONE {(aMaker.IsDone() ? "1" : "0")} {((int)aMaker.GetError()).ToString(CultureInfo.InvariantCulture)}", aText));
                 }
-                catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                catch (FailureException e) when (e is not (ImmutableObjectException or TopoDS_LockedShape))
                 {
                     aRes.Add(Throw(e));
                 }

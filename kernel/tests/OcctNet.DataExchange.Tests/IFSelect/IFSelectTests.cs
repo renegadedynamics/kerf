@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using OcctNet.DataExchange.Tests.Interface;
 using static Occt.IFSelect_EditValue;
@@ -19,7 +20,7 @@ public class IFSelectTests
 {
     internal const string ToyFile = "A B C\nB C\nC\nD E\nE D\nF\n!G\n?H\n";
 
-    private static string Names(NCollection_HSequence<Standard_Transient>? theList) =>
+    private static string Names(NCollection_HSequence<Transient>? theList) =>
         theList is null ? "null" : string.Join(" ", Enumerable.Range(1, theList.Length()).Select(i => theList.Value(i)!.ToString()));
 
     // OCCT's selections deducing lists from a graph (shared, sharing, complete results) need its statuses: a session
@@ -201,7 +202,7 @@ public class IFSelectTests
     {
         IFSelect_WorkSession WS = Session();
         Interface_InterfaceModel M = WS.Model()!;
-        Standard_Transient A = WS.StartingEntity(1)!;
+        Transient A = WS.StartingEntity(1)!;
         Assert.Equal("ToyEntity", new IFSelect_SignType().Value(A, M));
         Assert.Equal("ToyEntity", new IFSelect_SignType(true).Value(A, M)); // the part after the first '_' (none here)
         Assert.Equal("HAsciiString", new IFSelect_SignType(true).Value(new TCollection_HAsciiString("x"), M));
@@ -213,7 +214,7 @@ public class IFSelectTests
         Assert.Equal("Data-Warning", IFSelect_SignValidity.CVal(WS.StartingEntity(8), M));
         Assert.True(IFSelect_Signature.MatchValue("ToyEntity", "Ent", false));
         Assert.False(IFSelect_Signature.MatchValue("ToyEntity", "Ent", true));
-        Assert.Throws<Standard_OutOfRange>(() => IFSelect_Signature.MatchValue("ToyEntity", "", false)); // OCCT
+        Assert.Throws<OutOfRangeException>(() => IFSelect_Signature.MatchValue("ToyEntity", "", false)); // OCCT
         Assert.Equal("12", IFSelect_Signature.IntValue(12));
         // a counter of validities
         var cnt = new IFSelect_SignCounter(new IFSelect_SignValidity(), true, true);
@@ -274,7 +275,7 @@ public class IFSelectTests
         Assert.Null(WS.GiveList("nothing")); // neither an entity nor a selection
         Assert.Equal("A F G H", Names(WS.GiveList(WS.NamedItem("roots"))));
         Assert.Equal("A B C D E F G H", Names(WS.GiveList(WS.Model())));
-        NCollection_HSequence<Standard_Transient>? aRoots = WS.GiveList("roots");
+        NCollection_HSequence<Transient>? aRoots = WS.GiveList("roots");
         Assert.Same(aRoots, WS.GiveList(aRoots)); // a list (a transient): itself
         Assert.Equal("B C", Names(WS.GiveListFromList("shared", aRoots)));
         Assert.Equal("C", Names(WS.GiveList(WS.StartingEntity(3))));
@@ -400,7 +401,7 @@ public class IFSelectTests
         Assert.Same(sign, IFSelect_Functions.GiveDispatch(WS, "bysign(validity)"));
         Assert.Null(IFSelect_Functions.GiveDispatch(WS, "bysign(nothing)"));
         // OCCT: an unknown name without parentheses raises (TCollection_AsciiString::SetValue(0, ...))
-        Assert.Throws<Standard_OutOfRange>(() => IFSelect_Functions.GiveDispatch(WS, "unknown"));
+        Assert.Throws<OutOfRangeException>(() => IFSelect_Functions.GiveDispatch(WS, "unknown"));
     }
 
     [Fact]

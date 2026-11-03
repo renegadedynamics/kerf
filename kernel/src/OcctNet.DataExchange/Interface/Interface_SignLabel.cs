@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -28,7 +30,7 @@ public class Interface_SignLabel : MoniTool_SignText
     /// <summary>
     /// Considers context as an InterfaceModel and returns the Label computed by it
     /// </summary>
-    public override string Text(Standard_Transient? ent, Standard_Transient? context)
+    public override string Text(Transient? ent, Transient? context)
     {
         string atext = "";
         Interface_InterfaceModel model = (context as Interface_InterfaceModel);

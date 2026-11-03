@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity RoleAssociation
 /// </summary>
-public class StepBasic_RoleAssociation : Standard_Transient
+public class StepBasic_RoleAssociation : Transient
 {
     private StepBasic_ObjectRole theRole;
     private StepBasic_RoleSelect theItemWithRole = new StepBasic_RoleSelect();

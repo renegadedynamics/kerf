@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// </summary>
 public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
 {
-    private gp_Ax2 myPosition = new();
+    private Frame3D myPosition = new();
 
     /// <summary>A builder with the default parameters, about the global Z axis.</summary>
     public HelixGeom_BuilderHelix()
@@ -18,18 +22,18 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
     }
 
     /// <summary>Sets the coordinate system of the helix (its Z axis is the helix's axis).</summary>
-    public void SetPosition(in gp_Ax2 aAx2)
+    public void SetPosition(in Frame3D aAx2)
     {
         myPosition = aAx2;
     }
 
     /// <summary>The coordinate system of the helix.</summary>
-    public gp_Ax2 Position() => myPosition;
+    public Frame3D Position() => myPosition;
 
     /// <summary>
     /// Builds the curves. <see cref="HelixGeom_BuilderApproxCurve.ErrorStatus"/> is 2 if an approximation fails.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The helix parameters are invalid.</exception>
+    /// <exception cref="ConstructionErrorException">The helix parameters are invalid.</exception>
     public override void Perform()
     {
         myErrorStatus = 0;
@@ -81,7 +85,7 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
                 {
                     // Optimization: for cylindrical helixes, reuse first coil with translation
                     Geom_Curve aCi;
-                    gp_Pnt aP1, aPi = new();
+                    Point3D aP1, aPi = new();
 
                     Geom_Curve aC1 = myCurves[1];
                     aC1.D0(aC1.FirstParameter(), out aP1);
@@ -143,8 +147,8 @@ public sealed class HelixGeom_BuilderHelix : HelixGeom_BuilderHelixGen
         }
         // Apply coordinate system transformation to all curves
         // Transformation
-        gp_Trsf aTrsf = new();
-        gp_Ax3 aAx3 = new(), aAx3x = new(myPosition);
+        Transform3D aTrsf = new();
+        CoordinateSystem aAx3 = new(), aAx3x = new(myPosition);
         // Set transformation from standard coordinate system to helix position
         aTrsf.SetDisplacement(aAx3, aAx3x);
         // Apply transformation to all generated curves (new and unfrozen: the coil builder's own, or translated copies)

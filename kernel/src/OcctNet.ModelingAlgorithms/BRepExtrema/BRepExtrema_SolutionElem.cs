@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.BRepExtrema_SupportType;
 
 namespace Occt;
@@ -17,7 +19,7 @@ namespace Occt;
 public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_SolutionElem>
 {
     private readonly double myDist;
-    private readonly gp_Pnt myPoint;
+    private readonly Point3D myPoint;
     private readonly BRepExtrema_SupportType mySupType;
     private readonly TopoDS_Vertex myVertex;
     private readonly TopoDS_Edge myEdge;
@@ -29,14 +31,14 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     public BRepExtrema_SolutionElem()
     {
         myDist = 0.0;
-        myPoint = new gp_Pnt(0.0, 0.0, 0.0);
+        myPoint = new Point3D(0.0, 0.0, 0.0);
         mySupType = BRepExtrema_IsVertex;
         myPar1 = 0.0;
         myPar2 = 0.0;
     }
 
     /// <summary>A solution at a vertex.</summary>
-    public BRepExtrema_SolutionElem(double theDist, in gp_Pnt thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Vertex theVertex)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Vertex theVertex)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -47,7 +49,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     }
 
     /// <summary>A solution on an edge at the parameter <paramref name="theParam"/>.</summary>
-    public BRepExtrema_SolutionElem(double theDist, in gp_Pnt thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Edge theEdge, double theParam)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Edge theEdge, double theParam)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -58,7 +60,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     }
 
     /// <summary>A solution in a face at the parameters (<paramref name="theU"/>, <paramref name="theV"/>).</summary>
-    public BRepExtrema_SolutionElem(double theDist, in gp_Pnt thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Face theFace, double theU, double theV)
+    public BRepExtrema_SolutionElem(double theDist, in Point3D thePoint, BRepExtrema_SupportType theSolType, in TopoDS_Face theFace, double theU, double theV)
     {
         myDist = theDist;
         myPoint = thePoint;
@@ -72,7 +74,7 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
     public double Dist() => myDist;
 
     /// <summary>The solution point.</summary>
-    public gp_Pnt Point() => myPoint;
+    public Point3D Point() => myPoint;
 
     /// <summary>The kind of support: a vertex, on an edge or inside a face.</summary>
     public BRepExtrema_SupportType SupportKind() => mySupType;
@@ -111,5 +113,5 @@ public readonly struct BRepExtrema_SolutionElem : IEquatable<BRepExtrema_Solutio
 
     public override string ToString() =>
         $"BRepExtrema_SolutionElem({mySupType}, {myPoint}, "
-        + gp.Format("", myDist, myPar1, myPar2) + ")";
+        + Constants.Format("", myDist, myPar1, myPar2) + ")";
 }

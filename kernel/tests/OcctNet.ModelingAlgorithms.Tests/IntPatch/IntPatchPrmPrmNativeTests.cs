@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -23,7 +24,7 @@ public class IntPatchPrmPrmNativeTests
     // tools/walkrec's main.cpp, line for line.
     internal static Geom_BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
         {
             { 0.10, -0.20, 0.30, 0.00 },
@@ -42,7 +43,7 @@ public class IntPatchPrmPrmNativeTests
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(theX0 + (theX1 - theX0) * (i - 1) / 3.0, theY0 + (theY1 - theY0) * (j - 1) / 3.0,
+                aPoles[i, j] = new Point3D(theX0 + (theX1 - theX0) * (i - 1) / 3.0, theY0 + (theY1 - theY0) * (j - 1) / 3.0,
                                           theTable == 0 ? aZ[i - 1, j - 1] : aZB[i - 1, j - 1]);
             }
         }
@@ -58,13 +59,13 @@ public class IntPatchPrmPrmNativeTests
     internal static Geom_BSplineSurface Bumpy(int theSeed, double theZ0)
     {
         const int aN = 30;
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aN, 1, aN);
+        var aPoles = new NCollection_Array2<Point3D>(1, aN, 1, aN);
         for (int i = 1; i <= aN; i++)
         {
             for (int j = 1; j <= aN; j++)
             {
                 int aR = (i * 7919 + j * 104729 + theSeed * 31) % 97;
-                aPoles[i, j] = new gp_Pnt(-2.0 + 4.0 * (i - 1) / (aN - 1), -2.0 + 4.0 * (j - 1) / (aN - 1),
+                aPoles[i, j] = new Point3D(-2.0 + 4.0 * (i - 1) / (aN - 1), -2.0 + 4.0 * (j - 1) / (aN - 1),
                                           theZ0 + 0.4 * aR / 97.0 - 0.2);
             }
         }
@@ -82,12 +83,12 @@ public class IntPatchPrmPrmNativeTests
     {
         double[] aX = [-1.0, 2.0, 2.0, 0.0, 0.0, 1.5];
         double[] aZ = [0.0, 0.0, 1.2, 1.2, -0.6, -0.6];
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 6, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 6, 1, 4);
         for (int i = 1; i <= 6; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(aX[i - 1], -1.0 + 2.0 * (j - 1) / 3.0, aZ[i - 1] + 0.05 * (j - 1));
+                aPoles[i, j] = new Point3D(aX[i - 1], -1.0 + 2.0 * (j - 1) / 3.0, aZ[i - 1] + 0.05 * (j - 1));
             }
         }
         var aUKnots = new NCollection_Array1<double>(1, 3);
@@ -112,7 +113,7 @@ public class IntPatchPrmPrmNativeTests
     internal static Geom_BSplineSurface PatchB() => Patch(-2.0, 2.0, -2.0, 2.0, 1);
 
     internal static Geom_CylindricalSurface Cylinder() =>
-        new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     private static void Hex(StringBuilder theOut, double theValue) =>
         theOut.Append(' ').Append(BitConverter.DoubleToUInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture));

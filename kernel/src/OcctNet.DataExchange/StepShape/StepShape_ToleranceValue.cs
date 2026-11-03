@@ -6,42 +6,44 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepShape_ToleranceValue : Standard_Transient
+public class StepShape_ToleranceValue : Transient
 {
-    private Standard_Transient theLowerBound;
-    private Standard_Transient theUpperBound;
+    private Transient theLowerBound;
+    private Transient theUpperBound;
 
     public StepShape_ToleranceValue()
     {
     }
 
-    public void Init(Standard_Transient lower_bound, Standard_Transient upper_bound)
+    public void Init(Transient lower_bound, Transient upper_bound)
     {
         theLowerBound = lower_bound;
         theUpperBound = upper_bound;
     }
 
-    public Standard_Transient LowerBound()
+    public Transient LowerBound()
     {
         return theLowerBound;
     }
 
-    public void SetLowerBound(Standard_Transient lower_bound)
+    public void SetLowerBound(Transient lower_bound)
     {
         theLowerBound = lower_bound;
     }
 
-    public Standard_Transient UpperBound()
+    public Transient UpperBound()
     {
         return theUpperBound;
     }
 
-    public void SetUpperBound(Standard_Transient upper_bound)
+    public void SetUpperBound(Transient upper_bound)
     {
         theUpperBound = upper_bound;
     }

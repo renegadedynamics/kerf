@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,10 +20,10 @@ namespace Occt;
 /// </remarks>
 public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
 {
-    private NCollection_HArray1<gp_Vec>? tabTang;
-    private NCollection_HArray1<gp_Vec>? tabCurv;
-    private NCollection_HArray1<gp_Vec2d>? tabTang2d;
-    private NCollection_HArray1<gp_Vec2d>? tabCurv2d;
+    private NCollection_HArray1<Vector3D>? tabTang;
+    private NCollection_HArray1<Vector3D>? tabCurv;
+    private NCollection_HArray1<Vector2D>? tabTang2d;
+    private NCollection_HArray1<Vector2D>? tabCurv2d;
 
     /// <summary>An undefined MultiPointConstraint.</summary>
     public AppDef_MultiPointConstraint() { }
@@ -31,32 +35,32 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     public AppDef_MultiPointConstraint(int NbPoles, int NbPoles2d) : base(NbPoles, NbPoles2d) { }
 
     /// <summary>A MultiPoint of 3d points only.</summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP) : base(tabP) { }
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP) : base(tabP) { }
 
     /// <summary>A MultiPoint of 2d points only.</summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt2d> tabP2d) : base(tabP2d) { }
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point2D> tabP2d) : base(tabP2d) { }
 
     /// <summary>A MultiPoint of 3d and 2d points.</summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP, NCollection_Array1<gp_Pnt2d> tabP2d)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP, NCollection_Array1<Point2D> tabP2d)
         : base(tabP, tabP2d) { }
 
     /// <summary>
     /// A MultiPoint with tangency and curvature constraints. Throws Standard_ConstructionError unless there are as
     /// many tangents and curvatures as points, in each dimension.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP, NCollection_Array1<gp_Pnt2d> tabP2d,
-                                       NCollection_Array1<gp_Vec> tabVec, NCollection_Array1<gp_Vec2d> tabVec2d,
-                                       NCollection_Array1<gp_Vec> tabCur, NCollection_Array1<gp_Vec2d> tabCur2d)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP, NCollection_Array1<Point2D> tabP2d,
+                                       NCollection_Array1<Vector3D> tabVec, NCollection_Array1<Vector2D> tabVec2d,
+                                       NCollection_Array1<Vector3D> tabCur, NCollection_Array1<Vector2D> tabCur2d)
         : base(tabP, tabP2d)
     {
         if ((tabP.Length() != tabVec.Length()) || (tabP2d.Length() != tabVec2d.Length())
             || (tabCur.Length() != tabP.Length()) || (tabCur2d.Length() != tabP2d.Length()))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang = new NCollection_HArray1<gp_Vec>(1, tabVec.Length());
-        tabTang2d = new NCollection_HArray1<gp_Vec2d>(1, tabVec2d.Length());
+        tabTang = new NCollection_HArray1<Vector3D>(1, tabVec.Length());
+        tabTang2d = new NCollection_HArray1<Vector2D>(1, tabVec2d.Length());
 
         int i, Lower = tabVec.Lower();
         for (i = 1; i <= tabVec.Length(); i++)
@@ -69,8 +73,8 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
             tabTang2d.SetValue(i, tabVec2d.Value(Lower + i - 1));
         }
 
-        tabCurv = new NCollection_HArray1<gp_Vec>(1, tabCur.Length());
-        tabCurv2d = new NCollection_HArray1<gp_Vec2d>(1, tabCur2d.Length());
+        tabCurv = new NCollection_HArray1<Vector3D>(1, tabCur.Length());
+        tabCurv2d = new NCollection_HArray1<Vector2D>(1, tabCur2d.Length());
 
         Lower = tabCur.Lower();
         for (i = 1; i <= tabVec.Length(); i++)
@@ -88,17 +92,17 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// A MultiPoint with tangency constraints. Throws Standard_ConstructionError unless there are as many
     /// tangents as points, in each dimension.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP, NCollection_Array1<gp_Pnt2d> tabP2d,
-                                       NCollection_Array1<gp_Vec> tabVec, NCollection_Array1<gp_Vec2d> tabVec2d)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP, NCollection_Array1<Point2D> tabP2d,
+                                       NCollection_Array1<Vector3D> tabVec, NCollection_Array1<Vector2D> tabVec2d)
         : base(tabP, tabP2d)
     {
         if ((tabP.Length() != tabVec.Length()) || (tabP2d.Length() != tabVec2d.Length()))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang = new NCollection_HArray1<gp_Vec>(1, tabVec.Length());
-        tabTang2d = new NCollection_HArray1<gp_Vec2d>(1, tabVec2d.Length());
+        tabTang = new NCollection_HArray1<Vector3D>(1, tabVec.Length());
+        tabTang2d = new NCollection_HArray1<Vector2D>(1, tabVec2d.Length());
 
         int i, Lower = tabVec.Lower();
         for (i = 1; i <= tabVec.Length(); i++)
@@ -116,15 +120,15 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// A MultiPoint of 3d points with tangency constraints. Throws Standard_ConstructionError unless there are as
     /// many tangents as points.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP, NCollection_Array1<gp_Vec> tabVec)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP, NCollection_Array1<Vector3D> tabVec)
         : base(tabP)
     {
         if (tabP.Length() != tabVec.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang = new NCollection_HArray1<gp_Vec>(1, tabVec.Length());
+        tabTang = new NCollection_HArray1<Vector3D>(1, tabVec.Length());
 
         int i, Lower = tabVec.Lower();
         for (i = 1; i <= tabVec.Length(); i++)
@@ -137,23 +141,23 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// A MultiPoint of 3d points with tangency and curvature constraints. Throws Standard_ConstructionError unless
     /// there are as many tangents and curvatures as points.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt> tabP, NCollection_Array1<gp_Vec> tabVec,
-                                       NCollection_Array1<gp_Vec> tabCur)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point3D> tabP, NCollection_Array1<Vector3D> tabVec,
+                                       NCollection_Array1<Vector3D> tabCur)
         : base(tabP)
     {
         if ((tabP.Length() != tabVec.Length()) || (tabP.Length() != tabCur.Length()))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang = new NCollection_HArray1<gp_Vec>(1, tabVec.Length());
+        tabTang = new NCollection_HArray1<Vector3D>(1, tabVec.Length());
         int i, Lower = tabVec.Lower();
         for (i = 1; i <= tabVec.Length(); i++)
         {
             tabTang.SetValue(i, tabVec.Value(Lower + i - 1));
         }
 
-        tabCurv = new NCollection_HArray1<gp_Vec>(1, tabCur.Length());
+        tabCurv = new NCollection_HArray1<Vector3D>(1, tabCur.Length());
         Lower = tabCur.Lower();
         for (i = 1; i <= tabCur.Length(); i++)
         {
@@ -165,15 +169,15 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// A MultiPoint of 2d points with tangency constraints. Throws Standard_ConstructionError unless there are as
     /// many tangents as points.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt2d> tabP2d, NCollection_Array1<gp_Vec2d> tabVec2d)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point2D> tabP2d, NCollection_Array1<Vector2D> tabVec2d)
         : base(tabP2d)
     {
         if (tabP2d.Length() != tabVec2d.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang2d = new NCollection_HArray1<gp_Vec2d>(1, tabVec2d.Length());
+        tabTang2d = new NCollection_HArray1<Vector2D>(1, tabVec2d.Length());
         int i, Lower = tabVec2d.Lower();
         for (i = 1; i <= tabVec2d.Length(); i++)
         {
@@ -185,23 +189,23 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// A MultiPoint of 2d points with tangency and curvature constraints. Throws Standard_ConstructionError unless
     /// there are as many tangents and curvatures as points.
     /// </summary>
-    public AppDef_MultiPointConstraint(NCollection_Array1<gp_Pnt2d> tabP2d, NCollection_Array1<gp_Vec2d> tabVec2d,
-                                       NCollection_Array1<gp_Vec2d> tabCur2d)
+    public AppDef_MultiPointConstraint(NCollection_Array1<Point2D> tabP2d, NCollection_Array1<Vector2D> tabVec2d,
+                                       NCollection_Array1<Vector2D> tabCur2d)
         : base(tabP2d)
     {
         if ((tabP2d.Length() != tabVec2d.Length()) || (tabCur2d.Length() != tabP2d.Length()))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        tabTang2d = new NCollection_HArray1<gp_Vec2d>(1, tabVec2d.Length());
+        tabTang2d = new NCollection_HArray1<Vector2D>(1, tabVec2d.Length());
         int i, Lower = tabVec2d.Lower();
         for (i = 1; i <= tabVec2d.Length(); i++)
         {
             tabTang2d.SetValue(i, tabVec2d.Value(Lower + i - 1));
         }
 
-        tabCurv2d = new NCollection_HArray1<gp_Vec2d>(1, tabCur2d.Length());
+        tabCurv2d = new NCollection_HArray1<Vector2D>(1, tabCur2d.Length());
         Lower = tabCur2d.Lower();
         for (i = 1; i <= tabCur2d.Length(); i++)
         {
@@ -210,44 +214,44 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     }
 
     /// <summary>Sets the tangent of the 3d point of range <paramref name="Index"/> (1 to NbPoints).</summary>
-    public void SetTang(int Index, in gp_Vec Tang)
+    public void SetTang(int Index, in Vector3D Tang)
     {
-        tabTang ??= new NCollection_HArray1<gp_Vec>(1, nbP);
+        tabTang ??= new NCollection_HArray1<Vector3D>(1, nbP);
         if ((Index <= 0) || (Index > nbP))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabTang.SetValue(Index, Tang);
     }
 
     /// <summary>The tangent of the 3d point of range <paramref name="Index"/> (1 to NbPoints).</summary>
-    public gp_Vec Tang(int Index)
+    public Vector3D Tang(int Index)
     {
         if ((Index <= 0) || (Index > nbP))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabTang!.Value(Index);
     }
 
     /// <summary>Sets the tangent of the 2d point of range <paramref name="Index"/> (NbPoints + 1 to NbPoints + NbPoints2d).</summary>
-    public void SetTang2d(int Index, in gp_Vec2d Tang2d)
+    public void SetTang2d(int Index, in Vector2D Tang2d)
     {
-        tabTang2d ??= new NCollection_HArray1<gp_Vec2d>(1, nbP2d);
+        tabTang2d ??= new NCollection_HArray1<Vector2D>(1, nbP2d);
 
         if ((Index <= nbP) || (Index > nbP + nbP2d))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabTang2d.SetValue(Index - nbP, Tang2d);
     }
 
     /// <summary>The tangent of the 2d point of range <paramref name="Index"/> (NbPoints + 1 to NbPoints + NbPoints2d).</summary>
-    public gp_Vec2d Tang2d(int Index)
+    public Vector2D Tang2d(int Index)
     {
         if ((Index <= nbP) || (Index > nbP + nbP2d))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabTang2d!.Value(Index - nbP);
     }
@@ -256,22 +260,22 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// Sets the normal vector of the 3d point of range <paramref name="Index"/> (1 to NbPoints), whose norm is the
     /// normal curvature.
     /// </summary>
-    public void SetCurv(int Index, in gp_Vec Curv)
+    public void SetCurv(int Index, in Vector3D Curv)
     {
-        tabCurv ??= new NCollection_HArray1<gp_Vec>(1, nbP);
+        tabCurv ??= new NCollection_HArray1<Vector3D>(1, nbP);
         if ((Index <= 0) || (Index > nbP))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabCurv.SetValue(Index, Curv);
     }
 
     /// <summary>The normal vector of the 3d point of range <paramref name="Index"/> (1 to NbPoints).</summary>
-    public gp_Vec Curv(int Index)
+    public Vector3D Curv(int Index)
     {
         if ((Index <= 0) || (Index > nbP))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabCurv!.Value(Index);
     }
@@ -280,22 +284,22 @@ public class AppDef_MultiPointConstraint : AppParCurves_MultiPoint
     /// Sets the normal vector of the 2d point of range <paramref name="Index"/> (NbPoints + 1 to NbPoints +
     /// NbPoints2d), whose norm is the normal curvature.
     /// </summary>
-    public void SetCurv2d(int Index, in gp_Vec2d Curv2d)
+    public void SetCurv2d(int Index, in Vector2D Curv2d)
     {
-        tabCurv2d ??= new NCollection_HArray1<gp_Vec2d>(1, nbP2d);
+        tabCurv2d ??= new NCollection_HArray1<Vector2D>(1, nbP2d);
         if ((Index <= nbP) || (Index > nbP + nbP2d))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabCurv2d.SetValue(Index - nbP, Curv2d);
     }
 
     /// <summary>The normal vector of the 2d point of range <paramref name="Index"/> (NbPoints + 1 to NbPoints + NbPoints2d).</summary>
-    public gp_Vec2d Curv2d(int Index)
+    public Vector2D Curv2d(int Index)
     {
         if ((Index <= nbP) || (Index > nbP + nbP2d))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabCurv2d!.Value(Index - nbP);
     }

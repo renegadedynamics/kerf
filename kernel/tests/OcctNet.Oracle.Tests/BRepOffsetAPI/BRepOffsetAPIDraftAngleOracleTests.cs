@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using OcctNet.TestHarness;
@@ -23,7 +26,7 @@ namespace OcctNet.Oracle.Tests;
 /// </remarks>
 public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
 {
-    internal sealed record Run(string Name, int[] Faces, double[] Angles, gp_Dir Dir, gp_Pln Plane, bool Flag = true);
+    internal sealed record Run(string Name, int[] Faces, double[] Angles, Direction3D Dir, Plane3D Plane, bool Flag = true);
 
     internal sealed class Tally
     {
@@ -40,12 +43,12 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
 
     private static TopoDS_Shape Box(double x, double y, double z) => new BRepPrimAPI_MakeBox(x, y, z).Shape();
 
-    private static gp_Ax2 Ax(double x, double y, double z) => new(new gp_Pnt(x, y, z), new gp_Dir(0, 0, 1));
+    private static Frame3D Ax(double x, double y, double z) => new(new Point3D(x, y, z), new Direction3D(0, 0, 1));
 
     private static TopoDS_Shape Moved(in TopoDS_Shape theS, double x, double y, double z)
     {
-        gp_Trsf aT = new();
-        aT.SetTranslation(new gp_Vec(x, y, z));
+        Transform3D aT = new();
+        aT.SetTranslation(new Vector3D(x, y, z));
         return new BRepBuilderAPI_Transform(theS, aT, true).Shape();
     }
 
@@ -54,13 +57,13 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         var aP = new BRepBuilderAPI_MakePolygon();
         foreach ((double x, double y) in thePoints)
         {
-            aP.Add(new gp_Pnt(x, y, 0));
+            aP.Add(new Point3D(x, y, 0));
         }
         aP.Close();
         return new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
     }
 
-    private static TopoDS_Shape Prism(in TopoDS_Face theFace, double h) => new BRepPrimAPI_MakePrism(theFace, new gp_Vec(0, 0, h)).Shape();
+    private static TopoDS_Shape Prism(in TopoDS_Face theFace, double h) => new BRepPrimAPI_MakePrism(theFace, new Vector3D(0, 0, h)).Shape();
 
     /// <summary>Solids: primitives and Boolean results like the draft group's.</summary>
     internal static List<(string Name, TopoDS_Shape Shape)> Solids() =>
@@ -86,10 +89,10 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     internal static List<(string Name, TopoDS_Face Profile, double Height)> Profiles()
     {
         TopoDS_Face aCircle = new BRepBuilderAPI_MakeFace(
-            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5)).Edge()).Wire()).Face();
+            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge()).Wire()).Face();
         TopoDS_Face aRect = Polygon((-5, -3), (5, -3), (5, 3), (-5, 3));
         TopoDS_Face aRectHole = new BRepAlgoAPI_Cut(aRect, new BRepBuilderAPI_MakeFace(
-            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.5)).Edge()).Wire()).Face()).Shape() is var aCut
+            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.5)).Edge()).Wire()).Face()).Shape() is var aCut
             && new TopExp_Explorer(aCut, TopAbs_FACE) is { } anExp && anExp.More() ? TopoDS.Face(anExp.Current()) : aRect;
         return
         [
@@ -126,20 +129,20 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         return aS switch
         {
             Geom_Plane p => Math.Abs(p.Pln().Axis().Direction().Z()) < 1.0e-9,
-            Geom_ElementarySurface e and (Geom_CylindricalSurface or Geom_ConicalSurface) => e.Axis().Direction().IsParallel(new gp_Dir(0, 0, 1), 1.0e-9),
+            Geom_ElementarySurface e and (Geom_CylindricalSurface or Geom_ConicalSurface) => e.Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1.0e-9),
             _ => false,
         };
     }
 
     private static (double ZMin, double ZMax) ZRange(in TopoDS_Shape theShape)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         aBox.Get(out _, out _, out double z0, out _, out _, out double z1);
         return (z0, z1);
     }
 
-    private static gp_Pln PlaneZ(double z) => new(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1));
+    private static Plane3D PlaneZ(double z) => new(new Point3D(0, 0, z), new Direction3D(0, 0, 1));
 
     // ---------------------------------------------------------------------------------------------------------------
     // Tests
@@ -166,12 +169,12 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                 {
                     foreach ((string aWhere, double z) in aPlanes)
                     {
-                        Compare(aRun, aTally, new Run($"{aName} face {f} {anAngle} {aWhere}", [f], [anAngle], new gp_Dir(0, 0, 1), PlaneZ(z)), aShape);
+                        Compare(aRun, aTally, new Run($"{aName} face {f} {anAngle} {aWhere}", [f], [anAngle], new Direction3D(0, 0, 1), PlaneZ(z)), aShape);
                     }
                 }
                 // pulled along X about a plane x = 0
-                Compare(aRun, aTally, new Run($"{aName} face {f} 3 along X", [f], [3.0], new gp_Dir(1, 0, 0),
-                                              new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0))), aShape);
+                Compare(aRun, aTally, new Run($"{aName} face {f} 3 along X", [f], [3.0], new Direction3D(1, 0, 0),
+                                              new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))), aShape);
             }
         }
         Report(aTally, "single faces");
@@ -199,7 +202,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                     foreach (bool aFlag in new[] { true, false })
                     {
                         Compare(aRun, aTally, new Run($"{aName} sides {anAngle} {aWhere} flag={aFlag}", aSides,
-                                                      aSides.Select(_ => anAngle).ToArray(), new gp_Dir(0, 0, 1), PlaneZ(z), aFlag), aShape);
+                                                      aSides.Select(_ => anAngle).ToArray(), new Direction3D(0, 0, 1), PlaneZ(z), aFlag), aShape);
                     }
                 }
             }
@@ -207,7 +210,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         // build123d.NET's ExtrudeTaper: the prism's sides drafted about the profile's plane, inner walls the other way
         foreach ((string aName, TopoDS_Face aProfile, double aHeight) in Tape.Budget(Profiles()))
         {
-            BRepPrimAPI_MakePrism aMaker = new(aProfile, new gp_Vec(0, 0, aHeight));
+            BRepPrimAPI_MakePrism aMaker = new(aProfile, new Vector3D(0, 0, aHeight));
             TopoDS_Shape aPrism = aMaker.Shape();
             NCollection_IndexedMap<TopoDS_Shape> aFaces = FacesOf(aPrism);
             TopoDS_Wire anOuter = BRepTools.OuterWire(aProfile);
@@ -236,7 +239,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             foreach (double aTaper in new[] { 5.0, -5.0, 15.0 })
             {
                 Compare(aRun, aTally, new Run($"taper {aName} {aTaper}", aSides.ToArray(),
-                                              aSides.Select(i => anInner.Contains(i) ? -aTaper : aTaper).ToArray(), new gp_Dir(0, 0, 1),
+                                              aSides.Select(i => anInner.Contains(i) ? -aTaper : aTaper).ToArray(), new Direction3D(0, 0, 1),
                                               PlaneZ(0.0)), aPrism);
             }
         }
@@ -266,11 +269,11 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             (double z0, double z1) = ZRange(aShape);
             foreach (int f in aSides.Take(3))
             {
-                Compare(aRun, aTally, new Run($"{aName} face {f}", [f], [3.0], new gp_Dir(0, 0, 1), PlaneZ(0.5 * (z0 + z1))), aShape);
+                Compare(aRun, aTally, new Run($"{aName} face {f}", [f], [3.0], new Direction3D(0, 0, 1), PlaneZ(0.5 * (z0 + z1))), aShape);
             }
             if (aSides.Length > 1)
             {
-                Compare(aRun, aTally, new Run($"{aName} sides", aSides, aSides.Select(_ => 2.0).ToArray(), new gp_Dir(0, 0, 1), PlaneZ(z0)), aShape);
+                Compare(aRun, aTally, new Run($"{aName} sides", aSides, aSides.Select(_ => 2.0).ToArray(), new Direction3D(0, 0, 1), PlaneZ(z0)), aShape);
             }
         }
         Report(aTally, "data/occ shapes up to 300 kB");
@@ -304,7 +307,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             theTally.InputsChanged++;
             theTally.Differences.Add($"{aWhat}: the port's input changed");
         }
-        if (aP.PortResult is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (aP.PortResult is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
@@ -402,7 +405,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 
-    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? e.GetType().Name;
+    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
 
     private static string IndexOf(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS)
     {
@@ -434,8 +437,8 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         {
             using var aDraft = new N.BRepOffsetAPI_DraftAngle(theInput);
             using var aDir = new N.gp_Dir(theCase.Dir.X(), theCase.Dir.Y(), theCase.Dir.Z());
-            gp_Pnt aLoc = theCase.Plane.Location();
-            gp_Dir aNorm = theCase.Plane.Axis().Direction();
+            Point3D aLoc = theCase.Plane.Location();
+            Direction3D aNorm = theCase.Plane.Axis().Direction();
             using var aPLoc = new N.gp_Pnt(aLoc.X(), aLoc.Y(), aLoc.Z());
             using var aPDir = new N.gp_Dir(aNorm.X(), aNorm.Y(), aNorm.Z());
             using var aPln = new N.gp_Pln(aPLoc, aPDir);
@@ -537,9 +540,9 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             }
             return new Outcome(null, aStatus, aText, aSb.ToString(), aRes);
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
-            return new Outcome(e.GetType().Name, "", null, "", null);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, "", null);
         }
     }
 

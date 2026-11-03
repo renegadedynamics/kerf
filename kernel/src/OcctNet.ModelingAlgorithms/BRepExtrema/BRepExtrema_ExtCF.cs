@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -35,7 +36,7 @@ public sealed class BRepExtrema_ExtCF
     public void Initialize(in TopoDS_Edge E, in TopoDS_Face F)
     {
         var Surf = new BRepAdaptor_Surface(F);
-        if (Surf.GetType() == GeomAbs_OtherSurface || !BRep_Tool.IsGeometric(E))
+        if (Surf.GetType() == OtherSurface || !BRep_Tool.IsGeometric(E))
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
@@ -43,13 +44,13 @@ public sealed class BRepExtrema_ExtCF
         myHS = Surf;
         double aTolC, aTolS;
         //
-        aTolS = Min(BRep_Tool.Tolerance(F), Precision.Confusion());
+        aTolS = Min(BRep_Tool.Tolerance(F), global::Kerf.Engine.Foundation.Precision.Confusion());
         aTolS = Min(Surf.UResolution(aTolS), Surf.VResolution(aTolS));
-        aTolS = Max(aTolS, Precision.PConfusion());
+        aTolS = Max(aTolS, global::Kerf.Engine.Foundation.Precision.PConfusion());
         //
-        aTolC = Min(BRep_Tool.Tolerance(E), Precision.Confusion());
+        aTolC = Min(BRep_Tool.Tolerance(E), global::Kerf.Engine.Foundation.Precision.Confusion());
         aTolC = aC.Resolution(aTolC);
-        aTolC = Max(aTolC, Precision.PConfusion());
+        aTolC = Max(aTolC, global::Kerf.Engine.Foundation.Precision.PConfusion());
         //
         double U1, U2, V1, V2;
         BRepTools.UVBounds(F, out U1, out U2, out V1, out V2);
@@ -102,7 +103,7 @@ public sealed class BRepExtrema_ExtCF
             {
                 myExtCS.Points(i, out Extrema_POnCurv P1, out Extrema_POnSurf P2);
                 P2.Parameter(out U1, out U2);
-                var Puv = new gp_Pnt2d(U1, U2);
+                var Puv = new Point2D(U1, U2);
                 TopAbs_State state = classifier.Perform(Puv, isAdjustPeriodic);
                 if (state == TopAbs_ON || state == TopAbs_IN)
                 {
@@ -133,8 +134,8 @@ public sealed class BRepExtrema_ExtCF
     public void ParameterOnFace(int N, out double U, out double V) => myPointsOnS.Value(N).Parameter(out U, out V);
 
     /// <summary>The point on the edge of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnEdge(int N) => myPointsOnC.Value(N).Value();
+    public Point3D PointOnEdge(int N) => myPointsOnC.Value(N).Value();
 
     /// <summary>The point on the face of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnFace(int N) => myPointsOnS.Value(N).Value();
+    public Point3D PointOnFace(int N) => myPointsOnS.Value(N).Value();
 }

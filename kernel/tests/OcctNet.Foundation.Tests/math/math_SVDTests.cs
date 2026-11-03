@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_SVDTest
 {
     // Helper function to check if solution is approximately correct
-    private static void checkSolution(math_Matrix theA, math_Vector theX, math_Vector theB, double theTolerance = 1.0e-10)
+    private static void checkSolution(Matrix theA, math_Vector theX, math_Vector theB, double theTolerance = 1.0e-10)
     {
         Assert.Equal(theX.Length(), theA.ColNumber());
         Assert.Equal(theB.Length(), theA.RowNumber());
@@ -32,9 +34,9 @@ public class math_SVDTest
     }
 
     // Helper to create a well-conditioned test matrix
-    private static math_Matrix createWellConditionedMatrix()
+    private static Matrix createWellConditionedMatrix()
     {
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 2.0;
         aMatrix[1, 2] = 1.0;
         aMatrix[1, 3] = 0.0;
@@ -52,10 +54,10 @@ public class math_SVDTest
     [Fact]
     public void WellConditionedSquareMatrix()
     {
-        math_Matrix aMatrix = createWellConditionedMatrix();
-        math_SVD aSVD = new(aMatrix);
+        Matrix aMatrix = createWellConditionedMatrix();
+        Svd aSVD = new(aMatrix);
 
-        Assert.True(aSVD.IsDone());
+        Assert.True(aSVD.IsDone);
 
         // Test solving Ax = b where b = [6, 9, 8]
         math_Vector aB = new(1, 3);
@@ -74,7 +76,7 @@ public class math_SVDTest
     public void IdentityMatrix()
     {
         // Identity matrix test
-        math_Matrix anIdentity = new(1, 3, 1, 3);
+        Matrix anIdentity = new(1, 3, 1, 3);
         anIdentity[1, 1] = 1.0;
         anIdentity[1, 2] = 0.0;
         anIdentity[1, 3] = 0.0;
@@ -85,8 +87,8 @@ public class math_SVDTest
         anIdentity[3, 2] = 0.0;
         anIdentity[3, 3] = 1.0;
 
-        math_SVD aSVD = new(anIdentity);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(anIdentity);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(1, 3);
         aB[1] = 5.0;
@@ -97,16 +99,16 @@ public class math_SVDTest
         aSVD.Solve(aB, aX);
 
         // For identity matrix, X should equal B
-        Assert.Equal(aB[1], aX[1], Precision.Confusion());
-        Assert.Equal(aB[2], aX[2], Precision.Confusion());
-        Assert.Equal(aB[3], aX[3], Precision.Confusion());
+        Assert.Equal(aB[1], aX[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aB[2], aX[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aB[3], aX[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void DiagonalMatrix()
     {
         // Diagonal matrix test
-        math_Matrix aDiagonal = new(1, 3, 1, 3);
+        Matrix aDiagonal = new(1, 3, 1, 3);
         aDiagonal[1, 1] = 3.0;
         aDiagonal[1, 2] = 0.0;
         aDiagonal[1, 3] = 0.0;
@@ -117,8 +119,8 @@ public class math_SVDTest
         aDiagonal[3, 2] = 0.0;
         aDiagonal[3, 3] = 2.0;
 
-        math_SVD aSVD = new(aDiagonal);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aDiagonal);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(1, 3);
         aB[1] = 12.0;
@@ -129,16 +131,16 @@ public class math_SVDTest
         aSVD.Solve(aB, aX);
 
         // For diagonal matrix, X[i] = B[i] / D[i,i]
-        Assert.Equal(4.0, aX[1], Precision.Confusion());
-        Assert.Equal(4.0, aX[2], Precision.Confusion());
-        Assert.Equal(4.0, aX[3], Precision.Confusion());
+        Assert.Equal(4.0, aX[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aX[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aX[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void OverdeterminedSystem()
     {
         // Overdetermined system: more equations than unknowns (4x3)
-        math_Matrix aMatrix = new(1, 4, 1, 3);
+        Matrix aMatrix = new(1, 4, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -152,8 +154,8 @@ public class math_SVDTest
         aMatrix[4, 2] = 1.0;
         aMatrix[4, 3] = 1.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         // Consistent system: b4 = b1 + b2 + b3
         math_Vector aB = new(1, 4);
@@ -173,7 +175,7 @@ public class math_SVDTest
     public void UnderdeterminedSystem()
     {
         // Underdetermined system: fewer equations than unknowns (2x3)
-        math_Matrix aMatrix = new(1, 2, 1, 3);
+        Matrix aMatrix = new(1, 2, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 3.0;
@@ -181,8 +183,8 @@ public class math_SVDTest
         aMatrix[2, 2] = 5.0;
         aMatrix[2, 3] = 6.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(1, 2);
         aB[1] = 14.0; // 1*1 + 2*2 + 3*3 = 14
@@ -199,7 +201,7 @@ public class math_SVDTest
     public void RankDeficientMatrix()
     {
         // Rank deficient matrix (rank 2, but 3x3)
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 3.0;
@@ -210,8 +212,8 @@ public class math_SVDTest
         aMatrix[3, 2] = 1.0;
         aMatrix[3, 3] = 1.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         // Consistent RHS (b2 = 2*b1, compatible with rank deficiency)
         math_Vector aB = new(1, 3);
@@ -230,13 +232,13 @@ public class math_SVDTest
     public void SingleRowMatrix()
     {
         // Single equation, multiple unknowns (1x3)
-        math_Matrix aMatrix = new(1, 1, 1, 3);
+        Matrix aMatrix = new(1, 1, 1, 3);
         aMatrix[1, 1] = 2.0;
         aMatrix[1, 2] = 3.0;
         aMatrix[1, 3] = 4.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(1, 1);
         aB[1] = 20.0; // 2*2 + 3*3 + 4*3 = 20 (one possible solution: x=[2,3,3])
@@ -252,13 +254,13 @@ public class math_SVDTest
     public void SingleColumnMatrix()
     {
         // Multiple equations, single unknown (3x1)
-        math_Matrix aMatrix = new(1, 3, 1, 1);
+        Matrix aMatrix = new(1, 3, 1, 1);
         aMatrix[1, 1] = 2.0;
         aMatrix[2, 1] = 3.0;
         aMatrix[3, 1] = 4.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         // Least squares problem: find x that minimizes ||Ax - b||^2
         math_Vector aB = new(1, 3);
@@ -275,13 +277,13 @@ public class math_SVDTest
     [Fact]
     public void PseudoInverseMethod()
     {
-        math_Matrix aMatrix = createWellConditionedMatrix();
-        math_SVD aSVD = new(aMatrix);
+        Matrix aMatrix = createWellConditionedMatrix();
+        Svd aSVD = new(aMatrix);
 
-        Assert.True(aSVD.IsDone());
+        Assert.True(aSVD.IsDone);
 
         // Test PseudoInverse method - compute A^+ (pseudoinverse of A)
-        math_Matrix aPseudoInv = new(aMatrix.LowerCol(),
+        Matrix aPseudoInv = new(aMatrix.LowerCol(),
                                                       aMatrix.UpperCol(),
                                                       aMatrix.LowerRow(),
                                                       aMatrix.UpperRow());
@@ -289,7 +291,7 @@ public class math_SVDTest
 
         // For a well-conditioned square matrix, pseudoinverse should behave like regular inverse
         // Test: A^+ * A should be approximately identity
-        math_Matrix aProduct = new(aMatrix.LowerRow(),
+        Matrix aProduct = new(aMatrix.LowerRow(),
                                                   aMatrix.UpperRow(),
                                                   aMatrix.LowerRow(),
                                                   aMatrix.UpperRow());
@@ -322,10 +324,10 @@ public class math_SVDTest
     [Fact]
     public void DimensionCompatibility()
     {
-        math_Matrix aMatrix = createWellConditionedMatrix();
-        math_SVD aSVD = new(aMatrix);
+        Matrix aMatrix = createWellConditionedMatrix();
+        Svd aSVD = new(aMatrix);
 
-        Assert.True(aSVD.IsDone());
+        Assert.True(aSVD.IsDone);
 
         // Test with correctly dimensioned vectors
         math_Vector aCorrectB = new(1, 3); // Correct size for 3x3 matrix
@@ -349,14 +351,14 @@ public class math_SVDTest
     public void SingularValues()
     {
         // Test a matrix where we can predict singular values
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 3.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[2, 1] = 0.0;
         aMatrix[2, 2] = 4.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         // For a diagonal matrix, singular values should be the absolute values of diagonal elements
         // We can't directly access singular values in this interface, but we can verify through solutions
@@ -381,7 +383,7 @@ public class math_SVDTest
     public void DifferentMatrixBounds()
     {
         // Test with non-standard matrix bounds
-        math_Matrix aMatrix = new(2, 4, 3, 5); // 3x3 matrix with custom bounds
+        Matrix aMatrix = new(2, 4, 3, 5); // 3x3 matrix with custom bounds
 
         aMatrix[2, 3] = 1.0;
         aMatrix[2, 4] = 0.0;
@@ -393,8 +395,8 @@ public class math_SVDTest
         aMatrix[4, 4] = 0.0;
         aMatrix[4, 5] = 1.0;
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(2, 4); // Matching row bounds
         aB[2] = 5.0;
@@ -405,16 +407,16 @@ public class math_SVDTest
         aSVD.Solve(aB, aX);
 
         // For identity matrix, solution should equal RHS
-        Assert.Equal(5.0, aX[3], Precision.Confusion());
-        Assert.Equal(7.0, aX[4], Precision.Confusion());
-        Assert.Equal(9.0, aX[5], Precision.Confusion());
+        Assert.Equal(5.0, aX[3], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aX[4], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(9.0, aX[5], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void LargerMatrix()
     {
         // Test with a larger well-conditioned matrix (5x5)
-        math_Matrix aMatrix = new(1, 5, 1, 5);
+        Matrix aMatrix = new(1, 5, 1, 5);
 
         // Create a symmetric positive definite matrix
         for (int anI = 1; anI <= 5; anI++)
@@ -432,8 +434,8 @@ public class math_SVDTest
             }
         }
 
-        math_SVD aSVD = new(aMatrix);
-        Assert.True(aSVD.IsDone());
+        Svd aSVD = new(aMatrix);
+        Assert.True(aSVD.IsDone);
 
         math_Vector aB = new(1, 5);
         for (int anI = 1; anI <= 5; anI++)

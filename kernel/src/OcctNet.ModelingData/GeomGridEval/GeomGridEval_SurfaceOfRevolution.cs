@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,17 +16,17 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
 {
     private readonly Geom_SurfaceOfRevolution? myGeom;
     private readonly Geom_Curve? myBasisCurve;
-    private readonly gp_Ax1 myAxis;
-    private readonly gp_Pnt myAxisLocation;
-    private readonly gp_Dir myAxisDirection;
+    private readonly Axis3D myAxis;
+    private readonly Point3D myAxisLocation;
+    private readonly Direction3D myAxisDirection;
 
     /// <summary>Constructor with the surface of revolution to evaluate (null gives empty results).</summary>
     public GeomGridEval_SurfaceOfRevolution(Geom_SurfaceOfRevolution? theRevolution)
     {
         myGeom = theRevolution;
-        myAxis = new gp_Ax1();
-        myAxisLocation = new gp_Pnt();
-        myAxisDirection = new gp_Dir();
+        myAxis = new Axis3D();
+        myAxisLocation = new Point3D();
+        myAxisDirection = new Direction3D();
         if (myGeom is not null)
         {
             myBasisCurve = myGeom.BasisCurve();
@@ -38,12 +40,12 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
     public Geom_SurfaceOfRevolution? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myBasisCurve is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         int aNbU = theUParams.Length();
@@ -51,19 +53,19 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
 
         // Batch evaluate curve points using optimized curve evaluator
         GeomGridEval_Curve aCurveEval = new(myBasisCurve);
-        NCollection_Array1<gp_Pnt> aCurvePoints = aCurveEval.EvaluateGrid(theVParams);
+        NCollection_Array1<Point3D> aCurvePoints = aCurveEval.EvaluateGrid(theVParams);
         if (aCurvePoints.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; ++i)
         {
             double aU = theUParams.Value(theUParams.Lower() + i - 1);
             for (int j = 1; j <= aNbV; ++j)
             {
-                Geom_RevolutionUtils.CalculateD0(aCurvePoints.Value(j), aU, myAxis, out gp_Pnt aP);
+                Geom_RevolutionUtils.CalculateD0(aCurvePoints.Value(j), aU, myAxis, out Point3D aP);
                 aResult.SetValue(i, j, aP);
             }
         }
@@ -101,9 +103,9 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
                                                  aCurveData.D1,
                                                  aU,
                                                  myAxis,
-                                                 out gp_Pnt aP,
-                                                 out gp_Vec aD1U,
-                                                 out gp_Vec aD1V);
+                                                 out Point3D aP,
+                                                 out Vector3D aD1U,
+                                                 out Vector3D aD1V);
                 aResult[i, j] = new Geom_Surface.ResD1 { Point = aP, D1U = aD1U, D1V = aD1V };
             }
         }
@@ -142,12 +144,12 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
                                                  aCurveData.D2,
                                                  aU,
                                                  myAxis,
-                                                 out gp_Pnt aP,
-                                                 out gp_Vec aD1U,
-                                                 out gp_Vec aD1V,
-                                                 out gp_Vec aD2U,
-                                                 out gp_Vec aD2V,
-                                                 out gp_Vec aD2UV);
+                                                 out Point3D aP,
+                                                 out Vector3D aD1U,
+                                                 out Vector3D aD1V,
+                                                 out Vector3D aD2U,
+                                                 out Vector3D aD2V,
+                                                 out Vector3D aD2UV);
                 aResult[i, j] = new Geom_Surface.ResD2
                 {
                     Point = aP,
@@ -195,16 +197,16 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
                                                  aCurveData.D3,
                                                  aU,
                                                  myAxis,
-                                                 out gp_Pnt aP,
-                                                 out gp_Vec aD1U,
-                                                 out gp_Vec aD1V,
-                                                 out gp_Vec aD2U,
-                                                 out gp_Vec aD2V,
-                                                 out gp_Vec aD2UV,
-                                                 out gp_Vec aD3U,
-                                                 out gp_Vec aD3V,
-                                                 out gp_Vec aD3UUV,
-                                                 out gp_Vec aD3UVV);
+                                                 out Point3D aP,
+                                                 out Vector3D aD1U,
+                                                 out Vector3D aD1V,
+                                                 out Vector3D aD2U,
+                                                 out Vector3D aD2V,
+                                                 out Vector3D aD2UV,
+                                                 out Vector3D aD3U,
+                                                 out Vector3D aD3V,
+                                                 out Vector3D aD3UUV,
+                                                 out Vector3D aD3UVV);
                 aResult[i, j] = new Geom_Surface.ResD3
                 {
                     Point = aP,
@@ -224,7 +226,7 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -232,12 +234,12 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
         if (myBasisCurve is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0
             || theNV < 0 || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         // Get curve data
         GeomGridEval_Curve aCurveEval = new(myBasisCurve);
@@ -245,13 +247,13 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
         if (theNU == 0)
         {
             // Pure V derivative = curve derivative, rotated
-            NCollection_Array1<gp_Vec> aCurveDN = aCurveEval.EvaluateGridDN(theVParams, theNV);
+            NCollection_Array1<Vector3D> aCurveDN = aCurveEval.EvaluateGridDN(theVParams, theNV);
             for (int i = 1; i <= aNbU; ++i)
             {
                 double aU = theUParams.Value(theUParams.Lower() + i - 1);
                 for (int j = 1; j <= aNbV; ++j)
                 {
-                    gp_Vec aDN = Geom_RevolutionUtils.CalculateDN(aCurveDN.Value(j), aU, myAxis, theNU, theNV);
+                    Vector3D aDN = Geom_RevolutionUtils.CalculateDN(aCurveDN.Value(j), aU, myAxis, theNU, theNV);
                     aResult.SetValue(i, j, aDN);
                 }
             }
@@ -260,8 +262,8 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
         {
             // Mixed or pure U derivative
             // Get curve point or derivative depending on theNV
-            NCollection_Array1<gp_Vec> aCurveDV = new();
-            NCollection_Array1<gp_Pnt> aCurvePts = new();
+            NCollection_Array1<Vector3D> aCurveDV = new();
+            NCollection_Array1<Point3D> aCurvePts = new();
             if (theNV == 0)
             {
                 aCurvePts = aCurveEval.EvaluateGrid(theVParams);
@@ -276,17 +278,17 @@ public sealed class GeomGridEval_SurfaceOfRevolution : GeomGridEval.ISurfaceEval
                 double aU = theUParams.Value(theUParams.Lower() + i - 1);
                 for (int j = 1; j <= aNbV; ++j)
                 {
-                    gp_Vec aCurvePtOrDN;
+                    Vector3D aCurvePtOrDN;
                     if (theNV == 0)
                     {
                         // For pure U derivative, pass (P - AxisLocation) as the base vector
-                        aCurvePtOrDN = new gp_Vec(aCurvePts.Value(j).XYZ() - myAxisLocation.XYZ());
+                        aCurvePtOrDN = new Vector3D(aCurvePts.Value(j).XYZ() - myAxisLocation.XYZ());
                     }
                     else
                     {
                         aCurvePtOrDN = aCurveDV.Value(j);
                     }
-                    gp_Vec aDN = Geom_RevolutionUtils.CalculateDN(aCurvePtOrDN, aU, myAxis, theNU, theNV);
+                    Vector3D aDN = Geom_RevolutionUtils.CalculateDN(aCurvePtOrDN, aU, myAxis, theNU, theNV);
                     aResult.SetValue(i, j, aDN);
                 }
             }

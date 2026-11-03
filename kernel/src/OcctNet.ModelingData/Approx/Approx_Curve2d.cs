@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -45,12 +46,12 @@ public sealed class Approx_Curve2d
             }
             if (StartEnd[0] != StartEndSav0 || StartEnd[1] != StartEndSav1)
             {
-                fonct = fonct.Trim(StartEnd[0], StartEnd[1], Precision.PConfusion());
+                fonct = fonct.Trim(StartEnd[0], StartEnd[1], global::Kerf.Engine.Foundation.Precision.PConfusion());
                 StartEndSav0 = StartEnd[0];
                 StartEndSav1 = StartEnd[1];
             }
-            gp_Pnt2d pnt;
-            gp_Vec2d v1, v2;
+            Point2D pnt;
+            Vector2D v1, v2;
 
             switch (Order)
             {
@@ -88,10 +89,10 @@ public sealed class Approx_Curve2d
     /// MaxDegree and at most MaxSegments segments.
     /// </summary>
     public Approx_Curve2d(Adaptor2d_Curve2d C2D, double First, double Last, double TolU, double TolV,
-                          GeomAbs_Shape Continuity, int MaxDegree, int MaxSegments)
+                          Continuity Continuity, int MaxDegree, int MaxSegments)
     {
         // OCCT discards the trimmed adaptor this returns: C2D is evaluated as given.
-        _ = C2D.Trim(First, Last, Precision.PConfusion());
+        _ = C2D.Trim(First, Last, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         int Num1DSS = 2, Num2DSS = 0, Num3DSS = 0;
         NCollection_HArray1<double>? TwoDTolNul = null, ThreeDTolNul = null;
@@ -99,12 +100,12 @@ public sealed class Approx_Curve2d
         OneDTol[1] = TolU;
         OneDTol[2] = TolV;
 
-        int NbInterv_C2 = C2D.NbIntervals(GeomAbs_C2);
+        int NbInterv_C2 = C2D.NbIntervals(C2);
         NCollection_Array1<double> CutPnts_C2 = new(1, NbInterv_C2 + 1);
-        C2D.Intervals(CutPnts_C2, GeomAbs_C2);
-        int NbInterv_C3 = C2D.NbIntervals(GeomAbs_C3);
+        C2D.Intervals(CutPnts_C2, C2);
+        int NbInterv_C3 = C2D.NbIntervals(C3);
         NCollection_Array1<double> CutPnts_C3 = new(1, NbInterv_C3 + 1);
-        C2D.Intervals(CutPnts_C3, GeomAbs_C3);
+        C2D.Intervals(CutPnts_C3, C3);
 
         AdvApprox_PrefAndRec CutTool = new(CutPnts_C2, CutPnts_C3);
 
@@ -132,14 +133,14 @@ public sealed class Approx_Curve2d
         if (myHasResult)
         {
             int aNbPoles = aApprox.NbPoles();
-            NCollection_Array1<gp_Pnt2d> Poles2d = new(1, aNbPoles);
+            NCollection_Array1<Point2D> Poles2d = new(1, aNbPoles);
             NCollection_Array1<double> Poles1dU = new(1, aNbPoles);
             aApprox.Poles1d(1, Poles1dU);
             NCollection_Array1<double> Poles1dV = new(1, aNbPoles);
             aApprox.Poles1d(2, Poles1dV);
             for (int i = 1; i <= aNbPoles; i++)
             {
-                Poles2d.SetValue(i, new gp_Pnt2d(Poles1dU.Value(i), Poles1dV.Value(i)));
+                Poles2d.SetValue(i, new Point2D(Poles1dU.Value(i), Poles1dV.Value(i)));
             }
 
             NCollection_HArray1<double> Knots = aApprox.Knots()!;

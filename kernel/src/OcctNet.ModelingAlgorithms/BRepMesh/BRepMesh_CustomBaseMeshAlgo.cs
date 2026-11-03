@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +19,7 @@ public abstract class BRepMesh_CustomBaseMeshAlgo : BRepMesh_ConstrainedBaseMesh
     }
 
     /// <summary>Generates the mesh of the contour stored in the data structure.</summary>
-    protected override void generateMesh(Message_ProgressRange theRange)
+    protected override void generateMesh(ProgressRange theRange)
     {
         BRepMesh_DataStructureOfDelaun aStructure = getStructure();
         int aNodesNb = aStructure.NbNodes();

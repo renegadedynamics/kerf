@@ -339,7 +339,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
 
             // vdisplay: the selection meshes the shape with AIS's defaults (Prs3d::GetDeflection on the native box);
             // vsetdispmode 1 then finds it tessellated finely enough
-            double aPrsDeflection = Math.Max(aSize * 0.001 * 4.0, Precision.Confusion());
+            double aPrsDeflection = Math.Max(aSize * 0.001 * 4.0, global::Kerf.Engine.Foundation.Precision.Confusion());
             Check(aF1, $"{aName} vdisplay", "vinit; vdisplay s; vsetdispmode 1", aPrsDeflection, false, 20 * Math.PI / 180, false);
         }
 

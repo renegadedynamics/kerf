@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -14,10 +17,10 @@ namespace Occt;
 /// </summary>
 public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
 {
-    private static readonly double TolConf = Precision.Confusion();
+    private static readonly double TolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private gp_Pnt myPoint;
-    private readonly NCollection_HSequence<gp_Ax2> myTrihedrons;
+    private Point3D myPoint;
+    private readonly NCollection_HSequence<Frame3D> myTrihedrons;
     private readonly NCollection_HSequence<double> myKnots;
     private readonly GeomFill_Frenet myFrenet;
     private bool myUseFrenet;
@@ -27,7 +30,7 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         myUseFrenet = false;
         myFrenet = new GeomFill_Frenet();
         myKnots = new NCollection_HSequence<double>();
-        myTrihedrons = new NCollection_HSequence<gp_Ax2>();
+        myTrihedrons = new NCollection_HSequence<Frame3D>();
     }
 
     public override GeomFill_TrihedronLaw Copy()
@@ -46,15 +49,15 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         base.SetCurve(C);
         if (C is not null)
         {
-            GeomAbs_CurveType type;
+            CurveKind type;
             type = C.GetType();
             switch (type)
             {
-                case GeomAbs_Circle:
-                case GeomAbs_Ellipse:
-                case GeomAbs_Hyperbola:
-                case GeomAbs_Parabola:
-                case GeomAbs_Line:
+                case Circle:
+                case Ellipse:
+                case Hyperbola:
+                case Parabola:
+                case Line:
                 {
                     // No problem
                     myUseFrenet = true;
@@ -80,9 +83,9 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
     /// </remarks>
     public void Init()
     {
-        int NbIntervals = myTrimmed!.NbIntervals(GeomAbs_CN);
+        int NbIntervals = myTrimmed!.NbIntervals(CN);
         NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, NbIntervals + 1);
-        myTrimmed.Intervals(Knots, GeomAbs_CN);
+        myTrimmed.Intervals(Knots, CN);
 
         int NbSamples = 10;
 
@@ -99,18 +102,18 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         }
         myKnots.Append(Knots[NbIntervals + 1]);
 
-        gp_Pnt Origin = new gp_Pnt(0.0, 0.0, 0.0), SubPnt;
-        gp_Dir TangDir;
+        Point3D Origin = new Point3D(0.0, 0.0, 0.0), SubPnt;
+        Direction3D TangDir;
         double norm;
         for (i = 1; i <= myKnots.Length(); i++)
         {
             double Param = myKnots.Value(i);
-            myTrimmed.D1(Param, out gp_Pnt Pnt, out gp_Vec Tangent);
+            myTrimmed.D1(Param, out Point3D Pnt, out Vector3D Tangent);
             norm = Tangent.Magnitude();
             if (norm < TolConf)
             {
                 double subdelta = (myKnots.Value(i + 1) - myKnots.Value(i)) / NbSamples;
-                if (subdelta < Precision.PConfusion())
+                if (subdelta < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     subdelta = myKnots.Value(i + 1) - myKnots.Value(i);
                 }
@@ -118,19 +121,19 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
                 Tangent.SetXYZ(SubPnt.XYZ() - Pnt.XYZ());
             }
 
-            TangDir = new gp_Dir(Tangent); // normalize;
-            Tangent = new gp_Vec(TangDir);
+            TangDir = new Direction3D(Tangent); // normalize;
+            Tangent = new Vector3D(TangDir);
             if (i == 1) // first point
             {
-                gp_Ax2 FirstAxis = new gp_Ax2(Origin, TangDir);
+                Frame3D FirstAxis = new Frame3D(Origin, TangDir);
                 myTrihedrons.Append(FirstAxis);
             }
             else
             {
-                gp_Ax2 LastAxis = myTrihedrons.Value(myTrihedrons.Length());
-                gp_Vec LastTangent = new gp_Vec(LastAxis.Direction());
-                gp_Vec AxisOfRotation = LastTangent ^ Tangent;
-                if (AxisOfRotation.Magnitude() <= gp.Resolution()) // tangents are equal or opposite
+                Frame3D LastAxis = myTrihedrons.Value(myTrihedrons.Length());
+                Vector3D LastTangent = new Vector3D(LastAxis.Direction());
+                Vector3D AxisOfRotation = LastTangent ^ Tangent;
+                if (AxisOfRotation.Magnitude() <= Constants.Resolution()) // tangents are equal or opposite
                 {
                     double ScalarProduct = LastTangent * Tangent;
                     if (ScalarProduct > 0.0)
@@ -140,9 +143,9 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
                     else // tangents are opposite
                     {
                         double NewParam = (myKnots.Value(i - 1) + myKnots.Value(i)) / 2.0;
-                        if (NewParam - myKnots.Value(i - 1) < gp.Resolution())
+                        if (NewParam - myKnots.Value(i - 1) < Constants.Resolution())
                         {
-                            throw new Standard_ConstructionError(
+                            throw new ConstructionErrorException(
                                 "GeomFill_DiscreteTrihedron : impassable singularities on path curve");
                         }
                         myKnots.InsertBefore(i, NewParam);
@@ -152,8 +155,8 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
                 else // good value of angle
                 {
                     double theAngle = LastTangent.AngleWithRef(Tangent, AxisOfRotation);
-                    gp_Ax1 theAxisOfRotation = new gp_Ax1(Origin, new gp_Dir(AxisOfRotation));
-                    gp_Ax2 NewAxis = LastAxis.Rotated(theAxisOfRotation, theAngle);
+                    Axis3D theAxisOfRotation = new Axis3D(Origin, new Direction3D(AxisOfRotation));
+                    Frame3D NewAxis = LastAxis.Rotated(theAxisOfRotation, theAngle);
                     NewAxis.SetDirection(TangDir); // to prevent accumulation of floating computations error
                     myTrihedrons.Append(NewAxis);
                 }
@@ -161,7 +164,7 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         }
     }
 
-    public override bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
         if (myUseFrenet)
         {
@@ -171,9 +174,9 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         {
             // Locate <Param> in the sequence <myKnots>
             int Index = -1;
-            double TolPar = Precision.PConfusion();
+            double TolPar = global::Kerf.Engine.Foundation.Precision.PConfusion();
             int NbSamples = 10;
-            gp_Pnt Origin = new gp_Pnt(0.0, 0.0, 0.0);
+            Point3D Origin = new Point3D(0.0, 0.0, 0.0);
 
             int i;
             int I1, I2;
@@ -202,8 +205,8 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
             }
 
             double PrevParam = myKnots.Value(Index);
-            gp_Ax2 PrevAxis = myTrihedrons.Value(Index);
-            gp_Ax2 theAxis;
+            Frame3D PrevAxis = myTrihedrons.Value(Index);
+            Frame3D theAxis;
             if (Math.Abs(Param - PrevParam) < TolPar)
             {
                 theAxis = PrevAxis;
@@ -215,19 +218,19 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
                 if (norm < TolConf)
                 {
                     double subdelta = (myKnots.Value(Index + 1) - Param) / NbSamples;
-                    if (subdelta < Precision.PConfusion())
+                    if (subdelta < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         subdelta = myKnots.Value(Index + 1) - Param;
                     }
-                    gp_Pnt SubPnt = myTrimmed.Value(Param + subdelta);
+                    Point3D SubPnt = myTrimmed.Value(Param + subdelta);
                     Tangent.SetXYZ(SubPnt.XYZ() - myPoint.XYZ());
                 }
 
-                gp_Dir TangDir = new gp_Dir(Tangent); // normalize;
-                Tangent = new gp_Vec(TangDir);
-                gp_Vec PrevTangent = new gp_Vec(PrevAxis.Direction());
-                gp_Vec AxisOfRotation = PrevTangent ^ Tangent;
-                if (AxisOfRotation.Magnitude() <= gp.Resolution()) // tangents are equal
+                Direction3D TangDir = new Direction3D(Tangent); // normalize;
+                Tangent = new Vector3D(TangDir);
+                Vector3D PrevTangent = new Vector3D(PrevAxis.Direction());
+                Vector3D AxisOfRotation = PrevTangent ^ Tangent;
+                if (AxisOfRotation.Magnitude() <= Constants.Resolution()) // tangents are equal
                 {
                     // we assume that tangents can not be opposite
                     theAxis = PrevAxis;
@@ -235,21 +238,21 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
                 else // good value of angle
                 {
                     double theAngle = PrevTangent.AngleWithRef(Tangent, AxisOfRotation);
-                    gp_Ax1 theAxisOfRotation = new gp_Ax1(Origin, new gp_Dir(AxisOfRotation));
+                    Axis3D theAxisOfRotation = new Axis3D(Origin, new Direction3D(AxisOfRotation));
                     theAxis = PrevAxis.Rotated(theAxisOfRotation, theAngle);
                 }
                 theAxis.SetDirection(TangDir); // to prevent accumulation of floating computations error
             } // end of else (Param is between knots)
 
-            Tangent = new gp_Vec(theAxis.Direction());
-            Normal = new gp_Vec(theAxis.XDirection());
-            BiNormal = new gp_Vec(theAxis.YDirection());
+            Tangent = new Vector3D(theAxis.Direction());
+            Normal = new Vector3D(theAxis.XDirection());
+            BiNormal = new Vector3D(theAxis.YDirection());
         }
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         if (myUseFrenet)
         {
@@ -266,9 +269,9 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
         if (myUseFrenet)
         {
@@ -289,20 +292,20 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override int NbIntervals(GeomAbs_Shape S) => myTrimmed!.NbIntervals(GeomAbs_CN);
+    public override int NbIntervals(Continuity S) => myTrimmed!.NbIntervals(CN);
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        myTrimmed!.Intervals(T, GeomAbs_CN);
+        myTrimmed!.Intervals(T, CN);
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         int Num = 20; // order of digitalization
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), BN = new gp_Vec();
-        ATangent = new gp_Vec(0, 0, 0);
-        ANormal = new gp_Vec(0, 0, 0);
-        ABiNormal = new gp_Vec(0, 0, 0);
+        Vector3D T = new Vector3D(), N = new Vector3D(), BN = new Vector3D();
+        ATangent = new Vector3D(0, 0, 0);
+        ANormal = new Vector3D(0, 0, 0);
+        ABiNormal = new Vector3D(0, 0, 0);
         double Step = (myTrimmed!.LastParameter() - myTrimmed.FirstParameter()) / Num;
         double Param;
         for (int i = 0; i <= Num; i++)
@@ -325,7 +328,7 @@ public class GeomFill_DiscreteTrihedron : GeomFill_TrihedronLaw
         ANormal = ABiNormal.Crossed(ATangent);
     }
 
-    public override bool IsConstant() => myCurve!.GetType() == GeomAbs_Line;
+    public override bool IsConstant() => myCurve!.GetType() == Line;
 
     /// <summary>Returns true.</summary>
     public override bool IsOnlyBy3dCurve() => true;

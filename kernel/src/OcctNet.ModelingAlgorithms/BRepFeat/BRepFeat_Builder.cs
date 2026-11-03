@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2014 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.BOPAlgo_Operation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -156,7 +158,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
     }
 
     /// <summary>Main function to build the result of the local operation required.</summary>
-    public void PerformResult(Message_ProgressRange theRange = default)
+    public void PerformResult(ProgressRange theRange = default)
     {
         myOperation = myFuse != 0 ? BOPAlgo_FUSE : BOPAlgo_CUT;
         if (myShapes.IsEmpty())
@@ -166,7 +168,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
         }
 
         double aWhole = 100.0;
-        using var aPS = new Message_ProgressScope(theRange, "BRepFeat_Builder", aWhole);
+        using var aPS = new ProgressScope(theRange, "BRepFeat_Builder", aWhole);
         double aBSPart = 15;
         aWhole -= aBSPart;
 
@@ -668,7 +670,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
             //
             aSI.SetShape(aSp);
             //
-            ref Bnd_Box aBox = ref aSI.ChangeBox();
+            ref Box aBox = ref aSI.ChangeBox();
             BRepBndLib.Add(aSp, ref aBox);
             //
             nSp = myDS.Append(aSI);
@@ -750,7 +752,7 @@ public class BRepFeat_Builder : BOPAlgo_BOP
 
     /// <summary>Redefined to avoid the usage of removed faces.</summary>
     protected override void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids,
-                                          Message_ProgressRange theRange)
+                                          ProgressRange theRange)
     {
         GetReport().Clear();
 

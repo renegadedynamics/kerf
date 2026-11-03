@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using Xunit.Abstractions;
@@ -130,9 +132,9 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     /// <summary>The viewer's deflection for a shape: 0.1% of its bounding box's diagonal (build123d.NET's MeshTolerances.For).</summary>
     private static double ViewerDeflection(in TopoDS_Shape theShape)
     {
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         BRepBndLib.Add(theShape, ref aBox, true);
-        double aDiagonal = aBox.IsVoid() ? 0.0 : Math.Sqrt(aBox.SquareExtent());
+        double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         return aDiagonal > 1e-6 ? aDiagonal * 0.1 / 100 : 1e-3;
     }
 
@@ -259,7 +261,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     {
         TopoDS_Shape aPortF1 = PortRead(theF1);
         double aDeflection = theDeflection < 0 ? ViewerDeflection(aPortF1) : theDeflection;
-        if (aDeflection < Precision.Confusion())
+        if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -280,7 +282,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     {
         TopoDS_Shape aPortF1 = PortRead(theF1);
         double aDeflection = theDeflection < 0 ? ViewerDeflection(aPortF1) : theDeflection;
-        if (aDeflection < Precision.Confusion())
+        if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -411,7 +413,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             }
             TopoDS_Shape aPort = PortRead(aF1);
             double aDeflection = ViewerDeflection(aPort);
-            if (aDeflection < Precision.Confusion())
+            if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -434,7 +436,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     /// </summary>
     private IEnumerable<(string Name, string F1)> SpecialShapes()
     {
-        using var anAx2 = new N.gp_Ax2(Oracle.ToNative(new gp_Pnt(1, 2, 3)), Oracle.ToNative(new gp_Dir(0.2, 0.3, 1)));
+        using var anAx2 = new N.gp_Ax2(Oracle.ToNative(new Point3D(1, 2, 3)), Oracle.ToNative(new Direction3D(0.2, 0.3, 1)));
         using var aBoxMaker = new N.BRepPrimAPI_MakeBox(anAx2, 10, 20, 30);
         using var aCylMaker = new N.BRepPrimAPI_MakeCylinder(anAx2, 6, 40);
         using var aSphereMaker = new N.BRepPrimAPI_MakeSphere(anAx2, 12);
@@ -454,18 +456,18 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
 
         // A rotation with a translation, and a mirror (a location whose transformation is negative)
         using var aRotation = new N.gp_Trsf();
-        using (var anAxis = new N.gp_Ax1(Oracle.ToNative(new gp_Pnt(3, -1, 2)), Oracle.ToNative(new gp_Dir(1, 1, 0.5))))
+        using (var anAxis = new N.gp_Ax1(Oracle.ToNative(new Point3D(3, -1, 2)), Oracle.ToNative(new Direction3D(1, 1, 0.5))))
         {
             aRotation.SetRotation(anAxis, 0.7);
         }
         using (var aMove = new N.gp_Trsf())
         {
-            using N.gp_Vec aVec = Oracle.ToNative(new gp_Vec(5, -7, 11));
+            using N.gp_Vec aVec = Oracle.ToNative(new Vector3D(5, -7, 11));
             aMove.SetTranslation(aVec);
             aRotation.Multiply(aMove);
         }
         using var aMirror = new N.gp_Trsf();
-        using (var aPlane = new N.gp_Ax2(Oracle.ToNative(new gp_Pnt(0, 0, 4)), Oracle.ToNative(new gp_Dir(0.3, 0.1, 1))))
+        using (var aPlane = new N.gp_Ax2(Oracle.ToNative(new Point3D(0, 0, 4)), Oracle.ToNative(new Direction3D(0.3, 0.1, 1))))
         {
             aMirror.SetMirror(aPlane);
         }

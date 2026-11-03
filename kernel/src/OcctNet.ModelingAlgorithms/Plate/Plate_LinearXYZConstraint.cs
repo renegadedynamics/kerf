@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -29,7 +31,7 @@ public class Plate_LinearXYZConstraint
     {
         if (theCoeff.Length() != thePPC.Length())
         {
-            throw new Standard_DimensionMismatch();
+            throw new DimensionMismatchException();
         }
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, thePPC.Length());
         myCoef = new NCollection_HArray2<double>(1, 1, 1, theCoeff.Length());
@@ -44,7 +46,7 @@ public class Plate_LinearXYZConstraint
     {
         if (theCoeff.RowLength() != thePPC.Length())
         {
-            throw new Standard_DimensionMismatch();
+            throw new DimensionMismatchException();
         }
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, thePPC.Length());
         myCoef = new NCollection_HArray2<double>(1, theCoeff.ColLength(), 1, theCoeff.RowLength());

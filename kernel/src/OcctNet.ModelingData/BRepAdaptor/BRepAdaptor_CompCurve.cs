@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -245,16 +246,16 @@ public class BRepAdaptor_CompCurve : Adaptor3d_Curve
 
     public override double LastParameter() => TLast;
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
         if (myCurves!.Length() > 1)
         {
-            return GeomAbs_C0;
+            return C0;
         }
         return myCurves.Value(1).Continuity();
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int NbInt, ii;
         for (ii = 1, NbInt = 0; ii <= myCurves!.Length(); ii++)
@@ -265,7 +266,7 @@ public class BRepAdaptor_CompCurve : Adaptor3d_Curve
         return NbInt;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int ii, jj, kk, n;
         double f, F, delta;
@@ -334,7 +335,7 @@ public class BRepAdaptor_CompCurve : Adaptor3d_Curve
 
     public override double Period() => (TLast - TFirst);
 
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
         double u = theU;
         int index = CurIndex;
@@ -375,7 +376,7 @@ public class BRepAdaptor_CompCurve : Adaptor3d_Curve
         return aRes;
     }
 
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
         double u = theU;
         int index = CurIndex;
@@ -400,22 +401,22 @@ public class BRepAdaptor_CompCurve : Adaptor3d_Curve
     }
 
     /// <summary>Always GeomAbs_OtherCurve.</summary>
-    public override GeomAbs_CurveType GetType()
+    public override CurveKind GetType()
     {
-        return GeomAbs_OtherCurve; // temporary
+        return OtherCurve; // temporary
         //  if ( myCurves->Length() > 1) return GeomAbs_OtherCurve;
         //  return myCurves->Value(1).GetType();
     }
 
-    public override gp_Lin Line() => myCurves!.Value(1).Line();
+    public override Line3D Line() => myCurves!.Value(1).Line();
 
-    public override gp_Circ Circle() => myCurves!.Value(1).Circle();
+    public override Circle3D Circle() => myCurves!.Value(1).Circle();
 
-    public override gp_Elips Ellipse() => myCurves!.Value(1).Ellipse();
+    public override Ellipse3D Ellipse() => myCurves!.Value(1).Ellipse();
 
-    public override gp_Hypr Hyperbola() => myCurves!.Value(1).Hyperbola();
+    public override Hyperbola3D Hyperbola() => myCurves!.Value(1).Hyperbola();
 
-    public override gp_Parab Parabola() => myCurves!.Value(1).Parabola();
+    public override Parabola3D Parabola() => myCurves!.Value(1).Parabola();
 
     public override int Degree() => myCurves!.Value(1).Degree();
 

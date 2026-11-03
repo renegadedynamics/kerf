@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +21,7 @@ namespace Occt;
 /// A working object: <see cref="Parameter"/> must be called for the points in order, as it follows the previous
 /// one (OCCT's <c>mutable</c> fields).
 /// </remarks>
-public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Standard_Transient
+public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Transient
     where ParametersCollection : class, INCollection_ArrayRead<double>
 {
     private ParametersCollection? myParameters;
@@ -93,14 +97,14 @@ public sealed class BRepMesh_EdgeParameterProvider<ParametersCollection> : Stand
         myProjector.Initialize(myCurveAdaptor,
                                myCurveAdaptor.FirstParameter(),
                                myCurveAdaptor.LastParameter(),
-                               Precision.PConfusion());
+                               global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     /// <summary>
     /// The parameter of the point with the given index: the stored value if the edge is SameParameter, otherwise the
     /// scaled value refined by projecting <paramref name="thePoint3d"/> on the pcurve.
     /// </summary>
-    public double Parameter(int theIndex, in gp_Pnt thePoint3d)
+    public double Parameter(int theIndex, in Point3D thePoint3d)
     {
         if (myIsSameParam)
         {

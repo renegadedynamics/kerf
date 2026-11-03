@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.ChFiDS_TypeOfConcavity;
 using static Occt.ChFi3d_Builder_0;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.LocalAnalysis_StatusErrorType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -50,13 +52,13 @@ public static class ChFi3d
         l = C.LastParameter();
         //
         double ParOnC = 0.5 * (f + l);
-        gp_Vec T1 = C.DN(ParOnC, 1);
-        if (T1.SquareMagnitude() <= gp.Resolution())
+        Vector3D T1 = C.DN(ParOnC, 1);
+        if (T1.SquareMagnitude() <= Constants.Resolution())
         {
             ParOnC = IntTools_Tools.IntermediatePoint(f, l);
             T1 = C.DN(ParOnC, 1);
         }
-        if (T1.SquareMagnitude() > gp.Resolution())
+        if (T1.SquareMagnitude() > Constants.Resolution())
         {
             T1.Normalize();
         }
@@ -70,9 +72,9 @@ public static class ChFi3d
             T1.Reverse();
         }
 
-        gp_Pnt2d P = C1.Value(ParOnC);
-        gp_Pnt P3;
-        gp_Vec D1U, D1V;
+        Point2D P = C1.Value(ParOnC);
+        Point3D P3;
+        Vector3D D1U, D1V;
 
         if (CorrectPoint)
         {
@@ -80,7 +82,7 @@ public static class ChFi3d
         }
         //
         S1.D1(P.X(), P.Y(), out P3, out D1U, out D1V);
-        gp_Vec DN1 = D1U ^ D1V;
+        Vector3D DN1 = D1U ^ D1V;
         if (F1.Orientation() == TopAbs_REVERSED)
         {
             DN1.Reverse();
@@ -92,7 +94,7 @@ public static class ChFi3d
             Correct2dPoint(F2, ref P);
         }
         S2.D1(P.X(), P.Y(), out P3, out D1U, out D1V);
-        gp_Vec DN2 = D1U ^ D1V;
+        Vector3D DN2 = D1U ^ D1V;
         if (F2.Orientation() == TopAbs_REVERSED)
         {
             DN2.Reverse();
@@ -101,7 +103,7 @@ public static class ChFi3d
         DN1.Normalize();
         DN2.Normalize();
 
-        gp_Vec ProVec = DN1 ^ DN2;
+        Vector3D ProVec = DN1 ^ DN2;
         double NormProVec = ProVec.Magnitude();
         if (NormProVec < SinTol)
         {
@@ -119,7 +121,7 @@ public static class ChFi3d
         }
         else
         {
-            if (NormProVec > gp.Resolution())
+            if (NormProVec > Constants.Resolution())
             {
                 ProVec /= NormProVec;
             }
@@ -141,9 +143,9 @@ public static class ChFi3d
 
     /// <summary>True if <paramref name="theEdge"/> between <paramref name="theFace1"/> and <paramref name="theFace2"/> is tangent.</summary>
     public static bool IsTangentFaces(in TopoDS_Edge theEdge, in TopoDS_Face theFace1, in TopoDS_Face theFace2,
-                                      GeomAbs_Shape theOrder = GeomAbs_G1)
+                                      Continuity theOrder = G1)
     {
-        if (theOrder == GeomAbs_G1 && BRep_Tool.Continuity(theEdge, theFace1, theFace2) != GeomAbs_C0)
+        if (theOrder == G1 && BRep_Tool.Continuity(theEdge, theFace1, theFace2) != C0)
         {
             return true;
         }
@@ -236,7 +238,7 @@ public static class ChFi3d
                 new(aC2d1, aC2d2, aPar, aSurf1, aSurf2, theOrder, 0.001, TolC0, 0.1, 0.1, 0.1);
             if (!aCont.IsDone())
             {
-                if (theOrder == GeomAbs_C2 && aCont.StatusError() == LocalAnalysis_NullSecondDerivative)
+                if (theOrder == C2 && aCont.StatusError() == LocalAnalysis_NullSecondDerivative)
                 {
                     continue;
                 }
@@ -245,7 +247,7 @@ public static class ChFi3d
                 continue;
             }
 
-            if (theOrder == GeomAbs_G1)
+            if (theOrder == G1)
             {
                 if (!aCont.IsG1())
                 {
@@ -265,9 +267,9 @@ public static class ChFi3d
 
         // Compare normals of tangent faces in the middle point
         double MidPar = (aFirst + aLast) / 2.0;
-        gp_Pnt2d uv1 = aC2d1.Value(MidPar);
-        gp_Pnt2d uv2 = aC2d2.Value(MidPar);
-        gp_Dir normal1 = new(), normal2 = new();
+        Point2D uv1 = aC2d1.Value(MidPar);
+        Point2D uv2 = aC2d2.Value(MidPar);
+        Direction3D normal1 = new(), normal2 = new();
         TopOpeBRepTool_TOOL.Nt(uv1, theFace1, ref normal1);
         TopOpeBRepTool_TOOL.Nt(uv2, theFace2, ref normal2);
         double dot = normal1.Dot(normal2);
@@ -297,8 +299,8 @@ public static class ChFi3d
         double last = CE.LastParameter();
         double par = 0.691254 * first + 0.308746 * last;
 
-        gp_Pnt pt, pt1, pt2;
-        gp_Vec tgE, tgE1, tgE2, ns1, ns2, dint1, dint2;
+        Point3D pt, pt1, pt2;
+        Vector3D tgE, tgE1, tgE2, ns1, ns2, dint1, dint2;
         TopoDS_Face F1 = S1.Face();
         TopoDS_Face F2 = S2.Face();
         // F1.Orientation(TopAbs_FORWARD);
@@ -359,8 +361,8 @@ public static class ChFi3d
         }
         BRepAdaptor_Curve2d pc1 = new(E1, F1);
         BRepAdaptor_Curve2d pc2 = new(E2, F2);
-        gp_Pnt2d p2d1, p2d2;
-        gp_Vec DU1, DV1, DU2, DV2;
+        Point2D p2d1, p2d2;
+        Vector3D DU1, DV1, DU2, DV2;
         p2d1 = pc1.Value(par);
         p2d2 = pc2.Value(par);
         S1.D1(p2d1.X(), p2d1.Y(), out pt1, out DU1, out DV1);
@@ -402,7 +404,7 @@ public static class ChFi3d
             if (dint1.Dot(dint2) < 0.0)
             {
                 // This is a forgotten regularity
-                gp_Vec DDU, DDV, DDUV;
+                Vector3D DDU, DDV, DDUV;
                 S1.D2(p2d1.X(), p2d1.Y(), out pt1, out DU1, out DV1, out DDU, out DDV, out DDUV);
                 DU1 += (DU1 * dint1 < 0) ? -DDU : DDU;
                 DV1 += (DV1 * dint1 < 0) ? -DDV : DDV;
@@ -470,7 +472,7 @@ public static class ChFi3d
                 {
                     ns2.Reverse();
                 }
-                gp_Vec vref = new(pt1, pt2);
+                Vector3D vref = new(pt1, pt2);
                 if (ns1.Dot(vref) < 0.0)
                 {
                     Or1 = TopAbs_REVERSED;
@@ -627,10 +629,10 @@ public static class ChFi3d
 
     //=================================================================================================
 
-    private static void Correct2dPoint(in TopoDS_Face theF, ref gp_Pnt2d theP2d)
+    private static void Correct2dPoint(in TopoDS_Face theF, ref Point2D theP2d)
     {
         BRepAdaptor_Surface aBAS = new(theF, false);
-        if (aBAS.GetType() < GeomAbs_BezierSurface)
+        if (aBAS.GetType() < BezierSurface)
         {
             return;
         }
@@ -644,9 +646,9 @@ public static class ChFi3d
         u2 = aBAS.LastUParameter();
         v1 = aBAS.FirstVParameter();
         v2 = aBAS.LastVParameter();
-        if (!(Precision.IsInfinite(u1) || Precision.IsInfinite(u2)))
+        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2)))
         {
-            eps = Max(coeff * (u2 - u1), Precision.PConfusion());
+            eps = Max(coeff * (u2 - u1), global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (Math.Abs(theP2d.X() - u1) < eps)
             {
                 theP2d.SetX(u1 + eps);
@@ -656,9 +658,9 @@ public static class ChFi3d
                 theP2d.SetX(u2 - eps);
             }
         }
-        if (!(Precision.IsInfinite(v1) || Precision.IsInfinite(v2)))
+        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2)))
         {
-            eps = Max(coeff * (v2 - v1), Precision.PConfusion());
+            eps = Max(coeff * (v2 - v1), global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (Math.Abs(theP2d.Y() - v1) < eps)
             {
                 theP2d.SetY(v1 + eps);

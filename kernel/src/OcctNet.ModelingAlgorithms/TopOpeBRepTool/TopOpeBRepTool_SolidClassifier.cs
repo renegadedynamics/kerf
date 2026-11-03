@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -61,7 +62,7 @@ public sealed class TopOpeBRepTool_SolidClassifier
     /// The state of <paramref name="P"/> against the solid <paramref name="SOL"/>, with the state of an EXTERNAL or
     /// INTERNAL face found by the classifier taken into account.
     /// </summary>
-    public TopAbs_State Classify(in TopoDS_Solid SOL, in gp_Pnt P, double Tol)
+    public TopAbs_State Classify(in TopoDS_Solid SOL, in Point3D P, double Tol)
     {
         myPClassifier = null;
         myState = TopAbs_UNKNOWN;
@@ -142,7 +143,7 @@ public sealed class TopOpeBRepTool_SolidClassifier
     }
 
     /// <summary>The state of <paramref name="P"/> against the solid bounded by the shell <paramref name="SHE"/>.</summary>
-    public TopAbs_State Classify(in TopoDS_Shell SHE, in gp_Pnt P, double Tol)
+    public TopAbs_State Classify(in TopoDS_Shell SHE, in Point3D P, double Tol)
     {
         myPClassifier = null;
         myState = TopAbs_UNKNOWN;

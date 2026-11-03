@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -10,9 +12,9 @@ namespace Occt;
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>Treats the degenerated edges: splits them by the pave blocks passing through their vertex.</summary>
-    protected void ProcessDE(Message_ProgressRange theRange)
+    protected void ProcessDE(ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         //
         // 1. Find degenerated edges
         //-----------------------------------------------------scope f
@@ -70,7 +72,7 @@ public partial class BOPAlgo_PaveFiller
                     BRep_Builder BB = new();
                     BB.Add(aE, aVn);
                     BB.Degenerated(aE, true);
-                    BB.UpdateEdge(aE, Precision.Confusion());
+                    BB.UpdateEdge(aE, global::Kerf.Engine.Foundation.Precision.Confusion());
                     BOPDS_ShapeInfo aSI = new();
                     aSI.SetShapeType(TopAbs_EDGE);
                     aSI.SetShape(aE);
@@ -185,7 +187,7 @@ public partial class BOPAlgo_PaveFiller
         //
         // 2D intersection tolerance should be computed as a resolution
         // from the tolerance of vertex to resolve the touching cases
-        double aTolInt = Precision.PConfusion();
+        double aTolInt = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // UResolution from the tolerance of the vertex
         double aURes = aBAS.UResolution(aTolV);
         // VResolution from the tolerance of the vertex
@@ -196,7 +198,7 @@ public partial class BOPAlgo_PaveFiller
         // Parametric tolerance to compare intersection point with boundaries
         // should be computed as a resolution from the tolerance of vertex
         // in the direction of the 2D curve of degenerated edge
-        double aTolCmp = Precision.PConfusion();
+        double aTolCmp = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // Get 2D curve
         Geom2d_Curve? aC2DDE = BRep_Tool.CurveOnSurface(aDE, aDF, out double aTD1, out double aTD2);
         if (aC2DDE is null)
@@ -205,7 +207,7 @@ public partial class BOPAlgo_PaveFiller
         }
 
         // Get direction of the curve
-        bool bUDir = Math.Abs(aC2DDE.Value(aTD1).Y() - aC2DDE.Value(aTD2).Y()) < Precision.PConfusion();
+        bool bUDir = Math.Abs(aC2DDE.Value(aTD1).Y() - aC2DDE.Value(aTD2).Y()) < global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
         aTolCmp = Max(aTolCmp, (bUDir ? aURes : aVRes));
         //
@@ -259,7 +261,7 @@ public partial class BOPAlgo_PaveFiller
                 // If the intersection did not succeed, try the projection of the end point
                 // of the curve corresponding to the vertex of degenerated edge
                 double aT = (nVD == aPB.Pave1().Index() ? aPB.Pave1().Parameter() : aPB.Pave2().Parameter());
-                gp_Pnt2d aP2d = aC2D.Value(aT);
+                Point2D aP2d = aC2D.Value(aT);
                 Geom2dAPI_ProjectPointOnCurve aProj2d = new(aP2d, aC2DDE, aTD1, aTD2);
                 if (aProj2d.NbPoints() != 0)
                 {

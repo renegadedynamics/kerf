@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -45,12 +50,12 @@ public class BRepTools_ModifierTests
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
         TopoDS_Face aFace = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
-        var aTri = new Poly_Triangulation(4, 2, false);
+        var aTri = new Triangulation(4, 2, false);
         var aBuilder = new BRep_Builder();
         aBuilder.UpdateFace(aFace, aTri);
         for (var anExp = new TopExp_Explorer(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            aBuilder.UpdateEdge(TopoDS.Edge(anExp.Current()), new Poly_PolygonOnTriangulation(2, false), aTri, new TopLoc_Location());
+            aBuilder.UpdateEdge(TopoDS.Edge(anExp.Current()), new PolygonOnTriangulation(2, false), aTri, new Placement());
         }
 
         return aBox;
@@ -152,10 +157,10 @@ public class BRepTools_ModifierTests
             var aModifier = new BRepTools_Modifier(aBox, new BRepTools_CopyModification(aCopyGeom, aCopyMesh));
             Assert.True(aModifier.IsDone());
             TopoDS_Shape anInternal = aModifier.InternalModifiedShape(aBox);
-            Assert.False(anInternal.TShape()!.IsFrozen());
+            Assert.False(anInternal.TShape()!.IsFrozen);
             TopoDS_Shape aCopy = aModifier.ModifiedShape(aBox);
             Assert.True(aCopy.IsEqual(anInternal));
-            Assert.True(aCopy.TShape()!.IsFrozen());
+            Assert.True(aCopy.TShape()!.IsFrozen);
             AssertAllNew(aBox, aCopy);
             aSnapshot.AssertUnchanged(aBox);
 
@@ -166,7 +171,7 @@ public class BRepTools_ModifierTests
             Geom_Curve aNewCurve = BRep_Tool.Curve(aNewEdge, out _, out _)!;
             Assert.Equal(!aCopyGeom, ReferenceEquals(aCurve, aNewCurve));
             TopoDS_Face aFace = TopoDS.Face(SubShapes(aBox, TopAbs_FACE)[0]);
-            Poly_Triangulation? aNewTri = BRep_Tool.Triangulation(TopoDS.Face(aModifier.ModifiedShape(aFace)), out _);
+            Triangulation? aNewTri = BRep_Tool.Triangulation(TopoDS.Face(aModifier.ModifiedShape(aFace)), out _);
             Assert.Equal(aCopyMesh, aNewTri is not null);
             if (aNewTri is not null)
             {
@@ -180,8 +185,8 @@ public class BRepTools_ModifierTests
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aSnapshot = ShapeSnapshot.Of(aBox);
-        gp_Trsf aScale = new();
-        aScale.SetScale(new gp_Pnt(1, 1, 1), 2.0);
+        Transform3D aScale = new();
+        aScale.SetScale(new Point3D(1, 1, 1), 2.0);
         var aModifier = new BRepTools_Modifier(aBox, new BRepTools_TrsfModification(aScale));
         TopoDS_Shape aResult = aModifier.ModifiedShape(aBox);
         foreach (TopoDS_Shape aV in SubShapes(aBox, TopAbs_VERTEX))
@@ -196,8 +201,8 @@ public class BRepTools_ModifierTests
         AssertAllNew(aBox, aResult);
 
         // a mirror reverses the faces' new surfaces, so the faces are reversed
-        gp_Trsf aMirror = new();
-        aMirror.SetMirror(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1)));
+        Transform3D aMirror = new();
+        aMirror.SetMirror(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)));
         var aMirrored = new BRepTools_Modifier(aBox, new BRepTools_TrsfModification(aMirror));
         Assert.Equal(TopAbs_REVERSED, aMirrored.ModifiedShape(SubShapes(aBox, TopAbs_FACE)[0]).Orientation());
         aSnapshot.AssertUnchanged(aBox);
@@ -208,14 +213,14 @@ public class BRepTools_ModifierTests
     {
         // OCCT's BRepTools_GTrsfModification transforms B-spline and Bezier geometry only (GTransform converts first)
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var aG = new gp_GTrsf(new gp_Mat(2, 0, 0, 0, 1, 0, 0, 0, 1), new gp_XYZ());
-        Assert.Throws<Standard_NoSuchObject>(() => new BRepTools_Modifier(aBox, new BRepTools_GTrsfModification(aG)));
+        var aG = new GeneralTransform3D(new Matrix3x3(2, 0, 0, 0, 1, 0, 0, 0, 1), new Xyz());
+        Assert.Throws<NoSuchObjectException>(() => new BRepTools_Modifier(aBox, new BRepTools_GTrsfModification(aG)));
     }
 
     [Fact]
     public void NURBS_conversion_of_a_frozen_edge()
     {
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(3, 4, 0)));
+        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(3, 4, 0)));
         var aSnapshot = ShapeSnapshot.Of(anEdge);
         var aModifier = new BRepTools_Modifier(anEdge, new BRepTools_NurbsConvertModification());
         TopoDS_Edge aNewEdge = TopoDS.Edge(aModifier.ModifiedShape(anEdge));
@@ -223,7 +228,7 @@ public class BRepTools_ModifierTests
         Assert.IsType<Geom_BSplineCurve>(aCurve);
         Assert.Equal(0.0, f);
         Assert.Equal(5.0, l);
-        Assert.True(aCurve.Value(2.5).IsEqual(new gp_Pnt(1.5, 2, 0), 1e-12));
+        Assert.True(aCurve.Value(2.5).IsEqual(new Point3D(1.5, 2, 0), 1e-12));
         aSnapshot.AssertUnchanged(anEdge);
         AssertAllNew(anEdge, aNewEdge);
 
@@ -244,7 +249,7 @@ public class BRepTools_ModifierTests
         var aModification = new BRepTools_NurbsConvertModification();
         var aModifier = new BRepTools_Modifier(aBox, aModification);
         TopoDS_Shape aResult = aModifier.ModifiedShape(aBox);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         AssertNurbsAndConsistent(aResult, 6, 12);
         aSnapshot.AssertUnchanged(aBox);
         AssertAllNew(aBox, aResult);
@@ -273,7 +278,7 @@ public class BRepTools_ModifierTests
         var aSnapshot = ShapeSnapshot.Of(aFace);
         var aModifier = new BRepTools_Modifier(aFace, new BRepTools_NurbsConvertModification());
         TopoDS_Face aResult = TopoDS.Face(aModifier.ModifiedShape(aFace));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         AssertNurbsAndConsistent(aResult, 1, 3);
         aSnapshot.AssertUnchanged(aFace);
         AssertAllNew(aFace, aResult);
@@ -297,12 +302,12 @@ public class BRepTools_ModifierTests
         foreach (TopoDS_Shape aS in SubShapes(theResult, TopAbs_FACE))
         {
             TopoDS_Face aF = TopoDS.Face(aS);
-            Geom_Surface aSurf = BRep_Tool.Surface(aF, out TopLoc_Location aSL)!;
+            Geom_Surface aSurf = BRep_Tool.Surface(aF, out Placement aSL)!;
             Assert.IsType<Geom_BSplineSurface>(aSurf);
             foreach (TopoDS_Shape anS in SubShapes(aF, TopAbs_EDGE))
             {
                 TopoDS_Edge anE = TopoDS.Edge(anS);
-                Geom_Curve aC = BRep_Tool.Curve(anE, out TopLoc_Location aCL, out double f, out double l)!;
+                Geom_Curve aC = BRep_Tool.Curve(anE, out Placement aCL, out double f, out double l)!;
                 Assert.IsType<Geom_BSplineCurve>(aC);
                 foreach (TopoDS_Edge anOriented in new[] { anE, TopoDS.Edge(anE.Reversed()) })
                 {
@@ -315,9 +320,9 @@ public class BRepTools_ModifierTests
                     for (int i = 0; i <= 10; i++)
                     {
                         double t = f + (l - f) * i / 10;
-                        gp_Pnt2d aUV = aPC.Value(t);
-                        gp_Pnt aOnS = aSurf.Value(aUV.X(), aUV.Y()).Transformed(aSL.Transformation());
-                        gp_Pnt aOnC = aC.Value(t).Transformed(aCL.Transformation());
+                        Point2D aUV = aPC.Value(t);
+                        Point3D aOnS = aSurf.Value(aUV.X(), aUV.Y()).Transformed(aSL.Transformation());
+                        Point3D aOnC = aC.Value(t).Transformed(aCL.Transformation());
                         Assert.True(aOnS.Distance(aOnC) <= aTol, $"{aOnS.Distance(aOnC)} > {aTol}");
                     }
                 }
@@ -330,8 +335,8 @@ public class BRepTools_ModifierTests
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var aModifier = new BRepTools_Modifier(aBox, new BRepTools_CopyModification());
-        Assert.Throws<Standard_NoSuchObject>(() => aModifier.ModifiedShape(TestShapes.Vertex(new gp_Pnt())));
-        Assert.Throws<Standard_NullObject>(() => new BRepTools_Modifier().Perform(new BRepTools_CopyModification()));
+        Assert.Throws<NoSuchObjectException>(() => aModifier.ModifiedShape(TestShapes.Vertex(new Point3D())));
+        Assert.Throws<NullObjectException>(() => new BRepTools_Modifier().Perform(new BRepTools_CopyModification()));
     }
 
     // Copy for write
@@ -343,13 +348,13 @@ public class BRepTools_ModifierTests
         TopoDS_Face aFace = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
         // a second triangulation, active
         var aTri1 = BRep_Tool.Triangulation(aFace, out _)!;
-        var aTri2 = new Poly_Triangulation(3, 1, false);
-        ((BRep_TFace)aFace.TShape()!).Triangulations(new NCollection_List<Poly_Triangulation>([aTri1, aTri2]), aTri2);
+        var aTri2 = new Triangulation(3, 1, false);
+        ((BRep_TFace)aFace.TShape()!).Triangulations(new NCollection_List<Triangulation>([aTri1, aTri2]), aTri2);
         TestShapes.Frozen(aBox);
         var aSnapshot = ShapeSnapshot.Of(aBox);
 
         TopoDS_Shape aCopy = BRepTools.CopyForWrite(aBox, out BRepTools_History aHistory);
-        Assert.False(aCopy.TShape()!.IsFrozen());
+        Assert.False(aCopy.TShape()!.IsFrozen);
         AssertAllNew(aBox, aCopy);
         TopoDS_Face aNewFace = TopoDS.Face(aHistory.Modified(aFace)[0]);
         Assert.Same(BRep_Tool.Surface(aFace), BRep_Tool.Surface(aNewFace));
@@ -389,7 +394,7 @@ public class BRepTools_ModifierTests
         Assert.True(aHistory.IsRemoved(aFaces[0]));
         Assert.Equal([aCopiedFace1], aHistory.Modified(aFaces[1]));
         Assert.Equal(5, SubShapes(aResult, TopAbs_FACE).Count);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         aSnapshot.AssertUnchanged(aBox);
     }
 
@@ -406,7 +411,7 @@ public class BRepTools_ModifierTests
 
         theInPlace(anUnfrozen);
         TopoDS_Shape aResult = theTwin(aFrozen);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         aSnapshot.AssertUnchanged(aFrozen);
         ShapeSnapshot.Of(anUnfrozen).AssertSameValues(ShapeSnapshot.Of(aResult));
         AssertAllNew(aFrozen, aResult);
@@ -427,8 +432,8 @@ public class BRepTools_ModifierTests
                        var aBuilder = new BRep_Builder();
                        TopoDS_Compound aCompound = new();
                        aBuilder.MakeCompound(ref aCompound);
-                       aBuilder.Add(aCompound, TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0)));
-                       aBuilder.Add(aCompound, TestShapes.Edge(new gp_Pnt(0, 1, 0), new gp_Pnt(1, 1, 0)).Oriented(TopAbs_INTERNAL));
+                       aBuilder.Add(aCompound, TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)));
+                       aBuilder.Add(aCompound, TestShapes.Edge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Oriented(TopAbs_INTERNAL));
                        return aCompound;
                    },
                    s => BRepTools.RemoveInternals(s), s => BRepTools.InternalsRemoved(s));
@@ -444,7 +449,7 @@ public class BRepTools_ModifierTests
                        TopoDS_Face aFace = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
                        var aTri1 = BRep_Tool.Triangulation(aFace, out _)!;
                        ((BRep_TFace)aFace.TShape()!).Triangulations(
-                           new NCollection_List<Poly_Triangulation>([aTri1, new Poly_Triangulation(3, 1, false)]), null);
+                           new NCollection_List<Triangulation>([aTri1, new Triangulation(3, 1, false)]), null);
                        return aBox;
                    },
                    s => Assert.True(BRepTools.ActivateTriangulation(s, 1)),
@@ -460,16 +465,16 @@ public class BRepTools_ModifierTests
     public void Twin_of_EvalAndUpdateTol_raises_the_tolerance_of_a_copy()
     {
         // an edge on a plane whose pcurve is 0.01 off its 3D curve
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
+        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         Geom_Curve aC3d = BRep_Tool.Curve(anEdge, out double f, out double l)!;
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        var aC2d = new Geom2d_Line(new gp_Pnt2d(0, 0.01), new gp_Dir2d(1, 0));
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        var aC2d = new Geom2d_Line(new Point2D(0, 0.01), new Direction2D(1, 0));
         double aTol0 = BRep_Tool.Tolerance(anEdge);
         TopoDS_Edge aResult = BRepTools.TolEvaluatedAndUpdated(anEdge, aC3d, aC2d, aPlane, f, l, out double aTol);
         Assert.Equal(0.01, aTol, 1e-12);
         Assert.Equal(aTol, BRep_Tool.Tolerance(aResult));
         Assert.Equal(aTol0, BRep_Tool.Tolerance(anEdge));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
     }
 
     // PurgeLocations
@@ -478,17 +483,17 @@ public class BRepTools_ModifierTests
     public void PurgeLocations_applies_the_scaling_locations_to_the_geometry()
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        gp_Trsf aScale = new();
-        aScale.SetScale(new gp_Pnt(1, 0, 0), 1.5);
-        gp_Trsf aMove = gp_Trsf.Translation(new gp_Vec(0, 0, 10));
-        TopoDS_Shape aPlaced = aBox.Moved(new TopLoc_Location(aScale)).Moved(new TopLoc_Location(aMove));
+        Transform3D aScale = new();
+        aScale.SetScale(new Point3D(1, 0, 0), 1.5);
+        Transform3D aMove = Transform3D.Translation(new Vector3D(0, 0, 10));
+        TopoDS_Shape aPlaced = aBox.Moved(new Placement(aScale)).Moved(new Placement(aMove));
         var aSnapshot = ShapeSnapshot.Of(aPlaced);
 
         var aPurge = new BRepTools_PurgeLocations();
         Assert.True(aPurge.Perform(aPlaced));
         Assert.True(aPurge.IsDone());
         TopoDS_Shape aResult = aPurge.GetResult();
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         aSnapshot.AssertUnchanged(aPlaced);
 
         // no location that isn't a rigid motion is left, and the vertices are where the placed box had them
@@ -496,8 +501,8 @@ public class BRepTools_ModifierTests
         TopExp.MapShapes(aResult, aMap, false, false);
         foreach (TopoDS_Shape aS in aMap)
         {
-            gp_Trsf aT = aS.Location().Transformation();
-            Assert.False(aT.IsNegative());
+            Transform3D aT = aS.Location().Transformation();
+            Assert.False(aT.IsNegative);
             Assert.Equal(1.0, Math.Abs(aT.ScaleFactor()), 1e-14);
         }
 
@@ -511,7 +516,7 @@ public class BRepTools_ModifierTests
 
         // a shape with rigid locations only is left as it is
         var aRigid = new BRepTools_PurgeLocations();
-        TopoDS_Shape aMoved = aBox.Moved(new TopLoc_Location(aMove));
+        TopoDS_Shape aMoved = aBox.Moved(new Placement(aMove));
         Assert.True(aRigid.Perform(aMoved));
         Assert.True(aRigid.GetResult().IsEqual(aMoved));
         Assert.True(aRigid.ModifiedShape(aBox).IsEqual(aBox));

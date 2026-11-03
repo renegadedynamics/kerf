@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,12 +22,12 @@ namespace Occt;
 /// <see cref="SquareDistances"/>, <see cref="PointsOnCurve"/> and <see cref="PointsOnSurf"/> return the stored
 /// sequences themselves, for the caller to change (OCCT's non-const references).
 /// </remarks>
-public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
+public class Extrema_FuncExtCS : FunctionSetWithDerivatives
 {
     private Adaptor3d_Curve? myC;
     private Adaptor3d_Surface? myS;
-    private gp_Pnt myP1 = new();
-    private gp_Pnt myP2 = new();
+    private Point3D myP1 = new();
+    private Point3D myP2 = new();
     private double myt;
     private double myU;
     private double myV;
@@ -86,17 +92,17 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
 
         myt = UV[1];
         myU = UV[2];
         myV = UV[3];
 
-        myC!.D1(myt, out myP1, out gp_Vec Dtc);
-        myS!.D1(myU, myV, out myP2, out gp_Vec Dus, out gp_Vec Dvs);
+        myC!.D1(myt, out myP1, out Vector3D Dtc);
+        myS!.D1(myU, myV, out myP2, out Vector3D Dus, out Vector3D Dvs);
 
-        gp_Vec P1P2 = new(myP2, myP1);
+        Vector3D P1P2 = new(myP2, myP1);
 
         F[1] = P1P2.Dot(Dtc);
         F[2] = P1P2.Dot(Dus);
@@ -106,28 +112,28 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     }
 
     /// <summary>Calculates Fi'(t, u, v).</summary>
-    public override bool Derivatives(math_Vector UV, math_Matrix DF)
+    public override bool Derivatives(math_Vector UV, Matrix DF)
     {
         math_Vector F = new(1, 3);
         return Values(UV, F, DF);
     }
 
     /// <summary>Calculates Fi(t, u, v) and Fi'(t, u, v).</summary>
-    public override bool Values(math_Vector UV, math_Vector F, math_Matrix Df)
+    public override bool Values(math_Vector UV, math_Vector F, Matrix Df)
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
 
         myt = UV[1];
         myU = UV[2];
         myV = UV[3];
 
-        myC!.D2(myt, out myP1, out gp_Vec Dtc, out gp_Vec Dttc);
-        myS!.D2(myU, myV, out myP2, out gp_Vec Dus, out gp_Vec Dvs, out gp_Vec Duus, out gp_Vec Dvvs, out gp_Vec Duvs);
+        myC!.D2(myt, out myP1, out Vector3D Dtc, out Vector3D Dttc);
+        myS!.D2(myU, myV, out myP2, out Vector3D Dus, out Vector3D Dvs, out Vector3D Duus, out Vector3D Dvvs, out Vector3D Duvs);
 
-        gp_Vec P1P2 = new(myP2, myP1);
+        Vector3D P1P2 = new(myP2, myP1);
 
         F[1] = P1P2.Dot(Dtc);
         F[2] = P1P2.Dot(Dus);
@@ -153,10 +159,10 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         // comparison of solution with previous solutions
-        double tol2d = Precision.SquarePConfusion();
+        double tol2d = global::Kerf.Engine.Foundation.Precision.SquarePConfusion();
         int i = 1, nbSol = mySqDist.Length();
         for (; i <= nbSol; i++)
         {
@@ -186,7 +192,7 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return mySqDist.Value(N);
     }
@@ -196,7 +202,7 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint1.Value(N);
     }
@@ -206,7 +212,7 @@ public class Extrema_FuncExtCS : math_FunctionSetWithDerivatives
     {
         if (!myCinit || !mySinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint2.Value(N);
     }

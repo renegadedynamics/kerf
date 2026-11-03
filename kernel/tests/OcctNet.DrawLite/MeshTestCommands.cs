@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -207,7 +210,7 @@ internal static class MeshTestCommands
             else if (aNameCase is "-angular" or "-angdefl" or "-angulardeflection" or "-a" && anArgIter + 1 < theNbArgs)
             {
                 double aVal = theDI.Atof(theArgVec[++anArgIter]) * Math.PI / 180.0;
-                if (aVal <= Precision.Angular())
+                if (aVal <= global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
                     return 1;
@@ -219,7 +222,7 @@ internal static class MeshTestCommands
             else if (aNameCase == "-ai" && anArgIter + 1 < theNbArgs)
             {
                 double aVal = theDI.Atof(theArgVec[++anArgIter]) * Math.PI / 180.0;
-                if (aVal <= Precision.Angular())
+                if (aVal <= global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
                     return 1;
@@ -230,7 +233,7 @@ internal static class MeshTestCommands
             else if (aNameCase == "-min" && anArgIter + 1 < theNbArgs)
             {
                 double aVal = theDI.Atof(theArgVec[++anArgIter]);
-                if (aVal <= Precision.Confusion())
+                if (aVal <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
                     return 1;
@@ -241,7 +244,7 @@ internal static class MeshTestCommands
             else if (aNameCase == "-di" && anArgIter + 1 < theNbArgs)
             {
                 double aVal = theDI.Atof(theArgVec[++anArgIter]);
-                if (aVal <= Precision.Confusion())
+                if (aVal <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     di.Append("Syntax error: invalid input parameter '").Append(theArgVec[anArgIter]).Append("'");
                     return 1;
@@ -251,8 +254,8 @@ internal static class MeshTestCommands
             }
             else if (IsFullRealValue(aNameCase) && !hasDefl)
             {
-                aMeshParams.Deflection = Math.Max(theDI.Atof(theArgVec[anArgIter]), Precision.Confusion());
-                if (aMeshParams.DeflectionInterior < Precision.Confusion())
+                aMeshParams.Deflection = Math.Max(theDI.Atof(theArgVec[anArgIter]), global::Kerf.Engine.Foundation.Precision.Confusion());
+                if (aMeshParams.DeflectionInterior < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     aMeshParams.DeflectionInterior = aMeshParams.Deflection;
                 }
@@ -339,7 +342,7 @@ internal static class MeshTestCommands
     /// <summary>TCollection_AsciiString::IsRealValue(true): strtod reads the whole text.</summary>
     private static bool IsFullRealValue(string theText)
     {
-        Standard_Stream.Strtod(theText, out int anEnd);
+        global::Kerf.Engine.Foundation.StreamUtilities.Strtod(theText, out int anEnd);
         return anEnd == theText.Length;
     }
 
@@ -395,13 +398,13 @@ internal static class MeshTestCommands
             BRepTools.UVBounds(aSrcFace, out aUMin, out aUMax, out aVMin, out aVMax);
         }
 
-        if (Precision.IsInfinite(aUMin) || Precision.IsInfinite(aUMax) || Precision.IsInfinite(aVMin) || Precision.IsInfinite(aVMax))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aUMax) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVMax))
         {
             theDI.Output.WriteLine("Error: surface has infinite parametric range, aborting");
             return 1;
         }
 
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aSurf, aUMin, aUMax, aVMin, aVMax, Precision.Confusion());
+        var aFaceMaker = new BRepBuilderAPI_MakeFace(aSurf, aUMin, aUMax, aVMin, aVMax, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (!aFaceMaker.IsDone())
         {
             theDI.Output.WriteLine("Error: cannot build face with natural bounds, aborting");
@@ -414,7 +417,7 @@ internal static class MeshTestCommands
         // create triangulation
         int aNbNodes = (aNbU + 1) * (aNbV + 1);
         int aNbTriangles = 2 * aNbU * aNbV;
-        var aTriangulation = new Poly_Triangulation(aNbNodes, aNbTriangles, false);
+        var aTriangulation = new Triangulation(aNbNodes, aNbTriangles, false);
 
         // fill nodes
         var anAdSurf = new GeomAdaptor_Surface(aSurf);
@@ -426,7 +429,7 @@ internal static class MeshTestCommands
             for (int iV = 0; iV <= aNbV; iV++)
             {
                 double aV = aVMin + iV * aDV;
-                gp_Pnt aP = anAdSurf.Value(aU, aV);
+                Point3D aP = anAdSurf.Value(aU, aV);
                 aTriangulation.SetNode(iShift + iV, aP);
             }
         }
@@ -437,8 +440,8 @@ internal static class MeshTestCommands
             for (int iV = 0; iV < aNbV; iV++)
             {
                 int iBase = iShift + iV;
-                var aTri1 = new Poly_Triangle(iBase, iBase + aNbV + 2, iBase + 1);
-                var aTri2 = new Poly_Triangle(iBase, iBase + aNbV + 1, iBase + aNbV + 2);
+                var aTri1 = new Triangle1(iBase, iBase + aNbV + 2, iBase + 1);
+                var aTri2 = new Triangle1(iBase, iBase + aNbV + 1, iBase + aNbV + 2);
                 aTriangulation.SetTriangle(++iTri, aTri1);
                 aTriangulation.SetTriangle(++iTri, aTri2);
             }
@@ -465,16 +468,16 @@ internal static class MeshTestCommands
             aVMaxIso.SetValue(1 + iU, (1 + iU) * (1 + aNbV));
         }
 
-        var aUMinPoly = new Poly_PolygonOnTriangulation(aUMinIso);
-        var aUMaxPoly = new Poly_PolygonOnTriangulation(aUMaxIso);
-        var aVMinPoly = new Poly_PolygonOnTriangulation(aVMinIso);
-        var aVMaxPoly = new Poly_PolygonOnTriangulation(aVMaxIso);
+        var aUMinPoly = new PolygonOnTriangulation(aUMinIso);
+        var aUMaxPoly = new PolygonOnTriangulation(aUMaxIso);
+        var aVMinPoly = new PolygonOnTriangulation(aVMinIso);
+        var aVMaxPoly = new PolygonOnTriangulation(aVMaxIso);
         for (var exp = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(exp.Current());
             Geom2d_Curve aC = BRep_Tool.CurveOnSurface(anEdge, aFace, out double aFirst, out double aLast)!;
-            gp_Pnt2d aPFirst = aC.Value(aFirst);
-            gp_Pnt2d aPLast = aC.Value(aLast);
+            Point2D aPFirst = aC.Value(aFirst);
+            Point2D aPLast = aC.Value(aLast);
             if (Math.Abs(aPFirst.X() - aPLast.X()) < 0.1 * (aUMax - aUMin)) // U=const
             {
                 if (BRep_Tool.IsClosed(anEdge, aFace))
@@ -540,11 +543,11 @@ internal static class MeshTestCommands
         {
             TopoDS_Face aFace = TopoDS.Face(anExp.Current());
             aNbFaces++;
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out _);
             if (aTriangulation is not null)
             {
-                aNbTriangles += aTriangulation.NbTriangles();
-                aNbNodes += aTriangulation.NbNodes();
+                aNbTriangles += aTriangulation.TriangleCount;
+                aNbNodes += aTriangulation.NodeCount;
                 aMaxDeflection = Math.Max(aMaxDeflection, aTriangulation.Deflection());
                 if (aTriangulation.Parameters() is { } aParams)
                 {
@@ -561,14 +564,14 @@ internal static class MeshTestCommands
             if (toPrintLODs)
             {
                 // Collect LODs information
-                NCollection_List<Poly_Triangulation> aLODs = BRep_Tool.Triangulations(aFace, out _);
+                NCollection_List<Triangulation> aLODs = BRep_Tool.Triangulations(aFace, out _);
                 if (aLODs.Extent() != 0)
                 {
                     aNbLODs.Add(aLODs.Extent());
                 }
 
                 int aTriangIndex = 0;
-                for (var anIter = new NCollection_List<Poly_Triangulation>.Iterator(aLODs); anIter.More(); anIter.Next(), ++aTriangIndex)
+                for (var anIter = new NCollection_List<Triangulation>.Iterator(aLODs); anIter.More(); anIter.Next(), ++aTriangIndex)
                 {
                     if (aTriangIndex == aLODsStat.Count)
                     {
@@ -577,14 +580,14 @@ internal static class MeshTestCommands
 
                     TriangulationStat aStats = aLODsStat[aTriangIndex];
                     aStats.NbFaces++;
-                    Poly_Triangulation? aLOD = anIter.Value();
+                    Triangulation? aLOD = anIter.Value();
                     if (aLOD is null)
                     {
                         aStats.NbEmptyFaces++;
                         continue;
                     }
 
-                    string aType = aLOD.GetType().Name;
+                    string aType = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aLOD.GetType());
                     int aTypeIndex = aStats.TypeMap.FindIndex(t => t.Type == aType);
                     if (aTypeIndex < 0)
                     {
@@ -595,23 +598,23 @@ internal static class MeshTestCommands
                         aStats.TypeMap[aTypeIndex] = (aType, aStats.TypeMap[aTypeIndex].Count + 1);
                     }
 
-                    if (aLOD.HasDeferredData())
+                    if (aLOD.HasDeferredData)
                     {
                         aStats.NbDeferredFaces++;
-                        if (aLOD.HasGeometry())
+                        if (aLOD.HasGeometry)
                         {
-                            aStats.NbTriangles += aLOD.NbTriangles();
+                            aStats.NbTriangles += aLOD.TriangleCount;
                         }
                         else
                         {
                             aStats.NbUnloadedFaces++;
-                            aStats.NbTriangles += aLOD.NbDeferredTriangles();
-                            aStats.NbUnloadedTriangles += aLOD.NbDeferredTriangles();
+                            aStats.NbTriangles += aLOD.DeferredTriangleCount;
+                            aStats.NbUnloadedTriangles += aLOD.DeferredTriangleCount;
                         }
                     }
-                    else if (aLOD.HasGeometry())
+                    else if (aLOD.HasGeometry)
                     {
-                        aStats.NbTriangles += aLOD.NbTriangles();
+                        aStats.NbTriangles += aLOD.TriangleCount;
                     }
                     else
                     {
@@ -771,7 +774,7 @@ internal static class MeshTestCommands
             int nbEdge = 1;
             foreach (TopoDS_Shape anEdge in anEdgeMap)
             {
-                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anEdge), out Poly_PolygonOnTriangulation? aPoly, out Poly_Triangulation? aT, out TopLoc_Location aLoc);
+                BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anEdge), out PolygonOnTriangulation? aPoly, out Triangulation? aT, out Placement aLoc);
                 if (aT is null || aPoly is null)
                 {
                     continue;
@@ -781,8 +784,8 @@ internal static class MeshTestCommands
                 int nbnodes = Indices.Length();
                 for (int j = 1; j <= nbnodes; j++)
                 {
-                    gp_Pnt P3d = aT.Node(Indices[j]);
-                    if (!aLoc.IsIdentity())
+                    Point3D P3d = aT.Node(Indices[j]);
+                    if (!aLoc.IsIdentity)
                     {
                         P3d = P3d.Transformed(aLoc.Transformation());
                     }
@@ -870,30 +873,30 @@ internal static class MeshTestCommands
         int aNbNodesNew = 0, aNbTrisNew = 0;
         if (aResFace.Length > 0)
         {
-            var aMergeTool = new Poly_MergeNodesTool(aMergeAngle, aMergeToler);
+            var aMergeTool = new MergeNodesTool(aMergeAngle, aMergeToler);
             for (var aFaceIter = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
             {
                 TopoDS_Face aFace = TopoDS.Face(aFaceIter.Value());
-                Poly_Triangulation? aTris = BRep_Tool.Triangulation(aFace, out TopLoc_Location aFaceLoc);
-                if (aTris is null || aTris.NbNodes() < 3 || aTris.NbTriangles() < 1)
+                Triangulation? aTris = BRep_Tool.Triangulation(aFace, out Placement aFaceLoc);
+                if (aTris is null || aTris.NodeCount < 3 || aTris.TriangleCount < 1)
                 {
                     continue;
                 }
 
-                aNbNodesOld += aTris.NbNodes();
-                aNbTrisOld += aTris.NbTriangles();
+                aNbNodesOld += aTris.NodeCount;
+                aNbTrisOld += aTris.TriangleCount;
                 aMergeTool.AddTriangulation(aTris, aFaceLoc.Transformation(), aFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED);
             }
 
-            Poly_Triangulation? aNewTris = aMergeTool.Result();
+            Triangulation? aNewTris = aMergeTool.Result();
             if (aNewTris is null)
             {
                 theResult.Append("Error: empty result");
                 return 0;
             }
 
-            aNbNodesNew += aNewTris.NbNodes();
-            aNbTrisNew += aNewTris.NbTriangles();
+            aNbNodesNew += aNewTris.NodeCount;
+            aNbTrisNew += aNewTris.TriangleCount;
             var aFace1 = new TopoDS_Face();
             new BRep_Builder().MakeFace(ref aFace1, aNewTris);
             theDI.SetShape(aResFace, aFace1);
@@ -907,30 +910,30 @@ internal static class MeshTestCommands
             for (var aFaceIter = new TopExp_Explorer(aCopy, TopAbs_ShapeEnum.TopAbs_FACE); aFaceIter.More(); aFaceIter.Next())
             {
                 TopoDS_Face aFace = TopoDS.Face(aFaceIter.Value());
-                if (!aProcessedFaces.Add(aFace.Located(new TopLoc_Location())))
+                if (!aProcessedFaces.Add(aFace.Located(new Placement())))
                 {
                     continue;
                 }
 
-                Poly_Triangulation? aTris = BRep_Tool.Triangulation(aFace, out _);
-                if (aTris is null || aTris.NbNodes() < 3 || aTris.NbTriangles() < 1)
+                Triangulation? aTris = BRep_Tool.Triangulation(aFace, out _);
+                if (aTris is null || aTris.NodeCount < 3 || aTris.TriangleCount < 1)
                 {
                     continue;
                 }
 
-                aNbNodesOld += aTris.NbNodes();
-                aNbTrisOld += aTris.NbTriangles();
-                var aMergeTool = new Poly_MergeNodesTool(aMergeAngle, aMergeToler, aTris.NbTriangles());
+                aNbNodesOld += aTris.NodeCount;
+                aNbTrisOld += aTris.TriangleCount;
+                var aMergeTool = new MergeNodesTool(aMergeAngle, aMergeToler, aTris.TriangleCount);
                 aMergeTool.AddTriangulation(aTris);
-                if (toForce || aMergeTool.NbNodes() != aTris.NbNodes() || aMergeTool.NbElements() != aTris.NbTriangles())
+                if (toForce || aMergeTool.NodeCount != aTris.NodeCount || aMergeTool.ElementCount != aTris.TriangleCount)
                 {
                     new BRep_Builder().UpdateFace(aFace, aMergeTool.Result(), false);
                     isChanged = true;
                 }
 
                 aTris = BRep_Tool.Triangulation(aFace, out _)!;
-                aNbNodesNew += aTris.NbNodes();
-                aNbTrisNew += aTris.NbTriangles();
+                aNbNodesNew += aTris.NodeCount;
+                aNbTrisNew += aTris.TriangleCount;
             }
 
             if (isChanged)
@@ -1147,21 +1150,21 @@ internal static class MeshTestCommands
         {
             for (int i = 1; i <= aMapF.Extent(); i++)
             {
-                Poly_Triangulation? aPoly = BRep_Tool.Triangulation(TopoDS.Face(aMapF.FindKey(i)), out _);
+                Triangulation? aPoly = BRep_Tool.Triangulation(TopoDS.Face(aMapF.FindKey(i)), out _);
                 if (aPoly is null)
                 {
                     theDI.Output.Write("face " + i + " has no triangulation\n");
                     continue;
                 }
 
-                for (int j = 1; j <= aPoly.NbTriangles(); j++)
+                for (int j = 1; j <= aPoly.TriangleCount; j++)
                 {
                     aPoly.Triangle(j).Get(out int n1, out int n2, out int n3);
-                    gp_Pnt p1 = aPoly.Node(n1);
-                    gp_Pnt p2 = aPoly.Node(n2);
-                    gp_Pnt p3 = aPoly.Node(n3);
-                    var v1 = new gp_Vec(p1, p2);
-                    var v2 = new gp_Vec(p1, p3);
+                    Point3D p1 = aPoly.Node(n1);
+                    Point3D p2 = aPoly.Node(n2);
+                    Point3D p3 = aPoly.Node(n3);
+                    var v1 = new Vector3D(p1, p2);
+                    var v2 = new Vector3D(p1, p3);
                     aTriArea += v1.CrossMagnitude(v2);
                 }
             }
@@ -1299,13 +1302,13 @@ internal static class MeshTestCommands
         {
             TopoDS_Shape aShape = aFaceExp.Current();
             TopoDS_Face aFace = TopoDS.Face(aShape);
-            Poly_Triangulation? aT = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+            Triangulation? aT = BRep_Tool.Triangulation(aFace, out Placement aLoc);
 
             // Iterate boundary edges (BRepMesh_Edge: equal in either direction)
             var aBoundaryEdgeMap = new HashSet<(int, int)>();
             for (var anExp = new TopExp_Explorer(aShape, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
             {
-                Poly_PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aT, aLoc);
+                PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aT, aLoc);
                 if (aPoly is null)
                 {
                     continue;
@@ -1336,10 +1339,10 @@ internal static class MeshTestCommands
             var aFreeEdgeMap = new Dictionary<(int, int), long>();
             var aFreeEdges = new SortedDictionary<long, (int First, int Last)>();
             long anOrder = 0;
-            int aTriNum = aT!.NbTriangles();
+            int aTriNum = aT!.TriangleCount;
             for (int aTriIndx = 1; aTriIndx <= aTriNum; aTriIndx++)
             {
-                Poly_Triangle aTri = aT.Triangle(aTriIndx);
+                Triangle1 aTri = aT.Triangle(aTriIndx);
                 int[] aTriNodes = [aTri.Value(1), aTri.Value(2), aTri.Value(3)];
                 for (int j = 1; j <= 3; ++j)
                 {

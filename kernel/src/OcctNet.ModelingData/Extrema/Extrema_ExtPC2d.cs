@@ -4,8 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -22,8 +24,8 @@ namespace Occt;
 public class Extrema_ExtPC2d
 {
     private Adaptor2d_Curve2d? myC;
-    private gp_Pnt2d Pf = new();
-    private gp_Pnt2d Pl = new();
+    private Point2D Pf = new();
+    private Point2D Pl = new();
     private readonly Extrema_ExtPElC2d myExtPElC = new();
     private readonly NCollection_Sequence<Extrema_POnCurv2d> mypoint = new();
     private bool mydone;
@@ -37,7 +39,7 @@ public class Extrema_ExtPC2d
     private double myintusup;
     private double myuinf;
     private double myusup;
-    private GeomAbs_CurveType type;
+    private CurveKind type;
     private readonly NCollection_Sequence<bool> myismin = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
 
@@ -50,16 +52,16 @@ public class Extrema_ExtPC2d
         mytolu = 0.0;
         mytolf = 0.0;
         mysample = 17;
-        myintuinf = Precision.Infinite();
-        myintusup = Precision.Infinite();
-        myuinf = Precision.Infinite();
-        myusup = Precision.Infinite();
-        type = GeomAbs_OtherCurve;
+        myintuinf = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myintusup = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myuinf = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myusup = global::Kerf.Engine.Foundation.Precision.Infinite();
+        type = OtherCurve;
     }
 
     /// <summary>All the extremum distances between theP and theC on [theUinf, theUsup];
     /// theTolF is the tolerance on the function value of the root search.</summary>
-    public Extrema_ExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, double theUinf, double theUsup, double theTolF = 1.0e-10)
+    public Extrema_ExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, double theUinf, double theUsup, double theTolF = 1.0e-10)
     {
         Initialize(theC, theUinf, theUsup, theTolF);
         Perform(theP);
@@ -67,7 +69,7 @@ public class Extrema_ExtPC2d
 
     /// <summary>All the extremum distances between theP and theC over the curve's whole range;
     /// theTolF is the tolerance on the function value of the root search.</summary>
-    public Extrema_ExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, double theTolF = 1.0e-10)
+    public Extrema_ExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, double theTolF = 1.0e-10)
     {
         Initialize(theC, Extrema_Curve2dTool.FirstParameter(theC), Extrema_Curve2dTool.LastParameter(theC), theTolF);
         Perform(theP);
@@ -80,7 +82,7 @@ public class Extrema_ExtPC2d
         myintuinf = myuinf = theUinf;
         myintusup = myusup = theUsup;
         mytolf = theTolF;
-        mytolu = Extrema_Curve2dTool.Resolution(myC, Precision.Confusion());
+        mytolu = Extrema_Curve2dTool.Resolution(myC, global::Kerf.Engine.Foundation.Precision.Confusion());
         type = Extrema_Curve2dTool.GetType(theC);
         mydone = false;
         mydist1 = RealLast();
@@ -89,7 +91,7 @@ public class Extrema_ExtPC2d
     }
 
     /// <summary>Computes the extremum distances for the point theP.</summary>
-    public void Perform(in gp_Pnt2d theP)
+    public void Perform(in Point2D theP)
     {
         mySqDist.Clear();
         mypoint.Clear();
@@ -97,9 +99,9 @@ public class Extrema_ExtPC2d
         int i, NbExt, n;
         double U;
         mysample = 17;
-        double t3d = Precision.Confusion();
+        double t3d = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        if (Precision.IsInfinite(myuinf))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myuinf))
         {
             mydist1 = RealLast();
         }
@@ -109,7 +111,7 @@ public class Extrema_ExtPC2d
             mydist1 = theP.SquareDistance(Pf);
         }
 
-        if (Precision.IsInfinite(myusup))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myusup))
         {
             mydist2 = RealLast();
         }
@@ -123,32 +125,32 @@ public class Extrema_ExtPC2d
 
         switch (type)
         {
-            case GeomAbs_Circle:
+            case Circle:
             {
                 myExtPElC.Perform(theP, Extrema_Curve2dTool.Circle(aCurve), t3d, myuinf, myusup);
                 break;
             }
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
                 myExtPElC.Perform(theP, Extrema_Curve2dTool.Ellipse(aCurve), t3d, myuinf, myusup);
                 break;
             }
-            case GeomAbs_Parabola:
+            case Parabola:
             {
                 myExtPElC.Perform(theP, Extrema_Curve2dTool.Parabola(aCurve), t3d, myuinf, myusup);
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
                 myExtPElC.Perform(theP, Extrema_Curve2dTool.Hyperbola(aCurve), t3d, myuinf, myusup);
                 break;
             }
-            case GeomAbs_Line:
+            case Line:
             {
                 myExtPElC.Perform(theP, Extrema_Curve2dTool.Line(aCurve), t3d, myuinf, myusup);
                 break;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 myintuinf = myuinf;
                 myintusup = myusup;
@@ -157,7 +159,7 @@ public class Extrema_ExtPC2d
                 IntervalPerform(theP);
                 return;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBSpline = Extrema_Curve2dTool.BSpline(aCurve);
                 int aFirstIdx = aBSpline.FirstUKnotIndex();
@@ -165,7 +167,7 @@ public class Extrema_ExtPC2d
                 NCollection_Array1<double> aKnots = aBSpline.InternalKnots();
 
                 double aPeriodJump = 0.0;
-                double aTolCoeff = (myusup - myuinf) * Precision.PConfusion();
+                double aTolCoeff = (myusup - myuinf) * global::Kerf.Engine.Foundation.Precision.PConfusion();
                 if (Extrema_Curve2dTool.IsPeriodic(aCurve))
                 {
                     int aPeriodShift = (int)((myuinf - aKnots[aFirstIdx]) / Extrema_Curve2dTool.Period(aCurve));
@@ -213,7 +215,7 @@ public class Extrema_ExtPC2d
 
                 if (mysample == 2)
                 {
-                    gp_Pnt2d aPmin = new();
+                    Point2D aPmin = new();
                     double tmin = 0.0, distmin = RealLast();
                     double aMin1 = 0.0, aMin2 = 0.0;
                     myExtPC.Initialize(aCurve);
@@ -230,10 +232,10 @@ public class Extrema_ExtPC2d
                             aL = myusup;
                         }
 
-                        Extrema_Curve2dTool.D0(aCurve, aF, out gp_Pnt2d aP1);
-                        Extrema_Curve2dTool.D0(aCurve, aL, out gp_Pnt2d aP2);
-                        gp_Vec2d aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
-                        gp_Vec2d aV = new(aP2, aP1);
+                        Extrema_Curve2dTool.D0(aCurve, aF, out Point2D aP1);
+                        Extrema_Curve2dTool.D0(aCurve, aL, out Point2D aP2);
+                        Vector2D aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
+                        Vector2D aV = new(aP2, aP1);
                         double aVal1 = aV.Dot(aBase1);
                         double aVal2 = aV.Dot(aBase2);
                         if (anIdx == aFirstUsedKnot)
@@ -253,10 +255,10 @@ public class Extrema_ExtPC2d
                         aMin2 = theP.SquareDistance(aP2);
                         double aMinSqDist = Min(aMin1, aMin2);
                         double aMinDer = Min(Math.Abs(aVal1), Math.Abs(aVal2));
-                        if (!(Precision.IsInfinite(aVal1) || Precision.IsInfinite(aVal2)))
+                        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal2)))
                         {
-                            if (aVal1 * aVal2 <= 0.0 || aMinSqDist < 100.0 * Precision.SquareConfusion()
-                                || 2.0 * aMinDer < Precision.Confusion())
+                            if (aVal1 * aVal2 <= 0.0 || aMinSqDist < 100.0 * global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                                || 2.0 * aMinDer < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 myintuinf = aF;
                                 myintusup = aL;
@@ -264,7 +266,7 @@ public class Extrema_ExtPC2d
                             }
                         }
                     }
-                    if (!Precision.IsInfinite(distmin))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(distmin))
                     {
                         bool isToAdd = true;
                         NbExt = mypoint.Length();
@@ -316,7 +318,7 @@ public class Extrema_ExtPC2d
 
                     for (anIdx = aVal.Lower() + 1; anIdx < aVal.Upper(); anIdx++)
                     {
-                        if (aVal[anIdx] <= Precision.SquareConfusion())
+                        if (aVal[anIdx] <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                         {
                             mySqDist.Append(aVal[anIdx]);
                             myismin.Append(true);
@@ -331,17 +333,17 @@ public class Extrema_ExtPC2d
                         }
                     }
 
-                    if (mydist1 > Precision.SquareConfusion() && !Precision.IsPositiveInfinite(mydist1))
+                    if (mydist1 > global::Kerf.Engine.Foundation.Precision.SquareConfusion() && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(mydist1))
                     {
-                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Lower()), out gp_Pnt2d aP1, out gp_Vec2d aV1);
-                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Lower() + 1), out gp_Pnt2d aP2, out gp_Vec2d aV2);
-                        gp_Vec2d aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
+                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Lower()), out Point2D aP1, out Vector2D aV1);
+                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Lower() + 1), out Point2D aP2, out Vector2D aV2);
+                        Vector2D aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
                         double aVal1 = aV1.Dot(aBase1);
                         double aVal2 = aV2.Dot(aBase2);
-                        if (!(Precision.IsInfinite(aVal1) || Precision.IsInfinite(aVal2)))
+                        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal2)))
                         {
                             if (aVal1 * aVal2 <= 0.0 || aBase1.Dot(aBase2) <= 0.0
-                                || 2.0 * Math.Abs(aVal1) < Precision.Confusion())
+                                || 2.0 * Math.Abs(aVal1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 myintuinf = aParam[aVal.Lower()];
                                 myintusup = aParam[aVal.Lower() + 1];
@@ -350,18 +352,18 @@ public class Extrema_ExtPC2d
                         }
                     }
 
-                    if (mydist2 > Precision.SquareConfusion() && !Precision.IsPositiveInfinite(mydist2))
+                    if (mydist2 > global::Kerf.Engine.Foundation.Precision.SquareConfusion() && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(mydist2))
                     {
-                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Upper() - 1), out gp_Pnt2d aP1, out gp_Vec2d aV1);
-                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Upper()), out gp_Pnt2d aP2, out gp_Vec2d aV2);
-                        gp_Vec2d aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
+                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Upper() - 1), out Point2D aP1, out Vector2D aV1);
+                        Extrema_Curve2dTool.D1(aCurve, aParam.Value(aParam.Upper()), out Point2D aP2, out Vector2D aV2);
+                        Vector2D aBase1 = new(theP, aP1), aBase2 = new(theP, aP2);
                         double aVal1 = aV1.Dot(aBase1);
                         double aVal2 = aV2.Dot(aBase2);
 
-                        if (!(Precision.IsInfinite(aVal1) || Precision.IsInfinite(aVal2)))
+                        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aVal2)))
                         {
                             if (aVal1 * aVal2 <= 0.0 || aBase1.Dot(aBase2) <= 0.0
-                                || 2.0 * Math.Abs(aVal2) < Precision.Confusion())
+                                || 2.0 * Math.Abs(aVal2) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 myintuinf = aParam[aVal.Upper() - 1];
                                 myintusup = aParam[aVal.Upper()];
@@ -379,11 +381,11 @@ public class Extrema_ExtPC2d
                 bool IntExtIsDone = false;
                 bool IntIsNotValid;
                 NCollection_HArray1<double> theHInter;
-                n = Extrema_Curve2dTool.NbIntervals(aCurve, GeomAbs_C2);
+                n = Extrema_Curve2dTool.NbIntervals(aCurve, C2);
                 if (n > 1)
                 {
                     theHInter = new NCollection_HArray1<double>(1, n + 1);
-                    Extrema_Curve2dTool.Intervals(aCurve, theHInter.ChangeArray1(), GeomAbs_C2);
+                    Extrema_Curve2dTool.Intervals(aCurve, theHInter.ChangeArray1(), C2);
                 }
                 else
                 {
@@ -401,8 +403,8 @@ public class Extrema_ExtPC2d
                     }
                 }
                 bool isPeriodic = Extrema_Curve2dTool.IsPeriodic(aCurve);
-                gp_Vec2d V1;
-                gp_Pnt2d PP;
+                Vector2D V1;
+                Point2D PP;
                 double s1 = 0.0;
                 double s2 = 0.0;
                 myExtPC.Initialize(aCurve);
@@ -418,7 +420,7 @@ public class Extrema_ExtPC2d
                     if (isPeriodic)
                     {
                         double aPeriod = Extrema_Curve2dTool.Period(aCurve);
-                        anInfToCheck = ElCLib.InPeriod(myintuinf, myuinf, myuinf + aPeriod);
+                        anInfToCheck = global::Kerf.Engine.Geometry.ElCLib.InPeriod(myintuinf, myuinf, myuinf + aPeriod);
                         aSupToCheck = myintusup + (anInfToCheck - myintuinf);
                     }
                     IntIsNotValid = (myuinf > aSupToCheck) || (myusup < anInfToCheck);
@@ -444,7 +446,7 @@ public class Extrema_ExtPC2d
                     if (i != 1)
                     {
                         Extrema_Curve2dTool.D1(aCurve, myintuinf, out PP, out V1);
-                        s1 = (new gp_Vec2d(theP, PP)) * V1;
+                        s1 = (new Vector2D(theP, PP)) * V1;
                         if (s1 * s2 < 0.0)
                         {
                             mySqDist.Append(PP.SquareDistance(theP));
@@ -455,7 +457,7 @@ public class Extrema_ExtPC2d
                     if (i != n)
                     {
                         Extrema_Curve2dTool.D1(aCurve, myintusup, out PP, out V1);
-                        s2 = (new gp_Vec2d(theP, PP)) * V1;
+                        s2 = (new Vector2D(theP, PP)) * V1;
                     }
 
                     IntervalPerform(theP);
@@ -468,9 +470,9 @@ public class Extrema_ExtPC2d
         }
 
         // Postprocessing
-        if (type == GeomAbs_BSplineCurve || type == GeomAbs_OffsetCurve || type == GeomAbs_OtherCurve)
+        if (type == BSplineCurve || type == OffsetCurve || type == OtherCurve)
         {
-            if (mydist1 < Precision.SquareConfusion() || mydist2 < Precision.SquareConfusion())
+            if (mydist1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion() || mydist2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 bool isFirstAdded = false;
                 bool isLastAdded = false;
@@ -487,13 +489,13 @@ public class Extrema_ExtPC2d
                         isLastAdded = true;
                     }
                 }
-                if (!isFirstAdded && mydist1 < Precision.SquareConfusion())
+                if (!isFirstAdded && mydist1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     mySqDist.Prepend(mydist1);
                     myismin.Prepend(true);
                     mypoint.Prepend(new Extrema_POnCurv2d(myuinf, Pf));
                 }
-                if (!isLastAdded && mydist2 < Precision.SquareConfusion())
+                if (!isLastAdded && mydist2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     mySqDist.Append(mydist2);
                     myismin.Append(true);
@@ -514,7 +516,7 @@ public class Extrema_ExtPC2d
                     U = PC.Parameter();
                     if (Extrema_Curve2dTool.IsPeriodic(aCurve))
                     {
-                        U = ElCLib.InPeriod(U, myuinf, myuinf + Extrema_Curve2dTool.Period(aCurve));
+                        U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, myuinf, myuinf + Extrema_Curve2dTool.Period(aCurve));
                     }
                     if ((U >= myuinf - mytolu) && (U <= myusup + mytolu))
                     {
@@ -532,52 +534,52 @@ public class Extrema_ExtPC2d
     public bool IsDone() => mydone;
 
     /// <summary>The Nth extremum square distance.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public double SquareDistance(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist.Value(theN);
     }
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbExt()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist.Length();
     }
 
     /// <summary>True if the Nth extremum distance is a minimum.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public bool IsMin(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myismin.Value(theN);
     }
 
     /// <summary>The point of the Nth extremum distance.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public Extrema_POnCurv2d Point(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mypoint.Value(theN);
     }
 
     /// <summary>The square distances to the ends of the range and the end points (RealLast for an infinite end, whose
     /// point is then the one of a previous computation, or the origin).</summary>
-    public void TrimmedSquareDistances(out double theDist1, out double theDist2, out gp_Pnt2d theP1, out gp_Pnt2d theP2)
+    public void TrimmedSquareDistances(out double theDist1, out double theDist2, out Point2D theP1, out Point2D theP2)
     {
         theDist1 = mydist1;
         theDist2 = mydist2;
@@ -586,7 +588,7 @@ public class Extrema_ExtPC2d
     }
 
     /// <summary>Searches the extrema on the current interval [myintuinf, myintusup].</summary>
-    protected void IntervalPerform(in gp_Pnt2d theP)
+    protected void IntervalPerform(in Point2D theP)
     {
         int i;
         double U;
@@ -602,7 +604,7 @@ public class Extrema_ExtPC2d
                 U = PC.Parameter();
                 if (Extrema_Curve2dTool.IsPeriodic(myC!))
                 {
-                    U = ElCLib.InPeriod(U, myuinf, myuinf + Extrema_Curve2dTool.Period(myC!));
+                    U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, myuinf, myuinf + Extrema_Curve2dTool.Period(myC!));
                 }
                 if ((U >= myuinf - mytolu) && (U <= myusup + mytolu))
                 {
@@ -613,7 +615,7 @@ public class Extrema_ExtPC2d
     }
 
     /// <summary>Adds a solution unless one with the same parameter (within the parametric tolerance) is there.</summary>
-    protected void AddSol(double theU, in gp_Pnt2d theP, double theSqDist, bool isMin)
+    protected void AddSol(double theU, in Point2D theP, double theSqDist, bool isMin)
     {
         int i, NbExt = mypoint.Length();
         for (i = 1; i <= NbExt; i++)

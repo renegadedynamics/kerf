@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_PrintCount;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// signature, through SignOnly Mode. This can be useful for a specific counter (used in a Selection), while
 /// it remains better to use a Signature whenever possible
 /// </summary>
-public class IFSelect_SignatureList : Standard_Transient
+public class IFSelect_SignatureList : Transient
 {
 
     /// <summary>
@@ -62,7 +63,7 @@ public class IFSelect_SignatureList : Standard_Transient
     /// string is empty, counts a Null item. If SignOnly Mode is set, this work is replaced by just setting
     /// LastValue
     /// </summary>
-    public void Add(Standard_Transient? ent, string sign)
+    public void Add(Transient? ent, string sign)
     {
         if (thesignonly)
         {
@@ -87,14 +88,14 @@ public class IFSelect_SignatureList : Standard_Transient
 
         if (thelistat)
         {
-            NCollection_HSequence<Standard_Transient> alist = null;
+            NCollection_HSequence<Transient> alist = null;
             if (thediclist.Contains(sign))
             {
                 alist = thediclist.FindFromKey(sign);
             }
             else
             {
-                alist = new NCollection_HSequence<Standard_Transient>();
+                alist = new NCollection_HSequence<Transient>();
                 thediclist.Add(sign, alist);
             }
             alist.Append(ent);
@@ -112,7 +113,7 @@ public class IFSelect_SignatureList : Standard_Transient
     /// <summary>
     /// Acknowledges the list in once. Name identifies the Signature
     /// </summary>
-    public void Init(string name, NCollection_IndexedDataMap<string, int> theCount, NCollection_IndexedDataMap<string, NCollection_HSequence<Standard_Transient>> list, int nbnuls)
+    public void Init(string name, NCollection_IndexedDataMap<string, int> theCount, NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>> list, int nbnuls)
     {
         thelastval = "";
         thename = new TCollection_HAsciiString(name);
@@ -177,20 +178,20 @@ public class IFSelect_SignatureList : Standard_Transient
     /// Returns the list of entities attached to a signature It is empty if &lt;sign&gt; has not been recorded It
     /// is a Null Handle if the list of entities is not known
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? Entities(string sign)
+    public NCollection_HSequence<Transient>? Entities(string sign)
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         if (!thelistat)
         {
             return list;
         }
-        if (thediclist.FindFromKey(sign, out NCollection_HSequence<Standard_Transient> aTList))
+        if (thediclist.FindFromKey(sign, out NCollection_HSequence<Transient> aTList))
         {
             list = aTList;
         }
         else
         {
-            list = new NCollection_HSequence<Standard_Transient>();
+            list = new NCollection_HSequence<Transient>();
         }
         return list;
     }
@@ -283,7 +284,7 @@ public class IFSelect_SignatureList : Standard_Transient
         int nbtot = 0, nbsign = 0;
         for (int iter = 1; iter <= thediclist.Extent(); iter++)
         {
-            NCollection_HSequence<Standard_Transient> list = thediclist.FindFromIndex(iter);
+            NCollection_HSequence<Transient> list = thediclist.FindFromIndex(iter);
             S.Write(Name());
             S.Write(" : ");
             S.Write(thediclist.FindKey(iter));
@@ -450,5 +451,5 @@ public class IFSelect_SignatureList : Standard_Transient
     private TCollection_HAsciiString? thename;
     private string thelastval = "";
     private NCollection_IndexedDataMap<string, int> thedicount = new NCollection_IndexedDataMap<string, int>();
-    private NCollection_IndexedDataMap<string, NCollection_HSequence<Standard_Transient>> thediclist = new NCollection_IndexedDataMap<string, NCollection_HSequence<Standard_Transient>>();
+    private NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>> thediclist = new NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>>();
 }

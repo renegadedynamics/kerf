@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,8 +14,8 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's streams are a <see cref="TextWriter"/> and a <see cref="TextReader"/>, with C++'s stream state kept by
-/// <see cref="Standard_Stream"/>: <see cref="Write(Geom_Curve, TextWriter)"/> writes reals at the writer's precision
-/// (6 significant digits unless <see cref="Standard_Stream.Precision(TextWriter, int)"/> sets another, as C++'s
+/// <see cref="StreamUtilities"/>: <see cref="Write(Geom_Curve, TextWriter)"/> writes reals at the writer's precision
+/// (6 significant digits unless <see cref="StreamUtilities.Precision(TextWriter, int)"/> sets another, as C++'s
 /// <c>OS.precision(n)</c>); the sets' <c>Write</c> methods use 17. OCCT's debugger helper <c>GeomTools_Dump(void*)</c>
 /// (GeomTools_Debug.cxx) is not ported.
 /// </remarks>
@@ -105,14 +107,14 @@ public static class GeomTools
     /// <summary>
     /// Enters one level of nested geometry, for the readers; disposing the result leaves it.
     /// </summary>
-    /// <exception cref="Storage_StreamFormatError">The geometry is nested more than <see cref="MaxGeometryNesting"/>
+    /// <exception cref="StreamFormatErrorException">The geometry is nested more than <see cref="MaxGeometryNesting"/>
     /// deep.</exception>
     internal static NestingLevel Nesting()
     {
         // OCCT.NET: untrusted input
         if (theNesting >= MaxGeometryNesting)
         {
-            throw new Storage_StreamFormatError("GeomTools: geometry nested more than " + MaxGeometryNesting + " deep");
+            throw new StreamFormatErrorException("GeomTools: geometry nested more than " + MaxGeometryNesting + " deep");
         }
 
         theNesting++;
@@ -125,13 +127,13 @@ public static class GeomTools
     }
 
     /// <summary>
-    /// Reads a real: the next word, at most 31 characters, converted with <see cref="Standard_Stream.Strtod(string)"/>
+    /// Reads a real: the next word, at most 31 characters, converted with <see cref="StreamUtilities.Strtod(string)"/>
     /// (its longest numeric prefix). 0 at the end of the text or when there is no number.
     /// </summary>
     public static void GetReal(TextReader IS, out double theValue)
     {
         theValue = 0.0;
-        if (Standard_Stream.Eof(IS))
+        if (StreamUtilities.Eof(IS))
         {
             return;
         }
@@ -139,7 +141,7 @@ public static class GeomTools
         // According IEEE-754 Specification and standard stream parameters
         // the most optimal buffer length not less then 25
         const int THE_BUFFER_SIZE = 32;
-        string aBuffer = Standard_Stream.ReadWord(IS, THE_BUFFER_SIZE - 1) ?? "";
-        theValue = Standard_Stream.Strtod(aBuffer);
+        string aBuffer = StreamUtilities.ReadWord(IS, THE_BUFFER_SIZE - 1) ?? "";
+        theValue = StreamUtilities.Strtod(aBuffer);
     }
 }

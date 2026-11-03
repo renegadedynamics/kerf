@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -25,12 +26,12 @@ public static class IntImpParGen
     /// then return. The tolerance is not used.
     /// </summary>
     public static void DetermineTransition(IntRes2d_Position Pos1,
-                                           ref gp_Vec2d Tan1,
-                                           in gp_Vec2d Norm1,
+                                           ref Vector2D Tan1,
+                                           in Vector2D Norm1,
                                            ref IntRes2d_Transition T1,
                                            IntRes2d_Position Pos2,
-                                           ref gp_Vec2d Tan2,
-                                           in gp_Vec2d Norm2,
+                                           ref Vector2D Tan2,
+                                           in Vector2D Norm2,
                                            ref IntRes2d_Transition T2,
                                            double Tol)
     {
@@ -82,7 +83,7 @@ public static class IntImpParGen
                 }
                 else
                 {
-                    gp_Vec2d Norm = new();
+                    Vector2D Norm = new();
                     Norm.SetCoord(-Tan1.Y(), Tan1.X());
 
                     double Val1, Val2;
@@ -153,10 +154,10 @@ public static class IntImpParGen
     /// when a tangent is (nearly) zero or the curves are tangent. The tolerance is not used.
     /// </summary>
     public static bool DetermineTransition(IntRes2d_Position Pos1,
-                                           ref gp_Vec2d Tan1,
+                                           ref Vector2D Tan1,
                                            ref IntRes2d_Transition T1,
                                            IntRes2d_Position Pos2,
-                                           ref gp_Vec2d Tan2,
+                                           ref Vector2D Tan2,
                                            ref IntRes2d_Transition T2,
                                            double Tol)
     {
@@ -202,7 +203,7 @@ public static class IntImpParGen
     /// <paramref name="Param1"/>: Head or End when it is within the bound's tolerance (the closer bound in
     /// parameter when it is within both).
     /// </summary>
-    public static void DeterminePosition(out IntRes2d_Position Pos1, in IntRes2d_Domain TheDomain, in gp_Pnt2d Pnt1,
+    public static void DeterminePosition(out IntRes2d_Position Pos1, in IntRes2d_Domain TheDomain, in Point2D Pnt1,
                                          double Param1)
     {
         Pos1 = IntRes2d_Middle;

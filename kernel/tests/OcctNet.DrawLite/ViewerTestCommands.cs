@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -60,8 +61,8 @@ internal static class ViewerTestCommands
 
         // The view's camera, as V3d_View::SetProj leaves it (unit 7Q2): the projection axis (from the scene to the
         // eye) and the up direction; the default view is V3d_XposYnegZpos with +Z up.
-        public gp_Dir ViewProj = new(1.0, -1.0, 1.0);
-        public gp_Dir ViewUp = new(0.0, 0.0, 1.0);
+        public Direction3D ViewProj = new(1.0, -1.0, 1.0);
+        public Direction3D ViewUp = new(0.0, 0.0, 1.0);
 
         public AisContext() => DefaultDrawer.SetupOwnDefaults();
     }
@@ -151,7 +152,7 @@ internal static class ViewerTestCommands
                 DrawShapeRebind.Rebind(theDI, aShape, aMeshed);
             }
         }
-        catch (Standard_Failure anException)
+        catch (global::Kerf.Engine.Foundation.FailureException anException)
         {
             theDI.Output.WriteLine("Error: AIS_Shape::Compute() shaded presentation builder has failed ("
                                    + anException.GetMessageString() + ")");
@@ -173,13 +174,13 @@ internal static class ViewerTestCommands
         try
         {
             double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, theObject.Drawer);
-            if (theObject.Drawer.IsAutoTriangulation() && !BRepTools.Triangulation(aShape, Precision.Infinite(), true))
+            if (theObject.Drawer.IsAutoTriangulation() && !BRepTools.Triangulation(aShape, global::Kerf.Engine.Foundation.Precision.Infinite(), true))
             {
                 var aMesher = new BRepMesh_IncrementalMesh(aShape, aDeflection, false, theObject.Drawer.DeviationAngle());
                 DrawShapeRebind.Rebind(theDI, aShape, aMesher.Shape());
             }
         }
-        catch (Standard_Failure anException)
+        catch (global::Kerf.Engine.Foundation.FailureException anException)
         {
             theDI.Output.WriteLine("Error: AIS_Shape::ComputeSelection(0) has failed (" + anException.GetMessageString() + ")");
         }
@@ -722,13 +723,13 @@ internal static class ViewerTestCommands
             "vright" => (1.0, 0.0, 0.0),   // V3d_Xpos
             _ => (1.0, -1.0, 1.0),         // vaxo: V3d_XposYnegZpos
         };
-        aContext.ViewProj = new gp_Dir(anAxis.X, anAxis.Y, anAxis.Z);
+        aContext.ViewProj = new Direction3D(anAxis.X, anAxis.Y, anAxis.Z);
         // V3d_View::SetProj (Z up): +Z, but +Y looking down on Zpos and -Y looking up from Zneg
         aContext.ViewUp = theArgVec[0] switch
         {
-            "vtop" => new gp_Dir(0.0, 1.0, 0.0),
-            "vbottom" => new gp_Dir(0.0, -1.0, 0.0),
-            _ => new gp_Dir(0.0, 0.0, 1.0),
+            "vtop" => new Direction3D(0.0, 1.0, 0.0),
+            "vbottom" => new Direction3D(0.0, -1.0, 0.0),
+            _ => new Direction3D(0.0, 0.0, 1.0),
         };
         return 0;
     }
@@ -751,9 +752,9 @@ internal static class ViewerTestCommands
         int theArgNb = theArgVec.Count;
         string aHlrName = "";
         TopoDS_Shape aSh = new();
-        gp_Pnt anEye = new();
-        gp_Dir aDir;
-        gp_Ax2 aProjAx = new();
+        Point3D anEye = new();
+        Direction3D aDir;
+        Frame3D aProjAx = new();
         bool hasViewDirArg = false;
         bool isPolyAlgo = true;
         bool toShowCNEdges = false, toShowHiddenEdges = false;
@@ -761,10 +762,10 @@ internal static class ViewerTestCommands
         AisContext? aContext = Context(theDI);
         if (aContext is { NbViews: > 0 })
         {
-            gp_Dir aBck = aContext.ViewProj;
+            Direction3D aBck = aContext.ViewProj;
             // Graphic3d_Camera: the view direction, the up direction orthogonalized, and the side (right) direction
-            gp_Dir aCamDir = aBck.Reversed();
-            gp_Dir aSide = aCamDir.Crossed(aContext.ViewUp);
+            Direction3D aCamDir = aBck.Reversed();
+            Direction3D aSide = aCamDir.Crossed(aContext.ViewUp);
             aDir = aBck;
             aProjAx.SetLocation(anEye);
             aProjAx.SetDirection(aDir);
@@ -833,11 +834,11 @@ internal static class ViewerTestCommands
             else if (!hasViewDirArg && anArgIter + 8 < theArgNb)
             {
                 hasViewDirArg = true;
-                anEye = new gp_Pnt(theDI.Atof(theArgVec[anArgIter + 0]), theDI.Atof(theArgVec[anArgIter + 1]),
+                anEye = new Point3D(theDI.Atof(theArgVec[anArgIter + 0]), theDI.Atof(theArgVec[anArgIter + 1]),
                                    theDI.Atof(theArgVec[anArgIter + 2]));
-                aDir = new gp_Dir(theDI.Atof(theArgVec[anArgIter + 3]), theDI.Atof(theArgVec[anArgIter + 4]),
+                aDir = new Direction3D(theDI.Atof(theArgVec[anArgIter + 3]), theDI.Atof(theArgVec[anArgIter + 4]),
                                   theDI.Atof(theArgVec[anArgIter + 5]));
-                gp_Dir anUp = new(theDI.Atof(theArgVec[anArgIter + 6]), theDI.Atof(theArgVec[anArgIter + 7]),
+                Direction3D anUp = new(theDI.Atof(theArgVec[anArgIter + 6]), theDI.Atof(theArgVec[anArgIter + 7]),
                                   theDI.Atof(theArgVec[anArgIter + 8]));
                 aProjAx.SetLocation(anEye);
                 aProjAx.SetDirection(aDir);

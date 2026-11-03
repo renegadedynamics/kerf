@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -15,10 +16,10 @@ public class BRepLibStaticsTests
 {
     private const double Conf = 1e-7;
 
-    private static Geom_Plane XOY() => new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+    private static Geom_Plane XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
     private static Geom2d_BSplineCurve Bent2d(double theFirst, double theLast)
-        => new(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(2, 0), new gp_Pnt2d(10, 0)]),
+        => new(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(2, 0), new Point2D(10, 0)]),
                NCollection_Array1<double>.From([theFirst, theLast]),
                NCollection_Array1<int>.From([3, 3]), 2);
 
@@ -32,7 +33,7 @@ public class BRepLibStaticsTests
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
         double aLast = theSameRange ? 10 : 1;
         aB.UpdateEdge(anE, Bent2d(0, aLast), aF, Conf);
         aB.Range(anE, aF, 0, aLast);
@@ -56,7 +57,7 @@ public class BRepLibStaticsTests
         for (int i = 0; i <= 50; i++)
         {
             double t = f + (l - f) * i / 50.0;
-            gp_Pnt2d aUV = aPC.Value(t);
+            Point2D aUV = aPC.Value(t);
             aMax = Math.Max(aMax, aC.Value(t).Distance(aS.Value(aUV.X(), aUV.Y())));
         }
         return aMax;
@@ -68,9 +69,9 @@ public class BRepLibStaticsTests
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
         // the line's pcurve over [10, 20]: the same points at parameters shifted by 10
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(-10, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(-10, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
 
@@ -83,7 +84,7 @@ public class BRepLibStaticsTests
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
         Assert.Equal(0, f, 1e-12);
         Assert.Equal(10, l, 1e-12);
-        gp_Pnt2d aP = aPC.Value(5);
+        Point2D aP = aPC.Value(5);
         Assert.Equal(5, aP.X(), 1e-12);
         Assert.Equal(0, aP.Y(), 1e-12);
     }
@@ -93,11 +94,11 @@ public class BRepLibStaticsTests
     {
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 1, 1), new gp_Dir(1, 0, 0)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 1, 1), new Direction3D(1, 0, 0)));
         aB.MakeFace(ref aF, aPlane, Conf);
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE);
-        var aCirc = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0.5, -0.5), new gp_Dir2d(1, 0)), 2);
+        var aCirc = new Geom2d_Circle(new Axis2D(new Point2D(0.5, -0.5), new Direction2D(1, 0)), 2);
         aB.UpdateEdge(anE, aCirc, aF, Conf);
         aB.Range(anE, 0.25, 2.5);
         TopoDS_Wire aW = new();
@@ -119,7 +120,7 @@ public class BRepLibStaticsTests
     public void BuildCurves3d_approximates_curves_on_a_cylinder()
     {
         var aB = new BRep_Builder();
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 3);
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3);
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aCyl, Conf);
         TopoDS_Wire aW = new();
@@ -128,8 +129,8 @@ public class BRepLibStaticsTests
         var anEdges = new List<TopoDS_Edge>();
         foreach (Geom2d_Curve aPC in new Geom2d_Curve[]
                  {
-                     new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0.3)),
-                     new Geom2d_Line(new gp_Pnt2d(0, 1), new gp_Dir2d(1, 0)),
+                     new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0.3)),
+                     new Geom2d_Line(new Point2D(0, 1), new Direction2D(1, 0)),
                  })
         {
             TopoDS_Edge anE = new();
@@ -154,12 +155,12 @@ public class BRepLibStaticsTests
     public void BuildCurve3d_of_a_degenerated_edge_without_curve_fails()
     {
         var aB = new BRep_Builder();
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 3);
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3);
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aCyl, Conf);
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Degenerated(anE, true);
         Assert.False(BRepLib.BuildCurve3d(anE));
     }
@@ -176,7 +177,7 @@ public class BRepLibStaticsTests
         Assert.True(BRep_Tool.SameRange(anE));
         Assert.True(MaxDeviation(anE, aF) <= BRep_Tool.Tolerance(anE));
         Assert.True(BRep_Tool.Tolerance(anE) < 1e-5);
-        Assert.True(BRep_Tool.Tolerance(anE) >= Precision.Confusion());
+        Assert.True(BRep_Tool.Tolerance(anE) >= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -224,7 +225,7 @@ public class BRepLibStaticsTests
         Assert.Same(aBefore, BRep_Tool.CurveOnSurface(anE, aF, out _, out _));
         Assert.True(BRep_Tool.SameParameter(aNE));
         Assert.True(aNewTol > 0);
-        Assert.False(aNE.TShape()!.IsFrozen());
+        Assert.False(aNE.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -239,7 +240,7 @@ public class BRepLibStaticsTests
         aSnapshot.AssertUnchanged(aFrozen);
 
         TopoDS_Face aResult = TopoDS.Face(aReShape.Apply(aFrozen));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         TopoDS_Edge aNE = TopoDS.Edge(new TopExp_Explorer(aResult, TopAbs_EDGE).Current());
         Assert.True(BRep_Tool.SameParameter(aNE));
         Assert.True(MaxDeviation(aNE, aResult) <= BRep_Tool.Tolerance(aNE));
@@ -319,21 +320,21 @@ public class BRepLibStaticsTests
         aSnapshot.AssertUnchanged(aFrozen);
 
         TopoDS_Shape aResult = aReShape.Apply(aFrozen);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(1e-3, BRep_Tool.MaxTolerance(aResult, TopAbs_EDGE));
-        Assert.Equal(Precision.Confusion(), BRep_Tool.MaxTolerance(aFrozen, TopAbs_EDGE));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.MaxTolerance(aFrozen, TopAbs_EDGE));
     }
 
     [Fact]
     public void UpdateInnerTolerances_covers_a_vertex_off_the_curve()
     {
         var aB = new BRep_Builder();
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(0, 0, 1e-4));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new gp_Pnt(10, 0, 0));
-        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 10, aV1, aV2);
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 1e-4));
+        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV1, aV2);
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         TopoDS_Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, anE);
@@ -343,7 +344,7 @@ public class BRepLibStaticsTests
 
         Assert.True(BRep_Tool.Tolerance(aV1) >= 1e-4);
         Assert.True(BRep_Tool.Tolerance(aV1) < 1.1e-4);
-        Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(aV2));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(aV2));
     }
 
     [Fact]
@@ -391,11 +392,11 @@ public class BRepLibStaticsTests
         TopoDS_Edge aFrozenE = TopoDS.Edge(new TopExp_Explorer(aFrozen, TopAbs_EDGE).Current());
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.SameParameter(aFrozen, 1e-6));
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.SameParameter(aFrozenE, 1e-6));
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.SameRange(aFrozenE));
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.UpdateInnerTolerances(aFrozen));
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameParameter(aFrozen, 1e-6));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameParameter(aFrozenE, 1e-6));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameRange(aFrozenE));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateInnerTolerances(aFrozen));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
         aSnapshot.AssertUnchanged(aFrozen);
 
         TopoDS_Shape aCopy = BRepTools.CopyForWrite(aFrozen, out BRepTools_History aHistory);
@@ -415,7 +416,7 @@ public class BRepLibStaticsTests
         TopoDS_Face aTop = TopoDS.Face(new TopExp_Explorer(aBox, TopAbs_FACE).Current());
         new BRep_Builder().UpdateFace(aTop, 1e-3);
         TopoDS_Solid aFrozen = TestShapes.Frozen(aBox);
-        Assert.ThrowsAny<Standard_Failure>(() => BRepLib.UpdateTolerances(aFrozen));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateTolerances(aFrozen));
         Assert.True(BRepLib.BuildCurves3d(aFrozen)); // every edge has its curve: nothing is written
     }
 }

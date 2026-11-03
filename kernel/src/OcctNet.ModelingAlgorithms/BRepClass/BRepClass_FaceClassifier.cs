@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,17 +20,17 @@ public class BRepClass_FaceClassifier : BRepClass_FClassifier
     }
 
     /// <summary>Classifies <paramref name="P"/> with the tolerance <paramref name="Tol"/> in the face explored by <paramref name="F"/>.</summary>
-    public BRepClass_FaceClassifier(BRepClass_FaceExplorer F, in gp_Pnt2d P, double Tol)
+    public BRepClass_FaceClassifier(BRepClass_FaceExplorer F, in Point2D P, double Tol)
         : base(F, P, Tol)
     {
     }
 
     /// <summary>
     /// Classifies the 3D point <paramref name="theP"/> with the tolerance <paramref name="theTol"/> on the face
-    /// <paramref name="theF"/> (see <see cref="Perform(in TopoDS_Face, in gp_Pnt, double, bool, double)"/>).
+    /// <paramref name="theF"/> (see <see cref="Perform(in TopoDS_Face, in Point3D, double, bool, double)"/>).
     /// </summary>
     public BRepClass_FaceClassifier(in TopoDS_Face theF,
-                                    in gp_Pnt theP,
+                                    in Point3D theP,
                                     double theTol,
                                     bool theUseBndBox = false,
                                     double theGapCheckTol = 0.1)
@@ -43,7 +45,7 @@ public class BRepClass_FaceClassifier : BRepClass_FClassifier
     /// the wires are checked.
     /// </summary>
     public BRepClass_FaceClassifier(in TopoDS_Face theF,
-                                    in gp_Pnt2d theP,
+                                    in Point2D theP,
                                     double theTol,
                                     bool theUseBndBox = false,
                                     double theGapCheckTol = 0.1)
@@ -56,7 +58,7 @@ public class BRepClass_FaceClassifier : BRepClass_FClassifier
     /// <paramref name="theF"/> (see the constructor).
     /// </summary>
     public void Perform(in TopoDS_Face theF,
-                        in gp_Pnt2d theP,
+                        in Point2D theP,
                         double theTol,
                         bool theUseBndBox = false,
                         double theGapCheckTol = 0.1)
@@ -73,14 +75,14 @@ public class BRepClass_FaceClassifier : BRepClass_FClassifier
     /// when it has no projection.
     /// </summary>
     public void Perform(in TopoDS_Face theF,
-                        in gp_Pnt theP,
+                        in Point3D theP,
                         double theTol,
                         bool theUseBndBox = false,
                         double theGapCheckTol = 0.1)
     {
         int aNbExt, aIndice, i;
         double aU1, aU2, aV1, aV2, aMaxDist, aD;
-        gp_Pnt2d aPuv;
+        Point2D aPuv;
         var aExtrema = new Extrema_ExtPS();
         //
         aMaxDist = RealLast();
@@ -121,7 +123,7 @@ public class BRepClass_FaceClassifier : BRepClass_FClassifier
         if (aIndice != 0)
         {
             aExtrema.Point(aIndice).Parameter(out aU1, out aU2);
-            aPuv = new gp_Pnt2d(aU1, aU2);
+            aPuv = new Point2D(aU1, aU2);
             Perform(theF, aPuv, theTol, theUseBndBox, theGapCheckTol);
         }
     }

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -25,16 +29,16 @@ public class BRepToolsTests
     private static TopoDS_Face FaceWithHole()
     {
         var aV = new TopoDS_Vertex[8];
-        gp_Pnt[] aPts = [new(0, 0, 0), new(4, 0, 0), new(4, 4, 0), new(0, 4, 0), new(1, 1, 0), new(1, 3, 0), new(2, 3, 0), new(2, 1, 0)];
+        Point3D[] aPts = [new(0, 0, 0), new(4, 0, 0), new(4, 4, 0), new(0, 4, 0), new(1, 1, 0), new(1, 3, 0), new(2, 3, 0), new(2, 1, 0)];
         for (int i = 0; i < 8; i++)
         {
             aV[i] = TestShapes.Vertex(aPts[i]);
         }
 
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
-        var aPlane = new Geom_Plane(new gp_Ax3(gp.XOY()));
-        TopoDS_Face anOuter = TestShapes.PolygonFace(aV, new gp_Dir(0, 0, 1), anEdges, [0, 1, 2, 3], aPlane);
-        TopoDS_Face aHole = TestShapes.PolygonFace(aV, new gp_Dir(0, 0, 1), anEdges, [4, 5, 6, 7], aPlane);
+        var aPlane = new Geom_Plane(new CoordinateSystem(Constants.XOY()));
+        TopoDS_Face anOuter = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [0, 1, 2, 3], aPlane);
+        TopoDS_Face aHole = TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [4, 5, 6, 7], aPlane);
 
         // one face on the plane, with the hole's wire first: the edges have their pcurves on that plane
         var aBuilder = new BRep_Builder();
@@ -70,7 +74,7 @@ public class BRepToolsTests
         // a face without edges: the surface's natural bounds; without a surface: zeros
         var aBuilder = new BRep_Builder();
         TopoDS_Face aBare = new();
-        aBuilder.MakeFace(ref aBare, new Geom_RectangularTrimmedSurface(new Geom_Plane(new gp_Ax3(gp.XOY())), -1, 2, -3, 4), 1e-7);
+        aBuilder.MakeFace(ref aBare, new Geom_RectangularTrimmedSurface(new Geom_Plane(new CoordinateSystem(Constants.XOY())), -1, 2, -3, 4), 1e-7);
         BRepTools.UVBounds(aBare, out u1, out u2, out v1, out v2);
         AssertBounds((-1.0, 2.0, -3.0, 4.0), (u1, u2, v1, v2));
         TopoDS_Face aNoSurface = new();
@@ -100,27 +104,27 @@ public class BRepToolsTests
         Assert.Equal((0.0, 3.0), (v1, v2));
 
         var anAdaptor = new BRepAdaptor_Surface(aFace);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Cylinder, anAdaptor.GetType());
+        Assert.Equal(SurfaceKind.Cylinder, anAdaptor.GetType());
         Assert.Equal(3.0, anAdaptor.LastVParameter());
-        Assert.True(anAdaptor.Value(0.0, 1.5).Distance(new gp_Pnt(2, 0, 1.5)) < 1e-15);
+        Assert.True(anAdaptor.Value(0.0, 1.5).Distance(new Point3D(2, 0, 1.5)) < 1e-15);
         Assert.True(anAdaptor.Face() == aFace);
-        Assert.Equal(Precision.Confusion(), anAdaptor.Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anAdaptor.Tolerance());
     }
 
     [Fact]
     public void BRepAdaptor_Surface_applies_the_location()
     {
         TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
-        var aLoc = new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(10, 0, 0)));
+        var aLoc = new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)));
         TopoDS_Face aMoved = TopoDS.Face(aFace.Moved(aLoc));
         var anAdaptor = new BRepAdaptor_Surface(aMoved);
-        Assert.True(anAdaptor.Value(0.0, 0.0).Distance(new gp_Pnt(12, 0, 0)) < 1e-15);
+        Assert.True(anAdaptor.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
         var aCopy = (BRepAdaptor_Surface)anAdaptor.ShallowCopy();
-        Assert.True(aCopy.Value(0.0, 0.0).Distance(new gp_Pnt(12, 0, 0)) < 1e-15);
+        Assert.True(aCopy.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
         Assert.True(aCopy.Face() == aMoved);
         // without restriction, the surface's own bounds
         var anUnbounded = new BRepAdaptor_Surface(aMoved, false);
-        Assert.True(Precision.IsInfinite(anUnbounded.LastVParameter()));
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(anUnbounded.LastVParameter()));
     }
 
     [Fact]
@@ -132,12 +136,12 @@ public class BRepToolsTests
         TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
         Assert.Equal(anEdge.Orientation(), BRepTools.OriEdgeInFace(anEdge, aFace));
         Assert.True(BRepTools.Compare(anEdge, TopoDS.Edge(anEdge.Reversed())));
-        Assert.Throws<Standard_ConstructionError>(
-            () => BRepTools.OriEdgeInFace(TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0)), aFace));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(
+            () => BRepTools.OriEdgeInFace(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aFace));
 
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new gp_Pnt(0, 0, 0.5e-7));
-        TopoDS_Vertex aV3 = TestShapes.Vertex(new gp_Pnt(0, 0, 1));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0, 0));
+        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(0, 0, 0.5e-7));
+        TopoDS_Vertex aV3 = TestShapes.Vertex(new Point3D(0, 0, 1));
         Assert.True(BRepTools.Compare(aV1, aV2));
         Assert.False(BRepTools.Compare(aV1, aV3));
 
@@ -155,7 +159,7 @@ public class BRepToolsTests
         var aList = new NCollection_List<TopoDS_Shape>();
         BRepTools.CheckLocations(aBox, aList);
         Assert.True(aList.IsEmpty());
-        TopoDS_Shape aScaled = aBox.Moved(new TopLoc_Location(gp_Trsf.Scale(new gp_Pnt(), 2.0)));
+        TopoDS_Shape aScaled = aBox.Moved(new Placement(Transform3D.Scale(new Point3D(), 2.0)));
         BRepTools.CheckLocations(aScaled, aList);
         Assert.Equal(1, aList.Extent());
     }
@@ -166,12 +170,12 @@ public class BRepToolsTests
         // a face with a triangulation and edges with polygons on it
         TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
         TopoDS_Face aFace = FaceAt(aBox, 0);
-        var aTri = new Poly_Triangulation(4, 2, false);
+        var aTri = new Triangulation(4, 2, false);
         var aBuilder = new BRep_Builder();
         aBuilder.UpdateFace(aFace, aTri);
         for (var anExp = new TopExp_Explorer(aFace, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            aBuilder.UpdateEdge(TopoDS.Edge(anExp.Current()), new Poly_PolygonOnTriangulation(2, false), aTri, new TopLoc_Location());
+            aBuilder.UpdateEdge(TopoDS.Edge(anExp.Current()), new PolygonOnTriangulation(2, false), aTri, new Placement());
         }
 
         TopoDS_Solid aFrozen = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
@@ -180,7 +184,7 @@ public class BRepToolsTests
         BRepTools.Clean(aBox);
         Assert.Null(BRep_Tool.Triangulation(aFace, out _));
         TopoDS_Edge anEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
-        Assert.Null(BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new TopLoc_Location()));
+        Assert.Null(BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
 
         // CleanGeometry removes the surfaces and curves, and the pcurves on surfaces no face uses any more
         BRepTools.CleanGeometry(aBox);
@@ -194,9 +198,9 @@ public class BRepToolsTests
         var aBuilder = new BRep_Builder();
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         aBuilder.Add(aCompound, anEdge);
-        aBuilder.Add(aCompound, TestShapes.Edge(new gp_Pnt(0, 1, 0), new gp_Pnt(1, 1, 0)).Oriented(TopAbs_INTERNAL));
+        aBuilder.Add(aCompound, TestShapes.Edge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Oriented(TopAbs_INTERNAL));
         BRepTools.RemoveInternals(aCompound);
         Assert.Equal(1, aCompound.NbChildren());
         Assert.True(new TopoDS_Iterator(aCompound).Value() == anEdge);

@@ -3,21 +3,23 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
-/// General geometric transformation (a <see cref="gp_GTrsf"/>: an affinity, or any transformation defined by a 3 × 4
+/// General geometric transformation (a <see cref="GeneralTransform3D"/>: an affinity, or any transformation defined by a 3 × 4
 /// matrix) of a shape. The shape is first converted to NURBS geometry (<see cref="BRepBuilderAPI_NurbsConvert"/>),
 /// then its curves and surfaces are transformed (<see cref="BRepTools_GTrsfModification"/>): a circle may become an
 /// ellipse.
 /// </summary>
 public class BRepBuilderAPI_GTransform : BRepBuilderAPI_ModifyShape
 {
-    private readonly gp_GTrsf myGTrsf;
+    private readonly GeneralTransform3D myGTrsf;
     private readonly BRepBuilderAPI_Collect myHist = new();
 
     /// <summary>A framework applying <paramref name="T"/>; give the shape with <see cref="Perform"/>.</summary>
-    public BRepBuilderAPI_GTransform(in gp_GTrsf T)
+    public BRepBuilderAPI_GTransform(in GeneralTransform3D T)
     {
         myGTrsf = T;
         myModification = new BRepTools_GTrsfModification(T);
@@ -27,7 +29,7 @@ public class BRepBuilderAPI_GTransform : BRepBuilderAPI_ModifyShape
     /// <param name="S">The shape.</param>
     /// <param name="T">The transformation.</param>
     /// <param name="Copy">Passed to the NURBS conversion, which ignores it.</param>
-    public BRepBuilderAPI_GTransform(in TopoDS_Shape S, in gp_GTrsf T, bool Copy = false)
+    public BRepBuilderAPI_GTransform(in TopoDS_Shape S, in GeneralTransform3D T, bool Copy = false)
     {
         myGTrsf = T;
         myModification = new BRepTools_GTrsfModification(T);

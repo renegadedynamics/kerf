@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -164,7 +166,7 @@ internal static class XDEDRAWCommands
         {
             // the TShape's and the location's addresses: their identities here
             theLog.Append('(').Append(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(theShape.TShape()!).ToString("x", CultureInfo.InvariantCulture));
-            if (!theShape.Location().IsIdentity())
+            if (!theShape.Location().IsIdentity)
             {
                 theLog.Append(", ").Append(theShape.Location().HashCode().ToString("x", CultureInfo.InvariantCulture));
             }
@@ -261,13 +263,13 @@ internal static class XDEDRAWCommands
             theStat.NbAreaProp++;
         }
         // colour by layer (XCAFDoc_ColorTool::IsColorByLayer) isn't kept by Draw-lite's documents
-        if (theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorGen, out Quantity_ColorRGBA col)
+        if (theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorGen, out ColorWithAlpha col)
             || theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorSurf, out col)
             || theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorCurv, out col))
         {
             if (PrintStructMode)
             {
-                di.Append("Color(").Append(Quantity_Color.StringName(col.GetRGB().Name())).Append(" ").Append((double)col.Alpha()).Append(") ");
+                di.Append("Color(").Append(Color.StringName(col.GetRGB().Name())).Append(" ").Append((double)col.Alpha()).Append(") ");
             }
             theStat.NbShapesWithColor++;
         }
@@ -388,8 +390,8 @@ internal static class XDEDRAWCommands
         {
             foreach (XdeDoc_Label aLabel in CLabels)
             {
-                aDoc.GetColor(aLabel, out Quantity_ColorRGBA aColor);
-                di.Append(Quantity_Color.StringName(aColor.GetRGB().Name())).Append(" ");
+                aDoc.GetColor(aLabel, out ColorWithAlpha aColor);
+                di.Append(Color.StringName(aColor.GetRGB().Name())).Append(" ");
             }
             di.Append("\n");
         }
@@ -558,7 +560,7 @@ internal static class XDEDRAWCommands
         if (aLabel.IsNull())
         {
             // TNaming_Builder on a null label: OCAF raises
-            throw new Standard_NullObject("TDF_Label::Data");
+            throw new NullObjectException("TDF_Label::Data");
         }
         aDoc.SetShape(aLabel, aShape);
         return 0;
@@ -932,7 +934,7 @@ internal static class XDEDRAWCommands
             di.Append("Label ").Append(argv[2]).Append(" doesn't contain XCAFDoc_Location attribute\n");
             return 1;
         }
-        gp_Trsf aTrsf = aDoc.GetLocation(aLabel).Transformation();
+        Transform3D aTrsf = aDoc.GetLocation(aLabel).Transformation();
         di.Append("Transformation (3 rows * 4 columns matrix):");
         for (int i = 1; i <= 3; i++)
         {

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -54,7 +56,7 @@ public class IFSelect_CheckCounter : IFSelect_SignatureList
         for (list.Start(); list.More(); list.Next())
         {
             num = list.Number();
-            Standard_Transient ent = null;
+            Transient ent = null;
             Interface_Check check = list.Value();
             ent = check.Entity();
             if (ent is null && num > 0 && num <= nbe)
@@ -77,7 +79,7 @@ public class IFSelect_CheckCounter : IFSelect_SignatureList
                 }
                 else
                 {
-                    tystr = Interface_InterfaceModel.ClassName(ent.DynamicType().Name);
+                    tystr = Interface_InterfaceModel.ClassName(ent.DynamicTypeName());
                 }
             }
             for (i = 1; i <= nb; i++)

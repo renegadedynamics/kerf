@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +30,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     /// between the two arcs (false: opposite to the basis orientation), and theAdjustPeriodic brings the
     /// parameters into the first period (they may then differ from U1 and U2 by a period).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">U1 == U2, or C is not periodic and U1 or U2 is out of its bounds.</exception>
+    /// <exception cref="ConstructionErrorException">U1 == U2, or C is not periodic and U1 or U2 is out of its bounds.</exception>
     public Geom_TrimmedCurve(Geom_Curve C, double U1, double U2, bool Sense = true, bool theAdjustPeriodic = true)
     {
         uTrim1 = U1;
@@ -54,7 +58,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
     private void ownBasisCurve()
     {
-        if (basisCurve.IsFrozen())
+        if (basisCurve.IsFrozen)
         {
             basisCurve = (Geom_Curve)basisCurve.Copy();
         }
@@ -78,14 +82,14 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     public sealed override double ReversedParameter(double U) => basisCurve.ReversedParameter(U);
 
     /// <summary>Changes the trim parameters (see the constructor).</summary>
-    /// <exception cref="Standard_ConstructionError">U1 == U2, or the basis is not periodic and U1 or U2 is out of its bounds.</exception>
+    /// <exception cref="ConstructionErrorException">U1 == U2, or the basis is not periodic and U1 or U2 is out of its bounds.</exception>
     internal void SetTrim(double U1, double U2, bool Sense = true, bool theAdjustPeriodic = true)
     {
         CheckMutable();
         bool sameSense = true;
         if (U1 == U2)
         {
-            throw new Standard_ConstructionError("Geom_TrimmedCurve::U1 == U2");
+            throw new ConstructionErrorException("Geom_TrimmedCurve::U1 == U2");
         }
 
         double Udeb = basisCurve.FirstParameter();
@@ -101,9 +105,9 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
             uTrim2 = U2;
             if (theAdjustPeriodic)
             {
-                ElCLib.AdjustPeriodic(Udeb,
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Udeb,
                                       Ufin,
-                                      Min(Math.Abs(uTrim2 - uTrim1) / 2, Precision.PConfusion()),
+                                      Min(Math.Abs(uTrim2 - uTrim1) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                                       ref uTrim1,
                                       ref uTrim2);
             }
@@ -123,9 +127,9 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
                 uTrim2 = U1;
             }
 
-            if ((Udeb - uTrim1 > Precision.PConfusion()) || (uTrim2 - Ufin > Precision.PConfusion()))
+            if ((Udeb - uTrim1 > global::Kerf.Engine.Foundation.Precision.PConfusion()) || (uTrim2 - Ufin > global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
-                throw new Standard_ConstructionError("Geom_TrimmedCurve::parameters out of range");
+                throw new ConstructionErrorException("Geom_TrimmedCurve::parameters out of range");
             }
         }
         if (!sameSense)
@@ -144,13 +148,13 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
         {
             double aPeriod = basisCurve.Period();
             double aLength = LastParameter() - FirstParameter();
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
         }
-        return StartPoint().SquareDistance(EndPoint()) <= Precision.Computational();
+        return StartPoint().SquareDistance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Computational();
     }
 
     /// <summary>True if the basis is periodic and the trim spans a whole number of periods.</summary>
@@ -160,8 +164,8 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
         {
             double aPeriod = basisCurve.Period();
             double aLength = LastParameter() - FirstParameter();
-            if (aLength > Precision.PConfusion()
-                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= Precision.PConfusion())
+            if (aLength > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(Math.IEEERemainder(aLength, aPeriod)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return true;
             }
@@ -170,10 +174,10 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     }
 
     /// <summary>The period of the basis curve.</summary>
-    /// <exception cref="Standard_NoSuchObject">The basis curve is not periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The basis curve is not periodic.</exception>
     public sealed override double Period() => basisCurve.Period();
 
-    public sealed override GeomAbs_Shape Continuity() => basisCurve.Continuity();
+    public sealed override Continuity Continuity() => basisCurve.Continuity();
 
     /// <summary>The basis curve, frozen (it is shared with this trimmed curve; decision 127).</summary>
     public Geom_Curve BasisCurve()
@@ -182,7 +186,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
         return basisCurve;
     }
 
-    public sealed override gp_Pnt EvalD0(double U) => basisCurve.EvalD0(U);
+    public sealed override Point3D EvalD0(double U) => basisCurve.EvalD0(U);
 
     public sealed override ResD1 EvalD1(double U) => basisCurve.EvalD1(U);
 
@@ -190,17 +194,17 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
 
     public sealed override ResD3 EvalD3(double U) => basisCurve.EvalD3(U);
 
-    public sealed override gp_Vec EvalDN(double U, int N) => basisCurve.EvalDN(U, N);
+    public sealed override Vector3D EvalDN(double U, int N) => basisCurve.EvalDN(U, N);
 
-    public sealed override gp_Pnt EndPoint() => basisCurve.Value(uTrim2);
+    public sealed override Point3D EndPoint() => basisCurve.Value(uTrim2);
 
     public sealed override double FirstParameter() => uTrim1;
 
     public sealed override double LastParameter() => uTrim2;
 
-    public sealed override gp_Pnt StartPoint() => basisCurve.Value(uTrim1);
+    public sealed override Point3D StartPoint() => basisCurve.Value(uTrim1);
 
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCN(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -208,7 +212,7 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     }
 
     /// <summary>Applies T to this trimmed curve and its basis curve.</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ownBasisCurve();
@@ -219,10 +223,10 @@ public class Geom_TrimmedCurve : Geom_BoundedCurve
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf T) => basisCurve.TransformedParameter(U, T);
+    public sealed override double TransformedParameter(double U, in Transform3D T) => basisCurve.TransformedParameter(U, T);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf T) => basisCurve.ParametricTransformation(T);
+    public sealed override double ParametricTransformation(in Transform3D T) => basisCurve.ParametricTransformation(T);
 
     // Non-mutating twin of SetTrim (OCCT.NET)
 

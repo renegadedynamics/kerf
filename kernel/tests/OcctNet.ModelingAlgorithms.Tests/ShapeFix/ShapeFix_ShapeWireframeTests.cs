@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
@@ -10,7 +11,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 internal static class ShapeFixPolylines
 {
     /// <summary>A wire through the points, its consecutive edges sharing their vertices (closed: back to the first).</summary>
-    public static TopoDS_Wire Polyline(bool theClosed, params gp_Pnt[] thePoints)
+    public static TopoDS_Wire Polyline(bool theClosed, params Point3D[] thePoints)
     {
         var aV = thePoints.Select(p => TestShapes.Vertex(p)).ToArray();
         var aB = new BRep_Builder();
@@ -26,15 +27,15 @@ internal static class ShapeFixPolylines
     }
 
     /// <summary>A closed wire of edges through the points, each with its own vertices (gaps between the edges).</summary>
-    public static TopoDS_Wire WithGaps(double theGap, params gp_Pnt[] thePoints)
+    public static TopoDS_Wire WithGaps(double theGap, params Point3D[] thePoints)
     {
         var aB = new BRep_Builder();
         var aW = new TopoDS_Wire();
         aB.MakeWire(ref aW);
         for (int i = 0; i < thePoints.Length; i++)
         {
-            gp_Pnt aP2 = thePoints[(i + 1) % thePoints.Length];
-            aB.Add(aW, TestShapes.Edge(thePoints[i], new gp_Pnt(aP2.X() + theGap, aP2.Y() + theGap, aP2.Z())));
+            Point3D aP2 = thePoints[(i + 1) % thePoints.Length];
+            aB.Add(aW, TestShapes.Edge(thePoints[i], new Point3D(aP2.X() + theGap, aP2.Y() + theGap, aP2.Z())));
         }
         aW.Closed(true);
         return aW;
@@ -69,8 +70,8 @@ internal static class ShapeFixPolylines
 /// </summary>
 public class ShapeFix_ShapeTests
 {
-    private static TopoDS_Wire GapSquare() => TestShapes.Frozen(ShapeFixPolylines.WithGaps(1e-4, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0),
-                                                                                        new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)));
+    private static TopoDS_Wire GapSquare() => TestShapes.Frozen(ShapeFixPolylines.WithGaps(1e-4, new Point3D(0, 0, 0), new Point3D(10, 0, 0),
+                                                                                        new Point3D(10, 10, 0), new Point3D(0, 10, 0)));
 
     [Fact]
     public void Wire_WithGaps_IsConnected()
@@ -84,7 +85,7 @@ public class ShapeFix_ShapeTests
         Assert.True(aFix.Status(ShapeExtend_DONE2));
         TopoDS_Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_WIRE, aResult.ShapeType());
         Assert.Equal(4, ShapeFixShapes.Count(aResult, TopAbs_VERTEX));
         Assert.True(aFix.Context()!.Apply(aWire).IsSame(aResult));
@@ -93,7 +94,7 @@ public class ShapeFix_ShapeTests
     [Fact]
     public void Wire_Valid_GivesTheInput()
     {
-        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0)));
+        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0)));
         var aFix = new ShapeFix_Shape(aWire);
         aFix.Perform();
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), aWire.TShape()));
@@ -113,8 +114,8 @@ public class ShapeFix_ShapeTests
     [Fact]
     public void Compound_OfAWireAndAnEdge_KeepsWhatNeedsNothing()
     {
-        TopoDS_Wire aWire = ShapeFixPolylines.WithGaps(1e-4, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0));
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(50, 0, 0), new gp_Pnt(60, 0, 0));
+        TopoDS_Wire aWire = ShapeFixPolylines.WithGaps(1e-4, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(50, 0, 0), new Point3D(60, 0, 0));
         TopoDS_Compound aComp = TestShapes.Frozen(ShapeFixPolylines.Compound(aWire, anEdge));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aComp);
         var aFix = new ShapeFix_Shape(aComp);
@@ -164,7 +165,7 @@ public class ShapeFix_ShapeTests
     [Fact]
     public void Edge_VertexTolerance_Status()
     {
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)));
+        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         var aFix = new ShapeFix_Shape(anEdge);
         aFix.Perform();
         Assert.False(aFix.Status(ShapeExtend_DONE1));
@@ -174,13 +175,13 @@ public class ShapeFix_ShapeTests
     [Fact]
     public void RemoveSmallEdges_OnAWire()
     {
-        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0),
-                                                                           new gp_Pnt(10, 5e-8, 0), new gp_Pnt(10, 10, 0),
-                                                                           new gp_Pnt(0, 10, 0)));
+        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0),
+                                                                           new Point3D(10, 5e-8, 0), new Point3D(10, 10, 0),
+                                                                           new Point3D(0, 10, 0)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
         TopoDS_Shape aResult = ShapeFix.RemoveSmallEdges(aWire, 1e-3, out ShapeBuild_ReShape aContext);
         aSnap.AssertUnchanged(aWire);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(4, ShapeFixPolylines.NbEdges(aResult));
         Assert.True(aContext.Apply(aWire).IsSame(aResult));
     }
@@ -193,15 +194,15 @@ public class ShapeFix_ShapeTests
 public class ShapeFix_WireframeTests
 {
     // a square with a step of height 1e-4 on its top edge: the small edge is at right angles to both neighbours
-    private static TopoDS_Wire Step() => TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0),
-                                                                                   new gp_Pnt(10, 10, 0), new gp_Pnt(5, 10, 0),
-                                                                                   new gp_Pnt(5, 10.0001, 0), new gp_Pnt(0, 10.0001, 0)));
+    private static TopoDS_Wire Step() => TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0),
+                                                                                   new Point3D(10, 10, 0), new Point3D(5, 10, 0),
+                                                                                   new Point3D(5, 10.0001, 0), new Point3D(0, 10.0001, 0)));
 
     [Fact]
     public void FixWireGaps_FreeWire()
     {
-        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.WithGaps(1e-2, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0),
-                                                                          new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)));
+        TopoDS_Wire aWire = TestShapes.Frozen(ShapeFixPolylines.WithGaps(1e-2, new Point3D(0, 0, 0), new Point3D(10, 0, 0),
+                                                                          new Point3D(10, 10, 0), new Point3D(0, 10, 0)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
         var aFix = new ShapeFix_Wireframe(aWire);
         aFix.SetPrecision(1e-3);
@@ -209,7 +210,7 @@ public class ShapeFix_WireframeTests
         Assert.True(aFix.StatusWireGaps(ShapeExtend_DONE1));
         TopoDS_Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(4, ShapeFixPolylines.NbEdges(aResult));
     }
 
@@ -250,8 +251,8 @@ public class ShapeFix_WireframeTests
     [Fact]
     public void FixSmallEdges_OnAFace()
     {
-        TopoDS_Wire aWire = ShapeFixPolylines.Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 1e-4, 0),
-                                                       new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0));
+        TopoDS_Wire aWire = ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 1e-4, 0),
+                                                       new Point3D(10, 10, 0), new Point3D(0, 10, 0));
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aWire, true).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aFix = new ShapeFix_Wireframe(aFace);
@@ -261,16 +262,16 @@ public class ShapeFix_WireframeTests
         aSnap.AssertUnchanged(aFace);
         Assert.Equal(TopAbs_FACE, aResult.ShapeType());
         Assert.Equal(4, ShapeFixShapes.Count(aResult, TopAbs_EDGE));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
     }
 
     [Fact]
     public void Compound_OfWires()
     {
         TopoDS_Compound aComp = TestShapes.Frozen(ShapeFixPolylines.Compound(
-            ShapeFixPolylines.Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0),
-                                       new gp_Pnt(5, 10, 0), new gp_Pnt(5, 10.0001, 0), new gp_Pnt(0, 10.0001, 0)),
-            ShapeFixPolylines.Polyline(true, new gp_Pnt(20, 0, 0), new gp_Pnt(30, 0, 0), new gp_Pnt(30, 10, 0))));
+            ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0),
+                                       new Point3D(5, 10, 0), new Point3D(5, 10.0001, 0), new Point3D(0, 10.0001, 0)),
+            ShapeFixPolylines.Polyline(true, new Point3D(20, 0, 0), new Point3D(30, 0, 0), new Point3D(30, 10, 0))));
         var aFix = new ShapeFix_Wireframe(aComp);
         aFix.SetPrecision(1e-3);
         // OCCT: on a compound the status is the last child's (each child's fix clears it), here the second wire's

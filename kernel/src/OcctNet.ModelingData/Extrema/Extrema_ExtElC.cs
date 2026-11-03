@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -81,7 +89,7 @@ public class Extrema_ExtElC
     /// The distance between two lines. AngTol is not used: the lines are parallel when their angle is below
     /// <see cref="Precision.Angular"/>.
     /// </summary>
-    public Extrema_ExtElC(in gp_Lin theC1, in gp_Lin theC2, double AngTol)
+    public Extrema_ExtElC(in Line3D theC1, in Line3D theC2, double AngTol)
     {
         _ = AngTol; // OCCT: the tolerance is not used
         myDone = false;
@@ -92,22 +100,22 @@ public class Extrema_ExtElC
             mySqDist[anIdx] = RealLast();
         }
 
-        gp_Dir aD1 = theC1.Position().Direction(), aD2 = theC2.Position().Direction();
+        Direction3D aD1 = theC1.Position().Direction(), aD2 = theC2.Position().Direction();
         double aCosA = aD1.Dot(aD2);
         double aSqSinA = 1.0 - aCosA * aCosA;
         double aU1 = 0.0, aU2 = 0.0;
-        if (aSqSinA < gp.Resolution() || aD1.IsParallel(aD2, Precision.Angular()))
+        if (aSqSinA < Constants.Resolution() || aD1.IsParallel(aD2, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             myIsPar = true;
         }
         else
         {
-            gp_XYZ aL1L2 = theC2.Location().XYZ() - theC1.Location().XYZ();
+            Xyz aL1L2 = theC2.Location().XYZ() - theC1.Location().XYZ();
             double aD1L = aD1.XYZ().Dot(aL1L2), aD2L = aD2.XYZ().Dot(aL1L2);
             aU1 = (aD1L - aCosA * aD2L) / aSqSinA;
             aU2 = (aCosA * aD1L - aD2L) / aSqSinA;
 
-            myIsPar = Precision.IsInfinite(aU1) || Precision.IsInfinite(aU2);
+            myIsPar = global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2);
         }
 
         if (myIsPar)
@@ -120,7 +128,7 @@ public class Extrema_ExtElC
 
         // Here myIsPar == false;
 
-        gp_Pnt aP1 = ElCLib.Value(aU1, theC1), aP2 = ElCLib.Value(aU2, theC2);
+        Point3D aP1 = global::Kerf.Engine.Geometry.ElCLib.Value(aU1, theC1), aP2 = global::Kerf.Engine.Geometry.ElCLib.Value(aU2, theC2);
         mySqDist[myNbExt] = aP1.SquareDistance(aP2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv(aU1, aP1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv(aU2, aP2);
@@ -129,11 +137,11 @@ public class Extrema_ExtElC
     }
 
     /// <summary>Computes the extrema when the line and the circle are in one plane.</summary>
-    protected bool PlanarLineCircleExtrema(in gp_Lin theLin, in gp_Circ theCirc)
+    protected bool PlanarLineCircleExtrema(in Line3D theLin, in Circle3D theCirc)
     {
-        gp_Dir aDirC = theCirc.Axis().Direction(), aDirL = theLin.Direction();
+        Direction3D aDirC = theCirc.Axis().Direction(), aDirL = theLin.Direction();
 
-        if (Math.Abs(aDirC.Dot(aDirL)) > Precision.Angular())
+        if (Math.Abs(aDirC.Dot(aDirL)) > global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
         }
@@ -143,27 +151,27 @@ public class Extrema_ExtElC
         // Therefore, we are looking for extremas and
         // intersections in 2D-space.
 
-        gp_XYZ aCLoc = theCirc.Location().XYZ();
-        gp_XYZ aDCx = theCirc.Position().XDirection().XYZ(),
+        Xyz aCLoc = theCirc.Location().XYZ();
+        Xyz aDCx = theCirc.Position().XDirection().XYZ(),
                aDCy = theCirc.Position().YDirection().XYZ();
 
-        gp_XYZ aLLoc = theLin.Location().XYZ();
-        gp_XYZ aLDir = theLin.Direction().XYZ();
+        Xyz aLLoc = theLin.Location().XYZ();
+        Xyz aLDir = theLin.Direction().XYZ();
 
-        gp_XYZ aVecCL = aLLoc - aCLoc;
+        Xyz aVecCL = aLLoc - aCLoc;
 
         // Center of 2D-circle
-        gp_Pnt2d aPC = new(0.0, 0.0);
+        Point2D aPC = new(0.0, 0.0);
 
-        gp_Ax22d aCircAxis = new(aPC, new gp_Dir2d(gp_Dir2d.D.X), new gp_Dir2d(gp_Dir2d.D.Y));
-        gp_Circ2d aCirc2d = new(aCircAxis, theCirc.Radius());
+        Frame2D aCircAxis = new(aPC, new Direction2D(Direction2D.D.X), new Direction2D(Direction2D.D.Y));
+        Circle2D aCirc2d = new(aCircAxis, theCirc.Radius());
 
-        gp_Pnt2d aPL = new(aVecCL.Dot(aDCx), aVecCL.Dot(aDCy));
-        gp_Dir2d aDL = new(aLDir.Dot(aDCx), aLDir.Dot(aDCy));
-        gp_Lin2d aLin2d = new(aPL, aDL);
+        Point2D aPL = new(aVecCL.Dot(aDCx), aVecCL.Dot(aDCy));
+        Direction2D aDL = new(aLDir.Dot(aDCx), aLDir.Dot(aDCy));
+        Line2D aLin2d = new(aPL, aDL);
 
         // Extremas
-        Extrema_ExtElC2d anExt2d = new(aLin2d, aCirc2d, Precision.Confusion());
+        Extrema_ExtElC2d anExt2d = new(aLin2d, aCirc2d, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Intersections
         IntAna2d_AnaIntersection anInters = new(aLin2d, aCirc2d);
 
@@ -197,8 +205,8 @@ public class Extrema_ExtElC
                 aCircPar = anInters.Point(aDelta).ParamOnSecond();
             }
 
-            gp_Pnt aPOnL = ElCLib.LineValue(aLinPar, theLin.Position()),
-                   aPOnC = ElCLib.CircleValue(aCircPar, theCirc.Position(), theCirc.Radius());
+            Point3D aPOnL = global::Kerf.Engine.Geometry.ElCLib.LineValue(aLinPar, theLin.Position()),
+                   aPOnC = global::Kerf.Engine.Geometry.ElCLib.CircleValue(aCircPar, theCirc.Position(), theCirc.Radius());
 
             mySqDist[myNbExt] = aPOnL.SquareDistance(aPOnC);
             myPoint[myNbExt, 0].SetValues(aLinPar, aPOnL);
@@ -241,12 +249,12 @@ public class Extrema_ExtElC
     //=================================================================================================
 
     /// <summary>The distances between a line and a circle. Tol is not used.</summary>
-    public Extrema_ExtElC(in gp_Lin C1, in gp_Circ C2, double Tol)
+    public Extrema_ExtElC(in Line3D C1, in Circle3D C2, double Tol)
     {
         _ = Tol; // OCCT: the tolerance is not used
         double Dx, Dy, Dz, aRO2O1, aTolRO2O1;
         double R, A1, A2, A3, A4, A5, aTol;
-        gp_Dir x2, y2, z2, D, D1;
+        Direction3D x2, y2, z2, D, D1;
         //
         myIsPar = false;
         myDone = false;
@@ -276,27 +284,27 @@ public class Extrema_ExtElC
         D.Coord(out Dx, out Dy, out Dz);
         //
         // Calculate V in the reference frame of the circle:
-        gp_Pnt O1 = C1.Location();
-        gp_Pnt O2 = C2.Location();
-        gp_Vec O2O1 = new(O2, O1);
+        Point3D O1 = C1.Location();
+        Point3D O2 = C2.Location();
+        Vector3D O2O1 = new(O2, O1);
         //
-        aTolRO2O1 = gp.Resolution();
+        aTolRO2O1 = Constants.Resolution();
         aRO2O1 = O2O1.Magnitude();
         if (aRO2O1 > aTolRO2O1)
         {
-            gp_Dir aDO2O1 = new();
+            Direction3D aDO2O1 = new();
             //
             O2O1.Multiply(1.0 / aRO2O1);
-            aDO2O1.SetCoord(O2O1.Dot(new gp_Vec(x2)), O2O1.Dot(new gp_Vec(y2)), O2O1.Dot(new gp_Vec(z2)));
+            aDO2O1.SetCoord(O2O1.Dot(new Vector3D(x2)), O2O1.Dot(new Vector3D(y2)), O2O1.Dot(new Vector3D(z2)));
             RefineDir(ref aDO2O1);
             O2O1.SetXYZ(aRO2O1 * aDO2O1.XYZ());
         }
         else
         {
-            O2O1.SetCoord(O2O1.Dot(new gp_Vec(x2)), O2O1.Dot(new gp_Vec(y2)), O2O1.Dot(new gp_Vec(z2)));
+            O2O1.SetCoord(O2O1.Dot(new Vector3D(x2)), O2O1.Dot(new Vector3D(y2)), O2O1.Dot(new Vector3D(z2)));
         }
         //
-        gp_XYZ Vxyz = (D.XYZ() * (O2O1.Dot(new gp_Vec(D)))) - O2O1.XYZ();
+        Xyz Vxyz = (D.XYZ() * (O2O1.Dot(new Vector3D(D)))) - O2O1.XYZ();
         //
         aTol = 1.0e-12;
         // Calculate the coefficients of the equation by Cos and Sin ...
@@ -345,15 +353,15 @@ public class Extrema_ExtElC
         // Storage of solutions ...
         int NoSol, NbSol;
         double U1, U2;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         //
         NbSol = Sol.NbSolutions();
         for (NoSol = 1; NoSol <= NbSol; ++NoSol)
         {
             U2 = Sol.Value(NoSol);
-            P2 = ElCLib.Value(U2, C2);
-            U1 = (new gp_Vec(O1, P2)).Dot(new gp_Vec(D1));
-            P1 = ElCLib.Value(U1, C1);
+            P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
+            U1 = (new Vector3D(O1, P2)).Dot(new Vector3D(D1));
+            P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
             mySqDist[myNbExt] = P1.SquareDistance(P2);
             myPoint[myNbExt, 0].SetValues(U1, P1);
             myPoint[myNbExt, 1].SetValues(U2, P2);
@@ -363,7 +371,7 @@ public class Extrema_ExtElC
     }
 
     /// <summary>The distances between a line and an ellipse.</summary>
-    public Extrema_ExtElC(in gp_Lin C1, in gp_Elips C2)
+    public Extrema_ExtElC(in Line3D C1, in Ellipse3D C2)
     {
         /*-----------------------------------------------------------------------------
         Function:
@@ -405,9 +413,9 @@ public class Extrema_ExtElC
         }
 
         // Calculate T1 the reference of the ellipse ...
-        gp_Dir D = C1.Direction();
-        gp_Dir D1 = D;
-        gp_Dir x2, y2, z2;
+        Direction3D D = C1.Direction();
+        Direction3D D1 = D;
+        Direction3D x2, y2, z2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
         z2 = C2.Axis().Direction();
@@ -417,11 +425,11 @@ public class Extrema_ExtElC
         D.SetCoord(Dx, Dy, Dz);
 
         // Calculate V ...
-        gp_Pnt O1 = C1.Location();
-        gp_Pnt O2 = C2.Location();
-        gp_Vec O2O1 = new(O2, O1);
-        O2O1.SetCoord(O2O1.Dot(new gp_Vec(x2)), O2O1.Dot(new gp_Vec(y2)), O2O1.Dot(new gp_Vec(z2)));
-        gp_XYZ Vxyz = (D.XYZ() * (O2O1.Dot(new gp_Vec(D)))) - O2O1.XYZ();
+        Point3D O1 = C1.Location();
+        Point3D O2 = C2.Location();
+        Vector3D O2O1 = new(O2, O1);
+        O2O1.SetCoord(O2O1.Dot(new Vector3D(x2)), O2O1.Dot(new Vector3D(y2)), O2O1.Dot(new Vector3D(z2)));
+        Xyz Vxyz = (D.XYZ() * (O2O1.Dot(new Vector3D(D)))) - O2O1.XYZ();
 
         // Calculate the coefficients of the equation by Cos and Sin ...
         double MajR = C2.MajorRadius();
@@ -466,7 +474,7 @@ public class Extrema_ExtElC
         if (Sol.InfiniteRoots())
         {
             myIsPar = true;
-            gp_Pnt aP = ElCLib.EllipseValue(0.0, C2.Position(), C2.MajorRadius(), C2.MinorRadius());
+            Point3D aP = global::Kerf.Engine.Geometry.ElCLib.EllipseValue(0.0, C2.Position(), C2.MajorRadius(), C2.MinorRadius());
             mySqDist[0] = C1.SquareDistance(aP);
             myNbExt = 1;
             myDone = true;
@@ -474,15 +482,15 @@ public class Extrema_ExtElC
         }
 
         // Storage of solutions ...
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         double U1, U2;
         int NbSol = Sol.NbSolutions();
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             U2 = Sol.Value(NoSol);
-            P2 = ElCLib.Value(U2, C2);
-            U1 = (new gp_Vec(O1, P2)).Dot(new gp_Vec(D1));
-            P1 = ElCLib.Value(U1, C1);
+            P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
+            U1 = (new Vector3D(O1, P2)).Dot(new Vector3D(D1));
+            P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
             mySqDist[myNbExt] = P1.SquareDistance(P2);
             myPoint[myNbExt, 0] = new Extrema_POnCurv(U1, P1);
             myPoint[myNbExt, 1] = new Extrema_POnCurv(U2, P2);
@@ -492,7 +500,7 @@ public class Extrema_ExtElC
     }
 
     /// <summary>The distances between a line and a hyperbola.</summary>
-    public Extrema_ExtElC(in gp_Lin C1, in gp_Hypr C2)
+    public Extrema_ExtElC(in Line3D C1, in Hyperbola3D C2)
     {
         /*-----------------------------------------------------------------------------
         Function:
@@ -537,9 +545,9 @@ public class Extrema_ExtElC
         }
 
         // Calculate T1 in the reference of the hyperbola...
-        gp_Dir D = C1.Direction();
-        gp_Dir D1 = D;
-        gp_Dir x2, y2, z2;
+        Direction3D D = C1.Direction();
+        Direction3D D1 = D;
+        Direction3D x2, y2, z2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
         z2 = C2.Axis().Direction();
@@ -549,11 +557,11 @@ public class Extrema_ExtElC
         D.SetCoord(Dx, Dy, Dz);
 
         // Calculate V ...
-        gp_Pnt O1 = C1.Location();
-        gp_Pnt O2 = C2.Location();
-        gp_Vec O2O1 = new(O2, O1);
-        O2O1.SetCoord(O2O1.Dot(new gp_Vec(x2)), O2O1.Dot(new gp_Vec(y2)), O2O1.Dot(new gp_Vec(z2)));
-        gp_XYZ Vxyz = (D.XYZ() * (O2O1.Dot(new gp_Vec(D)))) - O2O1.XYZ();
+        Point3D O1 = C1.Location();
+        Point3D O2 = C2.Location();
+        Vector3D O2O1 = new(O2, O1);
+        O2O1.SetCoord(O2O1.Dot(new Vector3D(x2)), O2O1.Dot(new Vector3D(y2)), O2O1.Dot(new Vector3D(z2)));
+        Xyz Vxyz = (D.XYZ() * (O2O1.Dot(new Vector3D(D)))) - O2O1.XYZ();
         double Vx = Vxyz.X();
         double Vy = Vxyz.Y();
 
@@ -567,25 +575,25 @@ public class Extrema_ExtElC
         double A4 = -2 * R * Vx + 2 * r * Vy;
         double A5 = a - b;
 
-        math_DirectPolynomialRoots Sol = new(A1, A2, 0.0, A4, A5);
-        if (!Sol.IsDone())
+        DirectPolynomialRoots Sol = new(A1, A2, 0.0, A4, A5);
+        if (!Sol.IsDone)
         {
             return;
         }
 
         // Store solutions ...
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         double U1, U2, v;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             v = Sol.Value(NoSol);
             if (v > 0.0)
             {
                 U2 = Math.Log(v);
-                P2 = ElCLib.Value(U2, C2);
-                U1 = (new gp_Vec(O1, P2)).Dot(new gp_Vec(D1));
-                P1 = ElCLib.Value(U1, C1);
+                P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
+                U1 = (new Vector3D(O1, P2)).Dot(new Vector3D(D1));
+                P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
                 mySqDist[myNbExt] = P1.SquareDistance(P2);
                 myPoint[myNbExt, 0] = new Extrema_POnCurv(U1, P1);
                 myPoint[myNbExt, 1] = new Extrema_POnCurv(U2, P2);
@@ -596,7 +604,7 @@ public class Extrema_ExtElC
     }
 
     /// <summary>The distances between a line and a parabola.</summary>
-    public Extrema_ExtElC(in gp_Lin C1, in gp_Parab C2)
+    public Extrema_ExtElC(in Line3D C1, in Parabola3D C2)
     {
         /*-----------------------------------------------------------------------------
         Function:
@@ -638,9 +646,9 @@ public class Extrema_ExtElC
         }
 
         // Calculate T1 in the reference of the parabola...
-        gp_Dir D = C1.Direction();
-        gp_Dir D1 = D;
-        gp_Dir x2, y2, z2;
+        Direction3D D = C1.Direction();
+        Direction3D D1 = D;
+        Direction3D x2, y2, z2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
         z2 = C2.Axis().Direction();
@@ -650,11 +658,11 @@ public class Extrema_ExtElC
         D.SetCoord(Dx, Dy, Dz);
 
         // Calculate V ...
-        gp_Pnt O1 = C1.Location();
-        gp_Pnt O2 = C2.Location();
-        gp_Vec O2O1 = new(O2, O1);
-        O2O1.SetCoord(O2O1.Dot(new gp_Vec(x2)), O2O1.Dot(new gp_Vec(y2)), O2O1.Dot(new gp_Vec(z2)));
-        gp_XYZ Vxyz = (D.XYZ() * (O2O1.Dot(new gp_Vec(D)))) - O2O1.XYZ();
+        Point3D O1 = C1.Location();
+        Point3D O2 = C2.Location();
+        Vector3D O2O1 = new(O2, O1);
+        O2O1.SetCoord(O2O1.Dot(new Vector3D(x2)), O2O1.Dot(new Vector3D(y2)), O2O1.Dot(new Vector3D(z2)));
+        Xyz Vxyz = (D.XYZ() * (O2O1.Dot(new Vector3D(D)))) - O2O1.XYZ();
 
         // Calculate coefficients of the equation by y
         double P = C2.Parameter();
@@ -663,22 +671,22 @@ public class Extrema_ExtElC
         double A3 = (1 - Dy * Dy + Vxyz.X() / P);
         double A4 = Vxyz.Y();
 
-        math_DirectPolynomialRoots Sol = new(A1, A2, A3, A4);
-        if (!Sol.IsDone())
+        DirectPolynomialRoots Sol = new(A1, A2, A3, A4);
+        if (!Sol.IsDone)
         {
             return;
         }
 
         // Storage of solutions ...
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         double U1, U2;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             U2 = Sol.Value(NoSol);
-            P2 = ElCLib.Value(U2, C2);
-            U1 = (new gp_Vec(O1, P2)).Dot(new gp_Vec(D1));
-            P1 = ElCLib.Value(U1, C1);
+            P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
+            U1 = (new Vector3D(O1, P2)).Dot(new Vector3D(D1));
+            P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
             mySqDist[myNbExt] = P1.SquareDistance(P2);
             myPoint[myNbExt, 0] = new Extrema_POnCurv(U1, P1);
             myPoint[myNbExt, 1] = new Extrema_POnCurv(U2, P2);
@@ -691,12 +699,12 @@ public class Extrema_ExtElC
     /// The distances between two circles. Only coplanar circles give a result (IsDone is false otherwise); the
     /// circles can be parallel (concentric) or identical.
     /// </summary>
-    public Extrema_ExtElC(in gp_Circ C1, in gp_Circ C2)
+    public Extrema_ExtElC(in Circle3D C1, in Circle3D C2)
     {
         bool bIsSamePlane, bIsSameAxe;
         double aTolD, aTolD2, aTolA, aD2, aDC2;
-        gp_Pnt aPc1, aPc2;
-        gp_Dir aDc1, aDc2;
+        Point3D aPc1, aPc2;
+        Direction3D aDc1, aDc2;
         //
         myIsPar = false;
         myDone = false;
@@ -706,8 +714,8 @@ public class Extrema_ExtElC
             mySqDist[anIdx] = RealLast();
         }
         //
-        aTolA = Precision.Angular();
-        aTolD = Precision.Confusion();
+        aTolA = global::Kerf.Engine.Foundation.Precision.Angular();
+        aTolD = global::Kerf.Engine.Foundation.Precision.Confusion();
         aTolD2 = aTolD * aTolD;
         //
         aPc1 = C1.Location();
@@ -715,7 +723,7 @@ public class Extrema_ExtElC
 
         aPc2 = C2.Location();
         aDc2 = C2.Axis().Direction();
-        gp_Pln aPlc1 = new(aPc1, aDc1);
+        Plane3D aPlc1 = new(aPc1, aDc1);
         //
         aD2 = aPlc1.SquareDistance(aPc2);
         bIsSamePlane = aDc1.IsParallel(aDc2, aTolA) && aD2 < aTolD2;
@@ -743,8 +751,8 @@ public class Extrema_ExtElC
         bool bIn, bOut;
         int j1, j2;
         double aR1, aR2, aD12, aT11, aT12, aT21, aT22;
-        gp_Circ aC1, aC2;
-        gp_Pnt aP11, aP12, aP21, aP22;
+        Circle3D aC1, aC2;
+        Point3D aP11, aP12, aP21, aP22;
         //
         myDone = true;
         //
@@ -770,21 +778,21 @@ public class Extrema_ExtElC
         aPc2 = aC2.Location();
         //
         aD12 = aPc1.Distance(aPc2);
-        gp_Vec aVec12 = new(aPc1, aPc2);
-        gp_Dir aDir12 = new(aVec12);
+        Vector3D aVec12 = new(aPc1, aPc2);
+        Direction3D aDir12 = new(aVec12);
         //
         // 1. Four common solutions
         myNbExt = 4;
         //
-        aP11 = new gp_Pnt(aPc1.XYZ() - aR1 * aDir12.XYZ());
-        aP12 = new gp_Pnt(aPc1.XYZ() + aR1 * aDir12.XYZ());
-        aP21 = new gp_Pnt(aPc2.XYZ() - aR2 * aDir12.XYZ());
-        aP22 = new gp_Pnt(aPc2.XYZ() + aR2 * aDir12.XYZ());
+        aP11 = new Point3D(aPc1.XYZ() - aR1 * aDir12.XYZ());
+        aP12 = new Point3D(aPc1.XYZ() + aR1 * aDir12.XYZ());
+        aP21 = new Point3D(aPc2.XYZ() - aR2 * aDir12.XYZ());
+        aP22 = new Point3D(aPc2.XYZ() + aR2 * aDir12.XYZ());
         //
-        aT11 = ElCLib.Parameter(aC1, aP11);
-        aT12 = ElCLib.Parameter(aC1, aP12);
-        aT21 = ElCLib.Parameter(aC2, aP21);
-        aT22 = ElCLib.Parameter(aC2, aP22);
+        aT11 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC1, aP11);
+        aT12 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC1, aP12);
+        aT21 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC2, aP21);
+        aT22 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC2, aP22);
         //
         // P11, P21
         myPoint[0, j1].SetValues(aT11, aP11);
@@ -813,8 +821,8 @@ public class Extrema_ExtElC
             bool bNbExt6;
             double aAlpha, aBeta, aVal, aDist2;
             Span<double> aT = stackalloc double[2];
-            gp_Pnt aPt, aPL1, aPL2;
-            gp_Dir aDLt;
+            Point3D aPt, aPL1, aPL2;
+            Direction3D aDLt;
             //
             aAlpha = 0.5 * (aR1 * aR1 - aR2 * aR2 + aD12 * aD12) / aD12;
             aVal = aR1 * aR1 - aAlpha * aAlpha;
@@ -823,18 +831,18 @@ public class Extrema_ExtElC
                 aVal = -aVal;
             }
             aBeta = Math.Sqrt(aVal);
-            aPt = new gp_Pnt(aPc1.XYZ() + aAlpha * aDir12.XYZ());
+            aPt = new Point3D(aPc1.XYZ() + aAlpha * aDir12.XYZ());
             //
             aDLt = aDc1 ^ aDir12;
-            aPL1 = new gp_Pnt(aPt.XYZ() + aBeta * aDLt.XYZ());
-            aPL2 = new gp_Pnt(aPt.XYZ() - aBeta * aDLt.XYZ());
+            aPL1 = new Point3D(aPt.XYZ() + aBeta * aDLt.XYZ());
+            aPL2 = new Point3D(aPt.XYZ() - aBeta * aDLt.XYZ());
             //
             aDist2 = aPL1.SquareDistance(aPL2);
             bNbExt6 = aDist2 > aTolD2;
             //
             myNbExt = 5; // just in case. see pkv/900/L4 for details
-            aT[j1] = ElCLib.Parameter(aC1, aPL1);
-            aT[j2] = ElCLib.Parameter(aC2, aPL1);
+            aT[j1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC1, aPL1);
+            aT[j2] = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC2, aPL1);
             myPoint[4, j1].SetValues(aT[j1], aPL1);
             myPoint[4, j2].SetValues(aT[j2], aPL1);
             mySqDist[4] = 0.0;
@@ -842,8 +850,8 @@ public class Extrema_ExtElC
             if (bNbExt6)
             {
                 myNbExt = 6;
-                aT[j1] = ElCLib.Parameter(aC1, aPL2);
-                aT[j2] = ElCLib.Parameter(aC2, aPL2);
+                aT[j1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC1, aPL2);
+                aT[j2] = global::Kerf.Engine.Geometry.ElCLib.Parameter(aC2, aPL2);
                 myPoint[5, j1].SetValues(aT[j1], aPL2);
                 myPoint[5, j2].SetValues(aT[j2], aPL2);
                 mySqDist[5] = 0.0;
@@ -860,7 +868,7 @@ public class Extrema_ExtElC
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }
@@ -870,7 +878,7 @@ public class Extrema_ExtElC
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -880,7 +888,7 @@ public class Extrema_ExtElC
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist[N - 1];
@@ -891,14 +899,14 @@ public class Extrema_ExtElC
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         P1 = myPoint[N - 1, 0];
         P2 = myPoint[N - 1, 1];
     }
 
-    private static void RefineDir(ref gp_Dir aDir)
+    private static void RefineDir(ref Direction3D aDir)
     {
         int i, j, k, iK;
         double aEps, aX1, aX2, aOne;
@@ -958,9 +966,9 @@ public class Extrema_ExtElC
             while (nbessai <= 2 && !done)
             {
                 //-- F= AA*CN*CN+2*BB*CN*SN+CC*CN+DD*SN+EE;
-                math_TrigonometricFunctionRoots MTFR = new(cc, sc, c, s, cte, Binf, Bsup);
+                TrigonometricFunctionRoots MTFR = new(cc, sc, c, s, cte, Binf, Bsup);
                 //
-                if (MTFR.IsDone())
+                if (MTFR.IsDone)
                 {
                     done = true;
                     if (MTFR.InfiniteRoots())
@@ -974,7 +982,7 @@ public class Extrema_ExtElC
                         double aTwoPI, aMaxCoef, aPrecision;
                         //
                         aTwoPI = M_PI + M_PI;
-                        NbRoots = MTFR.NbSolutions();
+                        NbRoots = MTFR.SolutionCount;
                         for (i = 0; i < NbRoots; ++i)
                         {
                             Roots[i] = MTFR.Value(i + 1);
@@ -1094,7 +1102,7 @@ public class Extrema_ExtElC
         {
             if (!done)
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return NbRoots;
         }
@@ -1103,7 +1111,7 @@ public class Extrema_ExtElC
         {
             if (!done)
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return infinite_roots;
         }
@@ -1112,7 +1120,7 @@ public class Extrema_ExtElC
         {
             if ((!done) || (n > NbRoots))
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return Roots[n - 1];
         }

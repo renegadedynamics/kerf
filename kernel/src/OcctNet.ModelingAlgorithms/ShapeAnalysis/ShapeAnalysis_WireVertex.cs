@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +22,7 @@ public sealed class ShapeAnalysis_WireVertex
 {
     private ShapeExtend_WireData? myWire;
     private NCollection_HArray1<int>? myStat;
-    private NCollection_HArray1<gp_XYZ>? myPos;
+    private NCollection_HArray1<Xyz>? myPos;
     private NCollection_HArray1<double>? myUPre;
     private NCollection_HArray1<double>? myUFol;
     private double myPreci;
@@ -28,7 +32,7 @@ public sealed class ShapeAnalysis_WireVertex
     public ShapeAnalysis_WireVertex()
     {
         myDone = false;
-        myPreci = Occt.Precision.Confusion();
+        myPreci = Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>Loads a wire (the precision argument is unused, as in OCCT).</summary>
@@ -50,7 +54,7 @@ public sealed class ShapeAnalysis_WireVertex
         myWire = sbwd;
         myStat = new NCollection_HArray1<int>(1, nb);
         myStat.Init(0);
-        myPos = new NCollection_HArray1<gp_XYZ>(1, nb);
+        myPos = new NCollection_HArray1<Xyz>(1, nb);
         myUPre = new NCollection_HArray1<double>(1, nb);
         myUPre.Init(0.0);
         myUFol = new NCollection_HArray1<double>(1, nb);
@@ -94,8 +98,8 @@ public sealed class ShapeAnalysis_WireVertex
             j = (i == nb ? 1 : i + 1);
             TopoDS_Vertex V1 = EA.LastVertex(myWire!.Edge(i));
             TopoDS_Vertex V2 = EA.FirstVertex(myWire.Edge(j));
-            gp_Pnt PV1 = BRep_Tool.Pnt(V1);
-            gp_Pnt PV2 = BRep_Tool.Pnt(V2);
+            Point3D PV1 = BRep_Tool.Pnt(V1);
+            Point3D PV2 = BRep_Tool.Pnt(V2);
             double tol1 = BRep_Tool.Tolerance(V1);
             double tol2 = BRep_Tool.Tolerance(V2);
             EA.Curve3d(myWire.Edge(i), out Geom_Curve? c1, out double cf, out double upre);
@@ -104,8 +108,8 @@ public sealed class ShapeAnalysis_WireVertex
             {
                 continue; // on ne peut rien faire ...
             }
-            gp_Pnt P1 = c1.Value(upre);
-            gp_Pnt P2 = c2.Value(ufol);
+            Point3D P1 = c1.Value(upre);
+            Point3D P2 = c2.Value(ufol);
 
             //   Est-ce que le jeu de vertex convient ? (meme si V1 == V2, on verifie)
             double d1 = PV1.Distance(P1);
@@ -136,8 +140,8 @@ public sealed class ShapeAnalysis_WireVertex
 
             //    Une edge se termine sur l autre : il faudra simplement relimiter
             //    Projection calculee sur une demi-edge (pour eviter les pbs de couture)
-            double dj1 = new ShapeAnalysis_Curve().Project(c1, P2, myPreci, out gp_Pnt PJ1, out double U1, (cf + upre) / 2, upre);
-            double dj2 = new ShapeAnalysis_Curve().Project(c2, P1, myPreci, out gp_Pnt PJ2, out double U2, ufol, (ufol + cl) / 2);
+            double dj1 = new ShapeAnalysis_Curve().Project(c1, P2, myPreci, out Point3D PJ1, out double U1, (cf + upre) / 2, upre);
+            double dj2 = new ShapeAnalysis_Curve().Project(c2, P1, myPreci, out Point3D PJ2, out double U2, ufol, (ufol + cl) / 2);
             if (dj1 <= myPreci)
             {
                 SetStart(i, PJ1.XYZ(), U1);
@@ -175,7 +179,7 @@ public sealed class ShapeAnalysis_WireVertex
     /// Records status 3: vertex <paramref name="num"/> is the end of the preceding edge, and its projection on the
     /// following one, at parameter <paramref name="ufol"/>, lies on it.
     /// </summary>
-    public void SetEnd(int num, in gp_XYZ pos, double ufol)
+    public void SetEnd(int num, in Xyz pos, double ufol)
     {
         myStat!.SetValue(num, 3);
         myPos!.SetValue(num, pos);
@@ -186,7 +190,7 @@ public sealed class ShapeAnalysis_WireVertex
     /// Records status 4: vertex <paramref name="num"/> is the start of the following edge, and its projection on the
     /// preceding one, at parameter <paramref name="upre"/>, lies on it.
     /// </summary>
-    public void SetStart(int num, in gp_XYZ pos, double upre)
+    public void SetStart(int num, in Xyz pos, double upre)
     {
         myStat!.SetValue(num, 4);
         myPos!.SetValue(num, pos);
@@ -194,7 +198,7 @@ public sealed class ShapeAnalysis_WireVertex
     }
 
     /// <summary>Records status 5: vertex <paramref name="num"/> is the intersection of both edges.</summary>
-    public void SetInters(int num, in gp_XYZ pos, double upre, double ufol)
+    public void SetInters(int num, in Xyz pos, double upre, double ufol)
     {
         myStat!.SetValue(num, 5);
         myPos!.SetValue(num, pos);
@@ -224,7 +228,7 @@ public sealed class ShapeAnalysis_WireVertex
     public int Status(int num) => myStat!.Value(num);
 
     /// <summary>The recorded position of a vertex.</summary>
-    public gp_XYZ Position(int num) => myPos!.Value(num);
+    public Xyz Position(int num) => myPos!.Value(num);
 
     /// <summary>The recorded parameter on the preceding edge.</summary>
     public double UPrevious(int num) => myUPre!.Value(num);
@@ -236,7 +240,7 @@ public sealed class ShapeAnalysis_WireVertex
     /// The recorded status of a vertex, with its recorded position and parameters on both edges. Status 0 same, 1 same
     /// coords, 2 close, 3 end (position, following), 4 start (position, preceding), 5 intersection (all), -1 disjoined.
     /// </summary>
-    public int Data(int num, out gp_XYZ pos, out double upre, out double ufol)
+    public int Data(int num, out Xyz pos, out double upre, out double ufol)
     {
         pos = myPos!.Value(num);
         upre = myUPre!.Value(num);

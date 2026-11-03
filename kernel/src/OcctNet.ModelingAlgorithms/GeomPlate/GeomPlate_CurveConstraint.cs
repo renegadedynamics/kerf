@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +18,7 @@ namespace Occt;
 /// A working object (decision 21), as OCCT's: its setters are public, and GeomPlate_BuildPlateSurface sets the
 /// projected curve, the 2D curve and the order. It keeps the caller's adaptors and laws, read only.
 /// </remarks>
-public class GeomPlate_CurveConstraint : Standard_Transient
+public class GeomPlate_CurveConstraint : Transient
 {
     protected Adaptor3d_CurveOnSurface? myFrontiere;
     protected int myNbPoints;
@@ -56,7 +60,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     /// A constraint on <paramref name="Boundary"/> of order <paramref name="Tang"/> (-1 to 2), checked at
     /// <paramref name="NPt"/> points.
     /// </summary>
-    /// <exception cref="Standard_Failure">The order isn't -1 to 2, or a curve on a surface isn't on a
+    /// <exception cref="FailureException">The order isn't -1 to 2, or a curve on a surface isn't on a
     /// GeomAdaptor_Surface.</exception>
     public GeomPlate_CurveConstraint(Adaptor3d_Curve Boundary, int Tang, int NPt = 10, double TolDist = 0.0001,
                                      double TolAng = 0.01, double TolCurv = 0.1)
@@ -68,7 +72,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
         myOrder = Tang;
         if ((Tang < -1) || (Tang > 2))
         {
-            throw new Standard_Failure("GeomPlate : The continuity is not G0 G1 or G2");
+            throw new FailureException("GeomPlate : The continuity is not G0 G1 or G2");
         }
         myNbPoints = NPt;
         myConstG0 = true;
@@ -92,7 +96,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
             }
             else
             {
-                throw new Standard_Failure("GeomPlate_CurveConstraint : Surface must be GeomAdaptor_Surface");
+                throw new FailureException("GeomPlate_CurveConstraint : Surface must be GeomAdaptor_Surface");
             }
 
             myLProp.SetSurface(Surf!);
@@ -151,9 +155,9 @@ public class GeomPlate_CurveConstraint : Standard_Transient
         }
     }
 
-    public void D0(double U, out gp_Pnt P)
+    public void D0(double U, out Point3D P)
     {
-        gp_Pnt2d P2d;
+        Point2D P2d;
 
         if (my3dCurve is null)
         {
@@ -166,26 +170,26 @@ public class GeomPlate_CurveConstraint : Standard_Transient
         }
     }
 
-    /// <exception cref="Standard_Failure">The constraint isn't on a surface.</exception>
-    public void D1(double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    /// <exception cref="FailureException">The constraint isn't on a surface.</exception>
+    public void D1(double U, out Point3D P, out Vector3D V1, out Vector3D V2)
     {
-        gp_Pnt2d P2d;
+        Point2D P2d;
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
 
         P2d = myFrontiere!.GetCurve()!.Value(U);
         myFrontiere.GetSurface()!.D1(P2d.Coord(1), P2d.Coord(2), out P, out V1, out V2);
     }
 
-    /// <exception cref="Standard_Failure">The constraint isn't on a surface.</exception>
-    public void D2(double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3, out gp_Vec V4, out gp_Vec V5)
+    /// <exception cref="FailureException">The constraint isn't on a surface.</exception>
+    public void D2(double U, out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3, out Vector3D V4, out Vector3D V5)
     {
-        gp_Pnt2d P2d;
+        Point2D P2d;
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
 
         P2d = myFrontiere!.GetCurve()!.Value(U);
@@ -202,7 +206,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     {
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
         myG1Crit = G1Crit;
         myConstG1 = false;
@@ -212,7 +216,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     {
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
         myG2Crit = G2Crit;
         myConstG2 = false;
@@ -234,7 +238,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     {
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
         if (myConstG1)
         {
@@ -250,7 +254,7 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     {
         if (my3dCurve is not null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
         if (myConstG2)
         {
@@ -271,9 +275,9 @@ public class GeomPlate_CurveConstraint : Standard_Transient
         if (my2dCurve is null && myHCurve2d is not null)
         {
             Geom2d_Curve? C2d;
-            GeomAbs_Shape Continuity = GeomAbs_Shape.GeomAbs_C1;
+            Continuity Continuity = global::Kerf.Geometry.Continuity.C1;
             int MaxDegree = 10;
-            int MaxSeg = 20 + myHCurve2d.NbIntervals(GeomAbs_Shape.GeomAbs_C3);
+            int MaxSeg = 20 + myHCurve2d.NbIntervals(global::Kerf.Geometry.Continuity.C3);
             Approx_Curve2d appr = new Approx_Curve2d(myHCurve2d, myHCurve2d.FirstParameter(), myHCurve2d.LastParameter(),
                                                      myTolU, myTolV, Continuity, MaxDegree, MaxSeg);
             C2d = appr.Curve();
@@ -326,14 +330,14 @@ public class GeomPlate_CurveConstraint : Standard_Transient
     }
 
     /// <summary>The local properties of the support surface at the constraint's parameter U.</summary>
-    /// <exception cref="Standard_Failure">The constraint isn't on a surface.</exception>
+    /// <exception cref="FailureException">The constraint isn't on a surface.</exception>
     public GeomLProp_SLProps LPropSurf(double U)
     {
         if (myFrontiere is null)
         {
-            throw new Standard_Failure("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
+            throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
-        gp_Pnt2d P2d = myFrontiere.GetCurve()!.Value(U);
+        Point2D P2d = myFrontiere.GetCurve()!.Value(U);
         myLProp.SetParameters(P2d.X(), P2d.Y());
         return myLProp;
     }

@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ContractAssignment
 /// </summary>
-public class StepBasic_ContractAssignment : Standard_Transient
+public class StepBasic_ContractAssignment : Transient
 {
     private StepBasic_Contract theAssignedContract;
 

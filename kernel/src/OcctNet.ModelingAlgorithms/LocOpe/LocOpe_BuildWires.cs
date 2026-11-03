@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -105,7 +106,7 @@ public sealed class LocOpe_BuildWires
 
                 if (!anIterl.More())
                 {
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
                 }
                 TopoDS_Edge theEdge = TopoDS.Edge(anIterl.Value());
                 TopExp.Vertices(theEdge, out TopoDS_Vertex Vf1, out TopoDS_Vertex Vl1);
@@ -204,7 +205,7 @@ public sealed class LocOpe_BuildWires
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }

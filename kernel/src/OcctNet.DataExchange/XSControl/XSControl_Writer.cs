@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -89,7 +91,7 @@ public class XSControl_Writer
     /// <summary>
     /// Transfers a Shape according to the mode
     /// </summary>
-    public IFSelect_ReturnStatus TransferShape(TopoDS_Shape sh, int mode = 0, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferShape(TopoDS_Shape sh, int mode = 0, ProgressRange theProgress = default)
     {
         thesession.TransferWriter().SetTransferMode(mode);
         return thesession.TransferWriteShape(sh, true, theProgress);

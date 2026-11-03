@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -126,7 +127,7 @@ public class BRepTools_CopyAtEntryTests
             }
         }
         Assert.Equal(9, aNbKeptEdges);
-        Assert.False(aResult.TShape()!.IsFrozen()); // the helper freezes nothing
+        Assert.False(aResult.TShape()!.IsFrozen); // the helper freezes nothing
     }
 
     [Fact]
@@ -257,8 +258,8 @@ public class BRepTools_CopyAtEntryTests
     public void Finish_IsCalledOnce()
     {
         var anEntry = new BRepTools_CopyAtEntry(Box());
-        Assert.ThrowsAny<Standard_ProgramError>(() => anEntry.History());
+        Assert.ThrowsAny<ProgramErrorException>(() => anEntry.History());
         anEntry.Finish(anEntry.Shape());
-        Assert.ThrowsAny<Standard_ProgramError>(() => anEntry.Finish(anEntry.Shape()));
+        Assert.ThrowsAny<ProgramErrorException>(() => anEntry.Finish(anEntry.Shape()));
     }
 }

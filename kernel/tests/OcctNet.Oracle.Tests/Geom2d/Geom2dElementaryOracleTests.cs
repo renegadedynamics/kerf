@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -53,13 +54,13 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(anOracle);
             using var aNAxOwner = aNAx;
             using var aNative = new N.Geom2d_Line(aNAx);
             var aPort = new Geom2d_Line(anAx);
             CheckCurve(anOracle, aNative, aPort, "Line", true);
 
-            gp_Pnt2d aP = anOracle.Pnt2d();
+            Point2D aP = anOracle.Pnt2d();
             using var aNP = Oracle.ToNative(aP);
             anOracle.Same(aNative.Distance(aNP), aPort.Distance(aP), "Line Distance");
         }
@@ -73,7 +74,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(anOracle);
             using var aNAxOwner = aNAx;
             double aR = anOracle.Real(0.1, 50);
             bool aSense = anOracle.Bool();
@@ -94,7 +95,7 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(anOracle);
+            (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(anOracle);
             using var aNAxOwner = aNAx;
             double aMaj = anOracle.Real(1.0, 50);
             double aMin = anOracle.Real(0.05, 0.95) * aMaj;

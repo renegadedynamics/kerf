@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
@@ -17,7 +19,7 @@ public class ShapeFix_ComposeShellTests
     // the plane z = 0, as two patches [0, 1] x [0, 1] and [1, 2] x [0, 1]
     private static ShapeExtend_CompositeSurface TwoPatches(out Geom_Plane thePlane)
     {
-        thePlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        thePlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         var aGrid = new NCollection_HArray2<Geom_Surface>(1, 2, 1, 1);
         aGrid.SetValue(1, 1, new Geom_RectangularTrimmedSurface(thePlane, 0.0, 1.0, 0.0, 1.0));
         aGrid.SetValue(2, 1, new Geom_RectangularTrimmedSurface(thePlane, 1.0, 2.0, 0.0, 1.0));
@@ -29,10 +31,10 @@ public class ShapeFix_ComposeShellTests
     {
         TopoDS_Vertex[] aV =
         [
-            TestShapes.Vertex(new gp_Pnt(0.2, 0.2, 0)), TestShapes.Vertex(new gp_Pnt(1.8, 0.2, 0)),
-            TestShapes.Vertex(new gp_Pnt(1.8, 0.8, 0)), TestShapes.Vertex(new gp_Pnt(0.2, 0.8, 0)),
+            TestShapes.Vertex(new Point3D(0.2, 0.2, 0)), TestShapes.Vertex(new Point3D(1.8, 0.2, 0)),
+            TestShapes.Vertex(new Point3D(1.8, 0.8, 0)), TestShapes.Vertex(new Point3D(0.2, 0.8, 0)),
         ];
-        return TestShapes.PolygonFace(aV, new gp_Dir(0, 0, 1), new Dictionary<(int, int), TopoDS_Edge>(), [0, 1, 2, 3], thePlane);
+        return TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), new Dictionary<(int, int), TopoDS_Edge>(), [0, 1, 2, 3], thePlane);
     }
 
     private static List<TopoDS_Shape> SubShapes(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
@@ -56,14 +58,14 @@ public class ShapeFix_ComposeShellTests
         var aContext = new ShapeBuild_ReShape();
 
         var aTool = new ShapeFix_ComposeShell();
-        aTool.Init(aGrid, new TopLoc_Location(), aFace, Conf);
+        aTool.Init(aGrid, new Placement(), aFace, Conf);
         aTool.SetContext(aContext);
         Assert.True(aTool.Perform());
         Assert.True(aTool.Status(ShapeExtend_DONE1));
         TopoDS_Shape aResult = aTool.Result();
 
         aSnap.AssertUnchanged(aFace);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_SHELL, aResult.ShapeType());
         List<TopoDS_Shape> aFaces = SubShapes(aResult, TopAbs_FACE);
         Assert.Equal(2, aFaces.Count);
@@ -91,7 +93,7 @@ public class ShapeFix_ComposeShellTests
         TopoDS_Face aFace = Rectangle(aPlane); // unfrozen: worked in place
         var aContext = new ShapeBuild_ReShape();
         var aTool = new ShapeFix_ComposeShell();
-        aTool.Init(aGrid, new TopLoc_Location(), aFace, Conf);
+        aTool.Init(aGrid, new Placement(), aFace, Conf);
         aTool.SetContext(aContext);
         aTool.SplitEdges();
         Assert.True(aTool.InternalResult().IsNull());
@@ -124,11 +126,11 @@ public class ShapeFix_ComposeShellTests
         ShapeExtend_CompositeSurface aGrid = TwoPatches(out Geom_Plane aPlane);
         TopoDS_Face aFace = Rectangle(aPlane);
         var aTool = new ShapeFix_ComposeShell();
-        aTool.Init(aGrid, new TopLoc_Location(), aFace, Conf);
+        aTool.Init(aGrid, new Placement(), aFace, Conf);
         aTool.SetContext(new ShapeBuild_ReShape());
         Assert.True(aTool.Perform());
         TopoDS_Shape aResult = aTool.InternalResult();
-        Assert.False(aResult.TShape()!.IsFrozen());
+        Assert.False(aResult.TShape()!.IsFrozen);
         Assert.Equal(2, SubShapes(aResult, TopAbs_FACE).Count);
         Assert.True(ShapeFix_FaceTestsAccess.IsValid(aResult));
     }

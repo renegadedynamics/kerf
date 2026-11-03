@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class BSplCLib_CacheTest
@@ -24,24 +28,24 @@ public class BSplCLib_CacheTest
 
     // The GTests build these arrays inline in each test; they are shared here
 
-    private static NCollection_Array1<gp_Pnt> cubicPoles(double theZ)
+    private static NCollection_Array1<Point3D> cubicPoles(double theZ)
     {
         // A cubic Bezier curve
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, theZ);
-        aPoles[3] = new gp_Pnt(2, 2, theZ);
-        aPoles[4] = new gp_Pnt(3, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, theZ);
+        aPoles[3] = new Point3D(2, 2, theZ);
+        aPoles[4] = new Point3D(3, 0, 0);
         return aPoles;
     }
 
-    private static NCollection_Array1<gp_Pnt> conicPoles()
+    private static NCollection_Array1<Point3D> conicPoles()
     {
         // A rational quadratic Bezier curve (can represent a circle arc)
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt(1, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 1, 0);
-        aPoles[3] = new gp_Pnt(0, 1, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(1, 0, 0);
+        aPoles[2] = new Point3D(1, 1, 0);
+        aPoles[3] = new Point3D(0, 1, 0);
         return aPoles;
     }
 
@@ -69,7 +73,7 @@ public class BSplCLib_CacheTest
         createFlatKnots(theKnots, theMults, theFlatKnots);
     }
 
-    private static void near3(in gp_XYZ theCache, in gp_XYZ theDirect)
+    private static void near3(in Xyz theCache, in Xyz theDirect)
     {
         Assert.Equal(theDirect.X(), theCache.X(), THE_TOLERANCE);
         Assert.Equal(theDirect.Y(), theCache.Y(), THE_TOLERANCE);
@@ -79,14 +83,14 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D0_NonRationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = cubicPoles(0);
+        NCollection_Array1<Point3D> aPoles = cubicPoles(0);
         bezierKnots(4, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
 
         const int aDegree = 3;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, null);
 
         // Test at several parameter values
@@ -97,10 +101,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, null);
             }
-            aCache.D0(u, out gp_Pnt aCachePnt);
+            aCache.D0(u, out Point3D aCachePnt);
 
             // Direct evaluation using BSplCLib::D0
-            BSplCLib.D0(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out gp_Pnt aDirectPnt);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out Point3D aDirectPnt);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -110,14 +114,14 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D1_NonRationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = cubicPoles(1);
+        NCollection_Array1<Point3D> aPoles = cubicPoles(1);
         bezierKnots(4, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
 
         const int aDegree = 3;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, null);
 
         // Test at several parameter values
@@ -128,10 +132,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, null);
             }
-            aCache.D1(u, out gp_Pnt aCachePnt, out gp_Vec aCacheTan);
+            aCache.D1(u, out Point3D aCachePnt, out Vector3D aCacheTan);
 
             // Direct evaluation using BSplCLib::D1
-            BSplCLib.D1(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out gp_Pnt aDirectPnt, out gp_Vec aDirectTan);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -142,14 +146,14 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D2_NonRationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = cubicPoles(1);
+        NCollection_Array1<Point3D> aPoles = cubicPoles(1);
         bezierKnots(4, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
 
         const int aDegree = 3;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, null);
 
         // Test at several parameter values
@@ -160,10 +164,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, null);
             }
-            aCache.D2(u, out gp_Pnt aCachePnt, out gp_Vec aCacheTan, out gp_Vec aCacheCurv);
+            aCache.D2(u, out Point3D aCachePnt, out Vector3D aCacheTan, out Vector3D aCacheCurv);
 
             // Direct evaluation using BSplCLib::D2
-            BSplCLib.D2(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out gp_Pnt aDirectPnt, out gp_Vec aDirectTan, out gp_Vec aDirectCurv);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan, out Vector3D aDirectCurv);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -175,7 +179,7 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D0_RationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = conicPoles();
+        NCollection_Array1<Point3D> aPoles = conicPoles();
         NCollection_Array1<double> aWeights = conicWeights();
         bezierKnots(3, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
@@ -183,7 +187,7 @@ public class BSplCLib_CacheTest
         const int aDegree = 2;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, aWeights);
 
         // Test at several parameter values
@@ -194,10 +198,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, aWeights);
             }
-            aCache.D0(u, out gp_Pnt aCachePnt);
+            aCache.D0(u, out Point3D aCachePnt);
 
             // Direct evaluation using BSplCLib::D0
-            BSplCLib.D0(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out gp_Pnt aDirectPnt);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out Point3D aDirectPnt);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -207,7 +211,7 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D1_RationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = conicPoles();
+        NCollection_Array1<Point3D> aPoles = conicPoles();
         NCollection_Array1<double> aWeights = conicWeights();
         bezierKnots(3, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
@@ -215,7 +219,7 @@ public class BSplCLib_CacheTest
         const int aDegree = 2;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, aWeights);
 
         // Test at several parameter values
@@ -226,10 +230,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, aWeights);
             }
-            aCache.D1(u, out gp_Pnt aCachePnt, out gp_Vec aCacheTan);
+            aCache.D1(u, out Point3D aCachePnt, out Vector3D aCacheTan);
 
             // Direct evaluation using BSplCLib::D1
-            BSplCLib.D1(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out gp_Pnt aDirectPnt, out gp_Vec aDirectTan);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -240,7 +244,7 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D2_RationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = conicPoles();
+        NCollection_Array1<Point3D> aPoles = conicPoles();
         NCollection_Array1<double> aWeights = conicWeights();
         bezierKnots(3, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
@@ -248,7 +252,7 @@ public class BSplCLib_CacheTest
         const int aDegree = 2;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, aWeights);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, aWeights);
 
         // Test at several parameter values
@@ -259,10 +263,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, aWeights);
             }
-            aCache.D2(u, out gp_Pnt aCachePnt, out gp_Vec aCacheTan, out gp_Vec aCacheCurv);
+            aCache.D2(u, out Point3D aCachePnt, out Vector3D aCacheTan, out Vector3D aCacheCurv);
 
             // Direct evaluation using BSplCLib::D2
-            BSplCLib.D2(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out gp_Pnt aDirectPnt, out gp_Vec aDirectTan, out gp_Vec aDirectCurv);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, 0, aDegree, false, aPoles, aWeights, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan, out Vector3D aDirectCurv);
 
             // Compare
             near3(aCachePnt.XYZ(), aDirectPnt.XYZ());
@@ -274,14 +278,14 @@ public class BSplCLib_CacheTest
     [Fact]
     public void D3_NonRationalCurve3D()
     {
-        NCollection_Array1<gp_Pnt> aPoles = cubicPoles(1);
+        NCollection_Array1<Point3D> aPoles = cubicPoles(1);
         bezierKnots(4, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults,
                     out NCollection_Array1<double> aFlatKnots);
 
         const int aDegree = 3;
 
         // Create cache
-        BSplCLib_Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
+        global::Kerf.Engine.Geometry.Splines.Cache aCache = new(aDegree, false, aFlatKnots, aPoles, null);
         aCache.BuildCache(0.5, aFlatKnots, aPoles, null);
 
         // Test at several parameter values
@@ -292,10 +296,10 @@ public class BSplCLib_CacheTest
             {
                 aCache.BuildCache(u, aFlatKnots, aPoles, null);
             }
-            aCache.D3(u, out gp_Pnt aCachePnt, out gp_Vec aCacheTan, out gp_Vec aCacheCurv, out gp_Vec aCacheTors);
+            aCache.D3(u, out Point3D aCachePnt, out Vector3D aCacheTan, out Vector3D aCacheCurv, out Vector3D aCacheTors);
 
             // Direct evaluation using BSplCLib::D3
-            BSplCLib.D3(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out gp_Pnt aDirectPnt, out gp_Vec aDirectTan, out gp_Vec aDirectCurv, out gp_Vec aDirectTors);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan, out Vector3D aDirectCurv, out Vector3D aDirectTors);
 
             // Compare the X coordinates of point, tangent, curvature and torsion
             Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);

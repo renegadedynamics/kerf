@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,53 +28,53 @@ public readonly struct ApproxInt_MultiLineTool<TheLine> : IApprox_LineTool<Appro
 
     public static int LastPoint(ApproxInt_MultiLine<TheLine> ML) => (ML.LastPoint());
 
-    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Pnt> TabPnt)
+    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Point3D> TabPnt)
     {
         ML.Value(Index, TabPnt);
     }
 
-    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Pnt2d> TabPnt2d)
+    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Point2D> TabPnt2d)
     {
         ML.Value(Index, TabPnt2d);
     }
 
-    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Pnt> TabPnt,
-                             NCollection_Array1<gp_Pnt2d> TabPnt2d)
+    public static void Value(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Point3D> TabPnt,
+                             NCollection_Array1<Point2D> TabPnt2d)
     {
         ML.Value(Index, TabPnt, TabPnt2d);
     }
 
-    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec> TabVec)
+    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector3D> TabVec)
     {
         return (ML.Tangency(Index, TabVec));
     }
 
-    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec2d> TabVec2d)
+    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector2D> TabVec2d)
     {
         return (ML.Tangency(Index, TabVec2d));
     }
 
-    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec> TabVec,
-                                NCollection_Array1<gp_Vec2d> TabVec2d)
+    public static bool Tangency(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector3D> TabVec,
+                                NCollection_Array1<Vector2D> TabVec2d)
     {
         return (ML.Tangency(Index, TabVec, TabVec2d));
     }
 
     /// <summary>False: there are no curvatures.</summary>
-    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec> TabVec)
+    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector3D> TabVec)
     {
         return false;
     }
 
     /// <summary>False: there are no curvatures.</summary>
-    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec2d> TabVec2d)
+    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector2D> TabVec2d)
     {
         return false;
     }
 
     /// <summary>False: there are no curvatures.</summary>
-    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<gp_Vec> TabVec,
-                                 NCollection_Array1<gp_Vec2d> TabVec2d)
+    public static bool Curvature(ApproxInt_MultiLine<TheLine> ML, int Index, NCollection_Array1<Vector3D> TabVec,
+                                 NCollection_Array1<Vector2D> TabVec2d)
     {
         return false;
     }

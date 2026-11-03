@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class StepDimTol_GeometricToleranceWithDefinedUnit : StepDimTol_Geometric
     /// <summary>
     /// Initialize all fields (own and inherited) AP214
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect);
         myUnitSize = theUnitSize;
@@ -34,7 +36,7 @@ public class StepDimTol_GeometricToleranceWithDefinedUnit : StepDimTol_Geometric
     /// <summary>
     /// Initialize all fields (own and inherited) AP242
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepBasic_LengthMeasureWithUnit theUnitSize)
     {
         base.Init(theName, theDescription, theMagnitude, theTolerancedShapeAspect);
         myUnitSize = theUnitSize;

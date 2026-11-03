@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -42,7 +44,7 @@ public sealed class Approx_SameParameter
             ReadOnlySpan<double> PolesArray = Poles.AsSpan();
 
             // Evaluate the 1D B-Spline that represents the change in parameterization.
-            BSplCLib.Eval(Parameter,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(Parameter,
                           false,
                           DerivativeRequest,
                           extrap_mode,
@@ -52,8 +54,8 @@ public sealed class Approx_SameParameter
                           PolesArray,
                           eval_result);
 
-            gp_Pnt2d aPoint;
-            gp_Vec2d aVector;
+            Point2D aPoint;
+            Vector2D aVector;
             if (DerivativeRequest == 0)
             {
                 HCurve2d.D0(eval_result[0], out aPoint);
@@ -126,7 +128,7 @@ public sealed class Approx_SameParameter
     /// <summary>Makes C2D on S have the parameter of C3D, within Tol. The curves must have the same range.</summary>
     public Approx_SameParameter(Geom_Curve C3D, Geom2d_Curve C2D, Geom_Surface S, double Tol)
     {
-        myDeltaMin = Precision.PConfusion();
+        myDeltaMin = global::Kerf.Engine.Foundation.Precision.PConfusion();
         mySameParameter = true;
         myDone = false;
         myHCurve2d = new Geom2dAdaptor_Curve(C2D);
@@ -138,7 +140,7 @@ public sealed class Approx_SameParameter
     /// <summary>As the other constructors, for curves and a surface given by adaptors (kept by reference).</summary>
     public Approx_SameParameter(Adaptor3d_Curve C3D, Geom2d_Curve C2D, Adaptor3d_Surface S, double Tol)
     {
-        myDeltaMin = Precision.PConfusion();
+        myDeltaMin = global::Kerf.Engine.Foundation.Precision.PConfusion();
         mySameParameter = true;
         myDone = false;
         myC3d = C3D;
@@ -150,7 +152,7 @@ public sealed class Approx_SameParameter
     /// <summary>As the other constructors, for curves and a surface given by adaptors (kept by reference).</summary>
     public Approx_SameParameter(Adaptor3d_Curve C3D, Adaptor2d_Curve2d C2D, Adaptor3d_Surface S, double Tol)
     {
-        myDeltaMin = Precision.PConfusion();
+        myDeltaMin = global::Kerf.Engine.Foundation.Precision.PConfusion();
         mySameParameter = true;
         myDone = false;
         myC3d = C3D;
@@ -194,7 +196,7 @@ public sealed class Approx_SameParameter
     public Adaptor3d_CurveOnSurface? CurveOnSurface() => myCurveOnSurface;
 
     private static void ProjectPointOnCurve(double InitValue,
-                                            in gp_Pnt APoint,
+                                            in Point3D APoint,
                                             double Tolerance,
                                             int NumIteration,
                                             Adaptor3d_Curve Curve,
@@ -203,15 +205,15 @@ public sealed class Approx_SameParameter
     {
         int num_iter = 0, not_done = 1;
 
-        gp_Pnt a_point;
-        gp_Vec vector, d1, d2;
+        Point3D a_point;
+        Vector3D vector, d1, d2;
         double func, func_derivative, param = InitValue;
         Status = false;
         do
         {
             num_iter++;
             Curve.D2(param, out a_point, out d1, out d2);
-            vector = new gp_Vec(a_point, APoint);
+            vector = new Vector3D(a_point, APoint);
 
             func = vector.Dot(d1);
             if (Math.Abs(func) < Tolerance * d1.Magnitude())
@@ -247,21 +249,21 @@ public sealed class Approx_SameParameter
         {
             double t = IntToReal(i) / IntToReal(nbp);
             double u = first * (1.0 - t) + last * t;
-            gp_Pnt Pc3d, Pcons;
+            Point3D Pc3d, Pcons;
             try
             {
                 Pc3d = c3d.Value(u);
                 Pcons = cons.Value(u);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
-                d2 = Precision.Infinite();
+                d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
-            if (Precision.IsInfinite(Pcons.X()) || Precision.IsInfinite(Pcons.Y())
-                || Precision.IsInfinite(Pcons.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Y())
+                || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Z()))
             {
-                d2 = Precision.Infinite();
+                d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
             d2 = Max(d2, Pc3d.SquareDistance(Pcons));
@@ -269,7 +271,7 @@ public sealed class Approx_SameParameter
 
         const double aMult = 1.0 + 0.05; //
         double aDeviation = aMult * Math.Sqrt(d2);
-        aDeviation = Max(aDeviation, Precision.Confusion()); // Tolerance in modeling space.
+        aDeviation = Max(aDeviation, global::Kerf.Engine.Foundation.Precision.Confusion()); // Tolerance in modeling space.
         return aDeviation;
     }
 
@@ -316,16 +318,16 @@ public sealed class Approx_SameParameter
             // It should be inside of 3d curve parameter space.
             double t = unsurnn * i;
             double tc3d = pc3d[0] * (1.0 - t) + pc3d[nbp - 1] * t; // weight function.
-            gp_Pnt Pc3d = c3d.Value(tc3d);
-            BSplCLib.Eval(tc3d, false, 0, extrap_mode, aDegree, FlatKnots, 1, Poles.AsSpan(1), tcons);
+            Point3D Pc3d = c3d.Value(tc3d);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(tc3d, false, 0, extrap_mode, aDegree, FlatKnots, 1, Poles.AsSpan(1), tcons);
 
             if (tcons[0] < tprev || tcons[0] > aParamLast)
             {
-                tol = Precision.Infinite();
+                tol = global::Kerf.Engine.Foundation.Precision.Infinite();
                 return false;
             }
             tprev = tcons[0];
-            gp_Pnt Pcons = cons.Value(tcons[0]);
+            Point3D Pcons = cons.Value(tcons[0]);
             double temp = Pc3d.SquareDistance(Pcons);
             if (temp > d2)
             {
@@ -425,13 +427,13 @@ public sealed class Approx_SameParameter
         // There is at least one point where same parameter is broken.
         // Try to build B-spline approximation curve using interpolation with degree 3.
         // The loop is organized over number of poles.
-        GeomAbs_Shape aContinuity = myHCurve2d.Continuity();
-        if (aContinuity > GeomAbs_C1)
+        Continuity aContinuity = myHCurve2d.Continuity();
+        if (aContinuity > C1)
         {
-            aContinuity = GeomAbs_C1;
+            aContinuity = C1;
         }
 
-        double besttol2 = aData.myTol * aData.myTol, tolsov = Precision.Infinite();
+        double besttol2 = aData.myTol * aData.myTol, tolsov = global::Kerf.Engine.Foundation.Precision.Infinite();
         bool interpolok = false, hasCountChanged = false;
         do
         {
@@ -608,8 +610,8 @@ public sealed class Approx_SameParameter
         theData.myPC3d[theData.myNbPnt] = theData.myC3dPL;
 
         // Change number of points in case of C0 continuity.
-        GeomAbs_Shape Continuity = myHCurve2d.Continuity();
-        if (Continuity < GeomAbs_C1)
+        Continuity Continuity = myHCurve2d.Continuity();
+        if (Continuity < C1)
         {
             if (!IncreaseInitialNbSamples(theData))
             {
@@ -625,9 +627,9 @@ public sealed class Approx_SameParameter
     // Sub-method in BuildInitialDistribution.
     private bool IncreaseInitialNbSamples(Approx_SameParameter_Data theData)
     {
-        int NbInt = myHCurve2d.NbIntervals(GeomAbs_C1) + 1;
+        int NbInt = myHCurve2d.NbIntervals(C1) + 1;
         NCollection_Array1<double> aC1Intervals = new(1, NbInt);
-        myHCurve2d.Intervals(aC1Intervals, GeomAbs_C1);
+        myHCurve2d.Intervals(aC1Intervals, C1);
 
         int inter = 1;
         while (inter <= NbInt && aC1Intervals[inter] <= theData.myC3dPF + myDeltaMin)
@@ -693,7 +695,7 @@ public sealed class Approx_SameParameter
         bool isSameParam = true;
 
         // Compute initial distance on boundary points.
-        gp_Pnt Pcons, Pc3d;
+        Point3D Pcons, Pc3d;
         theData.myCOnS.D0(theData.myC2dPF, out Pcons);
         myC3d.D0(theData.myC3dPF, out Pc3d);
         double dist2 = Pcons.SquareDistance(Pc3d);
@@ -773,7 +775,7 @@ public sealed class Approx_SameParameter
             double aCurDistMin = RealLast();
             for (int i = 1; i <= aNbExt; i++)
             {
-                gp_Pnt aP = PR.Point(i).Value();
+                Point3D aP = PR.Point(i).Value();
                 double aDist2 = aP.SquareDistance(Pcons);
                 if (aDist2 < aCurDistMin)
                 {
@@ -808,8 +810,8 @@ public sealed class Approx_SameParameter
     {
         const double aSmallMagnitude = 1.0e-12;
         // Check tangency on curve border.
-        gp_Pnt aPnt, aPntCOnS;
-        gp_Vec aVec, aVecConS;
+        Point3D aPnt, aPntCOnS;
+        Vector3D aVec, aVecConS;
 
         // First point.
         double aParamFirst = myC3d.FirstParameter();
@@ -876,7 +878,7 @@ public sealed class Approx_SameParameter
             aParameters[ii] = theFlatKnots[ii + 2] = theData.myPC3d[ii - 2];
         }
         int inversion_problem;
-        BSplCLib.Interpolate(3,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(3,
                              theFlatKnots,
                              aParameters,
                              ContactOrder,
@@ -915,7 +917,7 @@ public sealed class Approx_SameParameter
                 continue;
             }
 
-            BSplCLib.Eval(0.5 * (theData.myPC3d[ii] + theData.myPC3d[ii + 1]),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(0.5 * (theData.myPC3d[ii] + theData.myPC3d[ii + 1]),
                           false,
                           DerivativeRequest,
                           extrap_mode,
@@ -930,7 +932,7 @@ public sealed class Approx_SameParameter
                 double ucons = 0.5 * (theData.myPC2d[ii] + theData.myPC2d[ii + 1]);
                 double uc3d = 0.5 * (theData.myPC3d[ii] + theData.myPC3d[ii + 1]);
 
-                gp_Pnt Pcons;
+                Point3D Pcons;
                 theData.myCOnS.D0(ucons, out Pcons);
                 Projector.Perform(Pcons, uc3d);
                 if (Projector.IsDone())
@@ -984,7 +986,7 @@ public sealed class Approx_SameParameter
             double ucons = 0.5 * (theData.myPC2d[n] + theData.myPC2d[n + 1]);
             double uc3d = 0.5 * (theData.myPC3d[n] + theData.myPC3d[n + 1]);
 
-            gp_Pnt Pcons;
+            Point3D Pcons;
             theData.myCOnS.D0(ucons, out Pcons);
             Projector.Perform(Pcons, uc3d);
             if (Projector.IsDone())

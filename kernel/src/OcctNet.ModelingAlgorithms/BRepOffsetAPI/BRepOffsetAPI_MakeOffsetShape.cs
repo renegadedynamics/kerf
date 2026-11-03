@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 
 namespace Occt;
 
@@ -59,8 +61,8 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     /// <paramref name="RemoveIntEdges"/> removes the INTERNAL edges from the result.
     /// </summary>
     public void PerformByJoin(in TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode = BRepOffset_Skin,
-                              bool Intersection = false, bool SelfInter = false, GeomAbs_JoinType Join = GeomAbs_Arc,
-                              bool RemoveIntEdges = false, Message_ProgressRange theRange = default)
+                              bool Intersection = false, bool SelfInter = false, JoinKind Join = Arc,
+                              bool RemoveIntEdges = false, ProgressRange theRange = default)
     {
         NotDone();
         myLastUsedAlgo = OffsetAlgo_Type.OffsetAlgo_JOIN;
@@ -105,7 +107,7 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>Does nothing.</summary>
-    public override void Build(Message_ProgressRange theRange = default) { }
+    public override void Build(ProgressRange theRange = default) { }
 
     //=================================================================================================
 
@@ -164,5 +166,5 @@ public class BRepOffsetAPI_MakeOffsetShape : BRepBuilderAPI_MakeShape
     //=================================================================================================
 
     /// <summary>The offset join type.</summary>
-    public GeomAbs_JoinType GetJoinType() => myOffsetShape.GetJoinType();
+    public JoinKind GetJoinType() => myOffsetShape.GetJoinType();
 }

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -71,7 +75,7 @@ internal static class BRepTestCurveCommands
 
         if (n >= 5)
         {
-            theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))).Shape());
+            theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))).Shape());
         }
         else if (n == 4)
         {
@@ -87,16 +91,16 @@ internal static class BRepTestCurveCommands
             }
 
             var C = new BRepAdaptor_Curve(TopoDS.Edge(S));
-            C.D0(theDI.Atof(a[2]), out gp_Pnt P);
+            C.D0(theDI.Atof(a[2]), out Point3D P);
             theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(P).Shape());
         }
         else
         {
             // OCCT dereferences the down-cast handle without a test: a name that isn't a point is an access violation
-            var aP = new gp_Pnt();
+            var aP = new Point3D();
             if (!DrawTrSurf.GetPoint(theDI, a[2], ref aP))
             {
-                throw new Standard_NullObject();
+                throw new global::Kerf.Engine.Foundation.NullObjectException();
             }
 
             theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(aP).Shape());
@@ -123,7 +127,7 @@ internal static class BRepTestCurveCommands
         int j = 2;
         for (int i = 1; i <= np; i++)
         {
-            W.Add(new gp_Pnt(theDI.Atof(a[j]), theDI.Atof(a[j + 1]), theDI.Atof(a[j + 2])));
+            W.Add(new Point3D(theDI.Atof(a[j]), theDI.Atof(a[j + 1]), theDI.Atof(a[j + 2])));
             j += 3;
         }
 
@@ -243,7 +247,7 @@ internal static class BRepTestCurveCommands
 
         Geom_Curve? C = DrawTrSurf.GetCurve(theDI, a[2]);
         Geom2d_Curve? C2d = DrawTrSurf.GetCurve2d(theDI, a[2]);
-        var P3d = (theDI.GetDrawable(a[2]) as DrawGeometry)?.Geometry as Poly_Polygon3D;
+        var P3d = (theDI.GetDrawable(a[2]) as DrawGeometry)?.Geometry as Polygon3D;
         if (C is null && C2d is null && P3d is null)
         {
             di.Append(a[2]).Append(" is not a curve or polygon 3d\n");
@@ -357,7 +361,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        Geom_Curve? C = BRep_Tool.Curve(TopoDS.Edge(S), out TopLoc_Location L, out double f, out double l);
+        Geom_Curve? C = BRep_Tool.Curve(TopoDS.Edge(S), out Placement L, out double f, out double l);
         if (C is null)
         {
             di.Append(a[2]).Append(" has no 3d curve\n");
@@ -401,7 +405,7 @@ internal static class BRepTestCurveCommands
         }
 
         TopoDS_Edge E = TopoDS.Edge(S);
-        TopLoc_Location L = new();
+        Placement L = new();
         double f = 0.0, l = 0.0;
         Geom2d_Curve? C = null;
         Geom_Surface? Surf = null;
@@ -477,7 +481,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        Geom_Surface S = BRep_Tool.Surface(TopoDS.Face(Sh), out TopLoc_Location Loc)!;
+        Geom_Surface S = BRep_Tool.Surface(TopoDS.Face(Sh), out Placement Loc)!;
         BRepTools.UVBounds(TopoDS.Face(Sh), out double UMin, out double UMax, out double VMin, out double VMax);
         if (uiso)
         {
@@ -497,12 +501,12 @@ internal static class BRepTestCurveCommands
         if (uiso)
         {
             C = TS.UIso(p);
-            L = new Geom2d_Line(new gp_Pnt2d(p, 0), new gp_Dir2d(0, 1));
+            L = new Geom2d_Line(new Point2D(p, 0), new Direction2D(0, 1));
         }
         else
         {
             C = TS.VIso(p);
-            L = new Geom2d_Line(new gp_Pnt2d(0, p), new gp_Dir2d(1, 0));
+            L = new Geom2d_Line(new Point2D(0, p), new Direction2D(1, 0));
         }
 
         // OCCT writes the location and the pcurve into the new edge before binding it
@@ -570,14 +574,14 @@ internal static class BRepTestCurveCommands
         int i = 2;
         double x0 = 0, y0 = 0, x = 0, y = 0, dx = 1, dy = 0;
         var MW = new BRepBuilderAPI_MakeWire();
-        var P = new gp_Pln(new gp_Ax3(gp.XOY()));
+        var P = new Plane3D(new CoordinateSystem(Constants.XOY()));
         bool face = true;
         bool close = true;
         bool first = true;
         bool stayfirst = false;
         bool isplanar = true;
         TopoDS_Shape S;
-        TopLoc_Location TheLocation = new();
+        Placement TheLocation = new();
         Geom_Surface? Surface = null;
         while (i < n)
         {
@@ -612,7 +616,7 @@ internal static class BRepTestCurveCommands
                         goto badargs;
                     }
 
-                    P.SetLocation(new gp_Pnt(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i])));
+                    P.SetLocation(new Point3D(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i])));
                     stayfirst = true;
                     break;
 
@@ -625,22 +629,22 @@ internal static class BRepTestCurveCommands
                     }
 
                     {
-                        var vn = new gp_Vec(theDI.Atof(a[i - 5]), theDI.Atof(a[i - 4]), theDI.Atof(a[i - 3]));
-                        var vx = new gp_Vec(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i]));
-                        if (vn.Magnitude() <= Precision.Confusion())
+                        var vn = new Vector3D(theDI.Atof(a[i - 5]), theDI.Atof(a[i - 4]), theDI.Atof(a[i - 3]));
+                        var vx = new Vector3D(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i]));
+                        if (vn.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("profile : null direction");
                             return 1;
                         }
 
-                        if (vx.Magnitude() <= Precision.Confusion())
+                        if (vx.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("profile : null direction");
                             return 1;
                         }
 
-                        var ax = new gp_Ax2(P.Location(), new gp_Dir(vn), new gp_Dir(vx));
-                        P.SetPosition(new gp_Ax3(ax));
+                        var ax = new Frame3D(P.Location(), new Direction3D(vn), new Direction3D(vx));
+                        P.SetPosition(new CoordinateSystem(ax));
                     }
 
                     stayfirst = true;
@@ -744,7 +748,7 @@ internal static class BRepTestCurveCommands
                         }
 
                         length = Math.Sqrt(vx * vx + vy * vy);
-                        if (length > Precision.Confusion())
+                        if (length > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             move = Move.Line;
                             dx = vx / length;
@@ -791,7 +795,7 @@ internal static class BRepTestCurveCommands
                         double vx = theDI.Atof(a[i - 1]);
                         double vy = theDI.Atof(a[i]);
                         length = Math.Sqrt(vx * vx + vy * vy);
-                        if (length > Precision.Confusion())
+                        if (length > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             dx = vx / length;
                             dy = vy / length;
@@ -809,7 +813,7 @@ internal static class BRepTestCurveCommands
                     }
 
                     radius = theDI.Atof(a[i - 1]);
-                    if (Math.Abs(radius) > Precision.Confusion())
+                    if (Math.Abs(radius) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         angle = theDI.Atof(a[i]) * (Math.PI / 180.0);
                         move = Move.Circle;
@@ -828,7 +832,7 @@ internal static class BRepTestCurveCommands
                     length = theDI.Atof(a[i]);
                     if (Second(a[i - 1]) is 'X' or 'x')
                     {
-                        if (Math.Abs(dx) < Precision.Confusion())
+                        if (Math.Abs(dx) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("Profile : cannot intersect, arg ").Append(i - 1);
                             return 1;
@@ -839,7 +843,7 @@ internal static class BRepTestCurveCommands
                     }
                     else if (Second(a[i - 1]) is 'Y' or 'y')
                     {
-                        if (Math.Abs(dy) < Precision.Confusion())
+                        if (Math.Abs(dy) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("Profile : cannot intersect, arg ").Append(i - 1);
                             return 1;
@@ -879,7 +883,7 @@ internal static class BRepTestCurveCommands
                         dy = -dy;
                     }
 
-                    var l = new Geom2d_Line(new gp_Pnt2d(x, y), new gp_Dir2d(dx, dy));
+                    var l = new Geom2d_Line(new Point2D(x, y), new Direction2D(dx, dy));
                     MW.Add(isplanar
                                ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(l, P), 0, length).InternalEdge()
                                : new BRepBuilderAPI_MakeEdge(l, Surface!, 0, length).InternalEdge());
@@ -899,7 +903,7 @@ internal static class BRepTestCurveCommands
                         dy = -dy;
                     }
 
-                    var ax = new gp_Ax2d(new gp_Pnt2d(x - radius * dy, y + radius * dx), new gp_Dir2d(dy, -dx));
+                    var ax = new Axis2D(new Point2D(x - radius * dy, y + radius * dx), new Direction2D(dy, -dx));
                     if (angle < 0)
                     {
                         angle = -angle;
@@ -910,7 +914,7 @@ internal static class BRepTestCurveCommands
                     MW.Add(isplanar
                                ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(c, P), 0, angle).InternalEdge()
                                : new BRepBuilderAPI_MakeEdge(c, Surface!, 0, angle).InternalEdge());
-                    c.D1(angle, out gp_Pnt2d p, out gp_Vec2d v);
+                    c.D1(angle, out Point2D p, out Vector2D v);
                     x = p.X();
                     y = p.Y();
                     dx = v.X() / radius;
@@ -934,7 +938,7 @@ internal static class BRepTestCurveCommands
                 dx = x0 - x;
                 dy = y0 - y;
                 length = Math.Sqrt(dx * dx + dy * dy);
-                if (length > Precision.Confusion())
+                if (length > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     move = Move.Line;
                     dx /= length;
@@ -954,7 +958,7 @@ internal static class BRepTestCurveCommands
             else
             {
                 var MFace = new BRepBuilderAPI_MakeFace();
-                MFace.Init(Surface!, false, Precision.Confusion());
+                MFace.Init(Surface!, false, global::Kerf.Engine.Foundation.Precision.Confusion());
                 MFace.Add(MW.InternalWire());
                 S = MFace.InternalFace();
             }
@@ -964,7 +968,7 @@ internal static class BRepTestCurveCommands
             S = MW.InternalWire();
         }
 
-        if (!TheLocation.IsIdentity())
+        if (!TheLocation.IsIdentity)
         {
             S.Move(TheLocation);
         }
@@ -994,7 +998,7 @@ internal static class BRepTestCurveCommands
 
         BRepOffsetAPI_MakeOffset Paral = new();
         bool ToApprox = false;
-        GeomAbs_JoinType theJoinType = GeomAbs_JoinType.GeomAbs_Arc;
+        JoinKind theJoinType = JoinKind.Arc;
 
         int anIndArg = 6;
         if (n >= 6)
@@ -1007,7 +1011,7 @@ internal static class BRepTestCurveCommands
 
             if (n >= anIndArg && a[anIndArg - 1] == "i")
             {
-                theJoinType = GeomAbs_JoinType.GeomAbs_Intersection;
+                theJoinType = JoinKind.Intersection;
             }
         }
 
@@ -1079,7 +1083,7 @@ internal static class BRepTestCurveCommands
 
         BRepOffsetAPI_MakeOffset Paral = new();
         bool ToApprox = false;
-        GeomAbs_JoinType theJoinType = GeomAbs_JoinType.GeomAbs_Arc;
+        JoinKind theJoinType = JoinKind.Arc;
 
         int anIndArg = 6;
         if (n >= 6)
@@ -1092,7 +1096,7 @@ internal static class BRepTestCurveCommands
 
             if (n >= anIndArg && a[anIndArg - 1] == "i")
             {
-                theJoinType = GeomAbs_JoinType.GeomAbs_Intersection;
+                theJoinType = JoinKind.Intersection;
             }
         }
 

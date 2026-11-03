@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -79,10 +80,10 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         return (aS1, aS2);
     }
 
-    private static string Alerts(Message_Report theReport, Message_Gravity theGravity)
+    private static string Alerts(Report theReport, Gravity theGravity)
     {
         StringBuilder aB = new();
-        foreach (Message_Alert anAlert in theReport.GetAlerts(theGravity))
+        foreach (Alert anAlert in theReport.GetAlerts(theGravity))
         {
             aB.Append(' ').Append(anAlert.GetMessageKey());
         }
@@ -150,8 +151,8 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 aChecker.SetFuzzyValue(FromHex(aRun[2]));
                 aChecker.SetRunParallel(theParallel);
                 aChecker.Perform();
-                string aB = "errors" + Alerts(aChecker.GetReport(), Message_Gravity.Message_Fail) + "\nwarnings"
-                            + Alerts(aChecker.GetReport(), Message_Gravity.Message_Warning) + "\n";
+                string aB = "errors" + Alerts(aChecker.GetReport(), Gravity.Fail) + "\nwarnings"
+                            + Alerts(aChecker.GetReport(), Gravity.Warning) + "\n";
                 if (aChecker.PDS() is not { } aDS)
                 {
                     return aB;
@@ -245,7 +246,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
             }
             catch (Exception anError)
             {
-                aPort = "port throws " + anError.GetType().Name + ": " + anError.Message + "\n";
+                aPort = "port throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message + "\n";
             }
             if (aPort == aCase.Native)
             {

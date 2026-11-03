@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -46,11 +48,11 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             bool isPeriodic = Int() != 0;
             bool isRational = Int() != 0;
             int aNbPoles = Int();
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
             NCollection_Array1<double> aWeights = new(1, aNbPoles);
             for (int i = 1; i <= aNbPoles; ++i)
             {
-                aPoles[i] = new gp_Pnt(Real(), Real(), Real());
+                aPoles[i] = new Point3D(Real(), Real(), Real());
                 aWeights[i] = isRational ? Real() : 1.0;
             }
             int aNbKnots = Int();
@@ -83,7 +85,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
         {
             for (int j = 1; j <= theSurface.NbVPoles(); ++j)
             {
-                gp_Pnt aP = theSurface.Pole(i, j);
+                Point3D aP = theSurface.Pole(i, j);
                 double aW = isRational ? theSurface.Weight(i, j) : 1.0;
                 double[] aVals = [aP.X(), aP.Y(), aP.Z(), aW];
                 for (int k = 0; k < (isRational ? 4 : 3); ++k)
@@ -120,7 +122,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
         {
             for (int j = 0; j <= 4; ++j)
             {
-                gp_Pnt aP = theSurface.Value(aU0 + (aU1 - aU0) * i / 4.0, aV0 + (aV1 - aV0) * j / 4.0);
+                Point3D aP = theSurface.Value(aU0 + (aU1 - aU0) * i / 4.0, aV0 + (aV1 - aV0) * j / 4.0);
                 theOut.Add("g:" + Hex(aP.X()) + "," + Hex(aP.Y()) + "," + Hex(aP.Z()));
             }
         }
@@ -178,7 +180,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                     PutSurface(anOut, aGordon.Surface());
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 anOut.Add("exc");
             }
@@ -215,12 +217,12 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                 aU[j] = aIn.Real();
             }
             aIn.Expect("X");
-            NCollection_Array2<gp_Pnt> aGrid = new(1, m, 1, n);
+            NCollection_Array2<Point3D> aGrid = new(1, m, 1, n);
             for (int j = 1; j <= m; ++j)
             {
                 for (int i = 1; i <= n; ++i)
                 {
-                    aGrid[j, i] = new gp_Pnt(aIn.Real(), aIn.Real(), aIn.Real());
+                    aGrid[j, i] = new Point3D(aIn.Real(), aIn.Real(), aIn.Real());
                 }
             }
             aIn.Expect("W");
@@ -243,7 +245,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                     PutSurface(anOut, aNetwork.Surface());
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 anOut.Add("exc");
             }

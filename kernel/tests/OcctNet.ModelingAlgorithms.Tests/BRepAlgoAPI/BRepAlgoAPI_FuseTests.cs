@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 
 /// <summary>
@@ -88,11 +92,11 @@ public static class BRepAlgoAPI_FuseTests
         public void IdenticalNurbsBoxPlusBox_A6()
         {
             // Create first box and convert to NURBS
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 6.0);
@@ -102,9 +106,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void IdenticalBoxPlusNurbsBox_A7()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -117,11 +121,11 @@ public static class BRepAlgoAPI_FuseTests
         public void NurbsBoxPlusLargerBox_A8()
         {
             // Create first box and convert to NURBS
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 24.0);
@@ -131,9 +135,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void LargerBoxPlusNurbsBox_A9()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -146,12 +150,12 @@ public static class BRepAlgoAPI_FuseTests
         public void NurbsBoxPlusBox_B1()
         {
             // Create first box and convert to NURBS
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
             // Create second box
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 0.5, 1.0, 0.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 0.5, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 6.0);
@@ -161,9 +165,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void BoxPlusNurbsBox_B2()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, -0.5, 0), 0.5, 0.5, 1.0);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -175,11 +179,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusAdjacentBox_B3()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 1.5, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, -0.5, 0), 0.5, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 7.5);
@@ -189,11 +193,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void AdjacentBoxPlusNurbsBox_B4()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0.5, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0.5, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 8.0);
@@ -203,11 +207,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusSmallerBox_B5()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.25, 0.25, 0.25), 0.5, 0.5, 0.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0.25, 0.25, 0.25), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 6.0);
@@ -217,9 +221,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void SmallerBoxPlusNurbsBox_B6()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.25, 0.25, 0.25), 0.5, 0.5, 0.5);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0.25, 0.25, 0.25), 0.5, 0.5, 0.5);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -231,11 +235,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusPartiallyOverlappingBox_B7()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.5, 0.5, 0.5), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0.5, 0.5, 0.5), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 7.75);
@@ -245,9 +249,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void PartiallyOverlappingBoxPlusNurbsBox_B8()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.5, 0.5, 0.5), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0.5, 0.5, 0.5), 1.0, 1.0, 1.0);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -259,11 +263,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusExtendedBox_B9()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(-0.5, -0.5, -0.5), 2.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 24.0);
@@ -273,11 +277,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void ExtendedBoxPlusNurbsBox_C1()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 7.0);
@@ -287,11 +291,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusShiftedBox_C2()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, -0.5, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, -0.5, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 8.5);
@@ -301,11 +305,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void ShiftedBoxPlusNurbsBox_C3()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.25, 0, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0.25, 0, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 6.0);
@@ -315,11 +319,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusNarrowBox_C4()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.25, 0.25, 0), 0.5, 0.5, 1.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0.25, 0.25, 0), 0.5, 0.5, 1.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 6.75);
@@ -329,9 +333,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NarrowBoxPlusNurbsBox_C5()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.25, 0.25, 0), 0.5, 0.5, 1.5);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0.25, 0.25, 0), 0.5, 0.5, 1.5);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -343,11 +347,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusCornerCube_C6()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.5, 0.5, 0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0.5, 0.5, 0.5), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 6.0);
@@ -357,9 +361,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void CornerCubePlusNurbsBox_C7()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0.5, 0.5, 0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0.5, 0.5, 0.5), 0.5, 0.5, 0.5);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -371,11 +375,11 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusOffsetCube_C8()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(1, 1, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(1, 1, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 6.25);
@@ -385,9 +389,9 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void OffsetCubePlusNurbsBox_C9()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(1, 1, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(1, 1, 0), 0.5, 0.5, 1.0);
 
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox2 = BOPTest_Utilities.ConvertToNurbs(aBox2);
             Assert.False(aBox2.IsNull(), "Failed to convert to NURBS");
 
@@ -399,15 +403,15 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusRotatedNarrowBox_D1()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
 
             // Create rotated narrow box: r=sqrt(2), box(0,0,0,r,0.25,1), rotate 45 degrees around Z
             const double r = M_SQRT2;
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), r, 0.25, 1.0);
-            gp_Trsf aTrsf = new();
-            aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), M_PI / 4.0); // 45 degrees
-            aBox2 = aBox2.Moved(new TopLoc_Location(aTrsf));
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), r, 0.25, 1.0);
+            Transform3D aTrsf = new();
+            aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 4.0); // 45 degrees
+            aBox2 = aBox2.Moved(new Placement(aTrsf));
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 6.41789);
@@ -417,15 +421,15 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void NurbsBoxPlusRotatedNarrowBoxVariation_D2()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = BOPTest_Utilities.ConvertToNurbs(aBox1);
 
             // Create rotated narrow box: r=sqrt(31), box(0,0,0,r/4,0.25,1), rotate 34.73 degrees around Z
             const double r = 5.5677643628300219;
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), r / 4.0, 0.25, 1.0);
-            gp_Trsf aTrsf = new();
-            aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 34.73 * M_PI / 180.0);
-            aBox2 = aBox2.Moved(new TopLoc_Location(aTrsf));
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), r / 4.0, 0.25, 1.0);
+            Transform3D aTrsf = new();
+            aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 34.73 * M_PI / 180.0);
+            aBox2 = aBox2.Moved(new Placement(aTrsf));
 
             TopoDS_Shape aResult = PerformFuse(aBox2, aBox1);
             ValidateResult(aResult, 6.32953);
@@ -435,8 +439,8 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void SpherePlusBox_D3()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aSphere, aBox);
             ValidateResult(aResult, 14.6394);
@@ -446,8 +450,8 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void BoxPlusSphere_D4()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox, aSphere);
             ValidateResult(aResult, 14.6394);
@@ -457,16 +461,16 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void RotatedSpherePlusBox_D5()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
 
             // Apply rotations: -90 degrees around Z, then -45 degrees around Y
-            gp_Trsf aTrsf1 = new(), aTrsf2 = new(), aTrsfCombined;
-            aTrsf1.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), -M_PI / 2.0); // -90 degrees Z
-            aTrsf2.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Y)), -M_PI / 4.0); // -45 degrees Y
+            Transform3D aTrsf1 = new(), aTrsf2 = new(), aTrsfCombined;
+            aTrsf1.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), -M_PI / 2.0); // -90 degrees Z
+            aTrsf2.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), -M_PI / 4.0); // -45 degrees Y
             aTrsfCombined = aTrsf2 * aTrsf1;
-            aSphere = aSphere.Moved(new TopLoc_Location(aTrsfCombined));
+            aSphere = aSphere.Moved(new Placement(aTrsfCombined));
 
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformFuse(aSphere, aBox);
             ValidateResult(aResult, 14.6393);
         }
@@ -475,16 +479,16 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void BoxPlusRotatedSphere_D6()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
 
             // Apply rotations: -90 degrees around Z, then -45 degrees around Y
-            gp_Trsf aTrsf1 = new(), aTrsf2 = new(), aTrsfCombined;
-            aTrsf1.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), -M_PI / 2.0);
-            aTrsf2.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Y)), -M_PI / 4.0);
+            Transform3D aTrsf1 = new(), aTrsf2 = new(), aTrsfCombined;
+            aTrsf1.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), -M_PI / 2.0);
+            aTrsf2.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), -M_PI / 4.0);
             aTrsfCombined = aTrsf2 * aTrsf1;
-            aSphere = aSphere.Moved(new TopLoc_Location(aTrsfCombined));
+            aSphere = aSphere.Moved(new Placement(aTrsfCombined));
 
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformFuse(aBox, aSphere);
             ValidateResult(aResult, 14.6393);
         }
@@ -493,13 +497,13 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void SpherePlusRotatedBox_D7()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
 
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             // Rotate box 90 degrees around Y axis: "trotate b 0 0 1 0 1 0 90"
-            gp_Trsf aTrsf = new();
-            aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 1), new gp_Dir(gp_Dir.D.Y)), M_PI / 2.0); // 90 degrees Y
-            aBox = aBox.Moved(new TopLoc_Location(aTrsf));
+            Transform3D aTrsf = new();
+            aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), M_PI / 2.0); // 90 degrees Y
+            aBox = aBox.Moved(new Placement(aTrsf));
 
             TopoDS_Shape aResult = PerformFuse(aSphere, aBox);
             ValidateResult(aResult, 14.6393);
@@ -509,13 +513,13 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void RotatedBoxPlusSphere_D8()
         {
-            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
+            TopoDS_Shape aSphere = BOPTest_Utilities.CreateSphere(new Point3D(0, 0, 0), 1.0);
 
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             // Rotate box 90 degrees around Y axis: "trotate b 0 0 1 0 1 0 90"
-            gp_Trsf aTrsf = new();
-            aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 1), new gp_Dir(gp_Dir.D.Y)), M_PI / 2.0); // 90 degrees Y
-            aBox = aBox.Moved(new TopLoc_Location(aTrsf));
+            Transform3D aTrsf = new();
+            aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), M_PI / 2.0); // 90 degrees Y
+            aBox = aBox.Moved(new Placement(aTrsf));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aSphere);
             ValidateResult(aResult, 14.6393);
@@ -527,7 +531,7 @@ public static class BRepAlgoAPI_FuseTests
         {
             // Create first profile: "profile f1 x 100 y 100 x -200 y -200 x 100"
             // This creates a closed rectangular profile starting at origin
-            gp_Pln aPlane1 = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)));
+            Plane3D aPlane1 = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.X, 100.0),  // move to (100, 0)
@@ -537,11 +541,11 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.X, 100.0),  // move to (0, -100), profile will auto-close
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, 100));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, 100));
 
             // Create second profile: "profile f2 x -100 y 100 x 100; ttranslate f2 0 0 100"
             // This creates a triangular profile translated to z=100
-            gp_Pln aPlane2 = new(new gp_Ax3(new gp_Pnt(0, 0, 100), new gp_Dir(gp_Dir.D.Z)));
+            Plane3D aPlane2 = new(new CoordinateSystem(new Point3D(0, 0, 100), new Direction3D(Direction3D.D.Z)));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.X, -100.0), // move to (-100, 0)
@@ -549,7 +553,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.X, 100.0),  // move to (0, 100), profile will auto-close
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, 100));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, 100));
 
             TopoDS_Shape aResult = PerformFuse(aPrism1, aPrism2);
             ValidateResult(aResult, 180000.0);
@@ -562,7 +566,7 @@ public static class BRepAlgoAPI_FuseTests
             const double SCALE = 100.0;
 
             // Create first profile: "profile f1 c 50*SCALE 180 x -100*SCALE c 50*SCALE 180"
-            gp_Pln aPlane1 = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)));
+            Plane3D aPlane1 = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps1 =
             [
                 new(BOPTest_Utilities.ProfileCmd.C, 50.0 * SCALE, 180.0),
@@ -570,11 +574,11 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.C, 50.0 * SCALE, 180.0),
             ];
             TopoDS_Shape aProfile1 = BOPTest_Utilities.CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new gp_Vec(0, 0, 30.0 * SCALE));
+            TopoDS_Shape aPrism1 = BOPTest_Utilities.CreatePrism(aProfile1, new Vector3D(0, 0, 30.0 * SCALE));
 
             // Create second profile: "profile f2 x 300*SCALE y 200*SCALE x -300*SCALE; ttranslate f2
             // -200*SCALE -50*SCALE 0"
-            gp_Pln aPlane2 = new(new gp_Ax3(new gp_Pnt(-200.0 * SCALE, -50.0 * SCALE, 0), new gp_Dir(gp_Dir.D.Z)));
+            Plane3D aPlane2 = new(new CoordinateSystem(new Point3D(-200.0 * SCALE, -50.0 * SCALE, 0), new Direction3D(Direction3D.D.Z)));
             List<BOPTest_Utilities.ProfileOperation> aProfileOps2 =
             [
                 new(BOPTest_Utilities.ProfileCmd.X, 300.0 * SCALE),
@@ -583,7 +587,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.Y, -200.0 * SCALE), // Close the profile
             ];
             TopoDS_Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new gp_Vec(0, 0, -50.0 * SCALE));
+            TopoDS_Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -50.0 * SCALE));
 
             TopoDS_Shape aResult = PerformFuse(aPrism2, aPrism1);
             ValidateResult(aResult, 1.85425e+09);
@@ -593,8 +597,8 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void AdjacentBoxes_E2()
         {
-            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 3.0, 3.0, 3.0);
-            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 3, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 3.0, 3.0, 3.0);
+            TopoDS_Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 3, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformFuse(aBox1, aBox2);
             ValidateResult(aResult, 58.0);
@@ -605,20 +609,20 @@ public static class BRepAlgoAPI_FuseTests
         public void ComplexVertexEdgeWireRevolution_E3()
         {
             // Create profile points for the wire
-            List<gp_Pnt> aPoints = [new gp_Pnt(0, 0, 0), new gp_Pnt(9, 0, 0), new gp_Pnt(9, 0, 3), new gp_Pnt(6.25, 0, 3), new gp_Pnt(6, 0, 4), new gp_Pnt(0, 0, 4)];
+            List<Point3D> aPoints = [new Point3D(0, 0, 0), new Point3D(9, 0, 0), new Point3D(9, 0, 3), new Point3D(6.25, 0, 3), new Point3D(6, 0, 4), new Point3D(0, 0, 4)];
 
             // Create wire from points
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create revolution: "revol cyla pa 0 0 0 0 0 1 360"
-            TopoDS_Shape aRevolution = BOPTest_Utilities.CreateRevolution(aFace, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 2.0 * M_PI);
+            TopoDS_Shape aRevolution = BOPTest_Utilities.CreateRevolution(aFace, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 2.0 * M_PI);
 
             // Create cylinder: "pcylinder cylb 1 9; ttranslate cylb 5 0 -2"
             TopoDS_Shape aCylinder = BOPTest_Utilities.CreateCylinder(1.0, 9.0);
-            gp_Trsf aTrsf = new();
-            aTrsf.SetTranslation(new gp_Vec(5, 0, -2));
-            aCylinder = aCylinder.Moved(new TopLoc_Location(aTrsf));
+            Transform3D aTrsf = new();
+            aTrsf.SetTranslation(new Vector3D(5, 0, -2));
+            aCylinder = aCylinder.Moved(new Placement(aTrsf));
 
             TopoDS_Shape aResult = PerformFuse(aRevolution, aCylinder);
             ValidateResult(aResult, 740.048);
@@ -632,14 +636,14 @@ public static class BRepAlgoAPI_FuseTests
             TopoDS_Shape aCylinder = BOPTest_Utilities.CreateCylinder(3.0, 5.0);
 
             // Create profile points for rectangular profile
-            List<gp_Pnt> aPoints = [new gp_Pnt(0, 3, 2), new gp_Pnt(0, 4, 2), new gp_Pnt(0, 4, 3), new gp_Pnt(0, 3, 3)];
+            List<Point3D> aPoints = [new Point3D(0, 3, 2), new Point3D(0, 4, 2), new Point3D(0, 4, 3), new Point3D(0, 3, 3)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create revolution: "revol ring f 0 0 0 0 0 1 269"
-            TopoDS_Shape aRing = BOPTest_Utilities.CreateRevolution(aFace, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 269.0 * M_PI / 180.0);
+            TopoDS_Shape aRing = BOPTest_Utilities.CreateRevolution(aFace, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 269.0 * M_PI / 180.0);
 
             TopoDS_Shape aResult = PerformFuse(aCylinder, aRing);
             ValidateResult(aResult, 190.356);
@@ -650,17 +654,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromVertexEdge_E5()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for rectangular prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 2, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(3, 3, 0)];
+            List<Point3D> aPoints = [new Point3D(3, 2, 0), new Point3D(4, 2, 0), new Point3D(4, 3, 0), new Point3D(3, 3, 0)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -671,17 +675,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromFront_E6()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for front prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 2, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(4, 2, 1), new gp_Pnt(3, 2, 1)];
+            List<Point3D> aPoints = [new Point3D(3, 2, 0), new Point3D(4, 2, 0), new Point3D(4, 2, 1), new Point3D(3, 2, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -692,17 +696,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromLeft_E7()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for left prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 2, 0), new gp_Pnt(3, 3, 0), new gp_Pnt(3, 3, 1), new gp_Pnt(3, 2, 1)];
+            List<Point3D> aPoints = [new Point3D(3, 2, 0), new Point3D(3, 3, 0), new Point3D(3, 3, 1), new Point3D(3, 2, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -713,17 +717,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromTop_E8()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for top prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 2, 1), new gp_Pnt(4, 2, 1), new gp_Pnt(4, 3, 1), new gp_Pnt(3, 3, 1)];
+            List<Point3D> aPoints = [new Point3D(3, 2, 1), new Point3D(4, 2, 1), new Point3D(4, 3, 1), new Point3D(3, 3, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 -1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -734,17 +738,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBack_E9()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for back prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 3, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(4, 3, 1), new gp_Pnt(3, 3, 1)];
+            List<Point3D> aPoints = [new Point3D(3, 3, 0), new Point3D(4, 3, 0), new Point3D(4, 3, 1), new Point3D(3, 3, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 -1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -755,17 +759,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromRight_F1()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for right prism
-            List<gp_Pnt> aPoints = [new gp_Pnt(4, 2, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(4, 3, 1), new gp_Pnt(4, 2, 1)];
+            List<Point3D> aPoints = [new Point3D(4, 2, 0), new Point3D(4, 3, 0), new Point3D(4, 3, 1), new Point3D(4, 2, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f -1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -776,17 +780,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBottomDifferent_F2()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for bottom prism (different position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(4, 3, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(3, 2, 0), new gp_Pnt(3, 3, 0)];
+            List<Point3D> aPoints = [new Point3D(4, 3, 0), new Point3D(4, 2, 0), new Point3D(3, 2, 0), new Point3D(3, 3, 0)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -797,17 +801,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBottomExternal_F3()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for bottom prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(8, 3, 0), new gp_Pnt(9, 3, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(8, 4, 0)];
+            List<Point3D> aPoints = [new Point3D(8, 3, 0), new Point3D(9, 3, 0), new Point3D(9, 4, 0), new Point3D(8, 4, 0)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -818,17 +822,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromFrontExternal_F4()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for front prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(8, 3, 0), new gp_Pnt(9, 3, 0), new gp_Pnt(9, 3, 1), new gp_Pnt(8, 3, 1)];
+            List<Point3D> aPoints = [new Point3D(8, 3, 0), new Point3D(9, 3, 0), new Point3D(9, 3, 1), new Point3D(8, 3, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -839,17 +843,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromLeftExternal_F5()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for left prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(8, 3, 0), new gp_Pnt(8, 4, 0), new gp_Pnt(8, 4, 1), new gp_Pnt(8, 3, 1)];
+            List<Point3D> aPoints = [new Point3D(8, 3, 0), new Point3D(8, 4, 0), new Point3D(8, 4, 1), new Point3D(8, 3, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -860,17 +864,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromTopExternal_F6()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for top prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(8, 3, 1), new gp_Pnt(9, 3, 1), new gp_Pnt(9, 4, 1), new gp_Pnt(8, 4, 1)];
+            List<Point3D> aPoints = [new Point3D(8, 3, 1), new Point3D(9, 3, 1), new Point3D(9, 4, 1), new Point3D(8, 4, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 -1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -881,17 +885,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBackExternal_F7()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for back prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(8, 4, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(9, 4, 1), new gp_Pnt(8, 4, 1)];
+            List<Point3D> aPoints = [new Point3D(8, 4, 0), new Point3D(9, 4, 0), new Point3D(9, 4, 1), new Point3D(8, 4, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 -1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -902,17 +906,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromRightExternal_F8()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for right prism (external position)
-            List<gp_Pnt> aPoints = [new gp_Pnt(9, 3, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(9, 4, 1), new gp_Pnt(9, 3, 1)];
+            List<Point3D> aPoints = [new Point3D(9, 3, 0), new Point3D(9, 4, 0), new Point3D(9, 4, 1), new Point3D(9, 3, 1)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f -1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -923,17 +927,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBottomTopPosition_F9()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for bottom prism at top position
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 3, 4), new gp_Pnt(4, 3, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(3, 4, 4)];
+            List<Point3D> aPoints = [new Point3D(3, 3, 4), new Point3D(4, 3, 4), new Point3D(4, 4, 4), new Point3D(3, 4, 4)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -944,17 +948,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromFrontTopLevel_G1()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for front prism at top level
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 3, 4), new gp_Pnt(4, 3, 4), new gp_Pnt(4, 3, 5), new gp_Pnt(3, 3, 5)];
+            List<Point3D> aPoints = [new Point3D(3, 3, 4), new Point3D(4, 3, 4), new Point3D(4, 3, 5), new Point3D(3, 3, 5)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -965,17 +969,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromLeftTopLevel_G2()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for left prism at top level
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 3, 4), new gp_Pnt(3, 4, 4), new gp_Pnt(3, 4, 5), new gp_Pnt(3, 3, 5)];
+            List<Point3D> aPoints = [new Point3D(3, 3, 4), new Point3D(3, 4, 4), new Point3D(3, 4, 5), new Point3D(3, 3, 5)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -986,17 +990,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromTopTopLevel_G3()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for top prism at top level
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 3, 5), new gp_Pnt(4, 3, 5), new gp_Pnt(4, 4, 5), new gp_Pnt(3, 4, 5)];
+            List<Point3D> aPoints = [new Point3D(3, 3, 5), new Point3D(4, 3, 5), new Point3D(4, 4, 5), new Point3D(3, 4, 5)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 0 -1"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -1007,17 +1011,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromBackTopLevel_G4()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for back prism at top level
-            List<gp_Pnt> aPoints = [new gp_Pnt(3, 4, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(4, 4, 5), new gp_Pnt(3, 4, 5)];
+            List<Point3D> aPoints = [new Point3D(3, 4, 4), new Point3D(4, 4, 4), new Point3D(4, 4, 5), new Point3D(3, 4, 5)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f 0 -1 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -1028,17 +1032,17 @@ public static class BRepAlgoAPI_FuseTests
         public void BoxWithPrismFromRightTopLevel_G5()
         {
             // Create box: "box ba 3 3 0 5 7 4"
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(3, 3, 0), 5.0, 7.0, 4.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(3, 3, 0), 5.0, 7.0, 4.0);
 
             // Create profile points for right prism at top level
-            List<gp_Pnt> aPoints = [new gp_Pnt(4, 3, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(4, 4, 5), new gp_Pnt(4, 3, 5)];
+            List<Point3D> aPoints = [new Point3D(4, 3, 4), new Point3D(4, 4, 4), new Point3D(4, 4, 5), new Point3D(4, 3, 5)];
 
             // Create wire and face
             TopoDS_Wire aWire = BOPTest_Utilities.CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = BOPTest_Utilities.CreateFaceFromWire(aWire);
 
             // Create prism: "prism bb f -1 0 0"
-            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aPrism = BOPTest_Utilities.CreatePrism(aFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBox, aPrism);
             ValidateResult(aResult, 170.0);
@@ -1049,16 +1053,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromBottom_G6()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from bottom
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 2, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(3, 3, 0)];
+            List<Point3D> aSmallPts = [new Point3D(3, 2, 0), new Point3D(4, 2, 0), new Point3D(4, 3, 0), new Point3D(3, 3, 0)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1069,16 +1073,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromFront_G7()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from front
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 2, 0), new gp_Pnt(4, 2, 0), new gp_Pnt(4, 2, 1), new gp_Pnt(3, 2, 1)];
+            List<Point3D> aSmallPts = [new Point3D(3, 2, 0), new Point3D(4, 2, 0), new Point3D(4, 2, 1), new Point3D(3, 2, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1089,16 +1093,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromLeft_G8()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from left
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 2, 0), new gp_Pnt(3, 3, 0), new gp_Pnt(3, 3, 1), new gp_Pnt(3, 2, 1)];
+            List<Point3D> aSmallPts = [new Point3D(3, 2, 0), new Point3D(3, 3, 0), new Point3D(3, 3, 1), new Point3D(3, 2, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1109,16 +1113,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromTop_G9()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from top
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 2, 1), new gp_Pnt(4, 2, 1), new gp_Pnt(4, 3, 1), new gp_Pnt(3, 3, 1)];
+            List<Point3D> aSmallPts = [new Point3D(3, 2, 1), new Point3D(4, 2, 1), new Point3D(4, 3, 1), new Point3D(3, 3, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1129,16 +1133,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromBackEdge_H1()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from back
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 3, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(4, 3, 1), new gp_Pnt(3, 3, 1)];
+            List<Point3D> aSmallPts = [new Point3D(3, 3, 0), new Point3D(4, 3, 0), new Point3D(4, 3, 1), new Point3D(3, 3, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1149,16 +1153,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromRightEdge_H2()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from right
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(4, 2, 0), new gp_Pnt(4, 3, 0), new gp_Pnt(4, 3, 1), new gp_Pnt(4, 2, 1)];
+            List<Point3D> aSmallPts = [new Point3D(4, 2, 0), new Point3D(4, 3, 0), new Point3D(4, 3, 1), new Point3D(4, 2, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1169,16 +1173,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromBottomCorner_H3()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from bottom
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(8, 3, 0), new gp_Pnt(9, 3, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(8, 4, 0)];
+            List<Point3D> aSmallPts = [new Point3D(8, 3, 0), new Point3D(9, 3, 0), new Point3D(9, 4, 0), new Point3D(8, 4, 0)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1189,16 +1193,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromFrontEdge_H4()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from front
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(8, 3, 0), new gp_Pnt(9, 3, 0), new gp_Pnt(9, 3, 1), new gp_Pnt(8, 3, 1)];
+            List<Point3D> aSmallPts = [new Point3D(8, 3, 0), new Point3D(9, 3, 0), new Point3D(9, 3, 1), new Point3D(8, 3, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1209,16 +1213,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromLeftEdge_H5()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from left
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(8, 3, 0), new gp_Pnt(8, 4, 0), new gp_Pnt(8, 4, 1), new gp_Pnt(8, 3, 1)];
+            List<Point3D> aSmallPts = [new Point3D(8, 3, 0), new Point3D(8, 4, 0), new Point3D(8, 4, 1), new Point3D(8, 3, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1229,16 +1233,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromTopEdge_H6()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from top
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(8, 3, 1), new gp_Pnt(9, 3, 1), new gp_Pnt(9, 4, 1), new gp_Pnt(8, 4, 1)];
+            List<Point3D> aSmallPts = [new Point3D(8, 3, 1), new Point3D(9, 3, 1), new Point3D(9, 4, 1), new Point3D(8, 4, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1249,16 +1253,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromBackEdgeCorner_H7()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from back
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(8, 4, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(9, 4, 1), new gp_Pnt(8, 4, 1)];
+            List<Point3D> aSmallPts = [new Point3D(8, 4, 0), new Point3D(9, 4, 0), new Point3D(9, 4, 1), new Point3D(8, 4, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1269,16 +1273,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromRightEdgeCorner_H8()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from right
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(9, 3, 0), new gp_Pnt(9, 4, 0), new gp_Pnt(9, 4, 1), new gp_Pnt(9, 3, 1)];
+            List<Point3D> aSmallPts = [new Point3D(9, 3, 0), new Point3D(9, 4, 0), new Point3D(9, 4, 1), new Point3D(9, 3, 1)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1289,16 +1293,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromTopCorner_H9()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from top
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 3, 4), new gp_Pnt(4, 3, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(3, 4, 4)];
+            List<Point3D> aSmallPts = [new Point3D(3, 3, 4), new Point3D(4, 3, 4), new Point3D(4, 4, 4), new Point3D(3, 4, 4)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1309,16 +1313,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromFrontTopLevel_I1()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from front at top level
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 3, 4), new gp_Pnt(4, 3, 4), new gp_Pnt(4, 3, 5), new gp_Pnt(3, 3, 5)];
+            List<Point3D> aSmallPts = [new Point3D(3, 3, 4), new Point3D(4, 3, 4), new Point3D(4, 3, 5), new Point3D(3, 3, 5)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1329,16 +1333,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromLeftTopLevel_I2()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from left at top level
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 3, 4), new gp_Pnt(3, 4, 4), new gp_Pnt(3, 4, 5), new gp_Pnt(3, 3, 5)];
+            List<Point3D> aSmallPts = [new Point3D(3, 3, 4), new Point3D(3, 4, 4), new Point3D(3, 4, 5), new Point3D(3, 3, 5)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1349,16 +1353,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromTopAbove_I3()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from top (above the base)
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 3, 5), new gp_Pnt(4, 3, 5), new gp_Pnt(4, 4, 5), new gp_Pnt(3, 4, 5)];
+            List<Point3D> aSmallPts = [new Point3D(3, 3, 5), new Point3D(4, 3, 5), new Point3D(4, 4, 5), new Point3D(3, 4, 5)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, 0, -1));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, 0, -1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1369,16 +1373,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromBackTopLevel_I4()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from back at top level
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(3, 4, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(4, 4, 5), new gp_Pnt(3, 4, 5)];
+            List<Point3D> aSmallPts = [new Point3D(3, 4, 4), new Point3D(4, 4, 4), new Point3D(4, 4, 5), new Point3D(3, 4, 5)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1389,16 +1393,16 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithSmallPrismFromRightTopLevel_I5()
         {
             // Create large prism base from vertices: (3,3,0) to (8,9,4)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 4));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 4));
 
             // Create small prism from right at top level
-            List<gp_Pnt> aSmallPts = [new gp_Pnt(4, 3, 4), new gp_Pnt(4, 4, 4), new gp_Pnt(4, 4, 5), new gp_Pnt(4, 3, 5)];
+            List<Point3D> aSmallPts = [new Point3D(4, 3, 4), new Point3D(4, 4, 4), new Point3D(4, 4, 5), new Point3D(4, 3, 5)];
             TopoDS_Wire aSmallWire = BOPTest_Utilities.CreatePolygonWire(aSmallPts, true);
             TopoDS_Shape aSmallFace = BOPTest_Utilities.CreateFaceFromWire(aSmallWire);
-            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new gp_Vec(-1, 0, 0));
+            TopoDS_Shape aSmallPrism = BOPTest_Utilities.CreatePrism(aSmallFace, new Vector3D(-1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aSmallPrism);
             ValidateResult(aResult, 152.0);
@@ -1409,10 +1413,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismProfile_I6()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 4 3 0  P 0 1 0 1 0 0  D -1 0  C 1 180  X 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1426,7 +1430,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1437,10 +1441,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismYDirection_I7()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 3 3 3  P 0 1 0 1 0 0  D 0 -1  C 1 180  Y 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1454,7 +1458,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1465,10 +1469,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismXDirection_I8()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 5 3 0  P 0 1 0 1 0 0  D -1 0  C 1 180  X 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1482,7 +1486,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1493,10 +1497,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismYDirectionFinal_I9()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 6 3 3  P 0 1 0 1 0 0  D 0 -1  C 1 180  Y 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1510,7 +1514,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(0, -1, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(0, -1, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1521,10 +1525,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSide_J1()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 8 4 0  P -1 0 0 0 1 0  D -1 0  C 1 180  X 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1538,7 +1542,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1549,10 +1553,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSideY_J2()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 8 3 3  P -1 0 0 0 1 0  D 0 -1  C 1 180  Y 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1566,7 +1570,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1577,10 +1581,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSideX_J3()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 8 6 0  P -1 0 0 0 1 0  D -1 0  C 1 180  X 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1594,7 +1598,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1605,10 +1609,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSideY2_J4()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 8 7 3  P -1 0 0 0 1 0  D 0 -1  C 1 180  Y 2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1622,7 +1626,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(1, 0, 0));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(1, 0, 0));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1634,13 +1638,13 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSide_J5()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Simplified oblong prism for J5
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new gp_Pnt(8, 4, 1), 1.0, 2.0, 2.0);
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new Point3D(8, 4, 1), 1.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1650,13 +1654,13 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSide_J6()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Simplified oblong prism for J6
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new gp_Pnt(8, 5, 2), 1.0, 2.0, 2.0);
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new Point3D(8, 5, 2), 1.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1666,13 +1670,13 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismRightSide_J7()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Simplified oblong prism for J7
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new gp_Pnt(8, 6, 1), 1.0, 2.0, 2.0);
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreateBox(new Point3D(8, 6, 1), 1.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1683,10 +1687,10 @@ public static class BRepAlgoAPI_FuseTests
         public void LargePrismWithOblongPrismTop_J8()
         {
             // Create large prism base (5 units high)
-            List<gp_Pnt> aBasePts = [new gp_Pnt(3, 3, 0), new gp_Pnt(8, 3, 0), new gp_Pnt(8, 9, 0), new gp_Pnt(3, 9, 0)];
+            List<Point3D> aBasePts = [new Point3D(3, 3, 0), new Point3D(8, 3, 0), new Point3D(8, 9, 0), new Point3D(3, 9, 0)];
             TopoDS_Wire aBaseWire = BOPTest_Utilities.CreatePolygonWire(aBasePts, true);
             TopoDS_Shape aBaseFace = BOPTest_Utilities.CreateFaceFromWire(aBaseWire);
-            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new gp_Vec(0, 0, 5));
+            TopoDS_Shape aBasePrism = BOPTest_Utilities.CreatePrism(aBaseFace, new Vector3D(0, 0, 5));
 
             // Create oblong profile: O 8 4 5  P 0 0 -1 1 0 0  D 0 1  C 1 180  Y -2  C 1 180  W
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1700,7 +1704,7 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
             TopoDS_Shape aProfileFace = BOPTest_Utilities.CreateProfileFromOperations(aOps);
-            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new gp_Vec(0, 0, 1));
+            TopoDS_Shape aOblongPrism = BOPTest_Utilities.CreatePrism(aProfileFace, new Vector3D(0, 0, 1));
 
             TopoDS_Shape aResult = PerformFuse(aBasePrism, aOblongPrism);
             ValidateResult(aResult, 180.283);
@@ -1714,12 +1718,12 @@ public static class BRepAlgoAPI_FuseTests
             TopoDS_Shape aCylinder = BOPTest_Utilities.CreateCylinder(3.0, 5.0);
 
             // Create ring profile vertices and wire
-            List<gp_Pnt> aRingPts = [new gp_Pnt(0, 3, 2), new gp_Pnt(0, 4, 2), new gp_Pnt(0, 4, 3), new gp_Pnt(0, 3, 3)];
+            List<Point3D> aRingPts = [new Point3D(0, 3, 2), new Point3D(0, 4, 2), new Point3D(0, 4, 3), new Point3D(0, 3, 3)];
             TopoDS_Wire aRingWire = BOPTest_Utilities.CreatePolygonWire(aRingPts, true);
             TopoDS_Shape aRingFace = BOPTest_Utilities.CreateFaceFromWire(aRingWire);
 
             // Create revolution: revol ring f 0 0 0 0 0 1 269
-            gp_Ax1 aAxis = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z));
+            Axis3D aAxis = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
             TopoDS_Shape aRing = BOPTest_Utilities.CreateRevolution(aRingFace, aAxis, 269.0 * M_PI / 180.0);
 
             TopoDS_Shape aResult = PerformFuse(aCylinder, aRing);
@@ -1731,7 +1735,7 @@ public static class BRepAlgoAPI_FuseTests
         public void ComplexProfileWithRevolution_K1()
         {
             // Create box: box b 200 200 100
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 200.0, 200.0, 100.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 200.0, 200.0, 100.0);
 
             // Create complex profile: profile wr pl 1 0 0 0 0 1 o 50 0 0 f 50 -80 x 50 y 5 x 10 y -25 x -60
             List<BOPTest_Utilities.ProfileOperation> aOps =
@@ -1745,11 +1749,11 @@ public static class BRepAlgoAPI_FuseTests
                 new(BOPTest_Utilities.ProfileCmd.X, -60),
                 new(BOPTest_Utilities.ProfileCmd.W),
             ];
-            gp_Pln aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.X)); // pl 1 0 0 0 0 1 (normal 1,0,0)
+            Plane3D aPlane = new(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)); // pl 1 0 0 0 0 1 (normal 1,0,0)
             TopoDS_Shape aProfile = BOPTest_Utilities.CreateProfile(aPlane, aOps);
 
             // Create revolution: revol rv wr 50 100 50 0 0 1 360
-            gp_Ax1 aRevAxis = new(new gp_Pnt(50, 100, 50), new gp_Dir(gp_Dir.D.Z));
+            Axis3D aRevAxis = new(new Point3D(50, 100, 50), new Direction3D(Direction3D.D.Z));
             TopoDS_Shape aRevolution = BOPTest_Utilities.CreateRevolution(aProfile, aRevAxis, 2 * M_PI);
 
             TopoDS_Shape aResult = PerformFuse(aBox, aRevolution);
@@ -1761,7 +1765,7 @@ public static class BRepAlgoAPI_FuseTests
         public void BlendBoxWithCylinder_K2()
         {
             // Create box: box bx1 300 300 100
-            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new gp_Pnt(0, 0, 0), 300.0, 300.0, 100.0);
+            TopoDS_Shape aBox = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), 300.0, 300.0, 100.0);
 
             // Skip blend for now - test simple cylinder creation instead
             // const TopoDS_Shape aBlendedBox = BOPTest_Utilities::CreateBlend(aBox, 1, 100.0);
@@ -1835,7 +1839,7 @@ public static class BRepAlgoAPI_FuseTests
         public void OCC277_FuseAndCommonOfOverlappingBoxes()
         {
             BRepPrimAPI_MakeBox aBox1Maker = new(100, 100, 100);
-            BRepPrimAPI_MakeBox aBox2Maker = new(new gp_Pnt(50, 50, 50), 200, 200, 200);
+            BRepPrimAPI_MakeBox aBox2Maker = new(new Point3D(50, 50, 50), 200, 200, 200);
 
             TopoDS_Shape aShape1 = aBox1Maker.Shape();
             TopoDS_Shape aShape2 = aBox2Maker.Shape();

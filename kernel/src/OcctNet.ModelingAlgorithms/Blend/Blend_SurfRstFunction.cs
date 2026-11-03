@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,33 +15,33 @@ namespace Occt;
 /// </summary>
 public abstract class Blend_SurfRstFunction : Blend_AppFunction
 {
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double GetMinimalDistance()
     {
-        throw new Standard_NotImplemented("Blend_SurfRstFunction::GetMinimalDistance");
+        throw new MethodNotImplementedException("Blend_SurfRstFunction::GetMinimalDistance");
     }
 
-    public override gp_Pnt Pnt1()
+    public override Point3D Pnt1()
     {
         return PointOnS();
     }
 
-    public override gp_Pnt Pnt2()
+    public override Point3D Pnt2()
     {
         return PointOnRst();
     }
 
     /// <summary>The point on the surface.</summary>
-    public abstract gp_Pnt PointOnS();
+    public abstract Point3D PointOnS();
 
     /// <summary>The point on the restriction.</summary>
-    public abstract gp_Pnt PointOnRst();
+    public abstract Point3D PointOnRst();
 
     /// <summary>The U, V coordinates of the point on the surface.</summary>
-    public abstract gp_Pnt2d Pnt2dOnS();
+    public abstract Point2D Pnt2dOnS();
 
     /// <summary>The U, V coordinates of the point on the restriction, on its surface.</summary>
-    public abstract gp_Pnt2d Pnt2dOnRst();
+    public abstract Point2D Pnt2dOnRst();
 
     /// <summary>The parameter of the point on the restriction.</summary>
     public abstract double ParameterOnRst();
@@ -45,14 +49,14 @@ public abstract class Blend_SurfRstFunction : Blend_AppFunction
     /// <summary>True when the tangent vectors cannot be computed.</summary>
     public abstract bool IsTangencyPoint();
 
-    public abstract gp_Vec TangentOnS();
+    public abstract Vector3D TangentOnS();
 
-    public abstract gp_Vec2d Tangent2dOnS();
+    public abstract Vector2D Tangent2dOnS();
 
-    public abstract gp_Vec TangentOnRst();
+    public abstract Vector3D TangentOnRst();
 
-    public abstract gp_Vec2d Tangent2dOnRst();
+    public abstract Vector2D Tangent2dOnRst();
 
     /// <summary>Whether the solution <paramref name="Sol"/> leaves the restriction's surface.</summary>
-    public abstract bool Decroch(math_Vector Sol, out gp_Vec NS, out gp_Vec TgS);
+    public abstract bool Decroch(math_Vector Sol, out Vector3D NS, out Vector3D TgS);
 }

@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_CoordinatedUniversalTimeOffset : Standard_Transient
+public class StepBasic_CoordinatedUniversalTimeOffset : Transient
 {
     private int hourOffset;
     private int minuteOffset;

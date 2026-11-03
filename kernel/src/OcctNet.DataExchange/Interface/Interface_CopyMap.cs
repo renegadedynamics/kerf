@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ public class Interface_CopyMap : Interface_CopyControl
     /// </summary>
     public Interface_CopyMap(Interface_InterfaceModel? amodel)
     {
-        theres = new NCollection_Array1<Standard_Transient>(0, amodel.NbEntities());
+        theres = new NCollection_Array1<Transient>(0, amodel.NbEntities());
         themod = amodel;
     }
 
@@ -30,7 +32,7 @@ public class Interface_CopyMap : Interface_CopyControl
     public override void Clear()
     {
         int nb = theres.Upper();
-        Standard_Transient bid = null; // Null
+        Transient bid = null; // Null
         for (int i = 1; i <= nb; i++)
         {
             theres.SetValue(i, bid);
@@ -49,7 +51,7 @@ public class Interface_CopyMap : Interface_CopyControl
     /// Binds a Starting Entity identified by its Number &lt;num&gt; in the Starting Model, to a Result of
     /// Transfer &lt;res&gt;
     /// </summary>
-    public override void Bind(Standard_Transient? ent, Standard_Transient? res)
+    public override void Bind(Transient? ent, Transient? res)
     {
         int num = themod.Number(ent);
         if (num == 0 || num > theres.Upper())
@@ -69,7 +71,7 @@ public class Interface_CopyMap : Interface_CopyControl
     /// Starting Model) Returns True if a Result is Bound (and fills &lt;res&gt;) Returns False if no result is
     /// Bound (and nullifies &lt;res&gt;)
     /// </summary>
-    public override bool Search(Standard_Transient? ent, out Standard_Transient? res)
+    public override bool Search(Transient? ent, out Transient? res)
     {
         int num = themod.Number(ent);
         if (num == 0)
@@ -82,5 +84,5 @@ public class Interface_CopyMap : Interface_CopyControl
     }
 
     private Interface_InterfaceModel? themod;
-    private NCollection_Array1<Standard_Transient> theres;
+    private NCollection_Array1<Transient> theres;
 }

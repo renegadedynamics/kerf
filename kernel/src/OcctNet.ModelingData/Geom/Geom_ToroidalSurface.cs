@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,14 +23,14 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     private double minorRadius;
 
     /// <summary>A torus of radii MajorRadius and MinorRadius whose local coordinate system is A3.</summary>
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0 or MajorRadius &lt; 0.</exception>
-    public Geom_ToroidalSurface(in gp_Ax3 A3, double MajorRadius, double MinorRadius)
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or MajorRadius &lt; 0.</exception>
+    public Geom_ToroidalSurface(in CoordinateSystem A3, double MajorRadius, double MinorRadius)
     {
         majorRadius = MajorRadius;
         minorRadius = MinorRadius;
         if (MinorRadius < 0.0 || MajorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -33,7 +39,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A torus from a gp torus.</summary>
-    public Geom_ToroidalSurface(in gp_Torus T)
+    public Geom_ToroidalSurface(in Torus T)
     {
         majorRadius = T.MajorRadius();
         minorRadius = T.MinorRadius();
@@ -71,13 +77,13 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     /// <summary>True (period 2*PI).</summary>
     public sealed override bool IsVPeriodic() => true;
 
-    /// <exception cref="Standard_ConstructionError">MajorRadius - MinorRadius &lt;= Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">MajorRadius - MinorRadius &lt;= Resolution.</exception>
     internal void SetMajorRadius(double MajorRadius)
     {
         CheckMutable();
-        if (MajorRadius - minorRadius <= gp.Resolution())
+        if (MajorRadius - minorRadius <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -85,13 +91,13 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
         }
     }
 
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0 or MajorRadius - MinorRadius &lt;= Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or MajorRadius - MinorRadius &lt;= Resolution.</exception>
     internal void SetMinorRadius(double MinorRadius)
     {
         CheckMutable();
-        if (MinorRadius < 0.0 || majorRadius - MinorRadius <= gp.Resolution())
+        if (MinorRadius < 0.0 || majorRadius - MinorRadius <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -99,7 +105,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
         }
     }
 
-    internal void SetTorus(in gp_Torus T)
+    internal void SetTorus(in Torus T)
     {
         CheckMutable();
         minorRadius = T.MinorRadius();
@@ -108,7 +114,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy of major radius MajorRadius.</summary>
-    /// <exception cref="Standard_ConstructionError">MajorRadius - MinorRadius &lt;= Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">MajorRadius - MinorRadius &lt;= Resolution.</exception>
     public Geom_ToroidalSurface WithMajorRadius(double MajorRadius)
     {
         Geom_ToroidalSurface aCopy = (Geom_ToroidalSurface)Copy();
@@ -117,7 +123,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy of minor radius MinorRadius.</summary>
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0 or MajorRadius - MinorRadius &lt;= Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or MajorRadius - MinorRadius &lt;= Resolution.</exception>
     public Geom_ToroidalSurface WithMinorRadius(double MinorRadius)
     {
         Geom_ToroidalSurface aCopy = (Geom_ToroidalSurface)Copy();
@@ -126,7 +132,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy that is the torus T.</summary>
-    public Geom_ToroidalSurface WithTorus(in gp_Torus T)
+    public Geom_ToroidalSurface WithTorus(in Torus T)
     {
         Geom_ToroidalSurface aCopy = (Geom_ToroidalSurface)Copy();
         aCopy.SetTorus(T);
@@ -148,31 +154,31 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     /// <summary>
     /// The 35 coefficients of the implicit quartic equation, in Coef from its lower bound (see gp_Torus).
     /// </summary>
-    /// <exception cref="Standard_DimensionError">Coef has fewer than 35 elements.</exception>
+    /// <exception cref="DimensionErrorException">Coef has fewer than 35 elements.</exception>
     public void Coefficients(NCollection_Array1<double> Coef)
     {
-        gp_Torus Tor = new gp_Torus(pos, majorRadius, minorRadius);
+        Torus Tor = new Torus(pos, majorRadius, minorRadius);
         Tor.Coefficients(Coef.AsSpan());
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aP;
-        ElSLib.TorusD0(U, V, pos, majorRadius, minorRadius, out aP);
+        Point3D aP;
+        global::Kerf.Engine.Geometry.ElSLib.TorusD0(U, V, pos, majorRadius, minorRadius, out aP);
         return aP;
     }
 
     public sealed override ResD1 EvalD1(double U, double V)
     {
         ResD1 aResult;
-        ElSLib.TorusD1(U, V, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1U, out aResult.D1V);
+        global::Kerf.Engine.Geometry.ElSLib.TorusD1(U, V, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1U, out aResult.D1V);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U, double V)
     {
         ResD2 aResult;
-        ElSLib.TorusD2(U,
+        global::Kerf.Engine.Geometry.ElSLib.TorusD2(U,
                        V,
                        pos,
                        majorRadius,
@@ -189,7 +195,7 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     public sealed override ResD3 EvalD3(double U, double V)
     {
         ResD3 aResult;
-        ElSLib.TorusD3(U,
+        global::Kerf.Engine.Geometry.ElSLib.TorusD3(U,
                        V,
                        pos,
                        majorRadius,
@@ -208,36 +214,36 @@ public class Geom_ToroidalSurface : Geom_ElementarySurface
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
-        return ElSLib.TorusDN(U, V, pos, majorRadius, minorRadius, Nu, Nv);
+        return global::Kerf.Engine.Geometry.ElSLib.TorusDN(U, V, pos, majorRadius, minorRadius, Nu, Nv);
     }
 
     /// <summary>The non-persistent gp torus with the same geometry.</summary>
-    public gp_Torus Torus() => new gp_Torus(pos, majorRadius, minorRadius);
+    public Torus Torus() => new Torus(pos, majorRadius, minorRadius);
 
     /// <summary>The U iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        Geom_Circle GC = new Geom_Circle(ElSLib.TorusUIso(pos, majorRadius, minorRadius, U));
+        Geom_Circle GC = new Geom_Circle(global::Kerf.Engine.Geometry.ElSLib.TorusUIso(pos, majorRadius, minorRadius, U));
         return GC;
     }
 
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        Geom_Circle GC = new Geom_Circle(ElSLib.TorusVIso(pos, majorRadius, minorRadius, V));
+        Geom_Circle GC = new Geom_Circle(global::Kerf.Engine.Geometry.ElSLib.TorusVIso(pos, majorRadius, minorRadius, V));
         return GC;
     }
 
     /// <summary>The volume, PI * R2**2 * 2 * PI * R1.</summary>
     public double Volume() => (M_PI * minorRadius * minorRadius) * (2.0 * M_PI * majorRadius);
 
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         majorRadius = majorRadius * Math.Abs(T.ScaleFactor());

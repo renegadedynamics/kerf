@@ -4,7 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.TopAbs_State;
 
@@ -76,7 +79,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     /// Intersects <paramref name="S1"/> bounded by <paramref name="D1"/> with <paramref name="S2"/> bounded by
     /// <paramref name="D2"/>; see the constructor.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">A surface is not a plane, cylinder, cone, sphere or torus.</exception>
+    /// <exception cref="ConstructionErrorException">A surface is not a plane, cylinder, cone, sphere or torus.</exception>
     public void Perform(Adaptor3d_Surface S1,
                         Adaptor3d_TopolTool D1,
                         Adaptor3d_Surface S2,
@@ -112,7 +115,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         IntSurf_Quadric quad1 = new(), quad2 = new();
         IntPatch_ArcFunction AFunc = new();
         const double Tolang = 1.0e-8;
-        GeomAbs_SurfaceType typs1, typs2;
+        SurfaceKind typs1, typs2;
         bool bEmpty = false;
         //
         int iT1 = SetQuad(S1, out typs1, ref quad1);
@@ -120,7 +123,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         //
         if (iT1 == 0 || iT2 == 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         //
         bool bReverse = iT1 > iT2;
@@ -145,7 +148,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     Adaptor3d_Surface aSCyl = bReverse ? S1 : S2;
                     VMin = aSCyl.FirstVParameter();
                     VMax = aSCyl.LastVParameter();
-                    H = (Precision.IsNegativeInfinite(VMin) || Precision.IsPositiveInfinite(VMax))
+                    H = (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax))
                           ? 0
                           : (VMax - VMin);
                     //
@@ -192,7 +195,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             case 22:
                 { // Cylinder/Cylinder
-                    Bnd_Box2d aBox1 = new(), aBox2 = new();
+                    Box2d aBox1 = new(), aBox2 = new();
 
                     double aU1f = S1.FirstUParameter();
                     double aU1l = S1.LastUParameter();
@@ -211,10 +214,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                         aU2l = aU2f + anUperiod;
                     }
 
-                    aBox1.Add(new gp_Pnt2d(aU1f, S1.FirstVParameter()));
-                    aBox1.Add(new gp_Pnt2d(aU1l, S1.LastVParameter()));
-                    aBox2.Add(new gp_Pnt2d(aU2f, S2.FirstVParameter()));
-                    aBox2.Add(new gp_Pnt2d(aU2l, S2.LastVParameter()));
+                    aBox1.Add(new Point2D(aU1f, S1.FirstVParameter()));
+                    aBox1.Add(new Point2D(aU1l, S1.LastVParameter()));
+                    aBox2.Add(new Point2D(aU2f, S2.FirstVParameter()));
+                    aBox2.Add(new Point2D(aU2l, S2.LastVParameter()));
 
                     // Resolution is too big if the cylinder radius is
                     // too small. Therefore, we shall bind its value above.
@@ -340,7 +343,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             default:
                 {
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
                 }
         }
         //
@@ -442,33 +445,33 @@ public sealed partial class IntPatch_ImpImpIntersection
                 slin.Clear();
                 spnt.Clear();
 
-                gp_Pnt Ptreference = new();
+                Point3D Ptreference = new();
 
                 switch (typs1)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                         {
                             Ptreference = (S1.Plane()).Location();
                         }
                         break;
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                         {
-                            Ptreference = ElSLib.Value(0.0, 0.0, S1.Cylinder());
+                            Ptreference = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, 0.0, S1.Cylinder());
                         }
                         break;
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                         {
-                            Ptreference = ElSLib.Value(M_PI / 4.0, M_PI / 4.0, S1.Sphere());
+                            Ptreference = global::Kerf.Engine.Geometry.ElSLib.Value(M_PI / 4.0, M_PI / 4.0, S1.Sphere());
                         }
                         break;
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                         {
-                            Ptreference = ElSLib.Value(0.0, 10.0, S1.Cone());
+                            Ptreference = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, 10.0, S1.Cone());
                         }
                         break;
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                         {
-                            Ptreference = ElSLib.Value(0.0, 0.0, S1.Torus());
+                            Ptreference = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, 0.0, S1.Torus());
                         }
                         break;
                     default:
@@ -518,16 +521,16 @@ public sealed partial class IntPatch_ImpImpIntersection
             //
             for (i = 1; i <= aNbPnt; ++i)
             {
-                gp_Pnt2d aP2D;
+                Point2D aP2D;
                 TopAbs_State aState1, aState2;
                 //
                 IntPatch_Point aIP = spnt[i];
                 aIP.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
                 //
-                aP2D = new gp_Pnt2d(aU1, aV1);
+                aP2D = new Point2D(aU1, aV1);
                 aState1 = D1.Classify(aP2D, TolArc);
                 //
-                aP2D = new gp_Pnt2d(aU2, aV2);
+                aP2D = new Point2D(aU2, aV2);
                 aState2 = D2.Classify(aP2D, TolArc);
                 //
                 if (aState1 != TopAbs_OUT && aState2 != TopAbs_OUT)
@@ -570,7 +573,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         //-- contiennent pas.
         for (i = 1; i <= nblin; i++)
         {
-            gp_Pnt P;
+            Point3D P;
             IntPatch_Point point = new();
             double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
             if (slin.Value(i).ArcType() == IntPatch_Circle)
@@ -578,8 +581,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                 IntPatch_GLine glin = (IntPatch_GLine)slin.Value(i);
                 if (glin.NbVertex() == 0)
                 {
-                    gp_Circ Circ = glin.Circle();
-                    P = ElCLib.Value(0.0, Circ);
+                    Circle3D Circ = glin.Circle();
+                    P = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ);
                     quad1.Parameters(P, ref u1, ref v1);
                     quad2.Parameters(P, ref u2, ref v2);
                     point.SetValue(P, TolArc, false);
@@ -587,7 +590,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     point.SetParameter(0.0);
                     glin.AddVertex(point);
 
-                    P = ElCLib.Value(0.0, Circ);
+                    P = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ);
                     quad1.Parameters(P, ref u1, ref v1);
                     quad2.Parameters(P, ref u2, ref v2);
                     point.SetValue(P, TolArc, false);
@@ -602,8 +605,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                 IntPatch_GLine glin = (IntPatch_GLine)slin.Value(i);
                 if (glin.NbVertex() == 0)
                 {
-                    gp_Elips Elips = glin.Ellipse();
-                    P = ElCLib.Value(0.0, Elips);
+                    Ellipse3D Elips = glin.Ellipse();
+                    P = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Elips);
                     quad1.Parameters(P, ref u1, ref v1);
                     quad2.Parameters(P, ref u2, ref v2);
                     point.SetValue(P, TolArc, false);
@@ -611,7 +614,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     point.SetParameter(0.0);
                     glin.AddVertex(point);
 
-                    P = ElCLib.Value(0.0, Elips);
+                    P = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Elips);
                     quad1.Parameters(P, ref u1, ref v1);
                     quad2.Parameters(P, ref u2, ref v2);
                     point.SetValue(P, TolArc, false);
@@ -635,7 +638,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return empt;
     }
@@ -648,7 +651,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tgte;
     }
@@ -657,16 +660,16 @@ public sealed partial class IntPatch_ImpImpIntersection
     /// Returns true when <see cref="TangentFaces"/> is true and the normals at a point of the two surfaces are
     /// opposite.
     /// </summary>
-    /// <exception cref="Standard_DomainError"><see cref="TangentFaces"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="TangentFaces"/> is false.</exception>
     public bool OppositeFaces()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (!tgte)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return oppo;
     }
@@ -676,7 +679,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Length();
     }
@@ -686,7 +689,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Value(Index);
     }
@@ -696,7 +699,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin.Length();
     }
@@ -706,36 +709,36 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin.Value(Index);
     }
 
     //=================================================================================================
 
-    private static int SetQuad(Adaptor3d_Surface theS, out GeomAbs_SurfaceType theTS, ref IntSurf_Quadric theQuad)
+    private static int SetQuad(Adaptor3d_Surface theS, out SurfaceKind theTS, ref IntSurf_Quadric theQuad)
     {
         theTS = theS.GetType();
         int iRet = 0;
         switch (theTS)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 theQuad.SetValue(theS.Plane());
                 iRet = 1;
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 theQuad.SetValue(theS.Cylinder());
                 iRet = 2;
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 theQuad.SetValue(theS.Cone());
                 iRet = 3;
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 theQuad.SetValue(theS.Sphere());
                 iRet = 4;
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 theQuad.SetValue(theS.Torus());
                 iRet = 5;
                 break;

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -141,7 +143,7 @@ public class IFGraph_SubPartsIterator
     {
         if (num <= 0 || num > theparts.Length())
         {
-            throw new Standard_OutOfRange("IFGraph_SubPartsIterator : SetPartNum");
+            throw new OutOfRangeException("IFGraph_SubPartsIterator : SetPartNum");
         }
         thepart = num;
     }
@@ -150,7 +152,7 @@ public class IFGraph_SubPartsIterator
     /// Adds an Entity : into load status if in Load mode, to the current part if there is one. If shared is
     /// True, adds also its shared ones (shared at all levels)
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent, bool shared)
+    public void GetFromEntity(Transient? ent, bool shared)
     {
         thegraph.GetFromEntity(ent, shared, thepart, thepart, false);
     }
@@ -213,7 +215,7 @@ public class IFGraph_SubPartsIterator
     /// <summary>
     /// Returns True if an Entity is loaded (either set into a sub-part or not)
     /// </summary>
-    public bool IsLoaded(Standard_Transient? ent)
+    public bool IsLoaded(Transient? ent)
     {
         return thegraph.IsPresent(thegraph.EntityNumber(ent));
     }
@@ -221,7 +223,7 @@ public class IFGraph_SubPartsIterator
     /// <summary>
     /// Returns True if an Entity is Present in a sub-part
     /// </summary>
-    public bool IsInPart(Standard_Transient? ent)
+    public bool IsInPart(Transient? ent)
     {
         int num = thegraph.EntityNumber(ent);
         if (!thegraph.IsPresent(num))
@@ -235,7 +237,7 @@ public class IFGraph_SubPartsIterator
     /// Returns number of the sub-part in which an Entity has been set if it is not in a sub-part (or not loaded
     /// at all), Returns 0
     /// </summary>
-    public int EntityPartNum(Standard_Transient? ent)
+    public int EntityPartNum(Transient? ent)
     {
         int num = thegraph.EntityNumber(ent);
         if (!thegraph.IsPresent(num))
@@ -346,7 +348,7 @@ public class IFGraph_SubPartsIterator
     {
         if (thecurr < 1 || thecurr > theparts.Length())
         {
-            throw new Standard_NoSuchObject("IFGraph_SubPartsIterator : IsSingle");
+            throw new NoSuchObjectException("IFGraph_SubPartsIterator : IsSingle");
         }
         return (theparts.Value(thecurr) == 1);
     }
@@ -355,16 +357,16 @@ public class IFGraph_SubPartsIterator
     /// Returns the first entity of current sub-part, that is for a Single one, the only one it contains Error :
     /// same as above (end of iteration)
     /// </summary>
-    public Standard_Transient? FirstEntity()
+    public Transient? FirstEntity()
     {
         if (thecurr < 1 || thecurr > theparts.Length())
         {
-            throw new Standard_NoSuchObject("IFGraph_SubPartsIterator : FirstEntity");
+            throw new NoSuchObjectException("IFGraph_SubPartsIterator : FirstEntity");
         }
         int nument = thefirsts.Value(thecurr);
         if (nument == 0)
         {
-            throw new Standard_NoSuchObject("IFGraph_SubPartsIterator : FirstEntity (current part is empty)");
+            throw new NoSuchObjectException("IFGraph_SubPartsIterator : FirstEntity (current part is empty)");
         }
         return thegraph.Entity(nument);
     }
@@ -377,7 +379,7 @@ public class IFGraph_SubPartsIterator
     {
         if (thecurr < 1 || thecurr > theparts.Length())
         {
-            throw new Standard_NoSuchObject("IFGraph_SubPartsIterator : Entities");
+            throw new NoSuchObjectException("IFGraph_SubPartsIterator : Entities");
         }
         Interface_EntityIterator iter = new Interface_EntityIterator();
         int nb = thegraph.Size();

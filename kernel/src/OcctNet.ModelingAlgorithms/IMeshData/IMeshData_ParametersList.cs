@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A list of parameters on a curve, indexed from zero.</summary>
-public abstract class IMeshData_ParametersList : Standard_Transient
+public abstract class IMeshData_ParametersList : Transient
 {
     /// <summary>An empty list.</summary>
     protected IMeshData_ParametersList()

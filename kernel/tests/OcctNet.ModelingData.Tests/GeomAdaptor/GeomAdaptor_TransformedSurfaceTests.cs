@@ -1,6 +1,10 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomAdaptor_TransformedSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>GeomAdaptor_TransformedSurface. All of OCCT's tests are ported.</summary>
@@ -8,27 +12,27 @@ public class GeomAdaptor_TransformedSurfaceTest
 {
     private const double THE_TOLERANCE = 1.0e-10;
 
-    private static gp_Trsf createTranslation(double theDx, double theDy, double theDz)
+    private static Transform3D createTranslation(double theDx, double theDy, double theDz)
     {
-        gp_Trsf aTrsf = new();
-        aTrsf.SetTranslation(new gp_Vec(theDx, theDy, theDz));
+        Transform3D aTrsf = new();
+        aTrsf.SetTranslation(new Vector3D(theDx, theDy, theDz));
         return aTrsf;
     }
 
-    private static gp_Trsf createRotationY(double theAngle)
+    private static Transform3D createRotationY(double theAngle)
     {
-        gp_Trsf aTrsf = new();
-        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 1.0, 0.0)), theAngle);
+        Transform3D aTrsf = new();
+        aTrsf.SetRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0)), theAngle);
         return aTrsf;
     }
 
     private static Geom_BSplineSurface createBSplineSurface()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles.SetValue(1, 1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, 1, new gp_Pnt(1.0, 0.0, 0.0));
-        aPoles.SetValue(1, 2, new gp_Pnt(0.0, 1.0, 0.0));
-        aPoles.SetValue(2, 2, new gp_Pnt(1.0, 1.0, 1.0));
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles.SetValue(1, 1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, 1, new Point3D(1.0, 0.0, 0.0));
+        aPoles.SetValue(1, 2, new Point3D(0.0, 1.0, 0.0));
+        aPoles.SetValue(2, 2, new Point3D(1.0, 1.0, 1.0));
 
         NCollection_Array1<double> aUKnots = new(1, 2);
         NCollection_Array1<double> aVKnots = new(1, 2);
@@ -45,14 +49,14 @@ public class GeomAdaptor_TransformedSurfaceTest
         return new Geom_BSplineSurface(aPoles, aUKnots, aVKnots, aUMults, aVMults, 1, 1);
     }
 
-    private static Geom_Plane XOYPlane() => new(new gp_Pln(new gp_Ax3(gp.XOY())));
+    private static Geom_Plane XOYPlane() => new(new Plane3D(new CoordinateSystem(Constants.XOY())));
 
     [Fact]
     public void IdentityTransformUsesOriginalSurface()
     {
         Geom_Plane aPlane = XOYPlane();
 
-        GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, new gp_Trsf());
+        GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, new Transform3D());
 
         Assert.Same(aPlane, anAdaptor.GeomSurfaceOriginal());
         Assert.Same(aPlane, anAdaptor.GeomSurfaceTransformed());
@@ -67,7 +71,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Geom_Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
         Assert.Same(aFirst, aSecond);
 
-        gp_Pln aCachedPlane = anAdaptor.Plane();
+        Plane3D aCachedPlane = anAdaptor.Plane();
         Assert.Equal(5.0, aCachedPlane.Location().Z(), THE_TOLERANCE);
     }
 
@@ -121,50 +125,50 @@ public class GeomAdaptor_TransformedSurfaceTest
 
         Geom_Surface? aFirst = anAdaptor.GeomSurfaceTransformed();
 
-        gp_Ax3 aSphereAx = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        CoordinateSystem aSphereAx = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_SphericalSurface aSphere = new(aSphereAx, 3.0);
-        anAdaptor.Load(aSphere, new gp_Trsf());
+        anAdaptor.Load(aSphere, new Transform3D());
 
         Geom_Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
         Assert.NotSame(aFirst, aSecond);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Sphere, anAdaptor.GetType());
+        Assert.Equal(SurfaceKind.Sphere, anAdaptor.GetType());
         Assert.Equal(3.0, anAdaptor.Sphere().Radius(), THE_TOLERANCE);
     }
 
     [Fact]
     public void ExtrusionCachesDirectionAndBasisCurve()
     {
-        Geom_Line aLine = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        Geom_SurfaceOfLinearExtrusion anExt = new(aLine, new gp_Dir(0.0, 0.0, 1.0));
+        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Geom_SurfaceOfLinearExtrusion anExt = new(aLine, new Direction3D(0.0, 0.0, 1.0));
 
         GeomAdaptor_TransformedSurface anAdaptor = new(anExt, createRotationY(M_PI / 2.0));
 
-        gp_Dir aDirection = anAdaptor.Direction();
+        Direction3D aDirection = anAdaptor.Direction();
         Assert.Equal(1.0, aDirection.X(), THE_TOLERANCE);
         Assert.Equal(0.0, aDirection.Y(), THE_TOLERANCE);
         Assert.Equal(0.0, aDirection.Z(), THE_TOLERANCE);
 
         Adaptor3d_Curve aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
-        Assert.Equal(GeomAbs_CurveType.GeomAbs_Line, aCurve.GetType());
+        Assert.Equal(CurveKind.Line, aCurve.GetType());
     }
 
     [Fact]
     public void RevolutionCachesAxisAndBasisCurve()
     {
-        Geom_Line aLine = new(new gp_Pnt(2.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        Geom_SurfaceOfRevolution aRev = new(aLine, new gp_Ax1(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0)));
+        Geom_Line aLine = new(new Point3D(2.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Geom_SurfaceOfRevolution aRev = new(aLine, new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)));
 
         GeomAdaptor_TransformedSurface anAdaptor = new(aRev, createRotationY(M_PI / 2.0));
 
-        gp_Ax1 aAxis = anAdaptor.AxeOfRevolution();
+        Axis3D aAxis = anAdaptor.AxeOfRevolution();
         Assert.Equal(1.0, aAxis.Direction().X(), THE_TOLERANCE);
         Assert.Equal(0.0, aAxis.Direction().Y(), THE_TOLERANCE);
         Assert.Equal(0.0, aAxis.Direction().Z(), THE_TOLERANCE);
 
         Adaptor3d_Curve aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
-        Assert.Equal(GeomAbs_CurveType.GeomAbs_Line, aCurve.GetType());
+        Assert.Equal(CurveKind.Line, aCurve.GetType());
     }
 
     [Fact]
@@ -176,7 +180,7 @@ public class GeomAdaptor_TransformedSurfaceTest
 
         Adaptor3d_Surface aBasis = anAdaptor.BasisSurface();
         Assert.NotNull(aBasis);
-        Assert.Equal(GeomAbs_SurfaceType.GeomAbs_Plane, aBasis.GetType());
+        Assert.Equal(SurfaceKind.Plane, aBasis.GetType());
         Assert.Equal(2.5, anAdaptor.OffsetValue(), THE_TOLERANCE);
     }
 
@@ -195,7 +199,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Assert.Equal(0.05, aTrimmed.ToleranceU(), THE_TOLERANCE);
         Assert.Equal(0.2, aTrimmed.ToleranceV(), THE_TOLERANCE);
 
-        gp_Pnt aPoint = aTrimmed.EvalD0(4.0, 3.0);
+        Point3D aPoint = aTrimmed.EvalD0(4.0, 3.0);
         Assert.Equal(5.0, aPoint.Z(), THE_TOLERANCE);
     }
 
@@ -214,14 +218,14 @@ public class GeomAdaptor_TransformedSurfaceTest
         Assert.Equal(0.1, aTrimmed.ToleranceU(), THE_TOLERANCE);
         Assert.Equal(0.15, aTrimmed.ToleranceV(), THE_TOLERANCE);
 
-        gp_Pnt aPoint = aTrimmed.EvalD0(2.0, 4.0);
+        Point3D aPoint = aTrimmed.EvalD0(2.0, 4.0);
         Assert.Equal(7.0, aPoint.Z(), THE_TOLERANCE);
     }
 
     [Fact]
     public void GridEvalUsesTransformedGeometryOnlyOnce()
     {
-        Geom_Plane aPlane = new(new gp_Pln(new gp_Ax3(gp.XOY())));
+        Geom_Plane aPlane = new(new Plane3D(new CoordinateSystem(Constants.XOY())));
         GeomAdaptor_TransformedSurface anAdaptor = new(aPlane, createTranslation(0.0, 0.0, 5.0));
 
         GeomGridEval_Surface anEval = new(anAdaptor);
@@ -233,7 +237,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         aVParams.SetValue(1, 0.0);
         aVParams.SetValue(2, 1.0);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.Equal(5.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
         Assert.Equal(5.0, aGrid.Value(2, 2).Z(), THE_TOLERANCE);
     }

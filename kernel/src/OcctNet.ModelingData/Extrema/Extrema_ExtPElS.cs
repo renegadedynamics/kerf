@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -30,7 +34,7 @@ public class Extrema_ExtPElS
     }
 
     /// <summary>The distances between a point and a cylinder. Tol is used to test if the point is on the axis.</summary>
-    public Extrema_ExtPElS(in gp_Pnt P, in gp_Cylinder S, double Tol) => Perform(P, S, Tol);
+    public Extrema_ExtPElS(in Point3D P, in Cylinder S, double Tol) => Perform(P, S, Tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -48,26 +52,26 @@ public class Extrema_ExtPElS
          then (U1,V) corresponds to the min distance.
          and  (U2,V) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Cylinder S, double Tol)
+    public void Perform(in Point3D P, in Cylinder S, double Tol)
     {
         myDone = false;
         myNbExt = 0;
 
         // Projection of point P in plane XOY of the cylinder ...
-        gp_Ax3 Pos = S.Position();
-        gp_Pnt O = Pos.Location();
-        gp_Vec OZ = new(Pos.Direction());
-        double V = new gp_Vec(O, P).Dot(OZ);
-        gp_Pnt Pp = P.Translated(OZ.Multiplied(-V));
+        CoordinateSystem Pos = S.Position();
+        Point3D O = Pos.Location();
+        Vector3D OZ = new(Pos.Direction());
+        double V = new Vector3D(O, P).Dot(OZ);
+        Point3D Pp = P.Translated(OZ.Multiplied(-V));
 
         // Calculation of extrema
-        gp_Vec OPp = new(O, Pp);
+        Vector3D OPp = new(O, Pp);
         if (OPp.Magnitude() < Tol)
         {
             return;
         }
-        gp_Vec myZ = new(Pos.XDirection() ^ Pos.YDirection());
-        double U1 = new gp_Vec(Pos.XDirection()).AngleWithRef(OPp, myZ); //-M_PI<U1<M_PI
+        Vector3D myZ = new(Pos.XDirection() ^ Pos.YDirection());
+        double U1 = new Vector3D(Pos.XDirection()).AngleWithRef(OPp, myZ); //-M_PI<U1<M_PI
         if (U1 > -ExtPElS_MyEps && U1 < ExtPElS_MyEps)
         {
             U1 = 0.0;
@@ -78,11 +82,11 @@ public class Extrema_ExtPElS
             U1 += 2.0 * M_PI;
         }
 
-        gp_Pnt Ps;
-        Ps = ElSLib.Value(U1, V, S);
+        Point3D Ps;
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U1, V, S);
         mySqDist[0] = Ps.SquareDistance(P);
         myPoint[0] = new Extrema_POnSurf(U1, V, Ps);
-        Ps = ElSLib.Value(U2, V, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U2, V, S);
         mySqDist[1] = Ps.SquareDistance(P);
         myPoint[1] = new Extrema_POnSurf(U2, V, Ps);
 
@@ -93,7 +97,7 @@ public class Extrema_ExtPElS
     /// <summary>
     /// The distances between a point and a cone. Tol is used to test if the point is at the apex or on the axis.
     /// </summary>
-    public Extrema_ExtPElS(in gp_Pnt P, in gp_Cone S, double Tol) => Perform(P, S, Tol);
+    public Extrema_ExtPElS(in Point3D P, in Cone S, double Tol) => Perform(P, S, Tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -124,18 +128,18 @@ public class Extrema_ExtPElS
              V2 = (L * cos(B+A)) + Vm;
            then (U1,V1) and (U2,V2) correspond to min distances.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Cone S, double Tol)
+    public void Perform(in Point3D P, in Cone S, double Tol)
     {
         myDone = false;
         myNbExt = 0;
 
-        gp_Pnt M = S.Apex();
-        gp_Ax3 Pos = S.Position();
-        gp_Pnt O = Pos.Location();
+        Point3D M = S.Apex();
+        CoordinateSystem Pos = S.Position();
+        Point3D O = Pos.Location();
         double A = S.SemiAngle();
-        gp_Vec OZ = new(Pos.Direction());
-        gp_Vec myZ = new(Pos.XDirection() ^ Pos.YDirection());
-        gp_Vec MP = new(M, P);
+        Vector3D OZ = new(Pos.Direction());
+        Vector3D myZ = new(Pos.XDirection() ^ Pos.YDirection());
+        Vector3D MP = new(M, P);
 
         double L2 = MP.SquareMagnitude();
         double Vm = -(S.RefRadius() / Math.Sin(A));
@@ -149,28 +153,28 @@ public class Extrema_ExtPElS
             myDone = true;
             return;
         }
-        gp_Vec DirZ;
+        Vector3D DirZ;
         if (M.SquareDistance(O) < Tol * Tol)
         {
             DirZ = (A < 0 ? -OZ : OZ);
         }
         else
         {
-            DirZ = new gp_Vec(M, O);
+            DirZ = new Vector3D(M, O);
         }
 
         // Projection of P in the reference plane of the cone ...
-        double Zp = new gp_Vec(O, P).Dot(OZ);
+        double Zp = new Vector3D(O, P).Dot(OZ);
 
-        gp_Pnt Pp = P.Translated(OZ.Multiplied(-Zp));
-        gp_Vec OPp = new(O, Pp);
+        Point3D Pp = P.Translated(OZ.Multiplied(-Zp));
+        Vector3D OPp = new(O, Pp);
         if (OPp.SquareMagnitude() < Tol * Tol)
         {
             return;
         }
         double U1, V1, U2, V2;
         bool Same = DirZ.Dot(MP) >= 0.0;
-        U1 = new gp_Vec(Pos.XDirection()).AngleWithRef(OPp, myZ); //-M_PI<U1<M_PI
+        U1 = new Vector3D(Pos.XDirection()).AngleWithRef(OPp, myZ); //-M_PI<U1<M_PI
         if (U1 > -ExtPElS_MyEps && U1 < ExtPElS_MyEps)
         {
             U1 = 0.0;
@@ -202,17 +206,17 @@ public class Extrema_ExtPElS
             V1 = L * Math.Cos(B - A);
             V2 = L * Math.Cos(B + A);
         }
-        double Sense = OZ.Dot(new gp_Vec(new gp_Dir(DirZ)));
+        double Sense = OZ.Dot(new Vector3D(new Direction3D(DirZ)));
         V1 *= Sense;
         V2 *= Sense;
         V1 += Vm;
         V2 += Vm;
 
-        gp_Pnt Ps;
-        Ps = ElSLib.Value(U1, V1, S);
+        Point3D Ps;
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U1, V1, S);
         mySqDist[0] = Ps.SquareDistance(P);
         myPoint[0] = new Extrema_POnSurf(U1, V1, Ps);
-        Ps = ElSLib.Value(U2, V2, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U2, V2, S);
         mySqDist[1] = Ps.SquareDistance(P);
         myPoint[1] = new Extrema_POnSurf(U2, V2, Ps);
 
@@ -221,7 +225,7 @@ public class Extrema_ExtPElS
     }
 
     /// <summary>The distances between a point and a sphere. Tol is used to test if the point is at the center.</summary>
-    public Extrema_ExtPElS(in gp_Pnt P, in gp_Sphere S, double Tol) => Perform(P, S, Tol);
+    public Extrema_ExtPElS(in Point3D P, in Sphere S, double Tol) => Perform(P, S, Tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -244,13 +248,13 @@ public class Extrema_ExtPElS
         then (U1, V1) corresponds to the min distance
         and  (U2,-V1) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Sphere S, double Tol)
+    public void Perform(in Point3D P, in Sphere S, double Tol)
     {
         myDone = false;
         myNbExt = 0;
 
-        gp_Ax3 Pos = S.Position();
-        gp_Vec OP = new(Pos.Location(), P);
+        CoordinateSystem Pos = S.Position();
+        Vector3D OP = new(Pos.Location(), P);
 
         // Case when P is mixed with O ...
         if (OP.SquareMagnitude() < Tol * Tol)
@@ -259,13 +263,13 @@ public class Extrema_ExtPElS
         }
 
         // Projection if P in plane XOY of the sphere ...
-        gp_Pnt O = Pos.Location();
-        gp_Vec OZ = new(Pos.Direction());
+        Point3D O = Pos.Location();
+        Vector3D OZ = new(Pos.Direction());
         double Zp = OP.Dot(OZ);
-        gp_Pnt Pp = P.Translated(OZ.Multiplied(-Zp));
+        Point3D Pp = P.Translated(OZ.Multiplied(-Zp));
 
         // Calculation of extrema ...
-        gp_Vec OPp = new(O, Pp);
+        Vector3D OPp = new(O, Pp);
         double U1, U2, V;
         if (OPp.SquareMagnitude() < Tol * Tol)
         {
@@ -282,8 +286,8 @@ public class Extrema_ExtPElS
         }
         else
         {
-            gp_Vec myZ = new(Pos.XDirection() ^ Pos.YDirection());
-            U1 = new gp_Vec(Pos.XDirection()).AngleWithRef(OPp, myZ);
+            Vector3D myZ = new(Pos.XDirection() ^ Pos.YDirection());
+            U1 = new Vector3D(Pos.XDirection()).AngleWithRef(OPp, myZ);
             if (U1 > -ExtPElS_MyEps && U1 < ExtPElS_MyEps)
             {
                 U1 = 0.0;
@@ -300,11 +304,11 @@ public class Extrema_ExtPElS
             }
         }
 
-        gp_Pnt Ps;
-        Ps = ElSLib.Value(U1, V, S);
+        Point3D Ps;
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U1, V, S);
         mySqDist[0] = Ps.SquareDistance(P);
         myPoint[0] = new Extrema_POnSurf(U1, V, Ps);
-        Ps = ElSLib.Value(U2, -V, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U2, -V, S);
         mySqDist[1] = Ps.SquareDistance(P);
         myPoint[1] = new Extrema_POnSurf(U2, -V, Ps);
 
@@ -313,7 +317,7 @@ public class Extrema_ExtPElS
     }
 
     /// <summary>The distances between a point and a torus. Tol is used to test if the point is on the axis.</summary>
-    public Extrema_ExtPElS(in gp_Pnt P, in gp_Torus S, double Tol) => Perform(P, S, Tol);
+    public Extrema_ExtPElS(in Point3D P, in Torus S, double Tol) => Perform(P, S, Tol);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -334,28 +338,28 @@ public class Extrema_ExtPElS
          then (U1,V1) corresponds to the min distance
          and  (U2,V2) corresponds to the max distance.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Torus S, double Tol)
+    public void Perform(in Point3D P, in Torus S, double Tol)
     {
         double tol2 = Tol * Tol;
         myDone = false;
         myNbExt = 0;
 
         // Projection of P in plane XOY ...
-        gp_Ax3 Pos = S.Position();
-        gp_Pnt O = Pos.Location();
-        gp_Vec OZ = new(Pos.Direction());
-        gp_Pnt Pp = P.Translated(OZ.Multiplied(-(new gp_Vec(O, P).Dot(new gp_Vec(Pos.Direction())))));
+        CoordinateSystem Pos = S.Position();
+        Point3D O = Pos.Location();
+        Vector3D OZ = new(Pos.Direction());
+        Point3D Pp = P.Translated(OZ.Multiplied(-(new Vector3D(O, P).Dot(new Vector3D(Pos.Direction())))));
 
         // Calculation of extrema ...
-        gp_Vec OPp = new(O, Pp);
+        Vector3D OPp = new(O, Pp);
         double R2 = OPp.SquareMagnitude();
         if (R2 < tol2)
         {
             return;
         }
 
-        gp_Vec myZ = new(Pos.XDirection() ^ Pos.YDirection());
-        double U1 = new gp_Vec(Pos.XDirection()).AngleWithRef(OPp, myZ);
+        Vector3D myZ = new(Pos.XDirection() ^ Pos.YDirection());
+        double U1 = new Vector3D(Pos.XDirection()).AngleWithRef(OPp, myZ);
         if (U1 > -ExtPElS_MyEps && U1 < ExtPElS_MyEps)
         {
             U1 = 0.0;
@@ -366,10 +370,10 @@ public class Extrema_ExtPElS
             U1 += 2.0 * M_PI;
         }
         double R = Math.Sqrt(R2);
-        gp_Vec OO1 = OPp.Divided(R).Multiplied(S.MajorRadius());
-        gp_Vec OO2 = OO1.Multiplied(-1.0);
-        gp_Pnt O1 = O.Translated(OO1);
-        gp_Pnt O2 = O.Translated(OO2);
+        Vector3D OO1 = OPp.Divided(R).Multiplied(S.MajorRadius());
+        Vector3D OO2 = OO1.Multiplied(-1.0);
+        Point3D O1 = O.Translated(OO1);
+        Point3D O2 = O.Translated(OO2);
 
         if (O1.SquareDistance(P) < tol2)
         {
@@ -380,13 +384,13 @@ public class Extrema_ExtPElS
             return;
         }
 
-        double V1 = OPp.AngleWithRef(new gp_Vec(O1, P), OPp.Crossed(OZ));
+        double V1 = OPp.AngleWithRef(new Vector3D(O1, P), OPp.Crossed(OZ));
         if (V1 > -ExtPElS_MyEps && V1 < ExtPElS_MyEps)
         {
             V1 = 0.0;
         }
         OPp.Reverse();
-        double V2 = OPp.AngleWithRef(new gp_Vec(P, O2), OPp.Crossed(OZ));
+        double V2 = OPp.AngleWithRef(new Vector3D(P, O2), OPp.Crossed(OZ));
         if (V2 > -ExtPElS_MyEps && V2 < ExtPElS_MyEps)
         {
             V2 = 0.0;
@@ -401,20 +405,20 @@ public class Extrema_ExtPElS
             V2 += 2.0 * M_PI;
         }
 
-        gp_Pnt Ps;
-        Ps = ElSLib.Value(U1, V1, S);
+        Point3D Ps;
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U1, V1, S);
         mySqDist[0] = Ps.SquareDistance(P);
         myPoint[0] = new Extrema_POnSurf(U1, V1, Ps);
 
-        Ps = ElSLib.Value(U1, V1 + M_PI, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U1, V1 + M_PI, S);
         mySqDist[1] = Ps.SquareDistance(P);
         myPoint[1] = new Extrema_POnSurf(U1, V1 + M_PI, Ps);
 
-        Ps = ElSLib.Value(U2, V2, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U2, V2, S);
         mySqDist[2] = Ps.SquareDistance(P);
         myPoint[2] = new Extrema_POnSurf(U2, V2, Ps);
 
-        Ps = ElSLib.Value(U2, V2 + M_PI, S);
+        Ps = global::Kerf.Engine.Geometry.ElSLib.Value(U2, V2 + M_PI, S);
         mySqDist[3] = Ps.SquareDistance(P);
         myPoint[3] = new Extrema_POnSurf(U2, V2 + M_PI, Ps);
 
@@ -423,21 +427,21 @@ public class Extrema_ExtPElS
     }
 
     /// <summary>The distance between a point and a plane (its projection). Tol is not used.</summary>
-    public Extrema_ExtPElS(in gp_Pnt P, in gp_Pln S, double Tol) => Perform(P, S, Tol);
+    public Extrema_ExtPElS(in Point3D P, in Plane3D S, double Tol) => Perform(P, S, Tol);
 
-    public void Perform(in gp_Pnt P, in gp_Pln S, double Tol)
+    public void Perform(in Point3D P, in Plane3D S, double Tol)
     {
         _ = Tol; // OCCT: the tolerance is not used
         myDone = false;
         myNbExt = 0;
 
         // Projection of point P in plane XOY of the cylinder ...
-        gp_Pnt O = S.Location();
-        gp_Vec OZ = new(S.Axis().Direction());
-        double U, V = new gp_Vec(O, P).Dot(OZ);
-        gp_Pnt Pp = P.Translated(OZ.Multiplied(-V));
+        Point3D O = S.Location();
+        Vector3D OZ = new(S.Axis().Direction());
+        double U, V = new Vector3D(O, P).Dot(OZ);
+        Point3D Pp = P.Translated(OZ.Multiplied(-V));
 
-        ElSLib.Parameters(S, P, out U, out V);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(S, P, out U, out V);
         mySqDist[0] = Pp.SquareDistance(P);
         myPoint[0] = new Extrema_POnSurf(U, V, Pp);
         myNbExt = 1;
@@ -452,7 +456,7 @@ public class Extrema_ExtPElS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -462,7 +466,7 @@ public class Extrema_ExtPElS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist[N - 1];
     }
@@ -472,7 +476,7 @@ public class Extrema_ExtPElS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoint[N - 1];
     }

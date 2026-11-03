@@ -2,6 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/GTests/BRepFill_PipeShell_Test.cxx (OCCT V8_0_1), with OCCT.NET's checks of
 // frozen inputs and the history added.
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -9,13 +10,13 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>BRepFill_PipeShell (unit 5S2): OCCT's GTests, and the port's frozen inputs and history.</summary>
 public class BRepFill_PipeShellTests
 {
-    private static TopoDS_Wire MakeSquareProfile(in gp_Pnt theCenter, double theHalfSide)
+    private static TopoDS_Wire MakeSquareProfile(in Point3D theCenter, double theHalfSide)
     {
         BRepBuilderAPI_MakePolygon aPolygon = new();
-        aPolygon.Add(new gp_Pnt(theCenter.X() - theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
-        aPolygon.Add(new gp_Pnt(theCenter.X() + theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
-        aPolygon.Add(new gp_Pnt(theCenter.X() + theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
-        aPolygon.Add(new gp_Pnt(theCenter.X() - theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
+        aPolygon.Add(new Point3D(theCenter.X() - theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
+        aPolygon.Add(new Point3D(theCenter.X() + theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
+        aPolygon.Add(new Point3D(theCenter.X() + theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
+        aPolygon.Add(new Point3D(theCenter.X() - theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
         aPolygon.Close();
         return aPolygon.Wire();
     }
@@ -30,10 +31,10 @@ public class BRepFill_PipeShellTests
     [Fact]
     public void MakeSolid_StraightSpineClosedProfile_ProducesClosedSolid()
     {
-        TopoDS_Edge aSpineEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(0.0, 0.0, 10.0)).Edge();
+        TopoDS_Edge aSpineEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 0.0, 10.0)).Edge();
         TopoDS_Wire aSpine = new BRepBuilderAPI_MakeWire(aSpineEdge).Wire();
 
-        TopoDS_Wire aProfile = MakeSquareProfile(new gp_Pnt(0.0, 0.0, 0.0), 1.0);
+        TopoDS_Wire aProfile = MakeSquareProfile(new Point3D(0.0, 0.0, 0.0), 1.0);
 
         BRepFill_PipeShell aPipe = new(aSpine);
         aPipe.Add(aProfile);
@@ -53,12 +54,12 @@ public class BRepFill_PipeShellTests
     public void MakeSolid_PolylineSpineClosedProfile_ProducesClosedSolid()
     {
         BRepBuilderAPI_MakePolygon aSpinePolygon = new();
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 0.0));
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 5.0));
-        aSpinePolygon.Add(new gp_Pnt(0.0, 5.0, 10.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 5.0));
+        aSpinePolygon.Add(new Point3D(0.0, 5.0, 10.0));
         TopoDS_Wire aSpine = aSpinePolygon.Wire();
 
-        TopoDS_Wire aProfile = MakeSquareProfile(new gp_Pnt(0.0, 0.0, 0.0), 0.5);
+        TopoDS_Wire aProfile = MakeSquareProfile(new Point3D(0.0, 0.0, 0.0), 0.5);
 
         BRepFill_PipeShell aPipe = new(aSpine);
         aPipe.SetTransition(BRepFill_TransitionStyle.BRepFill_Right);
@@ -80,13 +81,13 @@ public class BRepFill_PipeShellTests
     {
         // OCCT.NET: a closed spine whose wire isn't flagged closed (the pipe closes a new wire of the caller's edges)
         BRepBuilderAPI_MakePolygon aSpinePolygon = new();
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 0.0));
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 5.0));
-        aSpinePolygon.Add(new gp_Pnt(0.0, 5.0, 10.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 5.0));
+        aSpinePolygon.Add(new Point3D(0.0, 5.0, 10.0));
         TopoDS_Wire aSpine = aSpinePolygon.Wire();
-        TopoDS_Wire aProfile = MakeSquareProfile(new gp_Pnt(0.0, 0.0, 0.0), 0.5);
-        Assert.True(aSpine.TShape()!.IsFrozen());
-        Assert.True(aProfile.TShape()!.IsFrozen());
+        TopoDS_Wire aProfile = MakeSquareProfile(new Point3D(0.0, 0.0, 0.0), 0.5);
+        Assert.True(aSpine.TShape()!.IsFrozen);
+        Assert.True(aProfile.TShape()!.IsFrozen);
         string aSpineText = Text(aSpine), aProfileText = Text(aProfile);
 
         BRepFill_PipeShell aPipe = new(aSpine);
@@ -98,7 +99,7 @@ public class BRepFill_PipeShellTests
         Assert.Equal(aProfileText, Text(aProfile));
 
         TopoDS_Shape aResult = aPipe.Shape();
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_SOLID, aResult.ShapeType());
 
         // every edge of the profile generates faces of the result, every edge of the spine too
@@ -118,7 +119,7 @@ public class BRepFill_PipeShellTests
                     }
                     for (NCollection_List<TopoDS_Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
                     {
-                        Assert.True(anIt.Value().TShape()!.IsFrozen());
+                        Assert.True(anIt.Value().TShape()!.IsFrozen);
                         if (anIt.Value().ShapeType() == TopAbs_FACE)
                         {
                             Assert.True(aFaces.Contains(anIt.Value()));
@@ -133,10 +134,10 @@ public class BRepFill_PipeShellTests
     public void A_spine_closed_but_not_flagged_is_closed_on_a_new_wire()
     {
         BRepBuilderAPI_MakePolygon aSpinePolygon = new();
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 0.0));
-        aSpinePolygon.Add(new gp_Pnt(10.0, 0.0, 0.0));
-        aSpinePolygon.Add(new gp_Pnt(10.0, 10.0, 0.0));
-        aSpinePolygon.Add(new gp_Pnt(0.0, 0.0, 0.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));
+        aSpinePolygon.Add(new Point3D(10.0, 0.0, 0.0));
+        aSpinePolygon.Add(new Point3D(10.0, 10.0, 0.0));
+        aSpinePolygon.Add(new Point3D(0.0, 0.0, 0.0));
         TopoDS_Wire aSpine = aSpinePolygon.Wire();
         BRep_Builder aB = new();
         TopoDS_Wire anOpen = new();

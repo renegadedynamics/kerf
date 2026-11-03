@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -13,7 +15,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_BuilderSolidTests
 {
     private static TopoDS_Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), dx, dy, dz).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     private static NCollection_List<TopoDS_Shape> Faces(params TopoDS_Shape[] theShapes)
     {
@@ -100,14 +102,14 @@ public class BOPAlgo_BuilderSolidTests
         BOPAlgo_BuilderSolid aBS = BuildSolids(Faces(Box(1, 1, 1, 2, 2, 2).Reversed()));
         Assert.Equal(1, aBS.Areas().Extent());
         TopoDS_Shape aSolid = aBS.Areas().First();
-        Assert.True(aBS.GetBoxesMap().Find(aSolid).IsWhole());
+        Assert.True(aBS.GetBoxesMap().Find(aSolid).IsWhole);
     }
 
     [Fact]
     public void AFaceInsideTheBox_IsAddedAsAnInternalShell()
     {
         TopoDS_Shape aBox = Box(0, 0, 0, 4, 4, 4);
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1)), 1, 3, 1, 3).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         NCollection_List<TopoDS_Shape> aLF = Faces(aBox);
         aLF.Append(aFace);
         BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
@@ -138,7 +140,7 @@ public class BOPAlgo_BuilderSolidTests
     [Fact]
     public void AFaceOutsideTheBox_IsReportedUnused()
     {
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 10), new gp_Dir(0, 0, 1)), 1, 3, 1, 3).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         NCollection_List<TopoDS_Shape> aLF = Faces(Box(0, 0, 0, 4, 4, 4));
         aLF.Append(aFace);
         BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
@@ -150,7 +152,7 @@ public class BOPAlgo_BuilderSolidTests
     [Fact]
     public void OnlyOpenFaces_MakeOneSolidOfInternalShells()
     {
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 1, 0, 1).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
         NCollection_List<TopoDS_Shape> aLF = new();
         aLF.Append(aFace);
         BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
@@ -234,9 +236,9 @@ public class BOPAlgo_BuilderSolidTests
     public void ClassifyFaces_InsideAndOutside()
     {
         TopoDS_Shape aSolid = BuildSolids(Faces(Box(0, 0, 0, 4, 4, 4))).Areas().First();
-        TopoDS_Shape aFIn = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1)), 1, 3, 1, 3).Shape();
-        TopoDS_Shape aFOut = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 9), new gp_Dir(0, 0, 1)), 1, 3, 1, 3).Shape();
-        TopoDS_Shape aFFar = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1)), 10, 13, 10, 13).Shape();
+        TopoDS_Shape aFIn = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        TopoDS_Shape aFOut = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 9), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        TopoDS_Shape aFFar = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 10, 13, 10, 13).Shape();
         NCollection_List<TopoDS_Shape> aLF = new();
         aLF.Append(aFOut);
         aLF.Append(aFIn);
@@ -268,10 +270,10 @@ public class BOPAlgo_BuilderSolidTests
     public void FillInternals_AddsThePartsInside()
     {
         TopoDS_Shape aSolid = BuildSolids(Faces(Box(0, 0, 0, 4, 4, 4))).Areas().First();
-        TopoDS_Shape aVIn = new BRepBuilderAPI_MakeVertex(new gp_Pnt(2, 2, 2)).Shape();
-        TopoDS_Shape aVOut = new BRepBuilderAPI_MakeVertex(new gp_Pnt(9, 2, 2)).Shape();
-        TopoDS_Shape anEIn = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 1, 1), new gp_Pnt(1, 1, 3)).Shape();
-        TopoDS_Shape aFIn = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 2), new gp_Dir(0, 0, 1)), 1, 3, 1, 3).Shape();
+        TopoDS_Shape aVIn = new BRepBuilderAPI_MakeVertex(new Point3D(2, 2, 2)).Shape();
+        TopoDS_Shape aVOut = new BRepBuilderAPI_MakeVertex(new Point3D(9, 2, 2)).Shape();
+        TopoDS_Shape anEIn = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 3)).Shape();
+        TopoDS_Shape aFIn = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         // a compound of parts is explored
         BRep_Builder aBB = new();
         TopoDS_Compound aC = new();
@@ -312,10 +314,10 @@ public class BOPAlgo_BuilderSolidTests
     {
         // no edge, one edge, then the twelve edges of a box (already sharing their vertices)
         TopoDS_Shape aWires = new();
-        Assert.Equal(1, BOPAlgo_Tools.EdgesToWires(new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Shape(), ref aWires, true));
+        Assert.Equal(1, BOPAlgo_Tools.EdgesToWires(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Shape(), ref aWires, true));
         Assert.True(aWires.IsNull());
 
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Shape();
+        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
         Assert.Equal(0, BOPAlgo_Tools.EdgesToWires(anEdge, ref aWires, true));
         Assert.Equal(1, Count(aWires, TopAbs_WIRE));
 
@@ -343,11 +345,11 @@ public class BOPAlgo_BuilderSolidTests
             {
                 aLF.Append(aF);
             }
-            aLF.Append(new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 5), new gp_Dir(0, 0, 1)), 10 * i + 4, 10 * i + 5, 4, 5).Shape());
+            aLF.Append(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 10 * i + 4, 10 * i + 5, 4, 5).Shape());
         }
         foreach (TopoDS_Shape aF in FacesOfTwoBoxesSharingAnEdge())
         {
-            aLF.Append(aF.Moved(new TopLoc_Location(new gp_Trsf().WithTranslation(new gp_Vec(0, 20, 0)))));
+            aLF.Append(aF.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(0, 20, 0)))));
         }
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {

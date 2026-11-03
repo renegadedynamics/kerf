@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,10 +16,10 @@ public class BRepOffset_MakeOffset_Test
     //=================================================================================================
     // Helper function to create a circular wire
     //=================================================================================================
-    private static TopoDS_Wire MakeCircularWire(in gp_Pnt theCenter, in gp_Dir theNormal, double theRadius)
+    private static TopoDS_Wire MakeCircularWire(in Point3D theCenter, in Direction3D theNormal, double theRadius)
     {
-        gp_Ax2 anAxis = new(theCenter, theNormal);
-        gp_Circ aCirc = new(anAxis, theRadius);
+        Frame3D anAxis = new(theCenter, theNormal);
+        Circle3D aCirc = new(anAxis, theRadius);
         BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCirc);
         if (!anEdgeMaker.IsDone())
         {
@@ -31,20 +32,20 @@ public class BRepOffset_MakeOffset_Test
     //=================================================================================================
     // Helper function to create a rectangular wire
     //=================================================================================================
-    private static TopoDS_Wire MakeRectangularWire(in gp_Pnt theCenter, in gp_Dir theNormal, double theWidth, double theHeight)
+    private static TopoDS_Wire MakeRectangularWire(in Point3D theCenter, in Direction3D theNormal, double theWidth, double theHeight)
     {
         // Create rectangle centered at theCenter in a plane with theNormal
-        gp_Ax2 anAxis = new(theCenter, theNormal);
-        gp_Dir aXDir = anAxis.XDirection();
-        gp_Dir aYDir = anAxis.YDirection();
+        Frame3D anAxis = new(theCenter, theNormal);
+        Direction3D aXDir = anAxis.XDirection();
+        Direction3D aYDir = anAxis.YDirection();
 
         double aHalfW = theWidth / 2.0;
         double aHalfH = theHeight / 2.0;
 
-        gp_Pnt aP1 = theCenter.Translated(new gp_Vec(aXDir) * (-aHalfW) + new gp_Vec(aYDir) * (-aHalfH));
-        gp_Pnt aP2 = theCenter.Translated(new gp_Vec(aXDir) * (aHalfW) + new gp_Vec(aYDir) * (-aHalfH));
-        gp_Pnt aP3 = theCenter.Translated(new gp_Vec(aXDir) * (aHalfW) + new gp_Vec(aYDir) * (aHalfH));
-        gp_Pnt aP4 = theCenter.Translated(new gp_Vec(aXDir) * (-aHalfW) + new gp_Vec(aYDir) * (aHalfH));
+        Point3D aP1 = theCenter.Translated(new Vector3D(aXDir) * (-aHalfW) + new Vector3D(aYDir) * (-aHalfH));
+        Point3D aP2 = theCenter.Translated(new Vector3D(aXDir) * (aHalfW) + new Vector3D(aYDir) * (-aHalfH));
+        Point3D aP3 = theCenter.Translated(new Vector3D(aXDir) * (aHalfW) + new Vector3D(aYDir) * (aHalfH));
+        Point3D aP4 = theCenter.Translated(new Vector3D(aXDir) * (-aHalfW) + new Vector3D(aYDir) * (aHalfH));
 
         BRepBuilderAPI_MakeWire aWireMaker = new();
         aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
@@ -57,11 +58,11 @@ public class BRepOffset_MakeOffset_Test
     //=================================================================================================
     // Helper function to create an elliptical wire
     //=================================================================================================
-    private static TopoDS_Wire MakeEllipticalWire(in gp_Pnt theCenter, in gp_Dir theNormal, double theMajorRadius,
+    private static TopoDS_Wire MakeEllipticalWire(in Point3D theCenter, in Direction3D theNormal, double theMajorRadius,
                                                   double theMinorRadius)
     {
-        gp_Ax2 anAxis = new(theCenter, theNormal);
-        gp_Elips anEllipse = new(anAxis, theMajorRadius, theMinorRadius);
+        Frame3D anAxis = new(theCenter, theNormal);
+        Ellipse3D anEllipse = new(anAxis, theMajorRadius, theMinorRadius);
         BRepBuilderAPI_MakeEdge anEdgeMaker = new(anEllipse);
         if (!anEdgeMaker.IsDone())
         {
@@ -74,18 +75,18 @@ public class BRepOffset_MakeOffset_Test
     //=================================================================================================
     // Helper function to create a polygonal wire (regular polygon)
     //=================================================================================================
-    private static TopoDS_Wire MakePolygonalWire(in gp_Pnt theCenter, in gp_Dir theNormal, double theRadius, int theNbSides)
+    private static TopoDS_Wire MakePolygonalWire(in Point3D theCenter, in Direction3D theNormal, double theRadius, int theNbSides)
     {
-        gp_Ax2 anAxis = new(theCenter, theNormal);
-        gp_Dir aXDir = anAxis.XDirection();
-        gp_Dir aYDir = anAxis.YDirection();
+        Frame3D anAxis = new(theCenter, theNormal);
+        Direction3D aXDir = anAxis.XDirection();
+        Direction3D aYDir = anAxis.YDirection();
 
         BRepBuilderAPI_MakePolygon aPolygon = new();
         for (int i = 0; i <= theNbSides; ++i)
         {
             double anAngle = 2.0 * Math.PI * i / theNbSides;
-            gp_Pnt aPnt = theCenter.Translated(new gp_Vec(aXDir) * theRadius * Math.Cos(anAngle)
-                                               + new gp_Vec(aYDir) * theRadius * Math.Sin(anAngle));
+            Point3D aPnt = theCenter.Translated(new Vector3D(aXDir) * theRadius * Math.Cos(anAngle)
+                                               + new Vector3D(aYDir) * theRadius * Math.Sin(anAngle));
             aPolygon.Add(aPnt);
         }
         aPolygon.Close();
@@ -112,20 +113,20 @@ public class BRepOffset_MakeOffset_Test
         NCollection_List<TopoDS_Shape> aFacesToRemove = new();
         BRepOffsetAPI_MakeThickSolid aThickMaker = new();
         aThickMaker.MakeThickSolidByJoin(theShape, aFacesToRemove, theOffset, 1.0e-3, BRepOffset_Skin, theInter, false,
-                                         GeomAbs_Intersection);
+                                         Intersection);
         aThickMaker.Build();
         return aThickMaker;
     }
 
-    private static readonly gp_Dir Z = new(0, 0, 1);
+    private static readonly Direction3D Z = new(0, 0, 1);
 
     // This test reproduces a regression introduced by commit 44be1230391
     // where a "mixed connectivity" error is incorrectly reported for valid loft geometry.
     [Fact]
     public void ThickSolid_CircleToRectangleLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(new BRepCheck_Analyzer(aLoftShape).IsValid(), "Loft shape is not valid");
 
         BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0);
@@ -142,8 +143,8 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_CircleToRectangleLoft_IntersectionMode()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0, true);
         Assert.True(aThickMaker.IsDone(), "ThickSolid operation with intersection mode failed");
         TopoDS_Shape aThickShape = aThickMaker.Shape();
@@ -156,8 +157,8 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_SimpleBox_Baseline()
     {
-        TopoDS_Shape aShape = Loft(true, MakeRectangularWire(new gp_Pnt(0, 0, 0), Z, 100.0, 100.0),
-                                   MakeRectangularWire(new gp_Pnt(0, 0, 50), Z, 100.0, 100.0));
+        TopoDS_Shape aShape = Loft(true, MakeRectangularWire(new Point3D(0, 0, 0), Z, 100.0, 100.0),
+                                   MakeRectangularWire(new Point3D(0, 0, 50), Z, 100.0, 100.0));
         BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aShape, 2.0);
         Assert.True(aThickMaker.IsDone(), "ThickSolid on simple ruled solid failed");
         Assert.False(aThickMaker.Shape().IsNull(), "Thick solid shape is null");
@@ -166,73 +167,73 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_CircleToEllipseLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeEllipticalWire(new gp_Pnt(0, 0, 100), Z, 60.0, 40.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeEllipticalWire(new Point3D(0, 0, 100), Z, 60.0, 40.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-ellipse loft failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToHexagonLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakePolygonalWire(new gp_Pnt(0, 0, 100), Z, 50.0, 6));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakePolygonalWire(new Point3D(0, 0, 100), Z, 50.0, 6));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-hexagon loft failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToSquareLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 80.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 80.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-square loft failed");
     }
 
     [Fact]
     public void ThickSolid_EllipseToRectangleLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeEllipticalWire(new gp_Pnt(0, 0, 0), Z, 60.0, 30.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 100.0, 50.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeEllipticalWire(new Point3D(0, 0, 0), Z, 60.0, 30.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 100.0, 50.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on ellipse-to-rectangle loft failed");
     }
 
     [Fact]
     public void ThickSolid_ThreeSectionLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 40.0),
-                                       MakeEllipticalWire(new gp_Pnt(0, 0, 50), Z, 50.0, 35.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 40.0),
+                                       MakeEllipticalWire(new Point3D(0, 0, 50), Z, 50.0, 35.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on three-section loft failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToRectangleLoft_Ruled()
     {
-        TopoDS_Shape aLoftShape = Loft(true, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(true, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on ruled circle-to-rectangle loft failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToRectangleLoft_SmallOffset()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, 0.5).IsDone(), "ThickSolid with small offset failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToRectangleLoft_LargeOffset()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, 10.0).IsDone(), "ThickSolid with large offset failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToRectangleLoft_NegativeOffset()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 100), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, -2.0).IsDone(), "ThickSolid with negative offset failed");
     }
 
@@ -258,7 +259,7 @@ public class BRepOffset_MakeOffset_Test
     public void ThickSolid_FusedBoxCylinder()
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(100.0, 100.0, 50.0).Shape();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(50, 50, 50), new gp_Dir(0, 0, 1)), 30.0, 50.0).Shape();
+        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(50, 50, 50), new Direction3D(0, 0, 1)), 30.0, 50.0).Shape();
         BRepAlgoAPI_Fuse aFuser = new(aBox, aCyl);
         Assert.True(aFuser.IsDone(), "Failed to fuse shapes");
         Assert.True(Thick(aFuser.Shape(), 2.0).IsDone(), "ThickSolid on fused box+cylinder failed");
@@ -268,8 +269,8 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_CircleToRectangle_ThinLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 10), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 10), Z, 80.0, 60.0));
         // The operation may or may not succeed on very thin geometry, but it must not crash
         _ = Thick(aLoftShape, 1.0).IsDone();
     }
@@ -277,16 +278,16 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_CircleToRectangle_TallLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakeRectangularWire(new gp_Pnt(0, 0, 500), Z, 80.0, 60.0));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakeRectangularWire(new Point3D(0, 0, 500), Z, 80.0, 60.0));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on tall circle-to-rectangle loft failed");
     }
 
     [Fact]
     public void ThickSolid_CircleToTriangleLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakePolygonalWire(new gp_Pnt(0, 0, 100), Z, 60.0, 3));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakePolygonalWire(new Point3D(0, 0, 100), Z, 60.0, 3));
         // Triangle has sharp 60-degree corners
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-triangle loft failed");
     }
@@ -294,8 +295,8 @@ public class BRepOffset_MakeOffset_Test
     [Fact]
     public void ThickSolid_CircleToOctagonLoft()
     {
-        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new gp_Pnt(0, 0, 0), Z, 50.0),
-                                       MakePolygonalWire(new gp_Pnt(0, 0, 100), Z, 55.0, 8));
+        TopoDS_Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
+                                       MakePolygonalWire(new Point3D(0, 0, 100), Z, 55.0, 8));
         Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-octagon loft failed");
     }
 }
@@ -328,7 +329,7 @@ public class BRepOffsetAPI_MakeThickSolidTest
         aFacesToRemove.Append(FirstFace(aBox));
 
         BRepOffsetAPI_MakeThickSolid aMaker = new();
-        aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, Precision.Confusion());
+        aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMaker.Build();
         Assert.True(aMaker.IsDone());
 
@@ -349,7 +350,7 @@ public class BRepOffsetAPI_MakeThickSolidTest
         aFacesToRemove.Append(FirstFace(aBox));
 
         BRepOffsetAPI_MakeThickSolid aMaker = new();
-        aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, Precision.Confusion());
+        aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMaker.Build();
         Assert.True(aMaker.IsDone());
 

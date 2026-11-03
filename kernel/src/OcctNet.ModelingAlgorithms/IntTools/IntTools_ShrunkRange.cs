@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +27,7 @@ public class IntTools_ShrunkRange
     protected double myT2;
     protected double myTS1;
     protected double myTS2;
-    protected Bnd_Box myBndBox = new();
+    protected Box myBndBox = new();
     protected IntTools_Context? myCtx;
     protected bool myIsDone;
     protected bool myIsSplittable;
@@ -75,7 +79,7 @@ public class IntTools_ShrunkRange
     }
 
     /// <summary>The bounding box of the edge on the shrunk range.</summary>
-    public Bnd_Box BndBox() => myBndBox;
+    public Box BndBox() => myBndBox;
 
     public TopoDS_Edge Edge() => myEdge;
 
@@ -86,17 +90,17 @@ public class IntTools_ShrunkRange
         myIsSplittable = false;
         //
         // default tolerance - Precision::Confusion()
-        double aDTol = Precision.Confusion();
+        double aDTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // default parametric tolerance - Precision::PConfusion()
-        double aPDTol = Precision.PConfusion();
+        double aPDTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
         if (myT2 - myT1 < aPDTol)
         {
             return;
         }
         //
-        gp_Pnt aP1 = BRep_Tool.Pnt(myV1);
-        gp_Pnt aP2 = BRep_Tool.Pnt(myV2);
+        Point3D aP1 = BRep_Tool.Pnt(myV1);
+        Point3D aP2 = BRep_Tool.Pnt(myV2);
         double aTolE, aTolV1, aTolV2;
         aTolE = BRep_Tool.Tolerance(myEdge);
         aTolV1 = BRep_Tool.Tolerance(myV1);

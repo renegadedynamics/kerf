@@ -2,137 +2,139 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Polynomial evaluation and manipulation.</summary>
 public static partial class MathUtils
 {
     /// <summary>Evaluate polynomial a0 + a1*x + ... (constant term first) using Horner's method.</summary>
-    public static double EvalPoly(ReadOnlySpan<double> theCoeffs, int theDegree, double theX)
+    public static double EvalPoly(ReadOnlySpan<double> coeffs, int degree, double x)
     {
-        double aResult = theCoeffs[theDegree];
-        for (int i = theDegree - 1; i >= 0; --i)
+        double result = coeffs[degree];
+        for (int i = degree - 1; i >= 0; --i)
         {
-            aResult = aResult * theX + theCoeffs[i];
+            result = result * x + coeffs[i];
         }
-        return aResult;
+        return result;
     }
 
     /// <summary>Evaluate polynomial (constant term first) and its derivative in a single pass.</summary>
-    public static void EvalPolyDeriv(ReadOnlySpan<double> theCoeffs, int theDegree, double theX, out double theValue, out double theDeriv)
+    public static void EvalPolyDeriv(ReadOnlySpan<double> coeffs, int degree, double x, out double value, out double deriv)
     {
-        theValue = theCoeffs[theDegree];
-        theDeriv = 0.0;
-        for (int i = theDegree - 1; i >= 0; --i)
+        value = coeffs[degree];
+        deriv = 0.0;
+        for (int i = degree - 1; i >= 0; --i)
         {
-            theDeriv = theDeriv * theX + theValue;
-            theValue = theValue * theX + theCoeffs[i];
+            deriv = deriv * x + value;
+            value = value * x + coeffs[i];
         }
     }
 
     /// <summary>Evaluate polynomial with coefficients in descending order (leading term first).</summary>
-    public static double EvalPolyDesc(ReadOnlySpan<double> theCoeffs, int theDegree, double theX)
+    public static double EvalPolyDesc(ReadOnlySpan<double> coeffs, int degree, double x)
     {
-        double aResult = theCoeffs[0];
-        for (int i = 1; i <= theDegree; ++i)
+        double result = coeffs[0];
+        for (int i = 1; i <= degree; ++i)
         {
-            aResult = aResult * theX + theCoeffs[i];
+            result = result * x + coeffs[i];
         }
-        return aResult;
+        return result;
     }
 
     /// <summary>Newton-Raphson refinement for a polynomial root (constant term first).</summary>
-    public static double RefinePolyRoot(ReadOnlySpan<double> theCoeffs, int theDegree, double theRoot, int theMaxIter = 5)
+    public static double RefinePolyRoot(ReadOnlySpan<double> coeffs, int degree, double root, int maxIter = 5)
     {
-        double aX = theRoot;
-        for (int i = 0; i < theMaxIter; ++i)
+        double x = root;
+        for (int i = 0; i < maxIter; ++i)
         {
-            EvalPolyDeriv(theCoeffs, theDegree, aX, out double aF, out double aDf);
+            EvalPolyDeriv(coeffs, degree, x, out double f, out double df);
 
-            if (IsZero(aDf))
+            if (IsZero(df))
             {
                 break;
             }
 
-            double aDx = aF / aDf;
-            aX -= aDx;
+            double dx = f / df;
+            x -= dx;
 
-            if (Math.Abs(aDx) < THE_EPSILON * Max(1.0, Math.Abs(aX)))
+            if (Math.Abs(dx) < THE_EPSILON * Max(1.0, Math.Abs(x)))
             {
                 break;
             }
         }
-        return aX;
+        return x;
     }
 
     /// <summary>Newton-Raphson refinement with coefficients in descending order (degree at most 4).</summary>
-    public static double RefinePolyRootDesc(ReadOnlySpan<double> theCoeffs, int theDegree, double theRoot, int theMaxIter = 5)
+    public static double RefinePolyRootDesc(ReadOnlySpan<double> coeffs, int degree, double root, int maxIter = 5)
     {
         // Convert to ascending order for refinement
-        Span<double> aAsc = stackalloc double[5];
-        for (int i = 0; i <= theDegree; ++i)
+        Span<double> asc = stackalloc double[5];
+        for (int i = 0; i <= degree; ++i)
         {
-            aAsc[i] = theCoeffs[theDegree - i];
+            asc[i] = coeffs[degree - i];
         }
-        return RefinePolyRoot(aAsc, theDegree, theRoot, theMaxIter);
+        return RefinePolyRoot(asc, degree, root, maxIter);
     }
 
     /// <summary>Sort roots in ascending order (insertion sort for small arrays).</summary>
-    public static void SortRoots(Span<double> theRoots, int theCount)
+    public static void SortRoots(Span<double> roots, int count)
     {
-        for (int i = 1; i < theCount; ++i)
+        for (int i = 1; i < count; ++i)
         {
-            double aKey = theRoots[i];
+            double key = roots[i];
             int j = i;
-            while (j > 0 && theRoots[j - 1] > aKey)
+            while (j > 0 && roots[j - 1] > key)
             {
-                theRoots[j] = theRoots[j - 1];
+                roots[j] = roots[j - 1];
                 --j;
             }
-            theRoots[j] = aKey;
+            roots[j] = key;
         }
     }
 
     /// <summary>Remove duplicate sorted roots within tolerance; returns the new count.</summary>
-    public static int RemoveDuplicateRoots(Span<double> theRoots, int theCount, double theTolerance = 1.0e-10)
+    public static int RemoveDuplicateRoots(Span<double> roots, int count, double tolerance = 1.0e-10)
     {
-        if (theCount <= 1)
+        if (count <= 1)
         {
-            return theCount;
+            return count;
         }
 
-        int aNewCount = 1;
-        for (int i = 1; i < theCount; ++i)
+        int newCount = 1;
+        for (int i = 1; i < count; ++i)
         {
-            if (Math.Abs(theRoots[i] - theRoots[aNewCount - 1]) > theTolerance)
+            if (Math.Abs(roots[i] - roots[newCount - 1]) > tolerance)
             {
-                theRoots[aNewCount] = theRoots[i];
-                ++aNewCount;
+                roots[newCount] = roots[i];
+                ++newCount;
             }
         }
-        return aNewCount;
+        return newCount;
     }
 
     /// <summary>Depressed cubic: x^3 + bx^2 + cx + d to t^3 + pt + q via x = t - b/3.</summary>
-    public static void DepressCubic(double theB, double theC, double theD, out double theP, out double theQ, out double theShift)
+    public static void DepressCubic(double b, double c, double d, out double p, out double q, out double shift)
     {
-        theShift = theB / 3.0;
-        double aB2 = theB * theB;
-        theP = theC - aB2 / 3.0;
-        theQ = theD - theB * theC / 3.0 + 2.0 * aB2 * theB / 27.0;
+        shift = b / 3.0;
+        double b2 = b * b;
+        p = c - b2 / 3.0;
+        q = d - b * c / 3.0 + 2.0 * b2 * b / 27.0;
     }
 
     /// <summary>Depressed quartic: x^4 + bx^3 + cx^2 + dx + e to t^4 + pt^2 + qt + r via x = t - b/4.</summary>
-    public static void DepressQuartic(double theB, double theC, double theD, double theE,
-                                      out double theP, out double theQ, out double theR, out double theShift)
+    public static void DepressQuartic(double b, double c, double d, double e,
+                                      out double p, out double q, out double r, out double shift)
     {
-        theShift = theB / 4.0;
-        double aB2 = theB * theB;
-        double aB3 = aB2 * theB;
-        double aB4 = aB2 * aB2;
+        shift = b / 4.0;
+        double b2 = b * b;
+        double b3 = b2 * b;
+        double b4 = b2 * b2;
 
-        theP = theC - 3.0 * aB2 / 8.0;
-        theQ = theD - theB * theC / 2.0 + aB3 / 8.0;
-        theR = theE - theB * theD / 4.0 + aB2 * theC / 16.0 - 3.0 * aB4 / 256.0;
+        p = c - 3.0 * b2 / 8.0;
+        q = d - b * c / 2.0 + b3 / 8.0;
+        r = e - b * d / 4.0 + b2 * c / 16.0 - 3.0 * b4 / 256.0;
     }
 }

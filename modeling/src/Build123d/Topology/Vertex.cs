@@ -1,3 +1,4 @@
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -37,7 +38,7 @@ public sealed class Vertex : Shape
     /// <summary>The volume of a vertex, which is zero.</summary>
     public override double Volume => 0.0;
 
-    private gp_Pnt Point
+    private Point3D Point
     {
         get
         {
@@ -207,8 +208,8 @@ public sealed class Vertex : Shape
                 var end = curve.Value(param);
                 if (Math.Pow(end.X() - here.X(), 2) + Math.Pow(end.Y() - here.Y(), 2) > Constants.Tolerance)
                     continue;
-                var point = new gp_Pnt2d();
-                var tangent = new gp_Vec2d();
+                var point = new Point2D();
+                var tangent = new Vector2D();
                 curve.D1(param, out point, out tangent);
                 var length = Math.Sqrt(tangent.X() * tangent.X() + tangent.Y() * tangent.Y());
                 if (length > 0)
@@ -237,7 +238,7 @@ public sealed class Vertex : Shape
         BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
         var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
         var here = BRep_Tool.Parameters(TopoVertex, face);
-        var probe = new gp_Pnt2d(here.X() + bisector.U * step, here.Y() + bisector.V * step);
+        var probe = new Point2D(here.X() + bisector.U * step, here.Y() + bisector.V * step);
         var classifier = new IntTools_FClass2d(face, Constants.Tolerance);
         return classifier.Perform(probe) == TopAbs_State.TopAbs_IN ? Convexity.Convex : Convexity.Concave;
     }

@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepRepr_Representation : Standard_Transient
+public class StepRepr_Representation : Transient
 {
     private TCollection_HAsciiString name;
     private NCollection_HArray1<StepRepr_RepresentationItem> items;

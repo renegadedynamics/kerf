@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Reflection;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -80,30 +82,30 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 TopoDS_Solid aPS = TopoDS.Solid(aPExp.Current());
                 using var aNC = new N.BRepClass3d_SolidClassifier(aNExp.Current());
                 var aCtx = new IntTools_Context();
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 BRepBndLib.Add(aPS, ref aBox);
-                if (aBox.IsVoid())
+                if (aBox.IsVoid)
                 {
                     continue;
                 }
                 aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
                 aSolids++;
                 // random points in and around the box, and points on and near the solid's vertices
-                var aPnts = new List<gp_Pnt>();
+                var aPnts = new List<Point3D>();
                 for (int i = 0; i < 80; i++)
                 {
-                    aPnts.Add(new gp_Pnt(x0 + (x1 - x0) * (1.2 * aRnd.NextDouble() - 0.1),
+                    aPnts.Add(new Point3D(x0 + (x1 - x0) * (1.2 * aRnd.NextDouble() - 0.1),
                                          y0 + (y1 - y0) * (1.2 * aRnd.NextDouble() - 0.1),
                                          z0 + (z1 - z0) * (1.2 * aRnd.NextDouble() - 0.1)));
                 }
                 int iV = 0;
                 for (var aVExp = new TopExp_Explorer(aPS, TopAbs_VERTEX); aVExp.More() && iV < 20; aVExp.Next(), iV++)
                 {
-                    gp_Pnt aV = BRep_Tool.Pnt(TopoDS.Vertex(aVExp.Current()));
+                    Point3D aV = BRep_Tool.Pnt(TopoDS.Vertex(aVExp.Current()));
                     double d = 1e-3 * (x1 - x0) * aRnd.NextDouble();
-                    aPnts.Add(new gp_Pnt(aV.X() + d, aV.Y() - d, aV.Z() + d));
+                    aPnts.Add(new Point3D(aV.X() + d, aV.Y() - d, aV.Z() + d));
                 }
-                foreach (gp_Pnt aP in aPnts)
+                foreach (Point3D aP in aPnts)
                 {
                     double aTol = aRnd.Next(2) == 0 ? 1e-7 : 1e-4;
                     TopAbs_State aState = BOPTools_AlgoTools.ComputeState(aP, aPS, aTol, aCtx);
@@ -159,9 +161,9 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 Geom_Surface aS = BRep_Tool.Surface(aPF)!;
                 for (int i = 0; i < PointsPerFace; i++)
                 {
-                    gp_Pnt aOn = aS.Value(u1 + (u2 - u1) * aRnd.NextDouble(), v1 + (v2 - v1) * aRnd.NextDouble());
+                    Point3D aOn = aS.Value(u1 + (u2 - u1) * aRnd.NextDouble(), v1 + (v2 - v1) * aRnd.NextDouble());
                     double d = aRnd.Next(3) switch { 0 => 0.0, 1 => 1e-4, _ => 0.1 };
-                    gp_Pnt aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
+                    Point3D aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
                                     aOn.Z() + d * (aRnd.NextDouble() - 0.5));
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNProj.Perform(aNP);
@@ -201,9 +203,9 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 aEdges++;
                 for (int i = 0; i < PointsPerFace; i++)
                 {
-                    gp_Pnt aOn = aC.Value(f + (l - f) * (1.2 * aRnd.NextDouble() - 0.1));
+                    Point3D aOn = aC.Value(f + (l - f) * (1.2 * aRnd.NextDouble() - 0.1));
                     double d = aRnd.Next(3) switch { 0 => 0.0, 1 => 1e-4, _ => 0.1 };
-                    gp_Pnt aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
+                    Point3D aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
                                     aOn.Z() + d * (aRnd.NextDouble() - 0.5));
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNProj.Perform(aNP);

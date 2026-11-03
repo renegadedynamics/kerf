@@ -3,8 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.gp_TrsfForm;
+using static Kerf.Geometry.TransformForm;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -115,7 +120,7 @@ public class BRepCheck_Edge : BRepCheck_Result
             if (myCref is not null)
             {
                 var GCref = (BRep_GCurve)myCref;
-                double eps = Precision.PConfusion();
+                double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 GCref.Range(out double First, out double Last);
                 if (Last <= First)
                 {
@@ -129,7 +134,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                         // eap 6 Jun 2002 occ332
                         // better transform C3d instead of transforming Surf upto C3d initial location,
                         // on transformed BSpline surface 'same parameter' may seem wrong
-                        TopLoc_Location L = myShape.Location() * myCref.Location();
+                        Placement L = myShape.Location() * myCref.Location();
                         var C3d = (Geom_Curve)myCref.Curve3D()!.Transformed(L.Transformation());
                         bool IsPeriodic = C3d.IsPeriodic();
                         double aPeriod = RealLast();
@@ -318,16 +323,16 @@ public class BRepCheck_Edge : BRepCheck_Result
                     Adaptor3d_Curve aHCurve = myIsParallel ? myHCurve.ShallowCopy() : myHCurve;
 
                     var TF = (BRep_TFace)S.TShape()!;
-                    TopLoc_Location Floc = S.Location();
-                    TopLoc_Location TFloc = TF.Location();
+                    Placement Floc = S.Location();
+                    Placement TFloc = TF.Location();
                     Geom_Surface? Su = TF.Surface();
-                    TopLoc_Location L = (Floc * TFloc).Predivided(myShape.Location());
-                    TopLoc_Location LE = myShape.Location() * myCref.Location();
-                    gp_Trsf Etrsf = LE.Transformation();
+                    Placement L = (Floc * TFloc).Predivided(myShape.Location());
+                    Placement LE = myShape.Location() * myCref.Location();
+                    Transform3D Etrsf = LE.Transformation();
                     bool pcurvefound = false;
 
                     var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(TE.Curves());
-                    double eps = Precision.PConfusion();
+                    double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     bool toRunParallel = myIsParallel;
                     while (itcr.More())
                     {
@@ -475,7 +480,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                                 // OCCT down-casts and dereferences: a reference curve on a surface (no 3D curve)
                                 // gives a null handle here, which the analyzer catches as a failure
                                 var Gac = aHCurve as GeomAdaptor_Curve
-                                          ?? throw new Standard_NullObject("BRepCheck_Edge::InContext - no 3D curve");
+                                          ?? throw new NullObjectException("BRepCheck_Edge::InContext - no 3D curve");
                                 Geom_Curve C3d = Gac.Curve()!;
                                 Geom_Curve ProjOnPlane =
                                     GeomProjLib.ProjectOnPlane(new Geom_TrimmedCurve(C3d, First, Last),
@@ -605,7 +610,7 @@ public class BRepCheck_Edge : BRepCheck_Result
         int it, iRep = 1, nbRep = TE.Curves().Extent();
         if (nbRep <= 1)
         {
-            return Precision.Confusion();
+            return global::Kerf.Engine.Foundation.Precision.Confusion();
         }
 
         var theRep = new NCollection_Array1<Adaptor3d_Curve?>(1, nbRep * 2);
@@ -627,7 +632,7 @@ public class BRepCheck_Edge : BRepCheck_Result
             if (cr.IsCurve3D() && !TE.Degenerated())
             {
                 //// modified by jgv, 20.03.03 ////
-                TopLoc_Location Loc = myShape.Location() * cr.Location();
+                Placement Loc = myShape.Location() * cr.Location();
                 var C3d = (Geom_Curve)cr.Curve3D()!.Transformed(Loc.Transformation());
                 ///////////////////////////////////
                 var GAC3d = new GeomAdaptor_Curve(C3d, First, Last);
@@ -646,7 +651,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                 {
                     Geom_Surface Sref = cr.Surface()!;
                     //// modified by jgv, 20.03.03 ////
-                    TopLoc_Location Loc = myShape.Location() * cr.Location();
+                    Placement Loc = myShape.Location() * cr.Location();
                     Sref = (Geom_Surface)Sref.Transformed(Loc.Transformation());
                     ///////////////////////////////////
                     Geom2d_Curve PCref = cr.PCurve()!;
@@ -676,26 +681,26 @@ public class BRepCheck_Edge : BRepCheck_Result
         }
 
         double dist2, tol2, tolCal = 0.0, prm;
-        gp_Pnt center, othP;
+        Point3D center, othP;
         int i;
         for (i = 0; i < NCONTROL; i++)
         {
             prm = ((NCONTROL - 1 - i) * First + i * Last) / (NCONTROL - 1);
             tol2 = dist2 = 0.0;
             center = theRep[1]!.Value(prm);
-            if (Precision.IsInfinite(center.X()) || Precision.IsInfinite(center.Y())
-                || Precision.IsInfinite(center.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(center.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Y())
+                || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Z()))
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
 
             for (iRep = 2; iRep <= nbRep; iRep++)
             {
                 othP = theRep[iRep]!.Value(prm);
-                if (Precision.IsInfinite(othP.X()) || Precision.IsInfinite(othP.Y())
-                    || Precision.IsInfinite(othP.Z()))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Y())
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Z()))
                 {
-                    return Precision.Infinite();
+                    return global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
 
                 dist2 = center.SquareDistance(othP);
@@ -772,11 +777,11 @@ public class BRepCheck_Edge : BRepCheck_Result
             BRep_CurveRepresentation aCR = anIt.Value();
             var aPT = (BRep_PolygonOnTriangulation)aCR;
 
-            TopLoc_Location aLL = theEdge.Location() * aPT.Location();
-            gp_Trsf aTrsf = aLL.Transformation();
+            Placement aLL = theEdge.Location() * aPT.Location();
+            Transform3D aTrsf = aLL.Transformation();
 
-            Poly_Triangulation aTriang = aCR.Triangulation()!;
-            Poly_PolygonOnTriangulation aPOnTriag = aCR.IsPolygonOnClosedTriangulation()
+            Triangulation aTriang = aCR.Triangulation()!;
+            PolygonOnTriangulation aPOnTriag = aCR.IsPolygonOnClosedTriangulation()
                 ? aCR.PolygonOnTriangulation2()!
                 : aCR.PolygonOnTriangulation()!;
             NCollection_Array1<int> anIndices = aPOnTriag.Nodes();
@@ -784,14 +789,14 @@ public class BRepCheck_Edge : BRepCheck_Result
 
             double aTol = aPOnTriag.Deflection() + BRep_Tool.Tolerance(theEdge);
 
-            if (aPOnTriag.HasParameters())
+            if (aPOnTriag.HasParameters)
             {
                 NCollection_HArray1<double> aParams = aPOnTriag.Parameters()!;
                 for (int i = aParams.Lower(); i <= aParams.Upper(); i++)
                 {
                     double aParam = aParams.Value(i);
-                    gp_Pnt aPE = aBC.Value(aParam);
-                    gp_Pnt aPnt = aTriang.Node(anIndices[i]).Transformed(aTrsf);
+                    Point3D aPE = aBC.Value(aParam);
+                    Point3D aPnt = aTriang.Node(anIndices[i]).Transformed(aTrsf);
 
                     double aSQDist = aPE.SquareDistance(aPnt);
                     if (aSQDist > aTol * aTol)
@@ -805,11 +810,11 @@ public class BRepCheck_Edge : BRepCheck_Result
                 // If aPOnTriag does not have any parameters we will check if it
                 // inscribes into Bounding box, which is built on the edge triangulation.
 
-                var aB = new Bnd_Box();
+                var aB = new Box();
 
                 for (int i = 1; i <= aNbNodes; i++)
                 {
-                    if (aTrsf.Form() == gp_Identity)
+                    if (aTrsf.Form() == Identity)
                     {
                         aB.Add(aTriang.Node(anIndices[i]));
                     }
@@ -825,7 +830,7 @@ public class BRepCheck_Edge : BRepCheck_Result
                 double aLP = aBC.LastParameter();
 
                 double aStep = (aLP - aFP) / (double)NCONTROL;
-                gp_Pnt aP;
+                Point3D aP;
                 double aPar = aFP;
 
                 for (int i = 1; i < NCONTROL; i++)

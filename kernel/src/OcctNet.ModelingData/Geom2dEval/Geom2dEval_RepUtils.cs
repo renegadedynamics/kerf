@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,19 +24,19 @@ internal static class Geom2dEval_RepUtils
         }
         if (theDesc.Representation is null)
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: null Representation");
+            throw new ProgramErrorException("SetEvalRepresentation: null Representation");
         }
         if (theDesc.GetKind() == Geom2dEval_RepCurveDesc.Base.Kind.Mapped)
         {
             Geom2dEval_RepCurveDesc.Mapped aMapped = (Geom2dEval_RepCurveDesc.Mapped)theDesc;
             if (!aMapped.ParamMap.IsValid())
             {
-                throw new Standard_ProgramError("SetEvalRepresentation: invalid parameter map");
+                throw new ProgramErrorException("SetEvalRepresentation: invalid parameter map");
             }
         }
         if (ReferenceEquals(theDesc.Representation, theOwner))
         {
-            throw new Standard_ProgramError("SetEvalRepresentation: invalid descriptor chain");
+            throw new ProgramErrorException("SetEvalRepresentation: invalid descriptor chain");
         }
     }
 
@@ -82,9 +86,9 @@ internal static class Geom2dEval_RepUtils
 
     // Curves
 
-    internal static bool TryEvalCurveD0(Geom2dEval_RepCurveDesc.Base? theDesc, double theU, out gp_Pnt2d theResult)
+    internal static bool TryEvalCurveD0(Geom2dEval_RepCurveDesc.Base? theDesc, double theU, out Point2D theResult)
     {
-        theResult = new gp_Pnt2d();
+        theResult = new Point2D();
         if (theDesc is null)
         {
             return false;
@@ -210,9 +214,9 @@ internal static class Geom2dEval_RepUtils
         return false;
     }
 
-    internal static bool TryEvalCurveDN(Geom2dEval_RepCurveDesc.Base? theDesc, double theU, int theN, out gp_Vec2d theResult)
+    internal static bool TryEvalCurveDN(Geom2dEval_RepCurveDesc.Base? theDesc, double theU, int theN, out Vector2D theResult)
     {
-        theResult = new gp_Vec2d();
+        theResult = new Vector2D();
         if (theDesc is null || theN < 1)
         {
             return false;
@@ -248,9 +252,9 @@ internal static class Geom2dEval_RepUtils
 
     // Mapped curves
 
-    internal static bool TryEvalCurveD0Mapped(Geom2dEval_RepCurveDesc.Mapped theDesc, double theU, out gp_Pnt2d theResult)
+    internal static bool TryEvalCurveD0Mapped(Geom2dEval_RepCurveDesc.Mapped theDesc, double theU, out Point2D theResult)
     {
-        theResult = new gp_Pnt2d();
+        theResult = new Point2D();
         double aURep = theDesc.ParamMap.Map(theU);
         if (theDesc.Domain.HasValue && !theDesc.Domain.Value.Contains(aURep))
         {
@@ -311,15 +315,15 @@ internal static class Geom2dEval_RepUtils
         return true;
     }
 
-    internal static bool TryEvalCurveDNMapped(Geom2dEval_RepCurveDesc.Mapped theDesc, double theU, int theN, out gp_Vec2d theResult)
+    internal static bool TryEvalCurveDNMapped(Geom2dEval_RepCurveDesc.Mapped theDesc, double theU, int theN, out Vector2D theResult)
     {
-        theResult = new gp_Vec2d();
+        theResult = new Vector2D();
         double aURep = theDesc.ParamMap.Map(theU);
         if (theDesc.Domain.HasValue && !theDesc.Domain.Value.Contains(aURep))
         {
             return false;
         }
-        gp_Vec2d aRepVec = theDesc.Representation!.EvalDN(aURep, theN);
+        Vector2D aRepVec = theDesc.Representation!.EvalDN(aURep, theN);
         double aScaleN = 1.0;
         for (int i = 0; i < theN; ++i)
         {

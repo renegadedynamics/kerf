@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.Hatch_LineForm;
 
 namespace Occt;
@@ -41,7 +43,7 @@ public sealed class Hatch_Hatcher
     public double Tolerance() => myToler;
 
     /// <summary>Adds a line <paramref name="L"/> to be trimmed; its form <paramref name="T"/> is only kept for information.</summary>
-    public void AddLine(in gp_Lin2d L, Hatch_LineForm T = Hatch_ANYLINE)
+    public void AddLine(in Line2D L, Hatch_LineForm T = Hatch_ANYLINE)
     {
         Hatch_Line HL = new(L, T);
         myLines.Append(HL);
@@ -51,41 +53,41 @@ public sealed class Hatch_Hatcher
     /// Adds an infinite line of direction <paramref name="D"/> at the (signed) distance <paramref name="Dist"/> from
     /// the origin: the points P with OP · V = Dist, V perpendicular to D in the direct sense; P's parameter is OP · D.
     /// </summary>
-    public void AddLine(in gp_Dir2d D, double Dist)
+    public void AddLine(in Direction2D D, double Dist)
     {
         double X = D.X();
         double Y = D.Y();
-        gp_Pnt2d O = new(-Y * Dist, X * Dist);
-        gp_Lin2d L = new(O, D);
+        Point2D O = new(-Y * Dist, X * Dist);
+        Line2D L = new(O, D);
         AddLine(L, Hatch_ANYLINE);
     }
 
     /// <summary>Adds an infinite line parallel to the Y axis at the abscissa <paramref name="X"/>.</summary>
     public void AddXLine(double X)
     {
-        gp_Pnt2d O = new(X, 0);
-        gp_Dir2d D = new(gp_Dir2d.D.Y);
-        gp_Lin2d L = new(O, D);
+        Point2D O = new(X, 0);
+        Direction2D D = new(Direction2D.D.Y);
+        Line2D L = new(O, D);
         AddLine(L, Hatch_XLINE);
     }
 
     /// <summary>Adds an infinite line parallel to the X axis at the ordinate <paramref name="Y"/>.</summary>
     public void AddYLine(double Y)
     {
-        gp_Pnt2d O = new(0, Y);
-        gp_Dir2d D = new(gp_Dir2d.D.X);
-        gp_Lin2d L = new(O, D);
+        Point2D O = new(0, Y);
+        Direction2D D = new(Direction2D.D.X);
+        Line2D L = new(O, D);
         AddLine(L, Hatch_YLINE);
     }
 
     /// <summary>Trims the lines at their intersections with <paramref name="L"/>.</summary>
-    public void Trim(in gp_Lin2d L, int Index = 0)
+    public void Trim(in Line2D L, int Index = 0)
     {
         Trim(L, RealFirst(), RealLast(), Index);
     }
 
     /// <summary>Trims the lines at their intersections with <paramref name="L"/> in its parameter range [Start, End].</summary>
-    public void Trim(in gp_Lin2d L, double Start, double End, int Index = 0)
+    public void Trim(in Line2D L, double Start, double End, int Index = 0)
     {
         IntAna2d_IntPoint Pinter;
         IntAna2d_AnaIntersection Inters = new();
@@ -139,9 +141,9 @@ public sealed class Hatch_Hatcher
     }
 
     /// <summary>Trims the lines at their intersections with the oriented segment from <paramref name="P1"/> to <paramref name="P2"/>.</summary>
-    public void Trim(in gp_Pnt2d P1, in gp_Pnt2d P2, int Index = 0)
+    public void Trim(in Point2D P1, in Point2D P2, int Index = 0)
     {
-        gp_Vec2d V = new(P1, P2);
+        Vector2D V = new(P1, P2);
         if (Math.Abs(V.X()) > .9 * RealLast())
         {
             V.Multiply(1 / V.X());
@@ -152,8 +154,8 @@ public sealed class Hatch_Hatcher
         }
         if (V.Magnitude() > myToler)
         {
-            gp_Dir2d D = new(V);
-            gp_Lin2d L = new(P1, D);
+            Direction2D D = new(V);
+            Line2D L = new(P1, D);
             Trim(L, 0, P1.Distance(P2), Index);
         }
     }
@@ -173,7 +175,7 @@ public sealed class Hatch_Hatcher
     public int NbLines() => myLines.Length();
 
     /// <summary>The line of index <paramref name="I"/>.</summary>
-    public gp_Lin2d Line(int I) => myLines[I].myLin;
+    public Line2D Line(int I) => myLines[I].myLin;
 
     /// <summary>The form of the line of index <paramref name="I"/>.</summary>
     public Hatch_LineForm LineForm(int I) => myLines[I].myForm;
@@ -185,7 +187,7 @@ public sealed class Hatch_Hatcher
     public bool IsYLine(int I) => LineForm(I) == Hatch_YLINE;
 
     /// <summary>The X or Y coordinate of the line of index <paramref name="I"/>, an X or a Y line.</summary>
-    /// <exception cref="Standard_OutOfRange">The line is neither an X nor a Y line.</exception>
+    /// <exception cref="OutOfRangeException">The line is neither an X nor a Y line.</exception>
     public double Coordinate(int I)
     {
         switch (myLines[I].myForm)
@@ -197,7 +199,7 @@ public sealed class Hatch_Hatcher
                 return myLines[I].myLin.Location().Y();
 
             case Hatch_ANYLINE:
-                throw new Standard_OutOfRange("Hatcher : not an X or Y line");
+                throw new OutOfRangeException("Hatcher : not an X or Y line");
         }
 
         return 0.0;
@@ -232,7 +234,7 @@ public sealed class Hatch_Hatcher
         {
             if (J != 1 || !myOrient)
             {
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
             }
             return RealFirst();
         }
@@ -261,7 +263,7 @@ public sealed class Hatch_Hatcher
         {
             if (J != 1) // OCCT: doesn't check myOrient, as Start and End do (occt-issues.md)
             {
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
             }
             Index = 0;
             Par2 = 0;
@@ -293,7 +295,7 @@ public sealed class Hatch_Hatcher
         {
             if (J != 1 || !myOrient)
             {
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
             }
             return RealLast();
         }
@@ -322,7 +324,7 @@ public sealed class Hatch_Hatcher
         {
             if (J != 1) // OCCT: doesn't check myOrient, as Start and End do (occt-issues.md)
             {
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
             }
             Index = 0;
             Par2 = 0;

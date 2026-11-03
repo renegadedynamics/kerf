@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -13,8 +14,8 @@ public class TopTrans_SurfaceTransition_Test
     public void UndefinedStateStaysInstanceLocal()
     {
         var aReferenceTransition = new TopTrans_SurfaceTransition();
-        aReferenceTransition.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        aReferenceTransition.Compare(Precision.Angular(), new gp_Dir(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aReferenceTransition.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        aReferenceTransition.Compare(global::Kerf.Engine.Foundation.Precision.Angular(), new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
 
         TopAbs_State aBefore = aReferenceTransition.StateBefore();
         TopAbs_State anAfter = aReferenceTransition.StateAfter();
@@ -22,10 +23,10 @@ public class TopTrans_SurfaceTransition_Test
         Assert.NotEqual(TopAbs_UNKNOWN, anAfter);
 
         var anInvalidTransition = new TopTrans_SurfaceTransition();
-        anInvalidTransition.Reset(new gp_Dir(1.0, 0.0, 0.0),
-                                  new gp_Dir(0.0, 0.0, 1.0),
-                                  new gp_Dir(1.0, 0.0, 0.0),
-                                  new gp_Dir(1.0, 0.0, 0.0),
+        anInvalidTransition.Reset(new Direction3D(1.0, 0.0, 0.0),
+                                  new Direction3D(0.0, 0.0, 1.0),
+                                  new Direction3D(1.0, 0.0, 0.0),
+                                  new Direction3D(1.0, 0.0, 0.0),
                                   1.0,
                                   1.0);
 
@@ -39,11 +40,11 @@ public class TopTrans_SurfaceTransition_Test
     public void CompareUsesProvidedTolerance()
     {
         var aTransition = new TopTrans_SurfaceTransition();
-        aTransition.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        aTransition.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         aTransition.Compare(1.0,
-                            new gp_Dir(0.0, 0.0, 1.0),
-                            new gp_Dir(0.6, 0.8, 0.0),
-                            new gp_Dir(0.6, -0.8, 0.0),
+                            new Direction3D(0.0, 0.0, 1.0),
+                            new Direction3D(0.6, 0.8, 0.0),
+                            new Direction3D(0.6, -0.8, 0.0),
                             1.0,
                             0.5,
                             TopAbs_FORWARD,
@@ -65,7 +66,7 @@ public class TopTrans_SurfaceTransition_PortTests
         Assert.Equal(TopAbs_UNKNOWN, aTransition.StateAfter());
 
         // Compare before Reset is ignored
-        aTransition.Compare(0.0, new gp_Dir(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
         Assert.Equal(TopAbs_UNKNOWN, aTransition.StateBefore());
     }
 
@@ -75,19 +76,19 @@ public class TopTrans_SurfaceTransition_PortTests
         // Reference: the plane z = 0 crossed along X. The face's dironF is +Y, at angle 0 from beafter (+Y):
         // only the "after" row is filled, and the "before" state is read from it.
         var aForward = new TopTrans_SurfaceTransition();
-        aForward.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        aForward.Compare(0.0, new gp_Dir(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aForward.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        aForward.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
         Assert.Equal(TopAbs_OUT, aForward.StateBefore());
         Assert.Equal(TopAbs_IN, aForward.StateAfter());
 
         var aReversed = new TopTrans_SurfaceTransition();
-        aReversed.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        aReversed.Compare(0.0, new gp_Dir(0.0, 0.0, 1.0), TopAbs_REVERSED, TopAbs_FORWARD);
+        aReversed.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        aReversed.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_REVERSED, TopAbs_FORWARD);
         Assert.Equal(TopAbs_IN, aReversed.StateBefore());
         Assert.Equal(TopAbs_OUT, aReversed.StateAfter());
 
         // Reset forgets the previous faces
-        aReversed.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        aReversed.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Assert.Equal(TopAbs_UNKNOWN, aReversed.StateBefore());
         Assert.Equal(TopAbs_UNKNOWN, aReversed.StateAfter());
     }
@@ -97,9 +98,9 @@ public class TopTrans_SurfaceTransition_PortTests
     {
         // Two coincident faces with the same orientation: FUN_refnearest can't choose (OCCT's "nyi FUN_RAISE").
         var aTransition = new TopTrans_SurfaceTransition();
-        aTransition.Reset(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        aTransition.Compare(0.0, new gp_Dir(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
-        aTransition.Compare(0.0, new gp_Dir(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aTransition.Reset(new Direction3D(1.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
+        aTransition.Compare(0.0, new Direction3D(0.0, 0.0, 1.0), TopAbs_FORWARD, TopAbs_FORWARD);
         Assert.Equal(TopAbs_UNKNOWN, aTransition.StateBefore());
         Assert.Equal(TopAbs_UNKNOWN, aTransition.StateAfter());
     }

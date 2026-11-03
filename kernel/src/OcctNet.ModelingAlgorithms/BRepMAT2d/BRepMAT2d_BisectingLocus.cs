@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_JoinType;
+using Kerf.Geometry;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 
 namespace Occt;
@@ -37,7 +38,7 @@ public sealed class BRepMAT2d_BisectingLocus
     /// <summary>Computes the bisecting locus of the contours of anExplo, on the side aSide of its contour
     /// IndexLine.</summary>
     public void Compute(BRepMAT2d_Explorer anExplo, int IndexLine = 1, MAT_Side aSide = MAT_Left,
-        GeomAbs_JoinType aJoinType = GeomAbs_Arc, bool IsOpenResult = false)
+        JoinKind aJoinType = Arc, bool IsOpenResult = false)
     {
         MAT2d_Mat2d TheMAT = new(IsOpenResult);
         MAT_ListOfBisector TheRoots = new();
@@ -196,15 +197,15 @@ public sealed class BRepMAT2d_BisectingLocus
 
         Geom2d_Curve Bis = theTool.GeomBis(anArc.GeomIndex()).Value();
 
-        if (Bis.FirstParameter() <= -Precision.Infinite())
+        if (Bis.FirstParameter() <= -global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             Reverse = true;
         }
-        else if (Bis.LastParameter() < Precision.Infinite())
+        else if (Bis.LastParameter() < global::Kerf.Engine.Foundation.Precision.Infinite())
         {
-            gp_Pnt2d PF = Bis.Value(Bis.FirstParameter());
-            gp_Pnt2d PL = Bis.Value(Bis.LastParameter());
-            gp_Pnt2d PNode = GeomElt(anArc.FirstNode());
+            Point2D PF = Bis.Value(Bis.FirstParameter());
+            Point2D PL = Bis.Value(Bis.LastParameter());
+            Point2D PNode = GeomElt(anArc.FirstNode());
             if (PNode.SquareDistance(PF) > PNode.SquareDistance(PL))
             {
                 Reverse = true;
@@ -217,7 +218,7 @@ public sealed class BRepMAT2d_BisectingLocus
     public Geom2d_Geometry GeomElt(MAT_BasicElt aBasicElt) => theTool.GeomElt(aBasicElt.GeomIndex());
 
     /// <summary>The point of the node aNode.</summary>
-    public gp_Pnt2d GeomElt(MAT_Node aNode) => theTool.GeomPnt(aNode.GeomIndex());
+    public Point2D GeomElt(MAT_Node aNode) => theTool.GeomPnt(aNode.GeomIndex());
 
     // Cuts the curves of the figure at their extrema of curvature and inflections; NbSect counts the sections of
     // each initial curve.

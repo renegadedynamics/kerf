@@ -6,6 +6,8 @@
 
 // Modified by isg, Thu Mar 17 09:21:31 1994
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ChFiDS_ChamfMode;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
@@ -30,7 +32,7 @@ namespace Occt;
 /// elementary curve, so those members are internal too; the members OCCT declares <c>const</c> are public.
 /// </para>
 /// </remarks>
-public class ChFiDS_Spine : Standard_Transient
+public class ChFiDS_Spine : Transient
 {
     protected bool splitdone;
     protected readonly NCollection_List<ChFiDS_ElSpine> elspines = new();
@@ -58,16 +60,16 @@ public class ChFiDS_Spine : Standard_Transient
     private double lasttgtpar;
     private bool hasfirsttgt;
     private bool haslasttgt;
-    private gp_Pnt firstori = new();
-    private gp_Pnt lastori = new();
-    private gp_Vec firsttgt = new();
-    private gp_Vec lasttgt = new();
+    private Point3D firstori = new();
+    private Point3D lastori = new();
+    private Vector3D firsttgt = new();
+    private Vector3D lasttgt = new();
     private double valref;
     private bool hasref;
     private ChFiDS_ErrorStatus errorstate;
 
     public ChFiDS_Spine()
-        : this(Precision.Confusion())
+        : this(global::Kerf.Engine.Foundation.Precision.Confusion())
     {
     }
 
@@ -168,7 +170,7 @@ public class ChFiDS_Spine : Standard_Transient
         double wmil = 0.5 * (FirstParameter(IE) + LastParameter(IE));
         if (IsPeriodic())
         {
-            wmil = ElCLib.InPeriod(wmil, FirstParameter(), LastParameter());
+            wmil = global::Kerf.Engine.Geometry.ElCLib.InPeriod(wmil, FirstParameter(), LastParameter());
         }
 
         return ElSpine(wmil);
@@ -351,12 +353,12 @@ public class ChFiDS_Spine : Standard_Transient
         return (firstState == ChFiDS_Closed);
     }
 
-    /// <summary>The length of the closed chain; throws <see cref="Standard_Failure"/> if it is not periodic.</summary>
+    /// <summary>The length of the closed chain; throws <see cref="FailureException"/> if it is not periodic.</summary>
     public double Period()
     {
         if (!IsPeriodic())
         {
-            throw new Standard_Failure("Non-periodic Spine");
+            throw new FailureException("Non-periodic Spine");
         }
 
         return abscissa!.Value(abscissa.Upper());
@@ -440,7 +442,7 @@ public class ChFiDS_Spine : Standard_Transient
         }
     }
 
-    internal gp_Pnt Value(double AbsC)
+    internal Point3D Value(double AbsC)
     {
         int Index;
         double L = AbsC;
@@ -449,16 +451,16 @@ public class ChFiDS_Spine : Standard_Transient
 
         if (Index == -1)
         {
-            gp_Pnt Pp = firstori;
-            gp_Vec Vp = firsttgt;
+            Point3D Pp = firstori;
+            Vector3D Vp = firsttgt;
             Vp.Multiply(L);
             Pp.Translate(Vp);
             return Pp;
         }
         else if (Index == (abscissa!.Length() + 1))
         {
-            gp_Pnt Pp = lastori;
-            gp_Vec Vp = lasttgt;
+            Point3D Pp = lastori;
+            Vector3D Vp = lasttgt;
             Vp.Multiply(L);
             Pp.Translate(Vp);
             return Pp;
@@ -476,13 +478,13 @@ public class ChFiDS_Spine : Standard_Transient
         return myCurve.Value(GCP.Parameter());
     }
 
-    internal void D0(double AbsC, out gp_Pnt P)
+    internal void D0(double AbsC, out Point3D P)
     {
         P = Value(AbsC);
     }
 
     /// <summary>The point and the unit tangent at the abscissa <paramref name="AbsC"/>.</summary>
-    internal void D1(double AbsC, out gp_Pnt P, out gp_Vec V1)
+    internal void D1(double AbsC, out Point3D P, out Vector3D V1)
     {
         int Index;
         double L = AbsC;
@@ -493,7 +495,7 @@ public class ChFiDS_Spine : Standard_Transient
         {
             P = firstori;
             V1 = firsttgt;
-            gp_Vec Vp = firsttgt;
+            Vector3D Vp = firsttgt;
             Vp.Multiply(L);
             P.Translate(Vp);
         }
@@ -501,7 +503,7 @@ public class ChFiDS_Spine : Standard_Transient
         {
             P = lastori;
             V1 = lasttgt;
-            gp_Vec Vp = lasttgt;
+            Vector3D Vp = lasttgt;
             Vp.Multiply(L);
             P.Translate(Vp);
         }
@@ -527,7 +529,7 @@ public class ChFiDS_Spine : Standard_Transient
         }
     }
 
-    internal void D2(double AbsC, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    internal void D2(double AbsC, out Point3D P, out Vector3D V1, out Vector3D V2)
     {
         int Index;
         double L = AbsC;
@@ -538,9 +540,9 @@ public class ChFiDS_Spine : Standard_Transient
         {
             P = firstori;
             V1 = firsttgt;
-            V2 = new gp_Vec();
+            V2 = new Vector3D();
             V2.SetCoord(0.0, 0.0, 0.0);
-            gp_Vec Vp = firsttgt;
+            Vector3D Vp = firsttgt;
             Vp.Multiply(L);
             P.Translate(Vp);
         }
@@ -548,9 +550,9 @@ public class ChFiDS_Spine : Standard_Transient
         {
             P = lastori;
             V1 = lasttgt;
-            V2 = new gp_Vec();
+            V2 = new Vector3D();
             V2.SetCoord(0.0, 0.0, 0.0);
-            gp_Vec Vp = lasttgt;
+            Vector3D Vp = lasttgt;
             Vp.Multiply(L);
             P.Translate(Vp);
         }
@@ -570,7 +572,7 @@ public class ChFiDS_Spine : Standard_Transient
             double D2 = -(V1.Dot(V2)) * (1.0 / N1) * (1.0 / N1);
             V2.Multiply(1.0 / N1);
             N1 = Math.Sqrt(N1);
-            gp_Vec Va = V1.Multiplied(D2);
+            Vector3D Va = V1.Multiplied(D2);
             V2.Add(Va);
             double D1 = 1.0 / N1;
             if (spine.Value(Index).Orientation() == TopAbs_REVERSED)
@@ -609,15 +611,15 @@ public class ChFiDS_Spine : Standard_Transient
     }
 
     /// <summary>The type of the current curve.</summary>
-    public new GeomAbs_CurveType GetType()
+    public new CurveKind GetType()
     {
         return myCurve.GetType();
     }
 
     /// <summary>The current curve as an oriented line starting at the edge's start.</summary>
-    public gp_Lin Line()
+    public Line3D Line()
     {
-        gp_Lin LL = myCurve.Line();
+        Line3D LL = myCurve.Line();
         if (spine.Value(indexofcurve).Orientation() == TopAbs_REVERSED)
         {
             LL.Reverse();
@@ -632,20 +634,20 @@ public class ChFiDS_Spine : Standard_Transient
     }
 
     /// <summary>The current curve as an oriented circle starting at the edge's start.</summary>
-    public gp_Circ Circle()
+    public Circle3D Circle()
     {
-        gp_Ax2 Ac = myCurve.Circle().Position();
-        gp_Dir Dc = new gp_Dir(new gp_Vec(Ac.Location(), myCurve.Value(myCurve.FirstParameter())));
-        gp_Dir ZZ = Ac.Direction();
+        Frame3D Ac = myCurve.Circle().Position();
+        Direction3D Dc = new Direction3D(new Vector3D(Ac.Location(), myCurve.Value(myCurve.FirstParameter())));
+        Direction3D ZZ = Ac.Direction();
 
         if (spine.Value(indexofcurve).Orientation() == TopAbs_REVERSED)
         {
-            Dc = new gp_Dir(new gp_Vec(Ac.Location(), myCurve.Value(myCurve.LastParameter())));
+            Dc = new Direction3D(new Vector3D(Ac.Location(), myCurve.Value(myCurve.LastParameter())));
             ZZ.Reverse();
         }
 
-        gp_Ax2 A = new gp_Ax2(Ac.Location(), ZZ, Dc);
-        return new gp_Circ(A, myCurve.Circle().Radius());
+        Frame3D A = new Frame3D(Ac.Location(), ZZ, Dc);
+        return new Circle3D(A, myCurve.Circle().Radius());
     }
 
     /// <summary>Whether the chain starts on a free boundary, on a break point, or is closed.</summary>
@@ -780,7 +782,7 @@ public class ChFiDS_Spine : Standard_Transient
     {
         if (IsPeriodic())
         {
-            throw new Standard_Failure("No extension by tangent on periodic contours");
+            throw new FailureException("No extension by tangent on periodic contours");
         }
 
         // OCCT_DEBUG trace left out.
@@ -799,7 +801,7 @@ public class ChFiDS_Spine : Standard_Transient
     {
         if (IsPeriodic())
         {
-            throw new Standard_Failure("No extension by tangent periodic contours");
+            throw new FailureException("No extension by tangent periodic contours");
         }
 
         // OCCT_DEBUG trace left out.
@@ -830,7 +832,7 @@ public class ChFiDS_Spine : Standard_Transient
         double lll = abscissa!.Value(abscissa.Upper());
         if (IsPeriodic())
         {
-            valref = ElCLib.InPeriod(W, 0.0, lll);
+            valref = global::Kerf.Engine.Geometry.ElCLib.InPeriod(W, 0.0, lll);
         }
         else
         {
@@ -858,11 +860,11 @@ public class ChFiDS_Spine : Standard_Transient
     {
         int ind, len = abscissa!.Length();
         double par = W, last = abscissa.Value(abscissa.Upper());
-        double f = 0.0, l = 0.0, t = Max(tolesp, Precision.Confusion());
+        double f = 0.0, l = 0.0, t = Max(tolesp, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (IsPeriodic() && Math.Abs(par) >= t && Math.Abs(par - last) >= t)
         {
-            par = ElCLib.InPeriod(par, 0.0, last);
+            par = global::Kerf.Engine.Geometry.ElCLib.InPeriod(par, 0.0, last);
         }
 
         for (ind = 1; ind <= len; ind++)
@@ -940,12 +942,12 @@ public class ChFiDS_Spine : Standard_Transient
     // Moves the abscissa L to its edge Ind (-1 or NbEdges + 1 on the tangent extensions) and makes it local.
     private void Prepare(ref double L, out int Ind)
     {
-        double tol = Max(tolesp, Precision.Confusion());
+        double tol = Max(tolesp, global::Kerf.Engine.Foundation.Precision.Confusion());
         double last = abscissa!.Value(abscissa.Upper());
         int len = abscissa.Length();
         if (IsPeriodic() && Math.Abs(L) >= tol && Math.Abs(L - last) >= tol)
         {
-            L = ElCLib.InPeriod(L, 0.0, last);
+            L = global::Kerf.Engine.Geometry.ElCLib.InPeriod(L, 0.0, last);
         }
 
         if (hasfirsttgt && (L <= firsttgtpar))
@@ -994,14 +996,14 @@ public class ChFiDS_Spine : Standard_Transient
             {
                 if (L >= valref && Ind != 1)
                 {
-                    if (Math.Abs(L - abscissa.Value(Ind - 1)) <= Precision.Confusion())
+                    if (Math.Abs(L - abscissa.Value(Ind - 1)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         Ind--;
                     }
                 }
                 else if (L <= valref && Ind != len)
                 {
-                    if (Math.Abs(L - abscissa.Value(Ind)) <= Precision.Confusion())
+                    if (Math.Abs(L - abscissa.Value(Ind)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         Ind++;
                     }

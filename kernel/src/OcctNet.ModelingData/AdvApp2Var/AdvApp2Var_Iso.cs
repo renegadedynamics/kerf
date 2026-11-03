@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
 
 namespace Occt;
 
@@ -15,9 +18,9 @@ namespace Occt;
 /// A working object of the approximation, with OCCT's public mutators (decision 194). The arrays it returns are
 /// its own (shared: don't modify).
 /// </remarks>
-public class AdvApp2Var_Iso : Standard_Transient
+public class AdvApp2Var_Iso : Transient
 {
-    private readonly GeomAbs_IsoType myType;
+    private readonly IsoType myType;
     private double myConstPar;
     private double myU0;
     private double myU1;
@@ -37,7 +40,7 @@ public class AdvApp2Var_Iso : Standard_Transient
 
     public AdvApp2Var_Iso()
     {
-        myType = GeomAbs_IsoU;
+        myType = IsoU;
         myConstPar = 0.5;
         myU0 = 0.0;
         myU1 = 1.0;
@@ -51,12 +54,12 @@ public class AdvApp2Var_Iso : Standard_Transient
         myHasResult = false;
     }
 
-    public AdvApp2Var_Iso(GeomAbs_IsoType type, int iu, int iv)
+    public AdvApp2Var_Iso(IsoType type, int iu, int iv)
         : this(type, 0.5, 0.0, 1.0, 0.0, 1.0, 0, iu, iv)
     {
     }
 
-    public AdvApp2Var_Iso(GeomAbs_IsoType type,
+    public AdvApp2Var_Iso(IsoType type,
                           double cte,
                           double Ufirst,
                           double Ulast,
@@ -76,7 +79,7 @@ public class AdvApp2Var_Iso : Standard_Transient
         myNbCoeff = 0;
         myApprIsDone = false;
         myHasResult = false;
-        if (myType == GeomAbs_IsoU)
+        if (myType == IsoU)
         {
             myExtremOrder = iv;
             myDerivOrder = iu;
@@ -132,7 +135,7 @@ public class AdvApp2Var_Iso : Standard_Transient
         Span<double> ROOTLG = default;
         switch (myType)
         {
-            case GeomAbs_IsoV:
+            case IsoV:
                 ISOFAV = 2;
                 TABDEC[0] = myU0;
                 TABDEC[1] = myU1;
@@ -147,7 +150,7 @@ public class AdvApp2Var_Iso : Standard_Transient
                 NDGJAC = Conditions.UJacDeg();
                 NCFLIM = Conditions.ULimit();
                 break;
-            case GeomAbs_IsoU:
+            case IsoU:
                 ISOFAV = 1;
                 TABDEC[0] = myV0;
                 TABDEC[1] = myV1;
@@ -162,7 +165,7 @@ public class AdvApp2Var_Iso : Standard_Transient
                 NDGJAC = Conditions.VJacDeg();
                 NCFLIM = Conditions.VLimit();
                 break;
-            case GeomAbs_NoneIso:
+            case NoneIso:
             default:
                 break;
         }
@@ -281,7 +284,7 @@ public class AdvApp2Var_Iso : Standard_Transient
             for (ider = 0; ider <= IORDRE; ider++)
             {
                 // OCCT reads three coordinates whatever the dimension (occt-issues.md)
-                gp_Pnt pt = new(HCONTR1.Value(jpos), HCONTR1.Value(jpos + 1), HCONTR1.Value(jpos + 2));
+                Point3D pt = new(HCONTR1.Value(jpos), HCONTR1.Value(jpos + 1), HCONTR1.Value(jpos + 2));
                 if (ISOFAV == 2)
                 {
                     NodeBegin.SetPoint(ider, iapp, pt);
@@ -295,7 +298,7 @@ public class AdvApp2Var_Iso : Standard_Transient
             jpos = HCONTR2.Lower();
             for (ider = 0; ider <= IORDRE; ider++)
             {
-                gp_Pnt pt = new(HCONTR2.Value(jpos), HCONTR2.Value(jpos + 1), HCONTR2.Value(jpos + 2));
+                Point3D pt = new(HCONTR2.Value(jpos), HCONTR2.Value(jpos + 1), HCONTR2.Value(jpos + 2));
                 if (ISOFAV == 2)
                 {
                     NodeEnd.SetPoint(ider, iapp, pt);
@@ -350,7 +353,7 @@ public class AdvApp2Var_Iso : Standard_Transient
     /// <summary>Changes the bounds of the iso-curve's own parameter.</summary>
     public void ChangeDomain(double a, double b)
     {
-        if (myType == GeomAbs_IsoU)
+        if (myType == IsoU)
         {
             myV0 = a;
             myV1 = b;
@@ -388,13 +391,13 @@ public class AdvApp2Var_Iso : Standard_Transient
         }
     }
 
-    public GeomAbs_IsoType Type() => myType;
+    public IsoType Type() => myType;
 
     public double Constante() => myConstPar;
 
-    public double T0() => myType == GeomAbs_IsoU ? myV0 : myU0;
+    public double T0() => myType == IsoU ? myV0 : myU0;
 
-    public double T1() => myType == GeomAbs_IsoU ? myV1 : myU1;
+    public double T1() => myType == IsoU ? myV1 : myU1;
 
     public double U0() => myU0;
 
@@ -404,9 +407,9 @@ public class AdvApp2Var_Iso : Standard_Transient
 
     public double V1() => myV1;
 
-    public int UOrder() => Type() == GeomAbs_IsoU ? myDerivOrder : myExtremOrder;
+    public int UOrder() => Type() == IsoU ? myDerivOrder : myExtremOrder;
 
-    public int VOrder() => Type() == GeomAbs_IsoV ? myDerivOrder : myExtremOrder;
+    public int VOrder() => Type() == IsoV ? myDerivOrder : myExtremOrder;
 
     public int Position() => myPosition;
 

@@ -4,8 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.AppParCurves_Constraint;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -55,7 +59,7 @@ public static class BOPTools_AlgoTools2D
     /// The unit tangent of the edge's 3D curve at the parameter, reversed for a REVERSED edge. False (and
     /// <paramref name="aTau"/> unchanged or unnormalised) for a degenerated edge or a null derivative.
     /// </summary>
-    public static bool EdgeTangent(in TopoDS_Edge anEdge, double aT, ref gp_Vec aTau)
+    public static bool EdgeTangent(in TopoDS_Edge anEdge, double aT, ref Vector3D aTau)
     {
         bool isdgE;
 
@@ -68,7 +72,7 @@ public static class BOPTools_AlgoTools2D
         Geom_Curve aC = BRep_Tool.Curve(anEdge, out _, out _)!;
         aC.D1(aT, out _, out aTau);
         double mod = aTau.Magnitude();
-        if (mod > gp.Resolution())
+        if (mod > Constants.Resolution())
         {
             aTau /= mod;
         }
@@ -88,7 +92,7 @@ public static class BOPTools_AlgoTools2D
     public static void PointOnSurface(in TopoDS_Edge aE, in TopoDS_Face aF, double aParameter, out double U, out double V,
                                       IntTools_Context? theContext = null)
     {
-        gp_Pnt2d aP2D;
+        Point2D aP2D;
 
         CurveOnSurface(aE, aF, out Geom2d_Curve? aC2D, out _, out _, out _, theContext);
         aC2D!.D0(aParameter, out aP2D);
@@ -135,7 +139,7 @@ public static class BOPTools_AlgoTools2D
         aToler = BRep_Tool.Tolerance(aE);
         BRep_Tool.Range(aE, out aFirst, out aLast);
 
-        if ((aLast - aFirst) < Precision.PConfusion())
+        if ((aLast - aFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -153,7 +157,7 @@ public static class BOPTools_AlgoTools2D
         //
         BRep_Tool.Range(aE, out double aFirst, out double aLast);
         //
-        if ((aLast - aFirst) < Precision.PConfusion())
+        if ((aLast - aFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -213,11 +217,11 @@ public static class BOPTools_AlgoTools2D
         VMin = aBAS.FirstVParameter();
         VMax = aBAS.LastVParameter();
         //
-        aDelta = Precision.PConfusion();
+        aDelta = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         aT = .5 * (aFirst + aLast);
 
-        aC2D.D0(aT, out gp_Pnt2d pC2D);
+        aC2D.D0(aT, out Point2D pC2D);
 
         u2 = pC2D.X();
         v2 = pC2D.Y();
@@ -243,11 +247,11 @@ public static class BOPTools_AlgoTools2D
             //
             if (du == 0.0)
             {
-                if (aBAS.GetType() == GeomAbs_Cylinder)
+                if (aBAS.GetType() == SurfaceKind.Cylinder)
                 {
                     double aR, dFi, aTol;
                     //
-                    gp_Cylinder aCylinder = aBAS.Cylinder();
+                    Cylinder aCylinder = aBAS.Cylinder();
                     aR = aCylinder.Radius();
                     aTol = MaxToleranceEdge(aF);
                     dFi = aTol / aR;
@@ -308,7 +312,7 @@ public static class BOPTools_AlgoTools2D
                     if ((u > (UMin + aDelta + aUPeriod)) || (u < (UMax - aDelta - aUPeriod)))
                     {
                         BRepClass_FaceClassifier aClassifier = new();
-                        aClassifier.Perform(aF, new gp_Pnt2d(u, v), aDelta);
+                        aClassifier.Perform(aF, new Point2D(u, v), aDelta);
                         TopAbs_State Status = aClassifier.State();
                         if (Status == TopAbs_OUT)
                         {
@@ -327,7 +331,7 @@ public static class BOPTools_AlgoTools2D
                     if ((v > (VMin + aDelta + aVPeriod)) || (v < (VMax - aDelta - aVPeriod)))
                     {
                         BRepClass_FaceClassifier aClassifier = new();
-                        aClassifier.Perform(aF, new gp_Pnt2d(u, v), aDelta);
+                        aClassifier.Perform(aF, new Point2D(u, v), aDelta);
                         TopAbs_State Status = aClassifier.State();
                         if (Status == TopAbs_OUT)
                         {
@@ -343,7 +347,7 @@ public static class BOPTools_AlgoTools2D
         if (du != 0.0 || dv != 0.0)
         {
             Geom2d_Curve PCT = (Geom2d_Curve)aC2Dx.Copy();
-            gp_Vec2d aV2D = new(du, dv);
+            Vector2D aV2D = new(du, dv);
             PCT.Translate(aV2D);
             aC2Dx = PCT;
         }
@@ -385,7 +389,7 @@ public static class BOPTools_AlgoTools2D
     {
         bool aLocIdentity;
         double f3d, l3d;
-        TopLoc_Location aLoc;
+        Placement aLoc;
 
         Geom2d_Curve? C2D;
 
@@ -405,7 +409,7 @@ public static class BOPTools_AlgoTools2D
             // aE has no 3D curve, so nothing is done
         }
         //
-        aLocIdentity = aLoc.IsIdentity();
+        aLocIdentity = aLoc.IsIdentity;
 
         if (aLocIdentity)
         {
@@ -462,12 +466,12 @@ public static class BOPTools_AlgoTools2D
         GeomAdaptor_Curve aBAHC = new(aC3D, aT1, aT2);
         //
         double aTolR;
-        double aTR = Precision.Confusion(); // 1.e-7;
+        double aTR = global::Kerf.Engine.Foundation.Precision.Confusion(); // 1.e-7;
         double aMaxTol = 1.0e3 * aTR;       // 0.0001
         bool isAnaSurf = ProjLib.IsAnaSurf(aBAHS);
 
         // when the type of surface is GeomAbs_SurfaceOfRevolution
-        if (pBAS.GetType() == GeomAbs_SurfaceOfRevolution)
+        if (pBAS.GetType() == SurfaceOfRevolution)
         {
             if (TolReached2d > aTR)
             {
@@ -543,7 +547,7 @@ public static class BOPTools_AlgoTools2D
         //
         if (aC2D is null)
         {
-            throw new Standard_ConstructionError("BOPTools_AlgoTools2D::MakePCurveOnFace : PCurve is Null");
+            throw new ConstructionErrorException("BOPTools_AlgoTools2D::MakePCurveOnFace : PCurve is Null");
         }
         //
         TolReached2d = aTolR;
@@ -555,7 +559,7 @@ public static class BOPTools_AlgoTools2D
         // Make sure that the range of the 2D curve is sufficient for representation of the 3D curve.
         double aTCFirst = aC2D.FirstParameter();
         double aTCLast = aC2D.LastParameter();
-        if ((aTCFirst - aT1) > Precision.PConfusion() || (aT2 - aTCLast) > Precision.PConfusion())
+        if ((aTCFirst - aT1) > global::Kerf.Engine.Foundation.Precision.PConfusion() || (aT2 - aTCLast) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (aTCFirst < aT1)
             {
@@ -566,7 +570,7 @@ public static class BOPTools_AlgoTools2D
                 aTCLast = aT2;
             }
 
-            GeomLib.SameRange(Precision.PConfusion(), aC2D, aTCFirst, aTCLast, aT1, aT2, ref aC2D);
+            GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(), aC2D, aTCFirst, aTCLast, aT1, aT2, ref aC2D);
         }
 
         // compute the appropriate tolerance for the edge
@@ -611,10 +615,10 @@ public static class BOPTools_AlgoTools2D
 
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(theE, theF, out double aFirst, out double aLast)!;
 
-        aPC.D1(0.5 * (aFirst + aLast), out _, out gp_Vec2d aT);
+        aPC.D1(0.5 * (aFirst + aLast), out _, out Vector2D aT);
 
         double aSqMagn = aT.SquareMagnitude();
-        if (aSqMagn <= gp.Resolution())
+        if (aSqMagn <= Constants.Resolution())
         {
             return;
         }
@@ -623,8 +627,8 @@ public static class BOPTools_AlgoTools2D
         aT /= Math.Sqrt(aSqMagn);
 
         // sin(da) ~ da, when da->0.
-        double aTol = Precision.Angular();
-        gp_Vec2d aRefVDir = new(0.0, 1.0), aRefUDir = new(1.0, 0.0);
+        double aTol = global::Kerf.Engine.Foundation.Precision.Angular();
+        Vector2D aRefVDir = new(0.0, 1.0), aRefUDir = new(1.0, 0.0);
 
         double aDPv = aT.CrossMagnitude(aRefVDir), aDPu = aT.CrossMagnitude(aRefUDir);
 
@@ -689,7 +693,7 @@ public static class BOPTools_AlgoTools2D
         //
         aC2DT = new Geom2d_TrimmedCurve(aC2DoldC, aT21, aT22);
         //
-        aTolPPC = Precision.PConfusion();
+        aTolPPC = global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
         Geom_Curve aCE1 = BRep_Tool.Curve(aE1, out aT11, out aT12)!;
         //
@@ -733,7 +737,7 @@ public static class BOPTools_AlgoTools2D
             BRepLib.SameParameter(aE1T);
             BRepLib.SameRange(aE1T);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             iRet = 6;
             return iRet;
@@ -769,9 +773,9 @@ public static class BOPTools_AlgoTools2D
         int aNbPoints, iRet;
         double aTS1, aTS2, aTS, aScPr, aUS1, aVS1, aUS2, aVS2, aT, aU, aV;
         double aT1, aT2, aTol;
-        gp_Pnt2d aP2DS1, aP2DS2, aP2D;
-        gp_Vec2d aV2DT, aV2D, aV2DS1, aV2DS2;
-        gp_Pnt aP;
+        Point2D aP2DS1, aP2DS2, aP2D;
+        Vector2D aV2DT, aV2D, aV2DS1, aV2DS2;
+        Point3D aP;
         Geom2d_Curve aC2D, aC2DS1, aC2DS2, aC2Dnew, aC2DoldCT;
         Geom2d_TrimmedCurve aC2DTnew;
         Geom_Surface aS;
@@ -805,9 +809,9 @@ public static class BOPTools_AlgoTools2D
         aC2DS2.D1(aTS, out aP2DS2, out aV2DS2);
         //
         // aV2DS12 - translation vector
-        gp_Vec2d aV2DS12 = new(aP2DS1, aP2DS2);
-        gp_Dir2d aD2DS12 = new(aV2DS12);
-        gp_Dir2d aD2DX = gp.DX2d();
+        Vector2D aV2DS12 = new(aP2DS1, aP2DS2);
+        Direction2D aD2DS12 = new(aV2DS12);
+        Direction2D aD2DX = Constants.DX2d();
         //
         // Directoion of closeness: U-Closed or V-Closed
         aScPr = aD2DS12 * aD2DX;

@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -281,7 +284,7 @@ public static partial class BOPTools_AlgoTools
         //
         BRep_TEdge TE = (BRep_TEdge)aE.TShape()!;
         //
-        TopLoc_Location Eloc = aE.Location();
+        Placement Eloc = aE.Location();
 
         TopoDS_Iterator aItS = new(aE);
         for (; aItS.More(); aItS.Next())
@@ -289,7 +292,7 @@ public static partial class BOPTools_AlgoTools
             TopoDS_Vertex aV = TopoDS.Vertex(aItS.Value());
             //
             BRep_TVertex TV = (BRep_TVertex)aV.TShape()!;
-            gp_Pnt aPV = TV.Pnt();
+            Point3D aPV = TV.Pnt();
             //
             double aTol = BRep_Tool.Tolerance(aV);
             aTol = Max(aTol, aTolE);
@@ -306,14 +309,14 @@ public static partial class BOPTools_AlgoTools
                     Geom_Curve? aC = aCR.Curve3D();
                     if (aC is not null)
                     {
-                        TopLoc_Location L = (Eloc * aCR.Location()).Predivided(aV.Location());
+                        Placement L = (Eloc * aCR.Location()).Predivided(aV.Location());
                         NCollection_List<BRep_PointRepresentation>.Iterator aItPR = new(TV.Points());
                         while (aItPR.More())
                         {
                             BRep_PointRepresentation aPR = aItPR.Value();
                             if (aPR.IsPointOnCurve(aC, L))
                             {
-                                gp_Pnt aPC = aC.Value(aPR.Parameter());
+                                Point3D aPC = aC.Value(aPR.Parameter());
                                 aPC.Transform(L.Transformation());
                                 double aD2 = aPV.SquareDistance(aPC);
                                 if (aD2 > aTol)
@@ -332,7 +335,7 @@ public static partial class BOPTools_AlgoTools
                         if (aOrV == TopAbs_FORWARD || aOrV == TopAbs_REVERSED)
                         {
                             BRep_GCurve aGC = (BRep_GCurve)aCR;
-                            gp_Pnt aPC;
+                            Point3D aPC;
                             if (aOrV == TopAbs_FORWARD)
                             {
                                 aPC = aC.Value(aGC.First());
@@ -423,8 +426,8 @@ public static partial class BOPTools_AlgoTools
         //
         double aT1, aT2, aTint1, aTint2, aHalfR1, aHalfR2, aDist;
         int i, aNb;
-        gp_Pnt aP, aPV;
-        gp_Pnt2d aP2d;
+        Point3D aP, aPV;
+        Point2D aP2d;
         NCollection_List<IntRes2d_IntersectionPoint> aLP = new();
         NCollection_List<IntRes2d_IntersectionPoint>.Iterator aItLP;
         //
@@ -493,8 +496,8 @@ public static partial class BOPTools_AlgoTools
     {
         int i, aNbV;
         double aTol, aTol2, aD2, aD2max;
-        gp_Pnt aP, aPV;
-        gp_Pnt2d aP2D;
+        Point3D aP, aPV;
+        Point2D aP2D;
         TopoDS_Face aF;
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMVE = new(TopTools_ShapeMapHasher.Instance);
         NCollection_List<TopoDS_Shape>.Iterator aIt = new();
@@ -693,10 +696,10 @@ public static partial class BOPTools_AlgoTools
             double Last = myHCurve.LastParameter();
 
             BRep_TFace TF = (BRep_TFace)S.TShape()!;
-            TopLoc_Location Floc = S.Location();
-            TopLoc_Location TFloc = TF.Location();
+            Placement Floc = S.Location();
+            Placement TFloc = TF.Location();
             Geom_Surface? Su = TF.Surface();
-            TopLoc_Location L = (Floc * TFloc).Predivided(myShape.Location());
+            Placement L = (Floc * TFloc).Predivided(myShape.Location());
             bool pcurvefound = false;
 
             NCollection_List<BRep_CurveRepresentation>.Iterator itcr = new(TE.Curves());
@@ -779,7 +782,7 @@ public static partial class BOPTools_AlgoTools
                     // Dub - Normalement myHCurve est une GeomAdaptor_Curve
                     // OCCT down-casts and dereferences: a reference curve on a surface gives a null handle here
                     GeomAdaptor_Curve Gac = myHCurve as GeomAdaptor_Curve
-                                            ?? throw new Standard_NullObject("BOPTools_AlgoTools::CorrectEdgeTolerance - no 3D curve");
+                                            ?? throw new NullObjectException("BOPTools_AlgoTools::CorrectEdgeTolerance - no 3D curve");
                     Geom_Curve C3dx = Gac.Curve()!;
                     Geom_Curve ProjOnPlane =
                         GeomProjLib.ProjectOnPlane(new Geom_TrimmedCurve(C3dx, First, Last),

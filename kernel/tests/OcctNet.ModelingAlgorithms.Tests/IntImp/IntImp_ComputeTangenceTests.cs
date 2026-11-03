@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Known answers of IntImp_ComputeTangence.</summary>
@@ -10,20 +14,20 @@ public class IntImp_ComputeTangenceTests
     {
         Assert.Equal(IntImp_ConstIsoparametric.IntImp_UIsoparametricOnCaro1, IntImp_ComputeTangence.ChoixRef(0));
         Assert.Equal(IntImp_ConstIsoparametric.IntImp_VIsoparametricOnCaro2, IntImp_ComputeTangence.ChoixRef(3));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => IntImp_ComputeTangence.ChoixRef(4));
+        Assert.ThrowsAny<OutOfRangeException>(() => IntImp_ComputeTangence.ChoixRef(4));
     }
 
     [Fact]
     public void TangentPlanesAreTangent()
     {
-        gp_Vec[] aDPuv = [new(1, 0, 0), new(0, 1, 0), new(0, 2, 0), new(3, 0, 0)];
+        Vector3D[] aDPuv = [new(1, 0, 0), new(0, 1, 0), new(0, 2, 0), new(3, 0, 0)];
         double[] anEps = [1e-9, 1e-9, 1e-9, 1e-9];
         double[] aTg = new double[4];
         IntImp_ConstIsoparametric[] aIso = new IntImp_ConstIsoparametric[4];
         Assert.True(IntImp_ComputeTangence.ComputeTangence(aDPuv, anEps, aTg, aIso));
 
         // A vanishing derivative counts as tangent
-        gp_Vec[] aDegenerate = [new(0, 0, 0), new(0, 1, 0), new(0, 2, 0), new(3, 0, 0)];
+        Vector3D[] aDegenerate = [new(0, 0, 0), new(0, 1, 0), new(0, 2, 0), new(3, 0, 0)];
         Assert.True(IntImp_ComputeTangence.ComputeTangence(aDegenerate, anEps, aTg, aIso));
     }
 
@@ -32,7 +36,7 @@ public class IntImp_ComputeTangenceTests
     {
         // Surface 1: the plane z = 0 (u along X, v along Y); surface 2: the plane x = 0 (u along Y, v along Z).
         // The intersection is the Y axis: along it u of surface 1 is constant (an iso u), v of surface 2 is constant.
-        gp_Vec[] aDPuv = [new(1, 0, 0), new(0, 1, 0), new(0, 1, 0), new(0, 0, 1)];
+        Vector3D[] aDPuv = [new(1, 0, 0), new(0, 1, 0), new(0, 1, 0), new(0, 0, 1)];
         double[] anEps = [1e-9, 1e-9, 1e-9, 1e-9];
         double[] aTg = new double[4];
         IntImp_ConstIsoparametric[] aIso = new IntImp_ConstIsoparametric[4];

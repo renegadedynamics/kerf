@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An algorithm making the mesh of a discrete face.</summary>
-public abstract class IMeshTools_MeshAlgo : Standard_Transient
+public abstract class IMeshTools_MeshAlgo : Transient
 {
     /// <summary>An algorithm.</summary>
     protected IMeshTools_MeshAlgo()
@@ -14,5 +16,5 @@ public abstract class IMeshTools_MeshAlgo : Standard_Transient
     }
 
     /// <summary>Meshes the face.</summary>
-    public abstract void Perform(IMeshData_Face theDFace, in IMeshTools_Parameters theParameters, Message_ProgressRange theRange);
+    public abstract void Perform(IMeshData_Face theDFace, in IMeshTools_Parameters theParameters, ProgressRange theRange);
 }

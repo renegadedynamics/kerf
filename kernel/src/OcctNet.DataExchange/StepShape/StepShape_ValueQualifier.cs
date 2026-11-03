@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -24,7 +26,7 @@ public class StepShape_ValueQualifier : StepData_SelectType
     /// 3 -&gt; UnceraintyQualifier .. not yet implemented
     /// 4 -&gt; ValueFormatTypeQualifier
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

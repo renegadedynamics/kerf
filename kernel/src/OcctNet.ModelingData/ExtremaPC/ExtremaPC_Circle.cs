@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,48 +17,48 @@ namespace Occt;
 /// period means the whole circle.</remarks>
 public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
 {
-    private readonly gp_Circ myCircle;                      // Circle geometry
-    private readonly MathUtils.Domain1D? myDomain;          // Parameter domain (null for full circle)
+    private readonly Circle3D myCircle;                      // Circle geometry
+    private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? myDomain;          // Parameter domain (null for full circle)
     private readonly ExtremaPC.Result myResult = new();     // Reusable result storage
 
     /// <summary>Constructor with circle geometry (full circle).</summary>
-    public ExtremaPC_Circle(in gp_Circ theCircle)
+    public ExtremaPC_Circle(in Circle3D theCircle)
     {
         myCircle = theCircle;
         myDomain = null;
     }
 
     /// <summary>Constructor with circle geometry and parameter domain in radians (fixed for all queries).</summary>
-    public ExtremaPC_Circle(in gp_Circ theCircle, in MathUtils.Domain1D theDomain)
+    public ExtremaPC_Circle(in Circle3D theCircle, in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain)
     {
         myCircle = theCircle;
         myDomain = theDomain.IsFullPeriod(2.0 * M_PI) ? null : theDomain;
     }
 
     /// <summary>Evaluates point on circle at parameter (radians).</summary>
-    public gp_Pnt Value(double theU) => ElCLib.Value(theU, myCircle);
+    public Point3D Value(double theU) => global::Kerf.Engine.Geometry.ElCLib.Value(theU, myCircle);
 
     /// <summary>Returns true if domain is bounded (partial arc).</summary>
     public bool IsBounded() => myDomain.HasValue;
 
     /// <summary>Returns the domain (only valid if IsBounded() is true).</summary>
-    public MathUtils.Domain1D Domain() => myDomain!.Value;
+    public global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D Domain() => myDomain!.Value;
 
     /// <summary>Computes the extrema between point P and the circle.</summary>
-    public ExtremaPC.Result Perform(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result Perform(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         myResult.Clear();
 
         // Step 1: Project point P onto the circle plane
-        gp_Pnt aCenter = myCircle.Location();
-        gp_Dir aAxis = myCircle.Axis().Direction();
-        gp_Vec aToP = new(aCenter, theP);
-        double aHeight = aToP.Dot(new gp_Vec(aAxis));
-        gp_Vec aTrsl = new gp_Vec(aAxis) * (-aHeight);
-        gp_Pnt aPp = theP.Translated(aTrsl);
+        Point3D aCenter = myCircle.Location();
+        Direction3D aAxis = myCircle.Axis().Direction();
+        Vector3D aToP = new(aCenter, theP);
+        double aHeight = aToP.Dot(new Vector3D(aAxis));
+        Vector3D aTrsl = new Vector3D(aAxis) * (-aHeight);
+        Point3D aPp = theP.Translated(aTrsl);
 
         // Step 2: Check for degenerate case - point projects to center
-        gp_Vec aOPp = new(aCenter, aPp);
+        Vector3D aOPp = new(aCenter, aPp);
         double aOPpMag = aOPp.Magnitude();
 
         if (aOPpMag < theTol)
@@ -68,10 +72,10 @@ public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
 
         // Step 3: Compute the angle of the closest point
         // Us1 corresponds to minimum distance (closest point)
-        double aUs1 = myCircle.XAxis().Direction().AngleWithRef(new gp_Dir(aOPp), aAxis);
+        double aUs1 = myCircle.XAxis().Direction().AngleWithRef(new Direction3D(aOPp), aAxis);
 
         // Handle angle boundaries
-        double aAngTol = Precision.Angular();
+        double aAngTol = global::Kerf.Engine.Foundation.Precision.Angular();
         if (aUs1 + M_PI < aAngTol)
         {
             aUs1 = -M_PI;
@@ -85,21 +89,21 @@ public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
         double aUs2 = aUs1 + M_PI;
 
         // Step 4: For bounded case, adjust for periodicity
-        double aTolU = Precision.Angular();
+        double aTolU = global::Kerf.Engine.Foundation.Precision.Angular();
         if (myDomain.HasValue)
         {
             double theUMin = myDomain.Value.Min;
 
             double aRadius = myCircle.Radius();
-            if (aRadius > gp.Resolution())
+            if (aRadius > Constants.Resolution())
             {
                 aTolU = theTol / aRadius;
             }
 
             // Adjust angles to be within [theUMin, theUMin + 2*PI]
             double aUinf = theUMin;
-            ElCLib.AdjustPeriodic(theUMin, theUMin + 2.0 * M_PI, aTolU, ref aUinf, ref aUs1);
-            ElCLib.AdjustPeriodic(theUMin, theUMin + 2.0 * M_PI, aTolU, ref aUinf, ref aUs2);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(theUMin, theUMin + 2.0 * M_PI, aTolU, ref aUinf, ref aUs1);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(theUMin, theUMin + 2.0 * M_PI, aTolU, ref aUinf, ref aUs2);
 
             // Handle boundary tolerance
             if (Math.Abs(aUs1 - 2.0 * M_PI - theUMin) < aTolU)
@@ -130,7 +134,7 @@ public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
                     continue;
             }
 
-            gp_Pnt aCurvePt = ElCLib.Value(aU, myCircle);
+            Point3D aCurvePt = global::Kerf.Engine.Geometry.ElCLib.Value(aU, myCircle);
 
             ExtremaPC.ExtremumResult anExt = new();
             anExt.Parameter = aU;
@@ -146,7 +150,7 @@ public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Computes the extrema between point P and the circle arc including endpoints.</summary>
-    public ExtremaPC.Result PerformWithEndpoints(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result PerformWithEndpoints(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         _ = Perform(theP, theTol, theMode);
 
@@ -160,5 +164,5 @@ public sealed class ExtremaPC_Circle : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Returns the circle geometry.</summary>
-    public gp_Circ Circle() => myCircle;
+    public Circle3D Circle() => myCircle;
 }

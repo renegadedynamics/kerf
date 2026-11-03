@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,23 +17,23 @@ namespace Occt;
 public sealed class GeomFill_LocFunction
 {
     private readonly GeomFill_LocationLaw myLaw;
-    private readonly NCollection_Array1<gp_Vec> V;
-    private readonly NCollection_Array1<gp_Vec> DV;
-    private readonly NCollection_Array1<gp_Vec> D2V;
+    private readonly NCollection_Array1<Vector3D> V;
+    private readonly NCollection_Array1<Vector3D> DV;
+    private readonly NCollection_Array1<Vector3D> D2V;
     // OCCT's members M, DM and D2M are never used and are left out.
 
     public GeomFill_LocFunction(GeomFill_LocationLaw Law)
     {
-        V = new NCollection_Array1<gp_Vec>(1, 4);
-        DV = new NCollection_Array1<gp_Vec>(1, 4);
-        D2V = new NCollection_Array1<gp_Vec>(1, 4);
+        V = new NCollection_Array1<Vector3D>(1, 4);
+        DV = new NCollection_Array1<Vector3D>(1, 4);
+        D2V = new NCollection_Array1<Vector3D>(1, 4);
         myLaw = Law;
     }
 
     /// <summary>Computes the location for v = Param.</summary>
     public bool D0(double Param, double First, double Last)
     {
-        gp_Mat aM = new gp_Mat();
+        Matrix3x3 aM = new Matrix3x3();
         bool B;
         B = myLaw.D0(Param, ref aM, ref V[1]);
         V[2].SetXYZ(aM.Column(1));
@@ -41,9 +45,9 @@ public sealed class GeomFill_LocFunction
     /// <summary>Computes the location and its first derivative for v = Param.</summary>
     public bool D1(double Param, double First, double Last)
     {
-        NCollection_Array1<gp_Pnt2d> T1 = new(1, 1);
-        NCollection_Array1<gp_Vec2d> T2 = new(1, 1);
-        gp_Mat aM = new gp_Mat(), aDM = new gp_Mat();
+        NCollection_Array1<Point2D> T1 = new(1, 1);
+        NCollection_Array1<Vector2D> T2 = new(1, 1);
+        Matrix3x3 aM = new Matrix3x3(), aDM = new Matrix3x3();
         bool B;
         B = myLaw.D1(Param, ref aM, ref V[1], ref aDM, ref DV[1], T1, T2);
         V[2].SetXYZ(aM.Column(1));
@@ -58,9 +62,9 @@ public sealed class GeomFill_LocFunction
     /// <summary>Computes the location and its first and second derivatives for v = Param.</summary>
     public bool D2(double Param, double First, double Last)
     {
-        NCollection_Array1<gp_Pnt2d> T1 = new(1, 1);
-        NCollection_Array1<gp_Vec2d> T2 = new(1, 1), T3 = new(1, 1);
-        gp_Mat aM = new gp_Mat(), aDM = new gp_Mat(), aD2M = new gp_Mat();
+        NCollection_Array1<Point2D> T1 = new(1, 1);
+        NCollection_Array1<Vector2D> T2 = new(1, 1), T3 = new(1, 1);
+        Matrix3x3 aM = new Matrix3x3(), aDM = new Matrix3x3(), aD2M = new Matrix3x3();
         bool B;
         B = myLaw.D2(Param, ref aM, ref V[1], ref aDM, ref DV[1], ref aD2M, ref D2V[1], T1, T2, T3);
         V[2].SetXYZ(aM.Column(1));
@@ -82,7 +86,7 @@ public sealed class GeomFill_LocFunction
     public void DN(double Param, double First, double Last, int Order, Span<double> Result, ref int Ier)
     {
         bool B;
-        NCollection_Array1<gp_Vec>? LocalResult = null;
+        NCollection_Array1<Vector3D>? LocalResult = null;
         Ier = 0;
 
         switch (Order)
@@ -111,11 +115,11 @@ public sealed class GeomFill_LocFunction
         // OCCT: another order leaves LocalResult null and reads through it; the port throws.
         if (LocalResult is null)
         {
-            throw new Standard_OutOfRange("GeomFill_LocFunction::DN");
+            throw new OutOfRangeException("GeomFill_LocFunction::DN");
         }
         for (int ii = 0; ii <= 11; ii++)
         {
-            gp_Vec aV = LocalResult[1 + ii / 3];
+            Vector3D aV = LocalResult[1 + ii / 3];
             Result[ii] = aV.Coord(1 + ii % 3);
         }
     }

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Approximation of helix curves (and of any 3D curve adaptor) by B-spline curves.</summary>
@@ -33,8 +37,8 @@ public static class HelixGeom_Tools
             {
                 ErrorCode = 1;
             }
-            gp_Pnt pnt;
-            gp_Vec v1, v2;
+            Point3D pnt;
+            Vector3D v1, v2;
 
             switch (Order)
             {
@@ -72,7 +76,7 @@ public static class HelixGeom_Tools
     /// </summary>
     public static int ApprCurve3D(Adaptor3d_Curve theHC,
                                   double theTol,
-                                  GeomAbs_Shape theCont,
+                                  Continuity theCont,
                                   int theMaxSeg,
                                   int theMaxDeg,
                                   ref Geom_BSplineCurve? theBSpl,
@@ -122,7 +126,7 @@ public static class HelixGeom_Tools
             return 2;
         }
         // Extract B-spline curve data from approximation
-        NCollection_Array1<gp_Pnt> Poles = new(1, aApprox.NbPoles());
+        NCollection_Array1<Point3D> Poles = new(1, aApprox.NbPoles());
         aApprox.Poles(1, Poles);
         NCollection_HArray1<double> Knots = aApprox.Knots()!;
         NCollection_HArray1<int> Mults = aApprox.Multiplicities()!;
@@ -138,7 +142,7 @@ public static class HelixGeom_Tools
     /// by a B-spline within <paramref name="theTol"/>, C2, degree at most 8 and at most 150 segments. Returns 0 on
     /// success.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The helix parameters are invalid.</exception>
+    /// <exception cref="ConstructionErrorException">The helix parameters are invalid.</exception>
     public static int ApprHelix(double aT1,
                                 double aT2,
                                 double aPitch,
@@ -150,14 +154,14 @@ public static class HelixGeom_Tools
                                 ref double theMaxError)
     {
         int iErr, aMaxDegree, aMaxSeg;
-        GeomAbs_Shape aCont;
+        Continuity aCont;
         HelixGeom_HelixCurve aAdaptor = new();
         HelixGeom_HelixCurve aHAdaptor;
         // Load helix parameters and create adaptor handle
         aAdaptor.Load(aT1, aT2, aPitch, aRStart, aTaperAngle, aIsCW);
         aHAdaptor = new HelixGeom_HelixCurve(aAdaptor);
         // Set default approximation parameters
-        aCont = GeomAbs_Shape.GeomAbs_C2;
+        aCont = Continuity.C2;
         aMaxDegree = 8;
         aMaxSeg = 150;
         // Perform curve approximation

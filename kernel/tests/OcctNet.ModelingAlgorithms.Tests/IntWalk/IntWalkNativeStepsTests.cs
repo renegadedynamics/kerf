@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -20,7 +21,7 @@ public class IntWalkNativeStepsTests
     // tools/walkrec's main.cpp, line for line.
     private static Geom_BSplineSurface Patch(double theX0, double theX1, double theY0, double theY1, int theTable = 0)
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         double[,] aZ =
         {
             { 0.10, -0.20, 0.30, 0.00 },
@@ -39,7 +40,7 @@ public class IntWalkNativeStepsTests
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(theX0 + (theX1 - theX0) * (i - 1) / 3.0, theY0 + (theY1 - theY0) * (j - 1) / 3.0,
+                aPoles[i, j] = new Point3D(theX0 + (theX1 - theX0) * (i - 1) / 3.0, theY0 + (theY1 - theY0) * (j - 1) / 3.0,
                                           theTable == 0 ? aZ[i - 1, j - 1] : aZB[i - 1, j - 1]);
             }
         }
@@ -53,7 +54,7 @@ public class IntWalkNativeStepsTests
     }
 
     private static Geom_CylindricalSurface Cylinder() =>
-        new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     private static void Hex(StringBuilder theOut, double theValue) =>
         theOut.Append(' ').Append(BitConverter.DoubleToUInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture));
@@ -174,19 +175,19 @@ public class IntWalkNativeStepsTests
     {
         "cyl-bspline-closed" => ImpPrm(Cylinder(), Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
         "cyl-bspline-open" => ImpPrm(Cylinder(), Patch(0.0, 3.0, -2.0, 2.0), 0.01, 0.05),
-        "plane-torus" => ImpPrm(new Geom_Plane(new gp_Pnt(0, 0, 0.2), new gp_Dir(0.1, 0.05, 1.0)),
-                                new Geom_ToroidalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0, 0.5),
+        "plane-torus" => ImpPrm(new Geom_Plane(new Point3D(0, 0, 0.2), new Direction3D(0.1, 0.05, 1.0)),
+                                new Geom_ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
                                 0.01, 0.05),
         "pwalk-cyl-bspline" => PWalk(new Geom_RectangularTrimmedSurface(Cylinder(), 0.0, 2.0 * M_PI, -2.0, 2.0),
                                      Patch(0.0, 3.0, -2.0, 2.0), 0.3, 0.1, 0.4, 0.55),
-        "sphere-bspline" => ImpPrm(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.2),
+        "sphere-bspline" => ImpPrm(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.2),
                                    Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
-        "cone-bspline" => ImpPrm(new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0.1, -0.2, -1.0), new gp_Dir(0, 0, 1)),
+        "cone-bspline" => ImpPrm(new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0.1, -0.2, -1.0), new Direction3D(0, 0, 1)),
                                                          M_PI / 6, 0.5),
                                  Patch(-2.0, 2.0, -2.0, 2.0), 0.01, 0.05),
         "bspline-plane" => ImpPrm(Patch(-2.0, 2.0, -2.0, 2.0, 1),
-                                  new Geom_Plane(new gp_Pnt(0, 0, 0.05), new gp_Dir(0.2, -0.1, 1.0)), 0.01, 0.05),
-        "pwalk-torus-bspline" => PWalk(new Geom_ToroidalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0, 0.5),
+                                  new Geom_Plane(new Point3D(0, 0, 0.05), new Direction3D(0.2, -0.1, 1.0)), 0.01, 0.05),
+        "pwalk-torus-bspline" => PWalk(new Geom_ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 0.5),
                                        Patch(-2.0, 2.0, -2.0, 2.0), 0.0, M_PI, 0.875, 0.5),
         "pwalk-bspline-bspline" => PWalk(Patch(-2.0, 2.0, -2.0, 2.0), Patch(-2.0, 2.0, -2.0, 2.0, 1), 0.5, 0.5, 0.5, 0.5),
         _ => throw new ArgumentOutOfRangeException(nameof(theCase)),

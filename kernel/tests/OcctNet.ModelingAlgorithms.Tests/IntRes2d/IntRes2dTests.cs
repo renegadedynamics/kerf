@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -29,7 +30,7 @@ public class IntRes2dTests
     private static IntRes2d_IntersectionPoint Pnt(double u1, double u2, IntRes2d_TypeTrans t1 = IntRes2d_In,
                                                   IntRes2d_TypeTrans t2 = IntRes2d_Out,
                                                   IntRes2d_Position pos = IntRes2d_Middle)
-        => new(new gp_Pnt2d(u1, u2), u1, u2, new IntRes2d_Transition(false, pos, t1),
+        => new(new Point2D(u1, u2), u1, u2, new IntRes2d_Transition(false, pos, t1),
                new IntRes2d_Transition(false, pos, t2), false);
 
     [Fact]
@@ -38,9 +39,9 @@ public class IntRes2dTests
         var aT = new IntRes2d_Transition();
         Assert.Equal(IntRes2d_Middle, aT.PositionOnCurve());
         Assert.Equal(IntRes2d_Undecided, aT.TransitionType());
-        Assert.ThrowsAny<Standard_DomainError>(() => aT.IsTangent());
-        Assert.ThrowsAny<Standard_DomainError>(() => aT.Situation());
-        Assert.ThrowsAny<Standard_DomainError>(() => aT.IsOpposite());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aT.IsTangent());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aT.Situation());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aT.IsOpposite());
         Assert.NotEqual(aT, default);
     }
 
@@ -50,7 +51,7 @@ public class IntRes2dTests
         var anIn = new IntRes2d_Transition(false, IntRes2d_Head, IntRes2d_In);
         Assert.Equal(IntRes2d_In, anIn.TransitionType());
         Assert.False(anIn.IsTangent());
-        Assert.ThrowsAny<Standard_DomainError>(() => anIn.Situation());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => anIn.Situation());
 
         var aTouch = new IntRes2d_Transition(true, IntRes2d_End, IntRes2d_Outside, true);
         Assert.Equal(IntRes2d_Touch, aTouch.TransitionType());
@@ -75,18 +76,18 @@ public class IntRes2dTests
     {
         var aT1 = new IntRes2d_Transition(false, IntRes2d_Head, IntRes2d_In);
         var aT2 = new IntRes2d_Transition(false, IntRes2d_End, IntRes2d_Out);
-        var aP = new IntRes2d_IntersectionPoint(new gp_Pnt2d(1, 2), 0.25, 0.75, aT1, aT2, false);
+        var aP = new IntRes2d_IntersectionPoint(new Point2D(1, 2), 0.25, 0.75, aT1, aT2, false);
         Assert.Equal(0.25, aP.ParamOnFirst());
         Assert.Equal(0.75, aP.ParamOnSecond());
         Assert.Equal(aT1, aP.TransitionOfFirst());
 
-        var aR = new IntRes2d_IntersectionPoint(new gp_Pnt2d(1, 2), 0.25, 0.75, aT1, aT2, true);
+        var aR = new IntRes2d_IntersectionPoint(new Point2D(1, 2), 0.25, 0.75, aT1, aT2, true);
         Assert.Equal(0.75, aR.ParamOnFirst());
         Assert.Equal(0.25, aR.ParamOnSecond());
         Assert.Equal(aT2, aR.TransitionOfFirst());
         Assert.Equal(aT1, aR.TransitionOfSecond());
 
-        aP.SetValues(new gp_Pnt2d(1, 2), 0.25, 0.75, aT1, aT2, true);
+        aP.SetValues(new Point2D(1, 2), 0.25, 0.75, aT1, aT2, true);
         Assert.Equal(aR, aP);
 
         var aDefault = new IntRes2d_IntersectionPoint();
@@ -112,7 +113,7 @@ public class IntRes2dTests
         Assert.False(aHalf.HasFirstPoint());
         Assert.True(aHalf.HasLastPoint());
         Assert.Equal(aP1, aHalf.LastPoint());
-        Assert.ThrowsAny<Standard_DomainError>(() => aHalf.FirstPoint());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aHalf.FirstPoint());
 
         var anInfinite = new IntRes2d_IntersectionSegment(false);
         Assert.False(anInfinite.HasFirstPoint() || anInfinite.HasLastPoint());
@@ -126,10 +127,10 @@ public class IntRes2dTests
         Assert.False(anInfinite.HasFirstPoint());
         Assert.False(anInfinite.HasLastPoint());
         Assert.Equal(anInfinite, default);
-        Assert.ThrowsAny<Standard_DomainError>(() => anInfinite.FirstParameter());
-        Assert.ThrowsAny<Standard_DomainError>(() => anInfinite.WithEquivalentParameters(0, 1));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInfinite.FirstParameter());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInfinite.WithEquivalentParameters(0, 1));
 
-        var aBounded = new IntRes2d_Domain(new gp_Pnt2d(1, 0), 0, 1e-7, new gp_Pnt2d(1, 0), 2 * Math.PI, 1e-7);
+        var aBounded = new IntRes2d_Domain(new Point2D(1, 0), 0, 1e-7, new Point2D(1, 0), 2 * Math.PI, 1e-7);
         Assert.True(aBounded.HasFirstPoint() && aBounded.HasLastPoint());
         Assert.False(aBounded.IsClosed());
         var aClosed = aBounded.WithEquivalentParameters(0, 2 * Math.PI);
@@ -139,12 +140,12 @@ public class IntRes2dTests
         Assert.Equal(2 * Math.PI, aPeriod);
 
         // semi-infinite, with infinite values limited to Precision::Infinite()
-        var aSemi = new IntRes2d_Domain(new gp_Pnt2d(1e300, -1e300), -1e300, 1e-7, false);
+        var aSemi = new IntRes2d_Domain(new Point2D(1e300, -1e300), -1e300, 1e-7, false);
         Assert.False(aSemi.HasFirstPoint());
-        Assert.Equal(-Precision.Infinite(), aSemi.LastParameter());
-        Assert.Equal(Precision.Infinite(), aSemi.LastPoint().X());
-        Assert.Equal(-Precision.Infinite(), aSemi.LastPoint().Y());
-        Assert.ThrowsAny<Standard_DomainError>(() => aSemi.FirstPoint());
+        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastParameter());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().X());
+        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().Y());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aSemi.FirstPoint());
     }
 
     [Fact]
@@ -152,8 +153,8 @@ public class IntRes2dTests
     {
         var anInter = new TestIntersection();
         Assert.False(anInter.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anInter.NbPoints());
-        Assert.ThrowsAny<StdFail_NotDone>(() => anInter.IsEmpty());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.NbPoints());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.IsEmpty());
         anInter.Done();
         Assert.True(anInter.IsEmpty());
     }

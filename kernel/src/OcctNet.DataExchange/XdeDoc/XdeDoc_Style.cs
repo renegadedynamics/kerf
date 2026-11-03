@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Occt;
 /// <param name="SurfaceColor">The surfaces' colour, or null for the viewer's default.</param>
 /// <param name="CurveColor">The curves' colour, or null for the viewer's default.</param>
 /// <param name="IsVisible">False if the shape is hidden.</param>
-public readonly record struct XdeDoc_Style(Quantity_ColorRGBA? SurfaceColor, Quantity_ColorRGBA? CurveColor, bool IsVisible = true)
+public readonly record struct XdeDoc_Style(ColorWithAlpha? SurfaceColor, ColorWithAlpha? CurveColor, bool IsVisible = true)
 {
     /// <summary>No colour, visible.</summary>
     public static XdeDoc_Style Default => new(null, null, true);
@@ -21,20 +23,20 @@ public readonly record struct XdeDoc_Style(Quantity_ColorRGBA? SurfaceColor, Qua
     /// </summary>
     public XdeDoc_Style Merged(XdeDoc_Attributes theAttributes)
     {
-        Quantity_ColorRGBA? aSurf = SurfaceColor;
-        Quantity_ColorRGBA? aCurv = CurveColor;
-        if (theAttributes.GenericColor is Quantity_ColorRGBA aGen)
+        ColorWithAlpha? aSurf = SurfaceColor;
+        ColorWithAlpha? aCurv = CurveColor;
+        if (theAttributes.GenericColor is ColorWithAlpha aGen)
         {
             aSurf = aGen;
-            aCurv = new Quantity_ColorRGBA(aGen.GetRGB());
+            aCurv = new ColorWithAlpha(aGen.GetRGB());
         }
-        if (theAttributes.SurfaceColor is Quantity_ColorRGBA aS)
+        if (theAttributes.SurfaceColor is ColorWithAlpha aS)
         {
             aSurf = aS;
         }
-        if (theAttributes.CurveColor is Quantity_ColorRGBA aC)
+        if (theAttributes.CurveColor is ColorWithAlpha aC)
         {
-            aCurv = new Quantity_ColorRGBA(aC.GetRGB());
+            aCurv = new ColorWithAlpha(aC.GetRGB());
         }
         return new XdeDoc_Style(aSurf, aCurv, IsVisible && theAttributes.IsVisible);
     }

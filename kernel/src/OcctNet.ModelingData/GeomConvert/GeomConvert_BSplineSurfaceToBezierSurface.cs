@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -32,7 +36,7 @@ public sealed class GeomConvert_BSplineSurfaceToBezierSurface
     /// Prepares the conversion of the patch [U1, U2] x [V1, V2] of BasisSurface. A bound within
     /// ParametricTolerance / 2 of a knot outside the range is moved onto that knot.
     /// </summary>
-    /// <exception cref="Standard_DomainError">U2 - U1 or V2 - V1 is less than ParametricTolerance.</exception>
+    /// <exception cref="DomainErrorException">U2 - U1 or V2 - V1 is less than ParametricTolerance.</exception>
     public GeomConvert_BSplineSurfaceToBezierSurface(Geom_BSplineSurface BasisSurface,
                                                      double U1,
                                                      double U2,
@@ -42,7 +46,7 @@ public sealed class GeomConvert_BSplineSurfaceToBezierSurface
     {
         if ((U2 - U1 < ParametricTolerance) || (V2 - V1 < ParametricTolerance))
         {
-            throw new Standard_DomainError("GeomConvert_BSplineSurfaceToBezierSurface");
+            throw new DomainErrorException("GeomConvert_BSplineSurfaceToBezierSurface");
         }
 
         double Uf = U1, Ul = U2, Vf = V1, Vl = V2, PTol = ParametricTolerance / 2;
@@ -96,19 +100,19 @@ public sealed class GeomConvert_BSplineSurfaceToBezierSurface
     }
 
     /// <summary>A new Bezier surface: the patch (UIndex, VIndex) of the grid, oriented as the B-spline surface.</summary>
-    /// <exception cref="Standard_OutOfRange">UIndex out of [1, NbUPatches] or VIndex out of [1, NbVPatches].</exception>
+    /// <exception cref="OutOfRangeException">UIndex out of [1, NbUPatches] or VIndex out of [1, NbVPatches].</exception>
     public Geom_BezierSurface Patch(int UIndex, int VIndex)
     {
         if (UIndex < 1 || UIndex > mySurface.NbUKnots() - 1 || VIndex < 1
             || VIndex > mySurface.NbVKnots() - 1)
         {
-            throw new Standard_OutOfRange("GeomConvert_BSplineSurfaceToBezierSurface");
+            throw new OutOfRangeException("GeomConvert_BSplineSurfaceToBezierSurface");
         }
 
         int UDeg = mySurface.UDegree();
         int VDeg = mySurface.VDegree();
 
-        var Poles = new NCollection_Array2<gp_Pnt>(1, UDeg + 1, 1, VDeg + 1);
+        var Poles = new NCollection_Array2<Point3D>(1, UDeg + 1, 1, VDeg + 1);
 
         Geom_BezierSurface S;
         if (mySurface.IsURational() || mySurface.IsVRational())

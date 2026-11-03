@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -71,12 +73,12 @@ public class Interface_ShareFlags
         {
             return;
         }
-        theroots = new NCollection_HSequence<Standard_Transient>();
+        theroots = new NCollection_HSequence<Transient>();
         for (int i = 1; i <= nb; i++)
         {
             //    Result obtained from the Graph
-            Standard_Transient ent = themodel.Value(i);
-            NCollection_HSequence<Standard_Transient> list =
+            Transient ent = themodel.Value(i);
+            NCollection_HSequence<Transient> list =
                 agraph.GetSharings(ent);
 
             if (list is not null && list.Length() > 0)
@@ -101,12 +103,12 @@ public class Interface_ShareFlags
     /// <summary>
     /// Returns True if &lt;ent&gt; is Shared by one or more other Entity(ies) of the Model
     /// </summary>
-    public bool IsShared(Standard_Transient? ent)
+    public bool IsShared(Transient? ent)
     {
         int num = themodel.Number(ent);
         if (num == 0 || num > themodel.NbEntities())
         {
-            throw new Standard_DomainError("Interface ShareFlags : IsShared");
+            throw new DomainErrorException("Interface ShareFlags : IsShared");
         }
         return theflags.Value(num);
     }
@@ -131,7 +133,7 @@ public class Interface_ShareFlags
     /// <summary>
     /// Returns a root entity according its rank in the list of roots By default, it returns the first one
     /// </summary>
-    public Standard_Transient? Root(int num = 1)
+    public Transient? Root(int num = 1)
     {
         return theroots.Value(num);
     }
@@ -148,14 +150,14 @@ public class Interface_ShareFlags
         {
             return;
         }
-        theroots = new NCollection_HSequence<Standard_Transient>();
+        theroots = new NCollection_HSequence<Transient>();
         int i; // svv Jan11 2000 : porting on DEC
         for (i = 1; i <= nb; i++)
         {
 
             //    WARNING: If Entity not loaded hence unreadable, switch to its
             //    equivalent "Content"
-            Standard_Transient ent = themodel.Value(i);
+            Transient ent = themodel.Value(i);
             if (themodel.IsRedefinedContent(i))
             {
                 ent = themodel.ReportEntity(i).Content();
@@ -198,5 +200,5 @@ public class Interface_ShareFlags
 
     private Interface_InterfaceModel? themodel;
     private Interface_BitMap theflags = new Interface_BitMap();
-    private NCollection_HSequence<Standard_Transient>? theroots;
+    private NCollection_HSequence<Transient>? theroots;
 }

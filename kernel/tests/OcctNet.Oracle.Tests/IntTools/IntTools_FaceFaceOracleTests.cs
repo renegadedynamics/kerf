@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using Xunit.Abstractions;
@@ -41,9 +43,9 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
 
     private static N.gp_Ax3 NativeAx3(Oracle theO, double theRange)
     {
-        gp_Dir aN = Oracle.Settled(theO.Dir());
-        gp_Dir aX = Oracle.Settled(new gp_Dir(new gp_Vec(aN).Crossed(new gp_Vec(theO.Dir()))));
-        var anAx = new gp_Ax3(new gp_Pnt(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange),
+        Direction3D aN = Oracle.Settled(theO.Dir());
+        Direction3D aX = Oracle.Settled(new Direction3D(new Vector3D(aN).Crossed(new Vector3D(theO.Dir()))));
+        var anAx = new CoordinateSystem(new Point3D(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange),
                                          theO.Real(-theRange, theRange)), aN, aX);
         return Oracle.ToNative(anAx);
     }
@@ -118,7 +120,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 aFF.Perform(PortFace(aText1), PortFace(aText2));
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue;
             }
@@ -170,7 +172,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
                 else
                 {
                     aMisses.Add(string.Create(CultureInfo.InvariantCulture,
-                                              $"pair {aPair} (kinds {k1}, {k2}): a {aC.GetType().Name} of FaceFace's isn't among GeomAPI_IntSS's {aNative.Count} lines"));
+                                              $"pair {aPair} (kinds {k1}, {k2}): a {Kerf.Engine.Foundation.OcctTypeNames.Of(aC.GetType())} of FaceFace's isn't among GeomAPI_IntSS's {aNative.Count} lines"));
                 }
             }
         }

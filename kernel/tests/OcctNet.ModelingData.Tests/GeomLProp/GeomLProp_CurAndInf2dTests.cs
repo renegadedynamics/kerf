@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.LProp_CIType;
 
 namespace OcctNet.ModelingData.Tests;
@@ -16,17 +17,17 @@ public class GeomLProp_CurAndInf2dTest
     public GeomLProp_CurAndInf2dTest()
     {
         // Circle centered at origin, radius 5
-        var aCirc = new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 5.0);
+        var aCirc = new Circle2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0);
         myCircle = new Geom2d_Circle(aCirc);
 
         // Ellipse centered at origin, major radius 10, minor radius 3
-        var anElips = new gp_Elips2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 10.0, 3.0);
+        var anElips = new Ellipse2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 10.0, 3.0);
         myEllipse = new Geom2d_Ellipse(anElips);
 
-        var aHypr = new gp_Hypr2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 6.0, 3.0);
+        var aHypr = new Hyperbola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 6.0, 3.0);
         myHyperbola = new Geom2d_Hyperbola(aHypr);
 
-        var aParab = new gp_Parab2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 2.0);
+        var aParab = new Parabola2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 2.0);
         myParabola = new Geom2d_Parabola(aParab);
     }
 
@@ -167,7 +168,7 @@ public class GeomLProp_CurAndInf2dTest
 
         Assert.True(aAnalyzer.IsDone());
         Assert.Equal(1, aAnalyzer.NbPoints());
-        Assert.Equal(0.0, aAnalyzer.Parameter(1), Precision.PConfusion());
+        Assert.Equal(0.0, aAnalyzer.Parameter(1), global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.Equal(LProp_MinCur, aAnalyzer.Type(1));
     }
 
@@ -189,7 +190,7 @@ public class GeomLProp_CurAndInf2dTest
 
         Assert.True(aAnalyzer.IsDone());
         Assert.Equal(1, aAnalyzer.NbPoints());
-        Assert.Equal(0.0, aAnalyzer.Parameter(1), Precision.PConfusion());
+        Assert.Equal(0.0, aAnalyzer.Parameter(1), global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.Equal(LProp_MinCur, aAnalyzer.Type(1));
     }
 

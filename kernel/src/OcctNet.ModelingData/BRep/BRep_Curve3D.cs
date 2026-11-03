@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The representation of an edge by a 3D curve.</summary>
@@ -11,7 +15,7 @@ public class BRep_Curve3D : BRep_GCurve
     private Geom_Curve? myCurve;
 
     /// <summary>The curve <paramref name="C"/> (frozen here) with location <paramref name="L"/>, over its whole range.</summary>
-    public BRep_Curve3D(Geom_Curve? C, in TopLoc_Location L)
+    public BRep_Curve3D(Geom_Curve? C, in Placement L)
         : base(L, C is null ? RealFirst() : C.FirstParameter(), C is null ? RealLast() : C.LastParameter())
     {
         C?.Freeze(); // OCCT.NET: attached geometry is frozen
@@ -19,7 +23,7 @@ public class BRep_Curve3D : BRep_GCurve
     }
 
     /// <summary>The point at parameter <paramref name="U"/>.</summary>
-    public override void D0(double U, out gp_Pnt P)
+    public override void D0(double U, out Point3D P)
     {
         // should be D0 NYI
         P = myCurve!.Value(U);

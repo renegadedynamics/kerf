@@ -2,9 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BOPAlgo_GlueEnum;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -14,19 +19,19 @@ namespace Occt;
 /// OCCT's class derives from both IntTools_EdgeFace and BOPAlgo_ParallelAlgo; here it derives from the first and holds
 /// what the second gives (the progress range and a report, through a <see cref="BOPAlgo_Options"/>). Its
 /// <see cref="Perform"/> hides the base's: when the shapes are far from the origin it moves the edge and the face near
-/// it (<see cref="BOPAlgo_Tools.TrsfToPoint(in Bnd_Box, in Bnd_Box, ref gp_Trsf)"/>), intersects, restores them and
+/// it (<see cref="BOPAlgo_Tools.TrsfToPoint(in Box, in Box, ref Transform3D)"/>), intersects, restores them and
 /// gives the common parts back the unmoved edge. A moved face is a different key of the context (decision 756).
 /// </remarks>
 internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IContextSolver<IntTools_Context>
 {
     private readonly BOPAlgo_Options myOptions = new();
-    private Message_ProgressRange myProgressRange;
+    private ProgressRange myProgressRange;
     private int myIE;
     private int myIF;
     private IntTools_Range myNewSR = new();
     private BOPDS_PaveBlock? myPB;
-    private Bnd_Box myBox1 = new();
-    private Bnd_Box myBox2 = new();
+    private Box myBox1 = new();
+    private Box myBox2 = new();
 
     public BOPAlgo_EdgeFace()
     {
@@ -54,14 +59,14 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
 
     public BOPDS_PaveBlock PaveBlock() => myPB!;
 
-    public void SetBoxes(in Bnd_Box theBox1, in Bnd_Box theBox2)
+    public void SetBoxes(in Box theBox1, in Box theBox2)
     {
         myBox1 = theBox1;
         myBox2 = theBox2;
     }
 
     /// <summary>BOPAlgo_ParallelAlgo's range for the single run.</summary>
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     /// <summary>Whether the run failed (BOPAlgo_Options' errors).</summary>
     public bool HasErrors() => myOptions.HasErrors();
@@ -70,7 +75,7 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
 
     public new void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (myOptions.UserBreak(aPS))
         {
             return;
@@ -80,12 +85,12 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
         bool hasTrsf = false;
         try
         {
-            gp_Trsf aTrsf = new();
+            Transform3D aTrsf = new();
             if (BOPAlgo_Tools.TrsfToPoint(myBox1, myBox2, ref aTrsf))
             {
                 // Shapes are located far from origin, move the shapes to the origin,
                 // to increase the accuracy of intersection.
-                TopLoc_Location aLoc = new(aTrsf);
+                Placement aLoc = new(aTrsf);
                 myEdge.Move(aLoc);
                 myFace.Move(aLoc);
                 hasTrsf = true;
@@ -93,7 +98,7 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
 
             base.Perform();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             myOptions.AddError(new BOPAlgo_AlertIntersectionFailed());
         }
@@ -114,12 +119,12 @@ internal sealed class BOPAlgo_EdgeFace : IntTools_EdgeFace, BOPTools_Parallel.IC
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>The edge/face interferences.</summary>
-    protected virtual void PerformEF(Message_ProgressRange theRange)
+    protected virtual void PerformEF(ProgressRange theRange)
     {
         FillShrunkData(TopAbs_EDGE, TopAbs_FACE);
         //
         myIterator!.Initialize(TopAbs_EDGE, TopAbs_FACE);
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         int iSize = myIterator.ExpectedLength();
         if (iSize == 0)
         {
@@ -160,7 +165,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_IntMap aMIEFC = new(100);
         NCollection_IndexedDataMap<TopoDS_Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(TopTools_ShapeMapHasher.Instance);
         NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<int>> aMPBLI = new();
-        NCollection_DataMap<BOPDS_PaveBlock, Bnd_Box> aDMPBBox = new();
+        NCollection_DataMap<BOPDS_PaveBlock, Box> aDMPBBox = new();
         //
         NCollection_DynamicArray<BOPDS_InterfEF> aEFs = myDS!.InterfEF();
         //
@@ -180,7 +185,7 @@ public partial class BOPAlgo_PaveFiller
             //
             TopoDS_Edge aE = TopoDS.Edge(aSIE.Shape());
             TopoDS_Face aF = TopoDS.Face(myDS.Shape(nF));
-            Bnd_Box aBBF = myDS.ShapeInfo(nF).Box();
+            Box aBBF = myDS.ShapeInfo(nF).Box();
             //
             BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
             NCollection_IndexedMap<BOPDS_PaveBlock> aMPBF = aFI.PaveBlocksOn();
@@ -207,7 +212,7 @@ public partial class BOPAlgo_PaveFiller
                     continue;
                 }
                 //
-                Bnd_Box aBBE = new();
+                Box aBBE = new();
                 if (!GetPBBox(aE, aPB, aDMPBBox, ref aT1, ref aT2, ref aTS1, ref aTS2, ref aBBE))
                 {
                     continue;
@@ -254,7 +259,7 @@ public partial class BOPAlgo_PaveFiller
         } // for (; myIterator->More(); myIterator->Next()) {
         //
         aNbEdgeFace = aVEdgeFace.Length();
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(9), "Performing Edge-Face intersection", aNbEdgeFace);
+        using var aPS = new ProgressScope(aPSOuter.Next(9), "Performing Edge-Face intersection", aNbEdgeFace);
         for (int index = 0; index < aNbEdgeFace; index++)
         {
             BOPAlgo_EdgeFace aEdgeFace = aVEdgeFace[index];
@@ -339,7 +344,7 @@ public partial class BOPAlgo_PaveFiller
             if (aNbCPrts != 0)
             {
                 BRepAdaptor_Curve aBAC = new(aE);
-                bLinePlane = (aBAC.GetType() == GeomAbs_Line && myContext!.SurfaceAdaptor(aF).GetType() == GeomAbs_Plane);
+                bLinePlane = (aBAC.GetType() == Line && myContext!.SurfaceAdaptor(aF).GetType() == Plane);
             }
             //
             for (i = 1; i <= aNbCPrts; ++i)
@@ -414,11 +419,11 @@ public partial class BOPAlgo_PaveFiller
                             // If it is an intersection point, update the existing vertex to cover the
                             // intersection point.
                             GeomAPI_ProjectPointOnSurf aProjPS = myContext!.ProjPS(aF);
-                            gp_Pnt aPnew0 = BRep_Tool.Pnt(aVnew);
+                            Point3D aPnew0 = BRep_Tool.Pnt(aVnew);
                             aProjPS.Perform(aPnew0);
                             double aMinDistEF = (aProjPS.IsDone() && aProjPS.NbPoints() != 0) ? aProjPS.LowerDistance()
-                                                                                             : Precision.Infinite();
-                            bool hasRealIntersection = aMinDistEF < Precision.Intersection();
+                                                                                             : global::Kerf.Engine.Foundation.Precision.Infinite();
+                            bool hasRealIntersection = aMinDistEF < global::Kerf.Engine.Foundation.Precision.Intersection();
 
                             if (!hasRealIntersection)
                             {
@@ -433,7 +438,7 @@ public partial class BOPAlgo_PaveFiller
                                 if (bIsOnPave[j])
                                 {
                                     TopoDS_Vertex aV = TopoDS.Vertex(myDS.Shape(nV[j]));
-                                    gp_Pnt aP = BRep_Tool.Pnt(aV);
+                                    Point3D aP = BRep_Tool.Pnt(aV);
                                     double aDistPP = aP.Distance(aPnew0);
                                     double aTol = BRep_Tool.Tolerance(aV);
                                     double aMaxDist = 1.0e4 * aTol;
@@ -467,7 +472,7 @@ public partial class BOPAlgo_PaveFiller
                             aTolVnew = Max(aTolVnew, (aCR.Last() - aCR.First()) / 2.0);
                         }
                         //
-                        gp_Pnt aPnew = BRep_Tool.Pnt(aVnew);
+                        Point3D aPnew = BRep_Tool.Pnt(aVnew);
                         //
                         if (!myContext!.IsPointInFace(aPnew, aF, aTolVnew))
                         {
@@ -708,9 +713,9 @@ public partial class BOPAlgo_PaveFiller
     /// Looks for the edge/face common blocks among the pairs of pave blocks and faces with the same vertices, after
     /// the vertices have been increased and unified.
     /// </summary>
-    protected void ForceInterfEF(Message_ProgressRange theRange)
+    protected void ForceInterfEF(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 1);
+        using var aPS = new ProgressScope(theRange, null, 1);
         if (!myIsPrimary)
         {
             return;
@@ -769,10 +774,10 @@ public partial class BOPAlgo_PaveFiller
     /// Intersects the pave blocks with the faces containing both their vertices, looking for edge/face common blocks
     /// only; <paramref name="theAddInterf"/> adds the interferences and makes the common blocks.
     /// </summary>
-    protected void ForceInterfEF(NCollection_IndexedMap<BOPDS_PaveBlock> theMPB, Message_ProgressRange theRange, bool theAddInterf)
+    protected void ForceInterfEF(NCollection_IndexedMap<BOPDS_PaveBlock> theMPB, ProgressRange theRange, bool theAddInterf)
     {
         // Split progress on preparation, intersection and post-treatment stages
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         if (theMPB.IsEmpty())
         {
             return;
@@ -799,9 +804,9 @@ public partial class BOPAlgo_PaveFiller
                 return;
             }
 
-            aPB.ShrunkData(out double f, out double l, out Bnd_Box aPBBox, out bool isSplit);
+            aPB.ShrunkData(out double f, out double l, out Box aPBBox, out bool isSplit);
 
-            aBBTree.Add(aPBMap.Add(aPB), Bnd_Tools.Bnd2BVH(aPBBox));
+            aBBTree.Add(aPBMap.Add(aPB), Tools.Bnd2BVH(aPBBox));
         }
 
         // Shake the tree
@@ -835,9 +840,9 @@ public partial class BOPAlgo_PaveFiller
                 return;
             }
 
-            Bnd_Box aBoxF = aSI.Box();
+            Box aBoxF = aSI.Box();
             BOPTools_BoxTreeSelector aSelector = new();
-            aSelector.SetBox(Bnd_Tools.Bnd2BVH(aBoxF));
+            aSelector.SetBox(Tools.Bnd2BVH(aBoxF));
             aSelector.SetBVHSet(aBBTree);
             if (aSelector.Select() == 0)
             {
@@ -920,12 +925,12 @@ public partial class BOPAlgo_PaveFiller
                 // tolerance, as it may lead to undesired unification of edge with the face.
                 bool bUseAddTol = true;
 
-                aPB.ShrunkData(out aTS[0], out aTS[1], out Bnd_Box aPBBox, out bool isSplit);
+                aPB.ShrunkData(out aTS[0], out aTS[1], out Box aPBBox, out bool isSplit);
 
                 // Middle point
                 // Tangent vector in the middle point
-                aBAC.D1(BOPTools_AlgoTools2D.IntermediatePoint(aTS[0], aTS[1]), out gp_Pnt aPOnE, out gp_Vec aVETgt);
-                if (aVETgt.SquareMagnitude() < gp.Resolution())
+                aBAC.D1(BOPTools_AlgoTools2D.IntermediatePoint(aTS[0], aTS[1]), out Point3D aPOnE, out Vector3D aVETgt);
+                if (aVETgt.SquareMagnitude() < Constants.Resolution())
                 {
                     continue;
                 }
@@ -953,16 +958,16 @@ public partial class BOPAlgo_PaveFiller
                 }
 
                 aProjPS.LowerDistanceParameters(out double U, out double V);
-                if (!myContext.IsPointInFace(aF, new gp_Pnt2d(U, V)))
+                if (!myContext.IsPointInFace(aF, new Point2D(U, V)))
                 {
                     continue;
                 }
 
-                if (aSurfAdaptor.GetType() != GeomAbs_Plane || aBAC.GetType() != GeomAbs_Line)
+                if (aSurfAdaptor.GetType() != Plane || aBAC.GetType() != Line)
                 {
-                    gp_Pnt aPOnS = aProjPS.NearestPoint();
-                    gp_Vec aVFNorm = new(aPOnS, aPOnE);
-                    if (aVFNorm.SquareMagnitude() > gp.Resolution())
+                    Point3D aPOnS = aProjPS.NearestPoint();
+                    Vector3D aVFNorm = new(aPOnS, aPOnE);
+                    if (aVFNorm.SquareMagnitude() > Constants.Resolution())
                     {
                         // Angle between vectors should be close to 90 degrees.
                         // We allow deviation of 25 degrees.
@@ -986,7 +991,7 @@ public partial class BOPAlgo_PaveFiller
 
                     for (int iP = 0; iP < 2; ++iP)
                     {
-                        gp_Pnt aP = aBAC.Value(aTS[iP]);
+                        Point3D aP = aBAC.Value(aTS[iP]);
                         aProjPS.Perform(aP);
                         if (aProjPS.NbPoints() != 0)
                         {
@@ -1040,7 +1045,7 @@ public partial class BOPAlgo_PaveFiller
 
         aPBMap.Clear();
 
-        using var aPS = new Message_ProgressScope(aPSOuter.Next(9), "Checking for edges coinciding with faces", aNbEFs);
+        using var aPS = new ProgressScope(aPSOuter.Next(9), "Checking for edges coinciding with faces", aNbEFs);
         for (int i = 0; i < aNbEFs; i++)
         {
             BOPAlgo_EdgeFace aEdgeFace = aVEdgeFace[i];

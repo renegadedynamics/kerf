@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,11 +23,11 @@ public sealed class GccAna_Circ2dBisec
     private int NbrSol;
     private int intersection;
     private bool sameradius;
-    private gp_Circ2d circle1;
-    private gp_Circ2d circle2;
+    private Circle2D circle1;
+    private Circle2D circle2;
 
     /// <summary>Constructs the bisecting curves of Circ1 and Circ2.</summary>
-    public GccAna_Circ2dBisec(in gp_Circ2d Circ1, in gp_Circ2d Circ2)
+    public GccAna_Circ2dBisec(in Circle2D Circ1, in Circle2D Circ2)
     {
         //=========================================================================
         //  Initialization of fields :                                            +
@@ -38,7 +42,7 @@ public sealed class GccAna_Circ2dBisec
         //=========================================================================
 
         WellDone = false;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         double R1 = Circ1.Radius();
         double R2 = Circ2.Radius();
@@ -137,11 +141,11 @@ public sealed class GccAna_Circ2dBisec
 
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -151,16 +155,16 @@ public sealed class GccAna_Circ2dBisec
             double ycencir2 = circle2.Location().Y();
             double dist = circle1.Location().Distance(circle2.Location());
 
-            gp_Pnt2d pcen = new((xcencir1 + xcencir2) / 2.0, (ycencir1 + ycencir2) / 2.0);
-            gp_Dir2d dircen = new(), medcen = new();
+            Point2D pcen = new((xcencir1 + xcencir2) / 2.0, (ycencir1 + ycencir2) / 2.0);
+            Direction2D dircen = new(), medcen = new();
             if (dist > Tol)
             {
                 dircen.SetCoord(xcencir2 - xcencir1, ycencir2 - ycencir1);
                 medcen.SetCoord(ycencir2 - ycencir1, xcencir1 - xcencir2);
             }
-            gp_Dir2d dirx = new(gp_Dir2d.D.X);
-            gp_Ax2d acenx = new(pcen, dirx);
-            gp_Ax2d acencen = new(pcen, dircen);
+            Direction2D dirx = new(Direction2D.D.X);
+            Axis2D acenx = new(pcen, dirx);
+            Axis2D acencen = new(pcen, dircen);
 
             double R1 = circle1.Radius();
             double R2 = circle2.Radius();
@@ -176,21 +180,21 @@ public sealed class GccAna_Circ2dBisec
                 {
                     R = (R1 - R2) / 2.0;
                 }
-                gp_Circ2d C = new(acenx, R);
+                Circle2D C = new(acenx, R);
                 bissol = new GccInt_BCirc(C);
             }
             else if ((NbrSol == 2) && (intersection == 1))
             {
                 if (Index == 1)
                 {
-                    gp_Elips2d E = new(acencen,
+                    Ellipse2D E = new(acencen,
                                        (R1 + R2) / 2.0,
                                        Math.Sqrt((R1 * R1 + R2 * R2 - dist * dist) / 4.0 + R1 * R2 / 2.0));
                     bissol = new GccInt_BElips(E);
                 }
                 else if (Index == 2)
                 {
-                    gp_Lin2d L = new(circle1.Location(), dircen);
+                    Line2D L = new(circle1.Location(), dircen);
                     bissol = new GccInt_BLine(L);
                 }
             }
@@ -200,12 +204,12 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Math.Abs(xcencir2 - xcencir1) < Tol && Math.Abs(ycencir2 - ycencir1) < Tol)
                     {
-                        gp_Circ2d C = new(acenx, (R1 + R2) / 2.0);
+                        Circle2D C = new(acenx, (R1 + R2) / 2.0);
                         bissol = new GccInt_BCirc(C);
                     }
                     else
                     {
-                        gp_Elips2d E = new(acencen,
+                        Ellipse2D E = new(acencen,
                                            (R1 + R2) / 2.0,
                                            Math.Sqrt((R1 * R1 + R2 * R2 - dist * dist) / 4.0 + R1 * R2 / 2.0));
                         bissol = new GccInt_BElips(E);
@@ -215,12 +219,12 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Math.Abs(xcencir2 - xcencir1) < Tol && Math.Abs(ycencir2 - ycencir1) < Tol)
                     {
-                        gp_Circ2d C = new(acencen, (R1 - R2) / 2.0);
+                        Circle2D C = new(acencen, (R1 - R2) / 2.0);
                         bissol = new GccInt_BCirc(C);
                     }
                     else
                     {
-                        gp_Elips2d E = new(acencen,
+                        Ellipse2D E = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt((R1 * R1 + R2 * R2 - dist * dist) / 4.0 - R1 * R2 / 2.0));
                         bissol = new GccInt_BElips(E);
@@ -233,12 +237,12 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Lin2d L = new(pcen, medcen);
+                        Line2D L = new(pcen, medcen);
                         bissol = new GccInt_BLine(L);
                     }
                     else if (Index == 2)
                     {
-                        gp_Elips2d E = new(acencen, R1, Math.Sqrt(R1 * R1 - dist * dist / 4.0));
+                        Ellipse2D E = new(acencen, R1, Math.Sqrt(R1 * R1 - dist * dist / 4.0));
                         bissol = new GccInt_BElips(E);
                     }
                 }
@@ -246,22 +250,22 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Hypr2d H1;
-                        H1 = new gp_Hypr2d(acencen,
+                        Hyperbola2D H1;
+                        H1 = new Hyperbola2D(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1);
                     }
                     else if (Index == 2)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1.OtherBranch());
                     }
                     else if (Index == 3)
                     {
-                        gp_Elips2d E = new(acencen,
+                        Ellipse2D E = new(acencen,
                                            (R1 + R2) / 2.0,
                                            Math.Sqrt((R1 * R1 + R2 * R2 - dist * dist) / 4.0 + R1 * R2 / 2.0));
                         bissol = new GccInt_BElips(E);
@@ -274,12 +278,12 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Lin2d L = new(pcen, dircen);
+                        Line2D L = new(pcen, dircen);
                         bissol = new GccInt_BLine(L);
                     }
                     else if (Index == 2)
                     {
-                        gp_Lin2d L = new(pcen, medcen);
+                        Line2D L = new(pcen, medcen);
                         bissol = new GccInt_BLine(L);
                     }
                 }
@@ -287,19 +291,19 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Lin2d L = new(pcen, dircen);
+                        Line2D L = new(pcen, dircen);
                         bissol = new GccInt_BLine(L);
                     }
                     else if (Index == 2)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1);
                     }
                     else if (Index == 3)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1.OtherBranch());
@@ -312,17 +316,17 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Lin2d L = new(pcen, medcen);
+                        Line2D L = new(pcen, medcen);
                         bissol = new GccInt_BLine(L);
                     }
                     else if (Index == 2)
                     {
-                        gp_Hypr2d H1 = new(acencen, R1, Math.Sqrt(dist * dist - 4 * R1 * R1) / 2.0);
+                        Hyperbola2D H1 = new(acencen, R1, Math.Sqrt(dist * dist - 4 * R1 * R1) / 2.0);
                         bissol = new GccInt_BHyper(H1);
                     }
                     else if (Index == 3)
                     {
-                        gp_Hypr2d H1 = new(acencen, R1, Math.Sqrt(dist * dist - 4 * R1 * R1) / 2.0);
+                        Hyperbola2D H1 = new(acencen, R1, Math.Sqrt(dist * dist - 4 * R1 * R1) / 2.0);
                         bissol = new GccInt_BHyper(H1.OtherBranch());
                     }
                 }
@@ -330,28 +334,28 @@ public sealed class GccAna_Circ2dBisec
                 {
                     if (Index == 1)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1);
                     }
                     else if (Index == 2)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 - R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 - R2) * (R1 - R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1.OtherBranch());
                     }
                     else if (Index == 3)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 + R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 + R2) * (R1 + R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1);
                     }
                     else if (Index == 4)
                     {
-                        gp_Hypr2d H1 = new(acencen,
+                        Hyperbola2D H1 = new(acencen,
                                            (R1 + R2) / 2.0,
                                            Math.Sqrt(dist * dist - (R1 + R2) * (R1 + R2)) / 2.0);
                         bissol = new GccInt_BHyper(H1.OtherBranch());
@@ -373,7 +377,7 @@ public sealed class GccAna_Circ2dBisec
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return NbrSol;
     }

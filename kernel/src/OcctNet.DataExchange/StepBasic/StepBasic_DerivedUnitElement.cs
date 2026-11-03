@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class StepBasic_DerivedUnitElement : Standard_Transient
+public class StepBasic_DerivedUnitElement : Transient
 {
     private StepBasic_NamedUnit theUnit;
     private double theExponent;

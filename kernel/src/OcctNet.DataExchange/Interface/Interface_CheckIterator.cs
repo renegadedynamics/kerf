@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -179,7 +180,7 @@ public class Interface_CheckIterator
     /// Returns the Check attached to an Entity If no Check was recorded for this Entity, returns an empty Check.
     /// Remark : Works apart from the iteration methods (no interference)
     /// </summary>
-    public Interface_Check? Check(Standard_Transient? ent)
+    public Interface_Check? Check(Transient? ent)
     {
         int num = -1;
         if (themod is not null)
@@ -226,7 +227,7 @@ public class Interface_CheckIterator
     /// Returns the Check bound to an Entity, in order to be consulted or completed on the spot I.e. returns the
     /// Check if is already exists, or adds it then returns the new empty Check
     /// </summary>
-    public ref Interface_Check? CCheck(Standard_Transient? ent)
+    public ref Interface_Check? CCheck(Transient? ent)
     {
         int num = -1;
         if (themod is not null)
@@ -463,14 +464,14 @@ public class Interface_CheckIterator
     /// non-empty checks If &lt;global&gt; is true, adds the model for a global check Else, global check is
     /// ignored
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? Checkeds(bool failsonly, bool global)
+    public NCollection_HSequence<Transient>? Checkeds(bool failsonly, bool global)
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         if (themod is null)
         {
             return list;
         }
-        list = new NCollection_HSequence<Standard_Transient>();
+        list = new NCollection_HSequence<Transient>();
         int num, i, nb = thelist.Length();
         for (i = 1; i <= nb; i++)
         {
@@ -538,7 +539,7 @@ public class Interface_CheckIterator
     {
         if (thecurr.Value() > thelist.Length())
         {
-            throw new Standard_NoSuchObject("Interface Check Iterator : Value");
+            throw new NoSuchObjectException("Interface Check Iterator : Value");
         }
         return thelist.Value(thecurr.Value());
     }
@@ -550,7 +551,7 @@ public class Interface_CheckIterator
     {
         if (thecurr.Value() > thenums.Length())
         {
-            throw new Standard_NoSuchObject("Interface Check Iterator : Value");
+            throw new NoSuchObjectException("Interface Check Iterator : Value");
         }
         return thenums.Value(thecurr.Value());
     }
@@ -592,7 +593,7 @@ public class Interface_CheckIterator
             {
                 continue;
             }
-            Standard_Transient ent = ach.Entity();
+            Transient ent = ach.Entity();
             int nm0 = thenums.Value(i);
             bool entnul = ent is null;
             int num = nm0;
@@ -665,7 +666,7 @@ public class Interface_CheckIterator
                 else
                 {
                     S.Write("   Type:");
-                    S.Write(ent.DynamicType().Name);
+                    S.Write(ent.DynamicTypeName());
                     S.Write('\n');
                 }
             }

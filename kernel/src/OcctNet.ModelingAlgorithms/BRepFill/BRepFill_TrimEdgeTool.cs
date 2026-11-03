@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -21,8 +24,8 @@ public sealed class BRepFill_TrimEdgeTool
 {
     private readonly bool isPoint1;
     private readonly bool isPoint2;
-    private readonly gp_Pnt2d myP1;
-    private readonly gp_Pnt2d myP2;
+    private readonly Point2D myP1;
+    private readonly Point2D myP2;
     private readonly Geom2d_Curve? myC1;
     private readonly Geom2d_Curve? myC2;
     private readonly double myOffset;
@@ -88,7 +91,7 @@ public sealed class BRepFill_TrimEdgeTool
     }
 
     // Order the sequence of points by increasing x.
-    private static void Bubble(NCollection_Sequence<gp_Pnt> Seq)
+    private static void Bubble(NCollection_Sequence<Point3D> Seq)
     {
         bool Invert = true;
         int NbPoints = Seq.Length();
@@ -97,8 +100,8 @@ public sealed class BRepFill_TrimEdgeTool
             Invert = false;
             for (int i = 1; i < NbPoints; i++)
             {
-                gp_Pnt P1 = Seq.Value(i);
-                gp_Pnt P2 = Seq.Value(i + 1);
+                Point3D P1 = Seq.Value(i);
+                Point3D P2 = Seq.Value(i + 1);
                 if (P2.X() < P1.X())
                 {
                     Seq.Exchange(i, i + 1);
@@ -108,10 +111,10 @@ public sealed class BRepFill_TrimEdgeTool
         }
     }
 
-    private static void EvalParameters(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<gp_Pnt> Params)
+    private static void EvalParameters(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<Point3D> Params)
     {
         Geom2dInt_GInter Intersector;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         Geom2dAdaptor_Curve CBis = Bis;
         Geom2dAdaptor_Curve CAC = AC;
@@ -120,11 +123,11 @@ public sealed class BRepFill_TrimEdgeTool
 
         int NbPoints, NbSegments;
         double U1, U2;
-        gp_Pnt P;
+        Point3D P;
 
         if (!Intersector.IsDone())
         {
-            throw new StdFail_NotDone("BRepFill_TrimSurfaceTool::IntersectWith");
+            throw new NotDoneException("BRepFill_TrimSurfaceTool::IntersectWith");
         }
 
         NbPoints = Intersector.NbPoints();
@@ -135,7 +138,7 @@ public sealed class BRepFill_TrimEdgeTool
             {
                 U1 = Intersector.Point(i).ParamOnSecond();
                 U2 = Intersector.Point(i).ParamOnFirst();
-                P = new gp_Pnt(U1, U2, 0.0);
+                P = new Point3D(U1, U2, 0.0);
                 Params.Append(P);
             }
         }
@@ -153,9 +156,9 @@ public sealed class BRepFill_TrimEdgeTool
                 if (Math.Abs(U1 - CBis.FirstParameter()) <= Tol
                     && Math.Abs(Ulast - CBis.LastParameter()) <= Tol)
                 {
-                    P = new gp_Pnt(U1, Seg.FirstPoint().ParamOnFirst(), 0.0);
+                    P = new Point3D(U1, Seg.FirstPoint().ParamOnFirst(), 0.0);
                     Params.Append(P);
-                    P = new gp_Pnt(Ulast, Seg.LastPoint().ParamOnFirst(), 0.0);
+                    P = new Point3D(Ulast, Seg.LastPoint().ParamOnFirst(), 0.0);
                     Params.Append(P);
                 }
                 else
@@ -165,7 +168,7 @@ public sealed class BRepFill_TrimEdgeTool
                     U2 = Seg.FirstPoint().ParamOnFirst();
                     U2 += Seg.LastPoint().ParamOnFirst();
                     U2 /= 2.0;
-                    P = new gp_Pnt(U1, U2, 0.0);
+                    P = new Point3D(U1, U2, 0.0);
                     Params.Append(P);
                 }
             }
@@ -175,7 +178,7 @@ public sealed class BRepFill_TrimEdgeTool
         Bubble(Params);
     }
 
-    private static void EvalParametersBis(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<gp_Pnt> Params,
+    private static void EvalParametersBis(Geom2dAdaptor_Curve Bis, Geom2dAdaptor_Curve AC, NCollection_Sequence<Point3D> Params,
                                           double Tol)
     {
         Geom2dInt_GInter Intersector;
@@ -188,11 +191,11 @@ public sealed class BRepFill_TrimEdgeTool
 
         int NbPoints, NbSegments;
         double U1, U2;
-        gp_Pnt P;
+        Point3D P;
 
         if (!Intersector.IsDone())
         {
-            throw new StdFail_NotDone("BRepFill_TrimSurfaceTool::IntersectWith");
+            throw new NotDoneException("BRepFill_TrimSurfaceTool::IntersectWith");
         }
 
         NbPoints = Intersector.NbPoints();
@@ -203,7 +206,7 @@ public sealed class BRepFill_TrimEdgeTool
             {
                 U1 = Intersector.Point(i).ParamOnSecond();
                 U2 = Intersector.Point(i).ParamOnFirst();
-                P = new gp_Pnt(U1, U2, 0.0);
+                P = new Point3D(U1, U2, 0.0);
                 Params.Append(P);
             }
         }
@@ -221,9 +224,9 @@ public sealed class BRepFill_TrimEdgeTool
                 if (Math.Abs(U1 - CBis.FirstParameter()) <= Tol
                     && Math.Abs(Ulast - CBis.LastParameter()) <= Tol)
                 {
-                    P = new gp_Pnt(U1, Seg.FirstPoint().ParamOnFirst(), 0.0);
+                    P = new Point3D(U1, Seg.FirstPoint().ParamOnFirst(), 0.0);
                     Params.Append(P);
-                    P = new gp_Pnt(Ulast, Seg.LastPoint().ParamOnFirst(), 0.0);
+                    P = new Point3D(Ulast, Seg.LastPoint().ParamOnFirst(), 0.0);
                     Params.Append(P);
                 }
                 else
@@ -233,7 +236,7 @@ public sealed class BRepFill_TrimEdgeTool
                     U2 = Seg.FirstPoint().ParamOnFirst();
                     U2 += Seg.LastPoint().ParamOnFirst();
                     U2 /= 2.0;
-                    P = new gp_Pnt(U1, U2, 0.0);
+                    P = new Point3D(U1, U2, 0.0);
                     Params.Append(P);
                 }
             }
@@ -254,24 +257,24 @@ public sealed class BRepFill_TrimEdgeTool
                               in TopoDS_Shape InitShape2,
                               in TopoDS_Vertex End1,
                               in TopoDS_Vertex End2,
-                              GeomAbs_JoinType theJoinType,
+                              JoinKind theJoinType,
                               bool IsOpenResult,
-                              NCollection_Sequence<gp_Pnt> Params)
+                              NCollection_Sequence<Point3D> Params)
     {
         Params.Clear();
 
         // return curves associated to edges.
         double f, l;
 
-        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out TopLoc_Location _, out f, out l);
+        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out Placement _, out f, out l);
         Geom2dAdaptor_Curve AC1 = new(C1!, f, l);
 
-        BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out TopLoc_Location _, out f, out l);
+        BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out Placement _, out f, out l);
         Geom2dAdaptor_Curve AC2 = new(C2!, f, l);
 
         // Calculate intersection
-        NCollection_Sequence<gp_Pnt> Points2 = new();
-        gp_Pnt PSeq;
+        NCollection_Sequence<Point3D> Points2 = new();
+        Point3D PSeq;
 
         EvalParameters(myBis, AC1, Params);
         EvalParameters(myBis, AC2, Points2);
@@ -280,8 +283,8 @@ public sealed class BRepFill_TrimEdgeTool
         double TolInit = 1.0e-9;
         int nn = 7;
 
-        if ((AC1.GetType() != GeomAbs_Circle && AC1.GetType() != GeomAbs_Line)
-            || (AC2.GetType() != GeomAbs_Circle && AC2.GetType() != GeomAbs_Line))
+        if ((AC1.GetType() != Circle && AC1.GetType() != Line)
+            || (AC2.GetType() != Circle && AC2.GetType() != Line))
         {
             TolInit = 1.0e-8;
             nn = 6;
@@ -291,7 +294,7 @@ public sealed class BRepFill_TrimEdgeTool
         {
             // Check, may be there are no intersections at all
             //  for case myBis == Line
-            if (myBis.GetType() == GeomAbs_Line)
+            if (myBis.GetType() == Line)
             {
                 double dmax = TolInit;
                 int n = 0;
@@ -302,20 +305,20 @@ public sealed class BRepFill_TrimEdgeTool
                 }
                 dmax *= dmax;
                 //
-                gp_Lin2d anL = myBis.Line();
+                Line2D anL = myBis.Line();
                 bool isFar1;
                 bool isFar2;
-                gp_Pnt2d aP;
+                Point2D aP;
                 //
                 double d = RealLast();
                 AC1.D0(AC1.FirstParameter(), out aP);
-                double par = ElCLib.Parameter(anL, aP);
+                double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= myBis.FirstParameter() && par <= myBis.LastParameter())
                 {
                     d = anL.SquareDistance(aP);
                 }
                 AC1.D0(AC1.LastParameter(), out aP);
-                par = ElCLib.Parameter(anL, aP);
+                par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= myBis.FirstParameter() && par <= myBis.LastParameter())
                 {
                     d = Min(anL.SquareDistance(aP), d);
@@ -324,13 +327,13 @@ public sealed class BRepFill_TrimEdgeTool
                 //
                 d = RealLast();
                 AC2.D0(AC2.FirstParameter(), out aP);
-                par = ElCLib.Parameter(anL, aP);
+                par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= myBis.FirstParameter() && par <= myBis.LastParameter())
                 {
                     d = anL.SquareDistance(aP);
                 }
                 AC2.D0(AC2.LastParameter(), out aP);
-                par = ElCLib.Parameter(anL, aP);
+                par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= myBis.FirstParameter() && par <= myBis.LastParameter())
                 {
                     d = Min(anL.SquareDistance(aP), d);
@@ -361,12 +364,12 @@ public sealed class BRepFill_TrimEdgeTool
         {
             double dmin, dmax = 0.25 * myOffset * myOffset;
             double tBis = Points2[1].X();
-            gp_Pnt2d PBis = myBis.Value(tBis);
+            Point2D PBis = myBis.Value(tBis);
 
             double t = AC1.FirstParameter();
-            gp_Pnt2d PC = AC1.Value(t);
+            Point2D PC = AC1.Value(t);
             dmin = PC.SquareDistance(PBis);
-            gp_Pnt P = new(tBis, t, 0.0);
+            Point3D P = new(tBis, t, 0.0);
             if (dmin < dmax)
             {
                 Params.Append(P);
@@ -392,12 +395,12 @@ public sealed class BRepFill_TrimEdgeTool
         {
             double dmin, dmax = 0.25 * myOffset * myOffset;
             double tBis = Params[1].X();
-            gp_Pnt2d PBis = myBis.Value(tBis);
+            Point2D PBis = myBis.Value(tBis);
 
             double t = AC2.FirstParameter();
-            gp_Pnt2d PC = AC2.Value(t);
+            Point2D PC = AC2.Value(t);
             dmin = PC.SquareDistance(PBis);
-            gp_Pnt P = new(tBis, t, 0.0);
+            Point3D P = new(tBis, t, 0.0);
             if (dmin < dmax)
             {
                 Points2.Append(P);
@@ -425,8 +428,8 @@ public sealed class BRepFill_TrimEdgeTool
         // on the bissectrice.).
         // The tolerance can be eventually changed.
 
-        gp_Pnt P1, P2;
-        double Tol = 4 * 100 * Precision.PConfusion();
+        Point3D P1, P2;
+        double Tol = 4 * 100 * global::Kerf.Engine.Foundation.Precision.PConfusion();
         int i;
         int NbPoints = Params.Length();
 
@@ -486,7 +489,7 @@ public sealed class BRepFill_TrimEdgeTool
         // Now we define: if there are more than one point of intersection
         // is it Ok ?
         double init_fpar = RealFirst(), init_lpar = RealLast();
-        if (NbPoints > 1 && theJoinType == GeomAbs_Intersection && InitShape1.ShapeType() != TopAbs_VERTEX
+        if (NbPoints > 1 && theJoinType == Intersection && InitShape1.ShapeType() != TopAbs_VERTEX
             && InitShape2.ShapeType() != TopAbs_VERTEX)
         {
             // definition of initial first and last parameters:
@@ -508,7 +511,7 @@ public sealed class BRepFill_TrimEdgeTool
                 }
             }
             BRepAdaptor_Curve IC1 = new(InitEdge1);
-            if (IC1.GetType() == GeomAbs_Circle)
+            if (IC1.GetType() == Circle)
             {
                 double Delta = 2 * Math.PI - IC1.LastParameter() + IC1.FirstParameter();
                 if (ToExtendFirstPar && ToExtendLastPar)
@@ -527,7 +530,7 @@ public sealed class BRepFill_TrimEdgeTool
             }
         }
 
-        if (NbPoints > 1 && theJoinType == GeomAbs_Intersection)
+        if (NbPoints > 1 && theJoinType == Intersection)
         {
             // Remove all vertices with non-minimal parameter
             // if they are out of initial range
@@ -540,8 +543,8 @@ public sealed class BRepFill_TrimEdgeTool
                 }
             }
 
-            NCollection_Sequence<gp_Pnt> ParamsCopy = new(Params);
-            NCollection_Sequence<gp_Pnt> Points2Copy = new(Points2);
+            NCollection_Sequence<Point3D> ParamsCopy = new(Params);
+            NCollection_Sequence<Point3D> Points2Copy = new(Points2);
             Params.Clear();
             Points2.Clear();
             for (i = 1; i <= ParamsCopy.Length(); i++)
@@ -567,14 +570,14 @@ public sealed class BRepFill_TrimEdgeTool
     /// The first (<paramref name="Start"/>) or last point of the bisector is on the parallels: if it wasn't found among
     /// the intersections, it is projected on both parallels and added to <paramref name="Params"/>.
     /// </summary>
-    public void AddOrConfuse(bool Start, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, NCollection_Sequence<gp_Pnt> Params)
+    public void AddOrConfuse(bool Start, in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, NCollection_Sequence<Point3D> Params)
     {
         bool ToProj = true;
-        gp_Pnt2d PBis;
-        double Tol = 10 * Precision.Confusion();
+        Point2D PBis;
+        double Tol = 10 * global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // return curves associated to edges.
-        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out TopLoc_Location _, out double f, out double l);
+        BRep_Tool.CurveOnSurface(Edge1, out Geom2d_Curve? C1, out Geom_Surface? _, out Placement _, out double f, out double l);
         Geom2dAdaptor_Curve AC1 = new(C1!, f, l);
 
         if (Start)
@@ -589,7 +592,7 @@ public sealed class BRepFill_TrimEdgeTool
         // Test if the end of the bissectrice is in the set of intersection points.
         if (!Params.IsEmpty())
         {
-            gp_Pnt2d P;
+            Point2D P;
             if (Start)
             {
                 P = AC1.Value(Params.First().Y());
@@ -604,7 +607,7 @@ public sealed class BRepFill_TrimEdgeTool
         if (ToProj)
         {
             // Project point on parallels and add in Params
-            BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out TopLoc_Location _, out double f2, out double l2);
+            BRep_Tool.CurveOnSurface(Edge2, out Geom2d_Curve? C2, out Geom_Surface? _, out Placement _, out double f2, out double l2);
 
             Geom2dAPI_ProjectPointOnCurve Projector1 = new(PBis, C1!, f, l);
             Geom2dAPI_ProjectPointOnCurve Projector2 = new(PBis, C2!, f2, l2);
@@ -625,7 +628,7 @@ public sealed class BRepFill_TrimEdgeTool
             {
                 return;
             }
-            gp_Pnt PInt = new(0, Projector1.LowerDistanceParameter(), Projector2.LowerDistanceParameter());
+            Point3D PInt = new(0, Projector1.LowerDistanceParameter(), Projector2.LowerDistanceParameter());
             if (Start)
             {
                 PInt.SetX(myBis.FirstParameter());
@@ -640,7 +643,7 @@ public sealed class BRepFill_TrimEdgeTool
     }
 
     /// <summary>True if <paramref name="P"/> is closer than the offset to the first generating element.</summary>
-    public bool IsInside(in gp_Pnt2d P)
+    public bool IsInside(in Point2D P)
     {
         double Dist = RealLast();
         if (isPoint1)
@@ -661,8 +664,8 @@ public sealed class BRepFill_TrimEdgeTool
 
             // Check of distances between P and first and last point of the first curve
             // should be performed in any case, despite of the results of projection.
-            gp_Pnt2d PF = myC1!.Value(myC1.FirstParameter());
-            gp_Pnt2d PL = myC1.Value(myC1.LastParameter());
+            Point2D PF = myC1!.Value(myC1.FirstParameter());
+            Point2D PL = myC1.Value(myC1.LastParameter());
             double aDistMin = Min(P.Distance(PF), P.Distance(PL));
 
             if (Dist > aDistMin)
@@ -671,6 +674,6 @@ public sealed class BRepFill_TrimEdgeTool
             }
         }
 
-        return Dist < Math.Abs(myOffset) - Precision.Confusion();
+        return Dist < Math.Abs(myOffset) - global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 }

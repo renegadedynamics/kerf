@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -35,10 +39,10 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
     //===================================================================================
     // Construction of a segment of line from PMin to PMax, parameterised from UMin.
     //===================================================================================
-    private static Geom2d_Line ConstructSegment(in gp_Pnt2d PMin, in gp_Pnt2d PMax, double UMin, double UMax)
+    private static Geom2d_Line ConstructSegment(in Point2D PMin, in Point2D PMax, double UMin, double UMax)
     {
-        gp_Dir2d Dir = new(PMax.X() - PMin.X(), PMax.Y() - PMin.Y());
-        Geom2d_Line L = new(new gp_Pnt2d(PMin.X() - UMin * Dir.X(), PMin.Y() - UMin * Dir.Y()), Dir);
+        Direction2D Dir = new(PMax.X() - PMin.X(), PMax.Y() - PMin.Y());
+        Geom2d_Line L = new(new Point2D(PMin.X() - UMin * Dir.X(), PMin.Y() - UMin * Dir.Y()), Dir);
         return L;
     }
 
@@ -70,7 +74,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         int NB2 = 0;
         double MinDomain, MaxDomain;
         double UMin, UMax;
-        gp_Pnt2d PMin, PMax;
+        Point2D PMin, PMax;
 
         //------------------------------------------------------
         // Return Min Max domain1.
@@ -284,8 +288,8 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
     {
         double USol, U1 = 0.0, U2 = 0.0, Dist = 0.0;
         double UMin = 0.0, UMax = 0.0;
-        double Eps = Precision.PConfusion();
-        gp_Pnt2d PSol;
+        double Eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        Point2D PSol;
 
         Geom2d_Curve Guide;
         Bisector_BisecCC BisTemp;
@@ -311,10 +315,10 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
 
         // Solution F = 0 to find the common point.
         Bisector_FunctionInter Fint = new(Guide, Bis1, BisTemp);
-        math_BissecNewton aSolution = new(Tol);
+        BissecNewton aSolution = new(Tol);
         aSolution.Perform(Fint, UMin, UMax, 20);
 
-        if (aSolution.IsDone())
+        if (aSolution.IsDone)
         {
             USol = aSolution.Root();
         }
@@ -336,9 +340,9 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
         IntRes2d_Transition Trans1 = new(), Trans2 = new();
         IntRes2d_IntersectionPoint PointInterSol = new();
 
-        gp_Lin2d L1 = Bis1.Lin2d();
-        gp_Pnt2d PF = Bis2.Value(D2.FirstParameter());
-        gp_Pnt2d PL = Bis2.Value(D2.LastParameter());
+        Line2D L1 = Bis1.Lin2d();
+        Point2D PF = Bis2.Value(D2.FirstParameter());
+        Point2D PL = Bis2.Value(D2.LastParameter());
         //  Modified by skv - Mon May  5 14:43:28 2003 OCC616 Begin
         double Tol = TolConf;
         //  Modified by skv - Mon May  5 14:43:30 2003 OCC616 End
@@ -351,7 +355,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
 
         if (L1.Distance(PF) < Tol)
         {
-            double U1 = ElCLib.Parameter(L1, PF);
+            double U1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(L1, PF);
             //  Modified by skv - Mon May  5 14:48:12 2003 OCC616 Begin
             if (D1.FirstParameter() - D1.FirstTolerance() < U1 && D1.LastParameter() + D1.LastTolerance() > U1)
             {
@@ -359,7 +363,7 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
                 // PF est sur L1
                 if (BisecAlgo)
                 {
-                    PF = ElCLib.Value(U1, L1);
+                    PF = global::Kerf.Engine.Geometry.ElCLib.Value(U1, L1);
                 }
                 PointInterSol.SetValues(PF, U1, D2.FirstParameter(), Trans1, Trans2, Reverse);
                 Append(PointInterSol);
@@ -368,14 +372,14 @@ public sealed class Bisector_Inter : IntRes2d_Intersection
 
         if (L1.Distance(PL) < Tol)
         {
-            double U1 = ElCLib.Parameter(L1, PL);
+            double U1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(L1, PL);
             //  Modified by skv - Mon May  5 15:05:48 2003 OCC616 Begin
             if (D1.FirstParameter() - D1.FirstTolerance() < U1 && D1.LastParameter() + D1.LastTolerance() > U1)
             {
                 //  Modified by skv - Mon May  5 15:05:49 2003 OCC616 End
                 if (BisecAlgo)
                 {
-                    PL = ElCLib.Value(U1, L1);
+                    PL = global::Kerf.Engine.Geometry.ElCLib.Value(U1, L1);
                 }
                 PointInterSol.SetValues(PL, U1, D2.LastParameter(), Trans1, Trans2, Reverse);
                 Append(PointInterSol);

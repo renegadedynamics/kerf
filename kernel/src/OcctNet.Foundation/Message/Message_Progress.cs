@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2020-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// Progress and cancellation for long operations. A .NET caller makes one from a <see cref="CancellationToken"/>
@@ -14,51 +16,51 @@ namespace Occt;
 /// OCCT's indicator is abstract, with a UserBreak and a Show to override; here both are the .NET types. Progress
 /// is reported as OCCT computes it, and never moves backwards. Thread-safe, as OCCT's is.
 /// </remarks>
-public sealed class Message_ProgressIndicator
+public sealed class ProgressIndicator
 {
-    private readonly CancellationToken myToken;
-    private readonly IProgress<double>? myProgress;
-    private readonly Lock myLock = new();
-    private double myPosition;
+    private readonly CancellationToken _token;
+    private readonly IProgress<double>? _progress;
+    private readonly Lock _lock = new();
+    private double _position;
 
-    public Message_ProgressIndicator(CancellationToken theToken = default, IProgress<double>? theProgress = null)
+    public ProgressIndicator(CancellationToken token = default, IProgress<double>? progress = null)
     {
-        myToken = theToken;
-        myProgress = theProgress;
+        _token = token;
+        _progress = progress;
     }
 
     /// <summary>The range covering the whole operation.</summary>
-    public Message_ProgressRange Start()
+    public ProgressRange Start()
     {
-        lock (myLock)
+        lock (_lock)
         {
-            myPosition = 0.0;
+            _position = 0.0;
         }
 
-        return new Message_ProgressRange(this, 0.0, 1.0);
+        return new ProgressRange(this, 0.0, 1.0);
     }
 
     /// <summary>The fraction done, from 0 to 1.</summary>
     public double GetPosition()
     {
-        lock (myLock)
+        lock (_lock)
         {
-            return myPosition;
+            return _position;
         }
     }
 
-    public bool UserBreak() => myToken.IsCancellationRequested;
+    public bool UserBreak() => _token.IsCancellationRequested;
 
-    internal void Increment(double theStep)
+    internal void Increment(double step)
     {
-        double aPosition;
-        lock (myLock)
+        double position;
+        lock (_lock)
         {
-            myPosition = Math.Min(1.0, myPosition + theStep);
-            aPosition = myPosition;
+            _position = Math.Min(1.0, _position + step);
+            position = _position;
         }
 
-        myProgress?.Report(aPosition);
+        _progress?.Report(position);
     }
 }
 
@@ -67,38 +69,38 @@ public sealed class Message_ProgressIndicator
 /// cancelled. A range that is never used is consumed when it is closed, as in OCCT; in C# that means calling
 /// <see cref="Close"/> (C++ does it in the destructor), which ported code does where OCCT relies on it.
 /// </summary>
-public struct Message_ProgressRange
+public struct ProgressRange
 {
-    internal Message_ProgressIndicator? myIndicator;
-    internal readonly double myStart;
-    internal double myDelta;
-    internal bool myWasUsed;
+    internal ProgressIndicator? _indicator;
+    internal readonly double _start;
+    internal double _delta;
+    internal bool _wasUsed;
 
-    internal Message_ProgressRange(Message_ProgressIndicator? theIndicator, double theStart, double theDelta)
+    internal ProgressRange(ProgressIndicator? indicator, double start, double delta)
     {
-        myIndicator = theIndicator;
-        myStart = theStart;
-        myDelta = theDelta;
-        myWasUsed = false;
+        _indicator = indicator;
+        _start = start;
+        _delta = delta;
+        _wasUsed = false;
     }
 
-    public readonly bool UserBreak() => myIndicator is not null && myIndicator.UserBreak();
+    public readonly bool UserBreak() => _indicator is not null && _indicator.UserBreak();
 
     public readonly bool More() => !UserBreak();
 
-    public readonly bool IsActive() => !myWasUsed && myIndicator is not null;
+    public readonly bool IsActive => !_wasUsed && _indicator is not null;
 
     /// <summary>Marks the range as done, advancing the indicator by its share if no scope used it.</summary>
     public void Close()
     {
-        if (!IsActive())
+        if (!IsActive)
         {
             return;
         }
 
-        myIndicator!.Increment(myDelta);
-        myIndicator = null;
-        myWasUsed = true;
+        _indicator!.Increment(_delta);
+        _indicator = null;
+        _wasUsed = true;
     }
 }
 
@@ -106,28 +108,28 @@ public struct Message_ProgressRange
 /// Divides a range into steps: <c>for (Message_ProgressScope aPS(theRange, "name", n); aPS.More(); ) { op(aPS.Next()); }</c>.
 /// Dispose it (or call <see cref="Close"/>) where the C++ scope would be destroyed, so the remaining share is counted.
 /// </summary>
-public sealed class Message_ProgressScope : IDisposable
+public sealed class ProgressScope : IDisposable
 {
-    private readonly Message_ProgressIndicator? myIndicator;
-    private readonly double myPortion;
-    private readonly double myMax;
-    private double myValue;
-    private double myReported;
-    private bool myIsClosed;
+    private readonly ProgressIndicator? _indicator;
+    private readonly double _portion;
+    private readonly double _max;
+    private double _value;
+    private double _reported;
+    private bool _isClosed;
 
-    public Message_ProgressScope(Message_ProgressRange theRange, string? theName, double theMax, bool theIsInfinite = false)
+    public ProgressScope(ProgressRange range, string? name, double max, bool isInfinite = false)
     {
-        Name = theName;
-        myMax = theMax > 0.0 ? theMax : 1.0;
-        IsInfinite = theIsInfinite;
-        if (theRange.IsActive())
+        Name = name;
+        _max = max > 0.0 ? max : 1.0;
+        IsInfinite = isInfinite;
+        if (range.IsActive)
         {
-            myIndicator = theRange.myIndicator;
-            myPortion = theRange.myDelta;
+            _indicator = range._indicator;
+            _portion = range._delta;
         }
         else
         {
-            myIsClosed = true;
+            _isClosed = true;
         }
     }
 
@@ -135,46 +137,46 @@ public sealed class Message_ProgressScope : IDisposable
 
     public bool IsInfinite { get; }
 
-    public double MaxValue() => myMax;
+    public double MaxValue() => _max;
 
-    public double Value() => myValue;
+    public double Value() => _value;
 
-    public bool UserBreak() => myIndicator is not null && myIndicator.UserBreak();
+    public bool UserBreak() => _indicator is not null && _indicator.UserBreak();
 
     public bool More() => !UserBreak();
 
-    public bool IsActive() => !myIsClosed && myIndicator is not null;
+    public bool IsActive => !_isClosed && _indicator is not null;
 
-    /// <summary>The range of the next <paramref name="theStep"/> steps, which advances this scope.</summary>
-    public Message_ProgressRange Next(double theStep = 1.0)
+    /// <summary>The range of the next <paramref name="step"/> steps, which advances this scope.</summary>
+    public ProgressRange Next(double step = 1.0)
     {
-        if (!IsActive() || theStep <= 0.0)
+        if (!IsActive || step <= 0.0)
         {
             return default;
         }
 
-        double aFrom = myValue;
-        myValue = Math.Min(myMax, myValue + theStep);
-        double aShare = (myValue - aFrom) / myMax * myPortion;
-        myReported += aShare;
-        return new Message_ProgressRange(myIndicator, 0.0, aShare);
+        double aFrom = _value;
+        _value = Math.Min(_max, _value + step);
+        double share = (_value - aFrom) / _max * _portion;
+        _reported += share;
+        return new ProgressRange(_indicator, 0.0, share);
     }
 
     /// <summary>Counts any share not handed out by <see cref="Next"/>, and closes the scope.</summary>
     public void Close()
     {
-        if (!IsActive())
+        if (!IsActive)
         {
             return;
         }
 
-        double aRemaining = myPortion - myReported;
-        if (aRemaining > 0.0)
+        double remaining = _portion - _reported;
+        if (remaining > 0.0)
         {
-            myIndicator!.Increment(aRemaining);
+            _indicator!.Increment(remaining);
         }
 
-        myIsClosed = true;
+        _isClosed = true;
     }
 
     public void Dispose() => Close();

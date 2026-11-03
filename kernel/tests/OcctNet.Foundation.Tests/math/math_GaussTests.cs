@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_GaussTest
@@ -10,7 +12,7 @@ public class math_GaussTest
     public void WellConditionedMatrix()
     {
         // Test with a simple 3x3 well-conditioned matrix
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 2.0;
         aMatrix[1, 2] = 1.0;
         aMatrix[1, 3] = 1.0;
@@ -21,9 +23,9 @@ public class math_GaussTest
         aMatrix[3, 2] = 2.0;
         aMatrix[3, 3] = 3.0;
 
-        math_Gauss aGauss = new(aMatrix);
+        Gauss aGauss = new(aMatrix);
 
-        Assert.True(aGauss.IsDone());
+        Assert.True(aGauss.IsDone);
 
         // Verify by solving with known RHS and checking A*x = b
         math_Vector aB = new(1, 3);
@@ -54,7 +56,7 @@ public class math_GaussTest
     public void IdentityMatrix()
     {
         // Test with identity matrix
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -65,8 +67,8 @@ public class math_GaussTest
         aMatrix[3, 2] = 0.0;
         aMatrix[3, 3] = 1.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         // For identity matrix, solution should equal RHS
         math_Vector aB = new(1, 3);
@@ -77,16 +79,16 @@ public class math_GaussTest
         math_Vector aX = new(1, 3);
         aGauss.Solve(aB, aX);
 
-        Assert.Equal(5.0, aX[1], Precision.Confusion());
-        Assert.Equal(7.0, aX[2], Precision.Confusion());
-        Assert.Equal(9.0, aX[3], Precision.Confusion());
+        Assert.Equal(5.0, aX[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aX[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(9.0, aX[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void DiagonalMatrix()
     {
         // Test with diagonal matrix
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 2.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -97,8 +99,8 @@ public class math_GaussTest
         aMatrix[3, 2] = 0.0;
         aMatrix[3, 3] = 4.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         // For diagonal matrix: x_i = b_i / a_ii
         math_Vector aB = new(1, 3);
@@ -109,16 +111,16 @@ public class math_GaussTest
         math_Vector aX = new(1, 3);
         aGauss.Solve(aB, aX);
 
-        Assert.Equal(4.0, aX[1], Precision.Confusion());
-        Assert.Equal(5.0, aX[2], Precision.Confusion());
-        Assert.Equal(5.0, aX[3], Precision.Confusion());
+        Assert.Equal(4.0, aX[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aX[2], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aX[3], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void InPlaceSolve()
     {
         // Test the in-place solve method where B is overwritten with solution
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 3.0;
@@ -129,8 +131,8 @@ public class math_GaussTest
         aMatrix[3, 2] = 8.0;
         aMatrix[3, 3] = 14.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         math_Vector aB = new(1, 3);
         aB[1] = 14.0;
@@ -149,7 +151,7 @@ public class math_GaussTest
     public void Determinant()
     {
         // Test determinant calculation
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 3.0;
@@ -160,8 +162,8 @@ public class math_GaussTest
         aMatrix[3, 2] = 6.0;
         aMatrix[3, 3] = 0.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         double aDet = aGauss.Determinant();
         // Expected determinant: 1*(1*0 - 4*6) - 2*(0*0 - 4*5) + 3*(0*6 - 1*5) = -24 + 40 - 15 = 1
@@ -172,16 +174,16 @@ public class math_GaussTest
     public void MatrixInversion()
     {
         // Test matrix inversion
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 4.0;
         aMatrix[1, 2] = 7.0;
         aMatrix[2, 1] = 2.0;
         aMatrix[2, 2] = 6.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
-        math_Matrix aInverse = new(1, 2, 1, 2);
+        Matrix aInverse = new(1, 2, 1, 2);
         aGauss.Invert(aInverse);
 
         // For 2x2 matrix [[4,7],[2,6]], inverse should be [[0.6,-0.7],[-0.2,0.4]]
@@ -193,7 +195,7 @@ public class math_GaussTest
         Assert.Equal(0.4, aInverse[2, 2], 1.0e-12);
 
         // Verify that A * A^(-1) = I
-        math_Matrix aProduct = new(1, 2, 1, 2);
+        Matrix aProduct = new(1, 2, 1, 2);
         for (int i = 1; i <= 2; i++)
         {
             for (int j = 1; j <= 2; j++)
@@ -216,7 +218,7 @@ public class math_GaussTest
     public void SingularMatrix()
     {
         // Test with a singular (non-invertible) matrix
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 3.0;
@@ -228,8 +230,8 @@ public class math_GaussTest
         aMatrix[3, 3] = 9.0; // Row 3 = 3 * Row 1
 
         // Singular matrix should either fail decomposition or have zero determinant
-        math_Gauss aGauss = new(aMatrix);
-        if (aGauss.IsDone())
+        Gauss aGauss = new(aMatrix);
+        if (aGauss.IsDone)
         {
             double aDet = aGauss.Determinant();
             Assert.Equal(0.0, aDet, 1.0e-12);
@@ -241,39 +243,39 @@ public class math_GaussTest
     public void CustomMinPivot()
     {
         // Test with custom minimum pivot threshold
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 1.0e-15;
         aMatrix[1, 2] = 1.0; // Very small pivot
         aMatrix[2, 1] = 1.0;
         aMatrix[2, 2] = 1.0;
 
         // With default MinPivot (1e-20), should succeed
-        math_Gauss aGauss1 = new(aMatrix);
-        Assert.True(aGauss1.IsDone());
+        Gauss aGauss1 = new(aMatrix);
+        Assert.True(aGauss1.IsDone);
 
         // Create a truly singular matrix to test pivot threshold behavior
-        math_Matrix aSingular = new(1, 2, 1, 2);
+        Matrix aSingular = new(1, 2, 1, 2);
         aSingular[1, 1] = 1.0e-25;
         aSingular[1, 2] = 1.0; // Extremely small pivot
         aSingular[2, 1] = 1.0;
         aSingular[2, 2] = 1.0;
 
         // Test with truly singular matrix (all zeros) which should always fail
-        math_Matrix aTrulySingular = new(1, 2, 1, 2);
+        Matrix aTrulySingular = new(1, 2, 1, 2);
         aTrulySingular[1, 1] = 0.0;
         aTrulySingular[1, 2] = 0.0;
         aTrulySingular[2, 1] = 0.0;
         aTrulySingular[2, 2] = 0.0;
 
-        math_Gauss aGauss2 = new(aTrulySingular);
-        Assert.False(aGauss2.IsDone());
+        Gauss aGauss2 = new(aTrulySingular);
+        Assert.False(aGauss2.IsDone);
     }
 
     [Fact]
     public void LargerMatrix()
     {
         // Test with a larger 4x4 matrix
-        math_Matrix aMatrix = new(1, 4, 1, 4);
+        Matrix aMatrix = new(1, 4, 1, 4);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[1, 3] = 1.0;
@@ -291,8 +293,8 @@ public class math_GaussTest
         aMatrix[4, 3] = 2.0;
         aMatrix[4, 4] = 3.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         // Test with a simple RHS vector
         math_Vector aB = new(1, 4);
@@ -325,7 +327,7 @@ public class math_GaussTest
     public void DimensionCompatibility()
     {
         // Test dimension compatibility handling
-        math_Matrix aMatrix = new(1, 3, 1, 3);
+        Matrix aMatrix = new(1, 3, 1, 3);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 0.0;
         aMatrix[1, 3] = 0.0;
@@ -336,8 +338,8 @@ public class math_GaussTest
         aMatrix[3, 2] = 0.0;
         aMatrix[3, 3] = 1.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         // Test solve with correctly sized vectors
         math_Vector aB = new(1, 3);
@@ -352,7 +354,7 @@ public class math_GaussTest
         Assert.Equal(3, aX.Length());
 
         // Test invert with correctly sized matrix
-        math_Matrix aInv = new(1, 3, 1, 3);
+        Matrix aInv = new(1, 3, 1, 3);
         aGauss.Invert(aInv);
 
         Assert.Equal(3, aInv.RowNumber());
@@ -363,21 +365,21 @@ public class math_GaussTest
     public void SingularMatrixState()
     {
         // Test state handling with singular matrix
-        math_Matrix aMatrix = new(1, 2, 1, 2);
+        Matrix aMatrix = new(1, 2, 1, 2);
         aMatrix[1, 1] = 1.0;
         aMatrix[1, 2] = 2.0;
         aMatrix[2, 1] = 2.0;
         aMatrix[2, 2] = 4.0; // Singular matrix
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.False(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.False(aGauss.IsDone);
     }
 
     [Fact]
     public void CustomBounds()
     {
         // Test with non-standard matrix bounds
-        math_Matrix aMatrix = new(2, 4, 3, 5);
+        Matrix aMatrix = new(2, 4, 3, 5);
         aMatrix[2, 3] = 2.0;
         aMatrix[2, 4] = 1.0;
         aMatrix[2, 5] = 1.0;
@@ -388,8 +390,8 @@ public class math_GaussTest
         aMatrix[4, 4] = 2.0;
         aMatrix[4, 5] = 3.0;
 
-        math_Gauss aGauss = new(aMatrix);
-        Assert.True(aGauss.IsDone());
+        Gauss aGauss = new(aMatrix);
+        Assert.True(aGauss.IsDone);
 
         math_Vector aB = new(2, 4);
         aB[2] = 6.0;

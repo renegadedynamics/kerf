@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -141,8 +147,8 @@ public class IntPatch_PrmPrmIntersectionTests
         AssertLinesOnBothSurfaces(anInt, aS1, aS2, 1.0e-6);
 
         // Two parallel planes 1 apart: no start point, done and empty.
-        var aP1 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), -1, 1, -1, 1);
-        var aP2 = new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)), -1, 1, -1, 1);
+        var aP1 = new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
+        var aP2 = new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), -1, 1, -1, 1);
         var anEmpty = new IntPatch_PrmPrmIntersection();
         anEmpty.Perform(aP1, new Adaptor3d_TopolTool(aP1), aP2, new Adaptor3d_TopolTool(aP2), 0.0, 0.0, 0.0, 0.0,
                         THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
@@ -182,15 +188,15 @@ public class IntPatch_PrmPrmIntersectionTests
     {
         var anInt = new IntPatch_PrmPrmIntersection();
         Assert.False(anInt.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anInt.NbLines());
-        Assert.Throws<StdFail_NotDone>(() => anInt.IsEmpty());
-        Assert.Throws<StdFail_NotDone>(() => anInt.Line(1));
+        Assert.Throws<NotDoneException>(() => anInt.NbLines());
+        Assert.Throws<NotDoneException>(() => anInt.IsEmpty());
+        Assert.Throws<NotDoneException>(() => anInt.Line(1));
     }
 
     [Fact]
     public void DisjointSurfaces_DoneAndEmpty()
     {
-        var aFar = new Geom_Plane(new gp_Pnt(0, 0, 10), new gp_Dir(0, 0, 1));
+        var aFar = new Geom_Plane(new Point3D(0, 0, 10), new Direction3D(0, 0, 1));
         var aS1 = new GeomAdaptor_Surface(IntPatchPrmPrmNativeTests.PatchA());
         var aS2 = new GeomAdaptor_Surface(aFar, -2, 2, -2, 2);
         var anInt = new IntPatch_PrmPrmIntersection();
@@ -219,8 +225,8 @@ public class IntPatch_PrmPrmIntersectionTests
             Assert.True(aS1.Value(u1, v1).Distance(aP.Value()) < 1.0e-5);
             Assert.True(aS2.Value(u2, v2).Distance(aP.Value()) < 1.0e-5);
         }
-        Assert.Throws<Standard_OutOfRange>(() => anInt.NewLine(aS1, aS2, 0, 1, 2, 5));
-        Assert.Throws<Standard_OutOfRange>(() => anInt.NewLine(aS1, aS2, 1, 3, 3, 5));
+        Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 0, 1, 2, 5));
+        Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 1, 3, 3, 5));
     }
 
     [Fact]
@@ -278,17 +284,17 @@ public class IntPatch_PrmPrmIntersectionTests
     public void Polyhedron_DegenerateTriangles_VoidBoxes_LeftOutOfTheBVH()
     {
         // The sphere's poles collapse a row of triangles.
-        var aSphere = new GeomAdaptor_Surface(new Geom_SphericalSurface(new gp_Ax3(), 1.0));
+        var aSphere = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(), 1.0));
         var aPoly = new IntPatch_Polyhedron(aSphere, 4, 4);
         int aNbVoid = 0;
         for (int i = 1; i <= aPoly.NbTriangles(); i++)
         {
-            if (aPoly.ComponentsBounding().Value(i).IsVoid())
+            if (aPoly.ComponentsBounding().Value(i).IsVoid)
             {
                 aNbVoid++;
                 double aDist = 7.0;
-                aPoly.PlaneEquation(i, out gp_XYZ aNormal, ref aDist);
-                Assert.Equal(new gp_XYZ(1, 0, 0), aNormal);
+                aPoly.PlaneEquation(i, out Xyz aNormal, ref aDist);
+                Assert.Equal(new Xyz(1, 0, 0), aNormal);
                 Assert.Equal(7.0, aDist); // left unchanged, as OCCT leaves it
             }
         }
@@ -297,9 +303,9 @@ public class IntPatch_PrmPrmIntersectionTests
         Assert.True(aPoly.DeflectionOverEstimation() >= 0.0001);
         aPoly.Triangle(9, out int aP1, out int aP2, out int aP3);
         Assert.True(aPoly.Contain(9, aPoly.Point(aP2)));
-        gp_Pnt aMid = new((aPoly.Point(aP1).XYZ() + aPoly.Point(aP2).XYZ() + aPoly.Point(aP3).XYZ()) / 3.0);
+        Point3D aMid = new((aPoly.Point(aP1).XYZ() + aPoly.Point(aP2).XYZ() + aPoly.Point(aP3).XYZ()) / 3.0);
         Assert.True(aPoly.Contain(9, aMid));
-        Assert.False(aPoly.Contain(9, new gp_Pnt(aMid.XYZ() + (aPoly.Point(aP1).XYZ() - aMid.XYZ()) * 3.0)));
+        Assert.False(aPoly.Contain(9, new Point3D(aMid.XYZ() + (aPoly.Point(aP1).XYZ() - aMid.XYZ()) * 3.0)));
     }
 
     [Fact]

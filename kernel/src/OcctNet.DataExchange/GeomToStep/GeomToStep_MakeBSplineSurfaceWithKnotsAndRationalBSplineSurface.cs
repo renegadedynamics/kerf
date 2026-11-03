@@ -5,7 +5,9 @@
 
 #nullable disable warnings
 
-using static Occt.GeomAbs_BSplKnotDistribution;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_BSplineSurfaceForm;
 using static Occt.StepGeom_KnotType;
@@ -38,7 +40,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
         NCollection_HArray1<int> aUMultiplicities, aVMultiplicities;
         NCollection_HArray1<double> aUKnots, aVKnots;
         NCollection_HArray2<double> aWeightsData;
-        GeomAbs_BSplKnotDistribution UDistribution, VDistribution;
+        BSplKnotDistribution UDistribution, VDistribution;
         StepGeom_KnotType KnotSpec;
 
         aUDegree = BS.UDegree();
@@ -46,7 +48,7 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
 
         NU = BS.NbUPoles();
         NV = BS.NbVPoles();
-        NCollection_Array2<gp_Pnt> P = BS.InternalPoles();
+        NCollection_Array2<Point3D> P = BS.InternalPoles();
         aControlPointsList = new NCollection_HArray2<StepGeom_CartesianPoint>(1, NU, 1, NV);
         for (i = P.LowerRow(); i <= P.UpperRow(); i++)
         {
@@ -114,19 +116,19 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
 
         UDistribution = BS.UKnotDistribution();
         VDistribution = BS.VKnotDistribution();
-        if (UDistribution == GeomAbs_NonUniform && VDistribution == GeomAbs_NonUniform)
+        if (UDistribution == NonUniform && VDistribution == NonUniform)
         {
             KnotSpec = StepGeom_ktUnspecified;
         }
-        else if (UDistribution == GeomAbs_Uniform && VDistribution == GeomAbs_Uniform)
+        else if (UDistribution == Uniform && VDistribution == Uniform)
         {
             KnotSpec = StepGeom_ktUniformKnots;
         }
-        else if (UDistribution == GeomAbs_QuasiUniform && VDistribution == GeomAbs_QuasiUniform)
+        else if (UDistribution == QuasiUniform && VDistribution == QuasiUniform)
         {
             KnotSpec = StepGeom_ktQuasiUniformKnots;
         }
-        else if (UDistribution == GeomAbs_PiecewiseBezier && VDistribution == GeomAbs_PiecewiseBezier)
+        else if (UDistribution == PiecewiseBezier && VDistribution == PiecewiseBezier)
         {
             KnotSpec = StepGeom_ktPiecewiseBezierKnots;
         }

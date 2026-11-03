@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
 
@@ -31,12 +33,12 @@ internal static class IntCurve_IntConicConic_Tool
     /// <paramref name="Tan1"/> in place in the tangent case, hence <c>ref</c>.
     /// </summary>
     internal static void Determine_Transition_LC(IntRes2d_Position Pos1,
-                                                 ref gp_Vec2d Tan1,
-                                                 in gp_Vec2d Norm1,
+                                                 ref Vector2D Tan1,
+                                                 in Vector2D Norm1,
                                                  ref IntRes2d_Transition T1,
                                                  IntRes2d_Position Pos2,
-                                                 ref gp_Vec2d Tan2,
-                                                 in gp_Vec2d Norm2,
+                                                 ref Vector2D Tan2,
+                                                 in Vector2D Norm2,
                                                  ref IntRes2d_Transition T2,
                                                  double Tol)
     {
@@ -47,7 +49,7 @@ internal static class IntCurve_IntConicConic_Tool
         { // Transition TOUCH #########
             bool opos = (Tan1.Dot(Tan2)) < 0;
 
-            gp_Vec2d Norm = new();
+            Vector2D Norm = new();
             //  Modified by Sergey KHROMOV - Thu Nov  2 17:57:15 2000 Begin
             Tan1.Normalize();
             //  Modified by Sergey KHROMOV - Thu Nov  2 17:57:16 2000 End
@@ -56,7 +58,7 @@ internal static class IntCurve_IntConicConic_Tool
             double Val1 = Norm.Dot(Norm1);
             double Val2 = Norm.Dot(Norm2);
 
-            if (Math.Abs(Val1 - Val2) <= gp.Resolution())
+            if (Math.Abs(Val1 - Val2) <= Constants.Resolution())
             {
                 T1.SetValue(true, Pos1, IntRes2d_Unknown, opos);
                 T2.SetValue(true, Pos2, IntRes2d_Unknown, opos);

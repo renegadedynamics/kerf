@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -38,11 +40,11 @@ public class Interface_EntityList
     /// <summary>
     /// Appends an Entity, that is to the END of the list (keeps order, but works slowerly than Add, see below)
     /// </summary>
-    public void Append(Standard_Transient? ent)
+    public void Append(Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityList Append");
+            throw new NullObjectException("Interface_EntityList Append");
         }
         if (theval is null)
         {
@@ -66,11 +68,11 @@ public class Interface_EntityList
     /// Adds an Entity to the list, that is, with NO REGARD about the order (faster than Append if count becomes
     /// greater than 10)
     /// </summary>
-    public void Add(Standard_Transient? ent)
+    public void Add(Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityList Add");
+            throw new NullObjectException("Interface_EntityList Add");
         }
         if (theval is null)
         {
@@ -100,11 +102,11 @@ public class Interface_EntityList
     /// <summary>
     /// Removes an Entity from the list, if it is there
     /// </summary>
-    public void Remove(Standard_Transient? ent)
+    public void Remove(Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityList Remove");
+            throw new NullObjectException("Interface_EntityList Remove");
         }
         if (theval is null)
         {
@@ -134,14 +136,14 @@ public class Interface_EntityList
     {
         if (theval is null)
         {
-            throw new Standard_OutOfRange("EntityList : Remove");
+            throw new OutOfRangeException("EntityList : Remove");
         }
         Interface_EntityCluster ec = (theval as Interface_EntityCluster);
         if (ec is null)
         {
             if (num != 1)
             {
-                throw new Standard_OutOfRange("EntityList : Remove");
+                throw new OutOfRangeException("EntityList : Remove");
             }
             theval = null;
             return;
@@ -181,11 +183,11 @@ public class Interface_EntityList
     /// <summary>
     /// Returns an Item given its number. Beware about the way the list was filled (see above, Add and Append)
     /// </summary>
-    public Standard_Transient? Value(int num)
+    public Transient? Value(int num)
     {
         if (theval is null)
         {
-            throw new Standard_OutOfRange("Interface EntityList : Value");
+            throw new OutOfRangeException("Interface EntityList : Value");
         }
         Interface_EntityCluster ec = (theval as Interface_EntityCluster);
         if (ec is not null)
@@ -194,7 +196,7 @@ public class Interface_EntityList
         }
         else if (num != 1)
         {
-            throw new Standard_OutOfRange("Interface EntityList : Value");
+            throw new OutOfRangeException("Interface EntityList : Value");
         }
         return theval;
     }
@@ -202,15 +204,15 @@ public class Interface_EntityList
     /// <summary>
     /// Returns an Item given its number. Beware about the way the list was filled (see above, Add and Append)
     /// </summary>
-    public void SetValue(int num, Standard_Transient? ent)
+    public void SetValue(int num, Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityList SetValue");
+            throw new NullObjectException("Interface_EntityList SetValue");
         }
         if (theval is null)
         {
-            throw new Standard_OutOfRange("Interface EntityList : SetValue");
+            throw new OutOfRangeException("Interface EntityList : SetValue");
         }
         Interface_EntityCluster ec = (theval as Interface_EntityCluster);
         if (ec is not null)
@@ -219,7 +221,7 @@ public class Interface_EntityList
         }
         else if (num != 1)
         {
-            throw new Standard_OutOfRange("Interface EntityList : SetValue");
+            throw new OutOfRangeException("Interface EntityList : SetValue");
         }
         else
         {
@@ -291,10 +293,10 @@ public class Interface_EntityList
     /// Returns the Entity which is of a given type. If num = 0 (D), there must be ONE AND ONLY ONE If num &gt;
     /// 0, returns the num-th entity of this type
     /// </summary>
-    public Standard_Transient? TypedEntity(Type? atype, int num = 0)
+    public Transient? TypedEntity(Type? atype, int num = 0)
     {
         int res = 0;
-        Standard_Transient entres = null;
+        Transient entres = null;
         if (theval is null)
         {
             throw new Interface_InterfaceError("Interface EntityList : TypedEntity , none found");
@@ -342,5 +344,5 @@ public class Interface_EntityList
         return entres;
     }
 
-    private Standard_Transient? theval;
+    private Transient? theval;
 }

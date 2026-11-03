@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -12,7 +14,7 @@ public class ShapeAnalysis_EdgeTest
     [Fact]
     public void HasCurve3d()
     {
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0));
+        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
         TopoDS_Edge anEdge = aMakeEdge.Edge();
 
@@ -23,7 +25,7 @@ public class ShapeAnalysis_EdgeTest
     [Fact]
     public void FirstVertex_LastVertex()
     {
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0));
+        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
         TopoDS_Edge anEdge = aMakeEdge.Edge();
 
@@ -38,7 +40,7 @@ public class ShapeAnalysis_EdgeTest
     [Fact]
     public void IsClosed_OpenEdge()
     {
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0.0, 0.0, 0.0), new gp_Pnt(10.0, 0.0, 0.0));
+        var aMakeEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0));
         Assert.True(aMakeEdge.IsDone());
         TopoDS_Edge anEdge = aMakeEdge.Edge();
 
@@ -49,7 +51,7 @@ public class ShapeAnalysis_EdgeTest
     [Fact]
     public void IsClosed_ClosedEdge()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), gp.DZ()), 5.0);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0.0, 0.0, 0.0), Constants.DZ()), 5.0);
         var aMakeEdge = new BRepBuilderAPI_MakeEdge(aCircle);
         Assert.True(aMakeEdge.IsDone());
         TopoDS_Edge anEdge = aMakeEdge.Edge();

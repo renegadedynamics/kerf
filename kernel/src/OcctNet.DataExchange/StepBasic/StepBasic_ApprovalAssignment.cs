@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_ApprovalAssignment : Standard_Transient
+public class StepBasic_ApprovalAssignment : Transient
 {
     private StepBasic_Approval assignedApproval;
 

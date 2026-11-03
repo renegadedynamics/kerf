@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -61,69 +65,69 @@ public class BRepBlend_SurfCurvConstRadInv : Blend_SurfCurvFuncInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        gp_Pnt ptgui;
-        gp_Vec d1gui;
+        Point3D ptgui;
+        Vector3D d1gui;
         guide.D1(X[1], out ptgui, out d1gui);
-        gp_Vec nplan = d1gui.Normalized();
+        Vector3D nplan = d1gui.Normalized();
         double theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
-        gp_Pnt ptcur = curv.Value(X[2]);
+        Point3D ptcur = curv.Value(X[2]);
         F[1] = nplan.XYZ().Dot(ptcur.XYZ()) + theD;
-        gp_Pnt2d p2drst = rst!.Value(X[3]);
-        gp_Pnt pts;
-        gp_Vec du, dv;
+        Point2D p2drst = rst!.Value(X[3]);
+        Point3D pts;
+        Vector3D du, dv;
         surf.D1(p2drst.X(), p2drst.Y(), out pts, out du, out dv);
         F[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
-        gp_Vec ns = du.Crossed(dv);
+        Vector3D ns = du.Crossed(dv);
         double norm = nplan.Crossed(ns).Magnitude();
         double unsurnorm = 1.0 / norm;
         ns.SetLinearForm(nplan.Dot(ns), nplan, -1.0, ns);
         ns.Multiply(unsurnorm);
-        gp_Vec @ref = new(ptcur, pts);
+        Vector3D @ref = new(ptcur, pts);
         @ref.SetLinearForm(ray, ns, @ref);
         F[3] = @ref.SquareMagnitude() - ray * ray;
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Pnt ptgui;
-        gp_Vec d1gui, d2gui;
+        Point3D ptgui;
+        Vector3D d1gui, d2gui;
         guide.D2(X[1], out ptgui, out d1gui, out d2gui);
         double normd1gui = d1gui.Magnitude();
         double unsurnormd1gui = 1.0 / normd1gui;
-        gp_Vec nplan = d1gui.Multiplied(unsurnormd1gui);
-        gp_Vec dnplan = new();
+        Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
+        Vector3D dnplan = new();
         dnplan.SetLinearForm(-nplan.Dot(d2gui), nplan, d2gui);
         dnplan.Multiply(unsurnormd1gui);
         double dtheD = -nplan.XYZ().Dot(d1gui.XYZ()) - dnplan.XYZ().Dot(ptgui.XYZ());
-        gp_Pnt ptcur;
-        gp_Vec d1cur;
+        Point3D ptcur;
+        Vector3D d1cur;
         curv.D1(X[2], out ptcur, out d1cur);
         D[1, 1] = dnplan.XYZ().Dot(ptcur.XYZ()) + dtheD;
         D[1, 2] = nplan.XYZ().Dot(d1cur.XYZ());
         D[1, 3] = 0.0;
 
-        gp_Pnt2d p2drst;
-        gp_Vec2d d1rst;
+        Point2D p2drst;
+        Vector2D d1rst;
         rst!.D1(X[3], out p2drst, out d1rst);
-        gp_Pnt pts;
-        gp_Vec d1u, d1v, d2u, d2v, duv;
+        Point3D pts;
+        Vector3D d1u, d1v, d2u, d2v, duv;
         surf.D2(p2drst.X(), p2drst.Y(), out pts, out d1u, out d1v, out d2u, out d2v, out duv);
         D[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
         D[2, 2] = 0.0;
-        gp_Vec dwrstpts = new();
+        Vector3D dwrstpts = new();
         dwrstpts.SetLinearForm(d1rst.X(), d1u, d1rst.Y(), d1v);
         D[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
 
-        gp_Vec nsurf = d1u.Crossed(d1v);
-        gp_Vec dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
-        gp_Vec dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
-        gp_Vec dwrstnsurf = new();
+        Vector3D nsurf = d1u.Crossed(d1v);
+        Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
+        Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
+        Vector3D dwrstnsurf = new();
         dwrstnsurf.SetLinearForm(d1rst.X(), dunsurf, d1rst.Y(), dvnsurf);
 
-        gp_Vec nplancrosnsurf = nplan.Crossed(nsurf);
-        gp_Vec dwguinplancrosnsurf = dnplan.Crossed(nsurf);
-        gp_Vec dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
+        Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
+        Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
+        Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
 
         double norm2 = nplancrosnsurf.SquareMagnitude();
         double norm = Math.Sqrt(norm2);
@@ -138,13 +142,13 @@ public class BRepBlend_SurfCurvConstRadInv : Blend_SurfCurvFuncInv
         double dwguinplandotnsurf = dnplan.Dot(nsurf);
         double dwrstnplandotnsurf = nplan.Dot(dwrstnsurf);
 
-        gp_Vec temp = new(), dwguitemp = new(), dwrsttemp = new();
+        Vector3D temp = new(), dwguitemp = new(), dwrsttemp = new();
         temp.SetLinearForm(nplandotnsurf, nplan, -1.0, nsurf);
         dwguitemp.SetLinearForm(nplandotnsurf, dnplan, dwguinplandotnsurf, nplan);
         dwrsttemp.SetLinearForm(dwrstnplandotnsurf, nplan, -1.0, dwrstnsurf);
 
-        gp_Vec corde = new(ptcur, pts);
-        gp_Vec @ref = new(), dwguiref = new(), dwrstref = new();
+        Vector3D corde = new(ptcur, pts);
+        Vector3D @ref = new(), dwguiref = new(), dwrstref = new();
         @ref.SetLinearForm(raysurnorm, temp, corde);
         dwguiref.SetLinearForm(raysurnorm, dwguitemp, -raysurnorm2 * dwguinorm, temp);
         dwrstref.SetLinearForm(raysurnorm, dwrsttemp, -raysurnorm2 * dwrstnorm, temp, dwrstpts);
@@ -157,49 +161,49 @@ public class BRepBlend_SurfCurvConstRadInv : Blend_SurfCurvFuncInv
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
-        gp_Pnt ptgui;
-        gp_Vec d1gui, d2gui;
+        Point3D ptgui;
+        Vector3D d1gui, d2gui;
         guide.D2(X[1], out ptgui, out d1gui, out d2gui);
         double normd1gui = d1gui.Magnitude();
         double unsurnormd1gui = 1.0 / normd1gui;
-        gp_Vec nplan = d1gui.Multiplied(unsurnormd1gui);
+        Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
         double theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
-        gp_Vec dnplan = new();
+        Vector3D dnplan = new();
         dnplan.SetLinearForm(-nplan.Dot(d2gui), nplan, d2gui);
         dnplan.Multiply(unsurnormd1gui);
         double dtheD = -nplan.XYZ().Dot(d1gui.XYZ()) - dnplan.XYZ().Dot(ptgui.XYZ());
-        gp_Pnt ptcur;
-        gp_Vec d1cur;
+        Point3D ptcur;
+        Vector3D d1cur;
         curv.D1(X[2], out ptcur, out d1cur);
         F[1] = nplan.XYZ().Dot(ptcur.XYZ()) + theD;
         D[1, 1] = dnplan.XYZ().Dot(ptcur.XYZ()) + dtheD;
         D[1, 2] = nplan.XYZ().Dot(d1cur.XYZ());
         D[1, 3] = 0.0;
 
-        gp_Pnt2d p2drst;
-        gp_Vec2d d1rst;
+        Point2D p2drst;
+        Vector2D d1rst;
         rst!.D1(X[3], out p2drst, out d1rst);
-        gp_Pnt pts;
-        gp_Vec d1u, d1v, d2u, d2v, duv;
+        Point3D pts;
+        Vector3D d1u, d1v, d2u, d2v, duv;
         surf.D2(p2drst.X(), p2drst.Y(), out pts, out d1u, out d1v, out d2u, out d2v, out duv);
         F[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
         D[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
         D[2, 2] = 0.0;
-        gp_Vec dwrstpts = new();
+        Vector3D dwrstpts = new();
         dwrstpts.SetLinearForm(d1rst.X(), d1u, d1rst.Y(), d1v);
         D[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
 
-        gp_Vec nsurf = d1u.Crossed(d1v);
-        gp_Vec dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
-        gp_Vec dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
-        gp_Vec dwrstnsurf = new();
+        Vector3D nsurf = d1u.Crossed(d1v);
+        Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
+        Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
+        Vector3D dwrstnsurf = new();
         dwrstnsurf.SetLinearForm(d1rst.X(), dunsurf, d1rst.Y(), dvnsurf);
 
-        gp_Vec nplancrosnsurf = nplan.Crossed(nsurf);
-        gp_Vec dwguinplancrosnsurf = dnplan.Crossed(nsurf);
-        gp_Vec dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
+        Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
+        Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
+        Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
 
         double norm2 = nplancrosnsurf.SquareMagnitude();
         double norm = Math.Sqrt(norm2);
@@ -214,13 +218,13 @@ public class BRepBlend_SurfCurvConstRadInv : Blend_SurfCurvFuncInv
         double dwguinplandotnsurf = dnplan.Dot(nsurf);
         double dwrstnplandotnsurf = nplan.Dot(dwrstnsurf);
 
-        gp_Vec temp = new(), dwguitemp = new(), dwrsttemp = new();
+        Vector3D temp = new(), dwguitemp = new(), dwrsttemp = new();
         temp.SetLinearForm(nplandotnsurf, nplan, -1.0, nsurf);
         dwguitemp.SetLinearForm(nplandotnsurf, dnplan, dwguinplandotnsurf, nplan);
         dwrsttemp.SetLinearForm(dwrstnplandotnsurf, nplan, -1.0, dwrstnsurf);
 
-        gp_Vec corde = new(ptcur, pts);
-        gp_Vec @ref = new(), dwguiref = new(), dwrstref = new();
+        Vector3D corde = new(ptcur, pts);
+        Vector3D @ref = new(), dwguiref = new(), dwrstref = new();
         @ref.SetLinearForm(raysurnorm, temp, corde);
         F[3] = @ref.SquareMagnitude() - ray * ray;
         dwguiref.SetLinearForm(raysurnorm, dwguitemp, -raysurnorm2 * dwguinorm, temp);

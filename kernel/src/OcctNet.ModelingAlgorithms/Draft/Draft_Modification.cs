@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.Draft_ErrorStatus;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -71,12 +74,12 @@ public sealed partial class Draft_Modification : BRepTools_Modification
     /// Adds the face <paramref name="F"/> and propagates the draft to its tangent neighbours. Returns false on an
     /// error; <see cref="ProblematicShape"/> is then the bad shape.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">An earlier Add failed and the bad face wasn't removed.</exception>
-    public bool Add(in TopoDS_Face F, in gp_Dir Direction, double Angle, in gp_Pln NeutralPlane, bool Flag = true)
+    /// <exception cref="ConstructionErrorException">An earlier Add failed and the bad face wasn't removed.</exception>
+    public bool Add(in TopoDS_Face F, in Direction3D Direction, double Angle, in Plane3D NeutralPlane, bool Flag = true)
     {
         if (!badShape.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (myComp)
@@ -90,12 +93,12 @@ public sealed partial class Draft_Modification : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>Removes the face <paramref name="F"/> and the faces added with it.</summary>
-    /// <exception cref="Standard_NoSuchObject">The face wasn't added, or the modification was performed.</exception>
+    /// <exception cref="NoSuchObjectException">The face wasn't added, or the modification was performed.</exception>
     public void Remove(in TopoDS_Face F)
     {
         if (!myFMap.Contains(F) || myComp)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
 
         conneF.Clear();
@@ -152,17 +155,17 @@ public sealed partial class Draft_Modification : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>The faces added together with the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject">The face wasn't added.</exception>
-    /// <exception cref="StdFail_NotDone">The modification isn't done.</exception>
+    /// <exception cref="NoSuchObjectException">The face wasn't added.</exception>
+    /// <exception cref="NotDoneException">The modification isn't done.</exception>
     public NCollection_List<TopoDS_Shape> ConnectedFaces(in TopoDS_Face F)
     {
         if (!myFMap.Contains(F))
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         conneF.Clear();
         curFace = myFMap.FindFromKey(F).RootFace();
@@ -182,12 +185,12 @@ public sealed partial class Draft_Modification : BRepTools_Modification
     //=================================================================================================
 
     /// <summary>The faces on which a modification has been given.</summary>
-    /// <exception cref="StdFail_NotDone">An Add failed.</exception>
+    /// <exception cref="NotDoneException">An Add failed.</exception>
     public NCollection_List<TopoDS_Shape> ModifiedFaces()
     {
         if (!badShape.IsNull())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         conneF.Clear();
 
@@ -205,22 +208,22 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
     //=================================================================================================
 
-    /// <exception cref="Standard_DomainError">The modification isn't done.</exception>
+    /// <exception cref="DomainErrorException">The modification isn't done.</exception>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
     {
         S = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         Tol = 0.0;
         RevWires = false;
         RevFace = false;
         if (!IsDone())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!myFMap.Contains(F) || !myFMap.FindFromKey(F).NewGeometry())
@@ -234,7 +237,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
         S = BRep_Tool.Surface(F, out L);
 
-        L = new TopLoc_Location(); // L.Identity()
+        L = new Placement(); // L.Identity()
 
         S = myFMap.FindFromKey(F).Geometry();
 
@@ -243,15 +246,15 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
     //=================================================================================================
 
-    /// <exception cref="Standard_DomainError">The modification isn't done.</exception>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    /// <exception cref="DomainErrorException">The modification isn't done.</exception>
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         C = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         Tol = 0.0;
         if (!IsDone())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!myEMap.Contains(E))
@@ -267,7 +270,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
         Tol = Einf.Tolerance();
         Tol = Max(Tol, BRep_Tool.Tolerance(E));
-        L = new TopLoc_Location(); // L.Identity()
+        L = new Placement(); // L.Identity()
         C = myEMap.FindFromKey(E).Geometry();
 
         return true;
@@ -275,14 +278,14 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
     //=================================================================================================
 
-    /// <exception cref="Standard_DomainError">The modification isn't done.</exception>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    /// <exception cref="DomainErrorException">The modification isn't done.</exception>
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
-        P = new gp_Pnt();
+        P = new Point3D();
         Tol = 0.0;
         if (!IsDone())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!myVMap.Contains(V))
@@ -298,7 +301,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
     //=================================================================================================
 
     /// <remarks>Writes the range of <paramref name="NewE"/>, the modifier's new edge.</remarks>
-    /// <exception cref="Standard_DomainError">The modification isn't done.</exception>
+    /// <exception cref="DomainErrorException">The modification isn't done.</exception>
     public override bool NewCurve2d(in TopoDS_Edge E,
                                     in TopoDS_Face F,
                                     in TopoDS_Edge NewE,
@@ -310,7 +313,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
         Tol = 0.0;
         if (!IsDone())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!myEMap.Contains(E))
@@ -380,8 +383,8 @@ public sealed partial class Draft_Modification : BRepTools_Modification
         {
             bool bTranslate;
             double aD2;
-            gp_Pnt2d PF, NewPF;
-            gp_Vec2d aV2DT = new(), vectra = new(2.0 * M_PI, 0.0);
+            Point2D PF, NewPF;
+            Vector2D aV2DT = new(), vectra = new(2.0 * M_PI, 0.0);
             Geom2d_Curve aC2DE;
             //
             aC2DE = BRep_Tool.CurveOnSurface(E, F, out double aT1, out double aT2)!;
@@ -408,7 +411,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
             {
                 // OCCT.NET: OCCT translates the curve in place, which may be the one kept for the edge (FirstPC or
                 // SecondPC); a frozen one (already given to a modifier's edge) is translated on a copy.
-                if (C.IsFrozen())
+                if (C.IsFrozen)
                 {
                     C = (Geom2d_Curve)C.Copy();
                 }
@@ -423,12 +426,12 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
     //=================================================================================================
 
-    /// <exception cref="Standard_DomainError">The modification isn't done.</exception>
+    /// <exception cref="DomainErrorException">The modification isn't done.</exception>
     public override bool NewParameter(in TopoDS_Vertex V, in TopoDS_Edge E, ref double P, ref double Tol)
     {
         if (!IsDone())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         if (!myVMap.Contains(V))
@@ -460,7 +463,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
             // Patch
             double FirstPar = GC.FirstParameter(), LastPar = GC.LastParameter();
-            double pconf = Precision.PConfusion();
+            double pconf = global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (Math.Abs(paramf - LastPar) <= pconf)
             {
                 paramf = FirstPar;
@@ -491,7 +494,7 @@ public sealed partial class Draft_Modification : BRepTools_Modification
 
     //=================================================================================================
 
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,

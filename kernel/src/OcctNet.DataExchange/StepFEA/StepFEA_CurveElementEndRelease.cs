@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementEndRelease
 /// </summary>
-public class StepFEA_CurveElementEndRelease : Standard_Transient
+public class StepFEA_CurveElementEndRelease : Transient
 {
     private StepFEA_CurveElementEndCoordinateSystem theCoordinateSystem = new StepFEA_CurveElementEndCoordinateSystem();
     private NCollection_HArray1<StepElement_CurveElementEndReleasePacket> theReleases;

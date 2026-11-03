@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -21,20 +23,20 @@ namespace Occt;
 public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxInt_SvSurfaces
     where ThePSurfaceTool : IApproxInt_SurfaceTool<ThePSurface>
 {
-    private gp_Pnt2d MyParOnS1;
-    private gp_Pnt2d MyParOnS2;
-    private gp_Pnt MyPnt;
-    private gp_Vec2d MyTguv1;
-    private gp_Vec2d MyTguv2;
-    private gp_Vec MyTg;
+    private Point2D MyParOnS1;
+    private Point2D MyParOnS2;
+    private Point3D MyPnt;
+    private Vector2D MyTguv1;
+    private Vector2D MyTguv2;
+    private Vector3D MyTg;
     private bool MyIsTangent;
     private bool MyHasBeenComputed;
-    private gp_Pnt2d MyParOnS1bis;
-    private gp_Pnt2d MyParOnS2bis;
-    private gp_Pnt MyPntbis;
-    private gp_Vec2d MyTguv1bis;
-    private gp_Vec2d MyTguv2bis;
-    private gp_Vec MyTgbis;
+    private Point2D MyParOnS1bis;
+    private Point2D MyParOnS2bis;
+    private Point3D MyPntbis;
+    private Vector2D MyTguv1bis;
+    private Vector2D MyTguv2bis;
+    private Vector3D MyTgbis;
     private bool MyIsTangentbis;
     private bool MyHasBeenComputedbis;
     private readonly bool MyImplicitFirst;
@@ -48,9 +50,9 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     //              theAngTol is angular tolerance.
     //=================================================================================================
 
-    private static bool IsSingular(in gp_Vec theDU, in gp_Vec theDV, double theSqLinTol, double theAngTol)
+    private static bool IsSingular(in Vector3D theDU, in Vector3D theDV, double theSqLinTol, double theAngTol)
     {
-        gp_Vec aDU = theDU, aDV = theDV;
+        Vector3D aDU = theDU, aDV = theDV;
 
         double aSqMagnDU = aDU.SquareMagnitude(), aSqMagnDV = aDV.SquareMagnitude();
 
@@ -99,9 +101,9 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     //            always have magnitude 1.0).
     //=================================================================================================
 
-    private static bool SingularProcessing(in gp_Vec theDU, in gp_Vec theDV, bool theIsTo3DTgCompute,
-                                           double theLinTol, double theAngTol, ref gp_Vec theTg3D,
-                                           ref gp_Vec2d theTg2D)
+    private static bool SingularProcessing(in Vector3D theDU, in Vector3D theDV, bool theIsTo3DTgCompute,
+                                           double theLinTol, double theAngTol, ref Vector3D theTg3D,
+                                           ref Vector2D theTg2D)
     {
         // Attention: @ \sin theAngTol \approx theAngTol @ (for cross-product)
 
@@ -302,15 +304,15 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     //              More over, vector Tg has always to be NORMALIZED.
     //=================================================================================================
 
-    private static bool NonSingularProcessing(in gp_Vec theDU, in gp_Vec theDV, in gp_Vec theTg3D, double theLinTol,
-                                              double theAngTol, ref gp_Vec2d theTg2D)
+    private static bool NonSingularProcessing(in Vector3D theDU, in Vector3D theDV, in Vector3D theTg3D, double theLinTol,
+                                              double theAngTol, ref Vector2D theTg2D)
     {
-        gp_Vec aNormal = theDU.Crossed(theDV);
+        Vector3D aNormal = theDU.Crossed(theDV);
         double aSQMagn = aNormal.SquareMagnitude();
 
         if (IsSingular(theDU, theDV, theLinTol, theAngTol))
         {
-            gp_Vec aTg = theTg3D;
+            Vector3D aTg = theTg3D;
             return SingularProcessing(theDU, theDV, false, theLinTol, theAngTol, ref aTg, ref theTg2D);
         }
 
@@ -325,7 +327,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         //(if @\left \| \vec{A} \times \vec{B} \right \| > 0.0 @,
         // else it is singular case).
 
-        gp_Vec aTgU = theTg3D.Crossed(theDU), aTgV = theTg3D.Crossed(theDV);
+        Vector3D aTgU = theTg3D.Crossed(theDU), aTgV = theTg3D.Crossed(theDV);
         double aDeltaU = aTgV.SquareMagnitude() / aSQMagn;
         double aDeltaV = aTgU.SquareMagnitude() / aSQMagn;
 
@@ -349,20 +351,20 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
     private ApproxInt_ImpPrmSvSurfaces(ThePSurface PSurf, in IntSurf_Quadric ISurf, bool theImplicitFirst)
     {
-        MyParOnS1 = new gp_Pnt2d();
-        MyParOnS2 = new gp_Pnt2d();
-        MyPnt = new gp_Pnt();
-        MyTguv1 = new gp_Vec2d();
-        MyTguv2 = new gp_Vec2d();
-        MyTg = new gp_Vec();
+        MyParOnS1 = new Point2D();
+        MyParOnS2 = new Point2D();
+        MyPnt = new Point3D();
+        MyTguv1 = new Vector2D();
+        MyTguv2 = new Vector2D();
+        MyTg = new Vector3D();
         MyIsTangent = false;
         MyHasBeenComputed = false;
-        MyParOnS1bis = new gp_Pnt2d();
-        MyParOnS2bis = new gp_Pnt2d();
-        MyPntbis = new gp_Pnt();
-        MyTguv1bis = new gp_Vec2d();
-        MyTguv2bis = new gp_Vec2d();
-        MyTgbis = new gp_Vec();
+        MyParOnS1bis = new Point2D();
+        MyParOnS2bis = new Point2D();
+        MyPntbis = new Point3D();
+        MyTguv1bis = new Vector2D();
+        MyTguv2bis = new Vector2D();
+        MyTgbis = new Vector3D();
         MyIsTangentbis = false;
         MyHasBeenComputedbis = false;
         MyImplicitFirst = theImplicitFirst;
@@ -370,11 +372,11 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         SetUseSolver(true);
     }
 
-    public override void Pnt(double u1, double v1, double u2, double v2, ref gp_Pnt P)
+    public override void Pnt(double u1, double v1, double u2, double v2, ref Point3D P)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -383,11 +385,11 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         P = MyPnt;
     }
 
-    public override bool Tangency(double u1, double v1, double u2, double v2, ref gp_Vec T)
+    public override bool Tangency(double u1, double v1, double u2, double v2, ref Vector3D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -397,11 +399,11 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return (t);
     }
 
-    public override bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref gp_Vec2d T)
+    public override bool TangencyOnSurf1(double u1, double v1, double u2, double v2, ref Vector2D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -411,11 +413,11 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         return (t);
     }
 
-    public override bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref gp_Vec2d T)
+    public override bool TangencyOnSurf2(double u1, double v1, double u2, double v2, ref Vector2D T)
     {
-        gp_Pnt aP = new();
-        gp_Vec aT = new();
-        gp_Vec2d aTS1 = new(), aTS2 = new();
+        Point3D aP = new();
+        Vector3D aT = new();
+        Vector2D aTS1 = new(), aTS2 = new();
         double tu1 = u1;
         double tu2 = u2;
         double tv1 = v1;
@@ -431,17 +433,17 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
     //            parameters on the surfaces.
     //=================================================================================================
 
-    public override bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref gp_Pnt P,
-                                 ref gp_Vec Tg, ref gp_Vec2d Tguv1, ref gp_Vec2d Tguv2)
+    public override bool Compute(ref double u1, ref double v1, ref double u2, ref double v2, ref Point3D P,
+                                 ref Vector3D Tg, ref Vector2D Tguv1, ref Vector2D Tguv2)
     {
         IntSurf_Quadric aQSurf = MyZerImpFunc.ISurface();
         ThePSurface aPSurf = MyZerImpFunc.PSurface();
-        ref gp_Vec2d aQuadTg = ref MyImplicitFirst ? ref Tguv1 : ref Tguv2;
-        ref gp_Vec2d aPrmTg = ref MyImplicitFirst ? ref Tguv2 : ref Tguv1;
+        ref Vector2D aQuadTg = ref MyImplicitFirst ? ref Tguv1 : ref Tguv2;
+        ref Vector2D aPrmTg = ref MyImplicitFirst ? ref Tguv2 : ref Tguv1;
 
         // for square
-        double aNullValue = Precision.Approximation() * Precision.Approximation(),
-               anAngTol = Precision.Angular();
+        double aNullValue = global::Kerf.Engine.Foundation.Precision.Approximation() * global::Kerf.Engine.Foundation.Precision.Approximation(),
+               anAngTol = global::Kerf.Engine.Foundation.Precision.Angular();
 
         double tu1 = u1;
         double tu2 = u2;
@@ -473,12 +475,12 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
             if ((MyParOnS1bis.X() == u1) && (MyParOnS1bis.Y() == v1) && (MyParOnS2bis.X() == u2)
                 && (MyParOnS2bis.Y() == v2))
             {
-                gp_Vec TV = MyTg;
-                gp_Vec2d TV1 = MyTguv1;
-                gp_Vec2d TV2 = MyTguv2;
-                gp_Pnt TP = MyPnt;
-                gp_Pnt2d TP1 = MyParOnS1;
-                gp_Pnt2d TP2 = MyParOnS2;
+                Vector3D TV = MyTg;
+                Vector2D TV1 = MyTguv1;
+                Vector2D TV2 = MyTguv2;
+                Point3D TP = MyPnt;
+                Point2D TP1 = MyParOnS1;
+                Point2D TP2 = MyParOnS2;
                 bool TB = MyIsTangent;
 
                 MyTg = MyTgbis;
@@ -529,10 +531,10 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         double PourTesterV = X[2];
         if (GetUseSolver())
         {
-            math_FunctionSetRoot Rsnld = new(MyZerImpFunc);
+            FunctionSetRoot Rsnld = new(MyZerImpFunc);
             Rsnld.SetTolerance(Tolerance);
             Rsnld.Perform(MyZerImpFunc, X, BornInf, BornSup);
-            aRsnldIsDone = Rsnld.IsDone();
+            aRsnldIsDone = Rsnld.IsDone;
             if (aRsnldIsDone)
             {
                 Rsnld.Root(X);
@@ -549,15 +551,15 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
             if ((DistAvantApresV <= 0.001) && (DistAvantApresU <= 0.001))
             {
-                gp_Vec aD1uPrm, aD1vPrm;
-                gp_Vec aD1uQuad = new(), aD1vQuad = new();
+                Vector3D aD1uPrm, aD1vPrm;
+                Vector3D aD1uQuad = new(), aD1vQuad = new();
 
                 if (MyImplicitFirst)
                 {
                     u2 = X[1] - TranslationU;
                     v2 = X[2] - TranslationV;
 
-                    if (aQSurf.TypeQuadric() != GeomAbs_Plane)
+                    if (aQSurf.TypeQuadric() != Plane)
                     {
                         while (u1 - tu1 > M_PI)
                         {
@@ -572,7 +574,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
                     MyParOnS1.SetCoord(tu1, tv1);
                     MyParOnS2.SetCoord(tu2, tv2);
 
-                    gp_Pnt aP2 = new();
+                    Point3D aP2 = new();
 
                     ThePSurfaceTool.D1(aPSurf, X[1], X[2], out P, out aD1uPrm, out aD1vPrm);
                     aQSurf.D1(u1, v1, ref aP2, ref aD1uQuad, ref aD1vQuad);
@@ -585,7 +587,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
                     u1 = X[1] - TranslationU;
                     v1 = X[2] - TranslationV;
                     // aQSurf.Parameters(P, u2, v2);
-                    if (aQSurf.TypeQuadric() != GeomAbs_Plane)
+                    if (aQSurf.TypeQuadric() != Plane)
                     {
                         while (u2 - tu2 > M_PI)
                         {
@@ -600,7 +602,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
                     MyParOnS1.SetCoord(tu1, tv1);
                     MyParOnS2.SetCoord(tu2, tu2); // OCCT: tu2 for tv2, so the cache never matches this point
 
-                    gp_Pnt aP2 = new();
+                    Point3D aP2 = new();
                     ThePSurfaceTool.D1(aPSurf, X[1], X[2], out P, out aD1uPrm, out aD1vPrm);
 
                     aQSurf.D1(u2, v2, ref aP2, ref aD1uQuad, ref aD1vQuad);
@@ -612,7 +614,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
                 MyPnt = P;
 
                 // Normals to the surfaces
-                gp_Vec aNormalPrm = aD1uPrm.Crossed(aD1vPrm), aNormalImp = aQSurf.Normale(MyPnt);
+                Vector3D aNormalPrm = aD1uPrm.Crossed(aD1vPrm), aNormalImp = aQSurf.Normale(MyPnt);
 
                 double aSQMagnPrm = aNormalPrm.SquareMagnitude(),
                        aSQMagnImp = aNormalImp.SquareMagnitude();
@@ -771,10 +773,10 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
         double NewU1 = 0.0, NewV1 = 0.0, NewU2 = 0.0, NewV2 = 0.0;
 
-        math_FunctionSetRoot Rsnld = new(MyZerImpFunc);
+        FunctionSetRoot Rsnld = new(MyZerImpFunc);
         Rsnld.SetTolerance(Tolerance);
         Rsnld.Perform(MyZerImpFunc, X, BornInf, BornSup);
-        if (Rsnld.IsDone())
+        if (Rsnld.IsDone)
         {
             MyHasBeenComputed = true;
             Rsnld.Root(X);
@@ -788,7 +790,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
                 aQSurf.Parameters(MyPnt, ref NewU1, ref NewV1);
                 // adjust U
-                if (aQSurf.TypeQuadric() != GeomAbs_Plane)
+                if (aQSurf.TypeQuadric() != Plane)
                 {
                     double sign = (NewU1 > u1) ? -1 : 1;
                     while (Math.Abs(u1 - NewU1) > M_PI)
@@ -804,7 +806,7 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
 
                 aQSurf.Parameters(MyPnt, ref NewU2, ref NewV2);
                 // adjust U
-                if (aQSurf.TypeQuadric() != GeomAbs_Plane)
+                if (aQSurf.TypeQuadric() != Plane)
                 {
                     double sign = (NewU2 > u2) ? -1 : 1;
                     while (Math.Abs(u2 - NewU2) > M_PI)
@@ -971,8 +973,8 @@ public class ApproxInt_ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : ApproxIn
         // finding "outboundaried" solution (Rsnld -> NotDone).
         if (GetUseSolver())
         {
-            double du = Max(Precision.Confusion(), ThePSurfaceTool.UResolution(aPSurf, Precision.Confusion()));
-            double dv = Max(Precision.Confusion(), ThePSurfaceTool.VResolution(aPSurf, Precision.Confusion()));
+            double du = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), ThePSurfaceTool.UResolution(aPSurf, global::Kerf.Engine.Foundation.Precision.Confusion()));
+            double dv = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), ThePSurfaceTool.VResolution(aPSurf, global::Kerf.Engine.Foundation.Precision.Confusion()));
             if (X[1] - 0.0000000001 <= binfu)
             {
                 X[1] = X[1] + du;

@@ -6,6 +6,8 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.StepToTopoDS_TranslateEdgeLoopError;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -93,7 +95,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             if (w1 > w2 && mySurf.IsUPeriodic())
             {
                 mySurf.Bounds(out double u1, out double u2, out double v1, out double v2);
-                ElCLib.AdjustPeriodic(u1, u2, Min(Math.Abs(w2 - w1) / 2, Occt.Precision.PConfusion()), ref w1, ref w2);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(u1, u2, Min(Math.Abs(w2 - w1) / 2, Kerf.Engine.Foundation.Precision.PConfusion()), ref w1, ref w2);
                 B.Range(myEdge, aFace, w1, w2);
             }
 
@@ -284,9 +286,9 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             if (myTranVertex2.IsDone())
             {
                 V2 = TopoDS.Vertex(myTranVertex2.InternalValue());
-                gp_Pnt p1 = BRep_Tool.Pnt(V1);
-                gp_Pnt p2 = BRep_Tool.Pnt(V2);
-                if (p1.Distance(p2) <= Occt.Precision.Confusion())
+                Point3D p1 = BRep_Tool.Pnt(V1);
+                Point3D p2 = BRep_Tool.Pnt(V2);
+                if (p1.Distance(p2) <= Kerf.Engine.Foundation.Precision.Confusion())
                 { //: S4136: preci) {
                     bool Fixed = true;
                     if (!iseV)
@@ -367,8 +369,8 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 continue; // OK
             }
 
-            gp_Pnt p1 = BRep_Tool.Pnt(V1);
-            gp_Pnt p2 = BRep_Tool.Pnt(V2);
+            Point3D p1 = BRep_Tool.Pnt(V1);
+            Point3D p2 = BRep_Tool.Pnt(V2);
             bool locFixed = true;
             if (p1.Distance(p2) <= preci)
             {
@@ -753,7 +755,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 myEdgePro.Compute(preci);
                 if (myEdgePro.IsFirstDone() && myEdgePro.IsLastDone())
                 {
-                    if (Math.Abs(myEdgePro.FirstParam() - myEdgePro.LastParam()) < Occt.Precision.PConfusion())
+                    if (Math.Abs(myEdgePro.FirstParam() - myEdgePro.LastParam()) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
@@ -780,7 +782,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         => Init(FaceBound, Face, GeomSurf, StepSurf, sameSense, aTool, NMTool, new StepData_Factors());
 
     /// <summary>The wire, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

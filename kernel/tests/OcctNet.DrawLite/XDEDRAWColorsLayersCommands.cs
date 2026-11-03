@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -89,10 +90,10 @@ internal static class XDEDRAWColorsLayersCommands
     }
 
     // the colour's name, with its alpha when not opaque
-    private static void appendColor(DrawResult di, in Quantity_ColorRGBA theColor)
+    private static void appendColor(DrawResult di, in global::Kerf.Engine.Foundation.ColorWithAlpha theColor)
     {
-        di.Append(Quantity_Color.StringName(theColor.GetRGB().Name()));
-        if ((1.0 - theColor.Alpha()) >= Precision.Confusion())
+        di.Append(global::Kerf.Engine.Foundation.Color.StringName(theColor.GetRGB().Name()));
+        if ((1.0 - theColor.Alpha()) >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             di.Append(" (").Append((double)theColor.Alpha()).Append(")");
         }
@@ -122,7 +123,7 @@ internal static class XDEDRAWColorsLayersCommands
                 return fail(theDI, "Syntax error: " + argv[2] + " is not a label nor shape");
             }
         }
-        Quantity_ColorRGBA aColor = new();
+        global::Kerf.Engine.Foundation.ColorWithAlpha aColor = new();
         bool isColorDefined = false;
         XdeDoc_ColorType aColType = XdeDoc_ColorType.XdeDoc_ColorGen;
         for (int anArgIter = 3; anArgIter < argc; ++anArgIter)
@@ -173,7 +174,7 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (aDoc.GetColor(aLabel, out Quantity_ColorRGBA aColor))
+        if (aDoc.GetColor(aLabel, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor))
         {
             appendColor(di, aColor);
         }
@@ -201,7 +202,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: unknown color type '" + argv[3] + "'");
         }
-        if (aDoc.GetColor(aLabel, aColType, out Quantity_ColorRGBA aColor))
+        if (aDoc.GetColor(aLabel, aColType, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor))
         {
             appendColor(di, aColor);
         }
@@ -223,7 +224,7 @@ internal static class XDEDRAWColorsLayersCommands
         aDoc.GetColors(aLabels);
         foreach (XdeDoc_Label aLabel in aLabels)
         {
-            if (!aDoc.GetColor(aLabel, out Quantity_ColorRGBA aColor))
+            if (!aDoc.GetColor(aLabel, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor))
             {
                 continue;
             }
@@ -244,7 +245,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return 1;
         }
-        int aNbParsed = DDocStdCommands.ParseColor(theDI, argv, 2, out Quantity_ColorRGBA aColor);
+        int aNbParsed = DDocStdCommands.ParseColor(theDI, argv, 2, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor);
         if (aNbParsed != argv.Count - 2)
         {
             return fail(theDI, "Syntax error at '" + argv[2] + "'");
@@ -284,7 +285,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return 1;
         }
-        int aNbParsed = DDocStdCommands.ParseColor(theDI, argv, 2, out Quantity_ColorRGBA aColor);
+        int aNbParsed = DDocStdCommands.ParseColor(theDI, argv, 2, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor);
         if (aNbParsed != argv.Count - 2)
         {
             return fail(theDI, "Syntax error at '" + argv[2] + "'");
@@ -768,7 +769,7 @@ internal static class XDEDRAWColorsLayersCommands
             var G = new GProp_GProps();
             BRepGProp.VolumeProperties(aShape, G, anEps, true);
             double Vres = G.Mass();
-            gp_Pnt aPoint = G.CentreOfMass();
+            Point3D aPoint = G.CentreOfMass();
             aDoc.SetVolume(aLabel, Vres);
             aDoc.SetCentroid(aLabel, aPoint);
             BRepGProp.SurfaceProperties(aShape, G, anEps);
@@ -838,7 +839,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return 1;
         }
-        var aPnt = new gp_Pnt();
+        var aPnt = new Point3D();
         XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
         if (!aLabel.IsNull())
         {
@@ -904,7 +905,7 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull() && aDoc.GetValidationProps(aLabel)?.Centroid is gp_Pnt aPoint)
+        if (!aLabel.IsNull() && aDoc.GetValidationProps(aLabel)?.Centroid is Point3D aPoint)
         {
             di.Append(aPoint.X()).Append(" ").Append(aPoint.Y()).Append(" ").Append(aPoint.Z());
         }

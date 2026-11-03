@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using static Occt.TopAbs_Orientation;
@@ -17,15 +19,15 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A working object, as OCCT's: <see cref="Add"/> and <see cref="Read(TextReader, Message_ProgressRange)"/> change the
-/// set. The shapes it hands out are frozen: <see cref="Read(TextReader, Message_ProgressRange)"/> freezes every shape
+/// A working object, as OCCT's: <see cref="Add"/> and <see cref="Read(TextReader, ProgressRange)"/> change the
+/// set. The shapes it hands out are frozen: <see cref="Read(TextReader, ProgressRange)"/> freezes every shape
 /// it creates once the whole set is read (docs/phase3-design.md, section 4.2), and <see cref="Add"/> takes the
 /// caller's shapes as they are.
 /// </para>
 /// <para>
 /// Writing doesn't change the shapes. The text is OCCT's byte for byte, with <c>'\n'</c> line ends. Reading follows
-/// C++'s stream extraction (<see cref="Standard_Stream"/>), and rejects input it can't read safely with
-/// <see cref="Storage_StreamFormatError"/> (design, section 7): counts the input couldn't hold, words longer than
+/// C++'s stream extraction (<see cref="StreamUtilities"/>), and rejects input it can't read safely with
+/// <see cref="StreamFormatErrorException"/> (design, section 7): counts the input couldn't hold, words longer than
 /// OCCT's buffers, references to shapes or locations that don't exist, shapes nested more than
 /// <see cref="MaxShapeNesting"/> deep, and input that ends where OCCT would loop for ever.
 /// </para>
@@ -74,7 +76,7 @@ public class TopTools_ShapeSet
     }
 
     /// <summary>
-    /// The format version: the one to write, or, after <see cref="Read(TextReader, Message_ProgressRange)"/>, the one
+    /// The format version: the one to write, or, after <see cref="Read(TextReader, ProgressRange)"/>, the one
     /// read.
     /// </summary>
     public int FormatNb() => myFormatNb;
@@ -103,7 +105,7 @@ public class TopTools_ShapeSet
 
         myLocations.Add(S.Location());
         TopoDS_Shape S2 = S;
-        S2.Location(new TopLoc_Location());
+        S2.Location(new Placement());
         int index = myShapes.FindIndex(S2);
         if (index == 0)
         {
@@ -132,7 +134,7 @@ public class TopTools_ShapeSet
     /// <summary>The locations of the set, to change (OCCT's non-const access).</summary>
     public TopTools_LocationSet ChangeLocations() => myLocations;
 
-    private static void Out(TextWriter OS, int theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, int theValue) => StreamUtilities.Write(OS, theValue);
 
     private static void PrintShapeEnum(TopAbs_ShapeEnum T, TextWriter S, bool C)
     {
@@ -298,8 +300,8 @@ public class TopTools_ShapeSet
             {
                 TopoDS_Shape sub = its.Value();
                 PrintOrientation(sub.Orientation(), OS, true);
-                Out(OS, nbShapes - myShapes.FindIndex(sub.Located(new TopLoc_Location())) + 1);
-                if (!sub.Location().IsIdentity())
+                Out(OS, nbShapes - myShapes.FindIndex(sub.Located(new Placement())) + 1);
+                if (!sub.Location().IsIdentity)
                 {
                     OS.Write("(L");
                     Out(OS, myLocations.Index(sub.Location()));
@@ -333,15 +335,15 @@ public class TopTools_ShapeSet
     }
 
     /// <summary>
-    /// Writes the set in OCCT's text format, which <see cref="Read(TextReader, Message_ProgressRange)"/> reads: the
+    /// Writes the set in OCCT's text format, which <see cref="Read(TextReader, ProgressRange)"/> reads: the
     /// version line, the locations, the geometry and the TShapes, with 15 significant digits.
     /// </summary>
-    public virtual void Write(TextWriter OS, Message_ProgressRange theProgress = default)
+    public virtual void Write(TextWriter OS, ProgressRange theProgress = default)
     {
         // always use C locale for writing shapes (the port always does)
 
         // use 15-digit precision
-        int prec = Standard_Stream.Precision(OS, 15);
+        int prec = StreamUtilities.Precision(OS, 15);
 
         // write the copyright
         OS.Write("\n" + THE_ASCII_VERSIONS[myFormatNb] + "\n");
@@ -350,7 +352,7 @@ public class TopTools_ShapeSet
         // write the locations
         //-----------------------------------------
 
-        using var aPS = new Message_ProgressScope(theProgress, "Writing", 100);
+        using var aPS = new ProgressScope(theProgress, "Writing", 100);
 
         myLocations.Write(OS, aPS.Next(10));
 
@@ -384,7 +386,7 @@ public class TopTools_ShapeSet
         OS.Write("\n");
 
         // subshapes are written first
-        using (var aPS1 = new Message_ProgressScope(aPS.Next(15), "Shapes", nbShapes))
+        using (var aPS1 = new ProgressScope(aPS.Next(15), "Shapes", nbShapes))
         {
             for (i = 1; i <= nbShapes && aPS1.More(); i++, aPS1.Next())
             {
@@ -431,7 +433,7 @@ public class TopTools_ShapeSet
         }
 
         OS.Write("\n");
-        Standard_Stream.Precision(OS, prec);
+        StreamUtilities.Precision(OS, prec);
 
         if (aPS.UserBreak())
         {
@@ -442,7 +444,7 @@ public class TopTools_ShapeSet
     private static TopAbs_ShapeEnum ReadShapeEnum(TextReader IS)
     {
         char[] buffer = new char[255];
-        Standard_Stream.ReadWord(IS, buffer);
+        StreamUtilities.ReadWord(IS, buffer);
 
         switch (buffer[0])
         {
@@ -483,16 +485,16 @@ public class TopTools_ShapeSet
     }
 
     /// <summary>
-    /// Clears the set and reads one written by <see cref="Write(TextWriter, Message_ProgressRange)"/>, skipping lines
+    /// Clears the set and reads one written by <see cref="Write(TextWriter, ProgressRange)"/>, skipping lines
     /// until a version line. The shapes read are frozen once the whole set is read (or when reading stops on an
     /// error). Writes OCCT's console messages ("File was not written with this version of the topology", "Not a
     /// TShape table") and returns with what it has read when the text isn't a set.
     /// </summary>
-    /// <exception cref="Storage_StreamFormatError">The input can't be read safely (docs/phase3-design.md, section
+    /// <exception cref="StreamFormatErrorException">The input can't be read safely (docs/phase3-design.md, section
     /// 7).</exception>
-    /// <exception cref="Standard_Failure">OCCT's own exceptions on malformed input, such as
+    /// <exception cref="FailureException">OCCT's own exceptions on malformed input, such as
     /// <see cref="TopoDS_UnCompatibleShapes"/> for a sub-shape of the wrong type.</exception>
-    public virtual void Read(TextReader IS, Message_ProgressRange theProgress = default)
+    public virtual void Read(TextReader IS, ProgressRange theProgress = default)
     {
         try
         {
@@ -502,7 +504,7 @@ public class TopTools_ShapeSet
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception in ported code that OCCT doesn't catch
             // (where OCCT reads outside an array or dereferences a null handle)
-            throw new Storage_StreamFormatError("TopTools_ShapeSet::Read: " + anException.Message, anException);
+            throw new StreamFormatErrorException("TopTools_ShapeSet::Read: " + anException.Message, anException);
         }
         finally
         {
@@ -526,7 +528,7 @@ public class TopTools_ShapeSet
             or KeyNotFoundException;
     }
 
-    private void ReadSet(TextReader IS, Message_ProgressRange theProgress)
+    private void ReadSet(TextReader IS, ProgressRange theProgress)
     {
         // always use C locale for reading shapes (the port always does)
 
@@ -537,10 +539,10 @@ public class TopTools_ShapeSet
         bool anIsSetFormat = false;
         do
         {
-            Standard_Stream.GetLine(IS, vers, 100, '\n');
+            StreamUtilities.GetLine(IS, vers, 100, '\n');
             // BUC60769 PTV 18.10.2000: remove possible '\r' at the end of the line
 
-            int lv = Standard_Stream.Strlen(vers);
+            int lv = StreamUtilities.Strlen(vers);
             if (lv > 0)
             {
                 for (lv--; lv > 0 && (vers[lv] == '\r' || vers[lv] == '\n'); lv--)
@@ -549,7 +551,7 @@ public class TopTools_ShapeSet
                 }
             }
 
-            string aVers = Standard_Stream.CString(vers);
+            string aVers = StreamUtilities.CString(vers);
             for (int i = (int)TopTools_FormatVersionBounds.TopTools_FormatVersion_LOWER;
                  i <= (int)TopTools_FormatVersionBounds.TopTools_FormatVersion_UPPER;
                  ++i)
@@ -566,9 +568,9 @@ public class TopTools_ShapeSet
             {
                 break;
             }
-        } while (!Standard_Stream.Fail(IS));
+        } while (!StreamUtilities.Fail(IS));
 
-        if (Standard_Stream.Fail(IS))
+        if (StreamUtilities.Fail(IS))
         {
             Console.Out.Write("File was not written with this version of the topology" + '\n');
             return;
@@ -578,7 +580,7 @@ public class TopTools_ShapeSet
         // read the locations
         //-----------------------------------------
 
-        using var aPS = new Message_ProgressScope(theProgress, "Reading", 100);
+        using var aPS = new ProgressScope(theProgress, "Reading", 100);
 
         myLocations.Read(IS, aPS.Next(10));
 
@@ -604,8 +606,8 @@ public class TopTools_ShapeSet
         //-----------------------------------------
 
         char[] buffer = new char[255];
-        Standard_Stream.ReadWord(IS, buffer);
-        if (Standard_Stream.CString(buffer) != "TShapes")
+        StreamUtilities.ReadWord(IS, buffer);
+        if (StreamUtilities.CString(buffer) != "TShapes")
         {
             Console.Out.Write("Not a TShape table" + '\n');
             return;
@@ -613,15 +615,15 @@ public class TopTools_ShapeSet
 
         // OCCT's nbShapes is uninitialised if the count can't be read
         int nbShapes = 0;
-        Standard_Stream.Read(IS, ref nbShapes);
+        StreamUtilities.Read(IS, ref nbShapes);
         // OCCT.NET: untrusted input: a shape takes at least 13 characters ("Wi\n\n0000000\n*\n")
-        Standard_Stream.CheckCount(IS, Math.Max(nbShapes, 0), 8, "shapes");
+        StreamUtilities.CheckCount(IS, Math.Max(nbShapes, 0), 8, "shapes");
 
         // OCCT.NET: untrusted input: the nesting depth of each shape read, by index
         var aDepths = new List<int> { 0 };
 
         // OCC19559
-        using var aPS1 = new Message_ProgressScope(aPS.Next(15), "Shapes", nbShapes);
+        using var aPS1 = new ProgressScope(aPS.Next(15), "Shapes", nbShapes);
         for (int i = 1; i <= nbShapes && aPS1.More(); i++, aPS1.Next())
         {
             TopoDS_Shape S = new();
@@ -632,7 +634,7 @@ public class TopTools_ShapeSet
             ReadGeometry(T, IS, ref S);
 
             // Set the flags
-            Standard_Stream.ReadWord(IS, buffer);
+            StreamUtilities.ReadWord(IS, buffer);
 
             // sub-shapes
             TopoDS_Shape SS;
@@ -641,19 +643,19 @@ public class TopTools_ShapeSet
             {
                 Read(out SS, IS, nbShapes);
                 // OCCT.NET: untrusted input: OCCT loops for ever on a stream that has failed
-                Standard_Stream.CheckNotFailed(IS, "TopTools_ShapeSet::Read");
+                StreamUtilities.CheckNotFailed(IS, "TopTools_ShapeSet::Read");
                 if (!SS.IsNull())
                 {
                     AddShapes(ref S, SS);
                     // OCCT.NET: untrusted input
-                    aDepth = Math.Max(aDepth, aDepths[myShapes.FindIndex(SS.Located(new TopLoc_Location()))] + 1);
+                    aDepth = Math.Max(aDepth, aDepths[myShapes.FindIndex(SS.Located(new Placement()))] + 1);
                 }
             } while (!SS.IsNull());
 
             if (aDepth > MaxShapeNesting)
             {
                 // OCCT.NET: untrusted input: writing or exploring the shape would recurse this deep
-                throw new Storage_StreamFormatError("TopTools_ShapeSet::Read: shapes nested more than "
+                throw new StreamFormatErrorException("TopTools_ShapeSet::Read: shapes nested more than "
                                                     + MaxShapeNesting + " deep");
             }
 
@@ -696,10 +698,10 @@ public class TopTools_ShapeSet
         }
 
         OS.Write("Shape : ");
-        Out(OS, myShapes.FindIndex(S.Located(new TopLoc_Location())));
+        Out(OS, myShapes.FindIndex(S.Located(new Placement())));
         OS.Write(", ");
         PrintOrientation(S.Orientation(), OS, false);
-        if (!S.Location().IsIdentity())
+        if (!S.Location().IsIdentity)
         {
             OS.Write(", location : ");
             Out(OS, myLocations.Index(S.Location()));
@@ -721,7 +723,7 @@ public class TopTools_ShapeSet
         else
         {
             PrintOrientation(S.Orientation(), OS, true);
-            Out(OS, myShapes.Extent() - myShapes.FindIndex(S.Located(new TopLoc_Location())) + 1);
+            Out(OS, myShapes.Extent() - myShapes.FindIndex(S.Located(new Placement())) + 1);
             OS.Write(" ");
             Out(OS, myLocations.Index(S.Location()));
             OS.Write(" ");
@@ -729,7 +731,7 @@ public class TopTools_ShapeSet
     }
 
     /// <summary>Reads a reference to a shape of the set, written by <see cref="Write(in TopoDS_Shape, TextWriter)"/>.</summary>
-    /// <exception cref="Storage_StreamFormatError">The reference isn't to a shape of the set.</exception>
+    /// <exception cref="StreamFormatErrorException">The reference isn't to a shape of the set.</exception>
     public void Read(out TopoDS_Shape S, TextReader IS)
     {
         Read(out S, IS, myShapes.Extent());
@@ -739,7 +741,7 @@ public class TopTools_ShapeSet
     /// Reads a reference to a shape, its index counted from the end of a set of <paramref name="nbshapes"/> shapes
     /// (the set being read); a null shape if <paramref name="nbshapes"/> is less than 1.
     /// </summary>
-    /// <exception cref="Storage_StreamFormatError">The reference isn't to a shape already read.</exception>
+    /// <exception cref="StreamFormatErrorException">The reference isn't to a shape already read.</exception>
     public void Read(out TopoDS_Shape S, TextReader IS, int nbshapes)
     {
         if (nbshapes < 1)
@@ -750,19 +752,19 @@ public class TopTools_ShapeSet
 
         // OCCT's buffer is uninitialised; a failed read leaves it so
         char[] buffer = new char[255];
-        Standard_Stream.ReadWord(IS, buffer);
+        StreamUtilities.ReadWord(IS, buffer);
         if (buffer[0] == '*')
         {
             S = new TopoDS_Shape();
         }
         else
         {
-            long anIndex = (long)nbshapes - Standard_Stream.Atoi(buffer.AsSpan(1)) + 1;
+            long anIndex = (long)nbshapes - StreamUtilities.Atoi(buffer.AsSpan(1)) + 1;
             // OCCT.NET: untrusted input: OCCT reads outside its map
             if (anIndex < 1 || anIndex > myShapes.Extent())
             {
-                throw new Storage_StreamFormatError("TopTools_ShapeSet::Read: no shape "
-                                                    + Standard_Stream.CString(buffer));
+                throw new StreamFormatErrorException("TopTools_ShapeSet::Read: no shape "
+                                                    + StreamUtilities.CString(buffer));
             }
 
             S = myShapes[(int)anIndex];
@@ -787,7 +789,7 @@ public class TopTools_ShapeSet
 
             // OCCT's l is uninitialised if it can't be read
             int l = 0;
-            Standard_Stream.Read(IS, ref l);
+            StreamUtilities.Read(IS, ref l);
             S.Location(myLocations.Location(l), false);
         }
     }
@@ -803,12 +805,12 @@ public class TopTools_ShapeSet
     }
 
     /// <summary>Writes the geometry of the set. The base class has none.</summary>
-    public virtual void WriteGeometry(TextWriter OS, Message_ProgressRange theProgress = default)
+    public virtual void WriteGeometry(TextWriter OS, ProgressRange theProgress = default)
     {
     }
 
     /// <summary>Reads the geometry of the set. The base class has none.</summary>
-    public virtual void ReadGeometry(TextReader IS, Message_ProgressRange theProgress = default)
+    public virtual void ReadGeometry(TextReader IS, ProgressRange theProgress = default)
     {
     }
 

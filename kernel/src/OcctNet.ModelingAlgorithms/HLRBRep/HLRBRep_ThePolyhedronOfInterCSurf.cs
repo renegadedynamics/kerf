@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,10 +26,10 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
 {
     private readonly int nbdeltaU;
     private readonly int nbdeltaV;
-    private Bnd_Box TheBnd = new();
-    private NCollection_HArray1<Bnd_Box>? TheComponentsBnd;
+    private Box TheBnd = new();
+    private NCollection_HArray1<Box>? TheComponentsBnd;
     private double TheDeflection;
-    private gp_Pnt[]? C_MyPnts;
+    private Point3D[]? C_MyPnts;
     private double[]? C_MyU;
     private double[]? C_MyV;
     private bool UMinSingular;
@@ -119,17 +125,17 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
     public double DeflectionOverEstimation() => TheDeflection;
 
     /// <summary>The box of the polyhedron.</summary>
-    public Bnd_Box Bounding() => TheBnd;
+    public Box Bounding() => TheBnd;
 
     /// <summary>Computes the boxes of the triangles.</summary>
     public void FillBounding()
     {
-        TheComponentsBnd = new NCollection_HArray1<Bnd_Box>(1, NbTriangles());
+        TheComponentsBnd = new NCollection_HArray1<Box>(1, NbTriangles());
         IntCurveSurface_PolyhedronUtils.FillBounding(C_MyPnts!, nbdeltaU, nbdeltaV, TheDeflection, TheComponentsBnd);
     }
 
     /// <summary>The boxes of the triangles (the polyhedron's own array: don't modify).</summary>
-    public NCollection_HArray1<Bnd_Box> ComponentsBounding() => TheComponentsBnd!;
+    public NCollection_HArray1<Box> ComponentsBounding() => TheComponentsBnd!;
 
     public int NbTriangles() => IntCurveSurface_PolyhedronUtils.NbTriangles(nbdeltaU, nbdeltaV);
 
@@ -143,7 +149,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
         IntCurveSurface_PolyhedronUtils.TriConnex(Triang, Pivot, Pedge, out TriCon, out OtherP, nbdeltaU, nbdeltaV);
 
     /// <summary>The plane equation of the triangle <paramref name="Triang"/>.</summary>
-    public void PlaneEquation(int Triang, out gp_XYZ NormalVector, out double PolarDistance)
+    public void PlaneEquation(int Triang, out Xyz NormalVector, out double PolarDistance)
     {
         Triangle(Triang, out int i1, out int i2, out int i3);
         IntCurveSurface_PolyhedronUtils.PlaneEquation(Point(i1), Point(i2), Point(i3), out NormalVector,
@@ -151,7 +157,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
     }
 
     /// <summary>True if the triangle <paramref name="Triang"/> contains <paramref name="ThePnt"/>.</summary>
-    public bool Contain(int Triang, in gp_Pnt ThePnt)
+    public bool Contain(int Triang, in Point3D ThePnt)
     {
         Triangle(Triang, out int i1, out int i2, out int i3);
         return IntCurveSurface_PolyhedronUtils.Contain(Point(i1), Point(i2), Point(i3), ThePnt);
@@ -169,7 +175,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
         IntCurveSurface_PolyhedronUtils.Triangle(Index, out P1, out P2, out P3, nbdeltaV);
 
     /// <summary>The point of index <paramref name="Index"/> and its parameters.</summary>
-    public gp_Pnt Point(int Index, out double U, out double V)
+    public Point3D Point(int Index, out double U, out double V)
     {
         U = C_MyU![Index];
         V = C_MyV![Index];
@@ -177,10 +183,10 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
     }
 
     /// <summary>The point of index <paramref name="Index"/>.</summary>
-    public gp_Pnt Point(int Index) => C_MyPnts![Index];
+    public Point3D Point(int Index) => C_MyPnts![Index];
 
     /// <summary>Does nothing (as in OCCT).</summary>
-    public void Point(in gp_Pnt thePnt, int lig, int col, double U, double V)
+    public void Point(in Point3D thePnt, int lig, int col, double U, double V)
     {
         _ = thePnt;
         _ = lig;
@@ -190,7 +196,7 @@ public sealed class HLRBRep_ThePolyhedronOfInterCSurf
     }
 
     /// <summary>The point of index <paramref name="Index"/>.</summary>
-    public void Point(int Index, out gp_Pnt P) => P = C_MyPnts![Index];
+    public void Point(int Index, out Point3D P) => P = C_MyPnts![Index];
 
     /// <summary>True if the edge between the two points lies on the boundary of the parameter range.</summary>
     public bool IsOnBound(int Index1, int Index2) =>

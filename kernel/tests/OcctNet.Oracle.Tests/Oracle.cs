@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using Xunit.Abstractions;
 
@@ -37,31 +39,31 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public int Int(int theMin, int theMax) => myRandom.Next(theMin, theMax + 1);
 
-    public gp_Pnt Pnt() => new(Real(), Real(), Real());
+    public Point3D Pnt() => new(Real(), Real(), Real());
 
-    public gp_Vec Vec() => new(Real(), Real(), Real());
+    public Vector3D Vec() => new(Real(), Real(), Real());
 
     /// <summary>A random direction, kept away from zero so it can be normalised.</summary>
-    public gp_Dir Dir()
+    public Direction3D Dir()
     {
         while (true)
         {
-            var aV = new gp_Vec(Real(-1, 1), Real(-1, 1), Real(-1, 1));
+            var aV = new Vector3D(Real(-1, 1), Real(-1, 1), Real(-1, 1));
             if (aV.Magnitude() > 0.1)
             {
-                return new gp_Dir(aV);
+                return new Direction3D(aV);
             }
         }
     }
 
-    public gp_Ax1 Ax1() => new(Pnt(), Dir());
+    public Axis3D Ax1() => new(Pnt(), Dir());
 
-    public gp_Ax2 Ax2() => new(Pnt(), Dir());
+    public Frame3D Ax2() => new(Pnt(), Dir());
 
     /// <summary>A coordinate system, left-handed half the time.</summary>
-    public gp_Ax3 Ax3()
+    public CoordinateSystem Ax3()
     {
-        var anAx3 = new gp_Ax3(Pnt(), Dir(), Dir());
+        var anAx3 = new CoordinateSystem(Pnt(), Dir(), Dir());
         return myRandom.Next(2) == 0 ? anAx3 : anAx3.ZReversed();
     }
 
@@ -104,15 +106,15 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     public bool Bool() => myRandom.Next(2) == 0;
 
     /// <summary>
-    /// A direction that the port's normalisation leaves unchanged. <see cref="ToNative(in gp_Dir)"/> goes through
+    /// A direction that the port's normalisation leaves unchanged. <see cref="ToNative(in Direction3D)"/> goes through
     /// the native constructor, which normalises again: about one in eight random directions moves by an ulp there,
     /// and about one in a hundred settled ones still does (native OCCT's normalisation doesn't always round as .NET's).
     /// </summary>
-    public static gp_Dir Settled(gp_Dir theD)
+    public static Direction3D Settled(Direction3D theD)
     {
         for (int i = 0; i < 8; i++)
         {
-            var aNext = new gp_Dir(theD.X(), theD.Y(), theD.Z());
+            var aNext = new Direction3D(theD.X(), theD.Y(), theD.Z());
             if (aNext == theD)
             {
                 break;
@@ -123,12 +125,12 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return theD;
     }
 
-    /// <summary>The 2D twin of <see cref="Settled(gp_Dir)"/>.</summary>
-    public static gp_Dir2d Settled(gp_Dir2d theD)
+    /// <summary>The 2D twin of <see cref="Settled(Direction3D)"/>.</summary>
+    public static Direction2D Settled(Direction2D theD)
     {
         for (int i = 0; i < 8; i++)
         {
-            var aNext = new gp_Dir2d(theD.X(), theD.Y());
+            var aNext = new Direction2D(theD.X(), theD.Y());
             if (aNext == theD)
             {
                 break;
@@ -139,27 +141,27 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return theD;
     }
 
-    public gp_Pnt2d Pnt2d() => new(Real(), Real());
+    public Point2D Pnt2d() => new(Real(), Real());
 
-    public gp_Vec2d Vec2d() => new(Real(), Real());
+    public Vector2D Vec2d() => new(Real(), Real());
 
-    /// <summary>A random 2D direction, kept away from zero so it can be normalised, and <see cref="Settled(gp_Dir2d)"/>.</summary>
-    public gp_Dir2d Dir2d()
+    /// <summary>A random 2D direction, kept away from zero so it can be normalised, and <see cref="Settled(Direction2D)"/>.</summary>
+    public Direction2D Dir2d()
     {
         while (true)
         {
-            var aV = new gp_Vec2d(Real(-1, 1), Real(-1, 1));
+            var aV = new Vector2D(Real(-1, 1), Real(-1, 1));
             if (aV.Magnitude() > 0.1)
             {
-                return Settled(new gp_Dir2d(aV));
+                return Settled(new Direction2D(aV));
             }
         }
     }
 
-    public gp_Ax2d Ax2d() => new(Pnt2d(), Dir2d());
+    public Axis2D Ax2d() => new(Pnt2d(), Dir2d());
 
     /// <summary>A 2D coordinate system, indirect half the time.</summary>
-    public gp_Ax22d Ax22d() => new(Pnt2d(), Dir2d(), Bool());
+    public Frame2D Ax22d() => new(Pnt2d(), Dir2d(), Bool());
 
     // Conversions to and from the native wrappers. Each native object is disposed by the caller's `using`.
 
@@ -180,11 +182,11 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         }
     }
 
-    public static N.gp_Pnt2d ToNative(in gp_Pnt2d theP) => new(theP.X(), theP.Y());
+    public static N.gp_Pnt2d ToNative(in Point2D theP) => new(theP.X(), theP.Y());
 
-    public static N.gp_Dir2d ToNative(in gp_Dir2d theD) => new(theD.X(), theD.Y());
+    public static N.gp_Dir2d ToNative(in Direction2D theD) => new(theD.X(), theD.Y());
 
-    public static N.gp_Ax2d ToNative(in gp_Ax2d theA)
+    public static N.gp_Ax2d ToNative(in Axis2D theA)
     {
         using var aP = ToNative(theA.Location());
         using var aD = ToNative(theA.Direction());
@@ -192,7 +194,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     }
 
     /// <summary>A native gp_Ax22d with exactly the port's two directions.</summary>
-    public static N.gp_Ax22d ToNative(in gp_Ax22d theA)
+    public static N.gp_Ax22d ToNative(in Frame2D theA)
     {
         using var aP = ToNative(theA.Location());
         using var aX = ToNative(theA.XDirection());
@@ -200,24 +202,24 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return new N.gp_Ax22d(aP, aX, aY);
     }
 
-    public static gp_Pnt2d FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
+    public static Point2D FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
-    public static N.gp_Pnt ToNative(in gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
+    public static N.gp_Pnt ToNative(in Point3D theP) => new(theP.X(), theP.Y(), theP.Z());
 
-    public static N.gp_Vec ToNative(in gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
+    public static N.gp_Vec ToNative(in Vector3D theV) => new(theV.X(), theV.Y(), theV.Z());
 
-    public static N.gp_Dir ToNative(in gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
+    public static N.gp_Dir ToNative(in Direction3D theD) => new(theD.X(), theD.Y(), theD.Z());
 
-    public static N.gp_XYZ ToNative(in gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
+    public static N.gp_XYZ ToNative(in Xyz theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
-    public static N.gp_Ax1 ToNative(in gp_Ax1 theA)
+    public static N.gp_Ax1 ToNative(in Axis3D theA)
     {
         using var aP = ToNative(theA.Location());
         using var aD = ToNative(theA.Direction());
         return new N.gp_Ax1(aP, aD);
     }
 
-    public static N.gp_Ax2 ToNative(in gp_Ax2 theA)
+    public static N.gp_Ax2 ToNative(in Frame3D theA)
     {
         using var aP = ToNative(theA.Location());
         using var aN = ToNative(theA.Direction());
@@ -226,7 +228,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     }
 
     /// <summary>A native gp_Ax3 with exactly the port's three directions (a left-handed system stays left-handed).</summary>
-    public static N.gp_Ax3 ToNative(in gp_Ax3 theA)
+    public static N.gp_Ax3 ToNative(in CoordinateSystem theA)
     {
         using var aP = ToNative(theA.Location());
         using var aN = ToNative(theA.Direction());
@@ -240,7 +242,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.gp_Vec2d ToNative(in gp_Vec2d theV) => new(theV.X(), theV.Y());
+    public static N.gp_Vec2d ToNative(in Vector2D theV) => new(theV.X(), theV.Y());
 
     public static N.TColStd_Array1OfReal ToNative(NCollection_Array1<double> theArray)
     {
@@ -264,7 +266,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.TColgp_Array1OfPnt ToNative(NCollection_Array1<gp_Pnt> theArray)
+    public static N.TColgp_Array1OfPnt ToNative(NCollection_Array1<Point3D> theArray)
     {
         var aNative = new N.TColgp_Array1OfPnt(theArray.Lower(), theArray.Upper());
         for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
@@ -276,7 +278,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.TColgp_Array1OfPnt2d ToNative(NCollection_Array1<gp_Pnt2d> theArray)
+    public static N.TColgp_Array1OfPnt2d ToNative(NCollection_Array1<Point2D> theArray)
     {
         var aNative = new N.TColgp_Array1OfPnt2d(theArray.Lower(), theArray.Upper());
         for (int i = theArray.Lower(); i <= theArray.Upper(); i++)
@@ -302,7 +304,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.TColgp_Array2OfPnt ToNative(NCollection_Array2<gp_Pnt> theArray)
+    public static N.TColgp_Array2OfPnt ToNative(NCollection_Array2<Point3D> theArray)
     {
         var aNative = new N.TColgp_Array2OfPnt(theArray.LowerRow(), theArray.UpperRow(), theArray.LowerCol(), theArray.UpperCol());
         for (int i = theArray.LowerRow(); i <= theArray.UpperRow(); i++)
@@ -318,7 +320,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     }
 
     /// <summary>A native B-spline curve; non-rational (OCCT's constructor without weights) when theWeights is null.</summary>
-    public static N.Geom_BSplineCurve ToNativeCurve(NCollection_Array1<gp_Pnt> thePoles, NCollection_Array1<double>? theWeights,
+    public static N.Geom_BSplineCurve ToNativeCurve(NCollection_Array1<Point3D> thePoles, NCollection_Array1<double>? theWeights,
                                                     NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults,
                                                     int theDegree, bool thePeriodic)
     {
@@ -335,7 +337,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     }
 
     /// <summary>A native 2D B-spline curve; non-rational when theWeights is null.</summary>
-    public static N.Geom2d_BSplineCurve ToNativeCurve(NCollection_Array1<gp_Pnt2d> thePoles, NCollection_Array1<double>? theWeights,
+    public static N.Geom2d_BSplineCurve ToNativeCurve(NCollection_Array1<Point2D> thePoles, NCollection_Array1<double>? theWeights,
                                                       NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults,
                                                       int theDegree, bool thePeriodic)
     {
@@ -351,19 +353,19 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return new N.Geom2d_BSplineCurve(aPoles, aWeights, aKnots, aMults, theDegree, thePeriodic);
     }
 
-    public static gp_Vec FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
+    public static Vector3D FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
-    public static gp_Vec2d FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
+    public static Vector2D FromNative(N.gp_Vec2d theV) => new(theV.X(), theV.Y());
 
-    public static gp_XY FromNative(N.gp_Dir2d theD) => new(theD.X(), theD.Y());
+    public static Xy FromNative(N.gp_Dir2d theD) => new(theD.X(), theD.Y());
 
-    public static gp_XY FromNative(N.gp_XY theXY) => new(theXY.X(), theXY.Y());
+    public static Xy FromNative(N.gp_XY theXY) => new(theXY.X(), theXY.Y());
 
-    public static gp_XYZ FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
+    public static Xyz FromNative(N.gp_XYZ theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
-    public static gp_Pnt FromNative(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
+    public static Point3D FromNative(N.gp_Pnt theP) => new(theP.X(), theP.Y(), theP.Z());
 
-    public static gp_Mat FromNative(N.gp_Mat theM)
+    public static Matrix3x3 FromNative(N.gp_Mat theM)
         => new(theM.Value(1, 1), theM.Value(1, 2), theM.Value(1, 3),
                theM.Value(2, 1), theM.Value(2, 2), theM.Value(2, 3),
                theM.Value(3, 1), theM.Value(3, 2), theM.Value(3, 3));
@@ -383,16 +385,16 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     // Points and vectors against native wrappers: each coordinate is compared relative to the largest native
     // coordinate (at least 1), so a coordinate that is small next to the others isn't held to its own magnitude.
 
-    public void Same(N.gp_Pnt theNative, in gp_Pnt thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(N.gp_Pnt theNative, in Point3D thePort, string theWhat, double theTolerance = Tolerance)
         => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
 
-    public void Same(N.gp_Vec theNative, in gp_Vec thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(N.gp_Vec theNative, in Vector3D thePort, string theWhat, double theTolerance = Tolerance)
         => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
 
-    public void Same(N.gp_Pnt2d theNative, in gp_Pnt2d thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(N.gp_Pnt2d theNative, in Point2D thePort, string theWhat, double theTolerance = Tolerance)
         => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
 
-    public void Same(N.gp_Vec2d theNative, in gp_Vec2d thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(N.gp_Vec2d theNative, in Vector2D thePort, string theWhat, double theTolerance = Tolerance)
         => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
 
     private void Same3(double theNX, double theNY, double theNZ, double thePX, double thePY, double thePZ,
@@ -433,7 +435,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
                     string.Create(CultureInfo.InvariantCulture, $"{theWhat}: native {theNative:R}, port {thePort:R} (relative difference {aDiff:E2})"));
     }
 
-    public void Same(in gp_XYZ theNative, in gp_XYZ thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Xyz theNative, in Xyz thePort, string theWhat, double theTolerance = Tolerance)
     {
         for (int i = 1; i <= 3; i++)
         {
@@ -441,7 +443,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         }
     }
 
-    public void Same(in gp_Pnt2d theNative, in gp_Pnt2d thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Point2D theNative, in Point2D thePort, string theWhat, double theTolerance = Tolerance)
     {
         Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
         Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
@@ -449,19 +451,19 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     // 2D comparisons against the port's gp_XY coordinates (the Geom2d tests compare XY() of points, vectors and directions)
 
-    public void Same(in gp_XY theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Xy theNative, in Xy thePort, string theWhat, double theTolerance = Tolerance)
     {
         Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
         Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
     }
 
-    public void Same(in gp_Pnt2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Point2D theNative, in Xy thePort, string theWhat, double theTolerance = Tolerance)
         => Same(theNative.XY(), thePort, theWhat, theTolerance);
 
-    public void Same(in gp_Vec2d theNative, in gp_XY thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Vector2D theNative, in Xy thePort, string theWhat, double theTolerance = Tolerance)
         => Same(theNative.XY(), thePort, theWhat, theTolerance);
 
-    public void Same(in gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(in Matrix3x3 theNative, in Matrix3x3 thePort, string theWhat, double theTolerance = Tolerance)
     {
         for (int i = 1; i <= 3; i++)
         {
@@ -472,7 +474,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         }
     }
 
-    public void Same(N.gp_Trsf theNative, in gp_Trsf thePort, string theWhat, double theTolerance = Tolerance)
+    public void Same(N.gp_Trsf theNative, in Transform3D thePort, string theWhat, double theTolerance = Tolerance)
     {
         Assert.Equal((int)theNative.Form(), (int)thePort.Form());
         for (int i = 1; i <= 3; i++)

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,20 +24,20 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
     public Geom_Ellipse? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt> aResult = new(1, aNb);
+        NCollection_Array1<Point3D> aResult = new(1, aNb);
 
-        gp_Elips anElips = myGeom.Elips();
-        gp_Pnt aCenter = anElips.Location();
-        gp_Dir aXDir = anElips.XAxis().Direction();
-        gp_Dir aYDir = anElips.YAxis().Direction();
+        Ellipse3D anElips = myGeom.Elips();
+        Point3D aCenter = anElips.Location();
+        Direction3D aXDir = anElips.XAxis().Direction();
+        Direction3D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -57,7 +59,7 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
 
             // P = Center + MajorR * cos(u) * XDir + MinorR * sin(u) * YDir
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                             new Point3D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                         aCY + aMajR * cosU * aXY + aMinR * sinU * aYY,
                                         aCZ + aMajR * cosU * aXZ + aMinR * sinU * aYZ));
         }
@@ -75,10 +77,10 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Elips anElips = myGeom.Elips();
-        gp_Pnt aCenter = anElips.Location();
-        gp_Dir aXDir = anElips.XAxis().Direction();
-        gp_Dir aYDir = anElips.YAxis().Direction();
+        Ellipse3D anElips = myGeom.Elips();
+        Point3D aCenter = anElips.Location();
+        Direction3D aXDir = anElips.XAxis().Direction();
+        Direction3D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -102,10 +104,10 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
             // D1 = -MajorR * sin(u) * XDir + MinorR * cos(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD1
             {
-                Point = new gp_Pnt(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point3D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                    aCY + aMajR * cosU * aXY + aMinR * sinU * aYY,
                                    aCZ + aMajR * cosU * aXZ + aMinR * sinU * aYZ),
-                D1 = new gp_Vec(-aMajR * sinU * aXX + aMinR * cosU * aYX,
+                D1 = new Vector3D(-aMajR * sinU * aXX + aMinR * cosU * aYX,
                                 -aMajR * sinU * aXY + aMinR * cosU * aYY,
                                 -aMajR * sinU * aXZ + aMinR * cosU * aYZ),
             };
@@ -124,10 +126,10 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Elips anElips = myGeom.Elips();
-        gp_Pnt aCenter = anElips.Location();
-        gp_Dir aXDir = anElips.XAxis().Direction();
-        gp_Dir aYDir = anElips.YAxis().Direction();
+        Ellipse3D anElips = myGeom.Elips();
+        Point3D aCenter = anElips.Location();
+        Direction3D aXDir = anElips.XAxis().Direction();
+        Direction3D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -152,13 +154,13 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
             // D2 = -MajorR * cos(u) * XDir - MinorR * sin(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD2
             {
-                Point = new gp_Pnt(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point3D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                    aCY + aMajR * cosU * aXY + aMinR * sinU * aYY,
                                    aCZ + aMajR * cosU * aXZ + aMinR * sinU * aYZ),
-                D1 = new gp_Vec(-aMajR * sinU * aXX + aMinR * cosU * aYX,
+                D1 = new Vector3D(-aMajR * sinU * aXX + aMinR * cosU * aYX,
                                 -aMajR * sinU * aXY + aMinR * cosU * aYY,
                                 -aMajR * sinU * aXZ + aMinR * cosU * aYZ),
-                D2 = new gp_Vec(-aMajR * cosU * aXX - aMinR * sinU * aYX,
+                D2 = new Vector3D(-aMajR * cosU * aXX - aMinR * sinU * aYX,
                                 -aMajR * cosU * aXY - aMinR * sinU * aYY,
                                 -aMajR * cosU * aXZ - aMinR * sinU * aYZ),
             };
@@ -177,10 +179,10 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Elips anElips = myGeom.Elips();
-        gp_Pnt aCenter = anElips.Location();
-        gp_Dir aXDir = anElips.XAxis().Direction();
-        gp_Dir aYDir = anElips.YAxis().Direction();
+        Ellipse3D anElips = myGeom.Elips();
+        Point3D aCenter = anElips.Location();
+        Direction3D aXDir = anElips.XAxis().Direction();
+        Direction3D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -206,16 +208,16 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
             // D3 =  MajorR * sin(u) * XDir - MinorR * cos(u) * YDir = -D1
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD3
             {
-                Point = new gp_Pnt(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point3D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                    aCY + aMajR * cosU * aXY + aMinR * sinU * aYY,
                                    aCZ + aMajR * cosU * aXZ + aMinR * sinU * aYZ),
-                D1 = new gp_Vec(-aMajR * sinU * aXX + aMinR * cosU * aYX,
+                D1 = new Vector3D(-aMajR * sinU * aXX + aMinR * cosU * aYX,
                                 -aMajR * sinU * aXY + aMinR * cosU * aYY,
                                 -aMajR * sinU * aXZ + aMinR * cosU * aYZ),
-                D2 = new gp_Vec(-aMajR * cosU * aXX - aMinR * sinU * aYX,
+                D2 = new Vector3D(-aMajR * cosU * aXX - aMinR * sinU * aYX,
                                 -aMajR * cosU * aXY - aMinR * sinU * aYY,
                                 -aMajR * cosU * aXZ - aMinR * sinU * aYZ),
-                D3 = new gp_Vec(aMajR * sinU * aXX - aMinR * cosU * aYX,
+                D3 = new Vector3D(aMajR * sinU * aXX - aMinR * cosU * aYX,
                                 aMajR * sinU * aXY - aMinR * cosU * aYY,
                                 aMajR * sinU * aXZ - aMinR * cosU * aYZ),
             };
@@ -224,19 +226,19 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative (N &gt;= 1) at all grid points; the derivatives cycle with period 4.</summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec> aResult = new(1, aNb);
+        NCollection_Array1<Vector3D> aResult = new(1, aNb);
 
-        gp_Elips anElips = myGeom.Elips();
-        gp_Dir aXDir = anElips.XAxis().Direction();
-        gp_Dir aYDir = anElips.YAxis().Direction();
+        Ellipse3D anElips = myGeom.Elips();
+        Direction3D aXDir = anElips.XAxis().Direction();
+        Direction3D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -282,7 +284,7 @@ public sealed class GeomGridEval_Ellipse : GeomGridEval.ICurveEvaluator
             }
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Vec(aMajR * aCoeffMajR * aXX + aMinR * aCoeffMinR * aYX,
+                             new Vector3D(aMajR * aCoeffMajR * aXX + aMinR * aCoeffMinR * aYX,
                                         aMajR * aCoeffMajR * aXY + aMinR * aCoeffMinR * aYY,
                                         aMajR * aCoeffMajR * aXZ + aMinR * aCoeffMinR * aYZ));
         }

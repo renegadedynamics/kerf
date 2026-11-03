@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_JoinType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.JoinKind;
 
 namespace Occt;
 
@@ -17,17 +19,17 @@ namespace Occt;
 /// are copies. The map of references (keyed by MAT2d_BiInt) is iterated once, to sort each entry independently: its
 /// order doesn't matter. The OCCT_DEBUG drawing is left out.
 /// </remarks>
-public sealed class MAT2d_Circuit : Standard_Transient
+public sealed class MAT2d_Circuit : Transient
 {
     private double direction;
     private NCollection_Sequence<Geom2d_Geometry> geomElements = new();
     private readonly NCollection_DataMap<int, MAT2d_Connexion> connexionMap = new();
     private readonly NCollection_DataMap<MAT2d_BiInt, NCollection_Sequence<int>> linkRefEqui = new();
     private readonly NCollection_Sequence<int> linesLength = new();
-    private readonly GeomAbs_JoinType myJoinType;
+    private readonly JoinKind myJoinType;
     private readonly bool myIsOpenResult;
 
-    public MAT2d_Circuit(GeomAbs_JoinType aJoinType = GeomAbs_Arc, bool IsOpenResult = false)
+    public MAT2d_Circuit(JoinKind aJoinType = Arc, bool IsOpenResult = false)
     {
         direction = 0.0;
         myJoinType = aJoinType;
@@ -70,14 +72,14 @@ public sealed class MAT2d_Circuit : Standard_Transient
         {
             Geom2d_TrimmedCurve Curve;
             Curve = (Geom2d_TrimmedCurve)FigItem.Value(i).First();
-            gp_Pnt2d P1 = Curve.StartPoint();
+            Point2D P1 = Curve.StartPoint();
             Curve = (Geom2d_TrimmedCurve)FigItem.Value(i).Last();
-            gp_Pnt2d P2 = Curve.EndPoint();
+            Point2D P2 = Curve.EndPoint();
             if (IsClosed.Value(i))
             {
                 Open[i] = false;
             }
-            else if (P1.IsEqual(P2, Precision.Confusion()))
+            else if (P1.IsEqual(P2, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Open[i] = false;
             }
@@ -166,7 +168,7 @@ public sealed class MAT2d_Circuit : Standard_Transient
     {
         double ProVec = CrossProd(Geom1, Geom2, out double DotProd);
         int NbTest = 1;
-        double DU = Precision.Confusion();
+        double DU = global::Kerf.Engine.Foundation.Precision.Confusion();
         Geom2d_TrimmedCurve C1, C2;
 
         C1 = (Geom2d_TrimmedCurve)Geom1;
@@ -174,7 +176,7 @@ public sealed class MAT2d_Circuit : Standard_Transient
         // The same criterion as in InitOpen.
         double TolAng = 1.0E-8;
 
-        if (myJoinType == GeomAbs_Arc)
+        if (myJoinType == Arc)
         {
             while (NbTest <= 10)
             {
@@ -195,8 +197,8 @@ public sealed class MAT2d_Circuit : Standard_Transient
                     TolAng = 1.0E-8;
                     double U1 = C1.LastParameter() - NbTest * DU;
                     double U2 = C2.FirstParameter() + NbTest * DU;
-                    gp_Dir2d Dir1 = new(C1.DN(U1, 1));
-                    gp_Dir2d Dir2 = new(C2.DN(U2, 1));
+                    Direction2D Dir1 = new(C1.DN(U1, 1));
+                    Direction2D Dir2 = new(C2.DN(U2, 1));
                     DotProd = Dir1.Dot(Dir2);
                     ProVec = Dir1 ^ Dir2;
                     NbTest++;
@@ -206,12 +208,12 @@ public sealed class MAT2d_Circuit : Standard_Transient
             // Cusp: parallels to the two curves on the side of the domain; no intersection: salient, else
             // re-entrant.
             double D;
-            double Tol = Precision.Confusion();
+            double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             double MilC1 = (C1.LastParameter() + C1.FirstParameter()) * 0.5;
             double MilC2 = (C2.LastParameter() + C2.FirstParameter()) * 0.5;
-            gp_Pnt2d P = C1.Value(C1.LastParameter());
-            gp_Pnt2d P1 = C1.Value(MilC1);
-            gp_Pnt2d P2 = C2.Value(MilC2);
+            Point2D P = C1.Value(C1.LastParameter());
+            Point2D P1 = C1.Value(MilC1);
+            Point2D P2 = C2.Value(MilC2);
 
             D = Min(P1.Distance(P), P2.Distance(P));
             D /= 10;
@@ -230,7 +232,7 @@ public sealed class MAT2d_Circuit : Standard_Transient
 
             return !Intersect.IsDone() || Intersect.IsEmpty();
         }
-        else if (myJoinType == GeomAbs_Intersection)
+        else if (myJoinType == Intersection)
         {
             if (Math.Abs(ProVec) <= TolAng && DotProd < 0)
             {
@@ -238,8 +240,8 @@ public sealed class MAT2d_Circuit : Standard_Transient
                 {
                     double U1 = C1.LastParameter() - NbTest * DU;
                     double U2 = C2.FirstParameter() + NbTest * DU;
-                    gp_Dir2d Dir1 = new(C1.DN(U1, 1));
-                    gp_Dir2d Dir2 = new(C2.DN(U2, 1));
+                    Direction2D Dir1 = new(C1.DN(U1, 1));
+                    Direction2D Dir2 = new(C2.DN(U2, 1));
                     DotProd = Dir1.Dot(Dir2);
                     ProVec = Dir1 ^ Dir2;
                     if ((ProVec) * Direction < -TolAng)
@@ -591,10 +593,10 @@ public sealed class MAT2d_Circuit : Standard_Transient
     {
         Geom2d_TrimmedCurve Curve;
 
-        gp_Vec2d Vect1 = new(C1.PointOnSecond().X() - C1.PointOnFirst().X(),
+        Vector2D Vect1 = new(C1.PointOnSecond().X() - C1.PointOnFirst().X(),
             C1.PointOnSecond().Y() - C1.PointOnFirst().Y());
         Curve = (Geom2d_TrimmedCurve)Line.Value(C1.IndexItemOnFirst());
-        gp_Vec2d Vect2 = Curve.DN(C1.ParameterOnFirst(), 1);
+        Vector2D Vect2 = Curve.DN(C1.ParameterOnFirst(), 1);
         if ((Vect1 ^ Vect2) > 0.0)
         {
             return -1.0;
@@ -621,8 +623,8 @@ public sealed class MAT2d_Circuit : Standard_Transient
                 }
                 if (C2.ParameterOnFirst() == C1.ParameterOnSecond())
                 {
-                    gp_Vec2d Vect1 = new(C1.PointOnSecond(), C1.PointOnFirst());
-                    gp_Vec2d Vect2 = new(C2.PointOnFirst(), C2.PointOnSecond());
+                    Vector2D Vect1 = new(C1.PointOnSecond(), C1.PointOnFirst());
+                    Vector2D Vect2 = new(C2.PointOnFirst(), C2.PointOnSecond());
                     if ((Vect1 ^ Vect2) * direction > 0)
                     {
                         return true;
@@ -666,9 +668,9 @@ public sealed class MAT2d_Circuit : Standard_Transient
         Geom2d_TrimmedCurve Curve;
 
         Curve = (Geom2d_TrimmedCurve)Geom1;
-        gp_Dir2d Dir1 = new(Curve.DN(Curve.LastParameter(), 1));
+        Direction2D Dir1 = new(Curve.DN(Curve.LastParameter(), 1));
         Curve = (Geom2d_TrimmedCurve)Geom2;
-        gp_Dir2d Dir2 = new(Curve.DN(Curve.FirstParameter(), 1));
+        Direction2D Dir2 = new(Curve.DN(Curve.FirstParameter(), 1));
         DotProd = Dir1.Dot(Dir2);
         return Dir1 ^ Dir2;
     }

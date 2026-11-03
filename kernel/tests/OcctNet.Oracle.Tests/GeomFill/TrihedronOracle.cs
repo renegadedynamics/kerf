@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -20,9 +21,9 @@ namespace OcctNet.Oracle.Tests;
 /// </remarks>
 internal static class TrihedronOracle
 {
-    private static readonly GeomAbs_Shape[] Shapes =
-        [GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3,
-         GeomAbs_Shape.GeomAbs_CN];
+    private static readonly Continuity[] Shapes =
+        [Continuity.C0, Continuity.C1, Continuity.C2, Continuity.C3,
+         Continuity.CN];
 
     /// <summary>Runs <paramref name="theCases"/> random spines of every curve kind through both laws.</summary>
     internal static void Run(ITestOutputHelper theOutput, string theName, Func<N.GeomFill_TrihedronLaw> theNative,
@@ -41,7 +42,7 @@ internal static class TrihedronOracle
                 using (aNC)
                 {
                     double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
-                    if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
                     {
                         aF = anOracle.Real(-aRange, 0);
                         aL = aF + anOracle.Real(0.1, 2 * aRange);
@@ -72,10 +73,10 @@ internal static class TrihedronOracle
         List<double> aParams = Params(theO, thePC, aF, aL);
         // the law's own interval bounds (Frenet's singular points among them), on and just beside them
         int aNbLaw = 0;
-        if (Catch(() => aNbLaw = theP.NbIntervals(GeomAbs_Shape.GeomAbs_C0)) is null && aNbLaw > 1)
+        if (Catch(() => aNbLaw = theP.NbIntervals(Continuity.C0)) is null && aNbLaw > 1)
         {
             var aLawT = new NCollection_Array1<double>(1, aNbLaw + 1);
-            theP.Intervals(aLawT, GeomAbs_Shape.GeomAbs_C0);
+            theP.Intervals(aLawT, Continuity.C0);
             for (int i = 2; i <= aNbLaw; i++)
             {
                 aParams.Add(aLawT[i]);
@@ -123,7 +124,7 @@ internal static class TrihedronOracle
     private static List<double> Params(Oracle theO, GeomAdaptor_Curve theC, double theF, double theL)
     {
         var aParams = new List<double> { theF, theL };
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNb = theC.NbIntervals(aS);
             if (aNb <= 1)
@@ -155,7 +156,7 @@ internal static class TrihedronOracle
             using var nT = new N.gp_Vec();
             using var nN = new N.gp_Vec();
             using var nB = new N.gp_Vec();
-            gp_Vec pT = new(), pN = new(), pB = new();
+            Vector3D pT = new(), pN = new(), pB = new();
             bool aNR = false, aPR = false;
             if (SameOutcome(Catch(() => aNR = theN.D0(theU, nT, nN, nB)), Catch(() => aPR = theP.D0(theU, ref pT, ref pN, ref pB)),
                             aWhat + " D0"))
@@ -173,7 +174,7 @@ internal static class TrihedronOracle
             using var nDN = new N.gp_Vec();
             using var nB = new N.gp_Vec();
             using var nDB = new N.gp_Vec();
-            gp_Vec pT = new(), pDT = new(), pN = new(), pDN = new(), pB = new(), pDB = new();
+            Vector3D pT = new(), pDT = new(), pN = new(), pDN = new(), pB = new(), pDB = new();
             bool aNR = false, aPR = false;
             if (SameOutcome(Catch(() => aNR = theN.D1(theU, nT, nDT, nN, nDN, nB, nDB)),
                             Catch(() => aPR = theP.D1(theU, ref pT, ref pDT, ref pN, ref pDN, ref pB, ref pDB)),
@@ -198,7 +199,7 @@ internal static class TrihedronOracle
             using var nB = new N.gp_Vec();
             using var nDB = new N.gp_Vec();
             using var nD2B = new N.gp_Vec();
-            gp_Vec pT = new(), pDT = new(), pD2T = new(), pN = new(), pDN = new(), pD2N = new(), pB = new(), pDB = new(),
+            Vector3D pT = new(), pDT = new(), pD2T = new(), pN = new(), pDN = new(), pD2N = new(), pB = new(), pDB = new(),
                    pD2B = new();
             bool aNR = false, aPR = false;
             if (SameOutcome(Catch(() => aNR = theN.D2(theU, nT, nDT, nD2T, nN, nDN, nD2N, nB, nDB, nD2B)),
@@ -222,7 +223,7 @@ internal static class TrihedronOracle
 
     private static void SameIntervals(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP, string theWhat)
     {
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNNb = 0, aPNb = 0;
             if (!SameOutcome(Catch(() => aNNb = theN.NbIntervals((N.GeomAbs_Shape)(int)aS)), Catch(() => aPNb = theP.NbIntervals(aS)),
@@ -257,7 +258,7 @@ internal static class TrihedronOracle
         using var nT = new N.gp_Vec();
         using var nN = new N.gp_Vec();
         using var nB = new N.gp_Vec();
-        gp_Vec pT = new(), pN = new(), pB = new();
+        Vector3D pT = new(), pN = new(), pB = new();
         if (SameOutcome(Catch(() => theN.GetAverageLaw(nT, nN, nB)), Catch(() => theP.GetAverageLaw(ref pT, ref pN, ref pB)),
                         theWhat + " GetAverageLaw"))
         {

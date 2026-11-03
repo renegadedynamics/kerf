@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_ShapeEnum;
@@ -53,7 +54,7 @@ public class BRepCheckTests
     /// </summary>
     private static TopoDS_Shell TwoBoxesSharingAnEdge()
     {
-        gp_Pnt[] aPoints =
+        Point3D[] aPoints =
         [
             new(0, 0, 0), new(1, 0, 0), new(0, 1, 0), new(1, 1, 0), new(0, 0, 1), new(1, 0, 1), new(0, 1, 1), new(1, 1, 1),
             new(2, 1, 0), new(1, 2, 0), new(2, 2, 0), new(2, 1, 1), new(1, 2, 1), new(2, 2, 1),
@@ -62,22 +63,22 @@ public class BRepCheckTests
         // box B's corners in TestShapes.Box's numbering (bit 0: x, bit 1: y, bit 2: z)
         int[] aB = [3, 8, 9, 10, 7, 11, 12, 13];
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
-        (int[] Indices, gp_Dir Normal)[] aFaces =
+        (int[] Indices, Direction3D Normal)[] aFaces =
         [
-            ([0, 2, 3, 1], new gp_Dir(0, 0, -1)),
-            ([4, 5, 7, 6], new gp_Dir(0, 0, 1)),
-            ([0, 1, 5, 4], new gp_Dir(0, -1, 0)),
-            ([2, 6, 7, 3], new gp_Dir(0, 1, 0)),
-            ([0, 4, 6, 2], new gp_Dir(-1, 0, 0)),
-            ([1, 3, 7, 5], new gp_Dir(1, 0, 0)),
+            ([0, 2, 3, 1], new Direction3D(0, 0, -1)),
+            ([4, 5, 7, 6], new Direction3D(0, 0, 1)),
+            ([0, 1, 5, 4], new Direction3D(0, -1, 0)),
+            ([2, 6, 7, 3], new Direction3D(0, 1, 0)),
+            ([0, 4, 6, 2], new Direction3D(-1, 0, 0)),
+            ([1, 3, 7, 5], new Direction3D(1, 0, 0)),
         ];
         var aShellFaces = new List<TopoDS_Shape>();
-        foreach ((int[] anIndices, gp_Dir aNormal) in aFaces)
+        foreach ((int[] anIndices, Direction3D aNormal) in aFaces)
         {
             aShellFaces.Add(TestShapes.PolygonFace(aV, aNormal, anEdges, anIndices));
         }
 
-        foreach ((int[] anIndices, gp_Dir aNormal) in aFaces)
+        foreach ((int[] anIndices, Direction3D aNormal) in aFaces)
         {
             aShellFaces.Add(TestShapes.PolygonFace(aV, aNormal, anEdges, [.. anIndices.Select(i => aB[i])]));
         }
@@ -119,18 +120,18 @@ public class BRepCheckTests
     [Fact]
     public void PrecCurve_EllipseUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecCurve(new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(500, 0, 0), new gp_Dir(1, 0, 0)))));
-        var anEllipse = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(-300, 20, 1), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 10, 5);
+        Assert.Equal(RealEpsilon(), BRepCheck.PrecCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(500, 0, 0), new Direction3D(1, 0, 0)))));
+        var anEllipse = new Geom_Ellipse(new Frame3D(new Point3D(-300, 20, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 10, 5);
         Assert.Equal(Epsilon(300.0), BRepCheck.PrecCurve(new GeomAdaptor_Curve(anEllipse)));
-        var aBig = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 4000, 5);
+        var aBig = new Geom_Ellipse(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 4000, 5);
         Assert.Equal(Epsilon(4000.0), BRepCheck.PrecCurve(new GeomAdaptor_Curve(aBig)));
     }
 
     [Fact]
     public void PrecSurface_ConeUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecSurface(new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(900, 0, 0), new gp_Dir(0, 0, 1)))));
-        var aCone = new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, -200), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 0.3, 3);
+        Assert.Equal(RealEpsilon(), BRepCheck.PrecSurface(new GeomAdaptor_Surface(new Geom_Plane(new Point3D(900, 0, 0), new Direction3D(0, 0, 1)))));
+        var aCone = new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, -200), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.3, 3);
         Assert.Equal(Epsilon(200.0), BRepCheck.PrecSurface(new GeomAdaptor_Surface(aCone)));
     }
 
@@ -269,7 +270,7 @@ public class BRepCheckTests
         {
             Assert.Equal(TopAbs_SHELL, aSet.ShapeType());
             Assert.Equal(6, Faces(aSet).Count);
-            Assert.True(aSet.TShape()!.IsFrozen());
+            Assert.True(aSet.TShape()!.IsFrozen);
             Assert.True(aSet.Closed());
             Assert.Equal(BRepCheck_NoError, new BRepCheck_Shell(TopoDS.Shell(aSet)).Closed());
         }

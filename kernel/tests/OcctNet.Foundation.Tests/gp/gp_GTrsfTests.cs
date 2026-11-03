@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class gp_GTrsfTest
@@ -11,17 +15,17 @@ public class gp_GTrsfTest
     [Fact]
     public void OCC13963_SetAffinity_Ratio1_IsIdentity()
     {
-        gp_Ax2 aPln = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, -1.0, 0.0));
-        gp_GTrsf aTrf = new();
+        Frame3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, -1.0, 0.0));
+        GeneralTransform3D aTrf = new();
         aTrf.SetAffinity(aPln, 1.0);
 
-        gp_XYZ aOrigin = new(1.0, 0.0, 0.0);
-        gp_XYZ aResult = aOrigin;
+        Xyz aOrigin = new(1.0, 0.0, 0.0);
+        Xyz aResult = aOrigin;
         aTrf.Transforms(ref aResult);
 
-        Assert.Equal(1.0, aResult.X(), Precision.Confusion());
-        Assert.Equal(0.0, aResult.Y(), Precision.Confusion());
-        Assert.Equal(0.0, aResult.Z(), Precision.Confusion());
+        Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OCC13963: SetAffinity with ratio=2 scales the point component along the plane normal.
@@ -29,16 +33,16 @@ public class gp_GTrsfTest
     [Fact]
     public void OCC13963_SetAffinity_Ratio2_ScalesAlongNormal()
     {
-        gp_Ax2 aPln = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, -1.0, 0.0));
-        gp_GTrsf aTrf = new();
+        Frame3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, -1.0, 0.0));
+        GeneralTransform3D aTrf = new();
         aTrf.SetAffinity(aPln, 2.0);
 
-        gp_XYZ aOrigin = new(1.0, 0.0, 0.0);
-        gp_XYZ aResult = aOrigin;
+        Xyz aOrigin = new(1.0, 0.0, 0.0);
+        Xyz aResult = aOrigin;
         aTrf.Transforms(ref aResult);
 
-        Assert.Equal(1.5, aResult.X(), Precision.Confusion());
-        Assert.Equal(-0.5, aResult.Y(), Precision.Confusion());
-        Assert.Equal(0.0, aResult.Z(), Precision.Confusion());
+        Assert.Equal(1.5, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-0.5, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IntSurf_TypeTrans;
 
 namespace Occt;
@@ -16,7 +17,7 @@ namespace Occt;
 /// A working object (decision 21): the walkers fill it and the fillet builder reads it; its mutators are internal.
 /// It is the line of <see cref="BRepBlend_AppSurf"/>'s approximation (<see cref="IAppBlend_Line{ThePoint}"/>).
 /// </remarks>
-public class BRepBlend_Line : Standard_Transient, IAppBlend_Line<Blend_Point>
+public class BRepBlend_Line : Transient, IAppBlend_Line<Blend_Point>
 {
     private readonly NCollection_Sequence<Blend_Point> seqpt = new();
     private IntSurf_TypeTrans tras1;
@@ -91,7 +92,7 @@ public class BRepBlend_Line : Standard_Transient, IAppBlend_Line<Blend_Point>
     {
         if (!hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tras1;
@@ -101,7 +102,7 @@ public class BRepBlend_Line : Standard_Transient, IAppBlend_Line<Blend_Point>
     {
         if (!hass2)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tras2;
@@ -119,7 +120,7 @@ public class BRepBlend_Line : Standard_Transient, IAppBlend_Line<Blend_Point>
     {
         if (!hass1)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tras1;

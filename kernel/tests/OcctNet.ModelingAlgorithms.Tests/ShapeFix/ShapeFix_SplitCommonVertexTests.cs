@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -8,7 +9,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>Unit tests of ShapeFix_SplitCommonVertex (unit 6H2) on a frozen face whose two wires share a vertex.</summary>
 public class ShapeFix_SplitCommonVertexTests
 {
-    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, y, 0)).Vertex();
+    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
 
     private static NCollection_IndexedMap<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
     {
@@ -40,7 +41,7 @@ public class ShapeFix_SplitCommonVertexTests
         TopoDS_Shape aResult = aFix.Shape();
 
         aSnap.AssertUnchanged(aFace);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_FACE, aResult.ShapeType());
         var aWires = new List<TopoDS_Shape>();
         for (var anIt = new TopoDS_Iterator(aResult); anIt.More(); anIt.Next())
@@ -85,7 +86,7 @@ public class ShapeFix_SplitCommonVertexTests
     [Fact]
     public void Perform_OnAnEdge_DoesNothing()
     {
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         var aFix = new ShapeFix_SplitCommonVertex();
         aFix.Init(anEdge);
         aFix.Perform();

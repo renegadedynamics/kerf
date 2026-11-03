@@ -1,3 +1,4 @@
+using Kerf.Topology;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -113,7 +114,7 @@ internal static class ShapeLog
 
     private static bool Add(TopoDS_Shape shape)
     {
-        var identity = new TopLoc_Location();
+        var identity = new Placement();
         var bare = shape.Located(identity);
         var key = bare.StdHash();
         if (!s_seen.TryGetValue(key, out var bucket))

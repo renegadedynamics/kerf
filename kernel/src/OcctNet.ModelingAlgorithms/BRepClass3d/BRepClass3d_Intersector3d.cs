@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
@@ -20,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public class BRepClass3d_Intersector3d
 {
-    private gp_Pnt pnt = new();
+    private Point3D pnt = new();
     private double U;
     private double V;
     private double W;
@@ -45,7 +46,7 @@ public class BRepClass3d_Intersector3d
     /// Intersects the line <paramref name="L"/> with the face <paramref name="Face"/>, keeping the point with the
     /// smallest parameter on the line above -<paramref name="Tol"/>. <paramref name="Prm"/> is unused (OCCT's).
     /// </summary>
-    public void Perform(in gp_Lin L, double Prm, double Tol, in TopoDS_Face Face)
+    public void Perform(in Line3D L, double Prm, double Tol, in TopoDS_Face Face)
     {
         var HICS = new IntCurveSurface_HInter();
 
@@ -79,7 +80,7 @@ public class BRepClass3d_Intersector3d
         {
             for (int index = HICS.NbPoints(); index >= 1; index--)
             {
-                gp_Pnt2d Puv = new(HICS.Point(index).U(), HICS.Point(index).V());
+                Point2D Puv = new(HICS.Point(index).U(), HICS.Point(index).V());
 
                 int N1 = 0;
                 int N2 = 0;
@@ -162,7 +163,7 @@ public class BRepClass3d_Intersector3d
     public bool HasAPoint() => (hasapoint);
 
     /// <summary>The point.</summary>
-    public gp_Pnt Pnt() => (pnt);
+    public Point3D Pnt() => (pnt);
 
     /// <summary>The U parameter of the point on the surface.</summary>
     public double UParameter() => (U);

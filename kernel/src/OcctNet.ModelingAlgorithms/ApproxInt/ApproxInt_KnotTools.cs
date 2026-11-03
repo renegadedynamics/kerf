@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.Approx_ParametrizationType;
 
 namespace Occt;
@@ -49,7 +50,7 @@ public static class ApproxInt_KnotTools
             q += V1[i] * V1[i];
         }
 
-        if (q < 1 / Precision.Infinite())
+        if (q < 1 / global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             // Indeed, if q is small then we can
             // obtain equivocation of "0/0" type.
@@ -61,10 +62,10 @@ public static class ApproxInt_KnotTools
             // jumping. Return of Precision::Infinite() is
             // enough for it.
 
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        q = Min(q, Precision.Infinite());
+        q = Min(q, global::Kerf.Engine.Foundation.Precision.Infinite());
         q *= q * q;
 
         //
@@ -102,7 +103,7 @@ public static class ApproxInt_KnotTools
             }
             Par[j] = thePars[k];
         }
-        PLib.EvalLagrange(Par[0], 2, 2, dim, Val, Par, Res);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(Par[0], 2, 2, dim, Val, Par, Res);
         //
         theCurv[i] = EvalCurv(dim, Res[dim..], Res[(2 * dim)..]);
         //
@@ -124,7 +125,7 @@ public static class ApproxInt_KnotTools
                 }
                 Par[j] = thePars[k];
             }
-            PLib.EvalLagrange(Par[1], 2, 2, dim, Val, Par, Res);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(Par[1], 2, 2, dim, Val, Par, Res);
             //
             theCurv[i] = EvalCurv(dim, Res[dim..], Res[(2 * dim)..]);
             if (theCurv[i] > theMaxCurv)
@@ -145,7 +146,7 @@ public static class ApproxInt_KnotTools
             }
             Par[j] = thePars[k];
         }
-        PLib.EvalLagrange(Par[2], 2, 2, dim, Val, Par, Res);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(Par[2], 2, 2, dim, Val, Par, Res);
         //
         theCurv[i] = EvalCurv(dim, Res[dim..], Res[(2 * dim)..]);
         if (theCurv[i] > theMaxCurv)
@@ -175,7 +176,7 @@ public static class ApproxInt_KnotTools
         int i, j, dim = theDim;
 
         theInds.Append(aCurv.Lower());
-        if (aMaxCurv <= Precision.Confusion())
+        if (aMaxCurv <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // Linear case.
             theInds.Append(aCurv.Upper());
@@ -455,7 +456,7 @@ public static class ApproxInt_KnotTools
 
             // I: Curvature change criteria:
             // Non-null curvature.
-            if (theCurv[j] > Precision.Confusion() && theCurv[anInd] > Precision.Confusion())
+            if (theCurv[j] > global::Kerf.Engine.Foundation.Precision.Confusion() && theCurv[anInd] > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (theCurv[j] / theCurv[anInd] > aLimitCurvatureChange
                     || theCurv[j] / theCurv[anInd] < 1.0 / aLimitCurvatureChange)
@@ -539,8 +540,8 @@ public static class ApproxInt_KnotTools
     /// <paramref name="theApproxXYZ"/>, ...) must exist; <paramref name="thePars"/> are the expected parameters;
     /// <paramref name="theMinNbPnts"/> is the minimal number of points per knot interval.
     /// </summary>
-    public static void BuildKnots(NCollection_Array1<gp_Pnt> thePntsXYZ, NCollection_Array1<gp_Pnt2d> thePntsU1V1,
-                                  NCollection_Array1<gp_Pnt2d> thePntsU2V2, math_Vector thePars, bool theApproxXYZ,
+    public static void BuildKnots(NCollection_Array1<Point3D> thePntsXYZ, NCollection_Array1<Point2D> thePntsU1V1,
+                                  NCollection_Array1<Point2D> thePntsU2V2, math_Vector thePars, bool theApproxXYZ,
                                   bool theApproxU1V1, bool theApproxU2V2, int theMinNbPnts,
                                   NCollection_DynamicArray<int> theKnots)
     {
@@ -614,7 +615,7 @@ public static class ApproxInt_KnotTools
         for (i = thePars.Lower() + 1; i < thePars.Upper(); ++i)
         {
             double aDenom = thePars[i] - thePars[i - 1];
-            if (Math.Abs(aDenom) < Precision.Computational())
+            if (Math.Abs(aDenom) < global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 continue;
             }
@@ -646,11 +647,11 @@ public static class ApproxInt_KnotTools
         GeomInt_TheMultiLineOfWLApprox aTestLine = new(theWL, nbp3d, nbp2d, theApproxU1V1, theApproxU2V2, 0.0, 0.0,
                                                        0.0, 0.0, 0.0, 0.0, 0.0, theApproxU1V1, theFpar, theLpar);
 
-        NCollection_Array1<gp_Pnt> aTabPnt3d = new(1, Max(1, nbp3d));
-        NCollection_Array1<gp_Pnt2d> aTabPnt2d = new(1, Max(1, nbp2d));
-        NCollection_Array1<gp_Pnt> aPntXYZ = new(theFpar, theLpar);
-        NCollection_Array1<gp_Pnt2d> aPntU1V1 = new(theFpar, theLpar);
-        NCollection_Array1<gp_Pnt2d> aPntU2V2 = new(theFpar, theLpar);
+        NCollection_Array1<Point3D> aTabPnt3d = new(1, Max(1, nbp3d));
+        NCollection_Array1<Point2D> aTabPnt2d = new(1, Max(1, nbp2d));
+        NCollection_Array1<Point3D> aPntXYZ = new(theFpar, theLpar);
+        NCollection_Array1<Point2D> aPntU1V1 = new(theFpar, theLpar);
+        NCollection_Array1<Point2D> aPntU2V2 = new(theFpar, theLpar);
 
         int i, j;
 
@@ -745,7 +746,7 @@ public static class ApproxInt_KnotTools
         NCollection_Array1<double> aCurv = new(aPars.Lower(), aPars.Upper());
         BuildCurvature(aCoords, aDim, aPars, aCurv, out double aMaxCurv);
 
-        if (aMaxCurv < Precision.PConfusion() || Precision.IsPositiveInfinite(aMaxCurv))
+        if (aMaxCurv < global::Kerf.Engine.Foundation.Precision.PConfusion() || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aMaxCurv))
         {
             // Linear case
             return aParType;

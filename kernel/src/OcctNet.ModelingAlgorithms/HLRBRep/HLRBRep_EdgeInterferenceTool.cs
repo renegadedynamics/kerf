@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -78,11 +79,11 @@ public sealed class HLRBRep_EdgeInterferenceTool
     public bool IsPeriodic() => false;
 
     /// <summary>The tangent, normal and curvature of the current edge at Param, in the projection plane.</summary>
-    public void EdgeGeometry(double Param, out gp_Dir Tgt, out gp_Dir Nrm, out double CrLE)
+    public void EdgeGeometry(double Param, out Direction3D Tgt, out Direction3D Nrm, out double CrLE)
     {
-        myDS.LocalLEGeometry2D(Param, out gp_Dir2d TgLE, out gp_Dir2d NmLE, out CrLE);
-        Tgt = new gp_Dir(TgLE.X(), TgLE.Y(), 0);
-        Nrm = new gp_Dir(NmLE.X(), NmLE.Y(), 0);
+        myDS.LocalLEGeometry2D(Param, out Direction2D TgLE, out Direction2D NmLE, out CrLE);
+        Tgt = new Direction3D(TgLE.X(), TgLE.Y(), 0);
+        Nrm = new Direction3D(NmLE.X(), NmLE.Y(), 0);
     }
 
     public double ParameterOfInterference(in HLRAlgo_Interference I) => I.Intersection().Parameter();
@@ -110,12 +111,12 @@ public sealed class HLRBRep_EdgeInterferenceTool
     }
 
     /// <summary>The tangent, normal and curvature of the interference's boundary edge, in the projection plane.</summary>
-    public void InterferenceBoundaryGeometry(in HLRAlgo_Interference I, out gp_Dir Tang, out gp_Dir Norm,
+    public void InterferenceBoundaryGeometry(in HLRAlgo_Interference I, out Direction3D Tang, out Direction3D Norm,
                                              out double CrFE)
     {
         I.Boundary().Value2D(out int FE, out double Param);
-        myDS.LocalFEGeometry2D(FE, Param, out gp_Dir2d TgFE, out gp_Dir2d NmFE, out CrFE);
-        Tang = new gp_Dir(TgFE.X(), TgFE.Y(), 0);
-        Norm = new gp_Dir(NmFE.X(), NmFE.Y(), 0);
+        myDS.LocalFEGeometry2D(FE, Param, out Direction2D TgFE, out Direction2D NmFE, out CrFE);
+        Tang = new Direction3D(TgFE.X(), TgFE.Y(), 0);
+        Norm = new Direction3D(NmFE.X(), NmFE.Y(), 0);
     }
 }

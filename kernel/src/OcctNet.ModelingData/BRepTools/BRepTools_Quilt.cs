@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -303,7 +304,7 @@ public sealed class BRepTools_Quilt
     }
 
     /// <summary>The shape substituted for <paramref name="S"/> in the quilt, frozen.</summary>
-    /// <exception cref="Standard_NoSuchObject">The shape hasn't been copied.</exception>
+    /// <exception cref="NoSuchObjectException">The shape hasn't been copied.</exception>
     public TopoDS_Shape Copy(in TopoDS_Shape S)
     {
         TopoDS_Shape aCopy = InternalCopy(S);

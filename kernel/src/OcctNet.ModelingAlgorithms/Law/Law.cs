@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -56,7 +60,7 @@ public static class Law
         }
         nbpol = nbfk - Degree - 1;
         NCollection_Array1<double> par = new NCollection_Array1<double>(1, nbpol);
-        BSplCLib.BuildSchoenbergPoints(Degree, fk, par);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildSchoenbergPoints(Degree, fk, par);
         NCollection_HArray1<double> res = new NCollection_HArray1<double>(1, nbpol);
         NCollection_Array1<double> pol = res.ChangeArray1();
         for (i = 1; i <= nbpol; i++)
@@ -65,7 +69,7 @@ public static class Law
         }
         NCollection_Array1<int> ord = new NCollection_Array1<int>(1, nbpol);
         ord.Init(0);
-        BSplCLib.Interpolate(Degree, fk, par, ord, 1, pol.AsSpan(1), out i);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(Degree, fk, par, ord, 1, pol.AsSpan(1), out i);
         if (nbpol >= 4)
         {
             pol[2] = pol[1];
@@ -131,7 +135,7 @@ public static class Law
         }
         nbpol = nbfk - Degree - 1;
         NCollection_Array1<double> par = new NCollection_Array1<double>(1, nbpol);
-        BSplCLib.BuildSchoenbergPoints(Degree, fk, par);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildSchoenbergPoints(Degree, fk, par);
         NCollection_HArray1<double> res = new NCollection_HArray1<double>(1, nbpol);
         NCollection_Array1<double> pol = res.ChangeArray1();
         for (i = 1; i <= nbpol; i++)
@@ -140,7 +144,7 @@ public static class Law
         }
         NCollection_Array1<int> ord = new NCollection_Array1<int>(1, nbpol);
         ord.Init(0);
-        BSplCLib.Interpolate(Degree, fk, par, ord, 1, pol.AsSpan(1), out i);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(Degree, fk, par, ord, 1, pol.AsSpan(1), out i);
         return res;
     }
 
@@ -149,7 +153,7 @@ public static class Law
     /// parameters (reversed if Rev), interpolating NbPoints points, with the derivatives DFirst and DLast at the
     /// ends if HasDF and HasDL.
     /// </summary>
-    /// <exception cref="Standard_Failure">The interpolation failed.</exception>
+    /// <exception cref="FailureException">The interpolation failed.</exception>
     public static Law_BSpline Reparametrize(Adaptor3d_Curve Curve, double First, double Last, bool HasDF, bool HasDL,
                                             double DFirst, double DLast, bool Rev, int NbPoints)
     {
@@ -167,7 +171,7 @@ public static class Law
         }
         NCollection_Array1<double> cumdist = new NCollection_Array1<double>(1, 2 * NbPoints);
         NCollection_Array1<double> ucourbe = new NCollection_Array1<double>(1, 2 * NbPoints);
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         double U1 = Curve.FirstParameter();
         double U2 = Curve.LastParameter();
         double U, DU, Length = 0.0;
@@ -249,7 +253,7 @@ public static class Law
         inter.Perform();
         if (!inter.IsDone())
         {
-            throw new Standard_Failure("Law::Reparametrize echec interpolation");
+            throw new FailureException("Law::Reparametrize echec interpolation");
         }
         Law_BSpline bs = inter.InternalCurve();
         return bs;
@@ -317,14 +321,14 @@ public static class Law
 
         NCollection_Array1<double> pol = new NCollection_Array1<double>(1, 6);
         NCollection_Array1<double> par = new NCollection_Array1<double>(1, 6);
-        BSplCLib.BuildSchoenbergPoints(3, fknot, par);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildSchoenbergPoints(3, fknot, par);
         for (i = 1; i <= 6; i++)
         {
             pol[i] = eval2(par[i], First, Last, Milieu, HasF, HasL, bs1, bs2);
         }
         NCollection_Array1<int> ord = new NCollection_Array1<int>(1, 6);
         ord.Init(0);
-        BSplCLib.Interpolate(3, fknot, par, ord, 1, pol.AsSpan(1), out i);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(3, fknot, par, ord, 1, pol.AsSpan(1), out i);
         bs1 = new Law_BSpline(pol, knot, mult, 3);
         return bs1;
     }

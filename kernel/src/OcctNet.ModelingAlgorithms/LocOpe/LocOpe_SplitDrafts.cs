@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IntAna_ResultType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -59,7 +63,7 @@ public sealed class LocOpe_SplitDrafts
     /// <paramref name="Angle"/>, measured from <paramref name="Extr"/> with the neutral plane <paramref name="NPl"/>, on
     /// the left part.
     /// </summary>
-    public void Perform(in TopoDS_Face F, in TopoDS_Wire W, in gp_Dir Extr, in gp_Pln NPl, double Angle)
+    public void Perform(in TopoDS_Face F, in TopoDS_Wire W, in Direction3D Extr, in Plane3D NPl, double Angle)
     {
         Perform(F, W, Extr, NPl, Angle, Extr, NPl, Angle, true, false);
     }
@@ -72,11 +76,11 @@ public sealed class LocOpe_SplitDrafts
     /// </summary>
     public void Perform(in TopoDS_Face F,
                         in TopoDS_Wire W,
-                        in gp_Dir Extrg,
-                        in gp_Pln NPlg,
+                        in Direction3D Extrg,
+                        in Plane3D NPlg,
                         double Angleg,
-                        in gp_Dir Extrd,
-                        in gp_Pln NPld,
+                        in Direction3D Extrd,
+                        in Plane3D NPld,
                         double Angled,
                         bool ModLeft = true,
                         bool ModRight = true)
@@ -87,12 +91,12 @@ public sealed class LocOpe_SplitDrafts
         myMap.Clear();
         if (myShape.IsNull() || F.IsNull() || W.IsNull())
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
 
         if (!ModLeft && !ModRight)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         // OCCT.NET: the shape, the face and the wire as worked on (their copies if frozen, decision 1013)
@@ -119,13 +123,13 @@ public sealed class LocOpe_SplitDrafts
 
         if (!FinS)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         TopoDS_Shape aLocalFace = aF.Oriented(OriF);
 
-        if (!NewPlane(TopoDS.Face(aLocalFace), Extrg, NPlg, Angleg, out gp_Pln NewPlg, out gp_Ax1 NormalFg, ModLeft)
-            || !NewPlane(TopoDS.Face(aLocalFace), Extrd, NPld, Angled, out gp_Pln NewPld, out gp_Ax1 NormalFd, ModRight))
+        if (!NewPlane(TopoDS.Face(aLocalFace), Extrg, NPlg, Angleg, out Plane3D NewPlg, out Axis3D NormalFg, ModLeft)
+            || !NewPlane(TopoDS.Face(aLocalFace), Extrd, NPld, Angled, out Plane3D NewPld, out Axis3D NormalFd, ModRight))
         {
             return;
         }
@@ -137,7 +141,7 @@ public sealed class LocOpe_SplitDrafts
         Geom_Surface NewSg = new Geom_Plane(NewPlg);
         Geom_Surface NewSd = new Geom_Plane(NewPld);
         Geom_Line theLinePipe = new(NormalFg); // ou NormalFd
-        GeomInt_IntSS i2s = new(NewSg, NewSd, Precision.Confusion());
+        GeomInt_IntSS i2s = new(NewSg, NewSd, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         NCollection_Map<TopoDS_Shape> theMap = new(TopTools_ShapeMapHasher.Instance);
         GeomAdaptor_Curve HAC = new();
@@ -157,7 +161,7 @@ public sealed class LocOpe_SplitDrafts
             thePipe.Perform(true);
             if (!thePipe.IsDone())
             {
-                throw new Standard_ConstructionError("GeomFill_Pipe : Cannot make a surface");
+                throw new ConstructionErrorException("GeomFill_Pipe : Cannot make a surface");
             }
 
             Geom_Surface Spl = thePipe.InternalSurface()!;
@@ -187,11 +191,11 @@ public sealed class LocOpe_SplitDrafts
                     {
                         IntCurveSurface_IntersectionPoint P1 = intcs.Segment(1).FirstPoint();
                         IntCurveSurface_IntersectionPoint P2 = intcs.Segment(1).SecondPoint();
-                        gp_Pnt pf = P1.Pnt();
-                        gp_Pnt pl = P2.Pnt();
+                        Point3D pf = P1.Pnt();
+                        Point3D pl = P2.Pnt();
                         TopExp.Vertices(edg, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
-                        gp_Pnt Pf = BRep_Tool.Pnt(Vf);
-                        gp_Pnt Pl = BRep_Tool.Pnt(Vl);
+                        Point3D Pf = BRep_Tool.Pnt(Vf);
+                        Point3D Pl = BRep_Tool.Pnt(Vl);
                         double Tolf = BRep_Tool.Tolerance(Vf);
                         double Toll = BRep_Tool.Tolerance(Vl);
                         Tolf *= Tolf;
@@ -210,8 +214,8 @@ public sealed class LocOpe_SplitDrafts
                         {
                             // on segmente edg en pf et pl
                             TopoDS_Vertex Vnewf = new(), Vnewl = new();
-                            B.MakeVertex(ref Vnewf, pf, Precision.Confusion());
-                            B.MakeVertex(ref Vnewl, pl, Precision.Confusion());
+                            B.MakeVertex(ref Vnewf, pf, global::Kerf.Engine.Foundation.Precision.Confusion());
+                            B.MakeVertex(ref Vnewl, pl, global::Kerf.Engine.Foundation.Precision.Confusion());
                             if (P1.W() >= f && P1.W() <= l && P2.W() >= f && P2.W() <= l)
                             {
                                 splw.InternalAdd(Vnewf, P1.W(), edg);
@@ -226,8 +230,8 @@ public sealed class LocOpe_SplitDrafts
                     else if (intcs.NbPoints() != 0)
                     {
                         TopExp.Vertices(edg, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
-                        gp_Pnt Pf = BRep_Tool.Pnt(Vf);
-                        gp_Pnt Pl = BRep_Tool.Pnt(Vl);
+                        Point3D Pf = BRep_Tool.Pnt(Vf);
+                        Point3D Pl = BRep_Tool.Pnt(Vl);
                         double Tolf = BRep_Tool.Tolerance(Vf);
                         double Toll = BRep_Tool.Tolerance(Vl);
                         Tolf *= Tolf;
@@ -236,7 +240,7 @@ public sealed class LocOpe_SplitDrafts
                         for (int i = 1; i <= intcs.NbPoints(); i++)
                         {
                             IntCurveSurface_IntersectionPoint Pi = intcs.Point(i);
-                            gp_Pnt pi = Pi.Pnt();
+                            Point3D pi = Pi.Pnt();
                             double dif = pi.SquareDistance(Pf);
                             double dil = pi.SquareDistance(Pl);
                             if (dif <= Tolf)
@@ -250,7 +254,7 @@ public sealed class LocOpe_SplitDrafts
                                 if (Pi.W() >= f && Pi.W() <= l)
                                 {
                                     TopoDS_Vertex Vnew = new();
-                                    B.MakeVertex(ref Vnew, pi, Precision.Confusion());
+                                    B.MakeVertex(ref Vnew, pi, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     splw.InternalAdd(Vnew, Pi.W(), edg);
                                 }
                             }
@@ -379,7 +383,7 @@ public sealed class LocOpe_SplitDrafts
                 }
                 if (MapW.IsBound(edg))
                 { // edge du wire initial
-                    Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(edg), out TopLoc_Location Loc, out _, out _)!;
+                    Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(edg), out Placement Loc, out _, out _)!;
                     if (C.GetType() == typeof(Geom_TrimmedCurve))
                     {
                         C = ((Geom_TrimmedCurve)C).BasisCurve();
@@ -392,7 +396,7 @@ public sealed class LocOpe_SplitDrafts
                     thePipe.Perform(true);
                     if (!thePipe.IsDone())
                     {
-                        throw new Standard_ConstructionError("GeomFill_Pipe : Cannot make a surface");
+                        throw new ConstructionErrorException("GeomFill_Pipe : Cannot make a surface");
                     }
 
                     Geom_Surface thePS = thePipe.InternalSurface()!;
@@ -402,7 +406,7 @@ public sealed class LocOpe_SplitDrafts
                     }
 
                     TopoDS_Face NewFace = new();
-                    B.MakeFace(ref NewFace, thePS, Precision.Confusion());
+                    B.MakeFace(ref NewFace, thePS, global::Kerf.Engine.Foundation.Precision.Confusion());
                     MapEV.Add(edg, NewFace);
                 }
                 else
@@ -531,7 +535,7 @@ public sealed class LocOpe_SplitDrafts
                         }
                         if (exp2.More())
                         {
-                            Newc = BRep_Tool.Curve(TopoDS.Edge(exp2.Current()), out TopLoc_Location Loc, out _, out _)!;
+                            Newc = BRep_Tool.Curve(TopoDS.Edge(exp2.Current()), out Placement Loc, out _, out _)!;
                             Newc = (Geom_Curve)Newc.Transformed(Loc.Transformation());
                             Ebind = TopoDS.Edge(exp2.Current());
                             knownp = BRep_Tool.Parameter(vtx, Ebind);
@@ -544,7 +548,7 @@ public sealed class LocOpe_SplitDrafts
                     break;
                     case 2:
                     {
-                        gp_Lin theLine = new(NormalFg);
+                        Line3D theLine = new(NormalFg);
                         theLine.Translate(NormalFg.Location(), BRep_Tool.Pnt(vtx));
                         Newc = new Geom_Line(theLine);
                         knownp = 0.0;
@@ -566,7 +570,7 @@ public sealed class LocOpe_SplitDrafts
                         {
                             AppS2 = true;
                         }
-                        i2s.Perform(S1, S2, Precision.Confusion(), true, AppS1, AppS2);
+                        i2s.Perform(S1, S2, global::Kerf.Engine.Foundation.Precision.Confusion(), true, AppS1, AppS2);
                         if (!i2s.IsDone() || i2s.NbLines() <= 0)
                         {
                             return;
@@ -576,7 +580,7 @@ public sealed class LocOpe_SplitDrafts
                         GeomAdaptor_Curve TheCurve = new();
 
                         int i, imin, k;
-                        gp_Pnt pv = BRep_Tool.Pnt(vtx);
+                        Point3D pv = BRep_Tool.Pnt(vtx);
                         imin = 0;
                         for (i = 1; i <= i2s.NbLines(); i++)
                         {
@@ -586,7 +590,7 @@ public sealed class LocOpe_SplitDrafts
                             if (myExtPC.IsDone())
                             {
                                 double thepmin = TheCurve.FirstParameter();
-                                myExtPC.TrimmedSquareDistances(out Dist2Min, out Dist2, out gp_Pnt p1b, out gp_Pnt p2b);
+                                myExtPC.TrimmedSquareDistances(out Dist2Min, out Dist2, out Point3D p1b, out Point3D p2b);
                                 if (Dist2 < Dist2Min)
                                 {
                                     thepmin = TheCurve.LastParameter();
@@ -698,20 +702,20 @@ public sealed class LocOpe_SplitDrafts
                     }
                     if (it == 1)
                     {
-                        B.MakeVertex(ref vtx1, intcs.Point(imin).Pnt(), Precision.Confusion());
+                        B.MakeVertex(ref vtx1, intcs.Point(imin).Pnt(), global::Kerf.Engine.Foundation.Precision.Confusion());
                         p1 = intcs.Point(imin).W();
                         knownp = p1;
                     }
                     else
                     {
-                        B.MakeVertex(ref vtx2b, intcs.Point(imin).Pnt(), Precision.Confusion());
+                        B.MakeVertex(ref vtx2b, intcs.Point(imin).Pnt(), global::Kerf.Engine.Foundation.Precision.Confusion());
                         p2 = intcs.Point(imin).W();
                     }
                 }
-                if (Math.Abs(p1 - p2) > Precision.PConfusion())
+                if (Math.Abs(p1 - p2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     TopoDS_Edge NewEdge = new();
-                    B.MakeEdge(ref NewEdge, Newc, Precision.Confusion());
+                    B.MakeEdge(ref NewEdge, Newc, global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (p1 < p2)
                     {
                         B.Add(NewEdge, vtx1.Oriented(TopAbs_FORWARD));
@@ -722,16 +726,16 @@ public sealed class LocOpe_SplitDrafts
                         B.Add(NewEdge, vtx1.Oriented(TopAbs_REVERSED));
                         B.Add(NewEdge, vtx2b.Oriented(TopAbs_FORWARD));
                     }
-                    B.UpdateVertex(vtx1, p1, NewEdge, Precision.Confusion());
-                    B.UpdateVertex(vtx2b, p2, NewEdge, Precision.Confusion());
+                    B.UpdateVertex(vtx1, p1, NewEdge, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    B.UpdateVertex(vtx2b, p2, NewEdge, global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (newCs1 is not null)
                     {
-                        B.UpdateEdge(NewEdge, newCs1, TopoDS.Face(MapEV.FindFromKey(edg1)), Precision.Confusion());
+                        B.UpdateEdge(NewEdge, newCs1, TopoDS.Face(MapEV.FindFromKey(edg1)), global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
 
                     if (newCs2 is not null)
                     {
-                        B.UpdateEdge(NewEdge, newCs2, TopoDS.Face(MapEV.FindFromKey(edg2)), Precision.Confusion());
+                        B.UpdateEdge(NewEdge, newCs2, TopoDS.Face(MapEV.FindFromKey(edg2)), global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
 
                     MapEV.Add(vtx, NewEdge);
@@ -746,7 +750,7 @@ public sealed class LocOpe_SplitDrafts
                             if (thevtx.IsSame(vtx))
                             {
                                 B.Add(NE, vtx1.Oriented(thevtx.Orientation()));
-                                B.UpdateVertex(vtx1, p1, NE, Precision.Confusion());
+                                B.UpdateVertex(vtx1, p1, NE, global::Kerf.Engine.Foundation.Precision.Confusion());
                             }
                             else
                             {
@@ -873,8 +877,8 @@ public sealed class LocOpe_SplitDrafts
                 Geom_Curve Cd = BRep_Tool.Curve(NewEdgd, out double fd, out double ld)!;
                 double prmg = (fg + lg) / 2.0;
                 double prmd = (fd + ld) / 2.0;
-                gp_Pnt pg = Cg.Value(prmg);
-                gp_Pnt pd = Cd.Value(prmd);
+                Point3D pg = Cg.Value(prmg);
+                Point3D pd = Cd.Value(prmd);
                 double Tol = Max(BRep_Tool.Tolerance(NewEdgg), BRep_Tool.Tolerance(NewEdgg)); // OCCT: NewEdgg twice
                 if (pg.SquareDistance(pd) <= Tol * Tol)
                 {
@@ -1275,7 +1279,7 @@ public sealed class LocOpe_SplitDrafts
     {
         if (myResult.IsNull())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myResult;
     }
@@ -1288,16 +1292,16 @@ public sealed class LocOpe_SplitDrafts
     {
         if (myResult.IsNull())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myMap[myWork.Copied(S)];
     }
 
-    private static bool NewPlane(in TopoDS_Face F, in gp_Dir Extr, in gp_Pln Neutr, double Ang, out gp_Pln Newpl, out gp_Ax1 NormalF,
+    private static bool NewPlane(in TopoDS_Face F, in Direction3D Extr, in Plane3D Neutr, double Ang, out Plane3D Newpl, out Axis3D NormalF,
                                  bool Modify)
     {
-        Newpl = new gp_Pln();
-        NormalF = new gp_Ax1();
+        Newpl = new Plane3D();
+        NormalF = new Axis3D();
 
         // Determination du nouveau plan incline
         Geom_Surface S = BRep_Tool.Surface(F)!;
@@ -1310,7 +1314,7 @@ public sealed class LocOpe_SplitDrafts
             return false;
         }
 
-        gp_Pln Plorig = P.Pln();
+        Plane3D Plorig = P.Pln();
         if (!Modify)
         {
             Newpl = Plorig;
@@ -1322,19 +1326,19 @@ public sealed class LocOpe_SplitDrafts
             return true;
         }
 
-        gp_Ax1 Axe;
+        Axis3D Axe;
         double Theta;
 
-        IntAna_QuadQuadGeo i2pl = new(Plorig, Neutr, Precision.Angular(), Precision.Confusion());
+        IntAna_QuadQuadGeo i2pl = new(Plorig, Neutr, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (i2pl.IsDone() && i2pl.TypeInter() == IntAna_Line)
         {
-            gp_Lin LinInters = i2pl.Line(1);
-            gp_Dir nx = LinInters.Direction();
+            Line3D LinInters = i2pl.Line(1);
+            Direction3D nx = LinInters.Direction();
             NormalF = Plorig.Axis();
-            gp_Dir ny = NormalF.Direction().Crossed(nx);
+            Direction3D ny = NormalF.Direction().Crossed(nx);
             double a = Extr.Dot(nx);
-            if (Math.Abs(a) <= 1 - Precision.Angular())
+            if (Math.Abs(a) <= 1 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 double b = Extr.Dot(ny);
                 double c = Extr.Dot(NormalF.Direction());
@@ -1400,7 +1404,7 @@ public sealed class LocOpe_SplitDrafts
                         Geom2d_Curve? C22d = BRep_Tool.CurveOnSurface(edg2, F, out double f2, out double l2);
                         if (C22d is not null)
                         {
-                            gp_Pnt2d pt2d = new();
+                            Point2D pt2d = new();
                             if (Vp1.IsSame(V1))
                             {
                                 pt2d = C22d.Value(f2);
@@ -1421,7 +1425,7 @@ public sealed class LocOpe_SplitDrafts
                                 pt2d = C22d.Value(l2);
                                 pt2d.SetY(pt2d.Y() - l);
                             }
-                            C2d = new Geom2d_Line(pt2d, gp.DY2d());
+                            C2d = new Geom2d_Line(pt2d, Constants.DY2d());
                             B.UpdateEdge(edg, C2d, F, BRep_Tool.Tolerance(edg));
                             break;
                         }
@@ -1540,7 +1544,7 @@ public sealed class LocOpe_SplitDrafts
 
     // OCCT.NET: OCCT translates the intersection's pcurve in place; a frozen one is translated on a copy
     private static Geom2d_Curve Translatable(Geom2d_Curve theCurve) =>
-        theCurve.IsFrozen() ? (Geom2d_Curve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom2d_Curve)theCurve.Copy() : theCurve;
 
     private static TopoDS_Edge NewEdge(in TopoDS_Edge edg, in TopoDS_Face F, Geom_Surface NewS, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
@@ -1552,7 +1556,7 @@ public sealed class LocOpe_SplitDrafts
             AppS1 = true;
         }
 
-        GeomInt_IntSS i2s = new(S1, NewS, Precision.Confusion(), true, AppS1);
+        GeomInt_IntSS i2s = new(S1, NewS, global::Kerf.Engine.Foundation.Precision.Confusion(), true, AppS1);
         if (!i2s.IsDone() || i2s.NbLines() <= 0)
         {
             return NewEdg;
@@ -1564,8 +1568,8 @@ public sealed class LocOpe_SplitDrafts
         GeomAdaptor_Curve TheCurve = new();
 
         int i, k;
-        gp_Pnt pvf = BRep_Tool.Pnt(V1);
-        gp_Pnt pvl = BRep_Tool.Pnt(V2);
+        Point3D pvf = BRep_Tool.Pnt(V1);
+        Point3D pvl = BRep_Tool.Pnt(V2);
         for (i = 1; i <= i2s.NbLines(); i++)
         {
             TheCurve.Load(i2s.Line(i));
@@ -1574,7 +1578,7 @@ public sealed class LocOpe_SplitDrafts
             if (myExtPC.IsDone())
             {
                 double thepmin = TheCurve.FirstParameter();
-                myExtPC.TrimmedSquareDistances(out Dist2Min, out Dist2, out gp_Pnt p1b, out gp_Pnt p2b);
+                myExtPC.TrimmedSquareDistances(out Dist2Min, out Dist2, out Point3D p1b, out Point3D p2b);
                 if (Dist2 < Dist2Min && !TheCurve.IsPeriodic())
                 {
                     Dist2Min = Dist2;
@@ -1590,7 +1594,7 @@ public sealed class LocOpe_SplitDrafts
                     }
                 }
 
-                if (Dist2Min <= Precision.SquareConfusion())
+                if (Dist2Min <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     prmf = thepmin;
                     myExtPC.Perform(pvl);
@@ -1613,7 +1617,7 @@ public sealed class LocOpe_SplitDrafts
                             }
                         }
 
-                        if (Dist2Min <= Precision.SquareConfusion())
+                        if (Dist2Min <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                         {
                             prml = thepmin;
                             break;
@@ -1716,7 +1720,7 @@ public sealed class LocOpe_SplitDrafts
             if (S1.IsUPeriodic())
             {
                 double speriod = S1.UPeriod();
-                gp_Pnt2d pf, pl;
+                Point2D pf, pl;
                 pf = Cimg2d!.Value(prmf);
                 pl = Cimg2d.Value(prml);
 
@@ -1725,12 +1729,12 @@ public sealed class LocOpe_SplitDrafts
                 double ptra = 0.0;
 
                 double Ustart = Min(Uf, Ul);
-                while (Ustart < -Precision.PConfusion())
+                while (Ustart < -global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     Ustart += speriod;
                     ptra += speriod;
                 }
-                while (Ustart > speriod - Precision.PConfusion())
+                while (Ustart > speriod - global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     Ustart -= speriod;
                     ptra -= speriod;
@@ -1738,7 +1742,7 @@ public sealed class LocOpe_SplitDrafts
                 if (ptra != 0)
                 {
                     Cimg2d = Translatable(Cimg2d);
-                    Cimg2d.Translate(new gp_Vec2d(ptra, 0.0));
+                    Cimg2d.Translate(new Vector2D(ptra, 0.0));
                 }
             }
             if (prmf < prml)
@@ -1753,15 +1757,15 @@ public sealed class LocOpe_SplitDrafts
                 rev = true;
             }
 
-            B.MakeEdge(ref NewEdg, Cimg, Precision.Confusion());
+            B.MakeEdge(ref NewEdg, Cimg, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             B.Add(NewEdg, Vf);
             B.Add(NewEdg, Vl);
-            B.UpdateVertex(Vf, prmf, NewEdg, Precision.Confusion());
-            B.UpdateVertex(Vl, prml, NewEdg, Precision.Confusion());
+            B.UpdateVertex(Vf, prmf, NewEdg, global::Kerf.Engine.Foundation.Precision.Confusion());
+            B.UpdateVertex(Vl, prml, NewEdg, global::Kerf.Engine.Foundation.Precision.Confusion());
             if (AppS1)
             {
-                B.UpdateEdge(NewEdg, Cimg2d, F, Precision.Confusion());
+                B.UpdateEdge(NewEdg, Cimg2d, F, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
 
             if (rev)

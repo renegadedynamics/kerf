@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity DatumReferenceModifierWithValue
 /// </summary>
-public class StepDimTol_DatumReferenceModifierWithValue : Standard_Transient
+public class StepDimTol_DatumReferenceModifierWithValue : Transient
 {
     private StepDimTol_DatumReferenceModifierType myModifierType;
     private StepBasic_LengthMeasureWithUnit myModifierValue;

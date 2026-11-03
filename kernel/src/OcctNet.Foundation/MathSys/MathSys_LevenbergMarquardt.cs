@@ -2,14 +2,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Systems;
 
 public static partial class MathSys
 {
     /// <summary>Configuration for the Levenberg-Marquardt algorithm: Config plus the damping parameters.</summary>
-    public class LMConfig : MathUtils.Config
+    public class LMConfig : global::Kerf.Engine.Numerics.Utilities.MathUtils.Config
     {
         /// <summary>Initial damping parameter.</summary>
         public double LambdaInit = 1.0e-3;
@@ -26,20 +27,20 @@ public static partial class MathSys
         {
         }
 
-        public LMConfig(double theTolerance, int theMaxIter = 100)
-            : base(theTolerance, theMaxIter)
+        public LMConfig(double tolerance, int maxIter = 100)
+            : base(tolerance, maxIter)
         {
         }
 
         /// <summary>Copy, as C++'s copy construction.</summary>
-        public LMConfig(LMConfig theOther)
-            : base(theOther)
+        public LMConfig(LMConfig other)
+            : base(other)
         {
-            LambdaInit = theOther.LambdaInit;
-            LambdaIncrease = theOther.LambdaIncrease;
-            LambdaDecrease = theOther.LambdaDecrease;
-            LambdaMax = theOther.LambdaMax;
-            LambdaMin = theOther.LambdaMin;
+            LambdaInit = other.LambdaInit;
+            LambdaIncrease = other.LambdaIncrease;
+            LambdaDecrease = other.LambdaDecrease;
+            LambdaMax = other.LambdaMax;
+            LambdaMin = other.LambdaMin;
         }
     }
 
@@ -47,511 +48,511 @@ public static partial class MathSys
     /// Levenberg-Marquardt algorithm for nonlinear least squares: minimizes ||F(X)||^2, solving
     /// (J^T*J + lambda*I) * dX = -J^T*F with adaptive damping lambda.
     /// </summary>
-    public static VectorResult LevenbergMarquardt<FuncSetType>(FuncSetType theFunc,
-                                                           math_Vector theStart,
-                                                           LMConfig? theConfig = null)
+    public static VectorResult LevenbergMarquardt<FuncSetType>(FuncSetType func,
+                                                           math_Vector start,
+                                                           LMConfig? config = null)
         where FuncSetType : IFunctionSetWithDerivatives
     {
-        theConfig ??= new LMConfig();
-        VectorResult aResult = new();
+        config ??= new LMConfig();
+        VectorResult result = new();
 
-        int aNbVars = theFunc.NbVariables();
-        int aNbEqs = theFunc.NbEquations();
+        int nbVars = func.NbVariables();
+        int nbEqs = func.NbEquations();
 
         // Check dimensions
-        if (theStart.Length() != aNbVars)
+        if (start.Length() != nbVars)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aVarLower = theStart.Lower();
-        int aVarUpper = theStart.Upper();
+        int varLower = start.Lower();
+        int varUpper = start.Upper();
 
         // Working vectors and matrices
-        math_Vector aSol = new(theStart);
-        math_Vector aF = new(1, aNbEqs);
-        math_Vector aFNew = new(1, aNbEqs);
-        math_Vector aDeltaX = new(aVarLower, aVarUpper);
-        math_Vector aGrad = new(aVarLower, aVarUpper);
-        math_Matrix aJac = new(1, aNbEqs, aVarLower, aVarUpper);
-        math_Matrix aJtJ = new(aVarLower, aVarUpper, aVarLower, aVarUpper);
-        math_Vector aJtF = new(aVarLower, aVarUpper);
+        math_Vector sol = new(start);
+        math_Vector f = new(1, nbEqs);
+        math_Vector fNew = new(1, nbEqs);
+        math_Vector deltaX = new(varLower, varUpper);
+        math_Vector grad = new(varLower, varUpper);
+        Matrix jac = new(1, nbEqs, varLower, varUpper);
+        Matrix jtJ = new(varLower, varUpper, varLower, varUpper);
+        math_Vector jtF = new(varLower, varUpper);
 
-        double aLambda = theConfig.LambdaInit;
+        double lambda = config.LambdaInit;
 
         // Evaluate initial residual
-        if (!theFunc.Value(aSol, aF))
+        if (!func.Value(sol, f))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Compute initial ||F||^2
-        double aChi2 = 0.0;
-        for (int i = 1; i <= aNbEqs; ++i)
+        double chi2 = 0.0;
+        for (int i = 1; i <= nbEqs; ++i)
         {
-            aChi2 += aF[i] * aF[i];
+            chi2 += f[i] * f[i];
         }
 
         // Main iteration loop
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check F convergence
-            bool aFConverged = true;
-            for (int i = 1; i <= aNbEqs; ++i)
+            bool fConverged = true;
+            for (int i = 1; i <= nbEqs; ++i)
             {
-                if (Math.Abs(aF[i]) > theConfig.FTolerance)
+                if (Math.Abs(f[i]) > config.FTolerance)
                 {
-                    aFConverged = false;
+                    fConverged = false;
                     break;
                 }
             }
 
-            if (aFConverged)
+            if (fConverged)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = sol;
+                result.Value = chi2;
+                return result;
             }
 
             // Compute Jacobian
-            if (!theFunc.Derivatives(aSol, aJac))
+            if (!func.Derivatives(sol, jac))
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
 
             // Compute J^T * J
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                for (int j = aVarLower; j <= aVarUpper; ++j)
+                for (int j = varLower; j <= varUpper; ++j)
                 {
-                    double aSum = 0.0;
-                    for (int k = 1; k <= aNbEqs; ++k)
+                    double sum = 0.0;
+                    for (int k = 1; k <= nbEqs; ++k)
                     {
-                        aSum += aJac[k, i] * aJac[k, j];
+                        sum += jac[k, i] * jac[k, j];
                     }
-                    aJtJ[i, j] = aSum;
+                    jtJ[i, j] = sum;
                 }
             }
 
             // Compute J^T * F (negative gradient of chi^2)
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                double aSum = 0.0;
-                for (int k = 1; k <= aNbEqs; ++k)
+                double sum = 0.0;
+                for (int k = 1; k <= nbEqs; ++k)
                 {
-                    aSum += aJac[k, i] * aF[k];
+                    sum += jac[k, i] * f[k];
                 }
-                aJtF[i] = aSum;
-                aGrad[i] = 2.0 * aSum; // Gradient of chi^2 = 2 * J^T * F
+                jtF[i] = sum;
+                grad[i] = 2.0 * sum; // Gradient of chi^2 = 2 * J^T * F
             }
 
             // Check gradient convergence
-            double aGradNorm = 0.0;
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            double gradNorm = 0.0;
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                aGradNorm += aGrad[i] * aGrad[i];
+                gradNorm += grad[i] * grad[i];
             }
-            aGradNorm = Math.Sqrt(aGradNorm);
+            gradNorm = Math.Sqrt(gradNorm);
 
-            if (aGradNorm < theConfig.Tolerance)
+            if (gradNorm < config.Tolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                aResult.Gradient = aGrad;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = sol;
+                result.Value = chi2;
+                result.Gradient = grad;
+                return result;
             }
 
             // Inner loop: try to find an acceptable step
-            bool aStepAccepted = false;
-            for (int aLamIter = 0; aLamIter < 20 && !aStepAccepted; ++aLamIter)
+            bool stepAccepted = false;
+            for (int lamIter = 0; lamIter < 20 && !stepAccepted; ++lamIter)
             {
                 // Add damping: J^T*J + lambda*I
-                math_Matrix aDamped = new(aJtJ);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                Matrix damped = new(jtJ);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aDamped[i, i] += aLambda;
+                    damped[i, i] += lambda;
                 }
 
                 // Solve (J^T*J + lambda*I) * dX = -J^T*F
-                math_Vector aNegJtF = new(aVarLower, aVarUpper);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                math_Vector negJtF = new(varLower, varUpper);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aNegJtF[i] = -aJtF[i];
+                    negJtF[i] = -jtF[i];
                 }
 
-                LinearResult aLinResult = MathLin.Solve(aDamped, aNegJtF);
-                if (!aLinResult.IsDone())
+                LinearResult linResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(damped, negJtF);
+                if (!linResult.IsDone)
                 {
                     // Matrix is singular, increase damping
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.Singular;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.Singular;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                     continue;
                 }
 
-                aDeltaX.Initialized(aLinResult.Solution!);
+                deltaX.Initialized(linResult.Solution!);
 
                 // Compute new solution
-                math_Vector aSolNew = new(aVarLower, aVarUpper);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                math_Vector solNew = new(varLower, varUpper);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aSolNew[i] = aSol[i] + aDeltaX[i];
+                    solNew[i] = sol[i] + deltaX[i];
                 }
 
                 // Evaluate new residual
-                if (!theFunc.Value(aSolNew, aFNew))
+                if (!func.Value(solNew, fNew))
                 {
                     // Function evaluation failed, increase damping
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.NumericalError;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.NumericalError;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                     continue;
                 }
 
                 // Compute new ||F||^2
-                double aChi2New = 0.0;
-                for (int i = 1; i <= aNbEqs; ++i)
+                double chi2New = 0.0;
+                for (int i = 1; i <= nbEqs; ++i)
                 {
-                    aChi2New += aFNew[i] * aFNew[i];
+                    chi2New += fNew[i] * fNew[i];
                 }
 
                 // Accept or reject step
-                if (aChi2New < aChi2)
+                if (chi2New < chi2)
                 {
                     // Step accepted
-                    aSol.Initialized(aSolNew);
-                    aF.Initialized(aFNew);
-                    aChi2 = aChi2New;
-                    aLambda *= theConfig.LambdaDecrease;
-                    if (aLambda < theConfig.LambdaMin)
+                    sol.Initialized(solNew);
+                    f.Initialized(fNew);
+                    chi2 = chi2New;
+                    lambda *= config.LambdaDecrease;
+                    if (lambda < config.LambdaMin)
                     {
-                        aLambda = theConfig.LambdaMin;
+                        lambda = config.LambdaMin;
                     }
-                    aStepAccepted = true;
+                    stepAccepted = true;
 
                     // Check X convergence
-                    bool aXConverged = true;
-                    for (int i = aVarLower; i <= aVarUpper; ++i)
+                    bool xConverged = true;
+                    for (int i = varLower; i <= varUpper; ++i)
                     {
-                        if (Math.Abs(aDeltaX[i]) > theConfig.XTolerance * (1.0 + Math.Abs(aSol[i])))
+                        if (Math.Abs(deltaX[i]) > config.XTolerance * (1.0 + Math.Abs(sol[i])))
                         {
-                            aXConverged = false;
+                            xConverged = false;
                             break;
                         }
                     }
 
-                    if (aXConverged)
+                    if (xConverged)
                     {
-                        aResult.Status = Status.OK;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.OK;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                 }
                 else
                 {
                     // Step rejected, increase damping
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.NotConverged;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.NotConverged;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                 }
             }
 
-            if (!aStepAccepted)
+            if (!stepAccepted)
             {
                 // Failed to find acceptable step
-                aResult.Status = Status.NotConverged;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                return aResult;
+                result.Status = Status.NotConverged;
+                result.Solution = sol;
+                result.Value = chi2;
+                return result;
             }
         }
 
         // Max iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aSol;
-        aResult.Value = aChi2;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = sol;
+        result.Value = chi2;
+        return result;
     }
 
     /// <summary>
     /// Levenberg-Marquardt with bounds: minimizes ||F(X)||^2 subject to theInfBound &lt;= X &lt;= theSupBound,
     /// clamping the start and every step.
     /// </summary>
-    public static VectorResult LevenbergMarquardtBounded<FuncSetType>(FuncSetType theFunc,
-                                                                  math_Vector theStart,
-                                                                  math_Vector theInfBound,
-                                                                  math_Vector theSupBound,
-                                                                  LMConfig? theConfig = null)
+    public static VectorResult LevenbergMarquardtBounded<FuncSetType>(FuncSetType func,
+                                                                  math_Vector start,
+                                                                  math_Vector infBound,
+                                                                  math_Vector supBound,
+                                                                  LMConfig? config = null)
         where FuncSetType : IFunctionSetWithDerivatives
     {
-        theConfig ??= new LMConfig();
-        VectorResult aResult = new();
+        config ??= new LMConfig();
+        VectorResult result = new();
 
-        int aNbVars = theFunc.NbVariables();
-        int aNbEqs = theFunc.NbEquations();
+        int nbVars = func.NbVariables();
+        int nbEqs = func.NbEquations();
 
         // Check dimensions
-        if (theStart.Length() != aNbVars || theInfBound.Length() != aNbVars
-                || theSupBound.Length() != aNbVars)
+        if (start.Length() != nbVars || infBound.Length() != nbVars
+                || supBound.Length() != nbVars)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aVarLower = theStart.Lower();
-        int aVarUpper = theStart.Upper();
+        int varLower = start.Lower();
+        int varUpper = start.Upper();
 
         // Working vectors and matrices
-        math_Vector aSol = new(theStart);
-        math_Vector aF = new(1, aNbEqs);
-        math_Vector aFNew = new(1, aNbEqs);
-        math_Vector aDeltaX = new(aVarLower, aVarUpper);
-        math_Vector aGrad = new(aVarLower, aVarUpper);
-        math_Matrix aJac = new(1, aNbEqs, aVarLower, aVarUpper);
-        math_Matrix aJtJ = new(aVarLower, aVarUpper, aVarLower, aVarUpper);
-        math_Vector aJtF = new(aVarLower, aVarUpper);
+        math_Vector sol = new(start);
+        math_Vector f = new(1, nbEqs);
+        math_Vector fNew = new(1, nbEqs);
+        math_Vector deltaX = new(varLower, varUpper);
+        math_Vector grad = new(varLower, varUpper);
+        Matrix jac = new(1, nbEqs, varLower, varUpper);
+        Matrix jtJ = new(varLower, varUpper, varLower, varUpper);
+        math_Vector jtF = new(varLower, varUpper);
 
         // Clamp initial solution to bounds
-        for (int i = aVarLower; i <= aVarUpper; ++i)
+        for (int i = varLower; i <= varUpper; ++i)
         {
-            aSol[i] = MathUtils.Clamp(aSol[i], theInfBound[i], theSupBound[i]);
+            sol[i] = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(sol[i], infBound[i], supBound[i]);
         }
 
-        double aLambda = theConfig.LambdaInit;
+        double lambda = config.LambdaInit;
 
         // Evaluate initial residual
-        if (!theFunc.Value(aSol, aF))
+        if (!func.Value(sol, f))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Compute initial ||F||^2
-        double aChi2 = 0.0;
-        for (int i = 1; i <= aNbEqs; ++i)
+        double chi2 = 0.0;
+        for (int i = 1; i <= nbEqs; ++i)
         {
-            aChi2 += aF[i] * aF[i];
+            chi2 += f[i] * f[i];
         }
 
         // Main iteration loop
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check F convergence
-            bool aFConverged = true;
-            for (int i = 1; i <= aNbEqs; ++i)
+            bool fConverged = true;
+            for (int i = 1; i <= nbEqs; ++i)
             {
-                if (Math.Abs(aF[i]) > theConfig.FTolerance)
+                if (Math.Abs(f[i]) > config.FTolerance)
                 {
-                    aFConverged = false;
+                    fConverged = false;
                     break;
                 }
             }
 
-            if (aFConverged)
+            if (fConverged)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = sol;
+                result.Value = chi2;
+                return result;
             }
 
             // Compute Jacobian
-            if (!theFunc.Derivatives(aSol, aJac))
+            if (!func.Derivatives(sol, jac))
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
 
             // Compute J^T * J
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                for (int j = aVarLower; j <= aVarUpper; ++j)
+                for (int j = varLower; j <= varUpper; ++j)
                 {
-                    double aSum = 0.0;
-                    for (int k = 1; k <= aNbEqs; ++k)
+                    double sum = 0.0;
+                    for (int k = 1; k <= nbEqs; ++k)
                     {
-                        aSum += aJac[k, i] * aJac[k, j];
+                        sum += jac[k, i] * jac[k, j];
                     }
-                    aJtJ[i, j] = aSum;
+                    jtJ[i, j] = sum;
                 }
             }
 
             // Compute J^T * F
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                double aSum = 0.0;
-                for (int k = 1; k <= aNbEqs; ++k)
+                double sum = 0.0;
+                for (int k = 1; k <= nbEqs; ++k)
                 {
-                    aSum += aJac[k, i] * aF[k];
+                    sum += jac[k, i] * f[k];
                 }
-                aJtF[i] = aSum;
-                aGrad[i] = 2.0 * aSum;
+                jtF[i] = sum;
+                grad[i] = 2.0 * sum;
             }
 
             // Check gradient convergence
-            double aGradNorm = 0.0;
-            for (int i = aVarLower; i <= aVarUpper; ++i)
+            double gradNorm = 0.0;
+            for (int i = varLower; i <= varUpper; ++i)
             {
-                aGradNorm += aGrad[i] * aGrad[i];
+                gradNorm += grad[i] * grad[i];
             }
-            aGradNorm = Math.Sqrt(aGradNorm);
+            gradNorm = Math.Sqrt(gradNorm);
 
-            if (aGradNorm < theConfig.Tolerance)
+            if (gradNorm < config.Tolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                aResult.Gradient = aGrad;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = sol;
+                result.Value = chi2;
+                result.Gradient = grad;
+                return result;
             }
 
             // Inner loop: try to find an acceptable step
-            bool aStepAccepted = false;
-            for (int aLamIter = 0; aLamIter < 20 && !aStepAccepted; ++aLamIter)
+            bool stepAccepted = false;
+            for (int lamIter = 0; lamIter < 20 && !stepAccepted; ++lamIter)
             {
                 // Add damping
-                math_Matrix aDamped = new(aJtJ);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                Matrix damped = new(jtJ);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aDamped[i, i] += aLambda;
+                    damped[i, i] += lambda;
                 }
 
                 // Solve (J^T*J + lambda*I) * dX = -J^T*F
-                math_Vector aNegJtF = new(aVarLower, aVarUpper);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                math_Vector negJtF = new(varLower, varUpper);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aNegJtF[i] = -aJtF[i];
+                    negJtF[i] = -jtF[i];
                 }
 
-                LinearResult aLinResult = MathLin.Solve(aDamped, aNegJtF);
-                if (!aLinResult.IsDone())
+                LinearResult linResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(damped, negJtF);
+                if (!linResult.IsDone)
                 {
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.Singular;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.Singular;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                     continue;
                 }
 
-                aDeltaX.Initialized(aLinResult.Solution!);
+                deltaX.Initialized(linResult.Solution!);
 
                 // Compute new solution with bounds clamping
-                math_Vector aSolNew = new(aVarLower, aVarUpper);
-                for (int i = aVarLower; i <= aVarUpper; ++i)
+                math_Vector solNew = new(varLower, varUpper);
+                for (int i = varLower; i <= varUpper; ++i)
                 {
-                    aSolNew[i] = MathUtils.Clamp(aSol[i] + aDeltaX[i], theInfBound[i], theSupBound[i]);
+                    solNew[i] = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(sol[i] + deltaX[i], infBound[i], supBound[i]);
                 }
 
                 // Evaluate new residual
-                if (!theFunc.Value(aSolNew, aFNew))
+                if (!func.Value(solNew, fNew))
                 {
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.NumericalError;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.NumericalError;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                     continue;
                 }
 
                 // Compute new ||F||^2
-                double aChi2New = 0.0;
-                for (int i = 1; i <= aNbEqs; ++i)
+                double chi2New = 0.0;
+                for (int i = 1; i <= nbEqs; ++i)
                 {
-                    aChi2New += aFNew[i] * aFNew[i];
+                    chi2New += fNew[i] * fNew[i];
                 }
 
                 // Accept or reject step
-                if (aChi2New < aChi2)
+                if (chi2New < chi2)
                 {
-                    aSol.Initialized(aSolNew);
-                    aF.Initialized(aFNew);
-                    aChi2 = aChi2New;
-                    aLambda *= theConfig.LambdaDecrease;
-                    if (aLambda < theConfig.LambdaMin)
+                    sol.Initialized(solNew);
+                    f.Initialized(fNew);
+                    chi2 = chi2New;
+                    lambda *= config.LambdaDecrease;
+                    if (lambda < config.LambdaMin)
                     {
-                        aLambda = theConfig.LambdaMin;
+                        lambda = config.LambdaMin;
                     }
-                    aStepAccepted = true;
+                    stepAccepted = true;
 
                     // Check X convergence
                     // OCCT: tests the unclamped step aDeltaX, not the step actually taken, so at an active bound the
                     // X criterion fails however small the real step is.
-                    bool aXConverged = true;
-                    for (int i = aVarLower; i <= aVarUpper; ++i)
+                    bool xConverged = true;
+                    for (int i = varLower; i <= varUpper; ++i)
                     {
-                        if (Math.Abs(aDeltaX[i]) > theConfig.XTolerance * (1.0 + Math.Abs(aSol[i])))
+                        if (Math.Abs(deltaX[i]) > config.XTolerance * (1.0 + Math.Abs(sol[i])))
                         {
-                            aXConverged = false;
+                            xConverged = false;
                             break;
                         }
                     }
 
-                    if (aXConverged)
+                    if (xConverged)
                     {
-                        aResult.Status = Status.OK;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.OK;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                 }
                 else
                 {
-                    aLambda *= theConfig.LambdaIncrease;
-                    if (aLambda > theConfig.LambdaMax)
+                    lambda *= config.LambdaIncrease;
+                    if (lambda > config.LambdaMax)
                     {
-                        aResult.Status = Status.NotConverged;
-                        aResult.Solution = aSol;
-                        aResult.Value = aChi2;
-                        return aResult;
+                        result.Status = Status.NotConverged;
+                        result.Solution = sol;
+                        result.Value = chi2;
+                        return result;
                     }
                 }
             }
 
-            if (!aStepAccepted)
+            if (!stepAccepted)
             {
-                aResult.Status = Status.NotConverged;
-                aResult.Solution = aSol;
-                aResult.Value = aChi2;
-                return aResult;
+                result.Status = Status.NotConverged;
+                result.Solution = sol;
+                result.Value = chi2;
+                return result;
             }
         }
 
         // Max iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aSol;
-        aResult.Value = aChi2;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = sol;
+        result.Value = chi2;
+        return result;
     }
 }

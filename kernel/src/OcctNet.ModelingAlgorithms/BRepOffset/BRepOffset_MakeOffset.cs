@@ -7,15 +7,19 @@
 // Add methods for supporting history.
 //  Modified by skv - Mon Jan 12 11:50:02 2004 OCC4455
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepOffset_Error;
 using static Occt.BRepOffset_Mode;
 using static Occt.BRepOffset_Status;
 using static Occt.ChFiDS_TypeOfConcavity;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -55,7 +59,7 @@ public sealed partial class BRepOffset_MakeOffset
     private bool myIsLinearizationAllowed;
     private bool myInter;
     private bool mySelfInter;
-    private GeomAbs_JoinType myJoin;
+    private global::Kerf.Geometry.JoinKind myJoin;
     private bool myThickening;
     private bool myRemoveIntEdges;
     private readonly NCollection_DataMap<TopoDS_Shape, double> myFaceOffset = new(TopTools_ShapeMapHasher.Instance);
@@ -208,7 +212,7 @@ public sealed partial class BRepOffset_MakeOffset
 
         else
         {
-            Geom_Curve? C = BRep_Tool.Curve(E, out TopLoc_Location L, out f, out l);
+            Geom_Curve? C = BRep_Tool.Curve(E, out Placement L, out f, out l);
             L = L.Predivided(V.Location());
             if (C is not null || BRep_Tool.Degenerated(E))
             {
@@ -224,20 +228,20 @@ public sealed partial class BRepOffset_MakeOffset
                         if (C is not null)
                         {
                             // Closed curves RLE 16 june 94
-                            if (Precision.IsNegativeInfinite(f))
+                            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
                             {
                                 // return pr->Parameter();//p;
                                 U = pr.Parameter();
                                 return true;
                             }
-                            if (Precision.IsPositiveInfinite(l))
+                            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
                             {
                                 // return pr->Parameter();//p;
                                 U = pr.Parameter();
                                 return true;
                             }
-                            gp_Pnt Pf = C.Value(f).Transformed(L.Transformation());
-                            gp_Pnt Pl = C.Value(l).Transformed(L.Transformation());
+                            Point3D Pf = C.Value(f).Transformed(L.Transformation());
+                            Point3D Pl = C.Value(l).Transformed(L.Transformation());
                             double tol = BRep_Tool.Tolerance(V);
                             if (Pf.Distance(Pl) < tol)
                             {
@@ -307,13 +311,13 @@ public sealed partial class BRepOffset_MakeOffset
     // function : GetEdgePoints
     // purpose  : gets the first, last and middle points of the edge
     //=======================================================================
-    private static void GetEdgePoints(in TopoDS_Edge anEdge, in TopoDS_Face aFace, out gp_Pnt fPnt, out gp_Pnt mPnt,
-                                      out gp_Pnt lPnt)
+    private static void GetEdgePoints(in TopoDS_Edge anEdge, in TopoDS_Face aFace, out Point3D fPnt, out Point3D mPnt,
+                                      out Point3D lPnt)
     {
         Geom2d_Curve theCurve = BRep_Tool.CurveOnSurface(anEdge, aFace, out double f, out double l)!;
-        gp_Pnt2d fPnt2d = theCurve.Value(f);
-        gp_Pnt2d lPnt2d = theCurve.Value(l);
-        gp_Pnt2d mPnt2d = theCurve.Value(0.5 * (f + l));
+        Point2D fPnt2d = theCurve.Value(f);
+        Point2D lPnt2d = theCurve.Value(l);
+        Point2D mPnt2d = theCurve.Value(0.5 * (f + l));
         Geom_Surface aSurf = BRep_Tool.Surface(aFace)!;
         fPnt = aSurf.Value(fPnt2d.X(), fPnt2d.Y());
         lPnt = aSurf.Value(lPnt2d.X(), lPnt2d.Y());
@@ -399,9 +403,9 @@ public sealed partial class BRepOffset_MakeOffset
 
     /// <summary>Initializes the algorithm and makes the offset shape (<see cref="MakeOffsetShape"/>).</summary>
     public BRepOffset_MakeOffset(in TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode = BRepOffset_Skin,
-                                 bool Inter = false, bool SelfInter = false, GeomAbs_JoinType Join = GeomAbs_Arc,
+                                 bool Inter = false, bool SelfInter = false, global::Kerf.Geometry.JoinKind Join = Arc,
                                  bool Thickening = false, bool RemoveIntEdges = false,
-                                 Message_ProgressRange theRange = default)
+                                 ProgressRange theRange = default)
     {
         myOffset = Offset;
         myTol = Tol;
@@ -424,7 +428,7 @@ public sealed partial class BRepOffset_MakeOffset
 
     /// <summary>Sets the arguments of the offset and clears the results of an earlier run.</summary>
     public void Initialize(in TopoDS_Shape S, double Offset, double Tol, BRepOffset_Mode Mode = BRepOffset_Skin,
-                           bool Inter = false, bool SelfInter = false, GeomAbs_JoinType Join = GeomAbs_Arc,
+                           bool Inter = false, bool SelfInter = false, global::Kerf.Geometry.JoinKind Join = Arc,
                            bool Thickening = false, bool RemoveIntEdges = false)
     {
         myOffset = Offset;
@@ -667,14 +671,14 @@ public sealed partial class BRepOffset_MakeOffset
     //=================================================================================================
 
     /// <summary>Makes the offset shape (a shell, or a solid for a solid input).</summary>
-    public void MakeOffsetShape(Message_ProgressRange theRange = default)
+    public void MakeOffsetShape(ProgressRange theRange = default)
     {
         EnterCopy();
         InternalMakeOffsetShape(theRange);
         FinishCopy();
     }
 
-    private void InternalMakeOffsetShape(Message_ProgressRange theRange)
+    private void InternalMakeOffsetShape(ProgressRange theRange)
     {
         myDone = false;
         //
@@ -698,7 +702,7 @@ public sealed partial class BRepOffset_MakeOffset
             myFaceComp = TopoDS.Compound(aFaceComp);
         }
 
-        using Message_ProgressScope aPS = new(theRange, "Making offset shape", 100);
+        using ProgressScope aPS = new(theRange, "Making offset shape", 100);
 
         NCollection_Array1<double> aSteps = new(0, PIOperation_Last - 1);
         analyzeProgress(100.0, aSteps);
@@ -721,9 +725,9 @@ public sealed partial class BRepOffset_MakeOffset
         // ------------
         EvalMax(myShape, ref myTol);
         // There are possible second variant: analytical continuation of arcsin.
-        double TolAngleCoeff = Math.Min(myTol / (Math.Abs(myOffset * 0.5) + Precision.Confusion()), 1.0);
+        double TolAngleCoeff = Math.Min(myTol / (Math.Abs(myOffset * 0.5) + global::Kerf.Engine.Foundation.Precision.Confusion()), 1.0);
         double TolAngle = 4 * Math.Asin(TolAngleCoeff);
-        if ((myJoin == GeomAbs_Intersection) && myInter && myIsPlanar)
+        if ((myJoin == Intersection) && myInter && myIsPlanar)
         {
             myAnalyse.SetOffsetValue(myOffset);
             myAnalyse.SetFaceOffsetMap(myFaceOffset);
@@ -757,11 +761,11 @@ public sealed partial class BRepOffset_MakeOffset
         //----------------------------
         UpdateFaceOffset();
 
-        if (myJoin == GeomAbs_Arc)
+        if (myJoin == Arc)
         {
             BuildOffsetByArc(aPS.Next(aSteps[PIOperation_BuildOffsetBy]));
         }
-        else if (myJoin == GeomAbs_Intersection)
+        else if (myJoin == Intersection)
         {
             BuildOffsetByInter(aPS.Next(aSteps[PIOperation_BuildOffsetBy]));
         }
@@ -777,8 +781,8 @@ public sealed partial class BRepOffset_MakeOffset
         // Intersection 3d .
         //-----------------
         // OCCT's aPSInter.SetName(...) names the scope "Connect offset faces by arc" or "... by intersection".
-        using Message_ProgressScope aPSInter = new(aPS.Next(aSteps[PIOperation_Intersection]),
-                                                   (myJoin == GeomAbs_Arc) ? "Connect offset faces by arc"
+        using ProgressScope aPSInter = new(aPS.Next(aSteps[PIOperation_Intersection]),
+                                                   (myJoin == Arc) ? "Connect offset faces by arc"
                                                                            : "Connect offset faces by intersection",
                                                    100);
 
@@ -927,14 +931,14 @@ public sealed partial class BRepOffset_MakeOffset
     /// Makes the thick solid: the offset shell of the shape without its closing faces (<see cref="AddFace"/>), closed
     /// by the shape's faces.
     /// </summary>
-    public void MakeThickSolid(Message_ProgressRange theRange = default)
+    public void MakeThickSolid(ProgressRange theRange = default)
     {
         EnterCopy();
         InternalMakeThickSolid(theRange);
         FinishCopy();
     }
 
-    private void InternalMakeThickSolid(Message_ProgressRange theRange)
+    private void InternalMakeThickSolid(ProgressRange theRange)
     {
         //--------------------------------------------------------------
         // Construction of shell parallel to shell (initial without cap).
@@ -1048,7 +1052,7 @@ public sealed partial class BRepOffset_MakeOffset
     //=================================================================================================
 
     private void MakeOffsetFaces(NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset> theMapSF,
-                                 Message_ProgressRange theRange)
+                                 ProgressRange theRange)
     {
         double aCurOffset;
         NCollection_List<TopoDS_Shape> aLF = new();
@@ -1059,7 +1063,7 @@ public sealed partial class BRepOffset_MakeOffset
         //
         BRepLib.SortFaces(myFaceComp, aLF);
         //
-        using Message_ProgressScope aPS = new(theRange, "Making offset faces", aLF.Extent());
+        using ProgressScope aPS = new(theRange, "Making offset faces", aLF.Extent());
         aItLF.Initialize(aLF);
         for (; aItLF.More(); aItLF.Next(), aPS.Next())
         {
@@ -1120,11 +1124,11 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void BuildOffsetByInter(Message_ProgressRange theRange)
+    private void BuildOffsetByInter(ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
 
-        using Message_ProgressScope aPSOuter = new(theRange, "Connect offset faces by intersection", 100);
+        using ProgressScope aPSOuter = new(theRange, "Connect offset faces by intersection", 100);
 
         // just for better management and visualization of the progress steps
         // define a nested enum listing all the steps of the current method.
@@ -1146,7 +1150,7 @@ public sealed partial class BRepOffset_MakeOffset
         {
             aSteps.Init(0);
 
-            bool isInter = myJoin == GeomAbs_Intersection;
+            bool isInter = myJoin == Intersection;
             double aFaceInter = isInter ? 25.0 : 50.0;
             double aBuildFaces = isInter ? 50.0 : 25.0;
             aSteps[BuildOffsetByInter_MakeOffsetFaces] = 5.0;
@@ -1261,9 +1265,9 @@ public sealed partial class BRepOffset_MakeOffset
         GetEnlargedFaces(aLFaces, MapSF, MES, aFacesOrigins, IMOE, LFE);
         //
         NCollection_List<TopoDS_Shape>.Iterator itLFE = new(LFE);
-        using Message_ProgressScope aPS2d =
+        using ProgressScope aPS2d =
             new(aPSOuter.Next(aSteps[BuildOffsetByInter_CompleteEdgesIntersection]), null, 2);
-        using Message_ProgressScope aPS2dOffsets = new(aPS2d.Next(2.0 * anOffsetsPart), null, LFE.Extent());
+        using ProgressScope aPS2dOffsets = new(aPS2d.Next(2.0 * anOffsetsPart), null, LFE.Extent());
         for (; itLFE.More(); itLFE.Next())
         {
             if (!aPS2dOffsets.More())
@@ -1280,7 +1284,7 @@ public sealed partial class BRepOffset_MakeOffset
         // Intersections 2d on caps.
         //----------------------------------------------
         int i;
-        using Message_ProgressScope aPS2dCaps = new(aPS2d.Next(2.0 * aDeepeningsPart), null, myFaces.Extent());
+        using ProgressScope aPS2dCaps = new(aPS2d.Next(2.0 * aDeepeningsPart), null, myFaces.Extent());
         for (i = 1; i <= myFaces.Extent(); i++)
         {
             if (!aPS2dCaps.More())
@@ -1300,7 +1304,7 @@ public sealed partial class BRepOffset_MakeOffset
         //
         NCollection_Map<TopoDS_Shape> aMFDone = new(TopTools_ShapeMapHasher.Instance);
         //
-        if ((myJoin == GeomAbs_Intersection) && myInter && myIsPlanar)
+        if ((myJoin == Intersection) && myInter && myIsPlanar)
         {
             BuildSplitsOfExtendedFaces(LFE, myAnalyse, AsDes, anEdgesOrigins, aFacesOrigins, aETrimEInf, IMOE,
                                        aPSOuter.Next(aSteps[BuildOffsetByInter_BuildFaces]));
@@ -1330,7 +1334,7 @@ public sealed partial class BRepOffset_MakeOffset
         //---------------------------
         // MAJ SD. for faces //
         //---------------------------
-        using Message_ProgressScope aPSHist = new(aPSOuter.Next(aSteps[BuildOffsetByInter_FillHistoryForOffsets]),
+        using ProgressScope aPSHist = new(aPSOuter.Next(aSteps[BuildOffsetByInter_FillHistoryForOffsets]),
                                                   "Fill history for offset faces", aLFaces.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator it = new(aLFaces); it.More(); it.Next(), aPSHist.Next())
         {
@@ -1544,7 +1548,7 @@ public sealed partial class BRepOffset_MakeOffset
         // MAJ SD. for caps
         //---------------------------
         // NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> View;
-        using Message_ProgressScope aPSHist2 = new(aPSOuter.Next(aSteps[BuildOffsetByInter_FillHistoryForDeepenings]),
+        using ProgressScope aPSHist2 = new(aPSOuter.Next(aSteps[BuildOffsetByInter_FillHistoryForDeepenings]),
                                                    "Fill history for deepening faces", myFaces.Extent());
         for (i = 1; i <= myFaces.Extent(); i++, aPSHist2.Next())
         {
@@ -1664,14 +1668,14 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void BuildOffsetByArc(Message_ProgressRange theRange)
+    private void BuildOffsetByArc(ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
 
         TopExp_Explorer Exp = new();
         NCollection_List<TopoDS_Shape>.Iterator itLF = new();
         NCollection_Map<TopoDS_Shape> Done = new(TopTools_ShapeMapHasher.Instance);
-        using Message_ProgressScope aPSOuter = new(theRange, null, 10);
+        using ProgressScope aPSOuter = new(theRange, null, 10);
         //--------------------------------------------------------
         // Construction of faces parallel to initial faces
         //--------------------------------------------------------
@@ -1690,7 +1694,7 @@ public sealed partial class BRepOffset_MakeOffset
             OT = ChFiDS_Concave;
         }
 
-        using Message_ProgressScope aPS1 = new(aPSOuter.Next(4), "Constructing tubes on edges", 1, true);
+        using ProgressScope aPS1 = new(aPSOuter.Next(4), "Constructing tubes on edges", 1, true);
         for (Exp.Init(myFaceComp, TopAbs_EDGE); Exp.More(); Exp.Next(), aPS1.Next())
         {
             if (!aPS1.More())
@@ -1774,7 +1778,7 @@ public sealed partial class BRepOffset_MakeOffset
         //--------------------------------------------------------
         Done.Clear();
         NCollection_List<TopoDS_Shape>.Iterator it = new();
-        using Message_ProgressScope aPS2 = new(aPSOuter.Next(4), "Constructing spheres on vertices", 1, true);
+        using ProgressScope aPS2 = new(aPSOuter.Next(4), "Constructing spheres on vertices", 1, true);
         for (Exp.Init(myFaceComp, TopAbs_VERTEX); Exp.More(); Exp.Next(), aPS2.Next())
         {
             if (!aPS2.More())
@@ -1856,7 +1860,7 @@ public sealed partial class BRepOffset_MakeOffset
             RT = ChFiDS_Convex;
         }
         // OCCT.NET: OCCT iterates MapSF by its shapes' addresses; the port in insertion order (decision 1032).
-        using Message_ProgressScope aPS3 = new(aPSOuter.Next(), null, MapSF.Extent());
+        using ProgressScope aPS3 = new(aPSOuter.Next(), null, MapSF.Extent());
         foreach (KeyValuePair<TopoDS_Shape, BRepOffset_Offset> It in MapSF)
         {
             if (!aPS3.More())
@@ -1920,7 +1924,7 @@ public sealed partial class BRepOffset_MakeOffset
     {
         // OCCT_DEBUG: the chronometer is left out.
 
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     //=================================================================================================
@@ -2104,7 +2108,7 @@ public sealed partial class BRepOffset_MakeOffset
             Build.MakeCompound(ref Co);
             NCollection_Map<TopoDS_Shape> Dummy = new(TopTools_ShapeMapHasher.Instance);
             Build.Add(Co, F);
-            if (myJoin == GeomAbs_Arc)
+            if (myJoin == Arc)
             {
                 myAnalyse.AddFaces(F, Co, Dummy, ChFiDS_Tangential, RT);
             }
@@ -2149,7 +2153,7 @@ public sealed partial class BRepOffset_MakeOffset
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> FacesOfCone = new(TopTools_ShapeMapHasher.Instance);
         // NCollection_DataMap<TopoDS_Shape, TopoDS_Shape, TopTools_ShapeMapHasher> DegEdges;
         TopExp_Explorer Explo = new(myOffsetShape, TopAbs_FACE);
-        if (myJoin == GeomAbs_Arc)
+        if (myJoin == Arc)
         {
             for (; Explo.More(); Explo.Next())
             {
@@ -2170,7 +2174,7 @@ public sealed partial class BRepOffset_MakeOffset
                     {
                         // Check if anEdge is a really degenerated edge or not
                         BRepAdaptor_Curve BACurve = new(anEdge, aFace);
-                        gp_Pnt Pfirst, Plast, Pmid;
+                        Point3D Pfirst, Plast, Pmid;
                         Pfirst = BACurve.Value(BACurve.FirstParameter());
                         Plast = BACurve.Value(BACurve.LastParameter());
                         Pmid = BACurve.Value((BACurve.FirstParameter() + BACurve.LastParameter()) / 2.0);
@@ -2204,12 +2208,12 @@ public sealed partial class BRepOffset_MakeOffset
         } // if (myJoin == GeomAbs_Arc)
 
         BRep_Builder BB = new();
-        TopLoc_Location L = new();
+        Placement L = new();
         bool IsModified = false;
         // OCCT.NET: OCCT iterates the apexes by their addresses; the port in insertion order (decision 1032).
         foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Cone in FacesOfCone)
         {
-            gp_Sphere theSphere = new();
+            Sphere theSphere = new();
             Geom_SphericalSurface? aSphSurf = null;
             TopoDS_Wire SphereWire = new();
             BB.MakeWire(ref SphereWire);
@@ -2217,7 +2221,7 @@ public sealed partial class BRepOffset_MakeOffset
             NCollection_List<TopoDS_Shape> Faces = Cone.Value; // FacesOfCone(anApex);
             NCollection_List<TopoDS_Shape>.Iterator itFaces = new(Faces);
             bool isFirstFace = true;
-            gp_Pnt FirstPoint = new();
+            Point3D FirstPoint = new();
             TopoDS_Vertex theFirstVertex = new(), CurFirstVertex = new();
             for (; itFaces.More(); itFaces.Next())
             {
@@ -2241,21 +2245,21 @@ public sealed partial class BRepOffset_MakeOffset
                 BB.Degenerated(CurEdge, false);
                 BB.SameRange(CurEdge, false);
                 BB.SameParameter(CurEdge, false);
-                GetEdgePoints(CurEdge, aFace, out gp_Pnt fPnt, out gp_Pnt mPnt, out gp_Pnt lPnt);
+                GetEdgePoints(CurEdge, aFace, out Point3D fPnt, out Point3D mPnt, out Point3D lPnt);
                 BRep_Tool.Range(CurEdge, out double f, out double l);
                 if (isFirstFace)
                 {
-                    gp_Vec aVec1 = new(fPnt, mPnt);
-                    gp_Vec aVec2 = new(fPnt, lPnt);
-                    gp_Vec aNorm = aVec1.Crossed(aVec2);
-                    gp_Pnt theApex = BRep_Tool.Pnt(anApex);
-                    gp_Vec ApexToFpnt = new(theApex, fPnt);
-                    gp_Vec Ydir = aNorm ^ ApexToFpnt;
-                    gp_Vec Xdir = Ydir ^ aNorm;
+                    Vector3D aVec1 = new(fPnt, mPnt);
+                    Vector3D aVec2 = new(fPnt, lPnt);
+                    Vector3D aNorm = aVec1.Crossed(aVec2);
+                    Point3D theApex = BRep_Tool.Pnt(anApex);
+                    Vector3D ApexToFpnt = new(theApex, fPnt);
+                    Vector3D Ydir = aNorm ^ ApexToFpnt;
+                    Vector3D Xdir = Ydir ^ aNorm;
                     // Xdir.Rotate(gp_Ax1(theApex, aNorm), -f);
-                    gp_Ax2 anAx2 = new(theApex, new gp_Dir(aNorm), new gp_Dir(Xdir));
+                    Frame3D anAx2 = new(theApex, new Direction3D(aNorm), new Direction3D(Xdir));
                     theSphere.SetRadius(myOffset);
-                    theSphere.SetPosition(new gp_Ax3(anAx2) /*gp_Ax3(theApex, gp_Dir(aNorm))*/);
+                    theSphere.SetPosition(new CoordinateSystem(anAx2) /*gp_Ax3(theApex, gp_Dir(aNorm))*/);
                     aSphSurf = new Geom_SphericalSurface(theSphere);
                     FirstPoint = fPnt;
                     theFirstVertex = new BRepLib_MakeVertex(fPnt).InternalVertex();
@@ -2265,7 +2269,7 @@ public sealed partial class BRepOffset_MakeOffset
                 TopoDS_Vertex FirstVert, EndVert;
                 TopExp.Vertices(CurEdge, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
                 FirstVert = CurFirstVertex;
-                if (lPnt.Distance(FirstPoint) <= Precision.Confusion())
+                if (lPnt.Distance(FirstPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     EndVert = theFirstVertex;
                 }
@@ -2279,26 +2283,26 @@ public sealed partial class BRepOffset_MakeOffset
                 BB.Add(CurEdge, FirstVert.Oriented(TopAbs_FORWARD));
                 BB.Add(CurEdge, EndVert.Oriented(TopAbs_REVERSED));
                 // take the curve from sphere an put it to the edge
-                ElSLib.Parameters(theSphere, fPnt, out double Uf, out double Vf);
-                ElSLib.Parameters(theSphere, lPnt, out double Ul, out double Vl);
-                if (Math.Abs(Ul) <= Precision.Confusion())
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, fPnt, out double Uf, out double Vf);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, lPnt, out double Ul, out double Vl);
+                if (Math.Abs(Ul) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Ul = 2.0 * M_PI;
                 }
                 Geom_Curve aCurv = aSphSurf!.VIso(Vf);
                 // OCCT has a commented-out rotation of the circle for the faces after the first.
                 Geom_TrimmedCurve aTrimCurv = new(aCurv, Uf, Ul);
-                BB.UpdateEdge(CurEdge, aTrimCurv, Precision.Confusion());
+                BB.UpdateEdge(CurEdge, aTrimCurv, global::Kerf.Engine.Foundation.Precision.Confusion());
                 BB.Range(CurEdge, Uf, Ul, true);
-                Geom2d_Line theLin2d = new(new gp_Pnt2d(0.0, Vf), gp.DX2d());
+                Geom2d_Line theLin2d = new(new Point2D(0.0, Vf), Constants.DX2d());
                 Geom2d_TrimmedCurve theTrimLin2d = new(theLin2d, Uf, Ul);
-                BB.UpdateEdge(CurEdge, theTrimLin2d, aSphSurf, L, Precision.Confusion());
+                BB.UpdateEdge(CurEdge, theTrimLin2d, aSphSurf, L, global::Kerf.Engine.Foundation.Precision.Confusion());
                 BB.Range(CurEdge, aSphSurf, L, Uf, Ul);
                 BRepLib.SameParameter(CurEdge);
                 BB.Add(SphereWire, CurEdge);
                 // Modifying correspondent edges in aFace: substitute vertices common with CurEdge
                 BRepAdaptor_Curve2d BAc2d = new(CurEdge, aFace);
-                gp_Pnt2d fPnt2d, lPnt2d;
+                Point2D fPnt2d, lPnt2d;
                 fPnt2d = BAc2d.Value(BAc2d.FirstParameter());
                 lPnt2d = BAc2d.Value(BAc2d.LastParameter());
                 NCollection_IndexedMap<TopoDS_Shape> Emap = new(TopTools_ShapeMapHasher.Instance);
@@ -2324,18 +2328,18 @@ public sealed partial class BRepOffset_MakeOffset
                     Eforward.Free(true);
                     TopExp.Vertices(Eforward, out TopoDS_Vertex V1e, out TopoDS_Vertex V2e);
                     BRepAdaptor_Curve2d EEc = new(Eforward, aFace);
-                    gp_Pnt2d p2d1_, p2d2_;
+                    Point2D p2d1_, p2d2_;
                     p2d1_ = EEc.Value(EEc.FirstParameter());
                     p2d2_ = EEc.Value(EEc.LastParameter());
                     if (V1e.IsSame(v1))
                     {
-                        TopoDS_Vertex NewV = (p2d1_.Distance(fPnt2d) <= Precision.Confusion()) ? FirstVert : EndVert;
+                        TopoDS_Vertex NewV = (p2d1_.Distance(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? FirstVert : EndVert;
                         BB.Remove(Eforward, V1e);
                         BB.Add(Eforward, NewV.Oriented(TopAbs_FORWARD));
                     }
                     else
                     {
-                        TopoDS_Vertex NewV = (p2d2_.Distance(fPnt2d) <= Precision.Confusion()) ? FirstVert : EndVert;
+                        TopoDS_Vertex NewV = (p2d2_.Distance(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? FirstVert : EndVert;
                         BB.Remove(Eforward, V2e);
                         BB.Add(Eforward, NewV.Oriented(TopAbs_REVERSED));
                     }
@@ -2346,7 +2350,7 @@ public sealed partial class BRepOffset_MakeOffset
             }
             // Building new spherical face
             double Ufirst = RealLast(), Ulast = RealFirst();
-            gp_Pnt2d p2d1 = new(), p2d2 = new();
+            Point2D p2d1 = new(), p2d2 = new();
             NCollection_List<TopoDS_Shape> EdgesOfWire = new();
             TopoDS_Iterator itw = new(SphereWire);
             for (; itw.More(); itw.Next())
@@ -2382,7 +2386,7 @@ public sealed partial class BRepOffset_MakeOffset
                 Geom2d_Curve aC2d = BRep_Tool.CurveOnSurface(FirstEdge, aSphSurf, L, out double f, out double l)!;
                 p2d1 = aC2d.Value(f);
                 p2d2 = aC2d.Value(l);
-                if (Math.Abs(p2d1.X() - Ufirst) <= Precision.Confusion())
+                if (Math.Abs(p2d1.X() - Ufirst) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     EdgesOfWire.Remove(itl);
                     break;
@@ -2419,7 +2423,7 @@ public sealed partial class BRepOffset_MakeOffset
                 Vlast = p2d1.Y();
             }
             TopoDS_Face NewSphericalFace =
-                new BRepLib_MakeFace(aSphSurf!, Ufirst, Ulast, Vfirst, Vlast, Precision.Confusion()).InternalFace();
+                new BRepLib_MakeFace(aSphSurf!, Ufirst, Ulast, Vfirst, Vlast, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
             TopoDS_Edge OldEdge = new(), DegEdge2 = new();
             for (Explo.Init(NewSphericalFace, TopAbs_EDGE); Explo.More(); Explo.Next())
             {
@@ -2566,10 +2570,10 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void Intersection3D(BRepOffset_Inter3d Inter, Message_ProgressRange theRange)
+    private void Intersection3D(BRepOffset_Inter3d Inter, ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
-        using Message_ProgressScope aPS = new(theRange, null, (myFaces.Extent() != 0 && myJoin == GeomAbs_Arc) ? 2 : 1);
+        using ProgressScope aPS = new(theRange, null, (myFaces.Extent() != 0 && myJoin == Arc) ? 2 : 1);
 
         // In the Complete Intersection mode, implemented currently for planar
         // solids only, there is no need to intersect the faces here.
@@ -2578,7 +2582,7 @@ public sealed partial class BRepOffset_MakeOffset
         //
         // Make sure to match the parameters in which the method
         // BuildShellsCompleteInter is called.
-        if (myInter && (myJoin == GeomAbs_Intersection) && myIsPlanar && !myThickening && myFaces.IsEmpty()
+        if (myInter && (myJoin == Intersection) && myIsPlanar && !myThickening && myFaces.IsEmpty()
             && IsSolid(myShape))
         {
             return;
@@ -2593,7 +2597,7 @@ public sealed partial class BRepOffset_MakeOffset
             // it is necessary to calculate Inside taking account of the concavity or convexity of edges
             // between the cap and the part.
 
-            if (myJoin == GeomAbs_Arc)
+            if (myJoin == Arc)
             {
                 Inter.ContextIntByArc(myFaces, InSide, myAnalyse, myInitOffsetFace, myInitOffsetEdge, aPS.Next());
             }
@@ -2610,7 +2614,7 @@ public sealed partial class BRepOffset_MakeOffset
                 return;
             }
             NCollection_IndexedMap<TopoDS_Shape> NewEdges = Inter.NewEdges();
-            if (myJoin == GeomAbs_Intersection)
+            if (myJoin == Intersection)
             {
                 BRepOffset_Tool.CorrectOrientation(myFaceComp, NewEdges, myAsDes, myInitOffsetFace, myOffset);
             }
@@ -2633,7 +2637,7 @@ public sealed partial class BRepOffset_MakeOffset
     //=================================================================================================
 
     private void Intersection2D(NCollection_IndexedMap<TopoDS_Shape> Modif, NCollection_IndexedMap<TopoDS_Shape> NewEdges,
-                                Message_ProgressRange theRange)
+                                ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
         //--------------------------------------------------------
@@ -2646,7 +2650,7 @@ public sealed partial class BRepOffset_MakeOffset
         //-----------------------------------------------
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVV = new(TopTools_ShapeMapHasher.Instance);
         int i;
-        using Message_ProgressScope aPS = new(theRange, "Intersection 2D", Modif.Extent());
+        using ProgressScope aPS = new(theRange, "Intersection 2D", Modif.Extent());
         for (i = 1; i <= Modif.Extent(); i++)
         {
             if (!aPS.More())
@@ -2665,7 +2669,7 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void MakeLoops(NCollection_IndexedMap<TopoDS_Shape> Modif, Message_ProgressRange theRange)
+    private void MakeLoops(NCollection_IndexedMap<TopoDS_Shape> Modif, ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
         // NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher>::Iterator    it(Modif);
@@ -2682,8 +2686,8 @@ public sealed partial class BRepOffset_MakeOffset
             }
         }
         //
-        using Message_ProgressScope aPS = new(theRange, null, LF.Extent() + myFaces.Extent());
-        if ((myJoin == GeomAbs_Intersection) && myInter && myIsPlanar)
+        using ProgressScope aPS = new(theRange, null, LF.Extent() + myFaces.Extent());
+        if ((myJoin == Intersection) && myInter && myIsPlanar)
         {
             BuildSplitsOfTrimmedFaces(LF, myAsDes, myImageOffset, aPS.Next(LF.Extent()));
         }
@@ -2720,7 +2724,7 @@ public sealed partial class BRepOffset_MakeOffset
     // purpose  : Reconstruction of topologically unchanged faces that
     //           share edges that were reconstructed.
     //=======================================================================
-    private void MakeFaces(NCollection_IndexedMap<TopoDS_Shape> Modif, Message_ProgressRange theRange)
+    private void MakeFaces(NCollection_IndexedMap<TopoDS_Shape> Modif, ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
         NCollection_List<TopoDS_Shape>.Iterator itr = new();
@@ -2738,8 +2742,8 @@ public sealed partial class BRepOffset_MakeOffset
             }
         }
         //
-        using Message_ProgressScope aPS = new(theRange, null, 1);
-        if ((myJoin == GeomAbs_Intersection) && myInter && myIsPlanar)
+        using ProgressScope aPS = new(theRange, null, 1);
+        if ((myJoin == Intersection) && myInter && myIsPlanar)
         {
             BuildSplitsOfTrimmedFaces(LOF, myAsDes, myImageOffset, aPS.Next());
         }
@@ -2795,7 +2799,7 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void MakeMissingWalls(Message_ProgressRange theRange)
+    private void MakeMissingWalls(ProgressRange theRange)
     {
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Contours =
             new(TopTools_ShapeMapHasher.Instance); // Start vertex + list of connected edges (free boundary)
@@ -2804,7 +2808,7 @@ public sealed partial class BRepOffset_MakeOffset
 
         FillContours(myFaceComp, myAnalyse, Contours, MapEF);
 
-        using Message_ProgressScope aPS = new(theRange, "Making missing walls", Contours.Extent());
+        using ProgressScope aPS = new(theRange, "Making missing walls", Contours.Extent());
         for (int ic = 1; ic <= Contours.Extent(); ic++, aPS.Next())
         {
             if (!aPS.More())
@@ -2854,8 +2858,8 @@ public sealed partial class BRepOffset_MakeOffset
                     OE.Orientation(TopAbs_FORWARD);
                     Geom_Curve anOEC = BRep_Tool.Curve(OE, out double anOEF, out double anOEL)!;
                     BRep_Builder aBB = new();
-                    gp_Pnt aP1 = anOEC.Value(aF);
-                    gp_Pnt aP2 = anOEC.Value(aL);
+                    Point3D aP1 = anOEC.Value(aF);
+                    Point3D aP2 = anOEC.Value(aL);
                     TopoDS_Vertex anOEV1 = new(), anOEV2 = new();
                     double aTol = Math.Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
                     aBB.MakeVertex(ref anOEV1, aP1, aTol);
@@ -2870,10 +2874,10 @@ public sealed partial class BRepOffset_MakeOffset
                 }
                 if (aC is not null && (!aC.IsClosed() && !aC.IsPeriodic()))
                 {
-                    gp_Pnt aPntF = BRep_Tool.Pnt(V1);
-                    gp_Pnt aPntL = BRep_Tool.Pnt(V2);
+                    Point3D aPntF = BRep_Tool.Pnt(V1);
+                    Point3D aPntL = BRep_Tool.Pnt(V2);
                     double aDistE = aPntF.SquareDistance(aPntL);
-                    if (aDistE < Precision.SquareConfusion())
+                    if (aDistE < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         // Bad case: non closed, but vertexes mapped to same 3d point.
                         continue;
@@ -2883,14 +2887,14 @@ public sealed partial class BRepOffset_MakeOffset
                     if (aDistE < anEdgeTol0)
                     {
                         // Potential problems not detected via checkshape.
-                        gp_Pnt aPntOF = BRep_Tool.Pnt(V4);
-                        gp_Pnt aPntOL = BRep_Tool.Pnt(V3);
-                        if (aPntOF.SquareDistance(aPntOL) > gp.Resolution())
+                        Point3D aPntOF = BRep_Tool.Pnt(V4);
+                        Point3D aPntOL = BRep_Tool.Pnt(V3);
+                        if (aPntOF.SquareDistance(aPntOL) > Constants.Resolution())
                         {
                             // To avoid computation of complex analytical continuation of Sin / ArcSin.
                             double aSinValue = Math.Min(2 * anEdgeTol0 / aPntOF.Distance(aPntOL), 1.0);
                             double aMaxAngle = Math.Min(Math.Abs(Math.Asin(aSinValue)), M_PI_4); // Maximal angle.
-                            double aCurrentAngle = new gp_Vec(aPntF, aPntL).Angle(new gp_Vec(aPntOF, aPntOL));
+                            double aCurrentAngle = new Vector3D(aPntF, aPntL).Angle(new Vector3D(aPntOF, aPntOL));
                             if (aC is Geom_Line && Math.Abs(aCurrentAngle) > aMaxAngle)
                             {
                                 // anEdge not collinear to offset edge.
@@ -2916,7 +2920,7 @@ public sealed partial class BRepOffset_MakeOffset
 
                 OE.Orientation(TopAbs.Reverse(anEdge.Orientation()));
                 TopoDS_Edge E3, E4 = new();
-                bool ArcOnV2 = ((myJoin == GeomAbs_Arc) && (myInitOffsetEdge.HasImage(V2)));
+                bool ArcOnV2 = ((myJoin == Arc) && (myInitOffsetEdge.HasImage(V2)));
                 if (FirstStep || isBuildFromScratch)
                 {
                     E4 = new BRepLib_MakeEdge(V1, V4).InternalEdge();
@@ -2975,30 +2979,30 @@ public sealed partial class BRepOffset_MakeOffset
                 BRepAdaptor_Curve BAcurveOE = new(OE);
                 double fpar = BAcurve.FirstParameter();
                 double lpar = BAcurve.LastParameter();
-                gp_Pnt PonE = BAcurve.Value(fpar);
-                gp_Pnt PonOE = BAcurveOE.Value(fpar);
-                gp_Dir OffsetDir = new gce_MakeDir(PonE, PonOE).Value();
+                Point3D PonE = BAcurve.Value(fpar);
+                Point3D PonOE = BAcurveOE.Value(fpar);
+                Direction3D OffsetDir = new gce_MakeDir(PonE, PonOE).Value();
                 Geom2d_Line? EdgeLine2d = null, OELine2d = null, aLine2d = null, aLine2d2 = null;
                 bool IsPlanar = false;
-                if (BAcurve.GetType() == GeomAbs_Circle && BAcurveOE.GetType() == GeomAbs_Circle)
+                if (BAcurve.GetType() == Circle && BAcurveOE.GetType() == Circle)
                 {
-                    gp_Circ aCirc = BAcurve.Circle();
-                    gp_Circ aCircOE = BAcurveOE.Circle();
-                    gp_Lin anAxisLine = new(aCirc.Axis());
-                    gp_Dir CircAxisDir = aCirc.Axis().Direction();
-                    if (aCirc.Axis().IsParallel(aCircOE.Axis(), Precision.Confusion())
-                        && anAxisLine.Contains(aCircOE.Location(), Precision.Confusion()))
+                    Circle3D aCirc = BAcurve.Circle();
+                    Circle3D aCircOE = BAcurveOE.Circle();
+                    Line3D anAxisLine = new(aCirc.Axis());
+                    Direction3D CircAxisDir = aCirc.Axis().Direction();
+                    if (aCirc.Axis().IsParallel(aCircOE.Axis(), global::Kerf.Engine.Foundation.Precision.Confusion())
+                        && anAxisLine.Contains(aCircOE.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                     { // cylinder, plane or cone
-                        if (Math.Abs(aCirc.Radius() - aCircOE.Radius()) <= Precision.Confusion())
+                        if (Math.Abs(aCirc.Radius() - aCircOE.Radius()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         { // case of cylinder
                             theSurf = new GC_MakeCylindricalSurface(aCirc).Value();
                         }
-                        else if (aCirc.Location().Distance(aCircOE.Location()) <= Precision.Confusion())
+                        else if (aCirc.Location().Distance(aCircOE.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         { // case of plane
                             IsPlanar = true;
                             //
-                            gp_Pnt PonEL = BAcurve.Value(lpar);
-                            if (PonEL.Distance(PonE) <= Precision.PConfusion())
+                            Point3D PonEL = BAcurve.Value(lpar);
+                            if (PonEL.Distance(PonE) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 bool bIsHole;
                                 TopoDS_Edge aE1, aE2;
@@ -3029,9 +3033,9 @@ public sealed partial class BRepOffset_MakeOffset
                                     TopoDS_Edge aE = (i == 0) ? aE1 : aE2;
                                     //
                                     TopoDS_Face aFace = new();
-                                    BB.MakeFace(ref aFace, aPL, Precision.Confusion());
+                                    BB.MakeFace(ref aFace, aPL, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     BB.Add(aFace, aW);
-                                    aClsf.Init(aFace, Precision.Confusion());
+                                    aClsf.Init(aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     bIsHole = aClsf.IsHole();
                                     if ((bIsHole && i == 0) || (!bIsHole && i != 0))
                                     {
@@ -3041,16 +3045,16 @@ public sealed partial class BRepOffset_MakeOffset
                                     }
                                 }
                                 //
-                                BB.MakeFace(ref NewFace, aPL, Precision.Confusion());
+                                BB.MakeFace(ref NewFace, aPL, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 BB.Add(NewFace, aW1);
                                 BB.Add(NewFace, aW2);
                             }
                         }
                         else // case of cone
                         {
-                            gp_Cone theCone =
+                            Cone theCone =
                                 new gce_MakeCone(aCirc.Location(), aCircOE.Location(), aCirc.Radius(), aCircOE.Radius()).Value();
-                            gp_Ax3 theAx3 = new(aCirc.Position());
+                            CoordinateSystem theAx3 = new(aCirc.Position());
                             if (CircAxisDir * theCone.Axis().Direction() < 0.0)
                             {
                                 theAx3.ZReverse();
@@ -3061,23 +3065,23 @@ public sealed partial class BRepOffset_MakeOffset
                         }
                         if (!IsPlanar)
                         {
-                            TopLoc_Location Loc = new();
-                            EdgeLine2d = new Geom2d_Line(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(gp_Dir2d.D.X));
-                            BB.UpdateEdge(anEdge, EdgeLine2d, theSurf, Loc, Precision.Confusion());
+                            Placement Loc = new();
+                            EdgeLine2d = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(Direction2D.D.X));
+                            BB.UpdateEdge(anEdge, EdgeLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                             double Coeff = (OffsetDir * CircAxisDir > 0.0) ? 1.0 : -1.0;
-                            OELine2d = new Geom2d_Line(new gp_Pnt2d(0.0, OffsetVal * Coeff), new gp_Dir2d(gp_Dir2d.D.X));
-                            BB.UpdateEdge(OE, OELine2d, theSurf, Loc, Precision.Confusion());
-                            aLine2d = new Geom2d_Line(new gp_Pnt2d(ParV2, 0.0), new gp_Dir2d(0.0, Coeff));
-                            aLine2d2 = new Geom2d_Line(new gp_Pnt2d(ParV1, 0.0), new gp_Dir2d(0.0, Coeff));
+                            OELine2d = new Geom2d_Line(new Point2D(0.0, OffsetVal * Coeff), new Direction2D(Direction2D.D.X));
+                            BB.UpdateEdge(OE, OELine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
+                            aLine2d = new Geom2d_Line(new Point2D(ParV2, 0.0), new Direction2D(0.0, Coeff));
+                            aLine2d2 = new Geom2d_Line(new Point2D(ParV1, 0.0), new Direction2D(0.0, Coeff));
                             if (E3.IsSame(E4))
                             {
                                 if (Coeff > 0.0)
                                 {
-                                    BB.UpdateEdge(E3, aLine2d, aLine2d2, theSurf, Loc, Precision.Confusion());
+                                    BB.UpdateEdge(E3, aLine2d, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 }
                                 else
                                 {
-                                    BB.UpdateEdge(E3, aLine2d2, aLine2d, theSurf, Loc, Precision.Confusion());
+                                    BB.UpdateEdge(E3, aLine2d2, aLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     theWire.Nullify();
                                     BB.MakeWire(ref theWire);
                                     BB.Add(theWire, anEdge.Oriented(TopAbs_REVERSED));
@@ -3093,9 +3097,9 @@ public sealed partial class BRepOffset_MakeOffset
                                 BB.SameRange(E3, false);
                                 BB.SameParameter(E4, false);
                                 BB.SameRange(E4, false);
-                                BB.UpdateEdge(E3, aLine2d, theSurf, Loc, Precision.Confusion());
+                                BB.UpdateEdge(E3, aLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 BB.Range(E3, theSurf, Loc, 0.0, OffsetVal);
-                                BB.UpdateEdge(E4, aLine2d2, theSurf, Loc, Precision.Confusion());
+                                BB.UpdateEdge(E4, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 BB.Range(E4, theSurf, Loc, 0.0, OffsetVal);
                             }
                             NewFace = new BRepLib_MakeFace(theSurf!, theWire).InternalFace();
@@ -3145,23 +3149,23 @@ public sealed partial class BRepOffset_MakeOffset
                         GeomFill_Generator ThrusecGenerator = new();
                         ThrusecGenerator.AddCurve(TrEdgeCurve);
                         ThrusecGenerator.AddCurve(TrOffsetCurve);
-                        ThrusecGenerator.Perform(Precision.PConfusion());
+                        ThrusecGenerator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
                         theSurf = ThrusecGenerator.Surface()!;
                         theSurf.Bounds(out double Uf, out double Ul, out double Vf, out double Vl);
-                        TopLoc_Location Loc = new();
-                        EdgeLine2d = new Geom2d_Line(new gp_Pnt2d(0.0, Vf), new gp_Dir2d(gp_Dir2d.D.X));
-                        BB.UpdateEdge(anEdge, EdgeLine2d, theSurf, Loc, Precision.Confusion());
-                        OELine2d = new Geom2d_Line(new gp_Pnt2d(0.0, Vl), new gp_Dir2d(gp_Dir2d.D.X));
-                        BB.UpdateEdge(OE, OELine2d, theSurf, Loc, Precision.Confusion());
+                        Placement Loc = new();
+                        EdgeLine2d = new Geom2d_Line(new Point2D(0.0, Vf), new Direction2D(Direction2D.D.X));
+                        BB.UpdateEdge(anEdge, EdgeLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
+                        OELine2d = new Geom2d_Line(new Point2D(0.0, Vl), new Direction2D(Direction2D.D.X));
+                        BB.UpdateEdge(OE, OELine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                         double UonV1 = (ToReverse) ? Ul : Uf;
                         double UonV2 = (ToReverse) ? Uf : Ul;
-                        aLine2d = new Geom2d_Line(new gp_Pnt2d(UonV2, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
-                        aLine2d2 = new Geom2d_Line(new gp_Pnt2d(UonV1, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+                        aLine2d = new Geom2d_Line(new Point2D(UonV2, 0.0), new Direction2D(Direction2D.D.Y));
+                        aLine2d2 = new Geom2d_Line(new Point2D(UonV1, 0.0), new Direction2D(Direction2D.D.Y));
                         if (E3.IsSame(E4))
                         {
-                            BB.UpdateEdge(E3, aLine2d, aLine2d2, theSurf, Loc, Precision.Confusion());
+                            BB.UpdateEdge(E3, aLine2d, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                             Geom_Curve BSplC34 = theSurf.UIso(Uf);
-                            BB.UpdateEdge(E3, BSplC34, Precision.Confusion());
+                            BB.UpdateEdge(E3, BSplC34, global::Kerf.Engine.Foundation.Precision.Confusion());
                             BB.Range(E3, Vf, Vl);
                         }
                         else
@@ -3170,15 +3174,15 @@ public sealed partial class BRepOffset_MakeOffset
                             BB.SameRange(E3, false);
                             BB.SameParameter(E4, false);
                             BB.SameRange(E4, false);
-                            BB.UpdateEdge(E3, aLine2d, theSurf, Loc, Precision.Confusion());
+                            BB.UpdateEdge(E3, aLine2d, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                             BB.Range(E3, theSurf, Loc, Vf, Vl);
-                            BB.UpdateEdge(E4, aLine2d2, theSurf, Loc, Precision.Confusion());
+                            BB.UpdateEdge(E4, aLine2d2, theSurf, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                             BB.Range(E4, theSurf, Loc, Vf, Vl);
                             Geom_Curve BSplC3 = theSurf.UIso(UonV2);
-                            BB.UpdateEdge(E3, BSplC3, Precision.Confusion());
+                            BB.UpdateEdge(E3, BSplC3, global::Kerf.Engine.Foundation.Precision.Confusion());
                             BB.Range(E3, Vf, Vl, true); // only for 3d curve
                             Geom_Curve BSplC4 = theSurf.UIso(UonV1);
-                            BB.UpdateEdge(E4, BSplC4, Precision.Confusion());
+                            BB.UpdateEdge(E4, BSplC4, global::Kerf.Engine.Foundation.Precision.Confusion());
                             BB.Range(E4, Vf, Vl, true); // only for 3d curve
                         }
                         NewFace = new BRepLib_MakeFace(theSurf, theWire).InternalFace();
@@ -3188,12 +3192,12 @@ public sealed partial class BRepOffset_MakeOffset
                 {
                     double fparOE = BAcurveOE.FirstParameter();
                     double lparOE = BAcurveOE.LastParameter();
-                    TopLoc_Location Loc = new();
-                    if (Math.Abs(fpar - fparOE) > Precision.Confusion())
+                    Placement Loc = new();
+                    if (Math.Abs(fpar - fparOE) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         TopoDS_Edge anE4 = (ToReverse) ? E3 : E4;
-                        gp_Pnt2d fp2d = EdgeLine2d!.Value(fpar);
-                        gp_Pnt2d fp2dOE = OELine2d!.Value(fparOE);
+                        Point2D fp2d = EdgeLine2d!.Value(fpar);
+                        Point2D fp2dOE = OELine2d!.Value(fparOE);
                         aLine2d2 = new GC_MakeLine2d(fp2d, fp2dOE).Value();
                         Geom_Curve? aCurve = null;
                         double FirstPar = 0.0, LastPar = fp2d.Distance(fp2dOE);
@@ -3202,17 +3206,17 @@ public sealed partial class BRepOffset_MakeOffset
                         Geom2dAdaptor_Curve HC2d = AC2d; // OCCT copies the adaptors into handles
                         GeomAdaptor_Surface HSurf = GAsurf;
                         Adaptor3d_CurveOnSurface ConS = new(HC2d, HSurf);
-                        GeomLib.BuildCurve3d(Precision.Confusion(), ConS, FirstPar, LastPar, ref aCurve,
+                        GeomLib.BuildCurve3d(global::Kerf.Engine.Foundation.Precision.Confusion(), ConS, FirstPar, LastPar, ref aCurve,
                                              out double max_deviation, out double average_deviation);
                         BB.UpdateEdge(anE4, aCurve, max_deviation);
                         BB.UpdateEdge(anE4, aLine2d2, theSurf, Loc, max_deviation);
                         BB.Range(anE4, FirstPar, LastPar);
                     }
-                    if (Math.Abs(lpar - lparOE) > Precision.Confusion())
+                    if (Math.Abs(lpar - lparOE) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         TopoDS_Edge anE3 = (ToReverse) ? E4 : E3;
-                        gp_Pnt2d lp2d = EdgeLine2d!.Value(lpar);
-                        gp_Pnt2d lp2dOE = OELine2d!.Value(lparOE);
+                        Point2D lp2d = EdgeLine2d!.Value(lpar);
+                        Point2D lp2dOE = OELine2d!.Value(lparOE);
                         aLine2d = new GC_MakeLine2d(lp2d, lp2dOE).Value();
                         Geom_Curve? aCurve = null;
                         double FirstPar = 0.0, LastPar = lp2d.Distance(lp2dOE);
@@ -3221,7 +3225,7 @@ public sealed partial class BRepOffset_MakeOffset
                         Geom2dAdaptor_Curve HC2d = AC2d; // OCCT copies the adaptors into handles
                         GeomAdaptor_Surface HSurf = GAsurf;
                         Adaptor3d_CurveOnSurface ConS = new(HC2d, HSurf);
-                        GeomLib.BuildCurve3d(Precision.Confusion(), ConS, FirstPar, LastPar, ref aCurve,
+                        GeomLib.BuildCurve3d(global::Kerf.Engine.Foundation.Precision.Confusion(), ConS, FirstPar, LastPar, ref aCurve,
                                              out double max_deviation, out double average_deviation);
                         BB.UpdateEdge(anE3, aCurve, max_deviation);
                         BB.UpdateEdge(anE3, aLine2d, theSurf, Loc, max_deviation);
@@ -3316,11 +3320,11 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void MakeShells(Message_ProgressRange theRange)
+    private void MakeShells(ProgressRange theRange)
     {
         // OCCT_DEBUG: the chronometer is left out.
         //
-        using Message_ProgressScope aPS = new(theRange, "Making shells", 1);
+        using ProgressScope aPS = new(theRange, "Making shells", 1);
         // Prepare list of splits of the offset faces to make the shells
         NCollection_List<TopoDS_Shape> aLSF = new();
         NCollection_List<TopoDS_Shape> R = myImageOffset.Roots();
@@ -3372,7 +3376,7 @@ public sealed partial class BRepOffset_MakeOffset
         }
         //
         bool bDone = false;
-        if ((myJoin == GeomAbs_Intersection) && myInter && !myThickening && myFaces.IsEmpty() && IsSolid(myShape)
+        if ((myJoin == Intersection) && myInter && !myThickening && myFaces.IsEmpty() && IsSolid(myShape)
             && myIsPlanar)
         {
             //
@@ -3412,7 +3416,7 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private void MakeSolid(Message_ProgressRange theRange)
+    private void MakeSolid(ProgressRange theRange)
     {
         if (myOffsetShape.IsNull())
         {
@@ -3431,7 +3435,7 @@ public sealed partial class BRepOffset_MakeOffset
         TopoDS_Shape S1 = new();
         B.MakeCompound(ref NC);
 
-        using Message_ProgressScope aPS = new(theRange, "Making solid", 1);
+        using ProgressScope aPS = new(theRange, "Making solid", 1);
 
         TopoDS_Solid Sol = new();
         B.MakeSolid(ref Sol);
@@ -3561,7 +3565,7 @@ public sealed partial class BRepOffset_MakeOffset
     //=================================================================================================
 
     /// <summary>The join type.</summary>
-    public GeomAbs_JoinType GetJoinType() => myJoin;
+    public global::Kerf.Geometry.JoinKind GetJoinType() => myJoin;
 
     //=================================================================================================
 
@@ -3705,14 +3709,14 @@ public sealed partial class BRepOffset_MakeOffset
                     // so, manage case by case
                     // Note DUB; for Hidden parts, it is NECESSARY to code CN
                     // Analytic Surfaces.
-                    if (myJoin == GeomAbs_Intersection)
+                    if (myJoin == Intersection)
                     {
                         BRepAdaptor_Surface BS = new(F1, false);
-                        GeomAbs_SurfaceType SType = BS.GetType();
-                        if (SType == GeomAbs_Cylinder || SType == GeomAbs_Cone || SType == GeomAbs_Sphere
-                            || SType == GeomAbs_Torus)
+                        SurfaceKind SType = BS.GetType();
+                        if (SType == SurfaceKind.Cylinder || SType == SurfaceKind.Cone || SType == SurfaceKind.Sphere
+                            || SType == SurfaceKind.Torus)
                         {
-                            B.Continuity(OE, F1, F1, GeomAbs_CN);
+                            B.Continuity(OE, F1, F1, CN);
                         }
                         else
                         {
@@ -3725,14 +3729,14 @@ public sealed partial class BRepOffset_MakeOffset
                         {
                             TopoDS_Face FRoot = TopoDS.Face(Root1);
                             TopoDS_Edge EI = TopoDS.Edge(myInitOffsetEdge.ImageFrom(ROE));
-                            GeomAbs_Shape Conti = BRep_Tool.Continuity(EI, FRoot, FRoot);
-                            if (Conti == GeomAbs_CN)
+                            Continuity Conti = BRep_Tool.Continuity(EI, FRoot, FRoot);
+                            if (Conti == CN)
                             {
-                                B.Continuity(OE, F1, F1, GeomAbs_CN);
+                                B.Continuity(OE, F1, F1, CN);
                             }
-                            else if (Conti > GeomAbs_C0)
+                            else if (Conti > C0)
                             {
-                                B.Continuity(OE, F1, F1, GeomAbs_G1);
+                                B.Continuity(OE, F1, F1, G1);
                             }
                         }
                     }
@@ -3754,7 +3758,7 @@ public sealed partial class BRepOffset_MakeOffset
                 TopExp.Vertices(TopoDS.Edge(Root1), out TopoDS_Vertex V1, out TopoDS_Vertex V2);
                 if (V1.IsSame(Root2) || V2.IsSame(Root2))
                 {
-                    B.Continuity(OE, F1, F2, GeomAbs_G1);
+                    B.Continuity(OE, F1, F2, G1);
                 }
             }
             else if (Type1 == TopAbs_VERTEX && Type2 == TopAbs_EDGE)
@@ -3762,7 +3766,7 @@ public sealed partial class BRepOffset_MakeOffset
                 TopExp.Vertices(TopoDS.Edge(Root2), out TopoDS_Vertex V1, out TopoDS_Vertex V2);
                 if (V1.IsSame(Root1) || V2.IsSame(Root1))
                 {
-                    B.Continuity(OE, F1, F2, GeomAbs_G1);
+                    B.Continuity(OE, F1, F2, G1);
                 }
             }
             else if (Type1 == TopAbs_FACE && Type2 == TopAbs_EDGE)
@@ -3772,7 +3776,7 @@ public sealed partial class BRepOffset_MakeOffset
                 {
                     if (exp2.Current().IsSame(Root2))
                     {
-                        B.Continuity(OE, F1, F2, GeomAbs_G1);
+                        B.Continuity(OE, F1, F2, G1);
                         break;
                     }
                 }
@@ -3784,7 +3788,7 @@ public sealed partial class BRepOffset_MakeOffset
                 {
                     if (exp2.Current().IsSame(Root1))
                     {
-                        B.Continuity(OE, F1, F2, GeomAbs_G1);
+                        B.Continuity(OE, F1, F2, G1);
                         break;
                     }
                 }
@@ -3803,7 +3807,7 @@ public sealed partial class BRepOffset_MakeOffset
                         NCollection_List<BRepOffset_Interval> LI = myAnalyse.Type(Ed);
                         if (LI.Extent() == 1 && LI.First().Type() == ChFiDS_Tangential)
                         {
-                            B.Continuity(OE, F1, F2, GeomAbs_G1);
+                            B.Continuity(OE, F1, F2, G1);
                         }
                     }
                 }
@@ -3821,7 +3825,7 @@ public sealed partial class BRepOffset_MakeOffset
                     {
                         if (it.Value().IsSame(Root2))
                         {
-                            B.Continuity(OE, F1, F2, GeomAbs_G1);
+                            B.Continuity(OE, F1, F2, G1);
                             break;
                         }
                     }
@@ -3834,19 +3838,19 @@ public sealed partial class BRepOffset_MakeOffset
 
     //=================================================================================================
 
-    private static double ComputeMaxDist(in gp_Pln thePlane, Geom_Curve? theCrv, double theFirst, double theLast)
+    private static double ComputeMaxDist(in Plane3D thePlane, Geom_Curve? theCrv, double theFirst, double theLast)
     {
         double aMaxDist = 0.0;
         int i, NCONTROL = 23;
         double aPrm, aDist2;
-        gp_Pnt aP;
+        Point3D aP;
         for (i = 0; i < NCONTROL; i++)
         {
             aPrm = ((NCONTROL - 1 - i) * theFirst + i * theLast) / (NCONTROL - 1);
             aP = theCrv!.Value(aPrm);
-            if (Precision.IsInfinite(aP.X()) || Precision.IsInfinite(aP.Y()) || Precision.IsInfinite(aP.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aP.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aP.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aP.Z()))
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             aDist2 = thePlane.SquareDistance(aP);
             if (aDist2 > aMaxDist)
@@ -3917,7 +3921,7 @@ public sealed partial class BRepOffset_MakeOffset
                 TopoDS_Edge E = TopoDS.Edge(Exp.Current());
                 bool isUpdated = false;
                 double aCurrTol = BRep_Tool.Tolerance(E);
-                if (aBAS.GetType() == GeomAbs_Plane)
+                if (aBAS.GetType() == Plane)
                 {
                     // Edge does not seem to have pcurve on plane,
                     // so EdgeCorrector does not include it in tolerance calculation
@@ -3989,7 +3993,7 @@ public sealed partial class BRepOffset_MakeOffset
             aVols.Append(aVProps.Mass());
         }
         //
-        if (Math.Abs(anOuterVol) < Precision.Confusion())
+        if (Math.Abs(anOuterVol) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return;
         }
@@ -4016,7 +4020,7 @@ public sealed partial class BRepOffset_MakeOffset
             {
                 TopExp_Explorer aVExp = new(aSh, TopAbs_VERTEX);
                 TopoDS_Vertex aV = TopoDS.Vertex(aVExp.Current());
-                gp_Pnt aP = BRep_Tool.Pnt(aV);
+                Point3D aP = BRep_Tool.Pnt(aV);
                 aSolClass.Perform(aP, BRep_Tool.Tolerance(aV));
                 if (aSolClass.State() == TopAbs_IN)
                 {
@@ -4053,13 +4057,13 @@ public sealed partial class BRepOffset_MakeOffset
     /// has a non-null offset, that the shell is connected, that the surfaces aren't C0, and that their normals exist on
     /// a grid of points.
     /// </summary>
-    public bool CheckInputData(Message_ProgressRange theRange)
+    public bool CheckInputData(ProgressRange theRange)
     {
         // Set initial error state.
         myError = BRepOffset_NoError;
         TopoDS_Shape aTmpShape = new();
         myBadShape = aTmpShape;
-        using Message_ProgressScope aPS = new(theRange, null, 1);
+        using ProgressScope aPS = new(theRange, null, 1);
         // Non-null offset.
         if (Math.Abs(myOffset) <= myTol)
         {
@@ -4092,7 +4096,7 @@ public sealed partial class BRepOffset_MakeOffset
         const int aPntPerDim = 20; // 21 points on each dimension.
         TopExp_Explorer anExpSF = new(myFaceComp, TopAbs_FACE);
         HashSet<TopoDS_TShape> aPresenceMap = new(ReferenceEqualityComparer.Instance);
-        gp_Pnt2d aPnt2d;
+        Point2D aPnt2d;
         for (; anExpSF.More(); anExpSF.Next())
         {
             if (!aPS.More())
@@ -4110,18 +4114,18 @@ public sealed partial class BRepOffset_MakeOffset
             }
             aPresenceMap.Add(aF.TShape()!);
 
-            Geom_Surface aSurf = BRep_Tool.Surface(aF, out TopLoc_Location L)!;
+            Geom_Surface aSurf = BRep_Tool.Surface(aF, out Placement L)!;
             BRepTools.UVBounds(aF, out double aUmin, out double aUmax, out double aVmin, out double aVmax);
 
             // Continuity check.
-            if (aSurf.Continuity() == GeomAbs_C0)
+            if (aSurf.Continuity() == C0)
             {
                 myError = BRepOffset_C0Geometry;
                 return false;
             }
 
             // Get degenerated points, to avoid check them.
-            NCollection_DynamicArray<gp_Pnt> aBad3dPnts = new();
+            NCollection_DynamicArray<Point3D> aBad3dPnts = new();
             TopExp_Explorer anExpFE = new(aF, TopAbs_EDGE);
             for (; anExpFE.More(); anExpFE.Next())
             {
@@ -4252,16 +4256,16 @@ public sealed partial class BRepOffset_MakeOffset
     // purpose  : Check single point on surface for bad normals
     //=======================================================================
     private static BRepOffset_Error checkSinglePoint(double theUParam, double theVParam, Geom_Surface theSurf,
-                                                     NCollection_DynamicArray<gp_Pnt> theBadPoints)
+                                                     NCollection_DynamicArray<Point3D> theBadPoints)
     {
-        theSurf.D1(theUParam, theVParam, out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V);
+        theSurf.D1(theUParam, theVParam, out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
 
-        if (aD1U.SquareMagnitude() < Precision.SquareConfusion() || aD1V.SquareMagnitude() < Precision.SquareConfusion())
+        if (aD1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion() || aD1V.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             bool isKnownBadPnt = false;
             for (int anIdx = theBadPoints.Lower(); anIdx <= theBadPoints.Upper(); ++anIdx)
             {
-                if (aPnt.SquareDistance(theBadPoints[anIdx]) < Precision.SquareConfusion())
+                if (aPnt.SquareDistance(theBadPoints[anIdx]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     isKnownBadPnt = true;
                     break;
@@ -4278,7 +4282,7 @@ public sealed partial class BRepOffset_MakeOffset
             }
         } //  if (aD1U.SquareMagnitude() < Precision::SquareConfusion() ||
 
-        if (aD1U.IsParallel(aD1V, Precision.Confusion()))
+        if (aD1U.IsParallel(aD1V, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // Isolines are collinear.
             return BRepOffset_BadNormalsOnGeometry;
@@ -4339,14 +4343,14 @@ public sealed partial class BRepOffset_MakeOffset
                                 NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset> theMapSF,
                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMES,
                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theBuild, ref BRepAlgo_AsDes theAsDes,
-                                ref BRepAlgo_AsDes theAsDes2d, Message_ProgressRange theRange)
+                                ref BRepAlgo_AsDes theAsDes2d, ProgressRange theRange)
     {
         double aTolF;
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVV = new(TopTools_ShapeMapHasher.Instance);
         // intersect edges created from edges
         NCollection_IndexedMap<TopoDS_Shape> aMFV = new(TopTools_ShapeMapHasher.Instance);
-        using Message_ProgressScope aPSOuter = new(theRange, null, 2);
-        using Message_ProgressScope aPS1 = new(aPSOuter.Next(), null, theFaces.Extent());
+        using ProgressScope aPSOuter = new(theRange, null, 2);
+        using ProgressScope aPS1 = new(aPSOuter.Next(), null, theFaces.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator it = new(theFaces); it.More(); it.Next())
         {
             TopoDS_Face aF = TopoDS.Face(it.Value());
@@ -4366,7 +4370,7 @@ public sealed partial class BRepOffset_MakeOffset
         }
         // intersect edges created from vertices
         int i, aNbF = aMFV.Extent();
-        using Message_ProgressScope aPS2 = new(aPSOuter.Next(), "Intersecting edges created from vertices", aNbF);
+        using ProgressScope aPS2 = new(aPSOuter.Next(), "Intersecting edges created from vertices", aNbF);
         for (i = 1; i <= aNbF; ++i)
         {
             TopoDS_Face aF = TopoDS.Face(aMFV[i]);
@@ -4537,7 +4541,7 @@ public sealed partial class BRepOffset_MakeOffset
                     {
                         TopoDS_Edge anEdge = TopoDS.Edge(NE);
                         BRepAdaptor_Curve aBAC = new(anEdge);
-                        if (aBAC.GetType() == GeomAbs_Line)
+                        if (aBAC.GetType() == Line)
                         {
                             BRepOffset_Inter2d.ExtentEdge(anEdge, out TopoDS_Edge aNewEdge, theOffset);
                             theETrimEInf.Bind(anEdge, aNewEdge);
@@ -4572,10 +4576,10 @@ public sealed partial class BRepOffset_MakeOffset
         BOPTools_AlgoTools.MakeSplitEdge(NE, V1, aT1, V2, aT2, out TopoDS_Edge aSourceEdge);
         //
         //
-        double aSameParTol = Precision.Confusion();
+        double aSameParTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         double U = 0.0;
-        double UMin = Precision.Infinite();
+        double UMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         double UMax = -UMin;
 
         NCollection_List<TopoDS_Shape> LE = AsDes2d.Descendant(NE);
@@ -4596,7 +4600,7 @@ public sealed partial class BRepOffset_MakeOffset
                 if (!FindParameter(V, NE, ref U))
                 {
                     Geom_Curve theCurve = BRep_Tool.Curve(NE, out double f, out double l)!;
-                    gp_Pnt thePoint = BRep_Tool.Pnt(V);
+                    Point3D thePoint = BRep_Tool.Pnt(V);
                     GeomAPI_ProjectPointOnCurve Projector = new(thePoint, theCurve);
                     if (Projector.NbPoints() == 0)
                     {
@@ -4644,7 +4648,7 @@ public sealed partial class BRepOffset_MakeOffset
         if (!bTrim)
         {
             BRepAdaptor_Curve aBAC = new(NE);
-            if (aBAC.GetType() == GeomAbs_Line)
+            if (aBAC.GetType() == Line)
             {
                 if (AsDes.HasAscendant(NE))
                 {
@@ -4691,9 +4695,9 @@ public sealed partial class BRepOffset_MakeOffset
     //           rebuilt using only outer faces.
     //=======================================================================
     private static bool BuildShellsCompleteInter(NCollection_List<TopoDS_Shape> theLF, BRepAlgo_Image theImage,
-                                                 ref TopoDS_Shape theShells, Message_ProgressRange theRange)
+                                                 ref TopoDS_Shape theShells, ProgressRange theRange)
     {
-        using Message_ProgressScope aPS = new(theRange, null, 5);
+        using ProgressScope aPS = new(theRange, null, 5);
         // make solids
         BOPAlgo_MakerVolume aMV1 = new();
         aMV1.SetArguments(theLF);
@@ -5075,7 +5079,7 @@ public sealed partial class BRepOffset_MakeOffset
         // The main point is to make the proportions valid relatively each other.
 
         // Proportions will be different for different connection types
-        bool isArc = (myJoin == GeomAbs_Arc);
+        bool isArc = (myJoin == Arc);
         bool isPlanarIntCase = myInter && !isArc && myIsPlanar && !myThickening && myFaces.IsEmpty() && IsSolid(myShape);
 
         theSteps[PIOperation_CheckInputData] = 1.0;
@@ -5110,7 +5114,7 @@ public sealed partial class BRepOffset_MakeOffset
         {
             TopoDS_Face aF = TopoDS.Face(aExp.Current());
             BRepAdaptor_Surface aBAS = new(aF, false);
-            if (aBAS.GetType() == GeomAbs_Plane)
+            if (aBAS.GetType() == Plane)
             {
                 continue;
             }
@@ -5122,13 +5126,13 @@ public sealed partial class BRepOffset_MakeOffset
 
                 // try to linearize
                 Geom_Surface aSurf = BRep_Tool.Surface(aF)!;
-                GeomLib_IsPlanarSurface aPlanarityChecker = new(aSurf, Precision.Confusion());
+                GeomLib_IsPlanarSurface aPlanarityChecker = new(aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (aPlanarityChecker.IsPlanar())
                 {
-                    gp_Pln aPln = aPlanarityChecker.Plan();
+                    Plane3D aPln = aPlanarityChecker.Plan();
                     double um, vm;
                     aSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
-                    bool isInf1 = Precision.IsInfinite(u1), isInf2 = Precision.IsInfinite(u2);
+                    bool isInf1 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u1), isInf2 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u2);
                     if (!isInf1 && !isInf2)
                     {
                         um = (u1 + u2) / 2.0;
@@ -5145,8 +5149,8 @@ public sealed partial class BRepOffset_MakeOffset
                     {
                         um = 0.0;
                     }
-                    isInf1 = Precision.IsInfinite(v1);
-                    isInf2 = Precision.IsInfinite(v2);
+                    isInf1 = global::Kerf.Engine.Foundation.Precision.IsInfinite(v1);
+                    isInf2 = global::Kerf.Engine.Foundation.Precision.IsInfinite(v2);
                     if (!isInf1 && !isInf2)
                     {
                         vm = (v1 + v2) / 2.0;
@@ -5163,13 +5167,13 @@ public sealed partial class BRepOffset_MakeOffset
                     {
                         vm = 0.0;
                     }
-                    aBAS.D1(um, vm, out gp_Pnt aP, out gp_Vec aD1, out gp_Vec aD2);
-                    gp_Vec aNorm = aD1.Crossed(aD2);
-                    gp_Dir aPlnNorm = aPln.Position().Direction();
-                    if (aNorm.Dot(new gp_Vec(aPlnNorm)) < 0.0)
+                    aBAS.D1(um, vm, out Point3D aP, out Vector3D aD1, out Vector3D aD2);
+                    Vector3D aNorm = aD1.Crossed(aD2);
+                    Direction3D aPlnNorm = aPln.Position().Direction();
+                    if (aNorm.Dot(new Vector3D(aPlnNorm)) < 0.0)
                     {
                         aPlnNorm.Reverse();
-                        gp_Ax1 anAx = new(aPln.Position().Location(), aPlnNorm);
+                        Axis3D anAx = new(aPln.Position().Location(), aPlnNorm);
                         aPln.SetAxis(anAx);
                     }
                     Geom_Plane aPlane = new(aPln);

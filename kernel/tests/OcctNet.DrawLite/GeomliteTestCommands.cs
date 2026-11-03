@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -95,12 +97,12 @@ internal static class GeomliteTestCommands
         }
 
         double F(int i) => theDI.Atof(a[i]);
-        gp_Pnt2d P2(int i) => new(F(i), F(i + 1));
-        gp_Pnt P3(int i) => new(F(i), F(i + 1), F(i + 2));
-        gp_Dir2d D2(int i) => new(F(i), F(i + 1));
-        gp_Dir D3(int i) => new(F(i), F(i + 1), F(i + 2));
-        gp_Ax22d Ax22dX() => new(P2(2), new gp_Dir2d(gp_Dir2d.D.X));
-        gp_Ax2 Ax2Z() => new(P3(2), new gp_Dir(gp_Dir.D.Z));
+        Point2D P2(int i) => new(F(i), F(i + 1));
+        Point3D P3(int i) => new(F(i), F(i + 1), F(i + 2));
+        Direction2D D2(int i) => new(F(i), F(i + 1));
+        Direction3D D3(int i) => new(F(i), F(i + 1), F(i + 2));
+        Frame2D Ax22dX() => new(P2(2), new Direction2D(Direction2D.D.X));
+        Frame3D Ax2Z() => new(P3(2), new Direction3D(Direction3D.D.Z));
 
         Geom_Geometry? result = null;
         Geom2d_Curve? result2d = null;
@@ -131,13 +133,13 @@ internal static class GeomliteTestCommands
                         result = new Geom_Circle(Ax2Z(), F(5));
                         break;
                     case 7:
-                        result2d = new Geom2d_Circle(new gp_Ax22d(P2(2), D2(4)), F(6));
+                        result2d = new Geom2d_Circle(new Frame2D(P2(2), D2(4)), F(6));
                         break;
                     case 9:
-                        result = new Geom_Circle(new gp_Ax2(P3(2), D3(5)), F(8));
+                        result = new Geom_Circle(new Frame3D(P3(2), D3(5)), F(8));
                         break;
                     case 12:
-                        result = new Geom_Circle(new gp_Ax2(P3(2), D3(5), D3(8)), F(11));
+                        result = new Geom_Circle(new Frame3D(P3(2), D3(5), D3(8)), F(11));
                         break;
                     default:
                         return 1;
@@ -154,13 +156,13 @@ internal static class GeomliteTestCommands
                         result = new Geom_Parabola(Ax2Z(), F(5));
                         break;
                     case 7:
-                        result2d = new Geom2d_Parabola(new gp_Ax22d(P2(2), D2(4)), F(6));
+                        result2d = new Geom2d_Parabola(new Frame2D(P2(2), D2(4)), F(6));
                         break;
                     case 9:
-                        result = new Geom_Parabola(new gp_Ax2(P3(2), D3(5)), F(8));
+                        result = new Geom_Parabola(new Frame3D(P3(2), D3(5)), F(8));
                         break;
                     case 12:
-                        result = new Geom_Parabola(new gp_Ax2(P3(2), D3(5), D3(8)), F(11));
+                        result = new Geom_Parabola(new Frame3D(P3(2), D3(5), D3(8)), F(11));
                         break;
                     default:
                         return 1;
@@ -177,13 +179,13 @@ internal static class GeomliteTestCommands
                         result = new Geom_Ellipse(Ax2Z(), F(5), F(6));
                         break;
                     case 8:
-                        result2d = new Geom2d_Ellipse(new gp_Ax22d(P2(2), D2(4)), F(6), F(7));
+                        result2d = new Geom2d_Ellipse(new Frame2D(P2(2), D2(4)), F(6), F(7));
                         break;
                     case 10:
-                        result = new Geom_Ellipse(new gp_Ax2(P3(2), D3(5)), F(8), F(9));
+                        result = new Geom_Ellipse(new Frame3D(P3(2), D3(5)), F(8), F(9));
                         break;
                     case 13:
-                        result = new Geom_Ellipse(new gp_Ax2(P3(2), D3(5), D3(8)), F(11), F(12));
+                        result = new Geom_Ellipse(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
                         break;
                     default:
                         return 1;
@@ -200,13 +202,13 @@ internal static class GeomliteTestCommands
                         result = new Geom_Hyperbola(Ax2Z(), F(5), F(6));
                         break;
                     case 8:
-                        result2d = new Geom2d_Hyperbola(new gp_Ax22d(P2(2), D2(4)), F(6), F(7));
+                        result2d = new Geom2d_Hyperbola(new Frame2D(P2(2), D2(4)), F(6), F(7));
                         break;
                     case 10:
-                        result = new Geom_Hyperbola(new gp_Ax2(P3(2), D3(5)), F(8), F(9));
+                        result = new Geom_Hyperbola(new Frame3D(P3(2), D3(5)), F(8), F(9));
                         break;
                     case 13:
-                        result = new Geom_Hyperbola(new gp_Ax2(P3(2), D3(5), D3(8)), F(11), F(12));
+                        result = new Geom_Hyperbola(new Frame3D(P3(2), D3(5), D3(8)), F(11), F(12));
                         break;
                     default:
                         return 1;
@@ -255,12 +257,12 @@ internal static class GeomliteTestCommands
             }
 
             bool hasw = i == 4;
-            var poles = new NCollection_Array1<gp_Pnt>(1, np);
+            var poles = new NCollection_Array1<Point3D>(1, np);
             var weights = new NCollection_Array1<double>(1, np);
             k = 3;
             for (i = 1; i <= np; i++)
             {
-                poles[i] = new gp_Pnt(theDI.Atof(a[k]), theDI.Atof(a[k + 1]), theDI.Atof(a[k + 2]));
+                poles[i] = new Point3D(theDI.Atof(a[k]), theDI.Atof(a[k + 1]), theDI.Atof(a[k + 2]));
                 k += 3;
                 if (hasw)
                 {
@@ -291,11 +293,11 @@ internal static class GeomliteTestCommands
 
             bool periodic = a[0].StartsWith('p');
             int np = periodic ? Sigma - mults[nbk] : Sigma - deg - 1;
-            var poles = new NCollection_Array1<gp_Pnt>(1, np);
+            var poles = new NCollection_Array1<Point3D>(1, np);
             var weights = new NCollection_Array1<double>(1, np);
             for (i = 1; i <= np; i++)
             {
-                poles[i] = new gp_Pnt(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
+                poles[i] = new Point3D(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
                 k += 3;
                 weights[i] = theDI.Atof(Arg(a, k));
                 k++;
@@ -333,12 +335,12 @@ internal static class GeomliteTestCommands
             }
 
             bool hasw = i == 3;
-            var poles = new NCollection_Array1<gp_Pnt2d>(1, np);
+            var poles = new NCollection_Array1<Point2D>(1, np);
             var weights = new NCollection_Array1<double>(1, np);
             k = 3;
             for (i = 1; i <= np; i++)
             {
-                poles[i] = new gp_Pnt2d(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)));
+                poles[i] = new Point2D(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)));
                 k += 2;
                 if (hasw)
                 {
@@ -369,11 +371,11 @@ internal static class GeomliteTestCommands
 
             bool periodic = a[0][2] == 'p';
             int np = periodic ? Sigma - mults[nbk] : Sigma - deg - 1;
-            var poles = new NCollection_Array1<gp_Pnt2d>(1, np);
+            var poles = new NCollection_Array1<Point2D>(1, np);
             var weights = new NCollection_Array1<double>(1, np);
             for (i = 1; i <= np; i++)
             {
-                poles[i] = new gp_Pnt2d(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)));
+                poles[i] = new Point2D(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)));
                 k += 2;
                 weights[i] = theDI.Atof(Arg(a, k));
                 k++;
@@ -449,7 +451,7 @@ internal static class GeomliteTestCommands
                 index1 = 2;
                 index2 = G2.NbPoles() - 1;
             }
-            G2.D0(u, out gp_Pnt p);
+            G2.D0(u, out Point3D p);
             p.SetCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
             DrawTrSurf.Set(theDI, a[1], G2.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
@@ -463,7 +465,7 @@ internal static class GeomliteTestCommands
                 index1 = 2;
                 index2 = G4.NbPoles() - 1;
             }
-            G4.D0(u, out gp_Pnt2d p);
+            G4.D0(u, out Point2D p);
             p.SetCoord(p.X() + dx, p.Y() + dy);
             DrawTrSurf.Set(theDI, a[1], G4.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
@@ -526,7 +528,7 @@ internal static class GeomliteTestCommands
         Geom2d_BezierCurve? GBZ2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
         if (GBZ is not null)
         {
-            var P = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+            var P = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
             if (n == 7)
             {
                 DrawTrSurf.Set(theDI, a[1], GBZ.PoleInsertedAfter(Index, P, theDI.Atof(a[6])));
@@ -539,7 +541,7 @@ internal static class GeomliteTestCommands
         else if (GBZ2d is not null)
         {
             // OCCT: n >= 6 here, so the 2D form always takes a[5] as the weight (occt-issues.md, unit 7W)
-            var P = new gp_Pnt2d(theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var P = new Point2D(theDI.Atof(a[3]), theDI.Atof(a[4]));
             if (n == 6)
             {
                 DrawTrSurf.Set(theDI, a[1], GBZ2d.PoleInsertedAfter(Index, P, theDI.Atof(a[5])));
@@ -567,16 +569,16 @@ internal static class GeomliteTestCommands
             return 1;
         }
 
-        Convert_ParameterisationType Parameterisation = a[n - 1] switch
+        ParameterisationType Parameterisation = a[n - 1] switch
         {
-            "qa" => Convert_ParameterisationType.Convert_QuasiAngular,
-            "c1" => Convert_ParameterisationType.Convert_RationalC1,
-            "s1" => Convert_ParameterisationType.Convert_TgtThetaOver2_1,
-            "s2" => Convert_ParameterisationType.Convert_TgtThetaOver2_2,
-            "s3" => Convert_ParameterisationType.Convert_TgtThetaOver2_3,
-            "s4" => Convert_ParameterisationType.Convert_TgtThetaOver2_4,
-            "po" => Convert_ParameterisationType.Convert_Polynomial,
-            _ => Convert_ParameterisationType.Convert_TgtThetaOver2,
+            "qa" => ParameterisationType.QuasiAngular,
+            "c1" => ParameterisationType.RationalC1,
+            "s1" => ParameterisationType.TgtThetaOver2_1,
+            "s2" => ParameterisationType.TgtThetaOver2_2,
+            "s3" => ParameterisationType.TgtThetaOver2_3,
+            "s4" => ParameterisationType.TgtThetaOver2_4,
+            "po" => ParameterisationType.Polynomial,
+            _ => ParameterisationType.TgtThetaOver2,
         };
 
         Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[2]);
@@ -630,8 +632,8 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            double aUTolerance = Precision.PConfusion();
-            double aVTolerance = Precision.PConfusion();
+            double aUTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
+            double aVTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (n >= 7)
             {
                 aUTolerance = aVTolerance = theDI.Atof(a[6]);
@@ -728,7 +730,7 @@ internal static class GeomliteTestCommands
         Geom2d_BezierCurve? GBz2d = DrawTrSurf.GetBezierCurve2d(theDI, a[1]);
         Geom2d_BSplineCurve? GBs2d = DrawTrSurf.GetBSplineCurve2d(theDI, a[1]);
         double f = theDI.Atof(a[2]), l = theDI.Atof(a[3]);
-        double aTolerance = Precision.PConfusion();
+        double aTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (n == 5)
         {
             aTolerance = theDI.Atof(a[4]);
@@ -806,7 +808,7 @@ internal static class GeomliteTestCommands
             n--;
         }
 
-        gp_Pnt P;
+        Point3D P;
         if (n > 6)
         {
             if (n < 9)
@@ -814,7 +816,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            gp_Vec D1;
+            Vector3D D1;
             if (n > 9)
             {
                 if (n < 12)
@@ -822,7 +824,7 @@ internal static class GeomliteTestCommands
                     return 1;
                 }
 
-                GC.D2(U, out P, out D1, out gp_Vec D2);
+                GC.D2(U, out P, out D1, out Vector3D D2);
                 theDI.SetNumber(a[9], D2.X());
                 theDI.SetNumber(a[10], D2.Y());
                 theDI.SetNumber(a[11], D2.Z());
@@ -877,7 +879,7 @@ internal static class GeomliteTestCommands
             n--;
         }
 
-        gp_Pnt2d P;
+        Point2D P;
         if (n > 5)
         {
             if (n < 7)
@@ -885,7 +887,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            gp_Vec2d D1;
+            Vector2D D1;
             if (n > 7)
             {
                 if (n < 9)
@@ -893,7 +895,7 @@ internal static class GeomliteTestCommands
                     return 1;
                 }
 
-                GC.D2(U, out P, out D1, out gp_Vec2d D2);
+                GC.D2(U, out P, out D1, out Vector2D D2);
                 theDI.SetNumber(a[7], D2.X());
                 theDI.SetNumber(a[8], D2.Y());
             }
@@ -929,7 +931,7 @@ internal static class GeomliteTestCommands
         int n = a.Count;
         if (n == 4)
         {
-            var P = new gp_Pnt2d();
+            var P = new Point2D();
             if (!DrawTrSurf.GetPoint2d(theDI, a[1], ref P))
             {
                 return 1;
@@ -940,7 +942,7 @@ internal static class GeomliteTestCommands
         }
         else if (n == 5)
         {
-            var P = new gp_Pnt();
+            var P = new Point3D();
             if (!DrawTrSurf.GetPoint(theDI, a[1], ref P))
             {
                 return 1;
@@ -970,26 +972,26 @@ internal static class GeomliteTestCommands
         }
 
         double F(int j) => theDI.Atof(a[j]);
-        gp_Ax3 loc;
+        CoordinateSystem loc;
         int i;
         if (n < 5)
         {
-            loc = new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+            loc = new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
             i = 2;
         }
         else if (n < 8)
         {
-            loc = new gp_Ax3(new gp_Pnt(F(2), F(3), F(4)), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+            loc = new CoordinateSystem(new Point3D(F(2), F(3), F(4)), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
             i = 5;
         }
         else if (n < 11)
         {
-            loc = new gp_Ax3(new gp_Pnt(F(2), F(3), F(4)), new gp_Dir(F(5), F(6), F(7)));
+            loc = new CoordinateSystem(new Point3D(F(2), F(3), F(4)), new Direction3D(F(5), F(6), F(7)));
             i = 8;
         }
         else if (n < 14)
         {
-            loc = new gp_Ax3(new gp_Pnt(F(2), F(3), F(4)), new gp_Dir(F(5), F(6), F(7)), new gp_Dir(F(8), F(9), F(10)));
+            loc = new CoordinateSystem(new Point3D(F(2), F(3), F(4)), new Direction3D(F(5), F(6), F(7)), new Direction3D(F(8), F(9), F(10)));
             i = 11;
         }
         else
@@ -1068,14 +1070,14 @@ internal static class GeomliteTestCommands
             }
 
             bool hasw = i == 4;
-            var poles = new NCollection_Array2<gp_Pnt>(1, nup, 1, nvp);
+            var poles = new NCollection_Array2<Point3D>(1, nup, 1, nvp);
             var weights = new NCollection_Array2<double>(1, nup, 1, nvp);
             k = 4;
             for (j = 1; j <= nvp; j++)
             {
                 for (i = 1; i <= nup; i++)
                 {
-                    poles[i, j] = new gp_Pnt(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
+                    poles[i, j] = new Point3D(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
                     k += 3;
                     if (hasw)
                     {
@@ -1125,13 +1127,13 @@ internal static class GeomliteTestCommands
 
             int nup = uper ? SigmaU - umult[nbuk] : SigmaU - udeg - 1;
             int nvp = vper ? SigmaV - vmult[nbvk] : SigmaV - vdeg - 1;
-            var poles = new NCollection_Array2<gp_Pnt>(1, nup, 1, nvp);
+            var poles = new NCollection_Array2<Point3D>(1, nup, 1, nvp);
             var weights = new NCollection_Array2<double>(1, nup, 1, nvp);
             for (j = 1; j <= nvp; j++)
             {
                 for (i = 1; i <= nup; i++)
                 {
-                    poles[i, j] = new gp_Pnt(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
+                    poles[i, j] = new Point3D(theDI.Atof(Arg(a, k)), theDI.Atof(Arg(a, k + 1)), theDI.Atof(Arg(a, k + 2)));
                     k += 3;
                     weights[i, j] = theDI.Atof(Arg(a, k));
                     k++;
@@ -1161,7 +1163,7 @@ internal static class GeomliteTestCommands
 
         if (a[0].Equals("extsurf", StringComparison.OrdinalIgnoreCase))
         {
-            var D = new gp_Dir(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(Arg(a, 5)));
+            var D = new Direction3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(Arg(a, 5)));
             DrawTrSurf.Set(theDI, a[1], new Geom_SurfaceOfLinearExtrusion(GC, D));
         }
         else if (a[0].Equals("revsurf", StringComparison.OrdinalIgnoreCase))
@@ -1171,9 +1173,9 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            var P = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-            var D = new gp_Dir(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(Arg(a, 8)));
-            DrawTrSurf.Set(theDI, a[1], new Geom_SurfaceOfRevolution(GC, new gp_Ax1(P, D)));
+            var P = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+            var D = new Direction3D(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(Arg(a, 8)));
+            DrawTrSurf.Set(theDI, a[1], new Geom_SurfaceOfRevolution(GC, new Axis3D(P, D)));
         }
 
         return 0;
@@ -1345,7 +1347,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            var D = new gp_Dir(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
+            var D = new Direction3D(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
             result = new Geom_OffsetCurve(GC!, dist, D);
         }
 
@@ -1411,13 +1413,13 @@ internal static class GeomliteTestCommands
             n--;
         }
 
-        gp_Pnt P;
+        Point3D P;
         if (n >= 13)
         {
-            gp_Vec DU, DV;
+            Vector3D DU, DV;
             if (n >= 22)
             {
-                GS.D2(U, V, out P, out DU, out DV, out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV);
+                GS.D2(U, V, out P, out DU, out DV, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
                 theDI.SetNumber(a[13], D2U.X());
                 theDI.SetNumber(a[14], D2U.Y());
                 theDI.SetNumber(a[15], D2U.Z());
@@ -1477,7 +1479,7 @@ internal static class GeomliteTestCommands
         double aV = theDI.Atof(theArgv[3]);
         int aNu = theDI.Atoi(theArgv[4]);
         int aNv = theDI.Atoi(theArgv[5]);
-        gp_Vec aDeriv = aSurf.DN(aU, aV, aNu, aNv);
+        Vector3D aDeriv = aSurf.DN(aU, aV, aNu, aNv);
         theDI.SetNumber(theArgv[6], aDeriv.X());
         theDI.SetNumber(theArgv[7], aDeriv.Y());
         theDI.SetNumber(theArgv[8], aDeriv.Z());
@@ -1496,7 +1498,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            var P = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             double Tol = theDI.Atof(a[5]);
             bool res = GeomLib_Tool.Parameters(S, P, Tol, out double U, out double V);
             theDI.SetNumber(a[6], U);
@@ -1516,7 +1518,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            var P = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var P = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
             double Tol = theDI.Atof(a[5]);
             bool res = GeomLib_Tool.Parameter(C, P, Tol, out double U);
             theDI.SetNumber(a[6], U);
@@ -1535,7 +1537,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            var P = new gp_Pnt2d(theDI.Atof(a[2]), theDI.Atof(a[3]));
+            var P = new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]));
             double Tol = theDI.Atof(a[4]);
             bool res = GeomLib_Tool.Parameter(C, P, Tol, out double U);
             theDI.SetNumber(a[5], U);
@@ -1613,7 +1615,7 @@ internal static class GeomliteTestCommands
 
         Geom_Curve? GC = DrawTrSurf.GetCurve(theDI, a[1]);
         Geom2d_Curve? GC2d = DrawTrSurf.GetCurve2d(theDI, a[1]);
-        double Tol = Precision.Confusion(), L;
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion(), L;
         if (n == 3)
         {
             Tol = theDI.Atof(a[2]);

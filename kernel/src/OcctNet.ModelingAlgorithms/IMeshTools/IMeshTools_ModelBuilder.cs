@@ -3,16 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Status;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Status;
 
 namespace Occt;
 
 /// <summary>A tool building the discrete model of a shape.</summary>
 /// <remarks>
-/// Statuses by default: <see cref="Message_Done1"/>, the model is built; <see cref="Message_Fail1"/>, an empty shape;
-/// <see cref="Message_Fail2"/>, the model wasn't built for an unexpected reason.
+/// Statuses by default: <see cref="Done1"/>, the model is built; <see cref="Fail1"/>, an empty shape;
+/// <see cref="Fail2"/>, the model wasn't built for an unexpected reason.
 /// </remarks>
-public abstract class IMeshTools_ModelBuilder : Message_Algorithm
+public abstract class IMeshTools_ModelBuilder : Algorithm
 {
     /// <summary>A builder.</summary>
     protected IMeshTools_ModelBuilder()
@@ -30,7 +31,7 @@ public abstract class IMeshTools_ModelBuilder : Message_Algorithm
         }
         catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
         {
-            SetStatus(Message_Fail2);
+            SetStatus(Fail2);
             return null;
         }
     }

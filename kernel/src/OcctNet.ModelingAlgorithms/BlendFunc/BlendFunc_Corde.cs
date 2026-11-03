@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,17 +22,17 @@ public sealed class BlendFunc_Corde
 {
     private readonly Adaptor3d_Surface surf;
     private readonly Adaptor3d_Curve guide;
-    private gp_Pnt pts;
+    private Point3D pts;
     // OCCT's pt2d is never used: left out.
     private double dis;
     private double normtg;
     private double theD;
-    private gp_Pnt ptgui;
-    private gp_Vec nplan;
-    private gp_Vec d1gui;
-    private gp_Vec d2gui;
-    private gp_Vec tgs;
-    private gp_Vec2d tg2d;
+    private Point3D ptgui;
+    private Vector3D nplan;
+    private Vector3D d1gui;
+    private Vector3D d2gui;
+    private Vector3D tgs;
+    private Vector2D tg2d;
     private bool istangent;
 
     public BlendFunc_Corde(Adaptor3d_Surface S, Adaptor3d_Curve CG)
@@ -61,7 +67,7 @@ public sealed class BlendFunc_Corde
         surf.D1(X[1], X[2], out pts, out _, out _);
 
         F[1] = nplan.XYZ().Dot(pts.XYZ()) + theD;
-        gp_Vec vref = new gp_Vec(ptgui, pts);
+        Vector3D vref = new Vector3D(ptgui, pts);
 
         F[2] = vref.SquareMagnitude() - dis * dis;
 
@@ -72,29 +78,29 @@ public sealed class BlendFunc_Corde
     // function : Derivatives
     // purpose  : D = grad F(U,V)
     //=======================================================================
-    public bool Derivatives(math_Vector X, math_Matrix D)
+    public bool Derivatives(math_Vector X, Matrix D)
     {
-        surf.D1(X[1], X[2], out pts, out gp_Vec d1u, out gp_Vec d1v);
+        surf.D1(X[1], X[2], out pts, out Vector3D d1u, out Vector3D d1v);
 
         D[1, 1] = nplan.Dot(d1u);
         D[1, 2] = nplan.Dot(d1v);
-        D[2, 1] = 2.0 * new gp_Vec(ptgui, pts).Dot(d1u);
-        D[2, 2] = 2.0 * new gp_Vec(ptgui, pts).Dot(d1v);
+        D[2, 1] = 2.0 * new Vector3D(ptgui, pts).Dot(d1u);
+        D[2, 2] = 2.0 * new Vector3D(ptgui, pts).Dot(d1v);
 
         return true;
     }
 
-    public gp_Pnt PointOnS()
+    public Point3D PointOnS()
     {
         return pts;
     }
 
-    public gp_Pnt PointOnGuide()
+    public Point3D PointOnGuide()
     {
         return ptgui;
     }
 
-    public gp_Vec NPlan()
+    public Vector3D NPlan()
     {
         return nplan;
     }
@@ -104,34 +110,34 @@ public sealed class BlendFunc_Corde
         return istangent;
     }
 
-    public gp_Vec TangentOnS()
+    public Vector3D TangentOnS()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Corde::TangentOnS");
+            throw new DomainErrorException("BlendFunc_Corde::TangentOnS");
         }
 
         return tgs;
     }
 
-    public gp_Vec2d Tangent2dOnS()
+    public Vector2D Tangent2dOnS()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Corde::Tangent2dOnS");
+            throw new DomainErrorException("BlendFunc_Corde::Tangent2dOnS");
         }
 
         return tg2d;
     }
 
     /// <summary>The derivative of F in the guide's parameter at the solution <paramref name="Sol"/>.</summary>
-    public void DerFguide(math_Vector Sol, ref gp_Vec2d DerF)
+    public void DerFguide(math_Vector Sol, ref Vector2D DerF)
     {
         surf.D1(Sol[1], Sol[2], out pts, out _, out _);
-        gp_Vec dnplan = new gp_Vec();
+        Vector3D dnplan = new Vector3D();
         dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
-        gp_Vec temp = new gp_Vec(pts.XYZ() - ptgui.XYZ());
+        Vector3D temp = new Vector3D(pts.XYZ() - ptgui.XYZ());
 
         DerF.SetX(dnplan.Dot(temp) - nplan.Dot(d1gui));
         DerF.SetY(-2.0 * d1gui.Dot(temp));
@@ -140,14 +146,14 @@ public sealed class BlendFunc_Corde
     public bool IsSolution(math_Vector Sol, double Tol)
     {
         math_Vector secmember = new(1, 2), valsol = new(1, 2);
-        math_Matrix gradsol = new(1, 2, 1, 2);
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec();
+        Matrix gradsol = new(1, 2, 1, 2);
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D();
 
         Value(Sol, valsol);
         Derivatives(Sol, gradsol);
         if (Math.Abs(valsol[1]) <= Tol && Math.Abs(valsol[2]) <= Tol * Tol)
         {
-            surf.D1(Sol[1], Sol[2], out pts, out gp_Vec d1u, out gp_Vec d1v);
+            surf.D1(Sol[1], Sol[2], out pts, out Vector3D d1u, out Vector3D d1v);
             dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
             temp.SetXYZ(pts.XYZ() - ptgui.XYZ());
@@ -158,8 +164,8 @@ public sealed class BlendFunc_Corde
             //  gradsol*der = secmember
             //  with  der(1) = dU/dW, der(2) = dU/dW, W is the guide parameter
 
-            math_Gauss Resol = new(gradsol);
-            if (Resol.IsDone())
+            Gauss Resol = new(gradsol);
+            if (Resol.IsDone)
             {
                 Resol.Solve(secmember);
                 tgs.SetLinearForm(secmember[1], d1u, secmember[2], d1v);

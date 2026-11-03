@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using OcctNet.DataExchange.Tests.Interface;
 using OcctNet.DataExchange.Tests.Transfer;
@@ -45,7 +46,7 @@ internal sealed class ToyLibrary : IFSelect_WorkLibrary
     }
 
     public override int ReadFile(string name, ref Interface_InterfaceModel? model, Interface_Protocol? protocol,
-                                 Message_ProgressRange theProgress = default)
+                                 ProgressRange theProgress = default)
     {
         if (!File.Exists(name))
         {
@@ -56,7 +57,7 @@ internal sealed class ToyLibrary : IFSelect_WorkLibrary
     }
 
     public override int ReadStream(string theName, Stream theIStream, ref Interface_InterfaceModel? model,
-                                   Interface_Protocol? protocol, Message_ProgressRange theProgress = default)
+                                   Interface_Protocol? protocol, ProgressRange theProgress = default)
     {
         NbReads++;
         if (protocol is not ToyProtocol)
@@ -99,7 +100,7 @@ internal sealed class ToyLibrary : IFSelect_WorkLibrary
         return true;
     }
 
-    public override void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Standard_Transient? entity,
+    public override void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Transient? entity,
                                     TextWriter S, int level)
     {
         S.Write("toy:" + entity + " level " + level);
@@ -133,8 +134,8 @@ internal sealed class ToyWriteActor : Transfer_ActorOfFinderProcess
     public override bool Recognize(Transfer_Finder? start) =>
         start is Transfer_TransientMapper tm && tm.Value() is TCollection_HAsciiString;
 
-    public override Standard_Transient? TransferTransient(Standard_Transient? ent, Transfer_FinderProcess? FP,
-                                                          Message_ProgressRange theProgress = default) =>
+    public override Transient? TransferTransient(Transient? ent, Transfer_FinderProcess? FP,
+                                                          ProgressRange theProgress = default) =>
         ent is TCollection_HAsciiString aText ? new ToyEntity(aText.ToCString().ToUpperInvariant()) : null;
 }
 

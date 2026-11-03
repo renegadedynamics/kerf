@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
-using static Occt.gp_TrsfForm;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
+using static Kerf.Geometry.TransformForm;
 
 namespace Occt;
 
@@ -23,14 +24,14 @@ namespace Occt;
 public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
 {
     private GeomGridEval.ISurfaceEvaluator? myEvaluator;
-    private GeomAbs_SurfaceType mySurfaceType;
-    private gp_Trsf? myTrsf; // Optional transformation for BRepAdaptor surfaces
+    private SurfaceKind mySurfaceType;
+    private Transform3D? myTrsf; // Optional transformation for BRepAdaptor surfaces
 
     /// <summary>Constructor from an adaptor (auto-detects the surface type).</summary>
     public GeomGridEval_Surface(Adaptor3d_Surface theSurface)
     {
         myEvaluator = null;
-        mySurfaceType = GeomAbs_OtherSurface;
+        mySurfaceType = OtherSurface;
         initialization(theSurface);
     }
 
@@ -38,19 +39,19 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
     public GeomGridEval_Surface(Geom_Surface? theSurface)
     {
         myEvaluator = null;
-        mySurfaceType = GeomAbs_OtherSurface;
+        mySurfaceType = OtherSurface;
         initialization(theSurface);
     }
 
     /// <summary>Returns the detected surface type.</summary>
     /// <remarks>Hides <c>object.GetType()</c> to keep OCCT's name (decision 98).</remarks>
-    public new GeomAbs_SurfaceType GetType() => mySurfaceType;
+    public new SurfaceKind GetType() => mySurfaceType;
 
     /// <summary>True if a (non-identity) transformation is applied to the results.</summary>
     public bool HasTransformation() => myTrsf.HasValue;
 
     /// <summary>The transformation applied to the results, if any.</summary>
-    public gp_Trsf? GetTransformation() => myTrsf;
+    public Transform3D? GetTransformation() => myTrsf;
 
     // Extracts basis surface from potentially nested RectangularTrimmedSurface wrappers.
     private static Geom_Surface ExtractBasisSurface(Geom_Surface theSurface)
@@ -68,15 +69,15 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
     {
         switch (theSurface.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
                 return new Geom_Plane(theSurface.Plane());
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 return new Geom_CylindricalSurface(theSurface.Cylinder());
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 return new Geom_ConicalSurface(theSurface.Cone());
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 return new Geom_SphericalSurface(theSurface.Sphere());
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 return new Geom_ToroidalSurface(theSurface.Torus());
             default:
                 return null;
@@ -129,10 +130,10 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
         // to extract transformation and underlying geometry
         if (theSurface is GeomAdaptor_TransformedSurface aTransformed)
         {
-            gp_Trsf aTrsf = aTransformed.Trsf();
+            Transform3D aTrsf = aTransformed.Trsf();
 
             // Only store transformation if it's not identity
-            if (aTrsf.Form() != gp_Identity)
+            if (aTrsf.Form() != Identity)
             {
                 myTrsf = aTrsf;
             }
@@ -252,7 +253,7 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
         if (theSurface is null)
         {
             myEvaluator = null;
-            mySurfaceType = GeomAbs_OtherSurface;
+            mySurfaceType = OtherSurface;
             return;
         }
 
@@ -261,68 +262,68 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
 
         if (aBasisSurf is Geom_Plane aPlane)
         {
-            mySurfaceType = GeomAbs_Plane;
+            mySurfaceType = Plane;
             myEvaluator = new GeomGridEval_Plane(aPlane);
         }
         else if (aBasisSurf is Geom_CylindricalSurface aCyl)
         {
-            mySurfaceType = GeomAbs_Cylinder;
+            mySurfaceType = SurfaceKind.Cylinder;
             myEvaluator = new GeomGridEval_Cylinder(aCyl);
         }
         else if (aBasisSurf is Geom_SphericalSurface aSphere)
         {
-            mySurfaceType = GeomAbs_Sphere;
+            mySurfaceType = SurfaceKind.Sphere;
             myEvaluator = new GeomGridEval_Sphere(aSphere);
         }
         else if (aBasisSurf is Geom_ConicalSurface aCone)
         {
-            mySurfaceType = GeomAbs_Cone;
+            mySurfaceType = SurfaceKind.Cone;
             myEvaluator = new GeomGridEval_Cone(aCone);
         }
         else if (aBasisSurf is Geom_ToroidalSurface aTorus)
         {
-            mySurfaceType = GeomAbs_Torus;
+            mySurfaceType = SurfaceKind.Torus;
             myEvaluator = new GeomGridEval_Torus(aTorus);
         }
         else if (aBasisSurf is Geom_BezierSurface aBezier)
         {
-            mySurfaceType = GeomAbs_BezierSurface;
+            mySurfaceType = BezierSurface;
             myEvaluator = new GeomGridEval_BezierSurface(aBezier);
         }
         else if (aBasisSurf is Geom_BSplineSurface aBSpline)
         {
-            mySurfaceType = GeomAbs_BSplineSurface;
+            mySurfaceType = BSplineSurface;
             myEvaluator = new GeomGridEval_BSplineSurface(aBSpline);
         }
         else if (aBasisSurf is Geom_OffsetSurface anOffset)
         {
-            mySurfaceType = GeomAbs_OffsetSurface;
+            mySurfaceType = OffsetSurface;
             myEvaluator = new GeomGridEval_OffsetSurface(anOffset);
         }
         else if (aBasisSurf is Geom_SurfaceOfRevolution aRevolution)
         {
-            mySurfaceType = GeomAbs_SurfaceOfRevolution;
+            mySurfaceType = SurfaceOfRevolution;
             myEvaluator = new GeomGridEval_SurfaceOfRevolution(aRevolution);
         }
         else if (aBasisSurf is Geom_SurfaceOfLinearExtrusion anExtrusion)
         {
-            mySurfaceType = GeomAbs_SurfaceOfExtrusion;
+            mySurfaceType = SurfaceOfExtrusion;
             myEvaluator = new GeomGridEval_SurfaceOfExtrusion(anExtrusion);
         }
         else
         {
             // Unknown surface type - use OtherSurface fallback
-            mySurfaceType = GeomAbs_OtherSurface;
+            mySurfaceType = OtherSurface;
             myEvaluator = new GeomGridEval_OtherSurface(aBasisSurf);
         }
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
-        NCollection_Array2<gp_Pnt> aResult = myEvaluator is null
-                                                 ? new NCollection_Array2<gp_Pnt>()
+        NCollection_Array2<Point3D> aResult = myEvaluator is null
+                                                 ? new NCollection_Array2<Point3D>()
                                                  : myEvaluator.EvaluateGrid(theUParams, theVParams);
 
         if (myTrsf.HasValue)
@@ -382,13 +383,13 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
     {
-        NCollection_Array2<gp_Vec> aResult = myEvaluator is null
-                                                 ? new NCollection_Array2<gp_Vec>()
+        NCollection_Array2<Vector3D> aResult = myEvaluator is null
+                                                 ? new NCollection_Array2<Vector3D>()
                                                  : myEvaluator.EvaluateGridDN(theUParams, theVParams, theNU, theNV);
 
         if (myTrsf.HasValue)
@@ -399,14 +400,14 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
         return aResult;
     }
 
-    private void applyTransformation(NCollection_Array2<gp_Pnt> theGrid)
+    private void applyTransformation(NCollection_Array2<Point3D> theGrid)
     {
         if (!myTrsf.HasValue || theGrid.IsEmpty())
         {
             return;
         }
 
-        gp_Trsf aTrsf = myTrsf.Value;
+        Transform3D aTrsf = myTrsf.Value;
         for (int aUIdx = theGrid.LowerRow(); aUIdx <= theGrid.UpperRow(); ++aUIdx)
         {
             for (int aVIdx = theGrid.LowerCol(); aVIdx <= theGrid.UpperCol(); ++aVIdx)
@@ -423,7 +424,7 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
             return;
         }
 
-        gp_Trsf aTrsf = myTrsf.Value;
+        Transform3D aTrsf = myTrsf.Value;
         for (int aUIdx = theGrid.LowerRow(); aUIdx <= theGrid.UpperRow(); ++aUIdx)
         {
             for (int aVIdx = theGrid.LowerCol(); aVIdx <= theGrid.UpperCol(); ++aVIdx)
@@ -443,7 +444,7 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
             return;
         }
 
-        gp_Trsf aTrsf = myTrsf.Value;
+        Transform3D aTrsf = myTrsf.Value;
         for (int aUIdx = theGrid.LowerRow(); aUIdx <= theGrid.UpperRow(); ++aUIdx)
         {
             for (int aVIdx = theGrid.LowerCol(); aVIdx <= theGrid.UpperCol(); ++aVIdx)
@@ -466,7 +467,7 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
             return;
         }
 
-        gp_Trsf aTrsf = myTrsf.Value;
+        Transform3D aTrsf = myTrsf.Value;
         for (int aUIdx = theGrid.LowerRow(); aUIdx <= theGrid.UpperRow(); ++aUIdx)
         {
             for (int aVIdx = theGrid.LowerCol(); aVIdx <= theGrid.UpperCol(); ++aVIdx)
@@ -486,14 +487,14 @@ public sealed class GeomGridEval_Surface : GeomGridEval.ISurfaceEvaluator
         }
     }
 
-    private void applyTransformation(NCollection_Array2<gp_Vec> theGrid)
+    private void applyTransformation(NCollection_Array2<Vector3D> theGrid)
     {
         if (!myTrsf.HasValue || theGrid.IsEmpty())
         {
             return;
         }
 
-        gp_Trsf aTrsf = myTrsf.Value;
+        Transform3D aTrsf = myTrsf.Value;
         for (int aUIdx = theGrid.LowerRow(); aUIdx <= theGrid.UpperRow(); ++aUIdx)
         {
             for (int aVIdx = theGrid.LowerCol(); aVIdx <= theGrid.UpperCol(); ++aVIdx)

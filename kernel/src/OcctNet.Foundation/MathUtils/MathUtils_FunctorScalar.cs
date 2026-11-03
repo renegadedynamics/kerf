@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 // OCCT's solvers are templates over any type with the right members ("Function type with Value(double, double&)
 // method"). Here each such member set is an interface, and the solvers are generic methods constrained on it
@@ -20,216 +22,216 @@ public static partial class MathUtils
     public interface IScalarFunction
     {
         /// <summary>Evaluates the function at theX; false if it could not be evaluated.</summary>
-        bool Value(double theX, out double theY);
+        bool Value(double x, out double y);
     }
 
     /// <summary>A scalar function with its derivative: C++'s "type with <c>Values(double, double&amp;, double&amp;)</c> method".</summary>
     public interface IScalarFunctionWithDerivative
     {
         /// <summary>Evaluates the function and its derivative at theX; false if they could not be evaluated.</summary>
-        bool Values(double theX, out double theY, out double theDY);
+        bool Values(double x, out double y, out double dy);
     }
 
     /// <summary>Signature of the callable wrapped by <see cref="ScalarLambda"/>: bool(double theX, double&amp; theY).</summary>
-    public delegate bool ScalarLambdaFunction(double theX, out double theY);
+    public delegate bool ScalarLambdaFunction(double x, out double y);
 
     /// <summary>Signature of the callable wrapped by <see cref="ScalarLambdaWithDerivative"/>.</summary>
-    public delegate bool ScalarLambdaWithDerivativeFunction(double theX, out double theY, out double theDY);
+    public delegate bool ScalarLambdaWithDerivativeFunction(double x, out double y, out double dy);
 
     /// <summary>Lambda wrapper for scalar functions with value only.</summary>
     /// <remarks>C++ is templated on the lambda type; here it holds a delegate.</remarks>
     public sealed class ScalarLambda : IScalarFunction
     {
-        private readonly ScalarLambdaFunction myLambda;
+        private readonly ScalarLambdaFunction _lambda;
 
-        public ScalarLambda(ScalarLambdaFunction theLambda)
+        public ScalarLambda(ScalarLambdaFunction lambda)
         {
-            myLambda = theLambda;
+            _lambda = lambda;
         }
 
-        public bool Value(double theX, out double theY) => myLambda(theX, out theY);
+        public bool Value(double x, out double y) => _lambda(x, out y);
     }
 
     /// <summary>Lambda wrapper for scalar functions with value and derivative.</summary>
     public sealed class ScalarLambdaWithDerivative : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly ScalarLambdaWithDerivativeFunction myLambda;
+        private readonly ScalarLambdaWithDerivativeFunction _lambda;
 
-        public ScalarLambdaWithDerivative(ScalarLambdaWithDerivativeFunction theLambda)
+        public ScalarLambdaWithDerivative(ScalarLambdaWithDerivativeFunction lambda)
         {
-            myLambda = theLambda;
+            _lambda = lambda;
         }
 
-        public bool Values(double theX, out double theY, out double theDY) => myLambda(theX, out theY, out theDY);
+        public bool Values(double x, out double y, out double dy) => _lambda(x, out y, out dy);
 
         /// <summary>Evaluates only the function value (for algorithms that don't need derivative).</summary>
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            return myLambda(theX, out theY, out _);
+            return _lambda(x, out y, out _);
         }
     }
 
     /// <summary>Helper function to create ScalarLambda.</summary>
-    public static ScalarLambda MakeScalar(ScalarLambdaFunction theLambda)
+    public static ScalarLambda MakeScalar(ScalarLambdaFunction lambda)
     {
-        return new ScalarLambda(theLambda);
+        return new ScalarLambda(lambda);
     }
 
     /// <summary>Helper function to create ScalarLambdaWithDerivative.</summary>
-    public static ScalarLambdaWithDerivative MakeScalarWithDerivative(ScalarLambdaWithDerivativeFunction theLambda)
+    public static ScalarLambdaWithDerivative MakeScalarWithDerivative(ScalarLambdaWithDerivativeFunction lambda)
     {
-        return new ScalarLambdaWithDerivative(theLambda);
+        return new ScalarLambdaWithDerivative(lambda);
     }
 
     /// <summary>Polynomial functor: f(x) = sum(a[i] * x^i), coefficients in ascending power order.</summary>
     public sealed class Polynomial : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly math_Vector myCoeffs;
+        private readonly math_Vector _coeffs;
 
         /// <summary>Constructor from a coefficient list (C++'s initializer list), ascending power order.</summary>
-        public Polynomial(params ReadOnlySpan<double> theCoeffs)
+        public Polynomial(params ReadOnlySpan<double> coeffs)
         {
-            myCoeffs = new math_Vector(0, theCoeffs.Length - 1);
-            int anIdx = 0;
-            foreach (double aCoeff in theCoeffs)
+            _coeffs = new math_Vector(0, coeffs.Length - 1);
+            int idx = 0;
+            foreach (double coeff in coeffs)
             {
-                myCoeffs[anIdx++] = aCoeff;
+                _coeffs[idx++] = coeff;
             }
         }
 
         /// <summary>Constructor from math_Vector (copied), ascending power order.</summary>
-        public Polynomial(math_Vector theCoeffs)
+        public Polynomial(math_Vector coeffs)
         {
-            myCoeffs = new math_Vector(theCoeffs);
+            _coeffs = new math_Vector(coeffs);
         }
 
         /// <summary>Evaluates polynomial at theX using Horner's method.</summary>
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            if (myCoeffs.Length() <= 0)
+            if (_coeffs.Length() <= 0)
             {
-                theY = 0.0;
+                y = 0.0;
                 return true;
             }
 
             // Horner's method: p(x) = a[0] + x*(a[1] + x*(a[2] + ...))
-            int aLast = myCoeffs.Upper();
-            theY = myCoeffs[aLast];
-            for (int i = aLast - 1; i >= myCoeffs.Lower(); --i)
+            int last = _coeffs.Upper();
+            y = _coeffs[last];
+            for (int i = last - 1; i >= _coeffs.Lower(); --i)
             {
-                theY = theY * theX + myCoeffs[i];
+                y = y * x + _coeffs[i];
             }
             return true;
         }
 
         /// <summary>Evaluates polynomial and its derivative at theX.</summary>
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            if (myCoeffs.Length() <= 0)
+            if (_coeffs.Length() <= 0)
             {
-                theY = 0.0;
-                theDY = 0.0;
+                y = 0.0;
+                dy = 0.0;
                 return true;
             }
 
-            int n = myCoeffs.Length();
+            int n = _coeffs.Length();
             if (n == 1)
             {
-                theY = myCoeffs[myCoeffs.Lower()];
-                theDY = 0.0;
+                y = _coeffs[_coeffs.Lower()];
+                dy = 0.0;
                 return true;
             }
 
             // Horner's method for value and derivative simultaneously
-            int aLower = myCoeffs.Lower();
-            int aLast = myCoeffs.Upper();
-            theY = myCoeffs[aLast];
-            theDY = 0.0;
-            for (int i = aLast - 1; i >= aLower; --i)
+            int lower = _coeffs.Lower();
+            int last = _coeffs.Upper();
+            y = _coeffs[last];
+            dy = 0.0;
+            for (int i = last - 1; i >= lower; --i)
             {
-                theDY = theDY * theX + theY;
-                theY = theY * theX + myCoeffs[i];
+                dy = dy * x + y;
+                y = y * x + _coeffs[i];
             }
             return true;
         }
 
         /// <summary>Returns the degree of the polynomial (number of coefficients - 1).</summary>
-        public int Degree() => myCoeffs.Length() <= 0 ? 0 : myCoeffs.Length() - 1;
+        public int Degree() => _coeffs.Length() <= 0 ? 0 : _coeffs.Length() - 1;
 
         /// <summary>Returns coefficient by index (0 = constant term), 0 out of range.</summary>
-        public double Coefficient(int theIndex)
+        public double Coefficient(int index)
         {
-            int aIdx = myCoeffs.Lower() + theIndex;
-            return (aIdx >= myCoeffs.Lower() && aIdx <= myCoeffs.Upper()) ? myCoeffs[aIdx] : 0.0;
+            int idx = _coeffs.Lower() + index;
+            return (idx >= _coeffs.Lower() && idx <= _coeffs.Upper()) ? _coeffs[idx] : 0.0;
         }
     }
 
     /// <summary>Rational function functor: f(x) = P(x) / Q(x).</summary>
     public sealed class Rational : IScalarFunction
     {
-        private readonly math_Vector myNum;
-        private readonly math_Vector myDenom;
+        private readonly math_Vector _num;
+        private readonly math_Vector _denom;
 
         /// <summary>Constructor from math_Vector (copied), ascending power order.</summary>
-        public Rational(math_Vector theNum, math_Vector theDenom)
+        public Rational(math_Vector num, math_Vector denom)
         {
-            myNum = new math_Vector(theNum);
-            myDenom = new math_Vector(theDenom);
+            _num = new math_Vector(num);
+            _denom = new math_Vector(denom);
         }
 
         /// <summary>Constructor from coefficient lists (C++'s initializer lists).</summary>
-        public Rational(ReadOnlySpan<double> theNum, ReadOnlySpan<double> theDenom)
+        public Rational(ReadOnlySpan<double> num, ReadOnlySpan<double> denom)
         {
-            myNum = new math_Vector(0, theNum.Length - 1);
-            myDenom = new math_Vector(0, theDenom.Length - 1);
-            int anIdx = 0;
-            foreach (double aCoeff in theNum)
+            _num = new math_Vector(0, num.Length - 1);
+            _denom = new math_Vector(0, denom.Length - 1);
+            int idx = 0;
+            foreach (double coeff in num)
             {
-                myNum[anIdx++] = aCoeff;
+                _num[idx++] = coeff;
             }
-            anIdx = 0;
-            foreach (double aCoeff in theDenom)
+            idx = 0;
+            foreach (double coeff in denom)
             {
-                myDenom[anIdx++] = aCoeff;
+                _denom[idx++] = coeff;
             }
         }
 
         /// <summary>Evaluates rational function at theX; false if the denominator is zero.</summary>
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            double aNum = 0.0;
-            double aDenom = 0.0;
+            double num = 0.0;
+            double denom = 0.0;
 
             // Evaluate numerator using Horner's method
-            if (myNum.Length() > 0)
+            if (_num.Length() > 0)
             {
-                int aLast = myNum.Upper();
-                aNum = myNum[aLast];
-                for (int i = aLast - 1; i >= myNum.Lower(); --i)
+                int last = _num.Upper();
+                num = _num[last];
+                for (int i = last - 1; i >= _num.Lower(); --i)
                 {
-                    aNum = aNum * theX + myNum[i];
+                    num = num * x + _num[i];
                 }
             }
 
             // Evaluate denominator using Horner's method
-            if (myDenom.Length() > 0)
+            if (_denom.Length() > 0)
             {
-                int aLast = myDenom.Upper();
-                aDenom = myDenom[aLast];
-                for (int i = aLast - 1; i >= myDenom.Lower(); --i)
+                int last = _denom.Upper();
+                denom = _denom[last];
+                for (int i = last - 1; i >= _denom.Lower(); --i)
                 {
-                    aDenom = aDenom * theX + myDenom[i];
+                    denom = denom * x + _denom[i];
                 }
             }
 
             // Check for division by zero
-            if (Math.Abs(aDenom) < 1e-15)
+            if (Math.Abs(denom) < 1e-15)
             {
-                theY = 0.0;
+                y = 0.0;
                 return false;
             }
 
-            theY = aNum / aDenom;
+            y = num / denom;
             return true;
         }
     }
@@ -239,32 +241,32 @@ public static partial class MathUtils
         where Outer : IScalarFunction
         where Inner : IScalarFunction
     {
-        private Outer myOuter;
-        private Inner myInner;
+        private Outer _outer;
+        private Inner _inner;
 
-        public Composite(Outer theOuter, Inner theInner)
+        public Composite(Outer outer, Inner inner)
         {
-            myOuter = theOuter;
-            myInner = theInner;
+            _outer = outer;
+            _inner = inner;
         }
 
         /// <summary>Evaluates f(g(theX)); false if either evaluation fails.</summary>
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            if (!myInner.Value(theX, out double aInner))
+            if (!_inner.Value(x, out double inner))
             {
-                theY = 0.0;
+                y = 0.0;
                 return false;
             }
-            return myOuter.Value(aInner, out theY);
+            return _outer.Value(inner, out y);
         }
     }
 
-    public static Composite<Outer, Inner> MakeComposite<Outer, Inner>(Outer theOuter, Inner theInner)
+    public static Composite<Outer, Inner> MakeComposite<Outer, Inner>(Outer outer, Inner inner)
         where Outer : IScalarFunction
         where Inner : IScalarFunction
     {
-        return new Composite<Outer, Inner>(theOuter, theInner);
+        return new Composite<Outer, Inner>(outer, inner);
     }
 
     /// <summary>Sum of functions functor: f(x) + g(x).</summary>
@@ -272,36 +274,36 @@ public static partial class MathUtils
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        private F myF;
-        private G myG;
+        private F _f;
+        private G _g;
 
-        public Sum(F theF, G theG)
+        public Sum(F f, G g)
         {
-            myF = theF;
-            myG = theG;
+            _f = f;
+            _g = g;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            if (!myG.Value(theX, out double aG))
+            if (!_g.Value(x, out double g))
             {
                 return false;
             }
-            theY = aF + aG;
+            y = f + g;
             return true;
         }
     }
 
-    public static Sum<F, G> MakeSum<F, G>(F theF, G theG)
+    public static Sum<F, G> MakeSum<F, G>(F f, G g)
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        return new Sum<F, G>(theF, theG);
+        return new Sum<F, G>(f, g);
     }
 
     /// <summary>Difference of functions functor: f(x) - g(x).</summary>
@@ -309,36 +311,36 @@ public static partial class MathUtils
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        private F myF;
-        private G myG;
+        private F _f;
+        private G _g;
 
-        public Difference(F theF, G theG)
+        public Difference(F f, G g)
         {
-            myF = theF;
-            myG = theG;
+            _f = f;
+            _g = g;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            if (!myG.Value(theX, out double aG))
+            if (!_g.Value(x, out double g))
             {
                 return false;
             }
-            theY = aF - aG;
+            y = f - g;
             return true;
         }
     }
 
-    public static Difference<F, G> MakeDifference<F, G>(F theF, G theG)
+    public static Difference<F, G> MakeDifference<F, G>(F f, G g)
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        return new Difference<F, G>(theF, theG);
+        return new Difference<F, G>(f, g);
     }
 
     /// <summary>Product of functions functor: f(x) * g(x).</summary>
@@ -346,36 +348,36 @@ public static partial class MathUtils
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        private F myF;
-        private G myG;
+        private F _f;
+        private G _g;
 
-        public Product(F theF, G theG)
+        public Product(F f, G g)
         {
-            myF = theF;
-            myG = theG;
+            _f = f;
+            _g = g;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            if (!myG.Value(theX, out double aG))
+            if (!_g.Value(x, out double g))
             {
                 return false;
             }
-            theY = aF * aG;
+            y = f * g;
             return true;
         }
     }
 
-    public static Product<F, G> MakeProduct<F, G>(F theF, G theG)
+    public static Product<F, G> MakeProduct<F, G>(F f, G g)
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        return new Product<F, G>(theF, theG);
+        return new Product<F, G>(f, g);
     }
 
     /// <summary>Quotient of functions functor: f(x) / g(x); fails where |g(x)| &lt; 1e-15.</summary>
@@ -383,153 +385,153 @@ public static partial class MathUtils
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        private F myF;
-        private G myG;
+        private F _f;
+        private G _g;
 
-        public Quotient(F theF, G theG)
+        public Quotient(F f, G g)
         {
-            myF = theF;
-            myG = theG;
+            _f = f;
+            _g = g;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            if (!myG.Value(theX, out double aG))
+            if (!_g.Value(x, out double g))
             {
                 return false;
             }
-            if (Math.Abs(aG) < 1e-15)
+            if (Math.Abs(g) < 1e-15)
             {
                 return false;
             }
-            theY = aF / aG;
+            y = f / g;
             return true;
         }
     }
 
-    public static Quotient<F, G> MakeQuotient<F, G>(F theF, G theG)
+    public static Quotient<F, G> MakeQuotient<F, G>(F f, G g)
         where F : IScalarFunction
         where G : IScalarFunction
     {
-        return new Quotient<F, G>(theF, theG);
+        return new Quotient<F, G>(f, g);
     }
 
     /// <summary>Scaled function functor: c * f(x).</summary>
     public sealed class Scaled<F> : IScalarFunction
         where F : IScalarFunction
     {
-        private F myF;
-        private readonly double myScale;
+        private F _f;
+        private readonly double _scale;
 
-        public Scaled(F theF, double theScale)
+        public Scaled(F f, double scale)
         {
-            myF = theF;
-            myScale = theScale;
+            _f = f;
+            _scale = scale;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            theY = myScale * aF;
+            y = _scale * f;
             return true;
         }
     }
 
-    public static Scaled<F> MakeScaled<F>(F theF, double theScale)
+    public static Scaled<F> MakeScaled<F>(F f, double scale)
         where F : IScalarFunction
     {
-        return new Scaled<F>(theF, theScale);
+        return new Scaled<F>(f, scale);
     }
 
     /// <summary>Shifted function functor: f(x) + c.</summary>
     public sealed class Shifted<F> : IScalarFunction
         where F : IScalarFunction
     {
-        private F myF;
-        private readonly double myShift;
+        private F _f;
+        private readonly double _shift;
 
-        public Shifted(F theF, double theShift)
+        public Shifted(F f, double shift)
         {
-            myF = theF;
-            myShift = theShift;
+            _f = f;
+            _shift = shift;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            theY = aF + myShift;
+            y = f + _shift;
             return true;
         }
     }
 
-    public static Shifted<F> MakeShifted<F>(F theF, double theShift)
+    public static Shifted<F> MakeShifted<F>(F f, double shift)
         where F : IScalarFunction
     {
-        return new Shifted<F>(theF, theShift);
+        return new Shifted<F>(f, shift);
     }
 
     /// <summary>Negated function functor: -f(x).</summary>
     public sealed class Negated<F> : IScalarFunction
         where F : IScalarFunction
     {
-        private F myF;
+        private F _f;
 
-        public Negated(F theF)
+        public Negated(F f)
         {
-            myF = theF;
+            _f = f;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = 0.0;
-            if (!myF.Value(theX, out double aF))
+            y = 0.0;
+            if (!_f.Value(x, out double f))
             {
                 return false;
             }
-            theY = -aF;
+            y = -f;
             return true;
         }
     }
 
-    public static Negated<F> MakeNegated<F>(F theF)
+    public static Negated<F> MakeNegated<F>(F f)
         where F : IScalarFunction
     {
-        return new Negated<F>(theF);
+        return new Negated<F>(f);
     }
 
     /// <summary>Constant function functor: f(x) = c.</summary>
     public sealed class Constant : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myValue;
+        private readonly double _value;
 
-        public Constant(double theValue)
+        public Constant(double value)
         {
-            myValue = theValue;
+            _value = value;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = myValue;
+            y = _value;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            theY = myValue;
-            theDY = 0.0;
+            y = _value;
+            dy = 0.0;
             return true;
         }
     }
@@ -537,25 +539,25 @@ public static partial class MathUtils
     /// <summary>Linear function functor: f(x) = a*x + b.</summary>
     public sealed class Linear : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double mySlope;
-        private readonly double myIntercept;
+        private readonly double _slope;
+        private readonly double _intercept;
 
-        public Linear(double theSlope, double theIntercept)
+        public Linear(double slope, double intercept)
         {
-            mySlope = theSlope;
-            myIntercept = theIntercept;
+            _slope = slope;
+            _intercept = intercept;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = mySlope * theX + myIntercept;
+            y = _slope * x + _intercept;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            theY = mySlope * theX + myIntercept;
-            theDY = mySlope;
+            y = _slope * x + _intercept;
+            dy = _slope;
             return true;
         }
     }
@@ -563,30 +565,30 @@ public static partial class MathUtils
     /// <summary>Sine function functor: f(x) = A * sin(omega * x + phi) + c.</summary>
     public sealed class Sine : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myAmplitude;
-        private readonly double myFrequency;
-        private readonly double myPhase;
-        private readonly double myOffset;
+        private readonly double _amplitude;
+        private readonly double _frequency;
+        private readonly double _phase;
+        private readonly double _offset;
 
-        public Sine(double theAmplitude = 1.0, double theFrequency = 1.0, double thePhase = 0.0, double theOffset = 0.0)
+        public Sine(double amplitude = 1.0, double frequency = 1.0, double phase = 0.0, double offset = 0.0)
         {
-            myAmplitude = theAmplitude;
-            myFrequency = theFrequency;
-            myPhase = thePhase;
-            myOffset = theOffset;
+            _amplitude = amplitude;
+            _frequency = frequency;
+            _phase = phase;
+            _offset = offset;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = myAmplitude * Math.Sin(myFrequency * theX + myPhase) + myOffset;
+            y = _amplitude * Math.Sin(_frequency * x + _phase) + _offset;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            double anArg = myFrequency * theX + myPhase;
-            theY = myAmplitude * Math.Sin(anArg) + myOffset;
-            theDY = myAmplitude * myFrequency * Math.Cos(anArg);
+            double arg = _frequency * x + _phase;
+            y = _amplitude * Math.Sin(arg) + _offset;
+            dy = _amplitude * _frequency * Math.Cos(arg);
             return true;
         }
     }
@@ -594,30 +596,30 @@ public static partial class MathUtils
     /// <summary>Cosine function functor: f(x) = A * cos(omega * x + phi) + c.</summary>
     public sealed class Cosine : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myAmplitude;
-        private readonly double myFrequency;
-        private readonly double myPhase;
-        private readonly double myOffset;
+        private readonly double _amplitude;
+        private readonly double _frequency;
+        private readonly double _phase;
+        private readonly double _offset;
 
-        public Cosine(double theAmplitude = 1.0, double theFrequency = 1.0, double thePhase = 0.0, double theOffset = 0.0)
+        public Cosine(double amplitude = 1.0, double frequency = 1.0, double phase = 0.0, double offset = 0.0)
         {
-            myAmplitude = theAmplitude;
-            myFrequency = theFrequency;
-            myPhase = thePhase;
-            myOffset = theOffset;
+            _amplitude = amplitude;
+            _frequency = frequency;
+            _phase = phase;
+            _offset = offset;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = myAmplitude * Math.Cos(myFrequency * theX + myPhase) + myOffset;
+            y = _amplitude * Math.Cos(_frequency * x + _phase) + _offset;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            double anArg = myFrequency * theX + myPhase;
-            theY = myAmplitude * Math.Cos(anArg) + myOffset;
-            theDY = -myAmplitude * myFrequency * Math.Sin(anArg);
+            double arg = _frequency * x + _phase;
+            y = _amplitude * Math.Cos(arg) + _offset;
+            dy = -_amplitude * _frequency * Math.Sin(arg);
             return true;
         }
     }
@@ -625,28 +627,28 @@ public static partial class MathUtils
     /// <summary>Exponential function functor: f(x) = a * exp(b * x) + c.</summary>
     public sealed class Exponential : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myScale;
-        private readonly double myRate;
-        private readonly double myOffset;
+        private readonly double _scale;
+        private readonly double _rate;
+        private readonly double _offset;
 
-        public Exponential(double theScale = 1.0, double theRate = 1.0, double theOffset = 0.0)
+        public Exponential(double scale = 1.0, double rate = 1.0, double offset = 0.0)
         {
-            myScale = theScale;
-            myRate = theRate;
-            myOffset = theOffset;
+            _scale = scale;
+            _rate = rate;
+            _offset = offset;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            theY = myScale * Math.Exp(myRate * theX) + myOffset;
+            y = _scale * Math.Exp(_rate * x) + _offset;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            double anExp = Math.Exp(myRate * theX);
-            theY = myScale * anExp + myOffset;
-            theDY = myScale * myRate * anExp;
+            double exp = Math.Exp(_rate * x);
+            y = _scale * exp + _offset;
+            dy = _scale * _rate * exp;
             return true;
         }
     }
@@ -654,45 +656,45 @@ public static partial class MathUtils
     /// <summary>Power function functor: f(x) = a * x^n + c; fails for x &lt; 0 with a non-integer exponent.</summary>
     public sealed class Power : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myExponent;
-        private readonly double myScale;
-        private readonly double myOffset;
+        private readonly double _exponent;
+        private readonly double _scale;
+        private readonly double _offset;
 
-        public Power(double theExponent, double theScale = 1.0, double theOffset = 0.0)
+        public Power(double exponent, double scale = 1.0, double offset = 0.0)
         {
-            myExponent = theExponent;
-            myScale = theScale;
-            myOffset = theOffset;
+            _exponent = exponent;
+            _scale = scale;
+            _offset = offset;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            if (theX < 0.0 && myExponent != Math.Floor(myExponent))
+            if (x < 0.0 && _exponent != Math.Floor(_exponent))
             {
-                theY = 0.0;
+                y = 0.0;
                 return false;
             }
-            theY = myScale * Math.Pow(theX, myExponent) + myOffset;
+            y = _scale * Math.Pow(x, _exponent) + _offset;
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            if (theX < 0.0 && myExponent != Math.Floor(myExponent))
+            if (x < 0.0 && _exponent != Math.Floor(_exponent))
             {
-                theY = 0.0;
-                theDY = 0.0;
+                y = 0.0;
+                dy = 0.0;
                 return false;
             }
-            double aPow = Math.Pow(theX, myExponent);
-            theY = myScale * aPow + myOffset;
-            if (Math.Abs(theX) < 1e-15)
+            double pow = Math.Pow(x, _exponent);
+            y = _scale * pow + _offset;
+            if (Math.Abs(x) < 1e-15)
             {
-                theDY = (myExponent == 1.0) ? myScale : 0.0;
+                dy = (_exponent == 1.0) ? _scale : 0.0;
             }
             else
             {
-                theDY = myScale * myExponent * aPow / theX;
+                dy = _scale * _exponent * pow / x;
             }
             return true;
         }
@@ -701,41 +703,41 @@ public static partial class MathUtils
     /// <summary>Gaussian function functor: f(x) = a * exp(-((x - mu)^2) / (2 * sigma^2)).</summary>
     public sealed class Gaussian : IScalarFunction, IScalarFunctionWithDerivative
     {
-        private readonly double myAmplitude;
-        private readonly double myMean;
-        private readonly double mySigma;
+        private readonly double _amplitude;
+        private readonly double _mean;
+        private readonly double _sigma;
 
-        public Gaussian(double theAmplitude = 1.0, double theMean = 0.0, double theSigma = 1.0)
+        public Gaussian(double amplitude = 1.0, double mean = 0.0, double sigma = 1.0)
         {
-            myAmplitude = theAmplitude;
-            myMean = theMean;
-            mySigma = theSigma;
+            _amplitude = amplitude;
+            _mean = mean;
+            _sigma = sigma;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            if (Math.Abs(mySigma) < 1e-15)
+            if (Math.Abs(_sigma) < 1e-15)
             {
-                theY = 0.0;
+                y = 0.0;
                 return false;
             }
-            double aZ = (theX - myMean) / mySigma;
-            theY = myAmplitude * Math.Exp(-0.5 * aZ * aZ);
+            double z = (x - _mean) / _sigma;
+            y = _amplitude * Math.Exp(-0.5 * z * z);
             return true;
         }
 
-        public bool Values(double theX, out double theY, out double theDY)
+        public bool Values(double x, out double y, out double dy)
         {
-            if (Math.Abs(mySigma) < 1e-15)
+            if (Math.Abs(_sigma) < 1e-15)
             {
-                theY = 0.0;
-                theDY = 0.0;
+                y = 0.0;
+                dy = 0.0;
                 return false;
             }
-            double aZ = (theX - myMean) / mySigma;
-            double aExp = Math.Exp(-0.5 * aZ * aZ);
-            theY = myAmplitude * aExp;
-            theDY = -myAmplitude * aZ * aExp / mySigma;
+            double z = (x - _mean) / _sigma;
+            double exp = Math.Exp(-0.5 * z * z);
+            y = _amplitude * exp;
+            dy = -_amplitude * z * exp / _sigma;
             return true;
         }
     }

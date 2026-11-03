@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.gp_TrsfForm;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.TransformForm;
 
 namespace Occt;
 
@@ -20,24 +22,24 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     // OCCT: occ::handle<Adaptor3d_CurveOnSurface> myConSurf
     protected Adaptor3d_CurveOnSurface? myConSurf;
 
-    protected gp_Trsf myTrsf;
+    protected Transform3D myTrsf;
 
     /// <summary>An undefined curve with the identity transformation.</summary>
     public GeomAdaptor_TransformedCurve()
     {
         myCurve = new GeomAdaptor_Curve();
-        myTrsf = new gp_Trsf();
+        myTrsf = new Transform3D();
     }
 
     /// <summary>theCurve transformed by theTrsf.</summary>
-    public GeomAdaptor_TransformedCurve(Geom_Curve theCurve, in gp_Trsf theTrsf)
+    public GeomAdaptor_TransformedCurve(Geom_Curve theCurve, in Transform3D theTrsf)
     {
         myCurve = new GeomAdaptor_Curve(theCurve);
         myTrsf = theTrsf;
     }
 
     /// <summary>theCurve between theFirst and theLast, transformed by theTrsf.</summary>
-    public GeomAdaptor_TransformedCurve(Geom_Curve theCurve, double theFirst, double theLast, in gp_Trsf theTrsf)
+    public GeomAdaptor_TransformedCurve(Geom_Curve theCurve, double theFirst, double theLast, in Transform3D theTrsf)
     {
         myCurve = new GeomAdaptor_Curve(theCurve, theFirst, theLast);
         myTrsf = theTrsf;
@@ -66,10 +68,10 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     public void LoadCurveOnSurface(Adaptor3d_CurveOnSurface theConSurf) => myConSurf = theConSurf;
 
     /// <summary>Sets the transformation.</summary>
-    public void SetTrsf(in gp_Trsf theTrsf) => myTrsf = theTrsf;
+    public void SetTrsf(in Transform3D theTrsf) => myTrsf = theTrsf;
 
     /// <summary>The transformation.</summary>
-    public gp_Trsf Trsf() => myTrsf;
+    public Transform3D Trsf() => myTrsf;
 
     /// <summary>True if the geometry is a 3D curve (not curve on surface).</summary>
     public bool Is3DCurve() => myConSurf is null;
@@ -95,12 +97,12 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
 
     public override double LastParameter() => myConSurf is null ? myCurve.LastParameter() : myConSurf.LastParameter();
 
-    public override GeomAbs_Shape Continuity() => myConSurf is null ? myCurve.Continuity() : myConSurf.Continuity();
+    public override Continuity Continuity() => myConSurf is null ? myCurve.Continuity() : myConSurf.Continuity();
 
-    public override int NbIntervals(GeomAbs_Shape theS) =>
+    public override int NbIntervals(Continuity theS) =>
         myConSurf is null ? myCurve.NbIntervals(theS) : myConSurf.NbIntervals(theS);
 
-    public override void Intervals(NCollection_Array1<double> theT, GeomAbs_Shape theS)
+    public override void Intervals(NCollection_Array1<double> theT, Continuity theS)
     {
         if (myConSurf is null)
         {
@@ -135,9 +137,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     public override double Period() => myConSurf is null ? myCurve.Period() : myConSurf.Period();
 
     /// <summary>Point evaluation. Applies transformation after evaluation.</summary>
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
-        gp_Pnt aP;
+        Point3D aP;
         if (myConSurf is null)
         {
             aP = myCurve.EvalD0(theU);
@@ -205,9 +207,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     }
 
     /// <summary>DN evaluation. Applies transformation after evaluation.</summary>
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
-        gp_Vec aV;
+        Vector3D aV;
         if (myConSurf is null)
         {
             aV = myCurve.EvalDN(theU, theN);
@@ -223,12 +225,12 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     public override double Resolution(double theR3d) =>
         myConSurf is null ? myCurve.Resolution(theR3d) : myConSurf.Resolution(theR3d);
 
-    public override GeomAbs_CurveType GetType() => myConSurf is null ? myCurve.GetType() : myConSurf.GetType();
+    public override CurveKind GetType() => myConSurf is null ? myCurve.GetType() : myConSurf.GetType();
 
     /// <summary>The line, transformed.</summary>
-    public override gp_Lin Line()
+    public override Line3D Line()
     {
-        gp_Lin aL;
+        Line3D aL;
         if (myConSurf is null)
         {
             aL = myCurve.Line();
@@ -242,9 +244,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     }
 
     /// <summary>The circle, transformed.</summary>
-    public override gp_Circ Circle()
+    public override Circle3D Circle()
     {
-        gp_Circ aC;
+        Circle3D aC;
         if (myConSurf is null)
         {
             aC = myCurve.Circle();
@@ -258,9 +260,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     }
 
     /// <summary>The ellipse, transformed.</summary>
-    public override gp_Elips Ellipse()
+    public override Ellipse3D Ellipse()
     {
-        gp_Elips aE;
+        Ellipse3D aE;
         if (myConSurf is null)
         {
             aE = myCurve.Ellipse();
@@ -274,9 +276,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     }
 
     /// <summary>The hyperbola, transformed.</summary>
-    public override gp_Hypr Hyperbola()
+    public override Hyperbola3D Hyperbola()
     {
-        gp_Hypr aH;
+        Hyperbola3D aH;
         if (myConSurf is null)
         {
             aH = myCurve.Hyperbola();
@@ -290,9 +292,9 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
     }
 
     /// <summary>The parabola, transformed.</summary>
-    public override gp_Parab Parabola()
+    public override Parabola3D Parabola()
     {
-        gp_Parab aP;
+        Parabola3D aP;
         if (myConSurf is null)
         {
             aP = myCurve.Parabola();
@@ -325,7 +327,7 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
         {
             aBC = myConSurf.Bezier();
         }
-        return myTrsf.Form() == gp_Identity ? aBC : (Geom_BezierCurve)aBC.Transformed(myTrsf);
+        return myTrsf.Form() == Identity ? aBC : (Geom_BezierCurve)aBC.Transformed(myTrsf);
     }
 
     /// <summary>The B-spline curve: the shared one for the identity, a transformed copy otherwise.</summary>
@@ -340,18 +342,18 @@ public class GeomAdaptor_TransformedCurve : Adaptor3d_Curve
         {
             aBS = myConSurf.BSpline();
         }
-        return myTrsf.Form() == gp_Identity ? aBS : (Geom_BSplineCurve)aBS.Transformed(myTrsf);
+        return myTrsf.Form() == Identity ? aBS : (Geom_BSplineCurve)aBS.Transformed(myTrsf);
     }
 
     /// <summary>The offset curve: the shared one for the identity, a transformed copy otherwise.</summary>
-    /// <exception cref="Standard_NoSuchObject">Not a 3D offset curve.</exception>
+    /// <exception cref="NoSuchObjectException">Not a 3D offset curve.</exception>
     public override Geom_OffsetCurve OffsetCurve()
     {
-        if (!Is3DCurve() || myCurve.GetType() != GeomAbs_OffsetCurve)
+        if (!Is3DCurve() || myCurve.GetType() != global::Kerf.Geometry.CurveKind.OffsetCurve)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_TransformedCurve::OffsetCurve");
+            throw new NoSuchObjectException("GeomAdaptor_TransformedCurve::OffsetCurve");
         }
         Geom_OffsetCurve anOffC = myCurve.OffsetCurve();
-        return myTrsf.Form() == gp_Identity ? anOffC : (Geom_OffsetCurve)anOffC.Transformed(myTrsf);
+        return myTrsf.Form() == Identity ? anOffC : (Geom_OffsetCurve)anOffC.Transformed(myTrsf);
     }
 }

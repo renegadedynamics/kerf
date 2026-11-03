@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 
 namespace Occt;
@@ -22,20 +24,20 @@ public sealed class MAT2d_Tool2d
     private const double MAT2d_TOLCONF = 1.0e-7;
 
     private double theDirection;
-    private GeomAbs_JoinType theJoinType;
+    private JoinKind theJoinType;
     private int theNumberOfBisectors;
     private int theNumberOfPnts;
     private int theNumberOfVecs;
     private MAT2d_Circuit? theCircuit;
     private readonly NCollection_DataMap<int, Bisector_Bisec> theGeomBisectors = new();
-    private readonly NCollection_DataMap<int, gp_Pnt2d> theGeomPnts = new();
-    private readonly NCollection_DataMap<int, gp_Vec2d> theGeomVecs = new();
+    private readonly NCollection_DataMap<int, Point2D> theGeomPnts = new();
+    private readonly NCollection_DataMap<int, Vector2D> theGeomVecs = new();
     private readonly NCollection_Sequence<int> theLinesLength = new();
 
     public MAT2d_Tool2d()
     {
         theDirection = 1.0;
-        theJoinType = GeomAbs_Arc; // default
+        theJoinType = Arc; // default
         theNumberOfBisectors = 0;
         theNumberOfVecs = 0;
         theNumberOfPnts = 0;
@@ -68,7 +70,7 @@ public sealed class MAT2d_Tool2d
         }
     }
 
-    public void SetJoinType(GeomAbs_JoinType aJoinType) => theJoinType = aJoinType;
+    public void SetJoinType(JoinKind aJoinType) => theJoinType = aJoinType;
 
     /// <summary>The number of items.</summary>
     public int NumberOfItems() => theCircuit!.NumberOfItems();
@@ -86,9 +88,9 @@ public sealed class MAT2d_Tool2d
 
         if (theCircuit!.ConnexionOn(anitem))
         {
-            gp_Pnt2d P1 = theCircuit.Connexion(anitem).PointOnFirst();
-            gp_Pnt2d P2 = theCircuit.Connexion(anitem).PointOnSecond();
-            theGeomPnts.Bind(theNumberOfPnts, new gp_Pnt2d((P1.X() + P2.X()) * 0.5, (P1.Y() + P2.Y()) * 0.5));
+            Point2D P1 = theCircuit.Connexion(anitem).PointOnFirst();
+            Point2D P2 = theCircuit.Connexion(anitem).PointOnSecond();
+            theGeomPnts.Bind(theNumberOfPnts, new Point2D((P1.X() + P2.X()) * 0.5, (P1.Y() + P2.Y()) * 0.5));
             dist = P1.Distance(P2) * 0.5;
             return theNumberOfPnts;
         }
@@ -128,7 +130,7 @@ public sealed class MAT2d_Tool2d
         {
             theCircuit.Connexion(item).PointOnFirst().Coord(out double x1, out double y1);
             theCircuit.Connexion(item).PointOnSecond().Coord(out double x2, out double y2);
-            theGeomVecs.Bind(theNumberOfVecs, new gp_Vec2d((x2 - x1), (y2 - y1)));
+            theGeomVecs.Bind(theNumberOfVecs, new Vector2D((x2 - x1), (y2 - y1)));
             return theNumberOfVecs;
         }
 
@@ -155,14 +157,14 @@ public sealed class MAT2d_Tool2d
     {
         int item;
         Geom2d_Curve curve;
-        gp_Vec2d thevector;
+        Vector2D thevector;
         theNumberOfVecs++;
 
         if (theCircuit!.ConnexionOn(anitem))
         {
             theCircuit.Connexion(anitem).PointOnFirst().Coord(out double x1, out double y1);
             theCircuit.Connexion(anitem).PointOnSecond().Coord(out double x2, out double y2);
-            theGeomVecs.Bind(theNumberOfVecs, new gp_Vec2d((x1 - x2), (y1 - y2)));
+            theGeomVecs.Bind(theNumberOfVecs, new Vector2D((x1 - x2), (y1 - y2)));
             return theNumberOfVecs;
         }
 
@@ -277,7 +279,7 @@ public sealed class MAT2d_Tool2d
         Geom2d_Curve Curve;
         Geom2d_TrimmedCurve Line;
         Geom2d_Line? Line1 = null, Line2 = null;
-        gp_Pnt2d Ori;
+        Point2D Ori;
         int INext;
         INext = (IndexEdge == theCircuit!.NumberOfItems()) ? 1 : (IndexEdge + 1);
 
@@ -295,8 +297,8 @@ public sealed class MAT2d_Tool2d
                     if (EdgeType == typeof(Geom2d_Circle))
                     {
                         Ori = ((Geom2d_Circle)Curve).Location();
-                        gp_Pnt2d P2 = theCircuit.Connexion(IndexEdge).PointOnFirst();
-                        Line1 = new Geom2d_Line(Ori, new gp_Dir2d(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
+                        Point2D P2 = theCircuit.Connexion(IndexEdge).PointOnFirst();
+                        Line1 = new Geom2d_Line(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
                     }
                 }
 
@@ -306,8 +308,8 @@ public sealed class MAT2d_Tool2d
                     if (EdgeType == typeof(Geom2d_Circle))
                     {
                         Ori = ((Geom2d_Circle)Curve).Location();
-                        gp_Pnt2d P2 = theCircuit.Connexion(INext).PointOnSecond();
-                        Line2 = new Geom2d_Line(Ori, new gp_Dir2d(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
+                        Point2D P2 = theCircuit.Connexion(INext).PointOnSecond();
+                        Line2 = new Geom2d_Line(Ori, new Direction2D(P2.X() - Ori.X(), P2.Y() - Ori.Y()));
                     }
                 }
                 if (Line1 is null && Line2 is null)
@@ -318,12 +320,12 @@ public sealed class MAT2d_Tool2d
                 // Restriction of the bisector by the half-lines of the connexions.
                 if (Line1 is not null)
                 {
-                    Line = new Geom2d_TrimmedCurve(Line1, 0.0, Precision.Infinite());
+                    Line = new Geom2d_TrimmedCurve(Line1, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     SetTrim(B1, Line);
                 }
                 if (Line2 is not null)
                 {
-                    Line = new Geom2d_TrimmedCurve(Line2, 0.0, Precision.Infinite());
+                    Line = new Geom2d_TrimmedCurve(Line2, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
                     SetTrim(B1, Line);
                 }
             }
@@ -338,7 +340,7 @@ public sealed class MAT2d_Tool2d
 
         Geom2d_TrimmedCurve bisector = ChangeGeomBis(abisector.BisectorNumber()).ChangeValue();
 
-        if (bisector.ChangeBasisCurve().IsPeriodic() && param == Precision.Infinite())
+        if (bisector.ChangeBasisCurve().IsPeriodic() && param == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             param = bisector.FirstParameter() + 2 * M_PI;
         }
@@ -388,9 +390,9 @@ public sealed class MAT2d_Tool2d
 
     // True if PCom can be projected on the element IEdge; Distance is then the minimum distance to its
     // projections.
-    private bool Projection(int IEdge, in gp_Pnt2d PCom, out double Distance)
+    private bool Projection(int IEdge, in Point2D PCom, out double Distance)
     {
-        gp_Pnt2d PEdge;
+        Point2D PEdge;
         Geom2d_Geometry Elt = theCircuit!.Value(IEdge);
         Type Type = Elt.GetType();
         Geom2d_TrimmedCurve Curve;
@@ -404,7 +406,7 @@ public sealed class MAT2d_Tool2d
         }
         else
         {
-            Distance = Precision.Infinite();
+            Distance = global::Kerf.Engine.Foundation.Precision.Infinite();
             Curve = (Geom2d_TrimmedCurve)Elt;
             // The parameters on the edge: if it is linked to its neighbours by connexions, the curve is limited by
             // them.
@@ -420,13 +422,13 @@ public sealed class MAT2d_Tool2d
                 ParamMax = theCircuit.Connexion(INext).ParameterOnFirst();
                 if (Curve.BasisCurve().IsPeriodic())
                 {
-                    ElCLib.AdjustPeriodic(0.0, 2 * M_PI, Eps, ref ParamMin, ref ParamMax);
+                    global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * M_PI, Eps, ref ParamMin, ref ParamMax);
                 }
             }
             // The curve for the extrema, and its bounds.
             Geom2dAdaptor_Curve C1 = new(Curve);
-            GeomAbs_CurveType TypeC1 = C1.GetType();
-            if (TypeC1 == GeomAbs_Circle)
+            CurveKind TypeC1 = C1.GetType();
+            if (TypeC1 == Circle)
             {
                 double R = C1.Circle().Radius();
                 double EpsCirc = 100.0 * Eps;
@@ -449,7 +451,7 @@ public sealed class MAT2d_Tool2d
             Extrema_ExtPC2d Extremas = new(PCom, C1, ParamMin, ParamMax);
             if (Extremas.IsDone())
             {
-                Distance = Precision.Infinite();
+                Distance = global::Kerf.Engine.Foundation.Precision.Infinite();
                 if (Extremas.NbExt() < 1)
                 {
                     return false;
@@ -465,7 +467,7 @@ public sealed class MAT2d_Tool2d
             }
             else
             {
-                if (TypeC1 == GeomAbs_Circle)
+                if (TypeC1 == Circle)
                 {
                     Distance = C1.Circle().Radius();
                 }
@@ -476,7 +478,7 @@ public sealed class MAT2d_Tool2d
 
     // True if PCom is equidistant from the elements separated by BisectorOne and BisectorTwo; Distance is then its
     // distance to them.
-    private bool IsSameDistance(MAT_Bisector BisectorOne, MAT_Bisector BisectorTwo, in gp_Pnt2d PCom,
+    private bool IsSameDistance(MAT_Bisector BisectorOne, MAT_Bisector BisectorTwo, in Point2D PCom,
         out double Distance)
     {
         NCollection_Array1<double> Dist = new(1, 4);
@@ -496,7 +498,7 @@ public sealed class MAT2d_Tool2d
             if (!isDone2)
             {
                 Geom2d_Geometry Elt = theCircuit!.Value(IEdge2);
-                double Tol = Max(Precision.Confusion(), eps * Dist[1]);
+                double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[1]);
                 if (CheckEnds(Elt, PCom, Dist[1], Tol))
                 {
                     Dist[2] = Dist[1];
@@ -508,7 +510,7 @@ public sealed class MAT2d_Tool2d
             if (isDone2)
             {
                 Geom2d_Geometry Elt = theCircuit!.Value(IEdge1);
-                double Tol = Max(Precision.Confusion(), eps * Dist[2]);
+                double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[2]);
                 if (CheckEnds(Elt, PCom, Dist[2], Tol))
                 {
                     Dist[1] = Dist[2];
@@ -548,7 +550,7 @@ public sealed class MAT2d_Tool2d
             if (!isDone4)
             {
                 Geom2d_Geometry Elt = theCircuit!.Value(IEdge4);
-                double Tol = Max(Precision.Confusion(), eps * Dist[3]);
+                double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[3]);
                 if (CheckEnds(Elt, PCom, Dist[3], Tol))
                 {
                     Dist[4] = Dist[3];
@@ -560,7 +562,7 @@ public sealed class MAT2d_Tool2d
             if (isDone4)
             {
                 Geom2d_Geometry Elt = theCircuit!.Value(IEdge3);
-                double Tol = Max(Precision.Confusion(), eps * Dist[4]);
+                double Tol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), eps * Dist[4]);
                 if (CheckEnds(Elt, PCom, Dist[4], Tol))
                 {
                     Dist[3] = Dist[4];
@@ -570,11 +572,11 @@ public sealed class MAT2d_Tool2d
 
         double EpsDist = MAT2d_TOLCONF * 300.0;
         Distance = Dist[1];
-        if (theJoinType == GeomAbs_Intersection && Precision.IsInfinite(Distance))
+        if (theJoinType == Intersection && global::Kerf.Engine.Foundation.Precision.IsInfinite(Distance))
         {
             for (int i = 2; i <= 4; i++)
             {
-                if (!Precision.IsInfinite(Dist[i]))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(Dist[i]))
                 {
                     Distance = Dist[i];
                     break;
@@ -583,14 +585,14 @@ public sealed class MAT2d_Tool2d
         }
         for (int i = 1; i <= 4; i++)
         {
-            if (theJoinType == GeomAbs_Intersection && Precision.IsInfinite(Dist[i]))
+            if (theJoinType == Intersection && global::Kerf.Engine.Foundation.Precision.IsInfinite(Dist[i]))
             {
                 continue;
             }
 
             if (Math.Abs(Dist[i] - Distance) > EpsDist)
             {
-                Distance = Precision.Infinite();
+                Distance = global::Kerf.Engine.Foundation.Precision.Infinite();
                 return false;
             }
         }
@@ -608,7 +610,7 @@ public sealed class MAT2d_Tool2d
         double Parama, Paramb;
         double Distance = 0.0, DistanceMini;
         bool SolutionValide;
-        gp_Pnt2d PointSolution = new();
+        Point2D PointSolution = new();
 
         Geom2d_TrimmedCurve? Bisector1 = ChangeGeomBis(BisectorOne.BisectorNumber()).ChangeValue();
 
@@ -616,7 +618,7 @@ public sealed class MAT2d_Tool2d
 
         if (Bisector1 is null || Bisector2 is null)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         // If the two bisectors separate consecutive elements and start from connexions C1 and C2, and C1 is the
@@ -634,7 +636,7 @@ public sealed class MAT2d_Tool2d
             C2 = theCircuit.Connexion(IS2);
             if (C2.IndexFirstLine() == C1.IndexSecondLine() && C1.IndexFirstLine() == C2.IndexSecondLine())
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
@@ -644,11 +646,11 @@ public sealed class MAT2d_Tool2d
 
         if (Domain1.LastParameter() - Domain1.FirstParameter() < Tolerance)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         if (Domain2.LastParameter() - Domain2.FirstParameter() < Tolerance)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         // The intersection.
@@ -660,17 +662,17 @@ public sealed class MAT2d_Tool2d
         // bisectors.
         if (!Intersect.IsDone())
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         if (Intersect.IsEmpty())
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        DistanceMini = Precision.Infinite();
-        Param1 = Precision.Infinite();
-        Param2 = Precision.Infinite();
+        DistanceMini = global::Kerf.Engine.Foundation.Precision.Infinite();
+        Param1 = global::Kerf.Engine.Foundation.Precision.Infinite();
+        Param2 = global::Kerf.Engine.Foundation.Precision.Infinite();
         SolutionValide = false;
 
         if (Intersect.NbSegments() >= 1)
@@ -680,11 +682,11 @@ public sealed class MAT2d_Tool2d
             {
                 IntRes2d_IntersectionSegment Segment = Intersect.Segment(i);
                 bool PointRetenu = false;
-                gp_Pnt2d PointOnSegment = new();
+                Point2D PointOnSegment = new();
                 // If the segments are small, the points on the segment equidistant from the edges.
                 if ((Segment.HasFirstPoint() && Segment.HasLastPoint()))
                 {
-                    gp_Pnt2d P1, P2;
+                    Point2D P1, P2;
                     double SegmentLength;
                     P1 = Segment.FirstPoint().Value();
                     P2 = Segment.LastPoint().Value();
@@ -699,11 +701,11 @@ public sealed class MAT2d_Tool2d
                     }
                     else if (SegmentLength <= MaxSegmentLength)
                     {
-                        gp_Dir2d Dir = new(P2.X() - P1.X(), P2.Y() - P1.Y());
+                        Direction2D Dir = new(P2.X() - P1.X(), P2.Y() - P1.Y());
                         double Dist = 0.0;
                         while (Dist <= SegmentLength + Tolerance)
                         {
-                            PointOnSegment = P1.Translated(Dist * new gp_Vec2d(Dir));
+                            PointOnSegment = P1.Translated(Dist * new Vector2D(Dir));
                             if (IsSameDistance(BisectorOne, BisectorTwo, PointOnSegment, out Distance))
                             {
                                 PointRetenu = true;
@@ -761,7 +763,7 @@ public sealed class MAT2d_Tool2d
 
         if (!SolutionValide)
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         theNumberOfPnts++;
         theGeomPnts.Bind(theNumberOfPnts, PointSolution);
@@ -806,24 +808,24 @@ public sealed class MAT2d_Tool2d
         {
             if (Bisector1.StartPoint().Distance(PointSolution) < Tolerance)
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             if (Bisector2.StartPoint().Distance(PointSolution) < Tolerance)
             {
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
 
-        if (BisectorOne.SecondParameter() < Precision.Infinite()
+        if (BisectorOne.SecondParameter() < global::Kerf.Engine.Foundation.Precision.Infinite()
             && BisectorOne.SecondParameter() < Param1 * (1.0 - Tolerance))
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        if (BisectorTwo.FirstParameter() < Precision.Infinite()
+        if (BisectorTwo.FirstParameter() < global::Kerf.Engine.Foundation.Precision.Infinite()
             && BisectorTwo.FirstParameter() < Param2 * (1.0 - Tolerance))
         {
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         BisectorOne.SecondParameter(Param1);
@@ -836,12 +838,12 @@ public sealed class MAT2d_Tool2d
     /// </summary>
     public double Distance(MAT_Bisector Bis, double Param1, double Param2)
     {
-        double Dist = Precision.Infinite();
+        double Dist = global::Kerf.Engine.Foundation.Precision.Infinite();
 
-        if (Param1 != Precision.Infinite() && Param2 != Precision.Infinite())
+        if (Param1 != global::Kerf.Engine.Foundation.Precision.Infinite() && Param2 != global::Kerf.Engine.Foundation.Precision.Infinite())
         {
-            gp_Pnt2d P1 = GeomBis(Bis.BisectorNumber()).Value().Value(Param1);
-            gp_Pnt2d P2 = GeomBis(Bis.BisectorNumber()).Value().Value(Param2);
+            Point2D P1 = GeomBis(Bis.BisectorNumber()).Value().Value(Param1);
+            Point2D P2 = GeomBis(Bis.BisectorNumber()).Value().Value(Param2);
             Dist = P1.Distance(P2);
         }
         return Dist;
@@ -851,7 +853,7 @@ public sealed class MAT2d_Tool2d
     /// </summary>
     public void Dump(int bisector, int erease)
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>The bisector of index Index.</summary>
@@ -864,10 +866,10 @@ public sealed class MAT2d_Tool2d
     public Geom2d_Geometry GeomElt(int Index) => theCircuit!.Value(Index);
 
     /// <summary>The point of index Index.</summary>
-    public gp_Pnt2d GeomPnt(int Index) => theGeomPnts.Find(Index);
+    public Point2D GeomPnt(int Index) => theGeomPnts.Find(Index);
 
     /// <summary>The vector of index Index.</summary>
-    public gp_Vec2d GeomVec(int Index) => theGeomVecs.Find(Index);
+    public Vector2D GeomVec(int Index) => theGeomVecs.Find(Index);
 
     public MAT2d_Circuit Circuit() => theCircuit!;
 
@@ -892,9 +894,9 @@ public sealed class MAT2d_Tool2d
             double Tolerance = MAT2d_TOLCONF;
 
             Bisector_Bisec Bis = new();
-            gp_Vec2d VBid = new(1, 0);
-            gp_Pnt2d P2 = Bisector2.Value(Bisector2.LastParameter());
-            gp_Pnt2d P1 = Bisector1.Value(Bisector1.LastParameter());
+            Vector2D VBid = new(1, 0);
+            Point2D P2 = Bisector2.Value(Bisector2.LastParameter());
+            Point2D P1 = Bisector1.Value(Bisector1.LastParameter());
             Bisector_BisecCC BCC1 = (Bisector_BisecCC)Bisector1.ChangeBasisCurve();
 
             Bis.Perform(BCC1.Curve(2), BCC1.Curve(1), P2, VBid, VBid, theDirection, theJoinType, Tolerance, false);
@@ -947,8 +949,8 @@ public sealed class MAT2d_Tool2d
         double UB1 = Bisector.FirstParameter();
         double UB2 = Bisector.LastParameter();
 
-        gp_Pnt2d FirstPointBisector = Bisector.Value(UB1);
-        double UTrim = Precision.Infinite();
+        Point2D FirstPointBisector = Bisector.Value(UB1);
+        double UTrim = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         Geom2dAdaptor_Curve AdapBisector = new(Bisector);
         Geom2dAdaptor_Curve AdapLine1 = new(Line1);
@@ -958,7 +960,7 @@ public sealed class MAT2d_Tool2d
         {
             for (int i = 1; i <= Intersect.NbPoints(); i++)
             {
-                gp_Pnt2d PInt = Intersect.Point(i).Value();
+                Point2D PInt = Intersect.Point(i).Value();
                 Distance = FirstPointBisector.Distance(PInt);
                 if (Distance > 10.0 * Tolerance && Intersect.Point(i).ParamOnFirst() < UTrim)
                 {
@@ -1001,8 +1003,8 @@ public sealed class MAT2d_Tool2d
                 BasisCurve = ((Bisector_BisecAna)Bisector1.ChangeBasisCurve()).Geom2dCurve();
                 Type1 = BasisCurve.GetType();
             }
-            gp_Parab2d gpParabola;
-            gp_Hypr2d gpHyperbola;
+            Parabola2D gpParabola;
+            Hyperbola2D gpHyperbola;
             double Focus;
             double Limit = 50000.0;
             if (Type1 == typeof(Geom2d_Parabola))
@@ -1035,7 +1037,7 @@ public sealed class MAT2d_Tool2d
         return Domain1;
     }
 
-    private static bool CheckEnds(Geom2d_Geometry Elt, in gp_Pnt2d PCom, double Distance, double Tol)
+    private static bool CheckEnds(Geom2d_Geometry Elt, in Point2D PCom, double Distance, double Tol)
     {
         Type Type = Elt.GetType();
         Geom2d_TrimmedCurve Curve;
@@ -1047,8 +1049,8 @@ public sealed class MAT2d_Tool2d
         else
         {
             Curve = (Geom2d_TrimmedCurve)Elt;
-            gp_Pnt2d aPf = Curve.StartPoint();
-            gp_Pnt2d aPl = Curve.EndPoint();
+            Point2D aPf = Curve.StartPoint();
+            Point2D aPl = Curve.EndPoint();
             double df = PCom.Distance(aPf);
             double dl = PCom.Distance(aPl);
             if (Math.Abs(df - Distance) <= Tol)

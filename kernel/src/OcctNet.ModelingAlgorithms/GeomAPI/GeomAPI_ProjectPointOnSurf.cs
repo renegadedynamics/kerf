@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.Extrema_ExtAlgo;
 
 namespace Occt;
@@ -34,20 +35,20 @@ public class GeomAPI_ProjectPointOnSurf
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Surface"/>.</summary>
-    public GeomAPI_ProjectPointOnSurf(in gp_Pnt P, Geom_Surface Surface, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
+    public GeomAPI_ProjectPointOnSurf(in Point3D P, Geom_Surface Surface, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         Init(P, Surface, theProjAlgo);
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Surface"/> with a tolerance.</summary>
-    public GeomAPI_ProjectPointOnSurf(in gp_Pnt P, Geom_Surface Surface, double Tolerance,
+    public GeomAPI_ProjectPointOnSurf(in Point3D P, Geom_Surface Surface, double Tolerance,
                                       Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         Init(P, Surface, Tolerance, theProjAlgo);
     }
 
     /// <summary>Projects <paramref name="P"/> onto <paramref name="Surface"/> on [Umin, Usup] x [Vmin, Vsup].</summary>
-    public GeomAPI_ProjectPointOnSurf(in gp_Pnt P, Geom_Surface Surface, double Umin, double Usup, double Vmin,
+    public GeomAPI_ProjectPointOnSurf(in Point3D P, Geom_Surface Surface, double Umin, double Usup, double Vmin,
                                       double Vsup, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         Init(P, Surface, Umin, Usup, Vmin, Vsup, theProjAlgo);
@@ -56,7 +57,7 @@ public class GeomAPI_ProjectPointOnSurf
     /// <summary>
     /// Projects <paramref name="P"/> onto <paramref name="Surface"/> on [Umin, Usup] x [Vmin, Vsup] with a tolerance.
     /// </summary>
-    public GeomAPI_ProjectPointOnSurf(in gp_Pnt P, Geom_Surface Surface, double Umin, double Usup, double Vmin,
+    public GeomAPI_ProjectPointOnSurf(in Point3D P, Geom_Surface Surface, double Umin, double Usup, double Vmin,
                                       double Vsup, double Tolerance, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         Init(P, Surface, Umin, Usup, Vmin, Vsup, Tolerance, theProjAlgo);
@@ -85,13 +86,13 @@ public class GeomAPI_ProjectPointOnSurf
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Surface"/>.</summary>
-    public void Init(in gp_Pnt P, Geom_Surface Surface, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
+    public void Init(in Point3D P, Geom_Surface Surface, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
-        Init(P, Surface, Precision.Confusion(), theProjAlgo);
+        Init(P, Surface, global::Kerf.Engine.Foundation.Precision.Confusion(), theProjAlgo);
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Surface"/> with a tolerance.</summary>
-    public void Init(in gp_Pnt P, Geom_Surface Surface, double Tolerance, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
+    public void Init(in Point3D P, Geom_Surface Surface, double Tolerance, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         Surface.Bounds(out double Umin, out double Usup, out double Vmin, out double Vsup);
         myGeomAdaptor.Load(Surface, Umin, Usup, Vmin, Vsup);
@@ -102,10 +103,10 @@ public class GeomAPI_ProjectPointOnSurf
     }
 
     /// <summary>Projects <paramref name="P"/> onto <paramref name="Surface"/> on [Umin, Usup] x [Vmin, Vsup].</summary>
-    public void Init(in gp_Pnt P, Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup,
+    public void Init(in Point3D P, Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup,
                      Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
-        double Tolerance = Precision.PConfusion();
+        double Tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myGeomAdaptor.Load(Surface, Umin, Usup, Vmin, Vsup);
         myExtPS.SetAlgo(theProjAlgo);
         myExtPS.Initialize(myGeomAdaptor, Umin, Usup, Vmin, Vsup, Tolerance, Tolerance);
@@ -116,7 +117,7 @@ public class GeomAPI_ProjectPointOnSurf
     /// <summary>
     /// Projects <paramref name="P"/> onto <paramref name="Surface"/> on [Umin, Usup] x [Vmin, Vsup] with a tolerance.
     /// </summary>
-    public void Init(in gp_Pnt P, Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup,
+    public void Init(in Point3D P, Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup,
                      double Tolerance, Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
         myGeomAdaptor.Load(Surface, Umin, Usup, Vmin, Vsup);
@@ -130,7 +131,7 @@ public class GeomAPI_ProjectPointOnSurf
     public void Init(Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup,
                      Extrema_ExtAlgo theProjAlgo = Extrema_ExtAlgo_Grad)
     {
-        double Tolerance = Precision.PConfusion();
+        double Tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myGeomAdaptor.Load(Surface, Umin, Usup, Vmin, Vsup);
         myExtPS.SetAlgo(theProjAlgo);
         myExtPS.Initialize(myGeomAdaptor, Umin, Usup, Vmin, Vsup, Tolerance, Tolerance);
@@ -157,7 +158,7 @@ public class GeomAPI_ProjectPointOnSurf
     public void SetExtremaFlag(Extrema_ExtFlag theExtFlag) => myExtPS.SetFlag(theExtFlag);
 
     /// <summary>Projects <paramref name="P"/> onto the surface loaded by <c>Init</c>.</summary>
-    public void Perform(in gp_Pnt P)
+    public void Perform(in Point3D P)
     {
         myExtPS.Perform(P);
         Init();
@@ -180,7 +181,7 @@ public class GeomAPI_ProjectPointOnSurf
     }
 
     /// <summary>The projection of index <paramref name="Index"/> (1..NbPoints).</summary>
-    public gp_Pnt Point(int Index)
+    public Point3D Point(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoints(), "GeomAPI_ProjectPointOnSurf::Point");
         return (myExtPS.Point(Index)).Value();
@@ -201,7 +202,7 @@ public class GeomAPI_ProjectPointOnSurf
     }
 
     /// <summary>The nearest projection. Throws StdFail_NotDone if there is none.</summary>
-    public gp_Pnt NearestPoint()
+    public Point3D NearestPoint()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_ProjectPointOnSurf::NearestPoint");
 
@@ -212,7 +213,7 @@ public class GeomAPI_ProjectPointOnSurf
     public static explicit operator int(GeomAPI_ProjectPointOnSurf theProj) => theProj.NbPoints();
 
     /// <summary>OCCT's <c>operator gp_Pnt</c>: <see cref="NearestPoint"/>.</summary>
-    public static explicit operator gp_Pnt(GeomAPI_ProjectPointOnSurf theProj) => theProj.NearestPoint();
+    public static explicit operator Point3D(GeomAPI_ProjectPointOnSurf theProj) => theProj.NearestPoint();
 
     /// <summary>The parameters of the nearest projection. Throws StdFail_NotDone if there is none.</summary>
     public void LowerDistanceParameters(out double U, out double V)

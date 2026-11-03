@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ConfigurationDesign
 /// </summary>
-public class StepRepr_ConfigurationDesign : Standard_Transient
+public class StepRepr_ConfigurationDesign : Transient
 {
     private StepRepr_ConfigurationItem theConfiguration;
     private StepRepr_ConfigurationDesignItem theDesign = new StepRepr_ConfigurationDesignItem();

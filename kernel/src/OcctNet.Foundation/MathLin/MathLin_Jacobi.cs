@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 // The C++ code names its result `EigenResult`, which is MathUtils::EigenResult only because MathLin_Jacobi.hxx
 // doesn't include MathLin_EigenSearch.hxx (whose MathLin::EigenResult, without NbIterations, would hide it). Here
@@ -17,177 +18,177 @@ public static partial class MathLin
     /// Eigenvalues and eigenvectors (as columns) of a symmetric matrix by Jacobi rotations (math_Recipes' Jacobi),
     /// sorted by descending eigenvalue if theSortDescending. NbIterations is the number of rotations.
     /// </summary>
-    public static MathUtils.EigenResult Jacobi(math_Matrix theA, bool theSortDescending = true)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.EigenResult Jacobi(Matrix a, bool sortDescending = true)
     {
-        MathUtils.EigenResult aResult = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.EigenResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aN = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int n = rowUpper - rowLower + 1;
 
         // Check for square matrix
-        if (aColUpper - aColLower + 1 != aN)
+        if (colUpper - colLower + 1 != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Create 1-based working copies as required by the Jacobi function
-        math_Matrix aWorkA = new(1, aN, 1, aN);
-        math_Vector aEigenVals = new(1, aN);
-        math_Matrix aEigenVecs = new(1, aN, 1, aN);
+        Matrix workA = new(1, n, 1, n);
+        math_Vector eigenVals = new(1, n);
+        Matrix eigenVecs = new(1, n, 1, n);
 
         // Copy input to working matrix
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            for (int j = aColLower; j <= aColUpper; ++j)
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aWorkA[i - aRowLower + 1, j - aColLower + 1] = theA[i, j];
+                workA[i - rowLower + 1, j - colLower + 1] = a[i, j];
             }
         }
 
         // Call the Jacobi function from math_Recipes
-        if (math_Recipes.Jacobi(aWorkA, aEigenVals, aEigenVecs, out int aNbRotations) != 0)
+        if (Recipes.Jacobi(workA, eigenVals, eigenVecs, out int nbRotations) != 0)
         {
-            aResult.Status = Status.NotConverged;
-            return aResult;
+            result.Status = Status.NotConverged;
+            return result;
         }
 
-        aResult.NbIterations = aNbRotations;
+        result.NbIterations = nbRotations;
 
         // Sort eigenvalues and eigenvectors if requested
-        if (theSortDescending && aN > 1)
+        if (sortDescending && n > 1)
         {
             // Simple selection sort
-            for (int i = 1; i < aN; ++i)
+            for (int i = 1; i < n; ++i)
             {
-                int aMaxIdx = i;
-                double aMaxVal = aEigenVals[i];
+                int maxIdx = i;
+                double maxVal = eigenVals[i];
 
-                for (int j = i + 1; j <= aN; ++j)
+                for (int j = i + 1; j <= n; ++j)
                 {
-                    if (aEigenVals[j] > aMaxVal)
+                    if (eigenVals[j] > maxVal)
                     {
-                        aMaxVal = aEigenVals[j];
-                        aMaxIdx = j;
+                        maxVal = eigenVals[j];
+                        maxIdx = j;
                     }
                 }
 
-                if (aMaxIdx != i)
+                if (maxIdx != i)
                 {
                     // Swap eigenvalues
-                    (aEigenVals[i], aEigenVals[aMaxIdx]) = (aEigenVals[aMaxIdx], aEigenVals[i]);
+                    (eigenVals[i], eigenVals[maxIdx]) = (eigenVals[maxIdx], eigenVals[i]);
 
                     // Swap corresponding eigenvector columns
-                    for (int k = 1; k <= aN; ++k)
+                    for (int k = 1; k <= n; ++k)
                     {
-                        (aEigenVecs[k, i], aEigenVecs[k, aMaxIdx]) = (aEigenVecs[k, aMaxIdx], aEigenVecs[k, i]);
+                        (eigenVecs[k, i], eigenVecs[k, maxIdx]) = (eigenVecs[k, maxIdx], eigenVecs[k, i]);
                     }
                 }
             }
         }
 
         // Copy results with original indexing
-        math_Vector aValues = new(aRowLower, aRowUpper);
-        aResult.EigenValues = aValues;
-        for (int i = 1; i <= aN; ++i)
+        math_Vector values = new(rowLower, rowUpper);
+        result.EigenValues = values;
+        for (int i = 1; i <= n; ++i)
         {
-            aValues[aRowLower + i - 1] = aEigenVals[i];
+            values[rowLower + i - 1] = eigenVals[i];
         }
 
-        math_Matrix aVectors = new(aRowLower, aRowUpper, aColLower, aColUpper);
-        aResult.EigenVectors = aVectors;
-        for (int i = 1; i <= aN; ++i)
+        Matrix vectors = new(rowLower, rowUpper, colLower, colUpper);
+        result.EigenVectors = vectors;
+        for (int i = 1; i <= n; ++i)
         {
-            for (int j = 1; j <= aN; ++j)
+            for (int j = 1; j <= n; ++j)
             {
-                aVectors[aRowLower + i - 1, aColLower + j - 1] = aEigenVecs[i, j];
+                vectors[rowLower + i - 1, colLower + j - 1] = eigenVecs[i, j];
             }
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Eigenvalues of a symmetric matrix (currently the full Jacobi, eigenvectors included).</summary>
-    public static MathUtils.EigenResult EigenValues(math_Matrix theA, bool theSortDescending = true)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.EigenResult EigenValues(Matrix a, bool sortDescending = true)
     {
         // Currently delegates to full Jacobi, but eigenvectors are computed
         // A future optimization could avoid eigenvector computation
-        return Jacobi(theA, theSortDescending);
+        return Jacobi(a, sortDescending);
     }
 
     /// <summary>Spectral decomposition A = V * D * V^T of a symmetric matrix (unsorted).</summary>
-    public static MathUtils.EigenResult SpectralDecomposition(math_Matrix theA)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.EigenResult SpectralDecomposition(Matrix a)
     {
-        return Jacobi(theA, false);
+        return Jacobi(a, false);
     }
 
     /// <summary>
     /// A^p = V * D^p * V^T for a symmetric positive semi-definite matrix; null if the decomposition fails or a
     /// negative eigenvalue meets a fractional power.
     /// </summary>
-    public static math_Matrix? MatrixPower(math_Matrix theA, double thePower)
+    public static Matrix? MatrixPower(Matrix a, double power)
     {
-        MathUtils.EigenResult aEigen = Jacobi(theA, false);
-        if (!aEigen.IsDone())
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.EigenResult eigen = Jacobi(a, false);
+        if (!eigen.IsDone)
         {
             return null;
         }
 
-        math_Vector aD = aEigen.EigenValues!;
-        math_Matrix aV = aEigen.EigenVectors!;
+        math_Vector d = eigen.EigenValues!;
+        Matrix v = eigen.EigenVectors!;
 
-        int aLower = aD.Lower();
-        int aUpper = aD.Upper();
+        int lower = d.Lower();
+        int upper = d.Upper();
 
         // Compute D^p
-        math_Vector aDp = new(aLower, aUpper);
-        for (int i = aLower; i <= aUpper; ++i)
+        math_Vector dp = new(lower, upper);
+        for (int i = lower; i <= upper; ++i)
         {
-            if (aD[i] < 0.0 && thePower != Math.Floor(thePower))
+            if (d[i] < 0.0 && power != Math.Floor(power))
             {
                 // Can't take fractional power of negative eigenvalue
                 return null;
             }
-            aDp[i] = (aD[i] >= 0.0) ? Math.Pow(aD[i], thePower) : Math.Pow(-aD[i], thePower);
-            if (aD[i] < 0.0 && (int)thePower % 2 != 0)
+            dp[i] = (d[i] >= 0.0) ? Math.Pow(d[i], power) : Math.Pow(-d[i], power);
+            if (d[i] < 0.0 && (int)power % 2 != 0)
             {
-                aDp[i] = -aDp[i];
+                dp[i] = -dp[i];
             }
         }
 
         // Compute V * D^p * V^T
         // OCCT: V's column indexes are taken from the eigenvalues' range (the row range): wrong or out of range
         // when the matrix's LowerCol differs from its LowerRow.
-        math_Matrix aResult = new(aLower, aUpper, aLower, aUpper, 0.0);
-        for (int i = aLower; i <= aUpper; ++i)
+        Matrix result = new(lower, upper, lower, upper, 0.0);
+        for (int i = lower; i <= upper; ++i)
         {
-            for (int j = aLower; j <= aUpper; ++j)
+            for (int j = lower; j <= upper; ++j)
             {
-                double aSum = 0.0;
-                for (int k = aLower; k <= aUpper; ++k)
+                double sum = 0.0;
+                for (int k = lower; k <= upper; ++k)
                 {
-                    aSum += aV[i, k] * aDp[k] * aV[j, k];
+                    sum += v[i, k] * dp[k] * v[j, k];
                 }
-                aResult[i, j] = aSum;
+                result[i, j] = sum;
             }
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>Square root of a symmetric positive semi-definite matrix.</summary>
-    public static math_Matrix? MatrixSqrt(math_Matrix theA)
+    public static Matrix? MatrixSqrt(Matrix a)
     {
-        return MatrixPower(theA, 0.5);
+        return MatrixPower(a, 0.5);
     }
 
     /// <summary>Inverse square root A^(-1/2) of a symmetric positive definite matrix.</summary>
-    public static math_Matrix? MatrixInvSqrt(math_Matrix theA)
+    public static Matrix? MatrixInvSqrt(Matrix a)
     {
-        return MatrixPower(theA, -0.5);
+        return MatrixPower(a, -0.5);
     }
 }

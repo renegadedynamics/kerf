@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.HLRAlgo_PolyMask;
 
 namespace Occt;
@@ -13,7 +16,7 @@ namespace Occt;
 /// triangles' planes, and the hiding of a segment by them.
 /// </summary>
 /// <remarks>A working object (a transient), as OCCT's; the nested structs are plain data with public fields.</remarks>
-public class HLRAlgo_PolyData : Standard_Transient
+public class HLRAlgo_PolyData : Transient
 {
     /// <summary>The face's index and its min-max indices (plain data).</summary>
     public struct FaceIndices
@@ -33,9 +36,9 @@ public class HLRAlgo_PolyData : Standard_Transient
     /// <summary>The triangle being tested and the segment's parameters and tolerances (plain data).</summary>
     public struct Triangle
     {
-        public gp_XY V1;
-        public gp_XY V2;
-        public gp_XY V3;
+        public Xy V1;
+        public Xy V2;
+        public Xy V3;
         public double Param;
         public double TolParam;
         public double TolAng;
@@ -43,7 +46,7 @@ public class HLRAlgo_PolyData : Standard_Transient
     }
 
     private FaceIndices myFaceIndices = new();
-    private NCollection_HArray1<gp_XYZ>? myHNodes;
+    private NCollection_HArray1<Xyz>? myHNodes;
     private NCollection_HArray1<HLRAlgo_TriangleData>? myHTData;
     private NCollection_HArray1<HLRAlgo_PolyHidingData>? myHPHDat;
 
@@ -51,7 +54,7 @@ public class HLRAlgo_PolyData : Standard_Transient
     {
     }
 
-    public void HNodes(NCollection_HArray1<gp_XYZ>? HNodes)
+    public void HNodes(NCollection_HArray1<Xyz>? HNodes)
     {
         myHNodes = HNodes;
     }
@@ -73,16 +76,16 @@ public class HLRAlgo_PolyData : Standard_Transient
 
     public int FaceIndex() => myFaceIndices.Index;
 
-    public NCollection_Array1<gp_XYZ> Nodes() => myHNodes!.ChangeArray1();
+    public NCollection_Array1<Xyz> Nodes() => myHNodes!.ChangeArray1();
 
     public NCollection_Array1<HLRAlgo_TriangleData> TData() => myHTData!.ChangeArray1();
 
     public NCollection_Array1<HLRAlgo_PolyHidingData> PHDat() => myHPHDat!.ChangeArray1();
 
     /// <summary>Adds the hiding triangles' nodes to <paramref name="theBox"/>.</summary>
-    public void UpdateGlobalMinMax(ref Bnd_Box theBox)
+    public void UpdateGlobalMinMax(ref Box theBox)
     {
-        NCollection_Array1<gp_XYZ> Nodes = myHNodes!.Array1();
+        NCollection_Array1<Xyz> Nodes = myHNodes!.Array1();
         NCollection_Array1<HLRAlgo_TriangleData> TData = myHTData!.Array1();
         int nbT = TData.Upper();
 
@@ -91,9 +94,9 @@ public class HLRAlgo_PolyData : Standard_Transient
             HLRAlgo_TriangleData TD = TData.Value(i);
             if ((TD.Flags & HLRAlgo_PolyMask_FMskHiding) != 0)
             {
-                gp_XYZ P1 = Nodes[TD.Node1];
-                gp_XYZ P2 = Nodes[TD.Node2];
-                gp_XYZ P3 = Nodes[TD.Node3];
+                Xyz P1 = Nodes[TD.Node1];
+                Xyz P2 = Nodes[TD.Node2];
+                Xyz P3 = Nodes[TD.Node3];
                 theBox.Update(P1.X(), P1.Y(), P1.Z());
                 theBox.Update(P2.X(), P2.Y(), P2.Z());
                 theBox.Update(P3.X(), P3.Y(), P3.Z());
@@ -184,13 +187,13 @@ public class HLRAlgo_PolyData : Standard_Transient
                                 toHideBefore = false;
                                 isCrossing = true;
                                 TFlag = aTriangle.Flags;
-                                NCollection_Array1<gp_XYZ> Nodes = myHNodes!.Array1();
-                                gp_XYZ P1 = Nodes[aTriangle.Node1];
-                                gp_XYZ P2 = Nodes[aTriangle.Node2];
-                                gp_XYZ P3 = Nodes[aTriangle.Node3];
-                                theTriangle.V1 = new gp_XY(P1.X(), P1.Y());
-                                theTriangle.V2 = new gp_XY(P2.X(), P2.Y());
-                                theTriangle.V3 = new gp_XY(P3.X(), P3.Y());
+                                NCollection_Array1<Xyz> Nodes = myHNodes!.Array1();
+                                Xyz P1 = Nodes[aTriangle.Node1];
+                                Xyz P2 = Nodes[aTriangle.Node2];
+                                Xyz P3 = Nodes[aTriangle.Node3];
+                                theTriangle.V1 = new Xy(P1.X(), P1.Y());
+                                theTriangle.V2 = new Xy(P2.X(), P2.Y());
+                                theTriangle.V3 = new Xy(P3.X(), P3.Y());
                                 hideByOneTriangle(thePoints, ref theTriangle, isCrossing, toHideBefore, TFlag, status);
                             }
                         }
@@ -202,26 +205,26 @@ public class HLRAlgo_PolyData : Standard_Transient
                                 toHideBefore = true;
                                 isCrossing = true;
                                 TFlag = aTriangle.Flags;
-                                NCollection_Array1<gp_XYZ> Nodes = myHNodes!.Array1();
-                                gp_XYZ P1 = Nodes[aTriangle.Node1];
-                                gp_XYZ P2 = Nodes[aTriangle.Node2];
-                                gp_XYZ P3 = Nodes[aTriangle.Node3];
-                                theTriangle.V1 = new gp_XY(P1.X(), P1.Y());
-                                theTriangle.V2 = new gp_XY(P2.X(), P2.Y());
-                                theTriangle.V3 = new gp_XY(P3.X(), P3.Y());
+                                NCollection_Array1<Xyz> Nodes = myHNodes!.Array1();
+                                Xyz P1 = Nodes[aTriangle.Node1];
+                                Xyz P2 = Nodes[aTriangle.Node2];
+                                Xyz P3 = Nodes[aTriangle.Node3];
+                                theTriangle.V1 = new Xy(P1.X(), P1.Y());
+                                theTriangle.V2 = new Xy(P2.X(), P2.Y());
+                                theTriangle.V3 = new Xy(P3.X(), P3.Y());
                                 hideByOneTriangle(thePoints, ref theTriangle, isCrossing, toHideBefore, TFlag, status);
                             }
                             else
                             {
                                 isCrossing = false;
                                 TFlag = aTriangle.Flags;
-                                NCollection_Array1<gp_XYZ> Nodes = myHNodes!.Array1();
-                                gp_XYZ P1 = Nodes[aTriangle.Node1];
-                                gp_XYZ P2 = Nodes[aTriangle.Node2];
-                                gp_XYZ P3 = Nodes[aTriangle.Node3];
-                                theTriangle.V1 = new gp_XY(P1.X(), P1.Y());
-                                theTriangle.V2 = new gp_XY(P2.X(), P2.Y());
-                                theTriangle.V3 = new gp_XY(P3.X(), P3.Y());
+                                NCollection_Array1<Xyz> Nodes = myHNodes!.Array1();
+                                Xyz P1 = Nodes[aTriangle.Node1];
+                                Xyz P2 = Nodes[aTriangle.Node2];
+                                Xyz P3 = Nodes[aTriangle.Node3];
+                                theTriangle.V1 = new Xy(P1.X(), P1.Y());
+                                theTriangle.V2 = new Xy(P2.X(), P2.Y());
+                                theTriangle.V3 = new Xy(P3.X(), P3.Y());
                                 hideByOneTriangle(thePoints, ref theTriangle, isCrossing, toHideBefore, TFlag, status);
                             }
                         }
@@ -229,13 +232,13 @@ public class HLRAlgo_PolyData : Standard_Transient
                         {
                             isCrossing = false;
                             TFlag = aTriangle.Flags;
-                            NCollection_Array1<gp_XYZ> Nodes = myHNodes!.Array1();
-                            gp_XYZ P1 = Nodes[aTriangle.Node1];
-                            gp_XYZ P2 = Nodes[aTriangle.Node2];
-                            gp_XYZ P3 = Nodes[aTriangle.Node3];
-                            theTriangle.V1 = new gp_XY(P1.X(), P1.Y());
-                            theTriangle.V2 = new gp_XY(P2.X(), P2.Y());
-                            theTriangle.V3 = new gp_XY(P3.X(), P3.Y());
+                            NCollection_Array1<Xyz> Nodes = myHNodes!.Array1();
+                            Xyz P1 = Nodes[aTriangle.Node1];
+                            Xyz P2 = Nodes[aTriangle.Node2];
+                            Xyz P3 = Nodes[aTriangle.Node3];
+                            theTriangle.V1 = new Xy(P1.X(), P1.Y());
+                            theTriangle.V2 = new Xy(P2.X(), P2.Y());
+                            theTriangle.V3 = new Xy(P3.X(), P3.Y());
                             hideByOneTriangle(thePoints, ref theTriangle, isCrossing, toHideBefore, TFlag, status);
                         }
                     }
@@ -259,8 +262,8 @@ public class HLRAlgo_PolyData : Standard_Transient
         int npiRej = 0;
 
         {
-            gp_XY aD = theTriangle.V2 - theTriangle.V1;
-            gp_XY aA = (1 / aD.Modulus()) * new gp_XY(-aD.Y(), aD.X());
+            Xy aD = theTriangle.V2 - theTriangle.V1;
+            Xy aA = (1 / aD.Modulus()) * new Xy(-aD.Y(), aD.X());
             double aDot = aA * theTriangle.V1;
             double d1 = aA * thePoints.PntP12D() - aDot;
             double d2 = aA * thePoints.PntP22D() - aDot;
@@ -520,8 +523,8 @@ public class HLRAlgo_PolyData : Standard_Transient
         }
 
         {
-            gp_XY aD = theTriangle.V3 - theTriangle.V2;
-            gp_XY aA = (1 / aD.Modulus()) * new gp_XY(-aD.Y(), aD.X());
+            Xy aD = theTriangle.V3 - theTriangle.V2;
+            Xy aA = (1 / aD.Modulus()) * new Xy(-aD.Y(), aD.X());
             double aDot = aA * theTriangle.V2;
             double d1 = aA * thePoints.PntP12D() - aDot;
             double d2 = aA * thePoints.PntP22D() - aDot;
@@ -780,8 +783,8 @@ public class HLRAlgo_PolyData : Standard_Transient
         }
 
         {
-            gp_XY aD = theTriangle.V1 - theTriangle.V3;
-            gp_XY aA = (1 / aD.Modulus()) * new gp_XY(-aD.Y(), aD.X());
+            Xy aD = theTriangle.V1 - theTriangle.V3;
+            Xy aA = (1 / aD.Modulus()) * new Xy(-aD.Y(), aD.X());
             double aDot = aA * theTriangle.V3;
             double d1 = aA * thePoints.PntP12D() - aDot;
             double d2 = aA * thePoints.PntP22D() - aDot;

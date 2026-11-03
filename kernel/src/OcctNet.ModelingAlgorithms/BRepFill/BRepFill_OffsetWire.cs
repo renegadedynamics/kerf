@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -33,7 +37,7 @@ public sealed class BRepFill_OffsetWire
     private bool myIsOpenResult;
     private TopoDS_Shape myShape = new();
     private bool myIsDone;
-    private GeomAbs_JoinType myJoinType;
+    private global::Kerf.Geometry.JoinKind myJoinType;
     private readonly NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(EqualityComparer<TopoDS_Shape>.Default);
     private readonly BRepMAT2d_BisectingLocus myBilo = new();
     private readonly BRepMAT2d_LinkTopoBilo myLink = new();
@@ -77,7 +81,7 @@ public sealed class BRepFill_OffsetWire
             return false;
         }
 
-        Geom_Curve? C = BRep_Tool.Curve(E, out TopLoc_Location L, out double f, out double l);
+        Geom_Curve? C = BRep_Tool.Curve(E, out Placement L, out double f, out double l);
         if (C is null)
         {
             return false;
@@ -96,7 +100,7 @@ public sealed class BRepFill_OffsetWire
             Geom2d_Curve aPCurve = BRep_Tool.CurveOnSurface(E, mySpine, out f, out l)!;
             Geom2dAdaptor_Curve AHC = new(aPCurve, f, l);
             Geom2d_Curve OC;
-            if (AHC.GetType() == GeomAbs_Line)
+            if (AHC.GetType() == Line)
             {
                 if (E.Orientation() == TopAbs_FORWARD)
                 {
@@ -105,7 +109,7 @@ public sealed class BRepFill_OffsetWire
                 Adaptor2d_OffsetCurve Off = new(AHC, anOffset);
                 OC = new Geom2d_Line(Off.Line());
             }
-            else if (AHC.GetType() == GeomAbs_Circle)
+            else if (AHC.GetType() == Circle)
             {
                 if (E.Orientation() == TopAbs_FORWARD)
                 {
@@ -115,7 +119,7 @@ public sealed class BRepFill_OffsetWire
                 {
                     anOffset *= -1;
                 }
-                gp_Circ2d theCirc = AHC.Circle();
+                Circle2D theCirc = AHC.Circle();
                 if (anOffset > 0.0 || Math.Abs(anOffset) < theCirc.Radius())
                 {
                     OC = new Geom2d_Circle(theCirc.Position(), theCirc.Radius() + anOffset);
@@ -142,15 +146,15 @@ public sealed class BRepFill_OffsetWire
 
             myShape.Orientation(E.Orientation());
             myShape.Location(L);
-            if (Math.Abs(Alt) > gp.Resolution())
+            if (Math.Abs(Alt) > Constants.Resolution())
             {
                 BRepAdaptor_Surface S = new(mySpine, false);
-                gp_Ax1 Nor = S.Plane().Axis();
-                gp_Trsf T = new();
-                gp_Vec Trans = new(Nor.Direction());
+                Axis3D Nor = S.Plane().Axis();
+                Transform3D T = new();
+                Vector3D Trans = new(Nor.Direction());
                 Trans = Alt * Trans;
                 T.SetTranslation(Trans);
-                myShape.Move(new TopLoc_Location(T));
+                myShape.Move(new Placement(T));
             }
 
             NCollection_List<TopoDS_Shape> LL = new();
@@ -178,7 +182,7 @@ public sealed class BRepFill_OffsetWire
     /// Prepares the offset of the wires of <paramref name="Spine"/> (a planar face) with the join type
     /// <paramref name="Join"/>; <paramref name="IsOpenResult"/> asks for open parallels of an open wire.
     /// </summary>
-    public BRepFill_OffsetWire(in TopoDS_Face Spine, GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public BRepFill_OffsetWire(in TopoDS_Face Spine, global::Kerf.Geometry.JoinKind Join = Arc, bool IsOpenResult = false)
     {
         Init(Spine, Join, IsOpenResult);
     }
@@ -187,7 +191,7 @@ public sealed class BRepFill_OffsetWire
     /// Prepares the offset of the wires of <paramref name="Spine"/>: cuts its edges for the bisectors and computes its
     /// medial axis on the left.
     /// </summary>
-    public void Init(in TopoDS_Face Spine, GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public void Init(in TopoDS_Face Spine, global::Kerf.Geometry.JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myIsDone = false;
         TopoDS_Shape aLocalShape = Spine.Oriented(TopAbs_FORWARD);
@@ -326,13 +330,13 @@ public sealed class BRepFill_OffsetWire
     }
 
     /// <summary>The join type.</summary>
-    public GeomAbs_JoinType JoinType() => myJoinType;
+    public global::Kerf.Geometry.JoinKind JoinType() => myJoinType;
 
     /// <summary>
     /// Computes the parallel at the distance <paramref name="Offset"/>, at the altitude <paramref name="Alt"/> along
     /// the normal of the spine's plane.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">A closed result is expected and a parallel wire isn't closed.</exception>
+    /// <exception cref="ConstructionErrorException">A closed result is expected and a parallel wire isn't closed.</exception>
     public void Perform(double Offset, double Alt = 0.0)
     {
         try
@@ -356,7 +360,7 @@ public sealed class BRepFill_OffsetWire
                 NCollection_List<TopoDS_Shape> aL = new();
                 double aDefl = .01 * Math.Abs(Offset);
                 NCollection_Sequence<double> Parameters = new();
-                NCollection_Sequence<gp_Pnt> Points = new();
+                NCollection_Sequence<Point3D> Points = new();
 
                 for (; it.More(); it.Next())
                 {
@@ -370,7 +374,7 @@ public sealed class BRepFill_OffsetWire
                     Geom_Curve? G3d = BRep_Tool.Curve(TopoDS.Edge(anE), out double f, out double l);
                     GeomAdaptor_Curve AC = new(G3d!, f, l);
 
-                    PerformCurve(Parameters, Points, AC, aDefl, f, l, Precision.Confusion(), 2);
+                    PerformCurve(Parameters, Points, AC, aDefl, f, l, global::Kerf.Engine.Foundation.Precision.Confusion(), 2);
 
                     int NPnts = Points.Length();
                     if (NPnts > 2)
@@ -381,7 +385,7 @@ public sealed class BRepFill_OffsetWire
                         int np;
                         for (np = 2; np < NPnts; np++)
                         {
-                            gp_Pnt LP = Points[np];
+                            Point3D LP = Points[np];
                             LV = new BRepLib_MakeVertex(LP).InternalVertex();
                             newE = new BRepLib_MakeEdge(FV, LV).InternalEdge();
                             aL.Append(newE);
@@ -474,8 +478,8 @@ public sealed class BRepFill_OffsetWire
                 PerformWithBiLo(myWorkSpine, Offset, myBilo, myLink, myJoinType, Alt);
             }
         }
-        catch (Exception anException) when (anException is Standard_Failure or NullReferenceException
-                                            && anException is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception anException) when (anException is FailureException or NullReferenceException
+                                            && anException is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // OCC_CATCH_SIGNALS turns OCCT's access violations (a null bisector, occt-issues.md) into failures caught
             // here: the port's NullReferenceException (decision 917)
@@ -497,7 +501,7 @@ public sealed class BRepFill_OffsetWire
                 {
                     myShape.Nullify();
                     myIsDone = false;
-                    throw new Standard_ConstructionError("Offset wire is not closed.");
+                    throw new ConstructionErrorException("Offset wire is not closed.");
                 }
             }
         }
@@ -518,9 +522,9 @@ public sealed class BRepFill_OffsetWire
         {
             ALT = -Alt;
         }
-        gp_Trsf T = new();
-        T.SetTranslation(new gp_Vec(0.0, 0.0, ALT));
-        TopLoc_Location L = new(T);
+        Transform3D T = new();
+        T.SetTranslation(new Vector3D(0.0, 0.0, ALT));
+        Placement L = new(T);
 
         for (TopExp_Explorer exp = new(Spine, TopAbs_WIRE); exp.More(); exp.Next())
         {
@@ -548,7 +552,7 @@ public sealed class BRepFill_OffsetWire
                                 double Offset,
                                 BRepMAT2d_BisectingLocus Locus,
                                 BRepMAT2d_LinkTopoBilo Link,
-                                GeomAbs_JoinType Join = GeomAbs_Arc,
+                                global::Kerf.Geometry.JoinKind Join = Arc,
                                 double Alt = 0.0)
     {
         myIsDone = false;
@@ -565,7 +569,7 @@ public sealed class BRepFill_OffsetWire
         }
         myMap.Clear();
 
-        if (Math.Abs(myOffset) < Precision.Confusion())
+        if (Math.Abs(myOffset) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Compute(mySpine, ref myShape, myMap, Alt);
             myIsDone = true;
@@ -599,14 +603,14 @@ public sealed class BRepFill_OffsetWire
 
         // OCCT.NET: OCCT down-casts (a null plane on another surface, dereferenced below: an access violation natively)
         Geom_Plane RefPlane = (BRep_Tool.Surface(myWorkSpine) as Geom_Plane)!;
-        if (Math.Abs(Alt) > gp.Resolution())
+        if (Math.Abs(Alt) > Constants.Resolution())
         {
             double anAlt = Alt;
             if (myWorkSpine.Orientation() == TopAbs_REVERSED)
             {
                 anAlt = -Alt;
             }
-            RefPlane = (Geom_Plane)RefPlane.Translated(anAlt * new gp_Vec(RefPlane.Axis().Direction()));
+            RefPlane = (Geom_Plane)RefPlane.Translated(anAlt * new Vector3D(RefPlane.Axis().Direction()));
         }
 
         //---------------------------------------------------------------
@@ -656,7 +660,7 @@ public sealed class BRepFill_OffsetWire
         }
 
         // Remove possible hanging arcs on vertices
-        if (myIsOpenResult && myJoinType == GeomAbs_Arc)
+        if (myIsOpenResult && myJoinType == Arc)
         {
             if (!myMap.IsEmpty() && myMap.FindKey(1).ShapeType() == TopAbs_VERTEX)
             {
@@ -690,7 +694,7 @@ public sealed class BRepFill_OffsetWire
             S[1] = Link.GeneratingShape(CurrentArc.SecondElement());
 
             NCollection_Sequence<TopoDS_Shape> Vertices = new();
-            NCollection_Sequence<gp_Pnt> Params = new();
+            NCollection_Sequence<Point3D> Params = new();
 
             //-----------------------------------------------------------
             // Return parallel edges on each face.
@@ -728,16 +732,16 @@ public sealed class BRepFill_OffsetWire
 
             if (!Node1.Infinite())
             {
-                gp_Pnt2d aLocalPnt2d = Locus.GeomElt(Node1);
+                Point2D aLocalPnt2d = Locus.GeomElt(Node1);
                 StartOnEdge = VertexFromNode(Node1, myOffset, aLocalPnt2d, MapNodeVertex, ref VS);
             }
             if (!Node2.Infinite())
             {
-                gp_Pnt2d aLocalPnt2d = Locus.GeomElt(Node2);
+                Point2D aLocalPnt2d = Locus.GeomElt(Node2);
                 EndOnEdge = VertexFromNode(Node2, myOffset, aLocalPnt2d, MapNodeVertex, ref VE);
             }
 
-            if (myJoinType == GeomAbs_Intersection)
+            if (myJoinType == Intersection)
             {
                 StartOnEdge = EndOnEdge = false;
             }
@@ -760,10 +764,10 @@ public sealed class BRepFill_OffsetWire
             {
                 TopoDS_Vertex VC = new();
                 myBuilder.MakeVertex(ref VC);
-                gp_Pnt2d P2 = Bisec.Value().Value(Params.Value(s).X());
-                gp_Pnt PVC = new(P2.X(), P2.Y(), 0.0);
+                Point2D P2 = Bisec.Value().Value(Params.Value(s).X());
+                Point3D PVC = new(P2.X(), P2.Y(), 0.0);
 
-                myBuilder.UpdateVertex(VC, PVC, Precision.Confusion());
+                myBuilder.UpdateVertex(VC, PVC, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Vertices.Append(VC);
             }
             if (StartOnEdge)
@@ -921,8 +925,8 @@ public sealed class BRepFill_OffsetWire
         {
             TopoDS_Vertex OldV = TopoDS.Vertex(MapVV.FindKey(ind));
             TopoDS_Vertex NewV = TopoDS.Vertex(MapVV[ind]);
-            gp_Pnt P1 = BRep_Tool.Pnt(OldV);
-            gp_Pnt P2 = BRep_Tool.Pnt(NewV);
+            Point3D P1 = BRep_Tool.Pnt(OldV);
+            Point3D P2 = BRep_Tool.Pnt(NewV);
             myBuilder.UpdateVertex(NewV, P1.Distance(P2));
             NCollection_List<TopoDS_Shape> LV = new();
             LV.Append(NewV.Oriented(TopAbs_FORWARD));
@@ -957,9 +961,9 @@ public sealed class BRepFill_OffsetWire
             TopoDS_Vertex V = TopoDS.Vertex(exp.Current());
             if (MapVertex.Add(V))
             {
-                gp_Pnt P = BRep_Tool.Pnt(V);
+                Point3D P = BRep_Tool.Pnt(V);
                 P = RefPlane.Value(P.X(), P.Y());
-                myBuilder.UpdateVertex(V, P, Precision.Confusion());
+                myBuilder.UpdateVertex(V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -974,11 +978,11 @@ public sealed class BRepFill_OffsetWire
             BRep_TVertex TV1 = (BRep_TVertex)V1.TShape()!;
             BRep_TVertex TV2 = (BRep_TVertex)V2.TShape()!;
 
-            Geom_Curve theCurve = BRep_Tool.Curve(anEdge, out TopLoc_Location loc, out double f, out double l)!;
+            Geom_Curve theCurve = BRep_Tool.Curve(anEdge, out Placement loc, out double f, out double l)!;
             theCurve = (Geom_Curve)theCurve.Copy();
             theCurve.Transform(loc.Transformation());
-            gp_Pnt f3d = theCurve.Value(f);
-            gp_Pnt l3d = theCurve.Value(l);
+            Point3D f3d = theCurve.Value(f);
+            Point3D l3d = theCurve.Value(l);
 
             double dist1, dist2;
             dist1 = f3d.Distance(TV1.Pnt());
@@ -1025,7 +1029,7 @@ public sealed class BRepFill_OffsetWire
         myWorkSpine.Nullify();
         myMapSpine.Clear();
 
-        Geom_Surface? S = BRep_Tool.Surface(mySpine, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(mySpine, out Placement L);
         double TolF = BRep_Tool.Tolerance(mySpine);
         TopoDS_Face aWorkSpine = new();
         B.MakeFace(ref aWorkSpine, S, L, TolF);
@@ -1106,7 +1110,7 @@ public sealed class BRepFill_OffsetWire
                                in TopoDS_Shape Shape1,
                                in TopoDS_Shape Shape2,
                                NCollection_Sequence<TopoDS_Shape> Vertices,
-                               NCollection_Sequence<gp_Pnt> Params,
+                               NCollection_Sequence<Point3D> Params,
                                Bisector_Bisec Bisec,
                                bool SOnE,
                                bool EOnE,
@@ -1114,7 +1118,7 @@ public sealed class BRepFill_OffsetWire
     {
         int ii = 1;
 
-        if (myJoinType == GeomAbs_Intersection)
+        if (myJoinType == Intersection)
         {
             for (; ii <= Vertices.Length(); ii++)
             {
@@ -1132,9 +1136,9 @@ public sealed class BRepFill_OffsetWire
             bool ForceAdd = false;
             if (Bis is Geom2d_TrimmedCurve aTC && aTC.ChangeBasisCurve().IsPeriodic())
             {
-                gp_Pnt2d Pf = Bis.Value(Bis.FirstParameter());
-                gp_Pnt2d Pl = Bis.Value(Bis.LastParameter());
-                ForceAdd = Pf.Distance(Pl) <= Precision.Confusion();
+                Point2D Pf = Bis.Value(Bis.FirstParameter());
+                Point2D Pl = Bis.Value(Bis.LastParameter());
+                ForceAdd = Pf.Distance(Pl) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
             U1 = Bis.FirstParameter();
@@ -1151,7 +1155,7 @@ public sealed class BRepFill_OffsetWire
                 U2 = Params.Value(ii).X();
                 V2 = TopoDS.Vertex(Vertices.Value(ii));
 
-                gp_Pnt2d P = Bis.Value((U2 + U1) * 0.5);
+                Point2D P = Bis.Value((U2 + U1) * 0.5);
                 if (!Trim.IsInside(P) || ForceAdd)
                 {
                     if (!V1.IsNull())
@@ -1171,9 +1175,9 @@ public sealed class BRepFill_OffsetWire
             U2 = Bis.LastParameter();
             if (!EOnE)
             {
-                if (!Precision.IsInfinite(U2))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
                 {
-                    gp_Pnt2d P = Bis.Value((U2 + U1) * 0.5);
+                    Point2D P = Bis.Value((U2 + U1) * 0.5);
                     if (!Trim.IsInside(P) || ForceAdd)
                     {
                         if (!V1.IsNull())
@@ -1415,9 +1419,9 @@ public sealed class BRepFill_OffsetWire
             TopExp.Vertices(Base, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
             if (Vf.IsNull() || Vl.IsNull())
             {
-                throw new Standard_Failure("BRepFill_OffsetWire::FixHoles(): Wrong wire.");
+                throw new FailureException("BRepFill_OffsetWire::FixHoles(): Wrong wire.");
             }
-            gp_Pnt Pf, Pl;
+            Point3D Pf, Pl;
             Pf = BRep_Tool.Pnt(Vf);
             Pl = BRep_Tool.Pnt(Vl);
             double DistF = RealLast(), DistL = RealLast();
@@ -1430,10 +1434,10 @@ public sealed class BRepFill_OffsetWire
 
                 if (V1.IsNull() || V2.IsNull())
                 {
-                    throw new Standard_Failure("BRepFill_OffsetWire::FixHoles(): Wrong wire.");
+                    throw new FailureException("BRepFill_OffsetWire::FixHoles(): Wrong wire.");
                 }
 
-                gp_Pnt P1, P2;
+                Point3D P1, P2;
                 P1 = BRep_Tool.Pnt(V1);
                 P2 = BRep_Tool.Pnt(V2);
                 double dist = Pf.Distance(P1);
@@ -1784,7 +1788,7 @@ public sealed class BRepFill_OffsetWire
             }
             else
             {
-                gp_Pnt P = aC!.Value(CC.LastParameter());
+                Point3D P = aC!.Value(CC.LastParameter());
 
                 VL = new BRepLib_MakeVertex(P).InternalVertex();
                 B.UpdateVertex(VL, aTol);
@@ -1808,9 +1812,9 @@ public sealed class BRepFill_OffsetWire
         Geom2d_TrimmedCurve TrimC;
         double UF, UL, UC;
         double Step;
-        gp_Pnt2d PF, PL, PC;
-        double PTol = Precision.PConfusion() * 10;
-        double Tol = Precision.Confusion() * 10;
+        Point2D PF, PL, PC;
+        double PTol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion() * 10;
         bool YaCut = false;
 
         UF = C.FirstParameter();
@@ -1860,8 +1864,8 @@ public sealed class BRepFill_OffsetWire
     {
         // evaluate the Axis of the Circle.
         Geom2d_Curve GC = BRep_Tool.CurveOnSurface(E, F, out double f, out double l)!;
-        gp_Vec2d DX;
-        gp_Pnt2d P;
+        Vector2D DX;
+        Point2D P;
 
         if (E.Orientation() == TopAbs_FORWARD)
         {
@@ -1873,7 +1877,7 @@ public sealed class BRepFill_OffsetWire
             GC.D1(f, out P, out DX);
         }
 
-        gp_Ax2d Axis = new(P, new gp_Dir2d(DX));
+        Axis2D Axis = new(P, new Direction2D(DX));
         Geom2d_Circle Circ = new(Axis, Math.Abs(Offset), Offset < 0.0);
 
         // Bind the edges in my Map.
@@ -1891,7 +1895,7 @@ public sealed class BRepFill_OffsetWire
                                    NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Map,
                                    Geom_Plane RefPlane,
                                    bool IsOpenResult,
-                                   GeomAbs_JoinType theJoinType,
+                                   global::Kerf.Geometry.JoinKind theJoinType,
                                    TopoDS_Vertex[] Ends)
     {
         double f, l;
@@ -1921,25 +1925,25 @@ public sealed class BRepFill_OffsetWire
         }
 
         Geom2dAdaptor_Curve AC = new(G2d, f, l);
-        if (AC.GetType() == GeomAbs_Circle)
+        if (AC.GetType() == Circle)
         {
             // if the offset is greater otr equal to the radius and the side of the
             // concavity of the circle => edge null.
-            gp_Circ2d C1 = AC.Circle();
-            gp_Ax22d axes = C1.Axis();
-            gp_Dir2d Xd = axes.XDirection();
-            gp_Dir2d Yd = axes.YDirection();
+            Circle2D C1 = AC.Circle();
+            Frame2D axes = C1.Axis();
+            Direction2D Xd = axes.XDirection();
+            Direction2D Yd = axes.YDirection();
             double Crossed = Xd.X() * Yd.Y() - Xd.Y() * Yd.X();
             double Signe = (Crossed > 0.0) ? -1.0 : 1.0;
 
-            if (anOffset * Signe < AC.Circle().Radius() - Precision.Confusion())
+            if (anOffset * Signe < AC.Circle().Radius() - global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Geom2dAdaptor_Curve AHC = new(G2d);
                 Adaptor2d_OffsetCurve Off = new(AHC, anOffset);
                 Geom2d_Circle CC = new(Off.Circle());
 
                 double Delta = 2 * Math.PI - l + f;
-                if (theJoinType == GeomAbs_Arc)
+                if (theJoinType == Arc)
                 {
                     if (ToExtendFirstPar)
                     {
@@ -1971,7 +1975,7 @@ public sealed class BRepFill_OffsetWire
                 G2dOC = new Geom2d_TrimmedCurve(CC, f, l);
             }
         }
-        else if (AC.GetType() == GeomAbs_Line)
+        else if (AC.GetType() == Line)
         {
             Geom2dAdaptor_Curve AHC = new(G2d);
             Adaptor2d_OffsetCurve Off = new(AHC, anOffset);
@@ -1979,24 +1983,24 @@ public sealed class BRepFill_OffsetWire
             double Delta = l - f;
             if (ToExtendFirstPar)
             {
-                if (theJoinType == GeomAbs_Arc)
+                if (theJoinType == Arc)
                 {
                     f -= Delta;
                 }
                 else
                 { // GeomAbs_Intersection
-                    f = -Precision.Infinite();
+                    f = -global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
             }
             if (ToExtendLastPar)
             {
-                if (theJoinType == GeomAbs_Arc)
+                if (theJoinType == Arc)
                 {
                     l += Delta;
                 }
                 else
                 { // GeomAbs_Intersection
-                    l = Precision.Infinite();
+                    l = global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
             }
             G2dOC = new Geom2d_TrimmedCurve(CC, f, l);
@@ -2021,12 +2025,12 @@ public sealed class BRepFill_OffsetWire
     // The vertex of a node of the locus that lies on the offset (one per node).
     private static bool VertexFromNode(MAT_Node aNode,
                                        double Offset,
-                                       in gp_Pnt2d PN,
+                                       in Point2D PN,
                                        NCollection_DataMap<MAT_Node, TopoDS_Shape> MapNodeVertex,
                                        ref TopoDS_Vertex VN)
     {
         bool Status;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         BRep_Builder B = new();
 
         if (!aNode.Infinite() && Math.Abs(aNode.Distance() - Offset) < Tol)
@@ -2040,9 +2044,9 @@ public sealed class BRepFill_OffsetWire
             }
             else
             {
-                gp_Pnt P = new(PN.X(), PN.Y(), 0.0);
+                Point3D P = new(PN.X(), PN.Y(), 0.0);
                 B.MakeVertex(ref VN);
-                B.UpdateVertex(VN, P, Precision.Confusion());
+                B.UpdateVertex(VN, P, global::Kerf.Engine.Foundation.Precision.Confusion());
                 MapNodeVertex.Bind(aNode, VN);
             }
             Status = true;
@@ -2136,7 +2140,7 @@ public sealed class BRepFill_OffsetWire
         //----------------------------------------------------------
         if (!BRep_Tool.Degenerated(E))
         {
-            double aParTol = 2.0 * Precision.PConfusion();
+            double aParTol = 2.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
             for (int k = 1; k < TheVer.Length(); k++)
             {
                 if (TheVer.Value(k).IsSame(TheVer.Value(k + 1))
@@ -2168,7 +2172,7 @@ public sealed class BRepFill_OffsetWire
             TopoDS_Shape aLocalShape = E.EmptyCopied();
             TopoDS_Edge NewEdge = TopoDS.Edge(aLocalShape);
             TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-            BRep_Tool.CurveOnSurface(E, out Geom2d_Curve? PCurve, out Geom_Surface? _, out TopLoc_Location _, out double fpar, out double lpar);
+            BRep_Tool.CurveOnSurface(E, out Geom2d_Curve? PCurve, out Geom_Surface? _, out Placement _, out double fpar, out double lpar);
 
             bool ToTrimAsOrigin = IsInnerEdge(ProE, AllSpine, out double TrPar1, out double TrPar2);
 
@@ -2179,8 +2183,8 @@ public sealed class BRepFill_OffsetWire
                     if (ToTrimAsOrigin)
                     {
                         fpar = TrPar1;
-                        gp_Pnt2d TrPnt2d = PCurve!.Value(fpar);
-                        gp_Pnt TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
+                        Point2D TrPnt2d = PCurve!.Value(fpar);
+                        Point3D TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
                         V1 = new BRepLib_MakeVertex(TrPnt).InternalVertex();
                     }
                     TheBuilder.Add(NewEdge, V1.Oriented(TopAbs_FORWARD));
@@ -2192,8 +2196,8 @@ public sealed class BRepFill_OffsetWire
                     if (ToTrimAsOrigin)
                     {
                         lpar = TrPar2;
-                        gp_Pnt2d TrPnt2d = PCurve!.Value(lpar);
-                        gp_Pnt TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
+                        Point2D TrPnt2d = PCurve!.Value(lpar);
+                        Point3D TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
                         V2 = new BRepLib_MakeVertex(TrPnt).InternalVertex();
                     }
                     TheBuilder.Add(NewEdge, TheVer.First().Oriented(TopAbs_REVERSED));
@@ -2208,8 +2212,8 @@ public sealed class BRepFill_OffsetWire
                     if (ToTrimAsOrigin)
                     {
                         lpar = TrPar2;
-                        gp_Pnt2d TrPnt2d = PCurve!.Value(lpar);
-                        gp_Pnt TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
+                        Point2D TrPnt2d = PCurve!.Value(lpar);
+                        Point3D TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
                         V2 = new BRepLib_MakeVertex(TrPnt).InternalVertex();
                     }
                     TheBuilder.Add(NewEdge, TheVer.First().Oriented(TopAbs_FORWARD));
@@ -2221,8 +2225,8 @@ public sealed class BRepFill_OffsetWire
                     if (ToTrimAsOrigin)
                     {
                         fpar = TrPar1;
-                        gp_Pnt2d TrPnt2d = PCurve!.Value(fpar);
-                        gp_Pnt TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
+                        Point2D TrPnt2d = PCurve!.Value(fpar);
+                        Point3D TrPnt = new(TrPnt2d.X(), TrPnt2d.Y(), 0.0);
                         V1 = new BRepLib_MakeVertex(TrPnt).InternalVertex();
                     }
                     TheBuilder.Add(NewEdge, V1.Oriented(TopAbs_REVERSED));
@@ -2307,8 +2311,8 @@ public sealed class BRepFill_OffsetWire
 
     private static bool IsSmallClosedEdge(in TopoDS_Edge anEdge, in TopoDS_Vertex aVertex)
     {
-        gp_Pnt PV = BRep_Tool.Pnt(aVertex);
-        gp_Pnt2d PV2d = new(), Pfirst, Plast, Pmid;
+        Point3D PV = BRep_Tool.Pnt(aVertex);
+        Point2D PV2d = new(), Pfirst, Plast, Pmid;
         PV2d.SetCoord(PV.X(), PV.Y());
 
         Geom2d_Curve PCurve;
@@ -2339,7 +2343,7 @@ public sealed class BRepFill_OffsetWire
                                       NCollection_List<TopoDS_Shape> BadEdges)
     {
         TopoDS_Face F = TopoDS.Face(Spine.Oriented(TopAbs_FORWARD));
-        double eps = Precision.Confusion();
+        double eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double LimCurv = 1.0 / Offset;
 
         NCollection_Map<TopoDS_Shape> aMap = new(TopTools_ShapeMapHasher.Instance);
@@ -2361,9 +2365,9 @@ public sealed class BRepFill_OffsetWire
                     Geom2d_Curve G2d = BRep_Tool.CurveOnSurface(E, F, out double f, out double l)!;
 
                     Geom2dAdaptor_Curve AC = new(G2d, f, l);
-                    GeomAbs_CurveType aCType = AC.GetType();
+                    CurveKind aCType = AC.GetType();
 
-                    if (aCType != GeomAbs_Line && aCType != GeomAbs_Circle)
+                    if (aCType != Line && aCType != Circle)
                     {
                         bool reverse = false;
                         if (E.Orientation() == TopAbs_FORWARD)
@@ -2371,8 +2375,8 @@ public sealed class BRepFill_OffsetWire
                             reverse = true;
                         }
 
-                        gp_Pnt2d P, Pc;
-                        gp_Dir2d N;
+                        Point2D P, Pc;
+                        Direction2D N;
 
                         GeomLProp_CLProps2d aCLProps = new(G2d, 2, eps);
 
@@ -2397,8 +2401,8 @@ public sealed class BRepFill_OffsetWire
                                 N.Reverse();
                             }
                             aCLProps.CentreOfCurvature(out Pc);
-                            gp_Vec2d Dir = new(P, Pc);
-                            if (N.Dot(new gp_Dir2d(Dir)) > 0.0) // C++ converts the vector to a direction implicitly
+                            Vector2D Dir = new(P, Pc);
+                            if (N.Dot(new Direction2D(Dir)) > 0.0) // C++ converts the vector to a direction implicitly
                             {
                                 if (LimCurv <= Crv + eps)
                                 {
@@ -2430,8 +2434,8 @@ public sealed class BRepFill_OffsetWire
                                 N.Reverse();
                             }
                             aCLProps.CentreOfCurvature(out Pc);
-                            gp_Vec2d Dir = new(P, Pc);
-                            if (N.Dot(new gp_Dir2d(Dir)) > 0.0) // C++ converts the vector to a direction implicitly
+                            Vector2D Dir = new(P, Pc);
+                            if (N.Dot(new Direction2D(Dir)) > 0.0) // C++ converts the vector to a direction implicitly
                             {
                                 if (LimCurv <= Crv + eps)
                                 {
@@ -2448,7 +2452,7 @@ public sealed class BRepFill_OffsetWire
     }
 
     private static bool PerformCurve(NCollection_Sequence<double> Parameters,
-                                     NCollection_Sequence<gp_Pnt> Points,
+                                     NCollection_Sequence<Point3D> Points,
                                      Adaptor3d_Curve C,
                                      double Deflection,
                                      double U1,
@@ -2459,11 +2463,11 @@ public sealed class BRepFill_OffsetWire
         double UU1 = Min(U1, U2);
         double UU2 = Max(U1, U2);
 
-        C.D1(UU1, out gp_Pnt Pdeb, out gp_Vec Ddeb);
+        C.D1(UU1, out Point3D Pdeb, out Vector3D Ddeb);
         Parameters.Append(UU1);
         Points.Append(Pdeb);
 
-        C.D1(UU2, out gp_Pnt Pfin, out gp_Vec Dfin);
+        C.D1(UU2, out Point3D Pfin, out Vector3D Dfin);
 
         double aDelta = UU2 - UU1;
         double aDist = Pdeb.Distance(Pfin);
@@ -2479,20 +2483,20 @@ public sealed class BRepFill_OffsetWire
     private static void QuasiFleche(Adaptor3d_Curve C,
                                     double Deflection2,
                                     double Udeb,
-                                    in gp_Pnt Pdeb,
-                                    in gp_Vec Vdeb,
+                                    in Point3D Pdeb,
+                                    in Vector3D Vdeb,
                                     double Ufin,
-                                    in gp_Pnt Pfin,
-                                    in gp_Vec Vfin,
+                                    in Point3D Pfin,
+                                    in Vector3D Vfin,
                                     int Nbmin,
                                     double Eps,
                                     NCollection_Sequence<double> Parameters,
-                                    NCollection_Sequence<gp_Pnt> Points)
+                                    NCollection_Sequence<Point3D> Points)
     {
         int Ptslength = Points.Length();
         double Udelta = Ufin - Udeb;
-        gp_Pnt Pdelta;
-        gp_Vec Vdelta;
+        Point3D Pdelta;
+        Vector3D Vdelta;
         if (Nbmin > 2)
         {
             Udelta /= (Nbmin - 1);
@@ -2504,7 +2508,7 @@ public sealed class BRepFill_OffsetWire
             Vdelta = Vfin;
         }
 
-        double Norme = new gp_Vec(Pdeb, Pdelta).SquareMagnitude();
+        double Norme = new Vector3D(Pdeb, Pdelta).SquareMagnitude();
         double theFleche = 0;
         bool flecheok = false;
         if (Norme > Eps)
@@ -2524,8 +2528,8 @@ public sealed class BRepFill_OffsetWire
         }
         if (!flecheok)
         {
-            gp_Pnt Pmid = new((Pdeb.XYZ() + Pdelta.XYZ()) / 2.0);
-            gp_Pnt Pverif = C.Value(Udeb + Udelta / 2.0);
+            Point3D Pmid = new((Pdeb.XYZ() + Pdelta.XYZ()) / 2.0);
+            Point3D Pverif = C.Value(Udeb + Udelta / 2.0);
             theFleche = Pmid.SquareDistance(Pverif);
         }
 
@@ -2554,7 +2558,7 @@ public sealed class BRepFill_OffsetWire
             BRep_CurveRepresentation CRep = ((BRep_TEdge)anEdge.TShape()!).Curves().First();
             double f = ((BRep_GCurve)CRep).First();
             double l = ((BRep_GCurve)CRep).Last();
-            if (Math.Abs(l - f) < Precision.PConfusion())
+            if (Math.Abs(l - f) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }

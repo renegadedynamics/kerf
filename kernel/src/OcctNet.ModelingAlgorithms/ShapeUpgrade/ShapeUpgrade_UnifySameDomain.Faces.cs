@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using DataMapOfFacePlane = Occt.NCollection_DataMap<Occt.TopoDS_Shape, Occt.Geom_Plane>;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -32,28 +36,28 @@ public partial class ShapeUpgrade_UnifySameDomain
     private static bool IsUiso(in TopoDS_Edge theEdge, in TopoDS_Face theFace)
     {
         var      aBAcurve2d = new BRepAdaptor_Curve2d(theEdge, theFace);
-        gp_Pnt2d aP2d;
-        gp_Vec2d aVec;
+        Point2D aP2d;
+        Vector2D aVec;
         aBAcurve2d.D1(aBAcurve2d.FirstParameter(), out aP2d, out aVec);
         return (Math.Abs(aVec.Y()) > Math.Abs(aVec.X()));
     }
 
-    private static bool IsLinear(BRepAdaptor_Curve theBAcurve, ref gp_Dir theDir)
+    private static bool IsLinear(BRepAdaptor_Curve theBAcurve, ref Direction3D theDir)
     {
-        GeomAbs_CurveType aType = theBAcurve.GetType();
+        CurveKind aType = theBAcurve.GetType();
 
-        if (aType == GeomAbs_CurveType.GeomAbs_Line)
+        if (aType == CurveKind.Line)
         {
             theDir = theBAcurve.Line().Position().Direction();
             return true;
         }
 
-        if ((aType == GeomAbs_CurveType.GeomAbs_BezierCurve || aType == GeomAbs_CurveType.GeomAbs_BSplineCurve)
+        if ((aType == CurveKind.BezierCurve || aType == CurveKind.BSplineCurve)
             && theBAcurve.NbPoles() == 2)
         {
-            gp_Pnt aFirstPnt = theBAcurve.Value(theBAcurve.FirstParameter());
-            gp_Pnt aLastPnt  = theBAcurve.Value(theBAcurve.LastParameter());
-            theDir           = new gp_Dir(new gp_Vec(aFirstPnt, aLastPnt));
+            Point3D aFirstPnt = theBAcurve.Value(theBAcurve.FirstParameter());
+            Point3D aLastPnt  = theBAcurve.Value(theBAcurve.LastParameter());
+            theDir           = new Direction3D(new Vector3D(aFirstPnt, aLastPnt));
             return true;
         }
 
@@ -158,7 +162,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         for (int i = 0; i <= NbSamples; i++)
         {
             double   aParam = theFirst + i * Delta;
-            gp_Pnt2d aPoint = thePCurve.Value(aParam);
+            Point2D aPoint = thePCurve.Value(aParam);
 
             if (aPoint.Coord(theIndCoord) < theMinCoord)
             {
@@ -174,30 +178,30 @@ public partial class ShapeUpgrade_UnifySameDomain
 
     private static bool TryMakeLine(Geom2d_Curve thePCurve, double theFirst, double theLast, ref Geom2d_Line? theLine)
     {
-        gp_Pnt2d aFirstPnt   = thePCurve.Value(theFirst);
-        gp_Pnt2d aLastPnt    = thePCurve.Value(theLast);
-        var      aVec        = new gp_Vec2d(aFirstPnt, aLastPnt);
+        Point2D aFirstPnt   = thePCurve.Value(theFirst);
+        Point2D aLastPnt    = thePCurve.Value(theLast);
+        var      aVec        = new Vector2D(aFirstPnt, aLastPnt);
         double   aSqLen      = aVec.SquareMagnitude();
         double   aSqParamLen = (theLast - theFirst) * (theLast - theFirst);
-        if (Math.Abs(aSqLen - aSqParamLen) > Precision.Confusion())
+        if (Math.Abs(aSqLen - aSqParamLen) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
 
-        var      aDir     = new gp_Dir2d(aVec);
-        gp_Vec2d anOffset = -new gp_Vec2d(aDir);
+        var      aDir     = new Direction2D(aVec);
+        Vector2D anOffset = -new Vector2D(aDir);
         anOffset *= theFirst;
-        gp_Pnt2d anOrigin = aFirstPnt.Translated(anOffset);
-        var      aLin     = new gp_Lin2d(anOrigin, aDir);
+        Point2D anOrigin = aFirstPnt.Translated(anOffset);
+        var      aLin     = new Line2D(anOrigin, aDir);
 
         const int NbSamples = 10;
         double    aDelta    = (theLast - theFirst) / NbSamples;
         for (int i = 1; i < NbSamples; i++)
         {
             double   aParam = theFirst + i * aDelta;
-            gp_Pnt2d aPnt   = thePCurve.Value(aParam);
+            Point2D aPnt   = thePCurve.Value(aParam);
             double   aDist  = aLin.Distance(aPnt);
-            if (aDist > Precision.Confusion())
+            if (aDist > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -255,12 +259,12 @@ public partial class ShapeUpgrade_UnifySameDomain
                 continue;
             }
 
-            gp_Pnt2d FirstP2d = BAcurve2d.Value(BAcurve2d.FirstParameter());
-            gp_Pnt2d LastP2d  = BAcurve2d.Value(BAcurve2d.LastParameter());
+            Point2D FirstP2d = BAcurve2d.Value(BAcurve2d.FirstParameter());
+            Point2D LastP2d  = BAcurve2d.Value(BAcurve2d.LastParameter());
             double   aSqDist;
             if (V1.IsSame(V2) && !BRep_Tool.Degenerated(anEdge))
             {
-                gp_Pnt2d MidP2d = BAcurve2d.Value((BAcurve2d.FirstParameter() + BAcurve2d.LastParameter()) / 2);
+                Point2D MidP2d = BAcurve2d.Value((BAcurve2d.FirstParameter() + BAcurve2d.LastParameter()) / 2);
                 aSqDist = FirstP2d.SquareDistance(MidP2d);
             }
             else
@@ -315,7 +319,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 UpdateBoundaries(aPCurve, fpar, lpar, theIndCoord, ref aMinCoord, ref aMaxCoord);
             }
 
-            if (Precision.IsInfinite(aMinCoord) || Precision.IsInfinite(aMaxCoord))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aMinCoord) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aMaxCoord))
             {
                 continue;
             }
@@ -394,7 +398,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
     // Returns the start and end points of the edge in parametric space of the face. The orientation of the edge is
     // taken into account, so the start and end points will be swapped if the edge has a reversed orientation.
-    private static (gp_Pnt2d, gp_Pnt2d) getCurveParams(in TopoDS_Edge theEdge, in TopoDS_Face theRefFace)
+    private static (Point2D, Point2D) getCurveParams(in TopoDS_Edge theEdge, in TopoDS_Face theRefFace)
     {
         var    aCurveAdaptor = new BRepAdaptor_Curve2d(theEdge, theRefFace);
         double aFirstParam   = aCurveAdaptor.FirstParameter();
@@ -404,8 +408,8 @@ public partial class ShapeUpgrade_UnifySameDomain
             (aFirstParam, aLastParam) = (aLastParam, aFirstParam);
         }
 
-        gp_Pnt2d aFirstPoint = aCurveAdaptor.Value(aFirstParam);
-        gp_Pnt2d aLastPoint  = aCurveAdaptor.Value(aLastParam);
+        Point2D aFirstPoint = aCurveAdaptor.Value(aFirstParam);
+        Point2D aLastPoint  = aCurveAdaptor.Value(aLastParam);
         return (aFirstPoint, aLastPoint);
     }
 
@@ -447,7 +451,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 if (aStartEdge.IsNull())
                 {
                     aStartEdge = anEdge;
-                    (gp_Pnt2d aFirstPoint, gp_Pnt2d aLastPoint) = getCurveParams(anEdge, theRefFace);
+                    (Point2D aFirstPoint, Point2D aLastPoint) = getCurveParams(anEdge, theRefFace);
                     if (aFirstPoint.Coord(theIndCoord) < aLastPoint.Coord(theIndCoord))
                     {
                         aCoordMin     = aFirstPoint.Coord(theIndCoord);
@@ -461,7 +465,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 else
                 {
-                    (gp_Pnt2d aFirstPoint, gp_Pnt2d aLastPoint) = getCurveParams(anEdge, theRefFace);
+                    (Point2D aFirstPoint, Point2D aLastPoint) = getCurveParams(anEdge, theRefFace);
                     if (aFirstPoint.Coord(theIndCoord) < aCoordMin)
                     {
                         aStartEdge    = anEdge;
@@ -496,7 +500,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 (anEdgeStartParam, anEdgeEndParam) = (anEdgeEndParam, anEdgeStartParam);
             }
             double   CurParam = (anOrientation == TopAbs_FORWARD) ? anEdgeEndParam : anEdgeStartParam;
-            gp_Pnt2d CurPoint = CurPCurve.Value(CurParam);
+            Point2D CurPoint = CurPCurve.Value(CurParam);
 
             for (;;) // collect pcurves of a contour
             {
@@ -543,7 +547,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                         (anEdgeStartParam, anEdgeEndParam) = (anEdgeEndParam, anEdgeStartParam);
                     }
                     double   aParam   = (anOrientation == TopAbs_FORWARD) ? anEdgeStartParam : anEdgeEndParam;
-                    gp_Pnt2d aPoint   = aPCurve.Value(aParam);
+                    Point2D aPoint   = aPCurve.Value(aParam);
                     double   anOffset = CurPoint.Coord(theIndCoord) - aPoint.Coord(theIndCoord);
                     if (Math.Abs(anOffset) >= theCoordTol && Math.Abs(Math.Abs(anOffset) - thePeriod) >= theCoordTol)
                     {
@@ -553,7 +557,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                     if (Math.Abs(anOffset) > thePeriod / 2)
                     {
                         anOffset = TrueValueOfOffset(anOffset, thePeriod);
-                        var aVec = new gp_Vec2d();
+                        var aVec = new Vector2D();
                         if (theIndCoord == 1)
                         {
                             aVec.SetCoord(anOffset, 0.0);
@@ -589,12 +593,12 @@ public partial class ShapeUpgrade_UnifySameDomain
             var         iter      = new TopoDS_Iterator(aWire);
             TopoDS_Edge anEdge    = TopoDS.Edge(iter.Value());
             var         BAcurve2d = new BRepAdaptor_Curve2d(anEdge, theRefFace);
-            gp_Pnt2d    aPnt2d    = BAcurve2d.Value((BAcurve2d.FirstParameter() + BAcurve2d.LastParameter()) / 2.0);
+            Point2D    aPnt2d    = BAcurve2d.Value((BAcurve2d.FirstParameter() + BAcurve2d.LastParameter()) / 2.0);
             var         RequiredFace = new TopoDS_Shape();
             for (int jj = 1; jj <= theFaces.Length(); jj++)
             {
                 TopoDS_Face   aFace      = TopoDS.Face(theFaces[jj]);
-                var           Classifier = new BRepTopAdaptor_FClass2d(aFace, Precision.Confusion());
+                var           Classifier = new BRepTopAdaptor_FClass2d(aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
                 TopAbs_State  aStatus    = Classifier.Perform(aPnt2d);
                 if (aStatus == TopAbs_IN)
                 {
@@ -662,8 +666,8 @@ public partial class ShapeUpgrade_UnifySameDomain
                                           ref TopAbs_Orientation                                                 OrOfE2OnFace,
                                           ref int                                                                theIndOnE1,
                                           ref int                                                                theIndOnE2,
-                                          Span<gp_Pnt2d>                                                         PointsOnEdge1,
-                                          Span<gp_Pnt2d>                                                         PointsOnEdge2)
+                                          Span<Point2D>                                                         PointsOnEdge1,
+                                          Span<Point2D>                                                         PointsOnEdge2)
     {
         theCommonFace = FindCommonFace(theEdge1, theEdge2, theVFmap, ref OrOfE1OnFace, ref OrOfE2OnFace);
         if (theCommonFace.IsNull())
@@ -704,11 +708,11 @@ public partial class ShapeUpgrade_UnifySameDomain
                                               in TopoDS_Face                     theFrefFace,
                                               in TopoDS_Edge                     theCurEdge,
                                               in TopoDS_Vertex                   theCurVertex,
-                                              in gp_Pnt2d                        theCurPoint,
+                                              in Point2D                        theCurPoint,
                                               double                             theUperiod,
                                               double                             theVperiod,
                                               ref TopoDS_Edge                    theSeamEdge,
-                                              ref gp_Pnt2d                       theNextPoint)
+                                              ref Point2D                       theNextPoint)
     {
         _ = BRep_Tool.Surface(theFrefFace); // RefSurf: unused, as in OCCT
 
@@ -733,7 +737,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                 && BRep_Tool.IsClosed(anEdge, theFrefFace))
             {
                 double   aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? Param1 : Param2;
-                gp_Pnt2d aPoint = aPC.Value(aParam);
+                Point2D aPoint = aPC.Value(aParam);
                 double   aUdiff = Math.Abs(aPoint.X() - theCurPoint.X());
                 double   aVdiff = Math.Abs(aPoint.Y() - theCurPoint.Y());
                 if ((theUperiod != 0.0 && aUdiff > theUperiod / 2) || (theVperiod != 0.0 && aVdiff > theVperiod / 2))
@@ -753,7 +757,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                         // OCCT: rewrites the pcurves of a removed seam of the input (the port's copy)
                         var           aBB   = new BRep_Builder();
                         double        aTol  = BRep_Tool.Tolerance(anEdge);
-                        Geom_Surface? aSurf = BRep_Tool.Surface(theFrefFace, out TopLoc_Location aLoc);
+                        Geom_Surface? aSurf = BRep_Tool.Surface(theFrefFace, out Placement aLoc);
                         aBB.UpdateEdge(anEdge, aPC2, aPC1, aSurf, aLoc, aTol);
                         anEdge.Orientation(anOri);
                     }
@@ -791,10 +795,10 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         theS1.Bounds(out double uf1, out double ul1, out double vf1, out double vl1);
         theS2.Bounds(out double uf2, out double ul2, out double vf2, out double vl2);
-        double aPTol = Precision.PConfusion();
-        if (Precision.IsNegativeInfinite(uf1))
+        double aPTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uf1))
         {
-            if (!Precision.IsNegativeInfinite(uf2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uf2))
             {
                 return false;
             }
@@ -805,7 +809,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         else
         {
-            if (Precision.IsNegativeInfinite(uf2))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uf2))
             {
                 return false;
             }
@@ -818,9 +822,9 @@ public partial class ShapeUpgrade_UnifySameDomain
             }
         }
         //
-        if (Precision.IsNegativeInfinite(vf1))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vf1))
         {
-            if (!Precision.IsNegativeInfinite(vf2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vf2))
             {
                 return false;
             }
@@ -831,7 +835,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         else
         {
-            if (Precision.IsNegativeInfinite(vf2))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vf2))
             {
                 return false;
             }
@@ -844,9 +848,9 @@ public partial class ShapeUpgrade_UnifySameDomain
             }
         }
         //
-        if (Precision.IsPositiveInfinite(ul1))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(ul1))
         {
-            if (!Precision.IsPositiveInfinite(ul2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(ul2))
             {
                 return false;
             }
@@ -857,7 +861,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         else
         {
-            if (Precision.IsPositiveInfinite(ul2))
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(ul2))
             {
                 return false;
             }
@@ -870,9 +874,9 @@ public partial class ShapeUpgrade_UnifySameDomain
             }
         }
         //
-        if (Precision.IsPositiveInfinite(vl1))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vl1))
         {
-            if (!Precision.IsPositiveInfinite(vl2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vl2))
             {
                 return false;
             }
@@ -883,7 +887,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         else
         {
-            if (Precision.IsPositiveInfinite(vl2))
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vl2))
             {
                 return false;
             }
@@ -905,8 +909,8 @@ public partial class ShapeUpgrade_UnifySameDomain
             for (j = 0; j < 2; ++j)
             {
                 v = vf1 + aCoefs[j] * dv;
-                gp_Pnt aP1 = theS1.Value(u, v);
-                gp_Pnt aP2 = theS2.Value(u, v);
+                Point3D aP1 = theS1.Value(u, v);
+                Point3D aP2 = theS2.Value(u, v);
                 if (!aP1.IsEqual(aP2, aPTol))
                 {
                     return false;
@@ -946,25 +950,25 @@ public partial class ShapeUpgrade_UnifySameDomain
 
         if (ElemSurfFace is not null && ElemRefSurf is not null)
         {
-            gp_Ax3 AxisOfSurfFace = ElemSurfFace.Position();
-            gp_Ax3 AxisOfRefSurf  = ElemRefSurf.Position();
+            CoordinateSystem AxisOfSurfFace = ElemSurfFace.Position();
+            CoordinateSystem AxisOfRefSurf  = ElemRefSurf.Position();
 
-            gp_Pnt OriginRefSurf = AxisOfRefSurf.Location();
+            Point3D OriginRefSurf = AxisOfRefSurf.Location();
 
-            double aParam = ElCLib.LineParameter(AxisOfSurfFace.Axis(), OriginRefSurf);
+            double aParam = global::Kerf.Engine.Geometry.ElCLib.LineParameter(AxisOfSurfFace.Axis(), OriginRefSurf);
 
-            if (Math.Abs(aParam) > Precision.PConfusion())
+            if (Math.Abs(aParam) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aTranslation = -aParam;
             }
 
-            gp_Dir VdirSurfFace = AxisOfSurfFace.Direction();
-            gp_Dir VdirRefSurf  = AxisOfRefSurf.Direction();
-            gp_Dir XdirSurfFace = AxisOfSurfFace.XDirection();
-            gp_Dir XdirRefSurf  = AxisOfRefSurf.XDirection();
+            Direction3D VdirSurfFace = AxisOfSurfFace.Direction();
+            Direction3D VdirRefSurf  = AxisOfRefSurf.Direction();
+            Direction3D XdirSurfFace = AxisOfSurfFace.XDirection();
+            Direction3D XdirRefSurf  = AxisOfRefSurf.XDirection();
 
-            gp_Dir CrossProd1 = AxisOfRefSurf.XDirection() ^ AxisOfRefSurf.YDirection();
-            gp_Dir CrossProd2 = AxisOfSurfFace.XDirection() ^ AxisOfSurfFace.YDirection();
+            Direction3D CrossProd1 = AxisOfRefSurf.XDirection() ^ AxisOfRefSurf.YDirection();
+            Direction3D CrossProd2 = AxisOfSurfFace.XDirection() ^ AxisOfSurfFace.YDirection();
             if (CrossProd1 * CrossProd2 < 0.0)
             {
                 X_Reverse = true;
@@ -978,7 +982,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
             if (!X_Reverse && !Y_Reverse)
             {
-                gp_Dir DirRef = VdirRefSurf;
+                Direction3D DirRef = VdirRefSurf;
                 if (!AxisOfRefSurf.Direct())
                 {
                     DirRef.Reverse();
@@ -990,9 +994,9 @@ public partial class ShapeUpgrade_UnifySameDomain
                 anAngle = XdirRefSurf.Angle(XdirSurfFace);
             }
 
-            ToRotate = (Math.Abs(anAngle) > Precision.PConfusion());
+            ToRotate = (Math.Abs(anAngle) > global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-            ToTranslate = (Math.Abs(aTranslation) > Precision.PConfusion());
+            ToTranslate = (Math.Abs(aTranslation) > global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             ToModify = ToTranslate || ToRotate || X_Reverse || Y_Reverse;
         }
@@ -1062,7 +1066,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                     Geom_Curve? aC3d = BRep_Tool.Curve(anEdge, out fpar, out lpar);
                     aC3d = new Geom_TrimmedCurve(aC3d!, fpar, lpar);
                     double tol = BRep_Tool.Tolerance(anEdge);
-                    tol = Min(tol, Precision.Approximation());
+                    tol = Min(tol, global::Kerf.Engine.Foundation.Precision.Approximation());
                     // (ToProject excludes the transformations below, so the projection is never edited)
                     NewPCurves[ii] = GeomProjLib.Curve2d(aC3d, RefSurf);
                 }
@@ -1072,20 +1076,20 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 if (ToTranslate)
                 {
-                    NewPCurves[ii]!.Translate(new gp_Vec2d(0.0, aTranslation));
+                    NewPCurves[ii]!.Translate(new Vector2D(0.0, aTranslation));
                 }
                 if (Y_Reverse)
                 {
-                    NewPCurves[ii]!.Mirror(gp.OX2d());
+                    NewPCurves[ii]!.Mirror(Constants.OX2d());
                 }
                 if (X_Reverse)
                 {
-                    NewPCurves[ii]!.Mirror(gp.OY2d());
-                    NewPCurves[ii]!.Translate(new gp_Vec2d(2 * M_PI, 0.0));
+                    NewPCurves[ii]!.Mirror(Constants.OY2d());
+                    NewPCurves[ii]!.Translate(new Vector2D(2 * M_PI, 0.0));
                 }
                 if (ToRotate)
                 {
-                    NewPCurves[ii]!.Translate(new gp_Vec2d(anAngle, 0.0));
+                    NewPCurves[ii]!.Translate(new Vector2D(anAngle, 0.0));
                 }
             }
 
@@ -1104,8 +1108,8 @@ public partial class ShapeUpgrade_UnifySameDomain
                     RefSurf.Bounds(out double aUmin, out double aUmax, out double aVmin, out double aVmax);
                     double   aUperiod      = (RefSurf.IsUClosed()) ? (aUmax - aUmin) : 0.0;
                     double   aVperiod      = (RefSurf.IsVClosed()) ? (aVmax - aVmin) : 0.0;
-                    gp_Pnt2d aP2dOnPCurve1 = PCurveOnRef!.Value(fpar);
-                    gp_Pnt2d aP2dOnPCurve2 = NewPCurves[0]!.Value(fpar);
+                    Point2D aP2dOnPCurve1 = PCurveOnRef!.Value(fpar);
+                    Point2D aP2dOnPCurve2 = NewPCurves[0]!.Value(fpar);
                     if ((aUperiod != 0.0 && Math.Abs(aP2dOnPCurve1.X() - aP2dOnPCurve2.X()) > aUperiod / 2)
                         || (aVperiod != 0.0 && Math.Abs(aP2dOnPCurve1.Y() - aP2dOnPCurve2.Y()) > aVperiod / 2))
                     {
@@ -1140,8 +1144,8 @@ public partial class ShapeUpgrade_UnifySameDomain
     {
         var RefBAsurf = new BRepAdaptor_Surface(theRefFace, false);
 
-        GeomAbs_SurfaceType aType = RefBAsurf.GetType();
-        if (aType == GeomAbs_Plane)
+        SurfaceKind aType = RefBAsurf.GetType();
+        if (aType == Plane)
         {
             return;
         }
@@ -1213,7 +1217,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         return isDropped;
     }
 
-    private static bool getCylinder(Geom_Surface theInSurface, ref gp_Cylinder theOutCylinder)
+    private static bool getCylinder(Geom_Surface theInSurface, ref Cylinder theOutCylinder)
     {
         bool isCylinder = false;
 
@@ -1233,16 +1237,16 @@ public partial class ShapeUpgrade_UnifySameDomain
 
             if (aBasis is Geom_Line aBasisLine)
             {
-                gp_Dir aDir      = aRS.Direction();
-                gp_Dir aBasisDir = aBasisLine.Position().Direction();
-                if (aBasisDir.IsParallel(aDir, Precision.Angular()))
+                Direction3D aDir      = aRS.Direction();
+                Direction3D aBasisDir = aBasisLine.Position().Direction();
+                if (aBasisDir.IsParallel(aDir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // basis line is parallel to the revolution axis: it is a cylinder
-                    gp_Pnt aLoc   = aRS.Location();
+                    Point3D aLoc   = aRS.Location();
                     double aR     = aBasisLine.Lin().Distance(aLoc);
-                    var    aCylAx = new gp_Ax3(aLoc, aDir);
+                    var    aCylAx = new CoordinateSystem(aLoc, aDir);
 
-                    theOutCylinder = new gp_Cylinder(aCylAx, aR);
+                    theOutCylinder = new Cylinder(aCylAx, aR);
                     isCylinder     = true;
                 }
             }
@@ -1258,16 +1262,16 @@ public partial class ShapeUpgrade_UnifySameDomain
 
             if (aBasis is Geom_Circle aBasisCircle)
             {
-                gp_Dir aDir      = aLES.Direction();
-                gp_Dir aBasisDir = aBasisCircle.Position().Direction();
-                if (aBasisDir.IsParallel(aDir, Precision.Angular()))
+                Direction3D aDir      = aLES.Direction();
+                Direction3D aBasisDir = aBasisCircle.Position().Direction();
+                if (aBasisDir.IsParallel(aDir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // basis circle is normal to the extrusion axis: it is a cylinder
-                    gp_Pnt aLoc   = aBasisCircle.Location();
+                    Point3D aLoc   = aBasisCircle.Location();
                     double aR     = aBasisCircle.Radius();
-                    var    aCylAx = new gp_Ax3(aLoc, aDir);
+                    var    aCylAx = new CoordinateSystem(aLoc, aDir);
 
-                    theOutCylinder = new gp_Cylinder(aCylAx, aR);
+                    theOutCylinder = new Cylinder(aCylAx, aR);
                     isCylinder     = true;
                 }
             }
@@ -1286,7 +1290,7 @@ public partial class ShapeUpgrade_UnifySameDomain
     }
 
     // Gets the normal to surface by the given parameter on edge. Returns True if normal was computed.
-    private static bool GetNormalToSurface(in TopoDS_Face theFace, in TopoDS_Edge theEdge, double theP, ref gp_Dir theNormal)
+    private static bool GetNormalToSurface(in TopoDS_Face theFace, in TopoDS_Edge theEdge, double theP, ref Direction3D theNormal)
     {
         double f, l;
         // get 2d curve to get point in 2d
@@ -1325,15 +1329,15 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         //
         // 2d point
-        aC2d.D0(theP, out gp_Pnt2d aP2d);
+        aC2d.D0(theP, out Point2D aP2d);
         //
         // get D1
-        Geom_Surface aS = BRep_Tool.Surface(theFace, out TopLoc_Location aLoc)!;
-        aS.D1(aP2d.X(), aP2d.Y(), out gp_Pnt aP3d, out gp_Vec aDU, out gp_Vec aDV);
+        Geom_Surface aS = BRep_Tool.Surface(theFace, out Placement aLoc)!;
+        aS.D1(aP2d.X(), aP2d.Y(), out Point3D aP3d, out Vector3D aDU, out Vector3D aDV);
         //
         // compute normal
-        gp_Vec aVNormal = aDU.Crossed(aDV);
-        if (aVNormal.Magnitude() < Precision.Confusion())
+        Vector3D aVNormal = aDU.Crossed(aDV);
+        if (aVNormal.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
@@ -1344,7 +1348,7 @@ public partial class ShapeUpgrade_UnifySameDomain
         }
         //
         aVNormal.Transform(aLoc.Transformation());
-        theNormal = new gp_Dir(aVNormal);
+        theNormal = new Direction3D(aVNormal);
         return true;
     }
 
@@ -1357,8 +1361,8 @@ public partial class ShapeUpgrade_UnifySameDomain
         // checking the same handles
         Geom_Surface? S1, S2;
 
-        S1 = BRep_Tool.Surface(aFace, out TopLoc_Location L1);
-        S2 = BRep_Tool.Surface(aCheckedFace, out TopLoc_Location L2);
+        S1 = BRep_Tool.Surface(aFace, out Placement L1);
+        S2 = BRep_Tool.Surface(aCheckedFace, out Placement L2);
 
         if (ReferenceEquals(S1, S2) && L1 == L2)
         {
@@ -1379,8 +1383,8 @@ public partial class ShapeUpgrade_UnifySameDomain
             var aPlanarityChecker2 = new GeomLib_IsPlanarSurface(S2, theLinTol);
             if (aPlanarityChecker2.IsPlanar())
             {
-                gp_Pln aPln1 = aPlanarityChecker1.Plan();
-                gp_Pln aPln2 = aPlanarityChecker2.Plan();
+                Plane3D aPln1 = aPlanarityChecker1.Plan();
+                Plane3D aPln2 = aPlanarityChecker2.Plan();
 
                 if (aPln1.Position().Direction().IsParallel(aPln2.Position().Direction(), theAngTol)
                     && aPln1.Distance(aPln2) < theLinTol)
@@ -1428,7 +1432,7 @@ public partial class ShapeUpgrade_UnifySameDomain
 
                 return anIIInt.TangentFaces();
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -1439,21 +1443,21 @@ public partial class ShapeUpgrade_UnifySameDomain
         if ((S1 is Geom_CylindricalSurface || S1 is Geom_SweptSurface)
             && (S2 is Geom_CylindricalSurface || S2 is Geom_SweptSurface))
         {
-            var aCyl1 = new gp_Cylinder();
-            var aCyl2 = new gp_Cylinder();
+            var aCyl1 = new Cylinder();
+            var aCyl2 = new Cylinder();
             if (getCylinder(S1, ref aCyl1) && getCylinder(S2, ref aCyl2))
             {
                 if (Math.Abs(aCyl1.Radius() - aCyl2.Radius()) < theLinTol)
                 {
-                    gp_Dir aDir1 = aCyl1.Position().Direction();
-                    gp_Dir aDir2 = aCyl2.Position().Direction();
-                    if (aDir1.IsParallel(aDir2, Precision.Angular()))
+                    Direction3D aDir1 = aCyl1.Position().Direction();
+                    Direction3D aDir2 = aCyl2.Position().Direction();
+                    if (aDir1.IsParallel(aDir2, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        gp_Pnt aLoc1  = aCyl1.Location();
-                        gp_Pnt aLoc2  = aCyl2.Location();
-                        var    aVec12 = new gp_Vec(aLoc1, aLoc2);
+                        Point3D aLoc1  = aCyl1.Location();
+                        Point3D aLoc2  = aCyl2.Location();
+                        var    aVec12 = new Vector3D(aLoc1, aLoc2);
                         if (aVec12.SquareMagnitude() < theLinTol * theLinTol
-                            || aVec12.IsParallel(new gp_Vec(aDir1), Precision.Angular()))
+                            || aVec12.IsParallel(new Vector3D(aDir1), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             return true;
                         }
@@ -1502,7 +1506,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                             var aNew = new BRep_CurveOnClosedSurface(aCOCS.PCurve()!, aCOCS.PCurve2(), theNew, aCOCS.Location(),
                                                                      aCOCS.Continuity());
                             aNew.SetRange(aCOCS.First(), aCOCS.Last());
-                            aCOCS.UVPoints(out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+                            aCOCS.UVPoints(out Point2D aP1, out Point2D aP2);
                             aNew.SetUVPoints(aP1, aP2);
                             aCOCS.UVPoints2(out aP1, out aP2);
                             aNew.SetUVPoints2(aP1, aP2);
@@ -1513,7 +1517,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                         {
                             var aNew = new BRep_CurveOnSurface(aCOS.PCurve()!, theNew, aCOS.Location());
                             aNew.SetRange(aCOS.First(), aCOS.Last());
-                            aCOS.UVPoints(out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+                            aCOS.UVPoints(out Point2D aP1, out Point2D aP2);
                             aNew.SetUVPoints(aP1, aP2);
                             anIt.ChangeValue() = aNew;
                             break;
@@ -1631,7 +1635,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                     else
                     {
                         double   aParam = (CurEdge.Orientation() == TopAbs_FORWARD) ? lpar : fpar;
-                        gp_Vec2d CurDir = aPCurve.EvalD1(aParam).D1;
+                        Vector2D CurDir = aPCurve.EvalD1(aParam).D1;
                         CurDir.Normalize();
                         if (CurEdge.Orientation() == TopAbs_REVERSED)
                         {
@@ -1651,7 +1655,7 @@ public partial class ShapeUpgrade_UnifySameDomain
                                 continue;
                             }
                             aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
-                            gp_Vec2d aDir = aPCurve.EvalD1(aParam).D1;
+                            Vector2D aDir = aPCurve.EvalD1(aParam).D1;
                             aDir.Normalize();
                             if (anEdge.Orientation() == TopAbs_REVERSED)
                             {

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -80,7 +82,7 @@ public partial struct IntTools_Curve
     /// If the 3D curve is bounded, its first and last parameters and points, and true; otherwise false, the outputs
     /// left as they were.
     /// </summary>
-    public readonly bool Bounds(ref double theFirst, ref double theLast, ref gp_Pnt theFirstPnt, ref gp_Pnt theLastPnt)
+    public readonly bool Bounds(ref double theFirst, ref double theLast, ref Point3D theFirstPnt, ref Point3D theLastPnt)
     {
         bool bIsBounded = HasBounds();
         if (bIsBounded)
@@ -97,7 +99,7 @@ public partial struct IntTools_Curve
     /// The 3D point at the parameter, and true, if the parameter is inside the curve's bounds; otherwise false, the
     /// point left as it was.
     /// </summary>
-    public readonly bool D0(double thePar, ref gp_Pnt thePnt)
+    public readonly bool D0(double thePar, ref Point3D thePnt)
     {
         // OCCT: "||" where "&&" is meant, so every parameter is inside (occt-issues.md, unit 6A)
         bool bInside = thePar >= my3dCurve!.FirstParameter() || thePar <= my3dCurve.LastParameter();
@@ -109,10 +111,10 @@ public partial struct IntTools_Curve
     }
 
     /// <summary>The type of the 3D curve.</summary>
-    public readonly GeomAbs_CurveType Type()
+    public readonly CurveKind Type()
     {
         GeomAdaptor_Curve aGAC = new(my3dCurve!);
-        GeomAbs_CurveType aType = aGAC.GetType();
+        CurveKind aType = aGAC.GetType();
         return aType;
     }
 

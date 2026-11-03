@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Double exponential (tanh-sinh, exp-sinh, sinh-sinh) quadrature.</summary>
 public static partial class MathInteg
@@ -21,16 +22,16 @@ public static partial class MathInteg
         {
         }
 
-        public DoubleExpConfig(double theTolerance, int theMaxIter = 100)
-            : base(theTolerance, theMaxIter)
+        public DoubleExpConfig(double tolerance, int maxIter = 100)
+            : base(tolerance, maxIter)
         {
         }
 
-        public DoubleExpConfig(DoubleExpConfig theOther)
-            : base(theOther)
+        public DoubleExpConfig(DoubleExpConfig other)
+            : base(other)
         {
-            NbLevels = theOther.NbLevels;
-            StepFactor = theOther.StepFactor;
+            NbLevels = other.NbLevels;
+            StepFactor = other.StepFactor;
         }
     }
 
@@ -38,475 +39,475 @@ public static partial class MathInteg
     /// Tanh-sinh quadrature over the finite interval [theLower, theUpper]; handles endpoint singularities.
     /// Points where the function fails or is not finite are skipped.
     /// </summary>
-    public static IntegResult TanhSinh<Function>(Function theFunc, double theLower, double theUpper, DoubleExpConfig? theConfig = null)
+    public static IntegResult TanhSinh<Function>(Function func, double lower, double upper, DoubleExpConfig? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new DoubleExpConfig();
-        IntegResult aResult = new();
+        config ??= new DoubleExpConfig();
+        IntegResult result = new();
 
-        if (theLower >= theUpper)
+        if (lower >= upper)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        double aHalfPi = M_PI / 2.0;
-        double aMid = 0.5 * (theUpper + theLower);
-        double aHalf = 0.5 * (theUpper - theLower);
+        double halfPi = M_PI / 2.0;
+        double mid = 0.5 * (upper + lower);
+        double half = 0.5 * (upper - lower);
 
-        double aH = 1.0;
+        double h = 1.0;
 
-        double aPrevSum = 0.0;
-        int aTotalPoints = 0;
+        double prevSum = 0.0;
+        int totalPoints = 0;
 
-        for (int aLevel = 0; aLevel < theConfig.NbLevels; ++aLevel)
+        for (int level = 0; level < config.NbLevels; ++level)
         {
-            double aSum = 0.0;
-            int aNbPoints = 0;
+            double sum = 0.0;
+            int nbPoints = 0;
 
-            int aStart = (aLevel == 0) ? 0 : 1;
-            int aStep = (aLevel == 0) ? 1 : 2;
+            int start = (level == 0) ? 0 : 1;
+            int step = (level == 0) ? 1 : 2;
 
-            for (int k = aStart; ; k += aStep)
+            for (int k = start; ; k += step)
             {
-                double aT = k * aH;
+                double t = k * h;
 
-                double aSinhT = Math.Sinh(aT);
-                double aCoshT = Math.Cosh(aT);
+                double sinhT = Math.Sinh(t);
+                double coshT = Math.Cosh(t);
 
-                double aU = aHalfPi * aSinhT;
+                double u = halfPi * sinhT;
 
-                if (Math.Abs(aU) > 700.0)
+                if (Math.Abs(u) > 700.0)
                 {
                     break; // tanh(u) ~= +/-1, contribution is negligible
                 }
 
-                double aTanhU = Math.Tanh(aU);
-                double aCoshU = Math.Cosh(aU);
-                double aSech2U = 1.0 / (aCoshU * aCoshU);
+                double tanhU = Math.Tanh(u);
+                double coshU = Math.Cosh(u);
+                double sech2U = 1.0 / (coshU * coshU);
 
-                double aX = aMid + aHalf * aTanhU;
+                double x = mid + half * tanhU;
 
-                if (aX <= theLower + MathUtils.THE_ZERO_TOL || aX >= theUpper - MathUtils.THE_ZERO_TOL)
+                if (x <= lower + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL || x >= upper - global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     break;
                 }
 
-                double aWeight = aHalf * aHalfPi * aCoshT * aSech2U;
+                double weight = half * halfPi * coshT * sech2U;
 
-                if (aWeight < MathUtils.THE_ZERO_TOL)
+                if (weight < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     break;
                 }
 
-                if (!theFunc.Value(aX, out double aF))
+                if (!func.Value(x, out double f))
                 {
                     continue;
                 }
 
-                if (!double.IsFinite(aF))
+                if (!double.IsFinite(f))
                 {
                     continue;
                 }
 
-                aSum += aWeight * aF;
-                ++aNbPoints;
+                sum += weight * f;
+                ++nbPoints;
 
-                if (aNbPoints > 10000)
+                if (nbPoints > 10000)
                 {
                     break;
                 }
             }
 
-            int aNegStart = (aLevel == 0) ? 1 : aStart; // Start at 1 for level 0, aStart otherwise
-            for (int k = aNegStart; ; k += aStep)
+            int negStart = (level == 0) ? 1 : start; // Start at 1 for level 0, aStart otherwise
+            for (int k = negStart; ; k += step)
             {
-                double aT = -k * aH;
+                double t = -k * h;
 
-                double aSinhT = Math.Sinh(aT);
-                double aCoshT = Math.Cosh(aT);
-                double aU = aHalfPi * aSinhT;
+                double sinhT = Math.Sinh(t);
+                double coshT = Math.Cosh(t);
+                double u = halfPi * sinhT;
 
-                if (Math.Abs(aU) > 700.0)
+                if (Math.Abs(u) > 700.0)
                 {
                     break;
                 }
 
-                double aTanhU = Math.Tanh(aU);
-                double aCoshU = Math.Cosh(aU);
-                double aSech2U = 1.0 / (aCoshU * aCoshU);
+                double tanhU = Math.Tanh(u);
+                double coshU = Math.Cosh(u);
+                double sech2U = 1.0 / (coshU * coshU);
 
-                double aX = aMid + aHalf * aTanhU;
+                double x = mid + half * tanhU;
 
-                if (aX <= theLower + MathUtils.THE_ZERO_TOL || aX >= theUpper - MathUtils.THE_ZERO_TOL)
+                if (x <= lower + global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL || x >= upper - global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     break;
                 }
 
-                double aWeight = aHalf * aHalfPi * aCoshT * aSech2U;
+                double weight = half * halfPi * coshT * sech2U;
 
-                if (aWeight < MathUtils.THE_ZERO_TOL)
+                if (weight < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     break;
                 }
 
-                if (!theFunc.Value(aX, out double aF))
+                if (!func.Value(x, out double f))
                 {
                     continue;
                 }
 
-                if (!double.IsFinite(aF))
+                if (!double.IsFinite(f))
                 {
                     continue;
                 }
 
-                aSum += aWeight * aF;
-                ++aNbPoints;
+                sum += weight * f;
+                ++nbPoints;
 
-                if (aNbPoints > 10000)
+                if (nbPoints > 10000)
                 {
                     break;
                 }
             }
 
-            double aLevelSum = aH * aSum;
-            aTotalPoints += aNbPoints;
+            double levelSum = h * sum;
+            totalPoints += nbPoints;
 
-            double aNewSum = (aLevel == 0) ? aLevelSum : 0.5 * aPrevSum + aLevelSum;
+            double newSum = (level == 0) ? levelSum : 0.5 * prevSum + levelSum;
 
-            if (aLevel > 0)
+            if (level > 0)
             {
-                double aAbsError = Math.Abs(aNewSum - aPrevSum);
-                double aRelError = aAbsError / Max(Math.Abs(aNewSum), 1.0e-15);
+                double absError = Math.Abs(newSum - prevSum);
+                double relError = absError / Max(Math.Abs(newSum), 1.0e-15);
 
-                if (aRelError < theConfig.Tolerance)
+                if (relError < config.Tolerance)
                 {
-                    aResult.Status = Status.OK;
-                    aResult.Value = aNewSum;
-                    aResult.AbsoluteError = aAbsError;
-                    aResult.RelativeError = aRelError;
-                    aResult.NbPoints = aTotalPoints;
-                    aResult.NbIterations = aLevel + 1;
-                    return aResult;
+                    result.Status = Status.OK;
+                    result.Value = newSum;
+                    result.AbsoluteError = absError;
+                    result.RelativeError = relError;
+                    result.NbPoints = totalPoints;
+                    result.NbIterations = level + 1;
+                    return result;
                 }
             }
 
-            aPrevSum = aNewSum;
-            aH *= 0.5; // Halve step size for next level
+            prevSum = newSum;
+            h *= 0.5; // Halve step size for next level
         }
 
-        aResult.Status = Status.OK; // Still return a result
-        aResult.Value = aPrevSum;
-        aResult.NbPoints = aTotalPoints;
-        aResult.NbIterations = theConfig.NbLevels;
-        return aResult;
+        result.Status = Status.OK; // Still return a result
+        result.Value = prevSum;
+        result.NbPoints = totalPoints;
+        result.NbIterations = config.NbLevels;
+        return result;
     }
 
     /// <summary>Exp-sinh quadrature over the semi-infinite interval [theLower, +infinity).</summary>
-    public static IntegResult ExpSinh<Function>(Function theFunc, double theLower, DoubleExpConfig? theConfig = null)
+    public static IntegResult ExpSinh<Function>(Function func, double lower, DoubleExpConfig? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new DoubleExpConfig();
-        IntegResult aResult = new();
+        config ??= new DoubleExpConfig();
+        IntegResult result = new();
 
-        double aHalfPi = M_PI / 2.0;
-        double aH = 1.0;
-        double aPrevSum = 0.0;
-        int aTotalPoints = 0;
+        double halfPi = M_PI / 2.0;
+        double h = 1.0;
+        double prevSum = 0.0;
+        int totalPoints = 0;
 
-        for (int aLevel = 0; aLevel < theConfig.NbLevels; ++aLevel)
+        for (int level = 0; level < config.NbLevels; ++level)
         {
-            double aSum = 0.0;
-            int aNbPoints = 0;
+            double sum = 0.0;
+            int nbPoints = 0;
 
-            int aStart = (aLevel == 0) ? 0 : 1;
-            int aStep = (aLevel == 0) ? 1 : 2;
+            int start = (level == 0) ? 0 : 1;
+            int step = (level == 0) ? 1 : 2;
 
-            for (int aSign = -1; aSign <= 1; aSign += 2)
+            for (int sign = -1; sign <= 1; sign += 2)
             {
-                for (int k = (aSign < 0 && aLevel == 0) ? 1 : aStart; ; k += aStep)
+                for (int k = (sign < 0 && level == 0) ? 1 : start; ; k += step)
                 {
-                    if (aSign < 0 && k == 0)
+                    if (sign < 0 && k == 0)
                     {
                         continue;
                     }
 
-                    double aT = aSign * k * aH;
+                    double t = sign * k * h;
 
-                    double aSinhT = Math.Sinh(aT);
-                    double aCoshT = Math.Cosh(aT);
-                    double aU = aHalfPi * aSinhT;
+                    double sinhT = Math.Sinh(t);
+                    double coshT = Math.Cosh(t);
+                    double u = halfPi * sinhT;
 
-                    if (aU > 700.0)
+                    if (u > 700.0)
                     {
                         break; // Overflow
                     }
 
-                    double aExpU = Math.Exp(aU);
+                    double expU = Math.Exp(u);
 
-                    double aX = theLower + aExpU;
+                    double x = lower + expU;
 
-                    double aWeight = aHalfPi * aCoshT * aExpU;
+                    double weight = halfPi * coshT * expU;
 
-                    if (aWeight < MathUtils.THE_ZERO_TOL || !double.IsFinite(aWeight))
+                    if (weight < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL || !double.IsFinite(weight))
                     {
                         break;
                     }
 
-                    if (aU < -30.0)
+                    if (u < -30.0)
                     {
                         break;
                     }
 
-                    if (!theFunc.Value(aX, out double aF))
+                    if (!func.Value(x, out double f))
                     {
                         continue;
                     }
 
-                    if (!double.IsFinite(aF))
+                    if (!double.IsFinite(f))
                     {
                         continue;
                     }
 
-                    aSum += aWeight * aF;
-                    ++aNbPoints;
+                    sum += weight * f;
+                    ++nbPoints;
 
-                    if (aNbPoints > 10000)
+                    if (nbPoints > 10000)
                     {
                         break;
                     }
                 }
             }
 
-            double aLevelSum = aH * aSum;
-            aTotalPoints += aNbPoints;
+            double levelSum = h * sum;
+            totalPoints += nbPoints;
 
-            double aNewSum = (aLevel == 0) ? aLevelSum : 0.5 * aPrevSum + aLevelSum;
+            double newSum = (level == 0) ? levelSum : 0.5 * prevSum + levelSum;
 
-            if (aLevel > 0)
+            if (level > 0)
             {
-                double aAbsError = Math.Abs(aNewSum - aPrevSum);
-                double aRelError = aAbsError / Max(Math.Abs(aNewSum), 1.0e-15);
+                double absError = Math.Abs(newSum - prevSum);
+                double relError = absError / Max(Math.Abs(newSum), 1.0e-15);
 
-                if (aRelError < theConfig.Tolerance)
+                if (relError < config.Tolerance)
                 {
-                    aResult.Status = Status.OK;
-                    aResult.Value = aNewSum;
-                    aResult.AbsoluteError = aAbsError;
-                    aResult.RelativeError = aRelError;
-                    aResult.NbPoints = aTotalPoints;
-                    aResult.NbIterations = aLevel + 1;
-                    return aResult;
+                    result.Status = Status.OK;
+                    result.Value = newSum;
+                    result.AbsoluteError = absError;
+                    result.RelativeError = relError;
+                    result.NbPoints = totalPoints;
+                    result.NbIterations = level + 1;
+                    return result;
                 }
             }
 
-            aPrevSum = aNewSum;
-            aH *= 0.5;
+            prevSum = newSum;
+            h *= 0.5;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aPrevSum;
-        aResult.NbPoints = aTotalPoints;
-        aResult.NbIterations = theConfig.NbLevels;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = prevSum;
+        result.NbPoints = totalPoints;
+        result.NbIterations = config.NbLevels;
+        return result;
     }
 
     /// <summary>Sinh-sinh quadrature over the infinite interval (-infinity, +infinity).</summary>
-    public static IntegResult SinhSinh<Function>(Function theFunc, DoubleExpConfig? theConfig = null)
+    public static IntegResult SinhSinh<Function>(Function func, DoubleExpConfig? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new DoubleExpConfig();
-        IntegResult aResult = new();
+        config ??= new DoubleExpConfig();
+        IntegResult result = new();
 
-        double aHalfPi = M_PI / 2.0;
-        double aH = 1.0;
-        double aPrevSum = 0.0;
-        int aTotalPoints = 0;
+        double halfPi = M_PI / 2.0;
+        double h = 1.0;
+        double prevSum = 0.0;
+        int totalPoints = 0;
 
-        for (int aLevel = 0; aLevel < theConfig.NbLevels; ++aLevel)
+        for (int level = 0; level < config.NbLevels; ++level)
         {
-            double aSum = 0.0;
-            int aNbPoints = 0;
+            double sum = 0.0;
+            int nbPoints = 0;
 
-            int aStart = (aLevel == 0) ? 0 : 1;
-            int aStep = (aLevel == 0) ? 1 : 2;
+            int start = (level == 0) ? 0 : 1;
+            int step = (level == 0) ? 1 : 2;
 
-            for (int aSign = -1; aSign <= 1; aSign += 2)
+            for (int sign = -1; sign <= 1; sign += 2)
             {
-                for (int k = (aSign < 0 && aLevel == 0) ? 1 : aStart; ; k += aStep)
+                for (int k = (sign < 0 && level == 0) ? 1 : start; ; k += step)
                 {
-                    if (aSign < 0 && k == 0)
+                    if (sign < 0 && k == 0)
                     {
                         continue;
                     }
 
-                    double aT = aSign * k * aH;
+                    double t = sign * k * h;
 
-                    double aSinhT = Math.Sinh(aT);
-                    double aCoshT = Math.Cosh(aT);
-                    double aU = aHalfPi * aSinhT;
+                    double sinhT = Math.Sinh(t);
+                    double coshT = Math.Cosh(t);
+                    double u = halfPi * sinhT;
 
-                    if (Math.Abs(aU) > 700.0)
+                    if (Math.Abs(u) > 700.0)
                     {
                         break;
                     }
 
-                    double aSinhU = Math.Sinh(aU);
-                    double aCoshU = Math.Cosh(aU);
+                    double sinhU = Math.Sinh(u);
+                    double coshU = Math.Cosh(u);
 
-                    double aX = aSinhU;
+                    double x = sinhU;
 
-                    double aWeight = aHalfPi * aCoshT * aCoshU;
+                    double weight = halfPi * coshT * coshU;
 
-                    if (aWeight < MathUtils.THE_ZERO_TOL || !double.IsFinite(aWeight))
+                    if (weight < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL || !double.IsFinite(weight))
                     {
                         break;
                     }
 
-                    if (!theFunc.Value(aX, out double aF))
+                    if (!func.Value(x, out double f))
                     {
                         continue;
                     }
 
-                    if (!double.IsFinite(aF))
+                    if (!double.IsFinite(f))
                     {
                         continue;
                     }
 
-                    aSum += aWeight * aF;
-                    ++aNbPoints;
+                    sum += weight * f;
+                    ++nbPoints;
 
-                    if (aNbPoints > 10000)
+                    if (nbPoints > 10000)
                     {
                         break;
                     }
                 }
             }
 
-            double aLevelSum = aH * aSum;
-            aTotalPoints += aNbPoints;
+            double levelSum = h * sum;
+            totalPoints += nbPoints;
 
-            double aNewSum = (aLevel == 0) ? aLevelSum : 0.5 * aPrevSum + aLevelSum;
+            double newSum = (level == 0) ? levelSum : 0.5 * prevSum + levelSum;
 
-            if (aLevel > 0)
+            if (level > 0)
             {
-                double aAbsError = Math.Abs(aNewSum - aPrevSum);
-                double aRelError = aAbsError / Max(Math.Abs(aNewSum), 1.0e-15);
+                double absError = Math.Abs(newSum - prevSum);
+                double relError = absError / Max(Math.Abs(newSum), 1.0e-15);
 
-                if (aRelError < theConfig.Tolerance)
+                if (relError < config.Tolerance)
                 {
-                    aResult.Status = Status.OK;
-                    aResult.Value = aNewSum;
-                    aResult.AbsoluteError = aAbsError;
-                    aResult.RelativeError = aRelError;
-                    aResult.NbPoints = aTotalPoints;
-                    aResult.NbIterations = aLevel + 1;
-                    return aResult;
+                    result.Status = Status.OK;
+                    result.Value = newSum;
+                    result.AbsoluteError = absError;
+                    result.RelativeError = relError;
+                    result.NbPoints = totalPoints;
+                    result.NbIterations = level + 1;
+                    return result;
                 }
             }
 
-            aPrevSum = aNewSum;
-            aH *= 0.5;
+            prevSum = newSum;
+            h *= 0.5;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aPrevSum;
-        aResult.NbPoints = aTotalPoints;
-        aResult.NbIterations = theConfig.NbLevels;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = prevSum;
+        result.NbPoints = totalPoints;
+        result.NbIterations = config.NbLevels;
+        return result;
     }
 
     /// <summary>f(-x): the integrand DoubleExponential uses for (-infinity, b] (a local class in C++).</summary>
     private struct DoubleExpNegatedFunc<Function> : IScalarFunction
         where Function : IScalarFunction
     {
-        private Function myFunc;
+        private Function _func;
 
-        public DoubleExpNegatedFunc(Function theF)
+        public DoubleExpNegatedFunc(Function f)
         {
-            myFunc = theF;
+            _func = f;
         }
 
-        public bool Value(double theX, out double theF) => myFunc.Value(-theX, out theF);
+        public bool Value(double x, out double f) => _func.Value(-x, out f);
     }
 
     /// <summary>
     /// Double exponential integration choosing the rule from the bounds: a bound beyond 1e300 in magnitude is
     /// infinite (SinhSinh, ExpSinh, ExpSinh of f(-x)); otherwise TanhSinh.
     /// </summary>
-    public static IntegResult DoubleExponential<Function>(Function theFunc, double theLower, double theUpper, DoubleExpConfig? theConfig = null)
+    public static IntegResult DoubleExponential<Function>(Function func, double lower, double upper, DoubleExpConfig? config = null)
         where Function : IScalarFunction
     {
-        double aHuge = 1.0e300;
+        double huge = 1.0e300;
 
-        bool aIsLowerInf = (theLower < -aHuge);
-        bool aIsUpperInf = (theUpper > aHuge);
+        bool isLowerInf = (lower < -huge);
+        bool isUpperInf = (upper > huge);
 
-        if (aIsLowerInf && aIsUpperInf)
+        if (isLowerInf && isUpperInf)
         {
-            return SinhSinh(theFunc, theConfig);
+            return SinhSinh(func, config);
         }
-        else if (aIsUpperInf)
+        else if (isUpperInf)
         {
-            return ExpSinh(theFunc, theLower, theConfig);
+            return ExpSinh(func, lower, config);
         }
-        else if (aIsLowerInf)
+        else if (isLowerInf)
         {
-            DoubleExpNegatedFunc<Function> aNegated = new(theFunc);
-            return ExpSinh(aNegated, -theUpper, theConfig);
+            DoubleExpNegatedFunc<Function> negated = new(func);
+            return ExpSinh(negated, -upper, config);
         }
         else
         {
-            return TanhSinh(theFunc, theLower, theUpper, theConfig);
+            return TanhSinh(func, lower, upper, config);
         }
     }
 
     /// <summary>Tanh-sinh with 8 levels, for integrands singular at the endpoints.</summary>
-    public static IntegResult TanhSinhSingular<Function>(Function theFunc, double theLower, double theUpper, double theTolerance = 1.0e-10)
+    public static IntegResult TanhSinhSingular<Function>(Function func, double lower, double upper, double tolerance = 1.0e-10)
         where Function : IScalarFunction
     {
-        DoubleExpConfig aConfig = new();
-        aConfig.Tolerance = theTolerance;
-        aConfig.NbLevels = 8; // More levels for singular functions
+        DoubleExpConfig config = new();
+        config.Tolerance = tolerance;
+        config.NbLevels = 8; // More levels for singular functions
 
-        return TanhSinh(theFunc, theLower, theUpper, aConfig);
+        return TanhSinh(func, lower, upper, config);
     }
 
     /// <summary>Tanh-sinh split at a known interior singularity theSingularity.</summary>
-    public static IntegResult TanhSinhWithSingularity<Function>(Function theFunc, double theLower, double theUpper,
-                                                                double theSingularity, DoubleExpConfig? theConfig = null)
+    public static IntegResult TanhSinhWithSingularity<Function>(Function func, double lower, double upper,
+                                                                double singularity, DoubleExpConfig? config = null)
         where Function : IScalarFunction
     {
-        IntegResult aResult = new();
+        IntegResult result = new();
 
-        if (theSingularity <= theLower || theSingularity >= theUpper)
+        if (singularity <= lower || singularity >= upper)
         {
-            return TanhSinh(theFunc, theLower, theUpper, theConfig);
+            return TanhSinh(func, lower, upper, config);
         }
 
-        IntegResult aLeft = TanhSinh(theFunc, theLower, theSingularity, theConfig);
-        if (!aLeft.IsDone())
+        IntegResult left = TanhSinh(func, lower, singularity, config);
+        if (!left.IsDone)
         {
-            return aLeft;
+            return left;
         }
 
-        IntegResult aRight = TanhSinh(theFunc, theSingularity, theUpper, theConfig);
-        if (!aRight.IsDone())
+        IntegResult right = TanhSinh(func, singularity, upper, config);
+        if (!right.IsDone)
         {
-            return aRight;
+            return right;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aLeft.Value!.Value + aRight.Value!.Value;
-        aResult.NbPoints = aLeft.NbPoints + aRight.NbPoints;
-        aResult.NbIterations = Max(aLeft.NbIterations, aRight.NbIterations);
+        result.Status = Status.OK;
+        result.Value = left.Value!.Value + right.Value!.Value;
+        result.NbPoints = left.NbPoints + right.NbPoints;
+        result.NbIterations = Max(left.NbIterations, right.NbIterations);
 
-        if (aLeft.AbsoluteError.HasValue && aRight.AbsoluteError.HasValue)
+        if (left.AbsoluteError.HasValue && right.AbsoluteError.HasValue)
         {
-            aResult.AbsoluteError = aLeft.AbsoluteError.Value + aRight.AbsoluteError.Value;
-            aResult.RelativeError = aResult.AbsoluteError.Value / Max(Math.Abs(aResult.Value.Value), 1.0e-15);
+            result.AbsoluteError = left.AbsoluteError.Value + right.AbsoluteError.Value;
+            result.RelativeError = result.AbsoluteError.Value / Max(Math.Abs(result.Value.Value), 1.0e-15);
         }
 
-        return aResult;
+        return result;
     }
 }

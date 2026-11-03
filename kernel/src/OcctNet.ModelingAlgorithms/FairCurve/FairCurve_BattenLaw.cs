@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>The height of a batten along its neutral fibre: linear, from its height at the middle and its slope.</summary>
@@ -11,7 +13,7 @@ namespace Occt;
 /// OCCT copies this class by value (the energies and distributions each keep their own copy of the law they are
 /// given); the port copies explicitly with the copy constructor at each of those sites (decision 858).
 /// </remarks>
-public class FairCurve_BattenLaw : math_Function
+public class FairCurve_BattenLaw : Function
 {
     private double MiddleHeigth;
     private double GeometricSlope;

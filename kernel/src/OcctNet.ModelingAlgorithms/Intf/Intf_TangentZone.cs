@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A zone of tangency between polygons or polyhedra, as a sequence of intersection points.</summary>
@@ -327,8 +329,8 @@ public sealed class Intf_TangentZone
     public override string ToString()
     {
         System.Text.StringBuilder aBuilder = new("Intf_TangentZone(");
-        aBuilder.Append(gp.Format("first", ParamOnFirstMin, ParamOnFirstMax)).Append(", ");
-        aBuilder.Append(gp.Format("second", ParamOnSecondMin, ParamOnSecondMax));
+        aBuilder.Append(Constants.Format("first", ParamOnFirstMin, ParamOnFirstMax)).Append(", ");
+        aBuilder.Append(Constants.Format("second", ParamOnSecondMin, ParamOnSecondMax));
         for (int p = 1; p <= Result.Length(); p++)
         {
             aBuilder.Append(", ").Append(Result[p].ToString());

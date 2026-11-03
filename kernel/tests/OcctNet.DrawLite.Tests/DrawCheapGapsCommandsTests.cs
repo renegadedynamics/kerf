@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Occt;
@@ -115,7 +116,7 @@ public class DrawCheapGapsCommandsTests
         Assert.Equal("ext_1  parameter 1 = 0\next_2  parameter 2 = 3.1415926535897931\n", i.Eval("proj c 20 0 0"));
         Assert.Equal(10, Geometry<Geom_TrimmedCurve>(i, "ext_1").LastParameter(), 1e-12);
         Assert.Equal("ext_1  Point on curve  parameter 1 = 0\next_2  parameter 2 = 3.1415926535897931\n", i.Eval("proj c 10 0 0"));
-        Assert.Equal(new gp_Pnt(10, 0, 0), Geometry<gp_Pnt>(i, "ext_1"));
+        Assert.Equal(new Point3D(10, 0, 0), Geometry<Point3D>(i, "ext_1"));
 
         i.Eval("sphere s 5");
         Assert.Equal("ext_1  Parameters: 0 0\next_2  Parameters: 3.1415926535897931 -0\n", i.Eval("proj s 10 0 0"));
@@ -128,14 +129,14 @@ public class DrawCheapGapsCommandsTests
     {
         DrawInterpreter i = New();
         i.Eval("circle c 1 2 0 10; to2d c2 c; to3d c3 c2");
-        Assert.Equal(new gp_Pnt2d(1, 2), Geometry<Geom2d_Circle>(i, "c2").Location());
-        Assert.Equal(new gp_Pnt(1, 2, 0), Geometry<Geom_Circle>(i, "c3").Location());
+        Assert.Equal(new Point2D(1, 2), Geometry<Geom2d_Circle>(i, "c2").Location());
+        Assert.Equal(new Point3D(1, 2, 0), Geometry<Geom_Circle>(i, "c3").Location());
         i.Eval("cylinder cy 10");
         Assert.Equal("", Error(i, "to2d x c cy"));
 
         // a circle on a cylinder projects on a line of the cylinder's parameters
         i.Eval("circle cc 0 0 3 10; project lp cc cy");
-        Assert.Equal(new gp_Pnt2d(0, 3), Geometry<Geom2d_Line>(i, "lp").Location());
+        Assert.Equal(new Point2D(0, 3), Geometry<Geom2d_Line>(i, "lp").Location());
         string aVerif = i.Eval("project lp cc cy -v 3");
         Assert.Equal(5, Regex.Matches(aVerif, @" Parameter = \S+\tDistance = 0\n").Count);
         Assert.EndsWith(" **** Distance Maximale : 0\n", aVerif, StringComparison.Ordinal);
@@ -203,7 +204,7 @@ public class DrawCheapGapsCommandsTests
         Assert.Equal(4, Geometry<Geom_BezierCurve>(i, "bz").Degree());
         Assert.Equal(2, Geometry<Geom_BezierCurve>(i, "keep").Degree());
         i.Eval("insertpole bz 1 0.5 0.5 0");
-        Assert.Equal(new gp_Pnt(0.5, 0.5, 0), Geometry<Geom_BezierCurve>(i, "bz").Pole(2));
+        Assert.Equal(new Point3D(0.5, 0.5, 0), Geometry<Geom_BezierCurve>(i, "bz").Pole(2));
         i.Eval("setweight bz 2 2");
         Assert.Equal(2, Geometry<Geom_BezierCurve>(i, "bz").Weight(2));
         Assert.Equal("insertpole needs a bezier curve", Error(i, "insertpole nothing 1 0 0 0"));
@@ -261,7 +262,7 @@ public class DrawCheapGapsCommandsTests
         i.Eval("line ln 0.5 1 -5 0 0 1");
         Assert.Equal("Point 1 : 0.5 1 0\nPoint 2 : 0.5 1 3\n", i.Eval("BRepIntCS ln b res"));
         Assert.Contains("VERTEX    : 2", i.Eval("nbshapes res"), StringComparison.Ordinal);
-        Assert.Equal(new gp_Pnt(0.5, 1, 3), Geometry<gp_Pnt>(i, "brics_2"));
+        Assert.Equal(new Point3D(0.5, 1, 3), Geometry<Point3D>(i, "brics_2"));
         i.Eval("line far 50 50 0 0 0 1");
         Assert.Equal("Points of intersections are not found\n", i.Eval("BRepIntCS far b"));
         Assert.Equal("Point 1 : 0.5 1 0\nPoint 2 : 0.5 1 3\n", i.Eval("BRepIntCS ln far b"));

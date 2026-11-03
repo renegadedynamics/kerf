@@ -3,13 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// A triaxial ellipsoid with semi-axes A, B, C (all &gt; 0), centred on the origin of its coordinate system:
 /// <c>P(u,v) = O + A*cos(v)*cos(u)*XDir + B*cos(v)*sin(u)*YDir + C*sin(v)*ZDir</c>, u in [0, 2*Pi] (periodic),
 /// v in [-Pi/2, Pi/2]. Implicit equation in local coordinates: <c>X^2/A^2 + Y^2/B^2 + Z^2/C^2 - 1 = 0</c>.
-/// Reversal, transformation and iso curves are not supported (they throw <see cref="Standard_NotImplemented"/>).
+/// Reversal, transformation and iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
 {
@@ -18,15 +24,15 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
     private double myC; // Semi-axis along ZDir
 
     /// <summary>Creates a triaxial ellipsoid with the given local coordinate system and semi-axes.</summary>
-    /// <exception cref="Standard_ConstructionError">A semi-axis is &lt;= 0.</exception>
-    public GeomEval_EllipsoidSurface(in gp_Ax3 thePosition, double theA, double theB, double theC)
+    /// <exception cref="ConstructionErrorException">A semi-axis is &lt;= 0.</exception>
+    public GeomEval_EllipsoidSurface(in CoordinateSystem thePosition, double theA, double theB, double theC)
     {
         myA = theA;
         myB = theB;
         myC = theC;
         if (theA <= 0.0 || theB <= 0.0 || theC <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_EllipsoidSurface: semi-axis must be > 0");
+            throw new ConstructionErrorException("GeomEval_EllipsoidSurface: semi-axis must be > 0");
         }
         pos = thePosition;
     }
@@ -40,41 +46,41 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
     /// <summary>The semi-axis C (along ZDir).</summary>
     public double SemiAxisC() => myC;
 
-    /// <exception cref="Standard_ConstructionError">theA &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theA &lt;= 0.</exception>
     internal void SetSemiAxisA(double theA)
     {
         CheckMutable();
         if (theA <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_EllipsoidSurface::SetSemiAxisA: value must be > 0");
+            throw new ConstructionErrorException("GeomEval_EllipsoidSurface::SetSemiAxisA: value must be > 0");
         }
         myA = theA;
     }
 
-    /// <exception cref="Standard_ConstructionError">theB &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theB &lt;= 0.</exception>
     internal void SetSemiAxisB(double theB)
     {
         CheckMutable();
         if (theB <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_EllipsoidSurface::SetSemiAxisB: value must be > 0");
+            throw new ConstructionErrorException("GeomEval_EllipsoidSurface::SetSemiAxisB: value must be > 0");
         }
         myB = theB;
     }
 
-    /// <exception cref="Standard_ConstructionError">theC &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theC &lt;= 0.</exception>
     internal void SetSemiAxisC(double theC)
     {
         CheckMutable();
         if (theC <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_EllipsoidSurface::SetSemiAxisC: value must be > 0");
+            throw new ConstructionErrorException("GeomEval_EllipsoidSurface::SetSemiAxisC: value must be > 0");
         }
         myC = theC;
     }
 
     /// <summary>A copy with the semi-axis A set to theA.</summary>
-    /// <exception cref="Standard_ConstructionError">theA &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theA &lt;= 0.</exception>
     public GeomEval_EllipsoidSurface WithSemiAxisA(double theA)
     {
         GeomEval_EllipsoidSurface aCopy = (GeomEval_EllipsoidSurface)Copy();
@@ -83,7 +89,7 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy with the semi-axis B set to theB.</summary>
-    /// <exception cref="Standard_ConstructionError">theB &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theB &lt;= 0.</exception>
     public GeomEval_EllipsoidSurface WithSemiAxisB(double theB)
     {
         GeomEval_EllipsoidSurface aCopy = (GeomEval_EllipsoidSurface)Copy();
@@ -92,7 +98,7 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy with the semi-axis C set to theC.</summary>
-    /// <exception cref="Standard_ConstructionError">theC &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theC &lt;= 0.</exception>
     public GeomEval_EllipsoidSurface WithSemiAxisC(double theC)
     {
         GeomEval_EllipsoidSurface aCopy = (GeomEval_EllipsoidSurface)Copy();
@@ -100,30 +106,30 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         return aCopy;
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::VReversedParameter");
     }
 
     /// <summary>U in [0, 2*Pi], V in [-Pi/2, Pi/2].</summary>
@@ -145,31 +151,31 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
 
     public override bool IsVPeriodic() => false;
 
-    /// <summary>Not supported (not a standard curve type): throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported (not a standard curve type): throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::UIso");
     }
 
-    /// <summary>Not supported (an ellipse only when A == B): throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported (an ellipse only when A == B): throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::VIso");
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
         double aCosV = Math.Cos(V);
         double aSinV = Math.Sin(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
-        return new gp_Pnt(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
+        return new Point3D(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
     }
 
     public override ResD1 EvalD1(double U, double V)
@@ -179,21 +185,21 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         double aCosV = Math.Cos(V);
         double aSinV = Math.Sin(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD1 aResult;
         aResult.Point =
-            new gp_Pnt(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
+            new Point3D(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
 
         // dP/du = -A*cv*su*XD + B*cv*cu*YD
-        aResult.D1U = new gp_Vec(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
+        aResult.D1U = new Vector3D(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
 
         // dP/dv = -A*sv*cu*XD - B*sv*su*YD + C*cv*ZD
         aResult.D1V =
-            new gp_Vec(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
+            new Vector3D(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
 
         return aResult;
     }
@@ -205,31 +211,31 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         double aCosV = Math.Cos(V);
         double aSinV = Math.Sin(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD2 aResult;
         aResult.Point =
-            new gp_Pnt(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
+            new Point3D(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
 
         // dP/du
-        aResult.D1U = new gp_Vec(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
+        aResult.D1U = new Vector3D(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
 
         // dP/dv
         aResult.D1V =
-            new gp_Vec(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
+            new Vector3D(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
 
         // d2P/du2 = -A*cv*cu*XD - B*cv*su*YD
-        aResult.D2U = new gp_Vec(myA * aCosV * (-aCosU) * aXD + myB * aCosV * (-aSinU) * aYD);
+        aResult.D2U = new Vector3D(myA * aCosV * (-aCosU) * aXD + myB * aCosV * (-aSinU) * aYD);
 
         // d2P/dv2 = -A*cv*cu*XD - B*cv*su*YD - C*sv*ZD
         aResult.D2V =
-            new gp_Vec(myA * (-aCosV) * aCosU * aXD + myB * (-aCosV) * aSinU * aYD + myC * (-aSinV) * aZD);
+            new Vector3D(myA * (-aCosV) * aCosU * aXD + myB * (-aCosV) * aSinU * aYD + myC * (-aSinV) * aZD);
 
         // d2P/dudv = A*sv*su*XD - B*sv*cu*YD
-        aResult.D2UV = new gp_Vec(myA * aSinV * aSinU * aXD + myB * (-aSinV) * aCosU * aYD);
+        aResult.D2UV = new Vector3D(myA * aSinV * aSinU * aXD + myB * (-aSinV) * aCosU * aYD);
 
         return aResult;
     }
@@ -241,61 +247,61 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         double aCosV = Math.Cos(V);
         double aSinV = Math.Sin(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD3 aResult;
 
         // P
         aResult.Point =
-            new gp_Pnt(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
+            new Point3D(anO + myA * aCosV * aCosU * aXD + myB * aCosV * aSinU * aYD + myC * aSinV * aZD);
 
         // dP/du
-        aResult.D1U = new gp_Vec(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
+        aResult.D1U = new Vector3D(myA * aCosV * (-aSinU) * aXD + myB * aCosV * aCosU * aYD);
 
         // dP/dv
         aResult.D1V =
-            new gp_Vec(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
+            new Vector3D(myA * (-aSinV) * aCosU * aXD + myB * (-aSinV) * aSinU * aYD + myC * aCosV * aZD);
 
         // d2P/du2
-        aResult.D2U = new gp_Vec(myA * aCosV * (-aCosU) * aXD + myB * aCosV * (-aSinU) * aYD);
+        aResult.D2U = new Vector3D(myA * aCosV * (-aCosU) * aXD + myB * aCosV * (-aSinU) * aYD);
 
         // d2P/dv2
         aResult.D2V =
-            new gp_Vec(myA * (-aCosV) * aCosU * aXD + myB * (-aCosV) * aSinU * aYD + myC * (-aSinV) * aZD);
+            new Vector3D(myA * (-aCosV) * aCosU * aXD + myB * (-aCosV) * aSinU * aYD + myC * (-aSinV) * aZD);
 
         // d2P/dudv
-        aResult.D2UV = new gp_Vec(myA * aSinV * aSinU * aXD + myB * (-aSinV) * aCosU * aYD);
+        aResult.D2UV = new Vector3D(myA * aSinV * aSinU * aXD + myB * (-aSinV) * aCosU * aYD);
 
         // d3P/du3 = A*cv*su*XD - B*cv*cu*YD
-        aResult.D3U = new gp_Vec(myA * aCosV * aSinU * aXD + myB * aCosV * (-aCosU) * aYD);
+        aResult.D3U = new Vector3D(myA * aCosV * aSinU * aXD + myB * aCosV * (-aCosU) * aYD);
 
         // d3P/dv3 = A*sv*cu*XD + B*sv*su*YD - C*cv*ZD
         aResult.D3V =
-            new gp_Vec(myA * aSinV * aCosU * aXD + myB * aSinV * aSinU * aYD + myC * (-aCosV) * aZD);
+            new Vector3D(myA * aSinV * aCosU * aXD + myB * aSinV * aSinU * aYD + myC * (-aCosV) * aZD);
 
         // d3P/du2dv = A*sv*cu*XD + B*sv*su*YD
-        aResult.D3UUV = new gp_Vec(myA * aSinV * aCosU * aXD + myB * aSinV * aSinU * aYD);
+        aResult.D3UUV = new Vector3D(myA * aSinV * aCosU * aXD + myB * aSinV * aSinU * aYD);
 
         // d3P/dudv2 = A*cv*su*XD - B*cv*cu*YD
-        aResult.D3UVV = new gp_Vec(myA * aCosV * aSinU * aXD + myB * (-aCosV) * aCosU * aYD);
+        aResult.D3UVV = new Vector3D(myA * aCosV * aSinU * aXD + myB * (-aCosV) * aCosU * aYD);
 
         return aResult;
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative("GeomEval_EllipsoidSurface::EvalDN: invalid derivative order");
         }
 
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         // Using phase-shift identities:
         // d^n/du^n[cos(u)] = cos(u + n*Pi/2)
@@ -312,14 +318,14 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         // ZD coefficient: C * d^Nv[sin(v)] * (Nu == 0 ? 1 : 0)
         double aCoeffZ = myC * Math.Sin(V + aPhaseV) * (Nu == 0 ? 1.0 : 0.0);
 
-        return new gp_Vec(aCoeffX * aXD + aCoeffY * aYD + aCoeffZ * aZD);
+        return new Vector3D(aCoeffX * aXD + aCoeffY * aYD + aCoeffZ * aZD);
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_EllipsoidSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::Transform");
     }
 
     public override Geom_Geometry Copy() => new GeomEval_EllipsoidSurface(pos, myA, myB, myC);
@@ -346,7 +352,7 @@ public sealed class GeomEval_EllipsoidSurface : Geom_ElementarySurface
         double aInvB2 = 1.0 / (myB * myB);
         double aInvC2 = 1.0 / (myC * myC);
 
-        gp_Trsf T = new gp_Trsf();
+        Transform3D T = new Transform3D();
         T.SetTransformation(pos);
         double T11 = T.Value(1, 1);
         double T12 = T.Value(1, 2);

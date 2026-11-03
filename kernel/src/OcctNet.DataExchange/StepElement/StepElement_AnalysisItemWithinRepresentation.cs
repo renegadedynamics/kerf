@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity AnalysisItemWithinRepresentation
 /// </summary>
-public class StepElement_AnalysisItemWithinRepresentation : Standard_Transient
+public class StepElement_AnalysisItemWithinRepresentation : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

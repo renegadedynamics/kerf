@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -163,7 +164,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// Returns the current Context List, Null if not defined The Context is given to the TransientProcess for
     /// TransferRead
     /// </summary>
-    public NCollection_DataMap<string, Standard_Transient> Context()
+    public NCollection_DataMap<string, Transient> Context()
     {
         return myContext;
     }
@@ -171,7 +172,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// <summary>
     /// Sets the current Context List, as a whole Sets it to the TransferReader
     /// </summary>
-    public void SetAllContext(NCollection_DataMap<string, Standard_Transient> context)
+    public void SetAllContext(NCollection_DataMap<string, Transient> context)
     {
         XSControl_TransferReader.AssignContext(myContext, context); // C++'s map assignments: copies
         XSControl_TransferReader.AssignContext(myTransferReader.Context(), context);
@@ -198,7 +199,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
 
         Transfer_Binder binder = null;
         Transfer_Finder finder = null;
-        Standard_Transient ent = null;
+        Transient ent = null;
 
         //   ***   WRITE  ***
         if (wri)
@@ -246,13 +247,13 @@ public class XSControl_WorkSession : IFSelect_WorkSession
             S.Write('\n');
             ent = FP.FindTransient(finder);
             S.Write(" -> Type ");
-            S.Write(finder.DynamicType().Name);
+            S.Write(finder.DynamicTypeName());
             S.Write('\n');
             FP.StartTrace(binder, finder, 0, 0); // pb sout/S
             if (ent is not null)
             {
                 S.Write(" ** Transient Result, type ");
-                S.Write(ent.DynamicType().Name);
+                S.Write(ent.DynamicTypeName());
                 Interface_InterfaceModel model = Model();
                 if (model is not null)
                 {
@@ -401,7 +402,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
                 myTransferReader.SetTransientProcess(TP);
                 TP.SetGraph(HGraph());
             }
-            NCollection_HSequence<Standard_Transient> lis =
+            NCollection_HSequence<Transient> lis =
                 myTransferReader.RecordedList();
             int i, nb = lis.Length();
             for (i = 1; i <= nb; i++)
@@ -509,7 +510,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// returns the Binder itself (if it is not, e.g. Shape, returns the Binder) &lt;mode&gt; = 20, returns the
     /// ResultFromModel
     /// </summary>
-    public Standard_Transient? Result(Standard_Transient? ent, int mode)
+    public Transient? Result(Transient? ent, int mode)
     {
         int ouca = (mode % 10);
         int kica = (mode / 10);
@@ -554,7 +555,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// list - &lt;ents&gt; the Model : in this specific case, all the roots, with no cumulation of former
     /// transfers (TransferReadRoots)
     /// </summary>
-    public int TransferReadOne(Standard_Transient? ent, Message_ProgressRange theProgress = default)
+    public int TransferReadOne(Transient? ent, ProgressRange theProgress = default)
     {
         Interface_InterfaceModel model = Model();
         if (ent == model)
@@ -562,7 +563,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
             return TransferReadRoots(theProgress);
         }
 
-        NCollection_HSequence<Standard_Transient> list = GiveList(ent);
+        NCollection_HSequence<Transient> list = GiveList(ent);
         if (list.Length() == 1)
         {
             return myTransferReader.TransferOne(list.Value(1), true, theProgress);
@@ -577,7 +578,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// Commands the transfer of all the root entities of the model i.e. calls TransferRoot from the
     /// TransferReader with the Graph No cumulation with former calls to TransferReadOne
     /// </summary>
-    public int TransferReadRoots(Message_ProgressRange theProgress = default)
+    public int TransferReadRoots(ProgressRange theProgress = default)
     {
         return myTransferReader.TransferRoots(Graph(), theProgress);
     }
@@ -642,7 +643,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     /// SetModeWriteShape Returns status :Done if OK, Fail if error during transfer, Error if transfer badly
     /// initialised
     /// </summary>
-    public IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, bool compgraph = true, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, bool compgraph = true, ProgressRange theProgress = default)
     {
         lock (WS_GLOBAL_MUTEX)
         {
@@ -650,7 +651,7 @@ public class XSControl_WorkSession : IFSelect_WorkSession
         }
     }
 
-    private IFSelect_ReturnStatus TransferWriteShapeLocked(TopoDS_Shape shape, bool compgraph, Message_ProgressRange theProgress)
+    private IFSelect_ReturnStatus TransferWriteShapeLocked(TopoDS_Shape shape, bool compgraph, ProgressRange theProgress)
     {
         IFSelect_ReturnStatus status;
         if (myController is null)
@@ -706,6 +707,6 @@ public class XSControl_WorkSession : IFSelect_WorkSession
     private XSControl_Controller? myController;
     private XSControl_TransferReader? myTransferReader;
     private XSControl_TransferWriter? myTransferWriter;
-    private NCollection_DataMap<string, Standard_Transient> myContext = new NCollection_DataMap<string, Standard_Transient>();
+    private NCollection_DataMap<string, Transient> myContext = new NCollection_DataMap<string, Transient>();
     private XSControl_Vars? myVars;
 }

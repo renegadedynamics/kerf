@@ -196,7 +196,7 @@ public class ShapeUpgrade_RemoveInternalWires : ShapeUpgrade_Tool
                 continue;
             }
             double anArea = ShapeAnalysis.ContourArea(aW);
-            if (anArea < myMinArea - Occt.Precision.Confusion())
+            if (anArea < myMinArea - Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Context()!.Remove(aW);
                 myRemoveWires.Append(aW);

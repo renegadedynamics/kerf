@@ -2,6 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntAna_ResultType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -100,7 +105,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 COE13 = 3,
             }
 
-            internal stCoeffsValue(in gp_Cylinder theCyl1, in gp_Cylinder theCyl2)
+            internal stCoeffsValue(in Cylinder theCyl1, in Cylinder theCyl2)
             {
                 mVecA1 = new math_Vector(-theCyl1.Radius() * theCyl1.XAxis().Direction().XYZ());
                 mVecA2 = new math_Vector(theCyl2.Radius() * theCyl2.XAxis().Direction().XYZ());
@@ -154,9 +159,9 @@ public sealed partial class IntPatch_ImpImpIntersection
                 // Therefore, in this case we should compare sine with angular tolerance.
                 // This constant is used for check if axes are parallel (see constructor
                 // AxeOperator::AxeOperator(...) in IntAna_QuadQuadGeo.cxx file).
-                if (Math.Abs(aDetV1V2) < Precision.Angular())
+                if (Math.Abs(aDetV1V2) < global::Kerf.Engine.Foundation.Precision.Angular())
                 {
-                    throw new Standard_Failure("Error. Exception in divide by zerro (IntCyCyTrim)!!!!");
+                    throw new FailureException("Error. Exception in divide by zerro (IntCyCyTrim)!!!!");
                 }
 
                 switch (aFoundCouple)
@@ -513,8 +518,8 @@ public sealed partial class IntPatch_ImpImpIntersection
         private readonly IntSurf_Quadric myQuad1;
         private readonly IntSurf_Quadric myQuad2;
         private readonly ComputationMethods.stCoeffsValue myCoeffs;
-        private readonly Bnd_Box2d myUVSurf1;
-        private readonly Bnd_Box2d myUVSurf2;
+        private readonly Box2d myUVSurf1;
+        private readonly Box2d myUVSurf2;
         private readonly int myNbWLines;
         private readonly double myPeriod;
         private readonly double myTol3D;
@@ -524,8 +529,8 @@ public sealed partial class IntPatch_ImpImpIntersection
         internal WorkWithBoundaries(in IntSurf_Quadric theQuad1,
                                     in IntSurf_Quadric theQuad2,
                                     ComputationMethods.stCoeffsValue theCoeffs,
-                                    in Bnd_Box2d theUVSurf1,
-                                    in Bnd_Box2d theUVSurf2,
+                                    in Box2d theUVSurf1,
+                                    in Box2d theUVSurf2,
                                     int theNbWLines,
                                     double thePeriod,
                                     double theTol3D,
@@ -570,14 +575,14 @@ public sealed partial class IntPatch_ImpImpIntersection
         internal double Get3dTolerance() => myTol3D;
 
         // Returns UV-bounds of 1st surface
-        internal Bnd_Box2d UVS1() => myUVSurf1;
+        internal Box2d UVS1() => myUVSurf1;
 
         // Returns UV-bounds of 2nd surface
-        internal Bnd_Box2d UVS2() => myUVSurf2;
+        internal Box2d UVS2() => myUVSurf2;
 
         // V(U1) - V_bound on one arccos branch of the analytical intersection curve (OCCT's local struct
         // VBoundDelta in AddBoundaryPoint).
-        private readonly struct VBoundDelta : MathUtils.IScalarFunction
+        private readonly struct VBoundDelta : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
         {
             private readonly ComputationMethods.stCoeffsValue Coeffs;
             private readonly int WLIndex;
@@ -637,10 +642,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                 return false; // no bracketed crossing
             }
 
-            MathUtils.Config aCfg = new();
-            aCfg.XTolerance = Precision.PConfusion();
-            MathUtils.ScalarResult aRes = MathRoot.Brent(aFunc, theULo, theUHi, aCfg);
-            if (aRes.Status != MathUtils.Status.OK || !aRes.Root.HasValue)
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aCfg = new();
+            aCfg.XTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aRes = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(aFunc, theULo, theUHi, aCfg);
+            if (aRes.Status != global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK || !aRes.Root.HasValue)
             {
                 return false;
             }
@@ -779,8 +784,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                     myCoeffs,
                                     myIsReverse,
                                     false,
-                                    new gp_Pnt2d(aUVPoint[i].myU1, aUVPoint[i].myV1),
-                                    new gp_Pnt2d(aUVPoint[i].myU2, aUVPoint[i].myV2),
+                                    new Point2D(aUVPoint[i].myU1, aUVPoint[i].myV1),
+                                    new Point2D(aUVPoint[i].myU2, aUVPoint[i].myV2),
                                     aUSurf1f,
                                     aUSurf1l,
                                     aUSurf2f,
@@ -846,7 +851,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         //=======================================================================
         internal static bool BoundariesComputing(ComputationMethods.stCoeffsValue theCoeffs,
                                                  double thePeriod,
-                                                 Bnd_Range[] theURange)
+                                                 BoundRange[] theURange)
         {
             // All comments to this method is related to the comment
             // to ComputationMethods class
@@ -1061,12 +1066,12 @@ public sealed partial class IntPatch_ImpImpIntersection
         // function : BoundaryEstimation
         // purpose  : Rough estimation of the parameter range.
         //=======================================================================
-        internal void BoundaryEstimation(in gp_Cylinder theCy1,
-                                         in gp_Cylinder theCy2,
-                                         ref Bnd_Range theOutBoxS1,
-                                         ref Bnd_Range theOutBoxS2)
+        internal void BoundaryEstimation(in Cylinder theCy1,
+                                         in Cylinder theCy2,
+                                         ref BoundRange theOutBoxS1,
+                                         ref BoundRange theOutBoxS2)
         {
-            gp_Dir aD1 = theCy1.Axis().Direction(), aD2 = theCy2.Axis().Direction();
+            Direction3D aD1 = theCy1.Axis().Direction(), aD2 = theCy2.Axis().Direction();
             double aR1 = theCy1.Radius(), aR2 = theCy2.Radius();
 
             // Let consider a parallelogram. Its edges are parallel to aD1 and aD2.
@@ -1079,7 +1084,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             double aSqSinA = aD1.XYZ().CrossSquareMagnitude(aD2.XYZ());
 
             // If sine is small then it can be compared with angle.
-            if (aSqSinA < Precision.Angular() * Precision.Angular())
+            if (aSqSinA < global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return;
             }
@@ -1101,14 +1106,14 @@ public sealed partial class IntPatch_ImpImpIntersection
             theOutBoxS2.Add(aV02 - aHDV2);
             theOutBoxS2.Add(aV02 + aHDV2);
 
-            theOutBoxS1.Enlarge(Precision.Confusion());
-            theOutBoxS2.Enlarge(Precision.Confusion());
+            theOutBoxS1.Enlarge(global::Kerf.Engine.Foundation.Precision.Confusion());
+            theOutBoxS2.Enlarge(global::Kerf.Engine.Foundation.Precision.Confusion());
 
             myUVSurf1.Get(out double aU1, out double aV1, out double aU2, out double aV2);
-            theOutBoxS1.Common(new Bnd_Range(aV1, aV2));
+            theOutBoxS1.Common(new BoundRange(aV1, aV2));
 
             myUVSurf2.Get(out aU1, out aV1, out aU2, out aV2);
-            theOutBoxS2.Common(new Bnd_Range(aV1, aV2));
+            theOutBoxS2.Common(new BoundRange(aV1, aV2));
         }
     }
 
@@ -1132,16 +1137,16 @@ public sealed partial class IntPatch_ImpImpIntersection
     // purpose  : Computes extrema between the given lines. Returns parameters
     //          on correspond curve (see correspond method for Extrema_ExtElC class).
     //=======================================================================
-    private static void ExtremaLineLine(in gp_Ax1 theC1,
-                                        in gp_Ax1 theC2,
+    private static void ExtremaLineLine(in Axis3D theC1,
+                                        in Axis3D theC2,
                                         double theCosA,
                                         double theSqSinA,
                                         out double thePar1,
                                         out double thePar2)
     {
-        gp_Dir aD1 = theC1.Direction(), aD2 = theC2.Direction();
+        Direction3D aD1 = theC1.Direction(), aD2 = theC2.Direction();
 
-        gp_XYZ aL1L2 = theC2.Location().XYZ() - theC1.Location().XYZ();
+        Xyz aL1L2 = theC2.Location().XYZ() - theC1.Location().XYZ();
         double aD1L = aD1.XYZ().Dot(aL1L2), aD2L = aD2.XYZ().Dot(aL1L2);
 
         thePar1 = (aD1L - theCosA * aD2L) / theSqSinA;
@@ -1155,7 +1160,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     //            must be computed as [V1current - DeltaV1] (analogically
     //            for V2). This function processes this case.
     //=======================================================================
-    private static void VBoundaryPrecise(math_Matrix theMatr,
+    private static void VBoundaryPrecise(Matrix theMatr,
                                          double theV1AfterDecrByDelta,
                                          double theV2AfterDecrByDelta,
                                          ref double theV1Set,
@@ -1164,7 +1169,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         // Now we are going to define if V1 (and V2) increases
         //(or decreases) when U1 will increase.
         const int aNbDim = 3;
-        math_Matrix aSyst = new(1, aNbDim, 1, aNbDim);
+        Matrix aSyst = new(1, aNbDim, 1, aNbDim);
 
         aSyst.SetCol(1, theMatr.Col(1));
         aSyst.SetCol(2, theMatr.Col(2));
@@ -1210,13 +1215,13 @@ public sealed partial class IntPatch_ImpImpIntersection
     // function : DeltaU1Computing
     // purpose  : Computes new step for U1 parameter.
     //=======================================================================
-    private static bool DeltaU1Computing(math_Matrix theSyst, math_Vector theFree, ref double theDeltaU1Found)
+    private static bool DeltaU1Computing(Matrix theSyst, math_Vector theFree, ref double theDeltaU1Found)
     {
         double aDet = theSyst.Determinant();
 
         if (Math.Abs(aDet) > aNulValue)
         {
-            math_Matrix aSyst1 = new(theSyst);
+            Matrix aSyst1 = new(theSyst);
             aSyst1.SetCol(2, theFree);
 
             theDeltaU1Found = Math.Abs(aSyst1.Determinant() / aDet);
@@ -1241,7 +1246,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     //                (a21 a22 a23 a24 b2)
     //                (a31 a32 a33 a34 b3)
     //=======================================================================
-    private static bool StepComputing(math_Matrix theMatr,
+    private static bool StepComputing(Matrix theMatr,
                                       double theV1Cur,
                                       double theV2Cur,
                                       double theDeltaV1,
@@ -1254,7 +1259,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         // theV2Found = theV2Set;
         const int aNbDim = 3;
 
-        math_Matrix aSyst = new(1, aNbDim, 1, aNbDim);
+        Matrix aSyst = new(1, aNbDim, 1, aNbDim);
         math_Vector aFree = new(1, aNbDim);
 
         // By default, increasing V1(U1) and V2(U1) functions is
@@ -1294,7 +1299,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         if (!isSuccess)
         {
             aFree.Initialized(theMatr.Col(5) - aV1Set * theMatr.Col(1) - aV2Set * theMatr.Col(2));
-            math_Matrix aSyst1 = new(1, aNbDim, 1, 2);
+            Matrix aSyst1 = new(1, aNbDim, 1, 2);
             aSyst1.SetCol(1, aSyst.Col(2));
             aSyst1.SetCol(2, aSyst.Col(3));
 
@@ -1384,11 +1389,11 @@ public sealed partial class IntPatch_ImpImpIntersection
         IntSurf_TypeTrans trans1, trans2;
         IntAna_ResultType typint;
 
-        gp_Elips elipsol;
-        gp_Lin linsol;
+        Ellipse3D elipsol;
+        Line3D linsol;
 
-        gp_Cylinder Cy1 = Quad1.Cylinder();
-        gp_Cylinder Cy2 = Quad2.Cylinder();
+        Cylinder Cy1 = Quad1.Cylinder();
+        Cylinder Cy2 = Quad2.Cylinder();
 
         typint = theInter.TypeInter();
         int NbSol = theInter.NbSolutions();
@@ -1411,7 +1416,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Point:
             {
-                gp_Pnt psol = theInter.Point(1);
+                Point3D psol = theInter.Point(1);
                 ptsol.SetValue(psol, Tol, true);
 
                 double U1 = 0.0, V1 = 0.0, U2 = 0.0, V2 = 0.0;
@@ -1425,19 +1430,19 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Line:
             {
-                gp_Pnt ptref;
+                Point3D ptref;
                 if (NbSol == 1)
                 { // Cylinders are tangent to each other by line
                     linsol = theInter.Line(1);
                     ptref = linsol.Location();
 
                     // Radius-vectors
-                    gp_Dir crb1 = new(new gp_Vec(ptref, Cy1.Location()));
-                    gp_Dir crb2 = new(new gp_Vec(ptref, Cy2.Location()));
+                    Direction3D crb1 = new(new Vector3D(ptref, Cy1.Location()));
+                    Direction3D crb2 = new(new Vector3D(ptref, Cy2.Location()));
 
                     // outer normal lines
-                    gp_Vec norm1 = Quad1.Normale(ptref);
-                    gp_Vec norm2 = Quad2.Normale(ptref);
+                    Vector3D norm1 = Quad1.Normale(ptref);
+                    Vector3D norm2 = Quad2.Normale(ptref);
                     IntSurf_Situation situcyl1;
                     IntSurf_Situation situcyl2;
 
@@ -1448,7 +1453,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         //         is used for judging what the situation of the 2nd(!)
                         //         cylinder is.
 
-                        if (norm1.Dot(new gp_Vec(crb1)) > 0.0)
+                        if (norm1.Dot(new Vector3D(crb1)) > 0.0)
                         {
                             situcyl2 = IntSurf_Inside;
                         }
@@ -1457,7 +1462,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                             situcyl2 = IntSurf_Outside;
                         }
 
-                        if (norm2.Dot(new gp_Vec(crb2)) > 0.0)
+                        if (norm2.Dot(new Vector3D(crb2)) > 0.0)
                         {
                             situcyl1 = IntSurf_Inside;
                         }
@@ -1470,7 +1475,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     {
                         if (Cy1.Radius() < Cy2.Radius())
                         {
-                            if (norm1.Dot(new gp_Vec(crb1)) > 0.0)
+                            if (norm1.Dot(new Vector3D(crb1)) > 0.0)
                             {
                                 situcyl2 = IntSurf_Inside;
                             }
@@ -1479,7 +1484,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                 situcyl2 = IntSurf_Outside;
                             }
 
-                            if (norm2.Dot(new gp_Vec(crb2)) > 0.0)
+                            if (norm2.Dot(new Vector3D(crb2)) > 0.0)
                             {
                                 situcyl1 = IntSurf_Outside;
                             }
@@ -1490,7 +1495,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         }
                         else
                         {
-                            if (norm1.Dot(new gp_Vec(crb1)) > 0.0)
+                            if (norm1.Dot(new Vector3D(crb1)) > 0.0)
                             {
                                 situcyl2 = IntSurf_Outside;
                             }
@@ -1499,7 +1504,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                 situcyl2 = IntSurf_Inside;
                             }
 
-                            if (norm2.Dot(new gp_Vec(crb2)) > 0.0)
+                            if (norm2.Dot(new Vector3D(crb2)) > 0.0)
                             {
                                 situcyl1 = IntSurf_Inside;
                             }
@@ -1519,7 +1524,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     {
                         linsol = theInter.Line(i);
                         ptref = linsol.Location();
-                        gp_Vec lsd = new(linsol.Direction());
+                        Vector3D lsd = new(linsol.Direction());
 
                         // Theoretically, qwe = +/- 1.0.
                         double qwe = lsd.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
@@ -1547,14 +1552,14 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Ellipse:
             {
-                gp_Vec Tgt;
-                gp_Pnt ptref;
+                Vector3D Tgt;
+                Point3D ptref;
                 IntPatch_Point pmult1 = new(), pmult2 = new();
 
                 elipsol = theInter.Ellipse(1);
 
-                gp_Pnt pttang1 = ElCLib.Value(0.5 * M_PI, elipsol);
-                gp_Pnt pttang2 = ElCLib.Value(1.5 * M_PI, elipsol);
+                Point3D pttang1 = global::Kerf.Engine.Geometry.ElCLib.Value(0.5 * M_PI, elipsol);
+                Point3D pttang2 = global::Kerf.Engine.Geometry.ElCLib.Value(1.5 * M_PI, elipsol);
 
                 Multpoint = true;
                 pmult1.SetValue(pttang1, Tol, true);
@@ -1575,7 +1580,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 // on traite la premiere ellipse
 
                 //-- Calcul de la Transition de la ligne
-                ElCLib.D1(0.0, elipsol, out ptref, out Tgt);
+                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, elipsol, out ptref, out Tgt);
 
                 // Theoretically, qwe = +/- |Tgt|.
                 double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
@@ -1601,7 +1606,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 {
                     double aU1 = 0.0, aV1 = 0.0, aU2 = 0.0, aV2 = 0.0;
                     IntPatch_Point aIP = new();
-                    gp_Pnt aP = ElCLib.Value(0.0, elipsol);
+                    Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, elipsol);
                     //
                     aIP.SetValue(aP, Tol, false);
                     aIP.SetMultiple(false);
@@ -1634,8 +1639,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                 // on traite la deuxieme ellipse
                 elipsol = theInter.Ellipse(2);
 
-                double param1 = ElCLib.Parameter(elipsol, pttang1);
-                double param2 = ElCLib.Parameter(elipsol, pttang2);
+                double param1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(elipsol, pttang1);
+                double param2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(elipsol, pttang2);
                 double parampourtransition = 0.0;
                 if (param1 < param2)
                 {
@@ -1651,7 +1656,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 }
 
                 //-- Calcul des transitions de ligne pour la premiere ligne
-                ElCLib.D1(parampourtransition, elipsol, out ptref, out Tgt);
+                global::Kerf.Engine.Geometry.ElCLib.D1(parampourtransition, elipsol, out ptref, out Tgt);
 
                 // Theoretically, qwe = +/- |Tgt|.
                 qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
@@ -1676,7 +1681,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                 {
                     double aU1 = 0.0, aV1 = 0.0, aU2 = 0.0, aV2 = 0.0;
                     IntPatch_Point aIP = new();
-                    gp_Pnt aP = ElCLib.Value(0.0, elipsol);
+                    Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, elipsol);
                     //
                     aIP.SetValue(aP, Tol, false);
                     aIP.SetMultiple(false);
@@ -1705,7 +1710,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case IntAna_Parabola:
             case IntAna_Hyperbola:
-                throw new Standard_Failure("IntCyCy(): Wrong intersection type!");
+                throw new FailureException("IntCyCy(): Wrong intersection type!");
 
             case IntAna_Circle:
             // Circle is useful when we will work with trimmed surfaces
@@ -1788,7 +1793,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                       double thePeriod,
                                       bool theFlForce)
     {
-        if (Precision.IsInfinite(theUGiven))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theUGiven))
         {
             return false;
         }
@@ -1823,7 +1828,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         double aUf = theUfTarget - theTol2D;
         double aUl = aUf + thePeriod;
 
-        theUGiven = ElCLib.InPeriod(theUGiven, aUf, aUl);
+        theUGiven = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theUGiven, aUf, aUl);
 
         return ((theUfTarget - theUGiven <= theTol2D) && (theUGiven - theUlTarget <= theTol2D));
     }
@@ -1835,7 +1840,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     //=======================================================================
     private static bool InscribeInterval(double theUfTarget,
                                          double theUlTarget,
-                                         ref Bnd_Range theRange,
+                                         ref BoundRange theRange,
                                          double theTol2D,
                                          double thePeriod)
     {
@@ -1909,7 +1914,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             // Here, anA >= anB
 
-            if (Precision.IsInfinite(anA))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(anA))
             {
                 break;
             }
@@ -1927,7 +1932,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
                 // Make this element infinite an forget it
                 //(we will not use it in next iterations).
-                anB = Precision.Infinite();
+                anB = global::Kerf.Engine.Foundation.Precision.Infinite();
                 aRetVal = true;
             }
         }
@@ -1978,8 +1983,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                        ComputationMethods.stCoeffsValue theCoeffs,
                                        bool isTheReverse,
                                        bool isThePrecise,
-                                       in gp_Pnt2d thePntOnSurf1,
-                                       in gp_Pnt2d thePntOnSurf2,
+                                       in Point2D thePntOnSurf1,
+                                       in Point2D thePntOnSurf2,
                                        double theUfSurf1,
                                        double theUlSurf1,
                                        double theUfSurf2,
@@ -1998,7 +2003,7 @@ public sealed partial class IntPatch_ImpImpIntersection
     {
         // Check if the point is in the domain or can be inscribed in the domain after adjusting.
 
-        gp_Pnt aPt1 = theQuad1.Value(thePntOnSurf1.X(), thePntOnSurf1.Y()),
+        Point3D aPt1 = theQuad1.Value(thePntOnSurf1.X(), thePntOnSurf1.Y()),
             aPt2 = theQuad2.Value(thePntOnSurf2.X(), thePntOnSurf2.Y());
 
         double aU1par = thePntOnSurf1.X();
@@ -2063,11 +2068,11 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         if (isTheReverse)
         {
-            aPnt.SetValue(new gp_Pnt((aPt1.XYZ() + aPt2.XYZ()) / 2.0), aU2par, aV2par, aU1par, aV1par);
+            aPnt.SetValue(new Point3D((aPt1.XYZ() + aPt2.XYZ()) / 2.0), aU2par, aV2par, aU1par, aV1par);
         }
         else
         {
-            aPnt.SetValue(new gp_Pnt((aPt1.XYZ() + aPt2.XYZ()) / 2.0), aU1par, aV1par, aU2par, aV2par);
+            aPnt.SetValue(new Point3D((aPt1.XYZ() + aPt2.XYZ()) / 2.0), aU1par, aV1par, aU2par, aV2par);
         }
 
         int aNbPnts = theLine.NbPoints();
@@ -2275,8 +2280,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                     continue;
                 }
 
-                gp_Pnt aP1 = theQuad1.Value(U1prec, V1prec), aP2 = theQuad2.Value(U2prec, V2prec);
-                gp_Pnt aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
+                Point3D aP1 = theQuad1.Value(U1prec, V1prec), aP2 = theQuad2.Value(U2prec, V2prec);
+                Point3D aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
 
                 IntSurf_PntOn2S anIP = new();
                 if (isTheReverse)
@@ -2357,16 +2362,16 @@ public sealed partial class IntPatch_ImpImpIntersection
         // must be -Precision::Infinite() instead of used +Precision::Infinite()
         theU1crit[6] = Math.Abs((aSl - theCoeffs.mC) / theCoeffs.mB) < 1.0
                          ? -Math.Acos((aSl - theCoeffs.mC) / theCoeffs.mB) + theCoeffs.mFI1
-                         : Precision.Infinite();
+                         : global::Kerf.Engine.Foundation.Precision.Infinite();
         theU1crit[7] = Math.Abs((aSf - theCoeffs.mC) / theCoeffs.mB) < 1.0
                          ? -Math.Acos((aSf - theCoeffs.mC) / theCoeffs.mB) + theCoeffs.mFI1
-                         : Precision.Infinite();
+                         : global::Kerf.Engine.Foundation.Precision.Infinite();
         theU1crit[8] = Math.Abs((aSf - theCoeffs.mC) / theCoeffs.mB) < 1.0
                          ? Math.Acos((aSf - theCoeffs.mC) / theCoeffs.mB) + theCoeffs.mFI1
-                         : Precision.Infinite();
+                         : global::Kerf.Engine.Foundation.Precision.Infinite();
         theU1crit[9] = Math.Abs((aSl - theCoeffs.mC) / theCoeffs.mB) < 1.0
                          ? Math.Acos((aSl - theCoeffs.mC) / theCoeffs.mB) + theCoeffs.mFI1
-                         : Precision.Infinite();
+                         : global::Kerf.Engine.Foundation.Precision.Infinite();
 
         theU1crit[10] = theCoeffs.mFI1;
         theU1crit[11] = M_PI + theCoeffs.mFI1;
@@ -2376,7 +2381,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         for (int i = 0; i < theNbCritPointsMax; i++)
         {
-            if (Precision.IsInfinite(theU1crit[i]))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theU1crit[i]))
             {
                 continue;
             }
@@ -2400,7 +2405,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         while (theNbCritPointsMax > 0)
         {
             ref double anB = ref theU1crit[theNbCritPointsMax - 1];
-            if (Precision.IsInfinite(anB))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(anB))
             {
                 theNbCritPointsMax--;
                 continue;
@@ -2423,7 +2428,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             if (Math.Abs(anB - anA - thePeriod) < theTol2D)
             { // E.g. anA == 2.0e-17, anB == (thePeriod-1.0e-18)
                 anA = (anA + anB - thePeriod) / 2.0;
-                anB = Precision.Infinite();
+                anB = global::Kerf.Engine.Foundation.Precision.Infinite();
                 theNbCritPointsMax--;
             }
 
@@ -2446,10 +2451,10 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static IntStatus CyCyNoGeometric(in gp_Cylinder theCyl1,
-                                             in gp_Cylinder theCyl2,
+    private static IntStatus CyCyNoGeometric(in Cylinder theCyl1,
+                                             in Cylinder theCyl2,
                                              WorkWithBoundaries theBW,
-                                             Bnd_Range[] theRange,
+                                             BoundRange[] theRange,
                                              int theNbOfRanges /*=2*/,
                                              ref bool isTheEmpty,
                                              NCollection_Sequence<IntPatch_Line> theSlin,
@@ -2458,9 +2463,9 @@ public sealed partial class IntPatch_ImpImpIntersection
         theBW.UVS1().Get(out double aUSurf1f, out double aVSurf1f, out double aUSurf1l, out double aVSurf1l);
         theBW.UVS2().Get(out double aUSurf2f, out double aVSurf2f, out double aUSurf2l, out double aVSurf2l);
 
-        Bnd_Range aRangeS1 = new(), aRangeS2 = new();
+        BoundRange aRangeS1 = new(), aRangeS2 = new();
         theBW.BoundaryEstimation(theCyl1, theCyl2, ref aRangeS1, ref aRangeS2);
-        if (aRangeS1.IsVoid() || aRangeS2.IsVoid())
+        if (aRangeS1.IsVoid || aRangeS2.IsVoid)
         {
             return IntStatus.IntStatus_OK;
         }
@@ -2508,14 +2513,14 @@ public sealed partial class IntPatch_ImpImpIntersection
                 break;
             }
             // Angle criterion
-            gp_Ax1 anAx1 = theCyl1.Axis();
-            gp_Ax1 anAx2 = theCyl2.Axis();
+            Axis3D anAx1 = theCyl1.Axis();
+            Axis3D anAx2 = theCyl2.Axis();
             if (!anAx1.IsNormal(anAx2, aCritAngle))
             {
                 break;
             }
             // Placement criterion
-            gp_Lin anL1 = new(anAx1), anL2 = new(anAx2);
+            Line3D anL1 = new(anAx1), anL2 = new(anAx2);
             double aDist = anL1.Distance(anL2);
             if (aDist > anRmax / 2.0)
             {
@@ -2559,7 +2564,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
         int aNbPts = Min(RealToInt((aUSurf1l - aUSurf1f) / du) + 1, RealToInt(20.0 * theCyl1.Radius()));
         int aNbPoints = Min(Max(aNbMinPoints, aNbPts), aNbMaxPoints);
-        double aStepMin = Max(aTol2D, Precision.PConfusion()),
+        double aStepMin = Max(aTol2D, global::Kerf.Engine.Foundation.Precision.PConfusion()),
             aStepMax = (aUSurf1l - aUSurf1f > M_PI / 100.0)
                          ? (aUSurf1l - aUSurf1f) / IntToReal(aNbPoints)
                          : aUSurf1l - aUSurf1f;
@@ -2570,7 +2575,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         for (int i = 0; i < theNbOfRanges; i++)
         {
-            if (theRange[i].IsVoid())
+            if (theRange[i].IsVoid)
             {
                 continue;
             }
@@ -2594,7 +2599,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         // See CriticalPointsComputing(...) function to get detail information about this array.
         const int aNbCritPointsMax = 12;
         Span<double> anU1crit = stackalloc double[aNbCritPointsMax];
-        anU1crit.Fill(Precision.Infinite());
+        anU1crit.Fill(global::Kerf.Engine.Foundation.Precision.Infinite());
 
         // V-boundary points (both crossings and tangencies) are caught on-the-fly
         // by the walker via AddBoundaryPoint; see the 1D branch-aware root-finder
@@ -2994,8 +2999,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                                    anEquationCoeffs,
                                                    isReversed,
                                                    true,
-                                                   new gp_Pnt2d(anU1, aV1[i]),
-                                                   new gp_Pnt2d(aU2[i], aV2[i]),
+                                                   new Point2D(anU1, aV1[i]),
+                                                   new Point2D(aU2[i], aV2[i]),
                                                    aUSurf1f,
                                                    aUSurf1l,
                                                    aUSurf2f,
@@ -3107,8 +3112,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                                anEquationCoeffs,
                                                isReversed,
                                                true,
-                                               new gp_Pnt2d(anU1, aV1[i]),
-                                               new gp_Pnt2d(aU2[i], aV2[i]),
+                                               new Point2D(anU1, aV1[i]),
+                                               new Point2D(aU2[i], aV2[i]),
                                                aUSurf1f,
                                                aUSurf1l,
                                                aUSurf2f,
@@ -3186,8 +3191,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                                anEquationCoeffs,
                                                isReversed,
                                                true,
-                                               new gp_Pnt2d(anUmaxAdded, aV1[i]),
-                                               new gp_Pnt2d(aU2[i], aV2[i]),
+                                               new Point2D(anUmaxAdded, aV1[i]),
+                                               new Point2D(aU2[i], aV2[i]),
                                                aUSurf1f,
                                                aUSurf1l,
                                                aUSurf2f,
@@ -3220,7 +3225,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         double aDeltaV1 = aRangeS1.Delta() / IntToReal(aNbPoints),
                             aDeltaV2 = aRangeS2.Delta() / IntToReal(aNbPoints);
 
-                        math_Matrix aMatr = new(1, 3, 1, 5);
+                        Matrix aMatr = new(1, 3, 1, 5);
 
                         double aMinUexp = RealLast();
 
@@ -3305,7 +3310,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         anU1 = aMinUexp;
                     }
 
-                    if (Precision.PConfusion() >= (anUl - anU1))
+                    if (global::Kerf.Engine.Foundation.Precision.PConfusion() >= (anUl - anU1))
                     {
                         anU1 = anUl;
                     }
@@ -3341,7 +3346,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                         // Check whether the added point exists.
                         // It is enough to check the last point.
                         if (theSPnt.IsEmpty()
-                            || !theSPnt.Last().PntOn2S().IsSame(aP.PntOn2S(), Precision.Confusion()))
+                            || !theSPnt.Last().PntOn2S().IsSame(aP.PntOn2S(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             theSPnt.Append(aP);
                         }
@@ -3355,7 +3360,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                             IntSurf_PntOn2S aPf = aWLine[i].Point(1);
                             IntSurf_PntOn2S aPl = aWLine[i].Point(2);
 
-                            if (aPf.IsSame(aPl, Precision.Confusion()))
+                            if (aPf.IsSame(aPl, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 isGood = false;
                             }
@@ -3391,10 +3396,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                                     int anIdx1 = j != 0 ? aWLine[i].NbPnts() - 1 : 2;
                                     int anIdx2 = j != 0 ? aWLine[i].NbPnts() : 1;
 
-                                    gp_Pnt aP1 = aWLine[i].Point(anIdx1).Value();
-                                    gp_Pnt aP2 = aWLine[i].Point(anIdx2).Value();
+                                    Point3D aP1 = aWLine[i].Point(anIdx1).Value();
+                                    Point3D aP2 = aWLine[i].Point(anIdx2).Value();
 
-                                    gp_Vec aDir = new(aP1, aP2);
+                                    Vector3D aDir = new(aP1, aP2);
 
                                     if (aDir.SquareMagnitude() < aSqTol3D)
                                     {
@@ -3407,11 +3412,11 @@ public sealed partial class IntPatch_ImpImpIntersection
                                     // important here (we are interested in the tangent
                                     // line itself and nothing to fear if its direction
                                     // is reversed).
-                                    gp_Vec aN1 = aQuad1.Normale(aP2);
-                                    gp_Vec aN2 = aQuad2.Normale(aP2);
-                                    gp_Vec aTg = aN1.Crossed(aN2);
+                                    Vector3D aN1 = aQuad1.Normale(aP2);
+                                    Vector3D aN2 = aQuad2.Normale(aP2);
+                                    Vector3D aTg = aN1.Crossed(aN2);
 
-                                    if (aTg.SquareMagnitude() < Precision.SquareConfusion())
+                                    if (aTg.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                     {
                                         // Tangent zone
                                         break;
@@ -3632,8 +3637,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                                 anEquationCoeffs,
                                                 isReversed,
                                                 true,
-                                                new gp_Pnt2d(anUC, aV1loc),
-                                                new gp_Pnt2d(aU2loc, aV2loc),
+                                                new Point2D(anUC, aV1loc),
+                                                new Point2D(aU2loc, aV2loc),
                                                 aUSurf1f,
                                                 aUSurf1l,
                                                 aUSurf2f,
@@ -3682,8 +3687,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                    anEquationCoeffs,
                                    isReversed,
                                    true,
-                                   new gp_Pnt2d(anAddedPar[aParID], aV1loc),
-                                   new gp_Pnt2d(aU2loc, aV2loc),
+                                   new Point2D(anAddedPar[aParID], aV1loc),
+                                   new Point2D(aU2loc, aV2loc),
                                    aUSurf1f,
                                    aUSurf1l,
                                    aUSurf2f,
@@ -3730,8 +3735,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                                      in IntSurf_Quadric theQuad2,
                                      double theTol3D,
                                      double theTol2D,
-                                     in Bnd_Box2d theUVSurf1,
-                                     in Bnd_Box2d theUVSurf2,
+                                     in Box2d theUVSurf1,
+                                     in Box2d theUVSurf2,
                                      ref bool isTheEmpty,
                                      ref bool isTheSameSurface,
                                      ref bool isTheMultiplePoint,
@@ -3744,7 +3749,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         theSlin.Clear();
         theSPnt.Clear();
 
-        gp_Cylinder aCyl1 = theQuad1.Cylinder(), aCyl2 = theQuad2.Cylinder();
+        Cylinder aCyl1 = theQuad1.Cylinder(), aCyl2 = theQuad2.Cylinder();
 
         IntAna_QuadQuadGeo anInter = new(aCyl1, aCyl2, theTol3D);
 
@@ -3794,7 +3799,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         // Intersection result can include two non-connected regions
         //(see WorkWithBoundaries::BoundariesComputing(...) method).
         const int aNbOfBoundaries = 2;
-        Bnd_Range[][] anURange = [[new(), new()], [new(), new()]]; // const
+        BoundRange[][] anURange = [[new(), new()], [new(), new()]]; // const
 
         if (!WorkWithBoundaries.BoundariesComputing(anEquationCoeffs1, aPeriod, anURange[0]))
         {
@@ -3829,7 +3834,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         Span<double> aSumRange = [0.0, 0.0];
         for (int aCID = 0; aCID < 2; aCID++)
         {
-            NCollection_List<Bnd_Range> aListOfRng = new();
+            NCollection_List<BoundRange> aListOfRng = new();
 
             aListOfRng.Append(anURange[aCID][0]);
             aListOfRng.Append(anURange[aCID][1]);
@@ -3838,20 +3843,20 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             for (int aSInd = 0; aSInd < 3; aSInd++)
             {
-                NCollection_List<Bnd_Range> aLstTemp = new(aListOfRng);
+                NCollection_List<BoundRange> aLstTemp = new(aListOfRng);
                 aListOfRng.Clear();
-                foreach (Bnd_Range aRng in aLstTemp)
+                foreach (BoundRange aRng in aLstTemp)
                 {
                     aRng.Split(aSplitArr[aSInd], aListOfRng, aPeriod);
                 }
             }
 
-            foreach (Bnd_Range anItem in aListOfRng)
+            foreach (BoundRange anItem in aListOfRng)
             {
                 // OCCT changes the list's element in place; the list is not read afterwards, so a copy is the same.
-                Bnd_Range aCurrRange = anItem;
+                BoundRange aCurrRange = anItem;
 
-                Bnd_Range aBoundR = new();
+                BoundRange aBoundR = new();
                 aBoundR.Add(aUSBou[aCID, 0]);
                 aBoundR.Add(aUSBou[aCID, 1]);
 

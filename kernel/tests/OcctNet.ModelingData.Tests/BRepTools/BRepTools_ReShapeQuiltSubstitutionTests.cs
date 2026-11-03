@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -45,13 +48,13 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         var aSnapshot = ShapeSnapshot.Of(aBox);
 
         TopoDS_Vertex aV = TopoDS.Vertex(SubShape(aBox, TopAbs_VERTEX, 1));
-        TopoDS_Vertex aNewV = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(-0.1, 0, 0)));
+        TopoDS_Vertex aNewV = TestShapes.Frozen(TestShapes.Vertex(new Point3D(-0.1, 0, 0)));
         var aReShape = new BRepTools_ReShape();
         aReShape.Replace(aV, aNewV);
         TopoDS_Shape aResult = aReShape.Apply(aBox);
 
         aSnapshot.AssertUnchanged(aBox);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.False(aResult.IsSame(aBox));
         Assert.Equal(8, Count(aResult, TopAbs_VERTEX));
         Assert.Equal(12, Count(aResult, TopAbs_EDGE));
@@ -93,7 +96,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         {
             foreach (TopoDS_Shape aM in aHistory.Modified(SubShape(aBox, TopAbs_EDGE, i)))
             {
-                Assert.True(aM.TShape()!.IsFrozen());
+                Assert.True(aM.TShape()!.IsFrozen);
                 aModifiedEdges++;
             }
         }
@@ -119,7 +122,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         TopoDS_Shape aResult = aReShape.Apply(aBox);
         aSnapshot.AssertUnchanged(aBox);
         Assert.Equal(5, Count(aResult, TopAbs_FACE));
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
 
         // The rebuilt shell is no longer closed.
         TopoDS_Shape aShell = SubShape(aResult, TopAbs_SHELL, 1);
@@ -136,7 +139,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         TopoDS_Vertex aV = TopoDS.Vertex(SubShape(aBox, TopAbs_VERTEX, 1));
         var aReShape = new BRepTools_ReShape();
-        aReShape.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(5, 5, 5))));
+        aReShape.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new Point3D(5, 5, 5))));
         // faces are neither rebuilt nor explored
         TopoDS_Shape aResult = aReShape.Apply(aBox, TopAbs_FACE);
         Assert.True(aResult.IsSame(aBox));
@@ -145,8 +148,8 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
     [Fact]
     public void ReShape_ReversedAndInternalOrientations()
     {
-        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(0, 0, 0)));
-        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(1, 0, 0)));
+        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0)));
+        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 0, 0)));
         TopoDS_Edge aE = TestShapes.Frozen(TestShapes.Edge(aV1, aV2));
         TopoDS_Edge aE2 = TestShapes.Frozen(TestShapes.Edge(aV1, aV2));
 
@@ -166,11 +169,11 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
     [Fact]
     public void ReShape_ConsiderLocation()
     {
-        TopoDS_Vertex aA = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(0, 0, 0)));
-        TopoDS_Vertex aB = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(1, 0, 0)));
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(0, 0, 5));
-        var aL = new TopLoc_Location(aT);
+        TopoDS_Vertex aA = TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0)));
+        TopoDS_Vertex aB = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 0, 0)));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(0, 0, 5));
+        var aL = new Placement(aT);
 
         // Without the mode, a located copy of a recorded shape isn't recorded (IsSame compares locations).
         var aPlain = new BRepTools_ReShape();
@@ -190,9 +193,9 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
     [Fact]
     public void ReShape_Merge_HistoryPresentsThePartsAlike()
     {
-        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(0, 0, 0)));
-        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(1, 0, 0)));
-        TopoDS_Vertex aV3 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(2, 0, 0)));
+        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0)));
+        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 0, 0)));
+        TopoDS_Vertex aV3 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(2, 0, 0)));
         TopoDS_Edge aE1 = TestShapes.Frozen(TestShapes.Edge(aV1, aV2));
         TopoDS_Edge aE2 = TestShapes.Frozen(TestShapes.Edge(aV2, aV3));
         TopoDS_Edge aProduct = TestShapes.Frozen(TestShapes.Edge(aV1, aV3));
@@ -213,20 +216,20 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         TopoDS_Vertex aV = TopoDS.Vertex(SubShape(aBox, TopAbs_VERTEX, 1));
         var aReShape = new BRepTools_ReShape();
-        aReShape.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(-1, 0, 0))));
+        aReShape.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new Point3D(-1, 0, 0))));
         TopoDS_Shape anInternal = aReShape.InternalApply(aBox);
-        Assert.False(anInternal.TShape()!.IsFrozen());
+        Assert.False(anInternal.TShape()!.IsFrozen);
         // the recorded intermediate results are unfrozen too until handed out
         TopoDS_Shape anEdge = aReShape.InternalValue(SubShape(aBox, TopAbs_EDGE, 1));
-        Assert.False(anEdge.TShape()!.IsFrozen());
-        Assert.True(aReShape.Value(SubShape(aBox, TopAbs_EDGE, 1)).TShape()!.IsFrozen());
-        Assert.True(aReShape.Apply(aBox).TShape()!.IsFrozen());
+        Assert.False(anEdge.TShape()!.IsFrozen);
+        Assert.True(aReShape.Value(SubShape(aBox, TopAbs_EDGE, 1)).TShape()!.IsFrozen);
+        Assert.True(aReShape.Apply(aBox).TShape()!.IsFrozen);
     }
 
     [Fact]
     public void ReShape_CopyVertex()
     {
-        TopoDS_Vertex aV = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(1, 2, 3)));
+        TopoDS_Vertex aV = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 2, 3)));
         var aReShape = new BRepTools_ReShape();
         TopoDS_Vertex aCopy = aReShape.CopyVertex(aV, 0.5);
         Assert.False(aCopy.IsSame(aV));
@@ -235,13 +238,13 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         // (the public Value would freeze the copy: ported code reads InternalValue)
         Assert.True(aReShape.InternalValue(aV).IsSame(aCopy));
         // the recorded copy is changed in place
-        TopoDS_Vertex aSecond = aReShape.CopyVertex(aV, new gp_Pnt(4, 5, 6), 0.25);
+        TopoDS_Vertex aSecond = aReShape.CopyVertex(aV, new Point3D(4, 5, 6), 0.25);
         Assert.True(aSecond.IsSame(aCopy));
         Assert.Equal(4.0, BRep_Tool.Pnt(aCopy).X());
 
         // a recorded frozen replacement can't be changed in place: OCCT's guard for locked shapes
         var aFrozenCase = new BRepTools_ReShape();
-        aFrozenCase.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(0, 0, 0))));
+        aFrozenCase.Replace(aV, TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0))));
         Assert.Throws<TopoDS_LockedShape>(() => aFrozenCase.CopyVertex(aV, 0.5));
     }
 
@@ -258,7 +261,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         TopoDS_Shape aShells = aQuilt.Shells();
         aSnapshot.AssertUnchanged(aBox);
-        Assert.True(aShells.TShape()!.IsFrozen());
+        Assert.True(aShells.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_COMPOUND, aShells.ShapeType());
         Assert.Equal(1, aShells.NbChildren());
         TopoDS_Shape aShell = new TopoDS_Iterator(aShells).Value();
@@ -288,14 +291,14 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
     // copies the second face with the first's edge, which receives a pcurve on it.
     private static (TopoDS_Face, TopoDS_Face, TopoDS_Edge, TopoDS_Edge) TwoSquares()
     {
-        TopoDS_Vertex[] aV1 = [TestShapes.Vertex(new gp_Pnt(0, 0, 0)), TestShapes.Vertex(new gp_Pnt(1, 0, 0)),
-                               TestShapes.Vertex(new gp_Pnt(1, 1, 0)), TestShapes.Vertex(new gp_Pnt(0, 1, 0))];
-        TopoDS_Vertex[] aV2 = [TestShapes.Vertex(new gp_Pnt(1, 0, 0)), TestShapes.Vertex(new gp_Pnt(2, 0, 0)),
-                               TestShapes.Vertex(new gp_Pnt(2, 1, 0)), TestShapes.Vertex(new gp_Pnt(1, 1, 0))];
+        TopoDS_Vertex[] aV1 = [TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(1, 0, 0)),
+                               TestShapes.Vertex(new Point3D(1, 1, 0)), TestShapes.Vertex(new Point3D(0, 1, 0))];
+        TopoDS_Vertex[] aV2 = [TestShapes.Vertex(new Point3D(1, 0, 0)), TestShapes.Vertex(new Point3D(2, 0, 0)),
+                               TestShapes.Vertex(new Point3D(2, 1, 0)), TestShapes.Vertex(new Point3D(1, 1, 0))];
         var anEdges1 = new Dictionary<(int, int), TopoDS_Edge>();
         var anEdges2 = new Dictionary<(int, int), TopoDS_Edge>();
-        TopoDS_Face aF1 = TestShapes.PolygonFace(aV1, new gp_Dir(0, 0, 1), anEdges1, [0, 1, 2, 3]);
-        TopoDS_Face aF2 = TestShapes.PolygonFace(aV2, new gp_Dir(0, 0, 1), anEdges2, [0, 1, 2, 3]);
+        TopoDS_Face aF1 = TestShapes.PolygonFace(aV1, new Direction3D(0, 0, 1), anEdges1, [0, 1, 2, 3]);
+        TopoDS_Face aF2 = TestShapes.PolygonFace(aV2, new Direction3D(0, 0, 1), anEdges2, [0, 1, 2, 3]);
         // the first square's (1,0)-(1,1) edge and the second's (1,0)-(1,1) edge: same direction
         return (aF1, aF2, anEdges1[(1, 2)], anEdges2[(0, 3)]);
     }
@@ -317,7 +320,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.True(aQuilt.IsCopied(anE2));
         Assert.True(aQuilt.Copy(anE2).IsSame(anE1));
         TopoDS_Shape aCopy = aQuilt.Copy(aF2);
-        Assert.True(aCopy.TShape()!.IsFrozen());
+        Assert.True(aCopy.TShape()!.IsFrozen);
         Assert.True(Contains(aCopy, anE1));
         Assert.NotNull(BRep_Tool.CurveOnSurface(anE1, TopoDS.Face(aCopy), out _, out _));
         aSnapshot2.AssertUnchanged(aF2);
@@ -353,7 +356,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         // replace the edge by two halves, and remove another edge
         TopoDS_Vertex aV1 = TopExp.FirstVertex(anE), aV2 = TopExp.LastVertex(anE);
-        gp_Pnt aMid = BRep_Tool.Pnt(aV1).Translated(new gp_Vec(BRep_Tool.Pnt(aV1), BRep_Tool.Pnt(aV2)) * 0.5);
+        Point3D aMid = BRep_Tool.Pnt(aV1).Translated(new Vector3D(BRep_Tool.Pnt(aV1), BRep_Tool.Pnt(aV2)) * 0.5);
         TopoDS_Vertex aVM = TestShapes.Frozen(TestShapes.Vertex(aMid));
         var aNew = new NCollection_List<TopoDS_Shape>();
         aNew.Append(TestShapes.Frozen(TestShapes.Edge(aV1, aVM)));
@@ -363,7 +366,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         var aSubst = new BRepTools_Substitution();
         aSubst.Substitute(anE, aNew);
         aSubst.Substitute(anOther, new NCollection_List<TopoDS_Shape>());
-        Assert.Throws<Standard_ConstructionError>(() => aSubst.Substitute(anE, aNew));
+        Assert.Throws<ConstructionErrorException>(() => aSubst.Substitute(anE, aNew));
         aSubst.Build(aF);
 
         aSnapshot.AssertUnchanged(aF);
@@ -371,11 +374,11 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.True(aSubst.IsCopied(anE));
         Assert.True(aSubst.IsCopied(anOther));
         Assert.Empty(aSubst.Copy(anOther));
-        Assert.Throws<Standard_NoSuchObject>(() => aSubst.Copy(SubShape(aF, TopAbs_EDGE, 2)));
+        Assert.Throws<NoSuchObjectException>(() => aSubst.Copy(SubShape(aF, TopAbs_EDGE, 2)));
         var aCopies = aSubst.Copy(aF);
         Assert.Single(aCopies);
         TopoDS_Shape aNewF = aCopies[0];
-        Assert.True(aNewF.TShape()!.IsFrozen());
+        Assert.True(aNewF.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_FORWARD, aNewF.Orientation());
         Assert.Equal(4, Count(aNewF, TopAbs_EDGE));
         Assert.False(Contains(aNewF, anE));
@@ -388,8 +391,8 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
     [Fact]
     public void Substitution_EmptyContainerDisappears()
     {
-        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(0, 0, 0)));
-        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new gp_Pnt(1, 0, 0)));
+        TopoDS_Vertex aV1 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0)));
+        TopoDS_Vertex aV2 = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 0, 0)));
         TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(aV1, aV2));
         var aB = new BRep_Builder();
         TopoDS_Wire aW = new();

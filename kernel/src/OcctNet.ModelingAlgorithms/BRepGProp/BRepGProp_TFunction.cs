@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GProp_ValueType;
 
 namespace Occt;
@@ -14,7 +16,7 @@ namespace Occt;
 /// Gauss-Kronrod integration to the set tolerance.
 /// </summary>
 /// <remarks>The coefficients are those of <see cref="BRepGProp_UFunction"/>. OCCT keeps a copy of the face; so does the port.</remarks>
-public class BRepGProp_TFunction : math_Function
+public class BRepGProp_TFunction : Function
 {
     private readonly BRepGProp_Face mySurface;
     private readonly BRepGProp_UFunction myUFunction;
@@ -32,7 +34,7 @@ public class BRepGProp_TFunction : math_Function
     /// <paramref name="theUMin"/> of the inner integrals and their tolerance.
     /// </summary>
     public BRepGProp_TFunction(BRepGProp_Face theSurface,
-                               in gp_Pnt theVertex,
+                               in Point3D theVertex,
                                bool IsByPoint,
                                ReadOnlySpan<double> theCoeffs,
                                double theUMin,
@@ -82,8 +84,8 @@ public class BRepGProp_TFunction : math_Function
     {
         const double tolU = 1.0e-9;
 
-        gp_Pnt2d aP2d;
-        gp_Vec2d aV2d;
+        Point2D aP2d;
+        Vector2D aV2d;
         double aUMax;
 
         mySurface.D12d(X, out aP2d, out aV2d);
@@ -138,7 +140,7 @@ public class BRepGProp_TFunction : math_Function
 
         double aAbsCoeff = Math.Abs(aCoeff);
 
-        if (aAbsCoeff <= Precision.Angular())
+        if (aAbsCoeff <= global::Kerf.Engine.Foundation.Precision.Angular())
         {
             // No need to compute the integral. The value will be equal to 0.
             F = 0.0;
@@ -152,7 +154,7 @@ public class BRepGProp_TFunction : math_Function
         int iU = aUKnots.Upper();
         int aNbPntsStart;
         int aNbMaxIter = 1000;
-        var anIntegral = new math_KronrodSingleIntegration();
+        var anIntegral = new KronrodSingleIntegration();
         double aLocalErr = 0.0;
 
         i = aUKnots.Lower();
@@ -174,7 +176,7 @@ public class BRepGProp_TFunction : math_Function
 
             anIntegral.Perform(myUFunction, aU1, aU2, aNbPntsStart, aTol, aNbMaxIter);
 
-            if (!anIntegral.IsDone())
+            if (!anIntegral.IsDone)
             {
                 return false;
             }

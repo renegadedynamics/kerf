@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 
 namespace Occt;
@@ -20,7 +21,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     public Transfer_TransientProcess(int nb = 10000)
         : base(nb)
     {
-        thetrroots = new NCollection_HSequence<Standard_Transient>();
+        thetrroots = new NCollection_HSequence<Transient>();
     }
 
     /// <summary>
@@ -68,7 +69,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     }
 
     /// <summary>Sets a Context : according to receiving appli, to be interpreted by the Actor.</summary>
-    public void SetContext(string name, Standard_Transient? ctx)
+    public void SetContext(string name, Transient? ctx)
     {
         thectx.Bind(name, ctx);
     }
@@ -77,7 +78,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     /// Returns the Context attached to a name, if set and if it is Kind of the type, else a Null Handle. Returns True
     /// if OK, False if no Context.
     /// </summary>
-    public bool GetContext(string name, Type? type, ref Standard_Transient? ctx)
+    public bool GetContext(string name, Type? type, ref Transient? ctx)
     {
         if (thectx.IsEmpty())
         {
@@ -106,13 +107,13 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     /// Returns (modifiable) the whole definition of Context. Rather for internal use (ex.: preparing and setting in
     /// once).
     /// </summary>
-    public NCollection_DataMap<string, Standard_Transient?> Context()
+    public NCollection_DataMap<string, Transient?> Context()
     {
         return thectx;
     }
 
     /// <summary>Specific printing to trace an entity : prints label and type (if model is set).</summary>
-    public override void PrintTrace(Standard_Transient? start, TextWriter S)
+    public override void PrintTrace(Transient? start, TextWriter S)
     {
         if (start is not null)
         {
@@ -126,14 +127,14 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
             else
             {
                 S.Write("Entity Type:");
-                S.Write(Interface_InterfaceModel.ClassName(start.DynamicType().Name));
+                S.Write(Interface_InterfaceModel.ClassName(start.DynamicTypeName()));
             }
             //  << start (handle)  ??
         }
     }
 
     /// <summary>Specific number of a starting object for check-list : Number in model.</summary>
-    public override int CheckNum(Standard_Transient? start)
+    public override int CheckNum(Transient? start)
     {
         return themodel is null ? 0 : themodel.Number(start);
     }
@@ -142,7 +143,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     /// Returns the list of sharings entities, AT ANY LEVEL, which are kind of a given type. Calls TypedSharings from
     /// Graph. Returns an empty list if the Graph has not been acknowledged.
     /// </summary>
-    public Interface_EntityIterator TypedSharings(Standard_Transient? start, Type? type)
+    public Interface_EntityIterator TypedSharings(Transient? start, Type? type)
     {
         var iter = new Interface_EntityIterator();
         if (thegraph is null)
@@ -157,7 +158,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     /// answers True. Else, there was a syntactic error in the file. A non-loaded entity MAY NOT BE transferred, unless
     /// its Report (in the model) is interpreted.
     /// </summary>
-    public bool IsDataLoaded(Standard_Transient? start)
+    public bool IsDataLoaded(Transient? start)
     {
         if (themodel is null)
         {
@@ -179,7 +180,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     /// Tells if an entity fails on data checking (load time, syntactic, or semantic check). Normally, should answer
     /// False. It is not prudent to try transferring an entity which fails on data checking.
     /// </summary>
-    public bool IsDataFail(Standard_Transient? start)
+    public bool IsDataFail(Transient? start)
     {
         if (themodel is null)
         {
@@ -262,13 +263,13 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
     }
 
     /// <summary>The list of the roots to transfer (filled by the actors that ask for them).</summary>
-    public NCollection_HSequence<Standard_Transient> RootsForTransfer()
+    public NCollection_HSequence<Transient> RootsForTransfer()
     {
         return thetrroots;
     }
 
     private Interface_InterfaceModel? themodel;
     private Interface_HGraph? thegraph;
-    private readonly NCollection_DataMap<string, Standard_Transient?> thectx = new(StringComparer.Ordinal);
-    private readonly NCollection_HSequence<Standard_Transient> thetrroots;
+    private readonly NCollection_DataMap<string, Transient?> thectx = new(StringComparer.Ordinal);
+    private readonly NCollection_HSequence<Transient> thetrroots;
 }

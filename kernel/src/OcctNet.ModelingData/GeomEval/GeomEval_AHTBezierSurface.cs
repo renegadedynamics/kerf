@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -13,7 +16,7 @@ namespace Occt;
 /// parameters (algDegreeU, alphaU, betaU) and (algDegreeV, alphaV, betaV); a hyperbolic or trigonometric pair is
 /// present when its frequency is &gt; 0. The poles grid has one row per U basis function and one column per V
 /// basis function. The domain is [0, 1] x [0, 1]. Reversal, transformation and iso-curves are not supported
-/// (they throw <see cref="Standard_NotImplemented"/>).
+/// (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 {
@@ -23,98 +26,98 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
     private struct PolySurfaceDerivData
     {
-        public gp_XYZ S00;
-        public gp_XYZ S10;
-        public gp_XYZ S01;
-        public gp_XYZ S20;
-        public gp_XYZ S02;
-        public gp_XYZ S11;
-        public gp_XYZ S30;
-        public gp_XYZ S03;
-        public gp_XYZ S21;
-        public gp_XYZ S12;
+        public Xyz S00;
+        public Xyz S10;
+        public Xyz S01;
+        public Xyz S20;
+        public Xyz S02;
+        public Xyz S11;
+        public Xyz S30;
+        public Xyz S03;
+        public Xyz S21;
+        public Xyz S12;
     }
 
-    private static gp_XYZ cubicVal(in gp_XYZ theC0, in gp_XYZ theC1, in gp_XYZ theC2, in gp_XYZ theC3, double theT)
+    private static Xyz cubicVal(in Xyz theC0, in Xyz theC1, in Xyz theC2, in Xyz theC3, double theT)
     {
         return ((theC3 * theT + theC2) * theT + theC1) * theT + theC0;
     }
 
-    private static gp_XYZ cubicD1(in gp_XYZ theC0, in gp_XYZ theC1, in gp_XYZ theC2, in gp_XYZ theC3, double theT)
+    private static Xyz cubicD1(in Xyz theC0, in Xyz theC1, in Xyz theC2, in Xyz theC3, double theT)
     {
         return (theC3 * (3.0 * theT) + theC2 * 2.0) * theT + theC1;
     }
 
-    private static gp_XYZ cubicD2(in gp_XYZ theC0, in gp_XYZ theC1, in gp_XYZ theC2, in gp_XYZ theC3, double theT)
+    private static Xyz cubicD2(in Xyz theC0, in Xyz theC1, in Xyz theC2, in Xyz theC3, double theT)
     {
         return theC3 * (6.0 * theT) + theC2 * 2.0;
     }
 
-    private static gp_XYZ cubicD3(in gp_XYZ theC0, in gp_XYZ theC1, in gp_XYZ theC2, in gp_XYZ theC3)
+    private static Xyz cubicD3(in Xyz theC0, in Xyz theC1, in Xyz theC2, in Xyz theC3)
     {
         return theC3 * 6.0;
     }
 
     // The C++ template evalPolynomialSurfaceCubicNonRational<theMaxOrder>: the `if constexpr` are plain tests.
     private static void evalPolynomialSurfaceCubicNonRational(int theMaxOrder,
-                                                              NCollection_Array2<gp_Pnt> thePoles,
+                                                              NCollection_Array2<Point3D> thePoles,
                                                               double theU,
                                                               double theV,
                                                               out PolySurfaceDerivData theData)
     {
-        theData.S00 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S10 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S01 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S20 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S02 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S11 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S30 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S03 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S21 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S12 = new gp_XYZ(0.0, 0.0, 0.0);
+        theData.S00 = new Xyz(0.0, 0.0, 0.0);
+        theData.S10 = new Xyz(0.0, 0.0, 0.0);
+        theData.S01 = new Xyz(0.0, 0.0, 0.0);
+        theData.S20 = new Xyz(0.0, 0.0, 0.0);
+        theData.S02 = new Xyz(0.0, 0.0, 0.0);
+        theData.S11 = new Xyz(0.0, 0.0, 0.0);
+        theData.S30 = new Xyz(0.0, 0.0, 0.0);
+        theData.S03 = new Xyz(0.0, 0.0, 0.0);
+        theData.S21 = new Xyz(0.0, 0.0, 0.0);
+        theData.S12 = new Xyz(0.0, 0.0, 0.0);
 
         int aLR = thePoles.LowerRow();
         int aLC = thePoles.LowerCol();
 
-        gp_XYZ aP00 = thePoles.Value(aLR + 0, aLC + 0).XYZ();
-        gp_XYZ aP01 = thePoles.Value(aLR + 0, aLC + 1).XYZ();
-        gp_XYZ aP02 = thePoles.Value(aLR + 0, aLC + 2).XYZ();
-        gp_XYZ aP03 = thePoles.Value(aLR + 0, aLC + 3).XYZ();
-        gp_XYZ aP10 = thePoles.Value(aLR + 1, aLC + 0).XYZ();
-        gp_XYZ aP11 = thePoles.Value(aLR + 1, aLC + 1).XYZ();
-        gp_XYZ aP12 = thePoles.Value(aLR + 1, aLC + 2).XYZ();
-        gp_XYZ aP13 = thePoles.Value(aLR + 1, aLC + 3).XYZ();
-        gp_XYZ aP20 = thePoles.Value(aLR + 2, aLC + 0).XYZ();
-        gp_XYZ aP21 = thePoles.Value(aLR + 2, aLC + 1).XYZ();
-        gp_XYZ aP22 = thePoles.Value(aLR + 2, aLC + 2).XYZ();
-        gp_XYZ aP23 = thePoles.Value(aLR + 2, aLC + 3).XYZ();
-        gp_XYZ aP30 = thePoles.Value(aLR + 3, aLC + 0).XYZ();
-        gp_XYZ aP31 = thePoles.Value(aLR + 3, aLC + 1).XYZ();
-        gp_XYZ aP32 = thePoles.Value(aLR + 3, aLC + 2).XYZ();
-        gp_XYZ aP33 = thePoles.Value(aLR + 3, aLC + 3).XYZ();
+        Xyz aP00 = thePoles.Value(aLR + 0, aLC + 0).XYZ();
+        Xyz aP01 = thePoles.Value(aLR + 0, aLC + 1).XYZ();
+        Xyz aP02 = thePoles.Value(aLR + 0, aLC + 2).XYZ();
+        Xyz aP03 = thePoles.Value(aLR + 0, aLC + 3).XYZ();
+        Xyz aP10 = thePoles.Value(aLR + 1, aLC + 0).XYZ();
+        Xyz aP11 = thePoles.Value(aLR + 1, aLC + 1).XYZ();
+        Xyz aP12 = thePoles.Value(aLR + 1, aLC + 2).XYZ();
+        Xyz aP13 = thePoles.Value(aLR + 1, aLC + 3).XYZ();
+        Xyz aP20 = thePoles.Value(aLR + 2, aLC + 0).XYZ();
+        Xyz aP21 = thePoles.Value(aLR + 2, aLC + 1).XYZ();
+        Xyz aP22 = thePoles.Value(aLR + 2, aLC + 2).XYZ();
+        Xyz aP23 = thePoles.Value(aLR + 2, aLC + 3).XYZ();
+        Xyz aP30 = thePoles.Value(aLR + 3, aLC + 0).XYZ();
+        Xyz aP31 = thePoles.Value(aLR + 3, aLC + 1).XYZ();
+        Xyz aP32 = thePoles.Value(aLR + 3, aLC + 2).XYZ();
+        Xyz aP33 = thePoles.Value(aLR + 3, aLC + 3).XYZ();
 
-        gp_XYZ aQ00 = cubicVal(aP00, aP10, aP20, aP30, theU);
-        gp_XYZ aQ01 = cubicVal(aP01, aP11, aP21, aP31, theU);
-        gp_XYZ aQ02 = cubicVal(aP02, aP12, aP22, aP32, theU);
-        gp_XYZ aQ03 = cubicVal(aP03, aP13, aP23, aP33, theU);
+        Xyz aQ00 = cubicVal(aP00, aP10, aP20, aP30, theU);
+        Xyz aQ01 = cubicVal(aP01, aP11, aP21, aP31, theU);
+        Xyz aQ02 = cubicVal(aP02, aP12, aP22, aP32, theU);
+        Xyz aQ03 = cubicVal(aP03, aP13, aP23, aP33, theU);
 
         theData.S00 = cubicVal(aQ00, aQ01, aQ02, aQ03, theV);
         if (theMaxOrder >= 1)
         {
-            gp_XYZ aQ10 = cubicD1(aP00, aP10, aP20, aP30, theU);
-            gp_XYZ aQ11 = cubicD1(aP01, aP11, aP21, aP31, theU);
-            gp_XYZ aQ12 = cubicD1(aP02, aP12, aP22, aP32, theU);
-            gp_XYZ aQ13 = cubicD1(aP03, aP13, aP23, aP33, theU);
+            Xyz aQ10 = cubicD1(aP00, aP10, aP20, aP30, theU);
+            Xyz aQ11 = cubicD1(aP01, aP11, aP21, aP31, theU);
+            Xyz aQ12 = cubicD1(aP02, aP12, aP22, aP32, theU);
+            Xyz aQ13 = cubicD1(aP03, aP13, aP23, aP33, theU);
 
             theData.S10 = cubicVal(aQ10, aQ11, aQ12, aQ13, theV);
             theData.S01 = cubicD1(aQ00, aQ01, aQ02, aQ03, theV);
 
             if (theMaxOrder >= 2)
             {
-                gp_XYZ aQ20 = cubicD2(aP00, aP10, aP20, aP30, theU);
-                gp_XYZ aQ21 = cubicD2(aP01, aP11, aP21, aP31, theU);
-                gp_XYZ aQ22 = cubicD2(aP02, aP12, aP22, aP32, theU);
-                gp_XYZ aQ23 = cubicD2(aP03, aP13, aP23, aP33, theU);
+                Xyz aQ20 = cubicD2(aP00, aP10, aP20, aP30, theU);
+                Xyz aQ21 = cubicD2(aP01, aP11, aP21, aP31, theU);
+                Xyz aQ22 = cubicD2(aP02, aP12, aP22, aP32, theU);
+                Xyz aQ23 = cubicD2(aP03, aP13, aP23, aP33, theU);
 
                 theData.S20 = cubicVal(aQ20, aQ21, aQ22, aQ23, theV);
                 theData.S11 = cubicD1(aQ10, aQ11, aQ12, aQ13, theV);
@@ -122,10 +125,10 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
                 if (theMaxOrder >= 3)
                 {
-                    gp_XYZ aQ30 = cubicD3(aP00, aP10, aP20, aP30);
-                    gp_XYZ aQ31 = cubicD3(aP01, aP11, aP21, aP31);
-                    gp_XYZ aQ32 = cubicD3(aP02, aP12, aP22, aP32);
-                    gp_XYZ aQ33 = cubicD3(aP03, aP13, aP23, aP33);
+                    Xyz aQ30 = cubicD3(aP00, aP10, aP20, aP30);
+                    Xyz aQ31 = cubicD3(aP01, aP11, aP21, aP31);
+                    Xyz aQ32 = cubicD3(aP02, aP12, aP22, aP32);
+                    Xyz aQ33 = cubicD3(aP03, aP13, aP23, aP33);
 
                     theData.S30 = cubicVal(aQ30, aQ31, aQ32, aQ33, theV);
                     theData.S21 = cubicD1(aQ20, aQ21, aQ22, aQ23, theV);
@@ -138,44 +141,44 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
     // The C++ template evalPolynomialSurfaceNonRational<theMaxOrder>: the `if constexpr` are plain tests.
     private static void evalPolynomialSurfaceNonRational(int theMaxOrder,
-                                                         NCollection_Array2<gp_Pnt> thePoles,
+                                                         NCollection_Array2<Point3D> thePoles,
                                                          int theDegreeU,
                                                          int theDegreeV,
                                                          double theU,
                                                          double theV,
                                                          out PolySurfaceDerivData theData)
     {
-        theData.S00 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S10 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S01 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S20 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S02 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S11 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S30 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S03 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S21 = new gp_XYZ(0.0, 0.0, 0.0);
-        theData.S12 = new gp_XYZ(0.0, 0.0, 0.0);
+        theData.S00 = new Xyz(0.0, 0.0, 0.0);
+        theData.S10 = new Xyz(0.0, 0.0, 0.0);
+        theData.S01 = new Xyz(0.0, 0.0, 0.0);
+        theData.S20 = new Xyz(0.0, 0.0, 0.0);
+        theData.S02 = new Xyz(0.0, 0.0, 0.0);
+        theData.S11 = new Xyz(0.0, 0.0, 0.0);
+        theData.S30 = new Xyz(0.0, 0.0, 0.0);
+        theData.S03 = new Xyz(0.0, 0.0, 0.0);
+        theData.S21 = new Xyz(0.0, 0.0, 0.0);
+        theData.S12 = new Xyz(0.0, 0.0, 0.0);
 
         int aLR = thePoles.LowerRow();
         int aLC = thePoles.LowerCol();
 
-        gp_XYZ aR00 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR01 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR02 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR03 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR10 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR11 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR12 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR20 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR21 = new(0.0, 0.0, 0.0);
-        gp_XYZ aR30 = new(0.0, 0.0, 0.0);
+        Xyz aR00 = new(0.0, 0.0, 0.0);
+        Xyz aR01 = new(0.0, 0.0, 0.0);
+        Xyz aR02 = new(0.0, 0.0, 0.0);
+        Xyz aR03 = new(0.0, 0.0, 0.0);
+        Xyz aR10 = new(0.0, 0.0, 0.0);
+        Xyz aR11 = new(0.0, 0.0, 0.0);
+        Xyz aR12 = new(0.0, 0.0, 0.0);
+        Xyz aR20 = new(0.0, 0.0, 0.0);
+        Xyz aR21 = new(0.0, 0.0, 0.0);
+        Xyz aR30 = new(0.0, 0.0, 0.0);
 
         for (int j = theDegreeV; j >= 0; --j)
         {
-            gp_XYZ aD0 = thePoles.Value(aLR + theDegreeU, aLC + j).XYZ();
-            gp_XYZ aD1 = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2 = new(0.0, 0.0, 0.0);
-            gp_XYZ aD3 = new(0.0, 0.0, 0.0);
+            Xyz aD0 = thePoles.Value(aLR + theDegreeU, aLC + j).XYZ();
+            Xyz aD1 = new(0.0, 0.0, 0.0);
+            Xyz aD2 = new(0.0, 0.0, 0.0);
+            Xyz aD3 = new(0.0, 0.0, 0.0);
 
             for (int i = theDegreeU - 1; i >= 0; --i)
             {
@@ -371,7 +374,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
     }
 
     // A null theWDerivs (non-rational) in C++ is an empty span here.
-    private static void evalTensorDerivs(NCollection_Array2<gp_Pnt> thePoles,
+    private static void evalTensorDerivs(NCollection_Array2<Point3D> thePoles,
                                          NCollection_Array2<double>? theWeights,
                                          int theMaxU,
                                          int theMaxV,
@@ -379,13 +382,13 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                                          int theDimV,
                                          ReadOnlySpan<double> theBUDerivs,
                                          ReadOnlySpan<double> theBVDerivs,
-                                         Span<gp_XYZ> theNDerivs,
+                                         Span<Xyz> theNDerivs,
                                          Span<double> theWDerivs)
     {
         int aTensorSize = (theMaxU + 1) * (theMaxV + 1);
         for (int idx = 0; idx < aTensorSize; ++idx)
         {
-            theNDerivs[idx] = new gp_XYZ(0.0, 0.0, 0.0);
+            theNDerivs[idx] = new Xyz(0.0, 0.0, 0.0);
             if (!theWDerivs.IsEmpty)
             {
                 theWDerivs[idx] = 0.0;
@@ -401,7 +404,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         {
             for (int j = 0; j < theDimV; ++j)
             {
-                gp_XYZ aPole = thePoles.Value(aLR + i, aLC + j).XYZ();
+                Xyz aPole = thePoles.Value(aLR + i, aLC + j).XYZ();
                 double aWij = (theWeights != null) ? theWeights.Value(aWLR + i, aWLC + j) : 1.0;
                 for (int du = 0; du <= theMaxU; ++du)
                 {
@@ -426,11 +429,11 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         }
     }
 
-    private static void computeRationalDerivs(ReadOnlySpan<gp_XYZ> theNDerivs,
+    private static void computeRationalDerivs(ReadOnlySpan<Xyz> theNDerivs,
                                               ReadOnlySpan<double> theWDerivs,
                                               int theMaxU,
                                               int theMaxV,
-                                              Span<gp_XYZ> theCDerivs)
+                                              Span<Xyz> theCDerivs)
     {
         double aInvW = 1.0 / theWDerivs[tensorIdx(0, 0, theMaxV)];
         for (int anOrd = 0; anOrd <= theMaxU + theMaxV; ++anOrd)
@@ -444,7 +447,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                     continue;
                 }
 
-                gp_XYZ aSum = theNDerivs[tensorIdx(du, dv, theMaxV)];
+                Xyz aSum = theNDerivs[tensorIdx(du, dv, theMaxV)];
                 for (int p = 0; p <= du; ++p)
                 {
                     double aBinU = 1.0;
@@ -472,7 +475,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         }
     }
 
-    private NCollection_Array2<gp_Pnt> myPoles;
+    private NCollection_Array2<Point3D> myPoles;
     private NCollection_Array2<double> myWeights;
     private int myAlgDegreeU;
     private int myAlgDegreeV;
@@ -491,8 +494,8 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
     /// <param name="theAlphaV">The hyperbolic frequency in V (&gt;= 0).</param>
     /// <param name="theBetaU">The trigonometric frequency in U (&gt;= 0; 0 leaves out the trigonometric pair).</param>
     /// <param name="theBetaV">The trigonometric frequency in V (&gt;= 0).</param>
-    /// <exception cref="Standard_ConstructionError">A parameter is negative, or the poles don't match the bases.</exception>
-    public GeomEval_AHTBezierSurface(NCollection_Array2<gp_Pnt> thePoles,
+    /// <exception cref="ConstructionErrorException">A parameter is negative, or the poles don't match the bases.</exception>
+    public GeomEval_AHTBezierSurface(NCollection_Array2<Point3D> thePoles,
                                      int theAlgDegreeU,
                                      int theAlgDegreeV,
                                      double theAlphaU,
@@ -500,7 +503,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                                      double theBetaU,
                                      double theBetaV)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array2<Point3D>(thePoles);
         // OCCT: a 1 x 1 weights array, left uninitialised (0 here), which Weights() returns.
         myWeights = new NCollection_Array2<double>(1, 1, 1, 1);
         myAlgDegreeU = theAlgDegreeU;
@@ -513,21 +516,21 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         myVRational = false;
         if (theAlgDegreeU < 0 || theAlgDegreeV < 0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: algebraic degree must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: algebraic degree must be >= 0");
         }
         if (theAlphaU < 0.0 || theAlphaV < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: alpha must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: alpha must be >= 0");
         }
         if (theBetaU < 0.0 || theBetaV < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: beta must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: beta must be >= 0");
         }
         int aDimU = basisDimension(theAlgDegreeU, theAlphaU, theBetaU);
         int aDimV = basisDimension(theAlgDegreeV, theAlphaV, theBetaV);
         if (thePoles.NbRows() != aDimU || thePoles.NbColumns() != aDimV)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierSurface: poles array dimensions must match basis dimensions");
         }
     }
@@ -541,8 +544,8 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
     /// <param name="theAlphaV">The hyperbolic frequency in V (&gt;= 0).</param>
     /// <param name="theBetaU">The trigonometric frequency in U (&gt;= 0).</param>
     /// <param name="theBetaV">The trigonometric frequency in V (&gt;= 0).</param>
-    /// <exception cref="Standard_ConstructionError">The validation fails.</exception>
-    public GeomEval_AHTBezierSurface(NCollection_Array2<gp_Pnt> thePoles,
+    /// <exception cref="ConstructionErrorException">The validation fails.</exception>
+    public GeomEval_AHTBezierSurface(NCollection_Array2<Point3D> thePoles,
                                      NCollection_Array2<double> theWeights,
                                      int theAlgDegreeU,
                                      int theAlgDegreeV,
@@ -551,7 +554,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                                      double theBetaU,
                                      double theBetaV)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array2<Point3D>(thePoles);
         myWeights = new NCollection_Array2<double>(theWeights);
         myAlgDegreeU = theAlgDegreeU;
         myAlgDegreeV = theAlgDegreeV;
@@ -563,26 +566,26 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         myVRational = true;
         if (theAlgDegreeU < 0 || theAlgDegreeV < 0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: algebraic degree must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: algebraic degree must be >= 0");
         }
         if (theAlphaU < 0.0 || theAlphaV < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: alpha must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: alpha must be >= 0");
         }
         if (theBetaU < 0.0 || theBetaV < 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: beta must be >= 0");
+            throw new ConstructionErrorException("GeomEval_AHTBezierSurface: beta must be >= 0");
         }
         int aDimU = basisDimension(theAlgDegreeU, theAlphaU, theBetaU);
         int aDimV = basisDimension(theAlgDegreeV, theAlphaV, theBetaV);
         if (thePoles.NbRows() != aDimU || thePoles.NbColumns() != aDimV)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierSurface: poles array dimensions must match basis dimensions");
         }
         if (theWeights.NbRows() != thePoles.NbRows() || theWeights.NbColumns() != thePoles.NbColumns())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_AHTBezierSurface: weights array dimensions must match poles");
         }
         for (int i = theWeights.LowerRow(); i <= theWeights.UpperRow(); ++i)
@@ -591,7 +594,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
             {
                 if (theWeights.Value(i, j) <= 0.0)
                 {
-                    throw new Standard_ConstructionError("GeomEval_AHTBezierSurface: all weights must be > 0");
+                    throw new ConstructionErrorException("GeomEval_AHTBezierSurface: all weights must be > 0");
                 }
             }
         }
@@ -600,7 +603,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
     /// <summary>
     /// The poles grid, row by row: the pole of (0-based) U index i and V index j is at <c>i * NbPolesV() + j</c>.
     /// </summary>
-    public PackedList<gp_Pnt> Poles() => PackedList.Create<gp_Pnt>(myPoles.AsSpan());
+    public PackedList<Point3D> Poles() => PackedList.Create<Point3D>(myPoles.AsSpan());
 
     /// <summary>
     /// The weights grid, laid out as <see cref="Poles"/>. For a non-rational surface, OCCT's single unset weight
@@ -638,30 +641,30 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
     /// <summary>True if the surface is rational in the V direction.</summary>
     public bool IsVRational() => myVRational;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::VReversedParameter");
     }
 
     /// <summary>[0, 1] x [0, 1].</summary>
@@ -681,25 +684,25 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
     public override bool IsVPeriodic() => false;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::UIso");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::VIso");
     }
 
-    public override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public override Continuity Continuity() => CN;
 
     public override bool IsCNu(int N) => true;
 
     public override bool IsCNv(int N) => true;
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
         int aDimU = NbPolesU();
         int aDimV = NbPolesV();
@@ -717,7 +720,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
             {
                 evalPolynomialSurfaceNonRational(0, myPoles, myAlgDegreeU, myAlgDegreeV, U, V, out aPolyData);
             }
-            return new gp_Pnt(aPolyData.S00);
+            return new Point3D(aPolyData.S00);
         }
 
         Span<double> aBUDerivs = aDimU <= 16 ? stackalloc double[16] : new double[aDimU];
@@ -725,7 +728,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         evalAxisDerivs(U, 0, myAlgDegreeU, myAlphaU, myBetaU, aDimU, aBUDerivs);
         evalAxisDerivs(V, 0, myAlgDegreeV, myAlphaV, myBetaV, aDimV, aBVDerivs);
 
-        Span<gp_XYZ> aN = stackalloc gp_XYZ[1];
+        Span<Xyz> aN = stackalloc Xyz[1];
         Span<double> aW = stackalloc double[1];
         evalTensorDerivs(myPoles,
                          isRational ? myWeights : null,
@@ -739,9 +742,9 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                          isRational ? aW : default);
         if (!isRational)
         {
-            return new gp_Pnt(aN[0]);
+            return new Point3D(aN[0]);
         }
-        return new gp_Pnt(aN[0] / aW[0]);
+        return new Point3D(aN[0] / aW[0]);
     }
 
     public override ResD1 EvalD1(double U, double V)
@@ -763,9 +766,9 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
             {
                 evalPolynomialSurfaceNonRational(1, myPoles, myAlgDegreeU, myAlgDegreeV, U, V, out aPolyData);
             }
-            aResult.Point = new gp_Pnt(aPolyData.S00);
-            aResult.D1U = new gp_Vec(aPolyData.S10);
-            aResult.D1V = new gp_Vec(aPolyData.S01);
+            aResult.Point = new Point3D(aPolyData.S00);
+            aResult.D1U = new Vector3D(aPolyData.S10);
+            aResult.D1V = new Vector3D(aPolyData.S01);
             return aResult;
         }
 
@@ -774,7 +777,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         evalAxisDerivs(U, 1, myAlgDegreeU, myAlphaU, myBetaU, aDimU, aBUDerivs);
         evalAxisDerivs(V, 1, myAlgDegreeV, myAlphaV, myBetaV, aDimV, aBVDerivs);
 
-        Span<gp_XYZ> aN = stackalloc gp_XYZ[(1 + 1) * (1 + 1)];
+        Span<Xyz> aN = stackalloc Xyz[(1 + 1) * (1 + 1)];
         Span<double> aW = stackalloc double[(1 + 1) * (1 + 1)];
         evalTensorDerivs(myPoles,
                          isRational ? myWeights : null,
@@ -789,20 +792,20 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
         if (!isRational)
         {
-            aResult.Point = new gp_Pnt(aN[tensorIdx(0, 0, 1)]);
-            aResult.D1U = new gp_Vec(aN[tensorIdx(1, 0, 1)]);
-            aResult.D1V = new gp_Vec(aN[tensorIdx(0, 1, 1)]);
+            aResult.Point = new Point3D(aN[tensorIdx(0, 0, 1)]);
+            aResult.D1U = new Vector3D(aN[tensorIdx(1, 0, 1)]);
+            aResult.D1V = new Vector3D(aN[tensorIdx(0, 1, 1)]);
             return aResult;
         }
 
         double aInvW00 = 1.0 / aW[tensorIdx(0, 0, 1)];
-        gp_XYZ aC00 = aN[tensorIdx(0, 0, 1)] * aInvW00;
-        gp_XYZ aC10 = (aN[tensorIdx(1, 0, 1)] - aC00 * aW[tensorIdx(1, 0, 1)]) * aInvW00;
-        gp_XYZ aC01 = (aN[tensorIdx(0, 1, 1)] - aC00 * aW[tensorIdx(0, 1, 1)]) * aInvW00;
+        Xyz aC00 = aN[tensorIdx(0, 0, 1)] * aInvW00;
+        Xyz aC10 = (aN[tensorIdx(1, 0, 1)] - aC00 * aW[tensorIdx(1, 0, 1)]) * aInvW00;
+        Xyz aC01 = (aN[tensorIdx(0, 1, 1)] - aC00 * aW[tensorIdx(0, 1, 1)]) * aInvW00;
 
-        aResult.Point = new gp_Pnt(aC00);
-        aResult.D1U = new gp_Vec(aC10);
-        aResult.D1V = new gp_Vec(aC01);
+        aResult.Point = new Point3D(aC00);
+        aResult.D1U = new Vector3D(aC10);
+        aResult.D1V = new Vector3D(aC01);
         return aResult;
     }
 
@@ -825,12 +828,12 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
             {
                 evalPolynomialSurfaceNonRational(2, myPoles, myAlgDegreeU, myAlgDegreeV, U, V, out aPolyData);
             }
-            aResult.Point = new gp_Pnt(aPolyData.S00);
-            aResult.D1U = new gp_Vec(aPolyData.S10);
-            aResult.D1V = new gp_Vec(aPolyData.S01);
-            aResult.D2U = new gp_Vec(aPolyData.S20);
-            aResult.D2V = new gp_Vec(aPolyData.S02);
-            aResult.D2UV = new gp_Vec(aPolyData.S11);
+            aResult.Point = new Point3D(aPolyData.S00);
+            aResult.D1U = new Vector3D(aPolyData.S10);
+            aResult.D1V = new Vector3D(aPolyData.S01);
+            aResult.D2U = new Vector3D(aPolyData.S20);
+            aResult.D2V = new Vector3D(aPolyData.S02);
+            aResult.D2UV = new Vector3D(aPolyData.S11);
             return aResult;
         }
 
@@ -839,7 +842,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         evalAxisDerivs(U, 2, myAlgDegreeU, myAlphaU, myBetaU, aDimU, aBUDerivs);
         evalAxisDerivs(V, 2, myAlgDegreeV, myAlphaV, myBetaV, aDimV, aBVDerivs);
 
-        Span<gp_XYZ> aN = stackalloc gp_XYZ[(2 + 1) * (2 + 1)];
+        Span<Xyz> aN = stackalloc Xyz[(2 + 1) * (2 + 1)];
         Span<double> aW = stackalloc double[(2 + 1) * (2 + 1)];
         evalTensorDerivs(myPoles,
                          isRational ? myWeights : null,
@@ -854,35 +857,35 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
         if (!isRational)
         {
-            aResult.Point = new gp_Pnt(aN[tensorIdx(0, 0, 2)]);
-            aResult.D1U = new gp_Vec(aN[tensorIdx(1, 0, 2)]);
-            aResult.D1V = new gp_Vec(aN[tensorIdx(0, 1, 2)]);
-            aResult.D2U = new gp_Vec(aN[tensorIdx(2, 0, 2)]);
-            aResult.D2V = new gp_Vec(aN[tensorIdx(0, 2, 2)]);
-            aResult.D2UV = new gp_Vec(aN[tensorIdx(1, 1, 2)]);
+            aResult.Point = new Point3D(aN[tensorIdx(0, 0, 2)]);
+            aResult.D1U = new Vector3D(aN[tensorIdx(1, 0, 2)]);
+            aResult.D1V = new Vector3D(aN[tensorIdx(0, 1, 2)]);
+            aResult.D2U = new Vector3D(aN[tensorIdx(2, 0, 2)]);
+            aResult.D2V = new Vector3D(aN[tensorIdx(0, 2, 2)]);
+            aResult.D2UV = new Vector3D(aN[tensorIdx(1, 1, 2)]);
             return aResult;
         }
 
         double aInvW00 = 1.0 / aW[tensorIdx(0, 0, 2)];
-        gp_XYZ aC00 = aN[tensorIdx(0, 0, 2)] * aInvW00;
-        gp_XYZ aC10 = (aN[tensorIdx(1, 0, 2)] - aC00 * aW[tensorIdx(1, 0, 2)]) * aInvW00;
-        gp_XYZ aC01 = (aN[tensorIdx(0, 1, 2)] - aC00 * aW[tensorIdx(0, 1, 2)]) * aInvW00;
-        gp_XYZ aC20 =
+        Xyz aC00 = aN[tensorIdx(0, 0, 2)] * aInvW00;
+        Xyz aC10 = (aN[tensorIdx(1, 0, 2)] - aC00 * aW[tensorIdx(1, 0, 2)]) * aInvW00;
+        Xyz aC01 = (aN[tensorIdx(0, 1, 2)] - aC00 * aW[tensorIdx(0, 1, 2)]) * aInvW00;
+        Xyz aC20 =
             (aN[tensorIdx(2, 0, 2)] - aC10 * (2.0 * aW[tensorIdx(1, 0, 2)]) - aC00 * aW[tensorIdx(2, 0, 2)])
             * aInvW00;
-        gp_XYZ aC02 =
+        Xyz aC02 =
             (aN[tensorIdx(0, 2, 2)] - aC01 * (2.0 * aW[tensorIdx(0, 1, 2)]) - aC00 * aW[tensorIdx(0, 2, 2)])
             * aInvW00;
-        gp_XYZ aC11 = (aN[tensorIdx(1, 1, 2)] - aC10 * aW[tensorIdx(0, 1, 2)]
+        Xyz aC11 = (aN[tensorIdx(1, 1, 2)] - aC10 * aW[tensorIdx(0, 1, 2)]
                        - aC01 * aW[tensorIdx(1, 0, 2)] - aC00 * aW[tensorIdx(1, 1, 2)])
                       * aInvW00;
 
-        aResult.Point = new gp_Pnt(aC00);
-        aResult.D1U = new gp_Vec(aC10);
-        aResult.D1V = new gp_Vec(aC01);
-        aResult.D2U = new gp_Vec(aC20);
-        aResult.D2V = new gp_Vec(aC02);
-        aResult.D2UV = new gp_Vec(aC11);
+        aResult.Point = new Point3D(aC00);
+        aResult.D1U = new Vector3D(aC10);
+        aResult.D1V = new Vector3D(aC01);
+        aResult.D2U = new Vector3D(aC20);
+        aResult.D2V = new Vector3D(aC02);
+        aResult.D2UV = new Vector3D(aC11);
         return aResult;
     }
 
@@ -905,16 +908,16 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
             {
                 evalPolynomialSurfaceNonRational(3, myPoles, myAlgDegreeU, myAlgDegreeV, U, V, out aPolyData);
             }
-            aResult.Point = new gp_Pnt(aPolyData.S00);
-            aResult.D1U = new gp_Vec(aPolyData.S10);
-            aResult.D1V = new gp_Vec(aPolyData.S01);
-            aResult.D2U = new gp_Vec(aPolyData.S20);
-            aResult.D2V = new gp_Vec(aPolyData.S02);
-            aResult.D2UV = new gp_Vec(aPolyData.S11);
-            aResult.D3U = new gp_Vec(aPolyData.S30);
-            aResult.D3V = new gp_Vec(aPolyData.S03);
-            aResult.D3UUV = new gp_Vec(aPolyData.S21);
-            aResult.D3UVV = new gp_Vec(aPolyData.S12);
+            aResult.Point = new Point3D(aPolyData.S00);
+            aResult.D1U = new Vector3D(aPolyData.S10);
+            aResult.D1V = new Vector3D(aPolyData.S01);
+            aResult.D2U = new Vector3D(aPolyData.S20);
+            aResult.D2V = new Vector3D(aPolyData.S02);
+            aResult.D2UV = new Vector3D(aPolyData.S11);
+            aResult.D3U = new Vector3D(aPolyData.S30);
+            aResult.D3V = new Vector3D(aPolyData.S03);
+            aResult.D3UUV = new Vector3D(aPolyData.S21);
+            aResult.D3UVV = new Vector3D(aPolyData.S12);
             return aResult;
         }
 
@@ -923,7 +926,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         evalAxisDerivs(U, 3, myAlgDegreeU, myAlphaU, myBetaU, aDimU, aBUDerivs);
         evalAxisDerivs(V, 3, myAlgDegreeV, myAlphaV, myBetaV, aDimV, aBVDerivs);
 
-        Span<gp_XYZ> aN = stackalloc gp_XYZ[(3 + 1) * (3 + 1)];
+        Span<Xyz> aN = stackalloc Xyz[(3 + 1) * (3 + 1)];
         Span<double> aW = stackalloc double[(3 + 1) * (3 + 1)];
         evalTensorDerivs(myPoles,
                          isRational ? myWeights : null,
@@ -938,66 +941,66 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
 
         if (!isRational)
         {
-            aResult.Point = new gp_Pnt(aN[tensorIdx(0, 0, 3)]);
-            aResult.D1U = new gp_Vec(aN[tensorIdx(1, 0, 3)]);
-            aResult.D1V = new gp_Vec(aN[tensorIdx(0, 1, 3)]);
-            aResult.D2U = new gp_Vec(aN[tensorIdx(2, 0, 3)]);
-            aResult.D2V = new gp_Vec(aN[tensorIdx(0, 2, 3)]);
-            aResult.D2UV = new gp_Vec(aN[tensorIdx(1, 1, 3)]);
-            aResult.D3U = new gp_Vec(aN[tensorIdx(3, 0, 3)]);
-            aResult.D3V = new gp_Vec(aN[tensorIdx(0, 3, 3)]);
-            aResult.D3UUV = new gp_Vec(aN[tensorIdx(2, 1, 3)]);
-            aResult.D3UVV = new gp_Vec(aN[tensorIdx(1, 2, 3)]);
+            aResult.Point = new Point3D(aN[tensorIdx(0, 0, 3)]);
+            aResult.D1U = new Vector3D(aN[tensorIdx(1, 0, 3)]);
+            aResult.D1V = new Vector3D(aN[tensorIdx(0, 1, 3)]);
+            aResult.D2U = new Vector3D(aN[tensorIdx(2, 0, 3)]);
+            aResult.D2V = new Vector3D(aN[tensorIdx(0, 2, 3)]);
+            aResult.D2UV = new Vector3D(aN[tensorIdx(1, 1, 3)]);
+            aResult.D3U = new Vector3D(aN[tensorIdx(3, 0, 3)]);
+            aResult.D3V = new Vector3D(aN[tensorIdx(0, 3, 3)]);
+            aResult.D3UUV = new Vector3D(aN[tensorIdx(2, 1, 3)]);
+            aResult.D3UVV = new Vector3D(aN[tensorIdx(1, 2, 3)]);
             return aResult;
         }
 
         double aInvW00 = 1.0 / aW[tensorIdx(0, 0, 3)];
-        gp_XYZ aC00 = aN[tensorIdx(0, 0, 3)] * aInvW00;
-        gp_XYZ aC10 = (aN[tensorIdx(1, 0, 3)] - aC00 * aW[tensorIdx(1, 0, 3)]) * aInvW00;
-        gp_XYZ aC01 = (aN[tensorIdx(0, 1, 3)] - aC00 * aW[tensorIdx(0, 1, 3)]) * aInvW00;
-        gp_XYZ aC20 =
+        Xyz aC00 = aN[tensorIdx(0, 0, 3)] * aInvW00;
+        Xyz aC10 = (aN[tensorIdx(1, 0, 3)] - aC00 * aW[tensorIdx(1, 0, 3)]) * aInvW00;
+        Xyz aC01 = (aN[tensorIdx(0, 1, 3)] - aC00 * aW[tensorIdx(0, 1, 3)]) * aInvW00;
+        Xyz aC20 =
             (aN[tensorIdx(2, 0, 3)] - aC10 * (2.0 * aW[tensorIdx(1, 0, 3)]) - aC00 * aW[tensorIdx(2, 0, 3)])
             * aInvW00;
-        gp_XYZ aC02 =
+        Xyz aC02 =
             (aN[tensorIdx(0, 2, 3)] - aC01 * (2.0 * aW[tensorIdx(0, 1, 3)]) - aC00 * aW[tensorIdx(0, 2, 3)])
             * aInvW00;
-        gp_XYZ aC11 = (aN[tensorIdx(1, 1, 3)] - aC10 * aW[tensorIdx(0, 1, 3)]
+        Xyz aC11 = (aN[tensorIdx(1, 1, 3)] - aC10 * aW[tensorIdx(0, 1, 3)]
                        - aC01 * aW[tensorIdx(1, 0, 3)] - aC00 * aW[tensorIdx(1, 1, 3)])
                       * aInvW00;
-        gp_XYZ aC30 = (aN[tensorIdx(3, 0, 3)] - aC20 * (3.0 * aW[tensorIdx(1, 0, 3)])
+        Xyz aC30 = (aN[tensorIdx(3, 0, 3)] - aC20 * (3.0 * aW[tensorIdx(1, 0, 3)])
                        - aC10 * (3.0 * aW[tensorIdx(2, 0, 3)]) - aC00 * aW[tensorIdx(3, 0, 3)])
                       * aInvW00;
-        gp_XYZ aC03 = (aN[tensorIdx(0, 3, 3)] - aC02 * (3.0 * aW[tensorIdx(0, 1, 3)])
+        Xyz aC03 = (aN[tensorIdx(0, 3, 3)] - aC02 * (3.0 * aW[tensorIdx(0, 1, 3)])
                        - aC01 * (3.0 * aW[tensorIdx(0, 2, 3)]) - aC00 * aW[tensorIdx(0, 3, 3)])
                       * aInvW00;
-        gp_XYZ aC21 = (aN[tensorIdx(2, 1, 3)] - aC11 * (2.0 * aW[tensorIdx(1, 0, 3)])
+        Xyz aC21 = (aN[tensorIdx(2, 1, 3)] - aC11 * (2.0 * aW[tensorIdx(1, 0, 3)])
                        - aC20 * aW[tensorIdx(0, 1, 3)] - aC01 * aW[tensorIdx(2, 0, 3)]
                        - aC10 * (2.0 * aW[tensorIdx(1, 1, 3)]) - aC00 * aW[tensorIdx(2, 1, 3)])
                       * aInvW00;
-        gp_XYZ aC12 = (aN[tensorIdx(1, 2, 3)] - aC11 * (2.0 * aW[tensorIdx(0, 1, 3)])
+        Xyz aC12 = (aN[tensorIdx(1, 2, 3)] - aC11 * (2.0 * aW[tensorIdx(0, 1, 3)])
                        - aC02 * aW[tensorIdx(1, 0, 3)] - aC10 * aW[tensorIdx(0, 2, 3)]
                        - aC01 * (2.0 * aW[tensorIdx(1, 1, 3)]) - aC00 * aW[tensorIdx(1, 2, 3)])
                       * aInvW00;
 
-        aResult.Point = new gp_Pnt(aC00);
-        aResult.D1U = new gp_Vec(aC10);
-        aResult.D1V = new gp_Vec(aC01);
-        aResult.D2U = new gp_Vec(aC20);
-        aResult.D2V = new gp_Vec(aC02);
-        aResult.D2UV = new gp_Vec(aC11);
-        aResult.D3U = new gp_Vec(aC30);
-        aResult.D3V = new gp_Vec(aC03);
-        aResult.D3UUV = new gp_Vec(aC21);
-        aResult.D3UVV = new gp_Vec(aC12);
+        aResult.Point = new Point3D(aC00);
+        aResult.D1U = new Vector3D(aC10);
+        aResult.D1V = new Vector3D(aC01);
+        aResult.D2U = new Vector3D(aC20);
+        aResult.D2V = new Vector3D(aC02);
+        aResult.D2UV = new Vector3D(aC11);
+        aResult.D3U = new Vector3D(aC30);
+        aResult.D3V = new Vector3D(aC03);
+        aResult.D3UUV = new Vector3D(aC21);
+        aResult.D3UVV = new Vector3D(aC12);
         return aResult;
     }
 
-    /// <exception cref="Standard_RangeError">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    /// <exception cref="RangeErrorException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
-            throw new Standard_RangeError("GeomEval_AHTBezierSurface::EvalDN: invalid derivative order");
+            throw new RangeErrorException("GeomEval_AHTBezierSurface::EvalDN: invalid derivative order");
         }
 
         int aTotOrd = Nu + Nv;
@@ -1043,7 +1046,7 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
         bool isRational = (myURational || myVRational);
         if (!isRational)
         {
-            gp_XYZ aSum = new(0.0, 0.0, 0.0);
+            Xyz aSum = new(0.0, 0.0, 0.0);
             int aLR = myPoles.LowerRow();
             int aLC = myPoles.LowerCol();
             for (int i = 0; i < aDimU; ++i)
@@ -1054,13 +1057,13 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                             * (aBUDerivs[Nu * aDimU + i] * aBVDerivs[Nv * aDimV + j]);
                 }
             }
-            return new gp_Vec(aSum);
+            return new Vector3D(aSum);
         }
 
         int aTensorSize = (Nu + 1) * (Nv + 1);
-        Span<gp_XYZ> aNDerivs = aTensorSize <= 16 ? stackalloc gp_XYZ[16] : new gp_XYZ[aTensorSize];
+        Span<Xyz> aNDerivs = aTensorSize <= 16 ? stackalloc Xyz[16] : new Xyz[aTensorSize];
         Span<double> aWDerivs = aTensorSize <= 16 ? stackalloc double[16] : new double[aTensorSize];
-        Span<gp_XYZ> aCDerivs = aTensorSize <= 16 ? stackalloc gp_XYZ[16] : new gp_XYZ[aTensorSize];
+        Span<Xyz> aCDerivs = aTensorSize <= 16 ? stackalloc Xyz[16] : new Xyz[aTensorSize];
         evalTensorDerivs(myPoles,
                          myWeights,
                          Nu,
@@ -1072,14 +1075,14 @@ public sealed class GeomEval_AHTBezierSurface : Geom_BoundedSurface
                          aNDerivs,
                          aWDerivs);
         computeRationalDerivs(aNDerivs, aWDerivs, Nu, Nv, aCDerivs);
-        return new gp_Vec(aCDerivs[tensorIdx(Nu, Nv, Nv)]);
+        return new Vector3D(aCDerivs[tensorIdx(Nu, Nv, Nv)]);
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_AHTBezierSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::Transform");
     }
 
     public override Geom_Geometry Copy()

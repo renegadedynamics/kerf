@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -278,7 +279,7 @@ public sealed partial class DrawInterpreter
                 string aWord = s[i..Math.Min(p, s.Length)];
                 if (aWord.Length > 0 && Numeric(aWord[0]))
                 {
-                    x = Standard_Stream.Strtod(aWord);
+                    x = StreamUtilities.Strtod(aWord);
                 }
                 else if (!TryGetNumber(aWord, out x))
                 {
@@ -349,7 +350,7 @@ public sealed partial class DrawInterpreter
         string aCall = theName + " " + string.Join(" ", anArgs);
         try
         {
-            return Standard_Stream.Strtod(EvalScript(aCall));
+            return StreamUtilities.Strtod(EvalScript(aCall));
         }
         catch (DrawException)
         {

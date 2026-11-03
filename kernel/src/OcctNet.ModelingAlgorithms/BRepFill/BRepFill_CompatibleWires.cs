@@ -3,12 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.BRepCheck_Status;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.BRepFill_ThruSectionErrorStatus;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -86,16 +90,16 @@ public sealed class BRepFill_CompatibleWires
         }
     }
 
-    private static bool PlaneOfWire(in TopoDS_Wire W, out gp_Pln P)
+    private static bool PlaneOfWire(in TopoDS_Wire W, out Plane3D P)
     {
-        P = new gp_Pln();
+        P = new Plane3D();
         bool isplane = true;
         BRepLib_FindSurface findPlanarSurf = new();
         Geom_Surface? S;
-        TopLoc_Location L;
+        Placement L;
 
         GProp_GProps GP = new();
-        gp_Pnt Bary = new();
+        Point3D Bary = new();
         bool isBaryDefined = false;
 
         // shielding for particular cases : only one edge circle or ellipse
@@ -128,13 +132,13 @@ public sealed class BRepFill_CompatibleWires
                 anIter.Initialize(W);
                 AdC.Load(BRep_Tool.Curve(TopoDS.Edge(anIter.Value()), out _, out _)!);
 
-                if (AdC.GetType() == GeomAbs_Circle)
+                if (AdC.GetType() == Circle)
                 {
                     Bary = AdC.Circle().Location();
                     isBaryDefined = true;
                 }
 
-                if (AdC.GetType() == GeomAbs_Ellipse)
+                if (AdC.GetType() == Ellipse)
                 {
                     Bary = AdC.Ellipse().Location();
                     isBaryDefined = true;
@@ -153,7 +157,7 @@ public sealed class BRepFill_CompatibleWires
         {
             S = findPlanarSurf.Surface();
             L = findPlanarSurf.Location();
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 S = (Geom_Surface)S!.Transformed(L.Transformation());
             }
@@ -164,8 +168,8 @@ public sealed class BRepFill_CompatibleWires
         {
             // wire not plane !
             GProp_PrincipalProps Pp = GP.PrincipalProperties();
-            gp_Vec Vec = new();
-            double Tol = Precision.Confusion();
+            Vector3D Vec = new();
+            double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             Pp.RadiusOfGyration(out double R1, out double R2, out double R3);
             double RMax = Max(Max(R1, R2), R3);
             if ((Math.Abs(RMax - R1) < Tol && Math.Abs(RMax - R2) < Tol)
@@ -188,7 +192,7 @@ public sealed class BRepFill_CompatibleWires
                 {
                     Vec = Pp.ThirdAxisOfInertia();
                 }
-                gp_Dir NDir = new(Vec);
+                Direction3D NDir = new(Vec);
                 if (R3 <= R2 && R3 <= R1)
                 {
                     Vec = Pp.ThirdAxisOfInertia();
@@ -201,8 +205,8 @@ public sealed class BRepFill_CompatibleWires
                 {
                     Vec = Pp.FirstAxisOfInertia();
                 }
-                gp_Dir XDir = new(Vec);
-                gp_Ax3 repere = new(Bary, NDir, XDir);
+                Direction3D XDir = new(Vec);
+                CoordinateSystem repere = new(Bary, NDir, XDir);
                 Geom_Plane GPlan = new(repere);
                 P = GPlan.Pln();
             }
@@ -211,10 +215,10 @@ public sealed class BRepFill_CompatibleWires
         return isplane;
     }
 
-    private static void WireContinuity(in TopoDS_Wire W, out GeomAbs_Shape contW)
+    private static void WireContinuity(in TopoDS_Wire W, out Continuity contW)
     {
-        contW = GeomAbs_CN;
-        GeomAbs_Shape cont;
+        contW = CN;
+        Continuity cont;
         bool IsDegenerated = false;
 
         BRepTools_WireExplorer anExp = new();
@@ -266,7 +270,7 @@ public sealed class BRepFill_CompatibleWires
 
                 if (testconti)
                 {
-                    cont = BRepLProp.Continuity(Curve1, Curve2, U1, U2, Eps, Precision.Angular());
+                    cont = BRepLProp.Continuity(Curve1, Curve2, U1, U2, Eps, global::Kerf.Engine.Foundation.Precision.Angular());
                     if (cont <= contW)
                     {
                         contW = cont;
@@ -303,7 +307,7 @@ public sealed class BRepFill_CompatibleWires
             {
                 // piece of edge
                 m1 = (CutValues.Value(j) - t0) * (last - first) / (t1 - t0) + first;
-                if (Math.Abs(m0 - m1) < Precision.Confusion())
+                if (Math.Abs(m0 - m1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return;
                 }
@@ -315,7 +319,7 @@ public sealed class BRepFill_CompatibleWires
                 if (j == ndec)
                 {
                     // last piece
-                    if (Math.Abs(m0 - last) < Precision.Confusion())
+                    if (Math.Abs(m0 - last) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return;
                     }
@@ -334,7 +338,7 @@ public sealed class BRepFill_CompatibleWires
             {
                 // piece of edge
                 m0 = (CutValues.Value(j) - t0) * (last - first) / (t1 - t0) + first;
-                if (Math.Abs(m0 - m1) < Precision.Confusion())
+                if (Math.Abs(m0 - m1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return;
                 }
@@ -346,7 +350,7 @@ public sealed class BRepFill_CompatibleWires
                 if (j == 1)
                 {
                     // last piece
-                    if (Math.Abs(first - m1) < Precision.Confusion())
+                    if (Math.Abs(first - m1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return;
                     }
@@ -435,8 +439,8 @@ public sealed class BRepFill_CompatibleWires
         return trouve;
     }
 
-    private static bool EdgeIntersectOnWire(in gp_Pnt P1,
-                                            in gp_Pnt P2,
+    private static bool EdgeIntersectOnWire(in Point3D P1,
+                                            in Point3D P2,
                                             double percent,
                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> Map,
                                             in TopoDS_Wire W,
@@ -449,7 +453,7 @@ public sealed class BRepFill_CompatibleWires
 
         // construction of the edge of intersection
         bool NewVertex = false;
-        gp_Lin droite = new(P1, new gp_Dir(new gp_Vec(P1, P2)));
+        Line3D droite = new(P1, new Direction3D(new Vector3D(P1, P2)));
         // ATTENTION : it is required to construct a half-straight
         //             but there is a bug in BRepExtrema_DistShapeShape
         //             it is enough to take 100 * distance between P1 and P2
@@ -459,10 +463,10 @@ public sealed class BRepFill_CompatibleWires
         //             100 is better than 10 but it is too much !
         //             finally, nothing is better than a blocking box
         //  double dernierparam = 100 * P1.Distance(P2);
-        Bnd_Box B = new();
+        Box B = new();
         BRepBndLib.Add(W, ref B);
         B.Get(out double x1, out double y1, out double z1, out double x2, out double y2, out double z2);
-        gp_Pnt BP1 = new(x1, y1, z1), BP2 = new(x2, y2, z2);
+        Point3D BP1 = new(x1, y1, z1), BP2 = new(x2, y2, z2);
         double diag = BP1.Distance(BP2);
         double dernierparam = diag;
         BRepLib_MakeEdge ME = new(droite, 0.0, dernierparam);
@@ -474,11 +478,11 @@ public sealed class BRepFill_CompatibleWires
         {
             // choose the solution closest to P2
             int isol = 1;
-            gp_Pnt Psol = DSS.PointOnShape2(isol);
+            Point3D Psol = DSS.PointOnShape2(isol);
             double dss = P2.Distance(Psol);
             for (int iss = 2; iss <= DSS.NbSolution(); iss++)
             {
-                gp_Pnt Pss = DSS.PointOnShape2(iss);
+                Point3D Pss = DSS.PointOnShape2(iss);
                 double aDist = P2.Distance(Pss);
                 if (dss > aDist)
                 {
@@ -492,7 +496,7 @@ public sealed class BRepFill_CompatibleWires
             if (NewVertex)
             {
                 TopoDS_Edge E = TopoDS.Edge(DSS.SupportOnShape2(isol));
-                double tol = Precision.PConfusion();
+                double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 BRep_Tool.Range(E, out double first, out double last);
                 tol = Max(tol, percent * Math.Abs(last - first));
                 DSS.ParOnEdgeS2(isol, out double param);
@@ -580,19 +584,19 @@ public sealed class BRepFill_CompatibleWires
     }
 
     private static void Transform(bool WithRotation,
-                                  in gp_Pnt P,
-                                  in gp_Pnt Pos1,
-                                  in gp_Vec Ax1,
-                                  in gp_Pnt Pos2,
-                                  in gp_Vec Ax2,
-                                  out gp_Pnt Pnew)
+                                  in Point3D P,
+                                  in Point3D Pos1,
+                                  in Vector3D Ax1,
+                                  in Point3D Pos2,
+                                  in Vector3D Ax2,
+                                  out Point3D Pnew)
     {
 
         Pnew = P.Translated(Pos1, Pos2);
-        gp_Vec axe1 = Ax1, axe2 = Ax2;
+        Vector3D axe1 = Ax1, axe2 = Ax2;
         if (!axe1.IsParallel(axe2, 1.0e-4))
         {
-            gp_Vec Vtrans = new(Pos1, Pos2), Vsign = new();
+            Vector3D Vtrans = new(Pos1, Pos2), Vsign = new();
             double alpha, beta, sign = 1;
             alpha = Vtrans.Dot(axe1);
             beta = Vtrans.Dot(axe2);
@@ -606,7 +610,7 @@ public sealed class BRepFill_CompatibleWires
             }
             alpha = Vtrans.Dot(axe1);
             beta = Vtrans.Dot(axe2);
-            gp_Vec norm2 = axe1 ^ axe2;
+            Vector3D norm2 = axe1 ^ axe2;
             Vsign.SetLinearForm(Vtrans.Dot(axe1), axe2, -Vtrans.Dot(axe2), axe1);
             alpha = Vsign.Dot(axe1);
             beta = Vsign.Dot(axe2);
@@ -615,7 +619,7 @@ public sealed class BRepFill_CompatibleWires
             {
                 sign = -1;
             }
-            gp_Ax1 Norm = new(Pos2, new gp_Dir(norm2));
+            Axis3D Norm = new(Pos2, new Direction3D(norm2));
             double ang = axe1.AngleWithRef(axe2, norm2);
             if (!WithRotation)
             {
@@ -838,8 +842,8 @@ public sealed class BRepFill_CompatibleWires
         int nbmax = 0, nbmin = 0;
         NCollection_Array1<int> nbEdges = new(1, nbSects);
         bool report;
-        GeomAbs_Shape contS = GeomAbs_CN;
-        GeomAbs_Shape cont;
+        Continuity contS = CN;
+        Continuity cont;
         for (i = 1; i <= nbSects; i++)
         {
             TopoDS_Shape aLocalShape = myWork[i].Oriented(TopAbs_FORWARD);
@@ -872,7 +876,7 @@ public sealed class BRepFill_CompatibleWires
         // if the number of elements is not the same or if all wires are at least
         // C1, the report is carried out by curvilinear abscissa of cuts, otherwise
         // a report vertex / Vertex is done
-        report = (nbmax != nbmin || contS >= GeomAbs_C1);
+        report = (nbmax != nbmin || contS >= C1);
 
         // initialization of the map
         for (i = 1; i <= nbSects; i++)
@@ -1043,14 +1047,14 @@ public sealed class BRepFill_CompatibleWires
         }
 
         // construction of tables of planes of wires
-        NCollection_HArray1<gp_Pnt> Pos = new(1, NbSects);
-        NCollection_HArray1<gp_Vec> Axe = new(1, NbSects);
+        NCollection_HArray1<Point3D> Pos = new(1, NbSects);
+        NCollection_HArray1<Vector3D> Axe = new(1, NbSects);
         for (i = ideb; i <= ifin; i++)
         {
-            if (PlaneOfWire(TopoDS.Wire(myWork[i]), out gp_Pln P))
+            if (PlaneOfWire(TopoDS.Wire(myWork[i]), out Plane3D P))
             {
                 Pos.SetValue(i, P.Location());
-                Axe.SetValue(i, new gp_Vec(P.Axis().Direction()));
+                Axe.SetValue(i, new Vector3D(P.Axis().Direction()));
             }
         }
         NCollection_Sequence<TopoDS_Shape> SeqV = new();
@@ -1097,7 +1101,7 @@ public sealed class BRepFill_CompatibleWires
                 RMap.Bind(Vi, Init);
 
                 // it is required to find intersection Vi - wire2
-                gp_Pnt Pi = BRep_Tool.Pnt(Vi);
+                Point3D Pi = BRep_Tool.Pnt(Vi);
 
                 // return Pi in the current plane
                 Transform(WithRotation,
@@ -1106,13 +1110,13 @@ public sealed class BRepFill_CompatibleWires
                           Axe.Value(i),
                           Pos.Value(i - 1),
                           Axe.Value(i - 1),
-                          out gp_Pnt Pnew);
+                          out Point3D Pnew);
 
                 // calculate the intersection
                 bool NewVertex;
                 TopoDS_Vertex Vsol = new();
                 TopoDS_Wire newwire = new();
-                if (Pnew.Distance(Pos.Value(i - 1)) > Precision.Confusion())
+                if (Pnew.Distance(Pos.Value(i - 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     double percent = myPercent;
                     NewVertex = EdgeIntersectOnWire(Pos.Value(i - 1),
@@ -1198,7 +1202,7 @@ public sealed class BRepFill_CompatibleWires
                 if (intersect)
                 {
                     // it is necessary to find intersection Vi - wire2
-                    gp_Pnt Pi = BRep_Tool.Pnt(Vi);
+                    Point3D Pi = BRep_Tool.Pnt(Vi);
 
                     // return Pi in the current plane
                     Transform(WithRotation,
@@ -1207,13 +1211,13 @@ public sealed class BRepFill_CompatibleWires
                               Axe.Value(i),
                               Pos.Value(i + 1),
                               Axe.Value(i + 1),
-                              out gp_Pnt Pnew);
+                              out Point3D Pnew);
 
                     // calculate the intersection
                     bool NewVertex;
                     TopoDS_Vertex Vsol = new();
                     TopoDS_Wire newwire = new();
-                    if (Pnew.Distance(Pos.Value(i + 1)) > Precision.Confusion())
+                    if (Pnew.Distance(Pos.Value(i + 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double percent = myPercent;
                         NewVertex = EdgeIntersectOnWire(Pos.Value(i + 1),
@@ -1257,7 +1261,7 @@ public sealed class BRepFill_CompatibleWires
             double U1 = BRep_Tool.Parameter(VF, ECur);
             double U2 = BRep_Tool.Parameter(VL, ECur);
             BRepAdaptor_Curve Curve = new(ECur);
-            gp_Pnt PPs = Curve.Value(0.1 * (U1 + 9 * U2));
+            Point3D PPs = Curve.Value(0.1 * (U1 + 9 * U2));
             NCollection_List<TopoDS_Shape>.Iterator itF = new(MapVLV.Find(VF)), itL = new(MapVLV.Find(VL));
             int rang = ideb;
             while (rang < i && itF.More() && itL.More())
@@ -1289,8 +1293,8 @@ public sealed class BRepFill_CompatibleWires
                     double U1param = BRep_Tool.Parameter(VVF, E);
                     double U2param = BRep_Tool.Parameter(VVL, E);
                     BRepAdaptor_Curve CurveE = new(E);
-                    gp_Pnt PP1 = CurveE.Value(0.1 * (U1param + 9 * U2param));
-                    gp_Pnt PP2 = CurveE.Value(0.1 * (9 * U1param + U2param));
+                    Point3D PP1 = CurveE.Value(0.1 * (U1param + 9 * U2param));
+                    Point3D PP2 = CurveE.Value(0.1 * (9 * U1param + U2param));
 
                     for (rang = i; rang > ideb; rang--)
                     {
@@ -1309,11 +1313,11 @@ public sealed class BRepFill_CompatibleWires
                                   Axe.Value(rang - 1),
                                   out PP2);
                     }
-                    gp_Vec Ns = new(Pos.Value(ideb), PPs);
+                    Vector3D Ns = new(Pos.Value(ideb), PPs);
                     Ns = Ns.Normalized();
-                    gp_Vec N1 = new(Pos.Value(ideb), PP1);
+                    Vector3D N1 = new(Pos.Value(ideb), PP1);
                     N1 = N1.Normalized();
-                    gp_Vec N2 = new(Pos.Value(ideb), PP2);
+                    Vector3D N2 = new(Pos.Value(ideb), PP2);
                     N2 = N2.Normalized();
                     scal1 = N1.Dot(Ns);
                     if (scal1 > scalmax)
@@ -1358,8 +1362,8 @@ public sealed class BRepFill_CompatibleWires
                 U1 = BRep_Tool.Parameter(VVF, E);
                 U2 = BRep_Tool.Parameter(VVL, E);
                 Curve.Initialize(E);
-                gp_Pnt PP1 = Curve.Value(0.1 * (U1 + 9 * U2));
-                gp_Pnt PP2 = Curve.Value(0.1 * (9 * U1 + U2));
+                Point3D PP1 = Curve.Value(0.1 * (U1 + 9 * U2));
+                Point3D PP2 = Curve.Value(0.1 * (9 * U1 + U2));
 
                 for (rang = i; rang > ideb; rang--)
                 {
@@ -1378,11 +1382,11 @@ public sealed class BRepFill_CompatibleWires
                               Axe.Value(rang - 1),
                               out PP2);
                 }
-                gp_Vec Ns = new(Pos.Value(ideb), PPs);
+                Vector3D Ns = new(Pos.Value(ideb), PPs);
                 Ns = Ns.Normalized();
-                gp_Vec N1 = new(Pos.Value(ideb), PP1);
+                Vector3D N1 = new(Pos.Value(ideb), PP1);
                 N1 = N1.Normalized();
-                gp_Vec N2 = new(Pos.Value(ideb), PP2);
+                Vector3D N2 = new(Pos.Value(ideb), PP2);
                 N2 = N2.Normalized();
                 scal1 = N1.Dot(Ns);
                 scal2 = N2.Dot(Ns);
@@ -1577,7 +1581,7 @@ public sealed class BRepFill_CompatibleWires
                     for (i = 1; i <= nbSects; i++)
                     {
                         double EdgeLen = (Knot2 - Knot1) * WireLen[i];
-                        if (EdgeLen > Precision.Confusion())
+                        if (EdgeLen > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             AllLengthsNull = false;
                             break;
@@ -1604,8 +1608,8 @@ public sealed class BRepFill_CompatibleWires
                 for (i = 1; i <= nbSects; i++)
                 {
                     TopoDS_Wire oldwire = TopoDS.Wire(myWork[i]);
-                    double tol = Precision.Confusion();
-                    if (WireLen[i] > gp.Resolution())
+                    double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+                    if (WireLen[i] > Constants.Resolution())
                     {
                         tol /= WireLen[i];
                     }
@@ -1620,7 +1624,7 @@ public sealed class BRepFill_CompatibleWires
                         {
                             NCollection_List<TopoDS_Shape> LE = new();
                             LE.Clear();
-                            gp_Pnt P1 = new(), P2 = new();
+                            Point3D P1 = new(), P2 = new();
                             TopoDS_Vertex V1 = anExp1.CurrentVertex();
                             TopExp.Vertices(Ecur, out TopoDS_Vertex VF, out TopoDS_Vertex VR, true);
                             if (V1.IsSame(VF))
@@ -1806,21 +1810,21 @@ public sealed class BRepFill_CompatibleWires
         {
             NbSamples = 4;
         }
-        PlaneOfWire(TopoDS.Wire(myWork[ideb]), out gp_Pln FirstPlane);
-        gp_Pnt PrevBary = FirstPlane.Location();
-        gp_Vec NormalOfFirstPlane = new(FirstPlane.Axis().Direction());
+        PlaneOfWire(TopoDS.Wire(myWork[ideb]), out Plane3D FirstPlane);
+        Point3D PrevBary = FirstPlane.Location();
+        Vector3D NormalOfFirstPlane = new(FirstPlane.Axis().Direction());
         for (i = ideb + 1; i <= ifin; i++)
         {
             TopoDS_Wire aWire = TopoDS.Wire(myWork[i]);
 
             // Compute offset vector as current bary center projected on first plane
             // to first bary center
-            PlaneOfWire(aWire, out gp_Pln CurPlane);
-            gp_Pnt CurBary = CurPlane.Location();
-            gp_Vec aVec = new(PrevBary, CurBary);
-            gp_Vec anOffsetProj = (aVec * NormalOfFirstPlane) * NormalOfFirstPlane;
+            PlaneOfWire(aWire, out Plane3D CurPlane);
+            Point3D CurBary = CurPlane.Location();
+            Vector3D aVec = new(PrevBary, CurBary);
+            Vector3D anOffsetProj = (aVec * NormalOfFirstPlane) * NormalOfFirstPlane;
             CurBary.Translate(-anOffsetProj); // projected current bary center
-            gp_Vec Offset = new(CurBary, PrevBary);
+            Vector3D Offset = new(CurBary, PrevBary);
 
             TopoDS_Wire newwire = new();
             BRep_Builder BB = new();
@@ -1833,7 +1837,7 @@ public sealed class BRepFill_CompatibleWires
                 SeqEdges.Append(anExp.Current());
             }
 
-            double MinSumDist = Precision.Infinite();
+            double MinSumDist = global::Kerf.Engine.Foundation.Precision.Infinite();
             int jmin = 1, j, k, n;
             bool forward = false;
             if (i == myWork.Length() && myDegen2)
@@ -1851,9 +1855,9 @@ public sealed class BRepFill_CompatibleWires
                     for (k = j, n = 1; k <= theLength; k++, n++)
                     {
                         TopoDS_Vertex Vprev = TopoDS.Vertex(PrevSeq[n]);
-                        gp_Pnt Pprev = BRep_Tool.Pnt(Vprev);
+                        Point3D Pprev = BRep_Tool.Pnt(Vprev);
                         TopoDS_Vertex V = TopoDS.Vertex(SeqVertices[k]);
-                        gp_Pnt P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
+                        Point3D P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
                         SumDist += Pprev.Distance(P);
                         if (NbSamples > 0)
                         {
@@ -1873,8 +1877,8 @@ public sealed class BRepFill_CompatibleWires
                                 double ParOnCur = (CurEdge.Orientation() == TopAbs_FORWARD)
                                                     ? (Ecurve.FirstParameter() + nbs * SampleOnCur)
                                                     : (Ecurve.FirstParameter() + (NbSamples - nbs) * SampleOnCur);
-                                gp_Pnt PonPrev = PrevEcurve.Value(ParOnPrev);
-                                gp_Pnt PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
+                                Point3D PonPrev = PrevEcurve.Value(ParOnPrev);
+                                Point3D PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
                                 SumDist += PonPrev.Distance(PonCur);
                             }
                         }
@@ -1882,9 +1886,9 @@ public sealed class BRepFill_CompatibleWires
                     for (k = 1; k < j; k++, n++)
                     {
                         TopoDS_Vertex Vprev = TopoDS.Vertex(PrevSeq[n]);
-                        gp_Pnt Pprev = BRep_Tool.Pnt(Vprev);
+                        Point3D Pprev = BRep_Tool.Pnt(Vprev);
                         TopoDS_Vertex V = TopoDS.Vertex(SeqVertices[k]);
-                        gp_Pnt P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
+                        Point3D P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
                         SumDist += Pprev.Distance(P);
                         if (NbSamples > 0)
                         {
@@ -1904,8 +1908,8 @@ public sealed class BRepFill_CompatibleWires
                                 double ParOnCur = (CurEdge.Orientation() == TopAbs_FORWARD)
                                                     ? (Ecurve.FirstParameter() + nbs * SampleOnCur)
                                                     : (Ecurve.FirstParameter() + (NbSamples - nbs) * SampleOnCur);
-                                gp_Pnt PonPrev = PrevEcurve.Value(ParOnPrev);
-                                gp_Pnt PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
+                                Point3D PonPrev = PrevEcurve.Value(ParOnPrev);
+                                Point3D PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
                                 SumDist += PonPrev.Distance(PonCur);
                             }
                         }
@@ -1922,9 +1926,9 @@ public sealed class BRepFill_CompatibleWires
                     for (k = j, n = 1; k >= 1; k--, n++)
                     {
                         TopoDS_Vertex Vprev = TopoDS.Vertex(PrevSeq[n]);
-                        gp_Pnt Pprev = BRep_Tool.Pnt(Vprev);
+                        Point3D Pprev = BRep_Tool.Pnt(Vprev);
                         TopoDS_Vertex V = TopoDS.Vertex(SeqVertices[k]);
-                        gp_Pnt P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
+                        Point3D P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
                         SumDist += Pprev.Distance(P);
                         if (NbSamples > 0)
                         {
@@ -1949,8 +1953,8 @@ public sealed class BRepFill_CompatibleWires
                                 double ParOnCur = (CurEdge.Orientation() == TopAbs_FORWARD)
                                                     ? (Ecurve.FirstParameter() + (NbSamples - nbs) * SampleOnCur)
                                                     : (Ecurve.FirstParameter() + nbs * SampleOnCur);
-                                gp_Pnt PonPrev = PrevEcurve.Value(ParOnPrev);
-                                gp_Pnt PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
+                                Point3D PonPrev = PrevEcurve.Value(ParOnPrev);
+                                Point3D PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
                                 SumDist += PonPrev.Distance(PonCur);
                             }
                         }
@@ -1958,9 +1962,9 @@ public sealed class BRepFill_CompatibleWires
                     for (k = theLength; k > j; k--, n++)
                     {
                         TopoDS_Vertex Vprev = TopoDS.Vertex(PrevSeq[n]);
-                        gp_Pnt Pprev = BRep_Tool.Pnt(Vprev);
+                        Point3D Pprev = BRep_Tool.Pnt(Vprev);
                         TopoDS_Vertex V = TopoDS.Vertex(SeqVertices[k]);
-                        gp_Pnt P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
+                        Point3D P = new(BRep_Tool.Pnt(V).XYZ() + Offset.XYZ());
                         SumDist += Pprev.Distance(P);
                         if (NbSamples > 0)
                         {
@@ -1980,8 +1984,8 @@ public sealed class BRepFill_CompatibleWires
                                 double ParOnCur = (CurEdge.Orientation() == TopAbs_FORWARD)
                                                     ? (Ecurve.FirstParameter() + (NbSamples - nbs) * SampleOnCur)
                                                     : (Ecurve.FirstParameter() + nbs * SampleOnCur);
-                                gp_Pnt PonPrev = PrevEcurve.Value(ParOnPrev);
-                                gp_Pnt PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
+                                Point3D PonPrev = PrevEcurve.Value(ParOnPrev);
+                                Point3D PonCur = new(Ecurve.Value(ParOnCur).XYZ() + Offset.XYZ());
                                 SumDist += PonPrev.Distance(PonCur);
                             }
                         }
@@ -2058,10 +2062,10 @@ public sealed class BRepFill_CompatibleWires
     {
         // reorganize the open wires respecting orientation and origin
 
-        gp_Pln P0, P;
+        Plane3D P0, P;
 
         TopoDS_Vertex Vdeb, Vfin;
-        gp_Pnt Pdeb, Pfin; //,Psuiv;
+        Point3D Pdeb, Pfin; //,Psuiv;
 
         BRepTools_WireExplorer anExp = new();
 
@@ -2129,7 +2133,7 @@ public sealed class BRepFill_CompatibleWires
             {
 
                 // particular case of straight segments
-                gp_Pnt P1 = BRep_Tool.Pnt(Vdeb), P2 = BRep_Tool.Pnt(Vfin);
+                Point3D P1 = BRep_Tool.Pnt(Vdeb), P2 = BRep_Tool.Pnt(Vfin);
                 double dist1, dist2;
                 dist1 = Pdeb.Distance(P1) + Pfin.Distance(P2);
                 dist2 = Pdeb.Distance(P2) + Pfin.Distance(P1);
@@ -2139,14 +2143,14 @@ public sealed class BRepFill_CompatibleWires
             else
             {
                 // OCC86
-                gp_Pnt P1 = BRep_Tool.Pnt(Vdeb), P1o = Pdeb, P2 = BRep_Tool.Pnt(Vfin), P2o = Pfin;
-                if (P1.IsEqual(P2, Precision.Confusion()) || P1o.IsEqual(P2o, Precision.Confusion()))
+                Point3D P1 = BRep_Tool.Pnt(Vdeb), P1o = Pdeb, P2 = BRep_Tool.Pnt(Vfin), P2o = Pfin;
+                if (P1.IsEqual(P2, global::Kerf.Engine.Foundation.Precision.Confusion()) || P1o.IsEqual(P2o, global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     BRepAdaptor_Curve Curve0 = new(E0), Curve = new(E);
-                    Curve0.D0(Curve0.FirstParameter() + Precision.Confusion(), out P2o);
-                    Curve.D0(Curve.FirstParameter() + Precision.Confusion(), out P2);
+                    Curve0.D0(Curve0.FirstParameter() + global::Kerf.Engine.Foundation.Precision.Confusion(), out P2o);
+                    Curve.D0(Curve.FirstParameter() + global::Kerf.Engine.Foundation.Precision.Confusion(), out P2);
                 }
-                gp_Vec VDebFin0 = new(P1o, P2o), VDebFin = new(P1, P2);
+                Vector3D VDebFin0 = new(P1o, P2o), VDebFin = new(P1, P2);
                 double AStraight = VDebFin0.Angle(VDebFin);
                 parcours = (AStraight < M_PI / 2.0);
             }

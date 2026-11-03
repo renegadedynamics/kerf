@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
@@ -32,7 +33,7 @@ public sealed partial class Build123dPhase7OracleTests
         {
             aTally.Differences.Add($"{aWhat}: the port changed its frozen operands");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             aTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -168,7 +169,7 @@ public sealed partial class Build123dPhase7OracleTests
                 return ("E " + new BRepAdaptor_Curve(TopoDS.Edge(theShape)).GetType(), [aProps.Mass()]);
             case TopAbs_VERTEX:
             {
-                gp_Pnt aP = BRep_Tool.Pnt(TopoDS.Vertex(theShape));
+                Point3D aP = BRep_Tool.Pnt(TopoDS.Vertex(theShape));
                 return ("V", [aP.X(), aP.Y(), aP.Z()]);
             }
             default:

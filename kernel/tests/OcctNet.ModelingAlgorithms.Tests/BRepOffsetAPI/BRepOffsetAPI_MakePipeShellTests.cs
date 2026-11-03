@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKOffset/GTests/BRepOffsetAPI_MakePipeShell_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -38,18 +39,18 @@ public class BRepOffsetAPI_MakePipeShellTests
         double aRadiusL = theDia1 / 2.0;
         double aRadiusR = theDia2 / 2.0;
 
-        gp_Ax2 anOrigin = new(new gp_Pnt(5000.0, -300.0, 1000.0), new gp_Dir(0.0, -1.0, -1.0));
+        Frame3D anOrigin = new(new Point3D(5000.0, -300.0, 1000.0), new Direction3D(0.0, -1.0, -1.0));
 
-        gp_Pln aCirc1Plane = new(anOrigin.Location(), anOrigin.Direction());
-        gp_Circ aFaceCircle = new(anOrigin, aRadiusL);
-        gp_Circ anOutFaceCircle = new(anOrigin, aRadiusL + theWallThickness);
+        Plane3D aCirc1Plane = new(anOrigin.Location(), anOrigin.Direction());
+        Circle3D aFaceCircle = new(anOrigin, aRadiusL);
+        Circle3D anOutFaceCircle = new(anOrigin, aRadiusL + theWallThickness);
 
-        gp_Pnt aCircCenter = anOrigin.Location().Translated(theMajorRadius * new gp_Vec(anOrigin.XDirection()));
-        gp_Ax1 aCircAxis = new(aCircCenter, anOrigin.YDirection());
-        gp_Pln aCirc2Plane = aCirc1Plane.Rotated(aCircAxis, aBendAngle);
+        Point3D aCircCenter = anOrigin.Location().Translated(theMajorRadius * new Vector3D(anOrigin.XDirection()));
+        Axis3D aCircAxis = new(aCircCenter, anOrigin.YDirection());
+        Plane3D aCirc2Plane = aCirc1Plane.Rotated(aCircAxis, aBendAngle);
 
-        gp_Ax2 aSpineAxis = new(aCircCenter, anOrigin.YDirection(), anOrigin.XDirection().Reversed());
-        gp_Circ aSpineCircle = new(aSpineAxis, theMajorRadius);
+        Frame3D aSpineAxis = new(aCircCenter, anOrigin.YDirection(), anOrigin.XDirection().Reversed());
+        Circle3D aSpineCircle = new(aSpineAxis, theMajorRadius);
 
         TopoDS_Wire aWire1 = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aFaceCircle).Edge()).Wire();
         TopoDS_Wire anOutWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anOutFaceCircle).Edge()).Wire();
@@ -92,7 +93,7 @@ public class BRepOffsetAPI_MakePipeShellTests
         // Build opening face at start of bend (annular ring)
         BRepBuilderAPI_MakeFace aMkFace = new();
         Geom_Plane aPlane1 = new(aCirc1Plane);
-        aMkFace.Init(aPlane1, false, Precision.Confusion());
+        aMkFace.Init(aPlane1, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMkFace.Add(TopoDS.Wire(aMkPipe2.FirstShape()));
         aMkFace.Add(TopoDS.Wire(aMkPipe1.FirstShape().Reversed()));
         if (!aMkFace.IsDone())
@@ -103,7 +104,7 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         // Build opening face at end of bend (annular ring)
         Geom_Plane aPlane2 = new(aCirc2Plane);
-        aMkFace.Init(aPlane2, false, Precision.Confusion());
+        aMkFace.Init(aPlane2, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMkFace.Add(TopoDS.Wire(aMkPipe2.LastShape()));
         aMkFace.Add(TopoDS.Wire(aMkPipe1.LastShape().Reversed()));
         if (!aMkFace.IsDone())
@@ -167,7 +168,7 @@ public class BRepOffsetAPI_MakePipeShellTests
         for (TopExp_Explorer anExp = new(aWallSolid, TopAbs_WIRE); anExp.More(); anExp.Next())
         {
             double aLen = wireLength(TopoDS.Wire(anExp.Current()));
-            if (aLen > Precision.Confusion())
+            if (aLen > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aWireLengths.Add(aLen);
             }

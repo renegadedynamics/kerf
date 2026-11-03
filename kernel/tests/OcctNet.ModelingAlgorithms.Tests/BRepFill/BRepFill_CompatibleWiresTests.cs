@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using Schematiq.Collections;
 using static Occt.BRepFill_ThruSectionErrorStatus;
@@ -20,7 +21,7 @@ public class BRepFill_CompatibleWiresTests
         for (int i = 0; i < theNb; i++)
         {
             double t = theClosed ? theAngle + 2 * Math.PI * i / theNb : theAngle + Math.PI * i / (theNb - 1);
-            aP.Add(new gp_Pnt(theRadius * Math.Cos(t), theRadius * Math.Sin(t), z));
+            aP.Add(new Point3D(theRadius * Math.Cos(t), theRadius * Math.Sin(t), z));
         }
         if (theClosed)
         {
@@ -29,7 +30,7 @@ public class BRepFill_CompatibleWiresTests
         return aP.Wire();
     }
 
-    private static TopoDS_Wire PointSection(in gp_Pnt theP)
+    private static TopoDS_Wire PointSection(in Point3D theP)
     {
         BRep_Builder B = new();
         TopoDS_Vertex aV = new();
@@ -99,7 +100,7 @@ public class BRepFill_CompatibleWiresTests
         int aNb = NbEdges(aRes[0]);
         Assert.True(aNb >= 6);
         Assert.All(aRes, w => Assert.Equal(aNb, NbEdges(w)));
-        Assert.All(aRes, w => Assert.True(w.TShape()!.IsFrozen()));
+        Assert.All(aRes, w => Assert.True(w.TShape()!.IsFrozen));
 
         // every input edge generates edges of its own section's result, which cover it
         for (int s = 0; s < 3; s++)
@@ -141,7 +142,7 @@ public class BRepFill_CompatibleWiresTests
         }
         // origins match: the second wire starts at the vertex above the first's start, and runs the same way
         BRepTools_WireExplorer e1 = new(TopoDS.Wire(aRes[0])), e2 = new(TopoDS.Wire(aRes[1]));
-        gp_Pnt p1 = BRep_Tool.Pnt(e1.CurrentVertex()), p2 = BRep_Tool.Pnt(e2.CurrentVertex());
+        Point3D p1 = BRep_Tool.Pnt(e1.CurrentVertex()), p2 = BRep_Tool.Pnt(e2.CurrentVertex());
         Assert.True(Math.Abs(p1.X() - p2.X()) < 0.2 && Math.Abs(p1.Y() - p2.Y()) < 0.2);
         e1.Next();
         e2.Next();
@@ -165,7 +166,7 @@ public class BRepFill_CompatibleWiresTests
         Assert.True(NbEdges(aRes[0]) >= 3);
         TopExp.Vertices(TopoDS.Wire(aRes[0]), out TopoDS_Vertex a0, out _);
         TopExp.Vertices(TopoDS.Wire(aRes[1]), out TopoDS_Vertex b0, out _);
-        gp_Pnt pa = BRep_Tool.Pnt(a0), pb = BRep_Tool.Pnt(b0);
+        Point3D pa = BRep_Tool.Pnt(a0), pb = BRep_Tool.Pnt(b0);
         Assert.True(Math.Abs(pa.X() - pb.X()) < 1e-9 && Math.Abs(pa.Y() - pb.Y()) < 1e-9);
     }
 
@@ -178,13 +179,13 @@ public class BRepFill_CompatibleWiresTests
         List<TopoDS_Shape> aSecs = [];
         if (theFirst)
         {
-            aSecs.Add(PointSection(new gp_Pnt(0, 0, -3)));
+            aSecs.Add(PointSection(new Point3D(0, 0, -3)));
         }
         aSecs.Add(Polygon(0, 0.0, 2, 4, true));
         aSecs.Add(Polygon(3, 0.2, 2, 3, true));
         if (theLast)
         {
-            aSecs.Add(PointSection(new gp_Pnt(0, 0, 6)));
+            aSecs.Add(PointSection(new Point3D(0, 0, 6)));
         }
         BRepFill_CompatibleWires aCW = new(Seq([.. aSecs]));
         aCW.Perform();
@@ -227,7 +228,7 @@ public class BRepFill_CompatibleWiresTests
     public void Frozen_inputs_are_never_written_and_uncut_edges_are_shared()
     {
         TopoDS_Wire aW1 = Polygon(0, 0.0, 2, 4, true), aW2 = Polygon(3, 0.4, 2, 3, true);
-        Assert.True(aW1.TShape()!.IsFrozen());
+        Assert.True(aW1.TShape()!.IsFrozen);
         string t1 = Text(aW1), t2 = Text(aW2);
         BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.Perform();

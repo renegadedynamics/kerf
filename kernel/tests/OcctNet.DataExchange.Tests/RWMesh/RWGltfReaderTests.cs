@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -77,7 +79,7 @@ public class RWGltfReaderTests
         Assert.Contains(theError, aReader.Error, StringComparison.Ordinal);
     }
 
-    private static Poly_Triangulation SingleTriangulation(XdeDoc_Tree theTree, out XdeDoc_FlatItem theItem)
+    private static Triangulation SingleTriangulation(XdeDoc_Tree theTree, out XdeDoc_FlatItem theItem)
     {
         theItem = Assert.Single(theTree.Flatten());
         TopoDS_Face aFace = TopoDS.Face(theItem.Product.Shape);
@@ -89,9 +91,9 @@ public class RWGltfReaderTests
     {
         XdeDoc_Tree? aTree = Read(Model(), out RWGltf_TreeReader aReader);
         Assert.True(aTree is not null, aReader.Error);
-        Poly_Triangulation aTri = SingleTriangulation(aTree, out XdeDoc_FlatItem anItem);
-        Assert.Equal(1, aTri.NbTriangles());
-        Assert.True(aTri.IsFrozen());
+        Triangulation aTri = SingleTriangulation(aTree, out XdeDoc_FlatItem anItem);
+        Assert.Equal(1, aTri.TriangleCount);
+        Assert.True(aTri.IsFrozen);
         // glTF's (1, 0, 0) m is (1000, 0, 0) mm; its (0, 1, 0), Y up, is (0, 0, 1000)
         Assert.Equal(1000.0, aTri.Node(2).X(), 9);
         Assert.Equal(1000.0, aTri.Node(3).Z(), 9);
@@ -110,8 +112,8 @@ public class RWGltfReaderTests
     public void ReadsStripsAndFansAndSkipsLines()
     {
         float[] aSquare = [0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 2, 2, 0];
-        Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 5), out _)!, out _).NbTriangles());
-        Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 6), out _)!, out _).NbTriangles());
+        Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 5), out _)!, out _).TriangleCount);
+        Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 6), out _)!, out _).TriangleCount);
 
         XdeDoc_Tree? aTree = Read(Model(null, [0, 1, 1, 2], 1), out RWGltf_TreeReader aReader);
         Assert.NotNull(aTree);
@@ -132,15 +134,15 @@ public class RWGltfReaderTests
         Assert.True(aTree is not null, aReader.Error);
         Assert.Equal(2, aTree.Roots.Length);
         Assert.Same(aTree.Roots[0].Product, aTree.Roots[1].Product);
-        Assert.False(aTree.Roots[0].Location.IsIdentity());
+        Assert.False(aTree.Roots[0].Location.IsIdentity);
         // glTF's Z (2 m) is OCCT's -Y
         Assert.Equal(-2000.0, aTree.Roots[1].Location.Transformation().TranslationPart().Y(), 9);
 
         // a scale: applied to the mesh (a copy for the node)
         JsonObject aScaled = Model();
         aScaled["nodes"]![0]!["scale"] = new JsonArray(2.0, 1.0, 1.0);
-        Poly_Triangulation aTri = SingleTriangulation(Read(aScaled, out _)!, out XdeDoc_FlatItem anItem);
-        Assert.True(anItem.Location.IsIdentity());
+        Triangulation aTri = SingleTriangulation(Read(aScaled, out _)!, out XdeDoc_FlatItem anItem);
+        Assert.True(anItem.Location.IsIdentity);
         Assert.Equal(2000.0, aTri.Node(2).X(), 9);
 
         // a mirror: applied, the winding swapped so the triangle keeps facing the same way
@@ -148,7 +150,7 @@ public class RWGltfReaderTests
         aMirrored["nodes"]![0]!["scale"] = new JsonArray(-1.0, 1.0, 1.0);
         aTri = SingleTriangulation(Read(aMirrored, out _)!, out _);
         aTri.Triangle(1).Get(out int a, out int b, out int c);
-        gp_XYZ aNormal = (aTri.Node(b).XYZ() - aTri.Node(a).XYZ()).Crossed(aTri.Node(c).XYZ() - aTri.Node(a).XYZ());
+        Xyz aNormal = (aTri.Node(b).XYZ() - aTri.Node(a).XYZ()).Crossed(aTri.Node(c).XYZ() - aTri.Node(a).XYZ());
         Assert.True(aNormal.Y() < 0); // glTF's +Z normal is OCCT's -Y, unchanged by a mirror in X
     }
 

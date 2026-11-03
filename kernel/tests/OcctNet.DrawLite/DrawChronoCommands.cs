@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Text;
 using Occt;
@@ -87,9 +88,9 @@ internal sealed class DrawTimer
         double aSeconds = aTimeCumul - anHours * 3600 - aMinutes * 60;
         (double aUser, double aSys) = Cpu();
         return new StringBuilder()
-               .Append($"Elapsed time: {anHours} Hours {aMinutes} Minutes {Standard_Stream.FormatReal(aSeconds, 12)} Seconds\n")
-               .Append($"CPU user time: {Standard_Stream.FormatReal(aUser, 12)} seconds\n")
-               .Append($"CPU system time: {Standard_Stream.FormatReal(aSys, 12)} seconds\n")
+               .Append($"Elapsed time: {anHours} Hours {aMinutes} Minutes {StreamUtilities.FormatReal(aSeconds, 12)} Seconds\n")
+               .Append($"CPU user time: {StreamUtilities.FormatReal(aUser, 12)} seconds\n")
+               .Append($"CPU system time: {StreamUtilities.FormatReal(aSys, 12)} seconds\n")
                .ToString();
     }
 }
@@ -105,7 +106,7 @@ public sealed class DrawChronometer : DrawDrawable
 
     public override void Dump(TextWriter theStream) => theStream.Write("Chronometer, " + Timer.Show());
 
-    public override void Save(TextWriter theStream) => throw new Standard_NotImplemented("Draw_Drawable3D::Save");
+    public override void Save(TextWriter theStream) => throw new MethodNotImplementedException("Draw_Drawable3D::Save");
 
     public override DrawDrawable Copy() => new DrawChronometer();
 }
@@ -182,7 +183,7 @@ internal static class DrawChronoCommands
             }
             else if (anIter + 1 < theNbArgs && anArg is "-counter" or "counter")
             {
-                string aLine = $"COUNTER {theArgVec[++anIter]}: {Standard_Stream.FormatReal(aChronom.Timer.UserTimeCPU(), 6)}\n";
+                string aLine = $"COUNTER {theArgVec[++anIter]}: {StreamUtilities.FormatReal(aChronom.Timer.UserTimeCPU(), 6)}\n";
                 if (toShowCout)
                 {
                     theDI.Output.Write(aLine);

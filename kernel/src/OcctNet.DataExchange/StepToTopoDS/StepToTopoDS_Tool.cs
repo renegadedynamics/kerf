@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -84,12 +85,12 @@ public sealed class StepToTopoDS_Tool
     }
 
     /// <summary>The shape bound to the item.</summary>
-    /// <exception cref="Standard_NoSuchObject">The item is not bound.</exception>
+    /// <exception cref="NoSuchObjectException">The item is not bound.</exception>
     public TopoDS_Shape Find(StepShape_TopologicalRepresentationItem? TRI)
     {
         if (TRI is null)
         {
-            return myHasNullItem ? myNullItemShape : throw new Standard_NoSuchObject("NCollection_DataMap::Find");
+            return myHasNullItem ? myNullItemShape : throw new NoSuchObjectException("NCollection_DataMap::Find");
         }
 
         return myDataMap.Find(TRI);
@@ -127,10 +128,10 @@ public sealed class StepToTopoDS_Tool
     {
         switch (GeomSurf.Continuity())
         {
-            case GeomAbs_C0:
+            case C0:
                 myNbC0Surf++;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myNbC1Surf++;
                 break;
             default:
@@ -143,10 +144,10 @@ public sealed class StepToTopoDS_Tool
     {
         switch (GeomCurve.Continuity())
         {
-            case GeomAbs_C0:
+            case C0:
                 myNbC0Cur3++;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myNbC1Cur3++;
                 break;
             default:
@@ -159,10 +160,10 @@ public sealed class StepToTopoDS_Tool
     {
         switch (GeomCur2d.Continuity())
         {
-            case GeomAbs_C0:
+            case C0:
                 myNbC0Cur2++;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myNbC1Cur2++;
                 break;
             default:

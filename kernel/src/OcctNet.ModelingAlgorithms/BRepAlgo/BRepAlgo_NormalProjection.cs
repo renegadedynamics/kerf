@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -31,7 +33,7 @@ public sealed class BRepAlgo_NormalProjection
     private double myTol2d;
     private double myMaxDist;
     private bool myWith3d;
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private int myMaxDegree;
     private int myMaxSeg;
     private bool myFaceBounds;
@@ -89,7 +91,7 @@ public sealed class BRepAlgo_NormalProjection
     /// Sets the parameters: the tolerances between the projected 3D curve and its 2D curve, the continuity of the
     /// approximation, its maximum degree and number of segments.
     /// </summary>
-    public void SetParams(double Tol3D, double Tol2D, GeomAbs_Shape InternalContinuity, int MaxDegree, int MaxSeg)
+    public void SetParams(double Tol3D, double Tol2D, Continuity InternalContinuity, int MaxDegree, int MaxSeg)
     {
         myTol3d = Tol3D;
         myTol2d = Tol2D;
@@ -105,7 +107,7 @@ public sealed class BRepAlgo_NormalProjection
     {
         myTol3d = 1.0e-4;
         myTol2d = Math.Pow(myTol3d, 2.0 / 3);
-        myContinuity = GeomAbs_C1;
+        myContinuity = C1;
         myMaxDegree = 14;
         myMaxSeg = 16;
     }
@@ -151,7 +153,7 @@ public sealed class BRepAlgo_NormalProjection
         bool Only3d, Only2d, Elementary;
 
         // for isoparametric cases
-        NCollection_Array1<gp_Pnt2d> Poles = new(1, 2);
+        NCollection_Array1<Point2D> Poles = new(1, 2);
         NCollection_Array1<double> Knots = new(1, 2);
         NCollection_Array1<int> Mults = new(1, 2);
         int Deg;
@@ -198,14 +200,14 @@ public sealed class BRepAlgo_NormalProjection
                 //
                 TopoDS_Shape prj = new();
                 bool Degenerated = false;
-                gp_Pnt P;
+                Point3D P;
 
                 Adaptor2d_Curve2d HPCur;
                 Geom2d_Curve? PCur2d = null; // Only for isoparametric projection
 
                 for (k = 1; k <= HProjector.NbCurves(); k++)
                 {
-                    if (HProjector.IsSinglePnt(k, out gp_Pnt2d P2d))
+                    if (HProjector.IsSinglePnt(k, out Point2D P2d))
                     {
                         HProjector.GetSurface()!.D0(P2d.X(), P2d.Y(), out P);
                         prj = new BRepLib_MakeVertex(P).InternalShape();
@@ -223,8 +225,8 @@ public sealed class BRepAlgo_NormalProjection
                         /**************************************************************/
                         if (HProjector.IsUIso(k, out double UIso))
                         {
-                            HProjector.D0(Udeb, out gp_Pnt2d Pdeb);
-                            HProjector.D0(Ufin, out gp_Pnt2d Pfin);
+                            HProjector.D0(Udeb, out Point2D Pdeb);
+                            HProjector.D0(Ufin, out Point2D Pfin);
                             Poles[1] = Pdeb;
                             Poles[2] = Pfin;
                             Knots[1] = Udeb;
@@ -236,8 +238,8 @@ public sealed class BRepAlgo_NormalProjection
                         }
                         else if (HProjector.IsVIso(k, out double VIso))
                         {
-                            HProjector.D0(Udeb, out gp_Pnt2d Pdeb);
-                            HProjector.D0(Ufin, out gp_Pnt2d Pfin);
+                            HProjector.D0(Udeb, out Point2D Pdeb);
+                            HProjector.D0(Ufin, out Point2D Pfin);
                             Poles[1] = Pdeb;
                             Poles[2] = Pfin;
                             Knots[1] = Udeb;
@@ -292,7 +294,7 @@ public sealed class BRepAlgo_NormalProjection
                                 Degenerated = true;
                                 double Dist;
                                 Geom_BSplineCurve BS3d = appr.Curve3d()!;
-                                gp_Pnt P1 = new(0.0, 0.0, 0.0), PP; // skl : I change "P" to "PP"
+                                Point3D P1 = new(0.0, 0.0, 0.0), PP; // skl : I change "P" to "PP"
                                 int NbPoint, ii; // skl : I change "i" to "ii"
                                 double Par, DPar;
                                 // start from 3 points to reject non degenerated edges
@@ -392,11 +394,11 @@ public sealed class BRepAlgo_NormalProjection
                                 else
                                 {
                                     // if the common operation has failed, try to classify the part
-                                    BRepTopAdaptor_FClass2d classifier = new(TopoDS.Face(Faces.Value(j)), Precision.Confusion());
+                                    BRepTopAdaptor_FClass2d classifier = new(TopoDS.Face(Faces.Value(j)), global::Kerf.Engine.Foundation.Precision.Confusion());
                                     double f = PCur2d!.FirstParameter();
                                     double l = PCur2d.LastParameter();
                                     double pmil = (f + l) / 2;
-                                    PCur2d.D0(pmil, out gp_Pnt2d Puv);
+                                    PCur2d.D0(pmil, out Point2D Puv);
                                     TopAbs_State state;
                                     state = classifier.Perform(Puv);
                                     if (state == TopAbs_IN || state == TopAbs_ON)
@@ -410,11 +412,11 @@ public sealed class BRepAlgo_NormalProjection
                             }
                             else
                             {
-                                BRepTopAdaptor_FClass2d classifier = new(TopoDS.Face(Faces.Value(j)), Precision.Confusion());
+                                BRepTopAdaptor_FClass2d classifier = new(TopoDS.Face(Faces.Value(j)), global::Kerf.Engine.Foundation.Precision.Confusion());
                                 double f = PCur2d!.FirstParameter();
                                 double l = PCur2d.LastParameter();
                                 double pmil = (f + l) / 2;
-                                PCur2d.D0(pmil, out gp_Pnt2d Puv);
+                                PCur2d.D0(pmil, out Point2D Puv);
                                 TopAbs_State state;
                                 state = classifier.Perform(Puv);
                                 if (state == TopAbs_IN || state == TopAbs_ON)
@@ -471,19 +473,19 @@ public sealed class BRepAlgo_NormalProjection
     //=================================================================================================
 
     /// <summary>The edge or wire's edge projected into the edge (or vertex) <paramref name="E"/> of the result.</summary>
-    /// <exception cref="Standard_NoSuchObject">E isn't in the result.</exception>
+    /// <exception cref="NoSuchObjectException">E isn't in the result.</exception>
     public TopoDS_Shape Ancestor(in TopoDS_Edge E) => myAncestorMap.Find(E);
 
     //=================================================================================================
 
     /// <summary>The face on which the edge <paramref name="E"/> of the result lies.</summary>
-    /// <exception cref="Standard_NoSuchObject">E isn't in the result.</exception>
+    /// <exception cref="NoSuchObjectException">E isn't in the result.</exception>
     public TopoDS_Shape Couple(in TopoDS_Edge E) => myCorresp.Find(E);
 
     //=================================================================================================
 
     /// <summary>The shapes of the result generated from the edge <paramref name="S"/>, frozen.</summary>
-    /// <exception cref="Standard_NoSuchObject">S wasn't projected.</exception>
+    /// <exception cref="NoSuchObjectException">S wasn't projected.</exception>
     public ISchematiqList<TopoDS_Shape> Generated(in TopoDS_Shape S)
     {
         NCollection_List<TopoDS_Shape> aList = InternalGenerated(S);
@@ -506,15 +508,15 @@ public sealed class BRepAlgo_NormalProjection
     /// <summary>True if the curve is a line or a conic.</summary>
     public bool IsElementary(Adaptor3d_Curve C)
     {
-        GeomAbs_CurveType type;
+        CurveKind type;
         type = C.GetType();
         switch (type)
         {
-            case GeomAbs_Line:
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
+            case Line:
+            case Circle:
+            case Ellipse:
+            case Hyperbola:
+            case Parabola:
                 return true;
             default:
                 return false;

@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -18,7 +21,7 @@ namespace Occt;
 public static class TopOpeBRepTool_ShapeTool
 {
     /// <summary>The tolerance of a face, edge or vertex (0 for a null shape).</summary>
-    /// <exception cref="Standard_ProgramError">The shape is of another type.</exception>
+    /// <exception cref="ProgramErrorException">The shape is of another type.</exception>
     public static double Tolerance(in TopoDS_Shape S)
     {
         if (S.IsNull())
@@ -38,18 +41,18 @@ public static class TopOpeBRepTool_ShapeTool
                 tol = BRep_Tool.Tolerance(TopoDS.Vertex(S));
                 break;
             default:
-                throw new Standard_ProgramError("TopOpeBRepTool_ShapeTool : Shape has no tolerance");
+                throw new ProgramErrorException("TopOpeBRepTool_ShapeTool : Shape has no tolerance");
         }
         return tol;
     }
 
     /// <summary>The point of a vertex.</summary>
-    /// <exception cref="Standard_ProgramError">The shape is not a vertex.</exception>
-    public static gp_Pnt Pnt(in TopoDS_Shape S)
+    /// <exception cref="ProgramErrorException">The shape is not a vertex.</exception>
+    public static Point3D Pnt(in TopoDS_Shape S)
     {
         if (S.ShapeType() != TopAbs_VERTEX)
         {
-            throw new Standard_ProgramError("TopOpeBRepTool_ShapeTool::Pnt");
+            throw new ProgramErrorException("TopOpeBRepTool_ShapeTool::Pnt");
         }
         return BRep_Tool.Pnt(TopoDS.Vertex(S));
     }
@@ -104,7 +107,7 @@ public static class TopOpeBRepTool_ShapeTool
     /// <summary>The basis surface of the face's surface.</summary>
     public static Geom_Surface BASISSURFACE(in TopoDS_Face F)
     {
-        Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location _)!;
+        Geom_Surface S = BRep_Tool.Surface(F, out Placement _)!;
         return BASISSURFACE(S);
     }
 
@@ -165,7 +168,7 @@ public static class TopOpeBRepTool_ShapeTool
                                 ref double Vmin,
                                 ref double Vmax)
     {
-        Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location _)!;
+        Geom_Surface S = BRep_Tool.Surface(F, out Placement _)!;
         UVBOUNDS(S, ref UPeriodic, ref VPeriodic, ref Umin, ref Umax, ref Vmin, ref Vmax);
     }
 
@@ -173,7 +176,7 @@ public static class TopOpeBRepTool_ShapeTool
     public static void AdjustOnPeriodic(in TopoDS_Shape F, ref double u, ref double v)
     {
         TopoDS_Face FF = TopoDS.Face(F);
-        Geom_Surface Surf = BRep_Tool.Surface(FF, out TopLoc_Location _)!;
+        Geom_Surface Surf = BRep_Tool.Surface(FF, out Placement _)!;
 
         //  double Ufirst,Ulast,Vfirst,Vlast;
         bool isUperio, isVperio;
@@ -189,7 +192,7 @@ public static class TopOpeBRepTool_ShapeTool
         BRepTools.UVBounds(FF, out double UFfirst, out double UFlast, out double VFfirst, out double VFlast);
         _ = UFlast;
         _ = VFlast;
-        double tol = Precision.PConfusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         if (isUperio)
         {
@@ -200,7 +203,7 @@ public static class TopOpeBRepTool_ShapeTool
             //    ElCLib::AdjustPeriodic(UFfirst,UFfirst + Uperiod,tol,ubid,u);
             if (Math.Abs(u - UFfirst - Uperiod) > tol)
             {
-                u = ElCLib.InPeriod(u, UFfirst, UFfirst + Uperiod);
+                u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, UFfirst, UFfirst + Uperiod);
             }
         }
         if (isVperio)
@@ -212,7 +215,7 @@ public static class TopOpeBRepTool_ShapeTool
             //    ElCLib::AdjustPeriodic(VFfirst,VFfirst + Vperiod,tol,vbid,v);
             if (Math.Abs(v - VFfirst - Vperiod) > tol)
             {
-                v = ElCLib.InPeriod(v, VFfirst, VFfirst + Vperiod);
+                v = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, VFfirst, VFfirst + Vperiod);
             }
         }
     }
@@ -275,7 +278,7 @@ public static class TopOpeBRepTool_ShapeTool
     /// The parameter on the other side of the seam: for an edge closed on the face with an iso-line pcurve, the
     /// parameter shifted by the surface's period.
     /// </summary>
-    /// <exception cref="Standard_ProgramError">The edge has no pcurve on the face.</exception>
+    /// <exception cref="ProgramErrorException">The edge has no pcurve on the face.</exception>
     public static double PeriodizeParameter(double par, in TopoDS_Shape EE, in TopoDS_Shape FF)
     {
         double periopar = par;
@@ -287,7 +290,7 @@ public static class TopOpeBRepTool_ShapeTool
         TopoDS_Edge E = TopoDS.Edge(EE);
         TopoDS_Face F = TopoDS.Face(FF);
 
-        Geom_Surface Surf = BRep_Tool.Surface(F, out TopLoc_Location _)!;
+        Geom_Surface Surf = BRep_Tool.Surface(F, out Placement _)!;
         bool isUperio = Surf.IsUPeriodic();
         bool isVperio = Surf.IsVPeriodic();
         if (!isUperio && !isVperio)
@@ -300,21 +303,21 @@ public static class TopOpeBRepTool_ShapeTool
         Geom2d_Curve? PC = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out double _, out double _, out double _);
         if (PC is null)
         {
-            throw new Standard_ProgramError("ShapeTool::PeriodizeParameter : no 2d curve");
+            throw new ProgramErrorException("ShapeTool::PeriodizeParameter : no 2d curve");
         }
 
         Type TheType = PC.DynamicType();
         if (TheType == typeof(Geom2d_Line))
         {
             Geom2d_Line HL = (Geom2d_Line)PC;
-            gp_Dir2d D = HL.Direction();
-            double tol = Precision.Angular();
+            Direction2D D = HL.Direction();
+            double tol = global::Kerf.Engine.Foundation.Precision.Angular();
             bool isoU = false, isoV = false;
-            if (D.IsParallel(new gp_Dir2d(gp_Dir2d.D.Y), tol))
+            if (D.IsParallel(new Direction2D(Direction2D.D.Y), tol))
             {
                 isoU = true;
             }
-            else if (D.IsParallel(new gp_Dir2d(gp_Dir2d.D.X), tol))
+            else if (D.IsParallel(new Direction2D(Direction2D.D.X), tol))
             {
                 isoV = true;
             }
@@ -394,39 +397,39 @@ public static class TopOpeBRepTool_ShapeTool
     public static bool SurfacesSameOriented(BRepAdaptor_Surface S1, BRepAdaptor_Surface Sref)
     {
         BRepAdaptor_Surface S2 = Sref;
-        GeomAbs_SurfaceType ST1 = S1.GetType();
-        GeomAbs_SurfaceType ST2 = S2.GetType();
+        SurfaceKind ST1 = S1.GetType();
+        SurfaceKind ST2 = S2.GetType();
 
         bool so = true;
 
-        if (ST1 == GeomAbs_Plane && ST2 == GeomAbs_Plane)
+        if (ST1 == Plane && ST2 == Plane)
         {
             double u1 = S1.FirstUParameter();
             double v1 = S1.FirstVParameter();
-            S1.D1(u1, v1, out gp_Pnt p1, out gp_Vec d1u, out gp_Vec d1v);
+            S1.D1(u1, v1, out Point3D p1, out Vector3D d1u, out Vector3D d1v);
             _ = p1;
-            gp_Vec n1 = d1u.Crossed(d1v);
+            Vector3D n1 = d1u.Crossed(d1v);
 
             double u2 = S2.FirstUParameter();
             double v2 = S2.FirstVParameter();
-            S2.D1(u2, v2, out gp_Pnt p2, out gp_Vec d2u, out gp_Vec d2v);
+            S2.D1(u2, v2, out Point3D p2, out Vector3D d2u, out Vector3D d2v);
             _ = p2;
-            gp_Vec n2 = d2u.Crossed(d2v);
+            Vector3D n2 = d2u.Crossed(d2v);
 
             double d = n1.Dot(n2);
             so = (d > 0.0);
         }
-        else if (ST1 == GeomAbs_Cylinder && ST2 == GeomAbs_Cylinder)
+        else if (ST1 == SurfaceKind.Cylinder && ST2 == SurfaceKind.Cylinder)
         {
             // On peut projeter n'importe quel point.
             // prenons donc l'origine
             double u1 = 0.0;
             double v1 = 0.0;
-            S1.D1(u1, v1, out gp_Pnt p1, out gp_Vec d1u, out gp_Vec d1v);
-            gp_Vec n1 = d1u.Crossed(d1v);
+            S1.D1(u1, v1, out Point3D p1, out Vector3D d1u, out Vector3D d1v);
+            Vector3D n1 = d1u.Crossed(d1v);
 
             Geom_Surface HS2 = S2.GeomSurfaceTransformed()!;
-            gp_Pnt2d p22d = new();
+            Point2D p22d = new();
             double dp2 = 0.0;
             bool ok = TopOpeBRepTool_PROJECT.FUN_tool_projPonS(p1, HS2, ref p22d, ref dp2);
             if (!ok)
@@ -436,9 +439,9 @@ public static class TopOpeBRepTool_ShapeTool
 
             double u2 = p22d.X();
             double v2 = p22d.Y();
-            S2.D1(u2, v2, out gp_Pnt p2, out gp_Vec d2u, out gp_Vec d2v);
+            S2.D1(u2, v2, out Point3D p2, out Vector3D d2u, out Vector3D d2v);
             _ = p2;
-            gp_Vec n2 = d2u.Crossed(d2v);
+            Vector3D n2 = d2u.Crossed(d2v);
 
             double d = n1.Dot(n2);
             so = (d > 0.0);
@@ -482,18 +485,18 @@ public static class TopOpeBRepTool_ShapeTool
     public static bool CurvesSameOriented(BRepAdaptor_Curve C1, BRepAdaptor_Curve Cref)
     {
         BRepAdaptor_Curve C2 = Cref;
-        GeomAbs_CurveType CT1 = C1.GetType();
-        GeomAbs_CurveType CT2 = C2.GetType();
+        CurveKind CT1 = C1.GetType();
+        CurveKind CT2 = C2.GetType();
         bool so = true;
 
-        if (CT1 == GeomAbs_Line && CT2 == GeomAbs_Line)
+        if (CT1 == Line && CT2 == Line)
         {
             double p1 = C1.FirstParameter();
-            gp_Dir t1 = new(), n1 = new();
+            Direction3D t1 = new(), n1 = new();
             double c1 = 0.0;
             EdgeData(C1, p1, ref t1, ref n1, ref c1);
             double p2 = C2.FirstParameter();
-            gp_Dir t2 = new(), n2 = new();
+            Direction3D t2 = new(), n2 = new();
             double c2 = 0.0;
             EdgeData(C2, p2, ref t2, ref n2, ref c2);
             double d = t1.Dot(t2);
@@ -536,9 +539,9 @@ public static class TopOpeBRepTool_ShapeTool
     /// The tangent <paramref name="T"/>, the normal <paramref name="N"/> (set only where the curvature is above the
     /// tolerance) and the curvature <paramref name="C"/> of the curve at <paramref name="P"/>; returns the angular tolerance.
     /// </summary>
-    public static double EdgeData(BRepAdaptor_Curve BAC, double P, ref gp_Dir T, ref gp_Dir N, ref double C)
+    public static double EdgeData(BRepAdaptor_Curve BAC, double P, ref Direction3D T, ref Direction3D N, ref double C)
     {
-        double tol = Precision.Angular();
+        double tol = global::Kerf.Engine.Foundation.Precision.Angular();
 
         BRepLProp_CLProps BL = new(BAC, P, 2, tol);
         BL.Tangent(out T);
@@ -558,7 +561,7 @@ public static class TopOpeBRepTool_ShapeTool
     }
 
     /// <summary>As the other overload, for the edge <paramref name="E"/>.</summary>
-    public static double EdgeData(in TopoDS_Shape E, double P, ref gp_Dir T, ref gp_Dir N, ref double C)
+    public static double EdgeData(in TopoDS_Shape E, double P, ref Direction3D T, ref Direction3D N, ref double C)
     {
         BRepAdaptor_Curve BAC = new(TopoDS.Edge(E));
         double d = EdgeData(BAC, P, ref T, ref N, ref C);
@@ -597,7 +600,7 @@ public static class TopOpeBRepTool_ShapeTool
     /// <summary>As the other overload, for the face's surface.</summary>
     public static double Resolution3d(in TopoDS_Face F, double Tol2d)
     {
-        Geom_Surface SU = BRep_Tool.Surface(F, out TopLoc_Location _)!;
+        Geom_Surface SU = BRep_Tool.Surface(F, out Placement _)!;
         double r = Resolution3d(SU, Tol2d);
         return r;
     }

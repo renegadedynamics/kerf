@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static OcctNet.DataExchange.Tests.MeshTestKit;
 
 namespace OcctNet.DataExchange.Tests;
@@ -71,8 +72,8 @@ public class XdeDocDocumentEditTests
     {
         var aDoc = new XdeDoc_Document();
         XdeDoc_Label aBox = aDoc.AddShape(Box(1, 1, 1));
-        var aRed = new Quantity_ColorRGBA(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED));
-        var aBlue = new Quantity_ColorRGBA(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_BLUE));
+        var aRed = new ColorWithAlpha(new Color(NameOfColor.NocRed));
+        var aBlue = new ColorWithAlpha(new Color(NameOfColor.NocBlue));
         XdeDoc_Label aRedLabel = aDoc.AddColor(aRed);
         Assert.Equal("0:1:2:1", aRedLabel.Entry());
         Assert.Equal(aRedLabel, aDoc.AddColor(aRed));

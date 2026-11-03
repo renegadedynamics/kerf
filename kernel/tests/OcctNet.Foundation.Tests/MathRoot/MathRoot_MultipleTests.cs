@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class MathRoot_Multiple
@@ -17,22 +19,22 @@ public class MathRoot_Multiple
     public void FindAllRoots_NoRoots()
     {
         // f(x) = x^2 + 1, no real roots
-        MathUtils.Polynomial aFunc = new([1.0, 0.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([1.0, 0.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -10.0, 10.0);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(0, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -10.0, 10.0);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(0, aResult.RootCount);
     }
 
     [Fact]
     public void FindAllRoots_SingleRoot()
     {
         // f(x) = x - 2, single root at x = 2
-        MathUtils.Polynomial aFunc = new([-2.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-2.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.0, 5.0);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(1, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.0, 5.0);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(1, aResult.RootCount);
         Assert.Equal(2.0, aResult.Roots[0], THE_TOLERANCE);
     }
 
@@ -40,11 +42,11 @@ public class MathRoot_Multiple
     public void FindAllRoots_TwoRoots()
     {
         // f(x) = x^2 - 4, roots at x = -2 and x = 2
-        MathUtils.Polynomial aFunc = new([-4.0, 0.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-4.0, 0.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -5.0, 5.0);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -5.0, 5.0);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
         Assert.Equal(-2.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Roots[1], THE_TOLERANCE);
     }
@@ -53,11 +55,11 @@ public class MathRoot_Multiple
     public void FindAllRoots_ThreeRoots()
     {
         // f(x) = (x - 1)(x - 2)(x - 3) = x^3 - 6x^2 + 11x - 6
-        MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.0, 4.0);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(3, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.0, 4.0);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(3, aResult.RootCount);
         Assert.Equal(1.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Roots[1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Roots[2], THE_TOLERANCE);
@@ -67,15 +69,15 @@ public class MathRoot_Multiple
     public void FindAllRoots_SineFunction()
     {
         // f(x) = sin(x), roots at 0, pi, 2*pi, 3*pi in [0, 10]
-        MathUtils.Sine aSine = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Sine aSine = new();
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 200;
         aConfig.FTolerance = 1e-10;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aSine, 0.0, 10.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(4, aResult.NbRoots()); // 0, pi, 2*pi, 3*pi
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aSine, 0.0, 10.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(4, aResult.RootCount); // 0, pi, 2*pi, 3*pi
 
         Assert.Equal(0.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(THE_PI, aResult.Roots[1], THE_TOLERANCE);
@@ -87,14 +89,14 @@ public class MathRoot_Multiple
     public void FindAllRoots_WithOffset()
     {
         // f(x) = x^2, find roots of f(x) - 4 = 0
-        MathUtils.Polynomial aFunc = new([0.0, 0.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([0.0, 0.0, 1.0]);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.Offset = 4.0;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -5.0, 5.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -5.0, 5.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
         Assert.Equal(-2.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Roots[1], THE_TOLERANCE);
     }
@@ -103,15 +105,15 @@ public class MathRoot_Multiple
     public void FindAllRoots_CloseRoots()
     {
         // f(x) = (x - 1)(x - 1.01) = x^2 - 2.01x + 1.01
-        MathUtils.Polynomial aFunc = new([1.01, -2.01, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([1.01, -2.01, 1.0]);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 500;
         aConfig.XTolerance = 1e-4;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.0, 2.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.0, 2.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
         Assert.Equal(1.0, aResult.Roots[0], 1e-3);
         Assert.Equal(1.01, aResult.Roots[1], 1e-3);
     }
@@ -120,13 +122,13 @@ public class MathRoot_Multiple
     public void FindAllRoots_NullFunction()
     {
         // f(x) = 0 (constant zero function)
-        MathUtils.Constant aFunc = new(0.0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Constant aFunc = new(0.0);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NullTolerance = 1e-10;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -1.0, 1.0, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -1.0, 1.0, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.IsAllNull);
     }
 
@@ -134,18 +136,18 @@ public class MathRoot_Multiple
     public void FindAllRoots_LambdaFunction()
     {
         // f(x) = cos(x) - 0.5, roots where cos(x) = 0.5
-        MathUtils.ScalarLambda aFunc = MathUtils.MakeScalar((double x, out double y) =>
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarLambda aFunc = global::Kerf.Engine.Numerics.Utilities.MathUtils.MakeScalar((double x, out double y) =>
         {
             y = Math.Cos(x) - 0.5;
             return true;
         });
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 100;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.0, 2.0 * THE_PI, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.0, 2.0 * THE_PI, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
         // cos(x) = 0.5 at x = pi/3 and x = 5*pi/3
         Assert.Equal(THE_PI / 3.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(5.0 * THE_PI / 3.0, aResult.Roots[1], THE_TOLERANCE);
@@ -159,11 +161,11 @@ public class MathRoot_Multiple
     public void FindAllRootsWithDerivative_ThreeRoots()
     {
         // f(x) = (x - 1)(x - 2)(x - 3)
-        MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(3, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(3, aResult.RootCount);
         Assert.Equal(1.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Roots[1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Roots[2], THE_TOLERANCE);
@@ -173,24 +175,24 @@ public class MathRoot_Multiple
     public void FindAllRootsWithDerivative_DoubleRoot()
     {
         // f(x) = (x - 2)^2 = x^2 - 4x + 4, double root at x = 2 (tangent root)
-        MathUtils.Polynomial aFunc = new([4.0, -4.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([4.0, -4.0, 1.0]);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 100;
         aConfig.FTolerance = 1e-8;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0, aConfig);
+        Assert.True(aResult.IsDone);
         // Should find the double root (or detect it as near-zero extremum)
-        Assert.True(aResult.NbRoots() >= 1);
-        if (aResult.NbRoots() > 0)
+        Assert.True(aResult.RootCount >= 1);
+        if (aResult.RootCount > 0)
         {
             Assert.Equal(2.0, aResult.Roots[0], 1e-4);
         }
     }
 
     // f(x) = sin(x) with derivative cos(x)
-    private sealed class SineWithDerivative : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private sealed class SineWithDerivative : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public bool Value(double theX, out double theY)
         {
@@ -211,12 +213,12 @@ public class MathRoot_Multiple
     {
         SineWithDerivative aSine = new();
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 200;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aSine, 0.0, 7.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(3, aResult.NbRoots()); // 0, pi, 2*pi
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aSine, 0.0, 7.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(3, aResult.RootCount); // 0, pi, 2*pi
 
         Assert.Equal(0.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(THE_PI, aResult.Roots[1], THE_TOLERANCE);
@@ -231,19 +233,19 @@ public class MathRoot_Multiple
     public void CompareWithReference_Polynomial()
     {
         // f(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3)
-        MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-6.0, 11.0, -6.0, 1.0]);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 50;
         aConfig.XTolerance = 1e-10;
         aConfig.FTolerance = 1e-10;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.5, 3.5, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(3, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.5, 3.5, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(3, aResult.RootCount);
 
         // Verify function value at roots is close to zero
-        for (int i = 0; i < aResult.NbRoots(); ++i)
+        for (int i = 0; i < aResult.RootCount; ++i)
         {
             aFunc.Value(aResult.Roots[i], out double aValue);
             Assert.Equal(0.0, aValue, 1e-9);
@@ -254,14 +256,14 @@ public class MathRoot_Multiple
     public void CompareWithReference_HigherDegree()
     {
         // f(x) = x^4 - 10x^2 + 9, roots at -3, -1, 1, 3
-        MathUtils.Polynomial aFunc = new([9.0, 0.0, -10.0, 0.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([9.0, 0.0, -10.0, 0.0, 1.0]);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 100;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -5.0, 5.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(4, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -5.0, 5.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(4, aResult.RootCount);
 
         Assert.Equal(-3.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(-1.0, aResult.Roots[1], THE_TOLERANCE);
@@ -269,7 +271,7 @@ public class MathRoot_Multiple
         Assert.Equal(3.0, aResult.Roots[3], THE_TOLERANCE);
     }
 
-    private sealed class ClusteredTangentialReference : math_FunctionWithDerivative
+    private sealed class ClusteredTangentialReference : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -295,7 +297,7 @@ public class MathRoot_Multiple
         }
     }
 
-    private struct ClusteredTangentialCallable : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    private struct ClusteredTangentialCallable : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         public readonly bool Value(double theX, out double theF)
         {
@@ -321,21 +323,21 @@ public class MathRoot_Multiple
         ClusteredTangentialReference aReferenceFunc = new();
         ClusteredTangentialCallable aCallableFunc = new();
 
-        math_FunctionRoots aReferenceRoots = new(aReferenceFunc, 0.99, 1.02, 4, 1.0e-8, 1.0e-12, 1.0e-12);
-        Assert.True(aReferenceRoots.IsDone());
-        Assert.False(aReferenceRoots.IsAllNull());
-        Assert.Equal(2, aReferenceRoots.NbSolutions());
+        FunctionRoots aReferenceRoots = new(aReferenceFunc, 0.99, 1.02, 4, 1.0e-8, 1.0e-12, 1.0e-12);
+        Assert.True(aReferenceRoots.IsDone);
+        Assert.False(aReferenceRoots.IsAllNull);
+        Assert.Equal(2, aReferenceRoots.SolutionCount);
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.NbSamples = 4;
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-12;
         aConfig.NullTolerance = 1.0e-12;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aCallableFunc, 0.99, 1.02, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aCallableFunc, 0.99, 1.02, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.False(aResult.IsAllNull);
-        Assert.Equal(2, aResult.NbRoots());
+        Assert.Equal(2, aResult.RootCount);
 
         Assert.Equal(aReferenceRoots.Value(1), aResult.Roots[0], 1.0e-8);
         Assert.Equal(aReferenceRoots.Value(2), aResult.Roots[1], 1.0e-8);
@@ -344,11 +346,11 @@ public class MathRoot_Multiple
     [Fact]
     public void FindAllRoots_ConvenienceOverload()
     {
-        MathUtils.Polynomial aFunc = new([-4.0, 0.0, 1.0]); // x^2 - 4
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([-4.0, 0.0, 1.0]); // x^2 - 4
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -5.0, 5.0, 50);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -5.0, 5.0, 50);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
         Assert.Equal(-2.0, aResult.Roots[0], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Roots[1], THE_TOLERANCE);
     }
@@ -357,15 +359,15 @@ public class MathRoot_Multiple
     public void FindAllRoots_Exponential()
     {
         // f(x) = exp(x) - 2, root at ln(2)
-        MathUtils.ScalarLambda aFunc = MathUtils.MakeScalar((double x, out double y) =>
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarLambda aFunc = global::Kerf.Engine.Numerics.Utilities.MathUtils.MakeScalar((double x, out double y) =>
         {
             y = Math.Exp(x) - 2.0;
             return true;
         });
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -1.0, 2.0, 50);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(1, aResult.NbRoots());
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -1.0, 2.0, 50);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(1, aResult.RootCount);
         Assert.Equal(Math.Log(2.0), aResult.Roots[0], THE_TOLERANCE);
     }
 
@@ -377,22 +379,22 @@ public class MathRoot_Multiple
     public void FindAllRootsWithDerivative_NegativeExtrema_BothProbeDirections()
     {
         // f(x) = -(x-1)(x-3); with offset 1: g(x) = -(x-2)^2, root at x=2 (double root at the extremum).
-        MathUtils.ScalarLambdaWithDerivative aFunc = MathUtils.MakeScalarWithDerivative((double theX, out double theY, out double theDY) =>
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarLambdaWithDerivative aFunc = global::Kerf.Engine.Numerics.Utilities.MathUtils.MakeScalarWithDerivative((double theX, out double theY, out double theDY) =>
         {
             theY = -(theX - 1.0) * (theX - 3.0);
             theDY = -2.0 * theX + 4.0;
             return true;
         });
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.Offset = 1.0;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbRoots() >= 1);
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 4.0, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.RootCount >= 1);
         // The root at x=2 should be found
         bool isFound = false;
-        for (int i = 0; i < aResult.NbRoots(); ++i)
+        for (int i = 0; i < aResult.RootCount; ++i)
         {
             if (Math.Abs(aResult.Roots[i] - 2.0) < THE_TOLERANCE)
             {
@@ -407,21 +409,21 @@ public class MathRoot_Multiple
     public void FindAllRootsWithDerivative_NegativeExtrema_AsymmetricRoots()
     {
         // f(x) = -sin(x) on [0, 2*pi]; with offset -0.5 roots where sin(x)=0.5: pi/6, 5*pi/6.
-        MathUtils.ScalarLambdaWithDerivative aFunc = MathUtils.MakeScalarWithDerivative((double theX, out double theY, out double theDY) =>
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarLambdaWithDerivative aFunc = global::Kerf.Engine.Numerics.Utilities.MathUtils.MakeScalarWithDerivative((double theX, out double theY, out double theDY) =>
         {
             theY = -Math.Sin(theX);
             theDY = -Math.Cos(theX);
             return true;
         });
 
-        MathRoot.MultipleConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleConfig aConfig = new();
         aConfig.Offset = -0.5;
         aConfig.FTolerance = 1.0e-12;
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 2.0 * THE_PI, aConfig);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(2, aResult.NbRoots());
-        if (aResult.NbRoots() == 2)
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRootsWithDerivative(aFunc, 0.0, 2.0 * THE_PI, aConfig);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(2, aResult.RootCount);
+        if (aResult.RootCount == 2)
         {
             Assert.Equal(THE_PI / 6.0, aResult.Roots[0], THE_TOLERANCE);
             Assert.Equal(5.0 * THE_PI / 6.0, aResult.Roots[1], THE_TOLERANCE);
@@ -436,15 +438,15 @@ public class MathRoot_Multiple
     public void FindAllRoots_ExactZeroAtSample()
     {
         // f(x) = x * (x - 1), roots at x=0 and x=1, both exact sample points.
-        MathUtils.Polynomial aFunc = new([0.0, -1.0, 1.0]);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Polynomial aFunc = new([0.0, -1.0, 1.0]);
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, 0.0, 2.0, 10);
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbRoots() >= 2);
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, 0.0, 2.0, 10);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.RootCount >= 2);
 
         bool isZeroFound = false;
         bool isOneFound = false;
-        for (int i = 0; i < aResult.NbRoots(); ++i)
+        for (int i = 0; i < aResult.RootCount; ++i)
         {
             if (Math.Abs(aResult.Roots[i]) < THE_TOLERANCE)
             {
@@ -463,18 +465,18 @@ public class MathRoot_Multiple
     public void FindAllRoots_ExactZeroWithSignChange()
     {
         // f(x) = x, single root at x=0.
-        MathUtils.ScalarLambda aFunc = MathUtils.MakeScalar((double theX, out double theY) =>
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarLambda aFunc = global::Kerf.Engine.Numerics.Utilities.MathUtils.MakeScalar((double theX, out double theY) =>
         {
             theY = theX;
             return true;
         });
 
-        MathRoot.MultipleResult aResult = MathRoot.FindAllRoots(aFunc, -1.0, 1.0, 10);
-        Assert.True(aResult.IsDone());
-        Assert.True(aResult.NbRoots() >= 1);
+        global::Kerf.Engine.Numerics.Roots.MathRoot.MultipleResult aResult = global::Kerf.Engine.Numerics.Roots.MathRoot.FindAllRoots(aFunc, -1.0, 1.0, 10);
+        Assert.True(aResult.IsDone);
+        Assert.True(aResult.RootCount >= 1);
 
         bool isFound = false;
-        for (int i = 0; i < aResult.NbRoots(); ++i)
+        for (int i = 0; i < aResult.RootCount; ++i)
         {
             if (Math.Abs(aResult.Roots[i]) < THE_TOLERANCE)
             {

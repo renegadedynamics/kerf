@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity EulerAngles
 /// </summary>
-public class StepBasic_EulerAngles : Standard_Transient
+public class StepBasic_EulerAngles : Transient
 {
     private NCollection_HArray1<double> theAngles;
 

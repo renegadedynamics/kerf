@@ -4,7 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 
@@ -19,7 +22,7 @@ namespace Occt;
 /// (shapes, wires) are frozen; geometry given is never changed (see
 /// <see cref="ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(Geom_BSplineCurve?, ref NCollection_HSequence{Geom_BoundedCurve}?)"/>).
 /// </remarks>
-public class ShapeAlgo_AlgoContainer : Standard_Transient
+public class ShapeAlgo_AlgoContainer : Transient
 {
     private ShapeAlgo_ToolContainer? myTC;
 
@@ -122,7 +125,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
         // Puis on approxime chaque "partie" de BSpline
 
         int NbPoles = bspline.NbPoles();
-        NCollection_Array1<gp_Pnt> Poles = bspline.InternalPoles();
+        NCollection_Array1<Point3D> Poles = bspline.InternalPoles();
         NCollection_Array1<double> Weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> Knots = bspline.InternalKnots();
         NCollection_Array1<int> Mults = bspline.InternalMultiplicities();
@@ -134,7 +137,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
         I1 = 1;
         for (int ipole = 1; ipole < NbPoles; ipole++)
         {
-            if (Poles[ipole].IsEqual(Poles[ipole + 1], Occt.Precision.Confusion()))
+            if (Poles[ipole].IsEqual(Poles[ipole + 1], Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 if (jpole == 1)
                 {
@@ -142,7 +145,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                 }
                 else
                 {
-                    var newPoles = new NCollection_Array1<gp_Pnt>(1, jpole);
+                    var newPoles = new NCollection_Array1<Point3D>(1, jpole);
                     var newWeigs = new NCollection_Array1<double>(1, jpole);
                     newWeigs.Init(1.0);
                     int NbNew = jpole - deg + 1;
@@ -186,7 +189,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
             jpole = mycurve.NbPoles();
             if (jpole > 2)
             {
-                NCollection_Array1<gp_Pnt> newP = mycurve.InternalPoles();
+                NCollection_Array1<Point3D> newP = mycurve.InternalPoles();
                 var R = new IntSurf_LineOn2S();
                 double u1, v1, u2, v2;
                 u1 = v1 = 0.0;
@@ -198,7 +201,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                     R.Add(POn2S);
                 }
                 var theapp3d = new GeomInt_WLApprox();
-                double Tol = Occt.Precision.Approximation();
+                double Tol = Kerf.Engine.Foundation.Precision.Approximation();
                 theapp3d.SetParameters(Tol, Tol, 4, 8, 0, 30, true);
                 var WL = new IntPatch_WLine(R, false);
                 int indicemin = 1;
@@ -216,7 +219,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                 {
                     AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(1);
                     int nbpoles = mbspc.NbPoles();
-                    var tpoles = new NCollection_Array1<gp_Pnt>(1, nbpoles);
+                    var tpoles = new NCollection_Array1<Point3D>(1, nbpoles);
                     mbspc.Curve(1, tpoles);
                     modifCurve = new Geom_BSplineCurve(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
                 }
@@ -254,7 +257,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
         // une BSpline = somme des BSplines traitees
 
         int NbPoles = bspline.NbPoles();
-        NCollection_Array1<gp_Pnt2d> Poles = bspline.InternalPoles();
+        NCollection_Array1<Point2D> Poles = bspline.InternalPoles();
         NCollection_Array1<double> Weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> Knots = bspline.InternalKnots();
         NCollection_Array1<int> Mults = bspline.InternalMultiplicities();
@@ -266,7 +269,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
         I1 = 1;
         for (int ipole = 1; ipole < NbPoles; ipole++)
         {
-            if (Poles[ipole].IsEqual(Poles[ipole + 1], Occt.Precision.PConfusion()))
+            if (Poles[ipole].IsEqual(Poles[ipole + 1], Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 if (jpole == 1)
                 {
@@ -274,7 +277,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                 }
                 else
                 {
-                    var newPoles = new NCollection_Array1<gp_Pnt2d>(1, jpole);
+                    var newPoles = new NCollection_Array1<Point2D>(1, jpole);
                     var newWeigs = new NCollection_Array1<double>(1, jpole);
                     newWeigs.Init(1.0);
                     int NbNew = jpole - deg + 1;
@@ -318,8 +321,8 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
             jpole = mycurve.NbPoles();
             if (jpole > 10)
             {
-                var P = new NCollection_Array1<gp_Pnt>(1, jpole);
-                NCollection_Array1<gp_Pnt2d> newP = mycurve.InternalPoles();
+                var P = new NCollection_Array1<Point3D>(1, jpole);
+                NCollection_Array1<Point2D> newP = mycurve.InternalPoles();
                 var R = new IntSurf_LineOn2S();
                 double u2, v2;
                 u2 = v2 = 1.0;
@@ -330,7 +333,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                     R.Add(POn2S);
                 }
                 var theapp3d = new GeomInt_WLApprox();
-                double Tol = Occt.Precision.PApproximation();
+                double Tol = Kerf.Engine.Foundation.Precision.PApproximation();
                 theapp3d.SetParameters(Tol, Tol, 4, 8, 0, 30, true);
                 var WL = new IntPatch_WLine(R, false);
                 int indicemin = 1;
@@ -348,7 +351,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                 {
                     AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(1);
                     int nbpoles = mbspc.NbPoles();
-                    var tpoles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+                    var tpoles = new NCollection_Array1<Point2D>(1, nbpoles);
                     mbspc.Curve(1, tpoles);
                     modifCurve = new Geom2d_BSplineCurve(tpoles, mbspc.Knots(), mbspc.Multiplicities(), mbspc.Degree());
                 }
@@ -381,8 +384,8 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
     {
         var sdc = new ShapeUpgrade_ShapeDivideContinuity(shape);
         sdc.SetTolerance(tol);
-        sdc.SetBoundaryCriterion(GeomAbs_C1);
-        sdc.SetSurfaceCriterion(GeomAbs_C1);
+        sdc.SetBoundaryCriterion(C1);
+        sdc.SetSurfaceCriterion(C1);
         sdc.Perform();
         return sdc.Result();
     }
@@ -395,8 +398,8 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                                                       UL,
                                                       VF,
                                                       VL,
-                                                      Occt.Precision.Confusion(),
-                                                      GeomAbs_C1,
+                                                      Kerf.Engine.Foundation.Precision.Confusion(),
+                                                      C1,
                                                       100,
                                                       Geom_BSplineSurface.MaxDegree());
     }
@@ -415,7 +418,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
         wireOut2 = new TopoDS_Wire();
         TopoDS_Iterator Cook = new(), Perry = new();
         TopoDS_Edge edge1, edge2;
-        TopLoc_Location loc1, loc2;
+        Placement loc1, loc2;
         //  BRepBuilderAPI_MakeWire makeWire1, makeWire2;
         var makeWire1 = new ShapeExtend_WireData();
         var makeWire2 = new ShapeExtend_WireData();
@@ -457,7 +460,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
             crv2 = BRep_Tool.Curve(edge2, out loc2, out first2, out last2);
             length2 += last2 - first2;
         }
-        double epsilon = Occt.Precision.PConfusion() * (length1 + length2);
+        double epsilon = Kerf.Engine.Foundation.Precision.PConfusion() * (length1 + length2);
         if (nEdges1 == 1 && nEdges2 == 1)
         {
             wireOut1 = wireIn11;
@@ -640,7 +643,7 @@ public class ShapeAlgo_AlgoContainer : Standard_Transient
                                                             double First,
                                                             double Last,
                                                             double Tol3d,
-                                                            GeomAbs_Shape Continuity,
+                                                            Continuity Continuity,
                                                             int MaxSegments,
                                                             int MaxDegree)
     {

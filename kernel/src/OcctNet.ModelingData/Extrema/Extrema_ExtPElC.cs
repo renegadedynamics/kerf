@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -31,19 +39,19 @@ public class Extrema_ExtPElC
     }
 
     /// <summary>The extremum distance between the point P and the segment [Uinf,Usup] of the line L.</summary>
-    public Extrema_ExtPElC(in gp_Pnt P, in gp_Lin L, double Tol, double Uinf, double Usup) => Perform(P, L, Tol, Uinf, Usup);
+    public Extrema_ExtPElC(in Point3D P, in Line3D L, double Tol, double Uinf, double Usup) => Perform(P, L, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt P, in gp_Lin L, double Tol, double Uinf, double Usup)
+    public void Perform(in Point3D P, in Line3D L, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
-        gp_Vec V1 = new(L.Direction());
-        gp_Pnt OR = L.Location();
-        gp_Vec V = new(OR, P);
+        Vector3D V1 = new(L.Direction());
+        Point3D OR = L.Location();
+        Vector3D V = new(OR, P);
         double Mydist = V1.Dot(V);
         if ((Mydist >= Uinf - Tol) && (Mydist <= Usup + Tol))
         {
-            gp_Pnt MyP = OR.Translated(Mydist * V1);
+            Point3D MyP = OR.Translated(Mydist * V1);
             Extrema_POnCurv MyPOnCurve = new(Mydist, MyP);
             mySqDist[0] = P.SquareDistance(MyP);
             myPoint[0] = MyPOnCurve;
@@ -59,7 +67,7 @@ public class Extrema_ExtPElC
     /// endpoint of the segment. Uinf must be in [0, 2.PI] and Usup &gt; Uinf; only the solutions in
     /// [Uinf, Uinf+2.PI[ are computed.
     /// </summary>
-    public Extrema_ExtPElC(in gp_Pnt P, in gp_Circ C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC(in Point3D P, in Circle3D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -83,29 +91,29 @@ public class Extrema_ExtPElC
              Us2 corresponds to the maximum.
       3- Calculate the extrema in [Uinf,Usup].
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Circ C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point3D P, in Circle3D C, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
 
         // 1- Projection of the point P in the plane of circle -> Pp ...
 
-        gp_Pnt O = C.Location();
-        gp_Vec Axe = new(C.Axis().Direction());
-        gp_Vec Trsl = Axe.Multiplied(-(new gp_Vec(O, P).Dot(Axe)));
-        gp_Pnt Pp = P.Translated(Trsl);
+        Point3D O = C.Location();
+        Vector3D Axe = new(C.Axis().Direction());
+        Vector3D Trsl = Axe.Multiplied(-(new Vector3D(O, P).Dot(Axe)));
+        Point3D Pp = P.Translated(Trsl);
 
         // 2- Calculate u solutions in [0.,2.*PI] ...
 
-        gp_Vec OPp = new(O, Pp);
+        Vector3D OPp = new(O, Pp);
         if (OPp.Magnitude() < Tol)
         {
             return;
         }
         Span<double> Usol = stackalloc double[2];
-        Usol[0] = C.XAxis().Direction().AngleWithRef(new gp_Dir(OPp), new gp_Dir(Axe)); // -M_PI<U1<M_PI
+        Usol[0] = C.XAxis().Direction().AngleWithRef(new Direction3D(OPp), new Direction3D(Axe)); // -M_PI<U1<M_PI
 
-        double aAngTol = Precision.Angular();
+        double aAngTol = global::Kerf.Engine.Foundation.Precision.Angular();
         if (Usol[0] + M_PI < aAngTol)
         {
             Usol[0] = -M_PI;
@@ -121,14 +129,14 @@ public class Extrema_ExtPElC
         // double TolU = Tol*C.Radius();
         double TolU, aR;
         aR = C.Radius();
-        TolU = Precision.Infinite();
-        if (aR > gp.Resolution())
+        TolU = global::Kerf.Engine.Foundation.Precision.Infinite();
+        if (aR > Constants.Resolution())
         {
             TolU = Tol / aR;
         }
         //
-        ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, TolU, ref myuinf, ref Usol[0]);
-        ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, TolU, ref myuinf, ref Usol[1]);
+        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, TolU, ref myuinf, ref Usol[0]);
+        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, TolU, ref myuinf, ref Usol[1]);
         if (((Usol[0] - 2 * M_PI - Uinf) < TolU) && ((Usol[0] - 2 * M_PI - Uinf) > -TolU))
         {
             Usol[0] = Uinf;
@@ -140,14 +148,14 @@ public class Extrema_ExtPElC
 
         // 3- Calculate extrema in [Umin,Umax] ...
 
-        gp_Pnt Cu;
+        Point3D Cu;
         double Us;
         for (int NoSol = 0; NoSol <= 1; NoSol++)
         {
             Us = Usol[NoSol];
             if (((Uinf - Us) < TolU) && ((Us - Usup) < TolU))
             {
-                Cu = ElCLib.Value(Us, C);
+                Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, C);
                 mySqDist[myNbExt] = Cu.SquareDistance(P);
                 myIsMin[myNbExt] = (NoSol == 0);
                 myPoint[myNbExt] = new Extrema_POnCurv(Us, Cu);
@@ -162,7 +170,7 @@ public class Extrema_ExtPElC
     /// determine if the point is on the axis of the ellipse and the radii are equal (infinite solutions, IsDone
     /// false).
     /// </summary>
-    public Extrema_ExtPElC(in gp_Pnt P, in gp_Elips C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC(in Point3D P, in Ellipse3D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -182,24 +190,24 @@ public class Extrema_ExtPElC
                         (B**2-A**2)*Cos*Sin - B*Y*Cos + A*X*Sin = 0.
          Use algorithm math_TrigonometricFunctionRoots to solve this equation.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Elips C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point3D P, in Ellipse3D C, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
 
         // 1- Projection of point P in the plane of the ellipse -> Pp ...
 
-        gp_Pnt O = C.Location();
-        gp_Vec Axe = new(C.Axis().Direction());
-        gp_Vec Trsl = Axe.Multiplied(-(new gp_Vec(O, P).Dot(Axe)));
-        gp_Pnt Pp = P.Translated(Trsl);
+        Point3D O = C.Location();
+        Vector3D Axe = new(C.Axis().Direction());
+        Vector3D Trsl = Axe.Multiplied(-(new Vector3D(O, P).Dot(Axe)));
+        Point3D Pp = P.Translated(Trsl);
 
         // 2- Calculation of solutions ...
 
         int NoSol, NbSol;
         double A = C.MajorRadius();
         double B = C.MinorRadius();
-        gp_Vec OPp = new(O, Pp);
+        Vector3D OPp = new(O, Pp);
         double OPpMagn = OPp.Magnitude();
         if (OPpMagn < Tol)
         {
@@ -208,8 +216,8 @@ public class Extrema_ExtPElC
                 return;
             }
         }
-        double X = OPp.Dot(new gp_Vec(C.XAxis().Direction()));
-        double Y = OPp.Dot(new gp_Vec(C.YAxis().Direction()));
+        double X = OPp.Dot(new Vector3D(C.XAxis().Direction()));
+        double Y = OPp.Dot(new Vector3D(C.YAxis().Direction()));
 
         double ko2 = (B * B - A * A) / 2.0, ko3 = -B * Y, ko4 = A * X;
         if (Math.Abs(ko3) < 1.0e-16 * Max(Math.Abs(ko2), Math.Abs(ko3)))
@@ -218,22 +226,22 @@ public class Extrema_ExtPElC
         }
 
         //  math_TrigonometricFunctionRoots Sol(0.,(B*B-A*A)/2.,-B*Y,A*X,0.,Uinf,Usup);
-        math_TrigonometricFunctionRoots Sol = new(0.0, ko2, ko3, ko4, 0.0, Uinf, Usup);
+        TrigonometricFunctionRoots Sol = new(0.0, ko2, ko3, ko4, 0.0, Uinf, Usup);
 
-        if (!Sol.IsDone())
+        if (!Sol.IsDone)
         {
             return;
         }
-        gp_Pnt Cu;
+        Point3D Cu;
         double Us;
-        NbSol = Sol.NbSolutions();
+        NbSol = Sol.SolutionCount;
         for (NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             Us = Sol.Value(NoSol);
-            Cu = ElCLib.Value(Us, C);
+            Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, C);
             mySqDist[myNbExt] = Cu.SquareDistance(P);
             myPoint[myNbExt] = new Extrema_POnCurv(Us, Cu);
-            Cu = ElCLib.Value(Us + 0.1, C);
+            Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us + 0.1, C);
             myIsMin[myNbExt] = mySqDist[myNbExt] < Cu.SquareDistance(P);
             myNbExt++;
         }
@@ -244,7 +252,7 @@ public class Extrema_ExtPElC
     /// The extremum distances between the point P and the segment [Uinf,Usup] of the hyperbola C. Two solutions u
     /// and v are identical when dist(C(u),C(v)) &lt; Tol.
     /// </summary>
-    public Extrema_ExtPElC(in gp_Pnt P, in gp_Hypr C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC(in Point3D P, in Hyperbola3D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -274,39 +282,39 @@ public class Extrema_ExtPElC
                 ((R**2+r**2)/4.)        = 0.
       Use algorithm math_DirectPolynomialRoots to solve this equation by v.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Hypr C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point3D P, in Hyperbola3D C, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
 
         // 1- Projection of point P in the plane of hyperbola -> Pp ...
 
-        gp_Pnt O = C.Location();
-        gp_Vec Axe = new(C.Axis().Direction());
-        gp_Vec Trsl = Axe.Multiplied(-(new gp_Vec(O, P).Dot(Axe)));
-        gp_Pnt Pp = P.Translated(Trsl);
+        Point3D O = C.Location();
+        Vector3D Axe = new(C.Axis().Direction());
+        Vector3D Trsl = Axe.Multiplied(-(new Vector3D(O, P).Dot(Axe)));
+        Point3D Pp = P.Translated(Trsl);
 
         // 2- Calculation of solutions ...
 
         double Tol2 = Tol * Tol;
         double R = C.MajorRadius();
         double r = C.MinorRadius();
-        gp_Vec OPp = new(O, Pp);
-        double X = OPp.Dot(new gp_Vec(C.XAxis().Direction()));
-        double Y = OPp.Dot(new gp_Vec(C.YAxis().Direction()));
+        Vector3D OPp = new(O, Pp);
+        double X = OPp.Dot(new Vector3D(C.XAxis().Direction()));
+        double Y = OPp.Dot(new Vector3D(C.YAxis().Direction()));
 
         double C1 = (R * R + r * r) / 4.0;
-        math_DirectPolynomialRoots Sol = new(C1, -(X * R + Y * r) / 2.0, 0.0, (X * R - Y * r) / 2.0, -C1);
-        if (!Sol.IsDone())
+        DirectPolynomialRoots Sol = new(C1, -(X * R + Y * r) / 2.0, 0.0, (X * R - Y * r) / 2.0, -C1);
+        if (!Sol.IsDone)
         {
             return;
         }
-        gp_Pnt Cu;
+        Point3D Cu;
         double Us, Vs;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         bool DejaEnr;
         int NoExt;
-        Span<gp_Pnt> TbExt = [new(), new(), new(), new()];
+        Span<Point3D> TbExt = [new(), new(), new(), new()];
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             Vs = Sol.Value(NoSol);
@@ -315,7 +323,7 @@ public class Extrema_ExtPElC
                 Us = Math.Log(Vs);
                 if ((Us >= Uinf) && (Us <= Usup))
                 {
-                    Cu = ElCLib.Value(Us, C);
+                    Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, C);
                     DejaEnr = false;
                     for (NoExt = 0; NoExt < myNbExt; NoExt++)
                     {
@@ -329,7 +337,7 @@ public class Extrema_ExtPElC
                     {
                         TbExt[myNbExt] = Cu;
                         mySqDist[myNbExt] = Cu.SquareDistance(P);
-                        myIsMin[myNbExt] = mySqDist[myNbExt] < P.SquareDistance(ElCLib.Value(Us + 1, C));
+                        myIsMin[myNbExt] = mySqDist[myNbExt] < P.SquareDistance(global::Kerf.Engine.Geometry.ElCLib.Value(Us + 1, C));
                         myPoint[myNbExt] = new Extrema_POnCurv(Us, Cu);
                         myNbExt++;
                     }
@@ -343,7 +351,7 @@ public class Extrema_ExtPElC
     /// The extremum distances between the point P and the segment [Uinf,Usup] of the parabola C. Two solutions are
     /// identical when their points are within <see cref="Precision.Confusion"/>; Tol is not used.
     /// </summary>
-    public Extrema_ExtPElC(in gp_Pnt P, in gp_Parab C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC(in Point3D P, in Parabola3D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
     /*-----------------------------------------------------------------------------
     Function:
@@ -363,7 +371,7 @@ public class Extrema_ExtPElC
                         (1./(4.*F)) * U**3 + (2.*F-X) * U - 2*F*Y = 0.
         Use algorithm math_DirectPolynomialRoots to solve this equation by U.
     -----------------------------------------------------------------------------*/
-    public void Perform(in gp_Pnt P, in gp_Parab C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point3D P, in Parabola3D C, double Tol, double Uinf, double Usup)
     {
         _ = Tol; // OCCT: the tolerance is not used
         myDone = false;
@@ -371,38 +379,38 @@ public class Extrema_ExtPElC
 
         // 1- Projection of point P in the plane of the parabola -> Pp ...
 
-        gp_Pnt O = C.Location();
-        gp_Vec Axe = new(C.Axis().Direction());
-        gp_Vec Trsl = Axe.Multiplied(-(new gp_Vec(O, P).Dot(Axe)));
-        gp_Pnt Pp = P.Translated(Trsl);
+        Point3D O = C.Location();
+        Vector3D Axe = new(C.Axis().Direction());
+        Vector3D Trsl = Axe.Multiplied(-(new Vector3D(O, P).Dot(Axe)));
+        Point3D Pp = P.Translated(Trsl);
 
         // 2- Calculation of solutions ...
 
         double F = C.Focal();
-        gp_Vec OPp = new(O, Pp);
-        double X = OPp.Dot(new gp_Vec(C.XAxis().Direction()));
-        double Y = OPp.Dot(new gp_Vec(C.YAxis().Direction()));
-        math_DirectPolynomialRoots Sol = new(1.0 / (4.0 * F), 0.0, 2.0 * F - X, -2.0 * F * Y);
-        if (!Sol.IsDone())
+        Vector3D OPp = new(O, Pp);
+        double X = OPp.Dot(new Vector3D(C.XAxis().Direction()));
+        double Y = OPp.Dot(new Vector3D(C.YAxis().Direction()));
+        DirectPolynomialRoots Sol = new(1.0 / (4.0 * F), 0.0, 2.0 * F - X, -2.0 * F * Y);
+        if (!Sol.IsDone)
         {
             return;
         }
-        gp_Pnt Cu;
+        Point3D Cu;
         double Us;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         bool DejaEnr;
         int NoExt;
-        Span<gp_Pnt> TbExt = [new(), new(), new()];
+        Span<Point3D> TbExt = [new(), new(), new()];
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             Us = Sol.Value(NoSol);
             if ((Us >= Uinf) && (Us <= Usup))
             {
-                Cu = ElCLib.Value(Us, C);
+                Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, C);
                 DejaEnr = false;
                 for (NoExt = 0; NoExt < myNbExt; NoExt++)
                 {
-                    if (TbExt[NoExt].SquareDistance(Cu) < Precision.SquareConfusion())
+                    if (TbExt[NoExt].SquareDistance(Cu) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         DejaEnr = true;
                         break;
@@ -412,7 +420,7 @@ public class Extrema_ExtPElC
                 {
                     TbExt[myNbExt] = Cu;
                     mySqDist[myNbExt] = Cu.SquareDistance(P);
-                    myIsMin[myNbExt] = mySqDist[myNbExt] < P.SquareDistance(ElCLib.Value(Us + 1, C));
+                    myIsMin[myNbExt] = mySqDist[myNbExt] < P.SquareDistance(global::Kerf.Engine.Geometry.ElCLib.Value(Us + 1, C));
                     myPoint[myNbExt] = new Extrema_POnCurv(Us, Cu);
                     myNbExt++;
                 }
@@ -429,7 +437,7 @@ public class Extrema_ExtPElC
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -439,7 +447,7 @@ public class Extrema_ExtPElC
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist[N - 1];
     }
@@ -449,7 +457,7 @@ public class Extrema_ExtPElC
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myIsMin[N - 1];
     }
@@ -459,7 +467,7 @@ public class Extrema_ExtPElC
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoint[N - 1];
     }

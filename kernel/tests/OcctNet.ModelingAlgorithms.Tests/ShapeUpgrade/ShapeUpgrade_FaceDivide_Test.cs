@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -31,7 +32,7 @@ public class ShapeUpgrade_FaceDivideTest
     public void Perform_Parallel_DoesNotCrash()
     {
         bool anError = false;
-        OSD_Parallel.For(0, 100, theIndex =>
+        OsdParallel.For(0, 100, theIndex =>
         {
             double aSize = 10.0 + theIndex * 0.1;
             TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(aSize, aSize + 5, aSize + 10).Shape();

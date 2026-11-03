@@ -4,7 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Geometry;
+
+using Occt;
+
+namespace Kerf.Engine.Geometry;
 
 /// <summary>
 /// Elementary Curves Library: points and derivatives of lines and conics (2D and 3D) at a parameter, the parameter
@@ -23,31 +27,31 @@ namespace Occt;
 /// </remarks>
 public static class ElCLib
 {
-    private const double PIPI = M_PI + M_PI;
+    private const double Pipi = M_PI + M_PI;
 
     // Threshold for angle normalization to avoid discontinuity near zero
-    private static readonly double NEGATIVE_RESOLUTION = -Precision.Computational();
+    private static readonly double NEGATIVE_RESOLUTION = -global::Kerf.Engine.Foundation.Precision.Computational();
 
     // Normalize angle to [0, 2*PI] range, with special handling
     // for values very close to zero to avoid discontinuity.
     // Preserves values at exactly 2*PI for proper seam handling.
-    private static void normalizeAngle(ref double theAngle)
+    private static void NormalizeAngle(ref double angle)
     {
-        while (theAngle < NEGATIVE_RESOLUTION)
+        while (angle < NEGATIVE_RESOLUTION)
         {
-            theAngle += PIPI;
+            angle += Pipi;
         }
 
         // Only normalize angles strictly greater than 2*PI (with small tolerance)
         // to preserve the closing seam value of exactly 2*PI
-        while (theAngle > PIPI * (1.0 + gp.Resolution()))
+        while (angle > Pipi * (1.0 + Constants.Resolution()))
         {
-            theAngle -= PIPI;
+            angle -= Pipi;
         }
 
-        if (theAngle < 0.0)
+        if (angle < 0.0)
         {
-            theAngle = 0.0;
+            angle = 0.0;
         }
     }
 
@@ -59,1181 +63,1181 @@ public static class ElCLib
     /// ULast is never returned. Because the period is computed as ULast - UFirst, rounding can make it differ
     /// slightly from the curve's true period; use with care.
     /// </remarks>
-    public static double InPeriod(double theU, double theUFirst, double theULast)
+    public static double InPeriod(double u, double uFirst, double uLast)
     {
-        if (Precision.IsInfinite(theU) || Precision.IsInfinite(theUFirst)
-            || Precision.IsInfinite(theULast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u) || global::Kerf.Engine.Foundation.Precision.IsInfinite(uFirst)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(uLast))
         { // In order to avoid FLT_Overflow exception
-            return theU;
+            return u;
         }
 
-        double aPeriod = theULast - theUFirst;
-        if (aPeriod < Epsilon(theULast))
+        double period = uLast - uFirst;
+        if (period < Epsilon(uLast))
         {
-            return theU;
+            return u;
         }
 
-        return Max(theUFirst, theU + aPeriod * Math.Ceiling((theUFirst - theU) / aPeriod));
+        return Max(uFirst, u + period * Math.Ceiling((uFirst - u) / period));
     }
 
     /// <summary>
     /// Adjusts U1 and U2 to the range [UFirst, ULast] of a periodic curve of period ULast - UFirst: U1 is brought
     /// into [UFirst, ULast], then U2 into [U1, U1 + period]. Preci is used to test the equalities.
     /// </summary>
-    public static void AdjustPeriodic(double UFirst, double ULast, double Preci, ref double U1, ref double U2)
+    public static void AdjustPeriodic(double uFirst, double uLast, double preci, ref double u1, ref double u2)
     {
-        if (Precision.IsInfinite(UFirst) || Precision.IsInfinite(ULast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(uLast))
         {
-            U1 = UFirst;
-            U2 = ULast;
+            u1 = uFirst;
+            u2 = uLast;
             return;
         }
 
-        double aPeriod = ULast - UFirst;
-        if (aPeriod < Epsilon(ULast))
+        double period = uLast - uFirst;
+        if (period < Epsilon(uLast))
         {
             // In order to avoid FLT_Overflow exception
             // (test bugs moddata_1 bug22757)
-            U1 = UFirst;
-            U2 = ULast;
+            u1 = uFirst;
+            u2 = uLast;
             return;
         }
 
-        U1 -= Math.Floor((U1 - UFirst) / aPeriod) * aPeriod;
-        if (ULast - U1 < Preci)
+        u1 -= Math.Floor((u1 - uFirst) / period) * period;
+        if (uLast - u1 < preci)
         {
-            U1 -= aPeriod;
+            u1 -= period;
         }
 
-        U2 -= Math.Floor((U2 - U1) / aPeriod) * aPeriod;
-        if (U2 - U1 < Preci)
+        u2 -= Math.Floor((u2 - u1) / period) * period;
+        if (u2 - u1 < preci)
         {
-            U2 += aPeriod;
+            u2 += period;
         }
     }
 
     // ElCLib.lxx: the gp curve overloads
 
     /// <summary>The point of parameter U on a line or conic.</summary>
-    public static gp_Pnt Value(double U, in gp_Lin L) => LineValue(U, L.Position());
+    public static Point3D Value(double u, in Line3D l) => LineValue(u, l.Position());
 
-    public static gp_Pnt Value(double U, in gp_Circ C) => CircleValue(U, C.Position(), C.Radius());
+    public static Point3D Value(double u, in Circle3D c) => CircleValue(u, c.Position(), c.Radius());
 
-    public static gp_Pnt Value(double U, in gp_Elips E) => EllipseValue(U, E.Position(), E.MajorRadius(), E.MinorRadius());
+    public static Point3D Value(double u, in Ellipse3D e) => EllipseValue(u, e.Position(), e.MajorRadius(), e.MinorRadius());
 
-    public static gp_Pnt Value(double U, in gp_Hypr H) => HyperbolaValue(U, H.Position(), H.MajorRadius(), H.MinorRadius());
+    public static Point3D Value(double u, in Hyperbola3D h) => HyperbolaValue(u, h.Position(), h.MajorRadius(), h.MinorRadius());
 
-    public static gp_Pnt Value(double U, in gp_Parab Prb) => ParabolaValue(U, Prb.Position(), Prb.Focal());
+    public static Point3D Value(double u, in Parabola3D prb) => ParabolaValue(u, prb.Position(), prb.Focal());
 
     /// <summary>The point P of parameter U and the first derivative V1.</summary>
-    public static void D1(double U, in gp_Lin L, out gp_Pnt P, out gp_Vec V1) => LineD1(U, L.Position(), out P, out V1);
+    public static void D1(double u, in Line3D l, out Point3D p, out Vector3D v1) => LineD1(u, l.Position(), out p, out v1);
 
-    public static void D1(double U, in gp_Circ C, out gp_Pnt P, out gp_Vec V1)
-        => CircleD1(U, C.Position(), C.Radius(), out P, out V1);
+    public static void D1(double u, in Circle3D c, out Point3D p, out Vector3D v1)
+        => CircleD1(u, c.Position(), c.Radius(), out p, out v1);
 
-    public static void D1(double U, in gp_Elips E, out gp_Pnt P, out gp_Vec V1)
-        => EllipseD1(U, E.Position(), E.MajorRadius(), E.MinorRadius(), out P, out V1);
+    public static void D1(double u, in Ellipse3D e, out Point3D p, out Vector3D v1)
+        => EllipseD1(u, e.Position(), e.MajorRadius(), e.MinorRadius(), out p, out v1);
 
-    public static void D1(double U, in gp_Hypr H, out gp_Pnt P, out gp_Vec V1)
-        => HyperbolaD1(U, H.Position(), H.MajorRadius(), H.MinorRadius(), out P, out V1);
+    public static void D1(double u, in Hyperbola3D h, out Point3D p, out Vector3D v1)
+        => HyperbolaD1(u, h.Position(), h.MajorRadius(), h.MinorRadius(), out p, out v1);
 
-    public static void D1(double U, in gp_Parab Prb, out gp_Pnt P, out gp_Vec V1)
-        => ParabolaD1(U, Prb.Position(), Prb.Focal(), out P, out V1);
+    public static void D1(double u, in Parabola3D prb, out Point3D p, out Vector3D v1)
+        => ParabolaD1(u, prb.Position(), prb.Focal(), out p, out v1);
 
     /// <summary>The point P of parameter U and the first and second derivatives V1 and V2.</summary>
-    public static void D2(double U, in gp_Circ C, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
-        => CircleD2(U, C.Position(), C.Radius(), out P, out V1, out V2);
+    public static void D2(double u, in Circle3D c, out Point3D p, out Vector3D v1, out Vector3D v2)
+        => CircleD2(u, c.Position(), c.Radius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Elips E, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
-        => EllipseD2(U, E.Position(), E.MajorRadius(), E.MinorRadius(), out P, out V1, out V2);
+    public static void D2(double u, in Ellipse3D e, out Point3D p, out Vector3D v1, out Vector3D v2)
+        => EllipseD2(u, e.Position(), e.MajorRadius(), e.MinorRadius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Hypr H, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
-        => HyperbolaD2(U, H.Position(), H.MajorRadius(), H.MinorRadius(), out P, out V1, out V2);
+    public static void D2(double u, in Hyperbola3D h, out Point3D p, out Vector3D v1, out Vector3D v2)
+        => HyperbolaD2(u, h.Position(), h.MajorRadius(), h.MinorRadius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Parab Prb, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
-        => ParabolaD2(U, Prb.Position(), Prb.Focal(), out P, out V1, out V2);
+    public static void D2(double u, in Parabola3D prb, out Point3D p, out Vector3D v1, out Vector3D v2)
+        => ParabolaD2(u, prb.Position(), prb.Focal(), out p, out v1, out v2);
 
     /// <summary>The point P of parameter U and the first, second and third derivatives V1, V2 and V3.</summary>
-    public static void D3(double U, in gp_Circ C, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
-        => CircleD3(U, C.Position(), C.Radius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Circle3D c, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
+        => CircleD3(u, c.Position(), c.Radius(), out p, out v1, out v2, out v3);
 
-    public static void D3(double U, in gp_Elips E, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
-        => EllipseD3(U, E.Position(), E.MajorRadius(), E.MinorRadius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Ellipse3D e, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
+        => EllipseD3(u, e.Position(), e.MajorRadius(), e.MinorRadius(), out p, out v1, out v2, out v3);
 
-    public static void D3(double U, in gp_Hypr H, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
-        => HyperbolaD3(U, H.Position(), H.MajorRadius(), H.MinorRadius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Hyperbola3D h, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
+        => HyperbolaD3(u, h.Position(), h.MajorRadius(), h.MinorRadius(), out p, out v1, out v2, out v3);
 
     /// <summary>The derivative of order N (greater than 0) at the point of parameter U.</summary>
-    public static gp_Vec DN(double U, in gp_Lin L, int N) => LineDN(U, L.Position(), N);
+    public static Vector3D DN(double u, in Line3D l, int n) => LineDN(u, l.Position(), n);
 
-    public static gp_Vec DN(double U, in gp_Circ C, int N) => CircleDN(U, C.Position(), C.Radius(), N);
+    public static Vector3D DN(double u, in Circle3D c, int n) => CircleDN(u, c.Position(), c.Radius(), n);
 
-    public static gp_Vec DN(double U, in gp_Elips E, int N)
-        => EllipseDN(U, E.Position(), E.MajorRadius(), E.MinorRadius(), N);
+    public static Vector3D DN(double u, in Ellipse3D e, int n)
+        => EllipseDN(u, e.Position(), e.MajorRadius(), e.MinorRadius(), n);
 
-    public static gp_Vec DN(double U, in gp_Hypr H, int N)
-        => HyperbolaDN(U, H.Position(), H.MajorRadius(), H.MinorRadius(), N);
+    public static Vector3D DN(double u, in Hyperbola3D h, int n)
+        => HyperbolaDN(u, h.Position(), h.MajorRadius(), h.MinorRadius(), n);
 
-    public static gp_Vec DN(double U, in gp_Parab Prb, int N) => ParabolaDN(U, Prb.Position(), Prb.Focal(), N);
+    public static Vector3D DN(double u, in Parabola3D prb, int n) => ParabolaDN(u, prb.Position(), prb.Focal(), n);
 
-    public static gp_Pnt2d Value(double U, in gp_Lin2d L) => LineValue(U, L.Position());
+    public static Point2D Value(double u, in Line2D l) => LineValue(u, l.Position());
 
-    public static gp_Pnt2d Value(double U, in gp_Circ2d C) => CircleValue(U, C.Axis(), C.Radius());
+    public static Point2D Value(double u, in Circle2D c) => CircleValue(u, c.Axis(), c.Radius());
 
-    public static gp_Pnt2d Value(double U, in gp_Elips2d E) => EllipseValue(U, E.Axis(), E.MajorRadius(), E.MinorRadius());
+    public static Point2D Value(double u, in Ellipse2D e) => EllipseValue(u, e.Axis(), e.MajorRadius(), e.MinorRadius());
 
-    public static gp_Pnt2d Value(double U, in gp_Hypr2d H) => HyperbolaValue(U, H.Axis(), H.MajorRadius(), H.MinorRadius());
+    public static Point2D Value(double u, in Hyperbola2D h) => HyperbolaValue(u, h.Axis(), h.MajorRadius(), h.MinorRadius());
 
-    public static gp_Pnt2d Value(double U, in gp_Parab2d Prb) => ParabolaValue(U, Prb.Axis(), Prb.Focal());
+    public static Point2D Value(double u, in Parabola2D prb) => ParabolaValue(u, prb.Axis(), prb.Focal());
 
-    public static void D1(double U, in gp_Lin2d L, out gp_Pnt2d P, out gp_Vec2d V1) => LineD1(U, L.Position(), out P, out V1);
+    public static void D1(double u, in Line2D l, out Point2D p, out Vector2D v1) => LineD1(u, l.Position(), out p, out v1);
 
-    public static void D1(double U, in gp_Circ2d C, out gp_Pnt2d P, out gp_Vec2d V1)
-        => CircleD1(U, C.Axis(), C.Radius(), out P, out V1);
+    public static void D1(double u, in Circle2D c, out Point2D p, out Vector2D v1)
+        => CircleD1(u, c.Axis(), c.Radius(), out p, out v1);
 
-    public static void D1(double U, in gp_Elips2d E, out gp_Pnt2d P, out gp_Vec2d V1)
-        => EllipseD1(U, E.Axis(), E.MajorRadius(), E.MinorRadius(), out P, out V1);
+    public static void D1(double u, in Ellipse2D e, out Point2D p, out Vector2D v1)
+        => EllipseD1(u, e.Axis(), e.MajorRadius(), e.MinorRadius(), out p, out v1);
 
-    public static void D1(double U, in gp_Hypr2d H, out gp_Pnt2d P, out gp_Vec2d V1)
-        => HyperbolaD1(U, H.Axis(), H.MajorRadius(), H.MinorRadius(), out P, out V1);
+    public static void D1(double u, in Hyperbola2D h, out Point2D p, out Vector2D v1)
+        => HyperbolaD1(u, h.Axis(), h.MajorRadius(), h.MinorRadius(), out p, out v1);
 
-    public static void D1(double U, in gp_Parab2d Prb, out gp_Pnt2d P, out gp_Vec2d V1)
-        => ParabolaD1(U, Prb.Axis(), Prb.Focal(), out P, out V1);
+    public static void D1(double u, in Parabola2D prb, out Point2D p, out Vector2D v1)
+        => ParabolaD1(u, prb.Axis(), prb.Focal(), out p, out v1);
 
-    public static void D2(double U, in gp_Circ2d C, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
-        => CircleD2(U, C.Axis(), C.Radius(), out P, out V1, out V2);
+    public static void D2(double u, in Circle2D c, out Point2D p, out Vector2D v1, out Vector2D v2)
+        => CircleD2(u, c.Axis(), c.Radius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Elips2d E, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
-        => EllipseD2(U, E.Axis(), E.MajorRadius(), E.MinorRadius(), out P, out V1, out V2);
+    public static void D2(double u, in Ellipse2D e, out Point2D p, out Vector2D v1, out Vector2D v2)
+        => EllipseD2(u, e.Axis(), e.MajorRadius(), e.MinorRadius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Hypr2d H, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
-        => HyperbolaD2(U, H.Axis(), H.MajorRadius(), H.MinorRadius(), out P, out V1, out V2);
+    public static void D2(double u, in Hyperbola2D h, out Point2D p, out Vector2D v1, out Vector2D v2)
+        => HyperbolaD2(u, h.Axis(), h.MajorRadius(), h.MinorRadius(), out p, out v1, out v2);
 
-    public static void D2(double U, in gp_Parab2d Prb, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
-        => ParabolaD2(U, Prb.Axis(), Prb.Focal(), out P, out V1, out V2);
+    public static void D2(double u, in Parabola2D prb, out Point2D p, out Vector2D v1, out Vector2D v2)
+        => ParabolaD2(u, prb.Axis(), prb.Focal(), out p, out v1, out v2);
 
-    public static void D3(double U, in gp_Circ2d C, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
-        => CircleD3(U, C.Axis(), C.Radius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Circle2D c, out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
+        => CircleD3(u, c.Axis(), c.Radius(), out p, out v1, out v2, out v3);
 
-    public static void D3(double U, in gp_Elips2d E, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
-        => EllipseD3(U, E.Axis(), E.MajorRadius(), E.MinorRadius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Ellipse2D e, out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
+        => EllipseD3(u, e.Axis(), e.MajorRadius(), e.MinorRadius(), out p, out v1, out v2, out v3);
 
-    public static void D3(double U, in gp_Hypr2d H, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
-        => HyperbolaD3(U, H.Axis(), H.MajorRadius(), H.MinorRadius(), out P, out V1, out V2, out V3);
+    public static void D3(double u, in Hyperbola2D h, out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
+        => HyperbolaD3(u, h.Axis(), h.MajorRadius(), h.MinorRadius(), out p, out v1, out v2, out v3);
 
-    public static gp_Vec2d DN(double U, in gp_Lin2d L, int N) => LineDN(U, L.Position(), N);
+    public static Vector2D DN(double u, in Line2D l, int n) => LineDN(u, l.Position(), n);
 
-    public static gp_Vec2d DN(double U, in gp_Circ2d C, int N) => CircleDN(U, C.Axis(), C.Radius(), N);
+    public static Vector2D DN(double u, in Circle2D c, int n) => CircleDN(u, c.Axis(), c.Radius(), n);
 
-    public static gp_Vec2d DN(double U, in gp_Elips2d E, int N)
-        => EllipseDN(U, E.Axis(), E.MajorRadius(), E.MinorRadius(), N);
+    public static Vector2D DN(double u, in Ellipse2D e, int n)
+        => EllipseDN(u, e.Axis(), e.MajorRadius(), e.MinorRadius(), n);
 
-    public static gp_Vec2d DN(double U, in gp_Hypr2d H, int N)
-        => HyperbolaDN(U, H.Axis(), H.MajorRadius(), H.MinorRadius(), N);
+    public static Vector2D DN(double u, in Hyperbola2D h, int n)
+        => HyperbolaDN(u, h.Axis(), h.MajorRadius(), h.MinorRadius(), n);
 
-    public static gp_Vec2d DN(double U, in gp_Parab2d Prb, int N) => ParabolaDN(U, Prb.Axis(), Prb.Focal(), N);
+    public static Vector2D DN(double u, in Parabola2D prb, int n) => ParabolaDN(u, prb.Axis(), prb.Focal(), n);
 
     /// <summary>
     /// The parameter of a point on a curve. The point must be on the curve; these functions don't check it, and
     /// may throw if it is not.
     /// </summary>
-    public static double Parameter(in gp_Lin L, in gp_Pnt P) => LineParameter(L.Position(), P);
+    public static double Parameter(in Line3D l, in Point3D p) => LineParameter(l.Position(), p);
 
-    public static double Parameter(in gp_Lin2d L, in gp_Pnt2d P) => LineParameter(L.Position(), P);
+    public static double Parameter(in Line2D l, in Point2D p) => LineParameter(l.Position(), p);
 
-    public static double Parameter(in gp_Circ C, in gp_Pnt P) => CircleParameter(C.Position(), P);
+    public static double Parameter(in Circle3D c, in Point3D p) => CircleParameter(c.Position(), p);
 
-    public static double Parameter(in gp_Circ2d C, in gp_Pnt2d P) => CircleParameter(C.Axis(), P);
+    public static double Parameter(in Circle2D c, in Point2D p) => CircleParameter(c.Axis(), p);
 
-    public static double Parameter(in gp_Elips E, in gp_Pnt P)
-        => EllipseParameter(E.Position(), E.MajorRadius(), E.MinorRadius(), P);
+    public static double Parameter(in Ellipse3D e, in Point3D p)
+        => EllipseParameter(e.Position(), e.MajorRadius(), e.MinorRadius(), p);
 
-    public static double Parameter(in gp_Elips2d E, in gp_Pnt2d P)
-        => EllipseParameter(E.Axis(), E.MajorRadius(), E.MinorRadius(), P);
+    public static double Parameter(in Ellipse2D e, in Point2D p)
+        => EllipseParameter(e.Axis(), e.MajorRadius(), e.MinorRadius(), p);
 
-    public static double Parameter(in gp_Hypr H, in gp_Pnt P)
-        => HyperbolaParameter(H.Position(), H.MajorRadius(), H.MinorRadius(), P);
+    public static double Parameter(in Hyperbola3D h, in Point3D p)
+        => HyperbolaParameter(h.Position(), h.MajorRadius(), h.MinorRadius(), p);
 
-    public static double Parameter(in gp_Hypr2d H, in gp_Pnt2d P)
-        => HyperbolaParameter(H.Axis(), H.MajorRadius(), H.MinorRadius(), P);
+    public static double Parameter(in Hyperbola2D h, in Point2D p)
+        => HyperbolaParameter(h.Axis(), h.MajorRadius(), h.MinorRadius(), p);
 
-    public static double Parameter(in gp_Parab Prb, in gp_Pnt P) => ParabolaParameter(Prb.Position(), P);
+    public static double Parameter(in Parabola3D prb, in Point3D p) => ParabolaParameter(prb.Position(), p);
 
-    public static double Parameter(in gp_Parab2d Prb, in gp_Pnt2d P) => ParabolaParameter(Prb.Axis(), P);
+    public static double Parameter(in Parabola2D prb, in Point2D p) => ParabolaParameter(prb.Axis(), p);
 
     // ElCLib.cxx: curves given by their geometric characteristics
 
-    public static gp_Pnt LineValue(double U, in gp_Ax1 Pos)
+    public static Point3D LineValue(double u, in Axis3D pos)
     {
-        gp_XYZ ZDir = Pos.Direction().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
-        return new gp_Pnt(U * ZDir.X() + PLoc.X(), U * ZDir.Y() + PLoc.Y(), U * ZDir.Z() + PLoc.Z());
+        Xyz zDir = pos.Direction().XYZ();
+        Xyz pLoc = pos.Location().XYZ();
+        return new Point3D(u * zDir.X() + pLoc.X(), u * zDir.Y() + pLoc.Y(), u * zDir.Z() + pLoc.Z());
     }
 
-    public static gp_Pnt CircleValue(double U, in gp_Ax2 Pos, double Radius)
+    public static Point3D CircleValue(double u, in Frame3D pos, double radius)
     {
-        gp_XYZ XDir = Pos.XDirection().XYZ();
-        gp_XYZ YDir = Pos.YDirection().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
-        double A1 = Radius * Math.Cos(U);
-        double A2 = Radius * Math.Sin(U);
-        return new gp_Pnt(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                          A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y(),
-                          A1 * XDir.Z() + A2 * YDir.Z() + PLoc.Z());
+        Xyz xDir = pos.XDirection().XYZ();
+        Xyz yDir = pos.YDirection().XYZ();
+        Xyz pLoc = pos.Location().XYZ();
+        double a1 = radius * Math.Cos(u);
+        double a2 = radius * Math.Sin(u);
+        return new Point3D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                          a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y(),
+                          a1 * xDir.Z() + a2 * yDir.Z() + pLoc.Z());
     }
 
-    public static gp_Pnt EllipseValue(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius)
+    public static Point3D EllipseValue(double u, in Frame3D pos, double majorRadius, double minorRadius)
     {
-        gp_XYZ XDir = Pos.XDirection().XYZ();
-        gp_XYZ YDir = Pos.YDirection().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
-        double A1 = MajorRadius * Math.Cos(U);
-        double A2 = MinorRadius * Math.Sin(U);
-        return new gp_Pnt(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                          A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y(),
-                          A1 * XDir.Z() + A2 * YDir.Z() + PLoc.Z());
+        Xyz xDir = pos.XDirection().XYZ();
+        Xyz yDir = pos.YDirection().XYZ();
+        Xyz pLoc = pos.Location().XYZ();
+        double a1 = majorRadius * Math.Cos(u);
+        double a2 = minorRadius * Math.Sin(u);
+        return new Point3D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                          a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y(),
+                          a1 * xDir.Z() + a2 * yDir.Z() + pLoc.Z());
     }
 
-    public static gp_Pnt HyperbolaValue(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius)
+    public static Point3D HyperbolaValue(double u, in Frame3D pos, double majorRadius, double minorRadius)
     {
-        gp_XYZ XDir = Pos.XDirection().XYZ();
-        gp_XYZ YDir = Pos.YDirection().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
-        double A1 = MajorRadius * Math.Cosh(U);
-        double A2 = MinorRadius * Math.Sinh(U);
-        return new gp_Pnt(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                          A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y(),
-                          A1 * XDir.Z() + A2 * YDir.Z() + PLoc.Z());
+        Xyz xDir = pos.XDirection().XYZ();
+        Xyz yDir = pos.YDirection().XYZ();
+        Xyz pLoc = pos.Location().XYZ();
+        double a1 = majorRadius * Math.Cosh(u);
+        double a2 = minorRadius * Math.Sinh(u);
+        return new Point3D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                          a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y(),
+                          a1 * xDir.Z() + a2 * yDir.Z() + pLoc.Z());
     }
 
     /// <summary>The point of parameter U on the parabola; a parabola of focal length below gp::Resolution() is a line.</summary>
-    public static gp_Pnt ParabolaValue(double U, in gp_Ax2 Pos, double Focal)
+    public static Point3D ParabolaValue(double u, in Frame3D pos, double focal)
     {
-        if (Math.Abs(Focal) <= gp.Resolution())
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            gp_XYZ XDir0 = Pos.XDirection().XYZ();
-            gp_XYZ PLoc0 = Pos.Location().XYZ();
-            return new gp_Pnt(U * XDir0.X() + PLoc0.X(), U * XDir0.Y() + PLoc0.Y(), U * XDir0.Z() + PLoc0.Z());
+            Xyz xDir0 = pos.XDirection().XYZ();
+            Xyz pLoc0 = pos.Location().XYZ();
+            return new Point3D(u * xDir0.X() + pLoc0.X(), u * xDir0.Y() + pLoc0.Y(), u * xDir0.Z() + pLoc0.Z());
         }
 
-        gp_XYZ XDir = Pos.XDirection().XYZ();
-        gp_XYZ YDir = Pos.YDirection().XYZ();
-        gp_XYZ PLoc = Pos.Location().XYZ();
-        double A1 = U * U / (4.0 * Focal);
-        return new gp_Pnt(A1 * XDir.X() + U * YDir.X() + PLoc.X(),
-                          A1 * XDir.Y() + U * YDir.Y() + PLoc.Y(),
-                          A1 * XDir.Z() + U * YDir.Z() + PLoc.Z());
+        Xyz xDir = pos.XDirection().XYZ();
+        Xyz yDir = pos.YDirection().XYZ();
+        Xyz pLoc = pos.Location().XYZ();
+        double a1 = u * u / (4.0 * focal);
+        return new Point3D(a1 * xDir.X() + u * yDir.X() + pLoc.X(),
+                          a1 * xDir.Y() + u * yDir.Y() + pLoc.Y(),
+                          a1 * xDir.Z() + u * yDir.Z() + pLoc.Z());
     }
 
-    public static void LineD1(double U, in gp_Ax1 Pos, out gp_Pnt P, out gp_Vec V1)
+    public static void LineD1(double u, in Axis3D pos, out Point3D p, out Vector3D v1)
     {
-        gp_XYZ Coord = Pos.Direction().XYZ();
-        V1 = new gp_Vec(Coord);
-        Coord.SetLinearForm(U, Coord, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord);
+        Xyz coord = pos.Direction().XYZ();
+        v1 = new Vector3D(coord);
+        coord.SetLinearForm(u, coord, pos.Location().XYZ());
+        p = new Point3D(coord);
     }
 
-    public static void CircleD1(double U, in gp_Ax2 Pos, double Radius, out gp_Pnt P, out gp_Vec V1)
+    public static void CircleD1(double u, in Frame3D pos, double radius, out Point3D p, out Vector3D v1)
     {
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant :
-        Coord0.SetLinearForm(Xc, Coord1, Yc, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc, coord1, yc, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc, Coord1, Xc, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc, coord1, xc, coord2);
+        v1 = new Vector3D(coord0);
     }
 
-    public static void EllipseD1(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt P, out gp_Vec V1)
+    public static void EllipseD1(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                 out Point3D p, out Vector3D v1)
     {
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant :
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
     }
 
-    public static void HyperbolaD1(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt P, out gp_Vec V1)
+    public static void HyperbolaD1(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                   out Point3D p, out Vector3D v1)
     {
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant :
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
     }
 
-    public static void ParabolaD1(double U, in gp_Ax2 Pos, double Focal, out gp_Pnt P, out gp_Vec V1)
+    public static void ParabolaD1(double u, in Frame3D pos, double focal, out Point3D p, out Vector3D v1)
     {
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        if (Math.Abs(Focal) <= gp.Resolution())
+        Xyz coord1 = pos.XDirection().XYZ();
+        if (Math.Abs(focal) <= Constants.Resolution())
         { // Parabole degenere en une droite
-            V1 = new gp_Vec(Coord1);
-            Coord1.Multiply(U);
-            Coord1.Add(Pos.Location().XYZ());
-            P = new gp_Pnt(Coord1);
+            v1 = new Vector3D(coord1);
+            coord1.Multiply(u);
+            coord1.Add(pos.Location().XYZ());
+            p = new Point3D(coord1);
         }
         else
         {
-            gp_XYZ Coord0 = new gp_XYZ();
-            gp_XYZ Coord2 = Pos.YDirection().XYZ();
-            Coord0.SetLinearForm(U / (2.0 * Focal), Coord1, Coord2);
-            V1 = new gp_Vec(Coord0);
-            Coord0.SetLinearForm((U * U) / (4.0 * Focal), Coord1, U, Coord2, Pos.Location().XYZ());
-            P = new gp_Pnt(Coord0);
+            Xyz coord0 = new Xyz();
+            Xyz coord2 = pos.YDirection().XYZ();
+            coord0.SetLinearForm(u / (2.0 * focal), coord1, coord2);
+            v1 = new Vector3D(coord0);
+            coord0.SetLinearForm((u * u) / (4.0 * focal), coord1, u, coord2, pos.Location().XYZ());
+            p = new Point3D(coord0);
         }
     }
 
-    public static void CircleD2(double U, in gp_Ax2 Pos, double Radius, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    public static void CircleD2(double u, in Frame3D pos, double radius, out Point3D p, out Vector3D v1, out Vector3D v2)
     {
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant :
-        Coord0.SetLinearForm(Xc, Coord1, Yc, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc, coord1, yc, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc, Coord1, Xc, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc, coord1, xc, coord2);
+        v1 = new Vector3D(coord0);
         // D2 :
-        Coord0.SetLinearForm(-Xc, Coord1, -Yc, Coord2);
-        V2 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-xc, coord1, -yc, coord2);
+        v2 = new Vector3D(coord0);
     }
 
-    public static void EllipseD2(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    public static void EllipseD2(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                 out Point3D p, out Vector3D v1, out Vector3D v2)
     {
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant :
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
         // D2 :
-        Coord0.SetLinearForm(-Xc * MajorRadius, Coord1, -Yc * MinorRadius, Coord2);
-        V2 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-xc * majorRadius, coord1, -yc * minorRadius, coord2);
+        v2 = new Vector3D(coord0);
     }
 
-    public static void HyperbolaD2(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    public static void HyperbolaD2(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                   out Point3D p, out Vector3D v1, out Vector3D v2)
     {
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant et D2:
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2);
-        V2 = new gp_Vec(Coord0);
-        Coord0.Add(Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2);
+        v2 = new Vector3D(coord0);
+        coord0.Add(pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
     }
 
-    public static void ParabolaD2(double U, in gp_Ax2 Pos, double Focal, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    public static void ParabolaD2(double u, in Frame3D pos, double focal, out Point3D p, out Vector3D v1, out Vector3D v2)
     {
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        if (Math.Abs(Focal) <= gp.Resolution())
+        Xyz coord1 = pos.XDirection().XYZ();
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            V2 = new gp_Vec(0.0, 0.0, 0.0);
-            V1 = new gp_Vec(Coord1);
-            Coord1.Multiply(U);
-            Coord1.Add(Pos.Location().XYZ());
-            P = new gp_Pnt(Coord1);
+            v2 = new Vector3D(0.0, 0.0, 0.0);
+            v1 = new Vector3D(coord1);
+            coord1.Multiply(u);
+            coord1.Add(pos.Location().XYZ());
+            p = new Point3D(coord1);
         }
         else
         {
-            gp_XYZ Coord0 = new gp_XYZ();
-            gp_XYZ Coord2 = Pos.YDirection().XYZ();
-            Coord0.SetLinearForm((U * U) / (4.0 * Focal), Coord1, U, Coord2, Pos.Location().XYZ());
-            P = new gp_Pnt(Coord0);
-            Coord0.SetLinearForm(U / (2.0 * Focal), Coord1, Coord2);
-            V1 = new gp_Vec(Coord0);
-            Coord1.Multiply(1.0 / (2.0 * Focal));
-            V2 = new gp_Vec(Coord1);
+            Xyz coord0 = new Xyz();
+            Xyz coord2 = pos.YDirection().XYZ();
+            coord0.SetLinearForm((u * u) / (4.0 * focal), coord1, u, coord2, pos.Location().XYZ());
+            p = new Point3D(coord0);
+            coord0.SetLinearForm(u / (2.0 * focal), coord1, coord2);
+            v1 = new Vector3D(coord0);
+            coord1.Multiply(1.0 / (2.0 * focal));
+            v2 = new Vector3D(coord1);
         }
     }
 
-    public static void CircleD3(double U, in gp_Ax2 Pos, double Radius,
-                                out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
+    public static void CircleD3(double u, in Frame3D pos, double radius,
+                                out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
     {
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point Courant :
-        Coord0.SetLinearForm(Xc, Coord1, Yc, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc, coord1, yc, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc, Coord1, Xc, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc, coord1, xc, coord2);
+        v1 = new Vector3D(coord0);
         // D2 :
-        Coord0.SetLinearForm(-Xc, Coord1, -Yc, Coord2);
-        V2 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-xc, coord1, -yc, coord2);
+        v2 = new Vector3D(coord0);
         // D3 :
-        Coord0.SetLinearForm(Yc, Coord1, -Xc, Coord2);
-        V3 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(yc, coord1, -xc, coord2);
+        v3 = new Vector3D(coord0);
     }
 
-    public static void EllipseD3(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
+    public static void EllipseD3(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                 out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
     {
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point Courant :
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2, Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2, pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 :
-        Coord0.SetLinearForm(-Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
         // D2 :
-        Coord0.SetLinearForm(-Xc * MajorRadius, Coord1, -Yc * MinorRadius, Coord2);
-        V2 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(-xc * majorRadius, coord1, -yc * minorRadius, coord2);
+        v2 = new Vector3D(coord0);
         // D3
-        Coord0.SetLinearForm(Yc * MajorRadius, Coord1, -Xc * MinorRadius, Coord2);
-        V3 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(yc * majorRadius, coord1, -xc * minorRadius, coord2);
+        v3 = new Vector3D(coord0);
     }
 
-    public static void HyperbolaD3(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3)
+    public static void HyperbolaD3(double u, in Frame3D pos, double majorRadius, double minorRadius,
+                                   out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
     {
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        gp_XYZ Coord2 = Pos.YDirection().XYZ();
-        gp_XYZ Coord0 = new gp_XYZ();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xyz coord1 = pos.XDirection().XYZ();
+        Xyz coord2 = pos.YDirection().XYZ();
+        Xyz coord0 = new Xyz();
         // Point courant et D2 :
-        Coord0.SetLinearForm(Xc * MajorRadius, Coord1, Yc * MinorRadius, Coord2);
-        V2 = new gp_Vec(Coord0);
-        Coord0.Add(Pos.Location().XYZ());
-        P = new gp_Pnt(Coord0);
+        coord0.SetLinearForm(xc * majorRadius, coord1, yc * minorRadius, coord2);
+        v2 = new Vector3D(coord0);
+        coord0.Add(pos.Location().XYZ());
+        p = new Point3D(coord0);
         // D1 et D3 :
-        Coord0.SetLinearForm(Yc * MajorRadius, Coord1, Xc * MinorRadius, Coord2);
-        V1 = new gp_Vec(Coord0);
-        V3 = new gp_Vec(Coord0);
+        coord0.SetLinearForm(yc * majorRadius, coord1, xc * minorRadius, coord2);
+        v1 = new Vector3D(coord0);
+        v3 = new Vector3D(coord0);
     }
 
-    public static gp_Pnt2d LineValue(double U, in gp_Ax2d Pos)
+    public static Point2D LineValue(double u, in Axis2D pos)
     {
-        gp_XY ZDir = Pos.Direction().XY();
-        gp_XY PLoc = Pos.Location().XY();
-        return new gp_Pnt2d(U * ZDir.X() + PLoc.X(), U * ZDir.Y() + PLoc.Y());
+        Xy zDir = pos.Direction().XY();
+        Xy pLoc = pos.Location().XY();
+        return new Point2D(u * zDir.X() + pLoc.X(), u * zDir.Y() + pLoc.Y());
     }
 
-    public static gp_Pnt2d CircleValue(double U, in gp_Ax22d Pos, double Radius)
+    public static Point2D CircleValue(double u, in Frame2D pos, double radius)
     {
-        gp_XY XDir = Pos.XDirection().XY();
-        gp_XY YDir = Pos.YDirection().XY();
-        gp_XY PLoc = Pos.Location().XY();
-        double A1 = Radius * Math.Cos(U);
-        double A2 = Radius * Math.Sin(U);
-        return new gp_Pnt2d(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                            A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y());
+        Xy xDir = pos.XDirection().XY();
+        Xy yDir = pos.YDirection().XY();
+        Xy pLoc = pos.Location().XY();
+        double a1 = radius * Math.Cos(u);
+        double a2 = radius * Math.Sin(u);
+        return new Point2D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                            a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y());
     }
 
-    public static gp_Pnt2d EllipseValue(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius)
+    public static Point2D EllipseValue(double u, in Frame2D pos, double majorRadius, double minorRadius)
     {
-        gp_XY XDir = Pos.XDirection().XY();
-        gp_XY YDir = Pos.YDirection().XY();
-        gp_XY PLoc = Pos.Location().XY();
-        double A1 = MajorRadius * Math.Cos(U);
-        double A2 = MinorRadius * Math.Sin(U);
-        return new gp_Pnt2d(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                            A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y());
+        Xy xDir = pos.XDirection().XY();
+        Xy yDir = pos.YDirection().XY();
+        Xy pLoc = pos.Location().XY();
+        double a1 = majorRadius * Math.Cos(u);
+        double a2 = minorRadius * Math.Sin(u);
+        return new Point2D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                            a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y());
     }
 
-    public static gp_Pnt2d HyperbolaValue(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius)
+    public static Point2D HyperbolaValue(double u, in Frame2D pos, double majorRadius, double minorRadius)
     {
-        gp_XY XDir = Pos.XDirection().XY();
-        gp_XY YDir = Pos.YDirection().XY();
-        gp_XY PLoc = Pos.Location().XY();
-        double A1 = MajorRadius * Math.Cosh(U);
-        double A2 = MinorRadius * Math.Sinh(U);
-        return new gp_Pnt2d(A1 * XDir.X() + A2 * YDir.X() + PLoc.X(),
-                            A1 * XDir.Y() + A2 * YDir.Y() + PLoc.Y());
+        Xy xDir = pos.XDirection().XY();
+        Xy yDir = pos.YDirection().XY();
+        Xy pLoc = pos.Location().XY();
+        double a1 = majorRadius * Math.Cosh(u);
+        double a2 = minorRadius * Math.Sinh(u);
+        return new Point2D(a1 * xDir.X() + a2 * yDir.X() + pLoc.X(),
+                            a1 * xDir.Y() + a2 * yDir.Y() + pLoc.Y());
     }
 
-    public static gp_Pnt2d ParabolaValue(double U, in gp_Ax22d Pos, double Focal)
+    public static Point2D ParabolaValue(double u, in Frame2D pos, double focal)
     {
-        if (Math.Abs(Focal) <= gp.Resolution())
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            gp_XY XDir0 = Pos.XDirection().XY();
-            gp_XY PLoc0 = Pos.Location().XY();
-            return new gp_Pnt2d(U * XDir0.X() + PLoc0.X(), U * XDir0.Y() + PLoc0.Y());
+            Xy xDir0 = pos.XDirection().XY();
+            Xy pLoc0 = pos.Location().XY();
+            return new Point2D(u * xDir0.X() + pLoc0.X(), u * xDir0.Y() + pLoc0.Y());
         }
 
-        gp_XY XDir = Pos.XDirection().XY();
-        gp_XY YDir = Pos.YDirection().XY();
-        gp_XY PLoc = Pos.Location().XY();
-        double A1 = U * U / (4.0 * Focal);
-        return new gp_Pnt2d(A1 * XDir.X() + U * YDir.X() + PLoc.X(), A1 * XDir.Y() + U * YDir.Y() + PLoc.Y());
+        Xy xDir = pos.XDirection().XY();
+        Xy yDir = pos.YDirection().XY();
+        Xy pLoc = pos.Location().XY();
+        double a1 = u * u / (4.0 * focal);
+        return new Point2D(a1 * xDir.X() + u * yDir.X() + pLoc.X(), a1 * xDir.Y() + u * yDir.Y() + pLoc.Y());
     }
 
-    public static void LineD1(double U, in gp_Ax2d Pos, out gp_Pnt2d P, out gp_Vec2d V1)
+    public static void LineD1(double u, in Axis2D pos, out Point2D p, out Vector2D v1)
     {
-        gp_XY Coord = Pos.Direction().XY();
-        V1 = new gp_Vec2d(Coord);
-        Coord.SetLinearForm(U, Coord, Pos.Location().XY());
-        P = new gp_Pnt2d(Coord);
+        Xy coord = pos.Direction().XY();
+        v1 = new Vector2D(coord);
+        coord.SetLinearForm(u, coord, pos.Location().XY());
+        p = new Point2D(coord);
     }
 
-    public static void CircleD1(double U, in gp_Ax22d Pos, double Radius, out gp_Pnt2d P, out gp_Vec2d V1)
+    public static void CircleD1(double u, in Frame2D pos, double radius, out Point2D p, out Vector2D v1)
     {
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        gp_XY Vxy = new gp_XY();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        Xy vxy = new Xy();
         // Point courant :
-        Vxy.SetLinearForm(Xc, Xdir, Yc, Ydir, Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.SetLinearForm(xc, xdir, yc, ydir, pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc, Xdir, Xc, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc, xdir, xc, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void EllipseD1(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt2d P, out gp_Vec2d V1)
+    public static void EllipseD1(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                 out Point2D p, out Vector2D v1)
     {
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        gp_XY Vxy = new gp_XY();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        Xy vxy = new Xy();
         // Point courant :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir, Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir, pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void HyperbolaD1(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt2d P, out gp_Vec2d V1)
+    public static void HyperbolaD1(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                   out Point2D p, out Vector2D v1)
     {
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        gp_XY Vxy = new gp_XY();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        Xy vxy = new Xy();
         // Point courant :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir, Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir, pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void ParabolaD1(double U, in gp_Ax22d Pos, double Focal, out gp_Pnt2d P, out gp_Vec2d V1)
+    public static void ParabolaD1(double u, in Frame2D pos, double focal, out Point2D p, out Vector2D v1)
     {
-        gp_XY Vxy = new gp_XY();
-        gp_XY Xdir = Pos.XDirection().XY();
-        if (Math.Abs(Focal) <= gp.Resolution())
+        Xy vxy = new Xy();
+        Xy xdir = pos.XDirection().XY();
+        if (Math.Abs(focal) <= Constants.Resolution())
         { // Parabole degenere en une droite
-            V1 = new gp_Vec2d(Xdir);
-            Vxy.SetLinearForm(U, Xdir, Pos.Location().XY());
+            v1 = new Vector2D(xdir);
+            vxy.SetLinearForm(u, xdir, pos.Location().XY());
         }
         else
         {
-            gp_XY Ydir = Pos.YDirection().XY();
-            Vxy.SetLinearForm(U / (2.0 * Focal), Xdir, Ydir);
-            V1 = new gp_Vec2d(Vxy);
-            Vxy.SetLinearForm((U * U) / (4.0 * Focal), Xdir, U, Ydir, Pos.Location().XY());
+            Xy ydir = pos.YDirection().XY();
+            vxy.SetLinearForm(u / (2.0 * focal), xdir, ydir);
+            v1 = new Vector2D(vxy);
+            vxy.SetLinearForm((u * u) / (4.0 * focal), xdir, u, ydir, pos.Location().XY());
         }
 
-        P = new gp_Pnt2d(Vxy);
+        p = new Point2D(vxy);
     }
 
-    public static void CircleD2(double U, in gp_Ax22d Pos, double Radius,
-                                out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public static void CircleD2(double u, in Frame2D pos, double radius,
+                                out Point2D p, out Vector2D v1, out Vector2D v2)
     {
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
-        gp_XY Vxy = new gp_XY();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
+        Xy vxy = new Xy();
         // V2 :
-        Vxy.SetLinearForm(Xc, Xdir, Yc, Ydir);
-        V2 = new gp_Vec2d(Vxy);
-        V2.Reverse();
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.SetLinearForm(xc, xdir, yc, ydir);
+        v2 = new Vector2D(vxy);
+        v2.Reverse();
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc, Xdir, Xc, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc, xdir, xc, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void EllipseD2(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public static void EllipseD2(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                 out Point2D p, out Vector2D v1, out Vector2D v2)
     {
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XY Vxy = new gp_XY();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xy vxy = new Xy();
         // V2 :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir);
-        V2 = new gp_Vec2d(Vxy);
-        V2.Reverse();
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
+        v2 = new Vector2D(vxy);
+        v2.Reverse();
         // Point courant :
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void HyperbolaD2(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public static void HyperbolaD2(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                   out Point2D p, out Vector2D v1, out Vector2D v2)
     {
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XY Vxy = new gp_XY();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xy vxy = new Xy();
         // V2 :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir);
-        V2 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
+        v2 = new Vector2D(vxy);
         // Point courant :
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
     }
 
-    public static void ParabolaD2(double U, in gp_Ax22d Pos, double Focal,
-                                  out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2)
+    public static void ParabolaD2(double u, in Frame2D pos, double focal,
+                                  out Point2D p, out Vector2D v1, out Vector2D v2)
     {
-        gp_XY Vxy = new gp_XY();
-        gp_XY Xdir = Pos.XDirection().XY();
-        if (Math.Abs(Focal) <= gp.Resolution())
+        Xy vxy = new Xy();
+        Xy xdir = pos.XDirection().XY();
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            V2 = new gp_Vec2d(0.0, 0.0);
-            V1 = new gp_Vec2d(Xdir);
-            Vxy.SetLinearForm(U, Xdir, Pos.Location().XY());
+            v2 = new Vector2D(0.0, 0.0);
+            v1 = new Vector2D(xdir);
+            vxy.SetLinearForm(u, xdir, pos.Location().XY());
         }
         else
         {
-            gp_XY Ydir = Pos.YDirection().XY();
-            Vxy = Xdir.Multiplied(1.0 / (2.0 * Focal));
-            V2 = new gp_Vec2d(Vxy);
-            Vxy.SetLinearForm(U, Vxy, Ydir);
-            V1 = new gp_Vec2d(Vxy);
-            Vxy.SetLinearForm(U * U / (4.0 * Focal), Xdir, U, Ydir);
-            Vxy.Add(Pos.Location().XY());
+            Xy ydir = pos.YDirection().XY();
+            vxy = xdir.Multiplied(1.0 / (2.0 * focal));
+            v2 = new Vector2D(vxy);
+            vxy.SetLinearForm(u, vxy, ydir);
+            v1 = new Vector2D(vxy);
+            vxy.SetLinearForm(u * u / (4.0 * focal), xdir, u, ydir);
+            vxy.Add(pos.Location().XY());
         }
 
-        P = new gp_Pnt2d(Vxy);
+        p = new Point2D(vxy);
     }
 
-    public static void CircleD3(double U, in gp_Ax22d Pos, double Radius,
-                                out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
+    public static void CircleD3(double u, in Frame2D pos, double radius,
+                                out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
     {
-        gp_XY Vxy = new gp_XY();
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Radius * Math.Cos(U);
-        double Yc = Radius * Math.Sin(U);
+        Xy vxy = new Xy();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = radius * Math.Cos(u);
+        double yc = radius * Math.Sin(u);
         // V2 :
-        Vxy.SetLinearForm(Xc, Xdir, Yc, Ydir);
-        V2 = new gp_Vec2d(Vxy);
-        V2.Reverse();
+        vxy.SetLinearForm(xc, xdir, yc, ydir);
+        v2 = new Vector2D(vxy);
+        v2.Reverse();
         // Point courant :
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc, Xdir, Xc, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc, xdir, xc, ydir);
+        v1 = new Vector2D(vxy);
         // V3 :
-        V3 = new gp_Vec2d(Vxy);
-        V3.Reverse();
+        v3 = new Vector2D(vxy);
+        v3.Reverse();
     }
 
-    public static void EllipseD3(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                 out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
+    public static void EllipseD3(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                 out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
     {
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Math.Cos(U);
-        double Yc = Math.Sin(U);
-        gp_XY Vxy = new gp_XY();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = Math.Cos(u);
+        double yc = Math.Sin(u);
+        Xy vxy = new Xy();
         // V2 :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir);
-        V2 = new gp_Vec2d(Vxy);
-        V2.Reverse();
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
+        v2 = new Vector2D(vxy);
+        v2.Reverse();
         // Point courant :
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(-Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(-yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
         // V3 :
-        V3 = new gp_Vec2d(Vxy);
-        V3.Reverse();
+        v3 = new Vector2D(vxy);
+        v3.Reverse();
     }
 
-    public static void HyperbolaD3(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius,
-                                   out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3)
+    public static void HyperbolaD3(double u, in Frame2D pos, double majorRadius, double minorRadius,
+                                   out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
     {
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        double Xc = Math.Cosh(U);
-        double Yc = Math.Sinh(U);
-        gp_XY Vxy = new gp_XY();
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        double xc = Math.Cosh(u);
+        double yc = Math.Sinh(u);
+        Xy vxy = new Xy();
         // V2 :
-        Vxy.SetLinearForm(Xc * MajorRadius, Xdir, Yc * MinorRadius, Ydir);
-        V2 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
+        v2 = new Vector2D(vxy);
         // Point courant :
-        Vxy.Add(Pos.Location().XY());
-        P = new gp_Pnt2d(Vxy);
+        vxy.Add(pos.Location().XY());
+        p = new Point2D(vxy);
         // V1 :
-        Vxy.SetLinearForm(Yc * MajorRadius, Xdir, Xc * MinorRadius, Ydir);
-        V1 = new gp_Vec2d(Vxy);
+        vxy.SetLinearForm(yc * majorRadius, xdir, xc * minorRadius, ydir);
+        v1 = new Vector2D(vxy);
         // V3 :
-        V3 = new gp_Vec2d(Vxy);
+        v3 = new Vector2D(vxy);
     }
 
     /// <summary>The derivative of order N of the line: its direction for N = 1, zero otherwise.</summary>
-    public static gp_Vec LineDN(double U, in gp_Ax1 Pos, int N)
+    public static Vector3D LineDN(double u, in Axis3D pos, int n)
     {
-        if (N == 1)
+        if (n == 1)
         {
-            return new gp_Vec(Pos.Direction());
+            return new Vector3D(pos.Direction());
         }
 
-        return new gp_Vec(0.0, 0.0, 0.0);
+        return new Vector3D(0.0, 0.0, 0.0);
     }
 
-    public static gp_Vec CircleDN(double U, in gp_Ax2 Pos, double Radius, int N)
+    public static Vector3D CircleDN(double u, in Frame3D pos, double radius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (N == 1)
+        double xc = 0, yc = 0;
+        if (n == 1)
         {
-            Xc = Radius * -Math.Sin(U);
-            Yc = Radius * Math.Cos(U);
+            xc = radius * -Math.Sin(u);
+            yc = radius * Math.Cos(u);
         }
-        else if ((N + 2) % 4 == 0)
+        else if ((n + 2) % 4 == 0)
         {
-            Xc = Radius * -Math.Cos(U);
-            Yc = Radius * -Math.Sin(U);
+            xc = radius * -Math.Cos(u);
+            yc = radius * -Math.Sin(u);
         }
-        else if ((N + 1) % 4 == 0)
+        else if ((n + 1) % 4 == 0)
         {
-            Xc = Radius * Math.Sin(U);
-            Yc = Radius * -Math.Cos(U);
+            xc = radius * Math.Sin(u);
+            yc = radius * -Math.Cos(u);
         }
-        else if (N % 4 == 0)
+        else if (n % 4 == 0)
         {
-            Xc = Radius * Math.Cos(U);
-            Yc = Radius * Math.Sin(U);
+            xc = radius * Math.Cos(u);
+            yc = radius * Math.Sin(u);
         }
-        else if ((N - 1) % 4 == 0)
+        else if ((n - 1) % 4 == 0)
         {
-            Xc = Radius * -Math.Sin(U);
-            Yc = Radius * Math.Cos(U);
+            xc = radius * -Math.Sin(u);
+            yc = radius * Math.Cos(u);
         }
 
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        Coord1.SetLinearForm(Xc, Coord1, Yc, Pos.YDirection().XYZ());
-        return new gp_Vec(Coord1);
+        Xyz coord1 = pos.XDirection().XYZ();
+        coord1.SetLinearForm(xc, coord1, yc, pos.YDirection().XYZ());
+        return new Vector3D(coord1);
     }
 
-    public static gp_Vec EllipseDN(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius, int N)
+    public static Vector3D EllipseDN(double u, in Frame3D pos, double majorRadius, double minorRadius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (N == 1)
+        double xc = 0, yc = 0;
+        if (n == 1)
         {
-            Xc = MajorRadius * -Math.Sin(U);
-            Yc = MinorRadius * Math.Cos(U);
+            xc = majorRadius * -Math.Sin(u);
+            yc = minorRadius * Math.Cos(u);
         }
-        else if ((N + 2) % 4 == 0)
+        else if ((n + 2) % 4 == 0)
         {
-            Xc = MajorRadius * -Math.Cos(U);
-            Yc = MinorRadius * -Math.Sin(U);
+            xc = majorRadius * -Math.Cos(u);
+            yc = minorRadius * -Math.Sin(u);
         }
-        else if ((N + 1) % 4 == 0)
+        else if ((n + 1) % 4 == 0)
         {
-            Xc = MajorRadius * Math.Sin(U);
-            Yc = MinorRadius * -Math.Cos(U);
+            xc = majorRadius * Math.Sin(u);
+            yc = minorRadius * -Math.Cos(u);
         }
-        else if (N % 4 == 0)
+        else if (n % 4 == 0)
         {
-            Xc = MajorRadius * Math.Cos(U);
-            Yc = MinorRadius * Math.Sin(U);
+            xc = majorRadius * Math.Cos(u);
+            yc = minorRadius * Math.Sin(u);
         }
-        else if ((N - 1) % 4 == 0)
+        else if ((n - 1) % 4 == 0)
         {
-            Xc = MajorRadius * -Math.Sin(U);
-            Yc = MinorRadius * Math.Cos(U);
+            xc = majorRadius * -Math.Sin(u);
+            yc = minorRadius * Math.Cos(u);
         }
 
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        Coord1.SetLinearForm(Xc, Coord1, Yc, Pos.YDirection().XYZ());
-        return new gp_Vec(Coord1);
+        Xyz coord1 = pos.XDirection().XYZ();
+        coord1.SetLinearForm(xc, coord1, yc, pos.YDirection().XYZ());
+        return new Vector3D(coord1);
     }
 
-    public static gp_Vec HyperbolaDN(double U, in gp_Ax2 Pos, double MajorRadius, double MinorRadius, int N)
+    public static Vector3D HyperbolaDN(double u, in Frame3D pos, double majorRadius, double minorRadius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (IsOdd(N))
+        double xc = 0, yc = 0;
+        if (IsOdd(n))
         {
-            Xc = MajorRadius * Math.Sinh(U);
-            Yc = MinorRadius * Math.Cosh(U);
+            xc = majorRadius * Math.Sinh(u);
+            yc = minorRadius * Math.Cosh(u);
         }
-        else if (IsEven(N))
+        else if (IsEven(n))
         {
-            Xc = MajorRadius * Math.Cosh(U);
-            Yc = MinorRadius * Math.Sinh(U);
+            xc = majorRadius * Math.Cosh(u);
+            yc = minorRadius * Math.Sinh(u);
         }
 
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        Coord1.SetLinearForm(Xc, Coord1, Yc, Pos.YDirection().XYZ());
-        return new gp_Vec(Coord1);
+        Xyz coord1 = pos.XDirection().XYZ();
+        coord1.SetLinearForm(xc, coord1, yc, pos.YDirection().XYZ());
+        return new Vector3D(coord1);
     }
 
-    public static gp_Vec ParabolaDN(double U, in gp_Ax2 Pos, double Focal, int N)
+    public static Vector3D ParabolaDN(double u, in Frame3D pos, double focal, int n)
     {
-        if (N > 2 || N <= 0)
+        if (n > 2 || n <= 0)
         {
-            return new gp_Vec(0.0, 0.0, 0.0);
+            return new Vector3D(0.0, 0.0, 0.0);
         }
 
-        gp_XYZ Coord1 = Pos.XDirection().XYZ();
-        if (N == 1)
+        Xyz coord1 = pos.XDirection().XYZ();
+        if (n == 1)
         {
-            if (Math.Abs(Focal) <= gp.Resolution())
+            if (Math.Abs(focal) <= Constants.Resolution())
             {
-                return new gp_Vec(Coord1);
+                return new Vector3D(coord1);
             }
 
-            Coord1.SetLinearForm(U / (2.0 * Focal), Coord1, Pos.YDirection().XYZ());
-            return new gp_Vec(Coord1);
+            coord1.SetLinearForm(u / (2.0 * focal), coord1, pos.YDirection().XYZ());
+            return new Vector3D(coord1);
         }
 
-        if (Math.Abs(Focal) <= gp.Resolution())
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            return new gp_Vec(0.0, 0.0, 0.0);
+            return new Vector3D(0.0, 0.0, 0.0);
         }
 
-        Coord1.Multiply(1.0 / (2.0 * Focal));
-        return new gp_Vec(Coord1);
+        coord1.Multiply(1.0 / (2.0 * focal));
+        return new Vector3D(coord1);
     }
 
-    public static gp_Vec2d LineDN(double U, in gp_Ax2d Pos, int N)
+    public static Vector2D LineDN(double u, in Axis2D pos, int n)
     {
-        if (N == 1)
+        if (n == 1)
         {
-            return new gp_Vec2d(Pos.Direction());
+            return new Vector2D(pos.Direction());
         }
 
-        return new gp_Vec2d(0.0, 0.0);
+        return new Vector2D(0.0, 0.0);
     }
 
-    public static gp_Vec2d CircleDN(double U, in gp_Ax22d Pos, double Radius, int N)
+    public static Vector2D CircleDN(double u, in Frame2D pos, double radius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (N == 1)
+        double xc = 0, yc = 0;
+        if (n == 1)
         {
-            Xc = Radius * -Math.Sin(U);
-            Yc = Radius * Math.Cos(U);
+            xc = radius * -Math.Sin(u);
+            yc = radius * Math.Cos(u);
         }
-        else if ((N + 2) % 4 == 0)
+        else if ((n + 2) % 4 == 0)
         {
-            Xc = Radius * -Math.Cos(U);
-            Yc = Radius * -Math.Sin(U);
+            xc = radius * -Math.Cos(u);
+            yc = radius * -Math.Sin(u);
         }
-        else if ((N + 1) % 4 == 0)
+        else if ((n + 1) % 4 == 0)
         {
-            Xc = Radius * Math.Sin(U);
-            Yc = Radius * -Math.Cos(U);
+            xc = radius * Math.Sin(u);
+            yc = radius * -Math.Cos(u);
         }
-        else if (N % 4 == 0)
+        else if (n % 4 == 0)
         {
-            Xc = Radius * Math.Cos(U);
-            Yc = Radius * Math.Sin(U);
+            xc = radius * Math.Cos(u);
+            yc = radius * Math.Sin(u);
         }
-        else if ((N - 1) % 4 == 0)
+        else if ((n - 1) % 4 == 0)
         {
-            Xc = Radius * -Math.Sin(U);
-            Yc = Radius * Math.Cos(U);
+            xc = radius * -Math.Sin(u);
+            yc = radius * Math.Cos(u);
         }
 
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        Xdir.SetLinearForm(Xc, Xdir, Yc, Ydir);
-        return new gp_Vec2d(Xdir);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        xdir.SetLinearForm(xc, xdir, yc, ydir);
+        return new Vector2D(xdir);
     }
 
-    public static gp_Vec2d EllipseDN(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius, int N)
+    public static Vector2D EllipseDN(double u, in Frame2D pos, double majorRadius, double minorRadius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (N == 1)
+        double xc = 0, yc = 0;
+        if (n == 1)
         {
-            Xc = MajorRadius * -Math.Sin(U);
-            Yc = MinorRadius * Math.Cos(U);
+            xc = majorRadius * -Math.Sin(u);
+            yc = minorRadius * Math.Cos(u);
         }
-        else if ((N + 2) % 4 == 0)
+        else if ((n + 2) % 4 == 0)
         {
-            Xc = MajorRadius * -Math.Cos(U);
-            Yc = MinorRadius * -Math.Sin(U);
+            xc = majorRadius * -Math.Cos(u);
+            yc = minorRadius * -Math.Sin(u);
         }
-        else if ((N + 1) % 4 == 0)
+        else if ((n + 1) % 4 == 0)
         {
-            Xc = MajorRadius * Math.Sin(U);
-            Yc = MinorRadius * -Math.Cos(U);
+            xc = majorRadius * Math.Sin(u);
+            yc = minorRadius * -Math.Cos(u);
         }
-        else if (N % 4 == 0)
+        else if (n % 4 == 0)
         {
-            Xc = MajorRadius * Math.Cos(U);
-            Yc = MinorRadius * Math.Sin(U);
+            xc = majorRadius * Math.Cos(u);
+            yc = minorRadius * Math.Sin(u);
         }
-        else if ((N - 1) % 4 == 0)
+        else if ((n - 1) % 4 == 0)
         {
-            Xc = MajorRadius * -Math.Sin(U);
-            Yc = MinorRadius * Math.Cos(U);
+            xc = majorRadius * -Math.Sin(u);
+            yc = minorRadius * Math.Cos(u);
         }
 
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        Xdir.SetLinearForm(Xc, Xdir, Yc, Ydir);
-        return new gp_Vec2d(Xdir);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        xdir.SetLinearForm(xc, xdir, yc, ydir);
+        return new Vector2D(xdir);
     }
 
-    public static gp_Vec2d HyperbolaDN(double U, in gp_Ax22d Pos, double MajorRadius, double MinorRadius, int N)
+    public static Vector2D HyperbolaDN(double u, in Frame2D pos, double majorRadius, double minorRadius, int n)
     {
-        double Xc = 0, Yc = 0;
-        if (IsOdd(N))
+        double xc = 0, yc = 0;
+        if (IsOdd(n))
         {
-            Xc = MajorRadius * Math.Sinh(U);
-            Yc = MinorRadius * Math.Cosh(U);
+            xc = majorRadius * Math.Sinh(u);
+            yc = minorRadius * Math.Cosh(u);
         }
-        else if (IsEven(N))
+        else if (IsEven(n))
         {
-            Xc = MajorRadius * Math.Cosh(U);
-            Yc = MinorRadius * Math.Sinh(U);
+            xc = majorRadius * Math.Cosh(u);
+            yc = minorRadius * Math.Sinh(u);
         }
 
-        gp_XY Xdir = Pos.XDirection().XY();
-        gp_XY Ydir = Pos.YDirection().XY();
-        Xdir.SetLinearForm(Xc, Xdir, Yc, Ydir);
-        return new gp_Vec2d(Xdir);
+        Xy xdir = pos.XDirection().XY();
+        Xy ydir = pos.YDirection().XY();
+        xdir.SetLinearForm(xc, xdir, yc, ydir);
+        return new Vector2D(xdir);
     }
 
-    public static gp_Vec2d ParabolaDN(double U, in gp_Ax22d Pos, double Focal, int N)
+    public static Vector2D ParabolaDN(double u, in Frame2D pos, double focal, int n)
     {
-        if (N > 2 || N <= 0)
+        if (n > 2 || n <= 0)
         {
-            return new gp_Vec2d(0.0, 0.0);
+            return new Vector2D(0.0, 0.0);
         }
 
-        gp_XY Xdir = Pos.XDirection().XY();
-        if (N == 1)
+        Xy xdir = pos.XDirection().XY();
+        if (n == 1)
         {
-            if (Math.Abs(Focal) <= gp.Resolution())
+            if (Math.Abs(focal) <= Constants.Resolution())
             {
-                return new gp_Vec2d(Xdir);
+                return new Vector2D(xdir);
             }
 
-            gp_XY Ydir = Pos.YDirection().XY();
-            Xdir.SetLinearForm(U / (2.0 * Focal), Xdir, Ydir);
-            return new gp_Vec2d(Xdir);
+            Xy ydir = pos.YDirection().XY();
+            xdir.SetLinearForm(u / (2.0 * focal), xdir, ydir);
+            return new Vector2D(xdir);
         }
 
-        if (Math.Abs(Focal) <= gp.Resolution())
+        if (Math.Abs(focal) <= Constants.Resolution())
         {
-            return new gp_Vec2d(0.0, 0.0);
+            return new Vector2D(0.0, 0.0);
         }
 
-        Xdir.Multiply(1.0 / (2.0 * Focal));
-        return new gp_Vec2d(Xdir);
+        xdir.Multiply(1.0 / (2.0 * focal));
+        return new Vector2D(xdir);
     }
 
     /// <summary>The parameter of P on the line: P(U) = L.Location() + U * L.Direction().</summary>
-    public static double LineParameter(in gp_Ax1 L, in gp_Pnt P)
-        => (P.XYZ() - L.Location().XYZ()).Dot(L.Direction().XYZ());
+    public static double LineParameter(in Axis3D l, in Point3D p)
+        => (p.XYZ() - l.Location().XYZ()).Dot(l.Direction().XYZ());
 
     /// <summary>The parameter of P on the circle of axis Pos, in [0, 2*PI]; 0 when P is on the axis.</summary>
-    public static double CircleParameter(in gp_Ax2 Pos, in gp_Pnt P)
+    public static double CircleParameter(in Frame3D pos, in Point3D p)
     {
-        gp_Vec aVec = new gp_Vec(Pos.Location(), P);
-        if (aVec.SquareMagnitude() < gp.Resolution())
+        Vector3D vec = new Vector3D(pos.Location(), p);
+        if (vec.SquareMagnitude() < Constants.Resolution())
         {
             // coinciding points -> infinite number of parameters
             return 0.0;
         }
 
-        gp_Dir dir = Pos.Direction();
+        Direction3D dir = pos.Direction();
         // Project vector on circle's plane
-        gp_XYZ aVProj = dir.XYZ().CrossCrossed(aVec.XYZ(), dir.XYZ());
-        if (aVProj.SquareModulus() < gp.Resolution())
+        Xyz vProj = dir.XYZ().CrossCrossed(vec.XYZ(), dir.XYZ());
+        if (vProj.SquareModulus() < Constants.Resolution())
         {
             return 0.0;
         }
 
         // Angle between X direction and projected vector
-        double Teta = Pos.XDirection().AngleWithRef(new gp_Dir(aVProj), dir);
-        normalizeAngle(ref Teta);
-        return Teta;
+        double teta = pos.XDirection().AngleWithRef(new Direction3D(vProj), dir);
+        NormalizeAngle(ref teta);
+        return teta;
     }
 
-    public static double EllipseParameter(in gp_Ax2 Pos, double MajorRadius, double MinorRadius, in gp_Pnt P)
+    public static double EllipseParameter(in Frame3D pos, double majorRadius, double minorRadius, in Point3D p)
     {
-        gp_XYZ OP = P.XYZ() - Pos.Location().XYZ();
-        gp_XYZ xaxis = Pos.XDirection().XYZ();
-        gp_XYZ yaxis = Pos.YDirection().XYZ();
-        double NY = OP.Dot(yaxis);
-        double NX = OP.Dot(xaxis);
-        if ((Math.Abs(NX) <= gp.Resolution()) && (Math.Abs(NY) <= gp.Resolution()))
+        Xyz op = p.XYZ() - pos.Location().XYZ();
+        Xyz xaxis = pos.XDirection().XYZ();
+        Xyz yaxis = pos.YDirection().XYZ();
+        double ny = op.Dot(yaxis);
+        double nx = op.Dot(xaxis);
+        if ((Math.Abs(nx) <= Constants.Resolution()) && (Math.Abs(ny) <= Constants.Resolution()))
         {
             //-- The point P is on the Axis of the Ellipse.
             return 0.0;
         }
 
-        yaxis.Multiply(NY * (MajorRadius / MinorRadius));
-        gp_XYZ Om = xaxis.Multiplied(NX);
-        Om.Add(yaxis);
-        double Teta = new gp_Vec(xaxis).AngleWithRef(new gp_Vec(Om), new gp_Vec(Pos.Direction()));
-        normalizeAngle(ref Teta);
-        return Teta;
+        yaxis.Multiply(ny * (majorRadius / minorRadius));
+        Xyz om = xaxis.Multiplied(nx);
+        om.Add(yaxis);
+        double teta = new Vector3D(xaxis).AngleWithRef(new Vector3D(om), new Vector3D(pos.Direction()));
+        NormalizeAngle(ref teta);
+        return teta;
     }
 
-    public static double HyperbolaParameter(in gp_Ax2 Pos, double MajorRadius, double MinorRadius, in gp_Pnt P)
+    public static double HyperbolaParameter(in Frame3D pos, double majorRadius, double minorRadius, in Point3D p)
     {
-        double sht = new gp_Vec(Pos.Location(), P).Dot(new gp_Vec(Pos.YDirection())) / MinorRadius;
+        double sht = new Vector3D(pos.Location(), p).Dot(new Vector3D(pos.YDirection())) / minorRadius;
         return Math.Asinh(sht);
     }
 
-    public static double ParabolaParameter(in gp_Ax2 Pos, in gp_Pnt P)
-        => new gp_Vec(Pos.Location(), P).Dot(new gp_Vec(Pos.YDirection()));
+    public static double ParabolaParameter(in Frame3D pos, in Point3D p)
+        => new Vector3D(pos.Location(), p).Dot(new Vector3D(pos.YDirection()));
 
-    public static double LineParameter(in gp_Ax2d L, in gp_Pnt2d P)
+    public static double LineParameter(in Axis2D l, in Point2D p)
     {
-        gp_XY Coord = P.XY();
-        Coord.Subtract(L.Location().XY());
-        return Coord.Dot(L.Direction().XY());
+        Xy coord = p.XY();
+        coord.Subtract(l.Location().XY());
+        return coord.Dot(l.Direction().XY());
     }
 
-    public static double CircleParameter(in gp_Ax22d Pos, in gp_Pnt2d P)
+    public static double CircleParameter(in Frame2D pos, in Point2D p)
     {
-        double Teta = Pos.XDirection().Angle(new gp_Dir2d(new gp_Vec2d(Pos.Location(), P)));
-        Teta = ((Pos.XDirection() ^ Pos.YDirection()) >= 0.0) ? Teta : -Teta;
-        normalizeAngle(ref Teta);
-        return Teta;
+        double teta = pos.XDirection().Angle(new Direction2D(new Vector2D(pos.Location(), p)));
+        teta = ((pos.XDirection() ^ pos.YDirection()) >= 0.0) ? teta : -teta;
+        NormalizeAngle(ref teta);
+        return teta;
     }
 
-    public static double EllipseParameter(in gp_Ax22d Pos, double MajorRadius, double MinorRadius, in gp_Pnt2d P)
+    public static double EllipseParameter(in Frame2D pos, double majorRadius, double minorRadius, in Point2D p)
     {
-        gp_XY OP = P.XY();
-        OP.Subtract(Pos.Location().XY());
-        gp_XY xaxis = Pos.XDirection().XY();
-        gp_XY yaxis = Pos.YDirection().XY();
-        gp_XY Om = xaxis.Multiplied(OP.Dot(xaxis));
-        yaxis.Multiply((OP.Dot(yaxis)) * (MajorRadius / MinorRadius));
-        Om.Add(yaxis);
-        double Teta = new gp_Vec2d(xaxis).Angle(new gp_Vec2d(Om));
-        Teta = ((Pos.XDirection() ^ Pos.YDirection()) >= 0.0) ? Teta : -Teta;
-        normalizeAngle(ref Teta);
-        return Teta;
+        Xy op = p.XY();
+        op.Subtract(pos.Location().XY());
+        Xy xaxis = pos.XDirection().XY();
+        Xy yaxis = pos.YDirection().XY();
+        Xy om = xaxis.Multiplied(op.Dot(xaxis));
+        yaxis.Multiply((op.Dot(yaxis)) * (majorRadius / minorRadius));
+        om.Add(yaxis);
+        double teta = new Vector2D(xaxis).Angle(new Vector2D(om));
+        teta = ((pos.XDirection() ^ pos.YDirection()) >= 0.0) ? teta : -teta;
+        NormalizeAngle(ref teta);
+        return teta;
     }
 
-    public static double HyperbolaParameter(in gp_Ax22d Pos, double MajorRadius, double MinorRadius, in gp_Pnt2d P)
+    public static double HyperbolaParameter(in Frame2D pos, double majorRadius, double minorRadius, in Point2D p)
     {
-        gp_Vec2d V = new gp_Vec2d(Pos.YDirection().XY());
-        double sht = new gp_Vec2d(Pos.Location(), P).Dot(V) / MinorRadius;
+        Vector2D v = new Vector2D(pos.YDirection().XY());
+        double sht = new Vector2D(pos.Location(), p).Dot(v) / minorRadius;
         return Math.Asinh(sht);
     }
 
-    public static double ParabolaParameter(in gp_Ax22d Pos, in gp_Pnt2d P)
+    public static double ParabolaParameter(in Frame2D pos, in Point2D p)
     {
-        gp_Vec2d Directrix = new gp_Vec2d(Pos.YDirection().XY());
-        return new gp_Vec2d(Pos.Location(), P).Dot(Directrix);
+        Vector2D directrix = new Vector2D(pos.YDirection().XY());
+        return new Vector2D(pos.Location(), p).Dot(directrix);
     }
 
     // Building 3D entities from 2D ones: the X and Y axes of the 2D space are lined up with the X and Y
     // directions of Pos.
 
-    public static gp_Pnt To3d(in gp_Ax2 Pos, in gp_Pnt2d P)
+    public static Point3D To3d(in Frame3D pos, in Point2D p)
     {
-        gp_XYZ Vxy = Pos.XDirection().XYZ();
-        Vxy.SetLinearForm(P.X(), Vxy, P.Y(), Pos.YDirection().XYZ(), Pos.Location().XYZ());
-        return new gp_Pnt(Vxy);
+        Xyz vxy = pos.XDirection().XYZ();
+        vxy.SetLinearForm(p.X(), vxy, p.Y(), pos.YDirection().XYZ(), pos.Location().XYZ());
+        return new Point3D(vxy);
     }
 
-    public static gp_Dir To3d(in gp_Ax2 Pos, in gp_Dir2d V)
+    public static Direction3D To3d(in Frame3D pos, in Direction2D v)
     {
-        gp_Vec Vx = new gp_Vec(Pos.XDirection());
-        gp_Vec Vy = new gp_Vec(Pos.YDirection());
-        Vx.Multiply(V.X());
-        Vy.Multiply(V.Y());
-        Vx.Add(Vy);
-        return new gp_Dir(Vx);
+        Vector3D vx = new Vector3D(pos.XDirection());
+        Vector3D vy = new Vector3D(pos.YDirection());
+        vx.Multiply(v.X());
+        vy.Multiply(v.Y());
+        vx.Add(vy);
+        return new Direction3D(vx);
     }
 
-    public static gp_Vec To3d(in gp_Ax2 Pos, in gp_Vec2d V)
+    public static Vector3D To3d(in Frame3D pos, in Vector2D v)
     {
-        gp_Vec Vx = new gp_Vec(Pos.XDirection());
-        gp_Vec Vy = new gp_Vec(Pos.YDirection());
-        Vx.Multiply(V.X());
-        Vy.Multiply(V.Y());
-        Vx.Add(Vy);
-        return Vx;
+        Vector3D vx = new Vector3D(pos.XDirection());
+        Vector3D vy = new Vector3D(pos.YDirection());
+        vx.Multiply(v.X());
+        vy.Multiply(v.Y());
+        vx.Add(vy);
+        return vx;
     }
 
-    public static gp_Ax1 To3d(in gp_Ax2 Pos, in gp_Ax2d A)
+    public static Axis3D To3d(in Frame3D pos, in Axis2D a)
     {
-        gp_Pnt P = To3d(Pos, A.Location());
-        gp_Vec V = new gp_Vec(To3d(Pos, A.Direction()));
-        return new gp_Ax1(P, new gp_Dir(V));
+        Point3D p = To3d(pos, a.Location());
+        Vector3D v = new Vector3D(To3d(pos, a.Direction()));
+        return new Axis3D(p, new Direction3D(v));
     }
 
-    public static gp_Ax2 To3d(in gp_Ax2 Pos, in gp_Ax22d A)
+    public static Frame3D To3d(in Frame3D pos, in Frame2D a)
     {
-        gp_Pnt P = To3d(Pos, A.Location());
-        gp_Vec VX = new gp_Vec(To3d(Pos, A.XDirection()));
-        gp_Vec VY = new gp_Vec(To3d(Pos, A.YDirection()));
-        return new gp_Ax2(P, new gp_Dir(VX.Crossed(VY)), new gp_Dir(VX));
+        Point3D p = To3d(pos, a.Location());
+        Vector3D vx = new Vector3D(To3d(pos, a.XDirection()));
+        Vector3D vy = new Vector3D(To3d(pos, a.YDirection()));
+        return new Frame3D(p, new Direction3D(vx.Crossed(vy)), new Direction3D(vx));
     }
 
-    public static gp_Lin To3d(in gp_Ax2 Pos, in gp_Lin2d L) => new gp_Lin(To3d(Pos, L.Position()));
+    public static Line3D To3d(in Frame3D pos, in Line2D l) => new Line3D(To3d(pos, l.Position()));
 
-    public static gp_Circ To3d(in gp_Ax2 Pos, in gp_Circ2d C) => new gp_Circ(To3d(Pos, C.Axis()), C.Radius());
+    public static Circle3D To3d(in Frame3D pos, in Circle2D c) => new Circle3D(To3d(pos, c.Axis()), c.Radius());
 
-    public static gp_Elips To3d(in gp_Ax2 Pos, in gp_Elips2d E)
-        => new gp_Elips(To3d(Pos, E.Axis()), E.MajorRadius(), E.MinorRadius());
+    public static Ellipse3D To3d(in Frame3D pos, in Ellipse2D e)
+        => new Ellipse3D(To3d(pos, e.Axis()), e.MajorRadius(), e.MinorRadius());
 
-    public static gp_Hypr To3d(in gp_Ax2 Pos, in gp_Hypr2d H)
-        => new gp_Hypr(To3d(Pos, H.Axis()), H.MajorRadius(), H.MinorRadius());
+    public static Hyperbola3D To3d(in Frame3D pos, in Hyperbola2D h)
+        => new Hyperbola3D(To3d(pos, h.Axis()), h.MajorRadius(), h.MinorRadius());
 
-    public static gp_Parab To3d(in gp_Ax2 Pos, in gp_Parab2d Prb) => new gp_Parab(To3d(Pos, Prb.Axis()), Prb.Focal());
+    public static Parabola3D To3d(in Frame3D pos, in Parabola2D prb) => new Parabola3D(To3d(pos, prb.Axis()), prb.Focal());
 }

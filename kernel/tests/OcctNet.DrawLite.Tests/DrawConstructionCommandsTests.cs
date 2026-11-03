@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 
@@ -42,15 +44,15 @@ public class DrawConstructionCommandsTests
     {
         (DrawInterpreter i, _) = Load();
         i.Eval("vertex v1 0 0 0; vertex v2 3 4 0; edge e v1 v2; polyvertex pv v1 v2");
-        Assert.Equal(new gp_Pnt(3, 4, 0), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v2"))));
+        Assert.Equal(new Point3D(3, 4, 0), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v2"))));
         TopoDS_Edge e = TopoDS.Edge(i.GetShape("e"));
-        Assert.Equal(5.0, BRep_Tool.Curve(e, out double f, out double l)!.Value(l).Distance(new gp_Pnt()) - f, 12);
+        Assert.Equal(5.0, BRep_Tool.Curve(e, out double f, out double l)!.Value(l).Distance(new Point3D()) - f, 12);
         Assert.Equal(1, Count(i.GetShape("pv"), TopAbs_ShapeEnum.TopAbs_EDGE));
 
         // vertex on an edge's curve, at a point
         i.Eval("vertex v3 2.5 e; point p 1 2 3; vertex v4 p");
-        Assert.Equal(new gp_Pnt(1.5, 2, 0), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v3"))));
-        Assert.Equal(new gp_Pnt(1, 2, 3), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v4"))));
+        Assert.Equal(new Point3D(1.5, 2, 0), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v3"))));
+        Assert.Equal(new Point3D(1, 2, 3), BRep_Tool.Pnt(TopoDS.Vertex(i.GetShape("v4"))));
         Assert.Equal("", i.Eval("vertex v5 1 nothing"));
         Assert.Equal("0", i.Eval("isdraw v5"));
         Assert.Equal("Standard_NullObject", Error(i, "vertex v6 nothing")["An exception was caught ".Length..]);
@@ -279,7 +281,7 @@ public class DrawConstructionCommandsTests
         Assert.Equal("", Error(i, "gcarc s seg p1 p3"));
         Assert.Equal("The length s is 2\n", i.Eval("length s"));
         Assert.Equal("", Error(i, "gcarc a cir p1 p2 p3"));
-        Assert.Equal($"The length a is {Standard_Stream.FormatReal(GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(DrawTrSurf_Curve(i, "a")), 1e-7), 17)}\n",
+        Assert.Equal($"The length a is {StreamUtilities.FormatReal(GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(DrawTrSurf_Curve(i, "a")), 1e-7), 17)}\n",
                      i.Eval("length a"));
         // the half circle through the three points
         Assert.Equal(Math.PI, GCPnts_AbscissaPoint.Length(new GeomAdaptor_Curve(DrawTrSurf_Curve(i, "a"))), 6);
@@ -314,12 +316,12 @@ public class DrawConstructionCommandsTests
         (DrawInterpreter i, _) = Load();
         i.Eval("line l 0 0 0 1 0 0; point p 1 2 3; circle c 0 0 0 1; point q 1 2");
         Assert.Equal("l p ", i.Eval("translate l p 0 0 5"));
-        Assert.Equal(new gp_Pnt(0, 0, 5), ((Geom_Line)((DrawGeometry)i.GetDrawable("l")!).Geometry).Lin().Location());
-        Assert.Equal(new gp_Pnt(1, 2, 8), (gp_Pnt)((DrawGeometry)i.GetDrawable("p")!).Geometry);
+        Assert.Equal(new Point3D(0, 0, 5), ((Geom_Line)((DrawGeometry)i.GetDrawable("l")!).Geometry).Lin().Location());
+        Assert.Equal(new Point3D(1, 2, 8), (Point3D)((DrawGeometry)i.GetDrawable("p")!).Geometry);
 
         // pmirror and pscale leave the point's coordinates in the list of names, as OCCT does
         Assert.Equal("p 0 0 0 ", i.Eval("pmirror p 0 0 0"));
-        Assert.Equal(new gp_Pnt(-1, -2, -8), (gp_Pnt)((DrawGeometry)i.GetDrawable("p")!).Geometry);
+        Assert.Equal(new Point3D(-1, -2, -8), (Point3D)((DrawGeometry)i.GetDrawable("p")!).Geometry);
         Assert.Equal("c 0 0 0 ", i.Eval("pscale c 0 0 0 2"));
         Assert.Equal(2.0, ((Geom_Circle)((DrawGeometry)i.GetDrawable("c")!).Geometry).Radius());
         Assert.Equal("c ", i.Eval("rotate c 0 0 0 1 0 0 90"));
@@ -328,9 +330,9 @@ public class DrawConstructionCommandsTests
         Assert.Equal("", Error(i, "translate c 1 2"));
 
         Assert.Equal("q ", i.Eval("2dtranslate q 1 1"));
-        Assert.Equal(new gp_Pnt2d(2, 3), (gp_Pnt2d)((DrawGeometry)i.GetDrawable("q")!).Geometry);
+        Assert.Equal(new Point2D(2, 3), (Point2D)((DrawGeometry)i.GetDrawable("q")!).Geometry);
         i.Eval("line l2 0 0 1 0; 2drotate l2 0 0 90; 2dpmirror q 0 0; 2dlmirror q 0 0 1 0; 2dpscale q 0 0 2");
-        Assert.Equal(new gp_Pnt2d(-4, 6), (gp_Pnt2d)((DrawGeometry)i.GetDrawable("q")!).Geometry);
+        Assert.Equal(new Point2D(-4, 6), (Point2D)((DrawGeometry)i.GetDrawable("q")!).Geometry);
         Assert.Equal(0.0, ((Geom2d_Line)((DrawGeometry)i.GetDrawable("l2")!).Geometry).Direction().X(), 15);
     }
 

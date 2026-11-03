@@ -1,3 +1,6 @@
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -33,16 +36,16 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     }
 
     /// <summary>A vector from an OCCT gp_XYZ.</summary>
-    public Vector(gp_XYZ xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
+    public Vector(Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
     /// <summary>A vector from an OCCT gp_Pnt.</summary>
-    public Vector(gp_Pnt pnt) : this(pnt.X(), pnt.Y(), pnt.Z()) { }
+    public Vector(Point3D pnt) : this(pnt.X(), pnt.Y(), pnt.Z()) { }
 
     /// <summary>A vector from an OCCT gp_Vec.</summary>
-    public Vector(gp_Vec vec) : this(vec.X(), vec.Y(), vec.Z()) { }
+    public Vector(Vector3D vec) : this(vec.X(), vec.Y(), vec.Z()) { }
 
     /// <summary>A vector from an OCCT gp_Dir.</summary>
-    public Vector(gp_Dir dir) : this(dir.X(), dir.Y(), dir.Z()) { }
+    public Vector(Direction3D dir) : this(dir.X(), dir.Y(), dir.Z()) { }
 
     /// <summary>The point a vertex is at.</summary>
     public Vector(Vertex vertex) => this = vertex.ToVector();
@@ -98,12 +101,12 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
 #pragma warning restore CS1591
 
     /// <summary>The vector scaled to length 1.</summary>
-    /// <exception cref="Standard_Failure">The vector has zero length.</exception>
+    /// <exception cref="FailureException">The vector has zero length.</exception>
     public Vector Normalized()
     {
         double d = Length;
         if (d <= GpResolution)   // as gp_Vec::Normalized checks
-            throw new Standard_ConstructionError("gp_Vec::Normalized() - vector has zero norm");
+            throw new ConstructionErrorException("gp_Vec::Normalized() - vector has zero norm");
         return new Vector(X / d, Y / d, Z / d);
     }
 
@@ -172,7 +175,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
             return new Vector(coords);
 
         // A direction has no position: remove the translation by subtracting where the origin lands
-        var origin = new gp_XYZ(0, 0, 0);
+        var origin = new Xyz(0, 0, 0);
         transform.GTrsf.Transforms(ref origin);
         return (new Vector(coords) - new Vector(origin)).Normalized();
     }
@@ -202,17 +205,17 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public Vector? Intersect(Location location) => location.Intersect(this);
 
     /// <summary>A new OCCT gp_Pnt at this point.</summary>
-    public gp_Pnt ToGpPnt() => new(X, Y, Z);
+    public Point3D ToGpPnt() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Dir in this direction.</summary>
-    /// <exception cref="Standard_Failure">The vector has zero length.</exception>
-    public gp_Dir ToGpDir() => new(X, Y, Z);
+    /// <exception cref="FailureException">The vector has zero length.</exception>
+    public Direction3D ToGpDir() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Vec with these components.</summary>
-    public gp_Vec ToGpVec() => new(X, Y, Z);
+    public Vector3D ToGpVec() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_XYZ with these components.</summary>
-    public gp_XYZ ToGpXyz() => new(X, Y, Z);
+    public Xyz ToGpXyz() => new(X, Y, Z);
 
     internal (double, double, double) Key => (GeomKey.Round(X), GeomKey.Round(Y), GeomKey.Round(Z));
 

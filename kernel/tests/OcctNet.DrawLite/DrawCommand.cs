@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -35,7 +36,7 @@ internal static class DrawCxx
                 aStatus = theCommand(i, aResult, a);
                 aText = aResult.ToString();
             }
-            catch (Standard_Failure aFailure)
+            catch (FailureException aFailure)
             {
                 aStatus = 1;
                 aText = "An exception was caught " + Print(aFailure);
@@ -50,7 +51,7 @@ internal static class DrawCxx
         });
 
     /// <summary>Standard_Failure::Print: the type, then ": " and the message when there is one.</summary>
-    public static string Print(Standard_Failure theFailure)
+    public static string Print(FailureException theFailure)
     {
         string aMessage = theFailure.GetMessageString();
         bool aHasMessage = aMessage.Length > 0 && !aMessage.StartsWith("Exception of type '", StringComparison.Ordinal);

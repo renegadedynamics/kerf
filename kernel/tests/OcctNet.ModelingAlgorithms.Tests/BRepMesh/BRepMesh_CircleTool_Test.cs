@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 public class BRepMesh_CircleTool_Test
@@ -20,10 +22,10 @@ public class BRepMesh_CircleTool_Test
     }
 
     // Returns true if thePoint lies on the circle defined by theCenter and theRadius.
-    private static bool isOnCircle(in gp_XY thePoint, in gp_XY theCenter, double theRadius)
+    private static bool isOnCircle(in Xy thePoint, in Xy theCenter, double theRadius)
     {
-        double aSqPrec = Precision.PConfusion() * Precision.PConfusion();
-        gp_XY aDiff = thePoint - theCenter;
+        double aSqPrec = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
+        Xy aDiff = thePoint - theCenter;
         return aDiff.SquareModulus() - theRadius * theRadius < aSqPrec;
     }
 
@@ -35,25 +37,25 @@ public class BRepMesh_CircleTool_Test
     {
         MsvcRand aRand = new(42);
 
-        double aSqPrec = Precision.PConfusion() * Precision.PConfusion();
+        double aSqPrec = global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion();
         double aMinArea = 5.0 * Math.PI / 180.0; // same threshold as the original command
         const int aNbTests = 100000;
 
         int aNbFailed = 0;
         int i = 0;
-        gp_XY[] p = new gp_XY[3];
+        Xy[] p = new Xy[3];
         while (i < aNbTests)
         {
             for (int j = 0; j < 3; ++j)
             {
                 double aX = (double)aRand.rand() / MsvcRand.RAND_MAX;
                 double aY = (double)aRand.rand() / MsvcRand.RAND_MAX;
-                p[j] = new gp_XY(aX, aY);
+                p[j] = new Xy(aX, aY);
             }
 
             // Skip degenerate (nearly collinear) triangles - retry like the original.
-            gp_XY aV1 = p[1] - p[0];
-            gp_XY aV2 = p[2] - p[0];
+            Xy aV1 = p[1] - p[0];
+            Xy aV2 = p[2] - p[0];
             if (aV1.SquareModulus() <= aSqPrec || aV2.SquareModulus() <= aSqPrec || (aV1 ^ aV2) <= aMinArea)
             {
                 continue;
@@ -61,7 +63,7 @@ public class BRepMesh_CircleTool_Test
 
             ++i;
 
-            if (!BRepMesh_CircleTool.MakeCircle(p[0], p[1], p[2], out gp_XY aCenter, out double aRadius))
+            if (!BRepMesh_CircleTool.MakeCircle(p[0], p[1], p[2], out Xy aCenter, out double aRadius))
             {
                 continue;
             }

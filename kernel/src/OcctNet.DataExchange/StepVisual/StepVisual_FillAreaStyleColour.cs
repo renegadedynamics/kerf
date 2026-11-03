@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_FillAreaStyleColour : Standard_Transient
+public class StepVisual_FillAreaStyleColour : Transient
 {
     private TCollection_HAsciiString name;
     private StepVisual_Colour fillColour;

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 /// </summary>
 public class StepRepr_ParallelOffset : StepRepr_DerivedShapeAspect
 {
-    private Standard_Transient offset;
+    private Transient offset;
 
     public StepRepr_ParallelOffset()
     {
@@ -22,7 +24,7 @@ public class StepRepr_ParallelOffset : StepRepr_DerivedShapeAspect
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theShapeAspect_Name, TCollection_HAsciiString theShapeAspect_Description, StepRepr_ProductDefinitionShape theShapeAspect_OfShape, StepData_Logical theShapeAspect_ProductDefinitional, Standard_Transient theOffset)
+    public void Init(TCollection_HAsciiString theShapeAspect_Name, TCollection_HAsciiString theShapeAspect_Description, StepRepr_ProductDefinitionShape theShapeAspect_OfShape, StepData_Logical theShapeAspect_ProductDefinitional, Transient theOffset)
     {
         base.Init(theShapeAspect_Name, theShapeAspect_Description, theShapeAspect_OfShape, theShapeAspect_ProductDefinitional);
 
@@ -32,7 +34,7 @@ public class StepRepr_ParallelOffset : StepRepr_DerivedShapeAspect
     /// <summary>
     /// Returns field Offset
     /// </summary>
-    public Standard_Transient Offset()
+    public Transient Offset()
     {
         return offset;
     }
@@ -40,7 +42,7 @@ public class StepRepr_ParallelOffset : StepRepr_DerivedShapeAspect
     /// <summary>
     /// Set field Offset
     /// </summary>
-    public void SetOffset(Standard_Transient theOffset)
+    public void SetOffset(Transient theOffset)
     {
         offset = theOffset;
     }

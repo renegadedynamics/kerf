@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -38,7 +39,7 @@ public class ShapeFixTests
         TopoDS_Shape aRes = ShapeFix.SameParametered(aBox, true, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(aBox);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
         Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
         for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
@@ -51,9 +52,9 @@ public class ShapeFixTests
     {
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
-        aB.MakeFace(ref aF, new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))), 1e-7);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(-10, 0), new gp_Dir2d(1, 0)), aF, 1e-7);
+        aB.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), 1e-7);
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(-10, 0), new Direction2D(1, 0)), aF, 1e-7);
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
         aB.SameParameter(anE, false);
@@ -73,7 +74,7 @@ public class ShapeFixTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         TopoDS_Shape aRes = ShapeFix.RegularityEncoded(aBox);
         aSnap.AssertUnchanged(aBox);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
     }
 
     // two segments from one vertex of tolerance 1 at the origin: (0,0,0)-(10,0,0) and (0,0.5,0)-(0,10,0)
@@ -81,11 +82,11 @@ public class ShapeFixTests
     {
         var aB = new BRep_Builder();
         var aV = new TopoDS_Vertex();
-        aB.MakeVertex(ref aV, new gp_Pnt(0, 0, 0), 1.0);
-        TopoDS_Edge aE1 = TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 10, aV,
-                                          TestShapes.Vertex(new gp_Pnt(10, 0, 0)));
-        TopoDS_Edge aE2 = TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0.5, 0), new gp_Dir(0, 1, 0)), 0, 9.5, aV,
-                                          TestShapes.Vertex(new gp_Pnt(0, 10, 0)));
+        aB.MakeVertex(ref aV, new Point3D(0, 0, 0), 1.0);
+        TopoDS_Edge aE1 = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV,
+                                          TestShapes.Vertex(new Point3D(10, 0, 0)));
+        TopoDS_Edge aE2 = TestShapes.Edge(new Geom_Line(new Point3D(0, 0.5, 0), new Direction3D(0, 1, 0)), 0, 9.5, aV,
+                                          TestShapes.Vertex(new Point3D(0, 10, 0)));
         var aC = new TopoDS_Compound();
         aB.MakeCompound(ref aC);
         aB.Add(aC, aE1);
@@ -102,7 +103,7 @@ public class ShapeFixTests
         TopoDS_Shape aRes = ShapeFix.VertexPositionFixed(aC, 0.1, aContext, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(aC);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
         // each edge now starts on its own curve's end, with a tight vertex
         for (var anExp = new TopExp_Explorer(aRes, TopAbs_EDGE); anExp.More(); anExp.Next())
         {

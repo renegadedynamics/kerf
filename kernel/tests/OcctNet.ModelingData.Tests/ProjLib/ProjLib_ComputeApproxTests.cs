@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace OcctNet.ModelingData.Tests;
@@ -11,9 +12,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class ProjLib_ComputeApproxTests
 {
-    private static readonly gp_Ax3 Std = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0));
+    private static readonly CoordinateSystem Std = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0));
 
-    private static readonly gp_Ax3 Tilted = new(new gp_Pnt(1.0, -2.0, 0.5), new gp_Dir(0.2, -0.3, 1.0), new gp_Dir(1.0, 0.0, -0.2));
+    private static readonly CoordinateSystem Tilted = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(0.2, -0.3, 1.0), new Direction3D(1.0, 0.0, -0.2));
 
     // The 2D curve mapped back through the surface lies on the 3D curve at the same parameter; consecutive samples
     // are close in the parametric space (no jump across a seam).
@@ -24,12 +25,12 @@ public class ProjLib_ComputeApproxTests
         double aFirst = theCurve.FirstParameter(), aLast = theCurve.LastParameter();
         Assert.Equal(aFirst, thePCurve.FirstParameter(), 1.0e-9);
         Assert.Equal(aLast, thePCurve.LastParameter(), 1.0e-9);
-        gp_Pnt2d aPrev = thePCurve.Value(aFirst);
+        Point2D aPrev = thePCurve.Value(aFirst);
         for (int i = 0; i <= theNb; i++)
         {
             double t = aFirst + (aLast - aFirst) * i / theNb;
-            gp_Pnt2d aUV = thePCurve.Value(t);
-            gp_Pnt aP = theSurf.Value(aUV.X(), aUV.Y());
+            Point2D aUV = thePCurve.Value(t);
+            Point3D aP = theSurf.Value(aUV.X(), aUV.Y());
             double aDist = aP.Distance(theCurve.Value(t));
             Assert.True(aDist <= theTol, $"distance {aDist} at t = {t}, tol {theTol}, {aFirst}..{aLast}, knots {(thePCurve as Geom2d_BSplineCurve)?.NbKnots()}");
             Assert.True(aUV.Distance(aPrev) < 1.0, $"jump at t = {t}");
@@ -53,12 +54,12 @@ public class ProjLib_ComputeApproxTests
 
     private static Geom_BSplineCurve SpaceBSpline(bool theRational, bool thePeriodic)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 5);
-        aPoles[1] = new gp_Pnt(0, 0, 1);
-        aPoles[2] = new gp_Pnt(1, 2, -1);
-        aPoles[3] = new gp_Pnt(3, 2, 2);
-        aPoles[4] = new gp_Pnt(4, -1, 0);
-        aPoles[5] = new gp_Pnt(2, -2, 3);
+        var aPoles = new NCollection_Array1<Point3D>(1, 5);
+        aPoles[1] = new Point3D(0, 0, 1);
+        aPoles[2] = new Point3D(1, 2, -1);
+        aPoles[3] = new Point3D(3, 2, 2);
+        aPoles[4] = new Point3D(4, -1, 0);
+        aPoles[5] = new Point3D(2, -2, 3);
         var aWeights = new NCollection_Array1<double>(1, 5);
         for (int i = 1; i <= 5; i++)
         {
@@ -106,12 +107,12 @@ public class ProjLib_ComputeApproxTests
         Assert.Equal(theRational, aRes.IsRational());
         // No approximation: the tolerance is unchanged.
         Assert.Equal(1.0e-7, aProj.Tolerance());
-        gp_Pln aP = aPln.Pln();
+        Plane3D aP = aPln.Pln();
         for (int i = 0; i <= 20; i++)
         {
             double t = aC.FirstParameter() + (aC.LastParameter() - aC.FirstParameter()) * i / 20;
-            ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
-            gp_Pnt2d aUV = aRes.Value(t);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
+            Point2D aUV = aRes.Value(t);
             Assert.Equal(u, aUV.X(), 1.0e-12);
             Assert.Equal(v, aUV.Y(), 1.0e-12);
         }
@@ -122,11 +123,11 @@ public class ProjLib_ComputeApproxTests
     [InlineData(true)]
     public void Plane_Bezier_GivesBezier(bool theRational)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 3, 1);
-        aPoles[3] = new gp_Pnt(3, 3, -2);
-        aPoles[4] = new gp_Pnt(4, 0, 5);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 3, 1);
+        aPoles[3] = new Point3D(3, 3, -2);
+        aPoles[4] = new Point3D(4, 0, 5);
         var aWeights = new NCollection_Array1<double>(1, 4);
         aWeights[1] = 1.0; aWeights[2] = 2.0; aWeights[3] = 0.5; aWeights[4] = 1.0;
         Geom_BezierCurve aC = theRational ? new Geom_BezierCurve(aPoles, aWeights) : new Geom_BezierCurve(aPoles);
@@ -136,11 +137,11 @@ public class ProjLib_ComputeApproxTests
         Geom2d_BezierCurve? aRes = aProj.Bezier();
         Assert.NotNull(aRes);
         Assert.Equal(theRational, aRes.IsRational());
-        gp_Pln aP = aPln.Pln();
+        Plane3D aP = aPln.Pln();
         for (int i = 0; i <= 10; i++)
         {
             double t = i / 10.0;
-            ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
             Assert.Equal(u, aRes.Value(t).X(), 1.0e-12);
             Assert.Equal(v, aRes.Value(t).Y(), 1.0e-12);
         }
@@ -149,7 +150,7 @@ public class ProjLib_ComputeApproxTests
     [Fact]
     public void Plane_OffsetCurve_Approximated()
     {
-        var aBase = new Geom_Circle(new gp_Ax2(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
+        var aBase = new Geom_Circle(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
         var aC = new Geom_TrimmedCurve(new Geom_OffsetCurve(aBase, 0.5, Tilted.Direction()), 0.3, 4.0);
         Approx(aC, new Geom_Plane(Tilted));
     }
@@ -157,7 +158,7 @@ public class ProjLib_ComputeApproxTests
     [Fact]
     public void Plane_Circle_Approximated()
     {
-        var aC = new Geom_Circle(new gp_Ax2(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
+        var aC = new Geom_Circle(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
         Approx(aC, new Geom_Plane(Tilted));
     }
 
@@ -177,9 +178,9 @@ public class ProjLib_ComputeApproxTests
     {
         var aCyl = new Geom_CylindricalSurface(Std, 2.0);
         // The section of the cylinder by a tilted plane through the axis: an ellipse of minor radius 2.
-        gp_Dir aN = new(0.0, -0.5, 1.0);
+        Direction3D aN = new(0.0, -0.5, 1.0);
         double aMaj = 2.0 / aN.Z();
-        var aC = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 1), aN, new gp_Dir(0.0, 1.0, 0.5)), aMaj, 2.0);
+        var aC = new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 1), aN, new Direction3D(0.0, 1.0, 0.5)), aMaj, 2.0);
         Approx(aC, aCyl);
     }
 
@@ -187,9 +188,9 @@ public class ProjLib_ComputeApproxTests
     public void Cylinder_OpenEllipseArc()
     {
         var aCyl = new Geom_CylindricalSurface(Std, 2.0);
-        gp_Dir aN = new(0.0, -0.5, 1.0);
+        Direction3D aN = new(0.0, -0.5, 1.0);
         double aMaj = 2.0 / aN.Z();
-        var anEl = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 1), aN, new gp_Dir(0.0, 1.0, 0.5)), aMaj, 2.0);
+        var anEl = new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 1), aN, new Direction3D(0.0, 1.0, 0.5)), aMaj, 2.0);
         Approx(new Geom_TrimmedCurve(anEl, 1.0, 4.0), aCyl);
         Approx(new Geom_TrimmedCurve(anEl, 4.0, 7.0), aCyl);
     }
@@ -198,9 +199,9 @@ public class ProjLib_ComputeApproxTests
     // direction (1, 0.4), on [0, len]). The method assumes the curve lies on the surface (Function_D1's tangents).
     private static Geom_BSplineCurve Helix(Geom_CylindricalSurface theCyl, double theU0, double theLen)
     {
-        var aLine = new Geom2d_Line(new gp_Pnt2d(theU0, 0.12), new gp_Dir2d(1.0, 0.4));
+        var aLine = new Geom2d_Line(new Point2D(theU0, 0.12), new Direction2D(1.0, 0.4));
         var aCOnS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, 0.0, theLen), new GeomAdaptor_Surface(theCyl));
-        Geom_BSplineCurve? aC = new GeomConvert_ApproxCurve(aCOnS, 1.0e-9, GeomAbs_Shape.GeomAbs_C2, 100, 12).Curve();
+        Geom_BSplineCurve? aC = new GeomConvert_ApproxCurve(aCOnS, 1.0e-9, Continuity.C2, 100, 12).Curve();
         Assert.NotNull(aC);
         return aC;
     }
@@ -234,7 +235,7 @@ public class ProjLib_ComputeApproxTests
         for (int i = 0; i <= 400; i++)
         {
             double t = 9.0 * i / 400;
-            gp_Pnt2d aUV = aRes.Value(t);
+            Point2D aUV = aRes.Value(t);
             aMax = Max(aMax, aS.Value(aUV.X(), aUV.Y()).Distance(aC.Value(t)));
         }
         Assert.True(aMax > 2.9, $"max distance {aMax}");
@@ -277,20 +278,20 @@ public class ProjLib_ComputeApproxTests
         // The plane z = 0.2 x + 1: intersection points along x at y = 0.
         double x1 = (1.0 + aTan) / (1.0 - 0.2 * aTan), x2 = -(1.0 + aTan) / (1.0 + 0.2 * aTan);
         // Not an exact section away from the major axis; the ellipse branch of SetUVBounds only needs the type.
-        gp_Pnt aCenter = new(0.5 * (x1 + x2), 0.0, 0.2 * 0.5 * (x1 + x2) + 1.0);
-        gp_Dir aN = new(-0.2, 0.0, 1.0);
-        var anEl = new Geom_Ellipse(new gp_Ax2(aCenter, aN, new gp_Dir(1.0, 0.0, 0.2)),
+        Point3D aCenter = new(0.5 * (x1 + x2), 0.0, 0.2 * 0.5 * (x1 + x2) + 1.0);
+        Direction3D aN = new(-0.2, 0.0, 1.0);
+        var anEl = new Geom_Ellipse(new Frame3D(aCenter, aN, new Direction3D(1.0, 0.0, 0.2)),
                                     0.5 * (x1 - x2) * Math.Sqrt(1.04), 1.0 + aTan * aCenter.Z());
         var aS = new GeomAdaptor_Surface(aCone);
         var aProj = new ProjLib_ComputeApprox(new GeomAdaptor_Curve(anEl), aS, 1.0e-6);
         Geom2d_BSplineCurve? aRes = aProj.BSpline();
         Assert.NotNull(aRes);
-        gp_Cone aCo = aCone.Cone();
+        Cone aCo = aCone.Cone();
         for (int i = 0; i <= 40; i++)
         {
             double t = 2 * M_PI * i / 40;
-            ElSLib.Parameters(aCo, anEl.Value(t), out double u, out double v);
-            gp_Pnt2d aUV = aRes.Value(t);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aCo, anEl.Value(t), out double u, out double v);
+            Point2D aUV = aRes.Value(t);
             double du = aUV.X() - u;
             du -= 2 * M_PI * Math.Round(du / (2 * M_PI));
             Assert.True(Math.Abs(du) < 1.0e-4, $"u at t = {t}");
@@ -310,7 +311,7 @@ public class ProjLib_ComputeApproxTests
     {
         // Crosses the seam twice.
         var aSph = new Geom_SphericalSurface(Std, 3.0);
-        var aC = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0.3, 0.2, 1.0)), 3.0);
+        var aC = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, 0.2, 1.0)), 3.0);
         Approx(aC, aSph);
     }
 
@@ -318,9 +319,9 @@ public class ProjLib_ComputeApproxTests
     public void Sphere_SmallCircleCrossingSeamArc()
     {
         var aSph = new Geom_SphericalSurface(Std, 2.0);
-        gp_Dir aN = new(1.0, 0.1, 0.4);
+        Direction3D aN = new(1.0, 0.1, 0.4);
         double aR = 0.8, aD = Math.Sqrt(4.0 - aR * aR);
-        var aCirc = new Geom_Circle(new gp_Ax2(new gp_Pnt(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
+        var aCirc = new Geom_Circle(new Frame3D(new Point3D(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
         Approx(aCirc, aSph);
         Approx(new Geom_TrimmedCurve(aCirc, 1.0, 4.0), aSph);
     }
@@ -341,13 +342,13 @@ public class ProjLib_ComputeApproxTests
         // A small circle through the north pole: its plane passes through the pole (|D / C| = R), so VCouture is set
         // (the V window is then widened to +-1e100); past the pole, the image is mirrored (T = PI - T, S = PI + S).
         var aSph = new Geom_SphericalSurface(Std, 2.0);
-        gp_Dir aN = new(1.0, 0.0, 1.0);
+        Direction3D aN = new(1.0, 0.0, 1.0);
         // The plane through the pole (0, 0, 2) with normal aN; its circle has center at the foot from the origin.
         double aDist = 2.0 * aN.Z();
-        gp_Pnt aCenter = new(aDist * aN.X(), aDist * aN.Y(), aDist * aN.Z());
+        Point3D aCenter = new(aDist * aN.X(), aDist * aN.Y(), aDist * aN.Z());
         double aR = Math.Sqrt(4.0 - aDist * aDist);
-        var aCirc = new Geom_Circle(new gp_Ax2(aCenter, aN, new gp_Dir(-1.0, 0.0, 1.0)), aR);
-        Assert.True(aCirc.Value(0.0).Distance(new gp_Pnt(0, 0, 2)) < 1.0e-12);
+        var aCirc = new Geom_Circle(new Frame3D(aCenter, aN, new Direction3D(-1.0, 0.0, 1.0)), aR);
+        Assert.True(aCirc.Value(0.0).Distance(new Point3D(0, 0, 2)) < 1.0e-12);
         // An arc away from the pole (the pole is at parameter 0).
         var aC = new Geom_TrimmedCurve(aCirc, 0.5, 2 * M_PI - 0.5);
         var aS = new GeomAdaptor_Surface(aSph);
@@ -390,20 +391,20 @@ public class ProjLib_ComputeApproxTests
         var aProj = new ProjLib_ComputeApprox(new GeomAdaptor_Curve(aCyl.VIso(1.0)), new GeomAdaptor_Surface(aCyl), 1.0e-6);
         Geom2d_BSplineCurve? anInternal = aProj.InternalBSpline();
         Assert.NotNull(anInternal);
-        Assert.False(anInternal.IsFrozen());
+        Assert.False(anInternal.IsFrozen);
         Geom2d_BSplineCurve? aRes = aProj.BSpline();
         Assert.Same(anInternal, aRes);
-        Assert.True(aRes!.IsFrozen());
+        Assert.True(aRes!.IsFrozen);
         Assert.Same(aRes, aProj.BSpline());
 
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 1, 1);
-        aPoles[3] = new gp_Pnt(2, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 1, 1);
+        aPoles[3] = new Point3D(2, 0, 0);
         var aBez = new ProjLib_ComputeApprox(new GeomAdaptor_Curve(new Geom_BezierCurve(aPoles)),
                                              new GeomAdaptor_Surface(new Geom_Plane(Std)), 1.0e-6);
-        Assert.False(aBez.InternalBezier()!.IsFrozen());
-        Assert.True(aBez.Bezier()!.IsFrozen());
+        Assert.False(aBez.InternalBezier()!.IsFrozen);
+        Assert.True(aBez.Bezier()!.IsFrozen);
         Assert.Same(aBez.InternalBezier(), aBez.Bezier());
     }
 
@@ -411,11 +412,11 @@ public class ProjLib_ComputeApproxTests
     public void Settings_DegreeSegmentsAndBoundaryConstraint()
     {
         var aSph = new Geom_SphericalSurface(Std, 2.0);
-        var aC = new GeomAdaptor_Curve(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0.3, 0.2, 1.0)), 2.0));
+        var aC = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, 0.2, 1.0)), 2.0));
         var aS = new GeomAdaptor_Surface(aSph);
 
         var aProj = new ProjLib_ComputeApprox();
-        Assert.Equal(Precision.PApproximation(), aProj.Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.PApproximation(), aProj.Tolerance());
         Assert.Null(aProj.BSpline());
         aProj.SetTolerance(1.0e-5);
         aProj.SetDegree(3, 4);
@@ -438,7 +439,7 @@ public class ProjLib_ComputeApproxTests
         // The tolerance argument of the constructor is at least PApproximation.
         var aTiny = new ProjLib_ComputeApprox(new GeomAdaptor_Curve(SpaceBSpline(false, false)),
                                               new GeomAdaptor_Surface(new Geom_Plane(Std)), 0.0);
-        Assert.Equal(Precision.PApproximation(), aTiny.Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.PApproximation(), aTiny.Tolerance());
     }
 
     [Fact]
@@ -448,7 +449,7 @@ public class ProjLib_ComputeApproxTests
         Geom_BSplineSurface aS = GeomConvert.SurfaceToBSplineSurface(new Geom_RectangularTrimmedSurface(
             new Geom_CylindricalSurface(Std, 2.0), 0.0, 3.0, 0.0, 2.0));
         var aC = new Geom_TrimmedCurve(new Geom_CylindricalSurface(Std, 2.0).VIso(1.0), 0.5, 2.5);
-        Assert.ThrowsAny<Standard_NoSuchObject>(() =>
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() =>
             new ProjLib_ComputeApprox(new GeomAdaptor_Curve(aC), new GeomAdaptor_Surface(aS), 1.0e-6));
     }
 }

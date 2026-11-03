@@ -76,21 +76,21 @@ public sealed class ChFi2d_ChamferAPI
         myCurve1 = BRep_Tool.Curve(myEdge1, out myStart1, out myEnd1);
         myCurve2 = BRep_Tool.Curve(myEdge2, out myStart2, out myEnd2);
         // searching for common points
-        if (myCurve1!.Value(myStart1).IsEqual(myCurve2!.Value(myEnd2), Precision.Confusion()))
+        if (myCurve1!.Value(myStart1).IsEqual(myCurve2!.Value(myEnd2), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             myCommonStart1 = true;
             myCommonStart2 = false;
         }
         else
         {
-            if (myCurve1.Value(myEnd1).IsEqual(myCurve2.Value(myStart2), Precision.Confusion()))
+            if (myCurve1.Value(myEnd1).IsEqual(myCurve2.Value(myStart2), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 myCommonStart1 = false;
                 myCommonStart2 = true;
             }
             else
             {
-                if (myCurve1.Value(myEnd1).IsEqual(myCurve2.Value(myEnd2), Precision.Confusion()))
+                if (myCurve1.Value(myEnd1).IsEqual(myCurve2.Value(myEnd2), global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     myCommonStart1 = false;
                     myCommonStart2 = false;

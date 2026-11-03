@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -30,7 +31,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         {
             using var aND = new N.gp_Dir();
             theN.TangentU(aND);
-            theP.TangentU(out gp_Dir aD);
+            theP.TangentU(out Direction3D aD);
             SameDir(theO, aND, aD, theWhat + " TangentU");
         }
 
@@ -40,7 +41,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         {
             using var aND = new N.gp_Dir();
             theN.TangentV(aND);
-            theP.TangentV(out gp_Dir aD);
+            theP.TangentV(out Direction3D aD);
             SameDir(theO, aND, aD, theWhat + " TangentV");
         }
 
@@ -64,7 +65,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
             using var aNMax = new N.gp_Dir();
             using var aNMin = new N.gp_Dir();
             theN.CurvatureDirections(aNMax, aNMin);
-            theP.CurvatureDirections(out gp_Dir aMax, out gp_Dir aMin);
+            theP.CurvatureDirections(out Direction3D aMax, out Direction3D aMin);
             SameDir(theO, aNMax, aMax, theWhat + " max direction");
             SameDir(theO, aNMin, aMin, theWhat + " min direction");
         }
@@ -113,7 +114,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                     {
                         aU = aU1;
                     }
-                    else if (j == 1 && !Precision.IsInfinite(aV2))
+                    else if (j == 1 && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aV2))
                     {
                         aV = aV2;
                     }
@@ -198,7 +199,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         using var aNAdaptor = new N.BRepAdaptor_Surface(aFace, false);
         using var aNProps = new N.BRepLProp_SLProps(aNAdaptor, 0.3, 0.2, 2, 1e-7);
 
-        var aPSphere = new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aPSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aPProps = new GeomLProp_SLProps(aPSphere, 0.3, 0.2, 2, 1e-7);
 
         Assert.Equal(0.0, aNProps.MaxCurvature());

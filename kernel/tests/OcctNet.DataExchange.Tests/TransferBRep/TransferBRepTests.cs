@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using OcctNet.DataExchange.Tests.Interface;
 using OcctNet.DataExchange.Tests.Transfer;
 using static Occt.TopAbs_Orientation;
@@ -34,7 +35,7 @@ public class TransferBRepTests
         Assert.Equal(TopAbs_FACE, aBinder.ShapeType());
         Assert.Equal("TopoDS_Face", aBinder.ResultTypeName());
         Assert.True(aBinder.Face().IsSame(myFaces[0]));
-        Assert.Throws<Standard_TypeMismatch>(() => aBinder.Edge());
+        Assert.Throws<TypeMismatchException>(() => aBinder.Edge());
         aBinder.SetAlreadyUsed();
         Assert.Throws<Transfer_TransferFailure>(() => aBinder.SetResult(myBox));
 
@@ -129,7 +130,7 @@ public class TransferBRepTests
 
         Assert.Equal(3, Occt.TransferBRep.Shapes(TP)!.Length()); // the roots: A, and D with its next result
         Assert.Equal(6, Occt.TransferBRep.Shapes(TP, false)!.Length());
-        var anEnts = new NCollection_HSequence<Standard_Transient>();
+        var anEnts = new NCollection_HSequence<Transient>();
         anEnts.Append(B);
         anEnts.Append(C);
         Assert.Equal(3, Occt.TransferBRep.Shapes(TP, anEnts)!.Length());
@@ -145,7 +146,7 @@ public class TransferBRepTests
         TP.AddWarning(A, "w");
         TP.AddFail(B, "f");
         TP.BindTransient(new TCollection_HAsciiString("x"), new TCollection_HAsciiString("y")); // not of the type
-        var aTypes = new NCollection_HSequence<Standard_Transient>();
+        var aTypes = new NCollection_HSequence<Transient>();
         aTypes.Append(new ToyEntity("type"));
         Occt.TransferBRep.TransferResultInfo(TP, aTypes, out NCollection_HSequence<TransferBRep_TransferResultInfo> anInfos);
         TransferBRep_TransferResultInfo anInfo = anInfos.Value(1);
@@ -170,12 +171,12 @@ public class TransferBRepTests
         // the printed report (XSTEP.us's texts)
         Interface_StaticSet.LoadMessages();
         var aPrinter = new StringPrinter();
-        Occt.TransferBRep.PrintResultInfo(aPrinter, new Message_Msg("Header"), anInfos.Value(1), false);
+        Occt.TransferBRep.PrintResultInfo(aPrinter, new Msg("Header"), anInfos.Value(1), false);
         string aText = aPrinter.Text.ToString();
         Assert.Contains("Result.Print.MSG38", aText, StringComparison.Ordinal); // OCCT 8 has no texts for these keys
         Assert.Equal(4, aText.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length); // header, result, two totals
         var aPrinter2 = new StringPrinter();
-        Occt.TransferBRep.PrintResultInfo(aPrinter2, new Message_Msg("Header"), anInfos.Value(1));
+        Occt.TransferBRep.PrintResultInfo(aPrinter2, new Msg("Header"), anInfos.Value(1));
         Assert.Equal(11, aPrinter2.Text.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
     }
 
@@ -225,10 +226,10 @@ public class TransferBRepTests
     /// <summary>The toy norm's shape actor: a ToyEntity becomes a box of size its name's length (a frozen-free working shape).</summary>
     private sealed class ShapeActor : Transfer_ActorOfTransientProcess
     {
-        public override bool Recognize(Standard_Transient? start) => start is ToyEntity;
+        public override bool Recognize(Transient? start) => start is ToyEntity;
 
-        public override Transfer_Binder? Transfer(Standard_Transient? start, Transfer_TransientProcess? TP,
-                                                  Message_ProgressRange theProgress = default)
+        public override Transfer_Binder? Transfer(Transient? start, Transfer_TransientProcess? TP,
+                                                  ProgressRange theProgress = default)
         {
             var anEnt = (ToyEntity)start!;
             if (anEnt.Fails)
@@ -261,10 +262,10 @@ public class TransferBRepTests
         aReader.TransferRoots();
         Assert.True(aReader.IsDone());
         Assert.Equal(2, aReader.NbShapes()); // A and C
-        Assert.True(aReader.Shape(1).TShape()!.IsFrozen());
+        Assert.True(aReader.Shape(1).TShape()!.IsFrozen);
         TopoDS_Shape aOne = aReader.OneShape();
         Assert.Equal(TopAbs_COMPOUND, aOne.ShapeType());
-        Assert.True(aOne.TShape()!.IsFrozen());
+        Assert.True(aOne.TShape()!.IsFrozen);
         Assert.Equal(0, aReader.NbTransients());
         Assert.True(aReader.ShapeResult(C).IsSame(aReader.Shape(2)));
         Assert.True(aReader.CheckStatusResult(false));
@@ -278,7 +279,7 @@ public class TransferBRepTests
         Assert.False(aReader.Transfer(4));
         aReader.ModeNewTransfer() = true;
         Transfer_TransientProcess? aBefore = aReader.TransientProcess();
-        var aList = new NCollection_HSequence<Standard_Transient>();
+        var aList = new NCollection_HSequence<Transient>();
         aList.Append(C);
         aList.Append(new ToyEntity("not in the model"));
         aList.Append(A);

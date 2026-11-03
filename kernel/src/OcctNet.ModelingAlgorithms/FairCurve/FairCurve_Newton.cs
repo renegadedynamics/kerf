@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>The optimisation algorithm of the fair curves: math_NewtonMinimum with a spatial convergence test.</summary>
-public class FairCurve_Newton : math_NewtonMinimum
+public class FairCurve_Newton : NewtonMinimum
 {
     private readonly double mySpTol;
 
@@ -15,7 +17,7 @@ public class FairCurve_Newton : math_NewtonMinimum
     /// positive (its smallest eigenvalue below <paramref name="theConvexity"/>), or when <see cref="IsConverged"/> is
     /// true for 2 successive iterations.
     /// </summary>
-    public FairCurve_Newton(math_MultipleVarFunctionWithHessian theFunction,
+    public FairCurve_Newton(MultipleVarFunctionWithHessian theFunction,
                             double theSpatialTolerance = 1.0e-7,
                             double theCriteriumTolerance = 1.0e-7,
                             int theNbIterations = 40,
@@ -31,11 +33,14 @@ public class FairCurve_Newton : math_NewtonMinimum
     /// little with a reasonable step (|Xi+1 - Xi| &lt;= SpatialTolerance and |F(Xi+1) - F(Xi)| &lt;=
     /// CriteriumTolerance * |F(Xi)|), which detects infinite slidings (a criterion varying too slowly).
     /// </summary>
-    public override bool IsConverged()
+    public override bool IsConverged
     {
-        double N = TheStep.Norm();
-        return (N <= 0.01 * mySpTol)
-               || (N <= mySpTol
-                   && Math.Abs(TheMinimum - PreviousMinimum) <= XTol * Math.Abs(PreviousMinimum));
+        get
+        {
+            double N = _theStep.Norm();
+            return (N <= 0.01 * mySpTol)
+                   || (N <= mySpTol
+                       && Math.Abs(_theMinimum - _previousMinimum) <= _xTol * Math.Abs(_previousMinimum));
+        }
     }
 }

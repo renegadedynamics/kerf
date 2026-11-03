@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
@@ -115,15 +116,15 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
 
     // ------------------------------------------------------------ settled inputs (as BRepLibMakersOracleTests)
 
-    private static bool Same(N.gp_Dir theN, in gp_Dir theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
 
-    private static gp_Dir FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
+    private static Direction3D FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
 
-    private static gp_Dir Dir(Oracle theO)
+    private static Direction3D Dir(Oracle theO)
     {
         while (true)
         {
-            gp_Dir aD = Oracle.Settled(theO.Dir());
+            Direction3D aD = Oracle.Settled(theO.Dir());
             using var aND = Oracle.ToNative(aD);
             if (Same(aND, aD))
             {
@@ -132,11 +133,11 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         }
     }
 
-    private static gp_Ax3 Ax3(Oracle theO)
+    private static CoordinateSystem Ax3(Oracle theO)
     {
         while (true)
         {
-            gp_Pnt aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
+            Point3D aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
             using var aNP = Oracle.ToNative(aP);
             using var aN0 = Oracle.ToNative(theO.Dir());
             using var aX0 = Oracle.ToNative(theO.Dir());
@@ -149,7 +150,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             }
             using var aND = aNAx.Direction();
             using var aNX = aNAx.XDirection();
-            var anAx = new gp_Ax3(new gp_Ax2(aP, FromNative(aND), FromNative(aNX)));
+            var anAx = new CoordinateSystem(new Frame3D(aP, FromNative(aND), FromNative(aNX)));
             using var aN3 = Oracle.ToNative(anAx);
             using var aD3 = aN3.Direction();
             using var aX3 = aN3.XDirection();
@@ -162,7 +163,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     }
 
     // A placement of a circle that native OCCT holds with the same directions, or false.
-    private static bool SettledAx2(in gp_Ax2 theAx)
+    private static bool SettledAx2(in Frame3D theAx)
     {
         using var aN = Oracle.ToNative(theAx);
         using var aD = aN.Direction();
@@ -172,24 +173,24 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     }
 
     // A random simple polygon in the XY plane of the placement: points at increasing angles around its origin.
-    private static gp_Pnt[] StarPolygon(Oracle theO, in gp_Ax3 theAx, int theN, double theScale)
+    private static Point3D[] StarPolygon(Oracle theO, in CoordinateSystem theAx, int theN, double theScale)
     {
-        var aPts = new gp_Pnt[theN];
+        var aPts = new Point3D[theN];
         double anAngle = theO.Real(0, 1);
         for (int i = 0; i < theN; i++)
         {
             anAngle += theO.Real(0.3, 2 * Math.PI / theN);
             double r = theScale * theO.Real(0.5, 1.0);
-            aPts[i] = ElSLib.PlaneValue(r * Math.Cos(anAngle), r * Math.Sin(anAngle), theAx);
+            aPts[i] = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(r * Math.Cos(anAngle), r * Math.Sin(anAngle), theAx);
         }
         return aPts;
     }
 
-    private static (N.TopoDS_Wire, TopoDS_Wire) Polygon(gp_Pnt[] thePoints, bool theClosed)
+    private static (N.TopoDS_Wire, TopoDS_Wire) Polygon(Point3D[] thePoints, bool theClosed)
     {
         var aNP = new N.BRepBuilderAPI_MakePolygon();
         var aPP = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             using var aN = Oracle.ToNative(aP);
             aNP.Add(aN);
@@ -210,34 +211,34 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     /// a triangle with an edge on the placement's Y axis), built the same way on both sides; null when a circle's
     /// placement can't be settled.
     /// </summary>
-    private static (N.TopoDS_Shape N, TopoDS_Shape P, string What)? Profile(Oracle theO, int theKind, in gp_Ax3 theAx, double theScale)
+    private static (N.TopoDS_Shape N, TopoDS_Shape P, string What)? Profile(Oracle theO, int theKind, in CoordinateSystem theAx, double theScale)
     {
         switch (theKind)
         {
             case 0:
             {
-                gp_Pnt aP = ElSLib.PlaneValue(theO.Real(-theScale, theScale) * 0.7, theO.Real(-theScale, theScale) * 0.7, theAx);
+                Point3D aP = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-theScale, theScale) * 0.7, theO.Real(-theScale, theScale) * 0.7, theAx);
                 using var aN = Oracle.ToNative(aP);
                 return (new N.BRepBuilderAPI_MakeVertex(aN).Shape(), new BRepBuilderAPI_MakeVertex(aP).Shape(), "vertex");
             }
             case 1:
             {
-                gp_Pnt[] aPts = StarPolygon(theO, theAx, 2, theScale);
+                Point3D[] aPts = StarPolygon(theO, theAx, 2, theScale);
                 using var aN1 = Oracle.ToNative(aPts[0]);
                 using var aN2 = Oracle.ToNative(aPts[1]);
                 return (new N.BRepBuilderAPI_MakeEdge(aN1, aN2).Shape(), new BRepBuilderAPI_MakeEdge(aPts[0], aPts[1]).Shape(), "line");
             }
             case 2:
             {
-                gp_Pnt aC = ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
-                var anAx2 = new gp_Ax2(aC, theAx.Direction(), theAx.XDirection());
+                Point3D aC = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
+                var anAx2 = new Frame3D(aC, theAx.Direction(), theAx.XDirection());
                 if (!SettledAx2(anAx2))
                 {
                     return null;
                 }
                 double r = theO.Real(0.2, 0.6) * theScale;
                 double a1 = theO.Real(0, 3), a2 = a1 + theO.Real(0.3, 3);
-                var aCirc = new gp_Circ(anAx2, r);
+                var aCirc = new Circle3D(anAx2, r);
                 using var aNAx = Oracle.ToNative(anAx2);
                 using var aNC = new N.gp_Circ(aNAx, r);
                 return (new N.BRepBuilderAPI_MakeEdge(aNC, a1, a2).Shape(), new BRepBuilderAPI_MakeEdge(aCirc, a1, a2).Shape(), "arc");
@@ -245,14 +246,14 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             case 3:
             case 4:
             {
-                gp_Pnt[] aPts = StarPolygon(theO, theAx, theO.Int(3, 6), theScale);
+                Point3D[] aPts = StarPolygon(theO, theAx, theO.Int(3, 6), theScale);
                 (N.TopoDS_Wire aNW, TopoDS_Wire aPW) = Polygon(aPts, theKind == 4);
                 return (aNW, aPW, theKind == 4 ? "closed polygon" : "open polygon");
             }
             case 5:
             case 6:
             {
-                gp_Pnt[] aPts = StarPolygon(theO, theAx, theO.Int(3, 7), theScale);
+                Point3D[] aPts = StarPolygon(theO, theAx, theO.Int(3, 7), theScale);
                 if (theO.Bool())
                 {
                     Array.Reverse(aPts);
@@ -262,7 +263,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 TopoDS_Face aPF = new BRepBuilderAPI_MakeFace(aPW, true).Face();
                 if (theKind == 6)
                 {
-                    gp_Pnt[] aHole = StarPolygon(theO, theAx, theO.Int(3, 6), 0.2 * theScale);
+                    Point3D[] aHole = StarPolygon(theO, theAx, theO.Int(3, 6), 0.2 * theScale);
                     (N.TopoDS_Wire aNH, TopoDS_Wire aPH) = Polygon(aHole, true);
                     aNF = new N.BRepBuilderAPI_MakeFace(aNF, N.TopoDS.Wire(aNH.Reversed())).Face();
                     aPF = new BRepBuilderAPI_MakeFace(aPF, TopoDS.Wire(aPH.Reversed())).Face();
@@ -271,14 +272,14 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             }
             case 7:
             {
-                gp_Pnt aC = ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
-                var anAx2 = new gp_Ax2(aC, theAx.Direction(), theAx.XDirection());
+                Point3D aC = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
+                var anAx2 = new Frame3D(aC, theAx.Direction(), theAx.XDirection());
                 if (!SettledAx2(anAx2))
                 {
                     return null;
                 }
                 double r = theO.Real(0.2, 0.6) * theScale;
-                var aCirc = new gp_Circ(anAx2, r);
+                var aCirc = new Circle3D(anAx2, r);
                 using var aNAx = Oracle.ToNative(anAx2);
                 using var aNC = new N.gp_Circ(aNAx, r);
                 N.TopoDS_Wire aNW = new N.BRepBuilderAPI_MakeWire(new N.BRepBuilderAPI_MakeEdge(aNC).Edge()).Wire();
@@ -294,7 +295,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 using var aNAx = Oracle.ToNative(theAx);
                 using var aNCyl = new N.gp_Cylinder(aNAx, r);
                 return (new N.BRepBuilderAPI_MakeFace(aNCyl, u1, u2, v1, v2).Face(),
-                        new BRepBuilderAPI_MakeFace(new gp_Cylinder(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
+                        new BRepBuilderAPI_MakeFace(new Cylinder(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
             }
             case 9:
             {
@@ -307,9 +308,9 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             case 10:
             {
                 // a compound of two polygon faces
-                gp_Pnt[] aPts1 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
-                gp_Pnt[] aPts2 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
-                var aT = new gp_Vec(theAx.XDirection()).Multiplied(0.5 * theScale);
+                Point3D[] aPts1 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
+                Point3D[] aPts2 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
+                var aT = new Vector3D(theAx.XDirection()).Multiplied(0.5 * theScale);
                 for (int i = 0; i < aPts2.Length; i++)
                 {
                     aPts2[i] = aPts2[i].Translated(aT);
@@ -329,10 +330,10 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             {
                 // a triangle with an edge on the placement's Y axis
                 double y1 = theO.Real(-0.7, 0) * theScale, y2 = theO.Real(0.1, 0.7) * theScale;
-                gp_Pnt[] aPts =
+                Point3D[] aPts =
                 [
-                    ElSLib.PlaneValue(0, y1, theAx), ElSLib.PlaneValue(theO.Real(0.2, 0.7) * theScale, theO.Real(y1, y2), theAx),
-                    ElSLib.PlaneValue(0, y2, theAx),
+                    global::Kerf.Engine.Geometry.ElSLib.PlaneValue(0, y1, theAx), global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(0.2, 0.7) * theScale, theO.Real(y1, y2), theAx),
+                    global::Kerf.Engine.Geometry.ElSLib.PlaneValue(0, y2, theAx),
                 ];
                 (N.TopoDS_Wire aNW, TopoDS_Wire aPW) = Polygon(aPts, true);
                 if (theO.Bool())
@@ -464,7 +465,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var aT = new Tally("prisms");
         foreach (int aCase in Tape.Budget(480))
         {
-            gp_Ax3 anAx = Ax3(anO);
+            CoordinateSystem anAx = Ax3(anO);
             double aScale = anO.Real(1, 10);
             var aProfile = Profile(anO, aCase % NbKinds, anAx, aScale);
             if (aProfile is null)
@@ -481,7 +482,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             if (aMode == 0)
             {
                 // a semi-infinite or infinite prism
-                gp_Dir aD = Dir(anO);
+                Direction3D aD = Dir(anO);
                 bool anInf = anO.Bool();
                 using var aND = Oracle.ToNative(aD);
                 aNM = new N.BRepPrimAPI_MakePrism(aNS, aND, anInf, aCopy, aCanonize);
@@ -491,9 +492,9 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             else
             {
                 // a vector: random, or along the normal of the profile's plane (a planar prism of a planar face)
-                gp_Vec aV = aMode == 1
-                              ? new gp_Vec(anAx.Direction()).Multiplied(anO.Real(0.5, 10) * (anO.Bool() ? 1 : -1))
-                              : new gp_Vec(anO.Real(-10, 10), anO.Real(-10, 10), anO.Real(-10, 10));
+                Vector3D aV = aMode == 1
+                              ? new Vector3D(anAx.Direction()).Multiplied(anO.Real(0.5, 10) * (anO.Bool() ? 1 : -1))
+                              : new Vector3D(anO.Real(-10, 10), anO.Real(-10, 10), anO.Real(-10, 10));
                 using var aNV = Oracle.ToNative(aV);
                 aNM = new N.BRepPrimAPI_MakePrism(aNS, aNV, aCopy, aCanonize);
                 aPM = new BRepPrimAPI_MakePrism(aPS, aV, aCopy, aCanonize);
@@ -518,7 +519,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var aT = new Tally("revolutions");
         foreach (int aCase in Tape.Budget(480))
         {
-            gp_Ax3 anAx = Ax3(anO);
+            CoordinateSystem anAx = Ax3(anO);
             double aScale = anO.Real(1, 10);
             int aKind = aCase % NbKinds;
             var aProfile = Profile(anO, aKind, anAx, aScale);
@@ -533,7 +534,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             // or (about a tenth of the time each) a random axis through the placement's origin or its Y axis, which may
             // cross the profile
             // (native gp_Dir normalises the Y direction again: one that doesn't come out the same is settled first)
-            gp_Dir aYD = anAx.YDirection();
+            Direction3D aYD = anAx.YDirection();
             using (var aNYD = Oracle.ToNative(aYD))
             {
                 if (!Same(aNYD, aYD))
@@ -546,24 +547,24 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                     }
                 }
             }
-            gp_Ax1 anAxis;
+            Axis3D anAxis;
             if (aKind == NbKinds - 1)
             {
-                anAxis = new gp_Ax1(anAx.Location(), aYD);
+                anAxis = new Axis3D(anAx.Location(), aYD);
             }
             else if (anO.Int(0, 9) == 0)
             {
-                anAxis = new gp_Ax1(anAx.Location(), Dir(anO));
+                anAxis = new Axis3D(anAx.Location(), Dir(anO));
                 aWhat += ", random axis";
             }
             else if (anO.Int(0, 9) == 0)
             {
-                anAxis = new gp_Ax1(anAx.Location(), aYD);
+                anAxis = new Axis3D(anAx.Location(), aYD);
                 aWhat += ", axis across";
             }
             else
             {
-                anAxis = new gp_Ax1(ElSLib.PlaneValue(-aScale * anO.Real(1.1, 2), 0, anAx), aYD);
+                anAxis = new Axis3D(global::Kerf.Engine.Geometry.ElSLib.PlaneValue(-aScale * anO.Real(1.1, 2), 0, anAx), aYD);
             }
             using var aNAxis = Oracle.ToNative(anAxis);
 
@@ -613,21 +614,21 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     public void Sweeps_of_faces_with_a_seam_have_native_OCCTs_histories()
     {
         var aT = new Tally("seamed faces");
-        var anAx = new gp_Ax3(new gp_Pnt(100, 0, 0), new gp_Dir(1, 0, 0), new gp_Dir(0, 1, 0));
+        var anAx = new CoordinateSystem(new Point3D(100, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0));
         using var aNAx = Oracle.ToNative(anAx);
         // made again for each sweep: native OCCT's sweep without copy writes into its profile
         var aFaces = new List<(Func<N.TopoDS_Shape>, Func<TopoDS_Shape>, string)>
         {
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Cylinder(aNAx, 15), 0, 2 * Math.PI, 0, 40).Face(),
-             () => new BRepBuilderAPI_MakeFace(new gp_Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
+             () => new BRepBuilderAPI_MakeFace(new Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(),
-             () => new BRepBuilderAPI_MakeFace(new gp_Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
+             () => new BRepBuilderAPI_MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(),
-             () => new BRepBuilderAPI_MakeFace(new gp_Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
+             () => new BRepBuilderAPI_MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
         };
-        using var aNZ = Oracle.ToNative(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
-        var aZ = new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        var aV = new gp_Vec(0, 0, 25);
+        using var aNZ = Oracle.ToNative(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        var aZ = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        var aV = new Vector3D(0, 0, 25);
         using var aNV = Oracle.ToNative(aV);
         foreach ((Func<N.TopoDS_Shape> aNF, Func<TopoDS_Shape> aPF, string aKind) in aFaces)
         {

@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -37,19 +38,19 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         if (!Segment)
         {
             mySurface!.Bounds(out double UF, out double UL, out double VF, out double VL);
-            if (!Occt.Precision.IsInfinite(UF))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(UF))
             {
                 myUSplitValues!.SetValue(1, UF);
             }
-            if (!Occt.Precision.IsInfinite(UL))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(UL))
             {
                 myUSplitValues!.SetValue(myUSplitValues.Length(), UL);
             }
-            if (!Occt.Precision.IsInfinite(VF))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(VF))
             {
                 myVSplitValues!.SetValue(1, VF);
             }
-            if (!Occt.Precision.IsInfinite(VL))
+            if (!Kerf.Engine.Foundation.Precision.IsInfinite(VL))
             {
                 myVSplitValues!.SetValue(myVSplitValues.Length(), VL);
             }
@@ -59,7 +60,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         double ULast = myUSplitValues.Value(myUSplitValues.Length());
         double VFirst = myVSplitValues!.Value(1);
         double VLast = myVSplitValues.Value(myVSplitValues.Length());
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
 
         if (mySurface is Geom_RectangularTrimmedSurface Surface)
         {
@@ -91,8 +92,8 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         }
         else if (mySurface is Geom_Plane pln && myPlaneMode)
         {
-            var poles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
-            gp_Pnt dp;
+            var poles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+            Point3D dp;
             poles[1, 1] = dp = pln.Value(UFirst, VFirst);
             poles[1, 2] = dp = pln.Value(UFirst, VLast);
             poles[2, 1] = dp = pln.Value(ULast, VFirst);
@@ -283,7 +284,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             if (basis is Geom_OffsetCurve offset)
             {
                 double value = offset.Offset();
-                gp_Dir direction = offset.Direction();
+                Direction3D direction = offset.Direction();
                 Geom_Curve bas = offset.BasisCurve();
                 var converter = new ShapeUpgrade_ConvertCurve3dToBezier();
                 converter.Init(bas, VFirst, VLast);
@@ -327,14 +328,14 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 nbCurves = curves.Length();
             }
 
-            gp_Ax1 axis = revol.Axis();
+            Axis3D axis = revol.Axis();
             var surf = new NCollection_HArray2<Geom_Surface>(1, 1, 1, nbCurves);
             mySurface.Bounds(out double Umin, out double Umax, out _, out _);
             int k;
             for (k = 1; k <= nbCurves; k++)
             {
                 var rev = new Geom_SurfaceOfRevolution(curves.Value(k), axis);
-                if (UFirst - Umin < Occt.Precision.PConfusion() && Umax - ULast < Occt.Precision.PConfusion())
+                if (UFirst - Umin < Kerf.Engine.Foundation.Precision.PConfusion() && Umax - ULast < Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     surf.SetValue(1, k, rev);
                 }
@@ -391,7 +392,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             curves = converter.GetCurves()!;
             nbCurves = curves.Length();
 
-            gp_Trsf shiftF = new(), shiftL = new();
+            Transform3D shiftF = new(), shiftL = new();
             shiftF.SetTranslation(extr.Value(UFirst, 0), extr.Value(UFirst, VFirst));
             shiftL.SetTranslation(extr.Value(UFirst, 0), extr.Value(UFirst, VLast));
             var surf = new NCollection_HArray2<Geom_Surface>(1, nbCurves, 1, 1);
@@ -402,8 +403,8 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
                 // OCCT down-casts the curve to a Bezier and dereferences it
                 var bez = (Geom_BezierCurve)curves.Value(k);
                 int nbPoles = bez.NbPoles();
-                NCollection_Array1<gp_Pnt> poles = bez.InternalPoles();
-                var resPoles = new NCollection_Array2<gp_Pnt>(1, nbPoles, 1, 2);
+                NCollection_Array1<Point3D> poles = bez.InternalPoles();
+                var resPoles = new NCollection_Array2<Point3D>(1, nbPoles, 1, 2);
                 for (int j = 1; j <= nbPoles; j++)
                 {
                     resPoles[j, 1] = poles[j].Transformed(shiftF);
@@ -479,7 +480,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         if (surf is Geom_BezierSurface)
         {
             var bezier = (Geom_BezierSurface)surf.Copy();
-            double prec = Occt.Precision.PConfusion();
+            double prec = Kerf.Engine.Foundation.Precision.PConfusion();
             if (U1 < prec && U2 > 1 - prec && V1 < prec && V2 > 1 - prec)
             {
                 return bezier;
@@ -529,7 +530,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             {
                 // OCCT_DEBUG output left out: resulting path is not surface of revolution basis on bezier curve
             }
-            if (Math.Abs(U1 - Umin) < Occt.Precision.PConfusion() && Math.Abs(U2 - Umax) < Occt.Precision.PConfusion())
+            if (Math.Abs(U1 - Umin) < Kerf.Engine.Foundation.Precision.PConfusion() && Math.Abs(U2 - Umax) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return revol;
             }
@@ -540,8 +541,8 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
         else
         {
             surf.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
-            if (U1 - Umin < Occt.Precision.PConfusion() && Umax - U2 < Occt.Precision.PConfusion()
-                && V1 - Vmin < Occt.Precision.PConfusion() && Vmax - V2 < Occt.Precision.PConfusion())
+            if (U1 - Umin < Kerf.Engine.Foundation.Precision.PConfusion() && Umax - U2 < Kerf.Engine.Foundation.Precision.PConfusion()
+                && V1 - Vmin < Kerf.Engine.Foundation.Precision.PConfusion() && Vmax - V2 < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return surf;
             }
@@ -571,7 +572,7 @@ public class ShapeUpgrade_ConvertSurfaceToBezierBasis : ShapeUpgrade_SplitSurfac
             offsetValue = offSur.Offset();
         }
 
-        double prec = Occt.Precision.PConfusion();
+        double prec = Kerf.Engine.Foundation.Precision.PConfusion();
         NCollection_HArray1<double> myUSplitParams = mySegments!.InternalUJointValues()!;
         NCollection_HArray1<double> myVSplitParams = mySegments.InternalVJointValues()!;
         int nbU = myUSplitValues!.Length();

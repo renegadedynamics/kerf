@@ -4,6 +4,8 @@
 
 // The file's NCollection_EBTree tests (its NCollection_UBTree tests are in NCollection_UBTreeTests.cs), and additions.
 
+using Kerf.Engine.Collections;
+
 namespace OcctNet.Foundation.Tests;
 
 public class NCollection_EBTreeTest
@@ -11,9 +13,9 @@ public class NCollection_EBTreeTest
     [Fact]
     public void AddContainsRemove()
     {
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
 
-        Assert.True(aTree.IsEmpty());
+        Assert.True(aTree.IsEmpty);
 
         aTree.Add(1, new TestBnd1D(0.0, 2.0));
         aTree.Add(2, new TestBnd1D(3.0, 5.0));
@@ -40,20 +42,20 @@ public class NCollection_EBTreeTest
     [Fact]
     public void RemoveRoot()
     {
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 5.0));
         Assert.True(aTree.Contains(1));
 
         // Removing the only element (root) should clear the tree
         Assert.True(aTree.Remove(1));
-        Assert.True(aTree.IsEmpty());
+        Assert.True(aTree.IsEmpty);
     }
 
     [Fact]
     public void SelectAfterRemove()
     {
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 2.0));
         aTree.Add(2, new TestBnd1D(3.0, 5.0));
@@ -73,20 +75,20 @@ public class NCollection_EBTreeTest
     [Fact]
     public void FindNode()
     {
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 2.0));
         aTree.Add(2, new TestBnd1D(3.0, 5.0));
 
-        NCollection_UBTree<int, TestBnd1D>.TreeNode aNode = aTree.FindNode(1);
-        Assert.True(aNode.IsLeaf());
+        SpatialTree<int, TestBnd1D>.TreeNode aNode = aTree.FindNode(1);
+        Assert.True(aNode.IsLeaf);
         Assert.Equal(1, aNode.Object());
     }
 
     [Fact]
     public void RemoveAll()
     {
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 2.0));
         aTree.Add(2, new TestBnd1D(3.0, 5.0));
@@ -95,25 +97,25 @@ public class NCollection_EBTreeTest
         Assert.True(aTree.Remove(1));
         Assert.True(aTree.Remove(2));
         Assert.True(aTree.Remove(3));
-        Assert.True(aTree.IsEmpty());
+        Assert.True(aTree.IsEmpty);
     }
 
     [Fact]
     public void MoveConstructor()
     {
-        NCollection_EBTree<int, TestBnd1D> aSrc = new();
+        IndexedSpatialTree<int, TestBnd1D> aSrc = new();
         aSrc.Add(1, new TestBnd1D(0.0, 2.0));
         aSrc.Add(2, new TestBnd1D(3.0, 5.0));
         aSrc.Add(3, new TestBnd1D(4.0, 6.0));
 
-        NCollection_EBTree<int, TestBnd1D> aDst = new(aSrc);
+        IndexedSpatialTree<int, TestBnd1D> aDst = new(aSrc);
 
         // Source is empty
-        Assert.True(aSrc.IsEmpty());
+        Assert.True(aSrc.IsEmpty);
         Assert.False(aSrc.Contains(1));
 
         // Destination has all objects
-        Assert.False(aDst.IsEmpty());
+        Assert.False(aDst.IsEmpty);
         Assert.True(aDst.Contains(1));
         Assert.True(aDst.Contains(2));
         Assert.True(aDst.Contains(3));
@@ -126,17 +128,17 @@ public class NCollection_EBTreeTest
     [Fact]
     public void MoveAssignment()
     {
-        NCollection_EBTree<int, TestBnd1D> aSrc = new();
+        IndexedSpatialTree<int, TestBnd1D> aSrc = new();
         aSrc.Add(1, new TestBnd1D(0.0, 2.0));
         aSrc.Add(2, new TestBnd1D(3.0, 5.0));
 
-        NCollection_EBTree<int, TestBnd1D> aDst = new();
+        IndexedSpatialTree<int, TestBnd1D> aDst = new();
         aDst.Add(10, new TestBnd1D(100.0, 200.0));
 
         aDst.Move(aSrc);
 
-        Assert.True(aSrc.IsEmpty());
-        Assert.False(aDst.IsEmpty());
+        Assert.True(aSrc.IsEmpty);
+        Assert.False(aDst.IsEmpty);
         Assert.True(aDst.Contains(1));
         Assert.True(aDst.Contains(2));
         Assert.False(aDst.Contains(10));
@@ -159,7 +161,7 @@ public class NCollection_EBTreeTest
     public void RandomAddRemove_MatchesBruteForce(int theSeed)
     {
         Random aRandom = new(theSeed);
-        NCollection_EBTree<int, TestBnd1D> aTree = new();
+        IndexedSpatialTree<int, TestBnd1D> aTree = new();
         Dictionary<int, TestBnd1D> aReference = [];
         for (int anIter = 0; anIter < 2000; ++anIter)
         {
@@ -185,20 +187,20 @@ public class NCollection_EBTreeTest
         checkTree(aTree, aReference, aRandom);
     }
 
-    private static void checkTree(NCollection_EBTree<int, TestBnd1D> theTree, Dictionary<int, TestBnd1D> theReference,
+    private static void checkTree(IndexedSpatialTree<int, TestBnd1D> theTree, Dictionary<int, TestBnd1D> theReference,
                                   Random theRandom)
     {
-        Assert.Equal(theReference.Count == 0, theTree.IsEmpty());
+        Assert.Equal(theReference.Count == 0, theTree.IsEmpty);
         foreach ((int anObj, TestBnd1D aBnd) in theReference)
         {
             Assert.True(theTree.Contains(anObj));
-            NCollection_UBTree<int, TestBnd1D>.TreeNode aNode = theTree.FindNode(anObj);
-            Assert.True(aNode.IsLeaf());
+            SpatialTree<int, TestBnd1D>.TreeNode aNode = theTree.FindNode(anObj);
+            Assert.True(aNode.IsLeaf);
             Assert.Equal(anObj, aNode.Object());
             Assert.Equal(aBnd.Min, aNode.Bnd().Min);
             Assert.Equal(aBnd.Max, aNode.Bnd().Max);
         }
-        if (!theTree.IsEmpty())
+        if (!theTree.IsEmpty)
         {
             Assert.Equal(theReference.Count, checkBranch(theTree.Root()));
         }
@@ -212,9 +214,9 @@ public class NCollection_EBTreeTest
     }
 
     // Checks that each branch's volume is the union of its children's; returns the number of leaves.
-    private static int checkBranch(NCollection_UBTree<int, TestBnd1D>.TreeNode theNode)
+    private static int checkBranch(SpatialTree<int, TestBnd1D>.TreeNode theNode)
     {
-        if (theNode.IsLeaf())
+        if (theNode.IsLeaf)
         {
             return 1;
         }

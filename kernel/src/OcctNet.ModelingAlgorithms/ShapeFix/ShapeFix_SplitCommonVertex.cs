@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -35,7 +37,7 @@ public class ShapeFix_SplitCommonVertex : ShapeFix_Root
         myShape  = new TopoDS_Shape();
         myResult = new TopoDS_Shape();
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        SetPrecision(Occt.Precision.Confusion());
+        SetPrecision(Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Loads the shape (and creates a context if there is none).</summary>
@@ -106,7 +108,7 @@ public class ShapeFix_SplitCommonVertex : ShapeFix_Root
                                 }
                                 else
                                 {
-                                    gp_Pnt P   = BRep_Tool.Pnt(V2);
+                                    Point3D P   = BRep_Tool.Pnt(V2);
                                     double tol = BRep_Tool.Tolerance(V2);
                                     var    B   = new BRep_Builder();
                                     B.MakeVertex(ref Vnew, P, tol);
@@ -143,7 +145,7 @@ public class ShapeFix_SplitCommonVertex : ShapeFix_Root
             }
             if (!MapVV.IsEmpty())
             {
-                SendWarning(new Message_Msg("Fix.SplitCommonVertex.MSG0"));
+                SendWarning(new Msg("Fix.SplitCommonVertex.MSG0"));
             }
         }
 

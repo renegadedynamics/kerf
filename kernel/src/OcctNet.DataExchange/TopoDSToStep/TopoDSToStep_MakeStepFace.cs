@@ -5,7 +5,9 @@
 
 #nullable disable warnings
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopoDSToStep_MakeFaceError;
@@ -159,26 +161,26 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                     double r = TS.MinorRadius();
                     if (R < r) // if torus is degenerate or base surface is degenerate, make revolution instead
                     {
-                        gp_Ax3 Ax3 = TS.Position();
-                        gp_Pnt pos = Ax3.Location();
-                        gp_Dir dir = Ax3.Direction();
-                        gp_Dir X = Ax3.XDirection();
+                        CoordinateSystem Ax3 = TS.Position();
+                        Point3D pos = Ax3.Location();
+                        Direction3D dir = Ax3.Direction();
+                        Direction3D X = Ax3.XDirection();
 
                         // create basis curve
                         ShapeAlgo.AlgoContainer().GetFaceUVBounds(aFace, out double UF, out double UL, out double VF, out double VL);
-                        gp_Ax2 Ax2 = new gp_Ax2(new gp_Pnt(pos.XYZ() + X.XYZ() * TS.MajorRadius()), X ^ dir, X);
+                        Frame3D Ax2 = new Frame3D(new Point3D(pos.XYZ() + X.XYZ() * TS.MajorRadius()), X ^ dir, X);
                         Geom_Curve BasisCurve = new Geom_Circle(Ax2, TS.MinorRadius());
 
                         // convert basis curve to bspline in order to avoid self-intersecting
                         // surface of revolution (necessary e.g. for CATIA)
-                        if (VL - VF - 2 * M_PI < -Precision.PConfusion())
+                        if (VL - VF - 2 * M_PI < -global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            BasisCurve = ShapeAlgo.AlgoContainer().ConvertCurveToBSpline(BasisCurve, VF, VL, Precision.Approximation(),
-                                                                                        GeomAbs_C1, 100, 9);
+                            BasisCurve = ShapeAlgo.AlgoContainer().ConvertCurveToBSpline(BasisCurve, VF, VL, global::Kerf.Engine.Foundation.Precision.Approximation(),
+                                                                                        C1, 100, 9);
                         }
 
                         // create surface of revolution
-                        gp_Ax1 Axis = Ax3.Axis();
+                        Axis3D Axis = Ax3.Axis();
                         if (!Ax3.Direct())
                         {
                             Axis.Reverse();
@@ -212,7 +214,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             StepShape_Loop Loop = null;
 
             var MkWire = new TopoDSToStep_MakeStepWire();
-            var mySeq = new NCollection_Sequence<Standard_Transient>();
+            var mySeq = new NCollection_Sequence<Transient>();
 
             // Initialize the Wire Explorer with the forward face
 
@@ -425,7 +427,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 done = false;
             }
         }
-        catch (Standard_Failure theFailure)
+        catch (FailureException theFailure)
         {
             FP.AddFail(errShape, Transfer_ProcessForTransient.What(theFailure));
             myError = TopoDSToStep_FaceOther;
@@ -436,7 +438,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
     public void Init(in TopoDS_Face aFace, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aFace, aTool, FP, new StepData_Factors());
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_TopologicalRepresentationItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeStepFace::Value() - no result");

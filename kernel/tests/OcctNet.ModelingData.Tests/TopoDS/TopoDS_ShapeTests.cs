@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -11,7 +15,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_ShapeTests
 {
-    private static readonly TopLoc_Location theLoc = new(gp_Trsf.Translation(new gp_Vec(1, 2, 3)));
+    private static readonly Placement theLoc = new(Transform3D.Translation(new Vector3D(1, 2, 3)));
 
     [Fact]
     public void A_new_shape_is_OCCTs_null_shape()
@@ -19,7 +23,7 @@ public class TopoDS_ShapeTests
         TopoDS_Shape aShape = new();
         Assert.True(aShape.IsNull());
         Assert.Equal(TopAbs_EXTERNAL, aShape.Orientation());
-        Assert.True(aShape.Location().IsIdentity());
+        Assert.True(aShape.Location().IsIdentity);
         Assert.Equal(0, aShape.NbChildren());
         Assert.Equal(TopAbs_EXTERNAL, new TopoDS_Edge().Orientation());
         // default differs only in the orientation
@@ -28,19 +32,19 @@ public class TopoDS_ShapeTests
         Assert.Equal("NULL", aShape.ToString());
 
         // queries that need the TShape throw on a null shape (OCCT: undefined behaviour)
-        Assert.Throws<Standard_NullObject>(() => aShape.ShapeType());
-        Assert.Throws<Standard_NullObject>(() => aShape.Free());
+        Assert.Throws<NullObjectException>(() => aShape.ShapeType());
+        Assert.Throws<NullObjectException>(() => aShape.Free());
     }
 
     [Fact]
     public void Copies_are_independent_values_sharing_the_TShape()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         TopoDS_Edge aCopy = anEdge;
         aCopy.Reverse();
         aCopy.Move(theLoc);
         Assert.Equal(TopAbs_FORWARD, anEdge.Orientation());
-        Assert.True(anEdge.Location().IsIdentity());
+        Assert.True(anEdge.Location().IsIdentity);
         Assert.True(aCopy.IsPartner(anEdge));
         Assert.False(aCopy.IsSame(anEdge));
 
@@ -54,28 +58,28 @@ public class TopoDS_ShapeTests
         Assert.Equal(theLoc, anEdge.Located(theLoc).Location());
         Assert.Equal(theLoc * theLoc, anEdge.Moved(theLoc).Moved(theLoc).Location());
         // a Moved shape's location is the new position times the old one
-        var aRot = new TopLoc_Location(gp_Trsf.Rotation(gp.OZ(), 0.5));
+        var aRot = new Placement(Transform3D.Rotation(Constants.OZ(), 0.5));
         Assert.Equal(aRot * theLoc, anEdge.Located(theLoc).Moved(aRot).Location());
     }
 
     [Fact]
     public void Scaled_or_mirrored_locations_are_refused_when_asked()
     {
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt());
-        var aScale = new TopLoc_Location(gp_Trsf.Scale(new gp_Pnt(), 2.0));
-        Assert.Throws<Standard_DomainError>(() => aV.Located(aScale, true));
-        Assert.Throws<Standard_DomainError>(() => aV.Moved(aScale, true));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D());
+        var aScale = new Placement(Transform3D.Scale(new Point3D(), 2.0));
+        Assert.Throws<DomainErrorException>(() => aV.Located(aScale, true));
+        Assert.Throws<DomainErrorException>(() => aV.Moved(aScale, true));
         Assert.Equal(aScale, aV.Located(aScale).Location()); // allowed without the check, as in OCCT
     }
 
     [Fact]
     public void Equality_is_IsEqual_and_the_hash_ignores_the_orientation()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         TopoDS_Shape aShape = anEdge;
         TopoDS_Shape aReversed = anEdge.Reversed();
         TopoDS_Shape aMoved = anEdge.Moved(theLoc);
-        TopoDS_Edge anOther = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anOther = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
 
         Assert.True(aShape == anEdge && aShape.Equals(anEdge) && anEdge.Equals(aShape) && aShape.IsEqual(anEdge));
         Assert.True(aShape != aReversed && aShape.IsSame(aReversed) && aShape.IsNotEqual(aReversed));
@@ -108,7 +112,7 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Map_hashers_choose_IsSame_or_IsEqual()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         var aSame = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         Assert.Equal(1, aSame.Add(anEdge));
         Assert.Equal(1, aSame.Add(anEdge.Reversed()));
@@ -124,11 +128,11 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Narrowing_checks_the_type()
     {
-        TopoDS_Shape anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Shape anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         TopoDS_Edge aNarrowed = TopoDS.Edge(anEdge);
         Assert.True(aNarrowed.IsEqual(anEdge));
-        Assert.Throws<Standard_TypeMismatch>(() => TopoDS.Face(anEdge));
-        Assert.Throws<Standard_TypeMismatch>(() => TopoDS.Vertex(anEdge));
+        Assert.Throws<TypeMismatchException>(() => TopoDS.Face(anEdge));
+        Assert.Throws<TypeMismatchException>(() => TopoDS.Vertex(anEdge));
         // a null shape narrows to any type
         Assert.True(TopoDS.Solid(new TopoDS_Shape()).IsNull());
         Assert.Equal(TopAbs_EXTERNAL, TopoDS.Compound(new TopoDS_Shape()).Orientation());
@@ -137,7 +141,7 @@ public class TopoDS_ShapeTests
     [Fact]
     public void AsShapeRef_writes_through_to_the_subtype_variable()
     {
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
         ReverseInPlace(ref TopoDS.AsShapeRef(ref anEdge));
         Assert.Equal(TopAbs_REVERSED, anEdge.Orientation());
 
@@ -160,7 +164,7 @@ public class TopoDS_ShapeTests
         aBuilder.MakeCompound(ref aC);
         TopoDS_Face aF = new();
         aBuilder.MakeFace(ref aF);
-        TopoDS_Shape[] aShapes = [TestShapes.Vertex(new gp_Pnt()), TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 0, 0)), aW, aF, aSh, aSo, aCs, aC];
+        TopoDS_Shape[] aShapes = [TestShapes.Vertex(new Point3D()), TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aW, aF, aSh, aSo, aCs, aC];
         TopAbs_ShapeEnum[] aTypes = [TopAbs_VERTEX, TopAbs_EDGE, TopAbs_WIRE, TopAbs_FACE, TopAbs_SHELL, TopAbs_SOLID, TopAbs_COMPSOLID, TopAbs_COMPOUND];
         for (int i = 0; i < aShapes.Length; i++)
         {
@@ -179,7 +183,7 @@ public class TopoDS_ShapeTests
     [Fact]
     public void HShape_holds_a_shape()
     {
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt());
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D());
         var aH = new TopoDS_HShape(aV);
         Assert.True(aH.Shape() == aV);
         aH.ChangeShape().Reverse();

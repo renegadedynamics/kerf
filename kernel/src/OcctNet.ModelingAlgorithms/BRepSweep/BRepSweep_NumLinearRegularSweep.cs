@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -148,14 +149,14 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         myBuilder.MakeShell(ref myShapes[iGenS, iDirS]);
                         break;
                     case TopAbs_SOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPSOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPOUND:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
-                        throw new Standard_NoSuchObject("Unknown Shape");
+                        throw new NoSuchObjectException("Unknown Shape");
                 }
                 bGenS = aGenS;
                 myGenShapeTool.SetOrientation(ref bGenS, TopAbs_FORWARD);
@@ -247,14 +248,14 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         myBuilder.MakeCompSolid(ref myShapes[iGenS, iDirS]);
                         break;
                     case TopAbs_SOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPSOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPOUND:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
-                        throw new Standard_NoSuchObject("Unknown Shape");
+                        throw new NoSuchObjectException("Unknown Shape");
                 }
                 bGenS = aGenS;
                 myGenShapeTool.SetOrientation(ref bGenS, TopAbs_FORWARD);
@@ -431,14 +432,14 @@ internal abstract class BRepSweep_NumLinearRegularSweep
                         myBuilder.MakeCompSolid(ref myShapes[iGenS, iDirS]);
                         break;
                     case TopAbs_SOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPSOLID:
-                        throw new Standard_NoSuchObject("Solids are not Processed");
+                        throw new NoSuchObjectException("Solids are not Processed");
                     case TopAbs_COMPOUND:
                         myBuilder.MakeCompound(ref myShapes[iGenS, iDirS]);
                         break;
                     default:
-                        throw new Standard_NoSuchObject("Unknown Shape");
+                        throw new NoSuchObjectException("Unknown Shape");
                 }
                 bDirS = aDirS;
                 for (Kt.Init(aDirS); Kt.More(); Kt.Next())

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Intf_PIType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,16 +12,16 @@ public class IntfTests
     /// <summary>A polyline through the given points.</summary>
     private sealed class TestPolygon : Intf_Polygon2d
     {
-        private readonly gp_Pnt2d[] myPoints;
+        private readonly Point2D[] myPoints;
         private readonly double myDeflection;
         private readonly bool myClosed;
 
         public TestPolygon(double theDeflection, bool theClosed, params (double X, double Y)[] thePoints)
         {
-            myPoints = [.. thePoints.Select(p => new gp_Pnt2d(p.X, p.Y))];
+            myPoints = [.. thePoints.Select(p => new Point2D(p.X, p.Y))];
             myDeflection = theDeflection;
             myClosed = theClosed;
-            foreach (gp_Pnt2d aP in myPoints)
+            foreach (Point2D aP in myPoints)
             {
                 myBox.Add(aP);
             }
@@ -33,7 +35,7 @@ public class IntfTests
 
         public override int NbSegments() => myPoints.Length - 1;
 
-        public override void Segment(int theIndex, out gp_Pnt2d theBegin, out gp_Pnt2d theEnd)
+        public override void Segment(int theIndex, out Point2D theBegin, out Point2D theEnd)
         {
             theBegin = myPoints[theIndex - 1];
             theEnd = myPoints[theIndex];
@@ -41,13 +43,13 @@ public class IntfTests
     }
 
     private static Intf_SectionPoint SP(int i)
-        => new(new gp_Pnt2d(i, 0), Intf_VERTEX, i, 0.0, Intf_VERTEX, i, 0.0, 0.0);
+        => new(new Point2D(i, 0), Intf_VERTEX, i, 0.0, Intf_VERTEX, i, 0.0, 0.0);
 
     [Fact]
     public void PlaneEquationAndContain()
     {
-        gp_Pnt aP1 = new(0, 0, 2), aP2 = new(1, 0, 2), aP3 = new(0, 1, 2);
-        Intf.PlaneEquation(aP1, aP2, aP3, out gp_XYZ aNormal, out double aDist);
+        Point3D aP1 = new(0, 0, 2), aP2 = new(1, 0, 2), aP3 = new(0, 1, 2);
+        Intf.PlaneEquation(aP1, aP2, aP3, out Xyz aNormal, out double aDist);
         Assert.Equal(0, aNormal.X(), 15);
         Assert.Equal(0, aNormal.Y(), 15);
         Assert.Equal(1, aNormal.Z(), 15);
@@ -56,21 +58,21 @@ public class IntfTests
         Intf.PlaneEquation(aP1, aP1, aP2, out _, out aDist);
         Assert.Equal(0, aDist);
 
-        Assert.True(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(0.2, 0.2, 2)));
-        Assert.True(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(0.5, 0, 2)));
-        Assert.False(Intf.Contain(aP1, aP2, aP3, new gp_Pnt(1, 1, 2)));
+        Assert.True(Intf.Contain(aP1, aP2, aP3, new Point3D(0.2, 0.2, 2)));
+        Assert.True(Intf.Contain(aP1, aP2, aP3, new Point3D(0.5, 0, 2)));
+        Assert.False(Intf.Contain(aP1, aP2, aP3, new Point3D(1, 1, 2)));
     }
 
     [Fact]
     public void SectionPoint_IsEqualComparesLogicalInformation()
     {
-        var aA = new Intf_SectionPoint(new gp_Pnt2d(1, 2), Intf_EDGE, 3, 0.25, Intf_VERTEX, 4, 0.0, 0.5);
-        var aB = new Intf_SectionPoint(new gp_Pnt2d(5, 6), Intf_EDGE, 3, 0.75, Intf_VERTEX, 4, 0.0, 0.1);
+        var aA = new Intf_SectionPoint(new Point2D(1, 2), Intf_EDGE, 3, 0.25, Intf_VERTEX, 4, 0.0, 0.5);
+        var aB = new Intf_SectionPoint(new Point2D(5, 6), Intf_EDGE, 3, 0.75, Intf_VERTEX, 4, 0.0, 0.1);
         Assert.True(aA.IsEqual(aB)); // OCCT's operator==
         Assert.False(aA == aB);      // exact comparison
         Assert.Equal(2.25, aA.ParamOnFirst());
         Assert.Equal(3.0, aA.ParamOnSecond());
-        Assert.Equal(new gp_Pnt(1, 2, 0), aA.Pnt());
+        Assert.Equal(new Point3D(1, 2, 0), aA.Pnt());
 
         aA.InfoFirst(out Intf_PIType aDim, out int anAdd1, out int anAdd2, out double aParam);
         Assert.Equal((Intf_EDGE, 0, 3, 0.25), (aDim, anAdd1, anAdd2, aParam));
@@ -82,7 +84,7 @@ public class IntfTests
     [Fact]
     public void SectionPoint_IsOnSameEdge()
     {
-        gp_Pnt aP = new(0, 0, 0);
+        Point3D aP = new(0, 0, 0);
         var anEdge12 = new Intf_SectionPoint(aP, Intf_EDGE, 1, 2, 0.5, Intf_FACE, 7, 8, 0.0, 0.0);
         var anEdge12b = new Intf_SectionPoint(aP, Intf_EDGE, 1, 2, 0.1, Intf_FACE, 9, 10, 0.0, 0.0);
         var aVertex2 = new Intf_SectionPoint(aP, Intf_VERTEX, 2, 0, 0.0, Intf_FACE, 9, 10, 0.0, 0.0);
@@ -98,13 +100,13 @@ public class IntfTests
     [Fact]
     public void SectionPoint_MergeKeepsHigherDimension()
     {
-        var aA = new Intf_SectionPoint(new gp_Pnt(1, 1, 1), Intf_EDGE, 1, 2, 0.5, Intf_FACE, 3, 4, 0.1, 0.0);
-        var aB = new Intf_SectionPoint(new gp_Pnt(2, 2, 2), Intf_VERTEX, 7, 0, 0.0, Intf_EDGE, 5, 6, 0.2, 0.0);
+        var aA = new Intf_SectionPoint(new Point3D(1, 1, 1), Intf_EDGE, 1, 2, 0.5, Intf_FACE, 3, 4, 0.1, 0.0);
+        var aB = new Intf_SectionPoint(new Point3D(2, 2, 2), Intf_VERTEX, 7, 0, 0.0, Intf_EDGE, 5, 6, 0.2, 0.0);
         aA.Merge(ref aB);
         Assert.True(aA.IsEqual(aB));
         Assert.Equal(Intf_VERTEX, aA.TypeOnFirst());
         Assert.Equal(Intf_EDGE, aA.TypeOnSecond());
-        Assert.Equal(new gp_Pnt(1, 1, 1), aB.Pnt());
+        Assert.Equal(new Point3D(1, 1, 1), aB.Pnt());
     }
 
     [Fact]
@@ -137,9 +139,9 @@ public class IntfTests
     public void TangentZone_RangesAndPolygonInsert()
     {
         var aZone = new Intf_TangentZone();
-        var aP1 = new Intf_SectionPoint(new gp_Pnt2d(0, 0), Intf_EDGE, 2, 0.5, Intf_EDGE, 3, 0.25, 0.0);
-        var aP2 = new Intf_SectionPoint(new gp_Pnt2d(1, 0), Intf_VERTEX, 3, 0.0, Intf_EDGE, 4, 0.75, 0.0);
-        var aP3 = new Intf_SectionPoint(new gp_Pnt2d(2, 0), Intf_EDGE, 2, 0.75, Intf_EDGE, 3, 0.5, 0.0);
+        var aP1 = new Intf_SectionPoint(new Point2D(0, 0), Intf_EDGE, 2, 0.5, Intf_EDGE, 3, 0.25, 0.0);
+        var aP2 = new Intf_SectionPoint(new Point2D(1, 0), Intf_VERTEX, 3, 0.0, Intf_EDGE, 4, 0.75, 0.0);
+        var aP3 = new Intf_SectionPoint(new Point2D(2, 0), Intf_EDGE, 2, 0.75, Intf_EDGE, 3, 0.5, 0.0);
         aZone.PolygonInsert(aP1);
         aZone.PolygonInsert(aP2);
         aZone.PolygonInsert(aP3); // inside the range on the first argument: inserted first
@@ -150,14 +152,14 @@ public class IntfTests
         aZone.InfoSecond(out int aSegMin, out double aParMin, out int aSegMax, out double aParMax);
         Assert.Equal((2, 0.25, 3, 0.75), (aSegMin, aParMin, aSegMax, aParMax));
         Assert.True(aZone.Contains(aP2));
-        Assert.True(aZone.RangeContains(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 2, 0.6, Intf_EDGE, 3, 0.9, 0.0)));
+        Assert.True(aZone.RangeContains(new Intf_SectionPoint(new Point2D(), Intf_EDGE, 2, 0.6, Intf_EDGE, 3, 0.9, 0.0)));
         Assert.False(aZone.Insert(aP1)); // OCCT's Insert does nothing
 
         var anOther = new Intf_TangentZone();
-        anOther.Append(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 2, 0.9, Intf_EDGE, 4, 0.5, 0.0));
+        anOther.Append(new Intf_SectionPoint(new Point2D(), Intf_EDGE, 2, 0.9, Intf_EDGE, 4, 0.5, 0.0));
         Assert.True(aZone.HasCommonRange(anOther));
         var aFar = new Intf_TangentZone();
-        aFar.Append(new Intf_SectionPoint(new gp_Pnt2d(), Intf_EDGE, 9, 0.5, Intf_EDGE, 4, 0.9, 0.0));
+        aFar.Append(new Intf_SectionPoint(new Point2D(), Intf_EDGE, 9, 0.5, Intf_EDGE, 4, 0.9, 0.0));
         Assert.False(aZone.HasCommonRange(aFar));
 
         var aCopy = new Intf_TangentZone(aZone);
@@ -215,7 +217,7 @@ public class IntfTests
         Assert.Equal(0.5, aPt.ParamOnFirst(), 15);
         Assert.Equal(0.5, aPt.ParamOnSecond(), 15);
         Assert.Equal(1.0, aPt.Incidence(), 15);
-        Assert.Equal(new gp_Pnt2d(1, 1), anInter.Pnt2dValue(1));
+        Assert.Equal(new Point2D(1, 1), anInter.Pnt2dValue(1));
     }
 
     [Fact]
@@ -275,7 +277,7 @@ public class IntfTests
         Assert.Equal(1, anInter.NbSectionPoints());
         Assert.Equal(0.5, anInter.PntValue(1).ParamOnFirst(), 15);
         Assert.Equal(2.5, anInter.PntValue(1).ParamOnSecond(), 15);
-        Assert.Equal(new gp_Pnt2d(1, 1), anInter.Pnt2dValue(1));
+        Assert.Equal(new Point2D(1, 1), anInter.Pnt2dValue(1));
 
         Assert.Equal(0, new Intf_InterferencePolygon2d(new TestPolygon(0, false, (0, 0), (1, 0), (2, 1))).NbSectionPoints());
     }

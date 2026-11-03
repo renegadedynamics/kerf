@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -114,7 +115,7 @@ public class Standard_StreamTests
         {
             foreach (int aPrecision in new[] { 1, 6, 15, 16, 17, 20 })
             {
-                Assert.Equal(CFormat(aValue, aPrecision), Standard_Stream.FormatReal(aValue, aPrecision));
+                Assert.Equal(CFormat(aValue, aPrecision), StreamUtilities.FormatReal(aValue, aPrecision));
                 aCount++;
             }
         }
@@ -139,14 +140,14 @@ public class Standard_StreamTests
         };
         foreach (double aValue in Values(5000))
         {
-            aTexts.Add(Standard_Stream.FormatReal(aValue, 17));
-            aTexts.Add(Standard_Stream.FormatReal(aValue, 15));
+            aTexts.Add(StreamUtilities.FormatReal(aValue, 17));
+            aTexts.Add(StreamUtilities.FormatReal(aValue, 15));
         }
 
         foreach (string aText in aTexts)
         {
             (double anExpected, int anExpectedEnd) = CStrtod(aText);
-            double anActual = Standard_Stream.Strtod(aText, out int anEnd);
+            double anActual = StreamUtilities.Strtod(aText, out int anEnd);
             Assert.True(BitConverter.DoubleToInt64Bits(anExpected) == BitConverter.DoubleToInt64Bits(anActual)
                         || (double.IsNaN(anExpected) && double.IsNaN(anActual)),
                         $"\"{aText}\": C {anExpected:R}, port {anActual:R}");
@@ -159,20 +160,20 @@ public class Standard_StreamTests
     {
         var aWriter = new StringWriter();
         var anOther = new StringWriter();
-        Assert.Equal(6, Standard_Stream.Precision(aWriter));
-        Assert.Equal(6, Standard_Stream.Precision(aWriter, 17));
-        Assert.Equal(17, Standard_Stream.Precision(aWriter));
-        Assert.Equal(6, Standard_Stream.Precision(anOther));
+        Assert.Equal(6, StreamUtilities.Precision(aWriter));
+        Assert.Equal(6, StreamUtilities.Precision(aWriter, 17));
+        Assert.Equal(17, StreamUtilities.Precision(aWriter));
+        Assert.Equal(6, StreamUtilities.Precision(anOther));
 
-        Standard_Stream.Write(aWriter, 1.0 / 3.0);
-        Standard_Stream.Write(anOther, 1.0 / 3.0);
+        StreamUtilities.Write(aWriter, 1.0 / 3.0);
+        StreamUtilities.Write(anOther, 1.0 / 3.0);
         Assert.Equal("0.33333333333333331", aWriter.ToString());
         Assert.Equal("0.333333", anOther.ToString());
-        Assert.Equal(17, Standard_Stream.Precision(aWriter, 6));
+        Assert.Equal(17, StreamUtilities.Precision(aWriter, 6));
 
         // an exact tie rounds to even, as native OCCT writes it (229.12124633789062 in a corpus file)
-        Assert.Equal("229.12124633789062", Standard_Stream.FormatReal(229.121246337890625, 17));
-        Assert.Equal("894716758318707.2", Standard_Stream.FormatReal(894716758318707.25, 16));
+        Assert.Equal("229.12124633789062", StreamUtilities.FormatReal(229.121246337890625, 17));
+        Assert.Equal("894716758318707.2", StreamUtilities.FormatReal(894716758318707.25, 16));
     }
 
     [Fact]
@@ -180,74 +181,74 @@ public class Standard_StreamTests
     {
         var aReader = new StringReader("  12 -7 +3 1.5 0 1 2 word  rest");
         int anInt = -1;
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(12, anInt);
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(-7, anInt);
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(3, anInt);
 
         // an integer stops at the decimal point, which the next word read starts with
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(1, anInt);
-        Assert.Equal(".5", Standard_Stream.ReadWord(aReader));
+        Assert.Equal(".5", StreamUtilities.ReadWord(aReader));
 
         bool aBool = true;
-        Standard_Stream.Read(aReader, ref aBool);
+        StreamUtilities.Read(aReader, ref aBool);
         Assert.False(aBool);
-        Standard_Stream.Read(aReader, ref aBool);
+        StreamUtilities.Read(aReader, ref aBool);
         Assert.True(aBool);
-        Assert.True(Standard_Stream.Good(aReader));
+        Assert.True(StreamUtilities.Good(aReader));
 
         // 2 is not a boolean: true, and the stream fails
         aBool = false;
-        Standard_Stream.Read(aReader, ref aBool);
+        StreamUtilities.Read(aReader, ref aBool);
         Assert.True(aBool);
-        Assert.True(Standard_Stream.Fail(aReader));
+        Assert.True(StreamUtilities.Fail(aReader));
 
         // a failed stream extracts nothing and leaves the value as it was
         anInt = 99;
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(99, anInt);
-        Assert.Null(Standard_Stream.ReadWord(aReader));
+        Assert.Null(StreamUtilities.ReadWord(aReader));
 
-        Standard_Stream.Clear(aReader);
-        Assert.Equal("word", Standard_Stream.ReadWord(aReader));
+        StreamUtilities.Clear(aReader);
+        Assert.Equal("word", StreamUtilities.ReadWord(aReader));
 
         // a word that isn't a number: 0, and the stream fails
         anInt = 99;
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(0, anInt);
-        Assert.True(Standard_Stream.Fail(aReader));
+        Assert.True(StreamUtilities.Fail(aReader));
     }
 
     [Fact]
     public void Extraction_at_the_end_sets_eof()
     {
         var aReader = new StringReader("abc 5");
-        Assert.Equal("ab", Standard_Stream.ReadWord(aReader, 3));
-        Assert.Equal("c", Standard_Stream.ReadWord(aReader));
+        Assert.Equal("ab", StreamUtilities.ReadWord(aReader, 3));
+        Assert.Equal("c", StreamUtilities.ReadWord(aReader));
         int anInt = 0;
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(5, anInt);
-        Assert.True(Standard_Stream.Eof(aReader));
-        Assert.False(Standard_Stream.Fail(aReader));
+        Assert.True(StreamUtilities.Eof(aReader));
+        Assert.False(StreamUtilities.Fail(aReader));
 
-        Standard_Stream.Read(aReader, ref anInt);
+        StreamUtilities.Read(aReader, ref anInt);
         Assert.Equal(5, anInt);
-        Assert.True(Standard_Stream.Fail(aReader));
+        Assert.True(StreamUtilities.Fail(aReader));
 
         var anOther = new StringReader("2147483648 -2147483649");
-        Standard_Stream.Read(anOther, ref anInt);
+        StreamUtilities.Read(anOther, ref anInt);
         Assert.Equal(int.MaxValue, anInt);
-        Assert.True(Standard_Stream.Fail(anOther));
+        Assert.True(StreamUtilities.Fail(anOther));
     }
 
     [Fact]
     public void Setw_pads_on_the_left()
     {
-        Assert.Equal("   7", Standard_Stream.Setw(4, "7"));
-        Assert.Equal("12345", Standard_Stream.Setw(4, "12345"));
-        Assert.Equal(Encoding.ASCII.GetBytes(" 3"), Encoding.ASCII.GetBytes(Standard_Stream.Setw(2, "3")));
+        Assert.Equal("   7", StreamUtilities.Setw(4, "7"));
+        Assert.Equal("12345", StreamUtilities.Setw(4, "12345"));
+        Assert.Equal(Encoding.ASCII.GetBytes(" 3"), Encoding.ASCII.GetBytes(StreamUtilities.Setw(2, "3")));
     }
 }

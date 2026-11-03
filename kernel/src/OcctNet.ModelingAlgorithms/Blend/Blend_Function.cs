@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,40 +19,40 @@ public abstract class Blend_Function : Blend_AppFunction
         return 4;
     }
 
-    public override gp_Pnt Pnt1()
+    public override Point3D Pnt1()
     {
         return PointOnS1();
     }
 
-    public override gp_Pnt Pnt2()
+    public override Point3D Pnt2()
     {
         return PointOnS2();
     }
 
     /// <summary>The point on the first surface, at the current guide parameter.</summary>
-    public abstract gp_Pnt PointOnS1();
+    public abstract Point3D PointOnS1();
 
     /// <summary>The point on the second surface, at the current guide parameter.</summary>
-    public abstract gp_Pnt PointOnS2();
+    public abstract Point3D PointOnS2();
 
     /// <summary>True when the tangent vectors at PointOnS1 and/or PointOnS2 cannot be computed.</summary>
     public abstract bool IsTangencyPoint();
 
     /// <summary>The tangent vector at PointOnS1, in 3d space.</summary>
-    public abstract gp_Vec TangentOnS1();
+    public abstract Vector3D TangentOnS1();
 
     /// <summary>The tangent vector at PointOnS1, in the parametric space of the first surface.</summary>
-    public abstract gp_Vec2d Tangent2dOnS1();
+    public abstract Vector2D Tangent2dOnS1();
 
     /// <summary>The tangent vector at PointOnS2, in 3d space.</summary>
-    public abstract gp_Vec TangentOnS2();
+    public abstract Vector3D TangentOnS2();
 
     /// <summary>The tangent vector at PointOnS2, in the parametric space of the second surface.</summary>
-    public abstract gp_Vec2d Tangent2dOnS2();
+    public abstract Vector2D Tangent2dOnS2();
 
     /// <summary>The tangents at the beginning and the end of the section, and the surfaces' normals there.</summary>
-    public abstract void Tangent(double U1, double V1, double U2, double V2, out gp_Vec TgFirst, out gp_Vec TgLast,
-                                 out gp_Vec NormFirst, out gp_Vec NormLast);
+    public abstract void Tangent(double U1, double V1, double U2, double V2, out Vector3D TgFirst, out Vector3D TgLast,
+                                 out Vector3D NormFirst, out Vector3D NormLast);
 
     /// <summary>False by default.</summary>
     public virtual bool TwistOnS1()
@@ -65,9 +67,9 @@ public abstract class Blend_Function : Blend_AppFunction
     }
 
     /// <summary>Not computed by default: returns false.</summary>
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weigths, NCollection_Array1<double> DWeigths,
                                  NCollection_Array1<double> D2Weigths)
     {

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,21 +21,21 @@ public class GeomFill_Coons : GeomFill_Filling
     {
     }
 
-    public GeomFill_Coons(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                          NCollection_Array1<gp_Pnt> P4)
+    public GeomFill_Coons(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                          NCollection_Array1<Point3D> P4)
     {
         Init(P1, P2, P3, P4);
     }
 
-    public GeomFill_Coons(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                          NCollection_Array1<gp_Pnt> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
+    public GeomFill_Coons(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                          NCollection_Array1<Point3D> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
                           NCollection_Array1<double> W3, NCollection_Array1<double> W4)
     {
         Init(P1, P2, P3, P4, W1, W2, W3, W4);
     }
 
-    public void Init(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                     NCollection_Array1<gp_Pnt> P4)
+    public void Init(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                     NCollection_Array1<Point3D> P4)
     {
         Standard_DomainError_Raise_if(P1.Length() != P3.Length() || P2.Length() != P4.Length(), " ");
 
@@ -41,7 +43,7 @@ public class GeomFill_Coons : GeomFill_Filling
         int NPolV = P2.Length();
 
         IsRational = false;
-        myPoles = new NCollection_HArray2<gp_Pnt>(1, NPolU, 1, NPolV);
+        myPoles = new NCollection_HArray2<Point3D>(1, NPolU, 1, NPolV);
 
         // The boundaries are not modified
         int i, j, k;
@@ -57,19 +59,19 @@ public class GeomFill_Coons : GeomFill_Filling
         }
 
         // Calcul des coefficients multiplicateurs
-        NCollection_Array1<gp_Pnt> Coef = new(1, 4);
-        NCollection_Array1<gp_Pnt> Pole = new(1, 4);
-        NCollection_Array1<gp_Pnt> CoefU = new(1, NPolU);
-        NCollection_Array1<gp_Pnt> CoefV = new(1, NPolV);
-        Coef[4] = new gp_Pnt(2.0, -2.0, 0.0);
-        Coef[3] = new gp_Pnt(-3.0, 3.0, 0.0);
-        Coef[2] = new gp_Pnt(0.0, 0.0, 0.0);
-        Coef[1] = new gp_Pnt(1.0, 0.0, 0.0);
-        PLib.CoefficientsPoles(Coef, PLib.NoWeights(), Pole, PLib.NoWeights());
+        NCollection_Array1<Point3D> Coef = new(1, 4);
+        NCollection_Array1<Point3D> Pole = new(1, 4);
+        NCollection_Array1<Point3D> CoefU = new(1, NPolU);
+        NCollection_Array1<Point3D> CoefV = new(1, NPolV);
+        Coef[4] = new Point3D(2.0, -2.0, 0.0);
+        Coef[3] = new Point3D(-3.0, 3.0, 0.0);
+        Coef[2] = new Point3D(0.0, 0.0, 0.0);
+        Coef[1] = new Point3D(1.0, 0.0, 0.0);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(Coef, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), Pole, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
 
         if (NPolU > 4)
         {
-            BSplCLib.IncreaseDegree(NPolU - 1, Pole, BSplCLib.NoWeights(), CoefU, BSplCLib.NoWeights());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(NPolU - 1, Pole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), CoefU, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
         }
         else
         {
@@ -78,7 +80,7 @@ public class GeomFill_Coons : GeomFill_Filling
 
         if (NPolV > 4)
         {
-            BSplCLib.IncreaseDegree(NPolV - 1, Pole, BSplCLib.NoWeights(), CoefV, BSplCLib.NoWeights());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(NPolV - 1, Pole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), CoefV, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
         }
         else
         {
@@ -101,7 +103,7 @@ public class GeomFill_Coons : GeomFill_Filling
         }
 
         // Clacul des poles interieurs
-        gp_Pnt P = new();
+        Point3D P = new();
         for (j = 2; j < NPolV; j++)
         {
             for (i = 2; i < NPolU; i++)
@@ -121,8 +123,8 @@ public class GeomFill_Coons : GeomFill_Filling
         }
     }
 
-    public void Init(NCollection_Array1<gp_Pnt> P1, NCollection_Array1<gp_Pnt> P2, NCollection_Array1<gp_Pnt> P3,
-                     NCollection_Array1<gp_Pnt> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
+    public void Init(NCollection_Array1<Point3D> P1, NCollection_Array1<Point3D> P2, NCollection_Array1<Point3D> P3,
+                     NCollection_Array1<Point3D> P4, NCollection_Array1<double> W1, NCollection_Array1<double> W2,
                      NCollection_Array1<double> W3, NCollection_Array1<double> W4)
     {
         Standard_DomainError_Raise_if(W1.Length() != W3.Length() || W2.Length() != W4.Length(), " ");

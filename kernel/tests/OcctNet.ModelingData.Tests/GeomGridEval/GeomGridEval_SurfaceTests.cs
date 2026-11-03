@@ -5,7 +5,9 @@
 // and parts of GeomGridEval_SphereTest, GeomGridEval_CylinderTest, GeomGridEval_ConeTest and
 // GeomGridEval_TorusTest, whose other tests are in their own files (decision 60: partial classes).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -26,11 +28,11 @@ file static class SurfaceTestUtils
 
     public static Geom_BSplineSurface CreateSimpleBSplineSurface()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles.SetValue(1, 1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, 1, new gp_Pnt(1, 0, 0));
-        aPoles.SetValue(1, 2, new gp_Pnt(0, 1, 0));
-        aPoles.SetValue(2, 2, new gp_Pnt(1, 1, 1)); // Non-planar corner
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles.SetValue(1, 1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, 1, new Point3D(1, 0, 0));
+        aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
+        aPoles.SetValue(2, 2, new Point3D(1, 1, 1)); // Non-planar corner
 
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 1.0]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([2, 2]);
@@ -38,7 +40,7 @@ file static class SurfaceTestUtils
                                        new NCollection_Array1<int>(aMults), 1, 1);
     }
 
-    public static gp_Ax3 ZAxis() => new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+    public static CoordinateSystem ZAxis() => new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
     // The XxxDispatch tests: the grid of the unified evaluator against the surface's Value.
     public static void CheckDispatchGrid(GeomGridEval_Surface theEval,
@@ -46,12 +48,12 @@ file static class SurfaceTestUtils
                                          NCollection_Array1<double> theUParams,
                                          NCollection_Array1<double> theVParams)
     {
-        NCollection_Array2<gp_Pnt> aGrid = theEval.EvaluateGrid(theUParams, theVParams);
+        NCollection_Array2<Point3D> aGrid = theEval.EvaluateGrid(theUParams, theVParams);
         for (int iU = 1; iU <= theUParams.Length(); ++iU)
         {
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
-                gp_Pnt aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
+                Point3D aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
             }
         }
@@ -70,8 +72,8 @@ file static class SurfaceTestUtils
         {
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
-                gp_Pnt aPnt;
-                gp_Vec aD1U, aD1V, aD2U, aD2V, aD2UV, aD3U, aD3V, aD3UUV, aD3UVV;
+                Point3D aPnt;
+                Vector3D aD1U, aD1V, aD2U, aD2V, aD2UV, aD3U, aD3V, aD3UUV, aD3UVV;
                 if (theAdaptor is not null)
                 {
                     theAdaptor.D3(theUParams.Value(iU), theVParams.Value(iV), out aPnt, out aD1U, out aD1V, out aD2U,
@@ -109,8 +111,8 @@ file static class SurfaceTestUtils
         {
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
-                theSurf.D1(theUParams.Value(iU), theVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U,
-                           out gp_Vec aD1V);
+                theSurf.D1(theUParams.Value(iU), theVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
+                           out Vector3D aD1V);
                 Assert.Equal(0.0, theGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -127,8 +129,8 @@ file static class SurfaceTestUtils
         {
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
-                theSurf.D2(theUParams.Value(iU), theVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U,
-                           out gp_Vec aD1V, out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+                theSurf.D2(theUParams.Value(iU), theVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
+                           out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
                 Assert.Equal(0.0, theGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -154,14 +156,14 @@ public class GeomGridEval_PlaneTest
     [Fact]
     public void BasicEvaluation()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomGridEval_Plane anEval = new(aPlane);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 5.0, 6);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 3.0, 4);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.Equal(4, aGrid.RowLength());
         Assert.Equal(6, aGrid.ColLength());
 
@@ -170,7 +172,7 @@ public class GeomGridEval_PlaneTest
         {
             for (int iV = 1; iV <= 4; ++iV)
             {
-                gp_Pnt aPnt = aGrid.Value(iU, iV);
+                Point3D aPnt = aGrid.Value(iU, iV);
                 Assert.Equal(0.0, aPnt.Z(), THE_TOLERANCE);
                 Assert.Equal(aUParams.Value(iU), aPnt.X(), THE_TOLERANCE);
                 Assert.Equal(aVParams.Value(iV), aPnt.Y(), THE_TOLERANCE);
@@ -181,13 +183,13 @@ public class GeomGridEval_PlaneTest
     [Fact]
     public void NonOriginPlane()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
         GeomGridEval_Plane anEval = new(aPlane);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(-1.0, 1.0, 3);
         NCollection_Array1<double> aVParams = CreateUniformParams(-1.0, 1.0, 3);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         // All points should have Z = 3
         for (int iU = 1; iU <= 3; ++iU)
@@ -206,7 +208,7 @@ public class GeomGridEval_PlaneTest
     [Fact]
     public void DerivativeD1()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomGridEval_Plane anEval = new(aPlane);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 5.0, 6);
@@ -215,7 +217,7 @@ public class GeomGridEval_PlaneTest
         NCollection_Array2<Geom_Surface.ResD1> aGrid = anEval.EvaluateGridD1(aUParams, aVParams);
 
         // Plane derivatives are constant
-        aPlane.D1(0.0, 0.0, out gp_Pnt aPnt, out gp_Vec aD1URef, out gp_Vec aD1VRef);
+        aPlane.D1(0.0, 0.0, out Point3D aPnt, out Vector3D aD1URef, out Vector3D aD1VRef);
         _ = aPnt;
 
         for (int iU = 1; iU <= 6; ++iU)
@@ -231,7 +233,7 @@ public class GeomGridEval_PlaneTest
     [Fact]
     public void DerivativeD2()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomGridEval_Plane anEval = new(aPlane);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 5.0, 6);
@@ -254,7 +256,7 @@ public class GeomGridEval_PlaneTest
     [Fact]
     public void DerivativeD3()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomGridEval_Plane anEval = new(aPlane);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 5.0, 6);
@@ -296,14 +298,14 @@ public partial class GeomGridEval_SphereTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9); // Longitude
         NCollection_Array1<double> aVParams = CreateUniformParams(-M_PI / 2, M_PI / 2, 5); // Latitude
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         // All points should be at distance 1 from origin
         for (int iU = 1; iU <= 9; ++iU)
         {
             for (int iV = 1; iV <= 5; ++iV)
             {
-                double aDist = aGrid.Value(iU, iV).Distance(new gp_Pnt(0, 0, 0));
+                double aDist = aGrid.Value(iU, iV).Distance(new Point3D(0, 0, 0));
                 Assert.Equal(1.0, aDist, THE_TOLERANCE);
             }
         }
@@ -328,16 +330,16 @@ public partial class GeomGridEval_SphereTest
     [Fact]
     public void NonUnitSphere()
     {
-        Geom_SphericalSurface aSphere = new(new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)), 3.0);
+        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 3.0);
         GeomGridEval_Sphere anEval = new(aSphere);
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 17);
         NCollection_Array1<double> aVParams = CreateUniformParams(-M_PI / 2, M_PI / 2, 9);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         // All points should be at distance 3 from center (1, 2, 3)
-        gp_Pnt aCenter = new(1, 2, 3);
+        Point3D aCenter = new(1, 2, 3);
         for (int iU = 1; iU <= 17; ++iU)
         {
             for (int iV = 1; iV <= 9; ++iV)
@@ -404,13 +406,13 @@ public class GeomGridEval_OtherSurfaceTest
         NCollection_Array1<double> aUParams = SurfaceTestUtils.CreateUniformParams(0.0, 2 * M_PI, 9);
         NCollection_Array1<double> aVParams = SurfaceTestUtils.CreateUniformParams(0.0, 5.0, 6);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
         for (int iU = 1; iU <= 9; ++iU)
         {
             for (int iV = 1; iV <= 6; ++iV)
             {
-                gp_Pnt aExpected = aCyl.Value(aUParams.Value(iU), aVParams.Value(iV));
+                Point3D aExpected = aCyl.Value(aUParams.Value(iU), aVParams.Value(iV));
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), SurfaceTestUtils.THE_TOLERANCE);
             }
         }
@@ -431,11 +433,11 @@ public class GeomGridEval_SurfaceTest
     [Fact]
     public void PlaneDispatch()
     {
-        Geom_Plane aGeomPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aGeomPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomAdaptor_Surface anAdaptor = new(aGeomPlane);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Plane, anEval.GetType());
+        Assert.Equal(Plane, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aGeomPlane, CreateUniformParams(-5.0, 5.0, 11),
                                            CreateUniformParams(-3.0, 3.0, 7));
@@ -448,7 +450,7 @@ public class GeomGridEval_SurfaceTest
         GeomAdaptor_Surface anAdaptor = new(aGeomSphere);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Sphere, anEval.GetType());
+        Assert.Equal(SurfaceKind.Sphere, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aGeomSphere, CreateUniformParams(0.0, 2 * M_PI, 13),
                                            CreateUniformParams(-M_PI / 2, M_PI / 2, 7));
@@ -461,7 +463,7 @@ public class GeomGridEval_SurfaceTest
         GeomAdaptor_Surface anAdaptor = new(aSurf);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BSplineSurface, anEval.GetType());
+        Assert.Equal(BSplineSurface, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aSurf, CreateUniformParams(0.0, 1.0, 11),
                                            CreateUniformParams(0.0, 1.0, 11));
@@ -471,16 +473,16 @@ public class GeomGridEval_SurfaceTest
     public void BezierSurfaceDispatch()
     {
         // Create a simple bilinear Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles.SetValue(1, 1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, 1, new gp_Pnt(1, 0, 0));
-        aPoles.SetValue(1, 2, new gp_Pnt(0, 1, 0));
-        aPoles.SetValue(2, 2, new gp_Pnt(1, 1, 0));
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles.SetValue(1, 1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, 1, new Point3D(1, 0, 0));
+        aPoles.SetValue(1, 2, new Point3D(0, 1, 0));
+        aPoles.SetValue(2, 2, new Point3D(1, 1, 0));
         Geom_BezierSurface aBezier = new(aPoles);
         GeomAdaptor_Surface anAdaptor = new(aBezier);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_BezierSurface, anEval.GetType());
+        Assert.Equal(BezierSurface, anEval.GetType());
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 1.0, 5);
         SurfaceTestUtils.CheckDispatchGrid(anEval, aBezier, aParams, aParams);
@@ -493,7 +495,7 @@ public class GeomGridEval_SurfaceTest
         GeomAdaptor_Surface anAdaptor = new(aCyl);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Cylinder, anEval.GetType());
+        Assert.Equal(SurfaceKind.Cylinder, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aCyl, CreateUniformParams(0.0, 2 * M_PI, 9),
                                            CreateUniformParams(0.0, 5.0, 6));
@@ -506,7 +508,7 @@ public class GeomGridEval_SurfaceTest
         GeomAdaptor_Surface anAdaptor = new(aTorus);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Torus, anEval.GetType());
+        Assert.Equal(SurfaceKind.Torus, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aTorus, CreateUniformParams(0.0, 2 * M_PI, 9),
                                            CreateUniformParams(0.0, 2 * M_PI, 9));
@@ -519,7 +521,7 @@ public class GeomGridEval_SurfaceTest
         GeomAdaptor_Surface anAdaptor = new(aCone);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
-        Assert.Equal(GeomAbs_Cone, anEval.GetType());
+        Assert.Equal(SurfaceKind.Cone, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aCone, CreateUniformParams(0.0, 2 * M_PI, 9),
                                            CreateUniformParams(0.0, 5.0, 6));
@@ -529,13 +531,13 @@ public class GeomGridEval_SurfaceTest
     public void SurfaceOfRevolutionFallbackDispatch()
     {
         // Create a surface of revolution - now uses optimized GeomGridEval_SurfaceOfRevolution
-        Geom_Line aLine = new(new gp_Pnt(1, 0, 0), new gp_Dir(0, 0, 1)); // Line at x=1 parallel to Z
-        Geom_SurfaceOfRevolution aRevSurf = new(aLine, gp.OZ()); // Revolving around Z -> Cylinder-like
+        Geom_Line aLine = new(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)); // Line at x=1 parallel to Z
+        Geom_SurfaceOfRevolution aRevSurf = new(aLine, Constants.OZ()); // Revolving around Z -> Cylinder-like
         GeomAdaptor_Surface anAdaptor = new(aRevSurf);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
         // Now uses optimized SurfaceOfRevolution evaluator
-        Assert.Equal(GeomAbs_SurfaceOfRevolution, anEval.GetType());
+        Assert.Equal(SurfaceOfRevolution, anEval.GetType());
 
         SurfaceTestUtils.CheckDispatchGrid(anEval, aRevSurf, CreateUniformParams(0.0, 2 * M_PI, 9),
                                            CreateUniformParams(0.0, 5.0, 6));
@@ -544,15 +546,15 @@ public class GeomGridEval_SurfaceTest
     [Fact]
     public void DirectHandleInit()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
         GeomGridEval_Surface anEval = new(aPlane);
-        Assert.Equal(GeomAbs_Plane, anEval.GetType());
+        Assert.Equal(Plane, anEval.GetType());
 
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 1.0, 5);
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 1.0, 5);
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.False(aGrid.IsEmpty());
         Assert.Equal(0.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
     }
@@ -560,13 +562,13 @@ public class GeomGridEval_SurfaceTest
     [Fact]
     public void EmptyParams()
     {
-        Geom_Plane aGeomPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Plane aGeomPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         GeomAdaptor_Surface anAdaptor = new(aGeomPlane);
 
         GeomGridEval_Surface anEval = new(anAdaptor);
 
         NCollection_Array1<double> aEmptyParams = new();
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aEmptyParams, aEmptyParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aEmptyParams, aEmptyParams);
         Assert.True(aGrid.IsEmpty());
     }
 

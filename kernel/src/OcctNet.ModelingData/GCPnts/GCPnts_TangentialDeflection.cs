@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -28,7 +32,7 @@ public sealed class GCPnts_TangentialDeflection
     private double myMinLen;
     private double myLastU;
     private double myFirstu;
-    private readonly NCollection_Sequence<gp_Pnt> myPoints = new();
+    private readonly NCollection_Sequence<Point3D> myPoints = new();
     private readonly NCollection_Sequence<double> myParameters = new();
 
     /// <summary>An empty algorithm; use <c>Initialize</c>.</summary>
@@ -48,7 +52,7 @@ public sealed class GCPnts_TangentialDeflection
     /// theCurvatureDeflection (a length); at least theMinimumOfPoints points, parameters closer than theUTol merged,
     /// segments not shorter than theMinLen.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// A deflection is below Precision::Confusion() (curvature) or Precision::Angular() (angle).
     /// </exception>
     public GCPnts_TangentialDeflection(Adaptor3d_Curve theC, double theAngularDeflection, double theCurvatureDeflection,
@@ -59,7 +63,7 @@ public sealed class GCPnts_TangentialDeflection
     }
 
     /// <summary>Points on the part theFirstParameter..theLastParameter of the curve.</summary>
-    /// <exception cref="Standard_ConstructionError">A deflection is too small.</exception>
+    /// <exception cref="ConstructionErrorException">A deflection is too small.</exception>
     public GCPnts_TangentialDeflection(Adaptor3d_Curve theC, double theFirstParameter, double theLastParameter,
         double theAngularDeflection, double theCurvatureDeflection, int theMinimumOfPoints = 2,
         double theUTol = 1.0e-9, double theMinLen = 1.0e-7)
@@ -70,7 +74,7 @@ public sealed class GCPnts_TangentialDeflection
     }
 
     /// <summary>Points on the 2D curve.</summary>
-    /// <exception cref="Standard_ConstructionError">A deflection is too small.</exception>
+    /// <exception cref="ConstructionErrorException">A deflection is too small.</exception>
     public GCPnts_TangentialDeflection(Adaptor2d_Curve2d theC, double theAngularDeflection,
         double theCurvatureDeflection, int theMinimumOfPoints = 2, double theUTol = 1.0e-9, double theMinLen = 1.0e-7)
         : this()
@@ -79,7 +83,7 @@ public sealed class GCPnts_TangentialDeflection
     }
 
     /// <summary>Points on the part theFirstParameter..theLastParameter of the 2D curve.</summary>
-    /// <exception cref="Standard_ConstructionError">A deflection is too small.</exception>
+    /// <exception cref="ConstructionErrorException">A deflection is too small.</exception>
     public GCPnts_TangentialDeflection(Adaptor2d_Curve2d theC, double theFirstParameter, double theLastParameter,
         double theAngularDeflection, double theCurvatureDeflection, int theMinimumOfPoints = 2,
         double theUTol = 1.0e-9, double theMinLen = 1.0e-7)
@@ -127,9 +131,9 @@ public sealed class GCPnts_TangentialDeflection
     /// Adds a point, keeping the parameters sorted; a point whose parameter is within Precision::PConfusion() of an
     /// existing one replaces it when theIsReplace is true. Returns the index of the point.
     /// </summary>
-    public int AddPoint(in gp_Pnt thePnt, double theParam, bool theIsReplace = true)
+    public int AddPoint(in Point3D thePnt, double theParam, bool theIsReplace = true)
     {
-        double tol = Precision.PConfusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         int index = -1;
         int nb = myParameters.Length();
         for (int i = 1; index == -1 && i <= nb; i++)
@@ -167,19 +171,19 @@ public sealed class GCPnts_TangentialDeflection
     public double Parameter(int I) => myParameters.Value(I);
 
     /// <summary>The point of index I (1 to NbPoints).</summary>
-    public gp_Pnt Value(int I) => myPoints.Value(I);
+    public Point3D Value(int I) => myPoints.Value(I);
 
     /// <summary>
     /// The angular step for an arc of radius theRadius that satisfies the linear and angular deflections, without
     /// going below theMinLength.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">theRadius is negative.</exception>
+    /// <exception cref="ConstructionErrorException">theRadius is negative.</exception>
     public static double ArcAngularStep(double theRadius, double theLinearDeflection, double theAngularDeflection,
         double theMinLength)
     {
         Standard_ConstructionError_Raise_if(theRadius < 0.0, "Negative radius");
 
-        double aPrecision = Precision.Confusion();
+        double aPrecision = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         double Du = 0.0, aMinSizeAng = 0.0;
         if (theRadius > aPrecision)
@@ -197,32 +201,32 @@ public sealed class GCPnts_TangentialDeflection
         return Du;
     }
 
-    private static void D0(Adaptor3d_Curve C, double U, out gp_Pnt P)
+    private static void D0(Adaptor3d_Curve C, double U, out Point3D P)
     {
         C.D0(U, out P);
     }
 
-    private static void D2(Adaptor3d_Curve C, double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    private static void D2(Adaptor3d_Curve C, double U, out Point3D P, out Vector3D V1, out Vector3D V2)
     {
         C.D2(U, out P, out V1, out V2);
     }
 
-    private static void D0(Adaptor2d_Curve2d C, double U, out gp_Pnt PP)
+    private static void D0(Adaptor2d_Curve2d C, double U, out Point3D PP)
     {
         double X, Y;
-        C.D0(U, out gp_Pnt2d P);
+        C.D0(U, out Point2D P);
         P.Coord(out X, out Y);
-        PP = new gp_Pnt();
+        PP = new Point3D();
         PP.SetCoord(X, Y, 0.0);
     }
 
-    private static void D2(Adaptor2d_Curve2d C, double U, out gp_Pnt PP, out gp_Vec VV1, out gp_Vec VV2)
+    private static void D2(Adaptor2d_Curve2d C, double U, out Point3D PP, out Vector3D VV1, out Vector3D VV2)
     {
         double X, Y;
-        C.D2(U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2);
-        PP = new gp_Pnt();
-        VV1 = new gp_Vec();
-        VV2 = new gp_Vec();
+        C.D2(U, out Point2D P, out Vector2D V1, out Vector2D V2);
+        PP = new Point3D();
+        VV1 = new Vector3D();
+        VV2 = new Vector3D();
         P.Coord(out X, out Y);
         PP.SetCoord(X, Y, 0.0);
         V1.Coord(out X, out Y);
@@ -231,11 +235,11 @@ public sealed class GCPnts_TangentialDeflection
         VV2.SetCoord(X, Y, 0.0);
     }
 
-    private static double EstimAngl(in gp_Pnt P1, in gp_Pnt Pm, in gp_Pnt P2)
+    private static double EstimAngl(in Point3D P1, in Point3D Pm, in Point3D P2)
     {
-        gp_Vec V1 = new(P1, Pm), V2 = new(Pm, P2);
+        Vector3D V1 = new(P1, Pm), V2 = new(Pm, P2);
         double L = V1.Magnitude() * V2.Magnitude();
-        if (L > gp.Resolution())
+        if (L > Constants.Resolution())
         {
             return V1.CrossMagnitude(V2) / L;
         }
@@ -264,13 +268,13 @@ public sealed class GCPnts_TangentialDeflection
     // ---- Templates over the curve type (3D instantiation) ----
 
     // theDu and theNotDone are left unchanged unless a step is found, as in OCCT.
-    private void EvaluateDu(Adaptor3d_Curve theC, double theU, out gp_Pnt theP, ref double theDu,
+    private void EvaluateDu(Adaptor3d_Curve theC, double theU, out Point3D theP, ref double theDu,
         ref bool theNotDone)
     {
-        gp_Vec T, N;
+        Vector3D T, N;
         D2(theC, theU, out theP, out T, out N);
         double Lt = T.Magnitude();
-        double LTol = Precision.Confusion();
+        double LTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (Lt > LTol && N.Magnitude() > LTol)
         {
             double Lc = N.CrossMagnitude(T);
@@ -285,7 +289,7 @@ public sealed class GCPnts_TangentialDeflection
 
     private void PerformLinear(Adaptor3d_Curve theC)
     {
-        gp_Pnt P;
+        Point3D P;
         D0(theC, myFirstu, out P);
         myParameters.Append(myFirstu);
         myPoints.Append(P);
@@ -321,7 +325,7 @@ public sealed class GCPnts_TangentialDeflection
         NbPoints = Max(NbPoints, myMinNbPnts - 1);
         Du = aDiff / NbPoints;
 
-        gp_Pnt P;
+        Point3D P;
         double U = myFirstu;
         for (int i = 1; i <= NbPoints; i++)
         {
@@ -345,7 +349,7 @@ public sealed class GCPnts_TangentialDeflection
                             double theMinLen)
     {
         Standard_ConstructionError_Raise_if(
-            theCurvatureDeflection < Precision.Confusion() || theAngularDeflection < Precision.Angular(),
+            theCurvatureDeflection < global::Kerf.Engine.Foundation.Precision.Confusion() || theAngularDeflection < global::Kerf.Engine.Foundation.Precision.Angular(),
             "GCPnts_TangentialDeflection::Initialize - Zero Deflection");
         // OCCT omits the semicolon between the check and the Clear below; harmless (occt-issues.md).
         myParameters.Clear();
@@ -364,21 +368,21 @@ public sealed class GCPnts_TangentialDeflection
         myAngularDeflection = theAngularDeflection;
         myCurvatureDeflection = theCurvatureDeflection;
         myMinNbPnts = Max(theMinimumOfPoints, 2);
-        myMinLen = Max(theMinLen, Precision.Confusion());
+        myMinLen = Max(theMinLen, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 PerformLinear(theC);
                 break;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 PerformCircular(theC);
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve aBS = theC.BSpline();
                 if (aBS.NbPoles() == 2)
@@ -391,7 +395,7 @@ public sealed class GCPnts_TangentialDeflection
                 }
                 break;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve aBZ = theC.Bezier();
                 if (aBZ.NbPoles() == 2)
@@ -415,12 +419,12 @@ public sealed class GCPnts_TangentialDeflection
     private void PerformCurve(Adaptor3d_Curve theC)
     {
         int i, j;
-        gp_XYZ V1, V2;
-        gp_Pnt MiddlePoint, CurrentPoint, LastPoint;
+        Xyz V1, V2;
+        Point3D MiddlePoint, CurrentPoint, LastPoint;
         double Du, Dusave, MiddleU, L1, L2;
 
         double U1 = myFirstu;
-        double LTol = Precision.Confusion(); // protection against zero length
+        double LTol = global::Kerf.Engine.Foundation.Precision.Confusion(); // protection against zero length
         double ATol = 1.0e-2 * myAngularDeflection;
         if (ATol > 1.0e-2)
         {
@@ -442,9 +446,9 @@ public sealed class GCPnts_TangentialDeflection
         myPoints.Append(CurrentPoint);
 
         // Used to detect "isLine" current bspline and in Du computation in general handling.
-        int NbInterv = theC.NbIntervals(GeomAbs_CN);
+        int NbInterv = theC.NbIntervals(CN);
         NCollection_Array1<double> Intervs = new(1, NbInterv + 1);
-        theC.Intervals(Intervs, GeomAbs_CN);
+        theC.Intervals(Intervs, CN);
 
         if (NotDone || Du > 5.0 * Dusave)
         {
@@ -458,13 +462,13 @@ public sealed class GCPnts_TangentialDeflection
                 int NbPoints = (myMinNbPnts > 3) ? myMinNbPnts : 3;
                 switch (theC.GetType())
                 {
-                    case GeomAbs_BSplineCurve:
+                    case BSplineCurve:
                     {
                         Geom_BSplineCurve BS = theC.BSpline();
                         NbPoints = Max(BS.Degree() + 1, NbPoints);
                         break;
                     }
-                    case GeomAbs_BezierCurve:
+                    case BezierCurve:
                     {
                         Geom_BezierCurve BZ = theC.Bezier();
                         NbPoints = Max(BZ.Degree() + 1, NbPoints);
@@ -572,7 +576,7 @@ public sealed class GCPnts_TangentialDeflection
         // Indexes of intervals of U1 and U2, used to handle non-uniform case.
         Span<int> aIdx = [Intervs.Lower(), Intervs.Lower()];
         bool isNeedToCheck = false;
-        gp_Pnt aPrevPoint = myPoints.Last();
+        Point3D aPrevPoint = myPoints.Last();
 
         while (MorePoints)
         {
@@ -698,7 +702,7 @@ public sealed class GCPnts_TangentialDeflection
                 {
                     if (Coef >= 1.5)
                     {
-                        if (!aPrevPoint.IsEqual(myPoints.Last(), Precision.Confusion()))
+                        if (!aPrevPoint.IsEqual(myPoints.Last(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             myParameters.Append(U1);
                             myPoints.Append(aPrevPoint);
@@ -819,8 +823,8 @@ public sealed class GCPnts_TangentialDeflection
             double umax = 0.0;
             double amax = 0.0;
             EstimDefl(theC, U1, U2, ref dmax, ref umax);
-            gp_Pnt P1 = myPoints[i];
-            gp_Pnt P2 = myPoints[i + 1];
+            Point3D P1 = myPoints[i];
+            Point3D P2 = myPoints[i + 1];
             D0(theC, umax, out MiddlePoint);
             amax = EstimAngl(P1, MiddlePoint, P2);
             if (dmax > myCurvatureDeflection || amax > AngleMax)
@@ -853,9 +857,9 @@ public sealed class GCPnts_TangentialDeflection
         const int aNbIter = 100;
         double aRelTol = Max(1.0e-3, 2.0 * myUTol / (Math.Abs(theU1) + Math.Abs(theU2)));
         //
-        math_BrentMinimum anOptLoc = new(aRelTol, aNbIter, myUTol);
+        BrentMinimum anOptLoc = new(aRelTol, aNbIter, myUTol);
         anOptLoc.Perform(aFunc, theU1, (theU1 + theU2) / 2.0, theU2);
-        if (anOptLoc.IsDone())
+        if (anOptLoc.IsDone)
         {
             theMaxDefl = Math.Sqrt(-anOptLoc.Minimum());
             theUMax = anOptLoc.Location();
@@ -873,14 +877,14 @@ public sealed class GCPnts_TangentialDeflection
         math_Vector aT = new(1, 1);
         GCPnts_DistFunctionMV aFuncMV = new(aFunc);
 
-        math_PSO aFinder = new(aFuncMV, aLowBorder, aUppBorder, aSteps, aNbParticles);
+        Pso aFinder = new(aFuncMV, aLowBorder, aUppBorder, aSteps, aNbParticles);
         aFinder.Perform(aSteps, out aValue, aT);
         //
         anOptLoc.Perform(aFunc,
                          Max(aT[1] - aSteps[1], theU1),
                          aT[1],
                          Min(aT[1] + aSteps[1], theU2));
-        if (anOptLoc.IsDone())
+        if (anOptLoc.IsDone)
         {
             theMaxDefl = Math.Sqrt(-anOptLoc.Minimum());
             theUMax = anOptLoc.Location();
@@ -893,13 +897,13 @@ public sealed class GCPnts_TangentialDeflection
     // ---- Templates over the curve type (2D instantiation) ----
 
     // theDu and theNotDone are left unchanged unless a step is found, as in OCCT.
-    private void EvaluateDu(Adaptor2d_Curve2d theC, double theU, out gp_Pnt theP, ref double theDu,
+    private void EvaluateDu(Adaptor2d_Curve2d theC, double theU, out Point3D theP, ref double theDu,
         ref bool theNotDone)
     {
-        gp_Vec T, N;
+        Vector3D T, N;
         D2(theC, theU, out theP, out T, out N);
         double Lt = T.Magnitude();
-        double LTol = Precision.Confusion();
+        double LTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (Lt > LTol && N.Magnitude() > LTol)
         {
             double Lc = N.CrossMagnitude(T);
@@ -914,7 +918,7 @@ public sealed class GCPnts_TangentialDeflection
 
     private void PerformLinear(Adaptor2d_Curve2d theC)
     {
-        gp_Pnt P;
+        Point3D P;
         D0(theC, myFirstu, out P);
         myParameters.Append(myFirstu);
         myPoints.Append(P);
@@ -950,7 +954,7 @@ public sealed class GCPnts_TangentialDeflection
         NbPoints = Max(NbPoints, myMinNbPnts - 1);
         Du = aDiff / NbPoints;
 
-        gp_Pnt P;
+        Point3D P;
         double U = myFirstu;
         for (int i = 1; i <= NbPoints; i++)
         {
@@ -974,7 +978,7 @@ public sealed class GCPnts_TangentialDeflection
                             double theMinLen)
     {
         Standard_ConstructionError_Raise_if(
-            theCurvatureDeflection < Precision.Confusion() || theAngularDeflection < Precision.Angular(),
+            theCurvatureDeflection < global::Kerf.Engine.Foundation.Precision.Confusion() || theAngularDeflection < global::Kerf.Engine.Foundation.Precision.Angular(),
             "GCPnts_TangentialDeflection::Initialize - Zero Deflection");
         // OCCT omits the semicolon between the check and the Clear below; harmless (occt-issues.md).
         myParameters.Clear();
@@ -993,21 +997,21 @@ public sealed class GCPnts_TangentialDeflection
         myAngularDeflection = theAngularDeflection;
         myCurvatureDeflection = theCurvatureDeflection;
         myMinNbPnts = Max(theMinimumOfPoints, 2);
-        myMinLen = Max(theMinLen, Precision.Confusion());
+        myMinLen = Max(theMinLen, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 PerformLinear(theC);
                 break;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 PerformCircular(theC);
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBS = theC.BSpline();
                 if (aBS.NbPoles() == 2)
@@ -1020,7 +1024,7 @@ public sealed class GCPnts_TangentialDeflection
                 }
                 break;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom2d_BezierCurve aBZ = theC.Bezier();
                 if (aBZ.NbPoles() == 2)
@@ -1044,12 +1048,12 @@ public sealed class GCPnts_TangentialDeflection
     private void PerformCurve(Adaptor2d_Curve2d theC)
     {
         int i, j;
-        gp_XYZ V1, V2;
-        gp_Pnt MiddlePoint, CurrentPoint, LastPoint;
+        Xyz V1, V2;
+        Point3D MiddlePoint, CurrentPoint, LastPoint;
         double Du, Dusave, MiddleU, L1, L2;
 
         double U1 = myFirstu;
-        double LTol = Precision.Confusion(); // protection against zero length
+        double LTol = global::Kerf.Engine.Foundation.Precision.Confusion(); // protection against zero length
         double ATol = 1.0e-2 * myAngularDeflection;
         if (ATol > 1.0e-2)
         {
@@ -1071,9 +1075,9 @@ public sealed class GCPnts_TangentialDeflection
         myPoints.Append(CurrentPoint);
 
         // Used to detect "isLine" current bspline and in Du computation in general handling.
-        int NbInterv = theC.NbIntervals(GeomAbs_CN);
+        int NbInterv = theC.NbIntervals(CN);
         NCollection_Array1<double> Intervs = new(1, NbInterv + 1);
-        theC.Intervals(Intervs, GeomAbs_CN);
+        theC.Intervals(Intervs, CN);
 
         if (NotDone || Du > 5.0 * Dusave)
         {
@@ -1087,13 +1091,13 @@ public sealed class GCPnts_TangentialDeflection
                 int NbPoints = (myMinNbPnts > 3) ? myMinNbPnts : 3;
                 switch (theC.GetType())
                 {
-                    case GeomAbs_BSplineCurve:
+                    case BSplineCurve:
                     {
                         Geom2d_BSplineCurve BS = theC.BSpline();
                         NbPoints = Max(BS.Degree() + 1, NbPoints);
                         break;
                     }
-                    case GeomAbs_BezierCurve:
+                    case BezierCurve:
                     {
                         Geom2d_BezierCurve BZ = theC.Bezier();
                         NbPoints = Max(BZ.Degree() + 1, NbPoints);
@@ -1201,7 +1205,7 @@ public sealed class GCPnts_TangentialDeflection
         // Indexes of intervals of U1 and U2, used to handle non-uniform case.
         Span<int> aIdx = [Intervs.Lower(), Intervs.Lower()];
         bool isNeedToCheck = false;
-        gp_Pnt aPrevPoint = myPoints.Last();
+        Point3D aPrevPoint = myPoints.Last();
 
         while (MorePoints)
         {
@@ -1327,7 +1331,7 @@ public sealed class GCPnts_TangentialDeflection
                 {
                     if (Coef >= 1.5)
                     {
-                        if (!aPrevPoint.IsEqual(myPoints.Last(), Precision.Confusion()))
+                        if (!aPrevPoint.IsEqual(myPoints.Last(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             myParameters.Append(U1);
                             myPoints.Append(aPrevPoint);
@@ -1448,8 +1452,8 @@ public sealed class GCPnts_TangentialDeflection
             double umax = 0.0;
             double amax = 0.0;
             EstimDefl(theC, U1, U2, ref dmax, ref umax);
-            gp_Pnt P1 = myPoints[i];
-            gp_Pnt P2 = myPoints[i + 1];
+            Point3D P1 = myPoints[i];
+            Point3D P2 = myPoints[i + 1];
             D0(theC, umax, out MiddlePoint);
             amax = EstimAngl(P1, MiddlePoint, P2);
             if (dmax > myCurvatureDeflection || amax > AngleMax)
@@ -1482,9 +1486,9 @@ public sealed class GCPnts_TangentialDeflection
         const int aNbIter = 100;
         double aRelTol = Max(1.0e-3, 2.0 * myUTol / (Math.Abs(theU1) + Math.Abs(theU2)));
         //
-        math_BrentMinimum anOptLoc = new(aRelTol, aNbIter, myUTol);
+        BrentMinimum anOptLoc = new(aRelTol, aNbIter, myUTol);
         anOptLoc.Perform(aFunc, theU1, (theU1 + theU2) / 2.0, theU2);
-        if (anOptLoc.IsDone())
+        if (anOptLoc.IsDone)
         {
             theMaxDefl = Math.Sqrt(-anOptLoc.Minimum());
             theUMax = anOptLoc.Location();
@@ -1502,14 +1506,14 @@ public sealed class GCPnts_TangentialDeflection
         math_Vector aT = new(1, 1);
         GCPnts_DistFunction2dMV aFuncMV = new(aFunc);
 
-        math_PSO aFinder = new(aFuncMV, aLowBorder, aUppBorder, aSteps, aNbParticles);
+        Pso aFinder = new(aFuncMV, aLowBorder, aUppBorder, aSteps, aNbParticles);
         aFinder.Perform(aSteps, out aValue, aT);
         //
         anOptLoc.Perform(aFunc,
                          Max(aT[1] - aSteps[1], theU1),
                          aT[1],
                          Min(aT[1] + aSteps[1], theU2));
-        if (anOptLoc.IsDone())
+        if (anOptLoc.IsDone)
         {
             theMaxDefl = Math.Sqrt(-anOptLoc.Minimum());
             theUMax = anOptLoc.Location();

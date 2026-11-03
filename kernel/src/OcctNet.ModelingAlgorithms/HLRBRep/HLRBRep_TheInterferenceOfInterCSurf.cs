@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,12 +30,12 @@ public sealed class HLRBRep_TheInterferenceOfInterCSurf
     {
     }
 
-    public HLRBRep_TheInterferenceOfInterCSurf(in gp_Lin theLin, HLRBRep_ThePolyhedronOfInterCSurf thePolyh)
+    public HLRBRep_TheInterferenceOfInterCSurf(in Line3D theLin, HLRBRep_ThePolyhedronOfInterCSurf thePolyh)
         : base(theLin, thePolyh)
     {
     }
 
-    public HLRBRep_TheInterferenceOfInterCSurf(NCollection_Array1<gp_Lin> theLins,
+    public HLRBRep_TheInterferenceOfInterCSurf(NCollection_Array1<Line3D> theLins,
                                                    HLRBRep_ThePolyhedronOfInterCSurf thePolyh)
         : base(theLins, thePolyh)
     {
@@ -39,20 +43,20 @@ public sealed class HLRBRep_TheInterferenceOfInterCSurf
 
     public HLRBRep_TheInterferenceOfInterCSurf(HLRBRep_ThePolygonOfInterCSurf thePolyg,
                                                    HLRBRep_ThePolyhedronOfInterCSurf thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+                                                   BoundSortBox theBoundSB)
         : base(thePolyg, thePolyh, theBoundSB)
     {
     }
 
-    public HLRBRep_TheInterferenceOfInterCSurf(in gp_Lin theLin, HLRBRep_ThePolyhedronOfInterCSurf thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+    public HLRBRep_TheInterferenceOfInterCSurf(in Line3D theLin, HLRBRep_ThePolyhedronOfInterCSurf thePolyh,
+                                                   BoundSortBox theBoundSB)
         : base(theLin, thePolyh, theBoundSB)
     {
     }
 
-    public HLRBRep_TheInterferenceOfInterCSurf(NCollection_Array1<gp_Lin> theLins,
+    public HLRBRep_TheInterferenceOfInterCSurf(NCollection_Array1<Line3D> theLins,
                                                    HLRBRep_ThePolyhedronOfInterCSurf thePolyh,
-                                                   Bnd_BoundSortBox theBoundSB)
+                                                   BoundSortBox theBoundSB)
         : base(theLins, thePolyh, theBoundSB)
     {
     }
@@ -63,5 +67,5 @@ public sealed class HLRBRep_TheInterferenceOfInterCSurf
 
     static HLRBRep_TheInterferenceOfInterCSurf IIntCurveSurface_TheInterference<HLRBRep_TheInterferenceOfInterCSurf, HLRBRep_ThePolygonOfInterCSurf, HLRBRep_ThePolyhedronOfInterCSurf>.Create(
         HLRBRep_ThePolygonOfInterCSurf thePolyg, HLRBRep_ThePolyhedronOfInterCSurf thePolyh,
-        Bnd_BoundSortBox theBoundSB) => new(thePolyg, thePolyh, theBoundSB);
+        BoundSortBox theBoundSB) => new(thePolyg, thePolyh, theBoundSB);
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
@@ -13,28 +15,28 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class TopClassTests
 {
-    internal readonly record struct TestEdge(gp_Pnt2d P0, gp_Pnt2d P1)
+    internal readonly record struct TestEdge(Point2D P0, Point2D P1)
     {
-        public gp_Vec2d V() => new(P0, P1);
+        public Vector2D V() => new(P0, P1);
     }
 
     /// <summary>Intersects the segment [0, P] of a line with a straight edge.</summary>
     internal sealed class TestIntersector : IntRes2d_Intersection, ITopClass_Intersector<TestEdge>
     {
-        public void Perform(in gp_Lin2d L, double P, double Tol, in TestEdge E)
+        public void Perform(in Line2D L, double P, double Tol, in TestEdge E)
         {
             ResetFields();
             done = true;
-            gp_Pnt2d anO = L.Location();
-            gp_Vec2d aD = new(L.Direction());
-            gp_Vec2d aV = E.V();
+            Point2D anO = L.Location();
+            Vector2D aD = new(L.Direction());
+            Vector2D aV = E.V();
             double aDenom = aD.Crossed(aV);
             if (Math.Abs(aDenom) < 1e-12)
             {
                 return; // parallel: ignored by this test intersector
             }
 
-            gp_Vec2d aW = new(anO, E.P0);
+            Vector2D aW = new(anO, E.P0);
             double t = aW.Crossed(aV) / aDenom;
             double s = aW.Crossed(aD) / aDenom;
             if (t < -Tol || t > P + Tol || s < -1e-9 || s > 1 + 1e-9)
@@ -42,55 +44,55 @@ public class TopClassTests
                 return;
             }
 
-            gp_Pnt2d aPnt = new(anO.X() + t * aD.X(), anO.Y() + t * aD.Y());
-            var aDomLin = new IntRes2d_Domain(anO, 0, Tol, new gp_Pnt2d(anO.X() + P * aD.X(), anO.Y() + P * aD.Y()), P, Tol);
+            Point2D aPnt = new(anO.X() + t * aD.X(), anO.Y() + t * aD.Y());
+            var aDomLin = new IntRes2d_Domain(anO, 0, Tol, new Point2D(anO.X() + P * aD.X(), anO.Y() + P * aD.Y()), P, Tol);
             var aDomEdge = new IntRes2d_Domain(E.P0, 0, 1e-9, E.P1, 1, 1e-9);
             IntImpParGen.DeterminePosition(out IntRes2d_Position aPos1, aDomLin, aPnt, t);
             IntImpParGen.DeterminePosition(out IntRes2d_Position aPos2, aDomEdge, aPnt, s);
             IntRes2d_Transition aT1 = new(), aT2 = new();
-            gp_Vec2d aTan1 = aD, aTan2 = aV;
-            IntImpParGen.DetermineTransition(aPos1, ref aTan1, new gp_Vec2d(0, 0), ref aT1,
-                                             aPos2, ref aTan2, new gp_Vec2d(0, 0), ref aT2, Tol);
+            Vector2D aTan1 = aD, aTan2 = aV;
+            IntImpParGen.DetermineTransition(aPos1, ref aTan1, new Vector2D(0, 0), ref aT1,
+                                             aPos2, ref aTan2, new Vector2D(0, 0), ref aT2, Tol);
             Insert(new IntRes2d_IntersectionPoint(aPnt, t, s, aT1, aT2, false));
         }
 
-        public void LocalGeometry(in TestEdge E, double U, out gp_Dir2d T, out gp_Dir2d N, out double C)
+        public void LocalGeometry(in TestEdge E, double U, out Direction2D T, out Direction2D N, out double C)
         {
-            T = new gp_Dir2d(E.V());
-            N = new gp_Dir2d(-T.Y(), T.X());
+            T = new Direction2D(E.V());
+            N = new Direction2D(-T.Y(), T.X());
             C = 0.0;
         }
     }
 
     /// <summary>Explores the wires of a polygonal face; the half-lines aim at the given targets in turn.</summary>
-    internal sealed class TestFaceExplorer(TestEdge[][] theWires, params gp_Pnt2d[] theTargets)
+    internal sealed class TestFaceExplorer(TestEdge[][] theWires, params Point2D[] theTargets)
         : ITopClass_FaceExplorer<TestEdge>
     {
         private int myWire;
         private int myEdge;
         private int myTarget;
 
-        public bool CheckPoint(ref gp_Pnt2d thePoint) => true;
+        public bool CheckPoint(ref Point2D thePoint) => true;
 
-        public bool Reject(in gp_Pnt2d P) => false;
+        public bool Reject(in Point2D P) => false;
 
-        public bool Segment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+        public bool Segment(in Point2D P, out Line2D L, out double Par)
         {
             myTarget = 0;
             return OtherSegment(P, out L, out Par);
         }
 
-        public bool OtherSegment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+        public bool OtherSegment(in Point2D P, out Line2D L, out double Par)
         {
             if (myTarget >= theTargets.Length)
             {
-                L = new gp_Lin2d();
+                L = new Line2D();
                 Par = 0;
                 return false;
             }
 
-            gp_Pnt2d aTarget = theTargets[myTarget++];
-            L = new gp_Lin2d(P, new gp_Dir2d(new gp_Vec2d(P, aTarget)));
+            Point2D aTarget = theTargets[myTarget++];
+            L = new Line2D(P, new Direction2D(new Vector2D(P, aTarget)));
             Par = 2.0 * P.Distance(aTarget);
             return true;
         }
@@ -101,7 +103,7 @@ public class TopClassTests
 
         public void NextWire() => myWire++;
 
-        public bool RejectWire(in gp_Lin2d L, double Par) => false;
+        public bool RejectWire(in Line2D L, double Par) => false;
 
         public void InitEdges() => myEdge = 0;
 
@@ -109,7 +111,7 @@ public class TopClassTests
 
         public void NextEdge() => myEdge++;
 
-        public bool RejectEdge(in gp_Lin2d L, double Par) => false;
+        public bool RejectEdge(in Line2D L, double Par) => false;
 
         public void CurrentEdge(ref TestEdge E, out TopAbs_Orientation Or)
         {
@@ -121,7 +123,7 @@ public class TopClassTests
     /// <summary>The 2D classifier, as BRepClass_FClass2dOfFClassifier: fields passed to TopClass_Classifier2d.</summary>
     internal sealed class TestFClass2d : ITopClass_FClass2d<TestEdge>
     {
-        private gp_Lin2d myLin = new();
+        private Line2D myLin = new();
         private double myParam;
         private double myTolerance;
         private TopAbs_State myState = TopAbs_UNKNOWN;
@@ -133,7 +135,7 @@ public class TopClassTests
         private readonly TestIntersector myIntersector = new();
         private readonly TopTrans_CurveTransition myTrans = new();
 
-        public void Reset(in gp_Lin2d L, double P, double Tol)
+        public void Reset(in Line2D L, double P, double Tol)
             => TopClass_Classifier2d.Reset(out myLin, out myParam, out myTolerance, out myState, out myFirstCompare,
                                            out myFirstTrans, out myClosest, out myIsSet, out myIsHeadOrEnd, L, P, Tol);
 
@@ -157,23 +159,23 @@ public class TopClassTests
 
     private static readonly TestEdge[] theSquare =
     [
-        new(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 0)),
-        new(new gp_Pnt2d(1, 0), new gp_Pnt2d(1, 1)),
-        new(new gp_Pnt2d(1, 1), new gp_Pnt2d(0, 1)),
-        new(new gp_Pnt2d(0, 1), new gp_Pnt2d(0, 0)),
+        new(new Point2D(0, 0), new Point2D(1, 0)),
+        new(new Point2D(1, 0), new Point2D(1, 1)),
+        new(new Point2D(1, 1), new Point2D(0, 1)),
+        new(new Point2D(0, 1), new Point2D(0, 0)),
     ];
 
     // A clockwise hole (0.4, 0.4)-(0.6, 0.6) in the square
     private static readonly TestEdge[] theHole =
     [
-        new(new gp_Pnt2d(0.4, 0.4), new gp_Pnt2d(0.4, 0.6)),
-        new(new gp_Pnt2d(0.4, 0.6), new gp_Pnt2d(0.6, 0.6)),
-        new(new gp_Pnt2d(0.6, 0.6), new gp_Pnt2d(0.6, 0.4)),
-        new(new gp_Pnt2d(0.6, 0.4), new gp_Pnt2d(0.4, 0.4)),
+        new(new Point2D(0.4, 0.4), new Point2D(0.4, 0.6)),
+        new(new Point2D(0.4, 0.6), new Point2D(0.6, 0.6)),
+        new(new Point2D(0.6, 0.6), new Point2D(0.6, 0.4)),
+        new(new Point2D(0.6, 0.4), new Point2D(0.4, 0.4)),
     ];
 
     private static (TopAbs_State State, TestEdge Edge, IntRes2d_Position Position, double Parameter) Classify(
-        gp_Pnt2d theP, TestEdge[][] theWires, params gp_Pnt2d[] theTargets)
+        Point2D theP, TestEdge[][] theWires, params Point2D[] theTargets)
     {
         var aClassifier = new TestFClass2d();
         var anExplorer = new TestFaceExplorer(theWires, theTargets);
@@ -197,7 +199,7 @@ public class TopClassTests
     [Fact]
     public void Inside_ThroughTheMiddleOfAnEdge()
     {
-        var aResult = Classify(new gp_Pnt2d(0.5, 0.25), [theSquare], new gp_Pnt2d(1, 0.4));
+        var aResult = Classify(new Point2D(0.5, 0.25), [theSquare], new Point2D(1, 0.4));
         Assert.Equal(TopAbs_IN, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
         Assert.Equal(IntRes2d_Middle, aResult.Position);
@@ -208,7 +210,7 @@ public class TopClassTests
     public void Outside_TheClosestEdgeDecides()
     {
         // From (2, 0.5) towards (0.5, 0): the half-line crosses the right edge first, entering the face.
-        var aResult = Classify(new gp_Pnt2d(2, 0.5), [theSquare], new gp_Pnt2d(0.5, 0));
+        var aResult = Classify(new Point2D(2, 0.5), [theSquare], new Point2D(0.5, 0));
         Assert.Equal(TopAbs_OUT, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
     }
@@ -216,7 +218,7 @@ public class TopClassTests
     [Fact]
     public void On_AnEdge()
     {
-        var aResult = Classify(new gp_Pnt2d(1, 0.5), [theSquare], new gp_Pnt2d(0, 0.3));
+        var aResult = Classify(new Point2D(1, 0.5), [theSquare], new Point2D(0, 0.3));
         Assert.Equal(TopAbs_ON, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
         Assert.Equal(0.5, aResult.Parameter, 12);
@@ -226,7 +228,7 @@ public class TopClassTests
     public void Inside_ThroughAVertex()
     {
         // Through the corner (1, 1): two edge ends, decided by the complex transition (TopTrans).
-        var aResult = Classify(new gp_Pnt2d(0.5, 0.5), [theSquare], new gp_Pnt2d(1, 1));
+        var aResult = Classify(new Point2D(0.5, 0.5), [theSquare], new Point2D(1, 1));
         Assert.Equal(TopAbs_IN, aResult.State);
         Assert.True(aResult.Position is IntRes2d_Head or IntRes2d_End);
     }
@@ -234,29 +236,29 @@ public class TopClassTests
     [Fact]
     public void Outside_ThroughAVertex()
     {
-        var aResult = Classify(new gp_Pnt2d(2, 2), [theSquare], new gp_Pnt2d(1, 1));
+        var aResult = Classify(new Point2D(2, 2), [theSquare], new Point2D(1, 1));
         Assert.Equal(TopAbs_OUT, aResult.State);
     }
 
     [Fact]
     public void Hole_InsideTheHoleIsOutside()
     {
-        Assert.Equal(TopAbs_OUT, Classify(new gp_Pnt2d(0.5, 0.5), [theSquare, theHole], new gp_Pnt2d(1, 0.55)).State);
-        Assert.Equal(TopAbs_IN, Classify(new gp_Pnt2d(0.2, 0.5), [theSquare, theHole], new gp_Pnt2d(1, 0.55)).State);
-        Assert.Equal(TopAbs_IN, Classify(new gp_Pnt2d(0.8, 0.5), [theSquare, theHole], new gp_Pnt2d(0, 0.45)).State);
+        Assert.Equal(TopAbs_OUT, Classify(new Point2D(0.5, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
+        Assert.Equal(TopAbs_IN, Classify(new Point2D(0.2, 0.5), [theSquare, theHole], new Point2D(1, 0.55)).State);
+        Assert.Equal(TopAbs_IN, Classify(new Point2D(0.8, 0.5), [theSquare, theHole], new Point2D(0, 0.45)).State);
     }
 
     [Fact]
     public void NoWires_IsInside()
     {
-        Assert.Equal(TopAbs_IN, Classify(new gp_Pnt2d(5, 5), [], new gp_Pnt2d(0, 0)).State);
+        Assert.Equal(TopAbs_IN, Classify(new Point2D(5, 5), [], new Point2D(0, 0)).State);
     }
 
     [Fact]
     public void Rejected_IsOutside()
     {
         Assert.Equal(TopAbs_OUT, TopClass_FaceClassifier.State(true, false, new TestFClass2d()));
-        Assert.ThrowsAny<Standard_DomainError>(() => TopClass_FaceClassifier.EdgeParameter(true, 0.5));
-        Assert.ThrowsAny<Standard_DomainError>(() => TopClass_FaceClassifier.Edge(true, theSquare[0]));
+        Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.EdgeParameter(true, 0.5));
+        Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.Edge(true, theSquare[0]));
     }
 }

@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+
 namespace OcctNet.Foundation.Tests;
 
 /// <summary>
-/// <see cref="std_heap"/> against orders recorded from MSVC (decision 491): BRepMesh_Delaun sorts its vertices with
+/// <see cref="Heap"/> against orders recorded from MSVC (decision 491): BRepMesh_Delaun sorts its vertices with
 /// <c>std::make_heap</c> + <c>std::sort_heap</c> on keys with many ties, and the oracle's OCCT is built with MSVC.
 /// </summary>
 /// <remarks>
@@ -52,7 +54,7 @@ namespace OcctNet.Foundation.Tests;
 /// </remarks>
 public class std_heapTests
 {
-    private readonly struct KeyLess(double[] theKeys) : std_heap.ILess<int>
+    private readonly struct KeyLess(double[] theKeys) : Heap.ILess<int>
     {
         public bool Less(int theLeft, int theRight) => theKeys[theLeft] < theKeys[theRight];
     }
@@ -158,10 +160,10 @@ public class std_heapTests
         int[] anIndices = [.. Enumerable.Range(0, aKeys.Length)];
         KeyLess aLess = new(aKeys);
 
-        std_heap.make_heap(anIndices.AsSpan(), aLess);
+        Heap.make_heap(anIndices.AsSpan(), aLess);
         Assert.Equal(theHeap, string.Join(' ', anIndices));
 
-        std_heap.sort_heap(anIndices.AsSpan(), aLess);
+        Heap.sort_heap(anIndices.AsSpan(), aLess);
         Assert.Equal(theSorted, string.Join(' ', anIndices));
     }
 
@@ -172,8 +174,8 @@ public class std_heapTests
         double[] aKeys = Keys("grid6_xplusy");
         int[] aHeap = [.. Enumerable.Range(0, aKeys.Length)];
         KeyLess aLess = new(aKeys);
-        std_heap.make_heap(aHeap.AsSpan(), aLess);
-        std_heap.sort_heap(aHeap.AsSpan(), aLess);
+        Heap.make_heap(aHeap.AsSpan(), aLess);
+        Heap.sort_heap(aHeap.AsSpan(), aLess);
 
         int[] aSorted = [.. Enumerable.Range(0, aKeys.Length)];
         Array.Sort(aSorted, (a, b) => aKeys[a].CompareTo(aKeys[b]));
@@ -199,12 +201,12 @@ public class std_heapTests
         int[] anIndices = [.. Enumerable.Range(0, aKeys.Length)];
         for (int n = 2; n <= anIndices.Length; ++n)
         {
-            std_heap.push_heap(anIndices.AsSpan(0, n), aLess);
+            Heap.push_heap(anIndices.AsSpan(0, n), aLess);
         }
 
         for (int n = anIndices.Length; n >= 2; --n)
         {
-            std_heap.pop_heap(anIndices.AsSpan(0, n), aLess);
+            Heap.pop_heap(anIndices.AsSpan(0, n), aLess);
             for (int i = 0; i < n - 1; ++i)
             {
                 Assert.False(aKeys[anIndices[n - 1]] < aKeys[anIndices[i]]);

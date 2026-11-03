@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +20,7 @@ public class Geom_Ellipse : Geom_Conic
     private double minorRadius;
 
     /// <summary>An ellipse equal to E.</summary>
-    public Geom_Ellipse(in gp_Elips E)
+    public Geom_Ellipse(in Ellipse3D E)
     {
         majorRadius = E.MajorRadius();
         minorRadius = E.MinorRadius();
@@ -24,14 +28,14 @@ public class Geom_Ellipse : Geom_Conic
     }
 
     /// <summary>An ellipse placed by A with the given radii.</summary>
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; MinorRadius, or MinorRadius &lt; 0.</exception>
-    public Geom_Ellipse(in gp_Ax2 A, double MajorRadius, double MinorRadius)
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; MinorRadius, or MinorRadius &lt; 0.</exception>
+    public Geom_Ellipse(in Frame3D A, double MajorRadius, double MinorRadius)
     {
         majorRadius = MajorRadius;
         minorRadius = MinorRadius;
         if (MajorRadius < MinorRadius || MinorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A;
     }
@@ -56,7 +60,7 @@ public class Geom_Ellipse : Geom_Conic
 
     public double MinorRadius() => minorRadius;
 
-    internal void SetElips(in gp_Elips E)
+    internal void SetElips(in Ellipse3D E)
     {
         CheckMutable();
         majorRadius = E.MajorRadius();
@@ -64,13 +68,13 @@ public class Geom_Ellipse : Geom_Conic
         pos = E.Position();
     }
 
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; the minor radius.</exception>
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; the minor radius.</exception>
     internal void SetMajorRadius(double MajorRadius)
     {
         CheckMutable();
         if (MajorRadius < minorRadius)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -78,13 +82,13 @@ public class Geom_Ellipse : Geom_Conic
         }
     }
 
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0 or more than the major radius.</exception>
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0 or more than the major radius.</exception>
     internal void SetMinorRadius(double MinorRadius)
     {
         CheckMutable();
         if (MinorRadius < 0 || majorRadius < MinorRadius)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -93,47 +97,47 @@ public class Geom_Ellipse : Geom_Conic
     }
 
     /// <summary>The non-persistent ellipse equal to this one.</summary>
-    public gp_Elips Elips() => new gp_Elips(pos, majorRadius, minorRadius);
+    public Ellipse3D Elips() => new Ellipse3D(pos, majorRadius, minorRadius);
 
     /// <summary>2 * PI - U.</summary>
     public sealed override double ReversedParameter(double U) => (2.0 * M_PI - U);
 
     /// <summary>The first directrix (see gp_Elips).</summary>
-    /// <exception cref="Standard_ConstructionError">The eccentricity is 0.</exception>
-    public gp_Ax1 Directrix1()
+    /// <exception cref="ConstructionErrorException">The eccentricity is 0.</exception>
+    public Axis3D Directrix1()
     {
-        gp_Elips Ev = new gp_Elips(pos, majorRadius, minorRadius);
+        Ellipse3D Ev = new Ellipse3D(pos, majorRadius, minorRadius);
         return Ev.Directrix1();
     }
 
     /// <summary>The second directrix, symmetric to the first about the main axis.</summary>
-    /// <exception cref="Standard_ConstructionError">The eccentricity is 0.</exception>
-    public gp_Ax1 Directrix2()
+    /// <exception cref="ConstructionErrorException">The eccentricity is 0.</exception>
+    public Axis3D Directrix2()
     {
-        gp_Elips Ev = new gp_Elips(pos, majorRadius, minorRadius);
+        Ellipse3D Ev = new Ellipse3D(pos, majorRadius, minorRadius);
         return Ev.Directrix2();
     }
 
-    public sealed override gp_Pnt EvalD0(double U) => ElCLib.EllipseValue(U, pos, majorRadius, minorRadius);
+    public sealed override Point3D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.EllipseValue(U, pos, majorRadius, minorRadius);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult = new ResD1();
-        ElCLib.EllipseD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult = new ResD2();
-        ElCLib.EllipseD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult = new ResD3();
-        ElCLib.EllipseD3(U,
+        global::Kerf.Engine.Geometry.ElCLib.EllipseD3(U,
                          pos,
                          majorRadius,
                          minorRadius,
@@ -145,13 +149,13 @@ public class Geom_Ellipse : Geom_Conic
     }
 
     /// <exception cref="Geom_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec EvalDN(double U, int N)
+    public sealed override Vector3D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom_UndefinedDerivative();
         }
-        return ElCLib.EllipseDN(U, pos, majorRadius, minorRadius, N);
+        return global::Kerf.Engine.Geometry.ElCLib.EllipseDN(U, pos, majorRadius, minorRadius, N);
     }
 
     /// <summary>sqrt(a² - b²) / a, 0 when the major radius is 0.</summary>
@@ -171,23 +175,23 @@ public class Geom_Ellipse : Geom_Conic
     public double Focal() => 2.0 * Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public gp_Pnt Focus1()
+    public Point3D Focus1()
     {
         double C = Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
         double Xp, Yp, Zp, Xd, Yd, Zd;
         pos.Location().Coord(out Xp, out Yp, out Zp);
         pos.XDirection().Coord(out Xd, out Yd, out Zd);
-        return new gp_Pnt(Xp + C * Xd, Yp + C * Yd, Zp + C * Zd);
+        return new Point3D(Xp + C * Xd, Yp + C * Yd, Zp + C * Zd);
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public gp_Pnt Focus2()
+    public Point3D Focus2()
     {
         double C = Math.Sqrt(majorRadius * majorRadius - minorRadius * minorRadius);
         double Xp, Yp, Zp, Xd, Yd, Zd;
         pos.Location().Coord(out Xp, out Yp, out Zp);
         pos.XDirection().Coord(out Xd, out Yd, out Zd);
-        return new gp_Pnt(Xp - C * Xd, Yp - C * Yd, Zp - C * Zd);
+        return new Point3D(Xp - C * Xd, Yp - C * Yd, Zp - C * Zd);
     }
 
     /// <summary>The parameter of the ellipse: b² / a (0 when a is 0).</summary>
@@ -204,7 +208,7 @@ public class Geom_Ellipse : Geom_Conic
     }
 
     /// <summary>Applies T to this ellipse (the radii are scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         majorRadius = majorRadius * Math.Abs(T.ScaleFactor());
@@ -214,7 +218,7 @@ public class Geom_Ellipse : Geom_Conic
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 
-    public Geom_Ellipse WithElips(in gp_Elips E)
+    public Geom_Ellipse WithElips(in Ellipse3D E)
     {
         Geom_Ellipse aCopy = (Geom_Ellipse)Copy();
         aCopy.SetElips(E);

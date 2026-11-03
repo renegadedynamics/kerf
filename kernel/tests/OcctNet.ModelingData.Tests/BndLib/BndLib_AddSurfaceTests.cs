@@ -1,15 +1,19 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/BndLib_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 // The BndLib_AddSurfaceTest suite of BndLib_Test.cxx.
 public class BndLib_AddSurfaceTest
 {
-    private static readonly double Conf = Precision.Confusion();
+    private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private static gp_Ax3 Ax3(double theX, double theY, double theZ, double theDX, double theDY, double theDZ)
-        => new(new gp_Pnt(theX, theY, theZ), new gp_Dir(theDX, theDY, theDZ));
+    private static CoordinateSystem Ax3(double theX, double theY, double theZ, double theDX, double theDY, double theDZ)
+        => new(new Point3D(theX, theY, theZ), new Direction3D(theDX, theDY, theDZ));
 
     private static void ExpectGE(double theA, double theB, string theWhat = "") => GeomBndLibSurfaceTestUtils.ExpectGE(theA, theB, theWhat);
 
@@ -21,7 +25,7 @@ public class BndLib_AddSurfaceTest
         // Create a plane and add a finite patch
         Geom_Plane aPlane = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0));
         GeomAdaptor_Surface aSurf = new(aPlane);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Add a 10x10 patch centered at origin
@@ -43,7 +47,7 @@ public class BndLib_AddSurfaceTest
         // Create a cylindrical surface
         Geom_CylindricalSurface aCyl = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), 5.0);
         GeomAdaptor_Surface aSurf = new(aCyl);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Full U range, V from 0 to 10
@@ -65,7 +69,7 @@ public class BndLib_AddSurfaceTest
         // Create a spherical surface
         Geom_SphericalSurface aSphere = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), 7.0);
         GeomAdaptor_Surface aSurf = new(aSphere);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         BndLib_AddSurface.Add(aSurf, aTol, ref aBox);
@@ -86,7 +90,7 @@ public class BndLib_AddSurfaceTest
         // Create a spherical surface patch (upper hemisphere)
         Geom_SphericalSurface aSphere = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), 5.0);
         GeomAdaptor_Surface aSurf = new(aSphere);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Full U, V from 0 to PI/2 (upper hemisphere)
@@ -108,7 +112,7 @@ public class BndLib_AddSurfaceTest
         // Create a conical surface
         Geom_ConicalSurface aCone = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), M_PI / 4.0, 2.0);
         GeomAdaptor_Surface aSurf = new(aCone);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Full U range, V from 0 to 5
@@ -130,7 +134,7 @@ public class BndLib_AddSurfaceTest
         // Create a toroidal surface
         Geom_ToroidalSurface aTorus = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), 10.0, 3.0);
         GeomAdaptor_Surface aSurf = new(aTorus);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         BndLib_AddSurface.Add(aSurf, aTol, ref aBox);
@@ -152,15 +156,15 @@ public class BndLib_AddSurfaceTest
     public void BezierSurface()
     {
         // Create a simple Bezier surface (2x2 control points)
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[1, 2] = new gp_Pnt(0.0, 10.0, 2.0);
-        aPoles[2, 1] = new gp_Pnt(10.0, 0.0, 2.0);
-        aPoles[2, 2] = new gp_Pnt(10.0, 10.0, 0.0);
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[1, 2] = new Point3D(0.0, 10.0, 2.0);
+        aPoles[2, 1] = new Point3D(10.0, 0.0, 2.0);
+        aPoles[2, 2] = new Point3D(10.0, 10.0, 0.0);
 
         Geom_BezierSurface aBezier = new(aPoles);
         GeomAdaptor_Surface aSurf = new(aBezier);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         BndLib_AddSurface.Add(aSurf, aTol, ref aBox);
@@ -182,7 +186,7 @@ public class BndLib_AddSurfaceTest
         // Test AddOptimal method with a sphere
         Geom_SphericalSurface aSphere = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0), 4.0);
         GeomAdaptor_Surface aSurf = new(aSphere);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         BndLib_AddSurface.AddOptimal(aSurf, aTol, ref aBox);
@@ -203,7 +207,7 @@ public class BndLib_AddSurfaceTest
         // Create a cylindrical surface centered at (5, 5, 0)
         Geom_CylindricalSurface aCyl = new(Ax3(5.0, 5.0, 0.0, 0.0, 0.0, 1.0), 3.0);
         GeomAdaptor_Surface aSurf = new(aCyl);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         BndLib_AddSurface.Add(aSurf, 0.0, 2.0 * M_PI, 0.0, 10.0, aTol, ref aBox);
@@ -225,13 +229,13 @@ public class BndLib_AddSurfaceTest
         // gp_Dir automatically normalizes the input vector
         Geom_Plane aPlane = new(Ax3(0.0, 0.0, 0.0, 0.0, 1.0, 1.0));
         GeomAdaptor_Surface aSurf = new(aPlane);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Add a unit square patch
         BndLib_AddSurface.Add(aSurf, 0.0, 1.0, 0.0, 1.0, aTol, ref aBox);
 
-        Assert.False(aBox.IsVoid(), "Box should not be void for tilted plane");
+        Assert.False(aBox.IsVoid, "Box should not be void for tilted plane");
     }
 
     // Test for edge case with large parameter values and small step sizes.
@@ -243,20 +247,20 @@ public class BndLib_AddSurfaceTest
     public void LargeParameters_PrecisionTest()
     {
         // Create a Bezier surface - uses the default sampling path
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Create a simple surface with known extent
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 3; j++)
             {
-                aPoles[i, j] = new gp_Pnt((i - 1) * 10.0, (j - 1) * 10.0, 0.0);
+                aPoles[i, j] = new Point3D((i - 1) * 10.0, (j - 1) * 10.0, 0.0);
             }
         }
 
         Geom_BezierSurface aBezier = new(aPoles);
         GeomAdaptor_Surface aSurf = new(aBezier);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Use large parameter offset with small parameter range
@@ -283,7 +287,7 @@ public class BndLib_AddSurfaceTest
         // Create a simple plane
         Geom_Plane aPlane = new(Ax3(0.0, 0.0, 0.0, 0.0, 0.0, 1.0));
         GeomAdaptor_Surface aSurf = new(aPlane);
-        Bnd_Box aBox = new();
+        Box aBox = new();
         double aTol = 0.0;
 
         // Test with very large parameter values but small range

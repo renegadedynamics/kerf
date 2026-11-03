@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A Simple Entity is defined by a type (which can heve super types) and a list of parameters.</summary>
@@ -138,7 +140,7 @@ public class StepData_Simple : StepData_Described
             {
                 for (j2 = 1; j2 <= l2; j2++)
                 {
-                    Standard_Transient ent = fi.Entity(j1, j2);
+                    Transient ent = fi.Entity(j1, j2);
                     if (ent is not null)
                     {
                         list.AddItem(ent);

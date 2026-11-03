@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
@@ -23,15 +24,15 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     /// <summary>One operation, on both sides.</summary>
     internal sealed record Op(string Name, Func<N.TopoDS_Shape, N.TopoDS_Shape> Native, Func<TopoDS_Shape, TopoDS_Shape> Port);
 
-    private static N.GeomAbs_Shape NC(GeomAbs_Shape theShape) => (N.GeomAbs_Shape)(int)theShape;
+    private static N.GeomAbs_Shape NC(Continuity theShape) => (N.GeomAbs_Shape)(int)theShape;
 
     /// <summary>BSplineRestriction with the default restriction parameters, as build123d.NET's ToSplines calls it.</summary>
     internal static Op ToSplines(int theDegree, double theTolerance, bool theNurbs)
         => BSplineRestriction($"ToSplines({theDegree}, {theTolerance}, {theNurbs})", theTolerance, theTolerance, theDegree, 1,
-                              GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C0, true, !theNurbs);
+                              Continuity.C0, Continuity.C0, true, !theNurbs);
 
     internal static Op BSplineRestriction(string theName, double theTol3d, double theTol2d, int theMaxDegree, int theMaxNbSegment,
-                                          GeomAbs_Shape theCont3d, GeomAbs_Shape theCont2d, bool theDegree, bool theRational)
+                                          Continuity theCont3d, Continuity theCont2d, bool theDegree, bool theRational)
         => new(theName,
                s =>
                {
@@ -43,8 +44,8 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                                                    theDegree, theRational, new ShapeCustom_RestrictionParameters()));
 
     // Draw's bsplres defaults (SWDRAW_ShapeCustom): the modification's own defaults
-    private static readonly Op s_bsplres = BSplineRestriction("bsplres", 0.01, 1e-6, 9, 10000, GeomAbs_Shape.GeomAbs_C1,
-                                                              GeomAbs_Shape.GeomAbs_C2, true, false);
+    private static readonly Op s_bsplres = BSplineRestriction("bsplres", 0.01, 1e-6, 9, 10000, Continuity.C1,
+                                                              Continuity.C2, true, false);
 
     internal static readonly Op[] s_modifications =
     [
@@ -194,15 +195,15 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static gp_Ax2 Frame(Oracle theO)
+    private static Frame3D Frame(Oracle theO)
     {
-        gp_Dir aZ = theO.Dir();
-        gp_Dir aRef = theO.Dir();
-        gp_Dir aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new gp_Dir(1, 0, 0), 0.1) ? new gp_Dir(0, 1, 0) : new gp_Dir(1, 0, 0)) : aRef);
-        return new gp_Ax2(new gp_Pnt(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20)), aZ, aX);
+        Direction3D aZ = theO.Dir();
+        Direction3D aRef = theO.Dir();
+        Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
+        return new Frame3D(new Point3D(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20)), aZ, aX);
     }
 
-    private static N.TopoDS_Shape Mirrored(N.TopoDS_Shape theShape, in gp_Ax2 thePlane)
+    private static N.TopoDS_Shape Mirrored(N.TopoDS_Shape theShape, in Frame3D thePlane)
     {
         using var aT = new N.gp_Trsf();
         using N.gp_Ax2 aA = Oracle.ToNative(thePlane);
@@ -215,7 +216,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         for (int i = 0; i < 24; i++)
         {
-            gp_Ax2 aF = Frame(theO);
+            Frame3D aF = Frame(theO);
             using N.gp_Ax2 aA = Oracle.ToNative(aF);
             double a = theO.Real(1, 10), b = theO.Real(1, 10), c = theO.Real(1, 10);
             (string aName, N.TopoDS_Shape aShape) = (i % 6) switch
@@ -243,7 +244,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         for (int i = 0; i < 24; i++)
         {
-            gp_Ax2 aF = Frame(theO);
+            Frame3D aF = Frame(theO);
             using N.gp_Ax2 aA = Oracle.ToNative(aF);
             double r = theO.Real(1, 10);
             N.TopoDS_Shape anEdge;
@@ -260,7 +261,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                 case 1:
                 {
                     using N.gp_Pnt aP1 = Oracle.ToNative(aF.Location());
-                    using N.gp_Pnt aP2 = Oracle.ToNative(aF.Location().Translated(new gp_Vec(aF.XDirection()) * r));
+                    using N.gp_Pnt aP2 = Oracle.ToNative(aF.Location().Translated(new Vector3D(aF.XDirection()) * r));
                     anEdge = Shape(new N.BRepBuilderAPI_MakeEdge(aP1, aP2));
                     aCurve = "segment";
                     break;
@@ -271,8 +272,8 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                     var aPoles = new N.TColgp_Array1OfPnt(1, 5);
                     for (int k = 1; k <= 5; k++)
                     {
-                        gp_Pnt aP = aF.Location().Translated(new gp_Vec(aF.XDirection()) * (r + theO.Real(0, 3))
-                                                             + new gp_Vec(aF.Direction()) * (k * 2.0));
+                        Point3D aP = aF.Location().Translated(new Vector3D(aF.XDirection()) * (r + theO.Real(0, 3))
+                                                             + new Vector3D(aF.Direction()) * (k * 2.0));
                         using N.gp_Pnt aNP = Oracle.ToNative(aP);
                         aPoles.SetValue(k, aNP);
                     }
@@ -284,13 +285,13 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
             }
             if (i % 2 == 0)
             {
-                using N.gp_Vec aV = Oracle.ToNative(new gp_Vec(aF.YDirection()) * theO.Real(1, 10));
+                using N.gp_Vec aV = Oracle.ToNative(new Vector3D(aF.YDirection()) * theO.Real(1, 10));
                 yield return ($"prism of {aCurve} {i}", Shape(new N.BRepPrimAPI_MakePrism(anEdge, aV)));
             }
             else
             {
                 // about the frame's Z axis, or the axis through the frame's origin along X for a segment (a cone or plane)
-                gp_Ax1 anAxis = new gp_Ax1(aF.Location(), i % 3 == 1 ? aF.YDirection() : aF.Direction());
+                Axis3D anAxis = new Axis3D(aF.Location(), i % 3 == 1 ? aF.YDirection() : aF.Direction());
                 using N.gp_Ax1 aNAxis = Oracle.ToNative(anAxis);
                 double anAngle = theO.Int(0, 1) == 0 ? 2 * Math.PI : theO.Real(0.5, 6);
                 yield return ($"revolution of {aCurve} {i}", Shape(new N.BRepPrimAPI_MakeRevol(anEdge, aNAxis, anAngle)));

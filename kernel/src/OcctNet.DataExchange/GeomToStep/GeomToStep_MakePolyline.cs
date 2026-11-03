@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of an array of points from gp to a STEP polyline.</summary>
@@ -18,12 +20,12 @@ public sealed class GeomToStep_MakePolyline : GeomToStep_Root
     //=============================================================================
 
     /// <summary>3D points, divided by the length factor (the array's lower bound must be 1, as OCCT assumes).</summary>
-    public GeomToStep_MakePolyline(NCollection_Array1<gp_Pnt> P, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakePolyline(NCollection_Array1<Point3D> P, in StepData_Factors theLocalFactors)
     {
         int N, i;
         NCollection_HArray1<StepGeom_CartesianPoint> aPoints;
         StepGeom_CartesianPoint P2;
-        gp_Pnt P1;
+        Point3D P1;
 
         N = P.Length();
         aPoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, N);
@@ -38,7 +40,7 @@ public sealed class GeomToStep_MakePolyline : GeomToStep_Root
     }
 
     /// <summary>3D points (default factors).</summary>
-    public GeomToStep_MakePolyline(NCollection_Array1<gp_Pnt> P) : this(P, new StepData_Factors())
+    public GeomToStep_MakePolyline(NCollection_Array1<Point3D> P) : this(P, new StepData_Factors())
     {
     }
 
@@ -47,12 +49,12 @@ public sealed class GeomToStep_MakePolyline : GeomToStep_Root
     //=============================================================================
 
     /// <summary>2D points (the array's lower bound must be 1).</summary>
-    public GeomToStep_MakePolyline(NCollection_Array1<gp_Pnt2d> P, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakePolyline(NCollection_Array1<Point2D> P, in StepData_Factors theLocalFactors)
     {
         int N, i;
         NCollection_HArray1<StepGeom_CartesianPoint> aPoints;
         StepGeom_CartesianPoint P2;
-        gp_Pnt2d P1;
+        Point2D P1;
 
         N = P.Length();
         aPoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, N);
@@ -67,7 +69,7 @@ public sealed class GeomToStep_MakePolyline : GeomToStep_Root
     }
 
     /// <summary>2D points.</summary>
-    public GeomToStep_MakePolyline(NCollection_Array1<gp_Pnt2d> P) : this(P, new StepData_Factors())
+    public GeomToStep_MakePolyline(NCollection_Array1<Point2D> P) : this(P, new StepData_Factors())
     {
     }
 

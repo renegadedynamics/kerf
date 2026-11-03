@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_GroupItem : StepData_SelectType
@@ -35,7 +37,7 @@ public class StepAP214_GroupItem : StepData_SelectType
     /// 14 -&gt; TopologicalRepresentationItem
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

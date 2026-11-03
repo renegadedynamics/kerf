@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -86,10 +87,10 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
 
     private static double Atof(string theWord) => double.Parse(theWord, CultureInfo.InvariantCulture);
 
-    private static string Alerts(Message_Report theReport, Message_Gravity theGravity)
+    private static string Alerts(Report theReport, Gravity theGravity)
     {
         StringBuilder aB = new();
-        foreach (Message_Alert anAlert in theReport.GetAlerts(theGravity))
+        foreach (Alert anAlert in theReport.GetAlerts(theGravity))
         {
             aB.Append(' ').Append(anAlert.GetMessageKey());
         }
@@ -99,12 +100,12 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
     private static void Block(StringBuilder theB, string theTag, string theText)
         => theB.Append(theTag).Append(' ').Append(Encoding.Latin1.GetByteCount(theText)).Append('\n').Append(theText).Append('\n');
 
-    private static string Dump(Message_Report theReport, TopoDS_Shape theResult, List<TopoDS_Shape> theArgs,
+    private static string Dump(Report theReport, TopoDS_Shape theResult, List<TopoDS_Shape> theArgs,
                                BRepTools_History? theHistory, string theExtra)
     {
         StringBuilder aB = new();
-        aB.Append("errors").Append(Alerts(theReport, Message_Gravity.Message_Fail)).Append("\nwarnings")
-          .Append(Alerts(theReport, Message_Gravity.Message_Warning)).Append('\n');
+        aB.Append("errors").Append(Alerts(theReport, Gravity.Fail)).Append("\nwarnings")
+          .Append(Alerts(theReport, Gravity.Warning)).Append('\n');
         Block(aB, "result", theResult.IsNull() ? "" : BRepTextComparison.Write(theResult));
         Block(aB, "history", DeterminismHarness.HistoryText(theArgs, theResult, theHistory));
         Block(aB, "extra", theExtra);
@@ -303,7 +304,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
             {
                 aDumps.Add(Run(aState, aStep, aShapes));
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 aDumps.Add("throws\n");
             }
@@ -569,7 +570,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                 {
                     Run(aState, aStep, aShapes);
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                 }
                 foreach ((string aKey, TopoDS_Shape aS) in aShapes)

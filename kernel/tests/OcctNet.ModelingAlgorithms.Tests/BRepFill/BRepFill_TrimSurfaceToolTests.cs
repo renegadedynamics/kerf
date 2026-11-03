@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -13,11 +17,11 @@ public class BRepFill_TrimSurfaceToolTests
     // The rectangle [0, 10] x [0, 5] of the XY plane (frozen, as a caller's) and its edge on y = 0
     private static (TopoDS_Face Face, TopoDS_Edge Bottom) Rectangle()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0.0, 10.0, 0.0, 5.0).Face();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0.0, 10.0, 0.0, 5.0).Face();
         for (TopExp_Explorer anExp = new(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
-            BRep_Tool.UVPoints(anEdge, aFace, out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+            BRep_Tool.UVPoints(anEdge, aFace, out Point2D aP1, out Point2D aP2);
             if (Math.Abs(aP1.Y()) < 1.0e-12 && Math.Abs(aP2.Y()) < 1.0e-12)
             {
                 return (aFace, anEdge);
@@ -28,12 +32,12 @@ public class BRepFill_TrimSurfaceToolTests
 
     private static Geom2d_TrimmedCurve Segment(double x1, double y1, double x2, double y2)
     {
-        gp_Pnt2d aP1 = new(x1, y1), aP2 = new(x2, y2);
-        return new Geom2d_TrimmedCurve(new Geom2d_Line(aP1, new gp_Dir2d(new gp_Vec2d(aP1, aP2))), 0.0, aP1.Distance(aP2));
+        Point2D aP1 = new(x1, y1), aP2 = new(x2, y2);
+        return new Geom2d_TrimmedCurve(new Geom2d_Line(aP1, new Direction2D(new Vector2D(aP1, aP2))), 0.0, aP1.Distance(aP2));
     }
 
     // An arc of the circle of centre (5, 0) and radius 3, inside the rectangle
-    private static Geom2d_TrimmedCurve Arc() => new(new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(5, 0), new gp_Dir2d(1, 0)), 3.0), 0.3, 2.8);
+    private static Geom2d_TrimmedCurve Arc() => new(new Geom2d_Circle(new Axis2D(new Point2D(5, 0), new Direction2D(1, 0)), 3.0), 0.3, 2.8);
 
     [Fact]
     public void MultiLine_on_a_plane_maps_the_bisector_to_its_parameters()
@@ -43,7 +47,7 @@ public class BRepFill_TrimSurfaceToolTests
         BRepFill_MultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
 
         Assert.False(aML.IsParticularCase());
-        Assert.Equal(GeomAbs_Shape.GeomAbs_C0, aML.Continuity());
+        Assert.Equal(Continuity.C0, aML.Continuity());
         Assert.Equal(0.3, aML.FirstParameter());
         Assert.Equal(2.8, aML.LastParameter());
         aML.GetNumberOfPoints(out int aNb3d, out int aNb2d);
@@ -51,18 +55,18 @@ public class BRepFill_TrimSurfaceToolTests
         for (int i = 0; i <= 10; i++)
         {
             double u = 0.3 + i * 0.25;
-            gp_Pnt2d aP = aBis.Value(u);
-            gp_Pnt2d aUV1 = aML.ValueOnF1(u), aUV2 = aML.ValueOnF2(u);
+            Point2D aP = aBis.Value(u);
+            Point2D aUV1 = aML.ValueOnF1(u), aUV2 = aML.ValueOnF2(u);
             Assert.True(aUV1.Distance(aP) < 1.0e-9, $"{u}: {aUV1} for {aP}");
             Assert.True(aUV2.Distance(aP) < 1.0e-9);
-            Assert.True(aML.Value(u).Distance(new gp_Pnt(aP.X(), aP.Y(), 0)) < 1.0e-9);
-            aML.Value3dOnF1OnF2(u, out gp_Pnt aP3d, out gp_Pnt2d aPF1, out gp_Pnt2d aPF2);
+            Assert.True(aML.Value(u).Distance(new Point3D(aP.X(), aP.Y(), 0)) < 1.0e-9);
+            aML.Value3dOnF1OnF2(u, out Point3D aP3d, out Point2D aPF1, out Point2D aPF2);
             Assert.Equal(aML.Value(u), aP3d);
             Assert.Equal(aUV1, aPF1);
             Assert.Equal(aUV2, aPF2);
         }
-        NCollection_Array1<gp_Vec2d> aV2d = new(1, 2);
-        NCollection_Array1<gp_Vec> aV3d = new(1, 1);
+        NCollection_Array1<Vector2D> aV2d = new(1, 2);
+        NCollection_Array1<Vector3D> aV3d = new(1, 1);
         Assert.False(aML.D1(1.0, aV2d, aV3d));
     }
 
@@ -78,10 +82,10 @@ public class BRepFill_TrimSurfaceToolTests
         Assert.NotNull(aCurve);
         Assert.NotNull(aPC1);
         Assert.NotNull(aPC2);
-        Assert.True(aCurve.Value(aCurve.FirstParameter()).Distance(new gp_Pnt(2, 1, 0)) < 1.0e-9);
-        Assert.True(aCurve.Value(aCurve.LastParameter()).Distance(new gp_Pnt(8, 4, 0)) < 1.0e-9);
-        Assert.True(aPC1.Value(aPC1.FirstParameter()).Distance(new gp_Pnt2d(2, 1)) < 1.0e-9);
-        Assert.True(aPC2.Value(aPC2.LastParameter()).Distance(new gp_Pnt2d(8, 4)) < 1.0e-9);
+        Assert.True(aCurve.Value(aCurve.FirstParameter()).Distance(new Point3D(2, 1, 0)) < 1.0e-9);
+        Assert.True(aCurve.Value(aCurve.LastParameter()).Distance(new Point3D(8, 4, 0)) < 1.0e-9);
+        Assert.True(aPC1.Value(aPC1.FirstParameter()).Distance(new Point2D(2, 1)) < 1.0e-9);
+        Assert.True(aPC2.Value(aPC2.LastParameter()).Distance(new Point2D(8, 4)) < 1.0e-9);
     }
 
     [Fact]
@@ -93,7 +97,7 @@ public class BRepFill_TrimSurfaceToolTests
 
         BRepFill_ApproxSeewing anEmpty = new();
         Assert.False(anEmpty.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anEmpty.Curve());
+        Assert.Throws<NotDoneException>(() => anEmpty.Curve());
 
         BRepFill_ApproxSeewing anApprox = new(aML);
         Assert.True(anApprox.IsDone());
@@ -104,12 +108,12 @@ public class BRepFill_TrimSurfaceToolTests
         for (int i = 0; i <= 20; i++)
         {
             double t = aCurve.FirstParameter() + i * (aCurve.LastParameter() - aCurve.FirstParameter()) / 20;
-            gp_Pnt aP = aCurve.Value(t);
+            Point3D aP = aCurve.Value(t);
             // on the circle, at the height of the plane, and the pcurves give the same point
-            Assert.True(Math.Abs(new gp_Pnt2d(aP.X(), aP.Y()).Distance(new gp_Pnt2d(5, 0)) - 3.0) < 1.0e-3, $"{t}: {aP}");
+            Assert.True(Math.Abs(new Point2D(aP.X(), aP.Y()).Distance(new Point2D(5, 0)) - 3.0) < 1.0e-3, $"{t}: {aP}");
             Assert.True(Math.Abs(aP.Z()) < 1.0e-9);
-            Assert.True(aPC1.Value(t).Distance(new gp_Pnt2d(aP.X(), aP.Y())) < 1.0e-3);
-            Assert.True(aPC2.Value(t).Distance(new gp_Pnt2d(aP.X(), aP.Y())) < 1.0e-3);
+            Assert.True(aPC1.Value(t).Distance(new Point2D(aP.X(), aP.Y())) < 1.0e-3);
+            Assert.True(aPC2.Value(t).Distance(new Point2D(aP.X(), aP.Y())) < 1.0e-3);
         }
 
         BRepFill_ComputeCLine aFit = new(aML, 3, 8, 1.0e-5, 1.0e-5, true);
@@ -136,23 +140,23 @@ public class BRepFill_TrimSurfaceToolTests
         // a bisector crossing the bottom edge at (3.2, 0)
         Geom2d_TrimmedCurve aBis = Segment(2, -1, 8, 4);
         BRepFill_TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
-        NCollection_Sequence<gp_Pnt> aPoints = new();
+        NCollection_Sequence<Point3D> aPoints = new();
         aTool.IntersectWith(anEdge, anEdge, aPoints);
         Assert.Equal(1, aPoints.Length());
-        gp_Pnt aPar = aPoints.Value(1);
-        Assert.True(aBis.Value(aPar.X()).Distance(new gp_Pnt2d(3.2, 0)) < 1.0e-9);
+        Point3D aPar = aPoints.Value(1);
+        Assert.True(aBis.Value(aPar.X()).Distance(new Point2D(3.2, 0)) < 1.0e-9);
         Geom_Curve anEdgeCurve = BRep_Tool.Curve(anEdge, out double _, out double _)!;
-        Assert.True(anEdgeCurve.Value(aPar.Y()).Distance(new gp_Pnt(3.2, 0, 0)) < 1.0e-9);
+        Assert.True(anEdgeCurve.Value(aPar.Y()).Distance(new Point3D(3.2, 0, 0)) < 1.0e-9);
         Assert.Equal(aPar.Y(), aPar.Z());
 
-        Assert.True(aTool.IsOnFace(new gp_Pnt2d(5, 2)));
-        Assert.False(aTool.IsOnFace(new gp_Pnt2d(20, 20)));
-        Assert.True(anEdgeCurve.Value(aTool.ProjOn(new gp_Pnt2d(3, 7), anEdge)).Distance(new gp_Pnt(3, 0, 0)) < 1.0e-9);
+        Assert.True(aTool.IsOnFace(new Point2D(5, 2)));
+        Assert.False(aTool.IsOnFace(new Point2D(20, 20)));
+        Assert.True(anEdgeCurve.Value(aTool.ProjOn(new Point2D(3, 7), anEdge)).Distance(new Point3D(3, 0, 0)) < 1.0e-9);
 
-        aTool.Project(0.0, aBis.LastParameter(), out Geom_Curve? aCurve, out Geom2d_Curve? aPC1, out Geom2d_Curve? _, out GeomAbs_Shape _);
+        aTool.Project(0.0, aBis.LastParameter(), out Geom_Curve? aCurve, out Geom2d_Curve? aPC1, out Geom2d_Curve? _, out Continuity _);
         Assert.NotNull(aCurve);
         Assert.NotNull(aPC1);
-        Assert.True(aCurve.Value(aCurve.LastParameter()).Distance(new gp_Pnt(8, 4, 0)) < 1.0e-9);
+        Assert.True(aCurve.Value(aCurve.LastParameter()).Distance(new Point3D(8, 4, 0)) < 1.0e-9);
 
         // the caller's face is never written
         Assert.Equal(aBefore, Text(aFace));
@@ -166,7 +170,7 @@ public class BRepFill_TrimSurfaceToolTests
         Geom2d_TrimmedCurve aBis = Segment(5, 3, 5, 5.0e-6);
         double aLast = aBis.LastParameter();
         BRepFill_TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
-        NCollection_Sequence<gp_Pnt> aPoints = new();
+        NCollection_Sequence<Point3D> aPoints = new();
         aTool.IntersectWith(anEdge, anEdge, aPoints);
         Assert.Equal(1, aPoints.Length());
         Assert.Equal(aLast + 2 * 1.0e-6, aBis.LastParameter(), 12);

@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
@@ -44,301 +45,301 @@ public static partial class MathOpt
         {
         }
 
-        public GlobalConfig(GlobalStrategy theStrategy, int theMaxIter = 200)
-            : base(1.0e-8, theMaxIter, true)
+        public GlobalConfig(GlobalStrategy strategy, int maxIter = 200)
+            : base(1.0e-8, maxIter, true)
         {
-            Strategy = theStrategy;
+            Strategy = strategy;
         }
 
-        public GlobalConfig(GlobalConfig theOther)
-            : base(theOther)
+        public GlobalConfig(GlobalConfig other)
+            : base(other)
         {
-            Strategy = theOther.Strategy;
-            NbPopulation = theOther.NbPopulation;
-            NbStarts = theOther.NbStarts;
-            MutationScale = theOther.MutationScale;
-            CrossoverProb = theOther.CrossoverProb;
-            Seed = theOther.Seed;
-            PolishBudgetPerDim = theOther.PolishBudgetPerDim;
+            Strategy = other.Strategy;
+            NbPopulation = other.NbPopulation;
+            NbStarts = other.NbStarts;
+            MutationScale = other.MutationScale;
+            CrossoverProb = other.CrossoverProb;
+            Seed = other.Seed;
+            PolishBudgetPerDim = other.PolishBudgetPerDim;
         }
     }
 
     /// <summary>Differential Evolution (DE/rand/1 with binomial crossover) for global minimization within bounds.</summary>
-    public static VectorResult DifferentialEvolution<Function>(Function theFunc,
-                                                               math_Vector theLowerBounds,
-                                                               math_Vector theUpperBounds,
-                                                               GlobalConfig? theConfig = null)
+    public static VectorResult DifferentialEvolution<Function>(Function func,
+                                                               math_Vector lowerBounds,
+                                                               math_Vector upperBounds,
+                                                               GlobalConfig? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new GlobalConfig();
-        VectorResult aResult = new();
+        config ??= new GlobalConfig();
+        VectorResult result = new();
 
-        int aLower = theLowerBounds.Lower();
-        int aUpper = theLowerBounds.Upper();
-        int aNbDims = aUpper - aLower + 1;
+        int lower = lowerBounds.Lower();
+        int upper = lowerBounds.Upper();
+        int nbDims = upper - lower + 1;
 
-        if (theUpperBounds.Length() != aNbDims)
+        if (upperBounds.Length() != nbDims)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aNbPop = theConfig.NbPopulation;
-        if (aNbPop < 4)
+        int nbPop = config.NbPopulation;
+        if (nbPop < 4)
         {
             // DE requires at least 4 population members for mutation (3 distinct + target)
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        double aMutScale = theConfig.MutationScale;
-        double aCrossProb = theConfig.CrossoverProb;
+        double mutScale = config.MutationScale;
+        double crossProb = config.CrossoverProb;
 
         // Random number generator
-        RandomGenerator aRNG = new(theConfig.Seed);
+        RandomGenerator rng = new(config.Seed);
 
         // Population: vector of candidate solutions
-        NCollection_DynamicArray<math_Vector> aPopulation = new();
-        math_Vector aFitness = new(0, aNbPop - 1);
+        NCollection_DynamicArray<math_Vector> population = new();
+        math_Vector fitness = new(0, nbPop - 1);
 
         // Initialize population
-        for (int aMemberIdx = 0; aMemberIdx < aNbPop; ++aMemberIdx)
+        for (int memberIdx = 0; memberIdx < nbPop; ++memberIdx)
         {
-            aPopulation.Append(new math_Vector(aLower, aUpper));
-            for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+            population.Append(new math_Vector(lower, upper));
+            for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
-                double aRandVal = aRNG.NextReal();
-                aPopulation.ChangeValue(aMemberIdx)[aDimIdx] =
-                  theLowerBounds[aDimIdx] + aRandVal * (theUpperBounds[aDimIdx] - theLowerBounds[aDimIdx]);
+                double randVal = rng.NextReal();
+                population.ChangeValue(memberIdx)[dimIdx] =
+                  lowerBounds[dimIdx] + randVal * (upperBounds[dimIdx] - lowerBounds[dimIdx]);
             }
 
-            if (!theFunc.Value(aPopulation.Value(aMemberIdx), out double aFitVal))
+            if (!func.Value(population.Value(memberIdx), out double fitVal))
             {
-                aFitVal = double.MaxValue;
+                fitVal = double.MaxValue;
             }
-            aFitness[aMemberIdx] = aFitVal;
+            fitness[memberIdx] = fitVal;
         }
 
         // Find best
-        int aBestIdx = 0;
-        double aBestValue = aFitness[0];
-        for (int aMemberIdx = 1; aMemberIdx < aNbPop; ++aMemberIdx)
+        int bestIdx = 0;
+        double bestValue = fitness[0];
+        for (int memberIdx = 1; memberIdx < nbPop; ++memberIdx)
         {
-            if (aFitness[aMemberIdx] < aBestValue)
+            if (fitness[memberIdx] < bestValue)
             {
-                aBestValue = aFitness[aMemberIdx];
-                aBestIdx = aMemberIdx;
+                bestValue = fitness[memberIdx];
+                bestIdx = memberIdx;
             }
         }
 
         // Trial vector
-        math_Vector aTrial = new(aLower, aUpper);
+        math_Vector trial = new(lower, upper);
 
         // Evolution loop
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
-            for (int aMemberIdx = 0; aMemberIdx < aNbPop; ++aMemberIdx)
+            for (int memberIdx = 0; memberIdx < nbPop; ++memberIdx)
             {
                 // Select 3 distinct random indices different from current member
-                int anIdxA, anIdxB, anIdxC;
+                int idxA, idxB, idxC;
                 do
                 {
-                    anIdxA = (int)(aRNG.NextReal() * aNbPop);
-                } while (anIdxA == aMemberIdx);
+                    idxA = (int)(rng.NextReal() * nbPop);
+                } while (idxA == memberIdx);
                 do
                 {
-                    anIdxB = (int)(aRNG.NextReal() * aNbPop);
-                } while (anIdxB == aMemberIdx || anIdxB == anIdxA);
+                    idxB = (int)(rng.NextReal() * nbPop);
+                } while (idxB == memberIdx || idxB == idxA);
                 do
                 {
-                    anIdxC = (int)(aRNG.NextReal() * aNbPop);
-                } while (anIdxC == aMemberIdx || anIdxC == anIdxA || anIdxC == anIdxB);
+                    idxC = (int)(rng.NextReal() * nbPop);
+                } while (idxC == memberIdx || idxC == idxA || idxC == idxB);
 
                 // Mutation and crossover
-                int aJRand = aLower + (int)(aRNG.NextReal() * aNbDims);
+                int jRand = lower + (int)(rng.NextReal() * nbDims);
 
-                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                 {
-                    if (aRNG.NextReal() < aCrossProb || aDimIdx == aJRand)
+                    if (rng.NextReal() < crossProb || dimIdx == jRand)
                     {
                         // Mutation: DE/rand/1
-                        double aMutVal =
-                          aPopulation.Value(anIdxA)[aDimIdx]
-                          + aMutScale * (aPopulation.Value(anIdxB)[aDimIdx] - aPopulation.Value(anIdxC)[aDimIdx]);
+                        double mutVal =
+                          population.Value(idxA)[dimIdx]
+                          + mutScale * (population.Value(idxB)[dimIdx] - population.Value(idxC)[dimIdx]);
                         // Clamp to bounds
-                        aTrial[aDimIdx] =
-                          MathUtils.Clamp(aMutVal, theLowerBounds[aDimIdx], theUpperBounds[aDimIdx]);
+                        trial[dimIdx] =
+                          global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(mutVal, lowerBounds[dimIdx], upperBounds[dimIdx]);
                     }
                     else
                     {
-                        aTrial[aDimIdx] = aPopulation.Value(aMemberIdx)[aDimIdx];
+                        trial[dimIdx] = population.Value(memberIdx)[dimIdx];
                     }
                 }
 
                 // Selection
-                if (!theFunc.Value(aTrial, out double aTrialFitness))
+                if (!func.Value(trial, out double trialFitness))
                 {
-                    aTrialFitness = double.MaxValue;
+                    trialFitness = double.MaxValue;
                 }
 
-                if (aTrialFitness <= aFitness[aMemberIdx])
+                if (trialFitness <= fitness[memberIdx])
                 {
-                    aPopulation.ChangeValue(aMemberIdx).Initialized(aTrial);
-                    aFitness[aMemberIdx] = aTrialFitness;
+                    population.ChangeValue(memberIdx).Initialized(trial);
+                    fitness[memberIdx] = trialFitness;
 
-                    if (aTrialFitness < aBestValue)
+                    if (trialFitness < bestValue)
                     {
-                        aBestValue = aTrialFitness;
-                        aBestIdx = aMemberIdx;
+                        bestValue = trialFitness;
+                        bestIdx = memberIdx;
                     }
                 }
             }
 
             // Check convergence
-            double aMaxDiff = 0.0;
-            for (int aMemberIdx = 0; aMemberIdx < aNbPop; ++aMemberIdx)
+            double maxDiff = 0.0;
+            for (int memberIdx = 0; memberIdx < nbPop; ++memberIdx)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aFitness[aMemberIdx] - aBestValue));
+                maxDiff = Max(maxDiff, Math.Abs(fitness[memberIdx] - bestValue));
             }
 
-            if (aMaxDiff < theConfig.Tolerance)
+            if (maxDiff < config.Tolerance)
             {
                 break;
             }
         }
 
         // Polish the best solution using coordinate-wise Brent's method
-        math_Vector aPolished = new(aPopulation.Value(aBestIdx));
-        double aPolishedValue = aBestValue;
-        if (theConfig.PolishBudgetPerDim > 0)
+        math_Vector polished = new(population.Value(bestIdx));
+        double polishedValue = bestValue;
+        if (config.PolishBudgetPerDim > 0)
         {
-            PolishCoordinateWise(theFunc,
-                                 aPolished,
-                                 ref aPolishedValue,
-                                 theLowerBounds,
-                                 theUpperBounds,
-                                 theConfig.Tolerance,
-                                 theConfig.PolishBudgetPerDim * aNbDims,
-                                 out int aPolishEvals);
+            PolishCoordinateWise(func,
+                                 polished,
+                                 ref polishedValue,
+                                 lowerBounds,
+                                 upperBounds,
+                                 config.Tolerance,
+                                 config.PolishBudgetPerDim * nbDims,
+                                 out int polishEvals);
         }
 
-        aResult.Status = Status.OK;
-        aResult.Solution = aPolished;
-        aResult.Value = aPolishedValue;
-        return aResult;
+        result.Status = Status.OK;
+        result.Solution = polished;
+        result.Value = polishedValue;
+        return result;
     }
 
     /// <summary>
     /// Multi-start local optimization: Powell's method from NbStarts random points within the bounds; the best
     /// (clamped) result is returned.
     /// </summary>
-    public static VectorResult MultiStart<Function>(Function theFunc,
-                                                    math_Vector theLowerBounds,
-                                                    math_Vector theUpperBounds,
-                                                    GlobalConfig? theConfig = null)
+    public static VectorResult MultiStart<Function>(Function func,
+                                                    math_Vector lowerBounds,
+                                                    math_Vector upperBounds,
+                                                    GlobalConfig? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new GlobalConfig();
-        VectorResult aResult = new();
+        config ??= new GlobalConfig();
+        VectorResult result = new();
 
-        int aLower = theLowerBounds.Lower();
-        int aUpper = theLowerBounds.Upper();
-        int aNbDims = aUpper - aLower + 1;
+        int lower = lowerBounds.Lower();
+        int upper = lowerBounds.Upper();
+        int nbDims = upper - lower + 1;
 
-        if (theUpperBounds.Length() != aNbDims)
+        if (upperBounds.Length() != nbDims)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        RandomGenerator aRNG = new(theConfig.Seed);
+        RandomGenerator rng = new(config.Seed);
 
-        math_Vector aBestSolution = new(aLower, aUpper);
-        double aBestValue = double.MaxValue;
-        bool aFound = false;
+        math_Vector bestSolution = new(lower, upper);
+        double bestValue = double.MaxValue;
+        bool found = false;
 
         // Configure Powell optimization for local refinement
-        Config aPowellConfig = new();
-        aPowellConfig.Tolerance = theConfig.Tolerance;
-        aPowellConfig.XTolerance = theConfig.Tolerance;
-        aPowellConfig.FTolerance = theConfig.Tolerance;
+        Config powellConfig = new();
+        powellConfig.Tolerance = config.Tolerance;
+        powellConfig.XTolerance = config.Tolerance;
+        powellConfig.FTolerance = config.Tolerance;
         // OCCT: divides by NbStarts unchecked (undefined in C++ when it is 0; DivideByZeroException here)
-        aPowellConfig.MaxIterations = theConfig.MaxIterations / theConfig.NbStarts;
-        if (aPowellConfig.MaxIterations < 10)
+        powellConfig.MaxIterations = config.MaxIterations / config.NbStarts;
+        if (powellConfig.MaxIterations < 10)
         {
-            aPowellConfig.MaxIterations = 10;
+            powellConfig.MaxIterations = 10;
         }
 
-        for (int aStartIdx = 0; aStartIdx < theConfig.NbStarts; ++aStartIdx)
+        for (int startIdx = 0; startIdx < config.NbStarts; ++startIdx)
         {
             // Random starting point within bounds
-            math_Vector aStart = new(aLower, aUpper);
-            for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+            math_Vector start = new(lower, upper);
+            for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
-                double aRandVal = aRNG.NextReal();
-                aStart[aDimIdx] =
-                  theLowerBounds[aDimIdx] + aRandVal * (theUpperBounds[aDimIdx] - theLowerBounds[aDimIdx]);
+                double randVal = rng.NextReal();
+                start[dimIdx] =
+                  lowerBounds[dimIdx] + randVal * (upperBounds[dimIdx] - lowerBounds[dimIdx]);
             }
 
             // Run local optimization from this starting point
-            VectorResult aLocalResult = Powell(theFunc, aStart, aPowellConfig);
+            VectorResult localResult = Powell(func, start, powellConfig);
 
-            if (aLocalResult.IsDone() && aLocalResult.Value.HasValue)
+            if (localResult.IsDone && localResult.Value.HasValue)
             {
                 // Clamp solution to bounds
-                math_Vector aSol = new(aLocalResult.Solution!);
-                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                math_Vector sol = new(localResult.Solution!);
+                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                 {
-                    aSol[aDimIdx] =
-                      MathUtils.Clamp(aSol[aDimIdx], theLowerBounds[aDimIdx], theUpperBounds[aDimIdx]);
+                    sol[dimIdx] =
+                      global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(sol[dimIdx], lowerBounds[dimIdx], upperBounds[dimIdx]);
                 }
 
                 // Re-evaluate at clamped point
-                if (theFunc.Value(aSol, out double aValue) && aValue < aBestValue)
+                if (func.Value(sol, out double value) && value < bestValue)
                 {
-                    aBestValue = aValue;
-                    aBestSolution.Initialized(aSol);
-                    aFound = true;
+                    bestValue = value;
+                    bestSolution.Initialized(sol);
+                    found = true;
                 }
             }
             else
             {
                 // Powell failed, just evaluate at starting point
-                if (theFunc.Value(aStart, out double aValue) && aValue < aBestValue)
+                if (func.Value(start, out double value) && value < bestValue)
                 {
-                    aBestValue = aValue;
-                    aBestSolution.Initialized(aStart);
-                    aFound = true;
+                    bestValue = value;
+                    bestSolution.Initialized(start);
+                    found = true;
                 }
             }
         }
 
-        if (!aFound)
+        if (!found)
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Solution = aBestSolution;
-        aResult.Value = aBestValue;
-        return aResult;
+        result.Status = Status.OK;
+        result.Solution = bestSolution;
+        result.Value = bestValue;
+        return result;
     }
 
     /// <summary>Unified global optimization interface: runs the strategy chosen in the configuration.</summary>
-    public static VectorResult GlobalMinimum<Function>(Function theFunc,
-                                                       math_Vector theLowerBounds,
-                                                       math_Vector theUpperBounds,
-                                                       GlobalConfig? theConfig = null)
+    public static VectorResult GlobalMinimum<Function>(Function func,
+                                                       math_Vector lowerBounds,
+                                                       math_Vector upperBounds,
+                                                       GlobalConfig? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new GlobalConfig();
-        return GlobalMinimum(theFunc,
-                             theLowerBounds,
-                             theUpperBounds,
-                             theConfig,
+        config ??= new GlobalConfig();
+        return GlobalMinimum(func,
+                             lowerBounds,
+                             upperBounds,
+                             config,
                              null,
                              null,
                              null);
@@ -349,107 +350,107 @@ public static partial class MathOpt
     /// thePSOConfig (if not null) replaces the PSO configuration derived from theConfig, and theSeeds and
     /// theStats are passed to PSO. Other strategies ignore them.
     /// </summary>
-    public static VectorResult GlobalMinimum<Function>(Function theFunc,
-                                                       math_Vector theLowerBounds,
-                                                       math_Vector theUpperBounds,
-                                                       GlobalConfig theConfig,
-                                                       PSOConfig? thePSOConfig,
-                                                       NCollection_DynamicArray<PSOSeedParticle>? theSeeds = null,
-                                                       PSOStats? theStats = null)
+    public static VectorResult GlobalMinimum<Function>(Function func,
+                                                       math_Vector lowerBounds,
+                                                       math_Vector upperBounds,
+                                                       GlobalConfig config,
+                                                       PSOConfig? psoConfig,
+                                                       NCollection_DynamicArray<PSOSeedParticle>? seeds = null,
+                                                       PSOStats? stats = null)
         where Function : IVectorFunction
     {
-        switch (theConfig.Strategy)
+        switch (config.Strategy)
         {
             case GlobalStrategy.PSO:
             {
                 PSOConfig aPSOConfig = new();
-                if (thePSOConfig is not null)
+                if (psoConfig is not null)
                 {
-                    aPSOConfig = new PSOConfig(thePSOConfig);
+                    aPSOConfig = new PSOConfig(psoConfig);
                 }
                 else
                 {
-                    aPSOConfig.NbParticles = theConfig.NbPopulation;
-                    aPSOConfig.MaxIterations = theConfig.MaxIterations;
-                    aPSOConfig.Tolerance = theConfig.Tolerance;
-                    aPSOConfig.Seed = theConfig.Seed;
-                    aPSOConfig.PolishBudgetPerDim = theConfig.PolishBudgetPerDim;
+                    aPSOConfig.NbParticles = config.NbPopulation;
+                    aPSOConfig.MaxIterations = config.MaxIterations;
+                    aPSOConfig.Tolerance = config.Tolerance;
+                    aPSOConfig.Seed = config.Seed;
+                    aPSOConfig.PolishBudgetPerDim = config.PolishBudgetPerDim;
                 }
-                return PSO(theFunc, theLowerBounds, theUpperBounds, aPSOConfig, theSeeds, theStats);
+                return PSO(func, lowerBounds, upperBounds, aPSOConfig, seeds, stats);
             }
 
             case GlobalStrategy.MultiStart:
-                return MultiStart(theFunc, theLowerBounds, theUpperBounds, theConfig);
+                return MultiStart(func, lowerBounds, upperBounds, config);
 
             case GlobalStrategy.PSOHybrid:
             {
                 // Run PSO first for global exploration
                 PSOConfig aPSOConfig = new();
-                if (thePSOConfig is not null)
+                if (psoConfig is not null)
                 {
                     // Honor caller's PSO configuration fully
-                    aPSOConfig = new PSOConfig(thePSOConfig);
+                    aPSOConfig = new PSOConfig(psoConfig);
                 }
                 else
                 {
                     // Auto-generate PSO config from GlobalConfig:
                     // use half iterations and relaxed tolerance for the PSO phase
-                    aPSOConfig.NbParticles = theConfig.NbPopulation;
-                    aPSOConfig.MaxIterations = theConfig.MaxIterations / 2;
-                    aPSOConfig.Tolerance = theConfig.Tolerance * 10.0;
-                    aPSOConfig.Seed = theConfig.Seed;
-                    aPSOConfig.PolishBudgetPerDim = theConfig.PolishBudgetPerDim;
+                    aPSOConfig.NbParticles = config.NbPopulation;
+                    aPSOConfig.MaxIterations = config.MaxIterations / 2;
+                    aPSOConfig.Tolerance = config.Tolerance * 10.0;
+                    aPSOConfig.Seed = config.Seed;
+                    aPSOConfig.PolishBudgetPerDim = config.PolishBudgetPerDim;
                 }
 
-                VectorResult aPSOResult =
-                  PSO(theFunc, theLowerBounds, theUpperBounds, aPSOConfig, theSeeds, theStats);
+                VectorResult psoResult =
+                  PSO(func, lowerBounds, upperBounds, aPSOConfig, seeds, stats);
 
-                if (!aPSOResult.IsDone() || aPSOResult.Solution is null)
+                if (!psoResult.IsDone || psoResult.Solution is null)
                 {
-                    return aPSOResult;
+                    return psoResult;
                 }
 
                 // Local refinement using Powell (gradient-free)
-                Config aPowellConfig = new();
-                aPowellConfig.Tolerance = theConfig.Tolerance;
-                aPowellConfig.XTolerance = theConfig.Tolerance;
-                aPowellConfig.FTolerance = theConfig.Tolerance;
-                aPowellConfig.MaxIterations = theConfig.MaxIterations / 2;
+                Config powellConfig = new();
+                powellConfig.Tolerance = config.Tolerance;
+                powellConfig.XTolerance = config.Tolerance;
+                powellConfig.FTolerance = config.Tolerance;
+                powellConfig.MaxIterations = config.MaxIterations / 2;
 
-                VectorResult aLocalResult = Powell(theFunc, aPSOResult.Solution, aPowellConfig);
+                VectorResult localResult = Powell(func, psoResult.Solution, powellConfig);
 
-                if (aLocalResult.IsDone() && aLocalResult.Value.HasValue && aPSOResult.Value.HasValue
-                    && aLocalResult.Value.Value < aPSOResult.Value.Value)
+                if (localResult.IsDone && localResult.Value.HasValue && psoResult.Value.HasValue
+                    && localResult.Value.Value < psoResult.Value.Value)
                 {
                     // Clamp to bounds
-                    int aLower = theLowerBounds.Lower();
-                    int aUpper = theLowerBounds.Upper();
-                    math_Vector aSol = new(aLocalResult.Solution!);
-                    for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                    int lower = lowerBounds.Lower();
+                    int upper = lowerBounds.Upper();
+                    math_Vector sol = new(localResult.Solution!);
+                    for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                     {
-                        aSol[aDimIdx] =
-                          MathUtils.Clamp(aSol[aDimIdx], theLowerBounds[aDimIdx], theUpperBounds[aDimIdx]);
+                        sol[dimIdx] =
+                          global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(sol[dimIdx], lowerBounds[dimIdx], upperBounds[dimIdx]);
                     }
-                    aLocalResult.Solution = aSol;
+                    localResult.Solution = sol;
 
                     // Re-evaluate at clamped point
-                    if (theFunc.Value(aSol, out double aValue))
+                    if (func.Value(sol, out double value))
                     {
-                        aLocalResult.Value = aValue;
+                        localResult.Value = value;
                     }
-                    return aLocalResult;
+                    return localResult;
                 }
 
-                return aPSOResult;
+                return psoResult;
             }
 
             case GlobalStrategy.DifferentialEvolution:
-                return DifferentialEvolution(theFunc, theLowerBounds, theUpperBounds, theConfig);
+                return DifferentialEvolution(func, lowerBounds, upperBounds, config);
 
             default:
-                VectorResult aResult = new();
-                aResult.Status = Status.InvalidInput;
-                return aResult;
+                VectorResult result = new();
+                result.Status = Status.InvalidInput;
+                return result;
         }
     }
 }

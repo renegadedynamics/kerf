@@ -5,6 +5,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.XdeDoc_ColorType;
@@ -121,7 +124,7 @@ public class STEPCAFControl_Reader
     /// Loads a file with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external files too
     /// (unit 8Z).
     /// </summary>
-    public IFSelect_ReturnStatus ReadFile(string theFileName, Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+    public IFSelect_ReturnStatus ReadFile(string theFileName, ProgressRange theProgress, StepFile_ReadLimits theLimits)
     {
         resetExternBudget(false, theLimits);
         return myReader.ReadFile(theFileName, theProgress, theLimits);
@@ -142,7 +145,7 @@ public class STEPCAFControl_Reader
     /// Loads a file from stream with limits for hostile input (OCCT.NET, plan 2.7). The limits apply to the external
     /// files too, which are read only through a resolver (unit 8Z).
     /// </summary>
-    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress,
+    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, ProgressRange theProgress,
                                             StepFile_ReadLimits theLimits)
     {
         resetExternBudget(true, theLimits);
@@ -443,7 +446,7 @@ public class STEPCAFControl_Reader
     /// Translates currently loaded STEP file into the document Returns True if succeeded, and False in case of fail
     /// Provided for use like single-file reader
     /// </summary>
-    public bool TransferOneRoot(int num, XdeDoc_Document doc, Message_ProgressRange theProgress = default)
+    public bool TransferOneRoot(int num, XdeDoc_Document doc, ProgressRange theProgress = default)
     {
         NCollection_Sequence<XdeDoc_Label> Lseq = new NCollection_Sequence<XdeDoc_Label>();
         return Transfer(myReader, num, doc, Lseq, false, theProgress);
@@ -453,13 +456,13 @@ public class STEPCAFControl_Reader
     /// Translates currently loaded STEP file into the document Returns True if succeeded, and False in case of fail
     /// Provided for use like single-file reader
     /// </summary>
-    public bool Transfer(XdeDoc_Document doc, Message_ProgressRange theProgress = default)
+    public bool Transfer(XdeDoc_Document doc, ProgressRange theProgress = default)
     {
         NCollection_Sequence<XdeDoc_Label> Lseq = new NCollection_Sequence<XdeDoc_Label>();
         return Transfer(myReader, 0, doc, Lseq, false, theProgress);
     }
 
-    public bool Perform(string filename, XdeDoc_Document doc, Message_ProgressRange theProgress = default)
+    public bool Perform(string filename, XdeDoc_Document doc, ProgressRange theProgress = default)
     {
         if (ReadFile(filename) != IFSelect_RetDone)
         {
@@ -469,7 +472,7 @@ public class STEPCAFControl_Reader
     }
 
     public bool Perform(string filename, XdeDoc_Document doc, in DESTEP_Parameters theParams,
-                        Message_ProgressRange theProgress = default)
+                        ProgressRange theProgress = default)
     {
         if (ReadFile(filename, theParams) != IFSelect_RetDone)
         {
@@ -517,7 +520,7 @@ public class STEPCAFControl_Reader
     //=======================================================================
     private static void FillShapesMap(TopoDS_Shape S, NCollection_Map<TopoDS_Shape> map)
     {
-        TopoDS_Shape S0 = S.Located(new TopLoc_Location());
+        TopoDS_Shape S0 = S.Located(new Placement());
         map.Add(S0);
         if (S.ShapeType() != TopAbs_COMPOUND)
         {
@@ -558,7 +561,7 @@ public class STEPCAFControl_Reader
     /// </summary>
     protected bool Transfer(STEPControl_Reader reader, int nroot, XdeDoc_Document doc,
                             NCollection_Sequence<XdeDoc_Label> Lseq, bool asOne = false,
-                            Message_ProgressRange theProgress = default)
+                            ProgressRange theProgress = default)
     {
         reader.ClearShapes();
         StepData_StepModel aModel = reader.Model() as StepData_StepModel;
@@ -573,7 +576,7 @@ public class STEPCAFControl_Reader
             return false;
         }
 
-        using Message_ProgressScope aPSRoot = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPSRoot = new ProgressScope(theProgress, null, 2);
 
         if (nroot != 0)
         {
@@ -585,7 +588,7 @@ public class STEPCAFControl_Reader
         }
         else
         {
-            using Message_ProgressScope aPS = new Message_ProgressScope(aPSRoot.Next(), null, num);
+            using ProgressScope aPS = new ProgressScope(aPSRoot.Next(), null, num);
             for (i = 1; i <= num && aPS.More(); i++)
             {
                 reader.TransferOneRoot(i, aPS.Next());
@@ -622,11 +625,11 @@ public class STEPCAFControl_Reader
         Transfer_TransientProcess TP = reader.WS().TransferReader().TransientProcess();
         int nb = aModel.NbEntities();
 
-        NCollection_HSequence<Standard_Transient> SeqPDS = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> SeqPDS = new NCollection_HSequence<Transient>();
 
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = aModel.Value(i);
+            Transient enti = aModel.Value(i);
             if (enti.IsKind(typeof(StepRepr_ProductDefinitionShape)))
             {
                 // sequence for acceleration ReadMaterials
@@ -684,7 +687,7 @@ public class STEPCAFControl_Reader
             ExtRefs.InternalFileExists = (theName, theReferencing) => probeResolver(aResolver, theName, theReferencing);
         }
         ExtRefs.LoadExternRefs();
-        using Message_ProgressScope aPSE = new Message_ProgressScope(aPSRoot.Next(), null, ExtRefs.NbExternRefs());
+        using ProgressScope aPSE = new ProgressScope(aPSRoot.Next(), null, ExtRefs.NbExternRefs());
         // OCCT.NET: the files being read, the main one first, against cycles (OCCT recurses without end)
         bool isTopFile = myExternStack.Count == 0;
         if (isTopFile)
@@ -696,7 +699,7 @@ public class STEPCAFControl_Reader
         {
             for (i = 1; i <= ExtRefs.NbExternRefs() && aPSE.More(); i++)
             {
-                Message_ProgressRange aRange = aPSE.Next();
+                ProgressRange aRange = aPSE.Next();
                 // check extern ref format
                 TCollection_HAsciiString format = ExtRefs.Format(i);
                 if (format is not null)
@@ -750,7 +753,7 @@ public class STEPCAFControl_Reader
                     string aRefusal = externRefusal(fullname);
                     if (aRefusal is not null)
                     {
-                        TP.AddWarning(ExtRefs.DocFile(i) ?? (Standard_Transient)PD, aRefusal);
+                        TP.AddWarning(ExtRefs.DocFile(i) ?? (Transient)PD, aRefusal);
                         STEPCAFControl_ExternFile anUnread = new STEPCAFControl_ExternFile();
                         anUnread.SetName(new TCollection_HAsciiString(filename));
                         anUnread.SetLoadStatus(IFSelect_RetError);
@@ -870,9 +873,9 @@ public class STEPCAFControl_Reader
         }
 
         // if shape is located, create instance
-        if (!S.Location().IsIdentity())
+        if (!S.Location().IsIdentity)
         {
-            TopoDS_Shape S0 = S.Located(new TopLoc_Location());
+            TopoDS_Shape S0 = S.Located(new Placement());
             AddShape(S0, STool, NewShapesMap, ShapePDMap, PDFileMap);
             XdeDoc_Label L = STool.AddShape(S, false); // should create reference
             myMap.Bind(S, L);
@@ -893,7 +896,7 @@ public class STEPCAFControl_Reader
         TopoDS_Iterator it = new TopoDS_Iterator();
         for (it.Initialize(S); it.More() && !isAssembly; it.Next(), nbComponents++)
         {
-            TopoDS_Shape Sub0 = it.Value().Located(new TopLoc_Location());
+            TopoDS_Shape Sub0 = it.Value().Located(new Placement());
             if (NewShapesMap.Contains(Sub0))
             {
                 isAssembly = true;
@@ -943,7 +946,7 @@ public class STEPCAFControl_Reader
         nbComponents = 0;
         for (it.Initialize(S); it.More(); it.Next(), nbComponents++)
         {
-            TopoDS_Shape Sub0 = it.Value().Located(new TopLoc_Location());
+            TopoDS_Shape Sub0 = it.Value().Located(new Placement());
             XdeDoc_Label subL = AddShape(Sub0, STool, NewShapesMap, ShapePDMap, PDFileMap);
             if (!subL.IsNull())
             {
@@ -973,13 +976,13 @@ public class STEPCAFControl_Reader
     /// <paramref name="fullname"/>, against which its own references are resolved.
     /// </remarks>
     protected STEPCAFControl_ExternFile ReadExternFile(string file, string fullname, XdeDoc_Document doc,
-                                                       Message_ProgressRange theProgress = default)
+                                                       ProgressRange theProgress = default)
     {
         return ReadExternFile(file, fullname, myReader.WS().LoadedFile() ?? "", doc, theProgress);
     }
 
     private STEPCAFControl_ExternFile ReadExternFile(string file, string fullname, string theReferencingName,
-                                                     XdeDoc_Document doc, Message_ProgressRange theProgress)
+                                                     XdeDoc_Document doc, ProgressRange theProgress)
     {
         // if the file is already read, associate it with SDR
         if (myFiles.IsBound(file))
@@ -999,7 +1002,7 @@ public class STEPCAFControl_Reader
 
         // read file
         // OCCT.NET: through the resolver, with the limits and progress (unit 8Z)
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPS = new ProgressScope(theProgress, null, 2);
         EF.SetLoadStatus(readExternStream(sr, file, fullname, theReferencingName, aPS.Next()));
 
         // transfer in single-result mode
@@ -1029,7 +1032,7 @@ public class STEPCAFControl_Reader
 
     // OCCT: sr.ReadFile(fullname); a file not opened is IFSelect_RetError as StepFile_Read's -1
     private IFSelect_ReturnStatus readExternStream(STEPControl_Reader sr, string file, string fullname,
-                                                   string theReferencingName, Message_ProgressRange theProgress)
+                                                   string theReferencingName, ProgressRange theProgress)
     {
         STEPCAFControl_ExternFileResolver aResolver = effectiveResolver();
         if (aResolver is null || theProgress.UserBreak())
@@ -1133,17 +1136,17 @@ public class STEPCAFControl_Reader
 
     // the colours decoded as SetStyle and SetAssemblyComponentStyle decode them
     private static void decodeColors(StepVisual_Colour aSurfCol, StepVisual_Colour aBoundCol, StepVisual_Colour aCurveCol,
-                                     STEPConstruct_RenderingProperties aRenderProps, out Quantity_ColorRGBA aFullSCol,
-                                     out Quantity_Color aBCol, out Quantity_Color aCCol)
+                                     STEPConstruct_RenderingProperties aRenderProps, out ColorWithAlpha aFullSCol,
+                                     out Color aBCol, out Color aCCol)
     {
-        Quantity_Color aSCol = new Quantity_Color();
-        aBCol = new Quantity_Color();
-        aCCol = new Quantity_Color();
-        aFullSCol = new Quantity_ColorRGBA();
+        Color aSCol = new Color();
+        aBCol = new Color();
+        aCCol = new Color();
+        aFullSCol = new ColorWithAlpha();
         if (aSurfCol is not null)
         {
             STEPConstruct_Styles.DecodeColor(aSurfCol, ref aSCol);
-            aFullSCol = new Quantity_ColorRGBA(aSCol);
+            aFullSCol = new ColorWithAlpha(aSCol);
         }
         if (aBoundCol is not null)
         {
@@ -1183,7 +1186,7 @@ public class STEPCAFControl_Reader
         }
 
         Interface_Graph aGraph = theTP.Graph();
-        TopLoc_Location aLoc = new TopLoc_Location(); // init;
+        Placement aLoc = new Placement(); // init;
         // find shape
         TopoDS_Shape aShape = new TopoDS_Shape();
         Transfer_Binder aBinder;
@@ -1196,7 +1199,7 @@ public class STEPCAFControl_Reader
         Interface_EntityIterator aSubs = theTP.Graph().Sharings(aRepr);
         for (aSubs.Start(); aSubs.More(); aSubs.Next())
         {
-            Standard_Transient aSubsVal = aSubs.Value();
+            Transient aSubsVal = aSubs.Value();
             if (aSubsVal.IsKind(typeof(StepRepr_ShapeRepresentationRelationship)))
             {
                 aSRR = aSubsVal as StepRepr_ShapeRepresentationRelationship;
@@ -1236,12 +1239,12 @@ public class STEPCAFControl_Reader
                 {
                     Geom_Axis2Placement anOrig = StepToGeom.MakeAxis2Placement(anAxp1, theLocalFactors);
                     Geom_Axis2Placement aTarg = StepToGeom.MakeAxis2Placement(anAxp2, theLocalFactors);
-                    gp_Ax3 anAx3Orig = new gp_Ax3(anOrig.Ax2());
-                    gp_Ax3 anAx3Targ = new gp_Ax3(aTarg.Ax2());
+                    CoordinateSystem anAx3Orig = new CoordinateSystem(anOrig.Ax2());
+                    CoordinateSystem anAx3Targ = new CoordinateSystem(aTarg.Ax2());
 
-                    gp_Trsf aTr1 = new gp_Trsf();
+                    Transform3D aTr1 = new Transform3D();
                     aTr1.SetTransformation(anAx3Targ, anAx3Orig);
-                    TopLoc_Location aLoc1 = new TopLoc_Location(aTr1);
+                    Placement aLoc1 = new Placement(aTr1);
                     aLoc = aLoc.Multiplied(aLoc1);
                 }
             }
@@ -1251,8 +1254,8 @@ public class STEPCAFControl_Reader
 
         if (aSurfCol is not null || aBoundCol is not null || aCurveCol is not null || aRenderProps.IsDefined())
         {
-            decodeColors(aSurfCol, aBoundCol, aCurveCol, aRenderProps, out Quantity_ColorRGBA aFullSCol,
-                         out Quantity_Color aBCol, out Quantity_Color aCCol);
+            decodeColors(aSurfCol, aBoundCol, aCurveCol, aRenderProps, out ColorWithAlpha aFullSCol,
+                         out Color aBCol, out Color aCCol);
 
             if (aSurfCol is not null || aRenderProps.IsDefined())
             {
@@ -1275,7 +1278,7 @@ public class STEPCAFControl_Reader
     //=======================================================================
     private static void SetStyle(XSControl_WorkSession theWS, NCollection_DataMap<TopoDS_Shape, XdeDoc_Label> theMap,
                                  XdeDoc_Document theSTool, STEPConstruct_Styles theStyles,
-                                 NCollection_HSequence<Standard_Transient> theHSeqOfInvisStyle,
+                                 NCollection_HSequence<Transient> theHSeqOfInvisStyle,
                                  StepVisual_StyledItem theStyle, in StepData_Factors theLocalFactors)
     {
         if (theStyle is null)
@@ -1408,8 +1411,8 @@ public class STEPCAFControl_Reader
                 bool isFound = theSTool.SearchUsingMap(aS, out XdeDoc_Label aL, false, true);
                 if (aSurfCol is not null || aBoundCol is not null || aCurveCol is not null || aRenderProps.IsDefined())
                 {
-                    decodeColors(aSurfCol, aBoundCol, aCurveCol, aRenderProps, out Quantity_ColorRGBA aFullSCol,
-                                 out Quantity_Color aBCol, out Quantity_Color aCCol);
+                    decodeColors(aSurfCol, aBoundCol, aCurveCol, aRenderProps, out ColorWithAlpha aFullSCol,
+                                 out Color aBCol, out Color aCCol);
                     if (isFound)
                     {
                         if (aSurfCol is not null || aRenderProps.IsDefined())
@@ -1477,7 +1480,7 @@ public class STEPCAFControl_Reader
                     return true;
                 }
                 // for root style returns true only if it is overridden by other root style
-                Standard_Transient anItem = anOverRidingStyle.ItemAP242()?.Value();
+                Transient anItem = anOverRidingStyle.ItemAP242()?.Value();
                 if (anItem is not null && anItem.IsKind(typeof(StepShape_ShapeRepresentation)))
                 {
                     return true;
@@ -1499,7 +1502,7 @@ public class STEPCAFControl_Reader
             return false;
         }
         // searching for invisible items in the model
-        NCollection_HSequence<Standard_Transient> aHSeqOfInvisStyle = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> aHSeqOfInvisStyle = new NCollection_HSequence<Transient>();
         Styles.LoadInvisStyles(ref aHSeqOfInvisStyle);
 
         Interface_Graph aGraph = Styles.Graph();
@@ -1640,7 +1643,7 @@ public class STEPCAFControl_Reader
         Interface_Graph aGraph = null;
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = Model.Value(i);
+            Transient enti = Model.Value(i);
 
             // get description of NAUO
             if (enti.DynamicType() == tNAUO)
@@ -1784,7 +1787,7 @@ public class STEPCAFControl_Reader
         Transfer_TransientProcess TP = TR.TransientProcess();
 
         // load props from the STEP model
-        NCollection_Sequence<Standard_Transient> props = new NCollection_Sequence<Standard_Transient>();
+        NCollection_Sequence<Transient> props = new NCollection_Sequence<Transient>();
         STEPConstruct_ValidationProps Props = new STEPConstruct_ValidationProps(WS);
         if (!Props.LoadProps(props))
         {
@@ -1941,7 +1944,7 @@ public class STEPCAFControl_Reader
                         Doc.SetVolume(L, val);
                     }
                 }
-                else if (Props.GetPropPnt(ent, rep.ContextOfItems(), out gp_Pnt pos, theLocalFactors))
+                else if (Props.GetPropPnt(ent, rep.ContextOfItems(), out Point3D pos, theLocalFactors))
                 {
                     Doc.SetCentroid(L, pos);
                 }
@@ -1966,7 +1969,7 @@ public class STEPCAFControl_Reader
 
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient enti = Model.Value(i);
+            Transient enti = Model.Value(i);
             if (!enti.IsKind(tSVPLA))
             {
                 continue;
@@ -2051,7 +2054,7 @@ public class STEPCAFControl_Reader
 
     /// <summary>Reads materials for instances defined in the STEP model</summary>
     /// <remarks>OCCT.NET: not read (decision 1279).</remarks>
-    protected bool ReadMaterials(XSControl_WorkSession WS, XdeDoc_Document doc, NCollection_HSequence<Standard_Transient> SeqPDS,
+    protected bool ReadMaterials(XSControl_WorkSession WS, XdeDoc_Document doc, NCollection_HSequence<Transient> SeqPDS,
                                  in StepData_Factors theLocalFactors)
     {
         _ = WS;
@@ -2203,7 +2206,7 @@ public class STEPCAFControl_Reader
             Interface_EntityIterator entIt = Graph.TypedSharings(aPDef, typeof(StepShape_ShapeDefinitionRepresentation));
             for (entIt.Start(); entIt.More(); entIt.Next())
             {
-                Standard_Transient aReferer = entIt.Value();
+                Transient aReferer = entIt.Value();
                 aSDR = aReferer as StepShape_ShapeDefinitionRepresentation;
                 if (aSDR is not null)
                 {

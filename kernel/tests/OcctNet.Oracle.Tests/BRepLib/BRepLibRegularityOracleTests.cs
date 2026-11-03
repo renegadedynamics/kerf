@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Text;
 using Schematiq.Collections;
 using Xunit.Abstractions;
@@ -259,13 +260,13 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 using var aNAC = new N.BRepAdaptor_Curve(aNE);
                 var aPAC = new BRepAdaptor_Curve(aPE);
                 double aF = aPAC.FirstParameter(), aL = aPAC.LastParameter();
-                if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
                 {
                     continue;
                 }
                 double aTolE = Math.Pow(10, anOracle.Real(-7, -2));
                 double aTol1 = (aL - aF) * anOracle.Real(0, 0.6), aTol2 = (aL - aF) * anOracle.Real(0, 0.6);
-                gp_Pnt aP1 = aPAC.Value(aF), aP2 = aPAC.Value(aL);
+                Point3D aP1 = aPAC.Value(aF), aP2 = aPAC.Value(aL);
                 using N.gp_Pnt aNP1 = Oracle.ToNative(aP1), aNP2 = Oracle.ToNative(aP2);
                 aNF = aNL = aPF = aPL = -7;
                 isN = N.BRepLib.FindValidRange(aNAC, aTolE, aF, aNP1, aTol1, aL, aNP2, aTol2, ref aNF, ref aNL);
@@ -291,7 +292,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                     aPList.Append(aPV[v]);
                 }
                 using var aNC = new N.gp_Pnt(1, 2, 3);
-                var aPC = new gp_Pnt(1, 2, 3);
+                var aPC = new Point3D(1, 2, 3);
                 double aNTol = -1, aPTol = -1;
                 N.BRepLib.BoundingVertex(aNList, aNC, ref aNTol);
                 BRepLib.BoundingVertex(aPList, ref aPC, ref aPTol);
@@ -391,10 +392,10 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     private static (N.TopoDS_Shape N, TopoDS_Shape P, string What) PlanarPolygonFace(Oracle theOracle, int theIndex)
     {
         // a placement that native OCCT builds with the same directions (gp_Ax3 recomputes the X direction)
-        gp_Ax3 anAx3;
+        CoordinateSystem anAx3;
         while (true)
         {
-            anAx3 = new gp_Ax3(theOracle.Pnt(), Oracle.Settled(theOracle.Dir()));
+            anAx3 = new CoordinateSystem(theOracle.Pnt(), Oracle.Settled(theOracle.Dir()));
             using N.gp_Ax3 aNCheck = Oracle.ToNative(anAx3);
             using N.gp_Dir aNX = aNCheck.XDirection(), aNY = aNCheck.YDirection(), aNZ = aNCheck.Direction();
             if (Oracle.FromNative(aNX.XYZ()) == anAx3.XDirection().XYZ() && Oracle.FromNative(aNY.XYZ()) == anAx3.YDirection().XYZ()
@@ -403,7 +404,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 break;
             }
         }
-        var aPln = new gp_Pln(anAx3);
+        var aPln = new Plane3D(anAx3);
         (N.TopoDS_Wire, TopoDS_Wire) Polygon(double theR, bool theReversed)
         {
             using var aNPolygon = new N.BRepBuilderAPI_MakePolygon();
@@ -413,7 +414,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 double anAngle = (theReversed ? -1 : 1) * 2 * Math.PI * k / aNb;
                 double aR = theR * theOracle.Real(0.8, 1.2);
-                gp_Pnt aP = ElSLib.Value(aR * Math.Cos(anAngle), aR * Math.Sin(anAngle), aPln);
+                Point3D aP = global::Kerf.Engine.Geometry.ElSLib.Value(aR * Math.Cos(anAngle), aR * Math.Sin(anAngle), aPln);
                 using N.gp_Pnt aNP = Oracle.ToNative(aP);
                 aNPolygon.Add(aNP);
                 aPolygon.Add(aP);

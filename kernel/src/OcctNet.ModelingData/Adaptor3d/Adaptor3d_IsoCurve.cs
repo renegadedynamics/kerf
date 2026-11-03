@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -17,7 +20,7 @@ namespace Occt;
 public class Adaptor3d_IsoCurve : Adaptor3d_Curve
 {
     private Adaptor3d_Surface? mySurface;
-    private GeomAbs_IsoType myIso;
+    private IsoType myIso;
     private double myFirst;
     private double myLast;
     private double myParameter;
@@ -25,7 +28,7 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     /// <summary>An empty adaptor: no surface, no iso.</summary>
     public Adaptor3d_IsoCurve()
     {
-        myIso = GeomAbs_NoneIso;
+        myIso = NoneIso;
         myFirst = 0.0;
         myLast = 0.0;
         myParameter = 0.0;
@@ -35,18 +38,18 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public Adaptor3d_IsoCurve(Adaptor3d_Surface S)
     {
         mySurface = S;
-        myIso = GeomAbs_NoneIso;
+        myIso = NoneIso;
         myFirst = 0.0;
         myLast = 0.0;
         myParameter = 0.0;
     }
 
     /// <summary>The iso of type theIso at theParam on S, over the surface's whole range.</summary>
-    /// <exception cref="Standard_NoSuchObject">theIso is GeomAbs_NoneIso.</exception>
-    public Adaptor3d_IsoCurve(Adaptor3d_Surface S, GeomAbs_IsoType theIso, double theParam)
+    /// <exception cref="NoSuchObjectException">theIso is GeomAbs_NoneIso.</exception>
+    public Adaptor3d_IsoCurve(Adaptor3d_Surface S, IsoType theIso, double theParam)
     {
         mySurface = S;
-        myIso = GeomAbs_NoneIso;
+        myIso = NoneIso;
         myFirst = 0.0;
         myLast = 0.0;
         myParameter = 0.0;
@@ -54,7 +57,7 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     }
 
     /// <summary>The iso of type theIso at theParam on theS, between theWFirst and theWLast (within the surface's range).</summary>
-    public Adaptor3d_IsoCurve(Adaptor3d_Surface theS, GeomAbs_IsoType theIso, double theParam, double theWFirst,
+    public Adaptor3d_IsoCurve(Adaptor3d_Surface theS, IsoType theIso, double theParam, double theWFirst,
                               double theWLast)
     {
         mySurface = theS;
@@ -96,25 +99,25 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public void Load(Adaptor3d_Surface S)
     {
         mySurface = S;
-        myIso = GeomAbs_NoneIso;
+        myIso = NoneIso;
     }
 
     /// <summary>Changes the iso, over the surface's whole range in the other direction.</summary>
-    /// <exception cref="Standard_NoSuchObject">Iso is GeomAbs_NoneIso.</exception>
-    public void Load(GeomAbs_IsoType Iso, double Param)
+    /// <exception cref="NoSuchObjectException">Iso is GeomAbs_NoneIso.</exception>
+    public void Load(IsoType Iso, double Param)
     {
         switch (Iso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 Load(Iso, Param, mySurface!.FirstVParameter(), mySurface.LastVParameter());
                 break;
 
-            case GeomAbs_IsoV:
+            case IsoV:
                 Load(Iso, Param, mySurface!.FirstUParameter(), mySurface.LastUParameter());
                 break;
 
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
     }
 
@@ -122,14 +125,14 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     /// Changes the iso and its range, which is cut to the surface's; on a periodic surface the parameters are
     /// brought into the first period.
     /// </summary>
-    public void Load(GeomAbs_IsoType Iso, double Param, double WFirst, double WLast)
+    public void Load(IsoType Iso, double Param, double WFirst, double WLast)
     {
         myIso = Iso;
         myParameter = Param;
         myFirst = WFirst;
         myLast = WLast;
 
-        if (myIso == GeomAbs_IsoU)
+        if (myIso == IsoU)
         {
             myFirst = Max(myFirst, mySurface!.FirstVParameter());
             myLast = Min(myLast, mySurface.LastVParameter());
@@ -147,19 +150,19 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
         if (mySurface.IsUPeriodic())
         {
 
-            if (myIso == GeomAbs_IsoU)
+            if (myIso == IsoU)
             {
-                ElCLib.AdjustPeriodic(mySurface.FirstUParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(mySurface.FirstUParameter(),
                                       mySurface.FirstUParameter() + mySurface.UPeriod(),
-                                      mySurface.UResolution(Precision.Confusion()),
+                                      mySurface.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
                                       ref myParameter,
                                       ref dummy);
             }
             else
             {
-                ElCLib.AdjustPeriodic(mySurface.FirstUParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(mySurface.FirstUParameter(),
                                       mySurface.FirstUParameter() + mySurface.UPeriod(),
-                                      mySurface.UResolution(Precision.Confusion()),
+                                      mySurface.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
                                       ref myFirst,
                                       ref myLast);
             }
@@ -168,19 +171,19 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
         if (mySurface.IsVPeriodic())
         {
 
-            if (myIso == GeomAbs_IsoV)
+            if (myIso == IsoV)
             {
-                ElCLib.AdjustPeriodic(mySurface.FirstVParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(mySurface.FirstVParameter(),
                                       mySurface.FirstVParameter() + mySurface.VPeriod(),
-                                      mySurface.VResolution(Precision.Confusion()),
+                                      mySurface.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
                                       ref myParameter,
                                       ref dummy);
             }
             else
             {
-                ElCLib.AdjustPeriodic(mySurface.FirstVParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(mySurface.FirstVParameter(),
                                       mySurface.FirstVParameter() + mySurface.VPeriod(),
-                                      mySurface.VResolution(Precision.Confusion()),
+                                      mySurface.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
                                       ref myFirst,
                                       ref myLast);
             }
@@ -191,7 +194,7 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public Adaptor3d_Surface? Surface() => mySurface;
 
     /// <summary>The type of iso.</summary>
-    public GeomAbs_IsoType Iso() => myIso;
+    public IsoType Iso() => myIso;
 
     /// <summary>The constant parameter of the iso.</summary>
     public double Parameter() => myParameter;
@@ -200,30 +203,30 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
 
     public override double LastParameter() => myLast;
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.VContinuity();
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.UContinuity();
-            case GeomAbs_NoneIso:
+            case NoneIso:
             default:
                 break;
         }
 
-        throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+        throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
-        if (myIso == GeomAbs_NoneIso)
+        if (myIso == NoneIso)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
 
-        bool UIso = (myIso == GeomAbs_IsoU);
+        bool UIso = (myIso == IsoU);
 
         int nbInter = UIso ? mySurface!.NbVIntervals(S) : mySurface!.NbUIntervals(S);
 
@@ -256,14 +259,14 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
         return (last - first + 2);
     }
 
-    public override void Intervals(NCollection_Array1<double> TI, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> TI, Continuity S)
     {
-        if (myIso == GeomAbs_NoneIso)
+        if (myIso == NoneIso)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
 
-        bool UIso = (myIso == GeomAbs_IsoU);
+        bool UIso = (myIso == IsoU);
 
         int nbInter = UIso ? mySurface!.NbVIntervals(S) : mySurface!.NbUIntervals(S);
 
@@ -319,63 +322,63 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.IsVClosed();
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.IsUClosed();
-            case GeomAbs_NoneIso:
+            case NoneIso:
             default:
                 break;
         }
 
-        throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+        throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
     }
 
     public override bool IsPeriodic()
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.IsVPeriodic();
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.IsUPeriodic();
-            case GeomAbs_NoneIso:
+            case NoneIso:
             default:
                 break;
         }
 
-        throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+        throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
     }
 
     public override double Period()
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.VPeriod();
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.UPeriod();
-            case GeomAbs_NoneIso:
+            case NoneIso:
             default:
                 break;
         }
 
-        throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+        throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
     }
 
     /// <summary>The point of parameter theU.</summary>
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.EvalD0(myParameter, theU);
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.EvalD0(theU, myParameter);
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
-        return new gp_Pnt();
+        return new Point3D();
     }
 
     /// <summary>The point and first derivative at theU.</summary>
@@ -383,18 +386,18 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 {
                     Geom_Surface.ResD1 aRes = mySurface!.EvalD1(myParameter, theU);
                     return new Geom_Curve.ResD1 { Point = aRes.Point, D1 = aRes.D1V };
                 }
-            case GeomAbs_IsoV:
+            case IsoV:
                 {
                     Geom_Surface.ResD1 aRes = mySurface!.EvalD1(theU, myParameter);
                     return new Geom_Curve.ResD1 { Point = aRes.Point, D1 = aRes.D1U };
                 }
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return new Geom_Curve.ResD1();
     }
@@ -404,18 +407,18 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 {
                     Geom_Surface.ResD2 aRes = mySurface!.EvalD2(myParameter, theU);
                     return new Geom_Curve.ResD2 { Point = aRes.Point, D1 = aRes.D1V, D2 = aRes.D2V };
                 }
-            case GeomAbs_IsoV:
+            case IsoV:
                 {
                     Geom_Surface.ResD2 aRes = mySurface!.EvalD2(theU, myParameter);
                     return new Geom_Curve.ResD2 { Point = aRes.Point, D1 = aRes.D1U, D2 = aRes.D2U };
                 }
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return new Geom_Curve.ResD2();
     }
@@ -425,257 +428,257 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 {
                     Geom_Surface.ResD3 aRes = mySurface!.EvalD3(myParameter, theU);
                     return new Geom_Curve.ResD3 { Point = aRes.Point, D1 = aRes.D1V, D2 = aRes.D2V, D3 = aRes.D3V };
                 }
-            case GeomAbs_IsoV:
+            case IsoV:
                 {
                     Geom_Surface.ResD3 aRes = mySurface!.EvalD3(theU, myParameter);
                     return new Geom_Curve.ResD3 { Point = aRes.Point, D1 = aRes.D1U, D2 = aRes.D2U, D3 = aRes.D3U };
                 }
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return new Geom_Curve.ResD3();
     }
 
     /// <summary>The derivative of order theN at theU.</summary>
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
         switch (myIso)
         {
-            case GeomAbs_IsoU:
+            case IsoU:
                 return mySurface!.EvalDN(myParameter, theU, 0, theN);
-            case GeomAbs_IsoV:
+            case IsoV:
                 return mySurface!.EvalDN(theU, myParameter, theN, 0);
-            case GeomAbs_NoneIso:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+            case NoneIso:
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
-        return new gp_Vec();
+        return new Vector3D();
     }
 
     /// <summary>Precision::Parametric(R3D), whatever the surface.</summary>
     public override double Resolution(double R3D)
     {
         // Peut-on faire mieux ??
-        return Precision.Parametric(R3D);
+        return global::Kerf.Engine.Foundation.Precision.Parametric(R3D);
     }
 
-    public override GeomAbs_CurveType GetType()
+    public override CurveKind GetType()
     {
         switch (mySurface!.GetType())
         {
-            case GeomAbs_Plane:
-                return GeomAbs_Line;
+            case Plane:
+                return global::Kerf.Geometry.CurveKind.Line;
 
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
-                            return GeomAbs_Line;
+                        case IsoU:
+                            return global::Kerf.Geometry.CurveKind.Line;
 
-                        case GeomAbs_IsoV:
-                            return GeomAbs_Circle;
+                        case IsoV:
+                            return global::Kerf.Geometry.CurveKind.Circle;
 
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                             }
                     }
                     break;
                 }
 
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-                return GeomAbs_Circle;
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
+                return global::Kerf.Geometry.CurveKind.Circle;
 
-            case GeomAbs_BezierSurface:
-                return GeomAbs_BezierCurve;
+            case BezierSurface:
+                return BezierCurve;
 
-            case GeomAbs_BSplineSurface:
-                return GeomAbs_BSplineCurve;
+            case BSplineSurface:
+                return BSplineCurve;
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             return mySurface.BasisCurve().GetType();
 
-                        case GeomAbs_IsoV:
-                            return GeomAbs_Circle;
+                        case IsoV:
+                            return global::Kerf.Geometry.CurveKind.Circle;
 
-                        case GeomAbs_NoneIso:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                        case NoneIso:
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                     break;
                 }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
-                            return GeomAbs_Line;
+                        case IsoU:
+                            return global::Kerf.Geometry.CurveKind.Line;
 
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             return mySurface.BasisCurve().GetType();
 
-                        case GeomAbs_NoneIso:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                        case NoneIso:
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                     break;
                 }
 
             default:
-                return GeomAbs_OtherCurve;
+                return OtherCurve;
         }
 
         // portage WNT
-        return GeomAbs_OtherCurve;
+        return OtherCurve;
     }
 
     /// <summary>The line through the point and tangent at parameter 0.</summary>
-    public override gp_Lin Line()
+    public override Line3D Line()
     {
-        gp_Pnt P;
-        gp_Vec V;
+        Point3D P;
+        Vector3D V;
         D1(0, out P, out V);
-        return new gp_Lin(P, new gp_Dir(V));
+        return new Line3D(P, new Direction3D(V));
     }
 
-    private static void computeHR(in gp_Ax3 axes, in gp_Pnt P, out double h, out double radius)
+    private static void computeHR(in CoordinateSystem axes, in Point3D P, out double h, out double radius)
     {
-        gp_Vec V = new gp_Vec(axes.Location(), P);
-        h = V * new gp_Vec(axes.Direction());
-        radius = V * new gp_Vec(axes.XDirection());
+        Vector3D V = new Vector3D(axes.Location(), P);
+        h = V * new Vector3D(axes.Direction());
+        radius = V * new Vector3D(axes.XDirection());
     }
 
-    public override gp_Circ Circle()
+    public override Circle3D Circle()
     {
-        gp_Ax3 axes;
+        CoordinateSystem axes;
         double radius, h = 0.0;
 
         switch (mySurface!.GetType())
         {
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 {
-                    gp_Cylinder cyl = mySurface.Cylinder();
+                    Cylinder cyl = mySurface.Cylinder();
 
                     switch (myIso)
                     {
 
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:UIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:UIso");
                             }
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
-                                return ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), myParameter);
                             }
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                             }
                     }
                     break;
                 }
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 {
-                    gp_Cone cone = mySurface.Cone();
+                    Cone cone = mySurface.Cone();
 
                     switch (myIso)
                     {
 
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:UIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:UIso");
                             }
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
-                                return ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), myParameter);
                             }
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                             }
                     }
                     break;
                 }
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 {
-                    gp_Sphere sph = mySurface.Sphere();
+                    Sphere sph = mySurface.Sphere();
 
                     switch (myIso)
                     {
 
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
-                                return ElSLib.SphereUIso(sph.Position(), sph.Radius(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.SphereUIso(sph.Position(), sph.Radius(), myParameter);
                             }
 
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
-                                return ElSLib.SphereVIso(sph.Position(), sph.Radius(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.SphereVIso(sph.Position(), sph.Radius(), myParameter);
                             }
 
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                             }
                     }
                     break;
                 }
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 {
-                    gp_Torus tor = mySurface.Torus();
+                    Torus tor = mySurface.Torus();
 
                     switch (myIso)
                     {
 
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
-                                return ElSLib.TorusUIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.TorusUIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), myParameter);
                             }
 
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
-                                return ElSLib.TorusVIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), myParameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.TorusVIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), myParameter);
                             }
 
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                             {
-                                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                             }
                     }
                     break;
                 }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
-                    if (myIso == GeomAbs_IsoV)
+                    if (myIso == IsoV)
                     {
-                        gp_Pnt aVal0 = Value(0.0);
-                        gp_Ax1 Ax1 = mySurface.AxeOfRevolution();
-                        if (new gp_Lin(Ax1).Contains(aVal0, Precision.Confusion()))
+                        Point3D aVal0 = Value(0.0);
+                        Axis3D Ax1 = mySurface.AxeOfRevolution();
+                        if (new Line3D(Ax1).Contains(aVal0, global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
-                            return new gp_Circ(new gp_Ax2(aVal0, Ax1.Direction()), 0);
+                            return new Circle3D(new Frame3D(aVal0, Ax1.Direction()), 0);
                         }
                         else
                         {
-                            gp_Vec DX = new gp_Vec(Ax1.Location(), aVal0);
-                            axes = new gp_Ax3(Ax1.Location(), Ax1.Direction(), new gp_Dir(DX));
+                            Vector3D DX = new Vector3D(Ax1.Location(), aVal0);
+                            axes = new CoordinateSystem(Ax1.Location(), Ax1.Direction(), new Direction3D(DX));
                             computeHR(axes, aVal0, out h, out radius);
-                            gp_Vec VT = new gp_Vec(axes.Direction());
+                            Vector3D VT = new Vector3D(axes.Direction());
                             axes.Translate(VT * h);
-                            return new gp_Circ(axes.Ax2(), radius);
+                            return new Circle3D(axes.Ax2(), radius);
                         }
                     }
                     else
@@ -684,87 +687,87 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
                     }
                 }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
-                    return mySurface.BasisCurve().Circle().Translated(myParameter * new gp_Vec(mySurface.Direction()));
+                    return mySurface.BasisCurve().Circle().Translated(myParameter * new Vector3D(mySurface.Direction()));
                 }
             default:
                 {
-                    throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:Circle");
+                    throw new NoSuchObjectException("Adaptor3d_IsoCurve:Circle");
                 }
         }
         // portage WNT
-        return new gp_Circ();
+        return new Circle3D();
     }
 
-    public override gp_Elips Ellipse()
+    public override Ellipse3D Ellipse()
     {
         switch (mySurface!.GetType())
         {
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
-                    return mySurface.BasisCurve().Ellipse().Translated(myParameter * new gp_Vec(mySurface.Direction()));
+                    return mySurface.BasisCurve().Ellipse().Translated(myParameter * new Vector3D(mySurface.Direction()));
                 }
             default:
                 {
-                    throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:Ellipse");
+                    throw new NoSuchObjectException("Adaptor3d_IsoCurve:Ellipse");
                 }
         }
     }
 
-    public override gp_Hypr Hyperbola() => throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:Hyperbola");
+    public override Hyperbola3D Hyperbola() => throw new NoSuchObjectException("Adaptor3d_IsoCurve:Hyperbola");
 
-    public override gp_Parab Parabola() => throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:Parabola");
+    public override Parabola3D Parabola() => throw new NoSuchObjectException("Adaptor3d_IsoCurve:Parabola");
 
     public override int Degree()
     {
         int degree = 0;
-        GeomAbs_SurfaceType type = mySurface!.GetType();
+        SurfaceKind type = mySurface!.GetType();
         switch (type)
         {
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
+            case BezierSurface:
+            case BSplineSurface:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             degree = mySurface.VDegree();
                             break;
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             degree = mySurface.UDegree();
                             break;
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             degree = mySurface.BasisCurve().Degree();
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             degree = mySurface.BasisCurve().Degree();
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
             default:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return degree;
     }
@@ -772,52 +775,52 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public override bool IsRational()
     {
         bool is_rational = false;
-        GeomAbs_SurfaceType type = mySurface!.GetType();
+        SurfaceKind type = mySurface!.GetType();
         switch (type)
         {
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
+            case BezierSurface:
+            case BSplineSurface:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             is_rational = mySurface.IsVRational();
                             break;
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             is_rational = mySurface.IsURational();
                             break;
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             is_rational = mySurface.BasisCurve().IsRational();
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             is_rational = mySurface.BasisCurve().IsRational();
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
             default:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return is_rational;
     }
@@ -825,55 +828,55 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public override int NbPoles()
     {
         int nb_poles = 0;
-        GeomAbs_SurfaceType type = mySurface!.GetType();
+        SurfaceKind type = mySurface!.GetType();
         switch (type)
         {
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
+            case BezierSurface:
+            case BSplineSurface:
                 switch (myIso)
                 {
-                    case GeomAbs_IsoU:
+                    case IsoU:
                         nb_poles = mySurface.NbVPoles();
                         break;
-                    case GeomAbs_IsoV:
+                    case IsoV:
                         nb_poles = mySurface.NbUPoles();
                         break;
-                    case GeomAbs_NoneIso:
+                    case NoneIso:
                     default:
-                        throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                        throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                 }
                 break;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
                                 nb_poles = mySurface.BasisCurve().NbPoles();
                             }
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
                                 nb_poles = mySurface.BasisCurve().NbPoles();
                             }
                             break;
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
 
             default:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return nb_poles;
     }
@@ -881,55 +884,55 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public override int NbKnots()
     {
         int nb_knots = 0;
-        GeomAbs_SurfaceType type = mySurface!.GetType();
+        SurfaceKind type = mySurface!.GetType();
         switch (type)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             nb_knots = mySurface.NbVKnots();
                             break;
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             nb_knots = mySurface.NbUKnots();
                             break;
-                        case GeomAbs_NoneIso:
+                        case NoneIso:
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoU:
+                        case IsoU:
                             {
                                 nb_knots = mySurface.BasisCurve().NbKnots();
                                 break;
                             }
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     switch (myIso)
                     {
-                        case GeomAbs_IsoV:
+                        case IsoV:
                             {
                                 nb_knots = mySurface.BasisCurve().NbKnots();
                                 break;
                             }
                         default:
-                            throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                            throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
                     }
                 }
                 break;
             default:
-                throw new Standard_NoSuchObject("Adaptor3d_IsoCurve:NoneIso");
+                throw new NoSuchObjectException("Adaptor3d_IsoCurve:NoneIso");
         }
         return nb_knots;
     }
@@ -941,19 +944,19 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public override Geom_BezierCurve Bezier()
     {
         Geom_BezierCurve C;
-        if (mySurface!.GetType() == GeomAbs_SurfaceOfRevolution)
+        if (mySurface!.GetType() == SurfaceOfRevolution)
         {
             C = mySurface.BasisCurve().Bezier();
             C = (Geom_BezierCurve)C.Copy();
             C.Rotate(mySurface.AxeOfRevolution(), myParameter);
         }
-        else if (mySurface.GetType() == GeomAbs_SurfaceOfExtrusion)
+        else if (mySurface.GetType() == SurfaceOfExtrusion)
         {
             C = mySurface.BasisCurve().Bezier();
             C = (Geom_BezierCurve)C.Copy();
-            C.Translate(myParameter * new gp_Vec(mySurface.Direction()));
+            C.Translate(myParameter * new Vector3D(mySurface.Direction()));
         }
-        else if (myIso == GeomAbs_IsoU)
+        else if (myIso == IsoU)
         {
             C = (Geom_BezierCurve)mySurface.Bezier().UIso(myParameter);
         }
@@ -972,19 +975,19 @@ public class Adaptor3d_IsoCurve : Adaptor3d_Curve
     public override Geom_BSplineCurve BSpline()
     {
         Geom_BSplineCurve C;
-        if (mySurface!.GetType() == GeomAbs_SurfaceOfRevolution)
+        if (mySurface!.GetType() == SurfaceOfRevolution)
         {
             C = mySurface.BasisCurve().BSpline();
             C = (Geom_BSplineCurve)C.Copy();
             C.Rotate(mySurface.AxeOfRevolution(), myParameter);
         }
-        else if (mySurface.GetType() == GeomAbs_SurfaceOfExtrusion)
+        else if (mySurface.GetType() == SurfaceOfExtrusion)
         {
             C = mySurface.BasisCurve().BSpline();
             C = (Geom_BSplineCurve)C.Copy();
-            C.Translate(myParameter * new gp_Vec(mySurface.Direction()));
+            C.Translate(myParameter * new Vector3D(mySurface.Direction()));
         }
-        else if (myIso == GeomAbs_IsoU)
+        else if (myIso == IsoU)
         {
             C = (Geom_BSplineCurve)mySurface.BSpline().UIso(myParameter);
         }

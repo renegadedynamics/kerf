@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_Colour : Standard_Transient
+public class StepVisual_Colour : Transient
 {
     /// <summary>
     /// Returns a Colour

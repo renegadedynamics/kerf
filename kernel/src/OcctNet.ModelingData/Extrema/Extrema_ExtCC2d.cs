@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -30,10 +32,10 @@ public class Extrema_ExtCC2d
     private double myv2;
     private double mytolc1;
     private double mytolc2;
-    private gp_Pnt2d P1f = new();
-    private gp_Pnt2d P1l = new();
-    private gp_Pnt2d P2f = new();
-    private gp_Pnt2d P2l = new();
+    private Point2D P1f = new();
+    private Point2D P1l = new();
+    private Point2D P2f = new();
+    private Point2D P2l = new();
     private double mydist11;
     private double mydist12;
     private double mydist21;
@@ -89,7 +91,7 @@ public class Extrema_ExtCC2d
     {
         mypoints.Clear();
         mySqDist.Clear();
-        GeomAbs_CurveType type1 = Extrema_Curve2dTool.GetType(C1), type2 = Extrema_Curve2dTool.GetType(myC!);
+        CurveKind type1 = Extrema_Curve2dTool.GetType(C1), type2 = Extrema_Curve2dTool.GetType(myC!);
         double U11, U12, U21, U22, Tol = Min(mytolc1, mytolc2);
         //  Extrema_POnCurv2d P1, P2;
         mynbext = 0;
@@ -113,36 +115,36 @@ public class Extrema_ExtCC2d
             //
             //  The first curve is a circle:
             //
-            case GeomAbs_Circle:
+            case Circle:
             {
                 switch (type2)
                 {
-                    case GeomAbs_Line:
+                    case Line:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(myC!), Extrema_Curve2dTool.Circle(C1), Tol);
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 0.0);
                     }
                     break;
-                    case GeomAbs_Circle:
+                    case Circle:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(C1), Extrema_Curve2dTool.Circle(myC!));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Ellipse:
+                    case Ellipse:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(C1), Extrema_Curve2dTool.Ellipse(myC!));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Parabola:
+                    case Parabola:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(C1), Extrema_Curve2dTool.Parabola(myC!));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 0.0);
                     }
                     break;
-                    case GeomAbs_Hyperbola:
+                    case Hyperbola:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(C1), Extrema_Curve2dTool.Hyperbola(myC!));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 0.0);
@@ -168,25 +170,25 @@ public class Extrema_ExtCC2d
             //
             // The first curve is an ellipse:
             //
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
                 switch (type2)
                 {
-                    case GeomAbs_Line:
+                    case Line:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(myC!), Extrema_Curve2dTool.Ellipse(C1));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 0.0);
                     }
                     break;
-                    case GeomAbs_Circle:
+                    case Circle:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(myC!), Extrema_Curve2dTool.Ellipse(C1));
                         Results(aXtream, U11, U12, U21, U22, 2 * M_PI, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Ellipse:
+                    case Ellipse:
                     {
                         aParamSolver = new Extrema_ECC2d(C1, myC!);
                         aParamSolver.SetSingleSolutionFlag(GetSingleSolutionFlag());
@@ -194,7 +196,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 2 * M_PI, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Parabola:
+                    case Parabola:
                     {
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Ellipse(C1),
                         // Extrema_Curve2dTool::Parabola(*myC));
@@ -204,7 +206,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 2 * M_PI, 0.0);
                     }
                     break;
-                    case GeomAbs_Hyperbola:
+                    case Hyperbola:
                     {
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Ellipse(C1),
                         // Extrema_Curve2dTool::Hyperbola(*myC));
@@ -234,25 +236,25 @@ public class Extrema_ExtCC2d
             //
             // The first curve is a parabola:
             //
-            case GeomAbs_Parabola:
+            case Parabola:
             {
                 switch (type2)
                 {
-                    case GeomAbs_Line:
+                    case Line:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(myC!), Extrema_Curve2dTool.Parabola(C1));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Circle:
+                    case Circle:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(myC!), Extrema_Curve2dTool.Parabola(C1));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Ellipse:
+                    case Ellipse:
                     {
                         // inverse = true;
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Ellipse(*myC),
@@ -263,7 +265,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Parabola:
+                    case Parabola:
                     {
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Parabola(C1),
                         // Extrema_Curve2dTool::Parabola(*myC));
@@ -273,7 +275,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Hyperbola:
+                    case Hyperbola:
                     {
                         // inverse = true;
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Hyperbola(*myC),
@@ -304,25 +306,25 @@ public class Extrema_ExtCC2d
             //
             // The first curve is a hyperbola:
             //
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
                 switch (type2)
                 {
-                    case GeomAbs_Line:
+                    case Line:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(myC!), Extrema_Curve2dTool.Hyperbola(C1));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Circle:
+                    case Circle:
                     {
                         inverse = true;
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Circle(myC!), Extrema_Curve2dTool.Hyperbola(C1));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Ellipse:
+                    case Ellipse:
                     {
                         // inverse = true;
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Ellipse(*myC),
@@ -333,7 +335,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Parabola:
+                    case Parabola:
                     {
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Hyperbola(C1),
                         // Extrema_Curve2dTool::Parabola(*myC));
@@ -343,7 +345,7 @@ public class Extrema_ExtCC2d
                         Results(aParamSolver, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Hyperbola:
+                    case Hyperbola:
                     {
                         // Extrema_ExtElC2d Xtrem(Extrema_Curve2dTool::Hyperbola(C1),
                         // Extrema_Curve2dTool::Hyperbola(*myC));
@@ -373,35 +375,35 @@ public class Extrema_ExtCC2d
             //
             // The first curve is a line:
             //
-            case GeomAbs_Line:
+            case Line:
             {
                 switch (type2)
                 {
-                    case GeomAbs_Line:
+                    case Line:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(C1), Extrema_Curve2dTool.Line(myC!), Tol);
                         Results(aXtream, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Circle:
+                    case Circle:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(C1), Extrema_Curve2dTool.Circle(myC!), Tol);
                         Results(aXtream, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Ellipse:
+                    case Ellipse:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(C1), Extrema_Curve2dTool.Ellipse(myC!));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 2 * M_PI);
                     }
                     break;
-                    case GeomAbs_Parabola:
+                    case Parabola:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(C1), Extrema_Curve2dTool.Parabola(myC!));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 0.0);
                     }
                     break;
-                    case GeomAbs_Hyperbola:
+                    case Hyperbola:
                     {
                         aXtream = new Extrema_ExtElC2d(Extrema_Curve2dTool.Line(C1), Extrema_Curve2dTool.Hyperbola(myC!));
                         Results(aXtream, U11, U12, U21, U22, 0.0, 0.0);
@@ -452,44 +454,44 @@ public class Extrema_ExtCC2d
     public bool IsDone() => myDone;
 
     /// <summary>The Nth square distance.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_OutOfRange">N is not in 1..NbExt().</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="OutOfRangeException">N is not in 1..NbExt().</exception>
     public double SquareDistance(int N = 1)
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if ((N <= 0) || (N > mynbext))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist.Value(N);
     }
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbExt()
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mynbext;
     }
 
     /// <summary>The points of the Nth extremum, on the first and on the second curve.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_OutOfRange">N is not in 1..NbExt().</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="OutOfRangeException">N is not in 1..NbExt().</exception>
     public void Points(int N, out Extrema_POnCurv2d P1, out Extrema_POnCurv2d P2)
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if ((N <= 0) || (N > mynbext))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         P1 = mypoints.Value(2 * N - 1);
         P2 = mypoints.Value(2 * N);
@@ -498,7 +500,7 @@ public class Extrema_ExtCC2d
     /// <summary>The square distances between the ends of the ranges and the end points (set only by a successful
     /// computation).</summary>
     public void TrimmedSquareDistances(out double dist11, out double dist12, out double dist21, out double dist22,
-        out gp_Pnt2d P11, out gp_Pnt2d P12, out gp_Pnt2d P21, out gp_Pnt2d P22)
+        out Point2D P11, out Point2D P12, out Point2D P21, out Point2D P22)
     {
         dist11 = mydist11;
         dist12 = mydist12;
@@ -535,12 +537,12 @@ public class Extrema_ExtCC2d
                         U = P1.Parameter();
                         if (Period1 != 0.0)
                         {
-                            U = ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
+                            U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
                         }
                         U2 = P2.Parameter();
                         if (Period2 != 0.0)
                         {
-                            U2 = ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
+                            U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
                         }
                     }
                     else
@@ -548,16 +550,16 @@ public class Extrema_ExtCC2d
                         U2 = P1.Parameter();
                         if (Period2 != 0.0)
                         {
-                            U2 = ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
+                            U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
                         }
                         U = P2.Parameter();
                         if (Period1 != 0.0)
                         {
-                            U = ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
+                            U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
                         }
                     }
-                    if ((U >= Ut11 - Precision.PConfusion()) && (U <= Ut12 + Precision.PConfusion())
-                        && (U2 >= Ut21 - Precision.PConfusion()) && (U2 <= Ut22 + Precision.PConfusion()))
+                    if ((U >= Ut11 - global::Kerf.Engine.Foundation.Precision.PConfusion()) && (U <= Ut12 + global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        && (U2 >= Ut21 - global::Kerf.Engine.Foundation.Precision.PConfusion()) && (U2 <= Ut22 + global::Kerf.Engine.Foundation.Precision.PConfusion()))
                     {
                         mynbext++;
                         Val = AlgExt.SquareDistance(i);
@@ -606,16 +608,16 @@ public class Extrema_ExtCC2d
                 U = P1.Parameter();
                 if (Period1 != 0.0)
                 {
-                    U = ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
+                    U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, Ut11, Ut11 + Period1);
                 }
                 U2 = P2.Parameter();
                 if (Period2 != 0.0)
                 {
-                    U2 = ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
+                    U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, Ut21, Ut21 + Period2);
                 }
 
-                if ((U >= Ut11 - Precision.PConfusion()) && (U <= Ut12 + Precision.PConfusion())
-                    && (U2 >= Ut21 - Precision.PConfusion()) && (U2 <= Ut22 + Precision.PConfusion()))
+                if ((U >= Ut11 - global::Kerf.Engine.Foundation.Precision.PConfusion()) && (U <= Ut12 + global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    && (U2 >= Ut21 - global::Kerf.Engine.Foundation.Precision.PConfusion()) && (U2 <= Ut22 + global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     mynbext++;
                     Val = AlgExt.SquareDistance(i);
@@ -635,12 +637,12 @@ public class Extrema_ExtCC2d
     }
 
     /// <summary>True if the curves are parallel.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IsParallel()
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }

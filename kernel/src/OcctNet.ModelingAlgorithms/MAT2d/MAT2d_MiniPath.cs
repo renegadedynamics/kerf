@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -220,7 +222,7 @@ public sealed class MAT2d_MiniPath
         double DistL1L2_2, DistP1P2_2;
         double ParameterOnC1 = 0.0, ParameterOnC2 = 0.0;
         NCollection_Sequence<Geom2d_Geometry> L1, L2;
-        gp_Pnt2d Point1 = new(), Point2 = new(), P1 = new(), P2 = new();
+        Point2D Point1 = new(), Point2 = new(), P1 = new(), P2 = new();
         Geom2d_Curve? Item1 = null;
         Geom2d_Curve? Item2 = null;
 

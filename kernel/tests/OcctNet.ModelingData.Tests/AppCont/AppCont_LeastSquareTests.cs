@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace OcctNet.ModelingData.Tests;
@@ -20,19 +22,19 @@ public class AppCont_LeastSquareTests
             myNbPnt2d = theWith2d ? 1 : 0;
         }
 
-        public static gp_Pnt P3d(double u) => new(1.0 + 2.0 * u - u * u * u, 0.5 * u * u, 3.0 - u + 0.25 * u * u * u);
+        public static Point3D P3d(double u) => new(1.0 + 2.0 * u - u * u * u, 0.5 * u * u, 3.0 - u + 0.25 * u * u * u);
 
-        public static gp_Vec V3d(double u) => new(2.0 - 3.0 * u * u, u, -1.0 + 0.75 * u * u);
+        public static Vector3D V3d(double u) => new(2.0 - 3.0 * u * u, u, -1.0 + 0.75 * u * u);
 
-        public static gp_Pnt2d P2d(double u) => new(u * u - 1.0, 2.0 * u + 0.5);
+        public static Point2D P2d(double u) => new(u * u - 1.0, 2.0 * u + 0.5);
 
-        public static gp_Vec2d V2d(double u) => new(2.0 * u, 2.0);
+        public static Vector2D V2d(double u) => new(2.0 * u, 2.0);
 
         public override double FirstParameter() => myU0;
 
         public override double LastParameter() => myU1;
 
-        public override bool Value(double theU, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theU, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt[1] = P3d(theU);
             if (myNbPnt2d == 1)
@@ -42,7 +44,7 @@ public class AppCont_LeastSquareTests
             return true;
         }
 
-        public override bool D1(double theU, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theU, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
             theVec[1] = V3d(theU);
             if (myNbPnt2d == 1)
@@ -72,15 +74,15 @@ public class AppCont_LeastSquareTests
 
         public override double LastParameter() => myU1;
 
-        public override bool Value(double theU, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theU, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
-            thePnt[1] = new gp_Pnt(Math.Cos(theU), Math.Sin(theU), 0.0);
+            thePnt[1] = new Point3D(Math.Cos(theU), Math.Sin(theU), 0.0);
             return true;
         }
 
-        public override bool D1(double theU, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theU, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
-            theVec[1] = new gp_Vec(-Math.Sin(theU), Math.Cos(theU), 0.0);
+            theVec[1] = new Vector3D(-Math.Sin(theU), Math.Cos(theU), 0.0);
             return myHasD1;
         }
     }
@@ -108,8 +110,8 @@ public class AppCont_LeastSquareTests
                 for (int i = 0; i <= 20; i++)
                 {
                     double t = i / 20.0, u = U0 + t * (U1 - U0);
-                    aCurve.Value(1, t, out gp_Pnt aP);
-                    aCurve.Value(2, t, out gp_Pnt2d aP2d);
+                    aCurve.Value(1, t, out Point3D aP);
+                    aCurve.Value(2, t, out Point2D aP2d);
                     Assert.True(aP.Distance(PolynomialFunction.P3d(u)) < 1e-10, $"{aFirst}/{aLast} 3d at {t}");
                     Assert.True(aP2d.Distance(PolynomialFunction.P2d(u)) < 1e-10, $"{aFirst}/{aLast} 2d at {t}");
                 }
@@ -129,7 +131,7 @@ public class AppCont_LeastSquareTests
         Assert.Equal(PolynomialFunction.P3d(U0), aCurve.Pole(1, 1));
         Assert.Equal(PolynomialFunction.P3d(U1), aCurve.Pole(1, 5));
         // second pole = first pole + tangent * (U1 - U0) / degree
-        gp_Pnt anExpected = PolynomialFunction.P3d(U0).Translated(PolynomialFunction.V3d(U0) * ((U1 - U0) / 4));
+        Point3D anExpected = PolynomialFunction.P3d(U0).Translated(PolynomialFunction.V3d(U0) * ((U1 - U0) / 4));
         Assert.True(aCurve.Pole(1, 2).Distance(anExpected) < 1e-15);
     }
 
@@ -151,15 +153,15 @@ public class AppCont_LeastSquareTests
         for (int i = 0; i <= 40; i++)
         {
             double t = i / 40.0, u = U0 + t * (U1 - U0);
-            aCurve.Value(1, t, out gp_Pnt aP);
+            aCurve.Value(1, t, out Point3D aP);
             // radial distance from the unit circle
             Assert.True(Math.Abs(Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()) - 1.0) < 1e-5);
             Assert.Equal(0.0, aP.Z());
-            Assert.True(aP.Distance(new gp_Pnt(Math.Cos(u), Math.Sin(u), 0.0)) < 1e-4);
+            Assert.True(aP.Distance(new Point3D(Math.Cos(u), Math.Sin(u), 0.0)) < 1e-4);
         }
         if (theFirst is AppParCurves_PassPoint or AppParCurves_TangencyPoint)
         {
-            Assert.True(aCurve.Pole(1, 1).Distance(new gp_Pnt(Math.Cos(U0), Math.Sin(U0), 0.0)) < 1e-15);
+            Assert.True(aCurve.Pole(1, 1).Distance(new Point3D(Math.Cos(U0), Math.Sin(U0), 0.0)) < 1e-15);
         }
     }
 
@@ -191,9 +193,9 @@ public class AppCont_LeastSquareTests
     {
         PolynomialFunction aFunc = new(0.0, 1.0, false);
         // MMatrix holds classe up to 24 (degree 23), VBernstein up to 24 points
-        Assert.ThrowsAny<Standard_DimensionError>(() => new AppCont_LeastSquare(aFunc, 0.0, 1.0, AppParCurves_PassPoint,
+        Assert.ThrowsAny<DimensionErrorException>(() => new AppCont_LeastSquare(aFunc, 0.0, 1.0, AppParCurves_PassPoint,
                                                                                AppParCurves_PassPoint, 24, 24));
-        Assert.ThrowsAny<Standard_DimensionError>(() => new AppCont_LeastSquare(aFunc, 0.0, 1.0, AppParCurves_PassPoint,
+        Assert.ThrowsAny<DimensionErrorException>(() => new AppCont_LeastSquare(aFunc, 0.0, 1.0, AppParCurves_PassPoint,
                                                                                AppParCurves_PassPoint, 5, 25));
     }
 }

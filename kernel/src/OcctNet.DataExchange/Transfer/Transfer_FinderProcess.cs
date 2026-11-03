@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 
 namespace Occt;
@@ -61,7 +62,7 @@ public class Transfer_FinderProcess : Transfer_ProcessForFinder
     /// its Mapper is returned. Or it is not, then a new one is created then returned, BUT it is not mapped here (use
     /// Bind or FindElseBind to do this).
     /// </summary>
-    public Transfer_TransientMapper TransientMapper(Standard_Transient? obj)
+    public Transfer_TransientMapper TransientMapper(Transient? obj)
     {
         var mapper = new Transfer_TransientMapper(obj);
         int index = MapIndex(mapper);

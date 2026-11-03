@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -35,8 +37,8 @@ public sealed class ShapeFix_SplitTool
             return false;
         }
         // check distance between edge and new vertex
-        gp_Pnt          P1;
-        TopLoc_Location L;
+        Point3D          P1;
+        Placement L;
         if (BRep_Tool.SameParameter(edge))
         {
             Geom_Curve? c3d = BRep_Tool.Curve(edge, out L, out double f, out double l);
@@ -45,7 +47,7 @@ public sealed class ShapeFix_SplitTool
                 return false;
             }
             P1 = c3d.Value(param);
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 P1 = P1.Transformed(L.Transformation());
             }
@@ -55,12 +57,12 @@ public sealed class ShapeFix_SplitTool
             Geom_Surface? surf = BRep_Tool.Surface(face, out L);
             var           sas  = new ShapeAnalysis_Surface(surf);
             P1 = sas.Value(c2d!.Value(param));
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 P1 = P1.Transformed(L.Transformation());
             }
         }
-        gp_Pnt P2 = BRep_Tool.Pnt(vert);
+        Point3D P2 = BRep_Tool.Pnt(vert);
         if (P1.Distance(P2) > tol3d)
         {
             // return false;
@@ -172,14 +174,14 @@ public sealed class ShapeFix_SplitTool
     /// </summary>
     internal bool CutEdge(in TopoDS_Edge edge, double pend, double cut, in TopoDS_Face face, ref bool iscutline)
     {
-        if (Math.Abs(cut - pend) < 10.0 * Occt.Precision.PConfusion())
+        if (Math.Abs(cut - pend) < 10.0 * Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
         double aRange = Math.Abs(cut - pend);
         BRep_Tool.Range(edge, out double a, out double b);
         iscutline = false;
-        if (aRange < 10.0 * Occt.Precision.PConfusion())
+        if (aRange < 10.0 * Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -196,20 +198,20 @@ public sealed class ShapeFix_SplitTool
                     {
                         var BL = new BRep_Builder();
                         BL.Range(edge, Min(pend, cut), Max(pend, cut));
-                        if (Math.Abs(pend - lp) < Occt.Precision.PConfusion())
+                        if (Math.Abs(pend - lp) < Kerf.Engine.Foundation.Precision.PConfusion())
                         { // cut from the beginning
                             double cut3d = (cut - fp) * (b - a) / (lp - fp);
-                            if (cut3d <= Occt.Precision.PConfusion())
+                            if (cut3d <= Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 return false;
                             }
                             BL.Range(edge, a + cut3d, b, true);
                             iscutline = true;
                         }
-                        else if (Math.Abs(pend - fp) < Occt.Precision.PConfusion())
+                        else if (Math.Abs(pend - fp) < Kerf.Engine.Foundation.Precision.PConfusion())
                         { // cut from the end
                             double cut3d = (lp - cut) * (b - a) / (lp - fp);
-                            if (cut3d <= Occt.Precision.PConfusion())
+                            if (cut3d <= Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 return false;
                             }
@@ -223,11 +225,11 @@ public sealed class ShapeFix_SplitTool
         }
 
         // det-study on 03/12/01 checking the old and new ranges
-        if (Math.Abs(Math.Abs(a - b) - aRange) < Occt.Precision.PConfusion())
+        if (Math.Abs(Math.Abs(a - b) - aRange) < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
-        if (aRange < 10.0 * Occt.Precision.PConfusion())
+        if (aRange < 10.0 * Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -242,7 +244,7 @@ public sealed class ShapeFix_SplitTool
         // ValidateRange reverses the curve only when the range is reversed, which min/max excludes: the edge's
         // (frozen) curve is only read.
         if (!BRep_Tool.Degenerated(edge) && c is not null
-            && sac.ValidateRange(c, ref na, ref nb, Occt.Precision.PConfusion()) && (na != a || nb != b))
+            && sac.ValidateRange(c, ref na, ref nb, Kerf.Engine.Foundation.Precision.PConfusion()) && (na != a || nb != b))
         {
             B.Range(edge, na, nb, true);
             var sae = new ShapeAnalysis_Edge();
@@ -287,10 +289,10 @@ public sealed class ShapeFix_SplitTool
         double        tolVL = BRep_Tool.Tolerance(VL);
         double        tolV1 = BRep_Tool.Tolerance(V1);
         double        tolV2 = BRep_Tool.Tolerance(V2);
-        gp_Pnt        PVF   = BRep_Tool.Pnt(VF);
-        gp_Pnt        PVL   = BRep_Tool.Pnt(VL);
-        gp_Pnt        PV1   = BRep_Tool.Pnt(V1);
-        gp_Pnt        PV2   = BRep_Tool.Pnt(V2);
+        Point3D        PVF   = BRep_Tool.Pnt(VF);
+        Point3D        PVL   = BRep_Tool.Pnt(VL);
+        Point3D        PV1   = BRep_Tool.Pnt(V1);
+        Point3D        PV2   = BRep_Tool.Pnt(V2);
 
         double par1, par2;
         bool   IsReverse = false;

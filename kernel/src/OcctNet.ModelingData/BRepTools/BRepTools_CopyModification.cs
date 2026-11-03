@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -28,7 +34,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     /// <summary>The face's surface, location and tolerance (the surface copied if the geometry is copied); always true.</summary>
     public override bool NewSurface(in TopoDS_Face theFace,
                                     out Geom_Surface? theSurf,
-                                    out TopLoc_Location theLoc,
+                                    out Placement theLoc,
                                     out double theTol,
                                     out bool theRevWires,
                                     out bool theRevFace)
@@ -46,7 +52,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     }
 
     /// <summary>The face's triangulation (copied if the geometry is copied), if the mesh is copied or the face has no surface.</summary>
-    public override bool NewTriangulation(in TopoDS_Face theFace, out Poly_Triangulation? theTri)
+    public override bool NewTriangulation(in TopoDS_Face theFace, out Triangulation? theTri)
     {
         theTri = null;
         if (!myCopyMesh && BRep_Tool.IsGeometric(theFace))
@@ -70,7 +76,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     }
 
     /// <summary>The edge's 3D curve, location and tolerance (the curve copied if the geometry is copied); always true.</summary>
-    public override bool NewCurve(in TopoDS_Edge theEdge, out Geom_Curve? theCurve, out TopLoc_Location theLoc, out double theTol)
+    public override bool NewCurve(in TopoDS_Edge theEdge, out Geom_Curve? theCurve, out Placement theLoc, out double theTol)
     {
         theCurve = BRep_Tool.Curve(theEdge, out theLoc, out _, out _);
         theTol = BRep_Tool.Tolerance(theEdge);
@@ -84,7 +90,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     }
 
     /// <summary>The edge's 3D polygon (copied if the geometry is copied), if the mesh is copied or the edge has no curve.</summary>
-    public override bool NewPolygon(in TopoDS_Edge theEdge, out Poly_Polygon3D? thePoly)
+    public override bool NewPolygon(in TopoDS_Edge theEdge, out Polygon3D? thePoly)
     {
         thePoly = null;
         if (!myCopyMesh && BRep_Tool.IsGeometric(theEdge))
@@ -111,7 +117,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     /// The edge's polygon on the face's triangulation (copied if the geometry is copied), if the mesh is copied or the
     /// edge has no curve.
     /// </summary>
-    public override bool NewPolygonOnTriangulation(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out Poly_PolygonOnTriangulation? thePoly)
+    public override bool NewPolygonOnTriangulation(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out PolygonOnTriangulation? thePoly)
     {
         thePoly = null;
         if (!myCopyMesh && BRep_Tool.IsGeometric(theEdge))
@@ -119,7 +125,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
             return false;
         }
 
-        Poly_Triangulation? aTria = BRep_Tool.Triangulation(theFace, out TopLoc_Location aLoc);
+        Triangulation? aTria = BRep_Tool.Triangulation(theFace, out Placement aLoc);
         thePoly = BRep_Tool.PolygonOnTriangulation(theEdge, aTria, aLoc);
 
         if (thePoly is null)
@@ -136,7 +142,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     }
 
     /// <summary>The vertex's point and tolerance; always true.</summary>
-    public override bool NewPoint(in TopoDS_Vertex theVertex, out gp_Pnt thePnt, out double theTol)
+    public override bool NewPoint(in TopoDS_Vertex theVertex, out Point3D thePnt, out double theTol)
     {
         thePnt = BRep_Tool.Pnt(theVertex);
         theTol = BRep_Tool.Tolerance(theVertex);
@@ -177,7 +183,7 @@ public class BRepTools_CopyModification : BRepTools_Modification
     }
 
     /// <summary>The edge's continuity between the original faces.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge theEdge,
+    public override Continuity Continuity(in TopoDS_Edge theEdge,
                                              in TopoDS_Face theFace1,
                                              in TopoDS_Face theFace2,
                                              in TopoDS_Edge theNewEdge,

@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.BRepMesh_GeomTool.IntFlag;
 
@@ -16,7 +21,7 @@ namespace Occt;
 /// <remarks>
 /// A working object, as OCCT's (a class used by value there; the allocators are dropped). It writes into the data
 /// structure it is given, and the constructors taking an index vector sort that vector in place, as OCCT's do, with
-/// MSVC's heap sort (<see cref="std_heap"/>, decision 491), so ties come out in native OCCT's order.
+/// MSVC's heap sort (<see cref="Heap"/>, decision 491), so ties come out in native OCCT's order.
 /// </remarks>
 public sealed class BRepMesh_Delaun
 {
@@ -24,7 +29,7 @@ public sealed class BRepMesh_Delaun
     private static readonly double AngDeviation90Deg = 90 * AngDeviation1Deg;
     private static readonly double Angle2PI = 2 * M_PI;
 
-    private static readonly double Precision = Occt.Precision.PConfusion();
+    private static readonly double Precision = Kerf.Engine.Foundation.Precision.PConfusion();
     private static readonly double Precision2 = Precision * Precision;
 
     private enum ReplaceFlag
@@ -127,10 +132,10 @@ public sealed class BRepMesh_Delaun
     /// <summary>Sets up the circles' cells from the structure's nodes and fills them with its triangles.</summary>
     public void InitCirclesTool(int theCellsCountU, int theCellsCountV)
     {
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         for (int aNodeIt = 1; aNodeIt <= myMeshData!.NbNodes(); ++aNodeIt)
         {
-            aBox.Add(new gp_Pnt2d(GetVertex(aNodeIt).Coord()));
+            aBox.Add(new Point2D(GetVertex(aNodeIt).Coord()));
         }
 
         aBox.Enlarge(Precision);
@@ -165,7 +170,7 @@ public sealed class BRepMesh_Delaun
             deleteTriangle(aTriangleIt.Key(), aLoopEdges);
         }
 
-        NCollection_Sequence<Bnd_B2d> aBoxes = new();
+        NCollection_Sequence<B2d> aBoxes = new();
         NCollection_Sequence<int> aPolygon = new();
         int aLoopEdgesCount = aLoopEdges.Extent();
         NCollection_IntDataMap<bool>.Iterator aLoopEdgesIt = new(aLoopEdges);
@@ -241,11 +246,11 @@ public sealed class BRepMesh_Delaun
     }
 
     /// <summary>Inserts the structure's nodes of the given indices into the triangulation; sorts the vector.</summary>
-    public void AddVertices(NCollection_DynamicArray<int> theVertices, Message_ProgressRange theRange = default)
+    public void AddVertices(NCollection_DynamicArray<int> theVertices, ProgressRange theRange = default)
     {
         ComparatorOfIndexedVertexOfDelaun aCmp = new(myMeshData!);
-        std_heap.make_heap(theVertices.AsSpan(), aCmp);
-        std_heap.sort_heap(theVertices.AsSpan(), aCmp);
+        Heap.make_heap(theVertices.AsSpan(), aCmp);
+        Heap.sort_heap(theVertices.AsSpan(), aCmp);
 
         createTrianglesOnNewVertices(theVertices, theRange);
     }
@@ -307,12 +312,12 @@ public sealed class BRepMesh_Delaun
 
         myMeshData!.ElementNodes(aElement, p);
 
-        Span<gp_XY> aPoints = stackalloc gp_XY[3];
+        Span<Xy> aPoints = stackalloc Xy[3];
         aPoints[0] = GetVertex(p[0]).Coord();
         aPoints[1] = GetVertex(p[1]).Coord();
         aPoints[2] = GetVertex(p[2]).Coord();
 
-        Span<gp_XY> aVEdges = stackalloc gp_XY[3];
+        Span<Xy> aVEdges = stackalloc Xy[3];
         aVEdges[0] = aPoints[1];
         aVEdges[0].Subtract(aPoints[0]);
 
@@ -396,19 +401,19 @@ public sealed class BRepMesh_Delaun
     }
 
     //! Sort two points in projection on vector (1,1)
-    private readonly struct ComparatorOfIndexedVertexOfDelaun(BRepMesh_DataStructureOfDelaun theDS) : std_heap.ILess<int>
+    private readonly struct ComparatorOfIndexedVertexOfDelaun(BRepMesh_DataStructureOfDelaun theDS) : Heap.ILess<int>
     {
         private readonly BRepMesh_DataStructureOfDelaun myStructure = theDS;
 
         public bool Less(int theLeft, int theRight)
         {
-            gp_XY aLeft = myStructure.GetNode(theLeft).Coord();
-            gp_XY aRight = myStructure.GetNode(theRight).Coord();
+            Xy aLeft = myStructure.GetNode(theLeft).Coord();
+            Xy aRight = myStructure.GetNode(theRight).Coord();
             return aLeft.X() + aLeft.Y() < aRight.X() + aRight.Y();
         }
     }
 
-    private static void UpdateBndBox(in gp_XY thePnt1, in gp_XY thePnt2, ref Bnd_B2d theBox)
+    private static void UpdateBndBox(in Xy thePnt1, in Xy thePnt2, ref B2d theBox)
     {
         theBox.Add(thePnt1);
         theBox.Add(thePnt2);
@@ -457,7 +462,7 @@ public sealed class BRepMesh_Delaun
         public bool IsEmpty() => myFrames.IsEmpty();
     }
 
-    private void initCirclesTool(in Bnd_Box2d theBox, int theCellsCountU, int theCellsCountV)
+    private void initCirclesTool(in Box2d theBox, int theCellsCountU, int theCellsCountV)
     {
         theBox.Get(out double aMinX, out double aMinY, out double aMaxX, out double aMaxY);
         double aDeltaX = aMaxX - aMinX;
@@ -473,16 +478,16 @@ public sealed class BRepMesh_Delaun
             aScaler = 7;
         }
 
-        myCircles.SetMinMaxSize(new gp_XY(aMinX, aMinY), new gp_XY(aMaxX, aMaxY));
+        myCircles.SetMinMaxSize(new Xy(aMinX, aMinY), new Xy(aMaxX, aMaxY));
         myCircles.SetCellSize(aDeltaX / Math.Max(theCellsCountU, aScaler),
                               aDeltaY / Math.Max(theCellsCountV, aScaler));
 
         myInitCircles = true;
     }
 
-    private void fillBndBox(NCollection_Sequence<Bnd_B2d> theBoxes, in BRepMesh_Vertex theV1, in BRepMesh_Vertex theV2)
+    private void fillBndBox(NCollection_Sequence<B2d> theBoxes, in BRepMesh_Vertex theV1, in BRepMesh_Vertex theV2)
     {
-        Bnd_B2d aBox = new();
+        B2d aBox = new();
         UpdateBndBox(theV1.Coord(), theV2.Coord(), ref aBox);
         theBoxes.Append(aBox);
     }
@@ -515,12 +520,12 @@ public sealed class BRepMesh_Delaun
             return;
         }
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         int anIndex = theVertexIndices.Lower();
         int anUpper = theVertexIndices.Upper();
         for (; anIndex <= anUpper; ++anIndex)
         {
-            aBox.Add(new gp_Pnt2d(GetVertex(theVertexIndices[anIndex]).Coord()));
+            aBox.Add(new Point2D(GetVertex(theVertexIndices[anIndex]).Coord()));
         }
 
         aBox.Enlarge(Precision);
@@ -529,13 +534,13 @@ public sealed class BRepMesh_Delaun
         superMesh(aBox);
 
         ComparatorOfIndexedVertexOfDelaun aCmp = new(myMeshData!);
-        std_heap.make_heap(theVertexIndices.AsSpan(), aCmp);
-        std_heap.sort_heap(theVertexIndices.AsSpan(), aCmp);
+        Heap.make_heap(theVertexIndices.AsSpan(), aCmp);
+        Heap.sort_heap(theVertexIndices.AsSpan(), aCmp);
 
         compute(theVertexIndices);
     }
 
-    private void superMesh(in Bnd_Box2d theBox)
+    private void superMesh(in Box2d theBox)
     {
         theBox.Get(out double aMinX, out double aMinY, out double aMaxX, out double aMaxY);
         double aDeltaX = aMaxX - aMinX;
@@ -620,7 +625,7 @@ public sealed class BRepMesh_Delaun
     {
         NCollection_List<int> aLoopEdges = new();
         NCollection_List<int> anExternalEdges = new();
-        gp_XY aVertexCoord = myMeshData!.GetNode(theVertexIndex).Coord();
+        Xy aVertexCoord = myMeshData!.GetNode(theVertexIndex).Coord();
 
         Span<int> aNodes = stackalloc int[3];
         Span<int> anEdgesInfo = stackalloc int[3];
@@ -650,7 +655,7 @@ public sealed class BRepMesh_Delaun
             BRepMesh_Vertex aFirstVertex = GetVertex(aNodes[0]);
             BRepMesh_Vertex aLastVertex = GetVertex(aNodes[2]);
 
-            gp_XY anEdgeDir = aLastVertex.Coord() - aFirstVertex.Coord();
+            Xy anEdgeDir = aLastVertex.Coord() - aFirstVertex.Coord();
             double anEdgeLen = anEdgeDir.Modulus();
             if (anEdgeLen < Precision)
             {
@@ -659,8 +664,8 @@ public sealed class BRepMesh_Delaun
 
             anEdgeDir.SetCoord(anEdgeDir.X() / anEdgeLen, anEdgeDir.Y() / anEdgeLen);
 
-            gp_XY aFirstLinkDir = aFirstVertex.Coord() - aVertexCoord;
-            gp_XY aLastLinkDir = aVertexCoord - aLastVertex.Coord();
+            Xy aFirstLinkDir = aFirstVertex.Coord() - aVertexCoord;
+            Xy aLastLinkDir = aVertexCoord - aLastVertex.Coord();
 
             double aDist12 = aFirstLinkDir ^ anEdgeDir;
             double aDist23 = anEdgeDir ^ aLastLinkDir;
@@ -745,7 +750,7 @@ public sealed class BRepMesh_Delaun
         }
     }
 
-    private void createTrianglesOnNewVertices(NCollection_DynamicArray<int> theVertexIndexes, Message_ProgressRange theRange)
+    private void createTrianglesOnNewVertices(NCollection_DynamicArray<int> theVertexIndexes, ProgressRange theRange)
     {
         myMeshData!.Data().GetTolerance(out double aTolU, out double aTolV);
         double aSqTol = aTolU * aTolU + aTolV * aTolV;
@@ -755,7 +760,7 @@ public sealed class BRepMesh_Delaun
 
         int anIndex = theVertexIndexes.Lower();
         int anUpper = theVertexIndexes.Upper();
-        using Message_ProgressScope aPS = new(theRange, "Create triangles on new vertices", anUpper);
+        using ProgressScope aPS = new(theRange, "Create triangles on new vertices", anUpper);
         for (; anIndex <= anUpper; ++anIndex, aPS.Next())
         {
             if (!aPS.More())
@@ -1183,7 +1188,7 @@ public sealed class BRepMesh_Delaun
         BRepMesh_Vertex aStartEdgeVertexS = GetVertex(aStartNode);
         BRepMesh_Vertex aPivotVertex = GetVertex(aPivotNode);
 
-        gp_Vec2d aRefLinkDir = new(aPivotVertex.Coord() - aStartEdgeVertexS.Coord());
+        Vector2D aRefLinkDir = new(aPivotVertex.Coord() - aStartEdgeVertexS.Coord());
 
         if (aRefLinkDir.SquareMagnitude() < Precision2)
         {
@@ -1193,7 +1198,7 @@ public sealed class BRepMesh_Delaun
         // Auxiliary structures.
         // Bounding boxes of polygon links to be used for preliminary
         // analysis of intersections
-        NCollection_Sequence<Bnd_B2d> aBoxes = new();
+        NCollection_Sequence<B2d> aBoxes = new();
         fillBndBox(aBoxes, aStartEdgeVertexS, aPivotVertex);
 
         // Hanging ends
@@ -1207,8 +1212,8 @@ public sealed class BRepMesh_Delaun
         int aFirstNode = aStartNode;
         while (aPivotNode != aFirstNode)
         {
-            Bnd_B2d aNextLinkBndBox = new();
-            gp_Vec2d aNextLinkDir = new();
+            B2d aNextLinkBndBox = new();
+            Vector2D aNextLinkDir = new();
             int aNextPivotNode = 0;
 
             int aNextLinkId = findNextPolygonLink(aFirstNode,
@@ -1269,7 +1274,7 @@ public sealed class BRepMesh_Delaun
                 }
 
                 aPivotVertex = GetVertex(aPivotNode);
-                aRefLinkDir = new gp_Vec2d(aPivotVertex.Coord() - GetVertex(aStartNode).Coord());
+                aRefLinkDir = new Vector2D(aPivotVertex.Coord() - GetVertex(aStartNode).Coord());
 
                 isSkipLeprous = false;
             }
@@ -1289,16 +1294,16 @@ public sealed class BRepMesh_Delaun
     private int findNextPolygonLink(int theFirstNode,
                                     int thePivotNode,
                                     in BRepMesh_Vertex thePivotVertex,
-                                    in gp_Vec2d theRefLinkDir,
-                                    NCollection_Sequence<Bnd_B2d> theBoxes,
+                                    in Vector2D theRefLinkDir,
+                                    NCollection_Sequence<B2d> theBoxes,
                                     NCollection_Sequence<int> thePolygon,
                                     NCollection_PackedMapOfInteger? theSkipped,
                                     bool isSkipLeprous,
                                     NCollection_PackedMapOfInteger theLeprousLinks,
                                     NCollection_PackedMapOfInteger theDeadLinks,
                                     ref int theNextPivotNode,
-                                    ref gp_Vec2d theNextLinkDir,
-                                    ref Bnd_B2d theNextLinkBndBox)
+                                    ref Vector2D theNextLinkDir,
+                                    ref B2d theNextLinkBndBox)
     {
         // Find the next link having the greatest angle
         // respect to a direction of a reference one
@@ -1339,7 +1344,7 @@ public sealed class BRepMesh_Delaun
                 anOtherNode = aNeighbourLink.LastNode();
             }
 
-            gp_Vec2d aCurLinkDir = new(GetVertex(anOtherNode).Coord() - thePivotVertex.Coord());
+            Vector2D aCurLinkDir = new(GetVertex(anOtherNode).Coord() - thePivotVertex.Coord());
 
             if (aCurLinkDir.SquareMagnitude() < Precision2)
             {
@@ -1358,7 +1363,7 @@ public sealed class BRepMesh_Delaun
             bool isCheckPointOnEdge = true;
             if (isFrontier)
             {
-                if (Math.Abs(Math.Abs(anAngle) - M_PI) < Occt.Precision.Angular())
+                if (Math.Abs(Math.Abs(anAngle) - M_PI) < Kerf.Engine.Foundation.Precision.Angular())
                 {
                     // Glued constrains - don't check intersection
                     isCheckPointOnEdge = false;
@@ -1373,7 +1378,7 @@ public sealed class BRepMesh_Delaun
 
             bool isCheckEndPoints = (anOtherNode != theFirstNode);
 
-            Bnd_B2d aBox = new();
+            B2d aBox = new();
             bool isNotIntersect = checkIntersection(aNeighbourLink,
                                                     thePolygon,
                                                     theBoxes,
@@ -1400,11 +1405,11 @@ public sealed class BRepMesh_Delaun
 
     private bool checkIntersection(in BRepMesh_Edge theLink,
                                    NCollection_Sequence<int> thePolygon,
-                                   NCollection_Sequence<Bnd_B2d> thePolyBoxes,
+                                   NCollection_Sequence<B2d> thePolyBoxes,
                                    bool isConsiderEndPointTouch,
                                    bool isConsiderPointOnEdge,
                                    bool isSkipLastEdge,
-                                   ref Bnd_B2d theLinkBndBox)
+                                   ref B2d theLinkBndBox)
     {
         UpdateBndBox(GetVertex(theLink.FirstNode()).Coord(),
                      GetVertex(theLink.LastNode()).Coord(),
@@ -1433,7 +1438,7 @@ public sealed class BRepMesh_Delaun
                     continue;
                 }
 
-                gp_Pnt2d anIntPnt = new();
+                Point2D anIntPnt = new();
                 BRepMesh_GeomTool.IntFlag aIntFlag =
                     intSegSeg(theLink, aPolyLink, isConsiderEndPointTouch, isConsiderPointOnEdge, ref anIntPnt);
 
@@ -1468,7 +1473,7 @@ public sealed class BRepMesh_Delaun
         }
     }
 
-    private void cleanupPolygon(NCollection_Sequence<int> thePolygon, NCollection_Sequence<Bnd_B2d> thePolyBoxes)
+    private void cleanupPolygon(NCollection_Sequence<int> thePolygon, NCollection_Sequence<B2d> thePolyBoxes)
     {
         int aPolyLen = thePolygon.Length();
         if (aPolyLen < 3)
@@ -1595,7 +1600,7 @@ public sealed class BRepMesh_Delaun
                                            NCollection_DynamicArray<int> thePolyVertices,
                                            NCollection_PackedMapOfInteger thePolyVerticesFindMap,
                                            NCollection_Sequence<int> thePolygon,
-                                           NCollection_Sequence<Bnd_B2d> thePolyBoxes,
+                                           NCollection_Sequence<B2d> thePolyBoxes,
                                            NCollection_PackedMapOfInteger theSurvivedLinks,
                                            NCollection_IntDataMap<bool> theLoopEdges,
                                            NCollection_DynamicArray<int> theVictimNodes)
@@ -1617,7 +1622,7 @@ public sealed class BRepMesh_Delaun
             {
                 // Though, if it lies onto the polygon boundary -
                 // take its triangles
-                Bnd_B2d aBox = new();
+                B2d aBox = new();
                 bool isNotIntersect =
                     checkIntersection(aNeighborLink, thePolygon, thePolyBoxes, false, true, false, ref aBox);
 
@@ -1675,10 +1680,10 @@ public sealed class BRepMesh_Delaun
             return false;
         }
 
-        gp_XY aCenterPointXY = GetVertex(theVertexId).Coord();
+        Xy aCenterPointXY = GetVertex(theVertexId).Coord();
 
         BRepMesh_Vertex aFirstVertex = GetVertex(thePolygonVertices[0]);
-        gp_Vec2d aPrevVertexDir = new(aFirstVertex.Coord() - aCenterPointXY);
+        Vector2D aPrevVertexDir = new(aFirstVertex.Coord() - aCenterPointXY);
         if (aPrevVertexDir.SquareMagnitude() < Precision2)
         {
             return true;
@@ -1689,7 +1694,7 @@ public sealed class BRepMesh_Delaun
         {
             BRepMesh_Vertex aPolyVertex = GetVertex(thePolygonVertices[aPolyIt]);
 
-            gp_Vec2d aCurVertexDir = new(aPolyVertex.Coord() - aCenterPointXY);
+            Vector2D aCurVertexDir = new(aPolyVertex.Coord() - aCenterPointXY);
             if (aCurVertexDir.SquareMagnitude() < Precision2)
             {
                 return true;
@@ -1699,14 +1704,14 @@ public sealed class BRepMesh_Delaun
             aPrevVertexDir = aCurVertexDir;
         }
 
-        return Math.Abs(Math.Abs(aTotalAng) - Angle2PI) <= Occt.Precision.Angular();
+        return Math.Abs(Math.Abs(aTotalAng) - Angle2PI) <= Kerf.Engine.Foundation.Precision.Angular();
     }
 
     private void killTrianglesOnIntersectingLinks(int theLinkToCheckId,
                                                   in BRepMesh_Edge theLinkToCheck,
                                                   int theEndPoint,
                                                   NCollection_Sequence<int> thePolygon,
-                                                  NCollection_Sequence<Bnd_B2d> thePolyBoxes,
+                                                  NCollection_Sequence<B2d> thePolyBoxes,
                                                   NCollection_PackedMapOfInteger theSurvivedLinks,
                                                   NCollection_IntDataMap<bool> theLoopEdges)
     {
@@ -1715,7 +1720,7 @@ public sealed class BRepMesh_Delaun
             return;
         }
 
-        Bnd_B2d aBox = new();
+        B2d aBox = new();
         bool isNotIntersect =
             checkIntersection(theLinkToCheck, thePolygon, thePolyBoxes, false, false, false, ref aBox);
 
@@ -1785,7 +1790,7 @@ public sealed class BRepMesh_Delaun
     private void processLoop(int theLinkFrom,
                              int theLinkTo,
                              NCollection_Sequence<int> thePolygon,
-                             NCollection_Sequence<Bnd_B2d> thePolyBoxes)
+                             NCollection_Sequence<B2d> thePolyBoxes)
     {
         int aNbOfLinksInLoop = theLinkTo - theLinkFrom - 1;
         if (aNbOfLinksInLoop < 3)
@@ -1794,7 +1799,7 @@ public sealed class BRepMesh_Delaun
         }
 
         NCollection_Sequence<int> aPolygon = new();
-        NCollection_Sequence<Bnd_B2d> aPolyBoxes = new();
+        NCollection_Sequence<B2d> aPolyBoxes = new();
         for (; aNbOfLinksInLoop > 0; --aNbOfLinksInLoop)
         {
             int aLoopLinkIndex = theLinkFrom + aNbOfLinksInLoop;
@@ -1806,15 +1811,15 @@ public sealed class BRepMesh_Delaun
     }
 
     private int createAndReplacePolygonLink(ReadOnlySpan<int> theNodes,
-                                            ReadOnlySpan<gp_Pnt2d> thePnts,
+                                            ReadOnlySpan<Point2D> thePnts,
                                             int theRootIndex,
                                             ReplaceFlag theReplaceFlag,
                                             NCollection_Sequence<int> thePolygon,
-                                            NCollection_Sequence<Bnd_B2d> thePolyBoxes)
+                                            NCollection_Sequence<B2d> thePolyBoxes)
     {
         int aNewEdgeId = myMeshData!.AddLink(new BRepMesh_Edge(theNodes[0], theNodes[1], BRepMesh_Free));
 
-        Bnd_B2d aNewBox = new();
+        B2d aNewBox = new();
         UpdateBndBox(thePnts[0].Coord(), thePnts[1].Coord(), ref aNewBox);
 
         switch (theReplaceFlag)
@@ -1851,7 +1856,7 @@ public sealed class BRepMesh_Delaun
     }
 
     private void meshPolygon(NCollection_Sequence<int> thePolygon,
-                             NCollection_Sequence<Bnd_B2d> thePolyBoxes,
+                             NCollection_Sequence<B2d> thePolyBoxes,
                              NCollection_PackedMapOfInteger? theSkipped = null)
     {
         // Check is the source polygon elementary
@@ -1865,13 +1870,13 @@ public sealed class BRepMesh_Delaun
         double aPolyArea = Math.Abs(polyArea(thePolygon, 1, aPolyLen));
         double aSmallLoopArea = 0.001 * aPolyArea;
         Span<int> aCurNodes = stackalloc int[2];
-        Span<gp_Pnt2d> aCurPnts = stackalloc gp_Pnt2d[2];
+        Span<Point2D> aCurPnts = stackalloc Point2D[2];
         Span<int> aNextNodes = stackalloc int[2];
-        Span<gp_Pnt2d> aNextPnts = stackalloc gp_Pnt2d[2];
+        Span<Point2D> aNextPnts = stackalloc Point2D[2];
         Span<int> aSplitLink = stackalloc int[3];
-        Span<gp_Pnt2d> aSplitPnts = stackalloc gp_Pnt2d[3];
+        Span<Point2D> aSplitPnts = stackalloc Point2D[3];
         Span<int> aSplitLinkNodes = stackalloc int[2];
-        Span<gp_Pnt2d> aSplitLinkPnts = stackalloc gp_Pnt2d[2];
+        Span<Point2D> aSplitLinkPnts = stackalloc Point2D[2];
         for (int aPolyIt = 1; aPolyIt < aPolyLen; ++aPolyIt)
         {
             int aCurEdgeInfo = thePolygon[aPolyIt];
@@ -1884,10 +1889,10 @@ public sealed class BRepMesh_Delaun
 
             getOrientedNodes(aCurEdge, aCurEdgeInfo > 0, aCurNodes);
 
-            aCurPnts[0] = new gp_Pnt2d(GetVertex(aCurNodes[0]).Coord());
-            aCurPnts[1] = new gp_Pnt2d(GetVertex(aCurNodes[1]).Coord());
+            aCurPnts[0] = new Point2D(GetVertex(aCurNodes[0]).Coord());
+            aCurPnts[1] = new Point2D(GetVertex(aCurNodes[1]).Coord());
 
-            gp_Vec2d aCurVec = new(aCurPnts[0], aCurPnts[1]);
+            Vector2D aCurVec = new(aCurPnts[0], aCurPnts[1]);
 
             // check further links
             int aNextPolyIt = aPolyIt + 1;
@@ -1903,10 +1908,10 @@ public sealed class BRepMesh_Delaun
 
                 getOrientedNodes(aNextEdge, aNextEdgeInfo > 0, aNextNodes);
 
-                aNextPnts[0] = new gp_Pnt2d(GetVertex(aNextNodes[0]).Coord());
-                aNextPnts[1] = new gp_Pnt2d(GetVertex(aNextNodes[1]).Coord());
+                aNextPnts[0] = new Point2D(GetVertex(aNextNodes[0]).Coord());
+                aNextPnts[1] = new Point2D(GetVertex(aNextNodes[1]).Coord());
 
-                gp_Pnt2d anIntPnt = new();
+                Point2D anIntPnt = new();
                 BRepMesh_GeomTool.IntFlag aIntFlag = intSegSeg(aCurEdge, aNextEdge, false, true, ref anIntPnt);
 
                 if (aIntFlag == NoIntersection)
@@ -1920,8 +1925,8 @@ public sealed class BRepMesh_Delaun
                 if (aIntFlag == Cross)
                 {
                     double aLoopArea = polyArea(thePolygon, aPolyIt + 1, aNextPolyIt);
-                    gp_Vec2d aVec1 = new(anIntPnt, aCurPnts[1]);
-                    gp_Vec2d aVec2 = new(anIntPnt, aNextPnts[0]);
+                    Vector2D aVec1 = new(anIntPnt, aCurPnts[1]);
+                    Vector2D aVec2 = new(anIntPnt, aNextPnts[0]);
 
                     aLoopArea += (aVec1 ^ aVec2) / 2.0;
                     if (Math.Abs(aLoopArea) > aSmallLoopArea)
@@ -1974,10 +1979,10 @@ public sealed class BRepMesh_Delaun
                     int aCheckPointIt = 0;
                     for (; aCheckPointIt < 2; ++aCheckPointIt)
                     {
-                        gp_Pnt2d aRefPoint = aCurPnts[aCheckPointIt];
+                        Point2D aRefPoint = aCurPnts[aCheckPointIt];
                         // Check is second link touches the first one
-                        gp_Vec2d aVec1 = new(aRefPoint, aNextPnts[0]);
-                        gp_Vec2d aVec2 = new(aRefPoint, aNextPnts[1]);
+                        Vector2D aVec1 = new(aRefPoint, aNextPnts[0]);
+                        Vector2D aVec2 = new(aRefPoint, aNextPnts[1]);
                         if (Math.Abs(aVec1 ^ aVec2) < Precision)
                         {
                             isFirstChopping = true;
@@ -2067,7 +2072,7 @@ public sealed class BRepMesh_Delaun
                                                                       thePolyBoxes));
 
                     aCurEdge = GetEdge(aCurEdgeId);
-                    aCurVec = new gp_Vec2d(aCurPnts[0], aCurPnts[1]);
+                    aCurVec = new Vector2D(aCurPnts[0], aCurPnts[1]);
                 }
 
                 int aIndexToRemoveFrom = isRemoveFromFirst ? aPolyIt : aPolyIt + 1;
@@ -2089,13 +2094,13 @@ public sealed class BRepMesh_Delaun
         }
 
         NCollection_Sequence<int> aPolygon1 = thePolygon;
-        NCollection_Sequence<Bnd_B2d> aPolyBoxes1 = thePolyBoxes;
+        NCollection_Sequence<B2d> aPolyBoxes1 = thePolyBoxes;
 
         NCollection_Sequence<int> aPolygon2 = new();
-        NCollection_Sequence<Bnd_B2d> aPolyBoxes2 = new();
+        NCollection_Sequence<B2d> aPolyBoxes2 = new();
 
         NCollection_Sequence<NCollection_Sequence<int>> aPolyStack = new();
-        NCollection_Sequence<NCollection_Sequence<Bnd_B2d>> aPolyBoxStack = new();
+        NCollection_Sequence<NCollection_Sequence<B2d>> aPolyBoxStack = new();
         for (;;)
         {
             decomposeSimplePolygon(aPolygon1, aPolyBoxes1, aPolygon2, aPolyBoxes2);
@@ -2105,7 +2110,7 @@ public sealed class BRepMesh_Delaun
                 aPolyBoxStack.Append(aPolyBoxes2);
 
                 aPolygon2 = new NCollection_Sequence<int>();
-                aPolyBoxes2 = new NCollection_Sequence<Bnd_B2d>();
+                aPolyBoxes2 = new NCollection_Sequence<B2d>();
             }
 
             if (aPolygon1.IsEmpty())
@@ -2164,9 +2169,9 @@ public sealed class BRepMesh_Delaun
     }
 
     private void decomposeSimplePolygon(NCollection_Sequence<int> thePolygon,
-                                        NCollection_Sequence<Bnd_B2d> thePolyBoxes,
+                                        NCollection_Sequence<B2d> thePolyBoxes,
                                         NCollection_Sequence<int> thePolygonCut,
-                                        NCollection_Sequence<Bnd_B2d> thePolyBoxesCut)
+                                        NCollection_Sequence<B2d> thePolyBoxesCut)
     {
         // Check is the given polygon elementary
         if (meshElementaryPolygon(thePolygon))
@@ -2183,11 +2188,11 @@ public sealed class BRepMesh_Delaun
         Span<int> aNodes = stackalloc int[3];
         getOrientedNodes(aFirstEdge, aFirstEdgeInfo > 0, aNodes);
 
-        Span<gp_Pnt2d> aRefVertices = stackalloc gp_Pnt2d[3];
-        aRefVertices[0] = new gp_Pnt2d(GetVertex(aNodes[0]).Coord());
-        aRefVertices[1] = new gp_Pnt2d(GetVertex(aNodes[1]).Coord());
+        Span<Point2D> aRefVertices = stackalloc Point2D[3];
+        aRefVertices[0] = new Point2D(GetVertex(aNodes[0]).Coord());
+        aRefVertices[1] = new Point2D(GetVertex(aNodes[1]).Coord());
 
-        gp_Vec2d aRefEdgeDir = new(aRefVertices[0], aRefVertices[1]);
+        Vector2D aRefEdgeDir = new(aRefVertices[0], aRefVertices[1]);
 
         double aRefEdgeLen = aRefEdgeDir.Magnitude();
         if (aRefEdgeLen < Precision)
@@ -2219,8 +2224,8 @@ public sealed class BRepMesh_Delaun
                 continue;
             }
 
-            gp_Pnt2d aPivotVertex = new(GetVertex(aPivotNode).Coord());
-            gp_Vec2d aDistanceDir = new(aRefVertices[1], aPivotVertex);
+            Point2D aPivotVertex = new(GetVertex(aPivotNode).Coord());
+            Vector2D aDistanceDir = new(aRefVertices[1], aPivotVertex);
 
             double aDist = aRefEdgeDir ^ aDistanceDir;
             double aAngle = Math.Abs(aRefEdgeDir.Angle(aDistanceDir));
@@ -2240,9 +2245,9 @@ public sealed class BRepMesh_Delaun
             for (int aRefLinkNodeIt = 0; aRefLinkNodeIt < 2; ++aRefLinkNodeIt)
             {
                 int aLinkFirstNode = aNodes[aRefLinkNodeIt];
-                gp_Pnt2d aLinkFirstVertex = aRefVertices[aRefLinkNodeIt];
+                Point2D aLinkFirstVertex = aRefVertices[aRefLinkNodeIt];
 
-                Bnd_B2d aBox = new();
+                B2d aBox = new();
                 UpdateBndBox(aLinkFirstVertex.Coord(), aPivotVertex.Coord(), ref aBox);
 
                 BRepMesh_Edge aCheckLink = new(aLinkFirstNode, aPivotNode, BRepMesh_Free);
@@ -2265,7 +2270,7 @@ public sealed class BRepMesh_Delaun
                         }
 
                         // intersection is possible...
-                        gp_Pnt2d anIntPnt = new();
+                        Point2D anIntPnt = new();
                         BRepMesh_GeomTool.IntFlag aIntFlag =
                             intSegSeg(aCheckLink, aPolyLink, false, false, ref anIntPnt);
 
@@ -2328,7 +2333,7 @@ public sealed class BRepMesh_Delaun
 
             thePolygon.SetValue(1, -aNewEdgesInfo[2]);
 
-            Bnd_B2d aBox = new();
+            B2d aBox = new();
             UpdateBndBox(aRefVertices[0].Coord(), aRefVertices[2].Coord(), ref aBox);
             thePolyBoxes.SetValue(1, aBox);
         }
@@ -2343,7 +2348,7 @@ public sealed class BRepMesh_Delaun
                 thePolygonCut.Prepend(-aNewEdgesInfo[2]);
                 thePolyBoxes.Split(aUsedLinkId, thePolyBoxesCut);
 
-                Bnd_B2d aCutBox = new();
+                B2d aCutBox = new();
                 UpdateBndBox(aRefVertices[0].Coord(), aRefVertices[2].Coord(), ref aCutBox);
                 thePolyBoxesCut.Prepend(aCutBox);
             }
@@ -2355,14 +2360,14 @@ public sealed class BRepMesh_Delaun
 
             thePolygon.SetValue(1, -aNewEdgesInfo[1]);
 
-            Bnd_B2d aBox = new();
+            B2d aBox = new();
             UpdateBndBox(aRefVertices[1].Coord(), aRefVertices[2].Coord(), ref aBox);
             thePolyBoxes.SetValue(1, aBox);
         }
     }
 
-    private double calculateDist(ReadOnlySpan<gp_XY> theVEdges,
-                                 ReadOnlySpan<gp_XY> thePoints,
+    private double calculateDist(ReadOnlySpan<Xy> theVEdges,
+                                 ReadOnlySpan<Xy> thePoints,
                                  in BRepMesh_Vertex theVertex,
                                  Span<double> theDistance,
                                  Span<double> theSqModulus,
@@ -2396,9 +2401,9 @@ public sealed class BRepMesh_Delaun
                                                 in BRepMesh_Edge theEdg2,
                                                 bool isConsiderEndPointTouch,
                                                 bool isConsiderPointOnEdge,
-                                                ref gp_Pnt2d theIntPnt)
+                                                ref Point2D theIntPnt)
     {
-        gp_XY p1, p2, p3, p4;
+        Xy p1, p2, p3, p4;
         p1 = GetVertex(theEdg1.FirstNode()).Coord();
         p2 = GetVertex(theEdg1.LastNode()).Coord();
         p3 = GetVertex(theEdg2.FirstNode()).Coord();
@@ -2429,7 +2434,7 @@ public sealed class BRepMesh_Delaun
         Span<int> aNodes = stackalloc int[2];
         getOrientedNodes(aCurEdge, aCurEdgeInfo > 0, aNodes);
 
-        gp_Pnt2d aRefPnt = new(GetVertex(aNodes[0]).Coord());
+        Point2D aRefPnt = new(GetVertex(aNodes[0]).Coord());
         int aPolyIt = theStartIndex + 1;
         for (; aPolyIt <= theEndIndex; ++aPolyIt)
         {
@@ -2438,8 +2443,8 @@ public sealed class BRepMesh_Delaun
             aCurEdge = GetEdge(aCurEdgeId);
 
             getOrientedNodes(aCurEdge, aCurEdgeInfo > 0, aNodes);
-            gp_Vec2d aVec1 = new(aRefPnt, new gp_Pnt2d(GetVertex(aNodes[0]).Coord()));
-            gp_Vec2d aVec2 = new(aRefPnt, new gp_Pnt2d(GetVertex(aNodes[1]).Coord()));
+            Vector2D aVec1 = new(aRefPnt, new Point2D(GetVertex(aNodes[0]).Coord()));
+            Vector2D aVec2 = new(aRefPnt, new Point2D(GetVertex(aNodes[1]).Coord()));
 
             aArea += aVec1 ^ aVec2;
         }

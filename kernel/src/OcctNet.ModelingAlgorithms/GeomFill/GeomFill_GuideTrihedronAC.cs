@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -32,25 +34,25 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         myTrimG = guide;
         myGuideAC = new Approx_CurvlinFunc(myGuide, 1.0e-7);
         Lguide = myGuideAC.GetLength();
-        UTol = STol = Precision.PConfusion();
+        UTol = STol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         Orig1 = 0; // origines pour le cas path multi-edges
         Orig2 = 1;
     }
 
     public override Adaptor3d_Curve Guide() => myGuide!;
 
-    public override bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
         double s = myCurveAC!.GetSParameter(Param); // abscisse curviligne <=> Param
         double OrigG = Orig1 + s * (Orig2 - Orig1); // abscisse curv sur le guide (cas multi-edges)
         double tG = myGuideAC.GetUParameter(myGuide!, OrigG, 1); // param <=> s sur theGuide
 
-        gp_Vec B;
-        myTrimmed!.D1(Param, out gp_Pnt P, out gp_Vec To); // point et derivee au parametre Param sur myCurve
-        myTrimG!.D0(tG, out gp_Pnt PG); // point au parametre tG sur myGuide
+        Vector3D B;
+        myTrimmed!.D1(Param, out Point3D P, out Vector3D To); // point et derivee au parametre Param sur myCurve
+        myTrimG!.D0(tG, out Point3D PG); // point au parametre tG sur myGuide
         myCurPointOnGuide = PG;
 
-        gp_Vec n = new gp_Vec(P, PG); // vecteur definissant la normale
+        Vector3D n = new Vector3D(P, PG); // vecteur definissant la normale
 
         // OCCT TODO: finding #8 - no zero-magnitude guard before Normalized()/Magnitude().
         Normal = n.Normalized();
@@ -62,8 +64,8 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         // triedre
         double s, OrigG, tG, dtg;
@@ -74,13 +76,13 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         // parametre <=> s sur  theGuide
         tG = myGuideAC.GetUParameter(myGuide!, OrigG, 1);
 
-        gp_Vec B, BPrim;
+        Vector3D B, BPrim;
 
-        myTrimmed!.D2(Param, out gp_Pnt P, out gp_Vec To, out gp_Vec DTo);
-        myTrimG!.D1(tG, out gp_Pnt PG, out gp_Vec TG);
+        myTrimmed!.D2(Param, out Point3D P, out Vector3D To, out Vector3D DTo);
+        myTrimG!.D1(tG, out Point3D PG, out Vector3D TG);
         myCurPointOnGuide = PG;
 
-        gp_Vec n = new gp_Vec(P, PG), dn = new gp_Vec();
+        Vector3D n = new Vector3D(P, PG), dn = new Vector3D();
         double Norm = n.Magnitude();
         if (Norm < 1.0e-12)
         {
@@ -107,7 +109,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         // derivee premiere
         DNormal.SetLinearForm(-(n.Dot(dn)), n, dn);
 
-        BPrim = new gp_Vec();
+        BPrim = new Vector3D();
         BPrim.SetLinearForm(DTo.Crossed(Normal), To.Crossed(DNormal));
 
         DBiNormal.SetLinearForm(-(B.Dot(BPrim)), B, BPrim);
@@ -118,9 +120,9 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         return true;
     }
 
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
         // abscisse curviligne <=> Param
         double s = myCurveAC!.GetSParameter(Param);
@@ -128,8 +130,8 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         double OrigG = Orig1 + s * (Orig2 - Orig1);
         double tG = myGuideAC.GetUParameter(myGuide!, OrigG, 1);
 
-        myTrimmed!.D3(Param, out gp_Pnt P, out gp_Vec To, out gp_Vec DTo, out gp_Vec D2To);
-        myTrimG!.D2(tG, out gp_Pnt PG, out gp_Vec TG, out gp_Vec DTG);
+        myTrimmed!.D3(Param, out Point3D P, out Vector3D To, out Vector3D DTo, out Vector3D D2To);
+        myTrimG!.D2(tG, out Point3D PG, out Vector3D TG, out Vector3D DTG);
         myCurPointOnGuide = PG;
 
         double NTo = To.Magnitude();
@@ -139,10 +141,10 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         double d2tp_dt2, dtg_dt;
         dtg_dt = (Orig2 - Orig1) * (NTo / NTG) * (Lguide / L);
 
-        gp_Vec n = new gp_Vec(P, PG); // vecteur definissant la normale
+        Vector3D n = new Vector3D(P, PG); // vecteur definissant la normale
         double Norm = n.Magnitude(), ndn;
         // derivee de n par rapport a Param
-        gp_Vec dn = new gp_Vec(), d2n = new gp_Vec();
+        Vector3D dn = new Vector3D(), d2n = new Vector3D();
         dn.SetLinearForm(dtg_dt, TG, -1, To);
 
         // derivee seconde de tG par rapport a Param
@@ -161,7 +163,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         // triedre
         Normal = n;
 
-        gp_Vec TN, DTN = new gp_Vec(), D2TN = new gp_Vec();
+        Vector3D TN, DTN = new Vector3D(), D2TN = new Vector3D();
         TN = To.Crossed(Normal);
 
         double Norma = TN.Magnitude();
@@ -225,7 +227,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         return true;
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int Nb;
         Nb = myCurveAC!.NbIntervals(S);
@@ -241,7 +243,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         return Seq.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> TT, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> TT, Continuity S)
     {
         int Nb, ii;
         Nb = myCurveAC!.NbIntervals(S);
@@ -276,7 +278,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         myTrimG = myGuide!.Trim(Sf, Sl, UTol);
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         int ii;
         double t, Delta = (myCurve!.LastParameter() - myCurve.FirstParameter()) / 20.001;
@@ -284,7 +286,7 @@ public class GeomFill_GuideTrihedronAC : GeomFill_TrihedronWithGuide
         ATangent.SetCoord(0.0, 0.0, 0.0);
         ANormal.SetCoord(0.0, 0.0, 0.0);
         ABiNormal.SetCoord(0.0, 0.0, 0.0);
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
 
         for (ii = 1; ii <= 20; ii++)
         {

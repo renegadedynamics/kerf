@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>IntAna2d's private tools (free functions and a class of IntAna2d_Outils.hxx).</summary>
@@ -46,12 +50,12 @@ internal static class IntAna2d_Outils
             }
 
             double tol = Epsilon(100.0);
-            math_DirectPolynomialRoots MATH_A43210 = new(A4, A3, A2, A1, A0);
+            DirectPolynomialRoots MATH_A43210 = new(A4, A3, A2, A1, A0);
             bool PbPossible = false;
             int NbsolPolyComplet = 0;
-            if (MATH_A43210.IsDone())
+            if (MATH_A43210.IsDone)
             {
-                nbp = MATH_A43210.NbSolutions();
+                nbp = MATH_A43210.SolutionCount;
                 NbsolPolyComplet = nbp;
                 for (i = 1; i <= nbp; i++)
                 {
@@ -89,10 +93,10 @@ internal static class IntAna2d_Outils
 
                 anEps = Min(1.0e-4, Epsilon(1000.0 * anAMax / anAMin));
                 //  Modified by Sergey KHROMOV - Thu Oct 24 15:46:24 2002 End
-                math_DirectPolynomialRoots MATH_A4321 = new(A4, A3, A2, A1);
-                if (MATH_A4321.IsDone())
+                DirectPolynomialRoots MATH_A4321 = new(A4, A3, A2, A1);
+                if (MATH_A4321.IsDone)
                 {
-                    nbp = MATH_A4321.NbSolutions();
+                    nbp = MATH_A4321.SolutionCount;
                     //-- Add the values to the array
                     for (i = 1; i <= nbp; i++)
                     {
@@ -114,10 +118,10 @@ internal static class IntAna2d_Outils
                         }
                     }
                 }
-                math_DirectPolynomialRoots MATH_A3210 = new(A3, A2, A1, A0);
-                if (MATH_A3210.IsDone())
+                DirectPolynomialRoots MATH_A3210 = new(A3, A2, A1, A0);
+                if (MATH_A3210.IsDone)
                 {
-                    nbp = MATH_A3210.NbSolutions();
+                    nbp = MATH_A3210.SolutionCount;
                     //-- Add the values to the array
                     for (i = 1; i <= nbp; i++)
                     {
@@ -140,10 +144,10 @@ internal static class IntAna2d_Outils
                     }
                 }
                 // OCCT: named A210 but solves A3 x^2 + A2 x + A1 (probably meant A2, A1, A0)
-                math_DirectPolynomialRoots MATH_A210 = new(A3, A2, A1);
-                if (MATH_A210.IsDone())
+                DirectPolynomialRoots MATH_A210 = new(A3, A2, A1);
+                if (MATH_A210.IsDone)
                 {
-                    nbp = MATH_A210.NbSolutions();
+                    nbp = MATH_A210.SolutionCount;
                     //-- Add the values to the array
                     for (i = 1; i <= nbp; i++)
                     {
@@ -218,11 +222,11 @@ internal static class IntAna2d_Outils
                 same = true;
                 return;
             }
-            math_DirectPolynomialRoots MATH_A210 = new(A2, A1, A0);
+            DirectPolynomialRoots MATH_A210 = new(A2, A1, A0);
             same = false;
-            if (MATH_A210.IsDone())
+            if (MATH_A210.IsDone)
             {
-                for (int i = 1; i <= MATH_A210.NbSolutions(); i++)
+                for (int i = 1; i <= MATH_A210.SolutionCount; i++)
                 {
                     double x = MATH_A210.Value(i);
                     val[nbsol] = A0 + x * (A1 + x * A2);
@@ -295,7 +299,7 @@ internal static class IntAna2d_Outils
     /// <summary>
     /// Converts x1, y1, coordinates in the system of <paramref name="Dir1"/>, into the "absolute" coordinate system.
     /// </summary>
-    internal static void Coord_Ancien_Repere(ref double x1, ref double y1, in gp_Ax2d Dir1)
+    internal static void Coord_Ancien_Repere(ref double x1, ref double y1, in Axis2D Dir1)
     {
         double t11, t12, t21, t22, t13, t23;
         double x0, y0;

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's Geom2dHatch_Intersector GTest (the suite is named after the class, hence the suffix).</summary>
@@ -11,13 +13,13 @@ public class Geom2dHatch_IntersectorTest
     [Fact]
     public void LocalGeometry_Circle_ValidOutputs()
     {
-        gp_Ax2d anAxis = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0));
+        Axis2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Geom2d_Circle aCircle = new(anAxis, 1.0);
         Geom2dAdaptor_Curve aCurveAdaptor = new(aCircle);
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 
-        anIntersector.LocalGeometry(aCurveAdaptor, 0.0, out gp_Dir2d aTang, out gp_Dir2d _, out double aCurv);
+        anIntersector.LocalGeometry(aCurveAdaptor, 0.0, out Direction2D aTang, out Direction2D _, out double aCurv);
 
         // Circle tangent at param=0 is (0,1), normal is (-1,0), curvature is 1.0.
         Assert.Equal(0.0, aTang.X(), 1.0e-10);
@@ -29,13 +31,13 @@ public class Geom2dHatch_IntersectorTest
     [Fact]
     public void LocalGeometry_Line_ZeroCurvature()
     {
-        gp_Ax2d anAxis = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0));
+        Axis2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Geom2d_Line aLine = new(anAxis);
         Geom2dAdaptor_Curve aCurveAdaptor = new(aLine);
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 
-        anIntersector.LocalGeometry(aCurveAdaptor, 0.5, out gp_Dir2d aTang, out gp_Dir2d aNorm, out double aCurv);
+        anIntersector.LocalGeometry(aCurveAdaptor, 0.5, out Direction2D aTang, out Direction2D aNorm, out double aCurv);
 
         Assert.Equal(1.0, aTang.X(), 1.0e-10);
         Assert.Equal(0.0, aTang.Y(), 1.0e-10);
@@ -52,11 +54,11 @@ public class Geom2dHatch_IntersectorTest
     {
         // Construct a degenerate BSpline where all control points coincide,
         // causing IsTangentDefined() to return false.
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt2d(1.0, 1.0);
-        aPoles[2] = new gp_Pnt2d(1.0, 1.0);
-        aPoles[3] = new gp_Pnt2d(1.0, 1.0);
-        aPoles[4] = new gp_Pnt2d(1.0, 1.0);
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles[1] = new Point2D(1.0, 1.0);
+        aPoles[2] = new Point2D(1.0, 1.0);
+        aPoles[3] = new Point2D(1.0, 1.0);
+        aPoles[4] = new Point2D(1.0, 1.0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -71,7 +73,7 @@ public class Geom2dHatch_IntersectorTest
 
         Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
 
-        gp_Dir2d aTang = new(), aNorm = new();
+        Direction2D aTang = new(), aNorm = new();
         double aCurv = -999.0;
 
         // Must not crash and must produce initialized outputs.

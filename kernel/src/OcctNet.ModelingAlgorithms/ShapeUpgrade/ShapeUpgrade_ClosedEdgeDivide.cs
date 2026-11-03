@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -27,7 +29,7 @@ public class ShapeUpgrade_ClosedEdgeDivide : ShapeUpgrade_EdgeDivide
         if (V1.IsSame(V2) && !BRep_Tool.Degenerated(anEdge))
         {
             const int nbPoints = 23;
-            gp_Pnt pntV = BRep_Tool.Pnt(V1);
+            Point3D pntV = BRep_Tool.Pnt(V1);
             double TolV1 = LimitTolerance(BRep_Tool.Tolerance(V1));
             TolV1 = TolV1 * TolV1;
             Geom_Curve? curve3d = BRep_Tool.Curve(anEdge, out double f, out double l);
@@ -47,7 +49,7 @@ public class ShapeUpgrade_ClosedEdgeDivide : ShapeUpgrade_EdgeDivide
                 double param = f + step;
                 for (int i = 1; i < 23; i++, param += step)
                 {
-                    gp_Pnt curPnt = curve3d!.Value(param);
+                    Point3D curPnt = curve3d!.Value(param);
                     double dist = pntV.SquareDistance(curPnt);
                     if (dist > dMax)
                     {
@@ -88,8 +90,8 @@ public class ShapeUpgrade_ClosedEdgeDivide : ShapeUpgrade_EdgeDivide
                 double param = f2d + step;
                 for (int i = 1; i < 23; i++, param += step)
                 {
-                    gp_Pnt2d p2d = pcurve1!.Value(param);
-                    gp_Pnt curPnt = surf.Value(p2d.X(), p2d.Y());
+                    Point2D p2d = pcurve1!.Value(param);
+                    Point3D curPnt = surf.Value(p2d.X(), p2d.Y());
                     double dist = pntV.SquareDistance(curPnt);
                     if (dist > dMax)
                     {

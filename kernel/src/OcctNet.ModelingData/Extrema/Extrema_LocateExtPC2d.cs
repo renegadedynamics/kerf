@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -30,7 +32,7 @@ public class Extrema_LocateExtPC2d
     private double mytol;
     private readonly Extrema_LocEPCOfLocateExtPC2d myLocExtPC = new();
     private readonly Extrema_ExtPC2d myExtremPC = new();
-    private GeomAbs_CurveType type;
+    private CurveKind type;
     private int numberext;
 
     public Extrema_LocateExtPC2d()
@@ -42,19 +44,19 @@ public class Extrema_LocateExtPC2d
         myumin = 0.0;
         myusup = 0.0;
         mytol = 0.0;
-        type = GeomAbs_OtherCurve;
+        type = OtherCurve;
         numberext = 0;
     }
 
     /// <summary>The extremum between theP and theC nearest theU0, on the curve's whole range.</summary>
-    public Extrema_LocateExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, double theU0, double theTolF)
+    public Extrema_LocateExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, double theU0, double theTolF)
     {
         Initialize(theC, Extrema_Curve2dTool.FirstParameter(theC), Extrema_Curve2dTool.LastParameter(theC), theTolF);
         Perform(theP, theU0);
     }
 
     /// <summary>The extremum between theP and theC nearest theU0, on [theUmin, theUsup].</summary>
-    public Extrema_LocateExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, double theU0, double theUmin, double theUsup,
+    public Extrema_LocateExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, double theU0, double theUmin, double theUsup,
         double theTolF)
     {
         Initialize(theC, theUmin, theUsup, theTolF);
@@ -69,9 +71,9 @@ public class Extrema_LocateExtPC2d
         myumin = theUmin;
         myusup = theUsup;
         type = Extrema_Curve2dTool.GetType(theC);
-        double tolu = Extrema_Curve2dTool.Resolution(theC, Precision.Confusion());
-        if ((type == GeomAbs_BSplineCurve) || (type == GeomAbs_BezierCurve)
-            || (type == GeomAbs_OffsetCurve) || (type == GeomAbs_OtherCurve))
+        double tolu = Extrema_Curve2dTool.Resolution(theC, global::Kerf.Engine.Foundation.Precision.Confusion());
+        if ((type == BSplineCurve) || (type == BezierCurve)
+            || (type == OffsetCurve) || (type == OtherCurve))
         {
             myLocExtPC.Initialize(theC, theUmin, theUsup, tolu);
         }
@@ -82,7 +84,7 @@ public class Extrema_LocateExtPC2d
     }
 
     /// <summary>Searches the extremum for theP nearest the parameter theU0.</summary>
-    public void Perform(in gp_Pnt2d theP, double theU0)
+    public void Perform(in Point2D theP, double theU0)
     {
         int i, i1, i2, inter;
         double Par, valU, valU2 = RealLast(), local_u0;
@@ -90,14 +92,14 @@ public class Extrema_LocateExtPC2d
         local_u0 = theU0;
         switch (type)
         {
-            case GeomAbs_OtherCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_BSplineCurve:
+            case OtherCurve:
+            case OffsetCurve:
+            case BSplineCurve:
             {
                 // Search for extremum is done interval by continuous C2 interval
-                int n = Extrema_Curve2dTool.NbIntervals(myC!, GeomAbs_C2);
+                int n = Extrema_Curve2dTool.NbIntervals(myC!, C2);
                 NCollection_Array1<double> theInter = new(1, n + 1);
-                Extrema_Curve2dTool.Intervals(myC!, theInter, GeomAbs_C2);
+                Extrema_Curve2dTool.Intervals(myC!, theInter, C2);
                 //
                 // be gentle with the caller
                 //
@@ -145,12 +147,12 @@ public class Extrema_LocateExtPC2d
                     i1 = inter;
                     i2 = inter;
                     double s1inf, s2inf, s1sup, s2sup;
-                    gp_Pnt2d P1;
-                    gp_Vec2d V1;
+                    Point2D P1;
+                    Vector2D V1;
                     Extrema_Curve2dTool.D1(myC!, myintuinf, out P1, out V1);
-                    s2inf = (new gp_Vec2d(theP, P1) * V1);
+                    s2inf = (new Vector2D(theP, P1) * V1);
                     Extrema_Curve2dTool.D1(myC!, myintusup, out P1, out V1);
-                    s1sup = (new gp_Vec2d(theP, P1) * V1);
+                    s1sup = (new Vector2D(theP, P1) * V1);
 
                     while (!myDone && (i2 > 0) && (i1 <= n))
                     {
@@ -163,8 +165,8 @@ public class Extrema_LocateExtPC2d
                             if (myintuinf < myintusup)
                             {
                                 Extrema_Curve2dTool.D1(myC!, myintuinf, out P1, out V1);
-                                s2sup = (new gp_Vec2d(theP, P1) * V1);
-                                if (Precision.IsInfinite(s2sup) || Precision.IsInfinite(s1sup))
+                                s2sup = (new Vector2D(theP, P1) * V1);
+                                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(s2sup) || global::Kerf.Engine.Foundation.Precision.IsInfinite(s1sup))
                                 {
                                     break;
                                 }
@@ -179,7 +181,7 @@ public class Extrema_LocateExtPC2d
                                 }
 
                                 Extrema_Curve2dTool.D1(myC!, myintusup, out P1, out V1);
-                                s1sup = (new gp_Vec2d(theP, P1) * V1);
+                                s1sup = (new Vector2D(theP, P1) * V1);
                                 myLocExtPC.Initialize(myC!, myintuinf, myintusup, mytol);
                                 myLocExtPC.Perform(theP, (myintuinf + myintusup) * 0.5);
                                 myDone = myLocExtPC.IsDone();
@@ -200,8 +202,8 @@ public class Extrema_LocateExtPC2d
                             if (myintuinf < myintusup)
                             {
                                 Extrema_Curve2dTool.D1(myC!, myintusup, out P1, out V1);
-                                s1inf = (new gp_Vec2d(theP, P1) * V1);
-                                if (Precision.IsInfinite(s2inf) || Precision.IsInfinite(s1inf))
+                                s1inf = (new Vector2D(theP, P1) * V1);
+                                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(s2inf) || global::Kerf.Engine.Foundation.Precision.IsInfinite(s1inf))
                                 {
                                     break;
                                 }
@@ -216,7 +218,7 @@ public class Extrema_LocateExtPC2d
                                 }
 
                                 Extrema_Curve2dTool.D1(myC!, myintuinf, out P1, out V1);
-                                s2inf = (new gp_Vec2d(theP, P1) * V1);
+                                s2inf = (new Vector2D(theP, P1) * V1);
                                 myLocExtPC.Initialize(myC!, myintuinf, myintusup, mytol);
                                 myLocExtPC.Perform(theP, (myintuinf + myintusup) * 0.5);
                                 myDone = myLocExtPC.IsDone();
@@ -238,7 +240,7 @@ public class Extrema_LocateExtPC2d
 
             break;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 myLocExtPC.Perform(theP, theU0);
                 myDone = myLocExtPC.IsDone();
@@ -278,19 +280,19 @@ public class Extrema_LocateExtPC2d
     public bool IsDone() => myDone;
 
     /// <summary>The square distance of the extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double SquareDistance()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         double d = 0;
-        if ((type == GeomAbs_BezierCurve))
+        if ((type == BezierCurve))
         {
             d = myLocExtPC.SquareDistance();
         }
-        else if (type == GeomAbs_BSplineCurve || type == GeomAbs_OffsetCurve || type == GeomAbs_OtherCurve)
+        else if (type == BSplineCurve || type == OffsetCurve || type == OtherCurve)
         {
             d = mydist2;
         }
@@ -305,19 +307,19 @@ public class Extrema_LocateExtPC2d
     }
 
     /// <summary>True if the extremum is a minimum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IsMin()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         bool b = false;
-        if ((type == GeomAbs_BezierCurve))
+        if ((type == BezierCurve))
         {
             b = myLocExtPC.IsMin();
         }
-        else if (type == GeomAbs_BSplineCurve || type == GeomAbs_OffsetCurve || type == GeomAbs_OtherCurve)
+        else if (type == BSplineCurve || type == OffsetCurve || type == OtherCurve)
         {
             b = myismin;
         }
@@ -332,18 +334,18 @@ public class Extrema_LocateExtPC2d
     }
 
     /// <summary>The point of the extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public Extrema_POnCurv2d Point()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
-        if (type == GeomAbs_BezierCurve)
+        if (type == BezierCurve)
         {
             return myLocExtPC.Point();
         }
-        else if (type == GeomAbs_BSplineCurve || type == GeomAbs_OffsetCurve || type == GeomAbs_OtherCurve)
+        else if (type == BSplineCurve || type == OffsetCurve || type == OtherCurve)
         {
             return mypp;
         }

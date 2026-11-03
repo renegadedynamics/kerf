@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
 namespace OcctNet.Foundation.Tests;
 
 // OCCT has no GTest for NCollection_CellFilter; these check the port's behaviour on 2D points.
 public class NCollection_CellFilterTest
 {
-    private sealed class PointInspector : INCollection_CellFilter_Inspector<int, double[]>
+    private sealed class PointInspector : ICellFilterInspector<int, double[]>
     {
         public static double Coord(int i, double[] thePnt) => thePnt[i];
 
@@ -15,17 +17,17 @@ public class NCollection_CellFilterTest
 
         public bool PurgeAll { get; set; }
 
-        public NCollection_CellFilter_Action Inspect(int theObject)
+        public CellFilterAction Inspect(int theObject)
         {
             Found.Add(theObject);
-            return PurgeAll ? NCollection_CellFilter_Action.CellFilter_Purge : NCollection_CellFilter_Action.CellFilter_Keep;
+            return PurgeAll ? CellFilterAction.CellFilter_Purge : CellFilterAction.CellFilter_Keep;
         }
     }
 
     [Fact]
     public void AddAndInspect_FindsTargetsInCoveredCells()
     {
-        NCollection_CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
+        CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
         aFilter.Add(1, [0.5, 0.5]);
         aFilter.Add(2, [0.7, 0.2]);
         aFilter.Add(3, [5.5, 5.5]);
@@ -43,7 +45,7 @@ public class NCollection_CellFilterTest
     [Fact]
     public void AddRange_PutsTargetInEveryCell()
     {
-        NCollection_CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
+        CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
         aFilter.Add(7, [0.5, 0.5], [2.5, 1.5]);
 
         PointInspector anInspector = new();
@@ -58,7 +60,7 @@ public class NCollection_CellFilterTest
     [Fact]
     public void RemoveAndPurge_RemoveTargets()
     {
-        NCollection_CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
+        CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
         aFilter.Add(1, [0.5, 0.5]);
         aFilter.Add(2, [0.6, 0.6]);
         aFilter.Remove(1, [0.5, 0.5]);
@@ -75,7 +77,7 @@ public class NCollection_CellFilterTest
     [Fact]
     public void Reset_ClearsAndChangesCellSize()
     {
-        NCollection_CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
+        CellFilter<PointInspector, int, double[]> aFilter = new(2, 1.0);
         aFilter.Add(1, [0.5, 0.5]);
 
         NCollection_Array1<double> aSizes = new(0, 1);

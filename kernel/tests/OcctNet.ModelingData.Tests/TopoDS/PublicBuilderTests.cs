@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Reflection;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -41,24 +44,24 @@ public class PublicBuilderTests
         aBuilder.Add(aCompound, aBox);
         aBuilder.Add(aCompound, new BRepPrimAPI_MakeBox(4, 5, 6).Shape());
         aBuilder.Remove(aCompound, aBox);
-        Assert.False(aCompound.TShape()!.IsFrozen());
+        Assert.False(aCompound.TShape()!.IsFrozen);
 
         aCompound.TShape()!.FreezeGraph();
 
-        Assert.True(aCompound.TShape()!.IsFrozen());
+        Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.Locked());
         Assert.Equal(1, aCompound.NbChildren());
-        Assert.ThrowsAny<Standard_Failure>(() => aBuilder.Add(aCompound, aBox));
+        Assert.ThrowsAny<FailureException>(() => aBuilder.Add(aCompound, aBox));
     }
 
     [Fact]
     public void AFaceOfATriangulation()
     {
-        var aTri = new Poly_Triangulation(3, 1, false);
-        aTri.SetNode(1, new gp_Pnt(0, 0, 0));
-        aTri.SetNode(2, new gp_Pnt(1, 0, 0));
-        aTri.SetNode(3, new gp_Pnt(0, 1, 0));
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        var aTri = new Triangulation(3, 1, false);
+        aTri.SetNode(1, new Point3D(0, 0, 0));
+        aTri.SetNode(2, new Point3D(1, 0, 0));
+        aTri.SetNode(3, new Point3D(0, 1, 0));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         TopoDS_Face aFace = new();
         new BRep_Builder().MakeFace(ref aFace, aTri);
         aFace.TShape()!.FreezeGraph();
@@ -66,6 +69,6 @@ public class PublicBuilderTests
         Assert.Equal(TopAbs_FACE, aFace.ShapeType());
         Assert.False(BRep_Tool.IsGeometric(aFace));
         Assert.Same(aTri, BRep_Tool.Triangulation(aFace, out _));
-        Assert.True(aFace.TShape()!.IsFrozen());
+        Assert.True(aFace.TShape()!.IsFrozen);
     }
 }

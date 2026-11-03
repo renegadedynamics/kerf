@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -110,5 +112,5 @@ public partial struct ChFiDS_Regul : IEquatable<ChFiDS_Regul>
 
     public static bool operator !=(in ChFiDS_Regul theLeft, in ChFiDS_Regul theRight) => !theLeft.Equals(theRight);
 
-    public override readonly string ToString() => gp.Format("ChFiDS_Regul", icurv, is1, is2);
+    public override readonly string ToString() => Constants.Format("ChFiDS_Regul", icurv, is1, is2);
 }

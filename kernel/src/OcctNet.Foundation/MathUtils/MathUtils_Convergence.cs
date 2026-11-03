@@ -2,90 +2,92 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Convergence testing utilities.</summary>
 public static partial class MathUtils
 {
     /// <summary>Check convergence based on relative change in X.</summary>
-    public static bool IsXConverged(double theXOld, double theXNew, double theTolerance)
+    public static bool IsXConverged(double xOld, double xNew, double tolerance)
     {
-        double aDiff = Math.Abs(theXNew - theXOld);
-        double aScale = Max(1.0, Math.Abs(theXNew));
-        return aDiff < theTolerance * aScale;
+        double diff = Math.Abs(xNew - xOld);
+        double scale = Max(1.0, Math.Abs(xNew));
+        return diff < tolerance * scale;
     }
 
     /// <summary>Check convergence based on absolute function value: |f(x)| &lt; tolerance.</summary>
-    public static bool IsFConverged(double theFValue, double theTolerance)
+    public static bool IsFConverged(double fValue, double tolerance)
     {
-        return Math.Abs(theFValue) < theTolerance;
+        return Math.Abs(fValue) < tolerance;
     }
 
     /// <summary>Combined convergence test for scalar root finders: X or function value.</summary>
-    public static bool IsConverged(double theXOld, double theXNew, double theFValue, Config theConfig)
+    public static bool IsConverged(double xOld, double xNew, double fValue, Config config)
     {
-        return IsXConverged(theXOld, theXNew, theConfig.XTolerance)
-               || IsFConverged(theFValue, theConfig.FTolerance);
+        return IsXConverged(xOld, xNew, config.XTolerance)
+               || IsFConverged(fValue, config.FTolerance);
     }
 
     /// <summary>Convergence test for minimization (checks both X and F change).</summary>
-    public static bool IsMinConverged(double theXOld, double theXNew, double theFOld, double theFNew, Config theConfig)
+    public static bool IsMinConverged(double xOld, double xNew, double fOld, double fNew, Config config)
     {
         // X convergence
-        if (IsXConverged(theXOld, theXNew, theConfig.XTolerance))
+        if (IsXConverged(xOld, xNew, config.XTolerance))
         {
             return true;
         }
 
         // Relative function change convergence
-        double aFDiff = Math.Abs(theFNew - theFOld);
-        double aFScale = Max(1.0, Math.Abs(theFNew));
-        return aFDiff < theConfig.FTolerance * aFScale;
+        double fDiff = Math.Abs(fNew - fOld);
+        double fScale = Max(1.0, Math.Abs(fNew));
+        return fDiff < config.FTolerance * fScale;
     }
 
     /// <summary>Convergence test for vector solvers: max|new_i - old_i| / max(1, |new_i|) &lt; tolerance.</summary>
-    public static bool IsVectorConverged(math_Vector theOld, math_Vector theNew, double theTolerance)
+    public static bool IsVectorConverged(math_Vector old, math_Vector theNew, double tolerance)
     {
-        double aMaxDiff = 0.0;
-        double aMaxScale = 1.0;
-        for (int i = theOld.Lower(); i <= theOld.Upper(); ++i)
+        double maxDiff = 0.0;
+        double maxScale = 1.0;
+        for (int i = old.Lower(); i <= old.Upper(); ++i)
         {
-            aMaxDiff = Max(aMaxDiff, Math.Abs(theNew[i] - theOld[i]));
-            aMaxScale = Max(aMaxScale, Math.Abs(theNew[i]));
+            maxDiff = Max(maxDiff, Math.Abs(theNew[i] - old[i]));
+            maxScale = Max(maxScale, Math.Abs(theNew[i]));
         }
-        return aMaxDiff < theTolerance * aMaxScale;
+        return maxDiff < tolerance * maxScale;
     }
 
     /// <summary>Convergence test using gradient norm for minimization.</summary>
-    public static bool IsGradientConverged(math_Vector theGradient, double theTolerance)
+    public static bool IsGradientConverged(math_Vector gradient, double tolerance)
     {
-        double aNormSq = 0.0;
-        for (int i = theGradient.Lower(); i <= theGradient.Upper(); ++i)
+        double normSq = 0.0;
+        for (int i = gradient.Lower(); i <= gradient.Upper(); ++i)
         {
-            aNormSq += Sqr(theGradient[i]);
+            normSq += Sqr(gradient[i]);
         }
-        return Math.Sqrt(aNormSq) < theTolerance;
+        return Math.Sqrt(normSq) < tolerance;
     }
 
     /// <summary>Compute infinity norm of a vector: max|v_i|.</summary>
-    public static double InfinityNorm(math_Vector theVector)
+    public static double InfinityNorm(math_Vector vector)
     {
-        double aMax = 0.0;
-        for (int i = theVector.Lower(); i <= theVector.Upper(); ++i)
+        double max = 0.0;
+        for (int i = vector.Lower(); i <= vector.Upper(); ++i)
         {
-            aMax = Max(aMax, Math.Abs(theVector[i]));
+            max = Max(max, Math.Abs(vector[i]));
         }
-        return aMax;
+        return max;
     }
 
     /// <summary>Compute Euclidean (L2) norm of a vector.</summary>
-    public static double EuclideanNorm(math_Vector theVector)
+    public static double EuclideanNorm(math_Vector vector)
     {
-        double aSumSq = 0.0;
-        for (int i = theVector.Lower(); i <= theVector.Upper(); ++i)
+        double sumSq = 0.0;
+        for (int i = vector.Lower(); i <= vector.Upper(); ++i)
         {
-            aSumSq += Sqr(theVector[i]);
+            sumSq += Sqr(vector[i]);
         }
-        return Math.Sqrt(aSumSq);
+        return Math.Sqrt(sumSq);
     }
 }

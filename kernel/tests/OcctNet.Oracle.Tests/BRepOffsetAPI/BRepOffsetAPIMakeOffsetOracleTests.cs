@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -81,27 +83,27 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
 
     // ---- inputs ----
 
-    private static gp_Pnt OnPlane(in gp_Ax2 theAx, double theU, double theV)
-        => theAx.Location().Translated(new gp_Vec(theAx.XDirection()) * theU + new gp_Vec(theAx.YDirection()) * theV);
+    private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
+        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
-    private static TopoDS_Edge Segment(in gp_Pnt theA, in gp_Pnt theB) => new BRepBuilderAPI_MakeEdge(theA, theB).Edge();
+    private static TopoDS_Edge Segment(in Point3D theA, in Point3D theB) => new BRepBuilderAPI_MakeEdge(theA, theB).Edge();
 
-    private static TopoDS_Edge Arc(in gp_Pnt theA, in gp_Pnt theM, in gp_Pnt theB)
+    private static TopoDS_Edge Arc(in Point3D theA, in Point3D theM, in Point3D theB)
         => new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(theA, theM, theB).Value()).Edge();
 
     // An arc through a point beside the middle of the chord (theBulge: the offset, relative to the chord's length)
-    private static TopoDS_Edge Bulge(in gp_Ax2 theAx, in gp_Pnt theA, in gp_Pnt theB, double theBulge)
+    private static TopoDS_Edge Bulge(in Frame3D theAx, in Point3D theA, in Point3D theB, double theBulge)
     {
-        var aSide = new gp_Vec(theA, theB);
-        gp_Vec aNormal = new gp_Vec(theAx.Direction()).Crossed(aSide);
+        var aSide = new Vector3D(theA, theB);
+        Vector3D aNormal = new Vector3D(theAx.Direction()).Crossed(aSide);
         return Arc(theA, theA.Translated(aSide * 0.5).Translated(aNormal * theBulge), theB);
     }
 
     // A closed polygon around (theU, theV), some sides arcs
-    private static TopoDS_Wire ClosedProfile(Oracle theOracle, in gp_Ax2 theAx, double theRadius, double theU, double theV, bool theArcs)
+    private static TopoDS_Wire ClosedProfile(Oracle theOracle, in Frame3D theAx, double theRadius, double theU, double theV, bool theArcs)
     {
         int aNb = theOracle.Int(3, 8);
-        var aPoints = new gp_Pnt[aNb];
+        var aPoints = new Point3D[aNb];
         for (int i = 0; i < aNb; i++)
         {
             double anAngle = 2.0 * Math.PI * (i + 0.3 * theOracle.Real(-1.0, 1.0)) / aNb;
@@ -111,26 +113,26 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         var aWire = new BRepBuilderAPI_MakeWire();
         for (int i = 0; i < aNb; i++)
         {
-            gp_Pnt a = aPoints[i], b = aPoints[(i + 1) % aNb];
+            Point3D a = aPoints[i], b = aPoints[(i + 1) % aNb];
             aWire.Add(theArcs && theOracle.Int(0, 9) < 4 ? Bulge(theAx, a, b, theOracle.Real(-0.3, 0.3)) : Segment(a, b));
         }
         return aWire.Wire();
     }
 
     // An open chain of segments and arcs
-    private static TopoDS_Wire OpenProfile(Oracle theOracle, in gp_Ax2 theAx, double theSize, bool theArcs)
+    private static TopoDS_Wire OpenProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theArcs)
     {
         int aNb = theOracle.Int(1, 5);
         var aWire = new BRepBuilderAPI_MakeWire();
         double u = 0, v = 0, anAngle = theOracle.Angle();
-        gp_Pnt a = OnPlane(theAx, u, v);
+        Point3D a = OnPlane(theAx, u, v);
         for (int i = 0; i < aNb; i++)
         {
             anAngle += theOracle.Real(-1.5, 1.5);
             double aLength = theSize * theOracle.Real(0.3, 1.0);
             u += aLength * Math.Cos(anAngle);
             v += aLength * Math.Sin(anAngle);
-            gp_Pnt b = OnPlane(theAx, u, v);
+            Point3D b = OnPlane(theAx, u, v);
             aWire.Add(theArcs && theOracle.Bool() ? Bulge(theAx, a, b, theOracle.Real(-0.4, 0.4)) : Segment(a, b));
             a = b;
         }
@@ -139,10 +141,10 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
 
     // ---- the comparison ----
 
-    private sealed record Spine(TopoDS_Shape Shape, bool IsFace, GeomAbs_JoinType Join, bool IsOpenResult, bool IsApprox,
+    private sealed record Spine(TopoDS_Shape Shape, bool IsFace, JoinKind Join, bool IsOpenResult, bool IsApprox,
                                 bool IsBuild123d, TopoDS_Shape PlaneFace);
 
-    private static N.GeomAbs_JoinType ToNative(GeomAbs_JoinType theJoin) => (N.GeomAbs_JoinType)(int)theJoin;
+    private static N.GeomAbs_JoinType ToNative(JoinKind theJoin) => (N.GeomAbs_JoinType)(int)theJoin;
 
     private void Compare(Spine theSpine, double[] theOffsets, double theAlt, string theWhat)
     {
@@ -193,7 +195,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
             catch (Exception e)
             {
-                myDifferences.Add($"{aWhat}: native IsDone {aN.IsDone()}, the port throws {e.GetType().Name} {e.StackTrace?.Split('\n')[0]}");
+                myDifferences.Add($"{aWhat}: native IsDone {aN.IsDone()}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} {e.StackTrace?.Split('\n')[0]}");
                 return;
             }
             bool isDone = aN.IsDone();
@@ -303,7 +305,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static GeomAbs_JoinType Join(Oracle theOracle) => theOracle.Bool() ? GeomAbs_Arc : GeomAbs_Intersection;
+    private static JoinKind Join(Oracle theOracle) => theOracle.Bool() ? global::Kerf.Geometry.JoinKind.Arc : Intersection;
 
     [Fact]
     public void Random_closed_profiles_both_joins_and_signs()
@@ -311,7 +313,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 5995);
         foreach (int i in Tape.Budget(300))
         {
-            gp_Ax2 anAx = anOracle.Bool() ? new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)) : anOracle.Ax2();
+            Frame3D anAx = anOracle.Bool() ? new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)) : anOracle.Ax2();
             double aSize = anOracle.Real(1.0, 50.0);
             bool isArcs = i % 2 == 1;
             bool isFace = anOracle.Int(0, 2) > 0;
@@ -336,11 +338,11 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     aShape = anOuter;
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue; // a degenerate arc
             }
-            GeomAbs_JoinType aJoin = Join(anOracle);
+            JoinKind aJoin = Join(anOracle);
             double d1 = aSize * anOracle.Real(0.02, 0.6) * (anOracle.Bool() ? 1 : -1);
             double[] anOffsets = anOracle.Int(0, 2) == 0 ? [d1, -d1 * anOracle.Real(0.3, 1.2)] : [d1];
             double anAlt = anOracle.Int(0, 4) == 0 ? anOracle.Real(-5, 5) : 0.0;
@@ -357,7 +359,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 5996);
         foreach (int i in Tape.Budget(300))
         {
-            gp_Ax2 anAx = anOracle.Bool() ? new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)) : anOracle.Ax2();
+            Frame3D anAx = anOracle.Bool() ? new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)) : anOracle.Ax2();
             double aSize = anOracle.Real(1.0, 50.0);
             bool isArcs = i % 2 == 1;
             TopoDS_Wire aWire;
@@ -365,7 +367,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             {
                 aWire = OpenProfile(anOracle, anAx, aSize, isArcs);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue;
             }
@@ -373,9 +375,9 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             TopoDS_Shape aPlane = new();
             if (!isArcs && new BRepBuilderAPI_MakeFace(aWire, true).Error() != BRepBuilderAPI_FaceError.BRepBuilderAPI_FaceDone)
             {
-                aPlane = new BRepBuilderAPI_MakeFace(new gp_Pln(anAx.Location(), anAx.Direction())).Face();
+                aPlane = new BRepBuilderAPI_MakeFace(new Plane3D(anAx.Location(), anAx.Direction())).Face();
             }
-            GeomAbs_JoinType aJoin = Join(anOracle);
+            JoinKind aJoin = Join(anOracle);
             bool isOpen = anOracle.Bool();
             double d1 = aSize * anOracle.Real(0.02, 0.5) * (anOracle.Bool() ? 1 : -1);
             double[] anOffsets = anOracle.Int(0, 2) == 0 ? [d1, -d1 * anOracle.Real(0.3, 1.2)] : [d1];
@@ -397,20 +399,20 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         {
             double cx = anOracle.Real(-10, 10), cy = anOracle.Real(-10, 10), r = anOracle.Real(1, 10);
             double dx = anOracle.Real(-1, 1), dy = anOracle.Real(-1, 1);
-            var aC = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(cx, cy), new gp_Dir2d(dx, dy)), r);
+            var aC = new Geom2d_Circle(new Axis2D(new Point2D(cx, cy), new Direction2D(dx, dy)), r);
             var aNC = new N.Geom2d_Circle(new N.gp_Ax2d(new N.gp_Pnt2d(cx, cy), new N.gp_Dir2d(dx, dy)), r);
             double px = cx + anOracle.Real(-r, r), py = cy + anOracle.Real(-r, r), ex = anOracle.Real(-1, 1), ey = anOracle.Real(-1, 1);
             Geom2d_Curve aL;
             N.Geom2d_Curve aNL;
             if (i % 2 == 0)
             {
-                aL = new Geom2d_Line(new gp_Pnt2d(px, py), new gp_Dir2d(ex, ey));
+                aL = new Geom2d_Line(new Point2D(px, py), new Direction2D(ex, ey));
                 aNL = new N.Geom2d_Line(new N.gp_Pnt2d(px, py), new N.gp_Dir2d(ex, ey));
             }
             else
             {
                 double r2 = anOracle.Real(1, 10);
-                aL = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(px, py), new gp_Dir2d(ex, ey)), r2);
+                aL = new Geom2d_Circle(new Axis2D(new Point2D(px, py), new Direction2D(ex, ey)), r2);
                 aNL = new N.Geom2d_Circle(new N.gp_Ax2d(new N.gp_Pnt2d(px, py), new N.gp_Dir2d(ex, ey)), r2);
             }
             var aP = new Geom2dAPI_InterCurveCurve(aC, aL, 1e-7);
@@ -444,11 +446,11 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 1);
         foreach (int i in Tape.Budget(200))
         {
-            gp_Ax2 anAx = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+            Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
             double r = anOracle.Real(5, 20), a0 = anOracle.Angle(), a1 = a0 + anOracle.Real(0.3, 3.0);
-            gp_Pnt P(double t) => new(r * Math.Cos(t), r * Math.Sin(t), 0);
+            Point3D P(double t) => new(r * Math.Cos(t), r * Math.Sin(t), 0);
             TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(Arc(P(a0), P((a0 + a1) / 2), P(a1))).Wire();
-            Compare(new Spine(aW, false, GeomAbs_Arc, i % 2 == 0, false, false, new TopoDS_Shape()), [anOracle.Real(0.5, 3)], 0.0, $"single arc #{i} {(i % 2 == 0 ? "open" : "closed")}");
+            Compare(new Spine(aW, false, global::Kerf.Geometry.JoinKind.Arc, i % 2 == 0, false, false, new TopoDS_Shape()), [anOracle.Real(0.5, 3)], 0.0, $"single arc #{i} {(i % 2 == 0 ? "open" : "closed")}");
         }
         Report();
         Assert.Empty(myDifferences);
@@ -458,19 +460,19 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     public void Build123d_Offset2D_and_slots()
     {
         var anOracle = new Oracle(output, 5997);
-        gp_Ax2 anXY = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Frame3D anXY = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         foreach (int i in Tape.Budget(120))
         {
             double h = anOracle.Real(0.5, 20.0);
             double c = anOracle.Real(1.0, 60.0);
-            GeomAbs_JoinType aJoin = i % 4 == 3 ? GeomAbs_Intersection : GeomAbs_Arc;
+            JoinKind aJoin = i % 4 == 3 ? Intersection : global::Kerf.Geometry.JoinKind.Arc;
             switch (i % 6)
             {
                 case 0:
                 {
                     // SlotCenterToCenter: two collinear segments (the centre one) offset by h / 2
-                    var aW = new BRepBuilderAPI_MakeWire(Segment(new gp_Pnt(-c / 2, 0, 0), new gp_Pnt(0, 0, 0)),
-                                                         Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(c / 2, 0, 0))).Wire();
+                    var aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(-c / 2, 0, 0), new Point3D(0, 0, 0)),
+                                                         Segment(new Point3D(0, 0, 0), new Point3D(c / 2, 0, 0))).Wire();
                     Compare(new Spine(aW, false, aJoin, false, false, true, new TopoDS_Shape()), [h / 2], 0.0, $"SlotCenterToCenter #{i} {c} {h}");
                     break;
                 }
@@ -478,14 +480,14 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 {
                     // SlotArc: an arc split in two halves (build123d.NET's workaround for one edge)
                     double r = anOracle.Real(5.0, 40.0), a0 = anOracle.Angle(), a1 = a0 + anOracle.Real(0.3, 4.0);
-                    gp_Pnt P(double t) => new(r * Math.Cos(t), r * Math.Sin(t), 0);
+                    Point3D P(double t) => new(r * Math.Cos(t), r * Math.Sin(t), 0);
                     double am = (a0 + a1) / 2;
                     TopoDS_Wire aW;
                     try
                     {
                         aW = new BRepBuilderAPI_MakeWire(Arc(P(a0), P((a0 + am) / 2), P(am)), Arc(P(am), P((am + a1) / 2), P(a1))).Wire();
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         continue;
                     }
@@ -504,16 +506,16 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 case 3:
                 {
                     // a straight line: a plane through it
-                    TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(c, anOracle.Real(-5, 5), 0))).Wire();
-                    TopoDS_Shape aPlane = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))).Face();
+                    TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(c, anOracle.Real(-5, 5), 0))).Wire();
+                    TopoDS_Shape aPlane = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).Face();
                     Compare(new Spine(aW, false, aJoin, false, false, true, aPlane), [h / 2, -h / 3], 0.0, $"line #{i}");
                     break;
                 }
                 case 4:
                 {
                     // a rectangle, as Offset2D's (Kind.Intersection keeps the corners)
-                    var aW = new BRepBuilderAPI_MakePolygon(new gp_Pnt(-c / 2, -h / 2, 0), new gp_Pnt(c / 2, -h / 2, 0), new gp_Pnt(c / 2, h / 2, 0),
-                                                            new gp_Pnt(-c / 2, h / 2, 0), true).Wire();
+                    var aW = new BRepBuilderAPI_MakePolygon(new Point3D(-c / 2, -h / 2, 0), new Point3D(c / 2, -h / 2, 0), new Point3D(c / 2, h / 2, 0),
+                                                            new Point3D(-c / 2, h / 2, 0), true).Wire();
                     double d = Math.Min(c, h) * anOracle.Real(0.05, 0.45) * (anOracle.Bool() ? 1 : -1);
                     Compare(new Spine(aW, false, aJoin, false, false, true, new TopoDS_Shape()), [d], 0.0, $"rectangle #{i} {c}x{h}");
                     break;
@@ -522,8 +524,8 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 {
                     // SlotOverall: as the centre-to-centre slot, from the overall width
                     double w = c + h;
-                    var aW = new BRepBuilderAPI_MakeWire(Segment(new gp_Pnt(-(w / 2 - h / 2), 0, 0), new gp_Pnt(0, 0, 0)),
-                                                         Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(w / 2 - h / 2, 0, 0))).Wire();
+                    var aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(-(w / 2 - h / 2), 0, 0), new Point3D(0, 0, 0)),
+                                                         Segment(new Point3D(0, 0, 0), new Point3D(w / 2 - h / 2, 0, 0))).Wire();
                     Compare(new Spine(aW, false, aJoin, false, false, true, new TopoDS_Shape()), [h / 2], 0.0, $"SlotOverall #{i} {w} {h}");
                     break;
                 }
@@ -545,17 +547,17 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             if (i % 2 == 0)
             {
                 double a = anOracle.Real(5, 30), b = a * anOracle.Real(0.3, 0.95);
-                var anEllipse = new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), a, b);
+                var anEllipse = new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), a, b);
                 aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anEllipse).Edge()).Wire();
             }
             else
             {
                 int aNb = anOracle.Int(4, 8);
-                var aPoints = new NCollection_HArray1<gp_Pnt>(1, aNb);
+                var aPoints = new NCollection_HArray1<Point3D>(1, aNb);
                 for (int k = 1; k <= aNb; k++)
                 {
                     double t = 2 * Math.PI * (k - 1) / aNb, r = anOracle.Real(10, 20);
-                    aPoints[k] = new gp_Pnt(r * Math.Cos(t), r * Math.Sin(t), 0);
+                    aPoints[k] = new Point3D(r * Math.Cos(t), r * Math.Sin(t), 0);
                 }
                 var anInterp = new GeomAPI_Interpolate(aPoints, true, 1.0e-7);
                 anInterp.Perform();
@@ -563,7 +565,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
             bool isFace = i % 4 < 2;
             TopoDS_Shape aShape = isFace ? new BRepBuilderAPI_MakeFace(aW, true).Face() : aW;
-            Compare(new Spine(aShape, isFace, i % 3 == 0 ? GeomAbs_Intersection : GeomAbs_Arc, false, true, false, new TopoDS_Shape()),
+            Compare(new Spine(aShape, isFace, i % 3 == 0 ? Intersection : global::Kerf.Geometry.JoinKind.Arc, false, true, false, new TopoDS_Shape()),
                     [anOracle.Real(-3, 3)], 0.0, $"approx #{i} {(i % 2 == 0 ? "ellipse" : "B-spline")} {(isFace ? "face" : "wire")}");
 
             if (isFace)

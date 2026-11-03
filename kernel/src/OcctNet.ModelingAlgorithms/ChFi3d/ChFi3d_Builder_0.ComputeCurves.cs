@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntAna_ResultType;
 
 namespace Occt;
@@ -32,10 +33,10 @@ internal static partial class ChFi3d_Builder_0
                                               double tol3d, double tol2d, out double tolreached,
                                               bool wholeCurv = true)
     {
-        gp_Pnt pdeb1 = S1.Value(Pardeb[1], Pardeb[2]);
-        gp_Pnt pfin1 = S1.Value(Parfin[1], Parfin[2]);
-        gp_Pnt pdeb2 = S2.Value(Pardeb[3], Pardeb[4]);
-        gp_Pnt pfin2 = S2.Value(Parfin[3], Parfin[4]);
+        Point3D pdeb1 = S1.Value(Pardeb[1], Pardeb[2]);
+        Point3D pfin1 = S1.Value(Parfin[1], Parfin[2]);
+        Point3D pdeb2 = S2.Value(Pardeb[3], Pardeb[4]);
+        Point3D pfin2 = S2.Value(Parfin[3], Parfin[4]);
 
         double distrefdeb = pdeb1.Distance(pdeb2); // checks the worthiness
         double distreffin = pfin1.Distance(pfin2); // of input data
@@ -48,7 +49,7 @@ internal static partial class ChFi3d_Builder_0
             distreffin = tol3d;
         }
 
-        gp_Pnt pdeb = new(), pfin = new();
+        Point3D pdeb = new(), pfin = new();
         pdeb.SetXYZ(pdeb1.XYZ().Added(pdeb2.XYZ()).Multiplied(0.5));
         pfin.SetXYZ(pfin1.XYZ().Added(pfin2.XYZ()).Multiplied(0.5));
 
@@ -66,17 +67,17 @@ internal static partial class ChFi3d_Builder_0
         // To reorientate the result of the analythic intersection,
         // it is stated that the beginning of the tangent should be
         // in the direction of the start/end line.
-        gp_Vec Vint = new(), Vref = new(pdeb, pfin);
-        gp_Pnt Pbid;
+        Vector3D Vint = new(), Vref = new(pdeb, pfin);
+        Point3D Pbid;
         double Udeb = 0.0, Ufin = 0.0;
         double tolr1, tolr2;
         tolr1 = tolr2 = tolreached = tol3d;
-        if ((S1.GetType() == GeomAbs_Cylinder && S2.GetType() == GeomAbs_Plane)
-            || (S1.GetType() == GeomAbs_Plane && S2.GetType() == GeomAbs_Cylinder))
+        if ((S1.GetType() == SurfaceKind.Cylinder && S2.GetType() == Plane)
+            || (S1.GetType() == Plane && S2.GetType() == SurfaceKind.Cylinder))
         {
-            gp_Pln pl;
-            gp_Cylinder cyl;
-            if (S1.GetType() == GeomAbs_Plane)
+            Plane3D pl;
+            Cylinder cyl;
+            if (S1.GetType() == Plane)
             {
                 pl = S1.Plane();
                 cyl = S2.Cylinder();
@@ -86,12 +87,12 @@ internal static partial class ChFi3d_Builder_0
                 pl = S2.Plane();
                 cyl = S1.Cylinder();
             }
-            IntAna_QuadQuadGeo ImpKK = new(pl, cyl, Precision.Angular(), tol3d);
+            IntAna_QuadQuadGeo ImpKK = new(pl, cyl, global::Kerf.Engine.Foundation.Precision.Angular(), tol3d);
             bool isIntDone = ImpKK.IsDone();
 
             if (ImpKK.TypeInter() == IntAna_Ellipse)
             {
-                gp_Elips anEl = ImpKK.Ellipse(1);
+                Ellipse3D anEl = ImpKK.Ellipse(1);
                 double aMajorR = anEl.MajorRadius();
                 double aMinorR = anEl.MinorRadius();
                 isIntDone = (aMajorR < 100000.0 * aMinorR);
@@ -106,38 +107,38 @@ internal static partial class ChFi3d_Builder_0
                     {
                         c1line = true;
                         int nbsol = ImpKK.NbSolutions();
-                        gp_Lin C1 = new();
+                        Line3D C1 = new();
                         for (int ilin = 1; ilin <= nbsol; ilin++)
                         {
                             C1 = ImpKK.Line(ilin);
-                            Udeb = ElCLib.Parameter(C1, pdeb);
-                            gp_Pnt ptest = ElCLib.Value(Udeb, C1);
+                            Udeb = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pdeb);
+                            Point3D ptest = global::Kerf.Engine.Geometry.ElCLib.Value(Udeb, C1);
                             if (ptest.Distance(pdeb) < tol3d)
                             {
                                 break;
                             }
                         }
-                        Ufin = ElCLib.Parameter(C1, pfin);
+                        Ufin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pfin);
                         C3d = new Geom_Line(C1);
-                        ElCLib.D1(Udeb, C1, out Pbid, out Vint);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(Udeb, C1, out Pbid, out Vint);
                     }
                         break;
                     case IntAna_Circle:
                     {
-                        gp_Circ C1 = ImpKK.Circle(1);
+                        Circle3D C1 = ImpKK.Circle(1);
                         C3d = new Geom_Circle(C1);
-                        Udeb = ElCLib.Parameter(C1, pdeb);
-                        Ufin = ElCLib.Parameter(C1, pfin);
-                        ElCLib.D1(Udeb, C1, out Pbid, out Vint);
+                        Udeb = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pdeb);
+                        Ufin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pfin);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(Udeb, C1, out Pbid, out Vint);
                     }
                         break;
                     case IntAna_Ellipse:
                     {
-                        gp_Elips C1 = ImpKK.Ellipse(1);
+                        Ellipse3D C1 = ImpKK.Ellipse(1);
                         C3d = new Geom_Ellipse(C1);
-                        Udeb = ElCLib.Parameter(C1, pdeb);
-                        Ufin = ElCLib.Parameter(C1, pfin);
-                        ElCLib.D1(Udeb, C1, out Pbid, out Vint);
+                        Udeb = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pdeb);
+                        Ufin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pfin);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(Udeb, C1, out Pbid, out Vint);
                     }
                         break;
                     default:
@@ -159,12 +160,12 @@ internal static partial class ChFi3d_Builder_0
                 }
                 if (!c1line)
                 {
-                    ElCLib.AdjustPeriodic(0.0, 2 * Math.PI, Precision.Angular(), ref Udeb, ref Ufin);
+                    global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * Math.PI, global::Kerf.Engine.Foundation.Precision.Angular(), ref Udeb, ref Ufin);
                 }
                 GeomAdaptor_Curve HC = new();
                 HC.Load(C3d!, Udeb, Ufin);
                 ChFi3d_ProjectPCurv(HC, S1, ref Pc1, tol3d, ref tolr1);
-                if (S1.GetType() == GeomAbs_Cylinder)
+                if (S1.GetType() == SurfaceKind.Cylinder)
                 {
                     double x, y;
                     Pc1!.Value(Udeb).Coord(out x, out y);
@@ -173,11 +174,11 @@ internal static partial class ChFi3d_Builder_0
                     if (Math.Abs(x) >= tol2d || Math.Abs(y) >= tol2d)
                     {
                         Pc1 = Writable(Pc1);
-                        Pc1.Translate(new gp_Vec2d(x, y));
+                        Pc1.Translate(new Vector2D(x, y));
                     }
                 }
                 ChFi3d_ProjectPCurv(HC, S2, ref Pc2, tol3d, ref tolr2);
-                if (S2.GetType() == GeomAbs_Cylinder)
+                if (S2.GetType() == SurfaceKind.Cylinder)
                 {
                     double x, y;
                     Pc2!.Value(Udeb).Coord(out x, out y);
@@ -186,7 +187,7 @@ internal static partial class ChFi3d_Builder_0
                     if (Math.Abs(x) >= tol2d || Math.Abs(y) >= tol2d)
                     {
                         Pc2 = Writable(Pc2);
-                        Pc2.Translate(new gp_Vec2d(x, y));
+                        Pc2.Translate(new Vector2D(x, y));
                     }
                 }
                 C3d = new Geom_TrimmedCurve(C3d!, Udeb, Ufin);
@@ -195,16 +196,16 @@ internal static partial class ChFi3d_Builder_0
                 return true;
             }
         }
-        else if (S1.GetType() == GeomAbs_Plane && S2.GetType() == GeomAbs_Plane)
+        else if (S1.GetType() == Plane && S2.GetType() == Plane)
         {
-            IntAna_QuadQuadGeo LInt = new(S1.Plane(), S2.Plane(), Precision.Angular(), tol3d);
+            IntAna_QuadQuadGeo LInt = new(S1.Plane(), S2.Plane(), global::Kerf.Engine.Foundation.Precision.Angular(), tol3d);
             if (LInt.IsDone())
             {
-                gp_Lin L = LInt.Line(1);
+                Line3D L = LInt.Line(1);
                 C3d = new Geom_Line(L);
-                Udeb = ElCLib.Parameter(L, pdeb);
-                Ufin = ElCLib.Parameter(L, pfin);
-                ElCLib.D1(Udeb, L, out Pbid, out Vint);
+                Udeb = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, pdeb);
+                Ufin = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, pfin);
+                global::Kerf.Engine.Geometry.ElCLib.D1(Udeb, L, out Pbid, out Vint);
                 if (Vint.Dot(Vref) < 0)
                 {
                     C3d.Reverse();
@@ -247,7 +248,7 @@ internal static partial class ChFi3d_Builder_0
                             C3d = inter.Line(ilin);
                             Pc1 = inter.LineOnS1(ilin);
                             Pc2 = inter.LineOnS2(ilin);
-                            gp_Pnt ptestdeb, ptestfin;
+                            Point3D ptestdeb, ptestfin;
                             double Uf = 0.0, Ul = 0.0;
                             if (wholeCurv)
                             {
@@ -262,7 +263,7 @@ internal static partial class ChFi3d_Builder_0
                                 bool failedF, failedL;
                                 failedF = failedL = false;
                                 proj.Init(pdeb1, C3d);
-                                if (proj.NbPoints() == 0 && distrefdeb > Precision.Confusion())
+                                if (proj.NbPoints() == 0 && distrefdeb > global::Kerf.Engine.Foundation.Precision.Confusion())
                                 {
                                     proj.Perform(pdeb2);
                                 }
@@ -275,7 +276,7 @@ internal static partial class ChFi3d_Builder_0
                                     Uf = proj.LowerDistanceParameter();
                                 }
                                 proj.Perform(pfin1);
-                                if (proj.NbPoints() == 0 && distreffin > Precision.Confusion())
+                                if (proj.NbPoints() == 0 && distreffin > global::Kerf.Engine.Foundation.Precision.Confusion())
                                 {
                                     proj.Perform(pfin2);
                                 }
@@ -310,7 +311,7 @@ internal static partial class ChFi3d_Builder_0
                                 }
                                 else
                                 { // both projected, but where?
-                                    if (Math.Abs(Uf - Ul) < Precision.PConfusion())
+                                    if (Math.Abs(Uf - Ul) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
                                         continue;
                                     }
@@ -321,8 +322,8 @@ internal static partial class ChFi3d_Builder_0
                                 {
                                     // assure the same order of ends, otherwise TrimmedCurve will take
                                     // the other part of C3d
-                                    gp_Pnt Ptmp;
-                                    gp_Vec DirOld, DirNew = new(ptestdeb, ptestfin);
+                                    Point3D Ptmp;
+                                    Vector3D DirOld, DirNew = new(ptestdeb, ptestfin);
                                     C3d.D1(Uf, out Ptmp, out DirOld);
                                     if (DirOld.Dot(DirNew) < 0)
                                     {
@@ -367,7 +368,7 @@ internal static partial class ChFi3d_Builder_0
                                 if (Math.Abs(x) > tol2d || Math.Abs(y) > tol2d)
                                 {
                                     Pc1 = Writable(Pc1);
-                                    Pc1.Translate(new gp_Vec2d(x, y));
+                                    Pc1.Translate(new Vector2D(x, y));
                                 }
                                 Pc2!.Value(Uf).Coord(out x, out y);
                                 x = Pardeb[3] - x;
@@ -375,7 +376,7 @@ internal static partial class ChFi3d_Builder_0
                                 if (Math.Abs(x) > tol2d || Math.Abs(y) > tol2d)
                                 {
                                     Pc2 = Writable(Pc2);
-                                    Pc2.Translate(new gp_Vec2d(x, y));
+                                    Pc2.Translate(new Vector2D(x, y));
                                 }
                                 tolreached = ChFi3d_EvalTolReached(S1, Pc1, S2, Pc2, C3d);
                                 return true;
@@ -441,21 +442,21 @@ internal static partial class ChFi3d_Builder_0
                 // Then the result is corrected to get proper start and end points.
                 IntSurf_LineOn2S L2S = IntKK.Line();
 
-                gp_Pnt codeb1 = S1.Value(Pardeb[1], Pardeb[2]);
-                gp_Pnt codeb2 = S2.Value(Pardeb[3], Pardeb[4]);
+                Point3D codeb1 = S1.Value(Pardeb[1], Pardeb[2]);
+                Point3D codeb2 = S2.Value(Pardeb[3], Pardeb[4]);
                 double tol1 = Math.Max(codeb1.Distance(codeb2), tol3d);
                 bool bondeb = (tol1 == tol3d);
-                gp_Pnt pntd = new(codeb1.Coord().Added(codeb2.Coord()).Multiplied(0.5));
+                Point3D pntd = new(codeb1.Coord().Added(codeb2.Coord()).Multiplied(0.5));
 
-                gp_Pnt cofin1 = S1.Value(Parfin[1], Parfin[2]);
-                gp_Pnt cofin2 = S2.Value(Parfin[3], Parfin[4]);
+                Point3D cofin1 = S1.Value(Parfin[1], Parfin[2]);
+                Point3D cofin2 = S2.Value(Parfin[3], Parfin[4]);
                 double tol2 = Math.Max(cofin1.Distance(cofin2), tol3d);
                 bool bonfin = (tol2 == tol3d);
-                gp_Pnt pntf = new(cofin1.Coord().Added(cofin2.Coord()).Multiplied(0.5));
+                Point3D pntf = new(cofin1.Coord().Added(cofin2.Coord()).Multiplied(0.5));
 
                 int nbp = L2S.NbPoints(), i;
-                double ddeb = Precision.Infinite();
-                double dfin = Precision.Infinite();
+                double ddeb = global::Kerf.Engine.Foundation.Precision.Infinite();
+                double dfin = global::Kerf.Engine.Foundation.Precision.Infinite();
                 double dd;
                 int indd = 0, indf = 0;
                 for (i = 1; i <= nbp; i++)
@@ -501,9 +502,9 @@ internal static partial class ChFi3d_Builder_0
                     IntSurf_PntOn2S p1 = L2S.Value(1);
                     IntSurf_PntOn2S p2 = L2S.Value(2);
 
-                    gp_Vec v1 = new(pntd, p1.Value());
-                    gp_Vec v2 = new(p1.Value(), p2.Value());
-                    gp_Vec v3 = new(pntd, p2.Value());
+                    Vector3D v1 = new(pntd, p1.Value());
+                    Vector3D v2 = new(p1.Value(), p2.Value());
+                    Vector3D v3 = new(pntd, p2.Value());
                     p1.SetValue(pntd, Pardeb[1], Pardeb[2], Pardeb[3], Pardeb[4]);
                     if (v1.Dot(v3) < 0)
                     {
@@ -529,9 +530,9 @@ internal static partial class ChFi3d_Builder_0
                 {
                     IntSurf_PntOn2S p1 = L2S.Value(nbp);
                     IntSurf_PntOn2S p2 = L2S.Value(nbp - 1);
-                    gp_Vec v1 = new(pntf, p1.Value());
-                    gp_Vec v2 = new(p1.Value(), p2.Value());
-                    gp_Vec v3 = new(pntf, p2.Value());
+                    Vector3D v1 = new(pntf, p1.Value());
+                    Vector3D v2 = new(p1.Value(), p2.Value());
+                    Vector3D v3 = new(pntf, p2.Value());
                     p1.SetValue(pntf, Parfin[1], Parfin[2], Parfin[3], Parfin[4]);
                     if (v1.Dot(v3) < 0)
                     {
@@ -571,11 +572,11 @@ internal static partial class ChFi3d_Builder_0
                 //      tolreached = std::max(tolreached,ChFi3d_ConvTol2dToTol3d(S2,tolr2d));
                 AppParCurves_MultiBSpCurve mbs = approx.Value(1);
                 int nbpol = mbs.NbPoles();
-                NCollection_Array1<gp_Pnt> pol3d = new(1, nbpol);
+                NCollection_Array1<Point3D> pol3d = new(1, nbpol);
                 mbs.Curve(1, pol3d);
-                NCollection_Array1<gp_Pnt2d> pol2d1 = new(1, nbpol);
+                NCollection_Array1<Point2D> pol2d1 = new(1, nbpol);
                 mbs.Curve(2, pol2d1);
-                NCollection_Array1<gp_Pnt2d> pol2d2 = new(1, nbpol);
+                NCollection_Array1<Point2D> pol2d2 = new(1, nbpol);
                 mbs.Curve(3, pol2d2);
                 // The extremities of the intersection are reset on known points.
                 if (ddeb >= tol1)

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,22 +13,22 @@ namespace Occt;
 /// </summary>
 /// <remarks>Not done (<see cref="IsDone"/> false) when the surface is not a quadric or a root search failed.</remarks>
 public sealed class HLRBRep_TheQuadCurvExactInterCSurf
-    : IIntCurveSurface_TheQuadCurvExactInter<HLRBRep_TheQuadCurvExactInterCSurf, HLRBRep_Surface, gp_Lin>
+    : IIntCurveSurface_TheQuadCurvExactInter<HLRBRep_TheQuadCurvExactInterCSurf, HLRBRep_Surface, Line3D>
 {
     private readonly int nbpnts;
     private readonly NCollection_Sequence<double> pnts = new();
     private readonly int nbintv;
     private readonly NCollection_Sequence<double> intv = new();
 
-    public HLRBRep_TheQuadCurvExactInterCSurf(HLRBRep_Surface S, gp_Lin C)
+    public HLRBRep_TheQuadCurvExactInterCSurf(HLRBRep_Surface S, Line3D C)
     {
         IntCurveSurface_QuadricCurveExactInterUtils.PerformIntersection<
-            HLRBRep_Surface, HLRBRep_SurfaceTool, gp_Lin, HLRBRep_LineTool,
+            HLRBRep_Surface, HLRBRep_SurfaceTool, Line3D, HLRBRep_LineTool,
             HLRBRep_TheQuadCurvFuncOfTheQuadCurvExactInterCSurf>(S, C, pnts, intv, out nbpnts, out nbintv);
     }
 
-    static HLRBRep_TheQuadCurvExactInterCSurf IIntCurveSurface_TheQuadCurvExactInter<HLRBRep_TheQuadCurvExactInterCSurf, HLRBRep_Surface, gp_Lin>.Create(
-        in HLRBRep_Surface S, in gp_Lin C) => new(S, C);
+    static HLRBRep_TheQuadCurvExactInterCSurf IIntCurveSurface_TheQuadCurvExactInter<HLRBRep_TheQuadCurvExactInterCSurf, HLRBRep_Surface, Line3D>.Create(
+        in HLRBRep_Surface S, in Line3D C) => new(S, C);
 
     public bool IsDone() => (nbpnts != -1);
 

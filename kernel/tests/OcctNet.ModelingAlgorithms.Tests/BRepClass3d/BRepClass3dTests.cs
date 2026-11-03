@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_State;
 
@@ -15,7 +16,7 @@ public class BRepClass3dTests
     private static TopoDS_Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
 
     private static TopAbs_State Classify(in TopoDS_Shape theShape, double x, double y, double z, double theTol = 1e-7)
-        => new BRepClass3d_SolidClassifier(theShape, new gp_Pnt(x, y, z), theTol).State();
+        => new BRepClass3d_SolidClassifier(theShape, new Point3D(x, y, z), theTol).State();
 
     [Theory]
     [InlineData(5, 5, 5, TopAbs_IN)]
@@ -47,17 +48,17 @@ public class BRepClass3dTests
     {
         TopoDS_Shape aBox = Box10();
         var aClassifier = new BRepClass3d_SolidClassifier(aBox);
-        aClassifier.Perform(new gp_Pnt(5, 5, 10), 1e-7);
+        aClassifier.Perform(new Point3D(5, 5, 10), 1e-7);
         Assert.Equal(TopAbs_ON, aClassifier.State());
         Assert.True(aClassifier.IsOnAFace());
         Assert.False(aClassifier.Rejected());
         Assert.True(aClassifier.Face().IsSame(BRepGPropTestShapes.Faces(aBox)[1])); // the top face
 
         // one classifier, many points
-        aClassifier.Perform(new gp_Pnt(5, 5, 5), 1e-7);
+        aClassifier.Perform(new Point3D(5, 5, 5), 1e-7);
         Assert.Equal(TopAbs_IN, aClassifier.State());
         Assert.False(aClassifier.IsOnAFace());
-        aClassifier.Perform(new gp_Pnt(50, 5, 5), 1e-7);
+        aClassifier.Perform(new Point3D(50, 5, 5), 1e-7);
         Assert.Equal(TopAbs_OUT, aClassifier.State());
     }
 
@@ -71,7 +72,7 @@ public class BRepClass3dTests
         Assert.Equal(TopAbs_IN, Classify(aReversed, 15, 5, 5));
         Assert.Equal(TopAbs_ON, Classify(aReversed, 5, 5, 0));
 
-        TopoDS_Shape aMoved = ClassificationTestShapes.Translated(aBox, new gp_Vec(100, 0, 0));
+        TopoDS_Shape aMoved = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
         Assert.Equal(TopAbs_IN, Classify(aMoved, 105, 5, 5));
         Assert.Equal(TopAbs_OUT, Classify(aMoved, 5, 5, 5));
         Assert.Equal(TopAbs_ON, Classify(aMoved, 100, 5, 5));
@@ -146,7 +147,7 @@ public class BRepClass3dTests
     public void Compound_of_boxes()
     {
         TopoDS_Shape aBox = Box10();
-        TopoDS_Shape aCompound = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, ClassificationTestShapes.Translated(aBox, new gp_Vec(20, 0, 0))));
+        TopoDS_Shape aCompound = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, ClassificationTestShapes.Translated(aBox, new Vector3D(20, 0, 0))));
         Assert.Equal(TopAbs_IN, Classify(aCompound, 5, 5, 5));
         Assert.Equal(TopAbs_IN, Classify(aCompound, 25, 5, 5));
         Assert.Equal(TopAbs_OUT, Classify(aCompound, 15, 5, 5));
@@ -159,7 +160,7 @@ public class BRepClass3dTests
         TopoDS_Solid anEmpty = new();
         aB.MakeSolid(ref anEmpty);
         TopoDS_Shape aSolid = TestShapes.Frozen(anEmpty);
-        var aClassifier = new BRepClass3d_SolidClassifier(aSolid, new gp_Pnt(1, 2, 3), 1e-7);
+        var aClassifier = new BRepClass3d_SolidClassifier(aSolid, new Point3D(1, 2, 3), 1e-7);
         Assert.Equal(TopAbs_IN, aClassifier.State());
         aClassifier.PerformInfinitePoint(1e-7);
         Assert.Equal(TopAbs_IN, aClassifier.State());
@@ -169,16 +170,16 @@ public class BRepClass3dTests
     public void Explorer_finds_a_point_in_a_face()
     {
         TopoDS_Face aFace = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
-        gp_Pnt aP = new();
+        Point3D aP = new();
         double u = 0, v = 0;
         Assert.True(BRepClass3d_SolidExplorer.FindAPointInTheFace(aFace, ref aP, ref u, ref v));
         Assert.Equal(0.0, aP.Z(), 1e-12);
         Assert.Equal(u, aP.X(), 1e-12);
         Assert.Equal(v, aP.Y(), 1e-12);
-        Assert.Equal(TopAbs_IN, new BRepClass_FaceClassifier(aFace, new gp_Pnt2d(u, v), 1e-7).State());
+        Assert.Equal(TopAbs_IN, new BRepClass_FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
 
         var anExplorer = new BRepClass3d_SolidExplorer(Box10());
-        Assert.False(anExplorer.Reject(new gp_Pnt()));
+        Assert.False(anExplorer.Reject(new Point3D()));
         Assert.Equal(20, anExplorer.GetMapEV().Extent()); // 12 edges and 8 vertices
         int aShells = 0, aFaces = 0;
         for (anExplorer.InitShell(); anExplorer.MoreShell(); anExplorer.NextShell())
@@ -195,11 +196,11 @@ public class BRepClass3dTests
         Assert.Equal(6, aFaces);
 
         // a line from inside towards a face
-        gp_Lin aL = new();
+        Line3D aL = new();
         double aPar = 0;
-        Assert.Equal(0, anExplorer.Segment(new gp_Pnt(5, 5, 5), ref aL, ref aPar));
+        Assert.Equal(0, anExplorer.Segment(new Point3D(5, 5, 5), ref aL, ref aPar));
         Assert.True(aPar > 0);
-        Assert.Equal(1, anExplorer.Segment(new gp_Pnt(5, 5, 0), ref aL, ref aPar)); // on the first face
+        Assert.Equal(1, anExplorer.Segment(new Point3D(5, 5, 0), ref aL, ref aPar)); // on the first face
     }
 
     [Fact]
@@ -207,7 +208,7 @@ public class BRepClass3dTests
     {
         TopoDS_Shape aBox = Box10();
         var aClassifier = new BRepClass3d_SolidPassiveClassifier();
-        aClassifier.Reset(new gp_Lin(new gp_Pnt(5, 5, 5), new gp_Dir(0, 0, 1)), RealLast(), 1e-7);
+        aClassifier.Reset(new Line3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), RealLast(), 1e-7);
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
         {
             aClassifier.Compare(aF, aF.Orientation());
@@ -217,7 +218,7 @@ public class BRepClass3dTests
         Assert.Equal(5.0, aClassifier.Parameter(), 1e-9);
 
         var anInter = new BRepClass3d_Intersector3d();
-        anInter.Perform(new gp_Lin(new gp_Pnt(5, 5, -5), new gp_Dir(0, 0, 1)), RealLast(), 1e-7, BRepGPropTestShapes.Faces(aBox)[0]);
+        anInter.Perform(new Line3D(new Point3D(5, 5, -5), new Direction3D(0, 0, 1)), RealLast(), 1e-7, BRepGPropTestShapes.Faces(aBox)[0]);
         Assert.True(anInter.IsDone());
         Assert.True(anInter.HasAPoint());
         Assert.Equal(5.0, anInter.WParameter(), 1e-9);

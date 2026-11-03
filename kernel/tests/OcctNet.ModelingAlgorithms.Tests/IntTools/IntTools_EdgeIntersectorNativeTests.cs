@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.ModelingAlgorithms.Tests.EdgeIntersectorRecordings;
 
@@ -54,7 +55,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
         return true;
     }
 
-    private static bool IsCircle(in TopoDS_Edge theE) => new BRepAdaptor_Curve(theE).GetType() == GeomAbs_CurveType.GeomAbs_Circle;
+    private static bool IsCircle(in TopoDS_Edge theE) => new BRepAdaptor_Curve(theE).GetType() == CurveKind.Circle;
 
     private void Report(string theCase, List<string> theMismatches, int theTotal, string theWhat)
     {

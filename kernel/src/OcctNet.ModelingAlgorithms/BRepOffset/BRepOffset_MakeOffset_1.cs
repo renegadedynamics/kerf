@@ -6,8 +6,10 @@
 // to work in mode Complete and Join Type Intersection.
 // Currently only the Planar cases are supported.
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -61,7 +63,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 new BRep_Builder().Add(aCOut, theS);
                 return true;
             default:
-                throw new Standard_ProgramError("BRepOffset_BuildOffsetFaces::AddToContainer");
+                throw new ProgramErrorException("BRepOffset_BuildOffsetFaces::AddToContainer");
         }
     }
 
@@ -158,7 +160,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
 
         bool bMicro = BOPTools_AlgoTools.IsMicroEdge(theEdge, theCtx);
-        if (bMicro && new BRepAdaptor_Curve(theEdge).GetType() == GeomAbs_Line)
+        if (bMicro && new BRepAdaptor_Curve(theEdge).GetType() == Line)
         {
             double aLen = BRep_Tool.Pnt(aV1).Distance(BRep_Tool.Pnt(aV2));
             new BRep_Builder().UpdateVertex(aV1, aLen / 2.0);
@@ -301,7 +303,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         BRepAdaptor_Curve aBAC = new(theEdge);
         switch (aBAC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return 1;
             default:
                 return 11;
@@ -356,7 +358,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=======================================================================
     private static void BuildSplitsOfTrimmedFace(in TopoDS_Face theFace, in TopoDS_Shape theEdges,
                                                  NCollection_List<TopoDS_Shape> theLFImages,
-                                                 Message_ProgressRange theRange)
+                                                 ProgressRange theRange)
     {
         BOPAlgo_Splitter aSplitter = new();
         //
@@ -431,9 +433,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : GetAverageTangent
     // purpose  : Computes average tangent vector along the curve
     //=======================================================================
-    private static gp_Vec GetAverageTangent(in TopoDS_Shape theS, int theNbP)
+    private static Vector3D GetAverageTangent(in TopoDS_Shape theS, int theNbP)
     {
-        gp_Vec aVA = new();
+        Vector3D aVA = new();
         TopExp_Explorer aExp = new(theS, TopAbs_EDGE);
         for (; aExp.More(); aExp.Next())
         {
@@ -441,12 +443,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
             //
             Geom_Curve aC = BRep_Tool.Curve(aE, out double aT1, out double aT2)!;
             //
-            gp_Vec aVSum = new();
+            Vector3D aVSum = new();
             double aT = aT1;
             double aDt = (aT2 - aT1) / theNbP;
             while (aT <= aT2)
             {
-                aC.D1(aT, out gp_Pnt aP, out gp_Vec aV);
+                aC.D1(aT, out Point3D aP, out Vector3D aV);
                 aVSum += aV.Normalized();
                 aT += aDt;
             }
@@ -556,7 +558,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=================================================================================================
 
     //! Build splits of already trimmed faces
-    public void BuildSplitsOfTrimmedFaces(Message_ProgressRange theRange)
+    public void BuildSplitsOfTrimmedFaces(ProgressRange theRange)
     {
         if (!hasData(myFaces))
         {
@@ -569,12 +571,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
             myEdgesOrigins = anEdgesOrigins;
         }
 
-        using Message_ProgressScope aPS = new(theRange, "Building splits of trimmed faces", 5);
+        using ProgressScope aPS = new(theRange, "Building splits of trimmed faces", 5);
 
         // Fuse all edges
         IntersectTrimmedEdges(aPS.Next(1));
 
-        using Message_ProgressScope aPSLoop = new(aPS.Next(4), null, myFaces!.Extent());
+        using ProgressScope aPSLoop = new(aPS.Next(4), null, myFaces!.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces); aItLF.More(); aItLF.Next())
         {
             if (!aPSLoop.More())
@@ -609,7 +611,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
 
     //! Building splits of not-trimmed offset faces.
     //! For the cases in which invalidities will be found, these invalidities will be rebuilt.
-    public void BuildSplitsOfExtendedFaces(Message_ProgressRange theRange)
+    public void BuildSplitsOfExtendedFaces(ProgressRange theRange)
     {
         // Check input data
         if (!hasData(myFaces) || !hasData(myEdgesOrigins) || !hasData(myFacesOrigins) || !hasData(myETrimEInf))
@@ -617,7 +619,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
 
-        using Message_ProgressScope aPS = new(theRange, "Building splits of extended faces", 100.0);
+        using ProgressScope aPS = new(theRange, "Building splits of extended faces", 100.0);
         // Scope has to be added into a loop of undefined size.
         // In general there are about 2 to 5 loops performed, each time
         // decreasing complexity. So reserve for each next loop smaller time.
@@ -662,7 +664,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // Split progress range on
             // * building faces basing on currently available edges and
             // * rebuilding faces basing on edges classification
-            using Message_ProgressScope aPSLoop = new(aPS.Next(aPart), null, 10.0);
+            using ProgressScope aPSLoop = new(aPS.Next(aPart), null, 10.0);
 
             // Build splits of the faces having new intersection edges
             BuildSplitsOfFaces(aPSLoop.Next(7.0));
@@ -725,12 +727,12 @@ internal sealed class BRepOffset_BuildOffsetFaces
     //=================================================================================================
 
     //! Intersection of the trimmed edges among themselves
-    private void IntersectTrimmedEdges(Message_ProgressRange theRange)
+    private void IntersectTrimmedEdges(ProgressRange theRange)
     {
         // get edges to intersect from descendants of the offset faces
         NCollection_List<TopoDS_Shape> aLS = new();
         //
-        using Message_ProgressScope aPS = new(theRange, null, 2);
+        using ProgressScope aPS = new(theRange, null, 2);
         NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces!);
         for (; aItLF.More(); aItLF.Next())
         {
@@ -775,7 +777,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         //
         NCollection_List<TopoDS_Shape> aLA = new();
         // fill map with edges images
-        using Message_ProgressScope aPSLoop = new(aPS.Next(), null, aLS.Extent());
+        using ProgressScope aPSLoop = new(aPS.Next(), null, aLS.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(aLS); aIt.More(); aIt.Next(), aPSLoop.Next())
         {
             if (!aPSLoop.More())
@@ -854,7 +856,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // purpose  : Building the splits of offset faces and
     //           looking for the invalid splits
     //=======================================================================
-    private void BuildSplitsOfFaces(Message_ProgressRange theRange)
+    private void BuildSplitsOfFaces(ProgressRange theRange)
     {
         BRep_Builder aBB = new();
         int i, aNb;
@@ -879,9 +881,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMEOrLEIm = new(TopTools_ShapeMapHasher.Instance);
         //
         // Outer range
-        using Message_ProgressScope aPSOuter = new(theRange, null, 10.0);
+        using ProgressScope aPSOuter = new(theRange, null, 10.0);
         // build splits of faces
-        using Message_ProgressScope aPSBF = new(aPSOuter.Next(3.0), "Building faces", 2 * myFaces!.Extent());
+        using ProgressScope aPSBF = new(aPSOuter.Next(3.0), "Building faces", 2 * myFaces!.Extent());
         NCollection_List<TopoDS_Shape>.Iterator aItLF = new(myFaces);
         for (; aItLF.More(); aItLF.Next(), aPSBF.Next())
         {
@@ -1076,7 +1078,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // Find the faces containing only the inverted edges and the invalid ones
         NCollection_List<TopoDS_Shape> anInvertedFaces = new();
 
-        using Message_ProgressScope aPSIF = new(aPSOuter.Next(2.0), "Checking validity of faces", aLFDone.Extent());
+        using ProgressScope aPSIF = new(aPSOuter.Next(2.0), "Checking validity of faces", aLFDone.Extent());
         // find invalid faces
         // considering faces containing only invalid edges as invalid
         aItLF.Initialize(aLFDone);
@@ -1444,7 +1446,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                                   NCollection_DataMap<TopoDS_Shape, NCollection_Map<TopoDS_Shape>> theDMFMVIE,
                                   NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theDMEOrLEIm,
                                   NCollection_Map<TopoDS_Shape> theEdgesInvalidByVertex,
-                                  NCollection_Map<TopoDS_Shape> theEdgesValidByVertex, Message_ProgressRange theRange)
+                                  NCollection_Map<TopoDS_Shape> theEdgesValidByVertex, ProgressRange theRange)
     {
         // Edge is considered as invalid in the following cases:
         // 1. Its orientation on the face has changed comparing to the originals edge and face;
@@ -1470,7 +1472,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // back map from the original shapes to their offset images
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> anImages = new(TopTools_ShapeMapHasher.Instance);
         //
-        using Message_ProgressScope aPS = new(theRange, "Checking validity of edges", 2 * theLFImages.Extent());
+        using ProgressScope aPS = new(theRange, "Checking validity of edges", 2 * theLFImages.Extent());
         NCollection_List<TopoDS_Shape>.Iterator aItLF = new(theLFImages);
         for (; aItLF.More(); aItLF.Next(), aPS.Next())
         {
@@ -1615,14 +1617,14 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             // located between tangent edges
                             bool bAllTgt = true;
                             NCollection_List<TopoDS_Shape>.Iterator aItLEFOr = new(pLEFOr);
-                            gp_Vec aVRef = GetAverageTangent(aItLEFOr.Value(), aNbP);
+                            Vector3D aVRef = GetAverageTangent(aItLEFOr.Value(), aNbP);
                             for (; aItLEFOr.More(); aItLEFOr.Next())
                             {
                                 TopoDS_Shape aEOr = aItLEFOr.Value();
                                 new BRep_Builder().Add(aCEOr, aEOr);
 
-                                gp_Vec aVCur = GetAverageTangent(aEOr, aNbP);
-                                if (!aVRef.IsParallel(aVCur, Precision.Angular()))
+                                Vector3D aVCur = GetAverageTangent(aEOr, aNbP);
+                                if (!aVRef.IsParallel(aVCur, global::Kerf.Engine.Foundation.Precision.Angular()))
                                 {
                                     bAllTgt = false;
                                 }
@@ -1702,8 +1704,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         // get average tangent vector for each curve taking into account
                         // the orientations of the edges, i.e. the edge is reversed
                         // the vector is reversed as well
-                        gp_Vec aVSum1 = GetAverageTangent(aEIm, aNbP);
-                        gp_Vec aVSum2 = GetAverageTangent(aEOrF, aNbP);
+                        Vector3D aVSum1 = GetAverageTangent(aEIm, aNbP);
+                        Vector3D aVSum2 = GetAverageTangent(aEOrF, aNbP);
                         //
                         aVSum1.Normalize();
                         aVSum2.Normalize();
@@ -1729,7 +1731,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                             }
                         }
                         //
-                        if (aCos < Precision.Confusion())
+                        if (aCos < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             bInvalid = true;
                             aNbInv++;
@@ -2019,7 +2021,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 TopAbs_Orientation anOriClass = aEClassified.Orientation();
 
                 BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(TopoDS.Edge(aEClassified), TopoDS.Face(aFClassified),
-                                                           out gp_Dir aDNClass);
+                                                           out Direction3D aDNClass);
 
                 theLocInvEdges.Find(aFClassified, out NCollection_IndexedMap<TopoDS_Shape>? pMEInvalid);
                 bool isInvalid = pMEInvalid is not null && pMEInvalid.Contains(aE);
@@ -2033,9 +2035,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     if (anEdgeSetClass.IsEqual(anEdgeSetUnclass))
                     {
                         BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(TopoDS.Edge(aE), TopoDS.Face(aFUnclassified),
-                                                                   out gp_Dir aDNUnclass);
+                                                                   out Direction3D aDNUnclass);
 
-                        bool isSameOri = aDNClass.IsEqual(aDNUnclass, Precision.Angular());
+                        bool isSameOri = aDNClass.IsEqual(aDNUnclass, global::Kerf.Engine.Foundation.Precision.Angular());
 
                         // Among other splits of the same face find those where the edge is contained with
                         // different orientation
@@ -2546,8 +2548,8 @@ internal sealed class BRepOffset_BuildOffsetFaces
             TopoDS_Face aFIm = TopoDS.Face(aItLF.Value());
             TopExp.MapShapesAndAncestors(aFIm, TopAbs_EDGE, TopAbs_FACE, anEFSplitsMap);
             // get the point inside the face and classify it relatively hole faces
-            gp_Pnt aP3D = new();
-            gp_Pnt2d aP2D = new();
+            Point3D aP3D = new();
+            Point2D aP2D = new();
             int iErr = BOPTools_AlgoTools3D.PointInFace(aFIm, ref aP3D, ref aP2D, myContext);
             if (iErr != 0)
             {
@@ -2676,9 +2678,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aVW2 = TopoDS.Vertex(aLVAlone.Last());
                 //
                 // check distances
-                gp_Pnt aPI1_ = BRep_Tool.Pnt(aVI1);
-                gp_Pnt aPW1 = BRep_Tool.Pnt(aVW1);
-                gp_Pnt aPW2 = BRep_Tool.Pnt(aVW2);
+                Point3D aPI1_ = BRep_Tool.Pnt(aVI1);
+                Point3D aPW1 = BRep_Tool.Pnt(aVW1);
+                Point3D aPW2 = BRep_Tool.Pnt(aVW2);
                 //
                 double aDist1 = aPI1_.SquareDistance(aPW1);
                 double aDist2 = aPI1_.SquareDistance(aPW2);
@@ -2779,13 +2781,13 @@ internal sealed class BRepOffset_BuildOffsetFaces
         }
         //
         // check positions of the offset and original vertices
-        gp_Pnt aPI1 = BRep_Tool.Pnt(aVI1);
-        gp_Pnt aPI2 = BRep_Tool.Pnt(aVI2);
-        gp_Pnt aPO1 = BRep_Tool.Pnt(aVO1);
-        gp_Pnt aPO2 = BRep_Tool.Pnt(aVO2);
+        Point3D aPI1 = BRep_Tool.Pnt(aVI1);
+        Point3D aPI2 = BRep_Tool.Pnt(aVI2);
+        Point3D aPO1 = BRep_Tool.Pnt(aVO1);
+        Point3D aPO2 = BRep_Tool.Pnt(aVO2);
         //
-        gp_Vec aVI = new(aPI1, aPI2);
-        gp_Vec aVOv = new(aPO1, aPO2);
+        Vector3D aVI = new(aPI1, aPI2);
+        Vector3D aVOv = new(aPO1, aPO2);
         //
         double anAngle = aVI.Angle(aVOv);
         bool bInverted = Math.Abs(anAngle - M_PI) < 1.0e-4;
@@ -3523,7 +3525,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                                    NCollection_IndexedMap<TopoDS_Shape> theMFToCheckInt,
                                    NCollection_IndexedMap<TopoDS_Shape> theMFInvInHole, in TopoDS_Shape theFHoles,
                                    NCollection_IndexedMap<TopoDS_Shape> theMERemoved,
-                                   NCollection_IndexedMap<TopoDS_Shape> theMEInside, Message_ProgressRange theRange)
+                                   NCollection_IndexedMap<TopoDS_Shape> theMEInside, ProgressRange theRange)
     {
         NCollection_List<TopoDS_Shape> aLS = new();
         NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
@@ -3531,7 +3533,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         NCollection_List<TopoDS_Shape>.Iterator aItLF = new();
         NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMFImF = new(TopTools_ShapeMapHasher.Instance);
         //
-        using Message_ProgressScope aPS = new(theRange, "Looking for inside faces", 10);
+        using ProgressScope aPS = new(theRange, "Looking for inside faces", 10);
         int i, aNb = myOFImages.Extent();
         for (i = 1; i <= aNb; ++i)
         {
@@ -5120,7 +5122,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : IntersectFaces
     // purpose  : Intersection of the faces that should be rebuild to resolve all invalidities
     //=======================================================================
-    private void IntersectFaces(NCollection_Map<TopoDS_Shape> theVertsToAvoid, Message_ProgressRange theRange)
+    private void IntersectFaces(NCollection_Map<TopoDS_Shape> theVertsToAvoid, ProgressRange theRange)
     {
         int aNbFR = myFacesToRebuild.Extent();
         if (aNbFR == 0)
@@ -5128,7 +5130,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
 
-        using Message_ProgressScope aPSOuter = new(theRange, "Rebuilding invalid faces", 10);
+        using ProgressScope aPSOuter = new(theRange, "Rebuilding invalid faces", 10);
         //
         int i, j, k, aNbInv;
         NCollection_List<TopoDS_Shape>.Iterator aItLF = new(), aItLE = new();
@@ -5211,7 +5213,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // alone edges
         NCollection_Map<TopoDS_Shape> aMEAlone = new(TopTools_ShapeMapHasher.Instance), aMEInvOnArt = new(TopTools_ShapeMapHasher.Instance);
         //
-        using Message_ProgressScope aPSArt = new(aPSOuter.Next(), null, aLCBArt.Extent());
+        using ProgressScope aPSArt = new(aPSOuter.Next(), null, aLCBArt.Extent());
         NCollection_List<TopoDS_Shape>.Iterator aItLCBArt = new(aLCBArt);
         for (; aItLCBArt.More(); aItLCBArt.Next(), aPSArt.Next())
         {
@@ -5390,7 +5392,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMOENEdges = new(TopTools_ShapeMapHasher.Instance);
 
         aNbInv = myInvalidFaces.Extent();
-        using Message_ProgressScope aPSInter = new(aPSOuter.Next(5), null, aNbInv);
+        using ProgressScope aPSInter = new(aPSOuter.Next(5), null, aNbInv);
         for (k = 1; k <= aNbInv; ++k)
         {
             if (!aPSInter.More())
@@ -5423,7 +5425,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 aLCB.Assign(aLFInv);
             }
             //
-            using Message_ProgressScope aPSCB = new(aPSInter.Next(), null, aLCB.Extent());
+            using ProgressScope aPSCB = new(aPSInter.Next(), null, aLCB.Extent());
             bool bArtificial = myArtInvalidFaces.IsBound(aFInv);
             NCollection_List<TopoDS_Shape>.Iterator aItLCB = new(aLCB);
             for (; aItLCB.More(); aItLCB.Next())
@@ -5468,7 +5470,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                 NCollection_List<TopoDS_Shape> aLCBE = new();
                 BOPTools_AlgoTools.MakeConnexityBlocks(aCBE, TopAbs_VERTEX, TopAbs_EDGE, aLCBE);
                 //
-                using Message_ProgressScope aPSCBE = new(aPSCB.Next(), null, aLCBE.Extent());
+                using ProgressScope aPSCBE = new(aPSCB.Next(), null, aLCBE.Extent());
                 NCollection_List<TopoDS_Shape>.Iterator aItLCBE = new(aLCBE);
                 for (; aItLCBE.More(); aItLCBE.Next())
                 {
@@ -5505,7 +5507,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     // among each other (except for the artificially invalid faces)
                     NCollection_IndexedMap<TopoDS_Shape> aMEToInt = new(TopTools_ShapeMapHasher.Instance);
                     int aNb = aMFInt.Extent();
-                    using Message_ProgressScope aPSIntPair = new(aPSCBE.Next(), null, aNb);
+                    using ProgressScope aPSIntPair = new(aPSCBE.Next(), null, aNb);
                     for (i = 1; i <= aNb; ++i, aPSIntPair.Next())
                     {
                         if (!aPSIntPair.More())
@@ -6742,9 +6744,9 @@ internal sealed class BRepOffset_BuildOffsetFaces
                                   NCollection_Map<TopoDS_Shape> theMECheckExt, NCollection_Map<TopoDS_Shape> theVertsToAvoid,
                                   NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEImages,
                                   NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEETrim,
-                                  Message_ProgressRange theRange)
+                                  ProgressRange theRange)
     {
-        using Message_ProgressScope aPSOuter = new(theRange, "Updating edges", 10);
+        using ProgressScope aPSOuter = new(theRange, "Updating edges", 10);
         // update images and origins of edges, plus update AsDes
         //
         // new edges
@@ -6835,7 +6837,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         // Intersected splits
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aMBlocksSp = new(TopTools_ShapeMapHasher.Instance);
 
-        using Message_ProgressScope aPSB = new(aPSOuter.Next(), null, aLBlocks.Extent());
+        using ProgressScope aPSB = new(aPSOuter.Next(), null, aLBlocks.Extent());
         NCollection_List<TopoDS_Shape>.Iterator aItLB = new(aLBlocks);
         for (; aItLB.More(); aItLB.Next(), aPSB.Next())
         {
@@ -6924,7 +6926,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
         NCollection_List<TopoDS_Shape> aLValBlocks = new();
 
         int aNbB = aMBlocksSp.Extent();
-        using Message_ProgressScope aPSBSp = new(aPSOuter.Next(), null, aNbB);
+        using ProgressScope aPSBSp = new(aPSOuter.Next(), null, aNbB);
         for (i = 1; i <= aNbB; ++i, aPSBSp.Next())
         {
             if (!aPSBSp.More())
@@ -7792,7 +7794,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                         // add this edge for checking by making new vertex in the middle of the edge
                         TopoDS_Vertex aV = new();
                         Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(aEIm), out double f, out double l)!;
-                        new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), Precision.Confusion());
+                        new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
                         // and adding this vertex for checking
                         aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<TopoDS_Shape>())).Append(aE);
                         aMVInv.Add(aV);
@@ -7812,7 +7814,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             // make new vertex in the middle of the edge
             TopoDS_Vertex aV = new();
             Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(aE), out double f, out double l)!;
-            new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), Precision.Confusion());
+            new BRep_Builder().MakeVertex(ref aV, aC.Value((f + l) * 0.5), global::Kerf.Engine.Foundation.Precision.Confusion());
             // add this vertex for checking
             aDMVE.ChangeFromIndex(aDMVE.Add(aV, new NCollection_List<TopoDS_Shape>())).Append(aE);
             aMVInv.Add(aV);
@@ -7917,7 +7919,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
                     if (iStatus == 0)
                     {
                         // classify the point relatively faces
-                        gp_Pnt2d aP2d = new(U, V);
+                        Point2D aP2d = new(U, V);
                         aItLF.Initialize(aLFIm);
                         for (; aItLF.More() && bInvalid; aItLF.Next())
                         {
@@ -7932,7 +7934,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             {
                 // the vertex is invalid for all faces
                 // check the same vertex for the solids
-                gp_Pnt aP = BRep_Tool.Pnt(aV);
+                Point3D aP = BRep_Tool.Pnt(aV);
                 double aTolV = BRep_Tool.Tolerance(aV);
                 //
                 TopExp_Explorer aExpS = new(mySolids, TopAbs_SOLID);
@@ -8250,7 +8252,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
     // function : FillGaps
     // purpose  : Fill possible gaps (holes) in the splits of the offset faces
     //=======================================================================
-    private void FillGaps(Message_ProgressRange theRange)
+    private void FillGaps(ProgressRange theRange)
     {
         int aNbF = myOFImages.Extent();
         if (aNbF == 0)
@@ -8258,7 +8260,7 @@ internal sealed class BRepOffset_BuildOffsetFaces
             return;
         }
 
-        using Message_ProgressScope aPS = new(theRange, "Filling gaps", 2 * aNbF);
+        using ProgressScope aPS = new(theRange, "Filling gaps", 2 * aNbF);
 
         // Check the splits of offset faces on the free edges and fill the gaps (holes)
         // in created splits, otherwise the closed volume will not be possible to create.
@@ -8448,7 +8450,7 @@ public sealed partial class BRepOffset_MakeOffset
     /// Builds the splits of the already trimmed offset faces, for the Complete mode with the Intersection join.
     /// </summary>
     private void BuildSplitsOfTrimmedFaces(NCollection_List<TopoDS_Shape> theLF, BRepAlgo_AsDes theAsDes,
-                                           BRepAlgo_Image theImage, Message_ProgressRange theRange)
+                                           BRepAlgo_Image theImage, ProgressRange theRange)
     {
         BRepOffset_BuildOffsetFaces aBFTool = new(theImage);
         aBFTool.SetFaces(theLF);
@@ -8472,7 +8474,7 @@ public sealed partial class BRepOffset_MakeOffset
                                             NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theEdgesOrigins,
                                             NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theFacesOrigins,
                                             NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theETrimEInf,
-                                            BRepAlgo_Image theImage, Message_ProgressRange theRange)
+                                            BRepAlgo_Image theImage, ProgressRange theRange)
     {
         BRepOffset_BuildOffsetFaces aBFTool = new(theImage);
         aBFTool.SetFaces(theLF);

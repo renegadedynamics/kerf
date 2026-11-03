@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -40,7 +43,7 @@ internal static class BRepTestBoundingCommands
 
             if (aShape.ShapeType() == TopAbs_ShapeEnum.TopAbs_VERTEX)
             {
-                gp_Pnt aPnt = BRep_Tool.Pnt(TopoDS.Vertex(aShape));
+                Point3D aPnt = BRep_Tool.Pnt(TopoDS.Vertex(aShape));
                 di.Append(a[i]).Append(" (x,y,z) : ").Append(aPnt.X()).Append(" ").Append(aPnt.Y()).Append(" ").Append(aPnt.Z()).Append("\n");
             }
         }
@@ -51,12 +54,12 @@ internal static class BRepTestBoundingCommands
     /// <summary>TCollection_AsciiString::IsRealValue (strtod converts a prefix) and RealValue.</summary>
     private static bool IsRealValue(string theText, out double theValue)
     {
-        theValue = Standard_Stream.Strtod(theText, out int anEnd);
+        theValue = global::Kerf.Engine.Foundation.StreamUtilities.Strtod(theText, out int anEnd);
         return anEnd != 0;
     }
 
     /// <summary>Parse 6 real values for defining AABB.</summary>
-    private static bool ParseMinMax(IReadOnlyList<string> theArgVec, int theFrom, ref Bnd_Box theBox)
+    private static bool ParseMinMax(IReadOnlyList<string> theArgVec, int theFrom, ref Box theBox)
     {
         double[] aValues = new double[6];
         for (int i = 0; i < 6; i++)
@@ -67,9 +70,9 @@ internal static class BRepTestBoundingCommands
             }
         }
 
-        var aPntMin = new gp_Pnt(aValues[0], aValues[1], aValues[2]);
-        var aPntMax = new gp_Pnt(aValues[3], aValues[4], aValues[5]);
-        theBox = Bnd_Box.Void().Added(aPntMin).Added(aPntMax);
+        var aPntMin = new Point3D(aValues[0], aValues[1], aValues[2]);
+        var aPntMax = new Point3D(aValues[3], aValues[4], aValues[5]);
+        theBox = Box.Void().Added(aPntMin).Added(aPntMax);
         return true;
     }
 
@@ -78,7 +81,7 @@ internal static class BRepTestBoundingCommands
         // 1. Parse arguments
         int theNArg = theArgVal.Count;
         TopoDS_Shape aShape = new();
-        Bnd_Box anAABB = new();
+        Box anAABB = new();
 
         bool doPrint = false;
         bool doDumpJson = false;
@@ -147,7 +150,7 @@ internal static class BRepTestBoundingCommands
             {
                 aShape = theDI.GetShape(theArgVal[anArgIter]);
             }
-            else if (anAABB.IsVoid() && anArgIter + 5 < theNArg && ParseMinMax(theArgVal, anArgIter, ref anAABB))
+            else if (anAABB.IsVoid && anArgIter + 5 < theNArg && ParseMinMax(theArgVal, anArgIter, ref anAABB))
             {
                 anArgIter += 5;
             }
@@ -158,12 +161,12 @@ internal static class BRepTestBoundingCommands
             }
         }
 
-        if (anAABB.IsVoid() && aShape.IsNull())
+        if (anAABB.IsVoid && aShape.IsNull())
         {
             theDI.Output.WriteLine("Syntax error: input is not specified (neither shape nor coordinates)");
             return 1;
         }
-        else if (!anAABB.IsVoid() && (isOBB || isOptimal || isTolerUsed))
+        else if (!anAABB.IsVoid && (isOBB || isOptimal || isTolerUsed))
         {
             theDI.Output.WriteLine("Syntax error: Options -obb, -optimal and -extToler cannot be used for explicitly defined AABB");
             return 1;
@@ -184,17 +187,17 @@ internal static class BRepTestBoundingCommands
         // 2. Compute box and save results
         if (isOBB)
         {
-            var anOBB = new Bnd_OBB();
+            var anOBB = new OrientedBox();
             BRepBndLib.AddOBB(aShape, ref anOBB, isTriangulationReq, isOptimal, isTolerUsed);
 
-            if (anOBB.IsVoid())
+            if (anOBB.IsVoid)
             {
                 theResult.Append("Void box.\n");
             }
             else if (doPrint)
             {
-                gp_XYZ aBaryCenter = anOBB.Center();
-                gp_XYZ aXDir = anOBB.XDirection(), aYDir = anOBB.YDirection(), aZDir = anOBB.ZDirection();
+                Xyz aBaryCenter = anOBB.Center();
+                Xyz aXDir = anOBB.XDirection(), aYDir = anOBB.YDirection(), aZDir = anOBB.ZDirection();
                 theResult.Append("Oriented bounding box\n");
                 theResult.Append("Center: ").Append(aBaryCenter.X()).Append(" ").Append(aBaryCenter.Y()).Append(" ").Append(aBaryCenter.Z()).Append("\n");
                 theResult.Append("X-axis: ").Append(aXDir.X()).Append(" ").Append(aXDir.Y()).Append(" ").Append(aXDir.Z()).Append("\n");
@@ -219,7 +222,7 @@ internal static class BRepTestBoundingCommands
         {
             if (!aShape.IsNull())
             {
-                anAABB = Bnd_Box.Void();
+                anAABB = Box.Void();
                 if (isOptimal)
                 {
                     BRepBndLib.AddOptimal(aShape, ref anAABB, isTriangulationReq, isTolerUsed);
@@ -230,19 +233,19 @@ internal static class BRepTestBoundingCommands
                 }
             }
 
-            if (anAABB.IsVoid())
+            if (anAABB.IsVoid)
             {
                 theResult.Append("Void box.\n");
             }
             else
             {
-                if (isFinitePart && anAABB.IsOpen())
+                if (isFinitePart && anAABB.IsOpen)
                 {
                     anAABB = anAABB.FinitePart();
                 }
 
-                gp_Pnt aMin = anAABB.CornerMin();
-                gp_Pnt aMax = anAABB.CornerMax();
+                Point3D aMin = anAABB.CornerMin();
+                Point3D aMax = anAABB.CornerMax();
 
                 // print to DRAW
                 if (doPrint)
@@ -258,11 +261,11 @@ internal static class BRepTestBoundingCommands
                         theResult.Append("X-range: ").Append(aMin.X()).Append(" ").Append(aMax.X()).Append("\n")
                                  .Append("Y-range: ").Append(aMin.Y()).Append(" ").Append(aMax.Y()).Append("\n")
                                  .Append("Z-range: ").Append(aMin.Z()).Append(" ").Append(aMax.Z()).Append("\n");
-                        if (anAABB.IsOpen() && anAABB.HasFinitePart())
+                        if (anAABB.IsOpen && anAABB.HasFinitePart)
                         {
-                            Bnd_Box aFinitAabb = anAABB.FinitePart();
-                            gp_Pnt aFinMin = aFinitAabb.CornerMin();
-                            gp_Pnt aFinMax = aFinitAabb.CornerMax();
+                            Box aFinitAabb = anAABB.FinitePart();
+                            Point3D aFinMin = aFinitAabb.CornerMin();
+                            Point3D aFinMax = aFinitAabb.CornerMax();
                             theResult.Append("Finite part\n");
                             theResult.Append("X-range: ").Append(aFinMin.X()).Append(" ").Append(aFinMax.X()).Append("\n")
                                      .Append("Y-range: ").Append(aFinMin.Y()).Append(" ").Append(aFinMax.Y()).Append("\n")
@@ -291,7 +294,7 @@ internal static class BRepTestBoundingCommands
             // save as shape
             if (aResShapeName.Length != 0)
             {
-                return ConvertBndToShape(theDI, theResult, new Bnd_OBB(anAABB), aResShapeName);
+                return ConvertBndToShape(theDI, theResult, new OrientedBox(anAABB), aResShapeName);
             }
         }
 
@@ -299,20 +302,20 @@ internal static class BRepTestBoundingCommands
     }
 
     /// <summary>ConvertBndToShape: the box as a solid (BRepPrimAPI_MakeBox on the box's axes), or a null shape for a void box.</summary>
-    private static int ConvertBndToShape(DrawInterpreter theDI, DrawResult theResult, in Bnd_OBB theBox, string theName)
+    private static int ConvertBndToShape(DrawInterpreter theDI, DrawResult theResult, in OrientedBox theBox, string theName)
     {
-        if (theBox.IsVoid())
+        if (theBox.IsVoid)
         {
             theDI.SetShape(theName, new TopoDS_Shape());
             return 0;
         }
 
-        gp_Pnt aBaryCenter = new(theBox.Center());
-        gp_XYZ aXDir = theBox.XDirection(), aYDir = theBox.YDirection(), aZDir = theBox.ZDirection();
+        Point3D aBaryCenter = new(theBox.Center());
+        Xyz aXDir = theBox.XDirection(), aYDir = theBox.YDirection(), aZDir = theBox.ZDirection();
         double aHalfX = theBox.XHSize(), aHalfY = theBox.YHSize(), aHalfZ = theBox.ZHSize();
 
-        gp_Ax2 anAxes = new(aBaryCenter, new gp_Dir(aZDir), new gp_Dir(aXDir));
-        anAxes.SetLocation(new gp_Pnt(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
+        Frame3D anAxes = new(aBaryCenter, new Direction3D(aZDir), new Direction3D(aXDir));
+        anAxes.SetLocation(new Point3D(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
         TopoDS_Solid aBox = new BRepPrimAPI_MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
         theDI.SetShape(theName, aBox);
         return 0;
@@ -341,14 +344,14 @@ internal static class BRepTestBoundingCommands
 
         if (isOBB)
         {
-            Bnd_OBB anOBB1 = new(), anOBB2 = new();
+            OrientedBox anOBB1 = new(), anOBB2 = new();
             BRepBndLib.AddOBB(aShape1, ref anOBB1);
             BRepBndLib.AddOBB(aShape2, ref anOBB2);
             theResult.Append(anOBB1.IsOut(anOBB2) ? "The shapes are NOT interfered by OBB.\n" : "The shapes are interfered by OBB.\n");
         }
         else
         {
-            Bnd_Box anAABB1 = new(), anAABB2 = new();
+            Box anAABB1 = new(), anAABB2 = new();
             BRepBndLib.Add(aShape1, ref anAABB1);
             BRepBndLib.Add(aShape2, ref anAABB2);
             theResult.Append(anAABB1.IsOut(anAABB2) ? "The shapes are NOT interfered by AABB.\n" : "The shapes are interfered by AABB.\n");
@@ -368,8 +371,8 @@ internal static class BRepTestBoundingCommands
         }
 
         bool IsOptimal = n == 3 && a[2] == "-o";
-        Bnd_Box B = new();
-        Bnd_Box2d B2d = new();
+        Box B = new();
+        Box2d B2d = new();
         bool Is3d = true;
         object? aGeometry = (theDI.GetDrawable(a[1]) as DrawGeometry)?.Geometry;
         if (aGeometry is Geom_Surface S)
@@ -378,11 +381,11 @@ internal static class BRepTestBoundingCommands
             var aGAS = new GeomAdaptor_Surface(S);
             if (IsOptimal)
             {
-                BndLib_AddSurface.AddOptimal(aGAS, Precision.Confusion(), ref B);
+                BndLib_AddSurface.AddOptimal(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
             else
             {
-                BndLib_AddSurface.Add(aGAS, Precision.Confusion(), ref B);
+                BndLib_AddSurface.Add(aGAS, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
         }
         else if (aGeometry is Geom_Curve C)
@@ -391,11 +394,11 @@ internal static class BRepTestBoundingCommands
             var aGAC = new GeomAdaptor_Curve(C);
             if (IsOptimal)
             {
-                BndLib_Add3dCurve.AddOptimal(aGAC, Precision.Confusion(), ref B);
+                BndLib_Add3dCurve.AddOptimal(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
             else
             {
-                BndLib_Add3dCurve.Add(aGAC, Precision.Confusion(), ref B);
+                BndLib_Add3dCurve.Add(aGAC, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B);
             }
         }
         else if (aGeometry is Geom2d_Curve C2d)
@@ -404,11 +407,11 @@ internal static class BRepTestBoundingCommands
             Is3d = false;
             if (IsOptimal)
             {
-                BndLib_Add2dCurve.AddOptimal(C2d, C2d.FirstParameter(), C2d.LastParameter(), Precision.Confusion(), ref B2d);
+                BndLib_Add2dCurve.AddOptimal(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
             else
             {
-                BndLib_Add2dCurve.Add(C2d, C2d.FirstParameter(), C2d.LastParameter(), Precision.Confusion(), ref B2d);
+                BndLib_Add2dCurve.Add(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
         }
         else

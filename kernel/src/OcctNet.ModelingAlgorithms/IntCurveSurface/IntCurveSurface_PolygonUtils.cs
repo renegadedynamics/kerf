@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,13 +20,13 @@ internal static class IntCurveSurface_PolygonUtils
     /// deflection (the box is enlarged by 1.5 times it).
     /// </summary>
     public static void InitUniform<CurveType, CurveTool>(in CurveType theCurve, double theBinf, double theBsup,
-                                                         int theNbPntIn, NCollection_Array1<gp_Pnt> thePnts,
-                                                         ref Bnd_Box theBnd, out double theDeflection)
+                                                         int theNbPntIn, NCollection_Array1<Point3D> thePnts,
+                                                         ref Box theBnd, out double theDeflection)
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
     {
         double du = (theBsup - theBinf) / (double)(theNbPntIn - 1);
         double u = theBinf;
-        gp_Pnt P;
+        Point3D P;
 
         for (int i = 1; i <= theNbPntIn; ++i)
         {
@@ -39,10 +43,10 @@ internal static class IntCurveSurface_PolygonUtils
             u = theBinf + du * 0.5;
             for (int i = 1; i < theNbPntIn; ++i)
             {
-                gp_Pnt Pm = CurveTool.Value(theCurve, u);
-                gp_Pnt P1 = thePnts.Value(i);
-                gp_Pnt P2 = thePnts.Value(i + 1);
-                gp_Lin L = new(P1, new gp_Dir(new gp_Vec(P1, P2)));
+                Point3D Pm = CurveTool.Value(theCurve, u);
+                Point3D P1 = thePnts.Value(i);
+                Point3D P2 = thePnts.Value(i + 1);
+                Line3D L = new(P1, new Direction3D(new Vector3D(P1, P2)));
                 double t = L.Distance(Pm);
                 if (t > theDeflection)
                 {
@@ -63,8 +67,8 @@ internal static class IntCurveSurface_PolygonUtils
     /// the parameters in <paramref name="theParams"/>, and estimates the maximum deflection.
     /// </summary>
     public static void InitWithParams<CurveType, CurveTool>(in CurveType theCurve, NCollection_Array1<double> theUpars,
-                                                            int theNbPntIn, NCollection_Array1<gp_Pnt> thePnts,
-                                                            ref Bnd_Box theBnd, out double theDeflection,
+                                                            int theNbPntIn, NCollection_Array1<Point3D> thePnts,
+                                                            ref Box theBnd, out double theDeflection,
                                                             out NCollection_HArray1<double> theParams)
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
     {
@@ -74,7 +78,7 @@ internal static class IntCurveSurface_PolygonUtils
         for (int i = 1; i <= theNbPntIn; ++i)
         {
             theParams.SetValue(i, theUpars[i + i0]);
-            CurveTool.D0(theCurve, theUpars[i + i0], out gp_Pnt P);
+            CurveTool.D0(theCurve, theUpars[i + i0], out Point3D P);
             theBnd.Add(P);
             thePnts.SetValue(i, P);
         }
@@ -86,10 +90,10 @@ internal static class IntCurveSurface_PolygonUtils
             for (int i = 1; i < theNbPntIn; ++i)
             {
                 double u = 0.5 * (theUpars[i0 + i] + theUpars[i0 + i + 1]);
-                gp_Pnt Pm = CurveTool.Value(theCurve, u);
-                gp_Pnt P1 = thePnts.Value(i);
-                gp_Pnt P2 = thePnts.Value(i + 1);
-                gp_Lin L = new(P1, new gp_Dir(new gp_Vec(P1, P2)));
+                Point3D Pm = CurveTool.Value(theCurve, u);
+                Point3D P1 = thePnts.Value(i);
+                Point3D P2 = thePnts.Value(i + 1);
+                Line3D L = new(P1, new Direction3D(new Vector3D(P1, P2)));
                 double t = L.Distance(Pm);
                 if (t > theDeflection)
                 {

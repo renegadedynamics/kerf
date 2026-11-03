@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_Orientation;
@@ -21,21 +22,21 @@ public class BRepCheckWireTests
     private static TopoDS_Face PlaneFace()
     {
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, Tol);
         return aF;
     }
 
-    private static TopoDS_Vertex V(double x, double y) => TestShapes.Vertex(new gp_Pnt(x, y, 0));
+    private static TopoDS_Vertex V(double x, double y) => TestShapes.Vertex(new Point3D(x, y, 0));
 
     /// <summary>A segment between two vertices of the plane z = 0, with its pcurve on <paramref name="theFace"/>.</summary>
     private static TopoDS_Edge Seg(in TopoDS_Face theFace, in TopoDS_Vertex theV1, in TopoDS_Vertex theV2)
     {
         var aB = new BRep_Builder();
-        gp_Pnt aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
+        Point3D aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
         TopoDS_Edge anE = TestShapes.Edge(theV1, theV2);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(aP1.X(), aP1.Y()), new gp_Dir2d(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(aP1.X(), aP1.Y()), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
                       theFace, Tol);
         return anE;
     }
@@ -283,23 +284,23 @@ public class BRepCheckWireTests
     private static (TopoDS_Face, TopoDS_Wire) CylinderPatchOpenIn2d()
     {
         var aB = new BRep_Builder();
-        var aSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0);
+        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aSurf, Tol);
-        TopoDS_Vertex aV00 = TestShapes.Vertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV10 = TestShapes.Vertex(new gp_Pnt(Math.Cos(1), Math.Sin(1), 0));
-        TopoDS_Vertex aV11 = TestShapes.Vertex(new gp_Pnt(Math.Cos(1), Math.Sin(1), 1));
-        TopoDS_Vertex aV01 = TestShapes.Vertex(new gp_Pnt(1, 0, 1));
-        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1),
+        TopoDS_Vertex aV00 = TestShapes.Vertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV10 = TestShapes.Vertex(new Point3D(Math.Cos(1), Math.Sin(1), 0));
+        TopoDS_Vertex aV11 = TestShapes.Vertex(new Point3D(Math.Cos(1), Math.Sin(1), 1));
+        TopoDS_Vertex aV01 = TestShapes.Vertex(new Point3D(1, 0, 1));
+        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1),
                                               0, 1, aV00, aV10);
-        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1),
+        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1),
                                            0, 1, aV01, aV11);
-        TopoDS_Edge aRight = TestShapes.Edge(new Geom_Line(new gp_Pnt(Math.Cos(1), Math.Sin(1), 0), new gp_Dir(0, 0, 1)), 0, 1, aV10, aV11);
-        TopoDS_Edge aLeft = TestShapes.Edge(new Geom_Line(new gp_Pnt(1, 0, 0), new gp_Dir(0, 0, 1)), 0, 1, aV00, aV01);
-        aB.UpdateEdge(aBottom, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Tol);
-        aB.UpdateEdge(aTop, new Geom2d_Line(new gp_Pnt2d(0, 1), new gp_Dir2d(1, 0)), aF, Tol);
-        aB.UpdateEdge(aRight, new Geom2d_Line(new gp_Pnt2d(1, 0), new gp_Dir2d(0, 1)), aF, Tol);
-        aB.UpdateEdge(aLeft, new Geom2d_Line(new gp_Pnt2d(-0.2, 0), new gp_Dir2d(0, 1)), aF, Tol);
+        TopoDS_Edge aRight = TestShapes.Edge(new Geom_Line(new Point3D(Math.Cos(1), Math.Sin(1), 0), new Direction3D(0, 0, 1)), 0, 1, aV10, aV11);
+        TopoDS_Edge aLeft = TestShapes.Edge(new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0, 1, aV00, aV01);
+        aB.UpdateEdge(aBottom, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Tol);
+        aB.UpdateEdge(aTop, new Geom2d_Line(new Point2D(0, 1), new Direction2D(1, 0)), aF, Tol);
+        aB.UpdateEdge(aRight, new Geom2d_Line(new Point2D(1, 0), new Direction2D(0, 1)), aF, Tol);
+        aB.UpdateEdge(aLeft, new Geom2d_Line(new Point2D(-0.2, 0), new Direction2D(0, 1)), aF, Tol);
         TopoDS_Wire aW = InFace(ref aF, WireOf(aBottom, aRight, aTop.Reversed(), aLeft.Reversed()));
         return (aF, aW);
     }

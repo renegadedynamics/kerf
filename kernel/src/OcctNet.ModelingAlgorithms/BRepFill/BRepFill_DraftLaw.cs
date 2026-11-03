@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The location law of a draft along a wire (a <see cref="GeomFill_LocationDraft"/> per edge).</summary>
@@ -12,7 +14,7 @@ public sealed class BRepFill_DraftLaw : BRepFill_Edge3DLaw
     // function : ToG0
     // purpose  : Calculate a transformation T tq T.M2 = M1
     //=======================================================================
-    private static void ToG0(in gp_Mat M1, in gp_Mat M2, out gp_Mat T)
+    private static void ToG0(in Matrix3x3 M1, in Matrix3x3 M2, out Matrix3x3 T)
     {
         T = M2.Inverted();
         T *= M1;
@@ -28,8 +30,8 @@ public sealed class BRepFill_DraftLaw : BRepFill_Edge3DLaw
     {
         double First, Last; //, Angle;
         int ipath;
-        gp_Mat Trsf, M1 = new(), M2 = new();
-        gp_Vec V = new(), T1 = new(), T2 = new(), N1 = new(), N2 = new();
+        Matrix3x3 Trsf, M1 = new(), M2 = new();
+        Vector3D V = new(), T1 = new(), T2 = new(), N1 = new(), N2 = new();
         //  gp_Dir D;
 
         myLaws!.Value(1).GetDomain(out First, out Last);

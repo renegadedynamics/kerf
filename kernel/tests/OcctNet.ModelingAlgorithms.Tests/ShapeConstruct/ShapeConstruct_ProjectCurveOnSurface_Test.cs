@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,17 +11,17 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class ShapeConstruct_ProjectCurveOnSurfaceTest
 {
     private readonly ShapeConstruct_ProjectCurveOnSurface myProjector = new();
-    private readonly double myTolerance = Precision.Confusion();
+    private readonly double myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
 
     // Helper to create a simple B-spline curve lying on Z=0 plane
     private static Geom_BSplineCurve createPlanarBSpline()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 5);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(2, 3, 0);
-        aPoles[3] = new gp_Pnt(5, 4, 0);
-        aPoles[4] = new gp_Pnt(8, 2, 0);
-        aPoles[5] = new gp_Pnt(10, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 5);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(2, 3, 0);
+        aPoles[3] = new Point3D(5, 4, 0);
+        aPoles[4] = new Point3D(8, 2, 0);
+        aPoles[5] = new Point3D(10, 0, 0);
 
         GeomAPI_PointsToBSpline aBuilder = new(aPoles);
         return aBuilder.Curve();
@@ -29,12 +30,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     // Helper to create a helical B-spline on a cylinder
     private static Geom_BSplineCurve createHelicalBSpline(double theRadius, int theNbPoints)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, theNbPoints);
+        NCollection_Array1<Point3D> aPoles = new(1, theNbPoints);
         for (int i = 1; i <= theNbPoints; ++i)
         {
             double anAngle = (i - 1) * Math.PI / 4.0;
             double aZ = (i - 1) * 1.0;
-            aPoles[i] = new gp_Pnt(theRadius * Math.Cos(anAngle), theRadius * Math.Sin(anAngle), aZ);
+            aPoles[i] = new Point3D(theRadius * Math.Cos(anAngle), theRadius * Math.Sin(anAngle), aZ);
         }
         GeomAPI_PointsToBSpline aBuilder = new(aPoles);
         return aBuilder.Curve();
@@ -50,18 +51,18 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         for (double t = 0.0; t <= 1.0; t += 0.25)
         {
             double aParam = aFirst + t * (aLast - aFirst);
-            theCurve.D0(aParam, out gp_Pnt a3DPnt);
+            theCurve.D0(aParam, out Point3D a3DPnt);
 
-            gp_Pnt2d a2DPnt = thePCurve.Value(aParam);
-            gp_Pnt aSurfPnt = theSurface.Value(a2DPnt);
+            Point2D a2DPnt = thePCurve.Value(aParam);
+            Point3D aSurfPnt = theSurface.Value(a2DPnt);
 
             Assert.Equal(0.0, a3DPnt.Distance(aSurfPnt), theTolerance);
         }
     }
 
-    private static Geom_Plane XOY() => new(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+    private static Geom_Plane XOY() => new(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
-    private static Geom_TrimmedCurve Segment(gp_Pnt theP1, gp_Pnt theP2) => new GC_MakeSegment(theP1, theP2).Value();
+    private static Geom_TrimmedCurve Segment(Point3D theP1, Point3D theP2) => new GC_MakeSegment(theP1, theP2).Value();
 
     //=============================================================================================
     // Basic projection tests - lines and circles on analytical surfaces
@@ -72,7 +73,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void LineOnPlane_A1()
     {
         Geom_Plane aPlane = XOY();
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
         ShapeAnalysis_Surface aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
@@ -85,8 +86,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // Verify start point maps to (0,0) and end point maps to (10,10)
-        gp_Pnt2d aStart = aPCurve.Value(aFirst);
-        gp_Pnt2d aEnd = aPCurve.Value(aLast);
+        Point2D aStart = aPCurve.Value(aFirst);
+        Point2D aEnd = aPCurve.Value(aLast);
         Assert.Equal(0.0, aStart.X(), 0.01);
         Assert.Equal(0.0, aStart.Y(), 0.01);
         Assert.Equal(10.0, aEnd.X(), 0.01);
@@ -98,10 +99,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void CircleOnCylinder_A2()
     {
         double aRadius = 5.0;
-        Geom_CylindricalSurface aCylinder = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_CylindricalSurface aCylinder = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
         // Circle at height Z=3 on the cylinder
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 3), new gp_Dir(0, 0, 1)), aRadius);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), aRadius);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aCylinder), myTolerance);
@@ -112,7 +113,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // On cylinder parametrization, V = Z, so circle at Z=3 should have V=3
-        gp_Pnt2d aMid = aPCurve.Value(Math.PI);
+        Point2D aMid = aPCurve.Value(Math.PI);
         Assert.Equal(3.0, aMid.Y(), 0.01);
     }
 
@@ -121,10 +122,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void IsoparametricLineOnCylinder_A3()
     {
         double aRadius = 5.0;
-        Geom_CylindricalSurface aCylinder = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_CylindricalSurface aCylinder = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
         // Line along cylinder axis at X=radius, Y=0 (U=0 on cylinder)
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(aRadius, 0, 0), new gp_Pnt(aRadius, 0, 10));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(aRadius, 0, 0), new Point3D(aRadius, 0, 10));
 
         ShapeAnalysis_Surface aSAS = new(aCylinder);
         myProjector.Init(aSAS, myTolerance);
@@ -137,8 +138,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // U should be constant (isoparametric curve)
-        gp_Pnt2d aStart = aPCurve.Value(aFirst);
-        gp_Pnt2d aEnd = aPCurve.Value(aLast);
+        Point2D aStart = aPCurve.Value(aFirst);
+        Point2D aEnd = aPCurve.Value(aLast);
         Assert.Equal(aEnd.X(), aStart.X(), 0.01);
     }
 
@@ -163,8 +164,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // Verify endpoints
-        gp_Pnt2d aStart = aPCurve.Value(aBSpline.FirstParameter());
-        gp_Pnt2d aEnd = aPCurve.Value(aBSpline.LastParameter());
+        Point2D aStart = aPCurve.Value(aBSpline.FirstParameter());
+        Point2D aEnd = aPCurve.Value(aBSpline.LastParameter());
         Assert.Equal(0.0, aStart.X(), 0.1);
         Assert.Equal(0.0, aStart.Y(), 0.1);
         Assert.Equal(10.0, aEnd.X(), 0.1);
@@ -176,7 +177,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void HelicalBSplineOnCylinder_B2()
     {
         double aRadius = 5.0;
-        Geom_CylindricalSurface aCylinder = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_CylindricalSurface aCylinder = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
         Geom_BSplineCurve aBSpline = createHelicalBSpline(aRadius, 9);
         Assert.NotNull(aBSpline);
@@ -201,12 +202,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         // Create B-spline with 50 control points (sinusoidal shape)
         int aNbPoles = 50;
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
             double aX = (i - 1) * 0.5;
             double aY = 5.0 * Math.Sin(aX * Math.PI / 10.0);
-            aPoles[i] = new gp_Pnt(aX, aY, 0);
+            aPoles[i] = new Point3D(aX, aY, 0);
         }
 
         GeomAPI_PointsToBSpline aBuilder = new(aPoles, 3, 8);
@@ -234,9 +235,9 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void EquatorOnSphere_C1()
     {
         double aRadius = 10.0;
-        Geom_SphericalSurface aSphere = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), aRadius);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aRadius);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
@@ -252,14 +253,14 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void LatitudeOnSphere_C2()
     {
         double aRadius = 10.0;
-        Geom_SphericalSurface aSphere = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
         // Latitude at 45 degrees
         double aLatitude = Math.PI / 4.0;
         double aZ = aRadius * Math.Sin(aLatitude);
         double aCircRadius = aRadius * Math.Cos(aLatitude);
 
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, aZ), new gp_Dir(0, 0, 1)), aCircRadius);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aCircRadius);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
@@ -270,8 +271,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // V should be constant for latitude circle
-        gp_Pnt2d aStart = aPCurve.Value(0.0);
-        gp_Pnt2d aMid = aPCurve.Value(Math.PI);
+        Point2D aStart = aPCurve.Value(0.0);
+        Point2D aMid = aPCurve.Value(Math.PI);
         Assert.Equal(aMid.Y(), aStart.Y(), 0.01);
     }
 
@@ -281,10 +282,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     {
         double aMajorRadius = 10.0;
         double aMinorRadius = 2.0;
-        Geom_ToroidalSurface aTorus = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aMajorRadius, aMinorRadius);
+        Geom_ToroidalSurface aTorus = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aMajorRadius, aMinorRadius);
 
         // Circle in the minor cross-section plane at U=0
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(aMajorRadius + aMinorRadius, 0, 0), new gp_Dir(0, 1, 0)), aMinorRadius);
+        Circle3D aCirc = new(new Frame3D(new Point3D(aMajorRadius + aMinorRadius, 0, 0), new Direction3D(0, 1, 0)), aMinorRadius);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aTorus), myTolerance);
@@ -305,12 +306,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     {
         double aRadius = 5.0;
         double aSemiAngle = Math.PI / 6.0; // 30 degrees
-        Geom_ConicalSurface aCone = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aSemiAngle, aRadius);
+        Geom_ConicalSurface aCone = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aSemiAngle, aRadius);
 
         // Circle at height Z=5, radius increases with height
         double aZ = 5.0;
         double aRadiusAtZ = aRadius + aZ * Math.Tan(aSemiAngle);
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, aZ), new gp_Dir(0, 0, 1)), aRadiusAtZ);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aRadiusAtZ);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aCone), myTolerance);
@@ -331,7 +332,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     {
         Geom_Plane aPlane = XOY();
 
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         Geom_Circle aFullCircle = new(aCirc);
         Geom_TrimmedCurve aArc = new(aFullCircle, 0.0, Math.PI / 2.0);
 
@@ -346,8 +347,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // Arc from (5,0) to (0,5)
-        gp_Pnt2d aStart = aPCurve.Value(aFirst);
-        gp_Pnt2d aEnd = aPCurve.Value(aLast);
+        Point2D aStart = aPCurve.Value(aFirst);
+        Point2D aEnd = aPCurve.Value(aLast);
         Assert.Equal(5.0, aStart.X(), 0.01);
         Assert.Equal(0.0, aStart.Y(), 0.01);
         Assert.Equal(0.0, aEnd.X(), 0.01);
@@ -393,7 +394,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane = XOY();
 
         // Ellipse with major radius 10, minor radius 5
-        gp_Elips anElips = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 5.0);
+        Ellipse3D anElips = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
         Geom_Ellipse anEllipse = new(anElips);
 
         ShapeAnalysis_Surface aSAS = new(aPlane);
@@ -405,12 +406,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // At parameter 0, ellipse is at (10, 0)
-        gp_Pnt2d aP0 = aPCurve.Value(0.0);
+        Point2D aP0 = aPCurve.Value(0.0);
         Assert.Equal(10.0, aP0.X(), 0.01);
         Assert.Equal(0.0, aP0.Y(), 0.01);
 
         // At parameter PI/2, ellipse is at (0, 5)
-        gp_Pnt2d aP1 = aPCurve.Value(Math.PI / 2.0);
+        Point2D aP1 = aPCurve.Value(Math.PI / 2.0);
         Assert.Equal(0.0, aP1.X(), 0.01);
         Assert.Equal(5.0, aP1.Y(), 0.01);
     }
@@ -424,9 +425,9 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void InitWithGeomSurface_G1()
     {
         Geom_Plane aPlane = XOY();
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
-        myProjector.Init(aPlane, Precision.Confusion());
+        myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Geom2d_Curve? aPCurve);
 
@@ -439,10 +440,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void SetSurfaceAndPrecision_G2()
     {
         Geom_Plane aPlane = XOY();
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
         myProjector.SetSurface(aPlane);
-        myProjector.SetPrecision(Precision.Confusion());
+        myProjector.SetPrecision(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Geom2d_Curve? aPCurve);
 
@@ -471,7 +472,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void StatusMethod_G4()
     {
         Geom_Plane aPlane = XOY();
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
         myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
 
@@ -491,7 +492,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void TightTolerance_H1()
     {
         Geom_Plane aPlane = XOY();
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
         myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1e-15);
 
@@ -508,10 +509,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane = XOY();
 
         // Curve slightly off plane at end
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(5, 5, 0.05);
-        aPoles[3] = new gp_Pnt(10, 10, 0.1);
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(5, 5, 0.05);
+        aPoles[3] = new Point3D(10, 10, 0.1);
 
         GeomAPI_PointsToBSpline aBuilder = new(aPoles, 2, 2);
         Geom_BSplineCurve aBSpline = aBuilder.Curve();
@@ -538,7 +539,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     {
         Geom_Plane aPlane = XOY();
 
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         Geom_Circle aCircle = new(aCirc);
 
         ShapeAnalysis_Surface aSAS = new(aPlane);
@@ -551,8 +552,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
 
         // Verify endpoints: (5,0) to (0,5)
-        gp_Pnt2d aStart = aPCurve.Value(0.0);
-        gp_Pnt2d aEnd = aPCurve.Value(Math.PI / 2.0);
+        Point2D aStart = aPCurve.Value(0.0);
+        Point2D aEnd = aPCurve.Value(Math.PI / 2.0);
         Assert.Equal(5.0, aStart.X(), 0.01);
         Assert.Equal(0.0, aStart.Y(), 0.01);
         Assert.Equal(0.0, aEnd.X(), 0.01);
@@ -596,7 +597,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         for (int i = 0; i < 5; ++i)
         {
             double aOffset = i * 10.0;
-            Geom_TrimmedCurve aLine = Segment(new gp_Pnt(aOffset, 0, 0), new gp_Pnt(aOffset + 5, 5, 0));
+            Geom_TrimmedCurve aLine = Segment(new Point3D(aOffset, 0, 0), new Point3D(aOffset + 5, 5, 0));
 
             bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Geom2d_Curve? aPCurve);
 
@@ -613,15 +614,15 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane1 = XOY();
         myProjector.Init(new ShapeAnalysis_Surface(aPlane1), myTolerance);
 
-        Geom_TrimmedCurve aLine1 = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 0));
+        Geom_TrimmedCurve aLine1 = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
         myProjector.Perform(aLine1, aLine1.FirstParameter(), aLine1.LastParameter(), out Geom2d_Curve? aPCurve1);
         Assert.NotNull(aPCurve1);
 
         // Second surface (different plane)
-        Geom_Plane aPlane2 = new(new gp_Pln(new gp_Pnt(0, 0, 5), new gp_Dir(0, 0, 1)));
+        Geom_Plane aPlane2 = new(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)));
         myProjector.Init(new ShapeAnalysis_Surface(aPlane2), myTolerance);
 
-        Geom_TrimmedCurve aLine2 = Segment(new gp_Pnt(0, 0, 5), new gp_Pnt(10, 10, 5));
+        Geom_TrimmedCurve aLine2 = Segment(new Point3D(0, 0, 5), new Point3D(10, 10, 5));
         myProjector.Perform(aLine2, aLine2.FirstParameter(), aLine2.LastParameter(), out Geom2d_Curve? aPCurve2);
         Assert.NotNull(aPCurve2);
     }
@@ -635,14 +636,14 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void NearPoleOnSphere_K1()
     {
         double aRadius = 10.0;
-        Geom_SphericalSurface aSphere = new(new gp_Ax3(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))), aRadius);
+        Geom_SphericalSurface aSphere = new(new CoordinateSystem(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))), aRadius);
 
         // Small circle very close to north pole (latitude = 89.4 degrees)
         double aLatitude = Math.PI / 2.0 - 0.01;
         double aZ = aRadius * Math.Sin(aLatitude);
         double aCircRadius = aRadius * Math.Cos(aLatitude);
 
-        gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, aZ), new gp_Dir(0, 0, 1)), aCircRadius);
+        Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aCircRadius);
         Geom_Circle aCircle = new(aCirc);
 
         myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
@@ -665,7 +666,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane = XOY();
 
         // Very short line segment (1e-6 length)
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(1e-6, 0, 0));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0), new Point3D(1e-6, 0, 0));
 
         myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1e-4);
 
@@ -680,7 +681,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane = XOY();
 
         // Line at Z=100, far from plane at Z=0
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 100), new gp_Pnt(10, 10, 100));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 100), new Point3D(10, 10, 100));
 
         myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
 
@@ -697,7 +698,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Geom_Plane aPlane = XOY();
 
         // Line slightly off plane
-        Geom_TrimmedCurve aLine = Segment(new gp_Pnt(0, 0, 0.1), new gp_Pnt(10, 10, 0.1));
+        Geom_TrimmedCurve aLine = Segment(new Point3D(0, 0, 0.1), new Point3D(10, 10, 0.1));
 
         myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1.0);
 
@@ -724,13 +725,13 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         int aNbKnots = 15;
         int aNbPoles = aNbKnots + aDegree - 1; // = 17
 
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
             double t = (i - 1.0) / (aNbPoles - 1.0);
             double aAngle = t * 2.0 * Math.PI;
             double aRadius = 50.0 + 20.0 * Math.Cos(3.0 * aAngle);
-            aPoles[i] = new gp_Pnt(aRadius * Math.Cos(aAngle), -30.0 * t, aRadius * Math.Sin(aAngle));
+            aPoles[i] = new Point3D(aRadius * Math.Cos(aAngle), -30.0 * t, aRadius * Math.Sin(aAngle));
         }
 
         // Uniform knot vector from 0 to 1
@@ -749,10 +750,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.True(aBSplineCurve.NbKnots() >= 10, "Curve should have at least 10 knots");
 
         // Create a simple plane-like surface containing the curve
-        Geom_Plane aPlane = new(new gp_Pnt(0, -15, 0), new gp_Dir(0, 1, 0));
+        Geom_Plane aPlane = new(new Point3D(0, -15, 0), new Direction3D(0, 1, 0));
 
         // Test projection onto plane
-        myProjector.Init(aPlane, Precision.Confusion());
+        myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(), aBSplineCurve.LastParameter(),
                                            out Geom2d_Curve? aPCurve);
@@ -793,7 +794,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         }
 
         // Create poles with a degenerate section (repeated identical poles in the middle)
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
 
         // First section: smooth curve from start
         for (int i = 1; i <= 15; ++i)
@@ -802,13 +803,13 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             double aX = 144.0 - t * 74.0; // Decreasing from 144 to 70
             double aY = -t * 0.0002;
             double aZ = 8.3 + t * 51.7; // Increasing from 8.3 to 60
-            aPoles[i] = new gp_Pnt(aX, aY, aZ);
+            aPoles[i] = new Point3D(aX, aY, aZ);
         }
 
         // Middle section: degenerate (repeated identical poles) - like in bug27569
         for (int i = 16; i <= 28; ++i)
         {
-            aPoles[i] = new gp_Pnt(70.0, 0.0, 60.0); // All identical
+            aPoles[i] = new Point3D(70.0, 0.0, 60.0); // All identical
         }
 
         // Last section: smooth curve to end
@@ -818,7 +819,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             double aX = 70.0 - t * 80.0; // Decreasing from 70 to -10
             double aY = -t * 32.0;
             double aZ = 60.0 - t * 60.0; // Decreasing from 60 to 0
-            aPoles[i] = new gp_Pnt(aX, aY, aZ);
+            aPoles[i] = new Point3D(aX, aY, aZ);
         }
 
         Geom_BSplineCurve aBSplineCurve;
@@ -826,7 +827,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         {
             aBSplineCurve = new Geom_BSplineCurve(aPoles, aKnots, aMults, aDegree);
         }
-        catch (Standard_Failure)
+        catch (global::Kerf.Engine.Foundation.FailureException)
         {
             // OCCT's GTEST_SKIP: "Could not construct B-spline with high multiplicities"
             return;
@@ -837,25 +838,25 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         int aNbUPoles = 8;
         int aNbVPoles = 2;
 
-        NCollection_Array2<gp_Pnt> aSurfPoles = new(1, aNbUPoles, 1, aNbVPoles);
+        NCollection_Array2<Point3D> aSurfPoles = new(1, aNbUPoles, 1, aNbVPoles);
         // V=0 row
-        aSurfPoles[1, 1] = new gp_Pnt(70, 0, 60);
-        aSurfPoles[2, 1] = new gp_Pnt(85.01, 0, 60);
-        aSurfPoles[3, 1] = new gp_Pnt(98.87, 0, 55.07);
-        aSurfPoles[4, 1] = new gp_Pnt(111.6, 0, 46.57);
-        aSurfPoles[5, 1] = new gp_Pnt(123.15, 0, 35.68);
-        aSurfPoles[6, 1] = new gp_Pnt(133.46, 0, 23.56);
-        aSurfPoles[7, 1] = new gp_Pnt(142.46, 0, 11.32);
-        aSurfPoles[8, 1] = new gp_Pnt(150, 0, 0);
+        aSurfPoles[1, 1] = new Point3D(70, 0, 60);
+        aSurfPoles[2, 1] = new Point3D(85.01, 0, 60);
+        aSurfPoles[3, 1] = new Point3D(98.87, 0, 55.07);
+        aSurfPoles[4, 1] = new Point3D(111.6, 0, 46.57);
+        aSurfPoles[5, 1] = new Point3D(123.15, 0, 35.68);
+        aSurfPoles[6, 1] = new Point3D(133.46, 0, 23.56);
+        aSurfPoles[7, 1] = new Point3D(142.46, 0, 11.32);
+        aSurfPoles[8, 1] = new Point3D(150, 0, 0);
         // V=1 row (same with Y offset)
-        aSurfPoles[1, 2] = new gp_Pnt(54.99, 0, 60);
-        aSurfPoles[2, 2] = new gp_Pnt(41.13, 0, 55.07);
-        aSurfPoles[3, 2] = new gp_Pnt(28.4, 0, 46.57);
-        aSurfPoles[4, 2] = new gp_Pnt(16.85, 0, 35.68);
-        aSurfPoles[5, 2] = new gp_Pnt(6.54, 0, 23.56);
-        aSurfPoles[6, 2] = new gp_Pnt(-2.46, 0, 11.32);
-        aSurfPoles[7, 2] = new gp_Pnt(-10, 0, 0);
-        aSurfPoles[8, 2] = new gp_Pnt(-10, -35.91, 0);
+        aSurfPoles[1, 2] = new Point3D(54.99, 0, 60);
+        aSurfPoles[2, 2] = new Point3D(41.13, 0, 55.07);
+        aSurfPoles[3, 2] = new Point3D(28.4, 0, 46.57);
+        aSurfPoles[4, 2] = new Point3D(16.85, 0, 35.68);
+        aSurfPoles[5, 2] = new Point3D(6.54, 0, 23.56);
+        aSurfPoles[6, 2] = new Point3D(-2.46, 0, 11.32);
+        aSurfPoles[7, 2] = new Point3D(-10, 0, 0);
+        aSurfPoles[8, 2] = new Point3D(-10, -35.91, 0);
 
         NCollection_Array1<double> aUKnots = new(1, 2);
         NCollection_Array1<double> aVKnots = new(1, 2);
@@ -876,11 +877,11 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         {
             aBSplineSurface = new Geom_BSplineSurface(aSurfPoles, aUKnots, aVKnots, aUMults, aVMults, 7, 1);
         }
-        catch (Standard_Failure)
+        catch (global::Kerf.Engine.Foundation.FailureException)
         {
             // Fall back to a simple plane if surface construction fails
-            Geom_Plane aPlane = new(new gp_Pnt(70, 0, 30), new gp_Dir(0, 1, 0));
-            myProjector.Init(aPlane, Precision.Confusion());
+            Geom_Plane aPlane = new(new Point3D(70, 0, 30), new Direction3D(0, 1, 0));
+            myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             bool aResult1 = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(),
                                                 aBSplineCurve.LastParameter(), out Geom2d_Curve? aPCurve1);
@@ -891,7 +892,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             return;
         }
 
-        myProjector.Init(aBSplineSurface, Precision.Confusion());
+        myProjector.Init(aBSplineSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(), aBSplineCurve.LastParameter(),
                                            out Geom2d_Curve? aPCurve);

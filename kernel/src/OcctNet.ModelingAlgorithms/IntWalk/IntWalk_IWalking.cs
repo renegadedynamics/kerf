@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntWalk_StatusDeflection;
 
 namespace Occt;
@@ -31,7 +36,7 @@ public interface IIntWalk_IWFunction<TSelf> : IIntStart_SurfFunction<Adaptor3d_S
 /// IntSurf_InteriorPoint and their tools), the surface (Adaptor3d_Surface and Adaptor3d_HSurfaceTool).
 /// </remarks>
 public class IntWalk_IWalking<TheIWFunction, TheIWLine>
-    where TheIWFunction : math_FunctionSetWithDerivatives, IIntWalk_IWFunction<TheIWFunction>
+    where TheIWFunction : FunctionSetWithDerivatives, IIntWalk_IWFunction<TheIWFunction>
     where TheIWLine : IntWalk_TheIWLine, new()
 {
     private bool done;
@@ -44,15 +49,15 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     private readonly NCollection_LinearVector<IntWalk_WalkingData> wd1 = new();
     private NCollection_LinearVector<IntWalk_WalkingData> wd2 = new();
     private readonly NCollection_LinearVector<int> nbMultiplicities = new();
-    private Bnd_Range mySRangeU = new(); // Estimated U-range for section curve
-    private Bnd_Range mySRangeV = new(); // Estimated V-range for section curve
+    private BoundRange mySRangeU = new(); // Estimated U-range for section curve
+    private BoundRange mySRangeV = new(); // Estimated V-range for section curve
     private double Um;
     private double UM;
     private double Vm;
     private double VM;
     private IntSurf_PntOn2S previousPoint = new();
-    private gp_Vec previousd3d = new();
-    private gp_Dir2d previousd2d = new();
+    private Vector3D previousd3d = new();
+    private Direction2D previousd2d = new();
     private readonly NCollection_Sequence<int> seqAjout = new();
     private readonly NCollection_Sequence<int> seqAlone = new();
     private readonly NCollection_DataMap<int, NCollection_List<int>> PointLineLine = new();
@@ -94,7 +99,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lines.Length();
     }
@@ -104,7 +109,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lines.Value(Index);
     }
@@ -114,7 +119,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return seqSingle.Length();
     }
@@ -124,7 +129,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return seqSingle.Value(Index);
     }
@@ -152,7 +157,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
 
     // OCCT's stack buffers of the stop tests (written by the function, never read).
     private readonly math_Vector myBidF = new(1, 1);
-    private readonly math_Matrix myBidD = new(1, 1, 1, 2);
+    private readonly Matrix myBidD = new(1, 1, 1, 2);
 
     /// <summary>
     /// Additional check if the point (theU, theV) is a tangent point. If it is, any direction leads to the next
@@ -319,29 +324,29 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             wd2.Append(aWD2);
         }
 
-        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, Precision.Confusion());
-        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, Precision.Confusion());
+        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Func.Set(Caro);
 
-        if (mySRangeU.Delta() > Math.Max(tolerance[1], Precision.PConfusion()))
+        if (mySRangeU.Delta() > Math.Max(tolerance[1], global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             mySRangeU.Enlarge(mySRangeU.Delta());
-            mySRangeU.Common(new Bnd_Range(Um, UM));
+            mySRangeU.Common(new BoundRange(Um, UM));
         }
         else
         {
-            mySRangeU = new Bnd_Range(Um, UM);
+            mySRangeU = new BoundRange(Um, UM);
         }
 
-        if (mySRangeV.Delta() > Math.Max(tolerance[2], Precision.PConfusion()))
+        if (mySRangeV.Delta() > Math.Max(tolerance[2], global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             mySRangeV.Enlarge(mySRangeV.Delta());
-            mySRangeV.Common(new Bnd_Range(Vm, VM));
+            mySRangeV.Common(new BoundRange(Vm, VM));
         }
         else
         {
-            mySRangeV = new Bnd_Range(Vm, VM);
+            mySRangeV = new BoundRange(Vm, VM);
         }
 
         // calculation of all open lines
@@ -444,8 +449,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             }
         }
 
-        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, Precision.Confusion());
-        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, Precision.Confusion());
+        tolerance[1] = Adaptor3d_HSurfaceTool.UResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolerance[2] = Adaptor3d_HSurfaceTool.VResolution(Caro, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Um = Adaptor3d_HSurfaceTool.FirstUParameter(Caro);
         Vm = Adaptor3d_HSurfaceTool.FirstVParameter(Caro);
@@ -485,7 +490,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
 
     // IntWalk_IWalking_2.gxx
 
-    private static void CutVectorByTolerances(ref gp_Vec2d theVector, math_Vector theTolerance)
+    private static void CutVectorByTolerances(ref Vector2D theVector, math_Vector theTolerance)
     {
         if (Math.Abs(theVector.X()) < theTolerance[1])
         {
@@ -521,10 +526,10 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         double U1 = UVap[1] + Step * Duvx * StepSign;
         double V1 = UVap[2] + Step * Duvy * StepSign;
 
-        bool infu = (U1 <= BornInf[1] + Precision.PConfusion());
-        bool supu = (U1 >= BornSup[1] - Precision.PConfusion());
-        bool infv = (V1 <= BornInf[2] + Precision.PConfusion());
-        bool supv = (V1 >= BornSup[2] - Precision.PConfusion());
+        bool infu = (U1 <= BornInf[1] + global::Kerf.Engine.Foundation.Precision.PConfusion());
+        bool supu = (U1 >= BornSup[1] - global::Kerf.Engine.Foundation.Precision.PConfusion());
+        bool infv = (V1 <= BornInf[2] + global::Kerf.Engine.Foundation.Precision.PConfusion());
+        bool supv = (V1 >= BornSup[2] - global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         double theStepU, theStepV;
 
@@ -887,10 +892,10 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         // Do not limit this factor in case of highly anisotropic parametrization
         //(parametric space is considerably larger in one direction than another).
         bool isHighlyAnisotropic = Math.Max(tolu, tolv) > 1000.0 * Math.Min(tolu, tolv);
-        double deltau = mySRangeU.IsVoid()
+        double deltau = mySRangeU.IsVoid
                             ? UM - Um
                             : (isHighlyAnisotropic ? mySRangeU.Delta() : Math.Max(mySRangeU.Delta(), 1.0));
-        double deltav = mySRangeV.IsVoid()
+        double deltav = mySRangeV.IsVoid
                             ? VM - Vm
                             : (isHighlyAnisotropic ? mySRangeV.Delta() : Math.Max(mySRangeV.Delta(), 1.0));
 
@@ -1123,7 +1128,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             {
                 PointAlone1 = Line1.Value(1);
             }
-            gp_Pnt2d P2d1 = PointAlone1.ValueOnSurface(reversed), P2d2;
+            Point2D P2d1 = PointAlone1.ValueOnSurface(reversed), P2d2;
             double MinSqDist = RealLast();
             int MinRang = 0, MinIndex = 0;
             for (int j = i + 1; j <= CopySeqAlone.Length(); j++)
@@ -1178,8 +1183,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             {
                 PointAlone2 = Line2.Value(1);
             }
-            gp_Pnt Pnt1 = PointAlone1.Value();
-            gp_Pnt Pnt2 = PointAlone2.Value();
+            Point3D Pnt1 = PointAlone1.Value();
+            Point3D Pnt2 = PointAlone2.Value();
             P2d2 = PointAlone2.ValueOnSurface(reversed);
             double MinSqDist3d = Pnt1.SquareDistance(Pnt2);
             if (MinSqDist3d <= epsilon
@@ -1192,15 +1197,15 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                 math_Vector UVap = new(1, 2), UV = new(1, 2);
                 UVap[1] = (P2d1.X() + P2d2.X()) / 2;
                 UVap[2] = (P2d1.Y() + P2d2.Y()) / 2;
-                math_FunctionSetRoot Rsnld = new(sp, tolerance);
+                FunctionSetRoot Rsnld = new(sp, tolerance);
                 Rsnld.Perform(sp, UVap, BornInf, BornSup);
-                if (Rsnld.IsDone() && Math.Abs(sp.Root()) <= sp.Tolerance() && !sp.IsTangent())
+                if (Rsnld.IsDone && Math.Abs(sp.Root()) <= sp.Tolerance() && !sp.IsTangent())
                 {
                     Rsnld.Root(UV);
-                    gp_Pnt2d Pmid = new(UV[1], UV[2]);
-                    gp_Vec2d P1P2 = new(P2d1, P2d2);
-                    gp_Vec2d P1Pmid = new(P2d1, Pmid);
-                    gp_Vec2d P2Pmid = new(P2d2, Pmid);
+                    Point2D Pmid = new(UV[1], UV[2]);
+                    Vector2D P1P2 = new(P2d1, P2d2);
+                    Vector2D P1Pmid = new(P2d1, Pmid);
+                    Vector2D P2Pmid = new(P2d2, Pmid);
                     double ScalProd1 = P1P2 * P1Pmid;
                     double ScalProd2 = P1P2 * P2Pmid;
                     bool IsPmidValid = (ScalProd1 > 0.0 && ScalProd2 < 0); // Pmid is in the middle
@@ -1218,7 +1223,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                     if (IsPmidValid)
                     {
                         IntSurf_InteriorPoint aPoint = new(sp.Point(), UV[1], UV[2], sp.Direction3d(),
-                                                           new gp_Vec2d(sp.Direction2d()));
+                                                           new Vector2D(sp.Direction2d()));
                         PntsInHoles.Append(aPoint);
                         NCollection_List<int> LineLine = new();
                         LineLine.Append(Irang1);
@@ -1296,7 +1301,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                     Line.Value(1).ParametersOnS1(out Up, out Vp);
                 }
                 int nbp = Line.NbPoints();
-                gp_Vec2d aVec1, aVec2;
+                Vector2D aVec1, aVec2;
                 for (int j = 2; j <= nbp; j++)
                 {
                     if (!reversed)
@@ -1308,8 +1313,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                         Line.Value(j).ParametersOnS1(out Uc, out Vc);
                     }
 
-                    aVec1 = new gp_Vec2d(Up - wd1[i].ustart, Vp - wd1[i].vstart);
-                    aVec2 = new gp_Vec2d(Uc - wd1[i].ustart, Vc - wd1[i].vstart);
+                    aVec1 = new Vector2D(Up - wd1[i].ustart, Vp - wd1[i].vstart);
+                    aVec2 = new Vector2D(Uc - wd1[i].ustart, Vc - wd1[i].vstart);
                     CutVectorByTolerances(ref aVec1, tolerance);
                     CutVectorByTolerances(ref aVec2, tolerance);
 
@@ -1378,8 +1383,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                             {
                                 // OCCT computes and orients this direction, then sets the previous tangent (kept:
                                 // Direction3d throws at a tangent point, as OCCT's).
-                                gp_Vec Dir3d = sp.Direction3d();
-                                gp_Vec Dir3d1 = new(Line.Value(j - 2).Value(), Line.Value(j - 1).Value());
+                                Vector3D Dir3d = sp.Direction3d();
+                                Vector3D Dir3d1 = new(Line.Value(j - 2).Value(), Line.Value(j - 1).Value());
                                 double dot = Dir3d.Dot(Dir3d1);
                                 if (dot < 0.0)
                                 { // Normally this Function should not be used often !!!
@@ -1398,8 +1403,8 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                 // now the last point of the line and the last calculated point are compated.
                 // there will be no need to "Cut"
 
-                aVec1 = new gp_Vec2d(Up - wd1[i].ustart, Vp - wd1[i].vstart);
-                aVec2 = new gp_Vec2d(UV[1] - wd1[i].ustart, UV[2] - wd1[i].vstart);
+                aVec1 = new Vector2D(Up - wd1[i].ustart, Vp - wd1[i].vstart);
+                aVec2 = new Vector2D(UV[1] - wd1[i].ustart, UV[2] - wd1[i].vstart);
                 CutVectorByTolerances(ref aVec1, tolerance);
                 CutVectorByTolerances(ref aVec2, tolerance);
 
@@ -1492,7 +1497,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         BornInf[2] = Vm;
         BornSup[2] = VM;
 
-        math_FunctionSetRoot Rsnld = new(Func, tolerance);
+        FunctionSetRoot Rsnld = new(Func, tolerance);
         int nbPath = Pnts1.Length();
 
         // modified by NIZHNY-MKK  Fri Oct 27 12:32:34 2000.BEGIN
@@ -1603,7 +1608,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                         BornInf[2] = Vm;
                         BornSup[2] = VM;
                     }
-                    if (Rsnld.IsDone())
+                    if (Rsnld.IsDone)
                     {
                         if (Math.Abs(Func.Root()) > Func.Tolerance())
                         {
@@ -1950,7 +1955,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                                                             NCollection_Sequence<double> Vmult, double prevUp,
                                                             double prevVp, NCollection_LinearVector<int> nbMultiplicities,
                                                             math_Vector tolerance, TheIWFunction sp, math_Vector UV,
-                                                            ref int Irang, math_Vector bidF, math_Matrix bidD)
+                                                            ref int Irang, math_Vector bidF, Matrix bidD)
     {
         bool Arrive = false;
         double Dup, Dvp, Utest, Vtest;
@@ -2055,11 +2060,11 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         BornInf[2] = Vm;
         BornSup[2] = VM;
 
-        math_FunctionSetRoot Rsnld = new(Func, tolerance);
+        FunctionSetRoot Rsnld = new(Func, tolerance);
         int nbLoop = Pnts2.Length();
 
         // Check borders for degeneracy:
-        math_Matrix D = new(1, 1, 1, 2);
+        Matrix D = new(1, 1, 1, 2);
         const int aNbSamplePnt = 10;
         Span<bool> isLeftDegeneratedBorder = [true, true];
         Span<bool> isRightDegeneratedBorder = [true, true];
@@ -2081,7 +2086,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                 double aParam = BornInf[aChangeIdx] + aParamIdx * aStep[aChangeIdx];
                 UV[aChangeIdx] = aParam;
                 Func.Derivatives(UV, D);
-                if (Math.Abs(D[1, aChangeIdx]) > Precision.Confusion())
+                if (Math.Abs(D[1, aChangeIdx]) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     isLeftDegeneratedBorder[aBorderIdx - 1] = false;
                     break;
@@ -2095,7 +2100,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                 double aParam = BornInf[aChangeIdx] + aParamIdx * aStep[aChangeIdx];
                 UV[aChangeIdx] = aParam;
                 Func.Derivatives(UV, D);
-                if (Math.Abs(D[1, aChangeIdx]) > Precision.Confusion())
+                if (Math.Abs(D[1, aChangeIdx]) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     isRightDegeneratedBorder[aBorderIdx - 1] = false;
                     break;
@@ -2176,7 +2181,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                         BornInf[2] = Vm;
                         BornSup[2] = VM;
                     }
-                    if (Rsnld.IsDone())
+                    if (Rsnld.IsDone)
                     {
                         if (Math.Abs(Func.Root()) > Func.Tolerance())
                         { // no solution for the tolerance
@@ -2229,9 +2234,9 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                                 {
                                     // Check degenerated cases and fix if possible.
                                     if ((isLeftDegeneratedBorder[aCoordIdx - 1]
-                                         && Math.Abs(Uvap[aCoordIdx] - BornInf[aCoordIdx]) < Precision.PConfusion())
+                                         && Math.Abs(Uvap[aCoordIdx] - BornInf[aCoordIdx]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                                         || (isRightDegeneratedBorder[aCoordIdx - 1]
-                                            && Math.Abs(Uvap[aCoordIdx] - BornSup[aCoordIdx]) < Precision.PConfusion()))
+                                            && Math.Abs(Uvap[aCoordIdx] - BornSup[aCoordIdx]) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
                                     {
                                         if (!reversed)
                                         {
@@ -2250,7 +2255,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                                         if (aStatus != IntWalk_PasTropGrand)
                                         {
                                             // Make linear extrapolation.
-                                            if (Math.Abs(uv[aCoordIdx - 1] - uvprev[aCoordIdx - 1]) > gp.Resolution())
+                                            if (Math.Abs(uv[aCoordIdx - 1] - uvprev[aCoordIdx - 1]) > Constants.Resolution())
                                             {
                                                 aScaleCoeff = Math.Abs((Uvap[aCoordIdx] - uv[aCoordIdx - 1])
                                                                        / (uv[aCoordIdx - 1] - uvprev[aCoordIdx - 1]));
@@ -2683,12 +2688,12 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         double Dv = UV[2] - Paramv;
         double Duv = Du * Du + Dv * Dv;
 
-        gp_Vec Corde = new(previousPoint.Value(), sp.Point());
+        Vector3D Corde = new(previousPoint.Value(), sp.Point());
 
         double Norme = Corde.SquareMagnitude();
 
-        if ((Norme <= 4.0 * Precision.SquareConfusion())
-            && ((Duv <= Precision.SquarePConfusion()) || (StatusPrecedent != IntWalk_OK)))
+        if ((Norme <= 4.0 * global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            && ((Duv <= global::Kerf.Engine.Foundation.Precision.SquarePConfusion()) || (StatusPrecedent != IntWalk_OK)))
         { // the square is already taken in the constructor
             aStatus = IntWalk_PointConfondu;
             if (StatusPrecedent == IntWalk_PasTropGrand)
@@ -2958,7 +2963,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         {
             math_Vector UV = new(1, 2);
             math_Vector FF = new(1, 1);
-            math_Matrix DD = new(1, 1, 1, 2);
+            Matrix DD = new(1, 1, 1, 2);
             UV[1] = U;
             UV[2] = V;
             sp.Values(UV, FF, DD);
@@ -2966,7 +2971,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         }
         else
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
     }
 
@@ -2978,7 +2983,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
 
         math_Vector UV = new(1, 2);
         math_Vector FF = new(1, 1);
-        math_Matrix DD = new(1, 1, 1, 2);
+        Matrix DD = new(1, 1, 1, 2);
 
         previousPoint = Line.Value(1);
         if (!reversed)
@@ -3050,21 +3055,21 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
         }
     }
 
-    protected bool IsPointOnLine(in gp_Pnt2d theP2d, int Irang)
+    protected bool IsPointOnLine(in Point2D theP2d, int Irang)
     {
         TheIWLine aLine = lines.Value(Math.Abs(Irang));
         for (int i = 1; i <= aLine.NbPoints(); i++)
         {
-            gp_Pnt2d P2d1 = aLine.Value(i).ValueOnSurface(reversed);
+            Point2D P2d1 = aLine.Value(i).ValueOnSurface(reversed);
             if (Math.Abs(P2d1.X() - theP2d.X()) <= tolerance[1] && Math.Abs(P2d1.Y() - theP2d.Y()) <= tolerance[2])
             {
                 return true;
             }
             if (i < aLine.NbPoints())
             {
-                gp_Pnt2d P2d2 = aLine.Value(i + 1).ValueOnSurface(reversed);
-                gp_Vec2d PP1 = new(theP2d, P2d1);
-                gp_Vec2d PP2 = new(theP2d, P2d2);
+                Point2D P2d2 = aLine.Value(i + 1).ValueOnSurface(reversed);
+                Vector2D PP1 = new(theP2d, P2d1);
+                Vector2D PP2 = new(theP2d, P2d2);
                 if (PP1 * PP2 < 0)
                 {
                     return true;
@@ -3079,10 +3084,10 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
     /// segment of each line, the projection refined with <paramref name="theSolver"/>, and compared.
     /// </summary>
     protected bool IsPointOnLine(in IntSurf_PntOn2S thePOn2S, math_Vector theInfBounds, math_Vector theSupBounds,
-                                 math_FunctionSetRoot theSolver, TheIWFunction theFunc)
+                                 FunctionSetRoot theSolver, TheIWFunction theFunc)
     {
         double eps = Epsilon(1.0);
-        gp_Pnt aP3d = thePOn2S.Value();
+        Point3D aP3d = thePOn2S.Value();
 
         for (int aLIdx = 1; aLIdx <= lines.Length(); aLIdx++)
         {
@@ -3098,15 +3103,15 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             double aMinSqDist = RealLast();
             for (int aPtIdx = 1; aPtIdx < aL.NbPoints(); aPtIdx++)
             {
-                gp_Pnt aP1 = aL.Value(aPtIdx).Value();
-                gp_Pnt aP2 = aL.Value(aPtIdx + 1).Value();
+                Point3D aP1 = aL.Value(aPtIdx).Value();
+                Point3D aP2 = aL.Value(aPtIdx + 1).Value();
 
-                gp_XYZ aP1P = aP3d.XYZ() - aP1.XYZ();
-                gp_XYZ aP1P2 = aP2.XYZ() - aP1.XYZ();
+                Xyz aP1P = aP3d.XYZ() - aP1.XYZ();
+                Xyz aP1P2 = aP2.XYZ() - aP1.XYZ();
 
                 double aSq12 = aP1P2.SquareModulus();
 
-                if (aSq12 < gp.Resolution())
+                if (aSq12 < Constants.Resolution())
                 {
                     continue;
                 }
@@ -3147,7 +3152,7 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
                 }
             }
 
-            if (aMinSqDist > Precision.Infinite())
+            if (aMinSqDist > global::Kerf.Engine.Foundation.Precision.Infinite())
             {
                 continue;
             }
@@ -3156,14 +3161,14 @@ public class IntWalk_IWalking<TheIWFunction, TheIWLine>
             aVecPrms[1] = aUMin;
             aVecPrms[2] = aVMin;
             theSolver.Perform(theFunc, aVecPrms, theInfBounds, theSupBounds);
-            if (!theSolver.IsDone())
+            if (!theSolver.IsDone)
             {
                 continue;
             }
 
             theSolver.Root(aVecPrms);
 
-            gp_Pnt aPa = theFunc.PSurface().Value(aUMin, aVMin), aPb = theFunc.PSurface().Value(aVecPrms[1], aVecPrms[2]);
+            Point3D aPa = theFunc.PSurface().Value(aUMin, aVMin), aPb = theFunc.PSurface().Value(aVecPrms[1], aVecPrms[2]);
             double aSqD1 = aPb.SquareDistance(aP3d);
             double aSqD2 = aPa.SquareDistance(aPb);
 

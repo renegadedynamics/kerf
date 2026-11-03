@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.Contap_IType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -26,9 +28,9 @@ public sealed class Contap_Line
     private NCollection_HSequence<Contap_Point> svtx;
     private Adaptor2d_Curve2d? thearc;
     private Contap_IType typL;
-    private gp_Pnt pt = new();
-    private gp_Dir dir1 = new();
-    private gp_Dir dir2 = new();
+    private Point3D pt = new();
+    private Direction3D dir1 = new();
+    private Direction3D dir2 = new();
     private double rad;
 
     public Contap_Line()
@@ -85,7 +87,7 @@ public sealed class Contap_Line
     }
 
     /// <summary>Makes the line the straight line <paramref name="L"/>.</summary>
-    public void SetValue(in gp_Lin L)
+    public void SetValue(in Line3D L)
     {
         pt = L.Location();
         dir1 = L.Direction();
@@ -93,7 +95,7 @@ public sealed class Contap_Line
     }
 
     /// <summary>Makes the line the circle <paramref name="C"/>.</summary>
-    public void SetValue(in gp_Circ C)
+    public void SetValue(in Circle3D C)
     {
         pt = C.Location();
         dir1 = C.Position().Direction();
@@ -152,7 +154,7 @@ public sealed class Contap_Line
     {
         if (typL != Contap_Walking)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return (curv!.NbPoints());
     }
@@ -162,29 +164,29 @@ public sealed class Contap_Line
     {
         if (typL != Contap_Walking)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return (curv!.Value(Index));
     }
 
     /// <summary>The straight line; throws Standard_DomainError on another type.</summary>
-    public gp_Lin Line()
+    public Line3D Line()
     {
         if (typL != Contap_Lin)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Lin(pt, dir1);
+        return new Line3D(pt, dir1);
     }
 
     /// <summary>The circle; throws Standard_DomainError on another type.</summary>
-    public gp_Circ Circle()
+    public Circle3D Circle()
     {
         if (typL != Contap_Circle)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        return new gp_Circ(new gp_Ax2(pt, dir1, dir2), rad);
+        return new Circle3D(new Frame3D(pt, dir1, dir2), rad);
     }
 
     /// <summary>The restriction; throws Standard_DomainError on another type.</summary>
@@ -192,7 +194,7 @@ public sealed class Contap_Line
     {
         if (typL != Contap_Restriction)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return thearc!;
     }

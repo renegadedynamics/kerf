@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -12,13 +15,13 @@ namespace Occt;
 /// line or a conic whose plane contains the axis, with Extrema_GenExtPS otherwise.
 /// </summary>
 /// <remarks>The surface adaptor is kept, as OCCT keeps its handle.</remarks>
-public class Extrema_ExtPRevS : Standard_Transient
+public class Extrema_ExtPRevS : Transient
 {
     private GeomAdaptor_SurfaceOfRevolution? myS;
     private double myvinf;
     private double myvsup;
     private double mytolv;
-    private gp_Ax2 myPosition = new();
+    private Frame3D myPosition = new();
     private readonly Extrema_GenExtPS myExtPS = new();
     private bool myIsAnalyticallyComputable;
     private bool myDone;
@@ -26,122 +29,122 @@ public class Extrema_ExtPRevS : Standard_Transient
     private readonly double[] mySqDist = new double[8];
     private readonly Extrema_POnSurf[] myPoint = [new(), new(), new(), new(), new(), new(), new(), new()];
 
-    private static gp_Ax2 GetPosition(GeomAdaptor_SurfaceOfRevolution S)
+    private static Frame3D GetPosition(GeomAdaptor_SurfaceOfRevolution S)
     {
         Adaptor3d_Curve C = S.BasisCurve();
 
         switch (C.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 {
-                    gp_Lin L = C.Line();
-                    gp_Dir N = S.AxeOfRevolution().Direction();
-                    if (N.IsParallel(L.Direction(), Precision.Angular()))
+                    Line3D L = C.Line();
+                    Direction3D N = S.AxeOfRevolution().Direction();
+                    if (N.IsParallel(L.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        gp_Vec OO = new(L.Location(), S.AxeOfRevolution().Location());
-                        if (OO.Magnitude() <= gp.Resolution())
+                        Vector3D OO = new(L.Location(), S.AxeOfRevolution().Location());
+                        if (OO.Magnitude() <= Constants.Resolution())
                         {
-                            OO = new gp_Vec(L.Location(), ElCLib.Value(100, L));
-                            if (N.IsParallel(new gp_Dir(OO), Precision.Angular()))
+                            OO = new Vector3D(L.Location(), global::Kerf.Engine.Geometry.ElCLib.Value(100, L));
+                            if (N.IsParallel(new Direction3D(OO), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
-                                return new gp_Ax2(); // Line and axe of revolution coincide
+                                return new Frame3D(); // Line and axe of revolution coincide
                             }
                         }
-                        N.Cross(new gp_Dir(OO));
+                        N.Cross(new Direction3D(OO));
                     }
                     else
                     {
                         N.Cross(L.Direction());
                     }
-                    return new gp_Ax2(L.Location(), N, L.Direction());
+                    return new Frame3D(L.Location(), N, L.Direction());
                 }
-            case GeomAbs_Circle:
+            case Circle:
                 return C.Circle().Position();
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 return C.Ellipse().Position();
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 return C.Hyperbola().Position();
-            case GeomAbs_Parabola:
+            case Parabola:
                 return C.Parabola().Position();
             default:
-                return new gp_Ax2();
+                return new Frame3D();
         }
     }
 
     private static bool HasSingularity(GeomAdaptor_SurfaceOfRevolution S)
     {
         Adaptor3d_Curve C = S.BasisCurve();
-        gp_Dir N = S.AxeOfRevolution().Direction();
-        gp_Pnt P = S.AxeOfRevolution().Location();
+        Direction3D N = S.AxeOfRevolution().Direction();
+        Point3D P = S.AxeOfRevolution().Location();
 
-        gp_Lin L = new(P, N);
+        Line3D L = new(P, N);
 
         P = C.Value(C.FirstParameter());
 
-        if (L.SquareDistance(P) < Precision.SquareConfusion())
+        if (L.SquareDistance(P) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return true;
         }
 
         P = C.Value(C.LastParameter());
 
-        return L.SquareDistance(P) < Precision.SquareConfusion();
+        return L.SquareDistance(P) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
-    private static void PerformExtPElC(Extrema_ExtPElC E, in gp_Pnt P, Adaptor3d_Curve C, double Tol)
+    private static void PerformExtPElC(Extrema_ExtPElC E, in Point3D P, Adaptor3d_Curve C, double Tol)
     {
         switch (C.GetType())
         {
-            case GeomAbs_Hyperbola:
-                E.Perform(P, C.Hyperbola(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Hyperbola:
+                E.Perform(P, C.Hyperbola(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
-            case GeomAbs_Line:
-                E.Perform(P, C.Line(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Line:
+                E.Perform(P, C.Line(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
-            case GeomAbs_Circle:
+            case Circle:
                 E.Perform(P, C.Circle(), Tol, 0.0, 2.0 * M_PI);
                 return;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 E.Perform(P, C.Ellipse(), Tol, 0.0, 2.0 * M_PI);
                 return;
-            case GeomAbs_Parabola:
-                E.Perform(P, C.Parabola(), Tol, -Precision.Infinite(), Precision.Infinite());
+            case Parabola:
+                E.Perform(P, C.Parabola(), Tol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
                 return;
             default:
                 return;
         }
     }
 
-    private static bool IsCaseAnalyticallyComputable(GeomAbs_CurveType theType, in gp_Ax2 theCurvePos,
-        in gp_Ax1 AxeOfRevolution)
+    private static bool IsCaseAnalyticallyComputable(CurveKind theType, in Frame3D theCurvePos,
+        in Axis3D AxeOfRevolution)
     {
         // check type
         switch (theType)
         {
-            case GeomAbs_Line:
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
+            case Line:
+            case Circle:
+            case Ellipse:
+            case Hyperbola:
+            case Parabola:
                 break;
             default:
                 return false;
         }
         //  the axe of revolution must be in the plane of the curve.
-        gp_Pln pl = new(theCurvePos.Location(), theCurvePos.Direction());
-        gp_Pnt p1 = AxeOfRevolution.Location();
+        Plane3D pl = new(theCurvePos.Location(), theCurvePos.Direction());
+        Point3D p1 = AxeOfRevolution.Location();
         double dist = 100.0, dist2 = dist * dist;
-        double aThreshold = Precision.Angular() * Precision.Angular() * dist2;
-        gp_Pnt p2 = new(AxeOfRevolution.Location().XYZ() + dist * AxeOfRevolution.Direction().XYZ());
+        double aThreshold = global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular() * dist2;
+        Point3D p2 = new(AxeOfRevolution.Location().XYZ() + dist * AxeOfRevolution.Direction().XYZ());
 
         return (pl.SquareDistance(p1) < aThreshold) && (pl.SquareDistance(p2) < aThreshold);
     }
 
-    private static bool IsOriginalPnt(in gp_Pnt P, Extrema_POnSurf[] Points, int NbPoints)
+    private static bool IsOriginalPnt(in Point3D P, Extrema_POnSurf[] Points, int NbPoints)
     {
         for (int i = 1; i <= NbPoints; i++)
         {
-            if (Points[i - 1].Value().IsEqual(P, Precision.Confusion()))
+            if (Points[i - 1].Value().IsEqual(P, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return false;
             }
@@ -149,7 +152,7 @@ public class Extrema_ExtPRevS : Standard_Transient
         return true;
     }
 
-    private static bool IsExtremum(double U, double V, in gp_Pnt P, Adaptor3d_Surface S, out gp_Pnt E,
+    private static bool IsExtremum(double U, double V, in Point3D P, Adaptor3d_Surface S, out Point3D E,
         out double Dist2, bool IsVSup, bool IsMin)
     {
         E = S.Value(U, V);
@@ -169,7 +172,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     public Extrema_ExtPRevS()
     {
         myvinf = myvsup = 0.0;
-        mytolv = Precision.Confusion();
+        mytolv = global::Kerf.Engine.Foundation.Precision.Confusion();
         myDone = false;
         myNbExt = 0;
         myIsAnalyticallyComputable = false;
@@ -181,7 +184,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     }
 
     /// <summary>The extrema between P and S on [Umin, Usup] x [Vmin, Vsup].</summary>
-    public Extrema_ExtPRevS(in gp_Pnt theP, GeomAdaptor_SurfaceOfRevolution theS, double theUmin, double theUsup,
+    public Extrema_ExtPRevS(in Point3D theP, GeomAdaptor_SurfaceOfRevolution theS, double theUmin, double theUsup,
         double theVmin, double theVsup, double theTolU, double theTolV)
     {
         Initialize(theS, theUmin, theUsup, theVmin, theVsup, theTolU, theTolV);
@@ -190,7 +193,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     }
 
     /// <summary>The extrema between P and S on S's whole range.</summary>
-    public Extrema_ExtPRevS(in gp_Pnt theP, GeomAdaptor_SurfaceOfRevolution theS, double theTolU, double theTolV)
+    public Extrema_ExtPRevS(in Point3D theP, GeomAdaptor_SurfaceOfRevolution theS, double theTolU, double theTolV)
     {
         Initialize(theS, theS.FirstUParameter(), theS.LastUParameter(), theS.FirstVParameter(), theS.LastVParameter(),
             theTolU, theTolV);
@@ -234,7 +237,7 @@ public class Extrema_ExtPRevS : Standard_Transient
         }
     }
 
-    public void Perform(in gp_Pnt P)
+    public void Perform(in Point3D P)
     {
         myDone = false;
         myNbExt = 0;
@@ -249,21 +252,21 @@ public class Extrema_ExtPRevS : Standard_Transient
 
         Adaptor3d_Curve anACurve = myS!.BasisCurve();
 
-        gp_Ax1 Ax = myS.AxeOfRevolution();
-        gp_Vec Dir = new(Ax.Direction()), Z = new(myPosition.Direction());
-        gp_Pnt O = Ax.Location();
+        Axis3D Ax = myS.AxeOfRevolution();
+        Vector3D Dir = new(Ax.Direction()), Z = new(myPosition.Direction());
+        Point3D O = Ax.Location();
 
-        double OPdir = new gp_Vec(O, P).Dot(Dir);
-        gp_Pnt Pp = P.Translated(Dir.Multiplied(-OPdir));
-        if (O.IsEqual(Pp, Precision.Confusion()))
+        double OPdir = new Vector3D(O, P).Dot(Dir);
+        Point3D Pp = P.Translated(Dir.Multiplied(-OPdir));
+        if (O.IsEqual(Pp, global::Kerf.Engine.Foundation.Precision.Confusion()))
         { // P is on the AxeOfRevolution
             return;
         }
 
         double U, V;
-        gp_Pnt P1, Ppp;
-        double OPpz = new gp_Vec(O, Pp).Dot(Z);
-        if (Math.Abs(OPpz) <= gp.Resolution())
+        Point3D P1, Ppp;
+        double OPpz = new Vector3D(O, Pp).Dot(Z);
+        if (Math.Abs(OPpz) <= Constants.Resolution())
         {
             Ppp = Pp;
             U = 0;
@@ -271,22 +274,22 @@ public class Extrema_ExtPRevS : Standard_Transient
         else
         {
             Ppp = Pp.Translated(Z.Multiplied(-OPpz));
-            if (O.IsEqual(Ppp, Precision.Confusion()))
+            if (O.IsEqual(Ppp, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 U = M_PI / 2;
             }
             else
             {
-                U = new gp_Vec(O, Ppp).AngleWithRef(new gp_Vec(O, Pp), Dir);
+                U = new Vector3D(O, Ppp).AngleWithRef(new Vector3D(O, Pp), Dir);
             }
         }
 
-        gp_Vec OPpp = new(O, Ppp), OPq = new(O, myS.Value(M_PI / 2, 0));
+        Vector3D OPpp = new(O, Ppp), OPq = new(O, myS.Value(M_PI / 2, 0));
         if (U != M_PI / 2)
         {
-            if (Math.Abs(OPq.Magnitude()) <= gp.Resolution())
+            if (Math.Abs(OPq.Magnitude()) <= Constants.Resolution())
             {
-                OPq = new gp_Vec(O, myS.Value(M_PI / 2, anACurve.LastParameter() / 10));
+                OPq = new Vector3D(O, myS.Value(M_PI / 2, anACurve.LastParameter() / 10));
             }
             if (OPpp.AngleWithRef(OPq, Dir) < 0)
             {
@@ -294,11 +297,11 @@ public class Extrema_ExtPRevS : Standard_Transient
             }
         }
 
-        gp_Trsf T = new();
+        Transform3D T = new();
         T.SetRotation(Ax, -U);
         P1 = P.Transformed(T);
 
-        gp_Pnt E;
+        Point3D E;
         double Dist2;
         int i;
 
@@ -316,9 +319,9 @@ public class Extrema_ExtPRevS : Standard_Transient
                 {
                     double newV = myvsup;
 
-                    if ((anACurve.GetType() == GeomAbs_Circle) || (anACurve.GetType() == GeomAbs_Ellipse))
+                    if ((anACurve.GetType() == Circle) || (anACurve.GetType() == Ellipse))
                     {
-                        newV = ElCLib.InPeriod(V, myvinf, myvinf + 2.0 * M_PI);
+                        newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvinf, myvinf + 2.0 * M_PI);
 
                         if (newV > myvsup)
                         {
@@ -345,9 +348,9 @@ public class Extrema_ExtPRevS : Standard_Transient
                 {
                     double newV = myvinf;
 
-                    if ((anACurve.GetType() == GeomAbs_Circle) || (anACurve.GetType() == GeomAbs_Ellipse))
+                    if ((anACurve.GetType() == Circle) || (anACurve.GetType() == Ellipse))
                     {
-                        newV = ElCLib.InPeriod(V, myvsup - 2.0 * M_PI, myvsup);
+                        newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvsup - 2.0 * M_PI, myvsup);
 
                         if (newV < myvinf)
                         {
@@ -401,9 +404,9 @@ public class Extrema_ExtPRevS : Standard_Transient
                 {
                     double newV = myvsup;
 
-                    if ((anACurve.GetType() == GeomAbs_Circle) || (anACurve.GetType() == GeomAbs_Ellipse))
+                    if ((anACurve.GetType() == Circle) || (anACurve.GetType() == Ellipse))
                     {
-                        newV = ElCLib.InPeriod(V, myvinf, myvinf + 2.0 * M_PI);
+                        newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvinf, myvinf + 2.0 * M_PI);
 
                         if (newV > myvsup)
                         {
@@ -430,9 +433,9 @@ public class Extrema_ExtPRevS : Standard_Transient
                 {
                     double newV = myvinf;
 
-                    if ((anACurve.GetType() == GeomAbs_Circle) || (anACurve.GetType() == GeomAbs_Ellipse))
+                    if ((anACurve.GetType() == Circle) || (anACurve.GetType() == Ellipse))
                     {
-                        newV = ElCLib.InPeriod(V, myvsup - 2.0 * M_PI, myvsup);
+                        newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvsup - 2.0 * M_PI, myvsup);
 
                         if (newV < myvinf)
                         {
@@ -476,7 +479,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -485,7 +488,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myIsAnalyticallyComputable)
         {
@@ -501,7 +504,7 @@ public class Extrema_ExtPRevS : Standard_Transient
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (myIsAnalyticallyComputable)
         {

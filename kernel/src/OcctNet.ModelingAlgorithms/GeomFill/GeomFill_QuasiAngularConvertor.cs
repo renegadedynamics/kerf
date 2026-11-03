@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,10 +31,10 @@ public sealed class GeomFill_QuasiAngularConvertor
 
     // B is the monomial-to-BSpline conversion matrix on [-1,1], degree 6.
     // It is a mathematical constant computed once.
-    private static readonly math_Matrix THE_BASIS = ComputeBasis();
+    private static readonly Matrix THE_BASIS = ComputeBasis();
 
     private bool myinit;
-    private readonly math_Matrix B;
+    private readonly Matrix B;
     private math_Vector Px;
     private math_Vector Py;
     private readonly math_Vector W;
@@ -37,7 +45,7 @@ public sealed class GeomFill_QuasiAngularConvertor
     public GeomFill_QuasiAngularConvertor()
     {
         myinit = false;
-        B = new math_Matrix(1, 7, 1, 7);
+        B = new Matrix(1, 7, 1, 7);
         Px = new math_Vector(1, 7);
         Py = new math_Vector(1, 7);
         W = new math_Vector(1, 7);
@@ -68,7 +76,7 @@ public sealed class GeomFill_QuasiAngularConvertor
         myinit = true;
     }
 
-    private static math_Matrix ComputeBasis()
+    private static Matrix ComputeBasis()
     {
         const int anOrdre = 7;
         NCollection_Array1<double> aCoeffs = new(1, anOrdre * anOrdre);
@@ -83,14 +91,14 @@ public sealed class GeomFill_QuasiAngularConvertor
             aCoeffs.SetValue(ii + (ii - 1) * anOrdre, 1);
         }
 
-        Convert_CompPolynomialToPoles aConverter = new Convert_CompPolynomialToPoles(anOrdre,
+        CompPolynomialToPoles aConverter = new CompPolynomialToPoles(anOrdre,
                                                                                     anOrdre - 1,
                                                                                     anOrdre - 1,
                                                                                     aCoeffs,
                                                                                     anInter,
                                                                                     aTrueInter);
         NCollection_Array2<double> aPoles = aConverter.Poles();
-        math_Matrix aResult = new math_Matrix(1, anOrdre, 1, anOrdre);
+        Matrix aResult = new Matrix(1, anOrdre, 1, anOrdre);
         for (int jj = 1; jj <= anOrdre; jj++)
         {
             for (int ii = 1; ii <= anOrdre; ii++)
@@ -111,23 +119,23 @@ public sealed class GeomFill_QuasiAngularConvertor
     }
 
     /// <summary>The poles and weights of the arc of Angle from FirstPnt about Center, around the axis Dir.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Pnt Center, in gp_Vec Dir, double Angle,
-                        NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> Weights)
+    public void Section(in Point3D FirstPnt, in Point3D Center, in Vector3D Dir, double Angle,
+                        NCollection_Array1<Point3D> Poles, NCollection_Array1<double> Weights)
     {
         double b, b2, c, c2, tan_b;
         int ii;
         double beta, beta2, beta3, beta4, beta5, beta6, wi;
-        gp_XYZ aux;
-        gp_Mat Rot = new gp_Mat();
+        Xyz aux;
+        Matrix3x3 Rot = new Matrix3x3();
         // Calcul de la transformation
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V2;
         Rot.SetRotation(Dir.XYZ(), Angle / 2);
         aux = V1.XYZ();
         aux *= Rot;
         V1.SetXYZ(aux);
         V2 = Dir ^ V1;
 
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
 
         // Calcul des coeffs  -----------
         beta = Angle / 4;
@@ -181,7 +189,7 @@ public sealed class GeomFill_QuasiAngularConvertor
         W.Multiply(B, Vw);
 
         // Transfo
-        gp_XYZ pnt = new gp_XYZ();
+        Xyz pnt = new Xyz();
         for (ii = 1; ii <= 7; ii++)
         {
             wi = W[ii];
@@ -194,9 +202,9 @@ public sealed class GeomFill_QuasiAngularConvertor
     }
 
     /// <summary>The poles and weights of the arc and their first derivatives.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Vec DFirstPnt, in gp_Pnt Center, in gp_Vec DCenter, in gp_Vec Dir,
-                        in gp_Vec DDir, double Angle, double DAngle, NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<double> Weights,
+    public void Section(in Point3D FirstPnt, in Vector3D DFirstPnt, in Point3D Center, in Vector3D DCenter, in Vector3D Dir,
+                        in Vector3D DDir, double Angle, double DAngle, NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Vector3D> DPoles, NCollection_Array1<double> Weights,
                         NCollection_Array1<double> DWeights)
     {
         int Ordre = 7;
@@ -206,12 +214,12 @@ public sealed class GeomFill_QuasiAngularConvertor
         double bpr, dtan_b;
         int ii;
         double beta, beta2, beta3, beta4, beta5, beta6, betaprim;
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V1Prim = new gp_Vec(), V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V1Prim = new Vector3D(), V2;
 
         // Calcul des  transformations
-        gp_XYZ aux;
+        Xyz aux;
         double Sina, Cosa;
-        gp_Mat Rot = new gp_Mat(), RotPrim, D = new gp_Mat(), DPrim = new gp_Mat();
+        Matrix3x3 Rot = new Matrix3x3(), RotPrim, D = new Matrix3x3(), DPrim = new Matrix3x3();
         // La rotation s'ecrit I +  sin(Ang) * D + (1. - cos(Ang)) * D*D
         // ou D est l'application x -> Dir ^ x
         Rot.SetRotation(Dir.XYZ(), Angle / 2);
@@ -236,9 +244,9 @@ public sealed class GeomFill_QuasiAngularConvertor
         aux.Multiply(Rot);
         V1.SetXYZ(aux);
         V2 = Dir ^ V1;
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
         V2 = (DDir.Crossed(V1)).Added(Dir.Crossed(V1Prim));
-        gp_Mat MPrim = new gp_Mat(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
+        Matrix3x3 MPrim = new Matrix3x3(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
 
         // Calcul des constante  -----------
         beta = Angle / 4;
@@ -315,7 +323,7 @@ public sealed class GeomFill_QuasiAngularConvertor
         DPy.Multiply(B, DVy);
         DW.Multiply(B, DVw);
 
-        gp_XYZ P = new gp_XYZ(), DP = new gp_XYZ();
+        Xyz P = new Xyz(), DP = new Xyz();
         double wi;
 
         for (ii = 1; ii <= Ordre; ii++)
@@ -336,10 +344,10 @@ public sealed class GeomFill_QuasiAngularConvertor
     }
 
     /// <summary>The poles and weights of the arc and their first and second derivatives.</summary>
-    public void Section(in gp_Pnt FirstPnt, in gp_Vec DFirstPnt, in gp_Vec D2FirstPnt, in gp_Pnt Center,
-                        in gp_Vec DCenter, in gp_Vec D2Center, in gp_Vec Dir, in gp_Vec DDir, in gp_Vec D2Dir,
-                        double Angle, double DAngle, double D2Angle, NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Vec> D2Poles,
+    public void Section(in Point3D FirstPnt, in Vector3D DFirstPnt, in Vector3D D2FirstPnt, in Point3D Center,
+                        in Vector3D DCenter, in Vector3D D2Center, in Vector3D Dir, in Vector3D DDir, in Vector3D D2Dir,
+                        double Angle, double DAngle, double D2Angle, NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Vector3D> D2Poles,
                         NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights,
                         NCollection_Array1<double> D2Weights)
     {
@@ -350,12 +358,12 @@ public sealed class GeomFill_QuasiAngularConvertor
 
         int ii;
         double daux, b, b2, c, c2, bpr, bsc;
-        gp_Vec V1 = new gp_Vec(Center, FirstPnt), V1Prim, V1Secn = new gp_Vec(), V2;
+        Vector3D V1 = new Vector3D(Center, FirstPnt), V1Prim, V1Secn = new Vector3D(), V2;
 
         // Calcul des  transformations
-        gp_XYZ auxyz;
+        Xyz auxyz;
         double Sina, Cosa;
-        gp_Mat Rot = new gp_Mat(), RotPrim, RotSecn, D = new gp_Mat(), DPrim = new gp_Mat(), DSecn = new gp_Mat(),
+        Matrix3x3 Rot = new Matrix3x3(), RotPrim, RotSecn, D = new Matrix3x3(), DPrim = new Matrix3x3(), DSecn = new Matrix3x3(),
                DDP, Maux;
         // La rotation s'ecrit I +  sin(Ang) * D + (1. - cos(Ang)) * D*D
         // ou D est l'application x -> Dir ^ x
@@ -405,14 +413,14 @@ public sealed class GeomFill_QuasiAngularConvertor
         V1.SetXYZ(auxyz);
         V2 = Dir ^ V1;
 
-        gp_Mat M = new gp_Mat(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
+        Matrix3x3 M = new Matrix3x3(V1.X(), V2.X(), 0, V1.Y(), V2.Y(), 0, V1.Z(), V2.Z(), 0);
         V2 = (DDir.Crossed(V1)).Added(Dir.Crossed(V1Prim));
-        gp_Mat MPrim = new gp_Mat(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
+        Matrix3x3 MPrim = new Matrix3x3(V1Prim.X(), V2.X(), 0, V1Prim.Y(), V2.Y(), 0, V1Prim.Z(), V2.Z(), 0);
 
         V2 = DDir ^ V1Prim;
         V2 *= 2;
         V2 += (D2Dir.Crossed(V1)).Added(Dir.Crossed(V1Secn));
-        gp_Mat MSecn = new gp_Mat(V1Secn.X(), V2.X(), 0, V1Secn.Y(), V2.Y(), 0, V1Secn.Z(), V2.Z(), 0);
+        Matrix3x3 MSecn = new Matrix3x3(V1Secn.X(), V2.X(), 0, V1Secn.Y(), V2.Y(), 0, V1Secn.Z(), V2.Z(), 0);
 
         // Calcul des coeff  -----------
         double tan_b, dtan_b, d2tan_b;
@@ -521,7 +529,7 @@ public sealed class GeomFill_QuasiAngularConvertor
         D2Py = B * D2Vy;
         D2W.Multiply(B, D2Vw);
 
-        gp_XYZ P = new gp_XYZ(), DP = new gp_XYZ(), D2P = new gp_XYZ();
+        Xyz P = new Xyz(), DP = new Xyz(), D2P = new Xyz();
         double wi, dwi;
         for (ii = 1; ii <= Ordre; ii++)
         {

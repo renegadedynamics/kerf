@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Security.Cryptography;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -91,7 +94,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                 aLines.Add($"M {aCount} {aMessage}");
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             aLines.Add("EXC " + anExc.Message);
         }
@@ -195,19 +198,19 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
     private static TopoDS_Shape Assembly(in TopoDS_Shape theShape)
     {
         var aBuilder = new BRep_Builder();
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0.5);
-        aTrsf.SetTranslationPart(new gp_Vec(100.0, 50.0, 0.0));
+        var aTrsf = new Transform3D();
+        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
+        aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
         var anAssembly = new TopoDS_Compound();
         aBuilder.MakeCompound(ref anAssembly);
         aBuilder.Add(anAssembly, theShape);
-        aBuilder.Add(anAssembly, theShape.Moved(new TopLoc_Location(aTrsf)));
+        aBuilder.Add(anAssembly, theShape.Moved(new Placement(aTrsf)));
         var aTop = new TopoDS_Compound();
         aBuilder.MakeCompound(ref aTop);
-        var aTrsf2 = new gp_Trsf();
-        aTrsf2.SetTranslation(new gp_Vec(0.0, 0.0, 300.0));
+        var aTrsf2 = new Transform3D();
+        aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
         aBuilder.Add(aTop, anAssembly);
-        aBuilder.Add(aTop, anAssembly.Moved(new TopLoc_Location(aTrsf2)));
+        aBuilder.Add(aTop, anAssembly.Moved(new Placement(aTrsf2)));
         return aTop;
     }
 
@@ -277,7 +280,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                             }
                         }
                     }
-                    catch (Standard_Failure anExc)
+                    catch (FailureException anExc)
                     {
                         aLines.Add(aHead + "EXC " + anExc.Message);
                     }

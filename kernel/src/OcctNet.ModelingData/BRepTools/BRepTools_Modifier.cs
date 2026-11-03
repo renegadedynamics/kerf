@@ -4,7 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -30,14 +35,14 @@ public sealed class BRepTools_Modifier
     private struct NewCurveInfo
     {
         public Geom_Curve? myCurve;
-        public TopLoc_Location myLoc;
+        public Placement myLoc;
         public double myToler;
     }
 
     private struct NewSurfaceInfo
     {
         public Geom_Surface? mySurface;
-        public TopLoc_Location myLoc;
+        public Placement myLoc;
         public double myToler;
         public bool myRevWires;
         public bool myRevFace;
@@ -93,15 +98,15 @@ public sealed class BRepTools_Modifier
     }
 
     /// <summary>Performs the modification.</summary>
-    /// <exception cref="Standard_NullObject">The modifier has no shape.</exception>
-    public void Perform(BRepTools_Modification M, Message_ProgressRange theProgress = default)
+    /// <exception cref="NullObjectException">The modifier has no shape.</exception>
+    public void Perform(BRepTools_Modification M, ProgressRange theProgress = default)
     {
         if (myShape.IsNull())
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
 
-        using var aPS = new Message_ProgressScope(theProgress, "Converting Shape", 2);
+        using var aPS = new ProgressScope(theProgress, "Converting Shape", 2);
 
         var aMVE = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         var aMEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
@@ -172,12 +177,12 @@ public sealed class BRepTools_Modifier
                 {
                     TopoDS_Face newf1 = TopoDS.Face(myMap[F1]);
                     TopoDS_Face newf2 = TopoDS.Face(myMap[F2]);
-                    GeomAbs_Shape Newcont = M.Continuity(CurE, F1, F2, NewE, newf1, newf2);
+                    Continuity Newcont = M.Continuity(CurE, F1, F2, NewE, newf1, newf2);
                     // OCCT.NET: frozen: an edge rebuilt by an earlier Perform (Init keeps the images, occt-issues.md)
                     // may have been published since; OCCT sets its continuity again, which changes nothing when it
                     // already has it
-                    if (Newcont > GeomAbs_C0
-                        && !(NewE.TShape()!.IsFrozen() && BRep_Tool.HasContinuity(NewE, newf1, newf2)
+                    if (Newcont > C0
+                        && !(NewE.TShape()!.IsFrozen && BRep_Tool.HasContinuity(NewE, newf1, newf2)
                              && BRep_Tool.Continuity(NewE, newf1, newf2) == Newcont))
                     {
                         aBB.Continuity(NewE, newf1, newf2, Newcont);
@@ -199,7 +204,7 @@ public sealed class BRepTools_Modifier
     internal void SetMutableInput(bool theMutableInput) => myMutableInput = theMutableInput;
 
     /// <summary>The shape that the sub-shape S became, frozen (a publication point).</summary>
-    /// <exception cref="Standard_NoSuchObject">S isn't a sub-shape of the modified shape.</exception>
+    /// <exception cref="NoSuchObjectException">S isn't a sub-shape of the modified shape.</exception>
     public TopoDS_Shape ModifiedShape(in TopoDS_Shape S)
     {
         TopoDS_Shape aResult = InternalModifiedShape(S);
@@ -208,12 +213,12 @@ public sealed class BRepTools_Modifier
     }
 
     /// <summary>The shape that the sub-shape S became, unfrozen if it was rebuilt: for ported code that goes on building on it.</summary>
-    /// <exception cref="Standard_NoSuchObject">S isn't a sub-shape of the modified shape.</exception>
+    /// <exception cref="NoSuchObjectException">S isn't a sub-shape of the modified shape.</exception>
     internal TopoDS_Shape InternalModifiedShape(in TopoDS_Shape S)
     {
         if (!myMap.IsBound(S))
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         return myMap[S];
     }
@@ -230,7 +235,7 @@ public sealed class BRepTools_Modifier
         }
     }
 
-    private bool Rebuild(in TopoDS_Shape S, BRepTools_Modification M, out bool theNewGeom, Message_ProgressRange theProgress)
+    private bool Rebuild(in TopoDS_Shape S, BRepTools_Modification M, out bool theNewGeom, ProgressRange theProgress)
     {
         TopAbs_ShapeEnum ts = S.ShapeType();
         // OCCT.NET: a reference into the map, as OCCT's TopoDS_Shape& result = myMap(S). The map gains no keys while
@@ -275,7 +280,7 @@ public sealed class BRepTools_Modifier
                 }
 
                 // update triangulation on the copied face
-                if (M.NewTriangulation(TopoDS.Face(S), out Poly_Triangulation? aTriangulation))
+                if (M.NewTriangulation(TopoDS.Face(S), out Triangulation? aTriangulation))
                 {
                     if (rebuild)
                     { // the copied face already exists => update it
@@ -328,7 +333,7 @@ public sealed class BRepTools_Modifier
                 }
 
                 // update polygonal structure on the edge
-                if (M.NewPolygon(TopoDS.Edge(S), out Poly_Polygon3D? aPolygon))
+                if (M.NewPolygon(TopoDS.Edge(S), out Polygon3D? aPolygon))
                 {
                     if (rebuild)
                     { // the copied edge already exists => update it
@@ -365,7 +370,7 @@ public sealed class BRepTools_Modifier
                 }
             }
 
-            using var aPS = new Message_ProgressScope(theProgress, "Converting SubShapes", aShapeCount);
+            using var aPS = new ProgressScope(theProgress, "Converting SubShapes", aShapeCount);
             //
             for (it.Initialize(S, false); it.More() && aPS.More(); it.Next())
             {
@@ -451,7 +456,7 @@ public sealed class BRepTools_Modifier
                                 {
                                     resface = face;
                                 }
-                                Geom_Surface? aSurf = BRep_Tool.Surface(TopoDS.Face(resface), out TopLoc_Location aLoc);
+                                Geom_Surface? aSurf = BRep_Tool.Surface(TopoDS.Face(resface), out Placement aLoc);
                                 // check other faces sharing the same surface
                                 var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE);
                                 for (; aExpF.More() && !isClosed; aExpF.Next())
@@ -467,7 +472,7 @@ public sealed class BRepTools_Modifier
                                         resface2 = anOther;
                                     }
                                     Geom_Surface? anOtherSurf =
-                                        BRep_Tool.Surface(TopoDS.Face(resface2), out TopLoc_Location anOtherLoc);
+                                        BRep_Tool.Surface(TopoDS.Face(resface2), out Placement anOtherLoc);
                                     if (ReferenceEquals(aSurf, anOtherSurf) && aLoc.IsEqual(anOtherLoc))
                                     {
                                         var aExpE = new TopExp_Explorer(anOther, TopAbs_EDGE);
@@ -494,7 +499,7 @@ public sealed class BRepTools_Modifier
                                 curve2d1 = BRep_Tool.CurveOnSurface(CurE, CurF, out f, out l);
                                 if (curve2d1 is null)
                                 {
-                                    curve2d1 = new Geom2d_Line(gp.OX2d());
+                                    curve2d1 = new Geom2d_Line(Constants.OX2d());
                                 }
                                 B.UpdateEdge(CurE, curve2d1, curve2d, CurF, 0.0);
                             }
@@ -504,7 +509,7 @@ public sealed class BRepTools_Modifier
                                 curve2d1 = BRep_Tool.CurveOnSurface(CurE, CurF, out f, out l);
                                 if (curve2d1 is null)
                                 {
-                                    curve2d1 = new Geom2d_Line(gp.OX2d());
+                                    curve2d1 = new Geom2d_Line(Constants.OX2d());
                                 }
                                 B.UpdateEdge(CurE, curve2d, curve2d1, CurF, 0.0);
                             }
@@ -552,8 +557,8 @@ public sealed class BRepTools_Modifier
                     }
 
                     // Copy polygon on triangulation
-                    bool aNewPonT = M.NewPolygonOnTriangulation(edge, face, out Poly_PolygonOnTriangulation? aPolyOnTria_1);
-                    Poly_PolygonOnTriangulation? aPolyOnTria_2 = null;
+                    bool aNewPonT = M.NewPolygonOnTriangulation(edge, face, out PolygonOnTriangulation? aPolyOnTria_1);
+                    PolygonOnTriangulation? aPolyOnTria_2 = null;
                     if (BRepTools.IsReallyClosed(edge, face))
                     {
                         // Obtain triangulation on reversed edge
@@ -569,8 +574,8 @@ public sealed class BRepTools_Modifier
                     }
                     if (aNewPonT)
                     {
-                        Poly_Triangulation? aNewFaceTria =
-                            BRep_Tool.Triangulation(TopoDS.Face(myMap[face]), out TopLoc_Location aLocation);
+                        Triangulation? aNewFaceTria =
+                            BRep_Tool.Triangulation(TopoDS.Face(myMap[face]), out Placement aLocation);
                         TopoDS_Edge aNewEdge = TopoDS.Edge(myMap[edge]);
                         if (aPolyOnTria_2 is null)
                         {
@@ -650,7 +655,7 @@ public sealed class BRepTools_Modifier
 
         // OCCT.NET: frozen: an unrebuilt shape is the input itself, whose flags SetShapeFlags copies onto themselves;
         // a frozen one can't be written, and keeps them.
-        if (!(ReferenceEquals(result.TShape(), S.TShape()) && S.TShape()!.IsFrozen()))
+        if (!(ReferenceEquals(result.TShape(), S.TShape()) && S.TShape()!.IsFrozen))
         {
             SetShapeFlags(S, result);
         }
@@ -666,7 +671,7 @@ public sealed class BRepTools_Modifier
         {
             // fill MyMap only with vertices with NewPoint == true
             TopoDS_Vertex aV = TopoDS.Vertex(theMVE.FindKey(i));
-            bool IsNewP = M.NewPoint(aV, out gp_Pnt aPnt, out double aToler);
+            bool IsNewP = M.NewPoint(aV, out Point3D aPnt, out double aToler);
             if (IsNewP)
             {
                 TopoDS_Vertex aNewV = new();
@@ -689,7 +694,7 @@ public sealed class BRepTools_Modifier
         for (int i = 1; i <= theMEF.Extent(); i++)
         {
             TopoDS_Edge anE = TopoDS.Edge(theMEF.FindKey(i));
-            bool IsNewCur = M.NewCurve(anE, out Geom_Curve? aCurve, out TopLoc_Location aLocation, out double aToler);
+            bool IsNewCur = M.NewCurve(anE, out Geom_Curve? aCurve, out Placement aLocation, out double aToler);
             if (IsNewCur)
             {
                 aNCinfo.myCurve = aCurve;
@@ -711,7 +716,7 @@ public sealed class BRepTools_Modifier
             TopoDS_Face aF = TopoDS.Face(aMF[i]);
             bool IsNewSur = M.NewSurface(aF,
                                          out Geom_Surface? aSurface,
-                                         out TopLoc_Location aLocation,
+                                         out Placement aLocation,
                                          out double aToler1,
                                          out bool RevWires,
                                          out bool RevFace);

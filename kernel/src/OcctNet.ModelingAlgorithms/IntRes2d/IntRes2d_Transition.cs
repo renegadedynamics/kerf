@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -116,12 +117,12 @@ public partial struct IntRes2d_Transition : IEquatable<IntRes2d_Transition>
     public readonly IntRes2d_TypeTrans TransitionType() => typetra;
 
     /// <summary>True when the two curves are tangent at the intersection point.</summary>
-    /// <exception cref="Standard_DomainError">The transition is UNDECIDED.</exception>
+    /// <exception cref="DomainErrorException">The transition is UNDECIDED.</exception>
     public readonly bool IsTangent()
     {
         if (typetra == IntRes2d_Undecided)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tangent;
@@ -131,24 +132,24 @@ public partial struct IntRes2d_Transition : IEquatable<IntRes2d_Transition>
     /// For a TOUCH transition: INSIDE when the curve remains inside the other one, OUTSIDE when it remains outside,
     /// UNKNOWN when the second derivatives cannot tell.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The transition is not TOUCH.</exception>
+    /// <exception cref="DomainErrorException">The transition is not TOUCH.</exception>
     public readonly IntRes2d_Situation Situation()
     {
         if (typetra != IntRes2d_Touch)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return situat;
     }
 
     /// <summary>For a TOUCH transition: true when the two curves locally define two different parts of the space.</summary>
-    /// <exception cref="Standard_DomainError">The transition is not TOUCH.</exception>
+    /// <exception cref="DomainErrorException">The transition is not TOUCH.</exception>
     public readonly bool IsOpposite()
     {
         if (typetra != IntRes2d_Touch)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return oppos;

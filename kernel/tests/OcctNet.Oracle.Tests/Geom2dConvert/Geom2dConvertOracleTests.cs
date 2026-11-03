@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -22,12 +25,12 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         BSpline,
     }
 
-    private static void Ax22d(Oracle theOracle, out gp_Ax22d thePort, out N.gp_Ax22d theNative)
+    private static void Ax22d(Oracle theOracle, out Frame2D thePort, out N.gp_Ax22d theNative)
     {
-        var aP = new gp_Pnt2d(theOracle.Real(), theOracle.Real());
-        gp_XY aD = GeomOracleInputs.RawDir2d(theOracle);
+        var aP = new Point2D(theOracle.Real(), theOracle.Real());
+        Xy aD = GeomOracleInputs.RawDir2d(theOracle);
         bool isSense = theOracle.Bool();
-        thePort = new gp_Ax22d(aP, new gp_Dir2d(aD.X(), aD.Y()), isSense);
+        thePort = new Frame2D(aP, new Direction2D(aD.X(), aD.Y()), isSense);
         using N.gp_Pnt2d aNP = Oracle.ToNative(aP);
         using var aND = new N.gp_Dir2d(aD.X(), aD.Y());
         theNative = new N.gp_Ax22d(aNP, aND, isSense);
@@ -41,7 +44,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             var aKind = (Kind)anOracle.Int(0, 3);
-            var aParam = (Convert_ParameterisationType)anOracle.Int(0, 7);
+            var aParam = (ParameterisationType)anOracle.Int(0, 7);
             bool isWhole = aKind != Kind.Line && anOracle.Int(0, 3) == 0;
             N.Geom2d_Curve aNBasis;
             Geom2d_Curve aBasis;
@@ -49,7 +52,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             {
                 case Kind.Line:
                 {
-                    (N.gp_Ax2d aNAx, gp_Ax2d anAx) = GeomOracleInputs.Ax2ds(anOracle);
+                    (N.gp_Ax2d aNAx, Axis2D anAx) = GeomOracleInputs.Ax2ds(anOracle);
                     using (aNAx)
                     {
                         aNBasis = new N.Geom2d_Line(aNAx);
@@ -61,7 +64,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 case Kind.Circle:
                 case Kind.Ellipse:
                 {
-                    Ax22d(anOracle, out gp_Ax22d anAx, out N.gp_Ax22d aNAx);
+                    Ax22d(anOracle, out Frame2D anAx, out N.gp_Ax22d aNAx);
                     double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
                     using (aNAx)
                     {
@@ -108,7 +111,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                     aU1 = anOracle.Real(-7, 7);
                     // half the arcs long, to exercise the split of RationalC1 arcs of 6 radians or more
                     aU2 = aU1 + (anOracle.Bool() ? anOracle.Real(6.0, 2 * Math.PI) : anOracle.Real(0.05, 2 * Math.PI));
-                    if (aParam == Convert_ParameterisationType.Convert_RationalC1 && aU2 - aU1 >= 6.0)
+                    if (aParam == ParameterisationType.RationalC1 && aU2 - aU1 >= 6.0)
                     {
                         aNbLongRationalC1++;
                     }
@@ -152,7 +155,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             }
 
             using N.Geom2d_BSplineCurve aNResult = aNative!;
-            Assert.False(aPort!.IsFrozen());
+            Assert.False(aPort!.IsFrozen);
             Geom2dOracle.SameStructure(anOracle, aNResult, aPort, aWhat);
         }
 
@@ -170,7 +173,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         for (int i = 0; i < 300; i++)
         {
             bool isCircle = anOracle.Bool();
-            Ax22d(anOracle, out gp_Ax22d anAx, out N.gp_Ax22d aNAx);
+            Ax22d(anOracle, out Frame2D anAx, out N.gp_Ax22d aNAx);
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.gp_Ax22d aNAxOwned = aNAx;
             using N.Geom2d_Curve aNBasis = isCircle ? new N.Geom2d_Circle(aNAx, aR1) : new N.Geom2d_Ellipse(aNAx, aR1, aR2);
@@ -182,7 +185,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             var aTrimmed = new Geom2d_TrimmedCurve(aBasis, aU1, aU2, aSense);
             using N.Geom2d_BSplineCurve aNative =
                 N.Geom2dConvert.CurveToBSplineCurve(aNTrimmed, N.Convert_ParameterisationType.Convert_RationalC1)!;
-            Geom2d_BSplineCurve aPort = Geom2dConvert.CurveToBSplineCurve(aTrimmed, Convert_ParameterisationType.Convert_RationalC1);
+            Geom2d_BSplineCurve aPort = Geom2dConvert.CurveToBSplineCurve(aTrimmed, ParameterisationType.RationalC1);
             Geom2dOracle.SameStructure(anOracle, aNative, aPort, $"{(isCircle ? "circle" : "ellipse")} {aU2 - aU1}");
         }
 
@@ -196,11 +199,11 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
         // conic of the plane XOY onto it with ProjLib_Plane, and the port projects the same conic with its ProjLib.
         var anOracle = new Oracle(output);
         using var aNPln = new N.gp_Pln();
-        var aPln = new gp_Pln();
+        var aPln = new Plane3D();
         for (int i = 0; i < Cases / 2; i++)
         {
             bool isParabola = anOracle.Bool();
-            gp_XY aD = GeomOracleInputs.RawDir2d(anOracle);
+            Xy aD = GeomOracleInputs.RawDir2d(anOracle);
             double aNz = anOracle.Bool() ? 1.0 : -1.0;
             double aPx = anOracle.Real(-50, 50), aPy = anOracle.Real(-50, 50);
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, 20);
@@ -210,14 +213,14 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             using var aNN = new N.gp_Dir(0.0, 0.0, aNz);
             using var aNVx = new N.gp_Dir(aD.X(), aD.Y(), 0.0);
             using var aNAx2 = new N.gp_Ax2(aNP, aNN, aNVx);
-            var anAx2 = new gp_Ax2(new gp_Pnt(aPx, aPy, 0.0), new gp_Dir(0.0, 0.0, aNz), new gp_Dir(aD.X(), aD.Y(), 0.0));
+            var anAx2 = new Frame3D(new Point3D(aPx, aPy, 0.0), new Direction3D(0.0, 0.0, aNz), new Direction3D(aD.X(), aD.Y(), 0.0));
             using N.Geom_Curve aN3d = isParabola ? new N.Geom_Parabola(aNAx2, aR1) : new N.Geom_Hyperbola(aNAx2, aR1, aR2);
             using var aN3dTrimmed = new N.Geom_TrimmedCurve(aN3d, aU1, aU2);
             using N.Geom2d_Curve aN2d = N.GeomAPI.To2d(aN3dTrimmed, aNPln)!;
             Assert.True(aN2d.IsKind(isParabola ? "Geom2d_Parabola" : "Geom2d_Hyperbola") || aN2d.IsKind("Geom2d_TrimmedCurve"));
 
-            Geom2d_Curve aBasis = isParabola ? new Geom2d_Parabola(ProjLib.Project(aPln, new gp_Parab(anAx2, aR1)))
-                                             : new Geom2d_Hyperbola(ProjLib.Project(aPln, new gp_Hypr(anAx2, aR1, aR2)));
+            Geom2d_Curve aBasis = isParabola ? new Geom2d_Parabola(ProjLib.Project(aPln, new Parabola3D(anAx2, aR1)))
+                                             : new Geom2d_Hyperbola(ProjLib.Project(aPln, new Hyperbola3D(anAx2, aR1, aR2)));
             var aTrimmed = new Geom2d_TrimmedCurve(aBasis, aU1, aU2);
             using N.Geom2d_BSplineCurve aNative = N.Geom2dConvert.CurveToBSplineCurve(aN2d)!;
             Geom2d_BSplineCurve aPort = Geom2dConvert.CurveToBSplineCurve(aTrimmed);

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -16,10 +18,10 @@ public sealed class Geom2dGcc_Circ2dTanCen
 {
     private readonly bool WellDone;
     private readonly int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol;
+    private readonly NCollection_Array1<Circle2D> cirsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<int> TheSame1;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> pararg1;
 
@@ -35,20 +37,20 @@ public sealed class Geom2dGcc_Circ2dTanCen
 
         Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
+        CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
         //=============================================================================
 
-        gp_Pnt2d pcenter = PCenter.Pnt2d();
+        Point2D pcenter = PCenter.Pnt2d();
         NbrSol           = 0;
-        if ((Type1 == GeomAbs_Line || Type1 == GeomAbs_Circle))
+        if ((Type1 == Line || Type1 == Circle))
         {
-            if (Type1 == GeomAbs_Circle)
+            if (Type1 == Circle)
             {
                 Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-                gp_Circ2d            c1   = CCC1.Circ2d();
+                Circle2D            c1   = CCC1.Circ2d();
                 GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
                 GccAna_Circ2dTanCen  Circ = new(Qc1, pcenter, Tolerance);
                 WellDone                  = Circ.IsDone();
@@ -71,7 +73,7 @@ public sealed class Geom2dGcc_Circ2dTanCen
             else
             {
                 Geom2d_Line         LL1  = (CC1 as Geom2d_Line)!;
-                gp_Lin2d            l1   = LL1.Lin2d();
+                Line2D            l1   = LL1.Lin2d();
                 GccAna_Circ2dTanCen Circ = new(l1, pcenter);
                 WellDone                 = Circ.IsDone();
                 NbrSol                   = Circ.NbSolutions();
@@ -125,17 +127,17 @@ public sealed class Geom2dGcc_Circ2dTanCen
     }
 
     /// <summary>The solution of index Index.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in 1..NbSolutions().</exception>
-    public gp_Circ2d ThisSolution(int Index)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in 1..NbSolutions().</exception>
+    public Circle2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return cirsol[Index];
     }
@@ -145,11 +147,11 @@ public sealed class Geom2dGcc_Circ2dTanCen
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -158,16 +160,16 @@ public sealed class Geom2dGcc_Circ2dTanCen
     }
 
     /// <summary>The tangency point between the solution of index Index and the argument, and its parameters.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the argument itself.</exception>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the argument itself.</exception>
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -179,7 +181,7 @@ public sealed class Geom2dGcc_Circ2dTanCen
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
@@ -189,11 +191,11 @@ public sealed class Geom2dGcc_Circ2dTanCen
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (TheSame1[Index] == 0)
         {

@@ -5,9 +5,12 @@
 
 //  Modified by skv - Thu Jul  7 12:29:34 2005 OCC9134
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -40,7 +43,7 @@ public class Extrema_ExtCS
     private double myucinf;
     private double myucsup;
     private readonly NCollection_Sequence<double> mySqDist = new();
-    private GeomAbs_SurfaceType myStype;
+    private SurfaceKind myStype;
 
     /// <summary>An empty algorithm.</summary>
     public Extrema_ExtCS()
@@ -56,7 +59,7 @@ public class Extrema_ExtCS
         mytolS = 0.0;
         myucinf = 0.0;
         myucsup = 0.0;
-        myStype = GeomAbs_OtherSurface;
+        myStype = OtherSurface;
     }
 
     /// <summary>It calculates all the distances between C and S.</summary>
@@ -109,7 +112,7 @@ public class Extrema_ExtCS
     public void Perform(Adaptor3d_Curve C, double Uinf, double Usup)
     {
         // OCCT dereferences the null surface pointer; the port throws.
-        Adaptor3d_Surface aS = myS ?? throw new StdFail_NotDone("Extrema_ExtCS::Perform: not initialized");
+        Adaptor3d_Surface aS = myS ?? throw new NotDoneException("Extrema_ExtCS::Perform: not initialized");
 
         myucinf = Uinf;
         myucsup = Usup;
@@ -120,7 +123,7 @@ public class Extrema_ExtCS
         int NbT, NbU, NbV;
         NbT = 12;
         NbU = NbV = 10;
-        GeomAbs_CurveType myCtype = C.GetType();
+        CurveKind myCtype = C.GetType();
 
         myDone = false;
         // Try analytic computation of extrema
@@ -130,19 +133,19 @@ public class Extrema_ExtCS
         // cases falling through to the hyperbola test and to `default`, are written out.
         switch (myCtype)
         {
-            case GeomAbs_Line:
+            case Line:
             {
-                if (myStype == GeomAbs_Sphere)
+                if (myStype == SurfaceKind.Sphere)
                 {
                     myExtElCS.Perform(C.Line(), aS.Sphere());
                     break;
                 }
-                if (myStype == GeomAbs_Cylinder)
+                if (myStype == SurfaceKind.Cylinder)
                 {
                     myExtElCS.Perform(C.Line(), aS.Cylinder());
                     break;
                 }
-                if (myStype == GeomAbs_Plane)
+                if (myStype == Plane)
                 {
                     myExtElCS.Perform(C.Line(), aS.Plane());
                     if (myExtElCS.IsParallel())
@@ -159,30 +162,30 @@ public class Extrema_ExtCS
                     double ufirst = aS.FirstUParameter(), ulast = aS.LastUParameter(),
                            vfirst = aS.FirstVParameter(), vlast = aS.LastVParameter();
 
-                    if (!(Precision.IsInfinite(ufirst) || Precision.IsInfinite(ulast)
-                          || Precision.IsInfinite(vfirst) || Precision.IsInfinite(vlast)))
+                    if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(ufirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(ulast)
+                          || global::Kerf.Engine.Foundation.Precision.IsInfinite(vfirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vlast)))
                     {
-                        double tmin = Precision.Infinite(), tmax = -tmin;
-                        Bnd_Box aSurfBox = new();
-                        BndLib_AddSurface.Add(aS, ufirst, ulast, vfirst, vlast, Precision.Confusion(), ref aSurfBox);
+                        double tmin = global::Kerf.Engine.Foundation.Precision.Infinite(), tmax = -tmin;
+                        Box aSurfBox = new();
+                        BndLib_AddSurface.Add(aS, ufirst, ulast, vfirst, vlast, global::Kerf.Engine.Foundation.Precision.Confusion(), ref aSurfBox);
                         aSurfBox.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
-                        gp_Lin aLin = C.Line();
+                        Line3D aLin = C.Line();
                         double aParOnLin;
-                        Span<gp_Pnt> aLimPntArray =
+                        Span<Point3D> aLimPntArray =
                         [
-                            new gp_Pnt(xmin, ymin, zmin),
-                            new gp_Pnt(xmax, ymin, zmin),
-                            new gp_Pnt(xmin, ymax, zmin),
-                            new gp_Pnt(xmax, ymax, zmin),
-                            new gp_Pnt(xmin, ymin, zmax),
-                            new gp_Pnt(xmax, ymin, zmax),
-                            new gp_Pnt(xmin, ymax, zmax),
-                            new gp_Pnt(xmax, ymax, zmax),
+                            new Point3D(xmin, ymin, zmin),
+                            new Point3D(xmax, ymin, zmin),
+                            new Point3D(xmin, ymax, zmin),
+                            new Point3D(xmax, ymax, zmin),
+                            new Point3D(xmin, ymin, zmax),
+                            new Point3D(xmax, ymin, zmax),
+                            new Point3D(xmin, ymax, zmax),
+                            new Point3D(xmax, ymax, zmax),
                         ];
 
                         for (i = 0; i <= 7; i++)
                         {
-                            aParOnLin = ElCLib.Parameter(aLin, aLimPntArray[i]);
+                            aParOnLin = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aLimPntArray[i]);
                             tmin = Min(aParOnLin, tmin);
                             tmax = Max(aParOnLin, tmax);
                         }
@@ -199,10 +202,10 @@ public class Extrema_ExtCS
                         NbV = 13;
                     }
 
-                    if (clast - cfirst <= Precision.Confusion())
+                    if (clast - cfirst <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double aCPar = (cfirst + clast) / 2.0;
-                        gp_Pnt aPm = C.Value(aCPar);
+                        Point3D aPm = C.Value(aCPar);
                         Extrema_ExtPS anExtPS = new(aPm, aS, ufirst, ulast, vfirst, vlast, mytolS, mytolS,
                                                     Extrema_ExtFlag.Extrema_ExtFlag_MIN);
                         myDone = anExtPS.IsDone();
@@ -247,19 +250,19 @@ public class Extrema_ExtCS
                 }
             }
             //  Modified by skv - Thu Jul  7 12:29:34 2005 OCC9134 Begin
-            case GeomAbs_Circle:
+            case Circle:
             {
-                if (myStype == GeomAbs_Cylinder)
+                if (myStype == SurfaceKind.Cylinder)
                 {
                     myExtElCS.Perform(C.Circle(), aS.Cylinder());
                     break;
                 }
-                else if (myStype == GeomAbs_Plane)
+                else if (myStype == Plane)
                 {
                     myExtElCS.Perform(C.Circle(), aS.Plane());
                     break;
                 }
-                else if (myStype == GeomAbs_Sphere)
+                else if (myStype == SurfaceKind.Sphere)
                 {
                     myExtElCS.Perform(C.Circle(), aS.Sphere());
                     break;
@@ -268,9 +271,9 @@ public class Extrema_ExtCS
                 isComputeAnalytic = false;
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                if (myCtype == GeomAbs_Hyperbola && myStype == GeomAbs_Plane)
+                if (myCtype == Hyperbola && myStype == Plane)
                 {
                     //  Modified by skv - Thu Jul  7 12:29:34 2005 OCC9134 End
                     myExtElCS.Perform(C.Hyperbola(), aS.Plane());
@@ -312,15 +315,15 @@ public class Extrema_ExtCS
                     {
                         // Analytical extrema seem to be out of curve/surface boundaries.
                         // Try extremity points of curve.
-                        Span<gp_Pnt> aPOnC = [new gp_Pnt(), new gp_Pnt()];
-                        Span<gp_Pnt> aPOnS = [new gp_Pnt(), new gp_Pnt()];
+                        Span<Point3D> aPOnC = [new Point3D(), new Point3D()];
+                        Span<Point3D> aPOnS = [new Point3D(), new Point3D()];
                         Span<double> aT = [myucinf, myucsup];
                         Span<double> U = [0.0, 0.0];
                         Span<double> V = [0.0, 0.0];
                         Span<double> aDist = [-1, -1];
                         for (i = 0; i < 2; ++i)
                         {
-                            if (Precision.IsInfinite(aT[i]))
+                            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aT[i]))
                             {
                                 continue;
                             }
@@ -328,34 +331,34 @@ public class Extrema_ExtCS
                             aPOnC[i] = C.Value(aT[i]);
                             switch (myStype)
                             {
-                                case GeomAbs_Plane:
+                                case Plane:
                                 {
-                                    ElSLib.Parameters(aS.Plane(), aPOnC[i], out U[i], out V[i]);
-                                    aPOnS[i] = ElSLib.Value(U[i], V[i], aS.Plane());
+                                    global::Kerf.Engine.Geometry.ElSLib.Parameters(aS.Plane(), aPOnC[i], out U[i], out V[i]);
+                                    aPOnS[i] = global::Kerf.Engine.Geometry.ElSLib.Value(U[i], V[i], aS.Plane());
                                     break;
                                 }
-                                case GeomAbs_Sphere:
+                                case SurfaceKind.Sphere:
                                 {
-                                    ElSLib.Parameters(aS.Sphere(), aPOnC[i], out U[i], out V[i]);
-                                    aPOnS[i] = ElSLib.Value(U[i], V[i], aS.Sphere());
+                                    global::Kerf.Engine.Geometry.ElSLib.Parameters(aS.Sphere(), aPOnC[i], out U[i], out V[i]);
+                                    aPOnS[i] = global::Kerf.Engine.Geometry.ElSLib.Value(U[i], V[i], aS.Sphere());
                                     break;
                                 }
-                                case GeomAbs_Cylinder:
+                                case SurfaceKind.Cylinder:
                                 {
-                                    ElSLib.Parameters(aS.Cylinder(), aPOnC[i], out U[i], out V[i]);
-                                    aPOnS[i] = ElSLib.Value(U[i], V[i], aS.Cylinder());
+                                    global::Kerf.Engine.Geometry.ElSLib.Parameters(aS.Cylinder(), aPOnC[i], out U[i], out V[i]);
+                                    aPOnS[i] = global::Kerf.Engine.Geometry.ElSLib.Value(U[i], V[i], aS.Cylinder());
                                     break;
                                 }
-                                case GeomAbs_Torus:
+                                case SurfaceKind.Torus:
                                 {
-                                    ElSLib.Parameters(aS.Torus(), aPOnC[i], out U[i], out V[i]);
-                                    aPOnS[i] = ElSLib.Value(U[i], V[i], aS.Torus());
+                                    global::Kerf.Engine.Geometry.ElSLib.Parameters(aS.Torus(), aPOnC[i], out U[i], out V[i]);
+                                    aPOnS[i] = global::Kerf.Engine.Geometry.ElSLib.Value(U[i], V[i], aS.Torus());
                                     break;
                                 }
-                                case GeomAbs_Cone:
+                                case SurfaceKind.Cone:
                                 {
-                                    ElSLib.Parameters(aS.Cone(), aPOnC[i], out U[i], out V[i]);
-                                    aPOnS[i] = ElSLib.Value(U[i], V[i], aS.Cone());
+                                    global::Kerf.Engine.Geometry.ElSLib.Parameters(aS.Cone(), aPOnC[i], out U[i], out V[i]);
+                                    aPOnS[i] = global::Kerf.Engine.Geometry.ElSLib.Value(U[i], V[i], aS.Cone());
                                     break;
                                 }
                                 default:
@@ -372,7 +375,7 @@ public class Extrema_ExtCS
                         {
                             double aDiff = aDist[0] - aDist[1];
                             // Both computed -> take only minimal
-                            if (Math.Abs(aDiff) < Precision.Confusion())
+                            if (Math.Abs(aDiff) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 // Add both
                                 bAdd[0] = bAdd[1] = true;
@@ -415,7 +418,7 @@ public class Extrema_ExtCS
         // Elementary extrema is not done, try generic solution
         Extrema_GenExtCS Ext2 = new();
         Ext2.Initialize(aS, NbU, NbV, mytolS);
-        if (myCtype == GeomAbs_Hyperbola)
+        if (myCtype == Hyperbola)
         {
             double tmin = Max(-20.0, C.FirstParameter());
             double tmax = Min(20.0, C.LastParameter());
@@ -423,7 +426,7 @@ public class Extrema_ExtCS
         }
         else
         {
-            if ((myCtype == GeomAbs_Circle && NbT < 13) || (myCtype == GeomAbs_BSplineCurve && NbT < 13))
+            if ((myCtype == Circle && NbT < 13) || (myCtype == BSplineCurve && NbT < 13))
             {
                 NbT = 13;
             }
@@ -450,9 +453,9 @@ public class Extrema_ExtCS
             int SolNumber = mySqDist.Length();
             // OCCT casts the const curve to non-const (void* CopyC) to call NbIntervals and Intervals.
             Adaptor3d_Curve aC = C;
-            int NbIntervals = aC.NbIntervals(GeomAbs_C1);
+            int NbIntervals = aC.NbIntervals(C1);
             NCollection_Array1<double> SharpPoints = new(1, NbIntervals + 1);
-            aC.Intervals(SharpPoints, GeomAbs_C1);
+            aC.Intervals(SharpPoints, C1);
 
             Extrema_ExtPS aProjPS = new();
             aProjPS.Initialize(aS,
@@ -466,7 +469,7 @@ public class Extrema_ExtCS
             for (i = 2; i < SharpPoints.Upper(); ++i)
             {
                 T = SharpPoints[i];
-                gp_Pnt aPnt = C.Value(T);
+                Point3D aPnt = C.Value(T);
                 aProjPS.Perform(aPnt);
                 if (!aProjPS.IsDone())
                 {
@@ -533,7 +536,7 @@ public class Extrema_ExtCS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return myIsPar;
@@ -544,7 +547,7 @@ public class Extrema_ExtCS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist.Value(N);
@@ -555,7 +558,7 @@ public class Extrema_ExtCS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return mySqDist.Length();
@@ -570,7 +573,7 @@ public class Extrema_ExtCS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         P1 = myPOnC.Value(N);
@@ -581,8 +584,8 @@ public class Extrema_ExtCS
                              double aT,
                              double aU,
                              double aV,
-                             in gp_Pnt PointOnCurve,
-                             in gp_Pnt PointOnSurf,
+                             in Point3D PointOnCurve,
+                             in Point3D PointOnSurf,
                              double SquareDist)
     {
         bool Added = false;
@@ -591,15 +594,15 @@ public class Extrema_ExtCS
 
         if (theCurve.IsPeriodic())
         {
-            T = ElCLib.InPeriod(T, myucinf, myucinf + theCurve.Period());
+            T = global::Kerf.Engine.Geometry.ElCLib.InPeriod(T, myucinf, myucinf + theCurve.Period());
         }
         if (myS!.IsUPeriodic())
         {
-            U = ElCLib.InPeriod(U, myuinf, myuinf + myS.UPeriod());
+            U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, myuinf, myuinf + myS.UPeriod());
         }
         if (myS.IsVPeriodic())
         {
-            V = ElCLib.InPeriod(V, myvinf, myvinf + myS.VPeriod());
+            V = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvinf, myvinf + myS.VPeriod());
         }
 
         Extrema_POnCurv aPC = new();

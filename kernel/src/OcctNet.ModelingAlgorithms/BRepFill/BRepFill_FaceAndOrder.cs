@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A face and the order of continuity a filling must have with it (a "free constraint").</summary>
@@ -10,7 +12,7 @@ namespace Occt;
 public readonly struct BRepFill_FaceAndOrder : IEquatable<BRepFill_FaceAndOrder>
 {
     internal readonly TopoDS_Face myFace;
-    internal readonly GeomAbs_Shape myOrder;
+    internal readonly Continuity myOrder;
 
     public BRepFill_FaceAndOrder()
     {
@@ -18,7 +20,7 @@ public readonly struct BRepFill_FaceAndOrder : IEquatable<BRepFill_FaceAndOrder>
         myOrder = default;
     }
 
-    public BRepFill_FaceAndOrder(in TopoDS_Face aFace, GeomAbs_Shape anOrder)
+    public BRepFill_FaceAndOrder(in TopoDS_Face aFace, Continuity anOrder)
     {
         myFace = aFace;
         myOrder = anOrder;

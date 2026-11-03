@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -34,7 +37,7 @@ namespace Occt;
 /// reference equality (OCCT's handle hasher). The allocator goes (translation rules, section 9).
 /// </para>
 /// </remarks>
-public class IntTools_Context : Standard_Transient
+public class IntTools_Context : Transient
 {
     private readonly NCollection_DataMap<TopoDS_Shape, IntTools_FClass2d> myFClass2dMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, GeomAPI_ProjectPointOnSurf> myProjPSMap = new(TopTools_ShapeMapHasher.Instance);
@@ -45,9 +48,9 @@ public class IntTools_Context : Standard_Transient
     private readonly NCollection_DataMap<TopoDS_Shape, IntTools_SurfaceRangeLocalizeData> myProjSDataMap = new(TopTools_ShapeMapHasher.Instance);
     // OCCT.NET (decision 753): the localisation data keyed by face and by what the intersector's boxes depend on
     private readonly NCollection_DataMap<TopoDS_Shape, Dictionary<SurfaceDataKey, IntTools_SurfaceRangeLocalizeData>> mySDataKeyedMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, Bnd_Box> myBndBoxDataMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<TopoDS_Shape, Box> myBndBoxDataMap = new(TopTools_ShapeMapHasher.Instance);
     private readonly NCollection_DataMap<TopoDS_Shape, BRepAdaptor_Surface> mySurfAdaptorMap = new(TopTools_ShapeMapHasher.Instance);
-    private readonly NCollection_DataMap<TopoDS_Shape, Bnd_OBB> myOBBMap = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<TopoDS_Shape, OrientedBox> myOBBMap = new(TopTools_ShapeMapHasher.Instance);
     private int myCreateFlag;
     private double myPOnSTolerance;
 
@@ -62,11 +65,11 @@ public class IntTools_Context : Standard_Transient
     /// The bounding box of the shape (<see cref="BRepBndLib.Add"/>), computed on the first call. OCCT returns a
     /// reference into its cache; the port returns the box by value.
     /// </summary>
-    public Bnd_Box BndBox(in TopoDS_Shape aS)
+    public Box BndBox(in TopoDS_Shape aS)
     {
-        if (!myBndBoxDataMap.Find(aS, out Bnd_Box aBox))
+        if (!myBndBoxDataMap.Find(aS, out Box aBox))
         {
-            aBox = new Bnd_Box();
+            aBox = new Box();
             BRepBndLib.Add(aS, ref aBox);
             myBndBoxDataMap.Bind(aS, aBox);
         }
@@ -76,9 +79,9 @@ public class IntTools_Context : Standard_Transient
     /// <summary>True if the face's bounding box is open in some direction (an infinite face).</summary>
     public bool IsInfiniteFace(in TopoDS_Face aFace)
     {
-        Bnd_Box aBox = BndBox(aFace);
-        return aBox.IsOpenXmax() || aBox.IsOpenXmin() || aBox.IsOpenYmax() || aBox.IsOpenYmin()
-               || aBox.IsOpenZmax() || aBox.IsOpenZmin();
+        Box aBox = BndBox(aFace);
+        return aBox.IsOpenXmax || aBox.IsOpenXmin || aBox.IsOpenYmax || aBox.IsOpenYmin
+               || aBox.IsOpenZmax || aBox.IsOpenZmin;
     }
 
     /// <summary>The 2D point classifier of the face (taken FORWARD, with the face's tolerance), built on the first call.</summary>
@@ -197,7 +200,7 @@ public class IntTools_Context : Standard_Transient
             aTolHatch3D = 1.0e-8;
             aTolArcIntr = 1.0e-10;
             aTolTangfIntr = 1.0e-10;
-            aEpsT = Precision.PConfusion();
+            aEpsT = global::Kerf.Engine.Foundation.Precision.PConfusion();
             //
             Geom2dHatch_Intersector aIntr = new(aTolArcIntr, aTolTangfIntr);
             pHatcher = new Geom2dHatch_Hatcher(aIntr, aTolHatch2D, aTolHatch3D, true, false);
@@ -237,14 +240,14 @@ public class IntTools_Context : Standard_Transient
     /// <see cref="Precision.Confusion"/> by default), computed on the first call. As in OCCT, a box cached with one gap
     /// is returned for any later gap.
     /// </summary>
-    public Bnd_OBB OBB(in TopoDS_Shape aS) => OBB(aS, Precision.Confusion());
+    public OrientedBox OBB(in TopoDS_Shape aS) => OBB(aS, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="OBB(in TopoDS_Shape)"/>
-    public Bnd_OBB OBB(in TopoDS_Shape aS, double theGap)
+    public OrientedBox OBB(in TopoDS_Shape aS, double theGap)
     {
-        if (!myOBBMap.Find(aS, out Bnd_OBB aBox))
+        if (!myOBBMap.Find(aS, out OrientedBox aBox))
         {
-            aBox = new Bnd_OBB();
+            aBox = new OrientedBox();
             BRepBndLib.AddOBB(aS, ref aBox);
             aBox.Enlarge(theGap);
             myOBBMap.Bind(aS, aBox);
@@ -262,8 +265,8 @@ public class IntTools_Context : Standard_Transient
         {
             pSData = new IntTools_SurfaceRangeLocalizeData(3,
                                                            3,
-                                                           10.0 * Precision.PConfusion(),
-                                                           10.0 * Precision.PConfusion());
+                                                           10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                                           10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
             //
             myProjSDataMap.Bind(aF, pSData);
         }
@@ -294,8 +297,8 @@ public class IntTools_Context : Standard_Transient
         {
             pSData = new IntTools_SurfaceRangeLocalizeData(3,
                                                            3,
-                                                           10.0 * Precision.PConfusion(),
-                                                           10.0 * Precision.PConfusion());
+                                                           10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                                           10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
             aMap.Add(aKey, pSData);
         }
         return pSData;
@@ -310,7 +313,7 @@ public class IntTools_Context : Standard_Transient
     /// and the edge's tolerances (or the point is near a vertex when the projection fails), -2 if the edge has no
     /// geometry, -3 if the projection fails and no vertex is near, -4 if the point is too far.
     /// </summary>
-    public int ComputePE(in gp_Pnt aP1, double aTolP1, in TopoDS_Edge aE2, ref double aT, ref double aDist)
+    public int ComputePE(in Point3D aP1, double aTolP1, in TopoDS_Edge aE2, ref double aT, ref double aDist)
     {
         if (!BRep_Tool.IsGeometric(aE2))
         {
@@ -329,7 +332,7 @@ public class IntTools_Context : Standard_Transient
             aDist = aProjector.LowerDistance();
             //
             aTolE2 = BRep_Tool.Tolerance(aE2);
-            aTolSum = aTolP1 + aTolE2 + Precision.Confusion();
+            aTolSum = aTolP1 + aTolE2 + global::Kerf.Engine.Foundation.Precision.Confusion();
             //
             aT = aProjector.LowerDistanceParameter();
             if (aDist > aTolSum)
@@ -348,8 +351,8 @@ public class IntTools_Context : Standard_Transient
                 TopoDS_Vertex aV = TopoDS.Vertex(itV.Value());
                 if (aV.Orientation() == TopAbs_FORWARD || aV.Orientation() == TopAbs_REVERSED)
                 {
-                    gp_Pnt aPV = BRep_Tool.Pnt(aV);
-                    aTolSum = aTolP1 + BRep_Tool.Tolerance(aV) + Precision.Confusion();
+                    Point3D aPV = BRep_Tool.Pnt(aV);
+                    aTolSum = aTolP1 + BRep_Tool.Tolerance(aV) + global::Kerf.Engine.Foundation.Precision.Confusion();
                     double aDist1 = aP1.Distance(aPV);
                     if (aDist1 < aDist && aDist1 < aTolSum)
                     {
@@ -358,7 +361,7 @@ public class IntTools_Context : Standard_Transient
                     }
                 }
             }
-            if (Precision.IsInfinite(aDist))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aDist))
             {
                 return -3;
             }
@@ -372,7 +375,7 @@ public class IntTools_Context : Standard_Transient
     /// without geometry, -3 if the projection fails, -4 if the vertex is too far.
     /// </summary>
     public int ComputeVE(in TopoDS_Vertex theV, in TopoDS_Edge theE, ref double theT, ref double theTol) =>
-        ComputeVE(theV, theE, ref theT, ref theTol, Precision.Confusion());
+        ComputeVE(theV, theE, ref theT, ref theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="ComputeVE(in TopoDS_Vertex, in TopoDS_Edge, ref double, ref double)"/>
     public int ComputeVE(in TopoDS_Vertex theV, in TopoDS_Edge theE, ref double theT, ref double theTol, double theFuzz)
@@ -387,7 +390,7 @@ public class IntTools_Context : Standard_Transient
         }
         double aDist, aTolV, aTolE, aTolSum;
         int aNbProj;
-        gp_Pnt aP;
+        Point3D aP;
         //
         aP = BRep_Tool.Pnt(theV);
         //
@@ -404,7 +407,7 @@ public class IntTools_Context : Standard_Transient
         //
         aTolV = BRep_Tool.Tolerance(theV);
         aTolE = BRep_Tool.Tolerance(theE);
-        aTolSum = aTolV + aTolE + Max(theFuzz, Precision.Confusion());
+        aTolSum = aTolV + aTolE + Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         theTol = aDist + aTolE;
         theT = aProjector.LowerDistanceParameter();
@@ -422,14 +425,14 @@ public class IntTools_Context : Standard_Transient
     /// boundary.
     /// </summary>
     public int ComputeVF(in TopoDS_Vertex theVertex, in TopoDS_Face theFace, ref double theU, ref double theV, ref double theTol) =>
-        ComputeVF(theVertex, theFace, ref theU, ref theV, ref theTol, Precision.Confusion());
+        ComputeVF(theVertex, theFace, ref theU, ref theV, ref theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="ComputeVF(in TopoDS_Vertex, in TopoDS_Face, ref double, ref double, ref double)"/>
     public int ComputeVF(in TopoDS_Vertex theVertex, in TopoDS_Face theFace, ref double theU, ref double theV, ref double theTol,
                          double theFuzz)
     {
         double aTolV, aTolF, aTolSum, aDist;
-        gp_Pnt aP;
+        Point3D aP;
 
         aP = BRep_Tool.Pnt(theVertex);
         //
@@ -449,7 +452,7 @@ public class IntTools_Context : Standard_Transient
         aTolV = BRep_Tool.Tolerance(theVertex);
         aTolF = BRep_Tool.Tolerance(theFace);
         //
-        aTolSum = aTolV + aTolF + Max(theFuzz, Precision.Confusion());
+        aTolSum = aTolV + aTolF + Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
         theTol = aDist + aTolF;
         aProjector.LowerDistanceParameters(out theU, out theV);
         //
@@ -459,7 +462,7 @@ public class IntTools_Context : Standard_Transient
             return -2;
         }
         //
-        gp_Pnt2d aP2d = new(theU, theV);
+        Point2D aP2d = new(theU, theV);
         bool pri = IsPointInFace(theFace, aP2d);
         if (!pri)
         { //  the point lays on the surface but out of the face
@@ -469,7 +472,7 @@ public class IntTools_Context : Standard_Transient
     }
 
     /// <summary>The state of the 2D point relative to the face (<see cref="IntTools_FClass2d.Perform"/>).</summary>
-    public TopAbs_State StatePointFace(in TopoDS_Face aF, in gp_Pnt2d aP2d)
+    public TopAbs_State StatePointFace(in TopoDS_Face aF, in Point2D aP2d)
     {
         TopAbs_State aState;
         IntTools_FClass2d aClass2d = FClass2d(aF);
@@ -478,14 +481,14 @@ public class IntTools_Context : Standard_Transient
     }
 
     /// <summary>True if the 2D point is inside the face's boundaries (not OUT, not ON).</summary>
-    public bool IsPointInFace(in TopoDS_Face aF, in gp_Pnt2d aP2d)
+    public bool IsPointInFace(in TopoDS_Face aF, in Point2D aP2d)
     {
         TopAbs_State aState = StatePointFace(aF, aP2d);
         return aState != TopAbs_OUT && aState != TopAbs_ON;
     }
 
     /// <summary>True if the point projects on the face's surface closer than the tolerance, inside the face.</summary>
-    public bool IsPointInFace(in gp_Pnt aP, in TopoDS_Face aF, double aTol)
+    public bool IsPointInFace(in Point3D aP, in TopoDS_Face aF, double aTol)
     {
         bool bIn = false;
         double aDist;
@@ -500,7 +503,7 @@ public class IntTools_Context : Standard_Transient
             if (aDist < aTol)
             {
                 aProjector.LowerDistanceParameters(out double U, out double V);
-                gp_Pnt2d aP2D = new(U, V);
+                Point2D aP2D = new(U, V);
                 bIn = IsPointInFace(aF, aP2D);
             }
         }
@@ -509,7 +512,7 @@ public class IntTools_Context : Standard_Transient
     }
 
     /// <summary>True if the 2D point is inside or on the face's boundaries.</summary>
-    public bool IsPointInOnFace(in TopoDS_Face aF, in gp_Pnt2d aP2d)
+    public bool IsPointInOnFace(in TopoDS_Face aF, in Point2D aP2d)
     {
         TopAbs_State aState = StatePointFace(aF, aP2d);
         return aState != TopAbs_OUT;
@@ -518,7 +521,7 @@ public class IntTools_Context : Standard_Transient
     /// <summary>
     /// True if the point projects on the face's surface within the tolerance, inside or on the face's boundaries.
     /// </summary>
-    public bool IsValidPointForFace(in gp_Pnt aP, in TopoDS_Face aF, double aTol)
+    public bool IsValidPointForFace(in Point3D aP, in TopoDS_Face aF, double aTol)
     {
         bool bFlag;
         double Umin;
@@ -538,14 +541,14 @@ public class IntTools_Context : Standard_Transient
             }
             //
             aProjector.LowerDistanceParameters(out double U, out double V);
-            gp_Pnt2d aP2D = new(U, V);
+            Point2D aP2D = new(U, V);
             bFlag = IsPointInOnFace(aF, aP2D);
         }
         return bFlag;
     }
 
     /// <summary>True if <see cref="IsValidPointForFace"/> holds for both faces.</summary>
-    public bool IsValidPointForFaces(in gp_Pnt aP, in TopoDS_Face aF1, in TopoDS_Face aF2, double aTol)
+    public bool IsValidPointForFaces(in Point3D aP, in TopoDS_Face aF1, in TopoDS_Face aF2, double aTol)
     {
         bool bFlag1, bFlag2;
 
@@ -563,7 +566,7 @@ public class IntTools_Context : Standard_Transient
     {
         bool bFlag;
         double aTInterm;
-        gp_Pnt aPInterm;
+        Point3D aPInterm;
 
         aTInterm = IntTools_Tools.IntermediatePoint(aT1, aT2);
 
@@ -591,10 +594,10 @@ public class IntTools_Context : Standard_Transient
         TopoDS_Face[] anArrF = [theF1, theF2];
 
         double aMidPar = IntTools_Tools.IntermediatePoint(theT1, theT2);
-        gp_Pnt aP = aC3D.Value(aMidPar);
+        Point3D aP = aC3D.Value(aMidPar);
 
         bool bFlag = true;
-        gp_Pnt2d aPnt2D;
+        Point2D aPnt2D;
 
         for (int i = 0; (i < aNbElem) && bFlag; ++i)
         {
@@ -636,7 +639,7 @@ public class IntTools_Context : Standard_Transient
     {
         double aFirst, aLast, aDist, aTolSum;
         int aNbProj;
-        gp_Pnt aPv;
+        Point3D aPv;
 
         aPv = BRep_Tool.Pnt(aV);
 
@@ -645,8 +648,8 @@ public class IntTools_Context : Standard_Transient
         aTolSum = aTolV + aTolC;
         //
         GeomAdaptor_Curve aGAC = new(aC3D);
-        GeomAbs_CurveType aType = aGAC.GetType();
-        if (aType == GeomAbs_BSplineCurve || aType == GeomAbs_BezierCurve)
+        CurveKind aType = aGAC.GetType();
+        if (aType == BSplineCurve || aType == BezierCurve)
         {
             aTolSum = 2.0 * aTolSum;
             if (aTolSum < 1.0e-5)
@@ -669,11 +672,11 @@ public class IntTools_Context : Standard_Transient
         // Checking extremities first
         // It is necessary to chose the closest bound to the point
         bool bFirstValid = false;
-        double aFirstDist = Precision.Infinite();
+        double aFirstDist = global::Kerf.Engine.Foundation.Precision.Infinite();
         //
-        if (!Precision.IsInfinite(aFirst))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst))
         {
-            gp_Pnt aPCFirst = aC3D.Value(aFirst);
+            Point3D aPCFirst = aC3D.Value(aFirst);
             aFirstDist = aPv.Distance(aPCFirst);
             if (aFirstDist < aTolSum)
             {
@@ -690,7 +693,7 @@ public class IntTools_Context : Standard_Transient
                         aT = aPOncurve.Parameter();
 
                         if ((aT > (aLast + aFirst) * 0.5) || (aPv.Distance(aPOncurve.Value()) > aTolSum)
-                            || (aPCFirst.Distance(aPOncurve.Value()) < Precision.Confusion()))
+                            || (aPCFirst.Distance(aPOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             aT = aFirst;
                         }
@@ -718,7 +721,7 @@ public class IntTools_Context : Standard_Transient
                             aT = aPOncurve.Parameter();
 
                             if ((aT > (aLast + aFirst) * 0.5) || (aPv.Distance(aPOncurve.Value()) > aTolSum)
-                                || (aPCFirst.Distance(aPOncurve.Value()) < Precision.Confusion()))
+                                || (aPCFirst.Distance(aPOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 aT = aFirst;
                             }
@@ -728,9 +731,9 @@ public class IntTools_Context : Standard_Transient
             }
         }
         //
-        if (!Precision.IsInfinite(aLast))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
-            gp_Pnt aPCLast = aC3D.Value(aLast);
+            Point3D aPCLast = aC3D.Value(aLast);
             aDist = aPv.Distance(aPCLast);
             if (bFirstValid && (aFirstDist < aDist))
             {
@@ -751,7 +754,7 @@ public class IntTools_Context : Standard_Transient
                         aT = aPOncurve.Parameter();
 
                         if ((aT < (aLast + aFirst) * 0.5) || (aPv.Distance(aPOncurve.Value()) > aTolSum)
-                            || (aPCLast.Distance(aPOncurve.Value()) < Precision.Confusion()))
+                            || (aPCLast.Distance(aPOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             aT = aLast;
                         }
@@ -779,7 +782,7 @@ public class IntTools_Context : Standard_Transient
                             aT = aPOncurve.Parameter();
 
                             if ((aT < (aLast + aFirst) * 0.5) || (aPv.Distance(aPOncurve.Value()) > aTolSum)
-                                || (aPCLast.Distance(aPOncurve.Value()) < Precision.Confusion()))
+                                || (aPCLast.Distance(aPOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 aT = aLast;
                             }
@@ -803,8 +806,8 @@ public class IntTools_Context : Standard_Transient
         {
             if (aC3D is Geom_BoundedCurve aBC)
             {
-                gp_Pnt aPStart = aBC.StartPoint();
-                gp_Pnt aPEnd = aBC.EndPoint();
+                Point3D aPStart = aBC.StartPoint();
+                Point3D aPEnd = aBC.EndPoint();
 
                 aDist = aPv.Distance(aPStart);
                 if (aDist < aTolSum)
@@ -837,7 +840,7 @@ public class IntTools_Context : Standard_Transient
     }
 
     /// <summary>Computes the parameter of the point's projection on the edge; false if the projection fails.</summary>
-    public bool ProjectPointOnEdge(in gp_Pnt aP, in TopoDS_Edge anEdge, ref double aT)
+    public bool ProjectPointOnEdge(in Point3D aP, in TopoDS_Edge anEdge, ref double aT)
     {
         int aNbPoints;
 

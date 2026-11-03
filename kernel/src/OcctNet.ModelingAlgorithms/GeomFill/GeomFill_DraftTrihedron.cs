@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -14,21 +16,21 @@ namespace Occt;
 /// </summary>
 public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
 {
-    private gp_Vec B;
+    private Vector3D B;
     private double myAngle;
     private double myCos;
 
     // computes (F/|F|)''
-    private static gp_Vec DDeriv(in gp_Vec F, in gp_Vec DF, in gp_Vec D2F)
+    private static Vector3D DDeriv(in Vector3D F, in Vector3D DF, in Vector3D D2F)
     {
         double Norma = F.Magnitude();
-        gp_Vec Result = (D2F - 2 * DF * (F * DF) / (Norma * Norma)) / Norma
+        Vector3D Result = (D2F - 2 * DF * (F * DF) / (Norma * Norma)) / Norma
                         - F * ((DF.SquareMagnitude() + F * D2F - 3 * (F * DF) * (F * DF) / (Norma * Norma))
                                / (Norma * Norma * Norma));
         return Result;
     }
 
-    public GeomFill_DraftTrihedron(in gp_Vec BiNormal, double Angle)
+    public GeomFill_DraftTrihedron(in Vector3D BiNormal, double Angle)
     {
         B = BiNormal;
         B.Normalize();
@@ -41,11 +43,11 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         myCos = Math.Cos(myAngle);
     }
 
-    public override bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
-        myTrimmed!.D1(Param, out _, out gp_Vec T);
+        myTrimmed!.D1(Param, out _, out Vector3D T);
         T.Normalize();
-        gp_Vec b = T.Crossed(B);
+        Vector3D b = T.Crossed(B);
         double normb = b.Magnitude();
         b /= normb;
         if (normb < 1.0e-12)
@@ -53,7 +55,7 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
             return false;
         }
 
-        gp_Vec v = b.Crossed(T);
+        Vector3D v = b.Crossed(T);
 
         double mu = myCos;
         mu = myCos;
@@ -72,11 +74,11 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
-        gp_Vec DT = new gp_Vec();
-        myTrimmed!.D2(Param, out _, out gp_Vec T, out gp_Vec aux);
+        Vector3D DT = new Vector3D();
+        myTrimmed!.D2(Param, out _, out Vector3D T, out Vector3D aux);
 
         double normT, normb;
         normT = T.Magnitude();
@@ -84,7 +86,7 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         DT.SetLinearForm(-(T.Dot(aux)), T, aux);
         DT /= normT;
 
-        gp_Vec db = new gp_Vec(), b = T.Crossed(B);
+        Vector3D db = new Vector3D(), b = T.Crossed(B);
         normb = b.Magnitude();
         if (normb < 1.0e-12)
         {
@@ -95,8 +97,8 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         db.SetLinearForm(-(b.Dot(aux)), b, aux);
         db /= normb;
 
-        gp_Vec v = b.Crossed(T);
-        gp_Vec dv = db.Crossed(T) + b.Crossed(DT);
+        Vector3D v = b.Crossed(T);
+        Vector3D dv = db.Crossed(T) + b.Crossed(DT);
 
         double mu = myCos;
 
@@ -117,14 +119,14 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
-        gp_Vec DT = new gp_Vec(), D2T;
+        Vector3D DT = new Vector3D(), D2T;
         double dot;
 
-        myTrimmed!.D3(Param, out _, out gp_Vec T, out gp_Vec aux, out gp_Vec aux2);
+        myTrimmed!.D3(Param, out _, out Vector3D T, out Vector3D aux, out Vector3D aux2);
 
         double normT, normb;
 
@@ -135,7 +137,7 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         DT.SetLinearForm(-dot, T, aux);
         DT /= normT;
 
-        gp_Vec db = new gp_Vec(), d2b, b = T.Crossed(B);
+        Vector3D db = new Vector3D(), d2b, b = T.Crossed(B);
         normb = b.Magnitude();
         if (normb < 1.0e-12)
         {
@@ -150,9 +152,9 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         db.SetLinearForm(-dot, b, aux);
         db /= normb;
 
-        gp_Vec v = b.Crossed(T);
-        gp_Vec dv = db.Crossed(T) + b.Crossed(DT);
-        gp_Vec d2v = d2b.Crossed(T) + 2 * db.Crossed(DT) + b.Crossed(D2T);
+        Vector3D v = b.Crossed(T);
+        Vector3D dv = db.Crossed(T) + b.Crossed(DT);
+        Vector3D d2v = d2b.Crossed(T) + 2 * db.Crossed(DT) + b.Crossed(D2T);
 
         double mu = myCos, rac;
         rac = Math.Sqrt(1 - mu * mu);
@@ -187,42 +189,42 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         return copy;
     }
 
-    private static GeomAbs_Shape RaisedShape(GeomAbs_Shape S)
+    private static Continuity RaisedShape(Continuity S)
     {
-        GeomAbs_Shape tmpS;
+        Continuity tmpS;
         switch (S)
         {
-            case GeomAbs_C0:
-                tmpS = GeomAbs_C2;
+            case C0:
+                tmpS = C2;
                 break;
-            case GeomAbs_C1:
-                tmpS = GeomAbs_C3;
+            case C1:
+                tmpS = C3;
                 break;
-            case GeomAbs_C2:
-            case GeomAbs_C3:
-            case GeomAbs_CN:
-                tmpS = GeomAbs_CN;
+            case C2:
+            case C3:
+            case CN:
+                tmpS = CN;
                 break;
             default:
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
         }
         return tmpS;
     }
 
-    public override int NbIntervals(GeomAbs_Shape S) => myCurve!.NbIntervals(RaisedShape(S));
+    public override int NbIntervals(Continuity S) => myCurve!.NbIntervals(RaisedShape(S));
 
-    public override void Intervals(NCollection_Array1<double> TT, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> TT, Continuity S)
     {
         myCurve!.Intervals(TT, RaisedShape(S));
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         int Num = 20; // order of digitalization
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), BN = new gp_Vec();
-        ATangent = new gp_Vec(0, 0, 0);
-        ANormal = new gp_Vec(0, 0, 0);
-        ABiNormal = new gp_Vec(0, 0, 0);
+        Vector3D T = new Vector3D(), N = new Vector3D(), BN = new Vector3D();
+        ATangent = new Vector3D(0, 0, 0);
+        ANormal = new Vector3D(0, 0, 0);
+        ABiNormal = new Vector3D(0, 0, 0);
         double Step = (myTrimmed!.LastParameter() - myTrimmed.FirstParameter()) / Num;
         double Param;
         for (int i = 0; i <= Num; i++)
@@ -243,40 +245,40 @@ public class GeomFill_DraftTrihedron : GeomFill_TrihedronLaw
         ATangent /= Num + 1;
     }
 
-    public override bool IsConstant() => myCurve!.GetType() == GeomAbs_Line;
+    public override bool IsConstant() => myCurve!.GetType() == Line;
 
     /// <summary>True when the plane of the curve is perpendicular to the draft direction.</summary>
     public override bool IsOnlyBy3dCurve()
     {
-        GeomAbs_CurveType TheType = myCurve!.GetType();
-        gp_Ax1 TheAxe;
+        CurveKind TheType = myCurve!.GetType();
+        Axis3D TheAxe;
         switch (TheType)
         {
-            case GeomAbs_Circle:
+            case Circle:
                 TheAxe = myCurve.Circle().Axis();
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 TheAxe = myCurve.Ellipse().Axis();
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 TheAxe = myCurve.Hyperbola().Axis();
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 TheAxe = myCurve.Parabola().Axis();
                 break;
-            case GeomAbs_Line:
+            case Line:
             { // La normale du plan de la courbe est il perpendiculaire a la BiNormale ?
-                gp_Vec V = new gp_Vec();
+                Vector3D V = new Vector3D();
                 V.SetXYZ(myCurve.Line().Direction().XYZ());
-                return V.IsParallel(B, Precision.Angular());
+                return V.IsParallel(B, global::Kerf.Engine.Foundation.Precision.Angular());
             }
             default:
                 return false; // pas de risques
         }
 
         // La normale du plan de la courbe est il // a la BiNormale ?
-        gp_Vec V2 = new gp_Vec();
+        Vector3D V2 = new Vector3D();
         V2.SetXYZ(TheAxe.Direction().XYZ());
-        return V2.IsParallel(B, Precision.Angular());
+        return V2.IsParallel(B, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 }

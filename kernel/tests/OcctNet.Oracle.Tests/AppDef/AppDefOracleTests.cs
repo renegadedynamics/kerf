@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.Approx_ParametrizationType;
 
@@ -18,7 +20,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     private const int Cases = 300;
 
     // A point set: samples of a random smooth curve, with random noise and random parameter spacing.
-    internal static NCollection_Array1<gp_Pnt> Points(Oracle theOracle)
+    internal static NCollection_Array1<Point3D> Points(Oracle theOracle)
     {
         int aNb = theOracle.Int(2, 40);
         int aKind = theOracle.Int(0, 3);
@@ -28,23 +30,23 @@ public class AppDefOracleTests(ITestOutputHelper output)
         {
             aC[k] = theOracle.Real(-10, 10);
         }
-        NCollection_Array1<gp_Pnt> aPoints = new(1, aNb);
+        NCollection_Array1<Point3D> aPoints = new(1, aNb);
         double t = 0.0;
         for (int i = 1; i <= aNb; i++)
         {
             t += theOracle.Real(0.2, 1.0) / aNb;
-            gp_Pnt aP = aKind switch
+            Point3D aP = aKind switch
             {
-                0 => new gp_Pnt(theOracle.Real(), theOracle.Real(), theOracle.Real()), // random points
-                1 => new gp_Pnt(aC[0] + aC[1] * t + aC[2] * t * t + aC[3] * t * t * t,
+                0 => new Point3D(theOracle.Real(), theOracle.Real(), theOracle.Real()), // random points
+                1 => new Point3D(aC[0] + aC[1] * t + aC[2] * t * t + aC[3] * t * t * t,
                                 aC[4] + aC[5] * t + aC[6] * t * t,
                                 aC[7] + aC[8] * t * t * t), // polynomial
-                2 => new gp_Pnt(aC[0] + 10 * Math.Cos(5 * t), aC[1] + 10 * Math.Sin(5 * t), aC[2] * t), // helix
-                _ => new gp_Pnt(10 * t, aC[3] * Math.Sin(aC[4] * t), aC[5] * Math.Cos(aC[6] * t)), // sines
+                2 => new Point3D(aC[0] + 10 * Math.Cos(5 * t), aC[1] + 10 * Math.Sin(5 * t), aC[2] * t), // helix
+                _ => new Point3D(10 * t, aC[3] * Math.Sin(aC[4] * t), aC[5] * Math.Cos(aC[6] * t)), // sines
             };
             if (aNoise > 0.0)
             {
-                aP = new gp_Pnt(aP.X() + theOracle.Real(-aNoise, aNoise), aP.Y() + theOracle.Real(-aNoise, aNoise),
+                aP = new Point3D(aP.X() + theOracle.Real(-aNoise, aNoise), aP.Y() + theOracle.Real(-aNoise, aNoise),
                                 aP.Z() + theOracle.Real(-aNoise, aNoise));
             }
             aPoints[i] = aP;
@@ -52,12 +54,12 @@ public class AppDefOracleTests(ITestOutputHelper output)
         return aPoints;
     }
 
-    internal static GeomAbs_Shape Continuity(Oracle theOracle) => theOracle.Int(0, 3) switch
+    internal static Continuity Continuity(Oracle theOracle) => theOracle.Int(0, 3) switch
     {
-        0 => GeomAbs_Shape.GeomAbs_C0,
-        1 => GeomAbs_Shape.GeomAbs_C1,
-        2 => GeomAbs_Shape.GeomAbs_C2,
-        _ => GeomAbs_Shape.GeomAbs_C3,
+        0 => global::Kerf.Geometry.Continuity.C0,
+        1 => global::Kerf.Geometry.Continuity.C1,
+        2 => global::Kerf.Geometry.Continuity.C2,
+        _ => global::Kerf.Geometry.Continuity.C3,
     };
 
     internal static double Tolerance(Oracle theOracle) => theOracle.Int(0, 4) switch
@@ -70,19 +72,19 @@ public class AppDefOracleTests(ITestOutputHelper output)
     };
 
     // GeomAPI_PointsToBSpline::Init's switch on the continuity.
-    private static void SetContinuity(AppDef_BSplineCompute theComputer, GeomAbs_Shape theContinuity)
+    private static void SetContinuity(AppDef_BSplineCompute theComputer, Continuity theContinuity)
     {
         switch (theContinuity)
         {
-            case GeomAbs_Shape.GeomAbs_C0:
+            case global::Kerf.Geometry.Continuity.C0:
                 theComputer.SetContinuity(0);
                 break;
-            case GeomAbs_Shape.GeomAbs_G1:
-            case GeomAbs_Shape.GeomAbs_C1:
+            case global::Kerf.Geometry.Continuity.G1:
+            case global::Kerf.Geometry.Continuity.C1:
                 theComputer.SetContinuity(1);
                 break;
-            case GeomAbs_Shape.GeomAbs_G2:
-            case GeomAbs_Shape.GeomAbs_C2:
+            case global::Kerf.Geometry.Continuity.G2:
+            case global::Kerf.Geometry.Continuity.C2:
                 theComputer.SetContinuity(2);
                 break;
             default:
@@ -97,7 +99,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         theOracle.Same(theNative.Degree(), theCurve.Degree(), theWhat + " degree");
         theOracle.Same(theNative.NbPoles(), theCurve.NbPoles(), theWhat + " NbPoles");
         theOracle.Same(theNative.NbKnots(), theKnots.Length(), theWhat + " NbKnots");
-        NCollection_Array1<gp_Pnt> aPoles = new(1, theCurve.NbPoles());
+        NCollection_Array1<Point3D> aPoles = new(1, theCurve.NbPoles());
         theCurve.Curve(1, aPoles);
         for (int i = 1; i <= aPoles.Length(); i++)
         {
@@ -123,10 +125,10 @@ public class AppDefOracleTests(ITestOutputHelper output)
         int aCompared = 0;
         for (int aCase = 0; aCase < Cases; aCase++)
         {
-            NCollection_Array1<gp_Pnt> aPoints = Points(anOracle);
+            NCollection_Array1<Point3D> aPoints = Points(anOracle);
             int aDegMin = anOracle.Int(1, 4);
             int aDegMax = anOracle.Int(aDegMin, 8);
-            GeomAbs_Shape aCont = Continuity(anOracle);
+            Continuity aCont = Continuity(anOracle);
             double aTol3D = Tolerance(anOracle);
 
             using N.TColgp_Array1OfPnt aNPoints = Oracle.ToNative(aPoints);
@@ -163,7 +165,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         Oracle anOracle = new(output, 20261030);
         for (int aCase = 0; aCase < Cases; aCase++)
         {
-            NCollection_Array1<gp_Pnt> aPoints = Points(anOracle);
+            NCollection_Array1<Point3D> aPoints = Points(anOracle);
             int Nbp = aPoints.Length();
             NCollection_Array1<double> Params = new(1, Nbp);
             double u = anOracle.Real(-5, 5);
@@ -174,7 +176,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
             }
             int aDegMin = anOracle.Int(1, 4);
             int aDegMax = anOracle.Int(aDegMin, 8);
-            GeomAbs_Shape aCont = Continuity(anOracle);
+            Continuity aCont = Continuity(anOracle);
             double aTol3D = Tolerance(anOracle);
 
             using N.TColgp_Array1OfPnt aNPoints = Oracle.ToNative(aPoints);
@@ -199,7 +201,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
             TheComputer.Perform(new AppDef_MultiLine(aPoints));
             AppParCurves_MultiBSpCurve TheCurve = TheComputer.Value();
             NCollection_Array1<double> Knots = TheCurve.Knots();
-            BSplCLib.Reparametrize(Params[Params.Lower()], Params[Params.Upper()], Knots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Params[Params.Lower()], Params[Params.Upper()], Knots);
 
             Assert.True(aNative.IsDone());
             using N.Geom_BSplineCurve? aNCurve = aNative.Curve();
@@ -216,7 +218,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
         int aDone = 0;
         for (int aCase = 0; aCase < Cases; aCase++)
         {
-            NCollection_Array1<gp_Pnt> aPoints = Points(anOracle);
+            NCollection_Array1<Point3D> aPoints = Points(anOracle);
             if (aPoints.Length() < 3)
             {
                 continue; // OCCT reads past its points for two points (occt-issues.md)
@@ -230,7 +232,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
             // Not C0: at C0, FEmTool_Curve::ReduceDegree can leave elements of degree 1, whose second derivative
             // OCCT reads from outside the element's coefficients, for the first element from uninitialised memory,
             // so native results change from run to run (occt-issues.md). The unit tests cover C0.
-            GeomAbs_Shape aCont = anOracle.Bool() ? GeomAbs_Shape.GeomAbs_C1 : GeomAbs_Shape.GeomAbs_C2;
+            Continuity aCont = anOracle.Bool() ? global::Kerf.Geometry.Continuity.C1 : global::Kerf.Geometry.Continuity.C2;
             double aTol3D = Tolerance(anOracle);
 
             using N.TColgp_Array1OfPnt aNPoints = Oracle.ToNative(aPoints);
@@ -286,7 +288,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
                 Variation.SetNbIterations(nbit);
                 Variation.SetCriteriumWeight(W1, W2, W3);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 aPortThrew = true;
             }
@@ -308,7 +310,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
                         aPortDone = true;
                     }
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                 }
             }

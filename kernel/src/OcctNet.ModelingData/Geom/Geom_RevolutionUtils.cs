@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,40 +20,40 @@ namespace Occt;
 internal static class Geom_RevolutionUtils
 {
     /// <summary>The point of the surface from the curve point C(V) and the rotation angle theU.</summary>
-    internal static void CalculateD0(in gp_Pnt theCurvePt,
+    internal static void CalculateD0(in Point3D theCurvePt,
                                      double theU,
-                                     in gp_Ax1 theAxis,
-                                     out gp_Pnt theP)
+                                     in Axis3D theAxis,
+                                     out Point3D theP)
     {
         theP = theCurvePt;
-        gp_Trsf aRotation = new gp_Trsf();
+        Transform3D aRotation = new Transform3D();
         aRotation.SetRotation(theAxis, theU);
         theP.Transform(aRotation);
     }
 
     /// <summary>The point and first derivatives from C(V) and C'(V).</summary>
-    internal static void CalculateD1(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
+    internal static void CalculateD1(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
                                      double theU,
-                                     in gp_Ax1 theAxis,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V)
+                                     in Axis3D theAxis,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V)
     {
         theP = theCurvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        gp_XYZ aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
-        theD1U = new gp_Vec(theAxis.Direction().XYZ().Crossed(aCQ));
+        Xyz aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
+        theD1U = new Vector3D(theAxis.Direction().XYZ().Crossed(aCQ));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (theD1U.SquareMagnitude() < Precision.SquareConfusion())
+        if (theD1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             theD1U.SetCoord(0.0, 0.0, 0.0);
         }
 
-        gp_Trsf aRotation = new gp_Trsf();
+        Transform3D aRotation = new Transform3D();
         aRotation.SetRotation(theAxis, theU);
         theP.Transform(aRotation);
         theD1U.Transform(aRotation);
@@ -58,36 +62,36 @@ internal static class Geom_RevolutionUtils
     }
 
     /// <summary>The point, first and second derivatives from C(V), C'(V) and C''(V).</summary>
-    internal static void CalculateD2(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
-                                     in gp_Vec theCurveD2,
+    internal static void CalculateD2(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
+                                     in Vector3D theCurveD2,
                                      double theU,
-                                     in gp_Ax1 theAxis,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V,
-                                     out gp_Vec theD2U,
-                                     out gp_Vec theD2V,
-                                     out gp_Vec theD2UV)
+                                     in Axis3D theAxis,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V,
+                                     out Vector3D theD2U,
+                                     out Vector3D theD2V,
+                                     out Vector3D theD2UV)
     {
         theP = theCurvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        gp_XYZ aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
-        gp_XYZ aDir = theAxis.Direction().XYZ();
-        theD1U = new gp_Vec(aDir.Crossed(aCQ));
+        Xyz aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
+        Xyz aDir = theAxis.Direction().XYZ();
+        theD1U = new Vector3D(aDir.Crossed(aCQ));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (theD1U.SquareMagnitude() < Precision.SquareConfusion())
+        if (theD1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             theD1U.SetCoord(0.0, 0.0, 0.0);
         }
 
-        theD2U = new gp_Vec(aDir.Dot(aCQ) * aDir - aCQ);
-        theD2UV = new gp_Vec(aDir.Crossed(theCurveD1.XYZ()));
+        theD2U = new Vector3D(aDir.Dot(aCQ) * aDir - aCQ);
+        theD2UV = new Vector3D(aDir.Crossed(theCurveD1.XYZ()));
 
-        gp_Trsf aRotation = new gp_Trsf();
+        Transform3D aRotation = new Transform3D();
         aRotation.SetRotation(theAxis, theU);
         theP.Transform(aRotation);
         theD1U.Transform(aRotation);
@@ -100,44 +104,44 @@ internal static class Geom_RevolutionUtils
     }
 
     /// <summary>The point and the derivatives up to the third order from C(V) to C'''(V).</summary>
-    internal static void CalculateD3(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
-                                     in gp_Vec theCurveD2,
-                                     in gp_Vec theCurveD3,
+    internal static void CalculateD3(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
+                                     in Vector3D theCurveD2,
+                                     in Vector3D theCurveD3,
                                      double theU,
-                                     in gp_Ax1 theAxis,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V,
-                                     out gp_Vec theD2U,
-                                     out gp_Vec theD2V,
-                                     out gp_Vec theD2UV,
-                                     out gp_Vec theD3U,
-                                     out gp_Vec theD3V,
-                                     out gp_Vec theD3UUV,
-                                     out gp_Vec theD3UVV)
+                                     in Axis3D theAxis,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V,
+                                     out Vector3D theD2U,
+                                     out Vector3D theD2V,
+                                     out Vector3D theD2UV,
+                                     out Vector3D theD3U,
+                                     out Vector3D theD3V,
+                                     out Vector3D theD3UUV,
+                                     out Vector3D theD3UVV)
     {
         theP = theCurvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        gp_XYZ aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
-        gp_XYZ aDir = theAxis.Direction().XYZ();
-        theD1U = new gp_Vec(aDir.Crossed(aCQ));
+        Xyz aCQ = theCurvePt.XYZ() - theAxis.Location().XYZ();
+        Xyz aDir = theAxis.Direction().XYZ();
+        theD1U = new Vector3D(aDir.Crossed(aCQ));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (theD1U.SquareMagnitude() < Precision.SquareConfusion())
+        if (theD1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             theD1U.SetCoord(0.0, 0.0, 0.0);
         }
 
-        theD2U = new gp_Vec(aDir.Dot(aCQ) * aDir - aCQ);
-        theD2UV = new gp_Vec(aDir.Crossed(theCurveD1.XYZ()));
+        theD2U = new Vector3D(aDir.Dot(aCQ) * aDir - aCQ);
+        theD2UV = new Vector3D(aDir.Crossed(theCurveD1.XYZ()));
         theD3U = -theD1U;
-        theD3UUV = new gp_Vec(aDir.Dot(theCurveD1.XYZ()) * aDir - theCurveD1.XYZ());
-        theD3UVV = new gp_Vec(aDir.Crossed(theCurveD2.XYZ()));
+        theD3UUV = new Vector3D(aDir.Dot(theCurveD1.XYZ()) * aDir - theCurveD1.XYZ());
+        theD3UVV = new Vector3D(aDir.Crossed(theCurveD2.XYZ()));
 
-        gp_Trsf aRotation = new gp_Trsf();
+        Transform3D aRotation = new Transform3D();
         aRotation.SetRotation(theAxis, theU);
         theP.Transform(aRotation);
         theD1U.Transform(aRotation);
@@ -158,19 +162,19 @@ internal static class Geom_RevolutionUtils
     /// The derivative of orders (theDerU, theDerV). theCurvePtOrDN is C(V) - axis location when theDerV is 0,
     /// and the curve derivative of order theDerV otherwise.
     /// </summary>
-    internal static gp_Vec CalculateDN(in gp_Vec theCurvePtOrDN,
+    internal static Vector3D CalculateDN(in Vector3D theCurvePtOrDN,
                                        double theU,
-                                       in gp_Ax1 theAxis,
+                                       in Axis3D theAxis,
                                        int theDerU,
                                        int theDerV)
     {
         // theDerV is part of the interface contract - caller provides different data based on its value
         _ = theDerV;
 
-        gp_Trsf aRotation = new gp_Trsf();
+        Transform3D aRotation = new Transform3D();
         aRotation.SetRotation(theAxis, theU);
 
-        gp_Vec aResult;
+        Vector3D aResult;
         if (theDerU == 0)
         {
             // Pure V derivative: just rotate the curve derivative
@@ -180,22 +184,22 @@ internal static class Geom_RevolutionUtils
         {
             // For theDerV == 0: theCurvePtOrDN is (P - AxisLocation) as a vector
             // For theDerV > 0: theCurvePtOrDN is the curve derivative
-            gp_XYZ aDir = theAxis.Direction().XYZ();
+            Xyz aDir = theAxis.Direction().XYZ();
             if (theDerU % 4 == 1)
             {
-                aResult = new gp_Vec(aDir.Crossed(theCurvePtOrDN.XYZ()));
+                aResult = new Vector3D(aDir.Crossed(theCurvePtOrDN.XYZ()));
             }
             else if (theDerU % 4 == 2)
             {
-                aResult = new gp_Vec(aDir.Dot(theCurvePtOrDN.XYZ()) * aDir - theCurvePtOrDN.XYZ());
+                aResult = new Vector3D(aDir.Dot(theCurvePtOrDN.XYZ()) * aDir - theCurvePtOrDN.XYZ());
             }
             else if (theDerU % 4 == 3)
             {
-                aResult = new gp_Vec(aDir.Crossed(theCurvePtOrDN.XYZ())) * (-1.0);
+                aResult = new Vector3D(aDir.Crossed(theCurvePtOrDN.XYZ())) * (-1.0);
             }
             else
             {
-                aResult = new gp_Vec(theCurvePtOrDN.XYZ() - aDir.Dot(theCurvePtOrDN.XYZ()) * aDir);
+                aResult = new Vector3D(theCurvePtOrDN.XYZ() - aDir.Dot(theCurvePtOrDN.XYZ()) * aDir);
             }
         }
 
@@ -207,10 +211,10 @@ internal static class Geom_RevolutionUtils
     internal static bool D0(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_Ax1 theAxis,
-                            out gp_Pnt theP)
+                            in Axis3D theAxis,
+                            out Point3D theP)
     {
-        gp_Pnt aCurveD0 = theBasis.EvalD0(theV);
+        Point3D aCurveD0 = theBasis.EvalD0(theV);
         CalculateD0(aCurveD0, theU, theAxis, out theP);
         return true;
     }
@@ -219,10 +223,10 @@ internal static class Geom_RevolutionUtils
     internal static bool D1(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_Ax1 theAxis,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V)
+                            in Axis3D theAxis,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V)
     {
         Geom_Curve.ResD1 aCurveD1 = theBasis.EvalD1(theV);
         CalculateD1(aCurveD1.Point, aCurveD1.D1, theU, theAxis, out theP, out theD1U, out theD1V);
@@ -233,13 +237,13 @@ internal static class Geom_RevolutionUtils
     internal static bool D2(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_Ax1 theAxis,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV)
+                            in Axis3D theAxis,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV)
     {
         Geom_Curve.ResD2 aCurveD2 = theBasis.EvalD2(theV);
         CalculateD2(aCurveD2.Point,
@@ -260,17 +264,17 @@ internal static class Geom_RevolutionUtils
     internal static bool D3(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_Ax1 theAxis,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV,
-                            out gp_Vec theD3U,
-                            out gp_Vec theD3V,
-                            out gp_Vec theD3UUV,
-                            out gp_Vec theD3UVV)
+                            in Axis3D theAxis,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV,
+                            out Vector3D theD3U,
+                            out Vector3D theD3V,
+                            out Vector3D theD3UUV,
+                            out Vector3D theD3UVV)
     {
         Geom_Curve.ResD3 aCurveD3 = theBasis.EvalD3(theV);
         CalculateD3(aCurveD3.Point,
@@ -296,20 +300,20 @@ internal static class Geom_RevolutionUtils
     internal static bool DN(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_Ax1 theAxis,
+                            in Axis3D theAxis,
                             int theDerU,
                             int theDerV,
-                            out gp_Vec theDN)
+                            out Vector3D theDN)
     {
-        gp_Vec aCurvePtOrDN;
+        Vector3D aCurvePtOrDN;
         if (theDerU == 0)
         {
             aCurvePtOrDN = theBasis.EvalDN(theV, theDerV);
         }
         else if (theDerV == 0)
         {
-            gp_Pnt aP = theBasis.EvalD0(theV);
-            aCurvePtOrDN = new gp_Vec(aP.XYZ() - theAxis.Location().XYZ());
+            Point3D aP = theBasis.EvalD0(theV);
+            aCurvePtOrDN = new Vector3D(aP.XYZ() - theAxis.Location().XYZ());
         }
         else
         {

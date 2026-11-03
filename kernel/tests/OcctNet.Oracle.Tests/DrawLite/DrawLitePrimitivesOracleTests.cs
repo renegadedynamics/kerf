@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -54,15 +56,15 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
 
     private static string R(double theValue) => theValue.ToString("R", CultureInfo.InvariantCulture);
 
-    private static string R(in gp_Pnt theP) => $"{R(theP.X())} {R(theP.Y())} {R(theP.Z())}";
+    private static string R(in Point3D theP) => $"{R(theP.X())} {R(theP.Y())} {R(theP.Z())}";
 
-    private static string R(in gp_Dir theD) => $"{R(theD.X())} {R(theD.Y())} {R(theD.Z())}";
+    private static string R(in Direction3D theD) => $"{R(theD.X())} {R(theD.Y())} {R(theD.Z())}";
 
     private const double DegToRad = Math.PI / 180.0;
 
-    private static bool Same(N.gp_Dir theN, in gp_Dir theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
 
-    private static bool Same(N.gp_Ax2 theN, in gp_Ax2 theP)
+    private static bool Same(N.gp_Ax2 theN, in Frame3D theP)
     {
         using N.gp_Pnt aL = theN.Location();
         using N.gp_Dir aD = theN.Direction();
@@ -73,11 +75,11 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     }
 
     // A direction that native OCCT and the port normalise to the same numbers.
-    private static gp_Dir Dir(Oracle theO)
+    private static Direction3D Dir(Oracle theO)
     {
         while (true)
         {
-            gp_Dir aD = Oracle.Settled(theO.Dir());
+            Direction3D aD = Oracle.Settled(theO.Dir());
             using var aND = Oracle.ToNative(aD);
             if (Same(aND, aD))
             {
@@ -133,7 +135,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         catch (Exception anException)
         {
             aNative = null;
-            aNativeError = anException.GetType().Name + ": " + anException.Message;
+            aNativeError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message;
         }
 
         bool isPortDone;
@@ -182,11 +184,11 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         aNative.Dispose();
     }
 
-    private static N.gp_Pnt P(in gp_Pnt theP) => Oracle.ToNative(theP);
+    private static N.gp_Pnt P(in Point3D theP) => Oracle.ToNative(theP);
 
     private static N.gp_Pnt P(double x, double y, double z) => new(x, y, z);
 
-    private static N.gp_Ax2 Ax2Native(in gp_Pnt theP, in gp_Dir theN, in gp_Dir theVx)
+    private static N.gp_Ax2 Ax2Native(in Point3D theP, in Direction3D theN, in Direction3D theVx)
     {
         using N.gp_Pnt aP = P(theP);
         using N.gp_Dir aN = Oracle.ToNative(theN);
@@ -204,7 +206,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             int aKind = aCase % 24;
             double a = anO.Real(0.5, 10), b = anO.Real(0.5, 10), c = anO.Real(0.5, 10);
             double sa = anO.Bool() ? a : -a, sb = anO.Bool() ? b : -b, sc = anO.Bool() ? c : -c;
-            gp_Pnt anOrigin = anO.Pnt();
+            Point3D anOrigin = anO.Pnt();
             switch (aKind)
             {
                 case 0:
@@ -217,7 +219,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                     break;
                 case 2:
                 {
-                    gp_Pnt aMax = anO.Pnt();
+                    Point3D aMax = anO.Pnt();
                     Run(aDI, $"box r -min {R(anOrigin)} -max {R(aMax)}",
                         () => { using var m = new N.BRepPrimAPI_MakeBox(P(anOrigin), P(aMax)); return m.Solid(); });
                     break;
@@ -230,13 +232,13 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                 }
                 case 4:
                 {
-                    gp_Dir aD = Dir(anO), aX = Dir(anO);
-                    gp_Ax2 anAx;
+                    Direction3D aD = Dir(anO), aX = Dir(anO);
+                    Frame3D anAx;
                     try
                     {
-                        anAx = new gp_Ax2(anOrigin, aD, aX);
+                        anAx = new Frame3D(anOrigin, aD, aX);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         break;
                     }
@@ -276,13 +278,13 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                 }
                 case 8:
                 {
-                    gp_Dir aD = Dir(anO), aX = Dir(anO);
-                    gp_Ax2 anAx;
+                    Direction3D aD = Dir(anO), aX = Dir(anO);
+                    Frame3D anAx;
                     try
                     {
-                        anAx = new gp_Ax2(anOrigin, aD, aX);
+                        anAx = new Frame3D(anOrigin, aD, aX);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         break;
                     }
@@ -493,7 +495,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                 {
                     // halfspace of a face or of the shell of a box
                     using N.TopoDS_Shape aNBox = BindBox(aDI, anOrigin, a, b, c);
-                    gp_Pnt aRef = anO.Pnt();
+                    Point3D aRef = anO.Pnt();
                     if (aKind == 17)
                     {
                         int k = anO.Int(1, 6);
@@ -568,8 +570,8 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
                     bool isFace = anO.Bool();
                     aDI.Eval($"explode b {(isFace ? "f" : "e")}");
                     int kr = anO.Int(1, isFace ? 6 : 12);
-                    gp_Pnt anAxisPnt = anO.Bool() ? anOrigin : anO.Pnt();
-                    gp_Dir anAxisDir = anO.Int(0, 2) switch { 0 => new gp_Dir(0, 0, 1), 1 => new gp_Dir(1, 0, 0), _ => Dir(anO) };
+                    Point3D anAxisPnt = anO.Bool() ? anOrigin : anO.Pnt();
+                    Direction3D anAxisDir = anO.Int(0, 2) switch { 0 => new Direction3D(0, 0, 1), 1 => new Direction3D(1, 0, 0), _ => Dir(anO) };
                     double anAngle = anO.Real(1, 360);
                     bool isCopy = anO.Bool();
                     Run(aDI, $"revol r b_{kr} {R(anAxisPnt)} {R(anAxisDir)} {R(anAngle)}{(isCopy ? " copy" : "")}",
@@ -602,13 +604,13 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     // or false when the two sides' placements differ.
     private bool Plane(DrawInterpreter theDI, Oracle theO, out N.gp_Ax2? theNative)
     {
-        gp_Dir aD = Dir(theO), aX = Dir(theO);
-        gp_Ax3 anAx3;
+        Direction3D aD = Dir(theO), aX = Dir(theO);
+        CoordinateSystem anAx3;
         try
         {
-            anAx3 = new gp_Ax3(theO.Pnt(), aD, aX);
+            anAx3 = new CoordinateSystem(theO.Pnt(), aD, aX);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             theNative = null;
             mySkipped++;
@@ -639,7 +641,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     }
 
     // box b at the origin with the sizes, its faces exploded as b_1 ... b_6; the native box
-    private static N.TopoDS_Shape BindBox(DrawInterpreter theDI, in gp_Pnt theOrigin, double a, double b, double c)
+    private static N.TopoDS_Shape BindBox(DrawInterpreter theDI, in Point3D theOrigin, double a, double b, double c)
     {
         myLastBox = $"box b {R(theOrigin)} {R(a)} {R(b)} {R(c)}";
         theDI.Eval(myLastBox);
@@ -678,13 +680,13 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         return aFound[k - 1];
     }
 
-    private static N.TopoDS_Shape NativePreview(in gp_Pnt theOrigin, double dx, double dy, double dz)
+    private static N.TopoDS_Shape NativePreview(in Point3D theOrigin, double dx, double dy, double dz)
     {
         // BRepPreviewAPI_MakeBox isn't bound: its Build for each thin case, with the makers it calls
-        gp_Pnt aMin = new(theOrigin.X() + Math.Min(dx, 0), theOrigin.Y() + Math.Min(dy, 0), theOrigin.Z() + Math.Min(dz, 0));
+        Point3D aMin = new(theOrigin.X() + Math.Min(dx, 0), theOrigin.Y() + Math.Min(dy, 0), theOrigin.Z() + Math.Min(dz, 0));
         double ax = Math.Abs(dx), ay = Math.Abs(dy), az = Math.Abs(dz);
-        var aF = new gp_Pnt(aMin.X(), aMin.Y(), aMin.Z());
-        var aS = new gp_Pnt(aMin.X() + ax, aMin.Y() + ay, aMin.Z() + az);
+        var aF = new Point3D(aMin.X(), aMin.Y(), aMin.Z());
+        var aS = new Point3D(aMin.X() + ax, aMin.Y() + ay, aMin.Z() + az);
         bool tx = Math.Abs(aF.X() - aS.X()) < 1e-7, ty = Math.Abs(aF.Y() - aS.Y()) < 1e-7, tz = Math.Abs(aF.Z() - aS.Z()) < 1e-7;
         int aType = (tx ? 1 : 0) + (ty ? 1 : 0) + (tz ? 1 : 0);
         if (aType == 3)
@@ -701,7 +703,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
 
         if (aType == 1)
         {
-            gp_Pnt p1, p2, p3, p4;
+            Point3D p1, p2, p3, p4;
             if (tx)
             {
                 p1 = new(aF.X(), aF.Y(), aF.Z()); p2 = new(aF.X(), aS.Y(), aF.Z()); p3 = new(aF.X(), aS.Y(), aS.Z()); p4 = new(aF.X(), aF.Y(), aS.Z());

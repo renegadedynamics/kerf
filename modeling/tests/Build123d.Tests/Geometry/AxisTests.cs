@@ -1,5 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_axis.py. Cases that need topology (Edge, Vertex)
 // follow with the topology port.
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d.Tests.Geometry;
@@ -27,9 +28,9 @@ public class AxisTests
     [Fact]
     public void FromOcct()
     {
-        var p = new gp_Pnt(1, 1, 1);
-        var d = new gp_Dir(0, 1, 0);
-        var occt = new gp_Ax1(p, d);
+        var p = new Point3D(1, 1, 1);
+        var d = new Direction3D(0, 1, 0);
+        var occt = new Axis3D(p, d);
         var axis = new Axis(occt);
         Check.AlmostEqual((1, 1, 1), axis.Position, 5);
         Check.AlmostEqual((0, 1, 0), axis.Direction, 5);

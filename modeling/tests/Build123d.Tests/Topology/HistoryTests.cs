@@ -7,6 +7,7 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
+using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
 
@@ -107,7 +108,7 @@ public class ShapeHistoryTests
     public void AlgorithmHistoryFromAPrism()
     {
         var square = Face.MakeRect(4, 4);
-        var vec = new gp_Vec(0, 0, 5);
+        var vec = new Vector3D(0, 0, 5);
         var prism = new BRepPrimAPI_MakePrism(square.Wrapped, vec);
         prism.Build();
         var history = ShapeHistory.FromAlgorithm(prism, [square.Wrapped], prism.Shape());
@@ -223,7 +224,7 @@ public class ShapeHistoryTests
         return answers;
     }
 
-    static void AssertPlacedSelectionMatches(Shape original, Shape placed, gp_Trsf inverse)
+    static void AssertPlacedSelectionMatches(Shape original, Shape placed, Transform3D inverse)
     {
         var expected = Answers(original);
         var actual = Answers(placed, s =>
@@ -254,7 +255,7 @@ public class ShapeHistoryTests
 
         var location = new Pos(12, -8, 5) * new Rotation(13, 0, 29);
         var inverseLocation = location.ToGpTrsf().Inverted();
-        var operations = new List<(string Name, Shape Placed, gp_Trsf Inverse)>
+        var operations = new List<(string Name, Shape Placed, Transform3D Inverse)>
         {
             ("positioning operator", location * recorded, inverseLocation),
             ("moved", recorded.Moved(location), inverseLocation),
@@ -274,15 +275,15 @@ public class ShapeHistoryTests
 
         operations.Add(("rotated copy", recorded.Rotate(Axis.Z, 31, transform: true), new Rotation(0, 0, -31).ToGpTrsf()));
 
-        var mirrorTransform = new gp_Trsf();
+        var mirrorTransform = new Transform3D();
         var origin = Plane.YZ.Origin.ToGpPnt();
         var normal = Plane.YZ.ZDir.ToGpDir();
-        var ax2 = new gp_Ax2(origin, normal);
+        var ax2 = new Frame3D(origin, normal);
         mirrorTransform = mirrorTransform.WithMirror(ax2);
         operations.Add(("mirror copy", recorded.Mirror(Plane.YZ), mirrorTransform));
 
-        var scaleInverse = new gp_Trsf();
-        var centre = new gp_Pnt(0, 0, 0);
+        var scaleInverse = new Transform3D();
+        var centre = new Point3D(0, 0, 0);
         scaleInverse = scaleInverse.WithScale(centre, 0.5);
         operations.Add(("scale copy", recorded.Scale(2), scaleInverse));
 

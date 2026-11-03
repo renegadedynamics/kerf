@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -81,7 +83,7 @@ public class IFSelect_DispPerSignature : IFSelect_Dispatch
         NCollection_HSequence<TCollection_HAsciiString> list = thesign.List();
         int i, nb, nbs = list.Length();
         TCollection_HAsciiString asign = null;
-        NCollection_HSequence<Standard_Transient> ents = null;
+        NCollection_HSequence<Transient> ents = null;
         for (int @is = 1; @is <= nbs; @is++)
         {
             asign = list.Value(@is);

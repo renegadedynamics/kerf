@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +17,7 @@ namespace Occt;
 /// </summary>
 public class IntPatch_PolyArc : IntPatch_Polygo
 {
-    private readonly NCollection_Array1<gp_Pnt2d> brise;
+    private readonly NCollection_Array1<Point2D> brise;
     private readonly NCollection_Array1<double> param;
     private double offsetx;
     private double offsety;
@@ -36,20 +42,20 @@ public class IntPatch_PolyArc : IntPatch_Polygo
     /// with <paramref name="NbSample"/> points. Throws Standard_ConstructionError on infinite bounds or fewer than two
     /// samples.
     /// </summary>
-    public IntPatch_PolyArc(Adaptor2d_Curve2d Line, int NbSample, double aPdeb, double aPfin, in Bnd_Box2d BoxOtherPolygon)
+    public IntPatch_PolyArc(Adaptor2d_Curve2d Line, int NbSample, double aPdeb, double aPfin, in Box2d BoxOtherPolygon)
     {
-        brise = new NCollection_Array1<gp_Pnt2d>(1, Max(1, NbSample));
+        brise = new NCollection_Array1<Point2D>(1, Max(1, NbSample));
         param = new NCollection_Array1<double>(1, Max(1, NbSample));
         offsetx = 0.0;
         offsety = 0.0;
 
         double Pdeb = aPdeb;
         double Pfin = aPfin;
-        gp_Pnt2d p2d;
+        Point2D p2d;
 
         if (Pdeb == RealFirst() || Pfin == RealLast() || NbSample <= 1)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         //----------------------------------------------------------------------
         //-- On veut eviter les cas ou  le present polygone est beaucoup plus
@@ -189,14 +195,14 @@ public class IntPatch_PolyArc : IntPatch_Polygo
     public override int NbPoints() => brise.Length();
 
     /// <summary>The point of range <paramref name="Index"/>, shifted by the offset.</summary>
-    public override gp_Pnt2d Point(int Index)
+    public override Point2D Point(int Index)
     {
         if (offsetx == 0.0 && offsety == 0.0)
         {
             return (brise[Index]);
         }
-        gp_Pnt2d P = brise[Index];
-        return (new gp_Pnt2d(P.X() + offsetx, P.Y() + offsety));
+        Point2D P = brise[Index];
+        return (new Point2D(P.X() + offsetx, P.Y() + offsety));
     }
 
     /// <summary>The parameter on the arc of the point of range <paramref name="Index"/>.</summary>

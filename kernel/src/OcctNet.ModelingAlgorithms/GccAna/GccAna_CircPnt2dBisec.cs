@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,13 +22,13 @@ public sealed class GccAna_CircPnt2dBisec
 {
     private bool WellDone;
     private int NbrSol;
-    private gp_Circ2d circle;
-    private gp_Pnt2d point;
+    private Circle2D circle;
+    private Point2D point;
     private int theposition;
     private double myTolerance;
 
     /// <summary>Constructs the bisecting curves of Circle and Point.</summary>
-    public GccAna_CircPnt2dBisec(in gp_Circ2d Circle, in gp_Pnt2d Point)
+    public GccAna_CircPnt2dBisec(in Circle2D Circle, in Point2D Point)
     {
         circle = Circle;
         point = Point;
@@ -33,7 +37,7 @@ public sealed class GccAna_CircPnt2dBisec
     }
 
     /// <summary>Constructs the bisecting curves of Circle and Point, with a tolerance (at least 1e-10).</summary>
-    public GccAna_CircPnt2dBisec(in gp_Circ2d Circle, in gp_Pnt2d Point, double Tolerance)
+    public GccAna_CircPnt2dBisec(in Circle2D Circle, in Point2D Point, double Tolerance)
     {
         circle = Circle;
         point = Point;
@@ -87,12 +91,12 @@ public sealed class GccAna_CircPnt2dBisec
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if ((Index <= 0) || (Index > NbrSol))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         GccInt_Bisec bissol;
@@ -105,13 +109,13 @@ public sealed class GccAna_CircPnt2dBisec
 
         if (dist < myTolerance)
         {
-            gp_Circ2d biscirpnt1 = new(new gp_Ax2d(point, new gp_Dir2d(gp_Dir2d.D.X)), R1 / 2.0);
+            Circle2D biscirpnt1 = new(new Axis2D(point, new Direction2D(Direction2D.D.X)), R1 / 2.0);
             bissol = new GccInt_BCirc(biscirpnt1);
         }
         else
         {
-            gp_Pnt2d center = new((xpoint + xcencir) / 2.0, (ypoint + ycencir) / 2.0);
-            gp_Ax2d majax = new(center, new gp_Dir2d(xpoint - xcencir, ypoint - ycencir));
+            Point2D center = new((xpoint + xcencir) / 2.0, (ypoint + ycencir) / 2.0);
+            Axis2D majax = new(center, new Direction2D(xpoint - xcencir, ypoint - ycencir));
 
             //=========================================================================
             //   The point is inside the circle.                                +
@@ -119,7 +123,7 @@ public sealed class GccAna_CircPnt2dBisec
 
             if (theposition == -1)
             {
-                gp_Elips2d biscirpnt = new(majax, R1 / 2.0, Math.Sqrt(R1 * R1 - dist * dist) / 2.0);
+                Ellipse2D biscirpnt = new(majax, R1 / 2.0, Math.Sqrt(R1 * R1 - dist * dist) / 2.0);
                 bissol = new GccInt_BElips(biscirpnt);
             }
 
@@ -131,16 +135,16 @@ public sealed class GccAna_CircPnt2dBisec
 
             else if (theposition == 0)
             {
-                gp_Dir2d dirsol;
-                if (circle.IsDirect())
+                Direction2D dirsol;
+                if (circle.IsDirect)
                 {
-                    dirsol = new gp_Dir2d(xcencir - xpoint, ycencir - ypoint);
+                    dirsol = new Direction2D(xcencir - xpoint, ycencir - ypoint);
                 }
                 else
                 {
-                    dirsol = new gp_Dir2d(xpoint - xcencir, ypoint - ycencir);
+                    dirsol = new Direction2D(xpoint - xcencir, ypoint - ycencir);
                 }
-                gp_Lin2d biscirpnt = new(point, dirsol);
+                Line2D biscirpnt = new(point, dirsol);
                 bissol = new GccInt_BLine(biscirpnt);
             }
 
@@ -156,13 +160,13 @@ public sealed class GccAna_CircPnt2dBisec
                 double d2 = R1 / 2.0;
                 if (Index == 1)
                 {
-                    gp_Hypr2d biscirpnt1 = new(majax, d2, d1);
+                    Hyperbola2D biscirpnt1 = new(majax, d2, d1);
                     bissol = new GccInt_BHyper(biscirpnt1);
                 }
                 else
                 {
-                    gp_Hypr2d biscirpnt1 = new(majax, d2, d1);
-                    gp_Hypr2d biscirpnt2 = biscirpnt1.OtherBranch();
+                    Hyperbola2D biscirpnt1 = new(majax, d2, d1);
+                    Hyperbola2D biscirpnt2 = biscirpnt1.OtherBranch();
                     bissol = new GccInt_BHyper(biscirpnt2);
                 }
             }

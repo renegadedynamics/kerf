@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BOPAlgo_Operation;
-using static Occt.Message_Gravity;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -306,7 +307,7 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
     }
 
     /// <summary>Intersects the objects and tools with a new pave filler and builds the result.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         BOPAlgo_PaveFiller pPF;
         NCollection_List<TopoDS_Shape>.Iterator aItLS = new();
@@ -337,7 +338,7 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
         pPF = new BOPAlgo_PaveFiller();
         pPF.SetArguments(aLS);
         pPF.SetRunParallel(myRunParallel);
-        using var aPS = new Message_ProgressScope(theRange, "Performing Boolean operation", 10);
+        using var aPS = new ProgressScope(theRange, "Performing Boolean operation", 10);
 
         pPF.SetFuzzyValue(myFuzzyValue);
         pPF.SetNonDestructive(myNonDestructive);
@@ -364,7 +365,7 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
                          (myOperation == BOPAlgo_FUSE ? 10.0 : 5.0) * theWhole / 100.0);
     }
 
-    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
         myPaveFiller = theFiller;
         myDS = myPaveFiller.PDS();
@@ -395,7 +396,7 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
                 return;
             }
         }
-        using var aPS = new Message_ProgressScope(theRange, "Building the result of Boolean operation", 100);
+        using var aPS = new ProgressScope(theRange, "Building the result of Boolean operation", 100);
         //
         BOPAlgo_PISteps aSteps = new((int)BOPAlgo_PIOperation.PIOperation_Last);
         analyzeProgress(100, aSteps);
@@ -523,9 +524,9 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
     }
 
     /// <summary>Builds the compound of the split building elements kept by the operation (myRC).</summary>
-    protected void BuildRC(Message_ProgressRange theRange)
+    protected void BuildRC(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 1);
+        using var aPS = new ProgressScope(theRange, null, 1);
 
         TopAbs_ShapeEnum aType;
         TopoDS_Compound aC = new();
@@ -807,9 +808,9 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
     }
 
     /// <summary>Builds the result shape from the kept building elements and the arguments' containers.</summary>
-    protected void BuildShape(Message_ProgressRange theRange)
+    protected void BuildShape(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 10.0);
+        using var aPS = new ProgressScope(theRange, null, 10.0);
 
         if (myDims[0] == 3 && myDims[1] == 3)
         {
@@ -824,9 +825,9 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
             bool hasNotClosedSolids = CheckArgsForOpenSolid();
             if (hasNotClosedSolids)
             {
-                Message_Report aReport = new();
-                BuildBOP(myArguments, myTools, myOperation, new Message_ProgressRange(), aReport);
-                if (aReport.GetAlerts(Message_Fail).IsEmpty())
+                Report aReport = new();
+                BuildBOP(myArguments, myTools, myOperation, new ProgressRange(), aReport);
+                if (aReport.GetAlerts(Fail).IsEmpty())
                 {
                     // Success. Merge the report into the main report.
                     myReport.Merge(aReport);
@@ -1036,9 +1037,9 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
     }
 
     /// <summary>Builds the result of the FUSE of solids: new solids from the outer faces of the kept splits.</summary>
-    protected void BuildSolid(Message_ProgressRange theRange)
+    protected void BuildSolid(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 10.0);
+        using var aPS = new ProgressScope(theRange, null, 10.0);
         // Containers
         NCollection_List<TopoDS_Shape> aLSC = new();
         //
@@ -1326,8 +1327,8 @@ public class BOPAlgo_BOP : BOPAlgo_ToolsProvider
         // for any of the solids and collect these solids to check if they are open.
         NCollection_Map<TopoDS_Shape> aFailedSolids = new(TopTools_ShapeMapHasher.Instance);
         {
-            NCollection_List<Message_Alert> aList = myReport.GetAlerts(Message_Warning);
-            for (NCollection_List<Message_Alert>.Iterator aIt = new(aList); aIt.More(); aIt.Next())
+            NCollection_List<Alert> aList = myReport.GetAlerts(Warning);
+            for (NCollection_List<Alert>.Iterator aIt = new(aList); aIt.More(); aIt.Next())
             {
                 Type aType = aIt.Value().GetType();
                 if (aType != typeof(BOPAlgo_AlertSolidBuilderUnusedFaces))

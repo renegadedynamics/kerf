@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Approx_ParametrizationType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -199,24 +203,24 @@ public class GeomFill_Gordon
     }
 
     // Fits a non-exact B-spline surface through a point grid for approximate fallback.
-    private static Geom_BSplineSurface? approximateGrid(NCollection_Array2<gp_Pnt> thePoints, double theTolerance)
+    private static Geom_BSplineSurface? approximateGrid(NCollection_Array2<Point3D> thePoints, double theTolerance)
     {
         GeomAPI_PointsToBSplineSurface anApprox = new();
-        anApprox.Init(thePoints, Approx_IsoParametric, 1, Geom_BSplineSurface.MaxDegree(), GeomAbs_C1,
-                      Max(theTolerance, Precision.Confusion()));
+        anApprox.Init(thePoints, Approx_IsoParametric, 1, Geom_BSplineSurface.MaxDegree(), C1,
+                      Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion()));
         return anApprox.IsDone() ? anApprox.Surface() : null;
     }
 
     // Samples the prepared profiles as section curves of an approximate profile skin.
-    private static NCollection_Array2<gp_Pnt> profileSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
+    private static NCollection_Array2<Point3D> profileSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
                                                                 int theNbUSamples)
     {
         NCollection_Array1<double> aUParams = unitParameters(theNbUSamples);
-        NCollection_Array2<gp_Pnt> aPoints = new(1, theNbUSamples, 1, theProfiles.Size());
+        NCollection_Array2<Point3D> aPoints = new(1, theNbUSamples, 1, theProfiles.Size());
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
             GeomGridEval_Curve anEvaluator = new(theProfiles.At(aProfileIdx));
-            NCollection_Array1<gp_Pnt> aProfilePoints = anEvaluator.EvaluateGrid(aUParams);
+            NCollection_Array1<Point3D> aProfilePoints = anEvaluator.EvaluateGrid(aUParams);
             for (int aUIdx = 0; aUIdx < theNbUSamples; ++aUIdx)
             {
                 aPoints.ChangeAt(aUIdx, aProfileIdx) = aProfilePoints.At(aUIdx);
@@ -226,15 +230,15 @@ public class GeomFill_Gordon
     }
 
     // Samples the prepared guides as section curves of an approximate guide skin.
-    private static NCollection_Array2<gp_Pnt> guideSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theGuides,
+    private static NCollection_Array2<Point3D> guideSampleGrid(NCollection_Array1<Geom_BSplineCurve?> theGuides,
                                                               int theNbVSamples)
     {
         NCollection_Array1<double> aVParams = unitParameters(theNbVSamples);
-        NCollection_Array2<gp_Pnt> aPoints = new(1, theGuides.Size(), 1, theNbVSamples);
+        NCollection_Array2<Point3D> aPoints = new(1, theGuides.Size(), 1, theNbVSamples);
         for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
         {
             GeomGridEval_Curve anEvaluator = new(theGuides.At(aGuideIdx));
-            NCollection_Array1<gp_Pnt> aGuidePoints = anEvaluator.EvaluateGrid(aVParams);
+            NCollection_Array1<Point3D> aGuidePoints = anEvaluator.EvaluateGrid(aVParams);
             for (int aVIdx = 0; aVIdx < theNbVSamples; ++aVIdx)
             {
                 aPoints.ChangeAt(aGuideIdx, aVIdx) = aGuidePoints.At(aVIdx);
@@ -246,7 +250,7 @@ public class GeomFill_Gordon
     // Builds a sampled fallback from approximate profile, guide, and reference surfaces.
     private static Geom_BSplineSurface? approximatePreparedNetwork(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
                                                                    NCollection_Array1<Geom_BSplineCurve?> theGuides,
-                                                                   NCollection_Array2<gp_Pnt> theIntersections,
+                                                                   NCollection_Array2<Point3D> theIntersections,
                                                                    double theTolerance)
     {
         int aNbUSamples = fallbackSampleCount(theProfiles);
@@ -259,22 +263,22 @@ public class GeomFill_Gordon
         {
             return null;
         }
-        NCollection_Array2<gp_Pnt> aPoints = new(1, aNbUSamples, 1, aNbVSamples);
+        NCollection_Array2<Point3D> aPoints = new(1, aNbUSamples, 1, aNbVSamples);
         NCollection_Array1<double> aUParams = unitParameters(aNbUSamples);
         NCollection_Array1<double> aVParams = unitParameters(aNbVSamples);
         GeomGridEval_Surface aProfileEvaluator = new(aProfileSurface);
         GeomGridEval_Surface aGuideEvaluator = new(aGuideSurface);
         GeomGridEval_Surface aReferenceEvaluator = new(aReferenceSurface);
-        NCollection_Array2<gp_Pnt> aProfilePoints = aProfileEvaluator.EvaluateGrid(aUParams, aVParams);
-        NCollection_Array2<gp_Pnt> aGuidePoints = aGuideEvaluator.EvaluateGrid(aUParams, aVParams);
-        NCollection_Array2<gp_Pnt> aReferencePoints = aReferenceEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aProfilePoints = aProfileEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGuidePoints = aGuideEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aReferencePoints = aReferenceEvaluator.EvaluateGrid(aUParams, aVParams);
         for (int aUIdx = 0; aUIdx < aNbUSamples; ++aUIdx)
         {
             for (int aVIdx = 0; aVIdx < aNbVSamples; ++aVIdx)
             {
-                gp_XYZ aPoint = aProfilePoints.At(aUIdx, aVIdx).XYZ() + aGuidePoints.At(aUIdx, aVIdx).XYZ()
+                Xyz aPoint = aProfilePoints.At(aUIdx, aVIdx).XYZ() + aGuidePoints.At(aUIdx, aVIdx).XYZ()
                                 - aReferencePoints.At(aUIdx, aVIdx).XYZ();
-                aPoints.ChangeAt(aUIdx, aVIdx) = new gp_Pnt(aPoint);
+                aPoints.ChangeAt(aUIdx, aVIdx) = new Point3D(aPoint);
             }
         }
         return approximateGrid(aPoints, theTolerance);
@@ -300,7 +304,7 @@ public class GeomFill_Gordon
         {
             return false;
         }
-        double aTolerance = Max(theTolerance, Precision.Confusion());
+        double aTolerance = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
             Geom_BSplineCurve? aCurve = theCurves.At(aCurveIdx);
@@ -332,7 +336,7 @@ public class GeomFill_Gordon
                 }
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -378,7 +382,7 @@ public class GeomFill_Gordon
         {
             double aFirst = theCurve.Knot(aKnotIdx);
             double aLast = theCurve.Knot(aKnotIdx + 1);
-            if (aLast - aFirst <= Precision.PConfusion())
+            if (aLast - aFirst <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 continue;
             }
@@ -492,8 +496,8 @@ public class GeomFill_Gordon
         }
         myIsUClosed = myIsUClosed || areClosedCurves(myProfiles, myTolerance);
 
-        math_Matrix aProfileParamMatrix = GordonUtilities.toMatrix(myProfileParams);
-        math_Matrix aGuideParamMatrix = GordonUtilities.toMatrix(myGuideParams);
+        Matrix aProfileParamMatrix = GordonUtilities.toMatrix(myProfileParams);
+        Matrix aGuideParamMatrix = GordonUtilities.toMatrix(myGuideParams);
 
         math_Vector aGuideParamValues = GordonUtilities.columnMeans(aProfileParamMatrix);
         math_Vector aProfileParamValues = GordonUtilities.rowMeans(aGuideParamMatrix);
@@ -614,7 +618,7 @@ public class GeomFill_Gordon
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone("GeomFill_Gordon::Surface");
+            throw new NotDoneException("GeomFill_Gordon::Surface");
         }
         mySurface!.Freeze();
         return mySurface;

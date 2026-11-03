@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Meshing;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +26,7 @@ namespace Occt;
 public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
 {
     private readonly NCollection_List<TopoDS_Shape> myled = new();
-    private readonly NCollection_List<Standard_Transient?> mylcu = new();
+    private readonly NCollection_List<Transient?> mylcu = new();
     private readonly NCollection_IndexedDataMap<object, object> myMap = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_List<TopoDS_Shape> myUpdatedEdges = new();
 
@@ -30,14 +38,14 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     private static void GeomLib_ChangeUBounds(Geom_BSplineSurface aSurface, double newU1, double newU2)
     {
         NCollection_Array1<double> knots = new(aSurface.InternalUKnots());
-        BSplCLib.Reparametrize(newU1, newU2, knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(newU1, newU2, knots);
         aSurface.SetUKnots(knots);
     }
 
     private static void GeomLib_ChangeVBounds(Geom_BSplineSurface aSurface, double newV1, double newV2)
     {
         NCollection_Array1<double> knots = new(aSurface.InternalVKnots());
-        BSplCLib.Reparametrize(newV1, newV2, knots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(newV1, newV2, knots);
         aSurface.SetVKnots(knots);
     }
 
@@ -49,7 +57,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     {
         Geom_Curve? aNewCurve = null;
 
-        Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out theFirst, out theLast);
+        Geom_Curve? aCurve = BRep_Tool.Curve(theEdge, out Placement aLoc, out theFirst, out theLast);
         if (aCurve is not null && theMap.Contains(aCurve))
         {
             aNewCurve = (Geom_Curve)theMap.FindFromKey(aCurve);
@@ -76,7 +84,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     {
         Geom_Surface? aNewSurf = null;
 
-        Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out TopLoc_Location aLoc);
+        Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out Placement aLoc);
         if (aSurf is not null && theMap.Contains(aSurf))
         {
             aNewSurf = (Geom_Surface)theMap.FindFromKey(aSurf);
@@ -85,7 +93,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         return aNewSurf;
     }
 
-    private static bool newParameter(in gp_Pnt thePoint,
+    private static bool newParameter(in Point3D thePoint,
                                      Geom_Curve theCurve,
                                      double theFirst,
                                      double theLast,
@@ -98,7 +106,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                                                            theParam,
                                                            theFirst,
                                                            theLast,
-                                                           Precision.PConfusion());
+                                                           global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (proj.IsDone())
         {
             double aDist2Min = proj.SquareDistance();
@@ -111,7 +119,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         return false;
     }
 
-    private static bool newParameter(in gp_Pnt2d theUV,
+    private static bool newParameter(in Point2D theUV,
                                      Geom2d_Curve theCurve2d,
                                      double theFirst,
                                      double theLast,
@@ -119,7 +127,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                                      ref double theParam)
     {
         Geom2dAdaptor_Curve anAdaptor = new Geom2dAdaptor_Curve(theCurve2d);
-        Extrema_LocateExtPC2d aProj = new Extrema_LocateExtPC2d(theUV, anAdaptor, theParam, Precision.PConfusion());
+        Extrema_LocateExtPC2d aProj = new Extrema_LocateExtPC2d(theUV, anAdaptor, theParam, global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (aProj.IsDone())
         {
             double aDist2Min = aProj.SquareDistance();
@@ -138,7 +146,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
             if (anExt.IsDone())
             {
                 int aMinInd = 0;
-                double aMinSqDist = Precision.Infinite();
+                double aMinSqDist = global::Kerf.Engine.Foundation.Precision.Infinite();
                 for (int anIndex = 1; anIndex <= anExt.NbExt(); ++anIndex)
                 {
                     if (anExt.SquareDistance(anIndex) < aMinSqDist)
@@ -157,7 +165,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         return false;
     }
 
-    private static bool newUV(in gp_Pnt thePoint, Geom_Surface theSurf, double theTol, ref gp_Pnt2d theUV)
+    private static bool newUV(in Point3D thePoint, Geom_Surface theSurf, double theTol, ref Point2D theUV)
     {
         GeomAdaptor_Surface anAdaptor = new GeomAdaptor_Surface(theSurf);
         Extrema_GenLocateExtPS aProj = new Extrema_GenLocateExtPS(anAdaptor);
@@ -181,7 +189,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     /// </summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -318,7 +326,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     }
 
     /// <summary>The face's triangulation, its UV nodes projected on the new surface (see the copy modification for when).</summary>
-    public override bool NewTriangulation(in TopoDS_Face theFace, out Poly_Triangulation? theTri)
+    public override bool NewTriangulation(in TopoDS_Face theFace, out Triangulation? theTri)
     {
         if (!base.NewTriangulation(theFace, out theTri))
         {
@@ -326,17 +334,17 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         }
 
         // convert UV nodes of the mesh
-        if (theTri!.HasUVNodes())
+        if (theTri!.HasUVNodes)
         {
             Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out _);
             Geom_Surface? aNewSurf = newSurface(myMap, theFace);
             if (aSurf is not null && aNewSurf is not null)
             {
                 double aTol = BRep_Tool.Tolerance(theFace);
-                for (int anInd = 1; anInd <= theTri.NbNodes(); ++anInd)
+                for (int anInd = 1; anInd <= theTri.NodeCount; ++anInd)
                 {
-                    gp_Pnt2d aUV = theTri.UVNode(anInd);
-                    gp_Pnt aPoint = aSurf.Value(aUV.X(), aUV.Y());
+                    Point2D aUV = theTri.UVNode(anInd);
+                    Point3D aPoint = aSurf.Value(aUV.X(), aUV.Y());
                     if (newUV(aPoint, aNewSurf, aTol, ref aUV))
                     {
                         theTri.SetUVNode(anInd, aUV);
@@ -352,14 +360,14 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     /// The edge's 3D curve converted to a B-spline reparametrised to the edge's range (a copy of a B-spline or Bezier
     /// curve if one of the edge's pcurves or surfaces needs converting); none for a degenerated edge.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         C = null;
         Tol = BRep_Tool.Tolerance(E);
         if (BRep_Tool.Degenerated(E))
         {
             C = null;
-            L = new TopLoc_Location();
+            L = new Placement();
             return true;
         }
 
@@ -420,7 +428,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
             if (Math.Abs(f - fnew) > UTol || Math.Abs(l - lnew) > UTol)
             {
                 NCollection_Array1<double> knots = new(BC.InternalKnots());
-                BSplCLib.Reparametrize(f, l, knots);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(f, l, knots);
                 BC.SetKnots(knots);
             }
         }
@@ -433,14 +441,14 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     }
 
     /// <summary>The edge's 3D polygon, its parameters projected on the new curve (see the copy modification for when).</summary>
-    public override bool NewPolygon(in TopoDS_Edge theEdge, out Poly_Polygon3D? thePoly)
+    public override bool NewPolygon(in TopoDS_Edge theEdge, out Polygon3D? thePoly)
     {
         if (!base.NewPolygon(theEdge, out thePoly))
         {
             return false;
         }
 
-        if (!thePoly!.HasParameters())
+        if (!thePoly!.HasParameters)
         {
             return false;
         }
@@ -456,16 +464,16 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         for (int anInd = aParams.Lower(); anInd <= aParams.Upper(); ++anInd)
         {
             ref double aParam = ref aParams[anInd];
-            gp_Pnt aPoint = aCurve.Value(aParam);
+            Point3D aPoint = aCurve.Value(aParam);
             newParameter(aPoint, aNewCurve, aFirst, aLast, aTol, ref aParam);
         }
         return true;
     }
 
     /// <summary>Vertices keep their points: always false.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
-        P = new gp_Pnt();
+        P = new Point3D();
         Tol = 0.0;
         return false;
     }
@@ -484,7 +492,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         Curve2d = null;
         Tol = BRep_Tool.Tolerance(E);
         Geom2d_Curve? aBaseC2d = BRep_Tool.CurveOnSurface(E, F, out double f2d, out double l2d);
-        Geom_Curve? C3d = BRep_Tool.Curve(E, out TopLoc_Location Loc, out double f3d, out double l3d);
+        Geom_Curve? C3d = BRep_Tool.Curve(E, out Placement Loc, out double f3d, out double l3d);
         bool isConvert2d = ((C3d is not null && C3d is not Geom_BSplineCurve
                              && C3d is not Geom_BezierCurve)
                             || IsConvert(E));
@@ -516,11 +524,11 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
 
             if (!C2d.IsPeriodic())
             {
-                if (fc - f2d > Precision.PConfusion())
+                if (fc - f2d > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     f2d = fc;
                 }
-                if (l2d - lc > Precision.PConfusion())
+                if (l2d - lc > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     l2d = lc;
                 }
@@ -658,7 +666,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                     {
                         // Surface is periodic, checking curve2d domain
                         // Old domain
-                        double aMinDist = Precision.Infinite();
+                        double aMinDist = global::Kerf.Engine.Foundation.Precision.Infinite();
                         if (S.IsUPeriodic())
                         {
                             aMinDist = Min(0.5 * S.UPeriod(), aMinDist);
@@ -669,10 +677,10 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                         }
                         aMinDist *= aMinDist;
                         // Old domain
-                        gp_Pnt2d aPf = C2d.Value(f2d);
+                        Point2D aPf = C2d.Value(f2d);
                         // New domain
-                        gp_Pnt2d aNewPf = Curve2d.Value(f2d);
-                        gp_Vec2d aT = new gp_Vec2d(aNewPf, aPf);
+                        Point2D aNewPf = Curve2d.Value(f2d);
+                        Vector2D aT = new Vector2D(aNewPf, aPf);
                         if (aT.SquareMagnitude() > aMinDist)
                         {
                             Curve2d = (Geom2d_Curve)Curve2d.Translated(aT);
@@ -704,7 +712,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         else
         {
             var itled = new NCollection_List<TopoDS_Shape>.Iterator();
-            var itlcu = new NCollection_List<Standard_Transient?>.Iterator();
+            var itlcu = new NCollection_List<Transient?>.Iterator();
 
             for (itled.Initialize(myled), itlcu.Initialize(mylcu); itled.More(); // itlcu.More()
                  itled.Next(), itlcu.Next())
@@ -871,7 +879,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
     }
 
     /// <summary>The edge's polygon on the face's triangulation, its parameters projected on the new pcurve.</summary>
-    public override bool NewPolygonOnTriangulation(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out Poly_PolygonOnTriangulation? thePoly)
+    public override bool NewPolygonOnTriangulation(in TopoDS_Edge theEdge, in TopoDS_Face theFace, out PolygonOnTriangulation? thePoly)
     {
         if (!base.NewPolygonOnTriangulation(theEdge, theFace, out thePoly))
         {
@@ -879,7 +887,7 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
         }
 
         // update parameters of 2D polygon
-        if (thePoly!.HasParameters())
+        if (thePoly!.HasParameters)
         {
             double aTol = Max(BRep_Tool.Tolerance(theEdge), thePoly.Deflection());
             Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out _);
@@ -892,11 +900,11 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
                 GeomAdaptor_Surface aSurfAdapt = new GeomAdaptor_Surface(aSurf);
                 double aTol2D = Max(aSurfAdapt.UResolution(aTol), aSurfAdapt.VResolution(aTol));
 
-                for (int anInd = 1; anInd <= thePoly.NbNodes(); ++anInd)
+                for (int anInd = 1; anInd <= thePoly.NodeCount; ++anInd)
                 {
                     double aParam = thePoly.Parameter(anInd);
-                    gp_Pnt2d aUV = aC2d.Value(aParam);
-                    gp_Pnt aPoint = aSurf.Value(aUV.X(), aUV.Y());
+                    Point2D aUV = aC2d.Value(aParam);
+                    Point3D aPoint = aSurf.Value(aUV.X(), aUV.Y());
                     if (newUV(aPoint, aNewSurf, aTol, ref aUV)
                         && newParameter(aUV, aNewC2d, aFirst, aLast, aTol2D, ref aParam))
                     {
@@ -917,14 +925,14 @@ public class BRepTools_NurbsConvertModification : BRepTools_CopyModification
             return false;
         }
 
-        gp_Pnt pnt = BRep_Tool.Pnt(V);
+        Point3D pnt = BRep_Tool.Pnt(V);
         P = BRep_Tool.Parameter(V, E);
         Geom_Curve? aNewCurve = newCurve(myMap, E, out double aFirst, out double aLast);
         return aNewCurve is not null && newParameter(pnt, aNewCurve, aFirst, aLast, Tol, ref P);
     }
 
     /// <summary>The edge's continuity between the original faces.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,

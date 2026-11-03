@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Occt;
+using static Kerf.Engine.Foundation.Gravity;
 
-namespace Occt;
+namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// The process-wide messenger and short-cuts to it: <c>Message.SendWarning("text")</c>,
@@ -20,62 +21,62 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <see cref="DefaultReport"/> (unit 6A) is internal process-wide state too (decisions 415 and 584): only
-/// <see cref="Message_Level"/> and <see cref="Message_PrinterToReport"/> reach it, and an algorithm's alerts go to its
+/// <see cref="Level"/> and <see cref="PrinterToReport"/> reach it, and an algorithm's alerts go to its
 /// own report. Left out: <c>ToOSDMetric</c> and <c>ToMessageMetric</c> (OSD_MemInfo isn't ported;
-/// <see cref="Message_AttributeMeter"/> reads .NET's counters instead).
+/// <see cref="AttributeMeter"/> reads .NET's counters instead).
 /// </para>
 /// </remarks>
 public static class Message
 {
-    private static volatile Message_Messenger theDefaultMessenger = Message_Messenger.Empty();
+    private static volatile Messenger s_defaultMessenger = Messenger.Empty();
 
     // OCCT.NET (decision 1275): a messenger standing for the default one in the current flow of execution, as
     // DRAWEXE's data exchange commands (XSTEPDRAWRUN) give the default messenger a printer to the Tcl result while
     // they run; Draw-lite installs one per command, and parallel interpreters don't see each other's
-    private static readonly AsyncLocal<Message_Messenger?> theFlowMessenger = new();
+    private static readonly AsyncLocal<Messenger?> FlowMessenger = new();
 
     /// <summary>
     /// The process-wide messenger. By default it has no printer: messages sent to it go nowhere. In a flow of execution
     /// that installed a messenger of its own (<see cref="SetFlowMessenger"/>), that one.
     /// </summary>
-    public static Message_Messenger DefaultMessenger() => theFlowMessenger.Value ?? theDefaultMessenger;
+    public static Messenger DefaultMessenger() => FlowMessenger.Value ?? s_defaultMessenger;
 
     /// <summary>
     /// Installs a messenger standing for the default one in the current flow of execution (the thread and the tasks it
     /// starts), until replaced; null removes it. Returns the one it replaces (OCCT.NET, for Draw-lite's commands).
     /// </summary>
-    internal static Message_Messenger? SetFlowMessenger(Message_Messenger? theMessenger)
+    internal static Messenger? SetFlowMessenger(Messenger? messenger)
     {
-        Message_Messenger? anOld = theFlowMessenger.Value;
-        theFlowMessenger.Value = theMessenger;
-        return anOld;
+        Messenger? old = FlowMessenger.Value;
+        FlowMessenger.Value = messenger;
+        return old;
     }
 
     /// <summary>Replaces the process-wide messenger (Draw-lite); null restores an empty one.</summary>
-    internal static void SetDefaultMessenger(Message_Messenger? theMessenger) =>
-        theDefaultMessenger = theMessenger ?? Message_Messenger.Empty();
+    internal static void SetDefaultMessenger(Messenger? messenger) =>
+        s_defaultMessenger = messenger ?? Messenger.Empty();
 
-    private static volatile Message_Report? theDefaultReport;
-    private static readonly Lock theDefaultReportLock = new();
+    private static volatile Report? s_defaultReport;
+    private static readonly Lock DefaultReportLock = new();
 
     /// <summary>
-    /// The process-wide report, made first if <paramref name="theToCreate"/> (null otherwise until made). Internal:
+    /// The process-wide report, made first if <paramref name="toCreate"/> (null otherwise until made). Internal:
     /// only the report levels and the printer to a report use it (decision 584).
     /// </summary>
-    internal static Message_Report? DefaultReport(bool theToCreate = false)
+    internal static Report? DefaultReport(bool toCreate = false)
     {
-        if (theDefaultReport is null && theToCreate)
+        if (s_defaultReport is null && toCreate)
         {
-            lock (theDefaultReportLock)
+            lock (DefaultReportLock)
             {
-                theDefaultReport ??= new Message_Report();
+                s_defaultReport ??= new Report();
             }
         }
-        return theDefaultReport;
+        return s_defaultReport;
     }
 
     /// <summary>For tests and Draw-lite: replaces (or, with null, removes) the process-wide report.</summary>
-    internal static void SetDefaultReport(Message_Report? theReport) => theDefaultReport = theReport;
+    internal static void SetDefaultReport(Report? report) => s_defaultReport = report;
 
     private static readonly string[] Message_Table_PrintMetricTypeEnum =
     [
@@ -85,55 +86,55 @@ public static class Message
     ];
 
     /// <summary>The name of the metric ("WallClock", ...).</summary>
-    public static string MetricToString(Message_MetricType theType) => Message_Table_PrintMetricTypeEnum[(int)theType];
+    public static string MetricToString(MetricType type) => Message_Table_PrintMetricTypeEnum[(int)type];
 
     /// <summary>The metric named by the string; false if there is none.</summary>
-    public static bool MetricFromString(string theString, out Message_MetricType theType)
+    public static bool MetricFromString(string theString, out MetricType type)
     {
-        for (int aMetricIter = 0; aMetricIter <= (int)Message_MetricType.Message_MetricType_MemHeapUsage; ++aMetricIter)
+        for (int metricIter = 0; metricIter <= (int)MetricType.MetricType_MemHeapUsage; ++metricIter)
         {
-            if (theString == Message_Table_PrintMetricTypeEnum[aMetricIter])
+            if (theString == Message_Table_PrintMetricTypeEnum[metricIter])
             {
-                theType = (Message_MetricType)aMetricIter;
+                type = (MetricType)metricIter;
                 return true;
             }
         }
-        theType = Message_MetricType.Message_MetricType_None;
+        type = MetricType.MetricType_None;
         return false;
     }
 
-    /// <summary>The metric named by the string, or <see cref="Message_MetricType.Message_MetricType_None"/>.</summary>
-    public static Message_MetricType MetricFromString(string theString)
+    /// <summary>The metric named by the string, or <see cref="MetricType.MetricType_None"/>.</summary>
+    public static MetricType MetricFromString(string theString)
     {
-        MetricFromString(theString, out Message_MetricType aMetric);
-        return aMetric;
+        MetricFromString(theString, out MetricType metric);
+        return metric;
     }
 
     // ---- Short-cuts to DefaultMessenger
 
-    public static Message_Messenger.StreamBuffer Send(Message_Gravity theGravity) => DefaultMessenger().Send(theGravity);
+    public static Messenger.StreamBuffer Send(Gravity gravity) => DefaultMessenger().Send(gravity);
 
-    public static void Send(string theMessage, Message_Gravity theGravity) => DefaultMessenger().Send(theMessage, theGravity);
+    public static void Send(string message, Gravity gravity) => DefaultMessenger().Send(message, gravity);
 
-    public static Message_Messenger.StreamBuffer SendFail() => DefaultMessenger().SendFail();
+    public static Messenger.StreamBuffer SendFail() => DefaultMessenger().SendFail();
 
-    public static Message_Messenger.StreamBuffer SendAlarm() => DefaultMessenger().SendAlarm();
+    public static Messenger.StreamBuffer SendAlarm() => DefaultMessenger().SendAlarm();
 
-    public static Message_Messenger.StreamBuffer SendWarning() => DefaultMessenger().SendWarning();
+    public static Messenger.StreamBuffer SendWarning() => DefaultMessenger().SendWarning();
 
-    public static Message_Messenger.StreamBuffer SendInfo() => DefaultMessenger().SendInfo();
+    public static Messenger.StreamBuffer SendInfo() => DefaultMessenger().SendInfo();
 
-    public static Message_Messenger.StreamBuffer SendTrace() => DefaultMessenger().SendTrace();
+    public static Messenger.StreamBuffer SendTrace() => DefaultMessenger().SendTrace();
 
-    public static void SendFail(string theMessage) => DefaultMessenger().SendFail(theMessage);
+    public static void SendFail(string message) => DefaultMessenger().SendFail(message);
 
-    public static void SendAlarm(string theMessage) => DefaultMessenger().SendAlarm(theMessage);
+    public static void SendAlarm(string message) => DefaultMessenger().SendAlarm(message);
 
-    public static void SendWarning(string theMessage) => DefaultMessenger().SendWarning(theMessage);
+    public static void SendWarning(string message) => DefaultMessenger().SendWarning(message);
 
-    public static void SendInfo(string theMessage) => DefaultMessenger().SendInfo(theMessage);
+    public static void SendInfo(string message) => DefaultMessenger().SendInfo(message);
 
-    public static void SendTrace(string theMessage) => DefaultMessenger().SendTrace(theMessage);
+    public static void SendTrace(string message) => DefaultMessenger().SendTrace(message);
 
     /// <summary>
     /// Hours, minutes and seconds as text: (5, 12, 26.3345) gives "05h:12m:26.33s", (0, 6, 34.496) "06m:34.50s",
@@ -143,16 +144,16 @@ public static class Message
     {
         if (hour > 0)
         {
-            return Message_Msg.Sprintf("%02d", hour) + "h:" + Message_Msg.Sprintf("%02d", minute) + "m:"
-                   + Message_Msg.Sprintf("%.2f", second) + "s";
+            return Msg.Sprintf("%02d", hour) + "h:" + Msg.Sprintf("%02d", minute) + "m:"
+                   + Msg.Sprintf("%.2f", second) + "s";
         }
         else if (minute > 0)
         {
-            return Message_Msg.Sprintf("%02d", minute) + "m:" + Message_Msg.Sprintf("%.2f", second) + "s";
+            return Msg.Sprintf("%02d", minute) + "m:" + Msg.Sprintf("%.2f", second) + "s";
         }
         else
         {
-            return Message_Msg.Sprintf("%.2f", second) + "s";
+            return Msg.Sprintf("%.2f", second) + "s";
         }
     }
 }

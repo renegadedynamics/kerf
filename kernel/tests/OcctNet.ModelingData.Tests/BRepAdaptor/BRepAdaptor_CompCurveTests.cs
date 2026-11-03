@@ -1,8 +1,10 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRepAdaptor_CompCurve_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -41,7 +43,7 @@ public class BRepAdaptor_CompCurveTests
     public void OCC5696_EdgeMethod()
     {
         // Create a simple edge from two points
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
 
         // Create a wire from the edge
         TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
@@ -80,7 +82,7 @@ public class BRepAdaptor_CompCurveTests
         double r45 = Math.PI / 4.0, r225 = 3.0 * Math.PI / 4.0;
 
         var arcMaker = new GC_MakeArcOfCircle(
-            new gp_Circ(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0),
+            new Circle3D(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0),
             r45,
             r225,
             true);
@@ -89,11 +91,11 @@ public class BRepAdaptor_CompCurveTests
         TopoDS_Wire aWire = wireMaker.Wire();
 
         var aCurve = new BRepAdaptor_CompCurve(aWire);
-        gp_Pnt aStartPt = aCurve.Value(aCurve.FirstParameter());
-        gp_Pnt anEndPt = aCurve.Value(aCurve.LastParameter());
+        Point3D aStartPt = aCurve.Value(aCurve.FirstParameter());
+        Point3D anEndPt = aCurve.Value(aCurve.LastParameter());
 
         // Collect wire vertices
-        var aVertices = new List<gp_Pnt>();
+        var aVertices = new List<Point3D>();
         for (var anExp = new TopExp_Explorer(aWire, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
             aVertices.Add(BRep_Tool.Pnt(TopoDS.Vertex(anExp.Current())));
@@ -102,7 +104,7 @@ public class BRepAdaptor_CompCurveTests
 
         bool aStartMatchesAnyVertex = false;
         bool anEndMatchesAnyVertex = false;
-        foreach (gp_Pnt aV in aVertices)
+        foreach (Point3D aV in aVertices)
         {
             if (aStartPt.Distance(aV) < 1.0e-7)
             {
@@ -123,7 +125,7 @@ public class BRepAdaptor_CompCurveTests
     public void OCC30869_ReversedEdgeBoundaryPoints()
     {
         // Build a circle: center(1,0,0), Z-axis(0,-1,0), X-axis(0,0,-1), radius=1
-        var anAx2 = new gp_Ax2(new gp_Pnt(1.0, 0.0, 0.0), new gp_Dir(0.0, -1.0, 0.0), new gp_Dir(0.0, 0.0, -1.0));
+        var anAx2 = new Frame3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, -1.0, 0.0), new Direction3D(0.0, 0.0, -1.0));
         var aCircle = new Geom_Circle(anAx2, 1.0);
 
         double t1 = Math.PI / 2.0;
@@ -140,29 +142,29 @@ public class BRepAdaptor_CompCurveTests
         double aFirst = aBACC.FirstParameter();
         double aLast = aBACC.LastParameter();
 
-        aBACC.D1(aFirst, out gp_Pnt aPFirst, out gp_Vec aVFirst);
-        aBACC.D1(aLast, out gp_Pnt aPLast, out gp_Vec aVLast);
+        aBACC.D1(aFirst, out Point3D aPFirst, out Vector3D aVFirst);
+        aBACC.D1(aLast, out Point3D aPLast, out Vector3D aVLast);
 
-        if (aVFirst.SquareMagnitude() > gp.Resolution())
+        if (aVFirst.SquareMagnitude() > Constants.Resolution())
         {
             aVFirst.Normalize();
         }
-        if (aVLast.SquareMagnitude() > gp.Resolution())
+        if (aVLast.SquareMagnitude() > Constants.Resolution())
         {
             aVLast.Normalize();
         }
 
         // Reference: inverse circle (normal = (0,1,0)), evaluated at the same parameters
-        var anAx2Ref = new gp_Ax2(new gp_Pnt(1.0, 0.0, 0.0), new gp_Dir(0.0, 1.0, 0.0), new gp_Dir(0.0, 0.0, -1.0));
+        var anAx2Ref = new Frame3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0), new Direction3D(0.0, 0.0, -1.0));
         var aCircleRef = new Geom_Circle(anAx2Ref, 1.0);
 
-        aCircleRef.D1(t1, out gp_Pnt aRefP1, out gp_Vec aRefV1);
-        aCircleRef.D1(t2, out gp_Pnt aRefP2, out gp_Vec aRefV2);
-        if (aRefV1.SquareMagnitude() > gp.Resolution())
+        aCircleRef.D1(t1, out Point3D aRefP1, out Vector3D aRefV1);
+        aCircleRef.D1(t2, out Point3D aRefP2, out Vector3D aRefV2);
+        if (aRefV1.SquareMagnitude() > Constants.Resolution())
         {
             aRefV1.Normalize();
         }
-        if (aRefV2.SquareMagnitude() > gp.Resolution())
+        if (aRefV2.SquareMagnitude() > Constants.Resolution())
         {
             aRefV2.Normalize();
         }
@@ -197,23 +199,23 @@ public class BRepAdaptor_CompCurveTests
         Assert.True(aC.IsClosed());
         Assert.False(aC.IsPeriodic());
         Assert.Equal(4.0, aC.Period());
-        Assert.Equal(GeomAbs_C0, aC.Continuity());
-        Assert.Equal(GeomAbs_OtherCurve, aC.GetType());
+        Assert.Equal(C0, aC.Continuity());
+        Assert.Equal(OtherCurve, aC.GetType());
         Assert.True(aC.Wire().IsSame(aWire));
 
         // the knots are the vertices, met in the explorer's order; the curve closes on itself
         var anExp = new BRepTools_WireExplorer(aWire);
         for (int i = 0; i < 4; i++, anExp.Next())
         {
-            gp_Pnt aV = BRep_Tool.Pnt(anExp.CurrentVertex());
+            Point3D aV = BRep_Tool.Pnt(anExp.CurrentVertex());
             Assert.True(aC.Value(i).Distance(aV) < 1e-12, $"knot {i}");
         }
         Assert.True(aC.Value(0.0).Distance(aC.Value(4.0)) < 1e-12);
 
         // the intervals are the knots
-        Assert.Equal(4, aC.NbIntervals(GeomAbs_C1));
+        Assert.Equal(4, aC.NbIntervals(C1));
         var aT = new NCollection_Array1<double>(1, 5);
-        aC.Intervals(aT, GeomAbs_C1);
+        aC.Intervals(aT, C1);
         for (int i = 1; i <= 5; i++)
         {
             Assert.Equal(i - 1.0, aT[i], 1e-14);
@@ -231,7 +233,7 @@ public class BRepAdaptor_CompCurveTests
         // unit speed along every edge
         for (double u = 0.1; u < 6.0; u += 0.5)
         {
-            aC.D1(u, out _, out gp_Vec aD1);
+            aC.D1(u, out _, out Vector3D aD1);
             Assert.Equal(1.0, aD1.Magnitude(), 1e-12);
         }
 
@@ -258,8 +260,8 @@ public class BRepAdaptor_CompCurveTests
         foreach (double u in new[] { 0.0, 0.3, 1.5, 3.9, 4.0 })
         {
             Assert.Equal(aC.Value(u), aCopy.Value(u));
-            aC.D2(u, out gp_Pnt aP, out gp_Vec aV1, out gp_Vec aV2);
-            aCopy.D2(u, out gp_Pnt aPc, out gp_Vec aV1c, out gp_Vec aV2c);
+            aC.D2(u, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
+            aCopy.D2(u, out Point3D aPc, out Vector3D aV1c, out Vector3D aV2c);
             Assert.Equal(aP, aPc);
             Assert.Equal(aV1, aV1c);
             Assert.Equal(aV2, aV2c);
@@ -274,18 +276,18 @@ public class BRepAdaptor_CompCurveTests
         var aC = new BRepAdaptor_CompCurve(MakeWire(aBottom));
         Assert.False(aC.IsPeriodic());
         Assert.Equal(1.0, aC.LastParameter());
-        Assert.Equal(GeomAbs_CN, aC.Continuity());
-        Assert.Equal(GeomAbs_Circle, new BRepAdaptor_Curve(aBottom).GetType());
+        Assert.Equal(CN, aC.Continuity());
+        Assert.Equal(Circle, new BRepAdaptor_Curve(aBottom).GetType());
         Assert.Equal(2.0, aC.Circle().Radius());
-        Assert.True(aC.Value(0.25).Distance(new gp_Pnt(0, 2, 0)) < 1e-12);
+        Assert.True(aC.Value(0.25).Distance(new Point3D(0, 2, 0)) < 1e-12);
     }
 
     [Fact]
     public void DegeneratedEdgesAreSkipped()
     {
         var aB = new BRep_Builder();
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(1, 0, 0));
+        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(0, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(1, 0, 0));
         TopoDS_Edge anE = TestShapes.Edge(aV0, aV1);
         TopoDS_Edge aDeg = new TopoDS_Edge();
         aB.MakeEdge(ref aDeg);
@@ -294,6 +296,6 @@ public class BRepAdaptor_CompCurveTests
         aB.Degenerated(aDeg, true);
         var aC = new BRepAdaptor_CompCurve(MakeWire(anE, aDeg));
         Assert.Equal(1.0, aC.LastParameter());
-        Assert.Equal(1, aC.NbIntervals(GeomAbs_C0));
+        Assert.Equal(1, aC.NbIntervals(C0));
     }
 }

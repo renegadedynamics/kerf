@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -67,7 +69,7 @@ public class Transfer_TransferIterator
     public void SelectResult(Type? atype, bool keep)
     {
         int casetype = 0;
-        if (SubType(atype, typeof(Standard_Transient)))
+        if (SubType(atype, typeof(Transient)))
         {
             casetype = 2;
         }
@@ -202,16 +204,16 @@ public class Transfer_TransferIterator
     }
 
     /// <summary>Returns the current Binder.</summary>
-    /// <exception cref="Standard_NoSuchObject">No current item.</exception>
+    /// <exception cref="NoSuchObjectException">No current item.</exception>
     public Transfer_Binder Value()
     {
         if (thecurr == 0 || thecurr > themaxi)
         {
-            throw new Standard_NoSuchObject("TransferIterator : Value");
+            throw new NoSuchObjectException("TransferIterator : Value");
         }
         if (theselect.Value(thecurr) == 0)
         {
-            throw new Standard_NoSuchObject("TransferIterator : Value");
+            throw new NoSuchObjectException("TransferIterator : Value");
         }
         return theitems.Value(thecurr);
     }
@@ -264,14 +266,14 @@ public class Transfer_TransferIterator
         {
             return false;
         }
-        return SubType(btype, typeof(Standard_Transient));
+        return SubType(btype, typeof(Transient));
     }
 
     /// <summary>
     /// Returns the Transient Result of the current Item if there is (else, returns a null Handle). Supposes that
     /// Binding is done by a SimpleBinderOfTransient.
     /// </summary>
-    public Standard_Transient? TransientResult()
+    public Transient? TransientResult()
     {
         Transfer_SimpleBinderOfTransient? atr = Value() as Transfer_SimpleBinderOfTransient;
         if (atr is not null)
@@ -316,7 +318,7 @@ public class Transfer_TransferIterator
     }
 
     // Standard_Transient::IsKind: false for a null type
-    internal static bool IsKind(Standard_Transient theObject, Type? theType)
+    internal static bool IsKind(Transient theObject, Type? theType)
     {
         return theType is not null && theObject.IsKind(theType);
     }

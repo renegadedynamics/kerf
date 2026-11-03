@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -17,7 +18,7 @@ public class BOPAlgo_MakeConnectedTests
     // [0, 10]^3 and [10, 20] x [0, 10]^2: they touch along the face x = 10
     private static TopoDS_Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new gp_Pnt(10, 0, 0), 10.0, 10.0, 10.0).Shape();
+    private static TopoDS_Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 10.0, 10.0, 10.0).Shape();
 
     private static TopoDS_Shape FaceAt(in TopoDS_Shape theShape, double theX)
     {
@@ -54,7 +55,7 @@ public class BOPAlgo_MakeConnectedTests
         TopoDS_Shape aC = aTool.Shape();
         Assert.Equal(2, Count(aC, TopAbs_SOLID));
         Assert.Equal(11, Count(aC, TopAbs_FACE));
-        Assert.True(aC.TShape()!.IsFrozen());
+        Assert.True(aC.TShape()!.IsFrozen);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
 
@@ -95,7 +96,7 @@ public class BOPAlgo_MakeConnectedTests
         aTool.Perform();
         Assert.True(aTool.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
 
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Shape();
         aTool = Connected(BoxA(), aFace);
         Assert.True(aTool.HasError(typeof(BOPAlgo_AlertMultiDimensionalArguments)));
 
@@ -144,7 +145,7 @@ public class BOPAlgo_MakeConnectedTests
 
         aTool.ClearRepetitions();
         Assert.Equal(2, Count(aTool.PeriodicShape(), TopAbs_SOLID));
-        Assert.True(aTool.PeriodicShape().TShape()!.IsFrozen());
+        Assert.True(aTool.PeriodicShape().TShape()!.IsFrozen);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
     }
 
@@ -173,7 +174,7 @@ public class BOPAlgo_MakeConnectedTests
     public void Serial_equals_parallel()
     {
         TopoDS_Shape aA = BoxA();
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(10, 5, 0), new gp_Dir(0, 0, 1)), 3.0, 10.0).Shape();
+        TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(10, 5, 0), new Direction3D(0, 0, 1)), 3.0, 10.0).Shape();
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             BOPAlgo_MakeConnected aTool = new();

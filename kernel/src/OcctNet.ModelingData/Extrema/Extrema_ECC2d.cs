@@ -3,9 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Extrema_GGenExtCC;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -35,7 +40,7 @@ public class Extrema_ECC2d
     {
         myIsFindSingleSolution = false;
         myParallel = false;
-        myCurveMinTol = Precision.PConfusion();
+        myCurveMinTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myLowBorder = new math_Vector(1, 2);
         myUppBorder = new math_Vector(1, 2);
         myDone = false;
@@ -47,7 +52,7 @@ public class Extrema_ECC2d
     {
         myIsFindSingleSolution = false;
         myParallel = false;
-        myCurveMinTol = Precision.PConfusion();
+        myCurveMinTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myLowBorder = new math_Vector(1, 2);
         myUppBorder = new math_Vector(1, 2);
         myDone = false;
@@ -65,7 +70,7 @@ public class Extrema_ECC2d
     {
         myIsFindSingleSolution = false;
         myParallel = false;
-        myCurveMinTol = Precision.PConfusion();
+        myCurveMinTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myLowBorder = new math_Vector(1, 2);
         myUppBorder = new math_Vector(1, 2);
         myDone = false;
@@ -108,13 +113,13 @@ public class Extrema_ECC2d
         Adaptor2d_Curve2d C2 = myC[1]!;
 
         Span<int> aNbInter = stackalloc int[2];
-        GeomAbs_Shape aContinuity = GeomAbs_C2;
+        Continuity aContinuity = global::Kerf.Geometry.Continuity.C2;
         aNbInter[0] = C1.NbIntervals(aContinuity);
         aNbInter[1] = C2.NbIntervals(aContinuity);
 
         if (aNbInter[0] * aNbInter[1] > 100)
         {
-            aContinuity = GeomAbs_C1;
+            aContinuity = global::Kerf.Geometry.Continuity.C1;
             aNbInter[0] = C1.NbIntervals(aContinuity);
             aNbInter[1] = C2.NbIntervals(aContinuity);
         }
@@ -122,8 +127,8 @@ public class Extrema_ECC2d
         Span<double> anL = stackalloc double[2];
         int indmax = -1, indmin = -1;
         const double mult = 20.0;
-        if (!(Precision.IsInfinite(C1.FirstParameter()) || Precision.IsInfinite(C1.LastParameter())
-              || Precision.IsInfinite(C2.FirstParameter()) || Precision.IsInfinite(C2.LastParameter())))
+        if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(C1.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(C1.LastParameter())
+              || global::Kerf.Engine.Foundation.Precision.IsInfinite(C2.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(C2.LastParameter())))
         {
             anL[0] = GCPnts_AbscissaPoint.Length(C1);
             anL[1] = GCPnts_AbscissaPoint.Length(C2);
@@ -208,7 +213,7 @@ public class Extrema_ECC2d
             aLC = aMaxLC;
             isConstLockedFlag = true;
         }
-        if (C1.GetType() == GeomAbs_Line)
+        if (C1.GetType() == Line)
         {
             aMaxDer = 1.0 / C2.Resolution(1.0);
             if (aLC > aMaxDer)
@@ -217,7 +222,7 @@ public class Extrema_ECC2d
                 aLC = aMaxDer;
             }
         }
-        if (C2.GetType() == GeomAbs_Line)
+        if (C2.GetType() == Line)
         {
             aMaxDer = 1.0 / C1.Resolution(1.0);
             if (aLC > aMaxDer)
@@ -263,9 +268,9 @@ public class Extrema_ECC2d
                 isConstLockedFlag = true;
             }
         }
-        math_GlobOptMin aFinder = new(aFunc, myLowBorder, myUppBorder, aLC);
+        GlobOptMin aFinder = new(aFunc, myLowBorder, myUppBorder, aLC);
         aFinder.SetLipConstState(isConstLockedFlag);
-        aFinder.SetContinuity(aContinuity == GeomAbs_C2 ? 2 : 1);
+        aFinder.SetContinuity(aContinuity == global::Kerf.Geometry.Continuity.C2 ? 2 : 1);
         double aDiscTol = 1.0e-2;
         double aValueTol = 1.0e-2;
         double aSameTol = myCurveMinTol / (aDiscTol);
@@ -274,11 +279,11 @@ public class Extrema_ECC2d
 
         double aCellSize = Max(Max(anIntervals1.Last() - anIntervals1.First(),
                                    anIntervals2.Last() - anIntervals2.First())
-                                 * Precision.PConfusion() / (2.0 * M_SQRT2),
-                               Precision.PConfusion());
+                                 * global::Kerf.Engine.Foundation.Precision.PConfusion() / (2.0 * M_SQRT2),
+                               global::Kerf.Engine.Foundation.Precision.PConfusion());
         Extrema_GGenExtCC_PointsInspector anInspector = new(aCellSize);
-        NCollection_CellFilter<Extrema_GGenExtCC_PointsInspector, gp_XY, gp_XY> aFilter = new(aCellSize);
-        NCollection_DynamicArray<gp_XY> aPnts = new();
+        CellFilter<Extrema_GGenExtCC_PointsInspector, Xy, Xy> aFilter = new(aCellSize);
+        NCollection_DynamicArray<Xy> aPnts = new();
 
         int i, j, k;
         math_Vector aFirstBorderInterval = new(1, 2);
@@ -318,13 +323,13 @@ public class Extrema_ECC2d
                 }
 
                 math_Vector sol = new(1, 2);
-                for (k = 1; k <= aFinder.NbExtrema(); k++)
+                for (k = 1; k <= aFinder.ExtremaCount; k++)
                 {
                     aFinder.Points(k, sol);
-                    gp_XY aPnt2d = new(sol[1], sol[2]);
+                    Xy aPnt2d = new(sol[1], sol[2]);
 
-                    gp_XY aXYmin = Extrema_GGenExtCC_PointsInspector.Shift(aPnt2d, -aCellSize);
-                    gp_XY aXYmax = Extrema_GGenExtCC_PointsInspector.Shift(aPnt2d, aCellSize);
+                    Xy aXYmin = Extrema_GGenExtCC_PointsInspector.Shift(aPnt2d, -aCellSize);
+                    Xy aXYmax = Extrema_GGenExtCC_PointsInspector.Shift(aPnt2d, aCellSize);
 
                     anInspector.ClearFind();
                     anInspector.SetCurrent(aPnt2d);
@@ -332,7 +337,7 @@ public class Extrema_ECC2d
                     if (!anInspector.isFind())
                     {
                         aFilter.Add(aPnt2d, aPnt2d);
-                        aPnts.Append(new gp_XY(sol[1], sol[2]));
+                        aPnts.Append(new Xy(sol[1], sol[2]));
                     }
                 }
             }
@@ -349,7 +354,7 @@ public class Extrema_ECC2d
 
         if (aNbSol == 1)
         {
-            gp_XY aSol = aPnts.First();
+            Xy aSol = aPnts.First();
             myPoints1.Append(aSol.X());
             myPoints2.Append(aSol.Y());
             return;
@@ -369,14 +374,14 @@ public class Extrema_ECC2d
 
         for (int anIdx = 0; anIdx < aNbSol - 1; anIdx++)
         {
-            gp_XY aCurrent = aPnts[anIdx];
-            gp_XY aNext = aPnts[anIdx + 1];
+            Xy aCurrent = aPnts[anIdx];
+            Xy aNext = aPnts[anIdx + 1];
 
             aVec[1] = (aCurrent.X() + aNext.X()) * 0.5;
             aVec[2] = (aCurrent.Y() + aNext.Y()) * 0.5;
 
             aFunc.Value(aVec, out aVal);
-            if (Math.Abs(aVal - aF) < Precision.Confusion())
+            if (Math.Abs(aVal - aF) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (bSaveSolution)
                 {
@@ -429,13 +434,13 @@ public class Extrema_ECC2d
             {
                 double aDist1 = Extrema_GGenExtCC_ProjPOnC(C1.Value(aT1[iT]), anExtPC2);
                 double aDist2 = Extrema_GGenExtCC_ProjPOnC(C2.Value(aT2[iT]), anExtPC1);
-                isParallel = (Math.Abs(Min(aDist1, aDist2) - aF * aF) < Precision.Confusion());
+                isParallel = (Math.Abs(Min(aDist1, aDist2) - aF * aF) < global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
         if (isParallel)
         {
-            gp_XY aSol = aPnts.First();
+            Xy aSol = aPnts.First();
             myPoints1.Append(aSol.X());
             myPoints2.Append(aSol.Y());
             myParallel = true;
@@ -445,7 +450,7 @@ public class Extrema_ECC2d
             NCollection_List<int>.Iterator aItSol = new(aSolutions);
             for (; aItSol.More(); aItSol.Next())
             {
-                gp_XY aSol = aPnts[aItSol.Value()];
+                Xy aSol = aPnts[aItSol.Value()];
                 myPoints1.Append(aSol.X());
                 myPoints2.Append(aSol.Y());
             }
@@ -456,34 +461,34 @@ public class Extrema_ECC2d
     public bool IsDone() => myDone;
 
     /// <summary>True if the curves are parallel (the minimum is reached along a range; one solution is kept).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IsParallel()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myParallel;
     }
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbExt()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myPoints1.Length();
     }
 
     /// <summary>The Nth square distance.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public double SquareDistance(int theN = 1)
     {
         if (theN < 1 || theN > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return Extrema_Curve2dTool.Value(myC[0]!, myPoints1[theN])
@@ -491,12 +496,12 @@ public class Extrema_ECC2d
     }
 
     /// <summary>The points of the Nth extremum, on the first and on the second curve.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public void Points(int theN, out Extrema_POnCurv2d theP1, out Extrema_POnCurv2d theP2)
     {
         if (theN < 1 || theN > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         theP1 = new Extrema_POnCurv2d(myPoints1[theN], Extrema_Curve2dTool.Value(myC[0]!, myPoints1[theN]));

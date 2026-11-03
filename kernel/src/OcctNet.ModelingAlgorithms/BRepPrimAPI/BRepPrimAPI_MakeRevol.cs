@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -39,7 +42,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     /// The revolution of <paramref name="S"/> around <paramref name="A"/> by the angle <paramref name="D"/> (radians,
     /// reduced to [0, 2π]). With <paramref name="Copy"/>, S's sub-shapes are copied.
     /// </summary>
-    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in gp_Ax1 A, double D, bool Copy = false)
+    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in Axis3D A, double D, bool Copy = false)
     {
         TopoDS_Shape aS = GeneratingShapeForWrite(S);
         myRevol = new BRepSweep_Revol(check(aS), A, D, Copy);
@@ -56,7 +59,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>The whole revolution of <paramref name="S"/> around <paramref name="A"/>.</summary>
-    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in gp_Ax1 A, bool Copy = false)
+    public BRepPrimAPI_MakeRevol(in TopoDS_Shape S, in Axis3D A, bool Copy = false)
     {
         TopoDS_Shape aS = GeneratingShapeForWrite(S);
         myRevol = new BRepSweep_Revol(check(aS), A, 2.0 * Math.PI, Copy);
@@ -76,7 +79,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     internal BRepSweep_Revol Revol() => myRevol;
 
     /// <summary>Builds the resulting shape (redefined from MakeShape).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         if (myIsBuild)
         {
@@ -219,16 +222,16 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
 
     // used in CheckValidity to find out is there
     // intersection between curve and axe of revolution
-    private static bool IsIntersect(Adaptor3d_Curve theC, in gp_Ax1 theAxe)
+    private static bool IsIntersect(Adaptor3d_Curve theC, in Axis3D theAxe)
     {
-        var anAxis = new gp_Lin(theAxe);
+        var anAxis = new Line3D(theAxe);
         // Quick test for circle
-        if (theC.GetType() == GeomAbs_Circle)
+        if (theC.GetType() == Circle)
         {
-            gp_Circ aCirc = theC.Circle();
-            gp_Pnt aCentr = aCirc.Location();
+            Circle3D aCirc = theC.Circle();
+            Point3D aCentr = aCirc.Location();
             double anR2 = aCirc.Radius();
-            anR2 -= Precision.Confusion();
+            anR2 -= global::Kerf.Engine.Foundation.Precision.Confusion();
             anR2 *= anR2;
             if (anAxis.SquareDistance(aCentr) > anR2)
             {
@@ -237,7 +240,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
         }
         var aL = new Geom_Line(anAxis);
         var aLin = new GeomAdaptor_Curve(aL);
-        double aParTol = theC.Resolution(Precision.Confusion());
+        double aParTol = theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion());
         double aParF = theC.FirstParameter() + aParTol, aParL = theC.LastParameter() - aParTol;
 
         var anExtr = new Extrema_ExtCC(theC, aLin);
@@ -246,7 +249,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
         {
             for (int i = 1; i <= anExtr.NbExt(); i++)
             {
-                if (anExtr.SquareDistance(i) > Precision.SquareConfusion())
+                if (anExtr.SquareDistance(i) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     continue;
                 }
@@ -261,7 +264,7 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>False if an edge of <paramref name="theShape"/> crosses the axis (edges lying on it are valid).</summary>
-    protected bool CheckValidity(in TopoDS_Shape theShape, in gp_Ax1 theA)
+    protected bool CheckValidity(in TopoDS_Shape theShape, in Axis3D theA)
     {
         var anExp = new TopExp_Explorer(theShape, TopAbs_EDGE);
         bool IsValid = true;
@@ -273,8 +276,8 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
                 continue;
             }
 
-            Geom_Curve C = BRep_Tool.Curve(anE, out TopLoc_Location L, out double First, out double Last)!;
-            gp_Trsf Tr = L.Transformation();
+            Geom_Curve C = BRep_Tool.Curve(anE, out Placement L, out double First, out double Last)!;
+            Transform3D Tr = L.Transformation();
             C = (Geom_Curve)C.Copy();
             C = new Geom_TrimmedCurve(C, First, Last);
             C.Transform(Tr);
@@ -286,13 +289,13 @@ public class BRepPrimAPI_MakeRevol : BRepPrimAPI_MakeSweep
             // This code is taken directly from GeomAdaptor_SurfaceOfRevolution
             int Ratio = 1;
             double Dist;
-            gp_Pnt PP;
+            Point3D PP;
             do
             {
                 PP = HC.Value(First + (Last - First) / Ratio);
-                Dist = new gp_Lin(theA).Distance(PP);
+                Dist = new Line3D(theA).Distance(PP);
                 Ratio++;
-            } while (Dist < Precision.Confusion() && Ratio < 100);
+            } while (Dist < global::Kerf.Engine.Foundation.Precision.Confusion() && Ratio < 100);
             //
             if (Ratio >= 100) // edge coincides with axes
             {

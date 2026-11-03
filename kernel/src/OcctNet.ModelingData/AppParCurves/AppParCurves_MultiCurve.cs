@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -69,7 +71,7 @@ public class AppParCurves_MultiCurve
     {
         if ((Index <= 0) || (Index > tabPoint!.Length()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         tabPoint.SetValue(Index, MPoint);
     }
@@ -105,17 +107,17 @@ public class AppParCurves_MultiCurve
         int nb = tabPoint.Value(Lo).NbPoints() + tabPoint.Value(Lo).NbPoints2d();
         if ((CuIndex <= 0) || (CuIndex > nb))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabPoint.Value(Lo).Dimension(CuIndex);
     }
 
     /// <summary>Fills <paramref name="TabPnt"/> (from 1) with the poles of the 3d curve <paramref name="CuIndex"/>.</summary>
-    public void Curve(int CuIndex, NCollection_Array1<gp_Pnt> TabPnt)
+    public void Curve(int CuIndex, NCollection_Array1<Point3D> TabPnt)
     {
         if ((CuIndex <= 0))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         for (int i = 1; i <= tabPoint!.Length(); i++)
         {
@@ -124,11 +126,11 @@ public class AppParCurves_MultiCurve
     }
 
     /// <summary>Fills <paramref name="TabPnt2d"/> (from 1) with the poles of the 2d curve <paramref name="CuIndex"/>.</summary>
-    public void Curve(int CuIndex, NCollection_Array1<gp_Pnt2d> TabPnt2d)
+    public void Curve(int CuIndex, NCollection_Array1<Point2D> TabPnt2d)
     {
         if ((CuIndex <= 0))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         for (int i = 1; i <= tabPoint!.Length(); i++)
         {
@@ -141,29 +143,29 @@ public class AppParCurves_MultiCurve
     {
         if ((Index <= 0) || (Index > tabPoint!.Length()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabPoint.Value(Index);
     }
 
     /// <summary>The pole <paramref name="Nieme"/> of the 3d curve <paramref name="CuIndex"/>.</summary>
-    public gp_Pnt Pole(int CuIndex, int Nieme)
+    public Point3D Pole(int CuIndex, int Nieme)
     {
         // OCCT: && where || is meant, so the check only fires when both indexes are non-positive
         if ((CuIndex <= 0) && Nieme <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabPoint!.Value(Nieme).Point(CuIndex);
     }
 
     /// <summary>The pole <paramref name="Nieme"/> of the 2d curve <paramref name="CuIndex"/>.</summary>
-    public gp_Pnt2d Pole2d(int CuIndex, int Nieme)
+    public Point2D Pole2d(int CuIndex, int Nieme)
     {
         // OCCT: && where || is meant (see Pole)
         if ((CuIndex <= 0) && Nieme <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return tabPoint!.Value(Nieme).Point2d(CuIndex);
     }
@@ -176,7 +178,7 @@ public class AppParCurves_MultiCurve
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         for (int i = 1; i <= tabPoint!.Length(); i++)
         {
@@ -191,7 +193,7 @@ public class AppParCurves_MultiCurve
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         for (int i = 1; i <= tabPoint!.Length(); i++)
         {
@@ -200,93 +202,93 @@ public class AppParCurves_MultiCurve
     }
 
     /// <summary>The point at <paramref name="U"/> of the 3d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void Value(int CuIndex, double U, out gp_Pnt Pt)
+    public virtual void Value(int CuIndex, double U, out Point3D Pt)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPoles = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPoles[i] = tabPoint.Value(i).Point(CuIndex);
         }
-        BSplCLib.D0(U, TabPoles, BSplCLib.NoWeights(), out Pt);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(U, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt);
     }
 
     /// <summary>The point at <paramref name="U"/> of the 2d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void Value(int CuIndex, double U, out gp_Pnt2d Pt)
+    public virtual void Value(int CuIndex, double U, out Point2D Pt)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPole = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPole = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPole[i] = tabPoint.Value(i).Point2d(CuIndex);
         }
-        BSplCLib.D0(U, TabPole, BSplCLib.NoWeights(), out Pt);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(U, TabPole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt);
     }
 
     /// <summary>The point and first derivative at <paramref name="U"/> of the 3d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void D1(int CuIndex, double U, out gp_Pnt Pt, out gp_Vec V1)
+    public virtual void D1(int CuIndex, double U, out Point3D Pt, out Vector3D V1)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPole = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPole = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPole[i] = tabPoint.Value(i).Point(CuIndex);
         }
-        BSplCLib.D1(U, TabPole, BSplCLib.NoWeights(), out Pt, out V1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(U, TabPole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt, out V1);
     }
 
     /// <summary>The point and two derivatives at <paramref name="U"/> of the 3d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void D2(int CuIndex, double U, out gp_Pnt Pt, out gp_Vec V1, out gp_Vec V2)
+    public virtual void D2(int CuIndex, double U, out Point3D Pt, out Vector3D V1, out Vector3D V2)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPole = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPole = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPole[i] = tabPoint.Value(i).Point(CuIndex);
         }
-        BSplCLib.D2(U, TabPole, BSplCLib.NoWeights(), out Pt, out V1, out V2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(U, TabPole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt, out V1, out V2);
     }
 
     /// <summary>The point and first derivative at <paramref name="U"/> of the 2d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void D1(int CuIndex, double U, out gp_Pnt2d Pt, out gp_Vec2d V1)
+    public virtual void D1(int CuIndex, double U, out Point2D Pt, out Vector2D V1)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPole = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPole = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPole[i] = tabPoint.Value(i).Point2d(CuIndex);
         }
-        BSplCLib.D1(U, TabPole, BSplCLib.NoWeights(), out Pt, out V1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(U, TabPole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt, out V1);
     }
 
     /// <summary>The point and two derivatives at <paramref name="U"/> of the 2d Bezier curve <paramref name="CuIndex"/>.</summary>
-    public virtual void D2(int CuIndex, double U, out gp_Pnt2d Pt, out gp_Vec2d V1, out gp_Vec2d V2)
+    public virtual void D2(int CuIndex, double U, out Point2D Pt, out Vector2D V1, out Vector2D V2)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPole = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPole = new(1, tabPoint!.Length());
         for (int i = 1; i <= tabPoint.Length(); i++)
         {
             TabPole[i] = tabPoint.Value(i).Point2d(CuIndex);
         }
-        BSplCLib.D2(U, TabPole, BSplCLib.NoWeights(), out Pt, out V1, out V2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(U, TabPole, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt, out V1, out V2);
     }
 
     /// <summary>Writes the number of curves and their degree (OCCT's pole listing is commented out).</summary>

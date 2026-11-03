@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -28,11 +32,11 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
     private readonly List<int> mySmallTrianglesTriangles = [];
 
     /// <summary>The area of the triangle of three 3D points.</summary>
-    private static double ComputeArea(in gp_XYZ theP1, in gp_XYZ theP2, in gp_XYZ theP3)
+    private static double ComputeArea(in Xyz theP1, in Xyz theP2, in Xyz theP3)
         => 0.5 * theP3.Subtracted(theP1).Crossed(theP2.Subtracted(theP1)).Modulus();
 
     /// <summary>The area of the triangle of three 2D points.</summary>
-    private static double ComputeArea(in gp_XY theP1, in gp_XY theP2, in gp_XY theP3)
+    private static double ComputeArea(in Xy theP1, in Xy theP2, in Xy theP3)
         => 0.5 * Math.Abs(theP3.Subtracted(theP1).Crossed(theP2.Subtracted(theP1)));
 
     /// <summary>Performs the checks; "face N has no triangulation" lines go to <paramref name="di"/>.</summary>
@@ -55,8 +59,8 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
 
             // get polygon on first face
             TopoDS_Face aFace1 = TopoDS.Face(aFaces.First());
-            Poly_Triangulation? aT1 = BRep_Tool.Triangulation(aFace1, out TopLoc_Location aLoc1);
-            Poly_PolygonOnTriangulation? aPoly1 = BRep_Tool.PolygonOnTriangulation(aEdge, aT1, aLoc1);
+            Triangulation? aT1 = BRep_Tool.Triangulation(aFace1, out Placement aLoc1);
+            PolygonOnTriangulation? aPoly1 = BRep_Tool.PolygonOnTriangulation(aEdge, aT1, aLoc1);
             if (aPoly1 is null || aT1 is null)
             {
                 continue;
@@ -70,8 +74,8 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
             for (; it.More(); it.Next())
             {
                 TopoDS_Face aFace2 = TopoDS.Face(it.Value());
-                Poly_Triangulation? aT2 = BRep_Tool.Triangulation(aFace2, out TopLoc_Location aLoc2);
-                Poly_PolygonOnTriangulation? aPoly2 = BRep_Tool.PolygonOnTriangulation(aEdge, aT2, aLoc2);
+                Triangulation? aT2 = BRep_Tool.Triangulation(aFace2, out Placement aLoc2);
+                PolygonOnTriangulation? aPoly2 = BRep_Tool.PolygonOnTriangulation(aEdge, aT2, aLoc2);
                 if (aPoly2 is null || aT2 is null)
                 {
                     continue;
@@ -93,12 +97,12 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
                 int iF2 = aMapF.FindIndex(aFace2);
                 int i1 = aNodes1.Lower();
                 int i2 = aNodes2.Lower();
-                gp_Trsf aTrsf1 = aFace1.Location().Transformation();
-                gp_Trsf aTrsf2 = aFace2.Location().Transformation();
+                Transform3D aTrsf1 = aFace1.Location().Transformation();
+                Transform3D aTrsf2 = aFace2.Location().Transformation();
                 for (; i1 <= aNodes1.Upper(); i1++, i2++)
                 {
-                    gp_Pnt aP1 = aT1.Node(aNodes1[i1]).Transformed(aTrsf1);
-                    gp_Pnt aP2 = aT2.Node(aNodes2[i2]).Transformed(aTrsf2);
+                    Point3D aP1 = aT1.Node(aNodes1[i1]).Transformed(aTrsf1);
+                    Point3D aP2 = aT2.Node(aNodes2[i2]).Transformed(aTrsf2);
                     double aSqDist = aP1.SquareDistance(aP2);
                     if (aSqDist > aSqDefle)
                     {
@@ -117,20 +121,20 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
         for (int iF = 1; iF <= aMapF.Extent(); iF++)
         {
             TopoDS_Face aFace = TopoDS.Face(aMapF.FindKey(iF));
-            Poly_Triangulation? aT = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+            Triangulation? aT = BRep_Tool.Triangulation(aFace, out Placement aLoc);
             if (aT is null)
             {
                 di.Append("face ").Append(iF).Append(" has no triangulation\n");
                 continue;
             }
 
-            gp_Trsf aTrsf = aLoc.Transformation();
+            Transform3D aTrsf = aLoc.Transformation();
 
             // remember boundary nodes
             var aMapBndNodes = new HashSet<int>();
             for (var ex = new TopExp_Explorer(aFace, TopAbs_ShapeEnum.TopAbs_EDGE); ex.More(); ex.Next())
             {
-                Poly_PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(ex.Current()), aT, aLoc);
+                PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(ex.Current()), aT, aLoc);
                 if (aPoly is null)
                 {
                     continue;
@@ -146,8 +150,8 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
             var aUsedNodes = new HashSet<int>();
 
             // check of free links and nodes
-            var aConn = new Poly_Connect(aT);
-            int nbTri = aT.NbTriangles();
+            var aConn = new Connect(aT);
+            int nbTri = aT.TriangleCount;
             int[] n = new int[3];
             int[] t = new int[3];
             for (int i = 1; i <= nbTri; i++)
@@ -158,20 +162,20 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
                 aUsedNodes.Add(n[1]);
                 aUsedNodes.Add(n[2]);
 
-                gp_Pnt aPts0 = aT.Node(n[0]).Transformed(aTrsf);
-                gp_Pnt aPts1 = aT.Node(n[1]).Transformed(aTrsf);
-                gp_Pnt aPts2 = aT.Node(n[2]).Transformed(aTrsf);
+                Point3D aPts0 = aT.Node(n[0]).Transformed(aTrsf);
+                Point3D aPts1 = aT.Node(n[1]).Transformed(aTrsf);
+                Point3D aPts2 = aT.Node(n[2]).Transformed(aTrsf);
 
                 double anArea = ComputeArea(aPts0.XYZ(), aPts1.XYZ(), aPts2.XYZ());
-                if (anArea < Precision.SquareConfusion())
+                if (anArea < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     mySmallTrianglesFaces.Add(iF);
                     mySmallTrianglesTriangles.Add(i);
                 }
-                else if (aT.HasUVNodes())
+                else if (aT.HasUVNodes)
                 {
                     anArea = ComputeArea(aT.UVNode(n[0]).XY(), aT.UVNode(n[1]).XY(), aT.UVNode(n[2]).XY());
-                    if (anArea < Precision.SquarePConfusion())
+                    if (anArea < global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                     {
                         mySmallTrianglesFaces.Add(iF);
                         mySmallTrianglesTriangles.Add(i);
@@ -207,7 +211,7 @@ internal sealed class MeshTestCheckTopology(TopoDS_Shape theShape)
             }
 
             // check of free nodes
-            int aNbNodes = aT.NbNodes();
+            int aNbNodes = aT.NodeCount;
             for (int k = 1; k <= aNbNodes; k++)
             {
                 if (!aUsedNodes.Contains(k))

@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +25,7 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
 {
     private double myu1;
     private double myu2;
-    private gp_Pnt2d myp;
+    private Point2D myp;
     private bool myimplicit;
 
     /// <summary>An intersection point between two parametric 2D curves.</summary>
@@ -27,7 +33,7 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
     {
         myu1 = U1;
         myu2 = U2;
-        myp = new gp_Pnt2d(X, Y);
+        myp = new Point2D(X, Y);
         myimplicit = false;
     }
 
@@ -36,7 +42,7 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
     {
         myu1 = U1;
         myu2 = RealLast();
-        myp = new gp_Pnt2d(X, Y);
+        myp = new Point2D(X, Y);
         myimplicit = true;
     }
 
@@ -44,7 +50,7 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
     {
         myu1 = RealLast();
         myu2 = RealLast();
-        myp = new gp_Pnt2d(RealLast(), RealLast());
+        myp = new Point2D(RealLast(), RealLast());
         myimplicit = false;
     }
 
@@ -71,7 +77,7 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
     // Queries
 
     /// <summary>The geometric point.</summary>
-    public readonly gp_Pnt2d Value() => myp;
+    public readonly Point2D Value() => myp;
 
     /// <summary>True if the second curve is implicit.</summary>
     public readonly bool SecondIsImplicit() => myimplicit;
@@ -80,12 +86,12 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
     public readonly double ParamOnFirst() => myu1;
 
     /// <summary>The parameter on the second element.</summary>
-    /// <exception cref="Standard_DomainError">The second element is an implicit curve.</exception>
+    /// <exception cref="DomainErrorException">The second element is an implicit curve.</exception>
     public readonly double ParamOnSecond()
     {
         if (myimplicit)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return myu2;
@@ -104,6 +110,6 @@ public partial struct IntAna2d_IntPoint : IEquatable<IntAna2d_IntPoint>
 
     public override readonly string ToString()
         => myimplicit
-               ? gp.Format("IntAna2d_IntPoint", myp.X(), myp.Y(), myu1)
-               : gp.Format("IntAna2d_IntPoint", myp.X(), myp.Y(), myu1, myu2);
+               ? Constants.Format("IntAna2d_IntPoint", myp.X(), myp.Y(), myu1)
+               : Constants.Format("IntAna2d_IntPoint", myp.X(), myp.Y(), myu1, myu2);
 }

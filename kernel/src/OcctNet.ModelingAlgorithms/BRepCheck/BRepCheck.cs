@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepCheck_Status;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -181,12 +182,12 @@ public static class BRepCheck
     {
         double aXEmax = RealEpsilon();
         //
-        GeomAbs_CurveType aCT = aAC3D.GetType();
-        if (aCT == GeomAbs_Ellipse)
+        CurveKind aCT = aAC3D.GetType();
+        if (aCT == Ellipse)
         {
             Span<double> aX = stackalloc double[5];
             //
-            gp_Elips aEL3D = aAC3D.Ellipse();
+            Ellipse3D aEL3D = aAC3D.Ellipse();
             aEL3D.Location().Coord(out aX[0], out aX[1], out aX[2]);
             aX[3] = aEL3D.MajorRadius();
             aX[4] = aEL3D.MinorRadius();
@@ -218,10 +219,10 @@ public static class BRepCheck
     {
         double aXEmax = RealEpsilon();
         //
-        GeomAbs_SurfaceType aST = aAHSurf.GetType();
-        if (aST == GeomAbs_Cone)
+        SurfaceKind aST = aAHSurf.GetType();
+        if (aST == SurfaceKind.Cone)
         {
-            gp_Cone aCone = aAHSurf.Cone();
+            Cone aCone = aAHSurf.Cone();
             Span<double> aX = stackalloc double[4];
             //
             aCone.Location().Coord(out aX[0], out aX[1], out aX[2]);

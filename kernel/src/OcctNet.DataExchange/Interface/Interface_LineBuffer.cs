@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,12 +27,12 @@ public class Interface_LineBuffer
     }
 
     /// <summary>Changes the maximum allowed size of the buffer; zero sets it to the initial size.</summary>
-    /// <exception cref="Standard_OutOfRange">More than the initial size.</exception>
+    /// <exception cref="OutOfRangeException">More than the initial size.</exception>
     public void SetMax(int theMax)
     {
         if (theMax > myLine.Length())
         {
-            throw new Standard_OutOfRange("Interface LineBuffer : SetMax");
+            throw new OutOfRangeException("Interface LineBuffer : SetMax");
         }
         if (theMax <= 0)
         {
@@ -43,7 +45,7 @@ public class Interface_LineBuffer
     }
 
     /// <summary>Sets an initial reservation for blank characters (counted in the size of the current line).</summary>
-    /// <exception cref="Standard_OutOfRange">Not less than the maximum size.</exception>
+    /// <exception cref="OutOfRangeException">Not less than the maximum size.</exception>
     public void SetInitial(int theInitial)
     {
         if (myFriz > 0)
@@ -52,7 +54,7 @@ public class Interface_LineBuffer
         }
         if (theInitial >= myMax)
         {
-            throw new Standard_OutOfRange("Interface LineBuffer : SetInitial");
+            throw new OutOfRangeException("Interface LineBuffer : SetInitial");
         }
         if (theInitial <= 0)
         {

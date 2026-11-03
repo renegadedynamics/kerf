@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added from StepVisual Rev2 to Rev4
 /// </summary>
-public class StepVisual_PresentedItemRepresentation : Standard_Transient
+public class StepVisual_PresentedItemRepresentation : Transient
 {
     private StepVisual_PresentationRepresentationSelect thePresentation = new StepVisual_PresentationRepresentationSelect();
     private StepVisual_PresentedItem theItem;

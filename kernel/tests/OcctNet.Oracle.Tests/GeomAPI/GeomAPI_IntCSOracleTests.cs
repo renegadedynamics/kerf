@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -21,7 +22,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
 
     private static (double, double) Range(Oracle theO, double theFirst, double theLast, double theHalfRange)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             return (-theHalfRange, theHalfRange);
         }
@@ -48,11 +49,11 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
             (double aV1, double aV2) = Range(theO, v1, v2, 10);
 
             // Move the curve so that it meets the surface, now and then near it only
-            gp_Pnt aOnC = aPC.Value(theO.Real(aF, aL));
-            gp_Pnt aOnS = aPS.Value(theO.Real(aU1, aU2), theO.Real(aV1, aV2));
+            Point3D aOnC = aPC.Value(theO.Real(aF, aL));
+            Point3D aOnS = aPS.Value(theO.Real(aU1, aU2), theO.Real(aV1, aV2));
             double aGap = theO.Int(0, 3) == 0 ? theO.Real(0.0, 1.0) : 0.0;
-            gp_Vec aV = new(aOnC, aOnS);
-            aV += new gp_Vec(aGap * theO.Real(-1, 1), aGap * theO.Real(-1, 1), aGap * theO.Real(-1, 1));
+            Vector3D aV = new(aOnC, aOnS);
+            aV += new Vector3D(aGap * theO.Real(-1, 1), aGap * theO.Real(-1, 1), aGap * theO.Real(-1, 1));
             using (N.gp_Vec aNV = Oracle.ToNative(aV))
             {
                 aNC.Translate(aNV);
@@ -167,13 +168,13 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                         (double aU1, double aU2) = Range(anOracle, u1, u2, 10);
                         (double aV1, double aV2) = Range(anOracle, v1, v2, 10);
                         double aU = anOracle.Real(aU1, aU2), aV = anOracle.Real(aV1, aV2);
-                        aPS.D1(aU, aV, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V);
-                        gp_Vec aT = anOracle.Real(-1, 1) * aD1U + anOracle.Real(-1, 1) * aD1V;
+                        aPS.D1(aU, aV, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
+                        Vector3D aT = anOracle.Real(-1, 1) * aD1U + anOracle.Real(-1, 1) * aD1V;
                         if (aT.Magnitude() < 1e-6)
                         {
                             continue;
                         }
-                        gp_Dir aDir = new(aT);
+                        Direction3D aDir = new(aT);
                         using N.Geom_Line aNL = new(Oracle.ToNative(aP), Oracle.ToNative(aDir));
                         Geom_Line aPL = new(aP, aDir);
                         string aW = $"tangent line / {SurfaceKinds[sk]} #{c}";

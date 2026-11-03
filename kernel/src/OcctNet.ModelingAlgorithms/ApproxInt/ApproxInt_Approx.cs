@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Approx_ParametrizationType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -20,15 +21,15 @@ namespace Occt;
 /// <typeparam name="ThePSurface">The surface.</typeparam>
 public interface IApproxInt_SurfaceTool<ThePSurface> : IIntImp_ZerCSParPSurfaceTool<ThePSurface>
 {
-    static abstract GeomAbs_SurfaceType GetType(in ThePSurface S);
+    static abstract SurfaceKind GetType(in ThePSurface S);
 
-    static abstract gp_Pln Plane(in ThePSurface S);
+    static abstract Plane3D Plane(in ThePSurface S);
 
-    static abstract gp_Cylinder Cylinder(in ThePSurface S);
+    static abstract Cylinder Cylinder(in ThePSurface S);
 
-    static abstract gp_Sphere Sphere(in ThePSurface S);
+    static abstract Sphere Sphere(in ThePSurface S);
 
-    static abstract gp_Cone Cone(in ThePSurface S);
+    static abstract Cone Cone(in ThePSurface S);
 
     static abstract bool IsUPeriodic(in ThePSurface S);
 
@@ -122,7 +123,7 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         double aXmin = RealLast(), aYmin = RealLast(), aZmin = RealLast();
         for (int i = 1; i <= aNbPnts; i++)
         {
-            gp_Pnt P = theline.Point(i).Value();
+            Point3D P = theline.Point(i).Value();
             aXmin = Min(P.X(), aXmin);
             aYmin = Min(P.Y(), aYmin);
             aZmin = Min(P.Z(), aZmin);
@@ -186,10 +187,10 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
             TheParameters[firstP] = 0.0;
             dist = 0.0;
-            NCollection_Array1<gp_Pnt> tabP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt> tabPP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynbP2d);
-            NCollection_Array1<gp_Pnt2d> tabPP2d = new(1, mynbP2d);
+            NCollection_Array1<Point3D> tabP = new(1, mynbP3d);
+            NCollection_Array1<Point3D> tabPP = new(1, mynbP3d);
+            NCollection_Array1<Point2D> tabP2d = new(1, mynbP2d);
+            NCollection_Array1<Point2D> tabPP2d = new(1, mynbP2d);
 
             for (i = firstP + 1; i <= lastP; i++)
             {
@@ -221,12 +222,12 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                 dist = 0;
                 for (j = 1; j <= nbP3d; j++)
                 {
-                    gp_Pnt aP1 = tabP[j], aP2 = tabPP[j];
+                    Point3D aP1 = tabP[j], aP2 = tabPP[j];
                     dist += aP2.SquareDistance(aP1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
-                    gp_Pnt2d aP12d = tabP2d[j], aP22d = tabPP2d[j];
+                    Point2D aP12d = tabP2d[j], aP22d = tabPP2d[j];
 
                     dist += aP22d.SquareDistance(aP12d);
                 }
@@ -332,12 +333,12 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     {
         myTolReached3d = myTolReached2d = 0.0;
 
-        GeomAbs_SurfaceType typeS1 = ThePSurfaceTool.GetType(Surf1);
-        GeomAbs_SurfaceType typeS2 = ThePSurfaceTool.GetType(Surf2);
+        SurfaceKind typeS1 = ThePSurfaceTool.GetType(Surf1);
+        SurfaceKind typeS2 = ThePSurfaceTool.GetType(Surf2);
 
-        bool isQuadric = ((typeS1 == GeomAbs_Plane) || (typeS1 == GeomAbs_Cylinder) || (typeS1 == GeomAbs_Sphere)
-                          || (typeS1 == GeomAbs_Cone) || (typeS2 == GeomAbs_Plane) || (typeS2 == GeomAbs_Cylinder)
-                          || (typeS2 == GeomAbs_Sphere) || (typeS2 == GeomAbs_Cone));
+        bool isQuadric = ((typeS1 == Plane) || (typeS1 == SurfaceKind.Cylinder) || (typeS1 == SurfaceKind.Sphere)
+                          || (typeS1 == SurfaceKind.Cone) || (typeS2 == Plane) || (typeS2 == SurfaceKind.Cylinder)
+                          || (typeS2 == SurfaceKind.Sphere) || (typeS2 == SurfaceKind.Cone));
 
         if (isQuadric)
         {
@@ -345,19 +346,19 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             bool SecondIsImplicit = false;
             switch (typeS1)
             {
-                case GeomAbs_Plane:
+                case Plane:
                     Quad.SetValue(ThePSurfaceTool.Plane(Surf1));
                     break;
 
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                     Quad.SetValue(ThePSurfaceTool.Cylinder(Surf1));
                     break;
 
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                     Quad.SetValue(ThePSurfaceTool.Sphere(Surf1));
                     break;
 
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                     Quad.SetValue(ThePSurfaceTool.Cone(Surf1));
                     break;
 
@@ -366,19 +367,19 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                     SecondIsImplicit = true;
                     switch (typeS2)
                     {
-                        case GeomAbs_Plane:
+                        case Plane:
                             Quad.SetValue(ThePSurfaceTool.Plane(Surf2));
                             break;
 
-                        case GeomAbs_Cylinder:
+                        case SurfaceKind.Cylinder:
                             Quad.SetValue(ThePSurfaceTool.Cylinder(Surf2));
                             break;
 
-                        case GeomAbs_Sphere:
+                        case SurfaceKind.Sphere:
                             Quad.SetValue(ThePSurfaceTool.Sphere(Surf2));
                             break;
 
-                        case GeomAbs_Cone:
+                        case SurfaceKind.Cone:
                             Quad.SetValue(ThePSurfaceTool.Cone(Surf2));
                             break;
 
@@ -619,11 +620,11 @@ public class ApproxInt_Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                                                       myData.ApproxU1V1, myData.indicemin, myData.indicemax);
 
         int nbp3d = aTestLine.NbP3d(), nbp2d = aTestLine.NbP2d();
-        NCollection_Array1<gp_Pnt> aTabPnt3d = new(1, Max(1, nbp3d));
-        NCollection_Array1<gp_Pnt2d> aTabPnt2d = new(1, Max(1, nbp2d));
-        NCollection_Array1<gp_Pnt> aPntXYZ = new(myData.indicemin, myData.indicemax);
-        NCollection_Array1<gp_Pnt2d> aPntU1V1 = new(myData.indicemin, myData.indicemax);
-        NCollection_Array1<gp_Pnt2d> aPntU2V2 = new(myData.indicemin, myData.indicemax);
+        NCollection_Array1<Point3D> aTabPnt3d = new(1, Max(1, nbp3d));
+        NCollection_Array1<Point2D> aTabPnt2d = new(1, Max(1, nbp2d));
+        NCollection_Array1<Point3D> aPntXYZ = new(myData.indicemin, myData.indicemax);
+        NCollection_Array1<Point2D> aPntU1V1 = new(myData.indicemin, myData.indicemax);
+        NCollection_Array1<Point2D> aPntU2V2 = new(myData.indicemin, myData.indicemax);
 
         for (int i = myData.indicemin; i <= myData.indicemax; ++i)
         {

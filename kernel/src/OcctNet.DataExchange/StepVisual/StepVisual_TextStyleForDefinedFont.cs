@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_TextStyleForDefinedFont : Standard_Transient
+public class StepVisual_TextStyleForDefinedFont : Transient
 {
     private StepVisual_Colour textColour;
 

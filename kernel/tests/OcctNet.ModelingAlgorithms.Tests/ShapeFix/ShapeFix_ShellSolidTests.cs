@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
@@ -88,16 +89,16 @@ internal static class ShapeFixShapes
         for (int i = 0; i < 5; i++)
         {
             double a = 2.0 * Math.PI * i / 5.0;
-            aV[i] = TestShapes.Vertex(new gp_Pnt(10.0 * Math.Cos(a), 10.0 * Math.Sin(a), (i % 2) * 3.0));
+            aV[i] = TestShapes.Vertex(new Point3D(10.0 * Math.Cos(a), 10.0 * Math.Sin(a), (i % 2) * 3.0));
         }
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
         int[][] aTriangles = [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 0], [4, 0, 1]];
         var aFaces = new List<TopoDS_Shape>();
         foreach (int[] t in aTriangles)
         {
-            gp_Pnt p0 = BRep_Tool.Pnt(aV[t[0]]), p1 = BRep_Tool.Pnt(aV[t[1]]), p2 = BRep_Tool.Pnt(aV[t[2]]);
-            gp_Vec aN = new gp_Vec(p0, p1).Crossed(new gp_Vec(p0, p2));
-            aFaces.Add(TestShapes.PolygonFace(aV, new gp_Dir(aN), anEdges, t));
+            Point3D p0 = BRep_Tool.Pnt(aV[t[0]]), p1 = BRep_Tool.Pnt(aV[t[1]]), p2 = BRep_Tool.Pnt(aV[t[2]]);
+            Vector3D aN = new Vector3D(p0, p1).Crossed(new Vector3D(p0, p2));
+            aFaces.Add(TestShapes.PolygonFace(aV, new Direction3D(aN), anEdges, t));
         }
         return Shell(aFaces);
     }
@@ -111,23 +112,23 @@ internal static class ShapeFixShapes
         var aV = new TopoDS_Vertex[10];
         for (int i = 0; i < 8; i++)
         {
-            aV[i] = TestShapes.Vertex(new gp_Pnt((i & 1) != 0 ? 10 : 0, (i & 2) != 0 ? 10 : 0, (i & 4) != 0 ? 10 : 0));
+            aV[i] = TestShapes.Vertex(new Point3D((i & 1) != 0 ? 10 : 0, (i & 2) != 0 ? 10 : 0, (i & 4) != 0 ? 10 : 0));
         }
-        aV[8] = TestShapes.Vertex(new gp_Pnt(20, 0, 0));
-        aV[9] = TestShapes.Vertex(new gp_Pnt(20, 0, 10));
+        aV[8] = TestShapes.Vertex(new Point3D(20, 0, 0));
+        aV[9] = TestShapes.Vertex(new Point3D(20, 0, 10));
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
-        (int[] Indices, gp_Dir Normal)[] aFaces =
+        (int[] Indices, Direction3D Normal)[] aFaces =
         [
-            ([0, 2, 3, 1], new gp_Dir(0, 0, -1)),
-            ([4, 5, 7, 6], new gp_Dir(0, 0, 1)),
-            ([0, 1, 5, 4], new gp_Dir(0, -1, 0)),
-            ([2, 6, 7, 3], new gp_Dir(0, 1, 0)),
-            ([0, 4, 6, 2], new gp_Dir(-1, 0, 0)),
-            ([1, 3, 7, 5], new gp_Dir(1, 0, 0)),
-            ([1, 8, 9, 5], new gp_Dir(0, -1, 0)), // the fin, on the edge 1-5
+            ([0, 2, 3, 1], new Direction3D(0, 0, -1)),
+            ([4, 5, 7, 6], new Direction3D(0, 0, 1)),
+            ([0, 1, 5, 4], new Direction3D(0, -1, 0)),
+            ([2, 6, 7, 3], new Direction3D(0, 1, 0)),
+            ([0, 4, 6, 2], new Direction3D(-1, 0, 0)),
+            ([1, 3, 7, 5], new Direction3D(1, 0, 0)),
+            ([1, 8, 9, 5], new Direction3D(0, -1, 0)), // the fin, on the edge 1-5
         ];
         var aList = new List<TopoDS_Shape>();
-        foreach ((int[] anIndices, gp_Dir aNormal) in aFaces)
+        foreach ((int[] anIndices, Direction3D aNormal) in aFaces)
         {
             aList.Add(TestShapes.PolygonFace(aV, aNormal, anEdges, anIndices));
         }
@@ -171,7 +172,7 @@ public class ShapeFix_ShellTests
 
         TopoDS_Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aShell);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_SHELL, aResult.ShapeType());
         Assert.True(ShapeFixShapes.IsOriented(aResult));
         Assert.True(BRep_Tool.IsClosed(aResult));
@@ -247,7 +248,7 @@ public class ShapeFix_ShellTests
         Assert.Equal(2, ShapeFixShapes.Count(aResult, TopAbs_SHELL));
         Assert.Equal(12, ShapeFixShapes.Count(aResult, TopAbs_FACE));
         Assert.True(ShapeFixShapes.IsOriented(aResult));
-        Assert.True(aFix.Shell().TShape()!.IsFrozen());
+        Assert.True(aFix.Shell().TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -291,7 +292,7 @@ public class ShapeFix_ShellTests
         Assert.True(aFix.Status(ShapeExtend_FAIL));
         Assert.True(aFix.FixFaceOrientation(aShell));
         TopoDS_Compound anErr = aFix.ErrorFaces();
-        Assert.True(anErr.TShape()!.IsFrozen());
+        Assert.True(anErr.TShape()!.IsFrozen);
         Assert.True(ShapeFixShapes.Count(anErr, TopAbs_FACE) > 0);
         aSnap.AssertUnchanged(aShell);
         // the error faces are the caller's faces
@@ -310,7 +311,7 @@ public class ShapeFix_ShellTests
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
         TopoDS_Shape aResult = aFix.InternalShape();
-        Assert.False(aResult.TShape()!.IsFrozen());
+        Assert.False(aResult.TShape()!.IsFrozen);
         // the faces are the ones the shell was made of (no copy)
         foreach (TopoDS_Shape aF in aFaces)
         {
@@ -342,7 +343,7 @@ public class ShapeFix_SolidTests
         TopoDS_Solid aSolid = aFix.SolidFromShell(aShell);
         aSnap.AssertUnchanged(aShell);
         Assert.True(aFix.Status(ShapeExtend_DONE2));
-        Assert.True(aSolid.TShape()!.IsFrozen());
+        Assert.True(aSolid.TShape()!.IsFrozen);
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aSolid), 9);
         // the shell is the caller's
         Assert.True(ShapeFixShapes.HasTShapeOf(aSolid, aShell, TopAbs_SHELL));
@@ -372,7 +373,7 @@ public class ShapeFix_SolidTests
         aFix.Perform();
         TopoDS_Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aSolid);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_SOLID, aResult.ShapeType());
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aResult), 9);
         Assert.True(ReferenceEquals(aFix.Solid().TShape(), aResult.TShape()));
@@ -419,7 +420,7 @@ public class ShapeFix_SolidTests
     {
         // an outer box and an inner box, both outward: the inner one is a hole and is reversed
         TopoDS_Shell anOuter = ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(10.0), -1, true);
-        TopoDS_Shape anInner = new BRepPrimAPI_MakeBox(new gp_Pnt(2, 2, 2), 4, 4, 4).Shell();
+        TopoDS_Shape anInner = new BRepPrimAPI_MakeBox(new Point3D(2, 2, 2), 4, 4, 4).Shell();
         TopoDS_Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(anOuter, anInner));
         ShapeFix_Solid aFix = Fixer();
         aFix.Init(aSolid);
@@ -433,7 +434,7 @@ public class ShapeFix_SolidTests
     public void Perform_TwoDisjointShells_GiveTwoSolids()
     {
         TopoDS_Shell aBox1 = ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(10.0), -1, true);
-        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new gp_Pnt(20, 0, 0), 4, 4, 4).Shell();
+        TopoDS_Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(20, 0, 0), 4, 4, 4).Shell();
         TopoDS_Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(aBox1, aBox2));
         ShapeFix_Solid aFix = Fixer();
         aFix.Init(aSolid);

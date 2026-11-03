@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 
+using Kerf.Geometry;
+
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>A random B-spline curve definition, built identically on both sides.</summary>
 internal sealed class BSplineSpec
 {
-    public required gp_Pnt2d[] Poles;
+    public required Point2D[] Poles;
     public double[]? Weights;
     public required double[] Knots;
     public required int[] Mults;
@@ -20,20 +22,20 @@ internal static class Geom2dOracle
     /// <summary>
     /// A random transformation, built by the same calls on both sides (1 to 3 elementary ones composed).
     /// </summary>
-    public static (gp_Trsf2d Port, N.gp_Trsf2d Native) Trsf(Oracle theOracle)
+    public static (Transform2D Port, N.gp_Trsf2d Native) Trsf(Oracle theOracle)
     {
-        gp_Trsf2d aPort = new gp_Trsf2d();
+        Transform2D aPort = new Transform2D();
         N.gp_Trsf2d aNative = new N.gp_Trsf2d();
         int aCount = theOracle.Int(1, 3);
         for (int i = 0; i < aCount; i++)
         {
-            gp_Trsf2d aT = new gp_Trsf2d();
+            Transform2D aT = new Transform2D();
             using N.gp_Trsf2d aNT = new N.gp_Trsf2d();
             switch (theOracle.Int(0, 4))
             {
                 case 0:
                 {
-                    gp_Pnt2d aP = theOracle.Pnt2d();
+                    Point2D aP = theOracle.Pnt2d();
                     double anAng = theOracle.Angle();
                     using var aNP = Oracle.ToNative(aP);
                     aT.SetRotation(aP, anAng);
@@ -42,7 +44,7 @@ internal static class Geom2dOracle
                 }
                 case 1:
                 {
-                    gp_Pnt2d aP = theOracle.Pnt2d();
+                    Point2D aP = theOracle.Pnt2d();
                     double aS = theOracle.Real(0.2, 5.0) * (theOracle.Bool() ? 1.0 : -1.0);
                     using var aNP = Oracle.ToNative(aP);
                     aT.SetScale(aP, aS);
@@ -51,7 +53,7 @@ internal static class Geom2dOracle
                 }
                 case 2:
                 {
-                    gp_Pnt2d aP = theOracle.Pnt2d();
+                    Point2D aP = theOracle.Pnt2d();
                     using var aNP = Oracle.ToNative(aP);
                     aT.SetMirror(aP);
                     aNT.SetMirror(aNP);
@@ -59,7 +61,7 @@ internal static class Geom2dOracle
                 }
                 case 3:
                 {
-                    (N.gp_Ax2d aNA, gp_Ax2d anA) = GeomOracleInputs.Ax2ds(theOracle);
+                    (N.gp_Ax2d aNA, Axis2D anA) = GeomOracleInputs.Ax2ds(theOracle);
                     using var aNAOwner = aNA;
                     aT.SetMirror(anA);
                     aNT.SetMirror(aNA);
@@ -67,7 +69,7 @@ internal static class Geom2dOracle
                 }
                 default:
                 {
-                    gp_Vec2d aV = theOracle.Vec2d();
+                    Vector2D aV = theOracle.Vec2d();
                     using var aNV = Oracle.ToNative(aV);
                     aT.SetTranslation(aV);
                     aNT.SetTranslation(aNV);
@@ -90,22 +92,22 @@ internal static class Geom2dOracle
         using var aNV3 = new N.gp_Vec2d();
 
         theNative.D0(U, aNP);
-        thePort.D0(U, out gp_Pnt2d aP);
+        thePort.D0(U, out Point2D aP);
         theOracle.Same(Oracle.FromNative(aNP), aP.XY(), $"{theWhat} D0({U})", theTolerance);
 
         theNative.D1(U, aNP, aNV1);
-        thePort.D1(U, out aP, out gp_Vec2d aV1);
+        thePort.D1(U, out aP, out Vector2D aV1);
         theOracle.Same(Oracle.FromNative(aNP), aP.XY(), $"{theWhat} D1 P", theTolerance);
         theOracle.Same(Oracle.FromNative(aNV1), aV1.XY(), $"{theWhat} D1 V1", theTolerance);
 
         theNative.D2(U, aNP, aNV1, aNV2);
-        thePort.D2(U, out aP, out aV1, out gp_Vec2d aV2);
+        thePort.D2(U, out aP, out aV1, out Vector2D aV2);
         theOracle.Same(Oracle.FromNative(aNP), aP.XY(), $"{theWhat} D2 P", theTolerance);
         theOracle.Same(Oracle.FromNative(aNV1), aV1.XY(), $"{theWhat} D2 V1", theTolerance);
         theOracle.Same(Oracle.FromNative(aNV2), aV2.XY(), $"{theWhat} D2 V2", theTolerance);
 
         theNative.D3(U, aNP, aNV1, aNV2, aNV3);
-        thePort.D3(U, out aP, out aV1, out aV2, out gp_Vec2d aV3);
+        thePort.D3(U, out aP, out aV1, out aV2, out Vector2D aV3);
         theOracle.Same(Oracle.FromNative(aNP), aP.XY(), $"{theWhat} D3 P", theTolerance);
         theOracle.Same(Oracle.FromNative(aNV1), aV1.XY(), $"{theWhat} D3 V1", theTolerance);
         theOracle.Same(Oracle.FromNative(aNV2), aV2.XY(), $"{theWhat} D3 V2", theTolerance);
@@ -168,10 +170,10 @@ internal static class Geom2dOracle
                 continue;
             }
 
-            gp_Pnt2d[] aPoles = new gp_Pnt2d[aNbPoles];
+            Point2D[] aPoles = new Point2D[aNbPoles];
             for (int i = 0; i < aNbPoles; i++)
             {
-                aPoles[i] = new gp_Pnt2d(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                aPoles[i] = new Point2D(theOracle.Real(-10, 10), theOracle.Real(-10, 10));
             }
             double[]? aWeights = null;
             if (theOracle.Bool())
@@ -191,7 +193,7 @@ internal static class Geom2dOracle
 
     public static Geom2d_BSplineCurve ToPort(BSplineSpec theSpec)
     {
-        var aPoles = NCollection_Array1<gp_Pnt2d>.From(theSpec.Poles);
+        var aPoles = NCollection_Array1<Point2D>.From(theSpec.Poles);
         var aKnots = NCollection_Array1<double>.From(theSpec.Knots);
         var aMults = NCollection_Array1<int>.From(theSpec.Mults);
         return theSpec.Weights is null
@@ -201,7 +203,7 @@ internal static class Geom2dOracle
     }
 
     public static N.Geom2d_BSplineCurve ToNative(BSplineSpec theSpec) =>
-        Oracle.ToNativeCurve(NCollection_Array1<gp_Pnt2d>.From(theSpec.Poles),
+        Oracle.ToNativeCurve(NCollection_Array1<Point2D>.From(theSpec.Poles),
                              theSpec.Weights is null ? null : NCollection_Array1<double>.From(theSpec.Weights),
                              NCollection_Array1<double>.From(theSpec.Knots),
                              NCollection_Array1<int>.From(theSpec.Mults),
@@ -222,7 +224,7 @@ internal static class Geom2dOracle
         using (var aNPoles = theNative.Poles())
         using (var aNWeights = theNative.WeightsArray())
         {
-            PackedList<gp_Pnt2d> aPoles = thePort.Poles();
+            PackedList<Point2D> aPoles = thePort.Poles();
             PackedList<double> aWeights = thePort.WeightsArray();
             for (int i = 1; i <= thePort.NbPoles(); i++)
             {

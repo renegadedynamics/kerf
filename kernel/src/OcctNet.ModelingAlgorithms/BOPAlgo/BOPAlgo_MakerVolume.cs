@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -22,7 +25,7 @@ namespace Occt;
 public class BOPAlgo_MakerVolume : BOPAlgo_Builder
 {
     protected bool myIntersect;
-    protected Bnd_Box myBBox = new();
+    protected Box myBBox = new();
     protected TopoDS_Solid mySBox = new();
     protected NCollection_List<TopoDS_Shape> myFaces = new();
     protected bool myAvoidInternalShapes;
@@ -39,7 +42,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     {
         base.Clear();
         myIntersect = true;
-        myBBox = new Bnd_Box();
+        myBBox = new Box();
         mySBox.Nullify();
         myFaces.Clear();
         myAvoidInternalShapes = false;
@@ -82,9 +85,9 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     }
 
     /// <summary>Performs the operation.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Performing MakeVolume operation", 10);
+        using var aPS = new ProgressScope(theRange, "Performing MakeVolume operation", 10);
         double anInterPart = myIntersect ? 9 : 0.5;
         double aBuildPart = 10.0 - anInterPart;
 
@@ -133,9 +136,9 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         PerformInternal(pPF, aPS.Next(aBuildPart));
     }
 
-    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Building volumes", 100);
+        using var aPS = new ProgressScope(theRange, "Building volumes", 100);
         myPaveFiller = theFiller;
         myDS = myPaveFiller.PDS();
         myContext = myPaveFiller.Context();
@@ -263,7 +266,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
                 continue;
             }
             //
-            Bnd_Box aB = aSI.Box();
+            Box aB = aSI.Box();
             myBBox.Add(aB);
             //
             TopoDS_Shape aF = aSI.Shape();
@@ -297,7 +300,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
         myBBox.Enlarge(anExt);
         myBBox.Get(out aXmin, out aYmin, out aZmin, out aXmax, out aYmax, out aZmax);
         //
-        gp_Pnt aPMin = new(aXmin, aYmin, aZmin), aPMax = new(aXmax, aYmax, aZmax);
+        Point3D aPMin = new(aXmin, aYmin, aZmin), aPMax = new(aXmax, aYmax, aZmax);
         //
         mySBox = new BRepPrimAPI_MakeBox(aPMin, aPMax).InternalSolid();
         //
@@ -311,7 +314,7 @@ public class BOPAlgo_MakerVolume : BOPAlgo_Builder
     }
 
     /// <summary>Builds the solids.</summary>
-    protected void BuildSolids(NCollection_List<TopoDS_Shape> theLSR, Message_ProgressRange theRange)
+    protected void BuildSolids(NCollection_List<TopoDS_Shape> theLSR, ProgressRange theRange)
     {
         BOPAlgo_BuilderSolid aBS = new();
         //

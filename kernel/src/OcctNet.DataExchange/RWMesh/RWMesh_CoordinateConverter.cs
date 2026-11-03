@@ -3,6 +3,8 @@
 // rotation from OCCT's Z-up system to glTF's Y-up one.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -60,7 +62,7 @@ internal readonly struct RWMesh_CoordinateConverter
     /// <summary>
     /// A transformation mapped (C·M·C⁻¹), as a 4×4 matrix in column-major order (glTF's "matrix").
     /// </summary>
-    public double[] MapMatrix(in gp_Trsf theTrsf)
+    public double[] MapMatrix(in Transform3D theTrsf)
     {
         double[] aMatrix = new double[16];
         for (int aRow = 1; aRow <= 3; aRow++)

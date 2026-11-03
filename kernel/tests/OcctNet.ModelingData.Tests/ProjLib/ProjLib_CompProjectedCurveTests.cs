@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -13,21 +17,21 @@ public class ProjLib_CompProjectedCurveTests
 
     private static GeomAdaptor_Surface UnitSquare(double theZ = 0.0)
     {
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(0, 0, theZ), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         return new GeomAdaptor_Surface(aPlane, 0.0, 1.0, 0.0, 1.0);
     }
 
-    private static GeomAdaptor_Curve Circle(in gp_Pnt theCenter, double theRadius, double theFirst, double theLast)
+    private static GeomAdaptor_Curve Circle(in Point3D theCenter, double theRadius, double theFirst, double theLast)
     {
-        Geom_Circle aCircle = new(new gp_Ax2(theCenter, new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), theRadius);
+        Geom_Circle aCircle = new(new Frame3D(theCenter, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), theRadius);
         return new GeomAdaptor_Curve(aCircle, theFirst, theLast);
     }
 
     // The 2D point is the foot of the perpendicular from C(t): S(P) - C(t) is normal to the surface.
-    private static void AssertOrthogonal(Adaptor3d_Surface theS, Adaptor3d_Curve theC, double theT, in gp_Pnt2d theP)
+    private static void AssertOrthogonal(Adaptor3d_Surface theS, Adaptor3d_Curve theC, double theT, in Point2D theP)
     {
-        theS.D1(theP.X(), theP.Y(), out gp_Pnt aS, out gp_Vec aDU, out gp_Vec aDV);
-        gp_Vec aV = new(theC.Value(theT), aS);
+        theS.D1(theP.X(), theP.Y(), out Point3D aS, out Vector3D aDU, out Vector3D aDV);
+        Vector3D aV = new(theC.Value(theT), aS);
         Assert.Equal(0.0, aV * aDU / aDU.Magnitude(), 1.0e-6);
         Assert.Equal(0.0, aV * aDV / aDV.Magnitude(), 1.0e-6);
     }
@@ -35,9 +39,9 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void Plane_Circle_ProjectsToCircle()
     {
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         GeomAdaptor_Surface aS = new(aPlane, -5, 5, -5, 5);
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0, 0, 3), 2.0, 0.0, 2 * M_PI);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0, 0, 3), 2.0, 0.0, 2 * M_PI);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.NbCurves());
@@ -51,25 +55,25 @@ public class ProjLib_CompProjectedCurveTests
         for (int i = 0; i <= 20; i++)
         {
             double t = 2 * M_PI * i / 20;
-            gp_Pnt2d aP = aProj.Value(t);
+            Point2D aP = aProj.Value(t);
             Assert.Equal(2 * Math.Cos(t), aP.X(), 1.0e-6);
             Assert.Equal(2 * Math.Sin(t), aP.Y(), 1.0e-6);
-            aProj.D1(t, out _, out gp_Vec2d aD1);
+            aProj.D1(t, out _, out Vector2D aD1);
             Assert.Equal(-2 * Math.Sin(t), aD1.X(), 1.0e-6);
             Assert.Equal(2 * Math.Cos(t), aD1.Y(), 1.0e-6);
-            aProj.D2(t, out _, out _, out gp_Vec2d aD2);
+            aProj.D2(t, out _, out _, out Vector2D aD2);
             Assert.Equal(-2 * Math.Cos(t), aD2.X(), 1.0e-6);
             Assert.Equal(-2 * Math.Sin(t), aD2.Y(), 1.0e-6);
         }
-        Assert.Equal(GeomAbs_CurveType.GeomAbs_OtherCurve, aProj.GetType());
+        Assert.Equal(CurveKind.OtherCurve, aProj.GetType());
     }
 
     [Fact]
     public void Cylinder_Generatrix_IsUIso()
     {
-        Geom_CylindricalSurface aCyl = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0);
+        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
         GeomAdaptor_Surface aS = new(aCyl, 0, 2 * M_PI, -10, 10);
-        Geom_Line aLine = new(new gp_Pnt(0, 3, 0), new gp_Dir(0, 0, 1));
+        Geom_Line aLine = new(new Point3D(0, 3, 0), new Direction3D(0, 0, 1));
         GeomAdaptor_Curve aC = new(aLine, 0.0, 5.0);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
@@ -83,13 +87,13 @@ public class ProjLib_CompProjectedCurveTests
         Assert.False(aProj.ResultIsPoint(1));
         Geom2d_Curve? aC2d = aProj.GetResult2dC(1);
         Assert.NotNull(aC2d);
-        Assert.True(aC2d.IsFrozen());
+        Assert.True(aC2d.IsFrozen);
         Assert.Same(aC2d, aProj.GetResult2dC(1));
         Assert.IsType<Geom2d_TrimmedCurve>(aC2d);
         // The line (UIso, 0) along Y, trimmed to the V range.
         Assert.Equal(0.0, aC2d.FirstParameter(), 1.0e-6);
         Assert.Equal(5.0, aC2d.LastParameter(), 1.0e-6);
-        gp_Pnt2d aP = aC2d.Value(2.5);
+        Point2D aP = aC2d.Value(2.5);
         Assert.Equal(M_PI / 2, aP.X(), 1.0e-6);
         Assert.Equal(2.5, aP.Y(), 1.0e-6);
     }
@@ -97,9 +101,9 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void Cylinder_Circle_IsVIso_And3dCurve()
     {
-        Geom_CylindricalSurface aCyl = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0);
+        Geom_CylindricalSurface aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
         GeomAdaptor_Surface aS = new(aCyl, 0, 2 * M_PI, -10, 10);
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0, 0, 2), 3.0, 0.5, 2.5);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0, 0, 2), 3.0, 0.5, 2.5);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.NbCurves());
@@ -109,7 +113,7 @@ public class ProjLib_CompProjectedCurveTests
         for (int i = 0; i <= 10; i++)
         {
             double t = 0.5 + 2.0 * i / 10;
-            gp_Pnt2d aP = aProj.Value(t);
+            Point2D aP = aProj.Value(t);
             Assert.Equal(t, aP.X(), 1.0e-6);
             Assert.Equal(2.0, aP.Y(), 1.0e-6);
         }
@@ -121,12 +125,12 @@ public class ProjLib_CompProjectedCurveTests
         Assert.Equal(1.0, aC2d.Value(1.0).X(), 1.0e-6); // the V-iso line (0, V) along X
         Geom_Curve? aC3d = aProj.GetResult3dC(1);
         Assert.NotNull(aC3d);
-        Assert.True(aC3d.IsFrozen());
+        Assert.True(aC3d.IsFrozen);
         Assert.Same(aC3d, aProj.GetResult3dC(1));
         for (int i = 0; i <= 10; i++)
         {
             double t = aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * i / 10;
-            gp_Pnt aP = aC3d.Value(t);
+            Point3D aP = aC3d.Value(t);
             Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1.0e-5);
             Assert.Equal(2.0, aP.Z(), 1.0e-5);
         }
@@ -135,9 +139,9 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void Sphere_Parallel_IsVIso()
     {
-        Geom_SphericalSurface aSph = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1.0);
+        Geom_SphericalSurface aSph = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1.0);
         GeomAdaptor_Surface aS = new(aSph);
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0, 0, 1), 2.0, 0.5, 2.5);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0, 0, 1), 2.0, 0.5, 2.5);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.NbCurves());
@@ -146,7 +150,7 @@ public class ProjLib_CompProjectedCurveTests
         for (int i = 0; i <= 10; i++)
         {
             double t = 0.5 + 2.0 * i / 10;
-            gp_Pnt2d aP = aProj.Value(t);
+            Point2D aP = aProj.Value(t);
             Assert.Equal(t, aP.X(), 1.0e-6);
             AssertOrthogonal(aS, aC, t, aP);
         }
@@ -155,13 +159,13 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void BSplineSurface_BSplineCurve_PointsAreFeetAndApproximationFits()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 4, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
                 double z = ((i == 2 || i == 3) && (j == 2 || j == 3)) ? 0.5 : 0.0;
-                aPoles[i, j] = new gp_Pnt((i - 1) / 3.0 * 4, (j - 1) / 3.0 * 4, z);
+                aPoles[i, j] = new Point3D((i - 1) / 3.0 * 4, (j - 1) / 3.0 * 4, z);
             }
         }
         NCollection_Array1<double> aKnots = new(1, 2);
@@ -173,11 +177,11 @@ public class ProjLib_CompProjectedCurveTests
         Geom_BSplineSurface aSurf = new(aPoles, aKnots, aKnots, aMults, aMults, 3, 3);
         GeomAdaptor_Surface aS = new(aSurf);
 
-        NCollection_Array1<gp_Pnt> aCPoles = new(1, 4);
-        aCPoles[1] = new gp_Pnt(0.5, 0.5, 1.0);
-        aCPoles[2] = new gp_Pnt(1.5, 3.0, 1.5);
-        aCPoles[3] = new gp_Pnt(2.5, 1.0, 1.2);
-        aCPoles[4] = new gp_Pnt(3.5, 3.5, 1.0);
+        NCollection_Array1<Point3D> aCPoles = new(1, 4);
+        aCPoles[1] = new Point3D(0.5, 0.5, 1.0);
+        aCPoles[2] = new Point3D(1.5, 3.0, 1.5);
+        aCPoles[3] = new Point3D(2.5, 1.0, 1.2);
+        aCPoles[4] = new Point3D(3.5, 3.5, 1.0);
         NCollection_Array1<double> aCKnots = new(1, 2);
         aCKnots[1] = 0;
         aCKnots[2] = 1;
@@ -189,8 +193,8 @@ public class ProjLib_CompProjectedCurveTests
 
         ProjLib_CompProjectedCurve aProj = new(1.0e-6, aS, aC);
         aProj.GetTolerance(out double aTolU, out double aTolV);
-        Assert.True(aTolU >= Precision.PConfusion());
-        Assert.True(aTolV >= Precision.PConfusion());
+        Assert.True(aTolU >= global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Assert.True(aTolV >= global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.Equal(1, aProj.NbCurves());
         for (int i = 0; i <= 20; i++)
         {
@@ -215,12 +219,12 @@ public class ProjLib_CompProjectedCurveTests
     public void Plane_NormalLine_IsSinglePoint()
     {
         GeomAdaptor_Surface aS = UnitSquare();
-        Geom_Line aLine = new(new gp_Pnt(0.3, 0.4, 0), new gp_Dir(0, 0, 1));
+        Geom_Line aLine = new(new Point3D(0.3, 0.4, 0), new Direction3D(0, 0, 1));
         GeomAdaptor_Curve aC = new(aLine, 1.0, 2.0);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.NbCurves());
-        Assert.True(aProj.IsSinglePnt(1, out gp_Pnt2d aP));
+        Assert.True(aProj.IsSinglePnt(1, out Point2D aP));
         Assert.Equal(0.3, aP.X(), 1.0e-9);
         Assert.Equal(0.4, aP.Y(), 1.0e-9);
         Assert.False(aProj.IsUIso(1, out _));
@@ -239,7 +243,7 @@ public class ProjLib_CompProjectedCurveTests
     public void Square_Circle_FourParts_IntervalsAndMaxDist()
     {
         GeomAdaptor_Surface aS = UnitSquare();
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0.5, 0.5, 1), 0.6, 0.0, 2 * M_PI);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0.5, 0.5, 1), 0.6, 0.0, 2 * M_PI);
 
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(4, aProj.NbCurves());
@@ -255,18 +259,18 @@ public class ProjLib_CompProjectedCurveTests
             // Each part ends on the square's boundary.
             foreach (double t in new[] { aF, aL })
             {
-                gp_Pnt2d aP = aProj.Value(t);
+                Point2D aP = aProj.Value(t);
                 double aDist = Min(Min(Math.Abs(aP.X()), Math.Abs(aP.X() - 1)), Min(Math.Abs(aP.Y()), Math.Abs(aP.Y() - 1)));
                 Assert.True(aDist < 1.0e-5, $"part {i}, t = {t}: {aP}");
             }
         }
-        Assert.ThrowsAny<Standard_DomainError>(() => aProj.Value(0.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aProj.Value(0.0));
 
         // The intervals are the parts' bounds (a circle has one interval and a plane none).
-        int aNb = aProj.NbIntervals(GeomAbs_Shape.GeomAbs_C1);
+        int aNb = aProj.NbIntervals(Continuity.C1);
         Assert.Equal(7, aNb);
         NCollection_Array1<double> aT = new(1, aNb + 1);
-        aProj.Intervals(aT, GeomAbs_Shape.GeomAbs_C1);
+        aProj.Intervals(aT, Continuity.C1);
         for (int i = 1; i <= 4; i++)
         {
             aProj.Bounds(i, out double aF, out double aL);
@@ -289,9 +293,9 @@ public class ProjLib_CompProjectedCurveTests
             Assert.True(aProj.GetResult3dApproxError(i) < 1.0e-5);
             for (int k = 0; k <= 10; k++)
             {
-                gp_Pnt aP = aC3d.Value(aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * k / 10);
+                Point3D aP = aC3d.Value(aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * k / 10);
                 Assert.Equal(0.0, aP.Z(), 1.0e-6);
-                Assert.Equal(0.6, aP.Distance(new gp_Pnt(0.5, 0.5, 0)), 1.0e-5);
+                Assert.Equal(0.6, aP.Distance(new Point3D(0.5, 0.5, 0)), 1.0e-5);
             }
         }
     }
@@ -300,10 +304,10 @@ public class ProjLib_CompProjectedCurveTests
     public void Perform_IsoThenFreePart_ReusesIsoLine_OcctBug()
     {
         // A polyline above the unit square: along V = 0.5 out of the square, then back in diagonally.
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt(0.1, 0.5, 1);
-        aPoles[2] = new gp_Pnt(1.5, 0.5, 1);
-        aPoles[3] = new gp_Pnt(0.6, 0.9, 1);
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(0.1, 0.5, 1);
+        aPoles[2] = new Point3D(1.5, 0.5, 1);
+        aPoles[3] = new Point3D(0.6, 0.9, 1);
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -330,7 +334,7 @@ public class ProjLib_CompProjectedCurveTests
     public void TrimAndShallowCopy_ShareTheParts()
     {
         GeomAdaptor_Surface aS = UnitSquare();
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
         ProjLib_CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.NbCurves());
 
@@ -351,8 +355,8 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void GetSequence_IsACopy()
     {
-        ProjLib_CompProjectedCurve aProj = new(UnitSquare(), Circle(new gp_Pnt(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI), Tol, Tol);
-        NCollection_HSequence<NCollection_HSequence<gp_Pnt>> aSeq = aProj.GetSequence();
+        ProjLib_CompProjectedCurve aProj = new(UnitSquare(), Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI), Tol, Tol);
+        NCollection_HSequence<NCollection_HSequence<Point3D>> aSeq = aProj.GetSequence();
         Assert.Equal(1, aSeq.Length());
         aProj.Bounds(1, out double aF, out double aL);
         Assert.Equal(aF, aSeq.Value(1).First().X());
@@ -367,15 +371,15 @@ public class ProjLib_CompProjectedCurveTests
     [Fact]
     public void Errors()
     {
-        ProjLib_CompProjectedCurve aProj = new(UnitSquare(), Circle(new gp_Pnt(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI), Tol, Tol);
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => aProj.Bounds(0, out _, out _));
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => aProj.IsUIso(2, out _));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aProj.DN(1.0, 0));
-        Assert.ThrowsAny<Standard_NotImplemented>(() => aProj.DN(1.0, 3));
-        aProj.D1(1.0, out _, out gp_Vec2d aV);
+        ProjLib_CompProjectedCurve aProj = new(UnitSquare(), Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI), Tol, Tol);
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.Bounds(0, out _, out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aProj.IsUIso(2, out _));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => aProj.DN(1.0, 0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aProj.DN(1.0, 3));
+        aProj.D1(1.0, out _, out Vector2D aV);
         Assert.Equal(aV, aProj.DN(1.0, 1));
         aProj.Perform();
-        Assert.ThrowsAny<Standard_TypeMismatch>(() => aProj.GetResult2dP(1));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.TypeMismatchException>(() => aProj.GetResult2dP(1));
 
         ProjLib_CompProjectedCurve anEmpty = new();
         Assert.Equal(0, anEmpty.NbCurves());
@@ -401,27 +405,27 @@ public class ProjLib_CompProjectedCurveTests
     public void PrjResolve_FootOnPlane()
     {
         GeomAdaptor_Surface aS = UnitSquare();
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
         ProjLib_PrjResolve aSolver = new(aC, aS, 1);
-        aSolver.Perform(0.0, 0.5, 0.5, new gp_Pnt2d(Tol, Tol), new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 1), 1.0e-10);
+        aSolver.Perform(0.0, 0.5, 0.5, new Point2D(Tol, Tol), new Point2D(0, 0), new Point2D(1, 1), 1.0e-10);
         Assert.True(aSolver.IsDone());
         Assert.Equal(0.8, aSolver.Solution().X(), 1.0e-9);
         Assert.Equal(0.5, aSolver.Solution().Y(), 1.0e-9);
 
         // Outside the bounds: not done.
-        aSolver.Perform(0.0, 0.5, 0.5, new gp_Pnt2d(Tol, Tol), new gp_Pnt2d(0, 0), new gp_Pnt2d(0.6, 1), 1.0e-10);
+        aSolver.Perform(0.0, 0.5, 0.5, new Point2D(Tol, Tol), new Point2D(0, 0), new Point2D(0.6, 1), 1.0e-10);
         Assert.False(aSolver.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aSolver.Solution());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.Solution());
 
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new ProjLib_PrjResolve(aC, aS, 0));
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new ProjLib_PrjResolve(aC, aS, 4));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ProjLib_PrjResolve(aC, aS, 0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ProjLib_PrjResolve(aC, aS, 4));
     }
 
     [Fact]
     public void PrjFunc_ZeroAtTheFoot()
     {
         GeomAdaptor_Surface aS = UnitSquare();
-        GeomAdaptor_Curve aC = Circle(new gp_Pnt(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
+        GeomAdaptor_Curve aC = Circle(new Point3D(0.5, 0.5, 1), 0.3, 0.0, 2 * M_PI);
         // Fix 2: u fixed at 0.8, the variables (t, v); the foot of C(0) is (0.8, 0.5).
         ProjLib_PrjFunc aF = new(aC, 0.8, aS, 2);
         Assert.Equal(2, aF.NbVariables());
@@ -430,11 +434,11 @@ public class ProjLib_CompProjectedCurveTests
         aX[1] = 0.0;
         aX[2] = 0.5;
         math_Vector aVal = new(1, 2);
-        math_Matrix aD = new(1, 2, 1, 2);
+        Matrix aD = new(1, 2, 1, 2);
         Assert.True(aF.Values(aX, aVal, aD));
         Assert.Equal(0.0, aVal[1], 1.0e-15);
         Assert.Equal(0.0, aVal[2], 1.0e-15);
-        Assert.Equal(new gp_Pnt2d(0.0, 0.5), aF.Solution());
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new ProjLib_PrjFunc(aC, 0.0, aS, 0));
+        Assert.Equal(new Point2D(0.0, 0.5), aF.Solution());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ProjLib_PrjFunc(aC, 0.0, aS, 0));
     }
 }

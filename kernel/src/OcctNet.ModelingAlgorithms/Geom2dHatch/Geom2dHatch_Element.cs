@@ -70,5 +70,5 @@ public struct Geom2dHatch_Element : IEquatable<Geom2dHatch_Element>
     public static bool operator !=(Geom2dHatch_Element left, Geom2dHatch_Element right) => !left.Equals(right);
 
     public override readonly string ToString() =>
-        $"Geom2dHatch_Element({myCurve?.Curve()?.GetType().Name ?? "no curve"}, {myOrientation})";
+        $"Geom2dHatch_Element({(myCurve?.Curve() is { } aCurve ? global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType()) : null) ?? "no curve"}, {myOrientation})";
 }

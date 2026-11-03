@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The function of a chamfer of two constant distances with one end on a surface's boundary.</summary>
@@ -64,7 +68,7 @@ public class BlendFunc_ChamfInv : BlendFunc_GenChamfInv
 
     public override bool IsSolution(math_Vector Sol, double Tol)
     {
-        csurf!.D1(Sol[1], out gp_Pnt2d p2d, out _);
+        csurf!.D1(Sol[1], out Point2D p2d, out _);
 
         math_Vector Sol1 = new(1, 2), Sol2 = new(1, 2);
         bool issol;
@@ -91,7 +95,7 @@ public class BlendFunc_ChamfInv : BlendFunc_GenChamfInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out _);
+        csurf!.D1(X[1], out Point2D p2d, out _);
 
         corde1.SetParam(X[2]);
         corde2.SetParam(X[2]);
@@ -122,16 +126,16 @@ public class BlendFunc_ChamfInv : BlendFunc_GenChamfInv
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         int i, j;
-        gp_Vec2d df1 = new gp_Vec2d(), df2 = new gp_Vec2d();
-        gp_Pnt pts, ptgui;
-        gp_Vec temp = new gp_Vec(), d1u, d1v, nplan;
+        Vector2D df1 = new Vector2D(), df2 = new Vector2D();
+        Point3D pts, ptgui;
+        Vector3D temp = new Vector3D(), d1u, d1v, nplan;
         math_Vector x1 = new(1, 2), x2 = new(1, 2);
-        math_Matrix d1 = new(1, 2, 1, 2), d2 = new(1, 2, 1, 2);
+        Matrix d1 = new(1, 2, 1, 2), d2 = new(1, 2, 1, 2);
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
         corde1.SetParam(X[2]);
         corde2.SetParam(X[2]);
 
@@ -166,7 +170,7 @@ public class BlendFunc_ChamfInv : BlendFunc_GenChamfInv
         if (first)
         {
             D[1, 1] = nplan.Dot(temp);
-            D[2, 1] = 2 * (new gp_Vec(ptgui, pts).Dot(temp));
+            D[2, 1] = 2 * (new Vector3D(ptgui, pts).Dot(temp));
             D[3, 1] = 0.0;
             D[4, 1] = 0.0;
         }
@@ -175,7 +179,7 @@ public class BlendFunc_ChamfInv : BlendFunc_GenChamfInv
             D[1, 1] = 0.0;
             D[2, 1] = 0.0;
             D[3, 1] = nplan.Dot(temp);
-            D[4, 1] = 2 * (new gp_Vec(ptgui, pts).Dot(temp));
+            D[4, 1] = 2 * (new Vector3D(ptgui, pts).Dot(temp));
         }
 
         // derivees par rapport a W

@@ -31,6 +31,7 @@ SOFTWARE.
 
 */
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -1037,7 +1038,7 @@ internal sealed class CDelaBella : IDelaBella
 
         if (advance_bytes % sizeof(double) != 0)
         {
-            throw new Standard_ProgramError("IDelaBella::Triangulate: advance_bytes must be a multiple of sizeof(double)");
+            throw new ProgramErrorException("IDelaBella::Triangulate: advance_bytes must be a multiple of sizeof(double)");
         }
 
         if (!ReallocVerts(points))

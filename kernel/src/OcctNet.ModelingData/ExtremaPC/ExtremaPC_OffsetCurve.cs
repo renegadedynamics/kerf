@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +16,7 @@ namespace Occt;
 public sealed class ExtremaPC_OffsetCurve : ExtremaPC.ICurveEvaluator
 {
     private readonly Adaptor3d_Curve myCurve;             // Curve adaptor (not owned)
-    private readonly MathUtils.Domain1D myDomain;         // Parameter domain (fixed)
+    private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D myDomain;         // Parameter domain (fixed)
 
     private readonly ExtremaPC_GridEvaluator myEvaluator = new();
 
@@ -22,12 +24,12 @@ public sealed class ExtremaPC_OffsetCurve : ExtremaPC.ICurveEvaluator
     public ExtremaPC_OffsetCurve(Adaptor3d_Curve theCurve)
     {
         myCurve = theCurve;
-        myDomain = new MathUtils.Domain1D(theCurve.FirstParameter(), theCurve.LastParameter());
+        myDomain = new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(theCurve.FirstParameter(), theCurve.LastParameter());
         buildGrid();
     }
 
     /// <summary>Constructor with curve adaptor and parameter domain (fixed for all queries).</summary>
-    public ExtremaPC_OffsetCurve(Adaptor3d_Curve theCurve, in MathUtils.Domain1D theDomain)
+    public ExtremaPC_OffsetCurve(Adaptor3d_Curve theCurve, in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain)
     {
         myCurve = theCurve;
         myDomain = theDomain;
@@ -35,7 +37,7 @@ public sealed class ExtremaPC_OffsetCurve : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Evaluates point on curve at parameter.</summary>
-    public gp_Pnt Value(double theU)
+    public Point3D Value(double theU)
     {
         return myCurve.Value(theU);
     }
@@ -44,10 +46,10 @@ public sealed class ExtremaPC_OffsetCurve : ExtremaPC.ICurveEvaluator
     public bool IsBounded() => true;
 
     /// <summary>Returns the domain.</summary>
-    public MathUtils.Domain1D Domain() => myDomain;
+    public global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D Domain() => myDomain;
 
     /// <summary>Computes the interior extrema between point P and the curve.</summary>
-    public ExtremaPC.Result Perform(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result Perform(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         if (myCurve is null)
         {
@@ -60,7 +62,7 @@ public sealed class ExtremaPC_OffsetCurve : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Computes the extrema between point P and the curve including endpoints.</summary>
-    public ExtremaPC.Result PerformWithEndpoints(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result PerformWithEndpoints(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         // Get interior extrema (populates myEvaluator's result)
         _ = myEvaluator.Perform(myCurve, theP, myDomain, theTol, theMode);

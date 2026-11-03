@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -53,11 +57,11 @@ internal static partial class AppCont_ContMatrices
     }
 
     /// <summary>The Bernstein basis mass matrix of size classe × classe, written from M's lower bounds.</summary>
-    internal static void MMatrix(int classe, math_Matrix M)
+    internal static void MMatrix(int classe, Matrix M)
     {
         if (classe > THE_MAX_MMATRIX_CLASSE)
         {
-            throw new Standard_DimensionError("MMatrix: classe > 24");
+            throw new DimensionErrorException("MMatrix: classe > 24");
         }
 
         ReadOnlySpan<double> aData = THE_BBMATRIX_DATA.Slice(MMatrixOffset(classe));
@@ -72,11 +76,11 @@ internal static partial class AppCont_ContMatrices
     }
 
     /// <summary>The inverse of the Bernstein basis mass matrix, written from InvM's lower bounds.</summary>
-    internal static void InvMMatrix(int classe, math_Matrix InvM)
+    internal static void InvMMatrix(int classe, Matrix InvM)
     {
         if (classe > THE_MAX_MMATRIX_CLASSE)
         {
-            throw new Standard_DimensionError("InvMMatrix: classe > 24");
+            throw new DimensionErrorException("InvMMatrix: classe > 24");
         }
 
         ReadOnlySpan<double> aData = THE_INV_MMATRIX_DATA.Slice(MMatrixOffset(classe));
@@ -94,11 +98,11 @@ internal static partial class AppCont_ContMatrices
     /// The inverse of MPᵀ·MP for pass-point constraints, where MP is M without its first and last columns:
     /// (classe - 2) × (classe - 2) values, written from IBPMa's lower bounds.
     /// </summary>
-    internal static void IBPMatrix(int classe, math_Matrix IBPMa)
+    internal static void IBPMatrix(int classe, Matrix IBPMa)
     {
         if (classe > THE_MAX_CLASSE)
         {
-            throw new Standard_DimensionError("IBPMatrix: classe > 26");
+            throw new DimensionErrorException("IBPMatrix: classe > 26");
         }
 
         int aDim = classe - 2;
@@ -117,11 +121,11 @@ internal static partial class AppCont_ContMatrices
     /// The inverse of MTᵀ·MT for tangency constraints, where MT is M without its first two and last two columns:
     /// (classe - 4) × (classe - 4) values, written from IBTMa's lower bounds.
     /// </summary>
-    internal static void IBTMatrix(int classe, math_Matrix IBTMa)
+    internal static void IBTMatrix(int classe, Matrix IBTMa)
     {
         if (classe > THE_MAX_CLASSE)
         {
-            throw new Standard_DimensionError("IBTMatrix: classe > 26");
+            throw new DimensionErrorException("IBTMatrix: classe > 26");
         }
 
         int aDim = classe - 4;
@@ -140,15 +144,15 @@ internal static partial class AppCont_ContMatrices
     /// The Bernstein polynomials of degree classe - 1 at the nbpoints Gauss-Legendre points of [0, 1]:
     /// M(i, j), i = 1..classe, j = 1..nbpoints (absolute indices, as OCCT).
     /// </summary>
-    internal static void VBernstein(int classe, int nbpoints, math_Matrix M)
+    internal static void VBernstein(int classe, int nbpoints, Matrix M)
     {
         if (classe > THE_MAX_CLASSE)
         {
-            throw new Standard_DimensionError("VBernstein: classe > 26");
+            throw new DimensionErrorException("VBernstein: classe > 26");
         }
         if (nbpoints > THE_MAX_NBPOINTS)
         {
-            throw new Standard_DimensionError("VBernstein: nbpoints > 24");
+            throw new DimensionErrorException("VBernstein: nbpoints > 24");
         }
 
         int Som = (int)(300.0 * ((classe - 1) * classe / 2.0 - 1.0)

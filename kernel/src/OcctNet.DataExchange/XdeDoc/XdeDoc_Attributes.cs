@@ -1,6 +1,7 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Immutable;
 
 namespace Occt;
@@ -21,13 +22,13 @@ public sealed record XdeDoc_Attributes
     public string? Name { get; init; }
 
     /// <summary>The generic colour (<see cref="XdeDoc_ColorType.XdeDoc_ColorGen"/>), or null.</summary>
-    public Quantity_ColorRGBA? GenericColor { get; init; }
+    public ColorWithAlpha? GenericColor { get; init; }
 
     /// <summary>The surfaces' colour (<see cref="XdeDoc_ColorType.XdeDoc_ColorSurf"/>), or null.</summary>
-    public Quantity_ColorRGBA? SurfaceColor { get; init; }
+    public ColorWithAlpha? SurfaceColor { get; init; }
 
     /// <summary>The curves' colour (<see cref="XdeDoc_ColorType.XdeDoc_ColorCurv"/>), or null.</summary>
-    public Quantity_ColorRGBA? CurveColor { get; init; }
+    public ColorWithAlpha? CurveColor { get; init; }
 
     /// <summary>False if the shape is hidden (<c>XCAFDoc_ColorTool::SetVisibility</c>).</summary>
     public bool IsVisible { get; init; } = true;
@@ -42,7 +43,7 @@ public sealed record XdeDoc_Attributes
     public ImmutableArray<string> ExternRefs { get; init; } = [];
 
     /// <summary>The colour of the type, or null.</summary>
-    public Quantity_ColorRGBA? Color(XdeDoc_ColorType theType) => theType switch
+    public ColorWithAlpha? Color(XdeDoc_ColorType theType) => theType switch
     {
         XdeDoc_ColorType.XdeDoc_ColorGen => GenericColor,
         XdeDoc_ColorType.XdeDoc_ColorSurf => SurfaceColor,
@@ -51,7 +52,7 @@ public sealed record XdeDoc_Attributes
     };
 
     /// <summary>The set with the colour of the type replaced (removed if null).</summary>
-    public XdeDoc_Attributes WithColor(XdeDoc_ColorType theType, Quantity_ColorRGBA? theColor) => theType switch
+    public XdeDoc_Attributes WithColor(XdeDoc_ColorType theType, ColorWithAlpha? theColor) => theType switch
     {
         XdeDoc_ColorType.XdeDoc_ColorGen => this with { GenericColor = theColor },
         XdeDoc_ColorType.XdeDoc_ColorSurf => this with { SurfaceColor = theColor },

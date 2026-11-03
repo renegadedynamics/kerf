@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -61,7 +64,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>The constructor compatible with the old version: one curve constraint per curve.</summary>
-    /// <exception cref="Standard_ConstructionError">Fewer than one iteration, no curve, no order, no point, or a
+    /// <exception cref="ConstructionErrorException">Fewer than one iteration, no curve, no order, no point, or a
     /// degree below 2.</exception>
     public GeomPlate_BuildPlateSurface(NCollection_HArray1<int> NPoints, NCollection_HArray1<Adaptor3d_Curve> TabCurve,
                                        NCollection_HArray1<int> Tang, int Degree, int NbIter = 3, double Tol2d = 0.00001,
@@ -81,16 +84,16 @@ public class GeomPlate_BuildPlateSurface
         myPntCont = new NCollection_HSequence<GeomPlate_PointConstraint>();
         if (myNbIter < 1)
         {
-            throw new Standard_ConstructionError("GeomPlate :  Number of iteration must be >= 1");
+            throw new ConstructionErrorException("GeomPlate :  Number of iteration must be >= 1");
         }
 
         if (NTCurve == 0)
         {
-            throw new Standard_ConstructionError("GeomPlate : the bounds Array is null");
+            throw new ConstructionErrorException("GeomPlate : the bounds Array is null");
         }
         if (Tang.Length() == 0)
         {
-            throw new Standard_ConstructionError("GeomPlate : the constraints Array is null");
+            throw new ConstructionErrorException("GeomPlate : the constraints Array is null");
         }
         int nbp = 0;
         int i;
@@ -100,12 +103,12 @@ public class GeomPlate_BuildPlateSurface
         }
         if (nbp == 0)
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomPlate : the resolution is impossible if the number of constraints points is 0");
         }
         if (myDegree < 2)
         {
-            throw new Standard_ConstructionError("GeomPlate ; the degree resolution must be upper of 2");
+            throw new ConstructionErrorException("GeomPlate ; the degree resolution must be upper of 2");
         }
         // Filling fields passing from the old constructor to the new one
         for (i = 1; i <= NTCurve; i++)
@@ -120,7 +123,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>A builder deforming the initial surface <paramref name="Surf"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Fewer than one iteration, or a degree below 2.</exception>
+    /// <exception cref="ConstructionErrorException">Fewer than one iteration, or a degree below 2.</exception>
     public GeomPlate_BuildPlateSurface(Geom_Surface Surf, int Degree = 3, int NbPtsOnCur = 10, int NbIter = 3,
                                        double Tol2d = 0.00001, double Tol3d = 0.0001, double TolAng = 0.01,
                                        double TolCurv = 0.1, bool Anisotropie = false)
@@ -136,11 +139,11 @@ public class GeomPlate_BuildPlateSurface
         myNbBounds = 0;
         if (myNbIter < 1)
         {
-            throw new Standard_ConstructionError("GeomPlate :  Number of iteration must be >= 1");
+            throw new ConstructionErrorException("GeomPlate :  Number of iteration must be >= 1");
         }
         if (myDegree < 2)
         {
-            throw new Standard_ConstructionError("GeomPlate : the degree must be above 2");
+            throw new ConstructionErrorException("GeomPlate : the degree must be above 2");
         }
         myLinCont = new NCollection_HSequence<GeomPlate_CurveConstraint>();
         myPntCont = new NCollection_HSequence<GeomPlate_PointConstraint>();
@@ -151,7 +154,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>A builder that computes its initial surface.</summary>
-    /// <exception cref="Standard_ConstructionError">Fewer than one iteration, or a degree below 2.</exception>
+    /// <exception cref="ConstructionErrorException">Fewer than one iteration, or a degree below 2.</exception>
     public GeomPlate_BuildPlateSurface(int Degree = 3, int NbPtsOnCur = 10, int NbIter = 3, double Tol2d = 0.00001,
                                        double Tol3d = 0.0001, double TolAng = 0.01, double TolCurv = 0.1,
                                        bool Anisotropie = false)
@@ -166,11 +169,11 @@ public class GeomPlate_BuildPlateSurface
         myNbBounds = 0;
         if (myNbIter < 1)
         {
-            throw new Standard_ConstructionError("GeomPlate :  Number of iteration must be >= 1");
+            throw new ConstructionErrorException("GeomPlate :  Number of iteration must be >= 1");
         }
         if (myDegree < 2)
         {
-            throw new Standard_ConstructionError("GeomPlate : the degree resolution must be upper of 2");
+            throw new ConstructionErrorException("GeomPlate : the degree resolution must be upper of 2");
         }
         myLinCont = new NCollection_HSequence<GeomPlate_CurveConstraint>();
         myPntCont = new NCollection_HSequence<GeomPlate_PointConstraint>();
@@ -206,7 +209,7 @@ public class GeomPlate_BuildPlateSurface
         // Project a curve on a plane
         Geom2d_Curve? Curve2d;
         GeomAdaptor_Surface hsur = new GeomAdaptor_Surface(mySurfInit!);
-        gp_Pnt2d P2d;
+        Point2D P2d;
 
         ProjLib_CompProjectedCurve HProjector = new ProjLib_CompProjectedCurve(hsur, Curv, myTol3d / 10, myTol3d / 10);
 
@@ -215,13 +218,13 @@ public class GeomPlate_BuildPlateSurface
         UfinCheck = Curv.LastParameter();
         HProjector.Bounds(1, out ProjUdeb, out ProjUfin);
 
-        if (HProjector.NbCurves() != 1 || Math.Abs(UdebCheck - ProjUdeb) > Precision.PConfusion()
-            || Math.Abs(UfinCheck - ProjUfin) > Precision.PConfusion())
+        if (HProjector.NbCurves() != 1 || Math.Abs(UdebCheck - ProjUdeb) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(UfinCheck - ProjUfin) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (HProjector.IsSinglePnt(1, out P2d))
             {
                 // solution in a point
-                NCollection_Array1<gp_Pnt2d> poles = new NCollection_Array1<gp_Pnt2d>(1, 2);
+                NCollection_Array1<Point2D> poles = new NCollection_Array1<Point2D>(1, 2);
                 poles.Init(P2d);
                 Curve2d = new Geom2d_BezierCurve(poles);
             }
@@ -232,12 +235,12 @@ public class GeomPlate_BuildPlateSurface
         }
         else
         {
-            GeomAbs_Shape Continuity = GeomAbs_C1;
+            Continuity Continuity = C1;
             int MaxDegree = 10, MaxSeg;
             double Udeb, Ufin;
             HProjector.Bounds(1, out Udeb, out Ufin);
 
-            MaxSeg = 20 + HProjector.NbIntervals(GeomAbs_C3);
+            MaxSeg = 20 + HProjector.NbIntervals(C3);
             Approx_CurveOnSurface appr = new Approx_CurveOnSurface(HProjector, hsur, Udeb, Ufin, myTol3d);
             appr.Perform(MaxSeg, MaxDegree, Continuity, false, true);
 
@@ -265,7 +268,7 @@ public class GeomPlate_BuildPlateSurface
 
             if (Math.Abs(First1 - First2) <= Max(myTolU, myTolV) && Math.Abs(Last1 - Last2) <= Max(myTolU, myTolV))
             {
-                HProjector = HProjector.Trim(First2, Last2, Precision.PConfusion()) as ProjLib_CompProjectedCurve;
+                HProjector = HProjector.Trim(First2, Last2, global::Kerf.Engine.Foundation.Precision.PConfusion()) as ProjLib_CompProjectedCurve;
             }
             else
             {
@@ -276,7 +279,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     // Projects a point on the initial surface
-    private gp_Pnt2d ProjectPoint(in gp_Pnt p3d)
+    private Point2D ProjectPoint(in Point3D p3d)
     {
         Extrema_POnSurf P;
         myProj.Perform(p3d);
@@ -296,7 +299,7 @@ public class GeomPlate_BuildPlateSurface
         P = myProj.Point(nearest);
         double u, v;
         P.Parameter(out u, out v);
-        gp_Pnt2d p2d = new gp_Pnt2d();
+        Point2D p2d = new Point2D();
         p2d.SetCoord(u, v);
 
         return p2d;
@@ -336,7 +339,7 @@ public class GeomPlate_BuildPlateSurface
     }
 
     /// <summary>Computes the surface filled with the loaded constraints.</summary>
-    public void Perform(Message_ProgressRange theProgress = default)
+    public void Perform(ProgressRange theProgress = default)
     {
         myGeomPlateSurface = null;
 
@@ -359,7 +362,7 @@ public class GeomPlate_BuildPlateSurface
         //======================================================================
         // Initial Surface
         //======================================================================
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, "Calculating the surface filled", 100, true);
+        using ProgressScope aPS = new ProgressScope(theProgress, "Calculating the surface filled", 100, true);
         if (!mySurfInitIsGive)
         {
             ComputeSurfInit(aPS.Next(10));
@@ -426,9 +429,9 @@ public class GeomPlate_BuildPlateSurface
             // (an access violation). The port throws Standard_NullObject (occt-issues.md).
             if (myGeomPlateSurface is null)
             {
-                throw new Standard_NullObject("GeomPlate_BuildPlateSurface::Perform: no plate surface to approximate");
+                throw new NullObjectException("GeomPlate_BuildPlateSurface::Perform: no plate surface to approximate");
             }
-            GeomPlate_MakeApprox App = new GeomPlate_MakeApprox(myGeomPlateSurface, myTol3d, 1, 3, 15 * myTol3d, -1, GeomAbs_C0, 1.3);
+            GeomPlate_MakeApprox App = new GeomPlate_MakeApprox(myGeomPlateSurface, myTol3d, 1, 3, 15 * myTol3d, -1, C0, 1.3);
             mySurfInit = App.Surface()!;
 
             mySurfInit.Bounds(out u1, out v1, out u2, out v2);
@@ -467,7 +470,7 @@ public class GeomPlate_BuildPlateSurface
             { // Project the points
                 for (int i = 1; i <= NTPntCont; i++)
                 {
-                    gp_Pnt P;
+                    Point3D P;
                     myPntCont.Value(i).D0(out P);
                     myPntCont.ChangeValue(i).SetPnt2dOnSurf(ProjectPoint(P));
                 }
@@ -481,7 +484,7 @@ public class GeomPlate_BuildPlateSurface
         {
             if (!myPntCont.Value(i).HasPnt2dOnSurf())
             {
-                gp_Pnt P;
+                Point3D P;
                 myPntCont.Value(i).D0(out P);
                 myPntCont.ChangeValue(i).SetPnt2dOnSurf(ProjectPoint(P));
             }
@@ -615,9 +618,9 @@ public class GeomPlate_BuildPlateSurface
         {
             NbPt = myParCont.Value(c).Length();
         }
-        gp_Vec v1i, v1f, v2i, v2f, v3i, v3f;
-        gp_Pnt Pi, Pf;
-        gp_Pnt2d P2d;
+        Vector3D v1i, v1f, v2i, v2f, v3i, v3f;
+        Point3D Pi, Pf;
+        Point2D P2d;
         int i;
         GeomPlate_CurveConstraint LinCont = myLinCont.Value(c);
         switch (LinCont.Order())
@@ -707,7 +710,7 @@ public class GeomPlate_BuildPlateSurface
                         }
                     }
                     GeomLProp_SLProps Prop = new GeomLProp_SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
-                    CG2.ComputeAnalysis(Prop, myLinCont.Value(c).LPropSurf(U), GeomAbs_G2);
+                    CG2.ComputeAnalysis(Prop, myLinCont.Value(c).LPropSurf(U), G2);
                     d.ChangeValue(i) = CG2.C0Value();
                     an.ChangeValue(i) = CG2.G1Angle();
                     courb.ChangeValue(i) = CG2.G2CurvatureGap();
@@ -720,7 +723,7 @@ public class GeomPlate_BuildPlateSurface
     /// The UV points of the constraints (order other than -1) on the initial surface: the point constraints, then
     /// each curve's first point and, on each interval, its points at 1/4, 1/2, 3/4 and the end.
     /// </summary>
-    public void Disc2dContour(int nbp, NCollection_Sequence<gp_XY> Seq2d)
+    public void Disc2dContour(int nbp, NCollection_Sequence<Xy> Seq2d)
     {
         //  initialization
         Seq2d.Clear();
@@ -728,9 +731,9 @@ public class GeomPlate_BuildPlateSurface
         //  sampling in "cosine" + 3 points on each interval
         int NTCurve = myLinCont.Length();
         int NTPntCont = myPntCont.Length();
-        gp_Pnt2d P2d;
-        gp_XY UV = new gp_XY();
-        gp_Pnt PP;
+        Point2D P2d;
+        Xy UV = new Xy();
+        Point3D PP;
         double u1, v1, u2, v2;
         int i;
 
@@ -869,7 +872,7 @@ public class GeomPlate_BuildPlateSurface
     /// The 3D points (<paramref name="iordre"/> 0) or normals (1) of the constraints at the points of
     /// <see cref="Disc2dContour"/>.
     /// </summary>
-    public void Disc3dContour(int nbp, int iordre, NCollection_Sequence<gp_XYZ> Seq3d)
+    public void Disc3dContour(int nbp, int iordre, NCollection_Sequence<Xyz> Seq3d)
     {
         //  initialization
         Seq3d.Clear();
@@ -880,9 +883,9 @@ public class GeomPlate_BuildPlateSurface
         myProj.Initialize(Surf, u1, v1, u2, v2, Surf.UResolution(myTol3d), Surf.VResolution(myTol3d));
         int NTCurve = myLinCont.Length();
         int NTPntCont = myPntCont.Length();
-        gp_Pnt P3d;
-        gp_Vec v1h, v2h, v3h;
-        gp_XYZ Pos = new gp_XYZ();
+        Point3D P3d;
+        Vector3D v1h, v2h, v3h;
+        Xyz Pos = new Xyz();
         int i;
 
         for (i = 1; i <= NTPntCont; i++)
@@ -1064,7 +1067,7 @@ public class GeomPlate_BuildPlateSurface
     public double G2Error() => myG2Error;
 
     /// <summary>The largest distance between the surface and the curve constraint <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_OutOfRange">The constraint has more points than the builder's NbPtsOnCur (OCCT's bug).</exception>
+    /// <exception cref="OutOfRangeException">The constraint has more points than the builder's NbPtsOnCur (OCCT's bug).</exception>
     public double G0Error(int Index)
     {
         // OCCT: the arrays have myNbPtsOnCur elements, but EcartContraintesMil writes one per interval of the curve's
@@ -1152,7 +1155,7 @@ public class GeomPlate_BuildPlateSurface
         mySense = new NCollection_HArray1<int>(1, nbf, 0);
         bool result = true;
         int j = 1, i;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
 
         while (j <= (myNbBounds - 1))
         {
@@ -1246,7 +1249,7 @@ public class GeomPlate_BuildPlateSurface
     // Calculate the initial surface either by the method of max flow or by
     // the method of the plane of inertia if the contour is not closed or if
     // there are point constraints.
-    private void ComputeSurfInit(Message_ProgressRange theProgress)
+    private void ComputeSurfInit(ProgressRange theProgress)
     {
         int nopt = 2, popt = 2, Np = 1;
         bool isHalfSpace = true;
@@ -1270,11 +1273,11 @@ public class GeomPlate_BuildPlateSurface
             nopt = 3;
             // Table contains the cloud of points for calculation of the plane
             int NbPoint = 20, Discr = NbPoint / 4, pnum = 0;
-            NCollection_HArray1<gp_Pnt> Pts = new NCollection_HArray1<gp_Pnt>(1, (NbPoint + 1) * NTLinCont + NTPntCont);
-            NCollection_Sequence<gp_Vec> Vecs = new NCollection_Sequence<gp_Vec>(), NewVecs = new NCollection_Sequence<gp_Vec>();
+            NCollection_HArray1<Point3D> Pts = new NCollection_HArray1<Point3D>(1, (NbPoint + 1) * NTLinCont + NTPntCont);
+            NCollection_Sequence<Vector3D> Vecs = new NCollection_Sequence<Vector3D>(), NewVecs = new NCollection_Sequence<Vector3D>();
             NCollection_Sequence<GeomPlate_Aij> Aset = new NCollection_Sequence<GeomPlate_Aij>();
             double Uinit, Ufinal, Uif;
-            gp_Vec LastVec = new gp_Vec();
+            Vector3D LastVec = new Vector3D();
             int i;
             for (i = 1; i <= NTLinCont; i++)
             {
@@ -1291,11 +1294,11 @@ public class GeomPlate_BuildPlateSurface
                     Uif = -Uif;
                 }
 
-                gp_Vec Vec1, Vec2, Normal = new gp_Vec();
+                Vector3D Vec1, Vec2, Normal = new Vector3D();
                 bool ToReverse = false;
-                if (i > 1 && Order >= (int)GeomAbs_G1)
+                if (i > 1 && Order >= (int)G1)
                 {
-                    gp_Pnt P;
+                    Point3D P;
                     myLinCont.Value(i).D1(Uinit, out P, out Vec1, out Vec2);
                     Normal = Vec1 ^ Vec2;
                     if (LastVec.IsOpposite(Normal, AngTol))
@@ -1308,7 +1311,7 @@ public class GeomPlate_BuildPlateSurface
                 { // Number of points per curve = 20
                   // Linear distribution
                     double Inter = j * Uif / (NbPoint);
-                    if (Order < (int)GeomAbs_G1 || j % Discr != 0)
+                    if (Order < (int)G1 || j % Discr != 0)
                     {
                         myLinCont.Value(i).D0(Uinit + Inter, out Pts.ChangeValue(++pnum));
                     }
@@ -1348,7 +1351,7 @@ public class GeomPlate_BuildPlateSurface
                         }
                     }
                 }
-                if (Order >= (int)GeomAbs_G1)
+                if (Order >= (int)G1)
                 {
                     isHalfSpace = GeomPlate_BuildAveragePlane.HalfSpace(NewVecs, Vecs, Aset, LinTol, AngTol);
                     if (!isHalfSpace)
@@ -1366,8 +1369,8 @@ public class GeomPlate_BuildPlateSurface
                     int Order = myPntCont.Value(i).Order();
 
                     NewVecs.Clear();
-                    gp_Vec Vec1, Vec2, Normal;
-                    if (Order < (int)GeomAbs_G1)
+                    Vector3D Vec1, Vec2, Normal;
+                    if (Order < (int)G1)
                     {
                         myPntCont.Value(i).D0(out Pts.ChangeValue(++pnum));
                     }
@@ -1474,7 +1477,7 @@ public class GeomPlate_BuildPlateSurface
             }
             _ = Npt;
             // Table containing a cloud of points for calculation of the plane
-            NCollection_HArray1<gp_Pnt> Pts = new NCollection_HArray1<gp_Pnt>(1, 20 * NTLinCont + NTPntCont);
+            NCollection_HArray1<Point3D> Pts = new NCollection_HArray1<Point3D>(1, 20 * NTLinCont + NTPntCont);
             int NbPoint = 20;
             double Uinit, Ufinal, Uif;
             for (i = 1; i <= NTLinCont; i++)
@@ -1491,14 +1494,14 @@ public class GeomPlate_BuildPlateSurface
                 { // Number of points per curve = 20
                   // Linear distribution
                     double Inter = j * Uif / (NbPoint);
-                    gp_Pnt P;
+                    Point3D P;
                     myLinCont.Value(i).D0(Uinit + Inter, out P);
                     Pts.SetValue(Np++, P);
                 }
             }
             for (i = 1; i <= NTPntCont; i++)
             {
-                gp_Pnt P;
+                Point3D P;
                 myPntCont.Value(i).D0(out P);
                 Pts.SetValue(Np++, P);
             }
@@ -1542,8 +1545,8 @@ public class GeomPlate_BuildPlateSurface
                 ProjLib_CompProjectedCurve ProjCurve = new ProjLib_CompProjectedCurve(hsur, Curve, myTol3d, myTol3d);
                 Adaptor3d_CurveOnSurface AProj = new Adaptor3d_CurveOnSurface(ProjCurve, hsur);
 
-                gp_Pnt P;
-                gp_Vec DerC, DerCproj;
+                Point3D P;
+                Vector3D DerC, DerCproj;
                 for (int j = 1; j < NbPoint && myIsLinear; j++)
                 {
                     double Inter = FirstPar + j * Uif;
@@ -1596,7 +1599,7 @@ public class GeomPlate_BuildPlateSurface
             //======================================================================
             for (i = 1; i <= NTPntCont; i++)
             {
-                gp_Pnt P;
+                Point3D P;
                 myPntCont.Value(i).D0(out P);
                 if (!myPntCont.Value(i).HasPnt2dOnSurf())
                 {
@@ -1639,7 +1642,7 @@ public class GeomPlate_BuildPlateSurface
             //====================================================================
             // Construction of the surface
             //====================================================================
-            using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, "ComputeSurfInit", 1);
+            using ProgressScope aPS = new ProgressScope(theProgress, "ComputeSurfInit", 1);
             myPlate.SolveTI(2, ComputeAnisotropie(), aPS.Next());
             if (theProgress.UserBreak())
             {
@@ -1653,7 +1656,7 @@ public class GeomPlate_BuildPlateSurface
 
             myGeomPlateSurface = new GeomPlate_Surface(mySurfInit, myPlate);
 
-            GeomPlate_MakeApprox App = new GeomPlate_MakeApprox(myGeomPlateSurface, myTol3d, 1, 3, 15 * myTol3d, -1, GeomAbs_C0);
+            GeomPlate_MakeApprox App = new GeomPlate_MakeApprox(myGeomPlateSurface, myTol3d, 1, 3, 15 * myTol3d, -1, C0);
             mySurfInit = App.Surface();
 
             mySurfInitIsGive = true;
@@ -1677,9 +1680,9 @@ public class GeomPlate_BuildPlateSurface
         Geom2dInt_GInter Intersection = new Geom2dInt_GInter();
         Geom2dAdaptor_Curve Ci = new Geom2dAdaptor_Curve(), Cj = new Geom2dAdaptor_Curve();
         IntRes2d_IntersectionPoint int2d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P2d;
-        gp_Vec2d V2d;
+        Point3D P1, P2;
+        Point2D P2d;
+        Vector2D V2d;
         for (int i = 1; i <= NTLinCont; i++)
         {
             //  Find the intersection with each curve including the curve itself
@@ -1738,7 +1741,7 @@ public class GeomPlate_BuildPlateSurface
                             // If G1-G1
                             if ((myLinCont.Value(i).Order() == 1) && (myLinCont.Value(j).Order() == 1))
                             {
-                                gp_Vec v11, v12, v13, v14, v15, v16, v21, v22, v23, v24, v25, v26;
+                                Vector3D v11, v12, v13, v14, v15, v16, v21, v22, v23, v24, v25, v26;
                                 myLinCont.Value(i).D2(int2d.ParamOnFirst(), out P1, out v11, out v12, out v13, out v14, out v15);
                                 myLinCont.Value(j).D2(int2d.ParamOnSecond(), out P2, out v21, out v22, out v23, out v24, out v25);
                                 v16 = v11 ^ v12;
@@ -1756,8 +1759,8 @@ public class GeomPlate_BuildPlateSurface
                                     double coin;
                                     double Tol = 100 * myTol3d;
                                     double A1;
-                                    gp_Pnt2d P1temp, P2temp;
-                                    gp_Vec2d V1, V2;
+                                    Point2D P1temp, P2temp;
+                                    Vector2D V1, V2;
                                     myLinCont.Value(i).Curve2dOnSurf()!.D1(int2d.ParamOnFirst(), out P1temp, out V1);
                                     myLinCont.Value(j).Curve2dOnSurf()!.D1(int2d.ParamOnSecond(), out P2temp, out V2);
                                     A1 = V1.Angle(V2);
@@ -1787,7 +1790,7 @@ public class GeomPlate_BuildPlateSurface
                             if ((myLinCont.Value(i).Order() == 0 && myLinCont.Value(j).Order() == 1)
                                 || (myLinCont.Value(i).Order() == 1 && myLinCont.Value(j).Order() == 0))
                             {
-                                gp_Vec vec, vecU, vecV, N;
+                                Vector3D vec, vecU, vecV, N;
                                 if (myLinCont.Value(i).Order() == 0)
                                 {
                                     Adaptor3d_Curve theCurve = myLinCont.Value(i).Curve3d();
@@ -1810,8 +1813,8 @@ public class GeomPlate_BuildPlateSurface
                                     double coin;
                                     double Tol = 100 * myTol3d;
                                     double A1;
-                                    gp_Pnt2d P1temp, P2temp;
-                                    gp_Vec2d V1, V2;
+                                    Point2D P1temp, P2temp;
+                                    Vector2D V1, V2;
                                     myLinCont.Value(i).Curve2dOnSurf()!.D1(int2d.ParamOnFirst(), out P1temp, out V1);
                                     myLinCont.Value(j).Curve2dOnSurf()!.D1(int2d.ParamOnSecond(), out P2temp, out V2);
                                     A1 = V1.Angle(V2);
@@ -1915,7 +1918,7 @@ public class GeomPlate_BuildPlateSurface
                 }
                 int ii, Nbint = 20;
                 double U;
-                NCollection_Array1<gp_Pnt2d> tabP2d = new NCollection_Array1<gp_Pnt2d>(1, Nbint + 1);
+                NCollection_Array1<Point2D> tabP2d = new NCollection_Array1<Point2D>(1, Nbint + 1);
                 tabP2d[1].SetY(Uinit);
                 tabP2d[1].SetX(0.0);
                 tabP2d[Nbint + 1].SetY(Ufinal);
@@ -1980,8 +1983,8 @@ public class GeomPlate_BuildPlateSurface
                                         {
                                             k = NbPtG1G1 + 2; // to leave the loop
                                             // Add points of constraint G0
-                                            gp_Pnt P3d, PP, Pdif = new gp_Pnt();
-                                            gp_Pnt2d P2d;
+                                            Point3D P3d, PP, Pdif = new Point3D();
+                                            Point2D P2d;
 
                                             AC2d.D0(Inter, out P2d);
                                             LinCont.D0(Inter, out P3d);
@@ -2021,8 +2024,8 @@ public class GeomPlate_BuildPlateSurface
                             {
                                 k = NbPtG1G1 + 2; // to leave the loop
                                 // Add points of constraint G0
-                                gp_Pnt P3d, PP, Pdif = new gp_Pnt();
-                                gp_Pnt2d P2d;
+                                Point3D P3d, PP, Pdif = new Point3D();
+                                Point2D P2d;
 
                                 AC2d.D0(Inter, out P2d);
                                 LinCont.D0(Inter, out P3d);
@@ -2046,7 +2049,7 @@ public class GeomPlate_BuildPlateSurface
                     else
                     {
                         if (((!mySurfInitIsGive)
-                             && (new Geom2dAdaptor_Curve(LinCont.Curve2dOnSurf()!).GetType() != GeomAbs_CurveType.GeomAbs_Circle))
+                             && (new Geom2dAdaptor_Curve(LinCont.Curve2dOnSurf()!).GetType() != CurveKind.Circle))
                             || ((j > 1) && (j < NbPnt_i)))
                         { // exclude extremities
                             myPlateCont[i].Append(Inter); // add the point
@@ -2095,8 +2098,8 @@ public class GeomPlate_BuildPlateSurface
     // Starting from table myParCont load all the points noted in plate
     private void LoadCurve(int NbBoucle, int OrderMax = 2)
     {
-        gp_Pnt P3d, Pdif = new gp_Pnt(), PP;
-        gp_Pnt2d P2d;
+        Point3D P3d, Pdif = new Point3D(), PP;
+        Point2D P2d;
         int NTLinCont = myLinCont.Length(), i, j;
         int Tang, Nt;
 
@@ -2137,7 +2140,7 @@ public class GeomPlate_BuildPlateSurface
                         // Loading of points G1
                         if (Tang == 1)
                         { // ==1
-                            gp_Vec V1, V2, V3, V4;
+                            Vector3D V1, V2, V3, V4;
                             CC.D1(myPlateCont.Value(i).Value(j), out PP, out V1, out V2);
                             mySurfInit.D1(P2d.Coord(1), P2d.Coord(2), out PP, out V3, out V4);
 
@@ -2155,7 +2158,7 @@ public class GeomPlate_BuildPlateSurface
                             }
                             else
                             {
-                                gp_Vec DU = new gp_Vec(), DV = new gp_Vec(), Normal, DerPlateU, DerPlateV;
+                                Vector3D DU = new Vector3D(), DV = new Vector3D(), Normal, DerPlateU, DerPlateV;
 
                                 Normal = V1 ^ V2;
                                 // Normal.Normalize();
@@ -2164,8 +2167,8 @@ public class GeomPlate_BuildPlateSurface
                                 {
                                     Normal /= norm;
                                 }
-                                DerPlateU = new gp_Vec(myPrevPlate.EvaluateDerivative(P2d.XY(), 1, 0));
-                                DerPlateV = new gp_Vec(myPrevPlate.EvaluateDerivative(P2d.XY(), 0, 1));
+                                DerPlateU = new Vector3D(myPrevPlate.EvaluateDerivative(P2d.XY(), 1, 0));
+                                DerPlateV = new Vector3D(myPrevPlate.EvaluateDerivative(P2d.XY(), 0, 1));
 
                                 DU.SetLinearForm(-(V3 + DerPlateU).Dot(Normal), Normal, DerPlateU);
                                 DV.SetLinearForm(-(V4 + DerPlateV).Dot(Normal), Normal, DerPlateV);
@@ -2178,7 +2181,7 @@ public class GeomPlate_BuildPlateSurface
                         // Loading of points G2
                         if (Tang == 2) // ==2
                         {
-                            gp_Vec V1, V2, V3, V4, V5, V6, V7, V8, V9, V10;
+                            Vector3D V1, V2, V3, V4, V5, V6, V7, V8, V9, V10;
                             CC.D2(myPlateCont.Value(i).Value(j), out PP, out V1, out V2, out V5, out V6, out V7);
                             mySurfInit.D2(P2d.Coord(1), P2d.Coord(2), out PP, out V3, out V4, out V8, out V9, out V10);
 
@@ -2198,8 +2201,8 @@ public class GeomPlate_BuildPlateSurface
     // Loading of points of point constraints (OCCT doesn't use NbBoucle)
     private void LoadPoint(int NbBoucle, int OrderMax = 2)
     {
-        gp_Pnt P3d, Pdif = new gp_Pnt(), PP;
-        gp_Pnt2d P2d;
+        Point3D P3d, Pdif = new Point3D(), PP;
+        Point2D P2d;
         int NTPntCont = myPntCont.Length();
         int Tang, i;
 
@@ -2217,7 +2220,7 @@ public class GeomPlate_BuildPlateSurface
             Tang = Min(myPntCont.Value(i).Order(), OrderMax);
             if (Tang == 1)
             { // ==1
-                gp_Vec V1, V2, V3, V4;
+                Vector3D V1, V2, V3, V4;
                 myPntCont.Value(i).D1(out PP, out V1, out V2);
                 mySurfInit.D1(P2d.Coord(1), P2d.Coord(2), out PP, out V3, out V4);
                 Plate_D1 D1final = new Plate_D1(V1.XYZ(), V2.XYZ());
@@ -2236,7 +2239,7 @@ public class GeomPlate_BuildPlateSurface
             // Loading of points G2 GeomPlate_PlateG0Criterion
             if (Tang == 2) // ==2
             {
-                gp_Vec V1, V2, V3, V4, V5, V6, V7, V8, V9, V10;
+                Vector3D V1, V2, V3, V4, V5, V6, V7, V8, V9, V10;
                 myPntCont.Value(i).D2(out PP, out V1, out V2, out V5, out V6, out V7);
                 mySurfInit.D2(P2d.Coord(1), P2d.Coord(2), out PP, out V3, out V4, out V8, out V9, out V10);
                 Plate_D1 D1final = new Plate_D1(V1.XYZ(), V2.XYZ());
@@ -2395,9 +2398,9 @@ public class GeomPlate_BuildPlateSurface
     private void VerifPoints(out double Dist, out double Ang, out double Curv)
     {
         int NTPntCont = myPntCont.Length();
-        gp_Pnt Pi, Pf;
-        gp_Pnt2d P2d;
-        gp_Vec v1i, v1f, v2i, v2f, v3i, v3f;
+        Point3D Pi, Pf;
+        Point2D P2d;
+        Vector3D v1i, v1f, v2i, v2f, v3i, v3f;
         Ang = 0;
         Dist = 0;
         Curv = 0;
@@ -2431,7 +2434,7 @@ public class GeomPlate_BuildPlateSurface
                     LocalAnalysis_SurfaceContinuity CG2 = new LocalAnalysis_SurfaceContinuity();
                     P2d = PntCont.Pnt2dOnSurf();
                     GeomLProp_SLProps Prop = new GeomLProp_SLProps(Splate, P2d.Coord(1), P2d.Coord(2), 2, 0.001);
-                    CG2.ComputeAnalysis(Prop, PntCont.LPropSurf(), GeomAbs_G2);
+                    CG2.ComputeAnalysis(Prop, PntCont.LPropSurf(), G2);
                     Dist = CG2.C0Value();
                     Ang = CG2.G1Angle();
                     Curv = CG2.G2CurvatureGap();

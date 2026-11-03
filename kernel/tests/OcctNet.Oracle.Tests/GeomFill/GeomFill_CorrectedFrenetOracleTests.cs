@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -39,10 +40,10 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261104);
         for (int i = 0; i < 10; i++)
         {
-            (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = GeomOracleInputs.Ax2sFromDirection(anOracle);
+            (N.gp_Ax2 aNAx2, Frame3D anAx2) = GeomOracleInputs.Ax2sFromDirection(anOracle);
             using var aNAx2Owner = aNAx2;
             double aR = anOracle.Real(1, 10), anOffset = anOracle.Real(0.1, 0.9) * aR * (anOracle.Bool() ? 1 : -1);
-            (N.gp_Dir aNDir, gp_Dir aDir) = GeomOracleInputs.Dirs(anOracle);
+            (N.gp_Dir aNDir, Direction3D aDir) = GeomOracleInputs.Dirs(anOracle);
             using var aNDirOwner = aNDir;
             using var aNBasis = new N.Geom_Circle(aNAx2, aR);
             using var aNC = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir, true);
@@ -79,13 +80,13 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
                 aMults[k] = anOracle.Int(1, aDeg);
             }
             aMults[1] = aMults[aNbKnots] = aDeg + 1;
-            int aNbPoles = Occt.BSplCLib.NbPoles(aDeg, false, aMults);
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+            int aNbPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, false, aMults);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
             for (int k = 1; k <= aNbPoles; k++)
             {
                 double aY = (k % 2 == 0 ? 1 : -1) * anOracle.Real(0.5, 3);
-                aPoles[k] = aPlanar ? new gp_Pnt(k * 2.0 + anOracle.Real(-0.3, 0.3), aY, 0)
-                                    : new gp_Pnt(anOracle.Real(-5, 5), anOracle.Real(-5, 5), anOracle.Real(-5, 5));
+                aPoles[k] = aPlanar ? new Point3D(k * 2.0 + anOracle.Real(-0.3, 0.3), aY, 0)
+                                    : new Point3D(anOracle.Real(-5, 5), anOracle.Real(-5, 5), anOracle.Real(-5, 5));
             }
             NCollection_Array1<double>? aWeights = anOracle.Bool() ? null : anOracle.Weights(aNbPoles, true);
             using N.Geom_BSplineCurve aNC = Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, false);

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class NCollectionTests
@@ -7,12 +11,12 @@ public class NCollectionTests
     [Fact]
     public void Array1_default_constructs_its_elements_as_CPlusPlus_does()
     {
-        var aDirs = new NCollection_Array1<gp_Dir>(1, 3);
-        var aTrsfs = new NCollection_Array2<gp_Trsf>(1, 2, 1, 2);
+        var aDirs = new NCollection_Array1<Direction3D>(1, 3);
+        var aTrsfs = new NCollection_Array2<Transform3D>(1, 2, 1, 2);
 
-        Assert.Equal(new gp_Dir(), aDirs[2]);
+        Assert.Equal(new Direction3D(), aDirs[2]);
         Assert.Equal(1.0, aDirs[2].X());
-        Assert.Equal(new gp_Trsf(), aTrsfs[2, 2]);
+        Assert.Equal(new Transform3D(), aTrsfs[2, 2]);
         Assert.Equal(0.0, new NCollection_Array1<double>(1, 3)[3]);
     }
 
@@ -27,7 +31,7 @@ public class NCollectionTests
         Assert.Equal(3, anArray.Length());
         Assert.Equal((5, 7), (anArray.Lower(), anArray.Upper()));
         Assert.Equal([1.0, 2.0, 3.0], anArray.AsSpan().ToArray());
-        Assert.Throws<Standard_OutOfRange>(() => anArray.Value(8));
+        Assert.Throws<OutOfRangeException>(() => anArray.Value(8));
     }
 
     [Fact]
@@ -126,13 +130,13 @@ public class NCollectionTests
     {
         using var aSource = new CancellationTokenSource();
         var aReports = new List<double>();
-        var anIndicator = new Message_ProgressIndicator(aSource.Token, new SynchronousProgress(aReports.Add));
+        var anIndicator = new ProgressIndicator(aSource.Token, new SynchronousProgress(aReports.Add));
 
-        using (var aScope = new Message_ProgressScope(anIndicator.Start(), "outer", 4))
+        using (var aScope = new ProgressScope(anIndicator.Start(), "outer", 4))
         {
             for (int i = 0; i < 2 && aScope.More(); i++)
             {
-                Message_ProgressRange aStep = aScope.Next();
+                ProgressRange aStep = aScope.Next();
                 aStep.Close();
             }
 

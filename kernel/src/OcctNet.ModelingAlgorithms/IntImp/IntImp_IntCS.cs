@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -43,7 +49,7 @@ public interface IIntImp_PSurfaceTool<ThePSurface>
 public interface IIntImp_CSFunction<ThePSurface, TheCurve>
 {
     /// <summary>The intersection point of the last evaluation.</summary>
-    gp_Pnt Point();
+    Point3D Point();
 
     /// <summary>The value whose zero is a root (a square distance).</summary>
     double Root();
@@ -64,7 +70,7 @@ public interface IIntImp_CSFunction<ThePSurface, TheCurve>
 /// object that the caller hands over).
 /// </remarks>
 public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
-    where TheFunction : math_FunctionSetWithDerivatives, IIntImp_CSFunction<ThePSurface, TheCurve>
+    where TheFunction : FunctionSetWithDerivatives, IIntImp_CSFunction<ThePSurface, TheCurve>
     where ThePSurfaceTool : IIntImp_PSurfaceTool<ThePSurface>
     where TheCurveTool : IIntImp_CurveTool<TheCurve>
 {
@@ -90,11 +96,11 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
         u = 0.0;
         v = 0.0;
         tol = TolTangency * TolTangency;
-        if (tol < Precision.SquareConfusion())
+        if (tol < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            tol = Precision.SquareConfusion();
+            tol = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         }
-        math_FunctionSetRoot Rsnld = new(myFunction);
+        FunctionSetRoot Rsnld = new(myFunction);
         double u0, u1, v0, v1, w0, w1;
         ThePSurface S = myFunction.AuxillarSurface();
         TheCurve C = myFunction.AuxillarCurve();
@@ -109,7 +115,7 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
 
         if (MarginCoef > 0.0)
         {
-            if (!Precision.IsInfinite(u0) && !Precision.IsInfinite(u1))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u0) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(u1))
             {
                 double marg = (u1 - u0) * MarginCoef;
                 if (u0 > u1)
@@ -119,7 +125,7 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
                 u0 -= marg;
                 u1 += marg;
             }
-            if (!Precision.IsInfinite(v0) && !Precision.IsInfinite(v1))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v0) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(v1))
             {
                 double marg = (v1 - v0) * MarginCoef;
                 if (v0 > v1)
@@ -141,9 +147,9 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
         empty = true;
         myFunction = F;
         tol = TolTangency * TolTangency;
-        if (tol < Precision.SquareConfusion())
+        if (tol < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            tol = Precision.SquareConfusion();
+            tol = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         }
     }
 
@@ -151,7 +157,7 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
     /// Searches an intersection from the starting point (<paramref name="U"/>, <paramref name="V"/>,
     /// <paramref name="W"/>) with the solver <paramref name="Rsnld"/>, within the given bounds.
     /// </summary>
-    public void Perform(double U, double V, double W, math_FunctionSetRoot Rsnld, double u0, double u1, double v0,
+    public void Perform(double U, double V, double W, FunctionSetRoot Rsnld, double u0, double u1, double v0,
                         double v1, double w0, double w1)
     {
         done = true;
@@ -170,9 +176,9 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
         BornInf[3] = w0;
         BornSup[3] = w1;
 
-        Tolerance[1] = ThePSurfaceTool.UResolution(S, Precision.Confusion());
-        Tolerance[2] = ThePSurfaceTool.VResolution(S, Precision.Confusion());
-        Tolerance[3] = TheCurveTool.Resolution(C, Precision.Confusion());
+        Tolerance[1] = ThePSurfaceTool.UResolution(S, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Tolerance[2] = ThePSurfaceTool.VResolution(S, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Tolerance[3] = TheCurveTool.Resolution(C, global::Kerf.Engine.Foundation.Precision.Confusion());
         Rsnld.SetTolerance(Tolerance);
         int autretentative = 0;
         done = false;
@@ -188,7 +194,7 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
             }
             autretentative++;
             Rsnld.Perform(myFunction, UVap, BornInf, BornSup);
-            if (Rsnld.IsDone())
+            if (Rsnld.IsDone)
             {
                 double AbsmyFunctionRoot = Math.Abs(myFunction.Root());
                 if (AbsmyFunctionRoot <= tol)
@@ -210,20 +216,20 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return empty;
     }
 
-    public gp_Pnt Point()
+    public Point3D Point()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (empty)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return myFunction.Point();
     }
@@ -232,11 +238,11 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (empty)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         U = u;
         V = v;
@@ -246,11 +252,11 @@ public class IntImp_IntCS<TheFunction, ThePSurface, ThePSurfaceTool, TheCurve, T
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (empty)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return w;
     }

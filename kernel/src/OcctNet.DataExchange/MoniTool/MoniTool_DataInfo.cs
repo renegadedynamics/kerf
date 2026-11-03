@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +18,7 @@ public static class MoniTool_DataInfo
     /// <summary>
     /// Returns the Type attached to an object Here, the Dynamic Type of a Transient. Null Type if unknown
     /// </summary>
-    public static Type? Type(Standard_Transient? ent)
+    public static Type? Type(Transient? ent)
     {
         return ent.DynamicType();
     }
@@ -24,8 +26,8 @@ public static class MoniTool_DataInfo
     /// <summary>
     /// Returns Type Name (string) Allows to name type of non-handled objects
     /// </summary>
-    public static string TypeName(Standard_Transient? ent)
+    public static string TypeName(Transient? ent)
     {
-        return ent.DynamicType().Name;
+        return ent.DynamicTypeName();
     }
 }

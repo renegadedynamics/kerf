@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using static Occt.StepData_Logical;
 using static Occt.UnitsMethods_LengthUnit;
@@ -67,7 +68,7 @@ public class StepDataTests
         bool b = false;
         StepData_Logical l = StepData_LFalse;
         TCollection_HAsciiString? s = null;
-        Standard_Transient? ent = null;
+        Transient? ent = null;
 
         Assert.True(aData.CheckNbParams(aNum, 11, ach, "point"));
         Assert.True(aData.ReadString(aNum, 1, "name", ach, ref s));
@@ -87,7 +88,7 @@ public class StepDataTests
         Assert.True(aData.ReadEnum(aNum, 7, "e", ach, new StepData_EnumTool(".GREEN.", ".RED."), ref e));
         Assert.Equal(1, e);
         Assert.True(aData.CheckDerived(aNum, 8, "d", ach));
-        Assert.False(aData.ReadEntity(aNum, 9, "void", ach, typeof(Standard_Transient), ref ent));
+        Assert.False(aData.ReadEntity(aNum, 9, "void", ach, typeof(Transient), ref ent));
         Assert.True(aData.ReadEntity(aNum, 10, "ref", ach, typeof(StepData_UndefinedEntity), ref ent));
         Assert.Same(aData.BoundEntity(Record(aData, 2)), ent);
         StepData_UndefinedEntity? und = null;
@@ -152,7 +153,7 @@ public class StepDataTests
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
         Assert.Equal(1, StepFile_Read.Read("mem", Bytes(aText), new StepData_StepModel(), StepDataDump.HeaderOnlyProtocol(),
-                                           new Message_ProgressIndicator(aSource.Token).Start()));
+                                           new ProgressIndicator(aSource.Token).Start()));
         Assert.Equal(1, StepFile_Read.Read("mem", Bytes(aText), new StepData_StepModel(), StepDataDump.HeaderOnlyProtocol(),
                                            default, new StepFile_ReadLimits { MaxRecords = 2 }));
     }
@@ -205,7 +206,7 @@ public class StepDataTests
 
     private sealed class ColourSelect : StepData_SelectType
     {
-        public override int CaseNum(Standard_Transient? ent) => ent is StepData_UndefinedEntity ? 1 : 0;
+        public override int CaseNum(Transient? ent) => ent is StepData_UndefinedEntity ? 1 : 0;
 
         public override int CaseMem(StepData_SelectMember? ent) => ent is not null && (ent.Name() == "RGB" || ent.Name() == "") ? 1 : 0;
     }
@@ -215,14 +216,14 @@ public class StepDataTests
     {
         var aSelect = new ColourSelect();
         var aMember = new StepData_SelectInt();
-        Assert.Throws<Standard_TypeMismatch>(() => aSelect.SetValue(new TCollection_HAsciiString("x")));
+        Assert.Throws<TypeMismatchException>(() => aSelect.SetValue(new TCollection_HAsciiString("x")));
         aSelect.SetValue(new StepData_UndefinedEntity());
         Assert.Equal(1, aSelect.CaseNumber());
         aSelect.SetReal(0.5, "RGB");
         Assert.Equal(0.5, aSelect.Real());
         Assert.Equal("RGB", aSelect.SelectName());
         Assert.IsType<StepData_SelectNamed>(aSelect.Value());
-        Assert.Throws<Standard_TypeMismatch>(() => aSelect.SetInteger(3, "HSV"));
+        Assert.Throws<TypeMismatchException>(() => aSelect.SetInteger(3, "HSV"));
 
         // OCCT stores every logical as 0 (occt-issues.md, 8B)
         aMember.SetLogical(StepData_LTrue);
@@ -336,6 +337,6 @@ public class StepDataTests
         // Not UTF-8 (a code point beyond U+10FFFF): one char per byte
         Assert.Equal("ÿÿ", Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_UTF8, "ÿÿ"));
         // OCCT's GBK and Big5 converters insert an ASCII byte after a lead byte "at 0", which throws
-        Assert.Throws<Standard_OutOfRange>(() => Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_Big5, "¤" + "0"));
+        Assert.Throws<OutOfRangeException>(() => Resource_Unicode.ConvertFormatToUnicode(Resource_FormatType.Resource_FormatType_Big5, "¤" + "0"));
     }
 }

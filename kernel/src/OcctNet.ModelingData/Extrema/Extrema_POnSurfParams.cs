@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.Extrema_ElementType;
 
@@ -37,7 +38,7 @@ public partial struct Extrema_POnSurfParams : IEquatable<Extrema_POnSurfParams>
     }
 
     /// <summary>A point on surface with its parameter values on the surface.</summary>
-    public Extrema_POnSurfParams(double theU, double theV, in gp_Pnt thePnt)
+    public Extrema_POnSurfParams(double theU, double theV, in Point3D thePnt)
     {
         myPOnSurf = new Extrema_POnSurf(theU, theV, thePnt);
         mySqrDistance = 0.0;
@@ -49,7 +50,7 @@ public partial struct Extrema_POnSurfParams : IEquatable<Extrema_POnSurfParams>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the parameters and the point (Extrema_POnSurf::SetParameters).</summary>
-    internal void SetParameters(double theU, double theV, in gp_Pnt thePnt) => myPOnSurf.SetParameters(theU, theV, thePnt);
+    internal void SetParameters(double theU, double theV, in Point3D thePnt) => myPOnSurf.SetParameters(theU, theV, thePnt);
 
     /// <summary>Sets the square distance from this point to another one (the point to be projected).</summary>
     internal void SetSqrDistance(double theSqrDistance) => mySqrDistance = theSqrDistance;
@@ -93,7 +94,7 @@ public partial struct Extrema_POnSurfParams : IEquatable<Extrema_POnSurfParams>
     public readonly Extrema_POnSurf POnSurf() => myPOnSurf;
 
     /// <summary>The 3D point.</summary>
-    public readonly gp_Pnt Value() => myPOnSurf.Value();
+    public readonly Point3D Value() => myPOnSurf.Value();
 
     /// <summary>The parameter values on the surface.</summary>
     public readonly void Parameter(out double theU, out double theV) => myPOnSurf.Parameter(out theU, out theV);

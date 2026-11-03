@@ -12,6 +12,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntAna2d_Outils;
 
 namespace Occt;
@@ -43,28 +46,28 @@ public class IntAna2d_AnaIntersection
     }
 
     /// <summary>Intersection between two lines.</summary>
-    public IntAna2d_AnaIntersection(in gp_Lin2d L1, in gp_Lin2d L2) => Perform(L1, L2);
+    public IntAna2d_AnaIntersection(in Line2D L1, in Line2D L2) => Perform(L1, L2);
 
     /// <summary>Intersection between two circles.</summary>
-    public IntAna2d_AnaIntersection(in gp_Circ2d C1, in gp_Circ2d C2) => Perform(C1, C2);
+    public IntAna2d_AnaIntersection(in Circle2D C1, in Circle2D C2) => Perform(C1, C2);
 
     /// <summary>Intersection between a line and a circle.</summary>
-    public IntAna2d_AnaIntersection(in gp_Lin2d L, in gp_Circ2d C) => Perform(L, C);
+    public IntAna2d_AnaIntersection(in Line2D L, in Circle2D C) => Perform(L, C);
 
     /// <summary>Intersection between a line and a conic.</summary>
-    public IntAna2d_AnaIntersection(in gp_Lin2d L, in IntAna2d_Conic Conic) => Perform(L, Conic);
+    public IntAna2d_AnaIntersection(in Line2D L, in IntAna2d_Conic Conic) => Perform(L, Conic);
 
     /// <summary>Intersection between a parabola and another conic.</summary>
-    public IntAna2d_AnaIntersection(in gp_Parab2d P, in IntAna2d_Conic Conic) => Perform(P, Conic);
+    public IntAna2d_AnaIntersection(in Parabola2D P, in IntAna2d_Conic Conic) => Perform(P, Conic);
 
     /// <summary>Intersection between a circle and another conic.</summary>
-    public IntAna2d_AnaIntersection(in gp_Circ2d C, in IntAna2d_Conic Conic) => Perform(C, Conic);
+    public IntAna2d_AnaIntersection(in Circle2D C, in IntAna2d_Conic Conic) => Perform(C, Conic);
 
     /// <summary>Intersection between an ellipse and another conic.</summary>
-    public IntAna2d_AnaIntersection(in gp_Elips2d E, in IntAna2d_Conic Conic) => Perform(E, Conic);
+    public IntAna2d_AnaIntersection(in Ellipse2D E, in IntAna2d_Conic Conic) => Perform(E, Conic);
 
     /// <summary>Intersection between a hyperbola and another conic.</summary>
-    public IntAna2d_AnaIntersection(in gp_Hypr2d E, in IntAna2d_Conic Conic) => Perform(E, Conic);
+    public IntAna2d_AnaIntersection(in Hyperbola2D E, in IntAna2d_Conic Conic) => Perform(E, Conic);
 
     /// <summary>True if the computation was successful.</summary>
     public bool IsDone() => done;
@@ -77,7 +80,7 @@ public class IntAna2d_AnaIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return ((nbp == 0) && (!iden));
     }
@@ -91,7 +94,7 @@ public class IntAna2d_AnaIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return iden;
     }
@@ -101,7 +104,7 @@ public class IntAna2d_AnaIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return para;
     }
@@ -111,24 +114,24 @@ public class IntAna2d_AnaIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return nbp;
     }
 
     /// <summary>The intersection point of range N.</summary>
-    /// <exception cref="Standard_OutOfRange">N is not in [1, NbPoints].</exception>
+    /// <exception cref="OutOfRangeException">N is not in [1, NbPoints].</exception>
     public IntAna2d_IntPoint Point(int N)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
             if ((N <= 0) || (N > nbp))
             {
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
             }
             else
             {
@@ -140,7 +143,7 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_1.cxx
 
     /// <summary>Intersection between two lines.</summary>
-    public void Perform(in gp_Lin2d L1, in gp_Lin2d L2)
+    public void Perform(in Line2D L1, in Line2D L2)
     {
         done = false;
 
@@ -251,7 +254,7 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_2.cxx
 
     /// <summary>Intersection between two circles.</summary>
-    public void Perform(in gp_Circ2d C1, in gp_Circ2d C2)
+    public void Perform(in Circle2D C1, in Circle2D C2)
     {
         // OCCT: the parameters are angles from each X axis counterclockwise, wrong on an indirect circle
         done = false;
@@ -290,9 +293,9 @@ public class IntAna2d_AnaIntersection
             para = false;
             iden = false;
             nbp = 1;
-            gp_Vec2d ax = new(C1.Location(), C2.Location());
-            gp_Vec2d Ox1 = new(C1.XAxis().Direction());
-            gp_Vec2d Ox2 = new(C2.XAxis().Direction());
+            Vector2D ax = new(C1.Location(), C2.Location());
+            Vector2D Ox1 = new(C1.XAxis().Direction());
+            Vector2D Ox2 = new(C2.XAxis().Direction());
 
             double XS = (C1.Location().X() * R2 + C2.Location().X() * R1) / sum;
             double YS = (C1.Location().Y() * R2 + C2.Location().Y() * R1) / sum;
@@ -310,9 +313,9 @@ public class IntAna2d_AnaIntersection
             para = false;
             iden = false;
             nbp = 2;
-            gp_Vec2d ax = new(C1.Location(), C2.Location());
-            gp_Vec2d Ox1 = new(C1.XAxis().Direction());
-            gp_Vec2d Ox2 = new(C2.XAxis().Direction());
+            Vector2D ax = new(C1.Location(), C2.Location());
+            Vector2D Ox1 = new(C1.XAxis().Direction());
+            Vector2D Ox2 = new(C2.XAxis().Direction());
             double ref1 = Ox1.Angle(ax); // Result between -PI and +PI
             double ref2 = Ox2.Angle(ax); // Result between -PI and +PI
 
@@ -410,14 +413,14 @@ public class IntAna2d_AnaIntersection
             para = false;
             iden = false;
             nbp = 1;
-            gp_Vec2d ax = new(C1.Location(), C2.Location());
+            Vector2D ax = new(C1.Location(), C2.Location());
             if (C1.Radius() < C2.Radius())
             {
                 ax.Reverse();
             }
 
-            gp_Vec2d Ox1 = new(C1.XAxis().Direction());
-            gp_Vec2d Ox2 = new(C2.XAxis().Direction());
+            Vector2D Ox1 = new(C1.XAxis().Direction());
+            Vector2D Ox2 = new(C2.XAxis().Direction());
             double ang1 = Ox1.Angle(ax); // Result between -PI and +PI
             double ang2 = Ox2.Angle(ax);
             if (ang1 < 0)
@@ -446,7 +449,7 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_3.cxx
 
     /// <summary>Intersection between a line and a circle.</summary>
-    public void Perform(in gp_Lin2d L, in gp_Circ2d C)
+    public void Perform(in Line2D L, in Circle2D C)
     {
         done = false;
 
@@ -454,7 +457,7 @@ public class IntAna2d_AnaIntersection
         para = false;
         //
         double A, B, C0, d;
-        gp_Pnt2d aP2D, aP2D1, aP2D2;
+        Point2D aP2D, aP2D1, aP2D2;
         //
         L.Coefficients(out A, out B, out C0);
         d = A * C.Location().X() + B * C.Location().Y() + C0;
@@ -475,9 +478,9 @@ public class IntAna2d_AnaIntersection
                 XS = C.Location().X() - d * A;
                 YS = C.Location().Y() - d * B;
                 //
-                aP2D = new gp_Pnt2d(XS, YS);
-                u = ElCLib.Parameter(L, aP2D);
-                ang = ElCLib.Parameter(C, aP2D);
+                aP2D = new Point2D(XS, YS);
+                u = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, aP2D);
+                ang = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, aP2D);
                 lpnt[0].SetValue(XS, YS, u, ang);
             }
             else
@@ -490,12 +493,12 @@ public class IntAna2d_AnaIntersection
                 XS2 = C.Location().X() - d * A + h * B;
                 YS2 = C.Location().Y() - d * B - h * A;
                 //
-                aP2D1 = new gp_Pnt2d(XS1, YS1);
-                aP2D2 = new gp_Pnt2d(XS2, YS2);
-                u1 = ElCLib.Parameter(L, aP2D1);
-                u2 = ElCLib.Parameter(L, aP2D2);
-                ang1 = ElCLib.Parameter(C, aP2D1);
-                ang2 = ElCLib.Parameter(C, aP2D2);
+                aP2D1 = new Point2D(XS1, YS1);
+                aP2D2 = new Point2D(XS2, YS2);
+                u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, aP2D1);
+                u2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, aP2D2);
+                ang1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, aP2D1);
+                ang2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, aP2D2);
 
                 lpnt[0].SetValue(XS1, YS1, u1, ang1);
                 lpnt[1].SetValue(XS2, YS2, u2, ang2);
@@ -507,7 +510,7 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_4.cxx
 
     /// <summary>Intersection between a line and a conic.</summary>
-    public void Perform(in gp_Lin2d L, in IntAna2d_Conic Conic)
+    public void Perform(in Line2D L, in IntAna2d_Conic Conic)
     {
         double A, B, C, D, E, F;
         double px0, px1, px2;
@@ -563,9 +566,9 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_5.cxx
 
     /// <summary>Intersection between a circle and another conic.</summary>
-    public void Perform(in gp_Circ2d Circle, in IntAna2d_Conic Conic)
+    public void Perform(in Circle2D Circle, in IntAna2d_Conic Conic)
     {
-        bool CIsDirect = Circle.IsDirect();
+        bool CIsDirect = Circle.IsDirect;
         double A, B, C, D, E, F;
         double pcc, pss, p2sc, pc, ps, pcte;
         double radius = Circle.Radius();
@@ -579,7 +582,7 @@ public class IntAna2d_AnaIntersection
         empt = false;
         iden = false;
 
-        gp_Ax2d Axe_rep = Circle.XAxis();
+        Axis2D Axe_rep = Circle.XAxis();
 
         Conic.Coefficients(out A, out B, out C, out D, out E, out F);
         Conic.NewCoefficients(ref A, ref B, ref C, ref D, ref E, ref F, Axe_rep);
@@ -593,9 +596,9 @@ public class IntAna2d_AnaIntersection
         ps = 2.0 * E * radius; // SIN
         pcte = F + pss; // 1
 
-        math_TrigonometricFunctionRoots Sol = new(pcc, p2sc, pc, ps, pcte, 0.0, 2.0 * M_PI);
+        TrigonometricFunctionRoots Sol = new(pcc, p2sc, pc, ps, pcte, 0.0, 2.0 * M_PI);
 
-        if (!Sol.IsDone())
+        if (!Sol.IsDone)
         {
             // std::cout of "math_TrigonometricFunctionRoots -> NotDone" left out
             done = false;
@@ -609,7 +612,7 @@ public class IntAna2d_AnaIntersection
                 done = true;
                 return;
             }
-            nbp = Sol.NbSolutions();
+            nbp = Sol.SolutionCount;
             for (i = 1; i <= nbp; i++)
             {
                 S = Sol.Value(i);
@@ -630,9 +633,9 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_6.cxx
 
     /// <summary>Intersection between an ellipse and another conic.</summary>
-    public void Perform(in gp_Elips2d Elips, in IntAna2d_Conic Conic)
+    public void Perform(in Ellipse2D Elips, in IntAna2d_Conic Conic)
     {
-        bool EIsDirect = Elips.IsDirect();
+        bool EIsDirect = Elips.IsDirect;
         double A, B, C, D, E, F;
         double pcte, ps, pc, p2sc, pcc, pss;
         double minor_radius = Elips.MinorRadius();
@@ -646,7 +649,7 @@ public class IntAna2d_AnaIntersection
         iden = false;
         empt = false;
 
-        gp_Ax2d Axe_rep = Elips.XAxis();
+        Axis2D Axe_rep = Elips.XAxis();
 
         Conic.Coefficients(out A, out B, out C, out D, out E, out F);
         Conic.NewCoefficients(ref A, ref B, ref C, ref D, ref E, ref F, Axe_rep);
@@ -660,9 +663,9 @@ public class IntAna2d_AnaIntersection
         ps = 2.0 * E * minor_radius; // SIN
         pcte = F + pss; // 1
 
-        math_TrigonometricFunctionRoots Sol = new(pcc, p2sc, pc, ps, pcte, 0.0, 2.0 * M_PI);
+        TrigonometricFunctionRoots Sol = new(pcc, p2sc, pc, ps, pcte, 0.0, 2.0 * M_PI);
 
-        if (!Sol.IsDone())
+        if (!Sol.IsDone)
         {
             done = false;
             return;
@@ -675,7 +678,7 @@ public class IntAna2d_AnaIntersection
                 done = true;
                 return;
             }
-            nbp = Sol.NbSolutions();
+            nbp = Sol.SolutionCount;
             for (i = 1; i <= nbp; i++)
             {
                 S = Sol.Value(i);
@@ -696,15 +699,15 @@ public class IntAna2d_AnaIntersection
     // IntAna2d_AnaIntersection_7.cxx
 
     /// <summary>Intersection between a parabola and another conic.</summary>
-    public void Perform(in gp_Parab2d P, in IntAna2d_Conic Conic)
+    public void Perform(in Parabola2D P, in IntAna2d_Conic Conic)
     {
-        bool PIsDirect = P.IsDirect();
+        bool PIsDirect = P.IsDirect;
         double A, B, C, D, E, F;
         double px4, px3, px2, px1, px0;
         int i;
         double tx, ty, S;
         double un_sur_2p = 0.5 / (P.Parameter());
-        gp_Ax2d Axe_rep = P.MirrorAxis();
+        Axis2D Axe_rep = P.MirrorAxis();
 
         done = false;
         nbp = 0;
@@ -773,9 +776,9 @@ public class IntAna2d_AnaIntersection
     // -----------------------------------------------------------------
 
     /// <summary>Intersection between a hyperbola and another conic.</summary>
-    public void Perform(in gp_Hypr2d H, in IntAna2d_Conic Conic)
+    public void Perform(in Hyperbola2D H, in IntAna2d_Conic Conic)
     {
-        bool HIsDirect = H.IsDirect();
+        bool HIsDirect = H.IsDirect;
         double A, B, C, D, E, F;
         double px0, px1, px2, px3, px4;
         double minor_radius = H.MinorRadius();
@@ -789,7 +792,7 @@ public class IntAna2d_AnaIntersection
         iden = false;
         empt = false;
 
-        gp_Ax2d Axe_rep = H.XAxis();
+        Axis2D Axe_rep = H.XAxis();
         Conic.Coefficients(out A, out B, out C, out D, out E, out F);
         Conic.NewCoefficients(ref A, ref B, ref C, ref D, ref E, ref F, Axe_rep);
 

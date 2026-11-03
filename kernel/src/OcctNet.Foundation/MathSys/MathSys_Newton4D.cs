@@ -2,9 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+using Kerf.Geometry;
+using Occt;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Systems;
 
 // The function contract `bool operator()(double x1, ..., double x4, double f[4], double j[4][4]) const` is
 // INewton4DFunction (see MathSys_Newton2D.cs); SolveSurfaceSurfaceExtrema4D's lambda is a private struct functor
@@ -17,8 +20,8 @@ public static partial class MathSys
     public interface INewton4DFunction
     {
         /// <summary>Computes F into theF and the Jacobian into theJ (theJ[i][j] = dF_i/dx_j); false on failure.</summary>
-        bool Invoke(double theX1, double theX2, double theX3, double theX4,
-                    ref std_array4<double> theF, ref std_array4<std_array4<double>> theJ);
+        bool Invoke(double x1, double x2, double x3, double x4,
+                    ref Array4<double> f, ref Array4<Array4<double>> j);
     }
 
     internal static partial class detail
@@ -27,59 +30,59 @@ public static partial class MathSys
         [InlineArray(5)]
         internal struct Array5
         {
-            private double myElement0;
+            private double _element0;
         }
 
         /// <summary>Check that the bounds have valid (min &lt;= max) ranges.</summary>
-        internal static bool IsBoundsValid4D(in NewtonBoundsN4 theBounds)
+        internal static bool IsBoundsValid4D(in NewtonBoundsN4 bounds)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return true;
             }
 
-            return theBounds.Min[0] <= theBounds.Max[0] && theBounds.Min[1] <= theBounds.Max[1]
-                   && theBounds.Min[2] <= theBounds.Max[2] && theBounds.Min[3] <= theBounds.Max[3];
+            return bounds.Min[0] <= bounds.Max[0] && bounds.Min[1] <= bounds.Max[1]
+                   && bounds.Min[2] <= bounds.Max[2] && bounds.Min[3] <= bounds.Max[3];
         }
 
         /// <summary>Check that NewtonOptions fields are positive and valid.</summary>
-        internal static bool IsOptionsValid4D(NewtonOptions theOptions)
+        internal static bool IsOptionsValid4D(NewtonOptions options)
         {
-            return theOptions.FTolerance > 0.0 && theOptions.XTolerance > 0.0 && theOptions.MaxIterations > 0
-                   && theOptions.MaxStepRatio > 0.0 && theOptions.SoftBoundsExtension >= 0.0;
+            return options.FTolerance > 0.0 && options.XTolerance > 0.0 && options.MaxIterations > 0
+                   && options.MaxStepRatio > 0.0 && options.SoftBoundsExtension >= 0.0;
         }
 
         /// <summary>Return the largest domain extent across all 4 dimensions (min 1.0).</summary>
-        internal static double MaxDomainSize4D(in NewtonBoundsN4 theBounds)
+        internal static double MaxDomainSize4D(in NewtonBoundsN4 bounds)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return 1.0;
             }
 
-            double aD0 = theBounds.Max[0] - theBounds.Min[0];
-            double aD1 = theBounds.Max[1] - theBounds.Min[1];
-            double aD2 = theBounds.Max[2] - theBounds.Min[2];
-            double aD3 = theBounds.Max[3] - theBounds.Min[3];
-            return Max(1.0, Max(aD0, Max(aD1, Max(aD2, aD3))));
+            double d0 = bounds.Max[0] - bounds.Min[0];
+            double d1 = bounds.Max[1] - bounds.Min[1];
+            double d2 = bounds.Max[2] - bounds.Min[2];
+            double d3 = bounds.Max[3] - bounds.Min[3];
+            return Max(1.0, Max(d0, Max(d1, Max(d2, d3))));
         }
 
         /// <summary>Clamp solution array to bounds, optionally extending by soft-bounds ratio.</summary>
-        internal static void Clamp4D(ref std_array4<double> theX,
-                                     in NewtonBoundsN4 theBounds,
-                                     bool theUseSoftBounds,
-                                     double theSoftExtRatio)
+        internal static void Clamp4D(ref Array4<double> x,
+                                     in NewtonBoundsN4 bounds,
+                                     bool useSoftBounds,
+                                     double softExtRatio)
         {
-            if (!theBounds.HasBounds)
+            if (!bounds.HasBounds)
             {
                 return;
             }
 
             for (int i = 0; i < 4; ++i)
             {
-                double aExt =
-                  theUseSoftBounds ? (theBounds.Max[i] - theBounds.Min[i]) * theSoftExtRatio : 0.0;
-                theX[i] = std_clamp(theX[i], theBounds.Min[i] - aExt, theBounds.Max[i] + aExt);
+                double ext =
+                  useSoftBounds ? (bounds.Max[i] - bounds.Min[i]) * softExtRatio : 0.0;
+                x[i] = std_clamp(x[i], bounds.Min[i] - ext, bounds.Max[i] + ext);
             }
         }
 
@@ -87,72 +90,72 @@ public static partial class MathSys
         /// Solve the 4x4 linear system J*x = -F by Gaussian elimination with partial pivoting; theDelta is written
         /// only when the system is non-singular (true).
         /// </summary>
-        internal static bool Solve4x4(in std_array4<std_array4<double>> theJ, in std_array4<double> theF, ref std_array4<double> theDelta)
+        internal static bool Solve4x4(in Array4<Array4<double>> theJ, in Array4<double> f, ref Array4<double> delta)
         {
             // Augmented matrix [J | -F]
-            std_array4<Array5> A = default;
+            Array4<Array5> a = default;
             for (int i = 0; i < 4; ++i)
             {
                 for (int j = 0; j < 4; ++j)
                 {
-                    A[i][j] = theJ[i][j];
+                    a[i][j] = theJ[i][j];
                 }
-                A[i][4] = -theF[i];
+                a[i][4] = -f[i];
             }
 
             // Forward elimination with partial pivoting
             for (int k = 0; k < 4; ++k)
             {
                 // Find pivot
-                int aMaxRow = k;
-                double aMaxVal = Math.Abs(A[k][k]);
+                int maxRow = k;
+                double maxVal = Math.Abs(a[k][k]);
                 for (int i = k + 1; i < 4; ++i)
                 {
-                    double aVal = Math.Abs(A[i][k]);
-                    if (aVal > aMaxVal)
+                    double val = Math.Abs(a[i][k]);
+                    if (val > maxVal)
                     {
-                        aMaxVal = aVal;
-                        aMaxRow = i;
+                        maxVal = val;
+                        maxRow = i;
                     }
                 }
 
                 // Check for singularity
-                if (aMaxVal < 1.0e-30)
+                if (maxVal < 1.0e-30)
                 {
                     return false;
                 }
 
                 // Swap rows if needed
-                if (aMaxRow != k)
+                if (maxRow != k)
                 {
                     for (int j = k; j <= 4; ++j)
                     {
-                        (A[k][j], A[aMaxRow][j]) = (A[aMaxRow][j], A[k][j]);
+                        (a[k][j], a[maxRow][j]) = (a[maxRow][j], a[k][j]);
                     }
                 }
 
                 // Eliminate column
-                double aInvPivot = 1.0 / A[k][k];
+                double invPivot = 1.0 / a[k][k];
                 for (int i = k + 1; i < 4; ++i)
                 {
-                    double aFactor = A[i][k] * aInvPivot;
+                    double factor = a[i][k] * invPivot;
                     for (int j = k + 1; j <= 4; ++j)
                     {
-                        A[i][j] -= aFactor * A[k][j];
+                        a[i][j] -= factor * a[k][j];
                     }
-                    A[i][k] = 0.0;
+                    a[i][k] = 0.0;
                 }
             }
 
             // Back substitution
             for (int i = 3; i >= 0; --i)
             {
-                double aSum = A[i][4];
+                double sum = a[i][4];
                 for (int j = i + 1; j < 4; ++j)
                 {
-                    aSum -= A[i][j] * theDelta[j];
+                    sum -= a[i][j] * delta[j];
                 }
-                theDelta[i] = aSum / A[i][i];
+                delta[i] = sum / a[i][i];
             }
 
             return true;
@@ -163,140 +166,140 @@ public static partial class MathSys
     /// Solve a 4x4 nonlinear system [F1, F2, F3, F4] = 0 by Newton iteration with bounds, using Gaussian
     /// elimination for the linear system at each step and steepest descent when the Jacobian is singular.
     /// </summary>
-    public static NewtonResultN4 Solve4D<Function>(Function theFunc,
-                                                   in std_array4<double> theX0,
-                                                   in NewtonBoundsN4 theBounds,
-                                                   NewtonOptions? theOptions = null)
+    public static NewtonResultN4 Solve4D<Function>(Function func,
+                                                   in Array4<double> x0,
+                                                   in NewtonBoundsN4 bounds,
+                                                   NewtonOptions? options = null)
         where Function : INewton4DFunction
     {
-        theOptions ??= new NewtonOptions();
-        NewtonResultN4 aRes = new();
-        aRes.X = theX0;
+        options ??= new NewtonOptions();
+        NewtonResultN4 res = new();
+        res.X = x0;
 
-        if (!detail.IsOptionsValid4D(theOptions) || !detail.IsBoundsValid4D(theBounds))
+        if (!detail.IsOptionsValid4D(options) || !detail.IsBoundsValid4D(bounds))
         {
-            aRes.Status = MathUtils.Status.InvalidInput;
-            return aRes;
+            res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return res;
         }
 
-        detail.Clamp4D(ref aRes.X, theBounds, theOptions.AllowSoftBounds, theOptions.SoftBoundsExtension);
+        detail.Clamp4D(ref res.X, bounds, options.AllowSoftBounds, options.SoftBoundsExtension);
 
-        double aTolSq = theOptions.FTolerance * theOptions.FTolerance;
-        double aMaxStep = theOptions.MaxStepRatio * detail.MaxDomainSize4D(theBounds);
+        double tolSq = options.FTolerance * options.FTolerance;
+        double maxStep = options.MaxStepRatio * detail.MaxDomainSize4D(bounds);
 
-        for (int anIter = 0; anIter < theOptions.MaxIterations; ++anIter)
+        for (int iter = 0; iter < options.MaxIterations; ++iter)
         {
-            aRes.NbIterations = anIter + 1;
+            res.NbIterations = iter + 1;
 
-            std_array4<double> aF = default;
-            std_array4<std_array4<double>> aJ = default;
-            if (!theFunc.Invoke(aRes.X[0], aRes.X[1], aRes.X[2], aRes.X[3], ref aF, ref aJ))
+            Array4<double> f = default;
+            Array4<Array4<double>> j = default;
+            if (!func.Invoke(res.X[0], res.X[1], res.X[2], res.X[3], ref f, ref j))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
             // Check convergence using squared norm (avoid sqrt)
-            double aFNormSq = aF[0] * aF[0] + aF[1] * aF[1] + aF[2] * aF[2] + aF[3] * aF[3];
-            aRes.ResidualNorm = Math.Sqrt(aFNormSq);
-            if (aFNormSq <= aTolSq)
+            double fNormSq = f[0] * f[0] + f[1] * f[1] + f[2] * f[2] + f[3] * f[3];
+            res.ResidualNorm = Math.Sqrt(fNormSq);
+            if (fNormSq <= tolSq)
             {
-                aRes.Status = MathUtils.Status.OK;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                return res;
             }
 
             // Solve 4x4 linear system: J * delta = -F
-            std_array4<double> aDelta = default;
-            if (!detail.Solve4x4(aJ, aF, ref aDelta))
+            Array4<double> delta = default;
+            if (!detail.Solve4x4(j, f, ref delta))
             {
                 // Singular Jacobian - try steepest descent direction: -J^T * F
-                std_array4<double> aGrad = std_array4<double>.Of(0.0, 0.0, 0.0, 0.0);
+                Array4<double> grad = Array4<double>.Of(0.0, 0.0, 0.0, 0.0);
                 for (int c = 0; c < 4; ++c)
                 {
                     for (int r = 0; r < 4; ++r)
                     {
-                        aGrad[c] += aJ[r][c] * aF[r];
+                        grad[c] += j[r][c] * f[r];
                     }
                 }
 
-                double aGradSq =
-                  aGrad[0] * aGrad[0] + aGrad[1] * aGrad[1] + aGrad[2] * aGrad[2] + aGrad[3] * aGrad[3];
-                if (aGradSq < 1.0e-60)
+                double gradSq =
+                  grad[0] * grad[0] + grad[1] * grad[1] + grad[2] * grad[2] + grad[3] * grad[3];
+                if (gradSq < 1.0e-60)
                 {
-                    aRes.Status = MathUtils.Status.Singular;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.Singular;
+                    return res;
                 }
 
-                double aAlpha = Min(1.0, Math.Sqrt(aFNormSq / aGradSq) * 0.1);
+                double alpha = Min(1.0, Math.Sqrt(fNormSq / gradSq) * 0.1);
                 for (int i = 0; i < 4; ++i)
                 {
-                    aDelta[i] = -aAlpha * aGrad[i];
+                    delta[i] = -alpha * grad[i];
                 }
             }
 
             // Limit step size to prevent wild oscillations
-            double aStepNormSq =
-              aDelta[0] * aDelta[0] + aDelta[1] * aDelta[1] + aDelta[2] * aDelta[2] + aDelta[3] * aDelta[3];
-            double aStepNorm = Math.Sqrt(aStepNormSq);
-            if (aStepNorm > aMaxStep)
+            double stepNormSq =
+              delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2] + delta[3] * delta[3];
+            double stepNorm = Math.Sqrt(stepNormSq);
+            if (stepNorm > maxStep)
             {
-                double aScale = aMaxStep / aStepNorm;
+                double scale = maxStep / stepNorm;
                 for (int i = 0; i < 4; ++i)
                 {
-                    aDelta[i] *= aScale;
+                    delta[i] *= scale;
                 }
             }
 
             // Update and clamp to bounds
-            std_array4<double> aNewX = std_array4<double>.Of(aRes.X[0] + aDelta[0],
-                                                             aRes.X[1] + aDelta[1],
-                                                             aRes.X[2] + aDelta[2],
-                                                             aRes.X[3] + aDelta[3]);
-            detail.Clamp4D(ref aNewX, theBounds, theOptions.AllowSoftBounds, theOptions.SoftBoundsExtension);
+            Array4<double> newX = Array4<double>.Of(res.X[0] + delta[0],
+                                                             res.X[1] + delta[1],
+                                                             res.X[2] + delta[2],
+                                                             res.X[3] + delta[3]);
+            detail.Clamp4D(ref newX, bounds, options.AllowSoftBounds, options.SoftBoundsExtension);
 
-            aRes.StepNorm = Math.Sqrt((aNewX[0] - aRes.X[0]) * (aNewX[0] - aRes.X[0])
-                                      + (aNewX[1] - aRes.X[1]) * (aNewX[1] - aRes.X[1])
-                                      + (aNewX[2] - aRes.X[2]) * (aNewX[2] - aRes.X[2])
-                                      + (aNewX[3] - aRes.X[3]) * (aNewX[3] - aRes.X[3]));
-            aRes.X = aNewX;
+            res.StepNorm = Math.Sqrt((newX[0] - res.X[0]) * (newX[0] - res.X[0])
+                                      + (newX[1] - res.X[1]) * (newX[1] - res.X[1])
+                                      + (newX[2] - res.X[2]) * (newX[2] - res.X[2])
+                                      + (newX[3] - res.X[3]) * (newX[3] - res.X[3]));
+            res.X = newX;
 
-            double aScaleRef = Max(
+            double scaleRef = Max(
               1.0,
-              Max(Math.Abs(aRes.X[0]),
-                  Max(Math.Abs(aRes.X[1]), Max(Math.Abs(aRes.X[2]), Math.Abs(aRes.X[3])))));
-            if (aRes.StepNorm <= theOptions.XTolerance * aScaleRef)
+              Max(Math.Abs(res.X[0]),
+                  Max(Math.Abs(res.X[1]), Max(Math.Abs(res.X[2]), Math.Abs(res.X[3])))));
+            if (res.StepNorm <= options.XTolerance * scaleRef)
             {
-                std_array4<double> aCheckF = default;
-                std_array4<std_array4<double>> aCheckJ = default;
-                if (!theFunc.Invoke(aRes.X[0], aRes.X[1], aRes.X[2], aRes.X[3], ref aCheckF, ref aCheckJ))
+                Array4<double> checkF = default;
+                Array4<Array4<double>> checkJ = default;
+                if (!func.Invoke(res.X[0], res.X[1], res.X[2], res.X[3], ref checkF, ref checkJ))
                 {
-                    aRes.Status = MathUtils.Status.NumericalError;
-                    return aRes;
+                    res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return res;
                 }
 
-                aRes.ResidualNorm = Math.Sqrt(aCheckF[0] * aCheckF[0] + aCheckF[1] * aCheckF[1]
-                                              + aCheckF[2] * aCheckF[2] + aCheckF[3] * aCheckF[3]);
-                aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                           : MathUtils.Status.MaxIterations;
-                return aRes;
+                res.ResidualNorm = Math.Sqrt(checkF[0] * checkF[0] + checkF[1] * checkF[1]
+                                              + checkF[2] * checkF[2] + checkF[3] * checkF[3]);
+                res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                           : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+                return res;
             }
         }
 
         // Final convergence check after max iterations
         // (braced: C# doesn't allow the loop's local names again in the enclosing block)
         {
-            std_array4<double> aF = default;
-            std_array4<std_array4<double>> aJ = default;
-            if (!theFunc.Invoke(aRes.X[0], aRes.X[1], aRes.X[2], aRes.X[3], ref aF, ref aJ))
+            Array4<double> f = default;
+            Array4<Array4<double>> j = default;
+            if (!func.Invoke(res.X[0], res.X[1], res.X[2], res.X[3], ref f, ref j))
             {
-                aRes.Status = MathUtils.Status.NumericalError;
-                return aRes;
+                res.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return res;
             }
 
-            aRes.ResidualNorm = Math.Sqrt(aF[0] * aF[0] + aF[1] * aF[1] + aF[2] * aF[2] + aF[3] * aF[3]);
-            aRes.Status = (aRes.ResidualNorm <= theOptions.FTolerance) ? MathUtils.Status.OK
-                                                                       : MathUtils.Status.MaxIterations;
-            return aRes;
+            res.ResidualNorm = Math.Sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2] + f[3] * f[3]);
+            res.Status = (res.ResidualNorm <= options.FTolerance) ? global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK
+                                                                       : global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+            return res;
         }
     }
 
@@ -305,48 +308,48 @@ public static partial class MathSys
         where SurfaceEvaluator1 : ISurfaceD2Evaluator
         where SurfaceEvaluator2 : ISurfaceD2Evaluator
     {
-        internal SurfaceEvaluator1 theSurf1;
-        internal SurfaceEvaluator2 theSurf2;
+        internal SurfaceEvaluator1 _surf1;
+        internal SurfaceEvaluator2 _surf2;
 
-        public bool Invoke(double theU1, double theV1, double theU2, double theV2,
-                           ref std_array4<double> theF, ref std_array4<std_array4<double>> theJ)
+        public bool Invoke(double u1, double v1, double u2, double v2,
+                           ref Array4<double> f, ref Array4<Array4<double>> j)
         {
-            theSurf1.D2(theU1, theV1, out gp_Pnt aPt1, out gp_Vec aD1U1, out gp_Vec aD1V1, out gp_Vec aD2UU1, out gp_Vec aD2VV1, out gp_Vec aD2UV1);
-            theSurf2.D2(theU2, theV2, out gp_Pnt aPt2, out gp_Vec aD1U2, out gp_Vec aD1V2, out gp_Vec aD2UU2, out gp_Vec aD2VV2, out gp_Vec aD2UV2);
+            _surf1.D2(u1, v1, out Point3D pt1, out Vector3D d1U1, out Vector3D d1V1, out Vector3D d2UU1, out Vector3D d2VV1, out Vector3D d2UV1);
+            _surf2.D2(u2, v2, out Point3D pt2, out Vector3D d1U2, out Vector3D d1V2, out Vector3D d2UU2, out Vector3D d2VV2, out Vector3D d2UV2);
 
             // D = P1 - P2
-            gp_Vec aD = new(aPt2, aPt1);
+            Vector3D d = new(pt2, pt1);
 
             // Function values: gradient of ||S1 - S2||^2
-            theF[0] = aD.Dot(aD1U1);
-            theF[1] = aD.Dot(aD1V1);
-            theF[2] = -aD.Dot(aD1U2);
-            theF[3] = -aD.Dot(aD1V2);
+            f[0] = d.Dot(d1U1);
+            f[1] = d.Dot(d1V1);
+            f[2] = -d.Dot(d1U2);
+            f[3] = -d.Dot(d1V2);
 
             // Jacobian: Hessian of ||S1 - S2||^2
             // Block [0:2, 0:2]: derivatives w.r.t. (u1, v1)
-            theJ[0][0] = aD1U1.Dot(aD1U1) + aD.Dot(aD2UU1);
-            theJ[0][1] = aD1V1.Dot(aD1U1) + aD.Dot(aD2UV1);
-            theJ[1][0] = theJ[0][1]; // Symmetric
-            theJ[1][1] = aD1V1.Dot(aD1V1) + aD.Dot(aD2VV1);
+            j[0][0] = d1U1.Dot(d1U1) + d.Dot(d2UU1);
+            j[0][1] = d1V1.Dot(d1U1) + d.Dot(d2UV1);
+            j[1][0] = j[0][1]; // Symmetric
+            j[1][1] = d1V1.Dot(d1V1) + d.Dot(d2VV1);
 
             // Block [0:2, 2:4]: cross derivatives
-            theJ[0][2] = -aD1U2.Dot(aD1U1);
-            theJ[0][3] = -aD1V2.Dot(aD1U1);
-            theJ[1][2] = -aD1U2.Dot(aD1V1);
-            theJ[1][3] = -aD1V2.Dot(aD1V1);
+            j[0][2] = -d1U2.Dot(d1U1);
+            j[0][3] = -d1V2.Dot(d1U1);
+            j[1][2] = -d1U2.Dot(d1V1);
+            j[1][3] = -d1V2.Dot(d1V1);
 
             // Block [2:4, 0:2]: cross derivatives (symmetric to above)
-            theJ[2][0] = theJ[0][2];
-            theJ[2][1] = theJ[1][2];
-            theJ[3][0] = theJ[0][3];
-            theJ[3][1] = theJ[1][3];
+            j[2][0] = j[0][2];
+            j[2][1] = j[1][2];
+            j[3][0] = j[0][3];
+            j[3][1] = j[1][3];
 
             // Block [2:4, 2:4]: derivatives w.r.t. (u2, v2)
-            theJ[2][2] = aD1U2.Dot(aD1U2) - aD.Dot(aD2UU2);
-            theJ[2][3] = aD1V2.Dot(aD1U2) - aD.Dot(aD2UV2);
-            theJ[3][2] = theJ[2][3]; // Symmetric
-            theJ[3][3] = aD1V2.Dot(aD1V2) - aD.Dot(aD2VV2);
+            j[2][2] = d1U2.Dot(d1U2) - d.Dot(d2UU2);
+            j[2][3] = d1V2.Dot(d1U2) - d.Dot(d2UV2);
+            j[3][2] = j[2][3]; // Symmetric
+            j[3][3] = d1V2.Dot(d1V2) - d.Dot(d2VV2);
             return true;
         }
     }
@@ -355,16 +358,16 @@ public static partial class MathSys
     /// 4D Newton solver for extrema between two surfaces S1(u1, v1) and S2(u2, v2). The result holds u1, v1, u2,
     /// v2 in X[0..3].
     /// </summary>
-    public static NewtonResultN4 SolveSurfaceSurfaceExtrema4D<SurfaceEvaluator1, SurfaceEvaluator2>(SurfaceEvaluator1 theSurf1,
-                                                                                                    SurfaceEvaluator2 theSurf2,
-                                                                                                    in std_array4<double> theX0,
-                                                                                                    in NewtonBoundsN4 theBounds,
-                                                                                                    NewtonOptions? theOptions = null)
+    public static NewtonResultN4 SolveSurfaceSurfaceExtrema4D<SurfaceEvaluator1, SurfaceEvaluator2>(SurfaceEvaluator1 surf1,
+                                                                                                    SurfaceEvaluator2 surf2,
+                                                                                                    in Array4<double> x0,
+                                                                                                    in NewtonBoundsN4 bounds,
+                                                                                                    NewtonOptions? options = null)
         where SurfaceEvaluator1 : ISurfaceD2Evaluator
         where SurfaceEvaluator2 : ISurfaceD2Evaluator
     {
-        SurfaceSurfaceExtrema4DFunction<SurfaceEvaluator1, SurfaceEvaluator2> aFunc = new() { theSurf1 = theSurf1, theSurf2 = theSurf2 };
+        SurfaceSurfaceExtrema4DFunction<SurfaceEvaluator1, SurfaceEvaluator2> func = new() { _surf1 = surf1, _surf2 = surf2 };
 
-        return Solve4D(aFunc, theX0, theBounds, theOptions);
+        return Solve4D(func, x0, bounds, options);
     }
 }

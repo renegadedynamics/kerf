@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -9,14 +11,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>Known answers of IntPatch_GLine, following OCCT's C++ (IntPatch_GLine.cxx).</summary>
 public class IntPatch_GLineTests
 {
-    private static readonly gp_Circ theCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+    private static readonly Circle3D theCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
-    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0))));
+    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
 
     private static IntPatch_Point Vertex(double theParam, double theU1 = 0.0, Adaptor2d_Curve2d? theArcOnS1 = null)
     {
         IntPatch_Point aPnt = new();
-        aPnt.SetValue(ElCLib.Value(theParam, theCircle), 1.0e-7, false);
+        aPnt.SetValue(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, theCircle), 1.0e-7, false);
         aPnt.SetParameters(theU1, 0.0, 0.0, 0.0);
         aPnt.SetParameter(theParam);
         if (theArcOnS1 is not null)
@@ -34,10 +36,10 @@ public class IntPatch_GLineTests
         Assert.Equal(IntSurf_In, aCircLine.TransitionOnS1());
         Assert.Equal(IntSurf_Out, aCircLine.TransitionOnS2());
         Assert.Equal(theCircle, aCircLine.Circle());
-        Assert.Throws<Standard_DomainError>(() => aCircLine.Line());
-        Assert.Throws<Standard_DomainError>(() => aCircLine.SituationS1());
+        Assert.Throws<DomainErrorException>(() => aCircLine.Line());
+        Assert.Throws<DomainErrorException>(() => aCircLine.SituationS1());
 
-        gp_Lin aLin = new(new gp_Pnt(1, 2, 3), new gp_Dir(0, 1, 0));
+        Line3D aLin = new(new Point3D(1, 2, 3), new Direction3D(0, 1, 0));
         IntPatch_GLine aLinLine = new(aLin, true, IntSurf_Inside, IntSurf_Outside);
         Assert.Equal(IntPatch_Lin, aLinLine.ArcType());
         Assert.True(aLinLine.IsTangent());
@@ -46,16 +48,16 @@ public class IntPatch_GLineTests
         Assert.True(aLinLine.Line().Location().IsEqual(aLin.Location(), 0.0));
         Assert.True(aLinLine.Line().Direction().IsEqual(aLin.Direction(), 0.0));
 
-        gp_Elips anElips = new(new gp_Ax2(), 3.0, 2.0);
+        Ellipse3D anElips = new(new Frame3D(), 3.0, 2.0);
         IntPatch_GLine anElLine = new(anElips, false);
         Assert.Equal(IntSurf_Undecided, anElLine.TransitionOnS1());
         Assert.Equal(3.0, anElLine.Ellipse().MajorRadius());
         Assert.Equal(2.0, anElLine.Ellipse().MinorRadius());
 
-        Assert.Equal(0.5, new IntPatch_GLine(new gp_Parab(new gp_Ax2(), 0.5), false).Parabola().Focal());
-        Assert.Equal(2.0, new IntPatch_GLine(new gp_Hypr(new gp_Ax2(), 4.0, 2.0), false).Hyperbola().MinorRadius());
+        Assert.Equal(0.5, new IntPatch_GLine(new Parabola3D(new Frame3D(), 0.5), false).Parabola().Focal());
+        Assert.Equal(2.0, new IntPatch_GLine(new Hyperbola3D(new Frame3D(), 4.0, 2.0), false).Hyperbola().MinorRadius());
         Assert.False(aCircLine.HasFirstPoint());
-        Assert.Throws<Standard_DomainError>(() => aCircLine.FirstPoint());
+        Assert.Throws<DomainErrorException>(() => aCircLine.FirstPoint());
     }
 
     [Fact]
@@ -139,7 +141,7 @@ public class IntPatch_GLineTests
     [Fact]
     public void AddVertexOnOpenConicRejectsOutsideTheBounds()
     {
-        gp_Lin aLin = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Line3D aLin = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntPatch_GLine aLine = new(aLin, false);
         IntPatch_Point aPnt = new();
         aPnt.SetParameter(0.0);

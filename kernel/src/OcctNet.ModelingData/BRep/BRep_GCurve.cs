@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The root of the geometric curve representations: a range, a first and a last parameter.</summary>
@@ -12,7 +16,7 @@ public abstract class BRep_GCurve : BRep_CurveRepresentation
     private double myFirst;
     private double myLast;
 
-    protected BRep_GCurve(in TopLoc_Location L, double First, double Last) : base(L)
+    protected BRep_GCurve(in Placement L, double First, double Last) : base(L)
     {
         myFirst = First;
         myLast = Last;
@@ -54,7 +58,7 @@ public abstract class BRep_GCurve : BRep_CurveRepresentation
     }
 
     /// <summary>The point at parameter <paramref name="U"/>.</summary>
-    public abstract void D0(double U, out gp_Pnt P);
+    public abstract void D0(double U, out Point3D P);
 
     /// <summary>Recomputes any derived data after a modification; called when the range changes.</summary>
     internal virtual void Update()

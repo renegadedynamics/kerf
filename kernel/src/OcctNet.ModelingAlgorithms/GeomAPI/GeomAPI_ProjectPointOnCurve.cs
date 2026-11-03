@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -31,19 +33,19 @@ public class GeomAPI_ProjectPointOnCurve
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Curve"/>.</summary>
-    public GeomAPI_ProjectPointOnCurve(in gp_Pnt P, Geom_Curve Curve)
+    public GeomAPI_ProjectPointOnCurve(in Point3D P, Geom_Curve Curve)
     {
         Init(P, Curve);
     }
 
     /// <summary>Projects <paramref name="P"/> onto <paramref name="Curve"/> on [Umin, Usup].</summary>
-    public GeomAPI_ProjectPointOnCurve(in gp_Pnt P, Geom_Curve Curve, double Umin, double Usup)
+    public GeomAPI_ProjectPointOnCurve(in Point3D P, Geom_Curve Curve, double Umin, double Usup)
     {
         Init(P, Curve, Umin, Usup);
     }
 
     /// <summary>Projects <paramref name="P"/> onto the whole of <paramref name="Curve"/>.</summary>
-    public void Init(in gp_Pnt P, Geom_Curve Curve)
+    public void Init(in Point3D P, Geom_Curve Curve)
     {
         myC.Load(Curve);
         myExtPC.Initialize(myC, myC.FirstParameter(), myC.LastParameter());
@@ -70,7 +72,7 @@ public class GeomAPI_ProjectPointOnCurve
     }
 
     /// <summary>Projects <paramref name="P"/> onto <paramref name="Curve"/> on [Umin, Usup].</summary>
-    public void Init(in gp_Pnt P, Geom_Curve Curve, double Umin, double Usup)
+    public void Init(in Point3D P, Geom_Curve Curve, double Umin, double Usup)
     {
         myC.Load(Curve, Umin, Usup);
         myExtPC.Initialize(myC, myC.FirstParameter(), myC.LastParameter());
@@ -105,7 +107,7 @@ public class GeomAPI_ProjectPointOnCurve
     }
 
     /// <summary>Projects <paramref name="aP3D"/> onto the curve loaded by <c>Init</c>.</summary>
-    public void Perform(in gp_Pnt aP3D)
+    public void Perform(in Point3D aP3D)
     {
         myExtPC.Perform(aP3D);
 
@@ -142,7 +144,7 @@ public class GeomAPI_ProjectPointOnCurve
     }
 
     /// <summary>The projection of index <paramref name="Index"/> (1..NbPoints).</summary>
-    public gp_Pnt Point(int Index)
+    public Point3D Point(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoints(), "GeomAPI_ProjectPointOnCurve::Point");
         return (myExtPC.Point(Index)).Value();
@@ -170,7 +172,7 @@ public class GeomAPI_ProjectPointOnCurve
     }
 
     /// <summary>The nearest projection. Throws StdFail_NotDone if there is none.</summary>
-    public gp_Pnt NearestPoint()
+    public Point3D NearestPoint()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_ProjectPointOnCurve::NearestPoint");
 
@@ -181,7 +183,7 @@ public class GeomAPI_ProjectPointOnCurve
     public static explicit operator int(GeomAPI_ProjectPointOnCurve theProj) => theProj.NbPoints();
 
     /// <summary>OCCT's <c>operator gp_Pnt</c>: <see cref="NearestPoint"/>.</summary>
-    public static explicit operator gp_Pnt(GeomAPI_ProjectPointOnCurve theProj) => theProj.NearestPoint();
+    public static explicit operator Point3D(GeomAPI_ProjectPointOnCurve theProj) => theProj.NearestPoint();
 
     /// <summary>The parameter of the nearest projection. Throws StdFail_NotDone if there is none.</summary>
     public double LowerDistanceParameter()

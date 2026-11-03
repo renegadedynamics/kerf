@@ -3,13 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
 /// The derivative of a polynomial, as a function with its derivative: built from the coefficients of the
 /// polynomial (constant term first), it evaluates the derivative polynomial and its own derivative.
 /// </summary>
-public sealed class GeomLib_PolyFunc : math_FunctionWithDerivative
+public sealed class GeomLib_PolyFunc : FunctionWithDerivative
 {
     private readonly math_Vector myCoeffs;
 
@@ -26,7 +28,7 @@ public sealed class GeomLib_PolyFunc : math_FunctionWithDerivative
     public override bool Value(double X, out double F)
     {
         Span<double> ff = stackalloc double[1];
-        PLib.EvalPolynomial(X, 0, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), ff);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(X, 0, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), ff);
         F = ff[0];
         return true;
     }
@@ -34,7 +36,7 @@ public sealed class GeomLib_PolyFunc : math_FunctionWithDerivative
     public override bool Derivative(double X, out double D)
     {
         math_Vector Aux = new(1, 2);
-        PLib.EvalPolynomial(X, 1, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), Aux.AsSpan());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(X, 1, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), Aux.AsSpan());
         D = Aux[2];
         return true;
     }
@@ -42,7 +44,7 @@ public sealed class GeomLib_PolyFunc : math_FunctionWithDerivative
     public override bool Values(double X, out double F, out double D)
     {
         math_Vector Aux = new(1, 2);
-        PLib.EvalPolynomial(X, 1, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), Aux.AsSpan());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(X, 1, myCoeffs.Length() - 1, 1, myCoeffs.AsSpan(), Aux.AsSpan());
         F = Aux[1];
         D = Aux[2];
         return true;

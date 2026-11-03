@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,7 +28,7 @@ public class IntAna_IntQuadQuad
     protected readonly int[] nextcurve = new int[12];
     protected int NbCurves;
     protected int Nbpoints;
-    protected readonly gp_Pnt[] Thepoints = [new gp_Pnt(), new gp_Pnt()];
+    protected readonly Point3D[] Thepoints = [new Point3D(), new Point3D()];
     protected int myNbMaxCurves;
     protected double myEpsilon;
     protected double myEpsilonCoeffPolyNull;
@@ -51,12 +57,12 @@ public class IntAna_IntQuadQuad
     //=======================================================================
     // A template in OCCT, instantiated for gp_Cylinder only.
     private static void AddSpecialPoints(IntAna_Quadric theQuad,
-                                         in gp_Cylinder theGpObj,
+                                         in Cylinder theGpObj,
                                          ref double theTheta1,
                                          ref double theTheta2)
     {
         double aPeriod = M_PI + M_PI;
-        NCollection_List<gp_Pnt> aLSP = theQuad.InternalSpecialPoints();
+        NCollection_List<Point3D> aLSP = theQuad.InternalSpecialPoints();
 
         if (aLSP.IsEmpty())
         {
@@ -65,13 +71,13 @@ public class IntAna_IntQuadQuad
 
         double aU = 0.0, aV = 0.0;
         double aMaxDelta = 0.0;
-        for (NCollection_List<gp_Pnt>.Iterator anItr = new(aLSP); anItr.More(); anItr.Next())
+        for (NCollection_List<Point3D>.Iterator anItr = new(aLSP); anItr.More(); anItr.Next())
         {
-            gp_Pnt aPt = anItr.Value();
-            ElSLib.Parameters(theGpObj, aPt, out aU, out aV);
-            gp_Pnt aPProj = ElSLib.Value(aU, aV, theGpObj);
+            Point3D aPt = anItr.Value();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(theGpObj, aPt, out aU, out aV);
+            Point3D aPProj = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, theGpObj);
 
-            if (aPt.SquareDistance(aPProj) > Precision.SquareConfusion())
+            if (aPt.SquareDistance(aPProj) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 // aPt is not an intersection point
                 continue;
@@ -136,8 +142,8 @@ public class IntAna_IntQuadQuad
             done = false;
             //
             //-- F= AA*CN*CN+2*BB*CN*SN+CC*CN+DD*SN+EE;
-            math_TrigonometricFunctionRoots MTFR = new(CC, SC, C, S, Cte, Binf, Bsup);
-            if (!MTFR.IsDone())
+            TrigonometricFunctionRoots MTFR = new(CC, SC, C, S, Cte, Binf, Bsup);
+            if (!MTFR.IsDone)
             {
                 return;
             }
@@ -149,7 +155,7 @@ public class IntAna_IntQuadQuad
                 return;
             }
             //
-            NbRoots = MTFR.NbSolutions();
+            NbRoots = MTFR.SolutionCount;
             //
             for (i = 0; i < NbRoots; ++i)
             {
@@ -237,7 +243,7 @@ public class IntAna_IntQuadQuad
         {
             if (!done)
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return NbRoots;
         }
@@ -247,7 +253,7 @@ public class IntAna_IntQuadQuad
         {
             if (!done)
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return infinite_roots;
         }
@@ -257,7 +263,7 @@ public class IntAna_IntQuadQuad
         {
             if ((!done) || (n > NbRoots))
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
             return Roots[n - 1];
         }
@@ -336,7 +342,7 @@ public class IntAna_IntQuadQuad
     //=================================================================================================
 
     /// <summary>The intersection between a cylinder and a quadric. Tol is not used.</summary>
-    public IntAna_IntQuadQuad(in gp_Cylinder Cyl, IntAna_Quadric Quad, double Tol)
+    public IntAna_IntQuadQuad(in Cylinder Cyl, IntAna_Quadric Quad, double Tol)
     {
         myNbMaxCurves = 12;
         myEpsilon = 0.00000001;
@@ -350,7 +356,7 @@ public class IntAna_IntQuadQuad
     //=================================================================================================
 
     /// <summary>Intersects a cylinder and a quadric. Tol is not used.</summary>
-    public void Perform(in gp_Cylinder Cyl, IntAna_Quadric Quad, double Tol)
+    public void Perform(in Cylinder Cyl, IntAna_Quadric Quad, double Tol)
     {
         _ = Tol;
         done = true;
@@ -654,7 +660,7 @@ public class IntAna_IntQuadQuad
     }
 
     /// <summary>The intersection between a cone and a quadric. Tol is not used.</summary>
-    public IntAna_IntQuadQuad(in gp_Cone Cone, IntAna_Quadric Quad, double Tol)
+    public IntAna_IntQuadQuad(in Cone Cone, IntAna_Quadric Quad, double Tol)
     {
         myNbMaxCurves = 12;
         myEpsilon = 0.00000001;
@@ -663,7 +669,7 @@ public class IntAna_IntQuadQuad
     }
 
     /// <summary>Intersects a cone and a quadric. Tol is not used.</summary>
-    public void Perform(in gp_Cone Cone, IntAna_Quadric Quad, double Tol)
+    public void Perform(in Cone Cone, IntAna_Quadric Quad, double Tol)
     {
         _ = Tol;
         //
@@ -691,7 +697,7 @@ public class IntAna_IntQuadQuad
         //
         Quad.Coefficients(out Qxx, out Qyy, out Qzz, out Qxy, out Qxz, out Qyz, out Qx, out Qy, out Qz, out Q1);
         //
-        gp_Ax3 tAx3 = Cone.Position();
+        CoordinateSystem tAx3 = Cone.Position();
         tAx3.SetLocation(Cone.Apex());
         Quad.NewCoefficients(ref Qxx, ref Qyy, ref Qzz, ref Qxy, ref Qxz, ref Qyz, ref Qx, ref Qy, ref Qz, ref Q1, tAx3);
         //
@@ -1160,63 +1166,63 @@ public class IntAna_IntQuadQuad
     public bool IsDone() => (done);
 
     /// <summary>True if the cylinder, the cone or the sphere is identical to the quadric (never set by OCCT).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public bool IdenticalElements()
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         return (identical);
     }
 
     /// <summary>The number of curves.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">The elements are identical.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">The elements are identical.</exception>
     public int NbCurve()
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return (NbCurves);
     }
 
     /// <summary>The number of contact points (always 0 in OCCT).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    /// <exception cref="Standard_DomainError">The elements are identical.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    /// <exception cref="DomainErrorException">The elements are identical.</exception>
     public int NbPnt()
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return (Nbpoints);
     }
 
     /// <summary>True if the curve I shares its first bound with another curve.</summary>
-    /// <exception cref="Standard_OutOfRange">I is not in [1, NbCurve()].</exception>
+    /// <exception cref="OutOfRangeException">I is not in [1, NbCurve()].</exception>
     public bool HasPreviousCurve(int I)
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError("IntQuadQuad identical");
+            throw new DomainErrorException("IntQuadQuad identical");
         }
         if ((I > NbCurves) || (I <= 0))
         {
-            throw new Standard_OutOfRange("Incorrect Curve Number 'HasPrevious Curve'");
+            throw new OutOfRangeException("Incorrect Curve Number 'HasPrevious Curve'");
         }
         if (previouscurve[I - 1] != 0)
         {
@@ -1226,20 +1232,20 @@ public class IntAna_IntQuadQuad
     }
 
     /// <summary>True if the curve I shares its last bound with another curve.</summary>
-    /// <exception cref="Standard_OutOfRange">I is not in [1, NbCurve()].</exception>
+    /// <exception cref="OutOfRangeException">I is not in [1, NbCurve()].</exception>
     public bool HasNextCurve(int I)
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError("IntQuadQuad identical");
+            throw new DomainErrorException("IntQuadQuad identical");
         }
         if ((I > NbCurves) || (I <= 0))
         {
-            throw new Standard_OutOfRange("Incorrect Curve Number 'HasNextCurve'");
+            throw new OutOfRangeException("Incorrect Curve Number 'HasNextCurve'");
         }
         if (nextcurve[I - 1] != 0)
         {
@@ -1252,7 +1258,7 @@ public class IntAna_IntQuadQuad
     /// The index J of the curve sharing the first bound of the curve I. If theOpposite is true, the first parameters
     /// of I and J give the same point; otherwise the first parameter of I and the last of J do.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The curve I has no previous curve.</exception>
+    /// <exception cref="DomainErrorException">The curve I has no previous curve.</exception>
     public int PreviousCurve(int I, out bool theOpposite)
     {
         if (HasPreviousCurve(I))
@@ -1270,7 +1276,7 @@ public class IntAna_IntQuadQuad
         }
         else
         {
-            throw new Standard_DomainError("Incorrect Curve Number 'PreviousCurve'");
+            throw new DomainErrorException("Incorrect Curve Number 'PreviousCurve'");
         }
     }
 
@@ -1278,7 +1284,7 @@ public class IntAna_IntQuadQuad
     /// The index J of the curve sharing the last bound of the curve I. If theOpposite is true, the last parameters
     /// of I and J give the same point; otherwise the last parameter of I and the first of J do.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The curve I has no next curve.</exception>
+    /// <exception cref="DomainErrorException">The curve I has no next curve.</exception>
     public int NextCurve(int I, out bool theOpposite)
     {
         if (HasNextCurve(I))
@@ -1288,44 +1294,44 @@ public class IntAna_IntQuadQuad
         }
         else
         {
-            throw new Standard_DomainError("Incorrect Curve Number 'NextCurve'");
+            throw new DomainErrorException("Incorrect Curve Number 'NextCurve'");
         }
     }
 
     /// <summary>The curve of range i.</summary>
-    /// <exception cref="Standard_OutOfRange">i is not in [1, NbCurve()].</exception>
+    /// <exception cref="OutOfRangeException">i is not in [1, NbCurve()].</exception>
     public IntAna_Curve Curve(int i)
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError("IntQuadQuad identical");
+            throw new DomainErrorException("IntQuadQuad identical");
         }
         if ((i <= 0) || (i > NbCurves))
         {
-            throw new Standard_OutOfRange("Incorrect Curve Number");
+            throw new OutOfRangeException("Incorrect Curve Number");
         }
         return TheCurve[i - 1];
     }
 
     /// <summary>The point of range i.</summary>
-    /// <exception cref="Standard_OutOfRange">i is not in [1, NbPnt()].</exception>
-    public gp_Pnt Point(int i)
+    /// <exception cref="OutOfRangeException">i is not in [1, NbPnt()].</exception>
+    public Point3D Point(int i)
     {
         if (!done)
         {
-            throw new StdFail_NotDone("IntQuadQuad Not done");
+            throw new NotDoneException("IntQuadQuad Not done");
         }
         if (identical)
         {
-            throw new Standard_DomainError("IntQuadQuad identical");
+            throw new DomainErrorException("IntQuadQuad identical");
         }
         if ((i <= 0) || (i > Nbpoints))
         {
-            throw new Standard_OutOfRange("Incorrect Point Number");
+            throw new OutOfRangeException("Incorrect Point Number");
         }
         return Thepoints[i - 1];
     }

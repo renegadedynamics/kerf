@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -37,38 +39,38 @@ public class GeomFill_SnglrFunc : Adaptor3d_Curve
 
     public override double LastParameter() => myHCurve.LastParameter();
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
-        GeomAbs_Shape HCS = GeomAbs_C0;
-        if (S == GeomAbs_C0)
+        Continuity HCS = C0;
+        if (S == C0)
         {
-            HCS = GeomAbs_C2;
+            HCS = C2;
         }
-        else if (S == GeomAbs_C1)
+        else if (S == C1)
         {
-            HCS = GeomAbs_C3;
+            HCS = C3;
         }
-        else if (S >= GeomAbs_C2)
+        else if (S >= C2)
         {
-            HCS = GeomAbs_CN;
+            HCS = CN;
         }
         return myHCurve.NbIntervals(HCS);
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        GeomAbs_Shape HCS = GeomAbs_C0;
-        if (S == GeomAbs_C0)
+        Continuity HCS = C0;
+        if (S == C0)
         {
-            HCS = GeomAbs_C2;
+            HCS = C2;
         }
-        else if (S == GeomAbs_C1)
+        else if (S == C1)
         {
-            HCS = GeomAbs_C3;
+            HCS = C3;
         }
-        else if (S >= GeomAbs_C2)
+        else if (S >= C2)
         {
-            HCS = GeomAbs_CN;
+            HCS = CN;
         }
         myHCurve.Intervals(T, HCS);
     }
@@ -77,26 +79,26 @@ public class GeomFill_SnglrFunc : Adaptor3d_Curve
 
     public override double Period() => myHCurve.Period();
 
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
         Geom_Curve.ResD2 aRes = myHCurve.EvalD2(theU);
-        return new gp_Pnt((aRes.D1 * ratio).Crossed(aRes.D2).XYZ());
+        return new Point3D((aRes.D1 * ratio).Crossed(aRes.D2).XYZ());
     }
 
     public sealed override Geom_Curve.ResD1 EvalD1(double theU)
     {
         Geom_Curve.ResD3 aRes = myHCurve.EvalD3(theU);
-        gp_Vec aDC = aRes.D1 * ratio;
-        return new Geom_Curve.ResD1 { Point = new gp_Pnt(aDC.Crossed(aRes.D2).XYZ()), D1 = aDC.Crossed(aRes.D3) };
+        Vector3D aDC = aRes.D1 * ratio;
+        return new Geom_Curve.ResD1 { Point = new Point3D(aDC.Crossed(aRes.D2).XYZ()), D1 = aDC.Crossed(aRes.D3) };
     }
 
     public sealed override Geom_Curve.ResD2 EvalD2(double theU)
     {
         Geom_Curve.ResD3 aRes = myHCurve.EvalD3(theU);
-        gp_Vec aD4 = myHCurve.EvalDN(theU, 4);
+        Vector3D aD4 = myHCurve.EvalDN(theU, 4);
         return new Geom_Curve.ResD2
         {
-            Point = new gp_Pnt((aRes.D1.Crossed(aRes.D2) * ratio).XYZ()),
+            Point = new Point3D((aRes.D1.Crossed(aRes.D2) * ratio).XYZ()),
             D1 = aRes.D1.Crossed(aRes.D3) * ratio,
             D2 = (aRes.D2.Crossed(aRes.D3) + aRes.D1.Crossed(aD4)) * ratio,
         };
@@ -105,18 +107,18 @@ public class GeomFill_SnglrFunc : Adaptor3d_Curve
     public sealed override Geom_Curve.ResD3 EvalD3(double theU)
     {
         Geom_Curve.ResD3 aRes = myHCurve.EvalD3(theU);
-        gp_Vec aD4 = myHCurve.EvalDN(theU, 4);
-        gp_Vec aD5 = myHCurve.EvalDN(theU, 5);
+        Vector3D aD4 = myHCurve.EvalDN(theU, 4);
+        Vector3D aD5 = myHCurve.EvalDN(theU, 5);
         return new Geom_Curve.ResD3
         {
-            Point = new gp_Pnt((aRes.D1.Crossed(aRes.D2) * ratio).XYZ()),
+            Point = new Point3D((aRes.D1.Crossed(aRes.D2) * ratio).XYZ()),
             D1 = aRes.D1.Crossed(aRes.D3) * ratio,
             D2 = (aRes.D2.Crossed(aRes.D3) + aRes.D1.Crossed(aD4)) * ratio,
             D3 = (aRes.D1.Crossed(aD5) + aRes.D2.Crossed(aD4) * 2) * ratio,
         };
     }
 
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
         Standard_RangeError_Raise_if(theN < 1, "Exception: Geom2d_OffsetCurve::DN(). N<1.");
         switch (theN)
@@ -128,12 +130,12 @@ public class GeomFill_SnglrFunc : Adaptor3d_Curve
             case 3:
                 return EvalD3(theU).D3;
             default:
-                throw new Standard_NotImplemented("Exception: Derivative order is greater than 3. "
+                throw new MethodNotImplementedException("Exception: Derivative order is greater than 3. "
                                                   + "Cannot compute of derivative.");
         }
     }
 
-    public override double Resolution(double R3D) => Precision.Parametric(R3D);
+    public override double Resolution(double R3D) => global::Kerf.Engine.Foundation.Precision.Parametric(R3D);
 
-    public override GeomAbs_CurveType GetType() => GeomAbs_CurveType.GeomAbs_OtherCurve;
+    public override CurveKind GetType() => CurveKind.OtherCurve;
 }

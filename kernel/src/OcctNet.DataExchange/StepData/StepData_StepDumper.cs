@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -59,7 +61,7 @@ public class StepData_StepDumper
     /// (StepType); 1: dumps the entity, completely (whatever it has inside); 2: dumps the entity, plus the entities it
     /// refers to (completely).
     /// </summary>
-    public bool Dump(TextWriter S, Standard_Transient? ent, int level)
+    public bool Dump(TextWriter S, Transient? ent, int level)
     {
         int i, nb = themodel.NbEntities();
         NCollection_Array1<int> ids = new NCollection_Array1<int>(0, nb); // Array to store entity identifiers
@@ -86,7 +88,7 @@ public class StepData_StepDumper
                     NCollection_Sequence<string> listypes = new NCollection_Sequence<string>();
                     if (!module.ComplexType(CN, listypes))
                     {
-                        S.Write("(Complex Type : ask level > 0) cdl = " + ent.DynamicType().Name + " (...);" + '\n');
+                        S.Write("(Complex Type : ask level > 0) cdl = " + ent.DynamicTypeName() + " (...);" + '\n');
                     }
                     else
                     {
@@ -105,7 +107,7 @@ public class StepData_StepDumper
             }
             else
             {
-                S.Write("(Unrecognized Type for protocol) cdl = " + ent.DynamicType().Name + " (...);" + '\n');
+                S.Write("(Unrecognized Type for protocol) cdl = " + ent.DynamicTypeName() + " (...);" + '\n');
             }
             if (nlab > 0)
             {
@@ -115,7 +117,7 @@ public class StepData_StepDumper
         else if (level == 1)
         {
             // Collect entity identifiers
-            Standard_Transient anent;
+            Transient anent;
             if (theslib.Select(ent, out Interface_GeneralModule module, out int CN))
             {
                 Interface_EntityIterator iter = new Interface_EntityIterator();
@@ -133,7 +135,7 @@ public class StepData_StepDumper
         }
         else
         {
-            Standard_Transient anent;
+            Transient anent;
             // Debug output: dumping entity number
             // Send entities to writer
             NCollection_Array1<int> tab = new NCollection_Array1<int>(0, nb);
@@ -247,7 +249,7 @@ public class StepData_StepDumper
         {
             return false;
         }
-        Standard_Transient ent = themodel.Value(num);
+        Transient ent = themodel.Value(num);
         return Dump(S, ent, level);
     }
 }

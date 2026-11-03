@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -29,7 +30,7 @@ internal static class AdaptorOracleInputs
     {
         Assert.True((theNative is null) == (thePort is null),
                     $"{theWhat}: native {(theNative is null ? "succeeded" : "threw " + theNative.Message)}, "
-                    + $"port {(thePort is null ? "succeeded" : "threw " + thePort.GetType().Name + " " + thePort.Message)}");
+                    + $"port {(thePort is null ? "succeeded" : "threw " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(thePort.GetType()) + " " + thePort.Message)}");
         return theNative is null;
     }
 
@@ -68,15 +69,15 @@ internal static class AdaptorOracleInputs
             {
                 aMults[1] = aMults[aNbKnots] = aDeg + 1;
             }
-            int aNbPoles = Occt.BSplCLib.NbPoles(aDeg, aPer, aMults);
+            int aNbPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, aPer, aMults);
             if (aNbPoles < 2 || (aPer && aNbPoles <= aDeg))
             {
                 continue;
             }
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
             for (int i = 1; i <= aNbPoles; i++)
             {
-                aPoles[i] = new gp_Pnt(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10));
+                aPoles[i] = new Point3D(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10));
             }
             NCollection_Array1<double>? aWeights = theO.Int(0, 1) == 0 ? null : theO.Weights(aNbPoles, true);
             return (Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, aDeg, aPer),
@@ -88,10 +89,10 @@ internal static class AdaptorOracleInputs
     internal static (N.Geom_BezierCurve Native, Geom_BezierCurve Port) RandomBezierCurve(Oracle theO, int theMaxDegree = 9)
     {
         int aNbPoles = theO.Int(2, theMaxDegree + 1);
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
-            aPoles[i] = new gp_Pnt(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10));
+            aPoles[i] = new Point3D(theO.Real(-10, 10), theO.Real(-10, 10), theO.Real(-10, 10));
         }
         using var aNPoles = Oracle.ToNative(aPoles);
         if (theO.Int(0, 1) == 0)
@@ -117,7 +118,7 @@ internal static class AdaptorOracleInputs
         {
             case 0:
             {
-                (N.gp_Ax1 aNAx1, gp_Ax1 anAx1) = Ax1s(theO);
+                (N.gp_Ax1 aNAx1, Axis3D anAx1) = Ax1s(theO);
                 using var aNAx1Owner = aNAx1;
                 return (new N.Geom_Line(aNAx1), new Geom_Line(anAx1), 50);
             }
@@ -126,7 +127,7 @@ internal static class AdaptorOracleInputs
             case 3:
             case 4:
             {
-                (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = Ax2sFromDirection(theO);
+                (N.gp_Ax2 aNAx2, Frame3D anAx2) = Ax2sFromDirection(theO);
                 using var aNAx2Owner = aNAx2;
                 if (theKind == 1)
                 {
@@ -176,7 +177,7 @@ internal static class AdaptorOracleInputs
                 }
                 using (aNB)
                 {
-                    (N.gp_Dir aNDir, gp_Dir aDir) = Dirs(theO);
+                    (N.gp_Dir aNDir, Direction3D aDir) = Dirs(theO);
                     using var aNDirOwner = aNDir;
                     double anOffset = theO.Real(0.1, 5) * (theO.Bool() ? 1 : -1);
                     return (new N.Geom_OffsetCurve(aNB, anOffset, aNDir, true), new Geom_OffsetCurve(aPB, anOffset, aDir, true),
@@ -191,7 +192,7 @@ internal static class AdaptorOracleInputs
                 using (aNB)
                 {
                     double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
-                    if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL) || aPB.IsPeriodic())
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic())
                     {
                         aF = -aRange;
                         aL = aRange;
@@ -221,16 +222,16 @@ internal static class AdaptorOracleInputs
         theO.BSplineKnots(aVDeg, aVPer, out NCollection_Array1<double> aVKnots, out NCollection_Array1<int> aVMults);
         ClampMults(aUMults, aUDeg, aUPer, theSmoothness);
         ClampMults(aVMults, aVDeg, aVPer, theSmoothness);
-        int aNbU = Occt.BSplCLib.NbPoles(aUDeg, aUPer, aUMults);
-        int aNbV = Occt.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        int aNbU = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aUDeg, aUPer, aUMults);
+        int aNbV = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         var aWeights = new NCollection_Array2<double>(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; i++)
         {
             for (int j = 1; j <= aNbV; j++)
             {
                 // a gently curved sheet, so that its offsets are regular
-                aPoles[i, j] = new gp_Pnt(i * 2.0 + theO.Real(-0.5, 0.5), j * 2.0 + theO.Real(-0.5, 0.5), theO.Real(-1, 1));
+                aPoles[i, j] = new Point3D(i * 2.0 + theO.Real(-0.5, 0.5), j * 2.0 + theO.Real(-0.5, 0.5), theO.Real(-1, 1));
                 aWeights[i, j] = aRational ? theO.Real(0.7, 1.3) : 1.0;
             }
         }
@@ -255,7 +256,7 @@ internal static class AdaptorOracleInputs
     }
 
     internal static (N.Geom_BSplineSurface Native, Geom_BSplineSurface Port) MakeBSplineSurface(
-        NCollection_Array2<gp_Pnt> thePoles, NCollection_Array2<double>? theWeights, NCollection_Array1<double> theUKnots,
+        NCollection_Array2<Point3D> thePoles, NCollection_Array2<double>? theWeights, NCollection_Array1<double> theUKnots,
         NCollection_Array1<double> theVKnots, NCollection_Array1<int> theUMults, NCollection_Array1<int> theVMults, int theUDeg,
         int theVDeg, bool theUPer, bool theVPer)
     {
@@ -278,20 +279,20 @@ internal static class AdaptorOracleInputs
     {
         int aNbU = theO.Int(2, 7), aNbV = theO.Int(2, 7);
         bool aRational = theO.Bool();
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         var aWeights = new NCollection_Array2<double>(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; i++)
         {
             for (int j = 1; j <= aNbV; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i * 2.0 + theO.Real(-0.5, 0.5), j * 2.0 + theO.Real(-0.5, 0.5), theO.Real(-1, 1));
+                aPoles[i, j] = new Point3D(i * 2.0 + theO.Real(-0.5, 0.5), j * 2.0 + theO.Real(-0.5, 0.5), theO.Real(-1, 1));
                 aWeights[i, j] = aRational ? theO.Real(0.7, 1.3) : 1.0;
             }
         }
         return MakeBezierSurface(aPoles, aRational ? aWeights : null);
     }
 
-    internal static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) MakeBezierSurface(NCollection_Array2<gp_Pnt> thePoles,
+    internal static (N.Geom_BezierSurface Native, Geom_BezierSurface Port) MakeBezierSurface(NCollection_Array2<Point3D> thePoles,
                                                                                           NCollection_Array2<double>? theWeights)
     {
         using N.TColgp_Array2OfPnt aNPoles = Oracle.ToNative(thePoles);
@@ -321,7 +322,7 @@ internal static class AdaptorOracleInputs
             case 3:
             case 4:
             {
-                (N.gp_Ax3 aNAx3, gp_Ax3 anAx3) = Ax3s(theO);
+                (N.gp_Ax3 aNAx3, CoordinateSystem anAx3) = Ax3s(theO);
                 using var aNAx3Owner = aNAx3;
                 switch (theKind)
                 {
@@ -373,11 +374,11 @@ internal static class AdaptorOracleInputs
                 {
                     if (theKind == 5)
                     {
-                        (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theO);
+                        (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theO);
                         using var aNAxisOwner = aNAxis;
                         return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new Geom_SurfaceOfRevolution(aPC, anAxis));
                     }
-                    (N.gp_Dir aNDir, gp_Dir aDir) = Dirs(theO);
+                    (N.gp_Dir aNDir, Direction3D aDir) = Dirs(theO);
                     using var aNDirOwner = aNDir;
                     return (new N.Geom_SurfaceOfLinearExtrusion(aNC, aNDir), new Geom_SurfaceOfLinearExtrusion(aPC, aDir));
                 }
@@ -437,7 +438,7 @@ internal static class AdaptorOracleInputs
 
     private static (double, double) TrimRange(Oracle theO, double theFirst, double theLast, bool thePeriodic)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double aF = theO.Real(-15, 0);
             return (aF, aF + theO.Real(1, 15));
@@ -536,8 +537,8 @@ internal static class AdaptorOracleInputs
         using var aNV1 = new N.gp_Vec(0, 0, 0);
         using var aNV2 = new N.gp_Vec(0, 0, 0);
         using var aNV3 = new N.gp_Vec(0, 0, 0);
-        gp_Pnt P = new();
-        gp_Vec V1 = new(), V2 = new(), V3 = new();
+        Point3D P = new();
+        Vector3D V1 = new(), V2 = new(), V3 = new();
         if (SameOutcome(Catch(() => theN.D0(theU, aNP)), Catch(() => theP.D0(theU, out P)), theWhat + " D0"))
         {
             theO.Same(aNP, P, theWhat + " D0", theTol);
@@ -565,7 +566,7 @@ internal static class AdaptorOracleInputs
         for (int n = 1; n <= theMaxN; n++)
         {
             N.gp_Vec? aNDN = null;
-            gp_Vec aDN = new();
+            Vector3D aDN = new();
             int aN = n;
             if (SameOutcome(Catch(() => aNDN = theN.DN(theU, aN)), Catch(() => aDN = theP.DN(theU, aN)), $"{theWhat} DN({n})"))
             {
@@ -615,8 +616,8 @@ internal static class AdaptorOracleInputs
                                         Action<N.gp_Pnt, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec, N.gp_Vec> theND3,
                                         Func<int, int, N.gp_Vec> theNDN,
                                         Action<N.gp_Pnt> theND0,
-                                        Func<gp_Pnt> thePD0, Func<Geom_Surface.ResD1> thePD1, Func<Geom_Surface.ResD2> thePD2,
-                                        Func<Geom_Surface.ResD3> thePD3, Func<int, int, gp_Vec> thePDN, int theMaxN, string theWhat,
+                                        Func<Point3D> thePD0, Func<Geom_Surface.ResD1> thePD1, Func<Geom_Surface.ResD2> thePD2,
+                                        Func<Geom_Surface.ResD3> thePD3, Func<int, int, Vector3D> thePDN, int theMaxN, string theWhat,
                                         double theTol)
     {
         using var P = new N.gp_Pnt(0, 0, 0);
@@ -630,7 +631,7 @@ internal static class AdaptorOracleInputs
         using var DUUV = new N.gp_Vec(0, 0, 0);
         using var DUVV = new N.gp_Vec(0, 0, 0);
 
-        gp_Pnt aP0 = new();
+        Point3D aP0 = new();
         if (SameOutcome(Catch(() => theND0(P)), Catch(() => aP0 = thePD0()), theWhat + " D0"))
         {
             theO.Same(P, aP0, theWhat + " D0", theTol);
@@ -677,7 +678,7 @@ internal static class AdaptorOracleInputs
             {
                 int aNu = nu, aNv = n - nu;
                 N.gp_Vec? aNDN = null;
-                gp_Vec aDN = new();
+                Vector3D aDN = new();
                 if (SameOutcome(Catch(() => aNDN = theNDN(aNu, aNv)), Catch(() => aDN = thePDN(aNu, aNv)), $"{theWhat} DN({aNu}, {aNv})"))
                 {
                     using (aNDN)
@@ -720,14 +721,14 @@ internal static class AdaptorOracleInputs
     // ---------------------------------------------------------------------------------------------------------
     // gp values
 
-    internal static void SameDir(Oracle theO, N.gp_Dir theN, in gp_Dir theP, string theWhat)
+    internal static void SameDir(Oracle theO, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
         theO.Same(theN.X(), theP.X(), theWhat + " X");
         theO.Same(theN.Y(), theP.Y(), theWhat + " Y");
         theO.Same(theN.Z(), theP.Z(), theWhat + " Z");
     }
 
-    internal static void SameAx1(Oracle theO, N.gp_Ax1 theN, in gp_Ax1 theP, string theWhat)
+    internal static void SameAx1(Oracle theO, N.gp_Ax1 theN, in Axis3D theP, string theWhat)
     {
         using N.gp_Pnt aLoc = theN.Location();
         using N.gp_Dir aDir = theN.Direction();
@@ -735,7 +736,7 @@ internal static class AdaptorOracleInputs
         SameDir(theO, aDir, theP.Direction(), theWhat + " direction");
     }
 
-    internal static void SameAx2(Oracle theO, N.gp_Ax2 theN, in gp_Ax2 theP, string theWhat)
+    internal static void SameAx2(Oracle theO, N.gp_Ax2 theN, in Frame3D theP, string theWhat)
     {
         using N.gp_Pnt aLoc = theN.Location();
         using N.gp_Dir aDir = theN.Direction();
@@ -747,7 +748,7 @@ internal static class AdaptorOracleInputs
         SameDir(theO, aYDir, theP.YDirection(), theWhat + " Y direction");
     }
 
-    internal static void SameAx3(Oracle theO, N.gp_Ax3 theN, in gp_Ax3 theP, string theWhat)
+    internal static void SameAx3(Oracle theO, N.gp_Ax3 theN, in CoordinateSystem theP, string theWhat)
     {
         using N.gp_Pnt aLoc = theN.Location();
         using N.gp_Dir aDir = theN.Direction();
@@ -762,10 +763,10 @@ internal static class AdaptorOracleInputs
     /// <summary>A parameter in [theFirst, theLast], or in [-theRange, theRange] where a bound is infinite.</summary>
     internal static double Param(Oracle theO, double theFirst, double theLast, double theRange = 20)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
-            double aF = Precision.IsInfinite(theFirst) ? -theRange : theFirst;
-            double aL = Precision.IsInfinite(theLast) ? theRange : theLast;
+            double aF = global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) ? -theRange : theFirst;
+            double aL = global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast) ? theRange : theLast;
             if (aF > aL)
             {
                 aF = aL - theRange;

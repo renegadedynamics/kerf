@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 using Status = Occt.IntPatch_ImpImpIntersection.IntStatus;
@@ -26,22 +27,22 @@ public class IntPatch_ImpImpIntersectionTests
 {
     private const double Tol = 1.0e-7;
 
-    private static gp_Ax3 Ax(double x, double y, double z, double dx, double dy, double dz) =>
-        new(new gp_Pnt(x, y, z), new gp_Dir(dx, dy, dz));
+    private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz) =>
+        new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
 
-    private static gp_Ax3 Ax(double x, double y, double z, double dx, double dy, double dz, double xx, double xy,
+    private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz, double xx, double xy,
                              double xz) =>
-        new(new gp_Pnt(x, y, z), new gp_Dir(dx, dy, dz), new gp_Dir(xx, xy, xz));
+        new(new Point3D(x, y, z), new Direction3D(dx, dy, dz), new Direction3D(xx, xy, xz));
 
-    private static Geom_Plane Pln(gp_Ax3 theAx) => new(theAx);
+    private static Geom_Plane Pln(CoordinateSystem theAx) => new(theAx);
 
-    private static Geom_CylindricalSurface Cyl(gp_Ax3 theAx, double theR) => new(theAx, theR);
+    private static Geom_CylindricalSurface Cyl(CoordinateSystem theAx, double theR) => new(theAx, theR);
 
-    private static Geom_ConicalSurface Cone(gp_Ax3 theAx, double theAng, double theR) => new(theAx, theAng, theR);
+    private static Geom_ConicalSurface Cone(CoordinateSystem theAx, double theAng, double theR) => new(theAx, theAng, theR);
 
-    private static Geom_SphericalSurface Sph(gp_Ax3 theAx, double theR) => new(theAx, theR);
+    private static Geom_SphericalSurface Sph(CoordinateSystem theAx, double theR) => new(theAx, theR);
 
-    private static Geom_ToroidalSurface Tor(gp_Ax3 theAx, double theR, double ther) => new(theAx, theR, ther);
+    private static Geom_ToroidalSurface Tor(CoordinateSystem theAx, double theR, double ther) => new(theAx, theR, ther);
 
     private sealed record Result(IntPatch_ImpImpIntersection Inter, GeomAdaptor_Surface S1, GeomAdaptor_Surface S2);
 
@@ -63,27 +64,27 @@ public class IntPatch_ImpImpIntersectionTests
 
     private static IntSurf_Quadric Quadric(GeomAdaptor_Surface theS) => theS.GetType() switch
     {
-        GeomAbs_SurfaceType.GeomAbs_Plane => new IntSurf_Quadric(theS.Plane()),
-        GeomAbs_SurfaceType.GeomAbs_Cylinder => new IntSurf_Quadric(theS.Cylinder()),
-        GeomAbs_SurfaceType.GeomAbs_Cone => new IntSurf_Quadric(theS.Cone()),
-        GeomAbs_SurfaceType.GeomAbs_Sphere => new IntSurf_Quadric(theS.Sphere()),
+        SurfaceKind.Plane => new IntSurf_Quadric(theS.Plane()),
+        SurfaceKind.Cylinder => new IntSurf_Quadric(theS.Cylinder()),
+        SurfaceKind.Cone => new IntSurf_Quadric(theS.Cone()),
+        SurfaceKind.Sphere => new IntSurf_Quadric(theS.Sphere()),
         _ => new IntSurf_Quadric(theS.Torus()),
     };
 
-    private static void OnBoth(Result theR, in gp_Pnt theP, double theTol, string theWhat)
+    private static void OnBoth(Result theR, in Point3D theP, double theTol, string theWhat)
     {
         double aScale = Math.Max(1.0, theP.XYZ().Modulus());
         Assert.True(Math.Abs(Quadric(theR.S1).Distance(theP)) <= theTol * aScale, $"{theWhat} {theP} is off surface 1");
         Assert.True(Math.Abs(Quadric(theR.S2).Distance(theP)) <= theTol * aScale, $"{theWhat} {theP} is off surface 2");
     }
 
-    private static gp_Pnt ConicValue(IntPatch_GLine theL, double theU) => theL.ArcType() switch
+    private static Point3D ConicValue(IntPatch_GLine theL, double theU) => theL.ArcType() switch
     {
-        IntPatch_Lin => ElCLib.Value(theU, theL.Line()),
-        IntPatch_Circle => ElCLib.Value(theU, theL.Circle()),
-        IntPatch_Ellipse => ElCLib.Value(theU, theL.Ellipse()),
-        IntPatch_Parabola => ElCLib.Value(theU, theL.Parabola()),
-        _ => ElCLib.Value(theU, theL.Hyperbola()),
+        IntPatch_Lin => global::Kerf.Engine.Geometry.ElCLib.Value(theU, theL.Line()),
+        IntPatch_Circle => global::Kerf.Engine.Geometry.ElCLib.Value(theU, theL.Circle()),
+        IntPatch_Ellipse => global::Kerf.Engine.Geometry.ElCLib.Value(theU, theL.Ellipse()),
+        IntPatch_Parabola => global::Kerf.Engine.Geometry.ElCLib.Value(theU, theL.Parabola()),
+        _ => global::Kerf.Engine.Geometry.ElCLib.Value(theU, theL.Hyperbola()),
     };
 
     // Every line lies on both surfaces; every vertex is on its line at its parameter.
@@ -206,7 +207,7 @@ public class IntPatch_ImpImpIntersectionTests
         Result aR = Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0)));
         Lines(aR, IntPatch_Lin);
         Transitions(aR.Inter.Line(1), IntSurf_In, IntSurf_Out);
-        Assert.Equal(new gp_Dir(0, 1, 0), G(aR, 1).Line().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Line().Direction());
         Assert.Equal(0, G(aR, 1).NbVertex()); // infinite planes: no boundary
     }
 
@@ -216,7 +217,7 @@ public class IntPatch_ImpImpIntersectionTests
         SameSurfaces(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 0, 0, -1))), theOpposite: true);
         SameSurfaces(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(1, 2, 0, 0, 0, 1))), theOpposite: false);
         Empty(Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 1, 0, 0, 1))));
-        Assert.Throws<Standard_DomainError>(() => Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0))).Inter.OppositeFaces());
+        Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0))).Inter.OppositeFaces());
     }
 
     // lowalgos/intss/buc60815: the planes z = 0 (origin (1, 0, 0)) and x = 0, trimmed to squares of sides 100 and 150: one line, with a vertex where it crosses each
@@ -242,11 +243,11 @@ public class IntPatch_ImpImpIntersectionTests
         Result aR = Run(Pln(Ax(0, 0, 2, 0, 0, 1)), Cyl(Ax(0, 0, 0, 0, 0, 1, 0, 1, 0), 3));
         Lines(aR, IntPatch_Circle);
         Transitions(aR.Inter.Line(1), IntSurf_In, IntSurf_Out);
-        gp_Circ aC = G(aR, 1).Circle();
-        Assert.Equal(new gp_Pnt(0, 0, 2), aC.Location());
+        Circle3D aC = G(aR, 1).Circle();
+        Assert.Equal(new Point3D(0, 0, 2), aC.Location());
         Assert.Equal(3.0, aC.Radius());
         // AdjustToSeam: the circle starts on the cylinder's seam (its X direction)
-        Assert.Equal(new gp_Dir(0, 1, 0), aC.XAxis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), aC.XAxis().Direction());
         // the two vertices OCCT puts on a closed conic without boundary points: 0 and 2π
         Assert.Equal(2, G(aR, 1).NbVertex());
         Assert.Equal(0.0, G(aR, 1).Vertex(1).ParameterOnLine());
@@ -298,13 +299,13 @@ public class IntPatch_ImpImpIntersectionTests
 
         Result aTilted = Run(Pln(Ax(0, 0, 1, 1, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
         Lines(aTilted, IntPatch_Circle);
-        Assert.Equal(new gp_Dir(1, 0, 1), G(aTilted, 1).Circle().Axis().Direction());
+        Assert.Equal(new Direction3D(1, 0, 1), G(aTilted, 1).Circle().Axis().Direction());
 
         // touching the north pole: one tangent point, and the pole's degenerated boundary on the plane, a restriction
         Result aPoint = Run(Pln(Ax(0, 0, 2, 0, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
         Lines(aPoint, IntPatch_Restriction);
         Assert.Equal(1, aPoint.Inter.NbPnts());
-        Assert.Equal(new gp_Pnt(0, 0, 2), aPoint.Inter.Point(1).Value());
+        Assert.Equal(new Point3D(0, 0, 2), aPoint.Inter.Point(1).Value());
         Assert.True(aPoint.Inter.Point(1).IsTangencyPoint());
 
         Empty(Run(Pln(Ax(0, 0, 3, 0, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2)));
@@ -340,7 +341,7 @@ public class IntPatch_ImpImpIntersectionTests
         // two generatrices, each split at the apex into two lines with a multiple vertex there
         Result aLines = Run(Pln(Ax(0, 0, 0, 1, 0, 0)), Cone(Ax(0, 0, -2, 0, 0, 1), Math.PI / 4, 2));
         Lines(aLines, IntPatch_Lin, IntPatch_Lin, IntPatch_Lin, IntPatch_Lin);
-        gp_Pnt anApex = new(0, 0, -4);
+        Point3D anApex = new(0, 0, -4);
         for (int i = 1; i <= 4; i++)
         {
             IntPatch_GLine aL = G(aLines, i);
@@ -361,7 +362,7 @@ public class IntPatch_ImpImpIntersectionTests
         // only the apex: an isolated point, and the apex's boundary on the plane
         Result aPoint = Run(Pln(Ax(0, 0, -2, 0, 0, 1)), Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 4, 2));
         Assert.Equal(1, aPoint.Inter.NbPnts());
-        Assert.True(aPoint.Inter.Point(1).Value().Distance(new gp_Pnt(0, 0, -2)) < 1.0e-15);
+        Assert.True(aPoint.Inter.Point(1).Value().Distance(new Point3D(0, 0, -2)) < 1.0e-15);
     }
 
     // lowalgos/intss/bug20766: plane x = 0 and a cone of radius 0 far from the origin: an ellipse.
@@ -373,9 +374,9 @@ public class IntPatch_ImpImpIntersectionTests
                         Cone(Ax(-3522.4299999999998, 2540, -1461.4300000000001, 5449.7857099692965, 0, 5537.6938973109054),
                              aSemiAngle, 0));
         Lines(aR, IntPatch_Ellipse);
-        gp_Elips anE = G(aR, 1).Ellipse();
+        Ellipse3D anE = G(aR, 1).Ellipse();
         Assert.True(anE.Location().X() < 1.0e-9);
-        Assert.Equal(new gp_Dir(1, 0, 0), anE.Axis().Direction());
+        Assert.Equal(new Direction3D(1, 0, 0), anE.Axis().Direction());
     }
 
     // ---------------------------------------------------------------- plane/torus
@@ -398,11 +399,11 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aR = Run(Tor(Ax(0, 0, 0, 0, 0, 1), 100, 10), Pln(Ax(0, 0, 0, 0, 1, 0)));
         Lines(aR, IntPatch_Circle, IntPatch_Circle);
-        Assert.Equal(new gp_Pnt(-100, 0, 0), G(aR, 1).Circle().Location());
-        Assert.Equal(new gp_Pnt(100, 0, 0), G(aR, 2).Circle().Location());
+        Assert.Equal(new Point3D(-100, 0, 0), G(aR, 1).Circle().Location());
+        Assert.Equal(new Point3D(100, 0, 0), G(aR, 2).Circle().Location());
         Assert.All(new[] { G(aR, 1), G(aR, 2) }, l => Assert.Equal(10.0, l.Circle().Radius()));
         // meridians: their axis is the plane's normal (IntPTo adjusts to the seam only planes not through the axis)
-        Assert.Equal(new gp_Dir(0, 1, 0), G(aR, 1).Circle().Axis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Circle().Axis().Direction());
     }
 
     // ---------------------------------------------------------------- cylinder/cylinder
@@ -444,7 +445,7 @@ public class IntPatch_ImpImpIntersectionTests
             Assert.True(aW.NbPnts() > 100);
             Assert.Equal(IntSurf_Undecided, aW.TransitionOnS1());
             // each line runs between boundary points of the trimmed cylinders or critical points (|x| = 3 or |y| = 2)
-            gp_Pnt aF = aW.Point(1).Value(), aL = aW.Point(aW.NbPnts()).Value();
+            Point3D aF = aW.Point(1).Value(), aL = aW.Point(aW.NbPnts()).Value();
             Assert.True(Math.Abs(Math.Abs(aF.Y()) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aF.X()) - 3) < 1.0e-9);
             Assert.True(Math.Abs(Math.Abs(aL.Y()) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aL.X()) - 3) < 1.0e-9);
         }
@@ -467,7 +468,7 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aR = Run(Cyl(Ax(0, 0, 0, 12, 35, 47), 5), Cyl(Ax(3, 2, 8, 12, 35, 47), 4));
         Lines(aR, IntPatch_Lin, IntPatch_Lin);
-        Assert.Equal(new gp_Dir(12, 35, 47), G(aR, 1).Line().Direction());
+        Assert.Equal(new Direction3D(12, 35, 47), G(aR, 1).Line().Direction());
     }
 
     // lowalgos/intss/bug23178 and bug28222_2: crossing cylinders of different radii, infinite: eight walking lines,
@@ -523,7 +524,7 @@ public class IntPatch_ImpImpIntersectionTests
 
         Result aSpSp = Run(Sph(Ax(0, 0, 0, 0, 0, 1), 2), Sph(Ax(2, 0, 0, 0, 0, 1), 2));
         Lines(aSpSp, IntPatch_Circle);
-        Assert.Equal(new gp_Pnt(1, 0, 0), G(aSpSp, 1).Circle().Location());
+        Assert.Equal(new Point3D(1, 0, 0), G(aSpSp, 1).Circle().Location());
     }
 
     [Fact]
@@ -570,7 +571,7 @@ public class IntPatch_ImpImpIntersectionTests
         Assert.False(aTangent.Inter.IsEmpty());
         Assert.Equal(0, aTangent.Inter.NbLines());
         Assert.Equal(1, aTangent.Inter.NbPnts());
-        Assert.Equal(new gp_Pnt(2, 0, 0), aTangent.Inter.Point(1).Value());
+        Assert.Equal(new Point3D(2, 0, 0), aTangent.Inter.Point(1).Value());
 
         Empty(Run(Sph(Ax(0, 0, 0, 0, 0, 1), 2), Sph(Ax(5, 0, 0, 0, 0, 1), 2)));
     }
@@ -625,7 +626,7 @@ public class IntPatch_ImpImpIntersectionTests
         Result aR = Run(Tor(Ax(0, 0, 0, 0, 0, 1), 20, 5), Tor(Ax(40, 0, 0, 0, 0, 1), 20, 5));
         Assert.Equal(Status.IntStatus_Fail, aR.Inter.GetStatus());
         Assert.False(aR.Inter.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => aR.Inter.NbLines());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aR.Inter.NbLines());
     }
 
     [Fact]
@@ -633,11 +634,11 @@ public class IntPatch_ImpImpIntersectionTests
     {
         var anInter = new IntPatch_ImpImpIntersection();
         Assert.False(anInter.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anInter.IsEmpty());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInter.IsEmpty());
 
-        GeomAdaptor_Surface aBezier = new(new Geom_BezierSurface(new NCollection_Array2<gp_Pnt>(1, 2, 1, 2)));
+        GeomAdaptor_Surface aBezier = new(new Geom_BezierSurface(new NCollection_Array2<Point3D>(1, 2, 1, 2)));
         GeomAdaptor_Surface aPlane = new(Pln(Ax(0, 0, 0, 0, 0, 1)));
-        Assert.Throws<Standard_ConstructionError>(() => new IntPatch_ImpImpIntersection(
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new IntPatch_ImpImpIntersection(
             aBezier, new Adaptor3d_TopolTool(aBezier), aPlane, new Adaptor3d_TopolTool(aPlane), Tol, Tol));
     }
 }

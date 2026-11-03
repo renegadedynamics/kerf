@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,10 +20,10 @@ namespace Occt;
 /// <see cref="SetFunc"/> replaces the blending functions. No check is made on the bounds: B1/B3 and B2/B4 must have
 /// the same range and be well oriented. The corners are the midpoints of the adjacent boundaries' ends.
 /// </remarks>
-public class GeomFill_CoonsAlgPatch : Standard_Transient
+public class GeomFill_CoonsAlgPatch : Transient
 {
     private readonly GeomFill_Boundary[] bound = new GeomFill_Boundary[4];
-    private readonly gp_Pnt[] c = [new gp_Pnt(), new gp_Pnt(), new gp_Pnt(), new gp_Pnt()];
+    private readonly Point3D[] c = [new Point3D(), new Point3D(), new Point3D(), new Point3D()];
     private readonly Law_Function[] a = new Law_Function[2];
 
     public GeomFill_CoonsAlgPatch(GeomFill_Boundary B1, GeomFill_Boundary B2, GeomFill_Boundary B3, GeomFill_Boundary B4)
@@ -36,7 +42,7 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
         aLaw1.Set(deb0, 0.0, fin0, 1.0);
         a[1] = aLaw1;
 
-        gp_XYZ temp;
+        Xyz temp;
         temp = B4.Value(deb1).XYZ().Added(B1.Value(deb0).XYZ());
         temp.Multiply(0.5);
         c[0].SetXYZ(temp);
@@ -66,14 +72,14 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
     }
 
     /// <summary>The value of the patch at (U, V).</summary>
-    public gp_Pnt Value(double U, double V)
+    public Point3D Value(double U, double V)
     {
         double a0, a1, a2, a3;
         a0 = a[0].Value(V);
         a1 = a[1].Value(U);
         a2 = 1.0 - a0;
         a3 = 1.0 - a1;
-        gp_XYZ cor, cortemp;
+        Xyz cor, cortemp;
 
         // OCCT: bounds 0 and 2 (the U boundaries) are evaluated at V, not U (occt-issues.md)
         cor = bound[0].Value(V).XYZ();
@@ -107,20 +113,20 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
         cortemp.Multiply(-a2 * a3);
         cor.Add(cortemp);
 
-        return new gp_Pnt(cor);
+        return new Point3D(cor);
     }
 
     /// <summary>The partial derivative d/dU at (U, V).</summary>
-    public gp_Vec D1U(double U, double V)
+    public Vector3D D1U(double U, double V)
     {
         double a0, a1, a2, a3, bid;
         a0 = a[0].Value(V);
         a[1].D1(U, out bid, out a1);
         a2 = 1 - a0;
         a3 = -a1;
-        gp_XYZ cor, cortemp;
-        gp_Pnt pbid;
-        gp_Vec vbid;
+        Xyz cor, cortemp;
+        Point3D pbid;
+        Vector3D vbid;
 
         bound[0].D1(U, out pbid, out vbid);
         cor = vbid.XYZ();
@@ -160,16 +166,16 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
     }
 
     /// <summary>The partial derivative d/dV at (U, V).</summary>
-    public gp_Vec D1V(double U, double V)
+    public Vector3D D1V(double U, double V)
     {
         double a0, a1, a2, a3, bid;
         a[0].D1(V, out bid, out a0);
         a1 = a[1].Value(U);
         a2 = -a0;
         a3 = 1.0 - a1;
-        gp_XYZ cor, cortemp;
-        gp_Pnt pbid;
-        gp_Vec vbid;
+        Xyz cor, cortemp;
+        Point3D pbid;
+        Vector3D vbid;
 
         cor = bound[0].Value(U).XYZ();
         cor.Multiply(a0);
@@ -209,7 +215,7 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
     }
 
     /// <summary>The mixed derivative d2/dUdV at (U, V) (exact for linear blending functions).</summary>
-    public gp_Vec DUV(double U, double V)
+    public Vector3D DUV(double U, double V)
     {
         double a0, a1, a2, a3, bid;
         a[0].D1(V, out bid, out a0);
@@ -217,9 +223,9 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
         a2 = -a0;
         a3 = -a1;
 
-        gp_XYZ cor, cortemp;
-        gp_Pnt pbid;
-        gp_Vec vbid;
+        Xyz cor, cortemp;
+        Point3D pbid;
+        Vector3D vbid;
 
         bound[0].D1(U, out pbid, out vbid);
         cor = vbid.XYZ();
@@ -261,7 +267,7 @@ public class GeomFill_CoonsAlgPatch : Standard_Transient
     }
 
     /// <summary>The corner <paramref name="I"/> (from 0).</summary>
-    public gp_Pnt Corner(int I) => c[I];
+    public Point3D Corner(int I) => c[I];
 
     /// <summary>The boundary <paramref name="I"/> (from 0).</summary>
     public GeomFill_Boundary Bound(int I) => bound[I];

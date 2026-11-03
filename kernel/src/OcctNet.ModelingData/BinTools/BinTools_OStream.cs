@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Buffers.Binary;
 
 namespace Occt;
@@ -135,21 +138,21 @@ public sealed class BinTools_OStream
     }
 
     /// <summary>Writes a 3D point.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in gp_Pnt theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Point3D theValue)
     {
         OS.PutReals(theValue.X(), theValue.Y(), theValue.Z());
         return OS;
     }
 
     /// <summary>Writes a 3D direction.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in gp_Dir theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Direction3D theValue)
     {
         OS.PutReals(theValue.X(), theValue.Y(), theValue.Z());
         return OS;
     }
 
     /// <summary>Writes a 2D point.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in gp_Pnt2d theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Point2D theValue)
     {
         BinaryPrimitives.WriteDoubleLittleEndian(OS.myBuf, theValue.X());
         BinaryPrimitives.WriteDoubleLittleEndian(OS.myBuf.AsSpan(8), theValue.Y());
@@ -159,7 +162,7 @@ public sealed class BinTools_OStream
     }
 
     /// <summary>Writes a 2D direction.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in gp_Dir2d theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Direction2D theValue)
     {
         BinaryPrimitives.WriteDoubleLittleEndian(OS.myBuf, theValue.X());
         BinaryPrimitives.WriteDoubleLittleEndian(OS.myBuf.AsSpan(8), theValue.Y());
@@ -169,10 +172,10 @@ public sealed class BinTools_OStream
     }
 
     /// <summary>Writes a transformation: three rows of the matrix, each followed by its translation component.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in gp_Trsf theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Transform3D theValue)
     {
-        gp_XYZ aTr = theValue.TranslationPart();
-        gp_Mat aMat = theValue.VectorialPart();
+        Xyz aTr = theValue.TranslationPart();
+        Matrix3x3 aMat = theValue.VectorialPart();
         Span<byte> aBuf = OS.myBuf;
         BinaryPrimitives.WriteDoubleLittleEndian(aBuf, aMat[1, 1]);
         BinaryPrimitives.WriteDoubleLittleEndian(aBuf[8..], aMat[1, 2]);
@@ -192,7 +195,7 @@ public sealed class BinTools_OStream
     }
 
     /// <summary>Writes the three node indices of a triangle.</summary>
-    public static BinTools_OStream operator <<(BinTools_OStream OS, in Poly_Triangle theValue)
+    public static BinTools_OStream operator <<(BinTools_OStream OS, in Triangle1 theValue)
     {
         BinaryPrimitives.WriteInt32LittleEndian(OS.myBuf, theValue.Value(1));
         BinaryPrimitives.WriteInt32LittleEndian(OS.myBuf.AsSpan(4), theValue.Value(2));
@@ -205,9 +208,9 @@ public sealed class BinTools_OStream
     /// <summary>Writes a vector of three floats.</summary>
     public static BinTools_OStream operator <<(BinTools_OStream OS, in NCollection_Vec3<float> theValue)
     {
-        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf, theValue.x());
-        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf.AsSpan(4), theValue.y());
-        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf.AsSpan(8), theValue.z());
+        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf, theValue.X());
+        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf.AsSpan(4), theValue.Y());
+        BinaryPrimitives.WriteSingleLittleEndian(OS.myBuf.AsSpan(8), theValue.Z());
         OS.myStream.Write(OS.myBuf, 0, sizeof(float) * 3);
         OS.myPosition += sizeof(float) * 3;
         return OS;

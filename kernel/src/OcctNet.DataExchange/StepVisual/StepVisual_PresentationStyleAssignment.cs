@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_PresentationStyleAssignment : Standard_Transient
+public class StepVisual_PresentationStyleAssignment : Transient
 {
     private NCollection_HArray1<StepVisual_PresentationStyleSelect> styles;
 

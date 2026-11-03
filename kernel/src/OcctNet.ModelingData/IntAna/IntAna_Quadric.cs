@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 //----------------------------------------------------------------------
@@ -35,7 +37,7 @@ public sealed class IntAna_Quadric
     private double CY;
     private double CZ;
     private double CCte;
-    private readonly NCollection_List<gp_Pnt> mySpecialPoints = new();
+    private readonly NCollection_List<Point3D> mySpecialPoints = new();
 
     //----------------------------------------------------------------------
     //-- Empty Quadric
@@ -56,7 +58,7 @@ public sealed class IntAna_Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Initializes the quadric with a plane.</summary>
-    public void SetQuadric(in gp_Pln P)
+    public void SetQuadric(in Plane3D P)
     {
         P.Coefficients(out CX, out CY, out CZ, out CCte);
         CX *= 0.5;
@@ -66,7 +68,7 @@ public sealed class IntAna_Quadric
     }
 
     /// <summary>Creates a quadric from a plane.</summary>
-    public IntAna_Quadric(in gp_Pln P)
+    public IntAna_Quadric(in Plane3D P)
     {
         P.Coefficients(out CX, out CY, out CZ, out CCte);
         CX *= 0.5;
@@ -80,13 +82,13 @@ public sealed class IntAna_Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Initializes the quadric with a cylinder.</summary>
-    public void SetQuadric(in gp_Cylinder Cyl)
+    public void SetQuadric(in Cylinder Cyl)
     {
         Cyl.Coefficients(out CXX, out CYY, out CZZ, out CXY, out CXZ, out CYZ, out CX, out CY, out CZ, out CCte);
     }
 
     /// <summary>Creates a quadric from a cylinder.</summary>
-    public IntAna_Quadric(in gp_Cylinder Cyl)
+    public IntAna_Quadric(in Cylinder Cyl)
     {
         Cyl.Coefficients(out CXX, out CYY, out CZZ, out CXY, out CXZ, out CYZ, out CX, out CY, out CZ, out CCte);
     }
@@ -96,17 +98,17 @@ public sealed class IntAna_Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Creates a quadric from a cone. Its apex is a special point.</summary>
-    public IntAna_Quadric(in gp_Cone Cone)
+    public IntAna_Quadric(in Cone Cone)
     {
         SetQuadric(Cone);
     }
 
     /// <summary>Initializes the quadric with a cone, and appends its apex to the special points.</summary>
-    public void SetQuadric(in gp_Cone Cone)
+    public void SetQuadric(in Cone Cone)
     {
         Cone.Coefficients(out CXX, out CYY, out CZZ, out CXY, out CXZ, out CYZ, out CX, out CY, out CZ, out CCte);
         double aVParam = -Cone.RefRadius() / Math.Sin(Cone.SemiAngle());
-        mySpecialPoints.Append(ElSLib.Value(0.0, aVParam, Cone));
+        mySpecialPoints.Append(global::Kerf.Engine.Geometry.ElSLib.Value(0.0, aVParam, Cone));
     }
 
     //----------------------------------------------------------------------
@@ -114,15 +116,15 @@ public sealed class IntAna_Quadric
     //----------------------------------------------------------------------
 
     /// <summary>Initializes the quadric with a sphere, and appends its poles to the special points.</summary>
-    public void SetQuadric(in gp_Sphere Sph)
+    public void SetQuadric(in Sphere Sph)
     {
         Sph.Coefficients(out CXX, out CYY, out CZZ, out CXY, out CXZ, out CYZ, out CX, out CY, out CZ, out CCte);
-        mySpecialPoints.Append(ElSLib.Value(0.0, -M_PI_2, Sph));
-        mySpecialPoints.Append(ElSLib.Value(0.0, M_PI_2, Sph));
+        mySpecialPoints.Append(global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, Sph));
+        mySpecialPoints.Append(global::Kerf.Engine.Geometry.ElSLib.Value(0.0, M_PI_2, Sph));
     }
 
     /// <summary>Creates a quadric from a sphere. Its poles are special points.</summary>
-    public IntAna_Quadric(in gp_Sphere Sph)
+    public IntAna_Quadric(in Sphere Sph)
     {
         SetQuadric(Sph);
     }
@@ -178,7 +180,7 @@ public sealed class IntAna_Quadric
                                 ref double _CY,
                                 ref double _CZ,
                                 ref double _CCte,
-                                in gp_Ax3 Axis)
+                                in CoordinateSystem Axis)
     {
         double t11, t12, t13, t14; // x = t11 X + t12 Y + t13 Z + t14
         double t21, t22, t23, t24; // y = t21 X + t22 Y + t23 Z + t24
@@ -188,7 +190,7 @@ public sealed class IntAna_Quadric
 
         double Cxx, Cyy, Czz, Cxy, Cxz, Cyz, Cx, Cy, Cz, Ccte;
 
-        gp_Trsf Trans = new();
+        Transform3D Trans = new();
         Trans.SetTransformation(Axis);
         Trans.Invert();
         t11 = Trans.Value(1, 1);
@@ -271,8 +273,8 @@ public sealed class IntAna_Quadric
     }
 
     /// <summary>The special points (singularities): a cone's apex, a sphere's poles. A copy.</summary>
-    public PackedList<gp_Pnt> SpecialPoints() => PackedList.Create<gp_Pnt>([.. mySpecialPoints]);
+    public PackedList<Point3D> SpecialPoints() => PackedList.Create<Point3D>([.. mySpecialPoints]);
 
     /// <summary>The stored list of special points (OCCT's <c>SpecialPoints()</c>). Don't modify.</summary>
-    internal NCollection_List<gp_Pnt> InternalSpecialPoints() => mySpecialPoints;
+    internal NCollection_List<Point3D> InternalSpecialPoints() => mySpecialPoints;
 }

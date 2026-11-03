@@ -3,6 +3,10 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -43,7 +47,7 @@ public static partial class BRepTools
         while (aStack.Count > 0)
         {
             TopoDS_TShape aTShape = aStack.Pop();
-            if (aTShape.IsFrozen())
+            if (aTShape.IsFrozen)
             {
                 return true;
             }
@@ -53,7 +57,7 @@ public static partial class BRepTools
                 continue;
             }
 
-            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aTShape, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD));
+            for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(aTShape, new Placement(), TopAbs_Orientation.TopAbs_FORWARD));
                  anIt.More(); anIt.Next())
             {
                 TopoDS_TShape? aChild = anIt.Value().TShape();
@@ -203,7 +207,7 @@ public static partial class BRepTools
                 aNewF.NaturalRestriction(aF.NaturalRestriction());
                 if (aF.NbTriangulations() > 0)
                 {
-                    aNewF.Triangulations(new NCollection_List<Poly_Triangulation>(aF.Triangulations()), aF.ActiveTriangulation());
+                    aNewF.Triangulations(new NCollection_List<Triangulation>(aF.Triangulations()), aF.ActiveTriangulation());
                 }
                 aCopy = aNewF;
                 break;
@@ -276,12 +280,12 @@ public static partial class BRepTools
         // the children, side by side
         var anOriginals = new List<TopoDS_Shape>();
         var aCopies = new List<TopoDS_Shape>();
-        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theOriginal, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
+        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theOriginal, new Placement(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
              anIt.More(); anIt.Next())
         {
             anOriginals.Add(anIt.Value());
         }
-        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theCopy, new TopLoc_Location(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
+        for (var anIt = new TopoDS_Iterator(new TopoDS_Shape(theCopy, new Placement(), TopAbs_Orientation.TopAbs_FORWARD), false, false);
              anIt.More(); anIt.Next())
         {
             aCopies.Add(anIt.Value());
@@ -335,9 +339,9 @@ public static partial class BRepTools
             else
             {
                 // the copy (unfrozen, made for this write) with the kept children in place of its own
-                if (theCopy.IsFrozen())
+                if (theCopy.IsFrozen)
                 {
-                    throw new Standard_ImmutableObject("BRepTools::KeepUnchanged");
+                    throw new ImmutableObjectException("BRepTools::KeepUnchanged");
                 }
                 theCopy.myShapes.Clear();
                 for (int i = 0; i < aCopies.Count; i++)
@@ -426,7 +430,7 @@ public static partial class BRepTools
                 {
                     return false;
                 }
-                for (NCollection_List<Poly_Triangulation>.Iterator anItA = new(aFA.Triangulations()), anItB = new(aFB.Triangulations());
+                for (NCollection_List<Triangulation>.Iterator anItA = new(aFA.Triangulations()), anItB = new(aFB.Triangulations());
                      anItA.More(); anItA.Next(), anItB.Next())
                 {
                     if (!ReferenceEquals(anItA.Value(), anItB.Value()))
@@ -485,8 +489,8 @@ public static partial class BRepTools
             case BRep_CurveOnSurface aCA:
             {
                 var aCB = (BRep_CurveOnSurface)theB;
-                aCA.UVPoints(out gp_Pnt2d aPA1, out gp_Pnt2d aPA2);
-                aCB.UVPoints(out gp_Pnt2d aPB1, out gp_Pnt2d aPB2);
+                aCA.UVPoints(out Point2D aPA1, out Point2D aPA2);
+                aCB.UVPoints(out Point2D aPB1, out Point2D aPB2);
                 if (!ReferenceEquals(aCA.PCurve(), aCB.PCurve()) || !ReferenceEquals(aCA.Surface(), aCB.Surface())
                     || !aPA1.Equals(aPB1) || !aPA2.Equals(aPB2))
                 {
@@ -583,7 +587,7 @@ public static partial class BRepTools
     private static void substituteTShapes(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap,
                                           HashSet<TopoDS_TShape> theVisited)
     {
-        if (theTShape.IsFrozen() || !theVisited.Add(theTShape))
+        if (theTShape.IsFrozen || !theVisited.Add(theTShape))
         {
             return;
         }

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -43,16 +44,16 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        var P = new gp_Pnt2d(theDI.Atof(a[2]), theDI.Atof(a[3]));
+        var P = new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]));
         var proj = new Geom2dAPI_ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
         for (int i = 1; i <= proj.NbPoints(); i++)
         {
-            gp_Pnt2d aP1 = proj.Point(i);
+            Point2D aP1 = proj.Point(i);
             double aDist = P.Distance(aP1);
             string aName = $"ext_{i}";
-            if (aDist > Precision.PConfusion())
+            if (aDist > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                var L = new Geom2d_Line(P, new gp_Dir2d(aP1.XY() - P.XY()));
+                var L = new Geom2d_Line(P, new Direction2D(aP1.XY() - P.XY()));
                 var CT = new Geom2d_TrimmedCurve(L, 0.0, aDist);
                 DrawTrSurf.Set(theDI, aName, CT);
             }
@@ -115,16 +116,16 @@ internal static class GeomliteTestAPI2dCommands
 
         for (int i = 1; i <= aNExtr; i++)
         {
-            Ex.Points(i, out gp_Pnt2d P1, out gp_Pnt2d P2);
+            Ex.Points(i, out Point2D P1, out Point2D P2);
             di.Append("dist ").Append(i).Append(": ").Append(Ex.Distance(i)).Append("  ");
             string aName = $"ext_{i}";
-            if (Ex.Distance(i) <= Precision.PConfusion())
+            if (Ex.Distance(i) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 DrawTrSurf.Set(theDI, aName, P1);
             }
             else
             {
-                var L = new Geom2d_Line(P1, new gp_Dir2d(new gp_Vec2d(P1, P2)));
+                var L = new Geom2d_Line(P1, new Direction2D(new Vector2D(P1, P2)));
                 var CT = new Geom2d_TrimmedCurve(L, 0.0, P1.Distance(P2));
                 DrawTrSurf.Set(theDI, aName, CT);
             }
@@ -213,7 +214,7 @@ internal static class GeomliteTestAPI2dCommands
         for (int i = 1; i <= aNbPoints; i++)
         {
             // API simplified result
-            gp_Pnt2d P = Intersector.Point(i);
+            Point2D P = Intersector.Point(i);
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
             // Intersection extended results from intersection tool
             IntRes2d_IntersectionPoint aPInt = anIntTool.Point(i);
@@ -259,7 +260,7 @@ internal static class GeomliteTestAPI2dCommands
         var Intersector = new IntAna2d_AnaIntersection(aCir1.Circ2d(), aCir2.Circ2d());
         for (int i = 1; i <= Intersector.NbPoints(); i++)
         {
-            gp_Pnt2d P = Intersector.Point(i).Value();
+            Point2D P = Intersector.Point(i).Value();
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
             di.Append("parameter on the fist: ").Append(Intersector.Point(i).ParamOnFirst());
             di.Append(" parameter on the second: ").Append(Intersector.Point(i).ParamOnSecond()).Append("\n");
@@ -293,23 +294,23 @@ internal static class GeomliteTestAPI2dCommands
 
         var AC1 = new Geom2dAdaptor_Curve(C1);
         var AC2 = new Geom2dAdaptor_Curve(C2);
-        GeomAbs_CurveType T1 = AC1.GetType(), T2 = AC2.GetType();
+        CurveKind T1 = AC1.GetType(), T2 = AC2.GetType();
         IntAna2d_Conic pCon;
         switch (T2)
         {
-            case GeomAbs_CurveType.GeomAbs_Line:
+            case CurveKind.Line:
                 pCon = new IntAna2d_Conic(AC2.Line());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Circle:
+            case CurveKind.Circle:
                 pCon = new IntAna2d_Conic(AC2.Circle());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Ellipse:
+            case CurveKind.Ellipse:
                 pCon = new IntAna2d_Conic(AC2.Ellipse());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Hyperbola:
+            case CurveKind.Hyperbola:
                 pCon = new IntAna2d_Conic(AC2.Hyperbola());
                 break;
-            case GeomAbs_CurveType.GeomAbs_Parabola:
+            case CurveKind.Parabola:
                 pCon = new IntAna2d_Conic(AC2.Parabola());
                 break;
             default:
@@ -320,19 +321,19 @@ internal static class GeomliteTestAPI2dCommands
         var Intersector = new IntAna2d_AnaIntersection();
         switch (T1)
         {
-            case GeomAbs_CurveType.GeomAbs_Line:
+            case CurveKind.Line:
                 Intersector.Perform(AC1.Line(), pCon);
                 break;
-            case GeomAbs_CurveType.GeomAbs_Circle:
+            case CurveKind.Circle:
                 Intersector.Perform(AC1.Circle(), pCon);
                 break;
-            case GeomAbs_CurveType.GeomAbs_Ellipse:
+            case CurveKind.Ellipse:
                 Intersector.Perform(AC1.Ellipse(), pCon);
                 break;
-            case GeomAbs_CurveType.GeomAbs_Hyperbola:
+            case CurveKind.Hyperbola:
                 Intersector.Perform(AC1.Hyperbola(), pCon);
                 break;
-            case GeomAbs_CurveType.GeomAbs_Parabola:
+            case CurveKind.Parabola:
                 Intersector.Perform(AC1.Parabola(), pCon);
                 break;
             default:
@@ -342,7 +343,7 @@ internal static class GeomliteTestAPI2dCommands
 
         for (int i = 1; i <= Intersector.NbPoints(); i++)
         {
-            gp_Pnt2d P = Intersector.Point(i).Value();
+            Point2D P = Intersector.Point(i).Value();
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
             di.Append("parameter on the fist: ").Append(Intersector.Point(i).ParamOnFirst());
             if (!Intersector.Point(i).SecondIsImplicit())

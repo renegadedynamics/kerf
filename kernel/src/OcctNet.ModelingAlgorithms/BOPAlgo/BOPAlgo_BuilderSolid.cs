@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -22,16 +24,16 @@ namespace Occt;
 /// </remarks>
 public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
 {
-    private readonly NCollection_DataMap<TopoDS_Shape, Bnd_Box> myBoxes = new(TopTools_ShapeMapHasher.Instance); // Boxes of the produced solids
+    private readonly NCollection_DataMap<TopoDS_Shape, Box> myBoxes = new(TopTools_ShapeMapHasher.Instance); // Boxes of the produced solids
 
     public BOPAlgo_BuilderSolid()
     {
     }
 
     /// <summary>Builds the solids.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 100);
+        using var aPS = new ProgressScope(theRange, null, 100);
 
         GetReport().Clear();
         //
@@ -78,10 +80,10 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
     }
 
     /// <summary>The boxes of the created solids.</summary>
-    public NCollection_DataMap<TopoDS_Shape, Bnd_Box> GetBoxesMap() => myBoxes;
+    public NCollection_DataMap<TopoDS_Shape, Box> GetBoxesMap() => myBoxes;
 
     /// <summary>Collects the faces that can't be in a closed shell (with free edges) into the shapes to avoid.</summary>
-    protected override void PerformShapesToAvoid(Message_ProgressRange theRange)
+    protected override void PerformShapesToAvoid(ProgressRange theRange)
     {
         bool bFound;
         int i, aNbE, aNbF;
@@ -91,7 +93,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         //
         myShapesToAvoid.Clear();
         //
-        using var aPS = new Message_ProgressScope(theRange, null, 1);
+        using var aPS = new ProgressScope(theRange, null, 1);
         //
         for (;;)
         {
@@ -173,7 +175,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
     }
 
     /// <summary>Builds the closed shells (the loops) and the internal shells of the faces to avoid.</summary>
-    protected override void PerformLoops(Message_ProgressRange theRange)
+    protected override void PerformLoops(ProgressRange theRange)
     {
         int i, aNbSh;
         NCollection_List<TopoDS_Shape>.Iterator aIt = new();
@@ -183,7 +185,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         //
         BOPAlgo_ShellSplitter aSSp = new();
         //
-        using var aMainScope = new Message_ProgressScope(theRange, "Building shells", 10);
+        using var aMainScope = new ProgressScope(theRange, "Building shells", 10);
 
         // 1. Shells Usual
         aIt.Initialize(myShapes);
@@ -343,7 +345,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
     }
 
     /// <summary>Makes the solids of the growth shells and puts the holes into them.</summary>
-    protected override void PerformAreas(Message_ProgressRange theRange)
+    protected override void PerformAreas(ProgressRange theRange)
     {
         myAreas.Clear();
         BRep_Builder aBB = new();
@@ -355,10 +357,10 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         // If the analyzed shell contains any of the hole faces, it is considered as growth.
         NCollection_IndexedMap<TopoDS_Shape> aMHF = new(TopTools_ShapeMapHasher.Instance);
 
-        using var aMainScope = new Message_ProgressScope(theRange, "Building solids", 10);
+        using var aMainScope = new ProgressScope(theRange, "Building solids", 10);
 
         // Analyze the shells
-        using (var aPSClass = new Message_ProgressScope(aMainScope.Next(5), "Classify solids", myLoops.Extent()))
+        using (var aPSClass = new ProgressScope(aMainScope.Next(5), "Classify solids", myLoops.Extent()))
         {
             NCollection_List<TopoDS_Shape>.Iterator aItLL = new(myLoops);
             for (; aItLL.More(); aItLL.Next(), aPSClass.Next())
@@ -401,7 +403,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
                 TopoDS_Shape aSol = aItLS0.Value();
                 myAreas.Append(aSol);
                 // Build box
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 BRepBndLib.Add(aSol, ref aBox);
                 myBoxes.Bind(aSol, aBox);
             }
@@ -418,9 +420,9 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         {
             TopoDS_Shape aHShell = aHoleShells[i];
             //
-            Bnd_Box aBox = new();
+            Box aBox = new();
             BRepBndLib.Add(aHShell, ref aBox);
-            aBBTree.Add(i, Bnd_Tools.Bnd2BVH(aBox));
+            aBBTree.Add(i, Tools.Bnd2BVH(aBox));
 
             myBoxes.Bind(aHShell, aBox);
         }
@@ -431,7 +433,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         // Find outer growth shell that is most close to each hole shell
         NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape> aHoleSolidMap = new(TopTools_ShapeMapHasher.Instance);
 
-        using (var aPSH = new Message_ProgressScope(aMainScope.Next(4), "Adding holes", aNewSolids.Extent()))
+        using (var aPSH = new ProgressScope(aMainScope.Next(4), "Adding holes", aNewSolids.Extent()))
         {
             NCollection_List<TopoDS_Shape>.Iterator aItLS1 = new(aNewSolids);
             for (; aItLS1.More(); aItLS1.Next(), aPSH.Next())
@@ -443,13 +445,13 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
                 TopoDS_Shape aSolid = aItLS1.Value();
 
                 // Build box
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 BRepBndLib.Add(aSolid, ref aBox);
 
                 myBoxes.Bind(aSolid, aBox);
 
                 BOPTools_BoxTreeSelector aSelector = new();
-                aSelector.SetBox(Bnd_Tools.Bnd2BVH(aBox));
+                aSelector.SetBox(Tools.Bnd2BVH(aBox));
                 aSelector.SetBVHSet(aBBTree);
                 aSelector.Select();
 
@@ -500,7 +502,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         }
 
         // Add Holes to Solids and add them to myAreas
-        using (var aPSU = new Message_ProgressScope(aMainScope.Next(), null, aNewSolids.Extent()))
+        using (var aPSU = new ProgressScope(aMainScope.Next(), null, aNewSolids.Extent()))
         {
             NCollection_List<TopoDS_Shape>.Iterator aItLS2 = new(aNewSolids);
             for (; aItLS2.More(); aItLS2.Next(), aPSU.Next())
@@ -541,7 +543,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
                 //
                 myAreas.Append(aSolid);
                 // Make an infinite box for the hole
-                Bnd_Box aBox = new();
+                Box aBox = new();
                 aBox.SetWhole();
                 myBoxes.Bind(aSolid, aBox);
             }
@@ -551,7 +553,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
     }
 
     /// <summary>Puts the internal shells into the solids containing them.</summary>
-    protected override void PerformInternalShapes(Message_ProgressRange theRange)
+    protected override void PerformInternalShapes(ProgressRange theRange)
     {
         if (myAvoidInternalShapes)
         {
@@ -565,7 +567,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
             return;
         }
 
-        using var aMainScope = new Message_ProgressScope(theRange, "Adding internal shapes", 2);
+        using var aMainScope = new ProgressScope(theRange, "Adding internal shapes", 2);
 
         // Get all faces to classify
         NCollection_IndexedMap<TopoDS_Shape> aMFs = new(TopTools_ShapeMapHasher.Instance);
@@ -635,7 +637,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
         NCollection_Map<TopoDS_Shape> aMFDone = new(TopTools_ShapeMapHasher.Instance);
 
         int aNbS = aMSLF.Extent();
-        using (var aPSLoop = new Message_ProgressScope(aMainScope.Next(), null, aNbS))
+        using (var aPSLoop = new ProgressScope(aMainScope.Next(), null, aNbS))
         {
             for (i = 1; i <= aNbS; ++i, aPSLoop.Next())
             {
@@ -801,7 +803,7 @@ public class BOPAlgo_BuilderSolid : BOPAlgo_BuilderArea
             NCollection_IndexedMap<TopoDS_Shape> aBounds = new(TopTools_ShapeMapHasher.Instance);
             TopExp.MapShapes(pS2, TopAbs_EDGE, aBounds);
             TopoDS_Face aF = TopoDS.Face(aExp.Current());
-            aState = BOPTools_AlgoTools.ComputeState(aF, pS2, Precision.Confusion(), aBounds, theContext);
+            aState = BOPTools_AlgoTools.ComputeState(aF, pS2, global::Kerf.Engine.Foundation.Precision.Confusion(), aBounds, theContext);
         }
         return (aState == TopAbs_IN);
     }

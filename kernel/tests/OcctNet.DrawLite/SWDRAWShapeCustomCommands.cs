@@ -2,8 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.DrawLite;
 
@@ -29,23 +31,23 @@ internal static class SWDRAWShapeCustomCommands
         DrawCxx.Add(theInterpreter, "convtorevol", convtorevol);
     }
 
-    private static int ContToInteger(GeomAbs_Shape Cont)
+    private static int ContToInteger(Continuity Cont)
     {
         int result;
         switch (Cont)
         {
-            case GeomAbs_C0:
-            case GeomAbs_G1:
+            case C0:
+            case G1:
                 result = 0;
                 break;
-            case GeomAbs_C1:
-            case GeomAbs_G2:
+            case C1:
+            case G2:
                 result = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 result = 2;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 result = 3;
                 break;
             default:
@@ -97,7 +99,7 @@ internal static class SWDRAWShapeCustomCommands
             if (aNum == 0)
             {
                 double aDF = theKnots[i - 1] - theFirst;
-                if (Math.Abs(aDF) <= Precision.PConfusion() || aDF > Precision.PConfusion())
+                if (Math.Abs(aDF) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || aDF > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aNum++;
                     continue;
@@ -106,7 +108,7 @@ internal static class SWDRAWShapeCustomCommands
             else
             {
                 double aDL = theKnots[i - 1] - theLast;
-                if (Math.Abs(aDL) <= Precision.PConfusion() || aDL > Precision.PConfusion())
+                if (Math.Abs(aDL) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || aDL > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     break;
                 }
@@ -317,18 +319,18 @@ internal static class SWDRAWShapeCustomCommands
     }
 
     // strcmp of the continuity names expshape and bsplres accept
-    private static bool ParseCont(string theArg, out GeomAbs_Shape theCont)
+    private static bool ParseCont(string theArg, out Continuity theCont)
     {
         switch (theArg)
         {
-            case "C0": theCont = GeomAbs_C0; return true;
-            case "C1": theCont = GeomAbs_C1; return true;
-            case "C2": theCont = GeomAbs_C2; return true;
-            case "C3": theCont = GeomAbs_C3; return true;
-            case "CN": theCont = GeomAbs_CN; return true;
-            case "G1": theCont = GeomAbs_C0; return true;
-            case "G2": theCont = GeomAbs_C1; return true;
-            default: theCont = GeomAbs_C0; return false;
+            case "C0": theCont = C0; return true;
+            case "C1": theCont = C1; return true;
+            case "C2": theCont = C2; return true;
+            case "C3": theCont = C3; return true;
+            case "CN": theCont = CN; return true;
+            case "G1": theCont = C0; return true;
+            case "G2": theCont = C1; return true;
+            default: theCont = C0; return false;
         }
     }
 
@@ -344,7 +346,7 @@ internal static class SWDRAWShapeCustomCommands
         TopoDS_Shape Shape = theDI.GetShape(arg2);
         int Degree = theDI.Atoi(argv[2]);
         int MaxSeg = theDI.Atoi(argv[3]);
-        GeomAbs_Shape aCont3 = GeomAbs_C0;
+        Continuity aCont3 = C0;
         int k = 4;
         if (argc > k)
         {
@@ -372,7 +374,7 @@ internal static class SWDRAWShapeCustomCommands
         for (var Ex = new TopExp_Explorer(Shape, TopAbs_ShapeEnum.TopAbs_FACE); Ex.More(); Ex.Next())
         {
             TopoDS_Face F = TopoDS.Face(Ex.Current());
-            Geom_Surface? aSurface = BRep_Tool.Surface(F, out TopLoc_Location L);
+            Geom_Surface? aSurface = BRep_Tool.Surface(F, out Placement L);
             expsurf(aSurface, NbSurf, Degree, MaxSeg, aCont);
 
             for (var exp = new TopExp_Explorer(F, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
@@ -466,12 +468,12 @@ internal static class SWDRAWShapeCustomCommands
             di.Append("Shape unknown: ").Append(arg2).Append("\n");
             return 1 /* Error */;
         }
-        if (!ParseCont(argv[7], out GeomAbs_Shape aCont3))
+        if (!ParseCont(argv[7], out Continuity aCont3))
         {
             di.Append("Invalid argument Cont3e\n");
             return 1;
         }
-        if (!ParseCont(argv[8], out GeomAbs_Shape aCont2))
+        if (!ParseCont(argv[8], out Continuity aCont2))
         {
             di.Append("Invalid argument Cont3e\n");
             return 1;

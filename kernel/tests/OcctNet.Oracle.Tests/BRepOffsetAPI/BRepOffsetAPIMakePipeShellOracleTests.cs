@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Diagnostics;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -110,8 +112,8 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         public required TopoDS_Wire Spine;
         public required List<Section> Sections;
         public Mode Mode;
-        public gp_Ax2 Axe = new();
-        public gp_Dir BiNormal = new();
+        public Frame3D Axe = new();
+        public Direction3D BiNormal = new();
         public TopoDS_Shape Aux = new(); // auxiliary spine, or Darboux support
         public bool Curvilinear;
         public BRepFill_TypeOfContact Contact;
@@ -130,10 +132,10 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         return aMW.Wire();
     }
 
-    private static TopoDS_Wire Polyline(bool theClosed, params gp_Pnt[] thePoints)
+    private static TopoDS_Wire Polyline(bool theClosed, params Point3D[] thePoints)
     {
         BRepBuilderAPI_MakePolygon aP = new();
-        foreach (gp_Pnt aQ in thePoints)
+        foreach (Point3D aQ in thePoints)
         {
             aP.Add(aQ);
         }
@@ -153,11 +155,11 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // a polyline with corners
                 int aNb = theOracle.Int(1, 4);
-                var aPoints = new List<gp_Pnt> { new(0, 0, 0) };
-                gp_Vec aDir = new(0, 0, 1);
+                var aPoints = new List<Point3D> { new(0, 0, 0) };
+                Vector3D aDir = new(0, 0, 1);
                 for (int i = 0; i < aNb; i++)
                 {
-                    gp_Vec aTurn = new(theOracle.Real(-0.8, 0.8), theOracle.Real(-0.8, 0.8), theOracle.Real(-0.3, 0.3));
+                    Vector3D aTurn = new(theOracle.Real(-0.8, 0.8), theOracle.Real(-0.8, 0.8), theOracle.Real(-0.3, 0.3));
                     aDir = (aDir + aTurn).Normalized();
                     aPoints.Add(aPoints[^1].Translated(aDir * theOracle.Real(6, 15)));
                 }
@@ -166,14 +168,14 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             case 1:
             {
                 // a G1 chain: a line, then tangent arcs
-                gp_Pnt aP0 = new(0, 0, 0), aP1 = new(0, 0, theOracle.Real(5, 10));
+                Point3D aP0 = new(0, 0, 0), aP1 = new(0, 0, theOracle.Real(5, 10));
                 List<TopoDS_Edge> anEdges = [new BRepBuilderAPI_MakeEdge(aP0, aP1).Edge()];
-                gp_Vec aTangent = new(0, 0, 1);
+                Vector3D aTangent = new(0, 0, 1);
                 int aNb = theOracle.Int(1, 2);
                 for (int i = 0; i < aNb; i++)
                 {
-                    gp_Pnt aNext = aP1.Translated(aTangent * theOracle.Real(4, 8)
-                                                  + new gp_Vec(theOracle.Real(-6, 6), theOracle.Real(-6, 6), 0));
+                    Point3D aNext = aP1.Translated(aTangent * theOracle.Real(4, 8)
+                                                  + new Vector3D(theOracle.Real(-6, 6), theOracle.Real(-6, 6), 0));
                     Geom_TrimmedCurve anArc = new GC_MakeArcOfCircle(aP1, aTangent, aNext).Value();
                     anEdges.Add(new BRepBuilderAPI_MakeEdge(anArc).Edge());
                     anArc.D1(anArc.LastParameter(), out _, out aTangent);
@@ -186,10 +188,10 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // an interpolated B-spline
                 int aNb = theOracle.Int(3, 6);
-                NCollection_HArray1<gp_Pnt> aPoints = new(1, aNb);
+                NCollection_HArray1<Point3D> aPoints = new(1, aNb);
                 for (int i = 1; i <= aNb; i++)
                 {
-                    aPoints.SetValue(i, new gp_Pnt(theOracle.Real(-4, 4), theOracle.Real(-4, 4), 6.0 * (i - 1)));
+                    aPoints.SetValue(i, new Point3D(theOracle.Real(-4, 4), theOracle.Real(-4, 4), 6.0 * (i - 1)));
                 }
                 GeomAPI_Interpolate anInt = new(aPoints, false, 1e-7);
                 anInt.Perform();
@@ -199,25 +201,25 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // a closed circle in the plane XZ (the profile at (r, 0, 0) normal to it)
                 double aR = theOracle.Real(8, 15);
-                gp_Circ aCirc = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, -1, 0), new gp_Dir(1, 0, 0)), aR);
+                Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0)), aR);
                 return (Wire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()), "circle");
             }
             case 4:
             {
                 // a closed polygon
                 double aS = theOracle.Real(8, 15);
-                return (Polyline(true, new gp_Pnt(0, 0, 0), new gp_Pnt(0, 0, aS), new gp_Pnt(aS, 0, aS), new gp_Pnt(aS, 0, 0)), "square");
+                return (Polyline(true, new Point3D(0, 0, 0), new Point3D(0, 0, aS), new Point3D(aS, 0, aS), new Point3D(aS, 0, 0)), "square");
             }
             default:
             {
                 // a helix-like B-spline
                 int aNb = theOracle.Int(8, 12);
                 double aR = theOracle.Real(3, 6), aPitch = theOracle.Real(4, 8);
-                NCollection_HArray1<gp_Pnt> aPoints = new(1, aNb);
+                NCollection_HArray1<Point3D> aPoints = new(1, aNb);
                 for (int i = 1; i <= aNb; i++)
                 {
                     double t = 0.5 * Math.PI * (i - 1);
-                    aPoints.SetValue(i, new gp_Pnt(aR * Math.Sin(t), aR * (1 - Math.Cos(t)), aPitch * t / (2 * Math.PI)));
+                    aPoints.SetValue(i, new Point3D(aR * Math.Sin(t), aR * (1 - Math.Cos(t)), aPitch * t / (2 * Math.PI)));
                 }
                 GeomAPI_Interpolate anInt = new(aPoints, false, 1e-7);
                 anInt.Perform();
@@ -227,28 +229,28 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     }
 
     // The frame normal to the spine at its start
-    private static gp_Ax2 StartFrame(in TopoDS_Wire theSpine)
+    private static Frame3D StartFrame(in TopoDS_Wire theSpine)
     {
         BRepAdaptor_CompCurve aC = new(theSpine);
-        aC.D1(aC.FirstParameter(), out gp_Pnt aP, out gp_Vec aV);
-        return new gp_Ax2(aP, new gp_Dir(aV));
+        aC.D1(aC.FirstParameter(), out Point3D aP, out Vector3D aV);
+        return new Frame3D(aP, new Direction3D(aV));
     }
 
-    private static gp_Pnt OnPlane(in gp_Ax2 theAx, double theU, double theV)
-        => theAx.Location().Translated(new gp_Vec(theAx.XDirection()) * theU + new gp_Vec(theAx.YDirection()) * theV);
+    private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
+        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
     // A random profile in the plane theAx, its kind
-    private static (TopoDS_Shape Shape, string Kind) RandomProfile(Oracle theOracle, in gp_Ax2 theAx, double theSize, bool theClosedOnly)
+    private static (TopoDS_Shape Shape, string Kind) RandomProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theClosedOnly)
     {
         int aKind = theOracle.Int(0, theClosedOnly ? 4 : 6);
         switch (aKind)
         {
             case 0:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new gp_Circ(theAx, theSize)).Edge()), "circle");
+                return (Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(theAx, theSize)).Edge()), "circle");
             case 1:
             {
                 double aMajor = theSize * theOracle.Real(1.0, 1.6);
-                return (Wire(new BRepBuilderAPI_MakeEdge(new gp_Elips(theAx, aMajor, theSize * theOracle.Real(0.4, 0.99))).Edge()), "ellipse");
+                return (Wire(new BRepBuilderAPI_MakeEdge(new Ellipse3D(theAx, aMajor, theSize * theOracle.Real(0.4, 0.99))).Edge()), "ellipse");
             }
             case 2:
             {
@@ -258,7 +260,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             case 3:
             {
                 int aNb = theOracle.Int(3, 6);
-                var aPoints = new gp_Pnt[aNb];
+                var aPoints = new Point3D[aNb];
                 for (int i = 0; i < aNb; i++)
                 {
                     double anAngle = 2.0 * Math.PI * (i + 0.2 * theOracle.Real(-1, 1)) / aNb;
@@ -270,7 +272,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             case 4:
             {
                 int aNb = theOracle.Int(4, 6);
-                NCollection_HArray1<gp_Pnt> aPoints = new(1, aNb);
+                NCollection_HArray1<Point3D> aPoints = new(1, aNb);
                 for (int i = 1; i <= aNb; i++)
                 {
                     double anAngle = 2.0 * Math.PI * (i - 1) / aNb;
@@ -292,12 +294,12 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
     // ---- the comparison ----
 
-    private static N.gp_Pnt ToN(in gp_Pnt theP) => Oracle.ToNative(theP);
+    private static N.gp_Pnt ToN(in Point3D theP) => Oracle.ToNative(theP);
 
     // A direction as native receives it: gp_Dir(x, y, z) normalises the coordinates again
-    private static gp_Dir Renormalised(in gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
+    private static Direction3D Renormalised(in Direction3D theD) => new(theD.X(), theD.Y(), theD.Z());
 
-    private static N.gp_Dir ToN(in gp_Dir theD) => Oracle.ToNative(theD);
+    private static N.gp_Dir ToN(in Direction3D theD) => Oracle.ToNative(theD);
 
     private void Run(Case theCase, bool theRerun = false)
     {
@@ -366,7 +368,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 case Mode.Frenet: aP.SetMode(true); break;
                 case Mode.Discrete: aP.SetDiscreteMode(); break;
                 // built as native builds them from the coordinates (gp_Ax2(P, N, Vx) and gp_Dir(x, y, z) normalise again)
-                case Mode.Fixed: aP.SetMode(new gp_Ax2(theCase.Axe.Location(), Renormalised(theCase.Axe.Direction()), Renormalised(theCase.Axe.XDirection()))); break;
+                case Mode.Fixed: aP.SetMode(new Frame3D(theCase.Axe.Location(), Renormalised(theCase.Axe.Direction()), Renormalised(theCase.Axe.XDirection()))); break;
                 case Mode.BiNormal: aP.SetMode(Renormalised(theCase.BiNormal)); break;
                 case Mode.Auxiliary: aP.SetMode(TopoDS.Wire(aPIn[1]), theCase.Curvilinear, theCase.Contact); break;
                 case Mode.Darboux: aP.SetMode(aPIn[1]); break;
@@ -390,17 +392,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 aPSolid = aP.MakeSolid();
             }
         }
-        catch (Standard_Failure f)
+        catch (FailureException f)
         {
-            aPError = f.GetType().Name;
-            if (f is Standard_ImmutableObject or TopoDS_LockedShape)
+            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
+            if (f is ImmutableObjectException or TopoDS_LockedShape)
             {
                 aPError += " " + string.Join(" / ", (f.StackTrace ?? "").Split('\n').Take(4).Select(l => l.Trim()));
             }
         }
         catch (Exception e)
         {
-            myDifferences.Add($"{aWhat}: native {aNError ?? "no exception"}, the port throws {e.GetType().Name} {e.StackTrace?.Split('\n')[0]}");
+            myDifferences.Add($"{aWhat}: native {aNError ?? "no exception"}, the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} {e.StackTrace?.Split('\n')[0]}");
             return;
         }
 
@@ -640,7 +642,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 foreach (Mode aMode in aModes)
                 {
                     (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, aSpineKind);
-                    gp_Ax2 aFrame = StartFrame(aSpine);
+                    Frame3D aFrame = StartFrame(aSpine);
                     (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.5), false);
                     Case c = new()
                     {
@@ -649,7 +651,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                         Sections = [new Section(aProfile, -1, false, anOracle.Int(0, 4) == 0)],
                         Mode = aMode,
                         Axe = aFrame,
-                        BiNormal = new gp_Dir(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-0.2, 0.2) + 2),
+                        BiNormal = new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-0.2, 0.2) + 2),
                         Transition = RandomTransition(anOracle),
                         Solid = anOracle.Bool(),
                         Simulate = anOracle.Int(0, 3) == 0 ? anOracle.Int(2, 6) : 0,
@@ -672,17 +674,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         {
             // two or three segments with corners of 20 to 120 degrees
             int aNb = anOracle.Int(2, 3);
-            List<gp_Pnt> aPoints = [new(0, 0, 0)];
-            gp_Vec aDir = new(0, 0, 1);
+            List<Point3D> aPoints = [new(0, 0, 0)];
+            Vector3D aDir = new(0, 0, 1);
             for (int k = 0; k < aNb; k++)
             {
                 aPoints.Add(aPoints[^1].Translated(aDir * anOracle.Real(8, 14)));
                 double anAngle = anOracle.Real(20, 120) * Math.PI / 180;
-                gp_Ax1 anAxis = new(new gp_Pnt(), new gp_Dir(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 0.01));
+                Axis3D anAxis = new(new Point3D(), new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 0.01));
                 aDir = aDir.Rotated(anAxis, anAngle);
             }
             TopoDS_Wire aSpine = Polyline(false, [.. aPoints]);
-            gp_Ax2 aFrame = StartFrame(aSpine);
+            Frame3D aFrame = StartFrame(aSpine);
             foreach (BRepBuilderAPI_TransitionMode aTransition in new[] { BRepBuilderAPI_TransitionMode.BRepBuilderAPI_Transformed,
                                                                           BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RightCorner,
                                                                           BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RoundCorner })
@@ -711,10 +713,10 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         foreach (int i in Tape.Budget(30))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
-            gp_Ax2 aFrame = StartFrame(aSpine);
+            Frame3D aFrame = StartFrame(aSpine);
             // the guide: the spine moved sideways (build123d.NET's twisted extrusion uses a twisted copy)
-            gp_Trsf aT = new();
-            aT.SetTranslation(new gp_Vec(aFrame.XDirection()) * anOracle.Real(2, 5));
+            Transform3D aT = new();
+            aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
             TopoDS_Wire aGuide = TopoDS.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
             foreach (bool aCurvilinear in new[] { true, false })
             {
@@ -783,7 +785,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 }
                 aSpine = Wire(aCircle);
             }
-            gp_Ax2 aFrame = StartFrame(aSpine);
+            Frame3D aFrame = StartFrame(aSpine);
             (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.0), true);
             Run(new Case
             {
@@ -816,9 +818,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             if (aShape == 0)
             {
                 // a punctual section at the end
-                gp_Ax2 aFrame = StartFrame(aSpine);
+                Frame3D aFrame = StartFrame(aSpine);
                 aSections.Add(new Section(RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true).Shape, -1, false, false));
-                aC.D0(aC.LastParameter(), out gp_Pnt anEnd);
+                aC.D0(aC.LastParameter(), out Point3D anEnd);
                 aSections.Add(new Section(new BRepBuilderAPI_MakeVertex(anEnd).Vertex(), -1, false, false));
             }
             else
@@ -828,10 +830,10 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 for (int k = 0; k < aNb; k++)
                 {
                     double t = k == 0 ? aC.FirstParameter() : aC.FirstParameter() + (aC.LastParameter() - aC.FirstParameter()) * k / (aNb - 1);
-                    aC.D1(t, out gp_Pnt aP, out gp_Vec aV);
+                    aC.D1(t, out Point3D aP, out Vector3D aV);
                     bool isOff = aShape == 3;
-                    gp_Ax2 aFrame = new(isOff ? aP.Translated(new gp_Vec(anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5))) : aP,
-                                        new gp_Dir(isOff ? aV + new gp_Vec(anOracle.Real(-0.2, 0.2), anOracle.Real(-0.2, 0.2), 0) * aV.Magnitude() : aV));
+                    Frame3D aFrame = new(isOff ? aP.Translated(new Vector3D(anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5))) : aP,
+                                        new Direction3D(isOff ? aV + new Vector3D(anOracle.Real(-0.2, 0.2), anOracle.Real(-0.2, 0.2), 0) * aV.Magnitude() : aV));
                     int aVertex = aShape == 2 && k > 0 ? (k == aNb - 1 ? aVertices.Extent() - 1 : anOracle.Int(0, aVertices.Extent() - 1)) : -1;
                     aSections.Add(new Section(RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true).Shape, aVertex,
                                               isOff && anOracle.Bool(), isOff && anOracle.Bool()));
@@ -862,7 +864,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         foreach (int i in Tape.Budget(30))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
-            gp_Ax2 aFrame = StartFrame(aSpine);
+            Frame3D aFrame = StartFrame(aSpine);
             (TopoDS_Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.2), true);
             int aStyle = anOracle.Int(0, 3);
             Case c = new()
@@ -871,14 +873,14 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 Spine = aSpine,
                 Sections = [new Section(aProfile, -1, false, aStyle == 1)],
                 Mode = aStyle switch { 0 => anOracle.Bool() ? Mode.Frenet : Mode.CorrectedFrenet, 1 => Mode.Fixed, _ => Mode.Auxiliary },
-                Axe = new gp_Ax2(aFrame.Location(), new gp_Dir(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 3)),
+                Axe = new Frame3D(aFrame.Location(), new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 3)),
                 Transition = RandomTransition(anOracle),
                 Solid = true,
             };
             if (c.Mode == Mode.Auxiliary)
             {
-                gp_Trsf aT = new();
-                aT.SetTranslation(new gp_Vec(aFrame.XDirection()) * anOracle.Real(2, 5));
+                Transform3D aT = new();
+                aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
                 c.Aux = TopoDS.Wire(new BRepBuilderAPI_Transform(aSpine, aT, true).Shape());
                 c.Curvilinear = aStyle == 2;
             }
@@ -895,17 +897,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // both sides (the Release figure is recorded in decision 932).
         // a twisted B-spline through random points, offset along Z (5L1's slow kind: random offsets of B-splines)
         var anOracle = new Oracle(output, 20261106);
-        NCollection_HArray1<gp_Pnt> aPoints = new(1, 6);
+        NCollection_HArray1<Point3D> aPoints = new(1, 6);
         for (int i = 1; i <= 6; i++)
         {
-            aPoints.SetValue(i, new gp_Pnt(5.0 * (i - 1), anOracle.Real(-6, 6), anOracle.Real(-3, 3)));
+            aPoints.SetValue(i, new Point3D(5.0 * (i - 1), anOracle.Real(-6, 6), anOracle.Real(-3, 3)));
         }
         GeomAPI_Interpolate anInt = new(aPoints, false, 1e-7);
         anInt.Perform();
-        Geom_OffsetCurve anOffset = new(anInt.Curve(), 4.0, new gp_Dir(0, 0, 1));
+        Geom_OffsetCurve anOffset = new(anInt.Curve(), 4.0, new Direction3D(0, 0, 1));
         TopoDS_Wire aSpine = Wire(new BRepBuilderAPI_MakeEdge(anOffset).Edge());
-        gp_Ax2 aFrame = StartFrame(aSpine);
-        TopoDS_Shape aProfile = Wire(new BRepBuilderAPI_MakeEdge(new gp_Circ(aFrame, 0.8)).Edge());
+        Frame3D aFrame = StartFrame(aSpine);
+        TopoDS_Shape aProfile = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(aFrame, 0.8)).Edge());
         (N.TopoDS_Shape[] aNIn, TopoDS_Shape[] aPIn) = Both(aSpine, aProfile);
 
         var aWatch = Stopwatch.StartNew();

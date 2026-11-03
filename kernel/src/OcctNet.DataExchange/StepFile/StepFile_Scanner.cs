@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using static Occt.Interface_ParamType;
 
@@ -24,7 +25,7 @@ namespace Occt;
 /// bytes that it can't enlarge (its variable trailing context makes flex's REJECT machinery hold one state per
 /// byte), so it throws (<c>YY_FATAL_ERROR</c>: "input buffer overflow, can't enlarge buffer because scanner uses
 /// REJECT") when it has to look at a token's 16,384th byte. This scanner throws the same
-/// <see cref="Standard_Failure"/> at the same byte (<see cref="MaxToken"/>).
+/// <see cref="FailureException"/> at the same byte (<see cref="MaxToken"/>).
 /// </para>
 /// <para>
 /// Reentrant: each read has its own scanner, parser and data. It reads the stream in blocks.
@@ -622,7 +623,7 @@ public sealed class StepFile_Scanner
         if (i >= myCap)
         {
             // OCCT: flex can't grow its buffer (see the class's remarks)
-            throw new Standard_Failure(theOverflow);
+            throw new FailureException(theOverflow);
         }
 
         return i < myLen ? myBuf[i] : -1;

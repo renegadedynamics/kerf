@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.FilletSurf_ErrorTypeStatus;
 using static Occt.FilletSurf_StatusDone;
 
@@ -111,25 +112,25 @@ public class FilletSurf_Builder
     //=================================================================================================
 
     /// <summary>The number of NURBS surfaces of the fillet.</summary>
-    /// <exception cref="StdFail_NotDone">The computation gave no result.</exception>
+    /// <exception cref="NotDoneException">The computation gave no result.</exception>
     public int NbSurface()
     {
         if (IsDone() != FilletSurf_IsNotOk)
         {
             return myIntBuild.NbSurface();
         }
-        throw new StdFail_NotDone("FilletSurf_Builder::NbSurface");
+        throw new NotDoneException("FilletSurf_Builder::NbSurface");
     }
 
     private void checkIndex(int Index, string theWhat)
     {
         if ((Index < 1) || (Index > NbSurface()))
         {
-            throw new Standard_OutOfRange("FilletSurf_Builder::" + theWhat);
+            throw new OutOfRangeException("FilletSurf_Builder::" + theWhat);
         }
     }
 
-    private static T Published<T>(T theObject) where T : Standard_Transient?
+    private static T Published<T>(T theObject) where T : Transient?
     {
         theObject?.Freeze();
         return theObject;
@@ -232,7 +233,7 @@ public class FilletSurf_Builder
     {
         if (IsDone() == FilletSurf_IsNotOk)
         {
-            throw new StdFail_NotDone("FilletSurf_Builder::FirstParameter");
+            throw new NotDoneException("FilletSurf_Builder::FirstParameter");
         }
         return myIntBuild.FirstParameter();
     }
@@ -244,7 +245,7 @@ public class FilletSurf_Builder
     {
         if (IsDone() == FilletSurf_IsNotOk)
         {
-            throw new StdFail_NotDone("FilletSurf_Builder::LastParameter");
+            throw new NotDoneException("FilletSurf_Builder::LastParameter");
         }
         return myIntBuild.LastParameter();
     }
@@ -258,7 +259,7 @@ public class FilletSurf_Builder
     {
         if (IsDone() == FilletSurf_IsNotOk)
         {
-            throw new StdFail_NotDone("FilletSurf_Builder::StartSectionStatus");
+            throw new NotDoneException("FilletSurf_Builder::StartSectionStatus");
         }
         return myIntBuild.StartSectionStatus();
     }
@@ -270,7 +271,7 @@ public class FilletSurf_Builder
     {
         if (IsDone() == FilletSurf_IsNotOk)
         {
-            throw new StdFail_NotDone("FilletSurf_Builder::StartSectionStatus"); // OCCT's message
+            throw new NotDoneException("FilletSurf_Builder::StartSectionStatus"); // OCCT's message
         }
         return myIntBuild.EndSectionStatus();
     }
@@ -303,11 +304,11 @@ public class FilletSurf_Builder
     {
         if (IsDone() == FilletSurf_IsNotOk)
         {
-            throw new StdFail_NotDone("FilletSurf_Builder::NbSection)");
+            throw new NotDoneException("FilletSurf_Builder::NbSection)");
         }
         else if ((IndexSurf < 1) || (IndexSurf > NbSurface()))
         {
-            throw new Standard_OutOfRange("FilletSurf_Builder::NbSection");
+            throw new OutOfRangeException("FilletSurf_Builder::NbSection");
         }
         return myIntBuild.NbSection(IndexSurf);
     }
@@ -322,11 +323,11 @@ public class FilletSurf_Builder
     {
         if ((IndexSurf < 1) || (IndexSurf > NbSurface()))
         {
-            throw new Standard_OutOfRange("FilletSurf_Builder::Section NbSurface");
+            throw new OutOfRangeException("FilletSurf_Builder::Section NbSurface");
         }
         else if ((IndexSec < 1) || (IndexSec > NbSection(IndexSurf)))
         {
-            throw new Standard_OutOfRange("FilletSurf_Builder::Section NbSection");
+            throw new OutOfRangeException("FilletSurf_Builder::Section NbSection");
         }
 
         return Published(myIntBuild.Section(IndexSurf, IndexSec));

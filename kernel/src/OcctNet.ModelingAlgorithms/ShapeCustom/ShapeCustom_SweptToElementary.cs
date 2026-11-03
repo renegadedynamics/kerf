@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -57,7 +60,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
     /// </summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -74,7 +77,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
         if (SS is Geom_SurfaceOfRevolution SR)
         {
             Geom_Curve bc = SR.BasisCurve();
-            gp_Ax1 ax1 = SR.Axis();
+            Axis3D ax1 = SR.Axis();
             GeomAdaptor_Curve HC = new GeomAdaptor_Curve();
             HC.Load(bc, bc.FirstParameter(), bc.LastParameter());
             GeomAdaptor_SurfaceOfRevolution AS = new GeomAdaptor_SurfaceOfRevolution(HC, ax1);
@@ -85,25 +88,25 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
                 //  occ::handle<Geom_Plane> Pl = new Geom_Plane(AS.Plane());
                 //  S = Pl;
                 //} break;
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
                     Geom_CylindricalSurface Cy = new Geom_CylindricalSurface(AS.Cylinder());
                     S = Cy;
                 }
                     break;
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                 {
                     Geom_SphericalSurface Sp = new Geom_SphericalSurface(AS.Sphere());
                     S = Sp;
                 }
                     break;
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                 {
                     Geom_ConicalSurface Co = new Geom_ConicalSurface(AS.Cone());
                     S = Co;
                 }
                     break;
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                 {
                     Geom_ToroidalSurface To = new Geom_ToroidalSurface(AS.Torus());
                     S = To;
@@ -117,7 +120,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
         else if (SS is Geom_SurfaceOfLinearExtrusion SLE)
         {
             Geom_Curve bc = SLE.BasisCurve();
-            gp_Dir dir = SLE.Direction();
+            Direction3D dir = SLE.Direction();
             GeomAdaptor_Curve HC = new GeomAdaptor_Curve();
             HC.Load(bc, bc.FirstParameter(), bc.LastParameter());
             GeomAdaptor_SurfaceOfLinearExtrusion AS = new GeomAdaptor_SurfaceOfLinearExtrusion(HC, dir);
@@ -128,7 +131,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
                 //  occ::handle<Geom_Plane> Pl = new Geom_Plane(AS.Plane());
                 //  S = Pl;
                 //} break;
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
                     Geom_CylindricalSurface Cy = new Geom_CylindricalSurface(AS.Cylinder());
                     S = Cy;
@@ -139,7 +142,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
             }
         }
 
-        SendMsg(F, new Message_Msg("SweptToElementary.NewSurface.MSG0"));
+        SendMsg(F, new Msg("SweptToElementary.NewSurface.MSG0"));
 
         Tol = BRep_Tool.Tolerance(F);
         RevWires = false;
@@ -150,10 +153,10 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
     /// <summary>
     /// True if the edge has a pcurve on a swept surface (so that the edge is copied): then C is a copy of its 3D curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         C = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -183,9 +186,9 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
-        P = new gp_Pnt();
+        P = new Point3D();
         Tol = 0.0;
         // 3d points are never modified
         return false;
@@ -204,7 +207,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
 
         // just copy pcurve if either its surface is changing or edge was copied
         if (!IsToConvert(S, out Geom_SweptSurface? SS) && E.IsSame(NewE))
@@ -227,10 +230,10 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
                 if ((SS ?? throw NullSweptSurface()) is Geom_SurfaceOfRevolution SR)
                 {
                     SR.Bounds(out double U1, out double U2, out double V1, out double V2);
-                    SR.D0(U1, V1, out gp_Pnt P0);
+                    SR.D0(U1, V1, out Point3D P0);
                     ShapeAnalysis_Surface sas = new ShapeAnalysis_Surface(NS);
-                    gp_Pnt2d p2d = sas.ValueOfUV(P0, Precision.Confusion());
-                    gp_Vec2d shift = new gp_Vec2d(p2d.X() - U1, p2d.Y() - V1);
+                    Point2D p2d = sas.ValueOfUV(P0, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    Vector2D shift = new Vector2D(p2d.X() - U1, p2d.Y() - V1);
                     C.Translate(shift);
                 }
             }
@@ -241,14 +244,14 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
                 {
                     Geom_SphericalSurface SPH = (Geom_SphericalSurface)NS;
                     SPH.Bounds(out double US1, out double US2, out double VS1, out double VS2);
-                    SPH.D0(US1, VS1, out gp_Pnt PS);
+                    SPH.D0(US1, VS1, out Point3D PS);
                     SR.Bounds(out double UR1, out double UR2, out double VR1, out double VR2);
-                    SR.D0(UR1, VR1, out gp_Pnt PR);
-                    gp_Pnt P0 = SPH.Location();
-                    gp_Vec VS = new gp_Vec(P0, PS);
-                    gp_Vec VR = new gp_Vec(P0, PR);
+                    SR.D0(UR1, VR1, out Point3D PR);
+                    Point3D P0 = SPH.Location();
+                    Vector3D VS = new Vector3D(P0, PS);
+                    Vector3D VR = new Vector3D(P0, PR);
                     double angle = VS.Angle(VR);
-                    gp_Vec2d shift = new gp_Vec2d(0, VS1 - VR1 + angle);
+                    Vector2D shift = new Vector2D(0, VS1 - VR1 + angle);
                     C.Translate(shift);
                 }
             }
@@ -269,7 +272,7 @@ public class ShapeCustom_SweptToElementary : ShapeCustom_Modification
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,

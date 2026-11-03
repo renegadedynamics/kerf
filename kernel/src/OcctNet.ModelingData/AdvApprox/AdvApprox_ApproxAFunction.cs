@@ -4,8 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics.Polynomials;
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -34,14 +38,14 @@ public class AdvApprox_ApproxAFunction
     private readonly NCollection_HArray1<double>? my3DTolerances;
     private readonly double myFirst;
     private readonly double myLast;
-    private readonly GeomAbs_Shape myContinuity;
+    private readonly Continuity myContinuity;
     private int myMaxDegree;
     private readonly int myMaxSegments;
     private bool myDone;
     private bool myHasResult;
     private NCollection_HArray2<double>? my1DPoles;
-    private NCollection_HArray2<gp_Pnt2d>? my2DPoles;
-    private NCollection_HArray2<gp_Pnt>? my3DPoles;
+    private NCollection_HArray2<Point2D>? my2DPoles;
+    private NCollection_HArray2<Point3D>? my3DPoles;
     private NCollection_HArray1<double>? myKnots;
     private NCollection_HArray1<int>? myMults;
     private int myDegree;
@@ -60,7 +64,7 @@ public class AdvApprox_ApproxAFunction
     /// </summary>
     public AdvApprox_ApproxAFunction(int Num1DSS, int Num2DSS, int Num3DSS, NCollection_HArray1<double>? OneDTol,
                                      NCollection_HArray1<double>? TwoDTol, NCollection_HArray1<double>? ThreeDTol,
-                                     double First, double Last, GeomAbs_Shape Continuity, int MaxDeg, int MaxSeg,
+                                     double First, double Last, Continuity Continuity, int MaxDeg, int MaxSeg,
                                      AdvApprox_EvaluatorFunction Func)
     {
         my1DTolerances = OneDTol;
@@ -81,7 +85,7 @@ public class AdvApprox_ApproxAFunction
     /// <summary>As the other constructor, cutting intervals with <paramref name="CutTool"/>.</summary>
     public AdvApprox_ApproxAFunction(int Num1DSS, int Num2DSS, int Num3DSS, NCollection_HArray1<double>? OneDTol,
                                      NCollection_HArray1<double>? TwoDTol, NCollection_HArray1<double>? ThreeDTol,
-                                     double First, double Last, GeomAbs_Shape Continuity, int MaxDeg, int MaxSeg,
+                                     double First, double Last, Continuity Continuity, int MaxDeg, int MaxSeg,
                                      AdvApprox_EvaluatorFunction Func, AdvApprox_Cutting CutTool)
     {
         my1DTolerances = OneDTol;
@@ -114,8 +118,8 @@ public class AdvApprox_ApproxAFunction
         double diff, moy, facteur1, facteur2, normal1, normal2, eps;
         int RealDegree = Max(MaxDegree + 1, 2 * ContinuityOrder + 2);
 
-        gp_Vec V1, V2;
-        gp_Vec2d v1, v2;
+        Vector3D V1, V2;
+        Vector2D v1, v2;
 
         NCollection_Array1<double> Result = new(1, 2 * (ContinuityOrder + 1) * Dimension);
         NCollection_Array1<double> Prec = new(1, NbSpace), Suivant = new(1, NbSpace);
@@ -140,9 +144,9 @@ public class AdvApprox_ApproxAFunction
                 Coefficients.AsSpan((icurve - 1) * Dimension * RealDegree + Coefficients.Lower());
             ReadOnlySpan<double> Coef2 = Coef1[(Dimension * RealDegree)..];
             int Deg1 = NumCoeffPerCurve[NumCoeffPerCurve.Lower() + icurve - 1] - 1;
-            PLib.EvalPolynomial(PolynomialIntervals[icurve, 2], ContinuityOrder, Deg1, Dimension, Coef1, Res1);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(PolynomialIntervals[icurve, 2], ContinuityOrder, Deg1, Dimension, Coef1, Res1);
             int Deg2 = NumCoeffPerCurve[NumCoeffPerCurve.Lower() + icurve] - 1;
-            PLib.EvalPolynomial(PolynomialIntervals[icurve + 1, 1], ContinuityOrder, Deg2, Dimension, Coef2, Res2);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(PolynomialIntervals[icurve + 1, 1], ContinuityOrder, Deg2, Dimension, Coef2, Res2);
 
             // Check in each subspace.
             for (iordre = 1; iordre <= ContinuityOrder && isCi; iordre++)
@@ -212,8 +216,8 @@ public class AdvApprox_ApproxAFunction
                 for (ii = 1; ii <= Num2DSS && isCi; ii++, idim++, Val1 += 2, Val2 += 2)
                 {
                     eps = LocalTolerance[idim] * 0.01;
-                    v1 = new gp_Vec2d(Res1[Val1 + 1], Res1[Val1 + 2]);
-                    v2 = new gp_Vec2d(Res2[Val2 + 1], Res2[Val2 + 2]);
+                    v1 = new Vector2D(Res1[Val1 + 1], Res1[Val1 + 2]);
+                    v2 = new Vector2D(Res2[Val2 + 1], Res2[Val2 + 2]);
                     v1 *= facteur1;
                     v2 *= facteur2;
                     diff = Math.Abs(v1.X() - v2.X()) + Math.Abs(v1.Y() - v2.Y());
@@ -237,8 +241,8 @@ public class AdvApprox_ApproxAFunction
                 for (ii = 1; ii <= Num3DSS && isCi; ii++, idim++, Val1 += 3, Val2 += 3)
                 {
                     eps = LocalTolerance[idim] * 0.01;
-                    V1 = new gp_Vec(Res1[Val1 + 1], Res1[Val1 + 2], Res1[Val1 + 3]);
-                    V2 = new gp_Vec(Res2[Val2 + 1], Res2[Val2 + 2], Res2[Val2 + 3]);
+                    V1 = new Vector3D(Res1[Val1 + 1], Res1[Val1 + 2], Res1[Val1 + 3]);
+                    V2 = new Vector3D(Res2[Val2 + 1], Res2[Val2 + 2], Res2[Val2 + 3]);
                     V1 *= facteur1;
                     V2 *= facteur2;
                     diff = Math.Abs(V1.X() - V2.X()) + Math.Abs(V1.Y() - V2.Y()) + Math.Abs(V1.Z() - V2.Z());
@@ -333,20 +337,20 @@ public class AdvApprox_ApproxAFunction
             ErrorCode = 1;
             return;
         }
-        GeomAbs_Shape Continuity = GeomAbs_C0;
+        Continuity Continuity = C0;
         switch (ContinuityOrder)
         {
             case 0:
-                Continuity = GeomAbs_C0;
+                Continuity = C0;
                 break;
             case 1:
-                Continuity = GeomAbs_C1;
+                Continuity = C1;
                 break;
             case 2:
-                Continuity = GeomAbs_C2;
+                Continuity = C2;
                 break;
             default:
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
         }
 
         //--------------------- Choice of number of points ----------------------
@@ -355,7 +359,7 @@ public class AdvApprox_ApproxAFunction
 
         int NbGaussPoints, WorkDegree;
 
-        PLib.JacobiParameters(Continuity, NumMaxCoeffs - 1, code_precis, out NbGaussPoints, out WorkDegree);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.JacobiParameters(Continuity, NumMaxCoeffs - 1, code_precis, out NbGaussPoints, out WorkDegree);
         //      NDJAC=WorkDegree;
 
         //------------------ Initialization of cutting management ---------
@@ -368,7 +372,7 @@ public class AdvApprox_ApproxAFunction
         // ********************************************************************
         //                      APPROXIMATION WITH CUTTING
         // ********************************************************************
-        PLib_JacobiPolynomial JacobiBase = new(WorkDegree, Continuity);
+        JacobiPolynomial JacobiBase = new(WorkDegree, Continuity);
         // HP port: the compiler refuses branching
         int IS;
         bool goto_fin_de_boucle;
@@ -479,7 +483,7 @@ public class AdvApprox_ApproxAFunction
         if (Num1DSS < 0 || Num2DSS < 0 || Num3DSS < 0 || Num1DSS + Num2DSS + Num3DSS <= 0 || myLast < myFirst
             || myMaxDegree < 1 || myMaxSegments < 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (myMaxDegree > 14)
         {
@@ -498,17 +502,17 @@ public class AdvApprox_ApproxAFunction
         int ContinuityOrder = 0;
         switch (myContinuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 ContinuityOrder = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 ContinuityOrder = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 ContinuityOrder = 2;
                 break;
             default:
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
         }
         Span<double> ApproxStartEnd = stackalloc double[2];
         int NumMaxCoeffs = Max(myMaxDegree + 1, 2 * ContinuityOrder + 2);
@@ -589,11 +593,11 @@ public class AdvApprox_ApproxAFunction
                            NumCoeffPerCurvePtr.Array1(), LocalCoefficientsPtr.ChangeArray1(), PolynomialIntervalsPtr,
                            IntervalsPtr.Array1(), LocalTolerances, ErrorMax, TabContinuity);
 
-            Convert_CompPolynomialToPoles AConverter = new(NumCurves, TotalDimension, myMaxDegree, TabContinuity,
+            CompPolynomialToPoles AConverter = new(NumCurves, TotalDimension, myMaxDegree, TabContinuity,
                                                            NumCoeffPerCurvePtr.Array1(), LocalCoefficientsPtr.Array1(),
                                                            PolynomialIntervalsPtr, IntervalsPtr.Array1());
 
-            if (AConverter.IsDone())
+            if (AConverter.IsDone)
             {
                 // Convert's accessors return copies (decision 88): take each once
                 NCollection_Array2<double> aPoles = AConverter.Poles();
@@ -642,7 +646,7 @@ public class AdvApprox_ApproxAFunction
 
                 if (myNumSubSpaces[1] > 0)
                 {
-                    my2DPoles = new NCollection_HArray2<gp_Pnt2d>(1, aPoles.ColLength(), 1, myNumSubSpaces[1]);
+                    my2DPoles = new NCollection_HArray2<Point2D>(1, aPoles.ColLength(), 1, myNumSubSpaces[1]);
                     my2DMaxError = new NCollection_HArray1<double>(1, myNumSubSpaces[1]);
                     my2DAverageError = new NCollection_HArray1<double>(1, myNumSubSpaces[1]);
                     Span<double> Point2d = stackalloc double[2];
@@ -655,7 +659,7 @@ public class AdvApprox_ApproxAFunction
                             {
                                 Point2d[kk - 1] = aPoles.Value(ii, local_index + kk);
                             }
-                            my2DPoles.SetValue(ii, jj, new gp_Pnt2d(Point2d[0], Point2d[1]));
+                            my2DPoles.SetValue(ii, jj, new Point2D(Point2d[0], Point2d[1]));
                         }
                     }
 
@@ -687,7 +691,7 @@ public class AdvApprox_ApproxAFunction
 
                 if (myNumSubSpaces[2] > 0)
                 {
-                    my3DPoles = new NCollection_HArray2<gp_Pnt>(1, aPoles.ColLength(), 1, myNumSubSpaces[2]);
+                    my3DPoles = new NCollection_HArray2<Point3D>(1, aPoles.ColLength(), 1, myNumSubSpaces[2]);
                     my3DMaxError = new NCollection_HArray1<double>(1, myNumSubSpaces[2]);
                     my3DAverageError = new NCollection_HArray1<double>(1, myNumSubSpaces[2]);
                     Span<double> Point = stackalloc double[3];
@@ -700,7 +704,7 @@ public class AdvApprox_ApproxAFunction
                             {
                                 Point[kk - 1] = aPoles.Value(ii, local_index + kk);
                             }
-                            my3DPoles.SetValue(ii, jj, new gp_Pnt(Point[0], Point[1], Point[2]));
+                            my3DPoles.SetValue(ii, jj, new Point3D(Point[0], Point[1], Point[2]));
                         }
                     }
 
@@ -749,17 +753,17 @@ public class AdvApprox_ApproxAFunction
     public NCollection_HArray2<double>? Poles1d() => my1DPoles is null ? null : new(my1DPoles);
 
     /// <summary>A copy of the poles of the 2D subspaces (pole index, subspace), or null.</summary>
-    public NCollection_HArray2<gp_Pnt2d>? Poles2d() => my2DPoles is null ? null : new(my2DPoles);
+    public NCollection_HArray2<Point2D>? Poles2d() => my2DPoles is null ? null : new(my2DPoles);
 
     /// <summary>A copy of the poles of the 3D subspaces (pole index, subspace), or null.</summary>
-    public NCollection_HArray2<gp_Pnt>? Poles() => my3DPoles is null ? null : new(my3DPoles);
+    public NCollection_HArray2<Point3D>? Poles() => my3DPoles is null ? null : new(my3DPoles);
 
     /// <summary>The number of poles of the B-splines (0 without a result).</summary>
     public int NbPoles()
     {
         if (myDone || myHasResult)
         {
-            return BSplCLib.NbPoles(myDegree, false, myMults!.Array1());
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(myDegree, false, myMults!.Array1());
         }
         return 0;
     }
@@ -775,7 +779,7 @@ public class AdvApprox_ApproxAFunction
     }
 
     /// <summary>Copies the poles of 2D subspace <paramref name="Index"/> into <paramref name="P"/>.</summary>
-    public void Poles2d(int Index, NCollection_Array1<gp_Pnt2d> P)
+    public void Poles2d(int Index, NCollection_Array1<Point2D> P)
     {
         int ii;
         for (ii = P.Lower(); ii <= P.Upper(); ii++)
@@ -785,7 +789,7 @@ public class AdvApprox_ApproxAFunction
     }
 
     /// <summary>Copies the poles of 3D subspace <paramref name="Index"/> into <paramref name="P"/>.</summary>
-    public void Poles(int Index, NCollection_Array1<gp_Pnt> P)
+    public void Poles(int Index, NCollection_Array1<Point3D> P)
     {
         int ii;
         for (ii = P.Lower(); ii <= P.Upper(); ii++)
@@ -803,7 +807,7 @@ public class AdvApprox_ApproxAFunction
     {
         if (Dimension < 1 || Dimension > 3)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         return myNumSubSpaces[Dimension - 1];
     }
@@ -840,7 +844,7 @@ public class AdvApprox_ApproxAFunction
         NCollection_HArray1<double>? EPtr = null;
         if (D <= 0 || D > 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         switch (D)
         {
@@ -863,7 +867,7 @@ public class AdvApprox_ApproxAFunction
         NCollection_HArray1<double>? EPtr = null;
         if (D <= 0 || D > 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         switch (D)
         {

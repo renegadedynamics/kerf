@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -13,8 +14,8 @@ public class IntPatch_ALineToWLineTests
 {
     private const double Tol = 1.0e-7;
 
-    private static gp_Ax3 Ax(double x, double y, double z, double dx, double dy, double dz) =>
-        new(new gp_Pnt(x, y, z), new gp_Dir(dx, dy, dz));
+    private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz) =>
+        new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
 
     private static (NCollection_Sequence<IntPatch_Line> Lines, int NbALines) Convert(
         GeomAdaptor_Surface theS1, GeomAdaptor_Surface theS2, int theNbPoints = 200)
@@ -144,7 +145,7 @@ public class IntPatch_ALineToWLineTests
         var aConv = new IntPatch_ALineToWLine(aCyl, aCyl);
         Assert.Equal(1.0e-9, aConv.TolOpenDomain());
         Assert.Equal(1.0e-8, aConv.TolTransition());
-        Assert.Equal(Precision.Confusion(), aConv.Tol3D());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aConv.Tol3D());
         aConv.SetTolOpenDomain(1.0e-6);
         aConv.SetTolTransition(1.0e-5);
         aConv.SetTol3D(1.0e-4);

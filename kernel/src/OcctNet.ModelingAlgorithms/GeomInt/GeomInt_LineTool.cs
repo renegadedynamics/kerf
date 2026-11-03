@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
@@ -32,7 +34,7 @@ public static class GeomInt_LineTool
 
         public void Init(Geom_Surface Surface, double Umin, double Usup, double Vmin, double Vsup)
         {
-            double Tolerance = Precision.PConfusion();
+            double Tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
             //
             myGeomAdaptor.Load(Surface, Umin, Usup, Vmin, Vsup);
             myExtPS.Initialize(myGeomAdaptor, Umin, Usup, Vmin, Vsup, Tolerance, Tolerance);
@@ -59,7 +61,7 @@ public static class GeomInt_LineTool
             }
         }
 
-        public void Perform(in gp_Pnt P)
+        public void Perform(in Point3D P)
         {
             myExtPS.Perform(P);
             Init();
@@ -114,17 +116,17 @@ public static class GeomInt_LineTool
         return false;
     }
 
-    private static bool FindPoint(in gp_Pnt2d theFirstPoint, in gp_Pnt2d theLastPoint, double theUmin, double theUmax,
-                                  double theVmin, double theVmax, ref gp_Pnt2d theNewPoint)
+    private static bool FindPoint(in Point2D theFirstPoint, in Point2D theLastPoint, double theUmin, double theUmax,
+                                  double theVmin, double theVmax, ref Point2D theNewPoint)
     {
-        gp_Vec2d aVec = new(theFirstPoint, theLastPoint);
+        Vector2D aVec = new(theFirstPoint, theLastPoint);
         int i = 0, j = 0;
 
         for (i = 0; i < 4; i++)
         {
-            gp_Vec2d anOtherVec = new();
-            gp_Vec2d anOtherVecNormal = new();
-            gp_Pnt2d aprojpoint = theLastPoint;
+            Vector2D anOtherVec = new();
+            Vector2D anOtherVecNormal = new();
+            Point2D aprojpoint = theLastPoint;
 
             if ((i % 2) == 0)
             {
@@ -158,11 +160,11 @@ public static class GeomInt_LineTool
                     aprojpoint.SetY(theVmax);
                 }
             }
-            gp_Vec2d anormvec = aVec;
+            Vector2D anormvec = aVec;
             anormvec.Normalize();
             double adot1 = anormvec.Dot(anOtherVecNormal);
 
-            if (Math.Abs(adot1) < Precision.Angular())
+            if (Math.Abs(adot1) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 continue;
             }
@@ -181,15 +183,15 @@ public static class GeomInt_LineTool
             for (j = 0; j < 2; j++)
             {
                 anoffset = (j == 0) ? anoffset : -anoffset;
-                gp_Pnt2d acurpoint = new(aprojpoint.XY() + (anOtherVec.XY() * anoffset));
-                gp_Vec2d acurvec = new(theLastPoint, acurpoint);
+                Point2D acurpoint = new(aprojpoint.XY() + (anOtherVec.XY() * anoffset));
+                Vector2D acurvec = new(theLastPoint, acurpoint);
 
                 //
                 double aDotX, anAngleX, aPC;
                 //
                 aDotX = aVec.Dot(acurvec);
                 anAngleX = aVec.Angle(acurvec);
-                aPC = Precision.PConfusion();
+                aPC = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 //
                 if (aDotX > 0.0 && Math.Abs(anAngleX) < aPC)
                 {
@@ -275,7 +277,7 @@ public static class GeomInt_LineTool
             {
                 IntPatch_RLine rlin = (L as IntPatch_RLine)!;
                 // a voir selon le type de la ligne 2d
-                return (rlin.HasFirstPoint() ? rlin.FirstPoint().ParameterOnLine() : -Precision.Infinite());
+                return (rlin.HasFirstPoint() ? rlin.FirstPoint().ParameterOnLine() : -global::Kerf.Engine.Foundation.Precision.Infinite());
             }
 
             case IntPatch_Walking:
@@ -296,7 +298,7 @@ public static class GeomInt_LineTool
                     case IntPatch_Lin:
                     case IntPatch_Parabola:
                     case IntPatch_Hyperbola:
-                        return -Precision.Infinite();
+                        return -global::Kerf.Engine.Foundation.Precision.Infinite();
                     default:
                         break;
                 }
@@ -331,7 +333,7 @@ public static class GeomInt_LineTool
             {
                 IntPatch_RLine rlin = (L as IntPatch_RLine)!;
                 // a voir selon le type de la ligne 2d
-                return (rlin.HasLastPoint() ? rlin.LastPoint().ParameterOnLine() : Precision.Infinite());
+                return (rlin.HasLastPoint() ? rlin.LastPoint().ParameterOnLine() : global::Kerf.Engine.Foundation.Precision.Infinite());
             }
 
             case IntPatch_Walking:
@@ -352,7 +354,7 @@ public static class GeomInt_LineTool
                     case IntPatch_Lin:
                     case IntPatch_Parabola:
                     case IntPatch_Hyperbola:
-                        return Precision.Infinite();
+                        return global::Kerf.Engine.Foundation.Precision.Infinite();
                     case IntPatch_Circle:
                     case IntPatch_Ellipse:
                         return 2.0 * M_PI;
@@ -403,7 +405,7 @@ public static class GeomInt_LineTool
         int[] anArrayOfLineType = new int[aNbPnts + 1];
         //
         nblines = 0;
-        aTol = Precision.Confusion();
+        aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         aSurf1 = theSurface1.Surface()!;
         aSurf1.Bounds(out umin, out umax, out vmin, out vmax);
@@ -649,16 +651,16 @@ public static class GeomInt_LineTool
                             bComputeLineEnd = true;
                             bool bCheckAngle1 = false;
                             bool bCheckAngle2 = false;
-                            gp_Vec2d aNewVec = new();
+                            Vector2D aNewVec = new();
                             double anewU = (bIsUBoundary) ? anotherPar : U;
                             double anewV = (bIsUBoundary) ? V : anotherPar;
                             //
-                            if (((adist1 - adist2) > Precision.PConfusion()) && (adist2 < (aPeriod / 4.0)))
+                            if (((adist1 - adist2) > global::Kerf.Engine.Foundation.Precision.PConfusion()) && (adist2 < (aPeriod / 4.0)))
                             {
                                 bCheckAngle1 = true;
-                                aNewVec = new gp_Vec2d(new gp_Pnt2d(nU1, nV1), new gp_Pnt2d(anewU, anewV));
+                                aNewVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(anewU, anewV));
 
-                                if (aNewVec.SquareMagnitude() < (gp.Resolution() * gp.Resolution()))
+                                if (aNewVec.SquareMagnitude() < (Constants.Resolution() * Constants.Resolution()))
                                 {
                                     aNewP.SetValue((surfit == 0), anewU, anewV);
                                     bCheckAngle1 = false;
@@ -667,9 +669,9 @@ public static class GeomInt_LineTool
                             else if (adist1 < (aPeriod / 4.0))
                             {
                                 bCheckAngle2 = true;
-                                aNewVec = new gp_Vec2d(new gp_Pnt2d(nU1, nV1), new gp_Pnt2d(U, V));
+                                aNewVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(U, V));
 
-                                if (aNewVec.SquareMagnitude() < (gp.Resolution() * gp.Resolution()))
+                                if (aNewVec.SquareMagnitude() < (Constants.Resolution() * Constants.Resolution()))
                                 {
                                     bCheckAngle2 = false;
                                 }
@@ -696,9 +698,9 @@ public static class GeomInt_LineTool
                                     {
                                         aPrevNeighbourPoint.ParametersOnS2(out nU2, out nV2);
                                     }
-                                    gp_Vec2d aVecOld = new(new gp_Pnt2d(nU2, nV2), new gp_Pnt2d(nU1, nV1));
+                                    Vector2D aVecOld = new(new Point2D(nU2, nV2), new Point2D(nU1, nV1));
 
-                                    if (aVecOld.SquareMagnitude() <= (gp.Resolution() * gp.Resolution()))
+                                    if (aVecOld.SquareMagnitude() <= (Constants.Resolution() * Constants.Resolution()))
                                     {
                                         continue;
                                     }
@@ -715,9 +717,9 @@ public static class GeomInt_LineTool
                                                 IntSurf_PntOn2S atmppoint = aNewP;
                                                 atmppoint.SetValue((surfit == 0), anewU, anewV);
                                                 atmppoint.Parameters(out U1, out V1, out U2, out V2);
-                                                gp_Pnt P1 = theSurface1.Value(U1, V1);
-                                                gp_Pnt P2 = theSurface2.Value(U2, V2);
-                                                gp_Pnt P0 = aPoint.Value();
+                                                Point3D P1 = theSurface1.Value(U1, V1);
+                                                Point3D P2 = theSurface2.Value(U2, V2);
+                                                Point3D P0 = aPoint.Value();
 
                                                 if (P0.IsEqual(P1, aTol) && P0.IsEqual(P2, aTol) && P1.IsEqual(P2, aTol))
                                                 {
@@ -752,8 +754,8 @@ public static class GeomInt_LineTool
                         {
                             aNeighbourPoint.ParametersOnS2(out nU1, out nV1);
                         }
-                        gp_Pnt2d ap1 = new(nU1, nV1);
-                        gp_Pnt2d ap2 = new(nU1, nV1);
+                        Point2D ap1 = new(nU1, nV1);
+                        Point2D ap2 = new(nU1, nV1);
                         int aneighbourpointindex2 = aneighbourpointindex1;
 
                         while ((aneighbourpointindex2 <= aListOfIndex.Last())
@@ -775,12 +777,12 @@ public static class GeomInt_LineTool
                             ap2.SetX(nU2);
                             ap2.SetY(nV2);
 
-                            if (ap1.SquareDistance(ap2) > (gp.Resolution() * gp.Resolution()))
+                            if (ap1.SquareDistance(ap2) > (Constants.Resolution() * Constants.Resolution()))
                             {
                                 break;
                             }
                         }
-                        gp_Pnt2d anewpoint = new();
+                        Point2D anewpoint = new();
                         bool found = FindPoint(ap2, ap1, umin, umax, vmin, vmax, ref anewpoint);
 
                         if (found)
@@ -791,7 +793,7 @@ public static class GeomInt_LineTool
                             ProjectPointOnSurf aProjector = (surfit == 0) ? aPrj2 : aPrj1;
                             GeomAdaptor_Surface aSurface = (surfit == 0) ? theSurface1 : theSurface2;
 
-                            gp_Pnt aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
+                            Point3D aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
                             aProjector.Perform(aP3d);
 
                             if (aProjector.IsDone())

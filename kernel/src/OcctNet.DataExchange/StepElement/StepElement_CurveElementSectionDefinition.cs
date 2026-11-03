@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementSectionDefinition
 /// </summary>
-public class StepElement_CurveElementSectionDefinition : Standard_Transient
+public class StepElement_CurveElementSectionDefinition : Transient
 {
     private TCollection_HAsciiString theDescription;
     private double theSectionAngle;

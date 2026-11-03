@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -11,19 +13,19 @@ namespace Occt;
 /// <summary>The geometry of a vertex: a 3D point, a tolerance and a list of point representations.</summary>
 /// <remarks>
 /// The setters and the list of representations are internal to OCCT.NET and throw
-/// <see cref="Standard_ImmutableObject"/> once the vertex is frozen. <see cref="PointRepresentations"/> is the public,
+/// <see cref="ImmutableObjectException"/> once the vertex is frozen. <see cref="PointRepresentations"/> is the public,
 /// read-only view of the list.
 /// </remarks>
 public class BRep_TVertex : TopoDS_TVertex
 {
-    private gp_Pnt myPnt;
+    private Point3D myPnt;
     private double myTolerance;
     private readonly NCollection_List<BRep_PointRepresentation> myPoints = new();
 
     /// <summary>An empty vertex at the origin, with a tolerance of RealEpsilon().</summary>
     public BRep_TVertex()
     {
-        myPnt = new gp_Pnt();
+        myPnt = new Point3D();
         myTolerance = RealEpsilon();
     }
 
@@ -47,9 +49,9 @@ public class BRep_TVertex : TopoDS_TVertex
     }
 
     /// <summary>The point, in the vertex's own coordinate system.</summary>
-    public gp_Pnt Pnt() => myPnt;
+    public Point3D Pnt() => myPnt;
 
-    internal void Pnt(in gp_Pnt P)
+    internal void Pnt(in Point3D P)
     {
         CheckMutable();
         myPnt = P;

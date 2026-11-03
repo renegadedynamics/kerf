@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -24,7 +26,7 @@ public class StepFEA_SymmetricTensor23d : StepData_SelectType
     /// Recognizes a kind of SymmetricTensor23d select type
     /// return 0
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         return 0;
     }

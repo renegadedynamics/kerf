@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,30 +31,30 @@ public sealed class GeomBndLib_Hyperbola : GeomBndLib_Curve.ICurveEvaluator
     Geom_Curve? GeomBndLib_Curve.ICurveEvaluator.CurveGeometry() => myGeom;
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box Box(double theU1, double theU2, double theTol) => Box(myGeom.Hypr(), theU1, theU2, theTol);
+    public Box Box(double theU1, double theU2, double theTol) => Box(myGeom.Hypr(), theU1, theU2, theTol);
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Bnd_Box Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
+    public Box Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
-    public Bnd_Box BoxOptimal(double theU1, double theU2, double theTol) => Box(theU1, theU2, theTol);
+    public Box BoxOptimal(double theU1, double theU2, double theTol) => Box(theU1, theU2, theTol);
 
     /// <summary>Compute bounding box for finite hyperbola arc, adding per-coordinate extrema.</summary>
-    private static void computeHyperbolaBox(in gp_Hypr theHypr, double theT1, double theT2, ref Bnd_Box theBox)
+    private static void computeHyperbolaBox(in Hyperbola3D theHypr, double theT1, double theT2, ref Box theBox)
     {
-        gp_Pnt aP1 = ElCLib.Value(theT1, theHypr);
-        gp_Pnt aP2 = ElCLib.Value(theT2, theHypr);
+        Point3D aP1 = global::Kerf.Engine.Geometry.ElCLib.Value(theT1, theHypr);
+        Point3D aP2 = global::Kerf.Engine.Geometry.ElCLib.Value(theT2, theHypr);
         theBox.Add(aP1);
         theBox.Add(aP2);
 
         if (theT1 * theT2 < 0.0)
         {
-            theBox.Add(ElCLib.Value(0.0, theHypr));
+            theBox.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, theHypr));
         }
 
-        gp_Ax2 aPos = theHypr.Position();
-        gp_XYZ aXDir = aPos.XDirection().XYZ();
-        gp_XYZ aYDir = aPos.YDirection().XYZ();
+        Frame3D aPos = theHypr.Position();
+        Xyz aXDir = aPos.XDirection().XYZ();
+        Xyz aYDir = aPos.YDirection().XYZ();
         double aRmaj = theHypr.MajorRadius();
         double aRmin = theHypr.MinorRadius();
         double aEps = Epsilon(1.0);
@@ -71,21 +79,21 @@ public sealed class GeomBndLib_Hyperbola : GeomBndLib_Curve.ICurveEvaluator
             {
                 continue;
             }
-            theBox.Add(ElCLib.Value(aT3, theHypr));
+            theBox.Add(global::Kerf.Engine.Geometry.ElCLib.Value(aT3, theHypr));
         }
     }
 
     /// <summary>Compute bounding box for a hyperbola arc [theU1, theU2] defined by gp_Hypr.</summary>
-    public static Bnd_Box Box(in gp_Hypr theHypr, double theU1, double theU2, double theTol)
+    public static Box Box(in Hyperbola3D theHypr, double theU1, double theU2, double theTol)
     {
-        Bnd_Box aBox = new();
-        if (Precision.IsNegativeInfinite(theU1))
+        Box aBox = new();
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theU1))
         {
-            if (Precision.IsNegativeInfinite(theU2))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theU2))
             {
-                throw new Standard_Failure("GeomBndLib_Hyperbola::Box - bad parameter");
+                throw new FailureException("GeomBndLib_Hyperbola::Box - bad parameter");
             }
-            else if (Precision.IsPositiveInfinite(theU2))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theU2))
             {
                 aBox.OpenXmax();
                 aBox.OpenYmax();
@@ -93,27 +101,27 @@ public sealed class GeomBndLib_Hyperbola : GeomBndLib_Curve.ICurveEvaluator
             }
             else
             {
-                aBox.Add(ElCLib.Value(theU2, theHypr));
+                aBox.Add(global::Kerf.Engine.Geometry.ElCLib.Value(theU2, theHypr));
             }
             aBox.OpenXmin();
             aBox.OpenYmin();
             aBox.OpenZmin();
         }
-        else if (Precision.IsPositiveInfinite(theU1))
+        else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theU1))
         {
-            if (Precision.IsNegativeInfinite(theU2))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theU2))
             {
                 aBox.OpenXmin();
                 aBox.OpenYmin();
                 aBox.OpenZmin();
             }
-            else if (Precision.IsPositiveInfinite(theU2))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theU2))
             {
-                throw new Standard_Failure("GeomBndLib_Hyperbola::Box - bad parameter");
+                throw new FailureException("GeomBndLib_Hyperbola::Box - bad parameter");
             }
             else
             {
-                aBox.Add(ElCLib.Value(theU2, theHypr));
+                aBox.Add(global::Kerf.Engine.Geometry.ElCLib.Value(theU2, theHypr));
             }
             aBox.OpenXmax();
             aBox.OpenYmax();
@@ -121,14 +129,14 @@ public sealed class GeomBndLib_Hyperbola : GeomBndLib_Curve.ICurveEvaluator
         }
         else
         {
-            aBox.Add(ElCLib.Value(theU1, theHypr));
-            if (Precision.IsNegativeInfinite(theU2))
+            aBox.Add(global::Kerf.Engine.Geometry.ElCLib.Value(theU1, theHypr));
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theU2))
             {
                 aBox.OpenXmin();
                 aBox.OpenYmin();
                 aBox.OpenZmin();
             }
-            else if (Precision.IsPositiveInfinite(theU2))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theU2))
             {
                 aBox.OpenXmax();
                 aBox.OpenYmax();

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -17,8 +20,8 @@ internal static class BinTestShapes
     /// <summary>The shapes of the round-trip tests, with names.</summary>
     public static IEnumerable<(string Name, TopoDS_Shape Shape)> All()
     {
-        yield return ("vertex", TestShapes.Vertex(new gp_Pnt(1, 2, 3)));
-        yield return ("edge", TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 1, 1)));
+        yield return ("vertex", TestShapes.Vertex(new Point3D(1, 2, 3)));
+        yield return ("edge", TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 1, 1)));
         yield return ("box", TestShapes.Box(1, 2, 3));
         yield return ("cylinder face", TestShapes.CylinderFace(2, 5));
         yield return ("meshed box", MeshedBox(false, false));
@@ -36,23 +39,23 @@ internal static class BinTestShapes
         TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
         TopoDS_Edge anEdge = FirstEdge(aBox);
         var aFaces = FacesOf(aBox, anEdge);
-        theBuilder.Continuity(anEdge, aFaces[0], aFaces[1], GeomAbs_Shape.GeomAbs_G1);
+        theBuilder.Continuity(anEdge, aFaces[0], aFaces[1], Continuity.G1);
 
         TopoDS_Edge aSecond = NthEdge(aBox, 2);
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, 3);
-        aNodes[1] = new gp_Pnt(0, 0, 0);
-        aNodes[2] = new gp_Pnt(0.5, 0, 0);
-        aNodes[3] = new gp_Pnt(1, 0, 0);
+        var aNodes = new NCollection_Array1<Point3D>(1, 3);
+        aNodes[1] = new Point3D(0, 0, 0);
+        aNodes[2] = new Point3D(0.5, 0, 0);
+        aNodes[3] = new Point3D(1, 0, 0);
         var aParams = new NCollection_Array1<double>(1, 3);
         aParams[1] = 0;
         aParams[2] = 0.5;
         aParams[3] = 1;
-        var aPolygon = new Poly_Polygon3D(aNodes, aParams);
+        var aPolygon = new Polygon3D(aNodes, aParams);
         aPolygon.Deflection(0.01);
         theBuilder.UpdateEdge(aSecond, aPolygon);
 
         TopoDS_Edge aThird = NthEdge(aBox, 3);
-        theBuilder.UpdateEdge(aThird, new Poly_Polygon3D(aNodes));
+        theBuilder.UpdateEdge(aThird, new Polygon3D(aNodes));
         return aBox;
     }
 
@@ -66,12 +69,12 @@ internal static class BinTestShapes
         TopoDS_Edge anEdge = FirstEdge(aBox);
         TopoDS_Face aFace = FacesOf(aBox, anEdge)[0];
         TopoDS_Vertex aVertex = TopoDS.Vertex(new TopExp_Explorer(anEdge, TopAbs_VERTEX).Current());
-        TopoDS_Vertex aFree = TestShapes.Vertex(new gp_Pnt(0.25, 0.5, 0.75));
-        theBuilder.UpdateVertex(aFree, 0.25, anEdge, Precision.Confusion());
-        theBuilder.UpdateVertex(aFree, 0.5, anEdge, aFace, Precision.Confusion());
+        TopoDS_Vertex aFree = TestShapes.Vertex(new Point3D(0.25, 0.5, 0.75));
+        theBuilder.UpdateVertex(aFree, 0.25, anEdge, global::Kerf.Engine.Foundation.Precision.Confusion());
+        theBuilder.UpdateVertex(aFree, 0.5, anEdge, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (includePointOnSurface)
         {
-            theBuilder.UpdateVertex(aFree, 0.125, 0.375, aFace, Precision.Confusion());
+            theBuilder.UpdateVertex(aFree, 0.125, 0.375, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         TopoDS_Compound aCompound = new();
@@ -89,14 +92,14 @@ internal static class BinTestShapes
     public static TopoDS_Shape CompoundWithLocations()
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
-        var aT1 = new gp_Trsf();
-        aT1.SetTranslation(new gp_Vec(5, 0, 0));
-        var aT2 = new gp_Trsf();
-        aT2.SetRotation(new gp_Ax1(new gp_Pnt(), new gp_Dir(0, 0, 1)), 0.3);
-        var aL1 = new TopLoc_Location(aT1);
-        var aL2 = new TopLoc_Location(aT2);
-        TopLoc_Location aComplex = aL1 * aL2.Powered(2);
-        TopLoc_Location aComplex2 = aL2.Powered(-3) * aL1 * aL2;
+        var aT1 = new Transform3D();
+        aT1.SetTranslation(new Vector3D(5, 0, 0));
+        var aT2 = new Transform3D();
+        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
+        var aL1 = new Placement(aT1);
+        var aL2 = new Placement(aT2);
+        Placement aComplex = aL1 * aL2.Powered(2);
+        Placement aComplex2 = aL2.Powered(-3) * aL1 * aL2;
 
         TopoDS_Compound aCompound = new();
         theBuilder.MakeCompound(ref aCompound);
@@ -117,9 +120,9 @@ internal static class BinTestShapes
         TopoDS_CompSolid aCS = new();
         theBuilder.MakeCompSolid(ref aCS);
         theBuilder.Add(aCS, TestShapes.Box(1, 1, 1));
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(1, 0, 0));
-        theBuilder.Add(aCS, TestShapes.Box(1, 1, 1).Moved(new TopLoc_Location(aT)));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(1, 0, 0));
+        theBuilder.Add(aCS, TestShapes.Box(1, 1, 1).Moved(new Placement(aT)));
         return aCS;
     }
 
@@ -144,13 +147,13 @@ internal static class BinTestShapes
                 }
             }
 
-            var aTri = new Poly_Triangulation(aVertices.Count, 2, theWithUV, theWithNormals);
+            var aTri = new Triangulation(aVertices.Count, 2, theWithUV, theWithNormals);
             for (int i = 0; i < aVertices.Count; i++)
             {
                 aTri.SetNode(i + 1, BRep_Tool.Pnt(aVertices[i]));
                 if (theWithUV)
                 {
-                    aTri.SetUVNode(i + 1, new gp_Pnt2d(i, 0.5 * i));
+                    aTri.SetUVNode(i + 1, new Point2D(i, 0.5 * i));
                 }
 
                 if (theWithNormals)
@@ -159,8 +162,8 @@ internal static class BinTestShapes
                 }
             }
 
-            aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-            aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+            aTri.SetTriangle(1, new Triangle1(1, 2, 3));
+            aTri.SetTriangle(2, new Triangle1(1, 3, 4));
             aTri.Deflection(0.001 * (aFaceIndex + 1));
             theBuilder.UpdateFace(aFace, aTri);
 
@@ -171,21 +174,21 @@ internal static class BinTestShapes
                 var aNodes = new NCollection_Array1<int>(1, 2);
                 aNodes[1] = 1 + anEdgeIndex;
                 aNodes[2] = 1 + (anEdgeIndex + 1) % 4;
-                Poly_PolygonOnTriangulation aPoly;
+                PolygonOnTriangulation aPoly;
                 if (anEdgeIndex == 0)
                 {
                     var aParams = new NCollection_Array1<double>(1, 2);
                     aParams[1] = 0;
                     aParams[2] = 1;
-                    aPoly = new Poly_PolygonOnTriangulation(aNodes, aParams);
+                    aPoly = new PolygonOnTriangulation(aNodes, aParams);
                 }
                 else
                 {
-                    aPoly = new Poly_PolygonOnTriangulation(aNodes);
+                    aPoly = new PolygonOnTriangulation(aNodes);
                 }
 
                 aPoly.Deflection(0.5);
-                theBuilder.UpdateEdge(anEdge, aPoly, aTri, new TopLoc_Location());
+                theBuilder.UpdateEdge(anEdge, aPoly, aTri, new Placement());
             }
         }
 
@@ -196,17 +199,17 @@ internal static class BinTestShapes
     public static TopoDS_Shape MeshedCylinder()
     {
         TopoDS_Face aFace = TestShapes.CylinderFace(2, 5);
-        var aTri = new Poly_Triangulation(4, 2, true, false);
-        aTri.SetNode(1, new gp_Pnt(2, 0, 0));
-        aTri.SetNode(2, new gp_Pnt(-2, 0, 0));
-        aTri.SetNode(3, new gp_Pnt(-2, 0, 5));
-        aTri.SetNode(4, new gp_Pnt(2, 0, 5));
-        aTri.SetUVNode(1, new gp_Pnt2d(0, 0));
-        aTri.SetUVNode(2, new gp_Pnt2d(Math.PI, 0));
-        aTri.SetUVNode(3, new gp_Pnt2d(Math.PI, 5));
-        aTri.SetUVNode(4, new gp_Pnt2d(0, 5));
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-        aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+        var aTri = new Triangulation(4, 2, true, false);
+        aTri.SetNode(1, new Point3D(2, 0, 0));
+        aTri.SetNode(2, new Point3D(-2, 0, 0));
+        aTri.SetNode(3, new Point3D(-2, 0, 5));
+        aTri.SetNode(4, new Point3D(2, 0, 5));
+        aTri.SetUVNode(1, new Point2D(0, 0));
+        aTri.SetUVNode(2, new Point2D(Math.PI, 0));
+        aTri.SetUVNode(3, new Point2D(Math.PI, 5));
+        aTri.SetUVNode(4, new Point2D(0, 5));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
+        aTri.SetTriangle(2, new Triangle1(1, 3, 4));
         theBuilder.UpdateFace(aFace, aTri);
         for (var anE = new TopExp_Explorer(aFace, TopAbs_EDGE); anE.More(); anE.Next())
         {
@@ -220,10 +223,10 @@ internal static class BinTestShapes
                 aNodes2[1] = 1;
                 aNodes2[2] = 4;
                 theBuilder.UpdateEdge(anEdge,
-                                      new Poly_PolygonOnTriangulation(aNodes1),
-                                      new Poly_PolygonOnTriangulation(aNodes2),
+                                      new PolygonOnTriangulation(aNodes1),
+                                      new PolygonOnTriangulation(aNodes2),
                                       aTri,
-                                      new TopLoc_Location());
+                                      new Placement());
                 break;
             }
         }
@@ -234,11 +237,11 @@ internal static class BinTestShapes
     /// <summary>A face with a triangulation and no surface, whose normals are always written.</summary>
     public static TopoDS_Shape TriangulationOnlyFace()
     {
-        var aTri = new Poly_Triangulation(3, 1, false, true);
-        aTri.SetNode(1, new gp_Pnt(0, 0, 0));
-        aTri.SetNode(2, new gp_Pnt(1, 0, 0));
-        aTri.SetNode(3, new gp_Pnt(0, 1, 0));
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        var aTri = new Triangulation(3, 1, false, true);
+        aTri.SetNode(1, new Point3D(0, 0, 0));
+        aTri.SetNode(2, new Point3D(1, 0, 0));
+        aTri.SetNode(3, new Point3D(0, 1, 0));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         for (int i = 1; i <= 3; i++)
         {
             aTri.SetNormal(i, new NCollection_Vec3<float>(0, 0, 1));

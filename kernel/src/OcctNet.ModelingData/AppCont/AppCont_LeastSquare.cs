@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace Occt;
@@ -27,10 +29,10 @@ public class AppCont_LeastSquare
     }
 
     private readonly AppParCurves_MultiCurve mySCU;
-    private readonly math_Matrix myPoints;
-    private readonly math_Matrix myPoles;
+    private readonly Matrix myPoints;
+    private readonly Matrix myPoles;
     private readonly math_Vector myParam;
-    private readonly math_Matrix myVB;
+    private readonly Matrix myVB;
     private readonly NCollection_Array1<PeriodicityInfo> myPerInfo;
     private bool myDone;
     private int myDegre;
@@ -38,11 +40,11 @@ public class AppCont_LeastSquare
 
     // Fix border point evaluation.
     private void FixSingleBorderPoint(AppCont_Function theSSP, double theU, double theU0, double theU1,
-                                      NCollection_Array1<gp_Pnt2d> theFix2d, NCollection_Array1<gp_Pnt> theFix)
+                                      NCollection_Array1<Point2D> theFix2d, NCollection_Array1<Point3D> theFix)
     {
         int aMaxIter = 15;
-        NCollection_Array1<gp_Pnt> aTabP = new(1, Max(myNbP, 1)), aPrevP = new(1, Max(myNbP, 1));
-        NCollection_Array1<gp_Pnt2d> aTabP2d = new(1, Max(myNbP2d, 1)), aPrevP2d = new(1, Max(myNbP2d, 1));
+        NCollection_Array1<Point3D> aTabP = new(1, Max(myNbP, 1)), aPrevP = new(1, Max(myNbP, 1));
+        NCollection_Array1<Point2D> aTabP2d = new(1, Max(myNbP2d, 1)), aPrevP2d = new(1, Max(myNbP2d, 1));
         double aMult = ((theU - theU0) > (theU1 - theU)) ? 1.0 : -1.0;
         double aStartParam = theU, aCurrParam, aPrevDist = 1.0, aCurrDist = 1.0;
 
@@ -97,10 +99,10 @@ public class AppCont_LeastSquare
                                AppParCurves_Constraint LastCons, int Deg, int myNbPoints)
     {
         mySCU = new AppParCurves_MultiCurve(Deg + 1);
-        myPoints = new math_Matrix(1, myNbPoints, 1, 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints());
-        myPoles = new math_Matrix(1, Deg + 1, 1, 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints(), 0.0);
+        myPoints = new Matrix(1, myNbPoints, 1, 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints());
+        myPoles = new Matrix(1, Deg + 1, 1, 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints(), 0.0);
         myParam = new math_Vector(1, myNbPoints);
-        myVB = new math_Matrix(1, Deg + 1, 1, myNbPoints);
+        myVB = new Matrix(1, Deg + 1, 1, myNbPoints);
         myPerInfo = new NCollection_Array1<PeriodicityInfo>(1, 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints());
 
         myDone = false;
@@ -112,17 +114,17 @@ public class AppCont_LeastSquare
 
         int FirstP = 1, LastP = myNbPoints;
         int nbcol = 3 * SSP.GetNbOf3dPoints() + 2 * SSP.GetNbOf2dPoints();
-        math_Matrix B = new(1, classe, 1, nbcol, 0.0);
+        Matrix B = new(1, classe, 1, nbcol, 0.0);
         int bdeb = 1, bfin = classe;
         AppParCurves_Constraint myFirstC = FirstCons, myLastC = LastCons;
         SSP.GetNumberOfPoints(out myNbP, out myNbP2d);
 
         int i2plus1, i2plus2;
         myNbdiscret = myNbPoints;
-        NCollection_Array1<gp_Pnt> aTabP = new(1, Max(myNbP, 1));
-        NCollection_Array1<gp_Pnt2d> aTabP2d = new(1, Max(myNbP2d, 1));
-        NCollection_Array1<gp_Vec> aTabV = new(1, Max(myNbP, 1));
-        NCollection_Array1<gp_Vec2d> aTabV2d = new(1, Max(myNbP2d, 1));
+        NCollection_Array1<Point3D> aTabP = new(1, Max(myNbP, 1));
+        NCollection_Array1<Point2D> aTabP2d = new(1, Max(myNbP2d, 1));
+        NCollection_Array1<Vector3D> aTabV = new(1, Max(myNbP, 1));
+        NCollection_Array1<Vector2D> aTabV2d = new(1, Max(myNbP2d, 1));
 
         for (int aDimIdx = 1; aDimIdx <= myNbP * 3 + myNbP2d * 2; aDimIdx++)
         {
@@ -150,8 +152,8 @@ public class AppCont_LeastSquare
 
         // Compute control points params on which approximation will be built.
         math_Vector GaussP = new(1, myNbPoints), GaussW = new(1, myNbPoints);
-        math.GaussPoints(myNbPoints, GaussP);
-        math.GaussWeights(myNbPoints, GaussW);
+        NumericTables.GaussPoints(myNbPoints, GaussP);
+        NumericTables.GaussWeights(myNbPoints, GaussW);
         math_Vector TheWeights = new(1, myNbPoints), VBParam = new(1, myNbPoints);
         dU = 0.5 * (U1 - U0);
         for (i = FirstP; i <= LastP; i++)
@@ -241,7 +243,7 @@ public class AppCont_LeastSquare
 
         if (myFirstC == AppParCurves_NoConstraint && myLastC == AppParCurves_NoConstraint)
         {
-            math_Matrix InvM = new(1, classe, 1, classe);
+            Matrix InvM = new(1, classe, 1, classe);
             AppCont_ContMatrices.InvMMatrix(classe, InvM);
             // Direct computation of poles:
 
@@ -260,10 +262,10 @@ public class AppCont_LeastSquare
         }
         else
         {
-            math_Matrix M = new(1, classe, 1, classe);
+            Matrix M = new(1, classe, 1, classe);
             AppCont_ContMatrices.MMatrix(classe, M);
-            NCollection_Array1<gp_Pnt2d> aFixP2d = new(1, Max(myNbP2d, 1));
-            NCollection_Array1<gp_Pnt> aFixP = new(1, Max(myNbP, 1));
+            NCollection_Array1<Point2D> aFixP2d = new(1, Max(myNbP2d, 1));
+            NCollection_Array1<Point3D> aFixP = new(1, Max(myNbP, 1));
 
             if (myFirstC == AppParCurves_PassPoint || myFirstC == AppParCurves_TangencyPoint)
             {
@@ -450,7 +452,7 @@ public class AppCont_LeastSquare
 
             if (bdeb <= bfin)
             {
-                math_Matrix B2 = new(bdeb, bfin, 1, B.UpperCol(), 0.0);
+                Matrix B2 = new(bdeb, bfin, 1, B.UpperCol(), 0.0);
 
                 for (i = bdeb; i <= bfin; i++)
                 {
@@ -466,7 +468,7 @@ public class AppCont_LeastSquare
 
                 // Resolution:
                 // ===========
-                math_Matrix IBP = new(bdeb, bfin, bdeb, bfin);
+                Matrix IBP = new(bdeb, bfin, bdeb, bfin);
 
                 // In IBPMatrix and IBTMatrix only results for a degree
                 // less than or equal to 26 are stored (for now at least).
@@ -481,7 +483,7 @@ public class AppCont_LeastSquare
                 }
                 else
                 {
-                    math_Matrix MP = new(1, classe, bdeb, bfin);
+                    Matrix MP = new(1, classe, bdeb, bfin);
                     for (i = 1; i <= classe; i++)
                     {
                         for (j = bdeb; j <= bfin; j++)
@@ -489,7 +491,7 @@ public class AppCont_LeastSquare
                             MP[i, j] = M[i, j];
                         }
                     }
-                    math_Matrix IBP1 = new(bdeb, bfin, bdeb, bfin);
+                    Matrix IBP1 = new(bdeb, bfin, bdeb, bfin);
                     IBP1.Initialized(MP.Transposed() * MP);
                     IBP.Initialized(IBP1.Inverse());
                 }
@@ -514,8 +516,8 @@ public class AppCont_LeastSquare
     public AppParCurves_MultiCurve Value()
     {
         int i, j, j2;
-        gp_Pnt Pt = new();
-        gp_Pnt2d Pt2d = new();
+        Point3D Pt = new();
+        Point2D Pt2d = new();
         int ideb = 1, ifin = myDegre + 1;
 
         // Store the result in the corresponding curves
@@ -550,7 +552,7 @@ public class AppCont_LeastSquare
         double Coeff, err3d = 0.0, err2d = 0.0;
         int ncol = myPoints.UpperCol() - myPoints.LowerCol() + 1;
 
-        math_Matrix MyPoints = new(1, myNbdiscret, 1, ncol);
+        Matrix MyPoints = new(1, myNbdiscret, 1, ncol);
         MyPoints.Initialized(myPoints);
 
         MaxE3d = MaxE2d = F = 0.0;

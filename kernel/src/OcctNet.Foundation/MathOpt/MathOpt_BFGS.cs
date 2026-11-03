@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
@@ -12,792 +13,792 @@ public static partial class MathOpt
     /// BFGS quasi-Newton minimization with Armijo backtracking (falling back to steepest descent when the line
     /// search fails).
     /// </summary>
-    public static VectorResult BFGS<Function>(Function theFunc, math_Vector theStartingPoint, Config? theConfig = null)
+    public static VectorResult BFGS<Function>(Function func, math_Vector startingPoint, Config? config = null)
         where Function : IVectorFunctionWithGradient
     {
-        theConfig ??= new Config();
-        VectorResult aResult = new();
+        config ??= new Config();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
 
         // Current point and function value
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector x = new(lower, upper);
+        x.Initialized(startingPoint);
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Gradient at current point
-        math_Vector aGrad = new(aLower, aUpper);
-        if (!theFunc.Gradient(aX, aGrad))
+        math_Vector grad = new(lower, upper);
+        if (!func.Gradient(x, grad))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Check if already at minimum (gradient near zero)
-        double aGradNorm = 0.0;
-        for (int i = aLower; i <= aUpper; ++i)
+        double gradNorm = 0.0;
+        for (int i = lower; i <= upper; ++i)
         {
-            aGradNorm += MathUtils.Sqr(aGrad[i]);
+            gradNorm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(grad[i]);
         }
-        aGradNorm = Math.Sqrt(aGradNorm);
+        gradNorm = Math.Sqrt(gradNorm);
 
-        if (aGradNorm < theConfig.FTolerance)
+        if (gradNorm < config.FTolerance)
         {
-            aResult.Status = Status.OK;
-            aResult.Solution = aX;
-            aResult.Value = aFx;
-            aResult.Gradient = aGrad;
-            return aResult;
+            result.Status = Status.OK;
+            result.Solution = x;
+            result.Value = fx;
+            result.Gradient = grad;
+            return result;
         }
 
         // Initialize inverse Hessian approximation to identity
-        math_Matrix aH = new(1, aN, 1, aN, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        Matrix h = new(1, n, 1, n, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
-            aH[i, i] = 1.0;
+            h[i, i] = 1.0;
         }
 
         // Working vectors
-        math_Vector aDir = new(aLower, aUpper);     // Search direction
-        math_Vector aXNew = new(aLower, aUpper);    // New point
-        math_Vector aGradNew = new(aLower, aUpper); // New gradient
-        math_Vector aS = new(1, aN);                // Step: x_new - x
-        math_Vector aY = new(1, aN);                // Gradient difference: grad_new - grad
+        math_Vector dir = new(lower, upper);     // Search direction
+        math_Vector xNew = new(lower, upper);    // New point
+        math_Vector gradNew = new(lower, upper); // New gradient
+        math_Vector s = new(1, n);                // Step: x_new - x
+        math_Vector y = new(1, n);                // Gradient difference: grad_new - grad
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Compute search direction: p = -H * grad
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                double aSum = 0.0;
-                for (int j = 1; j <= aN; ++j)
+                double sum = 0.0;
+                for (int j = 1; j <= n; ++j)
                 {
-                    aSum += aH[i, j] * aGrad[aLower + j - 1];
+                    sum += h[i, j] * grad[lower + j - 1];
                 }
-                aDir[aLower + i - 1] = -aSum;
+                dir[lower + i - 1] = -sum;
             }
 
             // Line search with Wolfe conditions
-            LineSearchResult aLineResult =
-              MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+            LineSearchResult lineResult =
+              global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-            if (!aLineResult.IsValid || aLineResult.Alpha < MathUtils.THE_EPSILON)
+            if (!lineResult.IsValid || lineResult.Alpha < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
             {
                 // Line search failed, try steepest descent direction
-                for (int i = aLower; i <= aUpper; ++i)
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aDir[i] = -aGrad[i];
+                    dir[i] = -grad[i];
                 }
-                aLineResult = MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+                lineResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-                if (!aLineResult.IsValid)
+                if (!lineResult.IsValid)
                 {
                     // Both BFGS and steepest descent failed
-                    aResult.Status = Status.NotConverged;
-                    aResult.Solution = aX;
-                    aResult.Value = aFx;
-                    aResult.Gradient = aGrad;
-                    return aResult;
+                    result.Status = Status.NotConverged;
+                    result.Solution = x;
+                    result.Value = fx;
+                    result.Gradient = grad;
+                    return result;
                 }
 
                 // Reset Hessian to identity after steepest descent step
-                for (int i = 1; i <= aN; ++i)
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aH[i, j] = (i == j) ? 1.0 : 0.0;
+                        h[i, j] = (i == j) ? 1.0 : 0.0;
                     }
                 }
             }
 
             // Compute new point
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = aX[i] + aLineResult.Alpha * aDir[i];
+                xNew[i] = x[i] + lineResult.Alpha * dir[i];
             }
 
             // Compute s = x_new - x
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                aS[i] = aXNew[aLower + i - 1] - aX[aLower + i - 1];
+                s[i] = xNew[lower + i - 1] - x[lower + i - 1];
             }
 
             // Evaluate gradient at new point
-            if (!theFunc.Gradient(aXNew, aGradNew))
+            if (!func.Gradient(xNew, gradNew))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
 
             // Check gradient convergence
-            aGradNorm = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            gradNorm = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aGradNorm += MathUtils.Sqr(aGradNew[i]);
+                gradNorm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(gradNew[i]);
             }
-            aGradNorm = Math.Sqrt(aGradNorm);
+            gradNorm = Math.Sqrt(gradNorm);
 
-            if (aGradNorm < theConfig.FTolerance)
+            if (gradNorm < config.FTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aLineResult.FNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = lineResult.FNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Check X convergence
-            double aMaxDiff = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double maxDiff = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aXNew[i] - aX[i]));
+                maxDiff = Max(maxDiff, Math.Abs(xNew[i] - x[i]));
             }
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aLineResult.FNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = lineResult.FNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Compute y = grad_new - grad
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                aY[i] = aGradNew[aLower + i - 1] - aGrad[aLower + i - 1];
+                y[i] = gradNew[lower + i - 1] - grad[lower + i - 1];
             }
 
             // Compute s^T * y (curvature condition)
-            double aSY = 0.0;
-            for (int i = 1; i <= aN; ++i)
+            double sy = 0.0;
+            for (int i = 1; i <= n; ++i)
             {
-                aSY += aS[i] * aY[i];
+                sy += s[i] * y[i];
             }
 
             // Skip update if curvature condition is not satisfied
-            if (aSY > MathUtils.THE_ZERO_TOL)
+            if (sy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
                 // BFGS update: H_new = (I - rho*sy^T) H (I - rho*ys^T) + rho*ss^T
                 // where rho = 1 / (s^T y)
-                double aRho = 1.0 / aSY;
+                double rho = 1.0 / sy;
 
                 // Compute H * y
-                math_Vector aHy = new(1, aN, 0.0);
-                for (int i = 1; i <= aN; ++i)
+                math_Vector hy = new(1, n, 0.0);
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aHy[i] += aH[i, j] * aY[j];
+                        hy[i] += h[i, j] * y[j];
                     }
                 }
 
                 // Compute y^T * H * y
-                double aYHy = 0.0;
-                for (int i = 1; i <= aN; ++i)
+                double yHy = 0.0;
+                for (int i = 1; i <= n; ++i)
                 {
-                    aYHy += aY[i] * aHy[i];
+                    yHy += y[i] * hy[i];
                 }
 
                 // Update H using the formula:
                 // H_new = H - (Hy*s^T + s*y^T*H)/(s^T*y) + (1 + y^T*H*y/(s^T*y)) * s*s^T/(s^T*y)
-                double aFactor = 1.0 + aRho * aYHy;
+                double factor = 1.0 + rho * yHy;
 
-                for (int i = 1; i <= aN; ++i)
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aH[i, j] =
-                          aH[i, j] - aRho * (aHy[i] * aS[j] + aS[i] * aHy[j]) + aFactor * aRho * aS[i] * aS[j];
+                        h[i, j] =
+                          h[i, j] - rho * (hy[i] * s[j] + s[i] * hy[j]) + factor * rho * s[i] * s[j];
                     }
                 }
             }
 
             // Update for next iteration
-            aX.Initialized(aXNew);
-            aGrad.Initialized(aGradNew);
-            aFx = aLineResult.FNew;
+            x.Initialized(xNew);
+            grad.Initialized(gradNew);
+            fx = lineResult.FNew;
         }
 
         // Maximum iterations reached
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        aResult.Gradient = aGrad;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = x;
+        result.Value = fx;
+        result.Gradient = grad;
+        return result;
     }
 
     /// <summary>The wrapper class local to BFGSNumerical: adds a central-difference gradient to a value-only function.</summary>
     private sealed class BFGSNumerical_FuncWithGradient<Function> : IVectorFunctionWithGradient
         where Function : IVectorFunction
     {
-        private Function myFunc;
-        private readonly double myStep;
+        private Function _func;
+        private readonly double _step;
 
-        public BFGSNumerical_FuncWithGradient(Function theF, double theStep)
+        public BFGSNumerical_FuncWithGradient(Function f, double step)
         {
-            myFunc = theF;
-            myStep = theStep;
+            _func = f;
+            _step = step;
         }
 
-        public bool Value(math_Vector theX, out double theF) => myFunc.Value(theX, out theF);
+        public bool Value(math_Vector x, out double f) => _func.Value(x, out f);
 
-        public bool Gradient(math_Vector theX, math_Vector theGrad)
+        public bool Gradient(math_Vector x, math_Vector grad)
         {
-            math_Vector aXMod = new(theX); // Make mutable copy
-            return MathUtils.NumericalGradientAdaptive(myFunc, aXMod, theGrad, myStep);
+            math_Vector xMod = new(x); // Make mutable copy
+            return global::Kerf.Engine.Numerics.Utilities.MathUtils.NumericalGradientAdaptive(_func, xMod, grad, _step);
         }
     }
 
     /// <summary>BFGS with a numerical (central-difference, adaptive step) gradient for value-only functions.</summary>
-    public static VectorResult BFGSNumerical<Function>(Function theFunc,
-                                                       math_Vector theStartingPoint,
-                                                       double theGradStep = 1.0e-8,
-                                                       Config? theConfig = null)
+    public static VectorResult BFGSNumerical<Function>(Function func,
+                                                       math_Vector startingPoint,
+                                                       double gradStep = 1.0e-8,
+                                                       Config? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new Config();
-        BFGSNumerical_FuncWithGradient<Function> aWrapper = new(theFunc, theGradStep);
-        return BFGS(aWrapper, theStartingPoint, theConfig);
+        config ??= new Config();
+        BFGSNumerical_FuncWithGradient<Function> wrapper = new(func, gradStep);
+        return BFGS(wrapper, startingPoint, config);
     }
 
     /// <summary>L-BFGS (limited-memory BFGS) keeping the theMemorySize most recent {s, y} pairs.</summary>
-    public static VectorResult LBFGS<Function>(Function theFunc,
-                                               math_Vector theStartingPoint,
-                                               int theMemorySize = 10,
-                                               Config? theConfig = null)
+    public static VectorResult LBFGS<Function>(Function func,
+                                               math_Vector startingPoint,
+                                               int memorySize = 10,
+                                               Config? config = null)
         where Function : IVectorFunctionWithGradient
     {
-        theConfig ??= new Config();
-        VectorResult aResult = new();
+        config ??= new Config();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
-        int aM = theMemorySize;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
+        int m = memorySize;
 
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector x = new(lower, upper);
+        x.Initialized(startingPoint);
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(x, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
-        math_Vector aGrad = new(aLower, aUpper);
-        if (!theFunc.Gradient(aX, aGrad))
+        math_Vector grad = new(lower, upper);
+        if (!func.Gradient(x, grad))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Storage for {s, y} pairs (circular buffer)
-        NCollection_DynamicArray<math_Vector> aSVec = new();
-        NCollection_DynamicArray<math_Vector> aYVec = new();
-        math_Vector aRhoVec = new(0, aM - 1, 0.0);
-        for (int i = 0; i < aM; ++i)
+        NCollection_DynamicArray<math_Vector> sVec = new();
+        NCollection_DynamicArray<math_Vector> yVec = new();
+        math_Vector rhoVec = new(0, m - 1, 0.0);
+        for (int i = 0; i < m; ++i)
         {
-            aSVec.Append(new math_Vector(1, aN));
-            aYVec.Append(new math_Vector(1, aN));
+            sVec.Append(new math_Vector(1, n));
+            yVec.Append(new math_Vector(1, n));
         }
-        int aHead = 0;  // Index of oldest entry
-        int aCount = 0; // Number of stored pairs
+        int head = 0;  // Index of oldest entry
+        int count = 0; // Number of stored pairs
 
-        math_Vector aDir = new(aLower, aUpper);
-        math_Vector aXNew = new(aLower, aUpper);
-        math_Vector aGradNew = new(aLower, aUpper);
-        math_Vector aQ = new(1, aN);
-        math_Vector aAlphaVec = new(0, aM - 1);
+        math_Vector dir = new(lower, upper);
+        math_Vector xNew = new(lower, upper);
+        math_Vector gradNew = new(lower, upper);
+        math_Vector q = new(1, n);
+        math_Vector alphaVec = new(0, m - 1);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check gradient convergence
-            double aGradNorm = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double gradNorm = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aGradNorm += MathUtils.Sqr(aGrad[i]);
+                gradNorm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(grad[i]);
             }
-            if (Math.Sqrt(aGradNorm) < theConfig.FTolerance)
+            if (Math.Sqrt(gradNorm) < config.FTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                aResult.Gradient = aGrad;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = x;
+                result.Value = fx;
+                result.Gradient = grad;
+                return result;
             }
 
             // L-BFGS two-loop recursion to compute search direction
             // q = gradient
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                aQ[i] = aGrad[aLower + i - 1];
+                q[i] = grad[lower + i - 1];
             }
 
             // First loop (backward)
-            for (int k = aCount - 1; k >= 0; --k)
+            for (int k = count - 1; k >= 0; --k)
             {
-                int aIdx = (aHead + k) % aM;
-                aAlphaVec[aIdx] = aRhoVec[aIdx] * MathUtils.DotProduct(aSVec.Value(aIdx), aQ);
-                for (int i = 1; i <= aN; ++i)
+                int idx = (head + k) % m;
+                alphaVec[idx] = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec.Value(idx), q);
+                for (int i = 1; i <= n; ++i)
                 {
-                    aQ[i] -= aAlphaVec[aIdx] * aYVec.Value(aIdx)[i];
+                    q[i] -= alphaVec[idx] * yVec.Value(idx)[i];
                 }
             }
 
             // Initial Hessian: H0 = gamma*I where gamma = s^T y / y^T y
-            double aGamma = 1.0;
-            if (aCount > 0)
+            double gamma = 1.0;
+            if (count > 0)
             {
-                int aLastIdx = (aHead + aCount - 1) % aM;
-                double aYY = MathUtils.DotProduct(aYVec.Value(aLastIdx), aYVec.Value(aLastIdx));
-                if (aYY > MathUtils.THE_ZERO_TOL)
+                int lastIdx = (head + count - 1) % m;
+                double yy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec.Value(lastIdx), yVec.Value(lastIdx));
+                if (yy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
-                    aGamma = 1.0 / (aRhoVec[aLastIdx] * aYY);
+                    gamma = 1.0 / (rhoVec[lastIdx] * yy);
                 }
             }
 
             // r = H0 * q = gamma * q
-            math_Vector aR = new(1, aN);
-            for (int i = 1; i <= aN; ++i)
+            math_Vector r = new(1, n);
+            for (int i = 1; i <= n; ++i)
             {
-                aR[i] = aGamma * aQ[i];
+                r[i] = gamma * q[i];
             }
 
             // Second loop (forward)
-            for (int k = 0; k < aCount; ++k)
+            for (int k = 0; k < count; ++k)
             {
-                int aIdx = (aHead + k) % aM;
-                double aBeta = aRhoVec[aIdx] * MathUtils.DotProduct(aYVec.Value(aIdx), aR);
-                for (int i = 1; i <= aN; ++i)
+                int idx = (head + k) % m;
+                double beta = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec.Value(idx), r);
+                for (int i = 1; i <= n; ++i)
                 {
-                    aR[i] += (aAlphaVec[aIdx] - aBeta) * aSVec.Value(aIdx)[i];
+                    r[i] += (alphaVec[idx] - beta) * sVec.Value(idx)[i];
                 }
             }
 
             // Search direction: p = -r
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aDir[i] = -aR[i - aLower + 1];
+                dir[i] = -r[i - lower + 1];
             }
 
             // Line search
-            LineSearchResult aLineResult =
-              MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+            LineSearchResult lineResult =
+              global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-            if (!aLineResult.IsValid)
+            if (!lineResult.IsValid)
             {
                 // Fall back to steepest descent
-                for (int i = aLower; i <= aUpper; ++i)
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aDir[i] = -aGrad[i];
+                    dir[i] = -grad[i];
                 }
-                aLineResult = MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, 1.0, 1.0e-4, 0.5, 50);
+                lineResult = global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, x, dir, grad, fx, 1.0, 1.0e-4, 0.5, 50);
 
-                if (!aLineResult.IsValid)
+                if (!lineResult.IsValid)
                 {
-                    aResult.Status = Status.NotConverged;
-                    aResult.Solution = aX;
-                    aResult.Value = aFx;
-                    return aResult;
+                    result.Status = Status.NotConverged;
+                    result.Solution = x;
+                    result.Value = fx;
+                    return result;
                 }
                 // Reset history after steepest descent
-                aCount = 0;
+                count = 0;
             }
 
             // Compute new point
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = aX[i] + aLineResult.Alpha * aDir[i];
+                xNew[i] = x[i] + lineResult.Alpha * dir[i];
             }
 
             // Check X convergence
-            double aMaxDiff = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double maxDiff = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aXNew[i] - aX[i]));
+                maxDiff = Max(maxDiff, Math.Abs(xNew[i] - x[i]));
             }
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                if (!theFunc.Gradient(aXNew, aGradNew))
+                if (!func.Gradient(xNew, gradNew))
                 {
-                    aGradNew.Initialized(aGrad);
+                    gradNew.Initialized(grad);
                 }
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aLineResult.FNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = lineResult.FNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Evaluate gradient at new point
-            if (!theFunc.Gradient(aXNew, aGradNew))
+            if (!func.Gradient(xNew, gradNew))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Solution = x;
+                result.Value = fx;
+                return result;
             }
 
             // Store new {s, y} pair
-            int aNewIdx = (aHead + aCount) % aM;
-            for (int i = 1; i <= aN; ++i)
+            int newIdx = (head + count) % m;
+            for (int i = 1; i <= n; ++i)
             {
-                aSVec.ChangeValue(aNewIdx)[i] = aXNew[aLower + i - 1] - aX[aLower + i - 1];
-                aYVec.ChangeValue(aNewIdx)[i] = aGradNew[aLower + i - 1] - aGrad[aLower + i - 1];
+                sVec.ChangeValue(newIdx)[i] = xNew[lower + i - 1] - x[lower + i - 1];
+                yVec.ChangeValue(newIdx)[i] = gradNew[lower + i - 1] - grad[lower + i - 1];
             }
 
-            double aSY = MathUtils.DotProduct(aSVec.Value(aNewIdx), aYVec.Value(aNewIdx));
-            if (aSY > MathUtils.THE_ZERO_TOL)
+            double sy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec.Value(newIdx), yVec.Value(newIdx));
+            if (sy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
-                aRhoVec[aNewIdx] = 1.0 / aSY;
-                if (aCount < aM)
+                rhoVec[newIdx] = 1.0 / sy;
+                if (count < m)
                 {
-                    ++aCount;
+                    ++count;
                 }
                 else
                 {
-                    aHead = (aHead + 1) % aM;
+                    head = (head + 1) % m;
                 }
             }
 
             // Update for next iteration
-            aX.Initialized(aXNew);
-            aGrad.Initialized(aGradNew);
-            aFx = aLineResult.FNew;
+            x.Initialized(xNew);
+            grad.Initialized(gradNew);
+            fx = lineResult.FNew;
         }
 
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        aResult.Gradient = aGrad;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = x;
+        result.Value = fx;
+        result.Gradient = grad;
+        return result;
     }
 
     /// <summary>
     /// BFGS with box constraints theLowerBounds &lt;= x &lt;= theUpperBounds, by projection: points are clamped and
     /// gradient components pointing out of an active bound are zeroed.
     /// </summary>
-    public static VectorResult BFGSBounded<Function>(Function theFunc,
-                                                     math_Vector theStartingPoint,
-                                                     math_Vector theLowerBounds,
-                                                     math_Vector theUpperBounds,
-                                                     Config? theConfig = null)
+    public static VectorResult BFGSBounded<Function>(Function func,
+                                                     math_Vector startingPoint,
+                                                     math_Vector lowerBounds,
+                                                     math_Vector upperBounds,
+                                                     Config? config = null)
         where Function : IVectorFunctionWithGradient
     {
-        theConfig ??= new Config();
-        VectorResult aResult = new();
+        config ??= new Config();
+        VectorResult result = new();
 
-        int aLower = theStartingPoint.Lower();
-        int aUpper = theStartingPoint.Upper();
-        int aN = aUpper - aLower + 1;
+        int lower = startingPoint.Lower();
+        int upper = startingPoint.Upper();
+        int n = upper - lower + 1;
 
         // Check dimensions
-        if (theLowerBounds.Length() != aN || theUpperBounds.Length() != aN)
+        if (lowerBounds.Length() != n || upperBounds.Length() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Lambda to clamp a point to bounds
-        void ClampToBounds(math_Vector theX)
+        void ClampToBounds(math_Vector x)
         {
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                int aBndIdx = theLowerBounds.Lower() + (i - aLower);
-                if (theX[i] < theLowerBounds[aBndIdx])
+                int bndIdx = lowerBounds.Lower() + (i - lower);
+                if (x[i] < lowerBounds[bndIdx])
                 {
-                    theX[i] = theLowerBounds[aBndIdx];
+                    x[i] = lowerBounds[bndIdx];
                 }
-                if (theX[i] > theUpperBounds[aBndIdx])
+                if (x[i] > upperBounds[bndIdx])
                 {
-                    theX[i] = theUpperBounds[aBndIdx];
+                    x[i] = upperBounds[bndIdx];
                 }
             }
         }
 
         // Lambda to project gradient (zero components at active bounds)
-        void ProjectGradient(math_Vector theX, math_Vector theGrad)
+        void ProjectGradient(math_Vector x, math_Vector grad)
         {
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                int aBndIdx = theLowerBounds.Lower() + (i - aLower);
-                double aTol = MathUtils.THE_EPSILON * Max(1.0, Math.Abs(theX[i]));
+                int bndIdx = lowerBounds.Lower() + (i - lower);
+                double tol = global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON * Max(1.0, Math.Abs(x[i]));
 
                 // At lower bound and gradient points downward -> zero gradient
-                if (theX[i] - theLowerBounds[aBndIdx] < aTol && theGrad[i] > 0.0)
+                if (x[i] - lowerBounds[bndIdx] < tol && grad[i] > 0.0)
                 {
-                    theGrad[i] = 0.0;
+                    grad[i] = 0.0;
                 }
                 // At upper bound and gradient points upward -> zero gradient
-                if (theUpperBounds[aBndIdx] - theX[i] < aTol && theGrad[i] < 0.0)
+                if (upperBounds[bndIdx] - x[i] < tol && grad[i] < 0.0)
                 {
-                    theGrad[i] = 0.0;
+                    grad[i] = 0.0;
                 }
             }
         }
 
         // Current point and function value
-        math_Vector aX = new(aLower, aUpper);
-        aX.Initialized(theStartingPoint);
+        math_Vector aX = new(lower, upper);
+        aX.Initialized(startingPoint);
         ClampToBounds(aX);
 
-        if (!theFunc.Value(aX, out double aFx))
+        if (!func.Value(aX, out double fx))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Gradient at current point
-        math_Vector aGrad = new(aLower, aUpper);
-        if (!theFunc.Gradient(aX, aGrad))
+        math_Vector aGrad = new(lower, upper);
+        if (!func.Gradient(aX, aGrad))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
         ProjectGradient(aX, aGrad);
 
         // Check if already at minimum
-        double aGradNorm = 0.0;
-        for (int i = aLower; i <= aUpper; ++i)
+        double gradNorm = 0.0;
+        for (int i = lower; i <= upper; ++i)
         {
-            aGradNorm += MathUtils.Sqr(aGrad[i]);
+            gradNorm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(aGrad[i]);
         }
-        aGradNorm = Math.Sqrt(aGradNorm);
+        gradNorm = Math.Sqrt(gradNorm);
 
-        if (aGradNorm < theConfig.FTolerance)
+        if (gradNorm < config.FTolerance)
         {
-            aResult.Status = Status.OK;
-            aResult.Solution = aX;
-            aResult.Value = aFx;
-            aResult.Gradient = aGrad;
-            return aResult;
+            result.Status = Status.OK;
+            result.Solution = aX;
+            result.Value = fx;
+            result.Gradient = aGrad;
+            return result;
         }
 
         // Initialize inverse Hessian approximation to identity
-        math_Matrix aH = new(1, aN, 1, aN, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        Matrix h = new(1, n, 1, n, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
-            aH[i, i] = 1.0;
+            h[i, i] = 1.0;
         }
 
         // Working vectors
-        math_Vector aDir = new(aLower, aUpper);
-        math_Vector aXNew = new(aLower, aUpper);
-        math_Vector aGradNew = new(aLower, aUpper);
-        math_Vector aS = new(1, aN);
-        math_Vector aY = new(1, aN);
+        math_Vector dir = new(lower, upper);
+        math_Vector xNew = new(lower, upper);
+        math_Vector gradNew = new(lower, upper);
+        math_Vector s = new(1, n);
+        math_Vector y = new(1, n);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Compute search direction: p = -H * grad
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                double aSum = 0.0;
-                for (int j = 1; j <= aN; ++j)
+                double sum = 0.0;
+                for (int j = 1; j <= n; ++j)
                 {
-                    aSum += aH[i, j] * aGrad[aLower + j - 1];
+                    sum += h[i, j] * aGrad[lower + j - 1];
                 }
-                aDir[aLower + i - 1] = -aSum;
+                dir[lower + i - 1] = -sum;
             }
 
             // Line search with bounds-aware step
-            double aAlphaMax = 1.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double alphaMax = 1.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                int aBndIdx = theLowerBounds.Lower() + (i - aLower);
-                if (aDir[i] < -MathUtils.THE_EPSILON)
+                int bndIdx = lowerBounds.Lower() + (i - lower);
+                if (dir[i] < -global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
                 {
                     // Moving toward lower bound
-                    double aMaxStep = (theLowerBounds[aBndIdx] - aX[i]) / aDir[i];
-                    aAlphaMax = Min(aAlphaMax, aMaxStep);
+                    double maxStep = (lowerBounds[bndIdx] - aX[i]) / dir[i];
+                    alphaMax = Min(alphaMax, maxStep);
                 }
-                else if (aDir[i] > MathUtils.THE_EPSILON)
+                else if (dir[i] > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
                 {
                     // Moving toward upper bound
-                    double aMaxStep = (theUpperBounds[aBndIdx] - aX[i]) / aDir[i];
-                    aAlphaMax = Min(aAlphaMax, aMaxStep);
+                    double maxStep = (upperBounds[bndIdx] - aX[i]) / dir[i];
+                    alphaMax = Min(alphaMax, maxStep);
                 }
             }
-            aAlphaMax = Max(aAlphaMax, MathUtils.THE_EPSILON);
+            alphaMax = Max(alphaMax, global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON);
 
-            LineSearchResult aLineResult =
-              MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, aAlphaMax, 1.0e-4, 0.5, 50);
+            LineSearchResult lineResult =
+              global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, aX, dir, aGrad, fx, alphaMax, 1.0e-4, 0.5, 50);
 
-            if (!aLineResult.IsValid || aLineResult.Alpha < MathUtils.THE_EPSILON)
+            if (!lineResult.IsValid || lineResult.Alpha < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
             {
                 // Fall back to projected steepest descent
-                for (int i = aLower; i <= aUpper; ++i)
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aDir[i] = -aGrad[i];
+                    dir[i] = -aGrad[i];
                 }
                 // Recompute alpha max for steepest descent
-                aAlphaMax = 1.0;
-                for (int i = aLower; i <= aUpper; ++i)
+                alphaMax = 1.0;
+                for (int i = lower; i <= upper; ++i)
                 {
-                    int aBndIdx = theLowerBounds.Lower() + (i - aLower);
-                    if (aDir[i] < -MathUtils.THE_EPSILON)
+                    int bndIdx = lowerBounds.Lower() + (i - lower);
+                    if (dir[i] < -global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
                     {
-                        aAlphaMax = Min(aAlphaMax, (theLowerBounds[aBndIdx] - aX[i]) / aDir[i]);
+                        alphaMax = Min(alphaMax, (lowerBounds[bndIdx] - aX[i]) / dir[i]);
                     }
-                    else if (aDir[i] > MathUtils.THE_EPSILON)
+                    else if (dir[i] > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON)
                     {
-                        aAlphaMax = Min(aAlphaMax, (theUpperBounds[aBndIdx] - aX[i]) / aDir[i]);
+                        alphaMax = Min(alphaMax, (upperBounds[bndIdx] - aX[i]) / dir[i]);
                     }
                 }
-                aAlphaMax = Max(aAlphaMax, MathUtils.THE_EPSILON);
+                alphaMax = Max(alphaMax, global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_EPSILON);
 
-                aLineResult =
-                  MathUtils.ArmijoBacktrack(theFunc, aX, aDir, aGrad, aFx, aAlphaMax, 1.0e-4, 0.5, 50);
+                lineResult =
+                  global::Kerf.Engine.Numerics.Utilities.MathUtils.ArmijoBacktrack(func, aX, dir, aGrad, fx, alphaMax, 1.0e-4, 0.5, 50);
 
-                if (!aLineResult.IsValid)
+                if (!lineResult.IsValid)
                 {
-                    aResult.Status = Status.NotConverged;
-                    aResult.Solution = aX;
-                    aResult.Value = aFx;
-                    aResult.Gradient = aGrad;
-                    return aResult;
+                    result.Status = Status.NotConverged;
+                    result.Solution = aX;
+                    result.Value = fx;
+                    result.Gradient = aGrad;
+                    return result;
                 }
 
                 // Reset Hessian
-                for (int i = 1; i <= aN; ++i)
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aH[i, j] = (i == j) ? 1.0 : 0.0;
+                        h[i, j] = (i == j) ? 1.0 : 0.0;
                     }
                 }
             }
 
             // Compute and clamp new point
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = aX[i] + aLineResult.Alpha * aDir[i];
+                xNew[i] = aX[i] + lineResult.Alpha * dir[i];
             }
-            ClampToBounds(aXNew);
+            ClampToBounds(xNew);
 
             // Compute s = x_new - x
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                aS[i] = aXNew[aLower + i - 1] - aX[aLower + i - 1];
+                s[i] = xNew[lower + i - 1] - aX[lower + i - 1];
             }
 
             // Evaluate at new point
-            if (!theFunc.Value(aXNew, out double aFxNew))
+            if (!func.Value(xNew, out double fxNew))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Solution = aX;
+                result.Value = fx;
+                return result;
             }
 
-            if (!theFunc.Gradient(aXNew, aGradNew))
+            if (!func.Gradient(xNew, gradNew))
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Solution = aX;
-                aResult.Value = aFx;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Solution = aX;
+                result.Value = fx;
+                return result;
             }
-            ProjectGradient(aXNew, aGradNew);
+            ProjectGradient(xNew, gradNew);
 
             // Check gradient convergence
-            aGradNorm = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            gradNorm = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aGradNorm += MathUtils.Sqr(aGradNew[i]);
+                gradNorm += global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(gradNew[i]);
             }
-            aGradNorm = Math.Sqrt(aGradNorm);
+            gradNorm = Math.Sqrt(gradNorm);
 
-            if (aGradNorm < theConfig.FTolerance)
+            if (gradNorm < config.FTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aFxNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = fxNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Check X convergence
-            double aMaxDiff = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double maxDiff = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aMaxDiff = Max(aMaxDiff, Math.Abs(aXNew[i] - aX[i]));
+                maxDiff = Max(maxDiff, Math.Abs(xNew[i] - aX[i]));
             }
-            if (aMaxDiff < theConfig.XTolerance)
+            if (maxDiff < config.XTolerance)
             {
-                aResult.Status = Status.OK;
-                aResult.Solution = aXNew;
-                aResult.Value = aFxNew;
-                aResult.Gradient = aGradNew;
-                return aResult;
+                result.Status = Status.OK;
+                result.Solution = xNew;
+                result.Value = fxNew;
+                result.Gradient = gradNew;
+                return result;
             }
 
             // Compute y = grad_new - grad
-            for (int i = 1; i <= aN; ++i)
+            for (int i = 1; i <= n; ++i)
             {
-                aY[i] = aGradNew[aLower + i - 1] - aGrad[aLower + i - 1];
+                y[i] = gradNew[lower + i - 1] - aGrad[lower + i - 1];
             }
 
             // Curvature condition
-            double aSY = 0.0;
-            for (int i = 1; i <= aN; ++i)
+            double sy = 0.0;
+            for (int i = 1; i <= n; ++i)
             {
-                aSY += aS[i] * aY[i];
+                sy += s[i] * y[i];
             }
 
-            if (aSY > MathUtils.THE_ZERO_TOL)
+            if (sy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
-                double aRho = 1.0 / aSY;
+                double rho = 1.0 / sy;
 
-                math_Vector aHy = new(1, aN, 0.0);
-                for (int i = 1; i <= aN; ++i)
+                math_Vector hy = new(1, n, 0.0);
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aHy[i] += aH[i, j] * aY[j];
+                        hy[i] += h[i, j] * y[j];
                     }
                 }
 
-                double aYHy = 0.0;
-                for (int i = 1; i <= aN; ++i)
+                double yHy = 0.0;
+                for (int i = 1; i <= n; ++i)
                 {
-                    aYHy += aY[i] * aHy[i];
+                    yHy += y[i] * hy[i];
                 }
 
-                double aFactor = 1.0 + aRho * aYHy;
-                for (int i = 1; i <= aN; ++i)
+                double factor = 1.0 + rho * yHy;
+                for (int i = 1; i <= n; ++i)
                 {
-                    for (int j = 1; j <= aN; ++j)
+                    for (int j = 1; j <= n; ++j)
                     {
-                        aH[i, j] =
-                          aH[i, j] - aRho * (aHy[i] * aS[j] + aS[i] * aHy[j]) + aFactor * aRho * aS[i] * aS[j];
+                        h[i, j] =
+                          h[i, j] - rho * (hy[i] * s[j] + s[i] * hy[j]) + factor * rho * s[i] * s[j];
                     }
                 }
             }
 
-            aX.Initialized(aXNew);
-            aGrad.Initialized(aGradNew);
-            aFx = aFxNew;
+            aX.Initialized(xNew);
+            aGrad.Initialized(gradNew);
+            fx = fxNew;
         }
 
-        aResult.Status = Status.MaxIterations;
-        aResult.Solution = aX;
-        aResult.Value = aFx;
-        aResult.Gradient = aGrad;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        result.Solution = aX;
+        result.Value = fx;
+        result.Gradient = aGrad;
+        return result;
     }
 }

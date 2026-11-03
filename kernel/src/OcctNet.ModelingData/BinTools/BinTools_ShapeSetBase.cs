@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -72,12 +76,12 @@ public class BinTools_ShapeSetBase
     }
 
     /// <summary>Writes the content of the set in binary format.</summary>
-    public virtual void Write(Stream OS, Message_ProgressRange theRange = default)
+    public virtual void Write(Stream OS, ProgressRange theRange = default)
     {
     }
 
     /// <summary>Clears the set and reads its content from the binary stream.</summary>
-    public virtual void Read(Stream IS, Message_ProgressRange theRange = default)
+    public virtual void Read(Stream IS, ProgressRange theRange = default)
     {
     }
 
@@ -92,7 +96,7 @@ public class BinTools_ShapeSetBase
     }
 
     // operator<<(Standard_OStream&, const gp_Pnt&)
-    internal static void Write(Stream OS, in gp_Pnt P)
+    internal static void Write(Stream OS, in Point3D P)
     {
         BinTools.PutReal(OS, P.X());
         BinTools.PutReal(OS, P.Y());

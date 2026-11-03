@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,47 +26,47 @@ namespace Occt;
 /// </remarks>
 public partial struct IntSurf_PathPoint : IEquatable<IntSurf_PathPoint>
 {
-    private gp_Pnt pt;
+    private Point3D pt;
     private bool ispass;
     private bool istgt;
-    private gp_Vec vectg;
-    private gp_Dir2d dirtg;
-    private NCollection_HSequence<gp_XY>? sequv;
+    private Vector3D vectg;
+    private Direction2D dirtg;
+    private NCollection_HSequence<Xy>? sequv;
 
     public IntSurf_PathPoint()
     {
-        pt = new gp_Pnt();
+        pt = new Point3D();
         ispass = true;
         istgt = true;
-        vectg = new gp_Vec();
-        dirtg = new gp_Dir2d();
+        vectg = new Vector3D();
+        dirtg = new Direction2D();
         sequv = null;
     }
 
-    public IntSurf_PathPoint(in gp_Pnt P, double U, double V)
+    public IntSurf_PathPoint(in Point3D P, double U, double V)
     {
         pt = P;
         ispass = true;
         istgt = true;
-        vectg = new gp_Vec();
-        dirtg = new gp_Dir2d();
-        sequv = new NCollection_HSequence<gp_XY>();
-        sequv.Append(new gp_XY(U, V));
+        vectg = new Vector3D();
+        dirtg = new Direction2D();
+        sequv = new NCollection_HSequence<Xy>();
+        sequv.Append(new Xy(U, V));
     }
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValue(in gp_Pnt P, double U, double V)
+    internal void SetValue(in Point3D P, double U, double V)
     {
         pt = P;
-        sequv = new NCollection_HSequence<gp_XY>();
-        sequv.Append(new gp_XY(U, V));
+        sequv = new NCollection_HSequence<Xy>();
+        sequv.Append(new Xy(U, V));
     }
 
     /// <summary>Adds a pair of parameters (the point is then multiple); shared with the copies of the point.</summary>
-    internal readonly void AddUV(double U, double V) => sequv!.Append(new gp_XY(U, V));
+    internal readonly void AddUV(double U, double V) => sequv!.Append(new Xy(U, V));
 
-    internal void SetDirections(in gp_Vec V, in gp_Dir2d D)
+    internal void SetDirections(in Vector3D V, in Direction2D D)
     {
         istgt = false;
         vectg = V;
@@ -73,11 +79,11 @@ public partial struct IntSurf_PathPoint : IEquatable<IntSurf_PathPoint>
 
     // Queries
 
-    public readonly gp_Pnt Value() => pt;
+    public readonly Point3D Value() => pt;
 
     public readonly void Value2d(out double U, out double V)
     {
-        gp_XY uv = sequv!.Sequence().First();
+        Xy uv = sequv!.Sequence().First();
         U = uv.X();
         V = uv.Y();
     }
@@ -87,21 +93,21 @@ public partial struct IntSurf_PathPoint : IEquatable<IntSurf_PathPoint>
     public readonly bool IsTangent() => istgt;
 
     /// <summary>The tangent in 3D. Throws StdFail_UndefinedDerivative at a tangent point.</summary>
-    public readonly gp_Vec Direction3d()
+    public readonly Vector3D Direction3d()
     {
         if (istgt)
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return vectg;
     }
 
     /// <summary>The tangent in the parametric space. Throws StdFail_UndefinedDerivative at a tangent point.</summary>
-    public readonly gp_Dir2d Direction2d()
+    public readonly Direction2D Direction2d()
     {
         if (istgt)
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return dirtg;
     }
@@ -112,7 +118,7 @@ public partial struct IntSurf_PathPoint : IEquatable<IntSurf_PathPoint>
     /// <summary>The parameters of rank <paramref name="Index"/> (0 is the first pair).</summary>
     public readonly void Parameters(int Index, out double U, out double V)
     {
-        gp_XY uv = sequv!.Value(Index + 1);
+        Xy uv = sequv!.Value(Index + 1);
         U = uv.X();
         V = uv.Y();
     }
@@ -131,5 +137,5 @@ public partial struct IntSurf_PathPoint : IEquatable<IntSurf_PathPoint>
     public static bool operator !=(in IntSurf_PathPoint theLeft, in IntSurf_PathPoint theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("IntSurf_PathPoint", pt.X(), pt.Y(), pt.Z())} passing {ispass} tangent {istgt} uv {sequv?.Length() ?? 0}";
+        => $"{Constants.Format("IntSurf_PathPoint", pt.X(), pt.Y(), pt.Z())} passing {ispass} tangent {istgt} uv {sequv?.Length() ?? 0}";
 }

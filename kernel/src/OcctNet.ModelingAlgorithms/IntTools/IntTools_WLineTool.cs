@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,14 +26,14 @@ public static class IntTools_WLineTool
     // oscillations that we would not like to have.
 
     // static subfunction in IsDegeneratedZone
-    private static bool IsDegeneratedZone(in gp_Pnt2d aP2d, Geom_Surface aS, int iDir)
+    private static bool IsDegeneratedZone(in Point2D aP2d, Geom_Surface aS, int iDir)
     {
         bool bFlag = true;
         double US1, US2, VS1, VS2, dY, dX, d1, d2, dD;
         double aXm, aYm, aXb, aYb, aXe, aYe;
         aS.Bounds(out US1, out US2, out VS1, out VS2);
 
-        gp_Pnt aPm, aPb, aPe;
+        Point3D aPm, aPb, aPe;
 
         aXm = aP2d.X();
         aYm = aP2d.Y();
@@ -100,7 +104,7 @@ public static class IntTools_WLineTool
         bool bFlag = true;
         double US11, US12, VS11, VS12, US21, US22, VS21, VS22;
         double U1, V1, U2, V2, aDelta, aD;
-        gp_Pnt2d aP2d = new();
+        Point2D aP2d = new();
 
         Geom_Surface aS1 = BRep_Tool.Surface(aF1)!;
         aS1.Bounds(out US11, out US12, out VS11, out VS12);
@@ -247,16 +251,16 @@ public static class IntTools_WLineTool
     }
 
     // static subfunction in DecompositionOfWLine
-    private static gp_Pnt2d AdjustByNeighbour(in gp_Pnt2d theaNeighbourPoint, in gp_Pnt2d theOriginalPoint,
+    private static Point2D AdjustByNeighbour(in Point2D theaNeighbourPoint, in Point2D theOriginalPoint,
                                               GeomAdaptor_Surface theGASurface)
     {
-        gp_Pnt2d ap1 = theaNeighbourPoint;
-        gp_Pnt2d ap2 = theOriginalPoint;
+        Point2D ap1 = theaNeighbourPoint;
+        Point2D ap2 = theOriginalPoint;
 
         if (theGASurface.IsUPeriodic())
         {
             double aPeriod = theGASurface.UPeriod();
-            gp_Pnt2d aPTest = ap2;
+            Point2D aPTest = ap2;
             double aSqDistMin = 1.0e+100;
 
             for (int pIt = -1; pIt <= 1; pIt++)
@@ -274,7 +278,7 @@ public static class IntTools_WLineTool
         if (theGASurface.IsVPeriodic())
         {
             double aPeriod = theGASurface.VPeriod();
-            gp_Pnt2d aPTest = ap2;
+            Point2D aPTest = ap2;
             double aSqDistMin = 1.0e+100;
 
             for (int pIt = -1; pIt <= 1; pIt++)
@@ -293,7 +297,7 @@ public static class IntTools_WLineTool
     }
 
     // static subfunction in FindPoint
-    private static void RefineVector(ref gp_Vec2d aV2D)
+    private static void RefineVector(ref Vector2D aV2D)
     {
         int k, m;
         double aEps, aR1, aR2, aNum;
@@ -327,17 +331,17 @@ public static class IntTools_WLineTool
     }
 
     // static subfunction in DecompositionOfWLine
-    private static bool FindPoint(in gp_Pnt2d theFirstPoint, in gp_Pnt2d theLastPoint, double theUmin, double theUmax,
-                                  double theVmin, double theVmax, ref gp_Pnt2d theNewPoint)
+    private static bool FindPoint(in Point2D theFirstPoint, in Point2D theLastPoint, double theUmin, double theUmax,
+                                  double theVmin, double theVmax, ref Point2D theNewPoint)
     {
-        gp_Vec2d aVec = new(theFirstPoint, theLastPoint);
+        Vector2D aVec = new(theFirstPoint, theLastPoint);
         int i = 0, j = 0;
 
         for (i = 0; i < 4; i++)
         {
-            gp_Vec2d anOtherVec = new();
-            gp_Vec2d anOtherVecNormal = new();
-            gp_Pnt2d aprojpoint = theLastPoint;
+            Vector2D anOtherVec = new();
+            Vector2D anOtherVecNormal = new();
+            Point2D aprojpoint = theLastPoint;
 
             if ((i % 2) == 0)
             {
@@ -371,12 +375,12 @@ public static class IntTools_WLineTool
                     aprojpoint.SetY(theVmax);
                 }
             }
-            gp_Vec2d anormvec = aVec;
+            Vector2D anormvec = aVec;
             anormvec.Normalize();
             RefineVector(ref anormvec);
             double adot1 = anormvec.Dot(anOtherVecNormal);
 
-            if (Math.Abs(adot1) < Precision.Angular())
+            if (Math.Abs(adot1) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 continue;
             }
@@ -398,8 +402,8 @@ public static class IntTools_WLineTool
             for (j = 0; j < 2; j++)
             {
                 anoffset = (j == 0) ? anoffset : -anoffset;
-                gp_Pnt2d acurpoint = new(aprojpoint.XY() + (anOtherVec.XY() * anoffset));
-                gp_Vec2d acurvec = new(theLastPoint, acurpoint);
+                Point2D acurpoint = new(aprojpoint.XY() + (anOtherVec.XY() * anoffset));
+                Vector2D acurvec = new(theLastPoint, acurpoint);
                 if (bIsOut)
                 {
                     acurvec.Reverse();
@@ -410,7 +414,7 @@ public static class IntTools_WLineTool
                 aDotX = aVec.Dot(acurvec);
                 anAngleX = aVec.Angle(acurvec);
                 //
-                if (aDotX > 0.0 && Math.Abs(anAngleX) < Precision.PConfusion())
+                if (aDotX > 0.0 && Math.Abs(anAngleX) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     if ((i % 2) == 0)
                     {
@@ -474,7 +478,7 @@ public static class IntTools_WLineTool
 
         //
         nblines = 0;
-        aTol = Precision.Confusion();
+        aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         aTol = 0.5 * aTol;
         bIsPrevPointOnBoundary = false;
         bIsPointOnBoundary = false;
@@ -734,16 +738,16 @@ public static class IntTools_WLineTool
                             bComputeLineEnd = true;
                             bool bCheckAngle1 = false;
                             bool bCheckAngle2 = false;
-                            gp_Vec2d aNewVec = new();
+                            Vector2D aNewVec = new();
                             double anewU = (bIsUBoundary) ? anotherPar : U;
                             double anewV = (bIsUBoundary) ? V : anotherPar;
 
-                            if (((adist1 - adist2) > Precision.PConfusion()) && (adist2 < (aPeriod / 4.0)))
+                            if (((adist1 - adist2) > global::Kerf.Engine.Foundation.Precision.PConfusion()) && (adist2 < (aPeriod / 4.0)))
                             {
                                 bCheckAngle1 = true;
-                                aNewVec = new gp_Vec2d(new gp_Pnt2d(nU1, nV1), new gp_Pnt2d(anewU, anewV));
+                                aNewVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(anewU, anewV));
 
-                                if (aNewVec.SquareMagnitude() < gp.Resolution())
+                                if (aNewVec.SquareMagnitude() < Constants.Resolution())
                                 {
                                     aNewP.SetValue((surfit == 0), anewU, anewV);
                                     bCheckAngle1 = false;
@@ -752,9 +756,9 @@ public static class IntTools_WLineTool
                             else if (adist1 < (aPeriod / 4.0))
                             {
                                 bCheckAngle2 = true;
-                                aNewVec = new gp_Vec2d(new gp_Pnt2d(nU1, nV1), new gp_Pnt2d(U, V));
+                                aNewVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(U, V));
 
-                                if (aNewVec.SquareMagnitude() < gp.Resolution())
+                                if (aNewVec.SquareMagnitude() < Constants.Resolution())
                                 {
                                     bCheckAngle2 = false;
                                 }
@@ -779,9 +783,9 @@ public static class IntTools_WLineTool
                                     {
                                         aPrevNeighbourPoint.ParametersOnS2(out nU2, out nV2);
                                     }
-                                    gp_Vec2d aVecOld = new(new gp_Pnt2d(nU2, nV2), new gp_Pnt2d(nU1, nV1));
+                                    Vector2D aVecOld = new(new Point2D(nU2, nV2), new Point2D(nU1, nV1));
 
-                                    if (aVecOld.SquareMagnitude() <= gp.Resolution())
+                                    if (aVecOld.SquareMagnitude() <= Constants.Resolution())
                                     {
                                         continue;
                                     }
@@ -798,9 +802,9 @@ public static class IntTools_WLineTool
                                                 IntSurf_PntOn2S atmppoint = aNewP;
                                                 atmppoint.SetValue((surfit == 0), anewU, anewV);
                                                 atmppoint.Parameters(out U1, out V1, out U2, out V2);
-                                                gp_Pnt P1 = theSurface1.Value(U1, V1);
-                                                gp_Pnt P2 = theSurface2.Value(U2, V2);
-                                                gp_Pnt P0 = aPoint.Value();
+                                                Point3D P1 = theSurface1.Value(U1, V1);
+                                                Point3D P2 = theSurface2.Value(U2, V2);
+                                                Point3D P0 = aPoint.Value();
 
                                                 if (P0.IsEqual(P1, aTol) && P0.IsEqual(P2, aTol) && P1.IsEqual(P2, aTol))
                                                 {
@@ -828,7 +832,7 @@ public static class IntTools_WLineTool
                     if (bComputeLineEnd)
                     {
 
-                        gp_Pnt2d anewpoint = new();
+                        Point2D anewpoint = new();
                         bool found = false;
 
                         if (bIsNearBoundary)
@@ -838,11 +842,11 @@ public static class IntTools_WLineTool
                             aNewP.Parameters(out u1, out v1, out u2, out v2);
                             if (surfit == 0)
                             {
-                                anewpoint = new gp_Pnt2d(u1, v1);
+                                anewpoint = new Point2D(u1, v1);
                             }
                             else
                             {
-                                anewpoint = new gp_Pnt2d(u2, v2);
+                                anewpoint = new Point2D(u2, v2);
                             }
 
                             int aneighbourpointindex1 = (j == 0) ? iFirst : iLast;
@@ -857,8 +861,8 @@ public static class IntTools_WLineTool
                             {
                                 aNeighbourPoint.ParametersOnS2(out nU1, out nV1);
                             }
-                            gp_Pnt2d ap1 = new(nU1, nV1);
-                            gp_Pnt2d ap2;
+                            Point2D ap1 = new(nU1, nV1);
+                            Point2D ap2;
 
                             if (aGASurface.IsUPeriodic() || aGASurface.IsVPeriodic())
                             {
@@ -891,8 +895,8 @@ public static class IntTools_WLineTool
                             {
                                 aNeighbourPoint.ParametersOnS2(out nU1, out nV1);
                             }
-                            gp_Pnt2d ap1 = new(nU1, nV1);
-                            gp_Pnt2d ap2 = new(nU1, nV1);
+                            Point2D ap1 = new(nU1, nV1);
+                            Point2D ap2 = new(nU1, nV1);
                             int aneighbourpointindex2 = aneighbourpointindex1;
 
                             while ((aneighbourpointindex2 <= iLast) && (aneighbourpointindex2 >= iFirst))
@@ -912,7 +916,7 @@ public static class IntTools_WLineTool
                                 ap2.SetX(nU2);
                                 ap2.SetY(nV2);
 
-                                if (ap1.SquareDistance(ap2) > gp.Resolution())
+                                if (ap1.SquareDistance(ap2) > Constants.Resolution())
                                 {
                                     break;
                                 }
@@ -930,7 +934,7 @@ public static class IntTools_WLineTool
 
                             GeomAdaptor_Surface aSurfaceOther = (surfit == 0) ? theSurface2 : theSurface1;
 
-                            gp_Pnt aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
+                            Point3D aP3d = aSurface.Value(anewpoint.X(), anewpoint.Y());
                             aProjector.Perform(aP3d);
 
                             if (aProjector.IsDone())
@@ -954,9 +958,9 @@ public static class IntTools_WLineTool
                                     {
                                         aNeighbourPoint.ParametersOnS1(out nUn, out nVn);
                                     }
-                                    gp_Pnt2d aNeighbour2d = new(nUn, nVn);
-                                    gp_Pnt2d anAdjustedPoint =
-                                        AdjustByNeighbour(aNeighbour2d, new gp_Pnt2d(foundU, foundV), aSurfaceOther);
+                                    Point2D aNeighbour2d = new(nUn, nVn);
+                                    Point2D anAdjustedPoint =
+                                        AdjustByNeighbour(aNeighbour2d, new Point2D(foundU, foundV), aSurfaceOther);
                                     foundU = anAdjustedPoint.X();
                                     foundV = anAdjustedPoint.Y();
 

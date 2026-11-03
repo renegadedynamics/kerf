@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -38,7 +39,7 @@ public class BRepMesh_FaceDiscret : IMeshTools_ModelAlgo
     /// <summary>Meshes the faces of the model; false without a model or on a user break.</summary>
     protected override bool performInternal(IMeshData_Model? theModel,
                                             in IMeshTools_Parameters theParameters,
-                                            Message_ProgressRange theRange)
+                                            ProgressRange theRange)
     {
         myModel = theModel;
         myParameters = theParameters;
@@ -48,7 +49,7 @@ public class BRepMesh_FaceDiscret : IMeshTools_ModelAlgo
         }
 
         FaceListFunctor aFunctor = new(this, theRange);
-        OSD_Parallel.For(0,
+        OsdParallel.For(0,
                          myModel.FacesNb(),
                          aFunctor.Process,
                          !myParameters.InParallel || myModel.FacesNb() <= 1);
@@ -66,14 +67,14 @@ public class BRepMesh_FaceDiscret : IMeshTools_ModelAlgo
     private sealed class FaceListFunctor
     {
         private readonly BRepMesh_FaceDiscret myAlgo;
-        private readonly Message_ProgressScope myScope;
-        private readonly Message_ProgressRange[] myRanges;
+        private readonly ProgressScope myScope;
+        private readonly ProgressRange[] myRanges;
 
-        public FaceListFunctor(BRepMesh_FaceDiscret theAlgo, Message_ProgressRange theRange)
+        public FaceListFunctor(BRepMesh_FaceDiscret theAlgo, ProgressRange theRange)
         {
             myAlgo = theAlgo;
-            myScope = new Message_ProgressScope(theRange, "Face Discret", theAlgo.myModel!.FacesNb());
-            myRanges = new Message_ProgressRange[theAlgo.myModel.FacesNb()];
+            myScope = new ProgressScope(theRange, "Face Discret", theAlgo.myModel!.FacesNb());
+            myRanges = new ProgressRange[theAlgo.myModel.FacesNb()];
             for (int aFaceIter = 0; aFaceIter < theAlgo.myModel.FacesNb(); ++aFaceIter)
             {
                 myRanges[aFaceIter] = myScope.Next();
@@ -86,7 +87,7 @@ public class BRepMesh_FaceDiscret : IMeshTools_ModelAlgo
             {
                 return;
             }
-            using Message_ProgressScope aFaceScope = new(myRanges[theFaceIndex], null, 1);
+            using ProgressScope aFaceScope = new(myRanges[theFaceIndex], null, 1);
             myAlgo.process(theFaceIndex, aFaceScope.Next());
         }
 
@@ -94,7 +95,7 @@ public class BRepMesh_FaceDiscret : IMeshTools_ModelAlgo
     }
 
     // Checks existing discretization of the face and updates data model.
-    private void process(int theFaceIndex, Message_ProgressRange theRange)
+    private void process(int theFaceIndex, ProgressRange theRange)
     {
         IMeshData_Face aDFace = myModel!.GetFace(theFaceIndex);
         if (aDFace.IsSet(IMeshData_Failure) || aDFace.IsSet(IMeshData_Reused))

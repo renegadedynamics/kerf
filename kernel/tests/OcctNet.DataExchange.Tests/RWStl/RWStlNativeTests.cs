@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.IO.Compression;
@@ -76,24 +79,24 @@ public class RWStlNativeTests(ITestOutputHelper output)
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture);
 
     /// <summary>"nodes triangles sha" of the triangulation's dump (stlrec's), or NULL.</summary>
-    internal static string Tri(Poly_Triangulation? theTri)
+    internal static string Tri(Triangulation? theTri)
     {
         if (theTri is null)
         {
             return "NULL";
         }
         var aDump = new StringBuilder();
-        for (int i = 1; i <= theTri.NbNodes(); ++i)
+        for (int i = 1; i <= theTri.NodeCount; ++i)
         {
-            gp_Pnt aP = theTri.Node(i);
+            Point3D aP = theTri.Node(i);
             aDump.Append(Hex(aP.X())).Append(' ').Append(Hex(aP.Y())).Append(' ').Append(Hex(aP.Z())).Append('\n');
         }
-        for (int i = 1; i <= theTri.NbTriangles(); ++i)
+        for (int i = 1; i <= theTri.TriangleCount; ++i)
         {
             theTri.Triangle(i).Get(out int n1, out int n2, out int n3);
             aDump.Append(CultureInfo.InvariantCulture, $"{n1} {n2} {n3}\n");
         }
-        return $"{theTri.NbNodes()} {theTri.NbTriangles()} {Sha256(Encoding.ASCII.GetBytes(aDump.ToString()))}";
+        return $"{theTri.NodeCount} {theTri.TriangleCount} {Sha256(Encoding.ASCII.GetBytes(aDump.ToString()))}";
     }
 
     private static string ShapeText(in TopoDS_Shape theShape)
@@ -112,7 +115,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         }
         catch (Exception e)
         {
-            return "THROW class " + e.GetType().Name;
+            return "THROW class " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
         }
     }
 
@@ -120,7 +123,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
     {
         public int myNbNodes, myNbTris, myNbSolids;
 
-        public override int AddNode(in gp_XYZ thePnt) => ++myNbNodes;
+        public override int AddNode(in Xyz thePnt) => ++myNbNodes;
 
         public override void AddTriangle(int theN1, int theN2, int theN3) => ++myNbTris;
 
@@ -199,7 +202,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         }
         aLines.AddRange(Line("MULTI", () =>
         {
-            var aList = new NCollection_Sequence<Poly_Triangulation>();
+            var aList = new NCollection_Sequence<Triangulation>();
             RWStl.ReadFile(thePath, Math.PI / 2.0, aList);
             var aText = new StringBuilder(aList.Length().ToString(CultureInfo.InvariantCulture));
             for (int i = 1; i <= aList.Length(); ++i)
@@ -234,21 +237,21 @@ public class RWStlNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>stlrec's hand-made triangulation.</summary>
-    internal static Poly_Triangulation Mesh()
+    internal static Triangulation Mesh()
     {
-        var aMesh = new Poly_Triangulation(7, 5, false);
-        aMesh.SetNode(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aMesh.SetNode(2, new gp_Pnt(1.0, 0.0, 0.0));
-        aMesh.SetNode(3, new gp_Pnt(0.0, 1.0, 0.0));
-        aMesh.SetNode(4, new gp_Pnt(-0.0, 1e-310, 1e300));
-        aMesh.SetNode(5, new gp_Pnt(1.0 / 3.0, 2.0 / 3.0, -1e-5));
-        aMesh.SetNode(6, new gp_Pnt(0.5, 0.5, 0.0));
-        aMesh.SetNode(7, new gp_Pnt(123456.789, -9.87654321e-7, 5e-324));
-        aMesh.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-        aMesh.SetTriangle(2, new Poly_Triangle(1, 2, 2));
-        aMesh.SetTriangle(3, new Poly_Triangle(4, 5, 6));
-        aMesh.SetTriangle(4, new Poly_Triangle(3, 2, 1));
-        aMesh.SetTriangle(5, new Poly_Triangle(5, 6, 7));
+        var aMesh = new Triangulation(7, 5, false);
+        aMesh.SetNode(1, new Point3D(0.0, 0.0, 0.0));
+        aMesh.SetNode(2, new Point3D(1.0, 0.0, 0.0));
+        aMesh.SetNode(3, new Point3D(0.0, 1.0, 0.0));
+        aMesh.SetNode(4, new Point3D(-0.0, 1e-310, 1e300));
+        aMesh.SetNode(5, new Point3D(1.0 / 3.0, 2.0 / 3.0, -1e-5));
+        aMesh.SetNode(6, new Point3D(0.5, 0.5, 0.0));
+        aMesh.SetNode(7, new Point3D(123456.789, -9.87654321e-7, 5e-324));
+        aMesh.SetTriangle(1, new Triangle1(1, 2, 3));
+        aMesh.SetTriangle(2, new Triangle1(1, 2, 2));
+        aMesh.SetTriangle(3, new Triangle1(4, 5, 6));
+        aMesh.SetTriangle(4, new Triangle1(3, 2, 1));
+        aMesh.SetTriangle(5, new Triangle1(5, 6, 7));
         return aMesh;
     }
 
@@ -286,7 +289,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
             }
             case "M":
             {
-                Poly_Triangulation aMesh = Mesh();
+                Triangulation aMesh = Mesh();
                 aLines.Add(Line("ASCII", () =>
                 {
                     var aStream = new MemoryStream();

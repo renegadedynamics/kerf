@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -23,26 +25,26 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
     Geom_Curve? GeomBndLib_Curve.ICurveEvaluator.CurveGeometry() => myGeom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Bnd_Box Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
+    public Box Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box Box(double theU1, double theU2, double theTol)
+    public Box Box(double theU1, double theU2, double theTol)
     {
         const double aWeakness = 1.5;
         Geom_BSplineCurve aCurve = myGeom;
         double aU1 = theU1;
         double aU2 = theU2;
 
-        if (Math.Abs(aCurve.FirstParameter() - aU1) > Precision.Parametric(theTol)
-            || Math.Abs(aCurve.LastParameter() - aU2) > Precision.Parametric(theTol))
+        if (Math.Abs(aCurve.FirstParameter() - aU1) > global::Kerf.Engine.Foundation.Precision.Parametric(theTol)
+            || Math.Abs(aCurve.LastParameter() - aU2) > global::Kerf.Engine.Foundation.Precision.Parametric(theTol))
         {
             Geom_Geometry aGeometry = aCurve.Copy();
             Geom_BSplineCurve aSegmentedCurve = (Geom_BSplineCurve)aGeometry;
             if (aSegmentedCurve.IsPeriodic())
             {
-                ElCLib.AdjustPeriodic(aSegmentedCurve.FirstParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aSegmentedCurve.FirstParameter(),
                                       aSegmentedCurve.LastParameter(),
-                                      Precision.PConfusion(),
+                                      global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                       ref aU1,
                                       ref aU2);
             }
@@ -58,7 +60,7 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
                 }
             }
 
-            double aSegmentTol = 2.0 * Precision.PConfusion();
+            double aSegmentTol = 2.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (aSegmentedCurve.IsPeriodic())
             {
                 double aPeriod = aSegmentedCurve.LastParameter() - aSegmentedCurve.FirstParameter();
@@ -82,7 +84,7 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
             aCurve = aSegmentedCurve;
         }
 
-        Bnd_Box aSampledBox = new();
+        Box aSampledBox = new();
         int aKnotFirst = aCurve.FirstUKnotIndex();
         int aKnotLast = aCurve.LastUKnotIndex();
         int aDegree = aCurve.Degree();
@@ -98,8 +100,8 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
             aFirst = aLast;
         }
 
-        Bnd_Box aBox = new();
-        if (!aSampledBox.IsVoid())
+        Box aBox = new();
+        if (!aSampledBox.IsVoid)
         {
             aSampledBox.Enlarge(aWeakness * aMaxDeflection);
             // The poles of the whole curve, as OCCT does, also when the curve was segmented.
@@ -110,7 +112,7 @@ public sealed class GeomBndLib_BSplineCurve : GeomBndLib_Curve.ICurveEvaluator
     }
 
     /// <summary>Compute precise bounding box using numerical optimization.</summary>
-    public Bnd_Box BoxOptimal(double theU1, double theU2, double theTol)
+    public Box BoxOptimal(double theU1, double theU2, double theTol)
     {
         GeomAdaptor_Curve aGACurve = new(myGeom);
         return GeomBndLib_SplineHelpers.CurveBoxOptimal(aGACurve, theU1, theU2, theTol);

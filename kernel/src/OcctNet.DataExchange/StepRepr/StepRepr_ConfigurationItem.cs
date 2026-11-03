@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ConfigurationItem
 /// </summary>
-public class StepRepr_ConfigurationItem : Standard_Transient
+public class StepRepr_ConfigurationItem : Transient
 {
     private TCollection_HAsciiString theId;
     private TCollection_HAsciiString theName;

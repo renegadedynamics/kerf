@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_AutoDesignPresentedItemSelect : StepData_SelectType
@@ -27,7 +29,7 @@ public class StepAP214_AutoDesignPresentedItemSelect : StepData_SelectType
     /// 6 -&gt; DocumentRelationship,
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

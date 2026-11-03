@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
@@ -17,7 +19,7 @@ public class ShapeFix_EdgeTests
     private const double Conf = 1e-7;
     private const double R = 5.0, H = 10.0;
 
-    private static Geom_Plane XOY() => new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+    private static Geom_Plane XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
     private static TopoDS_Face PlaneFace()
     {
@@ -30,7 +32,7 @@ public class ShapeFix_EdgeTests
     // the circle at height h around Z, one vertex, no pcurve
     private static TopoDS_Edge Circle(double h)
     {
-        var aC = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, h), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), R);
+        var aC = new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
         return TestShapes.Edge(aC, 0.0, 2.0 * Math.PI);
     }
 
@@ -45,7 +47,7 @@ public class ShapeFix_EdgeTests
         Assert.False(sfe.Status(ShapeExtend_FAIL));
         Geom2d_Curve? aPC = BRep_Tool.CurveOnSurface(anE, aF, out double f, out double l);
         Assert.NotNull(aPC);
-        gp_Pnt2d aP = aPC!.Value((f + l) / 2);
+        Point2D aP = aPC!.Value((f + l) / 2);
         Assert.Equal(H, aP.Y(), 1e-6);
         Assert.Equal(Math.PI, aP.X(), 1e-6);
         // a second call does nothing
@@ -55,17 +57,17 @@ public class ShapeFix_EdgeTests
     [Fact]
     public void FixAddPCurve_OnPlane_IsNotComputed()
     {
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
         var sfe = new ShapeFix_Edge();
         // on a plane the pcurve is computed on the fly, so HasPCurve is already true; a plane is never projected
-        Assert.False(sfe.FixAddPCurve(anE, XOY(), new TopLoc_Location(), false));
+        Assert.False(sfe.FixAddPCurve(anE, XOY(), new Placement(), false));
     }
 
     [Fact]
     public void FixAddPCurve_Seam_GivesTwoPCurvesAPeriodApart()
     {
         TopoDS_Face aF = TestShapes.CylinderFace(R, H);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new gp_Pnt(R, 0, 0), new gp_Dir(0, 0, 1)), 0.0, H);
+        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(R, 0, 0), new Direction3D(0, 0, 1)), 0.0, H);
         var sfe = new ShapeFix_Edge();
         Assert.True(sfe.FixAddPCurve(aSeam, aF, true));
         Assert.True(BRep_Tool.IsClosed(aSeam, aF));
@@ -81,7 +83,7 @@ public class ShapeFix_EdgeTests
         TopoDS_Edge anE = Circle(H);
         var aB = new BRep_Builder();
         // a pcurve at the bottom of the cylinder: its ends are far from the edge's vertex at the top
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         var sfe = new ShapeFix_Edge();
         Assert.True(sfe.FixRemovePCurve(anE, aF));
         Assert.Null(BRep_Tool.CurveOnSurface(anE, aF, out _, out _));
@@ -93,9 +95,9 @@ public class ShapeFix_EdgeTests
         // a 3D line off the vertices: removed
         var aB = new BRep_Builder();
         TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_Line(new gp_Pnt(0, 5, 0), new gp_Dir(1, 0, 0)), Conf);
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(0, 0, 0)).Oriented(TopAbs_FORWARD));
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(10, 0, 0)).Oriented(TopAbs_REVERSED));
+        aB.MakeEdge(ref anE, new Geom_Line(new Point3D(0, 5, 0), new Direction3D(1, 0, 0)), Conf);
+        aB.Add(anE, TestShapes.Vertex(new Point3D(0, 0, 0)).Oriented(TopAbs_FORWARD));
+        aB.Add(anE, TestShapes.Vertex(new Point3D(10, 0, 0)).Oriented(TopAbs_REVERSED));
         aB.Range(anE, 0, 10);
         var sfe = new ShapeFix_Edge();
         Assert.True(sfe.FixRemoveCurve3d(anE));
@@ -103,13 +105,13 @@ public class ShapeFix_EdgeTests
 
         // a pcurve on the plane: the 3D curve is built from it
         TopoDS_Face aF = PlaneFace();
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Range(anE, aF, 0, 10);
         Assert.True(sfe.FixAddCurve3d(anE));
         Assert.True(sfe.Status(ShapeExtend_DONE1));
         Geom_Curve? aC = BRep_Tool.Curve(anE, out double f, out double l);
         Assert.NotNull(aC);
-        Assert.True(aC!.Value(l).Distance(new gp_Pnt(10, 0, 0)) < 1e-7);
+        Assert.True(aC!.Value(l).Distance(new Point3D(10, 0, 0)) < 1e-7);
         Assert.False(sfe.FixAddCurve3d(anE));
     }
 
@@ -117,9 +119,9 @@ public class ShapeFix_EdgeTests
     public void FixSameParameter_MakesTheEdgeSameRangeAndSameParameter()
     {
         TopoDS_Face aF = PlaneFace();
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
         var aB = new BRep_Builder();
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(-10, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(-10, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
         aB.SameParameter(anE, false);
@@ -139,7 +141,7 @@ public class ShapeFix_EdgeTests
         var aB = new BRep_Builder();
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE);
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(0, 0, 0));
         aB.Add(anE, aV.Oriented(TopAbs_FORWARD));
         aB.Add(anE, aV.Oriented(TopAbs_REVERSED));
         aB.Degenerated(anE, true);
@@ -153,9 +155,9 @@ public class ShapeFix_EdgeTests
     {
         var aB = new BRep_Builder();
         TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), Conf);
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(0, 0.01, 0)).Oriented(TopAbs_FORWARD));
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(10, 0, 0)).Oriented(TopAbs_REVERSED));
+        aB.MakeEdge(ref anE, new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), Conf);
+        aB.Add(anE, TestShapes.Vertex(new Point3D(0, 0.01, 0)).Oriented(TopAbs_FORWARD));
+        aB.Add(anE, TestShapes.Vertex(new Point3D(10, 0, 0)).Oriented(TopAbs_REVERSED));
         aB.Range(anE, 0, 10);
         return anE;
     }
@@ -180,7 +182,7 @@ public class ShapeFix_EdgeTests
         TopoDS_Edge aRes = sfe.VertexToleranceFixed(anE, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
         Assert.NotSame(anE.TShape(), aRes.TShape());
         Assert.True(BRep_Tool.Tolerance(TopExp.FirstVertex(aRes)) >= 0.01);
         // the last vertex didn't change: it is the caller's
@@ -208,9 +210,9 @@ public class ShapeFix_EdgeTests
     private static (TopoDS_Edge E, TopoDS_Face F) ReversedPCurveEdge()
     {
         TopoDS_Face aF = TestShapes.CylinderFace(R, H);
-        var aC = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, H), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), R);
+        var aC = new Geom_Circle(new Frame3D(new Point3D(0, 0, H), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
         TopoDS_Edge anE = TestShapes.Edge(aC, 0.0, Math.PI);
-        new BRep_Builder().UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(Math.PI, H), new gp_Dir2d(-1, 0)), aF, Conf);
+        new BRep_Builder().UpdateEdge(anE, new Geom2d_Line(new Point2D(Math.PI, H), new Direction2D(-1, 0)), aF, Conf);
         return (anE, aF);
     }
 
@@ -221,8 +223,8 @@ public class ShapeFix_EdgeTests
         var sfe = new ShapeFix_Edge();
         Assert.True(sfe.FixReversed2d(anE, aF));
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
-        Assert.True(aPC.Value(f).Distance(new gp_Pnt2d(0, H)) < 1e-9);
-        Assert.True(aPC.Value(l).Distance(new gp_Pnt2d(Math.PI, H)) < 1e-9);
+        Assert.True(aPC.Value(f).Distance(new Point2D(0, H)) < 1e-9);
+        Assert.True(aPC.Value(l).Distance(new Point2D(Math.PI, H)) < 1e-9);
         Assert.False(sfe.FixReversed2d(anE, aF));
     }
 
@@ -236,10 +238,10 @@ public class ShapeFix_EdgeTests
         TopoDS_Edge aRes = new ShapeFix_Edge().Reversed2dFixed(anE, aF, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
-        Assert.True(aOldPC.Value(0).Distance(new gp_Pnt2d(Math.PI, H)) < 1e-12);
+        Assert.True(aOldPC.Value(0).Distance(new Point2D(Math.PI, H)) < 1e-12);
         Geom2d_Curve aPC = BRep_Tool.CurveOnSurface(aRes, aF, out double f, out _)!;
-        Assert.True(aPC.Value(f).Distance(new gp_Pnt2d(0, H)) < 1e-9);
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aPC.Value(f).Distance(new Point2D(0, H)) < 1e-9);
+        Assert.True(aRes.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -254,7 +256,7 @@ public class ShapeFix_EdgeTests
         aSnap.AssertUnchanged(anE);
         Assert.Null(BRep_Tool.CurveOnSurface(anE, aF, out _, out _));
         Assert.NotNull(BRep_Tool.CurveOnSurface(aRes, aF, out _, out _));
-        Assert.True(aRes.TShape()!.IsFrozen());
+        Assert.True(aRes.TShape()!.IsFrozen);
         Assert.Same(TopExp.FirstVertex(anE).TShape(), TopExp.FirstVertex(aRes).TShape());
 
         // nothing to do: the input itself
@@ -267,7 +269,7 @@ public class ShapeFix_EdgeTests
     public void SameParameterFixed_And_Curve3dTwins_OnFrozenEdges()
     {
         // an edge already SameParameter: nothing changes
-        TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)));
+        TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         var sfe = new ShapeFix_Edge();
         TopoDS_Edge aRes = sfe.SameParameterFixed(anE, out _);
         Assert.Same(anE.TShape(), aRes.TShape());
@@ -288,7 +290,7 @@ public class ShapeFix_EdgeTests
     {
         TopoDS_Face aF = TestShapes.CylinderFace(R, H);
         TopoDS_Edge anE = Circle(H);
-        new BRep_Builder().UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        new BRep_Builder().UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         anE = TestShapes.Frozen(anE);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
         TopoDS_Edge aRes = new ShapeFix_Edge().RemovePCurveFixed(anE, aF, out bool isDone);

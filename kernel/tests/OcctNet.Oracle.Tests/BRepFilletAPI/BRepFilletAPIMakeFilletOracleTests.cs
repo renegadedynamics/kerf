@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Globalization;
 using Xunit.Abstractions;
@@ -47,7 +50,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
 
     private static double Diagonal(in TopoDS_Shape theShape)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         return Math.Sqrt(aBox.SquareExtent());
     }
@@ -192,9 +195,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // OCC1077: box common sphere, cut by a cylinder, the section edges filleted (BRepFilletAPI_MakeFillet_Test)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "fillet");
-        TopoDS_Shape aCommon = new BRepAlgoAPI_Common(new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, -5), 10, 10, 10).Shape(),
+        TopoDS_Shape aCommon = new BRepAlgoAPI_Common(new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape(),
                                                       new BRepPrimAPI_MakeSphere(7).Shape()).Shape();
-        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, 0, -10), new gp_Dir(0, 0, 1)), 3, 20).Shape();
+        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
         BRepAlgoAPI_Cut aCut = new(aCommon, aCyl1);
         TopoDS_Shape aCutShape = aCut.Shape();
         NCollection_IndexedMap<TopoDS_Shape> anEdges = Map(aCutShape, TopAbs_EDGE);
@@ -218,8 +221,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
         TopoDS_Shape[] aCyls =
         [
-            new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(-10, 0, 0), new gp_Dir(1, 0, 0)), 3, 20).Shape(),
-            new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, -10, 0), new gp_Dir(0, 1, 0)), 3, 20).Shape(),
+            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape(),
+            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape(),
         ];
         for (int c = 0; c < aCyls.Length; c++)
         {
@@ -265,13 +268,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             BRepBuilderAPI_MakePolygon aW = new();
             double c = Math.Cos(a), s = Math.Sin(a);
-            aW.Add(new gp_Pnt(r1 * c, r1 * s, z1));
-            aW.Add(new gp_Pnt(r2 * c, r2 * s, z1));
-            aW.Add(new gp_Pnt(r2 * c, r2 * s, z2));
-            aW.Add(new gp_Pnt(r1 * c, r1 * s, z2));
-            aW.Add(new gp_Pnt(r1 * c, r1 * s, z1));
+            aW.Add(new Point3D(r1 * c, r1 * s, z1));
+            aW.Add(new Point3D(r2 * c, r2 * s, z1));
+            aW.Add(new Point3D(r2 * c, r2 * s, z2));
+            aW.Add(new Point3D(r1 * c, r1 * s, z2));
+            aW.Add(new Point3D(r1 * c, r1 * s, z1));
             TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), false).Face();
-            return new BRepPrimAPI_MakeRevol(aF, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), angle).Shape();
+            return new BRepPrimAPI_MakeRevol(aF, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), angle).Shape();
         }
         TopoDS_Shape aRs1 = Ring(10, 20, 0, 10, 0, 2 * Math.PI);
         TopoDS_Shape aRs2 = Ring(10, 20, 10, 20, Math.PI / 4, 270.0 * Math.PI / 180.0);
@@ -384,7 +387,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             }
             return new BRepCheck_Analyzer(aB.Shape()).IsValid();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -577,10 +580,10 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     TopoDS_Edge E = TopoDS.Edge(anEdges[e.K]);
                     if (e.Pairs is double[] p)
                     {
-                        NCollection_Array1<gp_Pnt2d> anArray = new(1, p.Length / 2);
+                        NCollection_Array1<Point2D> anArray = new(1, p.Length / 2);
                         for (int i = 0; i < p.Length / 2; i++)
                         {
-                            anArray.SetValue(i + 1, new gp_Pnt2d(p[2 * i], p[2 * i + 1]));
+                            anArray.SetValue(i + 1, new Point2D(p[2 * i], p[2 * i + 1]));
                         }
                         aF.Add(anArray, E);
                     }
@@ -627,9 +630,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException or IndexOutOfRangeException)
+        catch (Exception e) when (e is FailureException or NullReferenceException or IndexOutOfRangeException)
         {
-            return new Outcome(e.GetType().Name, "", null, []);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, []);
         }
     }
 
@@ -648,7 +651,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             theTally.Differences.Add($"{aWhat}: the port's input changed");
         }
-        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (aP.Result is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
         }
@@ -782,10 +785,10 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             d.Add($"valid {ok1} | {ok2}");
         }
-        Bnd_Box b1 = new(), b2 = new();
+        Box b1 = new(), b2 = new();
         BRepBndLib.AddOptimal(aN, ref b1, false, false);
         BRepBndLib.AddOptimal(aP, ref b2, false, false);
-        if (!b1.IsVoid() && !b2.IsVoid())
+        if (!b1.IsVoid && !b2.IsVoid)
         {
             b1.Get(out double x1, out double y1, out double z1, out double X1, out double Y1, out double Z1);
             b2.Get(out double x2, out double y2, out double z2, out double X2, out double Y2, out double Z2);

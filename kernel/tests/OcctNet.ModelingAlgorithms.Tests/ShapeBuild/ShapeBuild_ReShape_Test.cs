@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -21,9 +22,9 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_PerformsVertexReplacementOnCompound()
     {
-        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Vertex();
-        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 0, 0)).Vertex();
-        TopoDS_Vertex aV2Repl = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1.5, 0, 0)).Vertex();
+        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        TopoDS_Vertex aV2Repl = new BRepBuilderAPI_MakeVertex(new Point3D(1.5, 0, 0)).Vertex();
 
         TopoDS_Compound aParent = new();
         var aBuilder = new BRep_Builder();
@@ -55,9 +56,9 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_StructuralContainmentWithoutCrash()
     {
-        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Vertex();
-        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 0, 0)).Vertex();
-        TopoDS_Vertex aV3 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(2, 0, 0)).Vertex();
+        TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        TopoDS_Vertex aV3 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
         TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge();
 
         TopoDS_Compound aContainer = new();
@@ -113,10 +114,10 @@ public class ShapeBuild_ReShapeTest
     [Fact]
     public void Apply_DiamondSharedVertexInTwoCompounds()
     {
-        TopoDS_Vertex aShared = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 0)).Vertex();
-        TopoDS_Vertex aSharedNew = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0.1, 0, 0)).Vertex();
-        TopoDS_Vertex anOther1 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 0, 0)).Vertex();
-        TopoDS_Vertex anOther2 = new BRepBuilderAPI_MakeVertex(new gp_Pnt(2, 0, 0)).Vertex();
+        TopoDS_Vertex aShared = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        TopoDS_Vertex aSharedNew = new BRepBuilderAPI_MakeVertex(new Point3D(0.1, 0, 0)).Vertex();
+        TopoDS_Vertex anOther1 = new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex();
+        TopoDS_Vertex anOther2 = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 0)).Vertex();
 
         TopoDS_Compound aParentA = new(), aParentB = new(), aGrand = new();
         var aBuilder = new BRep_Builder();

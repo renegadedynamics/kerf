@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_SecurityClassificationAssignment : Standard_Transient
+public class StepBasic_SecurityClassificationAssignment : Transient
 {
     private StepBasic_SecurityClassification assignedSecurityClassification;
 

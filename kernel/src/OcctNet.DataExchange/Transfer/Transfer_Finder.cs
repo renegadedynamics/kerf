@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -19,7 +20,7 @@ namespace Occt;
 /// stored code; equality stays by reference, and <see cref="Transfer_FindHasher"/> compares finders with
 /// <see cref="Equates"/>, as OCCT's maps of finders do (decision 1200).
 /// </remarks>
-public abstract class Transfer_Finder : Standard_Transient
+public abstract class Transfer_Finder : Transient
 {
     /// <summary>Returns the HashCode which has been stored by SetHashCode.</summary>
     public override int GetHashCode()
@@ -49,7 +50,7 @@ public abstract class Transfer_Finder : Standard_Transient
     // Integer -> IntVal, Real -> Geom2d_CartesianPoint, CString -> HAsciiString
 
     /// <summary>Adds an attribute with a given name (replaces the former one with the same name if already exists).</summary>
-    public void SetAttribute(string name, Standard_Transient? val)
+    public void SetAttribute(string name, Transient? val)
     {
         theattrib.Bind(name, val);
     }
@@ -68,7 +69,7 @@ public abstract class Transfer_Finder : Standard_Transient
     /// Returns an attribute from its name, filtered by a type. If no attribute has this name, or if it is not kind of
     /// this type, <paramref name="val"/> is Null and returned value is False. Else, it is True.
     /// </summary>
-    public bool GetAttribute(string name, Type? type, out Standard_Transient? val)
+    public bool GetAttribute(string name, Type? type, out Transient? val)
     {
         if (theattrib.IsEmpty())
         {
@@ -89,9 +90,9 @@ public abstract class Transfer_Finder : Standard_Transient
     }
 
     /// <summary>Returns an attribute from its name. Null Handle if not recorded (whatever Transient, Integer, Real ...).</summary>
-    public Standard_Transient? Attribute(string name)
+    public Transient? Attribute(string name)
     {
-        Standard_Transient? atr = null;
+        Transient? atr = null;
         if (theattrib.IsEmpty())
         {
             return atr;
@@ -109,7 +110,7 @@ public abstract class Transfer_Finder : Standard_Transient
     /// </summary>
     public Interface_ParamType AttributeType(string name)
     {
-        Standard_Transient? atr = Attribute(name);
+        Transient? atr = Attribute(name);
         if (atr is null)
         {
             return Interface_ParamVoid;
@@ -233,7 +234,7 @@ public abstract class Transfer_Finder : Standard_Transient
     }
 
     /// <summary>Returns the exhaustive list of attributes (the finder's own map, which callers may edit).</summary>
-    public NCollection_DataMap<string, Standard_Transient?> AttrList()
+    public NCollection_DataMap<string, Transient?> AttrList()
     {
         return theattrib;
     }
@@ -251,7 +252,7 @@ public abstract class Transfer_Finder : Standard_Transient
     {
         if (other is not null)
         {
-            theattrib = new NCollection_DataMap<string, Standard_Transient?>(other.AttrList()); // OCCT: a copy, despite the documentation
+            theattrib = new NCollection_DataMap<string, Transient?>(other.AttrList()); // OCCT: a copy, despite the documentation
         }
     }
 
@@ -268,20 +269,20 @@ public abstract class Transfer_Finder : Standard_Transient
         {
             return;
         }
-        NCollection_DataMap<string, Standard_Transient?> list = other.AttrList();
+        NCollection_DataMap<string, Transient?> list = other.AttrList();
         if (list.IsEmpty())
         {
             return;
         }
-        foreach (KeyValuePair<string, Standard_Transient?> iter in list)
+        foreach (KeyValuePair<string, Transient?> iter in list)
         {
             string name = iter.Key;
             if (!name.StartsWith(fromname, StringComparison.Ordinal))
             {
                 continue;
             }
-            Standard_Transient? atr = iter.Value;
-            Standard_Transient? newatr = atr;
+            Transient? atr = iter.Value;
+            Transient? newatr = atr;
             //    Copy ? according type
             if (copied)
             {
@@ -318,5 +319,5 @@ public abstract class Transfer_Finder : Standard_Transient
     }
 
     private int thecode;
-    private NCollection_DataMap<string, Standard_Transient?> theattrib = new(StringComparer.Ordinal);
+    private NCollection_DataMap<string, Transient?> theattrib = new(StringComparer.Ordinal);
 }

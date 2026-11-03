@@ -5,6 +5,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Resources;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -18,7 +21,7 @@ namespace Occt;
 /// The parameters OCCT reads from <c>Interface_Static</c> come from the <see cref="Interface_StaticSet"/> the caller
 /// passes (decision 1181). <c>PrepareForTransfer</c> is left out (decision 1203).
 /// </remarks>
-public class XSAlgo_AlgoContainer : Standard_Transient
+public class XSAlgo_AlgoContainer : Transient
 {
     /// <summary>Empty constructor.</summary>
     public XSAlgo_AlgoContainer()
@@ -34,8 +37,8 @@ public class XSAlgo_AlgoContainer : Standard_Transient
     /// shapes are ignored. Returns the processed shape.
     /// </summary>
     public virtual TopoDS_Shape ProcessShape(in TopoDS_Shape theShape, double thePrec, double theMaxTol, string thePrscfile,
-                                             string thePseq, ref Standard_Transient? theInfo, Interface_StaticSet theStatics,
-                                             Message_ProgressRange theProgress = default, bool theNonManifold = false,
+                                             string thePseq, ref Transient? theInfo, Interface_StaticSet theStatics,
+                                             ProgressRange theProgress = default, bool theNonManifold = false,
                                              TopAbs_ShapeEnum theDetailingLevel = TopAbs_VERTEX)
     {
         if (theShape.IsNull())
@@ -48,7 +51,7 @@ public class XSAlgo_AlgoContainer : Standard_Transient
         {
             string aRscfile = theStatics.CVal(thePrscfile);
             aContext = new ShapeProcess_ShapeContext(theShape, aRscfile);
-            if (!aContext.ResourceManager().IsInitialized())
+            if (!aContext.ResourceManager().IsInitialized)
             {
                 // If resource file wasn't found, use static values instead
                 theStatics.FillMap(aContext.ResourceManager().GetMap());
@@ -63,7 +66,7 @@ public class XSAlgo_AlgoContainer : Standard_Transient
 
         // if resource file is not loaded or does not define <seq>.exec.op,
         // do default fixes
-        Resource_Manager aRsc = aContext.ResourceManager();
+        Manager aRsc = aContext.ResourceManager();
         string aStr = aSeq + ".exec.op";
         if (!aRsc.Find(aStr))
         {
@@ -126,7 +129,7 @@ public class XSAlgo_AlgoContainer : Standard_Transient
     /// <paramref name="startTPitem"/> can be used for optimisation, to restrict modifications to entities stored in TP
     /// starting from item <paramref name="startTPitem"/>.
     /// </summary>
-    public virtual void MergeTransferInfo(Transfer_TransientProcess TP, Standard_Transient? info, int startTPitem = 1)
+    public virtual void MergeTransferInfo(Transfer_TransientProcess TP, Transient? info, int startTPitem = 1)
     {
         ShapeProcess_ShapeContext? context = info as ShapeProcess_ShapeContext;
         if (context is null)
@@ -156,9 +159,9 @@ public class XSAlgo_AlgoContainer : Standard_Transient
             {
                 sb.SetResult(map.Find(orig));
             }
-            else if (!orig.Location().IsIdentity())
+            else if (!orig.Location().IsIdentity)
             {
-                var aNullLoc = new TopLoc_Location();
+                var aNullLoc = new Placement();
                 TopoDS_Shape atmpSh = orig.Located(aNullLoc);
                 if (map.IsBound(atmpSh))
                 {
@@ -194,13 +197,13 @@ public class XSAlgo_AlgoContainer : Standard_Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> msgmap = msg.MapShape();
+                NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
                 if (msgmap.IsBound(orig))
                 {
-                    NCollection_List<Message_Msg> msglist = msgmap.Find(orig);
-                    for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
+                    NCollection_List<Msg> msglist = msgmap.Find(orig);
+                    for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
-                        Message_Msg mess = iter.Value();
+                        Msg mess = iter.Value();
                         sb.AddWarning(mess.Value(), mess.Original());
                     }
                 }
@@ -212,7 +215,7 @@ public class XSAlgo_AlgoContainer : Standard_Transient
     /// Updates translation map (FP) with information resulting from ShapeProcessing. The map of modified shapes is
     /// iterated in the order the processing recorded it, where OCCT's hash order varies (decision 1204).
     /// </summary>
-    public virtual void MergeTransferInfo(Transfer_FinderProcess FP, Standard_Transient? info)
+    public virtual void MergeTransferInfo(Transfer_FinderProcess FP, Transient? info)
     {
         ShapeProcess_ShapeContext? context = info as ShapeProcess_ShapeContext;
         if (context is null)
@@ -245,7 +248,7 @@ public class XSAlgo_AlgoContainer : Standard_Transient
                             continue;
                         }
 
-                        Standard_Transient? tr = FP.FindTransient(subMapper);
+                        Transient? tr = FP.FindTransient(subMapper);
                         if (tr is null)
                         {
                             continue;
@@ -278,13 +281,13 @@ public class XSAlgo_AlgoContainer : Standard_Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> msgmap = msg.MapShape();
+                NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
                 if (msgmap.IsBound(orig))
                 {
-                    NCollection_List<Message_Msg> msglist = msgmap.Find(orig);
-                    for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
+                    NCollection_List<Msg> msglist = msgmap.Find(orig);
+                    for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
-                        Message_Msg mess = iter.Value();
+                        Msg mess = iter.Value();
                         resBinder.AddWarning(mess.Value(), mess.Original());
                     }
                 }

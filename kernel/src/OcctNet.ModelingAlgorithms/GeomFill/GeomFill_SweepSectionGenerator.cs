@@ -4,8 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -26,11 +28,11 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
     private Adaptor3d_Curve? myAdpPath;
     private Adaptor3d_Curve? myAdpFirstSect;
     private Adaptor3d_Curve? myAdpLastSect;
-    private gp_Ax1 myCircPathAxis = new gp_Ax1();
+    private Axis3D myCircPathAxis = new Axis3D();
     private double myRadius;
     // OCCT's myIsDone is written by Init and Perform but never read; it is left out.
     private int myNbSections;
-    private readonly NCollection_Sequence<gp_Trsf> myTrsfs = new();
+    private readonly NCollection_Sequence<Transform3D> myTrsfs = new();
     private int myType;
     private bool myPolynomial;
 
@@ -72,7 +74,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         myRadius = Radius;
         GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
 
-        if (ThePath.GetType() == GeomAbs_Circle)
+        if (ThePath.GetType() == Circle)
         {
             myCircPathAxis = ThePath.Circle().Axis();
             myType = 4;
@@ -96,7 +98,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         myRadius = 0;
         GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
 
-        if (ThePath.GetType() == GeomAbs_Circle)
+        if (ThePath.GetType() == Circle)
         {
             myCircPathAxis = ThePath.Circle().Axis();
             myType = 5;
@@ -122,7 +124,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         else
         {
             // JAG
-            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, Convert_QuasiAngular);
+            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
         }
         if (myFirstSect.IsPeriodic())
         {
@@ -135,7 +137,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         myRadius = 0;
         GeomAdaptor_Curve ThePath = new GeomAdaptor_Curve(Path);
 
-        if (ThePath.GetType() == GeomAbs_Circle)
+        if (ThePath.GetType() == Circle)
         {
             myCircPathAxis = ThePath.Circle().Axis();
             myType = 6;
@@ -161,7 +163,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         }
         else
         {
-            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, Convert_QuasiAngular);
+            myFirstSect = GeomConvert.CurveToBSplineCurve(FirstSect, QuasiAngular);
         }
         if (LastSect is Geom_BSplineCurve)
         {
@@ -169,7 +171,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         }
         else
         {
-            myLastSect = GeomConvert.CurveToBSplineCurve(LastSect, Convert_QuasiAngular);
+            myLastSect = GeomConvert.CurveToBSplineCurve(LastSect, QuasiAngular);
         }
 
         if (myFirstSect.IsPeriodic())
@@ -186,7 +188,7 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         GeomFill_Profiler Profil = new GeomFill_Profiler();
         Profil.AddCurve(myFirstSect);
         Profil.AddCurve(myLastSect);
-        Profil.Perform(Precision.Confusion());
+        Profil.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         myFirstSect = Profil.InternalCurve(1) as Geom_BSplineCurve;
         myLastSect = Profil.InternalCurve(2) as Geom_BSplineCurve;
@@ -222,9 +224,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         GCPnts_QuasiUniformDeflection Samp = new GCPnts_QuasiUniformDeflection();
         // Calcul de la longueur approximative de la courbe
         GeomAdaptor_Curve AdpPath = new GeomAdaptor_Curve(myPath);
-        gp_Pnt P1 = AdpPath.Value(U1);
-        gp_Pnt P2 = AdpPath.Value((U1 + U2) / 2.0);
-        gp_Pnt P3 = AdpPath.Value(U2);
+        Point3D P1 = AdpPath.Value(U1);
+        Point3D P2 = AdpPath.Value((U1 + U2) / 2.0);
+        Point3D P3 = AdpPath.Value(U2);
         double Length = P1.Distance(P2) + P2.Distance(P3);
         double Fleche = 1.0e-5 * Length;
         Samp.Initialize(AdpPath, Fleche);
@@ -245,9 +247,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         }
         Parameters[myNbSections] = U2 - U1;
 
-        gp_Vec D1Ref, D1;
-        gp_Pnt PRef, P;
-        gp_Trsf TR = new gp_Trsf(), cumulTR = new gp_Trsf(), Trans = new gp_Trsf();
+        Vector3D D1Ref, D1;
+        Point3D PRef, P;
+        Transform3D TR = new Transform3D(), cumulTR = new Transform3D(), Trans = new Transform3D();
 
         myPath.D1(U1, out PRef, out D1Ref);
 
@@ -258,10 +260,10 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             // point <PRef> ). This circle is, after transform to BSpline curve,
             // put in <myFirstSect>.
 
-            gp_Ax2 CircleAxis = new gp_Ax2(PRef, new gp_Dir(D1Ref));
+            Frame3D CircleAxis = new Frame3D(PRef, new Direction3D(D1Ref));
             Geom_TrimmedCurve Circ = new Geom_TrimmedCurve(new Geom_Circle(CircleAxis, myRadius), 0.0, 2.0 * M_PI);
 
-            myFirstSect = GeomConvert.CurveToBSplineCurve(Circ, Convert_QuasiAngular);
+            myFirstSect = GeomConvert.CurveToBSplineCurve(Circ, QuasiAngular);
         }
 
         if (myType <= 3 && myType >= 1)
@@ -279,13 +281,13 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
                 // Eval the translation between the (i-1) section and the i-th.
                 Trans.SetTranslation(PRef, P);
 
-                gp_Trsf Rot = new gp_Trsf();
-                if (!D1Ref.IsParallel(D1, Precision.Angular()))
+                Transform3D Rot = new Transform3D();
+                if (!D1Ref.IsParallel(D1, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // Eval the Rotation between (i-1) section and the i-th.
-                    Rot.SetRotation(new gp_Ax1(P, new gp_Dir(D1Ref ^ D1)), D1Ref.AngleWithRef(D1, D1Ref ^ D1));
+                    Rot.SetRotation(new Axis3D(P, new Direction3D(D1Ref ^ D1)), D1Ref.AngleWithRef(D1, D1Ref ^ D1));
                 }
-                else if (D1Ref.IsOpposite(D1, Precision.Angular()))
+                else if (D1Ref.IsOpposite(D1, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // OCCT: TR is set only here (the braces put "TR = Rot * Trans" in the opposite-tangents branch), so
                     // the rotations and translations computed above are dropped (occt-issues.md).
@@ -368,10 +370,10 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
     /// ends, and for a pipe on an edge).
     /// </summary>
     public bool Section(int P,
-                        NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Vec> DPoles,
-                        NCollection_Array1<gp_Pnt2d> Poles2d,
-                        NCollection_Array1<gp_Vec2d> DPoles2d,
+                        NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Vector3D> DPoles,
+                        NCollection_Array1<Point2D> Poles2d,
+                        NCollection_Array1<Vector2D> DPoles2d,
                         NCollection_Array1<double> Weigths,
                         NCollection_Array1<double> DWeigths)
     {
@@ -403,8 +405,8 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             return false;
         }
 
-        gp_Vec D1, D2;
-        gp_Pnt Pt;
+        Vector3D D1, D2;
+        Point3D Pt;
 
         myPath.D2(U, out Pt, out D1, out D2);
         double l = D1.Magnitude();
@@ -414,9 +416,9 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             return false;
         }
 
-        gp_Dir T = new gp_Dir(D1);
-        double m = D2.Dot(new gp_Vec(T));
-        gp_Vec D = D2 - m * new gp_Vec(T);
+        Direction3D T = new Direction3D(D1);
+        double m = D2.Dot(new Vector3D(T));
+        Vector3D D = D2 - m * new Vector3D(T);
         double c = D.Magnitude() / (l * l);
 
         if (c < Epsilon(1.0))
@@ -429,16 +431,16 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
         }
         else
         {
-            gp_Dir N = new gp_Dir(D);
-            gp_Pnt Q = Pt.Translated((1.0 / c) * new gp_Vec(N));
+            Direction3D N = new Direction3D(D);
+            Point3D Q = Pt.Translated((1.0 / c) * new Vector3D(N));
             double x, y;
-            gp_Vec V;
+            Vector3D V;
             for (int i = 1; i <= myFirstSect!.NbPoles(); i++)
             {
-                V = new gp_Vec(Q, Poles[i]);
-                x = V * new gp_Vec(T);
-                y = V * new gp_Vec(N);
-                DPoles[i] = x * new gp_Vec(N) - y * new gp_Vec(T);
+                V = new Vector3D(Q, Poles[i]);
+                x = V * new Vector3D(T);
+                y = V * new Vector3D(N);
+                DPoles[i] = x * new Vector3D(N) - y * new Vector3D(T);
                 if (DPoles[i].Magnitude() > Epsilon(1.0))
                 {
                     DPoles[i].Normalize();
@@ -457,15 +459,15 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
 
     /// <summary>The section P.</summary>
     public void Section(int P,
-                        NCollection_Array1<gp_Pnt> Poles,
-                        NCollection_Array1<gp_Pnt2d> Poles2d,
+                        NCollection_Array1<Point3D> Poles,
+                        NCollection_Array1<Point2D> Poles2d,
                         NCollection_Array1<double> Weigths)
     {
         if (myType != 0)
         {
             Poles.Assign(myFirstSect!.InternalPoles());
             Weigths.Assign(myFirstSect.InternalWeightsArray());
-            gp_Trsf cumulTR;
+            Transform3D cumulTR;
             if (P > 1)
             {
                 cumulTR = myTrsfs[P - 1];
@@ -496,50 +498,50 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
             double Coef = (P - 1.0) / (myNbSections - 1.0);
             double U = (1 - Coef) * myAdpPath!.FirstParameter() + Coef * myAdpPath.LastParameter();
 
-            gp_Pnt PPath = myAdpPath.Value(U);
+            Point3D PPath = myAdpPath.Value(U);
 
             double Alpha = U - myAdpPath.FirstParameter();
             Alpha /= myAdpPath.LastParameter() - myAdpPath.FirstParameter();
 
             double U1 = (1 - Alpha) * myAdpFirstSect!.FirstParameter() + Alpha * myAdpFirstSect.LastParameter();
 
-            if (myAdpFirstSect.GetType() == GeomAbs_Line)
+            if (myAdpFirstSect.GetType() == Line)
             {
-                if (Precision.IsInfinite(myAdpFirstSect.FirstParameter())
-                    || Precision.IsInfinite(myAdpFirstSect.LastParameter()))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myAdpFirstSect.FirstParameter())
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(myAdpFirstSect.LastParameter()))
                 {
-                    gp_Lin aLine = myAdpFirstSect.Line();
-                    U1 = ElCLib.Parameter(aLine, PPath);
+                    Line3D aLine = myAdpFirstSect.Line();
+                    U1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLine, PPath);
                 }
             }
-            gp_Pnt P1 = myAdpFirstSect.Value(U1);
+            Point3D P1 = myAdpFirstSect.Value(U1);
 
             double U2 = (1 - Alpha) * myAdpLastSect!.FirstParameter() + Alpha * myAdpLastSect.LastParameter();
 
-            if (myAdpLastSect.GetType() == GeomAbs_Line)
+            if (myAdpLastSect.GetType() == Line)
             {
-                if (Precision.IsInfinite(myAdpLastSect.FirstParameter())
-                    || Precision.IsInfinite(myAdpLastSect.LastParameter()))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myAdpLastSect.FirstParameter())
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(myAdpLastSect.LastParameter()))
                 {
-                    gp_Lin aLine = myAdpLastSect.Line();
-                    U2 = ElCLib.Parameter(aLine, PPath);
+                    Line3D aLine = myAdpLastSect.Line();
+                    U2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLine, PPath);
                 }
             }
-            gp_Pnt P2 = myAdpLastSect.Value(U2);
+            Point3D P2 = myAdpLastSect.Value(U2);
 
-            gp_Ax2 Axis = new gp_Ax2();
+            Frame3D Axis = new Frame3D();
             double Angle;
-            if (P1.Distance(P2) < Precision.Confusion())
+            if (P1.Distance(P2) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Angle = 0.0;
             }
             else
             {
-                Axis = new gp_Ax2(PPath, new gp_Dir(new gp_Vec(PPath, P1) ^ new gp_Vec(PPath, P2)),
-                                  new gp_Dir(new gp_Vec(PPath, P1)));
-                Angle = ElCLib.CircleParameter(Axis, P2);
+                Axis = new Frame3D(PPath, new Direction3D(new Vector3D(PPath, P1) ^ new Vector3D(PPath, P2)),
+                                  new Direction3D(new Vector3D(PPath, P1)));
+                Angle = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(Axis, P2);
             }
-            if (Angle < Precision.Angular())
+            if (Angle < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 for (int i = 1; i <= Poles.Upper(); i++)
                 {
@@ -554,11 +556,11 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
                 Geom_BSplineCurve BS;
                 if (myPolynomial)
                 {
-                    BS = GeomConvert.CurveToBSplineCurve(CT, Convert_Polynomial);
+                    BS = GeomConvert.CurveToBSplineCurve(CT, Polynomial);
                 }
                 else
                 {
-                    BS = GeomConvert.CurveToBSplineCurve(CT, Convert_QuasiAngular);
+                    BS = GeomConvert.CurveToBSplineCurve(CT, QuasiAngular);
                 }
 
                 Poles.Assign(BS.InternalPoles());
@@ -568,11 +570,11 @@ public sealed class GeomFill_SweepSectionGenerator : IAppBlend_SectionGenerator<
     }
 
     /// <summary>The transformation from the first section to the section Index + 1.</summary>
-    public gp_Trsf Transformation(int Index)
+    public Transform3D Transformation(int Index)
     {
         if (Index > myTrsfs.Length())
         {
-            throw new Standard_RangeError("GeomFill_SweepSectionGenerator::Transformation");
+            throw new RangeErrorException("GeomFill_SweepSectionGenerator::Transformation");
         }
 
         return myTrsfs[Index];

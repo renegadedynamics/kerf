@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Text;
 
 namespace OcctNet.DataExchange.Tests.STEPCAFControl;
@@ -41,8 +43,8 @@ public sealed class STEPCAFControlExternTests : IDisposable
         aDoc.SetName(aPartA, "partA");
         XdeDoc_Label aPartB = aDoc.AddShape(Box(20.0), false);
         aDoc.SetName(aPartB, "partB");
-        aDoc.AddComponent(anAsm, aPartA, new TopLoc_Location());
-        aDoc.AddComponent(anAsm, aPartB, new TopLoc_Location());
+        aDoc.AddComponent(anAsm, aPartA, new Placement());
+        aDoc.AddComponent(anAsm, aPartB, new Placement());
         return aDoc;
     }
 
@@ -101,7 +103,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
     }
 
     private static (STEPCAFControl_Reader Reader, XdeDoc_Document Doc) ReadStream(string theName, byte[] theBytes,
-        Action<STEPCAFControl_Reader>? theSetup = null, Message_ProgressRange theProgress = default, StepFile_ReadLimits? theLimits = null)
+        Action<STEPCAFControl_Reader>? theSetup = null, ProgressRange theProgress = default, StepFile_ReadLimits? theLimits = null)
     {
         var aReader = new STEPCAFControl_Reader();
         theSetup?.Invoke(aReader);
@@ -427,7 +429,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
             aNames.Add(n);
             aCancel.Cancel(); // the user cancels as the first external file is looked for
             return aFolder(n, f);
-        }), new Message_ProgressIndicator(aCancel.Token).Start());
+        }), new ProgressIndicator(aCancel.Token).Start());
         Assert.Equal(0, NbResolved(aReader));
         Assert.Single(aNames);
     }

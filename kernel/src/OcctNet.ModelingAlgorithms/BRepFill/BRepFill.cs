@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -66,7 +69,7 @@ public static class BRepFill
         BRep_Builder B = new();
         Geom_Curve C = BRep_Tool.Curve(CurrentEdge, out double first, out double last)!;
         TopoDS_Vertex Vi = new();
-        B.MakeVertex(ref Vi, C.Value(Param), Precision.Confusion());
+        B.MakeVertex(ref Vi, C.Value(Param), global::Kerf.Engine.Foundation.Precision.Confusion());
         TopExp.Vertices(CurrentEdge, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
         if (VRef.IsSame(Vf))
         {
@@ -222,18 +225,18 @@ public static class BRepFill
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool BT;
 
-        TopLoc_Location L = new();
+        Placement L = new();
         double Tol;
 
-        Geom_Curve C1 = BRep_Tool.Curve(Edge1, out TopLoc_Location L1, out double f1, out double l1)!;
-        Geom_Curve C2 = BRep_Tool.Curve(Edge2, out TopLoc_Location L2, out double f2, out double l2)!;
+        Geom_Curve C1 = BRep_Tool.Curve(Edge1, out Placement L1, out double f1, out double l1)!;
+        Geom_Curve C2 = BRep_Tool.Curve(Edge2, out Placement L2, out double f2, out double l2)!;
 
         // compute the location
         bool SameLoc = false;
         if (L1 == L2)
         {
             L = L1;
-            L1 = L2 = new TopLoc_Location();
+            L1 = L2 = new Placement();
             SameLoc = true;
         }
 
@@ -242,8 +245,8 @@ public static class BRepFill
         TopoDS_Vertex V1f, V1l, V2f, V2l;
 
         // create a new Handle
-        if (Math.Abs(f1 - C1.FirstParameter()) > Precision.PConfusion()
-            || Math.Abs(l1 - C1.LastParameter()) > Precision.PConfusion())
+        if (Math.Abs(f1 - C1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(l1 - C1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             C1 = new Geom_TrimmedCurve(C1, f1, l1);
         }
@@ -268,8 +271,8 @@ public static class BRepFill
         }
 
         // a new Handle is created
-        if (Math.Abs(f2 - C2.FirstParameter()) > Precision.PConfusion()
-            || Math.Abs(l2 - C2.LastParameter()) > Precision.PConfusion())
+        if (Math.Abs(f2 - C2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(l2 - C2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             C2 = new Geom_TrimmedCurve(C2, f2, l2);
         }
@@ -299,12 +302,12 @@ public static class BRepFill
         GeomFill_Generator Generator = new();
         Generator.AddCurve(C1);
         Generator.AddCurve(C2);
-        Generator.Perform(Precision.PConfusion());
+        Generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         Geom_Surface Surf = Generator.InternalSurface()!;
         Geom_Curve Iso;
 
-        B.MakeFace(ref Face, Surf, Precision.Confusion());
+        B.MakeFace(ref Face, Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // make the missing edges
         Surf.Bounds(out f1, out l1, out f2, out l2);
@@ -315,7 +318,7 @@ public static class BRepFill
         Tol = Max(BRep_Tool.Tolerance(V1f), BRep_Tool.Tolerance(V2f));
         if (Iso.Value(f2).Distance(Iso.Value(l2)) > Tol)
         {
-            B.MakeEdge(ref Edge3, Iso, Precision.Confusion());
+            B.MakeEdge(ref Edge3, Iso, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else
         {
@@ -338,7 +341,7 @@ public static class BRepFill
             Tol = Max(BRep_Tool.Tolerance(V1l), BRep_Tool.Tolerance(V2l));
             if (Iso.Value(l2).Distance(Iso.Value(f2)) > Tol)
             {
-                B.MakeEdge(ref Edge4, Iso, Precision.Confusion());
+                B.MakeEdge(ref Edge4, Iso, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -368,42 +371,42 @@ public static class BRepFill
 
         // set the pcurves
 
-        double T = Precision.Confusion();
+        double T = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         if (Edge1.Orientation() == TopAbs_REVERSED)
         {
-            B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+            B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), Face, T);
             B.Range(Edge1, Face, -l1, -f1);
         }
         else
         {
-            B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+            B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X)), Face, T);
             B.Range(Edge1, Face, f1, l1);
         }
 
         if (Edge2.Orientation() == TopAbs_REVERSED)
         {
-            B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+            B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), Face, T);
             B.Range(Edge2, Face, -l1, -f1);
         }
         else
         {
-            B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+            B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X)), Face, T);
             B.Range(Edge2, Face, f1, l1);
         }
 
         if (Closed)
         {
             B.UpdateEdge(Edge3,
-                         new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
-                         new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                         new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)),
+                         new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)),
                          Face,
                          T);
         }
         else
         {
-            B.UpdateEdge(Edge3, new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
-            B.UpdateEdge(Edge4, new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
+            B.UpdateEdge(Edge3, new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
+            B.UpdateEdge(Edge4, new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
         }
 
         // Set the non parameter flag;
@@ -477,18 +480,18 @@ public static class BRepFill
             ex1.Next();
             ex2.Next();
 
-            TopLoc_Location L = new();
+            Placement L = new();
             double Tol;
 
-            Geom_Curve C1 = BRep_Tool.Curve(Edge1, out TopLoc_Location L1, out double f1, out double l1)!;
-            Geom_Curve C2 = BRep_Tool.Curve(Edge2, out TopLoc_Location L2, out double f2, out double l2)!;
+            Geom_Curve C1 = BRep_Tool.Curve(Edge1, out Placement L1, out double f1, out double l1)!;
+            Geom_Curve C2 = BRep_Tool.Curve(Edge2, out Placement L2, out double f2, out double l2)!;
 
             // compute the location
             bool SameLoc = false;
             if (L1 == L2)
             {
                 L = L1;
-                L1 = L2 = new TopLoc_Location();
+                L1 = L2 = new Placement();
                 SameLoc = true;
             }
 
@@ -496,8 +499,8 @@ public static class BRepFill
 
             TopoDS_Vertex V1f, V1l, V2f, V2l;
 
-            if (Math.Abs(f1 - C1.FirstParameter()) > Precision.PConfusion()
-                || Math.Abs(l1 - C1.LastParameter()) > Precision.PConfusion())
+            if (Math.Abs(f1 - C1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(l1 - C1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 C1 = new Geom_TrimmedCurve(C1, f1, l1);
             }
@@ -519,8 +522,8 @@ public static class BRepFill
                 TopExp.Vertices(Edge1, out V1f, out V1l);
             }
 
-            if (Math.Abs(f2 - C2.FirstParameter()) > Precision.PConfusion()
-                || Math.Abs(l2 - C2.LastParameter()) > Precision.PConfusion())
+            if (Math.Abs(f2 - C2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(l2 - C2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 C2 = new Geom_TrimmedCurve(C2, f2, l2);
             }
@@ -545,12 +548,12 @@ public static class BRepFill
             GeomFill_Generator Generator = new();
             Generator.AddCurve(C1);
             Generator.AddCurve(C2);
-            Generator.Perform(Precision.PConfusion());
+            Generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             Geom_Surface Surf = Generator.InternalSurface()!;
             Geom_Curve Iso;
 
-            B.MakeFace(ref Face, Surf, Precision.Confusion());
+            B.MakeFace(ref Face, Surf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             // make the missing edges
             Surf.Bounds(out f1, out l1, out f2, out l2);
@@ -562,7 +565,7 @@ public static class BRepFill
                 Tol = Max(BRep_Tool.Tolerance(V1f), BRep_Tool.Tolerance(V2f));
                 if (Iso.Value(f2).Distance(Iso.Value(l2)) > Tol)
                 {
-                    B.MakeEdge(ref Edge3, Iso, Precision.Confusion());
+                    B.MakeEdge(ref Edge3, Iso, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 else
                 {
@@ -598,7 +601,7 @@ public static class BRepFill
                 Tol = Max(BRep_Tool.Tolerance(V1l), BRep_Tool.Tolerance(V2l));
                 if (Iso.Value(l2).Distance(Iso.Value(f2)) > Tol)
                 {
-                    B.MakeEdge(ref Edge4, Iso, Precision.Confusion());
+                    B.MakeEdge(ref Edge4, Iso, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 else
                 {
@@ -634,42 +637,42 @@ public static class BRepFill
 
             // set the pcurves
 
-            double T = Precision.Confusion();
+            double T = global::Kerf.Engine.Foundation.Precision.Confusion();
 
             if (Edge1.Orientation() == TopAbs_REVERSED)
             {
-                B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+                B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), Face, T);
                 B.Range(Edge1, Face, -l1, -f1);
             }
             else
             {
-                B.UpdateEdge(Edge1, new Geom2d_Line(new gp_Pnt2d(0, f2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+                B.UpdateEdge(Edge1, new Geom2d_Line(new Point2D(0, f2), new Direction2D(Direction2D.D.X)), Face, T);
                 B.Range(Edge1, Face, f1, l1);
             }
 
             if (Edge2.Orientation() == TopAbs_REVERSED)
             {
-                B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.NX)), Face, T);
+                B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), Face, T);
                 B.Range(Edge2, Face, -l1, -f1);
             }
             else
             {
-                B.UpdateEdge(Edge2, new Geom2d_Line(new gp_Pnt2d(0, l2), new gp_Dir2d(gp_Dir2d.D.X)), Face, T);
+                B.UpdateEdge(Edge2, new Geom2d_Line(new Point2D(0, l2), new Direction2D(Direction2D.D.X)), Face, T);
                 B.Range(Edge2, Face, f1, l1);
             }
 
             if (Periodic)
             {
                 B.UpdateEdge(Edge3,
-                             new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
-                             new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)),
+                             new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)),
+                             new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)),
                              Face,
                              T);
             }
             else
             {
-                B.UpdateEdge(Edge3, new Geom2d_Line(new gp_Pnt2d(f1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
-                B.UpdateEdge(Edge4, new Geom2d_Line(new gp_Pnt2d(l1, 0), new gp_Dir2d(gp_Dir2d.D.Y)), Face, T);
+                B.UpdateEdge(Edge3, new Geom2d_Line(new Point2D(f1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
+                B.UpdateEdge(Edge4, new Geom2d_Line(new Point2D(l1, 0), new Direction2D(Direction2D.D.Y)), Face, T);
             }
 
             // Set the non parameter flag;
@@ -696,15 +699,15 @@ public static class BRepFill
     /// its X direction the spine's tangent there. <paramref name="ProfOnSpine"/> is true when the profile touches the
     /// spine within <paramref name="Tol"/>.
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject">The spine is a face that isn't planar.</exception>
-    /// <exception cref="Standard_DomainError">No plane was found.</exception>
-    public static void Axe(in TopoDS_Shape Spine, in TopoDS_Wire Profile, out gp_Ax3 AxeProf, out bool ProfOnSpine, double Tol)
+    /// <exception cref="NoSuchObjectException">The spine is a face that isn't planar.</exception>
+    /// <exception cref="DomainErrorException">No plane was found.</exception>
+    public static void Axe(in TopoDS_Shape Spine, in TopoDS_Wire Profile, out CoordinateSystem AxeProf, out bool ProfOnSpine, double Tol)
     {
-        gp_Pnt Loc = new(), Loc1, Loc2;
-        gp_Vec Tang = new(), Tang1, Tang2, Normal;
+        Point3D Loc = new(), Loc1, Loc2;
+        Vector3D Tang = new(), Tang1, Tang2, Normal;
 
         Geom_Surface? S = null;
-        TopLoc_Location L = new();
+        Placement L = new();
 
         TopoDS_Face aFace = new();
 
@@ -723,7 +726,7 @@ public static class BRepFill
                 }
                 else
                 {
-                    throw new Standard_NoSuchObject("BRepFill_Evolved : The Face is not planar");
+                    throw new NoSuchObjectException("BRepFill_Evolved : The Face is not planar");
                 }
             }
         }
@@ -735,18 +738,18 @@ public static class BRepFill
 
         if (S is null)
         {
-            throw new Standard_DomainError("BRepFill_Evolved::Axe");
+            throw new DomainErrorException("BRepFill_Evolved::Axe");
         }
 
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             S = (Geom_Surface)S.Transformed(L.Transformation());
         }
 
-        Normal = new gp_Vec(((Geom_Plane)S).Pln().Axis().Direction());
+        Normal = new Vector3D(((Geom_Plane)S).Pln().Axis().Direction());
 
         // Find vertex of the profile closest to the spine.
-        double DistMin = Precision.Infinite();
+        double DistMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         double Dist;
         //  double     Tol2 = Tol*Tol;
         double Tol2 = 1.0e-10;
@@ -754,7 +757,7 @@ public static class BRepFill
         BRepExtrema_ExtPC BE = new();
         double Par = 0.0;
         //  double     D1,D2;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
 
         // First check if there is contact Vertex Vertex.
         bool IsOnVertex = false;
@@ -800,7 +803,7 @@ public static class BRepFill
             Geom_Curve CE1 = BRep_Tool.Curve(E1, out L, out _, out _)!;
             double Par1 = BRep_Tool.Parameter(VonF, E1, aFace);
             CE1.D1(Par1, out Loc1, out Tang1);
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 Tang1.Transform(L.Transformation());
                 Loc1.Transform(L.Transformation());
@@ -813,7 +816,7 @@ public static class BRepFill
             Geom_Curve CE2 = BRep_Tool.Curve(E2, out L, out _, out _)!;
             double Par2 = BRep_Tool.Parameter(VonF, E2, aFace);
             CE2.D1(Par2, out Loc2, out Tang2);
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 Tang2.Transform(L.Transformation());
                 Loc2.Transform(L.Transformation());
@@ -834,7 +837,7 @@ public static class BRepFill
                 TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
                 P1 = BRep_Tool.Pnt(V1);
                 P2 = BRep_Tool.Pnt(V2);
-                gp_Vec vec = new(P1, P2);
+                Vector3D vec = new(P1, P2);
                 sca1 += Math.Abs(Tang1.Dot(vec));
                 sca2 += Math.Abs(Tang2.Dot(vec));
             }
@@ -861,7 +864,7 @@ public static class BRepFill
                 BE.Initialize(E);
                 for (PE.Init(Profile, TopAbs_VERTEX); PE.More(); PE.Next())
                 {
-                    Dist = Precision.Infinite();
+                    Dist = global::Kerf.Engine.Foundation.Precision.Infinite();
                     TopoDS_Vertex V = TopoDS.Vertex(PE.Current());
                     BE.Perform(V);
                     if (BE.IsDone())
@@ -894,7 +897,7 @@ public static class BRepFill
 
         ProfOnSpine = (DistMin < Tol);
         // Construction AxeProf;
-        gp_Ax3 A3 = new(Loc, new gp_Dir(Normal), new gp_Dir(Tang));
+        CoordinateSystem A3 = new(Loc, new Direction3D(Normal), new Direction3D(Tang));
         AxeProf = A3;
     }
 
@@ -907,12 +910,12 @@ public static class BRepFill
     /// Cuts the closed wire <paramref name="W"/> at the point of it nearest to <paramref name="P"/> (a vertex, or a
     /// new vertex splitting an edge) and orients it along <paramref name="Dir"/>.
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject">The wire isn't closed.</exception>
-    internal static void SearchOrigin(ref TopoDS_Wire W, in gp_Pnt P, in gp_Vec Dir, double Tol)
+    /// <exception cref="NoSuchObjectException">The wire isn't closed.</exception>
+    internal static void SearchOrigin(ref TopoDS_Wire W, in Point3D P, in Vector3D Dir, double Tol)
     {
         if (!W.Closed())
         {
-            throw new Standard_NoSuchObject("BRepFill::SearchOrigin : the wire must be closed");
+            throw new NoSuchObjectException("BRepFill::SearchOrigin : the wire must be closed");
         }
 
         bool NewVertex = false;
@@ -1021,7 +1024,7 @@ public static class BRepFill
             theparam = BRep_Tool.Parameter(V, E);
         }
         BRepAdaptor_Curve AC = new(E);
-        AC.D1(theparam, out gp_Pnt _, out gp_Vec Ve);
+        AC.D1(theparam, out Point3D _, out Vector3D Ve);
         if (E.Orientation() == TopAbs_REVERSED)
         {
             Ve *= -1;
@@ -1069,7 +1072,7 @@ public static class BRepFill
         ACR[0] = ACR[nbEdges];
 
         // reduced curvilinear abscisses
-        if (ACR[0] > Precision.Confusion())
+        if (ACR[0] > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             for (i = 1; i <= nbEdges; i++)
             {

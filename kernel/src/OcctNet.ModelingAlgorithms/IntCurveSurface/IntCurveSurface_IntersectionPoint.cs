@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 
 namespace Occt;
@@ -19,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSurface_IntersectionPoint>
 {
-    private gp_Pnt myP;
+    private Point3D myP;
     private double myUSurf;
     private double myVSurf;
     private double myUCurv;
@@ -27,14 +29,14 @@ public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSur
 
     public IntCurveSurface_IntersectionPoint()
     {
-        myP = new gp_Pnt();
+        myP = new Point3D();
         myUSurf = 0.0;
         myVSurf = 0.0;
         myUCurv = 0.0;
         myTrOnCurv = IntCurveSurface_Tangent;
     }
 
-    public IntCurveSurface_IntersectionPoint(in gp_Pnt P, double USurf, double VSurf, double UCurv,
+    public IntCurveSurface_IntersectionPoint(in Point3D P, double USurf, double VSurf, double UCurv,
                                              IntCurveSurface_TransitionOnCurve TrOnCurv)
     {
         myP = P;
@@ -46,7 +48,7 @@ public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSur
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void SetValues(in gp_Pnt P, double USurf, double VSurf, double UCurv,
+    internal void SetValues(in Point3D P, double USurf, double VSurf, double UCurv,
                             IntCurveSurface_TransitionOnCurve TrOnCurv)
     {
         myP = P;
@@ -59,7 +61,7 @@ public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSur
     // Queries
 
     /// <summary>All the values of the point.</summary>
-    public readonly void Values(out gp_Pnt P, out double USurf, out double VSurf, out double UCurv,
+    public readonly void Values(out Point3D P, out double USurf, out double VSurf, out double UCurv,
                                 out IntCurveSurface_TransitionOnCurve TrOnCurv)
     {
         P = myP;
@@ -70,7 +72,7 @@ public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSur
     }
 
     /// <summary>The point.</summary>
-    public readonly gp_Pnt Pnt() => myP;
+    public readonly Point3D Pnt() => myP;
 
     /// <summary>The U parameter on the surface.</summary>
     public readonly double U() => myUSurf;
@@ -99,5 +101,5 @@ public partial struct IntCurveSurface_IntersectionPoint : IEquatable<IntCurveSur
                                    in IntCurveSurface_IntersectionPoint theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("IntCurveSurface_IntersectionPoint", myP.X(), myP.Y(), myP.Z(), myUSurf, myVSurf, myUCurv)} {myTrOnCurv}";
+        => $"{Constants.Format("IntCurveSurface_IntersectionPoint", myP.X(), myP.Y(), myP.Z(), myUSurf, myVSurf, myUCurv)} {myTrOnCurv}";
 }

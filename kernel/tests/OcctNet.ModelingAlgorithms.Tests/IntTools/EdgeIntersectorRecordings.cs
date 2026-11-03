@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.IO.Compression;
 using System.Text;
 using static Occt.TopAbs_ShapeEnum;
@@ -76,12 +79,12 @@ internal static class EdgeIntersectorRecordings
                         {
                             aA = BRepMeshModelKit.ReadDataOcc(f[2]);
                             aB = f[3] == "-" ? aA : BRepMeshModelKit.ReadDataOcc(f[3]);
-                            gp_Vec aShift = new(FromHex(f[4]), FromHex(f[5]), FromHex(f[6]));
+                            Vector3D aShift = new(FromHex(f[4]), FromHex(f[5]), FromHex(f[6]));
                             if (aShift.SquareMagnitude() != 0.0)
                             {
-                                gp_Trsf aT = new();
+                                Transform3D aT = new();
                                 aT.SetTranslation(aShift);
-                                aB = aB.Moved(new TopLoc_Location(aT));
+                                aB = aB.Moved(new Placement(aT));
                             }
                         }
                         aCase = new Case { Name = f[1], A = aA, B = aB };
@@ -125,7 +128,7 @@ internal static class EdgeIntersectorRecordings
         aS.Append(theCP.AllNullFlag() ? " 1" : " 0");
         if (theWithPoints)
         {
-            theCP.BoundingPoints(out gp_Pnt aP1, out gp_Pnt aP2);
+            theCP.BoundingPoints(out Point3D aP1, out Point3D aP2);
             aS.Append(' ').Append(Hex(aP1.X())).Append(' ').Append(Hex(aP1.Y())).Append(' ').Append(Hex(aP1.Z()))
               .Append(' ').Append(Hex(aP2.X())).Append(' ').Append(Hex(aP2.Y())).Append(' ').Append(Hex(aP2.Z()));
         }
@@ -167,9 +170,9 @@ internal static class EdgeIntersectorRecordings
             }
             return aS.ToString();
         }
-        catch (Standard_Failure anEx)
+        catch (FailureException anEx)
         {
-            return "X " + anEx.GetType().Name;
+            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType());
         }
     }
 
@@ -198,9 +201,9 @@ internal static class EdgeIntersectorRecordings
             }
             return aS.ToString();
         }
-        catch (Standard_Failure anEx)
+        catch (FailureException anEx)
         {
-            return "X " + anEx.GetType().Name;
+            return "X " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anEx.GetType());
         }
     }
 

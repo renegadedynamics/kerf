@@ -5,6 +5,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -101,7 +104,7 @@ public class BOPDS_DS
     public NCollection_List<TopoDS_Shape> Arguments() => myArguments;
 
     /// <summary>Initializes the data structure for the arguments.</summary>
-    public void Init() => Init(Precision.Confusion());
+    public void Init() => Init(global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <summary>Initializes the data structure for the arguments, with the fuzzy value.</summary>
     public void Init(double theFuzz)
@@ -130,7 +133,7 @@ public class BOPDS_DS
         myNbSourceShapes = NbShapes();
 
         // 2. Prepare data for shapes. Includes updating bound boxes, updating sub-shapes.
-        double anAdditionalTolerance = Max(theFuzz, Precision.Confusion()) * 0.5;
+        double anAdditionalTolerance = Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion()) * 0.5;
         prepareVertices(anAdditionalTolerance);                 // Vertex.
         int anEdgeCount = prepareEdges(anAdditionalTolerance);  // Edge.
         int aFaceCount = prepareFaces(anAdditionalTolerance);   // Face.
@@ -1142,7 +1145,7 @@ public class BOPDS_DS
         thePaveBlock1.Range(out double aPaveBlock1First, out double aPaveBlock1Last);
         double aPaveBlock1Intermediate = IntTools_Tools.IntermediatePoint(aPaveBlock1First, aPaveBlock1Last);
         TopoDS_Edge anEdge1 = TopoDS.Edge(Shape(thePaveBlock1.OriginalEdge()));
-        BOPTools_AlgoTools.PointOnEdge(anEdge1, aPaveBlock1Intermediate, out gp_Pnt aPaveBlock1IntermediatePoint);
+        BOPTools_AlgoTools.PointOnEdge(anEdge1, aPaveBlock1Intermediate, out Point3D aPaveBlock1IntermediatePoint);
 
         // Obtain the curve of the second edge and project the point onto it.
         thePaveBlock2.Range(out double aPaveBlock2First, out double aPaveBlock2Last);
@@ -1157,7 +1160,7 @@ public class BOPDS_DS
             double aDistance = aProjector.LowerDistance();
             double aTolerance = BRep_Tool.MaxTolerance(anEdge1, TopAbs_VERTEX)
                                 + BRep_Tool.MaxTolerance(anEdge2, TopAbs_VERTEX)
-                                + Max(theFuzzyValue, Precision.Confusion());
+                                + Max(theFuzzyValue, global::Kerf.Engine.Foundation.Precision.Confusion());
             // If the distance is less than tolerance, check that the projection
             // point lies within the parameter range of the second pave block.
             if (aDistance < aTolerance)
@@ -1217,7 +1220,7 @@ public class BOPDS_DS
             }
         }
 
-        std_sort.sort(pPaves.AsSpan(), new BOPDS_Pave.LessThan());
+        Sorting.Sort(pPaves.AsSpan(), new BOPDS_Pave.LessThan());
         foreach (BOPDS_Pave aPave in pPaves)
         {
             theResultPaves.Append(aPave);
@@ -1228,7 +1231,7 @@ public class BOPDS_DS
     /// The bounding box of the solid with the index, from its faces' boxes; whole if a shell is open or (with
     /// <paramref name="theCheckInverted"/>) the solid is inverted.
     /// </summary>
-    public void BuildBndBoxSolid(int theIndex, ref Bnd_Box theBox, bool theCheckInverted = true)
+    public void BuildBndBoxSolid(int theIndex, ref Box theBox, bool theCheckInverted = true)
     {
         BOPDS_ShapeInfo aShapeInfo = ShapeInfo(theIndex);
 
@@ -1249,10 +1252,10 @@ public class BOPDS_DS
                     continue;
                 }
 
-                Bnd_Box aFaceBoundBox = aFaceInfo.Box();
+                Box aFaceBoundBox = aFaceInfo.Box();
                 theBox.Add(aFaceBoundBox);
 
-                anIsOpenBox = aFaceBoundBox.IsOpen();
+                anIsOpenBox = aFaceBoundBox.IsOpen;
                 if (anIsOpenBox)
                 {
                     break;
@@ -1403,12 +1406,12 @@ public class BOPDS_DS
         for (int i = 0; i < 2; ++i)
         {
             TopoDS_Vertex aVertex = TopoDS.Vertex(Shape(aVertexIndex[i]));
-            double aTol = BRep_Tool.Tolerance(aVertex) + Precision.Confusion();
+            double aTol = BRep_Tool.Tolerance(aVertex) + global::Kerf.Engine.Foundation.Precision.Confusion();
             // Bounding point
-            gp_Pnt aVertexPoint = BRep_Tool.Pnt(aVertex);
+            Point3D aVertexPoint = BRep_Tool.Pnt(aVertex);
 
             // Point on the end of shrunk range
-            gp_Pnt aPointOnEdge = aCurveAdaptor.Value(aParameter[i]);
+            Point3D aPointOnEdge = aCurveAdaptor.Value(aParameter[i]);
 
             if (aTol - aVertexPoint.Distance(aPointOnEdge) > anEpsilon)
             {
@@ -1425,8 +1428,8 @@ public class BOPDS_DS
     // Note: this is generally unsafe function that is left to preserve previous behavior.
     private static double ComputeParameter(in TopoDS_Vertex theVertex, in TopoDS_Edge theEdge)
     {
-        double anEdgeToleranceSqr = MathUtils.Sqr(BRep_Tool.Tolerance(theEdge));
-        gp_Pnt aVertexPoint = BRep_Tool.Pnt(theVertex);
+        double anEdgeToleranceSqr = global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(BRep_Tool.Tolerance(theEdge));
+        Point3D aVertexPoint = BRep_Tool.Pnt(theVertex);
 
         TopoDS_Edge aForwardEdge = theEdge;
         aForwardEdge.Orientation(TopAbs_FORWARD);
@@ -1434,7 +1437,7 @@ public class BOPDS_DS
 
         bool isMatch(double theParameter)
         {
-            aCurve.D0(theParameter, out gp_Pnt aPointOnCurve);
+            aCurve.D0(theParameter, out Point3D aPointOnCurve);
             return aPointOnCurve.SquareDistance(aVertexPoint) < anEdgeToleranceSqr;
         }
 
@@ -1459,7 +1462,7 @@ public class BOPDS_DS
 
             TopoDS_Vertex aVertex = TopoDS.Vertex(aVertexInfo.Shape());
 
-            ref Bnd_Box aVertexBoundBox = ref aVertexInfo.ChangeBox();
+            ref Box aVertexBoundBox = ref aVertexInfo.ChangeBox();
             aVertexBoundBox.SetGap(BRep_Tool.Tolerance(aVertex) + theAdditionalTolerance);
             aVertexBoundBox.Add(BRep_Tool.Pnt(aVertex));
         }
@@ -1499,7 +1502,7 @@ public class BOPDS_DS
                 // Creates vertices at the infinite positions and add them to the edge sub-shape list.
                 void processInfinite(double theParam)
                 {
-                    aForwardEdgeCurve!.D0(theParam, out gp_Pnt aPoint);
+                    aForwardEdgeCurve!.D0(theParam, out Point3D aPoint);
                     TopoDS_Vertex aVertex = new();
                     BRep_Builder aBuilder = new();
                     aBuilder.MakeVertex(ref aVertex, aPoint, anEdgeTolerance);
@@ -1513,11 +1516,11 @@ public class BOPDS_DS
                     aVertexIndices.Append(Append(aVertexInfo));
                 }
 
-                if (Precision.IsNegativeInfinite(aCurveStart))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aCurveStart))
                 {
                     processInfinite(aCurveStart);
                 }
-                if (Precision.IsPositiveInfinite(aCurveEnd))
+                if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aCurveEnd))
                 {
                     processInfinite(aCurveEnd);
                 }
@@ -1528,7 +1531,7 @@ public class BOPDS_DS
             }
 
             // Update edge bounding box with its own bounding box.
-            ref Bnd_Box anEdgeBoundBox = ref anEdgeInfo.ChangeBox();
+            ref Box anEdgeBoundBox = ref anEdgeInfo.ChangeBox();
             BRepBndLib.Add(anEdge, ref anEdgeBoundBox);
 
             // Add bounding boxes of vertices to the edge bounding box.
@@ -1564,7 +1567,7 @@ public class BOPDS_DS
             TopoDS_Shape aFace = aFaceInfo.Shape();
 
             // Update face bounding box with its own bounding box.
-            ref Bnd_Box aFaceBoundBox = ref aFaceInfo.ChangeBox();
+            ref Box aFaceBoundBox = ref aFaceInfo.ChangeBox();
             BRepBndLib.Add(aFace, ref aFaceBoundBox);
 
             // Container of the face sub-shape indices. Currently contains wire indices.
@@ -1648,7 +1651,7 @@ public class BOPDS_DS
             NCollection_IntMap aNewSubShapeIndices = new(100);
 
             // Update solid bounding box with its own bounding box.
-            ref Bnd_Box aSolidBoundBox = ref aSolidInfo.ChangeBox();
+            ref Box aSolidBoundBox = ref aSolidInfo.ChangeBox();
             BuildBndBoxSolid(aSolidIndex, ref aSolidBoundBox);
 
             // Container of the solid sub-shape indices. Currently contains shell indices.

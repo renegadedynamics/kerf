@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2019-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
-using static Occt.Message_Gravity;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -28,7 +32,7 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
     {
         BRepMesh_DataStructureOfDelaun aStructure = getStructure();
 
-        Bnd_B2d aBox = new();
+        B2d aBox = new();
         int aNodesNb = aStructure.NbNodes();
         double[] aPoints = new double[2 * (aNodesNb + 4)];
         for (int aNodeIt = 0; aNodeIt < aNodesNb; ++aNodeIt)
@@ -39,12 +43,12 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
             aPoints[aBaseIdx + 0] = aVertex.Coord().X();
             aPoints[aBaseIdx + 1] = aVertex.Coord().Y();
 
-            aBox.Add(new gp_Pnt2d(aVertex.Coord()));
+            aBox.Add(new Point2D(aVertex.Coord()));
         }
 
         aBox.Enlarge(0.1 * (aBox.CornerMax() - aBox.CornerMin()).Modulus());
-        gp_XY aMin = aBox.CornerMin();
-        gp_XY aMax = aBox.CornerMax();
+        Xy aMin = aBox.CornerMin();
+        Xy aMax = aBox.CornerMax();
 
         aPoints[2 * aNodesNb + 0] = aMin.X();
         aPoints[2 * aNodesNb + 1] = aMin.Y();
@@ -77,7 +81,7 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
         IDelaBella? aTriangulator = IDelaBella.Create();
         if (aTriangulator is null) // should never happen
         {
-            throw new Standard_ProgramError("BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation: unable "
+            throw new ProgramErrorException("BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation: unable "
                                             + "creating a triangulation algorithm");
         }
 
@@ -120,7 +124,7 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
             aTriangulator.Destroy();
             aTriangulator = null;
         }
-        catch (Standard_Failure theException)
+        catch (FailureException theException)
         {
             if (aTriangulator is not null)
             {
@@ -128,9 +132,9 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
                 aTriangulator = null;
             }
 
-            throw new Standard_Failure(theException.Message);
+            throw new FailureException(theException.Message);
         }
-        catch (Exception anException) when (anException is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception anException) when (anException is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             if (aTriangulator is not null)
             {
@@ -138,7 +142,7 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
                 aTriangulator = null;
             }
 
-            throw new Standard_Failure("BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation: exception in "
+            throw new FailureException("BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation: exception in "
                                        + "triangulation algorithm");
         }
     }
@@ -147,20 +151,20 @@ public class BRepMesh_DelabellaBaseMeshAlgo : BRepMesh_CustomBaseMeshAlgo
     private static int logDelabella2Occ(object? theStream, string theMessage)
     {
         _ = theStream;
-        Message_Gravity aGravity = Message_Warning;
+        Gravity aGravity = Warning;
         switch (theMessage.Length > 1 ? theMessage[1] : '\0')
         {
             case 'E':
-                aGravity = Message_Fail;
+                aGravity = Fail;
                 break; // [ERR]
             case 'W':
-                aGravity = Message_Trace;
+                aGravity = Trace;
                 break; // [WRN]
             case 'N':
-                aGravity = Message_Trace;
+                aGravity = Trace;
                 break; // [NFO]
         }
-        Message.Send(theMessage, aGravity);
+        global::Kerf.Engine.Foundation.Message.Send(theMessage, aGravity);
         return 0;
     }
 }

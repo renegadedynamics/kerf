@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class StepBasic_DerivedUnit : Standard_Transient
+public class StepBasic_DerivedUnit : Transient
 {
     private NCollection_HArray1<StepBasic_DerivedUnitElement> theElements;
 

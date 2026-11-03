@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 
 namespace Occt;
@@ -14,7 +15,7 @@ namespace Occt;
 /// Cascade/Imagine It works with a Controller (which itself can work with an Actor to Write) and a
 /// FinderProcess. It records results and checks
 /// </summary>
-public class XSControl_TransferWriter : Standard_Transient
+public class XSControl_TransferWriter : Transient
 {
 
     /// <summary>
@@ -98,7 +99,7 @@ public class XSControl_TransferWriter : Standard_Transient
     /// </summary>
     public void PrintStats(int theWhat, int theMode = 0)
     {
-        using Message_Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
         //  A ameliorer ... !
         sout.Append("\n*******************************************************************\n");
         sout.Append("******        Statistics on Transfer (Write)                 ******");
@@ -120,7 +121,7 @@ public class XSControl_TransferWriter : Standard_Transient
     /// Tells if a transient object (from an application) is a valid candidate for a transfer to a model Asks the
     /// Controller (RecognizeWriteTransient) If &lt;obj&gt; is a HShape, calls RecognizeShape
     /// </summary>
-    public bool RecognizeTransient(Standard_Transient? obj)
+    public bool RecognizeTransient(Transient? obj)
     {
         if (myController is null)
         {
@@ -140,7 +141,7 @@ public class XSControl_TransferWriter : Standard_Transient
     /// to SetTransferMode Works by calling the Controller Returns status : =0 if OK, &gt;0 if error during
     /// transfer, &lt;0 if transfer badly initialised
     /// </summary>
-    public IFSelect_ReturnStatus TransferWriteTransient(Interface_InterfaceModel? model, Standard_Transient? obj, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferWriteTransient(Interface_InterfaceModel? model, Transient? obj, ProgressRange theProgress = default)
     {
         IFSelect_ReturnStatus status = IFSelect_RetVoid;
         if (myController is null)
@@ -158,12 +159,12 @@ public class XSControl_TransferWriter : Standard_Transient
         }
         Transfer_ActorOfFinderProcess nulact = null;
         myTransferWriter.SetActor(nulact);
-        using Message_Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
         try
         {
             PrintStats(myTransferMode);
             sout.Append("******        Transferring Transient, CDL Type = ");
-            sout.Append(obj.DynamicType().Name);
+            sout.Append(obj.DynamicTypeName());
             sout.Append("   ******");
             sout.Append('\n');
             status = myController.TransferWriteTransient(obj, myTransferWriter, model, myTransferMode, theProgress);
@@ -199,7 +200,7 @@ public class XSControl_TransferWriter : Standard_Transient
     /// Works by calling the Controller Returns status : =0 if OK, &gt;0 if error during transfer, &lt;0 if
     /// transfer badly initialised
     /// </summary>
-    public IFSelect_ReturnStatus TransferWriteShape(Interface_InterfaceModel? theModel, TopoDS_Shape theShape, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus TransferWriteShape(Interface_InterfaceModel? theModel, TopoDS_Shape theShape, ProgressRange theProgress = default)
     {
         IFSelect_ReturnStatus status = IFSelect_RetVoid;
         if (myController is null)
@@ -220,7 +221,7 @@ public class XSControl_TransferWriter : Standard_Transient
         //  effacer l actor : Controller s en charge
         Transfer_ActorOfFinderProcess nulact = null;
         myTransferWriter.SetActor(nulact);
-        using Message_Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = myTransferWriter.Messenger().SendInfo();
         try
         {
             PrintStats(myTransferMode);
@@ -302,7 +303,7 @@ public class XSControl_TransferWriter : Standard_Transient
             {
                 continue;
             }
-            Standard_Transient ent = tb.Result();
+            Transient ent = tb.Result();
             if (ent is not null && model is not null)
             {
                 chl.Add(ach, model.Number(ent));

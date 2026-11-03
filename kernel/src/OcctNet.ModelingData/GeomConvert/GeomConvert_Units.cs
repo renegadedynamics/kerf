@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -27,10 +31,10 @@ public static class GeomConvert_Units
         double LengthFact = 1.0 / theLengthFactor;
         double AngleFact = theFactorRadianDegree; // 180./PI;  pilotable
 
-        var Pt1 = new gp_Pnt2d();
-        gp_XY pXY;
-        var tMatu = new gp_GTrsf2d();
-        var tMatv = new gp_GTrsf2d();
+        var Pt1 = new Point2D();
+        Xy pXY;
+        var tMatu = new GeneralTransform2D();
+        var tMatv = new GeneralTransform2D();
 
         //  theSurf is a CylindricalSurface or a ConicalSurface or
         //             a ToroidalSurface or a SphericalSurface or
@@ -62,8 +66,8 @@ public static class GeomConvert_Units
             if (aCurve2d is Geom2d_Circle
                 || aCurve2d is Geom2d_Ellipse)
             {
-                var aT = new gp_Trsf2d();
-                aT.SetScale(gp.Origin2d(), LengthFact);
+                var aT = new Transform2D();
+                aT.SetScale(Constants.Origin2d(), LengthFact);
                 aCurve2d.Transform(aT);
                 return aCurve2d;
             }
@@ -76,11 +80,11 @@ public static class GeomConvert_Units
         if (aCurve2d is Geom2d_Line)
         {
             Geom2d_Line aLine2d = (Geom2d_Line)aCurve2d;
-            gp_Pnt2d myLoc = aLine2d.Location();
-            gp_Dir2d myDir = aLine2d.Direction();
-            var myNewLoc = new gp_Pnt2d();
+            Point2D myLoc = aLine2d.Location();
+            Direction2D myDir = aLine2d.Direction();
+            var myNewLoc = new Point2D();
             myNewLoc.SetCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
-            var myNewDir = new gp_Dir2d();
+            var myNewDir = new Direction2D();
             myNewDir.SetCoord(myDir.X() * uFact, myDir.Y() * vFact);
             Geom2d_Line myNewLine2d = (Geom2d_Line)aLine2d.Copy();
             myNewLine2d.SetLocation(myNewLoc);
@@ -100,8 +104,8 @@ public static class GeomConvert_Units
         }
 
         // Compute affinity
-        tMatu.SetAffinity(gp.OY2d(), uFact);
-        tMatv.SetAffinity(gp.OX2d(), vFact);
+        tMatu.SetAffinity(Constants.OY2d(), uFact);
+        tMatv.SetAffinity(Constants.OX2d(), vFact);
         if (aCurve2d is Geom2d_BoundedCurve)
         {
             if (aCurve2d is Geom2d_BSplineCurve)
@@ -145,10 +149,10 @@ public static class GeomConvert_Units
         double LengthFact = theLengthFactor;
         double AngleFact = theFactorRadianDegree; // PI/180.;  pilotable
 
-        var Pt1 = new gp_Pnt2d();
-        gp_XY pXY;
-        var tMatu = new gp_GTrsf2d();
-        var tMatv = new gp_GTrsf2d();
+        var Pt1 = new Point2D();
+        Xy pXY;
+        var tMatu = new GeneralTransform2D();
+        var tMatv = new GeneralTransform2D();
 
         // What to change ??
 
@@ -179,8 +183,8 @@ public static class GeomConvert_Units
             if (aPcurve is Geom2d_Circle
                 || aPcurve is Geom2d_Ellipse)
             {
-                var aT = new gp_Trsf2d();
-                aT.SetScale(gp.Origin2d(), LengthFact);
+                var aT = new Transform2D();
+                aT.SetScale(Constants.Origin2d(), LengthFact);
                 aPcurve.Transform(aT);
                 return aPcurve;
             }
@@ -212,20 +216,20 @@ public static class GeomConvert_Units
 
         // Compute affinity
 
-        tMatu.SetAffinity(gp.OY2d(), uFact);
-        tMatv.SetAffinity(gp.OX2d(), vFact);
+        tMatu.SetAffinity(Constants.OY2d(), uFact);
+        tMatv.SetAffinity(Constants.OX2d(), vFact);
 
         if (aPcurve is Geom2d_Line)
         {
             Geom2d_Line aLine2d = (Geom2d_Line)aPcurve;
 
-            gp_Pnt2d myLoc = aLine2d.Location();
-            gp_Dir2d myDir = aLine2d.Direction();
+            Point2D myLoc = aLine2d.Location();
+            Direction2D myDir = aLine2d.Direction();
 
-            var myNewLoc = new gp_Pnt2d();
+            var myNewLoc = new Point2D();
             myNewLoc.SetCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
 
-            var myNewDir = new gp_Dir2d();
+            var myNewDir = new Direction2D();
             myNewDir.SetCoord(myDir.X() * uFact, myDir.Y() * vFact);
 
             aLine2d.SetLocation(myNewLoc);
@@ -260,10 +264,10 @@ public static class GeomConvert_Units
     public static Geom2d_Curve MirrorPCurve(Geom2d_Curve theCurve)
     {
         Geom2d_Curve theMirrored = (Geom2d_Curve)theCurve.Copy();
-        var T = new gp_Trsf2d();
-        var Loc = new gp_Pnt2d(0.0, 0.0);
-        var Dir = new gp_Dir2d(gp_Dir2d.D.X);
-        var ax2 = new gp_Ax2d(Loc, Dir);
+        var T = new Transform2D();
+        var Loc = new Point2D(0.0, 0.0);
+        var Dir = new Direction2D(Direction2D.D.X);
+        var ax2 = new Axis2D(Loc, Dir);
         T.SetMirror(ax2);
         theMirrored.Transform(T);
         return theMirrored;

@@ -9,12 +9,16 @@
 
 //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -72,7 +76,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    private static bool IsoIsDeg(Adaptor3d_Surface S, double Param, GeomAbs_IsoType IT, double TolMin, double TolMax)
+    private static bool IsoIsDeg(Adaptor3d_Surface S, double Param, IsoType IT, double TolMin, double TolMax)
     {
         double U1 = 0.0, U2 = 0.0, V1 = 0.0, V2 = 0.0, T;
         bool Along = true;
@@ -80,10 +84,10 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
         U2 = S.LastUParameter();
         V1 = S.FirstVParameter();
         V2 = S.LastVParameter();
-        gp_Vec D1U, D1V;
-        gp_Pnt P;
+        Vector3D D1U, D1V;
+        Point3D P;
         double Step, D1NormMax;
-        if (IT == GeomAbs_IsoV)
+        if (IT == IsoV)
         {
             Step = (U2 - U1) / 10;
             D1NormMax = 0.0;
@@ -121,7 +125,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
     private static void TrimC3d(ref Adaptor3d_Curve myCurve,
                                 Span<bool> IsTrimmed,
                                 double dt,
-                                in gp_Pnt Pole,
+                                in Point3D Pole,
                                 Span<int> SingularCase,
                                 int NumberOfSingularCase,
                                 double TolConf)
@@ -129,13 +133,13 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
         double f = myCurve.FirstParameter();
         double l = myCurve.LastParameter();
 
-        gp_Pnt P = myCurve.Value(f);
+        Point3D P = myCurve.Value(f);
 
         if (P.Distance(Pole) <= TolConf)
         {
             IsTrimmed[0] = true;
             f = f + dt;
-            myCurve = myCurve.Trim(f, l, Precision.Confusion());
+            myCurve = myCurve.Trim(f, l, global::Kerf.Engine.Foundation.Precision.Confusion());
             SingularCase[0] = NumberOfSingularCase;
         }
 
@@ -144,7 +148,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
         {
             IsTrimmed[1] = true;
             l = l - dt;
-            myCurve = myCurve.Trim(f, l, Precision.Confusion());
+            myCurve = myCurve.Trim(f, l, global::Kerf.Engine.Foundation.Precision.Confusion());
             SingularCase[1] = NumberOfSingularCase;
         }
     }
@@ -166,19 +170,19 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
         _ = dt;
         double theParam = (FirstOrLast == 0) ? aRes!.FirstParameter() : aRes!.LastParameter();
 
-        gp_Pnt2d aPBnd;
-        gp_Vec2d aVBnd;
-        gp_Dir2d aDBnd = new();
+        Point2D aPBnd;
+        Vector2D aVBnd;
+        Direction2D aDBnd = new();
         Geom2d_TrimmedCurve aSegment;
-        Geom2dConvert_CompCurveToBSplineCurve aCompCurve = new(aRes, Convert_RationalC1);
-        double aTol = Precision.Confusion();
+        Geom2dConvert_CompCurveToBSplineCurve aCompCurve = new(aRes, RationalC1);
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         aRes.D1(theParam, out aPBnd, out aVBnd);
         aDBnd.SetXY(aVBnd.XY());
-        gp_Lin2d aLin = new(aPBnd, aDBnd); // line in direction of derivative
+        Line2D aLin = new(aPBnd, aDBnd); // line in direction of derivative
 
-        gp_Pnt2d thePole = new();
-        gp_Dir2d theBoundDir = new();
+        Point2D thePole = new();
+        Direction2D theBoundDir = new();
         switch (NumberOfSingularCase)
         {
             case 1:
@@ -206,11 +210,11 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                 break;
             }
         }
-        gp_Lin2d BoundLin = new(thePole, theBoundDir); // one of the bounds of rectangle
+        Line2D BoundLin = new(thePole, theBoundDir); // one of the bounds of rectangle
         double ParOnLin = 0.0;
-        if (theBoundDir.IsParallel(aDBnd, 100.0 * Precision.Angular()))
+        if (theBoundDir.IsParallel(aDBnd, 100.0 * global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            ParOnLin = ElCLib.Parameter(aLin, thePole);
+            ParOnLin = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, thePole);
         }
         else
         {
@@ -240,31 +244,31 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     private static void Project(ProjLib_Projector P, Adaptor3d_Curve C)
     {
-        GeomAbs_CurveType CType = C.GetType();
+        CurveKind CType = C.GetType();
         switch (CType)
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 P.Project(C.Line());
                 break;
-            case GeomAbs_Circle:
+            case global::Kerf.Geometry.CurveKind.Circle:
                 P.Project(C.Circle());
                 break;
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
                 P.Project(C.Ellipse());
                 break;
-            case GeomAbs_Hyperbola:
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
                 P.Project(C.Hyperbola());
                 break;
-            case GeomAbs_Parabola:
+            case global::Kerf.Geometry.CurveKind.Parabola:
                 P.Project(C.Parabola());
                 break;
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_BezierCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_OtherCurve: // try the approximation
+            case BSplineCurve:
+            case BezierCurve:
+            case OffsetCurve:
+            case OtherCurve: // try the approximation
                 break;
             default:
-                throw new Standard_NoSuchObject(" ");
+                throw new NoSuchObjectException(" ");
         }
     }
 
@@ -295,7 +299,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
         private void ReSize(long N)
         {
-            long newBuck = NCollection_Primes.NextPrimeForMap(N);
+            long newBuck = Primes.NextPrimeForMap(N);
             if (newBuck <= myNbBuckets)
             {
                 if (myData1 is null)
@@ -387,7 +391,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
     /// <summary>Empty constructor, it only sets some initial values for class fields.</summary>
     public ProjLib_ProjectedCurve()
     {
-        myTolerance = Precision.Confusion();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         myDegMin = -1;
         myDegMax = -1;
         myMaxSegments = -1;
@@ -422,7 +426,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
     public ProjLib_ProjectedCurve(Adaptor3d_Surface S, Adaptor3d_Curve C, double Tol)
         : this()
     {
-        myTolerance = Max(Tol, Precision.Confusion());
+        myTolerance = Max(Tol, global::Kerf.Engine.Foundation.Precision.Confusion());
         Load(S);
         Perform(C);
     }
@@ -479,18 +483,18 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
     /// non-analytical surface.</remarks>
     public void Perform(Adaptor3d_Curve C)
     {
-        myTolerance = Max(myTolerance, Precision.Confusion());
+        myTolerance = Max(myTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         myCurve = C;
         double FirstPar = C.FirstParameter();
         double LastPar = C.LastParameter();
-        GeomAbs_SurfaceType SType = mySurface!.GetType();
-        GeomAbs_CurveType CType = myCurve.GetType();
+        SurfaceKind SType = mySurface!.GetType();
+        CurveKind CType = myCurve.GetType();
         bool isAnalyticalSurf = true;
         Span<bool> IsTrimmed = stackalloc bool[2] { false, false };
         // OCCT leaves SingularCase uninitialised; it is read only where TrimC3d set it.
         Span<int> SingularCase = stackalloc int[2];
         const double eps = 0.01;
-        double TolConf = Precision.Confusion();
+        double TolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
         double dt = (LastPar - FirstPar) * eps;
         double U1 = 0.0, U2 = 0.0, V1 = 0.0, V2 = 0.0;
         U1 = mySurface.FirstUParameter();
@@ -500,7 +504,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
         switch (SType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 ProjLib_Plane P = new(mySurface.Plane());
                 Project(P, myCurve);
@@ -508,7 +512,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
             }
             break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 ProjLib_Cylinder P = new(mySurface.Cylinder());
                 Project(P, myCurve);
@@ -516,7 +520,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
             }
             break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 ProjLib_Cone P = new(mySurface.Cone());
                 Project(P, myCurve);
@@ -524,7 +528,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
             }
             break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 ProjLib_Sphere P = new(mySurface.Sphere());
                 Project(P, myCurve);
@@ -539,19 +543,19 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                     const double Vmax = M_PI / 2.0;
                     const double Vmin = -Vmax;
                     const double minang = 1.0e-5 * M_PI;
-                    gp_Sphere aSph = mySurface.Sphere();
+                    Sphere aSph = mySurface.Sphere();
                     double anR = aSph.Radius();
                     double f = myCurve.FirstParameter();
                     double l = myCurve.LastParameter();
 
-                    gp_Pnt Pf = myCurve.Value(f);
-                    gp_Pnt Pl = myCurve.Value(l);
-                    gp_Pnt aLoc = aSph.Position().Location();
+                    Point3D Pf = myCurve.Value(f);
+                    Point3D Pl = myCurve.Value(l);
+                    Point3D aLoc = aSph.Position().Location();
                     double maxdist = Max(Pf.Distance(aLoc), Pl.Distance(aLoc));
                     TolConf = Max(anR * minang, Math.Abs(anR - maxdist));
 
                     // Surface has pole at V = Vmin and Vmax
-                    gp_Pnt Pole = mySurface.Value(U1, Vmin);
+                    Point3D Pole = mySurface.Value(U1, Vmin);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 3, TolConf);
                     Pole = mySurface.Value(U1, Vmax);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 4, TolConf);
@@ -560,7 +564,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
             }
             break;
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 ProjLib_Torus P = new(mySurface.Torus());
                 Project(P, myCurve);
@@ -568,8 +572,8 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
             }
             break;
 
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
+            case BezierSurface:
+            case BSplineSurface:
             {
                 isAnalyticalSurf = false;
                 double f, l;
@@ -583,31 +587,31 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                 V1 = S.FirstVParameter();
                 V2 = S.LastVParameter();
 
-                if (IsoIsDeg(S, U1, GeomAbs_IsoU, 0.0, myTolerance))
+                if (IsoIsDeg(S, U1, IsoU, 0.0, myTolerance))
                 {
                     // Surface has pole at U = Umin
-                    gp_Pnt Pole = mySurface.Value(U1, V1);
+                    Point3D Pole = mySurface.Value(U1, V1);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 1, TolConf);
                 }
 
-                if (IsoIsDeg(S, U2, GeomAbs_IsoU, 0.0, myTolerance))
+                if (IsoIsDeg(S, U2, IsoU, 0.0, myTolerance))
                 {
                     // Surface has pole at U = Umax
-                    gp_Pnt Pole = mySurface.Value(U2, V1);
+                    Point3D Pole = mySurface.Value(U2, V1);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 2, TolConf);
                 }
 
-                if (IsoIsDeg(S, V1, GeomAbs_IsoV, 0.0, myTolerance))
+                if (IsoIsDeg(S, V1, IsoV, 0.0, myTolerance))
                 {
                     // Surface has pole at V = Vmin
-                    gp_Pnt Pole = mySurface.Value(U1, V1);
+                    Point3D Pole = mySurface.Value(U1, V1);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 3, TolConf);
                 }
 
-                if (IsoIsDeg(S, V2, GeomAbs_IsoV, 0.0, myTolerance))
+                if (IsoIsDeg(S, V2, IsoV, 0.0, myTolerance))
                 {
                     // Surface has pole at V = Vmax
-                    gp_Pnt Pole = mySurface.Value(U1, V2);
+                    Point3D Pole = mySurface.Value(U1, V2);
                     TrimC3d(ref myCurve, IsTrimmed, dt, Pole, SingularCase, 4, TolConf);
                 }
 
@@ -640,7 +644,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                             ExtendC2d(ref aRes, l, dt, U1, U2, V1, V2, 1, SingularCase[1]);
                         }
                         Geom2d_Curve? NewCurve2d = null;
-                        GeomLib.SameRange(Precision.PConfusion(),
+                        GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                           aRes,
                                           aRes!.FirstParameter(),
                                           aRes.LastParameter(),
@@ -651,7 +655,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                     }
                     myResult.SetBSpline(aRes);
                     myResult.Done();
-                    myResult.SetType(GeomAbs_BSplineCurve);
+                    myResult.SetType(BSplineCurve);
                 }
             }
             break;
@@ -663,25 +667,25 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                 double f = 0.0, l = 0.0;
                 dt = 0.0;
 
-                if (mySurface.GetType() == GeomAbs_SurfaceOfRevolution)
+                if (mySurface.GetType() == SurfaceOfRevolution)
                 {
                     // Check possible singularity
 
-                    gp_Pnt P = mySurface.AxeOfRevolution().Location();
-                    gp_Dir N = mySurface.AxeOfRevolution().Direction();
+                    Point3D P = mySurface.AxeOfRevolution().Location();
+                    Direction3D N = mySurface.AxeOfRevolution().Direction();
 
-                    gp_Lin L = new(P, N);
+                    Line3D L = new(P, N);
 
                     f = myCurve.FirstParameter();
                     l = myCurve.LastParameter();
                     dt = (l - f) * eps;
 
                     P = myCurve.Value(f);
-                    if (L.Distance(P) < Precision.Confusion())
+                    if (L.Distance(P) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         IsTrimmed[0] = true;
                         f = f + dt;
-                        myCurve = myCurve.Trim(f, l, Precision.Confusion());
+                        myCurve = myCurve.Trim(f, l, global::Kerf.Engine.Foundation.Precision.Confusion());
                         // Searching the parameter on the basis curve for surface of revolution
                         Extrema_ExtPC anExtr = new(P, mySurface.BasisCurve(), myTolerance);
                         if (anExtr.IsDone())
@@ -698,17 +702,17 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                         }
                         else
                         {
-                            Vsingular[0] = ElCLib.Parameter(L, P);
+                            Vsingular[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, P);
                         }
                         // SingularCase[0] = 3;
                     }
 
                     P = myCurve.Value(l);
-                    if (L.Distance(P) < Precision.Confusion())
+                    if (L.Distance(P) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         IsTrimmed[1] = true;
                         l = l - dt;
-                        myCurve = myCurve.Trim(f, l, Precision.Confusion());
+                        myCurve = myCurve.Trim(f, l, global::Kerf.Engine.Foundation.Precision.Confusion());
                         // Searching the parameter on the basis curve for surface of revolution
                         Extrema_ExtPC anExtr = new(P, mySurface.BasisCurve(), myTolerance);
                         if (anExtr.IsDone())
@@ -725,14 +729,14 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                         }
                         else
                         {
-                            Vsingular[1] = ElCLib.Parameter(L, P);
+                            Vsingular[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, P);
                         }
                         // SingularCase[1] = 4;
                     }
                 }
 
-                double aTolU = Max(ComputeTolU(mySurface, myTolerance), Precision.Confusion());
-                double aTolV = Max(ComputeTolV(mySurface, myTolerance), Precision.Confusion());
+                double aTolU = Max(ComputeTolU(mySurface, myTolerance), global::Kerf.Engine.Foundation.Precision.Confusion());
+                double aTolV = Max(ComputeTolV(mySurface, myTolerance), global::Kerf.Engine.Foundation.Precision.Confusion());
                 double aTol2d = Math.Sqrt(aTolU * aTolU + aTolV * aTolV);
 
                 double aMaxDist = 100.0 * myTolerance;
@@ -758,10 +762,10 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                 // Approximate this algorithmic curve.
                 bool Only3d = false;
                 bool Only2d = true;
-                GeomAbs_Shape Continuity = GeomAbs_C1;
+                Continuity Continuity = C1;
                 if (myBndPnt == AppParCurves_PassPoint)
                 {
-                    Continuity = GeomAbs_C0;
+                    Continuity = C0;
                 }
                 int MaxDegree = 14;
                 if (myDegMax > 0)
@@ -806,7 +810,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                             ExtendC2d(ref aRes, l, dt, u1, u2, v1, Vsingular[1], 1, 4);
                         }
                         Geom2d_Curve? NewCurve2d = null;
-                        GeomLib.SameRange(Precision.PConfusion(),
+                        GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                           aRes,
                                           aRes!.FirstParameter(),
                                           aRes.LastParameter(),
@@ -814,12 +818,12 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                                           LastPar,
                                           ref NewCurve2d);
                         aRes = NewCurve2d as Geom2d_BSplineCurve;
-                        if (Continuity == GeomAbs_C0)
+                        if (Continuity == C0)
                         {
                             // try to smoother the Curve GeomAbs_C1.
                             int aDeg = aRes!.Degree();
                             bool OK = true;
-                            double aSmoothTol = Max(Precision.Confusion(), aNewTol2d);
+                            double aSmoothTol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), aNewTol2d);
                             for (int ij = 2; ij < aRes.NbKnots(); ij++)
                             {
                                 OK = OK && aRes.RemoveKnot(ij, aDeg - 1, aSmoothTol);
@@ -829,7 +833,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
                     myResult.SetBSpline(aRes);
                     myResult.Done();
-                    myResult.SetType(GeomAbs_BSplineCurve);
+                    myResult.SetType(BSplineCurve);
                 }
             }
             break;
@@ -874,7 +878,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                     ExtendC2d(ref aRes, l, dt, U1, U2, V1, V2, 1, SingularCase[1]);
                 }
                 Geom2d_Curve? NewCurve2d = null;
-                GeomLib.SameRange(Precision.PConfusion(),
+                GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                   aRes,
                                   aRes!.FirstParameter(),
                                   aRes.LastParameter(),
@@ -883,24 +887,24 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                                   ref NewCurve2d);
                 aRes = NewCurve2d as Geom2d_BSplineCurve;
                 myResult.SetBSpline(aRes);
-                myResult.SetType(GeomAbs_BSplineCurve);
+                myResult.SetType(BSplineCurve);
             }
             else
             {
                 // set the type
-                if (SType == GeomAbs_Plane && CType == GeomAbs_BezierCurve)
+                if (SType == Plane && CType == BezierCurve)
                 {
-                    myResult.SetType(GeomAbs_BezierCurve);
+                    myResult.SetType(BezierCurve);
                     myResult.SetBezier(Comp.InternalBezier());
                 }
                 else
                 {
-                    myResult.SetType(GeomAbs_BSplineCurve);
+                    myResult.SetType(BSplineCurve);
                     myResult.SetBSpline(Comp.InternalBSpline());
                 }
             }
             // set the periodicity flag
-            if (SType == GeomAbs_Plane && CType == GeomAbs_BSplineCurve && myCurve.IsPeriodic())
+            if (SType == Plane && CType == BSplineCurve && myCurve.IsPeriodic())
             {
                 myResult.SetPeriodic();
             }
@@ -931,7 +935,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                     continue;
                 }
 
-                if (myResult.GetType() == GeomAbs_BSplineCurve)
+                if (myResult.GetType() == BSplineCurve)
                 {
                     IntDataMap aMap = new();
                     // A curve this projection built (or the result of an earlier Perform, which OCCT translates
@@ -947,7 +951,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                         for (int anIntIdx = 0; anIntIdx <= aDeg; anIntIdx++)
                         {
                             double aCurrParam = aFirstParam + (aLastParam - aFirstParam) * anIntIdx / (aDeg + 1.0);
-                            gp_Pnt2d aPnt2d;
+                            Point2D aPnt2d;
                             aRes.D0(aCurrParam, out aPnt2d);
 
                             int aMapKey = (int)((aPnt2d.Coord(anIdx) - aSurfFirstPar[anIdx - 1]) / aSurfPeriod[anIdx - 1]);
@@ -979,14 +983,14 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
                     }
                     if (aMaxIdx != 0)
                     {
-                        gp_Pnt2d aFirstPnt = aRes.Value(aRes.FirstParameter());
-                        gp_Pnt2d aSecondPnt = aFirstPnt;
+                        Point2D aFirstPnt = aRes.Value(aRes.FirstParameter());
+                        Point2D aSecondPnt = aFirstPnt;
                         aSecondPnt.SetCoord(anIdx, aFirstPnt.Coord(anIdx) - aSurfPeriod[anIdx - 1] * aMaxIdx);
-                        aRes.Translate(new gp_Vec2d(aFirstPnt, aSecondPnt));
+                        aRes.Translate(new Vector2D(aFirstPnt, aSecondPnt));
                     }
                 }
 
-                if (myResult.GetType() == GeomAbs_Line)
+                if (myResult.GetType() == global::Kerf.Geometry.CurveKind.Line)
                 {
                     double aT1 = myCurve.FirstParameter();
                     double aT2 = myCurve.LastParameter();
@@ -1072,27 +1076,27 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override GeomAbs_Shape Continuity() =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Continuity() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override Continuity Continuity() =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Continuity() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override int NbIntervals(GeomAbs_Shape S) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::NbIntervals() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override int NbIntervals(Continuity S) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::NbIntervals() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Intervals() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override void Intervals(NCollection_Array1<double> T, Continuity S) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Intervals() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
     public override bool IsClosed() =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::IsClosed() - method is not implemented");
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::IsClosed() - method is not implemented");
 
     //=================================================================================================
 
@@ -1100,90 +1104,90 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
     public override double Period() =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Period() - method is not implemented");
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Period() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override gp_Pnt2d Value(double U) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Value() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override Point2D Value(double U) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Value() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override void D0(double U, out gp_Pnt2d P) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::D0() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override void D0(double U, out Point2D P) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::D0() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override void D1(double U, out gp_Pnt2d P, out gp_Vec2d V) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::D1() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override void D1(double U, out Point2D P, out Vector2D V) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::D1() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override void D2(double U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::D2() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override void D2(double U, out Point2D P, out Vector2D V1, out Vector2D V2) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::D2() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override void D3(double U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2, out gp_Vec2d V3) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::D3() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override void D3(double U, out Point2D P, out Vector2D V1, out Vector2D V2, out Vector2D V3) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::D3() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
-    public override gp_Vec2d DN(double U, int N) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::DN() - method is not implemented");
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
+    public override Vector2D DN(double U, int N) =>
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::DN() - method is not implemented");
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
     public override double Resolution(double R3d) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Resolution() - method is not implemented");
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Resolution() - method is not implemented");
 
     //=================================================================================================
 
     /// <summary>The type of the result: Line, Circle, Ellipse, Hyperbola, Parabola, BezierCurve, BSplineCurve or
     /// OtherCurve.</summary>
-    public override GeomAbs_CurveType GetType() => myResult.GetType();
+    public override CurveKind GetType() => myResult.GetType();
 
     //=================================================================================================
 
-    public override gp_Lin2d Line() => myResult.Line();
+    public override Line2D Line() => myResult.Line();
 
     //=================================================================================================
 
-    public override gp_Circ2d Circle() => myResult.Circle();
+    public override Circle2D Circle() => myResult.Circle();
 
     //=================================================================================================
 
-    public override gp_Elips2d Ellipse() => myResult.Ellipse();
+    public override Ellipse2D Ellipse() => myResult.Ellipse();
 
     //=================================================================================================
 
-    public override gp_Hypr2d Hyperbola() => myResult.Hyperbola();
+    public override Hyperbola2D Hyperbola() => myResult.Hyperbola();
 
     //=================================================================================================
 
-    public override gp_Parab2d Parabola() => myResult.Parabola();
+    public override Parabola2D Parabola() => myResult.Parabola();
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NoSuchObject">The result is not a B-spline or Bezier curve.</exception>
+    /// <exception cref="NoSuchObjectException">The result is not a B-spline or Bezier curve.</exception>
     public override int Degree()
     {
-        Standard_NoSuchObject_Raise_if((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve),
+        Standard_NoSuchObject_Raise_if((GetType() != BSplineCurve) && (GetType() != BezierCurve),
                                        "ProjLib_ProjectedCurve:Degree");
-        if (GetType() == GeomAbs_BSplineCurve)
+        if (GetType() == BSplineCurve)
         {
             return myResult.InternalBSpline()!.Degree();
         }
-        else if (GetType() == GeomAbs_BezierCurve)
+        else if (GetType() == BezierCurve)
         {
             return myResult.InternalBezier()!.Degree();
         }
@@ -1194,16 +1198,16 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NoSuchObject">The result is not a B-spline or Bezier curve.</exception>
+    /// <exception cref="NoSuchObjectException">The result is not a B-spline or Bezier curve.</exception>
     public override bool IsRational()
     {
-        Standard_NoSuchObject_Raise_if((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve),
+        Standard_NoSuchObject_Raise_if((GetType() != BSplineCurve) && (GetType() != BezierCurve),
                                        "ProjLib_ProjectedCurve:IsRational");
-        if (GetType() == GeomAbs_BSplineCurve)
+        if (GetType() == BSplineCurve)
         {
             return myResult.InternalBSpline()!.IsRational();
         }
-        else if (GetType() == GeomAbs_BezierCurve)
+        else if (GetType() == BezierCurve)
         {
             return myResult.InternalBezier()!.IsRational();
         }
@@ -1213,16 +1217,16 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NoSuchObject">The result is not a B-spline or Bezier curve.</exception>
+    /// <exception cref="NoSuchObjectException">The result is not a B-spline or Bezier curve.</exception>
     public override int NbPoles()
     {
-        Standard_NoSuchObject_Raise_if((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve),
+        Standard_NoSuchObject_Raise_if((GetType() != BSplineCurve) && (GetType() != BezierCurve),
                                        "ProjLib_ProjectedCurve:NbPoles");
-        if (GetType() == GeomAbs_BSplineCurve)
+        if (GetType() == BSplineCurve)
         {
             return myResult.InternalBSpline()!.NbPoles();
         }
-        else if (GetType() == GeomAbs_BezierCurve)
+        else if (GetType() == BezierCurve)
         {
             return myResult.InternalBezier()!.NbPoles();
         }
@@ -1233,10 +1237,10 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NoSuchObject">The result is not a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The result is not a B-spline curve.</exception>
     public override int NbKnots()
     {
-        Standard_NoSuchObject_Raise_if(GetType() != GeomAbs_BSplineCurve, "ProjLib_ProjectedCurve:NbKnots");
+        Standard_NoSuchObject_Raise_if(GetType() != BSplineCurve, "ProjLib_ProjectedCurve:NbKnots");
         return myResult.InternalBSpline()!.NbKnots();
     }
 
@@ -1260,7 +1264,7 @@ public class ProjLib_ProjectedCurve : Adaptor2d_Curve2d
 
     //=================================================================================================
 
-    /// <exception cref="Standard_NotImplemented">Always, as in OCCT.</exception>
+    /// <exception cref="MethodNotImplementedException">Always, as in OCCT.</exception>
     public override Adaptor2d_Curve2d Trim(double First, double Last, double Tol) =>
-        throw new Standard_NotImplemented("ProjLib_ProjectedCurve::Trim() - method is not implemented");
+        throw new MethodNotImplementedException("ProjLib_ProjectedCurve::Trim() - method is not implemented");
 }

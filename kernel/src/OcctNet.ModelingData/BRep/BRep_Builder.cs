@@ -4,7 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -32,7 +36,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     // Insert a 3d curve <C> with location <L> in a list of curve representations <lcr>
-    private static void UpdateCurves(NCollection_List<BRep_CurveRepresentation> lcr, Geom_Curve? C, in TopLoc_Location L)
+    private static void UpdateCurves(NCollection_List<BRep_CurveRepresentation> lcr, Geom_Curve? C, in Placement L)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
         BRep_GCurve? GC = null;
@@ -76,10 +80,10 @@ public sealed class BRep_Builder : TopoDS_Builder
     private static void UpdateCurves(NCollection_List<BRep_CurveRepresentation> lcr,
                                      Geom2d_Curve? C,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L)
+                                     in Placement L)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
-        double f = -Precision.Infinite(), l = Precision.Infinite();
+        double f = -global::Kerf.Engine.Foundation.Precision.Infinite(), l = global::Kerf.Engine.Foundation.Precision.Infinite();
         // search the range of the 3d curve
         // and remove any existing representation
 
@@ -117,12 +121,12 @@ public sealed class BRep_Builder : TopoDS_Builder
         {
             BRep_CurveOnSurface COS = new BRep_CurveOnSurface(C, S, L);
             COS.Range(out double aFCur, out double aLCur);
-            if (!Precision.IsInfinite(f))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f))
             {
                 aFCur = f;
             }
 
-            if (!Precision.IsInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
             {
                 aLCur = l;
             }
@@ -137,12 +141,12 @@ public sealed class BRep_Builder : TopoDS_Builder
     private static void UpdateCurves(NCollection_List<BRep_CurveRepresentation> lcr,
                                      Geom2d_Curve? C,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L,
-                                     in gp_Pnt2d Pf,
-                                     in gp_Pnt2d Pl)
+                                     in Placement L,
+                                     in Point2D Pf,
+                                     in Point2D Pl)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
-        double f = -Precision.Infinite(), l = Precision.Infinite();
+        double f = -global::Kerf.Engine.Foundation.Precision.Infinite(), l = global::Kerf.Engine.Foundation.Precision.Infinite();
         // search the range of the 3d curve
         // and remove any existing representation
 
@@ -180,12 +184,12 @@ public sealed class BRep_Builder : TopoDS_Builder
         {
             BRep_CurveOnSurface COS = new BRep_CurveOnSurface(C, S, L);
             COS.Range(out double aFCur, out double aLCur);
-            if (!Precision.IsInfinite(f))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f))
             {
                 aFCur = f;
             }
 
-            if (!Precision.IsInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
             {
                 aLCur = l;
             }
@@ -202,10 +206,10 @@ public sealed class BRep_Builder : TopoDS_Builder
                                      Geom2d_Curve? C1,
                                      Geom2d_Curve? C2,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L)
+                                     in Placement L)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
-        double f = -Precision.Infinite(), l = Precision.Infinite();
+        double f = -global::Kerf.Engine.Foundation.Precision.Infinite(), l = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         while (itcr.More())
         {
@@ -234,14 +238,14 @@ public sealed class BRep_Builder : TopoDS_Builder
 
         if (C1 is not null && C2 is not null)
         {
-            BRep_CurveOnClosedSurface COS = new BRep_CurveOnClosedSurface(C1, C2, S, L, GeomAbs_C0);
+            BRep_CurveOnClosedSurface COS = new BRep_CurveOnClosedSurface(C1, C2, S, L, C0);
             COS.Range(out double aFCur, out double aLCur);
-            if (!Precision.IsInfinite(f))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f))
             {
                 aFCur = f;
             }
 
-            if (!Precision.IsInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
             {
                 aLCur = l;
             }
@@ -257,12 +261,12 @@ public sealed class BRep_Builder : TopoDS_Builder
                                      Geom2d_Curve? C1,
                                      Geom2d_Curve? C2,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L,
-                                     in gp_Pnt2d Pf,
-                                     in gp_Pnt2d Pl)
+                                     in Placement L,
+                                     in Point2D Pf,
+                                     in Point2D Pl)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
-        double f = -Precision.Infinite(), l = Precision.Infinite();
+        double f = -global::Kerf.Engine.Foundation.Precision.Infinite(), l = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         while (itcr.More())
         {
@@ -291,14 +295,14 @@ public sealed class BRep_Builder : TopoDS_Builder
 
         if (C1 is not null && C2 is not null)
         {
-            BRep_CurveOnClosedSurface COS = new BRep_CurveOnClosedSurface(C1, C2, S, L, GeomAbs_C0);
+            BRep_CurveOnClosedSurface COS = new BRep_CurveOnClosedSurface(C1, C2, S, L, C0);
             COS.Range(out double aFCur, out double aLCur);
-            if (!Precision.IsInfinite(f))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f))
             {
                 aFCur = f;
             }
 
-            if (!Precision.IsInfinite(l))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
             {
                 aLCur = l;
             }
@@ -312,9 +316,9 @@ public sealed class BRep_Builder : TopoDS_Builder
     private static void UpdateCurves(NCollection_List<BRep_CurveRepresentation> lcr,
                                      Geom_Surface? S1,
                                      Geom_Surface? S2,
-                                     in TopLoc_Location L1,
-                                     in TopLoc_Location L2,
-                                     GeomAbs_Shape C)
+                                     in Placement L1,
+                                     in Placement L2,
+                                     Continuity C)
     {
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
         while (itcr.More())
@@ -341,7 +345,7 @@ public sealed class BRep_Builder : TopoDS_Builder
         }
     }
 
-    private static void UpdatePoints(NCollection_List<BRep_PointRepresentation> lpr, double p, Geom_Curve? C, in TopLoc_Location L)
+    private static void UpdatePoints(NCollection_List<BRep_PointRepresentation> lpr, double p, Geom_Curve? C, in Placement L)
     {
         var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(lpr);
         while (itpr.More())
@@ -372,7 +376,7 @@ public sealed class BRep_Builder : TopoDS_Builder
                                      double p,
                                      Geom2d_Curve? PC,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L)
+                                     in Placement L)
     {
         var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(lpr);
         while (itpr.More())
@@ -403,7 +407,7 @@ public sealed class BRep_Builder : TopoDS_Builder
                                      double p1,
                                      double p2,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L)
+                                     in Placement L)
     {
         var itpr = new NCollection_List<BRep_PointRepresentation>.Iterator(lpr);
         while (itpr.More())
@@ -454,7 +458,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Makes a face with a triangulation (frozen here) and no surface.</summary>
-    public void MakeFace(ref TopoDS_Face theFace, Poly_Triangulation? theTriangulation)
+    public void MakeFace(ref TopoDS_Face theFace, Triangulation? theTriangulation)
     {
         BRep_TFace aTFace = new BRep_TFace();
         if (!theFace.IsNull() && theFace.Locked())
@@ -468,8 +472,8 @@ public sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>Makes a face with a list of triangulations (frozen here), one of them active (the first if null).</summary>
     internal void MakeFace(ref TopoDS_Face theFace,
-                           NCollection_List<Poly_Triangulation> theTriangulations,
-                           Poly_Triangulation? theActiveTriangulation = null)
+                           NCollection_List<Triangulation> theTriangulations,
+                           Triangulation? theActiveTriangulation = null)
     {
         BRep_TFace aTFace = new BRep_TFace();
         if (!theFace.IsNull() && theFace.Locked())
@@ -482,7 +486,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Makes a face with a surface (frozen here), a location for it and a tolerance.</summary>
-    internal void MakeFace(ref TopoDS_Face F, Geom_Surface? S, in TopLoc_Location L, double Tol)
+    internal void MakeFace(ref TopoDS_Face F, Geom_Surface? S, in Placement L, double Tol)
     {
         BRep_TFace TF = new BRep_TFace();
         if (!F.IsNull() && F.Locked())
@@ -497,7 +501,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Updates the face's surface (frozen here), its location and the tolerance.</summary>
-    internal void UpdateFace(in TopoDS_Face F, Geom_Surface? S, in TopLoc_Location L, double Tol)
+    internal void UpdateFace(in TopoDS_Face F, Geom_Surface? S, in Placement L, double Tol)
     {
         BRep_TFace TF = (BRep_TFace)F.TShape()!;
         if (TF.Locked())
@@ -515,18 +519,18 @@ public sealed class BRep_Builder : TopoDS_Builder
     /// Changes the face's triangulation (frozen here). With <paramref name="theToReset"/>, the face's list of
     /// triangulations becomes just this one; otherwise it becomes active, replacing the active one if not in the list.
     /// </summary>
-    internal void UpdateFace(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset = true)
+    internal void UpdateFace(in TopoDS_Face theFace, Triangulation? theTriangulation, bool theToReset = true)
         => updateFace(theFace, theTriangulation, theToReset, true);
 
     /// <summary>
-    /// <see cref="UpdateFace(in TopoDS_Face, Poly_Triangulation?, bool)"/> without freezing the triangulation: the
+    /// <see cref="UpdateFace(in TopoDS_Face, Triangulation?, bool)"/> without freezing the triangulation: the
     /// mesher's attach (BRepMesh_ShapeTool only, decision 488). The triangulation freezes with the face's graph when
     /// the result is published.
     /// </summary>
-    internal void UpdateFaceUnfrozen(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset = true)
+    internal void UpdateFaceUnfrozen(in TopoDS_Face theFace, Triangulation? theTriangulation, bool theToReset = true)
         => updateFace(theFace, theTriangulation, theToReset, false);
 
-    private static void updateFace(in TopoDS_Face theFace, Poly_Triangulation? theTriangulation, bool theToReset,
+    private static void updateFace(in TopoDS_Face theFace, Triangulation? theTriangulation, bool theToReset,
                                    bool theToFreeze)
     {
         BRep_TFace aTFace = (BRep_TFace)theFace.TShape()!;
@@ -581,32 +585,32 @@ public sealed class BRep_Builder : TopoDS_Builder
     internal void MakeEdge(ref TopoDS_Edge E, Geom_Curve? C, double Tol)
     {
         MakeEdge(ref E);
-        UpdateEdge(E, C, new TopLoc_Location(), Tol);
+        UpdateEdge(E, C, new Placement(), Tol);
     }
 
     /// <summary>Makes an edge with a 3D curve (frozen here), a location for it and a tolerance.</summary>
-    internal void MakeEdge(ref TopoDS_Edge E, Geom_Curve? C, in TopLoc_Location L, double Tol)
+    internal void MakeEdge(ref TopoDS_Edge E, Geom_Curve? C, in Placement L, double Tol)
     {
         MakeEdge(ref E);
         UpdateEdge(E, C, L, Tol);
     }
 
     /// <summary>Makes an edge with a 3D polygon (frozen here).</summary>
-    internal void MakeEdge(ref TopoDS_Edge E, Poly_Polygon3D? P)
+    internal void MakeEdge(ref TopoDS_Edge E, Polygon3D? P)
     {
         MakeEdge(ref E);
         UpdateEdge(E, P);
     }
 
     /// <summary>Makes an edge with a polygon on a triangulation (both frozen here).</summary>
-    internal void MakeEdge(ref TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T)
+    internal void MakeEdge(ref TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T)
     {
         MakeEdge(ref E);
-        UpdateEdge(E, P, T, new TopLoc_Location());
+        UpdateEdge(E, P, T, new Placement());
     }
 
     /// <summary>Makes an edge with a polygon on a triangulation (both frozen here) with a location.</summary>
-    internal void MakeEdge(ref TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L)
+    internal void MakeEdge(ref TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T, in Placement L)
     {
         MakeEdge(ref E);
         UpdateEdge(E, P, T, L);
@@ -614,10 +618,10 @@ public sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>Sets the edge's 3D curve (frozen here) and updates the tolerance.</summary>
     internal void UpdateEdge(in TopoDS_Edge E, Geom_Curve? C, double Tol)
-        => UpdateEdge(E, C, new TopLoc_Location(), Tol);
+        => UpdateEdge(E, C, new Placement(), Tol);
 
     /// <summary>Sets the edge's 3D curve (frozen here) with a location and updates the tolerance.</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Geom_Curve? C, in TopLoc_Location L, double Tol)
+    internal void UpdateEdge(in TopoDS_Edge E, Geom_Curve? C, in Placement L, double Tol)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -625,7 +629,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), C, l);
 
@@ -636,7 +640,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     /// <summary>Sets the edge's curve on the face's surface (frozen here; removes it if null) and updates the tolerance.</summary>
     internal void UpdateEdge(in TopoDS_Edge E, Geom2d_Curve? C, in TopoDS_Face F, double Tol)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         UpdateEdge(E, C, S, l, Tol);
     }
 
@@ -646,12 +650,12 @@ public sealed class BRep_Builder : TopoDS_Builder
     /// </summary>
     internal void UpdateEdge(in TopoDS_Edge E, Geom2d_Curve? C1, Geom2d_Curve? C2, in TopoDS_Face F, double Tol)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         UpdateEdge(E, C1, C2, S, l, Tol);
     }
 
     /// <summary>Sets the edge's curve on the surface (frozen here; removes it if null) and updates the tolerance.</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Geom2d_Curve? C, Geom_Surface? S, in TopLoc_Location L, double Tol)
+    internal void UpdateEdge(in TopoDS_Edge E, Geom2d_Curve? C, Geom_Surface? S, in Placement L, double Tol)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -659,7 +663,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), C, S, l);
 
@@ -674,10 +678,10 @@ public sealed class BRep_Builder : TopoDS_Builder
     internal void UpdateEdge(in TopoDS_Edge E,
                              Geom2d_Curve? C,
                              Geom_Surface? S,
-                             in TopLoc_Location L,
+                             in Placement L,
                              double Tol,
-                             in gp_Pnt2d Pf,
-                             in gp_Pnt2d Pl)
+                             in Point2D Pf,
+                             in Point2D Pl)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -685,7 +689,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), C, S, l, Pf, Pl);
 
@@ -701,7 +705,7 @@ public sealed class BRep_Builder : TopoDS_Builder
                              Geom2d_Curve? C1,
                              Geom2d_Curve? C2,
                              Geom_Surface? S,
-                             in TopLoc_Location L,
+                             in Placement L,
                              double Tol)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -710,7 +714,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), C1, C2, S, l);
 
@@ -726,10 +730,10 @@ public sealed class BRep_Builder : TopoDS_Builder
                              Geom2d_Curve? C1,
                              Geom2d_Curve? C2,
                              Geom_Surface? S,
-                             in TopLoc_Location L,
+                             in Placement L,
                              double Tol,
-                             in gp_Pnt2d Pf,
-                             in gp_Pnt2d Pl)
+                             in Point2D Pf,
+                             in Point2D Pl)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -737,7 +741,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), C1, C2, S, l, Pf, Pl);
 
@@ -746,18 +750,18 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the edge's 3D polygon (frozen here; removes it if null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon3D? P) => UpdateEdge(E, P, new TopLoc_Location());
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon3D? P) => UpdateEdge(E, P, new Placement());
 
     /// <summary>Sets the edge's 3D polygon (frozen here; removes it if null) with a location.</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L) => updateEdge(E, P, L, true);
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon3D? P, in Placement L) => updateEdge(E, P, L, true);
 
     /// <summary>
-    /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_Polygon3D?, in TopLoc_Location)"/> without freezing the polygon: the
+    /// <see cref="UpdateEdge(in TopoDS_Edge, Polygon3D?, in Placement)"/> without freezing the polygon: the
     /// mesher's attach (BRepMesh_ShapeTool only, decision 488).
     /// </summary>
-    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L) => updateEdge(E, P, L, false);
+    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Polygon3D? P, in Placement L) => updateEdge(E, P, L, false);
 
-    private static void updateEdge(in TopoDS_Edge E, Poly_Polygon3D? P, in TopLoc_Location L, bool theToFreeze)
+    private static void updateEdge(in TopoDS_Edge E, Polygon3D? P, in Placement L, bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -788,7 +792,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             itcr.Next();
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         BRep_Polygon3D P3d = new BRep_Polygon3D(P, l, theToFreeze);
         lcr.Append(P3d);
 
@@ -796,23 +800,23 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the edge's polygon on the triangulation (both frozen here; removes it if null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T)
-        => UpdateEdge(E, P, T, new TopLoc_Location());
+    internal void UpdateEdge(in TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T)
+        => UpdateEdge(E, P, T, new Placement());
 
     /// <summary>Sets the edge's polygon on the triangulation (both frozen here; removes it if null) with a location.</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T, in TopLoc_Location L)
+    internal void UpdateEdge(in TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T, in Placement L)
         => updateEdge(E, P, T, L, true);
 
     /// <summary>
-    /// <see cref="UpdateEdge(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
+    /// <see cref="UpdateEdge(in TopoDS_Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
     /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 488).
     /// </summary>
-    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T,
-                                     in TopLoc_Location L)
+    internal void UpdateEdgeUnfrozen(in TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T,
+                                     in Placement L)
         => updateEdge(E, P, T, L, false);
 
-    private static void updateEdge(in TopoDS_Edge E, Poly_PolygonOnTriangulation? P, Poly_Triangulation? T,
-                                   in TopLoc_Location L, bool theToFreeze)
+    private static void updateEdge(in TopoDS_Edge E, PolygonOnTriangulation? P, Triangulation? T,
+                                   in Placement L, bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -820,7 +824,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         bool isModified = false;
 
@@ -854,37 +858,37 @@ public sealed class BRep_Builder : TopoDS_Builder
 
     /// <summary>Sets the edge's two polygons on the triangulation (all frozen here; removes them if one is null).</summary>
     internal void UpdateEdge(in TopoDS_Edge E,
-                             Poly_PolygonOnTriangulation? P1,
-                             Poly_PolygonOnTriangulation? P2,
-                             Poly_Triangulation? T)
-        => UpdateEdge(E, P1, P2, T, new TopLoc_Location());
+                             PolygonOnTriangulation? P1,
+                             PolygonOnTriangulation? P2,
+                             Triangulation? T)
+        => UpdateEdge(E, P1, P2, T, new Placement());
 
     /// <summary>
     /// Sets the edge's two polygons on the triangulation (all frozen here; removes them if one is null) with a location.
     /// </summary>
     internal void UpdateEdge(in TopoDS_Edge E,
-                             Poly_PolygonOnTriangulation? P1,
-                             Poly_PolygonOnTriangulation? P2,
-                             Poly_Triangulation? T,
-                             in TopLoc_Location L)
+                             PolygonOnTriangulation? P1,
+                             PolygonOnTriangulation? P2,
+                             Triangulation? T,
+                             in Placement L)
         => updateEdge(E, P1, P2, T, L, true);
 
     /// <summary>
-    /// The seam form of <see cref="UpdateEdgeUnfrozen(in TopoDS_Edge, Poly_PolygonOnTriangulation?, Poly_Triangulation?, in TopLoc_Location)"/>
+    /// The seam form of <see cref="UpdateEdgeUnfrozen(in TopoDS_Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
     /// (decision 488).
     /// </summary>
     internal void UpdateEdgeUnfrozen(in TopoDS_Edge E,
-                                     Poly_PolygonOnTriangulation? P1,
-                                     Poly_PolygonOnTriangulation? P2,
-                                     Poly_Triangulation? T,
-                                     in TopLoc_Location L)
+                                     PolygonOnTriangulation? P1,
+                                     PolygonOnTriangulation? P2,
+                                     Triangulation? T,
+                                     in Placement L)
         => updateEdge(E, P1, P2, T, L, false);
 
     private static void updateEdge(in TopoDS_Edge E,
-                                   Poly_PolygonOnTriangulation? P1,
-                                   Poly_PolygonOnTriangulation? P2,
-                                   Poly_Triangulation? T,
-                                   in TopLoc_Location L,
+                                   PolygonOnTriangulation? P1,
+                                   PolygonOnTriangulation? P2,
+                                   Triangulation? T,
+                                   in Placement L,
                                    bool theToFreeze)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -893,7 +897,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         bool isModified = false;
 
@@ -926,14 +930,14 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the edge's polygon on the face's surface (frozen here; removes it if null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon2D? P, in TopoDS_Face F)
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon2D? P, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         UpdateEdge(E, P, S, l);
     }
 
     /// <summary>Sets the edge's polygon on the surface (frozen here; removes it if null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon2D? P, Geom_Surface? S, in TopLoc_Location L)
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon2D? P, Geom_Surface? S, in Placement L)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -941,7 +945,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         NCollection_List<BRep_CurveRepresentation> lcr = TE.ChangeCurves();
 
@@ -971,14 +975,14 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the edge's two polygons on the face's closed surface (frozen here; removes them if one is null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon2D? P1, Poly_Polygon2D? P2, in TopoDS_Face F)
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon2D? P1, Polygon2D? P2, in TopoDS_Face F)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         UpdateEdge(E, P1, P2, S, l);
     }
 
     /// <summary>Sets the edge's two polygons on the closed surface (frozen here; removes them if one is null).</summary>
-    internal void UpdateEdge(in TopoDS_Edge E, Poly_Polygon2D? P1, Poly_Polygon2D? P2, Geom_Surface? S, in TopLoc_Location L)
+    internal void UpdateEdge(in TopoDS_Edge E, Polygon2D? P1, Polygon2D? P2, Geom_Surface? S, in Placement L)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -986,7 +990,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateEdge");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         NCollection_List<BRep_CurveRepresentation> lcr = TE.ChangeCurves();
 
@@ -1009,7 +1013,7 @@ public sealed class BRep_Builder : TopoDS_Builder
         if (P1 is not null && P2 is not null)
         {
             // OCCT (occt-issues.md): the polygons are stored with the identity location, not l
-            BRep_PolygonOnClosedSurface PS = new BRep_PolygonOnClosedSurface(P1, P2, S, new TopLoc_Location());
+            BRep_PolygonOnClosedSurface PS = new BRep_PolygonOnClosedSurface(P1, P2, S, new Placement());
             lcr.Append(PS);
         }
 
@@ -1030,10 +1034,10 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the continuity of the edge between the surfaces of the two faces.</summary>
-    internal void Continuity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2, GeomAbs_Shape C)
+    internal void Continuity(in TopoDS_Edge E, in TopoDS_Face F1, in TopoDS_Face F2, Continuity C)
     {
-        Geom_Surface? S1 = BRep_Tool.Surface(F1, out TopLoc_Location l1);
-        Geom_Surface? S2 = BRep_Tool.Surface(F2, out TopLoc_Location l2);
+        Geom_Surface? S1 = BRep_Tool.Surface(F1, out Placement l1);
+        Geom_Surface? S2 = BRep_Tool.Surface(F2, out Placement l2);
         Continuity(E, S1, S2, l1, l2, C);
     }
 
@@ -1041,9 +1045,9 @@ public sealed class BRep_Builder : TopoDS_Builder
     internal void Continuity(in TopoDS_Edge E,
                              Geom_Surface? S1,
                              Geom_Surface? S2,
-                             in TopLoc_Location L1,
-                             in TopLoc_Location L2,
-                             GeomAbs_Shape C)
+                             in Placement L1,
+                             in Placement L2,
+                             Continuity C)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -1051,8 +1055,8 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::Continuity");
         }
 
-        TopLoc_Location l1 = L1.Predivided(E.Location());
-        TopLoc_Location l2 = L2.Predivided(E.Location());
+        Placement l1 = L1.Predivided(E.Location());
+        Placement l2 = L2.Predivided(E.Location());
 
         UpdateCurves(TE.ChangeCurves(), S1, S2, l1, l2, C);
 
@@ -1132,8 +1136,8 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the range of the edge's curve on the surface.</summary>
-    /// <exception cref="Standard_DomainError">The edge has no curve on the surface.</exception>
-    internal void Range(in TopoDS_Edge E, Geom_Surface? S, in TopLoc_Location L, double First, double Last)
+    /// <exception cref="DomainErrorException">The edge has no curve on the surface.</exception>
+    internal void Range(in TopoDS_Edge E, Geom_Surface? S, in Placement L, double First, double Last)
     {
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
         if (TE.Locked())
@@ -1141,7 +1145,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::Range");
         }
 
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
 
         NCollection_List<BRep_CurveRepresentation> lcr = TE.ChangeCurves();
         var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(lcr);
@@ -1160,17 +1164,17 @@ public sealed class BRep_Builder : TopoDS_Builder
 
         if (!itcr.More())
         {
-            throw new Standard_DomainError("BRep_Builder::Range, no pcurve");
+            throw new DomainErrorException("BRep_Builder::Range, no pcurve");
         }
 
         TE.Modified(true);
     }
 
     /// <summary>Sets the range of the edge's curve on the face.</summary>
-    /// <exception cref="Standard_DomainError">The edge has no curve on the face.</exception>
+    /// <exception cref="DomainErrorException">The edge has no curve on the face.</exception>
     internal void Range(in TopoDS_Edge E, in TopoDS_Face F, double First, double Last)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         Range(E, S, l, First, Last);
     }
 
@@ -1219,14 +1223,14 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Makes a vertex at the point with the tolerance.</summary>
-    internal void MakeVertex(ref TopoDS_Vertex V, in gp_Pnt P, double Tol)
+    internal void MakeVertex(ref TopoDS_Vertex V, in Point3D P, double Tol)
     {
         MakeVertex(ref V);
         UpdateVertex(V, P, Tol);
     }
 
     /// <summary>Sets the vertex's point and raises its tolerance to <paramref name="Tol"/> if lower.</summary>
-    internal void UpdateVertex(in TopoDS_Vertex V, in gp_Pnt P, double Tol)
+    internal void UpdateVertex(in TopoDS_Vertex V, in Point3D P, double Tol)
     {
         BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
         if (TV.Locked())
@@ -1240,12 +1244,12 @@ public sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Sets the parameter of the vertex on the edge, and raises the vertex's tolerance to <paramref name="Tol"/>.</summary>
-    /// <exception cref="Standard_DomainError">The parameter is infinite.</exception>
+    /// <exception cref="DomainErrorException">The parameter is infinite.</exception>
     internal void UpdateVertex(in TopoDS_Vertex V, double Par, in TopoDS_Edge E, double Tol)
     {
-        if (Precision.IsPositiveInfinite(Par) || Precision.IsNegativeInfinite(Par))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Par) || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Par))
         {
-            throw new Standard_DomainError("BRep_Builder::Infinite parameter");
+            throw new DomainErrorException("BRep_Builder::Infinite parameter");
         }
 
         BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
@@ -1256,7 +1260,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateVertex");
         }
 
-        TopLoc_Location L = E.Location().Predivided(V.Location());
+        Placement L = E.Location().Predivided(V.Location());
 
         // Search the vertex in the edge
         TopAbs_Orientation ori = TopAbs_INTERNAL;
@@ -1308,8 +1312,8 @@ public sealed class BRep_Builder : TopoDS_Builder
                 else
                 {
                     NCollection_List<BRep_PointRepresentation> lpr = TV.ChangePoints();
-                    TopLoc_Location GCloc = GC.Location();
-                    TopLoc_Location LGCloc = L * GCloc;
+                    Placement GCloc = GC.Location();
+                    Placement LGCloc = L * GCloc;
                     if (GC.IsCurve3D())
                     {
                         Geom_Curve? GC3d = GC.Curve3D();
@@ -1350,8 +1354,8 @@ public sealed class BRep_Builder : TopoDS_Builder
     {
         BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
-        if (!TV.IsFrozen() || TE.Locked() || Tol > TV.Tolerance()
-            || Precision.IsPositiveInfinite(Par) || Precision.IsNegativeInfinite(Par))
+        if (!TV.IsFrozen || TE.Locked() || Tol > TV.Tolerance()
+            || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Par) || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Par))
         {
             UpdateVertex(V, Par, E, Tol);
             return;
@@ -1406,7 +1410,7 @@ public sealed class BRep_Builder : TopoDS_Builder
     /// </summary>
     internal void UpdateVertex(in TopoDS_Vertex V, double Par, in TopoDS_Edge E, in TopoDS_Face F, double Tol)
     {
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location l);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement l);
         UpdateVertex(V, Par, E, S, l, Tol);
     }
 
@@ -1414,21 +1418,21 @@ public sealed class BRep_Builder : TopoDS_Builder
     /// Sets the parameter of the vertex on the edge's curve on the surface, and raises the vertex's tolerance to
     /// <paramref name="Tol"/>.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The parameter is infinite, or the edge has no curve on the surface.</exception>
+    /// <exception cref="DomainErrorException">The parameter is infinite, or the edge has no curve on the surface.</exception>
     internal void UpdateVertex(in TopoDS_Vertex V,
                                double Par,
                                in TopoDS_Edge E,
                                Geom_Surface? S,
-                               in TopLoc_Location L,
+                               in Placement L,
                                double Tol)
     {
-        if (Precision.IsPositiveInfinite(Par) || Precision.IsNegativeInfinite(Par))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Par) || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Par))
         {
-            throw new Standard_DomainError("BRep_Builder::Infinite parameter");
+            throw new DomainErrorException("BRep_Builder::Infinite parameter");
         }
 
         // Find the curve representation
-        TopLoc_Location l = L.Predivided(V.Location());
+        Placement l = L.Predivided(V.Location());
 
         BRep_TVertex TV = (BRep_TVertex)V.TShape()!;
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -1505,7 +1509,7 @@ public sealed class BRep_Builder : TopoDS_Builder
 
         if (!itcr.More())
         {
-            throw new Standard_DomainError("BRep_Builder:: no pcurve");
+            throw new DomainErrorException("BRep_Builder:: no pcurve");
         }
 
         TV.UpdateTolerance(Tol);
@@ -1522,7 +1526,7 @@ public sealed class BRep_Builder : TopoDS_Builder
             throw new TopoDS_LockedShape("BRep_Builder::UpdateVertex");
         }
 
-        Geom_Surface? S = BRep_Tool.Surface(F, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(F, out Placement L);
         L = L.Predivided(Ve.Location());
         NCollection_List<BRep_PointRepresentation> lpr = TV.ChangePoints();
         UpdatePoints(lpr, U, V, S, L);

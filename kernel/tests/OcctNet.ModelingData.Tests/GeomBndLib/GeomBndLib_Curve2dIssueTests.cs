@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -13,8 +17,8 @@ public class GeomBndLib_Curve2dIssueTest
     {
         // Mirror axis (1,1)/sqrt2, focal 2: x(u) = (u^2/8 - u)/sqrt2, minimal at u = 4 (-sqrt2).
         double aS = 1.0 / Math.Sqrt(2.0);
-        Geom2d_Parabola aParab = new(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(aS, aS), new gp_Dir2d(-aS, aS)), 2.0);
-        Bnd_Box2d aBox = new GeomBndLib_Curve2d(aParab).Box(-6.0, 6.0, 0.0);
+        Geom2d_Parabola aParab = new(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(aS, aS), new Direction2D(-aS, aS)), 2.0);
+        Box2d aBox = new GeomBndLib_Curve2d(aParab).Box(-6.0, 6.0, 0.0);
 
         var (aXmin, _, _, _) = aBox.Get();
         Assert.Equal(-1.5 / Math.Sqrt(2.0), aXmin, 1e-12);

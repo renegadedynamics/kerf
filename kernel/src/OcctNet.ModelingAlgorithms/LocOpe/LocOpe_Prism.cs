@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -20,8 +23,8 @@ namespace Occt;
 public sealed class LocOpe_Prism
 {
     private TopoDS_Shape myBase = new();
-    private gp_Vec myVec = new();
-    private gp_Vec myTra = new();
+    private Vector3D myVec = new();
+    private Vector3D myTra = new();
     private bool myIsTrans;
     private bool myDone;
     private TopoDS_Shape myRes = new();
@@ -36,7 +39,7 @@ public sealed class LocOpe_Prism
         myDone = false;
     }
 
-    public LocOpe_Prism(in TopoDS_Shape Base, in gp_Vec V)
+    public LocOpe_Prism(in TopoDS_Shape Base, in Vector3D V)
     {
         myBase = Base;
         myVec = V;
@@ -44,7 +47,7 @@ public sealed class LocOpe_Prism
         IntPerf();
     }
 
-    public LocOpe_Prism(in TopoDS_Shape Base, in gp_Vec V, in gp_Vec Vtra)
+    public LocOpe_Prism(in TopoDS_Shape Base, in Vector3D V, in Vector3D Vtra)
     {
         myBase = Base;
         myVec = V;
@@ -53,7 +56,7 @@ public sealed class LocOpe_Prism
         IntPerf();
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Vec V)
+    public void Perform(in TopoDS_Shape Base, in Vector3D V)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -67,7 +70,7 @@ public sealed class LocOpe_Prism
         IntPerf();
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Vec V, in gp_Vec Vtra)
+    public void Perform(in TopoDS_Shape Base, in Vector3D V, in Vector3D Vtra)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -88,7 +91,7 @@ public sealed class LocOpe_Prism
         BRepTools_Modifier Modif = new();
         if (myIsTrans)
         {
-            gp_Trsf T = new();
+            Transform3D T = new();
             T.SetTranslation(myTra);
             BRepTools_TrsfModification modbase = new(T);
             Modif.Init(theBase);
@@ -230,7 +233,7 @@ public sealed class LocOpe_Prism
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -257,7 +260,7 @@ public sealed class LocOpe_Prism
     public void Curves(NCollection_Sequence<Geom_Curve> Scurves)
     {
         Scurves.Clear();
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFirstShape, spt);
         double height = Math.Sqrt(myVec.X() * myVec.X() + myVec.Y() * myVec.Y() + myVec.Z() * myVec.Z());
         double u1 = -2 * height;
@@ -265,7 +268,7 @@ public sealed class LocOpe_Prism
 
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Ax1 theAx = new(spt[jj], new gp_Dir(myVec));
+            Axis3D theAx = new(spt[jj], new Direction3D(myVec));
             Geom_Line theLin = new(theAx);
             Geom_TrimmedCurve trlin = new(theLin, u1, u2, true);
             Scurves.Append(trlin);
@@ -275,18 +278,18 @@ public sealed class LocOpe_Prism
     /// <summary>The line along the vector through the barycentre of the first shape's sample points.</summary>
     public Geom_Curve BarycCurve()
     {
-        gp_Pnt bar = new(0.0, 0.0, 0.0);
-        NCollection_Sequence<gp_Pnt> spt = new();
+        Point3D bar = new(0.0, 0.0, 0.0);
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(myFirstShape, spt);
-        gp_XYZ aBar = bar.XYZ();
+        Xyz aBar = bar.XYZ();
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             aBar += pvt.XYZ();
         }
         aBar.Divide(spt.Length());
-        bar = new gp_Pnt(aBar);
-        gp_Ax1 newAx = new(bar, new gp_Dir(myVec));
+        bar = new Point3D(aBar);
+        Axis3D newAx = new(bar, new Direction3D(myVec));
         Geom_Line theLin = new(newAx);
         return theLin;
     }

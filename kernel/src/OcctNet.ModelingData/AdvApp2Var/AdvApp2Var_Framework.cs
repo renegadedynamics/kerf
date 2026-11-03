@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
+using Kerf.Engine.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
 
 namespace Occt;
 
@@ -102,20 +103,20 @@ public class AdvApp2Var_Framework
         return null;
     }
 
-    public int FirstNode(GeomAbs_IsoType Type, int IndexIso, int IndexStrip)
+    public int FirstNode(IsoType Type, int IndexIso, int IndexStrip)
     {
         int aNbIsoInV = myUConstraints.Length() + 1;
-        if (Type == GeomAbs_IsoU)
+        if (Type == global::Kerf.Engine.Geometry.IsoType.IsoU)
         {
             return aNbIsoInV * (IndexStrip - 1) + IndexIso;
         }
         return aNbIsoInV * (IndexIso - 1) + IndexStrip;
     }
 
-    public int LastNode(GeomAbs_IsoType Type, int IndexIso, int IndexStrip)
+    public int LastNode(IsoType Type, int IndexIso, int IndexStrip)
     {
         int aNbIsoInV = myUConstraints.Length() + 1;
-        if (Type == GeomAbs_IsoU)
+        if (Type == global::Kerf.Engine.Geometry.IsoType.IsoU)
         {
             return aNbIsoInV * IndexStrip + IndexIso;
         }
@@ -124,7 +125,7 @@ public class AdvApp2Var_Framework
 
     public void ChangeIso(int IndexIso, int IndexStrip, AdvApp2Var_Iso theIso)
     {
-        NCollection_Sequence<AdvApp2Var_Iso> aStrip = theIso.Type() == GeomAbs_IsoV
+        NCollection_Sequence<AdvApp2Var_Iso> aStrip = theIso.Type() == global::Kerf.Engine.Geometry.IsoType.IsoV
                                                           ? myUConstraints.ChangeValue(IndexStrip)
                                                           : myVConstraints.ChangeValue(IndexStrip);
         aStrip.SetValue(IndexIso, theIso);
@@ -237,7 +238,7 @@ public class AdvApp2Var_Framework
             if (aPrev.Coord().X() < CuttingValue && aNext.Coord().X() > CuttingValue
                 && aPrev.Coord().Y() == aNext.Coord().Y())
             {
-                gp_XY aNewUV = new(CuttingValue, aPrev.Coord().Y());
+                Xy aNewUV = new(CuttingValue, aPrev.Coord().Y());
                 AdvApp2Var_Node aNewNode = new(aNewUV, aPrev.UOrder(), aPrev.VOrder());
                 myNodeConstraints.InsertAfter(aNodeIndex, aNewNode);
             }
@@ -318,7 +319,7 @@ public class AdvApp2Var_Framework
         for (int anIsoIndex = 1; anIsoIndex <= myUConstraints.Length() + 1; anIsoIndex++)
         {
             AdvApp2Var_Node aJNode = myNodeConstraints.Value(anIsoIndex);
-            gp_XY NewUV = new(aJNode.Coord().X(), CuttingValue);
+            Xy NewUV = new(aJNode.Coord().X(), CuttingValue);
             AdvApp2Var_Node aNewNode = new(NewUV, aJNode.UOrder(), aJNode.VOrder());
             myNodeConstraints.InsertAfter(aNodeStartIndex + anIsoIndex - 2, aNewNode);
         }

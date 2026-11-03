@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -68,13 +70,13 @@ public class GeomTools_SurfaceSet
         return myMap.FindIndex((object?)S ?? GeomTools_CurveSet.theNullKey);
     }
 
-    private static void Out(TextWriter OS, double theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, double theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static void Out(TextWriter OS, int theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, int theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static string Setw(int theWidth, int theValue) => Standard_Stream.Setw(theWidth, theValue.ToString(CultureInfo.InvariantCulture));
+    private static string Setw(int theWidth, int theValue) => StreamUtilities.Setw(theWidth, theValue.ToString(CultureInfo.InvariantCulture));
 
-    private static void Print(in gp_Pnt P, TextWriter OS, bool compact)
+    private static void Print(in Point3D P, TextWriter OS, bool compact)
     {
         Out(OS, P.X());
         if (!compact)
@@ -94,7 +96,7 @@ public class GeomTools_SurfaceSet
         OS.Write(" ");
     }
 
-    private static void Print(in gp_Dir D, TextWriter OS, bool compact)
+    private static void Print(in Direction3D D, TextWriter OS, bool compact)
     {
         Out(OS, D.X());
         if (!compact)
@@ -126,7 +128,7 @@ public class GeomTools_SurfaceSet
             OS.Write("Plane");
         }
 
-        gp_Pln P = S.Pln();
+        Plane3D P = S.Pln();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -170,7 +172,7 @@ public class GeomTools_SurfaceSet
             OS.Write("CylindricalSurface");
         }
 
-        gp_Cylinder P = S.Cylinder();
+        Cylinder P = S.Cylinder();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -220,7 +222,7 @@ public class GeomTools_SurfaceSet
             OS.Write("ConicalSurface");
         }
 
-        gp_Cone P = S.Cone();
+        Cone P = S.Cone();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -277,7 +279,7 @@ public class GeomTools_SurfaceSet
             OS.Write("SphericalSurface");
         }
 
-        gp_Sphere P = S.Sphere();
+        Sphere P = S.Sphere();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -327,7 +329,7 @@ public class GeomTools_SurfaceSet
             OS.Write("ToroidalSurface");
         }
 
-        gp_Torus P = S.Torus();
+        Torus P = S.Torus();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -878,36 +880,36 @@ public class GeomTools_SurfaceSet
     /// Writes the set in the format <see cref="Read"/> reads: "Surfaces", the count, then each surface, at 17
     /// significant digits (the writer's precision is restored afterwards).
     /// </summary>
-    public void Write(TextWriter OS, Message_ProgressRange theProgress = default)
+    public void Write(TextWriter OS, ProgressRange theProgress = default)
     {
-        int prec = Standard_Stream.Precision(OS, 17);
+        int prec = StreamUtilities.Precision(OS, 17);
 
         int i, nbsurf = myMap.Extent();
         OS.Write("Surfaces ");
         Out(OS, nbsurf);
         OS.Write("\n");
-        using var aPS = new Message_ProgressScope(theProgress, "Surfaces", nbsurf);
+        using var aPS = new ProgressScope(theProgress, "Surfaces", nbsurf);
         for (i = 1; i <= nbsurf && aPS.More(); i++, aPS.Next())
         {
             // OCCT dereferences a null surface here
             PrintSurface(Surface(i)!, OS, true);
         }
 
-        Standard_Stream.Precision(OS, prec);
+        StreamUtilities.Precision(OS, prec);
     }
 
     // operator>> of the points, directions, axes and surfaces
 
-    private static void ReadPnt(TextReader IS, out gp_Pnt P)
+    private static void ReadPnt(TextReader IS, out Point3D P)
     {
         double X, Y, Z;
         GeomTools.GetReal(IS, out X);
         GeomTools.GetReal(IS, out Y);
         GeomTools.GetReal(IS, out Z);
-        P = new gp_Pnt(X, Y, Z);
+        P = new Point3D(X, Y, Z);
     }
 
-    private static void ReadDir(TextReader IS, ref gp_Dir D)
+    private static void ReadDir(TextReader IS, ref Direction3D D)
     {
         double X, Y, Z;
         GeomTools.GetReal(IS, out X);
@@ -916,15 +918,15 @@ public class GeomTools_SurfaceSet
         D.SetCoord(X, Y, Z);
     }
 
-    private static void ReadAx3(TextReader IS, out gp_Ax3 A3)
+    private static void ReadAx3(TextReader IS, out CoordinateSystem A3)
     {
-        gp_Pnt P;
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
         ReadPnt(IS, out P);
         ReadDir(IS, ref A);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
-        gp_Ax3 ax3 = new(P, A, AX);
+        CoordinateSystem ax3 = new(P, A, AX);
         if (AY.DotCross(A, AX) < 0)
         {
             ax3.YReverse();
@@ -935,14 +937,14 @@ public class GeomTools_SurfaceSet
 
     private static Geom_Plane ReadPlane(TextReader IS)
     {
-        gp_Ax3 A;
+        CoordinateSystem A;
         ReadAx3(IS, out A);
         return new Geom_Plane(A);
     }
 
     private static Geom_CylindricalSurface ReadCylinder(TextReader IS)
     {
-        gp_Ax3 A;
+        CoordinateSystem A;
         double R;
         ReadAx3(IS, out A);
         GeomTools.GetReal(IS, out R);
@@ -951,7 +953,7 @@ public class GeomTools_SurfaceSet
 
     private static Geom_ConicalSurface ReadCone(TextReader IS)
     {
-        gp_Ax3 A;
+        CoordinateSystem A;
         double R, Ang;
         ReadAx3(IS, out A);
         GeomTools.GetReal(IS, out R);
@@ -961,7 +963,7 @@ public class GeomTools_SurfaceSet
 
     private static Geom_SphericalSurface ReadSphere(TextReader IS)
     {
-        gp_Ax3 A;
+        CoordinateSystem A;
         double R;
         ReadAx3(IS, out A);
         GeomTools.GetReal(IS, out R);
@@ -970,7 +972,7 @@ public class GeomTools_SurfaceSet
 
     private static Geom_ToroidalSurface ReadTorus(TextReader IS)
     {
-        gp_Ax3 A;
+        CoordinateSystem A;
         double R1, R2;
         ReadAx3(IS, out A);
         GeomTools.GetReal(IS, out R1);
@@ -980,7 +982,7 @@ public class GeomTools_SurfaceSet
 
     private static Geom_SurfaceOfLinearExtrusion ReadLinearExtrusion(TextReader IS)
     {
-        gp_Dir D = new(gp_Dir.D.X);
+        Direction3D D = new(Direction3D.D.X);
         ReadDir(IS, ref D);
         Geom_Curve? C = GeomTools_CurveSet.ReadCurve(IS);
         return new Geom_SurfaceOfLinearExtrusion(C!, D);
@@ -988,28 +990,28 @@ public class GeomTools_SurfaceSet
 
     private static Geom_SurfaceOfRevolution ReadRevolution(TextReader IS)
     {
-        gp_Pnt P;
-        gp_Dir D = new(gp_Dir.D.X);
+        Point3D P;
+        Direction3D D = new(Direction3D.D.X);
         ReadPnt(IS, out P);
         ReadDir(IS, ref D);
         Geom_Curve? C = GeomTools_CurveSet.ReadCurve(IS);
-        return new Geom_SurfaceOfRevolution(C!, new gp_Ax1(P, D));
+        return new Geom_SurfaceOfRevolution(C!, new Axis3D(P, D));
     }
 
     private static Geom_BezierSurface ReadBezier(TextReader IS)
     {
         bool urational = false, vrational = false;
-        Standard_Stream.Read(IS, ref urational);
-        Standard_Stream.Read(IS, ref vrational);
+        StreamUtilities.Read(IS, ref urational);
+        StreamUtilities.Read(IS, ref vrational);
         int udegree = 0, vdegree = 0;
-        Standard_Stream.Read(IS, ref udegree);
-        Standard_Stream.Read(IS, ref vdegree);
+        StreamUtilities.Read(IS, ref udegree);
+        StreamUtilities.Read(IS, ref vdegree);
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(udegree + 1L, 0), 6, "Bezier poles");
-        Standard_Stream.CheckCount(IS, Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
-        Standard_Stream.CheckCount(IS, Math.Max(udegree + 1L, 0) * Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
-        var poles = new NCollection_Array2<gp_Pnt>(1, udegree + 1, 1, vdegree + 1);
+        StreamUtilities.CheckCount(IS, Math.Max(udegree + 1L, 0), 6, "Bezier poles");
+        StreamUtilities.CheckCount(IS, Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
+        StreamUtilities.CheckCount(IS, Math.Max(udegree + 1L, 0) * Math.Max(vdegree + 1L, 0), 6, "Bezier poles");
+        var poles = new NCollection_Array2<Point3D>(1, udegree + 1, 1, vdegree + 1);
         var weights = new NCollection_Array2<double>(1, udegree + 1, 1, vdegree + 1);
 
         int i, j;
@@ -1036,26 +1038,26 @@ public class GeomTools_SurfaceSet
     private static Geom_BSplineSurface ReadBSpline(TextReader IS)
     {
         bool urational = false, vrational = false, uperiodic = false, vperiodic = false;
-        Standard_Stream.Read(IS, ref urational);
-        Standard_Stream.Read(IS, ref vrational);
-        Standard_Stream.Read(IS, ref uperiodic);
-        Standard_Stream.Read(IS, ref vperiodic);
+        StreamUtilities.Read(IS, ref urational);
+        StreamUtilities.Read(IS, ref vrational);
+        StreamUtilities.Read(IS, ref uperiodic);
+        StreamUtilities.Read(IS, ref vperiodic);
         int udegree = 0, vdegree = 0, nbupoles = 0, nbvpoles = 0, nbuknots = 0, nbvknots = 0;
-        Standard_Stream.Read(IS, ref udegree);
-        Standard_Stream.Read(IS, ref vdegree);
-        Standard_Stream.Read(IS, ref nbupoles);
-        Standard_Stream.Read(IS, ref nbvpoles);
-        Standard_Stream.Read(IS, ref nbuknots);
-        Standard_Stream.Read(IS, ref nbvknots);
+        StreamUtilities.Read(IS, ref udegree);
+        StreamUtilities.Read(IS, ref vdegree);
+        StreamUtilities.Read(IS, ref nbupoles);
+        StreamUtilities.Read(IS, ref nbvpoles);
+        StreamUtilities.Read(IS, ref nbuknots);
+        StreamUtilities.Read(IS, ref nbvknots);
 
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 6
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(nbupoles, 0), 6, "B-spline poles");
-        Standard_Stream.CheckCount(IS, Math.Max(nbvpoles, 0), 6, "B-spline poles");
-        Standard_Stream.CheckCount(IS, Math.Max(nbupoles, 0) * (long)Math.Max(nbvpoles, 0), 6, "B-spline poles");
-        Standard_Stream.CheckCount(IS, Math.Max(nbuknots, 0), 4, "B-spline knots");
-        Standard_Stream.CheckCount(IS, Math.Max(nbvknots, 0), 4, "B-spline knots");
-        var poles = new NCollection_Array2<gp_Pnt>(1, nbupoles, 1, nbvpoles);
+        StreamUtilities.CheckCount(IS, Math.Max(nbupoles, 0), 6, "B-spline poles");
+        StreamUtilities.CheckCount(IS, Math.Max(nbvpoles, 0), 6, "B-spline poles");
+        StreamUtilities.CheckCount(IS, Math.Max(nbupoles, 0) * (long)Math.Max(nbvpoles, 0), 6, "B-spline poles");
+        StreamUtilities.CheckCount(IS, Math.Max(nbuknots, 0), 4, "B-spline knots");
+        StreamUtilities.CheckCount(IS, Math.Max(nbvknots, 0), 4, "B-spline knots");
+        var poles = new NCollection_Array2<Point3D>(1, nbupoles, 1, nbvpoles);
         var weights = new NCollection_Array2<double>(1, nbupoles, 1, nbvpoles);
 
         int i, j;
@@ -1076,7 +1078,7 @@ public class GeomTools_SurfaceSet
         for (i = 1; i <= nbuknots; i++)
         {
             GeomTools.GetReal(IS, out uknots[i]);
-            Standard_Stream.Read(IS, ref umults[i]);
+            StreamUtilities.Read(IS, ref umults[i]);
         }
 
         var vknots = new NCollection_Array1<double>(1, nbvknots);
@@ -1084,7 +1086,7 @@ public class GeomTools_SurfaceSet
         for (i = 1; i <= nbvknots; i++)
         {
             GeomTools.GetReal(IS, out vknots[i]);
-            Standard_Stream.Read(IS, ref vmults[i]);
+            StreamUtilities.Read(IS, ref vmults[i]);
         }
 
         if (urational || vrational)
@@ -1145,7 +1147,7 @@ public class GeomTools_SurfaceSet
         using var aNesting = GeomTools.Nesting();
         try
         {
-            Standard_Stream.Read(IS, ref stype);
+            StreamUtilities.Read(IS, ref stype);
             switch (stype)
             {
                 case PLANE:
@@ -1201,7 +1203,7 @@ public class GeomTools_SurfaceSet
                     break;
             }
         }
-        catch (Standard_Failure anException) when (anException is not Storage_StreamFormatError)
+        catch (FailureException anException) when (anException is not StreamFormatErrorException)
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_SurfaceSet::ReadSurface(..)!!!"
         }
@@ -1218,12 +1220,12 @@ public class GeomTools_SurfaceSet
     /// Reads a set written by <see cref="Write"/>, adding its surfaces (frozen) to this one. Writes "Not a surface
     /// table" to the console, as OCCT does, if the text doesn't start with "Surfaces".
     /// </summary>
-    public void Read(TextReader IS, Message_ProgressRange theProgress = default)
+    public void Read(TextReader IS, ProgressRange theProgress = default)
     {
         // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
         char[] buffer = new char[255];
-        bool isRead = Standard_Stream.ReadWord(IS, buffer);
-        if (!isRead || Standard_Stream.CString(buffer) != "Surfaces")
+        bool isRead = StreamUtilities.ReadWord(IS, buffer);
+        if (!isRead || StreamUtilities.CString(buffer) != "Surfaces")
         {
             Console.Out.Write("Not a surface table" + "\n");
             return;
@@ -1231,10 +1233,10 @@ public class GeomTools_SurfaceSet
 
         // OCCT's nbsurf is uninitialised if the count can't be read
         int i, nbsurf = 0;
-        Standard_Stream.Read(IS, ref nbsurf);
+        StreamUtilities.Read(IS, ref nbsurf);
         // OCCT.NET: untrusted input: an object takes at least 2 characters
-        Standard_Stream.CheckCount(IS, Math.Max(nbsurf, 0), 2, "surfaces");
-        using var aPS = new Message_ProgressScope(theProgress, "Surfaces", nbsurf);
+        StreamUtilities.CheckCount(IS, Math.Max(nbsurf, 0), 2, "surfaces");
+        using var aPS = new ProgressScope(theProgress, "Surfaces", nbsurf);
         for (i = 1; i <= nbsurf && aPS.More(); i++, aPS.Next())
         {
             Geom_Surface? S = ReadSurface(IS);

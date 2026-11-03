@@ -8,6 +8,9 @@
 // ShapeUpgrade_UnifySameDomain.Edges.cs MergeEdges, MergeSeq, MergeSubSeq, UnionPCurves and theirs.
 
 // OCCT's typedefs of the class
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using DataMapOfFacePlane = Occt.NCollection_DataMap<Occt.TopoDS_Shape, Occt.Geom_Plane>;
 using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Occt.TopoDS_Shape, Occt.NCollection_Map<Occt.TopoDS_Shape>>;
 using static Occt.TopAbs_Orientation;
@@ -42,7 +45,7 @@ namespace Occt;
 /// sub-shape changed in place (a pcurve added) is modified into its changed copy, where OCCT's history has no entry.
 /// </para>
 /// </remarks>
-public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
+public partial class ShapeUpgrade_UnifySameDomain : Transient
 {
     private TopoDS_Shape                  myInitShape;
     private double                        myLinTol;
@@ -70,8 +73,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
     public ShapeUpgrade_UnifySameDomain()
     {
         myInitShape      = new TopoDS_Shape();
-        myLinTol         = Precision.Confusion();
-        myAngTol         = Precision.Angular();
+        myLinTol         = global::Kerf.Engine.Foundation.Precision.Confusion();
+        myAngTol         = global::Kerf.Engine.Foundation.Precision.Angular();
         myUnifyFaces     = true;
         myUnifyEdges     = true;
         myConcatBSplines = false;
@@ -89,8 +92,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                         bool            ConcatBSplines = false)
     {
         myInitShape      = aShape;
-        myLinTol         = Precision.Confusion();
-        myAngTol         = Precision.Angular();
+        myLinTol         = global::Kerf.Engine.Foundation.Precision.Confusion();
+        myAngTol         = global::Kerf.Engine.Foundation.Precision.Angular();
         myUnifyFaces     = UnifyFaces;
         myUnifyEdges     = UnifyEdges;
         myConcatBSplines = ConcatBSplines;
@@ -192,7 +195,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
     /// </summary>
     public void SetAngularTolerance(double theValue)
     {
-        myAngTol = (theValue < Precision.Angular() ? Precision.Angular() : theValue);
+        myAngTol = (theValue < global::Kerf.Engine.Foundation.Precision.Angular() ? global::Kerf.Engine.Foundation.Precision.Angular() : theValue);
     }
 
     /// <summary>The resulting shape, frozen.</summary>
@@ -407,7 +410,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
             faces.Append(aFace);
 
             // surface and location to construct result
-            var                aBaseLocation      = new TopLoc_Location();
+            var                aBaseLocation      = new Placement();
             TopAbs_Orientation RefFaceOrientation = aFace.Orientation();
 
             // Take original surface
@@ -459,7 +462,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                 }
 
                 // get normal of the face to compare it with normals of other faces
-                var aDN1 = new gp_Dir();
+                var aDN1 = new Direction3D();
                 //
                 // take intermediate point on edge to compute the normal
                 BRep_Tool.Range(edge, out double f, out double l);
@@ -495,7 +498,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                     if (bCheckNormals)
                     {
                         // get normal of checked face using the same parameter on edge
-                        var aDN2 = new gp_Dir();
+                        var aDN2 = new Direction3D();
                         if (GetNormalToSurface(aCheckedFace, edge, aTMid, ref aDN2))
                         {
                             // and check if the adjacent faces are having approximately same normals
@@ -527,8 +530,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                 if (myFacePlaneMap.IsBound(faces[1]))
                 {
                     Geom_Plane aPlane = myFacePlaneMap[faces[1]];
-                    var        aLoc   = new TopLoc_Location();
-                    BB.UpdateFace(RefFace, aPlane, aLoc, Precision.Confusion());
+                    var        aLoc   = new Placement();
+                    BB.UpdateFace(RefFace, aPlane, aLoc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 // Add correct pcurves for the reference surface to the edges of other faces
                 TopoDS_Face F_RefFace0 = RefFace;
@@ -708,7 +711,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                 var    edgesMap = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
                 CoordTol =  ComputeMinEdgeSize(edges, F_RefFace, edgesMap);
                 CoordTol /= 10.0;
-                CoordTol =  Max(CoordTol, Precision.Confusion());
+                CoordTol =  Max(CoordTol, global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 var VEmap =
                   new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
@@ -756,8 +759,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                     NCollection_List<TopoDS_Shape> aFaceList = theGMapEdgeFaces.FindFromKey(EdgeWith2pcurves);
                     TopoDS_Face                    aFace1    = TopoDS.Face(aFaceList.First());
                     TopoDS_Face                    aFace2    = TopoDS.Face(aFaceList.Last());
-                    GeomAbs_Shape anOrderOfCont = BRepLib.ContinuityOfFaces(EdgeWith2pcurves, aFace1, aFace2, myAngTol);
-                    aIsEdgeWith2pcurvesSmooth = (anOrderOfCont >= GeomAbs_Shape.GeomAbs_G1);
+                    Continuity anOrderOfCont = BRepLib.ContinuityOfFaces(EdgeWith2pcurves, aFace1, aFace2, myAngTol);
+                    aIsEdgeWith2pcurvesSmooth = (anOrderOfCont >= Continuity.G1);
                 }
 
                 if (aIsEdgeWith2pcurvesSmooth)
@@ -765,8 +768,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                     Geom2d_Curve aPC1 = BRep_Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out double aFirst, out double aLast)!;
                     EdgeWith2pcurves.Reverse();
                     Geom2d_Curve aPC2       = BRep_Tool.CurveOnSurface(EdgeWith2pcurves, F_RefFace, out aFirst, out aLast)!;
-                    gp_Pnt2d     aPnt1      = aPC1.Value(aFirst);
-                    gp_Pnt2d     aPnt2      = aPC2.Value(aFirst);
+                    Point2D     aPnt1      = aPC1.Value(aFirst);
+                    Point2D     aPnt2      = aPC2.Value(aFirst);
                     bool         anIsUclosed = (Math.Abs(aPnt1.X() - aPnt2.X()) > Math.Abs(aPnt1.Y() - aPnt2.Y()));
                     bool         aToMakeUPeriodic = false, aToMakeVPeriodic = false;
                     if (anIsUclosed && Uperiod == 0.0)
@@ -785,19 +788,19 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                         if (aBSplineSurface is null)
                         {
                             double        aTol   = 1.0e-4;
-                            GeomAbs_Shape aUCont = GeomAbs_Shape.GeomAbs_C1, aVCont = GeomAbs_Shape.GeomAbs_C1;
+                            Continuity aUCont = Continuity.C1, aVCont = Continuity.C1;
                             int           degU   = 14, degV = 14;
                             int           nmax   = 16;
                             int           aPrec  = 1;
                             var Approximator = new GeomConvert_ApproxSurface(aBaseSurface, aTol, aUCont, aVCont, degU, degV, nmax, aPrec);
                             aBSplineSurface = Approximator.Surface()!;
-                            if (aBSplineSurface.IsFrozen())
+                            if (aBSplineSurface.IsFrozen)
                             {
                                 // a new surface, but frozen by the approximation: its copy is the same new surface
                                 aBSplineSurface = (Geom_BSplineSurface)aBSplineSurface.Copy();
                             }
                         }
-                        else if (aBSplineSurface.IsFrozen())
+                        else if (aBSplineSurface.IsFrozen)
                         {
                             // OCCT: makes the face's own surface periodic in place.
                             // OCCT.NET: frozen. OCCT makes the face's own surface periodic in place, so every shape
@@ -952,10 +955,10 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                 }
 
                                 if (NewCoordMax - NewCoordMin < aPeriods[ii] - CoordTol
-                                    && (-Precision.Confusion() >= NewCoordMin
-                                        || NewCoordMin >= aPeriods[ii] + Precision.Confusion()
-                                        || -Precision.Confusion() >= NewCoordMax
-                                        || NewCoordMax >= aPeriods[ii] + Precision.Confusion()))
+                                    && (-global::Kerf.Engine.Foundation.Precision.Confusion() >= NewCoordMin
+                                        || NewCoordMin >= aPeriods[ii] + global::Kerf.Engine.Foundation.Precision.Confusion()
+                                        || -global::Kerf.Engine.Foundation.Precision.Confusion() >= NewCoordMax
+                                        || NewCoordMax >= aPeriods[ii] + global::Kerf.Engine.Foundation.Precision.Confusion()))
                                 {
                                     // we can build a face without seam edge:
                                     // update the edges with earlier computed relocated pcurves
@@ -1010,7 +1013,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                 if (Uperiod == 0 || Vperiod == 0)
                 {
                     // Set the "periods" for closed non-periodic surface
-                    Geom_Surface aSurf = BRep_Tool.Surface(RefFace, out TopLoc_Location _)!;
+                    Geom_Surface aSurf = BRep_Tool.Surface(RefFace, out Placement _)!;
                     if (aSurf is Geom_RectangularTrimmedSurface aRTS)
                     {
                         aSurf = aRTS.BasisSurface();
@@ -1040,8 +1043,8 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                         continue;
                     }
 
-                    gp_Pnt2d aFirstPoint = aBAcurve.Value(aBAcurve.FirstParameter());
-                    gp_Pnt2d aLastPoint  = aBAcurve.Value(aBAcurve.LastParameter());
+                    Point2D aFirstPoint = aBAcurve.Value(aBAcurve.FirstParameter());
+                    Point2D aLastPoint  = aBAcurve.Value(aBAcurve.LastParameter());
 
                     if (aFirstPoint.X() < FaceUmin)
                     {
@@ -1100,14 +1103,14 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                         StartParam = lpar;
                         CurParam   = fpar;
                     }
-                    gp_Pnt2d StartPoint = StartPCurve.Value(StartParam);
-                    gp_Pnt2d CurPoint   = StartPCurve.Value(CurParam);
+                    Point2D StartPoint = StartPCurve.Value(StartParam);
+                    Point2D CurPoint   = StartPCurve.Value(CurParam);
 
                     TopoDS_Edge CurEdge = StartEdge;
                     for (;;) // loop till the end of current new wire
                     {
                         var NextEdge  = new TopoDS_Edge();
-                        var NextPoint = new gp_Pnt2d();
+                        var NextPoint = new Point2D();
 
                         var Elist = new NCollection_List<TopoDS_Shape>();
                         // const NCollection_List<TopoDS_Shape>& Elist = VEmap.FindFromKey(CurVertex);
@@ -1183,7 +1186,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                 CurParam = (CurEdge.Orientation() == TopAbs_FORWARD) ? lpar : fpar;
                                 Geom2d_Curve.ResD1 aCurD1 = CurPCurve.EvalD1(CurParam);
                                 CurPoint = aCurD1.Point;
-                                gp_Vec2d CurDir = aCurD1.D1;
+                                Vector2D CurDir = aCurD1.D1;
                                 CurDir.Normalize();
                                 if (CurEdge.Orientation() == TopAbs_REVERSED)
                                 {
@@ -1199,7 +1202,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                         continue;
                                     }
                                     double   aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
-                                    gp_Vec2d aDir   = aPCurve.EvalD1(aParam).D1;
+                                    Vector2D aDir   = aPCurve.EvalD1(aParam).D1;
                                     aDir.Normalize();
                                     if (anEdge.Orientation() == TopAbs_REVERSED)
                                     {
@@ -1230,7 +1233,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                     continue;
                                 }
                                 double   aParam = (anEdge.Orientation() == TopAbs_FORWARD) ? fpar : lpar;
-                                gp_Pnt2d aPoint = aPCurve.Value(aParam);
+                                Point2D aPoint = aPCurve.Value(aParam);
                                 double   DiffU  = Math.Abs(aPoint.X() - CurPoint.X());
                                 double   DiffV  = Math.Abs(aPoint.Y() - CurPoint.Y());
                                 if (Uperiod != 0.0 && DiffU > CoordTol && Math.Abs(DiffU - Uperiod) > CoordTol)
@@ -1247,7 +1250,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                                     || (Vperiod != 0.0 && DiffV > Vperiod / 2)) // end of parametric space
                                 {
                                     //<edges> do not contain seams => we must reconstruct the seam up to <NextEdge>
-                                    var StartOfNextEdge  = new gp_Pnt2d();
+                                    var StartOfNextEdge  = new Point2D();
                                     var LastVertexOfSeam = new TopoDS_Vertex();
                                     ReconstructMissedSeam(RemovedEdges,
                                                           F_RefFace,
@@ -1360,7 +1363,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                     }
                     if (EdgeOnBoundOfSurfFound) // this wire can not be a hole
                     {
-                        Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out TopLoc_Location aLoc);
+                        Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out Placement aLoc);
                         var           aResult = new TopoDS_Face();
                         BB.MakeFace(ref aResult, aSurf, aLoc, 0);
                         BB.Add(aResult, aNewWire);
@@ -1446,7 +1449,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
                 if (NewFaces.IsEmpty())
                 {
                     // one face without seam
-                    Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out TopLoc_Location aLoc);
+                    Geom_Surface? aSurf   = BRep_Tool.Surface(RefFace, out Placement aLoc);
                     var           aResult = new TopoDS_Face();
                     BB.MakeFace(ref aResult, aSurf, aLoc, 0.0);
                     for (int ii = 1; ii <= NewWires.Length(); ii++)
@@ -1590,7 +1593,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
         }
 
         // fix changed faces and replace them in the local context
-        double aPrec = Precision.Confusion();
+        double aPrec = global::Kerf.Engine.Foundation.Precision.Confusion();
         for (int i = 1; i <= aChangedFaces.Extent(); i++)
         {
             TopoDS_Face aFace = TopoDS.Face(myContext.InternalApply(aChangedFaces.FindKey(i)));
@@ -1603,7 +1606,7 @@ public partial class ShapeUpgrade_UnifySameDomain : Standard_Transient
             // to speed up all operations; but this is allowed only when non-safe mode in force
             if (!mySafeInputMode)
             {
-                Geom_Surface? aSurface = BRep_Tool.Surface(aFace, out TopLoc_Location _);
+                Geom_Surface? aSurface = BRep_Tool.Surface(aFace, out Placement _);
                 aSurface = ClearRts(aSurface);
                 if (aSurface is Geom_Plane)
                 {

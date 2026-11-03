@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -85,7 +86,7 @@ public class BRepBuilderAPI_SewingTest
         var aSewing = new BRepBuilderAPI_Sewing();
         const double aTol = 0.01;
         aSewing.SetTolerance(aTol);
-        Assert.Equal(aTol, aSewing.Tolerance(), Precision.Confusion());
+        Assert.Equal(aTol, aSewing.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -130,12 +131,12 @@ public class BRepBuilderAPI_SewingTests
         TopExp.MapShapes(theS, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            if (!aMap[i].TShape()!.IsFrozen())
+            if (!aMap[i].TShape()!.IsFrozen)
             {
                 return false;
             }
         }
-        return theS.TShape()!.IsFrozen();
+        return theS.TShape()!.IsFrozen;
     }
 
     // The faces of a box, each copied apart so that no two share an edge or a vertex.
@@ -151,7 +152,7 @@ public class BRepBuilderAPI_SewingTests
     }
 
     private static TopoDS_Face Rect(double theX0, double theX1, double theY0, double theY1) =>
-        new BRepBuilderAPI_MakeFace(new gp_Pln(), theX0, theX1, theY0, theY1).Face();
+        new BRepBuilderAPI_MakeFace(new Plane3D(), theX0, theX1, theY0, theY1).Face();
 
     [Fact]
     public void Exploded_box_faces_are_sewn_into_a_closed_shell_and_the_inputs_are_not_written()
@@ -183,7 +184,7 @@ public class BRepBuilderAPI_SewingTests
             aSnaps[i].AssertUnchanged(aFaces[i]);
             Assert.True(aSewing.IsModified(aFaces[i]));
             TopoDS_Shape aMod = aSewing.Modified(aFaces[i]);
-            Assert.True(aMod.TShape()!.IsFrozen());
+            Assert.True(aMod.TShape()!.IsFrozen);
             // The face's surface is the caller's.
             Assert.Same(BRep_Tool.Surface(TopoDS.Face(aFaces[i])), BRep_Tool.Surface(TopoDS.Face(aMod)));
         }
@@ -256,7 +257,7 @@ public class BRepBuilderAPI_SewingTests
         Assert.Equal(8, aTight.NbFreeEdges());
         // Nothing was sewn: the faces are the caller's.
         Assert.True(aTight.Modified(aF1).IsSame(aF1));
-        Assert.True(aTight.FreeEdge(1).TShape()!.IsFrozen());
+        Assert.True(aTight.FreeEdge(1).TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -370,7 +371,7 @@ public class BRepBuilderAPI_SewingTests
         Assert.Equal(8, anOpen.NbContigousEdges());
         for (int i = 1; i <= anOpen.NbFreeEdges(); i++)
         {
-            Assert.True(anOpen.FreeEdge(i).TShape()!.IsFrozen());
+            Assert.True(anOpen.FreeEdge(i).TShape()!.IsFrozen);
         }
     }
 
@@ -378,9 +379,9 @@ public class BRepBuilderAPI_SewingTests
     public void Init_and_Load_clear_the_results_and_the_options_keep_their_defaults()
     {
         var aSewing = new BRepBuilderAPI_Sewing(1.0e-8);
-        Assert.Equal(Precision.Confusion(), aSewing.Tolerance());
-        Assert.Equal(Precision.Confusion(), aSewing.MinTolerance());
-        Assert.Equal(Precision.Infinite(), aSewing.MaxTolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSewing.Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSewing.MinTolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aSewing.MaxTolerance());
         Assert.True(aSewing.FaceMode());
         Assert.False(aSewing.FloatingEdgesMode());
         Assert.True(aSewing.SameParameterMode());
@@ -439,31 +440,31 @@ public class BRepBuilderAPI_SewingTests
         // Ported callers pass shapes they built themselves (unfrozen): no copy is made, and the internal forms hand
         // the result out without freezing it.
         var aFaces = new List<TopoDS_Shape>();
-        var aMaker = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0.0, 1.0, 0.0, 1.0);
+        var aMaker = new BRepBuilderAPI_MakeFace(new Plane3D(), 0.0, 1.0, 0.0, 1.0);
         aFaces.Add(aMaker.InternalFace());
-        aMaker = new BRepBuilderAPI_MakeFace(new gp_Pln(), 1.0, 2.0, 0.0, 1.0);
+        aMaker = new BRepBuilderAPI_MakeFace(new Plane3D(), 1.0, 2.0, 0.0, 1.0);
         aFaces.Add(aMaker.InternalFace());
-        Assert.False(aFaces[0].TShape()!.IsFrozen());
+        Assert.False(aFaces[0].TShape()!.IsFrozen);
 
         var aSewing = new BRepBuilderAPI_Sewing();
         aSewing.Add(aFaces[0]);
         aSewing.Add(aFaces[1]);
         aSewing.Perform();
         TopoDS_Shape aResult = aSewing.InternalSewedShape();
-        Assert.False(aResult.TShape()!.IsFrozen());
+        Assert.False(aResult.TShape()!.IsFrozen);
         Assert.Equal(1, aSewing.NbContigousEdges());
-        Assert.False(aSewing.InternalFreeEdge(1).TShape()!.IsFrozen());
+        Assert.False(aSewing.InternalFreeEdge(1).TShape()!.IsFrozen);
     }
 
     // ---------------------------------------------------------------- fast sewing
 
     private static Geom_BezierSurface Patch(double theX0, double theX1, double theY0, double theY1)
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(theX0, theY0, 0.0);
-        aPoles[2, 1] = new gp_Pnt(theX1, theY0, 0.0);
-        aPoles[1, 2] = new gp_Pnt(theX0, theY1, 0.0);
-        aPoles[2, 2] = new gp_Pnt(theX1, theY1, 0.0);
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(theX0, theY0, 0.0);
+        aPoles[2, 1] = new Point3D(theX1, theY0, 0.0);
+        aPoles[1, 2] = new Point3D(theX0, theY1, 0.0);
+        aPoles[2, 2] = new Point3D(theX1, theY1, 0.0);
         return new Geom_BezierSurface(aPoles);
     }
 
@@ -500,8 +501,8 @@ public class BRepBuilderAPI_SewingTests
         aFast.Perform();
         Assert.Equal((uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_EmptyInput, aFast.GetStatuses());
 
-        Assert.False(aFast.Add(new Geom_Plane(new gp_Pln())));
-        Assert.False(aFast.Add(new Geom_RectangularTrimmedSurface(new Geom_Plane(new gp_Pln()), 0.0, 1.0, 0.0, 1.0)));
+        Assert.False(aFast.Add(new Geom_Plane(new Plane3D())));
+        Assert.False(aFast.Add(new Geom_RectangularTrimmedSurface(new Geom_Plane(new Plane3D()), 0.0, 1.0, 0.0, 1.0)));
         Assert.False(aFast.Add((Geom_Surface?)null));
         uint aStatus = aFast.GetStatuses();
         Assert.NotEqual(0u, aStatus & (uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_InfiniteSurface);
@@ -518,11 +519,11 @@ public class BRepBuilderAPI_SewingTests
     public void FastSewing_marks_degenerated_patches()
     {
         // A patch with two coincident corners has a degenerated edge.
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 2, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2, 1] = new gp_Pnt(1.0, 0.0, 0.0);
-        aPoles[1, 2] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2, 2] = new gp_Pnt(1.0, 1.0, 0.0);
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2, 1] = new Point3D(1.0, 0.0, 0.0);
+        aPoles[1, 2] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2, 2] = new Point3D(1.0, 1.0, 0.0);
         var aFast = new BRepBuilderAPI_FastSewing();
         Assert.True(aFast.Add(new Geom_BezierSurface(aPoles)));
         aFast.Perform();

@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Collections.Immutable;
 
 namespace Occt;
@@ -140,7 +142,7 @@ public sealed class XdeDoc_Product
     public XdeDoc_Product WithName(string? theName) => WithAttributes(Attributes.WithName(theName));
 
     /// <summary>The product with the colour of the type replaced (removed if null).</summary>
-    public XdeDoc_Product WithColor(XdeDoc_ColorType theType, Quantity_ColorRGBA? theColor)
+    public XdeDoc_Product WithColor(XdeDoc_ColorType theType, ColorWithAlpha? theColor)
         => WithAttributes(Attributes.WithColor(theType, theColor));
 
     /// <summary>The assembly with other components.</summary>
@@ -178,7 +180,7 @@ public sealed class XdeDoc_Product
     }
 
     /// <summary>The product placed at the location, as a new instance.</summary>
-    public XdeDoc_Instance Placed(in TopLoc_Location theLocation, XdeDoc_Attributes? theAttributes = null)
+    public XdeDoc_Instance Placed(in Placement theLocation, XdeDoc_Attributes? theAttributes = null)
         => new(this, theLocation, theAttributes);
 
     /// <inheritdoc/>

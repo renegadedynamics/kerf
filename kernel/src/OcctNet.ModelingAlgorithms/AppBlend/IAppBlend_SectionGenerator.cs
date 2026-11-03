@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,12 +23,12 @@ public interface IAppBlend_SectionGenerator<ThePoint>
     void Mults(NCollection_Array1<int> TMults);
 
     /// <summary>The section at <paramref name="P"/> with its derivatives; false when they are not computed.</summary>
-    bool Section(ThePoint P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    bool Section(ThePoint P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                  NCollection_Array1<double> Weigths, NCollection_Array1<double> DWeigths);
 
     /// <summary>The section at <paramref name="P"/>.</summary>
-    void Section(ThePoint P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
+    void Section(ThePoint P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Point2D> Poles2d,
                  NCollection_Array1<double> Weigths);
 
     /// <summary>The parameter of the section at <paramref name="P"/>, to impose it on the approximation.</summary>

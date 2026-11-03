@@ -2,6 +2,7 @@
 // (docs/phase3-design.md, section 4.6). Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -42,7 +43,7 @@ public static partial class BRepTools
                 BRep_TFace aTF = (BRep_TFace)aS.TShape()!;
                 if (aTF.NbTriangulations() > 1)
                 {
-                    ((BRep_TFace)aNewS.TShape()!).Triangulations(new NCollection_List<Poly_Triangulation>(aTF.Triangulations()),
+                    ((BRep_TFace)aNewS.TShape()!).Triangulations(new NCollection_List<Triangulation>(aTF.Triangulations()),
                                                                aTF.ActiveTriangulation());
                 }
             }

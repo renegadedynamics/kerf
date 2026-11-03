@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -421,7 +422,7 @@ public class STEPControl_Controller : XSControl_Controller
     /// Solid
     /// </summary>
     public override IFSelect_ReturnStatus TransferWriteShape(TopoDS_Shape shape, Transfer_FinderProcess FP, Interface_InterfaceModel model,
-                                                             int modeshape = 0, Message_ProgressRange theProgress = default)
+                                                             int modeshape = 0, ProgressRange theProgress = default)
     {
         if (modeshape < 0 || modeshape > 4)
         {
@@ -493,7 +494,7 @@ public class STEPControl_Controller : XSControl_Controller
         base.Customise(WS);
 
         IFSelect_SelectModelRoots slr;
-        Standard_Transient slr1 = WS.NamedItem("xst-model-roots");
+        Transient slr1 = WS.NamedItem("xst-model-roots");
         if (slr1 is not null)
         {
             slr = slr1 as IFSelect_SelectModelRoots;

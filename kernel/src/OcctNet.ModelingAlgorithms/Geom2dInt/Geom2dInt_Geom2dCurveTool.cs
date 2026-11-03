@@ -4,8 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -15,42 +16,42 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
 {
     // OCCT's IS_C2_COMPOSITE is 0: the curves are split at their C1 discontinuities.
 
-    public static GeomAbs_CurveType GetType(in Adaptor2d_Curve2d C) => (C.GetType());
+    public static CurveKind GetType(in Adaptor2d_Curve2d C) => (C.GetType());
 
-    public static gp_Lin2d Line(in Adaptor2d_Curve2d C) => (C.Line());
+    public static Line2D Line(in Adaptor2d_Curve2d C) => (C.Line());
 
-    public static gp_Circ2d Circle(in Adaptor2d_Curve2d C) => (C.Circle());
+    public static Circle2D Circle(in Adaptor2d_Curve2d C) => (C.Circle());
 
-    public static gp_Elips2d Ellipse(in Adaptor2d_Curve2d C) => (C.Ellipse());
+    public static Ellipse2D Ellipse(in Adaptor2d_Curve2d C) => (C.Ellipse());
 
-    public static gp_Parab2d Parabola(in Adaptor2d_Curve2d C) => (C.Parabola());
+    public static Parabola2D Parabola(in Adaptor2d_Curve2d C) => (C.Parabola());
 
-    public static gp_Hypr2d Hyperbola(in Adaptor2d_Curve2d C) => (C.Hyperbola());
+    public static Hyperbola2D Hyperbola(in Adaptor2d_Curve2d C) => (C.Hyperbola());
 
-    public static gp_Pnt2d Value(in Adaptor2d_Curve2d C, double U) => (C.Value(U));
+    public static Point2D Value(in Adaptor2d_Curve2d C, double U) => (C.Value(U));
 
-    public static void D0(in Adaptor2d_Curve2d C, double U, out gp_Pnt2d P)
+    public static void D0(in Adaptor2d_Curve2d C, double U, out Point2D P)
     {
         C.D0(U, out P);
     }
 
-    public static void D1(in Adaptor2d_Curve2d C, double U, out gp_Pnt2d P, out gp_Vec2d T)
+    public static void D1(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T)
     {
         C.D1(U, out P, out T);
     }
 
-    public static void D2(in Adaptor2d_Curve2d C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N)
+    public static void D2(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T, out Vector2D N)
     {
         C.D2(U, out P, out T, out N);
     }
 
-    public static void D3(in Adaptor2d_Curve2d C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N,
-                          out gp_Vec2d V)
+    public static void D3(in Adaptor2d_Curve2d C, double U, out Point2D P, out Vector2D T, out Vector2D N,
+                          out Vector2D V)
     {
         C.D3(U, out P, out T, out N, out V);
     }
 
-    public static gp_Vec2d DN(in Adaptor2d_Curve2d C, double U, int N) => C.DN(U, N);
+    public static Vector2D DN(in Adaptor2d_Curve2d C, double U, int N) => C.DN(U, N);
 
     public static double FirstParameter(in Adaptor2d_Curve2d C) => (C.FirstParameter());
 
@@ -64,7 +65,7 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
 
     public static void Intervals(in Adaptor2d_Curve2d C, NCollection_Array1<double> Tab)
     {
-        C.Intervals(Tab, GeomAbs_C1);
+        C.Intervals(Tab, C1);
     }
 
     public static void GetInterval(in Adaptor2d_Curve2d C, int i, NCollection_Array1<double> Tab, out double a,
@@ -77,7 +78,7 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
     public static int NbIntervals(in Adaptor2d_Curve2d C)
     {
         int N = 1;
-        N = C.NbIntervals(GeomAbs_C1);
+        N = C.NbIntervals(C1);
         return (N);
     }
 
@@ -86,13 +87,13 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
     /// <summary>The number of samples of the curve between <paramref name="U0"/> and <paramref name="U1"/>.</summary>
     public static int NbSamples(in Adaptor2d_Curve2d C, double U0, double U1)
     {
-        GeomAbs_CurveType typC = C.GetType();
+        CurveKind typC = C.GetType();
         int nbs = C.NbSamples();
 
-        if (typC == GeomAbs_BSplineCurve)
+        if (typC == BSplineCurve)
         {
             double t = C.LastParameter() - C.FirstParameter();
-            if (t > Precision.PConfusion())
+            if (t > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 double t1 = U1 - U0;
                 if (t1 < 0.0)
@@ -111,7 +112,7 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
                 }
             }
         }
-        else if (typC == GeomAbs_Circle)
+        else if (typC == global::Kerf.Geometry.CurveKind.Circle)
         {
             // Try to reach deflection = eps*R, eps = 0.01
             const double minR = 1.0; // eps = 0.01
@@ -135,8 +136,8 @@ public readonly struct Geom2dInt_Geom2dCurveTool : IIntCurve_CurveTool<Adaptor2d
     public static int NbSamples(in Adaptor2d_Curve2d C)
     {
         int nbs = C.NbSamples();
-        GeomAbs_CurveType typC = C.GetType();
-        if (typC == GeomAbs_Circle)
+        CurveKind typC = C.GetType();
+        if (typC == global::Kerf.Geometry.CurveKind.Circle)
         {
             // Try to reach deflection = eps*R, eps = 0.01
             const double minR = 1.0; // eps = 0.01

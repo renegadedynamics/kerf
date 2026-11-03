@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.IFSelect_PrintCount;
 using static Occt.Interface_ParamType;
@@ -17,7 +18,7 @@ namespace Occt;
 /// Dispatches, in addition to a ShareOut. To each of these variables, a unique Integer Identifier is
 /// attached. A Name can be attached too as desired.
 /// </summary>
-public class IFSelect_WorkSession : Standard_Transient
+public class IFSelect_WorkSession : Transient
 {
     private const int Flag_Incorrect = 2;
     //  (Bit Map n0 2)
@@ -304,7 +305,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// read
     /// </summary>
     /// <remarks>OCCT.NET: <paramref name="theProgress"/> (not in OCCT) is given to the library (plan 2.7).</remarks>
-    public IFSelect_ReturnStatus ReadFile(string filename, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus ReadFile(string filename, ProgressRange theProgress = default)
     {
         if (thelibrary is null)
         {
@@ -334,7 +335,7 @@ public class IFSelect_WorkSession : Standard_Transient
         }
         catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
         {
-            using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+            using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    ReadFile Interruption by Exception :   ****\n").Append(Transfer_ProcessForTransient.What(anException)).Append("\n    Abandon").Append('\n');
             status = IFSelect_RetFail;
         }
@@ -360,7 +361,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// OCCT.NET: the stream is a .NET <see cref="Stream"/>; <paramref name="theProgress"/> (not in OCCT) is given to
     /// the library (plan 2.7).
     /// </remarks>
-    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress = default)
+    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, ProgressRange theProgress = default)
     {
         if (thelibrary is null)
         {
@@ -390,7 +391,7 @@ public class IFSelect_WorkSession : Standard_Transient
         }
         catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
         {
-            using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+            using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    ReadFile Interruption by Exception :   ****\n").Append(Transfer_ProcessForTransient.What(anException)).Append("\n    Abandon").Append('\n');
             status = IFSelect_RetFail;
         }
@@ -418,9 +419,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// <summary>
     /// Returns an Entity stored in the Model of the WorkSession (Null Handle is no Model or num out of range)
     /// </summary>
-    public Standard_Transient? StartingEntity(int num)
+    public Transient? StartingEntity(int num)
     {
-        Standard_Transient res = null; // Null by default
+        Transient res = null; // Null by default
         if (myModel is null)
         {
             return res;
@@ -435,7 +436,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// <summary>
     /// Returns the Number of an Entity in the Model (0 if no Model set or &lt;ent&gt; not in the Model)
     /// </summary>
-    public int StartingNumber(Standard_Transient? ent)
+    public int StartingNumber(Transient? ent)
     {
         return (myModel is null ? 0 : myModel.Number(ent));
     }
@@ -449,7 +450,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public int NumberFromLabel(string val, int afternum = 0)
     {
-        int i, cnt = 0, num = atoi(val);
+        int i, cnt = 0, num = Atoi(val);
         if (num > 0 || myModel is null)
         {
             return num; // a direct n0 : won !
@@ -484,7 +485,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the label for &lt;ent&gt;, as the Model does If &lt;ent&gt; is not in the Model or if no Model is
     /// loaded, a Null Handle is returned
     /// </summary>
-    public TCollection_HAsciiString? EntityLabel(Standard_Transient? ent)
+    public TCollection_HAsciiString? EntityLabel(Transient? ent)
     {
         if (myModel is null || ent is null)
         {
@@ -501,7 +502,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Name of an Entity This Name is computed by the general service Name Returns a Null Handle if
     /// fails
     /// </summary>
-    public TCollection_HAsciiString? EntityName(Standard_Transient? ent)
+    public TCollection_HAsciiString? EntityName(Transient? ent)
     {
         if (myModel is null || ent is null)
         {
@@ -520,7 +521,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Category Number determined for an entity it is computed by the class Category An unknown
     /// entity (number 0) gives a value -1
     /// </summary>
-    public int CategoryNumber(Standard_Transient? ent)
+    public int CategoryNumber(Transient? ent)
     {
         return (myModel is null ? -1 : myModel.CategoryNumber(StartingNumber(ent)));
     }
@@ -529,7 +530,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Category Name determined for an entity it is computed by the class Category Remark : an
     /// unknown entity gives an empty string
     /// </summary>
-    public string CategoryName(Standard_Transient? ent)
+    public string CategoryName(Transient? ent)
     {
         return Interface_Category.Name(CategoryNumber(ent));
     }
@@ -538,7 +539,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Validity Name determined for an entity it is computed by the class SignValidity Remark : an
     /// unknown entity gives an empty string
     /// </summary>
-    public string ValidityName(Standard_Transient? ent)
+    public string ValidityName(Transient? ent)
     {
         return ((StartingNumber(ent) == 0) ? "" : IFSelect_SignValidity.CVal(ent, myModel));
     }
@@ -701,7 +702,7 @@ public class IFSelect_WorkSession : Standard_Transient
         ComputeGraph();
         if (thegraph is null)
         {
-            throw new Standard_DomainError("IFSelect WorkSession : Graph not available");
+            throw new DomainErrorException("IFSelect WorkSession : Graph not available");
         }
         return thegraph.Graph();
     }
@@ -710,9 +711,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the list of entities shared by &lt;ent&gt; (can be empty) Returns a null Handle if &lt;ent&gt; is
     /// unknown
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? Shareds(Standard_Transient? ent)
+    public NCollection_HSequence<Transient>? Shareds(Transient? ent)
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         if (!ComputeGraph())
         {
             return list;
@@ -728,9 +729,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the list of entities sharing &lt;ent&gt; (can be empty) Returns a null Handle if &lt;ent&gt; is
     /// unknown
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? Sharings(Standard_Transient? ent)
+    public NCollection_HSequence<Transient>? Sharings(Transient? ent)
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         if (!ComputeGraph())
         {
             return list;
@@ -850,7 +851,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// user) if &lt;ent&gt; is Null or equates the current Model, it gives the Global Check, else the Check for
     /// the given entity &lt;complete&gt; as for ModelCheckList
     /// </summary>
-    public Interface_CheckIterator CheckOne(Standard_Transient? ent, bool complete = true)
+    public Interface_CheckIterator CheckOne(Transient? ent, bool complete = true)
     {
         Interface_CheckIterator checks = new Interface_CheckIterator();
         checks.SetModel(myModel);
@@ -905,9 +906,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// <summary>
     /// Returns an Item, given its Ident. Returns a Null Handle if no Item corresponds to this Ident.
     /// </summary>
-    public Standard_Transient? Item(int id)
+    public Transient? Item(int id)
     {
-        Standard_Transient res = null;
+        Transient res = null;
         if (id <= 0 || id > MaxIdent())
         {
             return res;
@@ -922,7 +923,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// <summary>
     /// Returns the Ident attached to an Item in the WorkSession, or Zero if it is unknown
     /// </summary>
-    public int ItemIdent(Standard_Transient? item)
+    public int ItemIdent(Transient? item)
     {
         if (item is null)
         {
@@ -944,16 +945,16 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Item which corresponds to a Variable, given its Name (whatever the type of this Item).
     /// Returns a Null Handle if this Name is not recorded
     /// </summary>
-    public Standard_Transient? NamedItem(string name)
+    public Transient? NamedItem(string name)
     {
-        Standard_Transient res = null;
+        Transient res = null;
         if (CStringChar(name, 0) == '\0')
         {
             return res;
         }
         if (name[0] == '#')
         { // #nnn : not a name but an id number
-            int id = atoi(name.Substring(1));
+            int id = Atoi(name.Substring(1));
             return Item(id);
         }
         if (!thenames.Find(name, out res))
@@ -967,9 +968,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Same as above, but &lt;name&gt; is given through a Handle Especially useful with methods SelectionNames,
     /// etc...
     /// </summary>
-    public Standard_Transient? NamedItem(TCollection_HAsciiString? name)
+    public Transient? NamedItem(TCollection_HAsciiString? name)
     {
-        Standard_Transient res = null;
+        Transient res = null;
         if (name is not null)
         {
             res = NamedItem(name.ToCString());
@@ -988,10 +989,10 @@ public class IFSelect_WorkSession : Standard_Transient
         }
         if (name[0] == '#')
         { // #nnn : not a name but an id number
-            int id = atoi(name.Substring(1));
+            int id = Atoi(name.Substring(1));
             return id;
         }
-        if (!thenames.Find(name, out Standard_Transient res))
+        if (!thenames.Find(name, out Transient res))
         {
             return 0;
         }
@@ -1001,7 +1002,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// <summary>
     /// Returns True if an Item of the WorkSession has an attached Name
     /// </summary>
-    public bool HasName(Standard_Transient? item)
+    public bool HasName(Transient? item)
     {
         if (item is null)
         {
@@ -1012,7 +1013,7 @@ public class IFSelect_WorkSession : Standard_Transient
         {
             return false;
         }
-        Standard_Transient att = theitems.FindFromIndex(id);
+        Transient att = theitems.FindFromIndex(id);
         if (att is null)
         {
             return false;
@@ -1024,7 +1025,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Name attached to an Item as a Variable of this WorkSession. If &lt;item&gt; is Null or not
     /// recorded, returns an empty string.
     /// </summary>
-    public TCollection_HAsciiString? Name(Standard_Transient? item)
+    public TCollection_HAsciiString? Name(Transient? item)
     {
         TCollection_HAsciiString res = null;
         if (item is null)
@@ -1036,7 +1037,7 @@ public class IFSelect_WorkSession : Standard_Transient
         {
             return res; // Null
         }
-        Standard_Transient att = theitems.FindFromIndex(id);
+        Transient att = theitems.FindFromIndex(id);
         return (att as TCollection_HAsciiString);
     }
 
@@ -1045,7 +1046,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// returns its attached Ident) &lt;active&gt; if True commands call to SetActive (see below) Remark : the
     /// determined Ident is used if &lt;item&gt; is a Dispatch, to fill the ShareOut
     /// </summary>
-    public int AddItem(Standard_Transient? item, bool active = true)
+    public int AddItem(Transient? item, bool active = true)
     {
         if (item is null)
         {
@@ -1054,7 +1055,7 @@ public class IFSelect_WorkSession : Standard_Transient
         int id = theitems.FindIndex(item);
         if (id > 0)
         {
-            ref Standard_Transient att = ref theitems.ChangeFromIndex(id);
+            ref Transient att = ref theitems.ChangeFromIndex(id);
             if (att is null)
             {
                 att = item;
@@ -1079,7 +1080,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// (i.e. with no name) If &lt;item&gt; is already known but with no attached Name, this method tries to
     /// attached a Name to it &lt;active&gt; if True commands call to SetActive (see below)
     /// </summary>
-    public int AddNamedItem(string name, Standard_Transient? item, bool active = true)
+    public int AddNamedItem(string name, Transient? item, bool active = true)
     {
         if (item is null)
         {
@@ -1099,7 +1100,7 @@ public class IFSelect_WorkSession : Standard_Transient
         int id = theitems.FindIndex(item);
         if (id > 0)
         {
-            ref Standard_Transient att = ref theitems.ChangeFromIndex(id);
+            ref Transient att = ref theitems.ChangeFromIndex(id);
             if (att is null)
             {
                 att = item;
@@ -1132,7 +1133,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// GeneralModifier : Adds or Removes it for final sending (i.e. in the ModelCopier) Returns True if it did
     /// something, False else (state unchanged)
     /// </summary>
-    public bool SetActive(Standard_Transient? item, bool mode)
+    public bool SetActive(Transient? item, bool mode)
     {
         if (item.IsKind(typeof(IFSelect_Dispatch)))
         {
@@ -1172,7 +1173,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public bool RemoveNamedItem(string name)
     {
-        Standard_Transient item = NamedItem(name);
+        Transient item = NamedItem(name);
         if (item is null)
         {
             return false;
@@ -1189,7 +1190,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public bool RemoveName(string name)
     {
-        Standard_Transient item = NamedItem(name);
+        Transient item = NamedItem(name);
         if (item is null)
         {
             return false;
@@ -1202,7 +1203,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Removes an Item given its Ident. Returns False if &lt;id&gt; is attached to no Item in the WorkSession.
     /// For a Named Item, also removes its Name.
     /// </summary>
-    public bool RemoveItem(Standard_Transient? item)
+    public bool RemoveItem(Transient? item)
     {
         if (item is null)
         {
@@ -1213,7 +1214,7 @@ public class IFSelect_WorkSession : Standard_Transient
         {
             return false;
         }
-        ref Standard_Transient att = ref theitems.ChangeFromIndex(id);
+        ref Transient att = ref theitems.ChangeFromIndex(id);
         if (att is null)
         {
             return false; // already canceled
@@ -1255,7 +1256,7 @@ public class IFSelect_WorkSession : Standard_Transient
     public TCollection_HAsciiString? ItemLabel(int id)
     {
         TCollection_HAsciiString res = null;
-        Standard_Transient var = Item(id);
+        Transient var = Item(id);
         if (var is null)
         {
             return res;
@@ -1332,7 +1333,7 @@ public class IFSelect_WorkSession : Standard_Transient
             return res;
         }
         res = new TCollection_HAsciiString("VariableType:");
-        res.AssignCat(var.DynamicType().Name);
+        res.AssignCat(var.DynamicTypeName());
         return res;
     }
 
@@ -1363,7 +1364,7 @@ public class IFSelect_WorkSession : Standard_Transient
     {
         NCollection_HSequence<TCollection_HAsciiString> list =
             new NCollection_HSequence<TCollection_HAsciiString>();
-        foreach (KeyValuePair<string, Standard_Transient> IT in thenames)
+        foreach (KeyValuePair<string, Transient> IT in thenames)
         {
             if (type is not null && IT.Value.IsKind(type))
             {
@@ -1386,7 +1387,7 @@ public class IFSelect_WorkSession : Standard_Transient
         for (i = 1; i <= nb; i++)
         {
             TCollection_HAsciiString lab = ItemLabel(i);
-            Standard_Transient item = Item(i);
+            Transient item = Item(i);
             if (lab is null)
             {
                 continue;
@@ -1463,9 +1464,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// to it by its name. Else this creates a String which is the value of the Static. Returns a null handle if
     /// &lt;statname&gt; is unknown as a Static
     /// </summary>
-    public Standard_Transient? NewParamFromStatic(string statname, string name = "")
+    public Transient? NewParamFromStatic(string statname, string name = "")
     {
-        Standard_Transient param = null;
+        Transient param = null;
         Interface_Static stat = thestatics.Static(statname);
         if (stat is null)
         {
@@ -1610,7 +1611,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Value computed by a Signature for an Entity Returns an empty string if the entity does not
     /// belong to the loaded model
     /// </summary>
-    public string SignValue(IFSelect_Signature? sign, Standard_Transient? ent)
+    public string SignValue(IFSelect_Signature? sign, Transient? ent)
     {
         if (sign is null || myModel is null)
         {
@@ -1648,7 +1649,7 @@ public class IFSelect_WorkSession : Standard_Transient
             }
             catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    EvalSelection Interrupted by Exception :   ****\n");
                 sout.Append(Transfer_ProcessForTransient.What(anException));
                 sout.Append("\n    Abandon");
@@ -1681,9 +1682,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// (hence, it can be used by a frontal-engine logic). It can be empty Returns a Null Handle if &lt;sel&gt;
     /// is not in the WorkSession
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? SelectionResult(IFSelect_Selection? sel)
+    public NCollection_HSequence<Transient>? SelectionResult(IFSelect_Selection? sel)
     {
-        NCollection_HSequence<Standard_Transient> res = null;
+        NCollection_HSequence<Transient> res = null;
         if (myErrHand)
         {
             myErrHand = false;
@@ -1693,7 +1694,7 @@ public class IFSelect_WorkSession : Standard_Transient
             }
             catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SelectionResult Interrupted by Exception :   ****\n");
                 sout.Append(Transfer_ProcessForTransient.What(anException));
                 sout.Append("\n    Abandon");
@@ -1707,7 +1708,7 @@ public class IFSelect_WorkSession : Standard_Transient
         {
             Console.Out.Write(" ***  Data for Evaluation not available  ***");
             Console.Out.Write('\n');
-            return new NCollection_HSequence<Standard_Transient>();
+            return new NCollection_HSequence<Transient>();
         }
         //  if (ItemIdent(sel) == 0)
         if (sel is null)
@@ -1725,7 +1726,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// considered : if it is a SelectDeduct kind Selection, its Input is considered, etc... until an Input is
     /// not a Deduct/Extract : its result is replaced by &lt;list&gt; and all the chain of deductions is applied
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? SelectionResultFromList(IFSelect_Selection? sel, NCollection_HSequence<Standard_Transient>? list)
+    public NCollection_HSequence<Transient>? SelectionResultFromList(IFSelect_Selection? sel, NCollection_HSequence<Transient>? list)
     {
         if (list is null)
         {
@@ -1760,7 +1761,7 @@ public class IFSelect_WorkSession : Standard_Transient
         deduct.Alternate().SetList(list);
 
         //   We execute then we clean
-        NCollection_HSequence<Standard_Transient> res = SelectionResult(sel);
+        NCollection_HSequence<Transient> res = SelectionResult(sel);
         ////  deduct.SetInput (newinput);
         return res;
     }
@@ -1771,7 +1772,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// entities to modify &lt;sel&gt; Null causes this Selection to be nullified Returns False if &lt;item&gt;
     /// is not of a suitable type, or &lt;item&gt; or &lt;sel&gt; is not in the WorkSession
     /// </summary>
-    public bool SetItemSelection(Standard_Transient? item, IFSelect_Selection? sel)
+    public bool SetItemSelection(Transient? item, IFSelect_Selection? sel)
     {
         IFSelect_Dispatch disp = item as IFSelect_Dispatch;
         IFSelect_GeneralModifier modif = item as IFSelect_GeneralModifier;
@@ -1810,7 +1811,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Resets input Selection which was set by SetItemSelection Same conditions as for SetItemSelection Returns
     /// True if done, False if &lt;item&gt; is not in the WorkSession
     /// </summary>
-    public bool ResetItemSelection(Standard_Transient? item)
+    public bool ResetItemSelection(Transient? item)
     {
         IFSelect_Selection nulsel = null;
         return SetItemSelection(item, nulsel);
@@ -1820,7 +1821,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the Selection of a Dispatch or a GeneralModifier. Returns a Null Handle if none is defined or
     /// &lt;item&gt; not good type
     /// </summary>
-    public IFSelect_Selection? ItemSelection(Standard_Transient? item)
+    public IFSelect_Selection? ItemSelection(Transient? item)
     {
         IFSelect_Selection sel = null;
         IFSelect_Dispatch disp = item as IFSelect_Dispatch;
@@ -1868,7 +1869,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// definition of the Counter : a Selection, else the whole Model (recomputation forced) If &lt;clear&gt; is
     /// True (D), starts from scratch Else, cumulates computations
     /// </summary>
-    public bool ComputeCounterFromList(IFSelect_SignCounter? counter, NCollection_HSequence<Standard_Transient>? list, bool clear = true)
+    public bool ComputeCounterFromList(IFSelect_SignCounter? counter, NCollection_HSequence<Transient>? list, bool clear = true)
     {
         if (counter is null)
         {
@@ -2044,7 +2045,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// dispatches) - item is a Dispatch : applies for this dispatch only Returns True if done, False if
     /// &lt;modif&gt; or &lt;item&gt; not in &lt;me&gt;
     /// </summary>
-    public bool SetAppliedModifier(IFSelect_GeneralModifier? modif, Standard_Transient? item)
+    public bool SetAppliedModifier(IFSelect_GeneralModifier? modif, Transient? item)
     {
         if (ItemIdent(modif) == 0)
         {
@@ -2088,9 +2089,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Returns the item on which a GeneralModifier is applied : the ShareOut, or a given Dispatch Returns a Null
     /// Handle if &lt;modif&gt; is not applied
     /// </summary>
-    public Standard_Transient? UsesAppliedModifier(IFSelect_GeneralModifier? modif)
+    public Transient? UsesAppliedModifier(IFSelect_GeneralModifier? modif)
     {
-        Standard_Transient res = null;
+        Transient res = null;
         if (ItemIdent(modif) == 0)
         {
             return res;
@@ -2382,7 +2383,7 @@ public class IFSelect_WorkSession : Standard_Transient
             }
             catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SendAll Interrupted by Exception :   ****\n");
                 sout.Append(Transfer_ProcessForTransient.What(anException));
                 sout.Append("\n    Abandon");
@@ -2450,7 +2451,7 @@ public class IFSelect_WorkSession : Standard_Transient
             }
             catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SendSelected Interrupted by Exception :   ****\n");
                 sout.Append(Transfer_ProcessForTransient.What(anException));
                 sout.Append("\n    Abandon");
@@ -2631,7 +2632,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Creates a new Selection, of type SelectPointed, its content starts with &lt;list&gt;. A name must be
     /// given (can be empty)
     /// </summary>
-    public IFSelect_Selection? NewSelectPointed(NCollection_HSequence<Standard_Transient>? list, string name)
+    public IFSelect_Selection? NewSelectPointed(NCollection_HSequence<Transient>? list, string name)
     {
         IFSelect_SelectPointed sel = new IFSelect_SelectPointed();
         if (list is not null)
@@ -2650,7 +2651,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// new content (clear former) 1 : adds &lt;list&gt; to actual content -1 : removes &lt;list&gt; from actual
     /// content Returns True if done, False if &lt;sel&gt; is not a SelectPointed
     /// </summary>
-    public bool SetSelectPointed(IFSelect_Selection? sel, NCollection_HSequence<Standard_Transient>? list, int mode)
+    public bool SetSelectPointed(IFSelect_Selection? sel, NCollection_HSequence<Transient>? list, int mode)
     {
         IFSelect_SelectPointed sp = sel as IFSelect_SelectPointed;
         if (sp is null || list is null)
@@ -2710,7 +2711,7 @@ public class IFSelect_WorkSession : Standard_Transient
         {
             nomsel[nf] = '\0';
         }
-        Standard_Transient item = NamedItem(CString(nomsel, 0));
+        Transient item = NamedItem(CString(nomsel, 0));
 
         //  Parentheses? try Signature (later: parameterized Selection)
         //  NB: we count the levels of parentheses (reflected nesting)
@@ -2766,10 +2767,10 @@ public class IFSelect_WorkSession : Standard_Transient
     /// HSequence which contains it else, an empty HSequence &lt;obj&gt; the Model it self : ALL its content (not
     /// only the roots)
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveList(Standard_Transient? obj)
+    public NCollection_HSequence<Transient>? GiveList(Transient? obj)
     {
         //   Already a list
-        NCollection_HSequence<Standard_Transient> list = obj as NCollection_HSequence<Standard_Transient>;
+        NCollection_HSequence<Transient> list = obj as NCollection_HSequence<Transient>;
         if (list is not null)
         {
             return list;
@@ -2790,7 +2791,7 @@ public class IFSelect_WorkSession : Standard_Transient
         }
 
         //   The model: its content
-        list = new NCollection_HSequence<Standard_Transient>();
+        list = new NCollection_HSequence<Transient>();
         if (obj == myModel)
         {
             int i, nb = myModel.NbEntities();
@@ -2829,9 +2830,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// the result of the selection - and so on (the "leftest minus one" is a selection, of which the input is
     /// given by the remaining ...)
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveList(string first, string second = "")
+    public NCollection_HSequence<Transient>? GiveList(string first, string second = "")
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         if (first is null || CStringChar(first, 0) == '\0')
         {
             return list;
@@ -2863,9 +2864,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// selection is used (which contains a default input selection) if &lt;selname&gt; is erroneous, a null
     /// handle is returned REMARK : selname is processed as &lt;first second&gt; of preceding GiveList
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveListFromList(string selname, Standard_Transient? ent)
+    public NCollection_HSequence<Transient>? GiveListFromList(string selname, Transient? ent)
     {
-        NCollection_HSequence<Standard_Transient> list = null;
+        NCollection_HSequence<Transient> list = null;
         int num;
 
         //   LIST DEFINED BY DEFAULT (in this case, the input list is ignored)
@@ -2875,7 +2876,7 @@ public class IFSelect_WorkSession : Standard_Transient
             System.Text.StringBuilder entid = new System.Text.StringBuilder();
             int i;
             NCollection_Map<int> numap = new NCollection_Map<int>();
-            list = new NCollection_HSequence<Standard_Transient>();
+            list = new NCollection_HSequence<Transient>();
             for (i = 1; i < selname.Length && selname[i] != '\0'; i++)
             {
                 if (selname[i] == ' ')
@@ -2894,7 +2895,7 @@ public class IFSelect_WorkSession : Standard_Transient
                     {
                         continue;
                     }
-                    Standard_Transient anent = StartingEntity(num);
+                    Transient anent = StartingEntity(num);
                     if (anent is not null)
                     {
                         list.Append(anent);
@@ -2970,20 +2971,20 @@ public class IFSelect_WorkSession : Standard_Transient
     /// &lt;l1&gt; AND NOT in &lt;l2&gt; &lt;mode&gt; = 0 : entities in &lt;l1&gt; AND in &lt;l2&gt; &lt;mode&gt;
     /// &gt; 0 : entities in &lt;l1&gt; OR in &lt;l2&gt;
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GiveListCombined(NCollection_HSequence<Standard_Transient>? l1, NCollection_HSequence<Standard_Transient>? l2, int mode)
+    public NCollection_HSequence<Transient>? GiveListCombined(NCollection_HSequence<Transient>? l1, NCollection_HSequence<Transient>? l2, int mode)
     {
-        NCollection_HSequence<Standard_Transient> list = null; // OCCT: never created, so Append fails below
+        NCollection_HSequence<Transient> list = null; // OCCT: never created, so Append fails below
         if (l1 is null || l2 is null)
         {
             return list;
         }
 
         //  mode < 0 l1-l2  = 0 l1&l2  > 0 l1|l2 (l1+l2)
-        NCollection_Map<Standard_Transient> numap = new NCollection_Map<Standard_Transient>();
+        NCollection_Map<Transient> numap = new NCollection_Map<Transient>();
         int i, n = l2.Length();
         for (i = n; i > 0; i--)
         {
-            Standard_Transient ent = l2.Value(i);
+            Transient ent = l2.Value(i);
             if (ent is null)
             {
                 continue;
@@ -2999,7 +3000,7 @@ public class IFSelect_WorkSession : Standard_Transient
         n = l1.Length();
         for (i = n; i > 0; i--)
         {
-            Standard_Transient ent = l1.Value(i);
+            Transient ent = l1.Value(i);
             if (ent is null)
             {
                 continue;
@@ -3092,7 +3093,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// fail), no inherited check 2 : immediate fail, no inherited check +10 : idem but some inherited warning
     /// (no fail) +20 : idem but some inherited fail
     /// </summary>
-    public int QueryCheckStatus(Standard_Transient? ent)
+    public int QueryCheckStatus(Transient? ent)
     {
         if (!IsLoaded())
         {
@@ -3155,7 +3156,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Determines if &lt;entdad&gt; is parent of &lt;entson&gt; (in the graph), returns : -1 if no; 0 if
     /// &lt;entdad&gt; = &lt;entson&gt; 1 if immediate parent, &gt; 1 if parent, gives count of steps
     /// </summary>
-    public int QueryParent(Standard_Transient? entdad, Standard_Transient? entson)
+    public int QueryParent(Transient? entdad, Transient? entson)
     {
         int ndad = StartingNumber(entdad);
         int nson = StartingNumber(entson);
@@ -3169,7 +3170,7 @@ public class IFSelect_WorkSession : Standard_Transient
         }
         //  we will calculate: for each immediate parent, of <son>, status with <dad> + 1
         //  nb: not protected against loops ...
-        NCollection_HSequence<Standard_Transient> list =
+        NCollection_HSequence<Transient> list =
             thegraph.Graph().Sharings(entson).Content();
         if (list is null)
         {
@@ -3200,7 +3201,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// (no Transfer) xst-params-send 3 SendFile (Write, no Transfer) xst-params-split 4 Split xst-param-read 5
     /// Transfer on Reading xst-param-write 6 Transfer on Writing
     /// </summary>
-    public void SetParams(NCollection_DynamicArray<Standard_Transient> @params, NCollection_DynamicArray<int> uselist)
+    public void SetParams(NCollection_DynamicArray<Transient> @params, NCollection_DynamicArray<int> uselist)
     {
         int i, nbp = @params.Length(), nbu = uselist.Length();
         IFSelect_ParamEditor editor =
@@ -3296,7 +3297,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public void TraceStatics(int use, int mode = 0)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         if (use > 0)
         {
             if (mode == 0)
@@ -3561,7 +3562,7 @@ public class IFSelect_WorkSession : Standard_Transient
                 }
                 catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
                 {
-                    using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                    using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                     sout.Append("    ****    DumpModel (Check) Interrupted by Exception    ****\n");
                     S.Write("  ** **  Exception Raised during Check !  ** **\n");
                     S.Write("  -->  what could be determined is listed");
@@ -3584,7 +3585,7 @@ public class IFSelect_WorkSession : Standard_Transient
             }
             catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    DumpModel Interrupted by Exception :   ****\n");
                 sout.Append(Transfer_ProcessForTransient.What(anException));
                 sout.Append("\n    Abandon");
@@ -3606,7 +3607,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// </summary>
     public void TraceDumpModel(int mode)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo(); // should it be changed to SendTrace()?
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo(); // should it be changed to SendTrace()?
         StringWriter aText = new StringWriter();
         DumpModel(mode, aText);
         sout.Append(aText.ToString());
@@ -3621,7 +3622,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// &lt;level&gt; is to be interpreted for each norm : see specific classes of WorkLibrary for it. Generally,
     /// 0 if for very basic (only type ...), greater values give more and more details.
     /// </summary>
-    public void DumpEntity(Standard_Transient? ent, int level, TextWriter S)
+    public void DumpEntity(Transient? ent, int level, TextWriter S)
     {
         if (!IsLoaded())
         {
@@ -3655,7 +3656,7 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Prints main information about an entity : its number, type, validity (and checks if any), category,
     /// shareds and sharings.. mutable because it can recompute checks as necessary
     /// </summary>
-    public void PrintEntityStatus(Standard_Transient? ent, TextWriter S)
+    public void PrintEntityStatus(Transient? ent, TextWriter S)
     {
         int i, nb;
         int num = StartingNumber(ent);
@@ -3679,7 +3680,7 @@ public class IFSelect_WorkSession : Standard_Transient
         if (signtype is null)
         {
             S.Write("  Type(CDL):");
-            S.Write(ent.DynamicType().Name);
+            S.Write(ent.DynamicTypeName());
             S.Write('\n');
         }
         else
@@ -3696,7 +3697,7 @@ public class IFSelect_WorkSession : Standard_Transient
         Interface_CheckIterator chl = CheckOne(ent);
         chl.Print(S, myModel, false, 0); // OCCT: Print(S, model, false, false), the last argument an integer
 
-        NCollection_HSequence<Standard_Transient> list = Sharings(ent);
+        NCollection_HSequence<Transient> list = Sharings(ent);
         if (list is null)
         {
             S.Write("  Root");
@@ -3754,9 +3755,9 @@ public class IFSelect_WorkSession : Standard_Transient
     /// Dumps an entity from the current Model as inherited DumpEntity on currently defined Default Trace File
     /// (&lt;level&gt; interpreted according to the Norm, see WorkLibrary)
     /// </summary>
-    public void TraceDumpEntity(Standard_Transient? ent, int level)
+    public void TraceDumpEntity(Transient? ent, int level)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo(); // should it be changed to SendTrace()?
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo(); // should it be changed to SendTrace()?
         StringWriter aText = new StringWriter();
         DumpEntity(ent, level, aText);
         sout.Append(aText.ToString());
@@ -3845,7 +3846,7 @@ public class IFSelect_WorkSession : Standard_Transient
                     sout.Write("(");
                 }
                 titre = 1;
-                Standard_Transient ent = iter.Value();
+                Transient ent = iter.Value();
                 int num = myModel.Number(ent);
                 if (mode == 1)
                 {
@@ -3950,8 +3951,8 @@ public class IFSelect_WorkSession : Standard_Transient
 
     protected Interface_HGraph? thegraph;
     protected Interface_CheckIterator thecheckrun = new Interface_CheckIterator();
-    protected NCollection_IndexedDataMap<Standard_Transient, Standard_Transient> theitems = new NCollection_IndexedDataMap<Standard_Transient, Standard_Transient>();
-    protected NCollection_DataMap<string, Standard_Transient> thenames = new NCollection_DataMap<string, Standard_Transient>();
+    protected NCollection_IndexedDataMap<Transient, Transient> theitems = new NCollection_IndexedDataMap<Transient, Transient>();
+    protected NCollection_DataMap<string, Transient> thenames = new NCollection_DataMap<string, Transient>();
     private bool theerrhand;
     private bool myErrHand; // OCCT's file static "errhand", the session's own here
     private Interface_StaticSet thestatics;

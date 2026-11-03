@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
 using static Occt.TopAbs_ShapeEnum;
@@ -24,7 +26,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 {
     private TopoDS_Shape myPbase = new();
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
-    private gp_Ax1 myAxis = new();
+    private Axis3D myAxis = new();
     private readonly NCollection_Sequence<Geom_Curve> myCurves = new();
     private Geom_Curve? myBCurve;
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
@@ -43,14 +45,14 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     /// <paramref name="Axis"/>, from the sketch face <paramref name="Skface"/>; <paramref name="Fuse"/> is the mode
     /// (0 cut, 1 fuse, 2 the feature alone).
     /// </summary>
-    public BRepFeat_MakeRevol(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in gp_Ax1 Axis,
+    public BRepFeat_MakeRevol(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Axis3D Axis,
                               int Fuse, bool Modify)
     {
         Init(Sbase, Pbase, Skface, Axis, Fuse, Modify);
     }
 
     /// <summary>Initializes the revolved feature (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in gp_Ax1 Axis, int Mode,
+    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Axis3D Axis, int Mode,
                      bool Modify)
     {
         // OCCT.NET: the working copies of frozen inputs (decision 1052)
@@ -96,7 +98,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     }
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">F isn't a face of the basis shape, or E an edge of the profile.</exception>
+    /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in TopoDS_Edge E, in TopoDS_Face F)
     {
         TopExp_Explorer exp = new();
@@ -109,7 +111,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
@@ -121,7 +123,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySlface.IsBound(F))
@@ -153,7 +155,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         myGluedF.Clear();
         myPerfSelection = BRepFeat_NoSelection;
         PerfSelectionValid();
-        bool RevolComp = 2 * M_PI - Math.Abs(Angle) <= Precision.Angular();
+        bool RevolComp = 2 * M_PI - Math.Abs(Angle) <= global::Kerf.Engine.Foundation.Precision.Angular();
         LocOpe_Revol theRevol = new();
         double angledec = 0.0;
         TopExp_Explorer exp = new();
@@ -260,7 +262,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     }
 
     /// <summary>Builds a revolved feature up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape Until)
     {
         double Angle = 0.0;
@@ -268,12 +270,12 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
 
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
         {
@@ -375,12 +377,12 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     }
 
     /// <summary>Builds a revolved feature from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">From or Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
     {
         if (From.IsNull() || Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (!mySkface.IsNull())
         {
@@ -412,12 +414,12 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         TopExp_Explorer exp = new(From, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         mySFrom = Working(From);
         bool Trff = TransformShapeFU(0);
@@ -476,9 +478,9 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             if (ASI2.IsDone() && ASI2.NbPoints(1) >= 1)
             {
                 double pr1 = ASI2.Point(1, 1).Parameter();
-                pr1 = ElCLib.InPeriod(pr1, PrU - 2 * M_PI, PrU);
+                pr1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(pr1, PrU - 2 * M_PI, PrU);
                 double pr2 = ASI2.Point(1, ASI2.NbPoints(1)).Parameter();
-                pr2 = ElCLib.InPeriod(pr2, PrU - 2 * M_PI, PrU);
+                pr2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(pr2, PrU - 2 * M_PI, PrU);
                 OrF = TopAbs.Reverse(OrU);
                 FFrom = ASI2.Point(1, 1).Face();
                 PrF = Max(pr1, pr2);
@@ -551,7 +553,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
     }
 
     /// <summary>Builds a revolved feature up to the shape <paramref name="Until"/>, at the angle <paramref name="Angle"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until has no face (a null Until included, see below).</exception>
+    /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
     public void PerformUntilAngle(in TopoDS_Shape Until, double Angle)
     {
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero angle goes on and
@@ -567,7 +569,7 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
@@ -789,8 +791,8 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
         }
 
         Geom_Surface S1, S2;
-        double tollin = Precision.Confusion();
-        double tolang = Precision.Angular();
+        double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
         S1 = BRep_Tool.Surface(F1, out _)!;
         S2 = BRep_Tool.Surface(F2, out _)!;
@@ -816,8 +818,8 @@ public sealed class BRepFeat_MakeRevol : BRepFeat_Form
             S1 = BRep_Tool.Surface(F1)!; // to apply the location.
             S2 = BRep_Tool.Surface(F2)!;
             // OCCT: a trimmed plane gives a null plane here (an access violation natively)
-            gp_Pln pl1 = (S1 as Geom_Plane)!.Pln();
-            gp_Pln pl2 = (S2 as Geom_Plane)!.Pln();
+            Plane3D pl1 = (S1 as Geom_Plane)!.Pln();
+            Plane3D pl2 = (S2 as Geom_Plane)!.Pln();
 
             if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
             {

@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Blend_DecrochStatus;
 using static Occt.Blend_Status;
 using static Occt.IntSurf_TypeTrans;
@@ -111,11 +114,11 @@ public class BRepBlend_RstRstLineBuilder
             math_Vector tolerance = new(1, 2), infbound = new(1, 2), supbound = new(1, 2);
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
-            math_FunctionSetRoot rsnld = new(Func, tolerance, 30);
+            FunctionSetRoot rsnld = new(Func, tolerance, 30);
 
             rsnld.Perform(Func, ParDep, infbound, supbound);
 
-            if (!rsnld.IsDone())
+            if (!rsnld.IsDone)
             {
                 return;
             }
@@ -203,9 +206,9 @@ public class BRepBlend_RstRstLineBuilder
         Func.GetTolerance(tolerance, tolpoint3d);
         Func.GetBounds(infbound, supbound);
 
-        math_FunctionSetRoot rsnld = new(Func, tolerance, 30);
+        FunctionSetRoot rsnld = new(Func, tolerance, 30);
         rsnld.Perform(Func, ParDep, infbound, supbound);
-        if (!rsnld.IsDone())
+        if (!rsnld.IsDone)
         {
             return false;
         }
@@ -411,7 +414,7 @@ public class BRepBlend_RstRstLineBuilder
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (iscomplete)
         {
@@ -441,7 +444,7 @@ public class BRepBlend_RstRstLineBuilder
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return line!;
     }
@@ -494,7 +497,7 @@ public class BRepBlend_RstRstLineBuilder
         Func.GetTolerance(tolerance, tolpoint3d);
         Func.GetBounds(infbound, supbound);
 
-        math_FunctionSetRoot rsnld = new(Func, tolerance, 30);
+        FunctionSetRoot rsnld = new(Func, tolerance, 30);
         parinit.Initialized(sol);
 
         Arrive = false;
@@ -512,7 +515,7 @@ public class BRepBlend_RstRstLineBuilder
             Func.Set(param);
             rsnld.Perform(Func, parinit, infbound, supbound);
 
-            if (rsnld.IsDone())
+            if (rsnld.IsDone)
             {
                 rsnld.Root(sol);
                 if (!CheckInside(Func, out situonc1, out situonc2, out decroch) && line.NbPoints() == 1)
@@ -955,9 +958,9 @@ public class BRepBlend_RstRstLineBuilder
         Solinv[3] = sol[1];
 
         // The point where contact is not lost is found
-        math_FunctionSetRoot rsnld = new(Finv, toler, 30);
+        FunctionSetRoot rsnld = new(Finv, toler, 30);
         rsnld.Perform(Finv, Solinv, infb, supb);
-        if (!rsnld.IsDone())
+        if (!rsnld.IsDone)
         {
             return false;
         }
@@ -1003,12 +1006,12 @@ public class BRepBlend_RstRstLineBuilder
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
 
-            math_FunctionSetRoot rsnld2 = new(Func, tolerance, 30);
+            FunctionSetRoot rsnld2 = new(Func, tolerance, 30);
             parinit[1] = Solinv[3];
             parinit[2] = Solinv[2];
             Func.Set(Solinv[1]);
             rsnld2.Perform(Func, parinit, infbound, supbound);
-            if (!rsnld2.IsDone())
+            if (!rsnld2.IsDone)
             {
                 return false;
             }
@@ -1030,9 +1033,9 @@ public class BRepBlend_RstRstLineBuilder
         Solinv[2] = sol[1];
         Solinv[3] = sol[2];
 
-        math_FunctionSetRoot rsnld = new(Finv, toler, 30);
+        FunctionSetRoot rsnld = new(Finv, toler, 30);
         rsnld.Perform(Finv, Solinv, infb, supb);
-        if (!rsnld.IsDone())
+        if (!rsnld.IsDone)
         {
             return false;
         }
@@ -1077,12 +1080,12 @@ public class BRepBlend_RstRstLineBuilder
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
 
-            math_FunctionSetRoot rsnld2 = new(Func, tolerance, 30);
+            FunctionSetRoot rsnld2 = new(Func, tolerance, 30);
             parinit[1] = Solinv[2];
             parinit[2] = Solinv[3];
             Func.Set(Solinv[1]);
             rsnld2.Perform(Func, parinit, infbound, supbound);
-            if (!rsnld2.IsDone())
+            if (!rsnld2.IsDone)
             {
                 return false;
             }
@@ -1097,7 +1100,7 @@ public class BRepBlend_RstRstLineBuilder
     private bool Recadre1(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref Adaptor3d_HVertex? Vtx)
     {
         // One is located on the last or the first point, following the direction of processing.
-        gp_Pnt2d p2drst1;
+        Point2D p2drst1;
         double firstrst1 = rst1.FirstParameter();
         double lastrst1 = rst1.LastParameter();
         double upoint = firstrst1;
@@ -1107,7 +1110,7 @@ public class BRepBlend_RstRstLineBuilder
             upoint = lastrst1;
         }
         p2drst1 = rst1.Value(upoint);
-        gp_Pnt thepoint = surf1.Value(p2drst1.X(), p2drst1.Y());
+        Point3D thepoint = surf1.Value(p2drst1.X(), p2drst1.Y());
 
         FinvP.Set(thepoint);
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
@@ -1116,9 +1119,9 @@ public class BRepBlend_RstRstLineBuilder
         Solinv[1] = param;
         Solinv[2] = sol[2];
 
-        math_FunctionSetRoot rsnld = new(FinvP, toler, 30);
+        FunctionSetRoot rsnld = new(FinvP, toler, 30);
         rsnld.Perform(FinvP, Solinv, infb, supb);
-        if (!rsnld.IsDone())
+        if (!rsnld.IsDone)
         {
             return false;
         }
@@ -1126,7 +1129,7 @@ public class BRepBlend_RstRstLineBuilder
 
         if (FinvP.IsSolution(Solinv, tolpoint3d))
         {
-            gp_Pnt2d p2drst2 = rst2.Value(Solinv[2]);
+            Point2D p2drst2 = rst2.Value(Solinv[2]);
             TopAbs_State situ = domain2.Classify(p2drst2, toler[2], false);
             if ((situ != TopAbs_IN) && (situ != TopAbs_ON))
             {
@@ -1161,7 +1164,7 @@ public class BRepBlend_RstRstLineBuilder
     private bool Recadre2(Blend_CurvPointFuncInv FinvP, math_Vector Solinv, ref bool IsVtx, ref Adaptor3d_HVertex? Vtx)
     {
         // One is located on the last or the first point, following the direction of processing.
-        gp_Pnt2d p2drst2;
+        Point2D p2drst2;
         double firstrst2 = rst2.FirstParameter();
         double lastrst2 = rst2.LastParameter();
         double vpoint = firstrst2;
@@ -1171,7 +1174,7 @@ public class BRepBlend_RstRstLineBuilder
             vpoint = lastrst2;
         }
         p2drst2 = rst2.Value(vpoint);
-        gp_Pnt thepoint = surf2.Value(p2drst2.X(), p2drst2.Y());
+        Point3D thepoint = surf2.Value(p2drst2.X(), p2drst2.Y());
 
         FinvP.Set(thepoint);
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
@@ -1180,9 +1183,9 @@ public class BRepBlend_RstRstLineBuilder
         Solinv[1] = param;
         Solinv[2] = sol[1];
 
-        math_FunctionSetRoot rsnld = new(FinvP, toler, 30);
+        FunctionSetRoot rsnld = new(FinvP, toler, 30);
         rsnld.Perform(FinvP, Solinv, infb, supb);
-        if (!rsnld.IsDone())
+        if (!rsnld.IsDone)
         {
             return false;
         }
@@ -1190,7 +1193,7 @@ public class BRepBlend_RstRstLineBuilder
 
         if (FinvP.IsSolution(Solinv, tolpoint3d))
         {
-            gp_Pnt2d p2drst1 = rst1.Value(Solinv[2]);
+            Point2D p2drst1 = rst1.Value(Solinv[2]);
             TopAbs_State situ = domain1.Classify(p2drst1, toler[2], false);
             if ((situ != TopAbs_IN) && (situ != TopAbs_ON))
             {
@@ -1226,7 +1229,7 @@ public class BRepBlend_RstRstLineBuilder
                             ref IntSurf_Transition TArc)
     {
         bool computetranstionaveclacorde = false;
-        gp_Vec tgline;
+        Vector3D tgline;
         Blend_Point prevprev = new();
 
         if (previousP.IsTangencyPoint())
@@ -1245,11 +1248,11 @@ public class BRepBlend_RstRstLineBuilder
                 prevprev = line.Point(line.NbPoints() - 1);
             }
         }
-        gp_Pnt2d p2d;
-        gp_Vec2d dp2d;
+        Point2D p2d;
+        Vector2D dp2d;
 
-        gp_Pnt pbid;
-        gp_Vec d1u, d1v, normale, tgrst = new();
+        Point3D pbid;
+        Vector3D d1u, d1v, normale, tgrst = new();
 
         Arc.D1(Param, out p2d, out dp2d);
         if (OnFirst)
@@ -1261,7 +1264,7 @@ public class BRepBlend_RstRstLineBuilder
             }
             else
             {
-                tgline = new gp_Vec(prevprev.PointOnC1(), previousP.PointOnC1());
+                tgline = new Vector3D(prevprev.PointOnC1(), previousP.PointOnC1());
             }
         }
         else
@@ -1273,14 +1276,14 @@ public class BRepBlend_RstRstLineBuilder
             }
             else
             {
-                tgline = new gp_Vec(prevprev.PointOnC2(), previousP.PointOnC2());
+                tgline = new Vector3D(prevprev.PointOnC2(), previousP.PointOnC2());
             }
         }
 
         tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
         normale = d1u.Crossed(d1v);
 
-        IntSurf.MakeTransition(tgline, tgrst, new gp_Dir(normale), ref TLine, ref TArc);
+        IntSurf.MakeTransition(tgline, tgrst, new Direction3D(normale), ref TLine, ref TArc);
     }
 
     // Produces the extremity of a curve.
@@ -1356,21 +1359,21 @@ public class BRepBlend_RstRstLineBuilder
         bool curpointistangent = CurPoint.IsTangencyPoint();
         bool prevpointistangent = previousP.IsTangencyPoint();
 
-        gp_Pnt Psurf = CurPoint.PointOnC1();
-        gp_Vec Tgsurf = new();
+        Point3D Psurf = CurPoint.PointOnC1();
+        Vector3D Tgsurf = new();
         if (!curpointistangent)
         {
             Tgsurf = CurPoint.TangentOnC1();
         }
-        gp_Pnt prevP = previousP.PointOnC1();
-        gp_Vec prevTg = new();
+        Point3D prevP = previousP.PointOnC1();
+        Vector3D prevTg = new();
         if (!prevpointistangent)
         {
             prevTg = previousP.TangentOnC1();
         }
         double Norme;
         double prevNorme = 0.0;
-        gp_Vec Corde = new(prevP, Psurf);
+        Vector3D Corde = new(prevP, Psurf);
         Norme = Corde.SquareMagnitude();
         if (!prevpointistangent)
         {
@@ -1442,22 +1445,22 @@ public class BRepBlend_RstRstLineBuilder
         bool curpointistangent = CurPoint.IsTangencyPoint();
         bool prevpointistangent = previousP.IsTangencyPoint();
 
-        gp_Pnt Psurf = CurPoint.PointOnC2();
-        gp_Vec Tgsurf = new();
+        Point3D Psurf = CurPoint.PointOnC2();
+        Vector3D Tgsurf = new();
 
         if (!curpointistangent)
         {
             Tgsurf = CurPoint.TangentOnC2();
         }
-        gp_Pnt prevP = previousP.PointOnC2();
-        gp_Vec prevTg = new();
+        Point3D prevP = previousP.PointOnC2();
+        Vector3D prevTg = new();
         if (!prevpointistangent)
         {
             prevTg = previousP.TangentOnC2();
         }
         double Norme;
         double prevNorme = 0.0;
-        gp_Vec Corde = new(prevP, Psurf);
+        Vector3D Corde = new(prevP, Psurf);
         Norme = Corde.SquareMagnitude();
         if (!prevpointistangent)
         {
@@ -1530,10 +1533,10 @@ public class BRepBlend_RstRstLineBuilder
 
     private Blend_Status TestArret(Blend_RstRstFunction Func, bool TestDeflection, Blend_Status State)
     {
-        gp_Pnt ptrst1, ptrst2;
-        gp_Pnt2d pt2drst1, pt2drst2;
-        gp_Vec tgrst1, tgrst2;
-        gp_Vec2d tg2drst1 = new(), tg2drst2 = new();
+        Point3D ptrst1, ptrst2;
+        Point2D pt2drst1, pt2drst2;
+        Vector3D tgrst1, tgrst2;
+        Vector2D tg2drst1 = new(), tg2drst2 = new();
         Blend_Status StateRst1, StateRst2;
         IntSurf_TypeTrans trarst1 = IntSurf_Undecided, trarst2 = IntSurf_Undecided;
         Blend_Point curpoint = new();
@@ -1586,8 +1589,8 @@ public class BRepBlend_RstRstLineBuilder
 
             if (!comptra && !curpointistangent)
             {
-                gp_Pnt2d p2drstref;
-                gp_Vec2d tg2drstref;
+                Point2D p2drstref;
+                Vector2D tg2drstref;
                 rst1.D1(sol[1], out p2drstref, out tg2drstref);
                 double testra = tg2drst1.Dot(tg2drstref);
                 TopAbs_Orientation Or = domain1.Orientation(rst1);
@@ -1688,7 +1691,7 @@ public class BRepBlend_RstRstLineBuilder
         }
 
         // lost contact
-        gp_Vec tgrst1, norst1, tgrst2, norst2;
+        Vector3D tgrst1, norst1, tgrst2, norst2;
         Decroch = Func.Decroch(sol, out tgrst1, out norst1, out tgrst2, out norst2);
 
         return (SituOnC1 == TopAbs_IN && SituOnC2 == TopAbs_IN && Decroch == Blend_NoDecroch);

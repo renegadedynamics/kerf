@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +27,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
     private readonly struct CurveData
     {
         public readonly NCollection_Array1<double> FlatKnots;
-        public readonly NCollection_Array1<gp_Pnt2d> Poles;
+        public readonly NCollection_Array1<Point2D> Poles;
         public readonly NCollection_Array1<double>? Weights;
         public readonly NCollection_Array1<double> Knots;
         public readonly NCollection_Array1<int> Mults;
@@ -45,7 +49,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
     // The two functors of evaluateGridCached: (cache, localParam, result) and (data, param, spanIdx, result).
     private interface IEvalFunctor<TResult>
     {
-        static abstract void CacheEval(BSplCLib_Cache theCache, double theLocalParam, ref TResult theResult);
+        static abstract void CacheEval(Cache theCache, double theLocalParam, ref TResult theResult);
 
         static abstract void DirectEval(in CurveData theData, double theParam, int theSpanIdx, ref TResult theResult);
     }
@@ -82,9 +86,9 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
                                    out double theAdjustedParam,
                                    ref int theSpanIdx)
     {
-        BSplCLib.LocateParameter(theDegree,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(theDegree,
                                  theFlatKnots,
-                                 BSplCLib.NoMults(),
+                                 global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                                  theParam,
                                  theIsPeriodic,
                                  ref theSpanIdx,
@@ -107,9 +111,9 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         {
             double aParam = theParams.Value(aLower + i);
             int aSpan = 0;
-            BSplCLib.LocateParameter(theDegree,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(theDegree,
                                      theFlatKnots,
-                                     BSplCLib.NoMults(),
+                                     global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(),
                                      aParam,
                                      theIsPeriodic,
                                      ref aSpan,
@@ -147,7 +151,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         int aLow = theParams.Lower();
 
         NCollection_Array1<TResult> aResults = new(1, aNbParams);
-        BSplCLib_Cache aCache = new(theData.Degree, theData.IsPeriodic, theData.FlatKnots, theData.Poles, theData.Weights);
+        Cache aCache = new(theData.Degree, theData.IsPeriodic, theData.FlatKnots, theData.Poles, theData.Weights);
 
         int aPrevSpan = -1;
         int aSpanSize = 0;
@@ -191,16 +195,16 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         return aResults;
     }
 
-    private struct EvalD0 : IEvalFunctor<gp_Pnt2d>
+    private struct EvalD0 : IEvalFunctor<Point2D>
     {
-        public static void CacheEval(BSplCLib_Cache theCache, double theLocalParam, ref gp_Pnt2d theResult)
+        public static void CacheEval(Cache theCache, double theLocalParam, ref Point2D theResult)
         {
             theCache.D0Local(theLocalParam, out theResult);
         }
 
-        public static void DirectEval(in CurveData theData, double theParam, int theSpanIdx, ref gp_Pnt2d theResult)
+        public static void DirectEval(in CurveData theData, double theParam, int theSpanIdx, ref Point2D theResult)
         {
-            BSplCLib.D0(theParam,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(theParam,
                         theSpanIdx,
                         theData.Degree,
                         theData.IsPeriodic,
@@ -214,7 +218,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
 
     private struct EvalD1 : IEvalFunctor<Geom2d_Curve.ResD1>
     {
-        public static void CacheEval(BSplCLib_Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD1 theResult)
+        public static void CacheEval(Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD1 theResult)
         {
             theCache.D1Local(theLocalParam, out theResult.Point, out theResult.D1);
         }
@@ -222,7 +226,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         public static void DirectEval(in CurveData theData, double theParam, int theSpanIdx,
                                       ref Geom2d_Curve.ResD1 theResult)
         {
-            BSplCLib.D1(theParam,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(theParam,
                         theSpanIdx,
                         theData.Degree,
                         theData.IsPeriodic,
@@ -237,7 +241,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
 
     private struct EvalD2 : IEvalFunctor<Geom2d_Curve.ResD2>
     {
-        public static void CacheEval(BSplCLib_Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD2 theResult)
+        public static void CacheEval(Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD2 theResult)
         {
             theCache.D2Local(theLocalParam, out theResult.Point, out theResult.D1, out theResult.D2);
         }
@@ -245,7 +249,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         public static void DirectEval(in CurveData theData, double theParam, int theSpanIdx,
                                       ref Geom2d_Curve.ResD2 theResult)
         {
-            BSplCLib.D2(theParam,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(theParam,
                         theSpanIdx,
                         theData.Degree,
                         theData.IsPeriodic,
@@ -261,7 +265,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
 
     private struct EvalD3 : IEvalFunctor<Geom2d_Curve.ResD3>
     {
-        public static void CacheEval(BSplCLib_Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD3 theResult)
+        public static void CacheEval(Cache theCache, double theLocalParam, ref Geom2d_Curve.ResD3 theResult)
         {
             theCache.D3Local(theLocalParam, out theResult.Point, out theResult.D1, out theResult.D2, out theResult.D3);
         }
@@ -269,7 +273,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         public static void DirectEval(in CurveData theData, double theParam, int theSpanIdx,
                                       ref Geom2d_Curve.ResD3 theResult)
         {
-            BSplCLib.D3(theParam,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(theParam,
                         theSpanIdx,
                         theData.Degree,
                         theData.IsPeriodic,
@@ -285,14 +289,14 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (theParams.IsEmpty() || !extractCurveData(myGeom, out CurveData aData))
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
-        return evaluateGridCached<gp_Pnt2d, EvalD0>(aData, theParams);
+        return evaluateGridCached<Point2D, EvalD0>(aData, theParams);
     }
 
     /// <summary>Evaluates all grid points with the first derivative.</summary>
@@ -336,11 +340,11 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
     /// <see cref="IndexOutOfRangeException"/> is thrown) wherever the span's flat-knot index is also a valid knot
     /// index, and zero above the degree for rational curves too (occt-issues.md).
     /// </remarks>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (theParams.IsEmpty() || theN < 1 || !extractCurveData(myGeom, out CurveData aData))
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNbParams = theParams.Length();
@@ -350,8 +354,8 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
         // OCCT: not for a rational curve, whose derivatives above the degree are generally not zero
         if (theN > aData.Degree)
         {
-            NCollection_Array1<gp_Vec2d> aZeroResult = new(1, aNbParams);
-            gp_Vec2d aZero = new(0.0, 0.0);
+            NCollection_Array1<Vector2D> aZeroResult = new(1, aNbParams);
+            Vector2D aZero = new(0.0, 0.0);
             for (int i = 1; i <= aNbParams; ++i)
             {
                 aZeroResult.SetValue(i, aZero);
@@ -359,7 +363,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
             return aZeroResult;
         }
 
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNbParams);
+        NCollection_Array1<Vector2D> aResult = new(1, aNbParams);
 
         // DN uses direct evaluation (no cache available)
         for (int i = 0; i < aNbParams; ++i)
@@ -372,7 +376,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
             // their multiplicities. When it is a valid knot index, DN evaluates that span's polynomial at the
             // parameter (wrong values); building the span's knots may then read past the knots (garbage in OCCT,
             // IndexOutOfRangeException here). See occt-issues.md.
-            BSplCLib.DN(aAdjParam,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(aAdjParam,
                         theN,
                         aSpan,
                         aData.Degree,
@@ -381,7 +385,7 @@ public sealed class Geom2dGridEval_BSplineCurve : Geom2dGridEval.ICurveEvaluator
                         aData.Weights,
                         aData.Knots,
                         aData.Mults,
-                        out gp_Vec2d aDN);
+                        out Vector2D aDN);
             aResult.SetValue(i + 1, aDN);
         }
 

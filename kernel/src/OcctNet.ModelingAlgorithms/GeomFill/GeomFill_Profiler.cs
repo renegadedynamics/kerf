@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -120,7 +122,7 @@ public class GeomFill_Profiler
         }
         if (theCurve is Geom_Conic)
         {
-            GeomConvert_ApproxCurve appr = new(Curve, Precision.Confusion(), GeomAbs_C1, 16, 14);
+            GeomConvert_ApproxCurve appr = new(Curve, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
             if (appr.HasResult())
             {
                 C = appr.InternalCurve();
@@ -155,7 +157,7 @@ public class GeomFill_Profiler
         // The curves handed out by Curve() are frozen: change copies (decision 844).
         for (i = 1; i <= mySequence.Length(); i++)
         {
-            if (mySequence[i].IsFrozen())
+            if (mySequence[i].IsFrozen)
             {
                 mySequence[i] = (Geom_Curve)mySequence[i].Copy();
             }
@@ -199,7 +201,7 @@ public class GeomFill_Profiler
             C.IncreaseDegree(myDegree);
 
             NCollection_Array1<double> Knots = new(C.InternalKnots());
-            BSplCLib.Reparametrize(UFirst, ULast, Knots);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(UFirst, ULast, Knots);
             C.SetKnots(Knots);
         }
 
@@ -239,7 +241,7 @@ public class GeomFill_Profiler
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
@@ -253,7 +255,7 @@ public class GeomFill_Profiler
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
@@ -264,11 +266,11 @@ public class GeomFill_Profiler
     /// Copies the poles of curve <paramref name="Index"/> (from 1) into <paramref name="Poles"/>, which must have
     /// <see cref="NbPoles"/> elements.
     /// </summary>
-    public void Poles(int Index, NCollection_Array1<gp_Pnt> Poles)
+    public void Poles(int Index, NCollection_Array1<Point3D> Poles)
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         Standard_DomainError_Raise_if(Poles.Length() != NbPoles(), "GeomFill_Profiler::Poles");
@@ -287,7 +289,7 @@ public class GeomFill_Profiler
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         Standard_DomainError_Raise_if(Weights.Length() != NbPoles(), "GeomFill_Profiler::Weights");
@@ -303,7 +305,7 @@ public class GeomFill_Profiler
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         Geom_BSplineCurve C = (Geom_BSplineCurve)mySequence[1];
@@ -316,7 +318,7 @@ public class GeomFill_Profiler
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("GeomFill_Profiler::Degree");
+            throw new NotDoneException("GeomFill_Profiler::Degree");
         }
 
         int n = NbKnots();

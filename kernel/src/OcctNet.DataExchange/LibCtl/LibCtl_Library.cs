@@ -10,6 +10,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -31,7 +33,7 @@ namespace Occt;
 /// <typeparam name="TModule">The module class (OCCT's <c>TheModule</c>).</typeparam>
 /// <typeparam name="TProtocol">The protocol class (OCCT's <c>TheProtocol</c>).</typeparam>
 public class LibCtl_Library<TModule, TProtocol>
-    where TModule : Standard_Transient
+    where TModule : Transient
     where TProtocol : Interface_Protocol
 {
     //  Global registry of (Module, Protocol) pairs. SetGlobal / AddProtocol are
@@ -46,7 +48,7 @@ public class LibCtl_Library<TModule, TProtocol>
 
     //  Build/extend `theTargetList` for `theProtocol`, recursing into Resources.
     private static void LibCtl_AddProtocolImpl(ref LibCtl_Node<TModule, TProtocol>? theTargetList,
-                                               Standard_Transient? theProtocol)
+                                               Transient? theProtocol)
     {
         if (theProtocol is not TProtocol aProtocol)
         {
@@ -115,7 +117,7 @@ public class LibCtl_Library<TModule, TProtocol>
     /// Adds a couple (module, protocol) to the library, given the class of a protocol. Takes resources into account.
     /// (If <paramref name="theProtocol"/> is not of type <typeparamref name="TProtocol"/>, it is not added.)
     /// </summary>
-    public void AddProtocol(Standard_Transient? theProtocol) => LibCtl_AddProtocolImpl(ref thelist, theProtocol);
+    public void AddProtocol(Transient? theProtocol) => LibCtl_AddProtocolImpl(ref thelist, theProtocol);
 
     /// <summary>Clears the list of modules of the library (it can then be refilled by <see cref="AddProtocol"/>).</summary>
     public void Clear() => thelist = new LibCtl_Node<TModule, TProtocol>();
@@ -140,7 +142,7 @@ public class LibCtl_Library<TModule, TProtocol>
     /// module and the case number determined by the associated protocol; else <paramref name="theModule"/> is null and
     /// <paramref name="theCN"/> is zero.
     /// </summary>
-    public bool Select(Standard_Transient? theObj, out TModule? theModule, out int theCN)
+    public bool Select(Transient? theObj, out TModule? theModule, out int theCN)
     {
         theModule = null;
         theCN = 0; // Response "not found"
@@ -181,23 +183,23 @@ public class LibCtl_Library<TModule, TProtocol>
     }
 
     /// <summary>The current module in the iteration.</summary>
-    /// <exception cref="Standard_NoSuchObject">The iteration is over.</exception>
+    /// <exception cref="NoSuchObjectException">The iteration is over.</exception>
     public TModule? Module()
     {
         if (thecurr is null)
         {
-            throw new Standard_NoSuchObject("Library from LibCtl");
+            throw new NoSuchObjectException("Library from LibCtl");
         }
         return thecurr.Module();
     }
 
     /// <summary>The current protocol in the iteration.</summary>
-    /// <exception cref="Standard_NoSuchObject">The iteration is over.</exception>
+    /// <exception cref="NoSuchObjectException">The iteration is over.</exception>
     public TProtocol? Protocol()
     {
         if (thecurr is null)
         {
-            throw new Standard_NoSuchObject("Library from LibCtl");
+            throw new NoSuchObjectException("Library from LibCtl");
         }
         return thecurr.Protocol();
     }
@@ -207,8 +209,8 @@ public class LibCtl_Library<TModule, TProtocol>
 /// A node of the global list of a <see cref="LibCtl_Library{TModule, TProtocol}"/>: a module bound with a protocol,
 /// and the next node (OCCT's <c>Interface_GlobalNodeOfGeneralLib</c> and the other instantiations).
 /// </summary>
-public sealed class LibCtl_GlobalNode<TModule, TProtocol> : Standard_Transient
-    where TModule : Standard_Transient
+public sealed class LibCtl_GlobalNode<TModule, TProtocol> : Transient
+    where TModule : Transient
     where TProtocol : Interface_Protocol
 {
     private TModule? themod;
@@ -267,8 +269,8 @@ public sealed class LibCtl_GlobalNode<TModule, TProtocol> : Standard_Transient
 /// A node of a library's own list: designates a global node (OCCT's <c>Interface_NodeOfGeneralLib</c> and the other
 /// instantiations).
 /// </summary>
-public sealed class LibCtl_Node<TModule, TProtocol> : Standard_Transient
-    where TModule : Standard_Transient
+public sealed class LibCtl_Node<TModule, TProtocol> : Transient
+    where TModule : Transient
     where TProtocol : Interface_Protocol
 {
     private LibCtl_GlobalNode<TModule, TProtocol>? thenode;

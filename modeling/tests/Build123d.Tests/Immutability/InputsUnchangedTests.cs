@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 using System.Reflection;
 using Occt;
@@ -169,7 +170,7 @@ public class InputsUnchangedTests
         {
             c.Run();
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
         {
             // Failing is allowed; changing the inputs isn't
         }
@@ -246,7 +247,7 @@ public class InputsUnchangedTests
                 var value => value?.ToString() ?? "null",
             };
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
         {
             return e.GetType().Name + ": " + e.Message;
         }

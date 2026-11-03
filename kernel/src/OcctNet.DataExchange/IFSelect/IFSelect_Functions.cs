@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,9 +28,9 @@ public static class IFSelect_Functions
     /// entity name can be a label or a number (in alphanumeric), it is searched by NumberFromLabel from
     /// WorkSession. If &lt;name&gt; doesn't match en entity, a Null Handle is returned
     /// </summary>
-    public static Standard_Transient? GiveEntity(IFSelect_WorkSession WS, string name = "")
+    public static Transient? GiveEntity(IFSelect_WorkSession WS, string name = "")
     {
-        Standard_Transient ent = null; // starts at Null
+        Transient ent = null; // starts at Null
         int num = GiveEntityNumber(WS, name);
         if (num > 0)
         {
@@ -62,7 +64,7 @@ public static class IFSelect_Functions
     /// for a Selection and &lt;second&gt; is defined, the standard result of this selection from the list
     /// computed with &lt;second&gt; (an entity or a selection) If &lt;second&gt; is erroneous, it is ignored
     /// </summary>
-    public static NCollection_HSequence<Standard_Transient>? GiveList(IFSelect_WorkSession WS, string first = "", string second = "")
+    public static NCollection_HSequence<Transient>? GiveList(IFSelect_WorkSession WS, string first = "", string second = "")
     {
         return WS.GiveList(first, second);
     }
@@ -91,7 +93,7 @@ public static class IFSelect_Functions
         {
             // OCCT: SetValue(0, ...) throws before the test "no parenthesis: not found" is reached, so an unknown
             // name without parentheses raises Standard_OutOfRange (occt-issues.md, 8A3)
-            throw new Standard_OutOfRange("TCollection_AsciiString::SetValue(): out of range location");
+            throw new OutOfRangeException("TCollection_AsciiString::SetValue(): out of range location");
         }
         char[] buf = nam.ToCharArray();
         buf[paro - 1] = '\0';
@@ -105,10 +107,10 @@ public static class IFSelect_Functions
         }
 
         //  According to the type of dispatch :
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         if (disp is IFSelect_DispPerCount dc)
         {
-            int nb = atoi(param);
+            int nb = Atoi(param);
             if (nb <= 0)
             {
                 sout.Append(" DispPerCount, count is not positive").Append('\n');
@@ -125,7 +127,7 @@ public static class IFSelect_Functions
         }
         if (disp is IFSelect_DispPerFiles dp)
         {
-            int nb = atoi(param);
+            int nb = Atoi(param);
             if (nb <= 0)
             {
                 sout.Append(" DispPerFiles, count is not positive").Append('\n');

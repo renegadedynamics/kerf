@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +21,7 @@ namespace Occt;
 /// public, as OCCT's, and <see cref="Line"/> is the line itself, not a copy. <see cref="Value"/>,
 /// <see cref="FirstPoint"/> and <see cref="LastPoint"/> return copies (OCCT's <c>const&amp;</c>).
 /// </remarks>
-public class IntWalk_TheIWLine : Standard_Transient
+public class IntWalk_TheIWLine : Transient
 {
     private readonly IntSurf_LineOn2S line;
     private readonly NCollection_Sequence<IntSurf_Couple> couple = new();
@@ -29,7 +33,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     private IntSurf_PathPoint theFirstPoint;
     private IntSurf_PathPoint theLastPoint;
     private int indextg;
-    private gp_Vec vcttg;
+    private Vector3D vcttg;
     private bool istgtbeg;
     private bool istgtend;
 
@@ -45,7 +49,7 @@ public class IntWalk_TheIWLine : Standard_Transient
         theFirstPoint = new IntSurf_PathPoint();
         theLastPoint = new IntSurf_PathPoint();
         indextg = -1;
-        vcttg = new gp_Vec();
+        vcttg = new Vector3D();
         istgtbeg = false;
         istgtend = false;
     }
@@ -103,7 +107,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     /// <summary>Records that the next point added is the passing point <paramref name="Index"/>.</summary>
     public void AddIndexPassing(int Index) => couple.Append(new IntSurf_Couple(line.NbPoints() + 1, Index));
 
-    public void SetTangentVector(in gp_Vec V, int Index)
+    public void SetTangentVector(in Vector3D V, int Index)
     {
         indextg = Index;
         vcttg = V;
@@ -131,7 +135,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     {
         if (!hasFirst)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return theFirstPoint;
     }
@@ -140,7 +144,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     {
         if (!hasFirst)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return firstIndex;
     }
@@ -150,7 +154,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     {
         if (!hasLast)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return theLastPoint;
     }
@@ -159,7 +163,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     {
         if (!hasLast)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return lastIndex;
     }
@@ -173,7 +177,7 @@ public class IntWalk_TheIWLine : Standard_Transient
     }
 
     /// <summary>The tangent vector and, in <paramref name="Index"/>, the index of the point it is at.</summary>
-    public gp_Vec TangentVector(out int Index)
+    public Vector3D TangentVector(out int Index)
     {
         Index = indextg;
         return vcttg;

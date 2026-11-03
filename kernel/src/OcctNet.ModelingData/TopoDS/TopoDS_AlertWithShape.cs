@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An alert holding a shape: the shape the situation concerns. Such alerts never merge.</summary>
@@ -18,7 +20,7 @@ namespace Occt;
 /// <see cref="InternalGetShape"/>, which doesn't freeze. The setter is internal: alerts are made by the algorithms.
 /// </para>
 /// </remarks>
-public class TopoDS_AlertWithShape : Message_Alert
+public class TopoDS_AlertWithShape : Alert
 {
     private TopoDS_Shape myShape;
 
@@ -45,7 +47,7 @@ public class TopoDS_AlertWithShape : Message_Alert
     public override bool SupportsMerge() => false;
 
     /// <summary>False: alerts with shapes never merge.</summary>
-    public override bool Merge(Message_Alert theTarget)
+    public override bool Merge(Alert theTarget)
     {
         return false;
         //  occ::handle<TopoDS_AlertWithShape> aTarget = Handle(TopoDS_AlertWithShape)::DownCast (theTarget);

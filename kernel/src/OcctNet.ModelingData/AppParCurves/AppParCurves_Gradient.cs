@@ -15,6 +15,8 @@
 // If this is not the case, the call to ResConstraint is equivalent to a
 // second least squares resolution, thus wasting a lot of time.
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -61,10 +63,10 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
         int nbP2d = ToolLine.NbP2d(SSP);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
         int nbP = nbP3d + nbP2d;
-        gp_Pnt Pt;
-        gp_Pnt2d Pt2d;
-        gp_Vec V1, MyV;
-        gp_Vec2d V12d, MyV2d;
+        Point3D Pt;
+        Point2D Pt2d;
+        Vector3D V1, MyV;
+        Vector2D V12d, MyV2d;
         Done = false;
 
         if (nbP3d == 0)
@@ -75,8 +77,8 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> TabP = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> TabP = new(1, mynbP3d);
+        NCollection_Array1<Point2D> TabP2d = new(1, mynbP2d);
 
         // Calculation of the function F= sum(||C(ui)-Ptli||2):
         // Call to a function inheriting from MultipleVarFunctionWithGradient
@@ -94,10 +96,10 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
 
         SCU = new AppParCurves_MultiCurve(MyF.CurveValue());
         int deg = SCU.NbPoles() - 1;
-        NCollection_Array1<gp_Pnt> TabPole = new(1, deg + 1), TabCoef = new(1, deg + 1);
-        NCollection_Array1<gp_Pnt2d> TabPole2d = new(1, deg + 1), TabCoef2d = new(1, deg + 1);
-        NCollection_Array1<gp_Pnt> TheCoef = new(1, (deg + 1) * mynbP3d);
-        NCollection_Array1<gp_Pnt2d> TheCoef2d = new(1, (deg + 1) * mynbP2d);
+        NCollection_Array1<Point3D> TabPole = new(1, deg + 1), TabCoef = new(1, deg + 1);
+        NCollection_Array1<Point2D> TabPole2d = new(1, deg + 1), TabCoef2d = new(1, deg + 1);
+        NCollection_Array1<Point3D> TheCoef = new(1, (deg + 1) * mynbP3d);
+        NCollection_Array1<Point2D> TheCoef2d = new(1, (deg + 1) * mynbP2d);
 
         // Storage of curve poles for projection:
         // ============================================
@@ -105,7 +107,7 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
         for (k = 1; k <= nbP3d; k++)
         {
             SCU.Curve(k, TabPole);
-            BSplCLib.PolesCoefficients(TabPole, PLib.NoWeights(), TabCoef, PLib.NoWeights());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PolesCoefficients(TabPole, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), TabCoef, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             for (j = 1; j <= deg + 1; j++)
             {
                 TheCoef[j + i2] = TabCoef[j];
@@ -116,7 +118,7 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
         for (k = 1; k <= nbP2d; k++)
         {
             SCU.Curve(nbP3d + k, TabPole2d);
-            BSplCLib.PolesCoefficients(TabPole2d, PLib.NoWeights(), TabCoef2d, PLib.NoWeights());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PolesCoefficients(TabPole2d, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), TabCoef2d, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
             for (j = 1; j <= deg + 1; j++)
             {
                 TheCoef2d[j + i2] = TabCoef2d[j];
@@ -156,8 +158,8 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
                     TabCoef[l] = TheCoef[l + i2];
                 }
                 i2 += deg + 1;
-                BSplCLib.CoefsD1(UF, TabCoef, BSplCLib.NoWeights(), out Pt, out V1);
-                MyV = new gp_Vec(Pt, TabP[k]);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.CoefsD1(UF, TabCoef, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt, out V1);
+                MyV = new Vector3D(Pt, TabP[k]);
                 FU += MyV * V1;
                 DFU += V1.SquareMagnitude();
             }
@@ -169,8 +171,8 @@ public class AppParCurves_Gradient<MultiLine, ToolLine>
                     TabCoef2d[l] = TheCoef2d[l + i2];
                 }
                 i2 += deg + 1;
-                BSplCLib.CoefsD1(UF, TabCoef2d, BSplCLib.NoWeights(), out Pt2d, out V12d);
-                MyV2d = new gp_Vec2d(Pt2d, TabP2d[k]);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.CoefsD1(UF, TabCoef2d, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Pt2d, out V12d);
+                MyV2d = new Vector2D(Pt2d, TabP2d[k]);
                 FU += MyV2d * V12d;
                 DFU += V12d.SquareMagnitude();
             }

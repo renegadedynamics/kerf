@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text.Json;
 using Occt;
@@ -60,7 +61,7 @@ internal static class WasmCompare
                     bool isMeshSame = aWasmFaces[f] == aX64.FaceHashes[f].ToString("x16", CultureInfo.InvariantCulture);
                     bool isNormalSame = aWasmNormals.Length == aWasmFaces.Length
                                         && aWasmNormals[f] == aX64.NormalHashes[f].ToString("x16", CultureInfo.InvariantCulture);
-                    string aKey = ((GeomAbs_SurfaceType)aX64.Buffers.FaceTypes[f]).ToString().Replace("GeomAbs_", "", StringComparison.Ordinal);
+                    string aKey = ((SurfaceKind)aX64.Buffers.FaceTypes[f]).ToString().Replace("GeomAbs_", "", StringComparison.Ordinal);
                     theTypes[aKey] = theTypes.GetValueOrDefault(aKey) + 1;
                     if (!isMeshSame)
                     {

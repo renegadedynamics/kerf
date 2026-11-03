@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -109,7 +110,7 @@ public class MathOpt_GlobOptTest
     }
 
     // Old API adapter
-    private sealed class SphereFuncOld : math_MultipleVarFunction
+    private sealed class SphereFuncOld : MultipleVarFunction
     {
         private readonly int myN;
 
@@ -118,7 +119,7 @@ public class MathOpt_GlobOptTest
             myN = theN;
         }
 
-        public override int NbVariables() => myN;
+        public override int VariableCount => myN;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -140,12 +141,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.PSO, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSO, 100);
         aConfig.NbPopulation = 40;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -158,12 +159,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.MultiStart, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.MultiStart, 100);
         aConfig.NbStarts = 20;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -176,12 +177,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -10.0);
         math_Vector aUpper = new(1, 2, 10.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.PSOHybrid, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSOHybrid, 100);
         aConfig.NbPopulation = 40;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -194,14 +195,14 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.DifferentialEvolution, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.DifferentialEvolution, 100);
         aConfig.NbPopulation = 40;
         aConfig.MutationScale = 0.8;
         aConfig.CrossoverProb = 0.9;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -209,9 +210,9 @@ public class MathOpt_GlobOptTest
 
     // Differential Evolution tests
 
-    private static MathOpt.GlobalConfig MakeDEConfig(int theMaxIter, int thePop, double theMut, double theCross)
+    private static global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig MakeDEConfig(int theMaxIter, int thePop, double theMut, double theCross)
     {
-        MathOpt.GlobalConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new();
         aConfig.MaxIterations = theMaxIter;
         aConfig.NbPopulation = thePop;
         aConfig.MutationScale = theMut;
@@ -226,9 +227,9 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(100, 40, 0.8, 0.9));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(100, 40, 0.8, 0.9));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -241,9 +242,9 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(200, 50, 0.8, 0.9));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(200, 50, 0.8, 0.9));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 0.1);
         Assert.Equal(1.0, aResult.Solution![2], 0.1);
         Assert.True(aResult.Value!.Value < 0.1);
@@ -256,9 +257,9 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.12);
         math_Vector aUpper = new(1, 2, 5.12);
 
-        VectorResult aResult = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(200, 60, 0.5, 0.9));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(200, 60, 0.5, 0.9));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // Should find global minimum at origin
         Assert.Equal(0.0, aResult.Solution![1], 0.5);
         Assert.Equal(0.0, aResult.Solution![2], 0.5);
@@ -274,12 +275,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new();
         aConfig.NbStarts = 20;
 
-        VectorResult aResult = MathOpt.MultiStart(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.MultiStart(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -292,12 +293,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -10.0);
         math_Vector aUpper = new(1, 2, 10.0);
 
-        MathOpt.GlobalConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new();
         aConfig.NbStarts = 30;
 
-        VectorResult aResult = MathOpt.MultiStart(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.MultiStart(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 0.5);
         Assert.Equal(3.0, aResult.Solution![2], 0.5);
         Assert.True(aResult.Value!.Value < 1.0);
@@ -312,12 +313,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.DifferentialEvolution, 200);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.DifferentialEvolution, 200);
         aConfig.NbPopulation = 50;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Himmelblau has 4 global minima, all with f = 0
         // The algorithm should find one of them
@@ -333,12 +334,12 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -2.0);
         math_Vector aUpper = new(1, 2, 2.0);
 
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.DifferentialEvolution, 200);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.DifferentialEvolution, 200);
         aConfig.NbPopulation = 60;
 
-        VectorResult aResult = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Global minimum at (0, -1) with f = 3
         Assert.Equal(0.0, aResult.Solution![1], 0.1);
@@ -355,9 +356,9 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 5, -5.0);
         math_Vector aUpper = new(1, 5, 5.0);
 
-        VectorResult aResult = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(300, 80, 0.7, 0.9));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, MakeDEConfig(300, 80, 0.7, 0.9));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 5; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], 0.1);
@@ -375,19 +376,19 @@ public class MathOpt_GlobOptTest
         math_Vector aUpper = new(1, 2, 5.0);
 
         // Test PSO
-        MathOpt.GlobalConfig aConfigPSO = new(MathOpt.GlobalStrategy.PSO, 200);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfigPSO = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSO, 200);
         aConfigPSO.NbPopulation = 50;
 
-        VectorResult aResultPSO = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigPSO);
+        VectorResult aResultPSO = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigPSO);
 
         // Test DE
-        MathOpt.GlobalConfig aConfigDE = new(MathOpt.GlobalStrategy.DifferentialEvolution, 200);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfigDE = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.DifferentialEvolution, 200);
         aConfigDE.NbPopulation = 50;
 
-        VectorResult aResultDE = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigDE);
+        VectorResult aResultDE = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigDE);
 
-        Assert.True(aResultPSO.IsDone());
-        Assert.True(aResultDE.IsDone());
+        Assert.True(aResultPSO.IsDone);
+        Assert.True(aResultDE.IsDone);
 
         // Both should find reasonable solutions
         Assert.True(aResultPSO.Value!.Value < 1.0);
@@ -403,15 +404,15 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new();
         aConfig.MaxIterations = 100;
         aConfig.NbPopulation = 40;
 
-        VectorResult aResult1 = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, aConfig);
-        VectorResult aResult2 = MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult1 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult2 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.DifferentialEvolution(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult1.IsDone());
-        Assert.True(aResult2.IsDone());
+        Assert.True(aResult1.IsDone);
+        Assert.True(aResult2.IsDone);
 
         // With same seed, results should be identical
         Assert.Equal(aResult2.Value!.Value, aResult1.Value!.Value);
@@ -429,18 +430,18 @@ public class MathOpt_GlobOptTest
         math_Vector aUpper = new(1, 2, 5.0);
 
         // Old API
-        math_GlobOptMin anOldSolver = new(anOldFunc, aLower, aUpper, 0.01);
+        GlobOptMin anOldSolver = new(anOldFunc, aLower, aUpper, 0.01);
         anOldSolver.Perform();
         math_Vector anOldSol = new(1, 2);
         anOldSolver.Points(1, anOldSol);
 
         // New API
-        MathOpt.GlobalConfig aConfig = new(MathOpt.GlobalStrategy.PSOHybrid, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSOHybrid, 100);
         aConfig.NbPopulation = 40;
 
-        VectorResult aNewResult = MathOpt.GlobalMinimum(aNewFunc, aLower, aUpper, aConfig);
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aNewFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aNewResult.IsDone());
+        Assert.True(aNewResult.IsDone);
 
         // Both should find a good solution
         Assert.True(aNewResult.Value!.Value < 0.1);
@@ -455,22 +456,22 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.GlobalConfig aGlobConfig = new(MathOpt.GlobalStrategy.PSO, 200);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aGlobConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSO, 200);
         aGlobConfig.NbPopulation = 40;
 
-        MathOpt.PSOConfig aPSOConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPSOConfig = new();
         aPSOConfig.NbParticles = 60;
         aPSOConfig.MaxIterations = 150;
         aPSOConfig.Tolerance = 1.0e-6;
 
-        aPSOConfig.InertiaSchedule = MathOpt.PSOInertiaSchedule.LinearDecay;
+        aPSOConfig.InertiaSchedule = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInertiaSchedule.LinearDecay;
         aPSOConfig.OmegaMin = 0.3;
 
-        MathOpt.PSOStats aStats = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats = new();
         VectorResult aResult =
-          MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aGlobConfig, aPSOConfig, null, aStats);
+          global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aGlobConfig, aPSOConfig, null, aStats);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -485,26 +486,26 @@ public class MathOpt_GlobOptTest
         math_Vector aLower = new(1, 2, -10.0);
         math_Vector aUpper = new(1, 2, 10.0);
 
-        MathOpt.GlobalConfig aGlobConfig = new(MathOpt.GlobalStrategy.PSOHybrid, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aGlobConfig = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.PSOHybrid, 100);
         aGlobConfig.NbPopulation = 40;
 
-        MathOpt.PSOConfig aPSOConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPSOConfig = new();
         aPSOConfig.NbParticles = 40;
         aPSOConfig.MaxIterations = 100;
         aPSOConfig.Tolerance = 1.0e-6;
 
-        aPSOConfig.InitMode = MathOpt.PSOInitMode.SeededPlusRandom;
+        aPSOConfig.InitMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInitMode.SeededPlusRandom;
 
         // Seed near the minimum (1, 3)
         math_Vector aSeedPos = MathOpt_NDim_TestFunctions.Vec(1.5, 2.5);
-        NCollection_DynamicArray<MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new MathOpt.PSOSeedParticle(aSeedPos));
+        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
 
-        MathOpt.PSOStats aStats = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats = new();
         VectorResult aResult =
-          MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aGlobConfig, aPSOConfig, aSeeds, aStats);
+          global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aGlobConfig, aPSOConfig, aSeeds, aStats);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -519,22 +520,22 @@ public class MathOpt_GlobOptTest
         math_Vector aUpper = new(1, 2, 5.0);
 
         // MultiStart - PSO params should be ignored
-        MathOpt.GlobalConfig aConfigMS = new(MathOpt.GlobalStrategy.MultiStart, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfigMS = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.MultiStart, 100);
         aConfigMS.NbStarts = 20;
 
-        MathOpt.PSOConfig aPSOConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aPSOConfig = new();
         aPSOConfig.NbParticles = 100;
 
-        VectorResult aResultMS = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigMS, aPSOConfig);
-        Assert.True(aResultMS.IsDone());
+        VectorResult aResultMS = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigMS, aPSOConfig);
+        Assert.True(aResultMS.IsDone);
         Assert.Equal(0.0, aResultMS.Value!.Value, THE_TOLERANCE);
 
         // DE - PSO params should be ignored
-        MathOpt.GlobalConfig aConfigDE = new(MathOpt.GlobalStrategy.DifferentialEvolution, 100);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalConfig aConfigDE = new(global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalStrategy.DifferentialEvolution, 100);
         aConfigDE.NbPopulation = 40;
 
-        VectorResult aResultDE = MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigDE, aPSOConfig);
-        Assert.True(aResultDE.IsDone());
+        VectorResult aResultDE = global::Kerf.Engine.Numerics.Optimisation.MathOpt.GlobalMinimum(aFunc, aLower, aUpper, aConfigDE, aPSOConfig);
+        Assert.True(aResultDE.IsDone);
         Assert.Equal(0.0, aResultDE.Value!.Value, THE_TOLERANCE);
     }
 }

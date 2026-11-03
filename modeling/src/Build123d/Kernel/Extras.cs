@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
 using System.Text;
 using Occt;
 
@@ -13,7 +15,7 @@ internal static partial class Extras
     /// Whether the edge's own 3D curve lies in a plane normal to <paramref name="normal"/>
     /// (<c>ShapeAnalysis_Curve::IsPlanar</c> on the curve in <c>BRep_TEdge::Curves()</c>), or null if it has none.
     /// </summary>
-    public static bool? EdgeCurve3DIsPlanar(TopoDS_Edge edge, gp_XYZ normal, double tolerance)
+    public static bool? EdgeCurve3DIsPlanar(TopoDS_Edge edge, Xyz normal, double tolerance)
     {
         if (edge.TShape() is not BRep_TEdge tedge)
             return null;
@@ -36,7 +38,7 @@ internal static partial class Extras
 
     /// <summary>
     /// A shape read from OCCT's BRep text format. Data that isn't BRep, or is truncated or malformed, throws
-    /// <see cref="Storage_StreamFormatError"/>.
+    /// <see cref="StreamFormatErrorException"/>.
     /// </summary>
     public static TopoDS_Shape ReadBRep(ReadOnlySpan<byte> data)
     {
@@ -48,28 +50,28 @@ internal static partial class Extras
         {
             word = c is (byte)' ' or (byte)'\t' or (byte)'\n' or (byte)'\r' or (byte)'\v' or (byte)'\f' ? 0 : word + 1;
             if (word >= longestWord)
-                throw new Storage_StreamFormatError("BRep data has a word too long to be BRep");
+                throw new StreamFormatErrorException("BRep data has a word too long to be BRep");
             if (c == 0)
-                throw new Storage_StreamFormatError("BRep data is text, without NULs");
+                throw new StreamFormatErrorException("BRep data is text, without NULs");
         }
         var text = Encoding.ASCII.GetString(data);
         TopoDS_Shape shape;
         try
         {
             var reader = new StringReader(text);
-            Standard_Stream.SetInputLength(reader, text.Length);
+            StreamUtilities.SetInputLength(reader, text.Length);
             BRepTools.Read(out shape, reader);
         }
-        catch (Standard_Failure e) when (e is not Storage_StreamFormatError)
+        catch (FailureException e) when (e is not StreamFormatErrorException)
         {
-            throw new Storage_StreamFormatError($"BRep data is truncated or malformed ({e.OcctType})");
+            throw new StreamFormatErrorException($"BRep data is truncated or malformed ({e.OcctType})");
         }
         catch (Exception e) when (e is FormatException or EndOfStreamException or OverflowException or IndexOutOfRangeException)
         {
-            throw new Storage_StreamFormatError("BRep data is truncated or malformed");
+            throw new StreamFormatErrorException("BRep data is truncated or malformed");
         }
         if (shape.IsNull())
-            throw new Storage_StreamFormatError("BRep data holds no shape");
+            throw new StreamFormatErrorException("BRep data holds no shape");
         return shape;
     }
 
@@ -83,7 +85,7 @@ internal static partial class Extras
         {
             return new MemoryEstimate().Of(shape);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return 0;
         }
@@ -98,9 +100,9 @@ internal static partial class Extras
         try
         {
             var names = new List<string>();
-            foreach (var alert in algo.GetReport().GetAlerts(Message_Gravity.Message_Fail))
+            foreach (var alert in algo.GetReport().GetAlerts(Gravity.Fail))
             {
-                var name = alert.DynamicType().Name;
+                var name = alert.DynamicTypeName();
                 if (!names.Contains(name))
                     names.Add(name);
             }
@@ -146,16 +148,16 @@ internal static partial class Extras
                             Curve2d(rep.PCurve2());
                     }
                     else if (rep.IsPolygon3D() && rep.Polygon3D() is { } p && First(p))
-                        _bytes += 32L * p.NbNodes();
+                        _bytes += 32L * p.NodeCount;
                     else if (rep.IsPolygonOnTriangulation() && rep.PolygonOnTriangulation() is { } pt && First(pt))
-                        _bytes += 12L * pt.NbNodes();
+                        _bytes += 12L * pt.NodeCount;
                 }
             else if (tshape is BRep_TFace tface)
             {
                 Surface(tface.Surface());
                 foreach (var tri in tface.TriangulationList())
                     if (First(tri))
-                        _bytes += (long)tri.NbNodes() * (24 + (tri.HasUVNodes() ? 16 : 0) + (tri.HasNormals() ? 12 : 0)) + 12L * tri.NbTriangles();
+                        _bytes += (long)tri.NodeCount * (24 + (tri.HasUVNodes ? 16 : 0) + (tri.HasNormals ? 12 : 0)) + 12L * tri.TriangleCount;
             }
             for (var it = new TopoDS_Iterator(shape, false, false); it.More(); it.Next())
                 Visit(it.Value());

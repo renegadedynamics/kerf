@@ -96,7 +96,7 @@ public class BOPDS_IteratorTests
 
         // the boxes are axis-aligned: the oriented boxes filter nothing more out
         IntTools_Context aContext = new();
-        anIt.Prepare(aContext, true, Precision.Confusion());
+        anIt.Prepare(aContext, true, global::Kerf.Engine.Foundation.Precision.Confusion());
         var aWith = AllPairs(anIt);
         foreach (var aKey in theTypes)
         {
@@ -131,7 +131,7 @@ public class BOPDS_IteratorTests
         }
 
         Dictionary<(TopAbs_ShapeEnum, TopAbs_ShapeEnum), List<(int, int)>> aSerial;
-        using (OSD_Parallel.ForceSerialScope())
+        using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
         {
             aSerial = Run(false);
         }
@@ -143,7 +143,7 @@ public class BOPDS_IteratorTests
         {
             for (int aRepeat = 0; aRepeat < 3; ++aRepeat)
             {
-                using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+                using (global::Kerf.Engine.Foundation.OsdParallel.MaxDegreeOfParallelismScope(aDegree))
                 {
                     var aParallel = Run(true);
                     foreach (var aKey in theTypes)

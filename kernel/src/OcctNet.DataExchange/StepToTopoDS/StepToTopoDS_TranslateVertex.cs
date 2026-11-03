@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepToTopoDS_TranslateVertexError;
 
 namespace Occt;
@@ -82,7 +83,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
             Geom_CartesianPoint P2 = StepToGeom.MakeCartesianPoint(P1, theLocalFactors);
             var B = new BRep_Builder();
             TopoDS_Vertex V = new TopoDS_Vertex();
-            B.MakeVertex(ref V, P2.Pnt(), Occt.Precision.Confusion()); //: S4136: preci
+            B.MakeVertex(ref V, P2.Pnt(), Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
             aTool.Bind(aVertex, V);
             // Register Vertex in NM tool (ssv; 14.11.2010)
             if (NMTool.IsActive())
@@ -109,7 +110,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
         => Init(aVertex, aTool, NMTool, new StepData_Factors());
 
     /// <summary>The vertex, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

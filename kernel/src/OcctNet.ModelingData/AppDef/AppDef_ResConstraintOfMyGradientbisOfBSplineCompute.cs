@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>OCCT's instantiation of the constraint resolution over <see cref="AppDef_MultiLine"/>: <see cref="AppParCurves_ResolConstraint{MultiLine, ToolLine}"/>.</summary>
@@ -16,7 +18,7 @@ public sealed class AppDef_ResConstraintOfMyGradientbisOfBSplineCompute : AppPar
     public AppDef_ResConstraintOfMyGradientbisOfBSplineCompute(AppDef_MultiLine SSP, AppParCurves_MultiCurve SCurv,
                                                                int FirstPoint, int LastPoint,
                                                                NCollection_HArray1<AppParCurves_ConstraintCouple> TheConstraints,
-                                                               math_Matrix Bern, math_Matrix DerivativeBern,
+                                                               Matrix Bern, Matrix DerivativeBern,
                                                                double Tolerance = 1.0e-10)
         : base(SSP, SCurv, FirstPoint, LastPoint, TheConstraints, Bern, DerivativeBern, Tolerance) { }
 }

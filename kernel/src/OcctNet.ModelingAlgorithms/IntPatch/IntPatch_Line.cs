@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
 
@@ -20,7 +21,7 @@ namespace Occt;
 /// edit them in place, so their mutators are public, and they are never frozen. Maps and sequences hold them by
 /// reference, as OCCT's handles.
 /// </remarks>
-public class IntPatch_Line : Standard_Transient
+public class IntPatch_Line : Transient
 {
     /// <summary>The kind of the line, set by the derived classes' constructors.</summary>
     protected IntPatch_IType typ;
@@ -125,7 +126,7 @@ public class IntPatch_Line : Standard_Transient
     {
         if (tS1 != IntSurf_Touch)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return sit1;
     }
@@ -138,7 +139,7 @@ public class IntPatch_Line : Standard_Transient
     {
         if (tS2 != IntSurf_Touch)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return sit2;
     }

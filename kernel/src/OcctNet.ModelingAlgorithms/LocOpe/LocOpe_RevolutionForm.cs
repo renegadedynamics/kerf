@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -20,10 +22,10 @@ namespace Occt;
 public sealed class LocOpe_RevolutionForm
 {
     private TopoDS_Shape myBase = new();
-    private gp_Vec myVec = new();
-    private gp_Vec myTra = new();
+    private Vector3D myVec = new();
+    private Vector3D myTra = new();
     private double myAngle;
-    private gp_Ax1 myAxis = new();
+    private Axis3D myAxis = new();
     private double myAngTra;
     private bool myDone;
     private bool myIsTrans;
@@ -31,8 +33,8 @@ public sealed class LocOpe_RevolutionForm
     private TopoDS_Shape myFirstShape = new();
     private TopoDS_Shape myLastShape = new();
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myMap = new(TopTools_ShapeMapHasher.Instance);
-    private gp_Pnt myPnt1 = new();
-    private gp_Pnt myPnt2 = new();
+    private Point3D myPnt1 = new();
+    private Point3D myPnt2 = new();
     private LocOpe_WorkingShapes myWork = new();
 
     public LocOpe_RevolutionForm()
@@ -44,7 +46,7 @@ public sealed class LocOpe_RevolutionForm
         _ = (myVec, myTra, myPnt1, myPnt2);
     }
 
-    public void Perform(in TopoDS_Shape Base, in gp_Ax1 Axis, double Angle)
+    public void Perform(in TopoDS_Shape Base, in Axis3D Axis, double Angle)
     {
         myMap.Clear();
         myFirstShape.Nullify();
@@ -65,7 +67,7 @@ public sealed class LocOpe_RevolutionForm
         BRepTools_Modifier Modif = new();
         if (myIsTrans)
         {
-            gp_Trsf T = new();
+            Transform3D T = new();
             T.SetRotation(myAxis, myAngTra);
             BRepTools_TrsfModification modbase = new(T);
             Modif.Init(theBase);
@@ -207,7 +209,7 @@ public sealed class LocOpe_RevolutionForm
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }

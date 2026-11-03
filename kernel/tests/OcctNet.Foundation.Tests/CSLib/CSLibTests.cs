@@ -2,15 +2,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.CSLib_DerivativeStatus;
-using static Occt.CSLib_NormalStatus;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.DerivativeStatus;
+using static Kerf.Engine.Geometry.NormalStatus;
 
 namespace OcctNet.Foundation.Tests;
 
 internal static class CSLibTestHelpers
 {
     // Helper function for comparing directions with tolerance
-    public static void checkDirEqual(in gp_Dir theDir1, in gp_Dir theDir2, double theTolerance = 1e-10)
+    public static void checkDirEqual(in Direction3D theDir1, in Direction3D theDir2, double theTolerance = 1e-10)
     {
         Assert.Equal(theDir2.X(), theDir1.X(), theTolerance);
         Assert.Equal(theDir2.Y(), theDir1.Y(), theTolerance);
@@ -18,20 +19,20 @@ internal static class CSLibTestHelpers
     }
 
     // Helper function for comparing vectors with tolerance
-    public static void checkVecEqual(in gp_Vec theVec1, in gp_Vec theVec2, double theTolerance = 1e-10)
+    public static void checkVecEqual(in Vector3D theVec1, in Vector3D theVec2, double theTolerance = 1e-10)
     {
         Assert.Equal(theVec2.X(), theVec1.X(), theTolerance);
         Assert.Equal(theVec2.Y(), theVec1.Y(), theTolerance);
         Assert.Equal(theVec2.Z(), theVec1.Z(), theTolerance);
     }
 
-    public static NCollection_Array1<gp_Pnt2d> UnitSquare()
+    public static NCollection_Array1<Point2D> UnitSquare()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = new(1, 4);
-        aPnts[1] = new gp_Pnt2d(0.0, 0.0);
-        aPnts[2] = new gp_Pnt2d(1.0, 0.0);
-        aPnts[3] = new gp_Pnt2d(1.0, 1.0);
-        aPnts[4] = new gp_Pnt2d(0.0, 1.0);
+        NCollection_Array1<Point2D> aPnts = new(1, 4);
+        aPnts[1] = new Point2D(0.0, 0.0);
+        aPnts[2] = new Point2D(1.0, 0.0);
+        aPnts[3] = new Point2D(1.0, 1.0);
+        aPnts[4] = new Point2D(0.0, 1.0);
         return aPnts;
     }
 }
@@ -43,104 +44,104 @@ public class CSLibNormalTest
     public void Normal_FromD1U_D1V_OrthogonalVectors()
     {
         // D1U along X, D1V along Y -> Normal should be along Z
-        gp_Vec aD1U = new(1.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 1.0, 0.0);
+        Vector3D aD1U = new(1.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 1.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_Done, aStatus);
-        CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(0.0, 0.0, 1.0));
+        Assert.Equal(Done, aStatus);
+        CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(0.0, 0.0, 1.0));
     }
 
     [Fact]
     public void Normal_FromD1U_D1V_ScaledVectors()
     {
         // Non-unit vectors should still produce correct normal
-        gp_Vec aD1U = new(3.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 5.0, 0.0);
+        Vector3D aD1U = new(3.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 5.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_Done, aStatus);
-        CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(0.0, 0.0, 1.0));
+        Assert.Equal(Done, aStatus);
+        CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(0.0, 0.0, 1.0));
     }
 
     [Fact]
     public void Normal_FromD1U_D1V_ParallelVectors()
     {
         // Parallel vectors should return D1uIsParallelD1v status
-        gp_Vec aD1U = new(1.0, 0.0, 0.0);
-        gp_Vec aD1V = new(2.0, 0.0, 0.0);
+        Vector3D aD1U = new(1.0, 0.0, 0.0);
+        Vector3D aD1V = new(2.0, 0.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-6, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-6, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_D1uIsParallelD1v, aStatus);
+        Assert.Equal(D1uIsParallelD1v, aStatus);
     }
 
     [Fact]
     public void Normal_FromD1U_D1V_D1UIsNull()
     {
-        gp_Vec aD1U = new(0.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 1.0, 0.0);
+        Vector3D aD1U = new(0.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 1.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_D1uIsNull, aStatus);
+        Assert.Equal(D1uIsNull, aStatus);
     }
 
     [Fact]
     public void Normal_FromD1U_D1V_D1VIsNull()
     {
-        gp_Vec aD1U = new(1.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 0.0, 0.0);
+        Vector3D aD1U = new(1.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 0.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_D1vIsNull, aStatus);
+        Assert.Equal(D1vIsNull, aStatus);
     }
 
     [Fact]
     public void Normal_FromD1U_D1V_BothNull()
     {
-        gp_Vec aD1U = new(0.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 0.0, 0.0);
+        Vector3D aD1U = new(0.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 0.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_D1IsNull, aStatus);
+        Assert.Equal(D1IsNull, aStatus);
     }
 
     // Test Normal with MagTol (third overload)
     [Fact]
     public void Normal_WithMagTol_Defined()
     {
-        gp_Vec aD1U = new(1.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 1.0, 0.0);
+        Vector3D aD1U = new(1.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 1.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_NormalStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.NormalStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_Defined, aStatus);
-        CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(0.0, 0.0, 1.0));
+        Assert.Equal(Defined, aStatus);
+        CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(0.0, 0.0, 1.0));
     }
 
     [Fact]
     public void Normal_WithMagTol_Singular()
     {
         // Very small vectors below tolerance
-        gp_Vec aD1U = new(1e-12, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 1e-12, 0.0);
+        Vector3D aD1U = new(1e-12, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 1e-12, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_NormalStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.NormalStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_Singular, aStatus);
+        Assert.Equal(Singular, aStatus);
     }
 
     // Test DNNUV function
@@ -148,21 +149,21 @@ public class CSLibNormalTest
     public void DNNUV_ZeroDerivative()
     {
         // Create a simple surface derivative array
-        NCollection_Array2<gp_Vec> aDerSurf = new(0, 2, 0, 2);
+        NCollection_Array2<Vector3D> aDerSurf = new(0, 2, 0, 2);
 
         // Set D1U and D1V at index (1,0) and (0,1)
-        aDerSurf.SetValue(1, 0, new gp_Vec(1.0, 0.0, 0.0)); // D1U
-        aDerSurf.SetValue(0, 1, new gp_Vec(0.0, 1.0, 0.0)); // D1V
-        aDerSurf.SetValue(0, 0, new gp_Vec(0.0, 0.0, 0.0)); // Position (not used)
-        aDerSurf.SetValue(1, 1, new gp_Vec(0.0, 0.0, 0.0)); // D2UV
-        aDerSurf.SetValue(2, 0, new gp_Vec(0.0, 0.0, 0.0)); // D2U
-        aDerSurf.SetValue(0, 2, new gp_Vec(0.0, 0.0, 0.0)); // D2V
+        aDerSurf.SetValue(1, 0, new Vector3D(1.0, 0.0, 0.0)); // D1U
+        aDerSurf.SetValue(0, 1, new Vector3D(0.0, 1.0, 0.0)); // D1V
+        aDerSurf.SetValue(0, 0, new Vector3D(0.0, 0.0, 0.0)); // Position (not used)
+        aDerSurf.SetValue(1, 1, new Vector3D(0.0, 0.0, 0.0)); // D2UV
+        aDerSurf.SetValue(2, 0, new Vector3D(0.0, 0.0, 0.0)); // D2U
+        aDerSurf.SetValue(0, 2, new Vector3D(0.0, 0.0, 0.0)); // D2V
 
         // DNNUV(0,0) should give D1U x D1V
-        gp_Vec aResult = CSLib.DNNUV(0, 0, aDerSurf);
+        Vector3D aResult = global::Kerf.Engine.Geometry.CSLib.DNNUV(0, 0, aDerSurf);
 
         // D1U x D1V = (1,0,0) x (0,1,0) = (0,0,1)
-        CSLibTestHelpers.checkVecEqual(aResult, new gp_Vec(0.0, 0.0, 1.0));
+        CSLibTestHelpers.checkVecEqual(aResult, new Vector3D(0.0, 0.0, 1.0));
     }
 }
 
@@ -172,110 +173,110 @@ public class CSLibClass2dTest
     [Fact]
     public void SiDans_PointInsideSquare()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = CSLibTestHelpers.UnitSquare();
+        NCollection_Array1<Point2D> aPnts = CSLibTestHelpers.UnitSquare();
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
 
         // Point clearly inside
-        gp_Pnt2d aPointInside = new(0.5, 0.5);
+        Point2D aPointInside = new(0.5, 0.5);
         Assert.Equal(1, (int)aClassifier.SiDans(aPointInside));
     }
 
     [Fact]
     public void SiDans_PointOutsideSquare()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = CSLibTestHelpers.UnitSquare();
+        NCollection_Array1<Point2D> aPnts = CSLibTestHelpers.UnitSquare();
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
 
         // Point clearly outside
-        gp_Pnt2d aPointOutside = new(2.0, 2.0);
+        Point2D aPointOutside = new(2.0, 2.0);
         Assert.Equal(-1, (int)aClassifier.SiDans(aPointOutside));
     }
 
     [Fact]
     public void SiDans_PointOnBoundary()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = CSLibTestHelpers.UnitSquare();
+        NCollection_Array1<Point2D> aPnts = CSLibTestHelpers.UnitSquare();
 
-        CSLib_Class2d aClassifier = new(aPnts, 0.01, 0.01, 0.0, 0.0, 1.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 0.01, 0.01, 0.0, 0.0, 1.0, 1.0);
 
         // Point on boundary should return 0 (uncertain)
-        gp_Pnt2d aPointOnEdge = new(0.5, 0.0);
+        Point2D aPointOnEdge = new(0.5, 0.0);
         Assert.Equal(0, (int)aClassifier.SiDans(aPointOnEdge));
     }
 
     [Fact]
     public void SiDans_TriangularPolygon()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = new(1, 3);
-        aPnts[1] = new gp_Pnt2d(0.0, 0.0);
-        aPnts[2] = new gp_Pnt2d(2.0, 0.0);
-        aPnts[3] = new gp_Pnt2d(1.0, 2.0);
+        NCollection_Array1<Point2D> aPnts = new(1, 3);
+        aPnts[1] = new Point2D(0.0, 0.0);
+        aPnts[2] = new Point2D(2.0, 0.0);
+        aPnts[3] = new Point2D(1.0, 2.0);
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 2.0, 2.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 2.0, 2.0);
 
         // Point inside triangle (centroid)
-        Assert.Equal(1, (int)aClassifier.SiDans(new gp_Pnt2d(1.0, 0.5)));
+        Assert.Equal(1, (int)aClassifier.SiDans(new Point2D(1.0, 0.5)));
 
         // Point outside triangle
-        Assert.Equal(-1, (int)aClassifier.SiDans(new gp_Pnt2d(0.0, 1.0)));
+        Assert.Equal(-1, (int)aClassifier.SiDans(new Point2D(0.0, 1.0)));
     }
 
     // Test with Sequence constructor
     [Fact]
     public void SequenceConstructor_PointInsideSquare()
     {
-        NCollection_Sequence<gp_Pnt2d> aPnts = new();
-        aPnts.Append(new gp_Pnt2d(0.0, 0.0));
-        aPnts.Append(new gp_Pnt2d(1.0, 0.0));
-        aPnts.Append(new gp_Pnt2d(1.0, 1.0));
-        aPnts.Append(new gp_Pnt2d(0.0, 1.0));
+        NCollection_Sequence<Point2D> aPnts = new();
+        aPnts.Append(new Point2D(0.0, 0.0));
+        aPnts.Append(new Point2D(1.0, 0.0));
+        aPnts.Append(new Point2D(1.0, 1.0));
+        aPnts.Append(new Point2D(0.0, 1.0));
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
 
-        Assert.Equal(1, (int)aClassifier.SiDans(new gp_Pnt2d(0.5, 0.5)));
+        Assert.Equal(1, (int)aClassifier.SiDans(new Point2D(0.5, 0.5)));
     }
 
     // Test InternalSiDans with normalized coordinates
     [Fact]
     public void InternalSiDans_NormalizedCoordinates()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = new(1, 4);
-        aPnts[1] = new gp_Pnt2d(0.0, 0.0);
-        aPnts[2] = new gp_Pnt2d(10.0, 0.0);
-        aPnts[3] = new gp_Pnt2d(10.0, 10.0);
-        aPnts[4] = new gp_Pnt2d(0.0, 10.0);
+        NCollection_Array1<Point2D> aPnts = new(1, 4);
+        aPnts[1] = new Point2D(0.0, 0.0);
+        aPnts[2] = new Point2D(10.0, 0.0);
+        aPnts[3] = new Point2D(10.0, 10.0);
+        aPnts[4] = new Point2D(0.0, 10.0);
 
-        CSLib_Class2d aClassifier = new(aPnts, 0.1, 0.1, 0.0, 0.0, 10.0, 10.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 0.1, 0.1, 0.0, 0.0, 10.0, 10.0);
 
         // Test classification with actual coordinates
-        Assert.Equal(CSLib_Class2d.Result.Result_Inside, aClassifier.SiDans(new gp_Pnt2d(5.0, 5.0)));
-        Assert.Equal(CSLib_Class2d.Result.Result_Outside, aClassifier.SiDans(new gp_Pnt2d(15.0, 15.0)));
+        Assert.Equal(global::Kerf.Engine.Geometry.Class2d.Result.Result_Inside, aClassifier.SiDans(new Point2D(5.0, 5.0)));
+        Assert.Equal(global::Kerf.Engine.Geometry.Class2d.Result.Result_Outside, aClassifier.SiDans(new Point2D(15.0, 15.0)));
     }
 
     // Test SiDans_OnMode
     [Fact]
     public void SiDans_OnMode_PointInside()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = CSLibTestHelpers.UnitSquare();
+        NCollection_Array1<Point2D> aPnts = CSLibTestHelpers.UnitSquare();
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 1.0, 1.0);
 
-        Assert.Equal(1, (int)aClassifier.SiDans_OnMode(new gp_Pnt2d(0.5, 0.5), 0.01));
+        Assert.Equal(1, (int)aClassifier.SiDans_OnMode(new Point2D(0.5, 0.5), 0.01));
     }
 
     // Test with degenerate polygon (less than 3 points effective)
     [Fact]
     public void DegeneratePolygon_InvalidBounds()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = CSLibTestHelpers.UnitSquare();
+        NCollection_Array1<Point2D> aPnts = CSLibTestHelpers.UnitSquare();
 
         // Invalid bounds (umax <= umin)
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 1.0, 0.0, 0.0, 1.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 1.0, 0.0, 0.0, 1.0);
 
         // Should return 0 for any point with invalid bounds
-        Assert.Equal(0, (int)aClassifier.SiDans(new gp_Pnt2d(0.5, 0.5)));
+        Assert.Equal(0, (int)aClassifier.SiDans(new Point2D(0.5, 0.5)));
     }
 }
 
@@ -289,7 +290,7 @@ public class CSLibNormalPolyDefTest
         NCollection_Array1<double> aLambda = new(0, 0);
         aLambda[0] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(0, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(0, aLambda);
 
         Assert.True(aPoly.Value(0.5, out double aValue));
         Assert.Equal(1.0, aValue, 1e-10);
@@ -306,7 +307,7 @@ public class CSLibNormalPolyDefTest
         aLambda[0] = 1.0;
         aLambda[1] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(1, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(1, aLambda);
 
         // f(pi/4) = cos(pi/4) + sin(pi/4) = sqrt(2)
         Assert.True(aPoly.Value(M_PI / 4.0, out double aValue));
@@ -323,7 +324,7 @@ public class CSLibNormalPolyDefTest
         aLambda[1] = 1.0;
         aLambda[2] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(2, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(2, aLambda);
 
         // Test that the function doesn't crash at these points.
         Assert.True(aPoly.Value(0.0, out double aValue));
@@ -343,7 +344,7 @@ public class CSLibNormalPolyDefTest
         aLambda[1] = 0.0;
         aLambda[2] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(2, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(2, aLambda);
 
         Assert.True(aPoly.Derivative(M_PI / 4.0, out double aDeriv));
         // Derivative should be computed without crash
@@ -358,7 +359,7 @@ public class CSLibNormalPolyDefTest
         aLambda[1] = 1.0;
         aLambda[2] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(2, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(2, aLambda);
 
         // At singular points, derivative should be 0
         Assert.True(aPoly.Derivative(0.0, out double aDeriv));
@@ -374,7 +375,7 @@ public class CSLibNormalPolyDefTest
         aLambda[1] = 2.0;
         aLambda[2] = 1.0;
 
-        CSLib_NormalPolyDef aPoly = new(2, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(2, aLambda);
 
         // Get values using separate functions
         Assert.True(aPoly.Value(0.7, out double aF1));
@@ -397,7 +398,7 @@ public class CSLibNormalPolyDefTest
         aLambda[1] = 2.0;
         aLambda[2] = 3.0;
 
-        CSLib_NormalPolyDef aPoly = new(2, aLambda);
+        global::Kerf.Engine.Geometry.NormalPolyDef aPoly = new(2, aLambda);
 
         const double aX = 0.8; // Away from singular points
         const double aH = 1e-6;
@@ -419,26 +420,26 @@ public class CSLibEnumTest
     public void DerivativeStatus_AllValues()
     {
         // Verify all enum values are distinct
-        Assert.NotEqual(CSLib_Done, CSLib_D1uIsNull);
-        Assert.NotEqual(CSLib_Done, CSLib_D1vIsNull);
-        Assert.NotEqual(CSLib_Done, CSLib_D1IsNull);
-        Assert.NotEqual(CSLib_Done, CSLib_D1uD1vRatioIsNull);
-        Assert.NotEqual(CSLib_Done, CSLib_D1vD1uRatioIsNull);
-        Assert.NotEqual(CSLib_Done, CSLib_D1uIsParallelD1v);
+        Assert.NotEqual(Done, D1uIsNull);
+        Assert.NotEqual(Done, D1vIsNull);
+        Assert.NotEqual(Done, D1IsNull);
+        Assert.NotEqual(Done, D1uD1vRatioIsNull);
+        Assert.NotEqual(Done, D1vD1uRatioIsNull);
+        Assert.NotEqual(Done, D1uIsParallelD1v);
     }
 
     [Fact]
     public void NormalStatus_AllValues()
     {
         // Verify all enum values are distinct
-        Assert.NotEqual(CSLib_Singular, CSLib_Defined);
-        Assert.NotEqual(CSLib_Singular, CSLib_InfinityOfSolutions);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NuIsNull);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NvIsNull);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NIsNull);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NuNvRatioIsNull);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NvNuRatioIsNull);
-        Assert.NotEqual(CSLib_Singular, CSLib_D1NuIsParallelD1Nv);
+        Assert.NotEqual(Singular, Defined);
+        Assert.NotEqual(Singular, InfinityOfSolutions);
+        Assert.NotEqual(Singular, D1NuIsNull);
+        Assert.NotEqual(Singular, D1NvIsNull);
+        Assert.NotEqual(Singular, D1NIsNull);
+        Assert.NotEqual(Singular, D1NuNvRatioIsNull);
+        Assert.NotEqual(Singular, D1NvNuRatioIsNull);
+        Assert.NotEqual(Singular, D1NuIsParallelD1Nv);
     }
 }
 
@@ -449,14 +450,14 @@ public class CSLibIntegrationTest
     public void PlanarSurface_ConstantNormal()
     {
         // For a plane z = 0, D1U = (1,0,0), D1V = (0,1,0): Normal should be (0,0,1) at all points
-        gp_Vec aD1U = new(1.0, 0.0, 0.0);
-        gp_Vec aD1V = new(0.0, 1.0, 0.0);
+        Vector3D aD1U = new(1.0, 0.0, 0.0);
+        Vector3D aD1V = new(0.0, 1.0, 0.0);
 
-        gp_Dir aNormal = new();
-        CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+        Direction3D aNormal = new();
+        global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-        Assert.Equal(CSLib_Done, aStatus);
-        CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(0.0, 0.0, 1.0));
+        Assert.Equal(Done, aStatus);
+        CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(0.0, 0.0, 1.0));
     }
 
     // Test normal computation for a cylindrical surface
@@ -469,26 +470,26 @@ public class CSLibIntegrationTest
 
         // At u = 0
         {
-            gp_Vec aD1U = new(0.0, 1.0, 0.0);
-            gp_Vec aD1V = new(0.0, 0.0, 1.0);
+            Vector3D aD1U = new(0.0, 1.0, 0.0);
+            Vector3D aD1V = new(0.0, 0.0, 1.0);
 
-            gp_Dir aNormal = new();
-            CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+            Direction3D aNormal = new();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-            Assert.Equal(CSLib_Done, aStatus);
-            CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(1.0, 0.0, 0.0));
+            Assert.Equal(Done, aStatus);
+            CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(1.0, 0.0, 0.0));
         }
 
         // At u = pi/2
         {
-            gp_Vec aD1U = new(-1.0, 0.0, 0.0);
-            gp_Vec aD1V = new(0.0, 0.0, 1.0);
+            Vector3D aD1U = new(-1.0, 0.0, 0.0);
+            Vector3D aD1V = new(0.0, 0.0, 1.0);
 
-            gp_Dir aNormal = new();
-            CSLib.Normal(aD1U, aD1V, 1e-10, out CSLib_DerivativeStatus aStatus, ref aNormal);
+            Direction3D aNormal = new();
+            global::Kerf.Engine.Geometry.CSLib.Normal(aD1U, aD1V, 1e-10, out global::Kerf.Engine.Geometry.DerivativeStatus aStatus, ref aNormal);
 
-            Assert.Equal(CSLib_Done, aStatus);
-            CSLibTestHelpers.checkDirEqual(aNormal, new gp_Dir(0.0, 1.0, 0.0));
+            Assert.Equal(Done, aStatus);
+            CSLibTestHelpers.checkDirEqual(aNormal, new Direction3D(0.0, 1.0, 0.0));
         }
     }
 
@@ -497,23 +498,23 @@ public class CSLibIntegrationTest
     public void Class2d_ComplexPolygon()
     {
         // L-shaped polygon
-        NCollection_Array1<gp_Pnt2d> aPnts = new(1, 6);
-        aPnts[1] = new gp_Pnt2d(0.0, 0.0);
-        aPnts[2] = new gp_Pnt2d(2.0, 0.0);
-        aPnts[3] = new gp_Pnt2d(2.0, 1.0);
-        aPnts[4] = new gp_Pnt2d(1.0, 1.0);
-        aPnts[5] = new gp_Pnt2d(1.0, 2.0);
-        aPnts[6] = new gp_Pnt2d(0.0, 2.0);
+        NCollection_Array1<Point2D> aPnts = new(1, 6);
+        aPnts[1] = new Point2D(0.0, 0.0);
+        aPnts[2] = new Point2D(2.0, 0.0);
+        aPnts[3] = new Point2D(2.0, 1.0);
+        aPnts[4] = new Point2D(1.0, 1.0);
+        aPnts[5] = new Point2D(1.0, 2.0);
+        aPnts[6] = new Point2D(0.0, 2.0);
 
-        CSLib_Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 2.0, 2.0);
+        global::Kerf.Engine.Geometry.Class2d aClassifier = new(aPnts, 1e-10, 1e-10, 0.0, 0.0, 2.0, 2.0);
 
         // Point inside the L
-        Assert.Equal(1, (int)aClassifier.SiDans(new gp_Pnt2d(0.5, 0.5)));
+        Assert.Equal(1, (int)aClassifier.SiDans(new Point2D(0.5, 0.5)));
 
         // Point in the "notch" of the L (outside)
-        Assert.Equal(-1, (int)aClassifier.SiDans(new gp_Pnt2d(1.5, 1.5)));
+        Assert.Equal(-1, (int)aClassifier.SiDans(new Point2D(1.5, 1.5)));
 
         // Point clearly outside
-        Assert.Equal(-1, (int)aClassifier.SiDans(new gp_Pnt2d(3.0, 3.0)));
+        Assert.Equal(-1, (int)aClassifier.SiDans(new Point2D(3.0, 3.0)));
     }
 }

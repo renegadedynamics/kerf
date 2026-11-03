@@ -86,7 +86,7 @@ public class BRepMesh_ShapeVisitor : IMeshTools_ShapeVisitor
         }
 
         ShapeExtend_WireData aWireData = new(theWire, true, false);
-        ShapeAnalysis_Wire aWireTool = new(aWireData, theDFace.GetFace(), Precision.Confusion());
+        ShapeAnalysis_Wire aWireTool = new(aWireData, theDFace.GetFace(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         ShapeAnalysis_WireOrder aOrderTool = new();
         aWireTool.CheckOrder(aOrderTool, true, false);

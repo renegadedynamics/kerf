@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -23,7 +25,7 @@ public class Transfer_SimpleBinderOfTransient : Transfer_Binder
     {
         if (!HasResult() || theres is null)
         {
-            return typeof(Standard_Transient);
+            return typeof(Transient);
         }
         return Result().DynamicType();
     }
@@ -35,19 +37,19 @@ public class Transfer_SimpleBinderOfTransient : Transfer_Binder
         {
             return "(void)";
         }
-        return Result().DynamicType().Name;
+        return Result().DynamicTypeName();
     }
 
     /// <summary>Defines the Result.</summary>
     /// <exception cref="Transfer_TransferFailure">The result is already set and used.</exception>
-    public void SetResult(Standard_Transient? res)
+    public void SetResult(Transient? res)
     {
         SetResultPresent();
         theres = res;
     }
 
     /// <summary>Returns the defined Result, if there is one.</summary>
-    public Standard_Transient? Result()
+    public Transient? Result()
     {
         return theres;
     }
@@ -56,7 +58,7 @@ public class Transfer_SimpleBinderOfTransient : Transfer_Binder
     /// Returns a transient result according to its type (IsKind), i.e. the result itself if IsKind(atype), else
     /// searches in NextResult, until first found, then returns True. If not found, returns False (res is NOT touched).
     /// </summary>
-    public static bool GetTypedResult(Transfer_Binder? bnd, Type? atype, ref Standard_Transient? res)
+    public static bool GetTypedResult(Transfer_Binder? bnd, Type? atype, ref Transient? res)
     {
         if (atype is null)
         {
@@ -71,7 +73,7 @@ public class Transfer_SimpleBinderOfTransient : Transfer_Binder
             {
                 continue;
             }
-            Standard_Transient? rs = trb.Result();
+            Transient? rs = trb.Result();
             if (rs is null)
             {
                 continue;
@@ -86,5 +88,5 @@ public class Transfer_SimpleBinderOfTransient : Transfer_Binder
         return false;
     }
 
-    private Standard_Transient? theres;
+    private Transient? theres;
 }

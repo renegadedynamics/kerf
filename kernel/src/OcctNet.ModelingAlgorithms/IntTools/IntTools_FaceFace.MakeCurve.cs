@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.TopAbs_State;
 
@@ -54,8 +56,8 @@ public partial class IntTools_FaceFace
             IntSurf_PntOn2S p1 = aWLine.Point(1);
             IntSurf_PntOn2S p2 = aWLine.Point(nbp);
 
-            gp_Pnt P1 = p1.Value();
-            gp_Pnt P2 = p2.Value();
+            Point3D P1 = p1.Value();
+            Point3D P2 = p2.Value();
 
             if (P1.SquareDistance(P2) < 1.0e-14)
             {
@@ -124,8 +126,8 @@ public partial class IntTools_FaceFace
                     //
                     myLConstruct.Part(i, out fprm, out lprm);
                     //
-                    bFNIt = Precision.IsNegativeInfinite(fprm);
-                    bLPIt = Precision.IsPositiveInfinite(lprm);
+                    bFNIt = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(fprm);
+                    bLPIt = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(lprm);
                     //
                     if (!bFNIt && !bLPIt)
                     {
@@ -190,13 +192,13 @@ public partial class IntTools_FaceFace
                             aTestPrm = IntTools_Tools.IntermediatePoint(-dT, dT);
                         }
                         //
-                        gp_Pnt ptref = newc.Value(aTestPrm);
+                        Point3D ptref = newc.Value(aTestPrm);
                         //
-                        GeomAbs_SurfaceType typS1 = myHS1.GetType();
-                        GeomAbs_SurfaceType typS2 = myHS2.GetType();
-                        if (typS1 == GeomAbs_SurfaceOfExtrusion || typS1 == GeomAbs_OffsetSurface
-                            || typS1 == GeomAbs_SurfaceOfRevolution || typS2 == GeomAbs_SurfaceOfExtrusion
-                            || typS2 == GeomAbs_OffsetSurface || typS2 == GeomAbs_SurfaceOfRevolution)
+                        SurfaceKind typS1 = myHS1.GetType();
+                        SurfaceKind typS2 = myHS2.GetType();
+                        if (typS1 == SurfaceOfExtrusion || typS1 == OffsetSurface
+                            || typS1 == SurfaceOfRevolution || typS2 == SurfaceOfExtrusion
+                            || typS2 == OffsetSurface || typS2 == SurfaceOfRevolution)
                         {
                             Geom2d_BSplineCurve? H1 = null;
                             mySeqOfCurve.Append(new IntTools_Curve(newc, H1, H1));
@@ -205,12 +207,12 @@ public partial class IntTools_FaceFace
 
                         double u1, v1, u2, v2, Tol;
 
-                        Tol = Precision.Confusion();
+                        Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
                         Parameters(myHS1, myHS2, ptref, out u1, out v1, out u2, out v2);
-                        ok = (dom1.Classify(new gp_Pnt2d(u1, v1), Tol) != TopAbs_OUT);
+                        ok = (dom1.Classify(new Point2D(u1, v1), Tol) != TopAbs_OUT);
                         if (ok)
                         {
-                            ok = (dom2.Classify(new gp_Pnt2d(u2, v2), Tol) != TopAbs_OUT);
+                            ok = (dom2.Classify(new Point2D(u2, v2), Tol) != TopAbs_OUT);
                         }
                         if (ok)
                         {
@@ -269,8 +271,8 @@ public partial class IntTools_FaceFace
                         }
                         else
                         {
-                            gp_Pnt P1 = newc.Value(fprm);
-                            gp_Pnt P2 = newc.Value(aPeriod);
+                            Point3D P1 = newc.Value(fprm);
+                            Point3D P2 = newc.Value(aPeriod);
 
                             if (P1.Distance(P2) > myTol)
                             {
@@ -294,8 +296,8 @@ public partial class IntTools_FaceFace
                         }
                         else
                         {
-                            gp_Pnt P1 = newc.Value(aNul);
-                            gp_Pnt P2 = newc.Value(lprm);
+                            Point3D P1 = newc.Value(aNul);
+                            Point3D P2 = newc.Value(lprm);
 
                             if (P1.Distance(P2) > myTol)
                             {
@@ -404,14 +406,14 @@ public partial class IntTools_FaceFace
 
                         for (j = 0; j <= 17; j++)
                         {
-                            gp_Pnt ptref = newc.Value(j * aTwoPIdiv17);
-                            Tol = Precision.Confusion();
+                            Point3D ptref = newc.Value(j * aTwoPIdiv17);
+                            Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
                             Parameters(myHS1, myHS2, ptref, out u1, out v1, out u2, out v2);
-                            ok = (dom1.Classify(new gp_Pnt2d(u1, v1), Tol) != TopAbs_OUT);
+                            ok = (dom1.Classify(new Point2D(u1, v1), Tol) != TopAbs_OUT);
                             if (ok)
                             {
-                                ok = (dom2.Classify(new gp_Pnt2d(u2, v2), Tol) != TopAbs_OUT);
+                                ok = (dom2.Classify(new Point2D(u2, v2), Tol) != TopAbs_OUT);
                             }
                             if (ok)
                             {
@@ -521,16 +523,16 @@ public partial class IntTools_FaceFace
                     aTolApproxImp = 1.0e-5;
                     tol2d = myTolApprox;
 
-                    GeomAbs_SurfaceType typs1, typs2;
+                    SurfaceKind typs1, typs2;
                     typs1 = myHS1.GetType();
                     typs2 = myHS2.GetType();
                     bool anWithPC = true;
 
-                    if (typs1 == GeomAbs_Cylinder && typs2 == GeomAbs_Sphere)
+                    if (typs1 == SurfaceKind.Cylinder && typs2 == SurfaceKind.Sphere)
                     {
                         anWithPC = ApproxWithPCurves(myHS1.Cylinder(), myHS2.Sphere());
                     }
-                    else if (typs1 == GeomAbs_Sphere && typs2 == GeomAbs_Cylinder)
+                    else if (typs1 == SurfaceKind.Sphere && typs2 == SurfaceKind.Cylinder)
                     {
                         anWithPC = ApproxWithPCurves(myHS2.Cylinder(), myHS1.Sphere());
                     }
@@ -555,7 +557,7 @@ public partial class IntTools_FaceFace
                     if (bIsDecomposited)
                     {
                         nbiter = aNbSeqOfL;
-                        aTolC = Precision.Confusion();
+                        aTolC = global::Kerf.Engine.Foundation.Precision.Confusion();
                     }
                     else
                     {
@@ -592,12 +594,12 @@ public partial class IntTools_FaceFace
                         }
 
                         bool anApprox = myApprox;
-                        if (typs1 == GeomAbs_Plane)
+                        if (typs1 == Plane)
                         {
                             anApprox = false;
                             anApprox1 = true;
                         }
-                        else if (typs2 == GeomAbs_Plane)
+                        else if (typs2 == Plane)
                         {
                             anApprox = false;
                             anApprox2 = true;
@@ -627,11 +629,11 @@ public partial class IntTools_FaceFace
                         //-- lbr :
                         //-- Si une des surfaces est un plan , on approxime en 2d
                         //-- sur cette surface et on remonte les points 2d en 3d.
-                        if (typs1 == GeomAbs_Plane)
+                        if (typs1 == Plane)
                         {
                             theapp3d.Perform(myHS1, myHS2, WL, false, true, myApprox2, ifprm, ilprm);
                         }
-                        else if (typs2 == GeomAbs_Plane)
+                        else if (typs2 == Plane)
                         {
                             theapp3d.Perform(myHS1, myHS2, WL, false, myApprox1, true, ifprm, ilprm);
                         }
@@ -640,8 +642,8 @@ public partial class IntTools_FaceFace
                             //
                             if (myHS1 != myHS2)
                             {
-                                if ((typs1 == GeomAbs_BezierSurface || typs1 == GeomAbs_BSplineSurface)
-                                    && (typs2 == GeomAbs_BezierSurface || typs2 == GeomAbs_BSplineSurface))
+                                if ((typs1 == BezierSurface || typs1 == BSplineSurface)
+                                    && (typs2 == BezierSurface || typs2 == BSplineSurface))
                                 {
 
                                     theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, true, aParType);
@@ -684,10 +686,10 @@ public partial class IntTools_FaceFace
                         }
                         else
                         {
-                            if (typs1 == GeomAbs_Plane || typs2 == GeomAbs_Plane)
+                            if (typs1 == Plane || typs2 == Plane)
                             {
                                 //
-                                if (typs1 == GeomAbs_Torus || typs2 == GeomAbs_Torus)
+                                if (typs1 == SurfaceKind.Torus || typs2 == SurfaceKind.Torus)
                                 {
                                     if (aTolC < 1.0e-6)
                                     {
@@ -700,21 +702,21 @@ public partial class IntTools_FaceFace
                             aNbMultiCurves = theapp3d.NbMultiCurves();
                             for (j = 1; j <= aNbMultiCurves; j++)
                             {
-                                if (typs1 == GeomAbs_Plane)
+                                if (typs1 == Plane)
                                 {
                                     AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(j);
                                     nbpoles = mbspc.NbPoles();
 
-                                    NCollection_Array1<gp_Pnt2d> tpoles2d = new(1, nbpoles);
-                                    NCollection_Array1<gp_Pnt> tpoles = new(1, nbpoles);
+                                    NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
+                                    NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
 
                                     mbspc.Curve(1, tpoles2d);
-                                    gp_Pln Pln = myHS1.Plane();
+                                    Plane3D Pln = myHS1.Plane();
                                     //
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
-                                        tpoles.SetValue(ik, ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
+                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
                                                                          Pln));
                                     }
                                     //
@@ -777,20 +779,20 @@ public partial class IntTools_FaceFace
 
                                 } // if(typs1 == GeomAbs_Plane) {
 
-                                else if (typs2 == GeomAbs_Plane)
+                                else if (typs2 == Plane)
                                 {
                                     AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(j);
                                     nbpoles = mbspc.NbPoles();
 
-                                    NCollection_Array1<gp_Pnt2d> tpoles2d = new(1, nbpoles);
-                                    NCollection_Array1<gp_Pnt> tpoles = new(1, nbpoles);
+                                    NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
+                                    NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
                                     mbspc.Curve((myApprox1) ? 2 : 1, tpoles2d);
-                                    gp_Pln Pln = myHS2.Plane();
+                                    Plane3D Pln = myHS2.Plane();
                                     //
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
-                                        tpoles.SetValue(ik, ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
+                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
                                                                          Pln));
                                     }
                                     //
@@ -899,7 +901,7 @@ public partial class IntTools_FaceFace
                                     //
                                     AppParCurves_MultiBSpCurve mbspc = theapp3d.Value(j);
                                     nbpoles = mbspc.NbPoles();
-                                    NCollection_Array1<gp_Pnt> tpoles = new(1, nbpoles);
+                                    NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
                                     mbspc.Curve(1, tpoles);
                                     BS = new Geom_BSplineCurve(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
                                                                mbspc.Degree());
@@ -914,7 +916,7 @@ public partial class IntTools_FaceFace
                                         if (anApprox1)
                                         {
                                             Geom2d_BSplineCurve BS1;
-                                            NCollection_Array1<gp_Pnt2d> tpoles2d = new(1, nbpoles);
+                                            NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
                                             mbspc.Curve(2, tpoles2d);
                                             //
                                             BS1 = new Geom2d_BSplineCurve(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
@@ -948,7 +950,7 @@ public partial class IntTools_FaceFace
                                         if (anApprox2)
                                         {
                                             Geom2d_BSplineCurve BS2;
-                                            NCollection_Array1<gp_Pnt2d> tpoles2d = new(1, nbpoles);
+                                            NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
                                             mbspc.Curve((myApprox1) ? 3 : 2, tpoles2d);
                                             BS2 = new Geom2d_BSplineCurve(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                           mbspc.Degree());
@@ -1009,17 +1011,17 @@ public partial class IntTools_FaceFace
                     break;
                 }
 
-                Bnd_Box2d aBox1 = new(), aBox2 = new();
+                Box2d aBox1 = new(), aBox2 = new();
 
                 double aU1f = myHS1.FirstUParameter(), aV1f = myHS1.FirstVParameter(),
                        aU1l = myHS1.LastUParameter(), aV1l = myHS1.LastVParameter();
                 double aU2f = myHS2.FirstUParameter(), aV2f = myHS2.FirstVParameter(),
                        aU2l = myHS2.LastUParameter(), aV2l = myHS2.LastVParameter();
 
-                aBox1.Add(new gp_Pnt2d(aU1f, aV1f));
-                aBox1.Add(new gp_Pnt2d(aU1l, aV1l));
-                aBox2.Add(new gp_Pnt2d(aU2f, aV2f));
-                aBox2.Add(new gp_Pnt2d(aU2l, aV2l));
+                aBox1.Add(new Point2D(aU1f, aV1f));
+                aBox1.Add(new Point2D(aU1l, aV1l));
+                aBox2.Add(new Point2D(aU2f, aV2f));
+                aBox2.Add(new Point2D(aU2l, aV2l));
 
                 NCollection_DynamicArray<double> anArrayOfParameters = new();
 
@@ -1042,7 +1044,7 @@ public partial class IntTools_FaceFace
                     ref double aParF = ref anArrayOfParameters[anInd];
                     ref double aParL = ref anArrayOfParameters[anInd + 1];
 
-                    if ((aParL - aParF) <= Precision.PConfusion())
+                    if ((aParL - aParF) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // In order to more precise extending to the boundaries of source curves.
                         if (anInd < aNbIntersSolutionsm1 - 1)
@@ -1054,7 +1056,7 @@ public partial class IntTools_FaceFace
                     }
 
                     double aPar = 0.5 * (aParF + aParL);
-                    gp_Pnt2d aPt;
+                    Point2D aPt;
 
                     Geom2d_Curve? aCurv2d1 = null, aCurv2d2 = null;
                     if (aC2d1 is not null)

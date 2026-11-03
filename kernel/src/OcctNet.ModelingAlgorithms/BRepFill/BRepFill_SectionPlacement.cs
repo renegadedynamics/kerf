@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -21,7 +23,7 @@ public sealed class BRepFill_SectionPlacement
 {
     private readonly BRepFill_LocationLaw myLaw;
     private readonly TopoDS_Shape mySection;
-    private gp_Trsf myTrsf = new();
+    private Transform3D myTrsf = new();
     private double myParam;
     private int myIndex;
 
@@ -47,7 +49,7 @@ public sealed class BRepFill_SectionPlacement
     //=================================================================================================
 
     /// <summary>Automatic placement of <paramref name="Section"/> on <paramref name="Law"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">The section's nearest point isn't on the path.</exception>
+    /// <exception cref="ConstructionErrorException">The section's nearest point isn't on the path.</exception>
     public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in TopoDS_Shape Section, bool WithContact = false,
                                      bool WithCorrection = false)
     {
@@ -61,7 +63,7 @@ public sealed class BRepFill_SectionPlacement
     //=================================================================================================
 
     /// <summary>Placement of <paramref name="Section"/> on <paramref name="Law"/> at the path's vertex <paramref name="Vertex"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">The section's nearest point isn't on the path.</exception>
+    /// <exception cref="ConstructionErrorException">The section's nearest point isn't on the path.</exception>
     public BRepFill_SectionPlacement(BRepFill_LocationLaw Law, in TopoDS_Shape Section, in TopoDS_Shape Vertex,
                                      bool WithContact = false, bool WithCorrection = false)
     {
@@ -103,7 +105,7 @@ public sealed class BRepFill_SectionPlacement
             // No edge found : the section is a vertex
             TopExp_Explorer aVertexExplorer = new(mySection, TopAbs_VERTEX);
             TopoDS_Vertex aFirstVertex = TopoDS.Vertex(aVertexExplorer.Current());
-            gp_Pnt aPoint = BRep_Tool.Pnt(aFirstVertex);
+            Point3D aPoint = BRep_Tool.Pnt(aFirstVertex);
             aSection = new Geom_CartesianPoint(aPoint);
         }
         else
@@ -113,7 +115,7 @@ public sealed class BRepFill_SectionPlacement
 
             if (anEdgeExplorer.More())
             {
-                double aPrecisionTolerance = Precision.Confusion();
+                double aPrecisionTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
                 GeomConvert_CompCurveToBSplineCurve aBSplineConverter = new(aTrimmedCurve);
                 for (; anEdgeExplorer.More(); anEdgeExplorer.Next())
                 {
@@ -152,10 +154,10 @@ public sealed class BRepFill_SectionPlacement
 
         GeomFill_SectionPlacement aSectionPlacement = new(myLaw.Law(1), aSection);
         BRepAdaptor_CompCurve aWireAdaptor = new(myLaw.Wire());
-        aSectionPlacement.Perform(aWireAdaptor, Precision.Confusion());
+        aSectionPlacement.Perform(aWireAdaptor, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double aSectionParam = aSectionPlacement.ParameterOnPath();
-        double aParamConfusion = Precision.PConfusion();
+        double aParamConfusion = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         int aLawIndex1 = 0;
         int aLawIndex2 = 0;
@@ -188,7 +190,7 @@ public sealed class BRepFill_SectionPlacement
 
         if (!anIsIntervalFound)
         {
-            throw new Standard_ConstructionError("Interval is not found");
+            throw new ConstructionErrorException("Interval is not found");
         }
 
         // Search of the <Ind1> by vertex <TheV>
@@ -216,11 +218,11 @@ public sealed class BRepFill_SectionPlacement
         aSectionPlacement.SetLocation(myLaw.Law(aLawIndex1));
         if (!anIsVertexOnLaw)
         {
-            aSectionPlacement.Perform(Precision.Confusion());
+            aSectionPlacement.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else
         {
-            aSectionPlacement.Perform(SearchParam(myLaw, aLawIndex1, aVertex), Precision.Confusion());
+            aSectionPlacement.Perform(SearchParam(myLaw, aLawIndex1, aVertex), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         myTrsf = aSectionPlacement.Transformation(WithContact, WithCorrection);
@@ -233,7 +235,7 @@ public sealed class BRepFill_SectionPlacement
             aSectionPlacement.SetLocation(myLaw.Law(aLawIndex2));
             if (!anIsVertexOnLaw)
             {
-                aSectionPlacement.Perform(Precision.Confusion());
+                aSectionPlacement.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -241,7 +243,7 @@ public sealed class BRepFill_SectionPlacement
                 {
                     aVertex.Reverse();
                 }
-                aSectionPlacement.Perform(SearchParam(myLaw, aLawIndex2, aVertex), Precision.Confusion());
+                aSectionPlacement.Perform(SearchParam(myLaw, aLawIndex2, aVertex), global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             if (aSectionPlacement.Angle() > Angle)
             {
@@ -255,7 +257,7 @@ public sealed class BRepFill_SectionPlacement
     //=================================================================================================
 
     /// <summary>The transformation placing the section on the law.</summary>
-    public gp_Trsf Transformation() => myTrsf;
+    public Transform3D Transformation() => myTrsf;
 
     //=================================================================================================
 

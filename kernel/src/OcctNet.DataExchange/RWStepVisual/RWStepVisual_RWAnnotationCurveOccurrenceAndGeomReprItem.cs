@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -44,8 +46,8 @@ internal class RWStepVisual_RWAnnotationCurveOccurrenceAndGeomReprItem
         }
 
         // Inherited field : item
-        Standard_Transient aItem = null;
-        data.ReadEntity(num, 2, "item", ach, typeof(Standard_Transient), ref aItem);
+        Transient aItem = null;
+        data.ReadEntity(num, 2, "item", ach, typeof(Transient), ref aItem);
 
         // Initialization of the read entity
         ent.Init(aName, aStyles, aItem);

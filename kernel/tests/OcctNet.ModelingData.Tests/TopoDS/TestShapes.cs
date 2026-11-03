@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace OcctNet.ModelingData.Tests;
@@ -35,11 +36,11 @@ internal static class TestShapes
     public static TopoDS_Compound Frozen(TopoDS_Compound theShape) => TopoDS.Compound(Frozen((TopoDS_Shape)theShape));
 
     /// <summary>A vertex at <paramref name="theP"/>, tolerance Precision::Confusion() (BRepLib_MakeVertex's).</summary>
-    public static TopoDS_Vertex Vertex(in gp_Pnt theP)
+    public static TopoDS_Vertex Vertex(in Point3D theP)
     {
         var aB = new BRep_Builder();
         TopoDS_Vertex aV = new TopoDS_Vertex();
-        aB.MakeVertex(ref aV, theP, Precision.Confusion());
+        aB.MakeVertex(ref aV, theP, global::Kerf.Engine.Foundation.Precision.Confusion());
         return aV;
     }
 
@@ -47,9 +48,9 @@ internal static class TestShapes
     public static TopoDS_Edge Edge(Geom_Curve theC, double p1, double p2)
     {
         var aB = new BRep_Builder();
-        gp_Pnt aP1 = theC.Value(p1), aP2 = theC.Value(p2);
+        Point3D aP1 = theC.Value(p1), aP2 = theC.Value(p2);
         TopoDS_Vertex aV1 = Vertex(aP1);
-        TopoDS_Vertex aV2 = aP1.Distance(aP2) <= Precision.Confusion() ? aV1 : Vertex(aP2);
+        TopoDS_Vertex aV2 = aP1.Distance(aP2) <= global::Kerf.Engine.Foundation.Precision.Confusion() ? aV1 : Vertex(aP2);
         return Edge(theC, p1, p2, aV1, aV2);
     }
 
@@ -58,7 +59,7 @@ internal static class TestShapes
     {
         var aB = new BRep_Builder();
         TopoDS_Edge anE = new TopoDS_Edge();
-        aB.MakeEdge(ref anE, theC, Precision.Confusion());
+        aB.MakeEdge(ref anE, theC, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.Add(anE, theV1.Oriented(TopAbs_FORWARD));
         aB.Add(anE, theV2.Oriented(TopAbs_REVERSED));
         aB.Range(anE, p1, p2);
@@ -66,14 +67,14 @@ internal static class TestShapes
     }
 
     /// <summary>A segment from <paramref name="theP1"/> to <paramref name="theP2"/> (a line parametrised by length).</summary>
-    public static TopoDS_Edge Edge(in gp_Pnt theP1, in gp_Pnt theP2)
-        => Edge(new Geom_Line(theP1, new gp_Dir(new gp_Vec(theP1, theP2))), 0.0, theP1.Distance(theP2));
+    public static TopoDS_Edge Edge(in Point3D theP1, in Point3D theP2)
+        => Edge(new Geom_Line(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0.0, theP1.Distance(theP2));
 
     /// <summary>A segment between two vertices.</summary>
     public static TopoDS_Edge Edge(in TopoDS_Vertex theV1, in TopoDS_Vertex theV2)
     {
-        gp_Pnt aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
-        return Edge(new Geom_Line(aP1, new gp_Dir(new gp_Vec(aP1, aP2))), 0.0, aP1.Distance(aP2), theV1, theV2);
+        Point3D aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
+        return Edge(new Geom_Line(aP1, new Direction3D(new Vector3D(aP1, aP2))), 0.0, aP1.Distance(aP2), theV1, theV2);
     }
 
     /// <summary>
@@ -82,16 +83,16 @@ internal static class TestShapes
     /// are already there (shared with a neighbouring face), else made and added to it. On <paramref name="thePlane"/>
     /// if given.
     /// </summary>
-    public static TopoDS_Face PolygonFace(TopoDS_Vertex[] theVertices, in gp_Dir theNormal,
+    public static TopoDS_Face PolygonFace(TopoDS_Vertex[] theVertices, in Direction3D theNormal,
                                           Dictionary<(int, int), TopoDS_Edge> theEdges, int[] theIndices,
                                           Geom_Plane? thePlane = null)
     {
         var aB = new BRep_Builder();
-        gp_Pnt aP0 = BRep_Tool.Pnt(theVertices[theIndices[0]]);
+        Point3D aP0 = BRep_Tool.Pnt(theVertices[theIndices[0]]);
         Geom_Plane aPlane = thePlane ?? new Geom_Plane(aP0, theNormal);
-        gp_Pln aPln = aPlane.Pln();
+        Plane3D aPln = aPlane.Pln();
         TopoDS_Face aF = new TopoDS_Face();
-        aB.MakeFace(ref aF, aPlane, Precision.Confusion());
+        aB.MakeFace(ref aF, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         TopoDS_Wire aW = new TopoDS_Wire();
         aB.MakeWire(ref aW);
         for (int i = 0; i < theIndices.Length; i++)
@@ -106,11 +107,11 @@ internal static class TestShapes
             }
 
             // the pcurve: the image of the edge's line in the plane, with the same parameter
-            gp_Pnt aS = BRep_Tool.Pnt(theVertices[aKey.Item1]), anE = BRep_Tool.Pnt(theVertices[aKey.Item2]);
-            ElSLib.Parameters(aPln, aS, out double u1, out double v1);
-            ElSLib.Parameters(aPln, anE, out double u2, out double v2);
-            var aPCurve = new Geom2d_Line(new gp_Pnt2d(u1, v1), new gp_Dir2d(u2 - u1, v2 - v1));
-            aB.UpdateEdge(anEdge, aPCurve, aF, Precision.Confusion());
+            Point3D aS = BRep_Tool.Pnt(theVertices[aKey.Item1]), anE = BRep_Tool.Pnt(theVertices[aKey.Item2]);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, aS, out double u1, out double v1);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, anE, out double u2, out double v2);
+            var aPCurve = new Geom2d_Line(new Point2D(u1, v1), new Direction2D(u2 - u1, v2 - v1));
+            aB.UpdateEdge(anEdge, aPCurve, aF, global::Kerf.Engine.Foundation.Precision.Confusion());
             aB.Add(aW, isReversed ? anEdge.Reversed() : anEdge);
         }
 
@@ -129,23 +130,23 @@ internal static class TestShapes
         var aV = new TopoDS_Vertex[8];
         for (int i = 0; i < 8; i++)
         {
-            aV[i] = Vertex(new gp_Pnt((i & 1) != 0 ? dx : 0, (i & 2) != 0 ? dy : 0, (i & 4) != 0 ? dz : 0));
+            aV[i] = Vertex(new Point3D((i & 1) != 0 ? dx : 0, (i & 2) != 0 ? dy : 0, (i & 4) != 0 ? dz : 0));
         }
 
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
         TopoDS_Shell aShell = new TopoDS_Shell();
         aB.MakeShell(ref aShell);
         // each face's vertices counter-clockwise seen from outside
-        (int[] Indices, gp_Dir Normal)[] aFaces =
+        (int[] Indices, Direction3D Normal)[] aFaces =
         [
-            ([0, 2, 3, 1], new gp_Dir(0, 0, -1)),
-            ([4, 5, 7, 6], new gp_Dir(0, 0, 1)),
-            ([0, 1, 5, 4], new gp_Dir(0, -1, 0)),
-            ([2, 6, 7, 3], new gp_Dir(0, 1, 0)),
-            ([0, 4, 6, 2], new gp_Dir(-1, 0, 0)),
-            ([1, 3, 7, 5], new gp_Dir(1, 0, 0)),
+            ([0, 2, 3, 1], new Direction3D(0, 0, -1)),
+            ([4, 5, 7, 6], new Direction3D(0, 0, 1)),
+            ([0, 1, 5, 4], new Direction3D(0, -1, 0)),
+            ([2, 6, 7, 3], new Direction3D(0, 1, 0)),
+            ([0, 4, 6, 2], new Direction3D(-1, 0, 0)),
+            ([1, 3, 7, 5], new Direction3D(1, 0, 0)),
         ];
-        foreach ((int[] anIndices, gp_Dir aNormal) in aFaces)
+        foreach ((int[] anIndices, Direction3D aNormal) in aFaces)
         {
             aB.Add(aShell, PolygonFace(aV, aNormal, anEdges, anIndices));
         }
@@ -165,25 +166,25 @@ internal static class TestShapes
     public static TopoDS_Face CylinderFace(double theR, double theH)
     {
         var aB = new BRep_Builder();
-        var aSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), theR);
+        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), theR);
         double aTwoPi = 2.0 * Math.PI;
-        TopoDS_Vertex aV0 = Vertex(new gp_Pnt(theR, 0, 0));
-        TopoDS_Vertex aV1 = Vertex(new gp_Pnt(theR, 0, theH));
-        TopoDS_Edge aBottom = Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), theR),
+        TopoDS_Vertex aV0 = Vertex(new Point3D(theR, 0, 0));
+        TopoDS_Vertex aV1 = Vertex(new Point3D(theR, 0, theH));
+        TopoDS_Edge aBottom = Edge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), theR),
                                    0.0, aTwoPi, aV0, aV0);
-        TopoDS_Edge aTop = Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, theH), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), theR),
+        TopoDS_Edge aTop = Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, theH), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), theR),
                                 0.0, aTwoPi, aV1, aV1);
-        TopoDS_Edge aSeam = Edge(new Geom_Line(new gp_Pnt(theR, 0, 0), new gp_Dir(0, 0, 1)), 0.0, theH, aV0, aV1);
+        TopoDS_Edge aSeam = Edge(new Geom_Line(new Point3D(theR, 0, 0), new Direction3D(0, 0, 1)), 0.0, theH, aV0, aV1);
 
         TopoDS_Face aF = new TopoDS_Face();
-        aB.MakeFace(ref aF, aSurf, Precision.Confusion());
-        aB.UpdateEdge(aBottom, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Precision.Confusion());
-        aB.UpdateEdge(aTop, new Geom2d_Line(new gp_Pnt2d(0, theH), new gp_Dir2d(1, 0)), aF, Precision.Confusion());
+        aB.MakeFace(ref aF, aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aB.UpdateEdge(aBottom, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aB.UpdateEdge(aTop, new Geom2d_Line(new Point2D(0, theH), new Direction2D(1, 0)), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.UpdateEdge(aSeam,
-                      new Geom2d_Line(new gp_Pnt2d(aTwoPi, 0), new gp_Dir2d(0, 1)),
-                      new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)),
+                      new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                      new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)),
                       aF,
-                      Precision.Confusion());
+                      global::Kerf.Engine.Foundation.Precision.Confusion());
 
         TopoDS_Wire aW = new TopoDS_Wire();
         aB.MakeWire(ref aW);

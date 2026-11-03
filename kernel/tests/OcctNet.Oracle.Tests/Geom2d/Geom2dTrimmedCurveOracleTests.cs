@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -13,7 +14,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
     /// <summary>A random basis curve on both sides.</summary>
     private static (Geom2d_Curve Port, N.Geom2d_Curve Native) Basis(Oracle theOracle, int theKind)
     {
-        (N.gp_Ax2d aNAx, gp_Ax2d anAx) = Ax2ds(theOracle);
+        (N.gp_Ax2d aNAx, Axis2D anAx) = Ax2ds(theOracle);
         using var aNAxOwner = aNAx;
         switch (theKind)
         {
@@ -82,7 +83,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
                 U1 = anOracle.Real(-2 * aPer, 2 * aPer);
                 U2 = anOracle.Real(-2 * aPer, 2 * aPer);
             }
-            else if (Precision.IsInfinite(aBasis.LastParameter()))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasis.LastParameter()))
             {
                 U1 = anOracle.Real(-50, 50);
                 U2 = anOracle.Real(-50, 50);

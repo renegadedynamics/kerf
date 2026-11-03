@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ContextDependentKinematicLinkRepresentation
 /// </summary>
-public class StepKinematics_ContextDependentKinematicLinkRepresentation : Standard_Transient
+public class StepKinematics_ContextDependentKinematicLinkRepresentation : Transient
 {
     private StepKinematics_KinematicLinkRepresentationAssociation myRepresentationRelation;
     private StepKinematics_ProductDefinitionRelationshipKinematics myRepresentedProductRelation;

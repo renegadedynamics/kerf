@@ -99,7 +99,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Occt.Standard" Static="true" />
+    <Using Include="Kerf.Engine.Foundation.Standard" Static="true" />
   </ItemGroup>
 
 </Project>

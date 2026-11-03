@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -19,13 +21,13 @@ public static class IntPolyh_Tools
 
         // In the context of IntPolyh_Intersection only BSpline and Bezier surfaces
         // should be enlarged
-        if (theSurf.GetType() == GeomAbs_BSplineSurface || theSurf.GetType() == GeomAbs_BezierSurface)
+        if (theSurf.GetType() == BSplineSurface || theSurf.GetType() == BezierSurface)
         {
             // Check U periodicity and closeness
             if (!theSurf.IsUClosed() && !theSurf.IsUPeriodic())
             {
                 // Check that surface is not infinite in U direction
-                if (!Precision.IsInfinite(theSurf.FirstUParameter()) && !Precision.IsInfinite(theSurf.LastUParameter()))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.FirstUParameter()) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.LastUParameter()))
                 {
                     theUEnlarge = true;
                 }
@@ -35,7 +37,7 @@ public static class IntPolyh_Tools
             if (!theSurf.IsVClosed() && !theSurf.IsVPeriodic())
             {
                 // Check that surface is not infinite in V direction
-                if (!Precision.IsInfinite(theSurf.FirstVParameter()) && !Precision.IsInfinite(theSurf.LastVParameter()))
+                if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.FirstVParameter()) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(theSurf.LastVParameter()))
                 {
                     theVEnlarge = true;
                 }
@@ -145,11 +147,11 @@ public static class IntPolyh_Tools
             {
                 double aV = theVPars[j];
                 // Compute the point
-                theSurf.D1(aU, aV, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
+                theSurf.D1(aU, aV, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
                 // Compute normal
-                gp_Vec aVNorm = aDU.Crossed(aDV);
+                Vector3D aVNorm = aDU.Crossed(aDV);
                 double aLength = aVNorm.Magnitude();
-                if (aLength > gp.Resolution())
+                if (aLength > Constants.Resolution())
                 {
                     aVNorm /= aLength;
                 }

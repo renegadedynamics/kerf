@@ -3,14 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
 /// <summary>Projects elementary curves on a plane.</summary>
 public class ProjLib_Plane : ProjLib_Projector
 {
-    private gp_Pln myPlane = new();
+    private Plane3D myPlane = new();
 
     /// <summary>Undefined projection.</summary>
     public ProjLib_Plane()
@@ -18,124 +19,124 @@ public class ProjLib_Plane : ProjLib_Projector
     }
 
     /// <summary>Projection on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl)
+    public ProjLib_Plane(in Plane3D Pl)
     {
         Init(Pl);
     }
 
     /// <summary>Projection of the line L on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl, in gp_Lin L)
+    public ProjLib_Plane(in Plane3D Pl, in Line3D L)
     {
         Init(Pl);
         Project(L);
     }
 
     /// <summary>Projection of the circle C on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl, in gp_Circ C)
+    public ProjLib_Plane(in Plane3D Pl, in Circle3D C)
     {
         Init(Pl);
         Project(C);
     }
 
     /// <summary>Projection of the ellipse E on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl, in gp_Elips E)
+    public ProjLib_Plane(in Plane3D Pl, in Ellipse3D E)
     {
         Init(Pl);
         Project(E);
     }
 
     /// <summary>Projection of the parabola P on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl, in gp_Parab P)
+    public ProjLib_Plane(in Plane3D Pl, in Parabola3D P)
     {
         Init(Pl);
         Project(P);
     }
 
     /// <summary>Projection of the hyperbola H on the plane Pl.</summary>
-    public ProjLib_Plane(in gp_Pln Pl, in gp_Hypr H)
+    public ProjLib_Plane(in Plane3D Pl, in Hyperbola3D H)
     {
         Init(Pl);
         Project(H);
     }
 
-    public void Init(in gp_Pln Pl)
+    public void Init(in Plane3D Pl)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         isDone = false;
         myIsPeriodic = false;
         myPlane = Pl;
     }
 
-    private static gp_Pnt2d EvalPnt2d(in gp_Pnt P, in gp_Pln Pl)
+    private static Point2D EvalPnt2d(in Point3D P, in Plane3D Pl)
     {
-        gp_Vec OP = new(Pl.Location(), P);
-        return new gp_Pnt2d(OP.Dot(new gp_Vec(Pl.Position().XDirection())),
-                            OP.Dot(new gp_Vec(Pl.Position().YDirection())));
+        Vector3D OP = new(Pl.Location(), P);
+        return new Point2D(OP.Dot(new Vector3D(Pl.Position().XDirection())),
+                            OP.Dot(new Vector3D(Pl.Position().YDirection())));
     }
 
-    private static gp_Dir2d EvalDir2d(in gp_Dir D, in gp_Pln Pl)
+    private static Direction2D EvalDir2d(in Direction3D D, in Plane3D Pl)
     {
-        return new gp_Dir2d(D.Dot(Pl.Position().XDirection()), D.Dot(Pl.Position().YDirection()));
+        return new Direction2D(D.Dot(Pl.Position().XDirection()), D.Dot(Pl.Position().YDirection()));
     }
 
-    public override void Project(in gp_Lin L)
+    public override void Project(in Line3D L)
     {
-        myType = GeomAbs_Line;
-        myLin = new gp_Lin2d(EvalPnt2d(L.Location(), myPlane), EvalDir2d(L.Direction(), myPlane));
+        myType = global::Kerf.Geometry.CurveKind.Line;
+        myLin = new Line2D(EvalPnt2d(L.Location(), myPlane), EvalDir2d(L.Direction(), myPlane));
         isDone = true;
     }
 
-    public override void Project(in gp_Circ C)
+    public override void Project(in Circle3D C)
     {
-        myType = GeomAbs_Circle;
+        myType = global::Kerf.Geometry.CurveKind.Circle;
 
-        gp_Pnt2d P2d = EvalPnt2d(C.Location(), myPlane);
-        gp_Dir2d X2d = EvalDir2d(C.Position().XDirection(), myPlane);
-        gp_Dir2d Y2d = EvalDir2d(C.Position().YDirection(), myPlane);
-        gp_Ax22d Ax = new(P2d, X2d, Y2d);
+        Point2D P2d = EvalPnt2d(C.Location(), myPlane);
+        Direction2D X2d = EvalDir2d(C.Position().XDirection(), myPlane);
+        Direction2D Y2d = EvalDir2d(C.Position().YDirection(), myPlane);
+        Frame2D Ax = new(P2d, X2d, Y2d);
 
-        myCirc = new gp_Circ2d(Ax, C.Radius());
+        myCirc = new Circle2D(Ax, C.Radius());
         myIsPeriodic = true;
         isDone = true;
     }
 
-    public override void Project(in gp_Elips E)
+    public override void Project(in Ellipse3D E)
     {
-        myType = GeomAbs_Ellipse;
+        myType = global::Kerf.Geometry.CurveKind.Ellipse;
 
-        gp_Pnt2d P2d = EvalPnt2d(E.Location(), myPlane);
-        gp_Dir2d X2d = EvalDir2d(E.Position().XDirection(), myPlane);
-        gp_Dir2d Y2d = EvalDir2d(E.Position().YDirection(), myPlane);
-        gp_Ax22d Ax = new(P2d, X2d, Y2d);
+        Point2D P2d = EvalPnt2d(E.Location(), myPlane);
+        Direction2D X2d = EvalDir2d(E.Position().XDirection(), myPlane);
+        Direction2D Y2d = EvalDir2d(E.Position().YDirection(), myPlane);
+        Frame2D Ax = new(P2d, X2d, Y2d);
 
-        myElips = new gp_Elips2d(Ax, E.MajorRadius(), E.MinorRadius());
+        myElips = new Ellipse2D(Ax, E.MajorRadius(), E.MinorRadius());
         myIsPeriodic = true;
         isDone = true;
     }
 
-    public override void Project(in gp_Parab P)
+    public override void Project(in Parabola3D P)
     {
-        myType = GeomAbs_Parabola;
+        myType = global::Kerf.Geometry.CurveKind.Parabola;
 
-        gp_Pnt2d P2d = EvalPnt2d(P.Location(), myPlane);
-        gp_Dir2d X2d = EvalDir2d(P.Position().XDirection(), myPlane);
-        gp_Dir2d Y2d = EvalDir2d(P.Position().YDirection(), myPlane);
-        gp_Ax22d Ax = new(P2d, X2d, Y2d);
+        Point2D P2d = EvalPnt2d(P.Location(), myPlane);
+        Direction2D X2d = EvalDir2d(P.Position().XDirection(), myPlane);
+        Direction2D Y2d = EvalDir2d(P.Position().YDirection(), myPlane);
+        Frame2D Ax = new(P2d, X2d, Y2d);
 
-        myParab = new gp_Parab2d(Ax, P.Focal());
+        myParab = new Parabola2D(Ax, P.Focal());
         isDone = true;
     }
 
-    public override void Project(in gp_Hypr H)
+    public override void Project(in Hyperbola3D H)
     {
-        myType = GeomAbs_Hyperbola;
+        myType = global::Kerf.Geometry.CurveKind.Hyperbola;
 
-        gp_Pnt2d P2d = EvalPnt2d(H.Location(), myPlane);
-        gp_Dir2d X2d = EvalDir2d(H.Position().XDirection(), myPlane);
-        gp_Dir2d Y2d = EvalDir2d(H.Position().YDirection(), myPlane);
-        gp_Ax22d Ax = new(P2d, X2d, Y2d);
+        Point2D P2d = EvalPnt2d(H.Location(), myPlane);
+        Direction2D X2d = EvalDir2d(H.Position().XDirection(), myPlane);
+        Direction2D Y2d = EvalDir2d(H.Position().YDirection(), myPlane);
+        Frame2D Ax = new(P2d, X2d, Y2d);
 
-        myHypr = new gp_Hypr2d(Ax, H.MajorRadius(), H.MinorRadius());
+        myHypr = new Hyperbola2D(Ax, H.MajorRadius(), H.MinorRadius());
         isDone = true;
     }
 }

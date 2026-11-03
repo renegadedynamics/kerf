@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_SurfaceStyleSegmentationCurve : Standard_Transient
+public class StepVisual_SurfaceStyleSegmentationCurve : Transient
 {
     private StepVisual_CurveStyle styleOfSegmentationCurve;
 

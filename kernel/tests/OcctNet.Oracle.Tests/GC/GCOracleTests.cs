@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -37,7 +38,7 @@ public class GCOracleTests(ITestOutputHelper output)
         using var aNBasis = theNative.BasisCurve();
         using var aNCircle = N.Geom_Circle.DownCast(aNBasis);
         using var aNCirc = aNCircle!.Circ();
-        gp_Circ aCirc = ((Geom_Circle)thePort.BasisCurve()).Circ();
+        Circle3D aCirc = ((Geom_Circle)thePort.BasisCurve()).Circ();
         theOracle.Same(aNCirc.Radius(), aCirc.Radius(), theWhat + " radius", theTolerance);
         using var aNPos = aNCirc.Position();
         using var aNLoc = aNPos.Location();
@@ -57,7 +58,7 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt(), aP3 = anOracle.Pnt();
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt(), aP3 = anOracle.Pnt();
             using var aNP1 = Oracle.ToNative(aP1);
             using var aNP2 = Oracle.ToNative(aP2);
             using var aNP3 = Oracle.ToNative(aP3);
@@ -82,8 +83,8 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
-            gp_Vec aV = anOracle.Vec();
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Vector3D aV = anOracle.Vec();
             using var aNP1 = Oracle.ToNative(aP1);
             using var aNP2 = Oracle.ToNative(aP2);
             using var aNV = Oracle.ToNative(aV);
@@ -108,12 +109,12 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2 aNA2, gp_Ax2 aA2) = GeomOracleInputs.Ax2s(anOracle);
+            (N.gp_Ax2 aNA2, Frame3D aA2) = GeomOracleInputs.Ax2s(anOracle);
             using var _ = aNA2;
             double aR = anOracle.Real(0.1, 50);
             using var aNC = new N.gp_Circ(aNA2, aR);
-            gp_Circ aC = new(aA2, aR);
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Circle3D aC = new(aA2, aR);
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
             double aAlpha1 = anOracle.Angle(), aAlpha2 = anOracle.Angle();
             bool aSense = anOracle.Bool();
             using var aNP1 = Oracle.ToNative(aP1);
@@ -144,13 +145,13 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2 aNA2, gp_Ax2 aA2) = GeomOracleInputs.Ax2s(anOracle);
+            (N.gp_Ax2 aNA2, Frame3D aA2) = GeomOracleInputs.Ax2s(anOracle);
             using var _ = aNA2;
             double aMinor = anOracle.Real(0.1, 20);
             double aMajor = aMinor + anOracle.Real(0, 20);
             using var aNE = new N.gp_Elips(aNA2, aMajor, aMinor);
-            gp_Elips aE = new(aA2, aMajor, aMinor);
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Ellipse3D aE = new(aA2, aMajor, aMinor);
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
             double aAlpha1 = anOracle.Angle(), aAlpha2 = anOracle.Angle();
             bool aSense = anOracle.Bool();
             using var aNP1 = Oracle.ToNative(aP1);
@@ -181,12 +182,12 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2 aNA2, gp_Ax2 aA2) = GeomOracleInputs.Ax2s(anOracle);
+            (N.gp_Ax2 aNA2, Frame3D aA2) = GeomOracleInputs.Ax2s(anOracle);
             using var _ = aNA2;
             double aMajor = anOracle.Real(0.1, 20), aMinor = anOracle.Real(0.1, 20);
             using var aNH = new N.gp_Hypr(aNA2, aMajor, aMinor);
-            gp_Hypr aH = new(aA2, aMajor, aMinor);
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Hyperbola3D aH = new(aA2, aMajor, aMinor);
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
             double aAlpha1 = anOracle.Real(-3, 3), aAlpha2 = anOracle.Real(-3, 3);
             bool aSense = anOracle.Bool();
             using var aNP1 = Oracle.ToNative(aP1);
@@ -217,12 +218,12 @@ public class GCOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            (N.gp_Ax2 aNA2, gp_Ax2 aA2) = GeomOracleInputs.Ax2s(anOracle);
+            (N.gp_Ax2 aNA2, Frame3D aA2) = GeomOracleInputs.Ax2s(anOracle);
             using var _ = aNA2;
             double aFocal = anOracle.Real(0.1, 20);
             using var aNP = new N.gp_Parab(aNA2, aFocal);
-            gp_Parab aPb = new(aA2, aFocal);
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Parabola3D aPb = new(aA2, aFocal);
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
             double aAlpha1 = anOracle.Real(), aAlpha2 = anOracle.Real();
             bool aSense = anOracle.Bool();
             using var aNP1 = Oracle.ToNative(aP1);

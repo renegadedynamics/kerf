@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
 using static Occt.GProp_ValueType;
 
 namespace Occt;
@@ -30,7 +33,7 @@ public class BRepGProp_VinertGK : GProp_GProps
     }
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
-                              in gp_Pnt theLocation,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -41,8 +44,8 @@ public class BRepGProp_VinertGK : GProp_GProps
     }
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
-                              in gp_Pnt thePoint,
-                              in gp_Pnt theLocation,
+                              in Point3D thePoint,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -54,7 +57,7 @@ public class BRepGProp_VinertGK : GProp_GProps
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
                               BRepGProp_Domain theDomain,
-                              in gp_Pnt theLocation,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -66,8 +69,8 @@ public class BRepGProp_VinertGK : GProp_GProps
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
                               BRepGProp_Domain theDomain,
-                              in gp_Pnt thePoint,
-                              in gp_Pnt theLocation,
+                              in Point3D thePoint,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -78,8 +81,8 @@ public class BRepGProp_VinertGK : GProp_GProps
     }
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
-                              in gp_Pln thePlane,
-                              in gp_Pnt theLocation,
+                              in Plane3D thePlane,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -91,8 +94,8 @@ public class BRepGProp_VinertGK : GProp_GProps
 
     public BRepGProp_VinertGK(BRepGProp_Face theSurface,
                               BRepGProp_Domain theDomain,
-                              in gp_Pln thePlane,
-                              in gp_Pnt theLocation,
+                              in Plane3D thePlane,
+                              in Point3D theLocation,
                               double theTolerance = 0.001,
                               bool theCGFlag = false,
                               bool theIFlag = false)
@@ -103,7 +106,7 @@ public class BRepGProp_VinertGK : GProp_GProps
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in gp_Pnt theLocation) => loc = theLocation;
+    public void SetLocation(in Point3D theLocation) => loc = theLocation;
 
     /// <summary>The region between the face, over its natural bounds, and the location.</summary>
     public double Perform(BRepGProp_Face theSurface, double theTolerance = 0.001, bool theCGFlag = false, bool theIFlag = false)
@@ -115,12 +118,12 @@ public class BRepGProp_VinertGK : GProp_GProps
 
     /// <summary>The region between the face, over its natural bounds, and the location; inertia at <paramref name="thePoint"/>.</summary>
     public double Perform(BRepGProp_Face theSurface,
-                          in gp_Pnt thePoint,
+                          in Point3D thePoint,
                           double theTolerance = 0.001,
                           bool theCGFlag = false,
                           bool theIFlag = false)
     {
-        gp_XYZ aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
+        Xyz aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
         Span<double> aShift = stackalloc double[3];
 
         aXYZ.Coord(out aShift[0], out aShift[1], out aShift[2]);
@@ -143,12 +146,12 @@ public class BRepGProp_VinertGK : GProp_GProps
     /// <summary>The region between the face, bounded by its edges, and the location; inertia at <paramref name="thePoint"/>.</summary>
     public double Perform(BRepGProp_Face theSurface,
                           BRepGProp_Domain theDomain,
-                          in gp_Pnt thePoint,
+                          in Point3D thePoint,
                           double theTolerance = 0.001,
                           bool theCGFlag = false,
                           bool theIFlag = false)
     {
-        gp_XYZ aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
+        Xyz aXYZ = thePoint.XYZ().Subtracted(loc.XYZ());
         Span<double> aShift = stackalloc double[3];
 
         aXYZ.Coord(out aShift[0], out aShift[1], out aShift[2]);
@@ -158,7 +161,7 @@ public class BRepGProp_VinertGK : GProp_GProps
 
     /// <summary>The region between the face, over its natural bounds, and the plane.</summary>
     public double Perform(BRepGProp_Face theSurface,
-                          in gp_Pln thePlane,
+                          in Plane3D thePlane,
                           double theTolerance = 0.001,
                           bool theCGFlag = false,
                           bool theIFlag = false)
@@ -178,7 +181,7 @@ public class BRepGProp_VinertGK : GProp_GProps
     /// <summary>The region between the face, bounded by its edges, and the plane.</summary>
     public double Perform(BRepGProp_Face theSurface,
                           BRepGProp_Domain theDomain,
-                          in gp_Pln thePlane,
+                          in Plane3D thePlane,
                           double theTolerance = 0.001,
                           bool theCGFlag = false,
                           bool theIFlag = false)
@@ -305,7 +308,7 @@ public class BRepGProp_VinertGK : GProp_GProps
 
             if (thePtrDomain is null)
             {
-                theSurface.Load(false, GeomAbs_IsoU);
+                theSurface.Load(false, IsoU);
             }
             else
             {
@@ -324,7 +327,7 @@ public class BRepGProp_VinertGK : GProp_GProps
             int aNbTIntervals = aTKnots.Length() - 1;
             // double                 aTolSpan       = aCrvTol/aNbTIntervals;
             double aTolSpan = 0.9 * theTolerance; // Relative error
-            var anIntegral = new math_KronrodSingleIntegration();
+            var anIntegral = new KronrodSingleIntegration();
             GProp_ValueType aValueType;
 
             // Empirical criterion.
@@ -401,7 +404,7 @@ public class BRepGProp_VinertGK : GProp_GProps
                     aTFunc.SetTolerance(aCrvTol / (aT2 - aT1));
                     anIntegral.Perform(aTFunc, aT1, aT2, aNbPnts, aTolSpan, aNbMaxIter);
 
-                    if (!anIntegral.IsDone())
+                    if (!anIntegral.IsDone)
                     {
                         myErrorReached = -1.0;
 
@@ -477,9 +480,9 @@ public class BRepGProp_VinertGK : GProp_GProps
         if (theIFlag)
         {
             // Fill the matrix of inertia.
-            inertia.SetCols(new gp_XYZ(aValue[5], aValue[8], aValue[9]),
-                            new gp_XYZ(aValue[8], aValue[6], aValue[10]),
-                            new gp_XYZ(aValue[9], aValue[10], aValue[7]));
+            inertia.SetCols(new Xyz(aValue[5], aValue[8], aValue[9]),
+                            new Xyz(aValue[8], aValue[6], aValue[10]),
+                            new Xyz(aValue[9], aValue[10], aValue[7]));
         }
 
         // return myErrorReached;

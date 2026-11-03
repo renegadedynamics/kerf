@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -71,8 +73,8 @@ internal class RWStepRepr_RWQuantifiedAssemblyComponentUsage
 
         // Own fields of QuantifiedAssemblyComponentUsage
 
-        Standard_Transient aQuantity = null;
-        data.ReadEntity(num, 7, "quantity", ach, typeof(Standard_Transient), ref aQuantity);
+        Transient aQuantity = null;
+        data.ReadEntity(num, 7, "quantity", ach, typeof(Transient), ref aQuantity);
 
         // Initialize entity
         ent.Init(aProductDefinitionRelationship_Id, aProductDefinitionRelationship_Name, hasProductDefinitionRelationship_Description, aProductDefinitionRelationship_Description, aProductDefinitionRelationship_RelatingProductDefinition, aProductDefinitionRelationship_RelatedProductDefinition, hasAssemblyComponentUsage_ReferenceDesignator, aAssemblyComponentUsage_ReferenceDesignator, aQuantity);

@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ProductCategoryRelationship
 /// </summary>
-public class StepBasic_ProductCategoryRelationship : Standard_Transient
+public class StepBasic_ProductCategoryRelationship : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -123,5 +125,5 @@ public partial struct IntPolyh_Couple : IEquatable<IntPolyh_Couple>
     public static bool operator !=(in IntPolyh_Couple theLeft, in IntPolyh_Couple theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"IntPolyh_Couple({myIndex1}, {myIndex2}, {(myAnalyzed ? "analyzed" : "not analyzed")}, {gp.Format("angle", myAngle)})";
+        => $"IntPolyh_Couple({myIndex1}, {myIndex2}, {(myAnalyzed ? "analyzed" : "not analyzed")}, {Constants.Format("angle", myAngle)})";
 }

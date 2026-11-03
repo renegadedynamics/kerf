@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -106,7 +108,7 @@ public class BOPDS_Iterator
             NCollection_DynamicArray<BOPDS_Pair> aPairs =
                 (myUseExt && iX < NbExtInterfs()) ? myExtLists.Value(iX) : myLists.Value(iX);
             // sort interfering pairs for constant order of intersection
-            std_sort.stable_sort(aPairs.AsSpan(), new BOPDS_Pair.LessThan());
+            Sorting.stable_sort(aPairs.AsSpan(), new BOPDS_Pair.LessThan());
             // initialize iterator to access the pairs
             myIteratorList = aPairs;
             myLength = aPairs.Length();
@@ -190,17 +192,17 @@ public class BOPDS_Iterator
                 int nVSD = i;
                 myDS.HasShapeSD(i, ref nVSD);
                 BOPDS_ShapeInfo aSISD = myDS.ShapeInfo(nVSD);
-                Bnd_Box aBox = aSISD.Box();
-                aBoxTree.Add(i, Bnd_Tools.Bnd2BVH(aBox));
+                Box aBox = aSISD.Box();
+                aBoxTree.Add(i, Tools.Bnd2BVH(aBox));
                 BOPDS_TSR aTSR = aVTSR.Append(new BOPDS_TSR());
                 aTSR.SetHasBRep(true);
                 aTSR.SetBVHSet(aBoxTree);
-                aTSR.SetBox(Bnd_Tools.Bnd2BVH(aBox));
+                aTSR.SetBox(Tools.Bnd2BVH(aBox));
                 aTSR.SetIndex(i);
             }
             else
             {
-                aBoxTree.Add(i, Bnd_Tools.Bnd2BVH(aSI.Box()));
+                aBoxTree.Add(i, Tools.Bnd2BVH(aSI.Box()));
             }
         }
 
@@ -287,8 +289,8 @@ public class BOPDS_Iterator
             {
                 continue;
             }
-            Bnd_Box aBox = aSI.Box();
-            aBoxTree.Add(i, Bnd_Tools.Bnd2BVH(aBox));
+            Box aBox = aSI.Box();
+            aBoxTree.Add(i, Tools.Bnd2BVH(aBox));
         }
 
         // Build BVH
@@ -346,8 +348,8 @@ public class BOPDS_Iterator
                 if (theCheckOBB)
                 {
                     // Check intersection of Oriented bounding boxes of the shapes
-                    Bnd_OBB anOBB1 = theCtx!.OBB(aSI1.Shape(), theFuzzyValue);
-                    Bnd_OBB anOBB2 = theCtx.OBB(aSI2.Shape(), theFuzzyValue);
+                    OrientedBox anOBB1 = theCtx!.OBB(aSI1.Shape(), theFuzzyValue);
+                    OrientedBox anOBB2 = theCtx.OBB(aSI2.Shape(), theFuzzyValue);
 
                     if (anOBB1.IsOut(anOBB2))
                     {

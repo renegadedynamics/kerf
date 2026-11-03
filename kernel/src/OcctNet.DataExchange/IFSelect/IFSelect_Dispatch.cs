@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +18,7 @@ namespace Occt;
 /// none. The input set is read from a specified Selection, attached to the Dispatch : the Final Selection of
 /// the Dispatch. The input is the Unique Root Entities list of the Final Selection
 /// </summary>
-public abstract class IFSelect_Dispatch : Standard_Transient
+public abstract class IFSelect_Dispatch : Transient
 {
 
     /// <summary>

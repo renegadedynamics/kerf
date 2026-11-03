@@ -5,14 +5,18 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.BlendFunc_SectionShape;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilletShape;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -284,7 +288,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
     //=================================================================================================
 
-    public void SetRadius(in gp_XY UandR, int IC, int IinC)
+    public void SetRadius(in Xy UandR, int IC, int IinC)
     {
         if (IC <= NbElements())
         {
@@ -420,40 +424,40 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
     {
         TopOpeBRepDS_DataStructure DStr = myDS.ChangeDS();
         Geom_Surface? S = DStr.Surface(SD.Surf()).Surface();
-        gp_Pnt2d p1f = 
+        Point2D p1f = 
             SD.InterferenceOnS1().PCurveOnSurf().Value(SD.InterferenceOnS1().FirstParameter());
-        gp_Pnt2d p1l = 
+        Point2D p1l = 
             SD.InterferenceOnS1().PCurveOnSurf().Value(SD.InterferenceOnS1().LastParameter());
-        gp_Pnt2d p2f = 
+        Point2D p2f = 
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().FirstParameter());
-        gp_Pnt2d p2l = 
+        Point2D p2l = 
             SD.InterferenceOnS2().PCurveOnSurf().Value(SD.InterferenceOnS2().LastParameter());
         GeomAdaptor_Surface AS = new(S);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
         double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
-        GeomAbs_SurfaceType typ = AS.GetType();
+        SurfaceKind typ = AS.GetType();
         switch (typ)
         {
-            case GeomAbs_Cylinder: {
+            case SurfaceKind.Cylinder: {
                 u1 = p1f.X();
                 u2 = p2f.X();
                 v1 = Max(p1f.Y(), p2f.Y());
                 v2 = Min(p1l.Y(), p2l.Y());
                 sec = new NCollection_HArray1<ChFiDS_CircSection>(1, 2);
-                gp_Cylinder Cy = AS.Cylinder();
+                Cylinder Cy = AS.Cylinder();
                 ref ChFiDS_CircSection sec1 = ref sec.ChangeValue(1);
                 ref ChFiDS_CircSection sec2 = ref sec.ChangeValue(2);
-                sec1.Set(ElSLib.CylinderVIso(Cy.Position(), Cy.Radius(), v1), u1, u2);
-                sec2.Set(ElSLib.CylinderVIso(Cy.Position(), Cy.Radius(), v2), u1, u2);
+                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(Cy.Position(), Cy.Radius(), v1), u1, u2);
+                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(Cy.Position(), Cy.Radius(), v2), u1, u2);
             }
             break;
-            case GeomAbs_Torus: {
+            case SurfaceKind.Torus: {
                 v1 = p1f.Y();
                 v2 = p2f.Y();
                 u1 = Max(p1f.X(), p2f.X());
                 u2 = Min(p1l.X(), p2l.X());
                 double ang = (u2 - u1);
-                gp_Torus To = AS.Torus();
+                Torus To = AS.Torus();
                 double majr = To.MajorRadius(), minr = To.MinorRadius();
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
@@ -465,17 +469,17 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 {
                     ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(ElSLib.TorusUIso(To.Position(), majr, minr, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.TorusUIso(To.Position(), majr, minr, u), v1, v2);
                 }
             }
             break;
-            case GeomAbs_Sphere: {
+            case SurfaceKind.Sphere: {
                 v1 = p1f.Y();
                 v2 = p2f.Y();
                 u1 = Max(p1f.X(), p2f.X());
                 u2 = Min(p1l.X(), p2l.X());
                 double ang = (u2 - u1);
-                gp_Sphere Sp = AS.Sphere();
+                Sphere Sp = AS.Sphere();
                 double rad = Sp.Radius();
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
@@ -487,7 +491,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 {
                     ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(ElSLib.SphereUIso(Sp.Position(), rad, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.SphereUIso(Sp.Position(), rad, u), v1, v2);
                 }
             }
             break;
@@ -504,14 +508,14 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("SimulSurf : this is not the spine of the fillet");
+            throw new ConstructionErrorException("SimulSurf : this is not the spine of the fillet");
         }
         BRepBlend_Line? lin = null;
         // Flexible parameters!!!
         double locfleche = 0.0, MaxStep = 0.0;
         SimulParams(HGuide, fsp, ref MaxStep, ref locfleche);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-        gp_Pnt2d pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
+        Point2D pf1 = new(), pl1 = new(), pf2 = new(), pl2 = new();
 
         ChFiDS_ElSpine? EmptyHGuide = null;
 
@@ -543,7 +547,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0, w = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS1(out u1, out v1);
                 p.ParametersOnS2(out u2, out v2);
@@ -581,7 +585,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0, w = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS1(out u1, out v1);
                 p.ParametersOnS2(out u2, out v2);
@@ -659,7 +663,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of the fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of the fillet");
         }
         BRepBlend_Line? lin = null;
 
@@ -667,7 +671,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         double locfleche = 0.0, MaxStep = 0.0;
         SimulParams(HGuide, fsp, ref MaxStep, ref locfleche);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-        gp_Pnt2d pf = new(), pl = new(), ppcf = new(), ppcl = new();
+        Point2D pf = new(), pl = new(), ppcf = new(), ppcl = new();
 
         double PFirst = First;
         if (fsp.IsConstant())
@@ -702,7 +706,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                                               RecRst);
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Failed process!");
+                throw new FailureException("SimulSurf : Failed process!");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -710,7 +714,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, w = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS(out u, out v);
                 w = p.ParameterOnC();
@@ -759,7 +763,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                                               RecRst);
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Fail !");
+                throw new FailureException("SimulSurf : Fail !");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -767,7 +771,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, w = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS(out u, out v);
                 w = p.ParameterOnC();
@@ -808,7 +812,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : it is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : it is not the spine of a fillet");
         }
         BRepBlend_Line? lin = null;
 
@@ -816,7 +820,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         double locfleche = 0.0, MaxStep = 0.0;
         SimulParams(HGuide, fsp, ref MaxStep, ref locfleche);
         NCollection_HArray1<ChFiDS_CircSection>? sec = null;
-        gp_Pnt2d pf = new(), pl = new(), ppcf = new(), ppcl = new();
+        Point2D pf = new(), pl = new(), ppcf = new(), ppcl = new();
 
         double PFirst = First;
         if (fsp.IsConstant())
@@ -851,7 +855,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                                               RecRst);
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Failed Processing!");
+                throw new FailureException("SimulSurf : Failed Processing!");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -859,7 +863,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, w = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS(out u, out v);
                 w = p.ParameterOnC();
@@ -908,7 +912,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                                               RecRst);
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Fail !");
+                throw new FailureException("SimulSurf : Fail !");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -916,7 +920,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, w = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 p.ParametersOnS(out u, out v);
                 w = p.ParameterOnC();
@@ -957,7 +961,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : it is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : it is not the spine of a fillet");
         }
         BRepBlend_Line? lin = null;
 
@@ -1008,7 +1012,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                                               Inside, Appro, Forward, RecP1, RecRst1, RecP2, RecRst2);
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Failed processing!");
+                throw new FailureException("SimulSurf : Failed processing!");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -1016,7 +1020,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 u = p.ParameterOnC1();
                 v = p.ParameterOnC2();
@@ -1068,7 +1072,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             if (!done)
             {
-                throw new Standard_Failure("SimulSurf : Fail !");
+                throw new FailureException("SimulSurf : Fail !");
             }
             int nbp = lin.NbPoints();
             sec = new NCollection_HArray1<ChFiDS_CircSection>(1, nbp);
@@ -1076,7 +1080,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             {
                 ref ChFiDS_CircSection isec = ref sec.ChangeValue(i);
                 double u = 0.0, v = 0.0, param = 0.0, p1 = 0.0, p2 = 0.0;
-                gp_Circ ci = new();
+                Circle3D ci = new();
                 Blend_Point p = lin.Point(i);
                 u = p.ParameterOnC1();
                 v = p.ParameterOnC2();
@@ -1108,7 +1112,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         double TolGuide = HGuide.Resolution(tolapp3d);
         if (fsp.IsConstant())
@@ -1137,7 +1141,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         bool gd1 = false, gd2 = false, gf1 = false, gf2 = false, maybesingular = false;
         BRepBlend_Line? lin = null;
@@ -1176,7 +1180,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (Func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1204,7 +1208,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
 
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (Func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1223,7 +1227,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         BRepBlend_Line? lin = null;
         double PFirst = First;
@@ -1261,13 +1265,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS2.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, true);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1300,13 +1304,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS2.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, true);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1324,7 +1328,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         BRepBlend_Line? lin = null;
         double PFirst = First;
@@ -1362,13 +1366,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, false);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1402,13 +1406,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or, false);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1426,7 +1430,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         ChFiDS_FilSpine? fsp = (Spine as ChFiDS_FilSpine);
         if (fsp is null)
         {
-            throw new Standard_ConstructionError("PerformSurf : this is not the spine of a fillet");
+            throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         BRepBlend_Line? lin = null;
         double PFirst = First;
@@ -1472,13 +1476,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1524,13 +1528,13 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if (!done)
             {
                 Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                throw new Standard_Failure("PerformSurf : Failed processing!");
+                throw new FailureException("PerformSurf : Failed processing!");
             }
             TopAbs_Orientation Or = HS1.Face().Orientation();
             done = CompleteData(Data, func, lin, HS1, HS2, Or);
             if (!done)
             {
-                throw new Standard_Failure("PerformSurf : Failed approximation!");
+                throw new FailureException("PerformSurf : Failed approximation!");
             }
             maybesingular = (func.GetMinimalDistance() <= 100 * tolapp3d);
         }
@@ -1592,7 +1596,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
         for (; ii <= Nbpnt && Line.Point(ii).Parameter() <= VLast; ii++)
         {
             for (; ii <= Nbpnt && Line.Point(ii).Parameter() < VLast
-                          && Line.Point(ii).Parameter() - b < Precision.PConfusion();
+                          && Line.Point(ii).Parameter() - b < global::Kerf.Engine.Foundation.Precision.PConfusion();
                       ii++)
             {
             }
@@ -1603,10 +1607,10 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             if ((courant < precedant) && (courant < suivant))
             {
                 // (1.3) Find the exact minimum
-                math_FunctionRoot Resol = new(Fonc, (a + c) / 2,
+                FunctionRoot Resol = new(Fonc, (a + c) / 2,
                                               tol2d, // Surf->VResolution(toleps),
                                               a, c, 50);
-                if (Resol.IsDone())
+                if (Resol.IsDone)
                 {
                     double Val = 0.0, racine = Resol.Root();
 
@@ -1647,7 +1651,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
             TopOpeBRepDS_Surface S = new();
             TopOpeBRepDS_Curve C1 = new(), C2 = new();
             double T = 0.0, VertexTol = 0.0;
-            gp_Pnt P3d = new(), P1 = new(), P2 = new();
+            Point3D P3d = new(), P1 = new(), P2 = new();
             ChFiDS_CommonPoint LePoint = new();
             for (ii = 1; ii <= LesVi.Length(); ii++)
             {
@@ -1886,7 +1890,7 @@ public partial class ChFi3d_FilBuilder : ChFi3d_Builder
                 {
                     TopoDS_Face F1 = TopoDS.Face(its1.Value());
                     TopoDS_Face F2 = TopoDS.Face(its2.Value());
-                    GeomAbs_Shape cont = ChFi3d_evalconti(E, F1, F2);
+                    Continuity cont = ChFi3d_evalconti(E, F1, F2);
                     B.Continuity(E, F1, F2, cont);
                 }
             }

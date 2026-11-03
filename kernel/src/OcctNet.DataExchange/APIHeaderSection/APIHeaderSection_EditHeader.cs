@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class APIHeaderSection_EditHeader : IFSelect_Editor
@@ -197,7 +199,7 @@ public class APIHeaderSection_EditHeader : IFSelect_Editor
         return TypedValue(num).HStringValue();
     }
 
-    public override bool Apply(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Apply(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model)
     {
         StepData_StepModel modl = (model as StepData_StepModel);
         if (modl is null)
@@ -255,7 +257,7 @@ public class APIHeaderSection_EditHeader : IFSelect_Editor
         return true;
     }
 
-    public override bool Load(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Load(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model)
     {
         StepData_StepModel modl = (model as StepData_StepModel);
         if (modl is null)

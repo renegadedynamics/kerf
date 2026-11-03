@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,17 +20,17 @@ public class BlendFunc_Ruled : Blend_Function
     private readonly Adaptor3d_Surface surf1;
     private readonly Adaptor3d_Surface surf2;
     private readonly Adaptor3d_Curve curv;
-    private gp_Pnt pts1;
-    private gp_Pnt pts2;
+    private Point3D pts1;
+    private Point3D pts2;
     private bool istangent;
-    private gp_Vec tg1;
-    private gp_Vec2d tg12d;
-    private gp_Vec tg2;
-    private gp_Vec2d tg22d;
-    private gp_Pnt ptgui;
-    private gp_Vec d1gui;
-    private gp_Vec d2gui;
-    private gp_Vec nplan;
+    private Vector3D tg1;
+    private Vector2D tg12d;
+    private Vector3D tg2;
+    private Vector2D tg22d;
+    private Point3D ptgui;
+    private Vector3D d1gui;
+    private Vector3D d2gui;
+    private Vector3D nplan;
     private double normtg;
     private double theD;
     private readonly double distmin;
@@ -55,10 +61,10 @@ public class BlendFunc_Ruled : Blend_Function
         istangent = true;
     }
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override void Set(double First, double Last)
     {
-        throw new Standard_NotImplemented("BlendFunc_Ruled::Set");
+        throw new MethodNotImplementedException("BlendFunc_Ruled::Set");
     }
 
     public override void GetTolerance(math_Vector Tolerance, double Tol)
@@ -82,7 +88,7 @@ public class BlendFunc_Ruled : Blend_Function
 
         for (int i = 1; i <= 4; i++)
         {
-            if (!Precision.IsInfinite(InfBound[i]) && !Precision.IsInfinite(SupBound[i]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[i]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[i]))
             {
                 double range = (SupBound[i] - InfBound[i]);
                 InfBound[i] -= range;
@@ -94,9 +100,9 @@ public class BlendFunc_Ruled : Blend_Function
     public override bool IsSolution(math_Vector Sol, double Tol)
     {
         math_Vector valsol = new(1, 4), secmember = new(1, 4);
-        math_Matrix gradsol = new(1, 4, 1, 4);
+        Matrix gradsol = new(1, 4, 1, 4);
 
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec(), ns, ncrossns;
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), ns, ncrossns;
         double norm, ndotns, grosterme;
 
         Values(Sol, valsol, gradsol);
@@ -105,13 +111,13 @@ public class BlendFunc_Ruled : Blend_Function
         {
             // Calcul des tangentes
 
-            surf1.D1(Sol[1], Sol[2], out pts1, out gp_Vec d1u1, out gp_Vec d1v1);
-            surf2.D1(Sol[3], Sol[4], out pts2, out gp_Vec d1u2, out gp_Vec d1v2);
+            surf1.D1(Sol[1], Sol[2], out pts1, out Vector3D d1u1, out Vector3D d1v1);
+            surf2.D1(Sol[3], Sol[4], out pts2, out Vector3D d1u2, out Vector3D d1v2);
 
             dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
-            secmember[1] = normtg - dnplan.Dot(new gp_Vec(ptgui, pts1));
-            secmember[2] = normtg - dnplan.Dot(new gp_Vec(ptgui, pts2));
+            secmember[1] = normtg - dnplan.Dot(new Vector3D(ptgui, pts1));
+            secmember[2] = normtg - dnplan.Dot(new Vector3D(ptgui, pts2));
 
             ns = d1u1.Crossed(d1v1);
             ncrossns = nplan.Crossed(ns);
@@ -123,7 +129,7 @@ public class BlendFunc_Ruled : Blend_Function
             temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, nplan, ndotns / norm, dnplan,
                                grosterme / norm, ns);
 
-            secmember[3] = -(temp.Dot(new gp_Vec(pts1, pts2)));
+            secmember[3] = -(temp.Dot(new Vector3D(pts1, pts2)));
 
             ns = d1u2.Crossed(d1v2);
             ncrossns = nplan.Crossed(ns);
@@ -135,10 +141,10 @@ public class BlendFunc_Ruled : Blend_Function
             temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, nplan, ndotns / norm, dnplan,
                                grosterme / norm, ns);
 
-            secmember[4] = -(temp.Dot(new gp_Vec(pts1, pts2)));
+            secmember[4] = -(temp.Dot(new Vector3D(pts1, pts2)));
 
-            math_Gauss Resol = new(gradsol);
-            if (Resol.IsDone())
+            Gauss Resol = new(gradsol);
+            if (Resol.IsDone)
             {
                 Resol.Solve(secmember);
 
@@ -167,13 +173,13 @@ public class BlendFunc_Ruled : Blend_Function
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        surf1.D1(X[1], X[2], out pts1, out gp_Vec d1u1, out gp_Vec d1v1);
-        surf2.D1(X[3], X[4], out pts2, out gp_Vec d1u2, out gp_Vec d1v2);
+        surf1.D1(X[1], X[2], out pts1, out Vector3D d1u1, out Vector3D d1v1);
+        surf2.D1(X[3], X[4], out pts2, out Vector3D d1u2, out Vector3D d1v2);
 
-        gp_Vec temp = new gp_Vec(pts1, pts2);
+        Vector3D temp = new Vector3D(pts1, pts2);
 
-        gp_Vec ns1 = d1u1.Crossed(d1v1);
-        gp_Vec ns2 = d1u2.Crossed(d1v2);
+        Vector3D ns1 = d1u1.Crossed(d1v1);
+        Vector3D ns2 = d1u2.Crossed(d1v2);
 
         double norm1 = nplan.Crossed(ns1).Magnitude();
         double norm2 = nplan.Crossed(ns2).Magnitude();
@@ -188,17 +194,17 @@ public class BlendFunc_Ruled : Blend_Function
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec nor1 = new gp_Vec(), nor2 = new gp_Vec(), p1p2;
-        gp_Vec ns1, ns2, ncrossns1, ncrossns2, resul = new gp_Vec(), temp;
+        Vector3D nor1 = new Vector3D(), nor2 = new Vector3D(), p1p2;
+        Vector3D ns1, ns2, ncrossns1, ncrossns2, resul = new Vector3D(), temp;
 
         double norm1, norm2, ndotns1, ndotns2, grosterme;
 
-        surf1.D2(X[1], X[2], out pts1, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1,
-                 out gp_Vec d2uv1);
-        surf2.D2(X[3], X[4], out pts2, out gp_Vec d1u2, out gp_Vec d1v2, out gp_Vec d2u2, out gp_Vec d2v2,
-                 out gp_Vec d2uv2);
+        surf1.D2(X[1], X[2], out pts1, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                 out Vector3D d2uv1);
+        surf2.D2(X[3], X[4], out pts2, out Vector3D d1u2, out Vector3D d1v2, out Vector3D d2u2, out Vector3D d2v2,
+                 out Vector3D d2uv2);
 
         D[1, 1] = nplan.Dot(d1u1);
         D[1, 2] = nplan.Dot(d1v1);
@@ -222,7 +228,7 @@ public class BlendFunc_Ruled : Blend_Function
         nor1.SetLinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
         nor2.SetLinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
 
-        p1p2 = new gp_Vec(pts1, pts2);
+        p1p2 = new Vector3D(pts1, pts2);
 
         // Derivee de nor1 par rapport a u1
 
@@ -267,19 +273,19 @@ public class BlendFunc_Ruled : Blend_Function
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
-        gp_Vec nor1 = new gp_Vec(), nor2 = new gp_Vec(), p1p2;
-        gp_Vec ns1, ns2, ncrossns1, ncrossns2, resul = new gp_Vec(), temp;
+        Vector3D nor1 = new Vector3D(), nor2 = new Vector3D(), p1p2;
+        Vector3D ns1, ns2, ncrossns1, ncrossns2, resul = new Vector3D(), temp;
 
         double norm1, norm2, ndotns1, ndotns2, grosterme;
 
-        surf1.D2(X[1], X[2], out pts1, out gp_Vec d1u1, out gp_Vec d1v1, out gp_Vec d2u1, out gp_Vec d2v1,
-                 out gp_Vec d2uv1);
-        surf2.D2(X[3], X[4], out pts2, out gp_Vec d1u2, out gp_Vec d1v2, out gp_Vec d2u2, out gp_Vec d2v2,
-                 out gp_Vec d2uv2);
+        surf1.D2(X[1], X[2], out pts1, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                 out Vector3D d2uv1);
+        surf2.D2(X[3], X[4], out pts2, out Vector3D d1u2, out Vector3D d1v2, out Vector3D d2u2, out Vector3D d2v2,
+                 out Vector3D d2uv2);
 
-        p1p2 = new gp_Vec(pts1, pts2);
+        p1p2 = new Vector3D(pts1, pts2);
 
         ns1 = d1u1.Crossed(d1v1);
         ns2 = d1u2.Crossed(d1v2);
@@ -352,24 +358,24 @@ public class BlendFunc_Ruled : Blend_Function
         return true;
     }
 
-    public override void Tangent(double U1, double V1, double U2, double V2, out gp_Vec TgF, out gp_Vec TgL,
-                                 out gp_Vec NmF, out gp_Vec NmL)
+    public override void Tangent(double U1, double V1, double U2, double V2, out Vector3D TgF, out Vector3D TgL,
+                                 out Vector3D NmF, out Vector3D NmL)
     {
-        surf2.D1(U2, V2, out _, out gp_Vec d1u, out gp_Vec d1v);
+        surf2.D1(U2, V2, out _, out Vector3D d1u, out Vector3D d1v);
         NmL = d1u.Crossed(d1v);
 
         surf1.D1(U1, V1, out _, out d1u, out d1v);
         NmF = d1u.Crossed(d1v);
 
-        TgF = TgL = new gp_Vec(pts1, pts2);
+        TgF = TgL = new Vector3D(pts1, pts2);
     }
 
-    public override gp_Pnt PointOnS1()
+    public override Point3D PointOnS1()
     {
         return pts1;
     }
 
-    public override gp_Pnt PointOnS2()
+    public override Point3D PointOnS2()
     {
         return pts2;
     }
@@ -379,41 +385,41 @@ public class BlendFunc_Ruled : Blend_Function
         return istangent;
     }
 
-    public override gp_Vec TangentOnS1()
+    public override Vector3D TangentOnS1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Ruled::TangentOnS1");
+            throw new DomainErrorException("BlendFunc_Ruled::TangentOnS1");
         }
 
         return tg1;
     }
 
-    public override gp_Vec TangentOnS2()
+    public override Vector3D TangentOnS2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Ruled::TangentOnS2");
+            throw new DomainErrorException("BlendFunc_Ruled::TangentOnS2");
         }
 
         return tg2;
     }
 
-    public override gp_Vec2d Tangent2dOnS1()
+    public override Vector2D Tangent2dOnS1()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Ruled::Tangent2dOnS1");
+            throw new DomainErrorException("BlendFunc_Ruled::Tangent2dOnS1");
         }
 
         return tg12d;
     }
 
-    public override gp_Vec2d Tangent2dOnS2()
+    public override Vector2D Tangent2dOnS2()
     {
         if (istangent)
         {
-            throw new Standard_DomainError("BlendFunc_Ruled::Tangent2dOnS2");
+            throw new DomainErrorException("BlendFunc_Ruled::Tangent2dOnS2");
         }
 
         return tg22d;
@@ -423,22 +429,22 @@ public class BlendFunc_Ruled : Blend_Function
     /// The points and tangents of the section at <paramref name="Param"/> through (U1, V1) and (U2, V2), sampled at
     /// tabP.Length() points; false when the tangents cannot be computed.
     /// </summary>
-    public bool GetSection(double Param, double U1, double V1, double U2, double V2, NCollection_Array1<gp_Pnt> tabP,
-                           NCollection_Array1<gp_Vec> tabV)
+    public bool GetSection(double Param, double U1, double V1, double U2, double V2, NCollection_Array1<Point3D> tabP,
+                           NCollection_Array1<Vector3D> tabV)
     {
         int NbPoint = tabP.Length();
         if (NbPoint != tabV.Length() || NbPoint < 2)
         {
-            throw new Standard_RangeError();
+            throw new RangeErrorException();
         }
 
         int i, lowp = tabP.Lower(), lowv = tabV.Lower();
 
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec(), ns, ncrossns;
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), ns, ncrossns;
         double norm, ndotns, grosterme, lambda;
 
         math_Vector sol = new(1, 4), valsol = new(1, 4), secmember = new(1, 4);
-        math_Matrix gradsol = new(1, 4, 1, 4);
+        Matrix gradsol = new(1, 4, 1, 4);
 
         curv.D2(Param, out ptgui, out d1gui, out d2gui);
         normtg = d1gui.Magnitude();
@@ -452,13 +458,13 @@ public class BlendFunc_Ruled : Blend_Function
 
         Values(sol, valsol, gradsol);
 
-        surf1.D1(sol[1], sol[2], out pts1, out gp_Vec d1u1, out gp_Vec d1v1);
-        surf2.D1(sol[3], sol[4], out pts2, out gp_Vec d1u2, out gp_Vec d1v2);
+        surf1.D1(sol[1], sol[2], out pts1, out Vector3D d1u1, out Vector3D d1v1);
+        surf2.D1(sol[3], sol[4], out pts2, out Vector3D d1u2, out Vector3D d1v2);
 
         dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
-        secmember[1] = normtg - dnplan.Dot(new gp_Vec(ptgui, pts1));
-        secmember[2] = normtg - dnplan.Dot(new gp_Vec(ptgui, pts2));
+        secmember[1] = normtg - dnplan.Dot(new Vector3D(ptgui, pts1));
+        secmember[2] = normtg - dnplan.Dot(new Vector3D(ptgui, pts2));
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = nplan.Crossed(ns);
@@ -470,7 +476,7 @@ public class BlendFunc_Ruled : Blend_Function
         temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, nplan, ndotns / norm, dnplan,
                            grosterme / norm, ns);
 
-        secmember[3] = -(temp.Dot(new gp_Vec(pts1, pts2)));
+        secmember[3] = -(temp.Dot(new Vector3D(pts1, pts2)));
 
         ns = d1u2.Crossed(d1v2);
         ncrossns = nplan.Crossed(ns);
@@ -482,10 +488,10 @@ public class BlendFunc_Ruled : Blend_Function
         temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, nplan, ndotns / norm, dnplan,
                            grosterme / norm, ns);
 
-        secmember[4] = -(temp.Dot(new gp_Vec(pts1, pts2)));
+        secmember[4] = -(temp.Dot(new Vector3D(pts1, pts2)));
 
-        math_Gauss Resol = new(gradsol);
-        if (Resol.IsDone())
+        Gauss Resol = new(gradsol);
+        if (Resol.IsDone)
         {
             Resol.Solve(secmember);
 
@@ -517,10 +523,10 @@ public class BlendFunc_Ruled : Blend_Function
         return false;
     }
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double GetSectionSize()
     {
-        throw new Standard_NotImplemented("BlendFunc_Ruled::GetSectionSize()");
+        throw new MethodNotImplementedException("BlendFunc_Ruled::GetSectionSize()");
     }
 
     public override void GetMinimalWeight(NCollection_Array1<double> Weigths)
@@ -528,12 +534,12 @@ public class BlendFunc_Ruled : Blend_Function
         Weigths.Init(1);
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return curv.NbIntervals(BlendFunc.NextShape(S));
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         curv.Intervals(T, BlendFunc.NextShape(S));
     }
@@ -568,17 +574,17 @@ public class BlendFunc_Ruled : Blend_Function
     }
 
     /// <summary>Not computed: returns false.</summary>
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights,
                                  NCollection_Array1<double> D2Weights)
     {
         return false;
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
         int lowp = Poles.Lower(), lowp2d = Poles2d.Lower();
@@ -605,8 +611,8 @@ public class BlendFunc_Ruled : Blend_Function
         return false;
     }
 
-    public override void Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weights)
+    public override void Section(in Blend_Point P, NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weights)
     {
         int lowp = Poles.Lower(), lowp2d = Poles2d.Lower();
         double u, v;
@@ -621,11 +627,11 @@ public class BlendFunc_Ruled : Blend_Function
     }
 
     /// <summary>The axis of rotation of the section plane at the guide parameter <paramref name="Prm"/>.</summary>
-    public gp_Ax1 AxeRot(double Prm)
+    public Axis3D AxeRot(double Prm)
     {
-        gp_Ax1 axrot = new gp_Ax1();
-        gp_Vec dirax, dnplan = new gp_Vec();
-        gp_Pnt oriax = new gp_Pnt();
+        Axis3D axrot = new Axis3D();
+        Vector3D dirax, dnplan = new Vector3D();
+        Point3D oriax = new Point3D();
 
         curv.D2(Prm, out ptgui, out d1gui, out d2gui);
         normtg = d1gui.Magnitude();
@@ -633,7 +639,7 @@ public class BlendFunc_Ruled : Blend_Function
         dnplan.SetLinearForm(1.0 / normtg, d2gui, -1.0 / normtg * (nplan.Dot(d2gui)), nplan);
 
         dirax = nplan.Crossed(dnplan);
-        axrot.SetDirection(new gp_Dir(dirax));
+        axrot.SetDirection(new Direction3D(dirax));
         oriax.SetXYZ(ptgui.XYZ() + (normtg / dnplan.Magnitude()) * dnplan.Normalized().XYZ());
         axrot.SetLocation(oriax);
         return axrot;

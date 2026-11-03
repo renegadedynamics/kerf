@@ -1,3 +1,4 @@
+using Kerf.Engine.Geometry.Bounds;
 using Occt;
 
 namespace Build123d;
@@ -9,18 +10,18 @@ namespace Build123d;
 public sealed class OrientedBoundBox
 {
     /// <summary>The OCCT box. Never modified.</summary>
-    internal Bnd_OBB Wrapped { get; }
+    internal OrientedBox Wrapped { get; }
 
-    OrientedBoundBox(Bnd_OBB obb) => Wrapped = obb;
+    OrientedBoundBox(OrientedBox obb) => Wrapped = obb;
 
     /// <summary>Wraps a Bnd_OBB this box takes ownership of.</summary>
-    internal static OrientedBoundBox Own(Bnd_OBB obb) => new(obb);
+    internal static OrientedBoundBox Own(OrientedBox obb) => new(obb);
 
     /// <summary>An oriented bounding box from an OCCT Bnd_OBB.</summary>
-    public static OrientedBoundBox FromBndObb(Bnd_OBB obb) => new(obb);
+    public static OrientedBoundBox FromBndObb(OrientedBox obb) => new(obb);
 
     /// <summary>True for the box of nothing, which has no size or axes.</summary>
-    public bool IsEmpty => Wrapped.IsVoid();
+    public bool IsEmpty => Wrapped.IsVoid;
 
     /// <summary>
     /// The distinct corners. A degenerate box (of a line or a planar face) has only two or four, and a

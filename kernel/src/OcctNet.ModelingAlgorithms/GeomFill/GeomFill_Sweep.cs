@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 
 namespace Occt;
@@ -126,7 +129,7 @@ public sealed class GeomFill_Sweep
     /// </summary>
     public void Build(GeomFill_SectionLaw Section,
                       GeomFill_ApproxStyle Methode = GeomFill_Location,
-                      GeomAbs_Shape Continuity = GeomAbs_C2,
+                      Continuity Continuity = C2,
                       int Degmax = 10,
                       int Segmax = 30)
     {
@@ -180,7 +183,7 @@ public sealed class GeomFill_Sweep
         }
     }
 
-    private bool Build2d(GeomAbs_Shape Continuity, int Degmax, int Segmax)
+    private bool Build2d(Continuity Continuity, int Degmax, int Segmax)
     {
         bool Ok = false;
         if (myLoc.Nb2dCurves() == 0)
@@ -190,7 +193,7 @@ public sealed class GeomFill_Sweep
         return Ok;
     }
 
-    private bool BuildAll(GeomAbs_Shape Continuity, int Degmax, int Segmax)
+    private bool BuildAll(Continuity Continuity, int Degmax, int Segmax)
     {
         bool Ok = false;
 
@@ -207,7 +210,7 @@ public sealed class GeomFill_Sweep
             // La surface
             Approx.SurfShape(out _, out _, out int NbUPoles, out int NbVPoles, out int NbUKnots, out int NbVKnots);
 
-            NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+            NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
             NCollection_Array2<double> Weights = new(1, NbUPoles, 1, NbVPoles);
             NCollection_Array1<double> UKnots = new(1, NbUKnots), VKnots = new(1, NbVKnots);
             NCollection_Array1<int> UMults = new(1, NbUKnots), VMults = new(1, NbVKnots);
@@ -228,7 +231,7 @@ public sealed class GeomFill_Sweep
             if (myForceApproxC1 && !mySurface.IsCNv(1))
             {
                 double theTol = 1.0e-4;
-                GeomAbs_Shape theUCont = GeomAbs_C1, theVCont = GeomAbs_C1;
+                Continuity theUCont = C1, theVCont = C1;
                 int degU = 14, degV = 14;
                 int nmax = 16;
                 int thePrec = 1;
@@ -244,8 +247,8 @@ public sealed class GeomFill_Sweep
 
                     Geom_BSplineSurface BSplSurf = (Geom_BSplineSurface)mySurface!;
 
-                    gp_Dir2d D = new gp_Dir2d(gp_Dir2d.D.Y);
-                    gp_Pnt2d P = new gp_Pnt2d(BSplSurf.UKnot(1), 0);
+                    Direction2D D = new Direction2D(Direction2D.D.Y);
+                    Point2D P = new Point2D(BSplSurf.UKnot(1), 0);
                     Geom2d_Line LC1 = new Geom2d_Line(P, D);
                     Geom2d_TrimmedCurve TC1 = new Geom2d_TrimmedCurve(LC1, 0, BSplSurf.VKnot(BSplSurf.NbVKnots()));
 
@@ -301,8 +304,8 @@ public sealed class GeomFill_Sweep
                 // les iso Bords.
                 if (!myLoc.HasFirstRestriction())
                 {
-                    gp_Dir2d D = new gp_Dir2d(gp_Dir2d.D.Y);
-                    gp_Pnt2d P = new gp_Pnt2d(UKnots[UKnots.Lower()], 0);
+                    Direction2D D = new Direction2D(Direction2D.D.Y);
+                    Point2D P = new Point2D(UKnots[UKnots.Lower()], 0);
                     Geom2d_Line LC = new Geom2d_Line(P, D);
                     Geom2d_TrimmedCurve TC = new Geom2d_TrimmedCurve(LC, First, Last);
 
@@ -313,8 +316,8 @@ public sealed class GeomFill_Sweep
 
                 if (!myLoc.HasLastRestriction())
                 {
-                    gp_Dir2d D = new gp_Dir2d(gp_Dir2d.D.Y);
-                    gp_Pnt2d P = new gp_Pnt2d(UKnots[UKnots.Upper()], 0);
+                    Direction2D D = new Direction2D(Direction2D.D.Y);
+                    Point2D P = new Point2D(UKnots[UKnots.Upper()], 0);
                     Geom2d_Line LC = new Geom2d_Line(P, D);
                     Geom2d_TrimmedCurve TC = new Geom2d_TrimmedCurve(LC, First, Last);
                     myCurve2d.SetValue(myCurve2d.Length(), TC);
@@ -327,7 +330,7 @@ public sealed class GeomFill_Sweep
     }
 
     // OCCT: BuildProduct is never called (Build's call is commented out); kept as OCCT has it.
-    private bool BuildProduct(GeomAbs_Shape Continuity, int Degmax, int Segmax)
+    private bool BuildProduct(Continuity Continuity, int Degmax, int Segmax)
     {
         bool Ok = false;
 
@@ -340,12 +343,12 @@ public sealed class GeomFill_Sweep
         int NbIntervalC2, NbIntervalC3;
         GeomFill_LocFunction Func = new GeomFill_LocFunction(myLoc);
 
-        NbIntervalC2 = myLoc.NbIntervals(GeomAbs_C2);
-        NbIntervalC3 = myLoc.NbIntervals(GeomAbs_C3);
+        NbIntervalC2 = myLoc.NbIntervals(C2);
+        NbIntervalC3 = myLoc.NbIntervals(C3);
         NCollection_Array1<double> Param_de_decoupeC2 = new(1, NbIntervalC2 + 1);
-        myLoc.Intervals(Param_de_decoupeC2, GeomAbs_C2);
+        myLoc.Intervals(Param_de_decoupeC2, C2);
         NCollection_Array1<double> Param_de_decoupeC3 = new(1, NbIntervalC3 + 1);
-        myLoc.Intervals(Param_de_decoupeC3, GeomAbs_C3);
+        myLoc.Intervals(Param_de_decoupeC3, C3);
 
         AdvApprox_PrefAndRec Preferentiel = new AdvApprox_PrefAndRec(Param_de_decoupeC2, Param_de_decoupeC3);
 
@@ -386,13 +389,13 @@ public sealed class GeomFill_Sweep
         // Get the first and last transformations of the location
         double aFirst;
         double aLast;
-        gp_Vec VBegin = new gp_Vec();
-        gp_Vec VEnd = new gp_Vec();
-        gp_Mat M = new gp_Mat();
-        gp_GTrsf GTfBegin = new gp_GTrsf();
-        gp_Trsf TfBegin = new gp_Trsf();
-        gp_GTrsf GTfEnd = new gp_GTrsf();
-        gp_Trsf TfEnd = new gp_Trsf();
+        Vector3D VBegin = new Vector3D();
+        Vector3D VEnd = new Vector3D();
+        Matrix3x3 M = new Matrix3x3();
+        GeneralTransform3D GTfBegin = new GeneralTransform3D();
+        Transform3D TfBegin = new Transform3D();
+        GeneralTransform3D GTfEnd = new GeneralTransform3D();
+        Transform3D TfEnd = new Transform3D();
 
         theLoc.GetDomain(out aFirst, out aLast);
 
@@ -447,20 +450,20 @@ public sealed class GeomFill_Sweep
         GeomAdaptor_Curve ACFirst = new GeomAdaptor_Curve(FirstSection);
 
         double UFirst = ACFirst.FirstParameter();
-        gp_Lin L = ACFirst.Line();
+        Line3D L = ACFirst.Line();
 
         L.Transform(TfBegin);
 
         // Get and transform the last section
         Geom_Curve aLastSection = aSurf.VIso(Vmax);
         double aFirstParameter = aLastSection.FirstParameter();
-        gp_Pnt aPntLastSec = aLastSection.Value(aFirstParameter);
+        Point3D aPntLastSec = aLastSection.Value(aFirstParameter);
 
         aPntLastSec.Transform(TfEnd);
 
-        gp_Pnt aPntFirstSec = ElCLib.Value(UFirst, L);
-        gp_Vec aVecSec = new gp_Vec(aPntFirstSec, aPntLastSec);
-        gp_Vec aVecSpine = VEnd - VBegin;
+        Point3D aPntFirstSec = global::Kerf.Engine.Geometry.ElCLib.Value(UFirst, L);
+        Vector3D aVecSec = new Vector3D(aPntFirstSec, aPntLastSec);
+        Vector3D aVecSpine = VEnd - VBegin;
 
         bool isParallel = aVecSec.IsParallel(aVecSpine, theTol);
 
@@ -478,9 +481,9 @@ public sealed class GeomFill_Sweep
 
         isUPeriodic = mySec!.IsUPeriodic();
         Geom_Surface? S = null;
-        GeomAbs_CurveType SectionType;
-        gp_Vec V = new gp_Vec();
-        gp_Mat M = new gp_Mat();
+        CurveKind SectionType;
+        Vector3D V = new Vector3D();
+        Matrix3x3 M = new Matrix3x3();
         double levier, error = 0;
         double UFirst = 0, VFirst = First, ULast = 0, VLast = Last;
         double Tol = Min(Tol3d, BoundTol);
@@ -489,13 +492,13 @@ public sealed class GeomFill_Sweep
         if (myLoc.IsTranslation(ref error))
         {
             // Donne de la translation
-            gp_Vec DP, DS = new gp_Vec();
+            Vector3D DP, DS = new Vector3D();
             myLoc.D0(1, ref M, ref DS);
             myLoc.D0(0, ref M, ref V);
             DP = DS - V;
             DP.Normalize();
-            gp_GTrsf Tf = new gp_GTrsf();
-            gp_Trsf Tf2 = new gp_Trsf();
+            GeneralTransform3D Tf = new GeneralTransform3D();
+            Transform3D Tf2 = new Transform3D();
             Tf.SetVectorialPart(M);
             Tf.SetTranslationPart(V.XYZ());
             try
@@ -513,7 +516,7 @@ public sealed class GeomFill_Sweep
                               Tf[3, 3],
                               Tf[3, 4]);
             }
-            catch (Standard_ConstructionError)
+            catch (ConstructionErrorException)
             {
                 IsTrsf = false;
             }
@@ -532,7 +535,7 @@ public sealed class GeomFill_Sweep
                 UFirst = AC.FirstParameter();
                 ULast = AC.LastParameter();
                 // (1.1.a) Cas Plan
-                if ((SectionType == GeomAbs_Line) && IsTrsf)
+                if ((SectionType == Line) && IsTrsf)
                 {
                     //  Modified by skv - Thu Feb  5 11:39:06 2004 OCC5073 Begin
                     if (!IsSweepParallelSpine(myLoc, mySec, Tol))
@@ -540,7 +543,7 @@ public sealed class GeomFill_Sweep
                         return false;
                     }
                     //  Modified by skv - Thu Feb  5 11:39:08 2004 OCC5073 End
-                    gp_Lin L = AC.Line();
+                    Line3D L = AC.Line();
                     L.Transform(Tf2);
                     DS.SetXYZ(L.Position().Direction().XYZ());
                     DS.Normalize();
@@ -549,8 +552,8 @@ public sealed class GeomFill_Sweep
                     if (SError <= Tol)
                     {
                         Ok = true;
-                        gp_Ax2 AxisOfPlane = new gp_Ax2(L.Location(), new gp_Dir(DS ^ DP), new gp_Dir(DS));
-                        S = new Geom_Plane(new gp_Ax3(AxisOfPlane));
+                        Frame3D AxisOfPlane = new Frame3D(L.Location(), new Direction3D(DS ^ DP), new Direction3D(DS));
+                        S = new Geom_Plane(new CoordinateSystem(AxisOfPlane));
                     }
                     else
                     {
@@ -559,11 +562,11 @@ public sealed class GeomFill_Sweep
                 }
 
                 // (1.1.b) Cas Cylindrique
-                if ((SectionType == GeomAbs_Circle) && IsTrsf)
+                if ((SectionType == Circle) && IsTrsf)
                 {
                     const double TolProd = 1.0e-6;
 
-                    gp_Circ C = AC.Circle();
+                    Circle3D C = AC.Circle();
                     C.Transform(Tf2);
 
                     DS.SetXYZ(C.Position().Direction().XYZ());
@@ -573,7 +576,7 @@ public sealed class GeomFill_Sweep
                     if (SError <= TolProd)
                     {
                         Ok = true;
-                        gp_Ax3 axe = new gp_Ax3(C.Location(), new gp_Dir(DP), C.Position().XDirection());
+                        CoordinateSystem axe = new CoordinateSystem(C.Location(), new Direction3D(DP), C.Position().XDirection());
                         S = new Geom_CylindricalSurface(axe, C.Radius());
                         if (C.Position().Direction().IsOpposite(axe.Direction(), 0.1))
                         {
@@ -598,7 +601,7 @@ public sealed class GeomFill_Sweep
                     if (IsTrsf)
                     {
                         Section.Transform(Tf2);
-                        S = new Geom_SurfaceOfLinearExtrusion(Section, new gp_Dir(DP));
+                        S = new Geom_SurfaceOfLinearExtrusion(Section, new Direction3D(DP));
                         SError = 0.0;
                         Ok = true;
                     }
@@ -611,11 +614,11 @@ public sealed class GeomFill_Sweep
             // (1.2) Cas conique
             else if (mySec.IsConicalLaw(ref error))
             {
-                gp_Pnt P1, P2, Centre0, Centre1, Centre2;
-                gp_Vec dsection;
+                Point3D P1, P2, Centre0, Centre1, Centre2;
+                Vector3D dsection;
                 Geom_Curve Section;
                 GeomAdaptor_Curve AC = new GeomAdaptor_Curve();
-                gp_Circ C;
+                Circle3D C;
                 double R1, R2;
 
                 Section = mySec.CirclSection(SLast);
@@ -643,13 +646,13 @@ public sealed class GeomFill_Sweep
                 Centre0 = C.Location();
 
                 double Angle;
-                gp_Vec N = new gp_Vec(Centre1, P1);
+                Vector3D N = new Vector3D(Centre1, P1);
                 if (N.Magnitude() < 1.0e-9)
                 {
-                    gp_Vec Bis = new gp_Vec(Centre2, P2);
+                    Vector3D Bis = new Vector3D(Centre2, P2);
                     N = Bis;
                 }
-                gp_Vec L = new gp_Vec(P1, P2), Dir = new gp_Vec(Centre1, Centre2);
+                Vector3D L = new Vector3D(P1, P2), Dir = new Vector3D(Centre1, Centre2);
 
                 Angle = L.Angle(Dir);
                 if ((Angle > 0.01) && (Angle < M_PI / 2 - 0.01))
@@ -659,7 +662,7 @@ public sealed class GeomFill_Sweep
                         Angle = -Angle;
                     }
                     SError = error;
-                    gp_Ax3 Axis = new gp_Ax3(Centre0, new gp_Dir(Dir), new gp_Dir(N));
+                    CoordinateSystem Axis = new CoordinateSystem(Centre0, new Direction3D(Dir), new Direction3D(N));
                     S = new Geom_ConicalSurface(Axis, Angle, C.Radius());
                     // Calcul du glissement parametrique
                     VFirst = First / Math.Cos(Angle);
@@ -668,7 +671,7 @@ public sealed class GeomFill_Sweep
                     // Bornes en U
                     UFirst = AC.FirstParameter();
                     ULast = AC.LastParameter();
-                    S.VIso(VLast).D1(0, out _, out gp_Vec diso);
+                    S.VIso(VLast).D1(0, out _, out Vector3D diso);
                     if (diso.Magnitude() > 1.0e-9 && dsection.Magnitude() > 1.0e-9)
                     {
                         isUReversed = diso.IsOpposite(dsection, 0.1);
@@ -695,10 +698,10 @@ public sealed class GeomFill_Sweep
             if (mySec.IsConstant(ref error))
             {
                 // La trajectoire
-                gp_Pnt Centre = new gp_Pnt();
+                Point3D Centre = new Point3D();
                 isVPeriodic = (Math.Abs(Last - First - 2 * M_PI) < 1.0e-15);
                 double RotRadius;
-                gp_Vec DP, DS = new gp_Vec(), DN;
+                Vector3D DP, DS = new Vector3D(), DN;
                 myLoc.D0(0.1, ref M, ref DS);
                 myLoc.D0(0, ref M, ref V);
                 myLoc.Rotation(ref Centre);
@@ -719,8 +722,8 @@ public sealed class GeomFill_Sweep
                 DP = DN ^ DS;
                 DP.Normalize();
 
-                gp_GTrsf Tf = new gp_GTrsf();
-                gp_Trsf Tf2 = new gp_Trsf();
+                GeneralTransform3D Tf = new GeneralTransform3D();
+                Transform3D Tf2 = new Transform3D();
                 Tf.SetVectorialPart(M);
                 Tf.SetTranslationPart(V.XYZ());
                 // TODO: finding #9 - exception handling is commented out unlike the translation
@@ -747,13 +750,13 @@ public sealed class GeomFill_Sweep
                 ULast = AC.LastParameter();
 
                 // (2.1) Tore/Sphere ?
-                if ((SectionType == GeomAbs_Circle) && IsTrsf)
+                if ((SectionType == Circle) && IsTrsf)
                 {
-                    gp_Circ C = AC.Circle();
+                    Circle3D C = AC.Circle();
                     double Radius;
                     bool IsGoodSide = true;
                     C.Transform(Tf2);
-                    gp_Vec DC = new gp_Vec();
+                    Vector3D DC = new Vector3D();
                     // On calcul le centre eventuel
                     DC.SetXYZ(C.Location().XYZ() - Centre.XYZ());
                     Centre.ChangeCoord() += (DC.Dot(DN)) * DN.XYZ();
@@ -770,7 +773,7 @@ public sealed class GeomFill_Sweep
 
                     // On verifie d'abord que le plan de la section est // a
                     // l'axe de rotation
-                    gp_Vec NC = new gp_Vec();
+                    Vector3D NC = new Vector3D();
                     NC.SetXYZ(C.Position().Direction().XYZ());
                     NC.Normalize();
                     error = Math.Abs(NC.Dot(DN));
@@ -788,9 +791,9 @@ public sealed class GeomFill_Sweep
                             double f = UFirst, l = ULast, aRadius = 0.0;
                             SError = error;
                             Centre.BaryCenter(1.0, C.Location(), 1.0);
-                            gp_Ax3 AxisOfSphere = new gp_Ax3(Centre, new gp_Dir(DN), new gp_Dir(DS));
+                            CoordinateSystem AxisOfSphere = new CoordinateSystem(Centre, new Direction3D(DN), new Direction3D(DS));
                             aRadius = C.Radius();
-                            gp_Sphere theSphere = new gp_Sphere(AxisOfSphere, aRadius);
+                            Sphere theSphere = new Sphere(AxisOfSphere, aRadius);
                             S = new Geom_SphericalSurface(theSphere);
                             // Pour les spheres on ne peut pas controler le parametre
                             // V (donc U car  myExchUV = true)
@@ -799,11 +802,11 @@ public sealed class GeomFill_Sweep
                             double lpar = AC.LastParameter();
                             Geom_Curve theSection = new Geom_TrimmedCurve(Section, fpar, lpar);
                             theSection.Transform(Tf2);
-                            gp_Pnt FirstPoint = theSection.Value(theSection.FirstParameter());
-                            gp_Pnt LastPoint = theSection.Value(theSection.LastParameter());
+                            Point3D FirstPoint = theSection.Value(theSection.FirstParameter());
+                            Point3D LastPoint = theSection.Value(theSection.LastParameter());
                             double UfirstOnSec, VfirstOnSec, UlastOnSec, VlastOnSec;
-                            ElSLib.Parameters(theSphere, FirstPoint, out UfirstOnSec, out VfirstOnSec);
-                            ElSLib.Parameters(theSphere, LastPoint, out UlastOnSec, out VlastOnSec);
+                            global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, FirstPoint, out UfirstOnSec, out VfirstOnSec);
+                            global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, LastPoint, out UlastOnSec, out VlastOnSec);
                             if (VfirstOnSec < VlastOnSec)
                             {
                                 f = VfirstOnSec;
@@ -817,7 +820,7 @@ public sealed class GeomFill_Sweep
                                 isUReversed = true;
                             }
 
-                            if (Math.Abs(l - f) <= Precision.PConfusion()
+                            if (Math.Abs(l - f) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
                                 || Math.Abs(UlastOnSec - UfirstOnSec) > M_PI_2)
                             {
                                 // l == f - "degenerated" surface
@@ -842,7 +845,7 @@ public sealed class GeomFill_Sweep
                         else if (IsGoodSide)
                         {
                             // (2.1.b) Tore
-                            gp_Ax3 AxisOfTore = new gp_Ax3(Centre, new gp_Dir(DN), new gp_Dir(DC));
+                            CoordinateSystem AxisOfTore = new CoordinateSystem(Centre, new Direction3D(DN), new Direction3D(DC));
                             S = new Geom_ToroidalSurface(AxisOfTore, Radius, C.Radius());
 
                             // Pour les tores on ne peut pas controler le parametre
@@ -850,7 +853,7 @@ public sealed class GeomFill_Sweep
                             // Il faut donc modifier UFirst, ULast...
                             Geom_Circle? Iso;
                             Iso = S.UIso(0.0) as Geom_Circle;
-                            gp_Ax2 axeiso;
+                            Frame3D axeiso;
                             axeiso = Iso!.Circ().Position();
 
                             if (C.Position().Direction().IsOpposite(axeiso.Direction(), 0.1))
@@ -872,7 +875,7 @@ public sealed class GeomFill_Sweep
                             myExchUV = true;
                             // Attention l'arete de couture dans le cas periodique
                             // n'est peut etre pas a la bonne place...
-                            if (isUPeriodic && Math.Abs(UFirst) > Precision.PConfusion())
+                            if (isUPeriodic && Math.Abs(UFirst) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 isUPeriodic = false; // Pour trimmer la surface...
                             }
@@ -885,11 +888,11 @@ public sealed class GeomFill_Sweep
                     }
                 }
                 // (2.2) Cone / Cylindre
-                if ((SectionType == GeomAbs_Line) && IsTrsf)
+                if ((SectionType == Line) && IsTrsf)
                 {
-                    gp_Lin L = AC.Line();
+                    Line3D L = AC.Line();
                     L.Transform(Tf2);
-                    gp_Vec DL = new gp_Vec();
+                    Vector3D DL = new Vector3D();
                     DL.SetXYZ(L.Direction().XYZ());
                     levier = Max(Math.Abs(AC.FirstParameter()), AC.LastParameter());
                     // si la line est ortogonale au cercle de rotation
@@ -897,14 +900,14 @@ public sealed class GeomFill_Sweep
                     if (SError <= Tol)
                     {
                         bool reverse;
-                        gp_Lin Dir = new gp_Lin(Centre, new gp_Dir(DN));
+                        Line3D Dir = new Line3D(Centre, new Direction3D(DN));
                         double aux;
                         aux = DL.Dot(DN);
                         reverse = (aux < 0); // On choisit ici le sens de parametrisation
 
                         // Calcul du centre du vecteur supportant la "XDirection"
-                        gp_Pnt CentreOfSurf;
-                        gp_Vec O1O2 = new gp_Vec(Centre, L.Location()), trans;
+                        Point3D CentreOfSurf;
+                        Vector3D O1O2 = new Vector3D(Centre, L.Location()), trans;
                         trans = DN;
                         trans *= DN.Dot(O1O2);
                         CentreOfSurf = Centre.Translated(trans);
@@ -918,10 +921,10 @@ public sealed class GeomFill_Sweep
                             // si la line est orthogonale au plan de rotation
                             SError = error;
                             //
-                            gp_Ax3 Axis = new gp_Ax3(CentreOfSurf, Dir.Direction());
-                            if (DS.SquareMagnitude() > gp.Resolution())
+                            CoordinateSystem Axis = new CoordinateSystem(CentreOfSurf, Dir.Direction());
+                            if (DS.SquareMagnitude() > Constants.Resolution())
                             {
-                                Axis.SetXDirection(new gp_Dir(DS));
+                                Axis.SetXDirection(new Direction3D(DS));
                             }
                             S = new Geom_CylindricalSurface(Axis, L.Distance(CentreOfSurf));
                             Ok = true;
@@ -949,7 +952,7 @@ public sealed class GeomFill_Sweep
                                 // (2.2.b) Cone
                                 // si les 2 droites ne sont pas orthogonales
                                 double Radius = CentreOfSurf.Distance(L.Location());
-                                gp_Ax3 Axis = new gp_Ax3(CentreOfSurf, Dir.Direction(), new gp_Dir(DS));
+                                CoordinateSystem Axis = new CoordinateSystem(CentreOfSurf, Dir.Direction(), new Direction3D(DS));
                                 S = new Geom_ConicalSurface(Axis, Angle, Radius);
                                 myExchUV = true;
                                 Ok = true;
@@ -987,7 +990,7 @@ public sealed class GeomFill_Sweep
                     if (IsTrsf)
                     {
                         Section.Transform(Tf2);
-                        gp_Ax1 Axis = new gp_Ax1(Centre, new gp_Dir(DN));
+                        Axis3D Axis = new Axis3D(Centre, new Direction3D(DN));
                         S = new Geom_SurfaceOfRevolution(Section, Axis);
                         myExchUV = true;
                         SError = 0.0;
@@ -1067,7 +1070,7 @@ public sealed class GeomFill_Sweep
         int ind = IndexOfTrace + 1;
         if (IndexOfTrace > myLoc.TraceNumber())
         {
-            throw new Standard_OutOfRange(" GeomFill_Sweep::ErrorOnTrace");
+            throw new OutOfRangeException(" GeomFill_Sweep::ErrorOnTrace");
         }
 
         UError = CError!.Value(1, ind);
@@ -1119,7 +1122,7 @@ public sealed class GeomFill_Sweep
         int ind = IndexOfTrace + 1;
         if (IndexOfTrace > myLoc.TraceNumber())
         {
-            throw new Standard_OutOfRange(" GeomFill_Sweep::Trace");
+            throw new OutOfRangeException(" GeomFill_Sweep::Trace");
         }
         return myCurve2d!.Value(ind);
     }

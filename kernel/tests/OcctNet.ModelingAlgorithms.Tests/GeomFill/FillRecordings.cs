@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -57,7 +60,7 @@ internal static class FillRecordings
             {
                 aVal = theF();
             }
-            catch (Standard_Failure anExc)
+            catch (FailureException anExc)
             {
                 aVal = ExcName(anExc);
             }
@@ -65,16 +68,16 @@ internal static class FillRecordings
         }
     }
 
-    public static string ExcName(Standard_Failure theF) => "!" + theF.GetType().Name;
+    public static string ExcName(FailureException theF) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theF.GetType());
 
     public static string Hex(double theValue) =>
         ((ulong)BitConverter.DoubleToInt64Bits(theValue)).ToString("x", CultureInfo.InvariantCulture);
 
-    public static string Hex(gp_XYZ theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    public static string Hex(Xyz theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
 
-    public static string Hex(gp_Pnt theP) => Hex(theP.XYZ());
+    public static string Hex(Point3D theP) => Hex(theP.XYZ());
 
-    public static string Hex(gp_Vec theV) => Hex(theV.XYZ());
+    public static string Hex(Vector3D theV) => Hex(theV.XYZ());
 
     private static string Int(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
@@ -97,7 +100,7 @@ internal static class FillRecordings
             myN++;
         }
 
-        public void Add(gp_Pnt theP)
+        public void Add(Point3D theP)
         {
             Add(theP.X());
             Add(theP.Y());
@@ -144,7 +147,7 @@ internal static class FillRecordings
         {
             for (int j = 0; j <= 2; j++)
             {
-                theS.D1(u1 + (u2 - u1) * i / 2.0, v1 + (v2 - v1) * j / 2.0, out gp_Pnt P, out gp_Vec DU, out gp_Vec DV);
+                theS.D1(u1 + (u2 - u1) * i / 2.0, v1 + (v2 - v1) * j / 2.0, out Point3D P, out Vector3D DU, out Vector3D DV);
                 aD = Join(aD, Hex(P) + "," + Hex(DU) + "," + Hex(DV));
             }
         }
@@ -176,7 +179,7 @@ internal static class FillRecordings
         {
             for (int j = 0; j <= 2; j++)
             {
-                theS.D1(i / 2.0, j / 2.0, out gp_Pnt P, out gp_Vec DU, out gp_Vec DV);
+                theS.D1(i / 2.0, j / 2.0, out Point3D P, out Vector3D DU, out Vector3D DV);
                 aD = Join(aD, Hex(P) + "," + Hex(DU) + "," + Hex(DV));
             }
         }
@@ -186,7 +189,7 @@ internal static class FillRecordings
     private static void PutFilling(Writer theW, GeomFill_Filling theF)
     {
         theW.Put("nb:" + Int(theF.NbUPoles()) + "," + Int(theF.NbVPoles()) + "," + (theF.isRational() ? "1" : "0"));
-        NCollection_Array2<gp_Pnt> aP = new(1, theF.NbUPoles(), 1, theF.NbVPoles());
+        NCollection_Array2<Point3D> aP = new(1, theF.NbUPoles(), 1, theF.NbVPoles());
         theF.Poles(aP);
         string aS = "";
         for (int i = aP.LowerRow(); i <= aP.UpperRow(); i++)
@@ -226,12 +229,12 @@ internal static class FillRecordings
 
         public bool B() => theIn[myPos++] != 0.0;
 
-        public gp_Pnt Pnt()
+        public Point3D Pnt()
         {
             double x = D();
             double y = D();
             double z = D();
-            return new gp_Pnt(x, y, z);
+            return new Point3D(x, y, z);
         }
 
         public Geom_BSplineCurve BSpline()
@@ -239,7 +242,7 @@ internal static class FillRecordings
             int aDeg = I();
             bool aRat = B();
             int aNbP = I();
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbP);
             NCollection_Array1<double> aW = new(1, aNbP);
             for (int i = 1; i <= aNbP; i++)
             {
@@ -265,7 +268,7 @@ internal static class FillRecordings
         {
             bool aRat = B();
             int aNbP = I();
-            NCollection_Array1<gp_Pnt> aPoles = new(1, aNbP);
+            NCollection_Array1<Point3D> aPoles = new(1, aNbP);
             NCollection_Array1<double> aW = new(1, aNbP);
             for (int i = 1; i <= aNbP; i++)
             {
@@ -371,7 +374,7 @@ internal static class FillRecordings
                 PutBezierSurface(theW, aFill.Surface());
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             theW.Put("init:" + ExcName(anExc));
         }
@@ -384,7 +387,7 @@ internal static class FillRecordings
         int NV = theR.I();
         bool aTwo = theKind == "CURVED2";
         int aNb = aTwo ? 2 : 4;
-        NCollection_Array1<gp_Pnt>[] P = [new(1, NU), new(1, NV), new(1, NU), new(1, NV)];
+        NCollection_Array1<Point3D>[] P = [new(1, NU), new(1, NV), new(1, NU), new(1, NV)];
         NCollection_Array1<double>[] Wt = [new(1, NU), new(1, NV), new(1, NU), new(1, NV)];
         for (int k = 0; k < aNb; k++)
         {
@@ -426,7 +429,7 @@ internal static class FillRecordings
             }
             PutFilling(theW, F);
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             theW.Put("init:" + ExcName(anExc));
         }
@@ -436,7 +439,7 @@ internal static class FillRecordings
     {
         int NU = theR.I();
         int NV = theR.I();
-        NCollection_Array2<gp_Pnt> aP = new(1, NU, 1, NV);
+        NCollection_Array2<Point3D> aP = new(1, NU, 1, NV);
         for (int i = 1; i <= NU; i++)
         {
             for (int j = 1; j <= NV; j++)
@@ -475,14 +478,14 @@ internal static class FillRecordings
             };
             return new GeomFill_SimpleBound(new GeomAdaptor_Curve(anIso), theTol3d, theTolAng);
         }
-        gp_Pnt2d aP = theSide switch
+        Point2D aP = theSide switch
         {
-            0 => new gp_Pnt2d(0, 0),
-            1 => new gp_Pnt2d(1, 0),
-            2 => new gp_Pnt2d(0, 1),
-            _ => new gp_Pnt2d(0, 0),
+            0 => new Point2D(0, 0),
+            1 => new Point2D(1, 0),
+            2 => new Point2D(0, 1),
+            _ => new Point2D(0, 0),
         };
-        gp_Dir2d aD = (theSide == 0 || theSide == 2) ? new gp_Dir2d(1, 0) : new gp_Dir2d(0, 1);
+        Direction2D aD = (theSide == 0 || theSide == 2) ? new Direction2D(1, 0) : new Direction2D(0, 1);
         Geom2d_Line aL = new(aP, aD);
         Geom2dAdaptor_Curve aC2 = new(aL, 0.0, 1.0);
         GeomAdaptor_Surface aSA = new(theS);
@@ -528,11 +531,11 @@ internal static class FillRecordings
                 string s = "";
                 foreach (double w in new[] { 0.0, 0.37, 1.0 })
                 {
-                    B.D1(w, out gp_Pnt P, out gp_Vec V);
+                    B.D1(w, out Point3D P, out Vector3D V);
                     s = Join(s, Hex(B.Value(w)) + "," + Hex(P) + "," + Hex(V));
                     if (B.HasNormals())
                     {
-                        B.D1Norm(w, out gp_Vec N, out gp_Vec DN);
+                        B.D1Norm(w, out Vector3D N, out Vector3D DN);
                         s += "," + Hex(B.Norm(w)) + "," + Hex(N) + "," + Hex(DN);
                     }
                 }
@@ -542,8 +545,8 @@ internal static class FillRecordings
             {
                 B.Reparametrize(0.0, 1.0, aHasDF, aHasDL, aDF, aDL, aRev);
                 B.Bounds(out double f, out double l);
-                B.D1(0.21, out gp_Pnt P, out gp_Vec V);
-                B.Points(out gp_Pnt P1, out gp_Pnt P2);
+                B.D1(0.21, out Point3D P, out Vector3D V);
+                B.Points(out Point3D P1, out Point3D P2);
                 return Hex(f) + "," + Hex(l) + "," + Hex(B.Value(0.21)) + "," + Hex(P) + "," + Hex(V) + "," + Hex(P1) + ","
                        + Hex(P2);
             });
@@ -582,7 +585,7 @@ internal static class FillRecordings
                     string s = "";
                     foreach (double w in new[] { 0.3, 0.7 })
                     {
-                        T.D1(w, out gp_Vec V, out gp_Vec DV);
+                        T.D1(w, out Vector3D V, out Vector3D DV);
                         s = Join(s, Hex(T.Value(w)) + "," + Hex(T.D1(w)) + "," + Hex(V) + "," + Hex(DV));
                     }
                     return s;
@@ -616,7 +619,7 @@ internal static class FillRecordings
                 CF.Init(aUsed[0], aUsed[1], aUsed[2], aNoCheck);
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             theW.Put("init:" + ExcName(anExc));
             return;

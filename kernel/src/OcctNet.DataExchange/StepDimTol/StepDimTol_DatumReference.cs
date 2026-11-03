@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity DatumReference
 /// </summary>
-public class StepDimTol_DatumReference : Standard_Transient
+public class StepDimTol_DatumReference : Transient
 {
     private int myPrecedence;
     private StepDimTol_Datum myReferencedDatum;

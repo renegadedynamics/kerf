@@ -3,13 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>A basic element of the bisecting locus: an element of the contour (a curve or a vertex), with the arcs of
 /// the graph that start and end its zone.</summary>
 /// <remarks>OCCT keeps the arcs as raw pointers (no reference count, to break cycles); the port keeps references. The
 /// setters are internal (MAT_Graph and MAT2d build the graph).</remarks>
-public sealed class MAT_BasicElt : Standard_Transient
+public sealed class MAT_BasicElt : Transient
 {
     private MAT_Arc? startLeftArc;
     private MAT_Arc? endLeftArc;

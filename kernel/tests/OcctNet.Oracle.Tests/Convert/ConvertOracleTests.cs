@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -31,24 +33,24 @@ public class ConvertOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void Ax2(Oracle theOracle, out gp_Ax2 thePort, out N.gp_Ax2 theNative)
+    private static void Ax2(Oracle theOracle, out Frame3D thePort, out N.gp_Ax2 theNative)
     {
-        gp_Pnt aP = theOracle.Pnt();
+        Point3D aP = theOracle.Pnt();
         var (nx, ny, nz) = RawDir(theOracle);
         var (vx, vy, vz) = RawDir(theOracle);
-        thePort = new gp_Ax2(aP, new gp_Dir(nx, ny, nz), new gp_Dir(vx, vy, vz));
+        thePort = new Frame3D(aP, new Direction3D(nx, ny, nz), new Direction3D(vx, vy, vz));
         using N.gp_Pnt aNP = Oracle.ToNative(aP);
         using var aNN = new N.gp_Dir(nx, ny, nz);
         using var aNV = new N.gp_Dir(vx, vy, vz);
         theNative = new N.gp_Ax2(aNP, aNN, aNV);
     }
 
-    private static void Ax3(Oracle theOracle, out gp_Ax3 thePort, out N.gp_Ax3 theNative)
+    private static void Ax3(Oracle theOracle, out CoordinateSystem thePort, out N.gp_Ax3 theNative)
     {
-        gp_Pnt aP = theOracle.Pnt();
+        Point3D aP = theOracle.Pnt();
         var (nx, ny, nz) = RawDir(theOracle);
         var (vx, vy, vz) = RawDir(theOracle);
-        thePort = new gp_Ax3(aP, new gp_Dir(nx, ny, nz), new gp_Dir(vx, vy, vz));
+        thePort = new CoordinateSystem(aP, new Direction3D(nx, ny, nz), new Direction3D(vx, vy, vz));
         using N.gp_Pnt aNP = Oracle.ToNative(aP);
         using var aNN = new N.gp_Dir(nx, ny, nz);
         using var aNV = new N.gp_Dir(vx, vy, vz);
@@ -60,9 +62,9 @@ public class ConvertOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void Ax22d(Oracle theOracle, out gp_Ax22d thePort, out N.gp_Ax22d theNative)
+    private static void Ax22d(Oracle theOracle, out Frame2D thePort, out N.gp_Ax22d theNative)
     {
-        var aP = new gp_Pnt2d(theOracle.Real(), theOracle.Real());
+        var aP = new Point2D(theOracle.Real(), theOracle.Real());
         double x, y;
         do
         {
@@ -71,7 +73,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
         }
         while (x * x + y * y < 0.01);
         bool isSense = theOracle.Int(0, 1) == 1;
-        thePort = new gp_Ax22d(aP, new gp_Dir2d(x, y), isSense);
+        thePort = new Frame2D(aP, new Direction2D(x, y), isSense);
         using N.gp_Pnt2d aNP = Oracle.ToNative(aP);
         using var aND = new N.gp_Dir2d(x, y);
         theNative = new N.gp_Ax22d(aNP, aND, isSense);
@@ -93,9 +95,9 @@ public class ConvertOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             var aKind = (ConicKind)anOracle.Int(0, 3);
-            var aParam = (Convert_ParameterisationType)anOracle.Int(0, 7);
+            var aParam = (ParameterisationType)anOracle.Int(0, 7);
             bool isWhole = aKind <= ConicKind.Ellipse && anOracle.Int(0, 3) == 0;
-            Ax2(anOracle, out gp_Ax2 anAx2, out N.gp_Ax2 aNAx2);
+            Ax2(anOracle, out Frame3D anAx2, out N.gp_Ax2 aNAx2);
             using N.gp_Ax2 aNAx2Owned = aNAx2;
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.Geom_Curve aNConic = aKind switch
@@ -124,7 +126,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 aNTrimmed = new N.Geom_TrimmedCurve(aNConic, aFirst, aFirst + aLength);
                 aNCurve = aNTrimmed;
                 aCurve = new Geom_TrimmedCurve(aConic, aFirst, aFirst + aLength);
-                if (aParam == Convert_ParameterisationType.Convert_RationalC1 && aKind <= ConicKind.Ellipse
+                if (aParam == ParameterisationType.RationalC1 && aKind <= ConicKind.Ellipse
                     && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
                     aNbSplit++;
@@ -159,9 +161,9 @@ public class ConvertOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             var aKind = (ConicKind)anOracle.Int(0, 1);
-            var aParam = (Convert_ParameterisationType)anOracle.Int(0, 7);
+            var aParam = (ParameterisationType)anOracle.Int(0, 7);
             bool isWhole = anOracle.Int(0, 3) == 0;
-            Ax22d(anOracle, out gp_Ax22d anAx, out N.gp_Ax22d aNAx);
+            Ax22d(anOracle, out Frame2D anAx, out N.gp_Ax22d aNAx);
             using N.gp_Ax22d aNAxOwned = aNAx;
             double aR1 = anOracle.Real(0.5, 20), aR2 = anOracle.Real(0.1, aR1);
             using N.Geom2d_Curve aNConic = aKind == ConicKind.Circle ? new N.Geom2d_Circle(aNAx, aR1)
@@ -177,7 +179,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
                 aNTrimmed = new N.Geom2d_TrimmedCurve(aNConic, aFirst, aLast);
                 aNCurve = aNTrimmed;
                 aCurve = new Geom2d_TrimmedCurve(aConic, aFirst, aLast);
-                if (aParam == Convert_ParameterisationType.Convert_RationalC1
+                if (aParam == ParameterisationType.RationalC1
                     && aNTrimmed.LastParameter() - aNTrimmed.FirstParameter() >= 6.0)
                 {
                     aNbSplit++;
@@ -220,7 +222,7 @@ public class ConvertOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             var aKind = (QuadricKind)anOracle.Int(0, 3);
-            Ax3(anOracle, out gp_Ax3 anAx3, out N.gp_Ax3 aNAx3);
+            Ax3(anOracle, out CoordinateSystem anAx3, out N.gp_Ax3 aNAx3);
             using N.gp_Ax3 aNAx3Owned = aNAx3;
             double aR1 = anOracle.Real(1, 20), aR2 = anOracle.Real(0.1, aR1 * 0.9), anAngle = anOracle.Real(0.05, 1.4);
             using N.Geom_Surface aNSurface = aKind switch

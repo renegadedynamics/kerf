@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// General frame to describe entities with Description (Simple or Complex).
 /// </summary>
-public abstract class StepData_Described : Standard_Transient
+public abstract class StepData_Described : Transient
 {
     private readonly StepData_EDescr thedescr;
 

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopOpeBRepDS_Kind;
@@ -78,7 +79,7 @@ internal static partial class ChFi3d_Builder_0
                         continue;
                     }
                     double FiLen = Math.Abs(Fi.FirstParameter() - Fi.LastParameter());
-                    if (FiLen > Precision.PConfusion())
+                    if (FiLen > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
@@ -357,9 +358,9 @@ internal static partial class ChFi3d_Builder_0
                         DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
                     } // End of the removal
 
-                    gp_Pnt2d UV1 =
+                    Point2D UV1 =
                         Fd.InterferenceOnS1().PCurveOnSurf()!.Value(Fd.InterferenceOnS1().FirstParameter());
-                    gp_Pnt2d UV2 =
+                    Point2D UV2 =
                         Fd.InterferenceOnS2().PCurveOnSurf()!.Value(Fd.InterferenceOnS2().FirstParameter());
                     ref TopOpeBRepDS_Curve TCurv = ref DStr.ChangeCurve(Icurv);
                     if (Degene)

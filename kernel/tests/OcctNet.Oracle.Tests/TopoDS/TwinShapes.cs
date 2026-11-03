@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 
 namespace OcctNet.Oracle.Tests;
@@ -23,7 +26,7 @@ internal sealed class TwinShapes
 
     public static N.TopAbs_ShapeEnum ToNative(TopAbs_ShapeEnum theT) => (N.TopAbs_ShapeEnum)(int)theT;
 
-    public Twin<N.TopoDS_Vertex, TopoDS_Vertex> Vertex(in gp_Pnt theP, double theTol = Tol)
+    public Twin<N.TopoDS_Vertex, TopoDS_Vertex> Vertex(in Point3D theP, double theTol = Tol)
     {
         var aNV = new N.TopoDS_Vertex();
         using var aNP = Oracle.ToNative(theP);
@@ -34,20 +37,20 @@ internal sealed class TwinShapes
     }
 
     /// <summary>A segment between the vertices at the given points (a line from the raw difference, parametrised by length).</summary>
-    public Twin<N.TopoDS_Edge, TopoDS_Edge> Segment(Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV1, in gp_Pnt theP1,
-                                                    Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV2, in gp_Pnt theP2)
+    public Twin<N.TopoDS_Edge, TopoDS_Edge> Segment(Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV1, in Point3D theP1,
+                                                    Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV2, in Point3D theP2)
     {
         double dx = theP2.X() - theP1.X(), dy = theP2.Y() - theP1.Y(), dz = theP2.Z() - theP1.Z();
         using var aNP = Oracle.ToNative(theP1);
         using var aND = new N.gp_Dir(dx, dy, dz);
         var aNLine = new N.Geom_Line(aNP, aND);
-        var aLine = new Geom_Line(theP1, new gp_Dir(dx, dy, dz));
+        var aLine = new Geom_Line(theP1, new Direction3D(dx, dy, dz));
         double aLength = theP1.Distance(theP2);
-        return EdgeOn(aNLine, aLine, new TopLoc_Location(), null, 0.0, aLength, theV1, theV2);
+        return EdgeOn(aNLine, aLine, new Placement(), null, 0.0, aLength, theV1, theV2);
     }
 
     /// <summary>An edge on the curve (at a location for it) over [p1, p2] between the vertices.</summary>
-    public Twin<N.TopoDS_Edge, TopoDS_Edge> EdgeOn(N.Geom_Curve theNC, Geom_Curve theC, in TopLoc_Location theL, N.TopLoc_Location? theNL,
+    public Twin<N.TopoDS_Edge, TopoDS_Edge> EdgeOn(N.Geom_Curve theNC, Geom_Curve theC, in Placement theL, N.TopLoc_Location? theNL,
                                                    double p1, double p2,
                                                    Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV1, Twin<N.TopoDS_Vertex, TopoDS_Vertex> theV2)
     {
@@ -78,9 +81,9 @@ internal sealed class TwinShapes
     /// <paramref name="theOrigin"/> with the raw normal and X direction, with pcurves computed by the port and given to
     /// both sides. Edges are shared through <paramref name="theEdges"/> (keyed by vertex indices).
     /// </summary>
-    public Twin<N.TopoDS_Face, TopoDS_Face> PolygonFace(gp_Pnt[] thePoints, Twin<N.TopoDS_Vertex, TopoDS_Vertex>[] theVertices,
+    public Twin<N.TopoDS_Face, TopoDS_Face> PolygonFace(Point3D[] thePoints, Twin<N.TopoDS_Vertex, TopoDS_Vertex>[] theVertices,
                                                          Dictionary<(int, int), Twin<N.TopoDS_Edge, TopoDS_Edge>> theEdges,
-                                                         in gp_Pnt theOrigin, in gp_XYZ theNormal, in gp_XYZ theXDir,
+                                                         in Point3D theOrigin, in global::Kerf.Engine.Geometry.Xyz theNormal, in global::Kerf.Engine.Geometry.Xyz theXDir,
                                                          params int[][] theLoops)
     {
         using var aNO = Oracle.ToNative(theOrigin);
@@ -88,9 +91,9 @@ internal sealed class TwinShapes
         using var aNX = new N.gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z());
         using var aNAx = new N.gp_Ax3(aNO, aNN, aNX);
         var aNPlane = new N.Geom_Plane(aNAx);
-        var aPlane = new Geom_Plane(new gp_Ax3(theOrigin, new gp_Dir(theNormal.X(), theNormal.Y(), theNormal.Z()),
-                                               new gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z())));
-        gp_Pln aPln = aPlane.Pln();
+        var aPlane = new Geom_Plane(new CoordinateSystem(theOrigin, new Direction3D(theNormal.X(), theNormal.Y(), theNormal.Z()),
+                                               new Direction3D(theXDir.X(), theXDir.Y(), theXDir.Z())));
+        Plane3D aPln = aPlane.Pln();
 
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, aNPlane, Tol);
@@ -115,15 +118,15 @@ internal sealed class TwinShapes
                 }
 
                 // the pcurve: the image of the edge's line, with the same parameter (computed once, given to both)
-                ElSLib.Parameters(aPln, thePoints[aKey.Item1], out double u1, out double v1);
-                ElSLib.Parameters(aPln, thePoints[aKey.Item2], out double u2, out double v2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, thePoints[aKey.Item1], out double u1, out double v1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, thePoints[aKey.Item2], out double u2, out double v2);
                 using (var aNP2 = new N.gp_Pnt2d(u1, v1))
                 using (var aND2 = new N.gp_Dir2d(u2 - u1, v2 - v1))
                 {
                     myN.UpdateEdge(anEdge.N, new N.Geom2d_Line(aNP2, aND2), aNF, Tol);
                 }
 
-                myP.UpdateEdge(anEdge.P, new Geom2d_Line(new gp_Pnt2d(u1, v1), new gp_Dir2d(u2 - u1, v2 - v1)), aF, Tol);
+                myP.UpdateEdge(anEdge.P, new Geom2d_Line(new Point2D(u1, v1), new Direction2D(u2 - u1, v2 - v1)), aF, Tol);
                 myN.Add(aNW, isReversed ? anEdge.N.Reversed() : anEdge.N);
                 myP.Add(aW, isReversed ? anEdge.P.Reversed() : anEdge.P);
             }
@@ -142,7 +145,7 @@ internal sealed class TwinShapes
     /// <paramref name="theOrigin"/> with the raw normal and X direction, whose edges have pcurves and no 3D curves (each
     /// pcurve a line from one corner to the next, parametrised by length over [0, length]).
     /// </summary>
-    public Twin<N.TopoDS_Face, TopoDS_Face> PCurveOnlyFace(in gp_Pnt theOrigin, in gp_XYZ theNormal, in gp_XYZ theXDir,
+    public Twin<N.TopoDS_Face, TopoDS_Face> PCurveOnlyFace(in Point3D theOrigin, in global::Kerf.Engine.Geometry.Xyz theNormal, in global::Kerf.Engine.Geometry.Xyz theXDir,
                                                            params (double U, double V)[] theCorners)
     {
         using var aNO = Oracle.ToNative(theOrigin);
@@ -150,9 +153,9 @@ internal sealed class TwinShapes
         using var aNX = new N.gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z());
         using var aNAx = new N.gp_Ax3(aNO, aNN, aNX);
         var aNPlane = new N.Geom_Plane(aNAx);
-        var aPlane = new Geom_Plane(new gp_Ax3(theOrigin, new gp_Dir(theNormal.X(), theNormal.Y(), theNormal.Z()),
-                                               new gp_Dir(theXDir.X(), theXDir.Y(), theXDir.Z())));
-        gp_Pln aPln = aPlane.Pln();
+        var aPlane = new Geom_Plane(new CoordinateSystem(theOrigin, new Direction3D(theNormal.X(), theNormal.Y(), theNormal.Z()),
+                                               new Direction3D(theXDir.X(), theXDir.Y(), theXDir.Z())));
+        Plane3D aPln = aPlane.Pln();
 
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, aNPlane, Tol);
@@ -163,7 +166,7 @@ internal sealed class TwinShapes
         var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[n];
         for (int i = 0; i < n; i++)
         {
-            aV[i] = Vertex(ElSLib.Value(theCorners[i].U, theCorners[i].V, aPln), 1e-6);
+            aV[i] = Vertex(global::Kerf.Engine.Geometry.ElSLib.Value(theCorners[i].U, theCorners[i].V, aPln), 1e-6);
         }
 
         var aNW = new N.TopoDS_Wire();
@@ -190,7 +193,7 @@ internal sealed class TwinShapes
 
             TopoDS_Edge anE = new();
             myP.MakeEdge(ref anE);
-            myP.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(u1, v1), new gp_Dir2d(u2 - u1, v2 - v1)), aF, Tol);
+            myP.UpdateEdge(anE, new Geom2d_Line(new Point2D(u1, v1), new Direction2D(u2 - u1, v2 - v1)), aF, Tol);
             myP.Range(anE, 0.0, aLength);
             myP.Add(anE, aV[i].P.Oriented(TopAbs_FORWARD));
             myP.Add(anE, aV[(i + 1) % n].P.Oriented(TopAbs_REVERSED));
@@ -255,11 +258,11 @@ internal sealed class TwinShapes
     /// <summary>A box [0, dx] x [0, dy] x [0, dz]: 8 vertices, 12 edges, 6 faces, a closed shell and a solid.</summary>
     public Twin<N.TopoDS_Solid, TopoDS_Solid> Box(double dx, double dy, double dz)
     {
-        var aPoints = new gp_Pnt[8];
+        var aPoints = new Point3D[8];
         var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
-            aPoints[i] = new gp_Pnt((i & 1) != 0 ? dx : 0, (i & 2) != 0 ? dy : 0, (i & 4) != 0 ? dz : 0);
+            aPoints[i] = new Point3D((i & 1) != 0 ? dx : 0, (i & 2) != 0 ? dy : 0, (i & 4) != 0 ? dz : 0);
             aV[i] = Vertex(aPoints[i]);
         }
 
@@ -268,16 +271,16 @@ internal sealed class TwinShapes
         myN.MakeShell(aNShell);
         TopoDS_Shell aShell = new();
         myP.MakeShell(ref aShell);
-        (int[] Indices, gp_XYZ Normal, gp_XYZ XDir)[] aFaces =
+        (int[] Indices, global::Kerf.Engine.Geometry.Xyz Normal, global::Kerf.Engine.Geometry.Xyz XDir)[] aFaces =
         [
-            ([0, 2, 3, 1], new gp_XYZ(0, 0, -1), new gp_XYZ(0, 1, 0)),
-            ([4, 5, 7, 6], new gp_XYZ(0, 0, 1), new gp_XYZ(1, 0, 0)),
-            ([0, 1, 5, 4], new gp_XYZ(0, -1, 0), new gp_XYZ(1, 0, 0)),
-            ([2, 6, 7, 3], new gp_XYZ(0, 1, 0), new gp_XYZ(0, 0, 1)),
-            ([0, 4, 6, 2], new gp_XYZ(-1, 0, 0), new gp_XYZ(0, 0, 1)),
-            ([1, 3, 7, 5], new gp_XYZ(1, 0, 0), new gp_XYZ(0, 1, 0)),
+            ([0, 2, 3, 1], new global::Kerf.Engine.Geometry.Xyz(0, 0, -1), new global::Kerf.Engine.Geometry.Xyz(0, 1, 0)),
+            ([4, 5, 7, 6], new global::Kerf.Engine.Geometry.Xyz(0, 0, 1), new global::Kerf.Engine.Geometry.Xyz(1, 0, 0)),
+            ([0, 1, 5, 4], new global::Kerf.Engine.Geometry.Xyz(0, -1, 0), new global::Kerf.Engine.Geometry.Xyz(1, 0, 0)),
+            ([2, 6, 7, 3], new global::Kerf.Engine.Geometry.Xyz(0, 1, 0), new global::Kerf.Engine.Geometry.Xyz(0, 0, 1)),
+            ([0, 4, 6, 2], new global::Kerf.Engine.Geometry.Xyz(-1, 0, 0), new global::Kerf.Engine.Geometry.Xyz(0, 0, 1)),
+            ([1, 3, 7, 5], new global::Kerf.Engine.Geometry.Xyz(1, 0, 0), new global::Kerf.Engine.Geometry.Xyz(0, 1, 0)),
         ];
-        foreach ((int[] anIndices, gp_XYZ aNormal, gp_XYZ anX) in aFaces)
+        foreach ((int[] anIndices, global::Kerf.Engine.Geometry.Xyz aNormal, global::Kerf.Engine.Geometry.Xyz anX) in aFaces)
         {
             Twin<N.TopoDS_Face, TopoDS_Face> aF = PolygonFace(aPoints, aV, anEdges, aPoints[anIndices[0]], aNormal, anX, anIndices);
             myN.Add(aNShell, aF.N);
@@ -300,11 +303,11 @@ internal sealed class TwinShapes
     /// (the face's own location is the identity): bottom and top circles, each with one vertex, and a seam with two
     /// pcurves (U = 2 Pi FORWARD, U = 0 REVERSED).
     /// </summary>
-    public Twin<N.TopoDS_Face, TopoDS_Face> CylinderFace(double r, double h, in TopLoc_Location theL, N.TopLoc_Location theNL)
+    public Twin<N.TopoDS_Face, TopoDS_Face> CylinderFace(double r, double h, in Placement theL, N.TopLoc_Location theNL)
     {
         double aTwoPi = 2.0 * Math.PI;
-        gp_Trsf aT = theL.Transformation();
-        gp_Pnt aP0 = new gp_Pnt(r, 0, 0).Transformed(aT), aP1 = new gp_Pnt(r, 0, h).Transformed(aT);
+        Transform3D aT = theL.Transformation();
+        Point3D aP0 = new Point3D(r, 0, 0).Transformed(aT), aP1 = new Point3D(r, 0, h).Transformed(aT);
         // the vertices are where the located curves put them; both sides use the port's coordinates
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = Vertex(aP0, 1e-6), aV1 = Vertex(aP1, 1e-6);
 
@@ -313,20 +316,20 @@ internal sealed class TwinShapes
         using var aNXd = new N.gp_Dir(1, 0, 0);
         using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNXd);
         var aNSurf = new N.Geom_CylindricalSurface(aNAx3, r);
-        var aSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r);
+        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
 
         using var aNAx2 = new N.gp_Ax2(aNO, aNZ, aNXd);
         using var aNO2 = new N.gp_Pnt(0, 0, h);
         using var aNAx2Top = new N.gp_Ax2(aNO2, aNZ, aNXd);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aBottom =
-            EdgeOn(new N.Geom_Circle(aNAx2, r), new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r),
+            EdgeOn(new N.Geom_Circle(aNAx2, r), new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                    theL, theNL, 0.0, aTwoPi, aV0, aV0);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aTop =
-            EdgeOn(new N.Geom_Circle(aNAx2Top, r), new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, h), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r),
+            EdgeOn(new N.Geom_Circle(aNAx2Top, r), new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                    theL, theNL, 0.0, aTwoPi, aV1, aV1);
         using var aNSeamP = new N.gp_Pnt(r, 0, 0);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aSeam =
-            EdgeOn(new N.Geom_Line(aNSeamP, aNZ), new Geom_Line(new gp_Pnt(r, 0, 0), new gp_Dir(0, 0, 1)), theL, theNL, 0.0, h, aV0, aV1);
+            EdgeOn(new N.Geom_Line(aNSeamP, aNZ), new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), theL, theNL, 0.0, h, aV0, aV1);
 
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, aNSurf, theNL, Tol);
@@ -344,10 +347,10 @@ internal sealed class TwinShapes
             myN.UpdateEdge(aSeam.N, new N.Geom2d_Line(aNPc, aNV), new N.Geom2d_Line(aNPa, aNV), aNF, Tol);
         }
 
-        myP.UpdateEdge(aBottom.P, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Tol);
-        myP.UpdateEdge(aTop.P, new Geom2d_Line(new gp_Pnt2d(0, h), new gp_Dir2d(1, 0)), aF, Tol);
-        myP.UpdateEdge(aSeam.P, new Geom2d_Line(new gp_Pnt2d(aTwoPi, 0), new gp_Dir2d(0, 1)),
-                       new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)), aF, Tol);
+        myP.UpdateEdge(aBottom.P, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Tol);
+        myP.UpdateEdge(aTop.P, new Geom2d_Line(new Point2D(0, h), new Direction2D(1, 0)), aF, Tol);
+        myP.UpdateEdge(aSeam.P, new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                       new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)), aF, Tol);
 
         var aNW = new N.TopoDS_Wire();
         myN.MakeWire(aNW);
@@ -388,10 +391,10 @@ internal sealed class TwinShapes
     public void AttachTriangulation(Twin<N.TopoDS_Face, TopoDS_Face> theFace, double theDeflection)
     {
         var aNT = new N.Poly_Triangulation(3, 1, false);
-        var aT = new Poly_Triangulation(3, 1, false);
+        var aT = new Triangulation(3, 1, false);
         for (int i = 1; i <= 3; i++)
         {
-            var aP = new gp_Pnt(i == 2 ? 1 : 0, i == 3 ? 1 : 0, 0);
+            var aP = new Point3D(i == 2 ? 1 : 0, i == 3 ? 1 : 0, 0);
             using var aNP = Oracle.ToNative(aP);
             aNT.SetNode(i, aNP);
             aT.SetNode(i, aP);
@@ -402,7 +405,7 @@ internal sealed class TwinShapes
             aNT.SetTriangle(1, aNTri);
         }
 
-        aT.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        aT.SetTriangle(1, new Triangle1(1, 2, 3));
         aNT.Deflection(theDeflection);
         aT.Deflection(theDeflection);
         myN.UpdateFace(theFace.N, aNT);

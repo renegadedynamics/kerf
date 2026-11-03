@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -63,7 +64,7 @@ public sealed class BRepFeat_Gluer : BRepBuilderAPI_MakeShape
     public TopoDS_Shape GluedShape() => myGluer.GluedShape();
 
     /// <summary>Glues the shapes.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myGluer.Perform();
         if (myGluer.IsDone())

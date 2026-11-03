@@ -5,10 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The FILE_SCHEMA entity of a STEP file's header.</summary>
-public class HeaderSection_FileSchema : Standard_Transient
+public class HeaderSection_FileSchema : Transient
 {
     private NCollection_HArray1<TCollection_HAsciiString> schemaIdentifiers;
 

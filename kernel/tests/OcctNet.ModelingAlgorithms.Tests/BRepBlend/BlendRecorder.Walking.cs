@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_State;
 
@@ -40,7 +42,7 @@ internal sealed partial class BlendRecorder
             Hex(u);
             Hex(v);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -50,7 +52,7 @@ internal sealed partial class BlendRecorder
             Hex(u);
             Hex(v);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -58,7 +60,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(P.ParameterOnC1());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -66,7 +68,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(P.ParameterOnC2());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -78,7 +80,7 @@ internal sealed partial class BlendRecorder
             {
                 Vec2d(P.Tangent2dOnS1());
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Tag(" X");
             }
@@ -86,7 +88,7 @@ internal sealed partial class BlendRecorder
             {
                 Vec2d(P.Tangent2dOnS2());
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 Tag(" X");
             }
@@ -128,7 +130,7 @@ internal sealed partial class BlendRecorder
         {
             Int((int)L.TransitionOnS1());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -136,7 +138,7 @@ internal sealed partial class BlendRecorder
         {
             Int((int)L.TransitionOnS2());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -158,7 +160,7 @@ internal sealed partial class BlendRecorder
         {
             Hex(F.GetMinimalDistance());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Tag(" X");
         }
@@ -177,7 +179,7 @@ internal sealed partial class BlendRecorder
         Int(nuk);
         Int(nvk);
         End();
-        NCollection_Array2<gp_Pnt> aPoles = A.SurfPoles();
+        NCollection_Array2<Point3D> aPoles = A.SurfPoles();
         NCollection_Array2<double> aW = A.SurfWeights();
         Tag("poles");
         for (int i = aPoles.LowerRow(); i <= aPoles.UpperRow(); i++)
@@ -213,7 +215,7 @@ internal sealed partial class BlendRecorder
         End();
         for (int k = 1; k <= aNb2d; k++)
         {
-            NCollection_Array1<gp_Pnt2d> aP2 = A.Curve2dPoles(k);
+            NCollection_Array1<Point2D> aP2 = A.Curve2dPoles(k);
             Tag("c2d");
             for (int i = aP2.Lower(); i <= aP2.Upper(); i++)
             {
@@ -245,7 +247,7 @@ internal sealed partial class BlendRecorder
     private void RecAppSurface(BRepBlend_AppFuncRoot F, BRepBlend_Line L)
     {
         BRepBlend_AppSurface approx = new(F, L.Point(1).Parameter(), L.Point(L.NbPoints()).Parameter(), 1.0e-4, 1.0e-5,
-                                          1.0e-2, GeomAbs_C1, 20, 5000);
+                                          1.0e-2, C1, 20, 5000);
         Tag("appsurface");
         Int(approx.IsDone() ? 1 : 0);
         End();
@@ -325,9 +327,9 @@ internal sealed partial class BlendRecorder
     {
         return theG switch
         {
-            0 => new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)),
-            1 => new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0),
-            _ => new Geom_Line(new gp_Pnt(1.5, 0, 0), new gp_Dir(0, 1, 0)),
+            0 => new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
+            1 => new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0),
+            _ => new Geom_Line(new Point3D(1.5, 0, 0), new Direction3D(0, 1, 0)),
         };
     }
 
@@ -506,7 +508,7 @@ internal sealed partial class BlendRecorder
         Adaptor3d_TopolTool D1 = new(S1);
         Adaptor3d_TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
-        Adaptor2d_Curve2d Rst = new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(0.0, -1.0), new gp_Dir2d(1.0, 0.0)),
+        Adaptor2d_Curve2d Rst = new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)),
                                                         C.R2[0], C.R2[1]);
         Adaptor3d_CurveOnSurface HC = new();
         HC.Load(Rst, S2);
@@ -584,9 +586,9 @@ internal sealed partial class BlendRecorder
         Adaptor3d_TopolTool D2 = new(S2);
         ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
         Adaptor2d_Curve2d Rst1 = new Geom2dAdaptor_Curve(
-            new Geom2d_Line(new gp_Pnt2d(0.0, 1.0), new gp_Dir2d(1.0, 0.0)), C.R1[0], C.R1[1]);
+            new Geom2d_Line(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0)), C.R1[0], C.R1[1]);
         Adaptor2d_Curve2d Rst2 = new Geom2dAdaptor_Curve(
-            new Geom2d_Line(new gp_Pnt2d(0.0, -1.0), new gp_Dir2d(1.0, 0.0)), C.R2[0], C.R2[1]);
+            new Geom2d_Line(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)), C.R2[0], C.R2[1]);
         Adaptor3d_CurveOnSurface HC1 = new();
         HC1.Load(Rst1, S1);
         Adaptor3d_CurveOnSurface HC2 = new();
@@ -662,7 +664,7 @@ internal sealed partial class BlendRecorder
         {
             theCase();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Fail("exception");
         }

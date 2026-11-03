@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
@@ -38,7 +40,7 @@ public class BOPDS_ValueTests
     {
         // MSVC's std::sort keeps the order of tied elements in ranges of up to 32 (insertion sort)
         BOPDS_Pave[] aPaves = [new(1, 2.0), new(2, 1.0), new(3, 2.0), new(4, 1.0), new(5, 0.0)];
-        std_sort.sort(aPaves.AsSpan(), new BOPDS_Pave.LessThan());
+        Sorting.Sort(aPaves.AsSpan(), new BOPDS_Pave.LessThan());
         Assert.Equal(new[] { 5, 2, 4, 1, 3 }, aPaves.Select(p => p.Index()));
     }
 
@@ -61,7 +63,7 @@ public class BOPDS_ValueTests
         Assert.Equal((-1, -1), (i1, i2));
 
         BOPDS_Pair[] aPairs = [new(3, 1), new(1, 5), new(1, 2), new(0, 9)];
-        std_sort.stable_sort(aPairs.AsSpan(), new BOPDS_Pair.LessThan());
+        Sorting.stable_sort(aPairs.AsSpan(), new BOPDS_Pair.LessThan());
         Assert.Equal(new[] { "BOPDS_Pair(0, 9)", "BOPDS_Pair(1, 2)", "BOPDS_Pair(1, 5)", "BOPDS_Pair(3, 1)" },
                      aPairs.Select(p => p.ToString()));
     }
@@ -84,16 +86,16 @@ public class BOPDS_ValueTests
     public void Point_Defaults()
     {
         BOPDS_Point aPoint = new();
-        Assert.Equal(new gp_Pnt(99, 99, 99), aPoint.Pnt());
-        Assert.Equal(new gp_Pnt2d(99, 99), aPoint.Pnt2D1());
-        Assert.Equal(new gp_Pnt2d(99, 99), aPoint.Pnt2D2());
+        Assert.Equal(new Point3D(99, 99, 99), aPoint.Pnt());
+        Assert.Equal(new Point2D(99, 99), aPoint.Pnt2D1());
+        Assert.Equal(new Point2D(99, 99), aPoint.Pnt2D2());
         Assert.Equal(-1, aPoint.Index());
 
         // a vector of points default-constructs as OCCT's
         NCollection_DynamicArray<BOPDS_Point> aPoints = new();
         aPoints.Appended().SetIndex(4);
         Assert.Equal(4, aPoints.Value(0).Index());
-        Assert.Equal(new gp_Pnt(99, 99, 99), aPoints.Value(0).Pnt());
+        Assert.Equal(new Point3D(99, 99, 99), aPoints.Value(0).Pnt());
     }
 
     [Fact]

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -39,7 +41,7 @@ public class STEPConstruct_ContextTool
         int i, nb = aStepModel.NbEntities();
         for (i = 1; i <= nb && theAPD is null; i++)
         {
-            Standard_Transient ent = aStepModel.Value(i);
+            Transient ent = aStepModel.Value(i);
             if (ent.IsKind(typeof(StepBasic_ApplicationProtocolDefinition)))
             {
                 if (theAPD is null)
@@ -345,9 +347,9 @@ public class STEPConstruct_ContextTool
     /// Produces and returns a full list of root entities required for part identified by SDRTool (including SDR
     /// itself)
     /// </summary>
-    public NCollection_HSequence<Standard_Transient> GetRootsForPart(STEPConstruct_Part SDRTool)
+    public NCollection_HSequence<Transient> GetRootsForPart(STEPConstruct_Part SDRTool)
     {
-        NCollection_HSequence<Standard_Transient> seq = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> seq = new NCollection_HSequence<Transient>();
 
         seq.Append(SDRTool.SDRValue());
         //  seq->Append ( GetAPD() );
@@ -381,9 +383,9 @@ public class STEPConstruct_ContextTool
     /// Produces and returns a full list of root entities required for assembly link identified by assembly
     /// (including NAUO and CDSR)
     /// </summary>
-    public NCollection_HSequence<Standard_Transient> GetRootsForAssemblyLink(STEPConstruct_Assembly assembly)
+    public NCollection_HSequence<Transient> GetRootsForAssemblyLink(STEPConstruct_Assembly assembly)
     {
-        NCollection_HSequence<Standard_Transient> seq = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> seq = new NCollection_HSequence<Transient>();
 
         seq.Append(assembly.ItemValue());
 

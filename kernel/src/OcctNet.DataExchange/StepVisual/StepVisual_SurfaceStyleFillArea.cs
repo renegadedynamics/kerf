@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_SurfaceStyleFillArea : Standard_Transient
+public class StepVisual_SurfaceStyleFillArea : Transient
 {
     private StepVisual_FillAreaStyle fillArea;
 

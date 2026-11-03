@@ -5,8 +5,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
-using static Occt.Quantity_NameOfColor;
+using static Kerf.Engine.Foundation.NameOfColor;
 using static Occt.STEPControl_StepModelType;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.XdeDoc_ColorType;
@@ -36,8 +39,8 @@ public class STEPCAFControl_Writer
     // XCAFPrs_Style as MakeSTEPStyles uses it: the colours and the visibility (OCCT.NET, decision 1279: no materials)
     private sealed class Style
     {
-        public Quantity_ColorRGBA? ColorSurf;
-        public Quantity_Color? ColorCurv;
+        public ColorWithAlpha? ColorSurf;
+        public Color? ColorCurv;
         public bool IsVisible = true;
 
         public Style Copy() => (Style)MemberwiseClone();
@@ -135,7 +138,7 @@ public class STEPCAFControl_Writer
             {
                 aFileName = anExtFile.GetName().ToCString();
             }
-            Message.SendTrace("Writing external file: " + aFileName + "\n");
+            global::Kerf.Engine.Foundation.Message.SendTrace("Writing external file: " + aFileName + "\n");
 
             IFSelect_ReturnStatus anExtStatus = anExtFile.GetWS().SendAll(aFileName);
             anExtFile.SetWriteStatus(anExtStatus);
@@ -230,7 +233,7 @@ public class STEPCAFControl_Writer
     /// gives prefix for names of extern files (can be empty string) Returns True if translation is OK
     /// </summary>
     public bool Transfer(XdeDoc_Document theDoc, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string? theMulti = null, Message_ProgressRange theProgress = default)
+                         string? theMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         // OCCT: InitFromStatic(), the process-wide statics; here the session's (decision 1181)
@@ -240,7 +243,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Transfers a document (or single label) to a STEP model with the given parameters</summary>
     public bool Transfer(XdeDoc_Document theDoc, in DESTEP_Parameters theParams, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string? theMulti = null, Message_ProgressRange theProgress = default)
+                         string? theMulti = null, ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
         myRootLabels.Add(theDoc);
@@ -253,7 +256,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to transfer part of the document specified by label</summary>
     public bool Transfer(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string? theIsMulti = null, Message_ProgressRange theProgress = default)
+                         string? theIsMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         aModel.InternalParameters.InitFromStatic(myWriter.WS().Statics());
@@ -263,7 +266,7 @@ public class STEPCAFControl_Writer
     /// <summary>Method to transfer part of the document specified by label with the given parameters</summary>
     public bool Transfer(in XdeDoc_Label theLabel, in DESTEP_Parameters theParams,
                          STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
-                         Message_ProgressRange theProgress = default)
+                         ProgressRange theProgress = default)
     {
         if (theLabel.IsNull())
         {
@@ -280,7 +283,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
     public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, STEPControl_StepModelType theMode = STEPControl_AsIs,
-                         string? theIsMulti = null, Message_ProgressRange theProgress = default)
+                         string? theIsMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
         aModel.InternalParameters.InitFromStatic(myWriter.WS().Statics());
@@ -290,7 +293,7 @@ public class STEPCAFControl_Writer
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
     public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, in DESTEP_Parameters theParams,
                          STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
-                         Message_ProgressRange theProgress = default)
+                         ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
         foreach (XdeDoc_Label aLabel in theLabels)
@@ -305,7 +308,7 @@ public class STEPCAFControl_Writer
         return transfer(myWriter, theLabels, theMode, theIsMulti, false, theProgress);
     }
 
-    public bool Perform(XdeDoc_Document theDoc, string theFileName, Message_ProgressRange theProgress = default)
+    public bool Perform(XdeDoc_Document theDoc, string theFileName, ProgressRange theProgress = default)
     {
         if (!Transfer(theDoc, STEPControl_AsIs, null, theProgress))
         {
@@ -315,7 +318,7 @@ public class STEPCAFControl_Writer
     }
 
     public bool Perform(XdeDoc_Document theDoc, string theFileName, in DESTEP_Parameters theParams,
-                        Message_ProgressRange theProgress = default)
+                        ProgressRange theProgress = default)
     {
         if (!Transfer(theDoc, theParams, STEPControl_AsIs, null, theProgress))
         {
@@ -435,7 +438,7 @@ public class STEPCAFControl_Writer
     /// </summary>
     protected bool transfer(STEPControl_Writer theWriter, NCollection_Sequence<XdeDoc_Label> theLabels,
                             STEPControl_StepModelType theMode, string? theIsMulti, bool theIsExternFile,
-                            Message_ProgressRange theProgress)
+                            ProgressRange theProgress)
     {
         if (theLabels.IsEmpty())
         {
@@ -449,11 +452,11 @@ public class STEPCAFControl_Writer
         prepareUnit(theLabels.First().Document, aModel, ref aLocalFactors); // set local length unit to the model
         // translate free top-level shapes of the DECAF document
         NCollection_Sequence<XdeDoc_Label> aSubLabels = new NCollection_Sequence<XdeDoc_Label>();
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, "Labels", theLabels.Length());
+        using ProgressScope aPS = new ProgressScope(theProgress, "Labels", theLabels.Length());
         // Iterate on requested shapes
         for (int aLabelIndex = 1; aLabelIndex <= theLabels.Length() && aPS.More(); aLabelIndex++)
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             XdeDoc_Label aCurL = theLabels.Value(aLabelIndex);
             if (myLabels.IsBound(aCurL))
             {
@@ -556,7 +559,7 @@ public class STEPCAFControl_Writer
             else
             {
                 // translate final solids
-                using Message_ProgressScope aPS1 = new Message_ProgressScope(aRange, null, 2);
+                using ProgressScope aPS1 = new ProgressScope(aRange, null, 2);
                 TopoDS_Shape aSass = transferExternFiles(aCurL, theMode, aSubLabels, aLocalFactors, theIsMulti, aPS1.Next());
                 if (aPS1.UserBreak())
                 {
@@ -625,7 +628,7 @@ public class STEPCAFControl_Writer
             // register all MDGPRs in model
             // OCCT.NET: OCCT iterates a map keyed by shapes (by address); here in the order the MDGPRs were made
             // (decision 1280)
-            foreach (KeyValuePair<TopoDS_Shape, Standard_Transient> anItr in myMapCompMDGPR)
+            foreach (KeyValuePair<TopoDS_Shape, Transient> anItr in myMapCompMDGPR)
             {
                 aModel.AddWithRefs(anItr.Value);
             }
@@ -700,7 +703,7 @@ public class STEPCAFControl_Writer
     /// </summary>
     protected TopoDS_Shape transferExternFiles(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode,
                                                NCollection_Sequence<XdeDoc_Label> theLabels, in StepData_Factors theLocalFactors,
-                                               string thePrefix, Message_ProgressRange theProgress)
+                                               string thePrefix, ProgressRange theProgress)
     {
         // if label already translated, just return the shape
         if (myLabels.IsBound(theLabel))
@@ -781,7 +784,7 @@ public class STEPCAFControl_Writer
         }
 
         theLabels.Append(aLabel);
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, aCompLabels.Length());
+        using ProgressScope aPS = new ProgressScope(theProgress, null, aCompLabels.Length());
         // Iterate on requested shapes
         for (int i = 1; i <= aCompLabels.Length() && aPS.More(); i++)
         {
@@ -836,7 +839,7 @@ public class STEPCAFControl_Writer
             TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(aFP, aShape);
             if (!aFP.FindTypedTransient(mapper, typeof(StepShape_ShapeDefinitionRepresentation), ref aSDR))
             {
-                Message.SendTrace("Warning: Cannot find SDR for " + aShape.TShape().GetType().Name + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Warning: Cannot find SDR for " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.TShape().GetType()) + "\n");
                 continue;
             }
 
@@ -847,16 +850,16 @@ public class STEPCAFControl_Writer
             StepRepr_PropertyDefinition aPropDef = aRD.PropertyDefinition();
             if (aPropDef is null)
             {
-                Message.SendTrace("Warning: STEPCAFControl_Writer::writeExternRefs StepRepr_PropertyDefinition is null for "
-                                  + aShape.TShape().GetType().Name + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Warning: STEPCAFControl_Writer::writeExternRefs StepRepr_PropertyDefinition is null for "
+                                  + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.TShape().GetType()) + "\n");
                 continue;
             }
             StepRepr_CharacterizedDefinition aCharDef = aPropDef.Definition();
             StepBasic_ProductDefinition aPD = aCharDef.ProductDefinition();
             if (aPD is null)
             {
-                Message.SendTrace("Warning: STEPCAFControl_Writer::writeExternRefs StepBasic_ProductDefinition is null for "
-                                  + aShape.TShape().GetType().Name + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Warning: STEPCAFControl_Writer::writeExternRefs StepBasic_ProductDefinition is null for "
+                                  + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.TShape().GetType()) + "\n");
                 continue;
             }
             anEFTool.AddExternRef(anExtFile.GetName().ToCString(), aPD, aStepFormat);
@@ -865,8 +868,8 @@ public class STEPCAFControl_Writer
         return true;
     }
 
-    private static int FindEntities(Transfer_FinderProcess theFP, TopoDS_Shape theShape, ref TopLoc_Location theLocation,
-                                    NCollection_Sequence<Standard_Transient> theSeqRI)
+    private static int FindEntities(Transfer_FinderProcess theFP, TopoDS_Shape theShape, ref Placement theLocation,
+                                    NCollection_Sequence<Transient> theSeqRI)
     {
         StepRepr_RepresentationItem anItem = STEPConstruct.FindEntity(theFP, theShape, ref theLocation);
 
@@ -904,7 +907,7 @@ public class STEPCAFControl_Writer
             int aNbTransient = aTransientListBinder.NbTransients();
             for (int anInd = 1; anInd <= aNbTransient; anInd++)
             {
-                Standard_Transient anEntity = aTransientListBinder.Transient(anInd);
+                Transient anEntity = aTransientListBinder.Transient(anInd);
                 anItem = anEntity as StepRepr_RepresentationItem;
                 if (anItem is null)
                 {
@@ -919,7 +922,7 @@ public class STEPCAFControl_Writer
 
     private static bool getStyledItem(TopoDS_Shape theShape, XdeDoc_Document theShapeTool, STEPConstruct_Styles theStyles,
                                       ref StepVisual_StyledItem theResSelItem,
-                                      NCollection_DataMap<TopoDS_Shape, Standard_Transient> theMapCompMDGPR)
+                                      NCollection_DataMap<TopoDS_Shape, Transient> theMapCompMDGPR)
     {
         XdeDoc_Label aTopShL = theShapeTool.FindShape(theShape, false);
         TopoDS_Shape aTopLevSh = aTopShL.IsNull() ? new TopoDS_Shape() : theShapeTool.GetShape(aTopShL);
@@ -935,7 +938,7 @@ public class STEPCAFControl_Writer
             return false;
         }
         // Search for PSA of Manifold solid
-        NCollection_Sequence<Standard_Transient> aNewSeqRI = new NCollection_Sequence<Standard_Transient>();
+        NCollection_Sequence<Transient> aNewSeqRI = new NCollection_Sequence<Transient>();
         bool isFilled = false;
         for (int anIter = anSelItmHArr.Lower(); anIter <= anSelItmHArr.Upper() && !anIsFound; anIter++)
         {
@@ -948,7 +951,7 @@ public class STEPCAFControl_Writer
             // Check that it is a styled item for manifold solid brep
             if (!isFilled)
             {
-                TopLoc_Location aLoc = new TopLoc_Location();
+                Placement aLoc = new Placement();
                 FindEntities(theStyles.FinderProcess(), aTopLevSh, ref aLoc, aNewSeqRI);
                 isFilled = true;
             }
@@ -956,7 +959,7 @@ public class STEPCAFControl_Writer
             {
                 StepRepr_RepresentationItem anItem = aSelItm.Item();
                 bool isSameMonSolBR = false;
-                foreach (Standard_Transient aIterRI in aNewSeqRI)
+                foreach (Transient aIterRI in aNewSeqRI)
                 {
                     if (anItem is not null && anItem == aIterRI)
                     {
@@ -1043,9 +1046,9 @@ public class STEPCAFControl_Writer
     private static void MakeSTEPStyles(STEPConstruct_Styles theStyles, TopoDS_Shape theShape,
                                        NCollection_IndexedDataMap<TopoDS_Shape, Style> theSettings,
                                        ref StepVisual_StyledItem theOverride, NCollection_Map<TopoDS_Shape> theMap,
-                                       NCollection_DataMap<TopoDS_Shape, Standard_Transient> theMapCompMDGPR,
-                                       NCollection_DataMap<string, Standard_Transient> theDPDCs,
-                                       NCollection_DataMap<gp_Pnt, Standard_Transient> theColRGBs, XdeDoc_Document theShTool,
+                                       NCollection_DataMap<TopoDS_Shape, Transient> theMapCompMDGPR,
+                                       NCollection_DataMap<string, Transient> theDPDCs,
+                                       NCollection_DataMap<Point3D, Transient> theColRGBs, XdeDoc_Document theShTool,
                                        Style theInherit, bool theIsComponent, bool theVisMaterialMode)
     {
         // skip already processed shapes
@@ -1082,12 +1085,12 @@ public class STEPCAFControl_Writer
         StepVisual_Colour aSurfColor = null;
         StepVisual_Colour aCurvColor = null;
         double aRenderTransp = 0.0;
-        if (aStyle.ColorSurf is Quantity_ColorRGBA aSurfCol)
+        if (aStyle.ColorSurf is ColorWithAlpha aSurfCol)
         {
             aRenderTransp = 1.0 - aSurfCol.Alpha();
             aSurfColor = STEPConstruct_Styles.EncodeColor(aSurfCol.GetRGB(), theDPDCs, theColRGBs);
         }
-        if (aStyle.ColorCurv is Quantity_Color aCurvCol)
+        if (aStyle.ColorCurv is Color aCurvCol)
         {
             aCurvColor = STEPConstruct_Styles.EncodeColor(aCurvCol, theDPDCs, theColRGBs);
         }
@@ -1100,12 +1103,12 @@ public class STEPCAFControl_Writer
         {
             if (theShape.ShapeType() != TopAbs_COMPOUND || theIsComponent)
             { // skip compounds, let subshapes inherit its colors
-                TopLoc_Location aLocation = new TopLoc_Location();
-                NCollection_Sequence<Standard_Transient> aSeqRI = new NCollection_Sequence<Standard_Transient>();
+                Placement aLocation = new Placement();
+                NCollection_Sequence<Transient> aSeqRI = new NCollection_Sequence<Transient>();
                 int aNbEntities = FindEntities(theStyles.FinderProcess(), theShape, ref aLocation, aSeqRI);
                 if (aNbEntities <= 0)
                 {
-                    Message.SendTrace("Warning: Cannot find RI for " + theShape.TShape().GetType().Name + "\n");
+                    global::Kerf.Engine.Foundation.Message.SendTrace("Warning: Cannot find RI for " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theShape.TShape().GetType()) + "\n");
                 }
                 // Get overridden style gka 10.06.03
                 if (theIsComponent && aNbEntities > 0)
@@ -1113,7 +1116,7 @@ public class STEPCAFControl_Writer
                     getStyledItem(theShape, theShTool, theStyles, ref theOverride, theMapCompMDGPR);
                 }
 
-                foreach (Standard_Transient anEntIter in aSeqRI)
+                foreach (Transient anEntIter in aSeqRI)
                 {
                     StepRepr_RepresentationItem anItem = anEntIter as StepRepr_RepresentationItem;
                     StepVisual_PresentationStyleAssignment aPSA;
@@ -1131,7 +1134,7 @@ public class STEPCAFControl_Writer
                     else
                     {
                         // default white color
-                        aSurfColor = STEPConstruct_Styles.EncodeColor(new Quantity_Color(Quantity_NOC_WHITE), theDPDCs, theColRGBs);
+                        aSurfColor = STEPConstruct_Styles.EncodeColor(new Color(NocWhite), theDPDCs, theColRGBs);
                         aPSA = theStyles.MakeColorPSA(anItem, aSurfColor, aCurvColor, new STEPConstruct_RenderingProperties(),
                                                       theIsComponent);
                         if (theIsComponent)
@@ -1173,8 +1176,8 @@ public class STEPCAFControl_Writer
         }
 
         STEPConstruct_Styles Styles = new STEPConstruct_Styles(theWS);
-        NCollection_DataMap<string, Standard_Transient> DPDCs = new NCollection_DataMap<string, Standard_Transient>();
-        NCollection_DataMap<gp_Pnt, Standard_Transient> ColRGBs = new NCollection_DataMap<gp_Pnt, Standard_Transient>();
+        NCollection_DataMap<string, Transient> DPDCs = new NCollection_DataMap<string, Transient>();
+        NCollection_DataMap<Point3D, Transient> ColRGBs = new NCollection_DataMap<Point3D, Transient>();
         // Iterate on requested shapes
         foreach (XdeDoc_Label aLabel in theLabels)
         {
@@ -1184,8 +1187,8 @@ public class STEPCAFControl_Writer
             // are not supported (it is not clear how to encode that in STEP)
             if (aSTool.IsAssembly(aLabel))
             {
-                Message.SendTrace("Warning: Cannot write color  for Assembly" + "\n");
-                Message.SendTrace("Info: Check for colors assigned to components in assembly" + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Warning: Cannot write color  for Assembly" + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Info: Check for colors assigned to components in assembly" + "\n");
                 // PTV 22.01.2003 Write color for instances.
                 NCollection_Sequence<XdeDoc_Label> compLabels = new NCollection_Sequence<XdeDoc_Label>();
                 if (!aSTool.GetComponents(aLabel, compLabels))
@@ -1240,7 +1243,7 @@ public class STEPCAFControl_Writer
                         aStyle.IsVisible = false;
                     }
                 }
-                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorGen, out Quantity_ColorRGBA aColor))
+                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorGen, out ColorWithAlpha aColor))
                 {
                     aStyle.ColorCurv = aColor.GetRGB();
                     aStyle.ColorSurf = aColor;
@@ -1293,7 +1296,7 @@ public class STEPCAFControl_Writer
             {
                 if (myMapCompMDGPR.IsBound(aTopSh))
                 {
-                    Message.SendTrace("Error: Current Top-Level shape have MDGPR already " + "\n");
+                    global::Kerf.Engine.Foundation.Message.SendTrace("Error: Current Top-Level shape have MDGPR already " + "\n");
                 }
                 Styles.CreateMDGPR(aContext, out aMDGPR, aStepModel);
                 if (aMDGPR is not null)
@@ -1441,7 +1444,7 @@ public class STEPCAFControl_Writer
             }
             else
             {
-                Message.SendTrace("Warning: Cannot find RI for " + aShape.TShape().GetType().Name + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("Warning: Cannot find RI for " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.TShape().GetType()) + "\n");
                 continue;
             }
         }
@@ -1489,7 +1492,7 @@ public class STEPCAFControl_Writer
             }
         }
         // write centroid
-        if (aValProps?.Centroid is gp_Pnt aCentroid)
+        if (aValProps?.Centroid is Point3D aCentroid)
         {
             aProps.AddCentroid(aShape, aCentroid);
         }
@@ -1565,7 +1568,7 @@ public class STEPCAFControl_Writer
 
             // Find target STEP entity for each shape and add to StepVisual_PresentationLayerAssignment
             // items.
-            NCollection_Sequence<Standard_Transient> aSeqRI = new NCollection_Sequence<Standard_Transient>();
+            NCollection_Sequence<Transient> aSeqRI = new NCollection_Sequence<Transient>();
             foreach (XdeDoc_Label aShLabel in aShapeLabels)
             {
                 if (aShLabel.IsNull())
@@ -1596,11 +1599,11 @@ public class STEPCAFControl_Writer
                 // get target STEP entity
                 TopoDS_Shape anOneShape = aDoc.GetShape(aShLabel);
 
-                TopLoc_Location aLoc = new TopLoc_Location();
+                Placement aLoc = new Placement();
                 int aNb = FindEntities(aFP, anOneShape, ref aLoc, aSeqRI);
                 if (aNb <= 0)
                 {
-                    Message.SendTrace("Warning: Cannot find RI for " + anOneShape.TShape()?.GetType().Name + "\n");
+                    global::Kerf.Engine.Foundation.Message.SendTrace("Warning: Cannot find RI for " + (anOneShape.TShape() is { } aTShape ? global::Kerf.Engine.Foundation.OcctTypeNames.Of(aTShape.GetType()) : null) + "\n");
                 }
             }
             if (aSeqRI.IsEmpty())
@@ -1615,7 +1618,7 @@ public class STEPCAFControl_Writer
             if (!aDoc.IsVisible(aLayerL))
             {
                 aDescr = new TCollection_HAsciiString("invisible");
-                Message.SendTrace("\tLayer \"" + aHName.ToCString() + "\" is invisible" + "\n");
+                global::Kerf.Engine.Foundation.Message.SendTrace("\tLayer \"" + aHName.ToCString() + "\" is invisible" + "\n");
                 isLinv = true;
             }
             else
@@ -1626,7 +1629,7 @@ public class STEPCAFControl_Writer
             // create layer entity
             int anSetStyleInd = 1;
             NCollection_HArray1<StepVisual_LayeredItem> aHArrayOfLItem = new NCollection_HArray1<StepVisual_LayeredItem>(1, aSeqRI.Length());
-            foreach (Standard_Transient aRIIter in aSeqRI)
+            foreach (Transient aRIIter in aSeqRI)
             {
                 StepVisual_LayeredItem aLI = new StepVisual_LayeredItem();
                 aLI.SetValue(aRIIter);
@@ -1694,8 +1697,8 @@ public class STEPCAFControl_Writer
     private readonly NCollection_DataMap<XdeDoc_Label, TopoDS_Shape> myPureRefLabels = new NCollection_DataMap<XdeDoc_Label, TopoDS_Shape>();
     // OCCT: the documents' root labels (a map); here the documents, in the order given
     private readonly List<XdeDoc_Document> myRootLabels = new List<XdeDoc_Document>();
-    private readonly NCollection_DataMap<TopoDS_Shape, Standard_Transient> myMapCompMDGPR =
-        new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<TopoDS_Shape, Transient> myMapCompMDGPR =
+        new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
     private bool myColorMode = true;
     private bool myNameMode = true;
     private bool myLayerMode = true;

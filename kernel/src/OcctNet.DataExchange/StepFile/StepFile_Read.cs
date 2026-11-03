@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public static class StepFile_Read
         {
             return;
         }
-        using Message_Messenger.StreamBuffer sout = theIsFail ? Message.SendFail() : Message.SendTrace();
+        using Messenger.StreamBuffer sout = theIsFail ? global::Kerf.Engine.Foundation.Message.SendFail() : global::Kerf.Engine.Foundation.Message.SendTrace();
         sout.Append("**** ERR StepFile : ").Append(theErrorMessage).Append("    ****").Append('\n');
     }
 
@@ -35,7 +37,7 @@ public static class StepFile_Read
     /// error (or cancellation, or a limit reached).
     /// </summary>
     public static int Read(string theName, Stream? theIStream, StepData_StepModel theStepModel, StepData_Protocol theProtocol,
-                           Message_ProgressRange theRange = default, StepFile_ReadLimits? theLimits = null)
+                           ProgressRange theRange = default, StepFile_ReadLimits? theLimits = null)
     {
         StepData_FileRecognizer aNulRecog = null;
         return Read(theName, theIStream, theStepModel, theProtocol, aNulRecog, aNulRecog, theRange, theLimits);
@@ -43,7 +45,7 @@ public static class StepFile_Read
 
     private static int Read(string theName, Stream? theIStream, StepData_StepModel theStepModel, StepData_Protocol theProtocol,
                             StepData_FileRecognizer theRecogHeader, StepData_FileRecognizer theRecogData,
-                            Message_ProgressRange theRange, StepFile_ReadLimits? theLimits)
+                            ProgressRange theRange, StepFile_ReadLimits? theLimits)
     {
         // if stream is not provided, open file stream here
         Stream aStreamPtr = theIStream;
@@ -76,10 +78,10 @@ public static class StepFile_Read
 
     private static int ReadStream(string theName, Stream aStreamPtr, StepData_StepModel theStepModel, StepData_Protocol theProtocol,
                                   StepData_FileRecognizer theRecogHeader, StepData_FileRecognizer theRecogData,
-                                  Message_ProgressRange theRange, StepFile_ReadLimits? theLimits)
+                                  ProgressRange theRange, StepFile_ReadLimits? theLimits)
     {
         // OCCT_DEBUG's chronometer (CHRONOMESURE) left out
-        using Message_Messenger.StreamBuffer sout = Message.SendTrace();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendTrace();
         sout.Append("      ...    Step File Reading : '").Append(theName).Append("'");
 
         StepFile_ReadData aFileDataModel = new StepFile_ReadData();
@@ -95,11 +97,11 @@ public static class StepFile_Read
                 return 1;
             }
         }
-        catch (Standard_Failure anException)
+        catch (FailureException anException)
         {
-            using Message_Messenger.StreamBuffer aFail = Message.SendFail();
+            using Messenger.StreamBuffer aFail = global::Kerf.Engine.Foundation.Message.SendFail();
             aFail.Append(" ...  Exception Raised while reading Step File : '").Append(theName).Append("':\n")
-                .Append(anException.GetType().Name).Append(": ").Append(anException.Message).Append("    ...");
+                .Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType())).Append(": ").Append(anException.Message).Append("    ...");
             return 1;
         }
 
@@ -128,7 +130,7 @@ public static class StepFile_Read
         int anFailsCount = undirec.GlobalCheck().NbFails();
         if (anFailsCount > 0)
         {
-            using Message_Messenger.StreamBuffer anInfo = Message.SendInfo();
+            using Messenger.StreamBuffer anInfo = global::Kerf.Engine.Foundation.Message.SendInfo();
             anInfo.Append("**** ERR StepFile : Incorrect Syntax : Fails Count : ").Append(anFailsCount).Append(" ****");
         }
 
@@ -156,7 +158,7 @@ public static class StepFile_Read
         anFailsCount = undirec.GlobalCheck().NbFails() - anFailsCount;
         if (anFailsCount > 0)
         {
-            using Message_Messenger.StreamBuffer anInfo = Message.SendInfo();
+            using Messenger.StreamBuffer anInfo = global::Kerf.Engine.Foundation.Message.SendInfo();
             anInfo.Append("*** ERR StepReaderData : Unresolved Reference : Fails Count : ").Append(anFailsCount).Append(" ***");
         }
         readtool.Clear();

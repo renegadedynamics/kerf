@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -28,7 +29,7 @@ public abstract class ShapeCustom_Modification : BRepTools_Modification
     }
 
     /// <summary>Sends a message attached to the shape to the message registrator, if any.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Message_Msg message, Message_Gravity gravity = Message_Info)
+    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
     {
         if (myMsgReg is not null)
         {

@@ -2,7 +2,8 @@
 // Port of OCCT's GTests src/ModelingAlgorithms/TKHelix/GTests/HelixGeom_BuilderHelixCoil_Test.cxx
 // (HelixGeom_BuilderHelixCoil_Test) and HelixGeom_BuilderHelix_Test.cxx (HelixGeom_BuilderHelix_Test).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -23,8 +24,8 @@ public class HelixGeom_BuilderHelixCoilTests
         Geom_Curve aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
-        aCurve.D0(aCurve.FirstParameter(), out gp_Pnt aP1);
-        aCurve.D0(aCurve.LastParameter(), out gp_Pnt aP2);
+        aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
+        aCurve.D0(aCurve.LastParameter(), out Point3D aP2);
         Assert.Equal(2.0, aP1.X(), myTolerance);
         Assert.Equal(0.0, aP1.Y(), myTolerance);
         Assert.Equal(0.0, aP1.Z(), myTolerance);
@@ -41,8 +42,8 @@ public class HelixGeom_BuilderHelixCoilTests
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
         // Check default approximation parameters
-        aBuilder.ApproxParameters(out GeomAbs_Shape aCont, out int aMaxDegree, out int aMaxSeg);
-        Assert.Equal(GeomAbs_C2, aCont);
+        aBuilder.ApproxParameters(out Continuity aCont, out int aMaxDegree, out int aMaxSeg);
+        Assert.Equal(C2, aCont);
         Assert.Equal(8, aMaxDegree);
         Assert.Equal(150, aMaxSeg);
         Assert.Equal(0.0001, aBuilder.Tolerance());
@@ -72,7 +73,7 @@ public class HelixGeom_BuilderHelixCoilTests
     {
         var aBuilder = new HelixGeom_BuilderHelixCoil();
         aBuilder.SetTolerance(myTolerance);
-        aBuilder.SetApproxParameters(GeomAbs_C2, 8, 100);
+        aBuilder.SetApproxParameters(C2, 8, 100);
         aBuilder.SetCurveParameters(0.0, 4.0 * M_PI, 20.0, 5.0, 0.1, true);
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
@@ -98,7 +99,7 @@ public class HelixGeom_BuilderHelixTests
     public void SingleCoil()
     {
         var aBuilder = new HelixGeom_BuilderHelix();
-        gp_Ax2 aPosition = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
         aBuilder.SetCurveParameters(0.0, 2.0 * M_PI, 10.0, 5.0, 0.0, true);
@@ -111,7 +112,7 @@ public class HelixGeom_BuilderHelixTests
     public void MultipleCoils()
     {
         var aBuilder = new HelixGeom_BuilderHelix();
-        gp_Ax2 aPosition = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
         // 3 full turns
@@ -125,9 +126,9 @@ public class HelixGeom_BuilderHelixTests
     public void PositionGetterSetter()
     {
         var aBuilder = new HelixGeom_BuilderHelix();
-        gp_Ax2 aTestPosition = new(new gp_Pnt(10.0, 20.0, 30.0), new gp_Dir(gp_Dir.D.X), new gp_Dir(gp_Dir.D.Y));
+        Frame3D aTestPosition = new(new Point3D(10.0, 20.0, 30.0), new Direction3D(Direction3D.D.X), new Direction3D(Direction3D.D.Y));
         aBuilder.SetPosition(aTestPosition);
-        gp_Ax2 aRetrievedPosition = aBuilder.Position();
+        Frame3D aRetrievedPosition = aBuilder.Position();
         Assert.True(aRetrievedPosition.Location().IsEqual(aTestPosition.Location(), 1e-15));
         Assert.True(aRetrievedPosition.Direction().IsEqual(aTestPosition.Direction(), 1e-15));
         Assert.True(aRetrievedPosition.XDirection().IsEqual(aTestPosition.XDirection(), 1e-15));

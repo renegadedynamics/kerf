@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Modern math solver utilities: constants and helper functions.</summary>
 public static partial class MathUtils
@@ -24,130 +26,130 @@ public static partial class MathUtils
     public const double THE_GOLDEN_SECTION = 0.381966011250105;
 
     /// <summary>Clamp value to range [theLower, theUpper].</summary>
-    public static double Clamp(double theValue, double theLower, double theUpper)
+    public static double Clamp(double value, double lower, double upper)
     {
-        return (theValue < theLower) ? theLower : ((theValue > theUpper) ? theUpper : theValue);
+        return (value < lower) ? lower : ((value > upper) ? upper : value);
     }
 
     /// <summary>Check if value is effectively zero: |theValue| &lt; theTolerance.</summary>
-    public static bool IsZero(double theValue, double theTolerance = THE_ZERO_TOL)
+    public static bool IsZero(double value, double tolerance = THE_ZERO_TOL)
     {
-        return Math.Abs(theValue) < theTolerance;
+        return Math.Abs(value) < tolerance;
     }
 
     /// <summary>Check if two values are approximately equal (relative tolerance).</summary>
-    public static bool IsEqual(double theA, double theB, double theTolerance = THE_ZERO_TOL)
+    public static bool IsEqual(double a, double b, double tolerance = THE_ZERO_TOL)
     {
-        double aDiff = Math.Abs(theA - theB);
-        double aScale = Max(Max(1.0, Math.Abs(theA)), Math.Abs(theB));
-        return aDiff < theTolerance * aScale;
+        double diff = Math.Abs(a - b);
+        double scale = Max(Max(1.0, Math.Abs(a)), Math.Abs(b));
+        return diff < tolerance * scale;
     }
 
     /// <summary>Safe division avoiding division by zero: theNumerator / theDenominator or theDefault.</summary>
-    public static double SafeDiv(double theNumerator, double theDenominator, double theDefault = 0.0)
+    public static double SafeDiv(double numerator, double denominator, double theDefault = 0.0)
     {
-        return IsZero(theDenominator) ? theDefault : theNumerator / theDenominator;
+        return IsZero(denominator) ? theDefault : numerator / denominator;
     }
 
     /// <summary>Sign function: -1 if negative, 0 if zero, +1 if positive (with THE_ZERO_TOL).</summary>
-    public static int Sign(double theValue)
+    public static int Sign(double value)
     {
-        if (theValue > THE_ZERO_TOL)
+        if (value > THE_ZERO_TOL)
             return 1;
-        if (theValue < -THE_ZERO_TOL)
+        if (value < -THE_ZERO_TOL)
             return -1;
         return 0;
     }
 
     /// <summary>Sign transfer function: |theA| with the sign of theB.</summary>
-    public static double SignTransfer(double theA, double theB)
+    public static double SignTransfer(double a, double b)
     {
-        return (theB >= 0.0) ? Math.Abs(theA) : -Math.Abs(theA);
+        return (b >= 0.0) ? Math.Abs(a) : -Math.Abs(a);
     }
 
-    public static double Sqr(double theValue)
+    public static double Sqr(double value)
     {
-        return theValue * theValue;
+        return value * value;
     }
 
-    public static double Cube(double theValue)
+    public static double Cube(double value)
     {
-        return theValue * theValue * theValue;
+        return value * value * value;
     }
 
     /// <summary>Cube root with proper sign handling.</summary>
-    public static double CubeRoot(double theValue)
+    public static double CubeRoot(double value)
     {
-        return (theValue >= 0.0) ? Math.Cbrt(theValue) : -Math.Cbrt(-theValue);
+        return (value >= 0.0) ? Math.Cbrt(value) : -Math.Cbrt(-value);
     }
 
     /// <summary>Check if value is finite (not NaN or Inf).</summary>
-    public static bool IsFinite(double theValue)
+    public static bool IsFinite(double value)
     {
-        return double.IsFinite(theValue);
+        return double.IsFinite(value);
     }
 
     /// <summary>Compute scaling factor for coefficient normalization (a power of 2 for exact arithmetic).</summary>
-    public static double ComputeScaleFactor(ReadOnlySpan<double> theCoeffs, int theCount)
+    public static double ComputeScaleFactor(ReadOnlySpan<double> coeffs, int count)
     {
-        double aMaxAbs = 0.0;
-        for (int i = 0; i < theCount; ++i)
+        double maxAbs = 0.0;
+        for (int i = 0; i < count; ++i)
         {
-            aMaxAbs = Max(aMaxAbs, Math.Abs(theCoeffs[i]));
+            maxAbs = Max(maxAbs, Math.Abs(coeffs[i]));
         }
 
-        if (aMaxAbs < THE_ZERO_TOL || aMaxAbs > 1.0e15)
+        if (maxAbs < THE_ZERO_TOL || maxAbs > 1.0e15)
         {
             // Find nearest power of 2 for exact scaling
-            int anExp = frexpExponent(aMaxAbs);
-            return Math.ScaleB(1.0, -anExp + 1);
+            int exp = FrexpExponent(maxAbs);
+            return Math.ScaleB(1.0, -exp + 1);
         }
 
         return 1.0;
     }
 
     /// <summary>The exponent C's <c>std::frexp</c> returns: x = m * 2^e with 0.5 &lt;= |m| &lt; 1; 0 for 0, NaN and infinities.</summary>
-    internal static int frexpExponent(double theX)
+    internal static int FrexpExponent(double x)
     {
-        if (theX == 0.0 || !double.IsFinite(theX))
+        if (x == 0.0 || !double.IsFinite(x))
         {
             return 0;
         }
-        return Math.ILogB(theX) + 1;
+        return Math.ILogB(x) + 1;
     }
 
     /// <summary>Compute dot product of two vectors.</summary>
-    public static double DotProduct(math_Vector theA, math_Vector theB)
+    public static double DotProduct(math_Vector a, math_Vector b)
     {
-        double aSum = 0.0;
-        int aLower = theA.Lower();
-        int aUpper = theA.Upper();
-        for (int i = aLower; i <= aUpper; ++i)
+        double sum = 0.0;
+        int lower = a.Lower();
+        int upper = a.Upper();
+        for (int i = lower; i <= upper; ++i)
         {
-            aSum += theA[i] * theB[i];
+            sum += a[i] * b[i];
         }
-        return aSum;
+        return sum;
     }
 
     /// <summary>Compute Euclidean norm of a vector.</summary>
-    public static double VectorNorm(math_Vector theVec)
+    public static double VectorNorm(math_Vector vec)
     {
-        double aSum = 0.0;
-        for (int i = theVec.Lower(); i <= theVec.Upper(); ++i)
+        double sum = 0.0;
+        for (int i = vec.Lower(); i <= vec.Upper(); ++i)
         {
-            aSum += theVec[i] * theVec[i];
+            sum += vec[i] * vec[i];
         }
-        return Math.Sqrt(aSum);
+        return Math.Sqrt(sum);
     }
 
     /// <summary>Compute infinity norm (maximum absolute value) of a vector.</summary>
-    public static double VectorInfNorm(math_Vector theVec)
+    public static double VectorInfNorm(math_Vector vec)
     {
-        double aMax = 0.0;
-        for (int i = theVec.Lower(); i <= theVec.Upper(); ++i)
+        double max = 0.0;
+        for (int i = vec.Lower(); i <= vec.Upper(); ++i)
         {
-            aMax = Max(aMax, Math.Abs(theVec[i]));
+            max = Max(max, Math.Abs(vec[i]));
         }
-        return aMax;
+        return max;
     }
 }

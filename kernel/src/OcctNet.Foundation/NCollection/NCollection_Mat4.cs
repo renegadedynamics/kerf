@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -15,7 +16,7 @@ namespace Occt;
 public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     where T : unmanaged, INumber<T>
 {
-    private NCollection_Buffer16<T> myMat;
+    private NCollection_Buffer16<T> _mat;
 
     public static int Rows() => 4;
 
@@ -27,115 +28,115 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     /// <summary>The zero matrix.</summary>
     public static NCollection_Mat4<T> Zero()
     {
-        NCollection_Mat4<T> aMat = new();
-        aMat.InitZero();
-        return aMat;
+        NCollection_Mat4<T> mat = new();
+        mat.InitZero();
+        return mat;
     }
 
     /// <summary>The identity matrix.</summary>
     public NCollection_Mat4() => InitIdentity();
 
     /// <summary>Converts a matrix of another element type (OCCT's converting constructor).</summary>
-    public static NCollection_Mat4<T> From<TOther>(in NCollection_Mat4<TOther> theOtherMat3) where TOther : unmanaged, INumber<TOther>
+    public static NCollection_Mat4<T> From<TOther>(in NCollection_Mat4<TOther> otherMat3) where TOther : unmanaged, INumber<TOther>
     {
-        NCollection_Mat4<T> aMat = new();
-        aMat.ConvertFrom(theOtherMat3);
-        return aMat;
+        NCollection_Mat4<T> mat = new();
+        mat.ConvertFrom(otherMat3);
+        return mat;
     }
 
     /// <summary>The element at a (0-based) row and column.</summary>
-    public readonly T GetValue(int theRow, int theCol) => myMat[theCol * 4 + theRow];
+    public readonly T GetValue(int row, int col) => _mat[col * 4 + row];
 
     /// <summary>The element at a (0-based) row and column (OCCT's <c>operator()</c>).</summary>
-    public T this[int theRow, int theCol]
+    public T this[int row, int col]
     {
-        readonly get => GetValue(theRow, theCol);
-        internal set => SetValue(theRow, theCol, value);
+        readonly get => GetValue(row, col);
+        internal set => SetValue(row, col, value);
     }
 
-    public readonly NCollection_Vec4<T> GetRow(int theRow)
-        => new(GetValue(theRow, 0), GetValue(theRow, 1), GetValue(theRow, 2), GetValue(theRow, 3));
+    public readonly NCollection_Vec4<T> GetRow(int row)
+        => new(GetValue(row, 0), GetValue(row, 1), GetValue(row, 2), GetValue(row, 3));
 
-    public readonly NCollection_Vec4<T> GetColumn(int theCol)
-        => new(GetValue(0, theCol), GetValue(1, theCol), GetValue(2, theCol), GetValue(3, theCol));
+    public readonly NCollection_Vec4<T> GetColumn(int col)
+        => new(GetValue(0, col), GetValue(1, col), GetValue(2, col), GetValue(3, col));
 
     public readonly NCollection_Vec4<T> GetDiagonal() => new(GetValue(0, 0), GetValue(1, 1), GetValue(2, 2), GetValue(3, 3));
 
     /// <summary>The upper-left 3x3 part.</summary>
     public readonly NCollection_Mat3<T> GetMat3()
     {
-        NCollection_Mat3<T> aMat = new();
-        aMat.SetColumn(0, GetColumn(0).xyz());
-        aMat.SetColumn(1, GetColumn(1).xyz());
-        aMat.SetColumn(2, GetColumn(2).xyz());
-        return aMat;
+        NCollection_Mat3<T> mat = new();
+        mat.SetColumn(0, GetColumn(0).Xyz());
+        mat.SetColumn(1, GetColumn(1).Xyz());
+        mat.SetColumn(2, GetColumn(2).Xyz());
+        return mat;
     }
 
     // Mutators (internal: see docs/translation-rules.md)
 
     [UnscopedRef]
-    internal ref T ChangeValue(int theRow, int theCol) => ref myMat[theCol * 4 + theRow];
+    internal ref T ChangeValue(int row, int col) => ref _mat[col * 4 + row];
 
-    internal void SetValue(int theRow, int theCol, T theValue) => myMat[theCol * 4 + theRow] = theValue;
+    internal void SetValue(int row, int col, T value) => _mat[col * 4 + row] = value;
 
-    internal void SetRow(int theRow, in NCollection_Vec3<T> theVec)
+    internal void SetRow(int row, in NCollection_Vec3<T> vec)
     {
-        SetValue(theRow, 0, theVec.x());
-        SetValue(theRow, 1, theVec.y());
-        SetValue(theRow, 2, theVec.z());
+        SetValue(row, 0, vec.X());
+        SetValue(row, 1, vec.Y());
+        SetValue(row, 2, vec.Z());
     }
 
-    internal void SetRow(int theRow, in NCollection_Vec4<T> theVec)
+    internal void SetRow(int row, in NCollection_Vec4<T> vec)
     {
-        SetValue(theRow, 0, theVec.x());
-        SetValue(theRow, 1, theVec.y());
-        SetValue(theRow, 2, theVec.z());
-        SetValue(theRow, 3, theVec.w());
+        SetValue(row, 0, vec.X());
+        SetValue(row, 1, vec.Y());
+        SetValue(row, 2, vec.Z());
+        SetValue(row, 3, vec.W());
     }
 
-    internal void SetColumn(int theCol, in NCollection_Vec3<T> theVec)
+    internal void SetColumn(int col, in NCollection_Vec3<T> vec)
     {
-        SetValue(0, theCol, theVec.x());
-        SetValue(1, theCol, theVec.y());
-        SetValue(2, theCol, theVec.z());
+        SetValue(0, col, vec.X());
+        SetValue(1, col, vec.Y());
+        SetValue(2, col, vec.Z());
     }
 
-    internal void SetColumn(int theCol, in NCollection_Vec4<T> theVec)
+    internal void SetColumn(int col, in NCollection_Vec4<T> vec)
     {
-        SetValue(0, theCol, theVec.x());
-        SetValue(1, theCol, theVec.y());
-        SetValue(2, theCol, theVec.z());
-        SetValue(3, theCol, theVec.w());
+        SetValue(0, col, vec.X());
+        SetValue(1, col, vec.Y());
+        SetValue(2, col, vec.Z());
+        SetValue(3, col, vec.W());
     }
 
-    internal void SetDiagonal(in NCollection_Vec3<T> theVec)
+    internal void SetDiagonal(in NCollection_Vec3<T> vec)
     {
-        SetValue(0, 0, theVec.x());
-        SetValue(1, 1, theVec.y());
-        SetValue(2, 2, theVec.z());
+        SetValue(0, 0, vec.X());
+        SetValue(1, 1, vec.Y());
+        SetValue(2, 2, vec.Z());
     }
 
-    internal void SetDiagonal(in NCollection_Vec4<T> theVec)
+    internal void SetDiagonal(in NCollection_Vec4<T> vec)
     {
-        SetValue(0, 0, theVec.x());
-        SetValue(1, 1, theVec.y());
-        SetValue(2, 2, theVec.z());
-        SetValue(3, 3, theVec.w());
+        SetValue(0, 0, vec.X());
+        SetValue(1, 1, vec.Y());
+        SetValue(2, 2, vec.Z());
+        SetValue(3, 3, vec.W());
     }
 
     /// <summary>Multiplies this matrix on the right by a translation.</summary>
-    internal void Translate(in NCollection_Vec3<T> theVec)
+    internal void Translate(in NCollection_Vec3<T> vec)
     {
-        NCollection_Mat4<T> aTempMat = new();
-        aTempMat.SetColumn(3, theVec);
-        Multiply(aTempMat);
+        NCollection_Mat4<T> tempMat = new();
+        tempMat.SetColumn(3, vec);
+        Multiply(tempMat);
     }
 
     internal void InitZero()
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] = T.Zero;
+            _mat[i] = T.Zero;
         }
     }
 
@@ -143,42 +144,42 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] = (i % 5 == 0) ? T.One : T.Zero;
+            _mat[i] = (i % 5 == 0) ? T.One : T.Zero;
         }
     }
 
     /// <summary>Multiplies this matrix by another on the right (OCCT's <c>operator*=</c>).</summary>
-    internal void Multiply(in NCollection_Mat4<T> theMat) => this = Multiply(this, theMat);
+    internal void Multiply(in NCollection_Mat4<T> mat) => this = Multiply(this, mat);
 
-    internal void Multiply(T theFactor)
+    internal void Multiply(T factor)
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] *= theFactor;
+            _mat[i] *= factor;
         }
     }
 
-    internal void Divide(T theFactor)
+    internal void Divide(T factor)
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] /= theFactor;
+            _mat[i] /= factor;
         }
     }
 
-    internal void Add(in NCollection_Mat4<T> theMat)
+    internal void Add(in NCollection_Mat4<T> mat)
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] += theMat.myMat[i];
+            _mat[i] += mat._mat[i];
         }
     }
 
-    internal void Subtract(in NCollection_Mat4<T> theMat)
+    internal void Subtract(in NCollection_Mat4<T> mat)
     {
         for (int i = 0; i < 16; ++i)
         {
-            myMat[i] -= theMat.myMat[i];
+            _mat[i] -= mat._mat[i];
         }
     }
 
@@ -188,68 +189,68 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
 
     internal void ConvertFrom<TOther>(in NCollection_Mat4<TOther> theFrom) where TOther : unmanaged, INumber<TOther>
     {
-        for (int anIdx = 0; anIdx < 16; ++anIdx)
+        for (int idx = 0; idx < 16; ++idx)
         {
-            myMat[anIdx] = T.CreateTruncating(theFrom.GetValue(anIdx % 4, anIdx / 4));
+            _mat[idx] = T.CreateTruncating(theFrom.GetValue(idx % 4, idx / 4));
         }
     }
 
     // Copies with a mutator applied
 
-    public readonly NCollection_Mat4<T> WithValue(int theRow, int theCol, T theValue)
+    public readonly NCollection_Mat4<T> WithValue(int row, int col, T value)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetValue(theRow, theCol, theValue);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetValue(row, col, value);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithRow(int theRow, in NCollection_Vec4<T> theVec)
+    public readonly NCollection_Mat4<T> WithRow(int row, in NCollection_Vec4<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetRow(theRow, theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetRow(row, vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithColumn(int theCol, in NCollection_Vec4<T> theVec)
+    public readonly NCollection_Mat4<T> WithColumn(int col, in NCollection_Vec4<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetColumn(theCol, theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetColumn(col, vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithRow(int theRow, in NCollection_Vec3<T> theVec)
+    public readonly NCollection_Mat4<T> WithRow(int row, in NCollection_Vec3<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetRow(theRow, theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetRow(row, vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithColumn(int theCol, in NCollection_Vec3<T> theVec)
+    public readonly NCollection_Mat4<T> WithColumn(int col, in NCollection_Vec3<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetColumn(theCol, theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetColumn(col, vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithDiagonal(in NCollection_Vec3<T> theVec)
+    public readonly NCollection_Mat4<T> WithDiagonal(in NCollection_Vec3<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetDiagonal(theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetDiagonal(vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> Translated(in NCollection_Vec3<T> theVec)
+    public readonly NCollection_Mat4<T> Translated(in NCollection_Vec3<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.Translate(theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.Translate(vec);
+        return copy;
     }
 
-    public readonly NCollection_Mat4<T> WithDiagonal(in NCollection_Vec4<T> theVec)
+    public readonly NCollection_Mat4<T> WithDiagonal(in NCollection_Vec4<T> vec)
     {
-        NCollection_Mat4<T> aCopy = this;
-        aCopy.SetDiagonal(theVec);
-        return aCopy;
+        NCollection_Mat4<T> copy = this;
+        copy.SetDiagonal(vec);
+        return copy;
     }
 
     // Queries
@@ -258,7 +259,7 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     {
         for (int i = 0; i < 16; ++i)
         {
-            if (myMat[i] != T.Zero)
+            if (_mat[i] != T.Zero)
             {
                 return false;
             }
@@ -271,7 +272,7 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     {
         for (int i = 0; i < 16; ++i)
         {
-            if (myMat[i] != ((i % 5 == 0) ? T.One : T.Zero))
+            if (_mat[i] != ((i % 5 == 0) ? T.One : T.Zero))
             {
                 return false;
             }
@@ -281,11 +282,11 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     }
 
     /// <summary>Exact comparison, without tolerance (C++ <c>==</c> on each element).</summary>
-    public readonly bool IsEqual(in NCollection_Mat4<T> theOther)
+    public readonly bool IsEqual(in NCollection_Mat4<T> other)
     {
         for (int i = 0; i < 16; ++i)
         {
-            if (myMat[i] != theOther.myMat[i])
+            if (_mat[i] != other._mat[i])
             {
                 return false;
             }
@@ -295,89 +296,89 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     }
 
     /// <summary>The product of two matrices.</summary>
-    public static NCollection_Mat4<T> Multiply(in NCollection_Mat4<T> theMatA, in NCollection_Mat4<T> theMatB)
+    public static NCollection_Mat4<T> Multiply(in NCollection_Mat4<T> matA, in NCollection_Mat4<T> matB)
     {
-        NCollection_Mat4<T> aMatRes = new();
+        NCollection_Mat4<T> matRes = new();
 
-        for (int aResElem = 0; aResElem < 16; ++aResElem)
+        for (int resElem = 0; resElem < 16; ++resElem)
         {
-            aMatRes.myMat[aResElem] = T.Zero;
-            for (int aInputElem = 0; aInputElem < 4; ++aInputElem)
+            matRes._mat[resElem] = T.Zero;
+            for (int inputElem = 0; inputElem < 4; ++inputElem)
             {
-                aMatRes.myMat[aResElem] += theMatA.GetValue(aResElem % 4, aInputElem) * theMatB.GetValue(aInputElem, aResElem / 4);
+                matRes._mat[resElem] += matA.GetValue(resElem % 4, inputElem) * matB.GetValue(inputElem, resElem / 4);
             }
         }
 
-        return aMatRes;
+        return matRes;
     }
 
-    public readonly NCollection_Mat4<T> Multiplied(in NCollection_Mat4<T> theMat)
+    public readonly NCollection_Mat4<T> Multiplied(in NCollection_Mat4<T> mat)
     {
-        NCollection_Mat4<T> aTempMat = this;
-        aTempMat.Multiply(theMat);
-        return aTempMat;
+        NCollection_Mat4<T> tempMat = this;
+        tempMat.Multiply(mat);
+        return tempMat;
     }
 
-    public readonly NCollection_Mat4<T> Multiplied(T theFactor)
+    public readonly NCollection_Mat4<T> Multiplied(T factor)
     {
-        NCollection_Mat4<T> aTempMat = this;
-        aTempMat.Multiply(theFactor);
-        return aTempMat;
+        NCollection_Mat4<T> tempMat = this;
+        tempMat.Multiply(factor);
+        return tempMat;
     }
 
-    public readonly NCollection_Mat4<T> Divided(T theScalar)
+    public readonly NCollection_Mat4<T> Divided(T scalar)
     {
-        NCollection_Mat4<T> aTempMat = this;
-        aTempMat.Divide(theScalar);
-        return aTempMat;
+        NCollection_Mat4<T> tempMat = this;
+        tempMat.Divide(scalar);
+        return tempMat;
     }
 
-    public readonly NCollection_Mat4<T> Added(in NCollection_Mat4<T> theMat)
+    public readonly NCollection_Mat4<T> Added(in NCollection_Mat4<T> mat)
     {
         NCollection_Mat4<T> aMat = this;
-        aMat.Add(theMat);
+        aMat.Add(mat);
         return aMat;
     }
 
-    public readonly NCollection_Mat4<T> Subtracted(in NCollection_Mat4<T> theMat)
+    public readonly NCollection_Mat4<T> Subtracted(in NCollection_Mat4<T> mat)
     {
         NCollection_Mat4<T> aMat = this;
-        aMat.Subtract(theMat);
+        aMat.Subtract(mat);
         return aMat;
     }
 
     public readonly NCollection_Mat4<T> Negated()
     {
-        NCollection_Mat4<T> aMat = new();
+        NCollection_Mat4<T> mat = new();
         for (int i = 0; i < 16; ++i)
         {
-            aMat.myMat[i] = -myMat[i];
+            mat._mat[i] = -_mat[i];
         }
 
-        return aMat;
+        return mat;
     }
 
     public readonly NCollection_Mat4<T> Transposed()
     {
-        NCollection_Mat4<T> aTempMat = new();
-        aTempMat.SetRow(0, GetColumn(0));
-        aTempMat.SetRow(1, GetColumn(1));
-        aTempMat.SetRow(2, GetColumn(2));
-        aTempMat.SetRow(3, GetColumn(3));
-        return aTempMat;
+        NCollection_Mat4<T> tempMat = new();
+        tempMat.SetRow(0, GetColumn(0));
+        tempMat.SetRow(1, GetColumn(1));
+        tempMat.SetRow(2, GetColumn(2));
+        tempMat.SetRow(3, GetColumn(3));
+        return tempMat;
     }
 
     /// <summary>
-    /// Computes the inverse and the determinant into <paramref name="theOutMx"/> (written even when the
+    /// Computes the inverse and the determinant into <paramref name="outMx"/> (written even when the
     /// determinant is zero, as OCCT does). Returns false when the determinant is zero.
     /// </summary>
-    public readonly bool Inverted(out NCollection_Mat4<T> theOutMx, out T theDet)
+    public readonly bool Inverted(out NCollection_Mat4<T> outMx, out T det)
     {
         // use short-cut for better readability (a copy, read before theOutMx is written in case they alias)
-        NCollection_Buffer16<T> m = myMat;
+        NCollection_Buffer16<T> m = _mat;
 
-        theOutMx = new();
-        ref NCollection_Buffer16<T> inv = ref theOutMx.myMat;
+        outMx = new();
+        ref NCollection_Buffer16<T> inv = ref outMx._mat;
 
         inv[0] = m[5] * (m[10] * m[15] - m[11] * m[14]) - m[9] * (m[6] * m[15] - m[7] * m[14])
                  - m[13] * (m[7] * m[10] - m[6] * m[11]);
@@ -427,32 +428,32 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
         inv[15] = m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9])
                   - m[8] * (m[2] * m[5] - m[1] * m[6]);
 
-        theDet = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-        if (theDet == T.Zero)
+        det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+        if (det == T.Zero)
         {
             return false;
         }
 
-        T aDiv = T.One / theDet;
+        T div = T.One / det;
         for (int i = 0; i < 16; ++i)
         {
-            inv[i] *= aDiv;
+            inv[i] *= div;
         }
 
         return true;
     }
 
-    public readonly bool Inverted(out NCollection_Mat4<T> theOutMx) => Inverted(out theOutMx, out _);
+    public readonly bool Inverted(out NCollection_Mat4<T> outMx) => Inverted(out outMx, out _);
 
     /// <summary>The inverse; throws Standard_ConstructionError when the determinant is zero.</summary>
     public readonly NCollection_Mat4<T> Inverted()
     {
-        if (!Inverted(out NCollection_Mat4<T> anInv))
+        if (!Inverted(out NCollection_Mat4<T> inv))
         {
-            throw new Standard_ConstructionError("NCollection_Mat4::Inverted() - matrix has zero determinant");
+            throw new ConstructionErrorException("NCollection_Mat4::Inverted() - matrix has zero determinant");
         }
 
-        return anInv;
+        return inv;
     }
 
     /// <summary>The determinant of the upper-left 3x3 part.</summary>
@@ -469,55 +470,55 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     // Mat3's convention. Nothing in OCCT calls it.
     public readonly NCollection_Mat4<T> Adjoint()
     {
-        NCollection_Mat4<T> aMat = new();
-        aMat.SetRow(0, crossVec4(GetRow(1), GetRow(2), GetRow(3)));
-        aMat.SetRow(1, crossVec4(-GetRow(0), GetRow(2), GetRow(3)));
-        aMat.SetRow(2, crossVec4(GetRow(0), GetRow(1), GetRow(3)));
-        aMat.SetRow(3, crossVec4(-GetRow(0), GetRow(1), GetRow(2)));
-        return aMat;
+        NCollection_Mat4<T> mat = new();
+        mat.SetRow(0, CrossVec4(GetRow(1), GetRow(2), GetRow(3)));
+        mat.SetRow(1, CrossVec4(-GetRow(0), GetRow(2), GetRow(3)));
+        mat.SetRow(2, CrossVec4(GetRow(0), GetRow(1), GetRow(3)));
+        mat.SetRow(3, CrossVec4(-GetRow(0), GetRow(1), GetRow(2)));
+        return mat;
     }
 
-    private static NCollection_Vec4<T> crossVec4(in NCollection_Vec4<T> theA, in NCollection_Vec4<T> theB, in NCollection_Vec4<T> theC)
+    private static NCollection_Vec4<T> CrossVec4(in NCollection_Vec4<T> a, in NCollection_Vec4<T> b, in NCollection_Vec4<T> c)
     {
-        T aD1 = (theB.z() * theC.w()) - (theB.w() * theC.z());
-        T aD2 = (theB.y() * theC.w()) - (theB.w() * theC.y());
-        T aD3 = (theB.y() * theC.z()) - (theB.z() * theC.y());
-        T aD4 = (theB.x() * theC.w()) - (theB.w() * theC.x());
-        T aD5 = (theB.x() * theC.z()) - (theB.z() * theC.x());
-        T aD6 = (theB.x() * theC.y()) - (theB.y() * theC.x());
+        T d1 = (b.Z() * c.W()) - (b.W() * c.Z());
+        T d2 = (b.Y() * c.W()) - (b.W() * c.Y());
+        T d3 = (b.Y() * c.Z()) - (b.Z() * c.Y());
+        T d4 = (b.X() * c.W()) - (b.W() * c.X());
+        T d5 = (b.X() * c.Z()) - (b.Z() * c.X());
+        T d6 = (b.X() * c.Y()) - (b.Y() * c.X());
 
-        NCollection_Vec4<T> aVec = new();
-        aVec[0] = -theA.y() * aD1 + theA.z() * aD2 - theA.w() * aD3;
-        aVec[1] = theA.x() * aD1 - theA.z() * aD4 + theA.w() * aD5;
-        aVec[2] = -theA.x() * aD2 + theA.y() * aD4 - theA.w() * aD6;
-        aVec[3] = theA.x() * aD3 - theA.y() * aD5 + theA.z() * aD6;
-        return aVec;
+        NCollection_Vec4<T> vec = new();
+        vec[0] = -a.Y() * d1 + a.Z() * d2 - a.W() * d3;
+        vec[1] = a.X() * d1 - a.Z() * d4 + a.W() * d5;
+        vec[2] = -a.X() * d2 + a.Y() * d4 - a.W() * d6;
+        vec[3] = a.X() * d3 - a.Y() * d5 + a.Z() * d6;
+        return vec;
     }
 
     /// <summary>Copies the 16 elements, column by column, into a span (OCCT's <c>GetData()</c>).</summary>
-    public readonly void CopyTo(Span<T> theDestination) => ((ReadOnlySpan<T>)myMat).CopyTo(theDestination);
+    public readonly void CopyTo(Span<T> destination) => ((ReadOnlySpan<T>)_mat).CopyTo(destination);
 
-    public static NCollection_Vec4<T> operator *(in NCollection_Mat4<T> theMat, in NCollection_Vec4<T> theVec)
-        => new(theMat.GetValue(0, 0) * theVec.x() + theMat.GetValue(0, 1) * theVec.y() + theMat.GetValue(0, 2) * theVec.z()
-                 + theMat.GetValue(0, 3) * theVec.w(),
-               theMat.GetValue(1, 0) * theVec.x() + theMat.GetValue(1, 1) * theVec.y() + theMat.GetValue(1, 2) * theVec.z()
-                 + theMat.GetValue(1, 3) * theVec.w(),
-               theMat.GetValue(2, 0) * theVec.x() + theMat.GetValue(2, 1) * theVec.y() + theMat.GetValue(2, 2) * theVec.z()
-                 + theMat.GetValue(2, 3) * theVec.w(),
-               theMat.GetValue(3, 0) * theVec.x() + theMat.GetValue(3, 1) * theVec.y() + theMat.GetValue(3, 2) * theVec.z()
-                 + theMat.GetValue(3, 3) * theVec.w());
+    public static NCollection_Vec4<T> operator *(in NCollection_Mat4<T> mat, in NCollection_Vec4<T> vec)
+        => new(mat.GetValue(0, 0) * vec.X() + mat.GetValue(0, 1) * vec.Y() + mat.GetValue(0, 2) * vec.Z()
+                 + mat.GetValue(0, 3) * vec.W(),
+               mat.GetValue(1, 0) * vec.X() + mat.GetValue(1, 1) * vec.Y() + mat.GetValue(1, 2) * vec.Z()
+                 + mat.GetValue(1, 3) * vec.W(),
+               mat.GetValue(2, 0) * vec.X() + mat.GetValue(2, 1) * vec.Y() + mat.GetValue(2, 2) * vec.Z()
+                 + mat.GetValue(2, 3) * vec.W(),
+               mat.GetValue(3, 0) * vec.X() + mat.GetValue(3, 1) * vec.Y() + mat.GetValue(3, 2) * vec.Z()
+                 + mat.GetValue(3, 3) * vec.W());
 
-    public static NCollection_Mat4<T> operator *(in NCollection_Mat4<T> theLeft, in NCollection_Mat4<T> theRight) => theLeft.Multiplied(theRight);
+    public static NCollection_Mat4<T> operator *(in NCollection_Mat4<T> left, in NCollection_Mat4<T> right) => left.Multiplied(right);
 
-    public static NCollection_Mat4<T> operator *(in NCollection_Mat4<T> theMat, T theFactor) => theMat.Multiplied(theFactor);
+    public static NCollection_Mat4<T> operator *(in NCollection_Mat4<T> mat, T factor) => mat.Multiplied(factor);
 
-    public static NCollection_Mat4<T> operator /(in NCollection_Mat4<T> theMat, T theScalar) => theMat.Divided(theScalar);
+    public static NCollection_Mat4<T> operator /(in NCollection_Mat4<T> mat, T scalar) => mat.Divided(scalar);
 
-    public static NCollection_Mat4<T> operator +(in NCollection_Mat4<T> theLeft, in NCollection_Mat4<T> theRight) => theLeft.Added(theRight);
+    public static NCollection_Mat4<T> operator +(in NCollection_Mat4<T> left, in NCollection_Mat4<T> right) => left.Added(right);
 
-    public static NCollection_Mat4<T> operator -(in NCollection_Mat4<T> theLeft, in NCollection_Mat4<T> theRight) => theLeft.Subtracted(theRight);
+    public static NCollection_Mat4<T> operator -(in NCollection_Mat4<T> left, in NCollection_Mat4<T> right) => left.Subtracted(right);
 
-    public static NCollection_Mat4<T> operator -(in NCollection_Mat4<T> theMat) => theMat.Negated();
+    public static NCollection_Mat4<T> operator -(in NCollection_Mat4<T> mat) => mat.Negated();
 
     // Exact equality, for use as a value
 
@@ -525,7 +526,7 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
     {
         for (int i = 0; i < 16; ++i)
         {
-            if (!myMat[i].Equals(other.myMat[i]))
+            if (!_mat[i].Equals(other._mat[i]))
             {
                 return false;
             }
@@ -538,31 +539,31 @@ public partial struct NCollection_Mat4<T> : IEquatable<NCollection_Mat4<T>>
 
     public override readonly int GetHashCode()
     {
-        var aHash = new HashCode();
+        var hash = new HashCode();
         for (int i = 0; i < 16; ++i)
         {
-            aHash.Add(myMat[i]);
+            hash.Add(_mat[i]);
         }
 
-        return aHash.ToHashCode();
+        return hash.ToHashCode();
     }
 
-    public static bool operator ==(in NCollection_Mat4<T> theLeft, in NCollection_Mat4<T> theRight) => theLeft.Equals(theRight);
+    public static bool operator ==(in NCollection_Mat4<T> left, in NCollection_Mat4<T> right) => left.Equals(right);
 
-    public static bool operator !=(in NCollection_Mat4<T> theLeft, in NCollection_Mat4<T> theRight) => !theLeft.Equals(theRight);
+    public static bool operator !=(in NCollection_Mat4<T> left, in NCollection_Mat4<T> right) => !left.Equals(right);
 
     /// <summary>The elements row by row.</summary>
     public override readonly string ToString()
     {
-        Span<T> aRows = stackalloc T[16];
+        Span<T> rows = stackalloc T[16];
         for (int r = 0; r < 4; ++r)
         {
             for (int c = 0; c < 4; ++c)
             {
-                aRows[r * 4 + c] = GetValue(r, c);
+                rows[r * 4 + c] = GetValue(r, c);
             }
         }
 
-        return NCollection_VecTools.Format<T>("NCollection_Mat4", aRows);
+        return NCollection_VecTools.Format<T>("NCollection_Mat4", rows);
     }
 }

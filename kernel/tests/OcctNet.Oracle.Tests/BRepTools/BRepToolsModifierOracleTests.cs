@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -47,7 +51,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = MeshedScene(anOracle, aScene);
-            (N.gp_Trsf aNT, gp_Trsf aT) = RandomTrsf(anOracle, aScene % 4);
+            (N.gp_Trsf aNT, Transform3D aT) = RandomTrsf(anOracle, aScene % 4);
             bool aCopyMesh = anOracle.Bool();
             // the modifier's path: a copy of the geometry asked, or a transformation that isn't a rigid motion
             using var aNTransform = new N.BRepBuilderAPI_Transform(aShape.N, aNT, true, aCopyMesh);
@@ -71,7 +75,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = BSplineScene(anOracle);
-            (N.gp_GTrsf aNG, gp_GTrsf aG) = RandomGTrsf(anOracle);
+            (N.gp_GTrsf aNG, GeneralTransform3D aG) = RandomGTrsf(anOracle);
             using (aNG)
             {
                 // GTransform converts to NURBS first, which leaves a shape of B-splines with B-spline pcurves as it is
@@ -106,9 +110,9 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             // the mesh-only tetrahedron (scene 7) has no geometry to convert
             (Twin<N.TopoDS_Shape, TopoDS_Shape> aShape, _) = BRepGPropOracleTests.RandomScene(anOracle, aScene % 7);
             aShape.P.TShape()!.FreezeGraph();
-            (N.gp_GTrsf aNG, gp_GTrsf aG) = anOracle.Int(0, 2) == 0
+            (N.gp_GTrsf aNG, GeneralTransform3D aG) = anOracle.Int(0, 2) == 0
                 ? (new N.gp_GTrsf(new N.gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new N.gp_XYZ(0, 0, 0)),
-                   new gp_GTrsf(new gp_Mat(1, 0, 0, 0, 1, 0, 0, 0, 1), new gp_XYZ(0, 0, 0)))
+                   new GeneralTransform3D(new Matrix3x3(1, 0, 0, 0, 1, 0, 0, 0, 1), new Xyz(0, 0, 0)))
                 : RandomGTrsf(anOracle);
             using (aNG)
             {
@@ -161,7 +165,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = MeshedScene(anOracle, aScene);
             using var aNCopy = new N.BRepBuilderAPI_Copy(aShape.N, false, true);
             TopoDS_Shape aCopy = BRepTools.CopyForWrite(aShape.P, out BRepTools_History aHistory);
-            Assert.False(aCopy.TShape()!.IsFrozen());
+            Assert.False(aCopy.TShape()!.IsFrozen);
             Twin<N.TopoDS_Shape, TopoDS_Shape> aResult = new(aNCopy.Shape(), aCopy);
             TopologyOracleTests.CompareFlags(anOracle, aResult);
             aCopy.TShape()!.FreezeGraph();
@@ -306,10 +310,10 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         aS.Bounds(out double u1, out double u2, out double v1, out double v2);
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> V(double u, double v) => aTwins.Vertex(aS.Value(u, v), 1e-6);
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> v11 = V(u1, v1), v21 = V(u2, v1), v22 = V(u2, v2), v12 = V(u1, v2);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> e1 = aTwins.EdgeOn(aNS.VIso(v1)!, aS.VIso(v1), new TopLoc_Location(), null, u1, u2, v11, v21);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> e2 = aTwins.EdgeOn(aNS.UIso(u2)!, aS.UIso(u2), new TopLoc_Location(), null, v1, v2, v21, v22);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> e3 = aTwins.EdgeOn(aNS.VIso(v2)!, aS.VIso(v2), new TopLoc_Location(), null, u1, u2, v12, v22);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> e4 = aTwins.EdgeOn(aNS.UIso(u1)!, aS.UIso(u1), new TopLoc_Location(), null, v1, v2, v11, v12);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> e1 = aTwins.EdgeOn(aNS.VIso(v1)!, aS.VIso(v1), new Placement(), null, u1, u2, v11, v21);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> e2 = aTwins.EdgeOn(aNS.UIso(u2)!, aS.UIso(u2), new Placement(), null, v1, v2, v21, v22);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> e3 = aTwins.EdgeOn(aNS.VIso(v2)!, aS.VIso(v2), new Placement(), null, u1, u2, v12, v22);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> e4 = aTwins.EdgeOn(aNS.UIso(u1)!, aS.UIso(u1), new Placement(), null, v1, v2, v11, v12);
         Twin<N.TopoDS_Face, TopoDS_Face> aFace = aTwins.FaceOn(aNS, aS,
                                                                (e1, false, NLine(u1, v1, u2, v1, u1, u2), Line(u1, v1, u2, v1, u1, u2)),
                                                                (e2, false, NLine(u2, v1, u2, v2, v1, v2), Line(u2, v1, u2, v2, v1, v2)),
@@ -322,13 +326,13 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 break;
             case 1:
             {
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = TopologyOracleTests.RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
                 aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
                 break;
             }
             default:
             {
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = TopologyOracleTests.RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
                 aShape = TwinShapes.Up(aTwins.Compound(aShape, new(aShape.N.Moved(aNL).Reversed(), aShape.P.Moved(aL).Reversed())));
                 break;
             }
@@ -339,11 +343,11 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     }
 
     // A degree-1 B-spline from (x1, y1) to (x2, y2) over [t1, t2], on both sides.
-    private static NCollection_Array1<gp_Pnt2d> LinePoles(double x1, double y1, double x2, double y2)
+    private static NCollection_Array1<Point2D> LinePoles(double x1, double y1, double x2, double y2)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt2d>(1, 2);
-        aPoles[1] = new gp_Pnt2d(x1, y1);
-        aPoles[2] = new gp_Pnt2d(x2, y2);
+        var aPoles = new NCollection_Array1<Point2D>(1, 2);
+        aPoles[1] = new Point2D(x1, y1);
+        aPoles[2] = new Point2D(x2, y2);
         return aPoles;
     }
 
@@ -373,14 +377,14 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
     // A rigid motion composed with a scaling (0), a point mirror (1), a plane mirror (2) or nothing (3), from the same
     // raw numbers on both sides.
-    internal static (N.gp_Trsf, gp_Trsf) RandomTrsf(Oracle theOracle, int theKind)
+    internal static (N.gp_Trsf, Transform3D) RandomTrsf(Oracle theOracle, int theKind)
     {
-        (N.TopLoc_Location aNL, TopLoc_Location aL) = TopologyOracleTests.RandomLocation(theOracle);
+        (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
         using N.gp_Trsf aNRigid = aNL.Transformation();
-        gp_Trsf aRigid = aL.Transformation();
+        Transform3D aRigid = aL.Transformation();
         var aNT = new N.gp_Trsf();
-        var aT = new gp_Trsf();
-        gp_Pnt aP = theOracle.Pnt();
+        var aT = new Transform3D();
+        Point3D aP = theOracle.Pnt();
         using N.gp_Pnt aNP = Oracle.ToNative(aP);
         switch (theKind)
         {
@@ -397,11 +401,11 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 break;
             case 2:
             {
-                gp_Vec aV = theOracle.Vec();
+                Vector3D aV = theOracle.Vec();
                 using var aND = new N.gp_Dir(aV.X(), aV.Y(), aV.Z());
                 using var aNAx = new N.gp_Ax2(aNP, aND);
                 aNT.SetMirror(aNAx);
-                aT.SetMirror(new gp_Ax2(aP, new gp_Dir(aV.X(), aV.Y(), aV.Z())));
+                aT.SetMirror(new Frame3D(aP, new Direction3D(aV.X(), aV.Y(), aV.Z())));
                 break;
             }
             default:
@@ -412,7 +416,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     }
 
     // An affine transformation near a rotation, scaled, from the same raw numbers on both sides.
-    internal static (N.gp_GTrsf, gp_GTrsf) RandomGTrsf(Oracle theOracle)
+    internal static (N.gp_GTrsf, GeneralTransform3D) RandomGTrsf(Oracle theOracle)
     {
         double[] m = new double[9];
         for (int i = 0; i < 9; i++)
@@ -420,11 +424,11 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             m[i] = (i % 4 == 0 ? theOracle.Real(0.5, 2.0) * (theOracle.Int(0, 5) == 0 ? -1 : 1) : 0.0) + theOracle.Real(-0.3, 0.3);
         }
 
-        gp_Vec aV = theOracle.Vec();
+        Vector3D aV = theOracle.Vec();
         using var aNM = new N.gp_Mat(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
         using var aNV = new N.gp_XYZ(aV.X(), aV.Y(), aV.Z());
         return (new N.gp_GTrsf(aNM, aNV),
-                new gp_GTrsf(new gp_Mat(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]), new gp_XYZ(aV.X(), aV.Y(), aV.Z())));
+                new GeneralTransform3D(new Matrix3x3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]), new Xyz(aV.X(), aV.Y(), aV.Z())));
     }
 
     // Comparisons
@@ -470,12 +474,12 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         Twin<N.TopoDS_Shape, TopoDS_Shape> aTwin = new(theNResult, theResult);
         // a result that is the input moved, or an earlier result, holds frozen TShapes
-        TopologyOracleTests.CompareFlags(theOracle, aTwin, theResult.TShape()!.IsFrozen());
+        TopologyOracleTests.CompareFlags(theOracle, aTwin, theResult.TShape()!.IsFrozen);
 
         // the public result is the same shape, frozen
         TopoDS_Shape aPublished = thePublish();
         Assert.True(aPublished.IsEqual(theResult));
-        Assert.True(aPublished.TShape()!.IsFrozen());
+        Assert.True(aPublished.TShape()!.IsFrozen);
 
         TopologyOracleTests.CompareTopology(theOracle, aTwin, theCounts);
         if (theCompareGeometry)
@@ -514,7 +518,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         {
             using var aNLoc = new N.TopLoc_Location();
             N.Poly_Triangulation? aNT = N.BRep_Tool.Triangulation(N.TopoDS.Face(aF.N), aNLoc);
-            Poly_Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aF.P), out TopLoc_Location aLoc);
+            Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aF.P), out Placement aLoc);
             theOracle.Same(aNT is null, aT is null, "triangulation is null");
             if (aNT is null || aT is null)
             {
@@ -526,9 +530,9 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 theOracle.Same(aNTrsf, aLoc.Transformation(), "triangulation location");
             }
 
-            theOracle.Same(aNT.NbNodes(), aT.NbNodes(), "triangulation nodes");
+            theOracle.Same(aNT.NbNodes(), aT.NodeCount, "triangulation nodes");
             theOracle.Same(aNT.Deflection(), aT.Deflection(), "triangulation deflection");
-            for (int i = 1; i <= aT.NbNodes(); i++)
+            for (int i = 1; i <= aT.NodeCount; i++)
             {
                 using N.gp_Pnt aNP = aNT.Node(i);
                 theOracle.Same(aNP, aT.Node(i), "triangulation node");

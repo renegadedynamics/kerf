@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -35,7 +39,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     private readonly double[] myFaceRangeV = new double[2];
 
     /// <summary>A tessellator of the edge's 3D curve.</summary>
-    /// <exception cref="Standard_Failure">The parameters' MinSize isn't positive.</exception>
+    /// <exception cref="FailureException">The parameters' MinSize isn't positive.</exception>
     public BRepMesh_CurveTessellator(IMeshData_Edge theEdge,
                                      in IMeshTools_Parameters theParameters,
                                      int theMinPointsNb = 2)
@@ -49,7 +53,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     }
 
     /// <summary>A tessellator of the edge, with the orientation, as a curve on the face.</summary>
-    /// <exception cref="Standard_Failure">The parameters' MinSize isn't positive.</exception>
+    /// <exception cref="FailureException">The parameters' MinSize isn't positive.</exception>
     public BRepMesh_CurveTessellator(IMeshData_Edge theEdge,
                                      TopAbs_Orientation theOrientation,
                                      IMeshData_Face theFace,
@@ -69,7 +73,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     {
         if (myParameters.MinSize <= 0.0)
         {
-            throw new Standard_Failure("The structure \"myParameters\" is not initialized");
+            throw new FailureException("The structure \"myParameters\" is not initialized");
         }
 
         TopExp.Vertices(myEdge, out myFirstVertex, out myLastVertex);
@@ -81,8 +85,8 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             aPreciseLinDef *= 0.5;
         }
 
-        aPreciseLinDef = Max(aPreciseLinDef, Precision.Confusion());
-        aPreciseAngDef = Max(aPreciseAngDef, Precision.Angular());
+        aPreciseLinDef = Max(aPreciseLinDef, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aPreciseAngDef = Max(aPreciseAngDef, global::Kerf.Engine.Foundation.Precision.Angular());
 
         double aMinSize = myParameters.MinSize;
         if (myParameters.AdjustMinSize)
@@ -104,10 +108,10 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         int aMinPntThreshold = 2;
         switch (myCurve.GetType())
         {
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
-            case GeomAbs_Parabola:
-            case GeomAbs_Hyperbola:
+            case Circle:
+            case Ellipse:
+            case Parabola:
+            case Hyperbola:
                 aMinPntThreshold = 4;
                 break;
 
@@ -122,7 +126,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
                                  aPreciseAngDef,
                                  aPreciseLinDef,
                                  aMinPntNb,
-                                 Precision.PConfusion(),
+                                 global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                  aMinSize);
 
         if (myCurve.IsCurveOnSurface())
@@ -130,7 +134,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             Adaptor3d_CurveOnSurface aCurve = myCurve.CurveOnSurface();
             Adaptor3d_Surface aSurface = aCurve.GetSurface()!;
 
-            double aTol = Precision.Confusion();
+            double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
             double aDu = aSurface.UResolution(aTol);
             double aDv = aSurface.VResolution(aTol);
 
@@ -158,7 +162,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             {
                 IMeshData_PCurve aPCurve = myDEdge.GetPCurve(aPCurveIt);
                 TopoDS_Face aFace = aPCurve.GetFace().GetFace();
-                Geom_Surface aSurface = BRep_Tool.Surface(aFace, out TopLoc_Location _)!;
+                Geom_Surface aSurface = BRep_Tool.Surface(aFace, out Placement _)!;
                 if (aSurface.IsInstance(typeof(Geom_Plane)))
                 {
                     continue;
@@ -200,9 +204,9 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     }
 
     // Checks whether the given point lies within tolerance of the vertex (unused, as in OCCT).
-    private static bool isInToleranceOfVertex(in gp_Pnt thePoint, in TopoDS_Vertex theVertex)
+    private static bool isInToleranceOfVertex(in Point3D thePoint, in TopoDS_Vertex theVertex)
     {
-        gp_Pnt aPoint = BRep_Tool.Pnt(theVertex);
+        Point3D aPoint = BRep_Tool.Pnt(theVertex);
         double aTolerance = BRep_Tool.Tolerance(theVertex);
 
         return (thePoint.SquareDistance(aPoint) < aTolerance * aTolerance);
@@ -213,7 +217,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
     /// On a B-spline, Bezier or other non-periodic surface, a point whose UV lies outside the surface's range is
     /// valid only if the surface's point there is within the edge's tolerance.
     /// </remarks>
-    public override bool Value(int theIndex, out gp_Pnt thePoint, out double theParameter)
+    public override bool Value(int theIndex, out Point3D thePoint, out double theParameter)
     {
         thePoint = myDiscretTool.Value(theIndex);
         theParameter = myDiscretTool.Parameter(theIndex);
@@ -227,8 +231,8 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         // it is necessary to re-project point.
         Adaptor3d_CurveOnSurface aCurve = myCurve.CurveOnSurface();
         Adaptor3d_Surface aSurface = aCurve.GetSurface()!;
-        if (aSurface.GetType() != GeomAbs_BSplineSurface && aSurface.GetType() != GeomAbs_BezierSurface
-            && aSurface.GetType() != GeomAbs_OtherSurface)
+        if (aSurface.GetType() != BSplineSurface && aSurface.GetType() != BezierSurface
+            && aSurface.GetType() != OtherSurface)
         {
             return true;
         }
@@ -239,7 +243,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             return true;
         }
 
-        aCurve.GetCurve()!.D0(theParameter, out gp_Pnt2d aUV);
+        aCurve.GetCurve()!.D0(theParameter, out Point2D aUV);
         // Point lies within the surface range - nothing to do.
         if (aUV.X() > myFaceRangeU[0] && aUV.X() < myFaceRangeU[1] && aUV.Y() > myFaceRangeV[0]
             && aUV.Y() < myFaceRangeV[1])
@@ -247,7 +251,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             return true;
         }
 
-        aSurface.D0(aUV.X(), aUV.Y(), out gp_Pnt aPntOnSurf);
+        aSurface.D0(aUV.X(), aUV.Y(), out Point3D aPntOnSurf);
 
         return (thePoint.SquareDistance(aPntOnSurf) < myEdgeSqTol);
     }
@@ -264,17 +268,17 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             return;
         }
 
-        gp_Pnt2d uvf, uvl, uvm;
-        gp_Pnt P3dF, P3dL, midP3dFromSurf;
+        Point2D uvf, uvl, uvm;
+        Point3D P3dF, P3dL, midP3dFromSurf;
         double midpar;
 
-        if (Math.Abs(theLast - theFirst) < 2 * Precision.PConfusion())
+        if (Math.Abs(theLast - theFirst) < 2 * global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return;
         }
 
-        if ((theCurve2d.FirstParameter() - theFirst > Precision.PConfusion())
-            || (theLast - theCurve2d.LastParameter() > Precision.PConfusion()))
+        if ((theCurve2d.FirstParameter() - theFirst > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            || (theLast - theCurve2d.LastParameter() > global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             // E.g. test bugs moddata_3 bug30133
             return;
@@ -291,21 +295,21 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
             return;
         }
 
-        uvm = new gp_Pnt2d((uvf.XY() + uvl.XY()) * 0.5);
+        uvm = new Point2D((uvf.XY() + uvl.XY()) * 0.5);
         midP3dFromSurf = theSurf.Value(uvm.X(), uvm.Y());
 
-        gp_XYZ Vec1 = midP3dFromSurf.XYZ() - P3dF.XYZ();
+        Xyz Vec1 = midP3dFromSurf.XYZ() - P3dF.XYZ();
         if (Vec1.SquareModulus() < mySquareMinSize)
         {
             return;
         }
 
-        gp_XYZ aVec = P3dL.XYZ() - P3dF.XYZ();
+        Xyz aVec = P3dL.XYZ() - P3dF.XYZ();
         aVec.Normalize();
 
         double aModulus = Vec1.Dot(aVec);
-        gp_XYZ aProj = aVec * aModulus;
-        gp_XYZ aDist = Vec1 - aProj;
+        Xyz aProj = aVec * aModulus;
+        Xyz aDist = Vec1 - aProj;
 
         if (aDist.SquareModulus() < mySquareEdgeDef)
         {
@@ -313,7 +317,7 @@ public class BRepMesh_CurveTessellator : IMeshTools_CurveTessellator
         }
 
         midpar = (theFirst + theLast) * 0.5;
-        myCurve.D0(midpar, out gp_Pnt midP3d);
+        myCurve.D0(midpar, out Point3D midP3d);
         myDiscretTool.AddPoint(midP3d, midpar, false);
 
         splitSegment(theSurf, theCurve2d, theFirst, midpar, theNbIter + 1);

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -55,9 +56,9 @@ public class BOPTools_AlgoTools_1Tests
                 double aTol = BRep_Tool.Tolerance(aE);
                 // the exact deviation can exceed the sampled one several times (bottle.brep: 1.74e-5 against 4.26e-6),
                 // but not by orders of magnitude
-                Assert.True(aTol >= 0.1 * aMaxDist || aMaxDist < Precision.Confusion(), $"{theFile}: tolerance {aTol} below deviation {aMaxDist}");
+                Assert.True(aTol >= 0.1 * aMaxDist || aMaxDist < global::Kerf.Engine.Foundation.Precision.Confusion(), $"{theFile}: tolerance {aTol} below deviation {aMaxDist}");
                 aChecked++;
-                if (aTol > Precision.Confusion())
+                if (aTol > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     aGrown++;
                 }
@@ -122,14 +123,14 @@ public class BOPTools_AlgoTools_1Tests
         foreach (TopoDS_Shape aS in aMap)
         {
             // BRep_Tool.Tolerance reads at least Precision::Confusion
-            Assert.Equal(Precision.Confusion(), aS.ShapeType() == TopAbs_EDGE ? BRep_Tool.Tolerance(TopoDS.Edge(aS)) : BRep_Tool.Tolerance(TopoDS.Vertex(aS)));
+            Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aS.ShapeType() == TopAbs_EDGE ? BRep_Tool.Tolerance(TopoDS.Edge(aS)) : BRep_Tool.Tolerance(TopoDS.Vertex(aS)));
         }
         // a maximal tolerance below every needed one changes nothing
         TopoDS_Shape aShape2 = ShrunkCopy("bottle.brep");
         BOPTools_AlgoTools.CorrectTolerances(aShape2, EmptyMap(), 1.0e-12);
         for (TopExp_Explorer anExp = new(aShape2, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
-            Assert.Equal(Precision.Confusion(), BRep_Tool.Tolerance(TopoDS.Edge(anExp.Current())));
+            Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRep_Tool.Tolerance(TopoDS.Edge(anExp.Current())));
         }
     }
 
@@ -163,7 +164,7 @@ public class BOPTools_AlgoTools_1Tests
     {
         TopoDS_Shape aShape = ShrunkCopy("bottle.brep");
         aShape.TShape()!.FreezeGraph();
-        Assert.ThrowsAny<Standard_Failure>(() => BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
     }
 
     [Fact]
@@ -229,7 +230,7 @@ public class BOPTools_SetTests
         // the sphere's seam twice (FORWARD and REVERSED in its face), its two degenerated poles left out
         Assert.Equal(2, aS.NbShapes());
 
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         TopoDS_Compound aC = new();
         BRep_Builder aBB = new();
         aBB.MakeCompound(ref aC);

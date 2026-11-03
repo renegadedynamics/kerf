@@ -3,8 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
-using static Occt.gp_TrsfForm;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
+using static Kerf.Geometry.TransformForm;
 
 namespace Occt;
 
@@ -20,18 +21,18 @@ namespace Occt;
 public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 {
     protected GeomAdaptor_Surface mySurf;
-    protected gp_Trsf myTrsf;
+    protected Transform3D myTrsf;
     private protected GeomAdaptor_Surface? myTransformedAdaptor;
 
     /// <summary>An undefined surface with the identity transformation.</summary>
     public GeomAdaptor_TransformedSurface()
     {
         mySurf = new GeomAdaptor_Surface();
-        myTrsf = new gp_Trsf();
+        myTrsf = new Transform3D();
     }
 
     /// <summary>theSurface transformed by theTrsf.</summary>
-    public GeomAdaptor_TransformedSurface(Geom_Surface theSurface, in gp_Trsf theTrsf)
+    public GeomAdaptor_TransformedSurface(Geom_Surface theSurface, in Transform3D theTrsf)
     {
         mySurf = new GeomAdaptor_Surface(theSurface);
         myTrsf = theTrsf;
@@ -44,7 +45,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
                                           double theULast,
                                           double theVFirst,
                                           double theVLast,
-                                          in gp_Trsf theTrsf,
+                                          in Transform3D theTrsf,
                                           double theTolU = 0.0,
                                           double theTolV = 0.0)
     {
@@ -65,7 +66,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     }
 
     /// <summary>Loads theSurface over its bounds, with theTrsf.</summary>
-    public void Load(Geom_Surface theSurface, in gp_Trsf theTrsf)
+    public void Load(Geom_Surface theSurface, in Transform3D theTrsf)
     {
         mySurf.Load(theSurface);
         myTrsf = theTrsf;
@@ -78,7 +79,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
                      double theULast,
                      double theVFirst,
                      double theVLast,
-                     in gp_Trsf theTrsf,
+                     in Transform3D theTrsf,
                      double theTolU = 0.0,
                      double theTolV = 0.0)
     {
@@ -88,17 +89,17 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     }
 
     /// <summary>Sets the transformation.</summary>
-    public void SetTrsf(in gp_Trsf theTrsf)
+    public void SetTrsf(in Transform3D theTrsf)
     {
         myTrsf = theTrsf;
         invalidateTransformedCache();
     }
 
     /// <summary>True if the transformation is not the identity.</summary>
-    public bool HasTrsf() => myTrsf.Form() != gp_Identity;
+    public bool HasTrsf() => myTrsf.Form() != Identity;
 
     /// <summary>The transformation.</summary>
-    public gp_Trsf Trsf() => myTrsf;
+    public Transform3D Trsf() => myTrsf;
 
     /// <summary>The adaptor of the original surface (the adaptor itself: a working object).</summary>
     [Obsolete("Use AdaptorSurfaceOriginal() instead to get the original surface without transformation")]
@@ -116,7 +117,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     /// <summary>The transformed Geom surface (the original one for the identity).</summary>
     public Geom_Surface? GeomSurfaceTransformed()
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.Surface();
         }
@@ -136,17 +137,17 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 
     public override double LastVParameter() => mySurf.LastVParameter();
 
-    public override GeomAbs_Shape UContinuity() => mySurf.UContinuity();
+    public override Continuity UContinuity() => mySurf.UContinuity();
 
-    public override GeomAbs_Shape VContinuity() => mySurf.VContinuity();
+    public override Continuity VContinuity() => mySurf.VContinuity();
 
-    public override int NbUIntervals(GeomAbs_Shape theS) => mySurf.NbUIntervals(theS);
+    public override int NbUIntervals(Continuity theS) => mySurf.NbUIntervals(theS);
 
-    public override int NbVIntervals(GeomAbs_Shape theS) => mySurf.NbVIntervals(theS);
+    public override int NbVIntervals(Continuity theS) => mySurf.NbVIntervals(theS);
 
-    public override void UIntervals(NCollection_Array1<double> theT, GeomAbs_Shape theS) => mySurf.UIntervals(theT, theS);
+    public override void UIntervals(NCollection_Array1<double> theT, Continuity theS) => mySurf.UIntervals(theT, theS);
 
-    public override void VIntervals(NCollection_Array1<double> theT, GeomAbs_Shape theS) => mySurf.VIntervals(theT, theS);
+    public override void VIntervals(NCollection_Array1<double> theT, Continuity theS) => mySurf.VIntervals(theT, theS);
 
     /// <summary>The transformed surface's adaptor, trimmed in U.</summary>
     public override Adaptor3d_Surface UTrim(double theFirst, double theLast, double theTol) =>
@@ -175,9 +176,9 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     public double ToleranceV() => mySurf.ToleranceV();
 
     /// <summary>Point evaluation. Applies transformation after evaluation.</summary>
-    public sealed override gp_Pnt EvalD0(double theU, double theV)
+    public sealed override Point3D EvalD0(double theU, double theV)
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.EvalD0(theU, theV);
         }
@@ -187,7 +188,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     /// <summary>D1 evaluation. Applies transformation after evaluation.</summary>
     public sealed override Geom_Surface.ResD1 EvalD1(double theU, double theV)
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.EvalD1(theU, theV);
         }
@@ -201,7 +202,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     /// <summary>D2 evaluation. Applies transformation after evaluation.</summary>
     public sealed override Geom_Surface.ResD2 EvalD2(double theU, double theV)
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.EvalD2(theU, theV);
         }
@@ -218,7 +219,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     /// <summary>D3 evaluation. Applies transformation after evaluation.</summary>
     public sealed override Geom_Surface.ResD3 EvalD3(double theU, double theV)
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.EvalD3(theU, theV);
         }
@@ -237,9 +238,9 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
     }
 
     /// <summary>DN evaluation. Applies transformation after evaluation.</summary>
-    public sealed override gp_Vec EvalDN(double theU, double theV, int theNu, int theNv)
+    public sealed override Vector3D EvalDN(double theU, double theV, int theNu, int theNv)
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf.EvalDN(theU, theV, theNu, theNv);
         }
@@ -250,17 +251,17 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 
     public override double VResolution(double theR3d) => mySurf.VResolution(theR3d);
 
-    public override GeomAbs_SurfaceType GetType() => mySurf.GetType();
+    public override SurfaceKind GetType() => mySurf.GetType();
 
-    public override gp_Pln Plane() => transformedAdaptor().Plane();
+    public override Plane3D Plane() => transformedAdaptor().Plane();
 
-    public override gp_Cylinder Cylinder() => transformedAdaptor().Cylinder();
+    public override Cylinder Cylinder() => transformedAdaptor().Cylinder();
 
-    public override gp_Cone Cone() => transformedAdaptor().Cone();
+    public override Cone Cone() => transformedAdaptor().Cone();
 
-    public override gp_Sphere Sphere() => transformedAdaptor().Sphere();
+    public override Sphere Sphere() => transformedAdaptor().Sphere();
 
-    public override gp_Torus Torus() => transformedAdaptor().Torus();
+    public override Torus Torus() => transformedAdaptor().Torus();
 
     public override int UDegree() => mySurf.UDegree();
 
@@ -282,9 +283,9 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 
     public override Geom_BSplineSurface BSpline() => transformedAdaptor().BSpline();
 
-    public override gp_Ax1 AxeOfRevolution() => transformedAdaptor().AxeOfRevolution();
+    public override Axis3D AxeOfRevolution() => transformedAdaptor().AxeOfRevolution();
 
-    public override gp_Dir Direction() => transformedAdaptor().Direction();
+    public override Direction3D Direction() => transformedAdaptor().Direction();
 
     public override Adaptor3d_Curve BasisCurve() => transformedAdaptor().BasisCurve();
 
@@ -299,7 +300,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 
     protected void ensureTransformedCache()
     {
-        if (myTrsf.Form() == gp_Identity || myTransformedAdaptor is not null)
+        if (myTrsf.Form() == Identity || myTransformedAdaptor is not null)
         {
             return;
         }
@@ -313,28 +314,28 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
             myTransformedAdaptor = new GeomAdaptor_Surface();
             return;
         }
-        bool isIdentity = myTrsf.Form() == gp_Identity;
-        gp_Trsf aTrsf = myTrsf;
+        bool isIdentity = myTrsf.Form() == Identity;
+        Transform3D aTrsf = myTrsf;
         Geom_Surface aSurface;
         switch (mySurf.GetType())
         {
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
                 aSurface = isIdentity ? mySurf.Surface()! : new Geom_Plane(mySurf.Plane().Transformed(aTrsf));
                 break;
-            case GeomAbs_Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
                 aSurface = isIdentity
                     ? mySurf.Surface()!
                     : new Geom_CylindricalSurface(mySurf.Cylinder().Transformed(aTrsf));
                 break;
-            case GeomAbs_Cone:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
                 aSurface = isIdentity ? mySurf.Surface()! : new Geom_ConicalSurface(mySurf.Cone().Transformed(aTrsf));
                 break;
-            case GeomAbs_Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
                 aSurface = isIdentity
                     ? mySurf.Surface()!
                     : new Geom_SphericalSurface(mySurf.Sphere().Transformed(aTrsf));
                 break;
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 aSurface = isIdentity ? mySurf.Surface()! : new Geom_ToroidalSurface(mySurf.Torus().Transformed(aTrsf));
                 break;
             default:
@@ -352,7 +353,7 @@ public class GeomAdaptor_TransformedSurface : Adaptor3d_Surface
 
     protected GeomAdaptor_Surface transformedAdaptor()
     {
-        if (myTrsf.Form() == gp_Identity)
+        if (myTrsf.Form() == Identity)
         {
             return mySurf;
         }

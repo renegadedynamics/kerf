@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -126,15 +128,15 @@ public sealed class TopOpeBRepBuild_FaceBuilder
             // Finding among all vertices,
             // couple of vertices falling on same geometry.
             // Filling up map <mapVV>, with (vi,vj) and (vj,vi).
-            double tol = Precision.Confusion();
+            double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             for (int i = 1; i <= nV; i++)
             {
                 TopoDS_Vertex vi = TopoDS.Vertex(mapVon1E.FindKey(i));
-                gp_Pnt pi = BRep_Tool.Pnt(vi);
+                Point3D pi = BRep_Tool.Pnt(vi);
                 for (int j = i + 1; j <= nV; j++)
                 {
                     TopoDS_Vertex vj = TopoDS.Vertex(mapVon1E.FindKey(j));
-                    gp_Pnt pj = BRep_Tool.Pnt(vj);
+                    Point3D pj = BRep_Tool.Pnt(vj);
                     bool same = pi.IsEqual(pj, tol);
                     if (same)
                     {
@@ -415,13 +417,13 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     }
 
     /// <summary>Starts the iteration on the edges of the current (new) wire; their number.</summary>
-    /// <exception cref="Standard_DomainError">The current wire is an old one.</exception>
+    /// <exception cref="DomainErrorException">The current wire is an old one.</exception>
     public int InitEdge()
     {
         TopOpeBRepBuild_Loop L = myFaceAreaBuilder.Loop();
         if (L.IsShape())
         {
-            throw new Standard_DomainError("TopOpeBRepBuild_FaceBuilder:InitEdge");
+            throw new DomainErrorException("TopOpeBRepBuild_FaceBuilder:InitEdge");
         }
         else
         {
@@ -448,19 +450,19 @@ public sealed class TopOpeBRepBuild_FaceBuilder
     }
 
     /// <summary>The current edge of the current new wire.</summary>
-    /// <exception cref="Standard_Failure">There is none, or it isn't valid.</exception>
+    /// <exception cref="FailureException">There is none, or it isn't valid.</exception>
     public TopoDS_Shape Edge()
     {
         if (!myBlockIterator.More())
         {
-            throw new Standard_Failure("OutOfRange");
+            throw new FailureException("OutOfRange");
         }
 
         int i = myBlockIterator.Value();
         bool isvalid = myBlockBuilder.ElementIsValid(i);
         if (!isvalid)
         {
-            throw new Standard_Failure("Edge not Valid");
+            throw new FailureException("Edge not Valid");
         }
 
         TopoDS_Shape E = myBlockBuilder.Element(i);

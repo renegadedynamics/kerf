@@ -1,7 +1,9 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/GeomBndLib_Curve2d_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -15,7 +17,7 @@ internal static class GeomBndLibCurve2dTestUtils
         => Assert.True(theA <= theB, $"{theWhat}: expected {theA:R} <= {theB:R}");
 
     /// <summary>Helper: compare two Bnd_Box2d results within tolerance.</summary>
-    internal static void CompareBoxes2d(in Bnd_Box2d theNew, in Bnd_Box2d theOld, double theTol)
+    internal static void CompareBoxes2d(in Box2d theNew, in Box2d theOld, double theTol)
     {
         var (aXminN, aXmaxN, aYminN, aYmaxN) = theNew.Get();
         var (aXminO, aXmaxO, aYminO, aYmaxO) = theOld.Get();
@@ -26,7 +28,7 @@ internal static class GeomBndLibCurve2dTestUtils
     }
 
     /// <summary>Helper: verify that the new box conservatively encloses the old box.</summary>
-    internal static void ExpectConservativeEnvelope2d(in Bnd_Box2d theNew, in Bnd_Box2d theOld, double theTol)
+    internal static void ExpectConservativeEnvelope2d(in Box2d theNew, in Box2d theOld, double theTol)
     {
         var (aXminN, aXmaxN, aYminN, aYmaxN) = theNew.Get();
         var (aXminO, aXmaxO, aYminO, aYmaxO) = theOld.Get();
@@ -37,7 +39,7 @@ internal static class GeomBndLibCurve2dTestUtils
     }
 
     /// <summary>Helper: verify new 2D box is no larger than old box (tighter or equal).</summary>
-    internal static void ExpectNoLarger2d(in Bnd_Box2d theNew, in Bnd_Box2d theOld, double theTol)
+    internal static void ExpectNoLarger2d(in Box2d theNew, in Box2d theOld, double theTol)
     {
         var (aXminN, aXmaxN, aYminN, aYmaxN) = theNew.Get();
         var (aXminO, aXmaxO, aYminO, aYmaxO) = theOld.Get();
@@ -50,9 +52,9 @@ internal static class GeomBndLibCurve2dTestUtils
 
 public class GeomBndLib_Curve2dTest
 {
-    private static readonly double Conf = Precision.Confusion();
+    private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private static void CompareBoxes2d(in Bnd_Box2d theNew, in Bnd_Box2d theOld, double theTol)
+    private static void CompareBoxes2d(in Box2d theNew, in Box2d theOld, double theTol)
         => GeomBndLibCurve2dTestUtils.CompareBoxes2d(theNew, theOld, theTol);
 
     private static void ExpectGE(double theA, double theB) => GeomBndLibCurve2dTestUtils.ExpectGE(theA, theB);
@@ -60,9 +62,9 @@ public class GeomBndLib_Curve2dTest
     private static void ExpectLE(double theA, double theB) => GeomBndLibCurve2dTestUtils.ExpectLE(theA, theB);
 
     private static Geom2d_Circle Circle(double theX, double theY, double theR)
-        => new(new gp_Ax2d(new gp_Pnt2d(theX, theY), new gp_Dir2d(1.0, 0.0)), theR);
+        => new(new Axis2D(new Point2D(theX, theY), new Direction2D(1.0, 0.0)), theR);
 
-    private static gp_Ax22d XOY22d() => new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0), new gp_Dir2d(0.0, 1.0));
+    private static Frame2D XOY22d() => new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
 
     // =========================================================================
     // Line2d
@@ -71,11 +73,11 @@ public class GeomBndLib_Curve2dTest
     [Fact]
     public void Line_FiniteSegment()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 1.0));
+        Geom2d_Line aLine = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 1.0));
         GeomBndLib_Curve2d aCurve = new(aLine);
-        Assert.Equal(GeomAbs_Line, aCurve.GetType());
+        Assert.Equal(Line, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aCurve.Add(0.0, 10.0, 0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax) = aBox.Get();
@@ -91,13 +93,13 @@ public class GeomBndLib_Curve2dTest
     [Fact]
     public void Line_CompareWithBndLib()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(1.0, 2.0), new gp_Dir2d(0.0, 1.0));
+        Geom2d_Line aLine = new(new Point2D(1.0, 2.0), new Direction2D(0.0, 1.0));
         Geom2dAdaptor_Curve anAdaptor = new(aLine);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aLine).Add(0.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, 0.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -113,9 +115,9 @@ public class GeomBndLib_Curve2dTest
         double aRadius = 5.0;
         Geom2d_Circle aCircle = Circle(0.0, 0.0, aRadius);
         GeomBndLib_Curve2d aCurve = new(aCircle);
-        Assert.Equal(GeomAbs_Circle, aCurve.GetType());
+        Assert.Equal(global::Kerf.Geometry.CurveKind.Circle, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aCurve.Add(0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax) = aBox.Get();
@@ -133,7 +135,7 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Circle aCircle = Circle(0.0, 0.0, aRadius);
         GeomBndLib_Curve2d aCurve = new(aCircle);
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         // Pass 0 tolerance for precise reference comparison
         aCurve.Add(0.0, M_PI / 2.0, 0.0, ref aBox);
 
@@ -151,10 +153,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Circle aCircle = Circle(0.0, 0.0, 7.5);
         Geom2dAdaptor_Curve anAdaptor = new(aCircle);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aCircle).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -171,9 +173,9 @@ public class GeomBndLib_Curve2dTest
         double aMinR = 5.0;
         Geom2d_Ellipse anEllipse = new(XOY22d(), aMajR, aMinR);
         GeomBndLib_Curve2d aCurve = new(anEllipse);
-        Assert.Equal(GeomAbs_Ellipse, aCurve.GetType());
+        Assert.Equal(Ellipse, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aCurve.Add(0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax) = aBox.Get();
@@ -190,10 +192,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Ellipse anEllipse = new(XOY22d(), 8.0, 3.0);
         Geom2dAdaptor_Curve anAdaptor = new(anEllipse);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anEllipse).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -210,9 +212,9 @@ public class GeomBndLib_Curve2dTest
         double aMinR = 3.0;
         Geom2d_Hyperbola aHyp = new(XOY22d(), aMajR, aMinR);
         GeomBndLib_Curve2d aCurve = new(aHyp);
-        Assert.Equal(GeomAbs_Hyperbola, aCurve.GetType());
+        Assert.Equal(Hyperbola, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         double aU = 1.0;
         aCurve.Add(-aU, aU, 0.0, ref aBox);
 
@@ -233,10 +235,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Hyperbola aHyp = new(XOY22d(), 5.0, 3.0);
         Geom2dAdaptor_Curve anAdaptor = new(aHyp);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aHyp).Add(-1.0, 1.0, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, -1.0, 1.0, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -252,9 +254,9 @@ public class GeomBndLib_Curve2dTest
         double aFocal = 2.0;
         Geom2d_Parabola aParab = new(XOY22d(), aFocal);
         GeomBndLib_Curve2d aCurve = new(aParab);
-        Assert.Equal(GeomAbs_Parabola, aCurve.GetType());
+        Assert.Equal(Parabola, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         double aU = 5.0;
         aCurve.Add(-aU, aU, 0.0, ref aBox);
 
@@ -274,10 +276,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Parabola aParab = new(XOY22d(), 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(aParab);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aParab).Add(-5.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, -5.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -290,16 +292,16 @@ public class GeomBndLib_Curve2dTest
     [Fact]
     public void BezierCurve_Simple()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 3);
-        aPoles.SetValue(1, new gp_Pnt2d(0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt2d(5.0, 10.0));
-        aPoles.SetValue(3, new gp_Pnt2d(10.0, 0.0));
+        NCollection_Array1<Point2D> aPoles = new(1, 3);
+        aPoles.SetValue(1, new Point2D(0.0, 0.0));
+        aPoles.SetValue(2, new Point2D(5.0, 10.0));
+        aPoles.SetValue(3, new Point2D(10.0, 0.0));
 
         Geom2d_BezierCurve aBez = new(aPoles);
         GeomBndLib_Curve2d aCurve = new(aBez);
-        Assert.Equal(GeomAbs_BezierCurve, aCurve.GetType());
+        Assert.Equal(BezierCurve, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aCurve.Add(Conf, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax) = aBox.Get();
@@ -313,19 +315,19 @@ public class GeomBndLib_Curve2dTest
     [Fact]
     public void BezierCurve_CompareWithBndLib()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt2d(3.0, 8.0));
-        aPoles.SetValue(3, new gp_Pnt2d(7.0, 2.0));
-        aPoles.SetValue(4, new gp_Pnt2d(10.0, 5.0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0.0, 0.0));
+        aPoles.SetValue(2, new Point2D(3.0, 8.0));
+        aPoles.SetValue(3, new Point2D(7.0, 2.0));
+        aPoles.SetValue(4, new Point2D(10.0, 5.0));
 
         Geom2d_BezierCurve aBez = new(aPoles);
         Geom2dAdaptor_Curve anAdaptor = new(aBez);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aBez).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         // New box should be no larger than old box (may be tighter due to convex hull approach)
@@ -343,11 +345,11 @@ public class GeomBndLib_Curve2dTest
 
     private static Geom2d_BSplineCurve SimpleBSpline()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt2d(2.0, 5.0));
-        aPoles.SetValue(3, new gp_Pnt2d(8.0, 5.0));
-        aPoles.SetValue(4, new gp_Pnt2d(10.0, 0.0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0.0, 0.0));
+        aPoles.SetValue(2, new Point2D(2.0, 5.0));
+        aPoles.SetValue(3, new Point2D(8.0, 5.0));
+        aPoles.SetValue(4, new Point2D(10.0, 0.0));
 
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots.SetValue(1, 0.0);
@@ -367,9 +369,9 @@ public class GeomBndLib_Curve2dTest
     {
         Geom2d_BSplineCurve aBSpl = SimpleBSpline();
         GeomBndLib_Curve2d aCurve = new(aBSpl);
-        Assert.Equal(GeomAbs_BSplineCurve, aCurve.GetType());
+        Assert.Equal(BSplineCurve, aCurve.GetType());
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         aCurve.Add(Conf, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax) = aBox.Get();
@@ -386,10 +388,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_BSplineCurve aBSpl = SimpleBSpline();
         Geom2dAdaptor_Curve anAdaptor = new(aBSpl);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aBSpl).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -407,15 +409,15 @@ public class GeomBndLib_Curve2dTest
 
         // Construct from handle
         GeomBndLib_Curve2d aCurveH = new(aCircle);
-        Bnd_Box2d aBoxH = new();
+        Box2d aBoxH = new();
         aCurveH.Add(Conf, ref aBoxH);
 
         // Construct from adaptor
         Geom2dAdaptor_Curve anAdaptor = new(aCircle);
         GeomBndLib_Curve2d aCurveA = new(anAdaptor);
-        Assert.Equal(GeomAbs_Circle, aCurveA.GetType());
+        Assert.Equal(global::Kerf.Geometry.CurveKind.Circle, aCurveA.GetType());
 
-        Bnd_Box2d aBoxA = new();
+        Box2d aBoxA = new();
         aCurveA.Add(Conf, ref aBoxA);
 
         CompareBoxes2d(aBoxH, aBoxA, Conf);
@@ -432,7 +434,7 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Circle aCircle = Circle(0.0, 0.0, aRadius);
         GeomBndLib_Curve2d aCurve = new(aCircle);
 
-        Bnd_Box2d aBoxOpt = new();
+        Box2d aBoxOpt = new();
         aCurve.AddOptimal(0.0, ref aBoxOpt);
 
         var (aXminO, aXmaxO, aYminO, aYmaxO) = aBoxOpt.Get();
@@ -450,10 +452,10 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Circle aCircle = Circle(0.0, 0.0, 10.0);
         Geom2dAdaptor_Curve anAdaptor = new(aCircle, 0.0, M_PI / 2.0);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anAdaptor).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes2d(aNewBox, anOldBox, Conf);
@@ -466,13 +468,13 @@ public class GeomBndLib_Curve2dTest
         Geom2d_TrimmedCurve aTrim = new(aCircle, 0.0, M_PI / 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(aTrim);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(aTrim).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
-        Assert.False(aNewBox.IsVoid());
+        Assert.False(aNewBox.IsVoid);
         GeomBndLibCurve2dTestUtils.ExpectConservativeEnvelope2d(aNewBox, anOldBox, Conf);
     }
 
@@ -482,12 +484,12 @@ public class GeomBndLib_Curve2dTest
         Geom2d_Circle aCircle = Circle(0.0, 0.0, 10.0);
         Geom2d_TrimmedCurve aTrim = new(aCircle, 0.0, M_PI / 2.0);
         GeomBndLib_Curve2d aCurve = new(aTrim);
-        Assert.Equal(GeomAbs_Circle, aCurve.GetType());
+        Assert.Equal(global::Kerf.Geometry.CurveKind.Circle, aCurve.GetType());
 
         Geom2dAdaptor_Curve anAdaptor = new(aTrim);
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         aCurve.Add(Conf, ref aNewBox);
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
         CompareBoxes2d(aNewBox, anOldBox, Conf);
     }
@@ -502,11 +504,11 @@ public class GeomBndLib_Curve2dTest
         const int aDegree = 3;
         const int aNbKnots = 40;
         const int aNbPoles = 42;
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point2D> aPoles = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
             double t = (double)(i - 1) / (double)(aNbPoles - 1);
-            aPoles.SetValue(i, new gp_Pnt2d(10.0 * t, t));
+            aPoles.SetValue(i, new Point2D(10.0 * t, t));
         }
         NCollection_Array1<double> aKnots = new(1, aNbKnots);
         for (int i = 1; i <= aNbKnots; ++i)

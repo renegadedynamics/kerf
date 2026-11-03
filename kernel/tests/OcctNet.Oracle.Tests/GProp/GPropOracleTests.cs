@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -19,10 +20,10 @@ public class GPropOracleTests(ITestOutputHelper output)
     /// <summary>A GProp_GProps holding given properties, with the reference point at the centre of mass.</summary>
     private sealed class LoadedProps : GProp_GProps
     {
-        public LoadedProps(double theMass, in gp_Pnt theCentre, in gp_Mat theInertia)
+        public LoadedProps(double theMass, in Point3D theCentre, in Matrix3x3 theInertia)
         {
             loc = theCentre;
-            g = Occt.gp.Origin();
+            g = Kerf.Engine.Geometry.Constants.Origin();
             dim = theMass;
             inertia = theInertia;
         }
@@ -32,9 +33,9 @@ public class GPropOracleTests(ITestOutputHelper output)
     /// An axis built on both sides from the same raw components, so that native OCCT and the port normalize the same
     /// numbers (normalizing the port's unit direction again can change its last bit).
     /// </summary>
-    private static void Ax1(Oracle theOracle, out gp_Ax1 thePort, out N.gp_Ax1 theNative)
+    private static void Ax1(Oracle theOracle, out Axis3D thePort, out N.gp_Ax1 theNative)
     {
-        gp_Pnt aP = theOracle.Pnt();
+        Point3D aP = theOracle.Pnt();
         double x, y, z;
         do
         {
@@ -42,7 +43,7 @@ public class GPropOracleTests(ITestOutputHelper output)
             y = theOracle.Real(-1, 1);
             z = theOracle.Real(-1, 1);
         } while (x * x + y * y + z * z < 0.01);
-        thePort = new gp_Ax1(aP, new gp_Dir(x, y, z));
+        thePort = new Axis3D(aP, new Direction3D(x, y, z));
         using N.gp_Pnt aNP = Oracle.ToNative(aP);
         using var aND = new N.gp_Dir(x, y, z);
         theNative = new N.gp_Ax1(aNP, aND);
@@ -50,7 +51,7 @@ public class GPropOracleTests(ITestOutputHelper output)
 
     private static N.TopoDS_Shape MakeShape(Oracle theOracle, out string theName)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         using N.gp_Ax2 aNAx = Oracle.ToNative(anAx);
         double a = theOracle.Real(0.5, 20.0), b = theOracle.Real(0.5, 20.0), c = theOracle.Real(0.5, 20.0);
         switch (theOracle.Int(0, 5))
@@ -114,7 +115,7 @@ public class GPropOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Matrices compared element by element relative to their largest native element.</summary>
-    private static void SameMat(Oracle theOracle, N.gp_Mat theNative, in gp_Mat thePort, string theWhat, double theTol)
+    private static void SameMat(Oracle theOracle, N.gp_Mat theNative, in Matrix3x3 thePort, string theWhat, double theTol)
     {
         double aScale = 1.0;
         for (int i = 1; i <= 3; i++)
@@ -165,7 +166,7 @@ public class GPropOracleTests(ITestOutputHelper output)
 
                 for (int k = 0; k < 3; k++)
                 {
-                    Ax1(anOracle, out gp_Ax1 anAxis, out N.gp_Ax1 aNAxis);
+                    Ax1(anOracle, out Axis3D anAxis, out N.gp_Ax1 aNAxis);
                     using N.gp_Ax1 aNAxisOwner = aNAxis; // disposes the native axis
                     anOracle.Same(aNative.MomentOfInertia(aNAxis), aPort.MomentOfInertia(anAxis), aWhat + " MomentOfInertia");
                     anOracle.Same(aNative.RadiusOfGyration(aNAxis), aPort.RadiusOfGyration(anAxis), aWhat + " RadiusOfGyration");
@@ -217,7 +218,7 @@ public class GPropOracleTests(ITestOutputHelper output)
         for (int aCase = 0; aCase < Cases; aCase++)
         {
             string aWhat = $"case {aCase}";
-            gp_Pnt aLoc = anOracle.Pnt();
+            Point3D aLoc = anOracle.Pnt();
             using N.gp_Pnt aNLoc = Oracle.ToNative(aLoc);
             using var aNative = new N.GProp_GProps(aNLoc);
             var aPort = new GProp_GProps(aLoc);
@@ -240,7 +241,7 @@ public class GPropOracleTests(ITestOutputHelper output)
             {
                 SameMat(anOracle, aNM, aPort.MatrixOfInertia(), aWhat + " MatrixOfInertia", 1e-9);
             }
-            Ax1(anOracle, out gp_Ax1 anAxis, out N.gp_Ax1 aNAxis);
+            Ax1(anOracle, out Axis3D anAxis, out N.gp_Ax1 aNAxis);
             using N.gp_Ax1 aNAxisOwner = aNAxis; // disposes the native axis
             anOracle.Same(aNative.MomentOfInertia(aNAxis), aPort.MomentOfInertia(anAxis), aWhat + " MomentOfInertia", 1e-9);
 

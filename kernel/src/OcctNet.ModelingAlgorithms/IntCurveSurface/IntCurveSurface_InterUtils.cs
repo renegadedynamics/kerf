@@ -2,9 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.Intf_PIType;
 
@@ -30,7 +33,7 @@ internal static class IntCurveSurface_InterUtils
     /// intersects them with the projected basis curve, and widens [<paramref name="theVmin"/>,
     /// <paramref name="theVmax"/>] with the parameters found on it.
     /// </summary>
-    public static void ProjectIntersectAndEstLim(in gp_Lin theLine, in gp_Pln thePln, ProjLib_Plane theBasCurvProj,
+    public static void ProjectIntersectAndEstLim(in Line3D theLine, in Plane3D thePln, ProjLib_Plane theBasCurvProj,
                                                  ref double theVmin, ref double theVmax, ref bool theNoIntersection)
     {
         ProjLib_Plane aLineProj = new(thePln, theLine);
@@ -38,14 +41,14 @@ internal static class IntCurveSurface_InterUtils
         {
             return;
         }
-        gp_Lin2d aLin2d = aLineProj.Line();
+        Line2D aLin2d = aLineProj.Line();
 
         // make a second line X-axe symmetric to the first one
-        gp_Pnt2d aP1 = aLin2d.Location();
-        gp_Pnt2d aP2 = new(aP1.XY() + aLin2d.Direction().XY());
-        gp_Pnt2d aP1sym = new(aP1.X(), -aP1.Y());
-        gp_Pnt2d aP2sym = new(aP2.X(), -aP2.Y());
-        gp_Lin2d aLin2dsym = new(aP1sym, new gp_Dir2d(new gp_Vec2d(aP1sym, aP2sym)));
+        Point2D aP1 = aLin2d.Location();
+        Point2D aP2 = new(aP1.XY() + aLin2d.Direction().XY());
+        Point2D aP1sym = new(aP1.X(), -aP1.Y());
+        Point2D aP2sym = new(aP2.X(), -aP2.Y());
+        Line2D aLin2dsym = new(aP1sym, new Direction2D(new Vector2D(aP1sym, aP2sym)));
 
         // intersect projections
         IntAna2d_Conic aCon = new(aLin2d);
@@ -55,15 +58,15 @@ internal static class IntCurveSurface_InterUtils
 
         switch (theBasCurvProj.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 anIntersectSym.Perform(theBasCurvProj.Line(), aConSym);
                 anIntersect.Perform(theBasCurvProj.Line(), aCon);
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 anIntersectSym.Perform(theBasCurvProj.Hyperbola(), aConSym);
                 anIntersect.Perform(theBasCurvProj.Hyperbola(), aCon);
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 anIntersectSym.Perform(theBasCurvProj.Parabola(), aConSym);
                 anIntersect.Perform(theBasCurvProj.Parabola(), aCon);
                 break;
@@ -111,7 +114,7 @@ internal static class IntCurveSurface_InterUtils
     }
 
     /// <summary>Estimates the bounds of an infinite surface of extrusion (or offset of one) around the line.</summary>
-    public static void EstLimForInfExtr<SurfaceType, SurfaceTool>(in gp_Lin Line, in SurfaceType surface,
+    public static void EstLimForInfExtr<SurfaceType, SurfaceTool>(in Line3D Line, in SurfaceType surface,
                                                                   bool IsOffSurf, int nbsu, bool U1inf, bool U2inf,
                                                                   bool V1inf, bool V2inf, ref double U1new,
                                                                   ref double U2new, ref double V1new,
@@ -127,7 +130,7 @@ internal static class IntCurveSurface_InterUtils
             aBasSurf = SurfaceTool.BasisSurface(surface);
         }
 
-        gp_Dir aDirOfExt;
+        Direction3D aDirOfExt;
 
         if (IsOffSurf)
         {
@@ -149,10 +152,10 @@ internal static class IntCurveSurface_InterUtils
         if ((V1inf || V2inf) && !(U1inf || U2inf))
         {
             double vmin = RealLast(), vmax = -vmin;
-            gp_Lin aL = new();
+            Line3D aL = new();
             double step = (U2new - U1new) / nbsu;
             double u = U1new, v;
-            gp_Pnt aP;
+            Point3D aP;
             int i;
 
             for (i = 0; i <= nbsu; i++)
@@ -193,8 +196,8 @@ internal static class IntCurveSurface_InterUtils
             double umin = RealLast(), umax = -umin;
             double u0 = Min(Max(0.0, U1new), U2new);
             double v0 = Min(Max(0.0, V1new), V2new);
-            SurfaceTool.D0(surface, u0, v0, out gp_Pnt aP);
-            gp_Pln aRefPln = new(aP, aDirOfExt);
+            SurfaceTool.D0(surface, u0, v0, out Point3D aP);
+            Plane3D aRefPln = new(aP, aDirOfExt);
 
             Adaptor3d_Curve aBasCurv;
 
@@ -216,11 +219,11 @@ internal static class IntCurveSurface_InterUtils
                 return;
             }
 
-            gp_Lin2d Line2d = Projector.Line();
+            Line2D Line2d = Projector.Line();
 
-            GeomAbs_CurveType aCurvTyp = aBasCurv.GetType();
+            CurveKind aCurvTyp = aBasCurv.GetType();
 
-            if (aCurvTyp == GeomAbs_Line)
+            if (aCurvTyp == global::Kerf.Geometry.CurveKind.Line)
             {
                 Projector.Project(aBasCurv.Line());
 
@@ -229,7 +232,7 @@ internal static class IntCurveSurface_InterUtils
                     return;
                 }
 
-                gp_Lin2d aL2d = Projector.Line();
+                Line2D aL2d = Projector.Line();
 
                 IntAna2d_AnaIntersection anInter = new(Line2d, aL2d);
 
@@ -247,12 +250,12 @@ internal static class IntCurveSurface_InterUtils
                 IntAna2d_IntPoint anIntPnt = anInter.Point(1);
                 umin = umax = anIntPnt.ParamOnSecond();
             }
-            else if (aCurvTyp == GeomAbs_Parabola || aCurvTyp == GeomAbs_Hyperbola)
+            else if (aCurvTyp == Parabola || aCurvTyp == Hyperbola)
             {
                 IntAna2d_Conic aCon = new(Line2d);
                 IntAna2d_AnaIntersection anInter = new();
 
-                if (aCurvTyp == GeomAbs_Parabola)
+                if (aCurvTyp == Parabola)
                 {
                     Projector.Project(aBasCurv.Parabola());
                     if (!Projector.IsDone())
@@ -260,7 +263,7 @@ internal static class IntCurveSurface_InterUtils
                         return;
                     }
 
-                    gp_Parab2d aP2d = Projector.Parabola();
+                    Parabola2D aP2d = Projector.Parabola();
 
                     anInter.Perform(aP2d, aCon);
                 }
@@ -272,7 +275,7 @@ internal static class IntCurveSurface_InterUtils
                         return;
                     }
 
-                    gp_Hypr2d aH2d = Projector.Hyperbola();
+                    Hyperbola2D aH2d = Projector.Hyperbola();
                     anInter.Perform(aH2d, aCon);
                 }
 
@@ -317,7 +320,7 @@ internal static class IntCurveSurface_InterUtils
     }
 
     /// <summary>Estimates the V bounds of an infinite surface of revolution around the line.</summary>
-    public static void EstLimForInfRevl<SurfaceType, SurfaceTool>(in gp_Lin Line, in SurfaceType surface, bool U1inf,
+    public static void EstLimForInfRevl<SurfaceType, SurfaceTool>(in Line3D Line, in SurfaceType surface, bool U1inf,
                                                                   bool U2inf, bool V1inf, bool V2inf,
                                                                   ref double U1new, ref double U2new,
                                                                   ref double V1new, ref double V2new,
@@ -343,38 +346,38 @@ internal static class IntCurveSurface_InterUtils
         }
 
         Adaptor3d_Curve aBasisCurve = SurfaceTool.BasisCurve(surface);
-        gp_Ax1 aRevAx = SurfaceTool.AxeOfRevolution(surface);
-        gp_Vec aXVec = new(aRevAx.Direction());
-        double aTolAng = Precision.Angular();
+        Axis3D aRevAx = SurfaceTool.AxeOfRevolution(surface);
+        Vector3D aXVec = new(aRevAx.Direction());
+        double aTolAng = global::Kerf.Engine.Foundation.Precision.Angular();
 
         // make plane to project a basis curve
-        gp_Pnt O = aRevAx.Location();
+        Point3D O = aRevAx.Location();
         double aU = 0.0;
-        gp_Pnt P = aBasisCurve.Value(aU);
-        while (O.SquareDistance(P) <= Precision.PConfusion() || aXVec.IsParallel(new gp_Vec(O, P), aTolAng))
+        Point3D P = aBasisCurve.Value(aU);
+        while (O.SquareDistance(P) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || aXVec.IsParallel(new Vector3D(O, P), aTolAng))
         {
             aU += 1.0;
             P = aBasisCurve.Value(aU);
             if (aU > 3)
             {
                 // basis curve is a line coinciding with aXVec, P is any not on aXVec
-                P = new gp_Pnt(aU, aU + 1, aU + 2);
+                P = new Point3D(aU, aU + 1, aU + 2);
             }
         }
-        gp_Vec aNVec = aXVec ^ new gp_Vec(O, P);
-        gp_Pln aPln = new(new gp_Ax3(O, new gp_Dir(aNVec), new gp_Dir(aXVec)));
+        Vector3D aNVec = aXVec ^ new Vector3D(O, P);
+        Plane3D aPln = new(new CoordinateSystem(O, new Direction3D(aNVec), new Direction3D(aXVec)));
 
         // project basic curve
         ProjLib_Plane aBasCurvProj = new(aPln);
         switch (aBasisCurve.GetType())
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
                 aBasCurvProj.Project(aBasisCurve.Line());
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 aBasCurvProj.Project(aBasisCurve.Hyperbola());
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 aBasCurvProj.Project(aBasisCurve.Parabola());
                 break;
             default:
@@ -385,25 +388,25 @@ internal static class IntCurveSurface_InterUtils
             return;
         }
         // make plane to project Line
-        if (aXVec.IsParallel(new gp_Vec(Line.Direction()), aTolAng))
+        if (aXVec.IsParallel(new Vector3D(Line.Direction()), aTolAng))
         {
             P = Line.Location();
-            while (O.SquareDistance(P) <= Precision.PConfusion())
+            while (O.SquareDistance(P) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aU += 1.0;
-                P = new gp_Pnt(aU, aU + 1, aU + 2); // any not on aXVec
+                P = new Point3D(aU, aU + 1, aU + 2); // any not on aXVec
             }
-            aNVec = aXVec ^ new gp_Vec(O, P);
+            aNVec = aXVec ^ new Vector3D(O, P);
         }
         else
         {
-            aNVec = aXVec.Crossed(new gp_Vec(Line.Direction()));
+            aNVec = aXVec.Crossed(new Vector3D(Line.Direction()));
         }
 
-        aPln = new gp_Pln(new gp_Ax3(O, new gp_Dir(aNVec), new gp_Dir(aXVec)));
+        aPln = new Plane3D(new CoordinateSystem(O, new Direction3D(aNVec), new Direction3D(aXVec)));
 
         // make a second plane perpendicular to the first one, rotated around aXVec
-        gp_Pln aPlnPrp = aPln.Rotated(new gp_Ax1(O, new gp_Dir(aXVec)), M_PI / 2.0);
+        Plane3D aPlnPrp = aPln.Rotated(new Axis3D(O, new Direction3D(aXVec)), M_PI / 2.0);
 
         // project Line and its X-axe symmetric one to plane and intersect
         // resulting curve with projection of Basic Curve
@@ -432,7 +435,7 @@ internal static class IntCurveSurface_InterUtils
     }
 
     /// <summary>Estimates the bounds of an infinite offset surface around the line.</summary>
-    public static void EstLimForInfOffs<SurfaceType, SurfaceTool>(in gp_Lin Line, in SurfaceType surface, int nbsu,
+    public static void EstLimForInfOffs<SurfaceType, SurfaceTool>(in Line3D Line, in SurfaceType surface, int nbsu,
                                                                   bool U1inf, bool U2inf, bool V1inf, bool V2inf,
                                                                   ref double U1new, ref double U2new,
                                                                   ref double V1new, ref double V2new,
@@ -444,14 +447,14 @@ internal static class IntCurveSurface_InterUtils
         Adaptor3d_Surface aBasSurf = SurfaceTool.BasisSurface(surface);
         double anOffVal = SurfaceTool.OffsetValue(surface);
 
-        GeomAbs_SurfaceType aTypeOfBasSurf = aBasSurf.GetType();
+        SurfaceKind aTypeOfBasSurf = aBasSurf.GetType();
 
         //  case for plane, cylinder and cone - make equivalent surface;
-        if (aTypeOfBasSurf == GeomAbs_Plane)
+        if (aTypeOfBasSurf == Plane)
         {
-            gp_Pln aPln = aBasSurf.Plane();
+            Plane3D aPln = aBasSurf.Plane();
             // gp_Dir ^ gp_Dir is a gp_Dir (normalized), converted to gp_Vec
-            gp_Vec aT = new(aPln.Position().XDirection() ^ aPln.Position().YDirection());
+            Vector3D aT = new(aPln.Position().XDirection() ^ aPln.Position().YDirection());
             aT *= anOffVal;
             aPln.Translate(aT);
             IntAna_IntConicQuad LinPlane = new(Line, aPln, THE_TOLERANCE_ANGULAIRE);
@@ -467,18 +470,18 @@ internal static class IntCurveSurface_InterUtils
                 return;
             }
 
-            ElSLib.Parameters(aPln, LinPlane.Point(1), out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, LinPlane.Point(1), out double u, out double v);
             U1new = Max(U1new, u - 10.0);
             U2new = Min(U2new, u + 10.0);
             V1new = Max(V1new, v - 10.0);
             V2new = Min(V2new, v + 10.0);
         }
-        else if (aTypeOfBasSurf == GeomAbs_Cylinder)
+        else if (aTypeOfBasSurf == SurfaceKind.Cylinder)
         {
-            gp_Cylinder aCyl = aBasSurf.Cylinder();
+            Cylinder aCyl = aBasSurf.Cylinder();
 
             double aR = aCyl.Radius();
-            gp_Ax3 anA = aCyl.Position();
+            CoordinateSystem anA = aCyl.Position();
 
             if (anA.Direct())
             {
@@ -495,7 +498,7 @@ internal static class IntCurveSurface_InterUtils
             }
             else if (aR <= -THE_TOLTANGENCY)
             {
-                anA.Rotate(new gp_Ax1(anA.Location(), anA.Direction()), M_PI);
+                anA.Rotate(new Axis3D(anA.Location(), anA.Direction()), M_PI);
                 aCyl.SetPosition(anA);
                 aCyl.SetRadius(-aR);
             }
@@ -523,7 +526,7 @@ internal static class IntCurveSurface_InterUtils
 
             for (i = 1; i <= nbp; i++)
             {
-                ElSLib.Parameters(aCyl, LinCylinder.Point(i), out _, out double v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(aCyl, LinCylinder.Point(i), out _, out double v);
                 vmin = Min(vmin, v);
                 vmax = Max(vmax, v);
             }
@@ -531,15 +534,15 @@ internal static class IntCurveSurface_InterUtils
             V1new = Max(V1new, vmin - Math.Abs(vmin) - 10.0);
             V2new = Min(V2new, vmax + Math.Abs(vmax) + 10.0);
         }
-        else if (aTypeOfBasSurf == GeomAbs_Cone)
+        else if (aTypeOfBasSurf == SurfaceKind.Cone)
         {
-            gp_Cone aCon = aBasSurf.Cone();
+            Cone aCon = aBasSurf.Cone();
             double anAng = aCon.SemiAngle();
             double aR = aCon.RefRadius() + anOffVal * Math.Cos(anAng);
-            gp_Ax3 anA = aCon.Position();
+            CoordinateSystem anA = aCon.Position();
             if (aR >= 0.0)
             {
-                gp_Vec aZ = new(anA.Direction());
+                Vector3D aZ = new(anA.Direction());
                 aZ *= -anOffVal * Math.Sin(anAng);
                 anA.Translate(aZ);
                 aCon.SetPosition(anA);
@@ -569,7 +572,7 @@ internal static class IntCurveSurface_InterUtils
 
             for (i = 1; i <= nbp; i++)
             {
-                ElSLib.Parameters(aCon, LinCone.Point(i), out _, out double v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(aCon, LinCone.Point(i), out _, out double v);
                 vmin = Min(vmin, v);
                 vmax = Max(vmax, v);
             }
@@ -577,7 +580,7 @@ internal static class IntCurveSurface_InterUtils
             V1new = Max(V1new, vmin - Math.Abs(vmin) - 10.0);
             V2new = Min(V2new, vmax + Math.Abs(vmax) + 10.0);
         }
-        else if (aTypeOfBasSurf == GeomAbs_SurfaceOfExtrusion)
+        else if (aTypeOfBasSurf == SurfaceOfExtrusion)
         {
             double anU1 = U1new, anU2 = U2new;
 
@@ -592,21 +595,21 @@ internal static class IntCurveSurface_InterUtils
 
             if (U1inf || U2inf)
             {
-                GeomAbs_CurveType aBasCurvType = aBasSurf.BasisCurve().GetType();
-                if (aBasCurvType == GeomAbs_Line)
+                CurveKind aBasCurvType = aBasSurf.BasisCurve().GetType();
+                if (aBasCurvType == global::Kerf.Geometry.CurveKind.Line)
                 {
                     U1new = Max(anU1, -1.0e10);
                     U2new = Min(anU2, 1.0e10);
                 }
-                else if (aBasCurvType == GeomAbs_Parabola)
+                else if (aBasCurvType == Parabola)
                 {
-                    gp_Parab aPrb = aBasSurf.BasisCurve().Parabola();
+                    Parabola3D aPrb = aBasSurf.BasisCurve().Parabola();
                     double aF = aPrb.Focal();
                     double dU = 2.0e5 * Math.Sqrt(aF);
                     U1new = Max(anU1, -dU);
                     U2new = Min(anU2, dU);
                 }
-                else if (aBasCurvType == GeomAbs_Hyperbola)
+                else if (aBasCurvType == Hyperbola)
                 {
                     U1new = Max(anU1, -30.0);
                     U2new = Min(anU2, 30.0);
@@ -618,23 +621,23 @@ internal static class IntCurveSurface_InterUtils
                 }
             }
         }
-        else if (aTypeOfBasSurf == GeomAbs_SurfaceOfRevolution)
+        else if (aTypeOfBasSurf == SurfaceOfRevolution)
         {
-            GeomAbs_CurveType aBasCurvType = aBasSurf.BasisCurve().GetType();
-            if (aBasCurvType == GeomAbs_Line)
+            CurveKind aBasCurvType = aBasSurf.BasisCurve().GetType();
+            if (aBasCurvType == global::Kerf.Geometry.CurveKind.Line)
             {
                 V1new = Max(V1new, -1.0e10);
                 V2new = Min(V2new, 1.0e10);
             }
-            else if (aBasCurvType == GeomAbs_Parabola)
+            else if (aBasCurvType == Parabola)
             {
-                gp_Parab aPrb = aBasSurf.BasisCurve().Parabola();
+                Parabola3D aPrb = aBasSurf.BasisCurve().Parabola();
                 double aF = aPrb.Focal();
                 double dV = 2.0e5 * Math.Sqrt(aF);
                 V1new = Max(V1new, -dV);
                 V2new = Min(V2new, dV);
             }
-            else if (aBasCurvType == GeomAbs_Hyperbola)
+            else if (aBasCurvType == Hyperbola)
             {
                 V1new = Max(V1new, -30.0);
                 V2new = Min(V2new, 30.0);
@@ -666,7 +669,7 @@ internal static class IntCurveSurface_InterUtils
         Intf_PIType typ;
         int Adr1, Adr2;
         double Param, u, v;
-        gp_Pnt P = Sp.Pnt();
+        Point3D P = Sp.Pnt();
 
         int Pt1, Pt2, Pt3;
         double u1 = 0.0, v1 = 0.0, param;
@@ -694,19 +697,19 @@ internal static class IntCurveSurface_InterUtils
             {
                 double ua, va, ub, vb, uc, vc, ca, cb, cc, cabc;
                 Polyhedron.Triangle(Adr1, out Pt1, out Pt2, out Pt3);
-                gp_Pnt PA = Polyhedron.Point(Pt1);
-                gp_Pnt PB = Polyhedron.Point(Pt2);
-                gp_Pnt PC = Polyhedron.Point(Pt3);
+                Point3D PA = Polyhedron.Point(Pt1);
+                Point3D PB = Polyhedron.Point(Pt2);
+                Point3D PC = Polyhedron.Point(Pt3);
                 Polyhedron.Parameters(Pt1, out ua, out va);
                 Polyhedron.Parameters(Pt2, out ub, out vb);
                 Polyhedron.Parameters(Pt3, out uc, out vc);
-                gp_Vec Normale = new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, PC));
-                cc = (new gp_Vec(PA, PB).Crossed(new gp_Vec(PA, P))).Dot(Normale);
-                ca = (new gp_Vec(PB, PC).Crossed(new gp_Vec(PB, P))).Dot(Normale);
-                cb = (new gp_Vec(PC, PA).Crossed(new gp_Vec(PC, P))).Dot(Normale);
+                Vector3D Normale = new Vector3D(PA, PB).Crossed(new Vector3D(PA, PC));
+                cc = (new Vector3D(PA, PB).Crossed(new Vector3D(PA, P))).Dot(Normale);
+                ca = (new Vector3D(PB, PC).Crossed(new Vector3D(PB, P))).Dot(Normale);
+                cb = (new Vector3D(PC, PA).Crossed(new Vector3D(PC, P))).Dot(Normale);
                 cabc = ca + cb + cc;
 
-                if (Math.Abs(cabc) > Precision.Computational())
+                if (Math.Abs(cabc) > global::Kerf.Engine.Foundation.Precision.Computational())
                 {
                     ca /= cabc;
                     cb /= cabc;
@@ -717,30 +720,30 @@ internal static class IntCurveSurface_InterUtils
                 }
                 else
                 {
-                    gp_Vec aAB = new(PA, PB);
-                    gp_Vec aBC = new(PB, PC);
-                    gp_Vec aCA = new(PC, PA);
+                    Vector3D aAB = new(PA, PB);
+                    Vector3D aBC = new(PB, PC);
+                    Vector3D aCA = new(PC, PA);
                     double aSqAB = aAB.SquareMagnitude();
                     double aSqBC = aBC.SquareMagnitude();
                     double aSqCA = aCA.SquareMagnitude();
 
-                    if (aSqAB >= aSqBC && aSqAB >= aSqCA && aSqAB > Precision.SquareConfusion())
+                    if (aSqAB >= aSqBC && aSqAB >= aSqCA && aSqAB > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        double aT = new gp_Vec(PA, P).Dot(aAB) / aSqAB;
+                        double aT = new Vector3D(PA, P).Dot(aAB) / aSqAB;
                         aT = Min(1.0, Max(0.0, aT));
                         u1 = ua + aT * (ub - ua);
                         v1 = va + aT * (vb - va);
                     }
-                    else if (aSqBC >= aSqCA && aSqBC > Precision.SquareConfusion())
+                    else if (aSqBC >= aSqCA && aSqBC > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        double aT = new gp_Vec(PB, P).Dot(aBC) / aSqBC;
+                        double aT = new Vector3D(PB, P).Dot(aBC) / aSqBC;
                         aT = Min(1.0, Max(0.0, aT));
                         u1 = ub + aT * (uc - ub);
                         v1 = vb + aT * (vc - vb);
                     }
-                    else if (aSqCA > Precision.SquareConfusion())
+                    else if (aSqCA > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        double aT = new gp_Vec(PC, P).Dot(aCA) / aSqCA;
+                        double aT = new Vector3D(PC, P).Dot(aCA) / aSqCA;
                         aT = Min(1.0, Max(0.0, aT));
                         u1 = uc + aT * (ua - uc);
                         v1 = vc + aT * (va - vc);
@@ -774,8 +777,8 @@ internal static class IntCurveSurface_InterUtils
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
     {
-        gp_Vec NSurf, D1U, D1V;
-        gp_Pnt Psurf;
+        Vector3D NSurf, D1U, D1V;
+        Point3D Psurf;
         double CosDir;
 
         SurfaceTool.D1(surface, u, v, out Psurf, out D1U, out D1V);
@@ -812,31 +815,31 @@ internal static class IntCurveSurface_InterUtils
     /// The parameters of <paramref name="P"/> on the quadric surface (ElSLib); unchanged for other surfaces, as in
     /// OCCT.
     /// </summary>
-    public static void ComputeParamsOnQuadric<SurfaceType, SurfaceTool>(in SurfaceType surface, in gp_Pnt P,
+    public static void ComputeParamsOnQuadric<SurfaceType, SurfaceTool>(in SurfaceType surface, in Point3D P,
                                                                         ref double u, ref double v)
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
     {
-        GeomAbs_SurfaceType SurfaceType_ = SurfaceTool.GetType(surface);
+        SurfaceKind SurfaceType_ = SurfaceTool.GetType(surface);
         switch (SurfaceType_)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                ElSLib.Parameters(SurfaceTool.Plane(surface), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(SurfaceTool.Plane(surface), P, out u, out v);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                ElSLib.Parameters(SurfaceTool.Cylinder(surface), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(SurfaceTool.Cylinder(surface), P, out u, out v);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                ElSLib.Parameters(SurfaceTool.Cone(surface), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(SurfaceTool.Cone(surface), P, out u, out v);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                ElSLib.Parameters(SurfaceTool.Sphere(surface), P, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(SurfaceTool.Sphere(surface), P, out u, out v);
                 break;
             }
             default:
@@ -847,14 +850,14 @@ internal static class IntCurveSurface_InterUtils
     /// <summary>Samples the surface on a 50 × 50 grid into <paramref name="thePntsOnSurface"/> and the box.</summary>
     public static void DoSurface<SurfaceType, SurfaceTool>(in SurfaceType theSurface, double theU0, double theU1,
                                                            double theV0, double theV1,
-                                                           NCollection_Array2<gp_Pnt> thePntsOnSurface,
-                                                           ref Bnd_Box theBoxSurface, out double theGap)
+                                                           NCollection_Array2<Point3D> thePntsOnSurface,
+                                                           ref Box theBoxSurface, out double theGap)
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
     {
         int iU = 0, iV = 0;
         double U = 0.0, V = 0.0;
         double dU = (theU1 - theU0) / 50.0, dV = (theV1 - theV0) / 50.0;
-        gp_Pnt aPnt;
+        Point3D aPnt;
 
         for (iU = 0; iU < 50; iU++)
         {
@@ -903,7 +906,7 @@ internal static class IntCurveSurface_InterUtils
     /// </summary>
     public static void DoNewBounds<SurfaceType, SurfaceTool>(in SurfaceType theSurface, double theU0, double theU1,
                                                              double theV0, double theV1,
-                                                             NCollection_Array2<gp_Pnt> thePntsOnSurface,
+                                                             NCollection_Array2<Point3D> thePntsOnSurface,
                                                              NCollection_Array1<double> theX,
                                                              NCollection_Array1<double> theY,
                                                              NCollection_Array1<double> theZ,
@@ -929,14 +932,14 @@ internal static class IntCurveSurface_InterUtils
             {
                 for (k = 1; k <= 2; k++)
                 {
-                    gp_Pnt aPoint = new(theX[i], theY[j], theZ[k]);
+                    Point3D aPoint = new(theX[i], theY[j], theZ[k]);
                     double DistMin = 1.0e+100;
                     int diU = 0, diV = 0;
                     for (iU = 1; iU <= 50; iU++)
                     {
                         for (iV = 1; iV <= 50; iV++)
                         {
-                            gp_Pnt aP = thePntsOnSurface.Value(iU, iV);
+                            Point3D aP = thePntsOnSurface.Value(iU, iV);
                             double dist = aP.SquareDistance(aPoint);
                             if (dist < DistMin)
                             {
@@ -1039,11 +1042,11 @@ internal static class IntCurveSurface_InterUtils
 
         double w = theLw, u = theSu, v = theSv;
 
-        GeomAbs_CurveType aCType = CurveTool.GetType(theCurve);
+        CurveKind aCType = CurveTool.GetType(theCurve);
 
-        if (CurveTool.IsPeriodic(theCurve) || aCType == GeomAbs_Circle || aCType == GeomAbs_Ellipse)
+        if (CurveTool.IsPeriodic(theCurve) || aCType == Circle || aCType == Ellipse)
         {
-            w = ElCLib.InPeriod(w, W0, W0 + CurveTool.Period(theCurve));
+            w = global::Kerf.Engine.Geometry.ElCLib.InPeriod(w, W0, W0 + CurveTool.Period(theCurve));
         }
 
         if ((W0 - w) >= THE_TOLTANGENCY || (w - W1) >= THE_TOLTANGENCY)
@@ -1051,16 +1054,16 @@ internal static class IntCurveSurface_InterUtils
             return false;
         }
 
-        GeomAbs_SurfaceType aSType = SurfaceTool.GetType(theSurface);
-        if (SurfaceTool.IsUPeriodic(theSurface) || aSType == GeomAbs_Cylinder || aSType == GeomAbs_Cone
-            || aSType == GeomAbs_Sphere)
+        SurfaceKind aSType = SurfaceTool.GetType(theSurface);
+        if (SurfaceTool.IsUPeriodic(theSurface) || aSType == SurfaceKind.Cylinder || aSType == SurfaceKind.Cone
+            || aSType == SurfaceKind.Sphere)
         {
-            u = ElCLib.InPeriod(u, U0, U0 + SurfaceTool.UPeriod(theSurface));
+            u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, U0, U0 + SurfaceTool.UPeriod(theSurface));
         }
 
         if (SurfaceTool.IsVPeriodic(theSurface))
         {
-            v = ElCLib.InPeriod(v, V0, V0 + SurfaceTool.VPeriod(theSurface));
+            v = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, V0, V0 + SurfaceTool.VPeriod(theSurface));
         }
 
         if ((U0 - u) >= THE_TOLTANGENCY || (u - U1) >= THE_TOLTANGENCY)
@@ -1075,7 +1078,7 @@ internal static class IntCurveSurface_InterUtils
         ComputeTransitions<CurveType, CurveTool, SurfaceType, SurfaceTool>(theCurve, w,
                                                                            out IntCurveSurface_TransitionOnCurve TransOnCurve,
                                                                            theSurface, u, v);
-        gp_Pnt P = CurveTool.Value(theCurve, w);
+        Point3D P = CurveTool.Value(theCurve, w);
         thePoint = new IntCurveSurface_IntersectionPoint(P, u, v, w, TransOnCurve);
         return true;
     }
@@ -1108,7 +1111,7 @@ internal static class IntCurveSurface_InterUtils
         double u = 0.0, v = 0.0, w;
         for (int i = 1; i <= nbp; i++)
         {
-            gp_Pnt P = theIntAna.Point(i);
+            Point3D P = theIntAna.Point(i);
             w = theIntAna.ParamOnConic(i);
             ComputeParamsOnQuadric<SurfaceType, SurfaceTool>(theSurface, P, ref u, ref v);
 
@@ -1153,7 +1156,7 @@ internal static class IntCurveSurface_InterUtils
 
     /// <summary>The intersection of a line and a torus (IntAna_IntLinTorus); false if it failed.</summary>
     public static bool ProcessLinTorus<CurveType, CurveTool, SurfaceType, SurfaceTool>(
-        in gp_Lin theLine, in CurveType theCurve, in SurfaceType theSurface,
+        in Line3D theLine, in CurveType theCurve, in SurfaceType theSurface,
         NCollection_DynamicArray<IntCurveSurface_IntersectionPoint> thePoints)
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
@@ -1250,7 +1253,7 @@ internal static class IntCurveSurface_InterUtils
             return;
         }
 
-        double ptol = 10 * Precision.PConfusion();
+        double ptol = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         // Sort by W
         bool Triok;
@@ -1316,11 +1319,11 @@ internal static class IntCurveSurface_InterUtils
     /// surface's bounds.
     /// </summary>
     public static void ProcessSortedPoints<ExactInterType, CSFunctionType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
-        ExactInterType theExactInter, math_FunctionSetRoot theRsnld, SortedStartPoints thePoints, double theU0,
+        ExactInterType theExactInter, FunctionSetRoot theRsnld, SortedStartPoints thePoints, double theU0,
         double theU1, double theV0, double theV1, double theWinf, double theWsup, in CurveType theCurve,
         in SurfaceType theSurface, NCollection_DynamicArray<IntCurveSurface_IntersectionPoint> theResult)
         where ExactInterType : IntImp_IntCS<CSFunctionType, SurfaceType, SurfaceTool, CurveType, CurveTool>
-        where CSFunctionType : math_FunctionSetWithDerivatives, IIntImp_CSFunction<SurfaceType, CurveType>
+        where CSFunctionType : FunctionSetWithDerivatives, IIntImp_CSFunction<SurfaceType, CurveType>
         where CurveTool : IIntCurveSurface_CurveTool<CurveType>
         where SurfaceTool : IIntCurveSurface_SurfaceTool<SurfaceType>
     {
@@ -1332,7 +1335,7 @@ internal static class IntCurveSurface_InterUtils
             return;
         }
 
-        double ptol = 10 * Precision.PConfusion();
+        double ptol = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
         double su = 0, sv = 0, sw = 0;
 
         for (int i = 0; i < NbStartPoints; i++)
@@ -1383,13 +1386,13 @@ internal static class IntCurveSurface_InterUtils
     {
         theIntervals.Clear();
 
-        int NbUOnS = SurfaceTool.NbUIntervals(theSurface, GeomAbs_C2);
-        int NbVOnS = SurfaceTool.NbVIntervals(theSurface, GeomAbs_C2);
+        int NbUOnS = SurfaceTool.NbUIntervals(theSurface, C2);
+        int NbVOnS = SurfaceTool.NbVIntervals(theSurface, C2);
 
         if (NbUOnS > 1)
         {
             NCollection_Array1<double> TabU = new(1, NbUOnS + 1);
-            SurfaceTool.UIntervals(theSurface, TabU, GeomAbs_C2);
+            SurfaceTool.UIntervals(theSurface, TabU, C2);
 
             for (int iu = 1; iu <= NbUOnS; iu++)
             {
@@ -1399,7 +1402,7 @@ internal static class IntCurveSurface_InterUtils
                 if (NbVOnS > 1)
                 {
                     NCollection_Array1<double> TabV = new(1, NbVOnS + 1);
-                    SurfaceTool.VIntervals(theSurface, TabV, GeomAbs_C2);
+                    SurfaceTool.VIntervals(theSurface, TabV, C2);
                     for (int iv = 1; iv <= NbVOnS; iv++)
                     {
                         double V0 = TabV.Value(iv);
@@ -1421,7 +1424,7 @@ internal static class IntCurveSurface_InterUtils
             double U1 = SurfaceTool.LastUParameter(theSurface);
 
             NCollection_Array1<double> TabV = new(1, NbVOnS + 1);
-            SurfaceTool.VIntervals(theSurface, TabV, GeomAbs_C2);
+            SurfaceTool.VIntervals(theSurface, TabV, C2);
 
             for (int iv = 1; iv <= NbVOnS; iv++)
             {

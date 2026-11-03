@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity DataEnvironment
 /// </summary>
-public class StepRepr_DataEnvironment : Standard_Transient
+public class StepRepr_DataEnvironment : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

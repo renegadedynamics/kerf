@@ -50,7 +50,7 @@ public static partial class BRepTools
     private static TopoDS_TShape replaceFrozen(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theCopies,
                                                HashSet<TopoDS_TShape> theVisited)
     {
-        if (theTShape.IsFrozen())
+        if (theTShape.IsFrozen)
         {
             return exactCopy(theTShape, theCopies);
         }

@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,12 +17,12 @@ namespace Occt;
 /// <remarks>
 /// A C++ value class, so a struct: OCCT copies it into lines and vertices. <c>new()</c> and <c>default</c> are the
 /// same (the origin, zero parameters). The <c>SetValue</c> overloads are internal mutators (translation rules,
-/// section 3); <see cref="WithValue(in gp_Pnt, double, double, double, double)"/> is the functional twin of the one
+/// section 3); <see cref="WithValue(in Point3D, double, double, double, double)"/> is the functional twin of the one
 /// that sets everything.
 /// </remarks>
 public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
 {
-    private gp_Pnt pt;
+    private Point3D pt;
     private double u1;
     private double v1;
     private double u2;
@@ -27,7 +31,7 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
     /// <summary>Empty constructor: the origin, zero parameters.</summary>
     public IntSurf_PntOn2S()
     {
-        pt = new gp_Pnt(0, 0, 0);
+        pt = new Point3D(0, 0, 0);
         u1 = 0;
         v1 = 0;
         u2 = 0;
@@ -37,10 +41,10 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the point in 3D space.</summary>
-    internal void SetValue(in gp_Pnt Pt) => pt = Pt;
+    internal void SetValue(in Point3D Pt) => pt = Pt;
 
     /// <summary>Sets the point in 3D space and in the parametric space of one of the surfaces.</summary>
-    internal void SetValue(in gp_Pnt Pt, bool OnFirst, double U, double V)
+    internal void SetValue(in Point3D Pt, bool OnFirst, double U, double V)
     {
         pt = Pt;
         if (OnFirst)
@@ -56,7 +60,7 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
     }
 
     /// <summary>Sets the point in 3D space and in the parametric space of each surface.</summary>
-    internal void SetValue(in gp_Pnt Pt, double U1, double V1, double U2, double V2)
+    internal void SetValue(in Point3D Pt, double U1, double V1, double U2, double V2)
     {
         pt = Pt;
         u1 = U1;
@@ -90,7 +94,7 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
     }
 
     /// <summary>A copy with the point and both pairs of parameters set.</summary>
-    public readonly IntSurf_PntOn2S WithValue(in gp_Pnt Pt, double U1, double V1, double U2, double V2)
+    public readonly IntSurf_PntOn2S WithValue(in Point3D Pt, double U1, double V1, double U2, double V2)
     {
         IntSurf_PntOn2S aCopy = this;
         aCopy.SetValue(Pt, U1, V1, U2, V2);
@@ -100,12 +104,12 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
     // Queries
 
     /// <summary>The point in 3D space.</summary>
-    public readonly gp_Pnt Value() => pt;
+    public readonly Point3D Value() => pt;
 
     /// <summary>The point in the parametric space of one of the surfaces.</summary>
-    public readonly gp_Pnt2d ValueOnSurface(bool OnFirst)
+    public readonly Point2D ValueOnSurface(bool OnFirst)
     {
-        gp_Pnt2d PointOnSurf = new();
+        Point2D PointOnSurf = new();
         if (OnFirst)
         {
             PointOnSurf.SetCoord(u1, v1);
@@ -173,7 +177,7 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
 
         theOtherPoint.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
 
-        gp_Pnt2d aP1 = new(u1, v1), aP2 = new(aU1, aV1);
+        Point2D aP1 = new(u1, v1), aP2 = new(aU1, aV1);
 
         if (!aP1.IsEqual(aP2, theTol2D))
         {
@@ -198,5 +202,5 @@ public partial struct IntSurf_PntOn2S : IEquatable<IntSurf_PntOn2S>
 
     public static bool operator !=(in IntSurf_PntOn2S theLeft, in IntSurf_PntOn2S theRight) => !theLeft.Equals(theRight);
 
-    public override readonly string ToString() => gp.Format("IntSurf_PntOn2S", pt.X(), pt.Y(), pt.Z(), u1, v1, u2, v2);
+    public override readonly string ToString() => Constants.Format("IntSurf_PntOn2S", pt.X(), pt.Y(), pt.Z(), u1, v1, u2, v2);
 }

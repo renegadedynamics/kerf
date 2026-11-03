@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using static Occt.GccInt_IType;
 
@@ -59,7 +60,7 @@ internal static class GeometryTestBisecCommands
 
         Geom2d_Curve? C1 = DrawTrSurf.GetCurve2d(theDI, a[2]);
         Geom2d_Curve? C2 = DrawTrSurf.GetCurve2d(theDI, a[3]);
-        gp_Pnt2d P1 = new(), P2 = new();
+        Point2D P1 = new(), P2 = new();
         bool ip1 = DrawTrSurf.GetPoint2d(theDI, a[2], ref P1);
         bool ip2 = DrawTrSurf.GetPoint2d(theDI, a[3], ref P2);
         int i, Compt = 0;

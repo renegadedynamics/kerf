@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +31,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     {
         public readonly NCollection_Array1<double> UFlatKnots;
         public readonly NCollection_Array1<double> VFlatKnots;
-        public readonly NCollection_Array2<gp_Pnt> Poles;
+        public readonly NCollection_Array2<Point3D> Poles;
         public readonly NCollection_Array2<double>? Weights;
         public readonly int UDegree;
         public readonly int VDegree;
@@ -53,7 +59,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     // (data, adjU, adjV, uSpan, vSpan, result); evaluateGridDirect uses the second only.
     private interface IEvalFunctor<TResult>
     {
-        static abstract void CacheEval(BSplSLib_Cache theCache, double theLocalU, double theLocalV, ref TResult theResult);
+        static abstract void CacheEval(SurfaceCache theCache, double theLocalU, double theLocalV, ref TResult theResult);
 
         static abstract void DirectEval(in SurfaceData theData,
                                         double theU,
@@ -97,7 +103,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                    out double theAdjustedParam,
                                    ref int theSpanIdx)
     {
-        BSplCLib.LocateParameter(theDegree, theFlatKnots, BSplCLib.NoMults(), theParam, theIsPeriodic,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(theDegree, theFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), theParam, theIsPeriodic,
                                  ref theSpanIdx, out theAdjustedParam);
     }
 
@@ -140,7 +146,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
         {
             double aParam = theParams.Value(aLower + i);
             int aSpan = 0;
-            BSplCLib.LocateParameter(theDegree, theFlatKnots, BSplCLib.NoMults(), aParam, theIsPeriodic, ref aSpan,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(theDegree, theFlatKnots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), aParam, theIsPeriodic, ref aSpan,
                                      out double aAdjusted);
             _ = aAdjusted;
             if (aSpan == theTargetSpan)
@@ -178,7 +184,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
         int aLowV = theVParams.Lower();
 
         NCollection_Array2<TResult> aGrid = new(1, aNbU, 1, aNbV);
-        BSplSLib_Cache aCache = new(theData.UDegree,
+        SurfaceCache aCache = new(theData.UDegree,
                                     theData.IsUPeriodic,
                                     theData.UFlatKnots,
                                     theData.VDegree,
@@ -347,9 +353,9 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     // D0: cache evaluation and direct evaluation.
-    private struct EvalD0 : IEvalFunctor<gp_Pnt>
+    private struct EvalD0 : IEvalFunctor<Point3D>
     {
-        public static void CacheEval(BSplSLib_Cache theCache, double theLocalU, double theLocalV, ref gp_Pnt theResult)
+        public static void CacheEval(SurfaceCache theCache, double theLocalU, double theLocalV, ref Point3D theResult)
         {
             theCache.D0Local(theLocalU, theLocalV, out theResult);
         }
@@ -361,9 +367,9 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                       int theVSpan,
                                       int theNU,
                                       int theNV,
-                                      ref gp_Pnt theResult)
+                                      ref Point3D theResult)
         {
-            BSplSLib.D0(theU,
+            SurfaceBSplSLib.D0(theU,
                         theV,
                         theUSpan,
                         theVSpan,
@@ -386,7 +392,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     // D1: cache evaluation and direct evaluation.
     private struct EvalD1 : IEvalFunctor<Geom_Surface.ResD1>
     {
-        public static void CacheEval(BSplSLib_Cache theCache,
+        public static void CacheEval(SurfaceCache theCache,
                                      double theLocalU,
                                      double theLocalV,
                                      ref Geom_Surface.ResD1 theResult)
@@ -403,7 +409,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                       int theNV,
                                       ref Geom_Surface.ResD1 theResult)
         {
-            BSplSLib.D1(theU,
+            SurfaceBSplSLib.D1(theU,
                         theV,
                         theUSpan,
                         theVSpan,
@@ -428,7 +434,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     // D2: cache evaluation and direct evaluation.
     private struct EvalD2 : IEvalFunctor<Geom_Surface.ResD2>
     {
-        public static void CacheEval(BSplSLib_Cache theCache,
+        public static void CacheEval(SurfaceCache theCache,
                                      double theLocalU,
                                      double theLocalV,
                                      ref Geom_Surface.ResD2 theResult)
@@ -452,7 +458,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                       int theNV,
                                       ref Geom_Surface.ResD2 theResult)
         {
-            BSplSLib.D2(theU,
+            SurfaceBSplSLib.D2(theU,
                         theV,
                         theUSpan,
                         theVSpan,
@@ -480,11 +486,11 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     // D3: direct evaluation only.
     private struct EvalD3 : IEvalFunctor<Geom_Surface.ResD3>
     {
-        public static void CacheEval(BSplSLib_Cache theCache,
+        public static void CacheEval(SurfaceCache theCache,
                                      double theLocalU,
                                      double theLocalV,
                                      ref Geom_Surface.ResD3 theResult) =>
-            throw new Standard_ProgramError("GeomGridEval_BSplineSurface: D3 has no cache evaluation");
+            throw new ProgramErrorException("GeomGridEval_BSplineSurface: D3 has no cache evaluation");
 
         public static void DirectEval(in SurfaceData theData,
                                       double theU,
@@ -495,7 +501,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                       int theNV,
                                       ref Geom_Surface.ResD3 theResult)
         {
-            BSplSLib.D3(theU,
+            SurfaceBSplSLib.D3(theU,
                         theV,
                         theUSpan,
                         theVSpan,
@@ -512,11 +518,11 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                         theData.IsUPeriodic,
                         theData.IsVPeriodic,
                         out theResult.Point,
-                        out gp_Vec aD1U,
-                        out gp_Vec aD1V,
-                        out gp_Vec aD2U,
-                        out gp_Vec aD2V,
-                        out gp_Vec aD2UV,
+                        out Vector3D aD1U,
+                        out Vector3D aD1V,
+                        out Vector3D aD2U,
+                        out Vector3D aD2V,
+                        out Vector3D aD2UV,
                         out theResult.D3U,
                         out theResult.D3V,
                         out theResult.D3UUV,
@@ -530,10 +536,10 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     // DN: direct evaluation only (OCCT's lambda captures theNU and theNV; the port passes them).
-    private struct EvalDN : IEvalFunctor<gp_Vec>
+    private struct EvalDN : IEvalFunctor<Vector3D>
     {
-        public static void CacheEval(BSplSLib_Cache theCache, double theLocalU, double theLocalV, ref gp_Vec theResult) =>
-            throw new Standard_ProgramError("GeomGridEval_BSplineSurface: DN has no cache evaluation");
+        public static void CacheEval(SurfaceCache theCache, double theLocalU, double theLocalV, ref Vector3D theResult) =>
+            throw new ProgramErrorException("GeomGridEval_BSplineSurface: DN has no cache evaluation");
 
         public static void DirectEval(in SurfaceData theData,
                                       double theU,
@@ -542,9 +548,9 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
                                       int theVSpan,
                                       int theNU,
                                       int theNV,
-                                      ref gp_Vec theResult)
+                                      ref Vector3D theResult)
         {
-            BSplSLib.DN(theU,
+            SurfaceBSplSLib.DN(theU,
                         theV,
                         theNU,
                         theNV,
@@ -567,15 +573,15 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (theUParams.IsEmpty() || theVParams.IsEmpty() || !extractSurfaceData(myGeom, out SurfaceData aData))
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
-        return evaluateGridCached<gp_Pnt, EvalD0>(aData, theUParams, theVParams);
+        return evaluateGridCached<Point3D, EvalD0>(aData, theUParams, theVParams);
     }
 
     /// <summary>Evaluates all grid points with first partial derivatives.</summary>
@@ -618,7 +624,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
     /// Evaluates the partial derivative of orders (NU, NV) on the grid (direct evaluation); zero above a
     /// degree.
     /// </summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -626,7 +632,7 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
         if (theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0 || theNV < 0 || (theNU + theNV) < 1
             || !extractSurfaceData(myGeom, out SurfaceData aData))
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         int aNbU = theUParams.Length();
@@ -637,8 +643,8 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
         // (BSplSLib::DN and Geom_BSplineSurface::DN return them); the grid returns zero (occt-issues.md).
         if (theNU > aData.UDegree || theNV > aData.VDegree)
         {
-            NCollection_Array2<gp_Vec> aZeroGrid = new(1, aNbU, 1, aNbV);
-            gp_Vec aZero = new(0.0, 0.0, 0.0);
+            NCollection_Array2<Vector3D> aZeroGrid = new(1, aNbU, 1, aNbV);
+            Vector3D aZero = new(0.0, 0.0, 0.0);
             for (int i = 1; i <= aNbU; ++i)
             {
                 for (int j = 1; j <= aNbV; ++j)
@@ -649,6 +655,6 @@ public sealed class GeomGridEval_BSplineSurface : GeomGridEval.ISurfaceEvaluator
             return aZeroGrid;
         }
 
-        return evaluateGridDirect<gp_Vec, EvalDN>(aData, theUParams, theVParams, theNU, theNV);
+        return evaluateGridDirect<Vector3D, EvalDN>(aData, theUParams, theVParams, theNU, theNV);
     }
 }

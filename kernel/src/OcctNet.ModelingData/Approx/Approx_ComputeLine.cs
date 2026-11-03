@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Approx_ParametrizationType;
 using static Occt.Approx_Status;
@@ -74,7 +76,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         }
 
         const double MinScalProd = -0.9;
-        double SqTol3d = Precision.SquareConfusion();
+        double SqTol3d = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
 
         // OCCT writes indbads[indcur] for every curve, past its 4 elements when a line has more than 3 curves
         // (2 2d curves beside a 3d one); the port throws there (occt-issues.md).
@@ -87,32 +89,32 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         int aNbP3d = Max(nbp3d, 1);
         int aNbP2d = Max(nbp2d, 1);
 
-        NCollection_Array1<gp_Pnt> tabP = new(1, aNbP3d);
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, aNbP2d);
+        NCollection_Array1<Point3D> tabP = new(1, aNbP3d);
+        NCollection_Array1<Point2D> tabP2d = new(1, aNbP2d);
 
         if (theMultiCurve.Dimension(1) == 3 /*myNbP3d == 1*/)
         {
-            NCollection_Array1<gp_Pnt> aPoles = new(1, theMultiCurve.NbPoles());
+            NCollection_Array1<Point3D> aPoles = new(1, theMultiCurve.NbPoles());
             theMultiCurve.Curve(1, aPoles);
-            gp_Vec FirstVec = new(), SecondVec;
+            Vector3D FirstVec = new(), SecondVec;
             int indp = 2;
             while (indp <= aPoles.Upper())
             {
-                FirstVec = new gp_Vec(aPoles[1], aPoles[indp++]);
+                FirstVec = new Vector3D(aPoles[1], aPoles[indp++]);
                 double aLength = FirstVec.Magnitude();
-                if (aLength > gp.Resolution())
+                if (aLength > Constants.Resolution())
                 {
                     FirstVec /= aLength;
                     break;
                 }
             }
-            gp_Pnt MidPnt = aPoles[indp - 1];
+            Point3D MidPnt = aPoles[indp - 1];
             // for (int k = 3; k <= aPoles.Upper(); k++)
             while (indp <= aPoles.Upper())
             {
-                SecondVec = new gp_Vec(MidPnt, aPoles[indp]);
+                SecondVec = new Vector3D(MidPnt, aPoles[indp]);
                 double aLength = SecondVec.Magnitude();
-                if (aLength <= gp.Resolution())
+                if (aLength <= Constants.Resolution())
                 {
                     indp++;
                     continue;
@@ -134,21 +136,21 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                 for (int FirstInd = theIndfirst; FirstInd <= theIndlast - 2; FirstInd++)
                 {
                     LineTool.Value(theLine, FirstInd, tabP);
-                    gp_Pnt FirstPnt = tabP[1];
+                    Point3D FirstPnt = tabP[1];
                     for (int k = FirstInd + 1; k < theIndlast; k++)
                     {
                         LineTool.Value(theLine, k, tabP);
-                        gp_Pnt Pnt1 = tabP[1];
+                        Point3D Pnt1 = tabP[1];
                         LineTool.Value(theLine, k + 1, tabP);
-                        gp_Pnt Pnt2 = tabP[1];
+                        Point3D Pnt2 = tabP[1];
                         if (FirstPnt.SquareDistance(Pnt1) <= SqTol3d || FirstPnt.SquareDistance(Pnt2) <= SqTol3d)
                         {
                             LoopFound = false;
                             break;
                         }
-                        gp_Vec Vec1 = new(FirstPnt, Pnt1);
+                        Vector3D Vec1 = new(FirstPnt, Pnt1);
                         Vec1.Normalize();
-                        gp_Vec Vec2 = new(FirstPnt, Pnt2);
+                        Vector3D Vec2 = new(FirstPnt, Pnt2);
                         Vec2.Normalize();
                         double ScalProd = Vec1 * Vec2;
                         if (ScalProd < MinScalProd)
@@ -171,16 +173,16 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                 for (int k = theIndfirst + 1; k <= theIndlast; k++)
                 {
                     LineTool.Value(theLine, k - 1, tabP);
-                    gp_Pnt PrevPnt = tabP[1];
+                    Point3D PrevPnt = tabP[1];
                     LineTool.Value(theLine, k, tabP);
-                    gp_Pnt CurPnt = tabP[1];
+                    Point3D CurPnt = tabP[1];
                     double aSqDist = PrevPnt.SquareDistance(CurPnt);
                     if (aSqDist > MaxSqDist)
                     {
                         MaxSqDist = aSqDist;
                         indbads[1] = k;
                     }
-                    if (aSqDist > gp.Resolution() && aSqDist < MinSqDist)
+                    if (aSqDist > Constants.Resolution() && aSqDist < MinSqDist)
                     {
                         MinSqDist = aSqDist;
                     }
@@ -198,9 +200,9 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                         for (int k = theIndfirst + 1; k <= theIndlast; k++)
                         {
                             LineTool.Value(theLine, k - 1, tabP2d);
-                            gp_Pnt2d PrevPnt = tabP2d[indcur - 1];
+                            Point2D PrevPnt = tabP2d[indcur - 1];
                             LineTool.Value(theLine, k, tabP2d);
-                            gp_Pnt2d CurPnt = tabP2d[indcur - 1];
+                            Point2D CurPnt = tabP2d[indcur - 1];
                             double aSqDist = PrevPnt.SquareDistance(CurPnt);
                             if (aSqDist > MaxSqDist)
                             {
@@ -214,10 +216,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         } // if (myNbP3d == 1)
         else // 2d case
         {
-            NCollection_Array1<gp_Pnt2d> aPoles2d = new(1, theMultiCurve.NbPoles());
+            NCollection_Array1<Point2D> aPoles2d = new(1, theMultiCurve.NbPoles());
             theMultiCurve.Curve(1, aPoles2d);
             double aSqNormToler = Epsilon(1.0) * Epsilon(1.0);
-            gp_Vec2d FirstVec = new(aPoles2d[1], aPoles2d[2]), SecondVec = new();
+            Vector2D FirstVec = new(aPoles2d[1], aPoles2d[2]), SecondVec = new();
             double aVecSqNorm = FirstVec.SquareMagnitude();
             if (aVecSqNorm < aSqNormToler)
             {
@@ -226,7 +228,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             }
 
             FirstVec /= Math.Sqrt(aSqNormToler); // OCCT: divides by the tolerance, not by the norm (occt-issues.md)
-            gp_Pnt2d MidPnt = aPoles2d[2];
+            Point2D MidPnt = aPoles2d[2];
             for (int k = 3; k <= aPoles2d.Upper(); k++)
             {
                 SecondVec.SetXY(aPoles2d[k].XY() - MidPnt.XY());
@@ -253,21 +255,21 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                 for (int FirstInd = theIndfirst; FirstInd <= theIndlast - 2; FirstInd++)
                 {
                     LineTool.Value(theLine, FirstInd, tabP2d);
-                    gp_Pnt2d FirstPnt = tabP2d[1];
+                    Point2D FirstPnt = tabP2d[1];
                     for (int k = FirstInd + 1; k < theIndlast; k++)
                     {
                         LineTool.Value(theLine, k, tabP2d);
-                        gp_Pnt2d Pnt1 = tabP2d[1];
+                        Point2D Pnt1 = tabP2d[1];
                         LineTool.Value(theLine, k + 1, tabP2d);
-                        gp_Pnt2d Pnt2 = tabP2d[1];
+                        Point2D Pnt2 = tabP2d[1];
                         if (FirstPnt.SquareDistance(Pnt1) <= SqTol3d || FirstPnt.SquareDistance(Pnt2) <= SqTol3d)
                         {
                             LoopFound = false;
                             break;
                         }
-                        gp_Vec2d Vec1 = new(FirstPnt, Pnt1);
+                        Vector2D Vec1 = new(FirstPnt, Pnt1);
                         Vec1.Normalize();
-                        gp_Vec2d Vec2 = new(FirstPnt, Pnt2);
+                        Vector2D Vec2 = new(FirstPnt, Pnt2);
                         Vec2.Normalize();
                         double ScalProd = Vec1 * Vec2;
                         if (ScalProd < MinScalProd)
@@ -292,16 +294,16 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                     for (int k = theIndfirst + 1; k <= theIndlast; k++)
                     {
                         LineTool.Value(theLine, k - 1, tabP2d);
-                        gp_Pnt2d PrevPnt = tabP2d[indcur];
+                        Point2D PrevPnt = tabP2d[indcur];
                         LineTool.Value(theLine, k, tabP2d);
-                        gp_Pnt2d CurPnt = tabP2d[indcur];
+                        Point2D CurPnt = tabP2d[indcur];
                         double aSqDist = PrevPnt.SquareDistance(CurPnt);
                         if (aSqDist > MaxSqDist)
                         {
                             MaxSqDist = aSqDist;
                             indbads[indcur] = k;
                         }
-                        if (aSqDist > gp.Resolution() && aSqDist < MinSqDist)
+                        if (aSqDist > Constants.Resolution() && aSqDist < MinSqDist)
                         {
                             MinSqDist = aSqDist;
                         }
@@ -348,8 +350,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             mynbP2d = 1;
         }
         bool Ok = false;
-        NCollection_Array1<gp_Vec> TabV = new(1, mynbP3d);
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, mynbP2d);
+        NCollection_Array1<Vector3D> TabV = new(1, mynbP3d);
+        NCollection_Array1<Vector2D> TabV2d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -399,10 +401,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             AppParCurves_LeastSquare<MultiLine, LineTool> LSQ = new(Line, index, index + 2, firstC, lastC, mypar, nbpoles);
             AppParCurves_MultiCurve C = LSQ.BezierValue();
 
-            gp_Pnt myP;
-            gp_Vec myV;
-            gp_Pnt2d myP2d;
-            gp_Vec2d myV2d;
+            Point3D myP;
+            Vector3D myV;
+            Point2D myP2d;
+            Vector2D myV2d;
             j = 1;
             for (i = 1; i <= nbP3d; i++)
             {
@@ -438,8 +440,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             mynbP2d = 1;
         }
         bool Ok = false;
-        NCollection_Array1<gp_Vec> TabV = new(1, mynbP3d);
-        NCollection_Array1<gp_Vec2d> TabV2d = new(1, mynbP2d);
+        NCollection_Array1<Vector3D> TabV = new(1, mynbP3d);
+        NCollection_Array1<Vector2D> TabV2d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -489,10 +491,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             AppParCurves_LeastSquare<MultiLine, LineTool> LSQ = new(Line, index - 2, index, firstC, lastC, mypar, nbpoles);
             AppParCurves_MultiCurve C = LSQ.BezierValue();
 
-            gp_Pnt myP;
-            gp_Vec myV;
-            gp_Pnt2d myP2d;
-            gp_Vec2d myV2d;
+            Point3D myP;
+            Vector3D myV;
+            Point2D myP2d;
+            Vector2D myV2d;
             j = 1;
             for (i = 1; i <= nbP3d; i++)
             {
@@ -518,8 +520,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         // dq/dw = lambda* V = (p2-p1)/(u2-u1)
 
         int nbP2d, nbP3d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P12d, P22d;
+        Point3D P1, P2;
+        Point2D P12d, P22d;
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
@@ -531,8 +533,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
+        NCollection_Array1<Point2D> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -568,7 +570,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             P1 = tabP1[1];
             P2 = tabP2[1];
-            gp_Vec P1P2 = new(P1, P2), myV = new();
+            Vector3D P1P2 = new(P1, P2), myV = new();
             myV.SetCoord(V[low], V[low + 1], V[low + 2]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -577,7 +579,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             P12d = tabP12d[1];
             P22d = tabP22d[1];
-            gp_Vec2d P1P2 = new(P12d, P22d), myV = new();
+            Vector2D P1P2 = new(P12d, P22d), myV = new();
             myV.SetCoord(V[low], V[low + 1]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -590,8 +592,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         // dq/dw = lambda* V = (p2-p1)/(u2-u1)
 
         int nbP2d, nbP3d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P12d, P22d;
+        Point3D P1, P2;
+        Point2D P12d, P22d;
         nbP3d = LineTool.NbP3d(Line);
         nbP2d = LineTool.NbP2d(Line);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
@@ -603,8 +605,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> tabP = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> tabP = new(1, mynbP3d), tabP2 = new(1, mynbP3d);
+        NCollection_Array1<Point2D> tabP2d = new(1, mynbP2d), tabP22d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -640,7 +642,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             P1 = tabP[1];
             P2 = tabP2[1];
-            gp_Vec P1P2 = new(P1, P2), myV = new();
+            Vector3D P1P2 = new(P1, P2), myV = new();
             myV.SetCoord(V[low], V[low + 1], V[low + 2]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -649,7 +651,7 @@ public class Approx_ComputeLine<MultiLine, LineTool>
         {
             P12d = tabP2d[1];
             P22d = tabP22d[1];
-            gp_Vec2d P1P2 = new(P12d, P22d), myV = new();
+            Vector2D P1P2 = new(P12d, P22d), myV = new();
             myV.SetCoord(V[low], V[low + 1]);
             lambda = (P1P2.Magnitude()) / (myV.Magnitude() * (U2 - U1));
             S = (P1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
@@ -1195,10 +1197,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             }
 
             TheParameters[firstP] = 0.0;
-            NCollection_Array1<gp_Pnt> tabP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt> tabPP = new(1, mynbP3d);
-            NCollection_Array1<gp_Pnt2d> tabP2d = new(1, mynbP2d);
-            NCollection_Array1<gp_Pnt2d> tabPP2d = new(1, mynbP2d);
+            NCollection_Array1<Point3D> tabP = new(1, mynbP3d);
+            NCollection_Array1<Point3D> tabPP = new(1, mynbP3d);
+            NCollection_Array1<Point2D> tabP2d = new(1, mynbP2d);
+            NCollection_Array1<Point2D> tabPP2d = new(1, mynbP2d);
 
             for (i = firstP + 1; i <= lastP; i++)
             {
@@ -1230,12 +1232,12 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                 dist = 0;
                 for (j = 1; j <= nbP3d; j++)
                 {
-                    gp_Pnt aP1 = tabP[j], aP2 = tabPP[j];
+                    Point3D aP1 = tabP[j], aP2 = tabPP[j];
                     dist += aP2.SquareDistance(aP1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
-                    gp_Pnt2d aP12d = tabP2d[j], aP22d = tabPP2d[j];
+                    Point2D aP12d = tabP2d[j], aP22d = tabPP2d[j];
 
                     dist += aP22d.SquareDistance(aP12d);
                 }
@@ -1381,10 +1383,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
     private bool ComputeCurve(MultiLine Line, int firstpt, int lastpt)
     {
         int i, j, nbP3d, nbP2d, deg;
-        gp_Vec V13d, V23d;
-        gp_Vec2d V12d, V22d;
-        gp_Pnt P1, P2;
-        gp_Pnt2d P12d, P22d;
+        Vector3D V13d, V23d;
+        Vector2D V12d, V22d;
+        Point3D P1, P2;
+        Point2D P12d, P22d;
         bool Tangent1, Tangent2, mydone = false;
         int myfirstpt = firstpt, mylastpt = lastpt;
         int nbp = lastpt - firstpt + 1;
@@ -1404,10 +1406,10 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             mynbP2d = 1;
         }
 
-        NCollection_Array1<gp_Vec> tabV1 = new(1, mynbP3d), tabV2 = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d), tabP = new(1, mynbP3d);
-        NCollection_Array1<gp_Vec2d> tabV12d = new(1, mynbP2d), tabV22d = new(1, mynbP2d);
-        NCollection_Array1<gp_Pnt2d> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d), tabP2d = new(1, mynbP2d);
+        NCollection_Array1<Vector3D> tabV1 = new(1, mynbP3d), tabV2 = new(1, mynbP3d);
+        NCollection_Array1<Point3D> tabP1 = new(1, mynbP3d), tabP2 = new(1, mynbP3d), tabP = new(1, mynbP3d);
+        NCollection_Array1<Vector2D> tabV12d = new(1, mynbP2d), tabV22d = new(1, mynbP2d);
+        NCollection_Array1<Point2D> tabP12d = new(1, mynbP2d), tabP22d = new(1, mynbP2d), tabP2d = new(1, mynbP2d);
 
         if (nbP3d != 0 && nbP2d != 0)
         {
@@ -1438,18 +1440,18 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             {
                 for (i = 1; i <= nbP3d; i++)
                 {
-                    gp_Vec PVec = new(tabP1[i], tabP2[i]);
+                    Vector3D PVec = new(tabP1[i], tabP2[i]);
                     V13d = tabV1[i];
-                    if (!PVec.IsParallel(V13d, Precision.Angular()))
+                    if (!PVec.IsParallel(V13d, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
                         break;
                     }
                 }
                 for (i = 1; i <= nbP2d; i++)
                 {
-                    gp_Vec2d PVec2d = new(tabP12d[i], tabP22d[i]);
+                    Vector2D PVec2d = new(tabP12d[i], tabP22d[i]);
                     V12d = tabV12d[i];
-                    if (!PVec2d.IsParallel(V12d, Precision.Angular()))
+                    if (!PVec2d.IsParallel(V12d, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
                         break;
                     }
@@ -1460,18 +1462,18 @@ public class Approx_ComputeLine<MultiLine, LineTool>
             {
                 for (i = 1; i <= nbP3d; i++)
                 {
-                    gp_Vec PVec = new(tabP1[i], tabP2[i]);
+                    Vector3D PVec = new(tabP1[i], tabP2[i]);
                     V23d = tabV2[i];
-                    if (!PVec.IsParallel(V23d, Precision.Angular()))
+                    if (!PVec.IsParallel(V23d, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
                         break;
                     }
                 }
                 for (i = 1; i <= nbP2d; i++)
                 {
-                    gp_Vec2d PVec2d = new(tabP12d[i], tabP22d[i]);
+                    Vector2D PVec2d = new(tabP12d[i], tabP22d[i]);
                     V22d = tabV22d[i];
-                    if (!PVec2d.IsParallel(V22d, Precision.Angular()))
+                    if (!PVec2d.IsParallel(V22d, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
                         break;
                     }
@@ -1549,8 +1551,8 @@ public class Approx_ComputeLine<MultiLine, LineTool>
                 ThePar2.SetValue(i, Para[i]);
             }
             myPar.Append(ThePar2);
-            Tolers3d.Append(Precision.Confusion());
-            Tolers2d.Append(Precision.PConfusion());
+            Tolers3d.Append(global::Kerf.Engine.Foundation.Precision.Confusion());
+            Tolers2d.Append(global::Kerf.Engine.Foundation.Precision.PConfusion());
             return mydone;
         }
 

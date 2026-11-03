@@ -2,6 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Meshing;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 // Test for bug #929: Internal vertices not bound in output triangulation from BRepMesh
@@ -14,10 +22,10 @@ public class BRepMesh_BaseMeshAlgoTest
 {
     // Helper function to add an internal vertex to a face.
     // Projects the vertex onto the face surface and adds it with proper UV parameters.
-    private static TopoDS_Vertex addInternalVertexToFace(ref TopoDS_Face theFace, in gp_Pnt thePoint)
+    private static TopoDS_Vertex addInternalVertexToFace(ref TopoDS_Face theFace, in Point3D thePoint)
     {
         // OCCT.NET: the maker's face is frozen; the vertices are added to an exact copy for write
-        if (theFace.TShape()!.IsFrozen())
+        if (theFace.TShape()!.IsFrozen)
         {
             theFace = TopoDS.Face(BRepTools.ExactCopyForWrite(theFace, out _));
         }
@@ -34,23 +42,23 @@ public class BRepMesh_BaseMeshAlgoTest
         // OCCT.NET: BRepBuilderAPI_MakeVertex's vertex is frozen, so the vertex is made unfrozen by BRep_Builder
         BRep_Builder aBuilder = new();
         TopoDS_Vertex aVertex = new();
-        aBuilder.MakeVertex(ref aVertex, aProjection.Point(1), Precision.Confusion());
+        aBuilder.MakeVertex(ref aVertex, aProjection.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion());
         aVertex.Orientation(TopAbs_Orientation.TopAbs_INTERNAL);
 
-        aBuilder.UpdateVertex(aVertex, aU, aV, theFace, Precision.Confusion());
+        aBuilder.UpdateVertex(aVertex, aU, aV, theFace, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.Add(theFace, aVertex);
 
         return aVertex;
     }
 
     // Checks triangulation nodes for valid coordinates (no extreme values).
-    private static bool hasOnlyValidNodes(Poly_Triangulation theTri, in TopLoc_Location theLoc)
+    private static bool hasOnlyValidNodes(Triangulation theTri, in Placement theLoc)
     {
         const double aMaxValidCoord = 1.0e10; // Reasonable max for valid geometry
 
-        for (int i = 1; i <= theTri.NbNodes(); ++i)
+        for (int i = 1; i <= theTri.NodeCount; ++i)
         {
-            gp_Pnt aPoint = theTri.Node(i).Transformed(theLoc.Transformation());
+            Point3D aPoint = theTri.Node(i).Transformed(theLoc.Transformation());
             if (Math.Abs(aPoint.X()) > aMaxValidCoord || Math.Abs(aPoint.Y()) > aMaxValidCoord
                 || Math.Abs(aPoint.Z()) > aMaxValidCoord)
             {
@@ -61,9 +69,9 @@ public class BRepMesh_BaseMeshAlgoTest
     }
 
     // Check if any triangle has degenerate indices (duplicate node indices).
-    private static bool hasOnlyValidTriangles(Poly_Triangulation theTri)
+    private static bool hasOnlyValidTriangles(Triangulation theTri)
     {
-        for (int i = 1; i <= theTri.NbTriangles(); ++i)
+        for (int i = 1; i <= theTri.TriangleCount; ++i)
         {
             theTri.Triangle(i).Get(out int aN1, out int aN2, out int aN3);
             if (aN1 == aN2 || aN2 == aN3 || aN1 == aN3)
@@ -75,14 +83,14 @@ public class BRepMesh_BaseMeshAlgoTest
     }
 
     // Find the closest triangulation node to a given 3D point.
-    private static (int, double) findClosestNode(Poly_Triangulation theTri, in TopLoc_Location theLoc, in gp_Pnt thePoint)
+    private static (int, double) findClosestNode(Triangulation theTri, in Placement theLoc, in Point3D thePoint)
     {
         int aClosestIdx = 0;
         double aMinDistSq = double.MaxValue;
 
-        for (int i = 1; i <= theTri.NbNodes(); ++i)
+        for (int i = 1; i <= theTri.NodeCount; ++i)
         {
-            gp_Pnt aNode = theTri.Node(i).Transformed(theLoc.Transformation());
+            Point3D aNode = theTri.Node(i).Transformed(theLoc.Transformation());
             double aDist2 = thePoint.SquareDistance(aNode);
             if (aDist2 < aMinDistSq)
             {
@@ -98,13 +106,13 @@ public class BRepMesh_BaseMeshAlgoTest
     public void InternalVerticesAreBound()
     {
         // Create a simple planar face
-        gp_Pln aPlane = new(new gp_Pnt(0.0, 0.0, 0.0), gp.DZ());
+        Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         double aUMin = 0.0, aUMax = 100.0;
         double aVMin = 0.0, aVMax = 50.0;
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, aUMin, aUMax, aVMin, aVMax).Face();
 
         // Add internal vertices on the face
-        gp_Pnt[] aInternalPts = [new(40.0, 20.0, 0.0), new(60.0, 30.0, 0.0), new(77.0, 33.0, 0.0)];
+        Point3D[] aInternalPts = [new(40.0, 20.0, 0.0), new(60.0, 30.0, 0.0), new(77.0, 33.0, 0.0)];
 
         for (int i = 0; i < 3; ++i)
         {
@@ -120,7 +128,7 @@ public class BRepMesh_BaseMeshAlgoTest
         aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         // Get triangulation
-        Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         // Verify all nodes are valid (not uninitialized)
@@ -143,20 +151,20 @@ public class BRepMesh_BaseMeshAlgoTest
     public void MultipleInternalVertices()
     {
         // Test with more internal vertices to ensure the fix handles multiple vertices correctly
-        gp_Pln aPlane = new(new gp_Pnt(0.0, 0.0, 0.0), gp.DZ());
+        Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         const double aSize = 100.0;
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, aSize, 0.0, aSize).Face();
 
         // Add a grid of internal vertices (5x5 = 25 vertices)
         const int aGridSize = 5;
-        NCollection_DynamicArray<gp_Pnt> anInternalPts = new();
+        NCollection_DynamicArray<Point3D> anInternalPts = new();
         for (int i = 1; i < aGridSize; ++i)
         {
             for (int j = 1; j < aGridSize; ++j)
             {
                 double aX = (aSize * i) / aGridSize;
                 double aY = (aSize * j) / aGridSize;
-                gp_Pnt aPt = new(aX, aY, 0.0);
+                Point3D aPt = new(aX, aY, 0.0);
                 anInternalPts.Append(aPt);
                 TopoDS_Vertex aVertex = addInternalVertexToFace(ref aFace, aPt);
                 Assert.False(aVertex.IsNull(), $"Failed to add internal vertex at ({aX}, {aY})");
@@ -169,7 +177,7 @@ public class BRepMesh_BaseMeshAlgoTest
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
         aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
-        Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         Assert.True(hasOnlyValidNodes(aTri, aLoc), "All triangulation nodes should have valid coordinates");
@@ -178,7 +186,7 @@ public class BRepMesh_BaseMeshAlgoTest
         // Verify all internal vertices are present
         const double aTolerance = 1.0e-6;
         int aFoundCount = 0;
-        foreach (gp_Pnt aPoint in anInternalPts)
+        foreach (Point3D aPoint in anInternalPts)
         {
             (int aClosestIdx, double aMinDist) = findClosestNode(aTri, aLoc, aPoint);
             if (aClosestIdx > 0 && aMinDist < aTolerance)
@@ -193,10 +201,10 @@ public class BRepMesh_BaseMeshAlgoTest
     public void InternalVerticesModeDisabled()
     {
         // Verify that when InternalVerticesMode is disabled, internal vertices are not included
-        gp_Pln aPlane = new(new gp_Pnt(0.0, 0.0, 0.0), gp.DZ());
+        Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, 100.0, 0.0, 50.0).Face();
 
-        gp_Pnt aInternalPt = new(50.0, 25.0, 0.0);
+        Point3D aInternalPt = new(50.0, 25.0, 0.0);
         TopoDS_Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPt);
         Assert.False(aVertex.IsNull(), "Failed to add internal vertex");
 
@@ -207,7 +215,7 @@ public class BRepMesh_BaseMeshAlgoTest
         Assert.True(aMesher.IsDone(), "Meshing should succeed");
         aFace = TopoDS.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
-        Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+        Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
         Assert.NotNull(aTri);
 
         // Triangulation should still be valid

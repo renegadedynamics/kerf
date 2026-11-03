@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepData_Logical;
 
 namespace Occt;
@@ -17,7 +18,7 @@ namespace Occt;
 /// <remarks>
 /// A C++ value class, a C# class here (decision 1185): C++'s assignment (<c>operator=</c>, which copies) is
 /// <see cref="CopyFrom"/>. The value is kept as <c>object</c>, since the port's <c>NCollection_HArray1</c> and
-/// <c>HArray2</c> (which a field holds for its lists) are not <see cref="Standard_Transient"/> (decision 17).
+/// <c>HArray2</c> (which a field holds for its lists) are not <see cref="Transient"/> (decision 17).
 /// </remarks>
 public sealed class StepData_Field
 {
@@ -163,11 +164,11 @@ public sealed class StepData_Field
                 }
                 return; // OCCT: the copy is dropped
             }
-            if (theany is NCollection_HArray1<Standard_Transient> ht)
+            if (theany is NCollection_HArray1<Transient> ht)
             {
                 low = ht.Lower();
                 up = ht.Upper();
-                NCollection_HArray1<Standard_Transient> ht2 = new NCollection_HArray1<Standard_Transient>(low, up);
+                NCollection_HArray1<Transient> ht2 = new NCollection_HArray1<Transient>(low, up);
                 //  Should handle SelectMember cases...
                 for (i = low; i <= up; i++)
                 {
@@ -324,7 +325,7 @@ public sealed class StepData_Field
     }
 
     /// <summary>Sets an Entity Value.</summary>
-    public void SetEntity(Standard_Transient? val)
+    public void SetEntity(Transient? val)
     {
         Clear(KindEntity);
         theany = val;
@@ -333,7 +334,7 @@ public sealed class StepData_Field
     /// <summary>Predeclares a list as of entity.</summary>
     public void SetEntity()
     {
-        Standard_Transient nulent = null;
+        Transient nulent = null;
         SetEntity(nulent);
     }
 
@@ -360,7 +361,7 @@ public sealed class StepData_Field
                 break;
             //  default : en particulier si "non specifie" (any)
             default:
-                theany = new NCollection_HArray1<Standard_Transient>(first, first + size - 1);
+                theany = new NCollection_HArray1<Transient>(first, first + size - 1);
                 break;
         }
         if (thekind == 0)
@@ -397,11 +398,11 @@ public sealed class StepData_Field
                 break;
             case KindEnum:
             case KindString:
-                theany = new NCollection_HArray2<Standard_Transient>(f1, f1 + siz1 - 1, f2, f2 + siz2 - 1);
+                theany = new NCollection_HArray2<Transient>(f1, f1 + siz1 - 1, f2, f2 + siz2 - 1);
                 break;
             //  default : en particulier si "non specifie" (any)
             default:
-                theany = new NCollection_HArray2<Standard_Transient>(f1, f1 + siz1 - 1, f2, f2 + siz2 - 1);
+                theany = new NCollection_HArray2<Transient>(f1, f1 + siz1 - 1, f2, f2 + siz2 - 1);
                 break;
         }
         if (thekind == 0)
@@ -456,7 +457,7 @@ public sealed class StepData_Field
             theint = hs.Length();
             return;
         }
-        if (val is NCollection_HArray1<Standard_Transient> ht)
+        if (val is NCollection_HArray1<Transient> ht)
         {
             if (kind == 0)
             {
@@ -485,7 +486,7 @@ public sealed class StepData_Field
             thereal = hi2.RowLength(); // OCCT: hi2 is null here (a null dereference)
             return;
         }
-        if (val is NCollection_HArray2<Standard_Transient> ht2)
+        if (val is NCollection_HArray2<Transient> ht2)
         {
             if (kind == 0)
             {
@@ -501,7 +502,7 @@ public sealed class StepData_Field
     /// <summary>Declares an item of the list as undefined (ignored if list not defined as String, Entity or Any).</summary>
     public void ClearItem(int num)
     {
-        if (theany is NCollection_HArray1<Standard_Transient> ht)
+        if (theany is NCollection_HArray1<Transient> ht)
         {
             ht.ChangeValue(num) = null;
         }
@@ -520,7 +521,7 @@ public sealed class StepData_Field
             return;
         }
         //   If already started with something else, change and put selects
-        if (theany is not NCollection_HArray1<Standard_Transient> ht)
+        if (theany is not NCollection_HArray1<Transient> ht)
         {
             return; // yena erreur, ou alors OfReal
         }
@@ -565,7 +566,7 @@ public sealed class StepData_Field
     /// <summary>Sets an Enum Value (Integer counterpart), also its text expression if known (if list has been set as "any").</summary>
     public void SetEnum(int num, int val, string text = "")
     {
-        if (theany is not NCollection_HArray1<Standard_Transient> ht)
+        if (theany is not NCollection_HArray1<Transient> ht)
         {
             SetInteger(num, val);
             return;
@@ -588,7 +589,7 @@ public sealed class StepData_Field
             return;
         }
         //   If already started with something else, change and put selects
-        if (theany is not NCollection_HArray1<Standard_Transient> ht)
+        if (theany is not NCollection_HArray1<Transient> ht)
         {
             return; // yena erreur, ou alors OfInteger
         }
@@ -610,7 +611,7 @@ public sealed class StepData_Field
             return;
         }
         //    et si OfInteger ou OfReal ?
-        if (theany is not NCollection_HArray1<Standard_Transient> ht)
+        if (theany is not NCollection_HArray1<Transient> ht)
         {
             return;
         }
@@ -618,9 +619,9 @@ public sealed class StepData_Field
         ht.SetValue(num, new TCollection_HAsciiString(val));
     }
 
-    public void SetEntity(int num, Standard_Transient? val)
+    public void SetEntity(int num, Transient? val)
     {
-        if (theany is NCollection_HArray1<Standard_Transient> aHt)
+        if (theany is NCollection_HArray1<Transient> aHt)
         {
             aHt.SetValue(num, val);
             return;
@@ -628,7 +629,7 @@ public sealed class StepData_Field
         if (theany is NCollection_HArray1<int> hi)
         {
             int low = hi.Lower(), up = hi.Upper();
-            NCollection_HArray1<Standard_Transient> ht = new NCollection_HArray1<Standard_Transient>(low, up);
+            NCollection_HArray1<Transient> ht = new NCollection_HArray1<Transient>(low, up);
             StepData_SelectMember sm;
             int kind = Kind();
             for (int i = low; i <= up; i++)
@@ -651,7 +652,7 @@ public sealed class StepData_Field
         if (theany is NCollection_HArray1<double> hr)
         {
             int low = hr.Lower(), up = hr.Upper();
-            NCollection_HArray1<Standard_Transient> ht = new NCollection_HArray1<Standard_Transient>(low, up);
+            NCollection_HArray1<Transient> ht = new NCollection_HArray1<Transient>(low, up);
             StepData_SelectMember sm;
             for (int i = low; i <= up; i++)
             {
@@ -672,7 +673,7 @@ public sealed class StepData_Field
         if (theany is NCollection_HArray1<TCollection_HAsciiString> hs)
         {
             int low = hs.Lower(), up = hs.Upper();
-            NCollection_HArray1<Standard_Transient> ht = new NCollection_HArray1<Standard_Transient>(low, up);
+            NCollection_HArray1<Transient> ht = new NCollection_HArray1<Transient>(low, up);
             for (int i = low; i <= up; i++)
             {
                 if (i == num)
@@ -708,7 +709,7 @@ public sealed class StepData_Field
         }
         if ((thekind & KindArity) == KindList)
         {
-            if (theany is NCollection_HArray1<Standard_Transient> ht)
+            if (theany is NCollection_HArray1<Transient> ht)
             {
                 return (ht.Value(n1) is not null);
             }
@@ -719,7 +720,7 @@ public sealed class StepData_Field
         }
         if ((thekind & KindArity) == KindList2)
         {
-            if (theany is NCollection_HArray2<Standard_Transient> ht)
+            if (theany is NCollection_HArray2<Transient> ht)
             {
                 return (ht.Value(n1, n2) is not null);
             }
@@ -740,10 +741,10 @@ public sealed class StepData_Field
             return kind;
         }
         //  Otherwise, look for a Transient
-        Standard_Transient item = null;
+        Transient item = null;
         if ((thekind & KindArity) == KindList)
         {
-            NCollection_HArray1<Standard_Transient> ht = theany as NCollection_HArray1<Standard_Transient>;
+            NCollection_HArray1<Transient> ht = theany as NCollection_HArray1<Transient>;
             if (ht is not null)
             {
                 return kind; // OCCT: the test is inverted, a list of items answers Any ...
@@ -752,7 +753,7 @@ public sealed class StepData_Field
         }
         else if ((thekind & KindArity) == KindList2)
         {
-            NCollection_HArray2<Standard_Transient> ht = theany as NCollection_HArray2<Standard_Transient>;
+            NCollection_HArray2<Transient> ht = theany as NCollection_HArray2<Transient>;
             if (ht is not null)
             {
                 return kind; // OCCT: the test is inverted (see above)
@@ -838,14 +839,14 @@ public sealed class StepData_Field
             {
                 return hs.Lower();
             }
-            if (theany is NCollection_HArray1<Standard_Transient> ht)
+            if (theany is NCollection_HArray1<Transient> ht)
             {
                 return ht.Lower();
             }
         }
         if ((thekind & KindArity) == KindList2)
         {
-            if (theany is not NCollection_HArray2<Standard_Transient> ht)
+            if (theany is not NCollection_HArray2<Transient> ht)
             {
                 return 0;
             }
@@ -886,7 +887,7 @@ public sealed class StepData_Field
             {
                 return hi.Value(n1);
             }
-            if (theany is not NCollection_HArray1<Standard_Transient> ht)
+            if (theany is not NCollection_HArray1<Transient> ht)
             {
                 return 0;
             }
@@ -897,7 +898,7 @@ public sealed class StepData_Field
         }
         if ((thekind & KindArity) == KindList2)
         {
-            if (theany is not NCollection_HArray2<Standard_Transient> ht)
+            if (theany is not NCollection_HArray2<Transient> ht)
             {
                 return 0;
             }
@@ -947,7 +948,7 @@ public sealed class StepData_Field
             {
                 return hr.Value(n1);
             }
-            if (theany is not NCollection_HArray1<Standard_Transient> ht)
+            if (theany is not NCollection_HArray1<Transient> ht)
             {
                 return 0;
             }
@@ -962,7 +963,7 @@ public sealed class StepData_Field
             {
                 return hr.Value(n1, n2);
             }
-            if (theany is not NCollection_HArray2<Standard_Transient> ht)
+            if (theany is not NCollection_HArray2<Transient> ht)
             {
                 return 0;
             }
@@ -1007,7 +1008,7 @@ public sealed class StepData_Field
                     return hs.Value(n1).ToCString();
                 }
             }
-            if (theany is not NCollection_HArray1<Standard_Transient> ht)
+            if (theany is not NCollection_HArray1<Transient> ht)
             {
                 return "";
             }
@@ -1022,7 +1023,7 @@ public sealed class StepData_Field
         }
         if ((thekind & KindArity) == KindList2)
         {
-            if (theany is not NCollection_HArray2<Standard_Transient> ht)
+            if (theany is not NCollection_HArray2<Transient> ht)
             {
                 return "";
             }
@@ -1048,20 +1049,20 @@ public sealed class StepData_Field
         return String(n1, n2);
     }
 
-    public Standard_Transient? Entity(int n1 = 1, int n2 = 1)
+    public Transient? Entity(int n1 = 1, int n2 = 1)
     {
-        Standard_Transient nulval = null; // null handle
+        Transient nulval = null; // null handle
         if ((thekind & KindArity) == 0)
         {
             if (thekind == KindEntity)
             {
-                return theany as Standard_Transient;
+                return theany as Transient;
             }
             return nulval;
         }
         if ((thekind & KindArity) == KindList)
         {
-            if (theany is not NCollection_HArray1<Standard_Transient> ht)
+            if (theany is not NCollection_HArray1<Transient> ht)
             {
                 return nulval;
             }
@@ -1078,7 +1079,7 @@ public sealed class StepData_Field
         }
         if ((thekind & KindArity) == KindList2)
         {
-            if (theany is not NCollection_HArray2<Standard_Transient> ht)
+            if (theany is not NCollection_HArray2<Transient> ht)
             {
                 return nulval;
             }

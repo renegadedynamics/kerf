@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -217,7 +218,7 @@ public partial class BOPAlgo_WireSplitter
         //
         bool bIsOut, bIsNotPassed;
         NCollection_Sequence<TopoDS_Shape> aLS = new(), aVertVa = new();
-        NCollection_Sequence<gp_Pnt2d> aCoordVa = new();
+        NCollection_Sequence<Point2D> aCoordVa = new();
         //
         for (i = 1; i <= aNb; ++i)
         {
@@ -252,7 +253,7 @@ public partial class BOPAlgo_WireSplitter
                              BOPAlgo_EdgeInfo aEIFirst,
                              NCollection_Sequence<TopoDS_Shape> aLS,
                              NCollection_Sequence<TopoDS_Shape> aVertVa,
-                             NCollection_Sequence<gp_Pnt2d> aCoordVa,
+                             NCollection_Sequence<Point2D> aCoordVa,
                              BOPTools_ConnexityBlock aCB,
                              NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<BOPAlgo_EdgeInfo>> mySmartMap)
     {
@@ -296,12 +297,12 @@ public partial class BOPAlgo_WireSplitter
 
             TopoDS_Vertex pVa = aVa;
             pVa.Orientation(TopAbs_FORWARD);
-            gp_Pnt2d aPa = Coord2d(pVa, aEOuta, myFace);
+            Point2D aPa = Coord2d(pVa, aEOuta, myFace);
             aCoordVa.Append(aPa);
 
             GetNextVertex(pVa, aEOuta, out aVb);
 
-            gp_Pnt2d aPb = Coord2d(aVb, aEOuta, myFace);
+            Point2D aPb = Coord2d(aVb, aEOuta, myFace);
 
             NCollection_List<BOPAlgo_EdgeInfo> aLEInfo = mySmartMap.FindFromKey(aVb);
             //
@@ -317,7 +318,7 @@ public partial class BOPAlgo_WireSplitter
                 for (i = aNb; i > 0; --i)
                 {
                     TopoDS_Shape aVPrev = aVertVa[i];
-                    gp_Pnt2d aPaPrev = aCoordVa[i];
+                    Point2D aPaPrev = aCoordVa[i];
                     TopoDS_Edge aEPrev = TopoDS.Edge(aLS[i]);
                     //
                     aBuf.Append(aEPrev);
@@ -383,7 +384,7 @@ public partial class BOPAlgo_WireSplitter
                         }
                         //
                         NCollection_Sequence<TopoDS_Shape> aLSt = new(), aVertVat = new();
-                        NCollection_Sequence<gp_Pnt2d> aCoordVat = new();
+                        NCollection_Sequence<Point2D> aCoordVat = new();
                         NCollection_Sequence<BOPAlgo_EdgeInfo> anInfoSeqTmp = new();
                         //
                         aVb = TopoDS.Vertex(aVertVa[i]);
@@ -457,7 +458,7 @@ public partial class BOPAlgo_WireSplitter
                         // check 2d distance
                         if (bIsClosed)
                         {
-                            gp_Pnt2d aP2Dx;
+                            Point2D aP2Dx;
                             //
                             aP2Dx = Coord2dVf(aE, myFace);
                             //
@@ -543,11 +544,11 @@ public partial class BOPAlgo_WireSplitter
         return dA;
     }
 
-    private static gp_Pnt2d Coord2d(in TopoDS_Vertex aV1, in TopoDS_Edge aE1, in TopoDS_Face aF)
+    private static Point2D Coord2d(in TopoDS_Vertex aV1, in TopoDS_Edge aE1, in TopoDS_Face aF)
     {
         double aT;
         Geom2d_Curve? aC2D;
-        gp_Pnt2d aP2D1;
+        Point2D aP2D1;
         //
         aT = BRep_Tool.Parameter(aV1, aE1, aF);
         aC2D = BRep_Tool.CurveOnSurface(aE1, aF, out _, out _);
@@ -556,10 +557,10 @@ public partial class BOPAlgo_WireSplitter
         return aP2D1;
     }
 
-    private static gp_Pnt2d Coord2dVf(in TopoDS_Edge aE, in TopoDS_Face aF)
+    private static Point2D Coord2dVf(in TopoDS_Edge aE, in TopoDS_Face aF)
     {
         double aCoord = 99.0;
-        gp_Pnt2d aP2D1 = new(aCoord, aCoord);
+        Point2D aP2D1 = new(aCoord, aCoord);
         TopoDS_Iterator aIt = new();
         //
         aIt.Initialize(aE);
@@ -643,12 +644,12 @@ public partial class BOPAlgo_WireSplitter
                                   IntTools_Context theContext)
     {
         double aFirst, aLast, dt, aTV, aTV1, anAngle, aTX;
-        gp_Pnt2d aPV, aPV1;
-        gp_Vec2d aV2D;
+        Point2D aPV, aPV1;
+        Vector2D aV2D;
         Geom2d_Curve? aC2D;
         //
         aTV = BRep_Tool.Parameter(aV, anEdge, myFace);
-        if (Precision.IsInfinite(aTV))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aTV))
         {
             return 0.0;
         }
@@ -656,19 +657,19 @@ public partial class BOPAlgo_WireSplitter
         BOPTools_AlgoTools2D.CurveOnSurface(anEdge, myFace, out aC2D, out aFirst, out aLast, out _, theContext);
         double tol2d = 2.0 * Tolerance2D(aV, aGAS);
         //
-        GeomAbs_CurveType aType;
+        CurveKind aType;
         Geom2dAdaptor_Curve aGAC2D = new(aC2D!);
         //
-        dt = Math.Max(aGAC2D.Resolution(tol2d), Precision.PConfusion());
+        dt = Math.Max(aGAC2D.Resolution(tol2d), global::Kerf.Engine.Foundation.Precision.PConfusion());
         //
         aType = aGAC2D.GetType();
-        if (aType != GeomAbs_Line)
+        if (aType != Line)
         {
-            GeomLProp_CLProps2d LProp = new(aC2D!, aTV, 2, Precision.PConfusion());
+            GeomLProp_CLProps2d LProp = new(aC2D!, aTV, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (LProp.IsTangentDefined())
             {
                 double R = LProp.Curvature();
-                if (R > Precision.PConfusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     R = 1.0 / R;
                     double cosphi = R / (R + tol2d);
@@ -701,17 +702,17 @@ public partial class BOPAlgo_WireSplitter
         aGAC2D.D0(aTV1, out aPV1);
         aGAC2D.D0(aTV, out aPV);
         //
-        aV2D = bIsIN ? new gp_Vec2d(aPV1, aPV) : new gp_Vec2d(aPV, aPV1);
+        aV2D = bIsIN ? new Vector2D(aPV1, aPV) : new Vector2D(aPV, aPV1);
         //
-        gp_Dir2d aDir2D = new(aV2D);
+        Direction2D aDir2D = new(aV2D);
         anAngle = Angle(aDir2D);
         //
         return anAngle;
     }
 
-    private static double Angle(in gp_Dir2d aDir2D)
+    private static double Angle(in Direction2D aDir2D)
     {
-        gp_Dir2d aRefDir = new(gp_Dir2d.D.X);
+        Direction2D aRefDir = new(Direction2D.D.X);
         double anAngle;
 
         anAngle = aRefDir.Angle(aDir2D);
@@ -725,7 +726,7 @@ public partial class BOPAlgo_WireSplitter
     private static double Tolerance2D(in TopoDS_Vertex aV, BRepAdaptor_Surface aGAS)
     {
         double aTol2D, anUr, aVr, aTolV3D;
-        GeomAbs_SurfaceType aType;
+        SurfaceKind aType;
         //
         aType = aGAS.GetType();
         aTolV3D = BRep_Tool.Tolerance(aV);
@@ -738,7 +739,7 @@ public partial class BOPAlgo_WireSplitter
         {
             aTol2D = aTolV3D;
         }
-        if (aType == GeomAbs_BSplineSurface)
+        if (aType == BSplineSurface)
         {
             aTol2D = 1.1 * aTol2D;
         }
@@ -848,7 +849,7 @@ public partial class BOPAlgo_WireSplitter
             }
             else if (iCntInt == 2)
             {
-                aA = (aA <= aA1) ? (aA1 + Precision.Angular()) : (aA2 - Precision.Angular());
+                aA = (aA <= aA1) ? (aA1 + global::Kerf.Engine.Foundation.Precision.Angular()) : (aA2 - global::Kerf.Engine.Foundation.Precision.Angular());
                 aDMSR.Bind(aE, aA);
             }
         }
@@ -894,7 +895,7 @@ public partial class BOPAlgo_WireSplitter
         int i, j, aNbP;
         double aTV, aT1, aT2, dT, aAngle, aT, aTOp;
         double aTolInt, aAi, aXi, aYi, aT1j, aT2j, aT1max, aT2max, aCf;
-        gp_Pnt2d aPV, aP, aP1, aP2;
+        Point2D aPV, aP, aP1, aP2;
         Geom2d_Curve? aC2D;
         Geom2d_Line aLi;
         Geom2dAdaptor_Curve aGAC1 = new(), aGAC2 = new();
@@ -923,7 +924,7 @@ public partial class BOPAlgo_WireSplitter
             aAi = (i == 0) ? aA1 : (aA2 + M_PI);
             aXi = Math.Cos(aAi);
             aYi = Math.Sin(aAi);
-            gp_Dir2d aDiri = new(aXi, aYi);
+            Direction2D aDiri = new(aXi, aYi);
             aLi = new Geom2d_Line(aPV, aDiri);
             //
             aGAC2.Load(aLi);
@@ -960,8 +961,8 @@ public partial class BOPAlgo_WireSplitter
                 //
                 aT = aT1max + aCf * dT;
                 aGAC1.D0(aT, out aP);
-                gp_Vec2d aV2D = new(aPV, aP);
-                gp_Dir2d aDir2D = new(aV2D);
+                Vector2D aV2D = new(aPV, aP);
+                Direction2D aDir2D = new(aV2D);
                 //
                 aAngle = Angle(aDir2D);
                 double aDA = ClockWiseAngle(aA2, aAngle);

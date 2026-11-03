@@ -1,24 +1,28 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/GeomBndLib_OffsetCurve2d_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomBndLib_OffsetCurve2dTest
 {
-    private static readonly double Conf = Precision.Confusion();
+    private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private static void ExpectNoLarger2d(in Bnd_Box2d theNew, in Bnd_Box2d theOld, double theTol)
+    private static void ExpectNoLarger2d(in Box2d theNew, in Box2d theOld, double theTol)
         => GeomBndLibCurve2dTestUtils.ExpectNoLarger2d(theNew, theOld, theTol);
 
     /// <summary>Helper: verify 2D box contains all sampled points of the offset curve.</summary>
-    private static void ExpectContainsCurve2d(in Bnd_Box2d theBox, Geom2d_OffsetCurve theCurve, double theU1, double theU2, int theNbSamples)
+    private static void ExpectContainsCurve2d(in Box2d theBox, Geom2d_OffsetCurve theCurve, double theU1, double theU2, int theNbSamples)
     {
         double aStep = (theU2 - theU1) / theNbSamples;
         theBox.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
         for (int i = 0; i <= theNbSamples; ++i)
         {
             double aU = theU1 + i * aStep;
-            gp_Pnt2d aPnt = theCurve.Value(aU);
+            Point2D aPnt = theCurve.Value(aU);
             string aWhere = $"Point outside box at U={aU}";
             GeomBndLibCurve2dTestUtils.ExpectGE(aPnt.X(), aXmin - Conf, aWhere);
             GeomBndLibCurve2dTestUtils.ExpectLE(aPnt.X(), aXmax + Conf, aWhere);
@@ -28,10 +32,10 @@ public class GeomBndLib_OffsetCurve2dTest
     }
 
     private static Geom2d_Circle Circle(double theX, double theY, double theR)
-        => new(new gp_Ax2d(new gp_Pnt2d(theX, theY), new gp_Dir2d(1.0, 0.0)), theR);
+        => new(new Axis2D(new Point2D(theX, theY), new Direction2D(1.0, 0.0)), theR);
 
     private static Geom2d_Ellipse Ellipse83()
-        => new(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0), new gp_Dir2d(0.0, 1.0)), 8.0, 3.0);
+        => new(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0)), 8.0, 3.0);
 
     // =========================================================================
     // Circle offset (positive)
@@ -43,10 +47,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(0.0, 0.0, 5.0), 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -59,10 +63,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(0.0, 0.0, 5.0), 2.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(0.0, M_PI / 2.0, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, 0.0, M_PI / 2.0, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -79,10 +83,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(0.0, 0.0, 10.0), -3.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -95,10 +99,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(0.0, 0.0, 10.0), -3.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(M_PI / 4.0, M_PI, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, M_PI / 4.0, M_PI, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -115,10 +119,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Ellipse83(), 1.5);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -130,10 +134,10 @@ public class GeomBndLib_OffsetCurve2dTest
     {
         Geom2d_OffsetCurve anOff = new(Ellipse83(), 1.5);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).AddOptimal(0.0, M_PI, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.AddOptimal(anOff, 0.0, M_PI, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -147,14 +151,14 @@ public class GeomBndLib_OffsetCurve2dTest
     [Fact]
     public void Line_CompareWithBndLib()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0));
+        Geom2d_Line aLine = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Geom2d_OffsetCurve anOff = new(aLine, 3.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(0.0, 10.0, Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, 0.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -168,11 +172,11 @@ public class GeomBndLib_OffsetCurve2dTest
     [Fact]
     public void BSpline_OptimalCompareWithBndLib()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt2d(0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt2d(3.0, 5.0));
-        aPoles.SetValue(3, new gp_Pnt2d(7.0, -2.0));
-        aPoles.SetValue(4, new gp_Pnt2d(10.0, 0.0));
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point2D(0.0, 0.0));
+        aPoles.SetValue(2, new Point2D(3.0, 5.0));
+        aPoles.SetValue(3, new Point2D(7.0, -2.0));
+        aPoles.SetValue(4, new Point2D(10.0, 0.0));
 
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots.SetValue(1, 0.0);
@@ -187,10 +191,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_BSplineCurve aBSpl = new(aPoles, aKnots, aMults, 2);
         Geom2d_OffsetCurve anOff = new(aBSpl, 1.0);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).AddOptimal(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.AddOptimal(anOff, 0.0, 1.0, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -207,10 +211,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(0.0, 0.0, 2.0), 20.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);
@@ -227,10 +231,10 @@ public class GeomBndLib_OffsetCurve2dTest
         Geom2d_OffsetCurve anOff = new(Circle(5.0, 3.0, 4.0), 1.0);
         Geom2dAdaptor_Curve anAdaptor = new(anOff);
 
-        Bnd_Box2d aNewBox = new();
+        Box2d aNewBox = new();
         new GeomBndLib_Curve2d(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box2d anOldBox = new();
+        Box2d anOldBox = new();
         BndLib_Add2dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger2d(aNewBox, anOldBox, Conf);

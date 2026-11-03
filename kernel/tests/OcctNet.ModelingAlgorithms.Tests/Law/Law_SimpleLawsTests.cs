@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>Law_Constant, Law_Linear and Law_S: closed forms, Trim, Bounds and Intervals.</summary>
@@ -15,10 +17,10 @@ public class Law_SimpleLawsTests
         Assert.Equal((2.5, 0.0), (F, D));
         aLaw.D2(0.3, out F, out D, out double D2);
         Assert.Equal((2.5, 0.0, 0.0), (F, D, D2));
-        Assert.Equal(GeomAbs_Shape.GeomAbs_CN, aLaw.Continuity());
-        Assert.Equal(1, aLaw.NbIntervals(GeomAbs_Shape.GeomAbs_CN));
+        Assert.Equal(Continuity.CN, aLaw.Continuity());
+        Assert.Equal(1, aLaw.NbIntervals(Continuity.CN));
         var aT = new NCollection_Array1<double>(1, 2);
-        aLaw.Intervals(aT, GeomAbs_Shape.GeomAbs_CN);
+        aLaw.Intervals(aT, Continuity.CN);
         Assert.Equal([-1.0, 4.0], aT.AsSpan().ToArray());
         var aTrim = Assert.IsType<Law_Constant>(aLaw.Trim(0.0, 1.0, 1.0e-7));
         aTrim.Bounds(out double f, out double l);
@@ -48,9 +50,9 @@ public class Law_SimpleLawsTests
         Assert.Equal(2.0, aTrim.Value(2.0));
         Assert.Equal(0.0, aTrim.Value(4.0));
         var aT = new NCollection_Array1<double>(1, 2);
-        aLaw.Intervals(aT, GeomAbs_Shape.GeomAbs_C2);
+        aLaw.Intervals(aT, Continuity.C2);
         Assert.Equal([1.0, 5.0], aT.AsSpan().ToArray());
-        Assert.Equal(1, aLaw.NbIntervals(GeomAbs_Shape.GeomAbs_C2));
+        Assert.Equal(1, aLaw.NbIntervals(Continuity.C2));
     }
 
     [Fact]
@@ -75,7 +77,7 @@ public class Law_SimpleLawsTests
         Assert.Equal(-1.0, D, 1.0e-13);
         aLaw.Bounds(out double f, out double l);
         Assert.Equal((1.0, 3.0), (f, l));
-        Assert.True(aLaw.Curve()!.IsFrozen());
+        Assert.True(aLaw.Curve()!.IsFrozen);
         Assert.Equal(3, aLaw.Curve()!.Degree());
         // the Hermite cubic, against finite differences
         double h = 1.0e-6;

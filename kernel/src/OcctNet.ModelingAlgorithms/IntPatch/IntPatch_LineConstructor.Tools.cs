@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
@@ -16,21 +18,21 @@ public partial class IntPatch_LineConstructor
                                 ref double u2, ref double v2)
     {
         double f, l, lmf;
-        GeomAbs_SurfaceType typs1 = myHS1.GetType();
-        GeomAbs_SurfaceType typs2 = myHS2.GetType();
+        SurfaceKind typs1 = myHS1.GetType();
+        SurfaceKind typs2 = myHS2.GetType();
 
         bool myHS1IsUPeriodic, myHS1IsVPeriodic;
         switch (typs1)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
             {
                 myHS1IsUPeriodic = true;
                 myHS1IsVPeriodic = false;
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 myHS1IsUPeriodic = myHS1IsVPeriodic = true;
                 break;
@@ -46,15 +48,15 @@ public partial class IntPatch_LineConstructor
         bool myHS2IsUPeriodic, myHS2IsVPeriodic;
         switch (typs2)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
             {
                 myHS2IsUPeriodic = true;
                 myHS2IsVPeriodic = false;
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 myHS2IsUPeriodic = myHS2IsVPeriodic = true;
                 break;
@@ -124,52 +126,52 @@ public partial class IntPatch_LineConstructor
         }
     }
 
-    private static void Parameters(Adaptor3d_Surface myHS1, Adaptor3d_Surface myHS2, in gp_Pnt Ptref, ref double U1,
+    private static void Parameters(Adaptor3d_Surface myHS1, Adaptor3d_Surface myHS2, in Point3D Ptref, ref double U1,
                                    ref double V1, ref double U2, ref double V2)
     {
         IntSurf_Quadric quad1 = new IntSurf_Quadric(), quad2 = new IntSurf_Quadric();
-        GeomAbs_SurfaceType typs = myHS1.GetType();
+        SurfaceKind typs = myHS1.GetType();
         switch (typs)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 quad1.SetValue(myHS1.Plane());
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 quad1.SetValue(myHS1.Cylinder());
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 quad1.SetValue(myHS1.Cone());
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 quad1.SetValue(myHS1.Sphere());
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 quad1.SetValue(myHS1.Torus());
                 break;
             default:
-                throw new Standard_ConstructionError("IntPatch_IntSS::MakeCurve");
+                throw new ConstructionErrorException("IntPatch_IntSS::MakeCurve");
         }
 
         typs = myHS2.GetType();
         switch (typs)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 quad2.SetValue(myHS2.Plane());
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 quad2.SetValue(myHS2.Cylinder());
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 quad2.SetValue(myHS2.Cone());
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 quad2.SetValue(myHS2.Sphere());
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 quad2.SetValue(myHS2.Torus());
                 break;
             default:
-                throw new Standard_ConstructionError("IntPatch_IntSS::MakeCurve");
+                throw new ConstructionErrorException("IntPatch_IntSS::MakeCurve");
         }
         quad1.Parameters(Ptref, ref U1, ref V1);
         quad2.Parameters(Ptref, ref U2, ref V2);
@@ -208,7 +210,7 @@ public partial class IntPatch_LineConstructor
                 }
                 else
                 {
-                    firstp = -Precision.Infinite(); // a voir selon le type de la ligne 2d
+                    firstp = -global::Kerf.Engine.Foundation.Precision.Infinite(); // a voir selon le type de la ligne 2d
                 }
                 return firstp;
             }
@@ -240,7 +242,7 @@ public partial class IntPatch_LineConstructor
                         case IntPatch_Lin:
                         case IntPatch_Parabola:
                         case IntPatch_Hyperbola:
-                            firstp = -Precision.Infinite();
+                            firstp = -global::Kerf.Engine.Foundation.Precision.Infinite();
                             break;
 
                         case IntPatch_Circle:
@@ -293,7 +295,7 @@ public partial class IntPatch_LineConstructor
                 }
                 else
                 {
-                    lastp = Precision.Infinite(); // a voir selon le type de la ligne 2d
+                    lastp = global::Kerf.Engine.Foundation.Precision.Infinite(); // a voir selon le type de la ligne 2d
                 }
                 return lastp;
             }
@@ -327,7 +329,7 @@ public partial class IntPatch_LineConstructor
                         case IntPatch_Lin:
                         case IntPatch_Parabola:
                         case IntPatch_Hyperbola:
-                            lastp = Precision.Infinite();
+                            lastp = global::Kerf.Engine.Foundation.Precision.Infinite();
                             break;
 
                         case IntPatch_Circle:
@@ -346,7 +348,7 @@ public partial class IntPatch_LineConstructor
     }
 
     // modified by NIZHNY-MKK  Tue Apr  3 15:03:06 2001.BEGIN
-    private static double ComputeParametricTolerance(double theTol3d, in gp_Vec theD1u, in gp_Vec theD1v)
+    private static double ComputeParametricTolerance(double theTol3d, in Vector3D theD1u, in Vector3D theD1v)
     {
         double nad1u = theD1u.Magnitude();
         double nad1v = theD1v.Magnitude();
@@ -433,7 +435,7 @@ public partial class IntPatch_LineConstructor
                 {
                     p1 = Vtxindex.ParameterOnLine();
                     p2 = Vtxi.ParameterOnLine();
-                    if (Math.Abs(p1 - p2) < Precision.PConfusion())
+                    if (Math.Abs(p1 - p2) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         aajouter = true;
                     }
@@ -459,7 +461,7 @@ public partial class IntPatch_LineConstructor
         a = 0;
         n = L.NbVertex();
         IntPatch_Point Vtxindex = L.Vertex(index);
-        gp_Pnt Pntindex = Vtxindex.Value();
+        Point3D Pntindex = Vtxindex.Value();
         double thetol1 = Vtxindex.Tolerance();
         for (i = 1; i <= n; i++)
         {
@@ -528,7 +530,7 @@ public partial class IntPatch_LineConstructor
     }
 
     // OCCT's two GeomAbs_SurfaceType arguments are unused.
-    private static void AddLine(IntPatch_Line L, int i, int j, GeomAbs_SurfaceType TypeS1, GeomAbs_SurfaceType TypeS2,
+    private static void AddLine(IntPatch_Line L, int i, int j, SurfaceKind TypeS1, SurfaceKind TypeS2,
                                 int[] TabIndex, NCollection_Sequence<IntPatch_Line> slin)
     {
         int IndexFirstVertex = 1;
@@ -614,7 +616,7 @@ public partial class IntPatch_LineConstructor
                 wlig.SetFirstPoint(IndexFirstVertex);
                 wlig.SetLastPoint(IndexLastVertex);
                 wlig.SetPeriod(WLine.U1Period(), WLine.V1Period(), WLine.U2Period(), WLine.V2Period());
-                wlig.ComputeVertexParameters(Precision.Confusion());
+                wlig.ComputeVertexParameters(global::Kerf.Engine.Foundation.Precision.Confusion());
                 slin.Append(wlig);
                 //-- **********************************************************************
 
@@ -663,7 +665,7 @@ public partial class IntPatch_LineConstructor
                 }
                 rlig.SetFirstPoint(IndexFirstVertex);
                 rlig.SetLastPoint(IndexLastVertex);
-                rlig.ComputeVertexParameters(Precision.Confusion());
+                rlig.ComputeVertexParameters(global::Kerf.Engine.Foundation.Precision.Confusion());
                 slin.Append(rlig);
                 break;
             }
@@ -782,7 +784,7 @@ public partial class IntPatch_LineConstructor
             }
             default:
             {
-                throw new Standard_ConstructionError("IntPatch_LineConstructor::AddLine");
+                throw new ConstructionErrorException("IntPatch_LineConstructor::AddLine");
             }
         }
     }
@@ -810,10 +812,10 @@ public partial class IntPatch_LineConstructor
         double tol = Max(tolF, tolL);
 
         double len = 0.0;
-        gp_Pnt p1 = WLine.Point(ipF).Value();
+        Point3D p1 = WLine.Point(ipF).Value();
         for (int i = ipF + 1; i <= ipL; i++)
         {
-            gp_Pnt p2 = WLine.Point(i).Value();
+            Point3D p2 = WLine.Point(i).Value();
             len += p1.Distance(p2);
             if (len > tol)
             {
@@ -866,7 +868,7 @@ public partial class IntPatch_LineConstructor
                             v = (v + v1) * 0.5;
                         }
                         Adaptor2d_Curve2d C2d = arc;
-                        gp_Pnt2d PObt, P2d = new gp_Pnt2d(u, v);
+                        Point2D PObt, P2d = new Point2D(u, v);
                         double par = Geom2dInt_TheProjPCurOfGInter.FindParameter(C2d, P2d, 1e-7);
                         PObt = C2d.Value(par);
                         if (PObt.Distance(P2d) < tol2d)
@@ -887,8 +889,8 @@ public partial class IntPatch_LineConstructor
         int NbPnts = wlin.NbPnts();
         int allon1 = 0, allon2 = 0, i;
         double tol2d1 = 0.0, tol2d2 = 0.0;
-        gp_Pnt ap = new gp_Pnt();
-        gp_Vec ad1u = new gp_Vec(), ad1v = new gp_Vec();
+        Point3D ap = new Point3D();
+        Vector3D ad1u = new Vector3D(), ad1v = new Vector3D();
         for (i = 1; i <= NbPnts; i++)
         {
             IntSurf_PntOn2S Pmid = wlin.Point(i);
@@ -903,7 +905,7 @@ public partial class IntPatch_LineConstructor
                 tol2d1 = tol;
             }
             //--
-            if (allon1 + 1 == i && D1.IsThePointOn(new gp_Pnt2d(u1, v1), tol))
+            if (allon1 + 1 == i && D1.IsThePointOn(new Point2D(u1, v1), tol))
             {
                 allon1++;
             }
@@ -915,7 +917,7 @@ public partial class IntPatch_LineConstructor
                 tol2d2 = tol;
             }
             //--
-            if (allon2 + 1 == i && D2.IsThePointOn(new gp_Pnt2d(u2, v2), tol))
+            if (allon2 + 1 == i && D2.IsThePointOn(new Point2D(u2, v2), tol))
             {
                 allon2++;
             }
@@ -935,12 +937,12 @@ public partial class IntPatch_LineConstructor
     private static bool ProjectOnArc(double u, double v, Adaptor2d_Curve2d arc, Adaptor3d_Surface surf, double TolArc,
                                      out double par, out double dist)
     {
-        gp_Pnt aPbid = new gp_Pnt();
-        gp_Vec ad1u = new gp_Vec(), ad1v = new gp_Vec();
+        Point3D aPbid = new Point3D();
+        Vector3D ad1u = new Vector3D(), ad1v = new Vector3D();
         surf.D1(u, v, out aPbid, out ad1u, out ad1v);
         double tol2d = ComputeParametricTolerance(TolArc, ad1u, ad1v);
         Adaptor2d_Curve2d C2d = arc;
-        gp_Pnt2d aP = new gp_Pnt2d(u, v), aPprj;
+        Point2D aP = new Point2D(u, v), aPprj;
         par = Geom2dInt_TheProjPCurOfGInter.FindParameter(C2d, aP, 1e-7);
         aPprj = C2d.Value(par);
         dist = aPprj.Distance(aP);

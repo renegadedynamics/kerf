@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -19,7 +20,7 @@ namespace Occt;
 /// in the edges of the new faces (<c>Free</c>, <c>Remove</c>, <c>Add</c>) and merges its tolerance and point
 /// representations into the substitute's TShape. Those are the offset's own working shapes (intersection edges, the
 /// images, and the faces of BRepOffset_MakeOffset's own copy of the caller's shape) and must be unfrozen: a frozen one
-/// throws <see cref="TopoDS_LockedShape"/> or <see cref="Standard_ImmutableObject"/> at the first write.
+/// throws <see cref="TopoDS_LockedShape"/> or <see cref="ImmutableObjectException"/> at the first write.
 /// </remarks>
 public sealed class BRepOffset_MakeLoops
 {
@@ -37,15 +38,15 @@ public sealed class BRepOffset_MakeLoops
     /// edges in <paramref name="Image"/>.
     /// </summary>
     public void Build(NCollection_List<TopoDS_Shape> LF, BRepAlgo_AsDes AsDes, BRepAlgo_Image Image,
-                      BRepAlgo_Image theImageVV, Message_ProgressRange theRange)
+                      BRepAlgo_Image theImageVV, ProgressRange theRange)
     {
         NCollection_List<TopoDS_Shape>.Iterator it = new(LF);
         NCollection_List<TopoDS_Shape>.Iterator itl = new(), itLCE = new();
         BRepAlgo_Loop Loops = new();
         Loops.VerticesForSubstitute(myVerVerMap);
         Loops.SetImageVV(theImageVV);
-        using Message_ProgressScope aPSOuter = new(theRange, null, 2);
-        using Message_ProgressScope aPS1 = new(aPSOuter.Next(), "Init loops", LF.Extent());
+        using ProgressScope aPSOuter = new(theRange, null, 2);
+        using ProgressScope aPS1 = new(aPSOuter.Next(), "Init loops", LF.Extent());
         for (; it.More(); it.Next(), aPS1.Next())
         {
             if (!aPS1.More())
@@ -124,7 +125,7 @@ public sealed class BRepOffset_MakeLoops
             return;
         }
         BRep_Builder BB = new();
-        using Message_ProgressScope aPS2 = new(aPSOuter.Next(), "Building loops", LF.Extent());
+        using ProgressScope aPS2 = new(aPSOuter.Next(), "Building loops", LF.Extent());
         for (it.Initialize(LF); it.More(); it.Next(), aPS2.Next())
         {
             if (!aPS2.More())
@@ -211,7 +212,7 @@ public sealed class BRepOffset_MakeLoops
     /// <paramref name="AsDes"/>, binding the new faces and edges in <paramref name="Image"/>.
     /// </summary>
     public void BuildOnContext(NCollection_List<TopoDS_Shape> LContext, BRepOffset_Analyse Analyse, BRepAlgo_AsDes AsDes,
-                               BRepAlgo_Image Image, bool InSide, Message_ProgressRange theRange)
+                               BRepAlgo_Image Image, bool InSide, ProgressRange theRange)
     {
         //-----------------------------------------
         // unwinding of caps.
@@ -223,7 +224,7 @@ public sealed class BRepOffset_MakeLoops
         TopExp_Explorer exp = new();
         NCollection_Map<TopoDS_Shape> MapExtent = new(TopTools_ShapeMapHasher.Instance);
 
-        using Message_ProgressScope aPS = new(theRange, "Building deepening faces", LContext.Extent());
+        using ProgressScope aPS = new(theRange, "Building deepening faces", LContext.Extent());
         for (; it.More(); it.Next(), aPS.Next())
         {
             if (!aPS.More())
@@ -450,7 +451,7 @@ public sealed class BRepOffset_MakeLoops
     /// in <paramref name="Image"/>.
     /// </summary>
     public void BuildFaces(NCollection_List<TopoDS_Shape> LF, BRepAlgo_AsDes AsDes, BRepAlgo_Image Image,
-                           Message_ProgressRange theRange)
+                           ProgressRange theRange)
     {
         NCollection_List<TopoDS_Shape>.Iterator itr = new(), itl = new(), itLCE = new();
         bool ToRebuild;
@@ -461,7 +462,7 @@ public sealed class BRepOffset_MakeLoops
         //----------------------------------
         // Loop on all faces //.
         //----------------------------------
-        using Message_ProgressScope aPS = new(theRange, "Building faces", LF.Extent());
+        using ProgressScope aPS = new(theRange, "Building faces", LF.Extent());
         for (itr.Initialize(LF); itr.More(); itr.Next(), aPS.Next())
         {
             if (!aPS.More())

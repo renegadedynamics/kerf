@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BOPAlgo_Operation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -43,12 +44,12 @@ public static class BOPAlgo_BOPTests
 
     private static TopoDS_Shape CreateUnitBox() => new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
 
-    private static TopoDS_Shape CreateBox(gp_Pnt theCorner, double theX, double theY, double theZ) =>
+    private static TopoDS_Shape CreateBox(Point3D theCorner, double theX, double theY, double theZ) =>
         new BRepPrimAPI_MakeBox(theCorner, theX, theY, theZ).Shape();
 
     private static TopoDS_Shape CreateUnitSphere() => new BRepPrimAPI_MakeSphere(1.0).Shape();
 
-    private static TopoDS_Shape CreateSphere(gp_Pnt theCenter, double theRadius) => new BRepPrimAPI_MakeSphere(theCenter, theRadius).Shape();
+    private static TopoDS_Shape CreateSphere(Point3D theCenter, double theRadius) => new BRepPrimAPI_MakeSphere(theCenter, theRadius).Shape();
 
     private static TopoDS_Shape CreateCylinder(double theRadius, double theHeight) => new BRepPrimAPI_MakeCylinder(theRadius, theHeight).Shape();
 
@@ -200,8 +201,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void DirectCommon_OverlappingBoxes()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 2.0, 2.0, 2.0);
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(1, 1, 1), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(1, 1, 1), 2.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_COMMON);
             ValidateResult(aResult, -1.0, 1.0); // Expected volume = 1.0
@@ -211,8 +212,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void DirectTUC_IdenticalBoxes()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_CUT21);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -222,11 +223,11 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void DirectCut_NurbsBoxMinusBox()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(0, 1, 0), 1.0, 0.5, 1.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(0, 1, 0), 1.0, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_CUT);
             double aSurfaceArea = GetSurfaceArea(aResult);
@@ -272,8 +273,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void TwoStepCommon_OverlappingBoxes()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 2.0, 2.0, 2.0);
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(1, 1, 1), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(1, 1, 1), 2.0, 2.0, 2.0);
 
             TopoDS_Shape aResult = PerformTwoStepBOP(aBox1, aBox2, BOPAlgo_COMMON);
             ValidateResult(aResult, -1.0, 1.0); // Expected volume = 1.0
@@ -283,8 +284,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void TwoStepTUC_IdenticalBoxes()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformTwoStepBOP(aBox1, aBox2, BOPAlgo_CUT21);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -299,9 +300,9 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void MultipleIntersectingPrimitives()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.5);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.5);
             TopoDS_Shape aCylinder = CreateCylinder(0.8, 3.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(-0.5, -0.5, -0.5), 1.0, 1.0, 1.0);
 
             // First intersect sphere with cylinder
             TopoDS_Shape aIntermediate = PerformDirectBOP(aSphere, aCylinder, BOPAlgo_COMMON);
@@ -341,8 +342,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Cut_AxisAlignedThinTool_NearlyPreservesBoxVolume()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
-            TopoDS_Shape aThin = CreateBox(new gp_Pnt(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
+            TopoDS_Shape aThin = CreateBox(new Point3D(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
 
             TopoDS_Shape aRes = PerformDirectBOP(aBox, aThin, BOPAlgo_CUT);
             double aBoxVol = GetVolume(aBox);
@@ -354,8 +355,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Fuse_AxisAlignedThinTool_AddsNonOverlappingSlice()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
-            TopoDS_Shape aThin = CreateBox(new gp_Pnt(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
+            TopoDS_Shape aThin = CreateBox(new Point3D(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
 
             TopoDS_Shape aRes = PerformDirectBOP(aBox, aThin, BOPAlgo_FUSE);
             double aBoxVol = GetVolume(aBox);
@@ -368,8 +369,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Cut_LegitimateThinSlab_NotTreatedAsEmpty()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
-            TopoDS_Shape aSlab = CreateBox(new gp_Pnt(0.0, 0.0, 50.0), 100.0, 100.0, 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
+            TopoDS_Shape aSlab = CreateBox(new Point3D(0.0, 0.0, 50.0), 100.0, 100.0, 1.0);
 
             TopoDS_Shape aRes = PerformDirectBOP(aBox, aSlab, BOPAlgo_CUT);
             Assert.False(aRes.IsNull());
@@ -379,8 +380,8 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Common_SolidAndPlanarFace_Unaffected()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
-            gp_Pln aPln = new(new gp_Pnt(0.0, 0.0, 50.0), new gp_Dir(0.0, 0.0, 1.0));
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
+            Plane3D aPln = new(new Point3D(0.0, 0.0, 50.0), new Direction3D(0.0, 0.0, 1.0));
             BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -200.0, 200.0, -200.0, 200.0);
             Assert.True(aFaceMaker.IsDone());
             TopoDS_Shape aFace = aFaceMaker.Face();
@@ -393,11 +394,11 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Cut_BySemiInfinitePrism_Unaffected()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, -1.0, -1.0), 2.0, 2.0, 2.0);
-            gp_Pln aPln = new(new gp_Pnt(-0.5, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, -1.0, -1.0), 2.0, 2.0, 2.0);
+            Plane3D aPln = new(new Point3D(-0.5, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
             BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -0.5, 0.5, -0.5, 0.5);
             Assert.True(aFaceMaker.IsDone());
-            BRepPrimAPI_MakePrism aPrismMaker = new(aFaceMaker.Face(), new gp_Dir(1.0, 0.0, 0.0), true);
+            BRepPrimAPI_MakePrism aPrismMaker = new(aFaceMaker.Face(), new Direction3D(1.0, 0.0, 0.0), true);
             Assert.True(aPrismMaker.IsDone());
 
             TopoDS_Shape aRes = PerformDirectBOP(aBox, aPrismMaker.Shape(), BOPAlgo_CUT);
@@ -408,11 +409,11 @@ public static class BOPAlgo_BOPTests
         [Fact]
         public void Common_SolidAndHalfspace_Unaffected()
         {
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0.0, 0.0, -30.0), 150.0, 200.0, 200.0);
-            gp_Pln aPln = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+            TopoDS_Shape aBox = CreateBox(new Point3D(0.0, 0.0, -30.0), 150.0, 200.0, 200.0);
+            Plane3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
             BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -250.0, 250.0, -250.0, 250.0);
             Assert.True(aFaceMaker.IsDone());
-            BRepPrimAPI_MakeHalfSpace aHSMaker = new(aFaceMaker.Face(), new gp_Pnt(0.0, 0.0, -100.0));
+            BRepPrimAPI_MakeHalfSpace aHSMaker = new(aFaceMaker.Face(), new Point3D(0.0, 0.0, -100.0));
             TopoDS_Shape aHalfSpace = aHSMaker.Solid();
 
             TopoDS_Shape aRes = PerformDirectBOP(aBox, aHalfSpace, BOPAlgo_COMMON);

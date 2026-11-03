@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -73,7 +75,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
 
     private static void CompareText(Tally theTally, string theWhat, string theNative, in TopoDS_Shape thePort)
     {
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen())
+        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
@@ -169,7 +171,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                 {
                     case "DRAFT":
                     {
-                        var aMk = new BRepOffsetAPI_MakeDraft(Input(w[1]), new gp_Dir(0, 0, 1), FromHex(w[2]));
+                        var aMk = new BRepOffsetAPI_MakeDraft(Input(w[1]), new Direction3D(0, 0, 1), FromHex(w[2]));
                         if (w[5] == "1")
                         {
                             aMk.SetOptions(BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RoundCorner);
@@ -184,7 +186,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                                 aMk.Perform(FromHex(w[6]));
                                 break;
                             case "S":
-                                aMk.Perform(new Geom_Plane(new gp_Pnt(0, 0, FromHex(w[6])), new gp_Dir(0, 0, 1)), true);
+                                aMk.Perform(new Geom_Plane(new Point3D(0, 0, FromHex(w[6])), new Direction3D(0, 0, 1)), true);
                                 break;
                             default:
                                 aMk.Perform(Input(w[6]), true);
@@ -218,9 +220,9 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                                 aSb.Append(' ').Append(aType);
                             }
                         }
-                        catch (Standard_Failure e)
+                        catch (FailureException e)
                         {
-                            aPort.Add((aSb.Append(" THROW ").Append(e.GetType().Name).ToString(), null));
+                            aPort.Add((aSb.Append(" THROW ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())).ToString(), null));
                             break;
                         }
                         aPort.Add((aSb.ToString(), null));
@@ -229,16 +231,16 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                     }
                     default:
                     {
-                        var aMk = new BRepOffsetAPI_MakeEvolved(Input(w[1]), TopoDS.Wire(Input(w[2])), GeomAbs_JoinType.GeomAbs_Arc, true,
+                        var aMk = new BRepOffsetAPI_MakeEvolved(Input(w[1]), TopoDS.Wire(Input(w[2])), JoinKind.Arc, true,
                                                                 w[3] == "1", false, 1.0e-7, true);
                         aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aMk.IsDone() ? aMk.Shape() : new TopoDS_Shape()));
                         break;
                     }
                 }
             }
-            catch (Exception e) when (e is Standard_Failure)
+            catch (Exception e) when (e is FailureException)
             {
-                aPort.Add(("THROW " + e.GetType().Name, null));
+                aPort.Add(("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), null));
             }
             foreach ((TopoDS_Shape aS, ShapeSnapshot aSnap) in aSnaps)
             {

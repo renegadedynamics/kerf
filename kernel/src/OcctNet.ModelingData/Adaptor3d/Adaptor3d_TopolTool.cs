@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -15,9 +17,9 @@ namespace Occt;
 /// All methods may be redefined by a derived class (BRepTopAdaptor_TopolTool).
 /// </summary>
 /// <remarks>A working object (decision 101): <c>Initialize</c> and the iterators are public, as in OCCT.</remarks>
-public class Adaptor3d_TopolTool : Standard_Transient
+public class Adaptor3d_TopolTool : Transient
 {
-    private static double myInfinite => Precision.Infinite();
+    private static double myInfinite => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     // Absolute possible minimum of sample points (restriction of IntPolyh).
     private const int myMinPnts = 4;
@@ -62,7 +64,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
     /// <summary>Not implemented: throws Standard_NotImplemented, as in OCCT.</summary>
     public virtual void Initialize()
     {
-        throw new Standard_NotImplemented("Adaptor3d_TopolTool::Initialize ()");
+        throw new MethodNotImplementedException("Adaptor3d_TopolTool::Initialize ()");
     }
 
     /// <summary>Takes the parametric domain of the surface and builds its restrictions.</summary>
@@ -78,10 +80,10 @@ public class Adaptor3d_TopolTool : Standard_Transient
         nbRestr = 0;
         idRestr = 0;
 
-        bool Uinfinfinite = Precision.IsNegativeInfinite(Uinf);
-        bool Usupinfinite = Precision.IsPositiveInfinite(Usup);
-        bool Vinfinfinite = Precision.IsNegativeInfinite(Vinf);
-        bool Vsupinfinite = Precision.IsPositiveInfinite(Vsup);
+        bool Uinfinfinite = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf);
+        bool Usupinfinite = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup);
+        bool Vinfinfinite = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf);
+        bool Vsupinfinite = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup);
 
         if (!Vinfinfinite)
         {
@@ -102,7 +104,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 psup = myInfinite;
             }
 
-            myRestr[nbRestr] = new Adaptor2d_Line2d(new gp_Pnt2d(0.0, Vinf), new gp_Dir2d(gp_Dir2d.D.X), pinf, psup);
+            myRestr[nbRestr] = new Adaptor2d_Line2d(new Point2D(0.0, Vinf), new Direction2D(Direction2D.D.X), pinf, psup);
             nbRestr++;
         }
 
@@ -125,7 +127,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 psup = myInfinite;
             }
 
-            myRestr[nbRestr] = new Adaptor2d_Line2d(new gp_Pnt2d(Usup, 0.0), new gp_Dir2d(gp_Dir2d.D.Y), pinf, psup);
+            myRestr[nbRestr] = new Adaptor2d_Line2d(new Point2D(Usup, 0.0), new Direction2D(Direction2D.D.Y), pinf, psup);
             nbRestr++;
         }
 
@@ -148,7 +150,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 psup = myInfinite;
             }
 
-            myRestr[nbRestr] = new Adaptor2d_Line2d(new gp_Pnt2d(0.0, Vsup), new gp_Dir2d(gp_Dir2d.D.NX), pinf, psup);
+            myRestr[nbRestr] = new Adaptor2d_Line2d(new Point2D(0.0, Vsup), new Direction2D(Direction2D.D.NX), pinf, psup);
             nbRestr++;
         }
 
@@ -171,13 +173,13 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 psup = myInfinite;
             }
 
-            myRestr[nbRestr] = new Adaptor2d_Line2d(new gp_Pnt2d(Uinf, 0.0), new gp_Dir2d(gp_Dir2d.D.NY), pinf, psup);
+            myRestr[nbRestr] = new Adaptor2d_Line2d(new Point2D(Uinf, 0.0), new Direction2D(Direction2D.D.NY), pinf, psup);
             nbRestr++;
         }
 
         myS = S;
 
-        if (nbRestr == 2 && S.GetType() == GeomAbs_Cone)
+        if (nbRestr == 2 && S.GetType() == SurfaceKind.Cone)
         {
             double U = 0.0, V = 0.0;
             GetConeApexParam(S.Cone(), out U, out V);
@@ -199,7 +201,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 psup = myInfinite;
             }
 
-            myRestr[nbRestr] = new Adaptor2d_Line2d(new gp_Pnt2d(U, V), new gp_Dir2d(gp_Dir2d.D.X), pinf, psup);
+            myRestr[nbRestr] = new Adaptor2d_Line2d(new Point2D(U, V), new Direction2D(Direction2D.D.X), pinf, psup);
             nbRestr++;
         }
     }
@@ -235,12 +237,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
     public virtual bool More() => (idRestr < nbRestr);
 
     /// <summary>The current restriction.</summary>
-    /// <exception cref="Standard_DomainError">The iteration is over.</exception>
+    /// <exception cref="DomainErrorException">The iteration is over.</exception>
     public virtual Adaptor2d_Curve2d Value()
     {
         if (idRestr >= nbRestr)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return myRestr[idRestr]!;
     }
@@ -259,12 +261,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
     public virtual bool MoreVertex() => (idVtx < nbVtx);
 
     /// <summary>The current vertex.</summary>
-    /// <exception cref="Standard_DomainError">The iteration is over.</exception>
+    /// <exception cref="DomainErrorException">The iteration is over.</exception>
     public virtual Adaptor3d_HVertex Vertex()
     {
         if (idVtx >= nbVtx)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return myVtx[idVtx]!;
     }
@@ -276,7 +278,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
 
     /// <summary>Classifies a point of the parametric domain: IN, ON (within Tol of a finite bound) or OUT.</summary>
     /// <remarks>OCCT ignores <paramref name="ReacdreOnPeriodic"/>.</remarks>
-    public virtual TopAbs_State Classify(in gp_Pnt2d P, double Tol, bool ReacdreOnPeriodic = true)
+    public virtual TopAbs_State Classify(in Point2D P, double Tol, bool ReacdreOnPeriodic = true)
     {
         double U = P.X();
         double V = P.Y();
@@ -301,12 +303,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
         else
         {
             bool dansu, dansv, surumin, surumax, survmin, survmax;
-            if (Precision.IsNegativeInfinite(Uinf) && Precision.IsPositiveInfinite(Usup))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup))
             {
                 dansu = true;
                 surumin = surumax = false;
             }
-            else if (Precision.IsNegativeInfinite(Uinf))
+            else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf))
             {
                 surumin = false;
                 // OCCT: `>=` here where the V branch below has `>` (docs/occt-issues.md).
@@ -325,7 +327,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                     }
                 }
             }
-            else if (Precision.IsPositiveInfinite(Usup))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup))
             {
                 surumax = false;
                 if (U < Uinf - Tol)
@@ -364,12 +366,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 }
             }
 
-            if (Precision.IsNegativeInfinite(Vinf) && Precision.IsPositiveInfinite(Vsup))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup))
             {
                 dansv = true;
                 survmin = survmax = false;
             }
-            else if (Precision.IsNegativeInfinite(Vinf))
+            else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf))
             {
                 survmin = false;
                 if (V > Vsup + Tol)
@@ -387,7 +389,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                     }
                 }
             }
-            else if (Precision.IsPositiveInfinite(Vsup))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup))
             {
                 survmax = false;
                 if (V < Vinf - Tol)
@@ -440,7 +442,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
 
     /// <summary>True if the point is on a finite bound of the domain (within Tol).</summary>
     /// <remarks>OCCT ignores <paramref name="ReacdreOnPeriodic"/>.</remarks>
-    public virtual bool IsThePointOn(in gp_Pnt2d P, double Tol, bool ReacdreOnPeriodic = true)
+    public virtual bool IsThePointOn(in Point2D P, double Tol, bool ReacdreOnPeriodic = true)
     {
         double U = P.X();
         double V = P.Y();
@@ -465,12 +467,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
         else
         {
             bool dansu, dansv, surumin, surumax, survmin, survmax;
-            if (Precision.IsNegativeInfinite(Uinf) && Precision.IsPositiveInfinite(Usup))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup))
             {
                 dansu = true;
                 surumin = surumax = false;
             }
-            else if (Precision.IsNegativeInfinite(Uinf))
+            else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf))
             {
                 surumin = false;
                 // OCCT: `>=` here where the V branch below has `>` (docs/occt-issues.md).
@@ -489,7 +491,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                     }
                 }
             }
-            else if (Precision.IsPositiveInfinite(Usup))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup))
             {
                 surumax = false;
                 if (U < Uinf - Tol)
@@ -528,12 +530,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 }
             }
 
-            if (Precision.IsNegativeInfinite(Vinf) && Precision.IsPositiveInfinite(Vsup))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf) && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup))
             {
                 dansv = true;
                 survmin = survmax = false;
             }
-            else if (Precision.IsNegativeInfinite(Vinf))
+            else if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf))
             {
                 survmin = false;
                 if (V > Vsup + Tol)
@@ -551,7 +553,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                     }
                 }
             }
-            else if (Precision.IsPositiveInfinite(Vsup))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup))
             {
                 survmax = false;
                 if (V < Vinf - Tol)
@@ -617,26 +619,26 @@ public class Adaptor3d_TopolTool : Standard_Transient
     /// <summary>True if arcs and vertices have 3D representations (Tol3d and Pnt can be used). False here.</summary>
     public virtual bool Has3d() => false;
 
-    /// <exception cref="Standard_DomainError">Always: no 3D representation.</exception>
+    /// <exception cref="DomainErrorException">Always: no 3D representation.</exception>
     public virtual double Tol3d(Adaptor2d_Curve2d C) =>
-        throw new Standard_DomainError("Adaptor3d_TopolTool: has no 3d representation");
+        throw new DomainErrorException("Adaptor3d_TopolTool: has no 3d representation");
 
-    /// <exception cref="Standard_DomainError">Always: no 3D representation.</exception>
+    /// <exception cref="DomainErrorException">Always: no 3D representation.</exception>
     public virtual double Tol3d(Adaptor3d_HVertex V) =>
-        throw new Standard_DomainError("Adaptor3d_TopolTool: has no 3d representation");
+        throw new DomainErrorException("Adaptor3d_TopolTool: has no 3d representation");
 
-    /// <exception cref="Standard_DomainError">Always: no 3D representation.</exception>
-    public virtual gp_Pnt Pnt(Adaptor3d_HVertex V) =>
-        throw new Standard_DomainError("Adaptor3d_TopolTool: has no 3d representation");
+    /// <exception cref="DomainErrorException">Always: no 3D representation.</exception>
+    public virtual Point3D Pnt(Adaptor3d_HVertex V) =>
+        throw new DomainErrorException("Adaptor3d_TopolTool: has no 3d representation");
 
     //-- ============================================================
     //-- methods used for the samples
     //-- ============================================================
 
-    private static void Analyse(NCollection_Array2<gp_Pnt> array2, int nbup, int nbvp, ref int myNbSamplesU,
+    private static void Analyse(NCollection_Array2<Point3D> array2, int nbup, int nbvp, ref int myNbSamplesU,
                                 ref int myNbSamplesV)
     {
-        gp_Vec Vi = new gp_Vec(), Vip1 = new gp_Vec();
+        Vector3D Vi = new Vector3D(), Vip1 = new Vector3D();
         int sh, nbch, i, j;
 
         sh = 1;
@@ -645,18 +647,18 @@ public class Adaptor3d_TopolTool : Standard_Transient
         {
             for (i = 2; i < nbup; i++)
             {
-                gp_Pnt A = array2.Value(i, 1);
-                gp_Pnt B = array2.Value(i, 2);
-                gp_Pnt C = array2.Value(i, 3);
+                Point3D A = array2.Value(i, 1);
+                Point3D B = array2.Value(i, 2);
+                Point3D C = array2.Value(i, 3);
                 Vi.SetCoord(C.X() - B.X() - B.X() + A.X(),
                             C.Y() - B.Y() - B.Y() + A.Y(),
                             C.Z() - B.Z() - B.Z() + A.Z());
                 int locnbch = 0;
                 for (j = 3; j < nbvp; j++)
                 { //-- try
-                    gp_Pnt A1 = array2.Value(i, j - 1);
-                    gp_Pnt B1 = array2.Value(i, j);
-                    gp_Pnt C1 = array2.Value(i, j + 1);
+                    Point3D A1 = array2.Value(i, j - 1);
+                    Point3D B1 = array2.Value(i, j);
+                    Point3D C1 = array2.Value(i, j + 1);
                     Vip1.SetCoord(C1.X() - B1.X() - B1.X() + A1.X(),
                                   C1.Y() - B1.Y() - B1.Y() + A1.Y(),
                                   C1.Z() - B1.Z() - B1.Z() + A1.Z());
@@ -695,18 +697,18 @@ public class Adaptor3d_TopolTool : Standard_Transient
         {
             for (j = 2; j < nbvp; j++)
             {
-                gp_Pnt A = array2.Value(1, j);
-                gp_Pnt B = array2.Value(2, j);
-                gp_Pnt C = array2.Value(3, j);
+                Point3D A = array2.Value(1, j);
+                Point3D B = array2.Value(2, j);
+                Point3D C = array2.Value(3, j);
                 Vi.SetCoord(C.X() - B.X() - B.X() + A.X(),
                             C.Y() - B.Y() - B.Y() + A.Y(),
                             C.Z() - B.Z() - B.Z() + A.Z());
                 int locnbch = 0;
                 for (i = 3; i < nbup; i++)
                 { //-- try
-                    gp_Pnt A1 = array2.Value(i - 1, j);
-                    gp_Pnt B1 = array2.Value(i, j);
-                    gp_Pnt C1 = array2.Value(i + 1, j);
+                    Point3D A1 = array2.Value(i - 1, j);
+                    Point3D B1 = array2.Value(i, j);
+                    Point3D C1 = array2.Value(i + 1, j);
                     Vip1.SetCoord(C1.X() - B1.X() - B1.X() + A1.X(),
                                   C1.Y() - B1.Y() - B1.Y() + A1.Y(),
                                   C1.Z() - B1.Z() - B1.Z() + A1.Z());
@@ -792,22 +794,22 @@ public class Adaptor3d_TopolTool : Standard_Transient
         }
 
         int nbsu, nbsv;
-        GeomAbs_SurfaceType typS = myS.GetType();
+        SurfaceKind typS = myS.GetType();
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 nbsv = 2;
                 nbsu = 2;
             }
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 nbsv = 3 + myS.NbVPoles();
                 nbsu = 3 + myS.NbUPoles();
             }
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 nbsv = myS.NbVKnots();
                 nbsv *= myS.VDegree();
@@ -823,12 +825,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 }
             }
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
             {
                 nbsv = 15;
                 nbsu = 15;
@@ -853,12 +855,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
             nbsv = 6;
         }
 
-        if (typS == GeomAbs_BSplineSurface)
+        if (typS == BSplineSurface)
         {
             if (nbsu > 8 || nbsv > 8)
             {
                 Geom_BSplineSurface Bspl = myS.BSpline();
-                NCollection_Array2<gp_Pnt> array2 = Bspl.InternalPoles();
+                NCollection_Array2<Point3D> array2 = Bspl.InternalPoles();
                 int nbup = array2.NbRows();
                 int nbvp = array2.NbColumns();
                 Analyse(array2, nbup, nbvp, ref nbsu, ref nbsv);
@@ -878,12 +880,12 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 nbsv = Min(nbsv, aMaxNbSample);
             }
         }
-        else if (typS == GeomAbs_BezierSurface)
+        else if (typS == BezierSurface)
         {
             if (nbsu > 8 || nbsv > 8)
             {
                 Geom_BezierSurface Bez = myS.Bezier();
-                NCollection_Array2<gp_Pnt> array2 = Bez.InternalPoles();
+                NCollection_Array2<Point3D> array2 = Bez.InternalPoles();
                 int nbup = array2.NbRows();
                 int nbvp = array2.NbColumns();
                 Analyse(array2, nbup, nbvp, ref nbsu, ref nbsv);
@@ -934,7 +936,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
     }
 
     /// <summary>The sample point of index <paramref name="Index"/>, in the parametric domain and in 3D.</summary>
-    public virtual void SamplePoint(int Index, out gp_Pnt2d P2d, out gp_Pnt P3d)
+    public virtual void SamplePoint(int Index, out Point2D P2d, out Point3D P3d)
     {
         int i = Index;
         int iu, iv;
@@ -956,26 +958,26 @@ public class Adaptor3d_TopolTool : Standard_Transient
             v = myVPars!.Value(iv);
         }
 
-        P2d = new gp_Pnt2d(u, v);
+        P2d = new Point2D(u, v);
         P3d = myS!.Value(u, v);
     }
 
     /// <summary>True if one of the bounds of the domain is infinite.</summary>
     public virtual bool DomainIsInfinite()
     {
-        if (Precision.IsNegativeInfinite(Uinf))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Uinf))
         {
             return (true);
         }
-        if (Precision.IsPositiveInfinite(Usup))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Usup))
         {
             return (true);
         }
-        if (Precision.IsNegativeInfinite(Vinf))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(Vinf))
         {
             return (true);
         }
-        if (Precision.IsPositiveInfinite(Vsup))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Vsup))
         {
             return (true);
         }
@@ -1036,8 +1038,8 @@ public class Adaptor3d_TopolTool : Standard_Transient
             vsup = vinf + 2.0e5;
         }
 
-        GeomAbs_SurfaceType typS = myS.GetType();
-        if (typS == GeomAbs_BSplineSurface)
+        SurfaceKind typS = myS.GetType();
+        if (typS == BSplineSurface)
         {
             // Processing BSpline surface
             BSplSamplePnts(theDefl, theNUmin, theNVmin);
@@ -1292,18 +1294,18 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 }
 
                 t2 = anUPars[j];
-                gp_Pnt p1 = myS.Value(t2, t1);
+                Point3D p1 = myS.Value(t2, t1);
                 for (k = j + 2; k <= nbsu; ++k)
                 {
                     t2 = anUPars[k];
-                    gp_Pnt p2 = myS.Value(t2, t1);
+                    Point3D p2 = myS.Value(t2, t1);
 
                     if (p1.SquareDistance(p2) <= tol)
                     {
                         continue;
                     }
 
-                    gp_Lin lin = new(p1, new gp_Dir(new gp_Vec(p1, p2)));
+                    Line3D lin = new(p1, new Direction3D(new Vector3D(p1, p2)));
                     bool ok = true;
                     for (l = j + 1; l < k; ++l)
                     {
@@ -1313,7 +1315,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                             break;
                         }
 
-                        gp_Pnt pp = myS.Value(anUPars[l], t1);
+                        Point3D pp = myS.Value(anUPars[l], t1);
                         double d = lin.SquareDistance(pp);
 
                         if (d <= aDefl2)
@@ -1403,17 +1405,17 @@ public class Adaptor3d_TopolTool : Standard_Transient
                 }
 
                 t2 = aVPars[j];
-                gp_Pnt p1 = myS.Value(t1, t2);
+                Point3D p1 = myS.Value(t1, t2);
                 for (k = j + 2; k <= nbsv; ++k)
                 {
                     t2 = aVPars[k];
-                    gp_Pnt p2 = myS.Value(t1, t2);
+                    Point3D p2 = myS.Value(t1, t2);
 
                     if (p1.SquareDistance(p2) <= tol)
                     {
                         continue;
                     }
-                    gp_Lin lin = new(p1, new gp_Dir(new gp_Vec(p1, p2)));
+                    Line3D lin = new(p1, new Direction3D(new Vector3D(p1, p2)));
                     bool ok = true;
                     for (l = j + 1; l < k; ++l)
                     {
@@ -1423,7 +1425,7 @@ public class Adaptor3d_TopolTool : Standard_Transient
                             break;
                         }
 
-                        gp_Pnt pp = myS.Value(t1, aVPars[l]);
+                        Point3D pp = myS.Value(t1, aVPars[l]);
                         double d = lin.SquareDistance(pp);
 
                         if (d <= aDefl2)
@@ -1555,22 +1557,22 @@ public class Adaptor3d_TopolTool : Standard_Transient
     /// <summary>True if the sampling is uniform (any surface but a B-spline).</summary>
     public virtual bool IsUniformSampling()
     {
-        GeomAbs_SurfaceType typS = myS!.GetType();
+        SurfaceKind typS = myS!.GetType();
 
-        return typS != GeomAbs_BSplineSurface;
+        return typS != BSplineSurface;
     }
 
     /// <summary>Computes the parameters of the apex of a cone.</summary>
-    public static void GetConeApexParam(in gp_Cone theC, out double theU, out double theV)
+    public static void GetConeApexParam(in Cone theC, out double theU, out double theV)
     {
-        gp_Ax3 Pos = theC.Position();
+        CoordinateSystem Pos = theC.Position();
         double Radius = theC.RefRadius();
         double SAngle = theC.SemiAngle();
-        gp_Pnt P = theC.Apex();
+        Point3D P = theC.Apex();
 
-        gp_Trsf T = new();
+        Transform3D T = new();
         T.SetTransformation(Pos);
-        gp_Pnt Ploc = P.Transformed(T);
+        Point3D Ploc = P.Transformed(T);
 
         if (Ploc.X() == 0.0 && Ploc.Y() == 0.0)
         {

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -18,7 +20,7 @@ namespace Occt;
 internal sealed class BOPAlgo_FaceSelfIntersect : IntTools_FaceFace, BOPTools_Parallel.ISolver
 {
     private readonly BOPAlgo_Options myOptions = new();
-    private Message_ProgressRange myProgressRange;
+    private ProgressRange myProgressRange;
     private int myIF;
     private double myTolF;
     private TopoDS_Face myF = new();
@@ -47,14 +49,14 @@ internal sealed class BOPAlgo_FaceSelfIntersect : IntTools_FaceFace, BOPTools_Pa
     //
     public double TolF() => myTolF;
 
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     public void SetRunParallel(bool theFlag) => myOptions.SetRunParallel(theFlag);
 
     //
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (myOptions.UserBreak(aPS))
         {
             return;
@@ -102,7 +104,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         }
     }
 
-    protected override void Init(Message_ProgressRange theRange)
+    protected override void Init(ProgressRange theRange)
     {
         Clear();
         //
@@ -124,7 +126,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
     }
 
     /// <summary>Checks the single argument; an exception becomes <see cref="BOPAlgo_AlertIntersectionFailed"/>.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         try
         {
@@ -160,7 +162,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             }
         }
         //
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertIntersectionFailed());
         }
@@ -176,10 +178,10 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         myCopyAtEntry is not null && myCopyAtEntry.IsCopied() ? myCopyAtEntry.Original(theShape) : theShape;
 
     // OCCT's Perform from its progress scope on (the body of its try block).
-    private void PerformChecks(Message_ProgressRange theRange)
+    private void PerformChecks(ProgressRange theRange)
     {
         {
-            using var aPS = new Message_ProgressScope(theRange, "Checking shape on self-intersection", 10);
+            using var aPS = new ProgressScope(theRange, "Checking shape on self-intersection", 10);
             // Perform intersection of sub shapes
             base.Perform(aPS.Next(8));
             if (UserBreak(aPS))
@@ -189,7 +191,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             //
             CheckFaceSelfIntersection(aPS.Next());
 
-            using var aPSZZ = new Message_ProgressScope(aPS.Next(), null, 4);
+            using var aPSZZ = new ProgressScope(aPS.Next(), null, 4);
             // Perform intersection with solids
             if (!HasErrors())
             {
@@ -421,7 +423,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
     }
 
     /// <summary>Intersects the faces that may self-intersect (not planes, cylinders, cones, spheres or ring tori) with themselves.</summary>
-    protected void CheckFaceSelfIntersection(Message_ProgressRange theRange)
+    protected void CheckFaceSelfIntersection(ProgressRange theRange)
     {
         if (myLevelOfCheck < 5)
         {
@@ -437,7 +439,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
 
         int aNbS = myDS.NbSourceShapes();
 
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         //
         for (int i = 0; i < aNbS; i++)
@@ -450,19 +452,19 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
             //
             TopoDS_Face aF = TopoDS.Face(aSI.Shape());
             BRepAdaptor_Surface BAsurf = new(aF, false);
-            GeomAbs_SurfaceType aSurfType = BAsurf.GetType();
-            if (aSurfType == GeomAbs_Plane || aSurfType == GeomAbs_Cylinder || aSurfType == GeomAbs_Cone
-                || aSurfType == GeomAbs_Sphere)
+            SurfaceKind aSurfType = BAsurf.GetType();
+            if (aSurfType == Plane || aSurfType == SurfaceKind.Cylinder || aSurfType == SurfaceKind.Cone
+                || aSurfType == SurfaceKind.Sphere)
             {
                 continue;
             }
 
-            if (aSurfType == GeomAbs_Torus)
+            if (aSurfType == SurfaceKind.Torus)
             {
-                gp_Torus aTorus = BAsurf.Torus();
+                Torus aTorus = BAsurf.Torus();
                 double aMajorRadius = aTorus.MajorRadius();
                 double aMinorRadius = aTorus.MinorRadius();
-                if (aMajorRadius > aMinorRadius + Precision.Confusion())
+                if (aMajorRadius > aMinorRadius + global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     continue;
                 }
@@ -480,7 +482,7 @@ public partial class BOPAlgo_CheckerSI : BOPAlgo_PaveFiller
         }
 
         int aNbFace = aVFace.Count;
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), "Checking surface on self-intersection", aNbFace);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(), "Checking surface on self-intersection", aNbFace);
         for (int iF = 0; iF < aNbFace; ++iF)
         {
             aVFace[iF].SetProgressRange(aPSParallel.Next());

@@ -6,7 +6,10 @@
 // 09-Aug-95 : xab : changed the ProjLib_ProjectOnPlane in the case
 //                   of the line and the parameteriation is kept
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -26,65 +29,65 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     private const double aHyperbolaLimit = 10.0;
 
     private Adaptor3d_Curve? myCurve;
-    private gp_Ax3 myPlane = new();
-    private gp_Dir myDirection = new();
+    private CoordinateSystem myPlane = new();
+    private Direction3D myDirection = new();
     private bool myKeepParam;
     private double myFirstPar;
     private double myLastPar;
     private double myTolerance;
-    private GeomAbs_CurveType myType;
+    private CurveKind myType;
     private GeomAdaptor_Curve? myResult;
     private bool myIsApprox;
 
-    private static gp_Pnt OnPlane_Value(double U, Adaptor3d_Curve aCurvePtr, in gp_Ax3 Pl, in gp_Dir D)
+    private static Point3D OnPlane_Value(double U, Adaptor3d_Curve aCurvePtr, in CoordinateSystem Pl, in Direction3D D)
     {
         //                   PO . Z                /  Z = Pl.Direction()
         // Proj(u) = P(u) + -------  * D     with  \  O = Pl.Location()
         //                   D  . Z
 
-        gp_Pnt Point = aCurvePtr.Value(U);
+        Point3D Point = aCurvePtr.Value(U);
 
-        gp_Vec PO = new(Point, Pl.Location());
+        Vector3D PO = new(Point, Pl.Location());
 
-        double Alpha = PO * new gp_Vec(Pl.Direction());
+        double Alpha = PO * new Vector3D(Pl.Direction());
         Alpha /= D * Pl.Direction();
         Point.SetXYZ(Point.XYZ() + Alpha * D.XYZ());
 
         return Point;
     }
 
-    private static gp_Vec OnPlane_DN(double U, int DerivativeRequest, Adaptor3d_Curve aCurvePtr, in gp_Ax3 Pl, in gp_Dir D)
+    private static Vector3D OnPlane_DN(double U, int DerivativeRequest, Adaptor3d_Curve aCurvePtr, in CoordinateSystem Pl, in Direction3D D)
     {
         //                   PO . Z                /  Z = Pl.Direction()
         // Proj(u) = P(u) + -------  * D     with  \  O = Pl.Location()
         //                   D  . Z
 
-        gp_Vec Vector = aCurvePtr.DN(U, DerivativeRequest);
+        Vector3D Vector = aCurvePtr.DN(U, DerivativeRequest);
 
-        gp_Dir Z = Pl.Direction();
+        Direction3D Z = Pl.Direction();
 
-        double Alpha = Vector * new gp_Vec(Z);
+        double Alpha = Vector * new Vector3D(Z);
         Alpha /= D * Z;
 
         Vector.SetXYZ(Vector.XYZ() - Alpha * D.XYZ());
         return Vector;
     }
 
-    private static bool OnPlane_D1(double U, out gp_Pnt P, out gp_Vec V, Adaptor3d_Curve aCurvePtr, in gp_Ax3 Pl, in gp_Dir D)
+    private static bool OnPlane_D1(double U, out Point3D P, out Vector3D V, Adaptor3d_Curve aCurvePtr, in CoordinateSystem Pl, in Direction3D D)
     {
         double Alpha;
-        gp_Pnt Point;
-        gp_Vec Vector;
+        Point3D Point;
+        Vector3D Vector;
 
-        gp_Dir Z = Pl.Direction();
+        Direction3D Z = Pl.Direction();
 
         aCurvePtr.D1(U, out Point, out Vector);
 
         // evaluate the point as in `OnPlane_Value`
-        gp_Vec PO = new(Point, Pl.Location());
-        Alpha = PO * new gp_Vec(Z);
+        Vector3D PO = new(Point, Pl.Location());
+        Alpha = PO * new Vector3D(Z);
         Alpha /= D * Z;
-        P = new gp_Pnt();
+        P = new Point3D();
         P.SetXYZ(Point.XYZ() + Alpha * D.XYZ());
 
         // evaluate the derivative.
@@ -94,36 +97,36 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         //     dU     dU     ( D . Z)     dU
         //
 
-        Alpha = Vector * new gp_Vec(Z);
+        Alpha = Vector * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V = new gp_Vec();
+        V = new Vector3D();
         V.SetXYZ(Vector.XYZ() - Alpha * D.XYZ());
 
         return true;
     }
 
     private static bool OnPlane_D2(double U,
-                                   out gp_Pnt P,
-                                   out gp_Vec V1,
-                                   out gp_Vec V2,
+                                   out Point3D P,
+                                   out Vector3D V1,
+                                   out Vector3D V2,
                                    Adaptor3d_Curve aCurvePtr,
-                                   in gp_Ax3 Pl,
-                                   in gp_Dir D)
+                                   in CoordinateSystem Pl,
+                                   in Direction3D D)
     {
         double Alpha;
-        gp_Pnt Point;
-        gp_Vec Vector1, Vector2;
+        Point3D Point;
+        Vector3D Vector1, Vector2;
 
-        gp_Dir Z = Pl.Direction();
+        Direction3D Z = Pl.Direction();
 
         aCurvePtr.D2(U, out Point, out Vector1, out Vector2);
 
         // evaluate the point as in `OnPlane_Value`
-        gp_Vec PO = new(Point, Pl.Location());
-        Alpha = PO * new gp_Vec(Z);
+        Vector3D PO = new(Point, Pl.Location());
+        Alpha = PO * new Vector3D(Z);
         Alpha /= D * Z;
-        P = new gp_Pnt();
+        P = new Point3D();
         P.SetXYZ(Point.XYZ() + Alpha * D.XYZ());
 
         // evaluate the derivative.
@@ -133,42 +136,42 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         //     dU     dU     ( D . Z)     dU
         //
 
-        Alpha = Vector1 * new gp_Vec(Z);
+        Alpha = Vector1 * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V1 = new gp_Vec();
+        V1 = new Vector3D();
         V1.SetXYZ(Vector1.XYZ() - Alpha * D.XYZ());
 
-        Alpha = Vector2 * new gp_Vec(Z);
+        Alpha = Vector2 * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V2 = new gp_Vec();
+        V2 = new Vector3D();
         V2.SetXYZ(Vector2.XYZ() - Alpha * D.XYZ());
         return true;
     }
 
     private static bool OnPlane_D3(double U,
-                                   out gp_Pnt P,
-                                   out gp_Vec V1,
-                                   out gp_Vec V2,
-                                   out gp_Vec V3,
+                                   out Point3D P,
+                                   out Vector3D V1,
+                                   out Vector3D V2,
+                                   out Vector3D V3,
                                    Adaptor3d_Curve aCurvePtr,
-                                   in gp_Ax3 Pl,
-                                   in gp_Dir D)
+                                   in CoordinateSystem Pl,
+                                   in Direction3D D)
     {
         double Alpha;
-        gp_Pnt Point;
-        gp_Vec Vector1, Vector2, Vector3;
+        Point3D Point;
+        Vector3D Vector1, Vector2, Vector3;
 
-        gp_Dir Z = Pl.Direction();
+        Direction3D Z = Pl.Direction();
 
         aCurvePtr.D3(U, out Point, out Vector1, out Vector2, out Vector3);
 
         // evaluate the point as in `OnPlane_Value`
-        gp_Vec PO = new(Point, Pl.Location());
-        Alpha = PO * new gp_Vec(Z);
+        Vector3D PO = new(Point, Pl.Location());
+        Alpha = PO * new Vector3D(Z);
         Alpha /= D * Z;
-        P = new gp_Pnt();
+        P = new Point3D();
         P.SetXYZ(Point.XYZ() + Alpha * D.XYZ());
 
         // evaluate the derivative.
@@ -178,21 +181,21 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         //     dU     dU     ( D . Z)     dU
         //
 
-        Alpha = Vector1 * new gp_Vec(Z);
+        Alpha = Vector1 * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V1 = new gp_Vec();
+        V1 = new Vector3D();
         V1.SetXYZ(Vector1.XYZ() - Alpha * D.XYZ());
 
-        Alpha = Vector2 * new gp_Vec(Z);
+        Alpha = Vector2 * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V2 = new gp_Vec();
+        V2 = new Vector3D();
         V2.SetXYZ(Vector2.XYZ() - Alpha * D.XYZ());
-        Alpha = Vector3 * new gp_Vec(Z);
+        Alpha = Vector3 * new Vector3D(Z);
         Alpha /= D * Z;
 
-        V3 = new gp_Vec();
+        V3 = new Vector3D();
         V3.SetXYZ(Vector3.XYZ() - Alpha * D.XYZ());
         return true;
     }
@@ -201,10 +204,10 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     private sealed class ProjLib_OnPlane : AppCont_Function
     {
         private readonly Adaptor3d_Curve myCurve;
-        private readonly gp_Ax3 myPlane;
-        private readonly gp_Dir myDirection;
+        private readonly CoordinateSystem myPlane;
+        private readonly Direction3D myDirection;
 
-        public ProjLib_OnPlane(Adaptor3d_Curve C, in gp_Ax3 Pl, in gp_Dir D)
+        public ProjLib_OnPlane(Adaptor3d_Curve C, in CoordinateSystem Pl, in Direction3D D)
         {
             myCurve = C;
             myPlane = Pl;
@@ -217,20 +220,20 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
         public override double LastParameter() => myCurve.LastParameter();
 
-        public override bool Value(double theT, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theT, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt[1] = OnPlane_Value(theT, myCurve, myPlane, myDirection);
             return true;
         }
 
-        public override bool D1(double theT, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theT, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
             return OnPlane_D1(theT, out _, out theVec[1], myCurve, myPlane, myDirection);
         }
     }
 
     /// <summary>OCCT's file-local class ProjLib_MaxCurvature: minus the curvature, to be minimised.</summary>
-    private sealed class ProjLib_MaxCurvature : math_Function
+    private sealed class ProjLib_MaxCurvature : Function
     {
         private readonly LProp_CLProps3d myProps;
 
@@ -255,26 +258,26 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     //                                                                     //
     //=====================================================================//
 
-    private static void PerformApprox(Adaptor3d_Curve C, in gp_Ax3 Pl, in gp_Dir D, ref Geom_BSplineCurve? BSplineCurvePtr)
+    private static void PerformApprox(Adaptor3d_Curve C, in CoordinateSystem Pl, in Direction3D D, ref Geom_BSplineCurve? BSplineCurvePtr)
     {
         ProjLib_OnPlane F = new(C, Pl, D);
 
         int Deg1, Deg2;
         Deg1 = 8;
         Deg2 = 8;
-        if (C.GetType() == GeomAbs_Parabola)
+        if (C.GetType() == global::Kerf.Geometry.CurveKind.Parabola)
         {
             Deg1 = 2;
             Deg2 = 2;
         }
         int aNbSegm = 100;
-        if (C.GetType() == GeomAbs_Hyperbola)
+        if (C.GetType() == global::Kerf.Geometry.CurveKind.Hyperbola)
         {
             Deg1 = 14;
             Deg2 = 14;
             aNbSegm = 1000;
         }
-        Approx_FitAndDivide Fit = new(Deg1, Deg2, Precision.Approximation(), Precision.PApproximation(), true);
+        Approx_FitAndDivide Fit = new(Deg1, Deg2, global::Kerf.Engine.Foundation.Precision.Approximation(), global::Kerf.Engine.Foundation.Precision.PApproximation(), true);
         Fit.SetMaxSegments(aNbSegm);
         Fit.Perform(F);
         if (!Fit.IsAllApproximated())
@@ -295,9 +298,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
         NbPoles = MaxDeg * NbCurves + 1; // Poles on the BSpline
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
+        NCollection_Array1<Point3D> Poles = new(1, NbPoles);
 
-        NCollection_Array1<gp_Pnt> TempPoles = new(1, MaxDeg + 1); // for degree elevation
+        NCollection_Array1<Point3D> TempPoles = new(1, MaxDeg + 1); // for degree elevation
 
         NCollection_Array1<double> Knots = new(1, NbCurves + 1); // Knots of the BSpline
 
@@ -309,13 +312,13 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
             Fit.Error(i, out anErr3d, out anErr2d);
             anErrMax = Max(anErrMax, anErr3d);
             AppParCurves_MultiCurve MC = Fit.Value(i);                    // Load the i-th Curve
-            NCollection_Array1<gp_Pnt> LocalPoles = new(1, MC.Degree() + 1); // Get the poles
+            NCollection_Array1<Point3D> LocalPoles = new(1, MC.Degree() + 1); // Get the poles
             MC.Curve(1, LocalPoles);
 
             // Possible degree elevation
             if (MaxDeg > MC.Degree())
             {
-                BSplCLib.IncreaseDegree(MaxDeg, LocalPoles, BSplCLib.NoWeights(), TempPoles, BSplCLib.NoWeights());
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(MaxDeg, LocalPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), TempPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
                 // update the poles of the PCurve
                 for (int j = 1; j <= MaxDeg + 1; j++)
                 {
@@ -367,12 +370,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         myFirstPar = 0.0;
         myLastPar = 0.0;
         myTolerance = 0.0;
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         myIsApprox = false;
     }
 
     /// <summary>A projector on <paramref name="Pl"/> along its normal.</summary>
-    public ProjLib_ProjectOnPlane(in gp_Ax3 Pl)
+    public ProjLib_ProjectOnPlane(in CoordinateSystem Pl)
     {
         myPlane = Pl;
         myDirection = Pl.Direction();
@@ -380,13 +383,13 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         myFirstPar = 0.0;
         myLastPar = 0.0;
         myTolerance = 0.0;
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         myIsApprox = false;
     }
 
     /// <summary>A projector on <paramref name="Pl"/> along <paramref name="D"/> (not checked to be oblique to the
     /// plane).</summary>
-    public ProjLib_ProjectOnPlane(in gp_Ax3 Pl, in gp_Dir D)
+    public ProjLib_ProjectOnPlane(in CoordinateSystem Pl, in Direction3D D)
     {
         myPlane = Pl;
         myDirection = D;
@@ -394,7 +397,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         myFirstPar = 0.0;
         myLastPar = 0.0;
         myTolerance = 0.0;
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         myIsApprox = false;
         //  if ( std::abs(D * Pl.Direction()) < Precision::Confusion()) {
         //    throw Standard_ConstructionError
@@ -427,25 +430,25 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         return aCopy;
     }
 
-    private static gp_Pnt ProjectPnt(in gp_Ax3 ThePlane, in gp_Dir TheDir, in gp_Pnt Point)
+    private static Point3D ProjectPnt(in CoordinateSystem ThePlane, in Direction3D TheDir, in Point3D Point)
     {
-        gp_Vec PO = new(Point, ThePlane.Location());
+        Vector3D PO = new(Point, ThePlane.Location());
 
-        double Alpha = PO * new gp_Vec(ThePlane.Direction());
+        double Alpha = PO * new Vector3D(ThePlane.Direction());
         Alpha /= TheDir * ThePlane.Direction();
 
-        gp_Pnt P = new();
+        Point3D P = new();
         P.SetXYZ(Point.XYZ() + Alpha * TheDir.XYZ());
 
         return P;
     }
 
-    private static gp_Vec ProjectVec(in gp_Ax3 ThePlane, in gp_Dir TheDir, in gp_Vec Vec)
+    private static Vector3D ProjectVec(in CoordinateSystem ThePlane, in Direction3D TheDir, in Vector3D Vec)
     {
-        gp_Vec D = Vec;
-        gp_Vec Z = new(ThePlane.Direction());
+        Vector3D D = Vec;
+        Vector3D Z = new(ThePlane.Direction());
 
-        D -= ((Vec * Z) / (TheDir * new gp_Dir(Z))) * new gp_Vec(TheDir);
+        D -= ((Vec * Z) / (TheDir * new Direction3D(Z))) * new Vector3D(TheDir);
 
         return D;
     }
@@ -458,7 +461,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     public void Load(Adaptor3d_Curve C, double Tolerance, bool KeepParametrization = true)
     {
         myCurve = C;
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         myIsApprox = false;
         myTolerance = Tolerance;
 
@@ -470,35 +473,35 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         Geom_Hyperbola? GeomHyperbolaPtr = null;
         Geom_Parabola? GeomParabolaPtr = null;
 
-        gp_Lin aLine;
-        gp_Elips Elips;
+        Line3D aLine;
+        Ellipse3D Elips;
         //  gp_Hypr  Hypr ;
 
-        GeomAbs_CurveType Type = C.GetType();
+        CurveKind Type = C.GetType();
 
-        gp_Ax2 Axis = new();
+        Frame3D Axis = new();
         double R1 = 0.0, R2 = 0.0;
 
         myKeepParam = KeepParametrization;
 
         switch (Type)
         {
-            case GeomAbs_Line:
+            case global::Kerf.Geometry.CurveKind.Line:
             {
                 //     P(u) = O + u * Xc
                 // ==> Q(u) = f(P(u))
                 //          = f(O) + u * f(Xc)
 
-                gp_Lin L = myCurve.Line();
-                gp_Vec Xc = ProjectVec(myPlane, myDirection, new gp_Vec(L.Direction()));
+                Line3D L = myCurve.Line();
+                Vector3D Xc = ProjectVec(myPlane, myDirection, new Vector3D(L.Direction()));
 
-                if (Xc.Magnitude() < Precision.Confusion())
+                if (Xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
                 { // line orthogonal to the plane
-                    myType = GeomAbs_BSplineCurve;
-                    gp_Pnt P = ProjectPnt(myPlane, myDirection, L.Location());
+                    myType = BSplineCurve;
+                    Point3D P = ProjectPnt(myPlane, myDirection, L.Location());
                     NCollection_Array1<int> Mults = new(1, 2);
                     Mults.Init(2);
-                    NCollection_Array1<gp_Pnt> Poles = new(1, 2);
+                    NCollection_Array1<Point3D> Poles = new(1, 2);
                     Poles.Init(P);
                     NCollection_Array1<double> Knots = new(1, 2);
                     Knots[1] = myCurve.FirstParameter();
@@ -509,13 +512,13 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                     myResult = new GeomAdaptor_Curve(BSP);
                     //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:30 2002 End
                 }
-                else if (Math.Abs(Xc.Magnitude() - 1.0) < Precision.Confusion())
+                else if (Math.Abs(Xc.Magnitude() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    myType = GeomAbs_Line;
-                    gp_Pnt P = ProjectPnt(myPlane, myDirection, L.Location());
+                    myType = global::Kerf.Geometry.CurveKind.Line;
+                    Point3D P = ProjectPnt(myPlane, myDirection, L.Location());
                     myFirstPar = myCurve.FirstParameter();
                     myLastPar = myCurve.LastParameter();
-                    aLine = new gp_Lin(P, new gp_Dir(Xc));
+                    aLine = new Line3D(P, new Direction3D(Xc));
                     GeomLinePtr = new Geom_Line(aLine);
 
                     //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
@@ -524,18 +527,18 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 }
                 else
                 {
-                    myType = GeomAbs_Line;
-                    gp_Pnt P = ProjectPnt(myPlane, myDirection, L.Location());
-                    aLine = new gp_Lin(P, new gp_Dir(Xc));
+                    myType = global::Kerf.Geometry.CurveKind.Line;
+                    Point3D P = ProjectPnt(myPlane, myDirection, L.Location());
+                    aLine = new Line3D(P, new Direction3D(Xc));
                     double Udeb, Ufin;
 
                     // eval the first and last parameters of the projected curve
                     Udeb = myCurve.FirstParameter();
                     Ufin = myCurve.LastParameter();
-                    gp_Pnt P1 = ProjectPnt(myPlane, myDirection, myCurve.Value(Udeb));
-                    gp_Pnt P2 = ProjectPnt(myPlane, myDirection, myCurve.Value(Ufin));
-                    myFirstPar = new gp_Vec(aLine.Direction()).Dot(new gp_Vec(P, P1));
-                    myLastPar = new gp_Vec(aLine.Direction()).Dot(new gp_Vec(P, P2));
+                    Point3D P1 = ProjectPnt(myPlane, myDirection, myCurve.Value(Udeb));
+                    Point3D P2 = ProjectPnt(myPlane, myDirection, myCurve.Value(Ufin));
+                    myFirstPar = new Vector3D(aLine.Direction()).Dot(new Vector3D(P, P1));
+                    myLastPar = new Vector3D(aLine.Direction()).Dot(new Vector3D(P, P2));
                     GeomLinePtr = new Geom_Line(aLine);
                     if (!myKeepParam)
                     {
@@ -545,7 +548,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                     }
                     else
                     {
-                        myType = GeomAbs_BSplineCurve;
+                        myType = BSplineCurve;
                         //
                         // make a linear BSpline of degree 1 between the end points of
                         // the projected line
@@ -555,7 +558,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                         Geom_BSplineCurve NewCurvePtr = GeomConvert.CurveToBSplineCurve(NewTrimCurvePtr);
                         NCollection_Array1<double> BsplineKnots = new(NewCurvePtr.InternalKnots());
 
-                        BSplCLib.Reparametrize(myCurve.FirstParameter(), myCurve.LastParameter(), BsplineKnots);
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(myCurve.FirstParameter(), myCurve.LastParameter(), BsplineKnots);
 
                         NewCurvePtr.SetKnots(BsplineKnots);
                         //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
@@ -565,10 +568,10 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 }
                 break;
             }
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
+            case global::Kerf.Geometry.CurveKind.Circle:
+            case global::Kerf.Geometry.CurveKind.Ellipse:
             {
-                if (Type == GeomAbs_Circle)
+                if (Type == global::Kerf.Geometry.CurveKind.Circle)
                 {
                     // For circle and ellipse we have the following relations:
                     // (Note: for circle R1 = R2 = R)
@@ -576,25 +579,25 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                     // ==> Q(u) = f(P(u))
                     //          = f(O) + R1 * std::cos(u) * f(Xc) + R2 * std::sin(u) * f(Yc)
 
-                    gp_Circ Circ = myCurve.Circle();
+                    Circle3D Circ = myCurve.Circle();
                     Axis = Circ.Position();
                     R1 = R2 = Circ.Radius();
                 }
                 // [[fallthrough]] from the circle case
-                if (Type == GeomAbs_Ellipse)
+                if (Type == global::Kerf.Geometry.CurveKind.Ellipse)
                 {
-                    gp_Elips E = myCurve.Ellipse();
+                    Ellipse3D E = myCurve.Ellipse();
                     Axis = E.Position();
                     R1 = E.MajorRadius();
                     R2 = E.MinorRadius();
                 }
 
                 // Common Code  for CIRCLE & ELLIPSE begin here
-                gp_Dir X = Axis.XDirection();
-                gp_Dir Y = Axis.YDirection();
-                gp_Vec VDx = ProjectVec(myPlane, myDirection, new gp_Vec(X));
-                gp_Vec VDy = ProjectVec(myPlane, myDirection, new gp_Vec(Y));
-                gp_Dir Dx = new(), Dy = new();
+                Direction3D X = Axis.XDirection();
+                Direction3D Y = Axis.YDirection();
+                Vector3D VDx = ProjectVec(myPlane, myDirection, new Vector3D(X));
+                Vector3D VDy = ProjectVec(myPlane, myDirection, new Vector3D(Y));
+                Direction3D Dx = new(), Dy = new();
 
                 double Tol2 = myTolerance * myTolerance;
                 if (VDx.SquareMagnitude() < Tol2 || VDy.SquareMagnitude() < Tol2 || VDx.CrossSquareMagnitude(VDy) < Tol2)
@@ -604,18 +607,18 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
                 if (!myIsApprox)
                 {
-                    Dx = new gp_Dir(VDx);
-                    Dy = new gp_Dir(VDy);
-                    gp_Pnt O = Axis.Location();
-                    gp_Pnt P = ProjectPnt(myPlane, myDirection, O);
-                    gp_Pnt Px = ProjectPnt(myPlane, myDirection, O.Translated(R1 * new gp_Vec(X)));
-                    gp_Pnt Py = ProjectPnt(myPlane, myDirection, O.Translated(R2 * new gp_Vec(Y)));
+                    Dx = new Direction3D(VDx);
+                    Dy = new Direction3D(VDy);
+                    Point3D O = Axis.Location();
+                    Point3D P = ProjectPnt(myPlane, myDirection, O);
+                    Point3D Px = ProjectPnt(myPlane, myDirection, O.Translated(R1 * new Vector3D(X)));
+                    Point3D Py = ProjectPnt(myPlane, myDirection, O.Translated(R2 * new Vector3D(Y)));
                     double Major = P.Distance(Px);
                     double Minor = P.Distance(Py);
 
                     if (myKeepParam)
                     {
-                        myIsApprox = !new gp_Dir(VDx).IsNormal(new gp_Dir(VDy), Precision.Angular());
+                        myIsApprox = !new Direction3D(VDx).IsNormal(new Direction3D(VDy), global::Kerf.Engine.Foundation.Precision.Angular());
                     }
                     else
                     {
@@ -623,7 +626,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                         // on the projected curves, we will use the following approach to find axes of the
                         // projected ellipse and provide the canonical curve:
                         // https://www.geometrictools.com/Documentation/ParallelProjectionEllipse.pdf
-                        math_Matrix aMatrA = new(1, 2, 1, 2);
+                        Matrix aMatrA = new(1, 2, 1, 2);
                         // A = Jp^T * Pr(Je), where
                         //   Pr(Je) - projection of axes of original ellipse to the target plane
                         //   Jp - X and Y axes of the target plane
@@ -632,19 +635,19 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                         aMatrA[2, 1] = myPlane.YDirection().XYZ().Dot(VDx.XYZ());
                         aMatrA[2, 2] = myPlane.YDirection().XYZ().Dot(VDy.XYZ());
 
-                        math_Matrix aMatrDelta2 = new(1, 2, 1, 2, 0.0);
+                        Matrix aMatrDelta2 = new(1, 2, 1, 2, 0.0);
                         //           | 1/MajorRad^2       0       |
                         // Delta^2 = |                            |
                         //           |      0        1/MajorRad^2 |
                         aMatrDelta2[1, 1] = 1.0 / (R1 * R1);
                         aMatrDelta2[2, 2] = 1.0 / (R2 * R2);
 
-                        math_Matrix aMatrAInv = aMatrA.Inverse();
-                        math_Matrix aMatrM = aMatrAInv.Transposed() * aMatrDelta2 * aMatrAInv;
+                        Matrix aMatrAInv = aMatrA.Inverse();
+                        Matrix aMatrM = aMatrAInv.Transposed() * aMatrDelta2 * aMatrAInv;
 
                         // perform eigenvalues calculation
-                        math_Jacobi anEigenCalc = new(aMatrM);
-                        if (anEigenCalc.IsDone())
+                        Jacobi anEigenCalc = new(aMatrM);
+                        if (anEigenCalc.IsDone)
                         {
                             // radii of the projected ellipse
                             Minor = 1.0 / Math.Sqrt(anEigenCalc.Value(1));
@@ -652,11 +655,11 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
                             // calculate the rotation angle for the plane axes to meet the correct axes of the
                             // projected ellipse (swap eigenvectors in respect to major and minor axes)
-                            math_Matrix anEigenVec = anEigenCalc.Vectors();
-                            gp_Trsf2d aTrsfInPlane = new();
+                            Matrix anEigenVec = anEigenCalc.Vectors();
+                            Transform2D aTrsfInPlane = new();
                             aTrsfInPlane.SetValues(anEigenVec[1, 2], anEigenVec[1, 1], 0.0, anEigenVec[2, 2], anEigenVec[2, 1], 0.0);
-                            gp_Trsf aRot = new();
-                            aRot.SetRotation(new gp_Ax1(P, myPlane.Direction()), aTrsfInPlane.RotationPart());
+                            Transform3D aRot = new();
+                            aRot.SetRotation(new Axis3D(P, myPlane.Direction()), aTrsfInPlane.RotationPart());
 
                             Dx = myPlane.XDirection().Transformed(aRot);
                             Dy = myPlane.YDirection().Transformed(aRot);
@@ -669,12 +672,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
                     if (!myIsApprox)
                     {
-                        gp_Ax2 Axe = new(P, Dx ^ Dy, Dx);
+                        Frame3D Axe = new(P, Dx ^ Dy, Dx);
 
-                        if (Math.Abs(Major - Minor) < Precision.Confusion())
+                        if (Math.Abs(Major - Minor) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
-                            myType = GeomAbs_Circle;
-                            gp_Circ Circ = new(Axe, Major);
+                            myType = global::Kerf.Geometry.CurveKind.Circle;
+                            Circle3D Circ = new(Axe, Major);
                             GeomCirclePtr = new Geom_Circle(Circ);
                             //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
                             myResult = new GeomAdaptor_Curve(GeomCirclePtr);
@@ -682,8 +685,8 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                         }
                         else if (Major > Minor)
                         {
-                            myType = GeomAbs_Ellipse;
-                            Elips = new gp_Elips(Axe, Major, Minor);
+                            myType = global::Kerf.Geometry.CurveKind.Ellipse;
+                            Elips = new Ellipse3D(Axe, Major, Minor);
 
                             GeomEllipsePtr = new Geom_Ellipse(Elips);
                             //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
@@ -700,7 +703,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 // No way to build the canonical curve, approximate as B-spline
                 if (myIsApprox)
                 {
-                    myType = GeomAbs_BSplineCurve;
+                    myType = BSplineCurve;
                     PerformApprox(myCurve, myPlane, myDirection, ref ApproxCurve);
                     //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
                     // OCCT: when the approximation fails ApproxCurve stays null and GeomAdaptor_Curve throws
@@ -718,10 +721,10 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                     // start and end parameters of the projected curve
                     double aParFirst = myCurve.FirstParameter();
                     double aParLast = myCurve.LastParameter();
-                    gp_Pnt aPntFirst = ProjectPnt(myPlane, myDirection, myCurve.Value(aParFirst));
-                    gp_Pnt aPntLast = ProjectPnt(myPlane, myDirection, myCurve.Value(aParLast));
-                    GeomLib_Tool.Parameter(aResultCurve, aPntFirst, Precision.Confusion(), out myFirstPar);
-                    GeomLib_Tool.Parameter(aResultCurve, aPntLast, Precision.Confusion(), out myLastPar);
+                    Point3D aPntFirst = ProjectPnt(myPlane, myDirection, myCurve.Value(aParFirst));
+                    Point3D aPntLast = ProjectPnt(myPlane, myDirection, myCurve.Value(aParLast));
+                    GeomLib_Tool.Parameter(aResultCurve, aPntFirst, global::Kerf.Engine.Foundation.Precision.Confusion(), out myFirstPar);
+                    GeomLib_Tool.Parameter(aResultCurve, aPntLast, global::Kerf.Engine.Foundation.Precision.Confusion(), out myLastPar);
                     while (myLastPar <= myFirstPar)
                     {
                         myLastPar += myResult!.Period();
@@ -729,36 +732,36 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 }
             }
             break;
-            case GeomAbs_Parabola:
+            case global::Kerf.Geometry.CurveKind.Parabola:
             {
                 //     P(u) = O + (u*u)/(4*f) * Xc + u * Yc
                 // ==> Q(u) = f(P(u))
                 //          = f(O) + (u*u)/(4*f) * f(Xc) + u * f(Yc)
 
-                gp_Parab Parab = myCurve.Parabola();
-                gp_Ax2 AxeRef = Parab.Position();
-                gp_Vec Xc = ProjectVec(myPlane, myDirection, new gp_Vec(AxeRef.XDirection()));
-                gp_Vec Yc = ProjectVec(myPlane, myDirection, new gp_Vec(AxeRef.YDirection()));
-                gp_Pnt P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
+                Parabola3D Parab = myCurve.Parabola();
+                Frame3D AxeRef = Parab.Position();
+                Vector3D Xc = ProjectVec(myPlane, myDirection, new Vector3D(AxeRef.XDirection()));
+                Vector3D Yc = ProjectVec(myPlane, myDirection, new Vector3D(AxeRef.YDirection()));
+                Point3D P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
 
                 myIsApprox = false;
 
-                if ((Math.Abs(Yc.Magnitude() - 1.0) < Precision.Confusion()) && (Xc.Magnitude() < Precision.Confusion()))
+                if ((Math.Abs(Yc.Magnitude() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()) && (Xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
-                    myType = GeomAbs_Line;
-                    aLine = new gp_Lin(P, new gp_Dir(Yc));
+                    myType = global::Kerf.Geometry.CurveKind.Line;
+                    aLine = new Line3D(P, new Direction3D(Yc));
                     GeomLinePtr = new Geom_Line(aLine);
                 }
-                else if (Xc.IsNormal(Yc, Precision.Angular()))
+                else if (Xc.IsNormal(Yc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
-                    myType = GeomAbs_Parabola;
+                    myType = global::Kerf.Geometry.CurveKind.Parabola;
                     // OCCT: the focal of the image is Focal * |f(Yc)|^2 / |f(Xc)|; this ignores |f(Yc)|, so the
                     // parabola is wrong unless f(Yc) stays unit (ProjLib_ProjectOnPlaneTests).
                     double F = Parab.Focal() / Xc.Magnitude();
-                    gp_Parab aProjParab = new(new gp_Ax2(P, new gp_Dir(Xc ^ Yc), new gp_Dir(Xc)), F);
+                    Parabola3D aProjParab = new(new Frame3D(P, new Direction3D(Xc ^ Yc), new Direction3D(Xc)), F);
                     GeomParabolaPtr = new Geom_Parabola(aProjParab);
                 }
-                else if (Yc.Magnitude() < Precision.Confusion() || Yc.IsParallel(Xc, Precision.Angular()))
+                else if (Yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() || Yc.IsParallel(Xc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     myIsApprox = true;
                 }
@@ -786,44 +789,44 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 }
             }
             break;
-            case GeomAbs_Hyperbola:
+            case global::Kerf.Geometry.CurveKind.Hyperbola:
             {
                 //     P(u) = O + R1 * std::cosh(u) * Xc + R2 * std::sinh(u) * Yc
                 // ==> Q(u) = f(P(u))
                 //          = f(O) + R1 * std::cosh(u) * f(Xc) + R2 * std::sinh(u) * f(Yc)
 
-                gp_Hypr Hypr = myCurve.Hyperbola();
-                gp_Ax2 AxeRef = Hypr.Position();
-                gp_Vec Xc = ProjectVec(myPlane, myDirection, new gp_Vec(AxeRef.XDirection()));
-                gp_Vec Yc = ProjectVec(myPlane, myDirection, new gp_Vec(AxeRef.YDirection()));
-                gp_Pnt P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
+                Hyperbola3D Hypr = myCurve.Hyperbola();
+                Frame3D AxeRef = Hypr.Position();
+                Vector3D Xc = ProjectVec(myPlane, myDirection, new Vector3D(AxeRef.XDirection()));
+                Vector3D Yc = ProjectVec(myPlane, myDirection, new Vector3D(AxeRef.YDirection()));
+                Point3D P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
                 double aR1 = Hypr.MajorRadius();
                 double aR2 = Hypr.MinorRadius();
-                gp_Dir Z = myPlane.Direction();
+                Direction3D Z = myPlane.Direction();
                 myIsApprox = false;
 
-                if (Xc.Magnitude() < Precision.Confusion())
+                if (Xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    myType = GeomAbs_Hyperbola;
-                    gp_Dir X = new gp_Dir(Yc) ^ Z;
-                    Hypr = new gp_Hypr(new gp_Ax2(P, Z, X), 0.0, aR2 * Yc.Magnitude());
+                    myType = global::Kerf.Geometry.CurveKind.Hyperbola;
+                    Direction3D X = new Direction3D(Yc) ^ Z;
+                    Hypr = new Hyperbola3D(new Frame3D(P, Z, X), 0.0, aR2 * Yc.Magnitude());
                     GeomHyperbolaPtr = new Geom_Hyperbola(Hypr);
                 }
-                else if (Yc.Magnitude() < Precision.Confusion())
+                else if (Yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    myType = GeomAbs_Hyperbola;
-                    Hypr = new gp_Hypr(new gp_Ax2(P, Z, new gp_Dir(Xc)), aR1 * Xc.Magnitude(), 0.0);
+                    myType = global::Kerf.Geometry.CurveKind.Hyperbola;
+                    Hypr = new Hyperbola3D(new Frame3D(P, Z, new Direction3D(Xc)), aR1 * Xc.Magnitude(), 0.0);
                     GeomHyperbolaPtr = new Geom_Hyperbola(Hypr);
                 }
-                else if (Xc.IsNormal(Yc, Precision.Angular()))
+                else if (Xc.IsNormal(Yc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
-                    myType = GeomAbs_Hyperbola;
-                    Hypr = new gp_Hypr(new gp_Ax2(P, new gp_Dir(Xc ^ Yc), new gp_Dir(Xc)),
+                    myType = global::Kerf.Geometry.CurveKind.Hyperbola;
+                    Hypr = new Hyperbola3D(new Frame3D(P, new Direction3D(Xc ^ Yc), new Direction3D(Xc)),
                                        aR1 * Xc.Magnitude(),
                                        aR2 * Yc.Magnitude());
                     GeomHyperbolaPtr = new Geom_Hyperbola(Hypr);
                 }
-                else if (Yc.Magnitude() < Precision.Confusion() || Yc.IsParallel(Xc, Precision.Angular()))
+                else if (Yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() || Yc.IsParallel(Xc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     myIsApprox = true;
                 }
@@ -847,7 +850,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 }
             }
             break;
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve BezierCurvePtr = myCurve.Bezier();
                 int NbPoles = BezierCurvePtr.NbPoles();
@@ -868,7 +871,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
                 //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:30 2002 End
             }
             break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve BSplineCurvePtr = myCurve.BSpline();
                 //
@@ -893,7 +896,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
             {
                 myKeepParam = true;
                 myIsApprox = true;
-                myType = GeomAbs_BSplineCurve;
+                myType = BSplineCurve;
                 PerformApprox(myCurve, myPlane, myDirection, ref ApproxCurve);
                 //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:29 2002 Begin
                 // OCCT: when the approximation fails ApproxCurve stays null and GeomAdaptor_Curve throws
@@ -905,9 +908,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    public gp_Ax3 GetPlane() => myPlane;
+    public CoordinateSystem GetPlane() => myPlane;
 
-    public gp_Dir GetDirection() => myDirection;
+    public Direction3D GetDirection() => myDirection;
 
     /// <summary>The loaded curve (the caller's adaptor), null before <see cref="Load"/>.</summary>
     public Adaptor3d_Curve? GetCurve() => myCurve;
@@ -946,25 +949,25 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    public override GeomAbs_Shape Continuity() => myCurve!.Continuity();
+    public override Continuity Continuity() => myCurve!.Continuity();
 
-    public override int NbIntervals(GeomAbs_Shape S) => myCurve!.NbIntervals(S);
+    public override int NbIntervals(Continuity S) => myCurve!.NbIntervals(S);
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         myCurve!.Intervals(T, S);
     }
 
-    /// <exception cref="Standard_NotImplemented">The projection has no result (type OtherCurve).</exception>
+    /// <exception cref="MethodNotImplementedException">The projection has no result (type OtherCurve).</exception>
     public override Adaptor3d_Curve Trim(double First, double Last, double Tolerance)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.Trim(First, Last, Tolerance);
         }
         else
         {
-            throw new Standard_NotImplemented("ProjLib_ProjectOnPlane::Trim() - curve of unsupported type");
+            throw new MethodNotImplementedException("ProjLib_ProjectOnPlane::Trim() - curve of unsupported type");
         }
     }
 
@@ -982,12 +985,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is not periodic.</exception>
     public override double Period()
     {
         if (!IsPeriodic())
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane::Period");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane::Period");
         }
 
         if (myIsApprox)
@@ -1000,9 +1003,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.EvalD0(theU);
         }
@@ -1014,7 +1017,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
     public sealed override Geom_Curve.ResD1 EvalD1(double theU)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.EvalD1(theU);
         }
@@ -1028,7 +1031,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
     public sealed override Geom_Curve.ResD2 EvalD2(double theU)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.EvalD2(theU);
         }
@@ -1042,7 +1045,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
     public sealed override Geom_Curve.ResD3 EvalD3(double theU)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.EvalD3(theU);
         }
@@ -1054,9 +1057,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.EvalDN(theU, theN);
         }
@@ -1068,7 +1071,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
     public override double Resolution(double Tolerance)
     {
-        if (myType != GeomAbs_OtherCurve)
+        if (myType != OtherCurve)
         {
             return myResult!.Resolution(Tolerance);
         }
@@ -1079,69 +1082,69 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     }
 
     /// <summary>The type of the projected curve. Hides <see cref="object.GetType"/> (decision 98).</summary>
-    public override GeomAbs_CurveType GetType() => myType;
+    public override CurveKind GetType() => myType;
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not a line.</exception>
-    public override gp_Lin Line()
+    /// <exception cref="NoSuchObjectException">The projection is not a line.</exception>
+    public override Line3D Line()
     {
-        if (myType != GeomAbs_Line)
+        if (myType != global::Kerf.Geometry.CurveKind.Line)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Line");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Line");
         }
 
         return myResult!.Line();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not a circle.</exception>
-    public override gp_Circ Circle()
+    /// <exception cref="NoSuchObjectException">The projection is not a circle.</exception>
+    public override Circle3D Circle()
     {
-        if (myType != GeomAbs_Circle)
+        if (myType != global::Kerf.Geometry.CurveKind.Circle)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Circle");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Circle");
         }
 
         return myResult!.Circle();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not an ellipse.</exception>
-    public override gp_Elips Ellipse()
+    /// <exception cref="NoSuchObjectException">The projection is not an ellipse.</exception>
+    public override Ellipse3D Ellipse()
     {
-        if (myType != GeomAbs_Ellipse)
+        if (myType != global::Kerf.Geometry.CurveKind.Ellipse)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Ellipse");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Ellipse");
         }
 
         return myResult!.Ellipse();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not a hyperbola.</exception>
-    public override gp_Hypr Hyperbola()
+    /// <exception cref="NoSuchObjectException">The projection is not a hyperbola.</exception>
+    public override Hyperbola3D Hyperbola()
     {
-        if (myType != GeomAbs_Hyperbola)
+        if (myType != global::Kerf.Geometry.CurveKind.Hyperbola)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Hyperbola");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Hyperbola");
         }
 
         return myResult!.Hyperbola();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not a parabola.</exception>
-    public override gp_Parab Parabola()
+    /// <exception cref="NoSuchObjectException">The projection is not a parabola.</exception>
+    public override Parabola3D Parabola()
     {
-        if (myType != GeomAbs_Parabola)
+        if (myType != global::Kerf.Geometry.CurveKind.Parabola)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Parabola");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Parabola");
         }
 
         return myResult!.Parabola();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is neither a Bezier nor a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is neither a Bezier nor a B-spline curve.</exception>
     public override int Degree()
     {
-        if ((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve))
+        if ((GetType() != BSplineCurve) && (GetType() != BezierCurve))
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Degree");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Degree");
         }
 
         if (myIsApprox)
@@ -1154,12 +1157,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is neither a Bezier nor a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is neither a Bezier nor a B-spline curve.</exception>
     public override bool IsRational()
     {
-        if ((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve))
+        if ((GetType() != BSplineCurve) && (GetType() != BezierCurve))
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:IsRational");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:IsRational");
         }
 
         if (myIsApprox)
@@ -1172,12 +1175,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is neither a Bezier nor a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is neither a Bezier nor a B-spline curve.</exception>
     public override int NbPoles()
     {
-        if ((GetType() != GeomAbs_BSplineCurve) && (GetType() != GeomAbs_BezierCurve))
+        if ((GetType() != BSplineCurve) && (GetType() != BezierCurve))
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:NbPoles");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:NbPoles");
         }
 
         if (myIsApprox)
@@ -1190,12 +1193,12 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         }
     }
 
-    /// <exception cref="Standard_NoSuchObject">The projection is not a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is not a B-spline curve.</exception>
     public override int NbKnots()
     {
-        if (GetType() != GeomAbs_BSplineCurve)
+        if (GetType() != BSplineCurve)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:NbKnots");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:NbKnots");
         }
 
         if (myIsApprox)
@@ -1209,7 +1212,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     }
 
     /// <summary>The projected Bezier curve, frozen; the same object at each call.</summary>
-    /// <exception cref="Standard_NoSuchObject">The projection is not a Bezier curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is not a Bezier curve.</exception>
     public override Geom_BezierCurve Bezier()
     {
         Geom_BezierCurve aBezier = InternalBezier();
@@ -1218,7 +1221,7 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     }
 
     /// <summary>The projected B-spline curve, frozen; the same object at each call.</summary>
-    /// <exception cref="Standard_NoSuchObject">The projection is not a B-spline curve.</exception>
+    /// <exception cref="NoSuchObjectException">The projection is not a B-spline curve.</exception>
     public override Geom_BSplineCurve BSpline()
     {
         Geom_BSplineCurve aBSpline = InternalBSpline();
@@ -1229,9 +1232,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     /// <summary>OCCT's <c>Bezier()</c> without freezing, for ported code that discards the projector.</summary>
     internal Geom_BezierCurve InternalBezier()
     {
-        if (myType != GeomAbs_BezierCurve)
+        if (myType != BezierCurve)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:Bezier");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:Bezier");
         }
 
         return myResult!.Bezier();
@@ -1240,9 +1243,9 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     /// <summary>OCCT's <c>BSpline()</c> without freezing, for ported code that discards the projector.</summary>
     internal Geom_BSplineCurve InternalBSpline()
     {
-        if (myType != GeomAbs_BSplineCurve)
+        if (myType != BSplineCurve)
         {
-            throw new Standard_NoSuchObject("ProjLib_ProjectOnPlane:BSpline");
+            throw new NoSuchObjectException("ProjLib_ProjectOnPlane:BSpline");
         }
 
         return myResult!.BSpline();
@@ -1250,64 +1253,64 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
 
     protected void GetTrimmedResult(Geom_Curve? theProjCurve)
     {
-        gp_Lin aLin = new();
-        gp_Parab aParab = new();
-        gp_Hypr aHypr = new();
-        if (myType == GeomAbs_Line)
+        Line3D aLin = new();
+        Parabola3D aParab = new();
+        Hyperbola3D aHypr = new();
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
             aLin = ((Geom_Line)theProjCurve!).Lin();
         }
-        else if (myType == GeomAbs_Parabola)
+        else if (myType == global::Kerf.Geometry.CurveKind.Parabola)
         {
             aParab = ((Geom_Parabola)theProjCurve!).Parab();
         }
-        else if (myType == GeomAbs_Hyperbola)
+        else if (myType == global::Kerf.Geometry.CurveKind.Hyperbola)
         {
             aHypr = ((Geom_Hyperbola)theProjCurve!).Hypr();
         }
 
         myFirstPar = theProjCurve!.FirstParameter();
         myLastPar = theProjCurve.LastParameter();
-        if (!Precision.IsInfinite(myCurve!.FirstParameter()))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(myCurve!.FirstParameter()))
         {
-            gp_Pnt aP = myCurve.Value(myCurve.FirstParameter());
+            Point3D aP = myCurve.Value(myCurve.FirstParameter());
             aP = ProjectPnt(myPlane, myDirection, aP);
-            if (myType == GeomAbs_Line)
+            if (myType == global::Kerf.Geometry.CurveKind.Line)
             {
-                myFirstPar = ElCLib.Parameter(aLin, aP);
+                myFirstPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aP);
             }
-            else if (myType == GeomAbs_Parabola)
+            else if (myType == global::Kerf.Geometry.CurveKind.Parabola)
             {
-                myFirstPar = ElCLib.Parameter(aParab, aP);
+                myFirstPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aParab, aP);
             }
-            else if (myType == GeomAbs_Hyperbola)
+            else if (myType == global::Kerf.Geometry.CurveKind.Hyperbola)
             {
-                myFirstPar = ElCLib.Parameter(aHypr, aP);
+                myFirstPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aHypr, aP);
             }
             else
             {
-                GeomLib_Tool.Parameter(theProjCurve, aP, Precision.Confusion(), out myFirstPar);
+                GeomLib_Tool.Parameter(theProjCurve, aP, global::Kerf.Engine.Foundation.Precision.Confusion(), out myFirstPar);
             }
         }
-        if (!Precision.IsInfinite(myCurve.LastParameter()))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(myCurve.LastParameter()))
         {
-            gp_Pnt aP = myCurve.Value(myCurve.LastParameter());
+            Point3D aP = myCurve.Value(myCurve.LastParameter());
             aP = ProjectPnt(myPlane, myDirection, aP);
-            if (myType == GeomAbs_Line)
+            if (myType == global::Kerf.Geometry.CurveKind.Line)
             {
-                myLastPar = ElCLib.Parameter(aLin, aP);
+                myLastPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aP);
             }
-            else if (myType == GeomAbs_Parabola)
+            else if (myType == global::Kerf.Geometry.CurveKind.Parabola)
             {
-                myLastPar = ElCLib.Parameter(aParab, aP);
+                myLastPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aParab, aP);
             }
-            else if (myType == GeomAbs_Hyperbola)
+            else if (myType == global::Kerf.Geometry.CurveKind.Hyperbola)
             {
-                myLastPar = ElCLib.Parameter(aHypr, aP);
+                myLastPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aHypr, aP);
             }
             else
             {
-                GeomLib_Tool.Parameter(theProjCurve, aP, Precision.Confusion(), out myLastPar);
+                GeomLib_Tool.Parameter(theProjCurve, aP, global::Kerf.Engine.Foundation.Precision.Confusion(), out myLastPar);
             }
         }
         myResult = new GeomAdaptor_Curve(theProjCurve, myFirstPar, myLastPar);
@@ -1319,17 +1322,17 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         //
         // Searching parabola apex as point with maximal curvature
         double aF = myCurve!.Parabola().Focal();
-        GeomAbs_CurveType aCurType = myType;
-        myType = GeomAbs_OtherCurve; // To provide correct calculation of derivativesb by projection for
+        CurveKind aCurType = myType;
+        myType = OtherCurve; // To provide correct calculation of derivativesb by projection for
                                      // copy of instance;
         Adaptor3d_Curve aProjCrv = ShallowCopy();
         myType = aCurType;
-        LProp_CLProps3d aProps = new(aProjCrv, 2, Precision.Confusion());
+        LProp_CLProps3d aProps = new(aProjCrv, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
         ProjLib_MaxCurvature aMaxCur = new(aProps);
-        math_BrentMinimum aSolver = new(Precision.PConfusion());
+        BrentMinimum aSolver = new(global::Kerf.Engine.Foundation.Precision.PConfusion());
         aSolver.Perform(aMaxCur, -10.0 * aF, 0.0, 10.0 * aF);
 
-        if (!aSolver.IsDone())
+        if (!aSolver.IsDone)
         {
             return false;
         }
@@ -1337,34 +1340,34 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
         double aT;
         aT = aSolver.Location();
         aProps.SetParameter(aT);
-        gp_Pnt aP0 = aProps.Value();
-        gp_Vec aDY = aProps.D1();
-        gp_Dir anYDir = new(aDY);
-        gp_Dir anXDir;
+        Point3D aP0 = aProps.Value();
+        Vector3D aDY = aProps.D1();
+        Direction3D anYDir = new(aDY);
+        Direction3D anXDir;
         double aCurv = aProps.Curvature();
-        if (Precision.IsInfinite(aCurv) || aCurv < Precision.Confusion())
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurv) || aCurv < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
         aProps.Normal(out anXDir);
         //
-        gp_Lin anXLine = new(aP0, anXDir);
-        gp_Pnt aP1 = Value(aT + 10.0 * aF);
+        Line3D anXLine = new(aP0, anXDir);
+        Point3D aP1 = Value(aT + 10.0 * aF);
         //
-        double anX = ElCLib.LineParameter(anXLine.Position(), aP1);
+        double anX = global::Kerf.Engine.Geometry.ElCLib.LineParameter(anXLine.Position(), aP1);
         double anY = anXLine.Distance(aP1);
         double aNewF = anY * anY / 4.0 / anX;
-        gp_Dir anN = anXDir ^ anYDir;
-        gp_Ax2 anA2 = new(aP0, anN, anXDir);
+        Direction3D anN = anXDir ^ anYDir;
+        Frame3D anA2 = new(aP0, anN, anXDir);
         gce_MakeParab aMkParab = new(anA2, aNewF);
         if (!aMkParab.IsDone())
         {
             return false;
         }
 
-        gp_Parab aProjParab = aMkParab.Value();
+        Parabola3D aProjParab = aMkParab.Value();
 
-        myType = GeomAbs_Parabola;
+        myType = global::Kerf.Geometry.CurveKind.Parabola;
         theGeomParabolaPtr = new Geom_Parabola(aProjParab);
         // GetTrimmedResult(theGeomParabolaPtr);
 
@@ -1375,47 +1378,47 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     protected bool BuildHyperbolaByApex(ref Geom_Curve? theGeomHyperbolaPtr)
     {
         // Try to build hyperbola with help of apex position
-        GeomAbs_CurveType aCurType = myType;
-        myType = GeomAbs_OtherCurve; // To provide correct calculation of derivativesb by projection for
+        CurveKind aCurType = myType;
+        myType = OtherCurve; // To provide correct calculation of derivativesb by projection for
                                      // copy of instance;
         Adaptor3d_Curve aProjCrv = ShallowCopy();
         myType = aCurType;
         // Searching hyperbola apex as point with maximal curvature
-        LProp_CLProps3d aProps = new(aProjCrv, 2, Precision.Confusion());
+        LProp_CLProps3d aProps = new(aProjCrv, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
         ProjLib_MaxCurvature aMaxCur = new(aProps);
-        math_BrentMinimum aSolver = new(Precision.PConfusion());
+        BrentMinimum aSolver = new(global::Kerf.Engine.Foundation.Precision.PConfusion());
         aSolver.Perform(aMaxCur, -5.0, 0.0, 5.0);
 
-        if (aSolver.IsDone())
+        if (aSolver.IsDone)
         {
             double aT;
             aT = aSolver.Location();
             aProps.SetParameter(aT);
             double aCurv = aProps.Curvature();
-            if (Precision.IsInfinite(aCurv) || aCurv < Precision.Confusion())
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurv) || aCurv < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
             else
             {
-                gp_Hypr Hypr = myCurve!.Hyperbola();
-                gp_Ax2 AxeRef = Hypr.Position();
-                gp_Pnt P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
-                gp_Dir Z = myPlane.Direction();
-                gp_Pnt aP0 = aProps.Value();
-                gp_Dir anXDir = new gce_MakeDir(P, aP0).Value();
-                gp_Dir anYDir = new gce_MakeDir(aProps.D1()).Value();
+                Hyperbola3D Hypr = myCurve!.Hyperbola();
+                Frame3D AxeRef = Hypr.Position();
+                Point3D P = ProjectPnt(myPlane, myDirection, AxeRef.Location());
+                Direction3D Z = myPlane.Direction();
+                Point3D aP0 = aProps.Value();
+                Direction3D anXDir = new gce_MakeDir(P, aP0).Value();
+                Direction3D anYDir = new gce_MakeDir(aProps.D1()).Value();
                 //
                 double aMajRad = P.Distance(aP0);
-                gp_Pnt aP1 = Value(aT + 1.0);
-                gp_Vec aV = new(P, aP1);
-                double anX = aV * new gp_Vec(anXDir);
-                double anY = aV * new gp_Vec(anYDir);
+                Point3D aP1 = Value(aT + 1.0);
+                Vector3D aV = new(P, aP1);
+                double anX = aV * new Vector3D(anXDir);
+                double anY = aV * new Vector3D(anYDir);
                 double aMinRad = anY / Math.Sqrt(anX * anX / aMajRad / aMajRad - 1.0);
-                gp_Ax2 anA2 = new(P, Z, anXDir);
-                gp_Hypr anHypr = new(anA2, aMajRad, aMinRad);
+                Frame3D anA2 = new(P, Z, anXDir);
+                Hyperbola3D anHypr = new(anA2, aMajRad, aMinRad);
                 theGeomHyperbolaPtr = new Geom_Hyperbola(anHypr);
-                myType = GeomAbs_Hyperbola;
+                myType = global::Kerf.Geometry.CurveKind.Hyperbola;
             }
         }
         else
@@ -1429,14 +1432,14 @@ public class ProjLib_ProjectOnPlane : Adaptor3d_Curve
     /// <paramref name="theLimitParameter"/>.</summary>
     protected void BuildByApprox(double theLimitParameter)
     {
-        myType = GeomAbs_BSplineCurve;
+        myType = BSplineCurve;
         Geom_BSplineCurve? anApproxCurve = null;
-        if (Precision.IsInfinite(myCurve!.FirstParameter()) || Precision.IsInfinite(myCurve.LastParameter()))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(myCurve!.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(myCurve.LastParameter()))
         {
             // To avoid exception in approximation
             double f = Max(-theLimitParameter, myCurve.FirstParameter());
             double l = Min(theLimitParameter, myCurve.LastParameter());
-            Adaptor3d_Curve aTrimCurve = myCurve.Trim(f, l, Precision.Confusion());
+            Adaptor3d_Curve aTrimCurve = myCurve.Trim(f, l, global::Kerf.Engine.Foundation.Precision.Confusion());
             PerformApprox(aTrimCurve, myPlane, myDirection, ref anApproxCurve);
         }
         else

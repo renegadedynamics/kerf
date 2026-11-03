@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomHash_CurveHasherTest
@@ -15,8 +17,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Line_CopiedLines_SameHash()
     {
-        gp_Pnt aLoc = new(1.0, 2.0, 3.0);
-        gp_Dir aDir = new(1.0, 0.0, 0.0);
+        Point3D aLoc = new(1.0, 2.0, 3.0);
+        Direction3D aDir = new(1.0, 0.0, 0.0);
         Geom_Line aLine1 = new Geom_Line(aLoc, aDir);
         Geom_Line aLine2 = (Geom_Line)aLine1.Copy();
 
@@ -27,8 +29,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Line_DifferentLines_DifferentHash()
     {
-        Geom_Line aLine1 = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        Geom_Line aLine2 = new Geom_Line(new gp_Pnt(1.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine1 = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Geom_Line aLine2 = new Geom_Line(new Point3D(1.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));
@@ -41,7 +43,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_CopiedCircles_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 5.0);
         Geom_Circle aCircle2 = (Geom_Circle)aCircle1.Copy();
 
@@ -52,7 +54,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_DifferentRadius_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 5.0);
         Geom_Circle aCircle2 = new Geom_Circle(anAxis, 10.0);
 
@@ -67,7 +69,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Ellipse_CopiedEllipses_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Ellipse anEllipse1 = new Geom_Ellipse(anAxis, 10.0, 5.0);
         Geom_Ellipse anEllipse2 = (Geom_Ellipse)anEllipse1.Copy();
 
@@ -78,7 +80,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Ellipse_DifferentRadii_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Ellipse anEllipse1 = new Geom_Ellipse(anAxis, 10.0, 5.0);
         Geom_Ellipse anEllipse2 = new Geom_Ellipse(anAxis, 10.0, 7.0);
 
@@ -93,7 +95,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Hyperbola_CopiedHyperbolas_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Hyperbola aHyp1 = new Geom_Hyperbola(anAxis, 5.0, 3.0);
         Geom_Hyperbola aHyp2 = (Geom_Hyperbola)aHyp1.Copy();
 
@@ -104,7 +106,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Hyperbola_DifferentRadii_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Hyperbola aHyp1 = new Geom_Hyperbola(anAxis, 5.0, 3.0);
         Geom_Hyperbola aHyp2 = new Geom_Hyperbola(anAxis, 5.0, 4.0);
 
@@ -119,7 +121,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Parabola_CopiedParabolas_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Parabola aPar1 = new Geom_Parabola(anAxis, 2.0);
         Geom_Parabola aPar2 = (Geom_Parabola)aPar1.Copy();
 
@@ -130,7 +132,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Parabola_DifferentFocal_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Parabola aPar1 = new Geom_Parabola(anAxis, 2.0);
         Geom_Parabola aPar2 = new Geom_Parabola(anAxis, 3.0);
 
@@ -145,11 +147,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BezierCurve_CopiedCurves_SameHash()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 2.0, 0.0);
-        aPoles[3] = new gp_Pnt(3.0, 2.0, 0.0);
-        aPoles[4] = new gp_Pnt(4.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 2.0, 0.0);
+        aPoles[3] = new Point3D(3.0, 2.0, 0.0);
+        aPoles[4] = new Point3D(4.0, 0.0, 0.0);
 
         Geom_BezierCurve aCurve1 = new Geom_BezierCurve(aPoles);
         Geom_BezierCurve aCurve2 = (Geom_BezierCurve)aCurve1.Copy();
@@ -161,15 +163,15 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BezierCurve_DifferentPoles_DifferentComparison()
     {
-        var aPoles1 = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles1[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles1[2] = new gp_Pnt(1.0, 2.0, 0.0);
-        aPoles1[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        var aPoles1 = new NCollection_Array1<Point3D>(1, 3);
+        aPoles1[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles1[2] = new Point3D(1.0, 2.0, 0.0);
+        aPoles1[3] = new Point3D(2.0, 0.0, 0.0);
 
-        var aPoles2 = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles2[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles2[2] = new gp_Pnt(1.0, 3.0, 0.0); // Different
-        aPoles2[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        var aPoles2 = new NCollection_Array1<Point3D>(1, 3);
+        aPoles2[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles2[2] = new Point3D(1.0, 3.0, 0.0); // Different
+        aPoles2[3] = new Point3D(2.0, 0.0, 0.0);
 
         Geom_BezierCurve aCurve1 = new Geom_BezierCurve(aPoles1);
         Geom_BezierCurve aCurve2 = new Geom_BezierCurve(aPoles2);
@@ -185,11 +187,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_CopiedCurves_SameHash()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 1.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 1.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 0.0, 0.0);
 
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0.0;
@@ -213,7 +215,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_CopiedCurves_SameHash()
     {
-        Geom_Line aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Geom_TrimmedCurve aTrimmed1 = new Geom_TrimmedCurve(aLine, 0.0, 10.0);
         Geom_TrimmedCurve aTrimmed2 = (Geom_TrimmedCurve)aTrimmed1.Copy();
 
@@ -224,7 +226,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_DifferentBounds_DifferentHash()
     {
-        Geom_Line aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Geom_TrimmedCurve aTrimmed1 = new Geom_TrimmedCurve(aLine, 0.0, 10.0);
         Geom_TrimmedCurve aTrimmed2 = new Geom_TrimmedCurve(aLine, 0.0, 20.0);
 
@@ -239,8 +241,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void OffsetCurve_CopiedCurves_SameHash()
     {
-        Geom_Line        aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        gp_Dir aRefDir = new(0.0, 0.0, 1.0);
+        Geom_Line        aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Direction3D aRefDir = new(0.0, 0.0, 1.0);
         Geom_OffsetCurve anOffset1 = new Geom_OffsetCurve(aLine, 5.0, aRefDir);
         Geom_OffsetCurve anOffset2 = (Geom_OffsetCurve)anOffset1.Copy();
 
@@ -251,8 +253,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void OffsetCurve_DifferentOffset_DifferentHash()
     {
-        Geom_Line        aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        gp_Dir aRefDir = new(0.0, 0.0, 1.0);
+        Geom_Line        aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Direction3D aRefDir = new(0.0, 0.0, 1.0);
         Geom_OffsetCurve anOffset1 = new Geom_OffsetCurve(aLine, 5.0, aRefDir);
         Geom_OffsetCurve anOffset2 = new Geom_OffsetCurve(aLine, 10.0, aRefDir);
 
@@ -267,8 +269,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void DifferentTypes_DifferentComparison()
     {
-        Geom_Line   aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Geom_Line   aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle = new Geom_Circle(anAxis, 5.0);
 
         Assert.False(myHasher.Equals(aLine, aCircle));
@@ -278,7 +280,7 @@ public class GeomHash_CurveHasherTest
     public void NullCurves_HandledCorrectly()
     {
         Geom_Curve? aNullCurve = null;
-        Geom_Line  aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line  aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
 
         Assert.Equal(0, myHasher.GetHashCode(aNullCurve));
         Assert.True(myHasher.Equals(aNullCurve, aNullCurve));
@@ -288,7 +290,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void SameObject_Equal()
     {
-        Geom_Line aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Assert.True(myHasher.Equals(aLine, aLine));
     }
 
@@ -299,11 +301,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_Weighted_CopiedCurves_SameHash()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 1.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 1.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 0.0, 0.0);
 
         var aWeights = new NCollection_Array1<double>(1, 4);
         aWeights[1] = 1.0;
@@ -330,11 +332,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_DifferentWeights_DifferentComparison()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 1.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 1.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 0.0, 0.0);
 
         var aWeights1 = new NCollection_Array1<double>(1, 4);
         aWeights1[1] = 1.0;
@@ -371,10 +373,10 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BezierCurve_Weighted_CopiedCurves_SameHash()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 2.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 2.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.0, 0.0);
 
         var aWeights = new NCollection_Array1<double>(1, 3);
         aWeights[1] = 1.0;
@@ -395,8 +397,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_DifferentAxisOrientation_DifferentHash()
     {
-        gp_Ax2 anAxis1 = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
-        gp_Ax2 anAxis2 = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 1.0, 0.0));
+        Frame3D anAxis1 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
+        Frame3D anAxis2 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis1, 5.0);
         Geom_Circle aCircle2 = new Geom_Circle(anAxis2, 5.0);
 
@@ -407,8 +409,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Line_DifferentDirection_DifferentHash()
     {
-        Geom_Line aLine1 = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        Geom_Line aLine2 = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 1.0, 0.0));
+        Geom_Line aLine1 = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Geom_Line aLine2 = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));
@@ -421,11 +423,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_DifferentKnots_DifferentComparison()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 1.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 1.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 0.0, 0.0);
 
         var aKnots1 = new NCollection_Array1<double>(1, 2);
         aKnots1[1] = 0.0;
@@ -453,10 +455,10 @@ public class GeomHash_CurveHasherTest
     public void BSplineCurve_QuadraticBezierEquivalent_CopiedCurves_SameHash()
     {
         // Simple quadratic B-spline (Bezier-like, single span)
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 2.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 2.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.0, 0.0);
 
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0.0;
@@ -480,7 +482,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Line_Reversed_DifferentComparison()
     {
-        Geom_Line aLine1 = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine1 = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Geom_Line aLine2 = (Geom_Line)aLine1.Reversed();
 
         // Reversed line has opposite direction
@@ -490,10 +492,10 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BezierCurve_Reversed_DifferentComparison()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 2.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 2.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.0, 0.0);
 
         Geom_BezierCurve aCurve1 = new Geom_BezierCurve(aPoles);
         Geom_BezierCurve aCurve2 = (Geom_BezierCurve)aCurve1.Reversed();
@@ -509,10 +511,10 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_Translated_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 5.0);
         Geom_Circle aCircle2 = (Geom_Circle)aCircle1.Copy();
-        aCircle2.Translate(new gp_Vec(1.0, 0.0, 0.0));
+        aCircle2.Translate(new Vector3D(1.0, 0.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.False(myHasher.Equals(aCircle1, aCircle2));
@@ -521,10 +523,10 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_Scaled_DifferentHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 5.0);
         Geom_Circle aCircle2 = (Geom_Circle)aCircle1.Copy();
-        aCircle2.Scale(new gp_Pnt(0.0, 0.0, 0.0), 2.0);
+        aCircle2.Scale(new Point3D(0.0, 0.0, 0.0), 2.0);
 
         Assert.NotEqual(myHasher.GetHashCode(aCircle1), myHasher.GetHashCode(aCircle2));
         Assert.False(myHasher.Equals(aCircle1, aCircle2));
@@ -537,13 +539,13 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_HigherDegree_CopiedCurves_SameHash()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 6);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.5, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 1.5, 0.0);
-        aPoles[5] = new gp_Pnt(4.0, 0.0, 0.0);
-        aPoles[6] = new gp_Pnt(5.0, 1.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 6);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.5, 0.0);
+        aPoles[4] = new Point3D(3.0, 1.5, 0.0);
+        aPoles[5] = new Point3D(4.0, 0.0, 0.0);
+        aPoles[6] = new Point3D(5.0, 1.0, 0.0);
 
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0.0;
@@ -564,11 +566,11 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void BSplineCurve_DifferentDegree_DifferentComparison()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 1.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 1.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 0.0, 0.0);
 
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0.0;
@@ -585,10 +587,10 @@ public class GeomHash_CurveHasherTest
         // Different degrees: 3 vs 2
         Geom_BSplineCurve aCurve1 = new Geom_BSplineCurve(aPoles, aKnots, aMults1, 3);
 
-        var aPoles2 = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles2[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles2[2] = new gp_Pnt(1.5, 1.0, 0.0);
-        aPoles2[3] = new gp_Pnt(3.0, 0.0, 0.0);
+        var aPoles2 = new NCollection_Array1<Point3D>(1, 3);
+        aPoles2[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles2[2] = new Point3D(1.5, 1.0, 0.0);
+        aPoles2[3] = new Point3D(3.0, 0.0, 0.0);
 
         Geom_BSplineCurve aCurve2 = new Geom_BSplineCurve(aPoles2, aKnots, aMults2, 2);
 
@@ -603,11 +605,11 @@ public class GeomHash_CurveHasherTest
     public void BSplineCurve_LinearMultipleSpans_CopiedCurves_SameHash()
     {
         // Linear B-spline with multiple knots (piecewise linear)
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
-        aPoles[1] = new gp_Pnt(0.0, 0.0, 0.0);
-        aPoles[2] = new gp_Pnt(1.0, 1.0, 0.0);
-        aPoles[3] = new gp_Pnt(2.0, 0.0, 0.0);
-        aPoles[4] = new gp_Pnt(3.0, 1.0, 0.0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 4);
+        aPoles[1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2] = new Point3D(1.0, 1.0, 0.0);
+        aPoles[3] = new Point3D(2.0, 0.0, 0.0);
+        aPoles[4] = new Point3D(3.0, 1.0, 0.0);
 
         var aKnots = new NCollection_Array1<double>(1, 4);
         aKnots[1] = 0.0;
@@ -635,7 +637,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Ellipse_vs_Hyperbola_DifferentComparison()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Ellipse   anEllipse  = new Geom_Ellipse(anAxis, 5.0, 3.0);
         Geom_Hyperbola aHyperbola = new Geom_Hyperbola(anAxis, 5.0, 3.0);
 
@@ -645,7 +647,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_vs_Ellipse_DifferentComparison()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle  aCircle   = new Geom_Circle(anAxis, 5.0);
         Geom_Ellipse anEllipse = new Geom_Ellipse(anAxis, 5.0, 5.0);
 
@@ -659,7 +661,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void TrimmedCurve_vs_BaseCurve_DifferentComparison()
     {
-        Geom_Line aLine = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Geom_TrimmedCurve aTrimmed = new Geom_TrimmedCurve(aLine, 0.0, 10.0);
 
         // Trimmed curve is a different type from base curve
@@ -673,7 +675,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_VerySmallRadius_CopiedCircles_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 1e-10);
         Geom_Circle aCircle2 = (Geom_Circle)aCircle1.Copy();
 
@@ -684,7 +686,7 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Circle_VeryLargeRadius_CopiedCircles_SameHash()
     {
-        gp_Ax2 anAxis = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0));
+        Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Geom_Circle aCircle1 = new Geom_Circle(anAxis, 1e10);
         Geom_Circle aCircle2 = (Geom_Circle)aCircle1.Copy();
 
@@ -695,8 +697,8 @@ public class GeomHash_CurveHasherTest
     [Fact]
     public void Line_AtOrigin_vs_FarFromOrigin_DifferentHash()
     {
-        Geom_Line aLine1 = new Geom_Line(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 0.0, 0.0));
-        Geom_Line aLine2 = new Geom_Line(new gp_Pnt(1e10, 1e10, 1e10), new gp_Dir(1.0, 0.0, 0.0));
+        Geom_Line aLine1 = new Geom_Line(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
+        Geom_Line aLine2 = new Geom_Line(new Point3D(1e10, 1e10, 1e10), new Direction3D(1.0, 0.0, 0.0));
 
         Assert.NotEqual(myHasher.GetHashCode(aLine1), myHasher.GetHashCode(aLine2));
         Assert.False(myHasher.Equals(aLine1, aLine2));

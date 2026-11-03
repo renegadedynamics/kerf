@@ -2,14 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_PSOTest
 {
     // Simple quadratic function: f(x,y) = (x-1)^2 + (y-2)^2, minimum at (1, 2)
-    private sealed class QuadraticFunction : math_MultipleVarFunction
+    private sealed class QuadraticFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -21,9 +26,12 @@ public class math_PSOTest
     }
 
     // 1D quadratic function: f(x) = (x-3)^2, minimum at x = 3
-    private sealed class Quadratic1DFunction : math_MultipleVarFunction
+    private sealed class Quadratic1DFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 1; }
+        public override int VariableCount {
+            get
+            { return 1; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -34,9 +42,12 @@ public class math_PSOTest
     }
 
     // Rosenbrock function: f(x,y) = (1-x)^2 + 100*(y-x^2)^2
-    private sealed class RosenbrockFunction : math_MultipleVarFunction
+    private sealed class RosenbrockFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -50,9 +61,12 @@ public class math_PSOTest
     }
 
     // Multi-modal function: f(x,y) = -cos(x)*cos(y)*exp(-((x-PI)^2+(y-PI)^2))
-    private sealed class MultiModalFunction : math_MultipleVarFunction
+    private sealed class MultiModalFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -66,9 +80,12 @@ public class math_PSOTest
     }
 
     // 3D function: f(x,y,z) = x^2 + 2*y^2 + 3*z^2, minimum at (0,0,0)
-    private sealed class Quadratic3DFunction : math_MultipleVarFunction
+    private sealed class Quadratic3DFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 3; }
+        public override int VariableCount {
+            get
+            { return 3; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -100,7 +117,7 @@ public class math_PSOTest
         aSteps[1] = 0.1;
         aSteps[2] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 50);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 50);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -127,7 +144,7 @@ public class math_PSOTest
         math_Vector aSteps = new(1, 1);
         aSteps[1] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 15, 30);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 15, 30);
 
         double aValue;
         math_Vector aSolution = new(1, 1);
@@ -159,7 +176,7 @@ public class math_PSOTest
         aSteps[2] = 0.1;
         aSteps[3] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 25, 40);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 25, 40);
 
         double aValue;
         math_Vector aSolution = new(1, 3);
@@ -191,7 +208,7 @@ public class math_PSOTest
         aSteps[2] = 0.2;
 
         // Few particles
-        math_PSO aSolver1 = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 5, 20);
+        Pso aSolver1 = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 5, 20);
 
         double aValue1;
         math_Vector aSolution1 = new(1, 2);
@@ -202,7 +219,7 @@ public class math_PSOTest
         Assert.True(aSolution1[2] >= -1.0 && aSolution1[2] <= 5.0, "Solution should be within bounds");
 
         // Many particles
-        math_PSO aSolver2 = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 50, 30);
+        Pso aSolver2 = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 50, 30);
 
         double aValue2;
         math_Vector aSolution2 = new(1, 2);
@@ -231,7 +248,7 @@ public class math_PSOTest
         aSteps[1] = 0.1;
         aSteps[2] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 10);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 10);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -267,7 +284,7 @@ public class math_PSOTest
         aSteps[1] = 0.1;
         aSteps[2] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 40, 100);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 40, 100);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -298,7 +315,7 @@ public class math_PSOTest
         aSteps[1] = 0.2;
         aSteps[2] = 0.2;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 30, 50);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 30, 50);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -329,7 +346,7 @@ public class math_PSOTest
         aLargeSteps[1] = 0.5;
         aLargeSteps[2] = 0.5;
 
-        math_PSO aSolver1 = new(aFunc, aLowerBorder, aUpperBorder, aLargeSteps, 15, 20);
+        Pso aSolver1 = new(aFunc, aLowerBorder, aUpperBorder, aLargeSteps, 15, 20);
 
         double aValue1;
         math_Vector aSolution1 = new(1, 2);
@@ -344,7 +361,7 @@ public class math_PSOTest
         aSmallSteps[1] = 0.05;
         aSmallSteps[2] = 0.05;
 
-        math_PSO aSolver2 = new(aFunc, aLowerBorder, aUpperBorder, aSmallSteps, 15, 20);
+        Pso aSolver2 = new(aFunc, aLowerBorder, aUpperBorder, aSmallSteps, 15, 20);
 
         double aValue2;
         math_Vector aSolution2 = new(1, 2);
@@ -373,11 +390,11 @@ public class math_PSOTest
         aSteps[1] = 0.1;
         aSteps[2] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 30);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 20, 30);
 
         // Create particles pool
         int aNbParticles = 20;
-        math_PSOParticlesPool aParticlesPool = new(aNbParticles, 2);
+        PsoParticlesPool aParticlesPool = new(aNbParticles, 2);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -406,7 +423,7 @@ public class math_PSOTest
         aSteps[1] = 0.05;
         aSteps[2] = 0.05;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 10, 20);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 10, 20);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -436,7 +453,7 @@ public class math_PSOTest
         aSteps[1] = 0.2;
         aSteps[2] = 0.2;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 25, 40);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 25, 40);
 
         double aValue;
         math_Vector aSolution = new(1, 2);
@@ -464,7 +481,7 @@ public class math_PSOTest
         math_Vector aSteps = new(1, 1);
         aSteps[1] = 0.5;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 3, 5); // Minimal config
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 3, 5); // Minimal config
 
         double aValue;
         math_Vector aSolution = new(1, 1);
@@ -493,7 +510,7 @@ public class math_PSOTest
         aSteps[1] = 0.1;
         aSteps[2] = 0.1;
 
-        math_PSO aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 15, 20);
+        Pso aSolver = new(aFunc, aLowerBorder, aUpperBorder, aSteps, 15, 20);
 
         double aValue1, aValue2;
         math_Vector aSolution1 = new(1, 2); math_Vector aSolution2 = new(1, 2);

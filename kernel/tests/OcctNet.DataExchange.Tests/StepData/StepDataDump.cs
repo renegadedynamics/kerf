@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -80,7 +81,7 @@ internal static class StepDataDump
         return aRes.ToString();
     }
 
-    private static string Entity(Standard_Transient? theEnt, StepData_StepModel theModel) => theEnt switch
+    private static string Entity(Transient? theEnt, StepData_StepModel theModel) => theEnt switch
     {
         null => "(null)",
         StepData_UndefinedEntity anUnd => "U " + Und(anUnd, theModel),
@@ -89,7 +90,7 @@ internal static class StepDataDump
                                       + Str(aFn.OriginatingSystem()) + " " + Str(aFn.Authorisation()),
         HeaderSection_FileDescription aFd => "FILE_DESCRIPTION " + Strs(aFd.Description()) + " " + Str(aFd.ImplementationLevel()),
         HeaderSection_FileSchema aFs => "FILE_SCHEMA " + Strs(aFs.SchemaIdentifiers()),
-        _ => "? " + theEnt.DynamicType().Name,
+        _ => "? " + theEnt.DynamicTypeName(),
     };
 
     private static void Checks(List<string> theLines, string thePrefix, Interface_Check? theCheck)
@@ -126,7 +127,7 @@ internal static class StepDataDump
                 return (aRead, aWrite);
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             aRead.Add("RESULT FATAL");
             return (aRead, aWrite);
@@ -201,7 +202,7 @@ internal static class StepDataDump
                     undirec.ReadString(num, nump, "t", ach, ref aVal);
                     aRead.Add(aPrefix + Str(aVal));
                 }
-                catch (Standard_Failure anEx)
+                catch (FailureException anEx)
                 {
                     aRead.Add(aPrefix + "THROW " + StepFileDump.Esc(anEx.Message) + " " + StepFileDump.Esc(undirec.ParamCValue(num, nump)));
                 }

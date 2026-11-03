@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -70,24 +72,24 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
     public bool UnBind(int K) => myMap.UnBind(K);
 
     /// <summary>The element bound to <paramref name="K"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="K"/> is not bound.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="K"/> is not bound.</exception>
     public Geom2dHatch_Element Find(int K) => myMap.Find(K);
 
     /// <summary>The element bound to <paramref name="K"/>, for writing.</summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="K"/> is not bound.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="K"/> is not bound.</exception>
     internal ref Geom2dHatch_Element ChangeFind(int K) => ref myMap.ChangeFind(K);
 
     /// <summary>OCCT's <c>operator()</c>: the element bound to <paramref name="K"/>.</summary>
     public Geom2dHatch_Element this[int K] => Find(K);
 
     /// <summary>Accepts every point.</summary>
-    public bool CheckPoint(ref gp_Pnt2d P) => true;
+    public bool CheckPoint(ref Point2D P) => true;
 
     /// <summary>Rejects no point.</summary>
-    public bool Reject(in gp_Pnt2d P) => false;
+    public bool Reject(in Point2D P) => false;
 
     /// <summary>The first half-line from <paramref name="P"/>: through the first suitable sample point of an element.</summary>
-    public bool Segment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+    public bool Segment(in Point2D P, out Line2D L, out double Par)
     {
         myCurEdge = 1;
         myCurEdgePar = Probing_Start;
@@ -98,7 +100,7 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
     /// The next half-line from <paramref name="P"/>: through the next sample point of the elements, not too close to
     /// tangent to the element and passing through neither end of it; false when there is none.
     /// </summary>
-    public bool OtherSegment(in gp_Pnt2d P, out gp_Lin2d L, out double Par)
+    public bool OtherSegment(in Point2D P, out Line2D L, out double Par)
     {
         NCollection_IntDataMap<Geom2dHatch_Element>.Iterator Itertemp = new();
         int i;
@@ -116,9 +118,9 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
             if (Or == TopAbs_FORWARD || Or == TopAbs_REVERSED)
             {
                 double aFPar = E.FirstParameter(), aLPar = E.LastParameter();
-                if (Precision.IsNegativeInfinite(aFPar))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aFPar))
                 {
-                    if (Precision.IsPositiveInfinite(aLPar))
+                    if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLPar))
                     {
                         aFPar = -1.0;
                         aLPar = 1.0;
@@ -128,7 +130,7 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
                         aFPar = aLPar - 1.0;
                     }
                 }
-                else if (Precision.IsPositiveInfinite(aLPar))
+                else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aLPar))
                 {
                     aLPar = aFPar + 1.0;
                 }
@@ -136,20 +138,20 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
                 for (; myCurEdgePar < Probing_End; myCurEdgePar += Probing_Step)
                 {
                     double aParam = myCurEdgePar * aFPar + (1.0 - myCurEdgePar) * aLPar;
-                    E.D1(aParam, out gp_Pnt2d aPOnC, out gp_Vec2d aTanVec);
-                    gp_Vec2d aLinVec = new(P, aPOnC);
+                    E.D1(aParam, out Point2D aPOnC, out Vector2D aTanVec);
+                    Vector2D aLinVec = new(P, aPOnC);
                     Par = aLinVec.SquareMagnitude();
-                    if (Par > Precision.SquarePConfusion())
+                    if (Par > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                     {
-                        gp_Dir2d aLinDir = new(aLinVec);
+                        Direction2D aLinDir = new(aLinVec);
                         double aTanMod = aTanVec.SquareMagnitude();
-                        if (aTanMod < Precision.SquarePConfusion())
+                        if (aTanMod < global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                         {
                             continue;
                         }
 
                         aTanVec /= Math.Sqrt(aTanMod);
-                        double aSinA = aTanVec.Crossed(new gp_Vec2d(aLinDir));
+                        double aSinA = aTanVec.Crossed(new Vector2D(aLinDir));
                         if (Math.Abs(aSinA) < 0.001)
                         {
                             // too small angle - line and edge may be considered
@@ -160,13 +162,13 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
                             }
                         }
 
-                        L = new gp_Lin2d(P, aLinDir);
+                        L = new Line2D(P, aLinDir);
 
                         aPOnC = E.Value(aFPar);
-                        if (L.SquareDistance(aPOnC) > Precision.SquarePConfusion())
+                        if (L.SquareDistance(aPOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                         {
                             aPOnC = E.Value(aLPar);
-                            if (L.SquareDistance(aPOnC) > Precision.SquarePConfusion())
+                            if (L.SquareDistance(aPOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                             {
                                 myCurEdgePar += Probing_Step;
                                 if (myCurEdgePar >= Probing_End)
@@ -186,7 +188,7 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
         }
 
         Par = RealLast();
-        L = new gp_Lin2d(P, new gp_Dir2d(gp_Dir2d.D.X));
+        L = new Line2D(P, new Direction2D(Direction2D.D.X));
         return false;
     }
 
@@ -206,7 +208,7 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
     }
 
     /// <summary>Rejects no wire.</summary>
-    public bool RejectWire(in gp_Lin2d L, double Par) => false;
+    public bool RejectWire(in Line2D L, double Par) => false;
 
     /// <summary>Starts the exploration of the edges (the elements, in OCCT's map order).</summary>
     public void InitEdges()
@@ -225,7 +227,7 @@ public sealed class Geom2dHatch_Elements : ITopClass_FaceExplorer<Geom2dAdaptor_
     }
 
     /// <summary>Rejects no edge.</summary>
-    public bool RejectEdge(in gp_Lin2d L, double Par) => false;
+    public bool RejectEdge(in Line2D L, double Par) => false;
 
     /// <summary>
     /// The current edge: a shallow copy of the element's curve (OCCT copies it into <paramref name="E"/>), and its

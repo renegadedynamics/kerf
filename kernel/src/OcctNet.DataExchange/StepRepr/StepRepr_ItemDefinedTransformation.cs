@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added from StepRepr Rev2 to Rev4
 /// </summary>
-public class StepRepr_ItemDefinedTransformation : Standard_Transient
+public class StepRepr_ItemDefinedTransformation : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

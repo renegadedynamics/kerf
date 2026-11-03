@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
 using static Occt.TopAbs_Orientation;
@@ -26,7 +30,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
 {
     private TopoDS_Shape myPbase = new();
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
-    private gp_Dir myDir = new();
+    private Direction3D myDir = new();
     private readonly NCollection_Sequence<Geom_Curve> myCurves = new();
     private Geom_Curve? myBCurve;
     // OCCT: the class declares its own myStatusError, hiding BRepFeat_Form's; CurrentStatusError reads the form's
@@ -45,14 +49,14 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     /// <paramref name="Direction"/>, from the sketch face <paramref name="Skface"/>; <paramref name="Fuse"/> is the mode
     /// (0 cut, 1 fuse, 2 the feature alone).
     /// </summary>
-    public BRepFeat_MakePrism(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in gp_Dir Direction,
+    public BRepFeat_MakePrism(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Direction3D Direction,
                               int Fuse, bool Modify)
     {
         Init(Sbase, Pbase, Skface, Direction, Fuse, Modify);
     }
 
     /// <summary>Initializes the prism (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in gp_Dir Direc, int Mode,
+    public void Init(in TopoDS_Shape Sbase, in TopoDS_Shape Pbase, in TopoDS_Face Skface, in Direction3D Direc, int Mode,
                      bool Modify)
     {
         // OCCT.NET: the working copies of frozen inputs (decision 1052)
@@ -99,7 +103,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     }
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">F isn't a face of the basis shape, or E an edge of the profile.</exception>
+    /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in TopoDS_Edge E, in TopoDS_Face F)
     {
         TopExp_Explorer exp = new();
@@ -112,7 +116,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
@@ -124,7 +128,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySlface.IsBound(F))
@@ -156,7 +160,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         myGluedF.Clear();
         myPerfSelection = BRepFeat_NoSelection;
         PerfSelectionValid();
-        gp_Vec V = Length * new gp_Vec(myDir);
+        Vector3D V = Length * new Vector3D(myDir);
 
         // construction of prism of height Length
 
@@ -252,17 +256,17 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     }
 
     /// <summary>Builds a prism up to the shape <paramref name="Until"/>, and the topological reconstruction.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape Until)
     {
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myGluedF.Clear();
         myPerfSelection = BRepFeat_SelectionU;
@@ -272,10 +276,10 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve C = TestCurve(myPbase, new gp_Vec(myDir));
+        Geom_Curve C = TestCurve(myPbase, new Vector3D(myDir));
         int sens = SensOfPrism(C, mySUntil);
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
-        gp_Vec V = 2 * sens * Height * new gp_Vec(myDir);
+        Vector3D V = 2 * sens * Height * new Vector3D(myDir);
 
         // construction of long prism
         LocOpe_Prism thePrism = new(myPbase, V);
@@ -356,12 +360,12 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     }
 
     /// <summary>Builds a prism from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">From or Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
     {
         if (From.IsNull() || Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySkface.IsNull())
@@ -393,12 +397,12 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         TopExp_Explorer exp = new(From, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         mySFrom = Working(From);
         bool Trff = TransformShapeFU(0);
@@ -416,7 +420,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         // length depending on bounding boxes
 
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
-        Geom_Curve C = TestCurve(myPbase, new gp_Vec(myDir));
+        Geom_Curve C = TestCurve(myPbase, new Vector3D(myDir));
         int sens; // direction of prism
         int tran; // transfer of prism
         if (From.IsSame(Until))
@@ -432,12 +436,12 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         LocOpe_Prism thePrism = new();
         if (tran < 0)
         {
-            gp_Vec Vtra = -3 * Height * sens / 2.0 * new gp_Vec(myDir);
-            thePrism.Perform(myPbase, 3 * sens * Height * new gp_Vec(myDir), Vtra);
+            Vector3D Vtra = -3 * Height * sens / 2.0 * new Vector3D(myDir);
+            thePrism.Perform(myPbase, 3 * sens * Height * new Vector3D(myDir), Vtra);
         }
         else
         {
-            thePrism.Perform(myPbase, 2 * sens * Height * new gp_Vec(myDir));
+            thePrism.Perform(myPbase, 2 * sens * Height * new Vector3D(myDir));
         }
         TopoDS_Shape VraiPrism = thePrism.InternalShape();
 
@@ -577,7 +581,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         mySFrom.Nullify();
         ShapeFromValid();
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
-        gp_Vec V = 2 * Height * new gp_Vec(myDir);
+        Vector3D V = 2 * Height * new Vector3D(myDir);
 
         LocOpe_Prism thePrism = new(myPbase, V);
         TopoDS_Shape VraiPrism = thePrism.InternalShape();
@@ -607,12 +611,12 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     }
 
     /// <summary>Builds a prism from the end of the basis shape up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void PerformFromEnd(in TopoDS_Shape Until)
     {
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
         {
@@ -624,7 +628,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myPerfSelection = BRepFeat_SelectionShU;
         PerfSelectionValid();
@@ -633,11 +637,11 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve C = TestCurve(myPbase, new gp_Vec(myDir));
+        Geom_Curve C = TestCurve(myPbase, new Vector3D(myDir));
         int sens = SensOfPrism(C, mySUntil);
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
-        gp_Vec Vtra = -3 * Height * sens / 2.0 * new gp_Vec(myDir);
-        gp_Vec Vect = 3 * sens * Height * new gp_Vec(myDir);
+        Vector3D Vtra = -3 * Height * sens / 2.0 * new Vector3D(myDir);
+        Vector3D Vect = 3 * sens * Height * new Vector3D(myDir);
         LocOpe_Prism thePrism = new(myPbase, Vect, Vtra);
         TopoDS_Shape VraiPrism = thePrism.InternalShape();
 
@@ -682,7 +686,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
                 {
                     S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
                 }
-                BRepLib_MakeFace fac = new(S, Precision.Confusion());
+                BRepLib_MakeFace fac = new(S, global::Kerf.Engine.Foundation.Precision.Confusion());
                 mySFrom = fac.InternalFace();
                 Trf = TransformShapeFU(0);
                 FFrom = TopoDS.Face(mySFrom);
@@ -764,8 +768,8 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         GluedFacesValid();
 
         double Height = HeightMax(mySbase, mySkface, mySFrom, mySUntil);
-        gp_Vec V = 3 * Height * new gp_Vec(myDir);
-        gp_Vec Vtra = -3 * Height / 2.0 * new gp_Vec(myDir);
+        Vector3D V = 3 * Height * new Vector3D(myDir);
+        Vector3D Vtra = -3 * Height / 2.0 * new Vector3D(myDir);
         LocOpe_Prism thePrism = new(myPbase, V, Vtra);
         TopoDS_Shape VraiPrism = thePrism.InternalShape();
         MajMap(myPbase, thePrism, myMap, ref myFShape, ref myLShape);
@@ -792,7 +796,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     }
 
     /// <summary>Builds a prism up to the shape <paramref name="Until"/>, at the height <paramref name="Length"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until has no face (a null Until included, see below).</exception>
+    /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
     public void PerformUntilHeight(in TopoDS_Shape Until, double Length)
     {
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero length goes on
@@ -808,7 +812,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myGluedF.Clear();
         myPerfSelection = BRepFeat_NoSelection;
@@ -818,9 +822,9 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         mySUntil = Working(Until);
         bool Trf = TransformShapeFU(1);
         ShapeUntilValid();
-        Geom_Curve C = TestCurve(myPbase, new gp_Vec(myDir));
+        Geom_Curve C = TestCurve(myPbase, new Vector3D(myDir));
         int sens = SensOfPrism(C, mySUntil);
-        gp_Vec V = sens * Length * new gp_Vec(myDir);
+        Vector3D V = sens * Length * new Vector3D(myDir);
         LocOpe_Prism thePrism = new(myPbase, V);
         TopoDS_Shape VraiPrism = thePrism.InternalShape();
 
@@ -909,7 +913,7 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
     private static double HeightMax(in TopoDS_Shape theSbase, in TopoDS_Face theSkface, in TopoDS_Shape theSFrom,
                                     in TopoDS_Shape theSUntil)
     {
-        Bnd_Box Box = new();
+        Box Box = new();
         BRepBndLib.Add(theSbase, ref Box);
         BRepBndLib.Add(theSkface, ref Box);
         if (!theSFrom.IsNull())
@@ -982,8 +986,8 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         int sens = 1;
         if (ASI1.IsDone() && ASI1.NbPoints(1) >= 1)
         {
-            if (ASI1.Point(1, 1).Parameter() + Precision.Confusion() < 0.0
-                && ASI1.Point(1, ASI1.NbPoints(1)).Parameter() + Precision.Confusion() < 0.0)
+            if (ASI1.Point(1, 1).Parameter() + global::Kerf.Engine.Foundation.Precision.Confusion() < 0.0
+                && ASI1.Point(1, ASI1.NbPoints(1)).Parameter() + global::Kerf.Engine.Foundation.Precision.Confusion() < 0.0)
             {
                 sens = -1;
             }
@@ -1032,18 +1036,18 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         }
     }
 
-    private static Geom_Curve TestCurve(in TopoDS_Shape Base, in gp_Vec V)
+    private static Geom_Curve TestCurve(in TopoDS_Shape Base, in Vector3D V)
     {
-        gp_Pnt bar = new(0.0, 0.0, 0.0);
-        NCollection_Sequence<gp_Pnt> spt = new();
+        Point3D bar = new(0.0, 0.0, 0.0);
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(Base, spt);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             bar.ChangeCoord() += pvt.XYZ();
         }
         bar.ChangeCoord().Divide(spt.Length());
-        gp_Ax1 newAx = new(bar, new gp_Dir(V));
+        Axis3D newAx = new(bar, new Direction3D(V));
         Geom_Line theLin = new(newAx);
         return theLin;
     }
@@ -1056,11 +1060,11 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         }
 
         Geom_Surface S1, S2;
-        double tollin = Precision.Confusion();
-        double tolang = Precision.Angular();
+        double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        S1 = BRep_Tool.Surface(F1, out TopLoc_Location loc1)!;
-        S2 = BRep_Tool.Surface(F2, out TopLoc_Location loc2)!;
+        S1 = BRep_Tool.Surface(F1, out Placement loc1)!;
+        S2 = BRep_Tool.Surface(F2, out Placement loc2)!;
 
         if (S1.GetType() == typeof(Geom_RectangularTrimmedSurface))
         {
@@ -1080,15 +1084,15 @@ public sealed class BRepFeat_MakePrism : BRepFeat_Form
         bool ValRet = false;
         if (S1.GetType() == typeof(Geom_Plane))
         {
-            gp_Pln pl1 = ((Geom_Plane)S1).Pln();
-            gp_Pln pl2 = ((Geom_Plane)S2).Pln();
+            Plane3D pl1 = ((Geom_Plane)S1).Pln();
+            Plane3D pl2 = ((Geom_Plane)S2).Pln();
 
             // apply locations
-            if (!loc1.IsIdentity())
+            if (!loc1.IsIdentity)
             {
                 pl1.Transform(loc1.Transformation());
             }
-            if (!loc2.IsIdentity())
+            if (!loc2.IsIdentity)
             {
                 pl2.Transform(loc2.Transformation());
             }

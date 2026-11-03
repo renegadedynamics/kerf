@@ -4,9 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.GCPnts_AbscissaType;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -76,14 +77,14 @@ public sealed class GCPnts_AbscissaPoint
     }
 
     /// <summary>The point at the distance theAbscissa from the point of parameter theU0.</summary>
-    /// <exception cref="Standard_ConstructionError">The curve's length is below Precision::Confusion().</exception>
+    /// <exception cref="ConstructionErrorException">The curve's length is below Precision::Confusion().</exception>
     public GCPnts_AbscissaPoint(Adaptor3d_Curve theC, double theAbscissa, double theU0)
     {
         compute(theC, theAbscissa, theU0);
     }
 
     /// <summary>The point at the distance theAbscissa from the point of parameter theU0.</summary>
-    /// <exception cref="Standard_ConstructionError">The curve's length is below Precision::Confusion().</exception>
+    /// <exception cref="ConstructionErrorException">The curve's length is below Precision::Confusion().</exception>
     public GCPnts_AbscissaPoint(Adaptor2d_Curve2d theC, double theAbscissa, double theU0)
     {
         compute(theC, theAbscissa, theU0);
@@ -105,14 +106,14 @@ public sealed class GCPnts_AbscissaPoint
     public GCPnts_AbscissaPoint(Adaptor3d_Curve theC, double theAbscissa, double theU0, double theUi)
     {
         double anAbscis = theAbscissa, aUU0 = theU0, aUUi = theUi;
-        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(Precision.Confusion()));
+        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     /// <summary>The point at the distance theAbscissa from the point of parameter theU0, starting the search at theUi.</summary>
     public GCPnts_AbscissaPoint(Adaptor2d_Curve2d theC, double theAbscissa, double theU0, double theUi)
     {
         double anAbscis = theAbscissa, aUU0 = theU0, aUUi = theUi;
-        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(Precision.Confusion()));
+        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     /// <summary>
@@ -139,7 +140,7 @@ public sealed class GCPnts_AbscissaPoint
     public bool IsDone() => myComputer.IsDone();
 
     /// <summary>The parameter of the point found.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Parameter() => myComputer.Parameter();
 
     // ---- Templates over the curve type (3D instantiation) ----
@@ -148,24 +149,24 @@ public sealed class GCPnts_AbscissaPoint
     // compute the type and the length ratio if GCPnts_LengthParametrized.
     private static GCPnts_AbscissaType computeType(Adaptor3d_Curve theC, ref double theRatio)
     {
-        if (theC.NbIntervals(GeomAbs_CN) > 1)
+        if (theC.NbIntervals(CN) > 1)
         {
             return GCPnts_AbsComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 theRatio = 1.0;
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 theRatio = theC.Circle().Radius();
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom_BezierCurve aBz = theC.Bezier();
                 if (aBz.NbPoles() == 2 && !aBz.IsRational())
@@ -175,7 +176,7 @@ public sealed class GCPnts_AbscissaPoint
                 }
                 return GCPnts_Parametrized;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve aBs = theC.BSpline();
                 if (aBs.NbPoles() == 2 && !aBs.IsRational())
@@ -201,7 +202,7 @@ public sealed class GCPnts_AbscissaPoint
                                 double theEPSILON)
     {
         // test for easy solution
-        if (Math.Abs(theAbscis) <= Precision.Confusion())
+        if (Math.Abs(theAbscis) <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             theComputer.SetParameter(theU0);
             return;
@@ -224,12 +225,12 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aL = 0.0, aSign = 1.0;
                 int anIndex;
-                BSplCLib.Hunt(aTI, theU0, out anIndex);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU0, out anIndex);
                 int aDirection = 1;
                 if (theAbscis < 0)
                 {
@@ -241,7 +242,7 @@ public sealed class GCPnts_AbscissaPoint
                 while (anIndex >= 1 && anIndex <= aNbIntervals)
                 {
                     aL = CPnts_AbscissaPoint.Length(theC, theU0, aTI[anIndex + aDirection]);
-                    if (Math.Abs(aL - theAbscis) <= Precision.Confusion())
+                    if (Math.Abs(aL - theAbscis) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         theComputer.SetParameter(aTI[anIndex + aDirection]);
                         return;
@@ -316,12 +317,12 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aL = 0.0, aSign = 1.0;
                 int anIndex;
-                BSplCLib.Hunt(aTI, theU0, out anIndex);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU0, out anIndex);
 
                 int aDirection = 1;
                 if (theAbscis < 0)
@@ -362,7 +363,7 @@ public sealed class GCPnts_AbscissaPoint
                 while (anIndex >= 1 && anIndex <= aNbIntervals)
                 {
                     aL = CPnts_AbscissaPoint.Length(theC, theU0, aTI[anIndex + aDirection], theEPSILON);
-                    if (Math.Abs(aL - theAbscis) <= Precision.PConfusion())
+                    if (Math.Abs(aL - theAbscis) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         theComputer.SetParameter(aTI[anIndex + aDirection]);
                         return;
@@ -444,9 +445,9 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aUU1 = Min(theU1, theU2);
                 double aUU2 = Max(theU1, theU2);
                 double aL = 0.0;
@@ -483,15 +484,15 @@ public sealed class GCPnts_AbscissaPoint
     private void compute(Adaptor3d_Curve theC, double theAbscissa, double theU0)
     {
         double aL = GCPnts_AbscissaPoint.Length(theC);
-        if (aL < Precision.Confusion())
+        if (aL < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         double anAbscis = theAbscissa;
         double aUU0 = theU0;
         double aUUi = theU0 + (anAbscis / aL) * (theC.LastParameter() - theC.FirstParameter());
-        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(Precision.Confusion()));
+        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     private void advCompute(double theTol, Adaptor3d_Curve theC, double theAbscissa, double theU0)
@@ -504,7 +505,7 @@ public sealed class GCPnts_AbscissaPoint
         double anAbscis = theAbscissa;
         double aUU0 = theU0;
         double aUUi = 0.0;
-        if (aL >= Precision.Confusion())
+        if (aL >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             aUUi = theU0 + (anAbscis / aL) * (theC.LastParameter() - theC.FirstParameter());
         }
@@ -521,24 +522,24 @@ public sealed class GCPnts_AbscissaPoint
     // compute the type and the length ratio if GCPnts_LengthParametrized.
     private static GCPnts_AbscissaType computeType(Adaptor2d_Curve2d theC, ref double theRatio)
     {
-        if (theC.NbIntervals(GeomAbs_CN) > 1)
+        if (theC.NbIntervals(CN) > 1)
         {
             return GCPnts_AbsComposite;
         }
 
         switch (theC.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 theRatio = 1.0;
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 theRatio = theC.Circle().Radius();
                 return GCPnts_LengthParametrized;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Geom2d_BezierCurve aBz = theC.Bezier();
                 if (aBz.NbPoles() == 2 && !aBz.IsRational())
@@ -548,7 +549,7 @@ public sealed class GCPnts_AbscissaPoint
                 }
                 return GCPnts_Parametrized;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBs = theC.BSpline();
                 if (aBs.NbPoles() == 2 && !aBs.IsRational())
@@ -574,7 +575,7 @@ public sealed class GCPnts_AbscissaPoint
                                 double theEPSILON)
     {
         // test for easy solution
-        if (Math.Abs(theAbscis) <= Precision.Confusion())
+        if (Math.Abs(theAbscis) <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             theComputer.SetParameter(theU0);
             return;
@@ -597,12 +598,12 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aL = 0.0, aSign = 1.0;
                 int anIndex;
-                BSplCLib.Hunt(aTI, theU0, out anIndex);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU0, out anIndex);
                 int aDirection = 1;
                 if (theAbscis < 0)
                 {
@@ -614,7 +615,7 @@ public sealed class GCPnts_AbscissaPoint
                 while (anIndex >= 1 && anIndex <= aNbIntervals)
                 {
                     aL = CPnts_AbscissaPoint.Length(theC, theU0, aTI[anIndex + aDirection]);
-                    if (Math.Abs(aL - theAbscis) <= Precision.Confusion())
+                    if (Math.Abs(aL - theAbscis) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         theComputer.SetParameter(aTI[anIndex + aDirection]);
                         return;
@@ -689,12 +690,12 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aL = 0.0, aSign = 1.0;
                 int anIndex;
-                BSplCLib.Hunt(aTI, theU0, out anIndex);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(aTI, theU0, out anIndex);
 
                 int aDirection = 1;
                 if (theAbscis < 0)
@@ -735,7 +736,7 @@ public sealed class GCPnts_AbscissaPoint
                 while (anIndex >= 1 && anIndex <= aNbIntervals)
                 {
                     aL = CPnts_AbscissaPoint.Length(theC, theU0, aTI[anIndex + aDirection], theEPSILON);
-                    if (Math.Abs(aL - theAbscis) <= Precision.PConfusion())
+                    if (Math.Abs(aL - theAbscis) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         theComputer.SetParameter(aTI[anIndex + aDirection]);
                         return;
@@ -817,9 +818,9 @@ public sealed class GCPnts_AbscissaPoint
             }
             case GCPnts_AbsComposite:
             {
-                int aNbIntervals = theC.NbIntervals(GeomAbs_CN);
+                int aNbIntervals = theC.NbIntervals(CN);
                 NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-                theC.Intervals(aTI, GeomAbs_CN);
+                theC.Intervals(aTI, CN);
                 double aUU1 = Min(theU1, theU2);
                 double aUU2 = Max(theU1, theU2);
                 double aL = 0.0;
@@ -856,15 +857,15 @@ public sealed class GCPnts_AbscissaPoint
     private void compute(Adaptor2d_Curve2d theC, double theAbscissa, double theU0)
     {
         double aL = GCPnts_AbscissaPoint.Length(theC);
-        if (aL < Precision.Confusion())
+        if (aL < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         double anAbscis = theAbscissa;
         double aUU0 = theU0;
         double aUUi = theU0 + (anAbscis / aL) * (theC.LastParameter() - theC.FirstParameter());
-        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(Precision.Confusion()));
+        Compute(myComputer, theC, ref anAbscis, ref aUU0, ref aUUi, theC.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     private void advCompute(double theTol, Adaptor2d_Curve2d theC, double theAbscissa, double theU0)
@@ -877,7 +878,7 @@ public sealed class GCPnts_AbscissaPoint
         double anAbscis = theAbscissa;
         double aUU0 = theU0;
         double aUUi = 0.0;
-        if (aL >= Precision.Confusion())
+        if (aL >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             aUUi = theU0 + (anAbscis / aL) * (theC.LastParameter() - theC.FirstParameter());
         }

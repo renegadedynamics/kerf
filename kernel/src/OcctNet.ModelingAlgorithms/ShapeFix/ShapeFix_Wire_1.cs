@@ -4,7 +4,10 @@
 
 // szv 19.08.99: new methods for fixing gaps between edges (3d curves and pcurves)
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -128,7 +131,7 @@ public partial class ShapeFix_Wire
         }
 
         // Check gap in 3d space
-        gp_Pnt cpnt1 = C1!.Value(clast1), cpnt2 = C2!.Value(cfirst2);
+        Point3D cpnt1 = C1!.Value(clast1), cpnt2 = C2!.Value(cfirst2);
         double gap = cpnt1.Distance(cpnt2);
         if (!convert && gap <= preci)
         {
@@ -143,9 +146,9 @@ public partial class ShapeFix_Wire
              reversed2 = (E2.Orientation() == TopAbs_REVERSED);
 
         TopoDS_Vertex V1 = SAE.LastVertex(E1), V2 = SAE.FirstVertex(E2);
-        gp_Pnt        vpnt = (V1.IsSame(V2))
+        Point3D        vpnt = (V1.IsSame(V2))
                                ? BRep_Tool.Pnt(V1)
-                               : new gp_Pnt((BRep_Tool.Pnt(V1).XYZ() + BRep_Tool.Pnt(V2).XYZ()) * 0.5);
+                               : new Point3D((BRep_Tool.Pnt(V1).XYZ() + BRep_Tool.Pnt(V2).XYZ()) * 0.5);
 
         double first1, last1, first2, last2;
         if (reversed1)
@@ -174,7 +177,7 @@ public partial class ShapeFix_Wire
         // Extract basic curves from trimmed and offset
         bool   basic    = false;
         bool   trimmed1 = false, offset1 = false;
-        gp_XYZ offval1  = new gp_XYZ(0.0, 0.0, 0.0);
+        Xyz offval1  = new Xyz(0.0, 0.0, 0.0);
         while (!basic)
         {
             if (c1 is Geom_TrimmedCurve aTC1)
@@ -195,7 +198,7 @@ public partial class ShapeFix_Wire
         }
         basic = false;
         bool   trimmed2 = false, offset2 = false;
-        gp_XYZ offval2  = new gp_XYZ(0.0, 0.0, 0.0);
+        Xyz offval2  = new Xyz(0.0, 0.0, 0.0);
         while (!basic)
         {
             if (c2 is Geom_TrimmedCurve aTC2)
@@ -217,11 +220,11 @@ public partial class ShapeFix_Wire
         // Restore offset curves
         if (offset1)
         {
-            c1 = new Geom_OffsetCurve(c1, offval1.Modulus(), new gp_Dir(offval1));
+            c1 = new Geom_OffsetCurve(c1, offval1.Modulus(), new Direction3D(offval1));
         }
         if (offset2)
         {
-            c2 = new Geom_OffsetCurve(c2, offval2.Modulus(), new gp_Dir(offval2));
+            c2 = new Geom_OffsetCurve(c2, offval2.Modulus(), new Direction3D(offval2));
         }
 
         bool done1 = false, done2 = false;
@@ -297,14 +300,14 @@ public partial class ShapeFix_Wire
                     }
                     if (segment)
                     {
-                        bsp = GeomConvert.SplitBSplineCurve(bsp, fbsp, lbsp, Occt.Precision.Confusion());
+                        bsp = GeomConvert.SplitBSplineCurve(bsp, fbsp, lbsp, Kerf.Engine.Foundation.Precision.Confusion());
                     }
                 }
                 else if (c is Geom_Conic)
                 {
                     var Conv = new Approx_Curve3d(new GeomAdaptor_Curve(c, first, last),
                                                   myAnalyzer.Precision(),
-                                                  GeomAbs_C1,
+                                                  global::Kerf.Geometry.Continuity.C1,
                                                   9,
                                                   1000);
                     if (Conv.IsDone() || Conv.HasResult())
@@ -331,7 +334,7 @@ public partial class ShapeFix_Wire
                         }
                         bsp = GeomConvert.CurveToBSplineCurve(tc);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         // OCCT_DEBUG warning left out
                     }
@@ -507,9 +510,9 @@ public partial class ShapeFix_Wire
                 u1 = AdjustOnPeriodic3d(c1, reversed1, first1, last1, u1);
                 u2 = AdjustOnPeriodic3d(c2, !reversed2, first2, last2, u2);
                 // Check points to satisfy distance criterium
-                gp_Pnt p1 = c1.Value(u1), p2 = c2.Value(u2);
-                if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Occt.Precision.PConfusion()
-                    && Math.Abs(clast2 - u2) > Occt.Precision.PConfusion()
+                Point3D p1 = c1.Value(u1), p2 = c2.Value(u2);
+                if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                     && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
                         || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
                 {
@@ -549,7 +552,7 @@ public partial class ShapeFix_Wire
                         try
                         {
                             // First find all intersections
-                            gp_Pnt pp1, pp2;
+                            Point3D pp1, pp2;
                             int    index1 = 0, index2 = 0;
                             double uu1, uu2, pardist, pardist1 = -1.0, pardist2 = -1.0;
                             for (int i = 1; i <= Extr.NbExtrema(); i++)
@@ -560,7 +563,7 @@ public partial class ShapeFix_Wire
                                 uu2 = AdjustOnPeriodic3d(c2, !reversed2, first2, last2, uu2);
                                 pp1 = c1.Value(uu1);
                                 pp2 = c2.Value(uu2);
-                                if (pp1.Distance(pp2) < Occt.Precision.Confusion())
+                                if (pp1.Distance(pp2) < Kerf.Engine.Foundation.Precision.Confusion())
                                 {
                                     // assume intersection
                                     pardist = Math.Abs(cfirst1 - uu1);
@@ -583,9 +586,9 @@ public partial class ShapeFix_Wire
                                 {
                                     // take intersection closer to vertex point
                                     Extr.Parameters(index1, out uu1, out uu2);
-                                    pp1 = new gp_Pnt((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
+                                    pp1 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
                                     Extr.Parameters(index2, out uu1, out uu2);
-                                    pp2 = new gp_Pnt((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
+                                    pp2 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
                                     if (pp2.Distance(vpnt) < pp1.Distance(vpnt))
                                     {
                                         index1 = index2;
@@ -603,8 +606,8 @@ public partial class ShapeFix_Wire
                             // Check points to satisfy distance criterium
                             pp1 = c1.Value(uu1);
                             pp2 = c2.Value(uu2);
-                            if (pp1.Distance(pp2) <= gap && Math.Abs(cfirst1 - uu1) > Occt.Precision.PConfusion()
-                                && Math.Abs(clast2 - uu2) > Occt.Precision.PConfusion()
+                            if (pp1.Distance(pp2) <= gap && Math.Abs(cfirst1 - uu1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                && Math.Abs(clast2 - uu2) > Kerf.Engine.Foundation.Precision.PConfusion()
                                 && (((uu1 > first1) && (uu1 < last1)) || ((uu2 > first2) && (uu2 < last2))
                                     || (cpnt1.Distance(pp1) <= gap) || (cpnt2.Distance(pp2) <= gap)))
                             {
@@ -613,7 +616,7 @@ public partial class ShapeFix_Wire
                                 done1 = done2 = true;
                             }
                         }
-                        catch (Standard_Failure)
+                        catch (FailureException)
                         {
                         }
                     }
@@ -674,7 +677,7 @@ public partial class ShapeFix_Wire
                         }
                     }
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     // OCCT_DEBUG warning left out
                 }
@@ -692,7 +695,7 @@ public partial class ShapeFix_Wire
             // smh#8
             TopoDS_Shape  emptyCopiedV2 = V2.EmptyCopied();
             TopoDS_Vertex newV2         = TopoDS.Vertex(emptyCopiedV2);
-            SFST.SetTolerance(newV2, Occt.Precision.Confusion());
+            SFST.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
             Context()!.Replace(V2, newV2);
             if (V1.IsSame(V2))
             // smh#8
@@ -705,7 +708,7 @@ public partial class ShapeFix_Wire
                 // smh#8
                 TopoDS_Shape emptyCopied = V1.EmptyCopied();
                 newV1                    = TopoDS.Vertex(emptyCopied);
-                SFST.SetTolerance(newV1, Occt.Precision.Confusion());
+                SFST.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
                 Context()!.Replace(V1, newV1);
             }
 
@@ -717,7 +720,7 @@ public partial class ShapeFix_Wire
                 TopoDS_Shape tmpE1 = newE1.Oriented(TopAbs_FORWARD);
                 B.UpdateEdge(TopoDS.Edge(tmpE1), c1, 0.0);
                 SBE.SetRange3d(TopoDS.Edge(tmpE1), first1, last1);
-                SFST.SetTolerance(newE1, Occt.Precision.Confusion(), TopAbs_EDGE);
+                SFST.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), TopAbs_EDGE);
                 B.SameRange(newE1, false);
                 //      B.SameParameter(newE1,false);
 
@@ -747,7 +750,7 @@ public partial class ShapeFix_Wire
                 TopoDS_Shape tmpE2 = newE2.Oriented(TopAbs_FORWARD);
                 B.UpdateEdge(TopoDS.Edge(tmpE2), c2, 0.0);
                 SBE.SetRange3d(TopoDS.Edge(tmpE2), first2, last2);
-                SFST.SetTolerance(newE2, Occt.Precision.Confusion(), TopAbs_EDGE);
+                SFST.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), TopAbs_EDGE);
                 B.SameRange(newE2, false);
                 //      B.SameParameter(newE2,false);
 
@@ -826,7 +829,7 @@ public partial class ShapeFix_Wire
             SetContext(new ShapeBuild_ReShape());
         }
 
-        double preci = Occt.Precision.PConfusion();
+        double preci = Kerf.Engine.Foundation.Precision.PConfusion();
         // double preci = Precision();
         // GeomAdaptor_Surface& SA = Analyzer().Surface()->Adaptor()->ChangeSurface();
         // preci = std::max(SA.UResolution(preci), SA.VResolution(preci));
@@ -851,7 +854,7 @@ public partial class ShapeFix_Wire
         }
 
         // Check gap in 2d space
-        gp_Pnt2d cpnt1 = PC1!.Value(clast1), cpnt2 = PC2!.Value(cfirst2);
+        Point2D cpnt1 = PC1!.Value(clast1), cpnt2 = PC2!.Value(cfirst2);
         double   gap = cpnt1.Distance(cpnt2);
         if (gap <= preci)
         {
@@ -992,7 +995,7 @@ public partial class ShapeFix_Wire
                     }
                     if (segment)
                     {
-                        bsp = Geom2dConvert.SplitBSplineCurve(bsp, fbsp, lbsp, Occt.Precision.PConfusion());
+                        bsp = Geom2dConvert.SplitBSplineCurve(bsp, fbsp, lbsp, Kerf.Engine.Foundation.Precision.PConfusion());
                     }
                 }
                 else if (pc is Geom2d_Conic)
@@ -1005,7 +1008,7 @@ public partial class ShapeFix_Wire
                                                   last,
                                                   tolu,
                                                   tolv,
-                                                  GeomAbs_C1,
+                                                  C1,
                                                   9,
                                                   1000);
                     if (Conv.IsDone() || Conv.HasResult())
@@ -1032,7 +1035,7 @@ public partial class ShapeFix_Wire
                         }
                         bsp = Geom2dConvert.CurveToBSplineCurve(c);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         // OCCT_DEBUG warning left out
                     }
@@ -1049,7 +1052,7 @@ public partial class ShapeFix_Wire
             }
 
             // Take curves ends if could not convert
-            gp_Pnt2d mpnt = new gp_Pnt2d((cpnt1.XY() + cpnt2.XY()) * 0.5);
+            Point2D mpnt = new Point2D((cpnt1.XY() + cpnt2.XY()) * 0.5);
             if (bsp1 is null)
             {
                 mpnt = cpnt1;
@@ -1171,7 +1174,7 @@ public partial class ShapeFix_Wire
                 double ipar1 = clast1, ipar2 = cfirst2;
 
                 var    Inter  = new Geom2dInt_GInter();
-                double tolint = Occt.Precision.PConfusion();
+                double tolint = Kerf.Engine.Foundation.Precision.PConfusion();
 
                 var AC1 = new Geom2dAdaptor_Curve(pc1);
                 var AC2 = new Geom2dAdaptor_Curve(pc2);
@@ -1248,7 +1251,7 @@ public partial class ShapeFix_Wire
                         if (index1 != index2 || flag1 != flag2)
                         {
                             // take intersection closer to mean point
-                            gp_Pnt2d pt1, pt2;
+                            Point2D pt1, pt2;
                             if (flag1 == 0)
                             {
                                 pt1 = Inter.Point(index1).Value();
@@ -1281,7 +1284,7 @@ public partial class ShapeFix_Wire
                                     pt2 = IS.LastPoint().Value();
                                 }
                             }
-                            gp_Pnt2d mpnt = new gp_Pnt2d((cpnt1.XY() + cpnt2.XY()) * 0.5);
+                            Point2D mpnt = new Point2D((cpnt1.XY() + cpnt2.XY()) * 0.5);
                             if (pt2.Distance(mpnt) < pt1.Distance(mpnt))
                             {
                                 index1 = index2;
@@ -1308,9 +1311,9 @@ public partial class ShapeFix_Wire
                         double u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, IP.ParamOnFirst());
                         double u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, IP.ParamOnSecond());
                         // Check points to satisfy distance criterium
-                        gp_Pnt2d p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Occt.Precision.PConfusion()
-                            && Math.Abs(clast2 - u2) > Occt.Precision.PConfusion()
+                        Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
+                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                            && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
                                 || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
                         {
@@ -1333,9 +1336,9 @@ public partial class ShapeFix_Wire
                         u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, u1);
                         u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, u2);
                         // Check points to satisfy distance criterium
-                        gp_Pnt2d p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Occt.Precision.PConfusion()
-                            && Math.Abs(clast2 - u2) > Occt.Precision.PConfusion()
+                        Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
+                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                            && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
                                 || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
                         {
@@ -1350,7 +1353,7 @@ public partial class ShapeFix_Wire
                 if (!done1)
                 {
                     var      Proj  = new Geom2dAPI_ProjectPointOnCurve();
-                    gp_Pnt2d ipnt1 = cpnt1, ipnt2 = cpnt2;
+                    Point2D ipnt1 = cpnt1, ipnt2 = cpnt2;
                     double   u1    = ipar1, u2 = ipar2;
                     Proj.Init(cpnt2, pc1, domfirst1, domlast1);
                     if (Proj.NbPoints() != 0)
@@ -1397,7 +1400,7 @@ public partial class ShapeFix_Wire
                     {
                         // both projections lie inside/outside initial domains
                         // project mean point
-                        gp_Pnt2d mpnt = new gp_Pnt2d((cpnt1.XY() + cpnt2.XY()) * 0.5);
+                        Point2D mpnt = new Point2D((cpnt1.XY() + cpnt2.XY()) * 0.5);
                         u1 = ipar1;
                         u2 = ipar2;
                         Proj.Init(mpnt, pc1, domfirst1, domlast1);
@@ -1450,9 +1453,9 @@ public partial class ShapeFix_Wire
                     u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, u1);
                     u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, u2);
                     // Check points to satisfy distance criterium
-                    gp_Pnt2d p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                    if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Occt.Precision.PConfusion()
-                        && Math.Abs(clast2 - u2) > Occt.Precision.PConfusion()
+                    Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
+                    if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                         && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
                             || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
                     {
@@ -1468,29 +1471,29 @@ public partial class ShapeFix_Wire
                     {
                         // Check whether new points lie inside the surface bounds
                         myAnalyzer.Surface()!.Surface()!.Bounds(out double umin, out double umax, out double vmin, out double vmax);
-                        if (Occt.Precision.IsInfinite(umin) || Occt.Precision.IsInfinite(umax)
-                            || Occt.Precision.IsInfinite(vmin) || Occt.Precision.IsInfinite(vmax))
+                        if (Kerf.Engine.Foundation.Precision.IsInfinite(umin) || Kerf.Engine.Foundation.Precision.IsInfinite(umax)
+                            || Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                         {
                             BRepTools.UVBounds(face, out double fumin, out double fumax, out double fvmin, out double fvmax);
-                            if (Occt.Precision.IsInfinite(umin))
+                            if (Kerf.Engine.Foundation.Precision.IsInfinite(umin))
                             {
                                 umin = fumin - preci;
                             }
-                            if (Occt.Precision.IsInfinite(umax))
+                            if (Kerf.Engine.Foundation.Precision.IsInfinite(umax))
                             {
                                 umax = fumax + preci;
                             }
-                            if (Occt.Precision.IsInfinite(vmin))
+                            if (Kerf.Engine.Foundation.Precision.IsInfinite(vmin))
                             {
                                 vmin = fvmin - preci;
                             }
-                            if (Occt.Precision.IsInfinite(vmax))
+                            if (Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                             {
                                 vmax = fvmax + preci;
                             }
                         }
 
-                        gp_Pnt2d ipnt, P1 = new gp_Pnt2d(), P2 = new gp_Pnt2d();
+                        Point2D ipnt, P1 = new Point2D(), P2 = new Point2D();
                         double   u, v;
                         bool     @out;
                         // iterate on curves
@@ -1524,13 +1527,13 @@ public partial class ShapeFix_Wire
                                 {
                                     if (u < umin)
                                     {
-                                        P1 = new gp_Pnt2d(umin, vmin);
-                                        P2 = new gp_Pnt2d(umin, vmax);
+                                        P1 = new Point2D(umin, vmin);
+                                        P2 = new Point2D(umin, vmax);
                                     }
                                     else if (u > umax)
                                     {
-                                        P1 = new gp_Pnt2d(umax, vmin);
-                                        P2 = new gp_Pnt2d(umax, vmax);
+                                        P1 = new Point2D(umax, vmin);
+                                        P2 = new Point2D(umax, vmax);
                                     }
                                     else
                                     {
@@ -1541,13 +1544,13 @@ public partial class ShapeFix_Wire
                                 {
                                     if (v < vmin)
                                     {
-                                        P1 = new gp_Pnt2d(umin, vmin);
-                                        P2 = new gp_Pnt2d(umax, vmin);
+                                        P1 = new Point2D(umin, vmin);
+                                        P2 = new Point2D(umax, vmin);
                                     }
                                     else if (v > vmax)
                                     {
-                                        P1 = new gp_Pnt2d(umin, vmax);
-                                        P2 = new gp_Pnt2d(umax, vmax);
+                                        P1 = new Point2D(umin, vmax);
+                                        P2 = new Point2D(umax, vmax);
                                     }
                                     else
                                     {
@@ -1558,7 +1561,7 @@ public partial class ShapeFix_Wire
                                 if (@out)
                                 {
                                     // Intersect pcurve with bounding line
-                                    var lin  = new Geom2d_Line(P1, new gp_Dir2d(new gp_Vec2d(P1, P2)));
+                                    var lin  = new Geom2d_Line(P1, new Direction2D(new Vector2D(P1, P2)));
                                     var ACL  = new Geom2dAdaptor_Curve(lin);
                                     var dlin = new IntRes2d_Domain(P1, 0.0, tolint, P2, P1.Distance(P2), tolint);
 
@@ -1677,12 +1680,12 @@ public partial class ShapeFix_Wire
                                                                     fpar,
                                                                     lpar,
                                                                     IP.ParamOnSecond());
-                                            if (j == 1 && Math.Abs(cfirst1 - uu) > Occt.Precision.PConfusion())
+                                            if (j == 1 && Math.Abs(cfirst1 - uu) > Kerf.Engine.Foundation.Precision.PConfusion())
                                             {
                                                 ipar1 = uu;
                                                 ipnt  = IP.Value();
                                             }
-                                            if (j == 2 && Math.Abs(clast2 - uu) > Occt.Precision.PConfusion())
+                                            if (j == 2 && Math.Abs(clast2 - uu) > Kerf.Engine.Foundation.Precision.PConfusion())
                                             {
                                                 ipar2 = uu;
                                                 ipnt  = IP.Value();
@@ -1781,7 +1784,7 @@ public partial class ShapeFix_Wire
                         }
                     }
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     // OCCT_DEBUG warning left out
                 }
@@ -1800,7 +1803,7 @@ public partial class ShapeFix_Wire
             // smh#8
             TopoDS_Shape  emptyCopiedV2 = V2.EmptyCopied();
             TopoDS_Vertex newV2         = TopoDS.Vertex(emptyCopiedV2);
-            SFST.SetTolerance(newV2, Occt.Precision.Confusion());
+            SFST.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
             Context()!.Replace(V2, newV2);
             if (V1.IsSame(V2))
             // smh#8
@@ -1813,7 +1816,7 @@ public partial class ShapeFix_Wire
                 // smh#8
                 TopoDS_Shape emptyCopiedV1 = V1.EmptyCopied();
                 newV1                      = TopoDS.Vertex(emptyCopiedV1);
-                SFST.SetTolerance(newV1, Occt.Precision.Confusion());
+                SFST.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
                 Context()!.Replace(V1, newV1);
             }
 
@@ -1825,7 +1828,7 @@ public partial class ShapeFix_Wire
                 TopoDS_Shape tmpE1 = newE1.Oriented(TopAbs_FORWARD);
                 B.UpdateEdge(TopoDS.Edge(tmpE1), pc1, face, 0.0);
                 B.Range(TopoDS.Edge(tmpE1), face, first1, last1);
-                SFST.SetTolerance(newE1, Occt.Precision.Confusion(), TopAbs_EDGE);
+                SFST.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), TopAbs_EDGE);
                 B.SameRange(newE1, false);
                 //      B.SameParameter(newE1,false);
 
@@ -1855,7 +1858,7 @@ public partial class ShapeFix_Wire
                 TopoDS_Shape tmpE2 = newE2.Oriented(TopAbs_FORWARD);
                 B.UpdateEdge(TopoDS.Edge(tmpE2), pc2, face, 0.0);
                 B.Range(TopoDS.Edge(tmpE2), face, first2, last2);
-                SFST.SetTolerance(newE2, Occt.Precision.Confusion(), TopAbs_EDGE);
+                SFST.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), TopAbs_EDGE);
                 B.SameRange(newE2, false);
                 //      B.SameParameter(newE2,false);
                 // To keep NM vertices belonging initial edges

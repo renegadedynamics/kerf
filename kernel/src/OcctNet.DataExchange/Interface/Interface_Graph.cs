@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ namespace Occt;
 /// </summary>
 public class Interface_Graph
 {
-    private static void AddTypedSharings(Standard_Transient ent,
+    private static void AddTypedSharings(Transient ent,
                                          Type type,
                                          Interface_EntityIterator iter,
                                          int n,
@@ -40,7 +42,7 @@ public class Interface_Graph
             return;
         }
 
-        NCollection_HSequence<Standard_Transient> list = G.GetSharings(ent);
+        NCollection_HSequence<Transient> list = G.GetSharings(ent);
         if (list is null)
         {
             return;
@@ -182,7 +184,7 @@ public class Interface_Graph
     /// Returns 0 if &lt;ent&gt; not contained by Model used to create &lt;me&gt; (that is, &lt;ent&gt; is
     /// unknown from &lt;me&gt;)
     /// </summary>
-    public int EntityNumber(Standard_Transient? ent)
+    public int EntityNumber(Transient? ent)
     {
         return themodel.Number(ent);
     }
@@ -204,7 +206,7 @@ public class Interface_Graph
     /// Same as above but directly on an Entity &lt;ent&gt; : if it is not contained in the Model, returns False.
     /// Else calls IsPresent(num) with &lt;num&gt; given by EntityNumber
     /// </summary>
-    public bool IsPresent(Standard_Transient? ent)
+    public bool IsPresent(Transient? ent)
     {
         return IsPresent(EntityNumber(ent));
     }
@@ -212,7 +214,7 @@ public class Interface_Graph
     /// <summary>
     /// Returns mapped Entity given its no (if it is present)
     /// </summary>
-    public Standard_Transient? Entity(int num)
+    public Transient? Entity(int num)
     {
         return themodel.Value(num);
     }
@@ -328,7 +330,7 @@ public class Interface_Graph
     /// "newstat" Items already present in graph remain unchanged Of course, redefinitions of Shared lists are
     /// taken into account if there are some
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent, bool shared, int newstat = 0)
+    public void GetFromEntity(Transient? ent, bool shared, int newstat = 0)
     {
         if (thestats is null)
         {
@@ -363,7 +365,7 @@ public class Interface_Graph
     /// "newstat", they remain unchanged - if they have another status, this one is modified : if cumul is True,
     /// to former status + overlapstat (cumul) if cumul is False, to overlapstat (enforce)
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent, bool shared, int newstat, int overlapstat, bool cumul)
+    public void GetFromEntity(Transient? ent, bool shared, int newstat, int overlapstat, bool cumul)
     {
         if (thestats is null)
         {
@@ -426,7 +428,7 @@ public class Interface_Graph
         }
         for (iter.Start(); iter.More(); iter.Next())
         {
-            Standard_Transient ent = iter.Value();
+            Transient ent = iter.Value();
             int num = EntityNumber(ent);
             if (num == 0)
             {
@@ -455,7 +457,7 @@ public class Interface_Graph
         }
         for (iter.Start(); iter.More(); iter.Next())
         {
-            Standard_Transient ent = iter.Value();
+            Transient ent = iter.Value();
             int num = EntityNumber(ent);
             if (num == 0)
             {
@@ -474,7 +476,7 @@ public class Interface_Graph
     {
         if (Model() != agraph.Model())
         {
-            throw new Standard_DomainError("Graph from Interface : GetFromGraph");
+            throw new DomainErrorException("Graph from Interface : GetFromGraph");
         }
         int nb = Size();
         for (int i = 1; i <= nb; i++)
@@ -493,7 +495,7 @@ public class Interface_Graph
     {
         if (Model() != agraph.Model())
         {
-            throw new Standard_DomainError("Graph from Interface : GetFromGraph");
+            throw new DomainErrorException("Graph from Interface : GetFromGraph");
         }
         int nb = Size();
         for (int i = 1; i <= nb; i++)
@@ -509,7 +511,7 @@ public class Interface_Graph
     /// Returns True if &lt;ent&gt; or the list of entities shared by &lt;ent&gt; (not redefined) contains items
     /// unknown from this Graph Remark : apart from the status HasShareError, these items are ignored
     /// </summary>
-    public bool HasShareErrors(Standard_Transient? ent)
+    public bool HasShareErrors(Transient? ent)
     {
         if (thestats is null)
         {
@@ -526,7 +528,7 @@ public class Interface_Graph
     /// <summary>
     /// Returns the sequence of Entities Shared by an Entity
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GetShareds(Standard_Transient? ent)
+    public NCollection_HSequence<Transient>? GetShareds(Transient? ent)
     {
         return Shareds(ent).Content();
     }
@@ -535,7 +537,7 @@ public class Interface_Graph
     /// Returns the list of Entities Shared by an Entity, as recorded by the Graph. That is, by default Basic
     /// Shared List, else it can be redefined by methods SetShare, SetNoShare ... see below
     /// </summary>
-    public Interface_EntityIterator Shareds(Standard_Transient? ent)
+    public Interface_EntityIterator Shareds(Transient? ent)
     {
         Interface_EntityIterator iter = new Interface_EntityIterator();
         int num = EntityNumber(ent);
@@ -544,7 +546,7 @@ public class Interface_Graph
             return iter;
         }
 
-        Standard_Transient aCurEnt = ent;
+        Transient aCurEnt = ent;
         if (themodel.IsRedefinedContent(num))
         {
             aCurEnt = themodel.ReportEntity(num).Content();
@@ -563,7 +565,7 @@ public class Interface_Graph
     /// <summary>
     /// Returns the list of Entities which Share an Entity, computed from the Basic or Redefined Shared Lists
     /// </summary>
-    public Interface_EntityIterator Sharings(Standard_Transient? ent)
+    public Interface_EntityIterator Sharings(Transient? ent)
     {
         return new Interface_EntityIterator(GetSharings(ent));
     }
@@ -571,7 +573,7 @@ public class Interface_Graph
     /// <summary>
     /// Returns the sequence of Entities Sharings by an Entity
     /// </summary>
-    public NCollection_HSequence<Standard_Transient>? GetSharings(Standard_Transient? ent)
+    public NCollection_HSequence<Transient>? GetSharings(Transient? ent)
     {
         int num = EntityNumber(ent);
         if (num == 0)
@@ -581,8 +583,8 @@ public class Interface_Graph
         // return
         // occ.down_cast<NCollection_HSequence<Standard_Transient>>(thesharings.Value(num));
         NCollection_List<int> alist = thesharings.Value(num);
-        NCollection_HSequence<Standard_Transient> aSharings =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> aSharings =
+            new NCollection_HSequence<Transient>();
         NCollection_List<int>.Iterator aIt = new NCollection_List<int>.Iterator(alist);
         for (; aIt.More(); aIt.Next())
         {
@@ -595,7 +597,7 @@ public class Interface_Graph
     /// Returns the list of sharings entities, AT ANY LEVEL, which are kind of a given type. A sharing entity
     /// kind of this type ends the exploration of its branch
     /// </summary>
-    public Interface_EntityIterator TypedSharings(Standard_Transient? ent, Type? type)
+    public Interface_EntityIterator TypedSharings(Transient? ent, Type? type)
     {
         Interface_EntityIterator iter = new Interface_EntityIterator();
         int n = Size();
@@ -625,7 +627,7 @@ public class Interface_Graph
     /// Determines the name attached to an entity, by using the general service Name in GeneralModule Returns a
     /// null handle if no name could be computed or if the entity is not in the model
     /// </summary>
-    public TCollection_HAsciiString? Name(Standard_Transient? ent)
+    public TCollection_HAsciiString? Name(Transient? ent)
     {
         TCollection_HAsciiString str = null;
         if (themodel is null)
@@ -708,12 +710,12 @@ public class Interface_Graph
         // The entities which are not present in the model are ignored.
         // The entities which are not shared by any other entity are ignored.
         // Allocator is used to reuse memory for the lists of shared entities.
-        NCollection_HSequence<Standard_Transient> aListOfEntities =
-            new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> aListOfEntities =
+            new NCollection_HSequence<Transient>();
         for (int i = 1; i <= anEntityNumber; i++)
         {
             aListOfEntities.Clear();
-            Standard_Transient anEntity = themodel.Value(i);
+            Transient anEntity = themodel.Value(i);
             Interface_EntityIterator anIter = new Interface_EntityIterator(aListOfEntities);
             int aNumber = EntityNumber(anEntity);
             if (aNumber == 0)
@@ -721,7 +723,7 @@ public class Interface_Graph
                 continue;
             }
 
-            Standard_Transient aCurEnt = anEntity;
+            Transient aCurEnt = anEntity;
             if (themodel.IsRedefinedContent(aNumber))
             {
                 aCurEnt = themodel.ReportEntity(aNumber).Content();
@@ -736,7 +738,7 @@ public class Interface_Graph
 
             for (anIter.Start(); anIter.More(); anIter.Next())
             {
-                Standard_Transient anEntShare = anIter.Value();
+                Transient anEntShare = anIter.Value();
                 if (anEntShare == anEntity)
                 {
                     continue;

@@ -10,6 +10,8 @@
 // The conjugate gradient method is implemented in the mathematical
 // library: math_BFGS.
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace Occt;
@@ -127,10 +129,10 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
         int nbP2d = ToolLine.NbP2d(SSP);
         int mynbP3d = nbP3d, mynbP2d = nbP2d;
         int nbP = nbP3d + nbP2d;
-        gp_Pnt Pt = new();
-        gp_Pnt2d Pt2d = new();
-        gp_Vec V1 = new(), MyV;
-        gp_Vec2d V12d = new(), MyV2d;
+        Point3D Pt = new();
+        Point2D Pt2d = new();
+        Vector3D V1 = new(), MyV;
+        Vector2D V12d = new(), MyV2d;
         Done = false;
 
         if (nbP3d == 0)
@@ -141,8 +143,8 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
         {
             mynbP2d = 1;
         }
-        NCollection_Array1<gp_Pnt> TabP = new(1, mynbP3d);
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> TabP = new(1, mynbP3d);
+        NCollection_Array1<Point2D> TabP2d = new(1, mynbP2d);
 
         // Calculation of the function F= sum(||C(ui)-Ptli||2):
         // Call to a function inheriting from MultipleVarFunctionWithGradient
@@ -155,10 +157,10 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
             nbpoles += Mults[i];
         }
 
-        NCollection_Array1<gp_Pnt> TabPole = new(1, nbpoles);
-        NCollection_Array1<gp_Pnt2d> TabPole2d = new(1, nbpoles);
-        NCollection_Array1<gp_Pnt> ThePoles = new(1, (nbpoles) * mynbP3d);
-        NCollection_Array1<gp_Pnt2d> ThePoles2d = new(1, (nbpoles) * mynbP2d);
+        NCollection_Array1<Point3D> TabPole = new(1, nbpoles);
+        NCollection_Array1<Point2D> TabPole2d = new(1, nbpoles);
+        NCollection_Array1<Point3D> ThePoles = new(1, (nbpoles) * mynbP3d);
+        NCollection_Array1<Point2D> ThePoles2d = new(1, (nbpoles) * mynbP2d);
 
         AppParCurves_Constraint FirstCons = FirstConstraint(TheConstraints, FirstPoint),
                                 LastCons = LastConstraint(TheConstraints, LastPoint);
@@ -224,8 +226,8 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
             //  Rogers & Fog 89, methode equivalente a Hoschek 88 qui ne necessite pas
             //  le calcul de D2.
 
-            math_Matrix A = MyF.FunctionMatrix();
-            math_Matrix DA = MyF.DerivativeFunctionMatrix();
+            Matrix A = MyF.FunctionMatrix();
+            Matrix DA = MyF.DerivativeFunctionMatrix();
             math_IntegerVector Index = MyF.Index();
             double aa, da, a, b, c, d, e, f, px, py, pz;
             int indexdeb, indexfin;
@@ -275,7 +277,7 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
                     V1.SetCoord(d, e, f);
                     i2 += nbpoles;
 
-                    MyV = new gp_Vec(Pt, TabP[k]);
+                    MyV = new Vector3D(Pt, TabP[k]);
                     FU += MyV * V1;
                     DFU += V1.SquareMagnitude();
                 }
@@ -299,7 +301,7 @@ public class AppParCurves_BSpGradient<MultiLine, ToolLine>
                     V12d.SetCoord(d, e);
                     i2 += nbpoles;
 
-                    MyV2d = new gp_Vec2d(Pt2d, TabP2d[k]);
+                    MyV2d = new Vector2D(Pt2d, TabP2d[k]);
                     FU += MyV2d * V12d;
                     DFU += V12d.SquareMagnitude();
                 }

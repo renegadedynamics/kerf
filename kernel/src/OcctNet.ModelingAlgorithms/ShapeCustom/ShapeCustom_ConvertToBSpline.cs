@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -71,7 +74,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     /// </summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -81,12 +84,12 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
         S = BRep_Tool.Surface(F, out L);
         S!.Bounds(out double U1, out double U2, out double V1, out double V2);
         BRepTools.UVBounds(F, out double Umin, out double Umax, out double Vmin, out double Vmax);
-        if (Precision.IsInfinite(U1) || Precision.IsInfinite(U2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
         {
             U1 = Umin;
             U2 = Umax;
         }
-        if (Precision.IsInfinite(V1) || Precision.IsInfinite(V2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
         {
             V1 = Vmin;
             V2 = Vmax;
@@ -108,7 +111,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
                                                                U2,
                                                                V1,
                                                                V2,
-                                                               Precision.Approximation(),
+                                                               global::Kerf.Engine.Foundation.Precision.Approximation(),
                                                                surf.Continuity(),
                                                                10000,
                                                                15);
@@ -117,17 +120,17 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
         }
         else
         {
-            GeomAbs_Shape cnt = surf.Continuity();
+            Continuity cnt = surf.Continuity();
             if (surf is Geom_OffsetSurface)
             {
-                cnt = GeomAbs_C0; // pdn 30.06.99 because of hang-up in GeomConvert_ApproxSurface
+                cnt = C0; // pdn 30.06.99 because of hang-up in GeomConvert_ApproxSurface
             }
             res = ShapeConstruct.InternalConvertSurfaceToBSpline(surf,
                                                                  U1,
                                                                  U2,
                                                                  V1,
                                                                  V2,
-                                                                 Precision.Approximation(),
+                                                                 global::Kerf.Engine.Foundation.Precision.Approximation(),
                                                                  cnt,
                                                                  10000,
                                                                  15);
@@ -142,7 +145,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
             S = res;
         }
 
-        SendMsg(F, new Message_Msg("ConvertToBSpline.NewSurface.MSG0"));
+        SendMsg(F, new Msg("ConvertToBSpline.NewSurface.MSG0"));
 
         Tol = BRep_Tool.Tolerance(F);
         RevWires = false;
@@ -154,10 +157,10 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     /// True if the edge has a pcurve on a surface to convert (so that the edge is copied): then C is a copy of its 3D
     /// curve.
     /// </summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         C = null;
-        L = new TopLoc_Location();
+        L = new Placement();
         Tol = 0.0;
         //: p5 abv 26 Feb 99: force copying of edge if any its pcurve will be replaced
         BRep_TEdge TE = (BRep_TEdge)E.TShape()!;
@@ -181,16 +184,16 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
                 C = (Geom_Curve)C.Copy();
             }
             Tol = BRep_Tool.Tolerance(E);
-            SendMsg(E, new Message_Msg("ConvertToBSpline.NewCurve.MSG0"));
+            SendMsg(E, new Msg("ConvertToBSpline.NewCurve.MSG0"));
             return true;
         }
         return false;
     }
 
     /// <summary>False: 3D points are never modified.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
-        P = new gp_Pnt();
+        P = new Point3D();
         Tol = 0.0;
         return false;
     }
@@ -205,7 +208,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     {
         C = null;
         Tol = 0.0;
-        Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(F, out Placement L)!;
 
         // just copy pcurve if either its surface is changing or edge was copied
         if (!IsToConvert(S, out _) && E.IsSame(NewE))
@@ -230,7 +233,7 @@ public class ShapeCustom_ConvertToBSpline : ShapeCustom_Modification
     }
 
     /// <summary>The continuity of the edge between the faces, unchanged.</summary>
-    public override GeomAbs_Shape Continuity(in TopoDS_Edge E,
+    public override Continuity Continuity(in TopoDS_Edge E,
                                              in TopoDS_Face F1,
                                              in TopoDS_Face F2,
                                              in TopoDS_Edge NewE,

@@ -14,6 +14,9 @@
 //: s5 abv 22.04.99 Adding debug printouts in catch {} blocks
 //    abv 05.05.99 S4137: method CopyPCurves moved to ShapeBuild_Edge
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -35,7 +38,7 @@ namespace Occt;
 /// as OCCT documents.
 /// </para>
 /// </remarks>
-public partial class ShapeFix_Edge : Standard_Transient
+public partial class ShapeFix_Edge : Transient
 {
     protected ShapeBuild_ReShape?                  myContext;
     protected int                                  myStatus;
@@ -56,14 +59,14 @@ public partial class ShapeFix_Edge : Standard_Transient
     /// </summary>
     internal bool FixRemovePCurve(in TopoDS_Edge edge, in TopoDS_Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return FixRemovePCurve(edge, S!, L);
     }
 
     /// <summary>
     /// Removes the edge's pcurve on the surface if its ends don't lie on the vertices. Writes into the edge.
     /// </summary>
-    internal bool FixRemovePCurve(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location)
+    internal bool FixRemovePCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         var  EA     = new ShapeAnalysis_Edge();
@@ -95,18 +98,18 @@ public partial class ShapeFix_Edge : Standard_Transient
     /// </summary>
     internal bool FixAddPCurve(in TopoDS_Edge edge, in TopoDS_Face face, bool isSeam, double prec = 0.0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return FixAddPCurve(edge, S!, L, isSeam, prec);
     }
 
     /// <summary>Adds the edge's pcurve(s) on the surface if missing; see the face form.</summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location, bool isSeam,
+    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
                                double prec = 0.0)
     {
         Geom_Surface aTransSurf = surface;
-        if (!location.IsIdentity())
+        if (!location.IsIdentity)
         {
-            gp_Trsf aTrsf = location.Transformation();
+            Transform3D aTrsf = location.Transformation();
             aTransSurf = (Geom_Surface)surface.Transformed(aTrsf);
         }
         var sas = new ShapeAnalysis_Surface(aTransSurf);
@@ -117,7 +120,7 @@ public partial class ShapeFix_Edge : Standard_Transient
     internal bool FixAddPCurve(in TopoDS_Edge edge, in TopoDS_Face face, bool isSeam, ShapeAnalysis_Surface surfana,
                                double prec = 0.0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return FixAddPCurve(edge, S!, L, isSeam, surfana, prec);
     }
 
@@ -139,10 +142,10 @@ public partial class ShapeFix_Edge : Standard_Transient
         // case of a line
         if (aC2d is Geom2d_Line theL2d)
         {
-            gp_Pnt2d theLoc = theL2d.Location();
-            gp_Dir2d theDir = theL2d.Direction();
+            Point2D theLoc = theL2d.Location();
+            Direction2D theDir = theL2d.Direction();
 
-            var         newLoc    = new gp_Pnt2d();
+            var         newLoc    = new Point2D();
             Geom2d_Line theNewL2d = theL2d;
 
             // case UClosed
@@ -182,14 +185,14 @@ public partial class ShapeFix_Edge : Standard_Transient
                 return aC2d;
             }
             var      newC       = (Geom2d_BSplineCurve)aBC.Copy();
-            gp_Pnt2d FirstPoint = aBC.StartPoint();
-            gp_Pnt2d LastPoint  = aBC.EndPoint();
-            var      theVector  = new gp_Vec2d(FirstPoint, LastPoint);
-            gp_Pnt2d p00        = new gp_Pnt2d(uf, vf), p01 = new gp_Pnt2d(uf, vl), p10 = new gp_Pnt2d(ul, vf);
-            var      VectIsoUF  = new gp_Vec2d(p00, p01);
-            var      VectIsoVF  = new gp_Vec2d(p00, p10);
+            Point2D FirstPoint = aBC.StartPoint();
+            Point2D LastPoint  = aBC.EndPoint();
+            var      theVector  = new Vector2D(FirstPoint, LastPoint);
+            Point2D p00        = new Point2D(uf, vf), p01 = new Point2D(uf, vl), p10 = new Point2D(ul, vf);
+            var      VectIsoUF  = new Vector2D(p00, p01);
+            var      VectIsoVF  = new Vector2D(p00, p10);
 
-            var T = new gp_Trsf2d();
+            var T = new Transform2D();
             if (theVector.IsParallel(VectIsoUF, aTol))
             {
                 if (Math.Abs(FirstPoint.X() - uf) < Math.Abs(FirstPoint.X() - ul))
@@ -273,9 +276,9 @@ public partial class ShapeFix_Edge : Standard_Transient
                         first_time_in = false;
                     }
 
-                    if (Math.Abs(first - current_first) > Occt.Precision.PConfusion()
+                    if (Math.Abs(first - current_first) > Kerf.Engine.Foundation.Precision.PConfusion()
                         || //: b8 abv 20 Feb 98: Confusion -> PConfusion
-                        Math.Abs(last - current_last) > Occt.Precision.PConfusion())
+                        Math.Abs(last - current_last) > Kerf.Engine.Foundation.Precision.PConfusion())
                     { //: b8
                         double oldFirst = 0.0, oldLast = 0.0; // skl
                         if (has_curve)
@@ -295,7 +298,7 @@ public partial class ShapeFix_Edge : Standard_Transient
                             double oldFirstCurve1 = oldFirst, oldLastCurve1 = oldLast;
                             if (Curve2dPtr is Geom2d_BezierCurve)
                             {
-                                double preci = Occt.Precision.PConfusion();
+                                double preci = Kerf.Engine.Foundation.Precision.PConfusion();
                                 if (Math.Abs(oldFirst) > preci || Math.Abs(oldLast - 1) > preci)
                                 {
                                     var bezier = (Geom2d_BezierCurve)Curve2dPtr.Copy();
@@ -321,7 +324,7 @@ public partial class ShapeFix_Edge : Standard_Transient
 
                             if (Curve2dPtr2 is Geom2d_BezierCurve)
                             {
-                                double preci = Occt.Precision.PConfusion();
+                                double preci = Kerf.Engine.Foundation.Precision.PConfusion();
                                 if (Math.Abs(oldFirst) > preci || Math.Abs(oldLast - 1) > preci)
                                 {
                                     var bezier = (Geom2d_BezierCurve)Curve2dPtr2.Copy();
@@ -354,7 +357,7 @@ public partial class ShapeFix_Edge : Standard_Transient
     /// <summary>
     /// Adds the edge's pcurve(s) on the surface if missing, with an analyser of the surface; see the face form.
     /// </summary>
-    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location, bool isSeam,
+    internal bool FixAddPCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location, bool isSeam,
                                ShapeAnalysis_Surface surfana, double prec = 0.0)
     {
         Geom_Surface          surf = surface;
@@ -423,7 +426,7 @@ public partial class ShapeFix_Edge : Standard_Transient
                 // Standard_Failure (FAIL2)
                 if (c2d is null)
                 {
-                    throw new Standard_NullObject("ShapeFix_Edge::FixAddPCurve: no pcurve");
+                    throw new NullObjectException("ShapeFix_Edge::FixAddPCurve: no pcurve");
                 }
                 // On ne sait pas laquelle est Forward. Au PIF. La geometrie Forward
                 // sera mise a jour dans ComputeWire
@@ -438,12 +441,12 @@ public partial class ShapeFix_Edge : Standard_Transient
                 // #78 rln 12.03.99 S4135: checking spatial closure with prec
                 if (sas.IsUClosed(prec) && !sas.IsVClosed(prec)) // rln S4135 sphere is not considered as V-closed anymore
                 { //: d9 abv 17 Mar 98: any sphere
-                    var tranvec = new gp_Vec2d(ul - uf, 0);
+                    var tranvec = new Vector2D(ul - uf, 0);
                     c2d2.Translate(tranvec);
                 }
                 else if (sas.IsVClosed(prec) && !sas.IsUClosed(prec))
                 {
-                    var tranvec = new gp_Vec2d(0, vl - vf);
+                    var tranvec = new Vector2D(0, vl - vf);
                     c2d2.Translate(tranvec);
                 }
                 else if (sas.IsUClosed() && sas.IsVClosed())
@@ -468,7 +471,7 @@ public partial class ShapeFix_Edge : Standard_Transient
                 B.Range(edge, G3dCFirst, G3dCLast, true);
             }
         } // end try
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
         }
@@ -487,7 +490,7 @@ public partial class ShapeFix_Edge : Standard_Transient
         }
         if (!BRep_Tool.SameRange(edge))
         {
-            TempSameRange(edge, Occt.Precision.PConfusion());
+            TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
         }
 
         if (!new ShapeBuild_Edge().BuildCurve3d(edge))
@@ -597,14 +600,14 @@ public partial class ShapeFix_Edge : Standard_Transient
     /// <summary>Reverses the edge's pcurve on the face if it is oriented against the 3D curve. Writes into the edge.</summary>
     internal bool FixReversed2d(in TopoDS_Edge edge, in TopoDS_Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return FixReversed2d(edge, S!, L);
     }
 
     /// <summary>
     /// Reverses the edge's pcurve on the surface if it is oriented against the 3D curve. Writes into the edge.
     /// </summary>
-    internal bool FixReversed2d(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location)
+    internal bool FixReversed2d(in TopoDS_Edge edge, Geom_Surface surface, in Placement location)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
@@ -691,7 +694,7 @@ public partial class ShapeFix_Edge : Standard_Transient
             var BD = new BRep_Builder();
             if (!BRep_Tool.SameRange(edge))
             {
-                TempSameRange(edge, Occt.Precision.PConfusion());
+                TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
             }
             BD.SameParameter(edge, true);
             return false;
@@ -714,7 +717,7 @@ public partial class ShapeFix_Edge : Standard_Transient
             {
                 if (!BRep_Tool.SameRange(edge))
                 {
-                    TempSameRange(edge, Occt.Precision.PConfusion());
+                    TempSameRange(edge, Kerf.Engine.Foundation.Precision.PConfusion());
                 }
                 // #81 rln 15.03.99 S4135: for not SP edge choose the best result (either BRepLib or deviation
                 // only)
@@ -730,7 +733,7 @@ public partial class ShapeFix_Edge : Standard_Transient
                     // To prevent this discrepancy we enforce original 3D range.
                     BRep_Tool.Range(edge, out double aF, out double aL);
                     B.Range(copyedge, aF, aL, true); // only 3D
-                    BRepLib.SameParameter(copyedge, (tolerance >= Occt.Precision.Confusion() ? tolerance : tol));
+                    BRepLib.SameParameter(copyedge, (tolerance >= Kerf.Engine.Foundation.Precision.Confusion() ? tolerance : tol));
                     SP = BRep_Tool.SameParameter(copyedge);
                     if (!SP)
                     {
@@ -738,7 +741,7 @@ public partial class ShapeFix_Edge : Standard_Transient
                     }
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
             }

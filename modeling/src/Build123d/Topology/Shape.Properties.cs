@@ -1,3 +1,6 @@
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -46,32 +49,32 @@ public abstract partial class Shape
     }
 
     /// <summary>The geometry type of a kind of curve.</summary>
-    internal static GeomType GeomTypeOf(GeomAbs_CurveType type) => type switch
+    internal static GeomType GeomTypeOf(CurveKind type) => type switch
     {
-        GeomAbs_CurveType.GeomAbs_Line => GeomType.Line,
-        GeomAbs_CurveType.GeomAbs_Circle => GeomType.Circle,
-        GeomAbs_CurveType.GeomAbs_Ellipse => GeomType.Ellipse,
-        GeomAbs_CurveType.GeomAbs_Hyperbola => GeomType.Hyperbola,
-        GeomAbs_CurveType.GeomAbs_Parabola => GeomType.Parabola,
-        GeomAbs_CurveType.GeomAbs_BezierCurve => GeomType.Bezier,
-        GeomAbs_CurveType.GeomAbs_BSplineCurve => GeomType.BSpline,
-        GeomAbs_CurveType.GeomAbs_OffsetCurve => GeomType.Offset,
+        CurveKind.Line => GeomType.Line,
+        CurveKind.Circle => GeomType.Circle,
+        CurveKind.Ellipse => GeomType.Ellipse,
+        CurveKind.Hyperbola => GeomType.Hyperbola,
+        CurveKind.Parabola => GeomType.Parabola,
+        CurveKind.BezierCurve => GeomType.Bezier,
+        CurveKind.BSplineCurve => GeomType.BSpline,
+        CurveKind.OffsetCurve => GeomType.Offset,
         _ => GeomType.Other,
     };
 
     /// <summary>The geometry type of a kind of surface.</summary>
-    internal static GeomType GeomTypeOf(GeomAbs_SurfaceType type) => type switch
+    internal static GeomType GeomTypeOf(SurfaceKind type) => type switch
     {
-        GeomAbs_SurfaceType.GeomAbs_Plane => GeomType.Plane,
-        GeomAbs_SurfaceType.GeomAbs_Cylinder => GeomType.Cylinder,
-        GeomAbs_SurfaceType.GeomAbs_Cone => GeomType.Cone,
-        GeomAbs_SurfaceType.GeomAbs_Sphere => GeomType.Sphere,
-        GeomAbs_SurfaceType.GeomAbs_Torus => GeomType.Torus,
-        GeomAbs_SurfaceType.GeomAbs_BezierSurface => GeomType.Bezier,
-        GeomAbs_SurfaceType.GeomAbs_BSplineSurface => GeomType.BSpline,
-        GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution => GeomType.Revolution,
-        GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion => GeomType.Extrusion,
-        GeomAbs_SurfaceType.GeomAbs_OffsetSurface => GeomType.Offset,
+        SurfaceKind.Plane => GeomType.Plane,
+        SurfaceKind.Cylinder => GeomType.Cylinder,
+        SurfaceKind.Cone => GeomType.Cone,
+        SurfaceKind.Sphere => GeomType.Sphere,
+        SurfaceKind.Torus => GeomType.Torus,
+        SurfaceKind.BezierSurface => GeomType.Bezier,
+        SurfaceKind.BSplineSurface => GeomType.BSpline,
+        SurfaceKind.SurfaceOfRevolution => GeomType.Revolution,
+        SurfaceKind.SurfaceOfExtrusion => GeomType.Extrusion,
+        SurfaceKind.OffsetSurface => GeomType.Offset,
         _ => GeomType.Other,
     };
 
@@ -291,7 +294,7 @@ public abstract partial class Shape
     /// <summary>The smallest box in any orientation containing this shape.</summary>
     public OrientedBoundBox OrientedBoundingBox()
     {
-        var obb = new Bnd_OBB();
+        var obb = new OrientedBox();
         if (!IsEmpty)
             BRepBndLib.AddOBB(_wrapped, ref obb, true);
         return Build123d.OrientedBoundBox.Own(obb);
@@ -422,20 +425,20 @@ public abstract partial class Shape
         int offset = 0;
         foreach (var face in meshed.Faces())
         {
-            var loc = new TopLoc_Location();
+            var loc = new Placement();
             var poly = BRep_Tool.Triangulation(face.TopoFace, out loc);
             if (poly is null)
                 continue;
             var trsf = loc.Transformation();
             bool reverse = face.TopoShape.Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
-            int nodes = poly.NbNodes();
+            int nodes = poly.NodeCount;
             for (int i = 1; i <= nodes; i++)
             {
                 var node = poly.Node(i);
                 var placed = node.Transformed(trsf);
                 vertices.Add(new Vector(placed.X(), placed.Y(), placed.Z()));
             }
-            for (int i = 1; i <= poly.NbTriangles(); i++)
+            for (int i = 1; i <= poly.TriangleCount; i++)
             {
                 var t = poly.Triangle(i);
                 int a = t.Value(1) + offset - 1, b = t.Value(2) + offset - 1, c = t.Value(3) + offset - 1;

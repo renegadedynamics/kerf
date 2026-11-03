@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
@@ -51,15 +52,15 @@ public static partial class MathOpt
         /// <summary>Initial velocity (null = generate bounded random).</summary>
         public math_Vector? Velocity;
 
-        public PSOSeedParticle(math_Vector thePos)
+        public PSOSeedParticle(math_Vector pos)
         {
-            Position = new math_Vector(thePos);
+            Position = new math_Vector(pos);
         }
 
-        public PSOSeedParticle(math_Vector thePos, double theValue)
+        public PSOSeedParticle(math_Vector pos, double value)
         {
-            Position = new math_Vector(thePos);
-            Value = theValue;
+            Position = new math_Vector(pos);
+            Value = value;
         }
     }
 
@@ -86,21 +87,21 @@ public static partial class MathOpt
         {
         }
 
-        public PSOStats(PSOStats theOther)
+        public PSOStats(PSOStats other)
         {
-            Assign(theOther);
+            Assign(other);
         }
 
         /// <summary>C++'s assignment: copies all the values.</summary>
-        public void Assign(PSOStats theOther)
+        public void Assign(PSOStats other)
         {
-            NbFunctionEvals = theOther.NbFunctionEvals;
-            NbIterations = theOther.NbIterations;
-            NbBoundaryCorrections = theOther.NbBoundaryCorrections;
-            NbStagnationEvents = theOther.NbStagnationEvents;
-            NbRestarts = theOther.NbRestarts;
-            InitialBest = theOther.InitialBest;
-            FinalBest = theOther.FinalBest;
+            NbFunctionEvals = other.NbFunctionEvals;
+            NbIterations = other.NbIterations;
+            NbBoundaryCorrections = other.NbBoundaryCorrections;
+            NbStagnationEvents = other.NbStagnationEvents;
+            NbRestarts = other.NbRestarts;
+            InitialBest = other.InitialBest;
+            FinalBest = other.FinalBest;
         }
     }
 
@@ -145,32 +146,32 @@ public static partial class MathOpt
         {
         }
 
-        public PSOConfig(int theNbParticles, int theMaxIter = 100, double theTolerance = 1.0e-8)
-            : base(theTolerance, theMaxIter, true)
+        public PSOConfig(int nbParticles, int maxIter = 100, double tolerance = 1.0e-8)
+            : base(tolerance, maxIter, true)
         {
-            NbParticles = theNbParticles;
+            NbParticles = nbParticles;
         }
 
-        public PSOConfig(PSOConfig theOther)
-            : base(theOther)
+        public PSOConfig(PSOConfig other)
+            : base(other)
         {
-            NbParticles = theOther.NbParticles;
-            Omega = theOther.Omega;
-            PhiPersonal = theOther.PhiPersonal;
-            PhiGlobal = theOther.PhiGlobal;
-            VelocityClamp = theOther.VelocityClamp;
-            Seed = theOther.Seed;
-            InitMode = theOther.InitMode;
-            BoundaryMode = theOther.BoundaryMode;
-            InertiaSchedule = theOther.InertiaSchedule;
-            OmegaMin = theOther.OmegaMin;
-            MinIterations = theOther.MinIterations;
-            TargetValue = theOther.TargetValue;
-            NoImproveTol = theOther.NoImproveTol;
-            NoImproveIters = theOther.NoImproveIters;
-            RestartFraction = theOther.RestartFraction;
-            MaxRestarts = theOther.MaxRestarts;
-            PolishBudgetPerDim = theOther.PolishBudgetPerDim;
+            NbParticles = other.NbParticles;
+            Omega = other.Omega;
+            PhiPersonal = other.PhiPersonal;
+            PhiGlobal = other.PhiGlobal;
+            VelocityClamp = other.VelocityClamp;
+            Seed = other.Seed;
+            InitMode = other.InitMode;
+            BoundaryMode = other.BoundaryMode;
+            InertiaSchedule = other.InertiaSchedule;
+            OmegaMin = other.OmegaMin;
+            MinIterations = other.MinIterations;
+            TargetValue = other.TargetValue;
+            NoImproveTol = other.NoImproveTol;
+            NoImproveIters = other.NoImproveIters;
+            RestartFraction = other.RestartFraction;
+            MaxRestarts = other.MaxRestarts;
+            PolishBudgetPerDim = other.PolishBudgetPerDim;
         }
     }
 
@@ -178,65 +179,65 @@ public static partial class MathOpt
     /// Coordinate-wise polishing of thePosition/theValue (updated in place) by Brent's 1D minimization along each
     /// coordinate within the bounds, using at most theMaxPolishEvals evaluations (counted in theEvalCount).
     /// </summary>
-    public static void PolishCoordinateWise<Function>(Function theFunc,
-                                                      math_Vector thePosition,
-                                                      ref double theValue,
-                                                      math_Vector theLowerBounds,
-                                                      math_Vector theUpperBounds,
-                                                      double theTolerance,
-                                                      int theMaxPolishEvals,
-                                                      out int theEvalCount)
+    public static void PolishCoordinateWise<Function>(Function func,
+                                                      math_Vector position,
+                                                      ref double value,
+                                                      math_Vector lowerBounds,
+                                                      math_Vector upperBounds,
+                                                      double tolerance,
+                                                      int maxPolishEvals,
+                                                      out int evalCount)
         where Function : IVectorFunction
     {
-        theEvalCount = 0;
+        evalCount = 0;
 
-        int aLower = thePosition.Lower();
-        int aUpper = thePosition.Upper();
-        int aNbDims = aUpper - aLower + 1;
+        int lower = position.Lower();
+        int upper = position.Upper();
+        int nbDims = upper - lower + 1;
 
         // Fair per-coordinate cap: total budget split across dimensions and passes
-        int aNbPasses = (aNbDims > 1) ? 2 : 1;
-        int aPerCoordLimit = Max(1, theMaxPolishEvals / (aNbDims * aNbPasses));
+        int nbPasses = (nbDims > 1) ? 2 : 1;
+        int perCoordLimit = Max(1, maxPolishEvals / (nbDims * nbPasses));
 
-        for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+        for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
         {
-            if (theEvalCount >= theMaxPolishEvals)
+            if (evalCount >= maxPolishEvals)
             {
                 break;
             }
 
-            int aMaxIter = Min(aPerCoordLimit, theMaxPolishEvals - theEvalCount);
-            BrentAlongCoordinate(theFunc,
-                                 thePosition,
-                                 aDimIdx,
-                                 theLowerBounds[aDimIdx],
-                                 theUpperBounds[aDimIdx],
-                                 ref theValue,
-                                 theTolerance,
-                                 aMaxIter,
-                                 ref theEvalCount);
+            int maxIter = Min(perCoordLimit, maxPolishEvals - evalCount);
+            BrentAlongCoordinate(func,
+                                 position,
+                                 dimIdx,
+                                 lowerBounds[dimIdx],
+                                 upperBounds[dimIdx],
+                                 ref value,
+                                 tolerance,
+                                 maxIter,
+                                 ref evalCount);
         }
 
         // Second pass for non-separable functions - dimensions may interact
-        if (theEvalCount < theMaxPolishEvals && aNbDims > 1)
+        if (evalCount < maxPolishEvals && nbDims > 1)
         {
-            for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+            for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
-                if (theEvalCount >= theMaxPolishEvals)
+                if (evalCount >= maxPolishEvals)
                 {
                     break;
                 }
 
-                int aMaxIter = Min(aPerCoordLimit, theMaxPolishEvals - theEvalCount);
-                BrentAlongCoordinate(theFunc,
-                                     thePosition,
-                                     aDimIdx,
-                                     theLowerBounds[aDimIdx],
-                                     theUpperBounds[aDimIdx],
-                                     ref theValue,
-                                     theTolerance,
-                                     aMaxIter,
-                                     ref theEvalCount);
+                int maxIter = Min(perCoordLimit, maxPolishEvals - evalCount);
+                BrentAlongCoordinate(func,
+                                     position,
+                                     dimIdx,
+                                     lowerBounds[dimIdx],
+                                     upperBounds[dimIdx],
+                                     ref value,
+                                     tolerance,
+                                     maxIter,
+                                     ref evalCount);
             }
         }
     }
@@ -250,11 +251,11 @@ public static partial class MathOpt
         public double BestValue;
         public double CurrentValue;
 
-        public PSO_Particle(int theLower, int theUpper)
+        public PSO_Particle(int lower, int upper)
         {
-            Position = new math_Vector(theLower, theUpper);
-            Velocity = new math_Vector(theLower, theUpper);
-            BestPosition = new math_Vector(theLower, theUpper);
+            Position = new math_Vector(lower, upper);
+            Velocity = new math_Vector(lower, upper);
+            BestPosition = new math_Vector(lower, upper);
             BestValue = double.MaxValue;
             CurrentValue = double.MaxValue;
         }
@@ -265,435 +266,435 @@ public static partial class MathOpt
     /// particles (theSeeds, may be null) and reporting statistics into theStats (may be null). Stochastic, but
     /// reproducible for a given PSOConfig.Seed. The best point is polished coordinate-wise at the end.
     /// </summary>
-    public static VectorResult PSO<Function>(Function theFunc,
-                                             math_Vector theLowerBounds,
-                                             math_Vector theUpperBounds,
-                                             PSOConfig theConfig,
-                                             NCollection_DynamicArray<PSOSeedParticle>? theSeeds,
-                                             PSOStats? theStats = null)
+    public static VectorResult PSO<Function>(Function func,
+                                             math_Vector lowerBounds,
+                                             math_Vector upperBounds,
+                                             PSOConfig config,
+                                             NCollection_DynamicArray<PSOSeedParticle>? seeds,
+                                             PSOStats? stats = null)
         where Function : IVectorFunction
     {
-        VectorResult aResult = new();
+        VectorResult result = new();
 
-        int aLower = theLowerBounds.Lower();
-        int aUpper = theLowerBounds.Upper();
-        int aNbDims = aUpper - aLower + 1;
+        int lower = lowerBounds.Lower();
+        int upper = lowerBounds.Upper();
+        int nbDims = upper - lower + 1;
 
         // Check dimensions
         // OCCT: only the length of the upper bounds is checked; they are then indexed with the lower bounds' indexes.
-        if (theUpperBounds.Length() != aNbDims)
+        if (upperBounds.Length() != nbDims)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Check bounds
-        for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+        for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
         {
-            if (theLowerBounds[aDimIdx] >= theUpperBounds[aDimIdx])
+            if (lowerBounds[dimIdx] >= upperBounds[dimIdx])
             {
-                aResult.Status = Status.InvalidInput;
-                return aResult;
+                result.Status = Status.InvalidInput;
+                return result;
             }
         }
 
-        int aNbParticles = theConfig.NbParticles;
-        if (aNbParticles <= 0)
+        int nbParticles = config.NbParticles;
+        if (nbParticles <= 0)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Initialize stats
-        PSOStats aLocalStats = new();
+        PSOStats localStats = new();
 
-        NCollection_DynamicArray<PSO_Particle> aSwarm = new();
-        for (int aPartIdx = 0; aPartIdx < aNbParticles; ++aPartIdx)
+        NCollection_DynamicArray<PSO_Particle> swarm = new();
+        for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
         {
-            aSwarm.Append(new PSO_Particle(aLower, aUpper));
+            swarm.Append(new PSO_Particle(lower, upper));
         }
 
         // Random number generator
-        RandomGenerator aRNG = new(theConfig.Seed);
+        RandomGenerator rng = new(config.Seed);
 
         // Compute velocity limits
-        math_Vector aVelMax = new(aLower, aUpper);
-        math_Vector aRange = new(aLower, aUpper);
-        for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+        math_Vector velMax = new(lower, upper);
+        math_Vector range = new(lower, upper);
+        for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
         {
-            aRange[aDimIdx] = theUpperBounds[aDimIdx] - theLowerBounds[aDimIdx];
-            aVelMax[aDimIdx] = theConfig.VelocityClamp * aRange[aDimIdx];
+            range[dimIdx] = upperBounds[dimIdx] - lowerBounds[dimIdx];
+            velMax[dimIdx] = config.VelocityClamp * range[dimIdx];
         }
 
         // Initialize particles
-        math_Vector aGlobalBest = new(aLower, aUpper);
-        double aGlobalBestValue = double.MaxValue;
+        math_Vector globalBest = new(lower, upper);
+        double globalBestValue = double.MaxValue;
 
         // Determine how many particles are seeded
-        int aNbSeeds = (theSeeds is not null) ? theSeeds.Length() : 0;
-        int aSeeded = 0;
+        int nbSeeds = (seeds is not null) ? seeds.Length() : 0;
+        int seeded = 0;
 
         // Validate seed dimensions and index ranges
-        if (aNbSeeds > 0)
+        if (nbSeeds > 0)
         {
-            for (int aSeedIdx = 0; aSeedIdx < aNbSeeds; ++aSeedIdx)
+            for (int seedIdx = 0; seedIdx < nbSeeds; ++seedIdx)
             {
-                PSOSeedParticle aSeed = theSeeds!.Value(aSeedIdx);
-                if (aSeed.Position.Lower() != aLower || aSeed.Position.Upper() != aUpper)
+                PSOSeedParticle seed = seeds!.Value(seedIdx);
+                if (seed.Position.Lower() != lower || seed.Position.Upper() != upper)
                 {
-                    aResult.Status = Status.InvalidInput;
-                    return aResult;
+                    result.Status = Status.InvalidInput;
+                    return result;
                 }
-                if (aSeed.Velocity is not null
-                    && (aSeed.Velocity.Lower() != aLower || aSeed.Velocity.Upper() != aUpper))
+                if (seed.Velocity is not null
+                    && (seed.Velocity.Lower() != lower || seed.Velocity.Upper() != upper))
                 {
-                    aResult.Status = Status.InvalidInput;
-                    return aResult;
+                    result.Status = Status.InvalidInput;
+                    return result;
                 }
             }
         }
 
         // Validate SeededOnly requires at least one seed
-        if (theConfig.InitMode == PSOInitMode.SeededOnly && aNbSeeds == 0)
+        if (config.InitMode == PSOInitMode.SeededOnly && nbSeeds == 0)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        if (aNbSeeds > 0
-            && (theConfig.InitMode == PSOInitMode.SeededPlusRandom
-                || theConfig.InitMode == PSOInitMode.SeededOnly))
+        if (nbSeeds > 0
+            && (config.InitMode == PSOInitMode.SeededPlusRandom
+                || config.InitMode == PSOInitMode.SeededOnly))
         {
             // Initialize from seeds
-            int aNbDirect = Min(aNbSeeds, aNbParticles);
-            for (int aSeedIdx = 0; aSeedIdx < aNbDirect; ++aSeedIdx)
+            int nbDirect = Min(nbSeeds, nbParticles);
+            for (int seedIdx = 0; seedIdx < nbDirect; ++seedIdx)
             {
-                PSO_Particle aParticle = aSwarm.ChangeValue(aSeedIdx);
-                PSOSeedParticle aSeed = theSeeds!.Value(aSeedIdx);
+                PSO_Particle particle = swarm.ChangeValue(seedIdx);
+                PSOSeedParticle seed = seeds!.Value(seedIdx);
 
                 // Clamp seed position to bounds, track if any coordinate was clamped
-                bool aWasClamped = false;
-                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                bool wasClamped = false;
+                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                 {
-                    double aClamped = MathUtils.Clamp(aSeed.Position[aDimIdx],
-                                                      theLowerBounds[aDimIdx],
-                                                      theUpperBounds[aDimIdx]);
-                    if (aClamped != aSeed.Position[aDimIdx])
+                    double clamped = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(seed.Position[dimIdx],
+                                                      lowerBounds[dimIdx],
+                                                      upperBounds[dimIdx]);
+                    if (clamped != seed.Position[dimIdx])
                     {
-                        aWasClamped = true;
+                        wasClamped = true;
                     }
-                    aParticle.Position[aDimIdx] = aClamped;
+                    particle.Position[dimIdx] = clamped;
                 }
 
                 // Use seed velocity or generate random
-                if (aSeed.Velocity is not null)
+                if (seed.Velocity is not null)
                 {
-                    math_Vector aSeedVel = aSeed.Velocity;
-                    for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                    math_Vector seedVel = seed.Velocity;
+                    for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                     {
-                        aParticle.Velocity[aDimIdx] =
-                          MathUtils.Clamp(aSeedVel[aDimIdx], -aVelMax[aDimIdx], aVelMax[aDimIdx]);
+                        particle.Velocity[dimIdx] =
+                          global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(seedVel[dimIdx], -velMax[dimIdx], velMax[dimIdx]);
                     }
                 }
                 else
                 {
-                    for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                    for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                     {
-                        aParticle.Velocity[aDimIdx] = (2.0 * aRNG.NextReal() - 1.0) * aVelMax[aDimIdx];
+                        particle.Velocity[dimIdx] = (2.0 * rng.NextReal() - 1.0) * velMax[dimIdx];
                     }
                 }
 
                 // Use known value only if position was not clamped; otherwise re-evaluate
-                if (aSeed.Value.HasValue && !aWasClamped)
+                if (seed.Value.HasValue && !wasClamped)
                 {
-                    aParticle.CurrentValue = aSeed.Value.Value;
+                    particle.CurrentValue = seed.Value.Value;
                 }
                 else
                 {
-                    if (!theFunc.Value(aParticle.Position, out aParticle.CurrentValue))
+                    if (!func.Value(particle.Position, out particle.CurrentValue))
                     {
-                        aParticle.CurrentValue = double.MaxValue;
+                        particle.CurrentValue = double.MaxValue;
                     }
-                    ++aLocalStats.NbFunctionEvals;
+                    ++localStats.NbFunctionEvals;
                 }
 
-                aParticle.BestPosition.Initialized(aParticle.Position);
-                aParticle.BestValue = aParticle.CurrentValue;
+                particle.BestPosition.Initialized(particle.Position);
+                particle.BestValue = particle.CurrentValue;
 
-                if (aParticle.BestValue < aGlobalBestValue)
+                if (particle.BestValue < globalBestValue)
                 {
-                    aGlobalBestValue = aParticle.BestValue;
-                    aGlobalBest.Initialized(aParticle.BestPosition);
+                    globalBestValue = particle.BestValue;
+                    globalBest.Initialized(particle.BestPosition);
                 }
             }
-            aSeeded = aNbDirect;
+            seeded = nbDirect;
 
             // For SeededOnly: if seeds < NbParticles, jitter best seeds to fill
-            if (theConfig.InitMode == PSOInitMode.SeededOnly && aSeeded < aNbParticles)
+            if (config.InitMode == PSOInitMode.SeededOnly && seeded < nbParticles)
             {
-                for (int aPartIdx = aSeeded; aPartIdx < aNbParticles; ++aPartIdx)
+                for (int partIdx = seeded; partIdx < nbParticles; ++partIdx)
                 {
-                    PSO_Particle aParticle = aSwarm.ChangeValue(aPartIdx);
+                    PSO_Particle particle = swarm.ChangeValue(partIdx);
                     // Pick a seed to jitter (round-robin)
-                    int aSrcIdx = aPartIdx % aSeeded;
-                    PSOSeedParticle aSrc = theSeeds!.Value(aSrcIdx);
+                    int srcIdx = partIdx % seeded;
+                    PSOSeedParticle src = seeds!.Value(srcIdx);
 
-                    for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                    for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                     {
-                        double aJitter = (2.0 * aRNG.NextReal() - 1.0) * 0.1 * aRange[aDimIdx];
-                        aParticle.Position[aDimIdx] = MathUtils.Clamp(aSrc.Position[aDimIdx] + aJitter,
-                                                                      theLowerBounds[aDimIdx],
-                                                                      theUpperBounds[aDimIdx]);
-                        aParticle.Velocity[aDimIdx] = (2.0 * aRNG.NextReal() - 1.0) * aVelMax[aDimIdx];
+                        double jitter = (2.0 * rng.NextReal() - 1.0) * 0.1 * range[dimIdx];
+                        particle.Position[dimIdx] = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(src.Position[dimIdx] + jitter,
+                                                                      lowerBounds[dimIdx],
+                                                                      upperBounds[dimIdx]);
+                        particle.Velocity[dimIdx] = (2.0 * rng.NextReal() - 1.0) * velMax[dimIdx];
                     }
 
-                    if (!theFunc.Value(aParticle.Position, out aParticle.CurrentValue))
+                    if (!func.Value(particle.Position, out particle.CurrentValue))
                     {
-                        aParticle.CurrentValue = double.MaxValue;
+                        particle.CurrentValue = double.MaxValue;
                     }
-                    ++aLocalStats.NbFunctionEvals;
+                    ++localStats.NbFunctionEvals;
 
-                    aParticle.BestPosition.Initialized(aParticle.Position);
-                    aParticle.BestValue = aParticle.CurrentValue;
+                    particle.BestPosition.Initialized(particle.Position);
+                    particle.BestValue = particle.CurrentValue;
 
-                    if (aParticle.BestValue < aGlobalBestValue)
+                    if (particle.BestValue < globalBestValue)
                     {
-                        aGlobalBestValue = aParticle.BestValue;
-                        aGlobalBest.Initialized(aParticle.BestPosition);
+                        globalBestValue = particle.BestValue;
+                        globalBest.Initialized(particle.BestPosition);
                     }
                 }
-                aSeeded = aNbParticles;
+                seeded = nbParticles;
             }
         }
 
         // Fill remaining particles randomly
-        for (int aPartIdx = aSeeded; aPartIdx < aNbParticles; ++aPartIdx)
+        for (int partIdx = seeded; partIdx < nbParticles; ++partIdx)
         {
-            PSO_Particle aParticle = aSwarm.ChangeValue(aPartIdx);
-            for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+            PSO_Particle particle = swarm.ChangeValue(partIdx);
+            for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
-                aParticle.Position[aDimIdx] = theLowerBounds[aDimIdx] + aRNG.NextReal() * aRange[aDimIdx];
-                aParticle.Velocity[aDimIdx] = (2.0 * aRNG.NextReal() - 1.0) * aVelMax[aDimIdx];
+                particle.Position[dimIdx] = lowerBounds[dimIdx] + rng.NextReal() * range[dimIdx];
+                particle.Velocity[dimIdx] = (2.0 * rng.NextReal() - 1.0) * velMax[dimIdx];
             }
 
-            if (!theFunc.Value(aParticle.Position, out aParticle.CurrentValue))
+            if (!func.Value(particle.Position, out particle.CurrentValue))
             {
-                aParticle.CurrentValue = double.MaxValue;
+                particle.CurrentValue = double.MaxValue;
             }
-            ++aLocalStats.NbFunctionEvals;
+            ++localStats.NbFunctionEvals;
 
-            aParticle.BestPosition.Initialized(aParticle.Position);
-            aParticle.BestValue = aParticle.CurrentValue;
+            particle.BestPosition.Initialized(particle.Position);
+            particle.BestValue = particle.CurrentValue;
 
-            if (aParticle.BestValue < aGlobalBestValue)
+            if (particle.BestValue < globalBestValue)
             {
-                aGlobalBestValue = aParticle.BestValue;
-                aGlobalBest.Initialized(aParticle.BestPosition);
+                globalBestValue = particle.BestValue;
+                globalBest.Initialized(particle.BestPosition);
             }
         }
 
-        aLocalStats.InitialBest = aGlobalBestValue;
+        localStats.InitialBest = globalBestValue;
 
         // Main PSO loop
-        double aPrevBest = aGlobalBestValue;
-        int aStagnationCount = 0;
-        double aStagnTol =
-          (theConfig.NoImproveTol > 0.0) ? theConfig.NoImproveTol : theConfig.Tolerance;
+        double prevBest = globalBestValue;
+        int stagnationCount = 0;
+        double stagnTol =
+          (config.NoImproveTol > 0.0) ? config.NoImproveTol : config.Tolerance;
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Compute inertia weight
-            double anOmega = theConfig.Omega;
-            if (theConfig.InertiaSchedule == PSOInertiaSchedule.LinearDecay)
+            double omega = config.Omega;
+            if (config.InertiaSchedule == PSOInertiaSchedule.LinearDecay)
             {
-                anOmega = theConfig.Omega
-                          - (theConfig.Omega - theConfig.OmegaMin) * (double)anIter
-                              / (double)theConfig.MaxIterations;
+                omega = config.Omega
+                          - (config.Omega - config.OmegaMin) * (double)iter
+                              / (double)config.MaxIterations;
             }
 
             // Update each particle
-            for (int aPartIdx = 0; aPartIdx < aNbParticles; ++aPartIdx)
+            for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
             {
-                PSO_Particle aParticle = aSwarm.ChangeValue(aPartIdx);
+                PSO_Particle particle = swarm.ChangeValue(partIdx);
 
                 // Update velocity
-                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                 {
-                    double aRand1 = aRNG.NextReal();
-                    double aRand2 = aRNG.NextReal();
+                    double rand1 = rng.NextReal();
+                    double rand2 = rng.NextReal();
 
-                    double aVnew =
-                      anOmega * aParticle.Velocity[aDimIdx]
-                      + theConfig.PhiPersonal * aRand1
-                          * (aParticle.BestPosition[aDimIdx] - aParticle.Position[aDimIdx])
-                      + theConfig.PhiGlobal * aRand2 * (aGlobalBest[aDimIdx] - aParticle.Position[aDimIdx]);
+                    double vnew =
+                      omega * particle.Velocity[dimIdx]
+                      + config.PhiPersonal * rand1
+                          * (particle.BestPosition[dimIdx] - particle.Position[dimIdx])
+                      + config.PhiGlobal * rand2 * (globalBest[dimIdx] - particle.Position[dimIdx]);
 
                     // Clamp velocity
-                    aVnew = MathUtils.Clamp(aVnew, -aVelMax[aDimIdx], aVelMax[aDimIdx]);
-                    aParticle.Velocity[aDimIdx] = aVnew;
+                    vnew = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(vnew, -velMax[dimIdx], velMax[dimIdx]);
+                    particle.Velocity[dimIdx] = vnew;
                 }
 
                 // Update position with boundary handling
-                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                 {
-                    double aXnew = aParticle.Position[aDimIdx] + aParticle.Velocity[aDimIdx];
+                    double xnew = particle.Position[dimIdx] + particle.Velocity[dimIdx];
 
-                    if (aXnew < theLowerBounds[aDimIdx] || aXnew > theUpperBounds[aDimIdx])
+                    if (xnew < lowerBounds[dimIdx] || xnew > upperBounds[dimIdx])
                     {
-                        ++aLocalStats.NbBoundaryCorrections;
+                        ++localStats.NbBoundaryCorrections;
 
-                        switch (theConfig.BoundaryMode)
+                        switch (config.BoundaryMode)
                         {
                             case PSOBoundaryMode.Clamp:
                             {
-                                aXnew = MathUtils.Clamp(aXnew, theLowerBounds[aDimIdx], theUpperBounds[aDimIdx]);
-                                aParticle.Velocity[aDimIdx] = -0.5 * aParticle.Velocity[aDimIdx];
+                                xnew = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(xnew, lowerBounds[dimIdx], upperBounds[dimIdx]);
+                                particle.Velocity[dimIdx] = -0.5 * particle.Velocity[dimIdx];
                                 break;
                             }
                             case PSOBoundaryMode.Reflect:
                             {
-                                if (aXnew < theLowerBounds[aDimIdx])
+                                if (xnew < lowerBounds[dimIdx])
                                 {
-                                    aXnew = 2.0 * theLowerBounds[aDimIdx] - aXnew;
+                                    xnew = 2.0 * lowerBounds[dimIdx] - xnew;
                                 }
                                 else
                                 {
-                                    aXnew = 2.0 * theUpperBounds[aDimIdx] - aXnew;
+                                    xnew = 2.0 * upperBounds[dimIdx] - xnew;
                                 }
                                 // Re-clamp in case reflection overshoots the other bound
-                                aXnew = MathUtils.Clamp(aXnew, theLowerBounds[aDimIdx], theUpperBounds[aDimIdx]);
-                                aParticle.Velocity[aDimIdx] = -0.5 * aParticle.Velocity[aDimIdx];
+                                xnew = global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(xnew, lowerBounds[dimIdx], upperBounds[dimIdx]);
+                                particle.Velocity[dimIdx] = -0.5 * particle.Velocity[dimIdx];
                                 break;
                             }
                             case PSOBoundaryMode.Wrap:
                             {
-                                double aRangeSize = aRange[aDimIdx];
-                                aXnew = aXnew - theLowerBounds[aDimIdx];
-                                aXnew = aXnew % aRangeSize; // C#'s % on doubles is std::fmod
-                                if (aXnew < 0.0)
+                                double rangeSize = range[dimIdx];
+                                xnew = xnew - lowerBounds[dimIdx];
+                                xnew = xnew % rangeSize; // C#'s % on doubles is std::fmod
+                                if (xnew < 0.0)
                                 {
-                                    aXnew += aRangeSize;
+                                    xnew += rangeSize;
                                 }
-                                aXnew += theLowerBounds[aDimIdx];
+                                xnew += lowerBounds[dimIdx];
                                 break;
                             }
                         }
                     }
 
-                    aParticle.Position[aDimIdx] = aXnew;
+                    particle.Position[dimIdx] = xnew;
                 }
 
                 // Evaluate fitness
-                if (!theFunc.Value(aParticle.Position, out aParticle.CurrentValue))
+                if (!func.Value(particle.Position, out particle.CurrentValue))
                 {
-                    aParticle.CurrentValue = double.MaxValue;
+                    particle.CurrentValue = double.MaxValue;
                 }
-                ++aLocalStats.NbFunctionEvals;
+                ++localStats.NbFunctionEvals;
 
                 // Update personal best
-                if (aParticle.CurrentValue < aParticle.BestValue)
+                if (particle.CurrentValue < particle.BestValue)
                 {
-                    aParticle.BestValue = aParticle.CurrentValue;
-                    aParticle.BestPosition.Initialized(aParticle.Position);
+                    particle.BestValue = particle.CurrentValue;
+                    particle.BestPosition.Initialized(particle.Position);
                 }
 
                 // Update global best
-                if (aParticle.BestValue < aGlobalBestValue)
+                if (particle.BestValue < globalBestValue)
                 {
-                    aGlobalBestValue = aParticle.BestValue;
-                    aGlobalBest.Initialized(aParticle.BestPosition);
+                    globalBestValue = particle.BestValue;
+                    globalBest.Initialized(particle.BestPosition);
                 }
             }
 
             // Check for target value early stop
-            if (theConfig.TargetValue.HasValue && aGlobalBestValue <= theConfig.TargetValue.Value)
+            if (config.TargetValue.HasValue && globalBestValue <= config.TargetValue.Value)
             {
                 break;
             }
 
             // Check for convergence (stagnation) after minimum iterations
-            if (anIter >= theConfig.MinIterations)
+            if (iter >= config.MinIterations)
             {
-                if (Math.Abs(aGlobalBestValue - aPrevBest) < aStagnTol * (1.0 + Math.Abs(aGlobalBestValue)))
+                if (Math.Abs(globalBestValue - prevBest) < stagnTol * (1.0 + Math.Abs(globalBestValue)))
                 {
-                    ++aStagnationCount;
-                    if (aStagnationCount >= theConfig.NoImproveIters)
+                    ++stagnationCount;
+                    if (stagnationCount >= config.NoImproveIters)
                     {
-                        ++aLocalStats.NbStagnationEvents;
+                        ++localStats.NbStagnationEvents;
 
                         // Restart logic
-                        if (theConfig.RestartFraction > 0.0
-                            && (theConfig.MaxRestarts == 0 || aLocalStats.NbRestarts < theConfig.MaxRestarts))
+                        if (config.RestartFraction > 0.0
+                            && (config.MaxRestarts == 0 || localStats.NbRestarts < config.MaxRestarts))
                         {
-                            ++aLocalStats.NbRestarts;
-                            aStagnationCount = 0;
+                            ++localStats.NbRestarts;
+                            stagnationCount = 0;
 
                             // Reinitialize worst particles
-                            int aNbRestart = (int)Math.Ceiling(theConfig.RestartFraction * aNbParticles);
-                            aNbRestart = Min(aNbRestart, aNbParticles - 1); // keep at least the best
+                            int nbRestart = (int)Math.Ceiling(config.RestartFraction * nbParticles);
+                            nbRestart = Min(nbRestart, nbParticles - 1); // keep at least the best
 
                             // Find best particle index
-                            int aBestIdx = 0;
-                            for (int aFindIdx = 1; aFindIdx < aNbParticles; ++aFindIdx)
+                            int bestIdx = 0;
+                            for (int findIdx = 1; findIdx < nbParticles; ++findIdx)
                             {
-                                if (aSwarm.Value(aFindIdx).BestValue < aSwarm.Value(aBestIdx).BestValue)
+                                if (swarm.Value(findIdx).BestValue < swarm.Value(bestIdx).BestValue)
                                 {
-                                    aBestIdx = aFindIdx;
+                                    bestIdx = findIdx;
                                 }
                             }
 
                             // Sort by fitness descending (simple selection of worst)
                             // Reinitialize aNbRestart worst particles
-                            NCollection_DynamicArray<int> aWorstIndices = new();
-                            for (int aCollIdx = 0; aCollIdx < aNbParticles; ++aCollIdx)
+                            NCollection_DynamicArray<int> worstIndices = new();
+                            for (int collIdx = 0; collIdx < nbParticles; ++collIdx)
                             {
-                                if (aCollIdx != aBestIdx)
+                                if (collIdx != bestIdx)
                                 {
-                                    aWorstIndices.Append(aCollIdx);
+                                    worstIndices.Append(collIdx);
                                 }
                             }
                             // Simple approach: sort by BestValue descending, take first aNbRestart
-                            for (int aSortOuter = 0; aSortOuter < aWorstIndices.Length() - 1; ++aSortOuter)
+                            for (int sortOuter = 0; sortOuter < worstIndices.Length() - 1; ++sortOuter)
                             {
-                                for (int aSortInner = aSortOuter + 1; aSortInner < aWorstIndices.Length();
-                                     ++aSortInner)
+                                for (int sortInner = sortOuter + 1; sortInner < worstIndices.Length();
+                                     ++sortInner)
                                 {
-                                    if (aSwarm.Value(aWorstIndices.Value(aSortOuter)).BestValue
-                                        < aSwarm.Value(aWorstIndices.Value(aSortInner)).BestValue)
+                                    if (swarm.Value(worstIndices.Value(sortOuter)).BestValue
+                                        < swarm.Value(worstIndices.Value(sortInner)).BestValue)
                                     {
-                                        int aTmp = aWorstIndices.Value(aSortOuter);
-                                        aWorstIndices.ChangeValue(aSortOuter) = aWorstIndices.Value(aSortInner);
-                                        aWorstIndices.ChangeValue(aSortInner) = aTmp;
+                                        int tmp = worstIndices.Value(sortOuter);
+                                        worstIndices.ChangeValue(sortOuter) = worstIndices.Value(sortInner);
+                                        worstIndices.ChangeValue(sortInner) = tmp;
                                     }
                                 }
                             }
 
-                            int aNbToRestart = Min(aNbRestart, aWorstIndices.Length());
-                            for (int aRestIdx = 0; aRestIdx < aNbToRestart; ++aRestIdx)
+                            int nbToRestart = Min(nbRestart, worstIndices.Length());
+                            for (int restIdx = 0; restIdx < nbToRestart; ++restIdx)
                             {
-                                PSO_Particle aRestartPart = aSwarm.ChangeValue(aWorstIndices.Value(aRestIdx));
-                                for (int aDimIdx = aLower; aDimIdx <= aUpper; ++aDimIdx)
+                                PSO_Particle restartPart = swarm.ChangeValue(worstIndices.Value(restIdx));
+                                for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                                 {
-                                    aRestartPart.Position[aDimIdx] =
-                                      theLowerBounds[aDimIdx] + aRNG.NextReal() * aRange[aDimIdx];
-                                    aRestartPart.Velocity[aDimIdx] = (2.0 * aRNG.NextReal() - 1.0) * aVelMax[aDimIdx];
+                                    restartPart.Position[dimIdx] =
+                                      lowerBounds[dimIdx] + rng.NextReal() * range[dimIdx];
+                                    restartPart.Velocity[dimIdx] = (2.0 * rng.NextReal() - 1.0) * velMax[dimIdx];
                                 }
 
-                                if (!theFunc.Value(aRestartPart.Position, out aRestartPart.CurrentValue))
+                                if (!func.Value(restartPart.Position, out restartPart.CurrentValue))
                                 {
-                                    aRestartPart.CurrentValue = double.MaxValue;
+                                    restartPart.CurrentValue = double.MaxValue;
                                 }
-                                ++aLocalStats.NbFunctionEvals;
+                                ++localStats.NbFunctionEvals;
 
-                                aRestartPart.BestPosition.Initialized(aRestartPart.Position);
-                                aRestartPart.BestValue = aRestartPart.CurrentValue;
+                                restartPart.BestPosition.Initialized(restartPart.Position);
+                                restartPart.BestValue = restartPart.CurrentValue;
 
-                                if (aRestartPart.BestValue < aGlobalBestValue)
+                                if (restartPart.BestValue < globalBestValue)
                                 {
-                                    aGlobalBestValue = aRestartPart.BestValue;
-                                    aGlobalBest.Initialized(aRestartPart.BestPosition);
+                                    globalBestValue = restartPart.BestValue;
+                                    globalBest.Initialized(restartPart.BestPosition);
                                 }
                             }
                         }
@@ -706,46 +707,46 @@ public static partial class MathOpt
                 }
                 else
                 {
-                    aStagnationCount = 0;
+                    stagnationCount = 0;
                 }
             }
-            aPrevBest = aGlobalBestValue;
+            prevBest = globalBestValue;
         }
 
         // Polish the global best using coordinate-wise Brent's method
-        int aPolishEvals = 0;
-        if (theConfig.PolishBudgetPerDim > 0)
+        int polishEvals = 0;
+        if (config.PolishBudgetPerDim > 0)
         {
-            PolishCoordinateWise(theFunc,
-                                 aGlobalBest,
-                                 ref aGlobalBestValue,
-                                 theLowerBounds,
-                                 theUpperBounds,
-                                 theConfig.Tolerance,
-                                 theConfig.PolishBudgetPerDim * aNbDims,
-                                 out aPolishEvals);
-            aLocalStats.NbFunctionEvals += aPolishEvals;
+            PolishCoordinateWise(func,
+                                 globalBest,
+                                 ref globalBestValue,
+                                 lowerBounds,
+                                 upperBounds,
+                                 config.Tolerance,
+                                 config.PolishBudgetPerDim * nbDims,
+                                 out polishEvals);
+            localStats.NbFunctionEvals += polishEvals;
         }
 
-        aLocalStats.NbIterations = aResult.NbIterations;
-        aLocalStats.FinalBest = aGlobalBestValue;
+        localStats.NbIterations = result.NbIterations;
+        localStats.FinalBest = globalBestValue;
 
-        theStats?.Assign(aLocalStats);
+        stats?.Assign(localStats);
 
-        aResult.Status = Status.OK;
-        aResult.Solution = aGlobalBest;
-        aResult.Value = aGlobalBestValue;
-        return aResult;
+        result.Status = Status.OK;
+        result.Solution = globalBest;
+        result.Value = globalBestValue;
+        return result;
     }
 
     /// <summary>Particle Swarm Optimization for global minimization (basic overload).</summary>
-    public static VectorResult PSO<Function>(Function theFunc,
-                                             math_Vector theLowerBounds,
-                                             math_Vector theUpperBounds,
-                                             PSOConfig? theConfig = null)
+    public static VectorResult PSO<Function>(Function func,
+                                             math_Vector lowerBounds,
+                                             math_Vector upperBounds,
+                                             PSOConfig? config = null)
         where Function : IVectorFunction
     {
-        theConfig ??= new PSOConfig();
-        return PSO(theFunc, theLowerBounds, theUpperBounds, theConfig, null, null);
+        config ??= new PSOConfig();
+        return PSO(func, lowerBounds, upperBounds, config, null, null);
     }
 }

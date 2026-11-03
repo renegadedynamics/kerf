@@ -1,3 +1,5 @@
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -80,21 +82,21 @@ public sealed class ShapeMesh
             faceMeshes[i] = new FaceMesh(new ReadOnlyMemory<float>(buffers.Positions, 3 * node, 3 * nodes),
                                          new ReadOnlyMemory<float>(buffers.Normals, 3 * node, 3 * nodes),
                                          new ReadOnlyMemory<int>(buffers.Triangles, tri, tris),
-                                         GeomTypeOf((GeomAbs_SurfaceType)buffers.FaceTypes[i]));
+                                         GeomTypeOf((SurfaceKind)buffers.FaceTypes[i]));
         }
         var edgeMeshes = new EdgeMesh[edges.Count];
         for (int i = 0; i < edgeMeshes.Length; i++)
         {
             int point = (int)buffers.EdgePoints[i], points = (int)buffers.EdgePoints[i + 1] - point;
             edgeMeshes[i] = new EdgeMesh(new ReadOnlyMemory<float>(buffers.Points, 3 * point, 3 * points),
-                                         GeomTypeOf((GeomAbs_CurveType)buffers.EdgeTypes[i]));
+                                         GeomTypeOf((CurveKind)buffers.EdgeTypes[i]));
         }
         return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.Vertices().Select(v => v.ToVector())], tolerances);
     }
 
-    private static GeomType GeomTypeOf(GeomAbs_SurfaceType type) => Shape.GeomTypeOf(type);
+    private static GeomType GeomTypeOf(SurfaceKind type) => Shape.GeomTypeOf(type);
 
-    private static GeomType GeomTypeOf(GeomAbs_CurveType type) => Shape.GeomTypeOf(type);
+    private static GeomType GeomTypeOf(CurveKind type) => Shape.GeomTypeOf(type);
 }
 
 /// <summary>
@@ -195,7 +197,7 @@ public sealed class MeshNode
         foreach (var (key, mesh) in cache)
             if (key.IsPartner(shape.TopoShape) && key.Orientation() == shape.TopoShape.Orientation())
                 return mesh;
-        var identity = new TopLoc_Location();
+        var identity = new Placement();
         var unplaced = shape.Placed(shape.TopoShape.Located(identity));
         var made = ShapeMesh.Of(unplaced, tolerances);
         cache.Add((shape.TopoShape, made));

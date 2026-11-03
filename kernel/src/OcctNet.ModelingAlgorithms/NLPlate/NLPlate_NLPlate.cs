@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -128,11 +132,11 @@ public class NLPlate_NLPlate
         myHGPPConstraints.Clear();
     }
 
-    public gp_XYZ Evaluate(in gp_XY point2d) => EvaluateDerivative(point2d, 0, 0);
+    public Xyz Evaluate(in Xy point2d) => EvaluateDerivative(point2d, 0, 0);
 
-    public gp_XYZ EvaluateDerivative(in gp_XY point2d, int iu, int iv)
+    public Xyz EvaluateDerivative(in Xy point2d, int iu, int iv)
     {
-        gp_XYZ Value = new(0.0, 0.0, 0.0);
+        Xyz Value = new(0.0, 0.0, 0.0);
         if ((iu == 0) && (iv == 0))
         {
             Value = myInitialSurface.Value(point2d.X(), point2d.Y()).XYZ();
@@ -186,7 +190,7 @@ public class NLPlate_NLPlate
             {
                 Order = ConstraintOrder;
             }
-            gp_XY UV = HGPP.UV();
+            Xy UV = HGPP.UV();
 
             if ((Order >= 0) && HGPP.IsG0())
             {
@@ -283,22 +287,22 @@ public class NLPlate_NLPlate
             NLPlate_HGPPConstraint HGPP = myHGPPConstraints.Value(index);
             if (HGPP.UVFreeSliding() && HGPP.IsG0())
             {
-                gp_XY UV = HGPP.UV();
-                gp_XYZ P0 = Evaluate(UV);
-                gp_XYZ P1 = HGPP.G0Target();
+                Xy UV = HGPP.UV();
+                Xyz P0 = Evaluate(UV);
+                Xyz P1 = HGPP.G0Target();
                 for (int iter = 1; iter <= NbIterations; iter++)
                 {
                     // iterates at the first order, which is enough near the surface (OCCT's note)
-                    gp_XYZ DP = P1 - P0;
-                    gp_XYZ Du = EvaluateDerivative(UV, 1, 0);
-                    gp_XYZ Dv = EvaluateDerivative(UV, 0, 1);
-                    math_Matrix mat = new(0, 1, 0, 1);
+                    Xyz DP = P1 - P0;
+                    Xyz Du = EvaluateDerivative(UV, 1, 0);
+                    Xyz Dv = EvaluateDerivative(UV, 0, 1);
+                    Matrix mat = new(0, 1, 0, 1);
                     mat[0, 0] = Du * Du;
                     mat[0, 1] = Du * Dv;
                     mat[1, 0] = Du * Dv;
                     mat[1, 1] = Dv * Dv;
-                    math_Gauss gauss = new(mat);
-                    if (!gauss.IsDone())
+                    Gauss gauss = new(mat);
+                    if (!gauss.IsDone)
                     {
                         break;
                     }

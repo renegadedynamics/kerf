@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Occt;
@@ -337,15 +338,15 @@ internal static class DDocStdCommands
     /// or four components (integers 0..255 with one above 1, as sRGB; else reals 0..1, as linear RGB). Returns the
     /// number of arguments used, 0 on a syntax error.
     /// </summary>
-    internal static int ParseColor(DrawInterpreter theDI, IReadOnlyList<string> theArgs, int theFirst, out Quantity_ColorRGBA theColor, bool theToParseAlpha = true)
+    internal static int ParseColor(DrawInterpreter theDI, IReadOnlyList<string> theArgs, int theFirst, out ColorWithAlpha theColor, bool theToParseAlpha = true)
     {
-        theColor = new Quantity_ColorRGBA();
+        theColor = new ColorWithAlpha();
         int theArgNb = theArgs.Count - theFirst;
-        if (theArgNb >= 1 && Quantity_ColorRGBA.ColorFromHex(theArgs[theFirst], ref theColor, !theToParseAlpha))
+        if (theArgNb >= 1 && ColorWithAlpha.ColorFromHex(theArgs[theFirst], ref theColor, !theToParseAlpha))
         {
             return 1;
         }
-        if (theArgNb >= 1 && Quantity_ColorRGBA.ColorFromName(theArgs[theFirst], ref theColor))
+        if (theArgNb >= 1 && ColorWithAlpha.ColorFromName(theArgs[theFirst], ref theColor))
         {
             if (theArgNb >= 2 && theToParseAlpha && parseColorComponent(theDI, theArgs[theFirst + 1], out float anAlpha))
             {
@@ -417,7 +418,7 @@ internal static class DDocStdCommands
         return parseRealComponent(theDI, theText, out theValue);
     }
 
-    private static bool parseIntegerColor(DrawInterpreter theDI, ref int theNb, IReadOnlyList<string> theArgs, int theFirst, ref Quantity_ColorRGBA theColor)
+    private static bool parseIntegerColor(DrawInterpreter theDI, ref int theNb, IReadOnlyList<string> theArgs, int theFirst, ref ColorWithAlpha theColor)
     {
         int[] aColor = [-1, -1, -1, -1];
         for (int i = 0; i < theNb; ++i)
@@ -444,12 +445,12 @@ internal static class DDocStdCommands
             aColor[3] = 255;
         }
         var aReal = new NCollection_Vec4<float>(aColor[0] / 255f, aColor[1] / 255f, aColor[2] / 255f, aColor[3] / 255f);
-        NCollection_Vec4<float> aLinear = Quantity_ColorRGBA.Convert_sRGB_To_LinearRGB(aReal);
-        theColor = new Quantity_ColorRGBA(aLinear.x(), aLinear.y(), aLinear.z(), aLinear.w());
+        NCollection_Vec4<float> aLinear = ColorWithAlpha.Convert_sRGB_To_LinearRGB(aReal);
+        theColor = new ColorWithAlpha(aLinear.X(), aLinear.Y(), aLinear.Z(), aLinear.W());
         return true;
     }
 
-    private static bool parseRealColor(DrawInterpreter theDI, ref int theNb, IReadOnlyList<string> theArgs, int theFirst, ref Quantity_ColorRGBA theColor)
+    private static bool parseRealColor(DrawInterpreter theDI, ref int theNb, IReadOnlyList<string> theArgs, int theFirst, ref ColorWithAlpha theColor)
     {
         float[] aColor = [1f, 1f, 1f, 1f];
         for (int i = 0; i < theNb; ++i)
@@ -467,7 +468,7 @@ internal static class DDocStdCommands
                 return false;
             }
         }
-        theColor = new Quantity_ColorRGBA(aColor[0], aColor[1], aColor[2], aColor[3]);
+        theColor = new ColorWithAlpha(aColor[0], aColor[1], aColor[2], aColor[3]);
         return true;
     }
 }

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +20,7 @@ namespace Occt;
 /// </para>
 /// <para>Names are compared ignoring the case of ASCII letters, as OCCT's <c>IsSameString(..., false)</c>.</para>
 /// </remarks>
-public abstract class BRepMesh_DiscretAlgoFactory : Standard_Transient
+public abstract class BRepMesh_DiscretAlgoFactory : Transient
 {
     private static readonly Lock theLock = new();
     private static readonly NCollection_List<BRepMesh_DiscretAlgoFactory> TheFactories = new();

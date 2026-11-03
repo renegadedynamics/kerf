@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
@@ -31,7 +32,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (global::Kerf.Engine.Foundation.FailureException anE)
         {
             aPortError = anE;
         }
@@ -43,7 +44,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     // A finite sub-range of [theFirst, theLast] (a random window where the bound is infinite).
     private static (double, double) Window(Oracle theO, double theFirst, double theLast, bool theWhole)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double a = theO.Real(-10, 5);
             return (a, a + theO.Real(1, 12));
@@ -58,20 +59,20 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     }
 
     // A point near the surface (on it, or at some distance from a point of it) or anywhere.
-    private static gp_Pnt RandomPoint(Oracle theO, Geom_Surface theS, double theU1, double theU2, double theV1, double theV2)
+    private static Point3D RandomPoint(Oracle theO, Geom_Surface theS, double theU1, double theU2, double theV1, double theV2)
     {
         int aKind = theO.Int(0, 4);
         if (aKind == 4)
         {
-            return new gp_Pnt(theO.Real(-30, 30), theO.Real(-30, 30), theO.Real(-30, 30));
+            return new Point3D(theO.Real(-30, 30), theO.Real(-30, 30), theO.Real(-30, 30));
         }
-        gp_Pnt aP = theS.Value(theO.Real(theU1, theU2), theO.Real(theV1, theV2));
+        Point3D aP = theS.Value(theO.Real(theU1, theU2), theO.Real(theV1, theV2));
         if (aKind == 0)
         {
             return aP;
         }
         double aScale = aKind == 1 ? theO.Real(1e-3, 1) : theO.Real(1, 20);
-        return new gp_Pnt(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1),
+        return new Point3D(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1),
             aP.Z() + aScale * theO.Real(-1, 1));
     }
 
@@ -120,7 +121,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 int aNbPoints = anOracle.Int(1, 3);
                 for (int p = 0; p < aNbPoints; p++)
                 {
-                    gp_Pnt aP = RandomPoint(anOracle, aPS, aWU1, aWU2, aWV1, aWV2);
+                    Point3D aP = RandomPoint(anOracle, aPS, aWU1, aWU2, aWV1, aWV2);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     string aWP = $"{aW} point {p} {aP}";
                     bool anOk = Both(anOracle,
@@ -240,7 +241,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     {
         try
         {
-            using var aMF = new N.BRepBuilderAPI_MakeFace(theS, theU1, theU2, theV1, theV2, Precision.Confusion());
+            using var aMF = new N.BRepBuilderAPI_MakeFace(theS, theU1, theU2, theV1, theV2, global::Kerf.Engine.Foundation.Precision.Confusion());
             return aMF.IsDone() ? aMF.Face() : null;
         }
         catch (N.OcctException)
@@ -259,11 +260,11 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             Geom_Surface aBase = anOS.BasisSurface();
             if (aBase is Geom_SurfaceOfLinearExtrusion)
             {
-                return Precision.IsInfinite(umin) || Precision.IsInfinite(umax)
+                return global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
                     ? new Geom_RectangularTrimmedSurface(anOS, theU1, theU2, theV1, theV2)
                     : new Geom_RectangularTrimmedSurface(anOS, theV1, theV2, false);
             }
-            if (aBase is Geom_SurfaceOfRevolution && (Precision.IsInfinite(vmin) || Precision.IsInfinite(vmax)))
+            if (aBase is Geom_SurfaceOfRevolution && (global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vmax)))
             {
                 return new Geom_RectangularTrimmedSurface(anOS, theV1, theV2, false);
             }
@@ -303,7 +304,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             using (aNF)
             {
                 (double aU1, double aU2, double aV1, double aV2) = UVBounds(aNF);
-                gp_Pnt aP = RandomPoint(anOracle, aPS, aU1, aU2, aV1, aV2);
+                Point3D aP = RandomPoint(anOracle, aPS, aU1, aU2, aV1, aV2);
                 string aW = $"{aKindName} #{c} [{aU1:R}, {aU2:R}] x [{aV1:R}, {aV2:R}], point {aP}";
                 using N.gp_Pnt aNP = Oracle.ToNative(aP);
                 using var aMV = new N.BRepBuilderAPI_MakeVertex(aNP);
@@ -311,10 +312,10 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 using var aN = new N.BRepExtrema_DistShapeShape(aNV, aNF);
 
                 // The port's side of BRepExtrema_ExtPF(V, F, MINMAX, Grad)
-                var aSurf = new GeomAdaptor_TransformedSurface(aPS, new gp_Trsf()); // BRepAdaptor_Surface
-                double aTol = Math.Min(N.BRep_Tool.Tolerance(aNF), Precision.Confusion());
-                double aTolU = Math.Max(aSurf.UResolution(aTol), Precision.PConfusion());
-                double aTolV = Math.Max(aSurf.VResolution(aTol), Precision.PConfusion());
+                var aSurf = new GeomAdaptor_TransformedSurface(aPS, new Transform3D()); // BRepAdaptor_Surface
+                double aTol = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
+                double aTolU = Math.Max(aSurf.UResolution(aTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
+                double aTolV = Math.Max(aSurf.VResolution(aTol), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 var aPort = new Extrema_ExtPS();
                 aPort.SetFlag(Extrema_ExtFlag_MINMAX);
                 aPort.SetAlgo(Extrema_ExtAlgo_Grad);
@@ -420,7 +421,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 aF = anOracle.Real(-Math.PI, Math.PI);
                 aL = aF + anOracle.Real(0.5, 2 * Math.PI);
             }
-            else if (Precision.IsInfinite(aPC.FirstParameter()) || Precision.IsInfinite(aPC.LastParameter()))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter()))
             {
                 aF = anOracle.Real(-4, 1);
                 aL = aF + anOracle.Real(1, 4);
@@ -441,11 +442,11 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             {
                 (double aU1, double aU2, double aV1, double aV2) = UVBounds(aNF);
                 // Move the curve so that it passes near (or through) a point of the face
-                gp_Pnt aOnS = aPS.Value(anOracle.Real(aU1, aU2), anOracle.Real(aV1, aV2));
-                gp_Pnt aOnC = aPC.Value(anOracle.Real(aF, aL));
+                Point3D aOnS = aPS.Value(anOracle.Real(aU1, aU2), anOracle.Real(aV1, aV2));
+                Point3D aOnC = aPC.Value(anOracle.Real(aF, aL));
                 double aGap = anOracle.Bool() ? 0.0 : anOracle.Real(0.01, 3.0);
-                gp_Vec aMove = new(aOnC, aOnS);
-                aMove += new gp_Vec(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
+                Vector3D aMove = new(aOnC, aOnS);
+                aMove += new Vector3D(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
                 using (N.gp_Vec aNMove = Oracle.ToNative(aMove))
                 {
                     aNC.Translate(aNMove);
@@ -464,19 +465,19 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
 
                 // The port's side of BRepExtrema_ExtCF(E, F) and Extrema_ExtCS's generic path
                 var aCurve = new GeomAdaptor_Curve(aPC, aF, aL);
-                if (aCurve.NbIntervals(GeomAbs_Shape.GeomAbs_C1) != 1)
+                if (aCurve.NbIntervals(Continuity.C1) != 1)
                 {
                     continue;
                 }
                 using var aN = new N.BRepExtrema_DistShapeShape(aNE, aNF);
 
-                var aSurf = new GeomAdaptor_TransformedSurface(aPS, aU1, aU2, aV1, aV2, new gp_Trsf()); // BRepAdaptor_Surface
-                double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), Precision.Confusion());
+                var aSurf = new GeomAdaptor_TransformedSurface(aPS, aU1, aU2, aV1, aV2, new Transform3D()); // BRepAdaptor_Surface
+                double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolS = Math.Min(aSurf.UResolution(aTolS), aSurf.VResolution(aTolS));
-                aTolS = Math.Max(aTolS, Precision.PConfusion());
-                double aTolC = Math.Min(N.BRep_Tool.Tolerance(aNE), Precision.Confusion());
+                aTolS = Math.Max(aTolS, global::Kerf.Engine.Foundation.Precision.PConfusion());
+                double aTolC = Math.Min(N.BRep_Tool.Tolerance(aNE), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolC = aCurve.Resolution(aTolC);
-                aTolC = Math.Max(aTolC, Precision.PConfusion());
+                aTolC = Math.Max(aTolC, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 var aGen = new Extrema_GenExtCS();
                 aGen.Initialize(aSurf, 10, 10, aTolS);
                 // Extrema_ExtCS::Perform: 13 samples on circles and B-spline curves, 12 otherwise; hyperbolas within
@@ -491,7 +492,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     aGen.Perform(aCurve, aNbT, aTolC);
                 }
                 aCases++;
-                List<(double T, double U, double V, gp_Pnt PC, gp_Pnt PS, double D2)> aSols = [];
+                List<(double T, double U, double V, Point3D PC, Point3D PS, double D2)> aSols = [];
                 if (aGen.IsDone())
                 {
                     for (int j = 1; j <= aGen.NbExt(); j++)
@@ -503,15 +504,15 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         double aT = aPOnC.Parameter();
                         if (aCurve.IsPeriodic())
                         {
-                            aT = ElCLib.InPeriod(aT, aF, aF + aCurve.Period());
+                            aT = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aT, aF, aF + aCurve.Period());
                         }
                         if (aSurf.IsUPeriodic())
                         {
-                            aU = ElCLib.InPeriod(aU, aU1, aU1 + aSurf.UPeriod());
+                            aU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU, aU1, aU1 + aSurf.UPeriod());
                         }
                         if (aSurf.IsVPeriodic())
                         {
-                            aV = ElCLib.InPeriod(aV, aV1, aV1 + aSurf.VPeriod());
+                            aV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV, aV1, aV1 + aSurf.VPeriod());
                         }
                         aSols.Add((aT, aU, aV, aPOnC.Value(), aPOnS.Value(), aGen.SquareDistance(j)));
                     }
@@ -594,34 +595,34 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     (double aWV1, double aWV2) = Window(anOracle, aB3, aB4, false);
                     double aS1U = anOracle.Real(aU11, aU12), aS1V = anOracle.Real(aV11, aV12);
                     double aS2U = anOracle.Real(aWU1, aWU2), aS2V = anOracle.Real(aWV1, aWV2);
-                    aPS1.D1(aS1U, aS1V, out gp_Pnt aOn1, out gp_Vec aD1U1, out gp_Vec aD1V1);
-                    aPS2.D1(aS2U, aS2V, out gp_Pnt aOn2, out gp_Vec aD1U2, out gp_Vec aD1V2);
-                    gp_Vec aN1 = aD1U1 ^ aD1V1, aN2 = aD1U2 ^ aD1V2;
+                    aPS1.D1(aS1U, aS1V, out Point3D aOn1, out Vector3D aD1U1, out Vector3D aD1V1);
+                    aPS2.D1(aS2U, aS2V, out Point3D aOn2, out Vector3D aD1U2, out Vector3D aD1V2);
+                    Vector3D aN1 = aD1U1 ^ aD1V1, aN2 = aD1U2 ^ aD1V2;
                     double aGap = anOracle.Real(0.01, 3.0);
-                    gp_Vec aMove;
+                    Vector3D aMove;
                     if (anOracle.Int(0, 3) != 0 && aN1.Magnitude() > 1e-6 && aN2.Magnitude() > 1e-6)
                     {
                         // Turn surface 2 so that its normal at aOn2 is opposite to surface 1's at aOn1, and put aOn2 on
                         // that normal: the two points are then a local extremum of the distance, often inside both faces
                         aN1.Normalize();
                         aN2.Normalize();
-                        gp_Vec anAxis = aN2 ^ aN1.Reversed();
+                        Vector3D anAxis = aN2 ^ aN1.Reversed();
                         if (anAxis.Magnitude() > 1e-6)
                         {
                             double anAngle = aN2.Angle(aN1.Reversed());
-                            var anAx1 = new gp_Ax1(aOn2, new gp_Dir(anAxis.X(), anAxis.Y(), anAxis.Z()));
+                            var anAx1 = new Axis3D(aOn2, new Direction3D(anAxis.X(), anAxis.Y(), anAxis.Z()));
                             using var aNOn2 = new N.gp_Pnt(aOn2.X(), aOn2.Y(), aOn2.Z());
                             using var aNDir = new N.gp_Dir(anAxis.X(), anAxis.Y(), anAxis.Z());
                             using var aNAx1 = new N.gp_Ax1(aNOn2, aNDir);
                             aNS2.Rotate(aNAx1, anAngle);
                             aPS2.Rotate(anAx1, anAngle);
                         }
-                        aMove = new gp_Vec(aOn2, aOn1) + aGap * aN1;
+                        aMove = new Vector3D(aOn2, aOn1) + aGap * aN1;
                     }
                     else
                     {
-                        aMove = new gp_Vec(aOn2, aOn1);
-                        aMove += new gp_Vec(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
+                        aMove = new Vector3D(aOn2, aOn1);
+                        aMove += new Vector3D(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
                     }
                     using (N.gp_Vec aNMove = Oracle.ToNative(aMove))
                     {
@@ -651,16 +652,16 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     using var aNOwner = aN;
 
                     // The port's side of BRepExtrema_ExtFF(F1, F2)
-                    var aSurf2 = new GeomAdaptor_TransformedSurface(aPS2, aU21, aU22, aV21, aV22, new gp_Trsf()); // BRepAdaptor_Surface
-                    double aTol2 = Math.Min(N.BRep_Tool.Tolerance(aNF2), Precision.Confusion());
+                    var aSurf2 = new GeomAdaptor_TransformedSurface(aPS2, aU21, aU22, aV21, aV22, new Transform3D()); // BRepAdaptor_Surface
+                    double aTol2 = Math.Min(N.BRep_Tool.Tolerance(aNF2), global::Kerf.Engine.Foundation.Precision.Confusion());
                     aTol2 = Math.Min(aSurf2.UResolution(aTol2), aSurf2.VResolution(aTol2));
-                    aTol2 = Math.Max(aTol2, Precision.PConfusion());
+                    aTol2 = Math.Max(aTol2, global::Kerf.Engine.Foundation.Precision.PConfusion());
                     var aPort = new Extrema_ExtSS();
                     aPort.Initialize(aSurf2, aU21, aU22, aV21, aV22, aTol2);
-                    var aSurf1 = new GeomAdaptor_TransformedSurface(aPS1, aU11, aU12, aV11, aV12, new gp_Trsf());
-                    double aTol1 = Math.Min(N.BRep_Tool.Tolerance(aNF1), Precision.Confusion());
+                    var aSurf1 = new GeomAdaptor_TransformedSurface(aPS1, aU11, aU12, aV11, aV12, new Transform3D());
+                    double aTol1 = Math.Min(N.BRep_Tool.Tolerance(aNF1), global::Kerf.Engine.Foundation.Precision.Confusion());
                     aTol1 = Math.Min(aSurf1.UResolution(aTol1), aSurf1.VResolution(aTol1));
-                    aTol1 = Math.Max(aTol1, Precision.PConfusion());
+                    aTol1 = Math.Max(aTol1, global::Kerf.Engine.Foundation.Precision.PConfusion());
                     aPort.Perform(aSurf1, aU11, aU12, aV11, aV12, aTol1);
                     aCases++;
 

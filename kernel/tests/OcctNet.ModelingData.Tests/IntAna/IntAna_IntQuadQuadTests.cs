@@ -2,36 +2,40 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 // The three IntAna_QuadQuadGeo tests of the suite (CylinderCylinder*) are in IntAna_IntQuadQuadTests.QuadQuadGeo.cs.
 public partial class IntAna_IntQuadQuad_Test
 {
-    protected readonly gp_Sphere mySphere1;
-    protected readonly gp_Cylinder myCylinder1;
-    protected readonly gp_Cone myCone1;
-    protected readonly gp_Pln myPlane1;
+    protected readonly Sphere mySphere1;
+    protected readonly Cylinder myCylinder1;
+    protected readonly Cone myCone1;
+    protected readonly Plane3D myPlane1;
 
     public IntAna_IntQuadQuad_Test()
     {
         // Set up common geometric objects for tests
-        gp_Pnt anOrigin = new(0, 0, 0);
-        gp_Dir aZDir = new(gp_Dir.D.Z);
-        gp_Dir anXDir = new(gp_Dir.D.X);
-        gp_Ax3 anAxis = new(anOrigin, aZDir, anXDir);
+        Point3D anOrigin = new(0, 0, 0);
+        Direction3D aZDir = new(Direction3D.D.Z);
+        Direction3D anXDir = new(Direction3D.D.X);
+        CoordinateSystem anAxis = new(anOrigin, aZDir, anXDir);
 
         // Create sphere at origin with radius 5
-        mySphere1 = new gp_Sphere(anAxis, 5.0);
+        mySphere1 = new Sphere(anAxis, 5.0);
 
         // Create cylinder with axis along Z, radius 3
-        myCylinder1 = new gp_Cylinder(anAxis, 3.0);
+        myCylinder1 = new Cylinder(anAxis, 3.0);
 
         // Create cone with semi-angle 30 degrees
-        myCone1 = new gp_Cone(anAxis, M_PI / 6, 2.0);
+        myCone1 = new Cone(anAxis, M_PI / 6, 2.0);
 
         // Create plane at Z = 2
-        gp_Pnt aPlaneOrigin = new(0, 0, 2);
-        myPlane1 = new gp_Pln(aPlaneOrigin, aZDir);
+        Point3D aPlaneOrigin = new(0, 0, 2);
+        myPlane1 = new Plane3D(aPlaneOrigin, aZDir);
     }
 
     // Test basic intersection functionality - Cylinder vs Quadric (sphere)
@@ -96,15 +100,15 @@ public partial class IntAna_IntQuadQuad_Test
         Assert.True(anIntersector.IsDone());
 
         // Test with invalid indices (should throw exceptions)
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anIntersector.HasNextCurve(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anIntersector.HasNextCurve(anIntersector.NbCurve() + 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => anIntersector.HasNextCurve(anIntersector.NbCurve() + 1));
 
         // Test NextCurve on curves that don't have next curves
         for (int i = 1; i <= anIntersector.NbCurve(); i++)
         {
             if (!anIntersector.HasNextCurve(i)) // Only test exception when HasNextCurve is false
             {
-                Assert.ThrowsAny<Standard_DomainError>(() => anIntersector.NextCurve(i, out _));
+                Assert.ThrowsAny<DomainErrorException>(() => anIntersector.NextCurve(i, out _));
             }
         }
     }
@@ -114,21 +118,21 @@ public partial class IntAna_IntQuadQuad_Test
     public void ConnectedCurvesScenario()
     {
         // Create two spheres that intersect in a circle
-        gp_Pnt aCenter1 = new(0, 0, 0);
-        gp_Pnt aCenter2 = new(3, 0, 0); // Overlapping spheres
-        gp_Dir aZDir = new(gp_Dir.D.Z);
-        gp_Dir anXDir = new(gp_Dir.D.X);
-        gp_Ax3 anAxis1 = new(aCenter1, aZDir, anXDir);
-        gp_Ax3 anAxis2 = new(aCenter2, aZDir, anXDir);
+        Point3D aCenter1 = new(0, 0, 0);
+        Point3D aCenter2 = new(3, 0, 0); // Overlapping spheres
+        Direction3D aZDir = new(Direction3D.D.Z);
+        Direction3D anXDir = new(Direction3D.D.X);
+        CoordinateSystem anAxis1 = new(aCenter1, aZDir, anXDir);
+        CoordinateSystem anAxis2 = new(aCenter2, aZDir, anXDir);
 
-        gp_Sphere aSphere1 = new(anAxis1, 2.0);
-        gp_Sphere aSphere2 = new(anAxis2, 2.0);
+        Sphere aSphere1 = new(anAxis1, 2.0);
+        Sphere aSphere2 = new(anAxis2, 2.0);
         _ = aSphere1;
 
         IntAna_Quadric aSphere2Quad = new(aSphere2);
 
         IntAna_IntQuadQuad anIntersector = new();
-        anIntersector.Perform(new gp_Cylinder(anAxis1, 2.0), aSphere2Quad, 1e-7);
+        anIntersector.Perform(new Cylinder(anAxis1, 2.0), aSphere2Quad, 1e-7);
 
         Assert.True(anIntersector.IsDone());
 

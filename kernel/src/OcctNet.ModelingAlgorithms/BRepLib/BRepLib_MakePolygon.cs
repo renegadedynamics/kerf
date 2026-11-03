@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -26,13 +28,13 @@ public class BRepLib_MakePolygon : BRepLib_MakeShape
     {
     }
 
-    public BRepLib_MakePolygon(in gp_Pnt P1, in gp_Pnt P2)
+    public BRepLib_MakePolygon(in Point3D P1, in Point3D P2)
     {
         Add(P1);
         Add(P2);
     }
 
-    public BRepLib_MakePolygon(in gp_Pnt P1, in gp_Pnt P2, in gp_Pnt P3, bool Cl = false)
+    public BRepLib_MakePolygon(in Point3D P1, in Point3D P2, in Point3D P3, bool Cl = false)
     {
         Add(P1);
         Add(P2);
@@ -43,7 +45,7 @@ public class BRepLib_MakePolygon : BRepLib_MakeShape
         }
     }
 
-    public BRepLib_MakePolygon(in gp_Pnt P1, in gp_Pnt P2, in gp_Pnt P3, in gp_Pnt P4, bool Cl = false)
+    public BRepLib_MakePolygon(in Point3D P1, in Point3D P2, in Point3D P3, in Point3D P4, bool Cl = false)
     {
         Add(P1);
         Add(P2);
@@ -85,11 +87,11 @@ public class BRepLib_MakePolygon : BRepLib_MakeShape
         }
     }
 
-    public void Add(in gp_Pnt P)
+    public void Add(in Point3D P)
     {
         var B = new BRep_Builder();
         TopoDS_Vertex V = new();
-        B.MakeVertex(ref V, P, Precision.Confusion());
+        B.MakeVertex(ref V, P, global::Kerf.Engine.Foundation.Precision.Confusion());
         Add(V);
     }
 

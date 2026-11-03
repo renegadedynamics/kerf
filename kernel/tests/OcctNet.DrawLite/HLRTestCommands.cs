@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Occt;
@@ -99,7 +101,7 @@ internal static class HLRTestCommands
             return 1;
         }
         //
-        gp_Ax2 anAx2 = gp.XOY();
+        Frame3D anAx2 = Constants.XOY();
         if (n == 11)
         {
             double x = theDI.Atof(a[2]);
@@ -114,10 +116,10 @@ internal static class HLRTestCommands
             double dy1 = theDI.Atof(a[9]);
             double dz1 = theDI.Atof(a[10]);
 
-            gp_Pnt anOrigin = new(x, y, z);
-            gp_Dir aNormal = new(dx, dy, dz);
-            gp_Dir aDX = new(dx1, dy1, dz1);
-            anAx2 = new gp_Ax2(anOrigin, aNormal, aDX);
+            Point3D anOrigin = new(x, y, z);
+            Direction3D aNormal = new(dx, dy, dz);
+            Direction3D aDX = new(dx1, dy1, dz1);
+            anAx2 = new Frame3D(anOrigin, aNormal, aDX);
         }
 
         HLRAlgo_Projector P = new(anAx2);
@@ -357,16 +359,16 @@ internal static class HLRTestCommands
         double anAISViewProjY = Atof(a[4]);
         double anAISViewProjZ = Atof(a[5]);
 
-        gp_Pnt anOrigin = new(0.0, 0.0, 0.0);
-        gp_Dir aNormal = new(anAISViewProjX, anAISViewProjY, anAISViewProjZ);
-        gp_Dir aDX;
+        Point3D anOrigin = new(0.0, 0.0, 0.0);
+        Direction3D aNormal = new(anAISViewProjX, anAISViewProjY, anAISViewProjZ);
+        Direction3D aDX;
         if (theEye)
         {
-            aDX = new gp_Dir(Atof(a[6]), Atof(a[7]), Atof(a[8]));
+            aDX = new Direction3D(Atof(a[6]), Atof(a[7]), Atof(a[8]));
         }
         else
         {
-            gp_Ax2 theAxes = new(anOrigin, aNormal);
+            Frame3D theAxes = new(anOrigin, aNormal);
             aDX = theAxes.XDirection();
         }
 
@@ -493,9 +495,9 @@ public sealed class DrawHlrProjector(in HLRAlgo_Projector theProjector) : DrawDr
         {
             theStream.Write(Projector.Focus().ToString(CultureInfo.InvariantCulture) + "\n");
         }
-        gp_Trsf aTransformation = Projector.Transformation();
-        gp_XYZ aTranslationVector = aTransformation.TranslationPart();
-        gp_Mat aMatrix = aTransformation.VectorialPart();
+        Transform3D aTransformation = Projector.Transformation();
+        Xyz aTranslationVector = aTransformation.TranslationPart();
+        Matrix3x3 aMatrix = aTransformation.VectorialPart();
         for (int r = 1; r <= 3; r++)
         {
             for (int c = 1; c <= 3; c++)

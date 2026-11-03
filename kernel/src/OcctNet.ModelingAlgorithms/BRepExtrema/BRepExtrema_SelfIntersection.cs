@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -139,7 +140,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
         int anX;
         int anY;
 
-        if (aCrossLine.SquareModulus() < Precision.SquareConfusion()) // coplanar case
+        if (aCrossLine.SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // coplanar case
         {
             getProjectionAxes(aTrng0Normal, out anX, out anY);
 
@@ -164,7 +165,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
             // Standard_ASSERT_RAISE
             if (!(aPosOutTrgn0 || aNegOutTrgn0))
             {
-                throw new Standard_ProgramError("Failed to detect if shared vertex is regular or not");
+                throw new ProgramErrorException("Failed to detect if shared vertex is regular or not");
             }
 
             if (aPosOutTrgn0 && aNegOutTrgn0)
@@ -181,7 +182,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
             // Standard_ASSERT_RAISE
             if (!(aPosOutTrgn1 || aNegOutTrgn1))
             {
-                throw new Standard_ProgramError("Failed to detect if shared vertex is regular or not");
+                throw new ProgramErrorException("Failed to detect if shared vertex is regular or not");
             }
 
             if (aPosOutTrgn1 && aNegOutTrgn1)
@@ -211,7 +212,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
 
         BVH_Vec3d aCrossLine = BVH_Vec3d.Cross(aTrng0Normal, aTrng1Normal);
 
-        if (aCrossLine.SquareModulus() > Precision.SquareConfusion()) // non-coplanar case
+        if (aCrossLine.SquareModulus() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // non-coplanar case
         {
             return FilterResult.NoCheck;
         }
@@ -245,7 +246,7 @@ public class BRepExtrema_SelfIntersection : BRepExtrema_ElementFilter
         {
             for (int aVertIdx2 = 0; aVertIdx2 < 3; ++aVertIdx2)
             {
-                if ((aTrng0Vtxs[aVertIdx1] - aTrng1Vtxs[aVertIdx2]).SquareModulus() < Precision.SquareConfusion())
+                if ((aTrng0Vtxs[aVertIdx1] - aTrng1Vtxs[aVertIdx2]).SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     aSharedVtxs[aSharedVtxsSize++] = (aVertIdx1, aVertIdx2);
 

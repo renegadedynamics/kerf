@@ -6,13 +6,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_FilBuilder_C2;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -106,7 +108,7 @@ public partial class ChFi3d_FilBuilder
         parE2 = BRep_Tool.Parameter(Vtx, E2);
         BRepLProp_CLProps CL1 = new(BCurv1, parE1, 1, 1.0e-4);
         BRepLProp_CLProps CL2 = new(BCurv2, parE2, 1, 1.0e-4);
-        gp_Dir dir1 = new(), dir2 = new();
+        Direction3D dir1 = new(), dir2 = new();
         CL1.Tangent(out dir1);
         CL2.Tangent(out dir2);
         if (Sens1 == -1)
@@ -261,8 +263,8 @@ public partial class ChFi3d_FilBuilder
             Hpivot = new BRepAdaptor_Curve(pivot);
             parCP1 = CP1.ParameterOnArc();
             parCP2 = CP2.ParameterOnArc();
-            gp_Pnt tst1 = Hpivot.Value(parCP1);
-            gp_Pnt tst2 = Hpivot.Value(parCP2);
+            Point3D tst1 = Hpivot.Value(parCP1);
+            Point3D tst2 = Hpivot.Value(parCP2);
             sameparam = tst1.Distance(tst2) <= tolapp3d;
         }
         BRepAdaptor_Surface? HFaCo = new BRepAdaptor_Surface();
@@ -401,8 +403,8 @@ public partial class ChFi3d_FilBuilder
                     // Construction by filling remplissage
                     // ----------------------------
                     double uPCArc1 = 0.0, uPCArc2 = 0.0;
-                    gp_Pnt2d p2da1 = new(), p2df1 = new(), p2da2 = new(), p2df2 = new(), p2dfac1 = new(), p2dfac2 = new();
-                    gp_Vec2d v2dfac1 = new(), v2dfac2 = new();
+                    Point2D p2da1 = new(), p2df1 = new(), p2da2 = new(), p2df2 = new(), p2dfac1 = new(), p2dfac2 = new();
+                    Vector2D v2dfac1 = new(), v2dfac2 = new();
                     GeomFill_Boundary? B1 = null, B2 = null, Bpiv = null, Bfac = null;
                     uPCArc1 = sd1.Interference(IFaArc1).Parameter(isfirst1);
                     p2da1 = sd1.Interference(IFaArc1).PCurveOnSurf().Value(uPCArc1);
@@ -429,8 +431,8 @@ public partial class ChFi3d_FilBuilder
                         Bpiv = new GeomFill_SimpleBound(HPivTrim, tolapp3d, 2.0e-4);
                         fil.Init(Bfac, B2, Bpiv, B1, true);
                         BRepAdaptor_Curve2d pcpivot = new();
-                        gp_Vec dArc = new(), dcf = new();
-                        gp_Pnt bidon = new();
+                        Vector3D dArc = new(), dcf = new();
+                        Point3D bidon = new();
                         Hpivot.D1(parCP1, out bidon, out dArc);
                         double fb1 = 0.0, lb1 = 0.0;
                         B1.Bounds(out fb1, out lb1);
@@ -460,7 +462,7 @@ public partial class ChFi3d_FilBuilder
                                 break;
                             }
                         }
-                        if (pcpivot.GetType() != GeomAbs_BSplineCurve)
+                        if (pcpivot.GetType() != BSplineCurve)
                         {
                             Geom2d_TrimmedCurve? trc = 
                                 new Geom2d_TrimmedCurve(pcpivot.Curve(), Min(parCP1, parCP2), Max(parCP1, parCP2));
@@ -474,7 +476,7 @@ public partial class ChFi3d_FilBuilder
                         }
                         PCurveOnPiv = Writable(PCurveOnPiv);
                         NCollection_Array1<double> kk = new(PCurveOnPiv.InternalKnots());
-                        BSplCLib.Reparametrize(0.0, 1.0, kk);
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, kk);
                         PCurveOnPiv.SetKnots(kk);
                         if (pcfalenvers)
                         {
@@ -492,7 +494,7 @@ public partial class ChFi3d_FilBuilder
                     // ----------------------------------------
                     if (resetcp1)
                     {
-                        gp_Pnt pjyl = CP1.Point();
+                        Point3D pjyl = CP1.Point();
                         double tolsav = CP1.Tolerance();
                         CP1.Reset();
                         CP1.SetPoint(pjyl);
@@ -500,7 +502,7 @@ public partial class ChFi3d_FilBuilder
                     }
                     else if (resetcp2)
                     {
-                        gp_Pnt pjyl = CP2.Point();
+                        Point3D pjyl = CP2.Point();
                         double tolsav = CP2.Tolerance();
                         CP2.Reset();
                         CP2.SetPoint(pjyl);
@@ -530,7 +532,7 @@ public partial class ChFi3d_FilBuilder
                         Il2 = ChFi3d_IndexPointInDS(Pl2, DStr);
                     }
 
-                    gp_Pnt2d pp1 = new(), pp2 = new();
+                    Point2D pp1 = new(), pp2 = new();
                     pp1 =
                         coin.InterferenceOnS1().PCurveOnSurf().Value(coin.InterferenceOnS1().FirstParameter());
                     pp2 =
@@ -627,7 +629,7 @@ public partial class ChFi3d_FilBuilder
                 // it is necessary to make difference with
                 if (!OkinterCC)
                 {
-                    throw new Standard_Failure("TwoCorner : No intersection pc pc");
+                    throw new FailureException("TwoCorner : No intersection pc pc");
                 }
                 ChFiDS_Stripe? stsam = null, stdif = null;
                 ChFiDS_SurfData? sdsam = null, sddif = null;
@@ -666,7 +668,7 @@ public partial class ChFi3d_FilBuilder
                 }
                 else
                 {
-                    throw new Standard_Failure("TwoCorner : Config unknown");
+                    throw new FailureException("TwoCorner : Config unknown");
                 }
                 // It is checked if surface ondiff has a point on arc from the side opposed
                 // to the common face and if this arc is connected to the base face
@@ -674,7 +676,7 @@ public partial class ChFi3d_FilBuilder
                 ref ChFiDS_CommonPoint cpopdif = ref sddif.ChangeVertex(isfirstdif, ifaopdif);
                 if (!cpopdif.IsOnArc())
                 {
-                    throw new Standard_Failure("TwoCorner : No point on restriction on surface OnDiff");
+                    throw new FailureException("TwoCorner : No point on restriction on surface OnDiff");
                 }
                 TopoDS_Edge Arcopdif = cpopdif.Arc();
                 TopoDS_Face Fopsam = TopoDS.Face(DStr.Shape(sdsam.Index(ifaopsam)));
@@ -687,26 +689,26 @@ public partial class ChFi3d_FilBuilder
                     }
                     else if (!ex.More())
                     {
-                        throw new Standard_Failure("TwoCorner : No common face to loop the contour");
+                        throw new FailureException("TwoCorner : No common face to loop the contour");
                     }
                 }
                 GeomFill_Boundary? Bsam = null, Bdif = null, Bfac = null;
-                gp_Pnt2d ppopsam = sdsam.Interference(ifaopsam).PCurveOnSurf().Value(uintpcsam);
-                gp_Pnt2d ppcosam = sdsam.Interference(ifacosam).PCurveOnSurf().Value(uintpcsam);
+                Point2D ppopsam = sdsam.Interference(ifaopsam).PCurveOnSurf().Value(uintpcsam);
+                Point2D ppcosam = sdsam.Interference(ifacosam).PCurveOnSurf().Value(uintpcsam);
                 Geom_Surface? surfsam = DStr.Surface(sdsam.Surf()).Surface();
                 GeomAdaptor_Surface? Hsurfsam = new GeomAdaptor_Surface(surfsam);
                 Geom2d_Curve? pcsurfsam = null;
                 Bsam = ChFi3d_mkbound(Hsurfsam, out pcsurfsam, ppopsam, ppcosam, tolapp3d, 2.0e-4);
                 double upcopdif = sddif.Interference(ifaopdif).Parameter(isfirstdif);
-                gp_Pnt2d ppopdif = sddif.Interference(ifaopdif).PCurveOnSurf().Value(upcopdif);
-                gp_Pnt2d ppcodif = sddif.Interference(ifacodif).PCurveOnSurf().Value(uintpcdif);
+                Point2D ppopdif = sddif.Interference(ifaopdif).PCurveOnSurf().Value(upcopdif);
+                Point2D ppcodif = sddif.Interference(ifacodif).PCurveOnSurf().Value(uintpcdif);
                 Geom_Surface? surfdif = DStr.Surface(sddif.Surf()).Surface();
                 GeomAdaptor_Surface? Hsurfdif = new GeomAdaptor_Surface(surfdif);
                 Geom2d_Curve? pcsurfdif = null;
                 Bdif = ChFi3d_mkbound(Hsurfdif, out pcsurfdif, ppcodif, ppopdif, tolapp3d, 2.0e-4);
-                gp_Pnt2d ppfacsam = new(), ppfacdif = new();
-                gp_Pnt PPfacsam = new(), PPfacdif = new();
-                gp_Vec VVfacsam = new(), VVfacdif = new();
+                Point2D ppfacsam = new(), ppfacdif = new();
+                Point3D PPfacsam = new(), PPfacdif = new();
+                Vector3D VVfacsam = new(), VVfacdif = new();
                 sdsam.Interference(ifaopsam).PCurveOnFace().D0(uintpcsam, out ppfacsam);
                 Geom_Curve? curvopsam = 
                     DStr.Curve(sdsam.Interference(ifaopsam).LineIndex()).Curve();
@@ -748,7 +750,7 @@ public partial class ChFi3d_FilBuilder
                                                         false);
                 if (!done)
                 {
-                    throw new Standard_Failure("concavites inverted : fail");
+                    throw new FailureException("concavites inverted : fail");
                 }
                 // Update 3 CornerData and the DS
                 // ----------------------------------------
@@ -768,7 +770,7 @@ public partial class ChFi3d_FilBuilder
                 Il1 = ChFi3d_IndexPointInDS(Pl1, DStr);
                 Il2 = If2;
 
-                gp_Pnt2d pp1 = new(), pp2 = new();
+                Point2D pp1 = new(), pp2 = new();
                 pp1 =
                     coin.InterferenceOnS1().PCurveOnSurf().Value(coin.InterferenceOnS1().FirstParameter());
                 pp2 =
@@ -890,14 +892,14 @@ internal static class ChFi3d_FilBuilder_C2
         {
             return false;
         }
-        if ((fac.GetType() != GeomAbs_Plane) || (s1.GetType() != GeomAbs_Plane)
-                || (s2.GetType() != GeomAbs_Plane))
+        if ((fac.GetType() != Plane) || (s1.GetType() != Plane)
+                || (s2.GetType() != Plane))
         {
             return false;
         }
-        gp_Dir df = fac.Plane().Position().Direction();
-        gp_Dir ds1 = s1.Plane().Position().Direction();
-        gp_Dir ds2 = s2.Plane().Position().Direction();
+        Direction3D df = fac.Plane().Position().Direction();
+        Direction3D ds1 = s1.Plane().Position().Direction();
+        Direction3D ds2 = s2.Plane().Position().Direction();
         if (Math.Abs(df.Dot(ds1)) >= tolesp || Math.Abs(df.Dot(ds2)) >= tolesp)
         {
             return false;
@@ -909,7 +911,7 @@ internal static class ChFi3d_FilBuilder_C2
 
     // OCCT.NET: OCCT changes this curve in place; one frozen elsewhere is changed on a copy (decisions 974, 1088).
     internal static T Writable<T>(T theCurve) where T : Geom2d_Geometry =>
-        theCurve.IsFrozen() ? (T)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (T)theCurve.Copy() : theCurve;
 
 
     internal static void RemoveSD(ChFiDS_Stripe? Stripe, int num1, int num2)

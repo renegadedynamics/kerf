@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: eigenvalue decomposition of symmetric tridiagonal matrices.</summary>
 public static partial class MathLin
@@ -13,135 +14,135 @@ public static partial class MathLin
     /// <remarks>Its C++ default status is NotConverged, so ported code writes `new EigenResult()`.</remarks>
     public struct EigenResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Computed eigenvalues.</summary>
         public math_Vector? EigenValues;
         /// <summary>Eigenvectors as columns.</summary>
-        public math_Matrix? EigenVectors;
+        public Matrix? EigenVectors;
         public int Dimension = 0;
 
         public EigenResult()
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(EigenResult theResult) => theResult.IsDone();
+        public static explicit operator bool(EigenResult result) => result.IsDone;
 
-        public static bool operator true(EigenResult theResult) => theResult.IsDone();
+        public static bool operator true(EigenResult result) => result.IsDone;
 
-        public static bool operator false(EigenResult theResult) => !theResult.IsDone();
+        public static bool operator false(EigenResult result) => !result.IsDone;
     }
 
     internal static partial class Internal
     {
         /// <summary>Computes sqrt(x*x + y*y).</summary>
-        internal static double Hypot(double theX, double theY)
+        internal static double Hypot(double x, double y)
         {
-            return Math.Sqrt(theX * theX + theY * theY);
+            return Math.Sqrt(x * x + y * y);
         }
 
         /// <summary>Finds the end of unreduced submatrix using deflation test.</summary>
-        internal static int FindSubmatrixEnd(math_Vector theDiag, math_Vector theSubdiag, int theStart, int theN)
+        internal static int FindSubmatrixEnd(math_Vector diag, math_Vector subdiag, int start, int n)
         {
-            int aLower = theDiag.Lower();
-            int aEnd;
-            for (aEnd = theStart; aEnd <= theN - 1; ++aEnd)
+            int lower = diag.Lower();
+            int end;
+            for (end = start; end <= n - 1; ++end)
             {
-                double aDiagSum =
-                  Math.Abs(theDiag[aEnd + aLower - 1]) + Math.Abs(theDiag[aEnd + 1 + aLower - 1]);
+                double diagSum =
+                  Math.Abs(diag[end + lower - 1]) + Math.Abs(diag[end + 1 + lower - 1]);
                 // Deflation test: subdiagonal negligible relative to diagonal elements
-                if (Math.Abs(theSubdiag[aEnd + aLower - 1]) + aDiagSum == aDiagSum)
+                if (Math.Abs(subdiag[end + lower - 1]) + diagSum == diagSum)
                 {
                     break;
                 }
             }
-            return aEnd;
+            return end;
         }
 
         /// <summary>Computes Wilkinson's shift for accelerated convergence.</summary>
-        internal static double ComputeWilkinsonShift(math_Vector theDiag, math_Vector theSubdiag, int theStart, int theEnd)
+        internal static double ComputeWilkinsonShift(math_Vector diag, math_Vector subdiag, int start, int end)
         {
-            int aLower = theDiag.Lower();
-            double aShift = (theDiag[theStart + 1 + aLower - 1] - theDiag[theStart + aLower - 1])
-                            / (2.0 * theSubdiag[theStart + aLower - 1]);
-            double aRadius = Hypot(1.0, aShift);
+            int lower = diag.Lower();
+            double shift = (diag[start + 1 + lower - 1] - diag[start + lower - 1])
+                            / (2.0 * subdiag[start + lower - 1]);
+            double radius = Hypot(1.0, shift);
 
-            if (aShift < 0.0)
+            if (shift < 0.0)
             {
-                aShift = theDiag[theEnd + aLower - 1] - theDiag[theStart + aLower - 1]
-                         + theSubdiag[theStart + aLower - 1] / (aShift - aRadius);
+                shift = diag[end + lower - 1] - diag[start + lower - 1]
+                         + subdiag[start + lower - 1] / (shift - radius);
             }
             else
             {
-                aShift = theDiag[theEnd + aLower - 1] - theDiag[theStart + aLower - 1]
-                         + theSubdiag[theStart + aLower - 1] / (aShift + aRadius);
+                shift = diag[end + lower - 1] - diag[start + lower - 1]
+                         + subdiag[start + lower - 1] / (shift + radius);
             }
-            return aShift;
+            return shift;
         }
 
         /// <summary>Performs a single QL step with implicit shift.</summary>
-        internal static bool PerformQLStep(math_Vector theDiag,
-                                           math_Vector theSubdiag,
-                                           math_Matrix theEigenVec,
-                                           int theStart,
-                                           int theEnd,
-                                           double theShift,
-                                           int theN)
+        internal static bool PerformQLStep(math_Vector diag,
+                                           math_Vector subdiag,
+                                           Matrix eigenVec,
+                                           int start,
+                                           int end,
+                                           double shift,
+                                           int n)
         {
-            int aLowerD = theDiag.Lower();
-            int aLowerV = theEigenVec.LowerRow();
+            int lowerD = diag.Lower();
+            int lowerV = eigenVec.LowerRow();
 
-            double aSine = 1.0;
-            double aCosine = 1.0;
-            double aPrevDiag = 0.0;
-            double aShift = theShift;
-            double aRadius = 0.0;
+            double sine = 1.0;
+            double cosine = 1.0;
+            double prevDiag = 0.0;
+            double aShift = shift;
+            double radius = 0.0;
 
-            int aRowIdx;
-            for (aRowIdx = theEnd - 1; aRowIdx >= theStart; --aRowIdx)
+            int rowIdx;
+            for (rowIdx = end - 1; rowIdx >= start; --rowIdx)
             {
-                double aTempVal = aSine * theSubdiag[aRowIdx + aLowerD - 1];
-                double aSubdiagTemp = aCosine * theSubdiag[aRowIdx + aLowerD - 1];
-                aRadius = Hypot(aTempVal, aShift);
-                theSubdiag[aRowIdx + 1 + aLowerD - 1] = aRadius;
+                double tempVal = sine * subdiag[rowIdx + lowerD - 1];
+                double subdiagTemp = cosine * subdiag[rowIdx + lowerD - 1];
+                radius = Hypot(tempVal, aShift);
+                subdiag[rowIdx + 1 + lowerD - 1] = radius;
 
-                if (aRadius == 0.0)
+                if (radius == 0.0)
                 {
-                    theDiag[aRowIdx + 1 + aLowerD - 1] -= aPrevDiag;
-                    theSubdiag[theEnd + aLowerD - 1] = 0.0;
+                    diag[rowIdx + 1 + lowerD - 1] -= prevDiag;
+                    subdiag[end + lowerD - 1] = 0.0;
                     break;
                 }
 
-                aSine = aTempVal / aRadius;
-                aCosine = aShift / aRadius;
-                aShift = theDiag[aRowIdx + 1 + aLowerD - 1] - aPrevDiag;
+                sine = tempVal / radius;
+                cosine = aShift / radius;
+                aShift = diag[rowIdx + 1 + lowerD - 1] - prevDiag;
 
-                double aRadiusTemp =
-                  (theDiag[aRowIdx + aLowerD - 1] - aShift) * aSine + 2.0 * aCosine * aSubdiagTemp;
-                aPrevDiag = aSine * aRadiusTemp;
-                theDiag[aRowIdx + 1 + aLowerD - 1] = aShift + aPrevDiag;
-                aShift = aCosine * aRadiusTemp - aSubdiagTemp;
+                double radiusTemp =
+                  (diag[rowIdx + lowerD - 1] - aShift) * sine + 2.0 * cosine * subdiagTemp;
+                prevDiag = sine * radiusTemp;
+                diag[rowIdx + 1 + lowerD - 1] = aShift + prevDiag;
+                aShift = cosine * radiusTemp - subdiagTemp;
 
                 // Update eigenvector matrix
-                for (int aVecIdx = 1; aVecIdx <= theN; ++aVecIdx)
+                for (int vecIdx = 1; vecIdx <= n; ++vecIdx)
                 {
-                    double aTempVec = theEigenVec[aVecIdx + aLowerV - 1, aRowIdx + 1 + aLowerV - 1];
-                    theEigenVec[aVecIdx + aLowerV - 1, aRowIdx + 1 + aLowerV - 1] =
-                      aSine * theEigenVec[aVecIdx + aLowerV - 1, aRowIdx + aLowerV - 1] + aCosine * aTempVec;
-                    theEigenVec[aVecIdx + aLowerV - 1, aRowIdx + aLowerV - 1] =
-                      aCosine * theEigenVec[aVecIdx + aLowerV - 1, aRowIdx + aLowerV - 1] - aSine * aTempVec;
+                    double tempVec = eigenVec[vecIdx + lowerV - 1, rowIdx + 1 + lowerV - 1];
+                    eigenVec[vecIdx + lowerV - 1, rowIdx + 1 + lowerV - 1] =
+                      sine * eigenVec[vecIdx + lowerV - 1, rowIdx + lowerV - 1] + cosine * tempVec;
+                    eigenVec[vecIdx + lowerV - 1, rowIdx + lowerV - 1] =
+                      cosine * eigenVec[vecIdx + lowerV - 1, rowIdx + lowerV - 1] - sine * tempVec;
                 }
             }
 
-            if (aRadius == 0.0 && aRowIdx >= 1)
+            if (radius == 0.0 && rowIdx >= 1)
             {
                 return true;
             }
 
-            theDiag[theStart + aLowerD - 1] -= aPrevDiag;
-            theSubdiag[theStart + aLowerD - 1] = aShift;
-            theSubdiag[theEnd + aLowerD - 1] = 0.0;
+            diag[start + lowerD - 1] -= prevDiag;
+            subdiag[start + lowerD - 1] = aShift;
+            subdiag[end + lowerD - 1] = 0.0;
 
             return true;
         }
@@ -151,105 +152,105 @@ public static partial class MathLin
     /// Eigenvalue decomposition of a symmetric tridiagonal matrix T = Q * D * Q^T by the QL algorithm with implicit
     /// Wilkinson shifts. theSubdiagonal has as many values as theDiagonal; its first is unused.
     /// </summary>
-    public static EigenResult EigenTridiagonal(math_Vector theDiagonal, math_Vector theSubdiagonal, int theMaxIterations = 30)
+    public static EigenResult EigenTridiagonal(math_Vector diagonal, math_Vector subdiagonal, int maxIterations = 30)
     {
-        EigenResult aResult = new();
+        EigenResult result = new();
 
-        int aN = theDiagonal.Length();
-        if (theSubdiagonal.Length() != aN)
+        int n = diagonal.Length();
+        if (subdiagonal.Length() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        aResult.Dimension = aN;
+        result.Dimension = n;
 
         // Create working copies
-        math_Vector aDiag = new(1, aN);
-        math_Vector aSubdiag = new(1, aN);
+        math_Vector diag = new(1, n);
+        math_Vector subdiag = new(1, n);
 
         // Copy diagonal
-        for (int i = 1; i <= aN; ++i)
+        for (int i = 1; i <= n; ++i)
         {
-            aDiag[i] = theDiagonal[theDiagonal.Lower() + i - 1];
+            diag[i] = diagonal[diagonal.Lower() + i - 1];
         }
 
         // Shift subdiagonal: e[i-1] = e[i] for QL algorithm
-        for (int i = 2; i <= aN; ++i)
+        for (int i = 2; i <= n; ++i)
         {
-            aSubdiag[i - 1] = theSubdiagonal[theSubdiagonal.Lower() + i - 1];
+            subdiag[i - 1] = subdiagonal[subdiagonal.Lower() + i - 1];
         }
-        aSubdiag[aN] = 0.0;
+        subdiag[n] = 0.0;
 
         // Initialize eigenvector matrix as identity
-        math_Matrix aEigenVec = new(1, aN, 1, aN, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        Matrix eigenVec = new(1, n, 1, n, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
-            aEigenVec[i, i] = 1.0;
+            eigenVec[i, i] = 1.0;
         }
 
         // Special case: 1x1 matrix
-        if (aN == 1)
+        if (n == 1)
         {
-            aResult.EigenValues = aDiag;
-            aResult.EigenVectors = aEigenVec;
-            aResult.Status = Status.OK;
-            return aResult;
+            result.EigenValues = diag;
+            result.EigenVectors = eigenVec;
+            result.Status = Status.OK;
+            return result;
         }
 
         // QL Algorithm with implicit shifts
-        for (int aStart = 1; aStart <= aN; ++aStart)
+        for (int start = 1; start <= n; ++start)
         {
-            int aIterCount = 0;
-            int aEnd;
+            int iterCount = 0;
+            int end;
 
             do
             {
-                aEnd = Internal.FindSubmatrixEnd(aDiag, aSubdiag, aStart, aN);
+                end = Internal.FindSubmatrixEnd(diag, subdiag, start, n);
 
-                if (aEnd != aStart)
+                if (end != start)
                 {
-                    if (aIterCount++ >= theMaxIterations)
+                    if (iterCount++ >= maxIterations)
                     {
-                        aResult.Status = Status.MaxIterations;
-                        return aResult;
+                        result.Status = Status.MaxIterations;
+                        return result;
                     }
 
-                    double aShift = Internal.ComputeWilkinsonShift(aDiag, aSubdiag, aStart, aEnd);
+                    double shift = Internal.ComputeWilkinsonShift(diag, subdiag, start, end);
 
-                    if (!Internal.PerformQLStep(aDiag, aSubdiag, aEigenVec, aStart, aEnd, aShift, aN))
+                    if (!Internal.PerformQLStep(diag, subdiag, eigenVec, start, end, shift, n))
                     {
-                        aResult.Status = Status.NotConverged;
-                        return aResult;
+                        result.Status = Status.NotConverged;
+                        return result;
                     }
                 }
-            } while (aEnd != aStart);
+            } while (end != start);
         }
 
-        aResult.EigenValues = aDiag;
-        aResult.EigenVectors = aEigenVec;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.EigenValues = diag;
+        result.EigenVectors = eigenVec;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Get a single eigenvector (1-based index) from the result; a 1-vector if there are none.</summary>
-    public static math_Vector GetEigenVector(in EigenResult theResult, int theIndex)
+    public static math_Vector GetEigenVector(in EigenResult result, int index)
     {
-        if (theResult.EigenVectors is null)
+        if (result.EigenVectors is null)
         {
             return new math_Vector(1, 1);
         }
 
-        math_Matrix aVecs = theResult.EigenVectors;
-        int aN = aVecs.RowNumber();
-        int aLowerR = aVecs.LowerRow();
-        int aLowerC = aVecs.LowerCol();
+        Matrix vecs = result.EigenVectors;
+        int n = vecs.RowNumber();
+        int lowerR = vecs.LowerRow();
+        int lowerC = vecs.LowerCol();
 
-        math_Vector aVec = new(1, aN);
-        for (int i = 1; i <= aN; ++i)
+        math_Vector vec = new(1, n);
+        for (int i = 1; i <= n; ++i)
         {
-            aVec[i] = aVecs[i + aLowerR - 1, theIndex + aLowerC - 1];
+            vec[i] = vecs[i + lowerR - 1, index + lowerC - 1];
         }
-        return aVec;
+        return vec;
     }
 }

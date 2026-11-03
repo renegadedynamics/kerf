@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Blend_Status;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_State;
@@ -90,11 +93,11 @@ public class BRepBlend_CSWalking
             math_Vector tolerance = new(1, Nbvar), infbound = new(1, Nbvar), supbound = new(1, Nbvar);
             Func.GetTolerance(tolerance, tolpoint3d);
             Func.GetBounds(infbound, supbound);
-            math_FunctionSetRoot rsnld = new(Func, tolerance, 30);
+            FunctionSetRoot rsnld = new(Func, tolerance, 30);
 
             rsnld.Perform(Func, ParDep, infbound, supbound);
 
-            if (!rsnld.IsDone())
+            if (!rsnld.IsDone)
             {
                 return;
             }
@@ -148,7 +151,7 @@ public class BRepBlend_CSWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (iscomplete)
         {
@@ -178,18 +181,18 @@ public class BRepBlend_CSWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return line!;
     }
 
     private Blend_Status TestArret(Blend_CSFunction Function, math_Vector Sol, bool TestDefl, Blend_Status State)
     {
-        gp_Pnt pt1;
-        gp_Vec V1, V2;
-        gp_Vec Tgp1, Nor1;
-        gp_Vec2d V12d;
-        gp_Pnt2d pt2d;
+        Point3D pt1;
+        Vector3D V1, V2;
+        Vector3D Tgp1, Nor1;
+        Vector2D V12d;
+        Point2D pt2d;
         double pOnC;
         Blend_Status State1, State2;
         IntSurf_TypeTrans tras = IntSurf_Undecided;
@@ -238,7 +241,7 @@ public class BRepBlend_CSWalking
             {
                 Function.Tangent(pt2d.X(), pt2d.Y(), out Tgp1, out Nor1);
                 double testra = Tgp1.Dot(Nor1.Crossed(V1));
-                if (Math.Abs(testra) > Precision.Confusion())
+                if (Math.Abs(testra) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     if (testra < 0.0)
                     {
@@ -289,8 +292,8 @@ public class BRepBlend_CSWalking
         }
     }
 
-    private Blend_Status CheckDeflectionOnSurf(in gp_Pnt Psurf, in gp_Pnt2d Ponsurf, in gp_Vec Tgsurf,
-                                               in gp_Vec2d Tgonsurf)
+    private Blend_Status CheckDeflectionOnSurf(in Point3D Psurf, in Point2D Ponsurf, in Vector3D Tgsurf,
+                                               in Vector2D Tgonsurf)
     {
         // set by tests in U4, corresponds to 11.478 degrees
         const double CosRef3D = 0.98;
@@ -301,16 +304,16 @@ public class BRepBlend_CSWalking
         double FlecheCourante;
         double Du, Dv, Duv;
         double paramu, paramv, tolu, tolv;
-        gp_Pnt prevP;
-        gp_Vec prevTg;
-        gp_Vec2d previousd2d;
+        Point3D prevP;
+        Vector3D prevTg;
+        Vector2D previousd2d;
 
         prevP = previousP.PointOnS();
         prevTg = previousP.TangentOnS();
         tolu = Adaptor3d_HSurfaceTool.UResolution(surf, tolpoint3d);
         tolv = Adaptor3d_HSurfaceTool.VResolution(surf, tolpoint3d);
 
-        gp_Vec Corde = new(prevP, Psurf);
+        Vector3D Corde = new(prevP, Psurf);
         Norme = Corde.SquareMagnitude();
         prevNorme = prevTg.SquareMagnitude();
 
@@ -380,7 +383,7 @@ public class BRepBlend_CSWalking
     }
 
     // Not called in OCCT (its call is commented out in TestArret), kept with the class.
-    private Blend_Status CheckDeflectionOnCurv(in gp_Pnt Pcurv, double Param, in gp_Vec Tgcurv)
+    private Blend_Status CheckDeflectionOnCurv(in Point3D Pcurv, double Param, in Vector3D Tgcurv)
     {
         // set by tests in U4, corresponds to 11.478 degrees
         const double CosRef3D = 0.98;
@@ -388,14 +391,14 @@ public class BRepBlend_CSWalking
         double Norme, prevNorme, Cosi, Cosi2;
         double FlecheCourante;
         double Du, paramu, tolu;
-        gp_Pnt prevP;
-        gp_Vec prevTg;
+        Point3D prevP;
+        Vector3D prevTg;
 
         prevP = previousP.PointOnC();
         prevTg = previousP.TangentOnC();
         tolu = BRepBlend_HCurveTool.Resolution(curv, tolpoint3d);
 
-        gp_Vec Corde = new(prevP, Pcurv);
+        Vector3D Corde = new(prevP, Pcurv);
         Norme = Corde.SquareMagnitude();
         prevNorme = prevTg.SquareMagnitude();
 
@@ -461,11 +464,11 @@ public class BRepBlend_CSWalking
     private void Transition(Adaptor2d_Curve2d A, double Param, ref IntSurf_Transition TLine,
                             ref IntSurf_Transition TArc)
     {
-        gp_Pnt2d p2d;
-        gp_Vec2d dp2d;
+        Point2D p2d;
+        Vector2D dp2d;
 
-        gp_Pnt pbid;
-        gp_Vec d1u, d1v, normale, tgrst = new();
+        Point3D pbid;
+        Vector3D d1u, d1v, normale, tgrst = new();
 
         BRepBlend_HCurve2dTool.D1(A, Param, out p2d, out dp2d);
         Adaptor3d_HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
@@ -473,7 +476,7 @@ public class BRepBlend_CSWalking
         tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
         normale = d1u.Crossed(d1v);
 
-        IntSurf.MakeTransition(previousP.TangentOnS(), tgrst, new gp_Dir(normale), ref TLine, ref TArc);
+        IntSurf.MakeTransition(previousP.TangentOnS(), tgrst, new Direction3D(normale), ref TLine, ref TArc);
     }
 
     private void MakeExtremity(ref BRepBlend_Extremity Extrem, int Index, double Param, bool IsVtx,
@@ -547,7 +550,7 @@ public class BRepBlend_CSWalking
         bool Isvtx = false;
         int Nbvar = Func.NbVariables();
         bool Arrive, recad, echecrecad;
-        gp_Pnt2d p2d;
+        Point2D p2d;
         math_Vector tolerance = new(1, Nbvar), infbound = new(1, Nbvar), supbound = new(1, Nbvar),
                     parinit = new(1, Nbvar);
         math_Vector solrst = new(1, Nbvar);
@@ -557,7 +560,7 @@ public class BRepBlend_CSWalking
         Func.GetTolerance(tolerance, tolpoint3d);
         Func.GetBounds(infbound, supbound);
 
-        math_FunctionSetRoot rsnld = new(Func, tolerance, 30);
+        FunctionSetRoot rsnld = new(Func, tolerance, 30);
         parinit.Initialized(sol);
 
         param = parprec + sens * stepw;
@@ -568,7 +571,7 @@ public class BRepBlend_CSWalking
             Func.Set(param);
             rsnld.Perform(Func, parinit, infbound, supbound);
 
-            if (!rsnld.IsDone())
+            if (!rsnld.IsDone)
             {
                 State = Blend_StepTooLarge;
             }

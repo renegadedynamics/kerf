@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -59,7 +61,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
             theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");
             using (N.TopLoc_Location aNL = theN.Location())
             {
-                theOracle.Same(aNL.IsIdentity(), theP.Location().IsIdentity(), theWhat + " identity location");
+                theOracle.Same(aNL.IsIdentity(), theP.Location().IsIdentity, theWhat + " identity location");
                 using N.gp_Trsf aNT = aNL.Transformation();
                 theOracle.Same(aNT, theP.Location().Transformation(), theWhat + " location");
             }
@@ -190,7 +192,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
             N.TopoDS_Shape aNResult = aNReShape.Apply(aStart.N, TwinShapes.ToNative(anUntil));
             TopoDS_Shape aResult = aReShape.Apply(aStart.P, anUntil);
             anIds.MatchTree(anOracle, aNResult, aResult, $"Apply until {anUntil}", new HashSet<TopoDS_TShape>(ReferenceEqualityComparer.Instance));
-            anOracle.Same(true, aResult.IsNull() || aResult.TShape()!.IsFrozen(), "Apply's result is frozen");
+            anOracle.Same(true, aResult.IsNull() || aResult.TShape()!.IsFrozen, "Apply's result is frozen");
             anApplies++;
 
             CompareQueries(anOracle, aNReShape, aReShape, aSubs, anIds, "after Apply");
@@ -243,7 +245,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
                                                                                    && (int)n.Orientation() == (int)aM.Orientation()
                                                                                    && SameLocation(n, aM));
                         anOracle.Same(true, isFound, "History Modified element");
-                        anOracle.Same(true, aM.TShape()!.IsFrozen(), "History Modified element is frozen");
+                        anOracle.Same(true, aM.TShape()!.IsFrozen, "History Modified element is frozen");
                     }
                 }
             }
@@ -286,7 +288,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
     {
         using N.TopLoc_Location aNL = theN.Location();
         using N.gp_Trsf aNT = aNL.Transformation();
-        gp_Trsf aT = theP.Location().Transformation();
+        Transform3D aT = theP.Location().Transformation();
         for (int r = 1; r <= 3; r++)
         {
             for (int c = 1; c <= 4; c++)
@@ -325,16 +327,16 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
                 return Placed(theOracle, TwinShapes.Up(theTwins.Box(theOracle.Real(0.5, 20), theOracle.Real(0.5, 20), theOracle.Real(0.5, 20))));
             case 1:
             {
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
                 return Placed(theOracle, TwinShapes.Up(theTwins.CylinderFace(theOracle.Real(0.5, 5), theOracle.Real(0.5, 5), aL, aNL)));
             }
             default:
             {
                 // a compound sharing a box at several locations and orientations, and a cylinder face
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(theTwins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aFace = TwinShapes.Up(theTwins.CylinderFace(1.0, 2.0, aL, aNL));
-                (N.TopLoc_Location aNL1, TopLoc_Location aL1) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle);
                 return Placed(theOracle, TwinShapes.Up(theTwins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1).Reversed(), aBox.P.Moved(aL1).Reversed()),
@@ -349,7 +351,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
         Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
         if (theOracle.Bool())
         {
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+            (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
             aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
         }
 
@@ -357,13 +359,13 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A rigid location (a rotation, a translation or both) built from the same raw numbers on both sides.</summary>
-    private static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
+    private static (N.TopLoc_Location, Placement) RandomLocation(Oracle theOracle)
     {
         var aNT = new N.gp_Trsf();
-        var aT = new gp_Trsf();
+        var aT = new Transform3D();
         if (theOracle.Bool())
         {
-            (N.gp_Ax1 aNAx, gp_Ax1 anAx) = GeomOracleInputs.Ax1s(theOracle);
+            (N.gp_Ax1 aNAx, Axis3D anAx) = GeomOracleInputs.Ax1s(theOracle);
             double anAngle = theOracle.Angle();
             using (aNAx)
             {
@@ -375,15 +377,15 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
 
         if (theOracle.Bool())
         {
-            gp_Vec aV = theOracle.Vec();
+            Vector3D aV = theOracle.Vec();
             using var aNV = Oracle.ToNative(aV);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetTranslation(aNV);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Translation(aV).Multiplied(aT);
+            aT = Transform3D.Translation(aV).Multiplied(aT);
         }
 
-        return (new N.TopLoc_Location(aNT), new TopLoc_Location(aT));
+        return (new N.TopLoc_Location(aNT), new Placement(aT));
     }
 
     private static List<Twin<N.TopoDS_Shape, TopoDS_Shape>> Explore(Twin<N.TopoDS_Shape, TopoDS_Shape> theShape, TopAbs_ShapeEnum theType)

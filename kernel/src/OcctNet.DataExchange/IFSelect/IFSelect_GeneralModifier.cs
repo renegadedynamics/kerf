@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -24,7 +26,7 @@ namespace Occt;
 /// define their kind of action, which can be applied at a precise step of the production of a File : see
 /// Modifier, and in the package IFAdapt, EntityModifier and EntityCopier
 /// </summary>
-public abstract class IFSelect_GeneralModifier : Standard_Transient
+public abstract class IFSelect_GeneralModifier : Transient
 {
 
     /// <summary>

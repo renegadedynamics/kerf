@@ -98,17 +98,17 @@ public abstract class Approx_ComputeCLine
     {
         double UFirst, ULast;
         bool Finish = false, begin = true, Ok = false;
-        double thetol3d = Precision.Confusion(), thetol2d = Precision.Confusion();
+        double thetol3d = global::Kerf.Engine.Foundation.Precision.Confusion(), thetol2d = global::Kerf.Engine.Foundation.Precision.Confusion();
         UFirst = Line.FirstParameter();
         ULast = Line.LastParameter();
         double TolU;
         if (myHangChecking)
         {
-            TolU = Max((ULast - UFirst) * 1.0e-03, Precision.Confusion());
+            TolU = Max((ULast - UFirst) * 1.0e-03, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else
         {
-            TolU = Max((ULast - UFirst) * 1.0e-05, Precision.PApproximation());
+            TolU = Max((ULast - UFirst) * 1.0e-05, global::Kerf.Engine.Foundation.Precision.PApproximation());
         }
         double myfirstU = UFirst;
         double mylastU = ULast;

@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>This class is intended to describe the authorized form for a Simple (not Plex) Entity, as a list of fields.</summary>
 public class StepData_ESDescr : StepData_EDescr
 {
     private readonly string thenom;
-    private NCollection_HArray1<Standard_Transient> thedescr;
+    private NCollection_HArray1<Transient> thedescr;
     private readonly NCollection_DataMap<string, int> thenames = new();
     private StepData_ESDescr thebase;
     private StepData_ESDescr thesuper;
@@ -34,7 +36,7 @@ public class StepData_ESDescr : StepData_EDescr
             thedescr = null;
             return;
         }
-        NCollection_HArray1<Standard_Transient> li = new NCollection_HArray1<Standard_Transient>(1, nb);
+        NCollection_HArray1<Transient> li = new NCollection_HArray1<Transient>(1, nb);
         if (oldnb == 0)
         {
             thedescr = li;
@@ -132,7 +134,7 @@ public class StepData_ESDescr : StepData_EDescr
         {
             return thebase.IsSub(oth); // Delegate to base if exists
         }
-        Standard_Transient t1 = this;
+        Transient t1 = this;
         if (oth == t1)
         {
             return true; // Same descriptor

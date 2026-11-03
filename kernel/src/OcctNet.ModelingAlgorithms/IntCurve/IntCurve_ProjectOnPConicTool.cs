@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -17,7 +18,7 @@ public readonly struct IntCurve_ProjectOnPConicTool : IIntImpParGen_ProjectOnPCu
     /// The parameter of the point of the conic corresponding to <paramref name="P"/>, clamped to the interval
     /// between the two parameters when they differ.
     /// </summary>
-    public static double FindParameter(in IntCurve_PConic ThePConic, in gp_Pnt2d P, double LowParameter,
+    public static double FindParameter(in IntCurve_PConic ThePConic, in Point2D P, double LowParameter,
                                        double HighParameter, double Tol)
     {
         double ParamSup, ParamInf, Param = 0;
@@ -34,21 +35,21 @@ public readonly struct IntCurve_ProjectOnPConicTool : IIntImpParGen_ProjectOnPCu
 
         switch (ThePConic.TypeCurve())
         {
-            case GeomAbs_Line:
-                Param = ElCLib.LineParameter(ThePConic.Axis2().XAxis(), P);
+            case Line:
+                Param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(ThePConic.Axis2().XAxis(), P);
                 break;
 
-            case GeomAbs_Circle:
-                Param = ElCLib.CircleParameter(ThePConic.Axis2(), P);
+            case Circle:
+                Param = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(ThePConic.Axis2(), P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
                 }
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                Param = ElCLib.EllipseParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.EllipseParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
@@ -56,14 +57,14 @@ public readonly struct IntCurve_ProjectOnPConicTool : IIntImpParGen_ProjectOnPCu
                 break;
             }
 
-            case GeomAbs_Parabola:
+            case Parabola:
             {
-                Param = ElCLib.ParabolaParameter(ThePConic.Axis2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.ParabolaParameter(ThePConic.Axis2(), P);
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                Param = ElCLib.HyperbolaParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.HyperbolaParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
                 break;
             }
             default:
@@ -85,26 +86,26 @@ public readonly struct IntCurve_ProjectOnPConicTool : IIntImpParGen_ProjectOnPCu
     }
 
     /// <summary>The parameter of the point of the conic corresponding to <paramref name="P"/>.</summary>
-    public static double FindParameter(in IntCurve_PConic ThePConic, in gp_Pnt2d P, double Tol)
+    public static double FindParameter(in IntCurve_PConic ThePConic, in Point2D P, double Tol)
     {
         double Param = 0;
         switch (ThePConic.TypeCurve())
         {
-            case GeomAbs_Line:
-                Param = ElCLib.LineParameter(ThePConic.Axis2().XAxis(), P);
+            case Line:
+                Param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(ThePConic.Axis2().XAxis(), P);
                 break;
 
-            case GeomAbs_Circle:
-                Param = ElCLib.CircleParameter(ThePConic.Axis2(), P);
+            case Circle:
+                Param = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(ThePConic.Axis2(), P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
                 }
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                Param = ElCLib.EllipseParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.EllipseParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
@@ -112,14 +113,14 @@ public readonly struct IntCurve_ProjectOnPConicTool : IIntImpParGen_ProjectOnPCu
                 break;
             }
 
-            case GeomAbs_Parabola:
+            case Parabola:
             {
-                Param = ElCLib.ParabolaParameter(ThePConic.Axis2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.ParabolaParameter(ThePConic.Axis2(), P);
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                Param = ElCLib.HyperbolaParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.HyperbolaParameter(ThePConic.Axis2(), ThePConic.Param1(), ThePConic.Param2(), P);
                 break;
             }
             default:

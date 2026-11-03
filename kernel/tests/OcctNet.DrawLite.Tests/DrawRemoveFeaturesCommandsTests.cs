@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -24,7 +25,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     public void Removefeatures_on_a_hand_made_hole()
     {
         DrawInterpreter i = Load();
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(5, 5, -1), new gp_Dir(0, 0, 1)), 2.0, 12.0).Shape();
+        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
         TopoDS_Shape aShape = new BRepAlgoAPI_Cut(new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
         i.SetShape("s", aShape);
         var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);

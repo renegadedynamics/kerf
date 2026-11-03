@@ -3,6 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -37,7 +47,7 @@ public class GeomFill_NetworkSurface
     private NCollection_Array1<Geom_BSplineCurve?> myGuides = new();
     private NCollection_Array1<double> myProfileParameters = new();
     private NCollection_Array1<double> myGuideParameters = new();
-    private NCollection_Array2<gp_Pnt> myIntersectionPoints = new();
+    private NCollection_Array2<Point3D> myIntersectionPoints = new();
     private NCollection_Array2<double> myIntersectionWeights = new();
     private Geom_BSplineSurface? mySurface;
     private double myTolerance = 0.0;
@@ -53,7 +63,7 @@ public class GeomFill_NetworkSurface
         }
         for (int aParamIdx = 1; aParamIdx < theParameters.Size(); ++aParamIdx)
         {
-            if (theParameters.At(aParamIdx) <= theParameters.At(aParamIdx - 1) + Precision.PConfusion())
+            if (theParameters.At(aParamIdx) <= theParameters.At(aParamIdx - 1) + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
@@ -69,7 +79,7 @@ public class GeomFill_NetworkSurface
         }
         foreach (double aWeight in theWeights.AsSpan())
         {
-            if (aWeight <= Precision.Confusion())
+            if (aWeight <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -81,8 +91,8 @@ public class GeomFill_NetworkSurface
     {
         NCollection_Array1<double> aUKnots = new(theSurface.InternalUKnots());
         NCollection_Array1<double> aVKnots = new(theSurface.InternalVKnots());
-        BSplCLib.Reparametrize(0.0, 1.0, aUKnots);
-        BSplCLib.Reparametrize(0.0, 1.0, aVKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aUKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aVKnots);
         theSurface.SetUKnots(aUKnots);
         theSurface.SetVKnots(aVKnots);
     }
@@ -132,7 +142,7 @@ public class GeomFill_NetworkSurface
             {
                 int aKnot = aKnotIdx + 1;
                 if (aCurve.Multiplicity(aKnot) != aReference.Multiplicity(aKnot)
-                    || Math.Abs(aCurve.Knot(aKnot) - aReference.Knot(aKnot)) > Precision.PConfusion())
+                    || Math.Abs(aCurve.Knot(aKnot) - aReference.Knot(aKnot)) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -158,7 +168,7 @@ public class GeomFill_NetworkSurface
             aProfiler.AddCurve(theCurves.At(aCurveIdx)!);
         }
 
-        aProfiler.Perform(Precision.PConfusion());
+        aProfiler.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
         {
             theCurves.ChangeAt(aCurveIdx) = aProfiler.InternalCurve(aCurveIdx + 1) as Geom_BSplineCurve;
@@ -210,10 +220,10 @@ public class GeomFill_NetworkSurface
 
     private static bool interpolatePoles(int theDegree, NCollection_Array1<double> theFlatKnots,
                                          NCollection_Array1<double> theParameters,
-                                         NCollection_Array1<int> theContactOrders, NCollection_Array1<gp_Pnt> thePoles,
+                                         NCollection_Array1<int> theContactOrders, NCollection_Array1<Point3D> thePoles,
                                          NCollection_Array1<double> theWeights)
     {
-        BSplCLib.Interpolate(theDegree, theFlatKnots, theParameters, theContactOrders, thePoles, theWeights,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(theDegree, theFlatKnots, theParameters, theContactOrders, thePoles, theWeights,
                              out int anInversionProblem);
         return anInversionProblem == 0;
     }
@@ -228,9 +238,9 @@ public class GeomFill_NetworkSurface
     {
         theStart = theKnots1.First();
         theEnd = theKnots1.Last();
-        return Math.Abs(theStart - theKnots2.First()) <= Precision.PConfusion()
-               && Math.Abs(theEnd - theKnots2.Last()) <= Precision.PConfusion()
-               && theStart < theEnd - Precision.PConfusion();
+        return Math.Abs(theStart - theKnots2.First()) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+               && Math.Abs(theEnd - theKnots2.Last()) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+               && theStart < theEnd - global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>Candidate knot with multiplicity collected before tolerance compaction.</summary>
@@ -240,7 +250,7 @@ public class GeomFill_NetworkSurface
         public int Multiplicity;
     }
 
-    private readonly struct KnotEntryLess : std_heap.ILess<KnotEntry>
+    private readonly struct KnotEntryLess : Heap.ILess<KnotEntry>
     {
         public bool Less(KnotEntry theLeft, KnotEntry theRight) => theLeft.Parameter < theRight.Parameter;
     }
@@ -262,16 +272,16 @@ public class GeomFill_NetworkSurface
     /// <summary>Evaluates the homogeneous denominator of a B-spline surface.</summary>
     private static double denominatorValue(Geom_BSplineSurface theSurface, double theU, double theV)
     {
-        BSplSLib.HomogeneousD0(theU, theV, 0, 0, theSurface.InternalPoles(), theSurface.InternalWeightsArray(),
+        SurfaceBSplSLib.HomogeneousD0(theU, theV, 0, 0, theSurface.InternalPoles(), theSurface.InternalWeightsArray(),
                                theSurface.InternalUKnots(), theSurface.InternalVKnots(),
                                theSurface.InternalUMultiplicities(), theSurface.InternalVMultiplicities(),
                                theSurface.UDegree(), theSurface.VDegree(), true, true, false, false,
-                               out double aWeight, out gp_Pnt _);
+                               out double aWeight, out Point3D _);
         return aWeight;
     }
 
     /// <summary>Multiplier for the product of two surface denominators.</summary>
-    private sealed class DenominatorProductEvaluator : BSplSLib_EvaluatorFunction
+    private sealed class DenominatorProductEvaluator : SurfaceEvaluatorFunction
     {
         private readonly Geom_BSplineSurface? myFirst;
         private readonly Geom_BSplineSurface? mySecond;
@@ -327,7 +337,7 @@ public class GeomFill_NetworkSurface
         }
 
         theProductFlatKnots.Resize(1, aFlatLength, false);
-        BSplCLib.KnotSequence(theProductKnots, theProductMults, theProductFlatKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(theProductKnots, theProductMults, theProductFlatKnots);
         return true;
     }
 
@@ -335,12 +345,12 @@ public class GeomFill_NetworkSurface
                                                Geom_BSplineSurface theSecondDenominator, int theUDegree,
                                                int theVDegree, NCollection_Array1<double> theUFlatKnots,
                                                NCollection_Array1<double> theVFlatKnots,
-                                               NCollection_Array2<gp_Pnt> theNumerator,
+                                               NCollection_Array2<Point3D> theNumerator,
                                                NCollection_Array2<double> theDenominator)
     {
         DenominatorProductEvaluator aMultiplier = new(theFirstDenominator, theSecondDenominator);
 
-        BSplSLib.FunctionMultiply(aMultiplier, theSurface.UDegree(), theSurface.VDegree(), theSurface.InternalUKnots(),
+        SurfaceBSplSLib.FunctionMultiply(aMultiplier, theSurface.UDegree(), theSurface.VDegree(), theSurface.InternalUKnots(),
                                   theSurface.InternalVKnots(), theSurface.InternalUMultiplicities(),
                                   theSurface.InternalVMultiplicities(), theSurface.InternalPoles(),
                                   theSurface.InternalWeightsArray(), theUFlatKnots, theVFlatKnots, theUDegree,
@@ -355,9 +365,9 @@ public class GeomFill_NetworkSurface
                                                         NCollection_Array1<double> theVFlatKnots)
     {
         Geom_BSplineCurve aBaseProfile = theProfiles.At(0)!;
-        NCollection_Array2<gp_Pnt> aPoles = new(1, aBaseProfile.NbPoles(), 1, theProfiles.Length());
+        NCollection_Array2<Point3D> aPoles = new(1, aBaseProfile.NbPoles(), 1, theProfiles.Length());
         NCollection_Array2<double> aWeights = new(1, aBaseProfile.NbPoles(), 1, theProfiles.Length());
-        NCollection_Array1<gp_Pnt> aColumn = new(1, theProfiles.Length());
+        NCollection_Array1<Point3D> aColumn = new(1, theProfiles.Length());
         NCollection_Array1<double> aColumnWeights = new(1, theProfiles.Length());
         NCollection_Array1<int> aContactOrders = new(1, theProfileParameters.Size());
         aContactOrders.Init(0);
@@ -393,9 +403,9 @@ public class GeomFill_NetworkSurface
                                                       NCollection_Array1<double> theUFlatKnots)
     {
         Geom_BSplineCurve aBaseGuide = theGuides.At(0)!;
-        NCollection_Array2<gp_Pnt> aPoles = new(1, theGuides.Length(), 1, aBaseGuide.NbPoles());
+        NCollection_Array2<Point3D> aPoles = new(1, theGuides.Length(), 1, aBaseGuide.NbPoles());
         NCollection_Array2<double> aWeights = new(1, theGuides.Length(), 1, aBaseGuide.NbPoles());
-        NCollection_Array1<gp_Pnt> aRow = new(1, theGuides.Length());
+        NCollection_Array1<Point3D> aRow = new(1, theGuides.Length());
         NCollection_Array1<double> aRowWeights = new(1, theGuides.Length());
         NCollection_Array1<int> aContactOrders = new(1, theGuideParameters.Size());
         aContactOrders.Init(0);
@@ -424,11 +434,11 @@ public class GeomFill_NetworkSurface
 
     private static double normalizedKnot(double theStart, double theEnd, double theKnot)
     {
-        if (Math.Abs(theKnot - theStart) <= Precision.PConfusion())
+        if (Math.Abs(theKnot - theStart) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return theStart;
         }
-        if (Math.Abs(theKnot - theEnd) <= Precision.PConfusion())
+        if (Math.Abs(theKnot - theEnd) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return theEnd;
         }
@@ -460,13 +470,13 @@ public class GeomFill_NetworkSurface
             return;
         }
 
-        std_sort.sort(theEntries.AsSpan(), new KnotEntryLess());
+        Sorting.Sort(theEntries.AsSpan(), new KnotEntryLess());
 
         KnotEntry aCurrent = theEntries.Value(0);
         for (int anEntryIdx = 1; anEntryIdx < theEntries.Size(); ++anEntryIdx)
         {
             KnotEntry anEntry = theEntries.Value(anEntryIdx);
-            if (Math.Abs(anEntry.Parameter - aCurrent.Parameter) <= Precision.PConfusion())
+            if (Math.Abs(anEntry.Parameter - aCurrent.Parameter) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aCurrent.Multiplicity = Max(aCurrent.Multiplicity, anEntry.Multiplicity);
                 continue;
@@ -553,13 +563,13 @@ public class GeomFill_NetworkSurface
             return false;
         }
 
-        theProfileSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), Precision.PConfusion(), false);
-        theGuideSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), Precision.PConfusion(), false);
-        theReferenceSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), Precision.PConfusion(), false);
+        theProfileSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+        theGuideSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+        theReferenceSurface.InsertUKnots(aUKnots.Array1(), aUMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
 
-        theProfileSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), Precision.PConfusion(), false);
-        theGuideSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), Precision.PConfusion(), false);
-        theReferenceSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), Precision.PConfusion(), false);
+        theProfileSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+        theGuideSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+        theReferenceSurface.InsertVKnots(aVKnots.Array1(), aVMults.Array1(), global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
         return true;
     }
 
@@ -582,16 +592,16 @@ public class GeomFill_NetworkSurface
             && !theGuideSurface.IsVRational() && !theReferenceSurface.IsURational()
             && !theReferenceSurface.IsVRational())
         {
-            Span<gp_Pnt> aProfilePoles = theProfileSurface.InternalPoles().AsSpan();
-            Span<gp_Pnt> aGuidePoles = theGuideSurface.InternalPoles().AsSpan();
-            Span<gp_Pnt> aReferencePoles = theReferenceSurface.InternalPoles().AsSpan();
-            NCollection_Array2<gp_Pnt> aResultPoles = new(theProfileSurface.InternalPoles());
-            Span<gp_Pnt> aResult = aResultPoles.AsSpan();
+            Span<Point3D> aProfilePoles = theProfileSurface.InternalPoles().AsSpan();
+            Span<Point3D> aGuidePoles = theGuideSurface.InternalPoles().AsSpan();
+            Span<Point3D> aReferencePoles = theReferenceSurface.InternalPoles().AsSpan();
+            NCollection_Array2<Point3D> aResultPoles = new(theProfileSurface.InternalPoles());
+            Span<Point3D> aResult = aResultPoles.AsSpan();
             for (int aPoleIdx = 0; aPoleIdx < aResult.Length; ++aPoleIdx)
             {
-                gp_XYZ aPoint = aProfilePoles[aPoleIdx].XYZ() + aGuidePoles[aPoleIdx].XYZ()
+                Xyz aPoint = aProfilePoles[aPoleIdx].XYZ() + aGuidePoles[aPoleIdx].XYZ()
                                 - aReferencePoles[aPoleIdx].XYZ();
-                aResult[aPoleIdx] = new gp_Pnt(aPoint);
+                aResult[aPoleIdx] = new Point3D(aPoint);
             }
 
             return new Geom_BSplineSurface(aResultPoles, theProfileSurface.InternalUKnots(),
@@ -627,11 +637,11 @@ public class GeomFill_NetworkSurface
             return null;
         }
 
-        NCollection_Array2<gp_Pnt> aProfileNumerator = new(1, aNbUPoles, 1, aNbVPoles);
+        NCollection_Array2<Point3D> aProfileNumerator = new(1, aNbUPoles, 1, aNbVPoles);
         NCollection_Array2<double> aProfileDenominator = new(1, aNbUPoles, 1, aNbVPoles);
-        NCollection_Array2<gp_Pnt> aGuideNumerator = new(1, aNbUPoles, 1, aNbVPoles);
+        NCollection_Array2<Point3D> aGuideNumerator = new(1, aNbUPoles, 1, aNbVPoles);
         NCollection_Array2<double> aGuideDenominator = new(1, aNbUPoles, 1, aNbVPoles);
-        NCollection_Array2<gp_Pnt> aReferenceNumerator = new(1, aNbUPoles, 1, aNbVPoles);
+        NCollection_Array2<Point3D> aReferenceNumerator = new(1, aNbUPoles, 1, aNbVPoles);
         NCollection_Array2<double> aReferenceDenominator = new(1, aNbUPoles, 1, aNbVPoles);
 
         if (!multiplyByDenominators(theProfileSurface, theGuideSurface, theReferenceSurface, aUDegree, aVDegree,
@@ -645,29 +655,29 @@ public class GeomFill_NetworkSurface
             return null;
         }
 
-        NCollection_Array2<gp_Pnt> aResultPoles2 = new(1, aNbUPoles, 1, aNbVPoles);
+        NCollection_Array2<Point3D> aResultPoles2 = new(1, aNbUPoles, 1, aNbVPoles);
         NCollection_Array2<double> aResultWeights = new(1, aNbUPoles, 1, aNbVPoles);
-        Span<gp_Pnt> aPoles = aResultPoles2.AsSpan();
+        Span<Point3D> aPoles = aResultPoles2.AsSpan();
         Span<double> aWeights = aResultWeights.AsSpan();
         Span<double> aProfileDen = aProfileDenominator.AsSpan();
         Span<double> aGuideDen = aGuideDenominator.AsSpan();
         Span<double> aReferenceDen = aReferenceDenominator.AsSpan();
-        Span<gp_Pnt> aProfileNum = aProfileNumerator.AsSpan();
-        Span<gp_Pnt> aGuideNum = aGuideNumerator.AsSpan();
-        Span<gp_Pnt> aReferenceNum = aReferenceNumerator.AsSpan();
+        Span<Point3D> aProfileNum = aProfileNumerator.AsSpan();
+        Span<Point3D> aGuideNum = aGuideNumerator.AsSpan();
+        Span<Point3D> aReferenceNum = aReferenceNumerator.AsSpan();
         for (int aPoleIdx = 0; aPoleIdx < aPoles.Length; ++aPoleIdx)
         {
             double aWeight = aProfileDen[aPoleIdx];
-            if (aWeight <= Precision.Confusion() || Math.Abs(aGuideDen[aPoleIdx] - aWeight) > Precision.Confusion()
-                || Math.Abs(aReferenceDen[aPoleIdx] - aWeight) > Precision.Confusion())
+            if (aWeight <= global::Kerf.Engine.Foundation.Precision.Confusion() || Math.Abs(aGuideDen[aPoleIdx] - aWeight) > global::Kerf.Engine.Foundation.Precision.Confusion()
+                || Math.Abs(aReferenceDen[aPoleIdx] - aWeight) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 theStatus = ResultStatus.RationalConstructionFailed;
                 return null;
             }
 
-            gp_XYZ aNumerator = aProfileNum[aPoleIdx].XYZ() + aGuideNum[aPoleIdx].XYZ() - aReferenceNum[aPoleIdx].XYZ();
+            Xyz aNumerator = aProfileNum[aPoleIdx].XYZ() + aGuideNum[aPoleIdx].XYZ() - aReferenceNum[aPoleIdx].XYZ();
             aWeights[aPoleIdx] = aWeight;
-            aPoles[aPoleIdx] = new gp_Pnt(aNumerator / aWeight);
+            aPoles[aPoleIdx] = new Point3D(aNumerator / aWeight);
         }
 
         return new Geom_BSplineSurface(aResultPoles2, aResultWeights, aUKnots, aVKnots, aUMults, aVMults, aUDegree,
@@ -679,8 +689,8 @@ public class GeomFill_NetworkSurface
         int aNbChecks = theAlongU ? theSurface.NbVPoles() : theSurface.NbUPoles();
         for (int aCheckIdx = 1; aCheckIdx <= aNbChecks; ++aCheckIdx)
         {
-            gp_Pnt aFirstPole = theAlongU ? theSurface.Pole(1, aCheckIdx) : theSurface.Pole(aCheckIdx, 1);
-            gp_Pnt aLastPole = theAlongU ? theSurface.Pole(theSurface.NbUPoles(), aCheckIdx)
+            Point3D aFirstPole = theAlongU ? theSurface.Pole(1, aCheckIdx) : theSurface.Pole(aCheckIdx, 1);
+            Point3D aLastPole = theAlongU ? theSurface.Pole(theSurface.NbUPoles(), aCheckIdx)
                                          : theSurface.Pole(aCheckIdx, theSurface.NbVPoles());
             if (aFirstPole.Distance(aLastPole) > theTolerance)
             {
@@ -694,7 +704,7 @@ public class GeomFill_NetworkSurface
                                        NCollection_Array1<Geom_BSplineCurve?> theGuides,
                                        NCollection_Array1<double> theProfileParameters,
                                        NCollection_Array1<double> theGuideParameters,
-                                       NCollection_Array2<gp_Pnt> theIntersectionPoints,
+                                       NCollection_Array2<Point3D> theIntersectionPoints,
                                        NCollection_Array2<double> theIntersectionWeights)
     {
         return theProfiles.Length() >= 2 && theGuides.Length() >= 2 && !hasPeriodicCurve(theProfiles)
@@ -712,7 +722,7 @@ public class GeomFill_NetworkSurface
     private static Geom_BSplineCurve? makeProfileSeamGuide(NCollection_Array1<Geom_BSplineCurve?> theProfiles,
                                                            NCollection_Array1<double> theProfileParameters)
     {
-        NCollection_HArray1<gp_Pnt> aPoints = new(1, theProfiles.Length());
+        NCollection_HArray1<Point3D> aPoints = new(1, theProfiles.Length());
         NCollection_HArray1<double> aParameters = new(1, theProfileParameters.Length());
         for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
         {
@@ -721,7 +731,7 @@ public class GeomFill_NetworkSurface
             aParameters.SetValue(aProfileIdx + 1, theProfileParameters.At(aProfileIdx));
         }
 
-        GeomAPI_Interpolate anInterpolator = new(aPoints, aParameters, false, Precision.Confusion());
+        GeomAPI_Interpolate anInterpolator = new(aPoints, aParameters, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInterpolator.Perform();
         return anInterpolator.IsDone() ? anInterpolator.Curve() : null;
     }
@@ -731,17 +741,17 @@ public class GeomFill_NetworkSurface
                                                 NCollection_Array1<double> theProfileParameters,
                                                 NCollection_Array1<Geom_BSplineCurve?> theGuides,
                                                 NCollection_Array1<double> theGuideParameters,
-                                                NCollection_Array2<gp_Pnt> theIntersectionPoints,
+                                                NCollection_Array2<Point3D> theIntersectionPoints,
                                                 NCollection_Array2<double> theIntersectionWeights,
                                                 ref NCollection_Array1<Geom_BSplineCurve?> theClosedGuides,
                                                 ref NCollection_Array1<double> theClosedGuideParameters,
-                                                ref NCollection_Array2<gp_Pnt> theClosedIntersectionPoints,
+                                                ref NCollection_Array2<Point3D> theClosedIntersectionPoints,
                                                 ref NCollection_Array2<double> theClosedIntersectionWeights)
     {
         double aProfileStart = theProfiles.At(0)!.FirstParameter();
         double aProfileEnd = theProfiles.At(0)!.LastParameter();
-        bool needsStartSeam = theGuideParameters.First() > aProfileStart + Precision.PConfusion();
-        bool needsEndSeam = theGuideParameters.Last() < aProfileEnd - Precision.PConfusion();
+        bool needsStartSeam = theGuideParameters.First() > aProfileStart + global::Kerf.Engine.Foundation.Precision.PConfusion();
+        bool needsEndSeam = theGuideParameters.Last() < aProfileEnd - global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (!needsStartSeam && !needsEndSeam)
         {
             return true;
@@ -777,7 +787,7 @@ public class GeomFill_NetworkSurface
             theClosedGuideParameters.ChangeAt(aNbGuides - 1) = aProfileEnd;
         }
 
-        theClosedIntersectionPoints = new NCollection_Array2<gp_Pnt>(1, aNbGuides, 1, theIntersectionPoints.NbColumns());
+        theClosedIntersectionPoints = new NCollection_Array2<Point3D>(1, aNbGuides, 1, theIntersectionPoints.NbColumns());
         theClosedIntersectionWeights = new NCollection_Array2<double>(1, aNbGuides, 1, theIntersectionWeights.NbColumns());
         if (needsStartSeam)
         {
@@ -815,7 +825,7 @@ public class GeomFill_NetworkSurface
                                                            NCollection_Array1<Geom_BSplineCurve?> theGuides,
                                                            NCollection_Array1<double> theProfileParameters,
                                                            NCollection_Array1<double> theGuideParameters,
-                                                           NCollection_Array2<gp_Pnt> theIntersectionPoints,
+                                                           NCollection_Array2<Point3D> theIntersectionPoints,
                                                            NCollection_Array2<double> theIntersectionWeights,
                                                            bool theIsUClosed, ref ResultStatus theStatus)
     {
@@ -823,12 +833,12 @@ public class GeomFill_NetworkSurface
 
         NCollection_Array1<Geom_BSplineCurve?> aClosedGuides = new();
         NCollection_Array1<double> aClosedGuideParameters = new();
-        NCollection_Array2<gp_Pnt> aClosedIntersectionPoints = new();
+        NCollection_Array2<Point3D> aClosedIntersectionPoints = new();
         NCollection_Array2<double> aClosedIntersectionWeights = new();
         bool shouldCompleteUSeam =
           theIsUClosed
-          && (theGuideParameters.First() > theProfiles.At(0)!.FirstParameter() + Precision.PConfusion()
-              || theGuideParameters.Last() < theProfiles.At(0)!.LastParameter() - Precision.PConfusion());
+          && (theGuideParameters.First() > theProfiles.At(0)!.FirstParameter() + global::Kerf.Engine.Foundation.Precision.PConfusion()
+              || theGuideParameters.Last() < theProfiles.At(0)!.LastParameter() - global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (shouldCompleteUSeam
             && !completeClosedGuideSeam(theProfiles, theProfileParameters, theGuides, theGuideParameters,
                                         theIntersectionPoints, theIntersectionWeights, ref aClosedGuides,
@@ -845,7 +855,7 @@ public class GeomFill_NetworkSurface
         }
         NCollection_Array1<Geom_BSplineCurve?> aGuides = shouldCompleteUSeam ? aClosedGuides : theGuides;
         NCollection_Array1<double> aGuideParameters = shouldCompleteUSeam ? aClosedGuideParameters : theGuideParameters;
-        NCollection_Array2<gp_Pnt> aIntersectionPoints =
+        NCollection_Array2<Point3D> aIntersectionPoints =
           shouldCompleteUSeam ? aClosedIntersectionPoints : theIntersectionPoints;
         NCollection_Array2<double> aIntersectionWeights =
           shouldCompleteUSeam ? aClosedIntersectionWeights : theIntersectionWeights;
@@ -873,7 +883,7 @@ public class GeomFill_NetworkSurface
         }
 
         // The reference surface starts from the same contact grid validated during preparation.
-        NCollection_Array2<gp_Pnt> aReferencePoles = new(aIntersectionPoints);
+        NCollection_Array2<Point3D> aReferencePoles = new(aIntersectionPoints);
         NCollection_Array2<double> aReferenceWeights = new(aIntersectionWeights);
         bool isReferencePolynomial = hasRationalCurve(theProfiles) != hasRationalCurve(aGuides);
         if (isReferencePolynomial)
@@ -882,16 +892,16 @@ public class GeomFill_NetworkSurface
         }
         else
         {
-            Span<gp_Pnt> aPoles = aReferencePoles.AsSpan();
+            Span<Point3D> aPoles = aReferencePoles.AsSpan();
             Span<double> aWeights = aReferenceWeights.AsSpan();
             for (int aPoleIdx = 0; aPoleIdx < aPoles.Length; ++aPoleIdx)
             {
                 double aWeight = aWeights[aPoleIdx];
-                aPoles[aPoleIdx] = new gp_Pnt(aPoles[aPoleIdx].XYZ() * aWeight);
+                aPoles[aPoleIdx] = new Point3D(aPoles[aPoleIdx].XYZ() * aWeight);
             }
         }
 
-        BSplSLib.Interpolate(anUBasis.Degree, aVBasis.Degree, anUBasis.FlatKnots, aVBasis.FlatKnots, aGuideParameters,
+        SurfaceBSplSLib.Interpolate(anUBasis.Degree, aVBasis.Degree, anUBasis.FlatKnots, aVBasis.FlatKnots, aGuideParameters,
                              theProfileParameters, aReferencePoles, aReferenceWeights, out int anInversionProblem);
         if (anInversionProblem != 0)
         {
@@ -900,17 +910,17 @@ public class GeomFill_NetworkSurface
         }
         if (!isReferencePolynomial)
         {
-            Span<gp_Pnt> aPoles = aReferencePoles.AsSpan();
+            Span<Point3D> aPoles = aReferencePoles.AsSpan();
             Span<double> aWeights = aReferenceWeights.AsSpan();
             for (int aPoleIdx = 0; aPoleIdx < aPoles.Length; ++aPoleIdx)
             {
                 double aWeight = aWeights[aPoleIdx];
-                if (aWeight <= gp.Resolution())
+                if (aWeight <= Constants.Resolution())
                 {
                     theStatus = ResultStatus.ReferenceSurfaceFailed;
                     return null;
                 }
-                aPoles[aPoleIdx] = new gp_Pnt(aPoles[aPoleIdx].XYZ() / aWeight);
+                aPoles[aPoleIdx] = new Point3D(aPoles[aPoleIdx].XYZ() / aWeight);
             }
         }
 
@@ -927,7 +937,7 @@ public class GeomFill_NetworkSurface
     private static bool applyPeriodicity(Geom_BSplineSurface theSurface, bool theIsUClosed, bool theIsVClosed,
                                          double theTolerance)
     {
-        double aTolerance = Max(theTolerance, Precision.Confusion());
+        double aTolerance = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (theIsUClosed)
         {
             if (!canSetPeriodic(theSurface, true, aTolerance))
@@ -961,14 +971,14 @@ public class GeomFill_NetworkSurface
     /// </summary>
     public void Init(NCollection_Array1<Geom_BSplineCurve?> theProfiles, NCollection_Array1<Geom_BSplineCurve?> theGuides,
                      NCollection_Array1<double> theProfileParameters, NCollection_Array1<double> theGuideParameters,
-                     NCollection_Array2<gp_Pnt> theIntersectionPoints, NCollection_Array2<double> theIntersectionWeights,
+                     NCollection_Array2<Point3D> theIntersectionPoints, NCollection_Array2<double> theIntersectionWeights,
                      double theTolerance, bool theIsUClosed, bool theIsVClosed)
     {
         myProfiles = new NCollection_Array1<Geom_BSplineCurve?>(theProfiles);
         myGuides = new NCollection_Array1<Geom_BSplineCurve?>(theGuides);
         myProfileParameters = new NCollection_Array1<double>(theProfileParameters);
         myGuideParameters = new NCollection_Array1<double>(theGuideParameters);
-        myIntersectionPoints = new NCollection_Array2<gp_Pnt>(theIntersectionPoints);
+        myIntersectionPoints = new NCollection_Array2<Point3D>(theIntersectionPoints);
         myIntersectionWeights = new NCollection_Array2<double>(theIntersectionWeights);
         myTolerance = theTolerance;
         myIsUClosed = theIsUClosed;
@@ -1016,7 +1026,7 @@ public class GeomFill_NetworkSurface
             }
             reparametrizeSurface(mySurface);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             mySurface = null;
             myStatus = ResultStatus.ConstructionFailed;
@@ -1037,7 +1047,7 @@ public class GeomFill_NetworkSurface
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone("GeomFill_NetworkSurface::Surface");
+            throw new NotDoneException("GeomFill_NetworkSurface::Surface");
         }
         mySurface!.Freeze();
         return mySurface;

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -19,7 +20,7 @@ namespace Occt;
 /// building uses <see cref="InternalWire"/> and <see cref="InternalWireAPIMake"/>. <see cref="Reverse(in TopoDS_Face)"/>
 /// swaps the pcurves of seam edges in place, so it is internal.
 /// </remarks>
-public class ShapeExtend_WireData : Standard_Transient
+public class ShapeExtend_WireData : Transient
 {
     private NCollection_HSequence<TopoDS_Shape> myEdges = null!;
     private NCollection_HSequence<TopoDS_Shape> myNonmanifoldEdges = null!;

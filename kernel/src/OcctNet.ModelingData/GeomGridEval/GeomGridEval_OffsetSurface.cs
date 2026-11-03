@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -51,12 +53,12 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myBasis is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         // Fast path: check if offset surface has an equivalent simple surface
@@ -72,14 +74,14 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         // Batch evaluate basis surface D1 (offset D0 requires basis D1)
         GeomGridEval_Surface aBasisEval = new(myBasis);
         NCollection_Array2<Geom_Surface.ResD1> aBasisD1 = aBasisEval.EvaluateGridD1(theUParams, theVParams);
         if (aBasisD1.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         // Use GeomAdaptor for evaluation - works with template functions
@@ -95,7 +97,7 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
             {
                 double aV = theVParams.Value(theVParams.Lower() + j - 1);
                 ref Geom_Surface.ResD1 aBasis = ref aBasisD1.ChangeValue(i, j);
-                gp_Pnt aP = aBasis.Point;
+                Point3D aP = aBasis.Point;
                 Geom_OffsetSurfaceUtils.EvaluateD0(aU, aV, aBasisAdaptor, myOffset, anOscQuery, ref aP, aBasis.D1U,
                                                    aBasis.D1V);
                 aResult.SetValue(i, j, aP);
@@ -144,9 +146,9 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
             {
                 double aV = theVParams.Value(theVParams.Lower() + j - 1);
                 ref Geom_Surface.ResD2 aBasis = ref aBasisD2.ChangeValue(i, j);
-                gp_Pnt aP = aBasis.Point;
-                gp_Vec aD1U = aBasis.D1U;
-                gp_Vec aD1V = aBasis.D1V;
+                Point3D aP = aBasis.Point;
+                Vector3D aD1U = aBasis.D1U;
+                Vector3D aD1V = aBasis.D1V;
                 Geom_OffsetSurfaceUtils.EvaluateD1(aU, aV, aBasisAdaptor, myOffset, anOscQuery, ref aP, ref aD1U,
                                                    ref aD1V, aBasis.D2U, aBasis.D2V, aBasis.D2UV);
                 aResult[i, j] = new Geom_Surface.ResD1 { Point = aP, D1U = aD1U, D1V = aD1V };
@@ -195,12 +197,12 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
             {
                 double aV = theVParams.Value(theVParams.Lower() + j - 1);
                 ref Geom_Surface.ResD3 aBasis = ref aBasisD3.ChangeValue(i, j);
-                gp_Pnt aP = aBasis.Point;
-                gp_Vec aD1U = aBasis.D1U;
-                gp_Vec aD1V = aBasis.D1V;
-                gp_Vec aD2U = aBasis.D2U;
-                gp_Vec aD2V = aBasis.D2V;
-                gp_Vec aD2UV = aBasis.D2UV;
+                Point3D aP = aBasis.Point;
+                Vector3D aD1U = aBasis.D1U;
+                Vector3D aD1V = aBasis.D1V;
+                Vector3D aD2U = aBasis.D2U;
+                Vector3D aD2V = aBasis.D2V;
+                Vector3D aD2UV = aBasis.D2UV;
                 Geom_OffsetSurfaceUtils.EvaluateD2(aU, aV, aBasisAdaptor, myOffset, anOscQuery, ref aP, ref aD1U,
                                                    ref aD1V, ref aD2U, ref aD2V, ref aD2UV, aBasis.D3U, aBasis.D3V,
                                                    aBasis.D3UUV, aBasis.D3UVV);
@@ -260,7 +262,7 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -268,7 +270,7 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
         if (myBasis is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0 || theNV < 0
             || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         // Fast path: check if offset surface has an equivalent simple surface
@@ -282,14 +284,14 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         // Batch evaluate basis surface D1 (offset DN requires basis D1)
         GeomGridEval_Surface aBasisEval = new(myBasis);
         NCollection_Array2<Geom_Surface.ResD1> aBasisD1 = aBasisEval.EvaluateGridD1(theUParams, theVParams);
         if (aBasisD1.IsEmpty())
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         Geom_OffsetSurfaceUtils.AdaptorBasis aBasisAdaptor = new(new GeomAdaptor_Surface(myBasis));
@@ -303,7 +305,7 @@ public sealed class GeomGridEval_OffsetSurface : GeomGridEval.ISurfaceEvaluator
                 double aV = theVParams.Value(theVParams.Lower() + j - 1);
                 ref Geom_Surface.ResD1 aBasis = ref aBasisD1.ChangeValue(i, j);
                 Geom_OffsetSurfaceUtils.EvaluateDN(aU, aV, theNU, theNV, aBasisAdaptor, myOffset, anOscQuery,
-                                                   out gp_Vec aDN, aBasis.D1U, aBasis.D1V);
+                                                   out Vector3D aDN, aBasis.D1U, aBasis.D1V);
                 aResult.SetValue(i, j, aDN);
             }
         }

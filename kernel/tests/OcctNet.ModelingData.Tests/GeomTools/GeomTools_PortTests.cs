@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -58,17 +62,17 @@ public class GeomTools_PortTests
         {
             Geom_Curve? aCurve = aRead.Curve(i);
             Assert.NotNull(aCurve);
-            Assert.True(aCurve.IsFrozen());
+            Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
-            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicTypeName()}");
             Assert.Equal(i, aRead.Index(aCurve));
 
             var aWriter = new StringWriter();
-            Standard_Stream.Precision(aWriter, 17);
+            StreamUtilities.Precision(aWriter, 17);
             GeomTools.Write(aCurves[i - 1], aWriter);
             string anOne = aWriter.ToString();
             aWriter = new StringWriter();
-            Standard_Stream.Precision(aWriter, 17);
+            StreamUtilities.Precision(aWriter, 17);
             GeomTools.Write(aCurve, aWriter);
             if (HasNoDirection(aCurve))
             {
@@ -77,7 +81,7 @@ public class GeomTools_PortTests
 
             GeomTools.Read(out Geom_Curve? aSingle, new StringReader(anOne));
             Assert.NotNull(aSingle);
-            Assert.False(aSingle.IsFrozen());
+            Assert.False(aSingle.IsFrozen);
             Assert.True(aHasher.Equals(aCurves[i - 1], aSingle));
         }
 
@@ -108,9 +112,9 @@ public class GeomTools_PortTests
         {
             Geom2d_Curve? aCurve = aRead.Curve2d(i);
             Assert.NotNull(aCurve);
-            Assert.True(aCurve.IsFrozen());
+            Assert.True(aCurve.IsFrozen);
             Assert.Equal(aCurves[i - 1].DynamicType(), aCurve.DynamicType());
-            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aCurves[i - 1], aCurve), $"curve {i}, {aCurve.DynamicTypeName()}");
             if (HasNoDirection(aCurve))
             {
                 var aSingle = new GeomTools_Curve2dSet();
@@ -145,16 +149,16 @@ public class GeomTools_PortTests
         {
             Geom_Surface? aSurface = aRead.Surface(i);
             Assert.NotNull(aSurface);
-            Assert.True(aSurface.IsFrozen());
+            Assert.True(aSurface.IsFrozen);
             Assert.Equal(aSurfaces[i - 1].DynamicType(), aSurface.DynamicType());
-            Assert.True(aHasher.Equals(aSurfaces[i - 1], aSurface), $"surface {i}, {aSurface.DynamicType().Name}");
+            Assert.True(aHasher.Equals(aSurfaces[i - 1], aSurface), $"surface {i}, {aSurface.DynamicTypeName()}");
             if (HasNoDirection(aSurface))
             {
                 var aWriter = new StringWriter();
-                Standard_Stream.Precision(aWriter, 17);
+                StreamUtilities.Precision(aWriter, 17);
                 GeomTools.Write(aSurface, aWriter);
                 var anOriginal = new StringWriter();
-                Standard_Stream.Precision(anOriginal, 17);
+                StreamUtilities.Precision(anOriginal, 17);
                 GeomTools.Write(aSurfaces[i - 1], anOriginal);
                 Assert.Equal(anOriginal.ToString(), aWriter.ToString());
             }
@@ -164,7 +168,7 @@ public class GeomTools_PortTests
     [Fact]
     public void Left_handed_axes_are_read_back_left_handed()
     {
-        var anAx3 = new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+        var anAx3 = new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         anAx3.YReverse();
         var aCylinder = new Geom_CylindricalSurface(anAx3, 2.0);
         var aWriter = new StringWriter();
@@ -180,7 +184,7 @@ public class GeomTools_PortTests
     [Fact]
     public void Write_uses_the_writer_precision_and_restores_it()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0 / 3.0);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0 / 3.0);
         var aWriter = new StringWriter();
         GeomTools.Write(aCircle, aWriter);
         Assert.Equal("2 0 0 0 0 0 1 1 0 -0 -0 1 0 0.333333\n", aWriter.ToString());
@@ -190,20 +194,20 @@ public class GeomTools_PortTests
         aWriter = new StringWriter();
         aSet.Write(aWriter);
         Assert.Equal("Curves 1\n2 0 0 0 0 0 1 1 0 -0 -0 1 0 0.33333333333333331\n", aWriter.ToString());
-        Assert.Equal(6, Standard_Stream.Precision(aWriter));
+        Assert.Equal(6, StreamUtilities.Precision(aWriter));
     }
 
     [Fact]
     public void Dumps_are_OCCT_s()
     {
-        var aLine = new Geom_Line(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1));
+        var aLine = new Geom_Line(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
         var aWriter = new StringWriter();
         GeomTools.Dump(aLine, aWriter);
         Assert.Equal("Line\n  Origin :1, 2, 3 \n  Axis   :0, 0, 1 \n\n", aWriter.ToString());
 
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 2);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 2);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 0, 0);
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -222,13 +226,13 @@ public class GeomTools_PortTests
                      + "Knots :\n\n   1 :  0 2\n   2 :  1 2\n\n",
                      aWriter.ToString());
 
-        var aSphere = new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         aWriter = new StringWriter();
         GeomTools.Dump(aSphere, aWriter);
         Assert.Equal("SphericalSurface\n  Center :0, 0, 0 \n  Axis   :0, 0, 1 \n  XAxis  :1, 0, -0 \n  YAxis  :-0, 1, 0 \n"
                      + "  Radius :2\n\n", aWriter.ToString());
 
-        var aCircle2d = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0)), 0.5);
+        var aCircle2d = new Geom2d_Circle(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 0.5);
         aWriter = new StringWriter();
         GeomTools.Dump(aCircle2d, aWriter);
         Assert.Equal("Circle\n  Center :1, 1 \n  XAxis  :1, 0 \n  YAxis  :-0, 1 \n  Radius :0.5\n\n", aWriter.ToString());
@@ -237,15 +241,15 @@ public class GeomTools_PortTests
     [Fact]
     public void Sets_index_and_null_as_OCCT_does()
     {
-        var aLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         var aCurves = new GeomTools_CurveSet();
         Assert.Equal(0, aCurves.Add(null));
         Assert.Equal(1, aCurves.Add(aLine));
         Assert.Equal(1, aCurves.Add(aLine));
         Assert.Equal(2, aCurves.Add((Geom_Curve)aLine.Copy()));
         Assert.Equal(0, aCurves.Index(null));
-        Assert.Equal(0, aCurves.Index(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0))));
-        Assert.False(aLine.IsFrozen());
+        Assert.Equal(0, aCurves.Index(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))));
+        Assert.False(aLine.IsFrozen);
         aCurves.Clear();
         Assert.Null(aCurves.Curve(1));
 
@@ -300,7 +304,7 @@ public class GeomTools_PortTests
         Assert.Equal(0.0, aValue);
         GeomTools.GetReal(aReader, out aValue);
         Assert.Equal(2000.0, aValue);
-        Assert.True(Standard_Stream.Eof(aReader));
+        Assert.True(StreamUtilities.Eof(aReader));
         GeomTools.GetReal(aReader, out aValue);
         Assert.Equal(0.0, aValue);
 
@@ -318,7 +322,7 @@ public class GeomTools_PortTests
         {
             Printed++;
             OS.Write("42 ");
-            Standard_Stream.Write(OS, ((TestLine)C).Origin().X());
+            StreamUtilities.Write(OS, ((TestLine)C).Origin().X());
             OS.Write("\n");
         }
 
@@ -327,7 +331,7 @@ public class GeomTools_PortTests
             if (ctype == 42)
             {
                 GeomTools.GetReal(IS, out double anX);
-                C = new TestLine(new gp_Pnt(anX, 0, 0), new gp_Vec(1, 0, 0));
+                C = new TestLine(new Point3D(anX, 0, 0), new Vector3D(1, 0, 0));
             }
 
             return IS;
@@ -337,7 +341,7 @@ public class GeomTools_PortTests
     [Fact]
     public void Unknown_types_go_to_the_handler()
     {
-        var aTestLine = new TestLine(new gp_Pnt(7, 0, 0), new gp_Vec(1, 0, 0));
+        var aTestLine = new TestLine(new Point3D(7, 0, 0), new Vector3D(1, 0, 0));
         var aWriter = new StringWriter();
         GeomTools.Dump(aTestLine, aWriter);
         Assert.Equal("****** UNKNOWN CURVE TYPE ******\n", aWriter.ToString());

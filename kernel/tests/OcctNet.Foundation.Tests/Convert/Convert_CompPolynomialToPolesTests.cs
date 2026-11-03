@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+
 namespace OcctNet.Foundation.Tests;
 
 public class Convert_CompPolynomialToPolesTest
@@ -27,9 +29,9 @@ public class Convert_CompPolynomialToPolesTest
         aTrueIntervals[1] = -1.0;
         aTrueIntervals[2] = 1.0;
 
-        Convert_CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
+        CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
 
-        Assert.True(aConv.IsDone());
+        Assert.True(aConv.IsDone);
         Assert.Equal(1, aConv.Degree());
         Assert.Equal(2, aConv.NbKnots());
         Assert.True(aConv.NbPoles() > 0);
@@ -56,9 +58,9 @@ public class Convert_CompPolynomialToPolesTest
         aTrueIntervals[1] = 0.0;
         aTrueIntervals[2] = 1.0;
 
-        Convert_CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
+        CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
 
-        Assert.True(aConv.IsDone());
+        Assert.True(aConv.IsDone);
         Assert.Equal(2, aConv.Degree());
     }
 
@@ -94,7 +96,7 @@ public class Convert_CompPolynomialToPolesTest
         aTrueIntervals.SetValue(2, 0.5);
         aTrueIntervals.SetValue(3, 1.0);
 
-        Convert_CompPolynomialToPoles aConv = new(aNumCurves,
+        CompPolynomialToPoles aConv = new(aNumCurves,
                                                   aContinuity,
                                                   aDim,
                                                   aMaxDeg,
@@ -103,7 +105,7 @@ public class Convert_CompPolynomialToPolesTest
                                                   aPolyIntervals,
                                                   aTrueIntervals);
 
-        Assert.True(aConv.IsDone());
+        Assert.True(aConv.IsDone);
         Assert.Equal(1, aConv.Degree());
         Assert.Equal(3, aConv.NbKnots());
     }
@@ -133,9 +135,9 @@ public class Convert_CompPolynomialToPolesTest
         aTrueIntervals[1] = 0.0;
         aTrueIntervals[2] = 1.0;
 
-        Convert_CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
+        CompPolynomialToPoles aConv = new(aDim, aMaxDeg, aDeg, aCoeffs, aPolyIntervals, aTrueIntervals);
 
-        Assert.True(aConv.IsDone());
+        Assert.True(aConv.IsDone);
         Assert.Equal(1, aConv.Degree());
 
         NCollection_Array2<double> aPoles = aConv.Poles();

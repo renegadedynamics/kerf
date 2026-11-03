@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -14,44 +17,44 @@ namespace Occt;
 /// </summary>
 public sealed class GeomLib_IsPlanarSurface
 {
-    private readonly gp_Pln myPlan = new();
+    private readonly Plane3D myPlan = new();
     private readonly bool IsPlan;
 
     /// <summary>Tests whether S is planar within Tol.</summary>
     public GeomLib_IsPlanarSurface(Geom_Surface S, double Tol = 1.0e-7)
     {
         GeomAdaptor_Surface AS = new(S);
-        GeomAbs_SurfaceType Type;
+        SurfaceKind Type;
 
         Type = AS.GetType();
 
         switch (Type)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IsPlan = true;
                 myPlan = AS.Plane();
                 break;
             }
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
             {
                 IsPlan = false;
                 break;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 bool Essai = true;
-                gp_Pnt P;
-                gp_Vec DU, DV, Dn;
-                gp_Dir Dir = AS.AxeOfRevolution().Direction();
+                Point3D P;
+                Vector3D DU, DV, Dn;
+                Direction3D Dir = AS.AxeOfRevolution().Direction();
                 double Umin, Umax, Vmin, Vmax;
                 S.Bounds(out Umin, out Umax, out Vmin, out Vmax);
                 S.D1((Umin + Umax) / 2, (Vmin + Vmax) / 2, out P, out DU, out DV);
-                if (DU.Magnitude() <= gp.Resolution() || DV.Magnitude() <= gp.Resolution())
+                if (DU.Magnitude() <= Constants.Resolution() || DV.Magnitude() <= Constants.Resolution())
                 {
                     double NewU = (Umin + Umax) / 2 + (Umax - Umin) * 0.1;
                     double NewV = (Vmin + Vmax) / 2 + (Vmax - Vmin) * 0.1;
@@ -60,7 +63,7 @@ public sealed class GeomLib_IsPlanarSurface
                 Dn = DU ^ DV;
                 if (Dn.Magnitude() > 1.0e-7)
                 {
-                    double angle = Dir.Angle(new gp_Dir(Dn));
+                    double angle = Dir.Angle(new Direction3D(Dn));
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;
@@ -71,8 +74,8 @@ public sealed class GeomLib_IsPlanarSurface
 
                 if (Essai)
                 {
-                    gp_Ax3 axe = new(P, Dir);
-                    axe.SetXDirection(new gp_Dir(DU));
+                    CoordinateSystem axe = new(P, Dir);
+                    axe.SetXDirection(new Direction3D(DU));
                     myPlan.SetPosition(axe);
                     myPlan.SetLocation(P);
                     Geom_Curve C;
@@ -86,17 +89,17 @@ public sealed class GeomLib_IsPlanarSurface
 
                 break;
             }
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 bool Essai = false;
                 double Umin, Umax, Vmin, Vmax;
                 double norm;
-                gp_Vec Du, Dv, Dn;
-                gp_Pnt P;
+                Vector3D Du, Dv, Dn;
+                Point3D P;
 
                 S.Bounds(out Umin, out Umax, out Vmin, out Vmax);
                 S.D1((Umin + Umax) / 2, (Vmin + Vmax) / 2, out P, out Du, out Dv);
-                if (Du.Magnitude() <= gp.Resolution() || Dv.Magnitude() <= gp.Resolution())
+                if (Du.Magnitude() <= Constants.Resolution() || Dv.Magnitude() <= Constants.Resolution())
                 {
                     double NewU = (Umin + Umax) / 2 + (Umax - Umin) * 0.1;
                     double NewV = (Vmin + Vmax) / 2 + (Vmax - Vmin) * 0.1;
@@ -108,12 +111,12 @@ public sealed class GeomLib_IsPlanarSurface
                 {
                     Dn /= norm;
                     double angmax = Tol / (Vmax - Vmin);
-                    gp_Dir D = new(Dn);
+                    Direction3D D = new(Dn);
                     Essai = (D.IsNormal(AS.Direction(), angmax));
                 }
                 if (Essai)
                 {
-                    gp_Ax3 axe = new(P, new gp_Dir(Dn), new gp_Dir(Du));
+                    CoordinateSystem axe = new(P, new Direction3D(Dn), new Direction3D(Du));
                     myPlan.SetPosition(axe);
                     myPlan.SetLocation(P);
                     Geom_Curve C;
@@ -130,13 +133,13 @@ public sealed class GeomLib_IsPlanarSurface
             default:
             {
                 int NbU, NbV, ii, jj, kk;
-                NbU = 8 + 3 * AS.NbUIntervals(GeomAbs_CN);
-                NbV = 8 + 3 * AS.NbVIntervals(GeomAbs_CN);
+                NbU = 8 + 3 * AS.NbUIntervals(CN);
+                NbV = 8 + 3 * AS.NbVIntervals(CN);
                 double Umin, Umax, Vmin, Vmax, du, dv, U, V;
                 S.Bounds(out Umin, out Umax, out Vmin, out Vmax);
                 du = (Umax - Umin) / (NbU - 1);
                 dv = (Vmax - Vmin) / (NbV - 1);
-                NCollection_Array1<gp_Pnt> Pnts = new(1, NbU * NbV);
+                NCollection_Array1<Point3D> Pnts = new(1, NbU * NbV);
                 for (ii = 0, kk = 1; ii < NbU; ii++)
                 {
                     U = Umin + du * ii;
@@ -157,36 +160,36 @@ public sealed class GeomLib_IsPlanarSurface
     public bool IsPlanar() => IsPlan;
 
     /// <summary>The plane of the surface; throws StdFail_NotDone if it is not planar.</summary>
-    public gp_Pln Plan()
+    public Plane3D Plan()
     {
         if (!IsPlan)
         {
-            throw new StdFail_NotDone(" GeomLib_IsPlanarSurface");
+            throw new NotDoneException(" GeomLib_IsPlanarSurface");
         }
         return myPlan;
     }
 
-    private static bool Controle(NCollection_Array1<gp_Pnt> Poles, double Tol, Geom_Surface S, ref gp_Pln Plan)
+    private static bool Controle(NCollection_Array1<Point3D> Poles, double Tol, Geom_Surface S, ref Plane3D Plan)
     {
         bool IsPlan = false;
         double gx, gy, gz;
-        gp_Pnt Bary;
-        gp_Dir DX, DY;
-        double aTolSingular = Precision.Confusion();
+        Point3D Bary;
+        Direction3D DX, DY;
+        double aTolSingular = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         GeomLib.Inertia(Poles, out Bary, out DX, out DY, out gx, out gy, out gz);
         if (gz < Tol && gy > aTolSingular)
         {
-            gp_Pnt P;
-            gp_Vec DU, DV;
+            Point3D P;
+            Vector3D DU, DV;
             double umin, umax, vmin, vmax;
             S.Bounds(out umin, out umax, out vmin, out vmax);
             S.D1((umin + umax) / 2, (vmin + vmax) / 2, out P, out DU, out DV);
 
-            if (DU.SquareMagnitude() > gp.Resolution() && DV.SquareMagnitude() > gp.Resolution())
+            if (DU.SquareMagnitude() > Constants.Resolution() && DV.SquareMagnitude() > Constants.Resolution())
             {
                 // Choose DX as close as possible to DU
-                gp_Dir du = new(DU);
+                Direction3D du = new(DU);
                 double Angle1 = du.Angle(DX);
                 double Angle2 = du.Angle(DY);
                 if (Angle1 > M_PI / 2)
@@ -203,16 +206,16 @@ public sealed class GeomLib_IsPlanarSurface
                     DY = DX;
                     DX = du;
                 }
-                if (DX.Angle(new gp_Dir(DU)) > M_PI / 2)
+                if (DX.Angle(new Direction3D(DU)) > M_PI / 2)
                 {
                     DX.Reverse();
                 }
-                if (DY.Angle(new gp_Dir(DV)) > M_PI / 2)
+                if (DY.Angle(new Direction3D(DV)) > M_PI / 2)
                 {
                     DY.Reverse();
                 }
 
-                gp_Ax3 axe = new(Bary, DX ^ DY, DX);
+                CoordinateSystem axe = new(Bary, DX ^ DY, DX);
                 Plan.SetPosition(axe);
                 Plan.SetLocation(Bary);
                 IsPlan = true;
@@ -221,47 +224,47 @@ public sealed class GeomLib_IsPlanarSurface
         return IsPlan;
     }
 
-    private static bool Controle(Geom_Curve C, in gp_Pln Plan, double Tol)
+    private static bool Controle(Geom_Curve C, in Plane3D Plan, double Tol)
     {
         bool B = true;
         int ii, Nb;
-        GeomAbs_CurveType Type;
+        CurveKind Type;
         GeomAdaptor_Curve AC = new(C);
         Type = AC.GetType();
 
         switch (Type)
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 Nb = 2;
                 break;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 Nb = 3;
                 break;
             }
 
-            case GeomAbs_Ellipse:
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
+            case Ellipse:
+            case Hyperbola:
+            case Parabola:
             {
                 Nb = 5;
                 break;
             }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 Nb = AC.NbPoles();
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Nb = AC.NbPoles();
                 break;
             }
             default:
             {
-                Nb = 8 + 3 * AC.NbIntervals(GeomAbs_CN);
+                Nb = 8 + 3 * AC.NbIntervals(CN);
                 break;
             }
         }

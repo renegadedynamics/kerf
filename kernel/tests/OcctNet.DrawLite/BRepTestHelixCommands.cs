@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 
@@ -16,12 +17,12 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class BRepTestHelixCommands
 {
-    private static readonly ConditionalWeakTable<DrawInterpreter, StrongBox<gp_Ax3>> s_axes = new();
+    private static readonly ConditionalWeakTable<DrawInterpreter, StrongBox<CoordinateSystem>> s_axes = new();
 
     // theHelixAxis: gp_Ax3(gp_Pnt(0., 0., 0), gp_Dir(gp_Dir::D::Z), gp_Dir(gp_Dir::D::X))
-    private static StrongBox<gp_Ax3> HelixAxis(DrawInterpreter theDI)
-        => s_axes.GetValue(theDI, static _ => new StrongBox<gp_Ax3>(
-            new gp_Ax3(new gp_Pnt(0.0, 0.0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X))));
+    private static StrongBox<CoordinateSystem> HelixAxis(DrawInterpreter theDI)
+        => s_axes.GetValue(theDI, static _ => new StrongBox<CoordinateSystem>(
+            new CoordinateSystem(new Point3D(0.0, 0.0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X))));
 
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -72,10 +73,10 @@ internal static class BRepTestHelixCommands
             xx[i] = theDI.Atof(a[i + 1]);
         }
 
-        StrongBox<gp_Ax3> theHelixAxis = HelixAxis(theDI);
-        theHelixAxis.Value.SetLocation(new gp_Pnt(xx[0], xx[1], xx[2]));
-        theHelixAxis.Value.SetDirection(new gp_Dir(xx[3], xx[4], xx[5]));
-        theHelixAxis.Value.SetXDirection(new gp_Dir(xx[6], xx[7], xx[8]));
+        StrongBox<CoordinateSystem> theHelixAxis = HelixAxis(theDI);
+        theHelixAxis.Value.SetLocation(new Point3D(xx[0], xx[1], xx[2]));
+        theHelixAxis.Value.SetDirection(new Direction3D(xx[3], xx[4], xx[5]));
+        theHelixAxis.Value.SetXDirection(new Direction3D(xx[6], xx[7], xx[8]));
 
         return 0;
     }

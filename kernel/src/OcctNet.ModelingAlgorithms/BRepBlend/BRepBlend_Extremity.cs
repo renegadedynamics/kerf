@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,8 +26,8 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 {
     private Adaptor3d_HVertex? vtx;
     private NCollection_Sequence<BRepBlend_PointOnRst>? seqpt;
-    private gp_Pnt pt;
-    private gp_Vec tang;
+    private Point3D pt;
+    private Vector3D tang;
     private double param;
     private double u;
     private double v;
@@ -31,8 +37,8 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 
     public BRepBlend_Extremity()
     {
-        pt = new gp_Pnt(0, 0, 0);
-        tang = new gp_Vec(0, 0, 0);
+        pt = new Point3D(0, 0, 0);
+        tang = new Vector3D(0, 0, 0);
         param = 0.0;
         u = 0.0;
         v = 0.0;
@@ -42,10 +48,10 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     }
 
     /// <summary>An extremity at <paramref name="P"/>, (<paramref name="U"/>, <paramref name="V"/>) on a surface.</summary>
-    public BRepBlend_Extremity(in gp_Pnt P, double U, double V, double Param, double Tol)
+    public BRepBlend_Extremity(in Point3D P, double U, double V, double Param, double Tol)
     {
         pt = P;
-        tang = new gp_Vec(0, 0, 0);
+        tang = new Vector3D(0, 0, 0);
         param = Param;
         u = U;
         v = V;
@@ -55,11 +61,11 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     }
 
     /// <summary>An extremity on the vertex <paramref name="Vtx"/>.</summary>
-    public BRepBlend_Extremity(in gp_Pnt P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
+    public BRepBlend_Extremity(in Point3D P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
     {
         vtx = Vtx;
         pt = P;
-        tang = new gp_Vec(0, 0, 0);
+        tang = new Vector3D(0, 0, 0);
         param = Param;
         u = U;
         v = V;
@@ -69,10 +75,10 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     }
 
     /// <summary>An extremity at parameter <paramref name="W"/> on a curve.</summary>
-    public BRepBlend_Extremity(in gp_Pnt P, double W, double Param, double Tol)
+    public BRepBlend_Extremity(in Point3D P, double W, double Param, double Tol)
     {
         pt = P;
-        tang = new gp_Vec(0, 0, 0);
+        tang = new Vector3D(0, 0, 0);
         param = Param;
         u = W;
         v = 0.0;
@@ -81,7 +87,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         hastang = false;
     }
 
-    internal void SetValue(in gp_Pnt P, double U, double V, double Param, double Tol)
+    internal void SetValue(in Point3D P, double U, double V, double Param, double Tol)
     {
         pt = P;
         u = U;
@@ -92,7 +98,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         seqpt = null; // seqpt.Clear()
     }
 
-    internal void SetValue(in gp_Pnt P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
+    internal void SetValue(in Point3D P, double U, double V, double Param, double Tol, Adaptor3d_HVertex Vtx)
     {
         pt = P;
         u = U;
@@ -104,7 +110,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         seqpt = null; // seqpt.Clear()
     }
 
-    internal void SetValue(in gp_Pnt P, double W, double Param, double Tol)
+    internal void SetValue(in Point3D P, double W, double Param, double Tol)
     {
         pt = P;
         u = W;
@@ -114,9 +120,9 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         seqpt = null; // seqpt.Clear()
     }
 
-    public readonly gp_Pnt Value() => pt;
+    public readonly Point3D Value() => pt;
 
-    internal void SetTangent(in gp_Vec Tangent)
+    internal void SetTangent(in Vector3D Tangent)
     {
         hastang = true;
         tang = Tangent;
@@ -124,11 +130,11 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 
     public readonly bool HasTangent() => hastang;
 
-    public readonly gp_Vec Tangent()
+    public readonly Vector3D Tangent()
     {
         if (!hastang)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return tang;
@@ -162,7 +168,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     {
         if (!isvtx)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return vtx!;
@@ -174,7 +180,7 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
     {
         if (seqpt is null)
         {
-            throw new Standard_OutOfRange("NCollection_Sequence::Value");
+            throw new OutOfRangeException("NCollection_Sequence::Value");
         }
 
         return seqpt.Value(Index);
@@ -184,14 +190,14 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
 
     public readonly double ParameterOnGuide() => param;
 
-    public readonly BRepBlend_Extremity WithValue(in gp_Pnt P, double U, double V, double Param, double Tol)
+    public readonly BRepBlend_Extremity WithValue(in Point3D P, double U, double V, double Param, double Tol)
     {
         BRepBlend_Extremity aCopy = this;
         aCopy.SetValue(P, U, V, Param, Tol);
         return aCopy;
     }
 
-    public readonly BRepBlend_Extremity WithValue(in gp_Pnt P, double U, double V, double Param, double Tol,
+    public readonly BRepBlend_Extremity WithValue(in Point3D P, double U, double V, double Param, double Tol,
                                                   Adaptor3d_HVertex Vtx)
     {
         BRepBlend_Extremity aCopy = this;
@@ -199,14 +205,14 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         return aCopy;
     }
 
-    public readonly BRepBlend_Extremity WithValue(in gp_Pnt P, double W, double Param, double Tol)
+    public readonly BRepBlend_Extremity WithValue(in Point3D P, double W, double Param, double Tol)
     {
         BRepBlend_Extremity aCopy = this;
         aCopy.SetValue(P, W, Param, Tol);
         return aCopy;
     }
 
-    public readonly BRepBlend_Extremity WithTangent(in gp_Vec Tangent)
+    public readonly BRepBlend_Extremity WithTangent(in Vector3D Tangent)
     {
         BRepBlend_Extremity aCopy = this;
         aCopy.SetTangent(Tangent);
@@ -259,5 +265,5 @@ public partial struct BRepBlend_Extremity : IEquatable<BRepBlend_Extremity>
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("BRepBlend_Extremity", pt.X(), pt.Y(), pt.Z(), u, v, param, tol);
+        => Constants.Format("BRepBlend_Extremity", pt.X(), pt.Y(), pt.Z(), u, v, param, tol);
 }

@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Box3d = Occt.BVH_Box<double, Occt.NCollection_Vec3<double>>;
-using Tree3d = Occt.BVH_Tree<double, Occt.NCollection_Vec3<double>>;
+using Kerf.Engine.Geometry.Bvh;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
+using Tree3d = Kerf.Engine.Geometry.Bvh.Tree<double, Occt.NCollection_Vec3<double>>;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -60,12 +61,12 @@ public class BVH_TreeTest
 
         aTree.AddLeafNode(new BVH_Vec3d(1.0, 2.0, 3.0), new BVH_Vec3d(4.0, 5.0, 6.0), 0, 0);
 
-        Assert.Equal(1.0, aTree.MinPoint(0).x(), Precision.Confusion());
-        Assert.Equal(2.0, aTree.MinPoint(0).y(), Precision.Confusion());
-        Assert.Equal(3.0, aTree.MinPoint(0).z(), Precision.Confusion());
-        Assert.Equal(4.0, aTree.MaxPoint(0).x(), Precision.Confusion());
-        Assert.Equal(5.0, aTree.MaxPoint(0).y(), Precision.Confusion());
-        Assert.Equal(6.0, aTree.MaxPoint(0).z(), Precision.Confusion());
+        Assert.Equal(1.0, aTree.MinPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aTree.MinPoint(0).Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aTree.MinPoint(0).Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aTree.MaxPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aTree.MaxPoint(0).Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(6.0, aTree.MaxPoint(0).Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -196,37 +197,37 @@ public class BVH_TreeTest
     [Fact]
     public void Float3DTree()
     {
-        BVH_Tree<float, BVH_Vec3f> aTree = new();
+        Tree<float, BVH_Vec3f> aTree = new();
 
         aTree.AddLeafNode(new BVH_Vec3f(0.0f, 0.0f, 0.0f), new BVH_Vec3f(1.0f, 1.0f, 1.0f), 0, 5);
 
         Assert.Equal(1, aTree.Length());
-        Assert.Equal(0.0f, aTree.MinPoint(0).x(), 1e-5f);
-        Assert.Equal(1.0f, aTree.MaxPoint(0).x(), 1e-5f);
+        Assert.Equal(0.0f, aTree.MinPoint(0).X(), 1e-5f);
+        Assert.Equal(1.0f, aTree.MaxPoint(0).X(), 1e-5f);
     }
 
     [Fact]
     public void Tree2D()
     {
-        BVH_Tree<double, BVH_Vec2d> aTree = new();
+        Tree<double, BVH_Vec2d> aTree = new();
 
         aTree.AddLeafNode(new BVH_Vec2d(0.0, 0.0), new BVH_Vec2d(1.0, 1.0), 0, 5);
 
         Assert.Equal(1, aTree.Length());
-        Assert.Equal(0.0, aTree.MinPoint(0).x(), Precision.Confusion());
-        Assert.Equal(0.0, aTree.MinPoint(0).y(), Precision.Confusion());
+        Assert.Equal(0.0, aTree.MinPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTree.MinPoint(0).Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Tree4D()
     {
-        BVH_Tree<double, BVH_Vec4d> aTree = new();
+        Tree<double, BVH_Vec4d> aTree = new();
 
         aTree.AddLeafNode(new BVH_Vec4d(0.0, 0.0, 0.0, 0.0), new BVH_Vec4d(1.0, 1.0, 1.0, 1.0), 0, 5);
 
         Assert.Equal(1, aTree.Length());
-        Assert.Equal(0.0, aTree.MinPoint(0).x(), Precision.Confusion());
-        Assert.Equal(0.0, aTree.MinPoint(0).w(), Precision.Confusion());
+        Assert.Equal(0.0, aTree.MinPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTree.MinPoint(0).W(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -299,8 +300,8 @@ public class BVH_TreeTest
         aTree.MinPoint(0) = new BVH_Vec3d(-1.0, -1.0, -1.0);
         aTree.MaxPoint(0) = new BVH_Vec3d(2.0, 2.0, 2.0);
 
-        Assert.Equal(-1.0, aTree.MinPoint(0).x(), Precision.Confusion());
-        Assert.Equal(2.0, aTree.MaxPoint(0).x(), Precision.Confusion());
+        Assert.Equal(-1.0, aTree.MinPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aTree.MaxPoint(0).X(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

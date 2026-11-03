@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -28,7 +31,7 @@ public class Extrema_GenLocateExtPS
     private static void CorrectTol(double theU0, double theV0, math_Vector theTol)
     {
         // Correct tolerance for large values of UV parameters
-        double aTolRef = Precision.PConfusion();
+        double aTolRef = global::Kerf.Engine.Foundation.Precision.PConfusion();
         double anEpsRef = Epsilon(1.0);
         double epsu = Epsilon(theU0);
         const double tolog10 = 0.43429;
@@ -61,12 +64,12 @@ public class Extrema_GenLocateExtPS
     /// True if (theU0, theV0) is a local minimum of the square distance between theP and theS(U, V) over a small area
     /// around it.
     /// </summary>
-    public static bool IsMinDist(in gp_Pnt theP, Adaptor3d_Surface theS, double theU0, double theV0)
+    public static bool IsMinDist(in Point3D theP, Adaptor3d_Surface theS, double theU0, double theV0)
     {
-        double du = Max(theS.UResolution(10.0 * Precision.Confusion()), 10.0 * Precision.PConfusion());
-        double dv = Max(theS.VResolution(10.0 * Precision.Confusion()), 10.0 * Precision.PConfusion());
+        double du = Max(theS.UResolution(10.0 * global::Kerf.Engine.Foundation.Precision.Confusion()), 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
+        double dv = Max(theS.VResolution(10.0 * global::Kerf.Engine.Foundation.Precision.Confusion()), 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
         double u, v;
-        gp_Pnt aP0 = theS.Value(theU0, theV0);
+        Point3D aP0 = theS.Value(theU0, theV0);
         double d0 = theP.SquareDistance(aP0);
         int iu, iv;
         for (iu = -1; iu <= 1; ++iu)
@@ -114,7 +117,7 @@ public class Extrema_GenLocateExtPS
     /// Computes the extremum near (theU0, theV0): normal projection criteria if <paramref name="isDistanceCriteria"/>
     /// is false, distance criteria otherwise.
     /// </summary>
-    public void Perform(in gp_Pnt theP, double theU0, double theV0, bool isDistanceCriteria = false)
+    public void Perform(in Point3D theP, double theU0, double theV0, bool isDistanceCriteria = false)
     {
         myDone = false;
 
@@ -143,15 +146,15 @@ public class Extrema_GenLocateExtPS
 
             Extrema_FuncPSDist F = new(mySurf, theP);
 
-            math_BFGS aSolver = new(2, aRelTol);
+            Bfgs aSolver = new(2, aRelTol);
             aSolver.Perform(F, aStart);
 
-            if (!aSolver.IsDone())
+            if (!aSolver.IsDone)
             {
                 // Try another method
-                math_FRPR aSolver1 = new(F, aRelTol);
+                Frpr aSolver1 = new(F, aRelTol);
                 aSolver1.Perform(F, aStart);
-                if (!aSolver1.IsDone())
+                if (!aSolver1.IsDone)
                 {
                     return;
                 }
@@ -172,29 +175,29 @@ public class Extrema_GenLocateExtPS
             // Normal projection criteria.
             Extrema_FuncPSNorm F = new(theP, mySurf);
 
-            if (mySurf.GetType() == GeomAbs_BSplineSurface)
+            if (mySurf.GetType() == BSplineSurface)
             {
                 aTol[1] = myTolU;
                 aTol[2] = myTolV;
                 CorrectTol(theU0, theV0, aTol);
             }
 
-            bool isCorrectTol = (Math.Abs(aTol[1] - myTolU) > Precision.PConfusion()
-                                 || Math.Abs(aTol[2] - myTolV) > Precision.PConfusion());
+            bool isCorrectTol = (Math.Abs(aTol[1] - myTolU) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                 || Math.Abs(aTol[2] - myTolV) > global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-            math_FunctionSetRoot aSR = new(F, aTol);
+            FunctionSetRoot aSR = new(F, aTol);
             aSR.Perform(F, aStart, aBoundInf, aBoundSup);
 
-            if (!aSR.IsDone() || isCorrectTol)
+            if (!aSR.IsDone || isCorrectTol)
             {
                 if (isCorrectTol)
                 {
                     aTol[1] = myTolU;
                     aTol[2] = myTolV;
                 }
-                math_NewtonFunctionSetRoot aNSR = new(F, aTol, Precision.Confusion());
+                NewtonFunctionSetRoot aNSR = new(F, aTol, global::Kerf.Engine.Foundation.Precision.Confusion());
                 aNSR.Perform(F, aStart, aBoundInf, aBoundSup);
-                if (!aSR.IsDone() && !aNSR.IsDone())
+                if (!aSR.IsDone && !aNSR.IsDone)
                 {
                     return;
                 }
@@ -224,7 +227,7 @@ public class Extrema_GenLocateExtPS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist;
     }
@@ -234,7 +237,7 @@ public class Extrema_GenLocateExtPS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myPoint;
     }

@@ -2,16 +2,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Optimisation;
 
 public static partial class MathOpt
 {
     /// <summary>Result for Uzawa constrained optimization.</summary>
     public struct UzawaResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Solution vector X.</summary>
         public math_Vector? Solution;
         /// <summary>Dual (Lagrange) variables.</summary>
@@ -21,20 +22,20 @@ public static partial class MathOpt
         /// <summary>C*X0 - S (initial constraint violation).</summary>
         public math_Vector? InitialError;
         /// <summary>(C * C^T)^-1 for gradient computation.</summary>
-        public math_Matrix? InverseCTC;
+        public Matrix? InverseCTC;
         public int NbIterations = 0;
 
         public UzawaResult()
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(UzawaResult theResult) => theResult.IsDone();
+        public static explicit operator bool(UzawaResult result) => result.IsDone;
 
-        public static bool operator true(UzawaResult theResult) => theResult.IsDone();
+        public static bool operator true(UzawaResult result) => result.IsDone;
 
-        public static bool operator false(UzawaResult theResult) => !theResult.IsDone();
+        public static bool operator false(UzawaResult result) => !result.IsDone;
     }
 
     /// <summary>Configuration for Uzawa algorithm.</summary>
@@ -51,11 +52,11 @@ public static partial class MathOpt
         {
         }
 
-        public UzawaConfig(UzawaConfig theOther)
+        public UzawaConfig(UzawaConfig other)
         {
-            EpsLix = theOther.EpsLix;
-            EpsLic = theOther.EpsLic;
-            MaxIterations = theOther.MaxIterations;
+            EpsLix = other.EpsLix;
+            EpsLic = other.EpsLic;
+            MaxIterations = other.MaxIterations;
         }
     }
 
@@ -64,235 +65,235 @@ public static partial class MathOpt
     /// last theNci rows): direct Crout solution for equalities only, the iterative Uzawa method otherwise. Result
     /// vectors are indexed from 1.
     /// </summary>
-    public static UzawaResult Uzawa(math_Matrix theCont,
-                                    math_Vector theSecont,
-                                    math_Vector theStartingPoint,
-                                    int theNce,
-                                    int theNci,
-                                    UzawaConfig? theConfig = null)
+    public static UzawaResult Uzawa(Matrix cont,
+                                    math_Vector secont,
+                                    math_Vector startingPoint,
+                                    int nce,
+                                    int nci,
+                                    UzawaConfig? config = null)
     {
-        theConfig ??= new UzawaConfig();
-        UzawaResult aResult = new();
+        config ??= new UzawaConfig();
+        UzawaResult result = new();
 
-        int aNlig = theCont.RowNumber();
-        int aNcol = theCont.ColNumber();
+        int nlig = cont.RowNumber();
+        int ncol = cont.ColNumber();
 
         // Validate dimensions
-        if (theSecont.Length() != aNlig || (theNce + theNci) != aNlig
-            || theStartingPoint.Length() != aNcol)
+        if (secont.Length() != nlig || (nce + nci) != nlig
+            || startingPoint.Length() != ncol)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aRowLower = theCont.LowerRow();
-        int aColLower = theCont.LowerCol();
-        int aSecLower = theSecont.Lower();
-        int aXLower = theStartingPoint.Lower();
+        int rowLower = cont.LowerRow();
+        int colLower = cont.LowerCol();
+        int secLower = secont.Lower();
+        int xLower = startingPoint.Lower();
 
         // Compute initial error: C*X0 - S
-        math_Vector aErrinit = new(1, aNlig);
-        for (int i = 1; i <= aNlig; ++i)
+        math_Vector errinit = new(1, nlig);
+        for (int i = 1; i <= nlig; ++i)
         {
-            double aSum = 0.0;
-            for (int j = 1; j <= aNcol; ++j)
+            double sum = 0.0;
+            for (int j = 1; j <= ncol; ++j)
             {
-                aSum += theCont[i + aRowLower - 1, j + aColLower - 1] * theStartingPoint[j + aXLower - 1];
+                sum += cont[i + rowLower - 1, j + colLower - 1] * startingPoint[j + xLower - 1];
             }
-            aErrinit[i] = aSum - theSecont[i + aSecLower - 1];
+            errinit[i] = sum - secont[i + secLower - 1];
         }
 
-        aResult.InitialError = aErrinit;
+        result.InitialError = errinit;
 
         // Initialize dual variables and error
-        math_Vector aVardua = new(1, aNlig);
-        math_Vector aErruza = new(1, aNcol, 0.0);
-        math_Matrix aCTCinv = new(1, aNlig, 1, aNlig, 0.0);
+        math_Vector vardua = new(1, nlig);
+        math_Vector erruza = new(1, ncol, 0.0);
+        Matrix ctCinv = new(1, nlig, 1, nlig, 0.0);
 
-        if (theNci == 0)
+        if (nci == 0)
         {
             // Direct solution for equality constraints only
-            aResult.NbIterations = 1;
+            result.NbIterations = 1;
 
             // Compute C * C^T (symmetric)
-            for (int i = 1; i <= aNlig; ++i)
+            for (int i = 1; i <= nlig; ++i)
             {
                 for (int j = 1; j <= i; ++j)
                 {
-                    double aSum = 0.0;
-                    for (int k = 1; k <= aNcol; ++k)
+                    double sum = 0.0;
+                    for (int k = 1; k <= ncol; ++k)
                     {
-                        aSum += theCont[i + aRowLower - 1, k + aColLower - 1]
-                                * theCont[j + aRowLower - 1, k + aColLower - 1];
+                        sum += cont[i + rowLower - 1, k + colLower - 1]
+                                * cont[j + rowLower - 1, k + colLower - 1];
                     }
-                    aCTCinv[i, j] = aSum;
+                    ctCinv[i, j] = sum;
                     if (i != j)
                     {
-                        aCTCinv[j, i] = aSum;
+                        ctCinv[j, i] = sum;
                     }
                 }
             }
 
             // Invert using Crout
-            InverseResult aInvResult = MathLin.InvertCrout(aCTCinv);
-            if (!aInvResult.IsDone())
+            InverseResult invResult = global::Kerf.Engine.Numerics.Linear.MathLin.InvertCrout(ctCinv);
+            if (!invResult.IsDone)
             {
-                aResult.Status = Status.Singular;
-                return aResult;
+                result.Status = Status.Singular;
+                return result;
             }
-            aCTCinv.Initialized(aInvResult.Inverse!);
+            ctCinv.Initialized(invResult.Inverse!);
 
             // Compute dual variables: (C*C^T)^-1 * (C*X0 - S)
-            for (int i = 1; i <= aNlig; ++i)
+            for (int i = 1; i <= nlig; ++i)
             {
-                double aSum = 0.0;
-                for (int j = 1; j <= aNlig; ++j)
+                double sum = 0.0;
+                for (int j = 1; j <= nlig; ++j)
                 {
-                    aSum += aCTCinv[i, j] * aErrinit[j];
+                    sum += ctCinv[i, j] * errinit[j];
                 }
-                aVardua[i] = aSum;
+                vardua[i] = sum;
             }
 
             // Compute error: -C^T * dual
-            for (int i = 1; i <= aNcol; ++i)
+            for (int i = 1; i <= ncol; ++i)
             {
-                double aSum = 0.0;
-                for (int j = 1; j <= aNlig; ++j)
+                double sum = 0.0;
+                for (int j = 1; j <= nlig; ++j)
                 {
-                    aSum -= theCont[j + aRowLower - 1, i + aColLower - 1] * aVardua[j];
+                    sum -= cont[j + rowLower - 1, i + colLower - 1] * vardua[j];
                 }
-                aErruza[i] = aSum;
+                erruza[i] = sum;
             }
 
             // Compute solution
-            math_Vector aResul = new(1, aNcol);
-            for (int i = 1; i <= aNcol; ++i)
+            math_Vector resul = new(1, ncol);
+            for (int i = 1; i <= ncol; ++i)
             {
-                aResul[i] = theStartingPoint[i + aXLower - 1] + aErruza[i];
+                resul[i] = startingPoint[i + xLower - 1] + erruza[i];
             }
 
-            aResult.Solution = aResul;
-            aResult.Dual = aVardua;
-            aResult.Error = aErruza;
-            aResult.InverseCTC = aCTCinv;
-            aResult.Status = Status.OK;
-            return aResult;
+            result.Solution = resul;
+            result.Dual = vardua;
+            result.Error = erruza;
+            result.InverseCTC = ctCinv;
+            result.Status = Status.OK;
+            return result;
         }
 
         // Iterative Uzawa for mixed equality/inequality constraints
         // Initialize dual variables
-        for (int i = 1; i <= aNlig; ++i)
+        for (int i = 1; i <= nlig; ++i)
         {
-            aVardua[i] = (i <= theNce) ? 0.0 : 1.0;
+            vardua[i] = (i <= nce) ? 0.0 : 1.0;
         }
 
         // Compute step size rho
-        double aNormat = 0.0;
-        for (int i = 1; i <= aNlig; ++i)
+        double normat = 0.0;
+        for (int i = 1; i <= nlig; ++i)
         {
-            double aNormli = 0.0;
-            for (int j = 1; j <= aNcol; ++j)
+            double normli = 0.0;
+            for (int j = 1; j <= ncol; ++j)
             {
-                double aVal = theCont[i + aRowLower - 1, j + aColLower - 1];
-                aNormli += aVal * aVal;
+                double val = cont[i + rowLower - 1, j + colLower - 1];
+                normli += val * val;
             }
-            aNormat += aNormli;
+            normat += normli;
         }
-        double aRho = 1.0 / (Math.Sqrt(2.0) * aNormat);
+        double rho = 1.0 / (Math.Sqrt(2.0) * normat);
 
         // Uzawa iterations
-        for (int anIter = 1; anIter <= theConfig.MaxIterations; ++anIter)
+        for (int iter = 1; iter <= config.MaxIterations; ++iter)
         {
-            aResult.NbIterations = anIter;
+            result.NbIterations = iter;
 
-            double aXmax = 0.0;
+            double xmax = 0.0;
 
             // Update primal: X = X0 - C^T * dual
-            for (int i = 1; i <= aNcol; ++i)
+            for (int i = 1; i <= ncol; ++i)
             {
-                double aXprev = aErruza[i];
-                double aSum = 0.0;
-                for (int j = 1; j <= aNlig; ++j)
+                double xprev = erruza[i];
+                double sum = 0.0;
+                for (int j = 1; j <= nlig; ++j)
                 {
-                    aSum -= theCont[j + aRowLower - 1, i + aColLower - 1] * aVardua[j];
+                    sum -= cont[j + rowLower - 1, i + colLower - 1] * vardua[j];
                 }
-                aErruza[i] = aSum;
+                erruza[i] = sum;
 
-                if (anIter > 1)
+                if (iter > 1)
                 {
-                    aXmax = Max(aXmax, Math.Abs(aErruza[i] - aXprev));
+                    xmax = Max(xmax, Math.Abs(erruza[i] - xprev));
                 }
             }
 
             // Update dual variables and compute constraint error
-            double aErrMax = 0.0;
-            for (int i = 1; i <= aNlig; ++i)
+            double errMax = 0.0;
+            for (int i = 1; i <= nlig; ++i)
             {
                 // Constraint violation: C*X - S
-                double aErr = aErrinit[i];
-                for (int j = 1; j <= aNcol; ++j)
+                double err = errinit[i];
+                for (int j = 1; j <= ncol; ++j)
                 {
-                    aErr += theCont[i + aRowLower - 1, j + aColLower - 1] * aErruza[j];
+                    err += cont[i + rowLower - 1, j + colLower - 1] * erruza[j];
                 }
 
-                double aErr1;
-                if (i <= theNce)
+                double err1;
+                if (i <= nce)
                 {
                     // Equality constraint: update freely
-                    aVardua[i] += aRho * aErr;
-                    aErr1 = Math.Abs(aRho * aErr);
+                    vardua[i] += rho * err;
+                    err1 = Math.Abs(rho * err);
                 }
                 else
                 {
                     // Inequality constraint: project to non-negative
-                    double aXmuPrev = aVardua[i];
-                    aVardua[i] = Max(0.0, aVardua[i] + aRho * aErr);
-                    aErr1 = Math.Abs(aVardua[i] - aXmuPrev);
+                    double xmuPrev = vardua[i];
+                    vardua[i] = Max(0.0, vardua[i] + rho * err);
+                    err1 = Math.Abs(vardua[i] - xmuPrev);
                 }
-                aErrMax = Max(aErrMax, aErr1);
+                errMax = Max(errMax, err1);
             }
 
             // Check convergence
-            if (anIter > 1)
+            if (iter > 1)
             {
-                if (aXmax <= theConfig.EpsLix)
+                if (xmax <= config.EpsLix)
                 {
-                    if (aErrMax <= theConfig.EpsLic)
+                    if (errMax <= config.EpsLic)
                     {
                         // Converged
-                        math_Vector aResul = new(1, aNcol);
-                        for (int i = 1; i <= aNcol; ++i)
+                        math_Vector resul = new(1, ncol);
+                        for (int i = 1; i <= ncol; ++i)
                         {
-                            aResul[i] = theStartingPoint[i + aXLower - 1] + aErruza[i];
+                            resul[i] = startingPoint[i + xLower - 1] + erruza[i];
                         }
 
-                        aResult.Solution = aResul;
-                        aResult.Dual = aVardua;
-                        aResult.Error = aErruza;
-                        aResult.Status = Status.OK;
-                        return aResult;
+                        result.Solution = resul;
+                        result.Dual = vardua;
+                        result.Error = erruza;
+                        result.Status = Status.OK;
+                        return result;
                     }
                     else
                     {
                         // Dual did not converge
-                        aResult.Status = Status.NotConverged;
-                        return aResult;
+                        result.Status = Status.NotConverged;
+                        return result;
                     }
                 }
             }
         }
 
-        aResult.Status = Status.MaxIterations;
-        return aResult;
+        result.Status = Status.MaxIterations;
+        return result;
     }
 
     /// <summary>Constrained least squares with equality constraints only: C*X = S with min ||X - X0||.</summary>
-    public static UzawaResult UzawaEquality(math_Matrix theCont,
-                                            math_Vector theSecont,
-                                            math_Vector theStartingPoint,
-                                            UzawaConfig? theConfig = null)
+    public static UzawaResult UzawaEquality(Matrix cont,
+                                            math_Vector secont,
+                                            math_Vector startingPoint,
+                                            UzawaConfig? config = null)
     {
-        theConfig ??= new UzawaConfig();
-        return Uzawa(theCont, theSecont, theStartingPoint, theCont.RowNumber(), 0, theConfig);
+        config ??= new UzawaConfig();
+        return Uzawa(cont, secont, startingPoint, cont.RowNumber(), 0, config);
     }
 }

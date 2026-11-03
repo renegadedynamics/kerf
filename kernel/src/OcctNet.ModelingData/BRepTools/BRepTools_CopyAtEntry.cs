@@ -3,6 +3,8 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -149,7 +151,7 @@ internal sealed class BRepTools_CopyAtEntry
     {
         if (myIsFinished)
         {
-            throw new Standard_ProgramError("BRepTools_CopyAtEntry::Finish called twice");
+            throw new ProgramErrorException("BRepTools_CopyAtEntry::Finish called twice");
         }
         myIsFinished = true;
         if (myCopies is null)
@@ -277,7 +279,7 @@ internal sealed class BRepTools_CopyAtEntry
     {
         if (!myIsFinished)
         {
-            throw new Standard_ProgramError("BRepTools_CopyAtEntry: Finish not called");
+            throw new ProgramErrorException("BRepTools_CopyAtEntry: Finish not called");
         }
     }
 

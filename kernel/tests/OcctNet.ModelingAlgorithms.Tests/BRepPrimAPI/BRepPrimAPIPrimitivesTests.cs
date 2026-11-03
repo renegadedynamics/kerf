@@ -1,5 +1,8 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -42,12 +45,12 @@ public class BRepPrimAPIPrimitivesTests
         TopExp.MapShapes(theS, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            if (!aMap[i].TShape()!.IsFrozen())
+            if (!aMap[i].TShape()!.IsFrozen)
             {
                 return false;
             }
         }
-        return theS.TShape()!.IsFrozen();
+        return theS.TShape()!.IsFrozen;
     }
 
     private static bool IsValid(in TopoDS_Shape theS) => new BRepCheck_Analyzer(theS).IsValid();
@@ -57,13 +60,13 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void Box_forms_give_the_same_box_with_negative_sizes_measured_from_the_corner()
     {
-        var aP = new gp_Pnt(1, 2, 3);
+        var aP = new Point3D(1, 2, 3);
         TopoDS_Shape[] aBoxes =
         [
-            new BRepPrimAPI_MakeBox(new gp_Pnt(-1, -1, 0), 2, 3, 4).Shape(),
-            new BRepPrimAPI_MakeBox(new gp_Pnt(1, 2, 4), -2, 3 - 6, -4).Shape(),
-            new BRepPrimAPI_MakeBox(new gp_Pnt(1, -1, 4), new gp_Pnt(-1, 2, 0)).Shape(),
-            new BRepPrimAPI_MakeBox(new gp_Ax2(new gp_Pnt(-1, -1, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 2, 3, 4).Shape(),
+            new BRepPrimAPI_MakeBox(new Point3D(-1, -1, 0), 2, 3, 4).Shape(),
+            new BRepPrimAPI_MakeBox(new Point3D(1, 2, 4), -2, 3 - 6, -4).Shape(),
+            new BRepPrimAPI_MakeBox(new Point3D(1, -1, 4), new Point3D(-1, 2, 0)).Shape(),
+            new BRepPrimAPI_MakeBox(new Frame3D(new Point3D(-1, -1, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2, 3, 4).Shape(),
         ];
         foreach (TopoDS_Shape aBox in aBoxes)
         {
@@ -73,7 +76,7 @@ public class BRepPrimAPIPrimitivesTests
             Assert.Equal(2 * (6 + 8 + 12), Area(aBox), 1e-9);
             Assert.True(IsValid(aBox));
             Assert.True(AllFrozen(aBox));
-            var aBnd = new Bnd_Box();
+            var aBnd = new Box();
             BRepBndLib.Add(aBox, ref aBnd);
             aBnd.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
             Assert.Equal(-1.0, x0, 1e-6);
@@ -93,7 +96,7 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void A_box_face_is_handed_out_complete_frozen_and_shared_with_the_solid()
     {
-        var aMaker = new BRepPrimAPI_MakeBox(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 1)), 2, 3, 4);
+        var aMaker = new BRepPrimAPI_MakeBox(new Frame3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 1)), 2, 3, 4);
         TopoDS_Face aBottom = aMaker.BottomFace();
         Assert.True(AllFrozen(aBottom));
         // each edge of the face already has its pcurves on both faces it bounds
@@ -131,7 +134,7 @@ public class BRepPrimAPIPrimitivesTests
     public void A_flat_box_has_no_shell_but_its_faces()
     {
         var aMaker = new BRepPrimAPI_MakeBox(2, 3, 0);
-        Assert.ThrowsAny<Standard_DomainError>(() => aMaker.Shape());
+        Assert.ThrowsAny<DomainErrorException>(() => aMaker.Shape());
         TopoDS_Face aBottom = aMaker.BottomFace();
         Assert.True(AllFrozen(aBottom));
         Assert.Equal(6.0, Area(aBottom), 1e-9);
@@ -168,7 +171,7 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void A_right_angular_wedge_has_ltx_at_the_top()
     {
-        var anAx = new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 1, 0), new gp_Dir(0, 0, 1));
+        var anAx = new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1));
         var aMaker = new BRepPrimAPI_MakeWedge(anAx, 4, 3, 2, 1);
         Assert.Equal(WedgeVolume(4, 3, 2, 0, 0, 1, 2), Volume(aMaker.Solid()), 1e-9);
         Assert.Equal((1, 6, 12, 8), Counts(aMaker.Shell()));
@@ -186,7 +189,7 @@ public class BRepPrimAPIPrimitivesTests
     public void Cylinders_whole_and_partial(double theAngle, int theNbFaces, int theNbEdges, int theNbVertices)
     {
         const double R = 2, H = 5;
-        var anAx = new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(1, 2, 3));
+        var anAx = new Frame3D(new Point3D(1, 2, 3), new Direction3D(1, 2, 3));
         var aMaker = new BRepPrimAPI_MakeCylinder(anAx, R, H, theAngle);
         TopoDS_Shape aCyl = aMaker.Shape();
         Assert.Equal((1, theNbFaces, theNbEdges, theNbVertices), Counts(aCyl));
@@ -215,9 +218,9 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void Cones_with_equal_radii_or_no_height_are_errors()
     {
-        Assert.ThrowsAny<Standard_DomainError>(() => new BRepPrimAPI_MakeCone(2, 2, 3));
-        Assert.ThrowsAny<Standard_DomainError>(() => new BRepPrimAPI_MakeCone(2, 1, 0));
-        Assert.ThrowsAny<Standard_DomainError>(() => new BRepPrimAPI_MakeCone(-1, 1, 3));
+        Assert.ThrowsAny<DomainErrorException>(() => new BRepPrimAPI_MakeCone(2, 2, 3));
+        Assert.ThrowsAny<DomainErrorException>(() => new BRepPrimAPI_MakeCone(2, 1, 0));
+        Assert.ThrowsAny<DomainErrorException>(() => new BRepPrimAPI_MakeCone(-1, 1, 3));
     }
 
     // The volume of a sphere's zone between the latitudes a1 < a2, over an angle around the axis.
@@ -234,7 +237,7 @@ public class BRepPrimAPIPrimitivesTests
     public void Spheres_whole_zones_and_wedges(double a1, double a2, double theAngle, int theNbFaces)
     {
         const double R = 3;
-        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new gp_Pnt(1, 1, 1), R, a1, a2, theAngle).Shape();
+        TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(new Point3D(1, 1, 1), R, a1, a2, theAngle).Shape();
         Assert.Equal(theNbFaces, Count(aSphere, TopAbs_FACE));
         Assert.Equal(ZoneVolume(R, a1, a2, theAngle), Volume(aSphere), 1e-6);
         Assert.True(IsValid(aSphere));
@@ -257,7 +260,7 @@ public class BRepPrimAPIPrimitivesTests
     public void Tori_whole_and_partial(double theAngle, int theNbFaces)
     {
         const double R1 = 5, R2 = 1.5;
-        var aMaker = new BRepPrimAPI_MakeTorus(new gp_Ax2(new gp_Pnt(0, 0, 1), new gp_Dir(0, 1, 0)), R1, R2, theAngle);
+        var aMaker = new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 1, 0)), R1, R2, theAngle);
         TopoDS_Shape aTorus = aMaker.Shape();
         Assert.Equal(theNbFaces, Count(aTorus, TopAbs_FACE));
         // Pappus: the disk's area times the path of its centre
@@ -283,14 +286,14 @@ public class BRepPrimAPIPrimitivesTests
     public void A_revolution_of_a_line_is_a_cylinder_and_of_an_arc_a_sphere()
     {
         // a line parallel to Z at x = 2 between z = 0 and z = 3
-        var aLine = new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 0, 3);
+        var aLine = new Geom_TrimmedCurve(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0, 3);
         var aCyl = new BRepPrimAPI_MakeRevolution(aLine);
         Assert.Equal(Math.PI * 4 * 3, Volume(aCyl.Shape()), 1e-6);
         Assert.Equal(3, Count(aCyl.Shape(), TopAbs_FACE));
         Assert.IsType<Geom_SurfaceOfRevolution>(BRep_Tool.Surface(aCyl.Face()));
 
         // a half circle in the XZ plane from the south pole to the north pole, over a quarter turn
-        var anArc = new Geom_TrimmedCurve(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, -1, 0), new gp_Dir(1, 0, 0)), 2),
+        var anArc = new Geom_TrimmedCurve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0)), 2),
                                           -Math.PI / 2, Math.PI / 2);
         var aSph = new BRepPrimAPI_MakeRevolution(anArc, Math.PI / 2);
         Assert.Equal(4.0 / 3 * Math.PI * 8 / 4, Volume(aSph.Shape()), 1e-6);
@@ -300,7 +303,7 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void A_one_axis_face_is_complete_frozen_and_in_the_solid()
     {
-        var aMaker = new BRepPrimAPI_MakeCone(new gp_Ax2(), 2, 1, 3, 2.0);
+        var aMaker = new BRepPrimAPI_MakeCone(new Frame3D(), 2, 1, 3, 2.0);
         TopoDS_Face aFace = aMaker.Face();
         Assert.True(AllFrozen(aFace));
         TopoDS_Shell aShell = aMaker.Shell();
@@ -318,11 +321,11 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void A_half_space_holds_the_callers_face_on_the_side_of_the_point()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), -1, 1, -1, 1).Face();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -1, 1, -1, 1).Face();
         var aSnapshot = ShapeSnapshot.Of(aFace);
 
-        var anAbove = new BRepPrimAPI_MakeHalfSpace(aFace, new gp_Pnt(0.2, 0.3, 5));
-        var aBelow = new BRepPrimAPI_MakeHalfSpace(aFace, new gp_Pnt(0.2, 0.3, -5));
+        var anAbove = new BRepPrimAPI_MakeHalfSpace(aFace, new Point3D(0.2, 0.3, 5));
+        var aBelow = new BRepPrimAPI_MakeHalfSpace(aFace, new Point3D(0.2, 0.3, -5));
         Assert.True(anAbove.IsDone());
         Assert.True(aBelow.IsDone());
         TopoDS_Solid aSolidAbove = anAbove.Solid(), aSolidBelow = aBelow.Solid();
@@ -340,8 +343,8 @@ public class BRepPrimAPIPrimitivesTests
     public void A_half_space_on_a_box_shell_keeps_the_shell()
     {
         TopoDS_Shell aShell = new BRepPrimAPI_MakeBox(2, 2, 2).Shell();
-        var anInside = new BRepPrimAPI_MakeHalfSpace(aShell, new gp_Pnt(1, 1, 1));
-        var anOutside = new BRepPrimAPI_MakeHalfSpace(aShell, new gp_Pnt(5, 1, 1));
+        var anInside = new BRepPrimAPI_MakeHalfSpace(aShell, new Point3D(1, 1, 1));
+        var anOutside = new BRepPrimAPI_MakeHalfSpace(aShell, new Point3D(5, 1, 1));
         TopoDS_Shape aShellIn = new TopoDS_Iterator(anInside.Solid()).Value();
         TopoDS_Shape aShellOut = new TopoDS_Iterator(anOutside.Shape()).Value();
         Assert.True(aShellIn.IsSame(aShell));
@@ -355,7 +358,7 @@ public class BRepPrimAPIPrimitivesTests
     [Fact]
     public void The_preview_box_is_a_vertex_an_edge_a_face_or_a_solid()
     {
-        TopoDS_Shape Preview(gp_Pnt theP1, gp_Pnt theP2)
+        TopoDS_Shape Preview(Point3D theP1, Point3D theP2)
         {
             var aMaker = new BRepPreviewAPI_MakeBox();
             aMaker.Init(theP1, theP2);
@@ -364,16 +367,16 @@ public class BRepPrimAPIPrimitivesTests
             return aShape;
         }
 
-        Assert.Equal(TopAbs_VERTEX, Preview(new gp_Pnt(1, 2, 3), new gp_Pnt(1, 2, 3)).ShapeType());
-        TopoDS_Shape anEdge = Preview(new gp_Pnt(1, 2, 3), new gp_Pnt(1, 2, 7));
+        Assert.Equal(TopAbs_VERTEX, Preview(new Point3D(1, 2, 3), new Point3D(1, 2, 3)).ShapeType());
+        TopoDS_Shape anEdge = Preview(new Point3D(1, 2, 3), new Point3D(1, 2, 7));
         Assert.Equal(TopAbs_EDGE, anEdge.ShapeType());
         GProp_GProps aProps = new();
         BRepGProp.LinearProperties(anEdge, aProps);
         Assert.Equal(4.0, aProps.Mass(), 1e-9);
-        TopoDS_Shape aFace = Preview(new gp_Pnt(1, 2, 3), new gp_Pnt(4, 2, 7));
+        TopoDS_Shape aFace = Preview(new Point3D(1, 2, 3), new Point3D(4, 2, 7));
         Assert.Equal(TopAbs_FACE, aFace.ShapeType());
         Assert.Equal(12.0, Area(aFace), 1e-9);
-        TopoDS_Shape aSolid = Preview(new gp_Pnt(1, 2, 3), new gp_Pnt(4, 3, 7));
+        TopoDS_Shape aSolid = Preview(new Point3D(1, 2, 3), new Point3D(4, 3, 7));
         Assert.Equal(TopAbs_SOLID, aSolid.ShapeType());
         Assert.Equal(12.0, Volume(aSolid), 1e-9);
     }

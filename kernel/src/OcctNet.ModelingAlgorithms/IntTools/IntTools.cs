@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation.Std;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.gce_ErrorType;
 using static Occt.TopAbs_State;
 
@@ -20,21 +22,21 @@ public static class IntTools
     public static int GetRadius(BRepAdaptor_Curve C, double t1, double t3, out double aR)
     {
         aR = 0.0;
-        GeomAbs_CurveType aType = C.GetType();
-        if (aType == GeomAbs_Line)
+        CurveKind aType = C.GetType();
+        if (aType == Line)
         {
             return 1;
         }
 
-        if (aType == GeomAbs_Circle)
+        if (aType == Circle)
         {
-            gp_Circ aCrc = C.Circle();
+            Circle3D aCrc = C.Circle();
             aR = aCrc.Radius();
             return 0;
         }
 
         double t2;
-        gp_Pnt P1, P2, P3;
+        Point3D P1, P2, P3;
 
         t2 = 0.5 * (t1 + t3);
 
@@ -59,7 +61,7 @@ public static class IntTools
         }
         //
         //
-        gp_Circ aCirc = aMakeCirc.Value();
+        Circle3D aCirc = aMakeCirc.Value();
         aR = aCirc.Radius();
 
         return 0;
@@ -82,7 +84,7 @@ public static class IntTools
         int ip, i, j, aNbDeflectionPoints;
         bool aRFlag;
 
-        GeomAbs_CurveType aCurveType;
+        CurveKind aCurveType;
         aCurveType = C.GetType();
 
         dt = (Tmax - Tmin) / Discret;
@@ -101,9 +103,9 @@ public static class IntTools
             {
                 continue;
             }
-            if (aCurveType == GeomAbs_BSplineCurve || aCurveType == GeomAbs_BezierCurve
-                || aCurveType == GeomAbs_OffsetCurve || aCurveType == GeomAbs_Ellipse
-                || aCurveType == GeomAbs_OtherCurve)
+            if (aCurveType == BSplineCurve || aCurveType == BezierCurve
+                || aCurveType == OffsetCurve || aCurveType == Ellipse
+                || aCurveType == OtherCurve)
             {
                 continue;
             }
@@ -188,14 +190,14 @@ public static class IntTools
     }
 
     // OCCT's IntTools_RootComparator: by the root's value only, so roots with equal values tie.
-    private readonly struct IntTools_RootComparator : std_heap.ILess<IntTools_Root>
+    private readonly struct IntTools_RootComparator : Heap.ILess<IntTools_Root>
     {
         public bool Less(IntTools_Root theLeft, IntTools_Root theRight) => theLeft.Root() < theRight.Root();
     }
 
     /// <summary>
     /// Sorts the roots in increasing order of their values (<paramref name="myEpsT"/> is unused). Ties are ordered as
-    /// MSVC's <c>std::sort</c> orders them (<see cref="std_sort"/>, decision 491): in their order for up to 32 roots.
+    /// MSVC's <c>std::sort</c> orders them (<see cref="Sorting"/>, decision 491): in their order for up to 32 roots.
     /// </summary>
     public static void SortRoots(NCollection_Sequence<IntTools_Root> mySequenceOfRoots, double myEpsT)
     {
@@ -211,7 +213,7 @@ public static class IntTools
             anArray1OfRoots[j - 1] = mySequenceOfRoots.Value(j);
         }
 
-        std_sort.sort(anArray1OfRoots.AsSpan(), new IntTools_RootComparator());
+        Sorting.Sort(anArray1OfRoots.AsSpan(), new IntTools_RootComparator());
 
         mySequenceOfRoots.Clear();
         for (j = 1; j <= aNbRoots; j++)
@@ -293,10 +295,10 @@ public static class IntTools
     /// The parameter of the point on the curve: exact on conics, by projection on Bézier and B-spline curves. Returns
     /// 0 if computed, 2 if the projection found nothing, 1 for another curve type (the parameter left as it was).
     /// </summary>
-    public static int Parameter(in gp_Pnt aP, Geom_Curve aCurve, ref double aParameter)
+    public static int Parameter(in Point3D aP, Geom_Curve aCurve, ref double aParameter)
     {
         double aFirst, aLast;
-        GeomAbs_CurveType aCurveType;
+        CurveKind aCurveType;
 
         aFirst = aCurve.FirstParameter();
         aLast = aCurve.LastParameter();
@@ -307,38 +309,38 @@ public static class IntTools
 
         switch (aCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
             {
-                gp_Lin aLin = aGAC.Line();
-                aParameter = ElCLib.Parameter(aLin, aP);
+                Line3D aLin = aGAC.Line();
+                aParameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aP);
                 return 0;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
-                gp_Circ aCircle = aGAC.Circle();
-                aParameter = ElCLib.Parameter(aCircle, aP);
+                Circle3D aCircle = aGAC.Circle();
+                aParameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aCircle, aP);
                 return 0;
             }
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                gp_Elips aElips = aGAC.Ellipse();
-                aParameter = ElCLib.Parameter(aElips, aP);
+                Ellipse3D aElips = aGAC.Ellipse();
+                aParameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aElips, aP);
                 return 0;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                gp_Hypr aHypr = aGAC.Hyperbola();
-                aParameter = ElCLib.Parameter(aHypr, aP);
+                Hyperbola3D aHypr = aGAC.Hyperbola();
+                aParameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aHypr, aP);
                 return 0;
             }
-            case GeomAbs_Parabola:
+            case Parabola:
             {
-                gp_Parab aParab = aGAC.Parabola();
-                aParameter = ElCLib.Parameter(aParab, aP);
+                Parabola3D aParab = aGAC.Parabola();
+                aParameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(aParab, aP);
                 return 0;
             }
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
+            case BezierCurve:
+            case BSplineCurve:
             {
                 GeomAPI_ProjectPointOnCurve aProjector = new();
 

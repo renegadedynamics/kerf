@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Occt;
 
@@ -32,17 +34,17 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         Geom_BSplineCurve? aCurve = C as Geom_BSplineCurve;
         if (aCurve is null)
         {
-            aCurve = GeomConvert.CurveToBSplineCurve(C, Convert_QuasiAngular);
+            aCurve = GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
             if (aCurve.IsPeriodic())
             {
                 int M = aCurve.Degree() / 2 + 1;
-                aCurve.RemoveKnot(1, M, Precision.Confusion());
+                aCurve.RemoveKnot(1, M, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
         myCurve = aCurve;
     }
 
-    public override bool D0(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> Weights)
+    public override bool D0(double U, NCollection_Array1<Point3D> Poles, NCollection_Array1<double> Weights)
     {
         double val;
         int ii, L = Poles.Length();
@@ -57,7 +59,7 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         return true;
     }
 
-    public override bool D1(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
+    public override bool D1(double U, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
                             NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
         double val, dval;
@@ -77,8 +79,8 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         return true;
     }
 
-    public override bool D2(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<double> Weights,
+    public override bool D2(double U, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<double> Weights,
                             NCollection_Array1<double> DWeights, NCollection_Array1<double> D2Weights)
     {
         double val, dval, d2val;
@@ -126,18 +128,18 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
 
     public override bool IsUPeriodic() => myCurve.IsPeriodic();
 
-    public override bool IsVPeriodic() => (Math.Abs(myLaw.Value(First) - myLaw.Value(Last)) < Precision.Confusion());
+    public override bool IsVPeriodic() => (Math.Abs(myLaw.Value(First) - myLaw.Value(Last)) < global::Kerf.Engine.Foundation.Precision.Confusion());
 
-    public override int NbIntervals(GeomAbs_Shape S) => myLaw.NbIntervals(S);
+    public override int NbIntervals(Continuity S) => myLaw.NbIntervals(S);
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         myLaw.Intervals(T, S);
     }
 
     public override void SetInterval(double F, double L)
     {
-        TLaw = myLaw.Trim(F, L, Precision.PConfusion());
+        TLaw = myLaw.Trim(F, L, global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void GetInterval(out double F, out double L)
@@ -161,13 +163,13 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         }
     }
 
-    public override gp_Pnt BarycentreOfSurf()
+    public override Point3D BarycentreOfSurf()
     {
         // OCCT: starts at the section's first parameter but steps to the B-spline's last one (as UniformSection).
         double U = mySection.FirstParameter(), Delta, b;
         int ii;
-        gp_Pnt P;
-        gp_Pnt Bary = new gp_Pnt();
+        Point3D P;
+        Point3D Bary = new Point3D();
 
         Delta = (myCurve.LastParameter() - U) / 20;
         Bary.SetCoord(0.0, 0.0, 0.0);
@@ -225,10 +227,10 @@ public class GeomFill_EvolvedSection : GeomFill_SectionLaw
         double Err = 0, scale;
         if (!IsConstant(ref Err))
         {
-            throw new StdFail_NotDone("The Law is not Constant!");
+            throw new NotDoneException("The Law is not Constant!");
         }
-        gp_Trsf T = new gp_Trsf();
-        gp_Pnt P = new gp_Pnt(0, 0, 0);
+        Transform3D T = new Transform3D();
+        Point3D P = new Point3D(0, 0, 0);
         scale = myLaw.Value(First) + myLaw.Value((First + Last) / 2) + myLaw.Value(Last);
         T.SetScale(P, scale / 3);
 

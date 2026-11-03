@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -49,7 +53,7 @@ public class Extrema_ExtElC2d
     /// The distance between two lines. AngTol is not used: the lines are parallel when their angle is below
     /// <see cref="Precision.Angular"/>.
     /// </summary>
-    public Extrema_ExtElC2d(in gp_Lin2d C1, in gp_Lin2d C2, double AngTol)
+    public Extrema_ExtElC2d(in Line2D C1, in Line2D C2, double AngTol)
     {
         _ = AngTol; // OCCT: the tolerance is not used
         myDone = false;
@@ -60,9 +64,9 @@ public class Extrema_ExtElC2d
             mySqDist[anIdx] = RealLast();
         }
 
-        gp_Vec2d D1 = new(C1.Direction());
-        gp_Vec2d D2 = new(C2.Direction());
-        if (D1.IsParallel(D2, Precision.Angular()))
+        Vector2D D1 = new(C1.Direction());
+        Vector2D D2 = new(C2.Direction());
+        if (D1.IsParallel(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             myIsPar = true;
             mySqDist[0] = C2.SquareDistance(C1.Location());
@@ -71,7 +75,7 @@ public class Extrema_ExtElC2d
         else
         {
             // Vector from P1 to P2 (P2 - P1).
-            gp_Vec2d aP1P2 = new(C1.Location(), C2.Location());
+            Vector2D aP1P2 = new(C1.Location(), C2.Location());
 
             // Solve linear system using Cramer's rule:
             // D1.X * t1 + D2.X * (-t2)  = P2.X - P1.X
@@ -83,8 +87,8 @@ public class Extrema_ExtElC2d
             double aParam1 = (aP1P2 ^ D2) * aDelim;
             double aParam2 = -(D1 ^ aP1P2) * aDelim; // -1.0 coefficient before t2.
 
-            gp_Pnt2d P1 = ElCLib.Value(aParam1, C1);
-            gp_Pnt2d P2 = ElCLib.Value(aParam2, C2);
+            Point2D P1 = global::Kerf.Engine.Geometry.ElCLib.Value(aParam1, C1);
+            Point2D P2 = global::Kerf.Engine.Geometry.ElCLib.Value(aParam2, C2);
 
             mySqDist[myNbExt] = 0.0;
             myPoint[myNbExt, 0] = new Extrema_POnCurv2d(aParam1, P1);
@@ -108,7 +112,7 @@ public class Extrema_ExtElC2d
     -----------------------------------------------------------------------------*/
 
     /// <summary>The distances between a line and a circle. Tol is not used.</summary>
-    public Extrema_ExtElC2d(in gp_Lin2d C1, in gp_Circ2d C2, double Tol)
+    public Extrema_ExtElC2d(in Line2D C1, in Circle2D C2, double Tol)
     {
         _ = Tol; // OCCT: the tolerance is not used
         myIsPar = false;
@@ -120,8 +124,8 @@ public class Extrema_ExtElC2d
         }
 
         // Calculate T1 in the reference of the circle ...
-        gp_Dir2d D = C1.Direction();
-        gp_Dir2d x2, y2;
+        Direction2D D = C1.Direction();
+        Direction2D x2, y2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
 
@@ -129,8 +133,8 @@ public class Extrema_ExtElC2d
         double Dy = D.Dot(y2);
         double U1;
         Span<double> teta = stackalloc double[2];
-        gp_Pnt2d O1 = C1.Location();
-        gp_Pnt2d P1, P2;
+        Point2D O1 = C1.Location();
+        Point2D P1, P2;
 
         if (Math.Abs(Dy) <= RealEpsilon())
         {
@@ -146,17 +150,17 @@ public class Extrema_ExtElC2d
             teta[0] = teta[0] + 2.0 * M_PI;
         }
 
-        P2 = ElCLib.Value(teta[0], C2);
-        U1 = (new gp_Vec2d(O1, P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[0], C2);
+        U1 = (new Vector2D(O1, P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(teta[0], P2);
         myNbExt++;
 
-        P2 = ElCLib.Value(teta[1], C2);
-        U1 = (new gp_Vec2d(O1, P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], C2);
+        U1 = (new Vector2D(O1, P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(teta[1], P2);
@@ -165,7 +169,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distances between a line and an ellipse.</summary>
-    public Extrema_ExtElC2d(in gp_Lin2d C1, in gp_Elips2d C2)
+    public Extrema_ExtElC2d(in Line2D C1, in Ellipse2D C2)
     {
         myDone = true;
         myIsPar = false;
@@ -177,8 +181,8 @@ public class Extrema_ExtElC2d
         }
 
         // Calculate T1 in the reference of the ellipse ...
-        gp_Dir2d D = C1.Direction();
-        gp_Dir2d x2, y2;
+        Direction2D D = C1.Direction();
+        Direction2D x2, y2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
 
@@ -186,7 +190,7 @@ public class Extrema_ExtElC2d
         double Dy = D.Dot(y2);
         double U1, r1 = C2.MajorRadius(), r2 = C2.MinorRadius();
         Span<double> teta = stackalloc double[2];
-        gp_Pnt2d O1 = C1.Location(), P1, P2;
+        Point2D O1 = C1.Location(), P1, P2;
 
         if (Math.Abs(Dy) <= RealEpsilon())
         {
@@ -202,17 +206,17 @@ public class Extrema_ExtElC2d
         {
             teta[0] += 2.0 * M_PI;
         }
-        P2 = ElCLib.Value(teta[0], C2);
-        U1 = (new gp_Vec2d(O1, P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[0], C2);
+        U1 = (new Vector2D(O1, P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(teta[0], P2);
         myNbExt++;
 
-        P2 = ElCLib.Value(teta[1], C2);
-        U1 = (new gp_Vec2d(O1, P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], C2);
+        U1 = (new Vector2D(O1, P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(teta[1], P2);
@@ -221,7 +225,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distance between a line and a hyperbola.</summary>
-    public Extrema_ExtElC2d(in gp_Lin2d C1, in gp_Hypr2d C2)
+    public Extrema_ExtElC2d(in Line2D C1, in Hyperbola2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -232,15 +236,15 @@ public class Extrema_ExtElC2d
         }
 
         // Calculate T1 in the reference of the parabole ...
-        gp_Dir2d D = C1.Direction();
-        gp_Dir2d x2, y2;
+        Direction2D D = C1.Direction();
+        Direction2D x2, y2;
         x2 = C2.XAxis().Direction();
         y2 = C2.YAxis().Direction();
         double Dx = D.Dot(x2);
         double Dy = D.Dot(y2);
 
         double U1, v2, U2 = 0, R = C2.MajorRadius(), r = C2.MinorRadius();
-        gp_Pnt2d P1, P2;
+        Point2D P1, P2;
         if (Math.Abs(Dy) < RealEpsilon())
         {
             return;
@@ -255,10 +259,10 @@ public class Extrema_ExtElC2d
         {
             U2 = Math.Log(Math.Sqrt(v2));
         }
-        P2 = ElCLib.Value(U2, C2);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
 
-        U1 = (new gp_Vec2d(C1.Location(), P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        U1 = (new Vector2D(C1.Location(), P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(U2, P2);
@@ -267,7 +271,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distance between a line and a parabola.</summary>
-    public Extrema_ExtElC2d(in gp_Lin2d C1, in gp_Parab2d C2)
+    public Extrema_ExtElC2d(in Line2D C1, in Parabola2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -278,24 +282,24 @@ public class Extrema_ExtElC2d
         }
 
         // Calculate  T1 in the reference of the parabole ...
-        gp_Dir2d D = C1.Direction();
-        gp_Dir2d x2, y2;
+        Direction2D D = C1.Direction();
+        Direction2D x2, y2;
         x2 = C2.MirrorAxis().Direction();
         y2 = C2.Axis().YAxis().Direction();
         double Dx = D.Dot(x2);
         double Dy = D.Dot(y2);
 
         double U1, U2, P = C2.Parameter();
-        gp_Pnt2d P1, P2;
+        Point2D P1, P2;
         if (Math.Abs(Dy) < RealEpsilon())
         {
             return;
         }
         U2 = Dx * P / Dy;
-        P2 = ElCLib.Value(U2, C2);
+        P2 = global::Kerf.Engine.Geometry.ElCLib.Value(U2, C2);
 
-        U1 = (new gp_Vec2d(C1.Location(), P2)).Dot(new gp_Vec2d(D));
-        P1 = ElCLib.Value(U1, C1);
+        U1 = (new Vector2D(C1.Location(), P2)).Dot(new Vector2D(D));
+        P1 = global::Kerf.Engine.Geometry.ElCLib.Value(U1, C1);
         mySqDist[myNbExt] = P1.SquareDistance(P2);
         myPoint[myNbExt, 0] = new Extrema_POnCurv2d(U1, P1);
         myPoint[myNbExt, 1] = new Extrema_POnCurv2d(U2, P2);
@@ -304,7 +308,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distances between two circles. The circles can be parallel or identical.</summary>
-    public Extrema_ExtElC2d(in gp_Circ2d C1, in gp_Circ2d C2)
+    public Extrema_ExtElC2d(in Circle2D C1, in Circle2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -315,12 +319,12 @@ public class Extrema_ExtElC2d
             mySqDist[anIdx] = RealLast();
         }
 
-        gp_Pnt2d O1 = C1.Location();
-        gp_Pnt2d O2 = C2.Location();
+        Point2D O1 = C1.Location();
+        Point2D O2 = C2.Location();
 
-        gp_Vec2d DO1O2 = new(O1, O2);
+        Vector2D DO1O2 = new(O1, O2);
         double aSqDCenters = DO1O2.SquareMagnitude();
-        if (aSqDCenters < Precision.SquareConfusion())
+        if (aSqDCenters < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             myIsPar = true;
             myNbExt = 1;
@@ -335,19 +339,19 @@ public class Extrema_ExtElC2d
         double r1 = C1.Radius(), r2 = C2.Radius();
         Span<double> Usol2 = stackalloc double[2];
         Span<double> Usol1 = stackalloc double[2];
-        Span<gp_Pnt2d> P1 = [new(), new()];
-        Span<gp_Pnt2d> P2 = [new(), new()];
-        gp_Vec2d O1O2 = DO1O2 / Math.Sqrt(aSqDCenters);
+        Span<Point2D> P1 = [new(), new()];
+        Span<Point2D> P2 = [new(), new()];
+        Vector2D O1O2 = DO1O2 / Math.Sqrt(aSqDCenters);
 
         P1[0] = O1.Translated(r1 * O1O2);
-        Usol1[0] = ElCLib.Parameter(C1, P1[0]);
+        Usol1[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, P1[0]);
         P1[1] = O1.Translated(-r1 * O1O2);
-        Usol1[1] = ElCLib.Parameter(C1, P1[1]);
+        Usol1[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, P1[1]);
 
         P2[0] = O2.Translated(r2 * O1O2);
-        Usol2[0] = ElCLib.Parameter(C2, P2[0]);
+        Usol2[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, P2[0]);
         P2[1] = O2.Translated(-r2 * O1O2);
-        Usol2[1] = ElCLib.Parameter(C2, P2[1]);
+        Usol2[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, P2[1]);
 
         for (NoSol = 0; NoSol <= 1; NoSol++)
         {
@@ -364,7 +368,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distances between a circle and an ellipse.</summary>
-    public Extrema_ExtElC2d(in gp_Circ2d C1, in gp_Elips2d C2)
+    public Extrema_ExtElC2d(in Circle2D C1, in Ellipse2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -376,13 +380,13 @@ public class Extrema_ExtElC2d
 
         int i, j;
 
-        Extrema_ExtPElC2d ExtElip = new(C1.Location(), C2, Precision.Confusion(), 0.0, 2.0 * M_PI);
+        Extrema_ExtPElC2d ExtElip = new(C1.Location(), C2, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
 
         if (ExtElip.IsDone())
         {
             for (i = 1; i <= ExtElip.NbExt(); i++)
             {
-                Extrema_ExtPElC2d ExtCirc = new(ExtElip.Point(i).Value(), C1, Precision.Confusion(), 0.0, 2.0 * M_PI);
+                Extrema_ExtPElC2d ExtCirc = new(ExtElip.Point(i).Value(), C1, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
                 if (ExtCirc.IsDone())
                 {
                     for (j = 1; j <= ExtCirc.NbExt(); j++)
@@ -399,7 +403,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distances between a circle and a hyperbola.</summary>
-    public Extrema_ExtElC2d(in gp_Circ2d C1, in gp_Hypr2d C2)
+    public Extrema_ExtElC2d(in Circle2D C1, in Hyperbola2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -411,13 +415,13 @@ public class Extrema_ExtElC2d
 
         int i, j;
 
-        Extrema_ExtPElC2d ExtHyp = new(C1.Location(), C2, Precision.Confusion(), RealFirst(), RealLast());
+        Extrema_ExtPElC2d ExtHyp = new(C1.Location(), C2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
 
         if (ExtHyp.IsDone())
         {
             for (i = 1; i <= ExtHyp.NbExt(); i++)
             {
-                Extrema_ExtPElC2d ExtCirc = new(ExtHyp.Point(i).Value(), C1, Precision.Confusion(), 0.0, 2.0 * M_PI);
+                Extrema_ExtPElC2d ExtCirc = new(ExtHyp.Point(i).Value(), C1, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
                 if (ExtCirc.IsDone())
                 {
                     for (j = 1; j <= ExtCirc.NbExt(); j++)
@@ -434,7 +438,7 @@ public class Extrema_ExtElC2d
     }
 
     /// <summary>The distances between a circle and a parabola.</summary>
-    public Extrema_ExtElC2d(in gp_Circ2d C1, in gp_Parab2d C2)
+    public Extrema_ExtElC2d(in Circle2D C1, in Parabola2D C2)
     {
         myIsPar = false;
         myDone = false;
@@ -446,13 +450,13 @@ public class Extrema_ExtElC2d
 
         int i, j;
 
-        Extrema_ExtPElC2d ExtParab = new(C1.Location(), C2, Precision.Confusion(), RealFirst(), RealLast());
+        Extrema_ExtPElC2d ExtParab = new(C1.Location(), C2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
 
         if (ExtParab.IsDone())
         {
             for (i = 1; i <= ExtParab.NbExt(); i++)
             {
-                Extrema_ExtPElC2d ExtCirc = new(ExtParab.Point(i).Value(), C1, Precision.Confusion(), 0.0, 2.0 * M_PI);
+                Extrema_ExtPElC2d ExtCirc = new(ExtParab.Point(i).Value(), C1, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
                 if (ExtCirc.IsDone())
                 {
                     for (j = 1; j <= ExtCirc.NbExt(); j++)
@@ -476,7 +480,7 @@ public class Extrema_ExtElC2d
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }
@@ -486,7 +490,7 @@ public class Extrema_ExtElC2d
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return myNbExt;
@@ -497,7 +501,7 @@ public class Extrema_ExtElC2d
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist[N - 1];
@@ -508,7 +512,7 @@ public class Extrema_ExtElC2d
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         P1 = myPoint[N - 1, 0];
         P2 = myPoint[N - 1, 1];

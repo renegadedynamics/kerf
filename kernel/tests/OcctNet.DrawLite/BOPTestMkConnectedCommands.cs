@@ -106,7 +106,7 @@ internal static class BOPTestMkConnectedCommands
                 aPeriod = theDI.Atof(theArgv[++i]);
             }
 
-            if (aPeriod <= Precision.Confusion())
+            if (aPeriod <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 di.Append("Period for ").Append(cDirName).Append(" direction is not set\n");
                 return 1;

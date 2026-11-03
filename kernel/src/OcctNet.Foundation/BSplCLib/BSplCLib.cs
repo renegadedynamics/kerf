@@ -17,11 +17,15 @@
 // jct : 24-Apr-97 : correction on computation of Tbord and NewFlatKnots
 //                   in TangExtendToConstraint; Continuity can be equal to 0
 
-using static Occt.BSplCLib_KnotDistribution;
-using static Occt.BSplCLib_MultDistribution;
-using static Occt.GeomAbs_BSplKnotDistribution;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Occt;
+using static Kerf.Engine.Geometry.Splines.KnotDistribution;
+using static Kerf.Engine.Geometry.Splines.MultDistribution;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
 
-namespace Occt;
+namespace Kerf.Engine.Geometry.Splines;
 
 /// <summary>
 /// B-spline curve library: management of knots and multiplicities, multi-dimensional spline methods (the poles are
@@ -44,149 +48,149 @@ public static partial class BSplCLib
     //         evaluation of bspline (using stack allocation for main matrix)
     //=======================================================================
     // Note: OCCT places the matrix on a zeroed 27 x 27 stack buffer; the port allocates a math_Matrix (also zeroed)
-    private static math_Matrix BSplCLib_LocalMatrix(int DerivativeRequest, int Order)
+    private static Matrix BSplCLib_LocalMatrix(int derivativeRequest, int order)
     {
-        Standard_OutOfRange_Raise_if(DerivativeRequest > BSplCLib.MaxDegree()
-                                       || Order > BSplCLib.MaxDegree() + 1
-                                       || BSplCLib.MaxDegree() > 25,
+        Standard_OutOfRange_Raise_if(derivativeRequest > global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree()
+                                       || order > global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() + 1
+                                       || global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree() > 25,
                                      "BSplCLib: bspline degree is greater than maximum supported");
-        return new math_Matrix(1, DerivativeRequest + 1, 1, Order);
+        return new Matrix(1, derivativeRequest + 1, 1, order);
     }
 
     /// <summary>
-    /// Searches the position of <paramref name="theX"/> in the increasing values <paramref name="theArray"/> by
+    /// Searches the position of <paramref name="x"/> in the increasing values <paramref name="array"/> by
     /// bisection. Out of range, returns theArray.Lower()-1 or theArray.Upper()+1. Used to locate a knot.
     /// </summary>
-    public static void Hunt(NCollection_Array1<double> theArray, double theX, out int theXPos)
+    public static void Hunt(NCollection_Array1<double> array, double x, out int xPos)
     {
         // replaced by simple dichotomy (RLE)
-        if (theArray.First() > theX)
+        if (array.First() > x)
         {
-            theXPos = theArray.Lower() - 1;
+            xPos = array.Lower() - 1;
             return;
         }
-        else if (theArray.Last() < theX)
+        else if (array.Last() < x)
         {
-            theXPos = theArray.Upper() + 1;
-            return;
-        }
-
-        theXPos = theArray.Lower();
-        if (theArray.Length() <= 1)
-        {
+            xPos = array.Upper() + 1;
             return;
         }
 
-        int aHi = theArray.Upper();
-        while (aHi - theXPos != 1)
+        xPos = array.Lower();
+        if (array.Length() <= 1)
         {
-            int aMid = (aHi + theXPos) / 2;
-            if (theArray.Value(aMid) < theX)
+            return;
+        }
+
+        int hi = array.Upper();
+        while (hi - xPos != 1)
+        {
+            int mid = (hi + xPos) / 2;
+            if (array.Value(mid) < x)
             {
-                theXPos = aMid;
+                xPos = mid;
             }
             else
             {
-                aHi = aMid;
+                hi = mid;
             }
         }
     }
 
     /// <summary>The index of the knot of the first parameter (first knot whose cumulated multiplicity exceeds Degree).</summary>
-    public static int FirstUKnotIndex(int Degree, NCollection_Array1<int> Mults)
+    public static int FirstUKnotIndex(int degree, NCollection_Array1<int> mults)
     {
-        int Index = Mults.Lower();
-        int SigmaMult = Mults[Index];
+        int index = mults.Lower();
+        int sigmaMult = mults[index];
 
-        while (SigmaMult <= Degree)
+        while (sigmaMult <= degree)
         {
-            Index++;
-            SigmaMult += Mults[Index];
+            index++;
+            sigmaMult += mults[index];
         }
-        return Index;
+        return index;
     }
 
     /// <summary>The index of the knot of the last parameter.</summary>
-    public static int LastUKnotIndex(int Degree, NCollection_Array1<int> Mults)
+    public static int LastUKnotIndex(int degree, NCollection_Array1<int> mults)
     {
-        int Index = Mults.Upper();
-        int SigmaMult = Mults[Index];
+        int index = mults.Upper();
+        int sigmaMult = mults[index];
 
-        while (SigmaMult <= Degree)
+        while (sigmaMult <= degree)
         {
-            Index--;
-            SigmaMult += Mults.Value(Index);
+            index--;
+            sigmaMult += mults.Value(index);
         }
-        return Index;
+        return index;
     }
 
     /// <summary>Computes the index of the knot <paramref name="Index"/> in the flat knot sequence.</summary>
-    public static int FlatIndex(int Degree, int Index, NCollection_Array1<int> Mults, bool Periodic)
+    public static int FlatIndex(int degree, int Index, NCollection_Array1<int> mults, bool periodic)
     {
         int i, index = Index;
-        int MLower = Mults.Lower();
-        ReadOnlySpan<int> pmu = Mults.AsSpan(); // pmu[i - MLower]
+        int mLower = mults.Lower();
+        ReadOnlySpan<int> pmu = mults.AsSpan(); // pmu[i - MLower]
 
-        for (i = MLower + 1; i <= Index; i++)
+        for (i = mLower + 1; i <= Index; i++)
         {
-            index += pmu[i - MLower] - 1;
+            index += pmu[i - mLower] - 1;
         }
-        if (Periodic)
+        if (periodic)
         {
-            index += Degree;
+            index += degree;
         }
         else
         {
-            index += pmu[MLower - MLower] - 1;
+            index += pmu[mLower - mLower] - 1;
         }
         return index;
     }
 
     /// <summary>
-    /// Locates the parametric value <paramref name="U"/> in the knot sequence between the knots FromK1 and ToK2:
+    /// Locates the parametric value <paramref name="u"/> in the knot sequence between the knots FromK1 and ToK2:
     /// Knots(KnotIndex) &lt;= U &lt; Knots(KnotIndex + 1); for a periodic curve, U is first brought into the
     /// period (NewU).
     /// </summary>
-    public static void LocateParameter(int Degree, NCollection_Array1<double> Knots, NCollection_Array1<int> Mults,
-                                       double U, bool IsPeriodic, int FromK1, int ToK2, out int KnotIndex,
-                                       out double NewU)
+    public static void LocateParameter(int degree, NCollection_Array1<double> knots, NCollection_Array1<int> mults,
+                                       double u, bool isPeriodic, int fromK1, int toK2, out int knotIndex,
+                                       out double newU)
     {
         double uf = 0, ul = 1;
-        if (IsPeriodic)
+        if (isPeriodic)
         {
-            uf = Knots[Knots.Lower()];
-            ul = Knots[Knots.Upper()];
+            uf = knots[knots.Lower()];
+            ul = knots[knots.Upper()];
         }
-        BSplCLib.LocateParameter(Knots, U, IsPeriodic, FromK1, ToK2, out KnotIndex, out NewU, uf, ul);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(knots, u, isPeriodic, fromK1, toK2, out knotIndex, out newU, uf, ul);
     }
 
     /// <summary>
-    /// Locates the parametric value <paramref name="U"/> in the flat knot sequence between the knots FromK1 and
+    /// Locates the parametric value <paramref name="u"/> in the flat knot sequence between the knots FromK1 and
     /// ToK2; for a periodic curve the period runs from Knots(Lower + Degree) to Knots(Upper - Degree).
     /// </summary>
-    public static void LocateParameter(int Degree, NCollection_Array1<double> Knots, double U, bool IsPeriodic,
-                                       int FromK1, int ToK2, out int KnotIndex, out double NewU)
+    public static void LocateParameter(int degree, NCollection_Array1<double> knots, double u, bool isPeriodic,
+                                       int fromK1, int toK2, out int knotIndex, out double newU)
     {
-        if (IsPeriodic)
+        if (isPeriodic)
         {
-            BSplCLib.LocateParameter(Knots,
-                                     U,
-                                     IsPeriodic,
-                                     FromK1,
-                                     ToK2,
-                                     out KnotIndex,
-                                     out NewU,
-                                     Knots[Knots.Lower() + Degree],
-                                     Knots[Knots.Upper() - Degree]);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(knots,
+                                     u,
+                                     isPeriodic,
+                                     fromK1,
+                                     toK2,
+                                     out knotIndex,
+                                     out newU,
+                                     knots[knots.Lower() + degree],
+                                     knots[knots.Upper() - degree]);
         }
         else
         {
-            BSplCLib.LocateParameter(Knots, U, IsPeriodic, FromK1, ToK2, out KnotIndex, out NewU, 0.0, 1.0);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(knots, u, isPeriodic, fromK1, toK2, out knotIndex, out newU, 0.0, 1.0);
         }
     }
 
-    private static void LocateParameter(NCollection_Array1<double> Knots, double U, bool IsPeriodic, int FromK1,
-                                        int ToK2, out int KnotIndex, out double NewU, double UFirst, double ULast)
+    private static void LocateParameter(NCollection_Array1<double> Knots, double u, bool isPeriodic, int fromK1,
+                                        int toK2, out int knotIndex, out double newU, double uFirst, double uLast)
     {
         /*
         Let Knots are distributed as follows (the array is sorted in ascending order):
@@ -200,76 +204,76 @@ public static partial class BSplCLib
         If Ki <= U < K(i+1) then KnotIndex should be equal to sum (M1+M2+...+Mi).
         */
 
-        int First, Last;
-        if (FromK1 < ToK2)
+        int first, last;
+        if (fromK1 < toK2)
         {
-            First = FromK1;
-            Last = ToK2;
+            first = fromK1;
+            last = toK2;
         }
         else
         {
-            First = ToK2;
-            Last = FromK1;
+            first = toK2;
+            last = fromK1;
         }
-        int Last1 = Last - 1;
-        NewU = U;
-        if (IsPeriodic && (NewU < UFirst || NewU > ULast))
+        int last1 = last - 1;
+        newU = u;
+        if (isPeriodic && (newU < uFirst || newU > uLast))
         {
-            NewU = ElCLib.InPeriod(NewU, UFirst, ULast);
+            newU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(newU, uFirst, uLast);
         }
 
-        BSplCLib.Hunt(Knots, NewU, out KnotIndex);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(Knots, newU, out knotIndex);
 
         double val;
-        int KLower = Knots.Lower(), KUpper = Knots.Upper();
+        int kLower = Knots.Lower(), kUpper = Knots.Upper();
 
-        double Eps = Epsilon(Min(Math.Abs(Knots[KUpper]), Math.Abs(U)));
+        double eps = Epsilon(Min(Math.Abs(Knots[kUpper]), Math.Abs(u)));
 
         ReadOnlySpan<double> knots = Knots.AsSpan(); // knots[i - KLower]
-        if (KnotIndex < Knots.Upper())
+        if (knotIndex < Knots.Upper())
         {
-            val = NewU - knots[KnotIndex + 1 - KLower];
+            val = newU - knots[knotIndex + 1 - kLower];
             if (val < 0)
             {
                 val = -val;
             }
             // <= to be coherent with Segment where Eps corresponds to a bit of error.
-            if (val <= Eps)
+            if (val <= eps)
             {
-                KnotIndex++;
+                knotIndex++;
             }
         }
-        if (KnotIndex < First)
+        if (knotIndex < first)
         {
-            KnotIndex = First;
+            knotIndex = first;
         }
-        if (KnotIndex > Last1)
+        if (knotIndex > last1)
         {
-            KnotIndex = Last1;
+            knotIndex = last1;
         }
 
-        if (KnotIndex != Last1)
+        if (knotIndex != last1)
         {
-            double K1 = knots[KnotIndex - KLower];
-            double K2 = knots[KnotIndex + 1 - KLower];
-            val = K2 - K1;
+            double k1 = knots[knotIndex - kLower];
+            double k2 = knots[knotIndex + 1 - kLower];
+            val = k2 - k1;
             if (val < 0)
             {
                 val = -val;
             }
 
-            while (val <= Eps)
+            while (val <= eps)
             {
-                KnotIndex++;
+                knotIndex++;
 
-                if (KnotIndex >= Knots.Upper())
+                if (knotIndex >= Knots.Upper())
                 {
                     break;
                 }
 
-                K1 = K2;
-                K2 = knots[KnotIndex + 1 - KLower];
-                val = K2 - K1;
+                k1 = k2;
+                k2 = knots[knotIndex + 1 - kLower];
+                val = k2 - k1;
                 if (val < 0)
                 {
                     val = -val;
@@ -279,121 +283,121 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Locates <paramref name="U"/> in the knots, unless <paramref name="Index"/> already designates a knot of the
+    /// Locates <paramref name="u"/> in the knots, unless <paramref name="index"/> already designates a knot of the
     /// curve's range (then NewU = U). Without multiplicities the knots are flat knots.
     /// </summary>
-    public static void LocateParameter(int Degree, NCollection_Array1<double> Knots, NCollection_Array1<int>? Mults,
-                                       double U, bool Periodic, ref int Index, out double NewU)
+    public static void LocateParameter(int degree, NCollection_Array1<double> knots, NCollection_Array1<int>? mults,
+                                       double u, bool periodic, ref int index, out double newU)
     {
-        int KnotIndex = Index;
+        int knotIndex = index;
         int first, last;
-        if (Mults != null)
+        if (mults != null)
         {
-            if (Periodic)
+            if (periodic)
             {
-                first = Knots.Lower();
-                last = Knots.Upper();
+                first = knots.Lower();
+                last = knots.Upper();
             }
             else
             {
-                first = FirstUKnotIndex(Degree, Mults);
-                last = LastUKnotIndex(Degree, Mults);
+                first = FirstUKnotIndex(degree, mults);
+                last = LastUKnotIndex(degree, mults);
             }
         }
         else
         {
-            first = Knots.Lower() + Degree;
-            last = Knots.Upper() - Degree;
+            first = knots.Lower() + degree;
+            last = knots.Upper() - degree;
         }
-        if (KnotIndex < first || KnotIndex > last)
+        if (knotIndex < first || knotIndex > last)
         {
-            BSplCLib.LocateParameter(Knots,
-                                     U,
-                                     Periodic,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(knots,
+                                     u,
+                                     periodic,
                                      first,
                                      last,
-                                     out KnotIndex,
-                                     out NewU,
-                                     Knots[first],
-                                     Knots[last]);
+                                     out knotIndex,
+                                     out newU,
+                                     knots[first],
+                                     knots[last]);
         }
         else
         {
-            NewU = U;
+            newU = u;
         }
-        Index = KnotIndex;
+        index = knotIndex;
     }
 
     /// <summary>The greatest multiplicity in Mults between FromK1 and ToK2.</summary>
-    public static int MaxKnotMult(NCollection_Array1<int> Mults, int FromK1, int ToK2)
+    public static int MaxKnotMult(NCollection_Array1<int> mults, int fromK1, int toK2)
     {
-        int aMaxMult = Mults[FromK1];
-        for (int anIndex = FromK1 + 1; anIndex <= ToK2; ++anIndex)
+        int maxMult = mults[fromK1];
+        for (int index = fromK1 + 1; index <= toK2; ++index)
         {
-            aMaxMult = Max(aMaxMult, Mults[anIndex]);
+            maxMult = Max(maxMult, mults[index]);
         }
-        return aMaxMult;
+        return maxMult;
     }
 
     /// <summary>The smallest multiplicity in Mults between FromK1 and ToK2.</summary>
-    public static int MinKnotMult(NCollection_Array1<int> Mults, int FromK1, int ToK2)
+    public static int MinKnotMult(NCollection_Array1<int> mults, int fromK1, int toK2)
     {
-        int aMinMult = Mults[FromK1];
-        for (int anIndex = FromK1 + 1; anIndex <= ToK2; ++anIndex)
+        int minMult = mults[fromK1];
+        for (int index = fromK1 + 1; index <= toK2; ++index)
         {
-            aMinMult = Min(aMinMult, Mults[anIndex]);
+            minMult = Min(minMult, mults[index]);
         }
-        return aMinMult;
+        return minMult;
     }
 
     /// <summary>
     /// The number of poles of the curve, or 0 if the multiplicities are inconsistent (a multiplicity &lt;= 0 or
     /// greater than Degree inside, ends greater than Degree + 1, or unequal ends of a periodic curve).
     /// </summary>
-    public static int NbPoles(int Degree, bool Periodic, NCollection_Array1<int> Mults)
+    public static int NbPoles(int degree, bool periodic, NCollection_Array1<int> mults)
     {
-        int f = Mults.Lower();
-        int l = Mults.Upper();
-        ReadOnlySpan<int> pmu = Mults.AsSpan();
-        int Mf = pmu[0];
-        int Ml = pmu[l - f];
-        if (Mf <= 0)
+        int f = mults.Lower();
+        int l = mults.Upper();
+        ReadOnlySpan<int> pmu = mults.AsSpan();
+        int mf = pmu[0];
+        int ml = pmu[l - f];
+        if (mf <= 0)
         {
             return 0;
         }
-        if (Ml <= 0)
+        if (ml <= 0)
         {
             return 0;
         }
         int sigma;
-        if (Periodic)
+        if (periodic)
         {
-            if (Mf > Degree)
+            if (mf > degree)
             {
                 return 0;
             }
-            if (Ml > Degree)
+            if (ml > degree)
             {
                 return 0;
             }
-            if (Mf != Ml)
+            if (mf != ml)
             {
                 return 0;
             }
-            sigma = Mf;
+            sigma = mf;
         }
         else
         {
-            int Deg1 = Degree + 1;
-            if (Mf > Deg1)
+            int deg1 = degree + 1;
+            if (mf > deg1)
             {
                 return 0;
             }
-            if (Ml > Deg1)
+            if (ml > deg1)
             {
                 return 0;
             }
-            sigma = Mf + Ml - Deg1;
+            sigma = mf + ml - deg1;
         }
 
         for (int i = 1; i < l - f; i++)
@@ -402,7 +406,7 @@ public static partial class BSplCLib
             {
                 return 0;
             }
-            if (pmu[i] > Degree)
+            if (pmu[i] > degree)
             {
                 return 0;
             }
@@ -412,81 +416,81 @@ public static partial class BSplCLib
     }
 
     /// <summary>The length of the flat knot sequence (the sum of the multiplicities, plus the periodic extension).</summary>
-    public static int KnotSequenceLength(NCollection_Array1<int> Mults, int Degree, bool Periodic)
+    public static int KnotSequenceLength(NCollection_Array1<int> mults, int degree, bool periodic)
     {
         int i, l = 0;
-        int MLower = Mults.Lower();
-        int MUpper = Mults.Upper();
-        ReadOnlySpan<int> pmu = Mults.AsSpan(); // pmu[i - MLower]
+        int mLower = mults.Lower();
+        int mUpper = mults.Upper();
+        ReadOnlySpan<int> pmu = mults.AsSpan(); // pmu[i - MLower]
 
-        for (i = MLower; i <= MUpper; i++)
+        for (i = mLower; i <= mUpper; i++)
         {
-            l += pmu[i - MLower];
+            l += pmu[i - mLower];
         }
-        if (Periodic)
+        if (periodic)
         {
-            l += 2 * (Degree + 1 - pmu[0]);
+            l += 2 * (degree + 1 - pmu[0]);
         }
         return l;
     }
 
     /// <summary>Computes the flat knot sequence (each knot repeated by its multiplicity) into KnotSeq.</summary>
-    public static void KnotSequence(NCollection_Array1<double> Knots, NCollection_Array1<int> Mults,
-                                    NCollection_Array1<double> KnotSeq, bool Periodic = false)
+    public static void KnotSequence(NCollection_Array1<double> knots, NCollection_Array1<int> mults,
+                                    NCollection_Array1<double> knotSeq, bool periodic = false)
     {
-        BSplCLib.KnotSequence(Knots, Mults, 0, Periodic, KnotSeq);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knots, mults, 0, periodic, knotSeq);
     }
 
     /// <summary>Computes the flat knot sequence into KnotSeq; for a periodic curve, extended by the period on both sides.</summary>
-    public static void KnotSequence(NCollection_Array1<double> Knots, NCollection_Array1<int> Mults, int Degree,
-                                    bool Periodic, NCollection_Array1<double> KnotSeq)
+    public static void KnotSequence(NCollection_Array1<double> knots, NCollection_Array1<int> mults, int degree,
+                                    bool periodic, NCollection_Array1<double> knotSeq)
     {
-        double K;
-        int Mult;
-        int MLower = Mults.Lower();
-        ReadOnlySpan<int> pmu = Mults.AsSpan(); // pmu[i - MLower]
-        int KLower = Knots.Lower();
-        int KUpper = Knots.Upper();
-        ReadOnlySpan<double> pkn = Knots.AsSpan(); // pkn[i - KLower]
-        int M1 = Degree + 1 - pmu[0]; // for periodic
-        int i, j, index = Periodic ? M1 + 1 : 1;
+        double k;
+        int mult;
+        int mLower = mults.Lower();
+        ReadOnlySpan<int> pmu = mults.AsSpan(); // pmu[i - MLower]
+        int kLower = knots.Lower();
+        int kUpper = knots.Upper();
+        ReadOnlySpan<double> pkn = knots.AsSpan(); // pkn[i - KLower]
+        int m1 = degree + 1 - pmu[0]; // for periodic
+        int i, j, index = periodic ? m1 + 1 : 1;
 
-        for (i = KLower; i <= KUpper; i++)
+        for (i = kLower; i <= kUpper; i++)
         {
-            Mult = pmu[i - MLower];
-            K = pkn[i - KLower];
+            mult = pmu[i - mLower];
+            k = pkn[i - kLower];
 
-            for (j = 1; j <= Mult; j++)
+            for (j = 1; j <= mult; j++)
             {
-                KnotSeq[index] = K;
+                knotSeq[index] = k;
                 index++;
             }
         }
-        if (Periodic)
+        if (periodic)
         {
-            double period = pkn[KUpper - KLower] - pkn[0];
+            double period = pkn[kUpper - kLower] - pkn[0];
             int m;
             m = 1;
-            j = KUpper - 1;
+            j = kUpper - 1;
 
-            for (i = M1; i >= 1; i--)
+            for (i = m1; i >= 1; i--)
             {
-                KnotSeq[i] = pkn[j - KLower] - period;
+                knotSeq[i] = pkn[j - kLower] - period;
                 m++;
-                if (m > pmu[j - MLower])
+                if (m > pmu[j - mLower])
                 {
                     j--;
                     m = 1;
                 }
             }
             m = 1;
-            j = KLower + 1;
+            j = kLower + 1;
 
-            for (i = index; i <= KnotSeq.Upper(); i++)
+            for (i = index; i <= knotSeq.Upper(); i++)
             {
-                KnotSeq[i] = pkn[j - KLower] + period;
+                knotSeq[i] = pkn[j - kLower] + period;
                 m++;
-                if (m > pmu[j - MLower])
+                if (m > pmu[j - mLower])
                 {
                     j++;
                     m = 1;
@@ -496,17 +500,17 @@ public static partial class BSplCLib
     }
 
     /// <summary>The number of distinct knots in a flat knot sequence (indexed from 1).</summary>
-    public static int KnotsLength(NCollection_Array1<double> KnotSeq, bool Periodic = false)
+    public static int KnotsLength(NCollection_Array1<double> knotSeq, bool periodic = false)
     {
-        NCollection_Array1<double> SeqKnots = KnotSeq;
+        NCollection_Array1<double> seqKnots = knotSeq;
         int sizeMult = 1;
-        double val = SeqKnots[1];
-        for (int jj = 2; jj <= SeqKnots.Length(); jj++)
+        double val = seqKnots[1];
+        for (int jj = 2; jj <= seqKnots.Length(); jj++)
         {
             // test on strict equality on nodes
-            if (SeqKnots[jj] != val)
+            if (seqKnots[jj] != val)
             {
-                val = SeqKnots[jj];
+                val = seqKnots[jj];
                 sizeMult++;
             }
         }
@@ -514,23 +518,23 @@ public static partial class BSplCLib
     }
 
     /// <summary>Computes the knots and multiplicities (indexed from 1) of a flat knot sequence (indexed from 1).</summary>
-    public static void Knots(NCollection_Array1<double> KnotSeq, NCollection_Array1<double> Knots,
-                             NCollection_Array1<int> Mults, bool Periodic = false)
+    public static void Knots(NCollection_Array1<double> knotSeq, NCollection_Array1<double> Knots,
+                             NCollection_Array1<int> mults, bool periodic = false)
     {
-        NCollection_Array1<double> SeqKnots = KnotSeq;
+        NCollection_Array1<double> seqKnots = knotSeq;
         NCollection_Array1<double> knots = Knots;
-        NCollection_Array1<int> mult = Mults;
-        double val = SeqKnots[1];
+        NCollection_Array1<int> mult = mults;
+        double val = seqKnots[1];
         int kk = 1;
         knots[kk] = val;
         mult[kk] = 1;
 
-        for (int jj = 2; jj <= SeqKnots.Length(); jj++)
+        for (int jj = 2; jj <= seqKnots.Length(); jj++)
         {
             // test on strict equality on nodes
-            if (SeqKnots[jj] != val)
+            if (seqKnots[jj] != val)
             {
-                val = SeqKnots[jj];
+                val = seqKnots[jj];
                 kk++;
                 knots[kk] = val;
                 mult[kk] = 1;
@@ -543,207 +547,207 @@ public static partial class BSplCLib
     }
 
     /// <summary>Analyses the distribution of the knots between FromK1 and ToK2: uniform or not.</summary>
-    public static BSplCLib_KnotDistribution KnotForm(NCollection_Array1<double> Knots, int FromK1, int ToK2)
+    public static KnotDistribution KnotForm(NCollection_Array1<double> knots, int fromK1, int toK2)
     {
-        if (FromK1 + 1 > Knots.Upper())
+        if (fromK1 + 1 > knots.Upper())
         {
-            return BSplCLib_Uniform;
+            return KnotDistribution.Uniform;
         }
 
-        double aUi = Math.Abs(Knots[FromK1]);
-        double aUj = Math.Abs(Knots[FromK1 + 1]);
-        double aDU0 = Math.Abs(aUj - aUi);
-        double anEps = Epsilon(aUi) + Epsilon(aUj) + Epsilon(aDU0);
+        double ui = Math.Abs(knots[fromK1]);
+        double uj = Math.Abs(knots[fromK1 + 1]);
+        double du0 = Math.Abs(uj - ui);
+        double eps = Epsilon(ui) + Epsilon(uj) + Epsilon(du0);
 
-        for (int i = FromK1 + 1; i < ToK2; i++)
+        for (int i = fromK1 + 1; i < toK2; i++)
         {
-            aUi = Math.Abs(Knots[i]);
-            aUj = Math.Abs(Knots[i + 1]);
-            double aDU1 = Math.Abs(aUj - aUi);
+            ui = Math.Abs(knots[i]);
+            uj = Math.Abs(knots[i + 1]);
+            double du1 = Math.Abs(uj - ui);
 
-            if (Math.Abs(aDU1 - aDU0) > anEps)
+            if (Math.Abs(du1 - du0) > eps)
             {
-                return BSplCLib_NonUniform;
+                return KnotDistribution.NonUniform;
             }
 
-            aDU0 = aDU1;
-            anEps = Epsilon(aUi) + Epsilon(aUj) + Epsilon(aDU0);
+            du0 = du1;
+            eps = Epsilon(ui) + Epsilon(uj) + Epsilon(du0);
         }
 
-        return BSplCLib_Uniform;
+        return KnotDistribution.Uniform;
     }
 
     /// <summary>
     /// Analyses the distribution of the multiplicities between FromK1 and ToK2: constant, quasi-constant
     /// (constant except the first and last) or non-constant.
     /// </summary>
-    public static BSplCLib_MultDistribution MultForm(NCollection_Array1<int> Mults, int FromK1, int ToK2)
+    public static MultDistribution MultForm(NCollection_Array1<int> mults, int fromK1, int toK2)
     {
-        int aFirst = Min(FromK1, ToK2), aLast = Max(FromK1, ToK2);
+        int first = Min(fromK1, toK2), last = Max(fromK1, toK2);
 
-        if (aFirst + 1 > Mults.Upper())
+        if (first + 1 > mults.Upper())
         {
-            return BSplCLib_Constant;
+            return Constant;
         }
 
-        int aFirstMult = Mults[aFirst];
-        BSplCLib_MultDistribution aForm = BSplCLib_Constant;
-        int aMult = Mults[aFirst + 1];
+        int firstMult = mults[first];
+        MultDistribution form = Constant;
+        int mult = mults[first + 1];
 
-        for (int i = aFirst + 1; i <= aLast && aForm != BSplCLib_NonConstant; i++)
+        for (int i = first + 1; i <= last && form != NonConstant; i++)
         {
-            if (i == aFirst + 1)
+            if (i == first + 1)
             {
-                if (aMult != aFirstMult)
+                if (mult != firstMult)
                 {
-                    aForm = BSplCLib_QuasiConstant;
+                    form = QuasiConstant;
                 }
             }
-            else if (i == aLast)
+            else if (i == last)
             {
-                if (aForm == BSplCLib_QuasiConstant)
+                if (form == QuasiConstant)
                 {
-                    if (aFirstMult != Mults[i])
+                    if (firstMult != mults[i])
                     {
-                        aForm = BSplCLib_NonConstant;
+                        form = NonConstant;
                     }
                 }
                 else
                 {
-                    if (aMult != Mults[i])
+                    if (mult != mults[i])
                     {
-                        aForm = BSplCLib_NonConstant;
+                        form = NonConstant;
                     }
                 }
             }
             else
             {
-                if (aMult != Mults[i])
+                if (mult != mults[i])
                 {
-                    aForm = BSplCLib_NonConstant;
+                    form = NonConstant;
                 }
-                aMult = Mults[i];
+                mult = mults[i];
             }
         }
 
-        return aForm;
+        return form;
     }
 
     /// <summary>
     /// Analyses the knots and multiplicities of a curve: its knot distribution (uniform, quasi-uniform,
     /// piecewise Bezier or non-uniform) and the greatest multiplicity of its interior knots.
     /// </summary>
-    public static void KnotAnalysis(int Degree, bool Periodic, NCollection_Array1<double> CKnots,
-                                    NCollection_Array1<int> CMults, out GeomAbs_BSplKnotDistribution KnotForm,
-                                    out int MaxKnotMult)
+    public static void KnotAnalysis(int degree, bool periodic, NCollection_Array1<double> cKnots,
+                                    NCollection_Array1<int> cMults, out BSplKnotDistribution knotForm,
+                                    out int maxKnotMult)
     {
-        KnotForm = GeomAbs_NonUniform;
+        knotForm = BSplKnotDistribution.NonUniform;
 
-        BSplCLib_KnotDistribution KSet = BSplCLib.KnotForm(CKnots, 1, CKnots.Length());
+        KnotDistribution kSet = global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotForm(cKnots, 1, cKnots.Length());
 
-        if (KSet == BSplCLib_Uniform)
+        if (kSet == KnotDistribution.Uniform)
         {
-            BSplCLib_MultDistribution MSet = BSplCLib.MultForm(CMults, 1, CMults.Length());
-            switch (MSet)
+            MultDistribution mSet = global::Kerf.Engine.Geometry.Splines.BSplCLib.MultForm(cMults, 1, cMults.Length());
+            switch (mSet)
             {
-                case BSplCLib_NonConstant:
+                case NonConstant:
                     break;
-                case BSplCLib_Constant:
-                    if (CKnots.Length() == 2)
+                case Constant:
+                    if (cKnots.Length() == 2)
                     {
-                        KnotForm = GeomAbs_PiecewiseBezier;
+                        knotForm = PiecewiseBezier;
                     }
                     else
                     {
-                        if (CMults[1] == 1)
+                        if (cMults[1] == 1)
                         {
-                            KnotForm = GeomAbs_Uniform;
+                            knotForm = BSplKnotDistribution.Uniform;
                         }
                     }
                     break;
-                case BSplCLib_QuasiConstant:
-                    if (CMults[1] == Degree + 1)
+                case QuasiConstant:
+                    if (cMults[1] == degree + 1)
                     {
-                        double M = CMults[2];
-                        if (M == Degree)
+                        double m = cMults[2];
+                        if (m == degree)
                         {
-                            KnotForm = GeomAbs_PiecewiseBezier;
+                            knotForm = PiecewiseBezier;
                         }
-                        else if (M == 1)
+                        else if (m == 1)
                         {
-                            KnotForm = GeomAbs_QuasiUniform;
+                            knotForm = QuasiUniform;
                         }
                     }
                     break;
             }
         }
 
-        int FirstKM = Periodic ? CKnots.Lower() : BSplCLib.FirstUKnotIndex(Degree, CMults);
-        int LastKM = Periodic ? CKnots.Upper() : BSplCLib.LastUKnotIndex(Degree, CMults);
-        MaxKnotMult = 0;
-        if (LastKM - FirstKM != 1)
+        int firstKM = periodic ? cKnots.Lower() : global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(degree, cMults);
+        int lastKM = periodic ? cKnots.Upper() : global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(degree, cMults);
+        maxKnotMult = 0;
+        if (lastKM - firstKM != 1)
         {
-            int Multi;
-            for (int i = FirstKM + 1; i < LastKM; i++)
+            int multi;
+            for (int i = firstKM + 1; i < lastKM; i++)
             {
-                Multi = CMults[i];
-                MaxKnotMult = Max(MaxKnotMult, Multi);
+                multi = cMults[i];
+                maxKnotMult = Max(maxKnotMult, multi);
             }
         }
     }
 
     /// <summary>Reparametrises the knots to the range [U1, U2] (in either order), keeping their relative spacing.</summary>
-    public static void Reparametrize(double U1, double U2, NCollection_Array1<double> Knots)
+    public static void Reparametrize(double u1, double u2, NCollection_Array1<double> knots)
     {
-        int Lower = Knots.Lower();
-        int Upper = Knots.Upper();
-        double UFirst = Min(U1, U2);
-        double ULast = Max(U1, U2);
-        double NewLength = ULast - UFirst;
-        BSplCLib_KnotDistribution KSet = BSplCLib.KnotForm(Knots, Lower, Upper);
-        if (KSet == BSplCLib_Uniform)
+        int lower = knots.Lower();
+        int upper = knots.Upper();
+        double uFirst = Min(u1, u2);
+        double uLast = Max(u1, u2);
+        double newLength = uLast - uFirst;
+        KnotDistribution kSet = global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotForm(knots, lower, upper);
+        if (kSet == KnotDistribution.Uniform)
         {
-            double DU = NewLength / (Upper - Lower);
-            Knots[Lower] = UFirst;
+            double du = newLength / (upper - lower);
+            knots[lower] = uFirst;
 
-            for (int i = Lower + 1; i <= Upper; i++)
+            for (int i = lower + 1; i <= upper; i++)
             {
-                Knots[i] = Knots[i - 1] + DU;
+                knots[i] = knots[i - 1] + du;
             }
         }
         else
         {
-            double K2;
-            double Ratio;
-            double K1 = Knots[Lower];
-            double Length = Knots[Upper] - Knots[Lower];
-            Knots[Lower] = UFirst;
+            double k2;
+            double ratio;
+            double k1 = knots[lower];
+            double length = knots[upper] - knots[lower];
+            knots[lower] = uFirst;
 
-            for (int i = Lower + 1; i <= Upper; i++)
+            for (int i = lower + 1; i <= upper; i++)
             {
-                K2 = Knots[i];
-                Ratio = (K2 - K1) / Length;
-                Knots[i] = Knots[i - 1] + (NewLength * Ratio);
+                k2 = knots[i];
+                ratio = (k2 - k1) / length;
+                knots[i] = knots[i - 1] + (newLength * ratio);
 
                 // for CheckCurveData
-                double Eps = Epsilon(Math.Abs(Knots[i - 1]));
-                if (Knots[i] - Knots[i - 1] <= Eps)
+                double eps = Epsilon(Math.Abs(knots[i - 1]));
+                if (knots[i] - knots[i - 1] <= eps)
                 {
-                    Knots[i] = NextAfter(Knots[i - 1] + Eps, RealLast());
+                    knots[i] = NextAfter(knots[i - 1] + eps, RealLast());
                 }
 
-                K1 = K2;
+                k1 = k2;
             }
         }
     }
 
     /// <summary>Reverses the orientation of the knots (the parametrisation is reversed, the range kept).</summary>
-    public static void Reverse(NCollection_Array1<double> Knots)
+    public static void Reverse(NCollection_Array1<double> knots)
     {
-        int first = Knots.Lower();
-        int last = Knots.Upper();
-        double kfirst = Knots[first];
-        double klast = Knots[last];
+        int first = knots.Lower();
+        int last = knots.Upper();
+        double kfirst = knots[first];
+        double klast = knots[last];
         double tfirst = kfirst;
         double tlast = klast;
         first++;
@@ -751,42 +755,42 @@ public static partial class BSplCLib
 
         while (first <= last)
         {
-            tfirst += klast - Knots[last];
-            tlast -= Knots[first] - kfirst;
-            kfirst = Knots[first];
-            klast = Knots[last];
-            Knots[first] = tfirst;
-            Knots[last] = tlast;
+            tfirst += klast - knots[last];
+            tlast -= knots[first] - kfirst;
+            kfirst = knots[first];
+            klast = knots[last];
+            knots[first] = tfirst;
+            knots[last] = tlast;
             first++;
             last--;
         }
     }
 
     /// <summary>Reverses the order of the multiplicities.</summary>
-    public static void Reverse(NCollection_Array1<int> Mults)
+    public static void Reverse(NCollection_Array1<int> mults)
     {
-        Mults.AsSpan().Reverse();
+        mults.AsSpan().Reverse();
     }
 
-    /// <summary>Reverses the array of weights, <paramref name="Last"/> being the index of the new first element.</summary>
-    public static void Reverse(NCollection_Array1<double> Weights, int Last)
+    /// <summary>Reverses the array of weights, <paramref name="last"/> being the index of the new first element.</summary>
+    public static void Reverse(NCollection_Array1<double> weights, int last)
     {
-        BSplCLib_CurveComputation.BSplCLib_Reverse(Weights, Last);
+        CurveComputation.BSplCLib_Reverse(weights, last);
     }
 
     /// <summary>
     /// Returns false if all the weights between I1 and I2 are equal (compared exactly; Epsilon is unused);
     /// indices wrap around the array.
     /// </summary>
-    public static bool IsRational(NCollection_Array1<double> Weights, int I1, int I2, double Epsilon = 0.0)
+    public static bool IsRational(NCollection_Array1<double> weights, int i1, int i2, double epsilon = 0.0)
     {
-        int i, f = Weights.Lower(), l = Weights.Length();
-        int I3 = I2 - f;
-        ReadOnlySpan<double> WG = Weights.AsSpan(); // WG[f + x] -> WG[x]
+        int i, f = weights.Lower(), l = weights.Length();
+        int i3 = i2 - f;
+        ReadOnlySpan<double> wg = weights.AsSpan(); // WG[f + x] -> WG[x]
 
-        for (i = I1 - f; i < I3; i++)
+        for (i = i1 - f; i < i3; i++)
         {
-            if (WG[(i % l)] != WG[((i + 1) % l)])
+            if (wg[(i % l)] != wg[((i + 1) % l)])
             {
                 return true;
             }
@@ -798,39 +802,39 @@ public static partial class BSplCLib
     public static int MaxDegree() => 25;
 
     /// <summary>
-    /// Performs the de Boor algorithm at <paramref name="U"/> on the local poles (Degree + 1 poles of dimension
+    /// Performs the de Boor algorithm at <paramref name="u"/> on the local poles (Degree + 1 poles of dimension
     /// Dimension) with the 2 * Degree local knots; the value is left in the first pole.
     /// </summary>
-    public static void Eval(double U, int Degree, ReadOnlySpan<double> Knots, int Dimension, Span<double> Poles)
+    public static void Eval(double u, int degree, ReadOnlySpan<double> Knots, int dimension, Span<double> Poles)
     {
-        int step, i, Dms, Dm1, Dpi, Sti;
-        double X, Y;
+        int step, i, dms, dm1, dpi, sti;
+        double x, y;
         int poles;
         ReadOnlySpan<double> knots = Knots;
-        Dm1 = Dms = Degree;
-        Dm1--;
-        Dms++;
-        switch (Dimension)
+        dm1 = dms = degree;
+        dm1--;
+        dms++;
+        switch (dimension)
         {
 
             case 1:
                 {
 
-                    for (step = -1; step < Dm1; step++)
+                    for (step = -1; step < dm1; step++)
                     {
-                        Dms--;
+                        dms--;
                         poles = 0;
-                        Dpi = Dm1;
-                        Sti = step;
+                        dpi = dm1;
+                        sti = step;
 
-                        for (i = 0; i < Dms; i++)
+                        for (i = 0; i < dms; i++)
                         {
-                            Dpi++;
-                            Sti++;
-                            X = (knots[Dpi] - U) / (knots[Dpi] - knots[Sti]);
-                            Y = 1 - X;
-                            Poles[poles + 0] *= X;
-                            Poles[poles + 0] += Y * Poles[poles + 1];
+                            dpi++;
+                            sti++;
+                            x = (knots[dpi] - u) / (knots[dpi] - knots[sti]);
+                            y = 1 - x;
+                            Poles[poles + 0] *= x;
+                            Poles[poles + 0] += y * Poles[poles + 1];
                             poles += 1;
                         }
                     }
@@ -839,23 +843,23 @@ public static partial class BSplCLib
             case 2:
                 {
 
-                    for (step = -1; step < Dm1; step++)
+                    for (step = -1; step < dm1; step++)
                     {
-                        Dms--;
+                        dms--;
                         poles = 0;
-                        Dpi = Dm1;
-                        Sti = step;
+                        dpi = dm1;
+                        sti = step;
 
-                        for (i = 0; i < Dms; i++)
+                        for (i = 0; i < dms; i++)
                         {
-                            Dpi++;
-                            Sti++;
-                            X = (knots[Dpi] - U) / (knots[Dpi] - knots[Sti]);
-                            Y = 1 - X;
-                            Poles[poles + 0] *= X;
-                            Poles[poles + 0] += Y * Poles[poles + 2];
-                            Poles[poles + 1] *= X;
-                            Poles[poles + 1] += Y * Poles[poles + 3];
+                            dpi++;
+                            sti++;
+                            x = (knots[dpi] - u) / (knots[dpi] - knots[sti]);
+                            y = 1 - x;
+                            Poles[poles + 0] *= x;
+                            Poles[poles + 0] += y * Poles[poles + 2];
+                            Poles[poles + 1] *= x;
+                            Poles[poles + 1] += y * Poles[poles + 3];
                             poles += 2;
                         }
                     }
@@ -864,25 +868,25 @@ public static partial class BSplCLib
             case 3:
                 {
 
-                    for (step = -1; step < Dm1; step++)
+                    for (step = -1; step < dm1; step++)
                     {
-                        Dms--;
+                        dms--;
                         poles = 0;
-                        Dpi = Dm1;
-                        Sti = step;
+                        dpi = dm1;
+                        sti = step;
 
-                        for (i = 0; i < Dms; i++)
+                        for (i = 0; i < dms; i++)
                         {
-                            Dpi++;
-                            Sti++;
-                            X = (knots[Dpi] - U) / (knots[Dpi] - knots[Sti]);
-                            Y = 1 - X;
-                            Poles[poles + 0] *= X;
-                            Poles[poles + 0] += Y * Poles[poles + 3];
-                            Poles[poles + 1] *= X;
-                            Poles[poles + 1] += Y * Poles[poles + 4];
-                            Poles[poles + 2] *= X;
-                            Poles[poles + 2] += Y * Poles[poles + 5];
+                            dpi++;
+                            sti++;
+                            x = (knots[dpi] - u) / (knots[dpi] - knots[sti]);
+                            y = 1 - x;
+                            Poles[poles + 0] *= x;
+                            Poles[poles + 0] += y * Poles[poles + 3];
+                            Poles[poles + 1] *= x;
+                            Poles[poles + 1] += y * Poles[poles + 4];
+                            Poles[poles + 2] *= x;
+                            Poles[poles + 2] += y * Poles[poles + 5];
                             poles += 3;
                         }
                     }
@@ -891,27 +895,27 @@ public static partial class BSplCLib
             case 4:
                 {
 
-                    for (step = -1; step < Dm1; step++)
+                    for (step = -1; step < dm1; step++)
                     {
-                        Dms--;
+                        dms--;
                         poles = 0;
-                        Dpi = Dm1;
-                        Sti = step;
+                        dpi = dm1;
+                        sti = step;
 
-                        for (i = 0; i < Dms; i++)
+                        for (i = 0; i < dms; i++)
                         {
-                            Dpi++;
-                            Sti++;
-                            X = (knots[Dpi] - U) / (knots[Dpi] - knots[Sti]);
-                            Y = 1 - X;
-                            Poles[poles + 0] *= X;
-                            Poles[poles + 0] += Y * Poles[poles + 4];
-                            Poles[poles + 1] *= X;
-                            Poles[poles + 1] += Y * Poles[poles + 5];
-                            Poles[poles + 2] *= X;
-                            Poles[poles + 2] += Y * Poles[poles + 6];
-                            Poles[poles + 3] *= X;
-                            Poles[poles + 3] += Y * Poles[poles + 7];
+                            dpi++;
+                            sti++;
+                            x = (knots[dpi] - u) / (knots[dpi] - knots[sti]);
+                            y = 1 - x;
+                            Poles[poles + 0] *= x;
+                            Poles[poles + 0] += y * Poles[poles + 4];
+                            Poles[poles + 1] *= x;
+                            Poles[poles + 1] += y * Poles[poles + 5];
+                            Poles[poles + 2] *= x;
+                            Poles[poles + 2] += y * Poles[poles + 6];
+                            Poles[poles + 3] *= x;
+                            Poles[poles + 3] += y * Poles[poles + 7];
                             poles += 4;
                         }
                     }
@@ -921,26 +925,26 @@ public static partial class BSplCLib
                 {
                     int k;
 
-                    for (step = -1; step < Dm1; step++)
+                    for (step = -1; step < dm1; step++)
                     {
-                        Dms--;
+                        dms--;
                         poles = 0;
-                        Dpi = Dm1;
-                        Sti = step;
+                        dpi = dm1;
+                        sti = step;
 
-                        for (i = 0; i < Dms; i++)
+                        for (i = 0; i < dms; i++)
                         {
-                            Dpi++;
-                            Sti++;
-                            X = (knots[Dpi] - U) / (knots[Dpi] - knots[Sti]);
-                            Y = 1 - X;
+                            dpi++;
+                            sti++;
+                            x = (knots[dpi] - u) / (knots[dpi] - knots[sti]);
+                            y = 1 - x;
 
-                            for (k = 0; k < Dimension; k++)
+                            for (k = 0; k < dimension; k++)
                             {
-                                Poles[poles + k] *= X;
-                                Poles[poles + k] += Y * Poles[poles + k + Dimension];
+                                Poles[poles + k] *= x;
+                                Poles[poles + k] += y * Poles[poles + k + dimension];
                             }
-                            poles += Dimension;
+                            poles += dimension;
                         }
                     }
                     break;
@@ -949,12 +953,12 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Performs the de Boor scheme at <paramref name="U"/> to depth <paramref name="Depth"/> on poles stored
+    /// Performs the de Boor scheme at <paramref name="u"/> to depth <paramref name="depth"/> on poles stored
     /// alternately in even positions (see <see cref="BuildBoor"/>), with the local knots of
     /// <see cref="BuildKnots"/>; the intermediate values fill the odd positions. Used for knot insertion.
     /// </summary>
-    public static void BoorScheme(double U, int Degree, ReadOnlySpan<double> Knots, int Dimension, Span<double> Poles,
-                                  int Depth, int Length)
+    public static void BoorScheme(double u, int degree, ReadOnlySpan<double> Knots, int dimension, Span<double> poles,
+                                  int depth, int length)
     {
         //
         // Compute the values
@@ -985,27 +989,27 @@ public static partial class BSplCLib
 
         int i, k, step;
         ReadOnlySpan<double> knots = Knots;
-        int pole, firstpole = -2 * Dimension; // indexes in Poles
+        int pole, firstpole = -2 * dimension; // indexes in Poles
         // the steps of recursion
 
-        for (step = 0; step < Depth; step++)
+        for (step = 0; step < depth; step++)
         {
-            firstpole += Dimension;
+            firstpole += dimension;
             pole = firstpole;
             // compute the new row of poles
 
-            for (i = step; i < Length; i++)
+            for (i = step; i < length; i++)
             {
-                pole += 2 * Dimension;
+                pole += 2 * dimension;
                 // coefficient
-                double X = (knots[i + Degree - step] - U) / (knots[i + Degree - step] - knots[i]);
-                double Y = 1.0 - X;
+                double x = (knots[i + degree - step] - u) / (knots[i + degree - step] - knots[i]);
+                double y = 1.0 - x;
                 // Value
                 // P(i,j) = X * P(i-1,j) + (1-X) * P(i-1,j+1)
 
-                for (k = 0; k < Dimension; k++)
+                for (k = 0; k < dimension; k++)
                 {
-                    Poles[pole + k] = X * Poles[pole + k - Dimension] + Y * Poles[pole + k + Dimension];
+                    poles[pole + k] = x * poles[pole + k - dimension] + y * poles[pole + k + dimension];
                 }
             }
         }
@@ -1013,30 +1017,30 @@ public static partial class BSplCLib
 
     /// <summary>
     /// The de Boor scheme reverted, for knot removal: computes the poles before insertion from the poles after
-    /// insertion. Returns false if the removal is not possible within <paramref name="Tolerance"/>.
+    /// insertion. Returns false if the removal is not possible within <paramref name="tolerance"/>.
     /// </summary>
-    public static bool AntiBoorScheme(double U, int Degree, ReadOnlySpan<double> Knots, int Dimension,
-                                      Span<double> Poles, int Depth, int Length, double Tolerance)
+    public static bool AntiBoorScheme(double u, int degree, ReadOnlySpan<double> Knots, int dimension,
+                                      Span<double> poles, int depth, int length, double tolerance)
     {
         // do the Boor scheme reverted.
 
         int i, k, step, half_length;
         ReadOnlySpan<double> knots = Knots;
-        double z, X, Y;
-        int pole, firstpole = (Depth - 1) * Dimension; // indexes in Poles
+        double z, x, y;
+        int pole, firstpole = (depth - 1) * dimension; // indexes in Poles
 
         // Test the special case length = 1
         // only verification of the central point
 
-        if (Length == 1)
+        if (length == 1)
         {
-            X = (knots[Degree] - U) / (knots[Degree] - knots[0]);
-            Y = 1.0 - X;
+            x = (knots[degree] - u) / (knots[degree] - knots[0]);
+            y = 1.0 - x;
 
-            for (k = 0; k < Dimension; k++)
+            for (k = 0; k < dimension; k++)
             {
-                z = X * Poles[firstpole + k] + Y * Poles[firstpole + k + 2 * Dimension];
-                if (Math.Abs(z - Poles[firstpole + k + Dimension]) > Tolerance)
+                z = x * poles[firstpole + k] + y * poles[firstpole + k + 2 * dimension];
+                if (Math.Abs(z - poles[firstpole + k + dimension]) > tolerance)
                 {
                     return false;
                 }
@@ -1047,52 +1051,52 @@ public static partial class BSplCLib
         // General case
         // the steps of recursion
 
-        for (step = Depth - 1; step >= 0; step--)
+        for (step = depth - 1; step >= 0; step--)
         {
-            firstpole -= Dimension;
+            firstpole -= dimension;
             pole = firstpole;
 
             // first step from left to right
 
-            for (i = step; i < Length - 1; i++)
+            for (i = step; i < length - 1; i++)
             {
-                pole += 2 * Dimension;
+                pole += 2 * dimension;
 
-                X = (knots[i + Degree - step] - U) / (knots[i + Degree - step] - knots[i]);
-                Y = 1.0 - X;
+                x = (knots[i + degree - step] - u) / (knots[i + degree - step] - knots[i]);
+                y = 1.0 - x;
 
-                for (k = 0; k < Dimension; k++)
+                for (k = 0; k < dimension; k++)
                 {
-                    Poles[pole + k + Dimension] = (Poles[pole + k] - X * Poles[pole + k - Dimension]) / Y;
+                    poles[pole + k + dimension] = (poles[pole + k] - x * poles[pole + k - dimension]) / y;
                 }
             }
 
             // second step from right to left
-            pole += 4 * Dimension;
-            half_length = (Length - 1 + step) / 2;
+            pole += 4 * dimension;
+            half_length = (length - 1 + step) / 2;
             //
             // only do half of the way from right to left
             // otherwise it start degenerating because of
             // overflows
             //
 
-            for (i = Length - 1; i > half_length; i--)
+            for (i = length - 1; i > half_length; i--)
             {
-                pole -= 2 * Dimension;
+                pole -= 2 * dimension;
 
                 // coefficient
-                X = (knots[i + Degree - step] - U) / (knots[i + Degree - step] - knots[i]);
-                Y = 1.0 - X;
+                x = (knots[i + degree - step] - u) / (knots[i + degree - step] - knots[i]);
+                y = 1.0 - x;
 
-                for (k = 0; k < Dimension; k++)
+                for (k = 0; k < dimension; k++)
                 {
-                    z = (Poles[pole + k] - Y * Poles[pole + k + Dimension]) / X;
-                    if (Math.Abs(z - Poles[pole + k - Dimension]) > Tolerance)
+                    z = (poles[pole + k] - y * poles[pole + k + dimension]) / x;
+                    if (Math.Abs(z - poles[pole + k - dimension]) > tolerance)
                     {
                         return false;
                     }
-                    Poles[pole + k - Dimension] += z;
-                    Poles[pole + k - Dimension] /= 2.0;
+                    poles[pole + k - dimension] += z;
+                    poles[pole + k - dimension] /= 2.0;
                 }
             }
         }
@@ -1100,77 +1104,77 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Computes the poles of the derivatives up to <paramref name="Order"/> of the local B-spline, in place
+    /// Computes the poles of the derivatives up to <paramref name="order"/> of the local B-spline, in place
     /// (Length poles of dimension Dimension).
     /// </summary>
-    public static void Derivative(int Degree, ReadOnlySpan<double> Knots, int Dimension, int Length, int Order,
-                                  Span<double> Poles)
+    public static void Derivative(int degree, ReadOnlySpan<double> knots, int dimension, int length, int order,
+                                  Span<double> poles)
     {
-        int i, k, step, span = Degree;
-        ReadOnlySpan<double> knot = Knots;
+        int i, k, step, span = degree;
+        ReadOnlySpan<double> knot = knots;
 
-        for (step = 1; step <= Order; step++)
+        for (step = 1; step <= order; step++)
         {
             int pole = 0;
 
-            for (i = step; i < Length; i++)
+            for (i = step; i < length; i++)
             {
                 double coef = -span / (knot[i + span] - knot[i]);
 
-                for (k = 0; k < Dimension; k++)
+                for (k = 0; k < dimension; k++)
                 {
-                    Poles[pole + k] -= Poles[pole + k + Dimension];
-                    Poles[pole + k] *= coef;
+                    poles[pole + k] -= poles[pole + k + dimension];
+                    poles[pole + k] *= coef;
                 }
-                pole += Dimension;
+                pole += dimension;
             }
             span--;
         }
     }
 
     /// <summary>
-    /// Performs the Bohm algorithm at <paramref name="U"/>: computes the value and the derivatives up to
-    /// <paramref name="N"/> of the local B-spline, in place in <paramref name="Poles"/> (value, first derivative,
+    /// Performs the Bohm algorithm at <paramref name="u"/>: computes the value and the derivatives up to
+    /// <paramref name="n"/> of the local B-spline, in place in <paramref name="poles"/> (value, first derivative,
     /// ..., each Dimension values). Derivatives above Degree are not computed.
     /// </summary>
-    public static void Bohm(double U, int Degree, int N, ReadOnlySpan<double> Knots, int Dimension, Span<double> Poles)
+    public static void Bohm(double u, int degree, int n, ReadOnlySpan<double> knots, int dimension, Span<double> poles)
     {
         // First phase independent of U, compute the poles of the derivatives
-        int i, j, iDim, min, Dmi, DDmi, jDmi, Degm1;
-        ReadOnlySpan<double> knot = Knots;
-        Span<double> P = Poles;
+        int i, j, iDim, min, dmi, dDmi, jDmi, degm1;
+        ReadOnlySpan<double> knot = knots;
+        Span<double> p = poles;
         double coef;
         int pole, tbis, psDD, psDDmDim; // indexes in Poles
         const int psav = 0;
-        if (N < Degree)
+        if (n < degree)
         {
-            min = N;
+            min = n;
         }
         else
         {
-            min = Degree;
+            min = degree;
         }
-        Degm1 = Degree - 1;
-        DDmi = (Degree << 1) + 1;
-        switch (Dimension)
+        degm1 = degree - 1;
+        dDmi = (degree << 1) + 1;
+        switch (dimension)
         {
             case 1:
                 {
-                    psDD = psav + Degree;
+                    psDD = psav + degree;
                     psDDmDim = psDD - 1;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        DDmi--;
+                        dDmi--;
                         pole = psDD;
                         tbis = psDDmDim;
-                        jDmi = DDmi;
+                        jDmi = dDmi;
 
-                        for (j = Degm1; j >= i; j--)
+                        for (j = degm1; j >= i; j--)
                         {
                             jDmi--;
-                            P[pole] -= P[tbis];
-                            P[pole] = (knot[jDmi] == knot[j]) ? 0.0 : P[pole] / (knot[jDmi] - knot[j]);
+                            p[pole] -= p[tbis];
+                            p[pole] = (knot[jDmi] == knot[j]) ? 0.0 : p[pole] / (knot[jDmi] - knot[j]);
                             pole--;
                             tbis--;
                         }
@@ -1178,56 +1182,56 @@ public static partial class BSplCLib
                     // Second phase, dependant of U
                     iDim = -1;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
                         iDim += 1;
                         pole = psav + iDim;
                         tbis = pole + 1;
-                        coef = U - knot[i];
+                        coef = u - knot[i];
 
                         for (j = i; j >= 0; j--)
                         {
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole--;
                             tbis--;
                         }
                     }
                     // multiply by the degrees
-                    coef = Degree;
-                    Dmi = Degree;
+                    coef = degree;
+                    dmi = degree;
                     pole = psav + 1;
 
                     for (i = 1; i <= min; i++)
                     {
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        Dmi--;
-                        coef *= Dmi;
+                        dmi--;
+                        coef *= dmi;
                     }
                     break;
                 }
             case 2:
                 {
-                    psDD = psav + (Degree << 1);
+                    psDD = psav + (degree << 1);
                     psDDmDim = psDD - 2;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        DDmi--;
+                        dDmi--;
                         pole = psDD;
                         tbis = psDDmDim;
-                        jDmi = DDmi;
+                        jDmi = dDmi;
 
-                        for (j = Degm1; j >= i; j--)
+                        for (j = degm1; j >= i; j--)
                         {
                             jDmi--;
                             coef = (knot[jDmi] == knot[j]) ? 0.0 : 1.0 / (knot[jDmi] - knot[j]);
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole -= 3;
                             tbis -= 3;
                         }
@@ -1235,65 +1239,65 @@ public static partial class BSplCLib
                     // Second phase, dependant of U
                     iDim = -2;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
                         iDim += 2;
                         pole = psav + iDim;
                         tbis = pole + 2;
-                        coef = U - knot[i];
+                        coef = u - knot[i];
 
                         for (j = i; j >= 0; j--)
                         {
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole -= 3;
                             tbis -= 3;
                         }
                     }
                     // multiply by the degrees
-                    coef = Degree;
-                    Dmi = Degree;
+                    coef = degree;
+                    dmi = degree;
                     pole = psav + 2;
 
                     for (i = 1; i <= min; i++)
                     {
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        Dmi--;
-                        coef *= Dmi;
+                        dmi--;
+                        coef *= dmi;
                     }
                     break;
                 }
             case 3:
                 {
-                    psDD = psav + (Degree << 1) + Degree;
+                    psDD = psav + (degree << 1) + degree;
                     psDDmDim = psDD - 3;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        DDmi--;
+                        dDmi--;
                         pole = psDD;
                         tbis = psDDmDim;
-                        jDmi = DDmi;
+                        jDmi = dDmi;
 
-                        for (j = Degm1; j >= i; j--)
+                        for (j = degm1; j >= i; j--)
                         {
                             jDmi--;
                             coef = (knot[jDmi] == knot[j]) ? 0.0 : 1.0 / (knot[jDmi] - knot[j]);
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole -= 5;
                             tbis -= 5;
                         }
@@ -1301,74 +1305,74 @@ public static partial class BSplCLib
                     // Second phase, dependant of U
                     iDim = -3;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
                         iDim += 3;
                         pole = psav + iDim;
                         tbis = pole + 3;
-                        coef = U - knot[i];
+                        coef = u - knot[i];
 
                         for (j = i; j >= 0; j--)
                         {
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole -= 5;
                             tbis -= 5;
                         }
                     }
                     // multiply by the degrees
-                    coef = Degree;
-                    Dmi = Degree;
+                    coef = degree;
+                    dmi = degree;
                     pole = psav + 3;
 
                     for (i = 1; i <= min; i++)
                     {
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        Dmi--;
-                        coef *= Dmi;
+                        dmi--;
+                        coef *= dmi;
                     }
                     break;
                 }
             case 4:
                 {
-                    psDD = psav + (Degree << 2);
+                    psDD = psav + (degree << 2);
                     psDDmDim = psDD - 4;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        DDmi--;
+                        dDmi--;
                         pole = psDD;
                         tbis = psDDmDim;
-                        jDmi = DDmi;
+                        jDmi = dDmi;
 
-                        for (j = Degm1; j >= i; j--)
+                        for (j = degm1; j >= i; j--)
                         {
                             jDmi--;
                             coef = (knot[jDmi] == knot[j]) ? 0.0 : 1.0 / (knot[jDmi] - knot[j]);
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole++;
                             tbis++;
-                            P[pole] -= P[tbis];
-                            P[pole] *= coef;
+                            p[pole] -= p[tbis];
+                            p[pole] *= coef;
                             pole -= 7;
                             tbis -= 7;
                         }
@@ -1376,117 +1380,117 @@ public static partial class BSplCLib
                     // Second phase, dependant of U
                     iDim = -4;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
                         iDim += 4;
                         pole = psav + iDim;
                         tbis = pole + 4;
-                        coef = U - knot[i];
+                        coef = u - knot[i];
 
                         for (j = i; j >= 0; j--)
                         {
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole++;
                             tbis++;
-                            P[pole] += coef * P[tbis];
+                            p[pole] += coef * p[tbis];
                             pole -= 7;
                             tbis -= 7;
                         }
                     }
                     // multiply by the degrees
-                    coef = Degree;
-                    Dmi = Degree;
+                    coef = degree;
+                    dmi = degree;
                     pole = psav + 4;
 
                     for (i = 1; i <= min; i++)
                     {
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        P[pole] *= coef;
+                        p[pole] *= coef;
                         pole++;
-                        Dmi--;
-                        coef *= Dmi;
+                        dmi--;
+                        coef *= dmi;
                     }
                     break;
                 }
             default:
                 {
                     int k;
-                    int Dim2 = Dimension << 1;
-                    psDD = psav + Degree * Dimension;
-                    psDDmDim = psDD - Dimension;
+                    int dim2 = dimension << 1;
+                    psDD = psav + degree * dimension;
+                    psDDmDim = psDD - dimension;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        DDmi--;
+                        dDmi--;
                         pole = psDD;
                         tbis = psDDmDim;
-                        jDmi = DDmi;
+                        jDmi = dDmi;
 
-                        for (j = Degm1; j >= i; j--)
+                        for (j = degm1; j >= i; j--)
                         {
                             jDmi--;
                             coef = (knot[jDmi] == knot[j]) ? 0.0 : 1.0 / (knot[jDmi] - knot[j]);
 
-                            for (k = 0; k < Dimension; k++)
+                            for (k = 0; k < dimension; k++)
                             {
-                                P[pole] -= P[tbis];
-                                P[pole] *= coef;
+                                p[pole] -= p[tbis];
+                                p[pole] *= coef;
                                 pole++;
                                 tbis++;
                             }
-                            pole -= Dim2;
-                            tbis -= Dim2;
+                            pole -= dim2;
+                            tbis -= dim2;
                         }
                     }
                     // Second phase, dependant of U
-                    iDim = -Dimension;
+                    iDim = -dimension;
 
-                    for (i = 0; i < Degree; i++)
+                    for (i = 0; i < degree; i++)
                     {
-                        iDim += Dimension;
+                        iDim += dimension;
                         pole = psav + iDim;
-                        tbis = pole + Dimension;
-                        coef = U - knot[i];
+                        tbis = pole + dimension;
+                        coef = u - knot[i];
 
                         for (j = i; j >= 0; j--)
                         {
 
-                            for (k = 0; k < Dimension; k++)
+                            for (k = 0; k < dimension; k++)
                             {
-                                P[pole] += coef * P[tbis];
+                                p[pole] += coef * p[tbis];
                                 pole++;
                                 tbis++;
                             }
-                            pole -= Dim2;
-                            tbis -= Dim2;
+                            pole -= dim2;
+                            tbis -= dim2;
                         }
                     }
                     // multiply by the degrees
-                    coef = Degree;
-                    Dmi = Degree;
-                    pole = psav + Dimension;
+                    coef = degree;
+                    dmi = degree;
+                    pole = psav + dimension;
 
                     for (i = 1; i <= min; i++)
                     {
 
-                        for (k = 0; k < Dimension; k++)
+                        for (k = 0; k < dimension; k++)
                         {
-                            P[pole] *= coef;
+                            p[pole] *= coef;
                             pole++;
                         }
-                        Dmi--;
-                        coef *= Dmi;
+                        dmi--;
+                        coef *= dmi;
                     }
                     break;
                 }
@@ -1503,22 +1507,22 @@ public static partial class BSplCLib
     public static int MaxUnitWeightsSize() => 2049;
 
     /// <summary>
-    /// Stores in <paramref name="LK"/> the 2 * Degree knots around the knot <paramref name="Index"/> needed for
-    /// the local evaluation of the span. Without <paramref name="Mults"/> the knots are flat knots.
+    /// Stores in <paramref name="lk"/> the 2 * Degree knots around the knot <paramref name="index"/> needed for
+    /// the local evaluation of the span. Without <paramref name="mults"/> the knots are flat knots.
     /// </summary>
-    public static void BuildKnots(int Degree, int Index, bool Periodic, NCollection_Array1<double> Knots,
-                                  NCollection_Array1<int>? Mults, Span<double> LK)
+    public static void BuildKnots(int degree, int index, bool periodic, NCollection_Array1<double> knots,
+                                  NCollection_Array1<int>? mults, Span<double> lk)
     {
-        int KLower = Knots.Lower();
-        ReadOnlySpan<double> pkn = Knots.AsSpan(); // pkn[i - KLower]
-        Span<double> knot = LK;
-        if (Mults == null)
+        int kLower = knots.Lower();
+        ReadOnlySpan<double> pkn = knots.AsSpan(); // pkn[i - KLower]
+        Span<double> knot = lk;
+        if (mults == null)
         {
-            switch (Degree)
+            switch (degree)
             {
                 case 1:
                     {
-                        int j = Index - KLower;
+                        int j = index - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1526,7 +1530,7 @@ public static partial class BSplCLib
                     }
                 case 2:
                     {
-                        int j = Index - 1 - KLower;
+                        int j = index - 1 - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1538,7 +1542,7 @@ public static partial class BSplCLib
                     }
                 case 3:
                     {
-                        int j = Index - 2 - KLower;
+                        int j = index - 2 - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1554,7 +1558,7 @@ public static partial class BSplCLib
                     }
                 case 4:
                     {
-                        int j = Index - 3 - KLower;
+                        int j = index - 3 - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1574,7 +1578,7 @@ public static partial class BSplCLib
                     }
                 case 5:
                     {
-                        int j = Index - 4 - KLower;
+                        int j = index - 4 - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1598,7 +1602,7 @@ public static partial class BSplCLib
                     }
                 case 6:
                     {
-                        int j = Index - 5 - KLower;
+                        int j = index - 5 - kLower;
                         knot[0] = pkn[j];
                         j++;
                         knot[1] = pkn[j];
@@ -1627,10 +1631,10 @@ public static partial class BSplCLib
                 default:
                     {
                         int i, j;
-                        int Deg2 = Degree << 1;
-                        j = Index - Degree - KLower;
+                        int deg2 = degree << 1;
+                        j = index - degree - kLower;
 
-                        for (i = 0; i < Deg2; i++)
+                        for (i = 0; i < deg2; i++)
                         {
                             j++;
                             knot[i] = pkn[j];
@@ -1642,152 +1646,152 @@ public static partial class BSplCLib
         else
         {
             int i;
-            int Deg1 = Degree - 1;
-            int KUpper = Knots.Upper();
-            int MLower = Mults.Lower();
-            int MUpper = Mults.Upper();
-            ReadOnlySpan<int> pmu = Mults.AsSpan(); // pmu[i - MLower]
+            int deg1 = degree - 1;
+            int kUpper = knots.Upper();
+            int mLower = mults.Lower();
+            int mUpper = mults.Upper();
+            ReadOnlySpan<int> pmu = mults.AsSpan(); // pmu[i - MLower]
             double dknot = 0;
-            int ilow = Index, mlow = 0;
-            int iupp = Index + 1, mupp = 0;
+            int ilow = index, mlow = 0;
+            int iupp = index + 1, mupp = 0;
             double loffset = 0.0, uoffset = 0.0;
             bool getlow = true, getupp = true;
-            if (Periodic)
+            if (periodic)
             {
-                dknot = pkn[KUpper - KLower] - pkn[0];
-                if (iupp > MUpper)
+                dknot = pkn[kUpper - kLower] - pkn[0];
+                if (iupp > mUpper)
                 {
-                    iupp = MLower + 1;
+                    iupp = mLower + 1;
                     uoffset = dknot;
                 }
             }
             // Find the knots around Index
 
-            for (i = 0; i < Degree; i++)
+            for (i = 0; i < degree; i++)
             {
                 if (getlow)
                 {
                     mlow++;
-                    if (mlow > pmu[ilow - MLower])
+                    if (mlow > pmu[ilow - mLower])
                     {
                         mlow = 1;
                         ilow--;
-                        getlow = (ilow >= MLower);
-                        if (Periodic && !getlow)
+                        getlow = (ilow >= mLower);
+                        if (periodic && !getlow)
                         {
-                            ilow = MUpper - 1;
+                            ilow = mUpper - 1;
                             loffset = dknot;
                             getlow = true;
                         }
                     }
                     if (getlow)
                     {
-                        knot[Deg1 - i] = pkn[ilow - KLower] - loffset;
+                        knot[deg1 - i] = pkn[ilow - kLower] - loffset;
                     }
                 }
                 if (getupp)
                 {
                     mupp++;
-                    if (mupp > pmu[iupp - MLower])
+                    if (mupp > pmu[iupp - mLower])
                     {
                         mupp = 1;
                         iupp++;
-                        getupp = (iupp <= MUpper);
-                        if (Periodic && !getupp)
+                        getupp = (iupp <= mUpper);
+                        if (periodic && !getupp)
                         {
-                            iupp = MLower + 1;
+                            iupp = mLower + 1;
                             uoffset = dknot;
                             getupp = true;
                         }
                     }
                     if (getupp)
                     {
-                        knot[Degree + i] = pkn[iupp - KLower] + uoffset;
+                        knot[degree + i] = pkn[iupp - kLower] + uoffset;
                     }
                 }
             }
         }
     }
 
-    /// <summary>Returns the index of the first pole of the span starting at the knot <paramref name="Index"/>.</summary>
-    public static int PoleIndex(int Degree, int Index, bool Periodic, NCollection_Array1<int> Mults)
+    /// <summary>Returns the index of the first pole of the span starting at the knot <paramref name="index"/>.</summary>
+    public static int PoleIndex(int degree, int index, bool periodic, NCollection_Array1<int> mults)
     {
         int i, pindex = 0;
 
-        for (i = Mults.Lower(); i <= Index; i++)
+        for (i = mults.Lower(); i <= index; i++)
         {
-            pindex += Mults[i];
+            pindex += mults[i];
         }
-        if (Periodic)
+        if (periodic)
         {
-            pindex -= Mults[Mults.Lower()];
+            pindex -= mults[mults.Lower()];
         }
         else
         {
-            pindex -= Degree + 1;
+            pindex -= degree + 1;
         }
 
         return pindex;
     }
 
     /// <summary>
-    /// Copies in <paramref name="LP"/> the Length + 1 poles starting at pole <paramref name="Index"/>, in the even
+    /// Copies in <paramref name="lp"/> the Length + 1 poles starting at pole <paramref name="index"/>, in the even
     /// positions (one free slot of Dimension values between two poles), for <see cref="BoorScheme"/>. Wraps around
     /// the poles.
     /// </summary>
-    public static void BuildBoor(int Index, int Length, int Dimension, NCollection_Array1<double> Poles, Span<double> LP)
+    public static void BuildBoor(int index, int length, int dimension, NCollection_Array1<double> Poles, Span<double> lp)
     {
         int poles = 0;
-        int i, k, ip = Poles.Lower() + Index * Dimension;
+        int i, k, ip = Poles.Lower() + index * dimension;
 
-        for (i = 0; i < Length + 1; i++)
+        for (i = 0; i < length + 1; i++)
         {
 
-            for (k = 0; k < Dimension; k++)
+            for (k = 0; k < dimension; k++)
             {
-                LP[poles + k] = Poles[ip];
+                lp[poles + k] = Poles[ip];
                 ip++;
                 if (ip > Poles.Upper())
                 {
                     ip = Poles.Lower();
                 }
             }
-            poles += 2 * Dimension;
+            poles += 2 * dimension;
         }
     }
 
-    /// <summary>The index in the Boor scheme array of the pole <paramref name="Index"/> (from 0 to Length + Depth).</summary>
-    public static int BoorIndex(int Index, int Length, int Depth)
+    /// <summary>The index in the Boor scheme array of the pole <paramref name="index"/> (from 0 to Length + Depth).</summary>
+    public static int BoorIndex(int index, int length, int depth)
     {
-        if (Index <= Depth)
+        if (index <= depth)
         {
-            return Index;
+            return index;
         }
-        if (Index <= Length)
+        if (index <= length)
         {
-            return 2 * Index - Depth;
+            return 2 * index - depth;
         }
-        return Length + Index - Depth;
+        return length + index - depth;
     }
 
     /// <summary>
-    /// Copies the pole <paramref name="Index"/> of the Boor scheme array <paramref name="LocPoles"/> into
-    /// <paramref name="Pole"/> at <paramref name="Position"/>, which is advanced (and wraps around).
+    /// Copies the pole <paramref name="index"/> of the Boor scheme array <paramref name="locPoles"/> into
+    /// <paramref name="Pole"/> at <paramref name="position"/>, which is advanced (and wraps around).
     /// </summary>
-    public static void GetPole(int Index, int Length, int Depth, int Dimension, Span<double> LocPoles,
-                               ref int Position, NCollection_Array1<double> Pole)
+    public static void GetPole(int index, int length, int depth, int dimension, Span<double> locPoles,
+                               ref int position, NCollection_Array1<double> Pole)
     {
         int k;
-        int pole = BoorIndex(Index, Length, Depth) * Dimension;
+        int pole = BoorIndex(index, length, depth) * dimension;
 
-        for (k = 0; k < Dimension; k++)
+        for (k = 0; k < dimension; k++)
         {
-            Pole[Position] = LocPoles[pole + k];
-            Position++;
+            Pole[position] = locPoles[pole + k];
+            position++;
         }
-        if (Position > Pole.Upper())
+        if (position > Pole.Upper())
         {
-            Position = Pole.Lower();
+            position = Pole.Lower();
         }
     }
 
@@ -1797,72 +1801,72 @@ public static partial class BSplCLib
     /// Returns false if the knots to add are not increasing or are outside the range. With Add false, the
     /// multiplicities of existing knots are set, not increased.
     /// </summary>
-    public static bool PrepareInsertKnots(int Degree, bool Periodic, NCollection_Array1<double> Knots,
-                                          NCollection_Array1<int> Mults, NCollection_Array1<double> AddKnots,
-                                          NCollection_Array1<int>? AddMults, out int NbPoles, out int NbKnots,
-                                          double Tolerance, bool Add = true)
+    public static bool PrepareInsertKnots(int degree, bool periodic, NCollection_Array1<double> knots,
+                                          NCollection_Array1<int> mults, NCollection_Array1<double> addKnots,
+                                          NCollection_Array1<int>? addMults, out int nbPoles, out int nbKnots,
+                                          double tolerance, bool add = true)
     {
-        bool addflat = AddMults == null;
+        bool addflat = addMults == null;
         // Note: OCCT leaves NbPoles and NbKnots unchanged when it returns false
-        NbPoles = 0;
-        NbKnots = 0;
+        nbPoles = 0;
+        nbKnots = 0;
 
         int first, last;
-        if (Periodic)
+        if (periodic)
         {
-            first = Knots.Lower();
-            last = Knots.Upper();
+            first = knots.Lower();
+            last = knots.Upper();
         }
         else
         {
-            first = FirstUKnotIndex(Degree, Mults);
-            last = LastUKnotIndex(Degree, Mults);
+            first = FirstUKnotIndex(degree, mults);
+            last = LastUKnotIndex(degree, mults);
         }
-        double adeltaK1 = Knots[first] - AddKnots[AddKnots.Lower()];
-        double adeltaK2 = AddKnots[AddKnots.Upper()] - Knots[last];
-        if (adeltaK1 > Tolerance)
+        double adeltaK1 = knots[first] - addKnots[addKnots.Lower()];
+        double adeltaK2 = addKnots[addKnots.Upper()] - knots[last];
+        if (adeltaK1 > tolerance)
         {
             return false;
         }
-        if (adeltaK2 > Tolerance)
+        if (adeltaK2 > tolerance)
         {
             return false;
         }
 
         int sigma = 0, mult, amult;
-        NbKnots = 0;
-        int k = Knots.Lower() - 1;
-        int ak = AddKnots.Lower();
+        nbKnots = 0;
+        int k = knots.Lower() - 1;
+        int ak = addKnots.Lower();
 
-        if (Periodic && AddKnots.Length() > 1)
+        if (periodic && addKnots.Length() > 1)
         {
             // gka for case when segments was produced on full period only one knot
             // was added in the end of curve
-            if (Math.Abs(adeltaK1) <= gp.Resolution() && Math.Abs(adeltaK2) <= gp.Resolution())
+            if (Math.Abs(adeltaK1) <= Constants.Resolution() && Math.Abs(adeltaK2) <= Constants.Resolution())
             {
                 ak++;
             }
         }
 
-        int aLastKnotMult = Mults[Knots.Upper()];
-        double au, oldau = AddKnots[ak], Eps;
+        int lastKnotMult = mults[knots.Upper()];
+        double au, oldau = addKnots[ak], eps;
 
-        while (ak <= AddKnots.Upper())
+        while (ak <= addKnots.Upper())
         {
-            au = AddKnots[ak];
+            au = addKnots[ak];
             if (au < oldau)
             {
                 return false;
             }
             oldau = au;
 
-            Eps = Max(Tolerance, Epsilon(au));
+            eps = Max(tolerance, Epsilon(au));
 
-            while ((k < Knots.Upper()) && (Knots[k + 1] - au <= Eps))
+            while ((k < knots.Upper()) && (knots[k + 1] - au <= eps))
             {
                 k++;
-                NbKnots++;
-                sigma += Mults[k];
+                nbKnots++;
+                sigma += mults[k];
             }
 
             if (addflat)
@@ -1871,15 +1875,15 @@ public static partial class BSplCLib
             }
             else
             {
-                amult = Max(0, AddMults![ak]);
+                amult = Max(0, addMults![ak]);
             }
 
             // OCCT: with Add false, equal entries of AddKnots count once with the first one's multiplicity here, but
             // InsertKnots processes each of them, so the two can disagree on the result
-            while ((ak < AddKnots.Upper()) && (Math.Abs(au - AddKnots[ak + 1]) <= Eps))
+            while ((ak < addKnots.Upper()) && (Math.Abs(au - addKnots[ak + 1]) <= eps))
             {
                 ak++;
-                if (Add)
+                if (add)
                 {
                     if (addflat)
                     {
@@ -1887,33 +1891,33 @@ public static partial class BSplCLib
                     }
                     else
                     {
-                        amult += Max(0, AddMults![ak]);
+                        amult += Max(0, addMults![ak]);
                     }
                 }
             }
 
-            if (Math.Abs(au - Knots[k]) <= Eps)
+            if (Math.Abs(au - knots[k]) <= eps)
             {
                 // identic to existing knot
-                mult = Mults[k];
-                if (Add)
+                mult = mults[k];
+                if (add)
                 {
-                    if (mult + amult > Degree)
+                    if (mult + amult > degree)
                     {
-                        amult = Max(0, Degree - mult);
+                        amult = Max(0, degree - mult);
                     }
                     sigma += amult;
                 }
                 else if (amult > mult)
                 {
-                    if (amult > Degree)
+                    if (amult > degree)
                     {
-                        amult = Degree;
+                        amult = degree;
                     }
-                    if (k == Knots.Upper() && Periodic)
+                    if (k == knots.Upper() && periodic)
                     {
-                        aLastKnotMult = Max(amult, mult);
-                        sigma += 2 * (aLastKnotMult - mult);
+                        lastKnotMult = Max(amult, mult);
+                        sigma += 2 * (lastKnotMult - mult);
                     }
                     else
                     {
@@ -1936,11 +1940,11 @@ public static partial class BSplCLib
                 // not identic to existing knot
                 if (amult > 0)
                 {
-                    if (amult > Degree)
+                    if (amult > degree)
                     {
-                        amult = Degree;
+                        amult = degree;
                     }
-                    NbKnots++;
+                    nbKnots++;
                     sigma += amult;
                 }
             }
@@ -1949,110 +1953,110 @@ public static partial class BSplCLib
         }
 
         // count the last knots
-        while (k < Knots.Upper())
+        while (k < knots.Upper())
         {
             k++;
-            NbKnots++;
-            sigma += Mults[k];
+            nbKnots++;
+            sigma += mults[k];
         }
 
-        if (Periodic)
+        if (periodic)
         {
             // for periodic B-Spline the requirement is that multiplicities of the first
             // and last knots must be equal (see Geom_BSplineCurve constructor for
             // instance);
             // respectively AddMults() must meet this requirement if AddKnots() contains
             // knot(s) coincident with first or last
-            NbPoles = sigma - aLastKnotMult;
+            nbPoles = sigma - lastKnotMult;
         }
         else
         {
-            NbPoles = sigma - Degree - 1;
+            nbPoles = sigma - degree - 1;
         }
 
         return true;
     }
 
-    private static void Copy(int NbPoles, ref int OldFirst, NCollection_Array1<double> OldPoles, ref int NewFirst,
-                             NCollection_Array1<double> NewPoles)
+    private static void Copy(int nbPoles, ref int oldFirst, NCollection_Array1<double> oldPoles, ref int newFirst,
+                             NCollection_Array1<double> newPoles)
     {
         // reset the index in the range for periodicity
 
-        OldFirst =
-          OldPoles.Lower() + (OldFirst - OldPoles.Lower()) % (OldPoles.Upper() - OldPoles.Lower() + 1);
+        oldFirst =
+          oldPoles.Lower() + (oldFirst - oldPoles.Lower()) % (oldPoles.Upper() - oldPoles.Lower() + 1);
 
-        NewFirst =
-          NewPoles.Lower() + (NewFirst - NewPoles.Lower()) % (NewPoles.Upper() - NewPoles.Lower() + 1);
+        newFirst =
+          newPoles.Lower() + (newFirst - newPoles.Lower()) % (newPoles.Upper() - newPoles.Lower() + 1);
 
         // copy
         int i;
 
-        for (i = 1; i <= NbPoles; i++)
+        for (i = 1; i <= nbPoles; i++)
         {
-            NewPoles[NewFirst] = OldPoles[OldFirst];
-            OldFirst++;
-            if (OldFirst > OldPoles.Upper())
+            newPoles[newFirst] = oldPoles[oldFirst];
+            oldFirst++;
+            if (oldFirst > oldPoles.Upper())
             {
-                OldFirst = OldPoles.Lower();
+                oldFirst = oldPoles.Lower();
             }
-            NewFirst++;
-            if (NewFirst > NewPoles.Upper())
+            newFirst++;
+            if (newFirst > newPoles.Upper())
             {
-                NewFirst = NewPoles.Lower();
+                newFirst = newPoles.Lower();
             }
         }
     }
 
     /// <summary>
     /// Inserts the knots AddKnots (with AddMults, or multiplicity 1 each when null) in the curve of dimension
-    /// <paramref name="Dimension"/>; the new arrays must be sized with <see cref="PrepareInsertKnots"/>. Knots
+    /// <paramref name="dimension"/>; the new arrays must be sized with <see cref="PrepareInsertKnots"/>. Knots
     /// closer than Epsilon to an existing knot raise its multiplicity (Add) or set it (not Add); multiplicities
     /// never exceed Degree.
     /// </summary>
-    public static void InsertKnots(int Degree, bool Periodic, int Dimension, NCollection_Array1<double> Poles,
-                                   NCollection_Array1<double> Knots, NCollection_Array1<int> Mults,
-                                   NCollection_Array1<double> AddKnots, NCollection_Array1<int>? AddMults,
-                                   NCollection_Array1<double> NewPoles, NCollection_Array1<double> NewKnots,
-                                   NCollection_Array1<int> NewMults, double Tolerance, bool Add = true)
+    public static void InsertKnots(int degree, bool periodic, int dimension, NCollection_Array1<double> Poles,
+                                   NCollection_Array1<double> Knots, NCollection_Array1<int> mults,
+                                   NCollection_Array1<double> addKnots, NCollection_Array1<int>? addMults,
+                                   NCollection_Array1<double> newPoles, NCollection_Array1<double> newKnots,
+                                   NCollection_Array1<int> newMults, double tolerance, bool add = true)
     {
-        bool addflat = AddMults == null;
+        bool addflat = addMults == null;
 
         int i, k, mult, firstmult;
         int index, kn, curnk, curk;
         int p, np, curp, curnp, length, depth;
         double u;
         int need;
-        double Eps;
+        double eps;
 
         // -------------------
         // create local arrays
         // -------------------
         // Use stack-based allocation for small arrays (MaxDegree=25, typical Dimension=4)
-        int aKnotsSize = 2 * Degree;
-        int aPolesSize = (2 * Degree + 1) * Dimension;
-        Span<double> knots = aKnotsSize <= 64 ? stackalloc double[aKnotsSize] : new double[aKnotsSize];
-        Span<double> poles = aPolesSize <= 256 ? stackalloc double[aPolesSize] : new double[aPolesSize];
+        int knotsSize = 2 * degree;
+        int polesSize = (2 * degree + 1) * dimension;
+        Span<double> knots = knotsSize <= 64 ? stackalloc double[knotsSize] : new double[knotsSize];
+        Span<double> poles = polesSize <= 256 ? stackalloc double[polesSize] : new double[polesSize];
 
         //----------------------------
         // loop on the knots to insert
         //----------------------------
 
         curk = Knots.Lower() - 1;    // current position in Knots
-        curnk = NewKnots.Lower() - 1; // current position in NewKnots
+        curnk = newKnots.Lower() - 1; // current position in NewKnots
         curp = Poles.Lower();        // current position in Poles
-        curnp = NewPoles.Lower();     // current position in NewPoles
+        curnp = newPoles.Lower();     // current position in NewPoles
 
         // NewKnots, NewMults, NewPoles contains the current state of the curve
 
         // index is the first pole of the current curve for insertion schema
 
-        if (Periodic)
+        if (periodic)
         {
-            index = -Mults[Mults.Lower()];
+            index = -mults[mults.Lower()];
         }
         else
         {
-            index = -Degree - 1;
+            index = -degree - 1;
         }
 
         // on Periodic curves the first knot and the last knot are inserted later
@@ -2061,23 +2065,23 @@ public static partial class BSplCLib
 
         // kn current knot to insert in AddKnots
 
-        for (kn = AddKnots.Lower(); kn <= AddKnots.Upper(); kn++)
+        for (kn = addKnots.Lower(); kn <= addKnots.Upper(); kn++)
         {
 
-            u = AddKnots[kn];
-            Eps = Max(Tolerance, Epsilon(u));
+            u = addKnots[kn];
+            eps = Max(tolerance, Epsilon(u));
 
             //-----------------------------------
             // find the position in the old knots
             // and copy to the new knots
             //-----------------------------------
 
-            while (curk < Knots.Upper() && Knots[curk + 1] - u <= Eps)
+            while (curk < Knots.Upper() && Knots[curk + 1] - u <= eps)
             {
                 curk++;
                 curnk++;
-                NewKnots[curnk] = Knots[curk];
-                index += NewMults[curnk] = Mults[curk];
+                newKnots[curnk] = Knots[curk];
+                index += newMults[curnk] = mults[curk];
             }
 
             //-----------------------------------
@@ -2086,8 +2090,8 @@ public static partial class BSplCLib
             //-----------------------------------
 
             i = curnk + Knots.Upper() - curk;
-            NCollection_Array1<double> nknots = new(NewKnots, NewKnots.Lower(), NewKnots.Lower(), i);
-            NCollection_Array1<int> nmults = new(NewMults, NewMults.Lower(), NewMults.Lower(), i);
+            NCollection_Array1<double> nknots = new(newKnots, newKnots.Lower(), newKnots.Lower(), i);
+            NCollection_Array1<int> nmults = new(newMults, newMults.Lower(), newMults.Lower(), i);
 
             //-----------------------------------
             // copy enough knots
@@ -2098,25 +2102,25 @@ public static partial class BSplCLib
             i = curnk;
             mult = 0;
 
-            while (mult < Degree && k < Knots.Upper())
+            while (mult < degree && k < Knots.Upper())
             {
                 k++;
                 i++;
                 nknots[i] = Knots[k];
-                mult += nmults[i] = Mults[k];
+                mult += nmults[i] = mults[k];
             }
 
             // copy knots at the end for periodic curve
-            if (Periodic)
+            if (periodic)
             {
                 mult = 0;
                 k = Knots.Upper();
                 i = nknots.Upper();
 
-                while (mult < Degree && i > curnk)
+                while (mult < degree && i > curnk)
                 {
                     nknots[i] = Knots[k];
-                    mult += nmults[i] = Mults[k];
+                    mult += nmults[i] = mults[k];
                     k--;
                     i--;
                 }
@@ -2128,15 +2132,15 @@ public static partial class BSplCLib
             // to insert the new knot
             //------------------------------------
 
-            bool sameknot = (Math.Abs(u - NewKnots[curnk]) <= Eps);
+            bool sameknot = (Math.Abs(u - newKnots[curnk]) <= eps);
 
             if (sameknot)
             {
-                length = Max(0, Degree - NewMults[curnk]);
+                length = Max(0, degree - newMults[curnk]);
             }
             else
             {
-                length = Degree;
+                length = degree;
             }
 
             if (addflat)
@@ -2145,24 +2149,24 @@ public static partial class BSplCLib
             }
             else
             {
-                depth = Min(Degree, AddMults![kn]);
+                depth = Min(degree, addMults![kn]);
             }
 
             if (sameknot)
             {
-                if (Add)
+                if (add)
                 {
-                    if ((NewMults[curnk] + depth) > Degree)
+                    if ((newMults[curnk] + depth) > degree)
                     {
-                        depth = Degree - NewMults[curnk];
+                        depth = degree - newMults[curnk];
                     }
                 }
                 else
                 {
-                    depth = Max(0, depth - NewMults[curnk]);
+                    depth = Max(0, depth - newMults[curnk]);
                 }
 
-                if (Periodic)
+                if (periodic)
                 {
                     // on periodic curve the first and last knot are delayed to the end
                     if (curk == Knots.Lower() || (curk == Knots.Upper()))
@@ -2180,36 +2184,36 @@ public static partial class BSplCLib
                 continue;
             }
 
-            BuildKnots(Degree, curnk, Periodic, nknots, nmults, knots);
+            BuildKnots(degree, curnk, periodic, nknots, nmults, knots);
 
             // copy the poles
 
-            need = NewPoles.Lower() + (index + length + 1) * Dimension - curnp;
+            need = newPoles.Lower() + (index + length + 1) * dimension - curnp;
             need = Min(need, Poles.Upper() - curp + 1);
 
             p = curp;
             np = curnp;
-            Copy(need, ref p, Poles, ref np, NewPoles);
+            Copy(need, ref p, Poles, ref np, newPoles);
             curp += need;
             curnp += need;
 
             // slice the poles to the current number of poles in case of periodic
-            NCollection_Array1<double> npoles = new(NewPoles, NewPoles.Lower(), NewPoles.Lower(), curnp - 1);
+            NCollection_Array1<double> npoles = new(newPoles, newPoles.Lower(), newPoles.Lower(), curnp - 1);
 
-            BuildBoor(index, length, Dimension, npoles, poles);
-            BoorScheme(u, Degree, knots, Dimension, poles, depth, length);
+            BuildBoor(index, length, dimension, npoles, poles);
+            BoorScheme(u, degree, knots, dimension, poles, depth, length);
 
             //-------------------
             // copy the new poles
             //-------------------
 
-            curnp += depth * Dimension; // number of poles is increased by depth
-            NCollection_Array1<double> ThePoles = new(NewPoles, NewPoles.Lower(), NewPoles.Lower(), curnp - 1);
-            np = NewKnots.Lower() + (index + 1) * Dimension; // OCCT: NewKnots.Lower() where NewPoles.Lower() is meant
+            curnp += depth * dimension; // number of poles is increased by depth
+            NCollection_Array1<double> thePoles = new(newPoles, newPoles.Lower(), newPoles.Lower(), curnp - 1);
+            np = newKnots.Lower() + (index + 1) * dimension; // OCCT: NewKnots.Lower() where NewPoles.Lower() is meant
 
             for (i = 1; i <= length + depth; i++)
             {
-                GetPole(i, length, depth, Dimension, poles, ref np, ThePoles);
+                GetPole(i, length, depth, dimension, poles, ref np, thePoles);
             }
 
             //-------------------
@@ -2219,13 +2223,13 @@ public static partial class BSplCLib
             index += depth;
             if (sameknot)
             {
-                NewMults[curnk] += depth;
+                newMults[curnk] += depth;
             }
             else
             {
                 curnk++;
-                NewKnots[curnk] = u;
-                NewMults[curnk] = depth;
+                newKnots[curnk] = u;
+                newMults[curnk] = depth;
             }
         }
 
@@ -2233,14 +2237,14 @@ public static partial class BSplCLib
         // copy the last poles and knots
         //------------------------------
 
-        Copy(Poles.Upper() - curp + 1, ref curp, Poles, ref curnp, NewPoles);
+        Copy(Poles.Upper() - curp + 1, ref curp, Poles, ref curnp, newPoles);
 
         while (curk < Knots.Upper())
         {
             curk++;
             curnk++;
-            NewKnots[curnk] = Knots[curk];
-            NewMults[curnk] = Mults[curk];
+            newKnots[curnk] = Knots[curk];
+            newMults[curnk] = mults[curk];
         }
 
         //------------------------------
@@ -2250,75 +2254,75 @@ public static partial class BSplCLib
 
         if (firstmult > 0)
         {
-            curnk = NewKnots.Lower();
-            if (NewMults[curnk] + firstmult > Degree)
+            curnk = newKnots.Lower();
+            if (newMults[curnk] + firstmult > degree)
             {
-                firstmult = Degree - NewMults[curnk];
+                firstmult = degree - newMults[curnk];
             }
             if (firstmult > 0)
             {
 
-                length = Degree - NewMults[curnk];
+                length = degree - newMults[curnk];
                 depth = firstmult;
 
-                BuildKnots(Degree, curnk, Periodic, NewKnots, NewMults, knots);
-                NCollection_Array1<double> npoles = new(NewPoles,
-                                                        NewPoles.Lower(),
-                                                        NewPoles.Lower(),
-                                                        NewPoles.Upper() - depth * Dimension);
-                BuildBoor(0, length, Dimension, npoles, poles);
-                BoorScheme(NewKnots[curnk], Degree, knots, Dimension, poles, depth, length);
+                BuildKnots(degree, curnk, periodic, newKnots, newMults, knots);
+                NCollection_Array1<double> npoles = new(newPoles,
+                                                        newPoles.Lower(),
+                                                        newPoles.Lower(),
+                                                        newPoles.Upper() - depth * dimension);
+                BuildBoor(0, length, dimension, npoles, poles);
+                BoorScheme(newKnots[curnk], degree, knots, dimension, poles, depth, length);
 
                 //---------------------------
                 // copy the new poles
                 // but rotate them with depth
                 //---------------------------
 
-                np = NewPoles.Lower();
+                np = newPoles.Lower();
 
                 for (i = depth; i < length + depth; i++)
                 {
-                    GetPole(i, length, depth, Dimension, poles, ref np, NewPoles);
+                    GetPole(i, length, depth, dimension, poles, ref np, newPoles);
                 }
 
-                np = NewPoles.Upper() - depth * Dimension + 1;
+                np = newPoles.Upper() - depth * dimension + 1;
 
                 for (i = 0; i < depth; i++)
                 {
-                    GetPole(i, length, depth, Dimension, poles, ref np, NewPoles);
+                    GetPole(i, length, depth, dimension, poles, ref np, newPoles);
                 }
 
-                NewMults[NewMults.Lower()] += depth;
-                NewMults[NewMults.Upper()] += depth;
+                newMults[newMults.Lower()] += depth;
+                newMults[newMults.Upper()] += depth;
             }
         }
     }
 
     /// <summary>
-    /// Decrements the multiplicity of the knot <paramref name="Index"/> to <paramref name="Mult"/> (0 removes
-    /// it) if the curve stays within <paramref name="Tolerance"/>. Returns false if not possible.
+    /// Decrements the multiplicity of the knot <paramref name="Index"/> to <paramref name="mult"/> (0 removes
+    /// it) if the curve stays within <paramref name="tolerance"/>. Returns false if not possible.
     /// </summary>
-    public static bool RemoveKnot(int Index, int Mult, int Degree, bool Periodic, int Dimension,
+    public static bool RemoveKnot(int Index, int mult, int degree, bool periodic, int dimension,
                                   NCollection_Array1<double> Poles, NCollection_Array1<double> Knots,
-                                  NCollection_Array1<int> Mults, NCollection_Array1<double> NewPoles,
-                                  NCollection_Array1<double> NewKnots, NCollection_Array1<int> NewMults,
-                                  double Tolerance)
+                                  NCollection_Array1<int> mults, NCollection_Array1<double> newPoles,
+                                  NCollection_Array1<double> newKnots, NCollection_Array1<int> newMults,
+                                  double tolerance)
     {
         int index, i, j, k, p, np;
 
-        int TheIndex = Index;
+        int theIndex = Index;
 
         // protection
         int first, last;
-        if (Periodic)
+        if (periodic)
         {
             first = Knots.Lower();
             last = Knots.Upper();
         }
         else
         {
-            first = BSplCLib.FirstUKnotIndex(Degree, Mults) + 1;
-            last = BSplCLib.LastUKnotIndex(Degree, Mults) - 1;
+            first = global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(degree, mults) + 1;
+            last = global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(degree, mults) - 1;
         }
         if (Index < first)
         {
@@ -2329,22 +2333,22 @@ public static partial class BSplCLib
             return false;
         }
 
-        if (Periodic && (Index == first))
+        if (periodic && (Index == first))
         {
-            TheIndex = last;
+            theIndex = last;
         }
 
-        int depth = Mults[TheIndex] - Mult;
-        int length = Degree - Mult;
+        int depth = mults[theIndex] - mult;
+        int length = degree - mult;
 
         // -------------------
         // create local arrays
         // -------------------
         // Use stack-based allocation for small arrays (MaxDegree=25, typical Dimension=4)
-        int aKnotsSize = 4 * Degree;
-        int aPolesSize = (2 * Degree + 1) * Dimension;
-        Span<double> knots = aKnotsSize <= 128 ? stackalloc double[aKnotsSize] : new double[aKnotsSize];
-        Span<double> poles = aPolesSize <= 256 ? stackalloc double[aPolesSize] : new double[aPolesSize];
+        int knotsSize = 4 * degree;
+        int polesSize = (2 * degree + 1) * dimension;
+        Span<double> knots = knotsSize <= 128 ? stackalloc double[knotsSize] : new double[knotsSize];
+        Span<double> poles = polesSize <= 256 ? stackalloc double[polesSize] : new double[polesSize];
 
         // ------------------------------------
         // build the knots for anti Boor Scheme
@@ -2353,37 +2357,37 @@ public static partial class BSplCLib
         // the new sequence of knots
         // is obtained from the knots at Index-1 and Index
 
-        BSplCLib.BuildKnots(Degree, TheIndex - 1, Periodic, Knots, Mults, knots);
-        index = PoleIndex(Degree, TheIndex - 1, Periodic, Mults);
-        BSplCLib.BuildKnots(Degree, TheIndex, Periodic, Knots, Mults, knots.Slice(2 * Degree));
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildKnots(degree, theIndex - 1, periodic, Knots, mults, knots);
+        index = PoleIndex(degree, theIndex - 1, periodic, mults);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildKnots(degree, theIndex, periodic, Knots, mults, knots.Slice(2 * degree));
 
-        index += Mult;
+        index += mult;
 
-        for (i = 0; i < Degree - Mult; i++)
+        for (i = 0; i < degree - mult; i++)
         {
-            knots[i] = knots[i + Mult];
+            knots[i] = knots[i + mult];
         }
 
-        for (i = Degree - Mult; i < 2 * Degree; i++)
+        for (i = degree - mult; i < 2 * degree; i++)
         {
-            knots[i] = knots[2 * Degree + i];
+            knots[i] = knots[2 * degree + i];
         }
 
         // ------------------------------------
         // build the poles for anti Boor Scheme
         // ------------------------------------
 
-        p = Poles.Lower() + index * Dimension;
+        p = Poles.Lower() + index * dimension;
 
         for (i = 0; i <= length + depth; i++)
         {
-            j = Dimension * BoorIndex(i, length, depth);
+            j = dimension * BoorIndex(i, length, depth);
 
-            for (k = 0; k < Dimension; k++)
+            for (k = 0; k < dimension; k++)
             {
                 poles[j + k] = Poles[p + k];
             }
-            p += Dimension;
+            p += dimension;
             if (p > Poles.Upper())
             {
                 p = Poles.Lower();
@@ -2401,7 +2405,7 @@ public static partial class BSplCLib
         bool result;
         try
         {
-            result = AntiBoorScheme(Knots[TheIndex], Degree, knots, Dimension, poles, depth, length, Tolerance);
+            result = AntiBoorScheme(Knots[theIndex], degree, knots, dimension, poles, depth, length, tolerance);
         }
         catch (IndexOutOfRangeException)
         {
@@ -2418,60 +2422,60 @@ public static partial class BSplCLib
             // poles
 
             p = Poles.Lower();
-            np = NewPoles.Lower();
+            np = newPoles.Lower();
 
             // unmodified poles before
-            Copy((index + 1) * Dimension, ref p, Poles, ref np, NewPoles);
+            Copy((index + 1) * dimension, ref p, Poles, ref np, newPoles);
 
             // modified
 
             for (i = 1; i <= length; i++)
             {
-                BSplCLib.GetPole(i, length, 0, Dimension, poles, ref np, NewPoles);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.GetPole(i, length, 0, dimension, poles, ref np, newPoles);
             }
-            p += (length + depth) * Dimension;
+            p += (length + depth) * dimension;
 
             // unmodified poles after
             if (p != Poles.Lower())
             {
                 i = Poles.Upper() - p + 1;
-                Copy(i, ref p, Poles, ref np, NewPoles);
+                Copy(i, ref p, Poles, ref np, newPoles);
             }
 
             // knots and mults
 
-            if (Mult > 0)
+            if (mult > 0)
             {
-                NewKnots.Assign(Knots);
-                NewMults.Assign(Mults);
-                NewMults[TheIndex] = Mult;
-                if (Periodic)
+                newKnots.Assign(Knots);
+                newMults.Assign(mults);
+                newMults[theIndex] = mult;
+                if (periodic)
                 {
-                    if (TheIndex == first)
+                    if (theIndex == first)
                     {
-                        NewMults[last] = Mult;
+                        newMults[last] = mult;
                     }
-                    if (TheIndex == last)
+                    if (theIndex == last)
                     {
-                        NewMults[first] = Mult;
+                        newMults[first] = mult;
                     }
                 }
             }
             else
             {
-                if (!Periodic || (TheIndex != first && TheIndex != last))
+                if (!periodic || (theIndex != first && theIndex != last))
                 {
 
-                    for (i = Knots.Lower(); i < TheIndex; i++)
+                    for (i = Knots.Lower(); i < theIndex; i++)
                     {
-                        NewKnots[i] = Knots[i];
-                        NewMults[i] = Mults[i];
+                        newKnots[i] = Knots[i];
+                        newMults[i] = mults[i];
                     }
 
-                    for (i = TheIndex + 1; i <= Knots.Upper(); i++)
+                    for (i = theIndex + 1; i <= Knots.Upper(); i++)
                     {
-                        NewKnots[i - 1] = Knots[i];
-                        NewMults[i - 1] = Mults[i];
+                        newKnots[i - 1] = Knots[i];
+                        newMults[i - 1] = mults[i];
                     }
                 }
                 else
@@ -2481,11 +2485,11 @@ public static partial class BSplCLib
 
                     for (i = first; i < last - 1; i++)
                     {
-                        NewKnots[i] = Knots[i + 1];
-                        NewMults[i] = Mults[i + 1];
+                        newKnots[i] = Knots[i + 1];
+                        newMults[i] = mults[i + 1];
                     }
-                    NewKnots[last - 1] = NewKnots[first] + Knots[last] - Knots[first];
-                    NewMults[last - 1] = NewMults[first];
+                    newKnots[last - 1] = newKnots[first] + Knots[last] - Knots[first];
+                    newMults[last - 1] = newMults[first];
                 }
             }
         }
@@ -2494,55 +2498,55 @@ public static partial class BSplCLib
     }
 
     /// <summary>Returns the number of knots of the curve after raising its degree to NewDegree.</summary>
-    public static int IncreaseDegreeCountKnots(int Degree, int NewDegree, bool Periodic, NCollection_Array1<int> Mults)
+    public static int IncreaseDegreeCountKnots(int degree, int newDegree, bool periodic, NCollection_Array1<int> mults)
     {
-        if (Periodic)
+        if (periodic)
         {
-            return Mults.Length();
+            return mults.Length();
         }
-        int f = FirstUKnotIndex(Degree, Mults);
-        int l = LastUKnotIndex(Degree, Mults);
-        int m, i, removed = 0, step = NewDegree - Degree;
+        int f = FirstUKnotIndex(degree, mults);
+        int l = LastUKnotIndex(degree, mults);
+        int m, i, removed = 0, step = newDegree - degree;
 
-        i = Mults.Lower();
-        m = Degree + (f - i + 1) * step + 1;
+        i = mults.Lower();
+        m = degree + (f - i + 1) * step + 1;
 
-        while (m > NewDegree + 1)
+        while (m > newDegree + 1)
         {
             removed++;
-            m -= Mults[i] + step;
+            m -= mults[i] + step;
             i++;
         }
-        if (m < NewDegree + 1)
+        if (m < newDegree + 1)
         {
             removed--;
         }
 
-        i = Mults.Upper();
-        m = Degree + (i - l + 1) * step + 1;
+        i = mults.Upper();
+        m = degree + (i - l + 1) * step + 1;
 
-        while (m > NewDegree + 1)
+        while (m > newDegree + 1)
         {
             removed++;
-            m -= Mults[i] + step;
+            m -= mults[i] + step;
             i--;
         }
-        if (m < NewDegree + 1)
+        if (m < newDegree + 1)
         {
             removed--;
         }
 
-        return Mults.Length() - removed;
+        return mults.Length() - removed;
     }
 
     /// <summary>
-    /// Raises the degree of the curve of dimension <paramref name="Dimension"/> to NewDegree. The new knot count
+    /// Raises the degree of the curve of dimension <paramref name="dimension"/> to NewDegree. The new knot count
     /// is given by <see cref="IncreaseDegreeCountKnots"/>; the arrays are expected indexed from 1.
     /// </summary>
-    public static void IncreaseDegree(int Degree, int NewDegree, bool Periodic, int Dimension,
-                                      NCollection_Array1<double> Poles, NCollection_Array1<double> Knots,
-                                      NCollection_Array1<int> Mults, NCollection_Array1<double> NewPoles,
-                                      NCollection_Array1<double> NewKnots, NCollection_Array1<int> NewMults)
+    public static void IncreaseDegree(int degree, int newDegree, bool periodic, int dimension,
+                                      NCollection_Array1<double> poles, NCollection_Array1<double> knots,
+                                      NCollection_Array1<int> mults, NCollection_Array1<double> newPoles,
+                                      NCollection_Array1<double> newKnots, NCollection_Array1<int> newMults)
     {
         // Degree elevation of a BSpline Curve
 
@@ -2577,78 +2581,78 @@ public static partial class BSplCLib
         pf = 0; // number of null poles added at beginning
         pl = 0; // number of null poles added at end
 
-        int nbwknots = Knots.Length();
-        f = FirstUKnotIndex(Degree, Mults);
-        l = LastUKnotIndex(Degree, Mults);
+        int nbwknots = knots.Length();
+        f = FirstUKnotIndex(degree, mults);
+        l = LastUKnotIndex(degree, mults);
 
-        if (Periodic)
+        if (periodic)
         {
             // OCCT: for most periodic curves whose multiplicities are not all 1, the raised curve is not the
             // input curve (found against native OCCT, whose poles the port reproduces exactly; not analysed)
             // Periodic curves are transformed in non-periodic curves
 
-            nbwknots += f - Mults.Lower();
+            nbwknots += f - mults.Lower();
 
-            pf = -Degree - 1;
+            pf = -degree - 1;
 
-            for (i = Mults.Lower(); i <= f; i++)
+            for (i = mults.Lower(); i <= f; i++)
             {
-                pf += Mults[i];
+                pf += mults[i];
             }
 
-            nbwknots += Mults.Upper() - l;
+            nbwknots += mults.Upper() - l;
 
-            pl = -Degree - 1;
+            pl = -degree - 1;
 
-            for (i = l; i <= Mults.Upper(); i++)
+            for (i = l; i <= mults.Upper(); i++)
             {
-                pl += Mults[i];
+                pl += mults[i];
             }
         }
 
         // copy the knots and multiplicities
         NCollection_Array1<double> wknots = new(1, nbwknots);
         NCollection_Array1<int> wmults = new(1, nbwknots);
-        if (!Periodic)
+        if (!periodic)
         {
-            wknots.Assign(Knots);
-            wmults.Assign(Mults);
+            wknots.Assign(knots);
+            wmults.Assign(mults);
         }
         else
         {
             // copy the knots for a periodic curve
-            double period = Knots[Knots.Upper()] - Knots[Knots.Lower()];
+            double period = knots[knots.Upper()] - knots[knots.Lower()];
             i = 0;
 
-            for (k = l; k < Knots.Upper(); k++)
+            for (k = l; k < knots.Upper(); k++)
             {
                 i++;
-                wknots[i] = Knots[k] - period;
-                wmults[i] = Mults[k];
+                wknots[i] = knots[k] - period;
+                wmults[i] = mults[k];
             }
 
-            for (k = Knots.Lower(); k <= Knots.Upper(); k++)
+            for (k = knots.Lower(); k <= knots.Upper(); k++)
             {
                 i++;
-                wknots[i] = Knots[k];
-                wmults[i] = Mults[k];
+                wknots[i] = knots[k];
+                wmults[i] = mults[k];
             }
 
-            for (k = Knots.Lower() + 1; k <= f; k++)
+            for (k = knots.Lower() + 1; k <= f; k++)
             {
                 i++;
-                wknots[i] = Knots[k] + period;
-                wmults[i] = Mults[k];
+                wknots[i] = knots[k] + period;
+                wmults[i] = mults[k];
             }
         }
 
         // set the first and last mults to Degree+1
         // and add null poles
 
-        pf += Degree + 1 - wmults[1];
-        wmults[1] = Degree + 1;
-        pl += Degree + 1 - wmults[nbwknots];
-        wmults[nbwknots] = Degree + 1;
+        pf += degree + 1 - wmults[1];
+        wmults[1] = degree + 1;
+        pl += degree + 1 - wmults[nbwknots];
+        wmults[nbwknots] = degree + 1;
 
         //---------------------------
         // poles of the working curve
@@ -2660,30 +2664,30 @@ public static partial class BSplCLib
         {
             nbwpoles += wmults[i];
         }
-        nbwpoles -= Degree + 1;
+        nbwpoles -= degree + 1;
 
         // we provide space for degree elevation
         NCollection_Array1<double> wpoles = new(1,
-                                                (nbwpoles + (nbwknots - 1) * (NewDegree - Degree)) * Dimension);
+                                                (nbwpoles + (nbwknots - 1) * (newDegree - degree)) * dimension);
 
-        for (i = 1; i <= pf * Dimension; i++)
+        for (i = 1; i <= pf * dimension; i++)
         {
             wpoles[i] = 0;
         }
 
-        k = Poles.Lower();
+        k = poles.Lower();
 
-        for (i = pf * Dimension + 1; i <= (nbwpoles - pl) * Dimension; i++)
+        for (i = pf * dimension + 1; i <= (nbwpoles - pl) * dimension; i++)
         {
-            wpoles[i] = Poles[k];
+            wpoles[i] = poles[k];
             k++;
-            if (k > Poles.Upper())
+            if (k > poles.Upper())
             {
-                k = Poles.Lower();
+                k = poles.Lower();
             }
         }
 
-        for (i = (nbwpoles - pl) * Dimension + 1; i <= nbwpoles * Dimension; i++)
+        for (i = (nbwpoles - pl) * dimension + 1; i <= nbwpoles * dimension; i++)
         {
             wpoles[i] = 0;
         }
@@ -2693,10 +2697,10 @@ public static partial class BSplCLib
         //-----------------------------------------------------------
 
         // Maximum number of poles after all degree elevations
-        int nbwpMax = nbwpoles + (nbwknots - 1) * (NewDegree - Degree);
+        int nbwpMax = nbwpoles + (nbwknots - 1) * (newDegree - degree);
         // Arrays for storing the temporary curves
-        NCollection_Array1<double> tempc1 = new(1, nbwpMax * Dimension);
-        NCollection_Array1<double> tempc2 = new(1, nbwpMax * Dimension);
+        NCollection_Array1<double> tempc1 = new(1, nbwpMax * dimension);
+        NCollection_Array1<double> tempc2 = new(1, nbwpMax * dimension);
 
         // Array for storing the knots to insert
         NCollection_Array1<double> iknots = new(1, nbwknots);
@@ -2705,7 +2709,7 @@ public static partial class BSplCLib
         NCollection_Array1<double> nknots = new(1, nbwknots);
 
         // Pre-allocate nwpoles with maximum size to avoid repeated heap allocations in loop
-        NCollection_Array1<double> nwpoles = new(1, nbwpMax * Dimension);
+        NCollection_Array1<double> nwpoles = new(1, nbwpMax * dimension);
 
         //------------------------------
         // Loop on degree incrementation
@@ -2715,14 +2719,14 @@ public static partial class BSplCLib
         int nbp = nbwpoles;
         int nbwp = nbp;
 
-        for (curDeg = Degree; curDeg < NewDegree; curDeg++)
+        for (curDeg = degree; curDeg < newDegree; curDeg++)
         {
 
             nbp = nbwp;               // current number of poles
             nbwp = nbp + nbwknots - 1; // new number of poles
 
             // Initialize the portion of nwpoles that will be used this iteration
-            for (int idx = 1; idx <= nbwp * Dimension; idx++)
+            for (int idx = 1; idx <= nbwp * dimension; idx++)
             {
                 nwpoles[idx] = 0.0;
             }
@@ -2750,18 +2754,18 @@ public static partial class BSplCLib
                 {
                     offset++;
 
-                    for (k = 0; k < Dimension; k++)
+                    for (k = 0; k < dimension; k++)
                     {
                         // OCCT indexes wpoles (from 1) with NewPoles.Lower()
-                        tempc1[(offset - 1) * Dimension + k + 1] = wpoles[NewPoles.Lower() + i * Dimension + k];
+                        tempc1[(offset - 1) * dimension + k + 1] = wpoles[newPoles.Lower() + i * dimension + k];
                     }
                     if (i % (curDeg + 1) == step)
                     {
                         offset++;
 
-                        for (k = 0; k < Dimension; k++)
+                        for (k = 0; k < dimension; k++)
                         {
-                            tempc1[(offset - 1) * Dimension + k + 1] = wpoles[NewPoles.Lower() + i * Dimension + k];
+                            tempc1[(offset - 1) * dimension + k + 1] = wpoles[newPoles.Lower() + i * dimension + k];
                         }
                     }
                 }
@@ -2797,14 +2801,14 @@ public static partial class BSplCLib
                 if (nbknots > 0)
                 {
                     NCollection_Array1<double> aknots = new(iknots, 1, 1, nbknots);
-                    NCollection_Array1<double> curve = new(tempc1, 1, 1, offset * Dimension);
-                    NCollection_Array1<double> ncurve = new(tempc2, 1, 1, nbwp * Dimension);
+                    NCollection_Array1<double> curve = new(tempc1, 1, 1, offset * dimension);
+                    NCollection_Array1<double> ncurve = new(tempc2, 1, 1, nbwp * dimension);
                     //	InsertKnots(curDeg+1,false,Dimension,curve,wknots,wmults,
                     //		    aknots,NoMults(),ncurve,nknots,wmults,Epsilon(1.));
 
                     InsertKnots(curDeg + 1,
                                 false,
-                                Dimension,
+                                dimension,
                                 curve,
                                 wknots,
                                 wmults,
@@ -2817,7 +2821,7 @@ public static partial class BSplCLib
 
                     // add to the average
 
-                    for (i = 1; i <= nbwp * Dimension; i++)
+                    for (i = 1; i <= nbwp * dimension; i++)
                     {
                         nwpoles[i] += ncurve[i];
                     }
@@ -2826,7 +2830,7 @@ public static partial class BSplCLib
                 {
                     // add to the average
 
-                    for (i = 1; i <= nbwp * Dimension; i++)
+                    for (i = 1; i <= nbwp * dimension; i++)
                     {
                         nwpoles[i] += tempc1[i];
                     }
@@ -2835,7 +2839,7 @@ public static partial class BSplCLib
 
             // The result is the average
 
-            for (i = 1; i <= nbwp * Dimension; i++)
+            for (i = 1; i <= nbwp * dimension; i++)
             {
                 wpoles[i] = nwpoles[i] / (curDeg + 1);
             }
@@ -2846,9 +2850,9 @@ public static partial class BSplCLib
         //-----------------
 
         // index in new knots of the first knot of the curve
-        if (Periodic)
+        if (periodic)
         {
-            firstknot = Mults.Upper() - l + 1;
+            firstknot = mults.Upper() - l + 1;
         }
         else
         {
@@ -2871,327 +2875,327 @@ public static partial class BSplCLib
         k = 1;
         pf = 0;
 
-        while (m > NewDegree + 1)
+        while (m > newDegree + 1)
         {
             k++;
             m -= wmults[k];
             pf += wmults[k];
         }
-        if (m < NewDegree + 1)
+        if (m < newDegree + 1)
         {
             k--;
-            wmults[k] += m - NewDegree - 1;
-            pf += m - NewDegree - 1;
+            wmults[k] += m - newDegree - 1;
+            pf += m - newDegree - 1;
         }
 
         // on a periodic curve the knots start with firstknot
-        if (Periodic)
+        if (periodic)
         {
             k = firstknot;
         }
 
         // copy knots
 
-        for (i = NewKnots.Lower(); i <= NewKnots.Upper(); i++)
+        for (i = newKnots.Lower(); i <= newKnots.Upper(); i++)
         {
-            NewKnots[i] = wknots[k];
-            NewMults[i] = wmults[k];
+            newKnots[i] = wknots[k];
+            newMults[i] = wmults[k];
             k++;
         }
 
         // copy poles
-        pf *= Dimension;
+        pf *= dimension;
 
-        for (i = NewPoles.Lower(); i <= NewPoles.Upper(); i++)
+        for (i = newPoles.Lower(); i <= newPoles.Upper(); i++)
         {
             pf++;
-            NewPoles[i] = wpoles[pf];
+            newPoles[i] = wpoles[pf];
         }
     }
 
     /// <summary>Computes the number of knots and poles of the curve once made non-periodic (<see cref="Unperiodize(int, int, NCollection_Array1{int}, NCollection_Array1{double}, NCollection_Array1{double}, NCollection_Array1{int}, NCollection_Array1{double}, NCollection_Array1{double})"/>).</summary>
-    public static void PrepareUnperiodize(int Degree, NCollection_Array1<int> Mults, out int NbKnots, out int NbPoles)
+    public static void PrepareUnperiodize(int degree, NCollection_Array1<int> mults, out int nbKnots, out int nbPoles)
     {
         int i;
         // initialize NbKnots and NbPoles
-        NbKnots = Mults.Length();
-        NbPoles = -Degree - 1;
+        nbKnots = mults.Length();
+        nbPoles = -degree - 1;
 
-        for (i = Mults.Lower(); i <= Mults.Upper(); i++)
+        for (i = mults.Lower(); i <= mults.Upper(); i++)
         {
-            NbPoles += Mults[i];
+            nbPoles += mults[i];
         }
 
         int sigma, k;
         // Add knots at the beginning of the curve to raise Multiplicities
         // to Degre + 1;
-        sigma = Mults[Mults.Lower()];
-        k = Mults.Upper() - 1;
+        sigma = mults[mults.Lower()];
+        k = mults.Upper() - 1;
 
-        while (sigma < Degree + 1)
+        while (sigma < degree + 1)
         {
-            sigma += Mults[k];
-            NbPoles += Mults[k];
+            sigma += mults[k];
+            nbPoles += mults[k];
             k--;
-            NbKnots++;
+            nbKnots++;
         }
         // We must add exactly until Degree + 1 ->
         //    Suppress the excedent.
-        if (sigma > Degree + 1)
+        if (sigma > degree + 1)
         {
-            NbPoles -= sigma - Degree - 1;
+            nbPoles -= sigma - degree - 1;
         }
 
         // Add knots at the end of the curve to raise Multiplicities
         // to Degre + 1;
-        sigma = Mults[Mults.Upper()];
-        k = Mults.Lower() + 1;
+        sigma = mults[mults.Upper()];
+        k = mults.Lower() + 1;
 
-        while (sigma < Degree + 1)
+        while (sigma < degree + 1)
         {
-            sigma += Mults[k];
-            NbPoles += Mults[k];
+            sigma += mults[k];
+            nbPoles += mults[k];
             k++;
-            NbKnots++;
+            nbKnots++;
         }
         // We must add exactly until Degree + 1 ->
         //    Suppress the excedent.
-        if (sigma > Degree + 1)
+        if (sigma > degree + 1)
         {
-            NbPoles -= sigma - Degree - 1;
+            nbPoles -= sigma - degree - 1;
         }
     }
 
     /// <summary>
-    /// Makes a periodic curve of dimension <paramref name="Dimension"/> non-periodic (arrays sized with
+    /// Makes a periodic curve of dimension <paramref name="dimension"/> non-periodic (arrays sized with
     /// <see cref="PrepareUnperiodize"/>, indexed from 1).
     /// </summary>
-    public static void Unperiodize(int Degree, int Dimension, NCollection_Array1<int> Mults,
-                                   NCollection_Array1<double> Knots, NCollection_Array1<double> Poles,
-                                   NCollection_Array1<int> NewMults, NCollection_Array1<double> NewKnots,
-                                   NCollection_Array1<double> NewPoles)
+    public static void Unperiodize(int degree, int dimension, NCollection_Array1<int> mults,
+                                   NCollection_Array1<double> knots, NCollection_Array1<double> poles,
+                                   NCollection_Array1<int> newMults, NCollection_Array1<double> newKnots,
+                                   NCollection_Array1<double> newPoles)
     {
         int sigma, k, index = 0;
         // evaluation of index : number of knots to insert before knot(1) to
         // raise sum of multiplicities to <Degree + 1>
-        sigma = Mults[Mults.Lower()];
-        k = Mults.Upper() - 1;
+        sigma = mults[mults.Lower()];
+        k = mults.Upper() - 1;
 
-        while (sigma < Degree + 1)
+        while (sigma < degree + 1)
         {
-            sigma += Mults[k];
+            sigma += mults[k];
             k--;
             index++;
         }
 
-        double period = Knots[Knots.Upper()] - Knots[Knots.Lower()];
+        double period = knots[knots.Upper()] - knots[knots.Lower()];
 
         // set the 'interior' knots;
 
-        for (k = 1; k <= Knots.Length(); k++)
+        for (k = 1; k <= knots.Length(); k++)
         {
-            NewKnots[k + index] = Knots[k];
-            NewMults[k + index] = Mults[k];
+            newKnots[k + index] = knots[k];
+            newMults[k + index] = mults[k];
         }
 
         // set the 'starting' knots;
 
         for (k = 1; k <= index; k++)
         {
-            NewKnots[k] = NewKnots[k + Knots.Length() - 1] - period;
-            NewMults[k] = NewMults[k + Knots.Length() - 1];
+            newKnots[k] = newKnots[k + knots.Length() - 1] - period;
+            newMults[k] = newMults[k + knots.Length() - 1];
         }
-        NewMults[1] -= sigma - Degree - 1;
+        newMults[1] -= sigma - degree - 1;
 
         // set the 'ending' knots;
-        sigma = NewMults[index + Knots.Length()];
+        sigma = newMults[index + knots.Length()];
 
-        for (k = Knots.Length() + index + 1; k <= NewKnots.Length(); k++)
+        for (k = knots.Length() + index + 1; k <= newKnots.Length(); k++)
         {
-            NewKnots[k] = NewKnots[k - Knots.Length() + 1] + period;
-            NewMults[k] = NewMults[k - Knots.Length() + 1];
-            sigma += NewMults[k - Knots.Length() + 1];
+            newKnots[k] = newKnots[k - knots.Length() + 1] + period;
+            newMults[k] = newMults[k - knots.Length() + 1];
+            sigma += newMults[k - knots.Length() + 1];
         }
-        NewMults[NewMults.Length()] -= sigma - Degree - 1;
+        newMults[newMults.Length()] -= sigma - degree - 1;
 
-        for (k = 1; k <= NewPoles.Length(); k++)
+        for (k = 1; k <= newPoles.Length(); k++)
         {
-            NewPoles[k] = Poles[(k - 1) % Poles.Length() + 1];
+            newPoles[k] = poles[(k - 1) % poles.Length() + 1];
         }
     }
 
     /// <summary>Computes the number of knots and poles of the curve trimmed to [U1, U2] (<see cref="Trimming(int, bool, int, NCollection_Array1{double}, NCollection_Array1{int}, NCollection_Array1{double}, double, double, NCollection_Array1{double}, NCollection_Array1{int}, NCollection_Array1{double})"/>).</summary>
-    public static void PrepareTrimming(int Degree, bool Periodic, NCollection_Array1<double> Knots,
-                                       NCollection_Array1<int> Mults, double U1, double U2, out int NbKnots,
-                                       out int NbPoles)
+    public static void PrepareTrimming(int degree, bool periodic, NCollection_Array1<double> knots,
+                                       NCollection_Array1<int> mults, double u1, double u2, out int nbKnots,
+                                       out int nbPoles)
     {
         int i;
-        double NewU1, NewU2;
+        double newU1, newU2;
         int index1 = 0, index2 = 0;
 
         // Eval index1, index2 : position of U1 and U2 in the Array Knots
         // such as Knots(index1-1) <= U1 < Knots(index1)
         //         Knots(index2-1) <= U2 < Knots(index2)
-        LocateParameter(Degree, Knots, Mults, U1, Periodic, Knots.Lower(), Knots.Upper(), out index1, out NewU1);
-        LocateParameter(Degree, Knots, Mults, U2, Periodic, Knots.Lower(), Knots.Upper(), out index2, out NewU2);
+        LocateParameter(degree, knots, mults, u1, periodic, knots.Lower(), knots.Upper(), out index1, out newU1);
+        LocateParameter(degree, knots, mults, u2, periodic, knots.Lower(), knots.Upper(), out index2, out newU2);
         index1++;
-        if (Math.Abs(Knots[index2] - U2) <= Epsilon(U1))
+        if (Math.Abs(knots[index2] - u2) <= Epsilon(u1))
         {
             index2--;
         }
 
         // eval NbKnots:
-        NbKnots = index2 - index1 + 3;
+        nbKnots = index2 - index1 + 3;
 
         // eval NbPoles:
-        NbPoles = Degree + 1;
+        nbPoles = degree + 1;
 
         for (i = index1; i <= index2; i++)
         {
-            NbPoles += Mults[i];
+            nbPoles += mults[i];
         }
     }
 
     /// <summary>
-    /// Trims the curve of dimension <paramref name="Dimension"/> to [U1, U2] (arrays sized with
-    /// <see cref="PrepareTrimming"/>, indexed from 1). Throws <see cref="Standard_OutOfRange"/> if U1 or U2 is
+    /// Trims the curve of dimension <paramref name="dimension"/> to [U1, U2] (arrays sized with
+    /// <see cref="PrepareTrimming"/>, indexed from 1). Throws <see cref="OutOfRangeException"/> if U1 or U2 is
     /// outside the curve.
     /// </summary>
-    public static void Trimming(int Degree, bool Periodic, int Dimension, NCollection_Array1<double> Knots,
-                                NCollection_Array1<int> Mults, NCollection_Array1<double> Poles, double U1, double U2,
-                                NCollection_Array1<double> NewKnots, NCollection_Array1<int> NewMults,
-                                NCollection_Array1<double> NewPoles)
+    public static void Trimming(int degree, bool periodic, int dimension, NCollection_Array1<double> knots,
+                                NCollection_Array1<int> mults, NCollection_Array1<double> poles, double u1, double u2,
+                                NCollection_Array1<double> newKnots, NCollection_Array1<int> newMults,
+                                NCollection_Array1<double> newPoles)
     {
         int i, nbpoles = 0, nbknots = 0;
-        double[] kk = [U1, U2];
-        int[] mm = [Degree, Degree];
-        NCollection_Array1<double> K = new(kk, 0, 1, 2);
-        NCollection_Array1<int> M = new(mm, 0, 1, 2);
-        if (!PrepareInsertKnots(Degree,
-                                Periodic,
-                                Knots,
-                                Mults,
-                                K,
-                                M,
+        double[] kk = [u1, u2];
+        int[] mm = [degree, degree];
+        NCollection_Array1<double> k = new(kk, 0, 1, 2);
+        NCollection_Array1<int> m = new(mm, 0, 1, 2);
+        if (!PrepareInsertKnots(degree,
+                                periodic,
+                                knots,
+                                mults,
+                                k,
+                                m,
                                 out nbpoles,
                                 out nbknots,
-                                Epsilon(U1),
+                                Epsilon(u1),
                                 false))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
-        NCollection_Array1<double> TempPoles = new(1, nbpoles * Dimension);
-        NCollection_Array1<double> TempKnots = new(1, nbknots);
-        NCollection_Array1<int> TempMults = new(1, nbknots);
+        NCollection_Array1<double> tempPoles = new(1, nbpoles * dimension);
+        NCollection_Array1<double> tempKnots = new(1, nbknots);
+        NCollection_Array1<int> tempMults = new(1, nbknots);
 
         //
         // do not allow the multiplicities to Add : they must be less than Degree
         //
-        InsertKnots(Degree,
-                    Periodic,
-                    Dimension,
-                    Poles,
-                    Knots,
-                    Mults,
-                    K,
-                    M,
-                    TempPoles,
-                    TempKnots,
-                    TempMults,
-                    Epsilon(U1),
+        InsertKnots(degree,
+                    periodic,
+                    dimension,
+                    poles,
+                    knots,
+                    mults,
+                    k,
+                    m,
+                    tempPoles,
+                    tempKnots,
+                    tempMults,
+                    Epsilon(u1),
                     false);
 
         // find in TempPoles the index of the pole corresponding to U1
-        int Kindex = 0, Pindex;
-        double NewU1;
-        LocateParameter(Degree,
-                        TempKnots,
-                        TempMults,
-                        U1,
-                        Periodic,
-                        TempKnots.Lower(),
-                        TempKnots.Upper(),
-                        out Kindex,
-                        out NewU1);
-        Pindex = PoleIndex(Degree, Kindex, Periodic, TempMults);
-        Pindex *= Dimension;
+        int kindex = 0, pindex;
+        double newU1;
+        LocateParameter(degree,
+                        tempKnots,
+                        tempMults,
+                        u1,
+                        periodic,
+                        tempKnots.Lower(),
+                        tempKnots.Upper(),
+                        out kindex,
+                        out newU1);
+        pindex = PoleIndex(degree, kindex, periodic, tempMults);
+        pindex *= dimension;
 
-        for (i = 1; i <= NewPoles.Length(); i++)
+        for (i = 1; i <= newPoles.Length(); i++)
         {
-            NewPoles[i] = TempPoles[Pindex + i];
+            newPoles[i] = tempPoles[pindex + i];
         }
 
-        for (i = 1; i <= NewKnots.Length(); i++)
+        for (i = 1; i <= newKnots.Length(); i++)
         {
-            NewKnots[i] = TempKnots[Kindex + i - 1];
-            NewMults[i] = TempMults[Kindex + i - 1];
+            newKnots[i] = tempKnots[kindex + i - 1];
+            newMults[i] = tempMults[kindex + i - 1];
         }
-        NewMults[1] = Min(Degree, NewMults[1]) + 1;
-        NewMults[NewMults.Length()] = Min(Degree, NewMults[NewMults.Length()]) + 1;
+        newMults[1] = Min(degree, newMults[1]) + 1;
+        newMults[newMults.Length()] = Min(degree, newMults[newMults.Length()]) + 1;
     }
 
     /// <summary>
-    /// Solves the banded system factored by <see cref="FactorBandedMatrix"/> for <paramref name="Array"/>, an array
+    /// Solves the banded system factored by <see cref="FactorBandedMatrix"/> for <paramref name="array"/>, an array
     /// of points of dimension ArrayDimension (one per row), in place. Returns 0, or 1 on a bad matrix or a null pivot.
     /// </summary>
-    public static int SolveBandedSystem(math_Matrix Matrix, int UpperBandWidth, int LowerBandWidth, int ArrayDimension,
-                                        Span<double> Array)
+    public static int SolveBandedSystem(Matrix matrix, int upperBandWidth, int lowerBandWidth, int arrayDimension,
+                                        Span<double> array)
     {
-        if (Matrix.LowerCol() != 1 || Matrix.UpperCol() != UpperBandWidth + LowerBandWidth + 1)
+        if (matrix.LowerCol() != 1 || matrix.UpperCol() != upperBandWidth + lowerBandWidth + 1)
         {
             return 1;
         }
 
-        Span<double> PolesArray = Array;
-        int aLRow = Matrix.LowerRow();
-        int aNCols = Matrix.ColNumber();
-        ReadOnlySpan<double> aMatData = Matrix.AsSpan(); // from (aLRow, 1), row-major
+        Span<double> polesArray = array;
+        int lRow = matrix.LowerRow();
+        int nCols = matrix.ColNumber();
+        ReadOnlySpan<double> matData = matrix.AsSpan(); // from (aLRow, 1), row-major
 
-        for (int ii = aLRow + 1; ii <= Matrix.UpperRow(); ii++)
+        for (int ii = lRow + 1; ii <= matrix.UpperRow(); ii++)
         {
-            int aMinIndex = (ii - LowerBandWidth >= aLRow ? ii - LowerBandWidth : aLRow);
-            ReadOnlySpan<double> aRowII = aMatData.Slice((ii - aLRow) * aNCols, aNCols);
+            int minIndex = (ii - lowerBandWidth >= lRow ? ii - lowerBandWidth : lRow);
+            ReadOnlySpan<double> rowII = matData.Slice((ii - lRow) * nCols, nCols);
 
-            for (int jj = aMinIndex; jj < ii; jj++)
+            for (int jj = minIndex; jj < ii; jj++)
             {
-                double aCoeff = aRowII[jj - ii + LowerBandWidth];
-                for (int kk = 0; kk < ArrayDimension; kk++)
+                double coeff = rowII[jj - ii + lowerBandWidth];
+                for (int kk = 0; kk < arrayDimension; kk++)
                 {
-                    PolesArray[(ii - 1) * ArrayDimension + kk] +=
-                      PolesArray[(jj - 1) * ArrayDimension + kk] * aCoeff;
+                    polesArray[(ii - 1) * arrayDimension + kk] +=
+                      polesArray[(jj - 1) * arrayDimension + kk] * coeff;
                 }
             }
         }
 
-        for (int ii = Matrix.UpperRow(); ii >= aLRow; ii--)
+        for (int ii = matrix.UpperRow(); ii >= lRow; ii--)
         {
-            int aMaxIndex =
-              (ii + UpperBandWidth <= Matrix.UpperRow() ? ii + UpperBandWidth : Matrix.UpperRow());
-            ReadOnlySpan<double> aRowII = aMatData.Slice((ii - aLRow) * aNCols, aNCols);
+            int maxIndex =
+              (ii + upperBandWidth <= matrix.UpperRow() ? ii + upperBandWidth : matrix.UpperRow());
+            ReadOnlySpan<double> rowII = matData.Slice((ii - lRow) * nCols, nCols);
 
-            for (int jj = aMaxIndex; jj > ii; jj--)
+            for (int jj = maxIndex; jj > ii; jj--)
             {
-                double aCoeff = aRowII[jj - ii + LowerBandWidth];
-                for (int kk = 0; kk < ArrayDimension; kk++)
+                double coeff = rowII[jj - ii + lowerBandWidth];
+                for (int kk = 0; kk < arrayDimension; kk++)
                 {
-                    PolesArray[(ii - 1) * ArrayDimension + kk] -=
-                      PolesArray[(jj - 1) * ArrayDimension + kk] * aCoeff;
+                    polesArray[(ii - 1) * arrayDimension + kk] -=
+                      polesArray[(jj - 1) * arrayDimension + kk] * coeff;
                 }
             }
 
             // Fixing a bug PRO18577 to avoid division by zero
-            double aDivisor = aRowII[LowerBandWidth];
+            double divisor = rowII[lowerBandWidth];
             const double THE_TOLERANCE = 1.0e-16;
-            if (Math.Abs(aDivisor) <= THE_TOLERANCE)
+            if (Math.Abs(divisor) <= THE_TOLERANCE)
             {
                 return 1;
             }
-            double anInverse = 1.0 / aDivisor;
+            double inverse = 1.0 / divisor;
 
-            for (int kk = 0; kk < ArrayDimension; kk++)
+            for (int kk = 0; kk < arrayDimension; kk++)
             {
-                PolesArray[(ii - 1) * ArrayDimension + kk] *= anInverse;
+                polesArray[(ii - 1) * arrayDimension + kk] *= inverse;
             }
         }
 
@@ -3199,55 +3203,55 @@ public static partial class BSplCLib
     }
 
     /// <summary>
-    /// Solves the banded system for rational poles: if <paramref name="HomogenousFlag"/> is false the poles are
+    /// Solves the banded system for rational poles: if <paramref name="homogenousFlag"/> is false the poles are
     /// first multiplied by the weights and divided back after. Returns 0, or 2 or 3 if solving the poles or the
     /// weights failed (1 on a bad matrix).
     /// </summary>
-    public static int SolveBandedSystem(math_Matrix Matrix, int UpperBandWidth, int LowerBandWidth, bool HomogenousFlag,
-                                        int ArrayDimension, Span<double> Array, Span<double> Weights)
+    public static int SolveBandedSystem(Matrix matrix, int upperBandWidth, int lowerBandWidth, bool homogenousFlag,
+                                        int arrayDimension, Span<double> array, Span<double> weights)
     {
-        bool HomogeneousFlag = HomogenousFlag;
-        if (Matrix.LowerCol() != 1 || Matrix.UpperCol() != UpperBandWidth + LowerBandWidth + 1)
+        bool homogeneousFlag = homogenousFlag;
+        if (matrix.LowerCol() != 1 || matrix.UpperCol() != upperBandWidth + lowerBandWidth + 1)
         {
             return 1;
         }
 
-        Span<double> aPolesArray = Array;
-        Span<double> aWeightsArray = Weights;
-        int aNumRows = Matrix.UpperRow() - Matrix.LowerRow() + 1;
+        Span<double> polesArray = array;
+        Span<double> weightsArray = weights;
+        int numRows = matrix.UpperRow() - matrix.LowerRow() + 1;
 
-        if (!HomogeneousFlag)
+        if (!homogeneousFlag)
         {
-            for (int ii = 0; ii < aNumRows; ii++)
+            for (int ii = 0; ii < numRows; ii++)
             {
-                for (int kk = 0; kk < ArrayDimension; kk++)
+                for (int kk = 0; kk < arrayDimension; kk++)
                 {
-                    aPolesArray[ii * ArrayDimension + kk] *= aWeightsArray[ii];
+                    polesArray[ii * arrayDimension + kk] *= weightsArray[ii];
                 }
             }
         }
 
-        int anErrorCode =
-          BSplCLib.SolveBandedSystem(Matrix, UpperBandWidth, LowerBandWidth, ArrayDimension, Array);
-        if (anErrorCode != 0)
+        int errorCode =
+          global::Kerf.Engine.Geometry.Splines.BSplCLib.SolveBandedSystem(matrix, upperBandWidth, lowerBandWidth, arrayDimension, array);
+        if (errorCode != 0)
         {
             return 2;
         }
 
-        anErrorCode = BSplCLib.SolveBandedSystem(Matrix, UpperBandWidth, LowerBandWidth, 1, Weights);
-        if (anErrorCode != 0)
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.SolveBandedSystem(matrix, upperBandWidth, lowerBandWidth, 1, weights);
+        if (errorCode != 0)
         {
             return 3;
         }
 
-        if (!HomogeneousFlag)
+        if (!homogeneousFlag)
         {
-            for (int ii = 0; ii < aNumRows; ii++)
+            for (int ii = 0; ii < numRows; ii++)
             {
-                double anInverse = 1.0 / aWeightsArray[ii];
-                for (int kk = 0; kk < ArrayDimension; kk++)
+                double inverse = 1.0 / weightsArray[ii];
+                for (int kk = 0; kk < arrayDimension; kk++)
                 {
-                    aPolesArray[ii * ArrayDimension + kk] *= anInverse;
+                    polesArray[ii * arrayDimension + kk] *= inverse;
                 }
             }
         }
@@ -3256,224 +3260,224 @@ public static partial class BSplCLib
     }
 
     /// <summary>Computes the Schoenberg points (the averages of Degree consecutive flat knots) into Parameters.</summary>
-    public static void BuildSchoenbergPoints(int Degree, NCollection_Array1<double> FlatKnots,
-                                             NCollection_Array1<double> Parameters)
+    public static void BuildSchoenbergPoints(int degree, NCollection_Array1<double> flatKnots,
+                                             NCollection_Array1<double> parameters)
     {
         int ii, jj;
-        double Inverse;
-        Inverse = 1.0e0 / (double)Degree;
+        double inverse;
+        inverse = 1.0e0 / (double)degree;
 
-        for (ii = Parameters.Lower(); ii <= Parameters.Upper(); ii++)
+        for (ii = parameters.Lower(); ii <= parameters.Upper(); ii++)
         {
-            Parameters[ii] = 0.0e0;
+            parameters[ii] = 0.0e0;
 
-            for (jj = 1; jj <= Degree; jj++)
+            for (jj = 1; jj <= degree; jj++)
             {
-                Parameters[ii] += FlatKnots[jj + ii];
+                parameters[ii] += flatKnots[jj + ii];
             }
-            Parameters[ii] *= Inverse;
+            parameters[ii] *= inverse;
         }
     }
 
     /// <summary>
     /// Interpolates the points (and derivatives, by ContactOrderArray) of dimension ArrayDimension stored in
-    /// <paramref name="Poles"/> at Parameters with a B-spline on FlatKnots; Poles receives the poles.
+    /// <paramref name="poles"/> at Parameters with a B-spline on FlatKnots; Poles receives the poles.
     /// InversionProblem is the pivot index of a singular matrix (0 otherwise). Throws
-    /// <see cref="Standard_OutOfRange"/> if the system can't be built or solved.
+    /// <see cref="OutOfRangeException"/> if the system can't be built or solved.
     /// </summary>
-    public static void Interpolate(int Degree, NCollection_Array1<double> FlatKnots, NCollection_Array1<double> Parameters,
-                                   NCollection_Array1<int> ContactOrderArray, int ArrayDimension, Span<double> Poles,
-                                   out int InversionProblem)
+    public static void Interpolate(int degree, NCollection_Array1<double> flatKnots, NCollection_Array1<double> parameters,
+                                   NCollection_Array1<int> contactOrderArray, int arrayDimension, Span<double> poles,
+                                   out int inversionProblem)
     {
-        int ErrorCode, UpperBandWidth, LowerBandWidth;
+        int errorCode, upperBandWidth, lowerBandWidth;
         // Note: OCCT uses a stack buffer of up to 2048 values for the matrix
-        math_Matrix InterpolationMatrix = new(1, Parameters.Length(), 1, 2 * Degree + 1);
-        ErrorCode = BSplCLib.BuildBSpMatrix(Parameters,
-                                            ContactOrderArray,
-                                            FlatKnots,
-                                            Degree,
-                                            InterpolationMatrix,
-                                            out UpperBandWidth,
-                                            out LowerBandWidth);
-        if (ErrorCode != 0)
+        Matrix interpolationMatrix = new(1, parameters.Length(), 1, 2 * degree + 1);
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildBSpMatrix(parameters,
+                                            contactOrderArray,
+                                            flatKnots,
+                                            degree,
+                                            interpolationMatrix,
+                                            out upperBandWidth,
+                                            out lowerBandWidth);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
 
-        ErrorCode = BSplCLib.FactorBandedMatrix(InterpolationMatrix,
-                                                UpperBandWidth,
-                                                LowerBandWidth,
-                                                out InversionProblem);
-        if (ErrorCode != 0)
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.FactorBandedMatrix(interpolationMatrix,
+                                                upperBandWidth,
+                                                lowerBandWidth,
+                                                out inversionProblem);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
 
-        ErrorCode = BSplCLib.SolveBandedSystem(InterpolationMatrix,
-                                               UpperBandWidth,
-                                               LowerBandWidth,
-                                               ArrayDimension,
-                                               Poles);
-        if (ErrorCode != 0)
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.SolveBandedSystem(interpolationMatrix,
+                                               upperBandWidth,
+                                               lowerBandWidth,
+                                               arrayDimension,
+                                               poles);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
     }
 
     /// <summary>
     /// Rational interpolation: as <see cref="Interpolate(int, NCollection_Array1{double}, NCollection_Array1{double}, NCollection_Array1{int}, int, Span{double}, out int)"/>
-    /// with the weights in <paramref name="Weights"/> (non-homogeneous poles).
+    /// with the weights in <paramref name="weights"/> (non-homogeneous poles).
     /// </summary>
-    public static void Interpolate(int Degree, NCollection_Array1<double> FlatKnots, NCollection_Array1<double> Parameters,
-                                   NCollection_Array1<int> ContactOrderArray, int ArrayDimension, Span<double> Poles,
-                                   Span<double> Weights, out int InversionProblem)
+    public static void Interpolate(int degree, NCollection_Array1<double> flatKnots, NCollection_Array1<double> parameters,
+                                   NCollection_Array1<int> contactOrderArray, int arrayDimension, Span<double> poles,
+                                   Span<double> weights, out int inversionProblem)
     {
-        int ErrorCode, UpperBandWidth, LowerBandWidth;
+        int errorCode, upperBandWidth, lowerBandWidth;
         // Note: OCCT uses a stack buffer of up to 2048 values for the matrix
-        math_Matrix InterpolationMatrix = new(1, Parameters.Length(), 1, 2 * Degree + 1);
-        ErrorCode = BSplCLib.BuildBSpMatrix(Parameters,
-                                            ContactOrderArray,
-                                            FlatKnots,
-                                            Degree,
-                                            InterpolationMatrix,
-                                            out UpperBandWidth,
-                                            out LowerBandWidth);
-        if (ErrorCode != 0)
+        Matrix interpolationMatrix = new(1, parameters.Length(), 1, 2 * degree + 1);
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildBSpMatrix(parameters,
+                                            contactOrderArray,
+                                            flatKnots,
+                                            degree,
+                                            interpolationMatrix,
+                                            out upperBandWidth,
+                                            out lowerBandWidth);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
 
-        ErrorCode = BSplCLib.FactorBandedMatrix(InterpolationMatrix,
-                                                UpperBandWidth,
-                                                LowerBandWidth,
-                                                out InversionProblem);
-        if (ErrorCode != 0)
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.FactorBandedMatrix(interpolationMatrix,
+                                                upperBandWidth,
+                                                lowerBandWidth,
+                                                out inversionProblem);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
 
-        ErrorCode = BSplCLib.SolveBandedSystem(InterpolationMatrix,
-                                               UpperBandWidth,
-                                               LowerBandWidth,
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.SolveBandedSystem(interpolationMatrix,
+                                               upperBandWidth,
+                                               lowerBandWidth,
                                                false,
-                                               ArrayDimension,
-                                               Poles,
-                                               Weights);
-        if (ErrorCode != 0)
+                                               arrayDimension,
+                                               poles,
+                                               weights);
+        if (errorCode != 0)
         {
-            throw new Standard_OutOfRange("BSplCLib::Interpolate");
+            throw new OutOfRangeException("BSplCLib::Interpolate");
         }
     }
 
     /// <summary>
     /// Evaluates the rational B-spline (poles of dimension ArrayDimension, non-homogeneous, and weights) and its
-    /// derivatives up to DerivativeRequest at <paramref name="U"/>, into PolesResult (homogeneous) and
-    /// WeightsResult. <paramref name="ExtrapMode"/> holds two values: the degree of extrapolation before the
+    /// derivatives up to DerivativeRequest at <paramref name="u"/>, into PolesResult (homogeneous) and
+    /// WeightsResult. <paramref name="extrapMode"/> holds two values: the degree of extrapolation before the
     /// first and after the last knot (a Taylor expansion of that order is used beyond the ends).
     /// </summary>
-    public static void Eval(double U, bool PeriodicFlag, int DerivativeRequest, ReadOnlySpan<int> ExtrapMode, int Degree,
-                            NCollection_Array1<double> FlatKnots, int ArrayDimension, ReadOnlySpan<double> Poles,
-                            ReadOnlySpan<double> Weights, Span<double> PolesResult, Span<double> WeightsResult)
+    public static void Eval(double u, bool periodicFlag, int derivativeRequest, ReadOnlySpan<int> extrapMode, int degree,
+                            NCollection_Array1<double> flatKnots, int arrayDimension, ReadOnlySpan<double> poles,
+                            ReadOnlySpan<double> weights, Span<double> polesResult, Span<double> weightsResult)
     {
-        double Parameter = U;
-        int ii, jj, kk = 0, Index, Index1, Index2, Modulus, NewRequest,
-                    ErrorCode, Order = Degree + 1, FirstNonZeroBsplineIndex,
-                    LocalRequest = DerivativeRequest;
-        Span<int> ExtrapolatingFlag = stackalloc int[2];
-        double LocalParameter, Period, Inverse, Delta;
-        ReadOnlySpan<double> PolesArray = Poles;
-        ReadOnlySpan<double> WeightsArray = Weights;
-        ReadOnlySpan<int> ExtrapModeArray = ExtrapMode;
-        Span<double> PResultArray = PolesResult;
-        Span<double> WResultArray = WeightsResult;
-        LocalParameter = Parameter;
-        ExtrapolatingFlag[0] = ExtrapolatingFlag[1] = 0;
+        double parameter = u;
+        int ii, jj, kk = 0, index, index1, index2, modulus, newRequest,
+                    errorCode, order = degree + 1, firstNonZeroBsplineIndex,
+                    localRequest = derivativeRequest;
+        Span<int> extrapolatingFlag = stackalloc int[2];
+        double localParameter, period, inverse, delta;
+        ReadOnlySpan<double> polesArray = poles;
+        ReadOnlySpan<double> weightsArray = weights;
+        ReadOnlySpan<int> extrapModeArray = extrapMode;
+        Span<double> pResultArray = polesResult;
+        Span<double> wResultArray = weightsResult;
+        localParameter = parameter;
+        extrapolatingFlag[0] = extrapolatingFlag[1] = 0;
         //
         // check if we are extrapolating to a degree which is smaller than
         // the degree of the Bspline
         //
-        if (PeriodicFlag)
+        if (periodicFlag)
         {
-            Period = FlatKnots[FlatKnots.Upper() - 1] - FlatKnots[2];
+            period = flatKnots[flatKnots.Upper() - 1] - flatKnots[2];
 
-            while (LocalParameter > FlatKnots[FlatKnots.Upper() - 1])
+            while (localParameter > flatKnots[flatKnots.Upper() - 1])
             {
-                LocalParameter -= Period;
+                localParameter -= period;
             }
 
-            while (LocalParameter < FlatKnots[2])
+            while (localParameter < flatKnots[2])
             {
-                LocalParameter += Period;
+                localParameter += period;
             }
         }
-        if (Parameter < FlatKnots[2] && LocalRequest < ExtrapModeArray[0] && ExtrapModeArray[0] < Degree)
+        if (parameter < flatKnots[2] && localRequest < extrapModeArray[0] && extrapModeArray[0] < degree)
         {
-            LocalRequest = ExtrapModeArray[0];
-            LocalParameter = FlatKnots[2];
-            ExtrapolatingFlag[0] = 1;
+            localRequest = extrapModeArray[0];
+            localParameter = flatKnots[2];
+            extrapolatingFlag[0] = 1;
         }
-        if (Parameter > FlatKnots[FlatKnots.Upper() - 1] && LocalRequest < ExtrapModeArray[1]
-            && ExtrapModeArray[1] < Degree)
+        if (parameter > flatKnots[flatKnots.Upper() - 1] && localRequest < extrapModeArray[1]
+            && extrapModeArray[1] < degree)
         {
-            LocalRequest = ExtrapModeArray[1];
-            LocalParameter = FlatKnots[FlatKnots.Upper() - 1];
-            ExtrapolatingFlag[1] = 1;
+            localRequest = extrapModeArray[1];
+            localParameter = flatKnots[flatKnots.Upper() - 1];
+            extrapolatingFlag[1] = 1;
         }
-        Delta = Parameter - LocalParameter;
-        if (LocalRequest >= Order)
+        delta = parameter - localParameter;
+        if (localRequest >= order)
         {
-            LocalRequest = Degree;
+            localRequest = degree;
         }
-        if (PeriodicFlag)
+        if (periodicFlag)
         {
-            Modulus = FlatKnots.Length() - Degree - 1;
+            modulus = flatKnots.Length() - degree - 1;
         }
         else
         {
-            Modulus = FlatKnots.Length() - Degree;
+            modulus = flatKnots.Length() - degree;
         }
 
-        math_Matrix BsplineBasis = BSplCLib_LocalMatrix(LocalRequest, Order);
-        ErrorCode = BSplCLib.EvalBsplineBasis(LocalRequest,
-                                              Order,
-                                              FlatKnots,
-                                              LocalParameter,
-                                              out FirstNonZeroBsplineIndex,
-                                              BsplineBasis);
-        if (ErrorCode != 0)
+        Matrix bsplineBasis = BSplCLib_LocalMatrix(localRequest, order);
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(localRequest,
+                                              order,
+                                              flatKnots,
+                                              localParameter,
+                                              out firstNonZeroBsplineIndex,
+                                              bsplineBasis);
+        if (errorCode != 0)
         {
             return;
         }
-        if (ExtrapolatingFlag[0] == 0 && ExtrapolatingFlag[1] == 0)
+        if (extrapolatingFlag[0] == 0 && extrapolatingFlag[1] == 0)
         {
-            Index = 0;
-            Index2 = 0;
+            index = 0;
+            index2 = 0;
 
-            for (ii = 1; ii <= LocalRequest + 1; ii++)
+            for (ii = 1; ii <= localRequest + 1; ii++)
             {
-                Index1 = FirstNonZeroBsplineIndex;
+                index1 = firstNonZeroBsplineIndex;
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    PResultArray[Index + kk] = 0.0e0;
+                    pResultArray[index + kk] = 0.0e0;
                 }
-                WResultArray[Index] = 0.0e0;
+                wResultArray[index] = 0.0e0;
 
-                for (jj = 1; jj <= Order; jj++)
+                for (jj = 1; jj <= order; jj++)
                 {
 
-                    for (kk = 0; kk < ArrayDimension; kk++)
+                    for (kk = 0; kk < arrayDimension; kk++)
                     {
-                        PResultArray[Index + kk] += PolesArray[(Index1 - 1) * ArrayDimension + kk]
-                                                    * WeightsArray[Index1 - 1] * BsplineBasis[ii, jj];
+                        pResultArray[index + kk] += polesArray[(index1 - 1) * arrayDimension + kk]
+                                                    * weightsArray[index1 - 1] * bsplineBasis[ii, jj];
                     }
-                    WResultArray[Index2] += WeightsArray[Index1 - 1] * BsplineBasis[ii, jj];
+                    wResultArray[index2] += weightsArray[index1 - 1] * bsplineBasis[ii, jj];
 
-                    Index1 = Index1 % Modulus;
-                    Index1 += 1;
+                    index1 = index1 % modulus;
+                    index1 += 1;
                 }
-                Index += ArrayDimension;
-                Index2 += 1;
+                index += arrayDimension;
+                index2 += 1;
             }
         }
         else
@@ -3481,175 +3485,175 @@ public static partial class BSplCLib
             //
             //  store Taylor expansion in LocalRealArray
             //
-            NewRequest = DerivativeRequest;
-            if (NewRequest > Degree)
+            newRequest = derivativeRequest;
+            if (newRequest > degree)
             {
-                NewRequest = Degree;
+                newRequest = degree;
             }
             // OCCT sizes LocalRealArray (LocalRequest + 1) * ArrayDimension, then evaluates a polynomial of degree
             // Degree (> LocalRequest here) on it, reading past the Taylor coefficients into uninitialised memory.
             // The port sizes it for Degree + 1 rows; the extra rows are zero.
-            int aLocalSize = Max(LocalRequest + 1, Degree + 1) * ArrayDimension;
-            Span<double> LocalRealArray = aLocalSize <= 128 ? stackalloc double[aLocalSize] : new double[aLocalSize];
-            Index = 0;
-            Inverse = 1.0e0;
+            int localSize = Max(localRequest + 1, degree + 1) * arrayDimension;
+            Span<double> localRealArray = localSize <= 128 ? stackalloc double[localSize] : new double[localSize];
+            index = 0;
+            inverse = 1.0e0;
 
-            for (ii = 1; ii <= LocalRequest + 1; ii++)
+            for (ii = 1; ii <= localRequest + 1; ii++)
             {
-                Index1 = FirstNonZeroBsplineIndex;
+                index1 = firstNonZeroBsplineIndex;
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    LocalRealArray[Index + kk] = 0.0e0;
+                    localRealArray[index + kk] = 0.0e0;
                 }
 
-                for (jj = 1; jj <= Order; jj++)
+                for (jj = 1; jj <= order; jj++)
                 {
 
-                    for (kk = 0; kk < ArrayDimension; kk++)
+                    for (kk = 0; kk < arrayDimension; kk++)
                     {
-                        LocalRealArray[Index + kk] += PolesArray[(Index1 - 1) * ArrayDimension + kk]
-                                                      * WeightsArray[Index1 - 1] * BsplineBasis[ii, jj];
+                        localRealArray[index + kk] += polesArray[(index1 - 1) * arrayDimension + kk]
+                                                      * weightsArray[index1 - 1] * bsplineBasis[ii, jj];
                     }
-                    Index1 = Index1 % Modulus;
-                    Index1 += 1;
+                    index1 = index1 % modulus;
+                    index1 += 1;
                 }
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    LocalRealArray[Index + kk] *= Inverse;
+                    localRealArray[index + kk] *= inverse;
                 }
-                Index += ArrayDimension;
-                Inverse /= (double)ii;
+                index += arrayDimension;
+                inverse /= (double)ii;
             }
-            PLib.EvalPolynomial(Delta, NewRequest, Degree, ArrayDimension, LocalRealArray, PolesResult); // OCCT: see above
-            Index = 0;
-            Inverse = 1.0e0;
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(delta, newRequest, degree, arrayDimension, localRealArray, polesResult); // OCCT: see above
+            index = 0;
+            inverse = 1.0e0;
 
-            for (ii = 1; ii <= LocalRequest + 1; ii++)
+            for (ii = 1; ii <= localRequest + 1; ii++)
             {
-                Index1 = FirstNonZeroBsplineIndex;
-                LocalRealArray[Index] = 0.0e0;
+                index1 = firstNonZeroBsplineIndex;
+                localRealArray[index] = 0.0e0;
 
-                for (jj = 1; jj <= Order; jj++)
+                for (jj = 1; jj <= order; jj++)
                 {
-                    LocalRealArray[Index] += WeightsArray[Index1 - 1] * BsplineBasis[ii, jj];
-                    Index1 = Index1 % Modulus;
-                    Index1 += 1;
+                    localRealArray[index] += weightsArray[index1 - 1] * bsplineBasis[ii, jj];
+                    index1 = index1 % modulus;
+                    index1 += 1;
                 }
-                LocalRealArray[Index] *= Inverse;
-                Index += 1;
-                Inverse /= (double)ii;
+                localRealArray[index] *= inverse;
+                index += 1;
+                inverse /= (double)ii;
             }
             // OCCT: here the coefficients past LocalRequest are the poles' values left from above
-            PLib.EvalPolynomial(Delta, NewRequest, Degree, 1, LocalRealArray, WeightsResult);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(delta, newRequest, degree, 1, localRealArray, weightsResult);
         }
     }
 
     /// <summary>
     /// Evaluates the B-spline (poles of dimension ArrayDimension) and its derivatives up to DerivativeRequest at
-    /// <paramref name="U"/> into Result. <paramref name="ExtrapMode"/> holds two values: the degree of
+    /// <paramref name="u"/> into Result. <paramref name="extrapMode"/> holds two values: the degree of
     /// extrapolation before the first and after the last knot.
     /// </summary>
-    public static void Eval(double U, bool PeriodicFlag, int DerivativeRequest, ReadOnlySpan<int> ExtrapMode, int Degree,
-                            NCollection_Array1<double> FlatKnots, int ArrayDimension, ReadOnlySpan<double> Poles,
-                            Span<double> Result)
+    public static void Eval(double u, bool periodicFlag, int derivativeRequest, ReadOnlySpan<int> extrapMode, int degree,
+                            NCollection_Array1<double> flatKnots, int arrayDimension, ReadOnlySpan<double> poles,
+                            Span<double> result)
     {
-        double Parameter = U;
-        int ii, jj, kk, Index, Index1, Modulus, NewRequest,
-          ErrorCode, Order = Degree + 1, FirstNonZeroBsplineIndex, LocalRequest = DerivativeRequest;
-        Span<int> ExtrapolatingFlag = stackalloc int[2];
+        double parameter = u;
+        int ii, jj, kk, index, index1, modulus, newRequest,
+          errorCode, order = degree + 1, firstNonZeroBsplineIndex, localRequest = derivativeRequest;
+        Span<int> extrapolatingFlag = stackalloc int[2];
 
-        double LocalParameter, Period, Inverse, Delta;
+        double localParameter, period, inverse, delta;
 
-        ReadOnlySpan<double> PolesArray = Poles;
-        ReadOnlySpan<int> ExtrapModeArray = ExtrapMode;
-        Span<double> ResultArray = Result;
-        LocalParameter = Parameter;
-        ExtrapolatingFlag[0] = ExtrapolatingFlag[1] = 0;
+        ReadOnlySpan<double> polesArray = poles;
+        ReadOnlySpan<int> extrapModeArray = extrapMode;
+        Span<double> resultArray = result;
+        localParameter = parameter;
+        extrapolatingFlag[0] = extrapolatingFlag[1] = 0;
         //
         // check if we are extrapolating to a degree which is smaller than
         // the degree of the Bspline
         //
-        if (PeriodicFlag)
+        if (periodicFlag)
         {
-            Period = FlatKnots[FlatKnots.Upper() - 1] - FlatKnots[2];
+            period = flatKnots[flatKnots.Upper() - 1] - flatKnots[2];
 
-            while (LocalParameter > FlatKnots[FlatKnots.Upper() - 1])
+            while (localParameter > flatKnots[flatKnots.Upper() - 1])
             {
-                LocalParameter -= Period;
+                localParameter -= period;
             }
 
-            while (LocalParameter < FlatKnots[2])
+            while (localParameter < flatKnots[2])
             {
-                LocalParameter += Period;
+                localParameter += period;
             }
         }
-        if (Parameter < FlatKnots[2] && LocalRequest < ExtrapModeArray[0] && ExtrapModeArray[0] < Degree)
+        if (parameter < flatKnots[2] && localRequest < extrapModeArray[0] && extrapModeArray[0] < degree)
         {
-            LocalRequest = ExtrapModeArray[0];
-            LocalParameter = FlatKnots[2];
-            ExtrapolatingFlag[0] = 1;
+            localRequest = extrapModeArray[0];
+            localParameter = flatKnots[2];
+            extrapolatingFlag[0] = 1;
         }
-        if (Parameter > FlatKnots[FlatKnots.Upper() - 1] && LocalRequest < ExtrapModeArray[1]
-            && ExtrapModeArray[1] < Degree)
+        if (parameter > flatKnots[flatKnots.Upper() - 1] && localRequest < extrapModeArray[1]
+            && extrapModeArray[1] < degree)
         {
-            LocalRequest = ExtrapModeArray[1];
-            LocalParameter = FlatKnots[FlatKnots.Upper() - 1];
-            ExtrapolatingFlag[1] = 1;
+            localRequest = extrapModeArray[1];
+            localParameter = flatKnots[flatKnots.Upper() - 1];
+            extrapolatingFlag[1] = 1;
         }
-        Delta = Parameter - LocalParameter;
-        if (LocalRequest >= Order)
+        delta = parameter - localParameter;
+        if (localRequest >= order)
         {
-            LocalRequest = Degree;
+            localRequest = degree;
         }
 
-        if (PeriodicFlag)
+        if (periodicFlag)
         {
-            Modulus = FlatKnots.Length() - Degree - 1;
+            modulus = flatKnots.Length() - degree - 1;
         }
         else
         {
-            Modulus = FlatKnots.Length() - Degree;
+            modulus = flatKnots.Length() - degree;
         }
 
-        math_Matrix BsplineBasis = BSplCLib_LocalMatrix(LocalRequest, Order);
+        Matrix bsplineBasis = BSplCLib_LocalMatrix(localRequest, order);
 
-        ErrorCode = BSplCLib.EvalBsplineBasis(LocalRequest,
-                                              Order,
-                                              FlatKnots,
-                                              LocalParameter,
-                                              out FirstNonZeroBsplineIndex,
-                                              BsplineBasis);
-        if (ErrorCode != 0)
+        errorCode = global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(localRequest,
+                                              order,
+                                              flatKnots,
+                                              localParameter,
+                                              out firstNonZeroBsplineIndex,
+                                              bsplineBasis);
+        if (errorCode != 0)
         {
             return;
         }
-        if (ExtrapolatingFlag[0] == 0 && ExtrapolatingFlag[1] == 0)
+        if (extrapolatingFlag[0] == 0 && extrapolatingFlag[1] == 0)
         {
-            Index = 0;
+            index = 0;
 
-            for (ii = 1; ii <= LocalRequest + 1; ii++)
+            for (ii = 1; ii <= localRequest + 1; ii++)
             {
-                Index1 = FirstNonZeroBsplineIndex;
+                index1 = firstNonZeroBsplineIndex;
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    ResultArray[Index + kk] = 0.0e0;
+                    resultArray[index + kk] = 0.0e0;
                 }
 
-                for (jj = 1; jj <= Order; jj++)
+                for (jj = 1; jj <= order; jj++)
                 {
 
-                    for (kk = 0; kk < ArrayDimension; kk++)
+                    for (kk = 0; kk < arrayDimension; kk++)
                     {
-                        ResultArray[Index + kk] +=
-                          PolesArray[(Index1 - 1) * ArrayDimension + kk] * BsplineBasis[ii, jj];
+                        resultArray[index + kk] +=
+                          polesArray[(index1 - 1) * arrayDimension + kk] * bsplineBasis[ii, jj];
                     }
-                    Index1 = Index1 % Modulus;
-                    Index1 += 1;
+                    index1 = index1 % modulus;
+                    index1 += 1;
                 }
-                Index += ArrayDimension;
+                index += arrayDimension;
             }
         }
         else
@@ -3657,68 +3661,68 @@ public static partial class BSplCLib
             //
             //  store Taylor expansion in LocalRealArray
             //
-            NewRequest = DerivativeRequest;
-            if (NewRequest > Degree)
+            newRequest = derivativeRequest;
+            if (newRequest > degree)
             {
-                NewRequest = Degree;
+                newRequest = degree;
             }
             // OCCT sizes LocalRealArray (LocalRequest + 1) * ArrayDimension, then evaluates a polynomial of degree
             // Degree (> LocalRequest here) on it, reading past the Taylor coefficients into uninitialised memory.
             // The port sizes it for Degree + 1 rows; the extra rows are zero.
-            int aLocalSize = Max(LocalRequest + 1, Degree + 1) * ArrayDimension;
-            Span<double> LocalRealArray = aLocalSize <= 128 ? stackalloc double[aLocalSize] : new double[aLocalSize];
+            int localSize = Max(localRequest + 1, degree + 1) * arrayDimension;
+            Span<double> localRealArray = localSize <= 128 ? stackalloc double[localSize] : new double[localSize];
 
-            Index = 0;
-            Inverse = 1.0e0;
+            index = 0;
+            inverse = 1.0e0;
 
-            for (ii = 1; ii <= LocalRequest + 1; ii++)
+            for (ii = 1; ii <= localRequest + 1; ii++)
             {
-                Index1 = FirstNonZeroBsplineIndex;
+                index1 = firstNonZeroBsplineIndex;
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    LocalRealArray[Index + kk] = 0.0e0;
+                    localRealArray[index + kk] = 0.0e0;
                 }
 
-                for (jj = 1; jj <= Order; jj++)
+                for (jj = 1; jj <= order; jj++)
                 {
 
-                    for (kk = 0; kk < ArrayDimension; kk++)
+                    for (kk = 0; kk < arrayDimension; kk++)
                     {
-                        LocalRealArray[Index + kk] +=
-                          PolesArray[(Index1 - 1) * ArrayDimension + kk] * BsplineBasis[ii, jj];
+                        localRealArray[index + kk] +=
+                          polesArray[(index1 - 1) * arrayDimension + kk] * bsplineBasis[ii, jj];
                     }
-                    Index1 = Index1 % Modulus;
-                    Index1 += 1;
+                    index1 = index1 % modulus;
+                    index1 += 1;
                 }
 
-                for (kk = 0; kk < ArrayDimension; kk++)
+                for (kk = 0; kk < arrayDimension; kk++)
                 {
-                    LocalRealArray[Index + kk] *= Inverse;
+                    localRealArray[index + kk] *= inverse;
                 }
-                Index += ArrayDimension;
-                Inverse /= (double)ii;
+                index += arrayDimension;
+                inverse /= (double)ii;
             }
-            PLib.EvalPolynomial(Delta, NewRequest, Degree, ArrayDimension, LocalRealArray, Result); // OCCT: see above
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(delta, newRequest, degree, arrayDimension, localRealArray, result); // OCCT: see above
         }
     }
 
     /// <summary>
     /// Extends a B-spline (flat knots, NumPoles poles of dimension Dimension) to the point ConstraintPoint, after
-    /// its end (<paramref name="After"/>) or before its start, with continuity <paramref name="Continuity"/> at the
+    /// its end (<paramref name="after"/>) or before its start, with continuity <paramref name="continuity"/> at the
     /// junction; C1Coefficient scales the tangent. Writes the result's flat knots and poles into KnotsResult and
     /// PolesResult (which must be large enough) and their counts into NbKnotsRsult and NbPolesResult.
     /// </summary>
-    public static void TangExtendToConstraint(NCollection_Array1<double> FlatKnots, double C1Coefficient, int NumPoles,
-                                              ReadOnlySpan<double> Poles, int Dimension, int Degree,
-                                              NCollection_Array1<double> ConstraintPoint, int Continuity, bool After,
-                                              out int NbPolesResult, out int NbKnotsRsult, Span<double> KnotsResult,
-                                              Span<double> PolesResult)
+    public static void TangExtendToConstraint(NCollection_Array1<double> flatKnots, double c1Coefficient, int numPoles,
+                                              ReadOnlySpan<double> poles, int dimension, int degree,
+                                              NCollection_Array1<double> constraintPoint, int continuity, bool after,
+                                              out int nbPolesResult, out int nbKnotsRsult, Span<double> knotsResult,
+                                              Span<double> polesResult)
     {
-        int CDimension = Dimension, CDegree = Degree;
-        ReadOnlySpan<double> Padr = Poles;
-        Span<double> KRadr = KnotsResult;
-        Span<double> PRadr = PolesResult;
+        int cDimension = dimension, cDegree = degree;
+        ReadOnlySpan<double> padr = poles;
+        Span<double> kRadr = knotsResult;
+        Span<double> pRadr = polesResult;
 
         ////////////////////////////////////////////////////////////////////////
         //
@@ -3727,186 +3731,186 @@ public static partial class BSplCLib
         ////////////////////////////////////////////////////////////////////////
 
         //  Hermite matrix
-        int Csize = Continuity + 2;
-        math_Matrix MatCoefs = new(1, Csize, 1, Csize);
-        if (After)
+        int csize = continuity + 2;
+        Matrix matCoefs = new(1, csize, 1, csize);
+        if (after)
         {
-            PLib.HermiteCoefficients(0,
+            global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0,
                                      1, // Limits
-                                     Continuity,
+                                     continuity,
                                      0, // Orders of constraints
-                                     MatCoefs);
+                                     matCoefs);
         }
         else
         {
-            PLib.HermiteCoefficients(0,
+            global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0,
                                      1, // Limits
                                      0,
-                                     Continuity, // Orders of constraints
-                                     MatCoefs);
+                                     continuity, // Orders of constraints
+                                     matCoefs);
         }
 
         //  position at the node of connection
-        double Tbord;
-        if (After)
+        double tbord;
+        if (after)
         {
-            Tbord = FlatKnots[FlatKnots.Upper() - CDegree];
+            tbord = flatKnots[flatKnots.Upper() - cDegree];
         }
         else
         {
-            Tbord = FlatKnots[FlatKnots.Lower() + CDegree];
+            tbord = flatKnots[flatKnots.Lower() + cDegree];
         }
         bool periodic_flag = false;
-        int ipos, derivative_request = Max(Continuity, 1);
+        int ipos, derivative_request = Max(continuity, 1);
         Span<int> extrap_mode = stackalloc int[2];
-        extrap_mode[0] = extrap_mode[1] = CDegree;
+        extrap_mode[0] = extrap_mode[1] = cDegree;
         // EvalBS over a plain array, so that it can be passed as an array start
-        double[] aEvalBuffer = new double[CDimension * (derivative_request + 1)];
-        math_Vector EvalBS = new(aEvalBuffer, 1, CDimension * (derivative_request + 1));
-        Span<double> Eadr = aEvalBuffer;
-        BSplCLib.Eval(Tbord,
+        double[] evalBuffer = new double[cDimension * (derivative_request + 1)];
+        math_Vector evalBS = new(evalBuffer, 1, cDimension * (derivative_request + 1));
+        Span<double> eadr = evalBuffer;
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(tbord,
                       periodic_flag,
                       derivative_request,
                       extrap_mode,
-                      CDegree,
-                      FlatKnots,
-                      CDimension,
-                      Poles,
-                      Eadr);
+                      cDegree,
+                      flatKnots,
+                      cDimension,
+                      poles,
+                      eadr);
 
         //  norm of the tangent at the node of connection
-        math_Vector Tgte = new(1, CDimension);
+        math_Vector tgte = new(1, cDimension);
 
-        for (ipos = 1; ipos <= CDimension; ipos++)
+        for (ipos = 1; ipos <= cDimension; ipos++)
         {
-            Tgte[ipos] = EvalBS[ipos + CDimension];
+            tgte[ipos] = evalBS[ipos + cDimension];
         }
-        double L1 = Tgte.Norm();
+        double l1 = tgte.Norm();
 
         //  matrix of constraints
-        math_Matrix Contraintes = new(1, Csize, 1, CDimension);
+        Matrix contraintes = new(1, csize, 1, cDimension);
         // Precompute powers of C1Coefficient for efficiency (avoid std::pow overhead)
-        double C1Coeff2 = C1Coefficient * C1Coefficient;
-        double C1Coeff3 = C1Coeff2 * C1Coefficient;
-        if (After)
+        double c1Coeff2 = c1Coefficient * c1Coefficient;
+        double c1Coeff3 = c1Coeff2 * c1Coefficient;
+        if (after)
         {
-            for (ipos = 1; ipos <= CDimension; ipos++)
+            for (ipos = 1; ipos <= cDimension; ipos++)
             {
-                Contraintes[1, ipos] = EvalBS[ipos];
-                Contraintes[2, ipos] = C1Coefficient * EvalBS[ipos + CDimension];
-                if (Continuity >= 2)
+                contraintes[1, ipos] = evalBS[ipos];
+                contraintes[2, ipos] = c1Coefficient * evalBS[ipos + cDimension];
+                if (continuity >= 2)
                 {
-                    Contraintes[3, ipos] = EvalBS[ipos + 2 * CDimension] * C1Coeff2;
+                    contraintes[3, ipos] = evalBS[ipos + 2 * cDimension] * c1Coeff2;
                 }
-                if (Continuity >= 3)
+                if (continuity >= 3)
                 {
-                    Contraintes[4, ipos] = EvalBS[ipos + 3 * CDimension] * C1Coeff3;
+                    contraintes[4, ipos] = evalBS[ipos + 3 * cDimension] * c1Coeff3;
                 }
-                Contraintes[Continuity + 2, ipos] = ConstraintPoint[ipos];
+                contraintes[continuity + 2, ipos] = constraintPoint[ipos];
             }
         }
         else
         {
-            for (ipos = 1; ipos <= CDimension; ipos++)
+            for (ipos = 1; ipos <= cDimension; ipos++)
             {
-                Contraintes[1, ipos] = ConstraintPoint[ipos];
-                Contraintes[2, ipos] = EvalBS[ipos];
-                if (Continuity >= 1)
+                contraintes[1, ipos] = constraintPoint[ipos];
+                contraintes[2, ipos] = evalBS[ipos];
+                if (continuity >= 1)
                 {
-                    Contraintes[3, ipos] = C1Coefficient * EvalBS[ipos + CDimension];
+                    contraintes[3, ipos] = c1Coefficient * evalBS[ipos + cDimension];
                 }
-                if (Continuity >= 2)
+                if (continuity >= 2)
                 {
-                    Contraintes[4, ipos] = EvalBS[ipos + 2 * CDimension] * C1Coeff2;
+                    contraintes[4, ipos] = evalBS[ipos + 2 * cDimension] * c1Coeff2;
                 }
-                if (Continuity >= 3)
+                if (continuity >= 3)
                 {
-                    Contraintes[5, ipos] = EvalBS[ipos + 3 * CDimension] * C1Coeff3;
+                    contraintes[5, ipos] = evalBS[ipos + 3 * cDimension] * c1Coeff3;
                 }
             }
         }
 
         //  calculate the coefficients of extension
         int ii, jj, kk;
-        NCollection_Array1<double> ExtraCoeffs = new(1, Csize * CDimension);
-        ExtraCoeffs.Init(0.0);
+        NCollection_Array1<double> extraCoeffs = new(1, csize * cDimension);
+        extraCoeffs.Init(0.0);
 
-        for (ii = 1; ii <= Csize; ii++)
+        for (ii = 1; ii <= csize; ii++)
         {
 
-            for (jj = 1; jj <= Csize; jj++)
+            for (jj = 1; jj <= csize; jj++)
             {
 
-                for (kk = 1; kk <= CDimension; kk++)
+                for (kk = 1; kk <= cDimension; kk++)
                 {
-                    ExtraCoeffs[kk + (jj - 1) * CDimension] += MatCoefs[ii, jj] * Contraintes[ii, kk];
+                    extraCoeffs[kk + (jj - 1) * cDimension] += matCoefs[ii, jj] * contraintes[ii, kk];
                 }
             }
         }
 
         //  calculate the poles of extension
-        NCollection_Array1<double> ExtrapPoles = new(1, Csize * CDimension);
-        PLib.CoefficientsPoles(CDimension,
-                               ExtraCoeffs,
-                               PLib.NoWeights(),
-                               ExtrapPoles,
-                               PLib.NoWeights());
+        NCollection_Array1<double> extrapPoles = new(1, csize * cDimension);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(cDimension,
+                               extraCoeffs,
+                               global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(),
+                               extrapPoles,
+                               global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
 
         //  calculate the nodes of extension with multiplicities
-        NCollection_Array1<double> ExtrapNoeuds = new(1, 2);
-        ExtrapNoeuds[1] = 0.0;
-        ExtrapNoeuds[2] = 1.0;
-        NCollection_Array1<int> ExtrapMults = new(1, 2);
-        ExtrapMults[1] = Csize;
-        ExtrapMults[2] = Csize;
+        NCollection_Array1<double> extrapNoeuds = new(1, 2);
+        extrapNoeuds[1] = 0.0;
+        extrapNoeuds[2] = 1.0;
+        NCollection_Array1<int> extrapMults = new(1, 2);
+        extrapMults[1] = csize;
+        extrapMults[2] = csize;
 
         // flat nodes of extension
-        NCollection_Array1<double> FK2 = new(1, Csize * 2);
-        BSplCLib.KnotSequence(ExtrapNoeuds, ExtrapMults, FK2);
+        NCollection_Array1<double> fk2 = new(1, csize * 2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(extrapNoeuds, extrapMults, fk2);
 
         //  norm of the tangent at the connection point
-        if (After)
+        if (after)
         {
-            BSplCLib.Eval(0.0, periodic_flag, 1, extrap_mode, Csize - 1, FK2, CDimension, ExtrapPoles.AsSpan(), Eadr);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(0.0, periodic_flag, 1, extrap_mode, csize - 1, fk2, cDimension, extrapPoles.AsSpan(), eadr);
         }
         else
         {
-            BSplCLib.Eval(1.0, periodic_flag, 1, extrap_mode, Csize - 1, FK2, CDimension, ExtrapPoles.AsSpan(), Eadr);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(1.0, periodic_flag, 1, extrap_mode, csize - 1, fk2, cDimension, extrapPoles.AsSpan(), eadr);
         }
 
-        for (ipos = 1; ipos <= CDimension; ipos++)
+        for (ipos = 1; ipos <= cDimension; ipos++)
         {
-            Tgte[ipos] = EvalBS[ipos + CDimension];
+            tgte[ipos] = evalBS[ipos + cDimension];
         }
-        double L2 = Tgte.Norm();
+        double l2 = tgte.Norm();
 
         //  harmonisation of degrees
-        NCollection_Array1<double> NewP2 = new(1, (CDegree + 1) * CDimension);
-        NCollection_Array1<double> NewK2 = new(1, 2);
-        NCollection_Array1<int> NewM2 = new(1, 2);
-        if (Csize - 1 < CDegree)
+        NCollection_Array1<double> newP2 = new(1, (cDegree + 1) * cDimension);
+        NCollection_Array1<double> newK2 = new(1, 2);
+        NCollection_Array1<int> newM2 = new(1, 2);
+        if (csize - 1 < cDegree)
         {
-            BSplCLib.IncreaseDegree(Csize - 1,
-                                    CDegree,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(csize - 1,
+                                    cDegree,
                                     false,
-                                    CDimension,
-                                    ExtrapPoles,
-                                    ExtrapNoeuds,
-                                    ExtrapMults,
-                                    NewP2,
-                                    NewK2,
-                                    NewM2);
+                                    cDimension,
+                                    extrapPoles,
+                                    extrapNoeuds,
+                                    extrapMults,
+                                    newP2,
+                                    newK2,
+                                    newM2);
         }
         else
         {
-            NewP2.Assign(ExtrapPoles);
-            NewK2.Assign(ExtrapNoeuds);
-            NewM2.Assign(ExtrapMults);
+            newP2.Assign(extrapPoles);
+            newK2.Assign(extrapNoeuds);
+            newM2.Assign(extrapMults);
         }
 
         //  flat nodes of extension after harmonization of degrees
-        NCollection_Array1<double> NewFK2 = new(1, (CDegree + 1) * 2);
-        BSplCLib.KnotSequence(NewK2, NewM2, NewFK2);
+        NCollection_Array1<double> newFK2 = new(1, (cDegree + 1) * 2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(newK2, newM2, newFK2);
 
         ////////////////////////////////////////////////////////////////////////
         //
@@ -3915,53 +3919,53 @@ public static partial class BSplCLib
         ////////////////////////////////////////////////////////////////////////
 
         //  ratio of reparametrization
-        double Ratio = 1, Delta;
-        if ((L1 > Precision.Confusion()) && (L2 > Precision.Confusion()))
+        double ratio = 1, delta;
+        if ((l1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (l2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            Ratio = L2 / L1;
+            ratio = l2 / l1;
         }
-        if ((Ratio < 1.0e-5) || (Ratio > 1.0e5))
+        if ((ratio < 1.0e-5) || (ratio > 1.0e5))
         {
-            Ratio = 1;
+            ratio = 1;
         }
 
-        if (After)
+        if (after)
         {
             //    do not touch the first BSpline
-            Delta = Ratio * NewFK2[NewFK2.Lower()] - FlatKnots[FlatKnots.Upper()];
+            delta = ratio * newFK2[newFK2.Lower()] - flatKnots[flatKnots.Upper()];
         }
         else
         {
             //    do not touch the second BSpline
-            Delta = Ratio * NewFK2[NewFK2.Upper()] - FlatKnots[FlatKnots.Lower()];
+            delta = ratio * newFK2[newFK2.Upper()] - flatKnots[flatKnots.Lower()];
         }
 
         //  result of the concatenation
-        int NbP1 = NumPoles, NbP2 = CDegree + 1;
-        int NbK1 = FlatKnots.Length(), NbK2 = 2 * (CDegree + 1);
-        NCollection_Array1<double> NewPoles = new(1, (NbP1 + NbP2 - 1) * CDimension);
-        NCollection_Array1<double> NewFlats = new(1, NbK1 + NbK2 - CDegree - 2);
+        int nbP1 = numPoles, nbP2 = cDegree + 1;
+        int nbK1 = flatKnots.Length(), nbK2 = 2 * (cDegree + 1);
+        NCollection_Array1<double> newPoles = new(1, (nbP1 + nbP2 - 1) * cDimension);
+        NCollection_Array1<double> newFlats = new(1, nbK1 + nbK2 - cDegree - 2);
 
         //  poles
         int indNP, indP, indEP;
-        if (After)
+        if (after)
         {
 
-            for (ii = 1; ii <= NbP1 + NbP2 - 1; ii++)
+            for (ii = 1; ii <= nbP1 + nbP2 - 1; ii++)
             {
 
-                for (jj = 1; jj <= CDimension; jj++)
+                for (jj = 1; jj <= cDimension; jj++)
                 {
-                    indNP = (ii - 1) * CDimension + jj;
-                    indP = (ii - 1) * CDimension + jj - 1;
-                    indEP = (ii - NbP1) * CDimension + jj;
-                    if (ii < NbP1)
+                    indNP = (ii - 1) * cDimension + jj;
+                    indP = (ii - 1) * cDimension + jj - 1;
+                    indEP = (ii - nbP1) * cDimension + jj;
+                    if (ii < nbP1)
                     {
-                        NewPoles[indNP] = Padr[indP];
+                        newPoles[indNP] = padr[indP];
                     }
                     else
                     {
-                        NewPoles[indNP] = NewP2[indEP];
+                        newPoles[indNP] = newP2[indEP];
                     }
                 }
             }
@@ -3969,55 +3973,55 @@ public static partial class BSplCLib
         else
         {
 
-            for (ii = 1; ii <= NbP1 + NbP2 - 1; ii++)
+            for (ii = 1; ii <= nbP1 + nbP2 - 1; ii++)
             {
 
-                for (jj = 1; jj <= CDimension; jj++)
+                for (jj = 1; jj <= cDimension; jj++)
                 {
-                    indNP = (ii - 1) * CDimension + jj;
-                    indEP = (ii - 1) * CDimension + jj;
-                    indP = (ii - NbP2) * CDimension + jj - 1;
-                    if (ii < NbP2)
+                    indNP = (ii - 1) * cDimension + jj;
+                    indEP = (ii - 1) * cDimension + jj;
+                    indP = (ii - nbP2) * cDimension + jj - 1;
+                    if (ii < nbP2)
                     {
-                        NewPoles[indNP] = NewP2[indEP];
+                        newPoles[indNP] = newP2[indEP];
                     }
                     else
                     {
-                        NewPoles[indNP] = Padr[indP];
+                        newPoles[indNP] = padr[indP];
                     }
                 }
             }
         }
 
         //  flat nodes
-        if (After)
+        if (after)
         {
             //    start with the nodes of the initial surface
 
-            for (ii = 1; ii < NbK1; ii++)
+            for (ii = 1; ii < nbK1; ii++)
             {
-                NewFlats[ii] = FlatKnots[FlatKnots.Lower() + ii - 1];
+                newFlats[ii] = flatKnots[flatKnots.Lower() + ii - 1];
             }
             //    continue with the reparameterized nodes of the extension
 
-            for (ii = 1; ii <= NbK2 - CDegree - 1; ii++)
+            for (ii = 1; ii <= nbK2 - cDegree - 1; ii++)
             {
-                NewFlats[NbK1 + ii - 1] = Ratio * NewFK2[NewFK2.Lower() + ii + CDegree] - Delta;
+                newFlats[nbK1 + ii - 1] = ratio * newFK2[newFK2.Lower() + ii + cDegree] - delta;
             }
         }
         else
         {
             //    start with the reparameterized nodes of the extension
 
-            for (ii = 1; ii < NbK2 - CDegree; ii++)
+            for (ii = 1; ii < nbK2 - cDegree; ii++)
             {
-                NewFlats[ii] = Ratio * NewFK2[NewFK2.Lower() + ii - 1] - Delta;
+                newFlats[ii] = ratio * newFK2[newFK2.Lower() + ii - 1] - delta;
             }
             //    continue with the nodes of the initial surface
 
-            for (ii = 2; ii <= NbK1; ii++)
+            for (ii = 2; ii <= nbK1; ii++)
             {
-                NewFlats[NbK2 + ii - CDegree - 2] = FlatKnots[FlatKnots.Lower() + ii - 1];
+                newFlats[nbK2 + ii - cDegree - 2] = flatKnots[flatKnots.Lower() + ii - 1];
             }
         }
 
@@ -4028,118 +4032,118 @@ public static partial class BSplCLib
         ////////////////////////////////////////////////////////////////////////
 
         //  number of separate nodes
-        int KLength = 1;
+        int kLength = 1;
 
-        for (ii = 2; ii <= NbK1 + NbK2 - CDegree - 2; ii++)
+        for (ii = 2; ii <= nbK1 + nbK2 - cDegree - 2; ii++)
         {
-            if (NewFlats[ii] != NewFlats[ii - 1])
+            if (newFlats[ii] != newFlats[ii - 1])
             {
-                KLength++;
+                kLength++;
             }
         }
 
         //  flat nodes --> nodes + multiplicities
-        NCollection_Array1<double> NewKnots = new(1, KLength);
-        NCollection_Array1<int> NewMults = new(1, KLength);
-        NewMults.Init(1);
+        NCollection_Array1<double> newKnots = new(1, kLength);
+        NCollection_Array1<int> newMults = new(1, kLength);
+        newMults.Init(1);
         jj = 1;
-        NewKnots[jj] = NewFlats[1];
+        newKnots[jj] = newFlats[1];
 
-        for (ii = 2; ii <= NbK1 + NbK2 - CDegree - 2; ii++)
+        for (ii = 2; ii <= nbK1 + nbK2 - cDegree - 2; ii++)
         {
-            if (NewFlats[ii] == NewFlats[ii - 1])
+            if (newFlats[ii] == newFlats[ii - 1])
             {
-                NewMults[jj]++;
+                newMults[jj]++;
             }
             else
             {
                 jj++;
-                NewKnots[jj] = NewFlats[ii];
+                newKnots[jj] = newFlats[ii];
             }
         }
 
         //  reduction of multiplicity at the second or the last but one node
-        int Index = 2, M = CDegree;
-        if (After)
+        int index = 2, m = cDegree;
+        if (after)
         {
-            Index = KLength - 1;
+            index = kLength - 1;
         }
-        NCollection_Array1<double> ResultPoles = new(1, (NbP1 + NbP2 - 1) * CDimension);
-        NCollection_Array1<double> ResultKnots = new(1, KLength);
-        NCollection_Array1<int> ResultMults = new(1, KLength);
-        double Tol = 1.0e-6;
-        bool Ok = true;
+        NCollection_Array1<double> resultPoles = new(1, (nbP1 + nbP2 - 1) * cDimension);
+        NCollection_Array1<double> resultKnots = new(1, kLength);
+        NCollection_Array1<int> resultMults = new(1, kLength);
+        double tol = 1.0e-6;
+        bool ok = true;
 
-        while ((M > CDegree - Continuity) && Ok)
+        while ((m > cDegree - continuity) && ok)
         {
-            Ok = RemoveKnot(Index,
-                            M - 1,
-                            CDegree,
+            ok = RemoveKnot(index,
+                            m - 1,
+                            cDegree,
                             false,
-                            CDimension,
-                            NewPoles,
-                            NewKnots,
-                            NewMults,
-                            ResultPoles,
-                            ResultKnots,
-                            ResultMults,
-                            Tol);
-            if (Ok)
+                            cDimension,
+                            newPoles,
+                            newKnots,
+                            newMults,
+                            resultPoles,
+                            resultKnots,
+                            resultMults,
+                            tol);
+            if (ok)
             {
-                M--;
+                m--;
             }
         }
 
-        if (M == CDegree)
+        if (m == cDegree)
         {
             //    number of poles of the concatenation
-            NbPolesResult = NbP1 + NbP2 - 1;
+            nbPolesResult = nbP1 + nbP2 - 1;
             //    the poles of the concatenation
-            int PLength = NbPolesResult * CDimension;
+            int pLength = nbPolesResult * cDimension;
 
-            for (jj = 1; jj <= PLength; jj++)
+            for (jj = 1; jj <= pLength; jj++)
             {
-                PRadr[jj - 1] = NewPoles[jj];
+                pRadr[jj - 1] = newPoles[jj];
             }
 
             //    flat nodes of the concatenation
             int ideb = 0;
 
-            for (jj = 0; jj < NewKnots.Length(); jj++)
+            for (jj = 0; jj < newKnots.Length(); jj++)
             {
-                for (ii = 0; ii < NewMults[jj + 1]; ii++)
+                for (ii = 0; ii < newMults[jj + 1]; ii++)
                 {
-                    KRadr[ideb + ii] = NewKnots[jj + 1];
+                    kRadr[ideb + ii] = newKnots[jj + 1];
                 }
-                ideb += NewMults[jj + 1];
+                ideb += newMults[jj + 1];
             }
-            NbKnotsRsult = ideb;
+            nbKnotsRsult = ideb;
         }
 
         else
         {
             //    number of poles of the result
-            NbPolesResult = NbP1 + NbP2 - 1 - CDegree + M;
+            nbPolesResult = nbP1 + nbP2 - 1 - cDegree + m;
             //    the poles of the result
-            int PLength = NbPolesResult * CDimension;
+            int pLength = nbPolesResult * cDimension;
 
-            for (jj = 0; jj < PLength; jj++)
+            for (jj = 0; jj < pLength; jj++)
             {
-                PRadr[jj] = ResultPoles[jj + 1];
+                pRadr[jj] = resultPoles[jj + 1];
             }
 
             //    flat nodes of the result
             int ideb = 0;
 
-            for (jj = 0; jj < ResultKnots.Length(); jj++)
+            for (jj = 0; jj < resultKnots.Length(); jj++)
             {
-                for (ii = 0; ii < ResultMults[jj + 1]; ii++)
+                for (ii = 0; ii < resultMults[jj + 1]; ii++)
                 {
-                    KRadr[ideb + ii] = ResultKnots[jj + 1];
+                    kRadr[ideb + ii] = resultKnots[jj + 1];
                 }
-                ideb += ResultMults[jj + 1];
+                ideb += resultMults[jj + 1];
             }
-            NbKnotsRsult = ideb;
+            nbKnotsRsult = ideb;
         }
     }
 
@@ -4215,67 +4219,67 @@ public static partial class BSplCLib
     //=================================================================================================
 
     /// <summary>
-    /// Computes the parametric tolerance <paramref name="UTolerance"/> such that |t1 - t0| &lt; UTolerance implies
+    /// Computes the parametric tolerance <paramref name="uTolerance"/> such that |t1 - t0| &lt; UTolerance implies
     /// |C(t1) - C(t0)| &lt; Tolerance3D, from an upper bound of the derivative of the curve (NumPoles poles of
     /// dimension ArrayDimension, optional weights, flat knots).
     /// </summary>
-    public static void Resolution(ReadOnlySpan<double> PolesArray, int ArrayDimension, int NumPoles,
-                                  NCollection_Array1<double>? Weights, NCollection_Array1<double> FlatKnots, int Degree,
-                                  double Tolerance3D, out double UTolerance)
+    public static void Resolution(ReadOnlySpan<double> polesArray, int arrayDimension, int numPoles,
+                                  NCollection_Array1<double>? weights, NCollection_Array1<double> flatKnots, int degree,
+                                  double tolerance3D, out double uTolerance)
     {
         int ii, num_poles, ii_index, jj_index, ii_inDim;
         int lower, upper, ii_minus, jj, ii_miDim;
-        int Deg1 = Degree + 1;
-        int Deg2 = (Degree << 1) + 1;
-        double value, factor, W, min_weights, inverse;
+        int deg1 = degree + 1;
+        int deg2 = (degree << 1) + 1;
+        double value, factor, w, min_weights, inverse;
         double pa_ii_inDim_0, pa_ii_inDim_1, pa_ii_inDim_2, pa_ii_inDim_3;
         double pa_ii_miDim_0, pa_ii_miDim_1, pa_ii_miDim_2, pa_ii_miDim_3;
         double wg_ii_index, wg_ii_minus;
         double max_derivative;
-        ReadOnlySpan<double> FK = FlatKnots.AsSpan();
-        ReadOnlySpan<double> PA = PolesArray;
+        ReadOnlySpan<double> fk = flatKnots.AsSpan();
+        ReadOnlySpan<double> pa = polesArray;
         max_derivative = 0.0e0;
-        num_poles = FlatKnots.Length() - Deg1;
-        switch (ArrayDimension)
+        num_poles = flatKnots.Length() - deg1;
+        switch (arrayDimension)
         {
             case 2:
             {
-                if (Weights != null)
+                if (weights != null)
                 {
-                    ReadOnlySpan<double> WG = Weights!.AsSpan();
-                    min_weights = WG[0];
+                    ReadOnlySpan<double> wg = weights!.AsSpan();
+                    min_weights = wg[0];
 
-                    for (ii = 1; ii < NumPoles; ii++)
+                    for (ii = 1; ii < numPoles; ii++)
                     {
-                        W = WG[ii];
-                        if (W < min_weights)
+                        w = wg[ii];
+                        if (w < min_weights)
                         {
-                            min_weights = W;
+                            min_weights = w;
                         }
                     }
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_inDim = ii_index << 1;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_miDim = ii_minus << 1;
-                        pa_ii_inDim_0 = PA[ii_inDim];
+                        pa_ii_inDim_0 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_1 = PA[ii_inDim];
-                        pa_ii_miDim_0 = PA[ii_miDim];
+                        pa_ii_inDim_1 = pa[ii_inDim];
+                        pa_ii_miDim_0 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_1 = PA[ii_miDim];
-                        wg_ii_index = WG[ii_index];
-                        wg_ii_minus = WG[ii_minus];
-                        inverse = FK[ii + Degree] - FK[ii];
+                        pa_ii_miDim_1 = pa[ii_miDim];
+                        wg_ii_index = wg[ii_index];
+                        wg_ii_minus = wg[ii_minus];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
-                        lower = ii - Deg1;
+                        lower = ii - deg1;
                         if (lower < 0)
                         {
                             lower = 0;
                         }
-                        upper = Deg2 + ii;
+                        upper = deg2 + ii;
                         if (upper > num_poles)
                         {
                             upper = num_poles;
@@ -4283,19 +4287,19 @@ public static partial class BSplCLib
 
                         for (jj = lower; jj < upper; jj++)
                         {
-                            jj_index = jj % NumPoles;
+                            jj_index = jj % numPoles;
                             jj_index = jj_index << 1;
                             value = 0.0e0;
-                            factor = (((PA[jj_index] - pa_ii_inDim_0) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_0) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_1) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_1) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
@@ -4315,14 +4319,14 @@ public static partial class BSplCLib
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_index = ii_index << 1;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_minus = ii_minus << 1;
-                        inverse = FK[ii + Degree] - FK[ii];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
                         value = 0.0e0;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4330,7 +4334,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4347,46 +4351,46 @@ public static partial class BSplCLib
             }
             case 3:
             {
-                if (Weights != null)
+                if (weights != null)
                 {
-                    ReadOnlySpan<double> WG = Weights!.AsSpan();
-                    min_weights = WG[0];
+                    ReadOnlySpan<double> wg = weights!.AsSpan();
+                    min_weights = wg[0];
 
-                    for (ii = 1; ii < NumPoles; ii++)
+                    for (ii = 1; ii < numPoles; ii++)
                     {
-                        W = WG[ii];
-                        if (W < min_weights)
+                        w = wg[ii];
+                        if (w < min_weights)
                         {
-                            min_weights = W;
+                            min_weights = w;
                         }
                     }
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_inDim = (ii_index << 1) + ii_index;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_miDim = (ii_minus << 1) + ii_minus;
-                        pa_ii_inDim_0 = PA[ii_inDim];
+                        pa_ii_inDim_0 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_1 = PA[ii_inDim];
+                        pa_ii_inDim_1 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_2 = PA[ii_inDim];
-                        pa_ii_miDim_0 = PA[ii_miDim];
+                        pa_ii_inDim_2 = pa[ii_inDim];
+                        pa_ii_miDim_0 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_1 = PA[ii_miDim];
+                        pa_ii_miDim_1 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_2 = PA[ii_miDim];
-                        wg_ii_index = WG[ii_index];
-                        wg_ii_minus = WG[ii_minus];
-                        inverse = FK[ii + Degree] - FK[ii];
+                        pa_ii_miDim_2 = pa[ii_miDim];
+                        wg_ii_index = wg[ii_index];
+                        wg_ii_minus = wg[ii_minus];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
-                        lower = ii - Deg1;
+                        lower = ii - deg1;
                         if (lower < 0)
                         {
                             lower = 0;
                         }
-                        upper = Deg2 + ii;
+                        upper = deg2 + ii;
                         if (upper > num_poles)
                         {
                             upper = num_poles;
@@ -4394,27 +4398,27 @@ public static partial class BSplCLib
 
                         for (jj = lower; jj < upper; jj++)
                         {
-                            jj_index = jj % NumPoles;
+                            jj_index = jj % numPoles;
                             jj_index = (jj_index << 1) + jj_index;
                             value = 0.0e0;
-                            factor = (((PA[jj_index] - pa_ii_inDim_0) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_0) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_1) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_1) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_2) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_2) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_2) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_2) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
@@ -4434,14 +4438,14 @@ public static partial class BSplCLib
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_index = (ii_index << 1) + ii_index;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_minus = (ii_minus << 1) + ii_minus;
-                        inverse = FK[ii + Degree] - FK[ii];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
                         value = 0.0e0;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4449,7 +4453,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4457,7 +4461,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4474,50 +4478,50 @@ public static partial class BSplCLib
             }
             case 4:
             {
-                if (Weights != null)
+                if (weights != null)
                 {
-                    ReadOnlySpan<double> WG = Weights!.AsSpan();
-                    min_weights = WG[0];
+                    ReadOnlySpan<double> wg = weights!.AsSpan();
+                    min_weights = wg[0];
 
-                    for (ii = 1; ii < NumPoles; ii++)
+                    for (ii = 1; ii < numPoles; ii++)
                     {
-                        W = WG[ii];
-                        if (W < min_weights)
+                        w = wg[ii];
+                        if (w < min_weights)
                         {
-                            min_weights = W;
+                            min_weights = w;
                         }
                     }
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_inDim = ii_index << 2;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_miDim = ii_minus << 2;
-                        pa_ii_inDim_0 = PA[ii_inDim];
+                        pa_ii_inDim_0 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_1 = PA[ii_inDim];
+                        pa_ii_inDim_1 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_2 = PA[ii_inDim];
+                        pa_ii_inDim_2 = pa[ii_inDim];
                         ii_inDim++;
-                        pa_ii_inDim_3 = PA[ii_inDim];
-                        pa_ii_miDim_0 = PA[ii_miDim];
+                        pa_ii_inDim_3 = pa[ii_inDim];
+                        pa_ii_miDim_0 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_1 = PA[ii_miDim];
+                        pa_ii_miDim_1 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_2 = PA[ii_miDim];
+                        pa_ii_miDim_2 = pa[ii_miDim];
                         ii_miDim++;
-                        pa_ii_miDim_3 = PA[ii_miDim];
-                        wg_ii_index = WG[ii_index];
-                        wg_ii_minus = WG[ii_minus];
-                        inverse = FK[ii + Degree] - FK[ii];
+                        pa_ii_miDim_3 = pa[ii_miDim];
+                        wg_ii_index = wg[ii_index];
+                        wg_ii_minus = wg[ii_minus];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
-                        lower = ii - Deg1;
+                        lower = ii - deg1;
                         if (lower < 0)
                         {
                             lower = 0;
                         }
-                        upper = Deg2 + ii;
+                        upper = deg2 + ii;
                         if (upper > num_poles)
                         {
                             upper = num_poles;
@@ -4525,35 +4529,35 @@ public static partial class BSplCLib
 
                         for (jj = lower; jj < upper; jj++)
                         {
-                            jj_index = jj % NumPoles;
+                            jj_index = jj % numPoles;
                             jj_index = jj_index << 2;
                             value = 0.0e0;
-                            factor = (((PA[jj_index] - pa_ii_inDim_0) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_0) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_0) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_1) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_1) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_1) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_2) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_2) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_2) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_2) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
                             }
                             value += factor;
                             jj_index++;
-                            factor = (((PA[jj_index] - pa_ii_inDim_3) * wg_ii_index)
-                                                - ((PA[jj_index] - pa_ii_miDim_3) * wg_ii_minus));
+                            factor = (((pa[jj_index] - pa_ii_inDim_3) * wg_ii_index)
+                                                - ((pa[jj_index] - pa_ii_miDim_3) * wg_ii_minus));
                             if (factor < 0)
                             {
                                 factor = -factor;
@@ -4573,14 +4577,14 @@ public static partial class BSplCLib
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
+                        ii_index = ii % numPoles;
                         ii_index = ii_index << 2;
-                        ii_minus = (ii - 1) % NumPoles;
+                        ii_minus = (ii - 1) % numPoles;
                         ii_minus = ii_minus << 2;
-                        inverse = FK[ii + Degree] - FK[ii];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
                         value = 0.0e0;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4588,7 +4592,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4596,7 +4600,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4604,7 +4608,7 @@ public static partial class BSplCLib
                         value += factor;
                         ii_index++;
                         ii_minus++;
-                        factor = PA[ii_index] - PA[ii_minus];
+                        factor = pa[ii_index] - pa[ii_minus];
                         if (factor < 0)
                         {
                             factor = -factor;
@@ -4622,36 +4626,36 @@ public static partial class BSplCLib
             default:
             {
                 int kk;
-                if (Weights != null)
+                if (weights != null)
                 {
-                    ReadOnlySpan<double> WG = Weights!.AsSpan();
-                    min_weights = WG[0];
+                    ReadOnlySpan<double> wg = weights!.AsSpan();
+                    min_weights = wg[0];
 
-                    for (ii = 1; ii < NumPoles; ii++)
+                    for (ii = 1; ii < numPoles; ii++)
                     {
-                        W = WG[ii];
-                        if (W < min_weights)
+                        w = wg[ii];
+                        if (w < min_weights)
                         {
-                            min_weights = W;
+                            min_weights = w;
                         }
                     }
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
-                        ii_inDim = ii_index * ArrayDimension;
-                        ii_minus = (ii - 1) % NumPoles;
-                        ii_miDim = ii_minus * ArrayDimension;
-                        wg_ii_index = WG[ii_index];
-                        wg_ii_minus = WG[ii_minus];
-                        inverse = FK[ii + Degree] - FK[ii];
+                        ii_index = ii % numPoles;
+                        ii_inDim = ii_index * arrayDimension;
+                        ii_minus = (ii - 1) % numPoles;
+                        ii_miDim = ii_minus * arrayDimension;
+                        wg_ii_index = wg[ii_index];
+                        wg_ii_minus = wg[ii_minus];
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
-                        lower = ii - Deg1;
+                        lower = ii - deg1;
                         if (lower < 0)
                         {
                             lower = 0;
                         }
-                        upper = Deg2 + ii;
+                        upper = deg2 + ii;
                         if (upper > num_poles)
                         {
                             upper = num_poles;
@@ -4659,14 +4663,14 @@ public static partial class BSplCLib
 
                         for (jj = lower; jj < upper; jj++)
                         {
-                            jj_index = jj % NumPoles;
-                            jj_index *= ArrayDimension;
+                            jj_index = jj % numPoles;
+                            jj_index *= arrayDimension;
                             value = 0.0e0;
 
-                            for (kk = 0; kk < ArrayDimension; kk++)
+                            for (kk = 0; kk < arrayDimension; kk++)
                             {
-                                factor = (((PA[jj_index + kk] - PA[ii_inDim + kk]) * wg_ii_index)
-                                                    - ((PA[jj_index + kk] - PA[ii_miDim + kk]) * wg_ii_minus));
+                                factor = (((pa[jj_index + kk] - pa[ii_inDim + kk]) * wg_ii_index)
+                                                    - ((pa[jj_index + kk] - pa[ii_miDim + kk]) * wg_ii_minus));
                                 if (factor < 0)
                                 {
                                     factor = -factor;
@@ -4687,17 +4691,17 @@ public static partial class BSplCLib
 
                     for (ii = 1; ii < num_poles; ii++)
                     {
-                        ii_index = ii % NumPoles;
-                        ii_index *= ArrayDimension;
-                        ii_minus = (ii - 1) % NumPoles;
-                        ii_minus *= ArrayDimension;
-                        inverse = FK[ii + Degree] - FK[ii];
+                        ii_index = ii % numPoles;
+                        ii_index *= arrayDimension;
+                        ii_minus = (ii - 1) % numPoles;
+                        ii_minus *= arrayDimension;
+                        inverse = fk[ii + degree] - fk[ii];
                         inverse = 1.0e0 / inverse;
                         value = 0.0e0;
 
-                        for (kk = 0; kk < ArrayDimension; kk++)
+                        for (kk = 0; kk < arrayDimension; kk++)
                         {
-                            factor = PA[ii_index + kk] - PA[ii_minus + kk];
+                            factor = pa[ii_index + kk] - pa[ii_minus + kk];
                             if (factor < 0)
                             {
                                 factor = -factor;
@@ -4714,154 +4718,154 @@ public static partial class BSplCLib
                 break;
             }
         }
-        max_derivative *= Degree;
+        max_derivative *= degree;
         if (max_derivative > RealSmall())
         {
-            UTolerance = Tolerance3D / max_derivative;
+            uTolerance = tolerance3D / max_derivative;
         }
         else
         {
-            UTolerance = Tolerance3D / RealSmall();
+            uTolerance = tolerance3D / RealSmall();
         }
     }
 
     /// <summary>
-    /// Computes the intervals of continuity <paramref name="theContinuity"/> of the curve within
-    /// [theFirst, theLast] and returns their number; fills <paramref name="theIntervals"/> (resized to the number
+    /// Computes the intervals of continuity <paramref name="continuity"/> of the curve within
+    /// [theFirst, theLast] and returns their number; fills <paramref name="intervals"/> (resized to the number
     /// + 1, the ends being theFirst and theLast) unless null.
     /// </summary>
-    public static int Intervals(NCollection_Array1<double> theKnots, NCollection_Array1<int> theMults, int theDegree,
-                                bool isPeriodic, int theContinuity, double theFirst, double theLast,
-                                double theTolerance, NCollection_Array1<double>? theIntervals)
+    public static int Intervals(NCollection_Array1<double> knots, NCollection_Array1<int> mults, int degree,
+                                bool isPeriodic, int continuity, double first, double last,
+                                double tolerance, NCollection_Array1<double>? intervals)
     {
         // remove all knots with multiplicity less or equal than (degree - continuity) except first and
         // last
-        int aFirstIndex = isPeriodic ? 1 : FirstUKnotIndex(theDegree, theMults);
-        int aLastIndex = isPeriodic ? theKnots.Length() : LastUKnotIndex(theDegree, theMults);
-        NCollection_Array1<double> aNewKnots = new(1, aLastIndex - aFirstIndex + 1);
-        int aNbNewKnots = 0;
-        for (int anIndex = aFirstIndex; anIndex <= aLastIndex; anIndex++)
+        int firstIndex = isPeriodic ? 1 : FirstUKnotIndex(degree, mults);
+        int lastIndex = isPeriodic ? knots.Length() : LastUKnotIndex(degree, mults);
+        NCollection_Array1<double> newKnots = new(1, lastIndex - firstIndex + 1);
+        int nbNewKnots = 0;
+        for (int index = firstIndex; index <= lastIndex; index++)
         {
-            if (theMults[anIndex] > (theDegree - theContinuity) || anIndex == aFirstIndex
-                || anIndex == aLastIndex)
+            if (mults[index] > (degree - continuity) || index == firstIndex
+                || index == lastIndex)
             {
-                aNbNewKnots++;
-                aNewKnots[aNbNewKnots] = theKnots[anIndex];
+                nbNewKnots++;
+                newKnots[nbNewKnots] = knots[index];
             }
         }
-        aNewKnots.Resize(1, aNbNewKnots, true);
+        newKnots.Resize(1, nbNewKnots, true);
 
         // the range boundaries
-        double aCurFirst = theFirst;
-        double aCurLast = theLast;
-        double aPeriod = 0.0;
-        int aFirstPeriod = 0;
-        int aLastPeriod = 0;
+        double curFirst = first;
+        double curLast = last;
+        double period = 0.0;
+        int firstPeriod = 0;
+        int lastPeriod = 0;
         // move boundaries into period
         if (isPeriodic)
         {
-            double aLower = theKnots.First();
-            double anUpper = theKnots.Last();
-            aPeriod = anUpper - aLower;
+            double lower = knots.First();
+            double upper = knots.Last();
+            period = upper - lower;
 
-            while (aCurFirst < aLower)
+            while (curFirst < lower)
             {
-                aCurFirst += aPeriod;
-                aFirstPeriod--;
+                curFirst += period;
+                firstPeriod--;
             }
-            while (aCurLast < aLower)
+            while (curLast < lower)
             {
-                aCurLast += aPeriod;
-                aLastPeriod--;
+                curLast += period;
+                lastPeriod--;
             }
-            while (aCurFirst >= anUpper)
+            while (curFirst >= upper)
             {
-                aCurFirst -= aPeriod;
-                aFirstPeriod += 1;
+                curFirst -= period;
+                firstPeriod += 1;
             }
-            while (aCurLast >= anUpper)
+            while (curLast >= upper)
             {
-                aCurLast -= aPeriod;
-                aLastPeriod += 1;
+                curLast -= period;
+                lastPeriod += 1;
             }
         }
         // locate the left and nearest knot for boundaries
-        int anIndex1 = 0;
-        int anIndex2 = 0;
-        double aDummyDouble;
+        int index1 = 0;
+        int index2 = 0;
+        double dummyDouble;
         // we use version of LocateParameter that doesn't need multiplicities
-        LocateParameter(theDegree,
-                        aNewKnots,
+        LocateParameter(degree,
+                        newKnots,
                         new NCollection_Array1<int>(),
-                        aCurFirst,
+                        curFirst,
                         false,
                         1,
-                        aNbNewKnots,
-                        out anIndex1,
-                        out aDummyDouble);
-        LocateParameter(theDegree,
-                        aNewKnots,
+                        nbNewKnots,
+                        out index1,
+                        out dummyDouble);
+        LocateParameter(degree,
+                        newKnots,
                         new NCollection_Array1<int>(),
-                        aCurLast,
+                        curLast,
                         false,
                         1,
-                        aNbNewKnots,
-                        out anIndex2,
-                        out aDummyDouble);
+                        nbNewKnots,
+                        out index2,
+                        out dummyDouble);
         // the case when the beginning of the range coincides with the next knot
-        if (anIndex1 < aNbNewKnots && Math.Abs(aNewKnots[anIndex1 + 1] - aCurFirst) < theTolerance)
+        if (index1 < nbNewKnots && Math.Abs(newKnots[index1 + 1] - curFirst) < tolerance)
         {
-            anIndex1 += 1;
+            index1 += 1;
         }
         // the case when the ending of the range coincides with the current knot
-        if (aNbNewKnots != 0 && Math.Abs(aNewKnots[anIndex2] - aCurLast) < theTolerance)
+        if (nbNewKnots != 0 && Math.Abs(newKnots[index2] - curLast) < tolerance)
         {
-            anIndex2 -= 1;
+            index2 -= 1;
         }
-        int aNbIntervals = anIndex2 - anIndex1 + 1 + (aLastPeriod - aFirstPeriod) * (aNbNewKnots - 1);
+        int nbIntervals = index2 - index1 + 1 + (lastPeriod - firstPeriod) * (nbNewKnots - 1);
 
         // fill the interval array
-        if (theIntervals != null)
+        if (intervals != null)
         {
-            theIntervals.Resize(1, aNbIntervals + 1, false);
-            if (isPeriodic && aLastPeriod != aFirstPeriod)
+            intervals.Resize(1, nbIntervals + 1, false);
+            if (isPeriodic && lastPeriod != firstPeriod)
             {
-                int anIndex = 1;
+                int index = 1;
                 // part from the begging of range to the end of the first period
-                for (int i = anIndex1; i < aNewKnots.Length(); i++, anIndex++)
+                for (int i = index1; i < newKnots.Length(); i++, index++)
                 {
-                    theIntervals.ChangeValue(anIndex) = aNewKnots[i] + aFirstPeriod * aPeriod;
+                    intervals.ChangeValue(index) = newKnots[i] + firstPeriod * period;
                 }
                 // full periods
-                for (int aPeriodNum = aFirstPeriod + 1; aPeriodNum < aLastPeriod; aPeriodNum++)
+                for (int periodNum = firstPeriod + 1; periodNum < lastPeriod; periodNum++)
                 {
-                    for (int i = 1; i < aNewKnots.Length(); i++, anIndex++)
+                    for (int i = 1; i < newKnots.Length(); i++, index++)
                     {
-                        theIntervals.ChangeValue(anIndex) = aNewKnots[i] + aPeriodNum * aPeriod;
+                        intervals.ChangeValue(index) = newKnots[i] + periodNum * period;
                     }
                 }
                 // part from the begging of the last period to the end of range
-                for (int i = 1; i <= anIndex2; i++, anIndex++)
+                for (int i = 1; i <= index2; i++, index++)
                 {
-                    theIntervals.ChangeValue(anIndex) = aNewKnots[i] + aLastPeriod * aPeriod;
+                    intervals.ChangeValue(index) = newKnots[i] + lastPeriod * period;
                 }
             }
             else
             {
-                int anIndex = 1;
-                for (int i = anIndex1; i <= anIndex2; i++, anIndex++)
+                int index = 1;
+                for (int i = index1; i <= index2; i++, index++)
                 {
-                    theIntervals.ChangeValue(anIndex) = aNewKnots[i] + aFirstPeriod * aPeriod;
+                    intervals.ChangeValue(index) = newKnots[i] + firstPeriod * period;
                 }
             }
             // update the first position (the begging of range doesn't coincide with the knot at anIndex1 in
             // general)
-            theIntervals.ChangeValue(1) = theFirst;
+            intervals.ChangeValue(1) = first;
             // write the ending of the range (we didn't write it at all)
-            theIntervals.ChangeValue(aNbIntervals + 1) = theLast;
+            intervals.ChangeValue(nbIntervals + 1) = last;
         }
 
-        return aNbIntervals;
+        return nbIntervals;
     }
 
     // array of flat knots for bezier curve of maximum 25 degree
@@ -4873,116 +4877,116 @@ public static partial class BSplCLib
     ];
 
     /// <summary>
-    /// The flat knots of a Bezier curve of degree <paramref name="Degree"/> (1 to 25): Degree + 1 zeros then
+    /// The flat knots of a Bezier curve of degree <paramref name="degree"/> (1 to 25): Degree + 1 zeros then
     /// Degree + 1 ones. OCCT returns a reference to the start of a static table; the port returns the
     /// 2 * (Degree + 1) values as a read-only span over it. OCCT's
     /// <c>NCollection_Array1&lt;double&gt; knots(BSplCLib::FlatBezierKnots(Degree), 1, 2 * (Degree + 1))</c> becomes
     /// <c>NCollection_Array1&lt;double&gt;.From(BSplCLib.FlatBezierKnots(Degree))</c> (a copy).
     /// </summary>
-    public static ReadOnlySpan<double> FlatBezierKnots(int Degree)
+    public static ReadOnlySpan<double> FlatBezierKnots(int degree)
     {
-        Standard_OutOfRange_Raise_if(Degree < 1 || Degree > MaxDegree() || MaxDegree() != 25,
+        Standard_OutOfRange_Raise_if(degree < 1 || degree > MaxDegree() || MaxDegree() != 25,
                                      "Bezier curve degree greater than maximal supported");
 
-        return knots.Slice(25 - Degree, 2 * (Degree + 1));
+        return knots.Slice(25 - degree, 2 * (degree + 1));
     }
 
     private static readonly double[] THE_UNIT_WEIGHTS = CreateUnitWeights();
 
     private static double[] CreateUnitWeights()
     {
-        double[] aData = new double[2049];
+        double[] data = new double[2049];
         for (int i = 0; i < 2049; ++i)
         {
-            aData[i] = 1.0;
+            data[i] = 1.0;
         }
-        return aData;
+        return data;
     }
 
     /// <summary>
-    /// An array of <paramref name="theNbElems"/> weights equal to 1, indexed from 1. Up to
+    /// An array of <paramref name="nbElems"/> weights equal to 1, indexed from 1. Up to
     /// <see cref="MaxUnitWeightsSize"/> elements it is a non-owning view of a shared static array (no allocation),
     /// as in OCCT: shared, don't modify. Above that it is a new array.
     /// </summary>
-    public static NCollection_Array1<double> UnitWeights(int theNbElems)
+    public static NCollection_Array1<double> UnitWeights(int nbElems)
     {
-        if (theNbElems <= MaxUnitWeightsSize())
+        if (nbElems <= MaxUnitWeightsSize())
         {
             // Non-owning view over global static array (zero allocation).
-            return new NCollection_Array1<double>(THE_UNIT_WEIGHTS, 0, 1, theNbElems);
+            return new NCollection_Array1<double>(THE_UNIT_WEIGHTS, 0, 1, nbElems);
         }
         // Rare: allocate fresh array.
-        NCollection_Array1<double> aResult = new(1, theNbElems);
-        aResult.Init(1.0);
-        return aResult;
+        NCollection_Array1<double> result = new(1, nbElems);
+        result.Init(1.0);
+        return result;
     }
 
     /// <summary>The shared unit weights: <see cref="MaxUnitWeightsSize"/> values equal to 1, read-only.</summary>
     public static ReadOnlySpan<double> UnitWeightsData() => THE_UNIT_WEIGHTS;
 
     /// <summary>Evaluates a Bezier curve given by its poles in the cache (power-basis) form, on [0, 1].</summary>
-    public static void CoefsD0(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double>? Weights, out gp_Pnt P)
+    public static void CoefsD0(double u, NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights, out Point3D p)
     {
-        BSplCLib.CacheD0(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD0(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p);
     }
 
-    /// <inheritdoc cref="CoefsD0(double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, out gp_Pnt)"/>
-    public static void CoefsD0(double U, NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double>? Weights, out gp_Pnt2d P)
+    /// <inheritdoc cref="CoefsD0(double, NCollection_Array1{Point3D}, NCollection_Array1{double}?, out Point3D)"/>
+    public static void CoefsD0(double u, NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights, out Point2D p)
     {
-        BSplCLib.CacheD0(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD0(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p);
     }
 
     /// <summary>Evaluates a cached Bezier curve and its first derivative on [0, 1].</summary>
-    public static void CoefsD1(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double>? Weights, out gp_Pnt P,
-                               out gp_Vec Vec)
+    public static void CoefsD1(double u, NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights, out Point3D p,
+                               out Vector3D vec)
     {
-        BSplCLib.CacheD1(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD1(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec);
     }
 
-    /// <inheritdoc cref="CoefsD1(double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, out gp_Pnt, out gp_Vec)"/>
-    public static void CoefsD1(double U, NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double>? Weights,
-                               out gp_Pnt2d P, out gp_Vec2d Vec)
+    /// <inheritdoc cref="CoefsD1(double, NCollection_Array1{Point3D}, NCollection_Array1{double}?, out Point3D, out Vector3D)"/>
+    public static void CoefsD1(double u, NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights,
+                               out Point2D p, out Vector2D vec)
     {
-        BSplCLib.CacheD1(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD1(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec);
     }
 
     /// <summary>Evaluates a cached Bezier curve and its first two derivatives on [0, 1].</summary>
-    public static void CoefsD2(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double>? Weights, out gp_Pnt P,
-                               out gp_Vec Vec1, out gp_Vec Vec2)
+    public static void CoefsD2(double u, NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights, out Point3D p,
+                               out Vector3D vec1, out Vector3D vec2)
     {
-        BSplCLib.CacheD2(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec1, out Vec2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD2(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec1, out vec2);
     }
 
-    /// <inheritdoc cref="CoefsD2(double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, out gp_Pnt, out gp_Vec, out gp_Vec)"/>
-    public static void CoefsD2(double U, NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double>? Weights,
-                               out gp_Pnt2d P, out gp_Vec2d Vec1, out gp_Vec2d Vec2)
+    /// <inheritdoc cref="CoefsD2(double, NCollection_Array1{Point3D}, NCollection_Array1{double}?, out Point3D, out Vector3D, out Vector3D)"/>
+    public static void CoefsD2(double u, NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights,
+                               out Point2D p, out Vector2D vec1, out Vector2D vec2)
     {
-        BSplCLib.CacheD2(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec1, out Vec2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD2(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec1, out vec2);
     }
 
     /// <summary>Evaluates a cached Bezier curve and its first three derivatives on [0, 1].</summary>
-    public static void CoefsD3(double U, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double>? Weights, out gp_Pnt P,
-                               out gp_Vec Vec1, out gp_Vec Vec2, out gp_Vec Vec3)
+    public static void CoefsD3(double u, NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights, out Point3D p,
+                               out Vector3D vec1, out Vector3D vec2, out Vector3D vec3)
     {
-        BSplCLib.CacheD3(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec1, out Vec2, out Vec3);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD3(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec1, out vec2, out vec3);
     }
 
-    /// <inheritdoc cref="CoefsD3(double, NCollection_Array1{gp_Pnt}, NCollection_Array1{double}?, out gp_Pnt, out gp_Vec, out gp_Vec, out gp_Vec)"/>
-    public static void CoefsD3(double U, NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<double>? Weights,
-                               out gp_Pnt2d P, out gp_Vec2d Vec1, out gp_Vec2d Vec2, out gp_Vec2d Vec3)
+    /// <inheritdoc cref="CoefsD3(double, NCollection_Array1{Point3D}, NCollection_Array1{double}?, out Point3D, out Vector3D, out Vector3D, out Vector3D)"/>
+    public static void CoefsD3(double u, NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights,
+                               out Point2D p, out Vector2D vec1, out Vector2D vec2, out Vector2D vec3)
     {
-        BSplCLib.CacheD3(U, Poles.Length() - 1, 0.0, 1.0, Poles, Weights, out P, out Vec1, out Vec2, out Vec3);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.CacheD3(u, poles.Length() - 1, 0.0, 1.0, poles, weights, out p, out vec1, out vec2, out vec3);
     }
 
     /// <summary>Converts the poles of a Bezier curve into its cache (power-basis) coefficients.</summary>
-    public static void PolesCoefficients(NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Pnt> CachePoles)
+    public static void PolesCoefficients(NCollection_Array1<Point3D> poles, NCollection_Array1<Point3D> cachePoles)
     {
-        BSplCLib.PolesCoefficients(Poles, PLib.NoWeights(), CachePoles, PLib.NoWeights());
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.PolesCoefficients(poles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), cachePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
     }
 
-    /// <inheritdoc cref="PolesCoefficients(NCollection_Array1{gp_Pnt}, NCollection_Array1{gp_Pnt})"/>
-    public static void PolesCoefficients(NCollection_Array1<gp_Pnt2d> Poles, NCollection_Array1<gp_Pnt2d> CachePoles)
+    /// <inheritdoc cref="PolesCoefficients(NCollection_Array1{Point3D}, NCollection_Array1{Point3D})"/>
+    public static void PolesCoefficients(NCollection_Array1<Point2D> poles, NCollection_Array1<Point2D> cachePoles)
     {
-        BSplCLib.PolesCoefficients(Poles, PLib.NoWeights(), CachePoles, PLib.NoWeights());
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.PolesCoefficients(poles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), cachePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
     }
 }

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ProjLib_ComputeApproxOnPolarSurfaceTest
@@ -12,9 +14,9 @@ public class ProjLib_ComputeApproxOnPolarSurfaceTest
                                                double theParam,
                                                double theTol)
     {
-        gp_Pnt2d aUV = thePCurve.Value(theParam);
-        gp_Pnt aProjP = theSurface.Value(aUV.X(), aUV.Y());
-        gp_Pnt aRefP = theCurve.Value(theParam);
+        Point2D aUV = thePCurve.Value(theParam);
+        Point3D aProjP = theSurface.Value(aUV.X(), aUV.Y());
+        Point3D aRefP = theCurve.Value(theParam);
         Assert.True(aProjP.Distance(aRefP) <= theTol);
     }
 
@@ -22,9 +24,9 @@ public class ProjLib_ComputeApproxOnPolarSurfaceTest
     public void BuildInitialCurveAndProjectOnCylinder_Done()
     {
         Geom_Circle aCurve =
-            new(new gp_Ax2(new gp_Pnt(0.0, 0.0, 2.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)), 5.0);
+            new(new Frame3D(new Point3D(0.0, 0.0, 2.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)), 5.0);
         Geom_CylindricalSurface aSurface =
-            new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)), 5.0);
+            new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)), 5.0);
 
         Adaptor3d_Curve aCurveAdaptor = new GeomAdaptor_Curve(aCurve);
         Adaptor3d_Surface aSurfAdaptor = new GeomAdaptor_Surface(aSurface);

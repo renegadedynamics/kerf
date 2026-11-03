@@ -224,7 +224,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         using var aN = new N.BRepBuilderAPI_Sewing();
         aN.Init(theTolerance, true, true, true, false);
         aN.SetMinTolerance(theMinTol);
-        aN.SetMaxTolerance(Precision.Infinite());
+        aN.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
         if (theChildren)
         {
             for (var anIt = new N.TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
@@ -248,7 +248,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         var aP = new BRepBuilderAPI_Sewing();
         aP.Init(theTolerance, true, true, true, false);
         aP.SetMinTolerance(theMinTol);
-        aP.SetMaxTolerance(Precision.Infinite());
+        aP.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
         if (theChildren)
         {
             for (var anIt = new TopoDS_Iterator(aShape); anIt.More(); anIt.Next())
@@ -268,10 +268,10 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
     private static void Setup(double theTol, out double theTolerance, out double theMinTol)
     {
         theMinTol = theTol * 1e-4;
-        theTolerance = Math.Max(theTol, Precision.Confusion());
-        if (theMinTol < Precision.Confusion())
+        theTolerance = Math.Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
+        if (theMinTol < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            theMinTol = Precision.Confusion();
+            theMinTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         }
     }
 
@@ -324,7 +324,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             aN.SetFloatingEdgesMode(false);
             aN.SetFaceMode(true);
             aN.SetMinTolerance(aMinTol);
-            aN.SetMaxTolerance(Precision.Infinite());
+            aN.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
             foreach (N.TopoDS_Shape anInput in aNInputs)
             {
                 aN.Add(anInput);
@@ -333,7 +333,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
         catch (Exception anException)
         {
-            aNError = anException.GetType().Name;
+            aNError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
         }
         theTally.NativeSeconds += aWatch.Elapsed.TotalSeconds;
         if (aProgress is not null)
@@ -351,7 +351,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             aP.SetFloatingEdgesMode(false);
             aP.SetFaceMode(true);
             aP.SetMinTolerance(aMinTol);
-            aP.SetMaxTolerance(Precision.Infinite());
+            aP.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
             foreach (TopoDS_Shape anInput in aPInputs)
             {
                 aP.Add(anInput);
@@ -360,7 +360,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
         catch (Exception anException)
         {
-            aPError = anException.GetType().Name + ": " + anException.Message;
+            aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()) + ": " + anException.Message;
         }
         theTally.PortSeconds += aWatch.Elapsed.TotalSeconds;
         if (aProgress is not null)

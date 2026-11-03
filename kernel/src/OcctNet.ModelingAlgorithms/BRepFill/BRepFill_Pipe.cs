@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFill_TransitionStyle;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.GeomFill_Trihedron;
 using static Occt.TopAbs_Orientation;
@@ -21,7 +24,7 @@ namespace Occt;
 /// <para>
 /// A working object (decision 21), as BRepSweep_Prism under BRepPrimAPI_MakePrism: it sweeps the profile in place, as
 /// OCCT does, and the sweep writes into the profile's sub-shapes it shares in the result (the faces at the ends of a
-/// face's pipe, the section edges). Given a frozen profile, such a write throws <see cref="Standard_ImmutableObject"/>;
+/// face's pipe, the section edges). Given a frozen profile, such a write throws <see cref="ImmutableObjectException"/>;
 /// <see cref="BRepOffsetAPI_MakePipe"/> gives it a copy of a frozen profile and maps its answers back to the caller's
 /// sub-shapes (decision 910).
 /// </para>
@@ -35,7 +38,7 @@ public sealed class BRepFill_Pipe
     private TopoDS_Wire mySpine = new();
     private TopoDS_Shape myProfile = new();
     private TopoDS_Shape myShape = new();
-    private gp_Trsf myTrsf = new();
+    private Transform3D myTrsf = new();
     private BRepFill_LocationLaw? myLoc;
     private NCollection_HArray2<TopoDS_Shape>? mySections;
     private NCollection_HArray2<TopoDS_Shape>? myFaces;
@@ -49,7 +52,7 @@ public sealed class BRepFill_Pipe
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> myGenMap = new(TopTools_ShapeMapHasher.Instance);
     private int myDegmax;
     private int mySegmax;
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private GeomFill_Trihedron myMode;
     private bool myForceApproxC1;
     private double myErrorOnSurf; // OCCT: uninitialised until a sweep
@@ -113,8 +116,8 @@ public sealed class BRepFill_Pipe
         for (int i = 0; i <= NCONTROL; i++)
         {
             double par = fpar + i * delta;
-            gp_Pnt pnt = aCurve.Value(par);
-            gp_Pnt prj = ConS.Value(par);
+            Point3D pnt = aCurve.Value(par);
+            Point3D prj = ConS.Value(par);
             double sqdist = pnt.SquareDistance(prj);
             if (sqdist > TolTol)
             {
@@ -142,7 +145,7 @@ public sealed class BRepFill_Pipe
     {
         myDegmax = 11;
         mySegmax = 100;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myMode = GeomFill_IsCorrectedFrenet;
         myForceApproxC1 = false;
 
@@ -173,10 +176,10 @@ public sealed class BRepFill_Pipe
             myMode = aMode;
         }
 
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         if (myMode == GeomFill_IsDiscreteTrihedron)
         {
-            myContinuity = GeomAbs_C0;
+            myContinuity = C0;
         }
 
         myForceApproxC1 = ForceApproxC1;
@@ -189,7 +192,7 @@ public sealed class BRepFill_Pipe
     //=================================================================================================
 
     /// <summary>Builds the pipe of <paramref name="Profile"/> along <paramref name="Spine"/>.</summary>
-    /// <exception cref="Standard_DomainError">The profile contains solids.</exception>
+    /// <exception cref="DomainErrorException">The profile contains solids.</exception>
     public void Perform(in TopoDS_Wire Spine,
                         in TopoDS_Shape Profile,
                         bool KPart = false)
@@ -233,15 +236,15 @@ public sealed class BRepFill_Pipe
         BRepFill_SectionPlacement Place = new(myLoc, Profile);
         myTrsf = Place.Transformation();
 
-        TopLoc_Location Loc2 = new(myTrsf), Loc1;
+        Placement Loc2 = new(myTrsf), Loc1;
         Loc1 = Profile.Location();
         TheProf = myProfile;
         TheProf.Location(Loc2.Multiplied(Loc1));
 
         // Construct First && Last Shape
-        gp_Mat M = new();
-        gp_Vec V = new();
-        gp_Trsf fila = new();
+        Matrix3x3 M = new();
+        Vector3D V = new();
+        Transform3D fila = new();
         myLoc.Law(1).GetDomain(out double first, out double last);
         myLoc.Law(1).D0(first, ref M, ref V);
         fila.SetValues(M[1, 1],
@@ -258,9 +261,9 @@ public sealed class BRepFill_Pipe
                        V.Z());
 
         fila.Multiply(myTrsf);
-        TopLoc_Location LocFirst = new(fila);
+        Placement LocFirst = new(fila);
         myFirst = myProfile;
-        if (!LocFirst.IsIdentity())
+        if (!LocFirst.IsIdentity)
         {
             // myFirst.Location( LocFirst.Multiplied(myProfile.Location()) );
             myFirst = new BRepBuilderAPI_Transform(myProfile, fila, true).InternalShape(); // copy
@@ -287,11 +290,11 @@ public sealed class BRepFill_Pipe
                        M[3, 3],
                        V.Z());
         fila.Multiply(myTrsf);
-        TopLoc_Location LocLast = new(fila);
+        Placement LocLast = new(fila);
         if (!myLoc.IsClosed() || LocFirst != LocLast)
         {
             myLast = myProfile;
-            if (!LocLast.IsIdentity())
+            if (!LocLast.IsIdentity)
             {
                 // myLast.Location(LocLast.Multiplied(myProfile.Location()) );
                 myLast = new BRepBuilderAPI_Transform(myProfile, fila, true).InternalShape(); // copy
@@ -375,7 +378,7 @@ public sealed class BRepFill_Pipe
     /// The face generated by the edge <paramref name="ESpine"/> of the spine and the edge <paramref name="EProfile"/>
     /// of the profile (frozen; null for a degenerated profile edge).
     /// </summary>
-    /// <exception cref="Standard_DomainError">An edge isn't in the spine or the profile.</exception>
+    /// <exception cref="DomainErrorException">An edge isn't in the spine or the profile.</exception>
     public TopoDS_Face Face(in TopoDS_Edge ESpine, in TopoDS_Edge EProfile)
     {
         TopoDS_Face aFace = InternalFace(ESpine, EProfile);
@@ -402,7 +405,7 @@ public sealed class BRepFill_Pipe
 
         if (iprof == 0)
         {
-            throw new Standard_DomainError("BRepFill_Pipe::Face : Edge not in the Profile");
+            throw new DomainErrorException("BRepFill_Pipe::Face : Edge not in the Profile");
         }
 
         // *************************************************
@@ -419,7 +422,7 @@ public sealed class BRepFill_Pipe
 
         if (ispin == 0)
         {
-            throw new Standard_DomainError("BRepFill_Pipe::Edge  : Edge not in the Spine");
+            throw new DomainErrorException("BRepFill_Pipe::Edge  : Edge not in the Spine");
         }
 
         theFace = TopoDS.Face(myFaces!.Value(iprof, ispin));
@@ -432,7 +435,7 @@ public sealed class BRepFill_Pipe
     /// The edge generated by the edge <paramref name="ESpine"/> of the spine and the vertex
     /// <paramref name="VProfile"/> of the profile (frozen).
     /// </summary>
-    /// <exception cref="Standard_DomainError">The edge or the vertex isn't in the spine or the profile.</exception>
+    /// <exception cref="DomainErrorException">The edge or the vertex isn't in the spine or the profile.</exception>
     public TopoDS_Edge Edge(in TopoDS_Edge ESpine, in TopoDS_Vertex VProfile)
     {
         TopoDS_Edge anEdge = InternalEdge(ESpine, VProfile);
@@ -451,7 +454,7 @@ public sealed class BRepFill_Pipe
         iprof = FindVertex(myProfile, VProfile, ref count);
         if (iprof == 0)
         {
-            throw new Standard_DomainError("BRepFill_Pipe::Edge : Vertex not in the Profile");
+            throw new DomainErrorException("BRepFill_Pipe::Edge : Vertex not in the Profile");
         }
 
         // *************************************************
@@ -469,7 +472,7 @@ public sealed class BRepFill_Pipe
 
         if (ispin == 0)
         {
-            throw new Standard_DomainError("BRepFill_Pipe::Edge  : Edge not in the Spine");
+            throw new DomainErrorException("BRepFill_Pipe::Edge  : Edge not in the Spine");
         }
 
         // *************************************************
@@ -484,7 +487,7 @@ public sealed class BRepFill_Pipe
     //=================================================================================================
 
     /// <summary>The profile at the position of the spine's vertex <paramref name="VSpine"/>, as a compound (frozen).</summary>
-    /// <exception cref="Standard_DomainError">The vertex isn't in the spine.</exception>
+    /// <exception cref="DomainErrorException">The vertex isn't in the spine.</exception>
     public TopoDS_Shape Section(in TopoDS_Vertex VSpine) => Published(InternalSection(VSpine));
 
     /// <summary><see cref="Section"/> without freezing, for ported callers.</summary>
@@ -508,7 +511,7 @@ public sealed class BRepFill_Pipe
 
         if (ispin == 0)
         {
-            throw new Standard_DomainError("BRepFill_Pipe::Section  : Vertex not in the Spine");
+            throw new DomainErrorException("BRepFill_Pipe::Section  : Vertex not in the Spine");
         }
 
         BRep_Builder B = new();
@@ -528,7 +531,7 @@ public sealed class BRepFill_Pipe
     //=======================================================================
 
     /// <summary>The wire swept by <paramref name="Point"/> (placed with the profile) along the spine (frozen).</summary>
-    public TopoDS_Wire PipeLine(in gp_Pnt Point)
+    public TopoDS_Wire PipeLine(in Point3D Point)
     {
         TopoDS_Wire aWire = InternalPipeLine(Point);
         aWire.TShape()?.FreezeGraph();
@@ -536,10 +539,10 @@ public sealed class BRepFill_Pipe
     }
 
     /// <summary><see cref="PipeLine"/> without freezing, for ported callers.</summary>
-    internal TopoDS_Wire InternalPipeLine(in gp_Pnt Point)
+    internal TopoDS_Wire InternalPipeLine(in Point3D Point)
     {
         // Positioning
-        gp_Pnt P;
+        Point3D P;
         P = Point;
         P.Transform(myTrsf);
 
@@ -584,7 +587,7 @@ public sealed class BRepFill_Pipe
             InitialLength = myFaces.ColLength();
         }
 
-        TopLoc_Location BackLoc = new(myTrsf.Inverted());
+        Placement BackLoc = new(myTrsf.Inverted());
         _ = BackLoc;
 
         // there are two kinds of generation
@@ -667,7 +670,7 @@ public sealed class BRepFill_Pipe
 
             case TopAbs_SOLID:
             case TopAbs_COMPSOLID:
-                throw new Standard_DomainError("BRepFill_Pipe::profile contains solids");
+                throw new DomainErrorException("BRepFill_Pipe::profile contains solids");
 
             case TopAbs_COMPOUND:
             {
@@ -894,7 +897,7 @@ public sealed class BRepFill_Pipe
             BS.Add(solid, TopoDS.Shell(result));
 
             BRepClass3d_SolidClassifier SC = new(solid);
-            SC.PerformInfinitePoint(Precision.Confusion());
+            SC.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
             if (SC.State() == TopAbs_IN)
             {
                 BS.MakeSolid(ref solid);
@@ -962,7 +965,7 @@ public sealed class BRepFill_Pipe
 
             case TopAbs_SOLID:
             case TopAbs_COMPSOLID:
-                throw new Standard_DomainError("BRepFill_Pipe::SOLID or COMPSOLID");
+                throw new DomainErrorException("BRepFill_Pipe::SOLID or COMPSOLID");
             default:
                 break;
         }
@@ -1042,7 +1045,7 @@ public sealed class BRepFill_Pipe
 
             case TopAbs_SOLID:
             case TopAbs_COMPSOLID:
-                throw new Standard_DomainError("BRepFill_Pipe::SOLID or COMPSOLID");
+                throw new DomainErrorException("BRepFill_Pipe::SOLID or COMPSOLID");
             default:
                 break;
         }
@@ -1088,12 +1091,12 @@ public sealed class BRepFill_Pipe
                 int RealNbKnots = NbKnots;
                 if (first > BC.FirstParameter())
                 {
-                    BC.LocateU(first, Precision.PConfusion(), out int I1, out _);
+                    BC.LocateU(first, global::Kerf.Engine.Foundation.Precision.PConfusion(), out int I1, out _);
                     RealNbKnots -= I1 - 1;
                 }
                 if (last < BC.LastParameter())
                 {
-                    BC.LocateU(last, Precision.PConfusion(), out _, out int I2);
+                    BC.LocateU(last, global::Kerf.Engine.Foundation.Precision.PConfusion(), out _, out int I2);
                     RealNbKnots -= NbKnots - I2;
                 }
                 RealSegmax += RealNbKnots - 1;

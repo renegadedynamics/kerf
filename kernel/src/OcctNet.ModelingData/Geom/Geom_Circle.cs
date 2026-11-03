@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,20 +18,20 @@ public class Geom_Circle : Geom_Conic
     private double radius;
 
     /// <summary>A circle equal to C.</summary>
-    public Geom_Circle(in gp_Circ C)
+    public Geom_Circle(in Circle3D C)
     {
         radius = C.Radius();
         pos = C.Position();
     }
 
     /// <summary>A circle of radius R placed by A2.</summary>
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
-    public Geom_Circle(in gp_Ax2 A2, double R)
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
+    public Geom_Circle(in Frame3D A2, double R)
     {
         radius = R;
         if (R < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A2;
     }
@@ -55,63 +59,63 @@ public class Geom_Circle : Geom_Conic
     public sealed override double LastParameter() => 2.0 * M_PI;
 
     /// <summary>The non-persistent circle equal to this one.</summary>
-    public gp_Circ Circ() => new gp_Circ(pos, radius);
+    public Circle3D Circ() => new Circle3D(pos, radius);
 
-    internal void SetCirc(in gp_Circ C)
+    internal void SetCirc(in Circle3D C)
     {
         CheckMutable();
         radius = C.Radius();
         pos = C.Position();
     }
 
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     internal void SetRadius(double R)
     {
         CheckMutable();
         if (R < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         radius = R;
     }
 
     public double Radius() => radius;
 
-    public sealed override gp_Pnt EvalD0(double U) => ElCLib.CircleValue(U, pos, radius);
+    public sealed override Point3D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(U, pos, radius);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult = new ResD1();
-        ElCLib.CircleD1(U, pos, radius, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD1(U, pos, radius, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult = new ResD2();
-        ElCLib.CircleD2(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD2(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult = new ResD3();
-        ElCLib.CircleD3(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
+        global::Kerf.Engine.Geometry.ElCLib.CircleD3(U, pos, radius, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
         return aResult;
     }
 
     /// <exception cref="Geom_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec EvalDN(double U, int N)
+    public sealed override Vector3D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom_UndefinedDerivative();
         }
-        return ElCLib.CircleDN(U, pos, radius, N);
+        return global::Kerf.Engine.Geometry.ElCLib.CircleDN(U, pos, radius, N);
     }
 
     /// <summary>Applies T to this circle (the radius is scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         radius = radius * Math.Abs(T.ScaleFactor());
@@ -120,7 +124,7 @@ public class Geom_Circle : Geom_Conic
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 
-    public Geom_Circle WithCirc(in gp_Circ C)
+    public Geom_Circle WithCirc(in Circle3D C)
     {
         Geom_Circle aCopy = (Geom_Circle)Copy();
         aCopy.SetCirc(C);

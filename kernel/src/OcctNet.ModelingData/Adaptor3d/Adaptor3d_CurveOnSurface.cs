@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -23,74 +27,74 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 {
     private Adaptor3d_Surface? mySurface;
     private Adaptor2d_Curve2d? myCurve;
-    private GeomAbs_CurveType myType;
-    private gp_Circ myCirc = new gp_Circ();
-    private gp_Lin myLin = new gp_Lin();
+    private CurveKind myType;
+    private Circle3D myCirc = new Circle3D();
+    private Line3D myLin = new Line3D();
     private Adaptor3d_Surface? myFirstSurf;
     private Adaptor3d_Surface? myLastSurf;
     private NCollection_HSequence<double>? myIntervals;
-    private GeomAbs_Shape myIntCont;
+    private Continuity myIntCont;
 
-    private static gp_Pnt to3d(in gp_Pln Pl, in gp_Pnt2d P)
+    private static Point3D to3d(in Plane3D Pl, in Point2D P)
     {
-        return ElSLib.Value(P.X(), P.Y(), Pl);
+        return global::Kerf.Engine.Geometry.ElSLib.Value(P.X(), P.Y(), Pl);
     }
 
-    private static gp_Vec to3d(in gp_Pln Pl, in gp_Vec2d V)
+    private static Vector3D to3d(in Plane3D Pl, in Vector2D V)
     {
-        gp_Vec Vx = new gp_Vec(Pl.XAxis().Direction());
-        gp_Vec Vy = new gp_Vec(Pl.YAxis().Direction());
+        Vector3D Vx = new Vector3D(Pl.XAxis().Direction());
+        Vector3D Vy = new Vector3D(Pl.YAxis().Direction());
         Vx.Multiply(V.X());
         Vy.Multiply(V.Y());
         Vx.Add(Vy);
         return Vx;
     }
 
-    private static gp_Ax2 to3d(in gp_Pln Pl, in gp_Ax22d A)
+    private static Frame3D to3d(in Plane3D Pl, in Frame2D A)
     {
-        gp_Pnt P = to3d(Pl, A.Location());
-        gp_Vec VX = to3d(Pl, new gp_Vec2d(A.XAxis().Direction()));
-        gp_Vec VY = to3d(Pl, new gp_Vec2d(A.YAxis().Direction()));
-        return new gp_Ax2(P, new gp_Dir(VX.Crossed(VY)), new gp_Dir(VX));
+        Point3D P = to3d(Pl, A.Location());
+        Vector3D VX = to3d(Pl, new Vector2D(A.XAxis().Direction()));
+        Vector3D VY = to3d(Pl, new Vector2D(A.YAxis().Direction()));
+        return new Frame3D(P, new Direction3D(VX.Crossed(VY)), new Direction3D(VX));
     }
 
-    private static gp_Circ to3d(in gp_Pln Pl, in gp_Circ2d C)
+    private static Circle3D to3d(in Plane3D Pl, in Circle2D C)
     {
-        return new gp_Circ(to3d(Pl, C.Axis()), C.Radius());
+        return new Circle3D(to3d(Pl, C.Axis()), C.Radius());
     }
 
-    private static gp_Elips to3d(in gp_Pln Pl, in gp_Elips2d E)
+    private static Ellipse3D to3d(in Plane3D Pl, in Ellipse2D E)
     {
-        return new gp_Elips(to3d(Pl, E.Axis()), E.MajorRadius(), E.MinorRadius());
+        return new Ellipse3D(to3d(Pl, E.Axis()), E.MajorRadius(), E.MinorRadius());
     }
 
-    private static gp_Hypr to3d(in gp_Pln Pl, in gp_Hypr2d H)
+    private static Hyperbola3D to3d(in Plane3D Pl, in Hyperbola2D H)
     {
-        return new gp_Hypr(to3d(Pl, H.Axis()), H.MajorRadius(), H.MinorRadius());
+        return new Hyperbola3D(to3d(Pl, H.Axis()), H.MajorRadius(), H.MinorRadius());
     }
 
-    private static gp_Parab to3d(in gp_Pln Pl, in gp_Parab2d P)
+    private static Parabola3D to3d(in Plane3D Pl, in Parabola2D P)
     {
-        return new gp_Parab(to3d(Pl, P.Axis()), P.Focal());
+        return new Parabola3D(to3d(Pl, P.Axis()), P.Focal());
     }
 
-    private static gp_Vec SetLinearForm(in gp_Vec2d DW,
-                                        in gp_Vec2d D2W,
-                                        in gp_Vec2d D3W,
-                                        in gp_Vec D1U,
-                                        in gp_Vec D1V,
-                                        in gp_Vec D2U,
-                                        in gp_Vec D2V,
-                                        in gp_Vec D2UV,
-                                        in gp_Vec D3U,
-                                        in gp_Vec D3V,
-                                        in gp_Vec D3UUV,
-                                        in gp_Vec D3UVV)
+    private static Vector3D SetLinearForm(in Vector2D DW,
+                                        in Vector2D D2W,
+                                        in Vector2D D3W,
+                                        in Vector3D D1U,
+                                        in Vector3D D1V,
+                                        in Vector3D D2U,
+                                        in Vector3D D2V,
+                                        in Vector3D D2UV,
+                                        in Vector3D D3U,
+                                        in Vector3D D3V,
+                                        in Vector3D D3UUV,
+                                        in Vector3D D3UVV)
     {
         // OCCT: this is not the third derivative of S(u(t), v(t)). D1U is weighted by DW.X() where the chain rule
         // has D3W.X() (first line), and D3UVV ends up with 5 u' v'^2 instead of 3 u' v'^2 (the second V32 line
         // repeats it). Ported as is; Adaptor3d_CurveOnSurfaceTests.EvalD3_OcctFormula_DiffersFromDerivative.
-        gp_Vec V31 = new gp_Vec(), V32 = new gp_Vec(), V33 = new gp_Vec(), V34 = new gp_Vec(), V3 = new gp_Vec();
+        Vector3D V31 = new Vector3D(), V32 = new Vector3D(), V33 = new Vector3D(), V34 = new Vector3D(), V3 = new Vector3D();
 
         V31.SetLinearForm(DW.X(), D1U, D2W.X() * DW.X(), D2U, D2W.X() * DW.Y(), D2UV);
         V31.SetLinearForm(D3W.Y(), D1V, D2W.Y() * DW.X(), D2UV, D2W.Y() * DW.Y(), D2V, V31);
@@ -104,7 +108,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         return V3;
     }
 
-    private static void CompareBounds(ref gp_Pnt2d P1, ref gp_Pnt2d P2) // SVV
+    private static void CompareBounds(ref Point2D P1, ref Point2D P2) // SVV
     {
         double Lx = P1.X(), Ly = P1.Y();
         double Rx = P2.X(), Ry = P2.Y();
@@ -125,7 +129,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     {
         // Warning: Hunt is used to find number of knot which equals coordinate component,
         //        when coordinate component definitely equals a knot only.
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         int i = 1;
         while ((i <= Arr.Upper()) && (Math.Abs(Coord - Arr[i]) > Tol))
         {
@@ -140,7 +144,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         }
         else if (Math.Abs(Coord - Arr[i]) > Tol)
         {
-            throw new Standard_NotImplemented("Adaptor3d_CurveOnSurface:Hunt");
+            throw new MethodNotImplementedException("Adaptor3d_CurveOnSurface:Hunt");
         }
     }
 
@@ -180,7 +184,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
                                    out bool DerNull)
     {
         int N = 0;
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         Hunt(Arr, Coord, ref N);
         DerNull = false;
 
@@ -238,14 +242,14 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     private static void Locate1Coord(int Index,
-                                     in gp_Pnt2d UV,
-                                     in gp_Vec2d DUV,
+                                     in Point2D UV,
+                                     in Vector2D DUV,
                                      Geom_BSplineCurve BSplC,
-                                     ref gp_Pnt2d LeftBot,
-                                     ref gp_Pnt2d RightTop)
+                                     ref Point2D LeftBot,
+                                     ref Point2D RightTop)
     {
         double Comp1 = 0, DComp1 = 0, cur, f = 0.0, l = 0.0;
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         int i = 1, Bnd1, Bnd2;
         bool DIsNull = false;
         NCollection_Array1<double> Arr = BSplC.InternalKnots();
@@ -408,15 +412,15 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     private static void Locate1Coord(int Index,
-                                     in gp_Pnt2d UV,
-                                     in gp_Vec2d DUV,
+                                     in Point2D UV,
+                                     in Vector2D DUV,
                                      Geom_BSplineSurface BSplS,
                                      out bool DIsNull,
-                                     ref gp_Pnt2d LeftBot,
-                                     ref gp_Pnt2d RightTop)
+                                     ref Point2D LeftBot,
+                                     ref Point2D RightTop)
     {
         double Comp1 = 0, DComp1 = 0;
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         int i = 1, Up = 0, Up1, Up2, Down = 0, Down1, Down2;
         double cur = 0.0;
 
@@ -612,14 +616,14 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     private static void Locate2Coord(int Index,
-                                     in gp_Pnt2d UV,
-                                     in gp_Vec2d DUV,
+                                     in Point2D UV,
+                                     in Vector2D DUV,
                                      double I1,
                                      double I2,
-                                     ref gp_Pnt2d LeftBot,
-                                     ref gp_Pnt2d RightTop)
+                                     ref Point2D LeftBot,
+                                     ref Point2D RightTop)
     {
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         double Comp1 = 0, DComp1 = 0;
         if (Index == 1)
         {
@@ -719,15 +723,15 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     private static void Locate2Coord(int Index,
-                                     in gp_Pnt2d UV,
-                                     in gp_Vec2d DUV,
+                                     in Point2D UV,
+                                     in Vector2D DUV,
                                      Geom_BSplineSurface BSplS,
                                      NCollection_Array1<double> Arr,
-                                     ref gp_Pnt2d LeftBot,
-                                     ref gp_Pnt2d RightTop)
+                                     ref Point2D LeftBot,
+                                     ref Point2D RightTop)
     {
         double Comp = 0, DComp = 0, Tmp1 = 0.0, Tmp2 = 0.0;
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         int N = 0, NUp = 0, NLo = 0;
         if (Index == 1)
         {
@@ -813,23 +817,23 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// <summary>An empty adaptor; load a surface and a curve before use.</summary>
     public Adaptor3d_CurveOnSurface()
     {
-        myType = GeomAbs_OtherCurve;
-        myIntCont = GeomAbs_CN;
+        myType = OtherCurve;
+        myIntCont = CN;
     }
 
     /// <summary>An adaptor on the surface S; load a curve before use.</summary>
     public Adaptor3d_CurveOnSurface(Adaptor3d_Surface S)
     {
-        myType = GeomAbs_OtherCurve;
-        myIntCont = GeomAbs_CN;
+        myType = OtherCurve;
+        myIntCont = CN;
         Load(S);
     }
 
     /// <summary>The curve C on the surface S.</summary>
     public Adaptor3d_CurveOnSurface(Adaptor2d_Curve2d C, Adaptor3d_Surface S)
     {
-        myType = GeomAbs_OtherCurve;
-        myIntCont = GeomAbs_CN;
+        myType = OtherCurve;
+        myIntCont = CN;
         Load(S);
         Load(C);
     }
@@ -886,13 +890,13 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
         EvalKPart();
 
-        GeomAbs_SurfaceType SType = mySurface.GetType();
-        if (SType == GeomAbs_OffsetSurface)
+        SurfaceKind SType = mySurface.GetType();
+        if (SType == OffsetSurface)
         {
             SType = mySurface.BasisSurface().GetType();
         }
-        if (SType == GeomAbs_BSplineSurface || SType == GeomAbs_SurfaceOfExtrusion
-            || SType == GeomAbs_SurfaceOfRevolution)
+        if (SType == BSplineSurface || SType == SurfaceOfExtrusion
+            || SType == SurfaceOfRevolution)
         {
             EvalFirstLastSurf();
         }
@@ -924,15 +928,15 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
     public override double LastParameter() => myCurve!.LastParameter();
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
-        GeomAbs_Shape ContC = myCurve!.Continuity();
-        GeomAbs_Shape ContSu = mySurface!.UContinuity();
+        Continuity ContC = myCurve!.Continuity();
+        Continuity ContSu = mySurface!.UContinuity();
         if (ContSu < ContC)
         {
             ContC = ContSu;
         }
-        GeomAbs_Shape ContSv = mySurface.VContinuity();
+        Continuity ContSv = mySurface.VContinuity();
         if (ContSv < ContC)
         {
             ContC = ContSv;
@@ -943,14 +947,14 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
     // Auxiliary: adds roots of equation to sorted sequence of parameters
     // along curve, keeping it sorted and avoiding repetitions (within tolerance Tol)
-    private static void AddIntervals(NCollection_HSequence<double> theParameters, math_FunctionRoots theRoots, double theTol)
+    private static void AddIntervals(NCollection_HSequence<double> theParameters, FunctionRoots theRoots, double theTol)
     {
-        if (!theRoots.IsDone() || theRoots.IsAllNull())
+        if (!theRoots.IsDone || theRoots.IsAllNull)
         {
             return;
         }
 
-        int nsol = theRoots.NbSolutions();
+        int nsol = theRoots.SolutionCount;
         for (int i = 1; i <= nsol; i++)
         {
             double param = theRoots.Value(i);
@@ -978,7 +982,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// The number of intervals of continuity S: the curve's, split where it crosses the surface's U and V
     /// interval bounds. The result is cached for the last S.
     /// </summary>
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         if (S == myIntCont && myIntervals is not null)
         {
@@ -1003,7 +1007,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
         myCurve.Intervals(TabC, S);
 
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
 
         // sorted sequence of parameters defining continuity intervals;
         // started with own intervals of curve and completed by
@@ -1021,7 +1025,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             {
                 U = TabU.Value(iu);
                 Adaptor3d_InterFunc Func = new Adaptor3d_InterFunc(myCurve, U, 1);
-                math_FunctionRoots Resol = new math_FunctionRoots(Func, Tdeb, Tfin, NbSample, Tol, Tol, Tol, 0.0);
+                FunctionRoots Resol = new FunctionRoots(Func, Tdeb, Tfin, NbSample, Tol, Tol, Tol, 0.0);
                 AddIntervals(aIntervals, Resol, Tol);
             }
         }
@@ -1032,7 +1036,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             {
                 V = TabV.Value(iv);
                 Adaptor3d_InterFunc Func = new Adaptor3d_InterFunc(myCurve, V, 2);
-                math_FunctionRoots Resol = new math_FunctionRoots(Func, Tdeb, Tfin, NbSample, Tol, Tol, Tol, 0.0);
+                FunctionRoots Resol = new FunctionRoots(Func, Tdeb, Tfin, NbSample, Tol, Tol, Tol, 0.0);
                 AddIntervals(aIntervals, Resol, Tol);
             }
         }
@@ -1051,12 +1055,12 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     /// <summary>Stores in T the bounds of the intervals of continuity S; T must have NbIntervals(S) + 1 values.</summary>
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         NbIntervals(S);
         if (T.Length() != myIntervals!.Length())
         {
-            throw new Standard_ProgramError("Error: Wrong size of array buffer in call to Adaptor3d_CurveOnSurface::Intervals");
+            throw new ProgramErrorException("Error: Wrong size of array buffer in call to Adaptor3d_CurveOnSurface::Intervals");
         }
         for (int i = 1; i <= myIntervals.Length(); i++)
         {
@@ -1078,7 +1082,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
     public override bool IsPeriodic()
     {
-        if (myType == GeomAbs_Circle || myType == GeomAbs_Ellipse)
+        if (myType == global::Kerf.Geometry.CurveKind.Circle || myType == global::Kerf.Geometry.CurveKind.Ellipse)
         {
             return true;
         }
@@ -1088,7 +1092,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
     public override double Period()
     {
-        if (myType == GeomAbs_Circle || myType == GeomAbs_Ellipse)
+        if (myType == global::Kerf.Geometry.CurveKind.Circle || myType == global::Kerf.Geometry.CurveKind.Ellipse)
         {
             return (2.0 * M_PI);
         }
@@ -1097,18 +1101,18 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     /// <summary>The point of parameter theU.</summary>
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
-        gp_Pnt P;
-        gp_Pnt2d Puv;
+        Point3D P;
+        Point2D Puv;
 
-        if (myType == GeomAbs_Line)
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
-            P = ElCLib.Value(theU, myLin);
+            P = global::Kerf.Engine.Geometry.ElCLib.Value(theU, myLin);
         }
-        else if (myType == GeomAbs_Circle)
+        else if (myType == global::Kerf.Geometry.CurveKind.Circle)
         {
-            P = ElCLib.Value(theU, myCirc);
+            P = global::Kerf.Engine.Geometry.ElCLib.Value(theU, myCirc);
         }
         else
         {
@@ -1122,16 +1126,16 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// <summary>The point and first derivative at theU.</summary>
     public sealed override Geom_Curve.ResD1 EvalD1(double theU)
     {
-        gp_Pnt2d Puv;
-        gp_Vec2d Duv;
-        gp_Vec D1U, D1V;
+        Point2D Puv;
+        Vector2D Duv;
+        Vector3D D1U, D1V;
 
         Geom_Curve.ResD1 aRes = new Geom_Curve.ResD1();
 
         double FP = myCurve!.FirstParameter();
         double LP = myCurve.LastParameter();
 
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         if ((Math.Abs(theU - FP) < Tol) && (myFirstSurf is not null))
         {
             myCurve.D1(theU, out Puv, out Duv);
@@ -1144,13 +1148,13 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             myLastSurf.D1(Puv.X(), Puv.Y(), out aRes.Point, out D1U, out D1V);
             aRes.D1.SetLinearForm(Duv.X(), D1U, Duv.Y(), D1V);
         }
-        else if (myType == GeomAbs_Line)
+        else if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
-            ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
         }
-        else if (myType == GeomAbs_Circle)
+        else if (myType == global::Kerf.Geometry.CurveKind.Circle)
         {
-            ElCLib.D1(theU, myCirc, out aRes.Point, out aRes.D1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(theU, myCirc, out aRes.Point, out aRes.D1);
         }
         else
         {
@@ -1165,16 +1169,16 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// <summary>The point and first two derivatives at theU.</summary>
     public sealed override Geom_Curve.ResD2 EvalD2(double theU)
     {
-        gp_Pnt2d UV;
-        gp_Vec2d DW, D2W;
-        gp_Vec D1U, D1V, D2U, D2V, D2UV;
+        Point2D UV;
+        Vector2D DW, D2W;
+        Vector3D D1U, D1V, D2U, D2V, D2UV;
 
         Geom_Curve.ResD2 aRes = new Geom_Curve.ResD2();
 
         double FP = myCurve!.FirstParameter();
         double LP = myCurve.LastParameter();
 
-        double Tol = Precision.PConfusion() / 10;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         if ((Math.Abs(theU - FP) < Tol) && (myFirstSurf is not null))
         {
             myCurve.D2(theU, out UV, out DW, out D2W);
@@ -1193,14 +1197,14 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             aRes.D2.SetLinearForm(D2W.X(), D1U, D2W.Y(), D1V, 2.0 * DW.X() * DW.Y(), D2UV);
             aRes.D2.SetLinearForm(DW.X() * DW.X(), D2U, DW.Y() * DW.Y(), D2V, aRes.D2);
         }
-        else if (myType == GeomAbs_Line)
+        else if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
-            ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
             aRes.D2.SetCoord(0.0, 0.0, 0.0);
         }
-        else if (myType == GeomAbs_Circle)
+        else if (myType == global::Kerf.Geometry.CurveKind.Circle)
         {
-            ElCLib.D2(theU, myCirc, out aRes.Point, out aRes.D1, out aRes.D2);
+            global::Kerf.Engine.Geometry.ElCLib.D2(theU, myCirc, out aRes.Point, out aRes.D1, out aRes.D2);
         }
         else
         {
@@ -1218,10 +1222,10 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// <summary>The point and first three derivatives at theU.</summary>
     public sealed override Geom_Curve.ResD3 EvalD3(double theU)
     {
-        double Tol = Precision.PConfusion() / 10;
-        gp_Pnt2d UV;
-        gp_Vec2d DW, D2W, D3W;
-        gp_Vec D1U, D1V, D2U, D2V, D2UV, D3U, D3V, D3UUV, D3UVV;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
+        Point2D UV;
+        Vector2D DW, D2W, D3W;
+        Vector3D D1U, D1V, D2U, D2V, D2UV, D3U, D3V, D3UUV, D3UVV;
 
         Geom_Curve.ResD3 aRes = new Geom_Curve.ResD3();
 
@@ -1248,15 +1252,15 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             aRes.D2.SetLinearForm(DW.X() * DW.X(), D2U, DW.Y() * DW.Y(), D2V, aRes.D2);
             aRes.D3 = SetLinearForm(DW, D2W, D3W, D1U, D1V, D2U, D2V, D2UV, D3U, D3V, D3UUV, D3UVV);
         }
-        else if (myType == GeomAbs_Line)
+        else if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
-            ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(theU, myLin, out aRes.Point, out aRes.D1);
             aRes.D2.SetCoord(0.0, 0.0, 0.0);
             aRes.D3.SetCoord(0.0, 0.0, 0.0);
         }
-        else if (myType == GeomAbs_Circle)
+        else if (myType == global::Kerf.Geometry.CurveKind.Circle)
         {
-            ElCLib.D3(theU, myCirc, out aRes.Point, out aRes.D1, out aRes.D2, out aRes.D3);
+            global::Kerf.Engine.Geometry.ElCLib.D3(theU, myCirc, out aRes.Point, out aRes.D1, out aRes.D2, out aRes.D3);
         }
         else
         {
@@ -1273,8 +1277,8 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     }
 
     /// <summary>The derivative of order theN (1 to 3) at theU.</summary>
-    /// <exception cref="Standard_NotImplemented">theN is above 3.</exception>
-    public sealed override gp_Vec EvalDN(double theU, int theN)
+    /// <exception cref="MethodNotImplementedException">theN is above 3.</exception>
+    public sealed override Vector3D EvalDN(double theU, int theN)
     {
         switch (theN)
         {
@@ -1285,7 +1289,7 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
             case 3:
                 return EvalD3(theU).D3;
             default:
-                throw new Standard_NotImplemented("Adaptor3d_CurveOnSurface:EvalDN");
+                throw new MethodNotImplementedException("Adaptor3d_CurveOnSurface:EvalDN");
         }
     }
 
@@ -1297,29 +1301,29 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         return myCurve!.Resolution(Min(ru, rv));
     }
 
-    public override GeomAbs_CurveType GetType() => myType;
+    public override CurveKind GetType() => myType;
 
-    public override gp_Lin Line()
+    public override Line3D Line()
     {
-        Standard_NoSuchObject_Raise_if(myType != GeomAbs_Line, "Adaptor3d_CurveOnSurface::Line(): curve is not a line");
+        Standard_NoSuchObject_Raise_if(myType != global::Kerf.Geometry.CurveKind.Line, "Adaptor3d_CurveOnSurface::Line(): curve is not a line");
         return myLin;
     }
 
-    public override gp_Circ Circle()
+    public override Circle3D Circle()
     {
         // OCCT's message says Line() (cosmetic).
-        Standard_NoSuchObject_Raise_if(myType != GeomAbs_Circle, "Adaptor3d_CurveOnSurface::Line(): curve is not a circle");
+        Standard_NoSuchObject_Raise_if(myType != global::Kerf.Geometry.CurveKind.Circle, "Adaptor3d_CurveOnSurface::Line(): curve is not a circle");
         return myCirc;
     }
 
     /// <summary>The ellipse, for an ellipse on a plane.</summary>
-    public override gp_Elips Ellipse() => to3d(mySurface!.Plane(), myCurve!.Ellipse());
+    public override Ellipse3D Ellipse() => to3d(mySurface!.Plane(), myCurve!.Ellipse());
 
     /// <summary>The hyperbola, for a hyperbola on a plane.</summary>
-    public override gp_Hypr Hyperbola() => to3d(mySurface!.Plane(), myCurve!.Hyperbola());
+    public override Hyperbola3D Hyperbola() => to3d(mySurface!.Plane(), myCurve!.Hyperbola());
 
     /// <summary>The parabola, for a parabola on a plane.</summary>
-    public override gp_Parab Parabola() => to3d(mySurface!.Plane(), myCurve!.Parabola());
+    public override Parabola3D Parabola() => to3d(mySurface!.Plane(), myCurve!.Parabola());
 
     /// <summary>The degree of the 2D curve (not multiplied by the surface's).</summary>
     public override int Degree()
@@ -1343,27 +1347,27 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
 
     public override int NbKnots()
     {
-        if (mySurface!.GetType() == GeomAbs_Plane)
+        if (mySurface!.GetType() == Plane)
         {
             return myCurve!.NbKnots();
         }
         else
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
     }
 
     /// <summary>The 3D Bezier curve of a 2D Bezier curve on a plane (a new curve).</summary>
     public override Geom_BezierCurve Bezier()
     {
-        Standard_NoSuchObject_Raise_if(mySurface!.GetType() != GeomAbs_Plane, "Adaptor3d_CurveOnSurface : Bezier");
+        Standard_NoSuchObject_Raise_if(mySurface!.GetType() != global::Kerf.Geometry.SurfaceKind.Plane, "Adaptor3d_CurveOnSurface : Bezier");
 
         Geom2d_BezierCurve Bez2d = myCurve!.Bezier();
         int NbPoles = Bez2d.NbPoles();
 
-        gp_Pln Plane = mySurface.Plane();
+        Plane3D Plane = mySurface.Plane();
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
+        NCollection_Array1<Point3D> Poles = new(1, NbPoles);
         for (int i = 1; i <= NbPoles; i++)
         {
             Poles[i] = to3d(Plane, Bez2d.Pole(i));
@@ -1385,14 +1389,14 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     /// <summary>The 3D B-spline curve of a 2D B-spline curve on a plane (a new curve).</summary>
     public override Geom_BSplineCurve BSpline()
     {
-        Standard_NoSuchObject_Raise_if(mySurface!.GetType() != GeomAbs_Plane, "Adaptor3d_CurveOnSurface : BSpline");
+        Standard_NoSuchObject_Raise_if(mySurface!.GetType() != global::Kerf.Geometry.SurfaceKind.Plane, "Adaptor3d_CurveOnSurface : BSpline");
 
         Geom2d_BSplineCurve Bsp2d = myCurve!.BSpline();
         int NbPoles = Bsp2d.NbPoles();
 
-        gp_Pln Plane = mySurface.Plane();
+        Plane3D Plane = mySurface.Plane();
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
+        NCollection_Array1<Point3D> Poles = new(1, NbPoles);
         for (int i = 1; i <= NbPoles; i++)
         {
             Poles[i] = to3d(Plane, Bsp2d.Pole(i));
@@ -1417,177 +1421,177 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     // Recognises lines and circles: curves of a plane, and the isoparametric lines of the elementary surfaces
     private void EvalKPart()
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
 
-        GeomAbs_SurfaceType STy = mySurface!.GetType();
-        GeomAbs_CurveType CTy = myCurve!.GetType();
-        if (STy == GeomAbs_Plane)
+        SurfaceKind STy = mySurface!.GetType();
+        CurveKind CTy = myCurve!.GetType();
+        if (STy == Plane)
         {
             myType = CTy;
-            if (myType == GeomAbs_Circle)
+            if (myType == global::Kerf.Geometry.CurveKind.Circle)
             {
                 myCirc = to3d(mySurface.Plane(), myCurve.Circle());
             }
-            else if (myType == GeomAbs_Line)
+            else if (myType == global::Kerf.Geometry.CurveKind.Line)
             {
-                gp_Pnt P;
-                gp_Vec V = new gp_Vec();
-                gp_Pnt2d Puv;
-                gp_Vec2d Duv;
+                Point3D P;
+                Vector3D V = new Vector3D();
+                Point2D Puv;
+                Vector2D Duv;
                 myCurve.D1(0.0, out Puv, out Duv);
-                gp_Vec D1U, D1V;
+                Vector3D D1U, D1V;
                 mySurface.D1(Puv.X(), Puv.Y(), out P, out D1U, out D1V);
                 V.SetLinearForm(Duv.X(), D1U, Duv.Y(), D1V);
-                myLin = new gp_Lin(P, new gp_Dir(V));
+                myLin = new Line3D(P, new Direction3D(V));
             }
         }
         else
         {
-            if (CTy == GeomAbs_Line)
+            if (CTy == global::Kerf.Geometry.CurveKind.Line)
             {
-                gp_Dir2d D = myCurve.Line().Direction();
-                if (D.IsParallel(gp.DX2d(), Precision.Angular()))
+                Direction2D D = myCurve.Line().Direction();
+                if (D.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso V.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) >= Precision.PConfusion())
+                        Point2D P = myCurve.Line().Location();
+                        if (Math.Abs(Math.Abs(P.Y()) - M_PI / 2.0) >= global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            myType = GeomAbs_Circle;
-                            gp_Sphere Sph = mySurface.Sphere();
-                            gp_Ax3 Axis = Sph.Position();
-                            myCirc = ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
-                            gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                            gp_Ax1 AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                            myType = global::Kerf.Geometry.CurveKind.Circle;
+                            Sphere Sph = mySurface.Sphere();
+                            CoordinateSystem Axis = Sph.Position();
+                            myCirc = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(Axis, Sph.Radius(), P.Y());
+                            Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                            Axis3D AxeRev = new Axis3D(Axis.Location(), DRev);
                             myCirc.Rotate(AxeRev, P.X());
-                            if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                            if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
-                                gp_Ax2 Ax = myCirc.Position();
+                                Frame3D Ax = myCirc.Position();
                                 Ax.SetDirection(Ax.Direction().Reversed());
                                 myCirc.SetPosition(Ax);
                             }
                         }
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        myType = GeomAbs_Circle;
-                        gp_Cylinder Cyl = mySurface.Cylinder();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        gp_Ax3 Axis = Cyl.Position();
-                        myCirc = ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
+                        Cylinder Cyl = mySurface.Cylinder();
+                        Point2D P = myCurve.Line().Location();
+                        CoordinateSystem Axis = Cyl.Position();
+                        myCirc = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(Axis, Cyl.Radius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new Axis3D(Axis.Location(), DRev);
                         myCirc.Rotate(AxeRev, P.X());
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Ax2 Ax = myCirc.Position();
+                            Frame3D Ax = myCirc.Position();
                             Ax.SetDirection(Ax.Direction().Reversed());
                             myCirc.SetPosition(Ax);
                         }
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        myType = GeomAbs_Circle;
-                        gp_Cone Cone = mySurface.Cone();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        gp_Ax3 Axis = Cone.Position();
-                        myCirc = ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
+                        Cone Cone = mySurface.Cone();
+                        Point2D P = myCurve.Line().Location();
+                        CoordinateSystem Axis = Cone.Position();
+                        myCirc = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(Axis, Cone.RefRadius(), Cone.SemiAngle(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new Axis3D(Axis.Location(), DRev);
                         myCirc.Rotate(AxeRev, P.X());
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Ax2 Ax = myCirc.Position();
+                            Frame3D Ax = myCirc.Position();
                             Ax.SetDirection(Ax.Direction().Reversed());
                             myCirc.SetPosition(Ax);
                         }
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
-                        myType = GeomAbs_Circle;
-                        gp_Torus Tore = mySurface.Torus();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        gp_Ax3 Axis = Tore.Position();
-                        myCirc = ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        gp_Ax1 AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
+                        Torus Tore = mySurface.Torus();
+                        Point2D P = myCurve.Line().Location();
+                        CoordinateSystem Axis = Tore.Position();
+                        myCirc = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.Y());
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.YDirection());
+                        Axis3D AxeRev = new Axis3D(Axis.Location(), DRev);
                         myCirc.Rotate(AxeRev, P.X());
-                        if (D.IsOpposite(gp.DX2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Ax2 Ax = myCirc.Position();
+                            Frame3D Ax = myCirc.Position();
                             Ax.SetDirection(Ax.Direction().Reversed());
                             myCirc.SetPosition(Ax);
                         }
                     }
                 }
-                else if (D.IsParallel(gp.DY2d(), Precision.Angular()))
+                else if (D.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso U.
-                    if (STy == GeomAbs_Sphere)
+                    if (STy == SurfaceKind.Sphere)
                     {
-                        myType = GeomAbs_Circle;
-                        gp_Sphere Sph = mySurface.Sphere();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        gp_Ax3 Axis = Sph.Position();
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
+                        Sphere Sph = mySurface.Sphere();
+                        Point2D P = myCurve.Line().Location();
+                        CoordinateSystem Axis = Sph.Position();
                         // Compute the iso 0.
-                        myCirc = ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
+                        myCirc = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(Axis, Sph.Radius(), 0.0);
 
                         // Same-parametrization (circle rotation - Y offset)
-                        gp_Dir DRev = Axis.XDirection().Crossed(Axis.Direction());
-                        gp_Ax1 AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        Direction3D DRev = Axis.XDirection().Crossed(Axis.Direction());
+                        Axis3D AxeRev = new Axis3D(Axis.Location(), DRev);
                         myCirc.Rotate(AxeRev, P.Y());
 
                         // Transform to iso U ( = P.X())
                         DRev = Axis.XDirection().Crossed(Axis.YDirection());
-                        AxeRev = new gp_Ax1(Axis.Location(), DRev);
+                        AxeRev = new Axis3D(Axis.Location(), DRev);
                         myCirc.Rotate(AxeRev, P.X());
 
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Ax2 Ax = myCirc.Position();
+                            Frame3D Ax = myCirc.Position();
                             Ax.SetDirection(Ax.Direction().Reversed());
                             myCirc.SetPosition(Ax);
                         }
                     }
-                    else if (STy == GeomAbs_Cylinder)
+                    else if (STy == SurfaceKind.Cylinder)
                     {
-                        myType = GeomAbs_Line;
-                        gp_Cylinder Cyl = mySurface.Cylinder();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        myLin = ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
-                        gp_Vec Tr = new gp_Vec(myLin.Direction());
+                        myType = global::Kerf.Geometry.CurveKind.Line;
+                        Cylinder Cyl = mySurface.Cylinder();
+                        Point2D P = myCurve.Line().Location();
+                        myLin = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(Cyl.Position(), Cyl.Radius(), P.X());
+                        Vector3D Tr = new Vector3D(myLin.Direction());
                         Tr.Multiply(P.Y());
                         myLin.Translate(Tr);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             myLin.Reverse();
                         }
                     }
-                    else if (STy == GeomAbs_Cone)
+                    else if (STy == SurfaceKind.Cone)
                     {
-                        myType = GeomAbs_Line;
-                        gp_Cone Cone = mySurface.Cone();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        myLin = ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
-                        gp_Vec Tr = new gp_Vec(myLin.Direction());
+                        myType = global::Kerf.Geometry.CurveKind.Line;
+                        Cone Cone = mySurface.Cone();
+                        Point2D P = myCurve.Line().Location();
+                        myLin = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(Cone.Position(), Cone.RefRadius(), Cone.SemiAngle(), P.X());
+                        Vector3D Tr = new Vector3D(myLin.Direction());
                         Tr.Multiply(P.Y());
                         myLin.Translate(Tr);
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             myLin.Reverse();
                         }
                     }
-                    else if (STy == GeomAbs_Torus)
+                    else if (STy == SurfaceKind.Torus)
                     {
-                        myType = GeomAbs_Circle;
-                        gp_Torus Tore = mySurface.Torus();
-                        gp_Pnt2d P = myCurve.Line().Location();
-                        gp_Ax3 Axis = Tore.Position();
-                        myCirc = ElSLib.TorusUIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.X());
+                        myType = global::Kerf.Geometry.CurveKind.Circle;
+                        Torus Tore = mySurface.Torus();
+                        Point2D P = myCurve.Line().Location();
+                        CoordinateSystem Axis = Tore.Position();
+                        myCirc = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(Axis, Tore.MajorRadius(), Tore.MinorRadius(), P.X());
                         myCirc.Rotate(myCirc.Axis(), P.Y());
 
-                        if (D.IsOpposite(gp.DY2d(), Precision.Angular()))
+                        if (D.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Ax2 Ax = myCirc.Position();
+                            Frame3D Ax = myCirc.Position();
                             Ax.SetDirection(Ax.Direction().Reversed());
                             myCirc.SetPosition(Ax);
                         }
@@ -1601,9 +1605,9 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
     private void EvalFirstLastSurf()
     {
         double FirstPar, LastPar;
-        gp_Pnt2d UV, LeftBot = new gp_Pnt2d(), RightTop = new gp_Pnt2d();
-        gp_Vec2d DUV;
-        double Tol = Precision.PConfusion() / 10;
+        Point2D UV, LeftBot = new Point2D(), RightTop = new Point2D();
+        Vector2D DUV;
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() / 10;
         bool Ok = true;
 
         FirstPar = myCurve!.FirstParameter();
@@ -1618,18 +1622,18 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         {
             switch (mySurface!.GetType())
             {
-                case GeomAbs_BSplineSurface:
+                case BSplineSurface:
                     LocatePart(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
-                case GeomAbs_SurfaceOfRevolution:
-                case GeomAbs_SurfaceOfExtrusion:
+                case SurfaceOfRevolution:
+                case SurfaceOfExtrusion:
                     Ok = LocatePart_RevExt(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
-                case GeomAbs_OffsetSurface:
+                case OffsetSurface:
                     Ok = LocatePart_Offset(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
                 default:
-                    throw new Standard_NotImplemented("Adaptor3d_CurveOnSurface::EvalFirstLastSurf");
+                    throw new MethodNotImplementedException("Adaptor3d_CurveOnSurface::EvalFirstLastSurf");
             }
         }
 
@@ -1659,18 +1663,18 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         {
             switch (mySurface!.GetType())
             {
-                case GeomAbs_BSplineSurface:
+                case BSplineSurface:
                     LocatePart(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
-                case GeomAbs_SurfaceOfRevolution:
-                case GeomAbs_SurfaceOfExtrusion:
+                case SurfaceOfRevolution:
+                case SurfaceOfExtrusion:
                     Ok = LocatePart_RevExt(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
-                case GeomAbs_OffsetSurface:
+                case OffsetSurface:
                     Ok = LocatePart_Offset(UV, DUV, mySurface, ref LeftBot, ref RightTop);
                     break;
                 default:
-                    throw new Standard_NotImplemented("Adaptor3d_CurveOnSurface::EvalFirstLastSurf");
+                    throw new MethodNotImplementedException("Adaptor3d_CurveOnSurface::EvalFirstLastSurf");
             }
         }
 
@@ -1687,22 +1691,22 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         }
     }
 
-    private bool LocatePart_RevExt(in gp_Pnt2d UV, in gp_Vec2d DUV, Adaptor3d_Surface S, ref gp_Pnt2d LeftBot,
-                                   ref gp_Pnt2d RightTop)
+    private bool LocatePart_RevExt(in Point2D UV, in Vector2D DUV, Adaptor3d_Surface S, ref Point2D LeftBot,
+                                   ref Point2D RightTop)
     {
         Adaptor3d_Curve AHC = S.BasisCurve();
 
-        if (AHC.GetType() == GeomAbs_BSplineCurve)
+        if (AHC.GetType() == BSplineCurve)
         {
             Geom_BSplineCurve BSplC;
             BSplC = AHC.BSpline();
 
-            if ((S.GetType()) == GeomAbs_SurfaceOfExtrusion)
+            if ((S.GetType()) == SurfaceOfExtrusion)
             {
                 Locate1Coord(1, UV, DUV, BSplC, ref LeftBot, ref RightTop);
                 Locate2Coord(2, UV, DUV, S.FirstVParameter(), S.LastVParameter(), ref LeftBot, ref RightTop);
             }
-            else if ((S.GetType()) == GeomAbs_SurfaceOfRevolution)
+            else if ((S.GetType()) == SurfaceOfRevolution)
             {
                 Locate1Coord(2, UV, DUV, BSplC, ref LeftBot, ref RightTop);
                 Locate2Coord(1, UV, DUV, S.FirstUParameter(), S.LastUParameter(), ref LeftBot, ref RightTop);
@@ -1720,21 +1724,21 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         return false;
     }
 
-    private bool LocatePart_Offset(in gp_Pnt2d UV, in gp_Vec2d DUV, Adaptor3d_Surface S, ref gp_Pnt2d LeftBot,
-                                   ref gp_Pnt2d RightTop)
+    private bool LocatePart_Offset(in Point2D UV, in Vector2D DUV, Adaptor3d_Surface S, ref Point2D LeftBot,
+                                   ref Point2D RightTop)
     {
         bool Ok = true;
         Adaptor3d_Surface AHS;
         AHS = S.BasisSurface();
-        GeomAbs_SurfaceType BasisSType = AHS.GetType();
+        SurfaceKind BasisSType = AHS.GetType();
         switch (BasisSType)
         {
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
                 Ok = LocatePart_RevExt(UV, DUV, AHS, ref LeftBot, ref RightTop);
                 break;
 
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 LocatePart(UV, DUV, AHS, ref LeftBot, ref RightTop);
                 break;
 
@@ -1745,8 +1749,8 @@ public class Adaptor3d_CurveOnSurface : Adaptor3d_Curve
         return Ok;
     }
 
-    private void LocatePart(in gp_Pnt2d UV, in gp_Vec2d DUV, Adaptor3d_Surface S, ref gp_Pnt2d LeftBot,
-                            ref gp_Pnt2d RightTop)
+    private void LocatePart(in Point2D UV, in Vector2D DUV, Adaptor3d_Surface S, ref Point2D LeftBot,
+                            ref Point2D RightTop)
     {
         Geom_BSplineSurface BSplS;
         BSplS = S.BSpline();

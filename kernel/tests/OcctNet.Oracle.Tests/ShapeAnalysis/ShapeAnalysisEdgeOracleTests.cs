@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
@@ -76,7 +78,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
                 TopoDS_Face aPF = TopoDS.Face(aPFExp.Current());
                 var aNLoc = new N.TopLoc_Location();
                 N.Geom_Surface? aNSurf = N.BRep_Tool.Surface(aNF, aNLoc);
-                Geom_Surface? aPSurf = BRep_Tool.Surface(aPF, out TopLoc_Location aPLoc);
+                Geom_Surface? aPSurf = BRep_Tool.Surface(aPF, out Placement aPLoc);
 
                 var aNEExp = new N.TopExp_Explorer(aNF, N.TopAbs_ShapeEnum.TopAbs_EDGE);
                 var aPEExp = new TopExp_Explorer(aPF, TopAbs_EDGE);
@@ -121,7 +123,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
 
     private static void CompareEdgeOnFace(Oracle o, N.ShapeAnalysis_Edge n, ShapeAnalysis_Edge p, N.TopoDS_Edge aNE, TopoDS_Edge aPE,
                                           N.TopoDS_Face aNF, TopoDS_Face aPF, N.Geom_Surface? aNSurf, Geom_Surface? aPSurf,
-                                          N.TopLoc_Location aNLoc, TopLoc_Location aPLoc, string w)
+                                          N.TopLoc_Location aNLoc, Placement aPLoc, string w)
     {
         SameBool(o, n.HasCurve3d(aNE), p.HasCurve3d(aPE), w + ", HasCurve3d");
         SameBool(o, n.IsClosed3d(aNE), p.IsClosed3d(aPE), w + ", IsClosed3d");
@@ -150,7 +152,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         var aNFirst = new N.gp_Pnt2d();
         var aNLast = new N.gp_Pnt2d();
         bool aNRes = n.BoundUV(aNE, aNF, aNFirst, aNLast);
-        bool aPRes = p.BoundUV(aPE, aPF, out gp_Pnt2d aPFirst, out gp_Pnt2d aPLast);
+        bool aPRes = p.BoundUV(aPE, aPF, out Point2D aPFirst, out Point2D aPLast);
         SameBool(o, aNRes, aPRes, w + ", BoundUV");
         if (aPRes)
         {
@@ -172,7 +174,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
                 var aNPos = new N.gp_Pnt2d();
                 var aNTan = new N.gp_Vec2d();
                 aNRes = n.GetEndTangent2d(aNE, aNF, anAtEnd, aNPos, aNTan, aDParam);
-                aPRes = p.GetEndTangent2d(aPE, aPF, anAtEnd, out gp_Pnt2d aPPos, out gp_Vec2d aPTan, aDParam);
+                aPRes = p.GetEndTangent2d(aPE, aPF, anAtEnd, out Point2D aPPos, out Vector2D aPTan, aDParam);
                 string t = $"{w}, GetEndTangent2d({anAtEnd}, {aDParam})";
                 SameBool(o, aNRes, aPRes, t);
                 if (aPRes)

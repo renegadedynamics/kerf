@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.GeomConvert_ConvType;
 using static Occt.IntAna_ResultType;
 
@@ -20,13 +23,13 @@ public sealed class GeomConvert_SurfToAnaSurf
     private Geom_Surface? mySurf;
     private double myGap;
     private GeomConvert_ConvType myConvType;
-    private GeomAbs_SurfaceType myTarget;
+    private SurfaceKind myTarget;
 
     public GeomConvert_SurfToAnaSurf()
     {
         myGap = -1.0;
         myConvType = GeomConvert_Simplest;
-        myTarget = GeomAbs_Plane;
+        myTarget = Plane;
     }
 
     /// <summary>A converter for S (kept, never changed).</summary>
@@ -34,7 +37,7 @@ public sealed class GeomConvert_SurfToAnaSurf
     {
         myGap = -1.0;
         myConvType = GeomConvert_Simplest;
-        myTarget = GeomAbs_Plane;
+        myTarget = Plane;
         Init(S);
     }
 
@@ -51,7 +54,7 @@ public sealed class GeomConvert_SurfToAnaSurf
     }
 
     /// <summary>Sets the target type, for <see cref="GeomConvert_ConvType.GeomConvert_Target"/>.</summary>
-    public void SetTarget(GeomAbs_SurfaceType theSurfType = GeomAbs_Plane)
+    public void SetTarget(SurfaceKind theSurfType = Plane)
     {
         myTarget = theSurfType;
     }
@@ -68,10 +71,10 @@ public sealed class GeomConvert_SurfToAnaSurf
         {
             return;
         }
-        gp_Ax1 anAxis = aRevSurf.Axis();
+        Axis3D anAxis = aRevSurf.Axis();
 
-        gp_Lin anALin = new(anAxis);
-        Extrema_ExtElC anExtLL = new(aLine.Lin(), anALin, Precision.Angular());
+        Line3D anALin = new(anAxis);
+        Extrema_ExtElC anExtLL = new(aLine.Lin(), anALin, global::Kerf.Engine.Foundation.Precision.Angular());
         if (!anExtLL.IsDone() || anExtLL.IsParallel())
         {
             return;
@@ -86,7 +89,7 @@ public sealed class GeomConvert_SurfToAnaSurf
         int imin = 0;
         for (i = 1; i <= aNbExt; ++i)
         {
-            if (anExtLL.SquareDistance(i) < Precision.SquareConfusion())
+            if (anExtLL.SquareDistance(i) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 imin = i;
                 break;
@@ -129,7 +132,7 @@ public sealed class GeomConvert_SurfToAnaSurf
         double param1, param2, cf1, cf2, cl1, cl2, aGap1 = 0.0, aGap2 = 0.0;
         Geom_Curve firstiso, lastiso;
         Geom_Circle? firstisocirc, lastisocirc, midisocirc;
-        gp_Dir isoline;
+        Direction3D isoline;
         if (theVCase)
         {
             param1 = theU1;
@@ -156,7 +159,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                                                                 out cl1,
                                                                 ref aGap1,
                                                                 GeomConvert_Target,
-                                                                GeomAbs_Circle) as Geom_Circle;
+                                                                Circle) as Geom_Circle;
         lastisocirc = GeomConvert_CurveToAnaCurve.ComputeCurve(lastiso,
                                                                theToler,
                                                                param1,
@@ -165,11 +168,11 @@ public sealed class GeomConvert_SurfToAnaSurf
                                                                out cl2,
                                                                ref aGap2,
                                                                GeomConvert_Target,
-                                                               GeomAbs_Circle) as Geom_Circle;
+                                                               Circle) as Geom_Circle;
         if (firstisocirc is not null || lastisocirc is not null)
         {
             double R1, R2, R3;
-            gp_Pnt P1, P2, P3;
+            Point3D P1, P2, P3;
             if (firstisocirc is not null)
             {
                 R1 = firstisocirc.Circ().Radius();
@@ -198,7 +201,7 @@ public sealed class GeomConvert_SurfToAnaSurf
             if (((Math.Abs(R2 - R1)) < theToler) && ((Math.Abs(R3 - R1)) < theToler)
                 && ((Math.Abs(R3 - R2)) < theToler))
             {
-                gp_Ax3 Axes = new(P1, new gp_Dir(new gp_Vec(P1, P3)));
+                CoordinateSystem Axes = new(P1, new Direction3D(new Vector3D(P1, P3)));
                 aNewSurf = new Geom_CylindricalSurface(Axes, R1);
             }
             // cone
@@ -206,8 +209,8 @@ public sealed class GeomConvert_SurfToAnaSurf
                      || (((Math.Abs(R3)) > (Math.Abs(R2))) && ((Math.Abs(R2)) > (Math.Abs(R1)))))
             {
                 double radius;
-                gp_Ax3 Axes;
-                double semiangle = new gp_Vec(isoline).Angle(new gp_Vec(P3, P1));
+                CoordinateSystem Axes;
+                double semiangle = new Vector3D(isoline).Angle(new Vector3D(P3, P1));
                 if (semiangle > M_PI / 2)
                 {
                     semiangle = M_PI - semiangle;
@@ -215,12 +218,12 @@ public sealed class GeomConvert_SurfToAnaSurf
                 if (R1 > R3)
                 {
                     radius = R3;
-                    Axes = new gp_Ax3(P3, new gp_Dir(new gp_Vec(P3, P1)));
+                    Axes = new CoordinateSystem(P3, new Direction3D(new Vector3D(P3, P1)));
                 }
                 else
                 {
                     radius = R1;
-                    Axes = new gp_Ax3(P1, new gp_Dir(new gp_Vec(P1, P3)));
+                    Axes = new CoordinateSystem(P1, new Direction3D(new Vector3D(P1, P3)));
                 }
                 aNewSurf = new Geom_ConicalSurface(Axes, semiangle, radius);
             }
@@ -230,28 +233,28 @@ public sealed class GeomConvert_SurfToAnaSurf
 
     //=================================================================================================
 
-    private static void GetLSGap(NCollection_HArray1<gp_XYZ> thePoints, in gp_Ax3 thePos, double theR, out double theGap)
+    private static void GetLSGap(NCollection_HArray1<Xyz> thePoints, in CoordinateSystem thePos, double theR, out double theGap)
     {
         theGap = 0.0;
         int i;
-        gp_XYZ aLoc = thePos.Location().XYZ();
-        gp_Dir aDir = thePos.Direction();
+        Xyz aLoc = thePos.Location().XYZ();
+        Direction3D aDir = thePos.Direction();
         for (i = thePoints.Lower(); i <= thePoints.Upper(); ++i)
         {
-            gp_Vec aD = new(thePoints.Value(i) - aLoc);
-            aD.Cross(new gp_Vec(aDir));
+            Vector3D aD = new(thePoints.Value(i) - aLoc);
+            aD.Cross(new Vector3D(aDir));
             theGap = Max(theGap, Math.Abs((aD.Magnitude() - theR)));
         }
     }
 
-    private static bool GetCylByLS(NCollection_HArray1<gp_XYZ> thePoints,
+    private static bool GetCylByLS(NCollection_HArray1<Xyz> thePoints,
                                    double theTol,
-                                   ref gp_Ax3 thePos,
+                                   ref CoordinateSystem thePos,
                                    ref double theR,
                                    out double theGap)
     {
         GetLSGap(thePoints, thePos, theR, out theGap);
-        if (theGap <= Precision.Confusion())
+        if (theGap <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return true;
         }
@@ -284,8 +287,8 @@ public sealed class GeomConvert_SurfToAnaSurf
         aLBnd[4] = aStartPoint[4] + aDR;
 
         //
-        double aTol = Precision.Confusion();
-        math_MultipleVarFunction aPFunc;
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        MultipleVarFunction aPFunc;
         GeomConvert_FuncCylinderLSDist aFuncCyl = new(thePoints, thePos.Direction());
         aPFunc = aFuncCyl;
         //
@@ -295,11 +298,11 @@ public sealed class GeomConvert_SurfToAnaSurf
         {
             aSteps[i] = (aLBnd[i] - aFBnd[i]) / aNbInt;
         }
-        math_PSO aGlobSolver = new(aPFunc, aFBnd, aLBnd, aSteps);
+        Pso aGlobSolver = new(aPFunc, aFBnd, aLBnd, aSteps);
         double aLSDist;
         aGlobSolver.Perform(aSteps, out aLSDist, aStartPoint);
         //
-        gp_Pnt aLoc = new(aStartPoint[1], aStartPoint[2], aStartPoint[3]);
+        Point3D aLoc = new(aStartPoint[1], aStartPoint[2], aStartPoint[3]);
         thePos.SetLocation(aLoc);
         theR = aStartPoint[4];
 
@@ -309,7 +312,7 @@ public sealed class GeomConvert_SurfToAnaSurf
             return true;
         }
         //
-        math_Matrix aDirMatrix = new(1, aNbVar, 1, aNbVar, 0.0);
+        Matrix aDirMatrix = new(1, aNbVar, 1, aNbVar, 0.0);
         for (i = 1; i <= aNbVar; i++)
         {
             aDirMatrix[i, i] = 1.0;
@@ -317,24 +320,24 @@ public sealed class GeomConvert_SurfToAnaSurf
 
         // Set search direction for location to be perpendicular to axis to avoid
         // searching along axis
-        gp_Dir aDir = thePos.Direction();
-        gp_Pln aPln = new(thePos.Location(), aDir);
-        gp_Dir aUDir = aPln.Position().XDirection();
-        gp_Dir aVDir = aPln.Position().YDirection();
+        Direction3D aDir = thePos.Direction();
+        Plane3D aPln = new(thePos.Location(), aDir);
+        Direction3D aUDir = aPln.Position().XDirection();
+        Direction3D aVDir = aPln.Position().YDirection();
         for (i = 1; i <= 3; ++i)
         {
             aDirMatrix[i, 1] = aUDir.Coord(i);
             aDirMatrix[i, 2] = aVDir.Coord(i);
-            gp_Dir aUVDir = new(aUDir.XYZ() + aVDir.XYZ());
+            Direction3D aUVDir = new(aUDir.XYZ() + aVDir.XYZ());
             aDirMatrix[i, 3] = aUVDir.Coord(i);
         }
 
-        math_Powell aSolver = new(aPFunc, aTol);
+        Powell aSolver = new(aPFunc, aTol);
         aSolver.Perform(aPFunc, aStartPoint, aDirMatrix);
 
-        if (aSolver.IsDone())
+        if (aSolver.IsDone)
         {
-            gp_Ax3 aPos2 = thePos;
+            CoordinateSystem aPos2 = thePos;
             aSolver.Location(aStartPoint);
             aLoc.SetCoord(aStartPoint[1], aStartPoint[2], aStartPoint[3]);
             aPos2.SetLocation(aLoc);
@@ -373,17 +376,17 @@ public sealed class GeomConvert_SurfToAnaSurf
         double aSigmaR = 0.0;
         double aTol = 1.0e3 * theToler;
         NCollection_Array1<double> anRs = new(1, theNbU * theNbV);
-        NCollection_HArray1<gp_XYZ>? aPoints = null;
+        NCollection_HArray1<Xyz>? aPoints = null;
         if (theLeastSquare)
         {
             // OCCT: sized NbU * NbU (occt-issues.md); its only caller passes NbU == NbV
-            aPoints = new NCollection_HArray1<gp_XYZ>(1, theNbU * theNbU);
+            aPoints = new NCollection_HArray1<Xyz>(1, theNbU * theNbU);
         }
         //
-        GeomLProp_SLProps aProps = new(theSurf, 2, Precision.Confusion());
+        GeomLProp_SLProps aProps = new(theSurf, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
         double anAvMaxCurv = 0.0, anAvMinCurv = 0.0, anAvR = 0, aSign = 1.0;
-        gp_XYZ anAvDir = new();
-        gp_Dir aMinD, aMaxD;
+        Xyz anAvDir = new();
+        Direction3D aMinD, aMaxD;
         int i, j, n = 0;
         double anU, aV;
         for (i = 1, anU = theU1 + du / 2.0; i <= theNbU; ++i, anU += du)
@@ -408,7 +411,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                 {
                     return aNewSurf;
                 }
-                gp_XYZ aD;
+                Xyz aD;
                 aProps.CurvatureDirections(out aMaxD, out aMinD);
                 aMinCurv = Math.Abs(aMinCurv);
                 aMaxCurv = Math.Abs(aMaxCurv);
@@ -417,7 +420,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                     // aMinCurv < 0;
                     aSign = -1.0;
                     (aMinCurv, aMaxCurv) = (aMaxCurv, aMinCurv);
-                    gp_Dir aDummy = aMaxD;
+                    Direction3D aDummy = aMaxD;
                     aMaxD = aMinD;
                     aMinD = aDummy;
                 }
@@ -473,19 +476,19 @@ public sealed class GeomConvert_SurfToAnaSurf
         {
             return aNewSurf;
         }
-        gp_Dir aNorm = aProps.Normal();
-        gp_Pnt aLoc = aProps.Value();
-        gp_Dir anAxD = new(anAvDir);
-        gp_Vec aT = new(aSign * anAvR * aNorm.XYZ());
+        Direction3D aNorm = aProps.Normal();
+        Point3D aLoc = aProps.Value();
+        Direction3D anAxD = new(anAvDir);
+        Vector3D aT = new(aSign * anAvR * aNorm.XYZ());
         aLoc.Translate(aT);
-        gp_Ax1 anAx1 = new(aLoc, anAxD);
-        gp_Cylinder aCyl = new();
+        Axis3D anAx1 = new(aLoc, anAxD);
+        Cylinder aCyl = new();
         aCyl.SetAxis(anAx1);
         aCyl.SetRadius(anAvR);
 
         if (theLeastSquare)
         {
-            gp_Ax3 aPos = aCyl.Position();
+            CoordinateSystem aPos = aCyl.Position();
             double anR = aCyl.Radius();
             bool IsDone = GetCylByLS(aPoints!, theToler, ref aPos, ref anR, out double _);
             if (IsDone)
@@ -540,7 +543,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                                                                     out cl,
                                                                     ref aGap1,
                                                                     GeomConvert_Target,
-                                                                    GeomAbs_Circle);
+                                                                    Circle);
         Geom_Curve? Crv2 = GeomConvert_CurveToAnaCurve.ComputeCurve(IsoCrv2,
                                                                     toler,
                                                                     aParam1ToCrv,
@@ -549,7 +552,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                                                                     out cl,
                                                                     ref aGap2,
                                                                     GeomConvert_Target,
-                                                                    GeomAbs_Circle);
+                                                                    Circle);
         if (Crv1 is not Geom_Circle aCircle1 || Crv2 is not Geom_Circle aCircle2)
         {
             return newSurface;
@@ -565,7 +568,7 @@ public sealed class GeomConvert_SurfToAnaSurf
         }
 
         // get centers of the major radius
-        gp_Pnt aPnt1, aPnt2, aPnt3;
+        Point3D aPnt1, aPnt2, aPnt3;
         aPnt1 = circle.Circ().Location();
         aPnt2 = aCircle1.Circ().Location();
         aPnt3 = aCircle2.Circ().Location();
@@ -573,13 +576,13 @@ public sealed class GeomConvert_SurfToAnaSurf
         // double eps = 1.e-09;  // angular resolution
         double d0 = aPnt1.Distance(aPnt2);
         double d1 = aPnt1.Distance(aPnt3);
-        gp_Circ circ = new();
+        Circle3D circ = new();
 
         if (d0 < toler || d1 < toler)
         {
             // compute sphere
-            gp_Dir MainDir = otherCircle.Circ().Axis().Direction();
-            gp_Ax3 Axes = new(circle.Circ().Location(), MainDir);
+            Direction3D MainDir = otherCircle.Circ().Axis().Direction();
+            CoordinateSystem Axes = new(circle.Circ().Location(), MainDir);
             Geom_SphericalSurface anObject = new(Axes, R);
             newSurface = anObject;
 
@@ -592,9 +595,9 @@ public sealed class GeomConvert_SurfToAnaSurf
         }
 
         double aMajorR = circ.Radius();
-        gp_Pnt aCenter = circ.Location();
-        gp_Dir aDir = new((aPnt1.XYZ() - aCenter.XYZ()) ^ (aPnt3.XYZ() - aCenter.XYZ()));
-        gp_Ax3 anAx3 = new(aCenter, aDir);
+        Point3D aCenter = circ.Location();
+        Direction3D aDir = new((aPnt1.XYZ() - aCenter.XYZ()) ^ (aPnt3.XYZ() - aCenter.XYZ()));
+        CoordinateSystem anAx3 = new(aCenter, aDir);
         newSurface = new Geom_ToroidalSurface(anAx3, aMajorR, R);
         return newSurface;
     }
@@ -610,38 +613,38 @@ public sealed class GeomConvert_SurfToAnaSurf
                                      double theTol = double.MaxValue) // RealLast()
     {
         GeomAdaptor_Surface aGAS = new(theNewSurf);
-        GeomAbs_SurfaceType aSType = aGAS.GetType();
-        gp_Pln aPln = new();
-        gp_Cylinder aCyl = new();
-        gp_Cone aCon = new();
-        gp_Sphere aSphere = new();
-        gp_Torus aTor = new();
+        SurfaceKind aSType = aGAS.GetType();
+        Plane3D aPln = new();
+        Cylinder aCyl = new();
+        Cone aCon = new();
+        Sphere aSphere = new();
+        Torus aTor = new();
         switch (aSType)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 aPln = aGAS.Plane();
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 aCyl = aGAS.Cylinder();
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 aCon = aGAS.Cone();
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 aSphere = aGAS.Sphere();
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 aTor = aGAS.Torus();
                 break;
             default:
-                return Precision.Infinite();
+                return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         double aGap = 0.0;
         bool onSurface = true;
 
         double S, T;
-        gp_Pnt P3d, P3d2;
+        Point3D P3d, P3d2;
 
         const int NP = 21;
         double DU, DV;
@@ -659,34 +662,34 @@ public sealed class GeomConvert_SurfToAnaSurf
 
                 switch (aSType)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                     {
-                        ElSLib.Parameters(aPln, P3d, out S, out T);
-                        P3d2 = ElSLib.Value(S, T, aPln);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, P3d, out S, out T);
+                        P3d2 = global::Kerf.Engine.Geometry.ElSLib.Value(S, T, aPln);
                         break;
                     }
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                     {
-                        ElSLib.Parameters(aCyl, P3d, out S, out T);
-                        P3d2 = ElSLib.Value(S, T, aCyl);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(aCyl, P3d, out S, out T);
+                        P3d2 = global::Kerf.Engine.Geometry.ElSLib.Value(S, T, aCyl);
                         break;
                     }
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                     {
-                        ElSLib.Parameters(aCon, P3d, out S, out T);
-                        P3d2 = ElSLib.Value(S, T, aCon);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(aCon, P3d, out S, out T);
+                        P3d2 = global::Kerf.Engine.Geometry.ElSLib.Value(S, T, aCon);
                         break;
                     }
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                     {
-                        ElSLib.Parameters(aSphere, P3d, out S, out T);
-                        P3d2 = ElSLib.Value(S, T, aSphere);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(aSphere, P3d, out S, out T);
+                        P3d2 = global::Kerf.Engine.Geometry.ElSLib.Value(S, T, aSphere);
                         break;
                     }
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                     {
-                        ElSLib.Parameters(aTor, P3d, out S, out T);
-                        P3d2 = ElSLib.Value(S, T, aTor);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(aTor, P3d, out S, out T);
+                        P3d2 = global::Kerf.Engine.Geometry.ElSLib.Value(S, T, aTor);
                         break;
                     }
                     default:
@@ -722,12 +725,12 @@ public sealed class GeomConvert_SurfToAnaSurf
     {
         double U1, U2, V1, V2;
         mySurf!.Bounds(out U1, out U2, out V1, out V2);
-        if (Precision.IsInfinite(U1) && Precision.IsInfinite(U2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
         {
             U1 = -1.0;
             U2 = 1.0;
         }
-        if (Precision.IsInfinite(V1) && Precision.IsInfinite(V2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
         {
             V1 = -1.0;
             V2 = 1.0;
@@ -749,30 +752,30 @@ public sealed class GeomConvert_SurfToAnaSurf
     {
         //
         GeomAdaptor_Surface aGAS = new(mySurf!);
-        GeomAbs_SurfaceType aSType = aGAS.GetType();
+        SurfaceKind aSType = aGAS.GetType();
         switch (aSType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 myGap = 0.0;
                 return new Geom_Plane(aGAS.Plane());
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 myGap = 0.0;
                 return new Geom_CylindricalSurface(aGAS.Cylinder());
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 myGap = 0.0;
                 return new Geom_ConicalSurface(aGAS.Cone());
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 myGap = 0.0;
                 return new Geom_SphericalSurface(aGAS.Sphere());
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 myGap = 0.0;
                 return new Geom_ToroidalSurface(aGAS.Torus());
@@ -784,14 +787,14 @@ public sealed class GeomConvert_SurfToAnaSurf
         double toler = InitialToler;
         Geom_Surface?[] newSurf = new Geom_Surface?[5];
         Span<double> dd = [RealLast(), RealLast(), RealLast(), RealLast(), RealLast()];
-        ReadOnlySpan<GeomAbs_SurfaceType> aSTypes =
-            [GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere, GeomAbs_Torus];
+        ReadOnlySpan<SurfaceKind> aSTypes =
+            [Plane, SurfaceKind.Cylinder, SurfaceKind.Cone, SurfaceKind.Sphere, SurfaceKind.Torus];
 
         // Check boundaries
         double U1, U2, V1, V2;
         mySurf!.Bounds(out U1, out U2, out V1, out V2);
         bool aDoSegment = false;
-        double aTolBnd = Precision.PConfusion();
+        double aTolBnd = global::Kerf.Engine.Foundation.Precision.PConfusion();
         int isurf = 0;
         if (Umin < U1 || Umax > U2 || Vmin < V1 || Vmax > V2)
         {
@@ -821,8 +824,8 @@ public sealed class GeomConvert_SurfToAnaSurf
             }
         }
 
-        bool IsBz = aSType == GeomAbs_BezierSurface;
-        bool IsBs = aSType == GeomAbs_BSplineSurface;
+        bool IsBz = aSType == BezierSurface;
+        bool IsBs = aSType == BSplineSurface;
 
         Geom_Surface aTempS = mySurf;
         if (IsBs)
@@ -853,11 +856,11 @@ public sealed class GeomConvert_SurfToAnaSurf
         GeomLib_IsPlanarSurface GeomIsPlanar = new(aTempS, toler);
         if (GeomIsPlanar.IsPlanar())
         {
-            gp_Pln newPln = GeomIsPlanar.Plan();
+            Plane3D newPln = GeomIsPlanar.Plan();
             newSurf[isurf] = new Geom_Plane(newPln);
             dd[isurf] = ComputeGap(aTempS, U1, U2, V1, V2, newSurf[isurf]!);
             if (myConvType == GeomConvert_Simplest
-                || (myConvType == GeomConvert_Target && myTarget == GeomAbs_Plane))
+                || (myConvType == GeomConvert_Target && myTarget == Plane))
             {
                 myGap = dd[isurf];
                 return newSurf[isurf];
@@ -865,7 +868,7 @@ public sealed class GeomConvert_SurfToAnaSurf
         }
         else
         {
-            if (myConvType == GeomConvert_Target && myTarget == GeomAbs_Plane)
+            if (myConvType == GeomConvert_Target && myTarget == Plane)
             {
                 myGap = dd[isurf];
                 return newSurf[isurf];
@@ -927,7 +930,7 @@ public sealed class GeomConvert_SurfToAnaSurf
             {
                 aToroidSphere = true;
                 if (myConvType == GeomConvert_Target
-                    && (myTarget == GeomAbs_Cylinder || myTarget == GeomAbs_Cone))
+                    && (myTarget == SurfaceKind.Cylinder || myTarget == SurfaceKind.Cone))
                 {
                     isurf = 1;
                     myGap = dd[isurf];
@@ -940,7 +943,7 @@ public sealed class GeomConvert_SurfToAnaSurf
                 aCylinderConus = true;
                 VCase = true;
                 if (myConvType == GeomConvert_Target
-                    && (myTarget == GeomAbs_Sphere || myTarget == GeomAbs_Torus))
+                    && (myTarget == SurfaceKind.Sphere || myTarget == SurfaceKind.Torus))
                 {
                     isurf = 3;
                     myGap = dd[isurf];
@@ -952,7 +955,7 @@ public sealed class GeomConvert_SurfToAnaSurf
             {
                 aCylinderConus = true;
                 if (myConvType == GeomConvert_Target
-                    && (myTarget == GeomAbs_Sphere || myTarget == GeomAbs_Torus))
+                    && (myTarget == SurfaceKind.Sphere || myTarget == SurfaceKind.Torus))
                 {
                     isurf = 3;
                     myGap = dd[isurf];
@@ -1090,8 +1093,8 @@ public sealed class GeomConvert_SurfToAnaSurf
         GeomAdaptor_Surface anAdaptor1 = new(S1);
         GeomAdaptor_Surface anAdaptor2 = new(S2);
 
-        GeomAbs_SurfaceType aST1 = anAdaptor1.GetType();
-        GeomAbs_SurfaceType aST2 = anAdaptor2.GetType();
+        SurfaceKind aST1 = anAdaptor1.GetType();
+        SurfaceKind aST2 = anAdaptor2.GetType();
 
         if (aST1 != aST2)
         {
@@ -1099,23 +1102,23 @@ public sealed class GeomConvert_SurfToAnaSurf
         }
 
         IntAna_QuadQuadGeo interii = new();
-        if (aST1 == GeomAbs_Plane)
+        if (aST1 == Plane)
         {
             interii.Perform(anAdaptor1.Plane(), anAdaptor2.Plane(), tol, tol);
         }
-        else if (aST1 == GeomAbs_Cylinder)
+        else if (aST1 == SurfaceKind.Cylinder)
         {
             interii.Perform(anAdaptor1.Cylinder(), anAdaptor2.Cylinder(), tol);
         }
-        else if (aST1 == GeomAbs_Cone)
+        else if (aST1 == SurfaceKind.Cone)
         {
             interii.Perform(anAdaptor1.Cone(), anAdaptor2.Cone(), tol);
         }
-        else if (aST1 == GeomAbs_Sphere)
+        else if (aST1 == SurfaceKind.Sphere)
         {
             interii.Perform(anAdaptor1.Sphere(), anAdaptor2.Sphere(), tol);
         }
-        else if (aST1 == GeomAbs_Torus)
+        else if (aST1 == SurfaceKind.Torus)
         {
             interii.Perform(anAdaptor1.Torus(), anAdaptor2.Torus(), tol);
         }

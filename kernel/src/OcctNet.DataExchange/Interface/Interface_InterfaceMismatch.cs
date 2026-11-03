@@ -5,7 +5,6 @@
 namespace Occt;
 
 /// <summary>An entity or a model of another norm than the one expected.</summary>
-[OcctName("Interface_InterfaceMismatch")]
 public class Interface_InterfaceMismatch : Interface_InterfaceError
 {
     public Interface_InterfaceMismatch() { }

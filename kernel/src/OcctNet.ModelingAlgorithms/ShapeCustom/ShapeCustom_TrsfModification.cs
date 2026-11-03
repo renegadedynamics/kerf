@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +17,7 @@ namespace Occt;
 public class ShapeCustom_TrsfModification : BRepTools_TrsfModification
 {
     /// <summary>The modification applying <paramref name="T"/>.</summary>
-    public ShapeCustom_TrsfModification(in gp_Trsf T)
+    public ShapeCustom_TrsfModification(in Transform3D T)
         : base(T)
     {
     }
@@ -21,7 +25,7 @@ public class ShapeCustom_TrsfModification : BRepTools_TrsfModification
     /// <summary>The inherited method; Tol is the face's own tolerance times the scale factor.</summary>
     public override bool NewSurface(in TopoDS_Face F,
                                     out Geom_Surface? S,
-                                    out TopLoc_Location L,
+                                    out Placement L,
                                     out double Tol,
                                     out bool RevWires,
                                     out bool RevFace)
@@ -32,7 +36,7 @@ public class ShapeCustom_TrsfModification : BRepTools_TrsfModification
     }
 
     /// <summary>The inherited method; Tol is the edge's own tolerance times the scale factor.</summary>
-    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out TopLoc_Location L, out double Tol)
+    public override bool NewCurve(in TopoDS_Edge E, out Geom_Curve? C, out Placement L, out double Tol)
     {
         bool result = base.NewCurve(E, out C, out L, out Tol);
         Tol = ((BRep_TEdge)E.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
@@ -40,7 +44,7 @@ public class ShapeCustom_TrsfModification : BRepTools_TrsfModification
     }
 
     /// <summary>The inherited method; Tol is the vertex's own tolerance times the scale factor.</summary>
-    public override bool NewPoint(in TopoDS_Vertex V, out gp_Pnt P, out double Tol)
+    public override bool NewPoint(in TopoDS_Vertex V, out Point3D P, out double Tol)
     {
         bool result = base.NewPoint(V, out P, out Tol);
         Tol = ((BRep_TVertex)V.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -36,7 +37,7 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         Geom_Curve CopyOfC = (Geom_Curve)C.Copy();
         myCurve = CopyOfC;
 
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double firstPar = First;
         double lastPar = Last;
         Geom_Curve aCurve = myCurve;
@@ -117,7 +118,7 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         {
             Geom_Curve BasCurve = tmpOffset.BasisCurve();
             double Offset = tmpOffset.Offset();
-            gp_Dir Direct = tmpOffset.Direction();
+            Direction3D Direct = tmpOffset.Direction();
             var spc = new ShapeUpgrade_SplitCurve3d();
             spc.Init(BasCurve, First, Last);
             spc.SetSplitValues(mySplitValues);
@@ -138,7 +139,7 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         if (!ShapeAnalysis_Curve.IsPeriodic(myCurve!))
         {
             // pdn exceptons only on non periodic curves
-            double precision = Occt.Precision.PConfusion();
+            double precision = Kerf.Engine.Foundation.Precision.PConfusion();
             double firstPar = myCurve!.FirstParameter();
             double lastPar = myCurve.LastParameter();
             if (Math.Abs(First - firstPar) < precision)
@@ -168,8 +169,8 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
         if (myNbCurves == 1)
         {
             bool filled = true;
-            if (Math.Abs(myCurve!.FirstParameter() - First) < Occt.Precision.PConfusion()
-                && Math.Abs(myCurve.LastParameter() - Last) < Occt.Precision.PConfusion())
+            if (Math.Abs(myCurve!.FirstParameter() - First) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(myCurve.LastParameter() - Last) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 myResultingCurves.SetValue(1, myCurve);
             }
@@ -200,11 +201,11 @@ public class ShapeUpgrade_SplitCurve3d : ShapeUpgrade_SplitCurve
                 double spval = mySplitValues.Value(ii);
                 for (; j <= LastInd; j++)
                 {
-                    if (spval > BsCurve.Knot(j) + Occt.Precision.PConfusion())
+                    if (spval > BsCurve.Knot(j) + Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
-                    if (spval < BsCurve.Knot(j) - Occt.Precision.PConfusion())
+                    if (spval < BsCurve.Knot(j) - Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         break;
                     }

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.LProp_Status;
 
 namespace Occt;
@@ -23,8 +24,8 @@ public class LProp_CLProps3d
     private int myDerOrder;
     private int myCN;
     private double myLinTol;
-    private gp_Pnt myPnt;
-    private readonly gp_Vec[] myDerivArr = new gp_Vec[3];
+    private Point3D myPnt;
+    private readonly Vector3D[] myDerivArr = new Vector3D[3];
     private double myCurvature = 0.0;
     private LProp_Status myTangentStatus;
     private int mySignificantFirstDerivativeOrder = 0;
@@ -85,16 +86,16 @@ public class LProp_CLProps3d
     }
 
     /// <summary>The point.</summary>
-    public gp_Pnt Value() => myPnt;
+    public Point3D Value() => myPnt;
 
     /// <summary>The first derivative, computed if it hasn't been.</summary>
-    public gp_Vec D1() => EnsureDeriv(1);
+    public Vector3D D1() => EnsureDeriv(1);
 
     /// <summary>The second derivative, computed if it hasn't been.</summary>
-    public gp_Vec D2() => EnsureDeriv(2);
+    public Vector3D D2() => EnsureDeriv(2);
 
     /// <summary>The third derivative, computed if it hasn't been.</summary>
-    public gp_Vec D3() => EnsureDeriv(3);
+    public Vector3D D3() => EnsureDeriv(3);
 
     /// <summary>
     /// True if the tangent is defined: one of the first three derivatives is longer than the resolution (the first
@@ -119,7 +120,7 @@ public class LProp_CLProps3d
         {
             if (myCN >= anOrder)
             {
-                gp_Vec aV;
+                Vector3D aV;
                 switch (anOrder)
                 {
                     case 1:
@@ -154,7 +155,7 @@ public class LProp_CLProps3d
     }
 
     /// <summary>The tangent direction; throws LProp_NotDefined if it isn't defined.</summary>
-    public void Tangent(out gp_Dir D)
+    public void Tangent(out Direction3D D)
     {
         // LProp_CurveUtils::Tangent
         if (!IsTangentDefined())
@@ -189,7 +190,7 @@ public class LProp_CLProps3d
     }
 
     /// <summary>The normal direction; throws LProp_NotDefined if the curvature is null or infinite.</summary>
-    public void Normal(out gp_Dir N)
+    public void Normal(out Direction3D N)
     {
         // LProp_CurveUtils::Normal
         double aCurvature = Curvature();
@@ -202,7 +203,7 @@ public class LProp_CLProps3d
     }
 
     /// <summary>The centre of curvature; throws LProp_NotDefined if the curvature is null.</summary>
-    public void CentreOfCurvature(out gp_Pnt P)
+    public void CentreOfCurvature(out Point3D P)
     {
         // LProp_CurveUtils::CentreOfCurvature
         if (Math.Abs(Curvature()) <= myLinTol)
@@ -236,7 +237,7 @@ public class LProp_CLProps3d
     }
 
     // LProp_CurveUtils::EnsureDeriv
-    private gp_Vec EnsureDeriv(int theRequired)
+    private Vector3D EnsureDeriv(int theRequired)
     {
         if (myDerOrder < theRequired)
         {
@@ -249,12 +250,12 @@ public class LProp_CLProps3d
 
     // LProp_CurveUtils::ComputeTangent: when the first significant derivative has order > 1, its sign is taken from
     // the chord to a nearby point
-    private void ComputeTangent(out gp_Dir theDir)
+    private void ComputeTangent(out Direction3D theDir)
     {
         int theSigOrder = mySignificantFirstDerivativeOrder;
         if (theSigOrder == 1)
         {
-            theDir = new gp_Dir(myDerivArr[0]);
+            theDir = new Direction3D(myDerivArr[0]);
             return;
         }
 
@@ -276,7 +277,7 @@ public class LProp_CLProps3d
 
         double aDelta = Max(aDu * THE_DIVISION_FACTOR, THE_MIN_STEP);
 
-        gp_Vec aV = myDerivArr[theSigOrder - 1];
+        Vector3D aV = myDerivArr[theSigOrder - 1];
 
         double anOtherU;
         if (myU - anUinfimum < aDelta)
@@ -288,15 +289,15 @@ public class LProp_CLProps3d
             anOtherU = myU - aDelta;
         }
 
-        myCurve.D0(Min(myU, anOtherU), out gp_Pnt aP1);
-        myCurve.D0(Max(myU, anOtherU), out gp_Pnt aP2);
+        myCurve.D0(Min(myU, anOtherU), out Point3D aP1);
+        myCurve.D0(Max(myU, anOtherU), out Point3D aP2);
 
-        gp_Vec aChord = new(aP1, aP2);
+        Vector3D aChord = new(aP1, aP2);
         if (aV.Dot(aChord) < 0.0)
         {
             aV = -aV;
         }
 
-        theDir = new gp_Dir(aV);
+        theDir = new Direction3D(aV);
     }
 }

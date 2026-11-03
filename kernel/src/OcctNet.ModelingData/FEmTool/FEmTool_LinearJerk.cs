@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Engine.Numerics.Polynomials;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,19 +24,19 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
     private static readonly math_Vector?[] theMatrixElemts = new math_Vector?[3];
     private static readonly Lock theLock = new();
 
-    private readonly math_Matrix RefMatrix;
+    private readonly Matrix RefMatrix;
     private readonly int myOrder;
 
     /// <summary>The criterion for elements of degree at most <paramref name="WorkDegree"/> (at most 14).</summary>
-    public FEmTool_LinearJerk(int WorkDegree, GeomAbs_Shape ConstraintOrder)
+    public FEmTool_LinearJerk(int WorkDegree, Continuity ConstraintOrder)
     {
-        RefMatrix = new math_Matrix(0, WorkDegree, 0, WorkDegree);
-        myOrder = PLib.NivConstr(ConstraintOrder);
+        RefMatrix = new Matrix(0, WorkDegree, 0, WorkDegree);
+        myOrder = global::Kerf.Engine.Numerics.Polynomials.PLib.NivConstr(ConstraintOrder);
 
         // OCCT checks the degree only when it computes the integrals, and otherwise reads past them
         if (WorkDegree > WDeg)
         {
-            throw new Standard_ConstructionError("Degree too high");
+            throw new ConstructionErrorException("Degree too high");
         }
 
         math_Vector MatrixElemts;
@@ -38,14 +46,14 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
             {
                 // Calculating RefMatrix
                 int DerOrder = 3;
-                PLib_HermitJacobi theBase = new(WDeg, ConstraintOrder);
+                HermitJacobi theBase = new(WDeg, ConstraintOrder);
                 FEmTool_ElementsOfRefMatrix Elem = new(theBase, DerOrder);
 
                 int maxDegree = WDeg + 1;
-                math_IntegerVector anOrder = new(1, 1, Min(4 * (maxDegree / 2 + 1), math.GaussPointsMax()));
+                math_IntegerVector anOrder = new(1, 1, Min(4 * (maxDegree / 2 + 1), NumericTables.GaussPointsMax()));
                 math_Vector Lower = new(1, 1, -1.0), Upper = new(1, 1, 1.0);
 
-                math_GaussSetIntegration anInt = new(Elem, Lower, Upper, anOrder);
+                GaussSetIntegration anInt = new(Elem, Lower, Upper, anOrder);
 
                 aCached = new math_Vector(0, ((WDeg + 2) * (WDeg + 1)) / 2 - 1);
                 aCached.Initialized(anInt.Value());
@@ -70,7 +78,7 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
     {
         if (myCoeff is null)
         {
-            throw new Standard_DomainError("FEmTool_LinearJerk::DependenceTable");
+            throw new DomainErrorException("FEmTool_LinearJerk::DependenceTable");
         }
 
         NCollection_HArray2<int> DepTab =
@@ -138,19 +146,19 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
         return cteh3 * J;
     }
 
-    public override void Hessian(int Dimension1, int Dimension2, math_Matrix H)
+    public override void Hessian(int Dimension1, int Dimension2, Matrix H)
     {
         NCollection_HArray2<int> DepTab = DependenceTable();
 
         if (Dimension1 < DepTab.LowerRow() || Dimension1 > DepTab.UpperRow() || Dimension2 < DepTab.LowerCol()
             || Dimension2 > DepTab.UpperCol())
         {
-            throw new Standard_OutOfRange("FEmTool_LinearJerk::Hessian");
+            throw new OutOfRangeException("FEmTool_LinearJerk::Hessian");
         }
 
         if (DepTab.Value(Dimension1, Dimension2) == 0)
         {
-            throw new Standard_DomainError("FEmTool_LinearJerk::Hessian");
+            throw new DomainErrorException("FEmTool_LinearJerk::Hessian");
         }
 
         int deg = Min(RefMatrix.UpperRow(), H.RowNumber() - 1), degH = Min(2 * myOrder + 1, deg);
@@ -211,7 +219,7 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
         NCollection_HArray2<double> aCoeff = myCoeff!;
         if (Dimension < aCoeff.LowerCol() || Dimension > aCoeff.UpperCol())
         {
-            throw new Standard_OutOfRange("FEmTool_LinearJerk::Gradient");
+            throw new OutOfRangeException("FEmTool_LinearJerk::Gradient");
         }
 
         int deg = Min(G.Length() - 1, aCoeff.ColLength() - 1);
@@ -223,7 +231,7 @@ public class FEmTool_LinearJerk : FEmTool_ElementaryCriterion
             X[i] = aCoeff.Value(i1 + i, Dimension);
         }
 
-        math_Matrix H = new(0, deg, 0, deg);
+        Matrix H = new(0, deg, 0, deg);
         Hessian(Dimension, Dimension, H);
 
         G.Multiply(H, X);

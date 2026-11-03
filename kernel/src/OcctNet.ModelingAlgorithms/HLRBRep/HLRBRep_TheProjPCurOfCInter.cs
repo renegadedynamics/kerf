@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The parameter of the point of a 2D curve nearest a given point.</summary>
@@ -16,7 +18,7 @@ public readonly struct HLRBRep_TheProjPCurOfCInter : IIntImpParGen_ProjectOnPCur
     /// The parameter of the point of <paramref name="C"/> nearest <paramref name="P"/>, searched between the two
     /// parameters: the nearest sample, refined by a local extremum search.
     /// </summary>
-    public static double FindParameter(in HLRBRep_Curve C, in gp_Pnt2d P, double LowParameter,
+    public static double FindParameter(in HLRBRep_Curve C, in Point2D P, double LowParameter,
                                        double HighParameter, double Tol)
     {
         double theparam, defaultparam;
@@ -49,7 +51,7 @@ public readonly struct HLRBRep_TheProjPCurOfCInter : IIntImpParGen_ProjectOnPCur
     }
 
     /// <summary>The parameter of the point of <paramref name="C"/> nearest <paramref name="P"/>.</summary>
-    public static double FindParameter(in HLRBRep_Curve C, in gp_Pnt2d P, double Tol)
+    public static double FindParameter(in HLRBRep_Curve C, in Point2D P, double Tol)
     {
         double theParam;
         theParam = FindParameter(C, P, HLRBRep_CurveTool.FirstParameter(C),

@@ -4,10 +4,12 @@
 
 // The C++ test functors are structs with a non-const Value; they stay structs here.
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 // Polynomial: f(x) = x^2
-file struct PolynomialFunc : MathUtils.IScalarFunction
+file struct PolynomialFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -17,7 +19,7 @@ file struct PolynomialFunc : MathUtils.IScalarFunction
 }
 
 // Sine function: f(x) = sin(x)
-file struct SineFunc : MathUtils.IScalarFunction
+file struct SineFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -27,7 +29,7 @@ file struct SineFunc : MathUtils.IScalarFunction
 }
 
 // Exponential: f(x) = exp(-x^2)
-file struct GaussianFunc : MathUtils.IScalarFunction
+file struct GaussianFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -37,7 +39,7 @@ file struct GaussianFunc : MathUtils.IScalarFunction
 }
 
 // Oscillatory: f(x) = cos(10*x)
-file struct OscillatoryFunc : MathUtils.IScalarFunction
+file struct OscillatoryFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -47,7 +49,7 @@ file struct OscillatoryFunc : MathUtils.IScalarFunction
 }
 
 // Square root singularity: f(x) = 1/sqrt(x)
-file struct SqrtSingularityFunc : MathUtils.IScalarFunction
+file struct SqrtSingularityFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -62,7 +64,7 @@ file struct SqrtSingularityFunc : MathUtils.IScalarFunction
 }
 
 // Log singularity: f(x) = -log(x)
-file struct LogSingularityFunc : MathUtils.IScalarFunction
+file struct LogSingularityFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -77,7 +79,7 @@ file struct LogSingularityFunc : MathUtils.IScalarFunction
 }
 
 // Decaying exponential for semi-infinite: f(x) = exp(-x)
-file struct ExponentialDecayFunc : MathUtils.IScalarFunction
+file struct ExponentialDecayFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -87,7 +89,7 @@ file struct ExponentialDecayFunc : MathUtils.IScalarFunction
 }
 
 // Gaussian for infinite interval: f(x) = exp(-x^2)
-file struct InfiniteGaussianFunc : MathUtils.IScalarFunction
+file struct InfiniteGaussianFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -97,7 +99,7 @@ file struct InfiniteGaussianFunc : MathUtils.IScalarFunction
 }
 
 // Function with known singularity at x = 0.5
-file struct SingularFunc : MathUtils.IScalarFunction
+file struct SingularFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -113,7 +115,7 @@ file struct SingularFunc : MathUtils.IScalarFunction
 }
 
 // Old API adapter
-file sealed class SineFuncOld : math_Function
+file sealed class SineFuncOld : Function
 {
     public override bool Value(double theX, out double theF)
     {
@@ -122,7 +124,7 @@ file sealed class SineFuncOld : math_Function
     }
 }
 
-file sealed class PolynomialFuncOld : math_Function
+file sealed class PolynomialFuncOld : Function
 {
     public override bool Value(double theX, out double theF)
     {
@@ -141,9 +143,9 @@ public class MathInteg_Kronrod_NewTest
         PolynomialFunc aFunc = new();
 
         // Integral of x^2 from 0 to 1 = 1/3
-        var aResult = MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -153,9 +155,9 @@ public class MathInteg_Kronrod_NewTest
         SineFunc aFunc = new();
 
         // Integral of sin(x) from 0 to pi = 2
-        var aResult = MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -165,15 +167,15 @@ public class MathInteg_Kronrod_NewTest
         OscillatoryFunc aFunc = new();
 
         // Integral of cos(10x) from 0 to pi = 0
-        MathInteg.KronrodConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.NbGaussPoints = 7;
         aConfig.Adaptive = true;
         aConfig.MaxIterations = 100;
 
-        var aResult = MathInteg.Kronrod(aFunc, 0.0, M_PI, aConfig);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Kronrod(aFunc, 0.0, M_PI, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
     }
 
@@ -184,12 +186,12 @@ public class MathInteg_Kronrod_NewTest
 
         // Integral of exp(-x^2) from -inf to +inf = sqrt(pi)
         // Use SinhSinh for proper infinite interval integration
-        MathInteg.DoubleExpConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Integration.MathInteg.DoubleExpConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
 
-        var aResult = MathInteg.SinhSinh(aFunc, aConfig);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.SinhSinh(aFunc, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(Math.Sqrt(M_PI), aResult.Value!.Value, 1.0e-6);
     }
 
@@ -199,9 +201,9 @@ public class MathInteg_Kronrod_NewTest
         SineFunc aFunc = new();
 
         // Integral of sin(x) from 0 to 2*pi = 0
-        var aResult = MathInteg.KronrodAuto(aFunc, 0.0, 2.0 * M_PI);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodAuto(aFunc, 0.0, 2.0 * M_PI);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
     }
 
@@ -215,9 +217,9 @@ public class MathInteg_Kronrod_NewTest
 
         foreach (int aOrder in aOrders)
         {
-            var aResult = MathInteg.KronrodRule(aFunc, 0.0, 1.0, aOrder);
+            var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, 1.0, aOrder);
 
-            Assert.True(aResult.IsDone(), $"Failed with order {aOrder}");
+            Assert.True(aResult.IsDone, $"Failed with order {aOrder}");
             Assert.Equal(1.0 / 3.0, aResult.Value!.Value, 1.0e-8);
         }
     }
@@ -232,9 +234,9 @@ public class MathInteg_Kronrod_NewTest
         InfiniteGaussianFunc aFunc = new();
 
         // Integral of exp(-x^2) from -inf to +inf = sqrt(pi)
-        var aResult = MathInteg.SinhSinh(aFunc);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.SinhSinh(aFunc);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(Math.Sqrt(M_PI), aResult.Value!.Value, 1.0e-4);
     }
 
@@ -244,9 +246,9 @@ public class MathInteg_Kronrod_NewTest
         ExponentialDecayFunc aFunc = new();
 
         // Integral of exp(-x) from 0 to +inf = 1
-        var aResult = MathInteg.ExpSinh(aFunc, 0.0);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.ExpSinh(aFunc, 0.0);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Value!.Value, 1.0e-4);
     }
 }
@@ -259,9 +261,9 @@ public class MathInteg_DoubleExp_NewTest
         PolynomialFunc aFunc = new();
 
         // Integral of x^2 from 0 to 1 = 1/3
-        var aResult = MathInteg.TanhSinh(aFunc, 0.0, 1.0);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, 1.0);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, 1.0e-6);
     }
 
@@ -271,9 +273,9 @@ public class MathInteg_DoubleExp_NewTest
         SineFunc aFunc = new();
 
         // Integral of sin(x) from 0 to pi = 2
-        var aResult = MathInteg.TanhSinh(aFunc, 0.0, M_PI);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, M_PI);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, 1.0e-6);
     }
 
@@ -283,12 +285,12 @@ public class MathInteg_DoubleExp_NewTest
         SqrtSingularityFunc aFunc = new();
 
         // Integral of 1/sqrt(x) from 0 to 1 = 2; singularity at x=0
-        MathInteg.DoubleExpConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Integration.MathInteg.DoubleExpConfig aConfig = new();
         aConfig.NbLevels = 8;
 
-        var aResult = MathInteg.TanhSinh(aFunc, 0.0, 1.0, aConfig);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, 1.0, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, 1.0e-4);
     }
 
@@ -298,12 +300,12 @@ public class MathInteg_DoubleExp_NewTest
         LogSingularityFunc aFunc = new();
 
         // Integral of -log(x) from 0 to 1 = 1; log singularity at x=0
-        MathInteg.DoubleExpConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Integration.MathInteg.DoubleExpConfig aConfig = new();
         aConfig.NbLevels = 8;
 
-        var aResult = MathInteg.TanhSinh(aFunc, 0.0, 1.0, aConfig);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, 1.0, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Value!.Value, 1.0e-4);
     }
 
@@ -313,9 +315,9 @@ public class MathInteg_DoubleExp_NewTest
         SqrtSingularityFunc aFunc = new();
 
         // Optimized for endpoint singularities
-        var aResult = MathInteg.TanhSinhSingular(aFunc, 0.0, 1.0, 1.0e-6);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinhSingular(aFunc, 0.0, 1.0, 1.0e-6);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, 1.0e-3);
     }
 
@@ -325,9 +327,9 @@ public class MathInteg_DoubleExp_NewTest
         ExponentialDecayFunc aFunc = new();
 
         // Integral of exp(-x) from 0 to infinity = 1
-        var aResult = MathInteg.ExpSinh(aFunc, 0.0);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.ExpSinh(aFunc, 0.0);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Value!.Value, 1.0e-4);
     }
 
@@ -337,9 +339,9 @@ public class MathInteg_DoubleExp_NewTest
         InfiniteGaussianFunc aFunc = new();
 
         // Integral of exp(-x^2) from -inf to +inf = sqrt(pi)
-        var aResult = MathInteg.SinhSinh(aFunc);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.SinhSinh(aFunc);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(Math.Sqrt(M_PI), aResult.Value!.Value, 1.0e-4);
     }
 
@@ -349,9 +351,9 @@ public class MathInteg_DoubleExp_NewTest
         SineFunc aFunc = new();
 
         // Finite interval
-        var aResult = MathInteg.DoubleExponential(aFunc, 0.0, M_PI);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.DoubleExponential(aFunc, 0.0, M_PI);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, 1.0e-6);
     }
 
@@ -361,9 +363,9 @@ public class MathInteg_DoubleExp_NewTest
         SingularFunc aFunc = new();
 
         // Split at singularity
-        var aResult = MathInteg.TanhSinhWithSingularity(aFunc, 0.0, 1.0, 0.5);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinhWithSingularity(aFunc, 0.0, 1.0, 0.5);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // The integral exists (both halves are sqrt singularities)
         Assert.True(aResult.Value!.Value > 0.0);
     }
@@ -376,11 +378,11 @@ public class MathInteg_NewTest
     {
         PolynomialFunc aFunc = new();
 
-        var aKronrodResult = MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
-        var aGaussResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 15);
+        var aKronrodResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
+        var aGaussResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 15);
 
-        Assert.True(aKronrodResult.IsDone());
-        Assert.True(aGaussResult.IsDone());
+        Assert.True(aKronrodResult.IsDone);
+        Assert.True(aGaussResult.IsDone);
 
         Assert.Equal(aGaussResult.Value!.Value, aKronrodResult.Value!.Value, 1.0e-10);
     }
@@ -390,11 +392,11 @@ public class MathInteg_NewTest
     {
         SineFunc aFunc = new();
 
-        var aKronrodResult = MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
-        var aGaussResult = MathInteg.Gauss(aFunc, 0.0, M_PI, 15);
+        var aKronrodResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
+        var aGaussResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, M_PI, 15);
 
-        Assert.True(aKronrodResult.IsDone());
-        Assert.True(aGaussResult.IsDone());
+        Assert.True(aKronrodResult.IsDone);
+        Assert.True(aGaussResult.IsDone);
 
         Assert.Equal(aGaussResult.Value!.Value, aKronrodResult.Value!.Value, 1.0e-10);
     }
@@ -404,11 +406,11 @@ public class MathInteg_NewTest
     {
         PolynomialFunc aFunc = new();
 
-        var aTanhSinhResult = MathInteg.TanhSinh(aFunc, 0.0, 1.0);
-        var aKronrodResult = MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
+        var aTanhSinhResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, 1.0);
+        var aKronrodResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, 1.0, 7);
 
-        Assert.True(aTanhSinhResult.IsDone());
-        Assert.True(aKronrodResult.IsDone());
+        Assert.True(aTanhSinhResult.IsDone);
+        Assert.True(aKronrodResult.IsDone);
 
         Assert.Equal(aKronrodResult.Value!.Value, aTanhSinhResult.Value!.Value, 1.0e-6);
     }
@@ -420,17 +422,17 @@ public class MathInteg_NewTest
         SineFunc aNewFunc = new();
 
         // Old API - constructor takes: func, lower, upper, nbPoints, tolerance, maxIterations
-        math_KronrodSingleIntegration anOldInteg = new(anOldFunc, 0.0, M_PI, 15, 1.0e-10, 100);
+        KronrodSingleIntegration anOldInteg = new(anOldFunc, 0.0, M_PI, 15, 1.0e-10, 100);
 
         // New API
-        MathInteg.KronrodConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodConfig aConfig = new();
         aConfig.NbGaussPoints = 7;
         aConfig.Tolerance = 1.0e-10;
         aConfig.Adaptive = true;
-        var aNewResult = MathInteg.Kronrod(aNewFunc, 0.0, M_PI, aConfig);
+        var aNewResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Kronrod(aNewFunc, 0.0, M_PI, aConfig);
 
-        Assert.True(anOldInteg.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldInteg.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should give sin integral = 2
         Assert.Equal(aNewResult.Value!.Value, anOldInteg.Value(), 1.0e-8);
@@ -444,13 +446,13 @@ public class MathInteg_NewTest
         PolynomialFunc aNewFunc = new();
 
         // Old API
-        math_GaussSingleIntegration anOldInteg = new(anOldFunc, 0.0, 1.0, 15);
+        GaussSingleIntegration anOldInteg = new(anOldFunc, 0.0, 1.0, 15);
 
         // New API
-        var aNewResult = MathInteg.Gauss(aNewFunc, 0.0, 1.0, 15);
+        var aNewResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aNewFunc, 0.0, 1.0, 15);
 
-        Assert.True(anOldInteg.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldInteg.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         Assert.Equal(aNewResult.Value!.Value, anOldInteg.Value(), 1.0e-10);
     }
@@ -460,9 +462,9 @@ public class MathInteg_NewTest
     {
         SineFunc aFunc = new();
 
-        var aResult = MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.KronrodRule(aFunc, 0.0, M_PI, 7);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.AbsoluteError.HasValue);
         Assert.True(aResult.RelativeError.HasValue);
 
@@ -475,9 +477,9 @@ public class MathInteg_NewTest
     {
         SineFunc aFunc = new();
 
-        var aResult = MathInteg.TanhSinh(aFunc, 0.0, M_PI);
+        var aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.TanhSinh(aFunc, 0.0, M_PI);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // TanhSinh provides error estimates when converged
     }
 }

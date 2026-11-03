@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -19,8 +22,8 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
 {
     private TopoDS_Edge arc;
     private TopoDS_Vertex vtx;
-    private gp_Pnt point;
-    private gp_Vec vector;
+    private Point3D point;
+    private Vector3D vector;
     private double tol;
     private double prmarc;
     private double prmtg;
@@ -34,8 +37,8 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     {
         arc = new TopoDS_Edge();
         vtx = new TopoDS_Vertex();
-        point = new gp_Pnt();
-        vector = new gp_Vec();
+        point = new Point3D();
+        vector = new Vector3D();
         tol = 0.0;
         prmarc = 0.0;
         prmtg = 0.0;
@@ -82,13 +85,13 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>Sets the 3d point, for a point that is neither a vertex nor on an arc.</summary>
-    internal void SetPoint(in gp_Pnt thePoint)
+    internal void SetPoint(in Point3D thePoint)
     {
         point = thePoint;
     }
 
     /// <summary>Sets the output 3d vector.</summary>
-    internal void SetVector(in gp_Vec theVector)
+    internal void SetVector(in Vector3D theVector)
     {
         hasvector = true;
         vector = theVector;
@@ -132,14 +135,14 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
         return aCopy;
     }
 
-    public readonly ChFiDS_CommonPoint WithPoint(in gp_Pnt thePoint)
+    public readonly ChFiDS_CommonPoint WithPoint(in Point3D thePoint)
     {
         ChFiDS_CommonPoint aCopy = this;
         aCopy.SetPoint(thePoint);
         return aCopy;
     }
 
-    public readonly ChFiDS_CommonPoint WithVector(in gp_Vec theVector)
+    public readonly ChFiDS_CommonPoint WithVector(in Vector3D theVector)
     {
         ChFiDS_CommonPoint aCopy = this;
         aCopy.SetVector(theVector);
@@ -165,12 +168,12 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
         return isvtx;
     }
 
-    /// <summary>The vertex; throws <see cref="Standard_DomainError"/> if the point is not a vertex.</summary>
+    /// <summary>The vertex; throws <see cref="DomainErrorException"/> if the point is not a vertex.</summary>
     public readonly TopoDS_Vertex Vertex()
     {
         if (!isvtx)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return vtx;
@@ -187,7 +190,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     {
         if (!isonarc)
         {
-            throw new Standard_DomainError("CommonPoint not on Arc");
+            throw new DomainErrorException("CommonPoint not on Arc");
         }
 
         return arc;
@@ -198,7 +201,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     {
         if (!isonarc)
         {
-            throw new Standard_DomainError("CommonPoint not on Arc");
+            throw new DomainErrorException("CommonPoint not on Arc");
         }
 
         return traarc;
@@ -209,7 +212,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     {
         if (!isonarc)
         {
-            throw new Standard_DomainError("CommonPoint not on Arc");
+            throw new DomainErrorException("CommonPoint not on Arc");
         }
 
         return prmarc;
@@ -222,7 +225,7 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The 3d point.</summary>
-    public readonly gp_Pnt Point()
+    public readonly Point3D Point()
     {
         return point;
     }
@@ -234,11 +237,11 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     }
 
     /// <summary>The output 3d vector.</summary>
-    public readonly gp_Vec Vector()
+    public readonly Vector3D Vector()
     {
         if (!hasvector)
         {
-            throw new Standard_DomainError("ChFiDS_CommonPoint::Vector");
+            throw new DomainErrorException("ChFiDS_CommonPoint::Vector");
         }
 
         return vector;
@@ -259,5 +262,5 @@ public partial struct ChFiDS_CommonPoint : IEquatable<ChFiDS_CommonPoint>
     public static bool operator !=(in ChFiDS_CommonPoint theLeft, in ChFiDS_CommonPoint theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => gp.Format("ChFiDS_CommonPoint", point.X(), point.Y(), point.Z(), tol, prmarc, prmtg);
+        => Constants.Format("ChFiDS_CommonPoint", point.X(), point.Y(), point.Z(), tol, prmarc, prmtg);
 }

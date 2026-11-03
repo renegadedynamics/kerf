@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -15,8 +16,8 @@ namespace Occt;
 /// The geometric elements are described locally at the intersection point by a second order development: the
 /// curve by its tangent, normal and curvature; the boundary by a set of curve elements, each a curve or a
 /// half-curve (a curve and an orientation saying whether the boundary is before or after the intersection).
-/// A working object (decision 21): <see cref="Reset(in gp_Dir, in gp_Dir, double)"/> and
-/// <see cref="Compare(double, in gp_Dir, in gp_Dir, double, TopAbs_Orientation, TopAbs_Orientation)"/> are public,
+/// A working object (decision 21): <see cref="Reset(in Direction3D, in Direction3D, double)"/> and
+/// <see cref="Compare(double, in Direction3D, in Direction3D, double, TopAbs_Orientation, TopAbs_Orientation)"/> are public,
 /// as in OCCT. A class: OCCT holds it by value as a member of the classifiers, which pass it by reference.
 /// </remarks>
 public class TopTrans_CurveTransition
@@ -25,16 +26,16 @@ public class TopTrans_CurveTransition
     private const int SAME = 0;
     private const int LOWER = -1;
 
-    private gp_Dir myTgt = new();
-    private gp_Dir myNorm = new();
+    private Direction3D myTgt = new();
+    private Direction3D myNorm = new();
     private double myCurv;
     private bool Init;
-    private gp_Dir TgtFirst = new();
-    private gp_Dir NormFirst = new();
+    private Direction3D TgtFirst = new();
+    private Direction3D NormFirst = new();
     private double CurvFirst;
     private TopAbs_Orientation TranFirst;
-    private gp_Dir TgtLast = new();
-    private gp_Dir NormLast = new();
+    private Direction3D TgtLast = new();
+    private Direction3D NormLast = new();
     private double CurvLast;
     private TopAbs_Orientation TranLast;
 
@@ -50,7 +51,7 @@ public class TopTrans_CurveTransition
     }
 
     /// <summary>Initializes the transition with the local description of a curve.</summary>
-    public void Reset(in gp_Dir Tgt, in gp_Dir Norm, double Curv)
+    public void Reset(in Direction3D Tgt, in Direction3D Norm, double Curv)
     {
         myTgt = Tgt;
         myNorm = Norm;
@@ -59,7 +60,7 @@ public class TopTrans_CurveTransition
     }
 
     /// <summary>Initializes the transition with the local description of a straight line.</summary>
-    public void Reset(in gp_Dir Tgt)
+    public void Reset(in Direction3D Tgt)
     {
         myTgt = Tgt;
         myCurv = 0.0;
@@ -70,7 +71,7 @@ public class TopTrans_CurveTransition
     /// Adds a curve element to the boundary. If <paramref name="Or"/> is REVERSED the curve is before the
     /// intersection, if FORWARD after it, and if INTERNAL the intersection is in the middle of the curve.
     /// </summary>
-    public void Compare(double Tole, in gp_Dir T, in gp_Dir N, double C, TopAbs_Orientation St, TopAbs_Orientation Or)
+    public void Compare(double Tole, in Direction3D T, in Direction3D N, double C, TopAbs_Orientation St, TopAbs_Orientation Or)
     {
         // S is the transition, how the curve cross the boundary
         // O is the orientation, how the intersection is set on the boundary
@@ -332,7 +333,7 @@ public class TopTrans_CurveTransition
     }
 
     /// <summary>Compares the curvature of two transitions: true if (N1, C1) is before (N2, C2).</summary>
-    private bool IsBefore(double Tole, double CosAngl, in gp_Dir N1, double C1, in gp_Dir N2, double C2)
+    private bool IsBefore(double Tole, double CosAngl, in Direction3D N1, double C1, in Direction3D N2, double C2)
     {
         double TN1 = myTgt * N1;
         double TN2 = myTgt * N2;

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,10 +16,10 @@ namespace Occt;
 /// U2, used to find the maximal deflection of the chord.
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT does.</remarks>
-public class GCPnts_DistFunction : math_Function
+public class GCPnts_DistFunction : Function
 {
     private readonly Adaptor3d_Curve myCurve;
-    private readonly gp_Lin myLin;
+    private readonly Line3D myLin;
     private readonly double myU1;
     private readonly double myU2;
 
@@ -22,15 +28,15 @@ public class GCPnts_DistFunction : math_Function
         myCurve = theCurve;
         myU1 = U1;
         myU2 = U2;
-        gp_Pnt P1 = theCurve.Value(U1), P2 = theCurve.Value(U2);
-        if (P1.SquareDistance(P2) > gp.Resolution())
+        Point3D P1 = theCurve.Value(U1), P2 = theCurve.Value(U2);
+        if (P1.SquareDistance(P2) > Constants.Resolution())
         {
-            myLin = new gp_Lin(P1, new gp_Dir(P2.XYZ() - P1.XYZ()));
+            myLin = new Line3D(P1, new Direction3D(P2.XYZ() - P1.XYZ()));
         }
         else
         {
             theCurve.D0(U1 + .01 * (U2 - U1), out P2);
-            myLin = new gp_Lin(P1, new gp_Dir(P2.XYZ() - P1.XYZ()));
+            myLin = new Line3D(P1, new Direction3D(P2.XYZ() - P1.XYZ()));
         }
     }
 
@@ -57,7 +63,7 @@ public class GCPnts_DistFunction : math_Function
 }
 
 /// <summary><see cref="GCPnts_DistFunction"/> as a function of one variable for the multi-variable minimisers.</summary>
-public class GCPnts_DistFunctionMV : math_MultipleVarFunction
+public class GCPnts_DistFunctionMV : MultipleVarFunction
 {
     private readonly GCPnts_DistFunction myMaxCurvLinDist;
 
@@ -72,8 +78,11 @@ public class GCPnts_DistFunctionMV : math_MultipleVarFunction
         return Ok;
     }
 
-    public override int NbVariables()
+    public override int VariableCount
     {
-        return 1;
+        get
+        {
+            return 1;
+        }
     }
 }

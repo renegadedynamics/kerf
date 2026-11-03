@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity FreedomAndCoefficient
 /// </summary>
-public class StepFEA_FreedomAndCoefficient : Standard_Transient
+public class StepFEA_FreedomAndCoefficient : Transient
 {
     private StepFEA_DegreeOfFreedom theFreedom = new StepFEA_DegreeOfFreedom();
     private StepElement_MeasureOrUnspecifiedValue theA = new StepElement_MeasureOrUnspecifiedValue();

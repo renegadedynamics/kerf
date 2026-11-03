@@ -4,6 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -108,7 +113,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
     }
 
     /// <summary>Sets the surface of the wire with a location.</summary>
-    public void SetSurface(Geom_Surface? surf, in TopLoc_Location loc)
+    public void SetSurface(Geom_Surface? surf, in Placement loc)
     {
         myAnalyzer.SetSurface(surf, loc);
     }
@@ -403,7 +408,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
     /// with the default mode it is called depending on the situation (some are skipped or limited if the order of the
     /// edges isn't OK).
     /// </summary>
-    public bool Perform(Message_ProgressRange theProgress = default)
+    public bool Perform(ProgressRange theProgress = default)
     {
         enterWork(); // OCCT.NET: frozen
         ClearStatuses();
@@ -801,25 +806,25 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                         for (int j = 1; j <= nbs; j++)
                         {
                             double   Preci = 0.0;
-                            gp_Pnt2d pd1 = new gp_Pnt2d(), pd2 = new gp_Pnt2d();
-                            gp_Pnt   P3d = new gp_Pnt();
+                            Point2D pd1 = new Point2D(), pd2 = new Point2D();
+                            Point3D   P3d = new Point3D();
                             double   par1 = 0.0, par2 = 0.0;
                             bool     tmpUIsoDeg = false;
                             S.Singularity(j, ref Preci, ref P3d, ref pd1, ref pd2, ref par1, ref par2, ref tmpUIsoDeg);
-                            if (SAC.Project(GAC, P3d, MinTolerance(), out gp_Pnt pr, out double split, true)
+                            if (SAC.Project(GAC, P3d, MinTolerance(), out Point3D pr, out double split, true)
                                 < Max(Preci, MinTolerance()))
                             {
-                                if (split - a > Occt.Precision.PConfusion() && b - split > Occt.Precision.PConfusion())
+                                if (split - a > Kerf.Engine.Foundation.Precision.PConfusion() && b - split > Kerf.Engine.Foundation.Precision.PConfusion())
                                 {
                                     int k;
                                     for (k = 1; k <= seq.Length(); k++)
                                     {
-                                        if (split < seq[k] - Occt.Precision.PConfusion())
+                                        if (split < seq[k] - Kerf.Engine.Foundation.Precision.PConfusion())
                                         {
                                             seq.InsertBefore(k, split);
                                             break;
                                         }
-                                        else if (split < seq[k] + Occt.Precision.PConfusion())
+                                        else if (split < seq[k] + Kerf.Engine.Foundation.Precision.PConfusion())
                                         {
                                             break;
                                         }
@@ -941,7 +946,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 double URange;
                 myAnalyzer.Surface()!.Bounds(out double SUF, out double SUL, out double SVF, out double SVL);
                 URange = (Math.Abs(SUL - SUF));
-                gp_XY vec = new gp_XY(0, 0);
+                Xy vec = new Xy(0, 0);
                 var   sae = new ShapeAnalysis_Edge();
                 int   k;
                 for (k = 1; k <= nb; k++)
@@ -991,12 +996,12 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 {
                     //: abv 29.08.01: Spatial_firex_lofting.sat: if 3d curve cannot
                     // be built because edge has no pcurves either, remove that edge
-                    BRep_Tool.CurveOnSurface(sbwd.Edge(i), out Geom2d_Curve? C, out Geom_Surface? S, out TopLoc_Location L,
+                    BRep_Tool.CurveOnSurface(sbwd.Edge(i), out Geom2d_Curve? C, out Geom_Surface? S, out Placement L,
                                              out double first, out double last);
-                    if (C is null || Math.Abs(last - first) < Occt.Precision.PConfusion())
+                    if (C is null || Math.Abs(last - first) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // Incomplete edge (with no pcurves or 3d curve) removed
-                        SendWarning(sbwd.Edge(i), new Message_Msg("FixWire.FixCurve3d.Removed"));
+                        SendWarning(sbwd.Edge(i), new Msg("FixWire.FixCurve3d.Removed"));
                         sbwd.Remove(i--);
                         nb--;
                         myStatusEdgeCurves |= ShapeExtend.EncodeStatus(ShapeExtend_DONE5);
@@ -1057,8 +1062,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 {
                     if (sae.PCurve(sbwd.Edge(i), face, out Geom2d_Curve? C2d, out double fp2d, out double lp2d, false))
                     {
-                        if (Math.Abs(First - fp2d) > Occt.Precision.PConfusion()
-                            || Math.Abs(Last - lp2d) > Occt.Precision.PConfusion())
+                        if (Math.Abs(First - fp2d) > Kerf.Engine.Foundation.Precision.PConfusion()
+                            || Math.Abs(Last - lp2d) > Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             var B = new BRep_Builder();
                             B.SameRange(sbwd.Edge(i), false);
@@ -1066,7 +1071,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                         else if (!sae.CheckPCurveRange(First, Last, C2d!))
                         {
                             // Replace pcurve
-                            Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+                            Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
                             new ShapeBuild_Edge().RemovePCurve(sbwd.Edge(i), S, L);
                             myFixEdge.FixAddPCurve(sbwd.Edge(i), face, sbwd.IsSeam(i), myAnalyzer.Surface()!, Precision());
                             if (myFixEdge.Status(ShapeExtend_DONE))
@@ -1486,7 +1491,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         {
             Context()!.Remove(WireData()!.Edge(n));
         }
-        SendWarning(WireData()!.Edge(n), new Message_Msg("FixAdvWire.FixSmall.MSG0")); // Small edge(s) removed
+        SendWarning(WireData()!.Edge(n), new Msg("FixAdvWire.FixSmall.MSG0")); // Small edge(s) removed
         WireData()!.Remove(n);
 
         // call FixConnected in the case if vertices of the small edge were not the same
@@ -1786,10 +1791,10 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         bool   end = (nb == 0), degstop = false;
         int    stop  = nb;
         int    degn2 = 0;
-        gp_Pnt pdeg  = new gp_Pnt();
+        Point3D pdeg  = new Point3D();
         // pdn 17.12.98 r0901_ec 38237 to shift wire at 0
 
-        var box = new Bnd_Box2d();
+        var box = new Box2d();
         for (int n2 = 1, n1 = nb; !end; n1 = n2++)
         {
             if (n2 > nb)
@@ -1820,7 +1825,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 continue;
             }
 
-            gp_Pnt p = BRep_Tool.Pnt(V);
+            Point3D p = BRep_Tool.Pnt(V);
 
             double        a1 = 0.0, b1 = 0.0, a2 = 0.0, b2 = 0.0;
             Geom2d_Curve? c2d1 = null, c2d2 = null;
@@ -1830,7 +1835,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             //    bool isDeg = surf->IsDegenerated ( p, Max ( Precision(),
             //    BRep_Tool::Tolerance(V) ) );
             int      isDeg = 0;
-            gp_Pnt2d degP1 = new gp_Pnt2d(), degP2 = new gp_Pnt2d();
+            Point2D degP1 = new Point2D(), degP2 = new Point2D();
             double   degT1 = 0.0, degT2 = 0.0;
             if (surf.DegeneratedValues(p, Max(Precision(), BRep_Tool.Tolerance(V)), ref degP1, ref degP2, ref degT1,
                                        ref degT2))
@@ -1848,8 +1853,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                     {
                         continue;
                     }
-                    gp_Pnt2d p1 = new gp_Pnt2d(SUF, c2d1!.Value(b1).Y());
-                    gp_Pnt2d p2 = new gp_Pnt2d(SUL, c2d1.Value(b1).Y());
+                    Point2D p1 = new Point2D(SUF, c2d1!.Value(b1).Y());
+                    Point2D p2 = new Point2D(SUL, c2d1.Value(b1).Y());
                     if (surf.IsDegenerated(p1, p2, MaxTolerance(), 10)
                         && !surf.IsDegenerated(c2d1.Value(a1), c2d1.Value(b1), MaxTolerance(), 10))
                     { // abv 31.07.00: trj4_pm1-ec-214.stp #31274: still allow
@@ -1863,8 +1868,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                     {
                         continue;
                     }
-                    gp_Pnt2d p1 = new gp_Pnt2d(c2d1!.Value(b1).X(), SVF);
-                    gp_Pnt2d p2 = new gp_Pnt2d(c2d1.Value(b1).X(), SVL);
+                    Point2D p1 = new Point2D(c2d1!.Value(b1).X(), SVF);
+                    Point2D p2 = new Point2D(c2d1.Value(b1).X(), SVL);
                     if (surf.IsDegenerated(p1, p2, MaxTolerance(), 10)
                         && !surf.IsDegenerated(c2d1.Value(a1), c2d1.Value(b1), MaxTolerance(), 10))
                     { // abv 31.07.00: trj4_pm1-ec-214.stp #31274: still allow
@@ -1906,11 +1911,11 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                             myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
                             continue;
                         }
-                        gp_Pnt2d pd1 = cx1!.Value(bx1);
-                        gp_Pnt2d pd2 = cx2!.Value(ax2);
-                        gp_Pnt2d pn1 = c2d1!.Value(b1);
-                        gp_Pnt2d pn2 = c2d2!.Value(a2);
-                        gp_Vec2d x   = new gp_Vec2d(0.0, 0.0); // shift vector
+                        Point2D pd1 = cx1!.Value(bx1);
+                        Point2D pd2 = cx2!.Value(ax2);
+                        Point2D pn1 = c2d1!.Value(b1);
+                        Point2D pn2 = c2d2!.Value(a2);
+                        Vector2D x   = new Vector2D(0.0, 0.0); // shift vector
                         double   period;
                         if (uclosed)
                         {
@@ -1926,9 +1931,9 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                         double rot2 = (pd1.XY() - pn2.XY()) ^ x.XY();
                         double scld = (pd2.XY() - pd1.XY()) * x.XY();
                         double scln = (pn2.XY() - pn1.XY()) * x.XY();
-                        if (rot1 * rot2 < -Occt.Precision.PConfusion() && scld * scln < -Occt.Precision.PConfusion()
+                        if (rot1 * rot2 < -Kerf.Engine.Foundation.Precision.PConfusion() && scld * scln < -Kerf.Engine.Foundation.Precision.PConfusion()
                             && Math.Abs(scln) > 0.1 * period && Math.Abs(scld) > 0.1 * period
-                            && rot1 * scld > Occt.Precision.PConfusion() && rot2 * scln > Occt.Precision.PConfusion())
+                            && rot1 * scld > Kerf.Engine.Foundation.Precision.PConfusion() && rot2 * scln > Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             // abv 02 Mar 00: trying more sophisticated analysis (ie_exhaust-A.stp #37520)
                             double sign  = (rot2 > 0 ? 1.0 : -1.0);
@@ -1948,12 +1953,12 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                                                 sign * (cx2.Value(0.5 * (ax2 + bx2)).XY() * x.XY()))))));
                             double deep = deep2 - deep1; // estimated current size of wire by x
                             // pdn 30 Oct 00: trying correct period [0,period] (trj5_k1-tc-203.stp #4698)
-                            double dx = ShapeAnalysis.AdjustToPeriod(deep, Occt.Precision.PConfusion(),
-                                                                     period + Occt.Precision.PConfusion());
+                            double dx = ShapeAnalysis.AdjustToPeriod(deep, Kerf.Engine.Foundation.Precision.PConfusion(),
+                                                                     period + Kerf.Engine.Foundation.Precision.PConfusion());
                             x *= (scld > 0 ? -dx : dx);
                             // x *= ( std::abs(scld-scln) > 1.5 * period ? 2. : 1. ) *
                             //      ( scld >0 ? -period : period );
-                            var Shift = new gp_Trsf2d();
+                            var Shift = new Transform2D();
                             Shift.SetTranslation(x);
                             for (int k = degn2;; k++)
                             {
@@ -1992,8 +1997,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
                 continue;
             }
-            gp_Pnt2d p2d1 = c2d1!.Value(b1);
-            gp_Pnt2d p2d2 = c2d2!.Value(a2);
+            Point2D p2d1 = c2d1!.Value(b1);
+            Point2D p2d2 = c2d2!.Value(a2);
             box.Add(p2d1);
 
             double du = 0.0, dv = 0.0;
@@ -2027,15 +2032,15 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             }
 
             myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
-            var Shift2 = new gp_Trsf2d();
-            Shift2.SetTranslation(new gp_Vec2d(du, dv));
+            var Shift2 = new Transform2D();
+            Shift2.SetTranslation(new Vector2D(du, dv));
             // c2d2->Transform ( Shift );
             //  skl 15.05.2002 for OCC208 (if few edges have reference to one pcurve)
             var c2d2new = c2d2.Transformed(Shift2) as Geom2d_Curve;
             sbe.ReplacePCurve(E2, c2d2new, Face());
             UpdateEdgeUVPoints(E2, Face());
         }
-        if (box.IsVoid())
+        if (box.IsVoid)
         {
             return false; // #3 smh 01.04.99. S4163: Overflow, when box is void.
         }
@@ -2084,8 +2089,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
 
-        var Shift3 = new gp_Trsf2d();
-        Shift3.SetTranslation(new gp_Vec2d(du2, dv2));
+        var Shift3 = new Transform2D();
+        Shift3.SetTranslation(new Vector2D(du2, dv2));
 
         for (n = 1; n <= sbwdOring.NbEdges(); n++)
         {
@@ -2117,7 +2122,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         }
 
         // analysis
-        gp_Pnt2d p2d1 = new gp_Pnt2d(), p2d2 = new gp_Pnt2d();
+        Point2D p2d1 = new Point2D(), p2d2 = new Point2D();
         myAnalyzer.CheckDegenerated(num, ref p2d1, ref p2d2);
         if (myAnalyzer.LastCheckStatus(ShapeExtend_FAIL1))
         {
@@ -2138,15 +2143,15 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         // action: create degenerated edge and insert it (or replace)
 
-        gp_Vec2d    vect2d = new gp_Vec2d(p2d1, p2d2);
-        gp_Dir2d    dir2d  = new gp_Dir2d(vect2d);
+        Vector2D    vect2d = new Vector2D(p2d1, p2d2);
+        Direction2D    dir2d  = new Direction2D(vect2d);
         Geom2d_Line line2d = new Geom2d_Line(p2d1, dir2d);
 
         TopoDS_Edge  degEdge = new TopoDS_Edge();
         BRep_Builder B       = new BRep_Builder();
         B.MakeEdge(ref degEdge);
         B.Degenerated(degEdge, true);
-        B.UpdateEdge(degEdge, line2d, Face(), Occt.Precision.Confusion());
+        B.UpdateEdge(degEdge, line2d, Face(), Kerf.Engine.Foundation.Precision.Confusion());
         B.Range(degEdge, Face(), 0.0, vect2d.Magnitude());
 
         ShapeExtend_WireData sbwd = WireData()!;
@@ -2289,10 +2294,10 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         }
 
         // direct construction causes error on osf system.
-        gp_Pnt p   = new gp_Pnt(0, 0, 0);
-        gp_Dir d   = new gp_Dir(gp_Dir.D.Z);
-        gp_Ax3 ax  = new gp_Ax3(p, d);
-        gp_Pln Pln = new gp_Pln(ax);
+        Point3D p   = new Point3D(0, 0, 0);
+        Direction3D d   = new Direction3D(Direction3D.D.Z);
+        CoordinateSystem ax  = new CoordinateSystem(p, d);
+        Plane3D Pln = new Plane3D(ax);
 
         // PTV OCC884
         Geom_Plane? aPlaneSurf = BRep_Tool.Surface(face) as Geom_Plane;
@@ -2312,7 +2317,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         GeomConvert_CompCurveToBSplineCurve connect = new GeomConvert_CompCurveToBSplineCurve(trim);
 
         // null-length segment patch instead of loop
-        NCollection_Array1<gp_Pnt> Poles = new NCollection_Array1<gp_Pnt>(1, 2);
+        NCollection_Array1<Point3D> Poles = new NCollection_Array1<Point3D>(1, 2);
         NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, 2);
         NCollection_Array1<int>    Mults = new NCollection_Array1<int>(1, 2);
 
@@ -2326,13 +2331,13 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         Mults.SetValue(2, 2);
 
         Geom_BSplineCurve patch = new Geom_BSplineCurve(Poles, Knots, Mults, 1);
-        if (!connect.Add(patch, Occt.Precision.PConfusion(), true, false))
+        if (!connect.Add(patch, Kerf.Engine.Foundation.Precision.PConfusion(), true, false))
         {
             return false;
         }
 
         // last segment
-        if (!connect.Add(trim, Occt.Precision.PConfusion(), true, false))
+        if (!connect.Add(trim, Kerf.Engine.Foundation.Precision.PConfusion(), true, false))
         {
             return false;
         }
@@ -2369,8 +2374,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 return false;
             }
             //: s2  bs = BRep_Tool::CurveOnSurface ( edge, face, a, b );
-            if (Math.Abs(a - f) > Occt.Precision.PConfusion() || // smth strange, cancel
-                Math.Abs(b - l) > Occt.Precision.PConfusion())
+            if (Math.Abs(a - f) > Kerf.Engine.Foundation.Precision.PConfusion() || // smth strange, cancel
+                Math.Abs(b - l) > Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
@@ -2391,14 +2396,14 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         }
 
         //: q1
-        Geom_Surface?       S  = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface?       S  = BRep_Tool.Surface(face, out Placement L);
         Geom2dAdaptor_Curve AC = new Geom2dAdaptor_Curve(c2d!);
         GeomAdaptor_Surface AS = new GeomAdaptor_Surface(S!);
 
         Adaptor3d_CurveOnSurface ACS = new Adaptor3d_CurveOnSurface(AC, AS);
-        gp_Pnt                   P1  = ACS.Value(t1);
-        gp_Pnt                   P2  = ACS.Value(t2);
-        gp_Pnt pcurPnt = new gp_Pnt((P1.X() + P2.X()) / 2, (P1.Y() + P2.Y()) / 2, (P1.Z() + P2.Z()) / 2);
+        Point3D                   P1  = ACS.Value(t1);
+        Point3D                   P2  = ACS.Value(t2);
+        Point3D pcurPnt = new Point3D((P1.X() + P2.X()) / 2, (P1.Y() + P2.Y()) / 2, (P1.Z() + P2.Z()) / 2);
 
         ShapeAnalysis_TransferParametersProj SFTP  = new ShapeAnalysis_TransferParametersProj(E, face);
         NCollection_HSequence<double>        Seq2d = new NCollection_HSequence<double>();
@@ -2424,7 +2429,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             ltrim += dt;
             Geom_TrimmedCurve                   trim1    = new Geom_TrimmedCurve(crv, f, ftrim);
             GeomConvert_CompCurveToBSplineCurve connect1 = new GeomConvert_CompCurveToBSplineCurve(trim1);
-            NCollection_Array1<gp_Pnt>          Poles1   = new NCollection_Array1<gp_Pnt>(1, 2);
+            NCollection_Array1<Point3D>          Poles1   = new NCollection_Array1<Point3D>(1, 2);
             NCollection_Array1<double>          Knots1   = new NCollection_Array1<double>(1, 2);
             NCollection_Array1<int>             Mults1   = new NCollection_Array1<int>(1, 2);
 
@@ -2440,13 +2445,13 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             // create b-spline curve
             Geom_BSplineCurve patch1 = new Geom_BSplineCurve(Poles1, Knots1, Mults1, 1);
 
-            if (!connect1.Add(patch1, Occt.Precision.PConfusion(), true, false))
+            if (!connect1.Add(patch1, Kerf.Engine.Foundation.Precision.PConfusion(), true, false))
             {
                 return false;
             }
 
             // last segment
-            if (!connect1.Add(trim1, Occt.Precision.PConfusion(), true, false))
+            if (!connect1.Add(trim1, Kerf.Engine.Foundation.Precision.PConfusion(), true, false))
             {
                 return false;
             }
@@ -2510,7 +2515,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         // first segment for 2d curve
         Geom2d_TrimmedCurve? trim1 = null;
-        if ((t1 - a) > Occt.Precision.PConfusion())
+        if ((t1 - a) > Kerf.Engine.Foundation.Precision.PConfusion())
         {
             trim1 = new Geom2d_TrimmedCurve(c2d!, a, t1);
         }
@@ -2523,14 +2528,14 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             return false;
         }
 
-        Geom_Surface?       S  = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface?       S  = BRep_Tool.Surface(face, out Placement L);
         Geom2dAdaptor_Curve AC = new Geom2dAdaptor_Curve(c2d!);
         GeomAdaptor_Surface AS = new GeomAdaptor_Surface(S!);
 
         Adaptor3d_CurveOnSurface ACS = new Adaptor3d_CurveOnSurface(AC, AS);
-        gp_Pnt                   P1  = ACS.Value(t1);
-        gp_Pnt                   P2  = ACS.Value(t2);
-        gp_Pnt pcurPnt = new gp_Pnt((P1.X() + P2.X()) / 2, (P1.Y() + P2.Y()) / 2, (P1.Z() + P2.Z()) / 2);
+        Point3D                   P1  = ACS.Value(t1);
+        Point3D                   P2  = ACS.Value(t2);
+        Point3D pcurPnt = new Point3D((P1.X() + P2.X()) / 2, (P1.Y() + P2.Y()) / 2, (P1.Z() + P2.Z()) / 2);
 
         // transfer parameters from pcurve to 3d curve
         ShapeAnalysis_TransferParametersProj SFTP  = new ShapeAnalysis_TransferParametersProj(E, face);
@@ -2574,9 +2579,9 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         }
 
         // create a point for middle vertex
-        gp_Pnt pnt1 = crv.Value(ftrim);
-        gp_Pnt pnt2 = crv.Value(ltrim);
-        gp_Pnt Pmid = new gp_Pnt((pnt1.X() + pnt2.X()) / 2, (pnt1.Y() + pnt2.Y()) / 2, (pnt1.Z() + pnt2.Z()) / 2);
+        Point3D pnt1 = crv.Value(ftrim);
+        Point3D pnt2 = crv.Value(ltrim);
+        Point3D Pmid = new Point3D((pnt1.X() + pnt2.X()) / 2, (pnt1.Y() + pnt2.Y()) / 2, (pnt1.Z() + pnt2.Z()) / 2);
 
         BRep_Builder B = new BRep_Builder();
 
@@ -2650,7 +2655,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         // analysis
         NCollection_Sequence<IntRes2d_IntersectionPoint> points2d       = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
-        NCollection_Sequence<gp_Pnt>                     points3d       = new NCollection_Sequence<gp_Pnt>();
+        NCollection_Sequence<Point3D>                     points3d       = new NCollection_Sequence<Point3D>();
         ShapeAnalysis_Wire?                              theAdvAnalyzer = myAnalyzer;
         if (theAdvAnalyzer is null)
         {
@@ -2675,8 +2680,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         TopoDS_Vertex      V2   = sae.LastVertex(E);
         double             tol1 = BRep_Tool.Tolerance(V1);
         double             tol2 = BRep_Tool.Tolerance(V2);
-        gp_Pnt             pnt1 = BRep_Tool.Pnt(V1);
-        gp_Pnt             pnt2 = BRep_Tool.Pnt(V2);
+        Point3D             pnt1 = BRep_Tool.Pnt(V1);
+        Point3D             pnt2 = BRep_Tool.Pnt(V2);
 
         // cycle is to verify fix in case of RemoveLoop
         double        tolfact = 0.1; // factor for shifting by parameter in RemoveLoop
@@ -2692,7 +2697,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 double prevFirst = 0, prevLast = 0;
                 for (int i = 1; i <= points2d.Length(); i++)
                 {
-                    gp_Pnt pint   = points3d.Value(i);
+                    Point3D pint   = points3d.Value(i);
                     double dist21 = pnt1.SquareDistance(pint);
                     double dist22 = pnt2.SquareDistance(pint);
                     if (dist21 < tol1 * tol1 || dist22 < tol2 * tol2)
@@ -2753,7 +2758,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 if (loopRemoved)
                 {
                     NCollection_Sequence<IntRes2d_IntersectionPoint> pnts2d = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
-                    NCollection_Sequence<gp_Pnt>                     pnts3d = new NCollection_Sequence<gp_Pnt>();
+                    NCollection_Sequence<Point3D>                     pnts3d = new NCollection_Sequence<Point3D>();
                     theAdvAnalyzer.CheckSelfIntersectingEdge(num, pnts2d, pnts3d);
                     if (!theAdvAnalyzer.LastCheckStatus(ShapeExtend_DONE))
                     {
@@ -2841,13 +2846,13 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         if (LastFixStatus(ShapeExtend_DONE) && !myShape.IsNull())
         {
-            SendWarning(E, new Message_Msg("FixAdvWire.FixIntersection.MSG5")); // Edge was self-intersecting, corrected
+            SendWarning(E, new Msg("FixAdvWire.FixIntersection.MSG5")); // Edge was self-intersecting, corrected
         }
 
         return LastFixStatus(ShapeExtend_DONE);
     }
 
-    private static double ComputeLocalDeviation(in TopoDS_Edge edge, in gp_Pnt pint, in gp_Pnt pnt, double f, double l,
+    private static double ComputeLocalDeviation(in TopoDS_Edge edge, in Point3D pint, in Point3D pnt, double f, double l,
                                                 in TopoDS_Face face)
     {
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
@@ -2856,7 +2861,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             return RealLast();
         }
 
-        gp_Lin line = new gp_Lin(pint, new gp_Dir(new gp_Vec(pint, pnt)));
+        Line3D line = new Line3D(pint, new Direction3D(new Vector3D(pint, pnt)));
 
         if (sae.PCurve(edge, face, out Geom2d_Curve? Crv, out double fp, out double lp, false))
         {
@@ -2875,7 +2880,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         double    dev  = 0.0;
         for (int i = 1; i < NSEG; i++)
         {
-            gp_Pnt p = c3d!.Value(f + i * step);
+            Point3D p = c3d!.Value(f + i * step);
             double d = line.Distance(p);
             if (dev < d)
             {
@@ -2895,7 +2900,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         // analysis
         NCollection_Sequence<IntRes2d_IntersectionPoint> points2d       = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
-        NCollection_Sequence<gp_Pnt>                     points3d       = new NCollection_Sequence<gp_Pnt>();
+        NCollection_Sequence<Point3D>                     points3d       = new NCollection_Sequence<Point3D>();
         NCollection_Sequence<double>                     errors         = new NCollection_Sequence<double>();
         ShapeAnalysis_Wire?                              theAdvAnalyzer = myAnalyzer;
         if (theAdvAnalyzer is null)
@@ -2940,7 +2945,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         TopoDS_Vertex      Vn  = sae.LastVertex(E2);
 
         double tol = BRep_Tool.Tolerance(V1);
-        gp_Pnt pnt = BRep_Tool.Pnt(V1);
+        Point3D pnt = BRep_Tool.Pnt(V1);
 
         double prevRange1 = RealLast(), prevRange2 = RealLast();
         bool   cutEdge1 = false, cutEdge2 = false;
@@ -2963,7 +2968,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 continue;
             }
 
-            gp_Pnt pint   = points3d.Value(i);
+            Point3D pint   = points3d.Value(i);
             double rad    = errors.Value(i);
             double newtol = 1.0001 * (pnt.Distance(pint) + rad);
 
@@ -3173,7 +3178,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         }
         if (!myShape.IsNull())
         {
-            SendWarning(new Message_Msg("FixAdvWire.FixIntersection.MSG10")); // Edges were intersecting, corrected
+            SendWarning(new Msg("FixAdvWire.FixIntersection.MSG10")); // Edges were intersecting, corrected
         }
         return true;
     }
@@ -3188,7 +3193,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             return false;
         }
         NCollection_Sequence<IntRes2d_IntersectionPoint> points2d       = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
-        NCollection_Sequence<gp_Pnt>                     points3d       = new NCollection_Sequence<gp_Pnt>();
+        NCollection_Sequence<Point3D>                     points3d       = new NCollection_Sequence<Point3D>();
         NCollection_Sequence<double>                     errors         = new NCollection_Sequence<double>();
         ShapeAnalysis_Wire?                              theAdvAnalyzer = myAnalyzer;
         if (theAdvAnalyzer is null)
@@ -3204,7 +3209,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         {
             return false;
         }
-        NCollection_Array1<gp_Pnt>       vertexPoints = new NCollection_Array1<gp_Pnt>(1, 4);
+        NCollection_Array1<Point3D>       vertexPoints = new NCollection_Array1<Point3D>(1, 4);
         NCollection_Array1<double>       vertexTolers = new NCollection_Array1<double>(1, 4);
         NCollection_Array1<double>       newTolers    = new NCollection_Array1<double>(1, 4);
         NCollection_Array1<TopoDS_Shape> vertices     = new NCollection_Array1<TopoDS_Shape>(1, 4);
@@ -3238,13 +3243,13 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         int    nb = points3d.Length();
         for (i = 1; i <= nb; i++)
         {
-            gp_Pnt pint = points3d.Value(i);
+            Point3D pint = points3d.Value(i);
 
             // searching for the nearest vertexies to the intersection point
             double aVtx1Param = 0.0, aVtx2Param = 0.0;
             int    aVC1, aVC2;
             double aMinDist          = RealLast();
-            gp_Pnt aNearestVertex    = new gp_Pnt();
+            Point3D aNearestVertex    = new Point3D();
             double aNecessaryVtxTole = 0.0;
             for (aVC1 = 1; aVC1 <= 2; aVC1++)
             {
@@ -3269,11 +3274,11 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             double                     param1 = IP.ParamOnFirst();
             double                     param2 = IP.ParamOnSecond();
             Geom_Curve?                aCurve1, aCurve2;
-            aCurve1 = BRep_Tool.Curve(edge1, out TopLoc_Location L1, out _, out _);
-            aCurve2 = BRep_Tool.Curve(edge2, out TopLoc_Location L2, out _, out _);
+            aCurve1 = BRep_Tool.Curve(edge1, out Placement L1, out _, out _);
+            aCurve2 = BRep_Tool.Curve(edge2, out Placement L2, out _, out _);
 
             // if aMinDist lower than resolution than the intersection point lyes inside the vertex
-            if (aMinDist < gp.Resolution())
+            if (aMinDist < Constants.Resolution())
             {
                 continue;
             }
@@ -3281,7 +3286,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             double aMaxEdgeTol1 = 0.0, aMaxEdgeTol2 = 0.0;
             if (aMinDist < RealLast() && aCurve1 is not null && aCurve2 is not null)
             {
-                gp_Lin aLig = new gp_Lin(aNearestVertex, new gp_Dir(new gp_Vec(aNearestVertex, pint)));
+                Line3D aLig = new Line3D(aNearestVertex, new Direction3D(new Vector3D(aNearestVertex, pint)));
                 int    aPointsC;
                 double du1   = 0.05 * (param1 - aVtx1Param);
                 double du2   = 0.05 * (param2 - aVtx2Param);
@@ -3290,7 +3295,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 for (aPointsC = 2; aPointsC < 19; aPointsC++)
                 {
                     double u  = aVtx1Param + aPointsC * du1;
-                    gp_Pnt P1 = aCurve1.Value(u);
+                    Point3D P1 = aCurve1.Value(u);
                     P1.Transform(L1.Transformation());
                     double d1 = aLig.Distance(P1) * 2.0000001;
                     if (d1 > tole1 && d1 > aMaxEdgeTol1)
@@ -3299,7 +3304,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                     }
 
                     u         = aVtx2Param + aPointsC * du2;
-                    gp_Pnt P2 = aCurve2.Value(u);
+                    Point3D P2 = aCurve2.Value(u);
                     P2.Transform(L2.Transformation());
                     double d2 = aLig.Distance(P2) * 2.0000001;
                     if (d2 > tole2 && d2 > aMaxEdgeTol2)
@@ -3391,7 +3396,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         if (!myShape.IsNull())
         {
-            SendWarning(new Message_Msg("FixAdvWire.FixIntersection.MSG10")); // Edges were intersecting, corrected
+            SendWarning(new Msg("FixAdvWire.FixIntersection.MSG10")); // Edges were intersecting, corrected
         }
         return true;
     }
@@ -3437,7 +3442,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
     // Example files: r0501_pe #107813, UKI60107-6 250, UKI60107-3 1577.
 
     //: s2 abv 21 Apr 99: add functionality for bending pcurve
-    private static bool TryBendingPCurve(in TopoDS_Edge E, in TopoDS_Face face, in gp_Pnt2d p2d, bool end,
+    private static bool TryBendingPCurve(in TopoDS_Edge E, in TopoDS_Face face, in Point2D p2d, bool end,
                                          ref Geom2d_Curve? c2d, ref double first, ref double last, ref double tol)
     {
         ShapeAnalysis_Edge sae = new ShapeAnalysis_Edge();
@@ -3465,18 +3470,18 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 }
                 // OCCT.NET: frozen: the poles are moved and the curve segmented in place; a copy above in OCCT too,
                 // but guard against a converter that hands back a shared curve
-                if (bs.IsFrozen())
+                if (bs.IsFrozen)
                 {
                     bs = (Geom2d_BSplineCurve)bs.Copy();
                 }
 
                 double par = (end ? last : first);
-                if (Math.Abs(bs.FirstParameter() - par) < Occt.Precision.PConfusion()
+                if (Math.Abs(bs.FirstParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
                     && bs.Multiplicity(1) > bs.Degree())
                 {
                     bs.SetPole(1, p2d);
                 }
-                else if (Math.Abs(bs.LastParameter() - par) < Occt.Precision.PConfusion()
+                else if (Math.Abs(bs.LastParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
                          && bs.Multiplicity(bs.NbKnots()) > bs.Degree())
                 {
                     bs.SetPole(bs.NbPoles(), p2d);
@@ -3484,12 +3489,12 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 else
                 {
                     bs.Segment(first, last);
-                    if (Math.Abs(bs.FirstParameter() - par) < Occt.Precision.PConfusion()
+                    if (Math.Abs(bs.FirstParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
                         && bs.Multiplicity(1) > bs.Degree())
                     {
                         bs.SetPole(1, p2d);
                     }
-                    else if (Math.Abs(bs.LastParameter() - par) < Occt.Precision.PConfusion()
+                    else if (Math.Abs(bs.LastParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
                              && bs.Multiplicity(bs.NbKnots()) > bs.Degree())
                     {
                         bs.SetPole(bs.NbPoles(), p2d);
@@ -3506,7 +3511,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                     return false;
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -3530,7 +3535,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
         //=============
         // First phase: analysis whether the problem (gap) exists
-        gp_Pnt2d p2d1 = new gp_Pnt2d(), p2d2 = new gp_Pnt2d();
+        Point2D p2d1 = new Point2D(), p2d2 = new Point2D();
         myAnalyzer.CheckLacking(num, (force ? Precision() : 0.0), ref p2d1, ref p2d2);
         if (myAnalyzer.LastCheckStatus(ShapeExtend_FAIL))
         {
@@ -3562,8 +3567,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         TopoDS_Face            face = myAnalyzer.Face();
         ShapeAnalysis_Surface? surf = myAnalyzer.Surface();
 
-        gp_Pnt p3d1 = new gp_Pnt(), p3d2 = new gp_Pnt();
-        double tol1 = Occt.Precision.Confusion(), tol2 = Occt.Precision.Confusion(); // SK
+        Point3D p3d1 = new Point3D(), p3d2 = new Point3D();
+        double tol1 = Kerf.Engine.Foundation.Precision.Confusion(), tol2 = Kerf.Engine.Foundation.Precision.Confusion(); // SK
 
         //=============
         //: s2 abv 21 Apr 99: Speculation: try bending pcurves
@@ -3572,7 +3577,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
         double        bendf1 = 0.0, bendl1 = 0.0, bendf2 = 0.0, bendl2 = 0.0;
         if (myGeomMode && !BRep_Tool.IsClosed(E1, face) && !BRep_Tool.IsClosed(E2, face))
         {
-            gp_Pnt2d p2d = new gp_Pnt2d(0.5 * (p2d1.XY() + p2d2.XY()));
+            Point2D p2d = new Point2D(0.5 * (p2d1.XY() + p2d2.XY()));
             bool     ok1 = TryBendingPCurve(E1,
                                         face,
                                         p2d,
@@ -3699,8 +3704,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             // else try to add either degenerated or closed edge
             if (!doAddLong)
             {
-                gp_Pnt pV = new gp_Pnt(0.5 * (BRep_Tool.Pnt(V1).XYZ() + BRep_Tool.Pnt(V2).XYZ()));
-                gp_Pnt pm = myAnalyzer.Surface()!.Value(new gp_Pnt2d(0.5 * (p2d1.XY() + p2d2.XY())));
+                Point3D pV = new Point3D(0.5 * (BRep_Tool.Pnt(V1).XYZ() + BRep_Tool.Pnt(V2).XYZ()));
+                Point3D pm = myAnalyzer.Surface()!.Value(new Point2D(0.5 * (p2d1.XY() + p2d2.XY())));
 
                 double dist = pV.Distance(pm);
                 if (dist <= tol)
@@ -3760,9 +3765,9 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             {
                 B.Degenerated(edge, true); // sln: do it before adding curve
             }
-            gp_Vec2d    v12       = new gp_Vec2d(p2d1, p2d2);
-            Geom2d_Line theLine2d = new Geom2d_Line(p2d1, new gp_Dir2d(v12));
-            B.UpdateEdge(edge, theLine2d, face, Occt.Precision.Confusion());
+            Vector2D    v12       = new Vector2D(p2d1, p2d2);
+            Geom2d_Line theLine2d = new Geom2d_Line(p2d1, new Direction2D(v12));
+            B.UpdateEdge(edge, theLine2d, face, Kerf.Engine.Foundation.Precision.Confusion());
             B.Range(edge, face, 0, dist2d);
             B.Add(edge, newV1.Oriented(TopAbs_FORWARD));
             B.Add(edge, newV2.Oriented(TopAbs_REVERSED));
@@ -3907,9 +3912,9 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 // check whether the whole edges should be removed - this is the case
                 // when split point coincides with the end of the edge;
                 // for closed edges split point may fall at the other end (see issue #0029780)
-                if (Math.Abs(param - (isRemoveFirst ? b : a)) <= Occt.Precision.PConfusion()
+                if (Math.Abs(param - (isRemoveFirst ? b : a)) <= Kerf.Engine.Foundation.Precision.PConfusion()
                     || (sae.IsClosed3d(splitE)
-                        && Math.Abs(param - (isRemoveFirst ? a : b)) <= Occt.Precision.PConfusion()))
+                        && Math.Abs(param - (isRemoveFirst ? a : b)) <= Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     FixDummySeam(n1);
                     // The seam edge is removed from the list. So, need to step back to avoid missing of edge
@@ -3919,7 +3924,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                 else // perform splitting of the edge and adding to wire
                 {
                     // pdn check if it is necessary
-                    if (Math.Abs((isRemoveFirst ? a : b) - param) < Occt.Precision.PConfusion())
+                    if (Math.Abs((isRemoveFirst ? a : b) - param) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
@@ -3942,7 +3947,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                     BRep_Builder  B    = new BRep_Builder();
                     B.MakeVertex(ref Vnew,
                                  Analyzer().Surface()!.Value(c2d!.Value(param)),
-                                 Occt.Precision.Confusion());
+                                 Kerf.Engine.Foundation.Precision.Confusion());
                     TopoDS_Edge wE = splitE;
                     wE.Orientation(TopAbs_FORWARD);
                     TopoDS_Shape aTmpShape = Vnew.Oriented(TopAbs_REVERSED); // for porting
@@ -4000,8 +4005,8 @@ public partial class ShapeFix_Wire : ShapeFix_Root
 
     private static void CopyReversePcurves(in TopoDS_Edge toedge, in TopoDS_Edge fromedge, bool reverse)
     {
-        TopLoc_Location fromLoc = fromedge.Location();
-        TopLoc_Location toLoc   = toedge.Location();
+        Placement fromLoc = fromedge.Location();
+        Placement toLoc   = toedge.Location();
         // OCCT.NET: frozen: the source edge's list is only read (OCCT walks ChangeCurves())
         for (var fromitcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
@@ -4014,7 +4019,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
             if (fromGC.IsCurveOnSurface())
             {
                 Geom_Surface?                              surface = fromGC.Surface();
-                TopLoc_Location                            L       = fromGC.Location();
+                Placement                            L       = fromGC.Location();
                 bool                                       found   = false;
                 NCollection_List<BRep_CurveRepresentation> tolist  = ((BRep_TEdge)toedge.TShape()!).ChangeCurves();
                 BRep_GCurve?                               toGC    = null;
@@ -4048,7 +4053,7 @@ public partial class ShapeFix_Wire : ShapeFix_Root
                         lp         = tmp;
                     }
                     // bug OCC209 invalid location of pcurve in the edge after copying
-                    TopLoc_Location newLoc = (fromLoc * L).Predivided(toLoc);
+                    Placement newLoc = (fromLoc * L).Predivided(toLoc);
                     toGC.SetRange(fp, lp);
                     toGC.PCurve(pcurve);
                     toGC.Location(newLoc);

@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -28,7 +30,7 @@ namespace Occt;
 /// <see cref="InternalOutLinedShape"/> doesn't freeze.
 /// </para>
 /// </remarks>
-public class HLRTopoBRep_OutLiner : Standard_Transient
+public class HLRTopoBRep_OutLiner : Transient
 {
     private TopoDS_Shape myOriginalShape = new();
     private TopoDS_Shape myOutLinedShape = new();
@@ -108,21 +110,21 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
                                      ? BRepTools.ExactCopyForWrite(myOriginalShape, out _, out myCopies)
                                      : myOriginalShape;
 
-                gp_Vec Vecz = new(0.0, 0.0, 1.0);
-                gp_Trsf Tr = P.Transformation();
+                Vector3D Vecz = new(0.0, 0.0, 1.0);
+                Transform3D Tr = P.Transformation();
                 Tr.Invert();
                 Vecz.Transform(Tr);
                 Contap_Contour FO = new();
                 if (P.Perspective())
                 {
-                    gp_Pnt Eye = new();
+                    Point3D Eye = new();
                     Eye.SetXYZ(P.Focus() * Vecz.XYZ());
                     FO.Init(Eye);
                 }
                 else
                 {
-                    gp_Dir DirZ = new(Vecz);
-                    FO.Init(new gp_Vec(DirZ));
+                    Direction3D DirZ = new(Vecz);
+                    FO.Init(new Vector3D(DirZ));
                 }
                 HLRTopoBRep_DSFiller.Insert(myWorkingShape, FO, myDS, MST, nbIso);
                 BuildShape(MST);
@@ -185,7 +187,7 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
                 // Check, if outline edge coincides with face boundary
                 BRepAdaptor_Curve C = new(E);
                 double par = 0.34 * C.FirstParameter() + 0.66 * C.LastParameter();
-                gp_Pnt P = C.Value(par);
+                Point3D P = C.Value(par);
                 TopoDS_Vertex V1, V2, aV1, aV2;
                 TopExp.Vertices(E, out V1, out V2);
                 bool SameEdge = false;
@@ -201,7 +203,7 @@ public class HLRTopoBRep_OutLiner : Standard_Transient
                         if ((V1.IsSame(aV1) && V2.IsSame(aV2)) || (V1.IsSame(aV2) && V2.IsSame(aV1)))
                         {
                             BRepAdaptor_Curve aC = new(aE);
-                            if ((C.GetType() == GeomAbs_Line) && (aC.GetType() == GeomAbs_Line))
+                            if ((C.GetType() == Line) && (aC.GetType() == Line))
                             {
                                 SameEdge = true;
                                 break;

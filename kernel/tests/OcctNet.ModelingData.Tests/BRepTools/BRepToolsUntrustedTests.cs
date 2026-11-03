@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -24,7 +26,7 @@ public class BRepToolsUntrustedTests
     private static void Rejects(string theText)
     {
         var aWatch = Stopwatch.StartNew();
-        Assert.Throws<Storage_StreamFormatError>(() => Read(theText));
+        Assert.Throws<StreamFormatErrorException>(() => Read(theText));
         Assert.True(aWatch.Elapsed < TimeSpan.FromSeconds(5), "too slow: " + aWatch.Elapsed);
     }
 
@@ -64,14 +66,14 @@ public class BRepToolsUntrustedTests
         // a reader of unknown length is assumed to hold UnknownInputLength characters, so 3000 poles are allowed (and
         // the curve can't be read: the stream ends)
         var aReader = new StringReader(aText);
-        Assert.Equal(Standard_Stream.UnknownInputLength, Standard_Stream.InputLength(aReader));
+        Assert.Equal(StreamUtilities.UnknownInputLength, StreamUtilities.InputLength(aReader));
         BRepTools.Read(out TopoDS_Shape aShape, aReader);
         Assert.True(aShape.IsNull());
         // a stream reader over a seekable stream knows its length
         var aStreamReader = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(aText)));
-        Assert.Equal(aText.Length, Standard_Stream.InputLength(aStreamReader));
-        Assert.Throws<Storage_StreamFormatError>(() => BRepTools.Read(out _, aStreamReader));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Standard_Stream.SetInputLength(new StringReader(""), -1));
+        Assert.Equal(aText.Length, StreamUtilities.InputLength(aStreamReader));
+        Assert.Throws<StreamFormatErrorException>(() => BRepTools.Read(out _, aStreamReader));
+        Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(new StringReader(""), -1));
     }
 
     [Fact]
@@ -117,7 +119,7 @@ public class BRepToolsUntrustedTests
                 + "1 0 0 0 0 0 1 1 0 0 0 1 0\nTriangulations 0\n\nTShapes 0\n");
 
         // the static readers too
-        Assert.Throws<Storage_StreamFormatError>(() => GeomTools_CurveSet.ReadCurve(new StringReader(Trimmed(65))));
+        Assert.Throws<StreamFormatErrorException>(() => GeomTools_CurveSet.ReadCurve(new StringReader(Trimmed(65))));
         Assert.NotNull(GeomTools_CurveSet.ReadCurve(new StringReader(Trimmed(64))));
     }
 
@@ -162,7 +164,7 @@ public class BRepToolsUntrustedTests
     {
         // 100,000 nested compounds, built in code: the writer recurses once per level, and stops before the stack
         // overflows
-        TopoDS_Shape aShape = TestShapes.Vertex(new gp_Pnt());
+        TopoDS_Shape aShape = TestShapes.Vertex(new Point3D());
         var aB = new BRep_Builder();
         for (int i = 0; i < 100000; i++)
         {
@@ -261,7 +263,7 @@ public class BRepToolsUntrustedTests
             TopoDS_Shape aShape = Read(theText);
             if (!aShape.IsNull())
             {
-                if (!aShape.TShape()!.IsFrozen())
+                if (!aShape.TShape()!.IsFrozen)
                 {
                     return new InvalidOperationException("a shape read isn't frozen");
                 }
@@ -270,7 +272,7 @@ public class BRepToolsUntrustedTests
                 {
                     BRepTools.Write(aShape, new StringWriter());
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     // a shape OCCT can't write either (a null triangulation or polygon)
                 }
@@ -278,7 +280,7 @@ public class BRepToolsUntrustedTests
 
             return null;
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return null;
         }

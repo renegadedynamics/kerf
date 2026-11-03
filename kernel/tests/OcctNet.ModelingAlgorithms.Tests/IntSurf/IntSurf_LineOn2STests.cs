@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntSurf_Situation;
 using static Occt.IntSurf_TypeTrans;
 
@@ -10,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>OCCT's IntSurf_LineOn2S GTest.</summary>
 public class IntSurf_LineOn2S_Test
 {
-    internal static IntSurf_PntOn2S buildPoint(in gp_Pnt thePoint, double theU1, double theV1, double theU2, double theV2)
+    internal static IntSurf_PntOn2S buildPoint(in Point3D thePoint, double theU1, double theV1, double theU2, double theV2)
     {
         IntSurf_PntOn2S aPnt = new();
         aPnt.SetValue(thePoint, theU1, theV1, theU2, theV2);
@@ -21,27 +23,27 @@ public class IntSurf_LineOn2S_Test
     public void EmptyLineBoxesAreNotOut()
     {
         IntSurf_LineOn2S aLine = new();
-        Assert.False(aLine.IsOutBox(new gp_Pnt(10.0, 10.0, 10.0)));
-        Assert.False(aLine.IsOutSurf1Box(new gp_Pnt2d(10.0, 10.0)));
-        Assert.False(aLine.IsOutSurf2Box(new gp_Pnt2d(10.0, 10.0)));
+        Assert.False(aLine.IsOutBox(new Point3D(10.0, 10.0, 10.0)));
+        Assert.False(aLine.IsOutSurf1Box(new Point2D(10.0, 10.0)));
+        Assert.False(aLine.IsOutSurf2Box(new Point2D(10.0, 10.0)));
     }
 
     [Fact]
     public void PointReplacementInvalidatesCachedBoxes()
     {
         IntSurf_LineOn2S aLine = new();
-        aLine.Add(buildPoint(new gp_Pnt(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0));
-        aLine.Add(buildPoint(new gp_Pnt(1.0, 1.0, 1.0), 1.0, 1.0, 1.0, 1.0));
+        aLine.Add(buildPoint(new Point3D(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0));
+        aLine.Add(buildPoint(new Point3D(1.0, 1.0, 1.0), 1.0, 1.0, 1.0, 1.0));
 
-        Assert.True(aLine.IsOutBox(new gp_Pnt(100.0, 100.0, 100.0)));
-        Assert.True(aLine.IsOutSurf1Box(new gp_Pnt2d(50.0, 50.0)));
+        Assert.True(aLine.IsOutBox(new Point3D(100.0, 100.0, 100.0)));
+        Assert.True(aLine.IsOutSurf1Box(new Point2D(50.0, 50.0)));
 
-        aLine.SetPoint(2, new gp_Pnt(100.0, 100.0, 100.0));
-        Assert.False(aLine.IsOutBox(new gp_Pnt(100.0, 100.0, 100.0)));
+        aLine.SetPoint(2, new Point3D(100.0, 100.0, 100.0));
+        Assert.False(aLine.IsOutBox(new Point3D(100.0, 100.0, 100.0)));
 
-        aLine.Value(2, buildPoint(new gp_Pnt(100.0, 100.0, 100.0), 50.0, 50.0, 60.0, 60.0));
-        Assert.False(aLine.IsOutSurf1Box(new gp_Pnt2d(50.0, 50.0)));
-        Assert.False(aLine.IsOutSurf2Box(new gp_Pnt2d(60.0, 60.0)));
+        aLine.Value(2, buildPoint(new Point3D(100.0, 100.0, 100.0), 50.0, 50.0, 60.0, 60.0));
+        Assert.False(aLine.IsOutSurf1Box(new Point2D(50.0, 50.0)));
+        Assert.False(aLine.IsOutSurf2Box(new Point2D(60.0, 60.0)));
     }
 
     // Split divides line at given index.
@@ -49,10 +51,10 @@ public class IntSurf_LineOn2S_Test
     public void Split_DividesCorrectly()
     {
         IntSurf_LineOn2S aLine = new();
-        aLine.Add(buildPoint(new gp_Pnt(0, 0, 0), 0, 0, 0, 0));
-        aLine.Add(buildPoint(new gp_Pnt(1, 0, 0), 1, 0, 1, 0));
-        aLine.Add(buildPoint(new gp_Pnt(2, 0, 0), 2, 0, 2, 0));
-        aLine.Add(buildPoint(new gp_Pnt(3, 0, 0), 3, 0, 3, 0));
+        aLine.Add(buildPoint(new Point3D(0, 0, 0), 0, 0, 0, 0));
+        aLine.Add(buildPoint(new Point3D(1, 0, 0), 1, 0, 1, 0));
+        aLine.Add(buildPoint(new Point3D(2, 0, 0), 2, 0, 2, 0));
+        aLine.Add(buildPoint(new Point3D(3, 0, 0), 3, 0, 3, 0));
 
         // NCollection_Sequence::Split(Index, SS) moves items Index..N into SS,
         // keeping 1..Index-1 in original.
@@ -73,7 +75,7 @@ public class IntSurf_LineOn2S_Test
 public class IntSurf_LineOn2STests
 {
     private static IntSurf_PntOn2S P(double x, double u1, double u2) =>
-        IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(x, 0, 0), u1, 0, u2, 0);
+        IntSurf_LineOn2S_Test.buildPoint(new Point3D(x, 0, 0), u1, 0, u2, 0);
 
     private static double[] Xs(IntSurf_LineOn2S theLine) =>
         Enumerable.Range(1, theLine.NbPoints()).Select(i => theLine.Value(i).Value().X()).ToArray();
@@ -90,7 +92,7 @@ public class IntSurf_LineOn2STests
         aLine.InsertBefore(1, P(-1, -1, -1));
         Assert.Equal(new[] { -1.0, 0, 1, 2, 3, 4 }, Xs(aLine));
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aLine.InsertBefore(0, P(9, 9, 9)));
+        Assert.ThrowsAny<OutOfRangeException>(() => aLine.InsertBefore(0, P(9, 9, 9)));
     }
 
     [Fact]
@@ -105,10 +107,10 @@ public class IntSurf_LineOn2STests
         Assert.Equal(new[] { 0.0, 1, 3, 4 }, Xs(aLine));
         aLine.Reverse();
         Assert.Equal(new[] { 4.0, 3, 1, 0 }, Xs(aLine));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aLine.RemovePoint(5));
+        Assert.ThrowsAny<OutOfRangeException>(() => aLine.RemovePoint(5));
         aLine.Clear();
         Assert.Equal(0, aLine.NbPoints());
-        Assert.False(aLine.IsOutBox(new gp_Pnt(1e10, 0, 0)));
+        Assert.False(aLine.IsOutBox(new Point3D(1e10, 0, 0)));
     }
 
     [Fact]
@@ -128,64 +130,64 @@ public class IntSurf_LineOn2STests
         Assert.Equal(new[] { 0.0, 1, 2 }, Xs(anAll));
 
         // The split line has its own boxes: they cover its points only.
-        Assert.False(anAll.IsOutBox(new gp_Pnt(2, 0, 0)));
-        Assert.True(anAll.IsOutBox(new gp_Pnt(2.1, 0, 0)));
+        Assert.False(anAll.IsOutBox(new Point3D(2, 0, 0)));
+        Assert.True(anAll.IsOutBox(new Point3D(2.1, 0, 0)));
     }
 
     [Fact]
     public void SetUV_changes_one_surface_s_parameters_in_place()
     {
         IntSurf_LineOn2S aLine = new();
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(1, 2, 3), 1, 2, 3, 4));
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(1, 2, 3), 1, 2, 3, 4));
         aLine.SetUV(1, true, 10, 20);
         aLine.Value(1).Parameters(out double u1, out double v1, out double u2, out double v2);
         Assert.Equal((10.0, 20.0, 3.0, 4.0), (u1, v1, u2, v2));
         aLine.SetUV(1, false, 30, 40);
         aLine.Value(1).Parameters(out u1, out v1, out u2, out v2);
         Assert.Equal((10.0, 20.0, 30.0, 40.0), (u1, v1, u2, v2));
-        Assert.Equal(new gp_Pnt(1, 2, 3), aLine.Value(1).Value());
+        Assert.Equal(new Point3D(1, 2, 3), aLine.Value(1).Value());
     }
 
     [Fact]
     public void The_boxes_are_enlarged_by_one_percent_of_their_largest_side()
     {
         IntSurf_LineOn2S aLine = new();
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(0, 0, 0), 0, 0, 0, 0));
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(10, 2, 1), 10, 2, 4, 8));
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(0, 0, 0), 0, 0, 0, 0));
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(10, 2, 1), 10, 2, 4, 8));
 
         // 3D: largest side 10, gap 0.1 on every side
-        Assert.False(aLine.IsOutBox(new gp_Pnt(10.09, 2.09, 1.09)));
-        Assert.True(aLine.IsOutBox(new gp_Pnt(10.11, 0, 0)));
-        Assert.True(aLine.IsOutBox(new gp_Pnt(0, 0, -0.11)));
+        Assert.False(aLine.IsOutBox(new Point3D(10.09, 2.09, 1.09)));
+        Assert.True(aLine.IsOutBox(new Point3D(10.11, 0, 0)));
+        Assert.True(aLine.IsOutBox(new Point3D(0, 0, -0.11)));
         // surface 1: largest side 10 (u), gap 0.1
-        Assert.False(aLine.IsOutSurf1Box(new gp_Pnt2d(-0.09, 2.09)));
-        Assert.True(aLine.IsOutSurf1Box(new gp_Pnt2d(0, 2.11)));
+        Assert.False(aLine.IsOutSurf1Box(new Point2D(-0.09, 2.09)));
+        Assert.True(aLine.IsOutSurf1Box(new Point2D(0, 2.11)));
         // surface 2: largest side 8 (v), gap 0.08
-        Assert.False(aLine.IsOutSurf2Box(new gp_Pnt2d(4.07, 8.07)));
-        Assert.True(aLine.IsOutSurf2Box(new gp_Pnt2d(4.09, 0)));
+        Assert.False(aLine.IsOutSurf2Box(new Point2D(4.07, 8.07)));
+        Assert.True(aLine.IsOutSurf2Box(new Point2D(4.09, 0)));
     }
 
     [Fact]
     public void Additions_grow_a_computed_box_and_replacements_forget_it()
     {
         IntSurf_LineOn2S aLine = new();
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(0, 0, 0), 0, 0, 0, 0));
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(10, 0, 0), 10, 0, 10, 0));
-        Assert.True(aLine.IsOutBox(new gp_Pnt(20, 0, 0))); // computes the box, gap 0.1
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(0, 0, 0), 0, 0, 0, 0));
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(10, 0, 0), 10, 0, 10, 0));
+        Assert.True(aLine.IsOutBox(new Point3D(20, 0, 0))); // computes the box, gap 0.1
 
         // Add grows the computed box (keeping its gap) instead of recomputing it.
-        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new gp_Pnt(20, 0, 0), 20, 0, 20, 0));
-        Assert.False(aLine.IsOutBox(new gp_Pnt(20.09, 0, 0)));
-        Assert.True(aLine.IsOutBox(new gp_Pnt(20.15, 0, 0)));
+        aLine.Add(IntSurf_LineOn2S_Test.buildPoint(new Point3D(20, 0, 0), 20, 0, 20, 0));
+        Assert.False(aLine.IsOutBox(new Point3D(20.09, 0, 0)));
+        Assert.True(aLine.IsOutBox(new Point3D(20.15, 0, 0)));
 
         // RemovePoint forgets it: the next query recomputes it with a gap of 0.2.
         aLine.RemovePoint(2);
-        Assert.False(aLine.IsOutBox(new gp_Pnt(20.15, 0, 0)));
+        Assert.False(aLine.IsOutBox(new Point3D(20.15, 0, 0)));
 
         // SetUV grows the box of its surface only
-        Assert.True(aLine.IsOutSurf1Box(new gp_Pnt2d(30, 0)));
+        Assert.True(aLine.IsOutSurf1Box(new Point2D(30, 0)));
         aLine.SetUV(1, true, 30, 0);
-        Assert.False(aLine.IsOutSurf1Box(new gp_Pnt2d(30, 0)));
+        Assert.False(aLine.IsOutSurf1Box(new Point2D(30, 0)));
     }
 }
 
@@ -196,20 +198,20 @@ public class IntSurfTests
     public void PntOn2S_sets_and_compares_as_OCCT()
     {
         IntSurf_PntOn2S aP = new();
-        Assert.Equal(new gp_Pnt(0, 0, 0), aP.Value());
-        aP.SetValue(new gp_Pnt(1, 2, 3), true, 4, 5);
+        Assert.Equal(new Point3D(0, 0, 0), aP.Value());
+        aP.SetValue(new Point3D(1, 2, 3), true, 4, 5);
         aP.SetValue(false, 6, 7);
-        Assert.Equal(new gp_Pnt2d(4, 5), aP.ValueOnSurface(true));
-        Assert.Equal(new gp_Pnt2d(6, 7), aP.ValueOnSurface(false));
+        Assert.Equal(new Point2D(4, 5), aP.ValueOnSurface(true));
+        Assert.Equal(new Point2D(6, 7), aP.ValueOnSurface(false));
         aP.ParametersOnSurface(false, out double u, out double v);
         Assert.Equal((6.0, 7.0), (u, v));
 
-        IntSurf_PntOn2S aQ = aP.WithValue(new gp_Pnt(1, 2, 3.001), 4, 5.01, 6, 7);
+        IntSurf_PntOn2S aQ = aP.WithValue(new Point3D(1, 2, 3.001), 4, 5.01, 6, 7);
         Assert.False(aP.IsSame(aQ)); // 3D tolerance 0
         Assert.True(aP.IsSame(aQ, 0.002)); // 2D not compared
         Assert.False(aP.IsSame(aQ, 0.002, 0.001));
         Assert.True(aP.IsSame(aQ, 0.002, 0.02));
-        Assert.Equal(new gp_Pnt(1, 2, 3), aP.Value()); // WithValue copies
+        Assert.Equal(new Point3D(1, 2, 3), aP.Value()); // WithValue copies
     }
 
     [Fact]
@@ -217,12 +219,12 @@ public class IntSurfTests
     {
         IntSurf_Transition anUndecided = new();
         Assert.Equal(IntSurf_Undecided, anUndecided.TransitionType());
-        Assert.ThrowsAny<Standard_DomainError>(() => anUndecided.IsTangent());
-        Assert.ThrowsAny<Standard_DomainError>(() => anUndecided.Situation());
+        Assert.ThrowsAny<DomainErrorException>(() => anUndecided.IsTangent());
+        Assert.ThrowsAny<DomainErrorException>(() => anUndecided.Situation());
 
         IntSurf_Transition anIn = new(true, IntSurf_In);
         Assert.True(anIn.IsTangent());
-        Assert.ThrowsAny<Standard_DomainError>(() => anIn.IsOpposite());
+        Assert.ThrowsAny<DomainErrorException>(() => anIn.IsOpposite());
 
         IntSurf_Transition aTouch = new(false, IntSurf_Outside, true);
         Assert.Equal(IntSurf_Touch, aTouch.TransitionType());
@@ -239,40 +241,40 @@ public class IntSurfTests
     [Fact]
     public void MakeTransition_by_the_mixed_product()
     {
-        gp_Dir aN = new(0, 0, 1);
+        Direction3D aN = new(0, 0, 1);
         IntSurf_Transition aT1 = new(), aT2 = new();
 
         // line along x, restriction along y: (y ^ x) . z < 0 -> line out, arc in
-        IntSurf.MakeTransition(new gp_Vec(1, 0, 0), new gp_Vec(0, 1, 0), aN, ref aT1, ref aT2);
+        IntSurf.MakeTransition(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0), aN, ref aT1, ref aT2);
         Assert.Equal((IntSurf_Out, IntSurf_In), (aT1.TransitionType(), aT2.TransitionType()));
         Assert.False(aT1.IsTangent());
 
-        IntSurf.MakeTransition(new gp_Vec(0, 1, 0), new gp_Vec(1, 0, 0), aN, ref aT1, ref aT2);
+        IntSurf.MakeTransition(new Vector3D(0, 1, 0), new Vector3D(1, 0, 0), aN, ref aT1, ref aT2);
         Assert.Equal((IntSurf_In, IntSurf_Out), (aT1.TransitionType(), aT2.TransitionType()));
 
         // collinear tangents: touch, unknown, opposite when they point away from each other
-        IntSurf.MakeTransition(new gp_Vec(1, 0, 0), new gp_Vec(-2, 0, 0), aN, ref aT1, ref aT2);
+        IntSurf.MakeTransition(new Vector3D(1, 0, 0), new Vector3D(-2, 0, 0), aN, ref aT1, ref aT2);
         Assert.Equal(IntSurf_Touch, aT1.TransitionType());
         Assert.Equal(IntSurf_Unknown, aT1.Situation());
         Assert.True(aT1.IsOpposite());
         Assert.True(aT2.IsTangent());
 
         // a null line tangent: undecided
-        IntSurf.MakeTransition(new gp_Vec(0, 0, 0), new gp_Vec(1, 0, 0), aN, ref aT1, ref aT2);
+        IntSurf.MakeTransition(new Vector3D(0, 0, 0), new Vector3D(1, 0, 0), aN, ref aT1, ref aT2);
         Assert.Equal(IntSurf_Undecided, aT1.TransitionType());
 
         // tangents in the plane of the normal: |yu| <= 1e-4, undecided
-        IntSurf.MakeTransition(new gp_Vec(1, 0, 0), new gp_Vec(0, 0, 1), aN, ref aT1, ref aT2);
+        IntSurf.MakeTransition(new Vector3D(1, 0, 0), new Vector3D(0, 0, 1), aN, ref aT1, ref aT2);
         Assert.Equal(IntSurf_Undecided, aT2.TransitionType());
     }
 
     [Fact]
     public void PathPoint_copies_share_their_parameters_as_OCCT_s_handle()
     {
-        IntSurf_PathPoint aP = new(new gp_Pnt(1, 2, 3), 0.5, 0.25);
+        IntSurf_PathPoint aP = new(new Point3D(1, 2, 3), 0.5, 0.25);
         Assert.True(aP.IsTangent());
         Assert.True(aP.IsPassingPnt());
-        Assert.ThrowsAny<StdFail_UndefinedDerivative>(() => aP.Direction3d());
+        Assert.ThrowsAny<UndefinedDerivativeException>(() => aP.Direction3d());
 
         IntSurf_PathPoint aCopy = aP;
         aCopy.AddUV(0.75, 0.125);
@@ -280,12 +282,12 @@ public class IntSurfTests
         aP.Parameters(1, out double u, out double v);
         Assert.Equal((0.75, 0.125), (u, v));
 
-        aCopy.SetDirections(new gp_Vec(1, 0, 0), new gp_Dir2d(0, 1));
+        aCopy.SetDirections(new Vector3D(1, 0, 0), new Direction2D(0, 1));
         Assert.False(aCopy.IsTangent());
         Assert.True(aP.IsTangent()); // the flags are the copy's own
-        Assert.Equal(new gp_Dir2d(0, 1), IntSurf_PathPointTool.Direction2d(aCopy));
+        Assert.Equal(new Direction2D(0, 1), IntSurf_PathPointTool.Direction2d(aCopy));
 
-        aCopy.SetValue(new gp_Pnt(), 9, 9); // a new sequence
+        aCopy.SetValue(new Point3D(), 9, 9); // a new sequence
         Assert.Equal(0, aCopy.Multiplicity());
         Assert.Equal(1, aP.Multiplicity());
         IntSurf_PathPointTool.Value2d(aP, out u, out v);
@@ -295,18 +297,18 @@ public class IntSurfTests
     [Fact]
     public void InteriorPoint_and_its_tool()
     {
-        IntSurf_InteriorPoint aP = new(new gp_Pnt(1, 2, 3), 4, 5, new gp_Vec(0, 0, 2), new gp_Vec2d(3, 4));
+        IntSurf_InteriorPoint aP = new(new Point3D(1, 2, 3), 4, 5, new Vector3D(0, 0, 2), new Vector2D(3, 4));
         IntSurf_InteriorPointTool.Value2d(aP, out double u, out double v);
         Assert.Equal((4.0, 5.0), (u, v));
-        Assert.Equal(new gp_Dir2d(0.6, 0.8), IntSurf_InteriorPointTool.Direction2d(aP));
-        Assert.Equal(new gp_Vec(0, 0, 2), IntSurf_InteriorPointTool.Direction3d(aP));
+        Assert.Equal(new Direction2D(0.6, 0.8), IntSurf_InteriorPointTool.Direction2d(aP));
+        Assert.Equal(new Vector3D(0, 0, 2), IntSurf_InteriorPointTool.Direction3d(aP));
     }
 
     [Fact]
     public void SetPeriod_reads_both_surfaces()
     {
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 2));
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new gp_Pln()));
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 2));
+        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D()));
         Span<double> aPeriods = stackalloc double[4];
         IntSurf.SetPeriod(aCyl, aPln, aPeriods);
         Assert.Equal(new[] { 2 * Math.PI, 0, 0, 0 }, aPeriods.ToArray());

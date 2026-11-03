@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -94,7 +95,7 @@ public class BOPAlgo_MakePeriodicTests
         Assert.True(aMaker.RepeatedShape().IsNull());
         Assert.False(aMaker.Shape().IsSame(aP));
         Assert.Equal(400.0, Volume(aMaker.Shape()), 1e-9);
-        Assert.True(aP.TShape()!.IsFrozen());
+        Assert.True(aP.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -107,7 +108,7 @@ public class BOPAlgo_MakePeriodicTests
         {
             var aProps = new GProp_GProps();
             BRepGProp.SurfaceProperties(anExp.Current(), aProps);
-            gp_Pnt aC = aProps.CentreOfMass();
+            Point3D aC = aProps.CentreOfMass();
             bool anIsZ = Math.Abs(aC.Z()) < 1e-9 || Math.Abs(aC.Z() - 10.0) < 1e-9;
             Assert.Equal(anIsZ ? 0 : 1, aMaker.GetTwins(anExp.Current()).Count);
         }
@@ -141,7 +142,7 @@ public class BOPAlgo_MakePeriodicTests
     public void Opposite_sides_are_twins()
     {
         // A box made periodic along X with its own length: its ends are associated
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 4.0, 3.0, 2.0).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 4.0, 3.0, 2.0).Shape();
         BOPAlgo_MakePeriodic aMaker = new();
         aMaker.SetShape(aBox);
         aMaker.MakeXPeriodic(true, 4.0);
@@ -161,7 +162,7 @@ public class BOPAlgo_MakePeriodicTests
         Assert.Equal(3, Count(aR, TopAbs_SOLID));
         IReadOnlyList<TopoDS_Shape> aTwins = [.. aMaker.GetTwins(aXMin)];
         Assert.Equal(3, aTwins.Count);
-        Assert.All(aTwins, s => Assert.True(s.TShape()!.IsFrozen()));
+        Assert.All(aTwins, s => Assert.True(s.TShape()!.IsFrozen));
     }
 
     [Fact]
@@ -176,12 +177,12 @@ public class BOPAlgo_MakePeriodicTests
         Assert.True(aHistory.HasModified());
         TopoDS_Shape aSolid = new TopExp_Explorer(aBox, TopAbs_SOLID).Current();
         Assert.True(aHistory.Modified(aSolid).Single().IsSame(new TopExp_Explorer(aMaker.Shape(), TopAbs_SOLID).Current()));
-        Assert.True(aMaker.Shape().TShape()!.IsFrozen());
+        Assert.True(aMaker.Shape().TShape()!.IsFrozen);
 
         // repetitions add the generated copies
         aMaker.RepeatShape(0, 1);
         Assert.Equal(2, aMaker.History()!.Generated(aSolid).Count);
-        Assert.True(aMaker.RepeatedShape().TShape()!.IsFrozen());
+        Assert.True(aMaker.RepeatedShape().TShape()!.IsFrozen);
         Assert.Equal(aText, BRepTextComparison.Write(aBox));
     }
 
@@ -247,7 +248,7 @@ public class BOPAlgo_MakePeriodicTests
     [Fact]
     public void Serial_equals_parallel()
     {
-        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(1, 1, -1), new gp_Dir(0, 0, 1)), 2.0, 5.0).Shape();
+        TopoDS_Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 1, -1), new Direction3D(0, 0, 1)), 2.0, 5.0).Shape();
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             BOPAlgo_MakePeriodic aMaker = new();

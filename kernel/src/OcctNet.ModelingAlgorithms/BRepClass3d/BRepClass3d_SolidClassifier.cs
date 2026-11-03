@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -46,7 +47,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
     }
 
     /// <summary>Classifies the point <paramref name="P"/> with the tolerance <paramref name="Tol"/> in the shape <paramref name="S"/>.</summary>
-    public BRepClass3d_SolidClassifier(in TopoDS_Shape S, in gp_Pnt P, double Tol)
+    public BRepClass3d_SolidClassifier(in TopoDS_Shape S, in Point3D P, double Tol)
     {
         explorer = new BRepClass3d_SolidExplorer(S);
         aSolidLoaded = true;
@@ -54,7 +55,7 @@ public class BRepClass3d_SolidClassifier : BRepClass3d_SClassifier
     }
 
     /// <summary>Classifies the point <paramref name="P"/> with the tolerance <paramref name="Tol"/>.</summary>
-    public void Perform(in gp_Pnt P, double Tol)
+    public void Perform(in Point3D P, double Tol)
     {
         Perform(explorer, P, Tol);
     }

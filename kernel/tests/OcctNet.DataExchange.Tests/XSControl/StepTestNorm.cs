@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
 
@@ -13,7 +14,7 @@ namespace OcctNet.DataExchange.Tests.XSControl;
 internal sealed class TestStepLibrary : IFSelect_WorkLibrary
 {
     public override int ReadFile(string name, ref Interface_InterfaceModel? model, Interface_Protocol? protocol,
-                                 Message_ProgressRange theProgress = default)
+                                 ProgressRange theProgress = default)
     {
         if (protocol is not StepData_Protocol stepro)
         {
@@ -23,7 +24,7 @@ internal sealed class TestStepLibrary : IFSelect_WorkLibrary
     }
 
     public override int ReadStream(string theName, Stream theIStream, ref Interface_InterfaceModel? model,
-                                   Interface_Protocol? protocol, Message_ProgressRange theProgress = default)
+                                   Interface_Protocol? protocol, ProgressRange theProgress = default)
     {
         if (protocol is not StepData_Protocol stepro)
         {
@@ -48,10 +49,10 @@ internal sealed class TestStepLibrary : IFSelect_WorkLibrary
         return SW.Print(aFile);
     }
 
-    public override void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Standard_Transient? entity,
+    public override void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Transient? entity,
                                     TextWriter S, int level)
     {
-        S.Write(model!.StringLabel(entity)!.ToCString() + " " + entity!.DynamicType().Name);
+        S.Write(model!.StringLabel(entity)!.ToCString() + " " + entity!.DynamicTypeName());
     }
 }
 
@@ -94,7 +95,7 @@ internal sealed class TestStepController : XSControl_Controller
         {
             stat = WS.WorkLibrary()!.ReadFile(thePath, ref aRead, WS.Protocol());
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return IFSelect_ReturnStatus.IFSelect_RetFail;
         }
@@ -114,7 +115,7 @@ internal sealed class TestStepController : XSControl_Controller
 /// <summary>What tools/xscontrolrec writes for a STEP file (its format, line for line).</summary>
 internal static class XSControlDump
 {
-    private static void DumpList(List<string> O, string theTag, Interface_InterfaceModel M, NCollection_HSequence<Standard_Transient>? L)
+    private static void DumpList(List<string> O, string theTag, Interface_InterfaceModel M, NCollection_HSequence<Transient>? L)
     {
         if (L is null)
         {
@@ -197,7 +198,7 @@ internal static class XSControlDump
         int aMid = (nb + 1) / 2;
         TCollection_HAsciiString? aLab = M!.StringLabel(M.Value(aMid));
         O.Add($"label {aMid} {aLab?.ToCString() ?? ""} {(aLab is null ? 0 : WS.NumberFromLabel(aLab.ToCString()))}");
-        NCollection_HSequence<Standard_Transient>? aCp = WS.GiveList("rec-type(CartesianPoint)");
+        NCollection_HSequence<Transient>? aCp = WS.GiveList("rec-type(CartesianPoint)");
         O.Add($"sel-cp {(aCp is null ? -1 : aCp.Length())}");
     }
 
@@ -210,7 +211,7 @@ internal static class XSControlDump
             Record(O, thePath, false);
             Record(O, thePath, true);
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
             O.Add("exception " + anExc.Message);
         }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -9,31 +10,31 @@ namespace OcctNet.ModelingData.Tests;
 /// <summary>BRepLProp's continuity, BRepLProp_CLProps, BRepLProp_SLProps and BRepLProp_SurfaceTool.</summary>
 public class BRepLPropTests
 {
-    private static Geom_Circle Circle(double theR) => new(new gp_Ax2(new gp_Pnt(1, 1, 0), new gp_Dir(0, 0, 1)), theR);
+    private static Geom_Circle Circle(double theR) => new(new Frame3D(new Point3D(1, 1, 0), new Direction3D(0, 0, 1)), theR);
 
     [Fact]
     public void CLProps_OnACircleEdge()
     {
         TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(Circle(2.0), 0.0, Math.PI));
         var aC = new BRepAdaptor_Curve(anE);
-        var aProps = new BRepLProp_CLProps(aC, 0.5 * Math.PI, 2, Precision.Confusion());
-        Assert.True(aProps.Value().Distance(new gp_Pnt(1, 3, 0)) < 1e-14);
+        var aProps = new BRepLProp_CLProps(aC, 0.5 * Math.PI, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aProps.Value().Distance(new Point3D(1, 3, 0)) < 1e-14);
         Assert.Equal(0.5, aProps.Curvature(), 1e-14);
-        aProps.CentreOfCurvature(out gp_Pnt aCentre);
-        Assert.True(aCentre.Distance(new gp_Pnt(1, 1, 0)) < 1e-14);
+        aProps.CentreOfCurvature(out Point3D aCentre);
+        Assert.True(aCentre.Distance(new Point3D(1, 1, 0)) < 1e-14);
         Assert.True(aProps.IsTangentDefined());
-        aProps.Tangent(out gp_Dir aT);
-        Assert.True(aT.IsEqual(new gp_Dir(-1, 0, 0), 1e-14));
+        aProps.Tangent(out Direction3D aT);
+        Assert.True(aT.IsEqual(new Direction3D(-1, 0, 0), 1e-14));
 
         // the properties keep their own copy of the adaptor
-        aC.Initialize(TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0))));
+        aC.Initialize(TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0))));
         aProps.SetParameter(0.0);
-        Assert.True(aProps.Value().Distance(new gp_Pnt(3, 1, 0)) < 1e-14);
+        Assert.True(aProps.Value().Distance(new Point3D(3, 1, 0)) < 1e-14);
 
-        var aLater = new BRepLProp_CLProps(1, Precision.Confusion());
+        var aLater = new BRepLProp_CLProps(1, global::Kerf.Engine.Foundation.Precision.Confusion());
         aLater.SetCurve(aC);
         aLater.SetParameter(0.25);
-        Assert.Equal(new gp_Pnt(0.25, 0, 0), aLater.Value());
+        Assert.Equal(new Point3D(0.25, 0, 0), aLater.Value());
     }
 
     [Fact]
@@ -41,13 +42,13 @@ public class BRepLPropTests
     {
         TopoDS_Face aFace = TestShapes.Frozen(TestShapes.CylinderFace(2.0, 3.0));
         var aS = new BRepAdaptor_Surface(aFace);
-        var aProps = new BRepLProp_SLProps(aS, 1.0, 1.5, 2, Precision.Confusion());
+        var aProps = new BRepLProp_SLProps(aS, 1.0, 1.5, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aProps.IsCurvatureDefined());
         Assert.Equal(0.5, Math.Abs(aProps.MaxCurvature()) + Math.Abs(aProps.MinCurvature()), 1e-14);
         Assert.Equal(0.0, aProps.GaussianCurvature(), 1e-14);
         Assert.True(aProps.IsNormalDefined());
 
-        var aLater = new BRepLProp_SLProps(1, Precision.Confusion());
+        var aLater = new BRepLProp_SLProps(1, global::Kerf.Engine.Foundation.Precision.Confusion());
         aLater.SetSurface(aS);
         aLater.SetParameters(1.0, 1.5);
         Assert.Equal(aProps.Value(), aLater.Value());
@@ -65,9 +66,9 @@ public class BRepLPropTests
         Assert.Equal(0.0, V1);
         Assert.Equal(2 * Math.PI, U2, 1e-15);
         Assert.Equal(3.0, V2);
-        BRepLProp_SurfaceTool.Value(aS, 0.5, 1.0, out gp_Pnt aP);
-        BRepLProp_SurfaceTool.D2(aS, 0.5, 1.0, out gp_Pnt aP2, out gp_Vec aD1U, out _, out _, out _, out _);
-        BRepLProp_SurfaceTool.D1(aS, 0.5, 1.0, out _, out gp_Vec aD1U1, out _);
+        BRepLProp_SurfaceTool.Value(aS, 0.5, 1.0, out Point3D aP);
+        BRepLProp_SurfaceTool.D2(aS, 0.5, 1.0, out Point3D aP2, out Vector3D aD1U, out _, out _, out _, out _);
+        BRepLProp_SurfaceTool.D1(aS, 0.5, 1.0, out _, out Vector3D aD1U1, out _);
         Assert.Equal(aP, aP2);
         Assert.Equal(aD1U, aD1U1);
         Assert.Equal(aD1U, BRepLProp_SurfaceTool.DN(aS, 0.5, 1.0, 1, 0));
@@ -84,12 +85,12 @@ public class BRepLPropTests
         TopoDS_Edge aHalf2 = TestShapes.Frozen(TestShapes.Edge(aCircle, Math.PI, 2 * Math.PI, aV1, aV0));
         var aC1 = new BRepAdaptor_Curve(aHalf1);
         var aC2 = new BRepAdaptor_Curve(aHalf2);
-        Assert.Equal(GeomAbs_C2, BRepLProp.Continuity(aC1, aC2, Math.PI, Math.PI));
+        Assert.Equal(C2, BRepLProp.Continuity(aC1, aC2, Math.PI, Math.PI));
 
         // a full circle with itself across its seam: CN
         TopoDS_Edge aFull = TestShapes.Frozen(TestShapes.Edge(aCircle, 0.0, 2 * Math.PI));
         var aF = new BRepAdaptor_Curve(aFull);
-        Assert.Equal(GeomAbs_CN, BRepLProp.Continuity(aF, aF, 2 * Math.PI, 0.0));
+        Assert.Equal(CN, BRepLProp.Continuity(aF, aF, 2 * Math.PI, 0.0));
 
         // a corner of a box: C0
         TopoDS_Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
@@ -104,9 +105,9 @@ public class BRepLPropTests
         BRep_Tool.Range(anE2, out double f2, out double l2);
         double u1 = anE1.Orientation() == TopAbs_REVERSED ? f1 : l1;
         double u2 = anE2.Orientation() == TopAbs_REVERSED ? l2 : f2;
-        Assert.Equal(GeomAbs_C0, BRepLProp.Continuity(aB1, aB2, u1, u2));
+        Assert.Equal(C0, BRepLProp.Continuity(aB1, aB2, u1, u2));
 
         // points that don't coincide
-        Assert.Throws<Standard_Failure>(() => BRepLProp.Continuity(aB1, aB2, u1 == f1 ? l1 : f1, u2));
+        Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => BRepLProp.Continuity(aB1, aB2, u1 == f1 ? l1 : f1, u2));
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -44,14 +45,14 @@ public class IntTools_ContextTests
             TopoDS_Face aF = aFaces[aRandom.Next(aFaces.Count)];
             BRepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
             double du = u2 - u1, dv = v2 - v1;
-            var aUV = new gp_Pnt2d(u1 - 0.1 * du + 1.2 * du * aRandom.NextDouble(), v1 - 0.1 * dv + 1.2 * dv * aRandom.NextDouble());
+            var aUV = new Point2D(u1 - 0.1 * du + 1.2 * du * aRandom.NextDouble(), v1 - 0.1 * dv + 1.2 * dv * aRandom.NextDouble());
             Geom_Surface aS = BRep_Tool.Surface(aF)!;
-            gp_Pnt aP = aS.Value(aUV.X(), aUV.Y());
-            aP = new gp_Pnt(aP.X() + Noise(1e-3), aP.Y() + Noise(1e-3), aP.Z() + Noise(1e-3));
+            Point3D aP = aS.Value(aUV.X(), aUV.Y());
+            aP = new Point3D(aP.X() + Noise(1e-3), aP.Y() + Noise(1e-3), aP.Z() + Noise(1e-3));
             aQueries.Add(c => $"S {c.StatePointFace(aF, aUV)} {c.IsPointInFace(aF, aUV)} {c.IsPointInOnFace(aF, aUV)}");
             aQueries.Add(c => $"F {c.FClass2d(aF).TestOnRestriction(aUV, 1e-3)} {c.FClass2d(aF).PerformInfinitePoint()}");
             aQueries.Add(c => $"V {c.IsValidPointForFace(aP, aF, 1e-3)} {c.IsPointInFace(aP, aF, 1e-3)}");
-            gp_Pnt aPCopy = aP;
+            Point3D aPCopy = aP;
             aQueries.Add(c =>
             {
                 GeomAPI_ProjectPointOnSurf aProj = c.ProjPS(aF);
@@ -67,8 +68,8 @@ public class IntTools_ContextTests
             TopoDS_Edge anE = anEdges[aRandom.Next(anEdges.Count)];
             BRep_Tool.Range(anE, out double t1, out double t2);
             Geom_Curve aC = BRep_Tool.Curve(anE, out _, out _)!;
-            gp_Pnt aPE = aC.Value(t1 + (t2 - t1) * (aRandom.NextDouble() * 1.2 - 0.1));
-            aPE = new gp_Pnt(aPE.X() + Noise(1e-4), aPE.Y() + Noise(1e-4), aPE.Z() + Noise(1e-4));
+            Point3D aPE = aC.Value(t1 + (t2 - t1) * (aRandom.NextDouble() * 1.2 - 0.1));
+            aPE = new Point3D(aPE.X() + Noise(1e-4), aPE.Y() + Noise(1e-4), aPE.Z() + Noise(1e-4));
             aQueries.Add(c =>
             {
                 double aT = -1, aD = -1;
@@ -100,7 +101,7 @@ public class IntTools_ContextTests
             if (aSolids.Count > 0)
             {
                 TopoDS_Solid aSo = aSolids[aRandom.Next(aSolids.Count)];
-                gp_Pnt aPS = aRandom.Next(2) == 0 ? aP : aPE;
+                Point3D aPS = aRandom.Next(2) == 0 ? aP : aPE;
                 aQueries.Add(c =>
                 {
                     BRepClass3d_SolidClassifier aSC = c.SolidClassifier(aSo);
@@ -151,15 +152,15 @@ public class IntTools_ContextTests
     {
         TopoDS_Face aF = ClassificationTestShapes.HoledSquare();
         var aContext = new IntTools_Context();
-        Assert.Equal(TopAbs_IN, aContext.StatePointFace(aF, new gp_Pnt2d(1, 1)));
-        Assert.Equal(TopAbs_OUT, aContext.StatePointFace(aF, new gp_Pnt2d(5, 5)));
-        Assert.True(aContext.IsPointInFace(aF, new gp_Pnt2d(1, 1)));
-        Assert.False(aContext.IsPointInFace(aF, new gp_Pnt2d(0, 1)));
-        Assert.True(aContext.IsPointInOnFace(aF, new gp_Pnt2d(0, 1)));
-        Assert.True(aContext.IsValidPointForFace(new gp_Pnt(1, 1, 1e-4), aF, 1e-3));
-        Assert.False(aContext.IsValidPointForFace(new gp_Pnt(1, 1, 1e-2), aF, 1e-3));
-        Assert.False(aContext.IsValidPointForFace(new gp_Pnt(5, 5, 0), aF, 1e-3));
-        Assert.True(aContext.IsPointInFace(new gp_Pnt(1, 1, 1e-4), aF, 1e-3));
+        Assert.Equal(TopAbs_IN, aContext.StatePointFace(aF, new Point2D(1, 1)));
+        Assert.Equal(TopAbs_OUT, aContext.StatePointFace(aF, new Point2D(5, 5)));
+        Assert.True(aContext.IsPointInFace(aF, new Point2D(1, 1)));
+        Assert.False(aContext.IsPointInFace(aF, new Point2D(0, 1)));
+        Assert.True(aContext.IsPointInOnFace(aF, new Point2D(0, 1)));
+        Assert.True(aContext.IsValidPointForFace(new Point3D(1, 1, 1e-4), aF, 1e-3));
+        Assert.False(aContext.IsValidPointForFace(new Point3D(1, 1, 1e-2), aF, 1e-3));
+        Assert.False(aContext.IsValidPointForFace(new Point3D(5, 5, 0), aF, 1e-3));
+        Assert.True(aContext.IsPointInFace(new Point3D(1, 1, 1e-4), aF, 1e-3));
         // The classifier is cached per face, whatever its orientation
         TopoDS_Face aR = TopoDS.Face(aF.Reversed());
         Assert.Same(aContext.FClass2d(aF), aContext.FClass2d(aR));
@@ -199,9 +200,9 @@ public class IntTools_ContextTests
         // The solid classifier
         TopoDS_Solid aSo = TopoDS.Solid(aBox);
         BRepClass3d_SolidClassifier aSC = aContext.SolidClassifier(aSo);
-        aSC.Perform(new gp_Pnt(1, 1, 1), 1e-7);
+        aSC.Perform(new Point3D(1, 1, 1), 1e-7);
         Assert.Equal(TopAbs_IN, aSC.State());
-        aSC.Perform(new gp_Pnt(5, 1, 1), 1e-7);
+        aSC.Perform(new Point3D(5, 1, 1), 1e-7);
         Assert.Equal(TopAbs_OUT, aSC.State());
         // IsVertexOnLine on the edge's own curve
         Geom_Curve aC = BRep_Tool.Curve(anEs[0], out _, out _)!;
@@ -218,6 +219,6 @@ public class IntTools_ContextTests
             }
         }
         Assert.Equal(2, nF);
-        Assert.True(aContext.BndBox(aBox).IsVoid() == false);
+        Assert.True(aContext.BndBox(aBox).IsVoid == false);
     }
 }

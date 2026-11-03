@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepLib_WireError;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -207,12 +211,12 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                 else if (IsCheckGeometryProximity)
                 {
                     // search if there is a similar vertex in the edge
-                    gp_Pnt PE = BRep_Tool.Pnt(VE);
+                    Point3D PE = BRep_Tool.Pnt(VE);
 
                     for (int i = 1; i <= myVertices.Extent(); i++)
                     {
                         TopoDS_Vertex VW = TopoDS.Vertex(myVertices.FindKey(i));
-                        gp_Pnt PW = BRep_Tool.Pnt(VW);
+                        Point3D PW = BRep_Tool.Pnt(VW);
                         double l = PE.Distance(PW);
 
                         if ((l < BRep_Tool.Tolerance(VE)) || (l < BRep_Tool.Tolerance(VW)))
@@ -300,24 +304,24 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                     for (it.Initialize(EE); it.More(); it.Next())
                     {
                         TopoDS_Vertex VE = TopoDS.Vertex(it.Value());
-                        gp_Pnt PE = BRep_Tool.Pnt(VE);
+                        Point3D PE = BRep_Tool.Pnt(VE);
 
                         bool newvertex = false;
                         for (int i = 1; i <= myVertices.Extent(); i++)
                         {
                             TopoDS_Vertex VW = TopoDS.Vertex(myVertices.FindKey(i));
-                            gp_Pnt PW = BRep_Tool.Pnt(VW);
+                            Point3D PW = BRep_Tool.Pnt(VW);
                             double l = PE.Distance(PW), tolE, tolW;
                             tolW = BRep_Tool.Tolerance(VW);
                             tolE = BRep_Tool.Tolerance(VE);
 
                             if ((l < tolE) || (l < tolW))
                             {
-                                mergedVertex(PW, tolW, PE, tolE, l, out gp_Pnt PC, out double maxtol);
+                                mergedVertex(PW, tolW, PE, tolE, l, out Point3D PC, out double maxtol);
 
                                 // OCCT.NET: frozen. A frozen VW here is one the update leaves as it is
                                 // (needsWritableVertices made the others writable).
-                                if (!VW.TShape()!.IsFrozen())
+                                if (!VW.TShape()!.IsFrozen)
                                 {
                                     B.UpdateVertex(VW, PC, maxtol);
                                 }
@@ -418,8 +422,8 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
 
     // The new point and tolerance of a wire vertex VW onto which an edge's vertex VE within tolerance is merged
     // (OCCT's code in Add, put in a function so that needsWritableVertices computes the same values).
-    private static void mergedVertex(in gp_Pnt PW, double tolW, in gp_Pnt PE, double tolE, double l,
-                                     out gp_Pnt PC, out double maxtol)
+    private static void mergedVertex(in Point3D PW, double tolW, in Point3D PE, double tolE, double l,
+                                     out Point3D PC, out double maxtol)
     {
         double cW, cE;
         maxtol = .5 * (tolW + tolE + l);
@@ -441,7 +445,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
             cE = 0.0;
         }
 
-        PC = new gp_Pnt(cW * PW.X() + cE * PE.X(),
+        PC = new Point3D(cW * PW.X() + cE * PE.X(),
                         cW * PW.Y() + cE * PE.Y(),
                         cW * PW.Z() + cE * PE.Z());
     }
@@ -455,21 +459,21 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
         for (var it = new TopoDS_Iterator(EE); it.More(); it.Next())
         {
             TopoDS_Vertex VE = TopoDS.Vertex(it.Value());
-            gp_Pnt PE = BRep_Tool.Pnt(VE);
+            Point3D PE = BRep_Tool.Pnt(VE);
             bool matched = false;
             for (int i = 1; i <= myVertices.Extent(); i++)
             {
                 TopoDS_Vertex VW = TopoDS.Vertex(myVertices.FindKey(i));
-                gp_Pnt PW = BRep_Tool.Pnt(VW);
+                Point3D PW = BRep_Tool.Pnt(VW);
                 double l = PE.Distance(PW);
                 double tolW = BRep_Tool.Tolerance(VW);
                 double tolE = BRep_Tool.Tolerance(VE);
                 if ((l < tolE) || (l < tolW))
                 {
                     matched = true;
-                    if (VW.TShape()!.IsFrozen())
+                    if (VW.TShape()!.IsFrozen)
                     {
-                        mergedVertex(PW, tolW, PE, tolE, l, out gp_Pnt PC, out double maxtol);
+                        mergedVertex(PW, tolW, PE, tolE, l, out Point3D PC, out double maxtol);
                         if (maxtol > tolW || !sameBits(PC, PW) || !isBoundary(VE) || tolE > maxtol)
                         {
                             return true;
@@ -478,7 +482,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                     break;
                 }
             }
-            if (!matched && VE.TShape()!.IsFrozen() && !isBoundary(VE))
+            if (!matched && VE.TShape()!.IsFrozen && !isBoundary(VE))
             {
                 return true;
             }
@@ -489,7 +493,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
     private static bool isBoundary(in TopoDS_Shape V)
         => V.Orientation() == TopAbs_FORWARD || V.Orientation() == TopAbs_REVERSED;
 
-    private static bool sameBits(in gp_Pnt P1, in gp_Pnt P2)
+    private static bool sameBits(in Point3D P1, in Point3D P2)
         => P1.X().Equals(P2.X()) && P1.Y().Equals(P2.Y()) && P1.Z().Equals(P2.Z());
 
     // OCCT.NET: frozen. B.Transfert(Ein, Eout, Vin, Vout): sets on Eout the parameter of Vin on Ein for Vout, and raises
@@ -499,7 +503,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
     private static void transfert(BRep_Builder B, in TopoDS_Edge Ein, in TopoDS_Edge Eout, in TopoDS_Vertex Vin,
                                   in TopoDS_Vertex Vout)
     {
-        if (!Vout.TShape()!.IsFrozen())
+        if (!Vout.TShape()!.IsFrozen)
         {
             B.Transfert(Ein, Eout, Vin, Vout);
             return;
@@ -507,9 +511,9 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
 
         double tol = BRep_Tool.Tolerance(Vin);
         double parin = BRep_Tool.Parameter(Vin, Ein);
-        if (Precision.IsPositiveInfinite(parin) || Precision.IsNegativeInfinite(parin))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(parin) || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(parin))
         {
-            throw new Standard_DomainError("BRep_Builder::Infinite parameter");
+            throw new DomainErrorException("BRep_Builder::Infinite parameter");
         }
         BRep_TEdge TE = (BRep_TEdge)Eout.TShape()!;
 
@@ -720,12 +724,12 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                     aNewV = itLV.Value();
                 }
             }
-            if (aNewV.IsNull() || !aNewV.TShape()!.IsFrozen())
+            if (aNewV.IsNull() || !aNewV.TShape()!.IsFrozen)
             {
                 continue;
             }
             double aNewTol = 0;
-            gp_Pnt aNewC = new();
+            Point3D aNewC = new();
             BRepLib.BoundingVertex(aValList, ref aNewC, ref aNewTol);
             if (aNewTol > BRep_Tool.Tolerance(aNewV) || !sameBits(aNewC, BRep_Tool.Pnt(aNewV)))
             {
@@ -755,13 +759,13 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
         }
     }
 
-    private sealed class BRepLib_BndBoxVertexSelector : NCollection_UBTree<int, Bnd_Box>.Selector
+    private sealed class BRepLib_BndBoxVertexSelector : SpatialTree<int, Box>.Selector
     {
         private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfShape; // vertices
-        private gp_Pnt myP;
+        private Point3D myP;
         private double myTolP;
         private int myVInd;
-        private Bnd_Box myVBox = new();
+        private Box myVBox = new();
         private readonly NCollection_List<int> myResultInd = new();
 
         public BRepLib_BndBoxVertexSelector(NCollection_IndexedMap<TopoDS_Shape> theMapOfShape)
@@ -771,7 +775,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
             myVInd = 0;
         }
 
-        public override bool Reject(in Bnd_Box theBox) => theBox.IsOut(myVBox);
+        public override bool Reject(in Box theBox) => theBox.IsOut(myVBox);
 
         public override bool Accept(in int theObj)
         {
@@ -787,7 +791,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                 return false;
             }
 
-            gp_Pnt aVPnt = BRep_Tool.Pnt(aV);
+            Point3D aVPnt = BRep_Tool.Pnt(aV);
 
             double aTolV = BRep_Tool.Tolerance(aV);
 
@@ -804,7 +808,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
             return false;
         }
 
-        public void SetCurrentVertex(in gp_Pnt theP, double theTol, int theVInd)
+        public void SetCurrentVertex(in Point3D theP, double theTol, int theVInd)
         {
             myP = theP;
             // OCCT never resets myVBox, so the box grows with every vertex (occt-issues.md): more boxes pass Reject,
@@ -835,15 +839,15 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
 
         // aV2CV : vertex <-> its coincident vertices. OCCT's maps here use std::hash and operator== (IsEqual).
         var aV2CV = new NCollection_DataMap<TopoDS_Vertex, NCollection_Map<TopoDS_Vertex>>(EqualityComparer<TopoDS_Vertex>.Default);
-        var aTree = new NCollection_UBTree<int, Bnd_Box>();
-        var aTreeFiller = new NCollection_UBTreeFiller<int, Bnd_Box>(aTree);
+        var aTree = new SpatialTree<int, Box>();
+        var aTreeFiller = new SpatialTreeFiller<int, Box>(aTree);
         var aNonGroupedV = new NCollection_Map<TopoDS_Vertex>(EqualityComparer<TopoDS_Vertex>.Default);
 
         // add vertices from anAllV to treefiller
         for (int i = 1; i <= anAllV.Extent(); i++)
         {
             TopoDS_Shape aSh = anAllV[i];
-            var aBB = new Bnd_Box();
+            var aBB = new Box();
             BRepBndLib.Add(aSh, ref aBB);
             aTreeFiller.Add(i, aBB);
         }
@@ -959,7 +963,7 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
             NCollection_List<TopoDS_Vertex> aVal = itLLV.Value();
             itLV.Initialize(aVal);
             double aNewTol = 0;
-            gp_Pnt aNewC = new();
+            Point3D aNewC = new();
             for (; itLV.More(); itLV.Next())
             {
                 TopoDS_Vertex aVV = itLV.Value();
@@ -978,10 +982,10 @@ public class BRepLib_MakeWire : BRepLib_MakeShape
                 aNewV = new BRepLib_MakeVertex(aNewC).InternalVertex();
                 aBB.UpdateVertex(aNewV, aNewTol);
             }
-            else if (!aNewV.TShape()!.IsFrozen())
+            else if (!aNewV.TShape()!.IsFrozen)
             {
                 // update already existing vertex
-                aBB.UpdateVertex(aNewV, new gp_Pnt(aNewC.XYZ()), aNewTol);
+                aBB.UpdateVertex(aNewV, new Point3D(aNewC.XYZ()), aNewTol);
             }
             // OCCT.NET: frozen. A frozen existing vertex here is one the update leaves as it is (needsWritableVertices
             // made the others writable).

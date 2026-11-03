@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Makes a geometric_curve_set of the (trimmed) curves of a shape's edges.</summary>
@@ -15,8 +17,8 @@ public sealed class TopoDSToStep_MakeGeometricCurveSet : TopoDSToStep_Root
     public TopoDSToStep_MakeGeometricCurveSet(in TopoDS_Shape aShape, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors)
     {
         done = false;
-        NCollection_HSequence<Standard_Transient> itemList;
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+        NCollection_HSequence<Transient> itemList;
+        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         var aTool = new TopoDSToStep_Tool(aMap, false, aStepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         var wirefB = new TopoDSToStep_WireframeBuilder(aShape, aTool, theLocalFactors);
@@ -51,7 +53,7 @@ public sealed class TopoDSToStep_MakeGeometricCurveSet : TopoDSToStep_Root
     {
     }
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_GeometricCurveSet Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeGeometricCurveSet::Value() - no result");

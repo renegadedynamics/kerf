@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -29,13 +33,13 @@ public sealed class GeomConvert_BSplineCurveToBezierCurve
     /// Prepares the conversion of BasisCurve between U1 and U2. A bound within ParametricTolerance / 2 of a knot,
     /// beyond it, is moved onto the knot.
     /// </summary>
-    /// <exception cref="Standard_DomainError">U2 - U1 is below ParametricTolerance.</exception>
+    /// <exception cref="DomainErrorException">U2 - U1 is below ParametricTolerance.</exception>
     public GeomConvert_BSplineCurveToBezierCurve(Geom_BSplineCurve BasisCurve, double U1, double U2,
                                                    double ParametricTolerance)
     {
         if (U2 - U1 < ParametricTolerance)
         {
-            throw new Standard_DomainError("GeomConvert_BSplineCurveToBezierSurface");
+            throw new DomainErrorException("GeomConvert_BSplineCurveToBezierSurface");
         }
 
         double Uf = U1, Ul = U2;
@@ -67,17 +71,17 @@ public sealed class GeomConvert_BSplineCurveToBezierCurve
     }
 
     /// <summary>A new Bezier curve for arc Index (1 to NbArcs()), oriented as the B-spline.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
     public Geom_BezierCurve Arc(int Index)
     {
         if (Index < 1 || Index > myCurve.NbKnots() - 1)
         {
-            throw new Standard_OutOfRange("GeomConvert_BSplineCurveToBezierCurve");
+            throw new OutOfRangeException("GeomConvert_BSplineCurveToBezierCurve");
         }
 
         int Deg = myCurve.Degree();
 
-        NCollection_Array1<gp_Pnt> Poles = new(1, Deg + 1);
+        NCollection_Array1<Point3D> Poles = new(1, Deg + 1);
 
         Geom_BezierCurve C;
         if (myCurve.IsRational())

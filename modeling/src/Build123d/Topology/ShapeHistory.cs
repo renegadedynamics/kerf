@@ -1,3 +1,4 @@
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace Build123d;
@@ -306,7 +307,7 @@ public sealed class ShapeHistory
         {
             return [.. query(shape)];
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return [];
         }

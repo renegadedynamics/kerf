@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Box3d = Occt.BVH_Box<double, Occt.NCollection_Vec3<double>>;
-using Tri3d = Occt.BVH_Triangulation<double, Occt.NCollection_Vec3<double>>;
+using Kerf.Engine.Geometry.Bvh;
+using Box3d = Kerf.Engine.Geometry.Bvh.Box<double, Occt.NCollection_Vec3<double>>;
+using Tri3d = Kerf.Engine.Geometry.Bvh.Triangulation<double, Occt.NCollection_Vec3<double>>;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -68,13 +69,13 @@ public class BVH_TriangulationTest
 
         Box3d aBox = aTriangulation.Box(0);
 
-        Assert.Equal(1.0, aBox.CornerMin().x(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMin().y(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMin().z(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().X(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().Y(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().Z(), 1e-10);
 
-        Assert.Equal(4.0, aBox.CornerMax().x(), 1e-10);
-        Assert.Equal(3.0, aBox.CornerMax().y(), 1e-10);
-        Assert.Equal(3.0, aBox.CornerMax().z(), 1e-10);
+        Assert.Equal(4.0, aBox.CornerMax().X(), 1e-10);
+        Assert.Equal(3.0, aBox.CornerMax().Y(), 1e-10);
+        Assert.Equal(3.0, aBox.CornerMax().Z(), 1e-10);
     }
 
     [Fact]
@@ -89,12 +90,12 @@ public class BVH_TriangulationTest
 
         Box3d aBox = aTriangulation.Box(0);
 
-        Assert.Equal(1.0, aBox.CornerMin().x(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMin().y(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMin().z(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().x(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().y(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().z(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().X(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().Y(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMin().Z(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().X(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().Y(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().Z(), 1e-10);
     }
 
     [Fact]
@@ -109,10 +110,10 @@ public class BVH_TriangulationTest
 
         Box3d aBox = aTriangulation.Box(0);
 
-        Assert.Equal(0.0, aBox.CornerMin().z(), 1e-10);
-        Assert.Equal(0.0, aBox.CornerMax().z(), 1e-10);
-        Assert.Equal(2.0, aBox.CornerMax().x(), 1e-10);
-        Assert.Equal(3.0, aBox.CornerMax().y(), 1e-10);
+        Assert.Equal(0.0, aBox.CornerMin().Z(), 1e-10);
+        Assert.Equal(0.0, aBox.CornerMax().Z(), 1e-10);
+        Assert.Equal(2.0, aBox.CornerMax().X(), 1e-10);
+        Assert.Equal(3.0, aBox.CornerMax().Y(), 1e-10);
     }
 
     // Center tests
@@ -223,7 +224,7 @@ public class BVH_TriangulationTest
     [Fact]
     public void Triangulation2D()
     {
-        BVH_Triangulation<double, BVH_Vec2d> aTriangulation2D = new();
+        Triangulation<double, BVH_Vec2d> aTriangulation2D = new();
 
         aTriangulation2D.Vertices.Append(new BVH_Vec2d(0.0, 0.0));
         aTriangulation2D.Vertices.Append(new BVH_Vec2d(1.0, 0.0));
@@ -232,11 +233,11 @@ public class BVH_TriangulationTest
 
         Assert.Equal(1, aTriangulation2D.Size());
 
-        BVH_Box<double, BVH_Vec2d> aBox = aTriangulation2D.Box(0);
-        Assert.Equal(0.0, aBox.CornerMin().x(), 1e-10);
-        Assert.Equal(0.0, aBox.CornerMin().y(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().x(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().y(), 1e-10);
+        Box<double, BVH_Vec2d> aBox = aTriangulation2D.Box(0);
+        Assert.Equal(0.0, aBox.CornerMin().X(), 1e-10);
+        Assert.Equal(0.0, aBox.CornerMin().Y(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().X(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().Y(), 1e-10);
     }
 
     // Shared vertices tests
@@ -268,7 +269,7 @@ public class BVH_TriangulationTest
     [Fact]
     public void FloatPrecision()
     {
-        BVH_Triangulation<float, BVH_Vec3f> aTriangulation = new();
+        Triangulation<float, BVH_Vec3f> aTriangulation = new();
 
         aTriangulation.Vertices.Append(new BVH_Vec3f(0.0f, 0.0f, 0.0f));
         aTriangulation.Vertices.Append(new BVH_Vec3f(1.0f, 0.0f, 0.0f));
@@ -277,9 +278,9 @@ public class BVH_TriangulationTest
 
         Assert.Equal(1, aTriangulation.Size());
 
-        BVH_Box<float, BVH_Vec3f> aBox = aTriangulation.Box(0);
-        Assert.Equal(1.0f, aBox.CornerMax().x(), 1e-6f);
-        Assert.Equal(1.0f, aBox.CornerMax().y(), 1e-6f);
+        Box<float, BVH_Vec3f> aBox = aTriangulation.Box(0);
+        Assert.Equal(1.0f, aBox.CornerMax().X(), 1e-6f);
+        Assert.Equal(1.0f, aBox.CornerMax().Y(), 1e-6f);
     }
 
     // Negative coordinates tests
@@ -296,11 +297,11 @@ public class BVH_TriangulationTest
 
         Box3d aBox = aTriangulation.Box(0);
 
-        Assert.Equal(-1.0, aBox.CornerMin().x(), 1e-10);
-        Assert.Equal(-2.0, aBox.CornerMin().y(), 1e-10);
-        Assert.Equal(-3.0, aBox.CornerMin().z(), 1e-10);
-        Assert.Equal(1.0, aBox.CornerMax().x(), 1e-10);
-        Assert.Equal(0.0, aBox.CornerMax().y(), 1e-10);
-        Assert.Equal(-1.0, aBox.CornerMax().z(), 1e-10);
+        Assert.Equal(-1.0, aBox.CornerMin().X(), 1e-10);
+        Assert.Equal(-2.0, aBox.CornerMin().Y(), 1e-10);
+        Assert.Equal(-3.0, aBox.CornerMin().Z(), 1e-10);
+        Assert.Equal(1.0, aBox.CornerMax().X(), 1e-10);
+        Assert.Equal(0.0, aBox.CornerMax().Y(), 1e-10);
+        Assert.Equal(-1.0, aBox.CornerMax().Z(), 1e-10);
     }
 }

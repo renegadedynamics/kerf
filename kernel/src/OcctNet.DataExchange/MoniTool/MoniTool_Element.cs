@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// that of the real Key, not of the Element which acts only as an intermediate. When a Map asks for the
 /// HashCode of a Element, this one returns the code it has determined at creation time
 /// </summary>
-public abstract class MoniTool_Element : Standard_Transient
+public abstract class MoniTool_Element : Transient
 {
 
     /// <summary>

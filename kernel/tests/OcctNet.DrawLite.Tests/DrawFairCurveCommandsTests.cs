@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
@@ -38,14 +39,14 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         Assert.Equal("DrawFairCurve_Batten", b.TypeName);
 
         // Draw computes with the defaults, then DrawFairCurve_Batten's constructor computes again with 1.0e-2
-        FairCurve_Batten aBat = new(new gp_Pnt2d(0, 0), new gp_Pnt2d(10, 0), 0.5);
+        FairCurve_Batten aBat = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         aBat.SetAngle1(30 * Math.PI / 180);
         aBat.SetAngle2(-20 * Math.PI / 180);
         Assert.True(aBat.Compute(out FairCurve_AnalysisCode aCode));
         Assert.Equal(FairCurve_AnalysisCode.FairCurve_OK, aCode);
         aBat.Compute(out _, 50, 1.0e-2);
         SameCurve(aBat.Curve(), b.Curve);
-        Assert.True(b.Curve.IsFrozen());
+        Assert.True(b.Curve.IsFrozen);
 
         // the editing commands: each changes the batten and computes again
         i.Eval("setangle 2 10 b; freeslide b; setheight 0.8 b; setslope 0.01 b; point p3 9 1; setpoint 2 p3 b; freeangle 1 b; setslide 1.1 b");
@@ -57,7 +58,7 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         aBat.Compute(out _, 50, 1.0e-2);
         aBat.SetSlope(0.01);
         aBat.Compute(out _, 50, 1.0e-2);
-        aBat.SetP2(new gp_Pnt2d(9, 1));
+        aBat.SetP2(new Point2D(9, 1));
         aBat.Compute(out _, 50, 1.0e-2);
         aBat.SetConstraintOrder1(0);
         aBat.Compute(out _, 50, 1.0e-2);
@@ -81,7 +82,7 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         DrawFairCurve m = Batten(i, "m");
         Assert.Equal("DrawFairCurve_MinimalVariation", m.TypeName);
 
-        FairCurve_MinimalVariation aMVC = new(new gp_Pnt2d(0, 0), new gp_Pnt2d(8, 2), 0.3);
+        FairCurve_MinimalVariation aMVC = new(new Point2D(0, 0), new Point2D(8, 2), 0.3);
         aMVC.SetAngle1(20 * Math.PI / 180);
         aMVC.SetAngle2(40 * Math.PI / 180);
         aMVC.Compute(out _);

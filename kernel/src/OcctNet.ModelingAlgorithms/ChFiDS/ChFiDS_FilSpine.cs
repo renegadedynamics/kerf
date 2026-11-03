@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +21,7 @@ namespace Occt;
 /// </remarks>
 public sealed class ChFiDS_FilSpine : ChFiDS_Spine
 {
-    private readonly NCollection_Sequence<gp_XY> parandrad = new();
+    private readonly NCollection_Sequence<Xy> parandrad = new();
     private readonly NCollection_List<Law_Function> laws = new();
 
     public ChFiDS_FilSpine()
@@ -40,15 +46,15 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             double spinedeb = FirstParameter();
             double spinefin = LastParameter();
 
-            gp_XY FirstUandR = parandrad.First();
-            gp_XY LastUandR = parandrad.Last();
-            if (Math.Abs(spinedeb - FirstUandR.X()) > gp.Resolution())
+            Xy FirstUandR = parandrad.First();
+            Xy LastUandR = parandrad.Last();
+            if (Math.Abs(spinedeb - FirstUandR.X()) > Constants.Resolution())
             {
                 FirstUandR.SetX(spinedeb);
                 parandrad.Prepend(FirstUandR);
             }
 
-            if (Math.Abs(spinefin - LastUandR.X()) > gp.Resolution())
+            if (Math.Abs(spinefin - LastUandR.X()) > Constants.Resolution())
             {
                 LastUandR.SetX(spinefin);
                 parandrad.Append(LastUandR);
@@ -66,7 +72,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     {
         splitdone = false;
         int IE = Index(E);
-        gp_XY FirstUandR = new gp_XY(0.0, Radius), LastUandR = new gp_XY(1.0, Radius);
+        Xy FirstUandR = new Xy(0.0, Radius), LastUandR = new Xy(1.0, Radius);
         SetRadius(FirstUandR, IE);
         SetRadius(LastUandR, IE);
     }
@@ -82,12 +88,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         int ifirst = 0, ilast = 0;
         for (int i = 1; i <= parandrad.Length(); i++)
         {
-            if (Math.Abs(parandrad[i].X() - Uf) <= gp.Resolution())
+            if (Math.Abs(parandrad[i].X() - Uf) <= Constants.Resolution())
             {
                 ifirst = i;
             }
 
-            if (Math.Abs(parandrad[i].X() - Ul) <= gp.Resolution())
+            if (Math.Abs(parandrad[i].X() - Ul) <= Constants.Resolution())
             {
                 ilast = i;
             }
@@ -103,7 +109,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     internal void SetRadius(double Radius, in TopoDS_Vertex V)
     {
         double npar = Absc(V);
-        gp_XY UandR = new gp_XY(npar, Radius);
+        Xy UandR = new Xy(npar, Radius);
         SetRadius(UandR, 0);
     }
 
@@ -111,8 +117,8 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     internal void SetRadius(double Radius)
     {
         parandrad.Clear();
-        gp_XY FirstUandR = new gp_XY(FirstParameter(), Radius);
-        gp_XY LastUandR = new gp_XY(LastParameter(), Radius);
+        Xy FirstUandR = new Xy(FirstParameter(), Radius);
+        Xy LastUandR = new Xy(LastParameter(), Radius);
         SetRadius(FirstUandR, 0);
         SetRadius(LastUandR, 0);
     }
@@ -121,7 +127,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     /// Sets the radius UandR.Y() at the abscissa UandR.X() (or, when <paramref name="IinC"/> is not 0, at the
     /// relative position UandR.X() on the edge IinC).
     /// </summary>
-    internal void SetRadius(in gp_XY UandR, int IinC)
+    internal void SetRadius(in Xy UandR, int IinC)
     {
         double W;
         if (IinC == 0)
@@ -135,7 +141,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             W = Uf + UandR.X() * (Ul - Uf);
         }
 
-        gp_XY pr = new gp_XY(W, UandR.Y());
+        Xy pr = new Xy(W, UandR.Y());
         int i;
         for (i = 1; i <= parandrad.Length(); i++)
         {
@@ -236,7 +242,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         double Radius = parandrad[1].Y();
         for (int i = 2; i <= parandrad.Length(); i++)
         {
-            if (Math.Abs(Radius - parandrad[i].Y()) > Precision.Confusion())
+            if (Math.Abs(Radius - parandrad[i].Y()) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 isconst = false;
                 break;
@@ -259,8 +265,8 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             par = parandrad[i].X();
             rad = parandrad[i].Y();
             double nextpar = parandrad[i + 1].X();
-            if (Math.Abs(Uf - par) <= gp.Resolution()
-                || (par < Uf && Uf < nextpar && nextpar - Uf > gp.Resolution()))
+            if (Math.Abs(Uf - par) <= Constants.Resolution()
+                || (par < Uf && Uf < nextpar && nextpar - Uf > Constants.Resolution()))
             {
                 StartRad = rad;
                 break;
@@ -271,12 +277,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         {
             par = parandrad[i].X();
             rad = parandrad[i].Y();
-            if (Math.Abs(rad - StartRad) > Precision.Confusion())
+            if (Math.Abs(rad - StartRad) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
 
-            if (Math.Abs(Ul - par) <= gp.Resolution())
+            if (Math.Abs(Ul - par) <= Constants.Resolution())
             {
                 return true;
             }
@@ -297,7 +303,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         return Radius(IE);
     }
 
-    /// <summary>The radius on the edge <paramref name="IE"/>; throws <see cref="Standard_DomainError"/> if it is not
+    /// <summary>The radius on the edge <paramref name="IE"/>; throws <see cref="DomainErrorException"/> if it is not
     /// constant there.</summary>
     public double Radius(int IE)
     {
@@ -311,8 +317,8 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             par = parandrad[i].X();
             rad = parandrad[i].Y();
             double nextpar = parandrad[i + 1].X();
-            if (Math.Abs(Uf - par) <= gp.Resolution()
-                || (par < Uf && Uf < nextpar && nextpar - Uf > gp.Resolution()))
+            if (Math.Abs(Uf - par) <= Constants.Resolution()
+                || (par < Uf && Uf < nextpar && nextpar - Uf > Constants.Resolution()))
             {
                 StartRad = rad;
                 break;
@@ -323,12 +329,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         {
             par = parandrad[i].X();
             rad = parandrad[i].Y();
-            if (Math.Abs(rad - StartRad) > Precision.Confusion())
+            if (Math.Abs(rad - StartRad) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                throw new Standard_DomainError("Edge is not constant");
+                throw new DomainErrorException("Edge is not constant");
             }
 
-            if (Math.Abs(Ul - par) <= gp.Resolution())
+            if (Math.Abs(Ul - par) <= Constants.Resolution())
             {
                 return StartRad;
             }
@@ -342,12 +348,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         return StartRad;
     }
 
-    /// <summary>The radius of the spine; throws <see cref="Standard_DomainError"/> if it is not constant.</summary>
+    /// <summary>The radius of the spine; throws <see cref="DomainErrorException"/> if it is not constant.</summary>
     public double Radius()
     {
         if (!IsConstant())
         {
-            throw new Standard_DomainError("Spine is not constant");
+            throw new DomainErrorException("Spine is not constant");
         }
 
         return parandrad[1].Y();
@@ -365,11 +371,11 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         laws.Append(l);
     }
 
-    private static void mklaw(NCollection_List<Law_Function> res, NCollection_Sequence<gp_XY> pr, double curdeb,
+    private static void mklaw(NCollection_List<Law_Function> res, NCollection_Sequence<Xy> pr, double curdeb,
                               double curfin, double Rdeb, double Rfin, bool recadre, double deb, double fin,
                               double tol3d)
     {
-        NCollection_Sequence<gp_XY> npr = new();
+        NCollection_Sequence<Xy> npr = new();
         double rad = Rdeb, raf = Rfin;
         bool yaunpointsurledeb = false;
         bool yaunpointsurlefin = false;
@@ -377,11 +383,11 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         {
             for (int i = 1; i <= pr.Length(); i++)
             {
-                gp_XY cur = pr.Value(i);
+                Xy cur = pr.Value(i);
                 double wcur = cur.X();
                 if (recadre)
                 {
-                    wcur = ElCLib.InPeriod(wcur, deb, fin);
+                    wcur = global::Kerf.Engine.Geometry.ElCLib.InPeriod(wcur, deb, fin);
                 }
 
                 if (curdeb - tol3d <= wcur && wcur <= curfin + tol3d)
@@ -389,7 +395,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     if (wcur - curdeb < tol3d)
                     {
                         yaunpointsurledeb = true;
-                        gp_XY ncur = cur;
+                        Xy ncur = cur;
                         if (Rdeb < 0.0)
                         {
                             rad = cur.Y();
@@ -401,7 +407,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     else if (curfin - wcur < tol3d)
                     {
                         yaunpointsurlefin = true;
-                        gp_XY ncur = cur;
+                        Xy ncur = cur;
                         if (Rfin < 0.0)
                         {
                             raf = cur.Y();
@@ -412,7 +418,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     }
                     else
                     {
-                        npr.Append(new gp_XY(wcur, cur.Y()));
+                        npr.Append(new Xy(wcur, cur.Y()));
                     }
                 }
             }
@@ -422,7 +428,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         {
             if (Rdeb < 0.0 && Rfin < 0.0)
             {
-                throw new Standard_DomainError("Impossible to create the law");
+                throw new DomainErrorException("Impossible to create the law");
             }
             else if (Rdeb < 0.0 || Rfin < 0.0)
             {
@@ -442,12 +448,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
         {
             if (!yaunpointsurledeb && Rdeb >= 0.0)
             {
-                npr.Append(new gp_XY(curdeb, Rdeb));
+                npr.Append(new Xy(curdeb, Rdeb));
             }
 
             if (!yaunpointsurlefin && Rfin >= 0.0)
             {
-                npr.Append(new gp_XY(curfin, Rfin));
+                npr.Append(new Xy(curfin, Rfin));
             }
 
             int nbp = npr.Length();
@@ -458,7 +464,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                 {
                     if (npr.Value(i).X() > npr.Value(j).X())
                     {
-                        gp_XY temp = npr.Value(i);
+                        Xy temp = npr.Value(i);
                         npr.ChangeValue(i) = npr.Value(j);
                         npr.ChangeValue(j) = temp;
                     }
@@ -492,7 +498,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
 
             if (nbp > 1)
             {
-                NCollection_Array1<gp_Pnt2d> tpr = new(1, nbp);
+                NCollection_Array1<Point2D> tpr = new(1, nbp);
                 for (int l = 1; l <= nbp; l++)
                 {
                     tpr[l].SetXY(npr.Value(l));
@@ -514,7 +520,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
 
     private Law_Composite ComputeLaw(ChFiDS_ElSpine Els)
     {
-        double tol3d = Precision.Confusion();
+        double tol3d = global::Kerf.Engine.Foundation.Precision.Confusion();
         double deb, fin, curdeb, curfin;
         curdeb = deb = Els.FirstParameter();
         curfin = fin = Els.LastParameter();
@@ -583,7 +589,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     }
                     else
                     {
-                        curfin = ElCLib.InPeriod(LastParameter(k), spinedeb, spinefin);
+                        curfin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(LastParameter(k), spinedeb, spinefin);
                     }
 
                     Law_Constant curloi = new();
@@ -598,7 +604,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             { // no !
                 if (parandrad.IsEmpty())
                 {
-                    throw new Standard_DomainError("Radius not defined");
+                    throw new DomainErrorException("Radius not defined");
                 }
 
                 int nbp = parandrad.Length();
@@ -616,7 +622,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     nbp++;
                 }
 
-                NCollection_Array1<gp_Pnt2d> pr = new(1, nbp);
+                NCollection_Array1<Point2D> pr = new(1, nbp);
                 for (int l = 1; l < nbp; l++)
                 {
                     pr[l].SetXY(parandrad[l]);
@@ -636,7 +642,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
             {
                 Rdeb = Radius(ind[1]);
                 curfin = LastParameter(ind[1]);
-                curfin = ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
+                curfin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
                 curfin = Min(fin, curfin);
                 Law_Constant curloi = new();
                 curloi.Set(Rdeb, curdeb, curfin);
@@ -659,7 +665,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                 }
                 else
                 {
-                    throw new Standard_DomainError("AppendLaw : previous constant is missing!");
+                    throw new DomainErrorException("AppendLaw : previous constant is missing!");
                 }
 
                 lawencours = true;
@@ -685,7 +691,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                 }
                 else
                 {
-                    throw new Standard_DomainError("AppendLaw : next constant is missing!");
+                    throw new DomainErrorException("AppendLaw : next constant is missing!");
                 }
             }
         }
@@ -712,12 +718,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     }
                     else
                     {
-                        throw new Standard_DomainError("AppendLaw : previous constant is missing");
+                        throw new DomainErrorException("AppendLaw : previous constant is missing");
                     }
                 }
                 else if (parandrad.IsEmpty())
                 {
-                    throw new Standard_DomainError("AppendLaw : no radius on vertex");
+                    throw new DomainErrorException("AppendLaw : no radius on vertex");
                 }
                 else
                 {
@@ -742,12 +748,12 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     }
                     else
                     {
-                        throw new Standard_DomainError("AppendLaw : next constant is missing");
+                        throw new DomainErrorException("AppendLaw : next constant is missing");
                     }
                 }
                 else if (parandrad.IsEmpty())
                 {
-                    throw new Standard_DomainError("AppendLaw : no radius on vertex");
+                    throw new DomainErrorException("AppendLaw : no radius on vertex");
                 }
                 else
                 {
@@ -775,13 +781,13 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                 curfin = LastParameter(ind[icur]);
                 if (IsPeriodic())
                 {
-                    curfin = ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
+                    curfin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
                     if (ind[icur] == ind[nbed])
                     {
                         // Attention the curfin can be wrong if the last edge passes
                         // above the  origin periodic spline.
                         double biddeb = FirstParameter(ind[icur]);
-                        biddeb = ElCLib.InPeriod(biddeb, spinedeb + tol3d, spinefin + tol3d);
+                        biddeb = global::Kerf.Engine.Geometry.ElCLib.InPeriod(biddeb, spinedeb + tol3d, spinefin + tol3d);
                         if (biddeb >= curfin)
                         {
                             curfin = fin;
@@ -811,7 +817,7 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                 curfin = LastParameter(ind[icur]);
                 if (IsPeriodic())
                 {
-                    curfin = ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
+                    curfin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
                 }
 
                 curfin = Min(fin, curfin);
@@ -824,8 +830,8 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
                     {
                         double biddeb = FirstParameter(ind[icur]);
                         curfin = LastParameter(ind[icur]);
-                        biddeb = ElCLib.InPeriod(biddeb, spinedeb + tol3d, spinefin + tol3d);
-                        curfin = ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
+                        biddeb = global::Kerf.Engine.Geometry.ElCLib.InPeriod(biddeb, spinedeb + tol3d, spinefin + tol3d);
+                        curfin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(curfin, spinedeb + tol3d, spinefin + tol3d);
                         if (biddeb >= curfin)
                         {
                             curfin = fin;
@@ -877,13 +883,13 @@ public sealed class ChFiDS_FilSpine : ChFiDS_Spine
     {
         if (!SplitDone())
         {
-            throw new Standard_DomainError("ChFiDS_FilSpine::ChangeLaw : the limits are not up-to-date");
+            throw new DomainErrorException("ChFiDS_FilSpine::ChangeLaw : the limits are not up-to-date");
         }
 
         int IE = Index(E);
         if (IsConstant(IE))
         {
-            throw new Standard_DomainError("ChFiDS_FilSpine::ChangeLaw : no law on constant edges");
+            throw new DomainErrorException("ChFiDS_FilSpine::ChangeLaw : no law on constant edges");
         }
 
         ChFiDS_ElSpine? hsp = ElSpine(IE);

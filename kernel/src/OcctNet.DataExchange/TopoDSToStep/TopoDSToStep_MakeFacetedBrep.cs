@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Makes a faceted_brep from a closed shell or from a solid's closed outer shell.</summary>
@@ -15,13 +17,13 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
 
     /// <summary>A faceted_brep from a closed shell.</summary>
     public TopoDSToStep_MakeFacetedBrep(in TopoDS_Shell aShell, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
-                                        Message_ProgressRange theProgress = default)
+                                        ProgressRange theProgress = default)
     {
         done = false;
         if (aShell.Closed())
         {
             StepShape_TopologicalRepresentationItem aItem;
-            var aMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+            var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
 
             StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
             int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -71,7 +73,7 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
     /// the null tessellated shell, an access violation natively and a NullReferenceException here (occt-issues.md, 8E).
     /// </remarks>
     public TopoDSToStep_MakeFacetedBrep(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
-                                        Message_ProgressRange theProgress = default)
+                                        ProgressRange theProgress = default)
     {
         done = false;
         // Looking for the Outer Shell
@@ -82,7 +84,7 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
             if (aOuterShell.Closed())
             {
                 StepShape_TopologicalRepresentationItem aItem;
-                var aMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
+                var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
 
                 StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
                 int aWriteTessGeom = (int)aStepModel.InternalParameters.WriteTessellated;
@@ -147,7 +149,7 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
     {
     }
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_FacetedBrep Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeFacetedBrep::Value() - no result");
@@ -155,7 +157,7 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
     }
 
     /// <summary>The tessellated item made, the optional result.</summary>
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepVisual_TessellatedItem TessellatedValue()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeFacetedBrep::TessellatedValue() - no result");

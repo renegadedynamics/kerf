@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -16,11 +19,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol;
+    private readonly NCollection_Array1<Circle2D> cirsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<int> TheSame1;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pntcen3;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pntcen3;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> pararg1;
     private readonly NCollection_Array1<double> parcen3;
@@ -53,8 +56,8 @@ public sealed partial class GccAna_Circ2dTanOnRad
     //=========================================================================
 
     /// <summary>Circles of radius Radius tangent to a qualified circle, centred on a line.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
-    public GccAna_Circ2dTanOnRad(in GccEnt_QualifiedCirc Qualified1, in gp_Lin2d OnLine, double Radius, double Tolerance)
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
+    public GccAna_Circ2dTanOnRad(in GccEnt_QualifiedCirc Qualified1, in Line2D OnLine, double Radius, double Tolerance)
     {
         cirsol = new(1, 4);
         qualifier1 = new(1, 4);
@@ -67,7 +70,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
 
 
         TheSame1.Init(0);
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double   Tol = Math.Abs(Tolerance);
         WellDone     = false;
         NbrSol       = 0;
@@ -77,17 +80,17 @@ public sealed partial class GccAna_Circ2dTanOnRad
             throw new GccEnt_BadQualifier();
         }
         NCollection_Array1<double> Coef = new(1, 2);
-        gp_Circ2d                  C1 = Qualified1.Qualified();
+        Circle2D                  C1 = Qualified1.Qualified();
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
             int      nbsol = 0;
             int      signe = 0;
-            gp_Pnt2d Center = new();
+            Point2D Center = new();
             double   xc;
             double   yc;
             double   R1    = C1.Radius();
@@ -96,7 +99,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
             double   ydir  = (OnLine.Direction()).Y();
             double   lxloc = (OnLine.Location()).X();
             double   lyloc = (OnLine.Location()).Y();
-            gp_Pnt2d center1 = C1.Location();
+            Point2D center1 = C1.Location();
             double   x1 = center1.X();
             double   y1 = center1.Y();
             if (Qualified1.IsEnclosed())
@@ -114,11 +117,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
                         NbrSol   = 1;
                         if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
                         {
-                            Center = new gp_Pnt2d(x1 - ydir * dist, y1 + xdir * dist);
+                            Center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
                         }
                         else
                         {
-                            Center = new gp_Pnt2d(x1 + ydir * dist, y1 - xdir * dist);
+                            Center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
                         }
                         signe = 1;
                     }
@@ -144,11 +147,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
                         NbrSol   = 1;
                         if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
                         {
-                            Center = new gp_Pnt2d(x1 - ydir * dist, y1 + xdir * dist);
+                            Center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
                         }
                         else
                         {
-                            Center = new gp_Pnt2d(x1 + ydir * dist, y1 - xdir * dist);
+                            Center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
                         }
                         signe = -1;
                     }
@@ -174,11 +177,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
                         NbrSol   = 1;
                         if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
                         {
-                            Center = new gp_Pnt2d(x1 - ydir * dist, y1 + xdir * dist);
+                            Center = new Point2D(x1 - ydir * dist, y1 + xdir * dist);
                         }
                         else
                         {
-                            Center = new gp_Pnt2d(x1 + ydir * dist, y1 - xdir * dist);
+                            Center = new Point2D(x1 + ydir * dist, y1 - xdir * dist);
                         }
                         signe = -1;
                     }
@@ -202,7 +205,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
             }
             if (signe != 0)
             {
-                cirsol[1] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                cirsol[1] = new Circle2D(new Axis2D(Center, dirx), Radius);
                 //     ==================================================
                 double distcc1 = Center.Distance(center1);
                 if (!Qualified1.IsUnqualified())
@@ -227,13 +230,13 @@ public sealed partial class GccAna_Circ2dTanOnRad
                 }
                 else
                 {
-                    gp_Dir2d dir1cen = new(Center.X() - x1, Center.Y() - y1);
-                    pnttg1sol[1] = new gp_Pnt2d(Center.XY() + signe * Radius * dir1cen.XY());
-                    par1sol[1]   = ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                    pararg1[1]   = ElCLib.Parameter(C1, pnttg1sol[1]);
+                    Direction2D dir1cen = new(Center.X() - x1, Center.Y() - y1);
+                    pnttg1sol[1] = new Point2D(Center.XY() + signe * Radius * dir1cen.XY());
+                    par1sol[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
+                    pararg1[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[1]);
                 }
                 pntcen3[1] = cirsol[NbrSol].Location();
-                parcen3[1] = ElCLib.Parameter(OnLine, pntcen3[1]);
+                parcen3[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[1]);
             }
             else if (nbsol > 0)
             {
@@ -255,12 +258,12 @@ public sealed partial class GccAna_Circ2dTanOnRad
                         x0 = x1;
                         y0 = y1;
                     }
-                    math_DirectPolynomialRoots Sol = new((B * B + A * A) / (A * A),
+                    DirectPolynomialRoots Sol = new((B * B + A * A) / (A * A),
                                         2.0 * (B * C / (A * A) + (B / A) * x0 - y0),
                                         x0 * x0 + y0 * y0 + C * C / (A * A) - Coef[j] + 2.0 * C * x0 / A);
-                    if (Sol.IsDone())
+                    if (Sol.IsDone)
                     {
-                        for (int i = 1; i <= Sol.NbSolutions(); i++)
+                        for (int i = 1; i <= Sol.SolutionCount; i++)
                         {
 
                             if (Math.Abs(D) > Tol)
@@ -273,13 +276,13 @@ public sealed partial class GccAna_Circ2dTanOnRad
                                 xc = Sol.Value(i);
                                 yc = -(B / A) * xc - C / A;
                             }
-                            Center = new gp_Pnt2d(xc, yc);
+                            Center = new Point2D(xc, yc);
                             if (OnLine.Distance(Center) > Tol)
                             {
                                 continue;
                             }
                             NbrSol++;
-                            cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             double distcc1 = Center.Distance(center1);
                             if (!Qualified1.IsUnqualified())
@@ -298,21 +301,21 @@ public sealed partial class GccAna_Circ2dTanOnRad
                             {
                                 qualifier1[NbrSol] = GccEnt_enclosing;
                             }
-                            gp_Dir2d dir1cen = new(Center.X() - x1, Center.Y() - y1);
+                            Direction2D dir1cen = new(Center.X() - x1, Center.Y() - y1);
                             // OCCT: the signs are swapped: dir1cen points from C1 to the centre, so these are the points
                             // of the solution opposite its tangency point
                             if ((Radius > R1) || (Center.Distance(center1) > R1))
                             {
-                                pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dir1cen.XY());
+                                pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * dir1cen.XY());
                             }
                             else
                             {
-                                pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() - Radius * dir1cen.XY());
+                                pnttg1sol[NbrSol] = new Point2D(Center.XY() - Radius * dir1cen.XY());
                             }
                             pntcen3[NbrSol] = cirsol[NbrSol].Location();
-                            par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-                            parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                            parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
                         }
                         WellDone = true;
                     }
@@ -334,11 +337,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
     }
 
     /// <summary>The solution number Index.</summary>
-    public gp_Circ2d ThisSolution(int Index)
+    public Circle2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return cirsol[Index];
     }
@@ -348,11 +351,11 @@ public sealed partial class GccAna_Circ2dTanOnRad
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -361,15 +364,15 @@ public sealed partial class GccAna_Circ2dTanOnRad
     }
 
     /// <summary>The tangency point of the solution number Index with the first argument: its parameter on the solution, its parameter on the argument, and the point.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -380,15 +383,15 @@ public sealed partial class GccAna_Circ2dTanOnRad
     }
 
     /// <summary>The centre of the solution number Index on the On-curve: its parameter there, and the point.</summary>
-    public void CenterOn3(int Index, out double ParArg, out gp_Pnt2d PntSol)
+    public void CenterOn3(int Index, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -402,12 +405,12 @@ public sealed partial class GccAna_Circ2dTanOnRad
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame1[Index] == 0)

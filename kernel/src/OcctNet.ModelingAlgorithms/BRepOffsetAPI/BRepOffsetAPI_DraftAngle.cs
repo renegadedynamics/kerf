@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -89,9 +92,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     /// Its tangent neighbours are added too. <paramref name="Flag"/> false keeps cylindrical neighbours' tangency.
     /// Check <see cref="AddDone"/> after.
     /// </summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
-    /// <exception cref="Standard_ConstructionError">An earlier Add failed and its face wasn't removed.</exception>
-    public void Add(in TopoDS_Face F, in gp_Dir D, double Angle, in gp_Pln Plane, bool Flag = true)
+    /// <exception cref="NullObjectException">No shape was given.</exception>
+    /// <exception cref="ConstructionErrorException">An earlier Add failed and its face wasn't removed.</exception>
+    public void Add(in TopoDS_Face F, in Direction3D D, double Angle, in Plane3D Plane, bool Flag = true)
     {
         // POP-DPF : protection
         if (Math.Abs(Angle) <= 1.0e-04)
@@ -105,7 +108,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>True if the last <see cref="Add"/> succeeded.</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
     public bool AddDone()
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::AddDone() - initial shape is not set");
@@ -115,8 +118,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>Cancels the face <paramref name="F"/> and the faces added with it (after a failed Add).</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
-    /// <exception cref="Standard_NoSuchObject">The face wasn't added, or the draft was built.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
+    /// <exception cref="NoSuchObjectException">The face wasn't added, or the draft was built.</exception>
     public void Remove(in TopoDS_Face F)
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Remove() - initial shape is not set");
@@ -126,7 +129,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>The face, edge or vertex on which the draft failed (null if none).</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
     public TopoDS_Shape ProblematicShape()
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(),
@@ -137,7 +140,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>The error status.</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
     public Draft_ErrorStatus Status()
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(), "BRepOffsetAPI_DraftAngle::Status() - initial shape is not set");
@@ -147,9 +150,9 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>The faces of the shape added together with the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
-    /// <exception cref="Standard_NoSuchObject">The face wasn't added.</exception>
-    /// <exception cref="StdFail_NotDone">The draft isn't built.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
+    /// <exception cref="NoSuchObjectException">The face wasn't added.</exception>
+    /// <exception cref="NotDoneException">The draft isn't built.</exception>
     public ISchematiqList<TopoDS_Shape> ConnectedFaces(in TopoDS_Face F)
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(),
@@ -160,8 +163,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>The faces of the shape on which a draft was given.</summary>
-    /// <exception cref="Standard_NullObject">No shape was given.</exception>
-    /// <exception cref="StdFail_NotDone">An Add failed.</exception>
+    /// <exception cref="NullObjectException">No shape was given.</exception>
+    /// <exception cref="NotDoneException">An Add failed.</exception>
     public ISchematiqList<TopoDS_Shape> ModifiedFaces()
     {
         Standard_NullObject_Raise_if(myInitialShape.IsNull(),
@@ -254,8 +257,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
     //=================================================================================================
 
     /// <summary>Builds the draft. Check IsDone, then <see cref="Status"/> and <see cref="ProblematicShape"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">An Add failed and its face wasn't removed.</exception>
-    public override void Build(Message_ProgressRange theRange = default)
+    /// <exception cref="ConstructionErrorException">An Add failed and its face wasn't removed.</exception>
+    public override void Build(ProgressRange theRange = default)
     {
         myResultCopy = null;
         draft().Perform();
@@ -339,7 +342,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             BRepAdaptor_Curve2d aBAC2D1 = new(TopoDS.Edge(CurEdge), aFace);
             BRepAdaptor_Curve2d aBAC2D1R = new(TopoDS.Edge(CurEdge.Reversed()), aFace);
             // Get surface of the face to get 3D intersection point
-            Geom_Surface aSurf = BRep_Tool.Surface(aFace, out TopLoc_Location aLoc)!;
+            Geom_Surface aSurf = BRep_Tool.Surface(aFace, out Placement aLoc)!;
             // Get the tolerance of the current edge to compare intersection points
             double aTolCurE = BRep_Tool.Tolerance(TopoDS.Edge(CurEdge));
             //
@@ -349,7 +352,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 TopoDS_Shape aWire = wit.Value();
                 if (!aWire.IsSame(CurWire))
                 {
-                    NCollection_Sequence<gp_Pnt> pts = new();
+                    NCollection_Sequence<Point3D> pts = new();
                     bool Wadd = false;
                     eit.Initialize(aWire);
                     for (; eit.More(); eit.Next())
@@ -409,8 +412,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                         for (k = 1; k <= aNbIntPnt; ++k)
                         {
                             IntRes2d_IntersectionPoint aP2DInt = aGInter.Point(k);
-                            gp_Pnt2d aP2D = aP2DInt.Value();
-                            gp_Pnt aP3D = aSurf.Value(aP2D.X(), aP2D.Y());
+                            Point2D aP2D = aP2DInt.Value();
+                            Point3D aP3D = aSurf.Value(aP2D.X(), aP2D.Y());
                             //
                             // Check if the intersection point is new
                             int ied = 0;
@@ -531,8 +534,8 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 }
             }
             TopoDS_Face theFace = TopoDS.Face(Fseq[j]);
-            Geom_Surface? theSurf = BRep_Tool.Surface(theFace, out TopLoc_Location L);
-            if (Math.Abs(par - FirstPar) <= Precision.Confusion())
+            Geom_Surface? theSurf = BRep_Tool.Surface(theFace, out Placement L);
+            if (Math.Abs(par - FirstPar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 BB.UpdateVertex(Vfirst, ParsSeam[i][1], SeamEdge, BRep_Tool.Tolerance(Vfirst));
                 EPmap.ChangeFind(SeamEdge).Append(ParsSeam[i][1]);
@@ -551,7 +554,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 par = ParsNonSeam[i][j];
                 BB.Range(NewE, prevpar, par);
                 SeamEdge = TopoDS.Edge(Seam[i][j]);
-                if (j == ParsNonSeam[i].Length() && Math.Abs(par - LastPar) <= Precision.Confusion())
+                if (j == ParsNonSeam[i].Length() && Math.Abs(par - LastPar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     NewV = Vlast;
                     if (firstind == 2 && j == 2)
@@ -566,11 +569,11 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 else
                 {
                     BRepAdaptor_Curve bcur = new(NewE);
-                    gp_Pnt Point = bcur.Value(par);
+                    Point3D Point = bcur.Value(par);
                     NewV = new BRepLib_MakeVertex(Point).InternalVertex();
-                    BB.UpdateVertex(NewV, par, NewE, 10.0 * Precision.Confusion());
+                    BB.UpdateVertex(NewV, par, NewE, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
-                BB.UpdateVertex(NewV, ParsSeam[i][j], SeamEdge, 10.0 * Precision.Confusion());
+                BB.UpdateVertex(NewV, ParsSeam[i][j], SeamEdge, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
                 NewE.Orientation(TopAbs_FORWARD);
                 BB.Add(NewE, PrevV.Oriented(TopAbs_FORWARD));
                 BB.Add(NewE, NewV.Oriented(TopAbs_REVERSED));
@@ -589,7 +592,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 NewE = TopoDS.Edge(aLocalShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 par = LastPar;
-                if (Math.Abs(prevpar - par) > Precision.Confusion())
+                if (Math.Abs(prevpar - par) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     BB.Range(NewE, prevpar, par);
                     NewE.Orientation(TopAbs_FORWARD);
@@ -643,7 +646,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 remove = false;
                 for (i = 1; i < Seq.Length(); i++)
                 {
-                    if (Math.Abs(Seq[i] - Seq[i + 1]) <= Precision.Confusion())
+                    if (Math.Abs(Seq[i] - Seq[i + 1]) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         Seq.Remove(i + 1);
                         SeqShape.Remove(i + 1);
@@ -675,7 +678,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             lpar = Seq[1];
             TopoDS_Edge NewE;
             int firstind = 1;
-            if (Math.Abs(fpar - lpar) <= Precision.Confusion())
+            if (Math.Abs(fpar - lpar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 firstind = 2;
                 fpar = Seq[1];
@@ -735,7 +738,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                     // Find vertices
                     for (j = 1; j <= Seq2.Length(); j++)
                     {
-                        if (Math.Abs(fpar - Seq2[j]) <= Precision.Confusion())
+                        if (Math.Abs(fpar - Seq2[j]) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             break;
                         }
@@ -754,7 +757,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
             i = Seq.Length();
             fpar = Seq[i];
             lpar = LastPar;
-            if (Math.Abs(fpar - lpar) <= Precision.Confusion())
+            if (Math.Abs(fpar - lpar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -838,25 +841,25 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                 theCopy = aSub.InternalCopy(aWire);
                 aWire = theCopy.First();
                 // Adjusting period
-                Geom_Surface? theSurf = BRep_Tool.Surface(TopoDS.Face(CurFace), out TopLoc_Location L);
+                Geom_Surface? theSurf = BRep_Tool.Surface(TopoDS.Face(CurFace), out Placement L);
                 eit.Initialize(aWire);
                 for (; eit.More(); eit.Next())
                 {
                     TopoDS_Edge anEdge = TopoDS.Edge(eit.Value());
-                    gp_Pnt2d Pmid;
-                    BRep_Tool.UVPoints(anEdge, TopoDS.Face(CurFace), out gp_Pnt2d Pfirst, out gp_Pnt2d Plast);
+                    Point2D Pmid;
+                    BRep_Tool.UVPoints(anEdge, TopoDS.Face(CurFace), out Point2D Pfirst, out Point2D Plast);
                     BRepAdaptor_Curve2d bc2d = new(anEdge, TopoDS.Face(CurFace));
                     Pmid = bc2d.Value((bc2d.FirstParameter() + bc2d.LastParameter()) / 2.0);
-                    gp_Vec2d offset = new();
+                    Vector2D offset = new();
                     bool translate = false;
-                    if (Pfirst.X() - 2.0 * M_PI > Precision.Confusion() || Plast.X() - 2.0 * M_PI > Precision.Confusion()
-                        || Pmid.X() - 2.0 * M_PI > Precision.Confusion())
+                    if (Pfirst.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion() || Plast.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion()
+                        || Pmid.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         offset.SetCoord(-2.0 * M_PI, 0);
                         translate = true;
                     }
-                    if (Pfirst.X() < -Precision.Confusion() || Plast.X() < -Precision.Confusion()
-                        || Pmid.X() < -Precision.Confusion())
+                    if (Pfirst.X() < -global::Kerf.Engine.Foundation.Precision.Confusion() || Plast.X() < -global::Kerf.Engine.Foundation.Precision.Confusion()
+                        || Pmid.X() < -global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         offset.SetCoord(2.0 * M_PI, 0);
                         translate = true;
@@ -951,7 +954,7 @@ public class BRepOffsetAPI_DraftAngle : BRepBuilderAPI_ModifyShape
                         if (aVTol < anETol)
                         {
                             TopoDS_Vertex aNewVtx = new();
-                            gp_Pnt aVPnt = BRep_Tool.Pnt(aVtx);
+                            Point3D aVPnt = BRep_Tool.Pnt(aVtx);
                             aBB.MakeVertex(ref aNewVtx, aVPnt, anETol + Epsilon(anETol));
                             aNewVtx.Orientation(aVtx.Orientation());
                             myVtxToReplace.Bind(aVtx, aNewVtx);

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Hyperbola from Geom and Geom2d to a STEP hyperbola.</summary>
@@ -20,7 +22,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     /// <summary>A 2D hyperbola.</summary>
     public GeomToStep_MakeHyperbola(Geom2d_Hyperbola C, in StepData_Factors theLocalFactors)
     {
-        gp_Hypr2d gpHyp;
+        Hyperbola2D gpHyp;
         gpHyp = C.Hypr2d();
 
         StepGeom_Hyperbola HStep = new StepGeom_Hyperbola();
@@ -52,7 +54,7 @@ public sealed class GeomToStep_MakeHyperbola : GeomToStep_Root
     /// <summary>A 3D hyperbola, its position and radii divided by the length factor.</summary>
     public GeomToStep_MakeHyperbola(Geom_Hyperbola C, in StepData_Factors theLocalFactors)
     {
-        gp_Hypr gpHyp;
+        Hyperbola3D gpHyp;
         gpHyp = C.Hypr();
 
         StepGeom_Hyperbola HStep = new StepGeom_Hyperbola();

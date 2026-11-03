@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -23,10 +25,10 @@ public sealed class GeomBndLib_BSplineCurve2d : GeomBndLib_Curve2d.ICurve2dEvalu
     Geom2d_Curve? GeomBndLib_Curve2d.ICurve2dEvaluator.CurveGeometry() => myGeom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Bnd_Box2d Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
+    public Box2d Box(double theTol) => Box(myGeom.FirstParameter(), myGeom.LastParameter(), theTol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box2d Box(double theU1, double theU2, double theTol)
+    public Box2d Box(double theU1, double theU2, double theTol)
     {
         Geom2d_BSplineCurve aCurve = myGeom;
         double aU1 = aCurve.FirstParameter();
@@ -38,7 +40,7 @@ public sealed class GeomBndLib_BSplineCurve2d : GeomBndLib_Curve2d.ICurve2dEvalu
             aTrim1 = aU1;
             aTrim2 = aU2;
         }
-        double anEps = Precision.PConfusion();
+        double anEps = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (Math.Abs(aU1 - aTrim1) > anEps || Math.Abs(aU2 - aTrim2) > anEps)
         {
             Geom2d_Geometry aCopy = aCurve.Copy();
@@ -46,7 +48,7 @@ public sealed class GeomBndLib_BSplineCurve2d : GeomBndLib_Curve2d.ICurve2dEvalu
             aCurve.Segment(aTrim1, aTrim2);
         }
 
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         for (int anIdx = 1; anIdx <= aCurve.NbPoles(); ++anIdx)
         {
             aBox.Add(aCurve.Pole(anIdx));
@@ -56,7 +58,7 @@ public sealed class GeomBndLib_BSplineCurve2d : GeomBndLib_Curve2d.ICurve2dEvalu
     }
 
     /// <summary>Compute precise bounding box using numerical optimization.</summary>
-    public Bnd_Box2d BoxOptimal(double theU1, double theU2, double theTol)
+    public Box2d BoxOptimal(double theU1, double theU2, double theTol)
     {
         Geom2dAdaptor_Curve aGACurve = new(myGeom);
         return GeomBndLib_SplineHelpers.CurveBoxOptimal(aGACurve, theU1, theU2, theTol);

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -33,10 +34,10 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     public NCollection_List<TopoDS_Shape> Shells() => myShells;
 
     /// <summary>Builds the shells.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         GetReport().Clear();
-        using var aPS = new Message_ProgressScope(theRange, "Building shells", 1);
+        using var aPS = new ProgressScope(theRange, "Building shells", 1);
         //
         BOPTools_AlgoTools.MakeConnexityBlocks(myStartShapes, TopAbs_EDGE, TopAbs_FACE, myLCB);
         if (UserBreak(aPS))
@@ -511,7 +512,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
     }
 
     /// <summary>Makes a shell of each regular block, and splits the others (in parallel).</summary>
-    protected void MakeShells(Message_ProgressRange theRange)
+    protected void MakeShells(ProgressRange theRange)
     {
         bool bIsRegular;
         int aNbVCBK, k;
@@ -519,7 +520,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         NCollection_List<TopoDS_Shape>.Iterator aIt = new();
         NCollection_DynamicArray<BOPAlgo_CBK> aVCBK = new();
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         myShells.Clear();
         //
         aItCB.Initialize(myLCB);
@@ -548,7 +549,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
         }
         //
         aNbVCBK = aVCBK.Length();
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), null, aNbVCBK);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(), null, aNbVCBK);
         for (int iS = 0; iS < aNbVCBK; ++iS)
         {
             aVCBK.ChangeValue(iS).SetProgressRange(aPSParallel.Next());
@@ -597,7 +598,7 @@ public class BOPAlgo_ShellSplitter : BOPAlgo_Algo
 internal sealed class BOPAlgo_CBK : BOPTools_Parallel.ISolver
 {
     private BOPTools_ConnexityBlock? myPCB;
-    private Message_ProgressRange myProgressRange;
+    private ProgressRange myProgressRange;
 
     public BOPAlgo_CBK()
     {
@@ -611,12 +612,12 @@ internal sealed class BOPAlgo_CBK : BOPTools_Parallel.ISolver
     public BOPTools_ConnexityBlock ConnexityBlock() => myPCB!;
 
     //
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     //
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (!aPS.More())
         {
             return;

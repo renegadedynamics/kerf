@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
@@ -15,7 +16,7 @@ namespace OcctNet.DataExchange.Tests;
 /// </summary>
 internal static class StepFileDump
 {
-    internal static List<string> Dump(Stream theStream, StepFile_ReadLimits? theLimits = null, Message_ProgressRange theRange = default)
+    internal static List<string> Dump(Stream theStream, StepFile_ReadLimits? theLimits = null, ProgressRange theRange = default)
     {
         var aLines = new List<string>();
         StepFile_ReadData aData = new();
@@ -27,7 +28,7 @@ internal static class StepFileDump
             StepFile_Parser aParser = new(aScanner, theRange);
             aResult = aParser.parse().ToString(CultureInfo.InvariantCulture);
         }
-        catch (Standard_Failure anEx)
+        catch (FailureException anEx)
         {
             aResult = "FATAL";
             aFatal = anEx.GetMessageString();

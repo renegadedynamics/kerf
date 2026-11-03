@@ -5,7 +5,8 @@
 
 #nullable disable warnings
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -76,11 +77,11 @@ public abstract class Interface_FileReaderTool
     /// <summary>
     /// Sets Messenger used for outputting messages
     /// </summary>
-    public void SetMessenger(Message_Messenger? messenger)
+    public void SetMessenger(Messenger? messenger)
     {
         if (messenger is null)
         {
-            themessenger = Message.DefaultMessenger();
+            themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         }
         else
         {
@@ -92,7 +93,7 @@ public abstract class Interface_FileReaderTool
     /// Returns Messenger used for outputting messages. The returned object is guaranteed to be non-null; default
     /// is Message::Messenger().
     /// </summary>
-    public Message_Messenger? Messenger()
+    public Messenger? Messenger()
     {
         return themessenger;
     }
@@ -145,7 +146,7 @@ public abstract class Interface_FileReaderTool
 
         for (num = thereader.FindNextRecord(0); num > 0; num = thereader.FindNextRecord(num))
         {
-            Standard_Transient newent = null;
+            Transient newent = null;
             Interface_Check ach = new Interface_Check();
             if (!Recognize(num, ref ach, ref newent))
             {
@@ -153,7 +154,7 @@ public abstract class Interface_FileReaderTool
                 if (thereports is null)
                 {
                     thereports =
-                        new NCollection_HArray1<Standard_Transient>(1, thereader.NbRecords());
+                        new NCollection_HArray1<Transient>(1, thereader.NbRecords());
                 }
                 thenbreps++;
                 thenbrep0++;
@@ -164,7 +165,7 @@ public abstract class Interface_FileReaderTool
                 if (thereports is null)
                 {
                     thereports =
-                        new NCollection_HArray1<Standard_Transient>(1, thereader.NbRecords());
+                        new NCollection_HArray1<Transient>(1, thereader.NbRecords());
                 }
                 thenbreps++;
                 thenbrep0++;
@@ -181,7 +182,7 @@ public abstract class Interface_FileReaderTool
     /// generate error messages if NewRead is called Note that it works thru a Recognizer (method Evaluate) which
     /// has to be memorized before starting
     /// </summary>
-    public abstract bool Recognize(int num, ref Interface_Check? ach, ref Standard_Transient? ent);
+    public abstract bool Recognize(int num, ref Interface_Check? ach, ref Transient? ent);
 
     /// <summary>
     /// Recognizes a record with the help of Libraries. Can be used to implement the method Recognize.
@@ -190,7 +191,7 @@ public abstract class Interface_FileReaderTool
     /// NewRead if it is called, gives a result but which is false &lt;ent&gt; is the result Returns False if
     /// recognition has failed, True else
     /// </summary>
-    public bool RecognizeByLib(int num, Interface_GeneralLib glib, Interface_ReaderLib rlib, ref Interface_Check? ach, ref Standard_Transient? ent)
+    public bool RecognizeByLib(int num, Interface_GeneralLib glib, Interface_ReaderLib rlib, ref Interface_Check? ach, ref Transient? ent)
     {
         // Interface_GeneralModule gmod: declared and unused in OCCT
         Interface_ReaderModule rmod = null;
@@ -247,7 +248,7 @@ public abstract class Interface_FileReaderTool
     /// (Unknown alone) or by LoadModel when an Entity has caused a Fail on reading (to keep at least its literal
     /// description) Uses Protocol to do it
     /// </summary>
-    public Standard_Transient? UnknownEntity()
+    public Transient? UnknownEntity()
     {
         return theproto.UnknownEntity();
     }
@@ -272,7 +273,7 @@ public abstract class Interface_FileReaderTool
         // MGE 16/06/98
         // Building of Messages
         //====================================
-        Message_Messenger TF = Messenger();
+        Messenger TF = Messenger();
         //====================================
         Interface_Check ach = new Interface_Check();
 
@@ -285,13 +286,13 @@ public abstract class Interface_FileReaderTool
             {
                 BeginRead(amodel); // according to the standard
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // Sendinf of message : Internal error during the header reading
                 if (TF is not null)
                 {
-                    Message_Msg Msg11 = new Message_Msg("XSTEP_11");
-                    TF.Send(Msg11.Get(), Message_Info);
+                    Msg Msg11 = new Msg("XSTEP_11");
+                    TF.Send(Msg11.Get(), Info);
                 }
             }
         }
@@ -310,7 +311,7 @@ public abstract class Interface_FileReaderTool
         while (num > 0)
         {
             int ierr = 0; // error on analysis of an entity
-            Standard_Transient anent = null;
+            Transient anent = null;
             try
             {
                 for (num = num0; num > 0; num = thereader.FindNextRecord(num))
@@ -331,9 +332,9 @@ public abstract class Interface_FileReaderTool
                         // Sending of message : Number of ignored Null Entities
                         if (TF is not null)
                         {
-                            Message_Msg Msg21 = new Message_Msg("XSTEP_21");
+                            Msg Msg21 = new Msg("XSTEP_21");
                             Msg21.Arg(amodel.NbEntities());
-                            TF.Send(Msg21.Get(), Message_Info);
+                            TF.Send(Msg21.Get(), Info);
                         }
                         continue;
                     }
@@ -353,7 +354,7 @@ public abstract class Interface_FileReaderTool
                 // clang-format on
                 // OCCT: a system signal (OSD_Exception, OSD_Signal: an access violation...) gives ierr = 2; their .NET
                 // counterparts are the exceptions that aren't Standard_Failure (decision 1183)
-                if (anException is not Standard_Failure)
+                if (anException is not FailureException)
                 {
                     ierr = 2;
                 }
@@ -367,17 +368,17 @@ public abstract class Interface_FileReaderTool
                         if (TF is not null)
                         {
 
-                            Message_Msg Msg21 = new Message_Msg("XSTEP_21");
+                            Msg Msg21 = new Msg("XSTEP_21");
                             Msg21.Arg(amodel.NbEntities() + 1);
 
-                            TF.Send(Msg21.Get(), Message_Info);
+                            TF.Send(Msg21.Get(), Info);
                         }
                         continue;
                     }
                 }
                 /*Interface_Check*/ ach = new Interface_Check(anent);
                 //: abv 03 Apr 00: trj3_s1-tc-214.stp: generate a message on exception
-                Message_Msg Msg278 = new Message_Msg("XSTEP_278");
+                Msg Msg278 = new Msg("XSTEP_278");
                 Msg278.Arg(amodel.StringLabel(anent).ToCString());
                 ach.SendFail(Msg278);
 
@@ -386,9 +387,9 @@ public abstract class Interface_FileReaderTool
                     // Sending of message : reading of entity failed
                     if (TF is not null)
                     {
-                        Message_Msg Msg22 = new Message_Msg("XSTEP_22");
+                        Msg Msg22 = new Msg("XSTEP_22");
                         Msg22.Arg(amodel.StringLabel(anent).ToCString());
-                        TF.Send(Msg22.Get(), Message_Info);
+                        TF.Send(Msg22.Get(), Info);
                     }
                     return;
                 }
@@ -403,23 +404,23 @@ public abstract class Interface_FileReaderTool
                         // Sending of message : recovered entity
                         if (TF is not null)
                         {
-                            Message_Msg Msg23 = new Message_Msg("XSTEP_23");
+                            Msg Msg23 = new Msg("XSTEP_23");
                             Msg23.Arg(num);
-                            TF.Send(Msg23.Get(), Message_Info);
+                            TF.Send(Msg23.Get(), Info);
                         }
                     }
 
                     //  Finally, we load an Unknown Entity
                     thenbreps++;
                     Interface_ReportEntity rep = new Interface_ReportEntity(ach, anent);
-                    Standard_Transient undef = UnknownEntity();
+                    Transient undef = UnknownEntity();
                     AnalyseRecord(num, undef, ref ach);
                     rep.SetContent(undef);
 
                     if (thereports is null)
                     {
                         thereports =
-                            new NCollection_HArray1<Standard_Transient>(1, thereader.NbRecords());
+                            new NCollection_HArray1<Transient>(1, thereader.NbRecords());
                     }
                     thenbreps++;
                     thereports.SetValue(num, rep);
@@ -433,9 +434,9 @@ public abstract class Interface_FileReaderTool
                         // Sending of message : reading of entity failed
                         if (TF is not null)
                         {
-                            Message_Msg Msg22 = new Message_Msg("XSTEP_22");
+                            Msg Msg22 = new Msg("XSTEP_22");
                             Msg22.Arg(amodel.StringLabel(anent).ToCString());
-                            TF.Send(Msg22.Get(), Message_Info);
+                            TF.Send(Msg22.Get(), Info);
                         }
                     }
                     //  We keep <rep> as is : no additional file analysis,
@@ -453,9 +454,9 @@ public abstract class Interface_FileReaderTool
                 // Sending of message : report
                 if (TF is not null)
                 {
-                    Message_Msg Msg24 = new Message_Msg("XSTEP_24");
+                    Msg Msg24 = new Msg("XSTEP_24");
                     Msg24.Arg(thenbreps);
-                    TF.Send(Msg24.Get(), Message_Info);
+                    TF.Send(Msg24.Get(), Info);
                 }
             }
             amodel.Reservate(-thenbreps - 10);
@@ -466,7 +467,7 @@ public abstract class Interface_FileReaderTool
                 {
                     continue;
                 }
-                Standard_Transient anent = thereader.BoundEntity(nr);
+                Transient anent = thereader.BoundEntity(nr);
                 Interface_ReportEntity rep =
                     (thereports.Value(nr) as Interface_ReportEntity);
                 amodel.SetReportEntity(-amodel.Number(anent), rep);
@@ -480,13 +481,13 @@ public abstract class Interface_FileReaderTool
             {
                 EndRead(amodel); // according to the standard
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // Sendinf of message : Internal error during the header reading
                 if (TF is not null)
                 {
-                    Message_Msg Msg11 = new Message_Msg("XSTEP_11");
-                    TF.Send(Msg11.Get(), Message_Info);
+                    Msg Msg11 = new Msg("XSTEP_11");
+                    TF.Send(Msg11.Get(), Info);
                 }
             }
         }
@@ -501,9 +502,9 @@ public abstract class Interface_FileReaderTool
     /// case of Fail or Warning, by producing a ReportEntyty plus , for a Fail, a literal Content (as an
     /// UnknownEntity). Performs also Trace
     /// </summary>
-    public Standard_Transient? LoadedEntity(int num)
+    public Transient? LoadedEntity(int num)
     {
-        Standard_Transient anent = thereader.BoundEntity(num);
+        Transient anent = thereader.BoundEntity(num);
         Interface_Check ach = new Interface_Check(anent);
         Interface_ReportEntity rep = null; // entite Report, s il y a lieu
         int irep = 0;
@@ -521,13 +522,13 @@ public abstract class Interface_FileReaderTool
         //    Trace Unknown Entity
         if (thetrace >= 2 && theproto.IsUnknownEntity(anent))
         {
-            Message_Messenger TF = Messenger();
+            Messenger TF = Messenger();
             if (TF is not null)
             {
-                Message_Msg Msg22 = new Message_Msg("XSTEP_22");
+                Msg Msg22 = new Msg("XSTEP_22");
                 // Sending of message : reading of entity failed
                 Msg22.Arg(themodel.StringLabel(anent).String());
-                TF.Send(Msg22.Get(), Message_Info);
+                TF.Send(Msg22.Get(), Info);
             }
         }
         //  ..        Actual Loading : Standard Specific        ..
@@ -555,7 +556,7 @@ public abstract class Interface_FileReaderTool
                 if (thereports is null)
                 {
                     thereports =
-                        new NCollection_HArray1<Standard_Transient>(1, thereader.NbRecords());
+                        new NCollection_HArray1<Transient>(1, thereader.NbRecords());
                 }
                 irep = num;
                 thenbreps++;
@@ -564,7 +565,7 @@ public abstract class Interface_FileReaderTool
 
             if (thetrace >= 2 && Messenger() is not null)
             {
-                using Message_Messenger.StreamBuffer sout = Messenger().SendInfo();
+                using global::Kerf.Engine.Foundation.Messenger.StreamBuffer sout = Messenger().SendInfo();
                 var aText = new StringWriter();
                 ach.Print(aText, 2);
                 sout.Append(aText.ToString());
@@ -578,7 +579,7 @@ public abstract class Interface_FileReaderTool
         }
         if (nbf > 0)
         {
-            Standard_Transient undef = UnknownEntity();
+            Transient undef = UnknownEntity();
             AnalyseRecord(num, undef, ref ach);
             rep.SetContent(undef);
         }
@@ -602,11 +603,11 @@ public abstract class Interface_FileReaderTool
     /// Integer; acheck : in out Check) returns Boolean; and call it from AnalyseRecord Returned Value : True if
     /// the entity could be loaded, False else (in case of syntactic fail)
     /// </summary>
-    public abstract bool AnalyseRecord(int num, Standard_Transient? anent, ref Interface_Check? acheck);
+    public abstract bool AnalyseRecord(int num, Transient? anent, ref Interface_Check? acheck);
 
     protected internal Interface_FileReaderTool()
     {
-        themessenger = Message.DefaultMessenger();
+        themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         theerrhand = true;
         thetrace = 0;
         thenbrep0 = thenbreps = 0;
@@ -638,10 +639,10 @@ public abstract class Interface_FileReaderTool
     private Interface_Protocol? theproto;
     private Interface_FileReaderData? thereader;
     private Interface_InterfaceModel? themodel;
-    private Message_Messenger? themessenger;
+    private Messenger? themessenger;
     private int thetrace;
     private bool theerrhand;
     private int thenbrep0;
     private int thenbreps;
-    private NCollection_HArray1<Standard_Transient>? thereports;
+    private NCollection_HArray1<Transient>? thereports;
 }

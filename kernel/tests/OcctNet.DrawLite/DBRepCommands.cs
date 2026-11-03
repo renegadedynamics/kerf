@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -516,7 +518,7 @@ internal static class DBRepCommands
         {
             OrderInd.SetValue(Index, Index);
             TopoDS_Shape aS = aShapes[Index];
-            gp_Pnt GPoint;
+            Point3D GPoint;
             if (aS.ShapeType() != TopAbs_VERTEX)
             {
                 BRepGProp.LinearProperties(aS, GPr);
@@ -1129,7 +1131,7 @@ internal static class DBRepCommands
         {
             string aText = Encoding.Latin1.GetString(aBytes);
             var aReader = new StringReader(aText);
-            Standard_Stream.SetInputLength(aReader, aText.Length);
+            StreamUtilities.SetInputLength(aReader, aText.Length);
             var aShapeSet = new BRepTools_ShapeSet();
             aShapeSet.Read(aReader);
             if (aShapeSet.NbShapes() == 0)

@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 
 namespace Occt;
 
@@ -43,8 +45,8 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
     /// </summary>
     public void MakeThickSolidByJoin(in TopoDS_Shape S, NCollection_List<TopoDS_Shape> ClosingFaces, double Offset,
                                      double Tol, BRepOffset_Mode Mode = BRepOffset_Skin, bool Intersection = false,
-                                     bool SelfInter = false, GeomAbs_JoinType Join = GeomAbs_Arc,
-                                     bool RemoveIntEdges = false, Message_ProgressRange theRange = default)
+                                     bool SelfInter = false, JoinKind Join = Arc,
+                                     bool RemoveIntEdges = false, ProgressRange theRange = default)
     {
         NotDone();
         myLastUsedAlgo = OffsetAlgo_Type.OffsetAlgo_JOIN;
@@ -89,7 +91,7 @@ public class BRepOffsetAPI_MakeThickSolid : BRepOffsetAPI_MakeOffsetShape
     //=================================================================================================
 
     /// <summary>Does nothing.</summary>
-    public override void Build(Message_ProgressRange theRange = default) { }
+    public override void Build(ProgressRange theRange = default) { }
 
     //=================================================================================================
 

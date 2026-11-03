@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopOpeBRepTool_OutCurveType;
@@ -128,7 +129,7 @@ public sealed class TopOpeBRepDS_BuildTool
         double p = P;
 
         // 13/07/95 :
-        Geom_Curve? C = BRep_Tool.Curve(e, out TopLoc_Location _, out double f, out double _);
+        Geom_Curve? C = BRep_Tool.Curve(e, out Placement _, out double f, out double _);
         if (C is not null && C.IsPeriodic())
         {
             double per = C.Period();
@@ -151,7 +152,7 @@ public sealed class TopOpeBRepDS_BuildTool
                 {
                     if (p < f)
                     {
-                        double pp = ElCLib.InPeriod(p, f, f + per);
+                        double pp = global::Kerf.Engine.Geometry.ElCLib.InPeriod(p, f, f + per);
                         p = pp;
                     }
                 }

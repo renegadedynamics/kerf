@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 
 namespace Occt;
@@ -27,7 +28,7 @@ public struct BRepAlgoAPI_Options : IEquatable<BRepAlgoAPI_Options>
     /// <summary>OCCT's defaults.</summary>
     public BRepAlgoAPI_Options()
     {
-        FuzzyValue = Precision.Confusion();
+        FuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
         UseOBB = false;
         CheckInverted = true;

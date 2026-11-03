@@ -3,6 +3,8 @@
 // part; objects with meshes or components, build items with transforms, colours as core base materials.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -63,11 +65,11 @@ public sealed class RW3mf_TreeWriter
     public RW3mf_WriteOptions Options { get; }
 
     /// <summary>Writes the tree as a 3MF package to the stream. False if cancelled or the stream fails.</summary>
-    public bool Write(XdeDoc_Tree theTree, Stream theStream, Message_ProgressRange theProgress = default)
+    public bool Write(XdeDoc_Tree theTree, Stream theStream, ProgressRange theProgress = default)
     {
         ArgumentNullException.ThrowIfNull(theTree);
         ArgumentNullException.ThrowIfNull(theStream);
-        using var aPS = new Message_ProgressScope(theProgress, "Writing 3MF", Options.MeshParameters is null ? 1 : 2);
+        using var aPS = new ProgressScope(theProgress, "Writing 3MF", Options.MeshParameters is null ? 1 : 2);
         XdeDoc_Tree aTree = theTree;
         if (Options.MeshParameters is IMeshTools_Parameters aParams)
         {
@@ -99,7 +101,7 @@ public sealed class RW3mf_TreeWriter
     }
 
     /// <summary>Writes the tree to a 3MF file.</summary>
-    public bool Perform(XdeDoc_Tree theTree, string theFilePath, Message_ProgressRange theProgress = default)
+    public bool Perform(XdeDoc_Tree theTree, string theFilePath, ProgressRange theProgress = default)
     {
         using FileStream aFile = File.Create(theFilePath);
         return Write(theTree, aFile, theProgress);
@@ -179,10 +181,10 @@ public sealed class RW3mf_TreeWriter
         public RWMesh_ProductMesh? Mesh;
         public int DefaultMaterial = -1;
         public List<int>? GroupMaterials;
-        public List<(int ObjectId, gp_Trsf? Trsf)>? Components;
+        public List<(int ObjectId, Transform3D? Trsf)>? Components;
     }
 
-    private byte[]? buildModel(XdeDoc_Tree theTree, Message_ProgressRange theProgress)
+    private byte[]? buildModel(XdeDoc_Tree theTree, ProgressRange theProgress)
     {
         double anInputUnit = Options.InputLengthUnit ?? theTree.LengthUnit?.UnitValue ?? 0.001;
         string? aUnitName = UnitName(anInputUnit);
@@ -193,9 +195,9 @@ public sealed class RW3mf_TreeWriter
             aScale = anInputUnit / 0.001;
         }
 
-        var aMaterials = new List<Quantity_ColorRGBA>();
-        var aMaterialIndex = new Dictionary<Quantity_ColorRGBA, int>();
-        int materialOf(Quantity_ColorRGBA theColor)
+        var aMaterials = new List<ColorWithAlpha>();
+        var aMaterialIndex = new Dictionary<ColorWithAlpha, int>();
+        int materialOf(ColorWithAlpha theColor)
         {
             if (!aMaterialIndex.TryGetValue(theColor, out int anIndex))
             {
@@ -207,24 +209,24 @@ public sealed class RW3mf_TreeWriter
         }
 
         var anObjects = new List<ObjectDef>();
-        var aKnown = new Dictionary<(XdeDoc_Product, Quantity_ColorRGBA?, Quantity_ColorRGBA?), ObjectDef?>();
+        var aKnown = new Dictionary<(XdeDoc_Product, ColorWithAlpha?, ColorWithAlpha?), ObjectDef?>();
         var aMeshes = new Dictionary<XdeDoc_Product, RWMesh_ProductMesh>(ReferenceEqualityComparer.Instance);
-        var aBuild = new List<(int ObjectId, gp_Trsf? Trsf)>();
+        var aBuild = new List<(int ObjectId, Transform3D? Trsf)>();
         int aNextId = 2; // 1 is the base materials
         int aNbParts = theTree.Products().Count(p => !p.IsAssembly);
-        using var aPS = new Message_ProgressScope(theProgress, "Objects", Math.Max(1, aNbParts));
+        using var aPS = new ProgressScope(theProgress, "Objects", Math.Max(1, aNbParts));
         bool isCancelled = false;
 
         ObjectDef? objectOf(XdeDoc_Product theProduct, XdeDoc_Style theStyle)
         {
-            Quantity_ColorRGBA? aColor = theStyle.SurfaceColor ?? theStyle.CurveColor;
+            ColorWithAlpha? aColor = theStyle.SurfaceColor ?? theStyle.CurveColor;
             if (aKnown.TryGetValue((theProduct, theStyle.SurfaceColor, theStyle.CurveColor), out ObjectDef? aDef))
             {
                 return aDef;
             }
             if (theProduct.IsAssembly)
             {
-                var aComponents = new List<(int, gp_Trsf?)>();
+                var aComponents = new List<(int, Transform3D?)>();
                 foreach (XdeDoc_Instance aComponent in theProduct.Components)
                 {
                     XdeDoc_Style aStyle = componentStyle(theTree, aComponent, theStyle);
@@ -239,7 +241,7 @@ public sealed class RW3mf_TreeWriter
                     }
                     if (aChild is not null)
                     {
-                        aComponents.Add((aChild.Id, aComponent.Location.IsIdentity() ? null : aComponent.Location.Transformation()));
+                        aComponents.Add((aChild.Id, aComponent.Location.IsIdentity ? null : aComponent.Location.Transformation()));
                     }
                 }
                 aDef = aComponents.Count == 0 ? null : new ObjectDef { Name = theProduct.Name, Components = aComponents };
@@ -268,8 +270,8 @@ public sealed class RW3mf_TreeWriter
                     if (hasColor)
                     {
                         // a part with colours but none of its own takes white where its faces have none
-                        aDef.DefaultMaterial = materialOf(aColor ?? new Quantity_ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f));
-                        aDef.GroupMaterials = aMesh.Groups.Select(g => g.Color is Quantity_ColorRGBA c ? materialOf(c) : -1).ToList();
+                        aDef.DefaultMaterial = materialOf(aColor ?? new ColorWithAlpha(1.0f, 1.0f, 1.0f, 1.0f));
+                        aDef.GroupMaterials = aMesh.Groups.Select(g => g.Color is ColorWithAlpha c ? materialOf(c) : -1).ToList();
                     }
                 }
             }
@@ -296,7 +298,7 @@ public sealed class RW3mf_TreeWriter
             }
             if (aDef is not null)
             {
-                aBuild.Add((aDef.Id, aRoot.Location.IsIdentity() ? null : aRoot.Location.Transformation()));
+                aBuild.Add((aDef.Id, aRoot.Location.IsIdentity ? null : aRoot.Location.Transformation()));
             }
         }
 
@@ -347,11 +349,11 @@ public sealed class RW3mf_TreeWriter
                 else
                 {
                     aW.WriteStartElement("components", CoreNamespace);
-                    foreach ((int anId, gp_Trsf? aTrsf) in anObject.Components!)
+                    foreach ((int anId, Transform3D? aTrsf) in anObject.Components!)
                     {
                         aW.WriteStartElement("component", CoreNamespace);
                         aW.WriteAttributeString("objectid", anId.ToString(CultureInfo.InvariantCulture));
-                        if (aTrsf is gp_Trsf aT)
+                        if (aTrsf is Transform3D aT)
                         {
                             aW.WriteAttributeString("transform", Transform(aT, aScale));
                         }
@@ -364,11 +366,11 @@ public sealed class RW3mf_TreeWriter
             aW.WriteEndElement();
 
             aW.WriteStartElement("build", CoreNamespace);
-            foreach ((int anId, gp_Trsf? aTrsf) in aBuild)
+            foreach ((int anId, Transform3D? aTrsf) in aBuild)
             {
                 aW.WriteStartElement("item", CoreNamespace);
                 aW.WriteAttributeString("objectid", anId.ToString(CultureInfo.InvariantCulture));
-                if (aTrsf is gp_Trsf aT)
+                if (aTrsf is Transform3D aT)
                 {
                     aW.WriteAttributeString("transform", Transform(aT, aScale));
                 }
@@ -438,9 +440,9 @@ public sealed class RW3mf_TreeWriter
     }
 
     /// <summary>A colour as 3MF writes it: "#RRGGBB" (sRGB), with "AA" if not opaque.</summary>
-    internal static string DisplayColor(in Quantity_ColorRGBA theColor)
+    internal static string DisplayColor(in ColorWithAlpha theColor)
     {
-        theColor.GetRGB().Values(out double aR, out double aG, out double aB, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+        theColor.GetRGB().Values(out double aR, out double aG, out double aB, ColorSpace.TOC_sRGB);
         static int toByte(double v) => (int)Math.Round(Math.Clamp(v, 0.0, 1.0) * 255.0);
         string aHex = string.Create(CultureInfo.InvariantCulture, $"#{toByte(aR):X2}{toByte(aG):X2}{toByte(aB):X2}");
         float anAlpha = theColor.Alpha();
@@ -451,7 +453,7 @@ public sealed class RW3mf_TreeWriter
     /// A transformation as 3MF writes it: "m00 m01 m02 m10 m11 m12 m20 m21 m22 m30 m31 m32", applied to row vectors
     /// (the transpose of OCCT's matrix), the translation scaled.
     /// </summary>
-    internal static string Transform(in gp_Trsf theTrsf, double theScale)
+    internal static string Transform(in Transform3D theTrsf, double theScale)
     {
         double[] aValues =
         [

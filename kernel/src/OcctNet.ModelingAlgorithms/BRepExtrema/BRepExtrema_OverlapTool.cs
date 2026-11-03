@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bvh;
 using BVH_Vec2d = Occt.NCollection_Vec2<double>;
 using BVH_Vec3d = Occt.NCollection_Vec3<double>;
 
@@ -18,7 +19,7 @@ namespace Occt;
 /// <see cref="BRepExtrema_SelfIntersection"/>; the result maps are its own. OCCT's debug output of the overlapped
 /// triangles (OVERLAP_TOOL_OUTPUT_TRIANGLES) is compiled out, as in OCCT.
 /// </remarks>
-public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, double>
+public class BRepExtrema_OverlapTool : PairTraverse<double, BVH_Vec3d, double>
 {
     private BRepExtrema_TriangleSet? mySet1;
     private BRepExtrema_TriangleSet? mySet2;
@@ -106,9 +107,9 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
             EdgeNormals[1] = BVH_Vec3d.Cross(Edges[1], Normal);
             EdgeNormals[2] = BVH_Vec3d.Cross(Edges[2], Normal);
 
-            EdgeNormals[0] = EdgeNormals[0] * (1.0 / Max(EdgeNormals[0].Modulus(), Precision.Confusion()));
-            EdgeNormals[1] = EdgeNormals[1] * (1.0 / Max(EdgeNormals[1].Modulus(), Precision.Confusion()));
-            EdgeNormals[2] = EdgeNormals[2] * (1.0 / Max(EdgeNormals[2].Modulus(), Precision.Confusion()));
+            EdgeNormals[0] = EdgeNormals[0] * (1.0 / Max(EdgeNormals[0].Modulus(), global::Kerf.Engine.Foundation.Precision.Confusion()));
+            EdgeNormals[1] = EdgeNormals[1] * (1.0 / Max(EdgeNormals[1].Modulus(), global::Kerf.Engine.Foundation.Precision.Confusion()));
+            EdgeNormals[2] = EdgeNormals[2] * (1.0 / Max(EdgeNormals[2].Modulus(), global::Kerf.Engine.Foundation.Precision.Confusion()));
 
             BVH_Vec3d aDirect01 = EdgeNormals[0] - EdgeNormals[1];
             BVH_Vec3d aDirect02 = EdgeNormals[0] + EdgeNormals[2];
@@ -118,7 +119,7 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
             Vertices[1] = Vertices[4] = theVertex1 + aDirect02 * (theDeflect / aDirect02.Dot(EdgeNormals[2]));
             Vertices[2] = Vertices[5] = theVertex2 + aDirect12 * (theDeflect / aDirect12.Dot(EdgeNormals[2]));
 
-            BVH_Vec3d aNormOffset = Normal * (theDeflect / Max(Normal.Modulus(), Precision.Confusion()));
+            BVH_Vec3d aNormOffset = Normal * (theDeflect / Max(Normal.Modulus(), global::Kerf.Engine.Foundation.Precision.Confusion()));
 
             for (int aVertIdx = 0; aVertIdx < 3; ++aVertIdx)
             {
@@ -187,7 +188,7 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
                                             in BVH_Vec2d theDirectSeg0,
                                             in BVH_Vec2d theDirectSeg1)
     {
-        double aDet = -theDirectSeg1.x() * theDirectSeg0.y() + theDirectSeg0.x() * theDirectSeg1.y();
+        double aDet = -theDirectSeg1.X() * theDirectSeg0.Y() + theDirectSeg0.X() * theDirectSeg1.Y();
 
         if (Math.Abs(aDet) < DBL_EPSILON) // segments are parallel
         {
@@ -209,15 +210,15 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
                 return false;
             }
 
-            var aNormal = new BVH_Vec2d(-aDirect.y(), aDirect.x());
+            var aNormal = new BVH_Vec2d(-aDirect.Y(), aDirect.X());
 
             return Math.Abs(theOriginSeg0.Dot(aNormal) - theOriginSeg1.Dot(aNormal)) < DBL_EPSILON;
         }
 
         BVH_Vec2d aDelta = theOriginSeg0 - theOriginSeg1;
 
-        double aU = (-theDirectSeg0.y() * aDelta.x() + theDirectSeg0.x() * aDelta.y()) / aDet;
-        double aV = (theDirectSeg1.x() * aDelta.y() - theDirectSeg1.y() * aDelta.x()) / aDet;
+        double aU = (-theDirectSeg0.Y() * aDelta.X() + theDirectSeg0.X() * aDelta.Y()) / aDet;
+        double aV = (theDirectSeg1.X() * aDelta.Y() - theDirectSeg1.Y() * aDelta.X()) / aDet;
 
         return aU >= 0.0 && aU <= 1.0 && aV >= 0.0 && aV <= 1.0;
     }
@@ -250,9 +251,9 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
             return false; // 1st triangle lies on one side of the 2nd triangle
         }
 
-        if (Math.Abs(aDistTrng0Vert0) > Precision.Confusion()
-            || Math.Abs(aDistTrng0Vert1) > Precision.Confusion()
-            || Math.Abs(aDistTrng0Vert2) > Precision.Confusion()) // general 3D case
+        if (Math.Abs(aDistTrng0Vert0) > global::Kerf.Engine.Foundation.Precision.Confusion()
+            || Math.Abs(aDistTrng0Vert1) > global::Kerf.Engine.Foundation.Precision.Confusion()
+            || Math.Abs(aDistTrng0Vert2) > global::Kerf.Engine.Foundation.Precision.Confusion()) // general 3D case
         {
             BVH_Vec3d aTrng0Normal = BVH_Vec3d.Cross(theTrng0Vert1 - theTrng0Vert0, theTrng0Vert2 - theTrng0Vert0).Normalized();
 
@@ -455,12 +456,12 @@ public class BRepExtrema_OverlapTool : BVH_PairTraverse<double, BVH_Vec3d, doubl
                                      double theTolerance)
     {
         // Check for overlap
-        return theBoxMin1.x() <= theBoxMax2.x() + theTolerance
-               && theBoxMax1.x() >= theBoxMin2.x() - theTolerance
-               && theBoxMin1.y() <= theBoxMax2.y() + theTolerance
-               && theBoxMax1.y() >= theBoxMin2.y() - theTolerance
-               && theBoxMin1.z() <= theBoxMax2.z() + theTolerance
-               && theBoxMax1.z() >= theBoxMin2.z() - theTolerance;
+        return theBoxMin1.X() <= theBoxMax2.X() + theTolerance
+               && theBoxMax1.X() >= theBoxMin2.X() - theTolerance
+               && theBoxMin1.Y() <= theBoxMax2.Y() + theTolerance
+               && theBoxMax1.Y() >= theBoxMin2.Y() - theTolerance
+               && theBoxMin1.Z() <= theBoxMax2.Z() + theTolerance
+               && theBoxMax1.Z() >= theBoxMin2.Z() - theTolerance;
     }
 
     private static NCollection_PackedMapOfInteger getSetOfFaces(NCollection_DataMap<int, NCollection_PackedMapOfInteger> theFaces,

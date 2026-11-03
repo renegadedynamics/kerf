@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -34,14 +40,14 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
     /// Creates and builds the cache for Bezier surface evaluation. Bezier surfaces are single-span, so the
     /// cache is built once at parameter (0.5, 0.5).
     /// </summary>
-    private static BSplSLib_Cache buildBezierCache(Geom_BezierSurface theGeom)
+    private static SurfaceCache buildBezierCache(Geom_BezierSurface theGeom)
     {
         NCollection_Array1<double> aUKnotSequence = theGeom.InternalUKnotSequence();
         NCollection_Array1<double> aVKnotSequence = theGeom.InternalVKnotSequence();
-        NCollection_Array2<gp_Pnt> aPoles = theGeom.InternalPoles();
+        NCollection_Array2<Point3D> aPoles = theGeom.InternalPoles();
         NCollection_Array2<double>? aWeights = theGeom.InternalWeights();
 
-        BSplSLib_Cache aCache = new(theGeom.UDegree(),
+        SurfaceCache aCache = new(theGeom.UDegree(),
                                     false,
                                     aUKnotSequence,
                                     theGeom.VDegree(),
@@ -53,12 +59,12 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         int aNbU = theUParams.Length();
@@ -80,10 +86,10 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
                 {
                     // Use unified curve evaluator
                     GeomGridEval_Curve aCurveEval = new(aCurve);
-                    NCollection_Array1<gp_Pnt> aCurveResult = aCurveEval.EvaluateGrid(theUParams);
+                    NCollection_Array1<Point3D> aCurveResult = aCurveEval.EvaluateGrid(theUParams);
 
                     // Reshape 1D curve result to 2D surface result (Nx1 grid)
-                    NCollection_Array2<gp_Pnt> aResultIso = new(1, aNbU, 1, 1);
+                    NCollection_Array2<Point3D> aResultIso = new(1, aNbU, 1, 1);
                     for (int k = 1; k <= aNbU; ++k)
                     {
                         aResultIso[k, 1] = aCurveResult[k];
@@ -91,16 +97,16 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
                     return aResultIso;
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // Isoline extraction failed, fall through to surface evaluation
             }
         }
 
         // Build cache (Bezier is single span, cache is built once)
-        BSplSLib_Cache aCache = buildBezierCache(myGeom);
+        SurfaceCache aCache = buildBezierCache(myGeom);
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         // Single span - use cache for all points
         for (int i = 0; i < aNbU; ++i)
@@ -108,7 +114,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
             double aU = theUParams.Value(theUParams.Lower() + i);
             for (int j = 0; j < aNbV; ++j)
             {
-                aCache.D0(aU, theVParams.Value(theVParams.Lower() + j), out gp_Pnt aPoint);
+                aCache.D0(aU, theVParams.Value(theVParams.Lower() + j), out Point3D aPoint);
                 aResult.SetValue(i + 1, j + 1, aPoint);
             }
         }
@@ -126,7 +132,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         }
 
         // Build cache (Bezier is single span, cache is built once)
-        BSplSLib_Cache aCache = buildBezierCache(myGeom);
+        SurfaceCache aCache = buildBezierCache(myGeom);
 
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
@@ -138,8 +144,8 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
             double aU = theUParams.Value(theUParams.Lower() + i);
             for (int j = 0; j < aNbV; ++j)
             {
-                aCache.D1(aU, theVParams.Value(theVParams.Lower() + j), out gp_Pnt aPoint, out gp_Vec aD1U,
-                          out gp_Vec aD1V);
+                aCache.D1(aU, theVParams.Value(theVParams.Lower() + j), out Point3D aPoint, out Vector3D aD1U,
+                          out Vector3D aD1V);
                 aResult[i + 1, j + 1] = new Geom_Surface.ResD1 { Point = aPoint, D1U = aD1U, D1V = aD1V };
             }
         }
@@ -157,7 +163,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         }
 
         // Build cache (Bezier is single span, cache is built once)
-        BSplSLib_Cache aCache = buildBezierCache(myGeom);
+        SurfaceCache aCache = buildBezierCache(myGeom);
 
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
@@ -169,8 +175,8 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
             double aU = theUParams.Value(theUParams.Lower() + i);
             for (int j = 0; j < aNbV; ++j)
             {
-                aCache.D2(aU, theVParams.Value(theVParams.Lower() + j), out gp_Pnt aPoint, out gp_Vec aD1U,
-                          out gp_Vec aD1V, out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+                aCache.D2(aU, theVParams.Value(theVParams.Lower() + j), out Point3D aPoint, out Vector3D aD1U,
+                          out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
                 aResult[i + 1, j + 1] = new Geom_Surface.ResD2
                 {
                     Point = aPoint,
@@ -204,7 +210,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         int aVDegree = myGeom.VDegree();
         NCollection_Array1<double> aUKnotSequence = myGeom.InternalUKnotSequence();
         NCollection_Array1<double> aVKnotSequence = myGeom.InternalVKnotSequence();
-        NCollection_Array2<gp_Pnt> aPoles = myGeom.InternalPoles();
+        NCollection_Array2<Point3D> aPoles = myGeom.InternalPoles();
         NCollection_Array2<double>? aWeights = myGeom.InternalWeights();
         bool isRational = (aWeights != null);
 
@@ -215,7 +221,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
             double aU = theUParams.Value(theUParams.Lower() + i);
             for (int j = 0; j < aNbV; ++j)
             {
-                BSplSLib.D3(aU,
+                SurfaceBSplSLib.D3(aU,
                             theVParams.Value(theVParams.Lower() + j),
                             0, // U span index (single span for Bezier)
                             0, // V span index (single span for Bezier)
@@ -231,16 +237,16 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
                             isRational,
                             false, // not U periodic
                             false, // not V periodic
-                            out gp_Pnt aPoint,
-                            out gp_Vec aD1U,
-                            out gp_Vec aD1V,
-                            out gp_Vec aD2U,
-                            out gp_Vec aD2V,
-                            out gp_Vec aD2UV,
-                            out gp_Vec aD3U,
-                            out gp_Vec aD3V,
-                            out gp_Vec aD3UUV,
-                            out gp_Vec aD3UVV);
+                            out Point3D aPoint,
+                            out Vector3D aD1U,
+                            out Vector3D aD1V,
+                            out Vector3D aD2U,
+                            out Vector3D aD2V,
+                            out Vector3D aD2UV,
+                            out Vector3D aD3U,
+                            out Vector3D aD3V,
+                            out Vector3D aD3UUV,
+                            out Vector3D aD3UVV);
                 aResult[i + 1, j + 1] = new Geom_Surface.ResD3
                 {
                     Point = aPoint,
@@ -264,7 +270,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
     /// Evaluates the partial derivative d^(NU+NV)S/(dU^NU dV^NV) at all grid points (BSplSLib::DN); zero above the
     /// degrees.
     /// </summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -272,12 +278,12 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0 || theNV < 0
             || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         // For Bezier surfaces, derivatives become zero when order exceeds degree in that direction
         // OCCT: not for a rational surface, whose derivatives of every order are non-zero in general; the grid
@@ -287,7 +293,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         if (theNU > aUDegree || theNV > aVDegree)
         {
             // All derivatives are zero
-            gp_Vec aZeroVec = new(0.0, 0.0, 0.0);
+            Vector3D aZeroVec = new(0.0, 0.0, 0.0);
             for (int i = 1; i <= aNbU; ++i)
             {
                 for (int j = 1; j <= aNbV; ++j)
@@ -299,7 +305,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
         }
 
         // Get poles, weights, and flat knots from geometry
-        NCollection_Array2<gp_Pnt> aPoles = myGeom.InternalPoles();
+        NCollection_Array2<Point3D> aPoles = myGeom.InternalPoles();
         NCollection_Array2<double>? aWeights = myGeom.InternalWeights();
         bool isRational = (aWeights != null);
         NCollection_Array1<double> aUKnotSequence = myGeom.InternalUKnotSequence();
@@ -311,7 +317,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
             double aU = theUParams.Value(theUParams.Lower() + i);
             for (int j = 0; j < aNbV; ++j)
             {
-                BSplSLib.DN(aU,
+                SurfaceBSplSLib.DN(aU,
                             theVParams.Value(theVParams.Lower() + j),
                             theNU,
                             theNV,
@@ -329,7 +335,7 @@ public sealed class GeomGridEval_BezierSurface : GeomGridEval.ISurfaceEvaluator
                             isRational,
                             false, // not U-periodic
                             false, // not V-periodic
-                            out gp_Vec aDN);
+                            out Vector3D aDN);
                 aResult.SetValue(i + 1, j + 1, aDN);
             }
         }

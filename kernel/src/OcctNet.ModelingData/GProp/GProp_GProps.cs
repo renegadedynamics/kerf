@@ -3,6 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,36 +25,36 @@ namespace Occt;
 public class GProp_GProps
 {
     /// <summary>Centre of mass, relative to <see cref="loc"/> (absolute coordinates in the elementary classes).</summary>
-    protected gp_Pnt g;
+    protected Point3D g;
 
     /// <summary>Reference point used for inertia accumulation.</summary>
-    protected gp_Pnt loc;
+    protected Point3D loc;
 
     /// <summary>Total mass / length / area / volume.</summary>
     protected double dim;
 
     /// <summary>Quadratic moments of inertia at <see cref="loc"/>.</summary>
-    protected gp_Mat inertia;
+    protected Matrix3x3 inertia;
 
     /// <summary>An empty system; the origin is the reference point.</summary>
     public GProp_GProps()
     {
-        g = gp.Origin();
-        loc = gp.Origin();
+        g = Constants.Origin();
+        loc = Constants.Origin();
         dim = 0.0;
-        inertia = new gp_Mat(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        inertia = new Matrix3x3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
     /// <summary>
     /// An empty system using <paramref name="SystemLocation"/> as its reference point. For accuracy, choose a point
     /// near the system's centre of mass.
     /// </summary>
-    public GProp_GProps(in gp_Pnt SystemLocation)
+    public GProp_GProps(in Point3D SystemLocation)
     {
-        g = gp.Origin();
+        g = Constants.Origin();
         loc = SystemLocation;
         dim = 0.0;
-        inertia = new gp_Mat(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        inertia = new Matrix3x3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
     /// <summary>A copy of the global properties of <paramref name="theOther"/> (C++ copy construction).</summary>
@@ -75,16 +83,16 @@ public class GProp_GProps
     /// system. Huygens' theorem moves the inertia of Item to the reference point of this system. A density already
     /// counted when Item was built (weighted points, a composed system) must not be given again.
     /// </summary>
-    /// <exception cref="Standard_DomainError">Density is not greater than gp::Resolution().</exception>
+    /// <exception cref="DomainErrorException">Density is not greater than gp::Resolution().</exception>
     public void Add(GProp_GProps Item, double Density = 1.0)
     {
-        if (Density <= gp.Resolution())
+        if (Density <= Constants.Resolution())
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
-        if (loc.Distance(Item.loc) <= gp.Resolution())
+        if (loc.Distance(Item.loc) <= Constants.Resolution())
         {
-            gp_XYZ GXYZ = (Item.g.XYZ()).Multiplied(Item.dim * Density);
+            Xyz GXYZ = (Item.g.XYZ()).Multiplied(Item.dim * Density);
             g.SetXYZ(g.XYZ().Multiplied(dim));
             GXYZ.Add(g.XYZ());
             dim = dim + Item.dim * Density;
@@ -101,9 +109,9 @@ public class GProp_GProps
         }
         else
         {
-            gp_XYZ Itemloc = loc.XYZ() - Item.loc.XYZ();
-            gp_XYZ Itemg = Item.loc.XYZ() + Item.g.XYZ();
-            gp_XYZ GXYZ = Item.g.XYZ() - Itemloc;
+            Xyz Itemloc = loc.XYZ() - Item.loc.XYZ();
+            Xyz Itemg = Item.loc.XYZ() + Item.g.XYZ();
+            Xyz GXYZ = Item.g.XYZ() - Itemloc;
             GXYZ = GXYZ.Multiplied(Item.dim * Density);
             g.SetXYZ(g.XYZ().Multiplied(dim));
             GXYZ.Add(g.XYZ());
@@ -119,16 +127,16 @@ public class GProp_GProps
             }
             // We have to compute the inertia of the Item at the location point
             // of the system using the Huyghens theorem
-            gp_Mat HMat;
-            gp_Mat ItemInertia = Item.inertia;
-            if (Item.g.XYZ().Modulus() > gp.Resolution())
+            Matrix3x3 HMat;
+            Matrix3x3 ItemInertia = Item.inertia;
+            if (Item.g.XYZ().Modulus() > Constants.Resolution())
             {
                 // Computes the inertia of Item at its dim centre
-                GProp.HOperator(new gp_Pnt(Itemg), Item.loc, Item.dim, out HMat);
+                GProp.HOperator(new Point3D(Itemg), Item.loc, Item.dim, out HMat);
                 ItemInertia = ItemInertia - HMat;
             }
             // Computes the inertia of Item at the location point of the system
-            GProp.HOperator(new gp_Pnt(Itemg), loc, Item.dim, out HMat);
+            GProp.HOperator(new Point3D(Itemg), loc, Item.dim, out HMat);
             ItemInertia = ItemInertia + HMat;
             inertia = inertia + ItemInertia * Density;
         }
@@ -138,29 +146,29 @@ public class GProp_GProps
     public double Mass() => dim;
 
     /// <summary>The centre of mass, in the absolute coordinate system.</summary>
-    public gp_Pnt CentreOfMass() => new(loc.XYZ() + g.XYZ());
+    public Point3D CentreOfMass() => new(loc.XYZ() + g.XYZ());
 
     /// <summary>
     /// The (symmetric) matrix of inertia in the central coordinate system: at the centre of mass, with axes parallel
     /// to the absolute ones. <see cref="GProp.HOperator"/> moves it elsewhere.
     /// </summary>
-    public gp_Mat MatrixOfInertia()
+    public Matrix3x3 MatrixOfInertia()
     {
-        GProp.HOperator(g, gp.Origin(), dim, out gp_Mat HMat);
+        GProp.HOperator(g, Constants.Origin(), dim, out Matrix3x3 HMat);
         return inertia - HMat;
     }
 
     /// <summary>The static moments of inertia about the three absolute axes.</summary>
     public void StaticMoments(out double Ix, out double Iy, out double Iz)
     {
-        gp_XYZ G = loc.XYZ() + g.XYZ();
+        Xyz G = loc.XYZ() + g.XYZ();
         Ix = G.X() * dim;
         Iy = G.Y() * dim;
         Iz = G.Z() * dim;
     }
 
     /// <summary>The moment of inertia of the system about the axis <paramref name="A"/>.</summary>
-    public double MomentOfInertia(in gp_Ax1 A)
+    public double MomentOfInertia(in Axis3D A)
     {
         // Moment of inertia / axis A
         // 1] computes the math_Matrix of inertia / A.location()
@@ -168,14 +176,14 @@ public class GProp_GProps
         // 3] then computes the scalar product between this vector and
         //    A.Direction()
 
-        if (loc.Distance(A.Location()) <= gp.Resolution())
+        if (loc.Distance(A.Location()) <= Constants.Resolution())
         {
             return (A.Direction().XYZ()).Dot((A.Direction().XYZ()).Multiplied(inertia));
         }
         else
         {
-            gp_Mat AxisInertia = MatrixOfInertia();
-            GProp.HOperator(new gp_Pnt(loc.XYZ() + g.XYZ()), A.Location(), dim, out gp_Mat HMat);
+            Matrix3x3 AxisInertia = MatrixOfInertia();
+            GProp.HOperator(new Point3D(loc.XYZ() + g.XYZ()), A.Location(), dim, out Matrix3x3 HMat);
             AxisInertia = AxisInertia + HMat;
             return (A.Direction().XYZ()).Dot((A.Direction().XYZ()).Multiplied(AxisInertia));
         }
@@ -187,9 +195,9 @@ public class GProp_GProps
     /// </summary>
     public GProp_PrincipalProps PrincipalProperties()
     {
-        var DiagMat = new math_Matrix(1, 3, 1, 3);
+        var DiagMat = new Matrix(1, 3, 1, 3);
         int i, j;
-        gp_Mat AxisInertia = MatrixOfInertia();
+        Matrix3x3 AxisInertia = MatrixOfInertia();
         for (j = 1; j <= 3; j++)
         {
             for (i = 1; i <= 3; i++)
@@ -197,14 +205,14 @@ public class GProp_GProps
                 DiagMat[i, j] = AxisInertia.Value(i, j);
             }
         }
-        var J = new math_Jacobi(DiagMat);
+        var J = new Jacobi(DiagMat);
         double Ixx = J.Value(1);
         double Iyy = J.Value(2);
         double Izz = J.Value(3);
         DiagMat = J.Vectors();
-        var Vxx = new gp_Vec(DiagMat[1, 1], DiagMat[2, 1], DiagMat[3, 1]);
-        var Vyy = new gp_Vec(DiagMat[1, 2], DiagMat[2, 2], DiagMat[3, 2]);
-        var Vzz = new gp_Vec(DiagMat[1, 3], DiagMat[2, 3], DiagMat[3, 3]);
+        var Vxx = new Vector3D(DiagMat[1, 1], DiagMat[2, 1], DiagMat[3, 1]);
+        var Vyy = new Vector3D(DiagMat[1, 2], DiagMat[2, 2], DiagMat[3, 2]);
+        var Vzz = new Vector3D(DiagMat[1, 3], DiagMat[2, 3], DiagMat[3, 3]);
         //
         // Protection against dim == 0.0e0 in case only a single point was provided
         //
@@ -217,9 +225,9 @@ public class GProp_GProps
             Ryy = Math.Sqrt(Math.Abs(Iyy / dim));
             Rzz = Math.Sqrt(Math.Abs(Izz / dim));
         }
-        return new GProp_PrincipalProps(Ixx, Iyy, Izz, Rxx, Ryy, Rzz, Vxx, Vyy, Vzz, new gp_Pnt(g.XYZ() + loc.XYZ()));
+        return new GProp_PrincipalProps(Ixx, Iyy, Izz, Rxx, Ryy, Rzz, Vxx, Vyy, Vzz, new Point3D(g.XYZ() + loc.XYZ()));
     }
 
     /// <summary>The radius of gyration of the system about the axis <paramref name="A"/>.</summary>
-    public double RadiusOfGyration(in gp_Ax1 A) => Math.Sqrt(MomentOfInertia(A) / dim);
+    public double RadiusOfGyration(in Axis3D A) => Math.Sqrt(MomentOfInertia(A) / dim);
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -77,7 +78,7 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             var aSet = new GeomTools_Curve2dSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
-            Standard_Stream.Precision(aWriter, thePrecision);
+            StreamUtilities.Precision(aWriter, thePrecision);
             int aCount = Count(theSection);
             aWriter.Write($"Curve2ds {aCount}\n");
             for (int i = 1; i <= aCount; i++)
@@ -94,7 +95,7 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             var aSet = new GeomTools_CurveSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
-            Standard_Stream.Precision(aWriter, thePrecision);
+            StreamUtilities.Precision(aWriter, thePrecision);
             int aCount = Count(theSection);
             aWriter.Write($"Curves {aCount}\n");
             for (int i = 1; i <= aCount; i++)
@@ -111,7 +112,7 @@ public partial class GeomTools_CorpusTests(ITestOutputHelper output)
             var aSet = new GeomTools_SurfaceSet();
             aSet.Read(new StringReader(theSection));
             var aWriter = new StringWriter();
-            Standard_Stream.Precision(aWriter, thePrecision);
+            StreamUtilities.Precision(aWriter, thePrecision);
             int aCount = Count(theSection);
             aWriter.Write($"Surfaces {aCount}\n");
             for (int i = 1; i <= aCount; i++)

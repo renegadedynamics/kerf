@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2011-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
-using static Occt.NCollection_CellFilter_Action;
+using static Kerf.Engine.Collections.CellFilterAction;
 
 namespace Occt;
 
@@ -13,7 +15,7 @@ namespace Occt;
 /// point within a tolerance.
 /// </summary>
 /// <remarks>A working object, as OCCT's (the allocator argument is dropped).</remarks>
-public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector<int, gp_XY>
+public sealed class BRepMesh_VertexInspector : ICellFilterInspector<int, Xy>
 {
     private int myIndex;
     private double myMinSqDist;
@@ -21,15 +23,15 @@ public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector
     private double myTolerance1;
     private NCollection_DynamicArray<BRepMesh_Vertex> myVertices;
     private readonly NCollection_List<int> myDelNodes;
-    private gp_XY myPoint;
+    private Xy myPoint;
 
     public static int Dimension => 2;
 
     /// <summary>The i-th coordinate (from 0) of the point.</summary>
-    public static double Coord(int i, gp_XY thePnt) => thePnt.Coord(i + 1);
+    public static double Coord(int i, Xy thePnt) => thePnt.Coord(i + 1);
 
     /// <summary>The point shifted by the tolerance in both directions.</summary>
-    public static gp_XY Shift(in gp_XY thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol);
+    public static Xy Shift(in Xy thePnt, double theTol) => new(thePnt.X() + theTol, thePnt.Y() + theTol);
 
     /// <summary>An empty inspector with the tolerance <c>Precision::Confusion()</c>.</summary>
     public BRepMesh_VertexInspector()
@@ -38,7 +40,7 @@ public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector
         myMinSqDist = RealLast();
         myVertices = new NCollection_DynamicArray<BRepMesh_Vertex>();
         myDelNodes = new NCollection_List<int>();
-        SetTolerance(Precision.Confusion());
+        SetTolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Stores a vertex, reusing the first deleted index if any; returns its index.</summary>
@@ -94,7 +96,7 @@ public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector
     public ref BRepMesh_Vertex GetVertex(int theIndex) => ref myVertices.ChangeValue(theIndex - 1);
 
     /// <summary>Sets the point to search for, and clears the result.</summary>
-    public void SetPoint(in gp_XY thePoint)
+    public void SetPoint(in Xy thePoint)
     {
         myIndex = 0;
         myMinSqDist = RealLast();
@@ -114,7 +116,7 @@ public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector
     public ref NCollection_DynamicArray<BRepMesh_Vertex> ChangeVertices() => ref myVertices;
 
     /// <summary>Keeps the vertex if it is the nearest so far within the tolerance; purges deleted vertices.</summary>
-    public NCollection_CellFilter_Action Inspect(int theTarget)
+    public CellFilterAction Inspect(int theTarget)
     {
         BRepMesh_Vertex aVertex = myVertices.Value(theTarget - 1);
         if (aVertex.Movability() == BRepMesh_Deleted)
@@ -123,9 +125,9 @@ public sealed class BRepMesh_VertexInspector : INCollection_CellFilter_Inspector
             return CellFilter_Purge;
         }
 
-        gp_XY aVec = (myPoint - aVertex.Coord());
+        Xy aVec = (myPoint - aVertex.Coord());
         bool inTol;
-        if (Math.Abs(myTolerance1) < Precision.Confusion())
+        if (Math.Abs(myTolerance1) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             inTol = aVec.SquareModulus() < myTolerance0;
         }

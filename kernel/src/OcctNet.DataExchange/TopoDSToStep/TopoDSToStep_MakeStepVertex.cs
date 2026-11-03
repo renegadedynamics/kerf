@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopoDSToStep_MakeVertexError;
 
 namespace Occt;
@@ -61,7 +63,7 @@ public sealed class TopoDSToStep_MakeStepVertex : TopoDSToStep_Root
             return;
         }
 
-        gp_Pnt P;
+        Point3D P;
 
         P = BRep_Tool.Pnt(aVertex);
         var MkPoint = new GeomToStep_MakeCartesianPoint(P, theLocalFactors.LengthFactor());
@@ -80,7 +82,7 @@ public sealed class TopoDSToStep_MakeStepVertex : TopoDSToStep_Root
     public void Init(in TopoDS_Vertex aVertex, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aVertex, aTool, FP, new StepData_Factors());
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_TopologicalRepresentationItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeStepVertex::Value() - no result");

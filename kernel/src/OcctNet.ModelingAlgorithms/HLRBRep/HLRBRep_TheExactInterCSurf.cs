@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +13,7 @@ namespace Occt;
 /// </summary>
 public sealed class HLRBRep_TheExactInterCSurf
     : IntImp_IntCS<HLRBRep_TheCSFunctionOfInterCSurf, HLRBRep_Surface, HLRBRep_SurfaceTool,
-                   gp_Lin, HLRBRep_LineTool>,
+                   Line3D, HLRBRep_LineTool>,
       IIntCurveSurface_TheExactInter<HLRBRep_TheExactInterCSurf, HLRBRep_TheCSFunctionOfInterCSurf>
 {
     public HLRBRep_TheExactInterCSurf(double U, double V, double W, HLRBRep_TheCSFunctionOfInterCSurf F,

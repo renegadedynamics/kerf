@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 
@@ -63,7 +66,7 @@ internal static class XdeDocDump
         if (theDoc.GetReferredShape(theLabel, out XdeDoc_Label aReferred))
         {
             theOut.Add("P " + aReferred.Entry());
-            gp_Trsf aTrsf = theDoc.GetLocation(theLabel).Transformation();
+            Transform3D aTrsf = theDoc.GetLocation(theLabel).Transformation();
             var aBuilder = new StringBuilder("O");
             for (int r = 1; r <= 3; r++)
             {
@@ -84,10 +87,10 @@ internal static class XdeDocDump
                      (XdeDoc_ColorType.XdeDoc_ColorCurv, "c"),
                  })
         {
-            if (theDoc.GetColor(theLabel, aType, out Quantity_ColorRGBA aColor))
+            if (theDoc.GetColor(theLabel, aType, out ColorWithAlpha aColor))
             {
                 NCollection_Vec3<float> aRgb = aColor.GetRGB().Rgb();
-                theOut.Add($"C {aTag} {F9(aRgb.r())} {F9(aRgb.g())} {F9(aRgb.b())} {F9(aColor.Alpha())}");
+                theOut.Add($"C {aTag} {F9(aRgb.R())} {F9(aRgb.G())} {F9(aRgb.B())} {F9(aColor.Alpha())}");
             }
         }
         if (!theDoc.IsVisible(theLabel))
@@ -111,7 +114,7 @@ internal static class XdeDocDump
         {
             theOut.Add("A " + R17(anArea));
         }
-        if (aProps?.Centroid is gp_Pnt aPnt)
+        if (aProps?.Centroid is Point3D aPnt)
         {
             theOut.Add($"G {R17(aPnt.X())} {R17(aPnt.Y())} {R17(aPnt.Z())}");
         }
@@ -147,12 +150,12 @@ internal static class XdeDocDump
     }
 
     // stepcafrec's palette
-    public static Quantity_ColorRGBA PaletteColor(int theIndex) => (theIndex % 4) switch
+    public static ColorWithAlpha PaletteColor(int theIndex) => (theIndex % 4) switch
     {
-        0 => new Quantity_ColorRGBA(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED)),
-        1 => new Quantity_ColorRGBA(new Quantity_Color(0.25, 0.5, 0.75, Quantity_TypeOfColor.Quantity_TOC_RGB)),
-        2 => new Quantity_ColorRGBA(new Quantity_Color(0.125, 0.625, 0.25, Quantity_TypeOfColor.Quantity_TOC_RGB), 0.5f),
-        _ => new Quantity_ColorRGBA(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_GREEN)),
+        0 => new ColorWithAlpha(new Color(NameOfColor.NocRed)),
+        1 => new ColorWithAlpha(new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb)),
+        2 => new ColorWithAlpha(new Color(0.125, 0.625, 0.25, ColorSpace.TocRgb), 0.5f),
+        _ => new ColorWithAlpha(new Color(NameOfColor.NocGreen)),
     };
 
     /// <summary>stepcafrec's MakePartDoc, with XCAF's auto-naming.</summary>
@@ -184,7 +187,7 @@ internal static class XdeDocDump
         }
         aDoc.SetVolume(aLabel, 100.0 + theIndex);
         aDoc.SetArea(aLabel, 50.5 + theIndex);
-        aDoc.SetCentroid(aLabel, new gp_Pnt(theIndex, 2.0 * theIndex, 0.5));
+        aDoc.SetCentroid(aLabel, new Point3D(theIndex, 2.0 * theIndex, 0.5));
         return aDoc;
     }
 
@@ -194,24 +197,24 @@ internal static class XdeDocDump
         var aDoc = new XdeDoc_Document { AutoNaming = true };
         XdeDoc_Label aPart = aDoc.AddShape(theShape, false);
         aDoc.SetName(aPart, "part");
-        aDoc.SetColor(aPart, new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED), XdeDoc_ColorType.XdeDoc_ColorSurf);
+        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), XdeDoc_ColorType.XdeDoc_ColorSurf);
         aDoc.SetLayer(aPart, "parts");
         aDoc.SetVolume(aPart, 12.5);
         XdeDoc_Label aSub = aDoc.NewShape();
         aDoc.SetName(aSub, "sub");
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0.5);
-        aTrsf.SetTranslationPart(new gp_Vec(100.0, 50.0, 0.0));
-        aDoc.AddComponent(aSub, aPart, new TopLoc_Location());
-        XdeDoc_Label aSecond = aDoc.AddComponent(aSub, aPart, new TopLoc_Location(aTrsf));
+        var aTrsf = new Transform3D();
+        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
+        aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
+        aDoc.AddComponent(aSub, aPart, new Placement());
+        XdeDoc_Label aSecond = aDoc.AddComponent(aSub, aPart, new Placement(aTrsf));
         aDoc.SetName(aSecond, "second");
-        aDoc.SetColor(aSecond, new Quantity_Color(0.25, 0.5, 0.75, Quantity_TypeOfColor.Quantity_TOC_RGB), XdeDoc_ColorType.XdeDoc_ColorSurf);
+        aDoc.SetColor(aSecond, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), XdeDoc_ColorType.XdeDoc_ColorSurf);
         XdeDoc_Label aTop = aDoc.NewShape();
         aDoc.SetName(aTop, "top");
-        var aTrsf2 = new gp_Trsf();
-        aTrsf2.SetTranslation(new gp_Vec(0.0, 0.0, 300.0));
-        aDoc.AddComponent(aTop, aSub, new TopLoc_Location());
-        XdeDoc_Label anUpper = aDoc.AddComponent(aTop, aSub, new TopLoc_Location(aTrsf2));
+        var aTrsf2 = new Transform3D();
+        aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
+        aDoc.AddComponent(aTop, aSub, new Placement());
+        XdeDoc_Label anUpper = aDoc.AddComponent(aTop, aSub, new Placement(aTrsf2));
         aDoc.SetName(anUpper, "upper");
         aDoc.UpdateAssemblies();
         return aDoc;

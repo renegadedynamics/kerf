@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,13 +26,13 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
     }
 
     /// <summary>Compute bounding box for full surface.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
         => Box(mySurf.FirstUParameter(), mySurf.LastUParameter(), mySurf.FirstVParameter(), mySurf.LastVParameter(), theTol);
 
     /// <summary>Compute bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         Adaptor3d_Surface aSurf = mySurf;
         int Nu = GeomBndLib_SamplingHelpers.ComputeNbUSamples(aSurf, theUMin, theUMax);
         int Nv = GeomBndLib_SamplingHelpers.ComputeNbVSamples(aSurf, theVMin, theVMax);
@@ -44,7 +50,7 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
 
         // OCCT samples the grid without enlarging the box by a deflection estimate (occt-issues.md).
         GeomGridEval_Surface anEvaluator = new(aSurf);
-        NCollection_Array2<gp_Pnt> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
         for (int i = aGrid.LowerRow(); i <= aGrid.UpperRow(); i++)
         {
             for (int j = aGrid.LowerCol(); j <= aGrid.UpperCol(); j++)
@@ -57,13 +63,13 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
     }
 
     /// <summary>Compute precise bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol)
+    public Box BoxOptimal(double theTol)
         => BoxOptimal(mySurf.FirstUParameter(), mySurf.LastUParameter(), mySurf.FirstVParameter(), mySurf.LastVParameter(), theTol);
 
     /// <summary>Compute precise bounding box using PSO + Powell optimization.</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         Adaptor3d_Surface aSurf = mySurf;
         int Nu = GeomBndLib_SamplingHelpers.ComputeNbUSamples(aSurf, theUMin, theUMax);
         int Nv = GeomBndLib_SamplingHelpers.ComputeNbVSamples(aSurf, theVMin, theVMax);
@@ -92,16 +98,16 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
         }
 
         GeomGridEval_Surface anEvaluator = new(aSurf);
-        NCollection_Array2<gp_Pnt> aFineGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aFineGrid = anEvaluator.EvaluateGrid(aUParams, aVParams);
 
-        NCollection_Array2<gp_XYZ> aPnts = new(1, Nu, 1, Nv);
+        NCollection_Array2<Xyz> aPnts = new(1, Nu, 1, Nv);
         for (int i = 1; i <= Nu; i++)
         {
             int iFine = 2 * i - 1;
             for (int j = 1; j <= Nv; j++)
             {
                 int jFine = 2 * j - 1;
-                gp_Pnt P = aFineGrid.Value(iFine, jFine);
+                Point3D P = aFineGrid.Value(iFine, jFine);
                 aPnts[i, j] = P.XYZ();
                 for (int k = 0; k < 3; ++k)
                 {
@@ -117,9 +123,9 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
                 // U-midpoint deflection.
                 if (i > 1)
                 {
-                    gp_XYZ aPm = 0.5 * (aPnts[i - 1, j] + aPnts[i, j]);
-                    gp_Pnt PM = aFineGrid.Value(iFine - 1, jFine);
-                    gp_XYZ aD = (PM.XYZ() - aPm);
+                    Xyz aPm = 0.5 * (aPnts[i - 1, j] + aPnts[i, j]);
+                    Point3D PM = aFineGrid.Value(iFine - 1, jFine);
+                    Xyz aD = (PM.XYZ() - aPm);
                     for (int k = 0; k < 3; ++k)
                     {
                         if (CoordMin[k] > PM.Coord(k + 1))
@@ -140,9 +146,9 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
                 // V-midpoint deflection.
                 if (j > 1)
                 {
-                    gp_XYZ aPm = 0.5 * (aPnts[i, j - 1] + aPnts[i, j]);
-                    gp_Pnt PM = aFineGrid.Value(iFine, jFine - 1);
-                    gp_XYZ aD = (PM.XYZ() - aPm);
+                    Xyz aPm = 0.5 * (aPnts[i, j - 1] + aPnts[i, j]);
+                    Point3D PM = aFineGrid.Value(iFine, jFine - 1);
+                    Xyz aD = (PM.XYZ() - aPm);
                     for (int k = 0; k < 3; ++k)
                     {
                         if (CoordMin[k] > PM.Coord(k + 1))
@@ -164,7 +170,7 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
         }
 
         // Adjust minmax using PSO + Powell optimization.
-        double eps = Max(theTol, Precision.Confusion());
+        double eps = Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int k = 0; k < 3; ++k)
         {
             double d = DeflMax[k];
@@ -208,8 +214,8 @@ public sealed class GeomBndLib_OtherSurface : GeomBndLib_Surface.ISurfaceEvaluat
             CoordMax[k] = CMax;
         }
 
-        aBox.Add(new gp_Pnt(CoordMin[0], CoordMin[1], CoordMin[2]));
-        aBox.Add(new gp_Pnt(CoordMax[0], CoordMax[1], CoordMax[2]));
+        aBox.Add(new Point3D(CoordMin[0], CoordMin[1], CoordMin[2]));
+        aBox.Add(new Point3D(CoordMax[0], CoordMax[1], CoordMax[2]));
         aBox.Enlarge(eps);
         return aBox;
     }

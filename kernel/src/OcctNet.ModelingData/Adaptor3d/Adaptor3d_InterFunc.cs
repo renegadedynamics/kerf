@@ -3,19 +3,25 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// The function U(t) - FixVal (Fix = 1) or V(t) - FixVal (Fix = 2) of a 2D curve, whose roots locate the
 /// parameters where an Adaptor3d_CurveOnSurface crosses a discontinuity of its surface.
 /// </summary>
-public class Adaptor3d_InterFunc : math_FunctionWithDerivative
+public class Adaptor3d_InterFunc : FunctionWithDerivative
 {
     private readonly Adaptor2d_Curve2d myCurve2d;
     private readonly double myFixVal;
     private readonly int myFix;
 
-    /// <exception cref="Standard_ConstructionError">Fix is neither 1 nor 2.</exception>
+    /// <exception cref="ConstructionErrorException">Fix is neither 1 nor 2.</exception>
     public Adaptor3d_InterFunc(Adaptor2d_Curve2d C, double FixVal, int Fix)
     {
         myCurve2d = C;
@@ -23,13 +29,13 @@ public class Adaptor3d_InterFunc : math_FunctionWithDerivative
         myFix = Fix;
         if (Fix != 1 && Fix != 2)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
     }
 
     public override bool Value(double X, out double F)
     {
-        gp_Pnt2d C;
+        Point2D C;
         myCurve2d.D0(X, out C);
         if (myFix == 1)
         {
@@ -50,8 +56,8 @@ public class Adaptor3d_InterFunc : math_FunctionWithDerivative
 
     public override bool Values(double X, out double F, out double D)
     {
-        gp_Pnt2d C;
-        gp_Vec2d DC;
+        Point2D C;
+        Vector2D DC;
         myCurve2d.D1(X, out C, out DC);
         if (myFix == 1)
         {

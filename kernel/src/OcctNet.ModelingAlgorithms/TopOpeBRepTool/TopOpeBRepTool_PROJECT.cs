@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The legacy Booleans' projection functions (<c>FUN_tool_*</c>).</summary>
@@ -26,9 +28,9 @@ public static class TopOpeBRepTool_PROJECT
     /// <paramref name="UV"/> and distance <paramref name="dist"/> of the nearest point; false (both unchanged) if
     /// there is none.
     /// </summary>
-    public static bool FUN_tool_projPonS(in gp_Pnt P,
+    public static bool FUN_tool_projPonS(in Point3D P,
                                          Geom_Surface S,
-                                         ref gp_Pnt2d UV,
+                                         ref Point2D UV,
                                          ref double dist,
                                          Extrema_ExtFlag anExtFlag = Extrema_ExtFlag.Extrema_ExtFlag_MINMAX,
                                          Extrema_ExtAlgo anExtAlgo = Extrema_ExtAlgo.Extrema_ExtAlgo_Grad)

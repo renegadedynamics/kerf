@@ -2,15 +2,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2d_CurveEvalTest
 {
     // OCCT.NET: OCCT builds the B-splines below with Geom2dAPI_PointsToBSpline, which isn't ported yet; the port's
     // tests use a cubic B-spline through the same kind of points, built from poles directly.
-    private static Geom2d_BSplineCurve MakeBSpline(params gp_Pnt2d[] thePoles)
+    private static Geom2d_BSplineCurve MakeBSpline(params Point2D[] thePoles)
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = NCollection_Array1<gp_Pnt2d>.From(thePoles);
+        NCollection_Array1<Point2D> aPoles = NCollection_Array1<Point2D>.From(thePoles);
         int aDeg = Math.Min(3, thePoles.Length - 1);
         int aNbKnots = thePoles.Length - aDeg + 1;
         NCollection_Array1<double> aKnots = new NCollection_Array1<double>(1, aNbKnots);
@@ -30,20 +32,20 @@ public class Geom2d_CurveEvalTest
     [Fact]
     public void Circle_EvalD0D1_ValidResults()
     {
-        gp_Circ2d aCirc = new gp_Circ2d(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 4.0);
+        Circle2D aCirc = new Circle2D(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 4.0);
         Geom2d_Circle aCurve = new Geom2d_Circle(aCirc);
         double aU = M_PI / 4.0;
 
         // EvalD0
-        gp_Pnt2d aD0 = aCurve.EvalD0(aU);
-        double aDist = aD0.Distance(new gp_Pnt2d(0.0, 0.0));
-        Assert.Equal(4.0, aDist, Precision.Confusion());
+        Point2D aD0 = aCurve.EvalD0(aU);
+        double aDist = aD0.Distance(new Point2D(0.0, 0.0));
+        Assert.Equal(4.0, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // EvalD1
         Geom2d_Curve.ResD1 aD1 = aCurve.EvalD1(aU);
-        Assert.Equal(0.0, aD1.Point.Distance(aD0), Precision.Confusion());
+        Assert.Equal(0.0, aD1.Point.Distance(aD0), global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1 should be perpendicular to radius
-        gp_Vec2d aRadial = new gp_Vec2d(new gp_Pnt2d(0.0, 0.0), aD1.Point);
+        Vector2D aRadial = new Vector2D(new Point2D(0.0, 0.0), aD1.Point);
         Assert.Equal(0.0, aRadial.Dot(aD1.D1), 1.0e-10);
     }
 
@@ -53,14 +55,14 @@ public class Geom2d_CurveEvalTest
     public void OffsetCurve_EvalD0_ValidAtDegenerateCenter()
     {
         // Create a circle with offset = -radius to get a degenerate (zero-radius) curve
-        gp_Circ2d aCirc = new gp_Circ2d(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 3.0);
+        Circle2D aCirc = new Circle2D(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 3.0);
         Geom2d_Circle aBasis = new Geom2d_Circle(aCirc);
 
         // Offset by -radius creates a collapsed curve at the center
         Geom2d_OffsetCurve anOffset = new Geom2d_OffsetCurve(aBasis, -3.0);
 
-        gp_Pnt2d aResult = anOffset.EvalD0(0.0);
-        Assert.Equal(0.0, aResult.Distance(new gp_Pnt2d(0.0, 0.0)), Precision.Confusion());
+        Point2D aResult = anOffset.EvalD0(0.0);
+        Assert.Equal(0.0, aResult.Distance(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // BSplineCurve 2D consistency tests
@@ -69,11 +71,11 @@ public class Geom2d_CurveEvalTest
     public void BSplineCurve_EvalD1_ConsistentWithOldAPI()
     {
         // OCCT.NET: built from poles (Geom2dAPI_PointsToBSpline not ported)
-        Geom2d_BSplineCurve aCurve = MakeBSpline(new gp_Pnt2d(0.0, 0.0),
-                                                 new gp_Pnt2d(1.0, 2.0),
-                                                 new gp_Pnt2d(3.0, 1.0),
-                                                 new gp_Pnt2d(5.0, 3.0),
-                                                 new gp_Pnt2d(7.0, 0.0));
+        Geom2d_BSplineCurve aCurve = MakeBSpline(new Point2D(0.0, 0.0),
+                                                 new Point2D(1.0, 2.0),
+                                                 new Point2D(3.0, 1.0),
+                                                 new Point2D(5.0, 3.0),
+                                                 new Point2D(7.0, 0.0));
 
         double aFirst = aCurve.FirstParameter();
         double aLast = aCurve.LastParameter();
@@ -81,9 +83,9 @@ public class Geom2d_CurveEvalTest
 
         // Compare EvalD1 with old D1 wrapper
         Geom2d_Curve.ResD1 aEvalResult = aCurve.EvalD1(aMid);
-        aCurve.D1(aMid, out gp_Pnt2d aOldP, out gp_Vec2d aOldV1);
-        Assert.Equal(0.0, aEvalResult.Point.Distance(aOldP), Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1 - aOldV1).Magnitude(), Precision.Confusion());
+        aCurve.D1(aMid, out Point2D aOldP, out Vector2D aOldV1);
+        Assert.Equal(0.0, aEvalResult.Point.Distance(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1 - aOldV1).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Ellipse 2D tests
@@ -91,7 +93,7 @@ public class Geom2d_CurveEvalTest
     [Fact]
     public void Ellipse_EvalD2D3_ValidResults()
     {
-        gp_Elips2d anElips = new gp_Elips2d(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 5.0, 3.0);
+        Ellipse2D anElips = new Ellipse2D(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0, 3.0);
         Geom2d_Ellipse aCurve = new Geom2d_Ellipse(anElips);
         double aU = M_PI / 4.0;
 
@@ -107,16 +109,16 @@ public class Geom2d_CurveEvalTest
     [Fact]
     public void Line_EvalDN_ValidResults()
     {
-        Geom2d_Line aCurve = new Geom2d_Line(new gp_Pnt2d(1.0, 2.0), new gp_Dir2d(1.0, 0.0));
+        Geom2d_Line aCurve = new Geom2d_Line(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0));
 
         // DN(U, 1) should return the direction
-        gp_Vec2d aDN1 = aCurve.EvalDN(5.0, 1);
-        Assert.Equal(1.0, aDN1.X(), Precision.Confusion());
-        Assert.Equal(0.0, aDN1.Y(), Precision.Confusion());
+        Vector2D aDN1 = aCurve.EvalDN(5.0, 1);
+        Assert.Equal(1.0, aDN1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // DN(U, 2) should return zero for a line
-        gp_Vec2d aDN2 = aCurve.EvalDN(5.0, 2);
-        Assert.Equal(0.0, aDN2.Magnitude(), Precision.Confusion());
+        Vector2D aDN2 = aCurve.EvalDN(5.0, 2);
+        Assert.Equal(0.0, aDN2.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // BSplineCurve 2D EvalDN invalid N test
@@ -126,7 +128,7 @@ public class Geom2d_CurveEvalTest
     {
         // OCCT.NET: built from poles (Geom2dAPI_PointsToBSpline not ported)
         Geom2d_BSplineCurve aCurve =
-            MakeBSpline(new gp_Pnt2d(0.0, 0.0), new gp_Pnt2d(1.0, 1.0), new gp_Pnt2d(2.0, 0.0));
+            MakeBSpline(new Point2D(0.0, 0.0), new Point2D(1.0, 1.0), new Point2D(2.0, 0.0));
 
         double aMid = (aCurve.FirstParameter() + aCurve.LastParameter()) / 2.0;
         Assert.ThrowsAny<Geom2d_UndefinedDerivative>(() => aCurve.EvalDN(aMid, 0));
@@ -139,7 +141,7 @@ public class Geom2d_CurveEvalTest
     public void OffsetCurve_EvalD1_DegenerateAtCollapsed()
     {
         // Create a circle with offset = -radius to get a degenerate (zero-radius) curve
-        gp_Circ2d aCirc = new gp_Circ2d(new gp_Ax22d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 3.0);
+        Circle2D aCirc = new Circle2D(new Frame2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 3.0);
         Geom2d_Circle aBasis = new Geom2d_Circle(aCirc);
 
         // The basis circle has valid tangents everywhere, so EvalD1 succeeds
@@ -148,6 +150,6 @@ public class Geom2d_CurveEvalTest
 
         Geom2d_Curve.ResD1 aResult = anOffset.EvalD1(0.0);
         // The point should be near the center
-        Assert.Equal(0.0, aResult.Point.Distance(new gp_Pnt2d(0.0, 0.0)), Precision.Confusion());
+        Assert.Equal(0.0, aResult.Point.Distance(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

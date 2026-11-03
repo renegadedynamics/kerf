@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,92 +20,92 @@ namespace Occt;
 internal static class Geom_ExtrusionUtils
 {
     /// <summary>The point of the surface from the curve point C(U).</summary>
-    internal static void CalculateD0(in gp_Pnt theCurvePt,
+    internal static void CalculateD0(in Point3D theCurvePt,
                                      double theV,
-                                     in gp_XYZ theDir,
-                                     out gp_Pnt theP)
+                                     in Xyz theDir,
+                                     out Point3D theP)
     {
-        theP = new gp_Pnt();
+        theP = new Point3D();
         theP.SetXYZ(theCurvePt.XYZ() + theV * theDir);
     }
 
     /// <summary>The point and first derivatives from C(U) and C'(U).</summary>
-    internal static void CalculateD1(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
+    internal static void CalculateD1(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
                                      double theV,
-                                     in gp_XYZ theDir,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V)
+                                     in Xyz theDir,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V)
     {
-        theP = new gp_Pnt();
+        theP = new Point3D();
         theP.SetXYZ(theCurvePt.XYZ() + theV * theDir);
         theD1U = theCurveD1;
-        theD1V = new gp_Vec();
+        theD1V = new Vector3D();
         theD1V.SetXYZ(theDir);
     }
 
     /// <summary>The point, first and second derivatives from C(U), C'(U) and C''(U).</summary>
-    internal static void CalculateD2(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
-                                     in gp_Vec theCurveD2,
+    internal static void CalculateD2(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
+                                     in Vector3D theCurveD2,
                                      double theV,
-                                     in gp_XYZ theDir,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V,
-                                     out gp_Vec theD2U,
-                                     out gp_Vec theD2V,
-                                     out gp_Vec theD2UV)
+                                     in Xyz theDir,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V,
+                                     out Vector3D theD2U,
+                                     out Vector3D theD2V,
+                                     out Vector3D theD2UV)
     {
-        theP = new gp_Pnt();
+        theP = new Point3D();
         theP.SetXYZ(theCurvePt.XYZ() + theV * theDir);
         theD1U = theCurveD1;
-        theD1V = new gp_Vec();
+        theD1V = new Vector3D();
         theD1V.SetXYZ(theDir);
         theD2U = theCurveD2;
-        theD2V = new gp_Vec(0.0, 0.0, 0.0);
-        theD2UV = new gp_Vec(0.0, 0.0, 0.0);
+        theD2V = new Vector3D(0.0, 0.0, 0.0);
+        theD2UV = new Vector3D(0.0, 0.0, 0.0);
     }
 
     /// <summary>The point and the derivatives up to the third order from C(U) to C'''(U).</summary>
-    internal static void CalculateD3(in gp_Pnt theCurvePt,
-                                     in gp_Vec theCurveD1,
-                                     in gp_Vec theCurveD2,
-                                     in gp_Vec theCurveD3,
+    internal static void CalculateD3(in Point3D theCurvePt,
+                                     in Vector3D theCurveD1,
+                                     in Vector3D theCurveD2,
+                                     in Vector3D theCurveD3,
                                      double theV,
-                                     in gp_XYZ theDir,
-                                     out gp_Pnt theP,
-                                     out gp_Vec theD1U,
-                                     out gp_Vec theD1V,
-                                     out gp_Vec theD2U,
-                                     out gp_Vec theD2V,
-                                     out gp_Vec theD2UV,
-                                     out gp_Vec theD3U,
-                                     out gp_Vec theD3V,
-                                     out gp_Vec theD3UUV,
-                                     out gp_Vec theD3UVV)
+                                     in Xyz theDir,
+                                     out Point3D theP,
+                                     out Vector3D theD1U,
+                                     out Vector3D theD1V,
+                                     out Vector3D theD2U,
+                                     out Vector3D theD2V,
+                                     out Vector3D theD2UV,
+                                     out Vector3D theD3U,
+                                     out Vector3D theD3V,
+                                     out Vector3D theD3UUV,
+                                     out Vector3D theD3UVV)
     {
-        theP = new gp_Pnt();
+        theP = new Point3D();
         theP.SetXYZ(theCurvePt.XYZ() + theV * theDir);
         theD1U = theCurveD1;
-        theD1V = new gp_Vec();
+        theD1V = new Vector3D();
         theD1V.SetXYZ(theDir);
         theD2U = theCurveD2;
-        theD2V = new gp_Vec(0.0, 0.0, 0.0);
-        theD2UV = new gp_Vec(0.0, 0.0, 0.0);
+        theD2V = new Vector3D(0.0, 0.0, 0.0);
+        theD2UV = new Vector3D(0.0, 0.0, 0.0);
         theD3U = theCurveD3;
-        theD3V = new gp_Vec(0.0, 0.0, 0.0);
-        theD3UUV = new gp_Vec(0.0, 0.0, 0.0);
-        theD3UVV = new gp_Vec(0.0, 0.0, 0.0);
+        theD3V = new Vector3D(0.0, 0.0, 0.0);
+        theD3UUV = new Vector3D(0.0, 0.0, 0.0);
+        theD3UVV = new Vector3D(0.0, 0.0, 0.0);
     }
 
     /// <summary>
     /// The derivative of orders (theDerU, theDerV): the curve derivative theCurveDN when theDerV is 0, the
     /// direction for (0, 1), zero otherwise.
     /// </summary>
-    internal static gp_Vec CalculateDN(in gp_Vec theCurveDN,
-                                       in gp_XYZ theDir,
+    internal static Vector3D CalculateDN(in Vector3D theCurveDN,
+                                       in Xyz theDir,
                                        int theDerU,
                                        int theDerV)
     {
@@ -111,19 +115,19 @@ internal static class Geom_ExtrusionUtils
         }
         else if (theDerU == 0 && theDerV == 1)
         {
-            return new gp_Vec(theDir);
+            return new Vector3D(theDir);
         }
-        return new gp_Vec(0.0, 0.0, 0.0);
+        return new Vector3D(0.0, 0.0, 0.0);
     }
 
     /// <summary>The point of parameters (theU, theV) on the extrusion of theBasis along theDir.</summary>
     internal static bool D0(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_XYZ theDir,
-                            out gp_Pnt theP)
+                            in Xyz theDir,
+                            out Point3D theP)
     {
-        gp_Pnt aCurveD0 = theBasis.EvalD0(theU);
+        Point3D aCurveD0 = theBasis.EvalD0(theU);
         CalculateD0(aCurveD0, theV, theDir, out theP);
         return true;
     }
@@ -132,10 +136,10 @@ internal static class Geom_ExtrusionUtils
     internal static bool D1(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_XYZ theDir,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V)
+                            in Xyz theDir,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V)
     {
         Geom_Curve.ResD1 aCurveD1 = theBasis.EvalD1(theU);
         CalculateD1(aCurveD1.Point, aCurveD1.D1, theV, theDir, out theP, out theD1U, out theD1V);
@@ -146,13 +150,13 @@ internal static class Geom_ExtrusionUtils
     internal static bool D2(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_XYZ theDir,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV)
+                            in Xyz theDir,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV)
     {
         Geom_Curve.ResD2 aCurveD2 = theBasis.EvalD2(theU);
         CalculateD2(aCurveD2.Point,
@@ -173,17 +177,17 @@ internal static class Geom_ExtrusionUtils
     internal static bool D3(double theU,
                             double theV,
                             Adaptor3d_Curve theBasis,
-                            in gp_XYZ theDir,
-                            out gp_Pnt theP,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV,
-                            out gp_Vec theD3U,
-                            out gp_Vec theD3V,
-                            out gp_Vec theD3UUV,
-                            out gp_Vec theD3UVV)
+                            in Xyz theDir,
+                            out Point3D theP,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV,
+                            out Vector3D theD3U,
+                            out Vector3D theD3V,
+                            out Vector3D theD3UUV,
+                            out Vector3D theD3UVV)
     {
         Geom_Curve.ResD3 aCurveD3 = theBasis.EvalD3(theU);
         CalculateD3(aCurveD3.Point,
@@ -208,12 +212,12 @@ internal static class Geom_ExtrusionUtils
     /// <summary>The derivative of orders (theDerU, theDerV); the curve is evaluated only when theDerV is 0.</summary>
     internal static bool DN(double theU,
                             Adaptor3d_Curve theBasis,
-                            in gp_XYZ theDir,
+                            in Xyz theDir,
                             int theDerU,
                             int theDerV,
-                            out gp_Vec theDN)
+                            out Vector3D theDN)
     {
-        gp_Vec aCurveDN = new gp_Vec();
+        Vector3D aCurveDN = new Vector3D();
         if (theDerV == 0)
         {
             aCurveDN = theBasis.EvalDN(theU, theDerU);

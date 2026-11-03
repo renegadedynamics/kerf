@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 using static Occt.IntRes2d_Situation;
 using static Occt.IntRes2d_TypeTrans;
@@ -18,10 +19,10 @@ namespace Occt;
 internal interface ITopClass_Intersector<TheEdge>
 {
     /// <summary>Intersects the segment of <paramref name="L"/> from its origin to the parameter <paramref name="P"/> with the edge.</summary>
-    void Perform(in gp_Lin2d L, double P, double Tol, in TheEdge E);
+    void Perform(in Line2D L, double P, double Tol, in TheEdge E);
 
     /// <summary>The tangent, normal and curvature of the edge at the parameter <paramref name="U"/>.</summary>
-    void LocalGeometry(in TheEdge E, double U, out gp_Dir2d T, out gp_Dir2d N, out double C);
+    void LocalGeometry(in TheEdge E, double U, out Direction2D T, out Direction2D N, out double C);
 }
 
 /// <summary>
@@ -37,7 +38,7 @@ internal interface ITopClass_Intersector<TheEdge>
 internal static class TopClass_Classifier2d
 {
     /// <summary>Starts a classification along the half-line <paramref name="theL"/>, up to the parameter <paramref name="theP"/>.</summary>
-    internal static void Reset(out gp_Lin2d theLin,
+    internal static void Reset(out Line2D theLin,
                                out double theParam,
                                out double theTolerance,
                                out TopAbs_State theState,
@@ -46,7 +47,7 @@ internal static class TopClass_Classifier2d
                                out int theClosest,
                                out bool theIsSet,
                                out bool theIsHeadOrEnd,
-                               in gp_Lin2d theL,
+                               in Line2D theL,
                                double theP,
                                double theTol)
     {
@@ -68,7 +69,7 @@ internal static class TopClass_Classifier2d
     /// </summary>
     internal static void Compare<TheEdge, TheIntersector>(ref int theClosest,
                                                           TheIntersector theIntersector,
-                                                          in gp_Lin2d theLin,
+                                                          in Line2D theLin,
                                                           ref double theParam,
                                                           double theTolerance,
                                                           ref TopAbs_State theState,
@@ -232,15 +233,15 @@ internal static class TopClass_Classifier2d
         else
         {
             // aPClosest is Head or End of the edge: update the complex transition.
-            gp_Dir2d aTang2d, aNorm2d;
+            Direction2D aTang2d, aNorm2d;
             double aCurv;
             theIntersector.LocalGeometry(theEdge, aPClosest.ParamOnSecond(), out aTang2d, out aNorm2d, out aCurv);
-            gp_Dir aTang = new(aTang2d.X(), aTang2d.Y(), 0.0);
-            gp_Dir aNorm = new(aNorm2d.X(), aNorm2d.Y(), 0.0);
+            Direction3D aTang = new(aTang2d.X(), aTang2d.Y(), 0.0);
+            Direction3D aNorm = new(aNorm2d.X(), aNorm2d.Y(), 0.0);
 
             if (theFirstTrans)
             {
-                gp_Dir aDir = new(theLin.Direction().X(), theLin.Direction().Y(), 0.0);
+                Direction3D aDir = new(theLin.Direction().X(), theLin.Direction().Y(), 0.0);
                 theTrans.Reset(aDir);
                 theFirstTrans = false;
             }

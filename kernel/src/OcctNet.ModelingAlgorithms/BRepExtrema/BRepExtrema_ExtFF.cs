@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -35,15 +36,15 @@ public sealed class BRepExtrema_ExtFF
     public void Initialize(in TopoDS_Face F2)
     {
         var Surf = new BRepAdaptor_Surface(F2);
-        if (Surf.GetType() == GeomAbs_OtherSurface)
+        if (Surf.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
         myHS = Surf;
-        double Tol = Min(BRep_Tool.Tolerance(F2), Precision.Confusion());
+        double Tol = Min(BRep_Tool.Tolerance(F2), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol = Min(Surf.UResolution(Tol), Surf.VResolution(Tol));
-        Tol = Max(Tol, Precision.PConfusion());
+        Tol = Max(Tol, global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
         BRepTools.UVBounds(F2, out U1, out U2, out V1, out V2);
         myExtSS.Initialize(myHS, U1, U2, V1, V2, Tol);
@@ -60,15 +61,15 @@ public sealed class BRepExtrema_ExtFF
         myPointsOnS2.Clear();
 
         var Surf1 = new BRepAdaptor_Surface(F1);
-        if (myHS is null || Surf1.GetType() == GeomAbs_OtherSurface)
+        if (myHS is null || Surf1.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
         BRepAdaptor_Surface HS1 = Surf1;
-        double Tol1 = Min(BRep_Tool.Tolerance(F1), Precision.Confusion());
+        double Tol1 = Min(BRep_Tool.Tolerance(F1), global::Kerf.Engine.Foundation.Precision.Confusion());
         Tol1 = Min(Surf1.UResolution(Tol1), Surf1.VResolution(Tol1));
-        Tol1 = Max(Tol1, Precision.PConfusion());
+        Tol1 = Max(Tol1, global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
         BRepTools.UVBounds(F1, out U1, out U2, out V1, out V2);
         myExtSS.Perform(HS1, U1, U2, V1, V2, Tol1);
@@ -93,13 +94,13 @@ public sealed class BRepExtrema_ExtFF
             {
                 myExtSS.Points(i, out Extrema_POnSurf P1, out Extrema_POnSurf P2);
                 P1.Parameter(out U1, out U2);
-                var Puv1 = new gp_Pnt2d(U1, U2);
+                var Puv1 = new Point2D(U1, U2);
                 classifier.Perform(F1, Puv1, Tol1);
                 TopAbs_State state1 = classifier.State();
                 if (state1 == TopAbs_ON || state1 == TopAbs_IN)
                 {
                     P2.Parameter(out U1, out U2);
-                    var Puv2 = new gp_Pnt2d(U1, U2);
+                    var Puv2 = new Point2D(U1, U2);
                     classifier.Perform(F2, Puv2, Tol2);
                     TopAbs_State state2 = classifier.State();
                     if (state2 == TopAbs_ON || state2 == TopAbs_IN)
@@ -132,8 +133,8 @@ public sealed class BRepExtrema_ExtFF
     public void ParameterOnFace2(int N, out double U, out double V) => myPointsOnS2.Value(N).Parameter(out U, out V);
 
     /// <summary>The point on the face F1 of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnFace1(int N) => myPointsOnS1.Value(N).Value();
+    public Point3D PointOnFace1(int N) => myPointsOnS1.Value(N).Value();
 
     /// <summary>The point on the face F2 of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt PointOnFace2(int N) => myPointsOnS2.Value(N).Value();
+    public Point3D PointOnFace2(int N) => myPointsOnS2.Value(N).Value();
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using Occt;
 
@@ -50,7 +52,7 @@ internal static class BRepTestModifyCommands
         double Tol = 1.0e-4;
         double Tol2d;
         double MaxDistance = 1.0e-3;
-        GeomAbs_Shape Continuity = GeomAbs_Shape.GeomAbs_C1;
+        Continuity Continuity = global::Kerf.Geometry.Continuity.C1;
         int MaxDeg = 14;
         int MaxSeg = 16;
 
@@ -101,11 +103,11 @@ internal static class BRepTestModifyCommands
         {
             if (theDI.Atoi(a[arg]) == 0)
             {
-                Continuity = GeomAbs_Shape.GeomAbs_C0;
+                Continuity = global::Kerf.Geometry.Continuity.C0;
             }
             else if (theDI.Atoi(a[arg]) == 2)
             {
-                Continuity = GeomAbs_Shape.GeomAbs_C2;
+                Continuity = global::Kerf.Geometry.Continuity.C2;
             }
             arg++;
         }
@@ -184,8 +186,8 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        var GT = new gp_GTrsf(new gp_Trsf());
-        var rot = new gp_Mat(theDI.Atof(a[3]), 0, 0, 0, theDI.Atof(a[4]), 0, 0, 0, theDI.Atof(a[5]));
+        var GT = new GeneralTransform3D(new Transform3D());
+        var rot = new Matrix3x3(theDI.Atof(a[3]), 0, 0, 0, theDI.Atof(a[4]), 0, 0, 0, theDI.Atof(a[5]));
         GT.SetVectorialPart(rot);
         var gtrf = new BRepBuilderAPI_GTransform(GT);
         TopoDS_Shape aShape = theDI.GetShape(a[2]);
@@ -222,13 +224,13 @@ internal static class BRepTestModifyCommands
         double aFactorX = theDI.Atof(a[3]);
         double aFactorY = theDI.Atof(a[4]);
         double aFactorZ = theDI.Atof(a[5]);
-        var aGTrsf = new gp_GTrsf();
-        var rot = new gp_Mat(aFactorX, 0, 0, 0, aFactorY, 0, 0, 0, aFactorZ);
+        var aGTrsf = new GeneralTransform3D();
+        var rot = new Matrix3x3(aFactorX, 0, 0, 0, aFactorY, 0, 0, 0, aFactorZ);
         aGTrsf.SetVectorialPart(rot);
         var aBRepGTrsf = new BRepBuilderAPI_GTransform(aShapeBase, aGTrsf, false);
         if (!aBRepGTrsf.IsDone())
         {
-            throw new Standard_ConstructionError("Scaling not done");
+            throw new ConstructionErrorException("Scaling not done");
         }
 
         theDI.SetShape(a[1], aBRepGTrsf.Shape());

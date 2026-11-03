@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -62,11 +65,11 @@ internal static class FairCurveRecordings
 
         public bool AtEnd => myPos == theIn.Length;
 
-        public gp_Pnt2d Pnt()
+        public Point2D Pnt()
         {
             double x = D();
             double y = D();
-            return new gp_Pnt2d(x, y);
+            return new Point2D(x, y);
         }
 
         public double Angle() => D() * M_PI / 180;
@@ -74,7 +77,7 @@ internal static class FairCurveRecordings
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(gp_Pnt2d theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
 
     private static string Str(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
@@ -103,7 +106,7 @@ internal static class FairCurveRecordings
         return aS.ToString();
     }
 
-    private static string Mat(math_Matrix theM)
+    private static string Mat(Matrix theM)
     {
         StringBuilder aS = new(Str(theM.RowNumber()));
         for (int i = theM.LowerRow(); i <= theM.UpperRow(); i++)
@@ -130,9 +133,9 @@ internal static class FairCurveRecordings
             {
                 aVal = theF();
             }
-            catch (Standard_Failure anExc)
+            catch (FailureException anExc)
             {
-                aVal = "!" + anExc.GetType().Name;
+                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType());
             }
             Put(theName + ":" + aVal);
         }
@@ -168,7 +171,7 @@ internal static class FairCurveRecordings
 
     private static void RunFair(Reader r, Writer w, bool theMV)
     {
-        gp_Pnt2d P1 = r.Pnt(), P2 = r.Pnt();
+        Point2D P1 = r.Pnt(), P2 = r.Pnt();
         double h = r.D(), s = r.D();
         double ratio = theMV ? r.D() : 0.0;
 
@@ -186,9 +189,9 @@ internal static class FairCurveRecordings
                 aB = new FairCurve_Batten(P1, P2, h, s);
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
-            w.Put("ctor:!" + anExc.GetType().Name);
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
             return;
         }
 
@@ -216,7 +219,7 @@ internal static class FairCurveRecordings
 
         if (r.B())
         {
-            gp_Pnt2d Q2 = r.Pnt();
+            Point2D Q2 = r.Pnt();
             double b1 = r.Angle();
             double h2 = r.D();
             double s2 = r.D();
@@ -248,7 +251,7 @@ internal static class FairCurveRecordings
 
     private static void RunDraw(Reader r, Writer w, bool theMV)
     {
-        gp_Pnt2d P1 = r.Pnt(), P2 = r.Pnt();
+        Point2D P1 = r.Pnt(), P2 = r.Pnt();
         double a1 = r.D(), a2 = r.D();
         double h = r.D();
 
@@ -266,9 +269,9 @@ internal static class FairCurveRecordings
                 aB = new FairCurve_Batten(P1, P2, h);
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
-            w.Put("ctor:!" + anExc.GetType().Name);
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
             return;
         }
         aB.SetAngle1(a1 * M_PI / 180);
@@ -379,17 +382,17 @@ internal static class FairCurveRecordings
             aKnots[i] = (double)(i - 1) / (aNbKnots - 1);
             aMults[i] = (i == 1 || i == aNbKnots) ? Degree + 1 : Degree - 3;
         }
-        NCollection_HArray1<double> aFlat = new(1, BSplCLib.KnotSequenceLength(aMults, Degree, false));
-        BSplCLib.KnotSequence(aKnots, aMults, Degree, false, aFlat.ChangeArray1());
+        NCollection_HArray1<double> aFlat = new(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(aMults, Degree, false));
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aKnots, aMults, Degree, false, aFlat.ChangeArray1());
         int aNbPoles = aFlat.Length() - Degree - 1;
-        NCollection_HArray1<gp_Pnt2d> aPoles = new(1, aNbPoles);
+        NCollection_HArray1<Point2D> aPoles = new(1, aNbPoles);
         double aLength = r.D();
         double aBend = r.D();
         for (int i = 1; i <= aNbPoles; i++)
         {
             double x = r.D();
             double y = r.D();
-            aPoles.SetValue(i, new gp_Pnt2d(x, y));
+            aPoles.SetValue(i, new Point2D(x, y));
         }
         int o1 = r.I(), o2 = r.I();
         bool fs = r.B();
@@ -412,14 +415,14 @@ internal static class FairCurveRecordings
                 anE = new FairCurve_EnergyOfBatten(Degree + 1, aFlat, aPoles, o1, o2, aLaw, aSliding, fs, a1, a2);
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
-            w.Put("ctor:!" + anExc.GetType().Name);
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
             return;
         }
-        int n = anE.NbVariables();
+        int n = anE.VariableCount;
         math_Vector X = new(1, n), G = new(1, n);
-        math_Matrix H = new(1, n, 1, n);
+        Matrix H = new(1, n, 1, n);
         w.Tok("var", () =>
         {
             bool anOk = anE.Variable(X);
@@ -490,9 +493,9 @@ internal static class FairCurveRecordings
                     throw new InvalidOperationException(theCase.Kind);
             }
         }
-        catch (Standard_Failure anExc)
+        catch (FailureException anExc)
         {
-            w.Put("fail:!" + anExc.GetType().Name);
+            w.Put("fail:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anExc.GetType()));
         }
         if (!r.AtEnd)
         {

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A point on a 2D curve: its parameter on the curve and the point.</summary>
@@ -12,17 +14,17 @@ namespace Occt;
 public partial struct Extrema_POnCurv2d : IEquatable<Extrema_POnCurv2d>
 {
     private double myU;
-    private gp_Pnt2d myP;
+    private Point2D myP;
 
     /// <summary>An indefinite point on curve.</summary>
     public Extrema_POnCurv2d()
     {
         myU = 0.0;
-        myP = new gp_Pnt2d();
+        myP = new Point2D();
     }
 
     /// <summary>A point on curve with its parameter value on the curve.</summary>
-    public Extrema_POnCurv2d(double theU, in gp_Pnt2d theP)
+    public Extrema_POnCurv2d(double theU, in Point2D theP)
     {
         myU = theU;
         myP = theP;
@@ -31,7 +33,7 @@ public partial struct Extrema_POnCurv2d : IEquatable<Extrema_POnCurv2d>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the point and parameter values.</summary>
-    internal void SetValues(double theU, in gp_Pnt2d theP)
+    internal void SetValues(double theU, in Point2D theP)
     {
         myU = theU;
         myP = theP;
@@ -40,7 +42,7 @@ public partial struct Extrema_POnCurv2d : IEquatable<Extrema_POnCurv2d>
     // Queries
 
     /// <summary>The point.</summary>
-    public readonly gp_Pnt2d Value() => myP;
+    public readonly Point2D Value() => myP;
 
     /// <summary>The parameter on the curve.</summary>
     public readonly double Parameter() => myU;

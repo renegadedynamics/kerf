@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.ModelingData.Tests;
@@ -94,7 +96,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         }
     }
 
-    private void Compare(string theKey, gp_XYZ theGrid, gp_XYZ theRef)
+    private void Compare(string theKey, Xyz theGrid, Xyz theRef)
     {
         if (!myStats.TryGetValue(theKey, out Stats? aStats))
         {
@@ -111,13 +113,13 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         aStats.MaxRel = Math.Max(aStats.MaxRel, aRel);
     }
 
-    private void Compare(string theKey, gp_Pnt theGrid, gp_Pnt theRef) => Compare(theKey, theGrid.XYZ(), theRef.XYZ());
+    private void Compare(string theKey, Point3D theGrid, Point3D theRef) => Compare(theKey, theGrid.XYZ(), theRef.XYZ());
 
-    private void Compare(string theKey, gp_Vec theGrid, gp_Vec theRef) => Compare(theKey, theGrid.XYZ(), theRef.XYZ());
+    private void Compare(string theKey, Vector3D theGrid, Vector3D theRef) => Compare(theKey, theGrid.XYZ(), theRef.XYZ());
 
     private static double Uniform(Random theRnd, double theA, double theB) => theA + (theB - theA) * theRnd.NextDouble();
 
-    private static gp_Dir RandomDir(Random theRnd)
+    private static Direction3D RandomDir(Random theRnd)
     {
         while (true)
         {
@@ -125,23 +127,23 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             double n = Math.Sqrt(x * x + y * y + z * z);
             if (n > 0.1 && n <= 1.0)
             {
-                return new gp_Dir(x, y, z);
+                return new Direction3D(x, y, z);
             }
         }
     }
 
-    private static gp_Pnt RandomPnt(Random theRnd, double theScale) =>
+    private static Point3D RandomPnt(Random theRnd, double theScale) =>
         new(Uniform(theRnd, -theScale, theScale), Uniform(theRnd, -theScale, theScale), Uniform(theRnd, -theScale, theScale));
 
-    private static gp_Ax3 RandomAx3(Random theRnd)
+    private static CoordinateSystem RandomAx3(Random theRnd)
     {
-        gp_Dir aN = RandomDir(theRnd);
-        gp_Dir aV;
+        Direction3D aN = RandomDir(theRnd);
+        Direction3D aV;
         do
         {
             aV = RandomDir(theRnd);
         } while (Math.Abs(aN.Dot(aV)) > 0.9);
-        gp_Ax3 anAx = new(RandomPnt(theRnd, 10.0), aN, aV);
+        CoordinateSystem anAx = new(RandomPnt(theRnd, 10.0), aN, aV);
         return theRnd.Next(2) == 0 ? anAx : anAx.YReversed(); // left-handed half the time
     }
 
@@ -175,7 +177,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             aNbPoles += m;
         }
         aNbPoles -= aDeg + 1;
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
         NCollection_Array1<double> aWeights = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
@@ -189,7 +191,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
     private static Geom_BezierCurve RandomBezierCurve(Random theRnd, bool theRational)
     {
         int aNb = theRnd.Next(2, 8);
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNb);
+        NCollection_Array1<Point3D> aPoles = new(1, aNb);
         NCollection_Array1<double> aWeights = new(1, aNb);
         for (int i = 1; i <= aNb; ++i)
         {
@@ -202,7 +204,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
     private static Geom_BezierSurface RandomBezierSurface(Random theRnd, bool theRational)
     {
         int aNbU = theRnd.Next(2, 7), aNbV = theRnd.Next(2, 7);
-        NCollection_Array2<gp_Pnt> aPoles = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aPoles = new(1, aNbU, 1, aNbV);
         NCollection_Array2<double> aWeights = new(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; ++i)
         {
@@ -278,7 +280,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             {
                 int aBasis = theRnd.Next(6);
                 Geom_Curve aC = RandomBasisCurve(theRnd, aBasis);
-                Geom_SurfaceOfRevolution aS = new(aC, new gp_Ax1(RandomPnt(theRnd, 10.0), RandomDir(theRnd)));
+                Geom_SurfaceOfRevolution aS = new(aC, new Axis3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd)));
                 return ("Revolution", aS, new GeomGridEval_SurfaceOfRevolution(aS));
             }
             default:
@@ -294,12 +296,12 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
     private static (double U1, double U2, double V1, double V2) Range(Geom_Surface theSurf)
     {
         theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        if (Precision.IsInfinite(aU1) || Precision.IsInfinite(aU2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
         {
             aU1 = -20.0;
             aU2 = 20.0;
         }
-        if (Precision.IsInfinite(aV1) || Precision.IsInfinite(aV2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aV1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aV2))
         {
             aV1 = -20.0;
             aV2 = 20.0;
@@ -325,7 +327,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         if (aBasis is not null)
         {
             GeomGridEval_Curve aCurveEval = new(aBasis);
-            NCollection_Array1<gp_Pnt> aC0 = aCurveEval.EvaluateGrid(aCurveParams);
+            NCollection_Array1<Point3D> aC0 = aCurveEval.EvaluateGrid(aCurveParams);
             NCollection_Array1<Geom_Curve.ResD1> aC1 = aCurveEval.EvaluateGridD1(aCurveParams);
             NCollection_Array1<Geom_Curve.ResD2> aC2 = aCurveEval.EvaluateGridD2(aCurveParams);
             NCollection_Array1<Geom_Curve.ResD3> aC3 = aCurveEval.EvaluateGridD3(aCurveParams);
@@ -347,12 +349,12 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         bool isRational = theSurf is Geom_BezierSurface aBz && (aBz.IsURational() || aBz.IsVRational());
         int aUDeg = (theSurf as Geom_BezierSurface)?.UDegree() ?? int.MaxValue;
         int aVDeg = (theSurf as Geom_BezierSurface)?.VDegree() ?? int.MaxValue;
-        NCollection_Array2<gp_Pnt> aD0 = theEval.EvaluateGrid(theU, theV);
+        NCollection_Array2<Point3D> aD0 = theEval.EvaluateGrid(theU, theV);
         NCollection_Array2<Geom_Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
         NCollection_Array2<Geom_Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
         NCollection_Array2<Geom_Surface.ResD3> aD3 = theEval.EvaluateGridD3(theU, theV);
         (int, int)[] anOrders = [(1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (3, 0), (0, 3), (4, 0), (2, 2), (0, 4), (5, 1)];
-        NCollection_Array2<gp_Vec>?[] aDN = new NCollection_Array2<gp_Vec>?[anOrders.Length];
+        NCollection_Array2<Vector3D>?[] aDN = new NCollection_Array2<Vector3D>?[anOrders.Length];
         for (int k = 0; k < anOrders.Length; ++k)
         {
             // The swept surfaces' DN is the basis curve's grid DN, which OCCT's B-spline curve grid evaluates on the
@@ -375,15 +377,15 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             for (int j = 1; j <= theV.Length(); ++j)
             {
                 double v = theV.Value(j);
-                foreach ((string aRefName, Func<double, double, Geom_Surface.ResD3> aRefD3, Func<double, double, gp_Pnt> aRefD0,
+                foreach ((string aRefName, Func<double, double, Geom_Surface.ResD3> aRefD3, Func<double, double, Point3D> aRefD0,
                           Func<double, double, Geom_Surface.ResD1> aRefD1, Func<double, double, Geom_Surface.ResD2> aRefD2,
-                          Func<double, double, int, int, gp_Vec> aRefDN) in new[]
+                          Func<double, double, int, int, Vector3D> aRefDN) in new[]
                          {
                              ("Geom", (Func<double, double, Geom_Surface.ResD3>)theSurf.EvalD3,
-                              (Func<double, double, gp_Pnt>)theSurf.EvalD0,
+                              (Func<double, double, Point3D>)theSurf.EvalD0,
                               (Func<double, double, Geom_Surface.ResD1>)theSurf.EvalD1,
                               (Func<double, double, Geom_Surface.ResD2>)theSurf.EvalD2,
-                              (Func<double, double, int, int, gp_Vec>)theSurf.EvalDN),
+                              (Func<double, double, int, int, Vector3D>)theSurf.EvalDN),
                              ("Adaptor", anAdaptor.EvalD3, anAdaptor.EvalD0, anAdaptor.EvalD1, anAdaptor.EvalD2,
                               anAdaptor.EvalDN),
                          })
@@ -427,7 +429,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                         {
                             continue;
                         }
-                        gp_Vec aRefVec = aRefDN(u, v, anOrders[k].Item1, anOrders[k].Item2);
+                        Vector3D aRefVec = aRefDN(u, v, anOrders[k].Item1, anOrders[k].Item2);
                         if (isRational && (anOrders[k].Item1 > aUDeg || anOrders[k].Item2 > aVDeg))
                         {
                             // OCCT returns zero above the degrees, also for rational surfaces (occt-issues.md)

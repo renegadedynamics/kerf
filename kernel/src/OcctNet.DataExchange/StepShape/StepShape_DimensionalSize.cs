@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity DimensionalSize
 /// </summary>
-public class StepShape_DimensionalSize : Standard_Transient
+public class StepShape_DimensionalSize : Transient
 {
     private StepRepr_ShapeAspect theAppliesTo;
     private TCollection_HAsciiString theName;

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
@@ -13,7 +15,7 @@ public sealed class StepAP214ProtocolTests
     {
         var aProtocol = StepAP214.Protocol();
         return typeof(StepAP214_Protocol).Assembly.GetTypes()
-            .Where(t => t.Namespace == "Occt" && t.Name.StartsWith("Step", StringComparison.Ordinal) && typeof(Standard_Transient).IsAssignableFrom(t))
+            .Where(t => t.Namespace == "Occt" && t.Name.StartsWith("Step", StringComparison.Ordinal) && typeof(Transient).IsAssignableFrom(t))
             .OrderBy(t => t.Name, StringComparer.Ordinal)
             .Select(t => (t, aProtocol.TypeNumber(t)))
             .Where(x => x.Item2 > 0)
@@ -82,7 +84,7 @@ public sealed class StepAP214ProtocolTests
 
             if (anEnt.GetType() != aType)
             {
-                aFailures.Add($"{aType.Name} ({aCase}): NewVoid creates {anEnt.GetType().Name}");
+                aFailures.Add($"{aType.Name} ({aCase}): NewVoid creates {Kerf.Engine.Foundation.OcctTypeNames.Of(anEnt.GetType())}");
             }
 
             // a simple type's name gives the case back

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -28,7 +30,7 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluate D0 at given UV parameters.</summary>
-    private void evaluateD0(double theU, double theV, out gp_Pnt thePoint)
+    private void evaluateD0(double theU, double theV, out Point3D thePoint)
     {
         if (mySurface is Adaptor3d_Surface aSurf)
         {
@@ -41,7 +43,7 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluate D1 at given UV parameters.</summary>
-    private void evaluateD1(double theU, double theV, out gp_Pnt thePoint, out gp_Vec theD1U, out gp_Vec theD1V)
+    private void evaluateD1(double theU, double theV, out Point3D thePoint, out Vector3D theD1U, out Vector3D theD1V)
     {
         if (mySurface is Adaptor3d_Surface aSurf)
         {
@@ -56,12 +58,12 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     /// <summary>Evaluate D2 at given UV parameters.</summary>
     private void evaluateD2(double theU,
                             double theV,
-                            out gp_Pnt thePoint,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV)
+                            out Point3D thePoint,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV)
     {
         if (mySurface is Adaptor3d_Surface aSurf)
         {
@@ -77,16 +79,16 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     /// <summary>Evaluate D3 at given UV parameters.</summary>
     private void evaluateD3(double theU,
                             double theV,
-                            out gp_Pnt thePoint,
-                            out gp_Vec theD1U,
-                            out gp_Vec theD1V,
-                            out gp_Vec theD2U,
-                            out gp_Vec theD2V,
-                            out gp_Vec theD2UV,
-                            out gp_Vec theD3U,
-                            out gp_Vec theD3V,
-                            out gp_Vec theD3UUV,
-                            out gp_Vec theD3UVV)
+                            out Point3D thePoint,
+                            out Vector3D theD1U,
+                            out Vector3D theD1V,
+                            out Vector3D theD2U,
+                            out Vector3D theD2V,
+                            out Vector3D theD2UV,
+                            out Vector3D theD3U,
+                            out Vector3D theD3V,
+                            out Vector3D theD3UUV,
+                            out Vector3D theD3UVV)
     {
         if (mySurface is Adaptor3d_Surface aSurf)
         {
@@ -101,7 +103,7 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluate DN at given UV parameters.</summary>
-    private gp_Vec evaluateDN(double theU, double theV, int theNU, int theNV)
+    private Vector3D evaluateDN(double theU, double theV, int theNU, int theNV)
     {
         if (mySurface is Adaptor3d_Surface aSurf)
         {
@@ -111,24 +113,24 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
         if (aNbU == 0 || aNbV == 0)
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
         for (int iU = 1; iU <= aNbU; ++iU)
         {
             double u = theUParams.Value(theUParams.Lower() + iU - 1);
             for (int iV = 1; iV <= aNbV; ++iV)
             {
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
-                evaluateD0(u, v, out gp_Pnt aPoint);
+                evaluateD0(u, v, out Point3D aPoint);
                 aResult.SetValue(iU, iV, aPoint);
             }
         }
@@ -213,7 +215,7 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -222,17 +224,17 @@ public sealed class GeomGridEval_OtherSurface : GeomGridEval.ISurfaceEvaluator
         int aNbV = theVParams.Length();
         if (aNbU == 0 || aNbV == 0 || theNU < 0 || theNV < 0 || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
         for (int iU = 1; iU <= aNbU; ++iU)
         {
             double u = theUParams.Value(theUParams.Lower() + iU - 1);
             for (int iV = 1; iV <= aNbV; ++iV)
             {
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
-                gp_Vec aDN = evaluateDN(u, v, theNU, theNV);
+                Vector3D aDN = evaluateDN(u, v, theNU, theNV);
                 aResult.SetValue(iU, iV, aDN);
             }
         }

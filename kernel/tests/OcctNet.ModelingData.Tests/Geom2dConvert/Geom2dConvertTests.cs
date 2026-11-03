@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -13,8 +17,8 @@ public class Geom2dConvertTests
     private static Geom2d_BSplineCurve Cubic()
     {
         // A smooth cubic with three spans
-        NCollection_Array1<gp_Pnt2d> aPoles = NCollection_Array1<gp_Pnt2d>.From([
-            new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 2), new gp_Pnt2d(3, 3), new gp_Pnt2d(5, 1), new gp_Pnt2d(7, 2), new gp_Pnt2d(8, 0)]);
+        NCollection_Array1<Point2D> aPoles = NCollection_Array1<Point2D>.From([
+            new Point2D(0, 0), new Point2D(1, 2), new Point2D(3, 3), new Point2D(5, 1), new Point2D(7, 2), new Point2D(8, 0)]);
         return new Geom2d_BSplineCurve(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                                        NCollection_Array1<int>.From([4, 1, 1, 4]), 3);
     }
@@ -24,13 +28,13 @@ public class Geom2dConvertTests
     {
         for (int i = 0; i <= 20; i++)
         {
-            gp_Pnt2d aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
-            gp_Pnt2d aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
+            Point2D aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
+            Point2D aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
             Assert.True(aP.Distance(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
         }
     }
 
-    private static double MinDistance(Geom2d_Curve theCurve, gp_Pnt2d theP)
+    private static double MinDistance(Geom2d_Curve theCurve, Point2D theP)
     {
         double aMin = double.MaxValue;
         double aF = theCurve.FirstParameter(), aL = theCurve.LastParameter();
@@ -45,16 +49,16 @@ public class Geom2dConvertTests
     [Fact]
     public void CurveToBSplineCurve_WholeCircle_IsPeriodic()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 1)), 3.0);
-        foreach (Convert_ParameterisationType aParam in new[] { Convert_TgtThetaOver2, Convert_QuasiAngular, Convert_RationalC1, Convert_Polynomial })
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 2), new Direction2D(1, 1)), 3.0);
+        foreach (ParameterisationType aParam in new[] { TgtThetaOver2, QuasiAngular, RationalC1, Polynomial })
         {
             Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(aCircle, aParam);
             Assert.True(aBS.IsPeriodic());
-            Assert.False(aBS.IsFrozen());
+            Assert.False(aBS.IsFrozen);
             for (int i = 0; i < 16; i++)
             {
                 double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 16.0;
-                Assert.Equal(3.0, aBS.Value(aU).Distance(new gp_Pnt2d(1, 2)), aParam == Convert_Polynomial ? 1e-4 : Tol);
+                Assert.Equal(3.0, aBS.Value(aU).Distance(new Point2D(1, 2)), aParam == Polynomial ? 1e-4 : Tol);
             }
         }
     }
@@ -62,7 +66,7 @@ public class Geom2dConvertTests
     [Fact]
     public void CurveToBSplineCurve_LeftHandedEllipse()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1), false), 4.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(0, 1), false), 4.0, 2.0);
         Geom2d_TrimmedCurve aTrimmed = new(anEllipse, 0.3, 2.5);
         Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(aTrimmed);
         Assert.True(aBS.StartPoint().Distance(aTrimmed.StartPoint()) < Tol);
@@ -73,41 +77,41 @@ public class Geom2dConvertTests
     [Fact]
     public void CurveToBSplineCurve_LongRationalC1Arc_JoinsTwoHalves()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         Geom2d_TrimmedCurve anArc = new(aCircle, 0.1, 6.2);
-        Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(anArc, Convert_RationalC1);
-        Assert.False(aBS.IsFrozen());
+        Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(anArc, RationalC1);
+        Assert.False(aBS.IsFrozen);
         Assert.True(aBS.StartPoint().Distance(anArc.StartPoint()) < Tol);
         Assert.True(aBS.EndPoint().Distance(anArc.EndPoint()) < Tol);
         for (int i = 0; i <= 50; i++)
         {
             double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 50.0;
-            Assert.Equal(2.0, aBS.Value(aU).Distance(new gp_Pnt2d(0, 0)), Tol);
+            Assert.Equal(2.0, aBS.Value(aU).Distance(new Point2D(0, 0)), Tol);
         }
     }
 
     [Fact]
     public void CurveToBSplineCurve_TrimmedLineHyperbolaParabolaBezier()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 2));
+        Geom2d_Line aLine = new(new Point2D(1, 1), new Direction2D(1, 2));
         Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(new Geom2d_TrimmedCurve(aLine, -2.0, 3.0));
         Assert.Equal(1, aBS.Degree());
         Assert.Equal(2, aBS.NbPoles());
         AssertSamePoints(aLine, -2.0, 3.0, aBS, -2.0, 3.0, Tol);
 
-        Geom2d_Hyperbola aHyp = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Hyperbola aHyp = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2d_TrimmedCurve aHypTrimmed = new(aHyp, -1.0, 1.5);
         aBS = Geom2dConvert.CurveToBSplineCurve(aHypTrimmed);
         Assert.True(aBS.StartPoint().Distance(aHypTrimmed.StartPoint()) < Tol);
         Assert.True(aBS.EndPoint().Distance(aHypTrimmed.EndPoint()) < Tol);
 
-        Geom2d_Parabola aParab = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)), 1.5);
+        Geom2d_Parabola aParab = new(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), 1.5);
         Geom2d_TrimmedCurve aParabTrimmed = new(aParab, -2.0, 4.0);
         aBS = Geom2dConvert.CurveToBSplineCurve(aParabTrimmed);
         Assert.Equal(2, aBS.Degree());
         AssertSamePoints(aParabTrimmed, -2.0, 4.0, aBS, aBS.FirstParameter(), aBS.LastParameter(), Tol);
 
-        Geom2d_BezierCurve aBez = new(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 3), new gp_Pnt2d(4, 2)]),
+        Geom2d_BezierCurve aBez = new(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(1, 3), new Point2D(4, 2)]),
                                       NCollection_Array1<double>.From([1.0, 2.0, 1.0]));
         aBS = Geom2dConvert.CurveToBSplineCurve(aBez);
         Assert.True(aBS.IsRational());
@@ -123,7 +127,7 @@ public class Geom2dConvertTests
         aCubic.Freeze();
         Geom2d_TrimmedCurve aTrimmed = new(aCubic, 0.5, 2.5);
         Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(aTrimmed);
-        Assert.False(aBS.IsFrozen());
+        Assert.False(aBS.IsFrozen);
         Assert.Equal(0.5, aBS.FirstParameter());
         Assert.Equal(2.5, aBS.LastParameter());
         AssertSamePoints(aCubic, 0.5, 2.5, aBS, 0.5, 2.5, Tol);
@@ -133,23 +137,23 @@ public class Geom2dConvertTests
     [Fact]
     public void CurveToBSplineCurve_OffsetCurve_Approximated()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         Geom2d_OffsetCurve anOffset = new(new Geom2d_TrimmedCurve(aCircle, 0.0, 2.0), 0.5);
         Geom2d_BSplineCurve aBS = Geom2dConvert.CurveToBSplineCurve(anOffset);
-        Assert.False(aBS.IsFrozen());
+        Assert.False(aBS.IsFrozen);
         for (int i = 0; i <= 20; i++)
         {
             double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 20.0;
-            Assert.Equal(2.5, aBS.Value(aU).Distance(new gp_Pnt2d(0, 0)), 1e-4);
+            Assert.Equal(2.5, aBS.Value(aU).Distance(new Point2D(0, 0)), 1e-4);
         }
     }
 
     [Fact]
     public void CurveToBSplineCurve_UnboundedCurves_Throw()
     {
-        Assert.ThrowsAny<Standard_DomainError>(() => Geom2dConvert.CurveToBSplineCurve(new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0))));
-        Assert.ThrowsAny<Standard_DomainError>(() => Geom2dConvert.CurveToBSplineCurve(
-            new Geom2d_Parabola(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0)));
+        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert.CurveToBSplineCurve(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0))));
+        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert.CurveToBSplineCurve(
+            new Geom2d_Parabola(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0)));
     }
 
     [Fact]
@@ -169,8 +173,8 @@ public class Geom2dConvertTests
         Assert.True(aByParams.StartPoint().Distance(aC.Value(2.5)) < Tol);
         Assert.True(aByParams.EndPoint().Distance(aC.Value(0.5)) < Tol);
 
-        Assert.ThrowsAny<Standard_DomainError>(() => Geom2dConvert.SplitBSplineCurve(aC, 2, 2));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => Geom2dConvert.SplitBSplineCurve(aC, 0, 2));
+        Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert.SplitBSplineCurve(aC, 2, 2));
+        Assert.ThrowsAny<OutOfRangeException>(() => Geom2dConvert.SplitBSplineCurve(aC, 0, 2));
     }
 
     [Fact]
@@ -189,8 +193,8 @@ public class Geom2dConvertTests
         NCollection_Array1<int> aValues = new(1, aSplit2.NbSplits());
         aSplit2.Splitting(aValues);
         Assert.Equal([1, 2, 3, 4], aValues.AsSpan().ToArray());
-        Assert.ThrowsAny<Standard_RangeError>(() => new Geom2dConvert_BSplineCurveKnotSplitting(aC, -1));
-        Assert.ThrowsAny<Standard_RangeError>(() => aSplit2.SplitValue(5));
+        Assert.ThrowsAny<RangeErrorException>(() => new Geom2dConvert_BSplineCurveKnotSplitting(aC, -1));
+        Assert.ThrowsAny<RangeErrorException>(() => aSplit2.SplitValue(5));
     }
 
     [Fact]
@@ -211,13 +215,13 @@ public class Geom2dConvertTests
             Assert.NotSame(anArcs[i], aConv.Arc(i));
         }
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aConv.Arc(4));
+        Assert.ThrowsAny<OutOfRangeException>(() => aConv.Arc(4));
 
         // A part, with bounds snapped onto knots within half the tolerance
         Geom2dConvert_BSplineCurveToBezierCurve aPart = new(aC, 0.5, 2.0 + 1e-4, 1e-3);
         Assert.Equal(2, aPart.NbArcs());
         AssertSamePoints(aC, 0.5, 1.0, aPart.Arc(1), 0.0, 1.0, Tol);
-        Assert.ThrowsAny<Standard_DomainError>(() => new Geom2dConvert_BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
+        Assert.ThrowsAny<DomainErrorException>(() => new Geom2dConvert_BSplineCurveToBezierCurve(aC, 1.0, 1.0, 1e-3));
     }
 
     [Fact]
@@ -230,7 +234,7 @@ public class Geom2dConvertTests
         Geom2dConvert_CompCurveToBSplineCurve aComp = new(aMiddle);
         Geom2d_BSplineCurve? aHandedOut = aComp.BSplineCurve();
         Assert.NotNull(aHandedOut);
-        Assert.True(aHandedOut.IsFrozen());
+        Assert.True(aHandedOut.IsFrozen);
         Assert.Same(aHandedOut, aComp.BSplineCurve());
         Assert.NotSame(aMiddle, aHandedOut);
 
@@ -246,7 +250,7 @@ public class Geom2dConvertTests
         Assert.Equal(4, aResult.NbKnots());
 
         // A curve that touches neither end
-        Geom2d_Line aLine = new(new gp_Pnt2d(100, 100), new gp_Dir2d(1, 0));
+        Geom2d_Line aLine = new(new Point2D(100, 100), new Direction2D(1, 0));
         Assert.False(aComp.Add(new Geom2d_TrimmedCurve(aLine, 0.0, 1.0), 1e-7));
 
         aComp.Clear();
@@ -275,7 +279,7 @@ public class Geom2dConvertTests
         AssertSamePoints(aC, 0.0, 3.0, aResult[0], 0.0, 3.0, 1e-9);
 
         // A closed G1 contour: four quarter circles, as rational B-splines
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         NCollection_Array1<Geom2d_BSplineCurve> aQuarters = new(0, 3);
         for (int i = 0; i < 4; i++)
         {
@@ -290,14 +294,14 @@ public class Geom2dConvertTests
         for (int i = 0; i <= 40; i++)
         {
             double aU = aResult[0].FirstParameter() + (aResult[0].LastParameter() - aResult[0].FirstParameter()) * i / 40.0;
-            Assert.Equal(2.0, aResult[0].Value(aU).Distance(new gp_Pnt2d(0, 0)), 1e-7);
+            Assert.Equal(2.0, aResult[0].Value(aU).Distance(new Point2D(0, 0)), 1e-7);
         }
     }
 
     [Fact]
     public void ConcatG1_SingleClosedCurve_DoesNotChangeTheCaller()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         Geom2d_BSplineCurve aWhole = Geom2dConvert.CurveToBSplineCurve(new Geom2d_TrimmedCurve(aCircle, 0.0, 2 * M_PI));
         aWhole.Freeze();
         NCollection_Array1<Geom2d_BSplineCurve> aCurves = new(0, 0);
@@ -317,12 +321,12 @@ public class Geom2dConvertTests
         aCurves[0] = Geom2dConvert.SplitBSplineCurve(aC, 1, 2);
         aCurves[1] = Geom2dConvert.SplitBSplineCurve(aC, 3, 4);
         bool isClosed = false;
-        Assert.ThrowsAny<Standard_Failure>(() => Geom2dConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
+        Assert.ThrowsAny<FailureException>(() => Geom2dConvert.ConcatG1(aCurves, NCollection_Array1<double>.From([1e-7], 0),
                                                                          out _, ref isClosed, 1e-7));
     }
 
-    private static Geom2d_BSplineCurve Segment(gp_Pnt2d theP1, gp_Pnt2d theP2) =>
-        new(NCollection_Array1<gp_Pnt2d>.From([theP1, theP2]), NCollection_Array1<double>.From([0.0, 1.0]),
+    private static Geom2d_BSplineCurve Segment(Point2D theP1, Point2D theP2) =>
+        new(NCollection_Array1<Point2D>.From([theP1, theP2]), NCollection_Array1<double>.From([0.0, 1.0]),
             NCollection_Array1<int>.From([2, 2]), 1);
 
     [Fact]
@@ -334,15 +338,15 @@ public class Geom2dConvertTests
         // merged with the tolerance of the junction s1-s2 instead of ClosedTolerance (occt-issues.md).
         Geom2d_BSplineCurve[] aSegments =
         [
-            Segment(new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 0)),
-            Segment(new gp_Pnt2d(1, 0), new gp_Pnt2d(2, 0)),
-            Segment(new gp_Pnt2d(2, 0), new gp_Pnt2d(2, 1)),
-            Segment(new gp_Pnt2d(2, 1), new gp_Pnt2d(1e-5, 0)),
+            Segment(new Point2D(0, 0), new Point2D(1, 0)),
+            Segment(new Point2D(1, 0), new Point2D(2, 0)),
+            Segment(new Point2D(2, 0), new Point2D(2, 1)),
+            Segment(new Point2D(2, 1), new Point2D(1e-5, 0)),
         ];
 
         NCollection_Array1<Geom2d_BSplineCurve> aCurves = NCollection_Array1<Geom2d_BSplineCurve>.From(aSegments, 0);
         bool isClosed = true;
-        Assert.ThrowsAny<Standard_ConstructionError>(() => Geom2dConvert.ConcatG1(
+        Assert.ThrowsAny<ConstructionErrorException>(() => Geom2dConvert.ConcatG1(
             aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _, ref isClosed, 1e-4));
 
         // With the junction s1-s2 given the closure's tolerance, the closure merges
@@ -352,8 +356,8 @@ public class Geom2dConvertTests
                                out NCollection_HArray1<Geom2d_BSplineCurve> aResult, ref isClosed, 1e-4);
         Assert.Equal(2, aResult.Length());
         Assert.Same(aSegments[2], aResult[0]);
-        Assert.True(aResult[1].StartPoint().Distance(new gp_Pnt2d(2, 1)) < Tol);
-        Assert.True(aResult[1].EndPoint().Distance(new gp_Pnt2d(2, 0)) < Tol);
+        Assert.True(aResult[1].StartPoint().Distance(new Point2D(2, 1)) < Tol);
+        Assert.True(aResult[1].EndPoint().Distance(new Point2D(2, 0)) < Tol);
     }
 
     [Fact]
@@ -361,10 +365,10 @@ public class Geom2dConvertTests
     {
         // A polyline with a corner after the second segment: two groups
         NCollection_Array1<Geom2d_BSplineCurve> aCurves = new(0, 2);
-        gp_Pnt2d[] aPts = [new(0, 0), new(1, 0), new(2, 0), new(2, 1)];
+        Point2D[] aPts = [new(0, 0), new(1, 0), new(2, 0), new(2, 1)];
         for (int i = 0; i < 3; i++)
         {
-            aCurves[i] = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From([aPts[i], aPts[i + 1]]),
+            aCurves[i] = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From([aPts[i], aPts[i + 1]]),
                                                  NCollection_Array1<double>.From([0.0, 1.0]), NCollection_Array1<int>.From([2, 2]), 1);
         }
 
@@ -386,7 +390,7 @@ public class Geom2dConvertTests
     {
         // Two rational quartics joining with G1 continuity, whose two first and two last weights are 2:
         // Pretreatment divides their weights by 2, in copies that replace them in the array
-        gp_Pnt2d[][] aPoles =
+        Point2D[][] aPoles =
         [
             [new(0, 0), new(1, 0), new(2, 1), new(3, 1), new(4, 1)],
             [new(4, 1), new(5, 1), new(6, 2), new(7, 0), new(8, 0)],
@@ -395,7 +399,7 @@ public class Geom2dConvertTests
         Geom2d_BSplineCurve[] anOriginals = new Geom2d_BSplineCurve[2];
         for (int i = 0; i < 2; i++)
         {
-            anOriginals[i] = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From(aPoles[i]),
+            anOriginals[i] = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From(aPoles[i]),
                                                      NCollection_Array1<double>.From([2.0, 2.0, 1.0, 2.0, 2.0]),
                                                      NCollection_Array1<double>.From([0.0, 1.0]),
                                                      NCollection_Array1<int>.From([5, 5]), 4);
@@ -411,8 +415,8 @@ public class Geom2dConvertTests
         Assert.Equal(2.0, anOriginals[0].Weight(1));
         Assert.Equal(1.0, aCurves[0].Weight(1));
         Assert.Equal(0.5, aCurves[0].Weight(3));
-        Assert.True(aResult[0].StartPoint().Distance(new gp_Pnt2d(0, 0)) < Tol);
-        Assert.True(aResult[0].EndPoint().Distance(new gp_Pnt2d(8, 0)) < Tol);
+        Assert.True(aResult[0].StartPoint().Distance(new Point2D(0, 0)) < Tol);
+        Assert.True(aResult[0].EndPoint().Distance(new Point2D(8, 0)) < Tol);
         Assert.True(MinDistance(aResult[0], anOriginals[0].Value(0.5)) < 1e-2);
         Assert.True(MinDistance(aResult[0], anOriginals[1].Value(0.5)) < 1e-2);
     }
@@ -429,7 +433,7 @@ public class Geom2dConvertTests
         Geom2dConvert.C0BSplineToC1BSplineCurve(ref aResult, 1e-7);
         Assert.NotSame(aC0, aResult);
         Assert.Equal(3, aC0.Multiplicity(2));
-        Assert.True(aResult.Continuity() >= GeomAbs_C1);
+        Assert.True(aResult.Continuity() >= C1);
         Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
         Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
 
@@ -442,12 +446,12 @@ public class Geom2dConvertTests
     [Fact]
     public void C0BSplineToArrayOfC1BSplineCurve_SplitsAtCorners()
     {
-        Geom2d_BSplineCurve aPolyline = new(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 0), new gp_Pnt2d(1, 1)]),
+        Geom2d_BSplineCurve aPolyline = new(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(1, 0), new Point2D(1, 1)]),
                                             NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<int>.From([2, 1, 2]), 1);
         Geom2dConvert.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<Geom2d_BSplineCurve> aTab, 1e-7);
         Assert.Equal(2, aTab.Length());
-        Assert.True(aTab[0].EndPoint().Distance(new gp_Pnt2d(1, 0)) < Tol);
-        Assert.True(aTab[1].StartPoint().Distance(new gp_Pnt2d(1, 0)) < Tol);
+        Assert.True(aTab[0].EndPoint().Distance(new Point2D(1, 0)) < Tol);
+        Assert.True(aTab[1].StartPoint().Distance(new Point2D(1, 0)) < Tol);
 
         Geom2d_BSplineCurve aC = Cubic();
         Geom2dConvert.C0BSplineToArrayOfC1BSplineCurve(aC, out aTab, 1e-7);
@@ -460,19 +464,19 @@ public class Geom2dConvertTests
     {
         Geom2d_BSplineCurve aC = Cubic();
         Geom2d_OffsetCurve anOffset = new(aC, 0.2);
-        Geom2dConvert_ApproxCurve anApprox = new(anOffset, 1e-5, GeomAbs_C2, 50, 9);
+        Geom2dConvert_ApproxCurve anApprox = new(anOffset, 1e-5, C2, 50, 9);
         Assert.True(anApprox.HasResult());
         Assert.True(anApprox.IsDone());
         Assert.True(anApprox.MaxError() < 1e-5);
         Geom2d_BSplineCurve aResult = anApprox.Curve()!;
-        Assert.True(aResult.IsFrozen());
+        Assert.True(aResult.IsFrozen);
         Assert.Same(aResult, anApprox.Curve());
         Assert.True(aResult.Degree() <= 9);
         AssertSamePoints(anOffset, 0.0, 3.0, aResult, aResult.FirstParameter(), aResult.LastParameter(), 1e-4);
         Assert.Contains("Dump of ApproxCurve", anApprox.ToString());
 
         // Through an adaptor on part of the curve
-        Geom2dConvert_ApproxCurve aPart = new(new Geom2dAdaptor_Curve(anOffset, 0.5, 2.5), 1e-5, GeomAbs_C1, 50, 9);
+        Geom2dConvert_ApproxCurve aPart = new(new Geom2dAdaptor_Curve(anOffset, 0.5, 2.5), 1e-5, C1, 50, 9);
         Assert.True(aPart.HasResult());
         Assert.Equal(0.5, aPart.Curve()!.FirstParameter());
         Assert.Equal(2.5, aPart.Curve()!.LastParameter());
@@ -481,14 +485,14 @@ public class Geom2dConvertTests
     [Fact]
     public void ApproxArcsSegments_LineAndCircle()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 1));
+        Geom2d_Line aLine = new(new Point2D(0, 0), new Direction2D(1, 1));
         Geom2dConvert_ApproxArcsSegments aLineApprox = new(new Geom2dAdaptor_Curve(aLine, 0.0, 5.0), 1e-3, 0.01);
         Schematiq.Collections.ISchematiqList<Geom2d_Curve> aResult = aLineApprox.GetResult();
         Assert.Single(aResult);
-        Assert.True(aResult[0].IsFrozen());
+        Assert.True(aResult[0].IsFrozen);
         Assert.True(aResult[0].Value(aResult[0].LastParameter()).Distance(aLine.Value(5.0)) < 1e-9);
 
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
         Geom2dConvert_ApproxArcsSegments aCircleApprox = new(new Geom2dAdaptor_Curve(aCircle, 0.0, 3.0), 1e-3, 0.01);
         aResult = aCircleApprox.GetResult();
         Assert.Equal(2, aResult.Count);
@@ -523,7 +527,7 @@ public class Geom2dConvertTests
             // Every piece lies within the tolerance of the curve
             for (int k = 0; k <= 10; k++)
             {
-                gp_Pnt2d aP = aCurve.Value(aCurve.FirstParameter() + (aCurve.LastParameter() - aCurve.FirstParameter()) * k / 10.0);
+                Point2D aP = aCurve.Value(aCurve.FirstParameter() + (aCurve.LastParameter() - aCurve.FirstParameter()) * k / 10.0);
                 Assert.True(MinDistance(aC, aP) < aTol + 2e-3, $"piece {i} point {k}");
             }
         }
@@ -534,16 +538,16 @@ public class Geom2dConvertTests
     {
         Geom2dConvert_PPoint anEmpty = new();
         Assert.Equal(RealLast(), anEmpty.Parameter());
-        Geom2dConvert_PPoint aP = new(1.0, new gp_XY(1, 2), new gp_XY(0, 1));
-        Geom2dConvert_PPoint aQ = new(1.0 + 1e-12, new gp_XY(5, 5), new gp_XY(1, 0));
+        Geom2dConvert_PPoint aP = new(1.0, new Xy(1, 2), new Xy(0, 1));
+        Geom2dConvert_PPoint aQ = new(1.0 + 1e-12, new Xy(5, 5), new Xy(1, 0));
         Assert.True(aP.IsEqual(aQ));
         Assert.False(aP == aQ);
-        Assert.Equal(new gp_XY(3, 3), aP.WithD1(new gp_XY(3, 3)).D1());
-        Assert.Equal(Math.Sqrt(9 + 16), aP.Dist(new Geom2dConvert_PPoint(0.0, new gp_XY(4, 6), new gp_XY(0, 1))), 1e-15);
+        Assert.Equal(new Xy(3, 3), aP.WithD1(new Xy(3, 3)).D1());
+        Assert.Equal(Math.Sqrt(9 + 16), aP.Dist(new Geom2dConvert_PPoint(0.0, new Xy(4, 6), new Xy(0, 1))), 1e-15);
 
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 2.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         Geom2dConvert_PPoint anOnCurve = new(M_PI / 2, new Geom2dAdaptor_Curve(aCircle));
-        Assert.True(new gp_Pnt2d(anOnCurve.Point()).Distance(new gp_Pnt2d(0, 2)) < 1e-15);
-        Assert.True(new gp_Vec2d(anOnCurve.D1()).IsParallel(new gp_Vec2d(-1, 0), 1e-12));
+        Assert.True(new Point2D(anOnCurve.Point()).Distance(new Point2D(0, 2)) < 1e-15);
+        Assert.True(new Vector2D(anOnCurve.D1()).IsParallel(new Vector2D(-1, 0), 1e-12));
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Occt;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -41,10 +43,10 @@ internal static class BRepTestPrimitiveCommands
     private static int Box(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        gp_Pnt anOrigin = new();
-        gp_XYZ aParams = new();
-        gp_Dir aDir = new();
-        gp_Dir aXDir = new();
+        Point3D anOrigin = new();
+        Xyz aParams = new();
+        Direction3D aDir = new();
+        Direction3D aXDir = new();
         bool isMinMax = false;
         bool isPreview = false;
         bool isAxis = false;
@@ -138,7 +140,7 @@ internal static class BRepTestPrimitiveCommands
             var aPreview = new BRepPreviewAPI_MakeBox();
             if (isMinMax)
             {
-                aPreview.Init(anOrigin, new gp_Pnt(aParams));
+                aPreview.Init(anOrigin, new Point3D(aParams));
             }
             else if (!isMinMax && !isAxis)
             {
@@ -146,7 +148,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else if (isAxis)
             {
-                var anAxis = new gp_Ax2(anOrigin, aDir, aXDir);
+                var anAxis = new Frame3D(anOrigin, aDir, aXDir);
                 aPreview.Init(anAxis, aParams.X(), aParams.Y(), aParams.Z());
             }
             else
@@ -162,7 +164,7 @@ internal static class BRepTestPrimitiveCommands
             TopoDS_Solid S;
             if (isMinMax)
             {
-                S = new BRepPrimAPI_MakeBox(anOrigin, new gp_Pnt(aParams)).Solid();
+                S = new BRepPrimAPI_MakeBox(anOrigin, new Point3D(aParams)).Solid();
             }
             else if (!isMinMax && !isAxis)
             {
@@ -170,7 +172,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else if (isAxis)
             {
-                var anAxis = new gp_Ax2(anOrigin, aDir, aXDir);
+                var anAxis = new Frame3D(anOrigin, aDir, aXDir);
                 S = new BRepPrimAPI_MakeBox(anAxis, aParams.X(), aParams.Y(), aParams.Z()).Solid();
             }
             else
@@ -191,10 +193,10 @@ internal static class BRepTestPrimitiveCommands
 
         if (n == 15 || n == 18)
         {
-            var LocalP = new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
-            var LocalN = new gp_Dir(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
-            var LocalVx = new gp_Dir(theDI.Atof(a[8]), theDI.Atof(a[9]), theDI.Atof(a[10]));
-            var Axis = new gp_Ax2(LocalP, LocalN, LocalVx);
+            var LocalP = new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]));
+            var LocalN = new Direction3D(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
+            var LocalVx = new Direction3D(theDI.Atof(a[8]), theDI.Atof(a[9]), theDI.Atof(a[10]));
+            var Axis = new Frame3D(LocalP, LocalN, LocalVx);
             if (n == 15)
             {
                 S = new BRepPrimAPI_MakeWedge(Axis, theDI.Atof(a[11]), theDI.Atof(a[12]), theDI.Atof(a[13]), theDI.Atof(a[14])).Solid();
@@ -482,7 +484,7 @@ internal static class BRepTestPrimitiveCommands
         }
 
         // The point on the side of the matter.
-        var RefPnt = new gp_Pnt(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        var RefPnt = new Point3D(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
         TopoDS_Shape Face = theDI.GetShape(a[2], TopAbs_FACE);
         if (Face.IsNull())

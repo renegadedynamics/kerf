@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +19,7 @@ namespace Occt;
 public sealed class HLRBRep_ShapeBounds
 {
     private HLRTopoBRep_OutLiner? myShape;
-    private Standard_Transient? myShapeData;
+    private Transient? myShapeData;
     private int myNbIso;
     private int myVertStart;
     private int myVertEnd;
@@ -38,7 +40,7 @@ public sealed class HLRBRep_ShapeBounds
         myFaceEnd = 0;
     }
 
-    public HLRBRep_ShapeBounds(HLRTopoBRep_OutLiner S, Standard_Transient? SData, int nbIso, int V1, int V2, int E1,
+    public HLRBRep_ShapeBounds(HLRTopoBRep_OutLiner S, Transient? SData, int nbIso, int V1, int V2, int E1,
                                int E2, int F1, int F2)
     {
         myShape = S;
@@ -94,9 +96,9 @@ public sealed class HLRBRep_ShapeBounds
 
     public HLRTopoBRep_OutLiner? Shape() => myShape;
 
-    public void ShapeData(Standard_Transient? SD) => myShapeData = SD;
+    public void ShapeData(Transient? SD) => myShapeData = SD;
 
-    public Standard_Transient? ShapeData() => myShapeData;
+    public Transient? ShapeData() => myShapeData;
 
     public void NbOfIso(int nbIso) => myNbIso = nbIso;
 

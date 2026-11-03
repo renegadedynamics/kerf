@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -41,10 +42,10 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
         }
     }
 
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         GetReport().Clear();
-        using var aPS = new Message_ProgressScope(theRange, "Building wires", 1);
+        using var aPS = new ProgressScope(theRange, "Building wires", 1);
         //
         CheckData();
         if (HasErrors())
@@ -81,7 +82,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
         aWire.Closed(BRep_Tool.IsClosed(aWire));
     }
 
-    protected void MakeWires(Message_ProgressRange theRange)
+    protected void MakeWires(ProgressRange theRange)
     {
         bool bIsRegular;
         int aNbVCB, k;
@@ -90,7 +91,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
         NCollection_List<TopoDS_Shape>.Iterator aIt;
         NCollection_DynamicArray<BOPAlgo_WS_ConnexityBlock> aVCB = new();
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
         //
         TopoDS_Face aF = myWES!.Face();
         //
@@ -119,7 +120,7 @@ public partial class BOPAlgo_WireSplitter : BOPAlgo_Algo
             }
         }
         aNbVCB = aVCB.Length();
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), null, aNbVCB);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(), null, aNbVCB);
         for (int iW = 0; iW < aNbVCB; ++iW)
         {
             aVCB.Value(iW).SetProgressRange(aPSParallel.Next());
@@ -187,7 +188,7 @@ internal sealed class BOPAlgo_WS_ConnexityBlock : BOPTools_Parallel.IContextSolv
     private TopoDS_Face myFace = new();
     private BOPTools_ConnexityBlock myCB = new();
     private IntTools_Context? myContext;
-    private Message_ProgressRange myRange;
+    private ProgressRange myRange;
 
     public void SetFace(in TopoDS_Face theF) => myFace = theF;
 
@@ -202,11 +203,11 @@ internal sealed class BOPAlgo_WS_ConnexityBlock : BOPTools_Parallel.IContextSolv
 
     public IntTools_Context? Context() => myContext;
 
-    public void SetProgressRange(Message_ProgressRange theRange) => myRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
 
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myRange, null, 1);
+        using var aPS = new ProgressScope(myRange, null, 1);
         if (!aPS.More())
         {
             return;

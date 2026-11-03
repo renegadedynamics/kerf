@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_BFGSTest
@@ -9,9 +11,12 @@ public class math_BFGSTest
     // Test function classes for optimization
 
     // Quadratic function: f(x,y) = (x-1)^2 + (y-2)^2 (minimum at (1,2), value = 0)
-    private sealed class QuadraticFunction2D : math_MultipleVarFunctionWithGradient
+    private sealed class QuadraticFunction2D : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -44,9 +49,12 @@ public class math_BFGSTest
     }
 
     // Rosenbrock function: f(x,y) = 100*(y-x^2)^2 + (1-x)^2 (minimum at (1,1), value = 0)
-    private sealed class RosenbrockFunction : math_MultipleVarFunctionWithGradient
+    private sealed class RosenbrockFunction : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -83,9 +91,12 @@ public class math_BFGSTest
     }
 
     // 3D Paraboloid: f(x,y,z) = x^2 + 2*y^2 + 3*z^2 (minimum at origin, value = 0)
-    private sealed class Paraboloid3D : math_MultipleVarFunctionWithGradient
+    private sealed class Paraboloid3D : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 3; }
+        public override int VariableCount {
+            get
+            { return 3; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -124,7 +135,7 @@ public class math_BFGSTest
         double aTolerance = 1.0e-8;
         int aMaxIterations = 100;
 
-        math_BFGS anOptimizer = new(2, aTolerance, aMaxIterations);
+        Bfgs anOptimizer = new(2, aTolerance, aMaxIterations);
 
         // Start from point (5, 7), should converge to (1, 2)
         math_Vector aStartPoint = new(1, 2);
@@ -133,7 +144,7 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "BFGS optimization should succeed");
+        Assert.True(anOptimizer.IsDone, "BFGS optimization should succeed");
 
         math_Vector aLocation = anOptimizer.Location();
         Assert.Equal(1.0, aLocation[1], 1.0e-6);
@@ -145,8 +156,8 @@ public class math_BFGSTest
         Assert.Equal(0.0, aGradient[1], 1.0e-6);
         Assert.Equal(0.0, aGradient[2], 1.0e-6);
 
-        Assert.True(anOptimizer.NbIterations() > 0, "Should require at least one iteration");
-        Assert.True(anOptimizer.NbIterations() <= aMaxIterations, "Should not exceed max iterations");
+        Assert.True(anOptimizer.IterationCount > 0, "Should require at least one iteration");
+        Assert.True(anOptimizer.IterationCount <= aMaxIterations, "Should not exceed max iterations");
     }
 
     [Fact]
@@ -156,7 +167,7 @@ public class math_BFGSTest
         double aTolerance = 1.0e-6;
         int aMaxIterations = 1000; // Rosenbrock can be challenging
 
-        math_BFGS anOptimizer = new(2, aTolerance, aMaxIterations);
+        Bfgs anOptimizer = new(2, aTolerance, aMaxIterations);
 
         // Start from point (-1, 1), should converge to (1, 1)
         math_Vector aStartPoint = new(1, 2);
@@ -165,7 +176,7 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "BFGS optimization should succeed for Rosenbrock");
+        Assert.True(anOptimizer.IsDone, "BFGS optimization should succeed for Rosenbrock");
 
         math_Vector aLocation = anOptimizer.Location();
         Assert.Equal(1.0, aLocation[1], 1.0e-4);
@@ -181,7 +192,7 @@ public class math_BFGSTest
         double aTolerance = 1.0e-8;
         int aMaxIterations = 100;
 
-        math_BFGS anOptimizer = new(3, aTolerance, aMaxIterations);
+        Bfgs anOptimizer = new(3, aTolerance, aMaxIterations);
 
         // Start from point (3, 4, 5), should converge to origin (0, 0, 0)
         math_Vector aStartPoint = new(1, 3);
@@ -191,7 +202,7 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "BFGS optimization should succeed for 3D paraboloid");
+        Assert.True(anOptimizer.IsDone, "BFGS optimization should succeed for 3D paraboloid");
 
         math_Vector aLocation = anOptimizer.Location();
         Assert.Equal(0.0, aLocation[1], 1.0e-6);
@@ -208,7 +219,7 @@ public class math_BFGSTest
         double aTolerance = 1.0e-8;
         int aMaxIterations = 100;
 
-        math_BFGS anOptimizer = new(2, aTolerance, aMaxIterations);
+        Bfgs anOptimizer = new(2, aTolerance, aMaxIterations);
 
         // Set boundaries: x in [2, 4], y in [3, 5]
         // True minimum (1,2) is outside these bounds
@@ -230,7 +241,7 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "BFGS optimization with boundaries should succeed");
+        Assert.True(anOptimizer.IsDone, "BFGS optimization with boundaries should succeed");
 
         math_Vector aLocation = anOptimizer.Location();
         Assert.True(aLocation[1] >= aLowerBound[1], "X should be within lower bound");
@@ -247,7 +258,7 @@ public class math_BFGSTest
     public void LocationCopyMethod()
     {
         QuadraticFunction2D aFunc = new();
-        math_BFGS anOptimizer = new(2);
+        Bfgs anOptimizer = new(2);
 
         math_Vector aStartPoint = new(1, 2);
         aStartPoint[1] = 3.0;
@@ -255,22 +266,22 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "Optimization should succeed");
+        Assert.True(anOptimizer.IsDone, "Optimization should succeed");
 
         // Test Location copy method
         math_Vector aLocationCopy = new(1, 2);
         anOptimizer.Location(aLocationCopy);
 
         math_Vector aLocationRef = anOptimizer.Location();
-        Assert.Equal(aLocationRef[1], aLocationCopy[1], Precision.Confusion());
-        Assert.Equal(aLocationRef[2], aLocationCopy[2], Precision.Confusion());
+        Assert.Equal(aLocationRef[1], aLocationCopy[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aLocationRef[2], aLocationCopy[2], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void GradientCopyMethod()
     {
         QuadraticFunction2D aFunc = new();
-        math_BFGS anOptimizer = new(2);
+        Bfgs anOptimizer = new(2);
 
         math_Vector aStartPoint = new(1, 2);
         aStartPoint[1] = 3.0;
@@ -278,15 +289,15 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "Optimization should succeed");
+        Assert.True(anOptimizer.IsDone, "Optimization should succeed");
 
         // Test Gradient copy method
         math_Vector aGradientCopy = new(1, 2);
         anOptimizer.Gradient(aGradientCopy);
 
         math_Vector aGradientRef = anOptimizer.Gradient();
-        Assert.Equal(aGradientRef[1], aGradientCopy[1], Precision.Confusion());
-        Assert.Equal(aGradientRef[2], aGradientCopy[2], Precision.Confusion());
+        Assert.Equal(aGradientRef[1], aGradientCopy[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aGradientRef[2], aGradientCopy[2], global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -297,7 +308,7 @@ public class math_BFGSTest
         // Test with very tight tolerance
         {
             double aTightTolerance = 1.0e-12;
-            math_BFGS anOptimizer = new(2, aTightTolerance);
+            Bfgs anOptimizer = new(2, aTightTolerance);
 
             math_Vector aStartPoint = new(1, 2);
             aStartPoint[1] = 2.0;
@@ -305,7 +316,7 @@ public class math_BFGSTest
 
             anOptimizer.Perform(aFunc, aStartPoint);
 
-            Assert.True(anOptimizer.IsDone(), "High precision optimization should succeed");
+            Assert.True(anOptimizer.IsDone, "High precision optimization should succeed");
             Assert.Equal(1.0, anOptimizer.Location()[1], aTightTolerance * 10);
             Assert.Equal(2.0, anOptimizer.Location()[2], aTightTolerance * 10);
         }
@@ -313,7 +324,7 @@ public class math_BFGSTest
         // Test with loose tolerance
         {
             double aLooseTolerance = 1.0e-3;
-            math_BFGS anOptimizer = new(2, aLooseTolerance);
+            Bfgs anOptimizer = new(2, aLooseTolerance);
 
             math_Vector aStartPoint = new(1, 2);
             aStartPoint[1] = 10.0;
@@ -321,7 +332,7 @@ public class math_BFGSTest
 
             anOptimizer.Perform(aFunc, aStartPoint);
 
-            Assert.True(anOptimizer.IsDone(), "Low precision optimization should succeed");
+            Assert.True(anOptimizer.IsDone, "Low precision optimization should succeed");
             Assert.Equal(1.0, anOptimizer.Location()[1], aLooseTolerance * 10);
             Assert.Equal(2.0, anOptimizer.Location()[2], aLooseTolerance * 10);
         }
@@ -334,7 +345,7 @@ public class math_BFGSTest
         double aTolerance = 1.0e-12; // Very tight tolerance
         int aVeryFewIterations = 5;       // Very few iterations
 
-        math_BFGS anOptimizer = new(2, aTolerance, aVeryFewIterations);
+        Bfgs anOptimizer = new(2, aTolerance, aVeryFewIterations);
 
         math_Vector aStartPoint = new(1, 2);
         aStartPoint[1] = -2.0;
@@ -343,9 +354,9 @@ public class math_BFGSTest
         anOptimizer.Perform(aFunc, aStartPoint);
 
         // Either succeeds within few iterations (unlikely) or fails
-        if (anOptimizer.IsDone())
+        if (anOptimizer.IsDone)
         {
-            Assert.True(anOptimizer.NbIterations() <= aVeryFewIterations, "Should not exceed max iterations");
+            Assert.True(anOptimizer.IterationCount <= aVeryFewIterations, "Should not exceed max iterations");
         }
         else
         {
@@ -359,7 +370,7 @@ public class math_BFGSTest
     public void NotDoneState()
     {
         QuadraticFunction2D aFunc = new();
-        math_BFGS anOptimizer = new(2, 1.0e-12, 3); // Reasonable tolerance, few iterations
+        Bfgs anOptimizer = new(2, 1.0e-12, 3); // Reasonable tolerance, few iterations
 
         math_Vector aStartPoint = new(1, 2);
         aStartPoint[1] = 50.0; // Far from minimum but not extreme
@@ -369,14 +380,14 @@ public class math_BFGSTest
         // (EXPECT_NO_THROW: an exception fails the test.)
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        if (!anOptimizer.IsDone())
+        if (!anOptimizer.IsDone)
         {
             // OCCT's release build compiles out the NotDone check of NbIterations(); the port always checks.
-            Assert.ThrowsAny<StdFail_NotDone>(() => anOptimizer.NbIterations());
+            Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anOptimizer.IterationCount);
         }
         else
         {
-            Assert.True(anOptimizer.NbIterations() > 0, "Successful optimization should require at least one iteration");
+            Assert.True(anOptimizer.IterationCount > 0, "Successful optimization should require at least one iteration");
         }
     }
 
@@ -384,7 +395,7 @@ public class math_BFGSTest
     public void DimensionCompatibility()
     {
         QuadraticFunction2D aFunc = new();
-        math_BFGS anOptimizer = new(2);
+        Bfgs anOptimizer = new(2);
 
         math_Vector aStartPoint = new(1, 2);
         aStartPoint[1] = 2.0;
@@ -392,7 +403,7 @@ public class math_BFGSTest
 
         anOptimizer.Perform(aFunc, aStartPoint);
 
-        Assert.True(anOptimizer.IsDone(), "Optimization should succeed for dimension compatibility tests");
+        Assert.True(anOptimizer.IsDone, "Optimization should succeed for dimension compatibility tests");
 
         // Verify optimizer works correctly with properly dimensioned vectors
         math_Vector aCorrectSizeLocation = new(1, 2);
@@ -411,7 +422,7 @@ public class math_BFGSTest
     {
         // Test different constructor parameter combinations
         {
-            math_BFGS anOptimizer1 = new(3); // Default tolerance, iterations, ZEPS
+            Bfgs anOptimizer1 = new(3); // Default tolerance, iterations, ZEPS
             QuadraticFunction2D aFunc = new(); // This is 2D, but optimizer is 3D - should handle gracefully
 
             // This might not work well due to dimension mismatch, but shouldn't crash
@@ -423,17 +434,17 @@ public class math_BFGSTest
         }
 
         {
-            math_BFGS anOptimizer2 = new(2, 1.0e-6); // Custom tolerance, default iterations and ZEPS
+            Bfgs anOptimizer2 = new(2, 1.0e-6); // Custom tolerance, default iterations and ZEPS
             // Should construct successfully
         }
 
         {
-            math_BFGS anOptimizer3 = new(2, 1.0e-8, 50); // Custom tolerance and iterations
+            Bfgs anOptimizer3 = new(2, 1.0e-8, 50); // Custom tolerance and iterations
             // Should construct successfully
         }
 
         {
-            math_BFGS anOptimizer4 = new(2, 1.0e-8, 100, 1.0e-10); // All parameters custom
+            Bfgs anOptimizer4 = new(2, 1.0e-8, 100, 1.0e-10); // All parameters custom
             // Should construct successfully
         }
     }
@@ -442,7 +453,7 @@ public class math_BFGSTest
     public void MultipleOptimizations()
     {
         QuadraticFunction2D aFunc = new();
-        math_BFGS anOptimizer = new(2);
+        Bfgs anOptimizer = new(2);
 
         // Perform multiple optimizations with the same optimizer instance
         double[][] aStartPoints = [[5.0, 7.0], [-3.0, -4.0], [0.5, 1.5], [10.0, -5.0]];
@@ -455,16 +466,19 @@ public class math_BFGSTest
 
             anOptimizer.Perform(aFunc, aStartPoint);
 
-            Assert.True(anOptimizer.IsDone(), "Each optimization should succeed");
+            Assert.True(anOptimizer.IsDone, "Each optimization should succeed");
             Assert.Equal(1.0, anOptimizer.Location()[1], 1.0e-6);
             Assert.Equal(2.0, anOptimizer.Location()[2], 1.0e-6);
         }
     }
 
     // Simple 1D square function: f(x) = x^2 (minimum at x=0, value = 0)
-    private sealed class SquareFunction1D : math_MultipleVarFunctionWithGradient
+    private sealed class SquareFunction1D : MultipleVarFunctionWithGradient
     {
-        public override int NbVariables() { return 1; }
+        public override int VariableCount {
+            get
+            { return 1; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -505,26 +519,26 @@ public class math_BFGSTest
         aStartPnt[1] = 0.0; // Start exactly at the minimum
 
         // Test FRPR
-        math_FRPR aFRPR = new(aFunc, Precision.Confusion());
+        Frpr aFRPR = new(aFunc, global::Kerf.Engine.Foundation.Precision.Confusion());
         aFRPR.Perform(aFunc, aStartPnt);
-        Assert.True(aFRPR.IsDone(), "FRPR optimization should succeed when starting at minimum");
+        Assert.True(aFRPR.IsDone, "FRPR optimization should succeed when starting at minimum");
 
         // Test BFGS
-        math_BFGS aBFGS = new(1, Precision.Confusion());
+        Bfgs aBFGS = new(1, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBFGS.Perform(aFunc, aStartPnt);
-        Assert.True(aBFGS.IsDone(), "BFGS optimization should succeed when starting at minimum");
+        Assert.True(aBFGS.IsDone, "BFGS optimization should succeed when starting at minimum");
 
         // Verify that both found the minimum (or stayed at it)
-        if (aFRPR.IsDone())
+        if (aFRPR.IsDone)
         {
-            Assert.Equal(0.0, aFRPR.Location()[1], Precision.Confusion());
-            Assert.Equal(0.0, aFRPR.Minimum(), Precision.Confusion());
+            Assert.Equal(0.0, aFRPR.Location()[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(0.0, aFRPR.Minimum(), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
-        if (aBFGS.IsDone())
+        if (aBFGS.IsDone)
         {
-            Assert.Equal(0.0, aBFGS.Location()[1], Precision.Confusion());
-            Assert.Equal(0.0, aBFGS.Minimum(), Precision.Confusion());
+            Assert.Equal(0.0, aBFGS.Location()[1], global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(0.0, aBFGS.Minimum(), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 }

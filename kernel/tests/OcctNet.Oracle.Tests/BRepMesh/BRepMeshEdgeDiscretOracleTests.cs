@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
 using static Occt.IMeshData_Status;
@@ -109,7 +113,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     {
         var aParams = new IMeshTools_Parameters { Deflection = theDeflection, Angle = theAngle, Relative = isRelative };
         aParams.DeflectionInterior = theDeflection;
-        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, Precision.Confusion());
+        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
         aParams.AngleInterior = 2.0 * theAngle;
         return aParams;
     }
@@ -200,19 +204,19 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             {
                 // The model takes a free edge without its location: its points, and the polygon, are in the edge's
                 // own frame.
-                Poly_Polygon3D? aPoly3D = BRep_Tool.Polygon3D(TopoDS.Edge(anEdge2.Located(new TopLoc_Location())), out _);
+                Polygon3D? aPoly3D = BRep_Tool.Polygon3D(TopoDS.Edge(anEdge2.Located(new Placement())), out _);
                 if (aDEdge.IsSet(IMeshData_Reused) || aPoly3D is null || aCurve.ParametersNb() == 0)
                 {
                     continue;
                 }
                 theTally.Polygons3D++;
-                if (aPoly3D.NbNodes() != aCurve.ParametersNb())
+                if (aPoly3D.NodeCount != aCurve.ParametersNb())
                 {
-                    Disagree(theTally, $"{aWhat} 3D polygon: {aPoly3D.NbNodes()} nodes, port {aCurve.ParametersNb()}");
+                    Disagree(theTally, $"{aWhat} 3D polygon: {aPoly3D.NodeCount} nodes, port {aCurve.ParametersNb()}");
                     continue;
                 }
                 theO.Same(aPoly3D.Deflection(), aDEdge.GetDeflection(), $"{aWhat} 3D deflection");
-                for (int k = 1; k <= aPoly3D.NbNodes(); k++)
+                for (int k = 1; k <= aPoly3D.NodeCount; k++)
                 {
                     theO.Same(aPoly3D.Parameters()![k], aCurve.GetParameter(k - 1), $"{aWhat} 3D parameter {k}");
                     theO.Same(aPoly3D.Nodes()[k].XYZ(), aCurve.GetPoint(k - 1).XYZ(),
@@ -241,7 +245,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             {
                 int aFaceIndex = IndexOf(aFaces1, aDFace.GetFace());
                 TopoDS_Face aFace2 = TopoDS.Face(aFaces2.FindKey(aFaceIndex));
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace2, out TopLoc_Location aLoc);
+                Triangulation? aTri = BRep_Tool.Triangulation(aFace2, out Placement aLoc);
                 if (aTri is null)
                 {
                     theTally.NotMeshed++;
@@ -255,12 +259,12 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                     theTally.Reused++;
                     TopoDS_Face anOldFace = TopoDS.Face(anOldFaces!.FindKey(aFaceIndex));
                     TopoDS_Edge anOldEdge = TopoDS.Edge(anOldEdges!.FindKey(anEdgeIndex));
-                    Poly_Triangulation? anOldTri = BRep_Tool.Triangulation(anOldFace, out TopLoc_Location anOldLoc);
-                    Poly_PolygonOnTriangulation? anOldPoly = BRep_Tool.PolygonOnTriangulation(anOldEdge, anOldTri, anOldLoc);
-                    Poly_PolygonOnTriangulation? aNewPoly = BRep_Tool.PolygonOnTriangulation(anEdge2, aTri, aLoc);
-                    if (anOldTri is null || aTri.NbNodes() != anOldTri.NbNodes() || aTri.NbTriangles() != anOldTri.NbTriangles()
+                    Triangulation? anOldTri = BRep_Tool.Triangulation(anOldFace, out Placement anOldLoc);
+                    PolygonOnTriangulation? anOldPoly = BRep_Tool.PolygonOnTriangulation(anOldEdge, anOldTri, anOldLoc);
+                    PolygonOnTriangulation? aNewPoly = BRep_Tool.PolygonOnTriangulation(anEdge2, aTri, aLoc);
+                    if (anOldTri is null || aTri.NodeCount != anOldTri.NodeCount || aTri.TriangleCount != anOldTri.TriangleCount
                         || (anOldPoly is null) != (aNewPoly is null)
-                        || (aNewPoly is not null && (aNewPoly.NbNodes() != anOldPoly!.NbNodes() || aNewPoly.Deflection() != anOldPoly.Deflection())))
+                        || (aNewPoly is not null && (aNewPoly.NodeCount != anOldPoly!.NodeCount || aNewPoly.Deflection() != anOldPoly.Deflection())))
                     {
                         Disagree(theTally, $"{aWhat} face {aFaceIndex}: reused by the port, re-meshed natively");
                     }
@@ -271,35 +275,35 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 {
                     IMeshData_PCurve aPCurve = aPCurves[aSide == 0 ? 0 : aPCurves.Count - 1];
                     TopoDS_Edge anOriented = TopoDS.Edge(anEdge2.Oriented(aSide == 0 ? TopAbs_FORWARD : TopAbs_REVERSED));
-                    Poly_PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(anOriented, aTri, aLoc);
+                    PolygonOnTriangulation? aPoly = BRep_Tool.PolygonOnTriangulation(anOriented, aTri, aLoc);
                     if (aPoly is null)
                     {
                         Disagree(theTally, $"{aWhat} face {aFaceIndex}: no native polygon");
                         continue;
                     }
                     theTally.Polygons++;
-                    if (aPoly.NbNodes() != aPCurve.ParametersNb())
+                    if (aPoly.NodeCount != aPCurve.ParametersNb())
                     {
-                        Disagree(theTally, $"{aWhat} face {aFaceIndex} side {aSide}: {aPoly.NbNodes()} nodes, port {aPCurve.ParametersNb()}");
+                        Disagree(theTally, $"{aWhat} face {aFaceIndex} side {aSide}: {aPoly.NodeCount} nodes, port {aPCurve.ParametersNb()}");
                         continue;
                     }
 
                     theO.Same(aPoly.Deflection(), aDEdge.GetDeflection(), $"{aWhat} deflection");
                     theTally.Values++;
-                    for (int k = 1; k <= aPoly.NbNodes(); k++)
+                    for (int k = 1; k <= aPoly.NodeCount; k++)
                     {
                         theO.Same(aPoly.Parameters()![k], aPCurve.GetParameter(k - 1), $"{aWhat} face {aFaceIndex} parameter {k}");
                         theTally.Values++;
                         // The ends are the vertices' points, which unit 4D's face mesher merges in UV with the
                         // first node registered there: only the inner nodes are the edge's own.
-                        if (!aDEdge.GetDegenerated() && k > 1 && k < aPoly.NbNodes())
+                        if (!aDEdge.GetDegenerated() && k > 1 && k < aPoly.NodeCount)
                         {
                             // Bit for bit: the native node through the binding, the port's point moved as
                             // BRepMesh_ShapeTool::AddInFace moves it into the face's frame.
-                            gp_Pnt aPoint = aCurve.GetPoint(k - 1);
-                            if (!aLoc.IsIdentity())
+                            Point3D aPoint = aCurve.GetPoint(k - 1);
+                            if (!aLoc.IsIdentity)
                             {
-                                gp_Trsf aTrsf = aLoc.Transformation();
+                                Transform3D aTrsf = aLoc.Transformation();
                                 aTrsf.Invert();
                                 aPoint.Transform(aTrsf);
                             }
@@ -317,9 +321,9 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     private void Run(Oracle theO, Tally theTally, string theName, string theF1)
     {
         TopoDS_Shape aPortF1 = PortRead(theF1);
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         BRepBndLib.Add(aPortF1, ref aBox, false);
-        if (aBox.IsVoid())
+        if (aBox.IsVoid)
         {
             return;
         }
@@ -375,9 +379,9 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
         var aTally = new Tally();
         foreach (int i in Tape.Budget(60))
         {
-            gp_Dir aZ = anOracle.Dir();
-            gp_Dir aRef = anOracle.Dir();
-            gp_Dir aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new gp_Dir(1, 0, 0), 0.1) ? new gp_Dir(0, 1, 0) : new gp_Dir(1, 0, 0)) : aRef);
+            Direction3D aZ = anOracle.Dir();
+            Direction3D aRef = anOracle.Dir();
+            Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
             using var aNAx2 = new N.gp_Ax2(Oracle.ToNative(anOracle.Pnt()), Oracle.ToNative(aZ), Oracle.ToNative(aX));
             double r = anOracle.Real(0.5, 20), h = anOracle.Real(0.5, 30);
             N.TopoDS_Shape aShape = (i % 5) switch

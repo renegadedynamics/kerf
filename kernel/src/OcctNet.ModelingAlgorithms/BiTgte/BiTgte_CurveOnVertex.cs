@@ -3,20 +3,22 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
 /// <summary>
 /// The degenerate curve of the rolling ball's centre on a vertex: the vertex's point over the range of the edge EonF.
 /// Only the parameters, D0 (<see cref="EvalD0"/>) and the type are defined; the other members throw
-/// <see cref="Standard_NotImplemented"/> (the base class's), and <see cref="Circle"/> Standard_NoSuchObject, as in OCCT.
+/// <see cref="MethodNotImplementedException"/> (the base class's), and <see cref="Circle"/> Standard_NoSuchObject, as in OCCT.
 /// </summary>
 public sealed class BiTgte_CurveOnVertex : Adaptor3d_Curve
 {
     private double myFirst;
     private double myLast;
-    private gp_Pnt myPnt = new();
+    private Point3D myPnt = new();
 
     public BiTgte_CurveOnVertex()
     {
@@ -41,10 +43,10 @@ public sealed class BiTgte_CurveOnVertex : Adaptor3d_Curve
 
     public override double LastParameter() => myLast;
 
-    public override gp_Pnt EvalD0(double theU) => myPnt;
+    public override Point3D EvalD0(double theU) => myPnt;
 
-    public override GeomAbs_CurveType GetType() => GeomAbs_OtherCurve;
+    public override CurveKind GetType() => OtherCurve;
 
-    /// <exception cref="Standard_NoSuchObject">Always.</exception>
-    public override gp_Circ Circle() => throw new Standard_NoSuchObject("BiTgte_CurveOnVertex::Circle");
+    /// <exception cref="NoSuchObjectException">Always.</exception>
+    public override Circle3D Circle() => throw new NoSuchObjectException("BiTgte_CurveOnVertex::Circle");
 }

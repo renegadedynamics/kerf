@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 using static OcctNet.ModelingAlgorithms.Tests.BOPAlgo_MakerVolumeTests;
@@ -52,7 +53,7 @@ public class BOPAlgo_CellsBuilderTests
         BOPAlgo_CellsBuilder aCB = Build(false, aA, aB);
         aCB.AddToResult(L(aA), L(aB));
         TopoDS_Shape aFirst = aCB.Shape();
-        Assert.True(aFirst.TShape()!.IsFrozen());
+        Assert.True(aFirst.TShape()!.IsFrozen);
         aCB.AddToResult(L(aB), L(aA));
         Assert.Equal(1, Count(aFirst, TopAbs_SOLID));
         Assert.Equal(2, Count(aCB.Shape(), TopAbs_SOLID));
@@ -83,8 +84,8 @@ public class BOPAlgo_CellsBuilderTests
     public void Faces_of_a_material_are_unified_and_parts_made_into_containers()
     {
         // two faces of a plane split by a line: the halves of one square face
-        TopoDS_Shape aF1 = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 10, 0, 10).Shape();
-        TopoDS_Shape aF2 = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5, 15, 0, 10).Shape();
+        TopoDS_Shape aF1 = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10, 0, 10).Shape();
+        TopoDS_Shape aF2 = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5, 15, 0, 10).Shape();
         BOPAlgo_CellsBuilder aCB = Build(false, aF1, aF2);
         Assert.Equal(3, Count(aCB.GetAllParts(), TopAbs_FACE));
         aCB.AddAllToResult(1, true);

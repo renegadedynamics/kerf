@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,10 +16,10 @@ namespace Occt;
 /// U2, used to find the maximal deflection of the chord.
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT does.</remarks>
-public class GCPnts_DistFunction2d : math_Function
+public class GCPnts_DistFunction2d : Function
 {
     private readonly Adaptor2d_Curve2d myCurve;
-    private readonly gp_Lin2d myLin;
+    private readonly Line2D myLin;
     private readonly double myU1;
     private readonly double myU2;
 
@@ -22,16 +28,16 @@ public class GCPnts_DistFunction2d : math_Function
         myCurve = theCurve;
         myU1 = U1;
         myU2 = U2;
-        gp_Pnt2d P2d1 = theCurve.Value(U1), P2d2 = theCurve.Value(U2);
-        if (P2d1.SquareDistance(P2d2) > gp.Resolution())
+        Point2D P2d1 = theCurve.Value(U1), P2d2 = theCurve.Value(U2);
+        if (P2d1.SquareDistance(P2d2) > Constants.Resolution())
         {
-            myLin = new gp_Lin2d(P2d1, new gp_Dir2d(P2d2.XY() - P2d1.XY()));
+            myLin = new Line2D(P2d1, new Direction2D(P2d2.XY() - P2d1.XY()));
         }
         else
         {
             // For #28812
             theCurve.D0(U1 + .01 * (U2 - U1), out P2d2);
-            myLin = new gp_Lin2d(P2d1, new gp_Dir2d(P2d2.XY() - P2d1.XY()));
+            myLin = new Line2D(P2d1, new Direction2D(P2d2.XY() - P2d1.XY()));
         }
     }
 
@@ -52,14 +58,14 @@ public class GCPnts_DistFunction2d : math_Function
             F = 0.0;
             return false;
         }
-        gp_Pnt2d aP2d = myCurve.Value(X);
+        Point2D aP2d = myCurve.Value(X);
         F = -myLin.SquareDistance(aP2d);
         return true;
     }
 }
 
 /// <summary><see cref="GCPnts_DistFunction2d"/> as a function of one variable for the multi-variable minimisers.</summary>
-public class GCPnts_DistFunction2dMV : math_MultipleVarFunction
+public class GCPnts_DistFunction2dMV : MultipleVarFunction
 {
     private readonly GCPnts_DistFunction2d myMaxCurvLinDist;
 
@@ -74,8 +80,11 @@ public class GCPnts_DistFunction2dMV : math_MultipleVarFunction
         return Ok;
     }
 
-    public override int NbVariables()
+    public override int VariableCount
     {
-        return 1;
+        get
+        {
+            return 1;
+        }
     }
 }

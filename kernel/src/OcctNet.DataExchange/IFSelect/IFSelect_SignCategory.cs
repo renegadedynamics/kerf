@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -30,7 +32,7 @@ public class IFSelect_SignCategory : IFSelect_Signature
     /// <summary>
     /// Returns the Signature for a Transient object, as its Category recorded in the model
     /// </summary>
-    public override string Value(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override string Value(Transient? ent, Interface_InterfaceModel? model)
     {
         if (ent is null || model is null)
         {

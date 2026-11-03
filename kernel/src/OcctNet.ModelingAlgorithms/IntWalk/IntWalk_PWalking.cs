@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
 using static Occt.IntWalk_StatusDeflection;
 
@@ -36,7 +39,7 @@ public partial class IntWalk_PWalking
     private bool tgfirst;
     private bool tglast;
     private int myTangentIdx;
-    private gp_Dir tgdir = new();
+    private Direction3D tgdir = new();
     private readonly double fleche;
     private double pasMax;
     private readonly double tolconf;
@@ -61,11 +64,11 @@ public partial class IntWalk_PWalking
     private IntImp_ConstIsoparametric choixIsoSav;
     private IntSurf_PntOn2S previousPoint = new();
     private bool previoustg;
-    private gp_Dir previousd = new();
-    private gp_Dir2d previousd1 = new();
-    private gp_Dir2d previousd2 = new();
-    private gp_Dir2d firstd1 = new();
-    private gp_Dir2d firstd2 = new();
+    private Direction3D previousd = new();
+    private Direction2D previousd1 = new();
+    private Direction2D previousd2 = new();
+    private Direction2D firstd1 = new();
+    private Direction2D firstd2 = new();
     private readonly IntWalk_TheInt2S myIntersectionOn2S;
     private int STATIC_BLOCAGE_SUR_PAS_TROP_GRAND;
     private int STATIC_PRECEDENT_INFLEXION;
@@ -119,11 +122,11 @@ public partial class IntWalk_PWalking
         UM2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
         VM2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
 
-        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, Precision.Confusion());
-        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, Precision.Confusion());
+        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, Precision.Confusion());
-        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, Precision.Confusion());
+        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double NEWRESO;
         double MAXVAL;
@@ -314,11 +317,11 @@ public partial class IntWalk_PWalking
         UM2 = Adaptor3d_HSurfaceTool.LastUParameter(Caro2);
         VM2 = Adaptor3d_HSurfaceTool.LastVParameter(Caro2);
 
-        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, Precision.Confusion());
-        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, Precision.Confusion());
+        ResoU1 = Adaptor3d_HSurfaceTool.UResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV1 = Adaptor3d_HSurfaceTool.VResolution(Caro1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, Precision.Confusion());
-        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, Precision.Confusion());
+        ResoU2 = Adaptor3d_HSurfaceTool.UResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ResoV2 = Adaptor3d_HSurfaceTool.VResolution(Caro2, global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         double NEWRESO, MAXVAL, MAXVAL2;
         //
@@ -492,7 +495,7 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return line.NbPoints();
     }
@@ -502,7 +505,7 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return line.Value(Index);
     }
@@ -512,7 +515,7 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return line;
     }
@@ -521,7 +524,7 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tgfirst;
     }
@@ -530,7 +533,7 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tglast;
     }
@@ -539,17 +542,17 @@ public partial class IntWalk_PWalking
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return close;
     }
 
     /// <summary>The tangent of the line at the point <paramref name="theIndex"/>.</summary>
-    public gp_Dir TangentAtLine(out int theIndex)
+    public Direction3D TangentAtLine(out int theIndex)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         theIndex = myTangentIdx;
         return tgdir;
@@ -609,7 +612,7 @@ public partial class IntWalk_PWalking
         //-- limit the reduction of uv box estimate to 0.01 natural box
         //--  theDeltaU1 : On box of Inter
         //-- aDeltaU1 : On parametric space
-        if (!Precision.IsInfinite(aDeltaU1))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aDeltaU1))
         {
             pasuv[0] = Math.Max(Increment * Math.Max(theDeltaU1, aRangePart * aDeltaU1), pasuv[0]);
         }
@@ -618,7 +621,7 @@ public partial class IntWalk_PWalking
             pasuv[0] = Math.Max(Increment * theDeltaU1, pasuv[0]);
         }
 
-        if (!Precision.IsInfinite(aDeltaV1))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aDeltaV1))
         {
             pasuv[1] = Math.Max(Increment * Math.Max(theDeltaV1, aRangePart * aDeltaV1), pasuv[1]);
         }
@@ -627,7 +630,7 @@ public partial class IntWalk_PWalking
             pasuv[1] = Math.Max(Increment * theDeltaV1, pasuv[1]);
         }
 
-        if (!Precision.IsInfinite(aDeltaU2))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aDeltaU2))
         {
             pasuv[2] = Math.Max(Increment * Math.Max(theDeltaU2, aRangePart * aDeltaU2), pasuv[2]);
         }
@@ -636,7 +639,7 @@ public partial class IntWalk_PWalking
             pasuv[2] = Math.Max(Increment * theDeltaU2, pasuv[2]);
         }
 
-        if (!Precision.IsInfinite(aDeltaV2))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aDeltaV2))
         {
             pasuv[3] = Math.Max(Increment * Math.Max(theDeltaV2, aRangePart * aDeltaV2), pasuv[3]);
         }
@@ -743,13 +746,13 @@ public partial class IntWalk_PWalking
         for (int i = 0; i < theNbElem; i++)
         {
             ref double aParam = ref theParam[theFirst + i];
-            if ((aParam - theLowBorder[theFirstBorder + i]) < -Precision.PConfusion())
+            if ((aParam - theLowBorder[theFirstBorder + i]) < -global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aParam = theLowBorder[theFirstBorder + i];
                 aRetVal = true;
             }
 
-            if ((aParam - theUppBorder[theFirstBorder + i]) > Precision.PConfusion())
+            if ((aParam - theUppBorder[theFirstBorder + i]) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aParam = theUppBorder[theFirstBorder + i];
                 aRetVal = true;
@@ -773,7 +776,7 @@ public partial class IntWalk_PWalking
             Param[i] = ParDep[i];
         }
         //-- calculate the first solution point
-        math_FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
+        FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
         //
         myIntersectionOn2S.Perform(Param, Rsnld);
         if (!myIntersectionOn2S.IsDone())
@@ -797,7 +800,7 @@ public partial class IntWalk_PWalking
     }
 
     /// <summary>The square distance between thePnt and theSurf, from (theU0, theV0).</summary>
-    private static double SQDistPointSurface(in gp_Pnt thePnt, Adaptor3d_Surface theSurf, double theU0, double theV0)
+    private static double SQDistPointSurface(in Point3D thePnt, Adaptor3d_Surface theSurf, double theU0, double theV0)
     {
         Extrema_GenLocateExtPS aExtPS = new(theSurf);
         aExtPS.Perform(thePnt, theU0, theV0);
@@ -819,10 +822,10 @@ public partial class IntWalk_PWalking
                                           double[] theArrStep)
     {
         {
-            theSurf1.D1(theU10, theV10, out gp_Pnt aPt, out gp_Vec aDu1, out gp_Vec aDv1);
-            theSurf2.D1(theU20, theV20, out aPt, out gp_Vec aDu2, out gp_Vec aDv2);
+            theSurf1.D1(theU10, theV10, out Point3D aPt, out Vector3D aDu1, out Vector3D aDv1);
+            theSurf2.D1(theU20, theV20, out aPt, out Vector3D aDu2, out Vector3D aDv2);
 
-            gp_Vec aN1 = aDu1.Crossed(aDv1), aN2 = aDu2.Crossed(aDv2);
+            Vector3D aN1 = aDu1.Crossed(aDv1), aN2 = aDu2.Crossed(aDv2);
             double aDP = aN1.Dot(aN2), aSQ1 = aN1.SquareMagnitude(), aSQ2 = aN2.SquareMagnitude();
 
             if ((aSQ1 < RealSmall()) || (aSQ2 < RealSmall()))
@@ -846,7 +849,7 @@ public partial class IntWalk_PWalking
 
         for (int i = 0; i < aNbItems; i++)
         {
-            gp_Pnt aP = theSurf1.Value(aParUS1[i], aParVS1[i]);
+            Point3D aP = theSurf1.Value(aParUS1[i], aParVS1[i]);
             double aSqDist = SQDistPointSurface(aP, theSurf2, theU20, theV20);
             if (aSqDist > aSQToler)
             {
@@ -856,7 +859,7 @@ public partial class IntWalk_PWalking
 
         for (int i = 0; i < aNbItems; i++)
         {
-            gp_Pnt aP = theSurf2.Value(aParUS2[i], aParVS2[i]);
+            Point3D aP = theSurf2.Value(aParUS2[i], aParVS2[i]);
             double aSqDist = SQDistPointSurface(aP, theSurf1, theU10, theV10);
             if (aSqDist > aSQToler)
             {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -50,68 +51,68 @@ internal static class GccAnaRecordings
 
         public double D() => theIn[myPos++];
 
-        public gp_Pnt2d Pnt()
+        public Point2D Pnt()
         {
             double x = D();
             double y = D();
-            return new gp_Pnt2d(x, y);
+            return new Point2D(x, y);
         }
 
-        public gp_Dir2d Dir()
+        public Direction2D Dir()
         {
             double x = D();
             double y = D();
-            return new gp_Dir2d(x, y);
+            return new Direction2D(x, y);
         }
 
-        public gp_Lin2d Lin()
+        public Line2D Lin()
         {
-            gp_Pnt2d p = Pnt();
-            gp_Dir2d d = Dir();
-            return new gp_Lin2d(p, d);
+            Point2D p = Pnt();
+            Direction2D d = Dir();
+            return new Line2D(p, d);
         }
 
-        public gp_Circ2d Circ()
+        public Circle2D Circ()
         {
-            gp_Pnt2d p = Pnt();
-            gp_Dir2d d = Dir();
+            Point2D p = Pnt();
+            Direction2D d = Dir();
             double r = D();
             bool s = D() != 0.0;
-            return new gp_Circ2d(new gp_Ax2d(p, d), r, s);
+            return new Circle2D(new Axis2D(p, d), r, s);
         }
 
         public GccEnt_QualifiedCirc QC()
         {
-            gp_Circ2d c = Circ();
+            Circle2D c = Circ();
             return new GccEnt_QualifiedCirc(c, (GccEnt_Position)(int)D());
         }
 
         public GccEnt_QualifiedLin QL()
         {
-            gp_Lin2d l = Lin();
+            Line2D l = Lin();
             return new GccEnt_QualifiedLin(l, (GccEnt_Position)(int)D());
         }
     }
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(gp_Pnt2d theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
 
-    private static string Hex(gp_Dir2d theD) => Hex(theD.X()) + "," + Hex(theD.Y());
+    private static string Hex(Direction2D theD) => Hex(theD.X()) + "," + Hex(theD.Y());
 
-    private static string Hex(gp_Ax22d theA) => Hex(theA.Location()) + "," + Hex(theA.XDirection()) + "," + Hex(theA.YDirection());
+    private static string Hex(Frame2D theA) => Hex(theA.Location()) + "," + Hex(theA.XDirection()) + "," + Hex(theA.YDirection());
 
-    private static string Hex(gp_Circ2d theC) => Hex(theC.Position()) + "," + Hex(theC.Radius());
+    private static string Hex(Circle2D theC) => Hex(theC.Position()) + "," + Hex(theC.Radius());
 
-    private static string Hex(gp_Lin2d theL) => Hex(theL.Location()) + "," + Hex(theL.Direction());
+    private static string Hex(Line2D theL) => Hex(theL.Location()) + "," + Hex(theL.Direction());
 
     private static string Q(GccEnt_Position p) => ((int)p).ToString(CultureInfo.InvariantCulture);
 
-    private delegate void TanFn(out double a, out double b, out gp_Pnt2d p);
+    private delegate void TanFn(out double a, out double b, out Point2D p);
 
     private static string Tan(TanFn theF)
     {
-        theF(out double a, out double b, out gp_Pnt2d p);
+        theF(out double a, out double b, out Point2D p);
         return Hex(a) + "," + Hex(b) + "," + Hex(p);
     }
 
@@ -129,17 +130,17 @@ internal static class GccAnaRecordings
                 return "Cir," + Hex(theB.Circle());
             case GccInt_IType.GccInt_Ell:
                 {
-                    gp_Elips2d anE = theB.Ellipse();
+                    Ellipse2D anE = theB.Ellipse();
                     return "Ell," + Hex(anE.Axis()) + "," + Hex(anE.MajorRadius()) + "," + Hex(anE.MinorRadius());
                 }
             case GccInt_IType.GccInt_Hpr:
                 {
-                    gp_Hypr2d aH = theB.Hyperbola();
+                    Hyperbola2D aH = theB.Hyperbola();
                     return "Hpr," + Hex(aH.Axis()) + "," + Hex(aH.MajorRadius()) + "," + Hex(aH.MinorRadius());
                 }
             case GccInt_IType.GccInt_Par:
                 {
-                    gp_Parab2d aP = theB.Parabola();
+                    Parabola2D aP = theB.Parabola();
                     return "Par," + Hex(aP.Axis()) + "," + Hex(aP.Focal());
                 }
             case GccInt_IType.GccInt_Pnt:
@@ -163,7 +164,7 @@ internal static class GccAnaRecordings
             }
             catch (Exception e)
             {
-                aVal = "!" + e.GetType().Name;
+                aVal = "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
             }
             Put(theName + ":" + aVal);
         }
@@ -183,7 +184,7 @@ internal static class GccAnaRecordings
             }
             catch (Exception e)
             {
-                Put("nb:!" + e.GetType().Name);
+                Put("nb:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
                 return;
             }
             Put("nb:" + aNb.ToString(CultureInfo.InvariantCulture));
@@ -205,11 +206,11 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b, out GccEnt_Position c);
                 return Q(a) + "," + Q(b) + "," + Q(c);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
-            w.Tok("t2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency2(i, out a, out b, out p)));
+            w.Tok("t2", () => Tan((out double a, out double b, out Point2D p) => S.Tangency2(i, out a, out b, out p)));
             w.Tok("s2", () => B(S.IsTheSame2(i)));
-            w.Tok("t3", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency3(i, out a, out b, out p)));
+            w.Tok("t3", () => Tan((out double a, out double b, out Point2D p) => S.Tangency3(i, out a, out b, out p)));
             w.Tok("s3", () => B(S.IsTheSame3(i)));
         });
 
@@ -222,13 +223,13 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
                 return Q(a) + "," + Q(b);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
-            w.Tok("t2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency2(i, out a, out b, out p)));
+            w.Tok("t2", () => Tan((out double a, out double b, out Point2D p) => S.Tangency2(i, out a, out b, out p)));
             w.Tok("s2", () => B(S.IsTheSame2(i)));
             w.Tok("c3", () =>
             {
-                S.CenterOn3(i, out double a, out gp_Pnt2d p);
+                S.CenterOn3(i, out double a, out Point2D p);
                 return Hex(a) + "," + Hex(p);
             });
         });
@@ -242,9 +243,9 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
                 return Q(a) + "," + Q(b);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
-            w.Tok("t2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency2(i, out a, out b, out p)));
+            w.Tok("t2", () => Tan((out double a, out double b, out Point2D p) => S.Tangency2(i, out a, out b, out p)));
             w.Tok("s2", () => B(S.IsTheSame2(i)));
         });
 
@@ -257,11 +258,11 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a);
                 return Q(a);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
             w.Tok("c3", () =>
             {
-                S.CenterOn3(i, out double a, out gp_Pnt2d p);
+                S.CenterOn3(i, out double a, out Point2D p);
                 return Hex(a) + "," + Hex(p);
             });
         });
@@ -275,7 +276,7 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a);
                 return Q(a);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
         });
 
@@ -288,8 +289,8 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
                 return Q(a) + "," + Q(b);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
-            w.Tok("t2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency2(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t2", () => Tan((out double a, out double b, out Point2D p) => S.Tangency2(i, out a, out b, out p)));
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanObl S)
@@ -301,8 +302,8 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a);
                 return Q(a);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
-            w.Tok("i2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Intersection2(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("i2", () => Tan((out double a, out double b, out Point2D p) => S.Intersection2(i, out a, out b, out p)));
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanPar S)
@@ -314,7 +315,7 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a);
                 return Q(a);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanPer S)
@@ -326,8 +327,8 @@ internal static class GccAnaRecordings
                 S.WhichQualifier(i, out GccEnt_Position a);
                 return Q(a);
             });
-            w.Tok("t1", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Tangency1(i, out a, out b, out p)));
-            w.Tok("i2", () => Tan((out double a, out double b, out gp_Pnt2d p) => S.Intersection2(i, out a, out b, out p)));
+            w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
+            w.Tok("i2", () => Tan((out double a, out double b, out Point2D p) => S.Intersection2(i, out a, out b, out p)));
         });
 
     private static void DumpBisec(Writer w, bool theDone, Func<int> theNb, Func<int, GccInt_Bisec?> theSol)
@@ -417,8 +418,8 @@ internal static class GccAnaRecordings
                         w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
                         {
                             w.Tok("sol", () => Hex(S.ThisSolution(i)));
-                            w.Tok("i1", () => Tan((out double x, out double y, out gp_Pnt2d p) => S.Intersection1(i, out x, out y, out p)));
-                            w.Tok("i2", () => Tan((out double x, out double y, out gp_Pnt2d p) => S.Intersection2(i, out x, out y, out p)));
+                            w.Tok("i1", () => Tan((out double x, out double y, out Point2D p) => S.Intersection1(i, out x, out y, out p)));
+                            w.Tok("i2", () => Tan((out double x, out double y, out Point2D p) => S.Intersection2(i, out x, out y, out p)));
                         });
                         break;
                     }
@@ -432,7 +433,7 @@ internal static class GccAnaRecordings
         }
         catch (Exception e) when (e is not InvalidOperationException)
         {
-            w.Put("ctor:!" + e.GetType().Name);
+            w.Put("ctor:!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
         }
         return w.Tokens.ToArray();
     }

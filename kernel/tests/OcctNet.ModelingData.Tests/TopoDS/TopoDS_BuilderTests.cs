@@ -1,6 +1,8 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Builder_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingData.Tests;
@@ -10,9 +12,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_BuilderTests
 {
-    private static TopoDS_Vertex MakeVertex(in gp_Pnt theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static TopoDS_Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
 
-    private static TopoDS_Edge MakeEdge(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static TopoDS_Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     private static int Count(in TopoDS_Shape theShape)
     {
@@ -89,9 +91,9 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref aCompound);
 
         // Create and add vertices
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(0, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV3 = MakeVertex(new gp_Pnt(0, 1, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(0, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV3 = MakeVertex(new Point3D(0, 1, 0));
 
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
@@ -108,9 +110,9 @@ public class TopoDS_BuilderTests
         aBuilder.MakeWire(ref aWire);
 
         // Create edges forming a triangle
-        TopoDS_Edge aE1 = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
-        TopoDS_Edge aE2 = MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(0.5, 1, 0));
-        TopoDS_Edge aE3 = MakeEdge(new gp_Pnt(0.5, 1, 0), new gp_Pnt(0, 0, 0));
+        TopoDS_Edge aE1 = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        TopoDS_Edge aE2 = MakeEdge(new Point3D(1, 0, 0), new Point3D(0.5, 1, 0));
+        TopoDS_Edge aE3 = MakeEdge(new Point3D(0.5, 1, 0), new Point3D(0, 0, 0));
 
         aBuilder.Add(aWire, aE1);
         aBuilder.Add(aWire, aE2);
@@ -134,9 +136,9 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref aCompound);
 
         // Add vertices
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(0, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV3 = MakeVertex(new gp_Pnt(0, 1, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(0, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV3 = MakeVertex(new Point3D(0, 1, 0));
 
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
@@ -158,7 +160,7 @@ public class TopoDS_BuilderTests
         // Add 500 vertices
         for (int i = 0; i < 500; ++i)
         {
-            TopoDS_Vertex aV = MakeVertex(new gp_Pnt(i, 0, 0));
+            TopoDS_Vertex aV = MakeVertex(new Point3D(i, 0, 0));
             aBuilder.Add(aCompound, aV);
         }
 
@@ -197,9 +199,9 @@ public class TopoDS_BuilderTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(2, 0, 0));
-        TopoDS_Vertex aV3 = MakeVertex(new gp_Pnt(3, 0, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(2, 0, 0));
+        TopoDS_Vertex aV3 = MakeVertex(new Point3D(3, 0, 0));
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
         aBuilder.Add(aCompound, aV3);
@@ -217,9 +219,9 @@ public class TopoDS_BuilderTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(2, 0, 0));
-        TopoDS_Vertex aV3 = MakeVertex(new gp_Pnt(3, 0, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(2, 0, 0));
+        TopoDS_Vertex aV3 = MakeVertex(new Point3D(3, 0, 0));
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
         aBuilder.Add(aCompound, aV3);
@@ -237,9 +239,9 @@ public class TopoDS_BuilderTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV1 = MakeVertex(new gp_Pnt(1, 0, 0));
-        TopoDS_Vertex aV2 = MakeVertex(new gp_Pnt(2, 0, 0));
-        TopoDS_Vertex aV3 = MakeVertex(new gp_Pnt(3, 0, 0));
+        TopoDS_Vertex aV1 = MakeVertex(new Point3D(1, 0, 0));
+        TopoDS_Vertex aV2 = MakeVertex(new Point3D(2, 0, 0));
+        TopoDS_Vertex aV3 = MakeVertex(new Point3D(3, 0, 0));
         aBuilder.Add(aCompound, aV1);
         aBuilder.Add(aCompound, aV2);
         aBuilder.Add(aCompound, aV3);
@@ -261,9 +263,9 @@ public class TopoDS_BuilderTests
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
 
-        TopoDS_Edge aE1 = MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
-        TopoDS_Edge aE2 = MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0));
-        TopoDS_Edge aE3 = MakeEdge(new gp_Pnt(1, 1, 0), new gp_Pnt(0, 0, 0));
+        TopoDS_Edge aE1 = MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        TopoDS_Edge aE2 = MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0));
+        TopoDS_Edge aE3 = MakeEdge(new Point3D(1, 1, 0), new Point3D(0, 0, 0));
 
         aBuilder.Add(aWire, aE1);
         aBuilder.Add(aWire, aE2);
@@ -284,8 +286,8 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref aInner);
 
         // Add vertices to inner
-        aBuilder.Add(aInner, MakeVertex(new gp_Pnt(0, 0, 0)));
-        aBuilder.Add(aInner, MakeVertex(new gp_Pnt(1, 0, 0)));
+        aBuilder.Add(aInner, MakeVertex(new Point3D(0, 0, 0)));
+        aBuilder.Add(aInner, MakeVertex(new Point3D(1, 0, 0)));
 
         // Add inner to outer
         aBuilder.Add(aOuter, aInner);
@@ -316,7 +318,7 @@ public class TopoDS_BuilderTests
         Assert.False(aCompound.Modified());
 
         // Add should set modified
-        aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(0, 0, 0)));
+        aBuilder.Add(aCompound, MakeVertex(new Point3D(0, 0, 0)));
         Assert.True(aCompound.Modified());
     }
 
@@ -327,7 +329,7 @@ public class TopoDS_BuilderTests
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
 
-        TopoDS_Vertex aV = MakeVertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV = MakeVertex(new Point3D(0, 0, 0));
         aBuilder.Add(aCompound, aV);
 
         // Clear modified flag
@@ -388,8 +390,8 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref aCompound);
 
         // Add different shape types
-        aBuilder.Add(aCompound, MakeVertex(new gp_Pnt(0, 0, 0)));
-        aBuilder.Add(aCompound, MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
+        aBuilder.Add(aCompound, MakeVertex(new Point3D(0, 0, 0)));
+        aBuilder.Add(aCompound, MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
 
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
@@ -446,7 +448,7 @@ public class TopoDS_BuilderTests
         var aBuilder = new TopoDS_Builder();
         TopoDS_Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
-        Assert.Throws<TopoDS_UnCompatibleShapes>(() => aBuilder.Add(aWire, MakeVertex(new gp_Pnt())));
+        Assert.Throws<TopoDS_UnCompatibleShapes>(() => aBuilder.Add(aWire, MakeVertex(new Point3D())));
 
         // a shape added to another isn't free any more: adding to it throws
         TopoDS_Compound anInner = new(), anOuter = new();
@@ -454,8 +456,8 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref anOuter);
         aBuilder.Add(anOuter, anInner);
         Assert.False(anInner.Free());
-        Assert.Throws<TopoDS_FrozenShape>(() => aBuilder.Add(anInner, MakeVertex(new gp_Pnt())));
-        Assert.Throws<TopoDS_FrozenShape>(() => aBuilder.Remove(anInner, MakeVertex(new gp_Pnt())));
+        Assert.Throws<TopoDS_FrozenShape>(() => aBuilder.Add(anInner, MakeVertex(new Point3D())));
+        Assert.Throws<TopoDS_FrozenShape>(() => aBuilder.Remove(anInner, MakeVertex(new Point3D())));
 
         // self-insertion: the component is made non-free first, so the shape isn't free any more
         TopoDS_Compound aSelf = new();
@@ -469,11 +471,11 @@ public class TopoDS_BuilderTests
         var aBuilder = new TopoDS_Builder();
         TopoDS_Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        var aLoc = new TopLoc_Location(gp_Trsf.Translation(new gp_Vec(1, 2, 3)));
+        var aLoc = new Placement(Transform3D.Translation(new Vector3D(1, 2, 3)));
         aCompound.Location(aLoc);
         aCompound.Reverse();
 
-        TopoDS_Vertex aV = MakeVertex(new gp_Pnt());
+        TopoDS_Vertex aV = MakeVertex(new Point3D());
         aBuilder.Add(aCompound, aV);
 
         // stored relative to the parent: reversed and moved by the inverse location

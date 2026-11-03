@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -93,7 +94,7 @@ public class MathOpt_PSOTest
     }
 
     // Old API adapter
-    private sealed class SphereFuncOld : math_MultipleVarFunction
+    private sealed class SphereFuncOld : MultipleVarFunction
     {
         private readonly int myN;
 
@@ -102,7 +103,7 @@ public class MathOpt_PSOTest
             myN = theN;
         }
 
-        public override int NbVariables() => myN;
+        public override int VariableCount => myN;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -115,9 +116,9 @@ public class MathOpt_PSOTest
         }
     }
 
-    private static MathOpt.PSOConfig MakeConfig(int theNbParticles, int theMaxIter, double theTolerance)
+    private static global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig MakeConfig(int theNbParticles, int theMaxIter, double theTolerance)
     {
-        MathOpt.PSOConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = new();
         aConfig.NbParticles = theNbParticles;
         aConfig.MaxIterations = theMaxIter;
         aConfig.Tolerance = theTolerance;
@@ -133,9 +134,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(50, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(50, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -148,9 +149,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 3, -5.0);
         math_Vector aUpper = new(1, 3, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(40, 100, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(40, 100, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 3; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], THE_TOLERANCE);
@@ -166,9 +167,9 @@ public class MathOpt_PSOTest
         math_Vector aUpper = new(1, 2, 10.0);
 
         // PSO with larger search space needs more exploration
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_STOCHASTIC_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_STOCHASTIC_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_STOCHASTIC_TOLERANCE);
@@ -181,9 +182,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(50, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(50, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 0.1);
         Assert.Equal(1.0, aResult.Solution![2], 0.1);
         Assert.True(aResult.Value!.Value < 0.1);
@@ -198,9 +199,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.12);
         math_Vector aUpper = new(1, 2, 5.12);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // PSO should find the global minimum at origin
         Assert.Equal(0.0, aResult.Solution![1], 0.5);
         Assert.Equal(0.0, aResult.Solution![2], 0.5);
@@ -214,9 +215,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // Global minimum at origin with f = 0
         Assert.Equal(0.0, aResult.Solution![1], 0.5);
         Assert.Equal(0.0, aResult.Solution![2], 0.5);
@@ -237,12 +238,12 @@ public class MathOpt_PSOTest
 
         foreach (double aOmega in aOmegas)
         {
-            MathOpt.PSOConfig aConfig = MakeConfig(30, 100, 1.0e-6);
+            global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(30, 100, 1.0e-6);
             aConfig.Omega = aOmega;
 
-            VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
+            VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
 
-            Assert.True(aResult.IsDone(), $"Failed with omega = {aOmega}");
+            Assert.True(aResult.IsDone, $"Failed with omega = {aOmega}");
             Assert.True(aResult.Value!.Value < 0.01, $"Failed with omega = {aOmega}");
         }
     }
@@ -259,9 +260,9 @@ public class MathOpt_PSOTest
 
         foreach (int aSize in aSizes)
         {
-            VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(aSize, 100, 1.0e-6));
+            VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(aSize, 100, 1.0e-6));
 
-            Assert.True(aResult.IsDone(), $"Failed with swarm size = {aSize}");
+            Assert.True(aResult.IsDone, $"Failed with swarm size = {aSize}");
             Assert.True(aResult.Value!.Value < 0.01, $"Failed with swarm size = {aSize}");
         }
     }
@@ -275,13 +276,13 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(30, 50, 1.0e-6);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(30, 50, 1.0e-6);
 
-        VectorResult aResult1 = MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
-        VectorResult aResult2 = MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult1 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult2 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult1.IsDone());
-        Assert.True(aResult2.IsDone());
+        Assert.True(aResult1.IsDone);
+        Assert.True(aResult2.IsDone);
 
         // With same seed, results should be identical
         Assert.Equal(aResult2.Value!.Value, aResult1.Value!.Value);
@@ -302,15 +303,15 @@ public class MathOpt_PSOTest
 
         // Old API
         math_Vector aStep = new(1, 2, 0.5);
-        math_PSO anOldSolver = new(anOldFunc, aLower, aUpper, aStep, 30, 100);
+        Pso anOldSolver = new(anOldFunc, aLower, aUpper, aStep, 30, 100);
         math_Vector anOldOutPnt = new(1, 2);
         anOldSolver.Perform(aStep, out double anOldValue, anOldOutPnt);
         _ = anOldValue;
 
         // New API
-        VectorResult aNewResult = MathOpt.PSO(aNewFunc, aLower, aUpper, MakeConfig(30, 100, 1.0e-8));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aNewFunc, aLower, aUpper, MakeConfig(30, 100, 1.0e-8));
 
-        Assert.True(aNewResult.IsDone());
+        Assert.True(aNewResult.IsDone);
 
         // Both should find a good solution
         Assert.True(aNewResult.Value!.Value < 0.01);
@@ -325,9 +326,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 5, -5.0);
         math_Vector aUpper = new(1, 5, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(60, 200, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 5; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], 0.1);
@@ -346,9 +347,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = MathOpt_NDim_TestFunctions.Vec(-5.0, 0.0);
         math_Vector aUpper = MathOpt_NDim_TestFunctions.Vec(5.0, 10.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(40, 100, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(40, 100, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_STOCHASTIC_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_STOCHASTIC_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_STOCHASTIC_TOLERANCE);
@@ -364,25 +365,25 @@ public class MathOpt_PSOTest
         math_Vector aUpper = new(1, 2, 5.0);
 
         // Unseeded run
-        MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
 
-        MathOpt.PSOStats aStatsUnseeded = new();
-        VectorResult aResultUnseeded = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStatsUnseeded);
-        Assert.True(aResultUnseeded.IsDone());
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStatsUnseeded = new();
+        VectorResult aResultUnseeded = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStatsUnseeded);
+        Assert.True(aResultUnseeded.IsDone);
 
         // Seeded run - seed near the origin
-        MathOpt.PSOConfig aConfigSeeded = new(aConfig);
-        aConfigSeeded.InitMode = MathOpt.PSOInitMode.SeededPlusRandom;
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfigSeeded = new(aConfig);
+        aConfigSeeded.InitMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInitMode.SeededPlusRandom;
 
         math_Vector aSeedPos = new(1, 2, 0.0);
         aSeedPos[1] = 0.1;
         aSeedPos[2] = -0.1;
-        NCollection_DynamicArray<MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new MathOpt.PSOSeedParticle(aSeedPos));
+        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
 
-        MathOpt.PSOStats aStatsSeeded = new();
-        VectorResult aResultSeeded = MathOpt.PSO(aFunc, aLower, aUpper, aConfigSeeded, aSeeds, aStatsSeeded);
-        Assert.True(aResultSeeded.IsDone());
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStatsSeeded = new();
+        VectorResult aResultSeeded = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfigSeeded, aSeeds, aStatsSeeded);
+        Assert.True(aResultSeeded.IsDone);
 
         // Seeded should converge at least as well
         Assert.True(aResultSeeded.Value!.Value <= aResultUnseeded.Value!.Value + 0.01);
@@ -398,17 +399,17 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.12);
         math_Vector aUpper = new(1, 2, 5.12);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(60, 200, 1.0e-6);
-        aConfig.InitMode = MathOpt.PSOInitMode.SeededPlusRandom;
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(60, 200, 1.0e-6);
+        aConfig.InitMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInitMode.SeededPlusRandom;
 
         // Seed near global minimum
         math_Vector aSeedPos = new(1, 2, 0.0);
-        NCollection_DynamicArray<MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new MathOpt.PSOSeedParticle(aSeedPos, 0.0));
+        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos, 0.0));
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], 0.5);
         Assert.Equal(0.0, aResult.Solution![2], 0.5);
         Assert.True(aResult.Value!.Value < 1.0);
@@ -425,13 +426,13 @@ public class MathOpt_PSOTest
         math_Vector aLower = MathOpt_NDim_TestFunctions.Vec(0.0, 2.0);
         math_Vector aUpper = MathOpt_NDim_TestFunctions.Vec(2.0, 4.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
-        aConfig.BoundaryMode = MathOpt.PSOBoundaryMode.Reflect;
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
+        aConfig.BoundaryMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOBoundaryMode.Reflect;
 
-        MathOpt.PSOStats aStats = new();
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats = new();
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 0.1);
         Assert.Equal(3.0, aResult.Solution![2], 0.1);
         Assert.True(aResult.Value!.Value < 0.1);
@@ -448,14 +449,14 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(30, 300, 1.0e-8);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(30, 300, 1.0e-8);
         aConfig.RestartFraction = 0.5;
         aConfig.NoImproveIters = 5;
 
-        MathOpt.PSOStats aStats = new();
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats = new();
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.Value!.Value < 1.0);
         // With tight convergence and restart enabled, stats should show activity
         Assert.True(aStats.NbFunctionEvals > 0);
@@ -473,19 +474,19 @@ public class MathOpt_PSOTest
         math_Vector aUpper = new(1, 2, 5.0);
 
         // Run without target value
-        MathOpt.PSOConfig aConfigFull = MakeConfig(40, 200, 1.0e-10); // very tight - force many iterations
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfigFull = MakeConfig(40, 200, 1.0e-10); // very tight - force many iterations
 
-        MathOpt.PSOStats aStatsFull = new();
-        VectorResult aResultFull = MathOpt.PSO(aFunc, aLower, aUpper, aConfigFull, null, aStatsFull);
-        Assert.True(aResultFull.IsDone());
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStatsFull = new();
+        VectorResult aResultFull = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfigFull, null, aStatsFull);
+        Assert.True(aResultFull.IsDone);
 
         // Run with target value - should stop early
-        MathOpt.PSOConfig aConfigTarget = new(aConfigFull);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfigTarget = new(aConfigFull);
         aConfigTarget.TargetValue = 0.1;
 
-        MathOpt.PSOStats aStatsTarget = new();
-        VectorResult aResultTarget = MathOpt.PSO(aFunc, aLower, aUpper, aConfigTarget, null, aStatsTarget);
-        Assert.True(aResultTarget.IsDone());
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStatsTarget = new();
+        VectorResult aResultTarget = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfigTarget, null, aStatsTarget);
+        Assert.True(aResultTarget.IsDone);
 
         // Target run should use fewer iterations
         Assert.True(aStatsTarget.NbIterations <= aStatsFull.NbIterations);
@@ -501,13 +502,13 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
-        aConfig.InertiaSchedule = MathOpt.PSOInertiaSchedule.LinearDecay;
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(40, 200, 1.0e-6);
+        aConfig.InertiaSchedule = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInertiaSchedule.LinearDecay;
         aConfig.OmegaMin = 0.3;
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -522,16 +523,16 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(30, 50, 1.0e-6);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(30, 50, 1.0e-6);
 
-        MathOpt.PSOStats aStats1 = new();
-        VectorResult aResult1 = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats1);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats1 = new();
+        VectorResult aResult1 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats1);
 
-        MathOpt.PSOStats aStats2 = new();
-        VectorResult aResult2 = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats2);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats2 = new();
+        VectorResult aResult2 = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, null, aStats2);
 
-        Assert.True(aResult1.IsDone());
-        Assert.True(aResult2.IsDone());
+        Assert.True(aResult1.IsDone);
+        Assert.True(aResult2.IsDone);
 
         // With same seed, stats should be identical
         Assert.Equal(aStats2.NbFunctionEvals, aStats1.NbFunctionEvals);
@@ -551,9 +552,9 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(30, 50, 1.0e-10));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, MakeConfig(30, 50, 1.0e-10));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // After polishing, component precision should be better than 1e-8
         Assert.Equal(0.0, aResult.Solution![1], 1.0e-8);
         Assert.Equal(0.0, aResult.Solution![2], 1.0e-8);
@@ -569,16 +570,16 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = new();
         aConfig.NbParticles = 20;
         aConfig.MaxIterations = 50;
-        aConfig.InitMode = MathOpt.PSOInitMode.SeededOnly;
+        aConfig.InitMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInitMode.SeededOnly;
 
         // No seeds provided
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig);
 
-        Assert.False(aResult.IsDone());
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        Assert.False(aResult.IsDone);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 
     // Clamped seed re-evaluation test
@@ -590,8 +591,8 @@ public class MathOpt_PSOTest
         math_Vector aLower = new(1, 2, -5.0);
         math_Vector aUpper = new(1, 2, 5.0);
 
-        MathOpt.PSOConfig aConfig = MakeConfig(10, 100, 1.0e-8);
-        aConfig.InitMode = MathOpt.PSOInitMode.SeededPlusRandom;
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOConfig aConfig = MakeConfig(10, 100, 1.0e-8);
+        aConfig.InitMode = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOInitMode.SeededPlusRandom;
 
         // Seed at out-of-bounds position with incorrect stale value
         math_Vector aSeedPos = new(1, 2);
@@ -599,13 +600,13 @@ public class MathOpt_PSOTest
         aSeedPos[2] = -10.0; // out of bounds (will be clamped to -5.0)
 
         // Provide a stale value of 0.0 which is wrong for (5, -5)
-        NCollection_DynamicArray<MathOpt.PSOSeedParticle> aSeeds = new();
-        MathOpt.PSOSeedParticle aSeed = new(aSeedPos, 0.0);
+        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle aSeed = new(aSeedPos, 0.0);
         aSeeds.Append(aSeed);
 
-        VectorResult aResult = MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         // The result should be correct (near origin), not misled by the stale value
         Assert.Equal(0.0, aResult.Solution![1], THE_STOCHASTIC_TOLERANCE);
         Assert.Equal(0.0, aResult.Solution![2], THE_STOCHASTIC_TOLERANCE);

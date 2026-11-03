@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -32,7 +33,7 @@ public static class TopOpeBRepTool_TOOL
             return true;
         }
 
-        gp_Pnt p1, p2;
+        Point3D p1, p2;
         f = BC.FirstParameter();
         l = BC.LastParameter();
         dt = (l - f) / aN;
@@ -56,7 +57,7 @@ public static class TopOpeBRepTool_TOOL
             p1 = p2;
         }
 
-        return ln > Precision.Confusion();
+        return ln > global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     // Tg2d, Tg2dApp, TgINSIDE, ..., the other members: not ported (plan 2.11).
@@ -65,9 +66,9 @@ public static class TopOpeBRepTool_TOOL
     /// The unit tangent <paramref name="Tg"/> of the curve <paramref name="BC"/> at <paramref name="par"/>; false if
     /// the parameter is out of the curve's range (by more than the parametric resolution of its tolerance).
     /// </summary>
-    public static bool TggeomE(double par, BRepAdaptor_Curve BC, out gp_Vec Tg)
+    public static bool TggeomE(double par, BRepAdaptor_Curve BC, out Vector3D Tg)
     {
-        Tg = new gp_Vec();
+        Tg = new Vector3D();
         double f = BC.FirstParameter(), l = BC.LastParameter();
         double tolE = BC.Tolerance();
         double tolp = BC.Resolution(tolE);
@@ -82,7 +83,7 @@ public static class TopOpeBRepTool_TOOL
         }
         double thepar = par;
 
-        BC.D1(thepar, out gp_Pnt _, out Tg);
+        BC.D1(thepar, out Point3D _, out Tg);
         Tg.Normalize();
         return true;
     }
@@ -91,9 +92,9 @@ public static class TopOpeBRepTool_TOOL
     /// The unit tangent <paramref name="Tg"/> of the edge <paramref name="E"/> at <paramref name="par"/>; false for a
     /// degenerated edge, a closed edge no longer than the confusion tolerance, or a parameter out of range.
     /// </summary>
-    public static bool TggeomE(double par, in TopoDS_Edge E, out gp_Vec Tg)
+    public static bool TggeomE(double par, in TopoDS_Edge E, out Vector3D Tg)
     {
-        Tg = new gp_Vec();
+        Tg = new Vector3D();
         bool isdgE = BRep_Tool.Degenerated(E);
         if (isdgE)
         {
@@ -117,14 +118,14 @@ public static class TopOpeBRepTool_TOOL
     /// The unit normal <paramref name="normt"/> of the face <paramref name="f"/> at <paramref name="uv"/>, with the
     /// face's orientation; false (and <paramref name="normt"/> unchanged) where the geometric normal can't be computed.
     /// </summary>
-    public static bool Nt(in gp_Pnt2d uv, in TopoDS_Face f, ref gp_Dir normt)
+    public static bool Nt(in Point2D uv, in TopoDS_Face f, ref Direction3D normt)
     {
-        bool ok = NggeomF(uv, f, out gp_Vec nggeom);
+        bool ok = NggeomF(uv, f, out Vector3D nggeom);
         if (!ok)
         {
             return false;
         }
-        normt = new gp_Dir(nggeom);
+        normt = new Direction3D(nggeom);
         if (f.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
         {
             normt.Reverse();
@@ -134,7 +135,7 @@ public static class TopOpeBRepTool_TOOL
 
     //=================================================================================================
 
-    private static bool FUN_ngF(in gp_Pnt2d uv, in TopoDS_Face F, ref gp_Vec ngF)
+    private static bool FUN_ngF(in Point2D uv, in TopoDS_Face F, ref Vector3D ngF)
     {
         BRepAdaptor_Surface bs = new(F);
         double tol3d = bs.Tolerance();
@@ -144,8 +145,8 @@ public static class TopOpeBRepTool_TOOL
         // ###############################
         // nyi : all geometries are direct
         // ###############################
-        gp_Pnt p;
-        gp_Vec d1u, d1v;
+        Point3D p;
+        Vector3D d1u, d1v;
         bs.D1(uv.X(), uv.Y(), out p, out d1u, out d1v);
 
         double delta = minDUV(F);
@@ -156,15 +157,15 @@ public static class TopOpeBRepTool_TOOL
         bool kpart = (du < tolu) || (dv < tolv);
         if (kpart)
         {
-            GeomAbs_SurfaceType ST = bs.GetType();
-            if (ST == GeomAbs_SurfaceType.GeomAbs_Cone)
+            SurfaceKind ST = bs.GetType();
+            if (ST == SurfaceKind.Cone)
             {
                 bool nullx = (Math.Abs(uv.X()) < tolu);
                 bool apex = nullx && (Math.Abs(uv.Y()) < tolv);
                 if (apex)
                 {
-                    gp_Dir axis = bs.Cone().Axis().Direction();
-                    gp_Vec ng = new(axis);
+                    Direction3D axis = bs.Cone().Axis().Direction();
+                    Vector3D ng = new(axis);
                     ng.Reverse();
                     ngF = ng;
                     return true;
@@ -188,13 +189,13 @@ public static class TopOpeBRepTool_TOOL
                     // modified by NIZHNY-MZV  Fri Nov 26 12:38:55 1999
                     y = vf;
                     bs.D1(x, y, out p, out d1u, out d1v);
-                    gp_Vec ng = d1u ^ d1v;
+                    Vector3D ng = d1u ^ d1v;
 
                     ngF = ng;
                     return true;
                 }
             }
-            if (ST == GeomAbs_SurfaceType.GeomAbs_Sphere)
+            if (ST == SurfaceKind.Sphere)
             {
                 double pisur2 = M_PI * .5;
                 double u = uv.X(), v = uv.Y();
@@ -203,9 +204,9 @@ public static class TopOpeBRepTool_TOOL
                 bool apex = vpisur2 || vmoinspisur2;
                 if (apex)
                 {
-                    gp_Pnt center = bs.Sphere().Location();
-                    gp_Pnt value = bs.Value(u, v);
-                    gp_Vec ng = new(center, value);
+                    Point3D center = bs.Sphere().Location();
+                    Point3D value = bs.Value(u, v);
+                    Vector3D ng = new(center, value);
                     ngF = ng;
                     return true;
                 }
@@ -214,9 +215,9 @@ public static class TopOpeBRepTool_TOOL
             return false;
         } // kpart
 
-        gp_Dir udir = new(d1u);
-        gp_Dir vdir = new(d1v);
-        ngF = new gp_Vec(udir ^ vdir);
+        Direction3D udir = new(d1u);
+        Direction3D vdir = new(d1v);
+        ngF = new Vector3D(udir ^ vdir);
         return true;
     }
 
@@ -224,9 +225,9 @@ public static class TopOpeBRepTool_TOOL
     /// The geometric normal <paramref name="ng"/> (not unit at a cone's apex or a degenerate place) of the face's
     /// surface at <paramref name="uv"/>, without the face's orientation; false where it can't be computed.
     /// </summary>
-    public static bool NggeomF(in gp_Pnt2d uv, in TopoDS_Face f, out gp_Vec ng)
+    public static bool NggeomF(in Point2D uv, in TopoDS_Face f, out Vector3D ng)
     {
-        ng = new gp_Vec();
+        ng = new Vector3D();
         return FUN_ngF(uv, f, ref ng);
     }
 

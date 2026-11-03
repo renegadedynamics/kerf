@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -15,11 +20,11 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace"/>, <see cref="NullifyFace"/>,
-/// <see cref="NullifyEdge(in TopoDS_Edge, Poly_Triangulation?, in TopLoc_Location)"/> and the <c>UpdateEdge</c>
+/// <see cref="NullifyEdge(in TopoDS_Edge, Triangulation?, in Placement)"/> and the <c>UpdateEdge</c>
 /// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's internal non-freezing
 /// forms (decision 488): the mesher's triangulations and polygons stay unfrozen, so its post-processor can set each
 /// triangulation's deflection and parameters in place, and they freeze with the result when it is published
-/// (<c>FreezeGraph</c>). On a frozen face or edge they throw <see cref="Standard_ImmutableObject"/>: the mesher writes
+/// (<c>FreezeGraph</c>). On a frozen face or edge they throw <see cref="ImmutableObjectException"/>: the mesher writes
 /// only into an unfrozen shape, or into an exact copy of a frozen one (decision 489).
 /// </para>
 /// </remarks>
@@ -39,9 +44,9 @@ public static class BRepMesh_ShapeTool
     /// <summary>
     /// Sets <paramref name="theMaxDimension"/> to the box's maximum dimension; leaves it unchanged for a void box.
     /// </summary>
-    public static void BoxMaxDimension(in Bnd_Box theBox, ref double theMaxDimension)
+    public static void BoxMaxDimension(in Box theBox, ref double theMaxDimension)
     {
-        if (theBox.IsVoid())
+        if (theBox.IsVoid)
         {
             return;
         }
@@ -81,8 +86,8 @@ public static class BRepMesh_ShapeTool
             {
                 double aDiffFirst = aCurveOnSurf.FirstParameter() - aFirstParam;
                 double aDiffLast = aCurveOnSurf.LastParameter() - aLastParam;
-                theEdge.SetSameRange(Math.Abs(aDiffFirst) < Precision.PConfusion()
-                                     && Math.Abs(aDiffLast) < Precision.PConfusion());
+                theEdge.SetSameRange(Math.Abs(aDiffFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                     && Math.Abs(aDiffLast) < global::Kerf.Engine.Foundation.Precision.PConfusion());
 
                 if (!theEdge.GetSameRange())
                 {
@@ -106,7 +111,7 @@ public static class BRepMesh_ShapeTool
                 double aVertexTolerance = BRep_Tool.Tolerance(aStartVertex);
                 double aDu = (aLastParam - aFirstParam) / aPointsNb;
 
-                aCurve.D0(aFirstParam, out gp_Pnt aPrevPnt);
+                aCurve.D0(aFirstParam, out Point3D aPrevPnt);
 
                 double aLength = 0.0;
                 for (int i = 1; i <= aPointsNb; ++i)
@@ -114,7 +119,7 @@ public static class BRepMesh_ShapeTool
                     double aParameter = aFirstParam + i * aDu;
                     // Calculation of the length of the edge in 3D
                     // in order to check degenerativity
-                    aCurve.D0(aParameter, out gp_Pnt aPnt);
+                    aCurve.D0(aParameter, out Point3D aPnt);
                     aLength += aPrevPnt.Distance(aPnt);
 
                     if (aLength > aVertexTolerance /*&& !theEdge->GetSameParam()*/)
@@ -137,16 +142,16 @@ public static class BRepMesh_ShapeTool
     /// Writes the nodes of <paramref name="theTriangulation"/> (unfrozen: the mesher's own) and attaches it to the face
     /// unfrozen (decision 488). OCCT passes the handle by reference without changing it; so does the port.
     /// </remarks>
-    public static void AddInFace(in TopoDS_Face theFace, Poly_Triangulation theTriangulation)
+    public static void AddInFace(in TopoDS_Face theFace, Triangulation theTriangulation)
     {
-        TopLoc_Location aLoc = theFace.Location();
-        if (!aLoc.IsIdentity())
+        Placement aLoc = theFace.Location();
+        if (!aLoc.IsIdentity)
         {
-            gp_Trsf aTrsf = aLoc.Transformation();
+            Transform3D aTrsf = aLoc.Transformation();
             aTrsf.Invert();
-            for (int aNodeIter = 1; aNodeIter <= theTriangulation.NbNodes(); ++aNodeIter)
+            for (int aNodeIter = 1; aNodeIter <= theTriangulation.NodeCount; ++aNodeIter)
             {
-                gp_Pnt aNode = theTriangulation.Node(aNodeIter);
+                Point3D aNode = theTriangulation.Node(aNodeIter);
                 aNode.Transform(aTrsf);
                 theTriangulation.SetNode(aNodeIter, aNode);
             }
@@ -164,23 +169,23 @@ public static class BRepMesh_ShapeTool
     }
 
     /// <summary>Removes the edge's polygon on the triangulation of the face with the given location.</summary>
-    public static void NullifyEdge(in TopoDS_Edge theEdge, Poly_Triangulation? theTriangulation, in TopLoc_Location theLocation)
+    public static void NullifyEdge(in TopoDS_Edge theEdge, Triangulation? theTriangulation, in Placement theLocation)
     {
-        UpdateEdge(theEdge, (Poly_PolygonOnTriangulation?)null, theTriangulation, theLocation);
+        UpdateEdge(theEdge, (PolygonOnTriangulation?)null, theTriangulation, theLocation);
     }
 
     /// <summary>Removes the edge's 3D polygon.</summary>
-    public static void NullifyEdge(in TopoDS_Edge theEdge, in TopLoc_Location theLocation)
+    public static void NullifyEdge(in TopoDS_Edge theEdge, in Placement theLocation)
     {
         BRep_Builder aBuilder = new();
-        aBuilder.UpdateEdgeUnfrozen(theEdge, (Poly_Polygon3D?)null, theLocation);
+        aBuilder.UpdateEdgeUnfrozen(theEdge, (Polygon3D?)null, theLocation);
     }
 
     /// <summary>Stores the polygon on the triangulation of the face with the given location into the edge.</summary>
     public static void UpdateEdge(in TopoDS_Edge theEdge,
-                                  Poly_PolygonOnTriangulation? thePolygon,
-                                  Poly_Triangulation? theTriangulation,
-                                  in TopLoc_Location theLocation)
+                                  PolygonOnTriangulation? thePolygon,
+                                  Triangulation? theTriangulation,
+                                  in Placement theLocation)
     {
         BRep_Builder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon, theTriangulation, theLocation);
@@ -191,26 +196,26 @@ public static class BRepMesh_ShapeTool
     /// face with the given location into the edge.
     /// </summary>
     public static void UpdateEdge(in TopoDS_Edge theEdge,
-                                  Poly_PolygonOnTriangulation? thePolygon1,
-                                  Poly_PolygonOnTriangulation? thePolygon2,
-                                  Poly_Triangulation? theTriangulation,
-                                  in TopLoc_Location theLocation)
+                                  PolygonOnTriangulation? thePolygon1,
+                                  PolygonOnTriangulation? thePolygon2,
+                                  Triangulation? theTriangulation,
+                                  in Placement theLocation)
     {
         BRep_Builder aBuilder = new();
         aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon1, thePolygon2, theTriangulation, theLocation);
     }
 
     /// <summary>Stores the 3D polygon into the edge.</summary>
-    public static void UpdateEdge(in TopoDS_Edge theEdge, Poly_Polygon3D? thePolygon)
+    public static void UpdateEdge(in TopoDS_Edge theEdge, Polygon3D? thePolygon)
     {
         BRep_Builder aBuilder = new();
-        aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon, new TopLoc_Location());
+        aBuilder.UpdateEdgeUnfrozen(theEdge, thePolygon, new Placement());
     }
 
     /// <summary>The point moved by the location.</summary>
-    public static gp_Pnt UseLocation(in gp_Pnt thePnt, in TopLoc_Location theLoc)
+    public static Point3D UseLocation(in Point3D thePnt, in Placement theLoc)
     {
-        if (theLoc.IsIdentity())
+        if (theLoc.IsIdentity)
         {
             return thePnt;
         }
@@ -221,12 +226,12 @@ public static class BRepMesh_ShapeTool
     /// <summary>The UV points of the edge's ends on its pcurve on the face.</summary>
     public static bool UVPoints(in TopoDS_Edge theEdge,
                                 in TopoDS_Face theFace,
-                                out gp_Pnt2d theFirstPoint2d,
-                                out gp_Pnt2d theLastPoint2d,
+                                out Point2D theFirstPoint2d,
+                                out Point2D theLastPoint2d,
                                 bool isConsiderOrientation = false)
     {
-        theFirstPoint2d = new gp_Pnt2d();
-        theLastPoint2d = new gp_Pnt2d();
+        theFirstPoint2d = new Point2D();
+        theLastPoint2d = new Point2D();
         if (!Range(theEdge, theFace, out Geom2d_Curve? aCurve2d, out double aFirstParam, out double aLastParam,
                    isConsiderOrientation))
         {

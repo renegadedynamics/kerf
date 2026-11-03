@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +24,7 @@ public class Plate_GtoCConstraint
 {
     private readonly Plate_PinpointConstraint[] myPPC = new Plate_PinpointConstraint[9];
     private readonly Plate_D1 myD1SurfInit;
-    private readonly gp_XY pnt2d;
+    private readonly Xy pnt2d;
     private readonly int nb_PPConstraints;
 
     private const double NORMIN = 1.0e-10;
@@ -37,13 +41,13 @@ public class Plate_GtoCConstraint
         }
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T)
     {
         myD1SurfInit = D1S;
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         // alr le 12/11/96
         if (normale.Modulus() < NORMIN)
         {
@@ -53,7 +57,7 @@ public class Plate_GtoCConstraint
 
         // G1 Constraints
 
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         // alr le 12/11/96
         if (normaleS.Modulus() < NORMIN)
         {
@@ -67,8 +71,8 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = normaleS * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = normaleS * -(normale * D1S.Dv) * invcos;
+        Xyz du = normaleS * -(normale * D1S.Du) * invcos;
+        Xyz dv = normaleS * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
@@ -76,13 +80,13 @@ public class Plate_GtoCConstraint
         nb_PPConstraints = 2;
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T, in gp_XYZ nP)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Xyz nP)
     {
         myD1SurfInit = D1S;
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         if (normale.Modulus() < NORMIN)
         {
             return;
@@ -91,14 +95,14 @@ public class Plate_GtoCConstraint
 
         // G1 Constraints
 
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         if (normaleS.Modulus() < NORMIN)
         {
             return;
         }
         normaleS.Normalize();
 
-        gp_XYZ nSP = normaleS - nP * (nP * normaleS);
+        Xyz nSP = normaleS - nP * (nP * normaleS);
         if (nSP.Modulus() < NORMIN)
         {
             return;
@@ -112,8 +116,8 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = nSP * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = nSP * -(normale * D1S.Dv) * invcos;
+        Xyz du = nSP * -(normale * D1S.Du) * invcos;
+        Xyz dv = nSP * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
@@ -121,14 +125,14 @@ public class Plate_GtoCConstraint
         nb_PPConstraints = 2;
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T)
     {
         myD1SurfInit = D1S;
 
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         // alr le 12/11/96
         if (normale.Modulus() < NORMIN)
         {
@@ -137,7 +141,7 @@ public class Plate_GtoCConstraint
         normale.Normalize();
 
         // G1 Constraints
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         // alr le 12/11/96
         if (normaleS.Modulus() < NORMIN)
         {
@@ -152,24 +156,24 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = normaleS * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = normaleS * -(normale * D1S.Dv) * invcos;
+        Xyz du = normaleS * -(normale * D1S.Du) * invcos;
+        Xyz dv = normaleS * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
         nb_PPConstraints = 2;
 
         // G2 Constraints
-        gp_XYZ Su = D1S.Du + du;
-        gp_XYZ Sv = D1S.Dv + dv;
+        Xyz Su = D1S.Du + du;
+        Xyz Sv = D1S.Dv + dv;
 
-        math_Matrix mat = new(0, 1, 0, 1);
+        Matrix mat = new(0, 1, 0, 1);
         mat[0, 0] = Su * D1T.Du;
         mat[0, 1] = Su * D1T.Dv;
         mat[1, 0] = Sv * D1T.Du;
         mat[1, 1] = Sv * D1T.Dv;
-        math_Gauss gauss = new(mat);
-        if (!gauss.IsDone())
+        Gauss gauss = new(mat);
+        if (!gauss.IsDone)
         {
             return;
         }
@@ -190,13 +194,13 @@ public class Plate_GtoCConstraint
         double c = sol[0];
         double d = sol[1];
 
-        gp_XYZ Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
-        gp_XYZ Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
-        gp_XYZ Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
+        Xyz Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
+        Xyz Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
+        Xyz Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
 
-        gp_XYZ duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
-        gp_XYZ duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
-        gp_XYZ dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
+        Xyz duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
+        Xyz duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
+        Xyz dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
 
         myPPC[2] = new Plate_PinpointConstraint(pnt2d, duu, 2, 0);
         myPPC[3] = new Plate_PinpointConstraint(pnt2d, duv, 1, 1);
@@ -204,14 +208,14 @@ public class Plate_GtoCConstraint
         nb_PPConstraints = 5;
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in gp_XYZ nP)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in Xyz nP)
     {
         myD1SurfInit = D1S;
 
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         // alr le 12/11/96
         if (normale.Modulus() < NORMIN)
         {
@@ -220,7 +224,7 @@ public class Plate_GtoCConstraint
         normale.Normalize();
 
         // G1 Constraints
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         // alr le 12/11/96
         if (normaleS.Modulus() < NORMIN)
         {
@@ -228,7 +232,7 @@ public class Plate_GtoCConstraint
         }
         normaleS.Normalize();
 
-        gp_XYZ nSP = normaleS - nP * (nP * normaleS);
+        Xyz nSP = normaleS - nP * (nP * normaleS);
         if (nSP.Modulus() < NORMIN)
         {
             return;
@@ -242,24 +246,24 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = nSP * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = nSP * -(normale * D1S.Dv) * invcos;
+        Xyz du = nSP * -(normale * D1S.Du) * invcos;
+        Xyz dv = nSP * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
         nb_PPConstraints = 2;
 
         // G2 Constraints
-        gp_XYZ Su = D1S.Du + du;
-        gp_XYZ Sv = D1S.Dv + dv;
+        Xyz Su = D1S.Du + du;
+        Xyz Sv = D1S.Dv + dv;
 
-        math_Matrix mat = new(0, 1, 0, 1);
+        Matrix mat = new(0, 1, 0, 1);
         mat[0, 0] = Su * D1T.Du;
         mat[0, 1] = Su * D1T.Dv;
         mat[1, 0] = Sv * D1T.Du;
         mat[1, 1] = Sv * D1T.Dv;
-        math_Gauss gauss = new(mat);
-        if (!gauss.IsDone())
+        Gauss gauss = new(mat);
+        if (!gauss.IsDone)
         {
             return;
         }
@@ -280,13 +284,13 @@ public class Plate_GtoCConstraint
         double c = sol[0];
         double d = sol[1];
 
-        gp_XYZ Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
-        gp_XYZ Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
-        gp_XYZ Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
+        Xyz Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
+        Xyz Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
+        Xyz Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
 
-        gp_XYZ duu = nSP * (normale * (Suu - D2S.Duu)) * invcos;
-        gp_XYZ duv = nSP * (normale * (Suv - D2S.Duv)) * invcos;
-        gp_XYZ dvv = nSP * (normale * (Svv - D2S.Dvv)) * invcos;
+        Xyz duu = nSP * (normale * (Suu - D2S.Duu)) * invcos;
+        Xyz duv = nSP * (normale * (Suv - D2S.Duv)) * invcos;
+        Xyz dvv = nSP * (normale * (Svv - D2S.Dvv)) * invcos;
 
         myPPC[2] = new Plate_PinpointConstraint(pnt2d, duu, 2, 0);
         myPPC[3] = new Plate_PinpointConstraint(pnt2d, duv, 1, 1);
@@ -294,13 +298,13 @@ public class Plate_GtoCConstraint
         nb_PPConstraints = 5;
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in Plate_D3 D3S, in Plate_D3 D3T)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in Plate_D3 D3S, in Plate_D3 D3T)
     {
         myD1SurfInit = D1S;
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         if (normale.Modulus() < NORMIN)
         {
             return;
@@ -308,7 +312,7 @@ public class Plate_GtoCConstraint
         normale.Normalize();
 
         // G1 Constraints
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         if (normaleS.Modulus() < NORMIN)
         {
             return;
@@ -322,24 +326,24 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = normaleS * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = normaleS * -(normale * D1S.Dv) * invcos;
+        Xyz du = normaleS * -(normale * D1S.Du) * invcos;
+        Xyz dv = normaleS * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
         nb_PPConstraints = 2;
 
         // G2 Constraints
-        gp_XYZ Su = D1S.Du + du;
-        gp_XYZ Sv = D1S.Dv + dv;
+        Xyz Su = D1S.Du + du;
+        Xyz Sv = D1S.Dv + dv;
 
-        math_Matrix mat = new(0, 1, 0, 1);
+        Matrix mat = new(0, 1, 0, 1);
         mat[0, 0] = Su * D1T.Du;
         mat[0, 1] = Su * D1T.Dv;
         mat[1, 0] = Sv * D1T.Du;
         mat[1, 1] = Sv * D1T.Dv;
-        math_Gauss gauss = new(mat);
-        if (!gauss.IsDone())
+        Gauss gauss = new(mat);
+        if (!gauss.IsDone)
         {
             return;
         }
@@ -360,13 +364,13 @@ public class Plate_GtoCConstraint
         double c = sol[0];
         double d = sol[1];
 
-        gp_XYZ Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
-        gp_XYZ Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
-        gp_XYZ Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
+        Xyz Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
+        Xyz Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
+        Xyz Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
 
-        gp_XYZ duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
-        gp_XYZ duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
-        gp_XYZ dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
+        Xyz duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
+        Xyz duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
+        Xyz dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
 
         myPPC[2] = new Plate_PinpointConstraint(pnt2d, duu, 2, 0);
         myPPC[3] = new Plate_PinpointConstraint(pnt2d, duv, 1, 1);
@@ -393,13 +397,13 @@ public class Plate_GtoCConstraint
         double B0vv = sol[0];
         double B1vv = sol[1];
 
-        gp_XYZ Suuu = D3T.Duuu * (a * a * a) + D3T.Duuv * (3 * a * a * b) + D3T.Duvv * (3 * a * b * b)
+        Xyz Suuu = D3T.Duuu * (a * a * a) + D3T.Duuv * (3 * a * a * b) + D3T.Duvv * (3 * a * b * b)
                                     + D3T.Dvvv * (b * b * b);
-        gp_XYZ Suuv = D3T.Duuu * (a * a * c) + D3T.Duuv * (a * a * d + 2 * a * b * c)
+        Xyz Suuv = D3T.Duuu * (a * a * c) + D3T.Duuv * (a * a * d + 2 * a * b * c)
                                     + D3T.Duvv * (b * b * c + 2 * a * b * d) + D3T.Dvvv * (b * b * d);
-        gp_XYZ Suvv = D3T.Duuu * (a * c * c) + D3T.Duuv * (b * c * c + 2 * a * c * d)
+        Xyz Suvv = D3T.Duuu * (a * c * c) + D3T.Duuv * (b * c * c + 2 * a * c * d)
                                     + D3T.Duvv * (a * d * d + 2 * b * c * d) + D3T.Dvvv * (b * d * d);
-        gp_XYZ Svvv = D3T.Duuu * (c * c * c) + D3T.Duuv * (3 * c * c * d) + D3T.Duvv * (3 * c * d * d)
+        Xyz Svvv = D3T.Duuu * (c * c * c) + D3T.Duuv * (3 * c * c * d) + D3T.Duvv * (3 * c * d * d)
                                     + D3T.Dvvv * (d * d * d);
 
         ref double A0u = ref a;
@@ -417,10 +421,10 @@ public class Plate_GtoCConstraint
         Svvv += D2T.Duu * (3 * A0v * B0vv) + D2T.Duv * (3 * (A0v * B1vv + A1v * B0vv))
                         + D2T.Dvv * (3 * A1v * B1vv);
 
-        gp_XYZ duuu = normaleS * (normale * (Suuu - D3S.Duuu)) * invcos;
-        gp_XYZ duuv = normaleS * (normale * (Suuv - D3S.Duuv)) * invcos;
-        gp_XYZ duvv = normaleS * (normale * (Suvv - D3S.Duvv)) * invcos;
-        gp_XYZ dvvv = normaleS * (normale * (Svvv - D3S.Dvvv)) * invcos;
+        Xyz duuu = normaleS * (normale * (Suuu - D3S.Duuu)) * invcos;
+        Xyz duuv = normaleS * (normale * (Suuv - D3S.Duuv)) * invcos;
+        Xyz duvv = normaleS * (normale * (Suvv - D3S.Duvv)) * invcos;
+        Xyz dvvv = normaleS * (normale * (Svvv - D3S.Dvvv)) * invcos;
 
         myPPC[5] = new Plate_PinpointConstraint(pnt2d, duuu, 3, 0);
         myPPC[6] = new Plate_PinpointConstraint(pnt2d, duuv, 2, 1);
@@ -429,7 +433,7 @@ public class Plate_GtoCConstraint
         nb_PPConstraints = 9;
     }
 
-    public Plate_GtoCConstraint(in gp_XY point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in Plate_D3 D3S, in Plate_D3 D3T, in gp_XYZ nP)
+    public Plate_GtoCConstraint(in Xy point2d, in Plate_D1 D1S, in Plate_D1 D1T, in Plate_D2 D2S, in Plate_D2 D2T, in Plate_D3 D3S, in Plate_D3 D3T, in Xyz nP)
     {
         _ = nP; // OCCT: this variant ignores nP (its name is commented out in OCCT's signature)
         myD1SurfInit = D1S;
@@ -437,7 +441,7 @@ public class Plate_GtoCConstraint
         pnt2d            = point2d;
         nb_PPConstraints = 0;
 
-        gp_XYZ normale = D1T.Du ^ D1T.Dv;
+        Xyz normale = D1T.Du ^ D1T.Dv;
         if (normale.Modulus() < NORMIN)
         {
             return;
@@ -445,7 +449,7 @@ public class Plate_GtoCConstraint
         normale.Normalize();
 
         // G1 Constraints
-        gp_XYZ normaleS = D1S.Du ^ D1S.Dv;
+        Xyz normaleS = D1S.Du ^ D1S.Dv;
         if (normaleS.Modulus() < NORMIN)
         {
             return;
@@ -459,25 +463,25 @@ public class Plate_GtoCConstraint
         }
         double invcos = 1.0 / cos_normales;
 
-        gp_XYZ du = normaleS * -(normale * D1S.Du) * invcos;
-        gp_XYZ dv = normaleS * -(normale * D1S.Dv) * invcos;
+        Xyz du = normaleS * -(normale * D1S.Du) * invcos;
+        Xyz dv = normaleS * -(normale * D1S.Dv) * invcos;
 
         myPPC[0] = new Plate_PinpointConstraint(pnt2d, du, 1, 0);
         myPPC[1] = new Plate_PinpointConstraint(pnt2d, dv, 0, 1);
         nb_PPConstraints = 2;
 
         // G2 Constraints
-        gp_XYZ Su = D1S.Du + du;
-        gp_XYZ Sv = D1S.Dv + dv;
+        Xyz Su = D1S.Du + du;
+        Xyz Sv = D1S.Dv + dv;
 
-        math_Matrix mat = new(0, 1, 0, 1);
+        Matrix mat = new(0, 1, 0, 1);
         mat[0, 0] = Su * D1T.Du;
         mat[0, 1] = Su * D1T.Dv;
         mat[1, 0] = Sv * D1T.Du;
         mat[1, 1] = Sv * D1T.Dv;
-        math_Gauss gauss = new(mat);
+        Gauss gauss = new(mat);
 
-        if (!gauss.IsDone())
+        if (!gauss.IsDone)
         {
             return;
         }
@@ -498,13 +502,13 @@ public class Plate_GtoCConstraint
         double c = sol[0];
         double d = sol[1];
 
-        gp_XYZ Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
-        gp_XYZ Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
-        gp_XYZ Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
+        Xyz Suu = D2T.Duu * (a * a) + D2T.Duv * (2 * a * b) + D2T.Dvv * (b * b);
+        Xyz Suv = D2T.Duu * (a * c) + D2T.Duv * (a * d + b * c) + D2T.Dvv * (b * d);
+        Xyz Svv = D2T.Duu * (c * c) + D2T.Duv * (2 * c * d) + D2T.Dvv * (d * d);
 
-        gp_XYZ duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
-        gp_XYZ duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
-        gp_XYZ dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
+        Xyz duu = normaleS * (normale * (Suu - D2S.Duu)) * invcos;
+        Xyz duv = normaleS * (normale * (Suv - D2S.Duv)) * invcos;
+        Xyz dvv = normaleS * (normale * (Svv - D2S.Dvv)) * invcos;
 
         myPPC[2] = new Plate_PinpointConstraint(pnt2d, duu, 2, 0);
         myPPC[3] = new Plate_PinpointConstraint(pnt2d, duv, 1, 1);
@@ -530,13 +534,13 @@ public class Plate_GtoCConstraint
         double B0vv = sol[0];
         double B1vv = sol[1];
 
-        gp_XYZ Suuu = D3T.Duuu * (a * a * a) + D3T.Duuv * (3 * a * a * b) + D3T.Duvv * (3 * a * b * b)
+        Xyz Suuu = D3T.Duuu * (a * a * a) + D3T.Duuv * (3 * a * a * b) + D3T.Duvv * (3 * a * b * b)
                                     + D3T.Dvvv * (b * b * b);
-        gp_XYZ Suuv = D3T.Duuu * (a * a * c) + D3T.Duuv * (a * a * d + 2 * a * b * c)
+        Xyz Suuv = D3T.Duuu * (a * a * c) + D3T.Duuv * (a * a * d + 2 * a * b * c)
                                     + D3T.Duvv * (b * b * c + 2 * a * b * d) + D3T.Dvvv * (b * b * d);
-        gp_XYZ Suvv = D3T.Duuu * (a * c * c) + D3T.Duuv * (b * c * c + 2 * a * c * d)
+        Xyz Suvv = D3T.Duuu * (a * c * c) + D3T.Duuv * (b * c * c + 2 * a * c * d)
                                     + D3T.Duvv * (a * d * d + 2 * b * c * d) + D3T.Dvvv * (b * d * d);
-        gp_XYZ Svvv = D3T.Duuu * (c * c * c) + D3T.Duuv * (3 * c * c * d) + D3T.Duvv * (3 * c * d * d)
+        Xyz Svvv = D3T.Duuu * (c * c * c) + D3T.Duuv * (3 * c * c * d) + D3T.Duvv * (3 * c * d * d)
                                     + D3T.Dvvv * (d * d * d);
 
         ref double A0u = ref a;
@@ -554,10 +558,10 @@ public class Plate_GtoCConstraint
         Svvv += D2T.Duu * (3 * A0v * B0vv) + D2T.Duv * (3 * (A0v * B1vv + A1v * B0vv))
                         + D2T.Dvv * (3 * A1v * B1vv);
 
-        gp_XYZ duuu = normaleS * (normale * (Suuu - D3S.Duuu)) * invcos;
-        gp_XYZ duuv = normaleS * (normale * (Suuv - D3S.Duuv)) * invcos;
-        gp_XYZ duvv = normaleS * (normale * (Suvv - D3S.Duvv)) * invcos;
-        gp_XYZ dvvv = normaleS * (normale * (Svvv - D3S.Dvvv)) * invcos;
+        Xyz duuu = normaleS * (normale * (Suuu - D3S.Duuu)) * invcos;
+        Xyz duuv = normaleS * (normale * (Suuv - D3S.Duuv)) * invcos;
+        Xyz duvv = normaleS * (normale * (Suvv - D3S.Duvv)) * invcos;
+        Xyz dvvv = normaleS * (normale * (Svvv - D3S.Dvvv)) * invcos;
 
         myPPC[5] = new Plate_PinpointConstraint(pnt2d, duuu, 3, 0);
         myPPC[6] = new Plate_PinpointConstraint(pnt2d, duuv, 2, 1);

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -30,28 +36,28 @@ public class Intf_Tool
         nbSeg = 0;
     }
 
-    public void Lin2dBox(in gp_Lin2d L2d, in Bnd_Box2d domain, ref Bnd_Box2d boxLin)
+    public void Lin2dBox(in Line2D L2d, in Box2d domain, ref Box2d boxLin)
     {
         nbSeg = 0;
         boxLin.SetVoid();
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxLin.Set(L2d.Location(), L2d.Direction());
             boxLin.Add(L2d.Direction().Reversed());
             nbSeg = 1;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
 
         double xmin, xmax, ymin, ymax;
         double Xmin = 0, Xmax = 0, Ymin = 0, Ymax = 0;
-        double parmin = -Precision.Infinite();
-        double parmax = Precision.Infinite();
+        double parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        double parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
         double parcur, par1, par2;
         bool xToSet, yToSet;
 
@@ -59,17 +65,17 @@ public class Intf_Tool
 
         if (L2d.Direction().XY().X() > 0.0)
         {
-            if (domain.IsOpenXmin())
+            if (domain.IsOpenXmin)
             {
-                parmin = -Precision.Infinite();
+                parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parmin = (xmin - L2d.Location().XY().X()) / L2d.Direction().XY().X();
             }
-            if (domain.IsOpenXmax())
+            if (domain.IsOpenXmax)
             {
-                parmax = Precision.Infinite();
+                parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -79,17 +85,17 @@ public class Intf_Tool
         }
         else if (L2d.Direction().XY().X() < 0.0)
         {
-            if (domain.IsOpenXmax())
+            if (domain.IsOpenXmax)
             {
-                parmin = -Precision.Infinite();
+                parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parmin = (xmax - L2d.Location().XY().X()) / L2d.Direction().XY().X();
             }
-            if (domain.IsOpenXmin())
+            if (domain.IsOpenXmin)
             {
-                parmax = Precision.Infinite();
+                parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -110,18 +116,18 @@ public class Intf_Tool
 
         if (L2d.Direction().XY().Y() > 0.0)
         {
-            if (domain.IsOpenYmin())
+            if (domain.IsOpenYmin)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (ymin - L2d.Location().XY().Y()) / L2d.Direction().XY().Y();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenYmax())
+            if (domain.IsOpenYmax)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -132,18 +138,18 @@ public class Intf_Tool
         }
         else if (L2d.Direction().XY().Y() < 0.0)
         {
-            if (domain.IsOpenYmax())
+            if (domain.IsOpenYmax)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (ymax - L2d.Location().XY().Y()) / L2d.Direction().XY().Y();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenYmin())
+            if (domain.IsOpenYmin)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -186,19 +192,19 @@ public class Intf_Tool
         boxLin.Update(Xmin, Ymin, Xmax, Ymax);
     }
 
-    public void Hypr2dBox(in gp_Hypr2d theHypr2d, in Bnd_Box2d domain, ref Bnd_Box2d boxHypr2d)
+    public void Hypr2dBox(in Hyperbola2D theHypr2d, in Box2d domain, ref Box2d boxHypr2d)
     {
         nbSeg = 0;
         boxHypr2d.SetVoid();
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxHypr2d.SetWhole();
             nbSeg = 1;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
@@ -244,30 +250,30 @@ public class Intf_Tool
                 }
             }
 
-            gp_Pnt2d Pn;
-            gp_Vec2d Tan;
+            Point2D Pn;
+            Vector2D Tan;
             double sinan = 0;
             bool out_ = true;
 
             for (npi = 0; npi < nbPi; npi++)
             {
-                ElCLib.D1(parint[npi], theHypr2d, out Pn, out Tan);
+                global::Kerf.Engine.Geometry.ElCLib.D1(parint[npi], theHypr2d, out Pn, out Tan);
                 switch (bord[npi])
                 {
                     case 1:
-                        sinan = new gp_XY(-1.0, 0.0) ^ Tan.XY();
+                        sinan = new Xy(-1.0, 0.0) ^ Tan.XY();
                         break;
                     case 2:
-                        sinan = new gp_XY(0.0, -1.0) ^ Tan.XY();
+                        sinan = new Xy(0.0, -1.0) ^ Tan.XY();
                         break;
                     case 3:
-                        sinan = new gp_XY(1.0, 0.0) ^ Tan.XY();
+                        sinan = new Xy(1.0, 0.0) ^ Tan.XY();
                         break;
                     case 4:
-                        sinan = new gp_XY(0.0, 1.0) ^ Tan.XY();
+                        sinan = new Xy(0.0, 1.0) ^ Tan.XY();
                         break;
                 }
-                if (Math.Abs(sinan) > Precision.Angular())
+                if (Math.Abs(sinan) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     if (sinan > 0.0)
                     {
@@ -282,7 +288,7 @@ public class Intf_Tool
                     {
                         if (out_ && nbSeg < 6)
                         {
-                            beginOnCurve[nbSeg] = -Precision.Infinite();
+                            beginOnCurve[nbSeg] = -global::Kerf.Engine.Foundation.Precision.Infinite();
                             nbSeg++;
                         }
                         if (nbSeg > 0)
@@ -315,7 +321,7 @@ public class Intf_Tool
                         int ip, pas = 1;
                         for (ip = ipmin; ip <= ipmax; ip += pas)
                         {
-                            boxHypr2d.Add(ElCLib.Value((double)ip / 10.0, theHypr2d));
+                            boxHypr2d.Add(global::Kerf.Engine.Geometry.ElCLib.Value((double)ip / 10.0, theHypr2d));
                             if (Math.Abs(ip) <= 10)
                             {
                                 pas = 1;
@@ -330,19 +336,19 @@ public class Intf_Tool
             }
             if (!out_ && nbSeg > 0)
             {
-                endOnCurve[nbSeg - 1] = Precision.Infinite();
+                endOnCurve[nbSeg - 1] = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
-        else if (!domain.IsOut(ElCLib.Value(0.0, theHypr2d)))
+        else if (!domain.IsOut(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, theHypr2d)))
         {
             boxHypr2d = domain;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             nbSeg = 1;
         }
     }
 
-    private int Inters2d(in gp_Hypr2d theCurv, in Bnd_Box2d Domain)
+    private int Inters2d(in Hyperbola2D theCurv, in Box2d Domain)
     {
         int nbpi = 0;
         int npi;
@@ -350,9 +356,9 @@ public class Intf_Tool
 
         Domain.Get(out xmin, out ymin, out xmax, out ymax);
 
-        if (!Domain.IsOpenYmax())
+        if (!Domain.IsOpenYmax)
         {
-            gp_Lin2d L1 = new(new gp_Pnt2d(0.0, ymax), new gp_Dir2d(gp_Dir2d.D.NX));
+            Line2D L1 = new(new Point2D(0.0, ymax), new Direction2D(Direction2D.D.NX));
             IntAna2d_AnaIntersection Inters1 = new(theCurv, new IntAna2d_Conic(L1));
             if (Inters1.IsDone())
             {
@@ -373,9 +379,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmin())
+        if (!Domain.IsOpenXmin)
         {
-            gp_Lin2d L2 = new(new gp_Pnt2d(xmin, 0.0), new gp_Dir2d(gp_Dir2d.D.NY));
+            Line2D L2 = new(new Point2D(xmin, 0.0), new Direction2D(Direction2D.D.NY));
             IntAna2d_AnaIntersection Inters2 = new(theCurv, new IntAna2d_Conic(L2));
             if (Inters2.IsDone())
             {
@@ -396,9 +402,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmin())
+        if (!Domain.IsOpenYmin)
         {
-            gp_Lin2d L3 = new(new gp_Pnt2d(0.0, ymin), new gp_Dir2d(gp_Dir2d.D.X));
+            Line2D L3 = new(new Point2D(0.0, ymin), new Direction2D(Direction2D.D.X));
             IntAna2d_AnaIntersection Inters3 = new(theCurv, new IntAna2d_Conic(L3));
             if (Inters3.IsDone())
             {
@@ -419,9 +425,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmax())
+        if (!Domain.IsOpenXmax)
         {
-            gp_Lin2d L4 = new(new gp_Pnt2d(xmax, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+            Line2D L4 = new(new Point2D(xmax, 0.0), new Direction2D(Direction2D.D.Y));
             IntAna2d_AnaIntersection Inters4 = new(theCurv, new IntAna2d_Conic(L4));
             if (Inters4.IsDone())
             {
@@ -444,19 +450,19 @@ public class Intf_Tool
         return nbpi;
     }
 
-    public void Parab2dBox(in gp_Parab2d theParab2d, in Bnd_Box2d domain, ref Bnd_Box2d boxParab2d)
+    public void Parab2dBox(in Parabola2D theParab2d, in Box2d domain, ref Box2d boxParab2d)
     {
         nbSeg = 0;
         boxParab2d.SetVoid();
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxParab2d.SetWhole();
             nbSeg = 1;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
@@ -502,30 +508,30 @@ public class Intf_Tool
                 }
             }
 
-            gp_Pnt2d Pn;
-            gp_Vec2d Tan;
+            Point2D Pn;
+            Vector2D Tan;
             double sinan = 0;
             bool out_ = true;
 
             for (npi = 0; npi < nbPi; npi++)
             {
-                ElCLib.D1(parint[npi], theParab2d, out Pn, out Tan);
+                global::Kerf.Engine.Geometry.ElCLib.D1(parint[npi], theParab2d, out Pn, out Tan);
                 switch (bord[npi])
                 {
                     case 1:
-                        sinan = new gp_XY(-1.0, 0.0) ^ Tan.XY();
+                        sinan = new Xy(-1.0, 0.0) ^ Tan.XY();
                         break;
                     case 2:
-                        sinan = new gp_XY(0.0, -1.0) ^ Tan.XY();
+                        sinan = new Xy(0.0, -1.0) ^ Tan.XY();
                         break;
                     case 3:
-                        sinan = new gp_XY(1.0, 0.0) ^ Tan.XY();
+                        sinan = new Xy(1.0, 0.0) ^ Tan.XY();
                         break;
                     case 4:
-                        sinan = new gp_XY(0.0, 1.0) ^ Tan.XY();
+                        sinan = new Xy(0.0, 1.0) ^ Tan.XY();
                         break;
                 }
-                if (Math.Abs(sinan) > Precision.Angular())
+                if (Math.Abs(sinan) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     if (sinan > 0.0)
                     {
@@ -540,7 +546,7 @@ public class Intf_Tool
                     {
                         if (out_ && nbSeg < 6)
                         {
-                            beginOnCurve[nbSeg] = -Precision.Infinite();
+                            beginOnCurve[nbSeg] = -global::Kerf.Engine.Foundation.Precision.Infinite();
                             nbSeg++;
                         }
                         if (nbSeg > 0)
@@ -573,7 +579,7 @@ public class Intf_Tool
                         int ip, pas = 1;
                         for (ip = ipmin; ip <= ipmax; ip += pas)
                         {
-                            boxParab2d.Add(ElCLib.Value((double)ip / 10.0, theParab2d));
+                            boxParab2d.Add(global::Kerf.Engine.Geometry.ElCLib.Value((double)ip / 10.0, theParab2d));
                             if (Math.Abs(ip) <= 10)
                             {
                                 pas = 1;
@@ -588,19 +594,19 @@ public class Intf_Tool
             }
             if (!out_ && nbSeg > 0)
             {
-                endOnCurve[nbSeg - 1] = Precision.Infinite();
+                endOnCurve[nbSeg - 1] = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
-        else if (!domain.IsOut(ElCLib.Value(0.0, theParab2d)))
+        else if (!domain.IsOut(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, theParab2d)))
         {
             boxParab2d = domain;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             nbSeg = 1;
         }
     }
 
-    private int Inters2d(in gp_Parab2d theCurv, in Bnd_Box2d Domain)
+    private int Inters2d(in Parabola2D theCurv, in Box2d Domain)
     {
         int nbpi = 0;
         int npi;
@@ -608,9 +614,9 @@ public class Intf_Tool
 
         Domain.Get(out xmin, out ymin, out xmax, out ymax);
 
-        if (!Domain.IsOpenYmax())
+        if (!Domain.IsOpenYmax)
         {
-            gp_Lin2d L1 = new(new gp_Pnt2d(0.0, ymax), new gp_Dir2d(gp_Dir2d.D.NX));
+            Line2D L1 = new(new Point2D(0.0, ymax), new Direction2D(Direction2D.D.NX));
             IntAna2d_AnaIntersection Inters1 = new(theCurv, new IntAna2d_Conic(L1));
             if (Inters1.IsDone())
             {
@@ -631,9 +637,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmin())
+        if (!Domain.IsOpenXmin)
         {
-            gp_Lin2d L2 = new(new gp_Pnt2d(xmin, 0.0), new gp_Dir2d(gp_Dir2d.D.NY));
+            Line2D L2 = new(new Point2D(xmin, 0.0), new Direction2D(Direction2D.D.NY));
             IntAna2d_AnaIntersection Inters2 = new(theCurv, new IntAna2d_Conic(L2));
             if (Inters2.IsDone())
             {
@@ -654,9 +660,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmin())
+        if (!Domain.IsOpenYmin)
         {
-            gp_Lin2d L3 = new(new gp_Pnt2d(0.0, ymin), new gp_Dir2d(gp_Dir2d.D.X));
+            Line2D L3 = new(new Point2D(0.0, ymin), new Direction2D(Direction2D.D.X));
             IntAna2d_AnaIntersection Inters3 = new(theCurv, new IntAna2d_Conic(L3));
             if (Inters3.IsDone())
             {
@@ -677,9 +683,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmax())
+        if (!Domain.IsOpenXmax)
         {
-            gp_Lin2d L4 = new(new gp_Pnt2d(xmax, 0.0), new gp_Dir2d(gp_Dir2d.D.Y));
+            Line2D L4 = new(new Point2D(xmax, 0.0), new Direction2D(Direction2D.D.Y));
             IntAna2d_AnaIntersection Inters4 = new(theCurv, new IntAna2d_Conic(L4));
             if (Inters4.IsDone())
             {
@@ -702,28 +708,28 @@ public class Intf_Tool
         return nbpi;
     }
 
-    public void LinBox(in gp_Lin L, in Bnd_Box domain, ref Bnd_Box boxLin)
+    public void LinBox(in Line3D L, in Box domain, ref Box boxLin)
     {
         nbSeg = 0;
         boxLin.SetVoid();
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxLin.Set(L.Location(), L.Direction());
             boxLin.Add(L.Direction().Reversed());
             nbSeg = 1;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
 
         double xmin, xmax, ymin, ymax, zmin, zmax;
         double Xmin = 0, Xmax = 0, Ymin = 0, Ymax = 0, Zmin = 0, Zmax = 0;
-        double parmin = -Precision.Infinite();
-        double parmax = Precision.Infinite();
+        double parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        double parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
         double parcur, par1, par2;
         bool xToSet, yToSet, zToSet;
 
@@ -731,17 +737,17 @@ public class Intf_Tool
 
         if (L.Direction().XYZ().X() > 0.0)
         {
-            if (domain.IsOpenXmin())
+            if (domain.IsOpenXmin)
             {
-                parmin = -Precision.Infinite();
+                parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parmin = (xmin - L.Location().XYZ().X()) / L.Direction().XYZ().X();
             }
-            if (domain.IsOpenXmax())
+            if (domain.IsOpenXmax)
             {
-                parmax = Precision.Infinite();
+                parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -751,17 +757,17 @@ public class Intf_Tool
         }
         else if (L.Direction().XYZ().X() < 0.0)
         {
-            if (domain.IsOpenXmax())
+            if (domain.IsOpenXmax)
             {
-                parmin = -Precision.Infinite();
+                parmin = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parmin = (xmax - L.Location().XYZ().X()) / L.Direction().XYZ().X();
             }
-            if (domain.IsOpenXmin())
+            if (domain.IsOpenXmin)
             {
-                parmax = Precision.Infinite();
+                parmax = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -782,18 +788,18 @@ public class Intf_Tool
 
         if (L.Direction().XYZ().Y() > 0.0)
         {
-            if (domain.IsOpenYmin())
+            if (domain.IsOpenYmin)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (ymin - L.Location().XYZ().Y()) / L.Direction().XYZ().Y();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenYmax())
+            if (domain.IsOpenYmax)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -804,18 +810,18 @@ public class Intf_Tool
         }
         else if (L.Direction().XYZ().Y() < 0.0)
         {
-            if (domain.IsOpenYmax())
+            if (domain.IsOpenYmax)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (ymax - L.Location().XYZ().Y()) / L.Direction().XYZ().Y();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenYmin())
+            if (domain.IsOpenYmin)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -837,18 +843,18 @@ public class Intf_Tool
 
         if (L.Direction().XYZ().Z() > 0.0)
         {
-            if (domain.IsOpenZmin())
+            if (domain.IsOpenZmin)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (zmin - L.Location().XYZ().Z()) / L.Direction().XYZ().Z();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenZmax())
+            if (domain.IsOpenZmax)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -859,18 +865,18 @@ public class Intf_Tool
         }
         else if (L.Direction().XYZ().Z() < 0.0)
         {
-            if (domain.IsOpenZmax())
+            if (domain.IsOpenZmax)
             {
-                parcur = -Precision.Infinite();
+                parcur = -global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
                 parcur = (zmax - L.Location().XYZ().Z()) / L.Direction().XYZ().Z();
             }
             parmin = Max(parmin, parcur);
-            if (domain.IsOpenZmin())
+            if (domain.IsOpenZmin)
             {
-                parcur = Precision.Infinite();
+                parcur = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             else
             {
@@ -921,12 +927,12 @@ public class Intf_Tool
         boxLin.Update(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
     }
 
-    public void HyprBox(in gp_Hypr theHypr, in Bnd_Box domain, ref Bnd_Box boxHypr)
+    public void HyprBox(in Hyperbola3D theHypr, in Box domain, ref Box boxHypr)
     {
         nbSeg = 0;
         boxHypr.SetVoid();
 
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxHypr.SetWhole();
             nbSeg = 1;
@@ -936,7 +942,7 @@ public class Intf_Tool
             endOnCurve[0] = 100.0;
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
@@ -962,36 +968,36 @@ public class Intf_Tool
             }
             boxHypr.Update(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
 
-            gp_Pnt Pn;
-            gp_Vec Tan;
+            Point3D Pn;
+            Vector3D Tan;
             double sinan = 0;
             bool out_ = true;
 
             for (npi = 0; npi < nbPi; npi++)
             {
-                ElCLib.D1(parint[npi], theHypr, out Pn, out Tan);
+                global::Kerf.Engine.Geometry.ElCLib.D1(parint[npi], theHypr, out Pn, out Tan);
                 switch (bord[npi])
                 {
                     case 1:
-                        sinan = new gp_XYZ(1.0, 0.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(1.0, 0.0, 0.0) * Tan.XYZ();
                         break;
                     case 2:
-                        sinan = new gp_XYZ(0.0, 1.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 1.0, 0.0) * Tan.XYZ();
                         break;
                     case 3:
-                        sinan = new gp_XYZ(0.0, 0.0, 1.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 0.0, 1.0) * Tan.XYZ();
                         break;
                     case 4:
-                        sinan = new gp_XYZ(-1.0, 0.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(-1.0, 0.0, 0.0) * Tan.XYZ();
                         break;
                     case 5:
-                        sinan = new gp_XYZ(0.0, -1.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, -1.0, 0.0) * Tan.XYZ();
                         break;
                     case 6:
-                        sinan = new gp_XYZ(0.0, 0.0, -1.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 0.0, -1.0) * Tan.XYZ();
                         break;
                 }
-                if (Math.Abs(sinan) > Precision.Angular())
+                if (Math.Abs(sinan) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     if (sinan > 0.0)
                     {
@@ -1033,7 +1039,7 @@ public class Intf_Tool
                         pas = 1.0;
                         for (ip = ipmin; ip <= ipmax; ip += pas)
                         {
-                            boxHypr.Add(ElCLib.Value(ip / 10.0, theHypr));
+                            boxHypr.Add(global::Kerf.Engine.Geometry.ElCLib.Value(ip / 10.0, theHypr));
                             pas = 10.0;
                             if (Math.Abs(ip) <= 10.0)
                             {
@@ -1044,7 +1050,7 @@ public class Intf_Tool
                 }
             }
         }
-        else if (!domain.IsOut(ElCLib.Value(0.0, theHypr)))
+        else if (!domain.IsOut(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, theHypr)))
         {
             boxHypr = domain;
             // beginOnCurve[0]=-Precision::Infinite();
@@ -1055,7 +1061,7 @@ public class Intf_Tool
         }
     }
 
-    private int Inters3d(in gp_Hypr theCurv, in Bnd_Box Domain)
+    private int Inters3d(in Hyperbola3D theCurv, in Box Domain)
     {
         int nbpi = 0;
         int npi;
@@ -1063,9 +1069,9 @@ public class Intf_Tool
 
         Domain.Get(out xmin, out ymin, out zmin, out xmax, out ymax, out zmax);
 
-        if (!Domain.IsOpenXmin())
+        if (!Domain.IsOpenXmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(1.0, 0.0, 0.0, -xmin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1086,9 +1092,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmin())
+        if (!Domain.IsOpenYmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 1.0, 0.0, -ymin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1109,9 +1115,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenZmin())
+        if (!Domain.IsOpenZmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 0.0, 1.0, -zmin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1132,9 +1138,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmax())
+        if (!Domain.IsOpenXmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(-1.0, 0.0, 0.0, xmax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1155,9 +1161,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmax())
+        if (!Domain.IsOpenYmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, -1.0, 0.0, ymax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1178,9 +1184,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenZmax())
+        if (!Domain.IsOpenZmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 0.0, -1.0, zmax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1236,7 +1242,7 @@ public class Intf_Tool
         return aNbDiffPoints;
     }
 
-    private int Inters3d(in gp_Parab theCurv, in Bnd_Box Domain)
+    private int Inters3d(in Parabola3D theCurv, in Box Domain)
     {
         int nbpi = 0;
         int npi;
@@ -1244,9 +1250,9 @@ public class Intf_Tool
 
         Domain.Get(out xmin, out ymin, out zmin, out xmax, out ymax, out zmax);
 
-        if (!Domain.IsOpenXmin())
+        if (!Domain.IsOpenXmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(1.0, 0.0, 0.0, -xmin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(1.0, 0.0, 0.0, -xmin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1267,9 +1273,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmin())
+        if (!Domain.IsOpenYmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 1.0, 0.0, -ymin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 1.0, 0.0, -ymin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1290,9 +1296,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenZmin())
+        if (!Domain.IsOpenZmin)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 0.0, 1.0, -zmin), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, 1.0, -zmin), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1313,9 +1319,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenXmax())
+        if (!Domain.IsOpenXmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(-1.0, 0.0, 0.0, xmax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(-1.0, 0.0, 0.0, xmax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1336,9 +1342,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenYmax())
+        if (!Domain.IsOpenYmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, -1.0, 0.0, ymax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, -1.0, 0.0, ymax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1359,9 +1365,9 @@ public class Intf_Tool
             }
         }
 
-        if (!Domain.IsOpenZmax())
+        if (!Domain.IsOpenZmax)
         {
-            IntAna_IntConicQuad Inters1 = new(theCurv, new gp_Pln(0.0, 0.0, -1.0, zmax), Precision.Angular());
+            IntAna_IntConicQuad Inters1 = new(theCurv, new Plane3D(0.0, 0.0, -1.0, zmax), global::Kerf.Engine.Foundation.Precision.Angular());
             if (Inters1.IsDone())
             {
                 if (!Inters1.IsInQuadric())
@@ -1417,20 +1423,20 @@ public class Intf_Tool
         return aNbDiffPoints;
     }
 
-    public void ParabBox(in gp_Parab theParab, in Bnd_Box domain, ref Bnd_Box boxParab)
+    public void ParabBox(in Parabola3D theParab, in Box domain, ref Box boxParab)
     {
         nbSeg = 0;
         boxParab.SetVoid();
 
-        if (domain.IsWhole())
+        if (domain.IsWhole)
         {
             boxParab.SetWhole();
             nbSeg = 1;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             return;
         }
-        else if (domain.IsVoid())
+        else if (domain.IsVoid)
         {
             return;
         }
@@ -1453,36 +1459,36 @@ public class Intf_Tool
             }
             boxParab.Update(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
 
-            gp_Pnt Pn;
-            gp_Vec Tan;
+            Point3D Pn;
+            Vector3D Tan;
             double sinan = 0;
             bool out_ = true;
 
             for (npi = 0; npi < nbPi; npi++)
             {
-                ElCLib.D1(parint[npi], theParab, out Pn, out Tan);
+                global::Kerf.Engine.Geometry.ElCLib.D1(parint[npi], theParab, out Pn, out Tan);
                 switch (bord[npi])
                 {
                     case 1:
-                        sinan = new gp_XYZ(1.0, 0.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(1.0, 0.0, 0.0) * Tan.XYZ();
                         break;
                     case 2:
-                        sinan = new gp_XYZ(0.0, 1.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 1.0, 0.0) * Tan.XYZ();
                         break;
                     case 3:
-                        sinan = new gp_XYZ(0.0, 0.0, 1.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 0.0, 1.0) * Tan.XYZ();
                         break;
                     case 4:
-                        sinan = new gp_XYZ(-1.0, 0.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(-1.0, 0.0, 0.0) * Tan.XYZ();
                         break;
                     case 5:
-                        sinan = new gp_XYZ(0.0, -1.0, 0.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, -1.0, 0.0) * Tan.XYZ();
                         break;
                     case 6:
-                        sinan = new gp_XYZ(0.0, 0.0, -1.0) * Tan.XYZ();
+                        sinan = new Xyz(0.0, 0.0, -1.0) * Tan.XYZ();
                         break;
                 }
-                if (Math.Abs(sinan) > Precision.Angular())
+                if (Math.Abs(sinan) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     if (sinan > 0.0)
                     {
@@ -1497,7 +1503,7 @@ public class Intf_Tool
                     {
                         if (out_ && nbSeg < 6)
                         {
-                            beginOnCurve[nbSeg] = -Precision.Infinite();
+                            beginOnCurve[nbSeg] = -global::Kerf.Engine.Foundation.Precision.Infinite();
                             nbSeg++;
                         }
                         if (nbSeg > 0)
@@ -1530,7 +1536,7 @@ public class Intf_Tool
                         int ip, pas = 1;
                         for (ip = ipmin; ip <= ipmax; ip += pas)
                         {
-                            boxParab.Add(ElCLib.Value((double)ip / 10.0, theParab));
+                            boxParab.Add(global::Kerf.Engine.Geometry.ElCLib.Value((double)ip / 10.0, theParab));
                             if (Math.Abs(ip) <= 10)
                             {
                                 pas = 1;
@@ -1545,14 +1551,14 @@ public class Intf_Tool
             }
             if (!out_ && nbSeg > 0)
             {
-                endOnCurve[nbSeg - 1] = Precision.Infinite();
+                endOnCurve[nbSeg - 1] = global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
-        else if (!domain.IsOut(ElCLib.Value(0.0, theParab)))
+        else if (!domain.IsOut(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, theParab)))
         {
             boxParab = domain;
-            beginOnCurve[0] = -Precision.Infinite();
-            endOnCurve[0] = Precision.Infinite();
+            beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
+            endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
             nbSeg = 1;
         }
     }

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopoDSToStep_BuilderError;
 
@@ -24,7 +25,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
     }
 
     public TopoDSToStep_Builder(in TopoDS_Shape S, TopoDSToStep_Tool T, Transfer_FinderProcess FP, int theTessellatedGeomParam,
-                                in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                                in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         done = false;
         Init(S, T, FP, theTessellatedGeomParam, theLocalFactors, theProgress);
@@ -36,7 +37,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
     }
 
     public void Init(in TopoDS_Shape aShape, TopoDSToStep_Tool myTool, Transfer_FinderProcess FP, int theTessellatedGeomParam,
-                     in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         if (myTool.IsBound(aShape))
         {
@@ -55,7 +56,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
 
                 StepShape_FaceSurface FS;
                 StepShape_TopologicalRepresentationItem Fpms;
-                var mySeq = new NCollection_Sequence<Standard_Transient>();
+                var mySeq = new NCollection_Sequence<Transient>();
 
                 //  CKY  9-DEC-1997 (PRO9824 et consorts)
                 //   Pour passer les orientations : ELLES SONT DONNEES EN RELATIF
@@ -72,7 +73,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
 
                 var MkFace = new TopoDSToStep_MakeStepFace();
 
-                using var aPS = new Message_ProgressScope(theProgress, null, (theTessellatedGeomParam != 0) ? 2 : 1);
+                using var aPS = new ProgressScope(theProgress, null, (theTessellatedGeomParam != 0) ? 2 : 1);
 
                 int nbshapes = 0;
                 for (anExp.Init(myShell, TopAbs_FACE); anExp.More(); anExp.Next())
@@ -80,7 +81,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                     nbshapes++;
                 }
 
-                using var aPS1 = new Message_ProgressScope(aPS.Next(), null, nbshapes);
+                using var aPS1 = new ProgressScope(aPS.Next(), null, nbshapes);
                 for (anExp.Init(myShell, TopAbs_FACE); anExp.More() && aPS1.More(); anExp.Next(), aPS1.Next())
                 {
                     TopoDS_Face Face = TopoDS.Face(anExp.Current());
@@ -169,7 +170,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                 var MkTessFace = new TopoDSToStep_MakeTessellatedItem();
                 if (theTessellatedGeomParam == 1 || (theTessellatedGeomParam == 2 && !MkFace.IsDone()))
                 {
-                    using var aPS = new Message_ProgressScope(theProgress, null, 1);
+                    using var aPS = new ProgressScope(theProgress, null, 1);
                     // fourth parameter is true in order to create a tessellated_surface_set entity
                     // or put false to create a triangulated_face instead
                     MkTessFace.Init(Face, myTool, FP, true, theLocalFactors, aPS.Next());
@@ -213,7 +214,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
     public TopoDSToStep_BuilderError Error() => myError;
 
     /// <summary>The topological representation item made.</summary>
-    /// <exception cref="StdFail_NotDone">The build wasn't done.</exception>
+    /// <exception cref="NotDoneException">The build wasn't done.</exception>
     public StepShape_TopologicalRepresentationItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_Builder::Value() - no result");
@@ -221,7 +222,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
     }
 
     /// <summary>The tessellated item made, the optional result.</summary>
-    /// <exception cref="StdFail_NotDone">The build wasn't done.</exception>
+    /// <exception cref="NotDoneException">The build wasn't done.</exception>
     public StepVisual_TessellatedItem TessellatedValue()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_Builder::TessellatedValue() - no result");

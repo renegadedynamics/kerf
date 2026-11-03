@@ -3,19 +3,23 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
-/// <summary>A vector with a magnitude, possibly zero, in 3D space (a shareable <see cref="gp_Vec"/>).</summary>
+/// <summary>A vector with a magnitude, possibly zero, in 3D space (a shareable <see cref="Vector3D"/>).</summary>
 public class Geom_VectorWithMagnitude : Geom_Vector
 {
     /// <summary>A vector equal to V.</summary>
-    public Geom_VectorWithMagnitude(in gp_Vec V) => gpVec = V;
+    public Geom_VectorWithMagnitude(in Vector3D V) => gpVec = V;
 
     /// <summary>The vector (X, Y, Z).</summary>
-    public Geom_VectorWithMagnitude(double X, double Y, double Z) => gpVec = new gp_Vec(X, Y, Z);
+    public Geom_VectorWithMagnitude(double X, double Y, double Z) => gpVec = new Vector3D(X, Y, Z);
 
     /// <summary>The vector from P1 to P2.</summary>
-    public Geom_VectorWithMagnitude(in gp_Pnt P1, in gp_Pnt P2) => gpVec = new gp_Vec(P1, P2);
+    public Geom_VectorWithMagnitude(in Point3D P1, in Point3D P2) => gpVec = new Vector3D(P1, P2);
 
     /// <summary>A new, unfrozen vector equal to this one.</summary>
     public override Geom_Geometry Copy()
@@ -28,10 +32,10 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     internal void SetCoord(double X, double Y, double Z)
     {
         CheckMutable();
-        gpVec = new gp_Vec(X, Y, Z);
+        gpVec = new Vector3D(X, Y, Z);
     }
 
-    internal void SetVec(in gp_Vec V)
+    internal void SetVec(in Vector3D V)
     {
         CheckMutable();
         gpVec = V;
@@ -68,7 +72,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this + Other.</summary>
     public Geom_VectorWithMagnitude Added(Geom_Vector Other)
     {
-        gp_Vec V1 = gpVec;
+        Vector3D V1 = gpVec;
         V1.Add(Other.Vec());
         return new Geom_VectorWithMagnitude(V1);
     }
@@ -82,7 +86,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this ^ Other.</summary>
     public override Geom_Vector Crossed(Geom_Vector Other)
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.Cross(Other.Vec());
         return new Geom_VectorWithMagnitude(V);
     }
@@ -96,7 +100,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this ^ (V1 ^ V2).</summary>
     public override Geom_Vector CrossCrossed(Geom_Vector V1, Geom_Vector V2)
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.CrossCross(V1.Vec(), V2.Vec());
         return new Geom_VectorWithMagnitude(V);
     }
@@ -110,7 +114,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this / Scalar.</summary>
     public Geom_VectorWithMagnitude Divided(double Scalar)
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.Divide(Scalar);
         return new Geom_VectorWithMagnitude(V);
     }
@@ -118,7 +122,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this * Scalar.</summary>
     public Geom_VectorWithMagnitude Multiplied(double Scalar)
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.Multiply(Scalar);
         return new Geom_VectorWithMagnitude(V);
     }
@@ -129,7 +133,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
         gpVec.Multiply(Scalar);
     }
 
-    /// <exception cref="Standard_ConstructionError">The magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     internal void Normalize()
     {
         CheckMutable();
@@ -137,10 +141,10 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     }
 
     /// <summary>The unit vector of this one.</summary>
-    /// <exception cref="Standard_ConstructionError">The magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     public Geom_VectorWithMagnitude Normalized()
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.Normalize();
         return new Geom_VectorWithMagnitude(V);
     }
@@ -154,13 +158,13 @@ public class Geom_VectorWithMagnitude : Geom_Vector
     /// <summary>this - Other.</summary>
     public Geom_VectorWithMagnitude Subtracted(Geom_Vector Other)
     {
-        gp_Vec V = gpVec;
+        Vector3D V = gpVec;
         V.Subtract(Other.Vec());
         return new Geom_VectorWithMagnitude(V);
     }
 
     /// <summary>Applies T to this vector.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
         gpVec.Transform(T);
@@ -175,7 +179,7 @@ public class Geom_VectorWithMagnitude : Geom_Vector
         return aCopy;
     }
 
-    public Geom_VectorWithMagnitude WithVec(in gp_Vec V)
+    public Geom_VectorWithMagnitude WithVec(in Vector3D V)
     {
         Geom_VectorWithMagnitude aCopy = (Geom_VectorWithMagnitude)Copy();
         aCopy.SetVec(V);

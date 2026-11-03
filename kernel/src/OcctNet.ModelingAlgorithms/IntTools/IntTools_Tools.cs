@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -16,7 +18,7 @@ public static partial class IntTools_Tools
     public static int ComputeVV(in TopoDS_Vertex aV1, in TopoDS_Vertex aV2)
     {
         double aTolV1, aTolV2, aTolSum, d;
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
 
         aTolV1 = BRep_Tool.Tolerance(aV1);
         aTolV2 = BRep_Tool.Tolerance(aV2);
@@ -66,7 +68,7 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>The state of the 2D point relative to the face, by a new <see cref="IntTools_FClass2d"/> with the face's tolerance.</summary>
-    public static TopAbs_State ClassifyPointByFace(in TopoDS_Face aF, in gp_Pnt2d aP2d)
+    public static TopAbs_State ClassifyPointByFace(in TopoDS_Face aF, in Point2D aP2d)
     {
         double aFaceTolerance;
         TopAbs_State aState;
@@ -83,7 +85,7 @@ public static partial class IntTools_Tools
     {
         double aTolV2, d2;
         TopoDS_Vertex aV;
-        gp_Pnt aPv, aPt;
+        Point3D aPv, aPt;
 
         BRepAdaptor_Curve aBAC = new(aE);
         aBAC.D0(t, out aPt);
@@ -108,7 +110,7 @@ public static partial class IntTools_Tools
     public static bool IsVertex(in TopoDS_Edge aE, in TopoDS_Vertex aV, double t)
     {
         double aTolV, aTolV2, d2;
-        gp_Pnt aPv, aPt;
+        Point3D aPv, aPt;
 
         BRepAdaptor_Curve aBAC = new(aE);
         aBAC.D0(t, out aPt);
@@ -149,7 +151,7 @@ public static partial class IntTools_Tools
     {
         bool bRet;
         double m1, m2, aTol1, aTol2, aSumTol, aD2;
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
 
         aTol1 = BRep_Tool.Tolerance(aE1);
         Geom_Curve C1 = BRep_Tool.Curve(aE1, out double f1, out double l1)!;
@@ -169,15 +171,15 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the point is within the vertex's tolerance plus <paramref name="aTolPV"/> plus Precision::Confusion.</summary>
-    public static bool IsVertex(in gp_Pnt aP, double aTolPV, in TopoDS_Vertex aV)
+    public static bool IsVertex(in Point3D aP, double aTolPV, in TopoDS_Vertex aV)
     {
         bool bRet;
         double aTolV, aD, dTol;
-        gp_Pnt aPv;
+        Point3D aPv;
 
         aTolV = BRep_Tool.Tolerance(aV);
         //
-        dTol = Precision.Confusion();
+        dTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         aTolV = aTolV + aTolPV + dTol;
         //
         aPv = BRep_Tool.Pnt(aV);
@@ -228,8 +230,8 @@ public static partial class IntTools_Tools
         aL = aC3D.LastParameter();
         aMid = 0.5 * (aF + aL);
         GeomAdaptor_Curve aGAC = new(aC3D);
-        GeomAbs_CurveType aCT = aGAC.GetType();
-        if (aCT == GeomAbs_BSplineCurve || aCT == GeomAbs_BezierCurve)
+        CurveKind aCT = aGAC.GetType();
+        if (aCT == BSplineCurve || aCT == BezierCurve)
         {
             // aMid=0.5*aMid;
             aMid = IntermediatePoint(aF, aL);
@@ -274,7 +276,7 @@ public static partial class IntTools_Tools
         bool bFlag;
         Geom_Curve? aC3D;
 
-        gp_Dir aD1 = new(), aD2;
+        Direction3D aD1 = new(), aD2;
 
         aSOut.Clear();
 
@@ -300,7 +302,7 @@ public static partial class IntTools_Tools
                 return;
             }
             //
-            gp_Lin aLin = aGLine.Lin();
+            Line3D aLin = aGLine.Lin();
             aD2 = aLin.Direction();
             if (i == 1)
             {
@@ -319,11 +321,11 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the directions are equal or opposite within 0.0002 (as points on the unit sphere).</summary>
-    public static bool IsDirsCoinside(in gp_Dir D1, in gp_Dir D2)
+    public static bool IsDirsCoinside(in Direction3D D1, in Direction3D D2)
     {
         bool bFlag;
-        gp_Pnt P1 = new(D1.X(), D1.Y(), D1.Z());
-        gp_Pnt P2 = new(D2.X(), D2.Y(), D2.Z());
+        Point3D P1 = new(D1.X(), D1.Y(), D1.Z());
+        Point3D P2 = new(D2.X(), D2.Y(), D2.Z());
         double dLim = 0.0002, d;
         d = P1.Distance(P2);
         bFlag = (d < dLim || Math.Abs(2.0 - d) < dLim);
@@ -331,13 +333,13 @@ public static partial class IntTools_Tools
     }
 
     /// <summary>True if the directions are equal or opposite within <paramref name="dLim"/> (as points on the unit sphere).</summary>
-    public static bool IsDirsCoinside(in gp_Dir D1, in gp_Dir D2, double dLim)
+    public static bool IsDirsCoinside(in Direction3D D1, in Direction3D D2, double dLim)
     {
         bool bFlag;
         double d;
         //
-        gp_Pnt P1 = new(D1.X(), D1.Y(), D1.Z());
-        gp_Pnt P2 = new(D2.X(), D2.Y(), D2.Z());
+        Point3D P1 = new(D1.X(), D1.Y(), D1.Z());
+        Point3D P2 = new(D2.X(), D2.Y(), D2.Z());
         d = P1.Distance(P2);
         bFlag = (d < dLim || Math.Abs(2.0 - d) < dLim);
         return bFlag;
@@ -348,7 +350,7 @@ public static partial class IntTools_Tools
     {
         bool bRet;
         double aF, aL, aDist, aPC;
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
 
         if (aC3D is not Geom_BoundedCurve)
         {
@@ -362,7 +364,7 @@ public static partial class IntTools_Tools
         aC3D.D0(aL, out aP2);
 
         //
-        aPC = Precision.Confusion();
+        aPC = global::Kerf.Engine.Foundation.Precision.Confusion();
         aPC = aPC * aPC;
         aDist = aP1.SquareDistance(aP2);
         bRet = aDist < aPC;
@@ -396,9 +398,9 @@ public static partial class IntTools_Tools
         aTl = aCT3D.LastParameter();
         //
         GeomAdaptor_Curve aGAC = new(aCT3D);
-        GeomAbs_CurveType aCType = aGAC.GetType();
+        CurveKind aCType = aGAC.GetType();
         //
-        if (aCType == GeomAbs_Parabola)
+        if (aCType == Parabola)
         {
             Geom_Curve aC3DBase = aCT3D.BasisCurve();
             ParabolaTolerance(aC3DBase, aTf, aTl, aTolBase, ref aTolMin, ref aTolMax);
@@ -422,9 +424,9 @@ public static partial class IntTools_Tools
 
         int aNbPoints;
         double aFocal, aX1, aX2, aTol1, aTol2;
-        gp_Pnt aPf, aPl;
-        gp_Parab aParab = aGP.Parab();
-        gp_Ax1 aXAxis = aParab.XAxis();
+        Point3D aPf, aPl;
+        Parabola3D aParab = aGP.Parab();
+        Axis3D aXAxis = aParab.XAxis();
         Geom_Line aGAxis = new(aXAxis);
 
         aFocal = aGP.Focal();
@@ -480,7 +482,7 @@ public static partial class IntTools_Tools
     /// Checks the curve: false if it has no 3D curve or if its box (enlarged by its larger tolerance, added to
     /// <paramref name="theBox"/>) is thinner than 3 Precision::Confusion.
     /// </summary>
-    public static bool CheckCurve(in IntTools_Curve theCurve, ref Bnd_Box theBox)
+    public static bool CheckCurve(in IntTools_Curve theCurve, ref Box theBox)
     {
         Geom_Curve? aC3D = theCurve.Curve();
         bool bValid = aC3D is not null;
@@ -499,7 +501,7 @@ public static partial class IntTools_Tools
         // 3*Precision::Confusion():
         // - 2 vertices with the Precision::Confusion() tolerance;
         // - plus Precision::Confusion() as the minimal distance between vertices.
-        double aTolCmp = 3 * Precision.Confusion();
+        double aTolCmp = 3 * global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         // Check the size of the box using the Bnd_Box::IsThin() method
         // which does not use the gap of the box.
@@ -596,22 +598,22 @@ public static partial class IntTools_Tools
     /// the sum of the tolerances, signed), 2 if it is on one side, 3 if the intersection is out of the range; the
     /// outputs are written only for 0.
     /// </summary>
-    public static int SegPln(in gp_Lin theLin, double theTLin1, double theTLin2, double theTolLin, in gp_Pln thePln, double theTolPln,
-                             ref gp_Pnt theP, ref double theTP, ref double theTolP, ref double theTPmin, ref double theTPmax)
+    public static int SegPln(in Line3D theLin, double theTLin1, double theTLin2, double theTolLin, in Plane3D thePln, double theTolPln,
+                             ref Point3D theP, ref double theTP, ref double theTolP, ref double theTPmin, ref double theTPmax)
     {
         int iRet;
         double aTol, aTP, aDist1, aDist2, aE, aH;
-        gp_Pnt aP1 = new(), aP2 = new();
+        Point3D aP1 = new(), aP2 = new();
         //
         iRet = 0;
         aTol = theTolLin + theTolPln;
         //
-        gp_Ax3 aPosPln = thePln.Position();
-        gp_Dir aDirPln = aPosPln.Direction();
-        gp_Pnt aLocPln = aPosPln.Location();
+        CoordinateSystem aPosPln = thePln.Position();
+        Direction3D aDirPln = aPosPln.Direction();
+        Point3D aLocPln = aPosPln.Location();
         //
-        gp_Dir aDirLin = theLin.Direction();
-        gp_Pnt aLocLin = theLin.Location();
+        Direction3D aDirLin = theLin.Direction();
+        Point3D aLocLin = theLin.Location();
         //
         aP1.SetXYZ(aLocLin.XYZ() + theTLin1 * aDirLin.XYZ());
         aDist1 = aDirPln.X() * (aP1.X() - aLocPln.X()) + aDirPln.Y() * (aP1.Y() - aLocPln.Y())
@@ -659,7 +661,7 @@ public static partial class IntTools_Tools
     /// </summary>
     public static bool ComputeTolerance(Geom_Curve theCurve3D, Geom2d_Curve theCurve2D, Geom_Surface theSurf, double theFirst, double theLast,
                                         out double theMaxDist, out double theMaxPar) =>
-        ComputeTolerance(theCurve3D, theCurve2D, theSurf, theFirst, theLast, out theMaxDist, out theMaxPar, Precision.PConfusion());
+        ComputeTolerance(theCurve3D, theCurve2D, theSurf, theFirst, theLast, out theMaxDist, out theMaxPar, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
     /// <inheritdoc cref="ComputeTolerance(Geom_Curve, Geom2d_Curve, Geom_Surface, double, double, out double, out double)"/>
     public static bool ComputeTolerance(Geom_Curve theCurve3D, Geom2d_Curve theCurve2D, Geom_Surface theSurf, double theFirst, double theLast,
@@ -707,7 +709,7 @@ public static partial class IntTools_Tools
     {
         double aDt;
         //
-        if (Math.Abs(M_PI_2 - theAngle) < Precision.Angular())
+        if (Math.Abs(M_PI_2 - theAngle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             aDt = theTol2;
         }

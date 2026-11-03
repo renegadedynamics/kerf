@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -48,8 +50,8 @@ public abstract class IFSelect_SelectExplore : IFSelect_SelectDeduct
         //      If last level, we take it entirely. Otherwise, it feeds the input
 
         int nb = G.Size();
-        NCollection_IndexedMap<Standard_Transient> entrees = new NCollection_IndexedMap<Standard_Transient>();
-        NCollection_IndexedMap<Standard_Transient> result = new NCollection_IndexedMap<Standard_Transient>();
+        NCollection_IndexedMap<Transient> entrees = new NCollection_IndexedMap<Transient>();
+        NCollection_IndexedMap<Transient> result = new NCollection_IndexedMap<Transient>();
         //  Initialisation
         int i, j, level = 1, ilev = 0;
         Interface_EntityIterator input = new Interface_EntityIterator();
@@ -76,7 +78,7 @@ public abstract class IFSelect_SelectExplore : IFSelect_SelectDeduct
                 }
                 ilev = entrees.Extent();
             }
-            Standard_Transient ent = entrees.FindKey(i);
+            Transient ent = entrees.FindKey(i);
             if (ent is null)
             {
                 continue;
@@ -128,7 +130,7 @@ public abstract class IFSelect_SelectExplore : IFSelect_SelectDeduct
     /// considered : If maximum level is attained, it is taken for result Else (or no max), each of its entity
     /// will be itself explored
     /// </summary>
-    public abstract bool Explore(int level, Standard_Transient? ent, Interface_Graph G, Interface_EntityIterator explored);
+    public abstract bool Explore(int level, Transient? ent, Interface_Graph G, Interface_EntityIterator explored);
 
     /// <summary>
     /// Returns a text saying "(Recursive)" or "(Level nn)" plus specific criterium returned by ExploreLabel (see

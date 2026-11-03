@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ChFi3d_FilletShape;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -124,14 +126,14 @@ public class BRepFilletAPI_MakeFilletTests
         TopoDS_Edge anE4 = TopoDS.Edge(anEdgeExp.Current());
 
         // Variable radius law: 4 (parameter, radius) control points
-        NCollection_Array1<gp_Pnt2d> aVarRadius = new(1, 4);
-        aVarRadius.SetValue(1, new gp_Pnt2d(0.0, 5.0));
-        aVarRadius.SetValue(2, new gp_Pnt2d(0.3, 15.0));
-        aVarRadius.SetValue(3, new gp_Pnt2d(0.7, 15.0));
-        aVarRadius.SetValue(4, new gp_Pnt2d(1.0, 5.0));
+        NCollection_Array1<Point2D> aVarRadius = new(1, 4);
+        aVarRadius.SetValue(1, new Point2D(0.0, 5.0));
+        aVarRadius.SetValue(2, new Point2D(0.3, 15.0));
+        aVarRadius.SetValue(3, new Point2D(0.7, 15.0));
+        aVarRadius.SetValue(4, new Point2D(1.0, 5.0));
 
         BRepFilletAPI_MakeFillet aFillet = new(aBox);
-        aFillet.SetContinuity(GeomAbs_C1, 0.001);
+        aFillet.SetContinuity(C1, 0.001);
         aFillet.Add(aVarRadius, anE1);
         aFillet.Add(5.0, anE2);
         aFillet.Add(aVarRadius, anE3);
@@ -150,19 +152,19 @@ public class BRepFilletAPI_MakeFilletTests
     [Fact]
     public void Bug828_FilletOnComplexPrism()
     {
-        gp_Pnt aPnt11 = new(-27.598139, -7.0408573, 0.0);
-        gp_Pnt aPnt12 = new(-28.483755, -17.487625, 0.0);
-        gp_Pnt aPnt13 = new(-19.555504, -22.983587, 0.0);
+        Point3D aPnt11 = new(-27.598139, -7.0408573, 0.0);
+        Point3D aPnt12 = new(-28.483755, -17.487625, 0.0);
+        Point3D aPnt13 = new(-19.555504, -22.983587, 0.0);
         GC_MakeArcOfCircle anArc1 = new(aPnt11, aPnt12, aPnt13);
 
-        gp_Pnt aPnt21 = new(12.125083, -22.983587, 0.0);
-        gp_Pnt aPnt22 = new(21.1572, -17.27554, 0.0);
-        gp_Pnt aPnt23 = new(19.878168, -6.6677585, 0.0);
+        Point3D aPnt21 = new(12.125083, -22.983587, 0.0);
+        Point3D aPnt22 = new(21.1572, -17.27554, 0.0);
+        Point3D aPnt23 = new(19.878168, -6.6677585, 0.0);
         GC_MakeArcOfCircle anArc2 = new(aPnt21, aPnt22, aPnt23);
 
-        gp_Pnt aPnt31 = new(3.265825, 13.724955, 0.0);
-        gp_Pnt aPnt32 = new(-4.7233953, 17.406338, 0.0);
-        gp_Pnt aPnt33 = new(-12.529893, 13.351856, 0.0);
+        Point3D aPnt31 = new(3.265825, 13.724955, 0.0);
+        Point3D aPnt32 = new(-4.7233953, 17.406338, 0.0);
+        Point3D aPnt33 = new(-12.529893, 13.351856, 0.0);
         GC_MakeArcOfCircle anArc3 = new(aPnt31, aPnt32, aPnt33);
 
         GC_MakeSegment aSegment1 = new(aPnt13, aPnt21);
@@ -183,7 +185,7 @@ public class BRepFilletAPI_MakeFilletTests
         Assert.False(aFace.IsNull());
 
         const double aSlabThick = 111.0;
-        BRepPrimAPI_MakePrism aSlab = new(aFace, new gp_Vec(0, 0, aSlabThick), true);
+        BRepPrimAPI_MakePrism aSlab = new(aFace, new Vector3D(0, 0, aSlabThick), true);
         Assert.True(aSlab.IsDone());
         TopoDS_Shape aSlabShape = aSlab.Shape();
         Assert.True(new BRepCheck_Analyzer(aSlabShape).IsValid(), "Prism shape should be valid");
@@ -212,7 +214,7 @@ public class BRepFilletAPI_MakeFilletTests
                 {
                     BRepFilletAPI_MakeFillet aFillet = new(aSlabShape, ChFi3d_Rational);
                     aFillet.SetParams(1.0e-2, 1.0e-4, 1.0e-5, 1.0e-4, 1.0e-5, 1.0e-3);
-                    aFillet.SetContinuity(GeomAbs_C1, 1.0e-2);
+                    aFillet.SetContinuity(C1, 1.0e-2);
                     aFillet.Add(10.0, anEdges[anEdgeIndex1 - 1]);
                     aFillet.Add(10.0, anEdges[anEdgeIndex2 - 1]);
                     aFillet.Build();
@@ -241,7 +243,7 @@ public class BRepFilletAPI_MakeFilletTests
                         break;
                     }
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     continue;
                 }
@@ -265,7 +267,7 @@ public class BRepFilletAPI_MakeFilletTests
         const double aTa = 1.0e-2;
         const double aFl = 1.0e-3;
         const double aTappAngl = 1.0e-2;
-        const GeomAbs_Shape aBlendCont = GeomAbs_C1;
+        const Continuity aBlendCont = C1;
 
         TopoDS_Shape aShapeCut = theBoolOp.Shape();
 
@@ -311,14 +313,14 @@ public class BRepFilletAPI_MakeFilletTests
     {
         // Build box-sphere common, then subtract 3 cylinders with fillets on section edges.
         // TCL reference: checkprops result -s 587.181; checkshape result
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, -5), 10, 10, 10).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape();
         TopoDS_Shape aSphere = new BRepPrimAPI_MakeSphere(7).Shape();
 
         TopoDS_Shape aCommon = new BRepAlgoAPI_Common(aBox, aSphere).Shape();
 
-        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, 0, -10), new gp_Dir(0, 0, 1)), 3, 20).Shape();
-        TopoDS_Shape aCyl2 = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(-10, 0, 0), new gp_Dir(1, 0, 0)), 3, 20).Shape();
-        TopoDS_Shape aCyl3 = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(0, -10, 0), new gp_Dir(0, 1, 0)), 3, 20).Shape();
+        TopoDS_Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
+        TopoDS_Shape aCyl2 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape();
+        TopoDS_Shape aCyl3 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape();
 
         TopoDS_Shape aTmp1 = occ1077CutBlend(aCommon, aCyl1, 0.7);
         ShapeFix_Shape aFixer = new(aTmp1);
@@ -355,37 +357,37 @@ public class BRepFilletAPI_MakeFilletTests
 
         // --- Solid 1: full 360-degree ring, Z=[0..10], R=[10..20] ---
         BRepBuilderAPI_MakePolygon aW1 = new();
-        aW1.Add(new gp_Pnt(10, 0, 0));
-        aW1.Add(new gp_Pnt(20, 0, 0));
-        aW1.Add(new gp_Pnt(20, 0, 10));
-        aW1.Add(new gp_Pnt(10, 0, 10));
-        aW1.Add(new gp_Pnt(10, 0, 0));
+        aW1.Add(new Point3D(10, 0, 0));
+        aW1.Add(new Point3D(20, 0, 0));
+        aW1.Add(new Point3D(20, 0, 10));
+        aW1.Add(new Point3D(10, 0, 10));
+        aW1.Add(new Point3D(10, 0, 0));
         TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(aW1.Wire(), false).Face();
-        gp_Ax1 aAxis1 = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Axis3D aAxis1 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopoDS_Shape aRs1 = new BRepPrimAPI_MakeRevol(aF1, aAxis1, 2.0 * Math.PI).Shape();
 
         // --- Solid 2: 270-degree ring at 45-degree radius offset, Z=[10..20] ---
         const double aF1Val = 7.0710678118654752440;
         const double aF2Val = 14.1421356237309504880;
         BRepBuilderAPI_MakePolygon aW2 = new();
-        aW2.Add(new gp_Pnt(aF1Val, aF1Val, 10));
-        aW2.Add(new gp_Pnt(aF2Val, aF2Val, 10));
-        aW2.Add(new gp_Pnt(aF2Val, aF2Val, 20));
-        aW2.Add(new gp_Pnt(aF1Val, aF1Val, 20));
-        aW2.Add(new gp_Pnt(aF1Val, aF1Val, 10));
+        aW2.Add(new Point3D(aF1Val, aF1Val, 10));
+        aW2.Add(new Point3D(aF2Val, aF2Val, 10));
+        aW2.Add(new Point3D(aF2Val, aF2Val, 20));
+        aW2.Add(new Point3D(aF1Val, aF1Val, 20));
+        aW2.Add(new Point3D(aF1Val, aF1Val, 10));
         TopoDS_Face aF2 = new BRepBuilderAPI_MakeFace(aW2.Wire(), false).Face();
-        gp_Ax1 aAxis2 = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Axis3D aAxis2 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopoDS_Shape aRs2 = new BRepPrimAPI_MakeRevol(aF2, aAxis2, 270.0 * Math.PI / 180.0).Shape();
 
         // --- Solid 3: full 360-degree ring, Z=[20..30], R=[10..20] ---
         BRepBuilderAPI_MakePolygon aW3 = new();
-        aW3.Add(new gp_Pnt(10, 0, 20));
-        aW3.Add(new gp_Pnt(20, 0, 20));
-        aW3.Add(new gp_Pnt(20, 0, 30));
-        aW3.Add(new gp_Pnt(10, 0, 30));
-        aW3.Add(new gp_Pnt(10, 0, 20));
+        aW3.Add(new Point3D(10, 0, 20));
+        aW3.Add(new Point3D(20, 0, 20));
+        aW3.Add(new Point3D(20, 0, 30));
+        aW3.Add(new Point3D(10, 0, 30));
+        aW3.Add(new Point3D(10, 0, 20));
         TopoDS_Face aF3 = new BRepBuilderAPI_MakeFace(aW3.Wire(), false).Face();
-        gp_Ax1 aAxis3 = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Axis3D aAxis3 = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopoDS_Shape aRs3 = new BRepPrimAPI_MakeRevol(aF3, aAxis3, 2.0 * Math.PI).Shape();
 
         Assert.True(new BRepCheck_Analyzer(aRs1).IsValid(), "rs1 must be valid");
@@ -426,7 +428,7 @@ public class BRepFilletAPI_MakeFilletTests
         {
             aBlend.Build();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             // Known exception on some platforms (OCC24156): OCCT's test skips.
             return;

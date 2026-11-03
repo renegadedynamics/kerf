@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +17,7 @@ public static class AppParCurves
     /// <summary>
     /// Fills <paramref name="A"/>(i, j) with the Bernstein polynomial j of degree NbPoles - 1 at U(i).
     /// </summary>
-    public static void BernsteinMatrix(int NbPoles, math_Vector U, math_Matrix A)
+    public static void BernsteinMatrix(int NbPoles, math_Vector U, Matrix A)
     {
         int i, j, id;
         double u0, u1, y0, y1, xs;
@@ -55,7 +57,7 @@ public static class AppParCurves
     /// Fills <paramref name="A"/>(i, j) and <paramref name="DA"/>(i, j) with the Bernstein polynomial j of degree
     /// NbPoles - 1 and its derivative at U(i).
     /// </summary>
-    public static void Bernstein(int NbPoles, math_Vector U, math_Matrix A, math_Matrix DA)
+    public static void Bernstein(int NbPoles, math_Vector U, Matrix A, Matrix DA)
     {
         int i, j, id, Ndeg = NbPoles - 1;
         double u0, u1, y0, y1, xs, bj, bj1;
@@ -158,8 +160,8 @@ public static class AppParCurves
     /// <paramref name="index"/>(i) receives the index before the first non-zero function: they are non-zero from
     /// index(i) + 1 to index(i) + deg + 1.
     /// </summary>
-    public static void SplineFunction(int nbpoles, int deg, math_Vector Parameters, math_Vector flatknots, math_Matrix A,
-                                      math_Matrix DA, math_IntegerVector index)
+    public static void SplineFunction(int nbpoles, int deg, math_Vector Parameters, math_Vector flatknots, Matrix A,
+                                      Matrix DA, math_IntegerVector index)
     {
         double U, NewU;
         int i, j, deg1 = deg + 1;
@@ -184,7 +186,7 @@ public static class AppParCurves
             U = Parameters[i];
             NewU = U;
             kindex = oldkindex;
-            BSplCLib.LocateParameter(deg, Aflatknots, U, false, deg1, nbpoles + 1, out kindex, out NewU);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, Aflatknots, U, false, deg1, nbpoles + 1, out kindex, out NewU);
 
             oldkindex = kindex;
 

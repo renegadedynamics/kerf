@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
@@ -101,7 +103,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         {
             // built by the algorithm (the trimmed copy of an infinite edge or face): compare it as a file
             myNbBuiltSupports++;
-            Assert.True(theP.TShape()!.IsFrozen(), theWhat + ": a support built by the algorithm is frozen");
+            Assert.True(theP.TShape()!.IsFrozen, theWhat + ": a support built by the algorithm is frozen");
             Assert.True(NativeText(theN) == PortText(theP), theWhat + ": the built support differs from native OCCT's");
         }
     }
@@ -111,7 +113,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         double aDeflection = theOracle.Int(0, 3) switch
         {
-            0 => Precision.Confusion(),
+            0 => global::Kerf.Engine.Foundation.Precision.Confusion(),
             1 => 1e-5,
             2 => 1e-3,
             _ => theOracle.Real(1e-7, 1e-1),
@@ -263,7 +265,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         return aList.Count == 0 ? theShape : aList[theOracle.Int(0, aList.Count - 1)];
     }
 
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> PointVertex(in gp_Pnt theP)
+    private static Twin<N.TopoDS_Shape, TopoDS_Shape> PointVertex(in Point3D theP)
     {
         using var aNP = Oracle.ToNative(theP);
         using var aNMaker = new N.BRepBuilderAPI_MakeVertex(aNP);
@@ -271,11 +273,11 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     // A direction that native OCCT and the port normalise to the same numbers.
-    private static gp_Dir Dir(Oracle theOracle)
+    private static Direction3D Dir(Oracle theOracle)
     {
         while (true)
         {
-            gp_Dir aD = Oracle.Settled(theOracle.Dir());
+            Direction3D aD = Oracle.Settled(theOracle.Dir());
             using var aND = Oracle.ToNative(aD);
             if (aND.X() == aD.X() && aND.Y() == aD.Y() && aND.Z() == aD.Z())
             {
@@ -285,24 +287,24 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     }
 
     /// <summary>An infinite line through a point of the shape's box, as an edge.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfiniteLine(Oracle theOracle, in gp_Pnt theP)
+    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfiniteLine(Oracle theOracle, in Point3D theP)
     {
-        gp_Dir aD = Dir(theOracle);
+        Direction3D aD = Dir(theOracle);
         using var aNP = Oracle.ToNative(theP);
         using var aND = Oracle.ToNative(aD);
         using var aNL = new N.gp_Lin(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeEdge(aNL);
-        return new(aNMaker.Edge(), new BRepBuilderAPI_MakeEdge(new gp_Lin(theP, aD)).Edge());
+        return new(aNMaker.Edge(), new BRepBuilderAPI_MakeEdge(new Line3D(theP, aD)).Edge());
     }
 
     /// <summary>An infinite horizontal plane at the point's height, as a face.</summary>
-    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfinitePlane(in gp_Pnt theP)
+    private static Twin<N.TopoDS_Shape, TopoDS_Shape> InfinitePlane(in Point3D theP)
     {
         using var aNP = Oracle.ToNative(theP);
         using var aND = new N.gp_Dir(0, 0, 1);
         using var aNPl = new N.gp_Pln(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeFace(aNPl);
-        return new(aNMaker.Face(), new BRepBuilderAPI_MakeFace(new gp_Pln(theP, new gp_Dir(0, 0, 1))).Face());
+        return new(aNMaker.Face(), new BRepBuilderAPI_MakeFace(new Plane3D(theP, new Direction3D(0, 0, 1))).Face());
     }
 
     [Fact]
@@ -322,7 +324,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape1 = ClassificationScenes.Scene(anOracle, aScene1);
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape2 = ClassificationScenes.Scene(anOracle, aScene2);
             string aWhat = $"pair {k}: {ClassificationScenes.Name(aScene1)} / {ClassificationScenes.Name(aScene2)}";
-            List<gp_Pnt> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape1.P, 3, 1);
+            List<Point3D> aPoints = ClassificationScenes.SamplePoints(anOracle, aShape1.P, 3, 1);
             int aCase = k % 8;
             switch (aCase)
             {
@@ -381,7 +383,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape1 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out string aWhat1));
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape2 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k + 5, out string aWhat2));
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = ClassificationScenes.RandomLocation(anOracle, false);
+            (N.TopLoc_Location aNL, Placement aL) = ClassificationScenes.RandomLocation(anOracle, false);
             if (k % 4 != 1)
             {
                 aShape2 = new(aShape2.N.Moved(aNL), aShape2.P.Moved(aL));

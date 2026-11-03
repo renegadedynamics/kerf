@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class TransferBRep_Reader
         theFilest = 0;
         theNewpr = false;
         theShapes = new NCollection_HSequence<TopoDS_Shape>();
-        theTransi = new NCollection_HSequence<Standard_Transient>();
+        theTransi = new NCollection_HSequence<Transient>();
     }
 
     /// <summary>Records the protocol to be used for read and transfer roots.</summary>
@@ -107,7 +109,7 @@ public class TransferBRep_Reader
         Interface_CheckIterator chl = cht.CompleteCheckList();
         if (withprint && theProc is not null && theProc.Messenger() is not null)
         {
-            using Message_Messenger.StreamBuffer aBuffer = theProc.Messenger().SendInfo();
+            using Messenger.StreamBuffer aBuffer = theProc.Messenger().SendInfo();
             using var aStream = new StringWriter(aBuffer.Stream());
             chl.Print(aStream, theModel, false);
         }
@@ -170,8 +172,8 @@ public class TransferBRep_Reader
         int nb = theProc.NbRoots();
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient? ent = theProc.Root(i);
-            Standard_Transient? res = theProc.FindTransient(ent);
+            Transient? ent = theProc.Root(i);
+            Transient? res = theProc.FindTransient(ent);
             if (res is not null)
             {
                 theTransi.Append(res);
@@ -192,7 +194,7 @@ public class TransferBRep_Reader
     /// Transfers all Root Entities which are recognized as Geom-Topol. The result will be a list of Shapes. This
     /// method calls user redefinable PrepareTransfer. Error messages are produced as the Transfer goes on.
     /// </summary>
-    public virtual void TransferRoots(Message_ProgressRange theProgress = default)
+    public virtual void TransferRoots(ProgressRange theProgress = default)
     {
         Clear();
         if (!BeginTransfer())
@@ -209,7 +211,7 @@ public class TransferBRep_Reader
     /// Transfers an Entity given its rank in the Model (Root or not). Returns True if it is recognized as Geom-Topol.
     /// (But it can have failed : see IsDone).
     /// </summary>
-    public virtual bool Transfer(int num, Message_ProgressRange theProgress = default)
+    public virtual bool Transfer(int num, ProgressRange theProgress = default)
     {
         // OCCT: the former shapes aren't cleared (TransferRoots does): they accumulate
         if (!BeginTransfer())
@@ -220,12 +222,12 @@ public class TransferBRep_Reader
         {
             return false;
         }
-        Standard_Transient? ent = theModel.Value(num);
+        Transient? ent = theModel.Value(num);
         var TP = new Transfer_TransferOutput(theProc, theModel);
 
         if (theProc.TraceLevel() > 1)
         {
-            using Message_Messenger.StreamBuffer sout = theProc.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = theProc.Messenger().SendInfo();
             sout.Append("--  Transfer(Read) : ");
             using (var aStream = new StringWriter(sout.Stream()))
             {
@@ -243,7 +245,7 @@ public class TransferBRep_Reader
     /// Transfers a list of Entities (only the ones also in the Model). Remark : former result is cleared (OCCT's
     /// documentation; in fact only the process is: the former shapes stay).
     /// </summary>
-    public virtual void TransferList(NCollection_HSequence<Standard_Transient>? list, Message_ProgressRange theProgress = default)
+    public virtual void TransferList(NCollection_HSequence<Transient>? list, ProgressRange theProgress = default)
     {
         // OCCT: the former shapes aren't cleared, despite the documentation
         if (!BeginTransfer())
@@ -256,17 +258,17 @@ public class TransferBRep_Reader
         }
         var TP = new Transfer_TransferOutput(theProc, theModel);
         int i, nb = list.Length();
-        using Message_Messenger.StreamBuffer sout = theProc.Messenger().SendInfo();
+        using Messenger.StreamBuffer sout = theProc.Messenger().SendInfo();
 
         if (theProc.TraceLevel() > 1)
         {
             sout.Append("--  Transfer(Read-List) : ").Append(nb).Append(" Items").Append('\n');
         }
-        using var aPS = new Message_ProgressScope(theProgress, null, nb);
+        using var aPS = new ProgressScope(theProgress, null, nb);
         for (i = 1; i <= nb && aPS.More(); i++)
         {
-            Message_ProgressRange aRange = aPS.Next();
-            Standard_Transient? ent = list.Value(i);
+            ProgressRange aRange = aPS.Next();
+            Transient? ent = list.Value(i);
             if (theModel.Number(ent) == 0)
             {
                 continue;
@@ -317,7 +319,7 @@ public class TransferBRep_Reader
     /// Returns a Shape produced from a given entity (if it was individually transferred or if an entity is a
     /// subpart of the one which was transferred). Returns a Null Shape if there is no result.
     /// </summary>
-    public TopoDS_Shape ShapeResult(Standard_Transient? ent)
+    public TopoDS_Shape ShapeResult(Transient? ent)
     {
         return TransferBRep.ShapeResult(theProc, ent);
     }
@@ -361,13 +363,13 @@ public class TransferBRep_Reader
     }
 
     /// <summary>Returns the complete list of produced Transient Results.</summary>
-    public NCollection_HSequence<Standard_Transient> Transients()
+    public NCollection_HSequence<Transient> Transients()
     {
         return theTransi;
     }
 
     /// <summary>Returns a Transient Root Result, given its rank (by default the first one).</summary>
-    public Standard_Transient? Transient(int num = 1)
+    public Transient? Transient(int num = 1)
     {
         return theTransi.Value(num);
     }
@@ -387,7 +389,7 @@ public class TransferBRep_Reader
         }
         if (withprint && theProc is not null && theProc.Messenger() is not null)
         {
-            using Message_Messenger.StreamBuffer aBuffer = theProc.Messenger().SendInfo();
+            using Messenger.StreamBuffer aBuffer = theProc.Messenger().SendInfo();
             using var aStream = new StringWriter(aBuffer.Stream());
             chl.Print(aStream, theModel, false);
         }
@@ -420,5 +422,5 @@ public class TransferBRep_Reader
     private int theFilest;
     private bool theNewpr;
     private readonly NCollection_HSequence<TopoDS_Shape> theShapes;
-    private readonly NCollection_HSequence<Standard_Transient> theTransi;
+    private readonly NCollection_HSequence<Transient> theTransi;
 }

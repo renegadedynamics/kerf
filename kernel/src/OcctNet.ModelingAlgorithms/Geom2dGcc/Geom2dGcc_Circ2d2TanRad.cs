@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -22,14 +24,14 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     private const int aNbSolMAX = 16;
 
     private bool WellDone;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol;
+    private readonly NCollection_Array1<Circle2D> cirsol;
     private int NbrSol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<GccEnt_Position> qualifier2;
     private readonly NCollection_Array1<int> TheSame1;
     private readonly NCollection_Array1<int> TheSame2;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg2sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -67,7 +69,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     //========================================================================
 
     /// <summary>Circles of radius Radius tangent to two qualified curves.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     /// <exception cref="GccEnt_BadQualifier">A line is qualified enclosing.</exception>
     public Geom2dGcc_Circ2d2TanRad(in Geom2dGcc_QualifiedCurve Qualified1,
                                    in Geom2dGcc_QualifiedCurve Qualified2,
@@ -77,7 +79,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     {
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -85,8 +87,8 @@ public sealed class Geom2dGcc_Circ2d2TanRad
             Geom2dAdaptor_Curve C2    = Qualified2.Qualified();
             Geom2d_Curve?       CC1   = C1.Curve();
             Geom2d_Curve?       CC2   = C2.Curve();
-            GeomAbs_CurveType   Type1 = C1.GetType();
-            GeomAbs_CurveType   Type2 = C2.GetType();
+            CurveKind   Type1 = C1.GetType();
+            CurveKind   Type2 = C2.GetType();
 
             //=============================================================================
             //                            Appel a GccAna.                                 +
@@ -94,18 +96,18 @@ public sealed class Geom2dGcc_Circ2d2TanRad
 
             Invert = false;
             NbrSol = 0;
-            if ((Type1 == GeomAbs_Line || Type1 == GeomAbs_Circle)
-                && (Type2 == GeomAbs_Line || Type2 == GeomAbs_Circle))
+            if ((Type1 == Line || Type1 == Circle)
+                && (Type2 == Line || Type2 == Circle))
             {
-                if (Type1 == GeomAbs_Circle)
+                if (Type1 == Circle)
                 {
                     Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-                    gp_Circ2d            c1   = CCC1.Circ2d();
+                    Circle2D            c1   = CCC1.Circ2d();
                     GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
-                    if (Type2 == GeomAbs_Circle)
+                    if (Type2 == Circle)
                     {
                         Geom2d_Circle        CCC2    = (CC2 as Geom2d_Circle)!;
-                        gp_Circ2d            c2      = CCC2.Circ2d();
+                        Circle2D            c2      = CCC2.Circ2d();
                         GccAna_Circ2d2TanRad CircAna = new(Qc1, new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()), Radius, Tolerance);
                         WellDone = CircAna.IsDone();
                         NbrSol   = CircAna.NbSolutions();
@@ -118,7 +120,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                     else
                     {
                         Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
-                        gp_Lin2d    l2  = LL2.Lin2d();
+                        Line2D    l2  = LL2.Lin2d();
                         if (!Qualified2.IsEnclosing())
                         {
                             GccAna_Circ2d2TanRad CircAna = new(Qc1, new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()), Radius, Tolerance);
@@ -140,7 +142,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 else
                 {
                     Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
-                    gp_Lin2d    l1  = LL1.Lin2d();
+                    Line2D    l1  = LL1.Lin2d();
                     if (Qualified1.IsEnclosing())
                     {
                         WellDone = false;
@@ -149,10 +151,10 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                     else
                     {
                         GccEnt_QualifiedLin Ql1 = new(l1, Qualified1.Qualifier());
-                        if (Type2 == GeomAbs_Circle)
+                        if (Type2 == Circle)
                         {
                             Geom2d_Circle CCC2 = (CC2 as Geom2d_Circle)!;
-                            gp_Circ2d     c2   = CCC2.Circ2d();
+                            Circle2D     c2   = CCC2.Circ2d();
                             Invert             = true;
                             GccAna_Circ2d2TanRad CircAna = new(new GccEnt_QualifiedCirc(c2, Qualified2.Qualifier()), Ql1, Radius, Tolerance);
                             WellDone = CircAna.IsDone();
@@ -166,7 +168,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                         else
                         {
                             Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
-                            gp_Lin2d    l2  = LL2.Lin2d();
+                            Line2D    l2  = LL2.Lin2d();
                             if (!Qualified2.IsEnclosing())
                             {
                                 GccAna_Circ2d2TanRad CircAna = new(Ql1, new GccEnt_QualifiedLin(l2, Qualified2.Qualifier()), Radius, Tolerance);
@@ -192,10 +194,10 @@ public sealed class Geom2dGcc_Circ2d2TanRad
             //=============================================================================
             else
             {
-                if (Type1 == GeomAbs_Line)
+                if (Type1 == Line)
                 {
                     Geom2d_Line LL1 = (CC1 as Geom2d_Line)!;
-                    gp_Lin2d    l1  = LL1.Lin2d();
+                    Line2D    l1  = LL1.Lin2d();
                     if (Qualified1.IsEnclosing())
                     {
                         WellDone = false;
@@ -215,10 +217,10 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                         Results(CircGeo);
                     }
                 }
-                else if (Type1 == GeomAbs_Circle)
+                else if (Type1 == Circle)
                 {
                     Geom2d_Circle              CCC1    = (CC1 as Geom2d_Circle)!;
-                    gp_Circ2d                  c1      = CCC1.Circ2d();
+                    Circle2D                  c1      = CCC1.Circ2d();
                     GccEnt_QualifiedCirc       Qc1     = new(c1, Qualified1.Qualifier());
                     Geom2dGcc_QCurve           Qc2     = new(C2, Qualified2.Qualifier());
                     Geom2dGcc_Circ2d2TanRadGeo CircGeo = new(Qc1, Qc2, Radius, Tolerance);
@@ -230,11 +232,11 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                     }
                     Results(CircGeo);
                 }
-                else if (Type2 == GeomAbs_Line)
+                else if (Type2 == Line)
                 {
                     Invert          = true;
                     Geom2d_Line LL2 = (CC2 as Geom2d_Line)!;
-                    gp_Lin2d    l2  = LL2.Lin2d();
+                    Line2D    l2  = LL2.Lin2d();
                     if (Qualified2.IsEnclosing())
                     {
                         WellDone = false;
@@ -254,11 +256,11 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                         Results(CircGeo);
                     }
                 }
-                else if (Type2 == GeomAbs_Circle)
+                else if (Type2 == Circle)
                 {
                     Invert                             = true;
                     Geom2d_Circle              CCC2    = (CC2 as Geom2d_Circle)!;
-                    gp_Circ2d                  c2      = CCC2.Circ2d();
+                    Circle2D                  c2      = CCC2.Circ2d();
                     GccEnt_QualifiedCirc       Qc2     = new(c2, Qualified2.Qualifier());
                     Geom2dGcc_QCurve           Qc1     = new(C1, Qualified1.Qualifier());
                     Geom2dGcc_Circ2d2TanRadGeo CircGeo = new(Qc2, Qc1, Radius, Tolerance);
@@ -288,19 +290,19 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     }
 
     /// <summary>Circles of radius Radius tangent to a qualified curve and passing through a point.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public Geom2dGcc_Circ2d2TanRad(in Geom2dGcc_QualifiedCurve Qualified1, Geom2d_Point Point, double Radius, double Tolerance)
         : this(aNbSolMAX)
     {
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
             Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
             Geom2d_Curve?       CC1   = C1.Curve();
-            GeomAbs_CurveType   Type1 = C1.GetType();
+            CurveKind   Type1 = C1.GetType();
 
             //=============================================================================
             //                            Appel a GccAna.                                 +
@@ -308,12 +310,12 @@ public sealed class Geom2dGcc_Circ2d2TanRad
 
             Invert = false;
             NbrSol = 0;
-            if (Type1 == GeomAbs_Line || Type1 == GeomAbs_Circle)
+            if (Type1 == Line || Type1 == Circle)
             {
-                if (Type1 == GeomAbs_Circle)
+                if (Type1 == Circle)
                 {
                     Geom2d_Circle        CCC1    = (CC1 as Geom2d_Circle)!;
-                    gp_Circ2d            c1      = CCC1.Circ2d();
+                    Circle2D            c1      = CCC1.Circ2d();
                     GccEnt_QualifiedCirc Qc1     = new(c1, Qualified1.Qualifier());
                     GccAna_Circ2d2TanRad CircAna = new(Qc1, Point.Pnt2d(), Radius, Tolerance);
                     WellDone = CircAna.IsDone();
@@ -327,7 +329,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 else
                 {
                     Geom2d_Line          LLL1    = (CC1 as Geom2d_Line)!;
-                    gp_Lin2d             l1      = LLL1.Lin2d();
+                    Line2D             l1      = LLL1.Lin2d();
                     GccEnt_QualifiedLin  Ql1     = new(l1, Qualified1.Qualifier());
                     GccAna_Circ2d2TanRad CircAna = new(Ql1, Point.Pnt2d(), Radius, Tolerance);
                     WellDone = CircAna.IsDone();
@@ -358,13 +360,13 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     }
 
     /// <summary>Circles of radius Radius passing through two points.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public Geom2dGcc_Circ2d2TanRad(Geom2d_Point Point1, Geom2d_Point Point2, double Radius, double Tolerance)
         : this(2)
     {
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -455,33 +457,33 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     }
 
     /// <summary>The solution of index Index (1 to NbSolutions).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
-    public gp_Circ2d ThisSolution(int Index)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
+    public Circle2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return cirsol[Index];
     }
 
     /// <summary>The qualifiers of the two arguments for the solution of index Index.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
     public void WhichQualifier(int Index, out GccEnt_Position Qualif1, out GccEnt_Position Qualif2)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -499,17 +501,17 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     }
 
     /// <summary>The tangency point on the first argument: its parameters on the solution and on the argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the first argument.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the first argument.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -523,7 +525,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    throw new StdFail_NotDone();
+                    throw new NotDoneException();
                 }
             }
             else
@@ -536,24 +538,24 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    throw new StdFail_NotDone();
+                    throw new NotDoneException();
                 }
             }
         }
     }
 
     /// <summary>The tangency point on the second argument: its parameters on the solution and on the argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the second argument.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
-    public void Tangency2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the second argument.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
+    public void Tangency2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -567,7 +569,7 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    throw new StdFail_NotDone();
+                    throw new NotDoneException();
                 }
             }
             else
@@ -580,24 +582,24 @@ public sealed class Geom2dGcc_Circ2d2TanRad
                 }
                 else
                 {
-                    throw new StdFail_NotDone();
+                    throw new NotDoneException();
                 }
             }
         }
     }
 
     /// <summary>True if the solution of index Index is the first argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
     public bool IsTheSame1(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (Invert)
         {
@@ -610,17 +612,17 @@ public sealed class Geom2dGcc_Circ2d2TanRad
     }
 
     /// <summary>True if the solution of index Index is the second argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is out of range.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is out of range.</exception>
     public bool IsTheSame2(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         if (!Invert)
         {

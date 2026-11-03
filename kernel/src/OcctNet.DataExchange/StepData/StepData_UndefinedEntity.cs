@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// "Complex Type" (see ANDOR clause in Express).
 /// </summary>
 /// <remarks>Its literal parameters keep the file's text as it is (one char per byte, decision 1174), quotes included.</remarks>
-public class StepData_UndefinedEntity : Standard_Transient
+public class StepData_UndefinedEntity : Transient
 {
     private TCollection_HAsciiString thetype;
     private Interface_UndefinedContent thecont;
@@ -81,7 +82,7 @@ public class StepData_UndefinedEntity : Standard_Transient
         thecont.Reservate(nb, 4);
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient anent = null;
+            Transient anent = null;
             TCollection_HAsciiString hval = null;
             string val = SR.ParamCValue(num, i);
             Interface_ParamType partyp = SR.ParamType(num, i);
@@ -160,7 +161,7 @@ public class StepData_UndefinedEntity : Standard_Transient
             SW.StartEntity(StepType());
         }
         int nb = thecont.NbParams();
-        Standard_Transient anent;
+        Transient anent;
         for (int i = 1; i <= nb; i++)
         {
             Interface_ParamType partyp = thecont.ParamType(i);

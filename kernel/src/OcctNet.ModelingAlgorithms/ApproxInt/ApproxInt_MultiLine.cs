@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -143,14 +144,14 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     public int NbP2d() => nbp2d;
 
     /// <summary>The 3d point of the MultiPoint <paramref name="Index"/>.</summary>
-    public void Value(int Index, NCollection_Array1<gp_Pnt> TabPnt)
+    public void Value(int Index, NCollection_Array1<Point3D> TabPnt)
     {
-        gp_Pnt aP = myLine!.Point(Index).Value();
+        Point3D aP = myLine!.Point(Index).Value();
         TabPnt[1].SetCoord(aP.X() + Xo, aP.Y() + Yo, aP.Z() + Zo);
     }
 
     /// <summary>The 2d points of the MultiPoint <paramref name="Index"/>.</summary>
-    public void Value(int Index, NCollection_Array1<gp_Pnt2d> TabPnt2d)
+    public void Value(int Index, NCollection_Array1<Point2D> TabPnt2d)
     {
         IntSurf_PntOn2S POn2S = myLine!.Point(Index);
         POn2S.Parameters(out double u1, out double v1, out double u2, out double v2);
@@ -176,14 +177,14 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     }
 
     /// <summary>The 3d and 2d points of the MultiPoint <paramref name="Index"/>.</summary>
-    public void Value(int Index, NCollection_Array1<gp_Pnt> TabPnt, NCollection_Array1<gp_Pnt2d> TabPnt2d)
+    public void Value(int Index, NCollection_Array1<Point3D> TabPnt, NCollection_Array1<Point2D> TabPnt2d)
     {
         Value(Index, TabPnt);
         Value(Index, TabPnt2d);
     }
 
     /// <summary>The 3d tangent at the MultiPoint <paramref name="Index"/>; false (a null vector) where there is none.</summary>
-    public bool Tangency(int Index, NCollection_Array1<gp_Vec> TabVec)
+    public bool Tangency(int Index, NCollection_Array1<Vector3D> TabVec)
     {
         if (PtrOnmySvSurfaces is null)
         {
@@ -203,7 +204,7 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     }
 
     /// <summary>The 2d tangents at the MultiPoint <paramref name="Index"/>; false (null vectors) where there are none.</summary>
-    public bool Tangency(int Index, NCollection_Array1<gp_Vec2d> TabVec2d)
+    public bool Tangency(int Index, NCollection_Array1<Vector2D> TabVec2d)
     {
         if (PtrOnmySvSurfaces is null)
         {
@@ -239,10 +240,10 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
 
         if (!ret)
         {
-            TabVec2d[1] = new gp_Vec2d(0.0, 0.0);
+            TabVec2d[1] = new Vector2D(0.0, 0.0);
             if (TabVec2d.Length() >= 2)
             {
-                TabVec2d[2] = new gp_Vec2d(0.0, 0.0);
+                TabVec2d[2] = new Vector2D(0.0, 0.0);
             }
         }
 
@@ -250,7 +251,7 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     }
 
     /// <summary>The 3d and 2d tangents at the MultiPoint <paramref name="Index"/>.</summary>
-    public bool Tangency(int Index, NCollection_Array1<gp_Vec> TabVec, NCollection_Array1<gp_Vec2d> TabVec2d)
+    public bool Tangency(int Index, NCollection_Array1<Vector3D> TabVec, NCollection_Array1<Vector2D> TabVec2d)
     {
         return (Tangency(Index, TabVec) && Tangency(Index, TabVec2d));
     }
@@ -290,9 +291,9 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
             NbPnts = NbPntsmin;
         }
 
-        gp_Vec T = new();
-        gp_Vec2d TS1 = new(), TS2 = new();
-        gp_Pnt P = new();
+        Vector3D T = new();
+        Vector2D TS1 = new(), TS2 = new();
+        Point3D P = new();
 
         //-----------------------l-------------------------------------------
         //--  Indice     :   Low       Low+1     I    I+1         High    --
@@ -448,14 +449,14 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
         //-- There must be no too sharp turn in 2d and in 3d
 
         temp.Point(1).Parameters(out u1, out v1, out u2, out v2);
-        gp_Pnt2d P1A = new(u1, v1);
-        gp_Pnt2d P2A = new(u2, v2);
+        Point2D P1A = new(u1, v1);
+        Point2D P2A = new(u2, v2);
 
         temp.Point(2).Parameters(out u1, out v1, out u2, out v2);
-        gp_Pnt2d P1B = new(u1, v1);
-        gp_Pnt2d P2B = new(u2, v2);
+        Point2D P1B = new(u1, v1);
+        Point2D P2B = new(u2, v2);
 
-        gp_Pnt2d P1C = new(), P2C = new();
+        Point2D P1C = new(), P2C = new();
 
         int CodeErreur = 0;
 
@@ -543,7 +544,7 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
             PtrOnmySvSurfaces.SetUseSolver(true);
         }
 
-        double SqTol3d = Precision.SquareConfusion();
+        double SqTol3d = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         math_Vector tolerance = new(1, 2);
         tolerance[1] = tolerance[2] = 1.0e-8;
 
@@ -555,8 +556,8 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
 
         // Insert new point between (theIndbad-1) and theIndbad
         // Using <thePtrSVSurf> for Rsnld: it may be ImpPrm or PrmPrm
-        gp_Pnt PrevPnt = myLine!.Point(theIndbad - 1).Value();
-        gp_Pnt CurPnt = myLine.Point(theIndbad).Value();
+        Point3D PrevPnt = myLine!.Point(theIndbad - 1).Value();
+        Point3D CurPnt = myLine.Point(theIndbad).Value();
         myLine.Point(theIndbad - 1).Parameters(out double uprev1, out double vprev1, out double uprev2, out double vprev2);
         myLine.Point(theIndbad).Parameters(out double ucur1, out double vcur1, out double ucur2, out double vcur2);
         double umid1, vmid1, umid2, vmid2;
@@ -574,7 +575,7 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
                                 && Math.Abs(vcur2 - vmid2) <= tolerance[2];
             if (!IsNewPointInvalid && PtrOnmySvSurfaces.SeekPoint(umid1, vmid1, umid2, vmid2, ref MidPoint))
             {
-                gp_Pnt NewPnt = MidPoint.Value();
+                Point3D NewPnt = MidPoint.Value();
                 double SqDistNewPrev = NewPnt.SquareDistance(PrevPnt);
                 double SqDistNewCur = NewPnt.SquareDistance(CurPnt);
                 IsNewPointInvalid = (SqDistNewPrev <= SqTol3d || SqDistNewCur <= SqTol3d);
@@ -624,8 +625,8 @@ public class ApproxInt_MultiLine<TheLine> where TheLine : class, IApproxInt_WLin
     /// <summary>Writes the points of the MultiLine, one per line, as OCCT prints them on the standard output.</summary>
     public void Dump(TextWriter theOut)
     {
-        NCollection_Array1<gp_Pnt> anArr1 = new(1, 1);
-        NCollection_Array1<gp_Pnt2d> anArr2 = new(1, 2);
+        NCollection_Array1<Point3D> anArr1 = new(1, 1);
+        NCollection_Array1<Point2D> anArr2 = new(1, 2);
 
         int anIndF = FirstPoint(), anIndL = LastPoint();
 

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -93,13 +94,13 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     public bool CheckInverted() => myCheckInverted;
 
     /// <summary>Performs the algorithm.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         // Setting not done status
         NotDone();
         // Destroy the tools if necessary
         Clear();
-        using var aPS = new Message_ProgressScope(theRange, "Performing General Fuse operation", 100);
+        using var aPS = new ProgressScope(theRange, "Performing General Fuse operation", 100);
         // If necessary perform intersection of the argument shapes
         IntersectShapes(myArguments, aPS.Next(70));
         if (HasErrors())
@@ -128,7 +129,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     /// <param name="theUnifyEdges">Controls the edges unification (true by default).</param>
     /// <param name="theUnifyFaces">Controls the faces unification (true by default).</param>
     public void SimplifyResult(bool theUnifyEdges = true, bool theUnifyFaces = true) =>
-        SimplifyResult(theUnifyEdges, theUnifyFaces, Precision.Angular());
+        SimplifyResult(theUnifyEdges, theUnifyFaces, global::Kerf.Engine.Foundation.Precision.Angular());
 
     /// <inheritdoc cref="SimplifyResult(bool, bool)"/>
     /// <param name="theUnifyEdges">Controls the edges unification.</param>
@@ -312,7 +313,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>Intersects the given shapes with a new intersection tool, unless one was given.</summary>
-    protected void IntersectShapes(NCollection_List<TopoDS_Shape> theArgs, Message_ProgressRange theRange)
+    protected void IntersectShapes(NCollection_List<TopoDS_Shape> theArgs, ProgressRange theRange)
     {
         if (!myIsIntersectionNeeded)
         {
@@ -338,7 +339,7 @@ public class BRepAlgoAPI_BuilderAlgo : BRepAlgoAPI_Algo
     }
 
     /// <summary>Builds the result with the building tool from the intersections.</summary>
-    protected void BuildResult(Message_ProgressRange theRange = default)
+    protected void BuildResult(ProgressRange theRange = default)
     {
         // Set options to the builder
         myBuilder!.SetRunParallel(myOptions.myRunParallel);

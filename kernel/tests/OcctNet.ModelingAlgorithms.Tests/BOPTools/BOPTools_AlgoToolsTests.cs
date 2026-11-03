@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -10,7 +13,7 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 public class BOPTools_AlgoToolsTests
 {
     private static TopoDS_Solid BoxSolid(double x, double y, double z, double dx, double dy, double dz) =>
-        TopoDS.Solid(TopExp_ExplorerFirst(new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), dx, dy, dz).InternalShape(), TopAbs_SOLID));
+        TopoDS.Solid(TopExp_ExplorerFirst(new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).InternalShape(), TopAbs_SOLID));
 
     private static TopoDS_Shape TopExp_ExplorerFirst(in TopoDS_Shape theS, TopAbs_ShapeEnum theType)
     {
@@ -37,8 +40,8 @@ public class BOPTools_AlgoToolsTests
         BRepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
         double du = 0.25 * (u2 - u1), dv = 0.25 * (v2 - v1);
         Geom_Surface aS = (Geom_Surface)BRep_Tool.Surface(theF)!.Copy();
-        TopLoc_Location aLoc = theF.Location();
-        TopoDS_Face aSplit = TopoDS.Face(new BRepBuilderAPI_MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, Precision.Confusion()).InternalShape());
+        Placement aLoc = theF.Location();
+        TopoDS_Face aSplit = TopoDS.Face(new BRepBuilderAPI_MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
         return TopoDS.Face(aSplit.Located(aLoc));
     }
 
@@ -91,7 +94,7 @@ public class BOPTools_AlgoToolsTests
                     Assert.Equal(1, anErrD);
                     continue;
                 }
-                Geom_Curve? aC = BRep_Tool.Curve(aE, out TopLoc_Location aLoc, out double f, out double l);
+                Geom_Curve? aC = BRep_Tool.Curve(aE, out Placement aLoc, out double f, out double l);
                 if (aC is null)
                 {
                     continue;
@@ -116,10 +119,10 @@ public class BOPTools_AlgoToolsTests
         TopoDS_Vertex aV = TopoDS.Vertex(TopExp_ExplorerFirst(aBox, TopAbs_VERTEX));
         Assert.False(BOPTools_AlgoTools.IsSplitToReverse((TopoDS_Shape)aV, (TopoDS_Shape)aV, new IntTools_Context(), out int anErr));
         Assert.Equal(100, anErr);
-        Message_Report aReport = new();
+        global::Kerf.Engine.Foundation.Report aReport = new();
         Assert.False(BOPTools_AlgoTools.IsSplitToReverseWithWarn(aV, aV, new IntTools_Context(), aReport));
-        Assert.Single(aReport.GetAlerts(Message_Gravity.Message_Warning));
-        Assert.IsType<BOPAlgo_AlertUnableToOrientTheShape>(aReport.GetAlerts(Message_Gravity.Message_Warning).First());
+        Assert.Single(aReport.GetAlerts(global::Kerf.Engine.Foundation.Gravity.Warning));
+        Assert.IsType<BOPAlgo_AlertUnableToOrientTheShape>(aReport.GetAlerts(global::Kerf.Engine.Foundation.Gravity.Warning).First());
     }
 
     [Fact]
@@ -134,13 +137,13 @@ public class BOPTools_AlgoToolsTests
                 continue;
             }
             TopoDS_Solid aSolid = TopoDS.Solid(aSolids.Current());
-            Bnd_Box aBox = new();
+            Box aBox = new();
             BRepBndLib.Add(aSolid, ref aBox);
             aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
             IntTools_Context aCtx = new();
             for (int i = 0; i < 60; ++i)
             {
-                gp_Pnt aP = new(x0 + (x1 - x0) * (1.2 * aRnd.NextDouble() - 0.1),
+                Point3D aP = new(x0 + (x1 - x0) * (1.2 * aRnd.NextDouble() - 0.1),
                                 y0 + (y1 - y0) * (1.2 * aRnd.NextDouble() - 0.1),
                                 z0 + (z1 - z0) * (1.2 * aRnd.NextDouble() - 0.1));
                 BRepClass3d_SolidClassifier aSC = new(aSolid, aP, 1.0e-7);
@@ -193,7 +196,7 @@ public class BOPTools_AlgoToolsTests
         foreach (TopoDS_Edge aE in BOPToolsTestShapes.Edges(aBox))
         {
             TopExp.Vertices(aE, out TopoDS_Vertex a, out TopoDS_Vertex b);
-            gp_Pnt pa = BRep_Tool.Pnt(a), pb = BRep_Tool.Pnt(b);
+            Point3D pa = BRep_Tool.Pnt(a), pb = BRep_Tool.Pnt(b);
             if (pa.X() == 0 && pa.Y() == 0 && pb.X() == 0 && pb.Y() == 0)
             {
                 aZ = aE;
@@ -206,9 +209,9 @@ public class BOPTools_AlgoToolsTests
         NCollection_List<TopoDS_Shape> aLF = aMEF.FindFromKey(aZ);
         Assert.Equal(2, aLF.Extent());
         TopExp.Vertices(aZ, out TopoDS_Vertex aV0, out TopoDS_Vertex aV1);
-        gp_Pnt p0 = BRep_Tool.Pnt(aV0), p1 = BRep_Tool.Pnt(aV1);
-        TopoDS_Vertex aW0 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new gp_Pnt(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
-        TopoDS_Vertex aW1 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new gp_Pnt(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
+        Point3D p0 = BRep_Tool.Pnt(aV0), p1 = BRep_Tool.Pnt(aV1);
+        TopoDS_Vertex aW0 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
+        TopoDS_Vertex aW1 = TopoDS.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
         TopoDS_Edge e1 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aV1, aW1).InternalShape());
         TopoDS_Edge e2 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aW1, aW0).InternalShape());
         TopoDS_Edge e3 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aW0, aV0).InternalShape());
@@ -285,7 +288,7 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void IsHole_by_the_wire_orientation()
     {
-        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 2, 0, 1).InternalShape());
+        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 2, 0, 1).InternalShape());
         TopoDS_Wire aW = TopoDS.Wire(TopExp_ExplorerFirst(aF, TopAbs_WIRE));
         Assert.False(BOPTools_AlgoTools.IsHole(aW, aF));
         Assert.True(BOPTools_AlgoTools.IsHole(aW.Reversed(), aF));
@@ -316,9 +319,9 @@ public class BOPTools_AlgoToolsTests
         {
             BRepGProp_Face aProps = new(aF);
             BRepAdaptor_Surface aBAS = new(aF);
-            gp_Pln aPln = aBAS.Plane();
-            gp_Pnt aLoc = aPln.Location();
-            gp_Dir aN = aPln.Axis().Direction();
+            Plane3D aPln = aBAS.Plane();
+            Point3D aLoc = aPln.Location();
+            Direction3D aN = aPln.Axis().Direction();
             if (Math.Abs(aN.X()) > 0.5 && aLoc.X() == 2)
             {
                 aFx = aF;
@@ -330,7 +333,7 @@ public class BOPTools_AlgoToolsTests
             _ = aProps;
         }
         Assert.False(aFx.IsNull() || aFz.IsNull());
-        Geom_Line aLine = new(new gp_Pnt(2, 0.5, 2), new gp_Dir(0, 1, 0));
+        Geom_Line aLine = new(new Point3D(2, 0.5, 2), new Direction3D(0, 1, 0));
         TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(aLine, 0, 1).InternalShape());
         IntTools_Curve aIC = new(aLine, null, null);
         BOPTools_AlgoTools.MakePCurve(aE, aFx, aFz, aIC, true, true, new IntTools_Context());
@@ -338,12 +341,12 @@ public class BOPTools_AlgoToolsTests
         {
             Geom2d_Curve? aC2 = BRep_Tool.CurveOnSurface(aE, aF, out double f, out double l);
             Assert.NotNull(aC2);
-            Geom_Surface aS = BRep_Tool.Surface(aF, out TopLoc_Location aL)!;
+            Geom_Surface aS = BRep_Tool.Surface(aF, out Placement aL)!;
             for (int i = 0; i <= 10; ++i)
             {
                 double t = f + (l - f) * i / 10.0;
-                gp_Pnt2d uv = aC2!.Value(t);
-                gp_Pnt p = aS.Value(uv.X(), uv.Y()).Transformed(aL.Transformation());
+                Point2D uv = aC2!.Value(t);
+                Point3D p = aS.Value(uv.X(), uv.Y()).Transformed(aL.Transformation());
                 Assert.True(p.Distance(aLine.Value(t)) < 1.0e-9);
             }
         }
@@ -353,10 +356,10 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void MakeEdge_MakeSectEdge_MakeVertex_and_ComputeVV()
     {
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntTools_Curve aIC = new(aLine, null, null);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(0, 0, 0), 1.0e-7, out TopoDS_Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(3, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-7, out TopoDS_Vertex aV1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
         BOPTools_AlgoTools.MakeEdge(aIC, aV1, 0, aV2, 3, 1.0e-4, out TopoDS_Edge aE);
         BRep_Tool.Range(aE, out double f, out double l);
         Assert.Equal(0.0, f);
@@ -364,14 +367,14 @@ public class BOPTools_AlgoToolsTests
         Assert.Equal(1.0e-4, BRep_Tool.Tolerance(aE));
         Assert.Equal(1.0e-4 + 1.0e-12, BRep_Tool.Tolerance(aV1));
 
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(0.5, 0, 0), 1.0e-7, out TopoDS_Vertex aVh);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.5, 0, 0), 1.0e-7, out TopoDS_Vertex aVh);
         BOPTools_AlgoTools.MakeSectEdge(aIC, aVh, 0.5, aV2, 3, out TopoDS_Edge aE2);
         BRep_Tool.Range(aE2, out f, out l);
         Assert.Equal(0.5, f);
 
-        Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, new gp_Pnt(1.0e-4, 0, 0), 0.0));
-        Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, new gp_Pnt(1.0e-3, 0, 0), 0.0));
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(1.0e-4, 0, 0), 1.0e-7, out TopoDS_Vertex aV3);
+        Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-4, 0, 0), 0.0));
+        Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-3, 0, 0), 0.0));
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1.0e-4, 0, 0), 1.0e-7, out TopoDS_Vertex aV3);
         Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV3));
         Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, aV2));
         Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV2, 3.0));
@@ -512,7 +515,7 @@ public class BOPTools_AlgoToolsTests
         TopoDS_Solid aBox = BoxSolid(0, 0, 0, 1, 2, 3);
         TopoDS_Edge aE = BOPToolsTestShapes.Edges(aBox)[0];
         Assert.False(BOPTools_AlgoTools.IsMicroEdge(aE, aCtx));
-        TopoDS_Edge aTiny = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1.0e-8, 0, 0)).InternalShape());
+        TopoDS_Edge aTiny = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1.0e-8, 0, 0)).InternalShape());
         Assert.True(BOPTools_AlgoTools.IsMicroEdge(aTiny, aCtx));
         TopoDS_Edge aDegen = new();
         foreach (TopoDS_Edge x in BOPToolsTestShapes.Edges(BOPToolsTestShapes.Sphere()))
@@ -543,34 +546,34 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void AlgoTools_2_vertices_edges_and_ranges()
     {
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(0, 0, 0), 1.0e-3, out TopoDS_Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(0.01, 0, 0), 1.0e-4, out TopoDS_Vertex aV2);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out TopoDS_Vertex aV1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out TopoDS_Vertex aV2);
         BOPTools_AlgoTools.MakeNewVertex(aV1, aV2, out TopoDS_Vertex aVm);
         Assert.Equal(0.005, BRep_Tool.Pnt(aVm).X(), 15);
         Assert.Equal(1.0e-3 + 0.005, BRep_Tool.Tolerance(aVm), 15);
 
-        TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0)).InternalShape());
-        TopoDS_Edge aE2 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 1.0e-3, 0), new gp_Pnt(1, 5, 0)).InternalShape());
+        TopoDS_Edge aE = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
+        TopoDS_Edge aE2 = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
         BOPTools_AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out TopoDS_Vertex aVee);
         Assert.Equal(1.0, BRep_Tool.Pnt(aVee).X(), 15);
-        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).InternalShape());
+        TopoDS_Face aF = TopoDS.Face(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
         BOPTools_AlgoTools.MakeNewVertex(aE, 2.0, aF, out TopoDS_Vertex aVef);
         Assert.Equal(BRep_Tool.Tolerance(aE) + BRep_Tool.Tolerance(aF) + 1.0e-12, BRep_Tool.Tolerance(aVef));
 
         // UpdateVertex forms
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(2, 0.01, 0), 1.0e-7, out TopoDS_Vertex aVu);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.01, 0), 1.0e-7, out TopoDS_Vertex aVu);
         BOPTools_AlgoTools.UpdateVertex(aE, 2.0, aVu);
         Assert.Equal(0.01 + 1.0e-12, BRep_Tool.Tolerance(aVu), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(2, 0.02, 0), 1.0e-7, out TopoDS_Vertex aVc);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.02, 0), 1.0e-7, out TopoDS_Vertex aVc);
         BOPTools_AlgoTools.UpdateVertex(new IntTools_Curve(BRep_Tool.Curve(aE, out _, out _), null, null), 2.0, aVc);
         Assert.Equal(0.02 + 1.0e-12, BRep_Tool.Tolerance(aVc), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(2, 0.05, 0), 1.0e-3, out TopoDS_Vertex aVn);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.05, 0), 1.0e-3, out TopoDS_Vertex aVn);
         BOPTools_AlgoTools.UpdateVertex(aVu, aVn);
         Assert.True(BRep_Tool.Tolerance(aVu) > 0.04);
 
         // split and copy
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(1, 0, 0), 1.0e-7, out TopoDS_Vertex aS1);
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(3, 0, 0), 1.0e-7, out TopoDS_Vertex aS2);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1, 0, 0), 1.0e-7, out TopoDS_Vertex aS1);
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out TopoDS_Vertex aS2);
         BOPTools_AlgoTools.MakeSplitEdge(aE, aS2, 3.0, aS1, 1.0, out TopoDS_Edge aSp);
         BRep_Tool.Range(aSp, out double f, out double l);
         Assert.Equal((1.0, 3.0), (f, l));
@@ -588,7 +591,7 @@ public class BOPTools_AlgoToolsTests
         IntTools_Range aR = new(0.5, 3.5);
         BOPTools_AlgoTools.CorrectRange(aE, aE2, aR, out IntTools_Range aNR);
         Assert.Equal(aR, aNR);
-        TopoDS_Edge aCircle = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(), 10)).InternalShape());
+        TopoDS_Edge aCircle = TopoDS.Edge(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 10)).InternalShape());
         BOPTools_AlgoTools.CorrectRange(aCircle, aE, new IntTools_Range(1, 2), out aNR);
         double aRes = 2.0 * (BRep_Tool.Tolerance(aCircle) + BRep_Tool.Tolerance(aE)) / 10.0;
         Assert.Equal(1 + aRes, aNR.First(), 14);
@@ -637,8 +640,8 @@ public class BOPTools_AlgoToolsTests
     {
         TopoDS_Shape aBox = BOPToolsTestShapes.Box(); // published: frozen
         TopoDS_Vertex aV = TopoDS.Vertex(TopExp_ExplorerFirst(aBox, TopAbs_VERTEX));
-        Geom_Line aLine = new(BRep_Tool.Pnt(aV), new gp_Dir(1, 0, 0));
-        BOPTools_AlgoTools.MakeNewVertex(new gp_Pnt(100, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
+        Geom_Line aLine = new(BRep_Tool.Pnt(aV), new Direction3D(1, 0, 0));
+        BOPTools_AlgoTools.MakeNewVertex(new Point3D(100, 0, 0), 1.0e-7, out TopoDS_Vertex aV2);
         Assert.ThrowsAny<Exception>(() =>
         {
             BOPTools_AlgoTools.MakeEdge(new IntTools_Curve(aLine, null, null), aV, 0, aV2, 1, 1.0e-3, out _);
@@ -675,7 +678,7 @@ public class BOPTools_AlgoToolsTests
             }
             foreach (TopoDS_Edge aE in aEdges.Take(40))
             {
-                Geom_Curve aC = BRep_Tool.Curve(aE, out TopLoc_Location aLoc, out double f, out double l)!;
+                Geom_Curve aC = BRep_Tool.Curve(aE, out Placement aLoc, out double f, out double l)!;
                 double d = 0.3 * (l - f);
                 TopoDS_Edge aSp = TopoDS.Edge(new BRepBuilderAPI_MakeEdge((Geom_Curve)aC.Copy(), f + d, l - d).InternalShape().Located(aLoc));
                 aQueries.Add(c => $"{BOPTools_AlgoTools.IsSplitToReverse(aSp, aE, c, out int e)} {e}");

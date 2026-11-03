@@ -6,6 +6,12 @@
 // Modified : 20/08/96 PMN Ajout des methodes (Nb)Intervals et IsRationnal
 // Modified : 30/12/96 PMN Ajout GetMinimalWeight, GetSectionSize;
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The function of an "ordinary" chamfer: constant distances from the spine to the two surfaces.</summary>
@@ -73,11 +79,11 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         int i, j;
         math_Vector x = new(1, 2);
-        math_Matrix d = new(1, 2, 1, 2);
+        Matrix d = new(1, 2, 1, 2);
 
         x[1] = X[1];
         x[2] = X[2];
@@ -106,12 +112,12 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
         return true;
     }
 
-    public override gp_Pnt PointOnS1()
+    public override Point3D PointOnS1()
     {
         return corde1.PointOnS();
     }
 
-    public override gp_Pnt PointOnS2()
+    public override Point3D PointOnS2()
     {
         return corde2.PointOnS();
     }
@@ -121,22 +127,22 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
         return corde1.IsTangencyPoint() && corde2.IsTangencyPoint();
     }
 
-    public override gp_Vec TangentOnS1()
+    public override Vector3D TangentOnS1()
     {
         return corde1.TangentOnS();
     }
 
-    public override gp_Vec TangentOnS2()
+    public override Vector3D TangentOnS2()
     {
         return corde2.TangentOnS();
     }
 
-    public override gp_Vec2d Tangent2dOnS1()
+    public override Vector2D Tangent2dOnS1()
     {
         return corde1.Tangent2dOnS();
     }
 
-    public override gp_Vec2d Tangent2dOnS2()
+    public override Vector2D Tangent2dOnS2()
     {
         return corde2.Tangent2dOnS();
     }
@@ -146,19 +152,19 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
     // purpose  : TgF,NmF et TgL,NmL les tangentes et normales respectives
     //           aux surfaces S1 et S2
     //=======================================================================
-    public override void Tangent(double U1, double V1, double U2, double V2, out gp_Vec TgF, out gp_Vec TgL,
-                                 out gp_Vec NmF, out gp_Vec NmL)
+    public override void Tangent(double U1, double V1, double U2, double V2, out Vector3D TgF, out Vector3D TgL,
+                                 out Vector3D NmF, out Vector3D NmL)
     {
-        gp_Vec nplan;
+        Vector3D nplan;
         bool revF = false;
         bool revL = false;
 
         nplan = corde1.NPlan();
 
-        surf1.D1(U1, V1, out _, out gp_Vec d1u1, out gp_Vec d1v1);
+        surf1.D1(U1, V1, out _, out Vector3D d1u1, out Vector3D d1v1);
         NmF = d1u1.Crossed(d1v1);
 
-        surf2.D1(U2, V2, out _, out gp_Vec d1u2, out gp_Vec d1v2);
+        surf2.D1(U2, V2, out _, out Vector3D d1u2, out Vector3D d1v2);
         NmL = d1u2.Crossed(d1v2);
 
         TgF = (nplan.Crossed(NmF)).Normalized();
@@ -195,9 +201,9 @@ public class BlendFunc_Chamfer : BlendFunc_GenChamfer
     // function : GetSectionSize
     // purpose  : Non implementee (non necessaire car non rationel)
     //=======================================================================
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double GetSectionSize()
     {
-        throw new Standard_NotImplemented("BlendFunc_Chamfer::GetSectionSize()");
+        throw new MethodNotImplementedException("BlendFunc_Chamfer::GetSectionSize()");
     }
 }

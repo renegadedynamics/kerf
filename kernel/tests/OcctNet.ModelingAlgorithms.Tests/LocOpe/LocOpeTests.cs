@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.LocOpe_Operation;
 using static Occt.TopAbs_Orientation;
@@ -27,7 +29,7 @@ public class LocOpeTests
         TopExp.MapShapes(theShape, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            if (!aMap[i].TShape()!.IsFrozen())
+            if (!aMap[i].TShape()!.IsFrozen)
             {
                 return false;
             }
@@ -81,7 +83,7 @@ public class LocOpeTests
         throw new InvalidOperationException("no top face");
     }
 
-    internal static TopoDS_Edge Segment(in gp_Pnt theP1, in gp_Pnt theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    internal static TopoDS_Edge Segment(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
 
     [Fact]
     public void Closed_TgtFaces_SampleEdges()
@@ -98,7 +100,7 @@ public class LocOpeTests
         TopExp.MapShapesAndAncestors(aBox, TopAbs_EDGE, TopAbs_FACE, aMap);
         Assert.False(LocOpe.TgtFaces(TopoDS.Edge(aMap.FindKey(1)), TopoDS.Face(aMap[1].First()), TopoDS.Face(aMap[1].Last())));
 
-        var aPoints = new NCollection_Sequence<gp_Pnt>();
+        var aPoints = new NCollection_Sequence<Point3D>();
         LocOpe.SampleEdges(aBox, aPoints);
         Assert.Equal(12 * 9 + 8, aPoints.Length());
     }
@@ -146,7 +148,7 @@ public class LocOpeTests
         // ported code's own shape (BRepFeat's intermediate results) isn't copied: the vertices get their point
         // representations in place, and the faces away from the split are the shape's own
         TopoDS_Shape aBox = BRepTools.ExactCopyForWrite(Box(), out _);
-        Assert.False(aBox.TShape()!.IsFrozen());
+        Assert.False(aBox.TShape()!.IsFrozen);
         TopoDS_Edge anEdge = TopoDS.Edge(new TopExp_Explorer(TopFace(aBox), TopAbs_EDGE).Current());
         BRep_Tool.Range(anEdge, out double f, out double l);
         TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(BRep_Tool.Curve(anEdge, out _, out _)!.Value((f + l) / 2)).Vertex();
@@ -183,12 +185,12 @@ public class LocOpeTests
     {
         TopoDS_Face aTop = TopFace(theBox);
         var aSplit = new LocOpe_SplitShape(theBox);
-        var anEnds = new List<(TopoDS_Edge, double, gp_Pnt)>();
+        var anEnds = new List<(TopoDS_Edge, double, Point3D)>();
         for (var anExp = new TopExp_Explorer(aTop, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             TopoDS_Edge anEdge = TopoDS.Edge(anExp.Current());
             Geom_Curve aC = BRep_Tool.Curve(anEdge, out double f, out double l)!;
-            gp_Pnt aMid = aC.Value((f + l) / 2);
+            Point3D aMid = aC.Value((f + l) / 2);
             if (Math.Abs(aMid.Y()) < 1e-9 || Math.Abs(aMid.Y() - 20) < 1e-9)
             {
                 anEnds.Add((anEdge, (f + l) / 2, aMid));
@@ -233,7 +235,7 @@ public class LocOpeTests
     {
         TopoDS_Shape aBox = Box();
         TopoDS_Face aTop = TopFace(aBox);
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(5, 10, 30), new gp_Dir(0, 0, 1)), 2);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(5, 10, 30), new Direction3D(0, 0, 1)), 2);
         TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
         var aSplit = new LocOpe_SplitShape(aBox);
         Assert.True(aSplit.Add(aWire, aTop));
@@ -244,7 +246,7 @@ public class LocOpeTests
     }
 
     // The edge along the middle of the top face of the box, from y = 0 to y = 20
-    private static TopoDS_Edge MidEdge() => Segment(new gp_Pnt(5, 0, 30), new gp_Pnt(5, 20, 30));
+    private static TopoDS_Edge MidEdge() => Segment(new Point3D(5, 0, 30), new Point3D(5, 20, 30));
 
     [Fact]
     public void WiresOnShape_Spliter_SplitTheBox_TheInputsAreUnchanged()
@@ -304,7 +306,7 @@ public class LocOpeTests
         TopoDS_Shape aBox = Box();
         var aWOnS = new LocOpe_WiresOnShape(aBox);
         var anEdges = new NCollection_List<TopoDS_Shape>();
-        var aP = new[] { new gp_Pnt(1, 1, 30), new gp_Pnt(2, 1, 30), new gp_Pnt(2, 2, 30) };
+        var aP = new[] { new Point3D(1, 1, 30), new Point3D(2, 1, 30), new Point3D(2, 2, 30) };
         TopoDS_Vertex aV0 = new BRepBuilderAPI_MakeVertex(aP[0]).Vertex();
         TopoDS_Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP[1]).Vertex();
         TopoDS_Vertex aV2 = new BRepBuilderAPI_MakeVertex(aP[2]).Vertex();
@@ -337,7 +339,7 @@ public class LocOpeTests
         TopoDS_Shape aBox = Box();
         TopoDS_Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aPrism = new LocOpe_Prism(aTop, new gp_Vec(0, 0, 5));
+        var aPrism = new LocOpe_Prism(aTop, new Vector3D(0, 0, 5));
         TopoDS_Shape aRes = aPrism.Shape();
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aRes));
@@ -355,7 +357,7 @@ public class LocOpeTests
         Assert.Equal(4 * 9 + 4, aCurves.Length());
         Assert.NotNull(aPrism.BarycCurve());
 
-        var aTrans = new LocOpe_Prism(aTop, new gp_Vec(0, 0, 5), new gp_Vec(0, 0, 1));
+        var aTrans = new LocOpe_Prism(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 1));
         Assert.Equal(1000, Math.Abs(Volume(aTrans.Shape())), 6);
         Assert.Equal(1, aTrans.Shapes(new TopExp_Explorer(aTop, TopAbs_EDGE).Current()).Extent());
     }
@@ -373,7 +375,7 @@ public class LocOpeTests
                 aLateral = TopoDS.Face(anExp.Current());
             }
         }
-        var aPrism = new LocOpe_Prism(aLateral, new gp_Vec(1, 0, 0));
+        var aPrism = new LocOpe_Prism(aLateral, new Vector3D(1, 0, 0));
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aPrism.Shape()));
         Assert.True(Count(aPrism.Shape(), TopAbs_FACE) > 3);
@@ -385,7 +387,7 @@ public class LocOpeTests
         TopoDS_Shape aBox = Box();
         TopoDS_Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var anAxis = new gp_Ax1(new gp_Pnt(-10, 0, 0), new gp_Dir(0, 1, 0));
+        var anAxis = new Axis3D(new Point3D(-10, 0, 0), new Direction3D(0, 1, 0));
         var aRevol = new LocOpe_Revol();
         aRevol.Perform(aTop, anAxis, Math.PI / 6);
         TopoDS_Shape aRes = aRevol.Shape();
@@ -414,9 +416,9 @@ public class LocOpeTests
         TopoDS_Shape aBox = Box();
         TopoDS_Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aForm = new LocOpe_LinearForm(aTop, new gp_Vec(0, 0, 5), new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        var aForm = new LocOpe_LinearForm(aTop, new Vector3D(0, 0, 5), new Point3D(), new Point3D(1, 0, 0));
         Assert.Equal(1000, Math.Abs(Volume(aForm.Shape())), 6);
-        var aForm2 = new LocOpe_LinearForm(aTop, new gp_Vec(0, 0, 5), new gp_Vec(0, 0, 2), new gp_Pnt(), new gp_Pnt(1, 0, 0));
+        var aForm2 = new LocOpe_LinearForm(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 2), new Point3D(), new Point3D(1, 0, 0));
         Assert.Equal(1000, Math.Abs(Volume(aForm2.Shape())), 6);
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aForm.Shape()));
@@ -425,7 +427,7 @@ public class LocOpeTests
     [Fact]
     public void DPrism_OfAFrozenRectangle()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 10, 0, 20).Face();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 20).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aDPrism = new LocOpe_DPrism(aFace, 5, 5 * Math.PI / 180);
         Assert.True(aDPrism.IsDone());
@@ -452,7 +454,7 @@ public class LocOpeTests
     public void Gluer_GluesABoxOnABox_TheInputsAreUnchanged()
     {
         TopoDS_Shape aBase = Box();
-        TopoDS_Shape aNew = new BRepPrimAPI_MakeBox(new gp_Pnt(2, 2, 30), 4, 4, 5).Shape();
+        TopoDS_Shape aNew = new BRepPrimAPI_MakeBox(new Point3D(2, 2, 30), 4, 4, 5).Shape();
         ShapeSnapshot aSnapBase = ShapeSnapshot.Of(aBase);
         ShapeSnapshot aSnapNew = ShapeSnapshot.Of(aNew);
         TopoDS_Face aTop = TopFace(aBase);
@@ -488,7 +490,7 @@ public class LocOpeTests
     public void Generator_OnAGluedShape()
     {
         TopoDS_Shape aBase = Box();
-        TopoDS_Shape aNew = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 30), 10, 20, 5).Shape();
+        TopoDS_Shape aNew = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 30), 10, 20, 5).Shape();
         // glue the new box by its bottom face, whose edges are the base's top edges in shape (not shared): the
         // generator's own test is through the gluer; here the generated shape is glued on itself
         var aGlued = new LocOpe_GluedShape(aNew);
@@ -535,8 +537,8 @@ public class LocOpeTests
     public void CSIntersector_And_CurveShapeIntersector()
     {
         TopoDS_Shape aBox = Box();
-        var aLines = new NCollection_Sequence<gp_Lin>();
-        aLines.Append(new gp_Lin(new gp_Pnt(5, 10, -10), new gp_Dir(0, 0, 1)));
+        var aLines = new NCollection_Sequence<Line3D>();
+        aLines.Append(new Line3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)));
         var anInt = new LocOpe_CSIntersector(aBox);
         anInt.Perform(aLines);
         Assert.True(anInt.IsDone());
@@ -549,7 +551,7 @@ public class LocOpeTests
         Assert.Equal(1, aFrom);
         Assert.Equal(1, aTo);
 
-        var aCurve = new LocOpe_CurveShapeIntersector(new gp_Ax1(new gp_Pnt(5, 10, -10), new gp_Dir(0, 0, 1)), aBox);
+        var aCurve = new LocOpe_CurveShapeIntersector(new Axis3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)), aBox);
         Assert.True(aCurve.IsDone());
         Assert.Equal(2, aCurve.NbPoints());
         Assert.True(aCurve.LocalizeAfter(0.0, ref anOr, ref aFrom, ref aTo));
@@ -557,8 +559,8 @@ public class LocOpeTests
         Assert.True(aCurve.LocalizeBefore(100.0, ref anOr, ref aFrom, ref aTo));
         Assert.Equal(TopAbs_REVERSED, anOr);
 
-        var aCircles = new NCollection_Sequence<gp_Circ>();
-        aCircles.Append(new gp_Circ(new gp_Ax2(new gp_Pnt(5, 10, 15), new gp_Dir(0, 0, 1)), 8));
+        var aCircles = new NCollection_Sequence<Circle3D>();
+        aCircles.Append(new Circle3D(new Frame3D(new Point3D(5, 10, 15), new Direction3D(0, 0, 1)), 8));
         anInt.Perform(aCircles);
         Assert.Equal(4, anInt.NbPoints(1));
     }
@@ -566,8 +568,8 @@ public class LocOpeTests
     [Fact]
     public void Pipe_OfAFrozenFace()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(), new gp_Dir(0, 0, 1)), -1, 1, -1, 1).Face();
-        TopoDS_Wire aSpine = new BRepBuilderAPI_MakeWire(Segment(new gp_Pnt(0, 0, 0), new gp_Pnt(0, 0, 10))).Wire();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(), new Direction3D(0, 0, 1)), -1, 1, -1, 1).Face();
+        TopoDS_Wire aSpine = new BRepBuilderAPI_MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(0, 0, 10))).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aPipe = new LocOpe_Pipe(aSpine, aFace);
         TopoDS_Shape aRes = aPipe.Shape();
@@ -581,9 +583,9 @@ public class LocOpeTests
         }
         Assert.Equal(1, aPipe.Shapes(new TopExp_Explorer(aFace, TopAbs_VERTEX).Current()).Extent());
         // as in OCCT, the pipe lines of a straight spine are infinite lines, which GeomConvert can't convert
-        var aPoints = new NCollection_Sequence<gp_Pnt>();
-        aPoints.Append(new gp_Pnt(0.5, 0.5, 0));
-        Assert.Throws<Standard_DomainError>(() => aPipe.Curves(aPoints));
+        var aPoints = new NCollection_Sequence<Point3D>();
+        aPoints.Append(new Point3D(0.5, 0.5, 0));
+        Assert.Throws<DomainErrorException>(() => aPipe.Curves(aPoints));
     }
 
     [Fact]
@@ -602,13 +604,13 @@ public class LocOpeTests
         }
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         // the side x = 10 split by a vertical segment, drafted by 5 degrees on its left part from the plane z = 0
-        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(Segment(new gp_Pnt(10, 10, 0), new gp_Pnt(10, 10, 30))).Wire();
+        TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(Segment(new Point3D(10, 10, 0), new Point3D(10, 10, 30))).Wire();
         ShapeSnapshot aWireSnap = ShapeSnapshot.Of(aWire);
         var aDrafts = new LocOpe_SplitDrafts(aBox);
         // as natively (tools/locoperec's DRAFT records, occt-issues.md): the drafted planes meet along a line, and
         // GeomFill_Pipe can't convert the infinite line to a B-spline
-        Assert.Throws<Standard_DomainError>(() => aDrafts.Perform(aSide, aWire, new gp_Dir(0, 0, 1),
-                                                                   new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5 * Math.PI / 180));
+        Assert.Throws<DomainErrorException>(() => aDrafts.Perform(aSide, aWire, new Direction3D(0, 0, 1),
+                                                                   new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5 * Math.PI / 180));
         aSnap.AssertUnchanged(aBox);
         aWireSnap.AssertUnchanged(aWire);
         Assert.False(aDrafts.IsDone());

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Defines General Services for HeaderSection Entities (Share, Check, Copy; Trace already inherited). Depends (for case numbers) of Protocol from HeaderSection.</summary>
@@ -17,7 +19,7 @@ public class RWHeaderSection_GeneralModule : StepData_GeneralModule
     }
 
     /// <summary>Specific filling of the list of Entities shared by an Entity ent, according to a Case Number CN (provided by HeaderSection Protocol).</summary>
-    public override void FillSharedCase(int CN, Standard_Transient? ent, Interface_EntityIterator iter)
+    public override void FillSharedCase(int CN, Transient? ent, Interface_EntityIterator iter)
     {
         if (CN != 4)
         {
@@ -29,12 +31,12 @@ public class RWHeaderSection_GeneralModule : StepData_GeneralModule
     }
 
     /// <summary>Specific Checking of an Entity ent.</summary>
-    public override void CheckCase(int CN, Standard_Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
+    public override void CheckCase(int CN, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
     {
     }
 
     /// <summary>Specific Copy ("Deep") from entfrom to entto (same type) by using a CopyTool which provides its working Map. Use method Transferred from CopyTool to work.</summary>
-    public override void CopyCase(int CN, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC)
+    public override void CopyCase(int CN, Transient? entfrom, Transient? entto, Interface_CopyTool TC)
     {
         //   ajout manuel
         switch (CN)
@@ -111,7 +113,7 @@ public class RWHeaderSection_GeneralModule : StepData_GeneralModule
 
     // --- Construction of empty class ---
 
-    public override bool NewVoid(int CN, out Standard_Transient? ent)
+    public override bool NewVoid(int CN, out Transient? ent)
     {
         ent = null;
         if (CN == 0)

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -145,7 +146,7 @@ public partial class BOPAlgo_Builder
         => myImages.Find(theS, out NCollection_List<TopoDS_Shape> aList) ? aList : null;
 
     /// <summary>OCCT's history of the result: modified, generated and deleted argument sub-shapes.</summary>
-    protected void PrepareHistory(Message_ProgressRange theRange)
+    protected void PrepareHistory(ProgressRange theRange)
     {
         if (!HasHistory())
         {
@@ -167,7 +168,7 @@ public partial class BOPAlgo_Builder
         // - Shapes that have no trace in the result shape. Add them as Deleted
         //   during the operation.
         int aNbS = myDS!.NbSourceShapes();
-        using var aPS = new Message_ProgressScope(theRange, "Preparing history information", aNbS);
+        using var aPS = new ProgressScope(theRange, "Preparing history information", aNbS);
         for (int i = 0; i < aNbS; ++i, aPS.Next())
         {
             TopoDS_Shape aS = myDS.Shape(i);

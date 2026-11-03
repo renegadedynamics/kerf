@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +21,7 @@ public sealed record XdeDoc_ValidationProps
     public double? Area { get; init; }
 
     /// <summary>The centroid.</summary>
-    public gp_Pnt? Centroid { get; init; }
+    public Point3D? Centroid { get; init; }
 
     /// <summary>True if no property is set.</summary>
     public bool IsEmpty => Volume is null && Area is null && Centroid is null;

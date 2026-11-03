@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Builds vertices: the combination of two vertices into one covering both.</summary>
@@ -19,7 +21,7 @@ public sealed class ShapeBuild_Vertex
     }
 
     /// <summary>As the vertex form, from the points and tolerances. Frozen.</summary>
-    public TopoDS_Vertex CombineVertex(in gp_Pnt pnt1, in gp_Pnt pnt2, double tol1, double tol2, double tolFactor = 1.0001)
+    public TopoDS_Vertex CombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
     {
         return frozen(InternalCombineVertex(pnt1, pnt2, tol1, tol2, tolFactor));
     }
@@ -37,12 +39,12 @@ public sealed class ShapeBuild_Vertex
     }
 
     /// <summary>OCCT's CombineVertex: the new vertex, not frozen.</summary>
-    internal TopoDS_Vertex InternalCombineVertex(in gp_Pnt pnt1, in gp_Pnt pnt2, double tol1, double tol2, double tolFactor = 1.0001)
+    internal TopoDS_Vertex InternalCombineVertex(in Point3D pnt1, in Point3D pnt2, double tol1, double tol2, double tolFactor = 1.0001)
     {
-        gp_Pnt pos;
+        Point3D pos;
         double tol;
 
-        gp_Vec v = new gp_Vec(pnt2.XYZ() - pnt1.XYZ());
+        Vector3D v = new Vector3D(pnt2.XYZ() - pnt1.XYZ());
         double dist = v.Magnitude();
 
         // #47 rln 09.12.98 S4054 PRO14323 entity 2844
@@ -60,7 +62,7 @@ public sealed class ShapeBuild_Vertex
         {
             tol = 0.5 * (dist + tol1 + tol2);
             double s = (dist > 0.0) ? (tol2 - tol1) / dist : 0.0; // szv#4:S4163:12Mar99 anti-exception
-            pos = new gp_Pnt(0.5 * ((1 - s) * pnt1.XYZ() + (1 + s) * pnt2.XYZ()));
+            pos = new Point3D(0.5 * ((1 - s) * pnt1.XYZ() + (1 + s) * pnt2.XYZ()));
         }
 
         TopoDS_Vertex V = new TopoDS_Vertex();

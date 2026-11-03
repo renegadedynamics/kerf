@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.LProp_Status;
 
 namespace Occt;
@@ -25,17 +26,17 @@ public class GeomLProp_SLProps
     private int myDerOrder;
     private int myCN;
     private double myLinTol;
-    private gp_Pnt myPnt;
-    private gp_Vec myD1u;
-    private gp_Vec myD1v;
-    private gp_Vec myD2u;
-    private gp_Vec myD2v;
-    private gp_Vec myDuv;
-    private gp_Dir myNormal = new();
+    private Point3D myPnt;
+    private Vector3D myD1u;
+    private Vector3D myD1v;
+    private Vector3D myD2u;
+    private Vector3D myD2v;
+    private Vector3D myDuv;
+    private Direction3D myNormal = new();
     private double myMinCurv = 0.0;
     private double myMaxCurv = 0.0;
-    private gp_Dir myDirMinCurv = new();
-    private gp_Dir myDirMaxCurv = new();
+    private Direction3D myDirMinCurv = new();
+    private Direction3D myDirMaxCurv = new();
     private double myMeanCurv = 0.0;
     private double myGausCurv = 0.0;
     private int mySignificantFirstDerivativeOrderU = 0;
@@ -118,38 +119,38 @@ public class GeomLProp_SLProps
     }
 
     /// <summary>The point.</summary>
-    public gp_Pnt Value() => myPnt;
+    public Point3D Value() => myPnt;
 
     /// <summary>The first U derivative, computed if it hasn't been.</summary>
-    public gp_Vec D1U()
+    public Vector3D D1U()
     {
         EnsureSurfDeriv(1);
         return myD1u;
     }
 
     /// <summary>The first V derivative, computed if it hasn't been.</summary>
-    public gp_Vec D1V()
+    public Vector3D D1V()
     {
         EnsureSurfDeriv(1);
         return myD1v;
     }
 
     /// <summary>The second U derivative, computed if it hasn't been.</summary>
-    public gp_Vec D2U()
+    public Vector3D D2U()
     {
         EnsureSurfDeriv(2);
         return myD2u;
     }
 
     /// <summary>The second V derivative, computed if it hasn't been.</summary>
-    public gp_Vec D2V()
+    public Vector3D D2V()
     {
         EnsureSurfDeriv(2);
         return myD2v;
     }
 
     /// <summary>The second cross derivative, computed if it hasn't been.</summary>
-    public gp_Vec DUV()
+    public Vector3D DUV()
     {
         EnsureSurfDeriv(2);
         return myDuv;
@@ -181,7 +182,7 @@ public class GeomLProp_SLProps
     }
 
     /// <summary>The tangent direction on the iso-V; throws LProp_NotDefined if it isn't defined.</summary>
-    public void TangentU(out gp_Dir D)
+    public void TangentU(out Direction3D D)
     {
         // LProp_SurfaceUtils::TangentU
         if (!IsTangentUDefined())
@@ -218,7 +219,7 @@ public class GeomLProp_SLProps
     }
 
     /// <summary>The tangent direction on the iso-U; throws LProp_NotDefined if it isn't defined.</summary>
-    public void TangentV(out gp_Dir D)
+    public void TangentV(out Direction3D D)
     {
         // LProp_SurfaceUtils::TangentV
         if (!IsTangentVDefined())
@@ -236,7 +237,7 @@ public class GeomLProp_SLProps
     }
 
     /// <summary>The normal direction; throws LProp_NotDefined if it isn't defined.</summary>
-    public gp_Dir Normal()
+    public Direction3D Normal()
     {
         // LProp_SurfaceUtils::Normal
         if (!IsNormalDefined())
@@ -343,7 +344,7 @@ public class GeomLProp_SLProps
     public double MinCurvature() => RequireCurvature(myMinCurv);
 
     /// <summary>The directions of the maximum and minimum curvatures; throws LProp_NotDefined if not defined.</summary>
-    public void CurvatureDirections(out gp_Dir MaxD, out gp_Dir MinD)
+    public void CurvatureDirections(out Direction3D MaxD, out Direction3D MinD)
     {
         // LProp_SurfaceUtils::CurvatureDirections
         if (!IsCurvatureDefined())
@@ -409,12 +410,12 @@ public class GeomLProp_SLProps
 
     // LProp_SurfaceUtils::ComputeSurfTangent: when the first significant derivative has order 2, its sign is taken
     // from the chord to a nearby point
-    private void ComputeSurfTangent(in gp_Vec theFirstDeriv, in gp_Vec theSecDeriv, int theSigOrder, bool theIsU,
-                                    out gp_Dir theDir)
+    private void ComputeSurfTangent(in Vector3D theFirstDeriv, in Vector3D theSecDeriv, int theSigOrder, bool theIsU,
+                                    out Direction3D theDir)
     {
         if (theSigOrder == 1)
         {
-            theDir = new gp_Dir(theFirstDeriv);
+            theDir = new Direction3D(theFirstDeriv);
             return;
         }
 
@@ -437,7 +438,7 @@ public class GeomLProp_SLProps
 
             double aDelta = Max(aDu * THE_DIVISION_FACTOR, THE_MIN_STEP);
 
-            gp_Vec aV = theSecDeriv;
+            Vector3D aV = theSecDeriv;
 
             double anOtherU;
             if (myU - anUinfimum < aDelta)
@@ -449,16 +450,16 @@ public class GeomLProp_SLProps
                 anOtherU = myU - aDelta;
             }
 
-            mySurf!.D0(Min(myU, anOtherU), myV, out gp_Pnt aP1);
-            mySurf.D0(Max(myU, anOtherU), myV, out gp_Pnt aP2);
+            mySurf!.D0(Min(myU, anOtherU), myV, out Point3D aP1);
+            mySurf.D0(Max(myU, anOtherU), myV, out Point3D aP2);
 
-            gp_Vec aChord = new(aP1, aP2);
+            Vector3D aChord = new(aP1, aP2);
             if (aV.Dot(aChord) < 0.0)
             {
                 aV = -aV;
             }
 
-            theDir = new gp_Dir(aV);
+            theDir = new Direction3D(aV);
         }
         else
         {
@@ -474,7 +475,7 @@ public class GeomLProp_SLProps
 
             double aDelta = Max(aDv * THE_DIVISION_FACTOR, THE_MIN_STEP);
 
-            gp_Vec aV = theSecDeriv;
+            Vector3D aV = theSecDeriv;
 
             double anOtherV;
             if (myV - anVinfimum < aDelta)
@@ -486,16 +487,16 @@ public class GeomLProp_SLProps
                 anOtherV = myV - aDelta;
             }
 
-            mySurf!.D0(myU, Min(myV, anOtherV), out gp_Pnt aP1);
-            mySurf.D0(myU, Max(myV, anOtherV), out gp_Pnt aP2);
+            mySurf!.D0(myU, Min(myV, anOtherV), out Point3D aP1);
+            mySurf.D0(myU, Max(myV, anOtherV), out Point3D aP2);
 
-            gp_Vec aChord = new(aP1, aP2);
+            Vector3D aChord = new(aP1, aP2);
             if (aV.Dot(aChord) < 0.0)
             {
                 aV = -aV;
             }
 
-            theDir = new gp_Dir(aV);
+            theDir = new Direction3D(aV);
         }
     }
 }

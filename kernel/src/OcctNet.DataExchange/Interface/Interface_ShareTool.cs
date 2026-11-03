@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -93,10 +95,10 @@ public class Interface_ShareTool
     /// <summary>
     /// Returns True if &lt;ent&gt; is Shared by other Entities in the Model
     /// </summary>
-    public bool IsShared(Standard_Transient? ent)
+    public bool IsShared(Transient? ent)
     {
         Interface_Graph thegraph = theHGraph.Graph();
-        NCollection_HSequence<Standard_Transient> list =
+        NCollection_HSequence<Transient> list =
             thegraph.GetShareds(ent);
         return (list is not null && list.Length() > 0);
     }
@@ -104,7 +106,7 @@ public class Interface_ShareTool
     /// <summary>
     /// Returns the List of Entities Shared by a given Entity &lt;ent&gt;
     /// </summary>
-    public Interface_EntityIterator Shareds(Standard_Transient? ent)
+    public Interface_EntityIterator Shareds(Transient? ent)
     {
         return theHGraph.Graph().Shareds(ent);
     }
@@ -112,7 +114,7 @@ public class Interface_ShareTool
     /// <summary>
     /// Returns the List of Entities Sharing a given Entity &lt;ent&gt;
     /// </summary>
-    public Interface_EntityIterator Sharings(Standard_Transient? ent)
+    public Interface_EntityIterator Sharings(Transient? ent)
     {
         return theHGraph.Graph().Sharings(ent);
     }
@@ -120,10 +122,10 @@ public class Interface_ShareTool
     /// <summary>
     /// Returns the count of Sharing Entities of an Entity, which are Kind of a given Type
     /// </summary>
-    public int NbTypedSharings(Standard_Transient? ent, Type? atype)
+    public int NbTypedSharings(Transient? ent, Type? atype)
     {
         Interface_Graph thegraph = theHGraph.CGraph();
-        NCollection_HSequence<Standard_Transient> list =
+        NCollection_HSequence<Transient> list =
             thegraph.GetSharings(ent);
         if (list is null)
         {
@@ -134,7 +136,7 @@ public class Interface_ShareTool
         int n = list.Length();
         for (int i = 1; i <= n; i++)
         {
-            Standard_Transient entsh = list.Value(i);
+            Transient entsh = list.Value(i);
             if (entsh is null)
             {
                 continue;
@@ -151,21 +153,21 @@ public class Interface_ShareTool
     /// Returns the Sharing Entity of an Entity, which is Kind of a given Type. Allows to access a Sharing Entity
     /// of a given type when there is one and only one (current case)
     /// </summary>
-    public Standard_Transient? TypedSharing(Standard_Transient? ent, Type? atype)
+    public Transient? TypedSharing(Transient? ent, Type? atype)
     {
         Interface_Graph thegraph = theHGraph.CGraph();
-        NCollection_HSequence<Standard_Transient> list =
+        NCollection_HSequence<Transient> list =
             thegraph.GetSharings(ent);
         if (list is null)
         {
             return null;
         }
-        Standard_Transient entresult = null;
+        Transient entresult = null;
         int result = 0;
         int n = list.Length();
         for (int i = 1; i <= n; i++)
         {
-            Standard_Transient entsh = list.Value(i);
+            Transient entsh = list.Value(i);
             if (entsh is null)
             {
                 continue;
@@ -193,7 +195,7 @@ public class Interface_ShareTool
     /// True (D), the list starts with lower level entities and ends by the root. Else, the root is first and the
     /// lower level entities are at end
     /// </summary>
-    public Interface_EntityIterator All(Standard_Transient? ent, bool rootlast = true)
+    public Interface_EntityIterator All(Transient? ent, bool rootlast = true)
     {
         Interface_InterfaceModel model = Model();
         Interface_EntityIterator list = new Interface_EntityIterator();
@@ -230,13 +232,13 @@ public class Interface_ShareTool
         }
         else
         {
-            NCollection_HSequence<Standard_Transient> sq =
-                new NCollection_HSequence<Standard_Transient>();
+            NCollection_HSequence<Transient> sq =
+                new NCollection_HSequence<Transient>();
             sq.Append(ent);
             //    file type process
             for (i = 1; i <= sq.Length(); i++)
             { // Length croit
-                Standard_Transient en = sq.Value(i);
+                Transient en = sq.Value(i);
                 int num = model.Number(en);
                 if (fl.Value(num) != 0)
                 {
@@ -290,7 +292,7 @@ public class Interface_ShareTool
         S.Write(" : ");
         for (iter.Start(); iter.More(); iter.Next())
         {
-            Standard_Transient ent = iter.Value();
+            Transient ent = iter.Value();
             S.Write(" n0/id:");
             Model().Print(ent, S);
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -91,7 +92,7 @@ internal static class SWDRAWShapeFixCommands
             return 1;
         }
 
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double aDistDomain = 0.0;
         int k = 3;
         if (k < n)
@@ -497,7 +498,7 @@ internal static class SWDRAWShapeFixCommands
             // Counting the number of each type of fixes. If the switch '*?' store all modified shapes in compound.
             foreach (var it in msg.MapShape())
             {
-                foreach (Message_Msg iter in it.Value)
+                foreach (global::Kerf.Engine.Foundation.Msg iter in it.Value)
                 {
                     string aKey = iter.Value();
                     if (aMapOfNumberOfFixes.TryGetValue(aKey, out int aCount))
@@ -713,7 +714,7 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Invalid arguments\n");
             return 1;
         }
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 4)
         {
             // OCCT calls C's atof here, which reads a plain number only
@@ -722,7 +723,7 @@ internal static class SWDRAWShapeFixCommands
         }
 
         TopoDS_Face aFace = TopoDS.Face(Sh1);
-        var p2d = new gp_Pnt2d(ucoord, vcoord);
+        var p2d = new Point2D(ucoord, vcoord);
         var f2d = new BRepTopAdaptor_FClass2d(aFace, tol);
         TopAbs_State stat = f2d.Perform(p2d);
         if (stat == TopAbs_State.TopAbs_OUT)
@@ -758,7 +759,7 @@ internal static class SWDRAWShapeFixCommands
             di.Append("Shape is null\n");
             return 1;
         }
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 3)
         {
             aTol = theDI.Atof(a[3]);
@@ -799,7 +800,7 @@ internal static class SWDRAWShapeFixCommands
                 else
                 {
                     TopExp.Vertices(TopoDS.Edge(aExp1.Current()), out TopoDS_Vertex aV1, out TopoDS_Vertex _);
-                    gp_Pnt aP = BRep_Tool.Pnt(aV1);
+                    Point3D aP = BRep_Tool.Pnt(aV1);
                     di.Append(aP.X()).Append(" ").Append(aP.Y()).Append(" ").Append(aP.Z()).Append("\n");
                 }
             }

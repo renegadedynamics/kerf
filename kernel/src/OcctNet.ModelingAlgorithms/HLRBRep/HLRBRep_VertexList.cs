@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -63,7 +65,7 @@ public sealed class HLRBRep_VertexList
     }
 
     /// <summary>The current vertex: the boundary vertex if there is one, else the interference's intersection.</summary>
-    /// <exception cref="Standard_NoSuchObject">The iteration is over.</exception>
+    /// <exception cref="NoSuchObjectException">The iteration is over.</exception>
     public HLRAlgo_Intersection Current()
     {
         if (fromEdge)
@@ -76,7 +78,7 @@ public sealed class HLRBRep_VertexList
         }
         else
         {
-            throw new Standard_NoSuchObject("HLRBRep_VertexList::Current");
+            throw new NoSuchObjectException("HLRBRep_VertexList::Current");
         }
     }
 
@@ -84,7 +86,7 @@ public sealed class HLRBRep_VertexList
 
     public bool IsInterference() => fromInterf;
 
-    /// <exception cref="Standard_DomainError">The current vertex is not a boundary.</exception>
+    /// <exception cref="DomainErrorException">The current vertex is not a boundary.</exception>
     public TopAbs_Orientation Orientation()
     {
         if (fromEdge)
@@ -93,11 +95,11 @@ public sealed class HLRBRep_VertexList
         }
         else
         {
-            throw new Standard_DomainError("HLRBRep_VertexList::Orientation");
+            throw new DomainErrorException("HLRBRep_VertexList::Orientation");
         }
     }
 
-    /// <exception cref="Standard_DomainError">The current vertex is not an interference.</exception>
+    /// <exception cref="DomainErrorException">The current vertex is not an interference.</exception>
     public TopAbs_Orientation Transition()
     {
         if (fromInterf)
@@ -106,11 +108,11 @@ public sealed class HLRBRep_VertexList
         }
         else
         {
-            throw new Standard_DomainError("HLRBRep_VertexList::Transition");
+            throw new DomainErrorException("HLRBRep_VertexList::Transition");
         }
     }
 
-    /// <exception cref="Standard_DomainError">The current vertex is not an interference.</exception>
+    /// <exception cref="DomainErrorException">The current vertex is not an interference.</exception>
     public TopAbs_Orientation BoundaryTransition()
     {
         if (fromInterf)
@@ -119,7 +121,7 @@ public sealed class HLRBRep_VertexList
         }
         else
         {
-            throw new Standard_DomainError("HLRBRep_VertexList::BoundaryTransition");
+            throw new DomainErrorException("HLRBRep_VertexList::BoundaryTransition");
         }
     }
 }

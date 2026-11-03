@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bvh;
+
 namespace Occt;
 
 /// <summary>Selects the pairs of elements of two BVH trees whose boxes meet.</summary>
@@ -9,7 +11,7 @@ namespace Occt;
 /// OCCT's <c>RejectNode</c> builds a <c>BVH_Box&lt;double, 3&gt;</c> whatever the dimension (only the 3D selector is
 /// instantiated in OCCT); the port uses the selector's own dimension, the same thing in 3D.
 /// </remarks>
-public class BOPTools_PairSelector<TVec> : BVH_PairTraverse<double, TVec, BVH_BoxSet<double, TVec, int>, double>
+public class BOPTools_PairSelector<TVec> : PairTraverse<double, TVec, BoxSet<double, TVec, int>, double>
     where TVec : unmanaged, INCollection_Vec<double, TVec>
 {
     /// <summary>A pair of element indices.</summary>
@@ -94,13 +96,13 @@ public class BOPTools_PairSelector<TVec> : BVH_PairTraverse<double, TVec, BVH_Bo
     public override bool RejectNode(in TVec theCMin1, in TVec theCMax1, in TVec theCMin2, in TVec theCMax2, out double theMetric)
     {
         theMetric = 0.0;
-        return new BVH_Box<double, TVec>(theCMin1, theCMax1).IsOut(theCMin2, theCMax2);
+        return new Box<double, TVec>(theCMin1, theCMax1).IsOut(theCMin2, theCMax2);
     }
 
     /// <summary>Checks if the pair of elements should be rejected.</summary>
     public bool RejectElement(int theID1, int theID2)
     {
-        return (mySameBVHs && theID1 >= theID2) || myBVHSet1!.Box(theID1).IsOut(myBVHSet2!.Box(theID2));
+        return (mySameBVHs && theID1 >= theID2) || _bvhSet1!.Box(theID1).IsOut(_bvhSet2!.Box(theID2));
     }
 
     /// <summary>Checks and accepts the pair of elements.</summary>
@@ -108,7 +110,7 @@ public class BOPTools_PairSelector<TVec> : BVH_PairTraverse<double, TVec, BVH_Bo
     {
         if (!RejectElement(theID1, theID2))
         {
-            myPairs.Append(new PairIDs(myBVHSet1!.Element(theID1), myBVHSet2!.Element(theID2)));
+            myPairs.Append(new PairIDs(_bvhSet1!.Element(theID1), _bvhSet2!.Element(theID2)));
             return true;
         }
         return false;

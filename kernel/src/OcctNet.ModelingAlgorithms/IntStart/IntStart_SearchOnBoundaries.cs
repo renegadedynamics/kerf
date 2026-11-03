@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -22,7 +25,7 @@ public interface IIntStart_ArcFunction
     int NbSamples();
 
     /// <summary>The point saved at state <paramref name="Index"/>.</summary>
-    gp_Pnt Valpoint(int Index);
+    Point3D Valpoint(int Index);
 
     /// <summary>The quadric.</summary>
     IntSurf_Quadric Quadric();
@@ -31,7 +34,7 @@ public interface IIntStart_ArcFunction
     Adaptor3d_Surface Surface();
 
     /// <summary>The point of the last evaluation.</summary>
-    gp_Pnt LastComputedPoint();
+    Point3D LastComputedPoint();
 }
 
 /// <summary>
@@ -51,7 +54,7 @@ public interface IIntStart_SOBTool
 
     static abstract int NbPoints(Adaptor2d_Curve2d C);
 
-    static abstract void Value(Adaptor2d_Curve2d C, int Index, out gp_Pnt Pt, out double Tol, out double U);
+    static abstract void Value(Adaptor2d_Curve2d C, int Index, out Point3D Pt, out double Tol, out double U);
 
     static abstract bool IsVertex(Adaptor2d_Curve2d C, int Index);
 
@@ -75,16 +78,16 @@ public interface IIntStart_PathPoint<TSelf>
     where TSelf : struct, IIntStart_PathPoint<TSelf>
 {
     /// <summary>A point on a vertex of an arc.</summary>
-    static abstract TSelf Create(in gp_Pnt P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
+    static abstract TSelf Create(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
 
     /// <summary>A new point on an arc.</summary>
-    static abstract TSelf Create(in gp_Pnt P, double Tol, Adaptor2d_Curve2d A, double Parameter);
+    static abstract TSelf Create(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter);
 
     /// <summary>Sets a point on a vertex of an arc.</summary>
-    void SetValue(in gp_Pnt P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
+    void SetValue(in Point3D P, double Tol, Adaptor3d_HVertex V, Adaptor2d_Curve2d A, double Parameter);
 
     /// <summary>Sets a new point on an arc (the vertex is kept, as in OCCT).</summary>
-    void SetValue(in gp_Pnt P, double Tol, Adaptor2d_Curve2d A, double Parameter);
+    void SetValue(in Point3D P, double Tol, Adaptor2d_Curve2d A, double Parameter);
 
     bool IsNew();
 
@@ -127,7 +130,7 @@ public interface IIntStart_Segment<ThePathPoint>
 /// </remarks>
 public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegment>
     where TheSOBTool : IIntStart_SOBTool
-    where TheFunction : math_FunctionWithDerivative, IIntStart_ArcFunction
+    where TheFunction : FunctionWithDerivative, IIntStart_ArcFunction
     where ThePathPoint : struct, IIntStart_PathPoint<ThePathPoint>
     where TheSegment : struct, IIntStart_Segment<ThePathPoint>
 {
@@ -137,7 +140,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     private readonly NCollection_Sequence<ThePathPoint> spnt = new();
 
     /// <summary>The function squared, to minimise near a root (OCCT's file-local MinFunction).</summary>
-    private sealed class MinFunction : math_Function
+    private sealed class MinFunction : Function
     {
         private readonly TheFunction myFunc;
 
@@ -172,7 +175,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             myValue = RealLast();
         }
 
-        public void Init(math_FunctionAllRoots theSolution, int theIndex)
+        public void Init(FunctionAllRoots theSolution, int theIndex)
         {
             myMathIndex = theIndex;
             myValue = theSolution.GetPoint(theIndex);
@@ -218,7 +221,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         bool Arcsol;
         double PDeb, PFin, prm, tol;
         int i, nbknown, nbfound, index;
-        gp_Pnt pt;
+        Point3D pt;
 
         Domain.Init();
 
@@ -239,7 +242,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 Func.Set(A);
                 FindVertex(A, Domain, Func, spnt, TolBoundary);
                 TheSOBTool.Bounds(A, out PDeb, out PFin);
-                if (Precision.IsNegativeInfinite(PDeb) || Precision.IsPositiveInfinite(PFin))
+                if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(PDeb) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(PFin))
                 {
                     ComputeBoundsfromInfinite(Func, ref PDeb, ref PFin, out _);
                 }
@@ -300,7 +303,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return all;
     }
@@ -310,7 +313,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Length();
     }
@@ -320,7 +323,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Value(Index);
     }
@@ -330,7 +333,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return sseg.Length();
     }
@@ -340,7 +343,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return sseg.Value(Index);
     }
@@ -378,10 +381,10 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
     private static bool IsDegenerated(Adaptor3d_CurveOnSurface theCurve)
     {
-        if (theCurve.GetType() == GeomAbs_Circle)
+        if (theCurve.GetType() == Circle)
         {
-            gp_Circ aCirc = theCurve.Circle();
-            if (aCirc.Radius() <= Precision.Confusion())
+            Circle3D aCirc = theCurve.Circle();
+            if (aCirc.Radius() <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
@@ -391,10 +394,10 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
     private static bool IsDegenerated(in IntSurf_Quadric theQuadric)
     {
-        GeomAbs_SurfaceType TypeQuad = theQuadric.TypeQuadric();
-        if (TypeQuad == GeomAbs_Cone)
+        SurfaceKind TypeQuad = theQuadric.TypeQuadric();
+        if (TypeQuad == SurfaceKind.Cone)
         {
-            gp_Cone aCone = theQuadric.Cone();
+            Cone aCone = theQuadric.Cone();
             double aSemiAngle = Math.Abs(aCone.SemiAngle());
             if (aSemiAngle < 0.02 || aSemiAngle > 1.55)
             {
@@ -443,7 +446,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     {
         int i, Nbi = 0, Nbp = 0;
 
-        gp_Pnt ptdeb, ptfin;
+        Point3D ptdeb, ptfin;
         double pardeb = 0.0, parfin = 0.0;
         int ideb, ifin, range, ranged, rangef;
 
@@ -541,15 +544,15 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         if (Rejection == false)
         {
             IntSurf_Quadric aQuadric = Func.Quadric();
-            GeomAbs_SurfaceType TypeQuad = aQuadric.TypeQuadric();
-            GeomAbs_CurveType TypeConS = GeomAbs_OtherCurve;
+            SurfaceKind TypeQuad = aQuadric.TypeQuadric();
+            CurveKind TypeConS = OtherCurve;
 
             IntCurveSurface_HInter IntCS = new();
             bool IsIntCSdone = false;
 
-            math_FunctionAllRoots? pSol = null;
+            FunctionAllRoots? pSol = null;
 
-            math_FunctionSample Echant = new(Pdeb, Pfin, NbEchant);
+            FunctionSample Echant = new(Pdeb, Pfin, NbEchant);
 
             bool aelargir = true;
             // modified by NIZNHY-PKV Thu Apr 12 09:25:19 2001 f
@@ -574,7 +577,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 maxdist = TolBoundary;
             }
 
-            if (TypeQuad != GeomAbs_OtherSurface) // intersection of boundary curve and quadric surface
+            if (TypeQuad != OtherSurface) // intersection of boundary curve and quadric surface
             {
                 // Exact solution
                 Adaptor3d_Surface aSurf = Func.Surface();
@@ -587,27 +590,27 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 Geom_Surface? QuadSurf = null;
                 switch (TypeQuad)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                     {
                         QuadSurf = new Geom_Plane(aQuadric.Plane());
                         break;
                     }
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                     {
                         QuadSurf = new Geom_CylindricalSurface(aQuadric.Cylinder());
                         break;
                     }
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                     {
                         QuadSurf = new Geom_ConicalSurface(aQuadric.Cone());
                         break;
                     }
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                     {
                         QuadSurf = new Geom_SphericalSurface(aQuadric.Sphere());
                         break;
                     }
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                     {
                         QuadSurf = new Geom_ToroidalSurface(aQuadric.Torus());
                         break;
@@ -617,9 +620,9 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 }
                 GeomAdaptor_Surface GAHsurf = new(QuadSurf!);
 
-                if ((TypeConS == GeomAbs_Line || TypeConS == GeomAbs_Circle || TypeConS == GeomAbs_Ellipse
-                     || TypeConS == GeomAbs_Parabola || TypeConS == GeomAbs_Hyperbola)
-                    && TypeQuad != GeomAbs_Torus && !IsDegenerated(HConS) && !IsDegenerated(aQuadric))
+                if ((TypeConS == Line || TypeConS == Circle || TypeConS == Ellipse
+                     || TypeConS == Parabola || TypeConS == Hyperbola)
+                    && TypeQuad != SurfaceKind.Torus && !IsDegenerated(HConS) && !IsDegenerated(aQuadric))
                 {
                     // exact intersection for only canonic curves and real quadric surfaces
                     IntCS.Perform(HConS, GAHsurf);
@@ -642,14 +645,14 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
             if (!IsIntCSdone)
             {
-                pSol = new math_FunctionAllRoots(Func, Echant, EpsX, maxdist, maxdist); //-- TolBoundary,nTolTangency);
+                pSol = new FunctionAllRoots(Func, Echant, EpsX, maxdist, maxdist); //-- TolBoundary,nTolTangency);
 
-                if (!pSol.IsDone())
+                if (!pSol.IsDone)
                 {
-                    throw new Standard_Failure();
+                    throw new FailureException();
                 }
 
-                Nbp = pSol.NbPoints();
+                Nbp = pSol.PointCount;
             }
             //
             // jgv: build solution on the whole boundary
@@ -658,14 +661,14 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 // double theTol = Domain->MaxTolerance(A);
                 // theTol += theTol;
                 double theTol = 5.0e-4;
-                math_FunctionAllRoots SolAgain = new(Func, Echant, EpsX, theTol, theTol); //-- TolBoundary,nTolTangency);
+                FunctionAllRoots SolAgain = new(Func, Echant, EpsX, theTol, theTol); //-- TolBoundary,nTolTangency);
 
-                if (!SolAgain.IsDone())
+                if (!SolAgain.IsDone)
                 {
-                    throw new Standard_Failure();
+                    throw new FailureException();
                 }
 
-                int Nbi_again = SolAgain.NbIntervals();
+                int Nbi_again = SolAgain.IntervalCount;
 
                 if (Nbi_again > 0)
                 {
@@ -693,11 +696,11 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                             // Recuperer point debut et fin, et leur parametre.
                             SolAgain.GetInterval(i, out pardeb, out parfin);
 
-                            if (Math.Abs(pardeb - Pdeb) <= Precision.PConfusion())
+                            if (Math.Abs(pardeb - Pdeb) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 pardeb = Pdeb;
                             }
-                            if (Math.Abs(parfin - Pfin) <= Precision.PConfusion())
+                            if (Math.Abs(parfin - Pfin) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 parfin = Pfin;
                             }
@@ -778,7 +781,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                                 // Line can be tangent surface if all distances less then maxdist
                                 aTang = aTang && Math.Abs(yf) < maxdist && Math.Abs(yl) < maxdist;
                             }
-                            if (aTang && IsIntCSdone && TypeConS == GeomAbs_Line)
+                            if (aTang && IsIntCSdone && TypeConS == Line)
                             {
                                 // Interval is got by exact intersection
                                 // Line can be tangent if all points are on the same side of surface
@@ -868,16 +871,16 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                         if (dist < maxdist)
                         {
                             if (!IsIntCSdone
-                                && (Math.Abs(aParam - Pdeb) <= Precision.PConfusion()
-                                    || Math.Abs(aParam - Pfin) <= Precision.PConfusion()))
+                                && (Math.Abs(aParam - Pdeb) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                    || Math.Abs(aParam - Pfin) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
                                 anIndx = pSol!.GetPointState(aSI[i].Index());
                             }
                         }
 
-                        gp_Pnt aPnt = anIndx < 0 ? Func.LastComputedPoint() : Func.Valpoint(anIndx);
+                        Point3D aPnt = anIndx < 0 ? Func.LastComputedPoint() : Func.Valpoint(anIndx);
 
-                        if (dist > 0.1 * Precision.Confusion())
+                        if (dist > 0.1 * global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             // Precise found points. It results in following:
                             //   1. Make the vertex nearer to the intersection line
@@ -891,13 +894,13 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                             double aLPar = (i == Nbp) ? Pfin : (para + aSI[i + 1].Value()) / 2.0;
 
                             MinFunction aNewFunc = new(Func);
-                            math_BrentMinimum aMin = new(Precision.Confusion());
+                            BrentMinimum aMin = new(global::Kerf.Engine.Foundation.Precision.Confusion());
 
                             aMin.Perform(aNewFunc, aFPar, para, aLPar);
-                            if (aMin.IsDone())
+                            if (aMin.IsDone)
                             {
                                 para = aMin.Location();
-                                gp_Pnt2d aP2d = A.Value(para);
+                                Point2D aP2d = A.Value(para);
                                 aPnt = Func.Surface().Value(aP2d.X(), aP2d.Y());
                             }
                         }
@@ -913,7 +916,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
             if (!IsIntCSdone)
             {
-                Nbi = pSol!.NbIntervals();
+                Nbi = pSol!.IntervalCount;
             }
 
             if (!RecheckOnRegularity && Nbp != 0)
@@ -954,7 +957,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
 
             if (Nbi == 1)
             {
-                if ((Math.Abs(pardeb - Pdeb) < Precision.PConfusion()) && (Math.Abs(parfin - Pfin) < Precision.PConfusion()))
+                if ((Math.Abs(pardeb - Pdeb) < global::Kerf.Engine.Foundation.Precision.PConfusion()) && (Math.Abs(parfin - Pfin) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     Arcsol = true;
                 }
@@ -1041,7 +1044,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
     // If confused, you should find this vertex in the list of
     // Start. It then returns the position of this point in the list pnt.
     // Otherwise, add the point in the list.
-    private static void PointProcess(in gp_Pnt Pt, double Para, Adaptor2d_Curve2d A, Adaptor3d_TopolTool Domain,
+    private static void PointProcess(in Point3D Pt, double Para, Adaptor2d_Curve2d A, Adaptor3d_TopolTool Domain,
                                      NCollection_Sequence<ThePathPoint> pnt, double Tol, out int Range)
     {
         int k;
@@ -1124,7 +1127,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
                 {
                     continue;
                 }
-                if (Math.Abs(ptsol.Parameter() - Para) <= Precision.PConfusion())
+                if (Math.Abs(ptsol.Parameter() - Para) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     found_internal = true;
                     Range = k;
@@ -1180,19 +1183,19 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             return anExitCode;
         }
 
-        GeomAbs_CurveType aTypeE;
+        CurveKind aTypeE;
         BRepAdaptor_Curve aBAC = new(anE);
         aTypeE = aBAC.GetType();
 
-        if (aTypeE != GeomAbs_Line)
+        if (aTypeE != Line)
         {
             return anExitCode;
         }
 
-        GeomAbs_SurfaceType aTypeS;
+        SurfaceKind aTypeS;
         aTypeS = aQuadric.TypeQuadric();
 
-        if (aTypeS != GeomAbs_Cylinder)
+        if (aTypeS != SurfaceKind.Cylinder)
         {
             return anExitCode;
         }
@@ -1200,9 +1203,9 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         double f, l, U1f, U1l, U2f, U2l, UEgde, TOL, aDist, aR, aRRel, Tol;
         Geom_Curve aCEdge = BRep_Tool.Curve(anE, out f, out l)!;
 
-        gp_Cylinder aCyl = aQuadric.Cylinder();
-        gp_Ax1 anAx1 = aCyl.Axis();
-        gp_Lin aLin = new(anAx1);
+        Cylinder aCyl = aQuadric.Cylinder();
+        Axis3D anAx1 = aCyl.Axis();
+        Line3D aLin = new(anAx1);
         Geom_Line aCAxis = new(aLin);
         aR = aCyl.Radius();
 
@@ -1217,7 +1220,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
         C1.Load(aCAxis);
         C2.Load(aCEdge);
 
-        Tol = Precision.PConfusion();
+        Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         Extrema_ExtCC anExtCC = new(C1, C2, U1f, U1l, U2f, U2l, Tol, Tol);
 
@@ -1227,7 +1230,7 @@ public class IntStart_SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, 
             return anExitCode;
         }
 
-        gp_Pnt P1, PEdge;
+        Point3D P1, PEdge;
 
         anExtCC.Points(1, out Extrema_POnCurv PC1, out Extrema_POnCurv PC2);
 

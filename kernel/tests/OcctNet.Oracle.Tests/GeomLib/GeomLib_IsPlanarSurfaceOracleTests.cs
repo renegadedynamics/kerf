@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -19,7 +21,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
     private static readonly double[] Noises = [0.0, 0.0, 1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-2];
     private static readonly double[] Tolerances = [1e-9, 1e-7, 1e-5, 1e-3, 1e-1];
 
-    private static void SameDir(Oracle theOracle, N.gp_Dir theN, in gp_Dir theP, string theWhat)
+    private static void SameDir(Oracle theOracle, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
         theOracle.Same(theN.X(), theP.X(), theWhat + " X");
         theOracle.Same(theN.Y(), theP.Y(), theWhat + " Y");
@@ -27,17 +29,17 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A point of the plane of theAx3 at (a, b), moved off it by theNoise times a random amount.</summary>
-    private static gp_Pnt PlanePoint(Oracle theOracle, in gp_Ax3 theAx3, double a, double b, double theNoise)
+    private static Point3D PlanePoint(Oracle theOracle, in CoordinateSystem theAx3, double a, double b, double theNoise)
     {
-        gp_XYZ aP = theAx3.Location().XYZ() + a * theAx3.XDirection().XYZ() + b * theAx3.YDirection().XYZ()
+        Xyz aP = theAx3.Location().XYZ() + a * theAx3.XDirection().XYZ() + b * theAx3.YDirection().XYZ()
                     + theNoise * theOracle.Real(-1, 1) * theAx3.Direction().XYZ();
-        return new gp_Pnt(aP);
+        return new Point3D(aP);
     }
 
     private static (N.Geom_Surface Native, Geom_Surface Port) PlanarBSpline(Oracle theOracle, double theNoise,
                                                                            bool theBezier)
     {
-        (N.gp_Ax3 aNAx3, gp_Ax3 anAx3) = Ax3s(theOracle);
+        (N.gp_Ax3 aNAx3, CoordinateSystem anAx3) = Ax3s(theOracle);
         aNAx3.Dispose();
         int aUDeg = theOracle.Int(1, 4), aVDeg = theOracle.Int(1, 4);
         NCollection_Array1<double> aUKnots, aVKnots;
@@ -54,12 +56,12 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         {
             theOracle.BSplineKnots(aUDeg, false, out aUKnots, out aUMults);
             theOracle.BSplineKnots(aVDeg, false, out aVKnots, out aVMults);
-            aNbU = Occt.BSplCLib.NbPoles(aUDeg, false, aUMults);
-            aNbV = Occt.BSplCLib.NbPoles(aVDeg, false, aVMults);
+            aNbU = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aUDeg, false, aUMults);
+            aNbV = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aVDeg, false, aVMults);
         }
         bool aRational = theOracle.Int(0, 2) == 0;
         double aScale = theOracle.Real(0.1, 20);
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         var aWeights = new NCollection_Array2<double>(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; i++)
         {
@@ -91,14 +93,14 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         bool aUPer = theOracle.Int(0, 3) == 0, aVPer = theOracle.Int(0, 3) == 0;
         theOracle.BSplineKnots(aUDeg, aUPer, out NCollection_Array1<double> aUKnots, out NCollection_Array1<int> aUMults);
         theOracle.BSplineKnots(aVDeg, aVPer, out NCollection_Array1<double> aVKnots, out NCollection_Array1<int> aVMults);
-        int aNbU = Occt.BSplCLib.NbPoles(aUDeg, aUPer, aUMults), aNbV = Occt.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        int aNbU = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aUDeg, aUPer, aUMults), aNbV = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         var aWeights = new NCollection_Array2<double>(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; i++)
         {
             for (int j = 1; j <= aNbV; j++)
             {
-                aPoles[i, j] = new gp_Pnt(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+                aPoles[i, j] = new Point3D(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
                 aWeights[i, j] = theOracle.Real(0.5, 1.5);
             }
         }
@@ -112,7 +114,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
 
     private static (N.Geom_Surface Native, Geom_Surface Port) Elementary(Oracle theOracle)
     {
-        (N.gp_Ax3 aNAx3, gp_Ax3 anAx3) = Ax3s(theOracle);
+        (N.gp_Ax3 aNAx3, CoordinateSystem anAx3) = Ax3s(theOracle);
         using var aNAx3Owner = aNAx3;
         switch (theOracle.Int(0, 4))
         {
@@ -149,29 +151,29 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
     /// </summary>
     private static (N.Geom_Surface Native, Geom_Surface Port) Revolution(Oracle theOracle)
     {
-        (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theOracle);
+        (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theOracle);
         using var aNAxisOwner = aNAxis;
         if (theOracle.Int(0, 4) == 0)
         {
-            (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = Ax2s(theOracle);
+            (N.gp_Ax2 aNAx2, Frame3D anAx2) = Ax2s(theOracle);
             using var aNAx2Owner = aNAx2;
             double R = theOracle.Real(0.1, 10);
             using var aNC = new N.Geom_Circle(aNAx2, R);
             return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new Geom_SurfaceOfRevolution(new Geom_Circle(anAx2, R), anAxis));
         }
         // Raw direction perpendicular to the axis, tilted along it by Noise
-        gp_XYZ aPerp = anAxis.Direction().XYZ() ^ RawDir(theOracle);
+        Xyz aPerp = anAxis.Direction().XYZ() ^ RawDir(theOracle);
         double aTilt = Noises[theOracle.Int(0, Noises.Length - 1)];
-        gp_XYZ aRaw = aPerp + aTilt * aPerp.Modulus() * anAxis.Direction().XYZ();
-        gp_Pnt aStart = anAxis.Location();
+        Xyz aRaw = aPerp + aTilt * aPerp.Modulus() * anAxis.Direction().XYZ();
+        Point3D aStart = anAxis.Location();
         if (theOracle.Int(0, 2) == 0)
         {
-            aStart = new gp_Pnt(aStart.XYZ() + theOracle.Real(-5, 5) * anAxis.Direction().XYZ());
+            aStart = new Point3D(aStart.XYZ() + theOracle.Real(-5, 5) * anAxis.Direction().XYZ());
         }
         using var aNDir = new N.gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z());
         using var aNStart = Oracle.ToNative(aStart);
         using var aNLine = new N.Geom_Line(aNStart, aNDir);
-        var aLine = new Geom_Line(aStart, new gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z()));
+        var aLine = new Geom_Line(aStart, new Direction3D(aRaw.X(), aRaw.Y(), aRaw.Z()));
         double U1 = theOracle.Real(0, 5), U2 = U1 + theOracle.Real(0.5, 10);
         using var aNTrim = new N.Geom_TrimmedCurve(aNLine, U1, U2);
         return (new N.Geom_SurfaceOfRevolution(aNTrim, aNAxis),
@@ -184,7 +186,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
     /// </summary>
     private static (N.Geom_Surface Native, Geom_Surface Port) Extrusion(Oracle theOracle)
     {
-        (N.gp_Ax3 aNAx3, gp_Ax3 anAx3) = Ax3s(theOracle);
+        (N.gp_Ax3 aNAx3, CoordinateSystem anAx3) = Ax3s(theOracle);
         aNAx3.Dispose();
         double aCurveNoise = Noises[theOracle.Int(0, Noises.Length - 1)];
         double aTilt = Noises[theOracle.Int(0, Noises.Length - 1)];
@@ -192,12 +194,12 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         Geom_Curve aPC;
         if (theOracle.Int(0, 3) == 0)
         {
-            gp_Pnt aP = PlanePoint(theOracle, anAx3, 0, 0, 0);
-            gp_XYZ aRaw = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + anAx3.YDirection().XYZ();
+            Point3D aP = PlanePoint(theOracle, anAx3, 0, 0, 0);
+            Xyz aRaw = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + anAx3.YDirection().XYZ();
             using var aNP = Oracle.ToNative(aP);
             using var aNDir = new N.gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z());
             using var aNLine = new N.Geom_Line(aNP, aNDir);
-            var aLine = new Geom_Line(aP, new gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z()));
+            var aLine = new Geom_Line(aP, new Direction3D(aRaw.X(), aRaw.Y(), aRaw.Z()));
             double U1 = theOracle.Real(-5, 0), U2 = U1 + theOracle.Real(0.5, 10);
             aNC = new N.Geom_TrimmedCurve(aNLine, U1, U2);
             aPC = new Geom_TrimmedCurve(aLine, U1, U2);
@@ -206,8 +208,8 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         {
             int aDeg = theOracle.Int(1, 5);
             theOracle.BSplineKnots(aDeg, false, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults);
-            int aNbPoles = Occt.BSplCLib.NbPoles(aDeg, false, aMults);
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+            int aNbPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, false, aMults);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
             for (int i = 1; i <= aNbPoles; i++)
             {
                 aPoles[i] = PlanePoint(theOracle, anAx3, theOracle.Real(-10, 10), theOracle.Real(-10, 10), aCurveNoise);
@@ -217,7 +219,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
             aPC = aWeights is null ? new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg)
                                    : new Geom_BSplineCurve(aPoles, aWeights, aKnots, aMults, aDeg);
         }
-        gp_XYZ anExt = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + theOracle.Real(-1, 1) * anAx3.YDirection().XYZ()
+        Xyz anExt = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + theOracle.Real(-1, 1) * anAx3.YDirection().XYZ()
                        + aTilt * anAx3.Direction().XYZ();
         if (anExt.Modulus() < 0.1)
         {
@@ -226,7 +228,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         using (aNC)
         using (var aNExt = new N.gp_Dir(anExt.X(), anExt.Y(), anExt.Z()))
         {
-            var aS = new Geom_SurfaceOfLinearExtrusion(aPC, new gp_Dir(anExt.X(), anExt.Y(), anExt.Z()));
+            var aS = new Geom_SurfaceOfLinearExtrusion(aPC, new Direction3D(anExt.X(), anExt.Y(), anExt.Z()));
             var aNS = new N.Geom_SurfaceOfLinearExtrusion(aNC, aNExt);
             if (theOracle.Int(0, 1) == 0)
             {
@@ -298,7 +300,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
     /// <summary>A sub-range of [theFirst, theLast] (of [-10, 10] where it is infinite or periodic and long).</summary>
     private static double Bound(Oracle theOracle, double theFirst, double theLast, out double theSecond)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             theFirst = -10;
             theLast = 10;
@@ -335,7 +337,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
                     using N.gp_Dir aNDir = aNPos.Direction();
                     using N.gp_Dir aNXDir = aNPos.XDirection();
                     using N.gp_Dir aNYDir = aNPos.YDirection();
-                    gp_Ax3 aPos = aP.Plan().Position();
+                    CoordinateSystem aPos = aP.Plan().Position();
                     anOracle.Same(aNLoc, aPos.Location(), aWhat + " location");
                     SameDir(anOracle, aNDir, aPos.Direction(), aWhat + " direction");
                     SameDir(anOracle, aNXDir, aPos.XDirection(), aWhat + " X direction");
@@ -343,7 +345,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
                 }
                 else
                 {
-                    Assert.ThrowsAny<StdFail_NotDone>(() => aP.Plan());
+                    Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => aP.Plan());
                 }
             }
         }

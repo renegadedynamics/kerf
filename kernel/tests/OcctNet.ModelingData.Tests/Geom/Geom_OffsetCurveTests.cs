@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom_OffsetCurve_Test
@@ -11,11 +13,11 @@ public class Geom_OffsetCurve_Test
     public Geom_OffsetCurve_Test()
     {
         // Create a circle as basis curve
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 5.0);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 5.0);
         Geom_Circle aBasisCurve = new(aCircle);
 
         // Create offset curve
-        gp_Dir anOffsetDir = new(gp_Dir.D.Z);
+        Direction3D anOffsetDir = new(Direction3D.D.Z);
         double anOffsetValue = 2.0;
         myOriginalCurve = new Geom_OffsetCurve(aBasisCurve, anOffsetValue, anOffsetDir);
     }
@@ -67,8 +69,8 @@ public class Geom_OffsetCurve_Test
 
         for (double u = anUFirst; u <= anULast; u += aStep)
         {
-            gp_Pnt anOrigPnt = myOriginalCurve.Value(u);
-            gp_Pnt aCopyPnt = aCopiedCurve.Value(u);
+            Point3D anOrigPnt = myOriginalCurve.Value(u);
+            Point3D aCopyPnt = aCopiedCurve.Value(u);
             Assert.True(anOrigPnt.IsEqual(aCopyPnt, 1e-10));
         }
     }

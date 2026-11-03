@@ -1,3 +1,4 @@
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -39,7 +40,7 @@ public partial class Wire
         var ownLocation = TopoShape.Location();
         var geometryAdjust = new Location(ownLocation).Inverse() * globalized.Location;
         var trsf = geometryAdjust.ToTopLoc().Transformation();
-        var identity = new TopLoc_Location();
+        var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
         var transformer = new BRepBuilderAPI_Transform(baseWire, trsf, true);

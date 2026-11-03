@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -27,19 +31,19 @@ public sealed class BRepFill_MultiLine : AppCont_Function
     private readonly bool myIsoU2;
     private readonly Geom2dAdaptor_Curve myBis = new();
     private readonly int myKPart;
-    private readonly GeomAbs_Shape myCont;
+    private readonly Continuity myCont;
 
     private static bool isIsoU(in TopoDS_Face Face, in TopoDS_Edge Edge)
     {
         Geom2d_Curve? C = BRep_Tool.CurveOnSurface(Edge, Face, out double f, out double _);
         if (C is null)
         {
-            throw new Standard_ConstructionError("BRepFill_MultiLine : Edge without PCurve");
+            throw new ConstructionErrorException("BRepFill_MultiLine : Edge without PCurve");
         }
 
-        gp_Dir2d D = new(C.DN(f, 1));
+        Direction2D D = new(C.DN(f, 1));
 
-        return Math.Abs(D.Dot(gp.DX2d())) < Math.Abs(D.Dot(gp.DY2d()));
+        return Math.Abs(D.Dot(Constants.DX2d())) < Math.Abs(D.Dot(Constants.DY2d()));
     }
 
     /// <summary>An empty MultiLine (one 3D point and two 2D points).</summary>
@@ -64,7 +68,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         myKPart = 0;
         //
         const double mult = 5.0;
-        double eps = mult * Precision.Confusion();
+        double eps = mult * global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         myNbPnt2d = 2;
         myNbPnt = 1;
@@ -76,13 +80,13 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         // eval myU1, myV1, myU2, myV2;
         Geom_Plane RefPlane;
         Geom_Plane BasisPlane = new(0.0, 0.0, 1.0, 0.0);
-        TopLoc_Location L;
+        Placement L;
 
         TopExp_Explorer Exp = new();
         double Umin = 0.0, Vmin = 0.0, Umax = 0.0, Vmax = 0.0, U, V;
-        gp_Pnt2d P1, P2;
-        gp_Vec DZ;
-        gp_Pnt P;
+        Point2D P1, P2;
+        Vector3D DZ;
+        Point3D P;
 
         // Result on Face1
         bool First = true;
@@ -116,7 +120,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         // return isos in their domain of restriction.
         Geom_Curve UU1, UU2, VV1, VV2;
         Geom_Surface S = BRep_Tool.Surface(myFace1, out L)!;
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             S = (Geom_Surface)S.Transformed(L.Transformation());
         }
@@ -127,7 +131,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU1 = S.UIso(Umin);
                 GeomAdaptor_Curve Dummy = new(UU1);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU1 = S.UIso(Umax);
                 }
@@ -136,7 +140,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU1 = S.UIso(Umax);
                 GeomAdaptor_Curve Dummy = new(UU1);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU1 = S.UIso(Umin);
                 }
@@ -149,7 +153,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU1 = S.VIso(Vmin);
                 GeomAdaptor_Curve Dummy = new(UU1);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU1 = S.VIso(Vmax);
                 }
@@ -158,7 +162,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU1 = S.VIso(Vmax);
                 GeomAdaptor_Curve Dummy = new(UU1);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU1 = S.VIso(Vmin);
                 }
@@ -177,22 +181,22 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
         // try duplication
         GeomAdaptor_Surface GAS1 = new(S);
-        GeomAbs_SurfaceType Type1 = GAS1.GetType();
+        SurfaceKind Type1 = GAS1.GetType();
 
         if (UU1.IsPeriodic())
         {
-            ElCLib.AdjustPeriodic(UU1.FirstParameter(), UU1.LastParameter(), Precision.PConfusion(), ref Umin, ref Umax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(UU1.FirstParameter(), UU1.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref Umin, ref Umax);
         }
         if (VV1.IsPeriodic())
         {
-            ElCLib.AdjustPeriodic(VV1.FirstParameter(), VV1.LastParameter(), Precision.PConfusion(), ref Vmin, ref Vmax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(VV1.FirstParameter(), VV1.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref Vmin, ref Vmax);
         }
         // end try duplication
 
         myU1 = new Geom2dAdaptor_Curve(GeomProjLib.Curve2d(UU1, BasisPlane)!, Umin, Umax);
 
         UU1.D1(Umin, out P, out DZ);
-        RefPlane = new Geom_Plane(new gp_Ax3(P, new gp_Dir(DZ), gp.DZ()));
+        RefPlane = new Geom_Plane(new CoordinateSystem(P, new Direction3D(DZ), Constants.DZ()));
 
         myV1 = new Geom2dAdaptor_Curve(GeomProjLib.Curve2d(VV1, RefPlane)!, Vmin, Vmax);
 
@@ -227,7 +231,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         // return isos in their domain of restriction.
         S = BRep_Tool.Surface(myFace2, out L)!;
 
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             S = (Geom_Surface)S.Transformed(L.Transformation());
         }
@@ -238,7 +242,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU2 = S.UIso(Umin);
                 GeomAdaptor_Curve Dummy = new(UU2);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU2 = S.UIso(Umax);
                 }
@@ -247,7 +251,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU2 = S.UIso(Umax);
                 GeomAdaptor_Curve Dummy = new(UU2);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU2 = S.UIso(Umin);
                 }
@@ -260,7 +264,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU2 = S.VIso(Vmin);
                 GeomAdaptor_Curve Dummy = new(UU2);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU2 = S.VIso(Vmax);
                 }
@@ -269,7 +273,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             {
                 UU2 = S.VIso(Vmax);
                 GeomAdaptor_Curve Dummy = new(UU2);
-                if (Dummy.GetType() == GeomAbs_Circle && Dummy.Circle().Radius() < eps)
+                if (Dummy.GetType() == Circle && Dummy.Circle().Radius() < eps)
                 {
                     UU2 = S.VIso(Vmin);
                 }
@@ -288,22 +292,22 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
         // try duplication
         GeomAdaptor_Surface GAS2 = new(S);
-        GeomAbs_SurfaceType Type2 = GAS2.GetType();
+        SurfaceKind Type2 = GAS2.GetType();
 
         if (UU2.IsPeriodic())
         {
-            ElCLib.AdjustPeriodic(UU2.FirstParameter(), UU2.LastParameter(), Precision.PConfusion(), ref Umin, ref Umax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(UU2.FirstParameter(), UU2.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref Umin, ref Umax);
         }
         if (VV2.IsPeriodic())
         {
-            ElCLib.AdjustPeriodic(VV2.FirstParameter(), VV2.LastParameter(), Precision.PConfusion(), ref Vmin, ref Vmax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(VV2.FirstParameter(), VV2.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref Vmin, ref Vmax);
         }
         // end try duplication
 
         myU2 = new Geom2dAdaptor_Curve(GeomProjLib.Curve2d(UU2, BasisPlane)!, Umin, Umax);
 
         UU2.D1(Umin, out P, out DZ);
-        RefPlane = new Geom_Plane(new gp_Ax3(P, new gp_Dir(DZ), gp.DZ()));
+        RefPlane = new Geom_Plane(new CoordinateSystem(P, new Direction3D(DZ), Constants.DZ()));
         myV2 = new Geom2dAdaptor_Curve(GeomProjLib.Curve2d(VV2, RefPlane)!, Vmin, Vmax);
 
         // eval if in a particular case.
@@ -313,13 +317,13 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         //        ==> Iso on 2 faces.
         //     2) - Straight Bissectrice
         //        - 2 surfaces are planes.
-        myCont = GeomAbs_C0;
+        myCont = C0;
 
-        if (myBis.GetType() == GeomAbs_Line)
+        if (myBis.GetType() == Line)
         {
             double DeltaU = myBis.LastParameter() - myBis.FirstParameter();
-            gp_Pnt2d aPnt1 = ValueOnF1(myBis.FirstParameter() + 0.1 * DeltaU);
-            gp_Pnt2d aPnt2 = ValueOnF1(myBis.FirstParameter() + 0.9 * DeltaU);
+            Point2D aPnt1 = ValueOnF1(myBis.FirstParameter() + 0.1 * DeltaU);
+            Point2D aPnt2 = ValueOnF1(myBis.FirstParameter() + 0.9 * DeltaU);
             if (myIsoU1)
             {
                 if (Math.Abs(aPnt1.Y() - aPnt2.Y()) < eps)
@@ -337,10 +341,10 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
             if (myKPart == 1)
             {
-                myCont = GeomAbs_G1;
+                myCont = G1;
             }
 
-            if ((Type1 == GeomAbs_Plane) && (Type2 == GeomAbs_Plane))
+            if ((Type1 == Plane) && (Type2 == Plane))
             {
                 myKPart = 2;
             }
@@ -351,7 +355,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
     public bool IsParticularCase() => myKPart != 0;
 
     /// <summary>The continuity of the line.</summary>
-    public GeomAbs_Shape Continuity() => myCont;
+    public Continuity Continuity() => myCont;
 
     /// <summary>In a particular case, the 3D curve and the two pcurves, built exactly.</summary>
     public void Curves(out Geom_Curve? Curve, out Geom2d_Curve? PCurve1, out Geom2d_Curve? PCurve2)
@@ -361,7 +365,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         PCurve2 = null;
         if (myKPart == 1)
         {
-            gp_Pnt2d P1, P2, PMil;
+            Point2D P1, P2, PMil;
             double f, l;
 
             P1 = ValueOnF1(myBis.FirstParameter());
@@ -372,8 +376,8 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
             PMil = ValueOnF1(0.5 * (myBis.FirstParameter() + myBis.LastParameter()));
 
-            Geom_Surface S = BRep_Tool.Surface(myFace1, out TopLoc_Location L)!;
-            if (!L.IsIdentity())
+            Geom_Surface S = BRep_Tool.Surface(myFace1, out Placement L)!;
+            if (!L.IsIdentity)
             {
                 S = (Geom_Surface)S.Transformed(L.Transformation());
             }
@@ -396,11 +400,11 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                 l = Curve.LastParameter();
                 if (Sens)
                 {
-                    PCurve1 = new Geom2d_Line(new gp_Pnt2d(PMil.X(), P1.Y() - f), gp.DY2d());
+                    PCurve1 = new Geom2d_Line(new Point2D(PMil.X(), P1.Y() - f), Constants.DY2d());
                 }
                 else
                 {
-                    PCurve1 = new Geom2d_Line(new gp_Pnt2d(PMil.X(), P1.Y() + f), gp.DY2d().Reversed());
+                    PCurve1 = new Geom2d_Line(new Point2D(PMil.X(), P1.Y() + f), Constants.DY2d().Reversed());
                 }
                 PCurve1 = new Geom2d_TrimmedCurve(PCurve1, f, l);
             }
@@ -421,11 +425,11 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                 l = Curve.LastParameter();
                 if (Sens)
                 {
-                    PCurve1 = new Geom2d_Line(new gp_Pnt2d(P1.X() - f, PMil.Y()), gp.DX2d());
+                    PCurve1 = new Geom2d_Line(new Point2D(P1.X() - f, PMil.Y()), Constants.DX2d());
                 }
                 else
                 {
-                    PCurve1 = new Geom2d_Line(new gp_Pnt2d(P1.X() + f, PMil.Y()), gp.DX2d().Reversed());
+                    PCurve1 = new Geom2d_Line(new Point2D(P1.X() + f, PMil.Y()), Constants.DX2d().Reversed());
                 }
                 PCurve1 = new Geom2d_TrimmedCurve(PCurve1, f, l);
             }
@@ -439,11 +443,11 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                 Sens = P1.Y() < P2.Y();
                 if (Sens)
                 {
-                    PCurve2 = new Geom2d_Line(new gp_Pnt2d(PMil.X(), (P1.Y() - f)), gp.DY2d());
+                    PCurve2 = new Geom2d_Line(new Point2D(PMil.X(), (P1.Y() - f)), Constants.DY2d());
                 }
                 else
                 {
-                    PCurve2 = new Geom2d_Line(new gp_Pnt2d(PMil.X(), (P1.Y() + f)), gp.DY2d().Reversed());
+                    PCurve2 = new Geom2d_Line(new Point2D(PMil.X(), (P1.Y() + f)), Constants.DY2d().Reversed());
                 }
             }
             else
@@ -451,19 +455,19 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                 Sens = P1.X() < P2.X();
                 if (Sens)
                 {
-                    PCurve2 = new Geom2d_Line(new gp_Pnt2d(P1.X() - f, PMil.Y()), gp.DX2d());
+                    PCurve2 = new Geom2d_Line(new Point2D(P1.X() - f, PMil.Y()), Constants.DX2d());
                 }
                 else
                 {
-                    PCurve2 = new Geom2d_Line(new gp_Pnt2d(P1.X() + f, PMil.Y()), gp.DX2d().Reversed());
+                    PCurve2 = new Geom2d_Line(new Point2D(P1.X() + f, PMil.Y()), Constants.DX2d().Reversed());
                 }
             }
             PCurve2 = new Geom2d_TrimmedCurve(PCurve2, f, l);
         }
         else if (myKPart == 2)
         {
-            Geom_Surface S = BRep_Tool.Surface(myFace1, out TopLoc_Location L)!;
-            if (!L.IsIdentity())
+            Geom_Surface S = BRep_Tool.Surface(myFace1, out Placement L)!;
+            if (!L.IsIdentity)
             {
                 S = (Geom_Surface)S.Transformed(L.Transformation());
             }
@@ -475,18 +479,18 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
             Geom_Plane Plane = (Geom_Plane)S;
             // eval the 3d curve corresponding to the bissectrice.
-            gp_Pnt2d P = myBis.Line().Location();
-            gp_Dir2d D = myBis.Line().Direction();
-            Geom_Line Line = new(new gp_Pnt(P.X(), P.Y(), 0.0), new gp_Dir(D.X(), D.Y(), 0.0));
+            Point2D P = myBis.Line().Location();
+            Direction2D D = myBis.Line().Direction();
+            Geom_Line Line = new(new Point3D(P.X(), P.Y(), 0.0), new Direction3D(D.X(), D.Y(), 0.0));
             Geom_TrimmedCurve TLine = new(Line, myBis.FirstParameter(), myBis.LastParameter());
-            Curve = GeomProjLib.ProjectOnPlane(TLine, Plane, gp.DZ(), false);
+            Curve = GeomProjLib.ProjectOnPlane(TLine, Plane, Constants.DZ(), false);
 
             // eval PCurve1
             PCurve1 = GeomProjLib.Curve2d(Curve!, Plane);
 
             // eval PCurve2
             S = BRep_Tool.Surface(myFace2, out L)!;
-            if (!L.IsIdentity())
+            if (!L.IsIdentity)
             {
                 S = (Geom_Surface)S.Transformed(L.Transformation());
             }
@@ -506,32 +510,32 @@ public sealed class BRepFill_MultiLine : AppCont_Function
     public override double LastParameter() => myBis.LastParameter();
 
     /// <summary>The 3D point at <paramref name="U"/> (on the first face).</summary>
-    public gp_Pnt Value(double U)
+    public Point3D Value(double U)
     {
-        Geom_Surface S = BRep_Tool.Surface(myFace1, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(myFace1, out Placement L)!;
 
-        gp_Pnt2d P2d = ValueOnF1(U);
+        Point2D P2d = ValueOnF1(U);
 
-        gp_Pnt P3d = S.Value(P2d.X(), P2d.Y());
+        Point3D P3d = S.Value(P2d.X(), P2d.Y());
         P3d.Transform(L.Transformation());
 
         return P3d;
     }
 
-    private static gp_Pnt2d ValueOnFace(double U,
+    private static Point2D ValueOnFace(double U,
                                         Geom2dAdaptor_Curve TheBis,
                                         Geom2dAdaptor_Curve TheU,
                                         Geom2dAdaptor_Curve TheV,
                                         bool IsIsoU)
     {
-        gp_Pnt2d P = TheBis.Value(U);
+        Point2D P = TheBis.Value(U);
 
         Geom2dAPI_ProjectPointOnCurve Ext = new(P, TheU.Curve()!, TheU.FirstParameter(), TheU.LastParameter());
         //
         const double mult = 5.0;
-        double eps = mult * Precision.Confusion();
+        double eps = mult * global::Kerf.Engine.Foundation.Precision.Confusion();
         //
-        double UU = 0.0, Dist = Precision.Infinite(), D1, D2;
+        double UU = 0.0, Dist = global::Kerf.Engine.Foundation.Precision.Infinite(), D1, D2;
 
         if (Ext.NbPoints() != 0)
         {
@@ -546,21 +550,21 @@ public sealed class BRepFill_MultiLine : AppCont_Function
         {
             if (Math.Abs(D1 - D2) < eps)
             {
-                if (TheU.GetType() == GeomAbs_Circle)
+                if (TheU.GetType() == Circle)
                 {
-                    gp_Vec2d Axis = new(TheU.Circle().XAxis().Direction());
-                    gp_Vec2d D12d = TheBis.DN(TheBis.FirstParameter(), 1);
+                    Vector2D Axis = new(TheU.Circle().XAxis().Direction());
+                    Vector2D D12d = TheBis.DN(TheBis.FirstParameter(), 1);
                     double Ang = Axis.Angle(D12d);
-                    if (!TheU.Circle().IsDirect())
+                    if (!TheU.Circle().IsDirect)
                     {
                         Ang = -Ang;
                     }
-                    UU = ElCLib.InPeriod(Ang, TheU.FirstParameter(), TheU.FirstParameter() + 2 * Math.PI);
+                    UU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(Ang, TheU.FirstParameter(), TheU.FirstParameter() + 2 * Math.PI);
                     Dist = TheU.Circle().Radius();
                 }
                 else
                 {
-                    throw new Standard_ConstructionError("BRepFill_MultiLine: ValueOnFace");
+                    throw new ConstructionErrorException("BRepFill_MultiLine: ValueOnFace");
                 }
             }
             else if (D1 < D2)
@@ -575,11 +579,11 @@ public sealed class BRepFill_MultiLine : AppCont_Function
             }
         }
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double VV;
 
-        gp_Pnt2d PF = TheV.Value(TheV.FirstParameter());
-        gp_Pnt2d PL = TheV.Value(TheV.LastParameter());
+        Point2D PF = TheV.Value(TheV.FirstParameter());
+        Point2D PL = TheV.Value(TheV.LastParameter());
 
         if (Math.Abs(Dist - Math.Abs(PF.Y())) < Tol)
         {
@@ -597,7 +601,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                 Dist = -Dist;
             }
 
-            Geom2d_Line Line = new(new gp_Pnt2d(0.0, Dist), gp.DX2d());
+            Geom2d_Line Line = new(new Point2D(0.0, Dist), Constants.DX2d());
 
             Geom2dAdaptor_Curve Cu1 = TheV;
             Geom2dAdaptor_Curve Cu2 = new(Line);
@@ -608,7 +612,7 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
             if (!Intersector.IsDone())
             {
-                return new gp_Pnt2d(0.0, 0.0);
+                return new Point2D(0.0, 0.0);
             }
             else
             {
@@ -621,8 +625,8 @@ public sealed class BRepFill_MultiLine : AppCont_Function
                     IntRes2d_IntersectionSegment Seg = Intersector.Segment(1);
                     double VS1 = Seg.FirstPoint().ParamOnFirst();
                     double VS2 = Seg.LastPoint().ParamOnFirst();
-                    gp_Pnt2d PS1 = TheV.Value(VS1);
-                    gp_Pnt2d PS2 = TheV.Value(VS2);
+                    Point2D PS1 = TheV.Value(VS1);
+                    Point2D PS2 = TheV.Value(VS2);
                     double Alp = (Dist - PS1.Y()) / (PS2.Y() - PS1.Y());
                     VV = Alp * (VS2 - VS1) + VS1;
                 }
@@ -642,33 +646,33 @@ public sealed class BRepFill_MultiLine : AppCont_Function
 
         if (IsIsoU)
         {
-            return new gp_Pnt2d(VV, UU);
+            return new Point2D(VV, UU);
         }
         else
         {
-            return new gp_Pnt2d(UU, VV);
+            return new Point2D(UU, VV);
         }
     }
 
     /// <summary>The point at <paramref name="U"/> on the first face's parameter plane.</summary>
-    public gp_Pnt2d ValueOnF1(double U) => ValueOnFace(U, myBis, myU1, myV1, myIsoU1);
+    public Point2D ValueOnF1(double U) => ValueOnFace(U, myBis, myU1, myV1, myIsoU1);
 
     /// <summary>The point at <paramref name="U"/> on the second face's parameter plane.</summary>
-    public gp_Pnt2d ValueOnF2(double U) => ValueOnFace(U, myBis, myU2, myV2, myIsoU2);
+    public Point2D ValueOnF2(double U) => ValueOnFace(U, myBis, myU2, myV2, myIsoU2);
 
     /// <summary>The 3D point and both 2D points at <paramref name="U"/>.</summary>
-    public void Value3dOnF1OnF2(double U, out gp_Pnt P3d, out gp_Pnt2d PF1, out gp_Pnt2d PF2)
+    public void Value3dOnF1OnF2(double U, out Point3D P3d, out Point2D PF1, out Point2D PF2)
     {
         PF1 = ValueOnFace(U, myBis, myU1, myV1, myIsoU1);
         PF2 = ValueOnFace(U, myBis, myU2, myV2, myIsoU2);
 
-        Geom_Surface S = BRep_Tool.Surface(myFace1, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(myFace1, out Placement L)!;
         P3d = S.Value(PF1.X(), PF1.Y());
         P3d.Transform(L.Transformation());
     }
 
     /// <inheritdoc/>
-    public override bool Value(double theT, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+    public override bool Value(double theT, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
     {
         thePnt[1] = Value(theT);
         thePnt2d[1] = ValueOnF1(theT);
@@ -677,5 +681,5 @@ public sealed class BRepFill_MultiLine : AppCont_Function
     }
 
     /// <inheritdoc/>
-    public override bool D1(double theT, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec) => false;
+    public override bool D1(double theT, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec) => false;
 }

@@ -4,8 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.DrawLite;
 
@@ -68,7 +69,7 @@ internal static class GeometryTestContinuityCommands
     {
         int n = a.Count;
         double U1, U2, V1, V2, u1, u2, v1, v2;
-        GeomAbs_Shape TypeCont;
+        Continuity TypeCont;
         int ord;
         bool b1, b2, b3, b4;
         if (n < 8)
@@ -114,7 +115,7 @@ internal static class GeometryTestContinuityCommands
         switch (ord)
         {
             case 0:
-                TypeCont = GeomAbs_C0;
+                TypeCont = C0;
                 switch (n)
                 {
                     case 10:
@@ -131,7 +132,7 @@ internal static class GeometryTestContinuityCommands
                 break;
 
             case 1:
-                TypeCont = GeomAbs_C1;
+                TypeCont = C1;
                 switch (n)
                 {
                     case 11:
@@ -151,7 +152,7 @@ internal static class GeometryTestContinuityCommands
                 break;
 
             case 2:
-                TypeCont = GeomAbs_C2;
+                TypeCont = C2;
                 switch (n)
                 {
                     case 12:
@@ -188,7 +189,7 @@ internal static class GeometryTestContinuityCommands
     {
         int n = a.Count;
         double U1, U2, V1, V2, u1, u2, v1, v2;
-        GeomAbs_Shape TypeCont;
+        Continuity TypeCont;
         int ord;
         bool b1, b2, b3, b4;
 
@@ -234,7 +235,7 @@ internal static class GeometryTestContinuityCommands
         switch (ord)
         {
             case 1:
-                TypeCont = GeomAbs_G1;
+                TypeCont = G1;
                 switch (n)
                 {
                     case 11:
@@ -254,7 +255,7 @@ internal static class GeometryTestContinuityCommands
                 break;
 
             case 2:
-                TypeCont = GeomAbs_G2;
+                TypeCont = G2;
                 switch (n)
                 {
                     case 13:
@@ -294,7 +295,7 @@ internal static class GeometryTestContinuityCommands
     {
         int n = a.Count;
         double U1, U2, u1, u2;
-        GeomAbs_Shape TypeCont;
+        Continuity TypeCont;
         int ord;
         bool b1, b2;
         if (n < 6)
@@ -336,7 +337,7 @@ internal static class GeometryTestContinuityCommands
         switch (ord)
         {
             case 1:
-                TypeCont = GeomAbs_G1;
+                TypeCont = G1;
                 switch (n)
                 {
                     case 9:
@@ -355,7 +356,7 @@ internal static class GeometryTestContinuityCommands
                 }
                 break;
             case 2:
-                TypeCont = GeomAbs_G2;
+                TypeCont = G2;
                 switch (n)
                 {
                     case 12:
@@ -399,7 +400,7 @@ internal static class GeometryTestContinuityCommands
     {
         int n = a.Count;
         double U1, U2, u1, u2;
-        GeomAbs_Shape TypeCont;
+        Continuity TypeCont;
         int ord;
         bool b1, b2;
         if (n < 6)
@@ -441,7 +442,7 @@ internal static class GeometryTestContinuityCommands
         switch (ord)
         {
             case 0:
-                TypeCont = GeomAbs_C0;
+                TypeCont = C0;
                 switch (n)
                 {
                     case 8:
@@ -457,7 +458,7 @@ internal static class GeometryTestContinuityCommands
                 }
                 break;
             case 1:
-                TypeCont = GeomAbs_C1;
+                TypeCont = C1;
                 switch (n)
                 {
                     case 9:
@@ -477,7 +478,7 @@ internal static class GeometryTestContinuityCommands
                 break;
 
             case 2:
-                TypeCont = GeomAbs_C2;
+                TypeCont = C2;
                 switch (n)
                 {
                     case 10:

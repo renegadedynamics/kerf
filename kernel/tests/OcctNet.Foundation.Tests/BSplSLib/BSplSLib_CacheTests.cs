@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class BSplSLib_CacheTest
@@ -26,22 +30,22 @@ public class BSplSLib_CacheTest
     public void D0_NonRationalSurface()
     {
         // Create a biquadratic Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 1);
-        aPoles[3, 1] = new gp_Pnt(2, 0, 0);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 1);
+        aPoles[3, 1] = new Point3D(2, 0, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(0, 1, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 2);
-        aPoles[3, 2] = new gp_Pnt(2, 1, 1);
+        aPoles[1, 2] = new Point3D(0, 1, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 2);
+        aPoles[3, 2] = new Point3D(2, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 2, 0);
-        aPoles[2, 3] = new gp_Pnt(1, 2, 1);
-        aPoles[3, 3] = new gp_Pnt(2, 2, 0);
+        aPoles[1, 3] = new Point3D(0, 2, 0);
+        aPoles[2, 3] = new Point3D(1, 2, 1);
+        aPoles[3, 3] = new Point3D(2, 2, 0);
 
         NCollection_Array1<double> aKnotsU = new(1, 2);
         aKnotsU[1] = 0.0;
@@ -69,8 +73,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, null);
 
         // Test at several parameter values
@@ -84,10 +88,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, null);
                 }
-                aCache.D0(u, v, out gp_Pnt aCachePnt);
+                aCache.D0(u, v, out Point3D aCachePnt);
 
                 // Direct evaluation using BSplSLib.D0
-                BSplSLib.D0(u,
+                SurfaceBSplSLib.D0(u,
                             v,
                             0,
                             0,
@@ -103,7 +107,7 @@ public class BSplSLib_CacheTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt);
+                            out Point3D aDirectPnt);
 
                 // Compare
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -117,22 +121,22 @@ public class BSplSLib_CacheTest
     public void D1_NonRationalSurface()
     {
         // Create a biquadratic Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 1);
-        aPoles[3, 1] = new gp_Pnt(2, 0, 0);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 1);
+        aPoles[3, 1] = new Point3D(2, 0, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(0, 1, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 2);
-        aPoles[3, 2] = new gp_Pnt(2, 1, 1);
+        aPoles[1, 2] = new Point3D(0, 1, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 2);
+        aPoles[3, 2] = new Point3D(2, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 2, 0);
-        aPoles[2, 3] = new gp_Pnt(1, 2, 1);
-        aPoles[3, 3] = new gp_Pnt(2, 2, 0);
+        aPoles[1, 3] = new Point3D(0, 2, 0);
+        aPoles[2, 3] = new Point3D(1, 2, 1);
+        aPoles[3, 3] = new Point3D(2, 2, 0);
 
         NCollection_Array1<double> aKnotsU = new(1, 2);
         aKnotsU[1] = 0.0;
@@ -160,8 +164,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, null);
 
         // Test at several parameter values
@@ -175,10 +179,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, null);
                 }
-                aCache.D1(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV);
+                aCache.D1(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV);
 
                 // Direct evaluation using BSplSLib.D1
-                BSplSLib.D1(u,
+                SurfaceBSplSLib.D1(u,
                             v,
                             0,
                             0,
@@ -194,9 +198,9 @@ public class BSplSLib_CacheTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV);
 
                 // Compare point
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -220,22 +224,22 @@ public class BSplSLib_CacheTest
     public void D2_NonRationalSurface()
     {
         // Create a biquadratic Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(0, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 1);
-        aPoles[3, 1] = new gp_Pnt(2, 0, 0);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 1);
+        aPoles[3, 1] = new Point3D(2, 0, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(0, 1, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 2);
-        aPoles[3, 2] = new gp_Pnt(2, 1, 1);
+        aPoles[1, 2] = new Point3D(0, 1, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 2);
+        aPoles[3, 2] = new Point3D(2, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 2, 0);
-        aPoles[2, 3] = new gp_Pnt(1, 2, 1);
-        aPoles[3, 3] = new gp_Pnt(2, 2, 0);
+        aPoles[1, 3] = new Point3D(0, 2, 0);
+        aPoles[2, 3] = new Point3D(1, 2, 1);
+        aPoles[3, 3] = new Point3D(2, 2, 0);
 
         NCollection_Array1<double> aKnotsU = new(1, 2);
         aKnotsU[1] = 0.0;
@@ -263,8 +267,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, null);
 
         // Test at several parameter values
@@ -278,10 +282,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, null);
                 }
-                aCache.D2(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV, out gp_Vec aCacheCurvU, out gp_Vec aCacheCurvV, out gp_Vec aCacheCurvUV);
+                aCache.D2(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV, out Vector3D aCacheCurvU, out Vector3D aCacheCurvV, out Vector3D aCacheCurvUV);
 
                 // Direct evaluation using BSplSLib.D2
-                BSplSLib.D2(u,
+                SurfaceBSplSLib.D2(u,
                             v,
                             0,
                             0,
@@ -297,12 +301,12 @@ public class BSplSLib_CacheTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV,
-                            out gp_Vec aDirectCurvU,
-                            out gp_Vec aDirectCurvV,
-                            out gp_Vec aDirectCurvUV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV,
+                            out Vector3D aDirectCurvU,
+                            out Vector3D aDirectCurvV,
+                            out Vector3D aDirectCurvUV);
 
                 // Compare point
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -339,22 +343,22 @@ public class BSplSLib_CacheTest
     public void D0_RationalSurface()
     {
         // Create a rational biquadratic Bezier surface (can represent sphere patch)
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 1, 0);
-        aPoles[3, 1] = new gp_Pnt(0, 1, 0);
+        aPoles[1, 1] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 1, 0);
+        aPoles[3, 1] = new Point3D(0, 1, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(1, 0, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 1);
-        aPoles[3, 2] = new gp_Pnt(0, 1, 1);
+        aPoles[1, 2] = new Point3D(1, 0, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 1);
+        aPoles[3, 2] = new Point3D(0, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[2, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[3, 3] = new gp_Pnt(0, 0, 1);
+        aPoles[1, 3] = new Point3D(0, 0, 1);
+        aPoles[2, 3] = new Point3D(0, 0, 1);
+        aPoles[3, 3] = new Point3D(0, 0, 1);
 
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         double aSqrt2_2 = 0.707106781186548;
@@ -394,8 +398,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
 
         // Test at several parameter values
@@ -409,10 +413,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
                 }
-                aCache.D0(u, v, out gp_Pnt aCachePnt);
+                aCache.D0(u, v, out Point3D aCachePnt);
 
                 // Direct evaluation using BSplSLib.D0
-                BSplSLib.D0(u,
+                SurfaceBSplSLib.D0(u,
                             v,
                             0,
                             0,
@@ -428,7 +432,7 @@ public class BSplSLib_CacheTest
                             true,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt);
+                            out Point3D aDirectPnt);
 
                 // Compare
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -442,22 +446,22 @@ public class BSplSLib_CacheTest
     public void D1_RationalSurface()
     {
         // Create a rational biquadratic Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 1, 0);
-        aPoles[3, 1] = new gp_Pnt(0, 1, 0);
+        aPoles[1, 1] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 1, 0);
+        aPoles[3, 1] = new Point3D(0, 1, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(1, 0, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 1);
-        aPoles[3, 2] = new gp_Pnt(0, 1, 1);
+        aPoles[1, 2] = new Point3D(1, 0, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 1);
+        aPoles[3, 2] = new Point3D(0, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[2, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[3, 3] = new gp_Pnt(0, 0, 1);
+        aPoles[1, 3] = new Point3D(0, 0, 1);
+        aPoles[2, 3] = new Point3D(0, 0, 1);
+        aPoles[3, 3] = new Point3D(0, 0, 1);
 
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         double aSqrt2_2 = 0.707106781186548;
@@ -497,8 +501,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
 
         // Test at several parameter values
@@ -512,10 +516,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
                 }
-                aCache.D1(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV);
+                aCache.D1(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV);
 
                 // Direct evaluation using BSplSLib.D1
-                BSplSLib.D1(u,
+                SurfaceBSplSLib.D1(u,
                             v,
                             0,
                             0,
@@ -531,9 +535,9 @@ public class BSplSLib_CacheTest
                             true,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV);
 
                 // Compare point
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -557,22 +561,22 @@ public class BSplSLib_CacheTest
     public void D2_RationalSurface()
     {
         // Create a rational biquadratic Bezier surface
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
 
         // Row 1 (v=0)
-        aPoles[1, 1] = new gp_Pnt(1, 0, 0);
-        aPoles[2, 1] = new gp_Pnt(1, 1, 0);
-        aPoles[3, 1] = new gp_Pnt(0, 1, 0);
+        aPoles[1, 1] = new Point3D(1, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 1, 0);
+        aPoles[3, 1] = new Point3D(0, 1, 0);
 
         // Row 2 (v=0.5)
-        aPoles[1, 2] = new gp_Pnt(1, 0, 1);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 1);
-        aPoles[3, 2] = new gp_Pnt(0, 1, 1);
+        aPoles[1, 2] = new Point3D(1, 0, 1);
+        aPoles[2, 2] = new Point3D(1, 1, 1);
+        aPoles[3, 2] = new Point3D(0, 1, 1);
 
         // Row 3 (v=1)
-        aPoles[1, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[2, 3] = new gp_Pnt(0, 0, 1);
-        aPoles[3, 3] = new gp_Pnt(0, 0, 1);
+        aPoles[1, 3] = new Point3D(0, 0, 1);
+        aPoles[2, 3] = new Point3D(0, 0, 1);
+        aPoles[3, 3] = new Point3D(0, 0, 1);
 
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         double aSqrt2_2 = 0.707106781186548;
@@ -612,8 +616,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, aWeights);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
 
         // Test at several parameter values
@@ -627,10 +631,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, aWeights);
                 }
-                aCache.D2(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV, out gp_Vec aCacheCurvU, out gp_Vec aCacheCurvV, out gp_Vec aCacheCurvUV);
+                aCache.D2(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV, out Vector3D aCacheCurvU, out Vector3D aCacheCurvV, out Vector3D aCacheCurvUV);
 
                 // Direct evaluation using BSplSLib.D2
-                BSplSLib.D2(u,
+                SurfaceBSplSLib.D2(u,
                             v,
                             0,
                             0,
@@ -646,12 +650,12 @@ public class BSplSLib_CacheTest
                             true,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV,
-                            out gp_Vec aDirectCurvU,
-                            out gp_Vec aDirectCurvV,
-                            out gp_Vec aDirectCurvUV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV,
+                            out Vector3D aDirectCurvU,
+                            out Vector3D aDirectCurvV,
+                            out Vector3D aDirectCurvUV);
 
                 // Compare point
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -688,14 +692,14 @@ public class BSplSLib_CacheTest
     public void D1_DifferentDegrees_UGreaterV()
     {
         // Create a surface with degree 3 in U, degree 2 in V
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 4, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 4, 1, 3);
 
         // Fill poles
         for (int i = 1; i <= 4; ++i)
         {
             for (int j = 1; j <= 3; ++j)
             {
-                aPoles[i, j] = new gp_Pnt((i - 1) * 1.0, (j - 1) * 1.0, Math.Sin((i - 1) * 0.5) * Math.Cos((j - 1) * 0.5));
+                aPoles[i, j] = new Point3D((i - 1) * 1.0, (j - 1) * 1.0, Math.Sin((i - 1) * 0.5) * Math.Cos((j - 1) * 0.5));
             }
         }
 
@@ -725,8 +729,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 2;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, null);
 
         // Test at several parameter values
@@ -740,10 +744,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, null);
                 }
-                aCache.D1(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV);
+                aCache.D1(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV);
 
                 // Direct evaluation using BSplSLib.D1
-                BSplSLib.D1(u,
+                SurfaceBSplSLib.D1(u,
                             v,
                             0,
                             0,
@@ -759,9 +763,9 @@ public class BSplSLib_CacheTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV);
 
                 // Compare
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
@@ -775,14 +779,14 @@ public class BSplSLib_CacheTest
     public void D1_DifferentDegrees_VGreaterU()
     {
         // Create a surface with degree 2 in U, degree 3 in V
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 4);
 
         // Fill poles
         for (int i = 1; i <= 3; ++i)
         {
             for (int j = 1; j <= 4; ++j)
             {
-                aPoles[i, j] = new gp_Pnt((i - 1) * 1.0, (j - 1) * 1.0, Math.Sin((i - 1) * 0.5) * Math.Cos((j - 1) * 0.5));
+                aPoles[i, j] = new Point3D((i - 1) * 1.0, (j - 1) * 1.0, Math.Sin((i - 1) * 0.5) * Math.Cos((j - 1) * 0.5));
             }
         }
 
@@ -812,8 +816,8 @@ public class BSplSLib_CacheTest
         int aDegreeV = 3;
 
         // Create cache
-        BSplSLib_Cache aCache =
-            new BSplSLib_Cache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
+        SurfaceCache aCache =
+            new SurfaceCache(aDegreeU, false, aFlatKnotsU, aDegreeV, false, aFlatKnotsV, null);
         aCache.BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, null);
 
         // Test at several parameter values
@@ -827,10 +831,10 @@ public class BSplSLib_CacheTest
                 {
                     aCache.BuildCache(u, v, aFlatKnotsU, aFlatKnotsV, aPoles, null);
                 }
-                aCache.D1(u, v, out gp_Pnt aCachePnt, out gp_Vec aCacheTanU, out gp_Vec aCacheTanV);
+                aCache.D1(u, v, out Point3D aCachePnt, out Vector3D aCacheTanU, out Vector3D aCacheTanV);
 
                 // Direct evaluation using BSplSLib.D1
-                BSplSLib.D1(u,
+                SurfaceBSplSLib.D1(u,
                             v,
                             0,
                             0,
@@ -846,9 +850,9 @@ public class BSplSLib_CacheTest
                             false,
                             false,
                             false,
-                            out gp_Pnt aDirectPnt,
-                            out gp_Vec aDirectTanU,
-                            out gp_Vec aDirectTanV);
+                            out Point3D aDirectPnt,
+                            out Vector3D aDirectTanU,
+                            out Vector3D aDirectTanV);
 
                 // Compare
                 Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);

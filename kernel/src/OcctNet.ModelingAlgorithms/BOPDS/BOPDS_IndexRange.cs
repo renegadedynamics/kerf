@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>The range of indices [First, Last] of an argument and its sub-shapes in the data structure.</summary>
@@ -65,5 +67,5 @@ public partial struct BOPDS_IndexRange : IEquatable<BOPDS_IndexRange>
 
     public static bool operator !=(BOPDS_IndexRange theLeft, BOPDS_IndexRange theRight) => !theLeft.Equals(theRight);
 
-    public override readonly string ToString() => gp.Format("BOPDS_IndexRange", myFirst, myLast);
+    public override readonly string ToString() => Constants.Format("BOPDS_IndexRange", myFirst, myLast);
 }

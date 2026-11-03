@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -32,7 +34,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
             var dir = direction.Normalized().ToGpDir();
             unit = new Vector(dir);
         }
-        catch (Standard_Failure ex)
+        catch (FailureException ex)
         {
             throw new ArgumentException("Invalid Axis parameters", nameof(direction), ex);
         }
@@ -41,7 +43,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     }
 
     /// <summary>An axis from an OCCT gp_Ax1.</summary>
-    public Axis(gp_Ax1 ax1)
+    public Axis(Axis3D ax1)
     {
         var loc = ax1.Location();
         var dir = ax1.Direction();
@@ -57,8 +59,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
                           ?? throw new ArgumentException($"Invalid edge argument: {edge}");
         double min = 0, max = 0;
         BRep_Tool.Range(edge.TopoEdge, out min, out max);
-        var origin = new gp_Pnt();
-        var tangent = new gp_Vec();
+        var origin = new Point3D();
+        var tangent = new Vector3D();
         curve.D1(min, out origin, out tangent);
         this = new Axis(new Vector(origin), new Vector(tangent));
     }
@@ -76,7 +78,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis WithPosition(Vector position) => new(position, Direction, true);
 
     /// <summary>This axis with a new direction (normalised), at the same position.</summary>
-    /// <exception cref="Standard_Failure">The direction has zero length.</exception>
+    /// <exception cref="FailureException">The direction has zero length.</exception>
     public Axis WithDirection(Vector direction)
     {
         var d = direction.ToGpDir();
@@ -87,11 +89,11 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Location Location => new(new Plane(Position, zDir: Direction));
 
     /// <summary>A new OCCT gp_Ax1 for this axis.</summary>
-    public gp_Ax1 ToGpAx1()
+    public Axis3D ToGpAx1()
     {
         var p = Position.ToGpPnt();
         var d = Direction.ToGpDir();
-        return new gp_Ax1(p, d);
+        return new Axis3D(p, d);
     }
 
     /// <summary>This axis moved to a new location, which can change both position and direction.</summary>

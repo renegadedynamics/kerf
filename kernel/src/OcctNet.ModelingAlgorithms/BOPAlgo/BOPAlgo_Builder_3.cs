@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -13,7 +15,7 @@ namespace Occt;
 internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parallel.ISolver
 {
     private TopoDS_Solid mySolid = new(); //!< Solid to split
-    private Message_ProgressRange myRange;
+    private ProgressRange myRange;
 
     //! Sets the solid
     public void SetSolid(in TopoDS_Solid theSolid) => mySolid = theSolid;
@@ -22,12 +24,12 @@ internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parall
     public TopoDS_Solid Solid() => mySolid;
 
     //! Sets progress range
-    public void SetProgressRange(Message_ProgressRange theRange) => myRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
 
     // New perform method, using own progress range
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myRange, null, 1);
+        using var aPS = new ProgressScope(myRange, null, 1);
         if (!aPS.More())
         {
             return;
@@ -36,7 +38,7 @@ internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parall
     }
 
     //! Disables the range enabled method (private in OCCT; C# can't narrow an override)
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
     }
 }
@@ -44,7 +46,7 @@ internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parall
 public partial class BOPAlgo_Builder
 {
     /// <summary>Fills the images of the solids: the split solids with their internal parts.</summary>
-    protected void FillImagesSolids(Message_ProgressRange theRange)
+    protected void FillImagesSolids(ProgressRange theRange)
     {
         int i = 0, aNbS = myDS!.NbSourceShapes();
         for (i = 0; i < aNbS; ++i)
@@ -60,7 +62,7 @@ public partial class BOPAlgo_Builder
             return;
         }
 
-        using var aPS = new Message_ProgressScope(theRange, "Building splits of solids", 10);
+        using var aPS = new ProgressScope(theRange, "Building splits of solids", 10);
         // Draft solids
         NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDraftSolids = new(TopTools_ShapeMapHasher.Instance);
         // Find all IN faces for all IN faces
@@ -80,14 +82,14 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Builds the draft solids and finds the faces IN each solid (its own internal ones and others').</summary>
-    protected virtual void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, Message_ProgressRange theRange)
+    protected virtual void FillIn3DParts(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, null, 2);
+        using var aPS = new ProgressScope(theRange, null, 2);
 
         // Find all faces that are IN solids
 
         // Store boxes of the shapes into a map
-        NCollection_DataMap<TopoDS_Shape, Bnd_Box> aShapeBoxMap = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_DataMap<TopoDS_Shape, Box> aShapeBoxMap = new(TopTools_ShapeMapHasher.Instance);
 
         // Fence map
         NCollection_Map<TopoDS_Shape> aMFence = new(TopTools_ShapeMapHasher.Instance);
@@ -154,8 +156,8 @@ public partial class BOPAlgo_Builder
             TopoDS_Solid aSolid = TopoDS.Solid(aS);
             //
             // Bounding box for the solid aS
-            ref Bnd_Box aBoxS = ref aSI.ChangeBox();
-            if (aBoxS.IsVoid())
+            ref Box aBoxS = ref aSI.ChangeBox();
+            if (aBoxS.IsVoid)
             {
                 myDS.BuildBndBoxSolid(i, ref aBoxS, myCheckInverted);
             }
@@ -341,7 +343,7 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Builds the split solids from the draft solids and their IN faces.</summary>
-    protected void BuildSplitSolids(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, Message_ProgressRange theRange)
+    protected void BuildSplitSolids(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theDraftSolids, ProgressRange theRange)
     {
         bool bFlagSD;
         int i, aNbS;
@@ -355,7 +357,7 @@ public partial class BOPAlgo_Builder
         NCollection_IndexedMap<BOPTools_Set> aMST = new();
         NCollection_DynamicArray<BOPAlgo_SplitSolid> aVBS = new();
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         // 0. Find same domain solids for non-interfered solids
         aNbS = myDS!.NbSourceShapes();
         for (i = 0; i < aNbS; ++i)
@@ -447,7 +449,7 @@ public partial class BOPAlgo_Builder
         //
         aNbBS = aVBS.Length();
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new Message_ProgressScope(aPSOuter.Next(9), "Splitting solids", aNbBS))
+        using (var aPSParallel = new ProgressScope(aPSOuter.Next(9), "Splitting solids", aNbBS))
         {
             for (int iS = 0; iS < aNbBS; iS++)
             {
@@ -473,14 +475,14 @@ public partial class BOPAlgo_Builder
             // assigning the solid with the warnings/errors which
             // have been generated for it.
             // Convert all errors of BuilderSolid into warnings for main report.
-            Message_Report aBSReport = aBS.GetReport();
-            Span<Message_Gravity> anAlertTypes = [Message_Warning, Message_Fail];
+            Report aBSReport = aBS.GetReport();
+            Span<Gravity> anAlertTypes = [Warning, Fail];
             for (int iGravity = 0; iGravity < 2; iGravity++)
             {
-                NCollection_List<Message_Alert> anLAlerts = aBSReport.GetAlerts(anAlertTypes[iGravity]);
-                for (NCollection_List<Message_Alert>.Iterator itA = new(anLAlerts); itA.More(); itA.Next())
+                NCollection_List<Alert> anLAlerts = aBSReport.GetAlerts(anAlertTypes[iGravity]);
+                for (NCollection_List<Alert>.Iterator itA = new(anLAlerts); itA.More(); itA.Next())
                 {
-                    Message_Alert anAlert = itA.Value();
+                    Alert anAlert = itA.Value();
 
                     if (itA.Value() is TopoDS_AlertWithShape anAlertWithShape)
                     {
@@ -542,7 +544,7 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Settles the internal vertices and edges of the arguments into the split solids containing them.</summary>
-    protected void FillInternalShapes(Message_ProgressRange theRange)
+    protected void FillInternalShapes(ProgressRange theRange)
     {
         int i, j, aNbS, aNbSI, aNbSx;
         TopAbs_ShapeEnum aType;
@@ -562,7 +564,7 @@ public partial class BOPAlgo_Builder
         NCollection_List<TopoDS_Shape> aLSC = new();
         NCollection_List<TopoDS_Shape> aLSI = new();
 
-        using var aPS = new Message_ProgressScope(theRange, null, 10);
+        using var aPS = new ProgressScope(theRange, null, 10);
         //
         // 1. Shapes to process
         //
@@ -738,7 +740,7 @@ public partial class BOPAlgo_Builder
         // 5 Settle internal vertices and edges into solids
         aMx.Clear();
 
-        using var aPSLoop = new Message_ProgressScope(aPS.Next(9), "Looking for internal shapes", aLSd.Extent());
+        using var aPSLoop = new ProgressScope(aPS.Next(9), "Looking for internal shapes", aLSd.Extent());
 
         aIt.Initialize(aLSd);
         for (; aIt.More(); aIt.Next(), aPSLoop.Next())

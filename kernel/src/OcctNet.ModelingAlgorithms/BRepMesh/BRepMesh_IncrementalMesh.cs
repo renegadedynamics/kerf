@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -26,9 +27,9 @@ namespace Occt;
 /// <c>new BRepMesh_IncrementalMesh(shape, tol, rel, ang, true).Shape()</c>. The functional twin is <see cref="Meshed(in TopoDS_Shape, in IMeshTools_Parameters)"/>.
 /// </para>
 /// <para>
-/// The default <see cref="Perform(Message_ProgressRange)"/> runs a <see cref="BRepMesh_Context"/> with the parameters'
+/// The default <see cref="Perform(ProgressRange)"/> runs a <see cref="BRepMesh_Context"/> with the parameters'
 /// algorithm (Watson by default: <c>CSF_MeshAlgo</c> isn't read, decision 492);
-/// <see cref="Perform(IMeshTools_Context, Message_ProgressRange)"/> runs any context.
+/// <see cref="Perform(IMeshTools_Context, ProgressRange)"/> runs any context.
 /// </para>
 /// <para>
 /// <b>Determinism</b> (decision 490). With <c>InParallel</c>, the edges and then the faces are meshed in parallel;
@@ -60,7 +61,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// Meshes the shape with the linear deflection (relative to each edge's size if <paramref name="isRelative"/>; the
     /// faces then take their edges' maximum) and the angular deflection, in parallel if <paramref name="isInParallel"/>.
     /// </summary>
-    /// <exception cref="Standard_NumericError">The deflection or the angle is too small.</exception>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
     public BRepMesh_IncrementalMesh(in TopoDS_Shape theShape,
                                     double theLinDeflection,
                                     bool isRelative = false,
@@ -79,10 +80,10 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     }
 
     /// <summary>Meshes the shape with the parameters.</summary>
-    /// <exception cref="Standard_NumericError">The deflection or the angle is too small.</exception>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
     public BRepMesh_IncrementalMesh(in TopoDS_Shape theShape,
                                     in IMeshTools_Parameters theParameters,
-                                    Message_ProgressRange theRange = default)
+                                    ProgressRange theRange = default)
     {
         myParameters = theParameters;
         myShape = theShape;
@@ -90,14 +91,14 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     }
 
     /// <summary>Meshes the shape.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         BRepMesh_Context aContext = new(myParameters.MeshAlgo);
         Perform(aContext, theRange);
     }
 
     /// <summary>Meshes the shape with a custom context.</summary>
-    public void Perform(IMeshTools_Context theContext, Message_ProgressRange theRange = default)
+    public void Perform(IMeshTools_Context theContext, ProgressRange theRange = default)
     {
         initParameters();
 
@@ -111,7 +112,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
         theContext.ChangeParameters() = myParameters;
         theContext.ChangeParameters().CleanModel = false;
 
-        using var aPS = new Message_ProgressScope(theRange, "Perform incmesh", 10);
+        using var aPS = new ProgressScope(theRange, "Perform incmesh", 10);
         IMeshTools_MeshBuilder aIncMesh = new(theContext);
         aIncMesh.Perform(aPS.Next(9));
         if (!aPS.More())
@@ -151,7 +152,7 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     /// The functional form: the shape meshed with the parameters, frozen, sharing the input's sub-shapes wherever
     /// meshing changed nothing. The input is never written, frozen or not (decision 489).
     /// </summary>
-    /// <exception cref="Standard_NumericError">The deflection or the angle is too small.</exception>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
     public static TopoDS_Shape Meshed(in TopoDS_Shape theShape, in IMeshTools_Parameters theParameters)
         => Meshed(theShape, theParameters, out _);
 
@@ -194,32 +195,32 @@ public class BRepMesh_IncrementalMesh : BRepMesh_DiscretRoot
     // Initializes specific parameters
     private void initParameters()
     {
-        if (myParameters.Deflection < Precision.Confusion())
+        if (myParameters.Deflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_NumericError(
+            throw new NumericErrorException(
                 "BRepMesh_IncrementalMesh::initParameters : invalid parameter value");
         }
 
-        if (myParameters.DeflectionInterior < Precision.Confusion())
+        if (myParameters.DeflectionInterior < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             myParameters.DeflectionInterior = myParameters.Deflection;
         }
 
-        if (myParameters.MinSize < Precision.Confusion())
+        if (myParameters.MinSize < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             myParameters.MinSize =
                 Max(IMeshTools_Parameters.RelMinSize()
                         * Min(myParameters.Deflection, myParameters.DeflectionInterior),
-                    Precision.Confusion());
+                    global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
-        if (myParameters.Angle < Precision.Angular())
+        if (myParameters.Angle < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            throw new Standard_NumericError(
+            throw new NumericErrorException(
                 "BRepMesh_IncrementalMesh::initParameters : invalid parameter value");
         }
 
-        if (myParameters.AngleInterior < Precision.Angular())
+        if (myParameters.AngleInterior < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             myParameters.AngleInterior = 2.0 * myParameters.Angle;
         }

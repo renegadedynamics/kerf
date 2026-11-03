@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics.Polynomials;
+
 namespace Occt;
 
 /// <summary>
@@ -14,11 +18,11 @@ namespace Occt;
 /// which callers fill or change in place as in OCCT (shared: changing it changes the curve). The evaluators cache
 /// the canonical coefficients of each element, so they are not thread-safe.
 /// </remarks>
-public class FEmTool_Curve : Standard_Transient
+public class FEmTool_Curve : Transient
 {
     private readonly int myNbElements;
     private readonly int myDimension;
-    private readonly PLib_HermitJacobi myBase;
+    private readonly HermitJacobi myBase;
     private readonly NCollection_HArray1<double> myKnots;
     private readonly NCollection_Array1<int> myDegree;
     private readonly NCollection_Array1<double> myCoeff;
@@ -41,7 +45,7 @@ public class FEmTool_Curve : Standard_Transient
     /// <paramref name="TheBase"/>. The tolerance is not used (as in OCCT). The knots must be set through
     /// <see cref="Knots"/>.
     /// </summary>
-    public FEmTool_Curve(int Dimension, int NbElements, PLib_HermitJacobi TheBase, double Tolerance)
+    public FEmTool_Curve(int Dimension, int NbElements, HermitJacobi TheBase, double Tolerance)
     {
         myNbElements = NbElements;
         myDimension = Dimension;
@@ -77,7 +81,7 @@ public class FEmTool_Curve : Standard_Transient
         int i, j, degBase, deg;
         if (IndexOfElement > myNbElements || IndexOfElement < 1)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         degBase = myBase.WorkDegree();
         deg = myDegree[IndexOfElement];
@@ -118,7 +122,7 @@ public class FEmTool_Curve : Standard_Transient
         int i, j, degBase, deg;
         if (IndexOfElement > myNbElements || IndexOfElement < 1)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         degBase = myBase.WorkDegree();
         deg = myDegree[IndexOfElement];
@@ -220,7 +224,7 @@ public class FEmTool_Curve : Standard_Transient
 
         // Parameter normalization: S [-1, 1]
         S = (2 * U - USum) * Denom;
-        PLib.NoDerivativeEvalPolynomial(S, deg, myDimension, deg * myDimension, myPoly.AsSpan(myPtr),
+        global::Kerf.Engine.Numerics.Polynomials.PLib.NoDerivativeEvalPolynomial(S, deg, myDimension, deg * myDimension, myPoly.AsSpan(myPtr),
                                         Pnt.AsSpan(Pnt.Lower()));
     }
 
@@ -240,7 +244,7 @@ public class FEmTool_Curve : Standard_Transient
 
         // Parameter normalization: S [-1, 1]
         S = (2 * U - USum) * Denom;
-        PLib.NoDerivativeEvalPolynomial(S, deg - 1, myDimension, (deg - 1) * myDimension,
+        global::Kerf.Engine.Numerics.Polynomials.PLib.NoDerivativeEvalPolynomial(S, deg - 1, myDimension, (deg - 1) * myDimension,
                                         myDeri.AsSpan(1 + (myIndex - 1) * myBase.WorkDegree() * myDimension),
                                         Vec.AsSpan(Vec.Lower()));
 
@@ -282,7 +286,7 @@ public class FEmTool_Curve : Standard_Transient
         }
         else
         {
-            PLib.NoDerivativeEvalPolynomial(S, deg - 2, myDimension, (deg - 2) * myDimension,
+            global::Kerf.Engine.Numerics.Polynomials.PLib.NoDerivativeEvalPolynomial(S, deg - 2, myDimension, (deg - 2) * myDimension,
                                             myDsecn.AsSpan(1 + (myIndex - 1) * (myBase.WorkDegree() - 1) * myDimension),
                                             Vec.AsSpan(Vec.Lower()));
         }
@@ -300,7 +304,7 @@ public class FEmTool_Curve : Standard_Transient
         int Low, High, deg, degBase, i, Ptr;
         if (FirstU > LastU)
         {
-            throw new Standard_OutOfRange("FEmTool_Curve::Length");
+            throw new OutOfRangeException("FEmTool_Curve::Length");
         }
 
         if (myKnots.Value(1) > FirstU)
@@ -360,7 +364,7 @@ public class FEmTool_Curve : Standard_Transient
             {
                 Update(Low, 0);
             }
-            PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, LastS, out Length);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, LastS, out Length);
             return;
         }
 
@@ -373,18 +377,18 @@ public class FEmTool_Curve : Standard_Transient
         }
         if (FirstS < -1.0)
         {
-            PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, -1.0, out Li);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, -1.0, out Li);
             Length += Li;
             if (myLength[Low] < 0.0)
             {
-                PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
                 myLength[Low] = Li;
             }
             Length += myLength[Low];
         }
         else
         {
-            PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, 1.0, out Li);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), FirstS, 1.0, out Li);
             Length += Li;
         }
 
@@ -397,18 +401,18 @@ public class FEmTool_Curve : Standard_Transient
         }
         if (LastS > 1.0)
         {
-            PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), 1.0, LastS, out Li);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), 1.0, LastS, out Li);
             Length += Li;
             if (myLength[High] < 0.0)
             {
-                PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
                 myLength[High] = Li;
             }
             Length += myLength[High];
         }
         else
         {
-            PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, LastS, out Li);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, LastS, out Li);
             Length += Li;
         }
 
@@ -422,7 +426,7 @@ public class FEmTool_Curve : Standard_Transient
                 {
                     Update(i, 0);
                 }
-                PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
+                global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLength(deg, myDimension, myPoly.AsSpan(Ptr), -1.0, 1.0, out Li);
                 myLength[i] = Li;
             }
             Length += myLength[i];
@@ -433,7 +437,7 @@ public class FEmTool_Curve : Standard_Transient
 
     public int Dimension() => myDimension;
 
-    public PLib_HermitJacobi Base() => myBase;
+    public HermitJacobi Base() => myBase;
 
     public int Degree(int IndexOfElement) => myDegree.Value(IndexOfElement);
 
@@ -448,7 +452,7 @@ public class FEmTool_Curve : Standard_Transient
         }
         else if (Degree > myBase.WorkDegree())
         {
-            throw new Standard_OutOfRange("FEmTool_Curve::SetDegree");
+            throw new OutOfRangeException("FEmTool_Curve::SetDegree");
         }
     }
 

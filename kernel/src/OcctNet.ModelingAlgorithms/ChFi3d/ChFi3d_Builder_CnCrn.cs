@@ -6,15 +6,20 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_CnCrn.ChFi3d_SurfType;
 using static Occt.ChFiKPart_ComputeData_Fcts;
 using static Occt.ChFi3d_Builder_CnCrn;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -217,7 +222,7 @@ public partial class ChFi3d_Builder
         TopoDS_Edge Ecur = new();
         NCollection_List<TopoDS_Shape>.Iterator ItF = new();
         TopoDS_Face F1 = new(), F2 = new();
-        gp_Vec SumFaceNormalAtV1 = new(0, 0, 0); // is used to define Plate orientation
+        Vector3D SumFaceNormalAtV1 = new(0, 0, 0); // is used to define Plate orientation
 
         // it is determined if there is a sewing edge
         bool couture = false;
@@ -282,7 +287,7 @@ public partial class ChFi3d_Builder
             }
             if (Enext.IsNull())
             {
-                throw new Standard_ConstructionError("PerformMoreThreeCorner: pb in the parsing of edges and faces");
+                throw new ConstructionErrorException("PerformMoreThreeCorner: pb in the parsing of edges and faces");
             }
             if (Enext.IsSame(edgelibre1) || Enext.IsSame(edgelibre2))
             {
@@ -687,8 +692,8 @@ public partial class ChFi3d_Builder
 
         // determine the minimum recoil distance that can't be exceeded
         bool distmini = false;
-        gp_Pnt som = BRep_Tool.Pnt(V1), pic;
-        gp_Pnt2d p2 = new();
+        Point3D som = BRep_Tool.Pnt(V1), pic;
+        Point2D p2 = new();
         TopoDS_Edge edgemin = new();
         TopoDS_Vertex V = new(), V2 = new();
         double dst = 0.0, distmin = 0.0;
@@ -943,7 +948,7 @@ public partial class ChFi3d_Builder
             NCollection_Array1<double> dist1 = new(0, size);
             NCollection_Array1<double> dist2 = new(0, size);
             double distance = 0.0;
-            gp_Pnt sommet_ = BRep_Tool.Pnt(V1); // OCCT's sommet, which C# cannot redeclare in this scope
+            Point3D sommet_ = BRep_Tool.Pnt(V1); // OCCT's sommet, which C# cannot redeclare in this scope
             if (!deuxconges)
             {
                 for (ic = 0; ic < nedge; ic++)
@@ -1072,7 +1077,7 @@ public partial class ChFi3d_Builder
         //
 
         double tolcp = 0;
-        gp_Pnt PE = new(), sommet = BRep_Tool.Pnt(V1);
+        Point3D PE = new(), sommet = BRep_Tool.Pnt(V1);
         if (!deuxconges)
         {
             for (ic = 0; ic < nedge; ic++)
@@ -1478,7 +1483,7 @@ public partial class ChFi3d_Builder
         bool intersection = false, introuve = false;
         if (nconges == 2 && !deuxconges)
         {
-            gp_Pnt P1 = new(), P2 = new(), P3 = new(), P4 = new();
+            Point3D P1 = new(), P2 = new(), P3 = new(), P4 = new();
             int ic1 = 0, ic2 = 0;
             trouve = false;
             for (ic = 0; ic < nedge && !trouve; ic++)
@@ -1544,7 +1549,7 @@ public partial class ChFi3d_Builder
         // calculation of curves on surface for each stripe
         for (ic = 0; ic < nedge; ic++)
         {
-            gp_Pnt2d p2d1 = new(), p2d2 = new();
+            Point2D p2d1 = new(), p2d2 = new();
             if (!sharp.Value(ic))
             {
                 n3d++;
@@ -1560,7 +1565,7 @@ public partial class ChFi3d_Builder
                 xdir = p2d2.X() - p2d1.X();
                 ydir = p2d2.Y() - p2d1.Y();
                 double l0 = Math.Sqrt(xdir * xdir + ydir * ydir);
-                gp_Dir2d dir = new(xdir, ydir);
+                Direction2D dir = new(xdir, ydir);
                 Geom2d_Line? l = new Geom2d_Line(p2d1, dir);
                 Geom2d_Curve? pcurve = new Geom2d_TrimmedCurve(l, 0, l0);
                 Geom2dAdaptor_Curve? Acurv = new Geom2dAdaptor_Curve(pcurve);
@@ -1578,7 +1583,7 @@ public partial class ChFi3d_Builder
                                                             out avedev);
                 TopOpeBRepDS_Curve tcurv3d = new(Curv3d, maxapp);
                 indcurve3d.SetValue(n3d, DStr.AddCurve(tcurv3d));
-                gp_Pnt point1 = new(), point2 = new();
+                Point3D point1 = new(), point2 = new();
                 point1 = CurvOnS.Value(CurvOnS.FirstParameter());
                 point2 = CurvOnS.Value(CurvOnS.LastParameter());
 
@@ -1748,7 +1753,7 @@ public partial class ChFi3d_Builder
                         }
                     }
                     n3d++;
-                    gp_Pnt2d p2d1 = new(), p2d2 = new();
+                    Point2D p2d1 = new(), p2d2 = new();
                     Geom2d_Curve? curv2d1 = null, curv2d2 = null;
                     Geom2d_Curve? pcurve = null;
                     Geom_Curve? curveint = null;
@@ -1769,7 +1774,7 @@ public partial class ChFi3d_Builder
 
                     if (curv2d1 is null)
                     {
-                        throw new Standard_ConstructionError("Failed to get p-curve of edge");
+                        throw new ConstructionErrorException("Failed to get p-curve of edge");
                     }
                     p2d1 = curv2d1.Value(p.Value(ic, icplus));
 
@@ -1787,7 +1792,7 @@ public partial class ChFi3d_Builder
                     }
                     if (curv2d2 is null)
                     {
-                        throw new Standard_ConstructionError("Failed to get p-curve of edge");
+                        throw new ConstructionErrorException("Failed to get p-curve of edge");
                     }
                     p2d2 = curv2d2.Value(p.Value(icplus, ic));
 
@@ -1987,7 +1992,7 @@ public partial class ChFi3d_Builder
                         if (sharp.Value(icplus) && indpoint.Value(icplus, 0) == 0)
                         {
                             // it is necessary to initialize indpoint[icplus][0] and indpoint[icplus][1]
-                            gp_Pnt point2 = new();
+                            Point3D point2 = new();
                             point2 = curveint.Value(parfin);
                             TopOpeBRepDS_Point tpoint2 = new(point2, maxapp);
                             indpoint.SetValue(icplus, 0, DStr.AddPoint(tpoint2));
@@ -2044,7 +2049,7 @@ public partial class ChFi3d_Builder
             if (moresurf.Value(ic))
             {
                 TopoDS_Vertex Vf = new(), Vl = new();
-                gp_Pnt Pf = new(), Pl = new(), P1 = new(), P2 = new(), Pcom = new();
+                Point3D Pf = new(), Pl = new(), P1 = new(), P2 = new(), Pcom = new();
                 ind = 0; // must be initialized because of possible use, see L2249
                 double up1 = 0.0, up2 = 0.0;
                 TopAbs_Orientation orvt = default;
@@ -2077,13 +2082,13 @@ public partial class ChFi3d_Builder
                                                                                           out up2);
                         if (proj is null)
                         {
-                            throw new Standard_ConstructionError("Failed to get p-curve of edge");
+                            throw new ConstructionErrorException("Failed to get p-curve of edge");
                         }
                         proj2d = new Geom2d_TrimmedCurve(proj, up1, up2);
                         projc = BRep_Tool.Curve(TopoDS.Edge(Eproj.Value(nb)), out up1, out up2);
                         if (projc is null)
                         {
-                            throw new Standard_ConstructionError("Failed to get 3D curve of edge");
+                            throw new ConstructionErrorException("Failed to get 3D curve of edge");
                         }
                         cproj = new Geom_TrimmedCurve(projc, up1, up2);
                         pardeb = cproj.FirstParameter();
@@ -2275,8 +2280,8 @@ public partial class ChFi3d_Builder
             double seuil = 0.0;
             GeomPlate_Surface? gpPlate = PSurf.Surface();
 
-            NCollection_Sequence<gp_XY> S2d = new();
-            NCollection_Sequence<gp_XYZ> S3d = new();
+            NCollection_Sequence<Xy> S2d = new();
+            NCollection_Sequence<Xyz> S3d = new();
             S2d.Clear();
             S3d.Clear();
             PSurf.Disc2dContour(4, S2d);
@@ -2439,10 +2444,10 @@ public partial class ChFi3d_Builder
                         int icplus21 = 0;
                         Indices(nedge, ic, ref icplus, ref icmoins);
                         Indices(nedge, icplus, ref icplus21, ref ic);
-                        gp_Pnt2d UV1 = new(), UV2 = new();
+                        Point2D UV1 = new(), UV2 = new();
                         Geom_Curve? C3d = null;
                         Geom2d_Curve? C2d = null; // OCCT's unused curv2d left out
-                        gp_Pnt ptic = new(), pticplus = new();
+                        Point3D ptic = new(), pticplus = new();
                         BRepAdaptor_Curve BCurv1 = new(TopoDS.Edge(Evive.Value(ic)));
                         BRepAdaptor_Curve BCurv2 = new(TopoDS.Edge(Evive.Value(icplus)));
                         double par1 = p.Value(ic, icplus);
@@ -2527,7 +2532,7 @@ public partial class ChFi3d_Builder
                     {
                         // limitation of the alive edge
                         TopAbs_Orientation ori = default;
-                        gp_Pnt Pf = new(), Pl = new(), sommet1 = new();
+                        Point3D Pf = new(), Pl = new(), sommet1 = new();
                         TopoDS_Vertex Vd = TopExp.FirstVertex(TopoDS.Edge(Evive.Value(ic)));
                         TopoDS_Vertex Vf = TopExp.LastVertex(TopoDS.Edge(Evive.Value(ic)));
                         Pf = BRep_Tool.Pnt(Vd);
@@ -2640,7 +2645,7 @@ public partial class ChFi3d_Builder
                     {
                         // limitation of the alive edge
                         TopAbs_Orientation ori = default;
-                        gp_Pnt Pf = new(), Pl = new(), sommet1 = new();
+                        Point3D Pf = new(), Pl = new(), sommet1 = new();
                         TopoDS_Vertex Vd = TopExp.FirstVertex(TopoDS.Edge(Evive.Value(ic)));
                         TopoDS_Vertex Vf = TopExp.LastVertex(TopoDS.Edge(Evive.Value(ic)));
                         Pf = BRep_Tool.Pnt(Vd);
@@ -2699,7 +2704,7 @@ internal static class ChFi3d_Builder_CnCrn
         }
     }
 
-    internal static void Calcul_P2dOnSurf(ChFiDS_Stripe? stripe, int jfposit, int indice, double param, ref gp_Pnt2d p2)
+    internal static void Calcul_P2dOnSurf(ChFiDS_Stripe? stripe, int jfposit, int indice, double param, ref Point2D p2)
     {
         if (jfposit == 1)
         {
@@ -2782,14 +2787,14 @@ internal static class ChFi3d_Builder_CnCrn
         }
         if (Edge.IsNull())
         {
-            throw new Standard_ConstructionError("Failed to find edge");
+            throw new ConstructionErrorException("Failed to find edge");
         }
     }
 
     internal static void CurveHermite(TopOpeBRepDS_DataStructure DStr, ChFiDS_Stripe? CDicmoins, int jficmoins, int icmoins, double picmoins, int sensicmoins, bool sharpicmoins, in TopoDS_Edge Eviveicmoins, ChFiDS_Stripe? CDicplus, int jficplus, int icplus, double picplus, int sensicplus, bool sharpicplus, in TopoDS_Edge Eviveicplus, int nbface, NCollection_Sequence<TopoDS_Shape> Ecom, NCollection_Sequence<TopoDS_Shape> Face, NCollection_Sequence<Geom2d_Curve> proj2d, NCollection_Sequence<Geom_Curve> cproj, NCollection_Sequence<TopoDS_Shape> Eproj, NCollection_Sequence<double> param, ref double error)
     {
-        gp_Pnt p01 = new(), p02 = new();
-        gp_Vec d11 = new(), d12 = new();
+        Point3D p01 = new(), p02 = new();
+        Vector3D d11 = new(), d12 = new();
         int ii = 0, jj = 0;
         double up1 = 0.0, up2 = 0.0;
         int ilin = 0, jfp = 0;
@@ -2829,18 +2834,18 @@ internal static class ChFi3d_Builder_CnCrn
         }
         if (c1 is null)
         {
-            throw new Standard_ConstructionError("Failed to get 3D curve of edge");
+            throw new ConstructionErrorException("Failed to get 3D curve of edge");
         }
         if (c2 is null)
         {
-            throw new Standard_ConstructionError("Failed to get 3D curve of edge");
+            throw new ConstructionErrorException("Failed to get 3D curve of edge");
         }
         c1.D1(picmoins, out p01, out d11);
         c2.D1(picplus, out p02, out d12);
         int size = 4;
-        math_Matrix MatCoefs = new(1, size, 1, size);
-        NCollection_Array1<gp_XYZ> Cont = new(1, size);
-        PLib.HermiteCoefficients(0, 1, 1, 1, MatCoefs);
+        Matrix MatCoefs = new(1, size, 1, size);
+        NCollection_Array1<Xyz> Cont = new(1, size);
+        global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0, 1, 1, 1, MatCoefs);
         double L1 = p01.Distance(p02);
         double lambda = ((double)1) / Max(d11.Magnitude() / L1, 1.0e-6);
         Cont[1] = p01.XYZ();
@@ -2862,9 +2867,9 @@ internal static class ChFi3d_Builder_CnCrn
         {
             Cont[4] = d12.XYZ() * (-lambda);
         }
-        NCollection_Array1<gp_Pnt> ExtrapPoles = new(1, size);
-        NCollection_Array1<gp_Pnt> ExtraCoeffs = new(1, size);
-        gp_Pnt p0 = new(0, 0, 0);
+        NCollection_Array1<Point3D> ExtrapPoles = new(1, size);
+        NCollection_Array1<Point3D> ExtraCoeffs = new(1, size);
+        Point3D p0 = new(0, 0, 0);
         ExtraCoeffs.Init(p0);
         for (ii = 1; ii <= size; ii++)
         {
@@ -2873,7 +2878,7 @@ internal static class ChFi3d_Builder_CnCrn
                 ExtraCoeffs[jj].ChangeCoord() += MatCoefs[ii, jj] * Cont[ii];
             }
         }
-        PLib.CoefficientsPoles(ExtraCoeffs, PLib.NoWeights(), ExtrapPoles, PLib.NoWeights());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(ExtraCoeffs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), ExtrapPoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
         Geom_BezierCurve? Bezier = new Geom_BezierCurve(ExtrapPoles);
         BRepLib_MakeEdge Bedge = new(Bezier);
         TopoDS_Edge edg = Bedge.Edge();
@@ -2890,7 +2895,7 @@ internal static class ChFi3d_Builder_CnCrn
             BRepAlgo_NormalProjection OrtProj = new();
             OrtProj.Init(F);
             OrtProj.Add(edg);
-            OrtProj.SetParams(1.0e-4, 1.0e-4, GeomAbs_C1, 14, 16);
+            OrtProj.SetParams(1.0e-4, 1.0e-4, C1, 14, 16);
             OrtProj.Build();
             if (OrtProj.IsDone())
             {
@@ -2899,7 +2904,7 @@ internal static class ChFi3d_Builder_CnCrn
                 {
                     if (MapE1.Extent() != 1)
                     {
-                        BRepLib_MakeFace Bface = new(BRep_Tool.Surface(F), Precision.Confusion());
+                        BRepLib_MakeFace Bface = new(BRep_Tool.Surface(F), global::Kerf.Engine.Foundation.Precision.Confusion());
                         F = Bface.Face();
                         OrtProj.Init(F);
                         OrtProj.Build();
@@ -2926,13 +2931,13 @@ internal static class ChFi3d_Builder_CnCrn
                         proj1 = BRep_Tool.CurveOnSurface(E1, F, out up1, out up2);
                         if (proj1 is null)
                         {
-                            throw new Standard_ConstructionError("Failed to get p-curve of edge");
+                            throw new ConstructionErrorException("Failed to get p-curve of edge");
                         }
                         proj2d.Append(new Geom2d_TrimmedCurve(proj1, up1, up2));
                         proj1c = BRep_Tool.Curve(E1, out up1, out up2);
                         if (proj1c is null)
                         {
-                            throw new Standard_ConstructionError("Failed to get 3D curve of edge");
+                            throw new ConstructionErrorException("Failed to get 3D curve of edge");
                         }
                         cproj.Append(new Geom_TrimmedCurve(proj1c, up1, up2));
                         if (error > BRep_Tool.Tolerance(E1))
@@ -2967,7 +2972,7 @@ internal static class ChFi3d_Builder_CnCrn
                 {
                     Extrema_POnCurv POnC = new(), POnL = new();
                     ext.Points(1, out POnC, out POnL);
-                    if (POnC.Value().Distance(POnL.Value()) < Precision.Confusion())
+                    if (POnC.Value().Distance(POnL.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         param.ChangeValue(nb) = POnC.Parameter();
                     }
@@ -3010,23 +3015,23 @@ internal static class ChFi3d_Builder_CnCrn
         }
     }
 
-    internal static void CalculDroite(in gp_Pnt2d p2d1, double xdir, double ydir, ref Geom2d_Curve? pcurve)
+    internal static void CalculDroite(in Point2D p2d1, double xdir, double ydir, ref Geom2d_Curve? pcurve)
     {
-        gp_Dir2d dir1 = new(xdir, ydir);
+        Direction2D dir1 = new(xdir, ydir);
         Geom2d_Line? l = new Geom2d_Line(p2d1, dir1);
         double l0 = Math.Sqrt(xdir * xdir + ydir * ydir);
         pcurve = new Geom2d_TrimmedCurve(l, 0, l0);
     }
 
-    internal static void CalculBatten(GeomAdaptor_Surface? ASurf, in TopoDS_Face Face, double xdir, double ydir, in gp_Pnt2d p2d1, in gp_Pnt2d p2d2, bool contraint1, bool contraint2, Geom2d_Curve? curv2d1, Geom2d_Curve? curv2d2, double picicplus, double picplusic, bool inverseic, bool inverseicplus, ref Geom2d_Curve? pcurve)
+    internal static void CalculBatten(GeomAdaptor_Surface? ASurf, in TopoDS_Face Face, double xdir, double ydir, in Point2D p2d1, in Point2D p2d2, bool contraint1, bool contraint2, Geom2d_Curve? curv2d1, Geom2d_Curve? curv2d2, double picicplus, double picplusic, bool inverseic, bool inverseicplus, ref Geom2d_Curve? pcurve)
     {
         bool isplane = false;
         bool anglebig = false;
-        isplane = ASurf.GetType() == GeomAbs_Plane;
-        gp_Dir2d dir1 = new(xdir, ydir);
+        isplane = ASurf.GetType() == Plane;
+        Direction2D dir1 = new(xdir, ydir);
         GeomLProp_CLProps2d CL1 = new(curv2d1, picicplus, 1, 1.0e-4);
         GeomLProp_CLProps2d CL2 = new(curv2d2, picplusic, 1, 1.0e-4);
-        gp_Dir2d dir3 = new(), dir4 = new();
+        Direction2D dir3 = new(), dir4 = new();
         CL1.Tangent(out dir3);
         CL2.Tangent(out dir4);
         if (inverseic)
@@ -3096,7 +3101,7 @@ internal static class ChFi3d_Builder_CnCrn
                 pcurve = Bat.Curve();
                 double umin = 0.0, vmin = 0.0, umax = 0.0, vmax = 0.0;
                 BRepTools.UVBounds(Face, out umin, out umax, out vmin, out vmax);
-                Bnd_Box2d bf = new(), bc = new();
+                Box2d bf = new(), bc = new();
                 Geom2dAdaptor_Curve acur = new(pcurve);
                 BndLib_Add2dCurve.Add(acur, 0, ref bc);
                 bf.Update(umin, vmin, umax, vmax);
@@ -3233,8 +3238,8 @@ internal static class ChFi3d_Builder_CnCrn
         bool isfirst = false;
         int indic1 = 0, indic2 = 0, indpoint1 = 0, indpoint2 = 0, ind = 0, indcurve = 0;
         double tol = 0.0;
-        gp_Pnt P1 = new(), P2 = new(), P3 = new(), P4 = new();
-        gp_Pnt2d p2d = new();
+        Point3D P1 = new(), P2 = new(), P3 = new(), P4 = new();
+        Point2D p2d = new();
         Geom_Curve? cint = null;
         Geom2d_Curve? C2dint1 = null, C2dint2 = null;
         isfirst = sens1 == 1;
@@ -3252,7 +3257,7 @@ internal static class ChFi3d_Builder_CnCrn
         ChFiDS_FaceInterference Fi12 = Fd1.InterferenceOnS2();
         ChFiDS_FaceInterference Fi21 = Fd2.InterferenceOnS1();
         ChFiDS_FaceInterference Fi22 = Fd2.InterferenceOnS2();
-        gp_Pnt2d pfi11 = new(), pfi12 = new(), pfi21 = new(), pfi22 = new();
+        Point2D pfi11 = new(), pfi12 = new(), pfi21 = new(), pfi22 = new();
         isfirst = sens1 == 1;
         pfi11 = Fi11.PCurveOnSurf().Value(Fi11.Parameter(isfirst));
         pfi12 = Fi12.PCurveOnSurf().Value(Fi12.Parameter(isfirst));
@@ -3462,10 +3467,10 @@ internal static class ChFi3d_Builder_CnCrn
         }
     }
 
-    internal static void ParametrePlate(int n3d, GeomPlate_BuildPlateSurface PSurf, Geom_Surface? Surf, in gp_Pnt point, double apperror, ref gp_Pnt2d uv)
+    internal static void ParametrePlate(int n3d, GeomPlate_BuildPlateSurface PSurf, Geom_Surface? Surf, in Point3D point, double apperror, ref Point2D uv)
     {
         int ip = 0;
-        gp_Pnt P1 = new();
+        Point3D P1 = new();
         double par = 0.0;
         bool trouve = false;
         for (ip = 1; ip <= n3d && !trouve; ip++)
@@ -3484,25 +3489,25 @@ internal static class ChFi3d_Builder_CnCrn
         }
     }
 
-    internal static void SummarizeNormal(in TopoDS_Vertex V1, in TopoDS_Face Fcur, in TopoDS_Edge Ecur, ref gp_Vec SumFaceNormalAtV1)
+    internal static void SummarizeNormal(in TopoDS_Vertex V1, in TopoDS_Face Fcur, in TopoDS_Edge Ecur, ref Vector3D SumFaceNormalAtV1)
     {
-        gp_Pnt2d uv1 = new(), uv2 = new();
+        Point2D uv1 = new(), uv2 = new();
         BRep_Tool.UVPoints(Ecur, Fcur, out uv1, out uv2);
         if (!V1.IsSame(TopExp.FirstVertex(Ecur)))
         {
             uv1 = uv2;
         }
 
-        gp_Pnt P = new();
-        gp_Vec d1U = new(), d1V = new();
+        Point3D P = new();
+        Vector3D d1U = new(), d1V = new();
         BRep_Tool.Surface(Fcur).D1(uv1.X(), uv1.Y(), out P, out d1U, out d1V);
-        gp_Vec N = d1U.Crossed(d1V);
+        Vector3D N = d1U.Crossed(d1V);
         if (Fcur.Orientation() == TopAbs_REVERSED)
         {
             N.Reverse();
         }
 
-        if (N.SquareMagnitude() <= Precision.PConfusion())
+        if (N.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return;
         }
@@ -3535,11 +3540,11 @@ internal static class ChFi3d_Builder_CnCrn
         }
     }
 
-    internal static TopAbs_Orientation PlateOrientation(Geom_Surface? thePlateSurf, NCollection_HArray1<Geom2d_Curve>? thePCArr, in gp_Vec theRefDir)
+    internal static TopAbs_Orientation PlateOrientation(Geom_Surface? thePlateSurf, NCollection_HArray1<Geom2d_Curve>? thePCArr, in Vector3D theRefDir)
     {
-        gp_Vec du = new(), dv = new();
-        gp_Pnt pp1 = new(), pp2 = new(), pp3 = new();
-        gp_Pnt2d uv = new();
+        Vector3D du = new(), dv = new();
+        Point3D pp1 = new(), pp2 = new(), pp3 = new();
+        Point2D uv = new();
         double fpar = 0.0, lpar = 0.0;
         double SumScal1 = 0, SumScal2 = 0;
 
@@ -3559,15 +3564,15 @@ internal static class ChFi3d_Builder_CnCrn
             lpar = aPC.LastParameter();
             aPC.D0(fpar, out uv);
             thePlateSurf.D1(uv.X(), uv.Y(), out pp2, out du, out dv);
-            gp_Vec n1 = du ^ dv;
+            Vector3D n1 = du ^ dv;
             n1.Normalize();
 
             aPC.D0((fpar + lpar) / 2.0, out uv);
             thePlateSurf.D0(uv.X(), uv.Y(), out pp3);
 
-            gp_Vec vv1 = new(pp2, pp1), vv2 = new(pp2, pp3);
+            Vector3D vv1 = new(pp2, pp1), vv2 = new(pp2, pp3);
 
-            gp_Vec n2 = vv2 ^ vv1;
+            Vector3D n2 = vv2 ^ vv1;
             n2.Normalize();
 
             SumScal1 += n1 * n2;

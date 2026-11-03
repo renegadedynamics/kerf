@@ -5,10 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The FILE_DESCRIPTION entity of a STEP file's header.</summary>
-public class HeaderSection_FileDescription : Standard_Transient
+public class HeaderSection_FileDescription : Transient
 {
     private NCollection_HArray1<TCollection_HAsciiString> description;
     private TCollection_HAsciiString implementationLevel;

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,12 +15,12 @@ namespace Occt;
 /// type). Each particular class provides a specific Eval method, which calls SetOK(result) when it recognizes the
 /// key. Recognizers can be chained (Add): Evaluate then asks the next one when this one fails.
 /// </summary>
-public abstract class StepData_FileRecognizer : Standard_Transient
+public abstract class StepData_FileRecognizer : Transient
 {
     //  WARNING: TransRecognizer has exactly the same code ...
     //  But produces a Transient instead of a Persistent
 
-    private Standard_Transient theres;
+    private Transient theres;
     private bool hasnext;
     private StepData_FileRecognizer thenext;
 
@@ -33,7 +35,7 @@ public abstract class StepData_FileRecognizer : Standard_Transient
     /// res. In case of failure, simply returns False. Works by calling deferred method Eval, and in case of failure,
     /// looks for Added Recognizers to work.
     /// </summary>
-    public bool Evaluate(string akey, ref Standard_Transient? res)
+    public bool Evaluate(string akey, ref Transient? res)
     {
         theres = null;
         Eval(akey);
@@ -50,8 +52,8 @@ public abstract class StepData_FileRecognizer : Standard_Transient
     }
 
     /// <summary>Returns result of last recognition (call of Evaluate).</summary>
-    /// <exception cref="Standard_NoSuchObject">The evaluation has failed.</exception>
-    public Standard_Transient Result()
+    /// <exception cref="NoSuchObjectException">The evaluation has failed.</exception>
+    public Transient Result()
     {
         if (theres is not null)
         {
@@ -61,7 +63,7 @@ public abstract class StepData_FileRecognizer : Standard_Transient
         {
             return thenext.Result();
         }
-        throw new Standard_NoSuchObject("Recognizer evaluation has failed");
+        throw new NoSuchObjectException("Recognizer evaluation has failed");
     }
 
     /// <summary>Adds a new Recognizer to the Compound, at the end. Several calls to Add work by adding in the order of calls: hence, when Eval has failed to recognize, Evaluate will call Evaluate from the first added Recognizer if there is one, and to the second if there is still no result, and so on.</summary>
@@ -72,7 +74,7 @@ public abstract class StepData_FileRecognizer : Standard_Transient
     }
 
     /// <summary>Records the result of the recognition. Called by specific method Eval to record a result: after calling it, Eval has finished and can return.</summary>
-    protected void SetOK(Standard_Transient aresult)
+    protected void SetOK(Transient aresult)
     {
         theres = aresult;
     }

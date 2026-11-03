@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -11,8 +13,8 @@ namespace Occt;
 
 /// <summary>
 /// OCCT's binary BRep format: the primitive writers and readers (little-endian, as OCCT writes on every platform it
-/// builds for), and <see cref="Write(in TopoDS_Shape, Stream, bool, bool, BinTools_FormatVersion, Message_ProgressRange)"/>
-/// and <see cref="Read(out TopoDS_Shape, Stream, Message_ProgressRange)"/> of a whole shape through a
+/// builds for), and <see cref="Write(in TopoDS_Shape, Stream, bool, bool, BinTools_FormatVersion, ProgressRange)"/>
+/// and <see cref="Read(out TopoDS_Shape, Stream, ProgressRange)"/> of a whole shape through a
 /// <see cref="BinTools_ShapeSet"/>.
 /// </summary>
 /// <remarks>
@@ -22,7 +24,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <b>Untrusted input</b> (phase3-design.md, section 7). The readers are OCCT's, with these additions, which throw
-/// <see cref="Storage_StreamFormatError"/>: input that ends early (OCCT throws Storage_StreamTypeMismatchError from the
+/// <see cref="StreamFormatErrorException"/>: input that ends early (OCCT throws Storage_StreamTypeMismatchError from the
 /// typed reads and carries on with garbage from the byte reads); counts larger than the rest of the stream could hold
 /// (<see cref="Stream.Length"/> for a seekable stream, <see cref="NonSeekableLimit"/> bytes otherwise); words longer
 /// than OCCT's 255-character buffers; indices outside the sets read so far; orientations and shape types outside their
@@ -95,7 +97,7 @@ public static class BinTools
         return OS;
     }
 
-    /// <summary>Reads a real; throws <see cref="Storage_StreamFormatError"/> at the end of the stream.</summary>
+    /// <summary>Reads a real; throws <see cref="StreamFormatErrorException"/> at the end of the stream.</summary>
     public static Stream GetReal(Stream IS, out double theValue)
     {
         Span<byte> aBuf = stackalloc byte[8];
@@ -104,7 +106,7 @@ public static class BinTools
         return IS;
     }
 
-    /// <summary>Reads a short real; throws <see cref="Storage_StreamFormatError"/> at the end of the stream.</summary>
+    /// <summary>Reads a short real; throws <see cref="StreamFormatErrorException"/> at the end of the stream.</summary>
     public static Stream GetShortReal(Stream IS, out float theValue)
     {
         Span<byte> aBuf = stackalloc byte[4];
@@ -113,7 +115,7 @@ public static class BinTools
         return IS;
     }
 
-    /// <summary>Reads an integer; throws <see cref="Storage_StreamFormatError"/> at the end of the stream.</summary>
+    /// <summary>Reads an integer; throws <see cref="StreamFormatErrorException"/> at the end of the stream.</summary>
     public static Stream GetInteger(Stream IS, out int theValue)
     {
         Span<byte> aBuf = stackalloc byte[4];
@@ -123,7 +125,7 @@ public static class BinTools
     }
 
     /// <summary>
-    /// Reads an extended character; throws <see cref="Storage_StreamFormatError"/> at the end of the stream.
+    /// Reads an extended character; throws <see cref="StreamFormatErrorException"/> at the end of the stream.
     /// </summary>
     public static Stream GetExtChar(Stream IS, out char theValue)
     {
@@ -148,7 +150,7 @@ public static class BinTools
     /// Writes the shape in the current binary format (<see cref="BinTools_FormatVersion.BinTools_FormatVersion_CURRENT"/>)
     /// with its triangulations, without normals.
     /// </summary>
-    public static void Write(in TopoDS_Shape theShape, Stream theStream, Message_ProgressRange theRange = default)
+    public static void Write(in TopoDS_Shape theShape, Stream theStream, ProgressRange theRange = default)
     {
         Write(theShape, theStream, true, false, BinTools_FormatVersion.BinTools_FormatVersion_CURRENT, theRange);
     }
@@ -162,7 +164,7 @@ public static class BinTools
                              bool theWithTriangles,
                              bool theWithNormals,
                              BinTools_FormatVersion theVersion,
-                             Message_ProgressRange theRange = default)
+                             ProgressRange theRange = default)
     {
         var aShapeSet = new BinTools_ShapeSet();
         aShapeSet.SetWithTriangles(theWithTriangles);
@@ -174,12 +176,12 @@ public static class BinTools
     }
 
     /// <summary>
-    /// Reads a shape written by <see cref="Write(in TopoDS_Shape, Stream, Message_ProgressRange)"/>. The shape is frozen.
+    /// Reads a shape written by <see cref="Write(in TopoDS_Shape, Stream, ProgressRange)"/>. The shape is frozen.
     /// A stream that can't seek is read to its end first.
     /// </summary>
-    /// <exception cref="Standard_Failure">The stream isn't a binary shape OCCT can read; for input that can't be read
-    /// safely, a <see cref="Storage_StreamFormatError"/>.</exception>
-    public static void Read(out TopoDS_Shape theShape, Stream theStream, Message_ProgressRange theRange = default)
+    /// <exception cref="FailureException">The stream isn't a binary shape OCCT can read; for input that can't be read
+    /// safely, a <see cref="StreamFormatErrorException"/>.</exception>
+    public static void Read(out TopoDS_Shape theShape, Stream theStream, ProgressRange theRange = default)
     {
         theShape = new TopoDS_Shape();
         if (!theStream.CanSeek)
@@ -202,12 +204,12 @@ public static class BinTools
         catch (Exception anException) when (IsSignal(anException))
         {
             // OCCT.NET: untrusted input: a malformed stream raised an exception that OCCT doesn't catch here
-            throw new Storage_StreamFormatError("BinTools::Read: " + anException.Message, anException);
+            throw new StreamFormatErrorException("BinTools::Read: " + anException.Message, anException);
         }
     }
 
     /// <summary>Writes the shape to a file in the current binary format, with triangulations. False on failure.</summary>
-    public static bool Write(in TopoDS_Shape theShape, string theFile, Message_ProgressRange theRange = default)
+    public static bool Write(in TopoDS_Shape theShape, string theFile, ProgressRange theRange = default)
     {
         return Write(theShape, theFile, true, false, BinTools_FormatVersion.BinTools_FormatVersion_CURRENT, theRange);
     }
@@ -219,7 +221,7 @@ public static class BinTools
                              bool theWithTriangles,
                              bool theWithNormals,
                              BinTools_FormatVersion theVersion,
-                             Message_ProgressRange theRange = default)
+                             ProgressRange theRange = default)
     {
         FileStream aStream;
         try
@@ -246,7 +248,7 @@ public static class BinTools
     }
 
     /// <summary>Reads a shape from a binary file. False if the file can't be opened; the shape is frozen.</summary>
-    public static bool Read(out TopoDS_Shape theShape, string theFile, Message_ProgressRange theRange = default)
+    public static bool Read(out TopoDS_Shape theShape, string theFile, ProgressRange theRange = default)
     {
         theShape = new TopoDS_Shape();
         FileStream aStream;
@@ -294,7 +296,7 @@ public static class BinTools
         }
     }
 
-    internal static Storage_StreamFormatError EndOfStream() => new("BinTools: unexpected end of the stream");
+    internal static StreamFormatErrorException EndOfStream() => new("BinTools: unexpected end of the stream");
 
     // istream::get(): one byte. OCCT returns EOF at the end of the stream and the callers carry on with it.
     internal static int Get(Stream IS)
@@ -362,7 +364,7 @@ public static class BinTools
             {
                 // OCCT overflows its buffer
                 // OCCT.NET: untrusted input: a word longer than OCCT's buffer
-                throw new Storage_StreamFormatError("BinTools: a word longer than 254 characters");
+                throw new StreamFormatErrorException("BinTools: a word longer than 254 characters");
             }
 
             aBuilder.Append((char)aChar);
@@ -378,7 +380,7 @@ public static class BinTools
     /// </summary>
     /// <remarks>
     /// C++ fails (and gives 0) when there are no digits or the number overflows; the port throws
-    /// <see cref="Storage_StreamFormatError"/> (OCCT goes on to throw or to read garbage).
+    /// <see cref="StreamFormatErrorException"/> (OCCT goes on to throw or to read garbage).
     /// </remarks>
     internal static int ReadFormattedInteger(Stream IS)
     {
@@ -409,7 +411,7 @@ public static class BinTools
             if (aValue > (long)int.MaxValue + 1)
             {
                 // OCCT.NET: untrusted input: the count overflows
-                throw new Storage_StreamFormatError("BinTools: an integer out of range");
+                throw new StreamFormatErrorException("BinTools: an integer out of range");
             }
 
             aChar = IS.ReadByte();
@@ -418,7 +420,7 @@ public static class BinTools
         if (!hasDigit)
         {
             // OCCT.NET: untrusted input: C++ fails and reads 0
-            throw new Storage_StreamFormatError("BinTools: an integer expected");
+            throw new StreamFormatErrorException("BinTools: an integer expected");
         }
 
         // leave the terminating character in the stream
@@ -431,7 +433,7 @@ public static class BinTools
         if (aValue > int.MaxValue || aValue < int.MinValue)
         {
             // OCCT.NET: untrusted input: the count overflows
-            throw new Storage_StreamFormatError("BinTools: an integer out of range");
+            throw new StreamFormatErrorException("BinTools: an integer out of range");
         }
 
         return (int)aValue;
@@ -545,13 +547,13 @@ public static class BinTools
         // OCCT.NET: untrusted input
         if (theCount < 0)
         {
-            throw new Storage_StreamFormatError("BinTools: a negative count of " + theWhat);
+            throw new StreamFormatErrorException("BinTools: a negative count of " + theWhat);
         }
 
         long aRemaining = IS.CanSeek ? Math.Max(0, IS.Length - IS.Position) : NonSeekableLimit;
         if (theBytesPerItem > 0 && theCount > aRemaining / theBytesPerItem)
         {
-            throw new Storage_StreamFormatError("BinTools: " + theCount + " " + theWhat + " can't fit in the rest of the stream");
+            throw new StreamFormatErrorException("BinTools: " + theCount + " " + theWhat + " can't fit in the rest of the stream");
         }
     }
 
@@ -561,7 +563,7 @@ public static class BinTools
         // OCCT.NET: untrusted input: OCCT reads outside its maps (an exception in debug builds only)
         if (theIndex < theLower || theIndex > theUpper)
         {
-            throw new Storage_StreamFormatError("BinTools: no " + theWhat + " " + theIndex);
+            throw new StreamFormatErrorException("BinTools: no " + theWhat + " " + theIndex);
         }
     }
 
@@ -571,7 +573,7 @@ public static class BinTools
         // OCCT.NET: untrusted input: OCCT casts any byte to TopAbs_Orientation
         if (theValue < 0 || theValue > 3)
         {
-            throw new Storage_StreamFormatError("BinTools: no orientation " + theValue);
+            throw new StreamFormatErrorException("BinTools: no orientation " + theValue);
         }
 
         return (TopAbs_Orientation)theValue;
@@ -581,28 +583,28 @@ public static class BinTools
     /// The location <c>theLocation.Powered(thePower) * theRight</c>, checked first: a location read from a stream can
     /// make Powered recurse once per power (when it isn't a single datum) and the product recurse once per item.
     /// </summary>
-    internal static TopLoc_Location PoweredTimes(in TopLoc_Location theLocation, int thePower, in TopLoc_Location theRight)
+    internal static Placement PoweredTimes(in Placement theLocation, int thePower, in Placement theRight)
     {
         // OCCT.NET: untrusted input: bound the recursion of Powered and Multiplied
         long aNbItems = NbItems(theLocation);
         if (aNbItems > 1 && (thePower == int.MinValue || aNbItems * Math.Abs((long)thePower) > MaxLocationItems))
         {
-            throw new Storage_StreamFormatError("BinTools: a location with too many items");
+            throw new StreamFormatErrorException("BinTools: a location with too many items");
         }
 
         if (aNbItems + NbItems(theRight) > MaxLocationItems + 1)
         {
-            throw new Storage_StreamFormatError("BinTools: a location with too many items");
+            throw new StreamFormatErrorException("BinTools: a location with too many items");
         }
 
         return theLocation.Powered(thePower) * theRight;
     }
 
     // the number of items of a location, counted up to MaxLocationItems + 1
-    private static long NbItems(in TopLoc_Location theLocation)
+    private static long NbItems(in Placement theLocation)
     {
         long aNb = 0;
-        for (TopLoc_Location aLoc = theLocation; !aLoc.IsIdentity() && aNb <= MaxLocationItems; aLoc = aLoc.NextLocation())
+        for (Placement aLoc = theLocation; !aLoc.IsIdentity && aNb <= MaxLocationItems; aLoc = aLoc.NextLocation())
         {
             aNb++;
         }
@@ -612,17 +614,17 @@ public static class BinTools
 
     /// <summary>
     /// The exceptions that a malformed stream can raise inside ported code and that OCCT's <c>OCC_CATCH_SIGNALS</c> blocks
-    /// catch (as Standard_Failure or a converted signal), except the port's own <see cref="Storage_StreamFormatError"/>,
+    /// catch (as Standard_Failure or a converted signal), except the port's own <see cref="StreamFormatErrorException"/>,
     /// which passes through OCCT's catch blocks unwrapped.
     /// </summary>
     internal static bool IsCaught(Exception theException)
     {
-        if (theException is Storage_StreamFormatError)
+        if (theException is StreamFormatErrorException)
         {
             return false;
         }
 
-        return theException is Standard_Failure || IsSignal(theException);
+        return theException is FailureException || IsSignal(theException);
     }
 
     // The .NET exceptions that stand for OCCT's access violations and the like on malformed input
@@ -638,9 +640,9 @@ public static class BinTools
     }
 
     // OCCT's message of a caught exception, "EXCEPTION in ...\n" followed by the exception
-    internal static Standard_Failure Rethrow(string theWhere, Exception theException)
+    internal static FailureException Rethrow(string theWhere, Exception theException)
     {
-        return new Standard_Failure("EXCEPTION in " + theWhere + "\n" + theException.GetType().Name + ": "
+        return new FailureException("EXCEPTION in " + theWhere + "\n" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()) + ": "
                                     + theException.Message + "\n", theException);
     }
 }

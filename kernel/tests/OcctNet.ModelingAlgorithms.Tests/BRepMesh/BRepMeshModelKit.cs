@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -44,7 +46,7 @@ internal static class BRepMeshModelKit
             InParallel = isInParallel,
         };
         aParams.DeflectionInterior = theDeflection;
-        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, Precision.Confusion());
+        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
         aParams.AngleInterior = 2.0 * theAngle;
         return aParams;
     }
@@ -96,7 +98,7 @@ internal static class BRepMeshModelKit
         public int Meshed;
 
         protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
-                                                Message_ProgressRange theRange)
+                                                global::Kerf.Engine.Foundation.ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
@@ -106,8 +108,8 @@ internal static class BRepMeshModelKit
                     continue;
                 }
 
-                var aNodes = new List<gp_Pnt>();
-                var aUV = new List<gp_Pnt2d>();
+                var aNodes = new List<Point3D>();
+                var aUV = new List<Point2D>();
                 for (int w = 0; w < aDFace.WiresNb(); w++)
                 {
                     IMeshData_Wire aDWire = aDFace.GetWire(w);
@@ -129,7 +131,7 @@ internal static class BRepMeshModelKit
                     continue;
                 }
 
-                var aTri = new Poly_Triangulation(aNodes.Count, aNodes.Count - 2, true);
+                var aTri = new Triangulation(aNodes.Count, aNodes.Count - 2, true);
                 for (int k = 0; k < aNodes.Count; k++)
                 {
                     aTri.SetNode(k + 1, aNodes[k]);
@@ -137,7 +139,7 @@ internal static class BRepMeshModelKit
                 }
                 for (int k = 1; k <= aNodes.Count - 2; k++)
                 {
-                    aTri.SetTriangle(k, new Poly_Triangle(1, k + 1, k + 2));
+                    aTri.SetTriangle(k, new Triangle1(1, k + 1, k + 2));
                 }
                 BRepMesh_ShapeTool.AddInFace(aDFace.GetFace(), aTri);
                 Meshed++;
@@ -191,7 +193,7 @@ internal static class BRepMeshModelKit
             IMeshData_Curve aC = anE.GetCurve();
             for (int k = 0; k < aC.ParametersNb(); k++)
             {
-                gp_Pnt aP = aC.GetPoint(k);
+                Point3D aP = aC.GetPoint(k);
                 aText.Append(CultureInfo.InvariantCulture, $" {B(aC.GetParameter(k))}:{B(aP.X())},{B(aP.Y())},{B(aP.Z())}");
             }
             aText.Append('\n');
@@ -201,7 +203,7 @@ internal static class BRepMeshModelKit
                 aText.Append(CultureInfo.InvariantCulture, $" P F{aFaceIndex[aPC.GetFace()]} {aPC.GetOrientation()}");
                 for (int k = 0; k < aPC.ParametersNb(); k++)
                 {
-                    gp_Pnt2d aP = aPC.GetPoint(k);
+                    Point2D aP = aPC.GetPoint(k);
                     aText.Append(CultureInfo.InvariantCulture, $" {B(aPC.GetParameter(k))}:{B(aP.X())},{B(aP.Y())}#{aPC.GetIndex(k)}");
                 }
                 aText.Append('\n');

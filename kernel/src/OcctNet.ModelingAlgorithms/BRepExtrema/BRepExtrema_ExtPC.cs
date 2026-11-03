@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The extrema of the distance between a vertex and an edge.</summary>
@@ -31,8 +33,8 @@ public sealed class BRepExtrema_ExtPC
         }
         double U1, U2;
         myHC = new BRepAdaptor_Curve(E);
-        double Tol = Min(BRep_Tool.Tolerance(E), Precision.Confusion());
-        Tol = Max(myHC.Resolution(Tol), Precision.PConfusion());
+        double Tol = Min(BRep_Tool.Tolerance(E), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Tol = Max(myHC.Resolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         BRep_Tool.Range(E, out U1, out U2);
         myExtPC.Initialize(myHC, U1, U2, Tol);
     }
@@ -42,7 +44,7 @@ public sealed class BRepExtrema_ExtPC
     {
         if (myHC is not null)
         {
-            gp_Pnt P = BRep_Tool.Pnt(V);
+            Point3D P = BRep_Tool.Pnt(V);
             myExtPC.Perform(P);
         }
     }
@@ -63,9 +65,9 @@ public sealed class BRepExtrema_ExtPC
     public double Parameter(int N) => myExtPC.Point(N).Parameter();
 
     /// <summary>The point of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt Point(int N) => myExtPC.Point(N).Value();
+    public Point3D Point(int N) => myExtPC.Point(N).Value();
 
     /// <summary>For a trimmed curve, the square distances to the points at its first and last parameters.</summary>
-    public void TrimmedSquareDistances(out double dist1, out double dist2, out gp_Pnt pnt1, out gp_Pnt pnt2)
+    public void TrimmedSquareDistances(out double dist1, out double dist2, out Point3D pnt1, out Point3D pnt2)
         => myExtPC.TrimmedSquareDistances(out dist1, out dist2, out pnt1, out pnt2);
 }

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -43,7 +45,7 @@ public class IFGraph_SCRoots : IFGraph_StrongComponants
         G.ResetStatus();
         for (complist.Start(); complist.More(); complist.Next())
         {
-            Standard_Transient ent = complist.FirstEntity();
+            Transient ent = complist.FirstEntity();
             int num = G.EntityNumber(ent);
         // OCCT_DEBUG block left out
             if (!G.IsPresent(num))

@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementInterval
 /// </summary>
-public class StepFEA_CurveElementInterval : Standard_Transient
+public class StepFEA_CurveElementInterval : Transient
 {
     private StepFEA_CurveElementLocation theFinishPosition;
     private StepBasic_EulerAngles theEuAngles;

@@ -3,10 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepBuilderAPI_FaceError;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -29,7 +31,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
 {
     private bool myIsInitialized;
     private bool myLastIsLeft;
-    private GeomAbs_JoinType myJoin;
+    private JoinKind myJoin;
     private bool myIsOpenResult;
     private bool myIsToApprox;
     private TopoDS_Face myFace = new();
@@ -44,8 +46,8 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         {
             TopoDS_Edge anEdge = TopoDS.Edge(anIter.Value());
             BRepAdaptor_Curve aBAcurve = new(anEdge);
-            GeomAbs_CurveType aType = aBAcurve.GetType();
-            if (aType != GeomAbs_Line && aType != GeomAbs_Circle)
+            CurveKind aType = aBAcurve.GetType();
+            if (aType != Line && aType != Circle)
             {
                 return true;
             }
@@ -95,13 +97,13 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     public BRepOffsetAPI_MakeOffset()
     {
         myIsInitialized = false;
-        myJoin = GeomAbs_Arc;
+        myJoin = Arc;
         myIsOpenResult = false;
         myIsToApprox = false;
     }
 
     /// <summary>The offset of the wires of the planar face <paramref name="Spine"/>.</summary>
-    public BRepOffsetAPI_MakeOffset(in TopoDS_Face Spine, GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public BRepOffsetAPI_MakeOffset(in TopoDS_Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         Init(Spine, Join, IsOpenResult);
     }
@@ -111,7 +113,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     /// parallels around the salient vertices: arcs of circles (GeomAbs_Arc) or the adjacent parallels prolonged to
     /// their intersection (GeomAbs_Intersection).
     /// </summary>
-    public void Init(in TopoDS_Face Spine, GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public void Init(in TopoDS_Face Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myFace = Spine;
         myIsInitialized = true;
@@ -126,7 +128,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The offset of the planar wire <paramref name="Spine"/>.</summary>
-    public BRepOffsetAPI_MakeOffset(in TopoDS_Wire Spine, GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public BRepOffsetAPI_MakeOffset(in TopoDS_Wire Spine, JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myWires.Append(Spine);
         myIsInitialized = true;
@@ -136,7 +138,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Sets the join type and the open-result flag.</summary>
-    public void Init(GeomAbs_JoinType Join = GeomAbs_Arc, bool IsOpenResult = false)
+    public void Init(JoinKind Join = Arc, bool IsOpenResult = false)
     {
         myJoin = Join;
         myIsOpenResult = IsOpenResult;
@@ -161,7 +163,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     private static void BuildDomains(ref TopoDS_Face myFace,
                                      NCollection_List<TopoDS_Shape> WorkWires,
                                      NCollection_List<BRepFill_OffsetWire> myAlgos,
-                                     GeomAbs_JoinType myJoin,
+                                     JoinKind myJoin,
                                      bool myIsOpenResult,
                                      bool isPositive,
                                      ref bool isWasReversed)
@@ -176,7 +178,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
             myFace = new BRepBuilderAPI_MakeFace(TopoDS.Wire(WorkWires.First()), true).Face();
             if (myFace.IsNull())
             {
-                throw new StdFail_NotDone("BRepOffsetAPI_MakeOffset : the wire is not planar");
+                throw new NotDoneException("BRepOffsetAPI_MakeOffset : the wire is not planar");
             }
         }
         //  Modified by Sergey KHROMOV - Thu Apr 26 16:04:43 2001 Begin
@@ -231,7 +233,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
         FR.Perform();
         if (!FR.IsDone())
         {
-            throw new StdFail_NotDone("BRepOffsetAPI_MakeOffset : Build Domains");
+            throw new NotDoneException("BRepOffsetAPI_MakeOffset : Build Domains");
         }
         NCollection_List<TopoDS_Shape> Faces = new();
         for (; FR.More(); FR.Next())
@@ -266,7 +268,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
             BRepAdaptor_Surface S = new(F, false);
             double Tol = BRep_Tool.Tolerance(F);
 
-            BRepTopAdaptor_FClass2d CL = new(F, Precision.Confusion());
+            BRepTopAdaptor_FClass2d CL = new(F, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             NCollection_List<TopoDS_Shape>.Iterator itW = new(LOW);
             while (itW.More())
@@ -277,10 +279,10 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                 //=======================================================
                 TopExp_Explorer exp = new(W, TopAbs_VERTEX);
                 TopoDS_Vertex V = TopoDS.Vertex(exp.Current());
-                gp_Pnt2d PV = new();
-                gp_Pnt P3d = BRep_Tool.Pnt(V);
+                Point2D PV = new();
+                Point3D P3d = BRep_Tool.Pnt(V);
                 Extrema_ExtPS ExtPS = new(P3d, S, Tol, Tol, Extrema_ExtFlag_MIN);
-                double Dist2Min = Precision.Infinite();
+                double Dist2Min = global::Kerf.Engine.Foundation.Precision.Infinite();
                 // OCCT declares Found as a double
                 bool Found = false;
                 for (int ie = 1; ie <= ExtPS.NbExt(); ie++)
@@ -322,7 +324,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     /// positive), at the altitude <paramref name="Alt"/> along the normal of the spine's plane. Failures leave the
     /// maker not done.
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The maker has neither a face nor a wire.</exception>
+    /// <exception cref="NotDoneException">The maker has neither a face nor a wire.</exception>
     public void Perform(double Offset, double Alt = 0.0)
     {
         StdFail_NotDone_Raise_if(!myIsInitialized, "BRepOffsetAPI_MakeOffset : Perform without Init");
@@ -445,8 +447,8 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
                 Done();
             }
         }
-        catch (Exception anException) when (anException is Standard_Failure or NullReferenceException
-                                            && anException is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (Exception anException) when (anException is FailureException or NullReferenceException
+                                            && anException is not (ImmutableObjectException or TopoDS_LockedShape))
         {
             // OCCT catches Standard_Failure; with the signals Draw and build123d.NET set, an access violation (the
             // medial axis's null bisector, occt-issues.md) arrives as one: the port's NullReferenceException
@@ -457,7 +459,7 @@ public class BRepOffsetAPI_MakeOffset : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Does nothing: the shape is built by <see cref="Perform"/>.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         Done();
     }

@@ -56,7 +56,7 @@ internal static class BRepTestChamferCommands
                 double offset = theDI.Atof(a[i + 2]);
                 double throat = theDI.Atof(a[i + 3]);
 
-                if (offset > Precision.Confusion() && throat > offset)
+                if (offset > global::Kerf.Engine.Foundation.Precision.Confusion() && throat > offset)
                 {
                     aMCh.Add(offset, throat, E, F);
                 }
@@ -118,7 +118,7 @@ internal static class BRepTestChamferCommands
             {
                 double throat = theDI.Atof(a[i + 1]);
 
-                if (throat > Precision.Confusion())
+                if (throat > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     aMCh.Add(throat, E);
                 }
@@ -174,7 +174,7 @@ internal static class BRepTestChamferCommands
             {
                 // symmetric chamfer (one distance)
                 double d1 = Atof(a[i + 1]); // C's atof, not Draw::Atof
-                if (aMCh.Contour(E) == 0 && d1 > Precision.Confusion())
+                if (aMCh.Contour(E) == 0 && d1 > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     aMCh.Add(d1, E);
                 }
@@ -192,8 +192,8 @@ internal static class BRepTestChamferCommands
                         double d1 = theDI.Atof(a[i + 3]);
                         double angle = theDI.Atof(a[i + 4]);
                         angle *= Math.PI / 180.0;
-                        if (aMCh.Contour(E) == 0 && d1 > Precision.Confusion() && angle > Precision.Confusion()
-                            && Math.PI / 2 - angle > Precision.Confusion())
+                        if (aMCh.Contour(E) == 0 && d1 > global::Kerf.Engine.Foundation.Precision.Confusion() && angle > global::Kerf.Engine.Foundation.Precision.Confusion()
+                            && Math.PI / 2 - angle > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             aMCh.AddDA(d1, angle, E, F);
                         }
@@ -204,7 +204,7 @@ internal static class BRepTestChamferCommands
                         // chamfer with two distances
                         double d1 = theDI.Atof(a[i + 2]);
                         double d2 = theDI.Atof(a[i + 3]);
-                        if (aMCh.Contour(E) == 0 && d1 > Precision.Confusion() && d2 > Precision.Confusion())
+                        if (aMCh.Contour(E) == 0 && d1 > global::Kerf.Engine.Foundation.Precision.Confusion() && d2 > global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             aMCh.Add(d1, d2, E, F);
                         }

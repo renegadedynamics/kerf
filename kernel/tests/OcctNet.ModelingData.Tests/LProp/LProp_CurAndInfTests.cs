@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.LProp_CIType;
 
 namespace OcctNet.ModelingData.Tests;
@@ -116,8 +117,8 @@ public class LProp_CurAndInfTest
         var aResult = new LProp_CurAndInf();
         aResult.AddInflection(1.0);
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aResult.Parameter(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aResult.Parameter(2));
+        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Parameter(2));
     }
 
     [Fact]
@@ -126,7 +127,7 @@ public class LProp_CurAndInfTest
         var aResult = new LProp_CurAndInf();
         aResult.AddInflection(1.0);
 
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aResult.Type(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aResult.Type(2));
+        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Type(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => aResult.Type(2));
     }
 }

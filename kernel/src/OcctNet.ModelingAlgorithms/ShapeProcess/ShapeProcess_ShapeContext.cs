@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -71,7 +74,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     {
         if (myWriteDepth > 0)
         {
-            throw new Standard_ProgramError("ShapeProcess_ShapeContext::Init called while operators run");
+            throw new ProgramErrorException("ShapeProcess_ShapeContext::Init called while operators run");
         }
         myMap.Clear();
         myMsg = new ShapeExtend_MsgRegistrator();
@@ -279,8 +282,8 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     {
         TopoDS_Shape r = S;
         // gka  -modification to keep history for shape with location (OCC21617)
-        TopLoc_Location aShLoc = S.Location();
-        var aNullLoc = new TopLoc_Location();
+        Placement aShLoc = S.Location();
+        var aNullLoc = new Placement();
         r.Location(aNullLoc);
 
         if (map.IsBound(r))
@@ -351,21 +354,21 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         // update messages (messages must be taken from each level in the substitution map)
         if (!r.IsNull() && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
         {
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> msgmap = msg.MapShape();
+            NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
             if (msgmap.IsBound(r))
             {
-                NCollection_List<Message_Msg> msglist = msgmap.Find(r);
-                for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
+                NCollection_List<Msg> msglist = msgmap.Find(r);
+                for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
-                    myMsg.Send(S, iter.Value(), Message_Warning);
+                    myMsg.Send(S, iter.Value(), Warning);
                 }
             }
             else if (msgmap.IsBound(theContext.working(S))) // OCCT.NET: S as the operator saw it (decision 1022)
             {
-                NCollection_List<Message_Msg> msglist = msgmap.Find(theContext.working(S));
-                for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
+                NCollection_List<Msg> msglist = msgmap.Find(theContext.working(S));
+                for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
-                    myMsg.Send(S, iter.Value(), Message_Warning);
+                    myMsg.Send(S, iter.Value(), Warning);
                 }
             }
         }
@@ -412,7 +415,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
             return;
         }
         // gka  -modification to keep history for shape with location (OCC21617)
-        var aNullLoc = new TopLoc_Location();
+        var aNullLoc = new Placement();
         TopoDS_Shape aS = S.Located(aNullLoc);
         TopoDS_Shape r = aS;
 
@@ -447,7 +450,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         if (!r.IsNull() && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
         {
             TopoDS_Shape cur, next = r;
-            NCollection_DataMap<TopoDS_Shape, NCollection_List<Message_Msg>> msgmap = msg.MapShape();
+            NCollection_DataMap<TopoDS_Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
             TopoDS_Shape aWorkS = theContext.working(S); // OCCT.NET: S as the operator saw it (decision 1022)
             if (msgmap.IsBound(aWorkS))
             {
@@ -458,10 +461,10 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
                 cur = next;
                 if (msgmap.IsBound(cur))
                 {
-                    NCollection_List<Message_Msg> msglist = msgmap.Find(cur);
-                    for (var iter = new NCollection_List<Message_Msg>.Iterator(msglist); iter.More(); iter.Next())
+                    NCollection_List<Msg> msglist = msgmap.Find(cur);
+                    for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
-                        myMsg.Send(S, iter.Value(), Message_Warning);
+                        myMsg.Send(S, iter.Value(), Warning);
                     }
                 }
                 next = repl.InternalValue(cur);
@@ -501,7 +504,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>Adds a message for the sub-shape <paramref name="S"/> (if messages are on).</summary>
-    public void AddMessage(in TopoDS_Shape S, Message_Msg msg, Message_Gravity grv = Message_Warning)
+    public void AddMessage(in TopoDS_Shape S, Msg msg, Gravity grv = Warning)
     {
         myMsg?.Send(S, msg, grv);
     }
@@ -539,7 +542,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>The value of a continuity parameter (C0, G1, C1, G2, C2, C3, CN); false if it isn't one.</summary>
-    public bool GetContinuity(string param, ref GeomAbs_Shape cont)
+    public bool GetContinuity(string param, ref Continuity cont)
     {
         string str = "";
         if (!GetString(param, ref str))
@@ -552,25 +555,25 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         switch (str)
         {
             case "C0":
-                cont = GeomAbs_Shape.GeomAbs_C0;
+                cont = Continuity.C0;
                 break;
             case "G1":
-                cont = GeomAbs_Shape.GeomAbs_G1;
+                cont = Continuity.G1;
                 break;
             case "C1":
-                cont = GeomAbs_Shape.GeomAbs_C1;
+                cont = Continuity.C1;
                 break;
             case "G2":
-                cont = GeomAbs_Shape.GeomAbs_G2;
+                cont = Continuity.G2;
                 break;
             case "C2":
-                cont = GeomAbs_Shape.GeomAbs_C2;
+                cont = Continuity.C2;
                 break;
             case "C3":
-                cont = GeomAbs_Shape.GeomAbs_C3;
+                cont = Continuity.C3;
                 break;
             case "CN":
-                cont = GeomAbs_Shape.GeomAbs_CN;
+                cont = Continuity.CN;
                 break;
             default:
                 return false;
@@ -579,9 +582,9 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
     }
 
     /// <summary>The value of a continuity parameter, or <paramref name="def"/>.</summary>
-    public GeomAbs_Shape ContinuityVal(string param, GeomAbs_Shape def)
+    public Continuity ContinuityVal(string param, Continuity def)
     {
-        GeomAbs_Shape val = def;
+        Continuity val = def;
         return GetContinuity(param, ref val) ? val : def;
     }
 
@@ -593,7 +596,7 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
 
     // The statistics ShapeProcess_ShapeContext::PrintStatistics and ShapeProcessAPI_ApplySequence::PrintPreparationResult
     // print (the same code twice in OCCT)
-    internal static void PrintPreparation(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap, Message_Messenger aMessenger)
+    internal static void PrintPreparation(NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> theMap, Messenger aMessenger)
     {
         int SS = 0, SN = 0, FF = 0, FS = 0, FN = 0;
         foreach (KeyValuePair<TopoDS_Shape, TopoDS_Shape> It in theMap)
@@ -628,30 +631,30 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         }
 
         // mapping
-        var EPMSG100 = new Message_Msg("PrResult.Print.MSG100"); // Mapping:
-        aMessenger.Send(EPMSG100.Get(), Message_Info);
-        var TPMSG50 = new Message_Msg("PrResult.Print.MSG50"); //  Shells:
-        aMessenger.Send(TPMSG50.Get(), Message_Info);
-        var EPMSG110 = new Message_Msg("PrResult.Print.MSG110"); //    Result is Shell                 : %d
+        var EPMSG100 = new Msg("PrResult.Print.MSG100"); // Mapping:
+        aMessenger.Send(EPMSG100.Get(), Info);
+        var TPMSG50 = new Msg("PrResult.Print.MSG50"); //  Shells:
+        aMessenger.Send(TPMSG50.Get(), Info);
+        var EPMSG110 = new Msg("PrResult.Print.MSG110"); //    Result is Shell                 : %d
         EPMSG110.Arg(SS);
-        aMessenger.Send(EPMSG110.Get(), Message_Info);
-        var EPMSG150 = new Message_Msg("PrResult.Print.MSG150"); //    No Result                       : %d
+        aMessenger.Send(EPMSG110.Get(), Info);
+        var EPMSG150 = new Msg("PrResult.Print.MSG150"); //    No Result                       : %d
         EPMSG150.Arg(SN);
-        aMessenger.Send(EPMSG150.Get(), Message_Info);
+        aMessenger.Send(EPMSG150.Get(), Info);
 
         string tmp110 = EPMSG110.Original(), tmp150 = EPMSG150.Original();
         EPMSG110.Set(tmp110);
         EPMSG150.Set(tmp150);
 
-        var TPMSG55 = new Message_Msg("PrResult.Print.MSG55"); //  Faces:
-        aMessenger.Send(TPMSG55.Get(), Message_Info);
-        var EPMSG115 = new Message_Msg("PrResult.Print.MSG115"); //    Result is Face                  : %d
+        var TPMSG55 = new Msg("PrResult.Print.MSG55"); //  Faces:
+        aMessenger.Send(TPMSG55.Get(), Info);
+        var EPMSG115 = new Msg("PrResult.Print.MSG115"); //    Result is Face                  : %d
         EPMSG115.Arg(FF);
-        aMessenger.Send(EPMSG115.Get(), Message_Info);
+        aMessenger.Send(EPMSG115.Get(), Info);
         EPMSG110.Arg(FS);
-        aMessenger.Send(EPMSG110.Get(), Message_Info);
+        aMessenger.Send(EPMSG110.Get(), Info);
         EPMSG150.Arg(FN);
-        aMessenger.Send(EPMSG150.Get(), Message_Info);
+        aMessenger.Send(EPMSG150.Get(), Info);
 
         // preparation ratio
         double SPR = 1, FPR = 1;
@@ -665,13 +668,13 @@ public class ShapeProcess_ShapeContext : ShapeProcess_Context
         {
             FPR = 1.0 * (NbF - FN) / NbF;
         }
-        var PMSG200 = new Message_Msg("PrResult.Print.MSG200"); // Preparation ratio:
-        aMessenger.Send(PMSG200.Get(), Message_Info);
-        var PMSG205 = new Message_Msg("PrResult.Print.MSG205"); //  Shells: %d per cent
+        var PMSG200 = new Msg("PrResult.Print.MSG200"); // Preparation ratio:
+        aMessenger.Send(PMSG200.Get(), Info);
+        var PMSG205 = new Msg("PrResult.Print.MSG205"); //  Shells: %d per cent
         PMSG205.Arg((int)(100.0 * SPR));
-        aMessenger.Send(PMSG205.Get(), Message_Info);
-        var PMSG210 = new Message_Msg("PrResult.Print.MSG210"); //  Faces : %d per cent
+        aMessenger.Send(PMSG205.Get(), Info);
+        var PMSG210 = new Msg("PrResult.Print.MSG210"); //  Faces : %d per cent
         PMSG210.Arg((int)(100.0 * FPR));
-        aMessenger.Send(PMSG210.Get(), Message_Info);
+        aMessenger.Send(PMSG210.Get(), Info);
     }
 }

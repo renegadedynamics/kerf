@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -32,20 +34,20 @@ internal sealed class GeomLProp_NumericCurInf2d
         myIsDone = true;
 
         double anEpsH = 1.0e-4 * (theUMax - theUMin);
-        double aTol = Precision.PConfusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         const int aNbSamples = 100;
 
         var aFunc = new GeomLProp_FuncCurExt2d(theCurve, anEpsH);
-        var aRootFinder = new math_FunctionRoots(aFunc, theUMin, theUMax, aNbSamples, anEpsH, anEpsH, anEpsH);
+        var aRootFinder = new FunctionRoots(aFunc, theUMin, theUMax, aNbSamples, anEpsH, anEpsH, anEpsH);
 
-        if (aRootFinder.IsDone())
+        if (aRootFinder.IsDone)
         {
-            for (int j = 1; j <= aRootFinder.NbSolutions(); j++)
+            for (int j = 1; j <= aRootFinder.SolutionCount; j++)
             {
                 double aParam = aRootFinder.Value(j);
                 // Refine the root with bracketed bisection.
-                var aRefinement = new math_BracketedRoot(aFunc, aParam - anEpsH, aParam + anEpsH, aTol);
-                if (aRefinement.IsDone())
+                var aRefinement = new BracketedRoot(aFunc, aParam - anEpsH, aParam + anEpsH, aTol);
+                if (aRefinement.IsDone)
                 {
                     aParam = aRefinement.Root();
                 }
@@ -75,11 +77,11 @@ internal sealed class GeomLProp_NumericCurInf2d
         const double anEpsF = 1.0e-6;
         const int aNbSamples = 30;
 
-        var aRootFinder = new math_FunctionRoots(aFunc, theUMin, theUMax, aNbSamples, anEpsX, anEpsF, anEpsX);
+        var aRootFinder = new FunctionRoots(aFunc, theUMin, theUMax, aNbSamples, anEpsX, anEpsF, anEpsX);
 
-        if (aRootFinder.IsDone())
+        if (aRootFinder.IsDone)
         {
-            for (int j = 1; j <= aRootFinder.NbSolutions(); j++)
+            for (int j = 1; j <= aRootFinder.SolutionCount; j++)
             {
                 theResult.AddInflection(aRootFinder.Value(j));
             }

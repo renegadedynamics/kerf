@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The curve services the Geom2dGcc solvers use, over Geom2dAdaptor_Curve.</summary>
@@ -18,7 +20,7 @@ public static class Geom2dGcc_CurveTool
         return 20;
     }
 
-    public static gp_Pnt2d Value(Geom2dAdaptor_Curve C, double U)
+    public static Point2D Value(Geom2dAdaptor_Curve C, double U)
     {
         return C.Value(U);
     }
@@ -33,17 +35,17 @@ public static class Geom2dGcc_CurveTool
         return C.LastParameter();
     }
 
-    public static void D1(Geom2dAdaptor_Curve C, double U, out gp_Pnt2d P, out gp_Vec2d T)
+    public static void D1(Geom2dAdaptor_Curve C, double U, out Point2D P, out Vector2D T)
     {
         C.D1(U, out P, out T);
     }
 
-    public static void D2(Geom2dAdaptor_Curve C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N)
+    public static void D2(Geom2dAdaptor_Curve C, double U, out Point2D P, out Vector2D T, out Vector2D N)
     {
         C.D2(U, out P, out T, out N);
     }
 
-    public static void D3(Geom2dAdaptor_Curve C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N, out gp_Vec2d dN)
+    public static void D3(Geom2dAdaptor_Curve C, double U, out Point2D P, out Vector2D T, out Vector2D N, out Vector2D dN)
     {
         C.D3(U, out P, out T, out N, out dN);
     }

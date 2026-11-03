@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -160,7 +162,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                     Result("result", BRepAlgo.ConvertWire(TopoDS.Wire(anIn[1]), 0.01, TopoDS.Face(anIn[0])));
                     Result("face", BRepAlgo.ConvertFace(TopoDS.Face(anIn[0]), 0.01));
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     aRec.Append("exception\n");
                 }
@@ -170,11 +172,11 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 TopoDS_Wire aRW = TopoDS.Wire(anIn[0]);
                 try
                 {
-                    Result("c1", BRepAlgo.ConcatenateWire(aRW, GeomAbs_Shape.GeomAbs_C1));
-                    Result("g1", BRepAlgo.ConcatenateWire(aRW, GeomAbs_Shape.GeomAbs_G1));
+                    Result("c1", BRepAlgo.ConcatenateWire(aRW, Continuity.C1));
+                    Result("g1", BRepAlgo.ConcatenateWire(aRW, Continuity.G1));
                     Result("c0", BRepAlgo.ConcatenateWireC0(aRW));
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     aRec.Append("exception\n");
                 }
@@ -223,7 +225,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                         Result("edge", it.Value());
                     }
                 }
-                catch (Standard_Failure)
+                catch (FailureException)
                 {
                     aRec.Append("exception\n");
                 }
@@ -321,9 +323,9 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 aRec.Append("face\n").Append(Text(it.Value())).Append('\n');
             }
         }
-        catch (Standard_Failure anE)
+        catch (FailureException anE)
         {
-            aRec.Append("exception ").Append(anE.GetType().Name).Append('\n');
+            aRec.Append("exception ").Append(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType())).Append('\n');
         }
         return aRec.ToString();
     }

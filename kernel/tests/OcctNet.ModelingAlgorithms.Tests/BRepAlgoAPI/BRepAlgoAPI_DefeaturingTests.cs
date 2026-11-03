@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -37,7 +38,7 @@ public class BRepAlgoAPI_DefeaturingTests
         Assert.Equal(5, aDF.FacesToRemove().Extent());
 
         TopoDS_Shape aResult = aDF.Shape();
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(1000.0, BOPAlgo_RemoveFeaturesTests.Volume(aResult), 1.0e-6);
         Assert.True(aDF.HasHistory());
         Assert.True(aDF.HasDeleted());
@@ -55,7 +56,7 @@ public class BRepAlgoAPI_DefeaturingTests
         {
             foreach (TopoDS_Shape aM in aDF.Modified(aF))
             {
-                Assert.True(aM.TShape()!.IsFrozen());
+                Assert.True(aM.TShape()!.IsFrozen);
                 Assert.Contains(BOPAlgo_RemoveFeaturesTests.SubShapes(aResult, TopAbs_FACE), r => r.IsSame(aM));
             }
         }
@@ -91,7 +92,7 @@ public class BRepAlgoAPI_DefeaturingTests
 
         // a second Build starts again from a cleared report
         aDF.Build();
-        Assert.Single(aDF.GetReport().GetAlerts(Message_Gravity.Message_Warning));
+        Assert.Single(aDF.GetReport().GetAlerts(Gravity.Warning));
     }
 
     [Fact]

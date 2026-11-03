@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -12,31 +14,31 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class GccAna_Circ2dTanOnRadTests
 {
     private const double Tol = 1.0e-9;
-    private static readonly gp_Dir2d DX = new(gp_Dir2d.D.X);
+    private static readonly Direction2D DX = new(Direction2D.D.X);
 
-    private static gp_Circ2d Circ(double x, double y, double r) => new(new gp_Ax2d(new gp_Pnt2d(x, y), DX), r);
+    private static Circle2D Circ(double x, double y, double r) => new(new Axis2D(new Point2D(x, y), DX), r);
 
-    private static gp_Lin2d Lin(double x, double y, double dx, double dy) => new(new gp_Pnt2d(x, y), new gp_Dir2d(dx, dy));
+    private static Line2D Lin(double x, double y, double dx, double dy) => new(new Point2D(x, y), new Direction2D(dx, dy));
 
-    private static void AssertNear(in gp_Pnt2d theP, in gp_Pnt2d theQ) => Assert.True(theP.Distance(theQ) < 1.0e-7, $"{theP} != {theQ}");
+    private static void AssertNear(in Point2D theP, in Point2D theQ) => Assert.True(theP.Distance(theQ) < 1.0e-7, $"{theP} != {theQ}");
 
-    private static void CheckCentreOnLine(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in gp_Lin2d theOn)
+    private static void CheckCentreOnLine(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in Line2D theOn)
     {
-        gp_Circ2d aSol = theAlgo.ThisSolution(theIndex);
+        Circle2D aSol = theAlgo.ThisSolution(theIndex);
         Assert.True(theOn.Distance(aSol.Location()) < 1.0e-7);
         theAlgo.CenterOn3(theIndex, out double aParArg, out _);
-        AssertNear(ElCLib.Value(aParArg, theOn), aSol.Location());
+        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theOn), aSol.Location());
     }
 
-    private static void CheckCentreOnCirc(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in gp_Circ2d theOn)
+    private static void CheckCentreOnCirc(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in Circle2D theOn)
     {
-        gp_Circ2d aSol = theAlgo.ThisSolution(theIndex);
+        Circle2D aSol = theAlgo.ThisSolution(theIndex);
         Assert.True(theOn.Distance(aSol.Location()) < 1.0e-7);
         theAlgo.CenterOn3(theIndex, out double aParArg, out _);
-        AssertNear(ElCLib.Value(aParArg, theOn), aSol.Location());
+        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theOn), aSol.Location());
     }
 
-    private static GccEnt_Position CircQualifier(in gp_Circ2d theArg, in gp_Circ2d theSol)
+    private static GccEnt_Position CircQualifier(in Circle2D theArg, in Circle2D theSol)
     {
         double d = theArg.Location().Distance(theSol.Location());
         if (Math.Abs(d + theSol.Radius() - theArg.Radius()) < 1.0e-7)
@@ -51,15 +53,15 @@ public class GccAna_Circ2dTanOnRadTests
         return GccEnt_enclosing;
     }
 
-    private static void CheckTangentCirc(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in gp_Circ2d theArg)
+    private static void CheckTangentCirc(GccAna_Circ2dTanOnRad theAlgo, int theIndex, in Circle2D theArg)
     {
-        gp_Circ2d aSol = theAlgo.ThisSolution(theIndex);
+        Circle2D aSol = theAlgo.ThisSolution(theIndex);
         GccEnt_Position aQual = CircQualifier(theArg, aSol);
         theAlgo.WhichQualifier(theIndex, out GccEnt_Position aQ1);
         Assert.Equal(aQual, aQ1);
-        theAlgo.Tangency1(theIndex, out double aParSol, out double aParArg, out gp_Pnt2d aPnt);
-        AssertNear(ElCLib.Value(aParSol, aSol), aPnt);
-        AssertNear(ElCLib.Value(aParArg, theArg), aPnt);
+        theAlgo.Tangency1(theIndex, out double aParSol, out double aParArg, out Point2D aPnt);
+        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
+        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theArg), aPnt);
     }
 
     // Unit circle at the origin, centres on the X axis, radius 0.4: outside at x = +-1.4, inside at x = +-0.6.
@@ -72,22 +74,22 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(GccEnt_enclosing, 0)]
     public void CircleCentreOnLine(GccEnt_Position theQ, int theNb)
     {
-        gp_Circ2d aC = Circ(0, 0, 1);
-        gp_Lin2d anOn = Lin(0, 0, 1, 0);
+        Circle2D aC = Circ(0, 0, 1);
+        Line2D anOn = Lin(0, 0, 1, 0);
         GccAna_Circ2dTanOnRad anAlgo = new(new GccEnt_QualifiedCirc(aC, theQ), anOn, 0.4, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(theNb, anAlgo.NbSolutions());
         for (int i = 1; i <= theNb; i++)
         {
-            gp_Circ2d aSol = anAlgo.ThisSolution(i);
+            Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(0.4, aSol.Radius());
             Assert.False(anAlgo.IsTheSame1(i));
             CheckCentreOnLine(anAlgo, i, anOn);
             anAlgo.WhichQualifier(i, out GccEnt_Position aQ1);
             Assert.Equal(CircQualifier(aC, aSol), aQ1);
-            anAlgo.Tangency1(i, out double aParSol, out _, out gp_Pnt2d aPnt);
-            AssertNear(ElCLib.Value(aParSol, aSol), aPnt);
-            gp_Pnt2d aTrue = new(aSol.Location().XY() - (aPnt.XY() - aSol.Location().XY()));
+            anAlgo.Tangency1(i, out double aParSol, out _, out Point2D aPnt);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
+            Point2D aTrue = new(aSol.Location().XY() - (aPnt.XY() - aSol.Location().XY()));
             Assert.Equal(1.0, aTrue.Distance(aC.Location()), 1.0e-9);
         }
     }
@@ -97,7 +99,7 @@ public class GccAna_Circ2dTanOnRadTests
     [Fact]
     public void CircleCentreOnLine_TangencyPointAtTheCentre_Throws()
     {
-        Assert.Throws<Standard_ConstructionError>(
+        Assert.Throws<ConstructionErrorException>(
             () => new GccAna_Circ2dTanOnRad(GccEnt.Enclosed(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol));
     }
 
@@ -107,8 +109,8 @@ public class GccAna_Circ2dTanOnRadTests
     {
         GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Outside(Circ(0, 0, 1)), Lin(0, 0, 1, 0), 0.5, Tol);
         Assert.Equal(2, anAlgo.NbSolutions());
-        anAlgo.CenterOn3(1, out _, out gp_Pnt2d aPnt);
-        anAlgo.Tangency1(1, out _, out _, out gp_Pnt2d aTan);
+        anAlgo.CenterOn3(1, out _, out Point2D aPnt);
+        anAlgo.Tangency1(1, out _, out _, out Point2D aTan);
         Assert.Equal(aTan, aPnt);
     }
 
@@ -119,25 +121,25 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(GccEnt_outside, 1)]
     public void LineCentreOnLine(GccEnt_Position theQ, int theNb)
     {
-        gp_Lin2d aL = Lin(0, 0, 1, 0);
-        gp_Lin2d anOn = Lin(0, 0, 0, 1);
+        Line2D aL = Lin(0, 0, 1, 0);
+        Line2D anOn = Lin(0, 0, 0, 1);
         GccAna_Circ2dTanOnRad anAlgo = new(new GccEnt_QualifiedLin(aL, theQ), anOn, 1.0, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(theNb, anAlgo.NbSolutions());
         for (int i = 1; i <= theNb; i++)
         {
-            gp_Circ2d aSol = anAlgo.ThisSolution(i);
+            Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(1.0, aL.Distance(aSol.Location()), 1.0e-9);
             Assert.True(anOn.Distance(aSol.Location()) < 1.0e-9);
             anAlgo.WhichQualifier(i, out GccEnt_Position aQ1);
             Assert.Equal(aSol.Location().Y() > 0 ? GccEnt_enclosed : GccEnt_outside, aQ1);
-            anAlgo.Tangency1(i, out double aParSol, out double aParArg, out gp_Pnt2d aPnt);
-            AssertNear(ElCLib.Value(aParSol, aSol), aPnt);
-            AssertNear(ElCLib.Value(aParArg, aL), aPnt);
+            anAlgo.Tangency1(i, out double aParSol, out double aParArg, out Point2D aPnt);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, aL), aPnt);
         }
         if (theQ == GccEnt_enclosed)
         {
-            AssertNear(anAlgo.ThisSolution(1).Location(), new gp_Pnt2d(0, 1));
+            AssertNear(anAlgo.ThisSolution(1).Location(), new Point2D(0, 1));
         }
     }
 
@@ -167,22 +169,22 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(0.5, 0)]
     public void PointCentreOnLine(double theRadius, int theNb)
     {
-        gp_Pnt2d aP = new(1, 0);
-        gp_Lin2d anOn = Lin(0, 0, 0, 1);
+        Point2D aP = new(1, 0);
+        Line2D anOn = Lin(0, 0, 0, 1);
         GccAna_Circ2dTanOnRad anAlgo = new(aP, anOn, theRadius, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(theNb, anAlgo.NbSolutions());
         for (int i = 1; i <= theNb; i++)
         {
-            gp_Circ2d aSol = anAlgo.ThisSolution(i);
+            Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(theRadius, aSol.Radius());
             Assert.Equal(theRadius, aSol.Location().Distance(aP), 1.0e-9);
             CheckCentreOnLine(anAlgo, i, anOn);
             anAlgo.WhichQualifier(i, out GccEnt_Position aQ1);
             Assert.Equal(GccEnt_noqualifier, aQ1);
-            anAlgo.Tangency1(i, out double aParSol, out _, out gp_Pnt2d aPnt);
+            anAlgo.Tangency1(i, out double aParSol, out _, out Point2D aPnt);
             AssertNear(aPnt, aP);
-            AssertNear(ElCLib.Value(aParSol, aSol), aPnt);
+            AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol), aPnt);
         }
     }
 
@@ -190,12 +192,12 @@ public class GccAna_Circ2dTanOnRadTests
     [Fact]
     public void PointOnTheCentreLine_NotDone()
     {
-        GccAna_Circ2dTanOnRad anAlgo = new(new gp_Pnt2d(0, 3), Lin(0, 0, 0, 1), 1.0, Tol);
+        GccAna_Circ2dTanOnRad anAlgo = new(new Point2D(0, 3), Lin(0, 0, 0, 1), 1.0, Tol);
         Assert.False(anAlgo.IsDone());
         Assert.Equal(2, anAlgo.NbSolutions());
-        Assert.Throws<StdFail_NotDone>(() => anAlgo.Tangency1(1, out _, out _, out _));
-        AssertNear(anAlgo.ThisSolution(1).Location(), new gp_Pnt2d(0, 4));
-        AssertNear(anAlgo.ThisSolution(2).Location(), new gp_Pnt2d(0, 2));
+        Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
+        AssertNear(anAlgo.ThisSolution(1).Location(), new Point2D(0, 4));
+        AssertNear(anAlgo.ThisSolution(2).Location(), new Point2D(0, 2));
     }
 
     // Unit circle at the origin, centres on the circle at (3, 0) of radius 1, radius 1.5: outside the unit circle at
@@ -207,8 +209,8 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(GccEnt_enclosed, 0)]
     public void CircleCentreOnCircle(GccEnt_Position theQ, int theNb)
     {
-        gp_Circ2d aC = Circ(0, 0, 1);
-        gp_Circ2d anOn = Circ(3, 0, 1);
+        Circle2D aC = Circ(0, 0, 1);
+        Circle2D anOn = Circ(3, 0, 1);
         GccAna_Circ2dTanOnRad anAlgo = new(new GccEnt_QualifiedCirc(aC, theQ), anOn, 1.5, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(theNb, anAlgo.NbSolutions());
@@ -226,9 +228,9 @@ public class GccAna_Circ2dTanOnRadTests
     [Fact]
     public void CircleCentreOnCircle_EnclosingAll_Throws()
     {
-        gp_Circ2d aC = Circ(0, 0, 1);
-        gp_Circ2d anOn = Circ(1, 0, 1);
-        Assert.Throws<Standard_OutOfRange>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol));
+        Circle2D aC = Circ(0, 0, 1);
+        Circle2D anOn = Circ(1, 0, 1);
+        Assert.Throws<OutOfRangeException>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), anOn, 3.0 + 5.0e-10, Tol));
     }
 
     // The X axis, centres on the circle of radius 2 at the origin, radius 1. OCCT truncates a dot product into its side
@@ -240,9 +242,9 @@ public class GccAna_Circ2dTanOnRadTests
     [InlineData(GccEnt_outside)]
     public void LineCentreOnCircle_Throws(GccEnt_Position theQ)
     {
-        gp_Lin2d aL = Lin(0, 0, 1, 0);
-        gp_Circ2d anOn = Circ(0, 0, 2);
-        Assert.Throws<Standard_ConstructionError>(() => new GccAna_Circ2dTanOnRad(new GccEnt_QualifiedLin(aL, theQ), anOn, 1.0, Tol));
+        Line2D aL = Lin(0, 0, 1, 0);
+        Circle2D anOn = Circ(0, 0, 2);
+        Assert.Throws<ConstructionErrorException>(() => new GccAna_Circ2dTanOnRad(new GccEnt_QualifiedLin(aL, theQ), anOn, 1.0, Tol));
     }
 
 
@@ -251,45 +253,45 @@ public class GccAna_Circ2dTanOnRadTests
     [Fact]
     public void PointCentreOnCircle()
     {
-        gp_Pnt2d aP = new(1, 1);
-        gp_Circ2d anOn = Circ(3, 0, 1);
+        Point2D aP = new(1, 1);
+        Circle2D anOn = Circ(3, 0, 1);
         GccAna_Circ2dTanOnRad anAlgo = new(aP, anOn, 2.5, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(2, anAlgo.NbSolutions());
         for (int i = 1; i <= 2; i++)
         {
-            gp_Circ2d aSol = anAlgo.ThisSolution(i);
+            Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(2.5, aSol.Radius());
             Assert.Equal(2.5, aSol.Location().Distance(aP), 1.0e-9);
             Assert.True(anOn.Distance(aSol.Location()) < 1.0e-9);
         }
         // OCCT fills the tangency data of the first solution only
-        anAlgo.Tangency1(1, out double aParSol, out _, out gp_Pnt2d aPnt);
+        anAlgo.Tangency1(1, out double aParSol, out _, out Point2D aPnt);
         AssertNear(aPnt, aP);
-        AssertNear(ElCLib.Value(aParSol, anAlgo.ThisSolution(1)), aP);
+        AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, anAlgo.ThisSolution(1)), aP);
     }
 
     // The origin, centres on the circle at (3, 0) of radius 1, radius 2: the one centre at (2, 0)
     [Fact]
     public void PointCentreOnCircle_Tangent()
     {
-        GccAna_Circ2dTanOnRad anAlgo = new(new gp_Pnt2d(0, 0), Circ(3, 0, 1), 2.0, Tol);
+        GccAna_Circ2dTanOnRad anAlgo = new(new Point2D(0, 0), Circ(3, 0, 1), 2.0, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(1, anAlgo.NbSolutions());
-        AssertNear(anAlgo.ThisSolution(1).Location(), new gp_Pnt2d(2, 0));
+        AssertNear(anAlgo.ThisSolution(1).Location(), new Point2D(2, 0));
     }
 
     [Fact]
     public void Errors()
     {
-        gp_Lin2d aL = Lin(0, 0, 1, 0);
-        gp_Circ2d aC = Circ(0, 0, 1);
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), aL, -1.0, Tol));
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aL), Lin(0, 0, 0, 1), -1.0, Tol));
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(new gp_Pnt2d(1, 0), aL, -1.0, Tol));
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), Circ(3, 0, 1), -1.0, Tol));
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aL), aC, -1.0, Tol));
-        Assert.Throws<Standard_NegativeValue>(() => new GccAna_Circ2dTanOnRad(new gp_Pnt2d(1, 0), Circ(3, 0, 1), -1.0, Tol));
+        Line2D aL = Lin(0, 0, 1, 0);
+        Circle2D aC = Circ(0, 0, 1);
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), aL, -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aL), Lin(0, 0, 0, 1), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(new Point2D(1, 0), aL, -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aC), Circ(3, 0, 1), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(GccEnt.Unqualified(aL), aC, -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2dTanOnRad(new Point2D(1, 0), Circ(3, 0, 1), -1.0, Tol));
         GccEnt_QualifiedLin aBad = new(aL, GccEnt_enclosing);
         Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2dTanOnRad(aBad, Lin(0, 0, 0, 1), 1.0, Tol));
         Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2dTanOnRad(aBad, aC, 1.0, Tol));
@@ -298,19 +300,19 @@ public class GccAna_Circ2dTanOnRadTests
         Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2dTanOnRad(aNoQual, Circ(3, 0, 1), 1.0, Tol));
 
         GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Unqualified(aC), aL, 0.4, Tol);
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.ThisSolution(0));
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.ThisSolution(5));
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.WhichQualifier(5, out _));
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.Tangency1(5, out _, out _, out _));
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.CenterOn3(0, out _, out _));
-        Assert.Throws<Standard_OutOfRange>(() => anAlgo.IsTheSame1(5));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(0));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(5));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(5, out _));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(5, out _, out _, out _));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.CenterOn3(0, out _, out _));
+        Assert.Throws<OutOfRangeException>(() => anAlgo.IsTheSame1(5));
     }
 
     // The unit circle at (1, 0), enclosed, centres on the unit circle at the origin, radius 1: the argument itself
     [Fact]
     public void CircleCentreOnCircle_SolutionIsTheArgument()
     {
-        gp_Circ2d aC = Circ(1, 0, 1);
+        Circle2D aC = Circ(1, 0, 1);
         GccAna_Circ2dTanOnRad anAlgo = new(GccEnt.Enclosed(aC), Circ(0, 0, 1), 1.0, Tol);
         Assert.True(anAlgo.IsDone());
         Assert.Equal(1, anAlgo.NbSolutions());

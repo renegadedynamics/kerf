@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepRepr_MaterialDesignation : Standard_Transient
+public class StepRepr_MaterialDesignation : Transient
 {
     private TCollection_HAsciiString name;
     private StepRepr_CharacterizedDefinition ofDefinition = new StepRepr_CharacterizedDefinition();

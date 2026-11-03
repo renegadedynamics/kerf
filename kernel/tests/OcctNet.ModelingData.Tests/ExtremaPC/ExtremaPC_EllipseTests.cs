@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Ellipse_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_EllipseTest
@@ -19,8 +21,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnMajorAxis_Outside()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -36,8 +38,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnMajorAxis_Inside()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(10.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(10.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -56,8 +58,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnMajorAxis_NegativeSide()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(-30.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(-30.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -77,8 +79,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnMinorAxis_Outside()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 20.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 20.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -94,8 +96,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnMinorAxis_Inside()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 5.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 5.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -115,8 +117,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointInFirstQuadrant()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(15.0, 15.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(15.0, 15.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -130,15 +132,15 @@ public class ExtremaPC_EllipseTest
 
         // Verify the closest point is actually on the ellipse
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
+        Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
     }
 
     [Fact]
     public void PointInSecondQuadrant()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(-15.0, 8.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(-15.0, 8.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -148,15 +150,15 @@ public class ExtremaPC_EllipseTest
 
         // Verify the point on ellipse
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
+        Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
     }
 
     [Fact]
     public void PointInThirdQuadrant()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(-12.0, -7.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(-12.0, -7.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -166,19 +168,19 @@ public class ExtremaPC_EllipseTest
 
         // Verify the closest point is on the ellipse and distance is reasonable
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
+        Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
 
         // Distance to closest point should be less than distance to origin
         double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
-        Assert.True(aMinDist < aPoint.Distance(new gp_Pnt(0, 0, 0)));
+        Assert.True(aMinDist < aPoint.Distance(new Point3D(0, 0, 0)));
     }
 
     [Fact]
     public void PointInFourthQuadrant()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(18.0, -5.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(18.0, -5.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -188,12 +190,12 @@ public class ExtremaPC_EllipseTest
 
         // Verify the closest point is on the ellipse
         int aMinIdx = aResult.MinIndex();
-        gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
+        Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
         Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
 
         // Distance to closest point should be less than distance to origin
         double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
-        Assert.True(aMinDist < aPoint.Distance(new gp_Pnt(0, 0, 0)));
+        Assert.True(aMinDist < aPoint.Distance(new Point3D(0, 0, 0)));
     }
 
     //==================================================================================================
@@ -203,8 +205,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointAtCenter_Degenerate()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -226,7 +228,7 @@ public class ExtremaPC_EllipseTest
         // Verify all extrema are on the ellipse
         for (int i = 0; i < aResult.NbExt(); ++i)
         {
-            gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[i].Parameter, anEllipse);
+            Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[i].Parameter, anEllipse);
             Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnEllipse), THE_TOL);
         }
     }
@@ -238,8 +240,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointAbovePlane()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 0.0, 5.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 0.0, 5.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -255,8 +257,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointBelowPlane()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 20.0, -8.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 20.0, -8.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -276,8 +278,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PartialArc_FirstQuadrant()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -293,8 +295,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PartialArc_SecondHalf()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(-30.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(-30.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -314,8 +316,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void EllipseWithOffset()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(100, 200, 50), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(130.0, 200.0, 50.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(100, 200, 50), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(130.0, 200.0, 50.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -331,8 +333,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void EllipseInYZPlane()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 20.0, 10.0);
-        gp_Pnt aPoint = new(5.0, 30.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 20.0, 10.0);
+        Point3D aPoint = new(5.0, 30.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -348,7 +350,7 @@ public class ExtremaPC_EllipseTest
         for (int i = 0; i < aResult.NbExt(); ++i)
         {
             ExtremaPC.ExtremumResult anExt = aResult[i];
-            gp_Pnt aCheck = ElCLib.Value(anExt.Parameter, anEllipse);
+            Point3D aCheck = global::Kerf.Engine.Geometry.ElCLib.Value(anExt.Parameter, anEllipse);
             Assert.Equal(0.0, aCheck.Distance(anExt.Point), 1e-7);
         }
     }
@@ -356,8 +358,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void NearlyCircularEllipse()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 9.9);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 9.9);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -373,8 +375,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void VeryFlatEllipse()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 2.0);
-        gp_Pnt aPoint = new(0.0, 10.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 2.0);
+        Point3D aPoint = new(0.0, 10.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -394,8 +396,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnEllipse_MajorVertex()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -409,8 +411,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnEllipse_MinorVertex()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(0.0, 10.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(0.0, 10.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -424,9 +426,9 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void PointOnEllipse_General()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         // Point at u = PI/4
-        gp_Pnt aPoint = ElCLib.Value(THE_PI / 4.0, anEllipse);
+        Point3D aPoint = global::Kerf.Engine.Geometry.ElCLib.Value(THE_PI / 4.0, anEllipse);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -444,8 +446,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void FourExtrema_PointInsideEllipse()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(5.0, 3.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(5.0, 3.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -459,8 +461,8 @@ public class ExtremaPC_EllipseTest
     [Fact]
     public void TwoExtrema_PointOnAxis()
     {
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -478,14 +480,14 @@ public class ExtremaPC_EllipseTest
     public void NarrowRange_VerySmall()
     {
         // Test with a very narrow parameter range (0.05 radians ~ 3 degrees)
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(22.0, 2.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(22.0, 2.0, 0.0);
 
         double aUMin = 0.0;
         double aUMax = 0.05; // Very small range
 
         // Create evaluator with restricted domain
-        ExtremaPC_Ellipse anEval = new(anEllipse, new MathUtils.Domain1D(aUMin, aUMax));
+        ExtremaPC_Ellipse anEval = new(anEllipse, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(aUMin, aUMax));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -504,14 +506,14 @@ public class ExtremaPC_EllipseTest
     public void NarrowRange_MediumSmall()
     {
         // Test with a moderately narrow parameter range (0.2 radians ~ 11 degrees)
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(25.0, 5.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(25.0, 5.0, 0.0);
 
         double aUMin = THE_PI / 6.0 - 0.1;
         double aUMax = THE_PI / 6.0 + 0.1;
 
         // Create evaluator with restricted domain
-        ExtremaPC_Ellipse anEval = new(anEllipse, new MathUtils.Domain1D(aUMin, aUMax));
+        ExtremaPC_Ellipse anEval = new(anEllipse, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(aUMin, aUMax));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         Assert.True(aResult.IsDone());
@@ -519,7 +521,7 @@ public class ExtremaPC_EllipseTest
         // Verify distance calculation is consistent
         for (int i = 0; i < aResult.NbExt(); ++i)
         {
-            gp_Pnt aPtOnEllipse = ElCLib.Value(aResult[i].Parameter, anEllipse);
+            Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[i].Parameter, anEllipse);
             Assert.Equal(0.0, aPtOnEllipse.Distance(aResult[i].Point), THE_TOL);
             double aExpectedSqDist = aPoint.SquareDistance(aPtOnEllipse);
             Assert.Equal(aExpectedSqDist, aResult[i].SquareDistance, THE_TOL);
@@ -530,14 +532,14 @@ public class ExtremaPC_EllipseTest
     public void NarrowRange_TinyArc()
     {
         // Test with an extremely narrow parameter range (0.001 radians ~ 0.06 degrees)
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(21.0, 0.5, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(21.0, 0.5, 0.0);
 
         double aUMin = 0.0;
         double aUMax = 0.001; // Extremely narrow
 
         // Create evaluator with restricted domain
-        ExtremaPC_Ellipse anEval = new(anEllipse, new MathUtils.Domain1D(aUMin, aUMax));
+        ExtremaPC_Ellipse anEval = new(anEllipse, new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(aUMin, aUMax));
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
 
         // Should complete without error
@@ -548,8 +550,8 @@ public class ExtremaPC_EllipseTest
     public void LargeRange_FullCircle()
     {
         // Verify full circle case still works correctly
-        gp_Elips anEllipse = new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
-        gp_Pnt aPoint = new(5.0, 3.0, 0.0);
+        Ellipse3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
+        Point3D aPoint = new(5.0, 3.0, 0.0);
 
         ExtremaPC_Ellipse anEval = new(anEllipse);
         ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);

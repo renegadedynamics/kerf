@@ -2,216 +2,218 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 public static partial class MathRoot
 {
     /// <summary>Bisection method for root finding; f(theLower) and f(theUpper) must have opposite signs.</summary>
-    public static MathUtils.ScalarResult Bisection<Function>(Function theFunc, double theLower, double theUpper, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunction
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult Bisection<Function>(Function func, double lower, double upper, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
 
-        double aA = theLower;
-        double aB = theUpper;
+        double a = lower;
+        double b = upper;
 
         // Evaluate at endpoints
-        if (!theFunc.Value(aA, out double aFa))
+        if (!func.Value(a, out double fa))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Value(aB, out double aFb))
+        if (!func.Value(b, out double fb))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
 
         // Check that bracket is valid (sign change)
-        if (aFa * aFb > 0.0)
+        if (fa * fb > 0.0)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
         // Ensure a < b
-        if (aA > aB)
+        if (a > b)
         {
-            (aA, aB) = (aB, aA);
-            (aFa, aFb) = (aFb, aFa);
+            (a, b) = (b, a);
+            (fa, fb) = (fb, fa);
         }
 
         // Track which endpoint has the negative value
         // We use separate tracking instead of swapping to maintain aA < aB
-        bool aIsNegAtA = (aFa < 0.0);
+        bool isNegAtA = (fa < 0.0);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
             // Compute midpoint
-            double aM = 0.5 * (aA + aB);
+            double m = 0.5 * (a + b);
 
-            if (!theFunc.Value(aM, out double aFm))
+            if (!func.Value(m, out double fm))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aM;
-                aResult.NbIterations = anIter + 1;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = m;
+                result.NbIterations = iter + 1;
+                return result;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence on function value
-            if (Math.Abs(aFm) < theConfig.FTolerance)
+            if (Math.Abs(fm) < config.FTolerance)
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aM;
-                aResult.Value = aFm;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = m;
+                result.Value = fm;
+                return result;
             }
 
             // Check convergence on interval size
-            if ((aB - aA) < theConfig.XTolerance * Max(1.0, Math.Abs(aM)))
+            if ((b - a) < config.XTolerance * Max(1.0, Math.Abs(m)))
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aM;
-                aResult.Value = aFm;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = m;
+                result.Value = fm;
+                return result;
             }
 
             // Update bracket based on sign tracking
-            bool aIsNegAtM = (aFm < 0.0);
-            if (aIsNegAtM == aIsNegAtA)
+            bool isNegAtM = (fm < 0.0);
+            if (isNegAtM == isNegAtA)
             {
                 // Same sign as endpoint A, replace A
-                aA = aM;
-                aFa = aFm;
+                a = m;
+                fa = fm;
             }
             else
             {
                 // Same sign as endpoint B, replace B
-                aB = aM;
-                aFb = aFm;
+                b = m;
+                fb = fm;
             }
         }
 
         // Maximum iterations reached
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = 0.5 * (aA + aB);
-        theFunc.Value(aResult.Root.Value, out double aValue);
-        aResult.Value = aValue;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = 0.5 * (a + b);
+        func.Value(result.Root.Value, out double value);
+        result.Value = value;
+        return result;
     }
 
     /// <summary>Bisection safeguarded Newton (Newton steps that stay inside the bracket, bisection otherwise).</summary>
-    public static MathUtils.ScalarResult BisectionNewton<Function>(Function theFunc, double theLower, double theUpper, MathUtils.Config? theConfig = null)
-        where Function : MathUtils.IScalarFunctionWithDerivative
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult BisectionNewton<Function>(Function func, double lower, double upper, global::Kerf.Engine.Numerics.Utilities.MathUtils.Config? config = null)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        theConfig ??= new MathUtils.Config();
-        MathUtils.ScalarResult aResult = new();
+        config ??= new global::Kerf.Engine.Numerics.Utilities.MathUtils.Config();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult result = new();
 
-        double aA = theLower;
-        double aB = theUpper;
+        double a = lower;
+        double b = upper;
 
         // Evaluate at endpoints
-        if (!theFunc.Values(aA, out double aFa, out _))
+        if (!func.Values(a, out double fa, out _))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
-        if (!theFunc.Values(aB, out double aFb, out _))
+        if (!func.Values(b, out double fb, out _))
         {
-            aResult.Status = MathUtils.Status.NumericalError;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+            return result;
         }
 
         // Check that bracket is valid
-        if (aFa * aFb > 0.0)
+        if (fa * fb > 0.0)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
         // Ensure a < b
-        if (aA > aB)
+        if (a > b)
         {
-            (aA, aB) = (aB, aA);
-            (aFa, aFb) = (aFb, aFa);
+            (a, b) = (b, a);
+            (fa, fb) = (fb, fa);
         }
 
         // Track which endpoint has the negative value
-        bool aIsNegAtA = (aFa < 0.0);
+        bool isNegAtA = (fa < 0.0);
 
         // Start from midpoint
-        double aX = 0.5 * (aA + aB);
+        double x = 0.5 * (a + b);
 
-        for (int anIter = 0; anIter < theConfig.MaxIterations; ++anIter)
+        for (int iter = 0; iter < config.MaxIterations; ++iter)
         {
-            if (!theFunc.Values(aX, out double aFx, out double aDfx))
+            if (!func.Values(x, out double fx, out double dfx))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                aResult.Root = aX;
-                aResult.NbIterations = anIter + 1;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                result.Root = x;
+                result.NbIterations = iter + 1;
+                return result;
             }
 
-            aResult.NbIterations = anIter + 1;
+            result.NbIterations = iter + 1;
 
             // Check convergence
-            if (Math.Abs(aFx) < theConfig.FTolerance)
+            if (Math.Abs(fx) < config.FTolerance)
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                aResult.Derivative = aDfx;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                result.Derivative = dfx;
+                return result;
             }
 
-            if ((aB - aA) < theConfig.XTolerance * Max(1.0, Math.Abs(aX)))
+            if ((b - a) < config.XTolerance * Max(1.0, Math.Abs(x)))
             {
-                aResult.Status = MathUtils.Status.OK;
-                aResult.Root = aX;
-                aResult.Value = aFx;
-                aResult.Derivative = aDfx;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+                result.Root = x;
+                result.Value = fx;
+                result.Derivative = dfx;
+                return result;
             }
 
             // Try Newton step
-            double aXNew = aX;
-            if (!MathUtils.IsZero(aDfx))
+            double xNew = x;
+            if (!global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(dfx))
             {
-                aXNew = aX - aFx / aDfx;
+                xNew = x - fx / dfx;
             }
 
             // Check if Newton step stays within bracket
-            if (aXNew <= aA || aXNew >= aB)
+            if (xNew <= a || xNew >= b)
             {
                 // Fall back to bisection
-                aXNew = 0.5 * (aA + aB);
+                xNew = 0.5 * (a + b);
             }
 
             // Update bracket based on current point using sign tracking
-            bool aIsNegAtX = (aFx < 0.0);
-            if (aIsNegAtX == aIsNegAtA)
+            bool isNegAtX = (fx < 0.0);
+            if (isNegAtX == isNegAtA)
             {
                 // Same sign as endpoint A, replace A
-                aA = aX;
+                a = x;
             }
             else
             {
                 // Same sign as endpoint B, replace B
-                aB = aX;
+                b = x;
             }
 
-            aX = aXNew;
+            x = xNew;
         }
 
         // Maximum iterations reached
-        aResult.Status = MathUtils.Status.MaxIterations;
-        aResult.Root = aX;
-        theFunc.Values(aX, out double aValue, out double aDerivative);
-        aResult.Value = aValue;
-        aResult.Derivative = aDerivative;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations;
+        result.Root = x;
+        func.Values(x, out double value, out double derivative);
+        result.Value = value;
+        result.Derivative = derivative;
+        return result;
     }
 }

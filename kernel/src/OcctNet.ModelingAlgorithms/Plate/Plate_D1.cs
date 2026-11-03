@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>The first derivatives (DU, DV) of a surface at a point, as the G1 constraints of a plate take them.</summary>
@@ -11,10 +13,10 @@ namespace Occt;
 /// Plate_GtoCConstraint and Plate_FreeGtoCConstraint (which transform a copy in place).</remarks>
 public struct Plate_D1 : IEquatable<Plate_D1>
 {
-    internal gp_XYZ Du;
-    internal gp_XYZ Dv;
+    internal Xyz Du;
+    internal Xyz Dv;
 
-    public Plate_D1(in gp_XYZ du, in gp_XYZ dv)
+    public Plate_D1(in Xyz du, in Xyz dv)
     {
         Du = du;
         Dv = dv;
@@ -26,9 +28,9 @@ public struct Plate_D1 : IEquatable<Plate_D1>
         Dv = @ref.Dv;
     }
 
-    public readonly gp_XYZ DU() => Du;
+    public readonly Xyz DU() => Du;
 
-    public readonly gp_XYZ DV() => Dv;
+    public readonly Xyz DV() => Dv;
 
     public readonly bool Equals(Plate_D1 other) => Du.Equals(other.Du) && Dv.Equals(other.Dv);
 

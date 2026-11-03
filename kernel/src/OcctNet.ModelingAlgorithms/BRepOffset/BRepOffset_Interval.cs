@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A range of parameters on an edge, with the type of connection of its faces there.</summary>
@@ -63,5 +65,5 @@ public partial struct BRepOffset_Interval : IEquatable<BRepOffset_Interval>
     public static bool operator !=(BRepOffset_Interval left, BRepOffset_Interval right) => !left.Equals(right);
 
     /// <inheritdoc/>
-    public override readonly string ToString() => gp.Format("BRepOffset_Interval", f, l)[..^1] + ", " + type + ")";
+    public override readonly string ToString() => Constants.Format("BRepOffset_Interval", f, l)[..^1] + ", " + type + ")";
 }

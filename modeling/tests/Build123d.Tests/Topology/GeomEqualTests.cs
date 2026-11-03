@@ -2,6 +2,7 @@
 // Omitted:
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
+using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
 
@@ -23,7 +24,7 @@ internal static class GeomEqualObjects
     /// <summary>An edge on an OCCT B-spline built from its poles, knots and multiplicities (and weights).</summary>
     public static Edge BSpline(Vector[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
     {
-        var poleArray = new NCollection_Array1<gp_Pnt>(1, poles.Length);
+        var poleArray = new NCollection_Array1<Point3D>(1, poles.Length);
         for (int i = 0; i < poles.Length; i++)
         {
             var p = poles[i].ToGpPnt();

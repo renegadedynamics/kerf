@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// BRep).
 /// </summary>
 /// <remarks>
-/// As in OCCT, the set can hold the null curve once (<see cref="Add"/> adds it). The curves that <see cref="Read(Stream, Message_ProgressRange)"/>
+/// As in OCCT, the set can hold the null curve once (<see cref="Add"/> adds it). The curves that <see cref="Read(Stream, ProgressRange)"/>
 /// creates are frozen. OCCT declares a <c>Dump</c> it doesn't define; it isn't ported.
 /// </remarks>
 public class BinTools_Curve2dSet
@@ -49,7 +53,7 @@ public class BinTools_Curve2dSet
     }
 
     /// <summary>The curve of index I (null for the null entry).</summary>
-    /// <exception cref="Standard_OutOfRange">There is no curve of index I.</exception>
+    /// <exception cref="OutOfRangeException">There is no curve of index I.</exception>
     public Geom2d_Curve? Curve2d(int I)
     {
         return myMap[I] as Geom2d_Curve;
@@ -67,7 +71,7 @@ public class BinTools_Curve2dSet
     private static void Write(BinTools_OStream OS, Geom2d_Line L)
     {
         OS = OS << LINE;
-        gp_Lin2d C2d = L.Lin2d();
+        Line2D C2d = L.Lin2d();
         OS = OS << C2d.Location();  // Pnt2d
         OS = OS << C2d.Direction(); // Dir2d
     }
@@ -75,7 +79,7 @@ public class BinTools_Curve2dSet
     private static void Write(BinTools_OStream OS, Geom2d_Circle C)
     {
         OS = OS << CIRCLE;
-        gp_Circ2d C2d = C.Circ2d();
+        Circle2D C2d = C.Circ2d();
         OS = OS << C2d.Location();
         OS = OS << C2d.XAxis().Direction();
         OS = OS << C2d.YAxis().Direction();
@@ -85,7 +89,7 @@ public class BinTools_Curve2dSet
     private static void Write(BinTools_OStream OS, Geom2d_Ellipse E)
     {
         OS = OS << ELLIPSE;
-        gp_Elips2d C2d = E.Elips2d();
+        Ellipse2D C2d = E.Elips2d();
         OS = OS << C2d.Location();
         OS = OS << C2d.XAxis().Direction();
         OS = OS << C2d.YAxis().Direction();
@@ -96,7 +100,7 @@ public class BinTools_Curve2dSet
     private static void Write(BinTools_OStream OS, Geom2d_Parabola P)
     {
         OS = OS << PARABOLA;
-        gp_Parab2d C2d = P.Parab2d();
+        Parabola2D C2d = P.Parab2d();
         OS = OS << C2d.Location();                 // Loc
         OS = OS << C2d.Axis().XAxis().Direction(); // XDir
         OS = OS << C2d.Axis().YAxis().Direction(); // YDir
@@ -106,7 +110,7 @@ public class BinTools_Curve2dSet
     private static void Write(BinTools_OStream OS, Geom2d_Hyperbola H)
     {
         OS = OS << HYPERBOLA;
-        gp_Hypr2d C2d = H.Hypr2d();
+        Hyperbola2D C2d = H.Hypr2d();
         OS = OS << C2d.Location();          // Loc
         OS = OS << C2d.XAxis().Direction(); // XDir
         OS = OS << C2d.YAxis().Direction(); // YDir
@@ -179,7 +183,7 @@ public class BinTools_Curve2dSet
     }
 
     /// <summary>Writes a 2D curve (its type byte, then its data).</summary>
-    /// <exception cref="Standard_Failure">The curve is of a type the format doesn't know.</exception>
+    /// <exception cref="FailureException">The curve is of a type the format doesn't know.</exception>
     public static void WriteCurve2d(Geom2d_Curve C, BinTools_OStream OS)
     {
         Type TheType = C.GetType();
@@ -223,7 +227,7 @@ public class BinTools_Curve2dSet
             }
             else
             {
-                throw new Standard_Failure("UNKNOWN CURVE2d TYPE");
+                throw new FailureException("UNKNOWN CURVE2d TYPE");
             }
         }
         catch (Exception anException) when (BinTools.IsCaught(anException))
@@ -233,10 +237,10 @@ public class BinTools_Curve2dSet
     }
 
     /// <summary>Writes the set ("Curve2ds", the count, then each curve).</summary>
-    public void Write(Stream OS, Message_ProgressRange theRange = default)
+    public void Write(Stream OS, ProgressRange theRange = default)
     {
         int i, aNbCurves = myMap.Extent();
-        using var aPS = new Message_ProgressScope(theRange, "Writing 2D curves", aNbCurves);
+        using var aPS = new ProgressScope(theRange, "Writing 2D curves", aNbCurves);
         BinTools.PutText(OS, "Curve2ds ");
         BinTools.PutText(OS, aNbCurves);
         BinTools.PutText(OS, "\n");
@@ -245,19 +249,19 @@ public class BinTools_Curve2dSet
         {
             // OCCT dereferences the null entry outside its try block, and crashes; the port throws
             Geom2d_Curve aCurve = myMap[i] as Geom2d_Curve
-                                  ?? throw new Standard_Failure("BinTools_Curve2dSet::Write: a null curve");
+                                  ?? throw new FailureException("BinTools_Curve2dSet::Write: a null curve");
             WriteCurve2d(aCurve, aStream);
         }
     }
 
-    private static void Read(Stream IS, out gp_Pnt2d P)
+    private static void Read(Stream IS, out Point2D P)
     {
         BinTools.GetReal(IS, out double X);
         BinTools.GetReal(IS, out double Y);
-        P = new gp_Pnt2d(X, Y);
+        P = new Point2D(X, Y);
     }
 
-    private static void Read(Stream IS, ref gp_Dir2d D)
+    private static void Read(Stream IS, ref Direction2D D)
     {
         BinTools.GetReal(IS, out double X);
         BinTools.GetReal(IS, out double Y);
@@ -266,52 +270,52 @@ public class BinTools_Curve2dSet
 
     private static Geom2d_Line ReadLine(Stream IS)
     {
-        gp_Dir2d AX = new(gp_Dir2d.D.X);
-        Read(IS, out gp_Pnt2d P);
+        Direction2D AX = new(Direction2D.D.X);
+        Read(IS, out Point2D P);
         Read(IS, ref AX);
         return new Geom2d_Line(P, AX);
     }
 
     private static Geom2d_Circle ReadCircle(Stream IS)
     {
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
-        Read(IS, out gp_Pnt2d P);
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
+        Read(IS, out Point2D P);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R);
-        return new Geom2d_Circle(new gp_Ax22d(P, AX, AY), R);
+        return new Geom2d_Circle(new Frame2D(P, AX, AY), R);
     }
 
     private static Geom2d_Ellipse ReadEllipse(Stream IS)
     {
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
-        Read(IS, out gp_Pnt2d P);
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
+        Read(IS, out Point2D P);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
         BinTools.GetReal(IS, out double R2);
-        return new Geom2d_Ellipse(new gp_Ax22d(P, AX, AY), R1, R2);
+        return new Geom2d_Ellipse(new Frame2D(P, AX, AY), R1, R2);
     }
 
     private static Geom2d_Parabola ReadParabola(Stream IS)
     {
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
-        Read(IS, out gp_Pnt2d P);
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
+        Read(IS, out Point2D P);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
-        return new Geom2d_Parabola(new gp_Ax22d(P, AX, AY), R1);
+        return new Geom2d_Parabola(new Frame2D(P, AX, AY), R1);
     }
 
     private static Geom2d_Hyperbola ReadHyperbola(Stream IS)
     {
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
-        Read(IS, out gp_Pnt2d P);
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
+        Read(IS, out Point2D P);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
         BinTools.GetReal(IS, out double R2);
-        return new Geom2d_Hyperbola(new gp_Ax22d(P, AX, AY), R1, R2);
+        return new Geom2d_Hyperbola(new Frame2D(P, AX, AY), R1, R2);
     }
 
     private static Geom2d_BezierCurve ReadBezier(Stream IS)
@@ -326,7 +330,7 @@ public class BinTools_Curve2dSet
         // OCCT.NET: untrusted input
         BinTools.CheckCount(IS, degree + 1L, rational ? 24 : 16, "poles");
 
-        var poles = new NCollection_Array1<gp_Pnt2d>(1, degree + 1);
+        var poles = new NCollection_Array1<Point2D>(1, degree + 1);
         var weights = new NCollection_Array1<double>(1, degree + 1);
         for (i = 1; i <= degree + 1; i++)
         {
@@ -360,7 +364,7 @@ public class BinTools_Curve2dSet
         BinTools.CheckCount(IS, nbpoles, rational ? 24 : 16, "poles");
         BinTools.CheckCount(IS, nbknots, 12, "knots");
 
-        var poles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+        var poles = new NCollection_Array1<Point2D>(1, nbpoles);
         var weights = new NCollection_Array1<double>(1, nbpoles);
         for (i = 1; i <= nbpoles; i++)
         {
@@ -403,7 +407,7 @@ public class BinTools_Curve2dSet
     }
 
     /// <summary>Reads a 2D curve written by <see cref="WriteCurve2d"/>. The curve is new and not frozen.</summary>
-    /// <exception cref="Standard_Failure">The curve can't be read.</exception>
+    /// <exception cref="FailureException">The curve can't be read.</exception>
     public static Stream ReadCurve2d(Stream IS, out Geom2d_Curve? C) => ReadCurve2d(IS, out C, 0);
 
     internal static Stream ReadCurve2d(Stream IS, out Geom2d_Curve? C, int theDepth)
@@ -414,7 +418,7 @@ public class BinTools_Curve2dSet
             if (theDepth > BinTools.MaxGeometryNesting)
             {
                 // OCCT.NET: untrusted input: OCCT recurses without limit
-                throw new Storage_StreamFormatError("BinTools_Curve2dSet: curves nested too deeply");
+                throw new StreamFormatErrorException("BinTools_Curve2dSet: curves nested too deeply");
             }
 
             byte ctype = (byte)BinTools.Get(IS);
@@ -459,7 +463,7 @@ public class BinTools_Curve2dSet
                 default:
                 {
                     C = null;
-                    throw new Standard_Failure("UNKNOWN CURVE2d TYPE");
+                    throw new FailureException("UNKNOWN CURVE2d TYPE");
                 }
             }
         }
@@ -472,19 +476,19 @@ public class BinTools_Curve2dSet
         return IS;
     }
 
-    /// <summary>Reads a set written by <see cref="Write(Stream, Message_ProgressRange)"/>, adding its curves (frozen) to this one.</summary>
-    /// <exception cref="Standard_Failure">The stream doesn't hold a 2D curve table, or a curve can't be read.</exception>
-    public void Read(Stream IS, Message_ProgressRange theRange = default)
+    /// <summary>Reads a set written by <see cref="Write(Stream, ProgressRange)"/>, adding its curves (frozen) to this one.</summary>
+    /// <exception cref="FailureException">The stream doesn't hold a 2D curve table, or a curve can't be read.</exception>
+    public void Read(Stream IS, ProgressRange theRange = default)
     {
         string? buffer = BinTools.ReadWord(IS);
         if (buffer is null || buffer != "Curve2ds")
         {
-            throw new Standard_Failure("BinTools_Curve2dSet::Read:  Not a Curve2d table" + "\n");
+            throw new FailureException("BinTools_Curve2dSet::Read:  Not a Curve2d table" + "\n");
         }
 
         int i, aNbCurves;
         aNbCurves = BinTools.ReadFormattedInteger(IS);
-        using var aPS = new Message_ProgressScope(theRange, "Reading curves 2d", aNbCurves);
+        using var aPS = new ProgressScope(theRange, "Reading curves 2d", aNbCurves);
         BinTools.Get(IS); // remove <lf>
         // OCCT.NET: untrusted input: a 2D curve takes at least 20 bytes (a Bezier curve of degree 0)
         BinTools.CheckCount(IS, aNbCurves, 20, "2D curves");

@@ -2,10 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Occt.Draft_ErrorStatus;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntAna_ResultType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -18,7 +22,7 @@ public sealed partial class Draft_Modification
 {
     //=================================================================================================
 
-    private bool InternalAdd(in TopoDS_Face F, in gp_Dir Direction, double Angle, in gp_Pln NeutralPlane, bool Flag = true)
+    private bool InternalAdd(in TopoDS_Face F, in Direction3D Direction, double Angle, in Plane3D NeutralPlane, bool Flag = true)
     {
         if (myFMap.Contains(F))
         {
@@ -26,7 +30,7 @@ public sealed partial class Draft_Modification
         }
 
         TopAbs_Orientation oris = Orientation(myShape, F);
-        TopLoc_Location Lo;
+        Placement Lo;
         // gp_Dir NewDirection = Direction;
         // double NewAngle = Angle;
         Geom_Surface S = BRep_Tool.Surface(F, out Lo)!;
@@ -44,19 +48,19 @@ public sealed partial class Draft_Modification
             Type typS = S.GetType();
             if (typS == typeof(Geom_CylindricalSurface) || typS == typeof(Geom_SurfaceOfLinearExtrusion))
             {
-                gp_Circ Cir;
+                Circle3D Cir;
                 if (typS == typeof(Geom_CylindricalSurface))
                 {
-                    gp_Cylinder cyl = ((Geom_CylindricalSurface)S).Cylinder();
-                    gp_Ax1 axcyl = cyl.Axis();
-                    Cir = ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
-                    gp_Vec VV = new(cyl.Location(), NeutralPlane.Location());
-                    Cir.Translate(VV.Dot(new gp_Vec(axcyl.Direction())) * new gp_Vec(axcyl.Direction()));
+                    Cylinder cyl = ((Geom_CylindricalSurface)S).Cylinder();
+                    Axis3D axcyl = cyl.Axis();
+                    Cir = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
+                    Vector3D VV = new(cyl.Location(), NeutralPlane.Location());
+                    Cir.Translate(VV.Dot(new Vector3D(axcyl.Direction())) * new Vector3D(axcyl.Direction()));
                 }
                 else
                 {
                     Geom_Curve Cbas = ((Geom_SurfaceOfLinearExtrusion)S).BasisCurve();
-                    gp_Dir theDirextr = ((Geom_SurfaceOfLinearExtrusion)S).Direction();
+                    Direction3D theDirextr = ((Geom_SurfaceOfLinearExtrusion)S).Direction();
 
                     if (Cbas is Geom_TrimmedCurve aTrimmed)
                     {
@@ -65,8 +69,8 @@ public sealed partial class Draft_Modification
                     if (Cbas is Geom_Circle aCircle)
                     {
                         Cir = aCircle.Circ();
-                        gp_Dir dircir = Cir.Axis().Direction();
-                        if (!Direction.IsParallel(dircir, Precision.Angular()))
+                        Direction3D dircir = Cir.Axis().Direction();
+                        if (!Direction.IsParallel(dircir, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             badShape = F;
                             errStat = Draft_FaceRecomputation;
@@ -80,10 +84,10 @@ public sealed partial class Draft_Modification
                         return false;
                     }
 
-                    gp_Ax3 Axis = NeutralPlane.Position();
-                    double L = new gp_Vec(Cir.Location(), Axis.Location()).Dot(new gp_Vec(Axis.Direction()));
+                    CoordinateSystem Axis = NeutralPlane.Position();
+                    double L = new Vector3D(Cir.Location(), Axis.Location()).Dot(new Vector3D(Axis.Direction()));
                     double Cos = theDirextr.Dot(Axis.Direction());
-                    gp_Vec VV = (L / Cos) * new gp_Vec(theDirextr);
+                    Vector3D VV = (L / Cos) * new Vector3D(theDirextr);
                     Cir.Translate(VV);
                 }
 
@@ -109,7 +113,7 @@ public sealed partial class Draft_Modification
             if (typs == typeof(Geom_CylindricalSurface) || typs == typeof(Geom_ConicalSurface))
             {
                 BRepTools.UVBounds(F, out double umin, out double umax, out double vmin, out double vmax);
-                if (!Precision.IsNegativeInfinite(vmin) && !Precision.IsPositiveInfinite(vmax))
+                if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vmin) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vmax))
                 {
                     double deltav = 10.0 * (vmax - vmin);
                     if (typs == typeof(Geom_CylindricalSurface))
@@ -119,7 +123,7 @@ public sealed partial class Draft_Modification
                     }
                     else
                     {
-                        gp_Cone Co = ((Geom_ConicalSurface)NewS).Cone();
+                        Cone Co = ((Geom_ConicalSurface)NewS).Cone();
                         double Vapex = -Co.RefRadius() / Math.Sin(Co.SemiAngle());
                         if (vmin < Vapex)
                         { // vmax should not exceed Vapex
@@ -128,7 +132,7 @@ public sealed partial class Draft_Modification
                                 vmax = Vapex;
                                 vmin = vmin - 10.0 * (vmax - vmin);
                                 // JAG debug to avoid apex
-                                vmax = vmax - Precision.Confusion();
+                                vmax = vmax - global::Kerf.Engine.Foundation.Precision.Confusion();
                             }
                             else
                             {
@@ -143,7 +147,7 @@ public sealed partial class Draft_Modification
                                 vmin = Vapex;
                                 vmax = vmax + 10.0 * (vmax - vmin);
                                 // JAG debug to avoid apex
-                                vmin = vmin + Precision.Confusion();
+                                vmin = vmin + global::Kerf.Engine.Foundation.Precision.Confusion();
                             }
                             else
                             {
@@ -204,7 +208,7 @@ public sealed partial class Draft_Modification
                         badShape = edg;
                         errStat = Draft_EdgeRecomputation;
                     }
-                    else if (!OtherF.IsNull() && BRep_Tool.Continuity(edg, F, OtherF) >= GeomAbs_G1)
+                    else if (!OtherF.IsNull() && BRep_Tool.Continuity(edg, F, OtherF) >= G1)
                     {
                         addface = true;
                         addedg = true;
@@ -220,7 +224,7 @@ public sealed partial class Draft_Modification
                     {
                         myFMap.ChangeFromKey(F).Add(OtherF);
                     }
-                    Geom_Curve C = BRep_Tool.Curve(edg, out TopLoc_Location L, out double f, out double l)!;
+                    Geom_Curve C = BRep_Tool.Curve(edg, out Placement L, out double f, out double l)!;
                     C = (Geom_Curve)C.Transformed(L.Transformation());
                     if (C.GetType() == typeof(Geom_TrimmedCurve))
                     {
@@ -241,8 +245,8 @@ public sealed partial class Draft_Modification
                         }
                         else
                         {
-                            gp_Lin lin = aLocalGeom.Lin();
-                            IntAna_IntConicQuad ilipl = new(lin, NeutralPlane, Precision.Angular());
+                            Line3D lin = aLocalGeom.Lin();
+                            IntAna_IntConicQuad ilipl = new(lin, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
                             if (ilipl.IsDone() && ilipl.NbPoints() != 0)
                             {
                                 EInf.Tangent(ilipl.Point(1));
@@ -406,14 +410,14 @@ public sealed partial class Draft_Modification
                 F = TopoDS.Face(it.Value());
                 if (!myFMap.Contains(F))
                 {
-                    Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location L)!;
+                    Geom_Surface S = BRep_Tool.Surface(F, out Placement L)!;
                     Geom_Surface NewS = (Geom_Surface)S.Transformed(L.Transformation());
 
                     Type typs = S.GetType();
                     if (typs == typeof(Geom_CylindricalSurface) || typs == typeof(Geom_ConicalSurface))
                     {
                         BRepTools.UVBounds(F, out double umin, out double umax, out double vmin, out double vmax);
-                        if (!Precision.IsNegativeInfinite(vmin) && !Precision.IsPositiveInfinite(vmax))
+                        if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vmin) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vmax))
                         {
                             double deltav = 10.0 * (vmax - vmin);
                             vmin = vmin - deltav;
@@ -436,7 +440,7 @@ public sealed partial class Draft_Modification
             Draft_EdgeInfo Einf = myEMap.ChangeFromIndex(i);
             if (Einf.NewGeometry() && Einf.Geometry() is null && Einf.SecondFace().IsNull())
             {
-                TopLoc_Location Loc;
+                Placement Loc;
                 Geom_Surface S1 = BRep_Tool.Surface(Einf.FirstFace(), out Loc)!;
                 S1 = (Geom_Surface)S1.Transformed(Loc.Transformation());
                 Geom_Surface? S2 = null;
@@ -453,12 +457,12 @@ public sealed partial class Draft_Modification
                 {
                     if (C is Geom_Conic aConic)
                     {
-                        gp_Ax3 thePl = new(aConic.Position());
+                        CoordinateSystem thePl = new(aConic.Position());
                         S2 = new Geom_Plane(thePl);
                     }
                     else if (C.GetType() == typeof(Geom_Line))
                     {
-                        gp_Ax1 axis;
+                        Axis3D axis;
                         if (S1.GetType() == typeof(Geom_RectangularTrimmedSurface))
                         {
                             axis = ((Geom_ElementarySurface)((Geom_RectangularTrimmedSurface)S1).BasisSurface()).Axis();
@@ -467,9 +471,9 @@ public sealed partial class Draft_Modification
                         {
                             axis = ((Geom_ElementarySurface)S1).Axis();
                         }
-                        gp_Vec they = new(axis.Location(), C.Value(0.0));
-                        gp_Dir axz = new(new gp_Vec(axis.Direction()).Crossed(they));
-                        S2 = new Geom_Plane(new gp_Ax3(axis.Location(), axz, axis.Direction()));
+                        Vector3D they = new(axis.Location(), C.Value(0.0));
+                        Direction3D axz = new(new Vector3D(axis.Direction()).Crossed(they));
+                        S2 = new Geom_Plane(new CoordinateSystem(axis.Location(), axz, axis.Direction()));
                     }
                     else
                     {
@@ -509,7 +513,7 @@ public sealed partial class Draft_Modification
                             {
                                 Geom_Curve C2 = BRep_Tool.Curve(Vinf.Edge(), out Loc, out f, out l)!;
                                 GeomAdaptor_Curve HCur;
-                                gp_Vec Direc;
+                                Vector3D Direc;
                                 C2 = (Geom_Curve)C2.Transformed(Loc.Transformation());
                                 if (C2.GetType() == typeof(Geom_TrimmedCurve))
                                 {
@@ -517,12 +521,12 @@ public sealed partial class Draft_Modification
                                 }
                                 if (C.GetType() == typeof(Geom_Line))
                                 {
-                                    Direc = new gp_Vec(((Geom_Line)C).Lin().Direction());
+                                    Direc = new Vector3D(((Geom_Line)C).Lin().Direction());
                                     HCur = new GeomAdaptor_Curve(C2);
                                 }
                                 else if (C2.GetType() == typeof(Geom_Line))
                                 {
-                                    Direc = new gp_Vec(((Geom_Line)C2).Lin().Direction());
+                                    Direc = new Vector3D(((Geom_Line)C2).Lin().Direction());
                                     HCur = new GeomAdaptor_Curve(C);
                                 }
                                 else
@@ -531,17 +535,17 @@ public sealed partial class Draft_Modification
                                     errStat = Draft_EdgeRecomputation;
                                     break; // leave from while
                                 }
-                                GeomAdaptor_SurfaceOfLinearExtrusion SLE = new(HCur, new gp_Dir(Direc));
+                                GeomAdaptor_SurfaceOfLinearExtrusion SLE = new(HCur, new Direction3D(Direc));
                                 switch (SLE.GetType())
                                 {
-                                    case GeomAbs_Plane:
+                                    case Plane:
                                         S2 = new Geom_Plane(SLE.Plane());
                                         break;
-                                    case GeomAbs_Cylinder:
+                                    case SurfaceKind.Cylinder:
                                         S2 = new Geom_CylindricalSurface(SLE.Cylinder());
                                         break;
                                     default:
-                                        S2 = new Geom_SurfaceOfLinearExtrusion(HCur.Curve()!, new gp_Dir(Direc));
+                                        S2 = new Geom_SurfaceOfLinearExtrusion(HCur.Curve()!, new Direction3D(Direc));
                                         break;
                                 }
                             }
@@ -561,7 +565,7 @@ public sealed partial class Draft_Modification
                 {
                     BRep_Builder B = new();
                     TopoDS_Face TheNewFace = new();
-                    B.MakeFace(ref TheNewFace, S2, Precision.Confusion());
+                    B.MakeFace(ref TheNewFace, S2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     Einf.Add(TheNewFace);
                     Draft_FaceInfo FI = new(S2, false);
                     myFMap.Add(TheNewFace, FI);
@@ -582,12 +586,12 @@ public sealed partial class Draft_Modification
     /// Performs the draft: computes the new faces, edges and vertices. On an error <see cref="IsDone"/> is false,
     /// <see cref="Error"/> tells what failed and <see cref="ProblematicShape"/> on which shape.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">An Add failed and the bad face wasn't removed.</exception>
+    /// <exception cref="ConstructionErrorException">An Add failed and the bad face wasn't removed.</exception>
     public void Perform()
     {
         if (!badShape.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!myComp)
@@ -639,9 +643,9 @@ public sealed partial class Draft_Modification
                         badShape = FK;
                         return;
                     }
-                    gp_Pln pp1 = P1.Pln();
-                    gp_Pln pp2 = P2.Pln();
-                    IntAna_QuadQuadGeo i2p = new(pp1, pp2, Precision.Angular(), Precision.Confusion());
+                    Plane3D pp1 = P1.Pln();
+                    Plane3D pp2 = P2.Pln();
+                    IntAna_QuadQuadGeo i2p = new(pp1, pp2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (!i2p.IsDone() || i2p.TypeInter() != IntAna_Line)
                     {
                         errStat = Draft_FaceRecomputation;
@@ -649,7 +653,7 @@ public sealed partial class Draft_Modification
                         return;
                     }
 
-                    gp_Dir extrdir = i2p.Line(1).Direction();
+                    Direction3D extrdir = i2p.Line(1).Direction();
 
                     // Preserve the same direction as the base face
                     Geom_Surface RefSurf = BRep_Tool.Surface(FK)!;
@@ -657,11 +661,11 @@ public sealed partial class Draft_Modification
                     {
                         RefSurf = ((Geom_RectangularTrimmedSurface)RefSurf).BasisSurface();
                     }
-                    gp_Dir DirRef = new();
+                    Direction3D DirRef = new();
 
                     if (RefSurf.GetType() == typeof(Geom_CylindricalSurface))
                     {
-                        gp_Ax3 AxeRef = ((Geom_CylindricalSurface)RefSurf).Cylinder().Position();
+                        CoordinateSystem AxeRef = ((Geom_CylindricalSurface)RefSurf).Cylinder().Position();
                         DirRef = AxeRef.Direction();
                     }
                     else if (RefSurf.GetType() == typeof(Geom_SurfaceOfLinearExtrusion))
@@ -682,7 +686,7 @@ public sealed partial class Draft_Modification
                     Geom_Surface NewS = new Geom_SurfaceOfLinearExtrusion(CCir, extrdir);
 
                     BRepTools.UVBounds(FK, out double umin, out double umax, out double vmin, out double vmax);
-                    if (!Precision.IsNegativeInfinite(vmin) && !Precision.IsPositiveInfinite(vmax))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vmin) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vmax))
                     {
                         double deltav = 2.0 * (vmax - vmin);
                         vmin = vmin - deltav;
@@ -711,12 +715,12 @@ public sealed partial class Draft_Modification
                 Geom_Surface? S1, S2;
                 Geom_Curve C;
                 Geom_Curve? newC = null;
-                C = BRep_Tool.Curve(theEdge, out TopLoc_Location L, out double f, out double l)!;
+                C = BRep_Tool.Curve(theEdge, out Placement L, out double f, out double l)!;
                 C = (Geom_Curve)C.Transformed(L.Transformation());
 
                 if (Einf.NewGeometry() && Einf.Geometry() is null)
                 {
-                    if (!Einf.IsTangent(out gp_Pnt ptfixe))
+                    if (!Einf.IsTangent(out Point3D ptfixe))
                     {
                         TopoDS_Face FirstFace = Einf.FirstFace();
                         TopoDS_Face SecondFace = Einf.SecondFace();
@@ -732,8 +736,8 @@ public sealed partial class Draft_Modification
                         double pmin = 0.0;
                         double prmfv = BRep_Tool.Parameter(FV, theEdge);
                         double prmlv = BRep_Tool.Parameter(LV, theEdge);
-                        gp_Pnt pfv, plv;
-                        gp_Vec d1fv, d1lv, newd1;
+                        Point3D pfv, plv;
+                        Vector3D d1fv, d1lv, newd1;
                         C.D1(prmfv, out pfv, out d1fv);
                         C.D1(prmlv, out plv, out d1lv);
 
@@ -748,8 +752,8 @@ public sealed partial class Draft_Modification
 
                         if (proj1.IsDone() && proj2.IsDone())
                         {
-                            if (proj1.LowerDistance() <= Precision.Confusion()
-                                && proj2.LowerDistance() <= Precision.Confusion())
+                            if (proj1.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                && proj2.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 detrompeur = 1;
                             }
@@ -757,15 +761,15 @@ public sealed partial class Draft_Modification
 
                         if (proj3.IsDone() && proj4.IsDone())
                         {
-                            if (proj3.LowerDistance() <= Precision.Confusion()
-                                && proj4.LowerDistance() <= Precision.Confusion())
+                            if (proj3.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                && proj4.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 detrompeur = 2;
                             }
                         }
 
-                        gp_Dir TheDirExtr = new();
-                        gp_Ax3 Axis = new();
+                        Direction3D TheDirExtr = new();
+                        CoordinateSystem Axis = new();
                         Geom_Curve? TheNewCurve = null;
                         bool KPart = false;
 
@@ -805,8 +809,8 @@ public sealed partial class Draft_Modification
                             }
                             else
                             {
-                                gp_Dir AxofCirc = aCirc.Position().Direction();
-                                KPart = AxofCirc.IsParallel(Axis.Direction(), Precision.Angular());
+                                Direction3D AxofCirc = aCirc.Position().Direction();
+                                KPart = AxofCirc.IsParallel(Axis.Direction(), global::Kerf.Engine.Foundation.Precision.Angular());
                             }
                         }
 
@@ -815,13 +819,13 @@ public sealed partial class Draft_Modification
                         if (KPart)
                         {
                             // direct calculation of NewC
-                            double aLocalReal = new gp_Vec(aCirc!.Circ().Location(), Axis.Location())
-                                                    .Dot(new gp_Vec(Axis.Direction()));
+                            double aLocalReal = new Vector3D(aCirc!.Circ().Location(), Axis.Location())
+                                                    .Dot(new Vector3D(Axis.Direction()));
                             double Cos = TheDirExtr.Dot(Axis.Direction());
-                            gp_Vec VV = (aLocalReal / Cos) * new gp_Vec(TheDirExtr);
+                            Vector3D VV = (aLocalReal / Cos) * new Vector3D(TheDirExtr);
                             newC = (Geom_Curve)TheNewCurve!.Translated(VV);
                             // it is possible to calculate PCurve
-                            Geom2d_Line L2d = new(new gp_Pnt2d(0.0, aLocalReal / Cos), gp.DX2d());
+                            Geom2d_Line L2d = new(new Point2D(0.0, aLocalReal / Cos), Constants.DX2d());
 
                             if (PC1)
                             {
@@ -841,7 +845,7 @@ public sealed partial class Draft_Modification
                             // 1 - If ProjLib should make an Approx, it is stupid to approximate the
                             //     entire intersection curve.
                             // 2 - Additionally, if YaRev, there is a risk to not be SameRange.
-                            i2s.Perform(S1, S2, Precision.Confusion(), true, false, false);
+                            i2s.Perform(S1, S2, global::Kerf.Engine.Foundation.Precision.Confusion(), true, false, false);
 
                             if (!i2s.IsDone() || i2s.NbLines() <= 0)
                             {
@@ -872,7 +876,7 @@ public sealed partial class Draft_Modification
                                             Dist2Min = myExtPC.SquareDistance(1);
                                             locpmin = myExtPC.Point(1).Parameter();
                                         }
-                                        if (myExtPC.NbExt() == 2 && Dist2Min > Precision.SquareConfusion())
+                                        if (myExtPC.NbExt() == 2 && Dist2Min > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                         {
                                             // to avoid incorrectly choosing the image
                                             // of the first vertex of the initial edge
@@ -894,8 +898,8 @@ public sealed partial class Draft_Modification
                                                 double plvpar = myExtPC.Point(2).Parameter();
                                                 newC = i2s.Line(i);
 
-                                                newC.D0(pfvpar, out gp_Pnt pfvprim);
-                                                newC.D0(plvpar, out gp_Pnt plvprim);
+                                                newC.D0(pfvpar, out Point3D pfvprim);
+                                                newC.D0(plvpar, out Point3D plvprim);
 
                                                 Geom_Surface? theSurf = null;
                                                 if (detrompeur == 1)
@@ -922,19 +926,19 @@ public sealed partial class Draft_Modification
                                                     if (theSurf!.GetType() == typeof(Geom_Plane))
                                                     {
                                                         // OCCT reads S2 whatever theSurf is (a null down-cast throws).
-                                                        gp_Pln pl = downCast<Geom_Plane>(S2).Pln();
-                                                        ElSLib.Parameters(pl, plv, out ul, out vl);
-                                                        ElSLib.Parameters(pl, pfv, out uf, out vf);
-                                                        ElSLib.Parameters(pl, plvprim, out ulprim, out vlprim);
-                                                        ElSLib.Parameters(pl, pfvprim, out ufprim, out vfprim);
+                                                        Plane3D pl = downCast<Geom_Plane>(S2).Pln();
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, plv, out ul, out vl);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pfv, out uf, out vf);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, plvprim, out ulprim, out vlprim);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pfvprim, out ufprim, out vfprim);
                                                     }
                                                     else if (theSurf.GetType() == typeof(Geom_CylindricalSurface))
                                                     {
-                                                        gp_Cylinder cy = downCast<Geom_CylindricalSurface>(S2).Cylinder();
-                                                        ElSLib.Parameters(cy, plv, out ul, out vl);
-                                                        ElSLib.Parameters(cy, pfv, out uf, out vf);
-                                                        ElSLib.Parameters(cy, plvprim, out ulprim, out vlprim);
-                                                        ElSLib.Parameters(cy, pfvprim, out ufprim, out vfprim);
+                                                        Cylinder cy = downCast<Geom_CylindricalSurface>(S2).Cylinder();
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plv, out ul, out vl);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, pfv, out uf, out vf);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plvprim, out ulprim, out vlprim);
+                                                        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, pfvprim, out ufprim, out vfprim);
                                                     }
                                                     else
                                                     {
@@ -943,9 +947,9 @@ public sealed partial class Draft_Modification
 
                                                     if (detrompeur == 1 || detrompeur == 2)
                                                     {
-                                                        gp_Vec2d v1 = new((ul - ufprim), (vl - vfprim));
-                                                        gp_Vec2d norm = new((vf - vfprim), (ufprim - uf));
-                                                        gp_Vec2d v2 = new((ulprim - ufprim), (vlprim - vfprim));
+                                                        Vector2D v1 = new((ul - ufprim), (vl - vfprim));
+                                                        Vector2D norm = new((vf - vfprim), (ufprim - uf));
+                                                        Vector2D v2 = new((ulprim - ufprim), (vlprim - vfprim));
                                                         if ((v1.Dot(norm)) * (v2.Dot(norm)) < 0)
                                                         {
                                                             Dist2Min = myExtPC.SquareDistance(2);
@@ -972,7 +976,7 @@ public sealed partial class Draft_Modification
                                         else if (myExtPC.NbExt() < 1)
                                         {
                                             myExtPC.TrimmedSquareDistances(out double dist1_2, out double dist2_2,
-                                                                           out gp_Pnt _, out gp_Pnt _);
+                                                                           out Point3D _, out Point3D _);
                                             if (dist1_2 < dist2_2)
                                             {
                                                 Dist2Min = dist1_2;
@@ -1047,21 +1051,21 @@ public sealed partial class Draft_Modification
                                     for (i = 1; i <= i2s.NbLines(); i++)
                                     {
                                         Geom_Curve aCurve = aLines[i];
-                                        gp_Pnt Pnt = aCurve.Value(aCurve.FirstParameter());
-                                        GeomAPI_ProjectPointOnSurf projector = new(Pnt, S1, Precision.Confusion());
+                                        Point3D Pnt = aCurve.Value(aCurve.FirstParameter());
+                                        GeomAPI_ProjectPointOnSurf projector = new(Pnt, S1, global::Kerf.Engine.Foundation.Precision.Confusion());
                                         projector.LowerDistanceParameters(out double U, out double V);
-                                        if (Math.Abs(U) <= Precision.Confusion()
-                                            || Math.Abs(U - 2.0 * M_PI) <= Precision.Confusion())
+                                        if (Math.Abs(U) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(U - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
                                             Candidates.Append(aCurve);
                                         }
                                         else
                                         {
                                             Pnt = aCurve.Value(aCurve.LastParameter());
-                                            projector.Init(Pnt, S1, Precision.Confusion());
+                                            projector.Init(Pnt, S1, global::Kerf.Engine.Foundation.Precision.Confusion());
                                             projector.LowerDistanceParameters(out U, out V);
-                                            if (Math.Abs(U) <= Precision.Confusion()
-                                                || Math.Abs(U - 2.0 * M_PI) <= Precision.Confusion())
+                                            if (Math.Abs(U) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                                || Math.Abs(U - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                             {
                                                 aCurve.Reverse();
                                                 Candidates.Append(aCurve);
@@ -1091,13 +1095,13 @@ public sealed partial class Draft_Modification
                                 Geom_Curve? FirstCurve = null;
                                 if (Candidates.Length() > 1)
                                 {
-                                    double DistMin = Precision.Infinite();
+                                    double DistMin = global::Kerf.Engine.Foundation.Precision.Infinite();
                                     for (i = 1; i <= Candidates.Length(); i++)
                                     {
                                         Geom_Curve aCurve = Candidates[i];
-                                        gp_Pnt Pnt = aCurve.Value(aCurve.FirstParameter());
+                                        Point3D Pnt = aCurve.Value(aCurve.FirstParameter());
                                         double Dist = Pnt.Distance(pfv);
-                                        if (Dist - DistMin < -Precision.Confusion())
+                                        if (Dist - DistMin < -global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
                                             DistMin = Dist;
                                             FirstCurve = aCurve;
@@ -1121,7 +1125,7 @@ public sealed partial class Draft_Modification
 
                                 NCollection_Sequence<Geom_Curve> ToGlue = new();
                                 // OCCT reads FirstCurve before its null check below.
-                                gp_Pnt EndPoint = FirstCurve!.Value(FirstCurve.LastParameter());
+                                Point3D EndPoint = FirstCurve!.Value(FirstCurve.LastParameter());
                                 bool added = true;
                                 while (added)
                                 {
@@ -1129,10 +1133,10 @@ public sealed partial class Draft_Modification
                                     for (i = 1; i <= Curves.Length(); i++)
                                     {
                                         Geom_Curve aCurve = Curves[i];
-                                        gp_Pnt pfirst, plast;
+                                        Point3D pfirst, plast;
                                         pfirst = aCurve.Value(aCurve.FirstParameter());
                                         plast = aCurve.Value(aCurve.LastParameter());
-                                        if (pfirst.Distance(EndPoint) <= Precision.Confusion())
+                                        if (pfirst.Distance(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
                                             ToGlue.Append(aCurve);
                                             EndPoint = plast;
@@ -1140,7 +1144,7 @@ public sealed partial class Draft_Modification
                                             added = true;
                                             break;
                                         }
-                                        if (plast.Distance(EndPoint) <= Precision.Confusion())
+                                        if (plast.Distance(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
                                             aCurve.Reverse();
                                             ToGlue.Append(aCurve);
@@ -1162,7 +1166,7 @@ public sealed partial class Draft_Modification
                                 GeomConvert_CompCurveToBSplineCurve Concat = new(downCast<Geom_BSplineCurve>(FirstCurve));
                                 for (i = 1; i <= ToGlue.Length(); i++)
                                 {
-                                    Concat.Add(downCast<Geom_BSplineCurve>(ToGlue[i]), Precision.Confusion(), true);
+                                    Concat.Add(downCast<Geom_BSplineCurve>(ToGlue[i]), global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                                 }
 
                                 newC = Concat.BSplineCurve()!;
@@ -1216,11 +1220,11 @@ public sealed partial class Draft_Modification
                             aLocalS2 = ((Geom_RectangularTrimmedSurface)aLocalS2).BasisSurface();
                         }
 
-                        gp_Dir dirextr = new();
+                        Direction3D dirextr = new();
                         // bool dirfound = false;
                         if (aLocalS1.GetType() == typeof(Geom_CylindricalSurface))
                         {
-                            gp_Cylinder cyl = ((Geom_CylindricalSurface)aLocalS1).Cylinder();
+                            Cylinder cyl = ((Geom_CylindricalSurface)aLocalS1).Cylinder();
                             dirextr = cyl.Axis().Direction();
                             // dirfound = true;
                             //  see direction...
@@ -1235,15 +1239,15 @@ public sealed partial class Draft_Modification
                             Geom_SurfaceOfLinearExtrusion SEL = (Geom_SurfaceOfLinearExtrusion)aLocalS1;
                             if (SEL.BasisCurve() is Geom_Circle GCir)
                             {
-                                double U = ElCLib.Parameter(GCir.Circ(), ptfixe);
-                                Geom2d_Line PC1 = new(new gp_Pnt2d(U, 0.0), gp.DY2d());
+                                double U = global::Kerf.Engine.Geometry.ElCLib.Parameter(GCir.Circ(), ptfixe);
+                                Geom2d_Line PC1 = new(new Point2D(U, 0.0), Constants.DY2d());
                                 Einf.ChangeFirstPC() = PC1;
                             }
                         }
 
                         else if (aLocalS2.GetType() == typeof(Geom_CylindricalSurface))
                         {
-                            gp_Cylinder cyl = ((Geom_CylindricalSurface)aLocalS2).Cylinder();
+                            Cylinder cyl = ((Geom_CylindricalSurface)aLocalS2).Cylinder();
                             dirextr = cyl.Axis().Direction();
                             // dirfound = true;
                             // see direction...
@@ -1258,15 +1262,15 @@ public sealed partial class Draft_Modification
                             Geom_SurfaceOfLinearExtrusion SEL = (Geom_SurfaceOfLinearExtrusion)aLocalS2;
                             if (SEL.BasisCurve() is Geom_Circle GCir)
                             {
-                                double U = ElCLib.Parameter(GCir.Circ(), ptfixe);
-                                Geom2d_Line PC2 = new(new gp_Pnt2d(U, 0.0), gp.DY2d());
+                                double U = global::Kerf.Engine.Geometry.ElCLib.Parameter(GCir.Circ(), ptfixe);
+                                Geom2d_Line PC2 = new(new Point2D(U, 0.0), Constants.DY2d());
                                 Einf.ChangeSecondPC() = PC2;
                             }
                         }
                         newC = new Geom_Line(ptfixe, dirextr);
 
-                        C.D1(0.0, out gp_Pnt pfv, out gp_Vec d1fv);
-                        newC.D1(0.0, out pfv, out gp_Vec newd1);
+                        C.D1(0.0, out Point3D pfv, out Vector3D d1fv);
+                        newC.D1(0.0, out pfv, out Vector3D newd1);
                         bool YaRev = d1fv.Dot(newd1) < 0.0;
                         if (YaRev)
                         {
@@ -1314,7 +1318,7 @@ public sealed partial class Draft_Modification
                 if (!Choose(myFMap, myEMap, TVV, Vinf, AC, AS))
                 {
                     // no concerted edge => alignment of two consecutive edges.
-                    gp_Pnt pvt = new();
+                    Point3D pvt = new();
                     Vinf.ChangeGeometry() = pvt;
                     Vinf.InitEdgeIterator();
                     if (Vinf.MoreEdge())
@@ -1322,7 +1326,7 @@ public sealed partial class Draft_Modification
                         TopoDS_Edge Edg1 = Vinf.Edge();
                         // const Draft_EdgeInfo& Einf1 = myEMap(Edg1);
                         Draft_EdgeInfo Einf1 = myEMap.ChangeFromKey(Edg1);
-                        gp_Pnt vtori = BRep_Tool.Pnt(TVV);
+                        Point3D vtori = BRep_Tool.Pnt(TVV);
                         // Einf1.Geometry()->D0(Vinf.Parameter(Edg1), pvt);
                         GeomAPI_ProjectPointOnCurve Projector = new(vtori, Einf1.Geometry()!); // patch
                         pvt = Projector.NearestPoint();
@@ -1335,7 +1339,7 @@ public sealed partial class Draft_Modification
                             // const Draft_EdgeInfo& Einf2 = myEMap(Edg2);
                             Draft_EdgeInfo Einf2 = myEMap.ChangeFromKey(Edg2);
                             //	    double f;
-                            Einf2.Geometry()!.D0(Vinf.Parameter(Edg2), out gp_Pnt opvt);
+                            Einf2.Geometry()!.D0(Vinf.Parameter(Edg2), out Point3D opvt);
 
                             if (opvt.SquareDistance(vtori) < dion)
                             {
@@ -1388,13 +1392,13 @@ public sealed partial class Draft_Modification
                 }
 
                 {
-                    gp_Pnt vtori = BRep_Tool.Pnt(TVV);
-                    gp_Pnt pvt;
+                    Point3D vtori = BRep_Tool.Pnt(TVV);
+                    Point3D pvt;
 
                     int nbsol = myintcs.NbPoints();
                     if (nbsol <= 0)
                     {
-                        Extrema_ExtCS extr = new(AC, AS, Precision.PConfusion(), Precision.PConfusion());
+                        Extrema_ExtCS extr = new(AC, AS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
                         if (!extr.IsDone() || extr.NbExt() == 0)
                         {
@@ -1454,9 +1458,9 @@ public sealed partial class Draft_Modification
                         }
                         else
                         {
-                            if (Math.Abs(initpar - param) > Precision.PConfusion())
+                            if (Math.Abs(initpar - param) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                Geom_Curve? aC = BRep_Tool.Curve(Edg, out TopLoc_Location Loc, out double f, out double l);
+                                Geom_Curve? aC = BRep_Tool.Curve(Edg, out Placement Loc, out double f, out double l);
                                 if (aC!.GetType() == typeof(Geom_TrimmedCurve))
                                 {
                                     Einf.SetNewGeometry(true);
@@ -1497,8 +1501,8 @@ public sealed partial class Draft_Modification
                     Draft_EdgeInfo aEinf = myEMap.ChangeFromKey(edg);
                     Geom_Curve aSCurve = BRep_Tool.Curve(edg, out double aF, out double aL)!;
                     Geom_Curve? anIntCurv = aEinf.Geometry()!;
-                    gp_Pnt aPf, aPl;
-                    gp_Vec aDirNF, aDirNL, aDirOF, aDirOL;
+                    Point3D aPf, aPl;
+                    Vector3D aDirNF, aDirNL, aDirOF, aDirOL;
                     aSCurve.D1(BRep_Tool.Parameter(Vf, edg), out aPf, out aDirOF);
                     aSCurve.D1(BRep_Tool.Parameter(Vl, edg), out aPl, out aDirOL);
                     anIntCurv.D1(aParF, out aPf, out aDirNF);
@@ -1506,25 +1510,25 @@ public sealed partial class Draft_Modification
 
                     double aSqMagn = aDirNF.SquareMagnitude();
 
-                    if (aSqMagn > Precision.SquareConfusion())
+                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aDirNF.Divide(Math.Sqrt(aSqMagn));
                     }
 
                     aSqMagn = aDirNL.SquareMagnitude();
-                    if (aSqMagn > Precision.SquareConfusion())
+                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aDirNL.Divide(Math.Sqrt(aSqMagn));
                     }
 
                     aSqMagn = aDirOF.SquareMagnitude();
-                    if (aSqMagn > Precision.SquareConfusion())
+                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aDirOF.Divide(Math.Sqrt(aSqMagn));
                     }
 
                     aSqMagn = aDirOL.SquareMagnitude();
-                    if (aSqMagn > Precision.SquareConfusion())
+                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         aDirOL.Divide(Math.Sqrt(aSqMagn));
                     }
@@ -1571,7 +1575,7 @@ public sealed partial class Draft_Modification
                 {
                     // pf >= pl
                     double FirstPar = theCurve.FirstParameter(), LastPar = theCurve.LastParameter();
-                    double pconf = Precision.PConfusion();
+                    double pconf = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     if (Math.Abs(pf - LastPar) <= pconf)
                     {
                         pf = FirstPar;
@@ -1608,9 +1612,9 @@ public sealed partial class Draft_Modification
 
     private Geom_Surface? NewSurface(Geom_Surface S,
                                      TopAbs_Orientation Oris,
-                                     in gp_Dir Direction,
+                                     in Direction3D Direction,
                                      double Angle,
-                                     in gp_Pln NeutralPlane)
+                                     in Plane3D NeutralPlane)
     {
         Geom_Surface? NewS = null;
 
@@ -1618,10 +1622,10 @@ public sealed partial class Draft_Modification
 
         if (TypeS == typeof(Geom_Plane))
         {
-            gp_Pln Pl = ((Geom_Plane)S).Pln();
-            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out gp_Ax1 Axe, out double Theta))
+            Plane3D Pl = ((Geom_Plane)S).Pln();
+            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out Axis3D Axe, out double Theta))
             {
-                if (Math.Abs(Theta) > Precision.Angular())
+                if (Math.Abs(Theta) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     NewS = (Geom_Surface)S.Rotated(Axe, Theta);
                 }
@@ -1634,25 +1638,25 @@ public sealed partial class Draft_Modification
         else if (TypeS == typeof(Geom_CylindricalSurface))
         {
             double testdir = Direction.Dot(NeutralPlane.Axis().Direction());
-            if (Math.Abs(testdir) <= 1.0 - Precision.Angular())
+            if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return NewS;
             }
-            gp_Cylinder Cy = ((Geom_CylindricalSurface)S).Cylinder();
+            Cylinder Cy = ((Geom_CylindricalSurface)S).Cylinder();
             testdir = Direction.Dot(Cy.Axis().Direction());
-            if (Math.Abs(testdir) <= 1.0 - Precision.Angular())
+            if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return NewS;
             }
-            if (Math.Abs(Angle) > Precision.Angular())
+            if (Math.Abs(Angle) > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 IntAna_QuadQuadGeo i2s = new();
-                i2s.Perform(NeutralPlane, Cy, Precision.Angular(), Precision.Confusion());
+                i2s.Perform(NeutralPlane, Cy, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 bool isIntDone = i2s.IsDone();
 
                 if (i2s.TypeInter() == IntAna_Ellipse)
                 {
-                    gp_Elips anEl = i2s.Ellipse(1);
+                    Ellipse3D anEl = i2s.Ellipse(1);
                     double aMajorR = anEl.MajorRadius();
                     double aMinorR = anEl.MinorRadius();
                     isIntDone = (aMajorR < 100000.0 * aMinorR);
@@ -1662,7 +1666,7 @@ public sealed partial class Draft_Modification
                 {
                     return NewS;
                 }
-                gp_Ax3 axcone = Cy.Position();
+                CoordinateSystem axcone = Cy.Position();
                 // Pb : Where is the material???
                 double alpha = Angle;
                 bool direct = axcone.Direct();
@@ -1671,12 +1675,12 @@ public sealed partial class Draft_Modification
                     alpha = -alpha;
                 }
 
-                gp_Pnt Center = i2s.Circle(1).Location();
+                Point3D Center = i2s.Circle(1).Location();
                 if (testdir < 0.0)
                 {
                     alpha = -alpha;
                 }
-                double Z = ElCLib.LineParameter(Cy.Axis(), Center);
+                double Z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Cy.Axis(), Center);
                 double Rad = Cy.Radius() + Z * Math.Tan(alpha);
                 if (Rad < 0.0)
                 {
@@ -1686,7 +1690,7 @@ public sealed partial class Draft_Modification
                 {
                     alpha = -alpha;
                 }
-                gp_Cone co = new(axcone, alpha, Rad);
+                Cone co = new(axcone, alpha, Rad);
                 NewS = new Geom_ConicalSurface(co);
             }
             else
@@ -1697,26 +1701,26 @@ public sealed partial class Draft_Modification
         else if (TypeS == typeof(Geom_ConicalSurface))
         {
             double testdir = Direction.Dot(NeutralPlane.Axis().Direction());
-            if (Math.Abs(testdir) <= 1.0 - Precision.Angular())
+            if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return NewS;
             }
 
-            gp_Cone Co1 = ((Geom_ConicalSurface)S).Cone();
+            Cone Co1 = ((Geom_ConicalSurface)S).Cone();
 
             testdir = Direction.Dot(Co1.Axis().Direction());
-            if (Math.Abs(testdir) <= 1.0 - Precision.Angular())
+            if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return NewS;
             }
 
             IntAna_QuadQuadGeo i2s = new();
-            i2s.Perform(NeutralPlane, Co1, Precision.Angular(), Precision.Confusion());
+            i2s.Perform(NeutralPlane, Co1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
             if (!i2s.IsDone() || i2s.TypeInter() != IntAna_Circle)
             {
                 return NewS;
             }
-            gp_Ax3 axcone = Co1.Position();
+            CoordinateSystem axcone = Co1.Position();
             // Pb : Where is the material???
             double alpha = Angle;
             bool direct = axcone.Direct();
@@ -1725,14 +1729,14 @@ public sealed partial class Draft_Modification
                 alpha = -alpha;
             }
 
-            gp_Pnt Center = i2s.Circle(1).Location();
-            if (Math.Abs(Angle) > Precision.Angular())
+            Point3D Center = i2s.Circle(1).Location();
+            if (Math.Abs(Angle) > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 if (testdir < 0.0)
                 {
                     alpha = -alpha;
                 }
-                double Z = ElCLib.LineParameter(Co1.Axis(), Center);
+                double Z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co1.Axis(), Center);
                 double Rad = i2s.Circle(1).Radius() + Z * Math.Tan(alpha);
                 if (Rad < 0.0)
                 {
@@ -1742,19 +1746,19 @@ public sealed partial class Draft_Modification
                 {
                     alpha = -alpha;
                 }
-                if (Math.Abs(alpha - Co1.SemiAngle()) < Precision.Angular())
+                if (Math.Abs(alpha - Co1.SemiAngle()) < global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     NewS = S;
                 }
                 else
                 {
-                    gp_Cone co = new(axcone, alpha, Rad);
+                    Cone co = new(axcone, alpha, Rad);
                     NewS = new Geom_ConicalSurface(co);
                 }
             }
             else
             {
-                NewS = new Geom_CylindricalSurface(new gp_Cylinder(axcone, i2s.Circle(1).Radius()));
+                NewS = new Geom_CylindricalSurface(new Cylinder(axcone, i2s.Circle(1).Radius()));
             }
         }
         return NewS;
@@ -1765,9 +1769,9 @@ public sealed partial class Draft_Modification
     private Geom_Curve? NewCurve(Geom_Curve C,
                                  Geom_Surface S,
                                  TopAbs_Orientation Oris,
-                                 in gp_Dir Direction,
+                                 in Direction3D Direction,
                                  double Angle,
-                                 in gp_Pln NeutralPlane,
+                                 in Plane3D NeutralPlane,
                                  bool Flag = true)
     {
         Geom_Curve? NewC = null;
@@ -1776,10 +1780,10 @@ public sealed partial class Draft_Modification
 
         if (TypeS == typeof(Geom_Plane))
         {
-            gp_Pln Pl = ((Geom_Plane)S).Pln();
-            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out gp_Ax1 Axe, out double Theta))
+            Plane3D Pl = ((Geom_Plane)S).Pln();
+            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out Axis3D Axe, out double Theta))
             {
-                if (Math.Abs(Theta) > Precision.Angular())
+                if (Math.Abs(Theta) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     NewC = (Geom_Curve)C.Rotated(Axe, Theta);
                 }
@@ -1796,36 +1800,36 @@ public sealed partial class Draft_Modification
             return NewC;
         }
 
-        gp_Lin lin = ((Geom_Line)C).Lin();
+        Line3D lin = ((Geom_Line)C).Lin();
         //  double testdir = Direction.Dot(lin.Direction());
         //  if (std::abs(testdir) <= 1.-Precision::Angular()) {
         //    return NewC;
         //  }
-        gp_Dir Norm = new();
+        Direction3D Norm = new();
         if (TypeS == typeof(Geom_CylindricalSurface))
         {
-            gp_Cylinder Cy = ((Geom_CylindricalSurface)S).Cylinder();
-            ElSLib.Parameters(Cy, lin.Location(), out double U, out double V);
-            ElSLib.D1(U, V, Cy, out gp_Pnt pbid, out gp_Vec d1u, out gp_Vec d1v);
-            Norm = new gp_Dir(d1u.Crossed(d1v));
+            Cylinder Cy = ((Geom_CylindricalSurface)S).Cylinder();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Cy, lin.Location(), out double U, out double V);
+            global::Kerf.Engine.Geometry.ElSLib.D1(U, V, Cy, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
+            Norm = new Direction3D(d1u.Crossed(d1v));
         }
         else if (TypeS == typeof(Geom_ConicalSurface))
         {
-            gp_Cone Co = ((Geom_ConicalSurface)S).Cone();
-            ElSLib.Parameters(Co, lin.Location(), out double U, out double V);
-            ElSLib.D1(U, V, Co, out gp_Pnt pbid, out gp_Vec d1u, out gp_Vec d1v);
-            Norm = new gp_Dir(d1u.Crossed(d1v));
+            Cone Co = ((Geom_ConicalSurface)S).Cone();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Co, lin.Location(), out double U, out double V);
+            global::Kerf.Engine.Geometry.ElSLib.D1(U, V, Co, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
+            Norm = new Direction3D(d1u.Crossed(d1v));
         }
 
-        IntAna_IntConicQuad ilipl = new(lin, NeutralPlane, Precision.Angular());
+        IntAna_IntConicQuad ilipl = new(lin, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
         if (ilipl.IsDone() && ilipl.NbPoints() != 0)
         {
             if (Oris == TopAbs_REVERSED)
             {
                 Norm.Reverse();
             }
-            gp_Ax1 axrot = new(ilipl.Point(1), Norm.Crossed(Direction));
-            gp_Lin lires = new gp_Lin(new gp_Ax1(ilipl.Point(1), Direction)).Rotated(axrot, Angle);
+            Axis3D axrot = new(ilipl.Point(1), Norm.Crossed(Direction));
+            Line3D lires = new Line3D(new Axis3D(ilipl.Point(1), Direction)).Rotated(axrot, Angle);
             if (lires.Direction().Dot(lin.Direction()) < 0.0)
             {
                 lires.Reverse();
@@ -1844,7 +1848,7 @@ public sealed partial class Draft_Modification
                                GeomAdaptor_Curve AC,
                                GeomAdaptor_Surface AS)
     {
-        gp_Vec tgref;
+        Vector3D tgref;
         Vinf.InitEdgeIterator();
 
         // Find a regular edge with null SecondFace
@@ -1858,8 +1862,8 @@ public sealed partial class Draft_Modification
             }
             else
             {
-                GeomAbs_Shape te = BRep_Tool.Continuity(E1, Einf1.FirstFace(), Einf1.SecondFace());
-                if (te >= GeomAbs_G1)
+                Continuity te = BRep_Tool.Continuity(E1, Einf1.FirstFace(), Einf1.SecondFace());
+                if (te >= G1)
                 {
                     break;
                 }
@@ -1878,7 +1882,7 @@ public sealed partial class Draft_Modification
         AC.Load(Einf.Geometry()!);
 
         double prm;
-        Geom_Curve C = BRep_Tool.Curve(Eref, out TopLoc_Location Loc, out double f, out double l)!;
+        Geom_Curve C = BRep_Tool.Curve(Eref, out Placement Loc, out double f, out double l)!;
         C = (Geom_Curve)C.Transformed(Loc.Transformation());
         // prm = Parameter(C,BRep_Tool::Pnt(Vtx));
         double param = Parameter(C, BRep_Tool.Pnt(Vtx), out int done);
@@ -1892,7 +1896,7 @@ public sealed partial class Draft_Modification
         {
             prm = param;
         }
-        C.D1(prm, out gp_Pnt ptbid, out tgref);
+        C.D1(prm, out Point3D ptbid, out tgref);
 
         Vinf.InitEdgeIterator();
         while (Vinf.MoreEdge())
@@ -1904,7 +1908,7 @@ public sealed partial class Draft_Modification
                 // const Draft_EdgeInfo& Einfo = theEMap(Edg);
                 Draft_EdgeInfo Einfo = theEMap.ChangeFromKey(Edg);
                 if (!Einfo.SecondFace().IsNull()
-                    && BRep_Tool.Continuity(Edg, Einfo.FirstFace(), Einfo.SecondFace()) <= GeomAbs_C0)
+                    && BRep_Tool.Continuity(Edg, Einfo.FirstFace(), Einfo.SecondFace()) <= C0)
                 {
                     C = BRep_Tool.Curve(Edg, out Loc, out f, out l)!;
                     C = (Geom_Curve)C.Transformed(Loc.Transformation());
@@ -1920,8 +1924,8 @@ public sealed partial class Draft_Modification
                     {
                         prm = anewparam;
                     }
-                    C.D1(prm, out ptbid, out gp_Vec tg);
-                    if (tg.CrossMagnitude(tgref) > Precision.Confusion())
+                    C.D1(prm, out ptbid, out Vector3D tg);
+                    if (tg.CrossMagnitude(tgref) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         break;
                     }
@@ -1962,7 +1966,7 @@ public sealed partial class Draft_Modification
 
     //=================================================================================================
 
-    private static double Parameter(Geom_Curve C, in gp_Pnt P, out int done)
+    private static double Parameter(Geom_Curve C, in Point3D P, out int done)
     {
         done = 0;
         Geom_Curve cbase = C;
@@ -1975,11 +1979,11 @@ public sealed partial class Draft_Modification
         double param;
         if (ctyp == typeof(Geom_Line))
         {
-            param = ElCLib.Parameter(((Geom_Line)cbase).Lin(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Line)cbase).Lin(), P);
         }
         else if (ctyp == typeof(Geom_Circle))
         {
-            param = ElCLib.Parameter(((Geom_Circle)cbase).Circ(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Circle)cbase).Circ(), P);
             if (Math.Abs(2.0 * M_PI - param) <= Epsilon(2.0 * M_PI))
             {
                 param = 0.0;
@@ -1987,7 +1991,7 @@ public sealed partial class Draft_Modification
         }
         else if (ctyp == typeof(Geom_Ellipse))
         {
-            param = ElCLib.Parameter(((Geom_Ellipse)cbase).Elips(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Ellipse)cbase).Elips(), P);
             if (Math.Abs(2.0 * M_PI - param) <= Epsilon(2.0 * M_PI))
             {
                 param = 0.0;
@@ -1995,11 +1999,11 @@ public sealed partial class Draft_Modification
         }
         else if (ctyp == typeof(Geom_Parabola))
         {
-            param = ElCLib.Parameter(((Geom_Parabola)cbase).Parab(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Parabola)cbase).Parab(), P);
         }
         else if (ctyp == typeof(Geom_Hyperbola))
         {
-            param = ElCLib.Parameter(((Geom_Hyperbola)cbase).Hypr(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Hyperbola)cbase).Hypr(), P);
         }
         else
         {
@@ -2007,7 +2011,7 @@ public sealed partial class Draft_Modification
             Extrema_ExtPC myExtPC = new(P, TheCurve);
             if (!myExtPC.IsDone())
             {
-                throw new Standard_Failure("Draft_Modification_1::Parameter: ExtremaPC not done.");
+                throw new FailureException("Draft_Modification_1::Parameter: ExtremaPC not done.");
             }
             if (myExtPC.NbExt() >= 1)
             {
@@ -2026,7 +2030,7 @@ public sealed partial class Draft_Modification
             }
             else
             {
-                myExtPC.TrimmedSquareDistances(out double dist1_2, out double dist2_2, out gp_Pnt _, out gp_Pnt _);
+                myExtPC.TrimmedSquareDistances(out double dist1_2, out double dist2_2, out Point3D _, out Point3D _);
                 if (dist1_2 < dist2_2)
                 {
                     done = -1;
@@ -2042,7 +2046,7 @@ public sealed partial class Draft_Modification
             if (cbase.IsPeriodic())
             {
                 double Per = cbase.Period();
-                double Tolp = Precision.Parametric(Precision.Confusion());
+                double Tolp = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (Math.Abs(Per - param) <= Tolp)
                 {
                     param = 0.0;
@@ -2056,13 +2060,13 @@ public sealed partial class Draft_Modification
 
     private static double SmartParameter(Draft_EdgeInfo Einf,
                                          double EdgeTol,
-                                         in gp_Pnt Pnt,
+                                         in Point3D Pnt,
                                          int sign,
                                          Geom_Surface S1,
                                          Geom_Surface S2)
     {
         Geom2d_Curve NewC2d;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         double Etol = EdgeTol;
 
         Geom2d_Curve? pcu1 = Einf.FirstPC();
@@ -2091,7 +2095,7 @@ public sealed partial class Draft_Modification
             NewC2d = ((Geom2d_TrimmedCurve)NewC2d).BasisCurve();
         }
 
-        gp_Pnt2d P2d = new(U, V);
+        Point2D P2d = new(U, V);
         Geom2dAPI_ProjectPointOnCurve Projector2d = new(P2d, NewC2d);
         if (Projector2d.NbPoints() == 0 || Projector2d.LowerDistance() > Tol)
         {
@@ -2106,21 +2110,21 @@ public sealed partial class Draft_Modification
             }
             if (sign == -1)
             {
-                NCollection_Array1<gp_Pnt2d> PntArray = new(1, 2);
+                NCollection_Array1<Point2D> PntArray = new(1, 2);
                 PntArray[1] = P2d;
                 PntArray[2] = BCurve.Pole(1);
                 Geom2d_BezierCurve Patch = new(PntArray);
-                Geom2dConvert_CompCurveToBSplineCurve Concat = new(BCurve, Convert_QuasiAngular);
+                Geom2dConvert_CompCurveToBSplineCurve Concat = new(BCurve, QuasiAngular);
                 Concat.Add(Patch, Tol, false);
                 BCurve = Concat.BSplineCurve()!;
             }
             else
             {
-                NCollection_Array1<gp_Pnt2d> PntArray = new(1, 2);
+                NCollection_Array1<Point2D> PntArray = new(1, 2);
                 PntArray[1] = BCurve.Pole(BCurve.NbPoles());
                 PntArray[2] = P2d;
                 Geom2d_BezierCurve Patch = new(PntArray);
-                Geom2dConvert_CompCurveToBSplineCurve Concat = new(BCurve, Convert_QuasiAngular);
+                Geom2dConvert_CompCurveToBSplineCurve Concat = new(BCurve, QuasiAngular);
                 Concat.Add(Patch, Tol, true);
                 BCurve = Concat.BSplineCurve()!;
             }
@@ -2134,9 +2138,9 @@ public sealed partial class Draft_Modification
         GeomAdaptor_Surface hsur2 = new(S2);
         ProjLib_CompProjectedCurve HProjector = new(hsur2, hcons, Tol, Tol);
         HProjector.Bounds(1, out double Udeb, out double Ufin);
-        int MaxSeg = 20 + HProjector.NbIntervals(GeomAbs_C3);
+        int MaxSeg = 20 + HProjector.NbIntervals(C3);
         Approx_CurveOnSurface appr = new(HProjector, hsur2, Udeb, Ufin, Tol);
-        appr.Perform(MaxSeg, 10, GeomAbs_C1, false, false);
+        appr.Perform(MaxSeg, 10, C1, false, false);
         Einf.ChangeSecondPC() = appr.Curve2d();
         Einf.ChangeGeometry() = appr.Curve3d();
         Einf.SetNewGeometry(true);
@@ -2173,26 +2177,26 @@ public sealed partial class Draft_Modification
 
     //=================================================================================================
 
-    private static bool FindRotation(in gp_Pln Pl,
+    private static bool FindRotation(in Plane3D Pl,
                                      TopAbs_Orientation Oris,
-                                     in gp_Dir Direction,
+                                     in Direction3D Direction,
                                      double Angle,
-                                     in gp_Pln NeutralPlane,
-                                     out gp_Ax1 Axe,
+                                     in Plane3D NeutralPlane,
+                                     out Axis3D Axe,
                                      out double theta)
     {
-        Axe = new gp_Ax1();
+        Axe = new Axis3D();
         theta = 0.0;
-        IntAna_QuadQuadGeo i2pl = new(Pl, NeutralPlane, Precision.Angular(), Precision.Confusion());
+        IntAna_QuadQuadGeo i2pl = new(Pl, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (i2pl.IsDone() && i2pl.TypeInter() == IntAna_Line)
         {
-            gp_Lin li = i2pl.Line(1);
+            Line3D li = i2pl.Line(1);
             // Try to turn around this line
-            gp_Dir nx = li.Direction();
-            gp_Dir ny = Pl.Axis().Direction().Crossed(nx);
+            Direction3D nx = li.Direction();
+            Direction3D ny = Pl.Axis().Direction().Crossed(nx);
             double a = Direction.Dot(nx);
-            if (Math.Abs(a) <= 1 - Precision.Angular())
+            if (Math.Abs(a) <= 1 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 double b = Direction.Dot(ny);
                 double c = Direction.Dot(Pl.Axis().Direction());
@@ -2233,7 +2237,7 @@ public sealed partial class Draft_Modification
     // a frozen one (the intersection's are) is reversed on a copy, which takes its place.
     private static void reverse(ref Geom_Curve? theCurve)
     {
-        if (theCurve!.IsFrozen())
+        if (theCurve!.IsFrozen)
         {
             theCurve = (Geom_Curve)theCurve.Copy();
         }
@@ -2242,7 +2246,7 @@ public sealed partial class Draft_Modification
 
     private static void reverse(ref Geom2d_Curve? theCurve)
     {
-        if (theCurve!.IsFrozen())
+        if (theCurve!.IsFrozen)
         {
             theCurve = (Geom2d_Curve)theCurve.Copy();
         }

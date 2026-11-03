@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of Ax2 and Ax22d from gp to a STEP axis2_placement_2d.</summary>
@@ -20,7 +22,7 @@ public sealed class GeomToStep_MakeAxis2Placement2d : GeomToStep_Root
     /// An Ax2: its location (3D, divided by the length factor) and its main direction (as OCCT writes them, a 3D
     /// placement in a 2D entity).
     /// </summary>
-    public GeomToStep_MakeAxis2Placement2d(in gp_Ax2 A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement2d(in Frame3D A, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement2d Axe;
         StepGeom_CartesianPoint P;
@@ -43,7 +45,7 @@ public sealed class GeomToStep_MakeAxis2Placement2d : GeomToStep_Root
     }
 
     /// <summary>An Ax2 (default factors).</summary>
-    public GeomToStep_MakeAxis2Placement2d(in gp_Ax2 A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement2d(in Frame3D A) : this(A, new StepData_Factors())
     {
     }
 
@@ -52,7 +54,7 @@ public sealed class GeomToStep_MakeAxis2Placement2d : GeomToStep_Root
     //=============================================================================
 
     /// <summary>An Ax22d: its location and X direction.</summary>
-    public GeomToStep_MakeAxis2Placement2d(in gp_Ax22d A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis2Placement2d(in Frame2D A, in StepData_Factors theLocalFactors)
     {
         StepGeom_Axis2Placement2d Axe;
         StepGeom_CartesianPoint P;
@@ -74,7 +76,7 @@ public sealed class GeomToStep_MakeAxis2Placement2d : GeomToStep_Root
     }
 
     /// <summary>An Ax22d.</summary>
-    public GeomToStep_MakeAxis2Placement2d(in gp_Ax22d A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis2Placement2d(in Frame2D A) : this(A, new StepData_Factors())
     {
     }
 

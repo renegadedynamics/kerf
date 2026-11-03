@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -19,7 +21,7 @@ public class IntPatch_WLineTests
         {
             double x = theX0 + k - 1;
             IntSurf_PntOn2S aP = new();
-            aP.SetValue(new gp_Pnt(x, 0, 0), x, 0, x, 1);
+            aP.SetValue(new Point3D(x, 0, 0), x, 0, x, 1);
             aLine.Add(aP);
         }
         return aLine;
@@ -28,14 +30,14 @@ public class IntPatch_WLineTests
     internal static IntPatch_Point Vtx(double x, double theParam, double theTol = 1e-7)
     {
         IntPatch_Point aV = new();
-        aV.SetValue(new gp_Pnt(x, 0, 0), theTol, false);
+        aV.SetValue(new Point3D(x, 0, 0), theTol, false);
         aV.SetParameters(x, 0, x, 1);
         aV.SetParameter(theParam);
         return aV;
     }
 
     private static Adaptor2d_Curve2d Arc() =>
-        new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), -100, 100);
+        new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), -100, 100);
 
     [Fact]
     public void Construction_and_flags()
@@ -46,7 +48,7 @@ public class IntPatch_WLineTests
         Assert.Equal(3, aW.NbPnts());
         Assert.False(aW.HasFirstPoint());
         Assert.False(aW.HasLastPoint());
-        Assert.Throws<Standard_DomainError>(() => aW.FirstPoint());
+        Assert.Throws<DomainErrorException>(() => aW.FirstPoint());
         Assert.True(aW.IsPurgingAllowed());
         aW.EnablePurging(false);
         Assert.False(aW.IsPurgingAllowed());
@@ -76,8 +78,8 @@ public class IntPatch_WLineTests
         Assert.Equal(new[] { 1.0, 2.0, 3.0, 5.0 },
                      Enumerable.Range(1, aW.NbVertex()).Select(i => aW.Vertex(i).ParameterOnLine()));
 
-        Assert.Throws<Standard_OutOfRange>(() => aW.RemoveVertex(0));
-        Assert.Throws<Standard_OutOfRange>(() => aW.RemoveVertex(5));
+        Assert.Throws<OutOfRangeException>(() => aW.RemoveVertex(0));
+        Assert.Throws<OutOfRangeException>(() => aW.RemoveVertex(5));
         aW.RemoveVertex(2);
         Assert.Equal(3, aW.NbVertex());
 
@@ -111,8 +113,8 @@ public class IntPatch_WLineTests
         Assert.Same(aCurve, aW.Curve());
         Assert.Equal(aV.PntOn2S(), aW.Point(2));
         Assert.Equal(7.0, aCurve.Value(2).Value().X());
-        Assert.True(aW.IsOutBox(new gp_Pnt(100, 0, 0)));
-        Assert.False(aW.IsOutSurf1Box(new gp_Pnt2d(2, 0)));
+        Assert.True(aW.IsOutBox(new Point3D(100, 0, 0)));
+        Assert.False(aW.IsOutSurf1Box(new Point2D(2, 0)));
     }
 
     [Fact]
@@ -124,12 +126,12 @@ public class IntPatch_WLineTests
         aW.ComputeVertexParameters(1e-6);
 
         Assert.Equal(6, aW.NbPnts());
-        Assert.Equal(new gp_Pnt(3.5, 0, 0), aW.Point(5).Value());
+        Assert.Equal(new Point3D(3.5, 0, 0), aW.Point(5).Value());
         Assert.Equal(new[] { 1.0, 3.0, 5.0, 6.0 },
                      Enumerable.Range(1, aW.NbVertex()).Select(i => aW.Vertex(i).ParameterOnLine()));
         Assert.True(aW.HasFirstPoint() && aW.HasLastPoint());
-        Assert.Equal(new gp_Pnt(0, 0, 0), aW.FirstPoint().Value());
-        Assert.Equal(new gp_Pnt(4, 0, 0), aW.LastPoint(out int anIndL).Value());
+        Assert.Equal(new Point3D(0, 0, 0), aW.FirstPoint().Value());
+        Assert.Equal(new Point3D(4, 0, 0), aW.LastPoint(out int anIndL).Value());
         Assert.Equal(4, anIndL);
         // The end vertices are made with the largest of the given tolerance and the vertices' ones.
         Assert.Equal(1e-6, aW.FirstPoint().Tolerance());
@@ -184,11 +186,11 @@ public class IntPatch_WLineTests
         aW.ComputeVertexParameters(1e-7);
 
         Assert.Equal(7, aW.NbPnts());
-        Assert.Equal(new gp_Pnt(-1, 0, 0), aW.Point(1).Value());
-        Assert.Equal(new gp_Pnt(-2, 0, 0), aW.Point(2).Value());
+        Assert.Equal(new Point3D(-1, 0, 0), aW.Point(1).Value());
+        Assert.Equal(new Point3D(-2, 0, 0), aW.Point(2).Value());
         Assert.Equal(2, aW.NbVertex());
         Assert.Equal(1.0, aW.Vertex(1).ParameterOnLine());
-        Assert.Equal(new gp_Pnt(-2, 0, 0), aW.Vertex(1).Value());
+        Assert.Equal(new Point3D(-2, 0, 0), aW.Vertex(1).Value());
         Assert.Equal(7.0, aW.Vertex(2).ParameterOnLine());
     }
 
@@ -199,7 +201,7 @@ public class IntPatch_WLineTests
         IntPatch_WLine aW = new(aCurve, false);
         aW.SetPeriod(10, 0, 0, 0);
         IntPatch_Point aV = new();
-        aV.SetValue(new gp_Pnt(1, 0, 0), 1e-7, false);
+        aV.SetValue(new Point3D(1, 0, 0), 1e-7, false);
         aV.SetParameters(11, 0, 1, 1); // U1 one period away
         aV.SetParameter(2);
         aW.AddVertex(aV);

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -21,7 +22,7 @@ namespace Occt;
 /// reading, <see cref="ChangeDS"/> and the storing functions internal. <c>ChkIntg</c> (TopOpeBRepDS_Check, a builder
 /// tool) is not ported.
 /// </remarks>
-public sealed class TopOpeBRepDS_HDataStructure : Standard_Transient
+public sealed class TopOpeBRepDS_HDataStructure : Transient
 {
     private readonly TopOpeBRepDS_DataStructure myDS = new();
 
@@ -402,7 +403,7 @@ public sealed class TopOpeBRepDS_HDataStructure : Standard_Transient
     /// Appends to <paramref name="SList"/> the point interferences of <paramref name="List"/> by increasing parameter
     /// (a selection sort, as OCCT's; equal parameters keep the list's order).
     /// </summary>
-    /// <exception cref="Standard_ProgramError">A point interference has no parameter (<see cref="TopOpeBRepDS_PointIterator.Parameter"/>).</exception>
+    /// <exception cref="ProgramErrorException">A point interference has no parameter (<see cref="TopOpeBRepDS_PointIterator.Parameter"/>).</exception>
     internal static void FUN_TopOpeBRepDS_SortOnParameter(NCollection_List<TopOpeBRepDS_Interference> List,
                                                           NCollection_List<TopOpeBRepDS_Interference> SList)
     {
@@ -604,27 +605,27 @@ public sealed class TopOpeBRepDS_HDataStructure : Standard_Transient
     }
 
     /// <summary>Stores the interference <paramref name="I"/> on the shape <paramref name="S"/> (and its geometry).</summary>
-    /// <exception cref="Standard_ProgramError"><paramref name="S"/> is not in the data structure.</exception>
+    /// <exception cref="ProgramErrorException"><paramref name="S"/> is not in the data structure.</exception>
     internal void StoreInterference(TopOpeBRepDS_Interference I, in TopoDS_Shape S, string str = "")
     {
         _ = str;
         bool h = myDS.HasShape(S);
         if (!h)
         {
-            throw new Standard_ProgramError("StoreInterference on shape out of DS");
+            throw new ProgramErrorException("StoreInterference on shape out of DS");
         }
         StoreInterference(I, myDS.ChangeShapeInterferences(S));
     }
 
     /// <summary>Stores the interference <paramref name="I"/> on the shape <paramref name="IS"/> (and its geometry).</summary>
-    /// <exception cref="Standard_ProgramError"><paramref name="IS"/> is not a shape index.</exception>
+    /// <exception cref="ProgramErrorException"><paramref name="IS"/> is not a shape index.</exception>
     internal void StoreInterference(TopOpeBRepDS_Interference I, int IS, string str = "")
     {
         _ = str;
         int n = myDS.NbShapes();
         if (IS < 1 || IS > n)
         {
-            throw new Standard_ProgramError("StoreInterference on index out of DS");
+            throw new ProgramErrorException("StoreInterference on index out of DS");
         }
 
         StoreInterference(I, myDS.ChangeShapeInterferences(IS));

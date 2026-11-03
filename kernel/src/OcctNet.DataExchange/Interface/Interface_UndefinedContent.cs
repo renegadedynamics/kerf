@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +21,7 @@ namespace Occt;
 /// to its data, calling methods defined here). Finally, the Protocols of each norm have to Create and
 /// Recognize Unknown Entities of this norm
 /// </summary>
-public class Interface_UndefinedContent : Standard_Transient
+public class Interface_UndefinedContent : Transient
 {
     private const int Content_TypeField = 31;
     private const int Content_LocalField = 7;
@@ -58,13 +60,13 @@ public class Interface_UndefinedContent : Standard_Transient
     /// Returns data of a Parameter : its type, and the entity if it designates en entity ("ent") or its literal
     /// value else ("str") Returned value (Boolean) : True if it is an Entity, False else
     /// </summary>
-    public bool ParamData(int num, out Interface_ParamType ptype, out Standard_Transient? ent, out TCollection_HAsciiString? val)
+    public bool ParamData(int num, out Interface_ParamType ptype, out Transient? ent, out TCollection_HAsciiString? val)
     {
         ent = null; // OCCT leaves the one not concerned as it was
         val = null;
         if (num < 1 || num > thenbparams)
         {
-            throw new Standard_OutOfRange("Interface UndefinedContent : ParamData");
+            throw new OutOfRangeException("Interface UndefinedContent : ParamData");
         }
         int desc = theparams.Value(num);
         int local = ((desc >> Content_LocalShift) & Content_LocalField);
@@ -100,7 +102,7 @@ public class Interface_UndefinedContent : Standard_Transient
     /// <summary>
     /// Returns Entity corresponding to a Param, given its rank
     /// </summary>
-    public Standard_Transient? ParamEntity(int num)
+    public Transient? ParamEntity(int num)
     {
         int desc = theparams.Value(num);
         if (((desc >> Content_LocalShift) & Content_LocalField) != Content_LocalRef)
@@ -194,7 +196,7 @@ public class Interface_UndefinedContent : Standard_Transient
     /// <summary>
     /// Adds a Parameter which references an Entity
     /// </summary>
-    public void AddEntity(Interface_ParamType ptype, Standard_Transient? ent)
+    public void AddEntity(Interface_ParamType ptype, Transient? ent)
     {
         Reservate(thenbparams + 1, 0);
         int desc = (int)(ptype);
@@ -290,7 +292,7 @@ public class Interface_UndefinedContent : Standard_Transient
     /// Sets a new value for the Parameter &lt;num&gt;, to reference an Entity. To simply change the Entity, see
     /// the variant below
     /// </summary>
-    public void SetEntity(int num, Interface_ParamType ptype, Standard_Transient? ent)
+    public void SetEntity(int num, Interface_ParamType ptype, Transient? ent)
     {
         //  Change a Parameter. If already Entity, simple substitution
         //  If Literal, remove its value and renumber the Literal parameters
@@ -337,7 +339,7 @@ public class Interface_UndefinedContent : Standard_Transient
     /// <summary>
     /// Changes the Entity referenced by the Parameter &lt;num&gt; (with same ParamType)
     /// </summary>
-    public void SetEntity(int num, Standard_Transient? ent)
+    public void SetEntity(int num, Transient? ent)
     {
         //  Change the Entity defined by a Parameter, all other things being equal,
         //  PROVIDED that it is already an "Entity" type Parameter
@@ -373,7 +375,7 @@ public class Interface_UndefinedContent : Standard_Transient
         theparams = null;
         Reservate(nb, other.NbLiterals());
 
-        Standard_Transient ent = null;
+        Transient ent = null;
         for (int i = 1; i <= nb; i++)
         {
             Interface_ParamType ptype = default;

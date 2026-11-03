@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using static Occt.StepData_Logical;
 
@@ -182,7 +183,7 @@ public class StepData_StepWriter
         thenum = 0;
         for (header.Start(); header.More(); header.Next())
         {
-            Standard_Transient anent = header.Value();
+            Transient anent = header.Value();
 
             //   Write Entity via Lib  (similaire a SendEntity)
             if (lib.Select(anent, out StepData_ReadWriteModule module, out int CN))
@@ -322,7 +323,7 @@ public class StepData_StepWriter
     public void SendEntity(int num, StepData_WriterLib lib)
     {
         string lident;
-        Standard_Transient anent = themodel.Entity(num);
+        Transient anent = themodel.Entity(num);
         int idnum = num, idtrue = 0;
 
         //   themodel->Number(anent) and/or IdentLabel(anent)
@@ -340,11 +341,11 @@ public class StepData_StepWriter
         }
         if (thelabmode < 2 || idnum == idtrue)
         {
-            lident = Standard.Sprintf("#%d = ", idnum); // skl 29.01.2003
+            lident = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d = ", idnum); // skl 29.01.2003
         }
         else
         {
-            lident = Standard.Sprintf("%d:#%d = ", idnum, idtrue); // skl 29.01.2003
+            lident = global::Kerf.Engine.Foundation.Standard.Sprintf("%d:#%d = ", idnum, idtrue); // skl 29.01.2003
         }
 
         //  SendIdent reused, lident has just been calculated
@@ -510,7 +511,7 @@ public class StepData_StepWriter
     /// </summary>
     public void SendIdent(int ident)
     {
-        string lident = Standard.Sprintf("#%d =", ident);
+        string lident = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d =", ident);
         thecurr.Clear();
         thecurr.Add(lident);
         themult = false;
@@ -894,7 +895,7 @@ public class StepData_StepWriter
     public void Send(int val)
     {
         AddParam();
-        string lval = Standard.Sprintf("%d", val);
+        string lval = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", val);
         AddCString(lval, lval.Length);
     }
 
@@ -996,7 +997,7 @@ public class StepData_StepWriter
     /// REMARK 2: for an HAsciiString which is not recorded in the Model, it is send as its String Content, between
     /// quotes.
     /// </summary>
-    public void Send(Standard_Transient? val)
+    public void Send(Transient? val)
     {
         string lident;
         //  Undefined ?
@@ -1055,11 +1056,11 @@ public class StepData_StepWriter
             }
             if (thelabmode < 2 || idnum == idtrue)
             {
-                lident = Standard.Sprintf("#%d", idnum);
+                lident = global::Kerf.Engine.Foundation.Standard.Sprintf("#%d", idnum);
             }
             else
             {
-                lident = Standard.Sprintf("%d:#%d", idnum, idtrue);
+                lident = global::Kerf.Engine.Foundation.Standard.Sprintf("%d:#%d", idnum, idtrue);
             }
             AddParam();
             AddCString(lident, lident.Length);
@@ -1111,7 +1112,7 @@ public class StepData_StepWriter
     /// <remarks>OCCT's <c>TCollection_AsciiString</c> and <c>const char*</c> forms are one method here.</remarks>
     public void SendEnum(string val)
     {
-        if (Standard.CStringChar(val, 0) == '$' && Standard.CStringChar(val, 1) == '\0')
+        if (global::Kerf.Engine.Foundation.Standard.CStringChar(val, 0) == '$' && global::Kerf.Engine.Foundation.Standard.CStringChar(val, 1) == '\0')
         {
             SendUndef();
             return;
@@ -1120,7 +1121,7 @@ public class StepData_StepWriter
         string aValue = val;
         if (aValue.Length == 0)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Value : parameter where"); // OCCT: an empty enum
+            throw new OutOfRangeException("TCollection_AsciiString::Value : parameter where"); // OCCT: an empty enum
         }
         if (aValue[0] != '.')
         {

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -68,13 +70,13 @@ public abstract class IntPatch_PointLine : IntPatch_Line
     public abstract IntSurf_LineOn2S? Curve();
 
     /// <summary>True if <paramref name="P1"/> is out of the box of the points on the first surface.</summary>
-    public abstract bool IsOutSurf1Box(in gp_Pnt2d P1);
+    public abstract bool IsOutSurf1Box(in Point2D P1);
 
     /// <summary>True if <paramref name="P2"/> is out of the box of the points on the second surface.</summary>
-    public abstract bool IsOutSurf2Box(in gp_Pnt2d P2);
+    public abstract bool IsOutSurf2Box(in Point2D P2);
 
     /// <summary>True if <paramref name="P"/> is out of the box of the 3D points.</summary>
-    public abstract bool IsOutBox(in gp_Pnt P);
+    public abstract bool IsOutBox(in Point3D P);
 
     /// <summary>
     /// The radius of curvature of the intersection line at a point; negative if it can't be computed.
@@ -82,20 +84,20 @@ public abstract class IntPatch_PointLine : IntPatch_Line
     public static double CurvatureRadiusOfIntersLine(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                                      in IntSurf_PntOn2S theUVPoint)
     {
-        double aSmallValue = 1.0 / Precision.Infinite();
+        double aSmallValue = 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite();
         double aSqSmallValue = aSmallValue * aSmallValue;
 
         theUVPoint.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
-        gp_Pnt aPt;
-        gp_Vec aDU1, aDV1, aDUU1, aDUV1, aDVV1;
-        gp_Vec aDU2, aDV2, aDUU2, aDUV2, aDVV2;
+        Point3D aPt;
+        Vector3D aDU1, aDV1, aDUU1, aDUV1, aDVV1;
+        Vector3D aDU2, aDV2, aDUU2, aDUV2, aDVV2;
 
         theS1.D2(aU1, aV1, out aPt, out aDU1, out aDV1, out aDUU1, out aDVV1, out aDUV1);
         theS2.D2(aU2, aV2, out aPt, out aDU2, out aDV2, out aDUU2, out aDVV2, out aDUV2);
 
-        gp_Vec aN1 = aDU1.Crossed(aDV1), aN2 = aDU2.Crossed(aDV2);
+        Vector3D aN1 = aDU1.Crossed(aDV1), aN2 = aDU2.Crossed(aDV2);
         // Tangent vector to the intersection curve
-        gp_Vec aCTan = aN1.Crossed(aN2);
+        Vector3D aCTan = aN1.Crossed(aN2);
         double aSqMagnFDer = aCTan.SquareMagnitude();
 
         if (aSqMagnFDer < 1.0e-8)
@@ -112,7 +114,7 @@ public abstract class IntPatch_PointLine : IntPatch_Line
             // This algorithm is described in NonSingularProcessing() function
             // in ApproxInt_ImpPrmSvSurfaces.gxx file
             double aSqNMagn = aN1.SquareMagnitude();
-            gp_Vec aTgU = aCTan.Crossed(aDU1), aTgV = aCTan.Crossed(aDV1);
+            Vector3D aTgU = aCTan.Crossed(aDU1), aTgV = aCTan.Crossed(aDV1);
             double aDeltaU = aTgV.SquareMagnitude() / aSqNMagn;
             double aDeltaV = aTgU.SquareMagnitude() / aSqNMagn;
 
@@ -155,12 +157,12 @@ public abstract class IntPatch_PointLine : IntPatch_Line
                      + aDvS2 * aDvS2 * aDVV2.Dot(aN2);
 
         // Principal normal to the intersection curve
-        gp_Vec aCNorm = (aF1 * aC - aF2 * aB) / aDetSyst * aN1 + (aA * aF2 - aF1 * aB) / aDetSyst * aN2;
+        Vector3D aCNorm = (aF1 * aC - aF2 * aB) / aDetSyst * aN1 + (aA * aF2 - aF1 * aB) / aDetSyst * aN2;
         double aSqMagnSDer = aCNorm.CrossSquareMagnitude(aCTan);
 
         if (aSqMagnSDer < aSqSmallValue)
         { // Intersection curve has null curvature in observed point
-            return Precision.Infinite();
+            return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
 
         // square of curvature radius

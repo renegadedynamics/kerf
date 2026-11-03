@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2001-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.HLRBRep_TypeOfResultingEdge;
 
 namespace Occt;
@@ -38,12 +39,12 @@ public class HLRAppli_ReflectLines
         double aFocus = 1;
         // Prs3d_Projector aPrs3dProjector(IsPerspective, aFocus, Nx, Ny, Nz, XAt, YAt, ZAt, XUp, YUp, ZUp);
 
-        gp_Pnt At = new(XAt, YAt, ZAt);
-        gp_Dir Zpers = new(Nx, Ny, Nz);
-        gp_Dir Ypers = new(XUp, YUp, ZUp);
-        gp_Dir Xpers = Ypers.Crossed(Zpers);
-        gp_Ax3 Axe = new(At, Zpers, Xpers);
-        gp_Trsf T = new();
+        Point3D At = new(XAt, YAt, ZAt);
+        Direction3D Zpers = new(Nx, Ny, Nz);
+        Direction3D Ypers = new(XUp, YUp, ZUp);
+        Direction3D Xpers = Ypers.Crossed(Zpers);
+        CoordinateSystem Axe = new(At, Zpers, Xpers);
+        Transform3D T = new();
         T.SetTransformation(Axe);
 
         // myProjector = aPrs3dProjector.Projector();
@@ -72,7 +73,7 @@ public class HLRAppli_ReflectLines
 
         TopoDS_Shape theCompound = aHLRToShape.InternalCompoundOfEdges(new TopoDS_Shape(), type, visible, In3d);
 
-        BRepLib.SameParameter(theCompound, Precision.PConfusion(), false);
+        BRepLib.SameParameter(theCompound, global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
 
         theCompound.TShape()?.FreezeGraph();
         return theCompound;

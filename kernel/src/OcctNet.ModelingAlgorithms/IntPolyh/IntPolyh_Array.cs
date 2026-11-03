@@ -9,6 +9,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -126,7 +130,7 @@ public sealed class IntPolyh_Array<T> where T : new()
     {
         if (aIndex < 0 || aIndex >= myLength)
         {
-            throw new Standard_OutOfRange("NCollection_DynamicArray::ChangeValue");
+            throw new OutOfRangeException("NCollection_DynamicArray::ChangeValue");
         }
 
         return ref myBlocks[aIndex / THE_BLOCK_SIZE][aIndex % THE_BLOCK_SIZE];
@@ -187,8 +191,8 @@ public sealed class IntPolyh_Array<T> where T : new()
 /// <remarks>Both are zero by default, as C++ default-constructs <c>gp_Pnt</c> and <c>gp_Vec</c>.</remarks>
 public struct IntPolyh_PointNormal : IEquatable<IntPolyh_PointNormal>
 {
-    public gp_Pnt Point;
-    public gp_Vec Normal;
+    public Point3D Point;
+    public Vector3D Normal;
 
     public readonly bool Equals(IntPolyh_PointNormal other) => Point.Equals(other.Point) && Normal.Equals(other.Normal);
 

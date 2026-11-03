@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -36,9 +38,9 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     private TopoDS_Edge myEdge = new();
     private TopoDS_Face myFace = new();
     private bool myP3Ddef;
-    private gp_Pnt myP3D = new();
+    private Point3D myP3D = new();
     private bool myP2Ddef;
-    private gp_Pnt2d myP2D = new();
+    private Point2D myP2D = new();
     private readonly TopOpeBRepTool_SolidClassifier mySolidClassifier = new();
     private int mySameDomain;
 
@@ -344,7 +346,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         {
             if (tR <= TopAbs_SOLID)
             {
-                gp_Pnt P3D = BRep_Tool.Pnt(TopoDS.Vertex(myS));
+                Point3D P3D = BRep_Tool.Pnt(TopoDS.Vertex(myS));
                 StateP3DReference(P3D);
             }
         }
@@ -386,7 +388,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
                     else
                     {
                         myState = TopAbs_UNKNOWN;
-                        throw new Standard_ProgramError("TopOpeBRepTool_ShapeClassifier !P3Ddef");
+                        throw new ProgramErrorException("TopOpeBRepTool_ShapeClassifier !P3Ddef");
                     }
                 }
             }
@@ -421,7 +423,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
         else
         {
-            throw new Standard_ProgramError("StateShapeShape : bad operands");
+            throw new ProgramErrorException("StateShapeShape : bad operands");
         }
 
         // take orientation of reference shape in account
@@ -449,9 +451,9 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
 
         Geom_Curve? C3D;
-        gp_Pnt P3D;
+        Point3D P3D;
         Geom2d_Curve? C2D;
-        gp_Pnt2d P2D;
+        Point2D P2D;
 
         TopAbs_ShapeEnum tR = myRef.ShapeType();
 
@@ -465,7 +467,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
 
                 if (C2D is null)
                 {
-                    throw new Standard_ProgramError("StateShapeShape : no 2d curve");
+                    throw new ProgramErrorException("StateShapeShape : no 2d curve");
                 }
 
                 double t = 0.127956477;
@@ -481,7 +483,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
 
                 if (C3D is null)
                 {
-                    throw new Standard_ProgramError("StateShapeShape : no 3d curve");
+                    throw new ProgramErrorException("StateShapeShape : no 3d curve");
                 }
 
                 double t = 0.127956477;
@@ -507,7 +509,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
 
                 if (C3D is null)
                 {
-                    throw new Standard_ProgramError("StateShapeShape : no 3d curve");
+                    throw new ProgramErrorException("StateShapeShape : no 3d curve");
                 }
 
                 double t = 0.127956477;
@@ -519,12 +521,12 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
         else
         {
-            throw new Standard_ProgramError("StateShapeShape : bad operands");
+            throw new ProgramErrorException("StateShapeShape : bad operands");
         }
     }
 
     /// <summary>Classifies the point <paramref name="P2D"/> in the reference face.</summary>
-    public void StateP2DReference(in gp_Pnt2d P2D)
+    public void StateP2DReference(in Point2D P2D)
     {
         myState = TopAbs_UNKNOWN;
         if (myRef.IsNull())
@@ -568,12 +570,12 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
         else
         {
-            throw new Standard_ProgramError("StateShapeShape : bad operands");
+            throw new ProgramErrorException("StateShapeShape : bad operands");
         }
     }
 
     /// <summary>Classifies the point <paramref name="P3D"/> in the reference solid (or the solids of the reference).</summary>
-    public void StateP3DReference(in gp_Pnt P3D)
+    public void StateP3DReference(in Point3D P3D)
     {
         myState = TopAbs_UNKNOWN;
         if (myRef.IsNull())
@@ -587,7 +589,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
             myP3D = P3D;
             myP3Ddef = true;
             TopoDS_Solid SO = TopoDS.Solid(myRef);
-            double tol3d = Precision.Confusion();
+            double tol3d = global::Kerf.Engine.Foundation.Precision.Confusion();
             mySolidClassifier.Classify(SO, P3D, tol3d);
             myState = mySolidClassifier.State();
         }
@@ -599,7 +601,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
             for (ex.Init(myRef, TopAbs_SOLID); ex.More(); ex.Next())
             {
                 TopoDS_Solid SO = TopoDS.Solid(ex.Current());
-                double tol3d = Precision.Confusion();
+                double tol3d = global::Kerf.Engine.Foundation.Precision.Confusion();
                 mySolidClassifier.Classify(SO, P3D, tol3d);
                 myState = mySolidClassifier.State();
                 if (myState == TopAbs_IN || myState == TopAbs_ON)
@@ -610,7 +612,7 @@ public sealed class TopOpeBRepTool_ShapeClassifier
         }
         else
         {
-            throw new Standard_ProgramError("StateShapeShape : bad operands");
+            throw new ProgramErrorException("StateShapeShape : bad operands");
         }
     }
 
@@ -618,25 +620,25 @@ public sealed class TopOpeBRepTool_ShapeClassifier
     public TopAbs_State State() => myState;
 
     /// <summary>The 3D point used by the last classification.</summary>
-    /// <exception cref="Standard_ProgramError">There is none.</exception>
-    public gp_Pnt P3D()
+    /// <exception cref="ProgramErrorException">There is none.</exception>
+    public Point3D P3D()
     {
         if (myP3Ddef)
         {
             return myP3D;
         }
-        throw new Standard_ProgramError("ShapeClassifier::P3D undefined");
+        throw new ProgramErrorException("ShapeClassifier::P3D undefined");
     }
 
     /// <summary>The 2D point used by the last classification.</summary>
-    /// <exception cref="Standard_ProgramError">There is none.</exception>
-    public gp_Pnt2d P2D()
+    /// <exception cref="ProgramErrorException">There is none.</exception>
+    public Point2D P2D()
     {
         if (myP2Ddef)
         {
             return myP2D;
         }
-        throw new Standard_ProgramError("ShapeClassifier::P2D undefined");
+        throw new ProgramErrorException("ShapeClassifier::P2D undefined");
     }
 
     private bool HasAvLS()

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -42,16 +43,16 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     // Recomputes the transition of newptvtx on the arc of ptvtx on one surface (ProcessSegments' repeated block).
     private static void SetArcTransition(ref IntPatch_Point newptvtx, in IntPatch_Point ptvtx, bool OnS1,
-                                         in IntSurf_Quadric Quad, in gp_Vec tgline, ref gp_Pnt valpt,
-                                         ref gp_Vec d1u, ref gp_Vec d1v, ref gp_Vec tgarc,
+                                         in IntSurf_Quadric Quad, in Vector3D tgline, ref Point3D valpt,
+                                         ref Vector3D d1u, ref Vector3D d1v, ref Vector3D tgarc,
                                          ref IntSurf_Transition TRest, ref IntSurf_Transition TArc)
     {
         Adaptor2d_Curve2d thearc = OnS1 ? ptvtx.ArcOnS1() : ptvtx.ArcOnS2();
         double aParOnArc = OnS1 ? ptvtx.ParameterOnArc1() : ptvtx.ParameterOnArc2();
-        thearc.D1(aParOnArc, out gp_Pnt2d p2d, out gp_Vec2d d2d);
+        thearc.D1(aParOnArc, out Point2D p2d, out Vector2D d2d);
         Quad.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
         tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
-        gp_Vec norm = d1u.Crossed(d1v);
+        Vector3D norm = d1u.Crossed(d1v);
         if (norm.SquareMagnitude() < 1e-16)
         {
             TRest.SetValue(true, IntSurf_Undecided);
@@ -59,7 +60,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
         else
         {
-            IntSurf.MakeTransition(tgline, tgarc, new gp_Dir(norm), ref TRest, ref TArc);
+            IntSurf.MakeTransition(tgline, tgarc, new Direction3D(norm), ref TRest, ref TArc);
         }
         newptvtx.SetArc(OnS1, thearc, aParOnArc, TRest, TArc);
     }
@@ -91,12 +92,12 @@ public sealed partial class IntPatch_ImpImpIntersection
         IntPatch_IType typ;
         IntSurf_TypeTrans trans1, trans2;
         IntSurf_Transition TRest = new(), TArc = new();
-        gp_Vec tgline = new(), norm1, norm2, tgarc = new();
-        gp_Pnt valpt = new();
+        Vector3D tgline = new(), norm1, norm2, tgarc = new();
+        Point3D valpt = new();
 
-        gp_Vec d1u = new(), d1v = new();
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
+        Vector3D d1u = new(), d1v = new();
+        Point2D p2d;
+        Vector2D d2d;
 
         for (i = 1; i <= nbedg; i++)
         {
@@ -372,11 +373,11 @@ public sealed partial class IntPatch_ImpImpIntersection
     }
 
     // OCCT's PointValue and VertexValue, chosen through a function pointer in IsRLineGood.
-    private static gp_Pnt PointValue(IntPatch_RLine theRLine, int theIndex) => theRLine.Point(theIndex).Value();
+    private static Point3D PointValue(IntPatch_RLine theRLine, int theIndex) => theRLine.Point(theIndex).Value();
 
-    private static gp_Pnt VertexValue(IntPatch_RLine theRLine, int theIndex) => theRLine.Vertex(theIndex).Value();
+    private static Point3D VertexValue(IntPatch_RLine theRLine, int theIndex) => theRLine.Vertex(theIndex).Value();
 
-    private static double SquareDistance(IntPatch_GLine theGLine, in gp_Pnt theP, Extrema_ExtPC theExtr)
+    private static double SquareDistance(IntPatch_GLine theGLine, in Point3D theP, Extrema_ExtPC theExtr)
     {
         double aSQDist = RealLast();
         switch (theGLine.ArcType())
@@ -421,7 +422,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         IntPatch_IType aGType = theGLine.ArcType();
         int aNbPntsM1 = 0;
 
-        Func<IntPatch_RLine, int, gp_Pnt> Value;
+        Func<IntPatch_RLine, int, Point3D> Value;
 
         if (theRLine.HasPolygon())
         {
@@ -465,7 +466,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         if (aNbPntsM1 == 1)
         {
-            gp_Pnt aP1 = Value(theRLine, 1), aP2 = Value(theRLine, 2);
+            Point3D aP1 = Value(theRLine, 1), aP2 = Value(theRLine, 2);
 
             if (aP1.SquareDistance(aP2) < aSQTol)
             {
@@ -473,19 +474,19 @@ public sealed partial class IntPatch_ImpImpIntersection
                 return false;
             }
 
-            gp_Pnt aPMid;
+            Point3D aPMid;
             if (theRLine.IsArcOnS1())
             {
                 Adaptor2d_Curve2d anAC2d = theRLine.ArcOnS1()!;
                 double aParF = anAC2d.FirstParameter(), aParL = anAC2d.LastParameter();
-                gp_Pnt2d aP2d = anAC2d.Value(0.5 * (aParF + aParL));
+                Point2D aP2d = anAC2d.Value(0.5 * (aParF + aParL));
                 aPMid = Quad1.Value(aP2d.X(), aP2d.Y());
             }
             else
             {
                 Adaptor2d_Curve2d anAC2d = theRLine.ArcOnS2()!;
                 double aParF = anAC2d.FirstParameter(), aParL = anAC2d.LastParameter();
-                gp_Pnt2d aP2d = anAC2d.Value(0.5 * (aParF + aParL));
+                Point2D aP2d = anAC2d.Value(0.5 * (aParF + aParL));
                 aPMid = Quad2.Value(aP2d.X(), aP2d.Y());
             }
 
@@ -495,7 +496,7 @@ public sealed partial class IntPatch_ImpImpIntersection
 
         for (int i = 2; i <= aNbPntsM1; i++)
         {
-            gp_Pnt aP = Value(theRLine, i);
+            Point3D aP = Value(theRLine, i);
             double aSQDist = SquareDistance(theGLine, aP, anExtr);
 
             if (aSQDist > aSQTol)
@@ -532,14 +533,14 @@ public sealed partial class IntPatch_ImpImpIntersection
         Adaptor2d_Curve2d? arcref = null;
         double paramproj, paramf, paraml;
 
-        NCollection_Sequence<gp_Pnt> seq_Pnt3d = new();
+        NCollection_Sequence<Point3D> seq_Pnt3d = new();
         NCollection_Sequence<double> seq_Real = new();
 
-        gp_Pnt ptproj, toproj, valpt = new();
+        Point3D ptproj, toproj, valpt = new();
 
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
-        gp_Vec d1u = new(), d1v = new(), tgrest = new(), tgarc = new(), norm;
+        Point2D p2d;
+        Vector2D d2d;
+        Vector3D d1u = new(), d1v = new(), tgrest = new(), tgarc = new(), norm;
         IntSurf_Transition TRest = new(), TArc = new();
         double U = 0.0, V = 0.0;
         IntPatch_Point Ptvtx, newptvtx = new();
@@ -645,7 +646,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                         Ptvtx.ParametersOnS2(out U, out V);
                                     }
 
-                                    project = IntPatch_HInterTool.Project(arcref!, new gp_Pnt2d(U, V), out paramproj,
+                                    project = IntPatch_HInterTool.Project(arcref!, new Point2D(U, V), out paramproj,
                                                                           out p2d);
 
                                     if (project)
@@ -729,7 +730,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                             }
                                             else
                                             {
-                                                IntSurf.MakeTransition(tgrest, tgarc, new gp_Dir(norm), ref TRest,
+                                                IntSurf.MakeTransition(tgrest, tgarc, new Direction3D(norm), ref TRest,
                                                                        ref TArc);
                                             }
                                             newptvtx.SetArc(false, thearc, Ptvtx.ParameterOnArc2(), TRest, TArc);
@@ -751,7 +752,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                                             }
                                             else
                                             {
-                                                IntSurf.MakeTransition(tgrest, tgarc, new gp_Dir(norm), ref TRest,
+                                                IntSurf.MakeTransition(tgrest, tgarc, new Direction3D(norm), ref TRest,
                                                                        ref TArc);
                                             }
                                             newptvtx.SetArc(true, thearc, Ptvtx.ParameterOnArc1(), TRest, TArc);

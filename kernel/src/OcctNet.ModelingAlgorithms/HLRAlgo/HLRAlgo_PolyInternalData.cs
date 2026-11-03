@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -19,7 +21,7 @@ namespace Occt;
 /// the port passes the arrays by <c>ref</c>, compared by reference as OCCT compares the pointers. OCCT's pointers to
 /// elements are <c>ref</c> locals. <see cref="Dump"/> writes OCCT's trace to a writer (stdout by default).
 /// </remarks>
-public class HLRAlgo_PolyInternalData : Standard_Transient
+public class HLRAlgo_PolyInternalData : Transient
 {
     private int myNbTData;
     private int myNbPISeg;
@@ -445,10 +447,10 @@ public class HLRAlgo_PolyInternalData : Standard_Transient
         ref HLRAlgo_PolyInternalNode.NodeIndices aNodeIndices = ref pip3.Indices();
         aNodeIndices.NdSg = 0;
         aNodeIndices.Flag = 0;
-        Nod3RValues.Point = new gp_XYZ(theX3, theY3, theZ3);
+        Nod3RValues.Point = new Xyz(theX3, theY3, theZ3);
         Nod3RValues.UV = coef2 * theNod1RValues.UV + theCoef1 * theNod2RValues.UV;
         Nod3RValues.Scal = theNod1RValues.Scal * coef2 + theNod2RValues.Scal * theCoef1;
-        gp_XYZ aXYZ = coef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
+        Xyz aXYZ = coef2 * theNod1RValues.Normal + theCoef1 * theNod2RValues.Normal;
         double aNorm = aXYZ.Modulus();
         if (aNorm > 0)
         {
@@ -456,7 +458,7 @@ public class HLRAlgo_PolyInternalData : Standard_Transient
         }
         else
         {
-            Nod3RValues.Normal = new gp_XYZ(1.0, 0.0, 0.0);
+            Nod3RValues.Normal = new Xyz(1.0, 0.0, 0.0);
             // OCCT_DEBUG trace left out
         }
         return ip3;

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Text;
 using OcctNet.DataExchange.Tests.IFSelect;
 using OcctNet.DataExchange.Tests.Interface;
@@ -20,7 +22,7 @@ public class XSControlTests
 {
     private const string ToyFile = "A B C\nB C\nC\nD E\nE D\nF\n?H\n";
 
-    private static string Names(NCollection_HSequence<Standard_Transient>? theList) =>
+    private static string Names(NCollection_HSequence<Transient>? theList) =>
         theList is null ? "null" : string.Join(" ", Enumerable.Range(1, theList.Length()).Select(i => theList.Value(i)!.ToString()));
 
     private static XSControl_WorkSession Session(Interface_StaticSet? theStatics = null)
@@ -174,10 +176,10 @@ public class XSControlTests
         Assert.True(TR.ClearResult(WS.StartingEntity(1), -1));
         Assert.False(TR.IsMarked(WS.StartingEntity(1)));
         // the context of the transfers goes to the transient process at the next transfer
-        WS.SetAllContext(new NCollection_DataMap<string, Standard_Transient>());
+        WS.SetAllContext(new NCollection_DataMap<string, Transient>());
         TR.SetContext("ctx", new TCollection_HAsciiString("v"));
         Assert.True(TR.BeginTransfer());
-        Standard_Transient? aCtx = null;
+        Transient? aCtx = null;
         Assert.True(TR.TransientProcess()!.GetContext("ctx", typeof(TCollection_HAsciiString), ref aCtx));
         // TransferClear on the model clears the process
         TR.TransferClear(WS.Model());
@@ -245,8 +247,8 @@ public class XSControlTests
         vars.Set("a", new TCollection_HAsciiString("x"));
         Assert.IsType<TCollection_HAsciiString>(vars.Get("a"));
         Assert.Null(vars.Get("b"));
-        vars.SetPoint("p", new gp_Pnt(1, 2, 3));
-        gp_Pnt p = default;
+        vars.SetPoint("p", new Point3D(1, 2, 3));
+        Point3D p = default;
         Assert.True(vars.GetPoint("p", ref p));
         Assert.Equal(2.0, p.Y());
         Assert.False(vars.GetPoint("a", ref p));
@@ -283,7 +285,7 @@ public class XSControlTests
         }
         Occt.TransferBRep.SetShapeResult(TP, M.Value(1), aFaces[0]);
         Occt.TransferBRep.SetShapeResult(TP, M.Value(2), aFaces[2]);
-        NCollection_HSequence<Standard_Transient>? adj = XSControl_ConnectedShapes.AdjacentEntities(aFaces[0], TP, TopAbs_ShapeEnum.TopAbs_FACE);
+        NCollection_HSequence<Transient>? adj = XSControl_ConnectedShapes.AdjacentEntities(aFaces[0], TP, TopAbs_ShapeEnum.TopAbs_FACE);
         Assert.Equal("f1 f2", Names(adj)); // the box's faces 1 and 3 share an edge
     }
 }

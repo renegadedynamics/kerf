@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -41,11 +43,11 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
 
     private Data extractData()
     {
-        gp_Sphere aSph = myGeom!.Sphere();
-        gp_Pnt aCenter = aSph.Location();
-        gp_Dir aXDir = aSph.Position().XDirection();
-        gp_Dir aYDir = aSph.Position().YDirection();
-        gp_Dir aZDir = aSph.Position().Direction();
+        Sphere aSph = myGeom!.Sphere();
+        Point3D aCenter = aSph.Location();
+        Direction3D aXDir = aSph.Position().XDirection();
+        Direction3D aYDir = aSph.Position().YDirection();
+        Direction3D aZDir = aSph.Position().Direction();
         return new Data
         {
             CX = aCenter.X(),
@@ -83,7 +85,7 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         };
     }
 
-    private static gp_Pnt computeD0(in Data theData, in UContext theUCtx, double theV)
+    private static Point3D computeD0(in Data theData, in UContext theUCtx, double theV)
     {
         double cosV = Math.Cos(theV);
         double sinV = Math.Sin(theV);
@@ -91,7 +93,7 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         // P = Center + R * (cosV * DirU + sinV * ZDir)
         double RcosV = theData.Radius * cosV;
         double RsinV = theData.Radius * sinV;
-        return new gp_Pnt(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
+        return new Point3D(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
                           theData.CY + RcosV * theUCtx.dirUY + RsinV * theData.ZY,
                           theData.CZ + RcosV * theUCtx.dirUZ + RsinV * theData.ZZ);
     }
@@ -108,11 +110,11 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         // D1V = R * (-sinV * DirU + cosV * ZDir)
         return new Geom_Surface.ResD1
         {
-            Point = new gp_Pnt(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
+            Point = new Point3D(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
                                theData.CY + RcosV * theUCtx.dirUY + RsinV * theData.ZY,
                                theData.CZ + RcosV * theUCtx.dirUZ + RsinV * theData.ZZ),
-            D1U = new gp_Vec(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
-            D1V = new gp_Vec(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
+            D1U = new Vector3D(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
+            D1V = new Vector3D(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
                              -RsinV * theUCtx.dirUY + RcosV * theData.ZY,
                              -RsinV * theUCtx.dirUZ + RcosV * theData.ZZ),
         };
@@ -131,18 +133,18 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         // D2UV = d/dV(D1U) = d/dV(R * cosV * dDirU) = -R * sinV * dDirU
         return new Geom_Surface.ResD2
         {
-            Point = new gp_Pnt(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
+            Point = new Point3D(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
                                theData.CY + RcosV * theUCtx.dirUY + RsinV * theData.ZY,
                                theData.CZ + RcosV * theUCtx.dirUZ + RsinV * theData.ZZ),
-            D1U = new gp_Vec(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
-            D1V = new gp_Vec(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
+            D1U = new Vector3D(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
+            D1V = new Vector3D(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
                              -RsinV * theUCtx.dirUY + RcosV * theData.ZY,
                              -RsinV * theUCtx.dirUZ + RcosV * theData.ZZ),
-            D2U = new gp_Vec(-RcosV * theUCtx.dirUX, -RcosV * theUCtx.dirUY, -RcosV * theUCtx.dirUZ),
-            D2V = new gp_Vec(-RcosV * theUCtx.dirUX - RsinV * theData.ZX,
+            D2U = new Vector3D(-RcosV * theUCtx.dirUX, -RcosV * theUCtx.dirUY, -RcosV * theUCtx.dirUZ),
+            D2V = new Vector3D(-RcosV * theUCtx.dirUX - RsinV * theData.ZX,
                              -RcosV * theUCtx.dirUY - RsinV * theData.ZY,
                              -RcosV * theUCtx.dirUZ - RsinV * theData.ZZ),
-            D2UV = new gp_Vec(-RsinV * theUCtx.dDirUX, -RsinV * theUCtx.dDirUY, -RsinV * theUCtx.dDirUZ),
+            D2UV = new Vector3D(-RsinV * theUCtx.dDirUX, -RsinV * theUCtx.dDirUY, -RsinV * theUCtx.dDirUZ),
         };
     }
 
@@ -160,28 +162,28 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         // D3UVV = d/dV(D2UV) = d/dV(-R * sinV * dDirU) = -R * cosV * dDirU
         return new Geom_Surface.ResD3
         {
-            Point = new gp_Pnt(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
+            Point = new Point3D(theData.CX + RcosV * theUCtx.dirUX + RsinV * theData.ZX,
                                theData.CY + RcosV * theUCtx.dirUY + RsinV * theData.ZY,
                                theData.CZ + RcosV * theUCtx.dirUZ + RsinV * theData.ZZ),
-            D1U = new gp_Vec(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
-            D1V = new gp_Vec(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
+            D1U = new Vector3D(RcosV * theUCtx.dDirUX, RcosV * theUCtx.dDirUY, RcosV * theUCtx.dDirUZ),
+            D1V = new Vector3D(-RsinV * theUCtx.dirUX + RcosV * theData.ZX,
                              -RsinV * theUCtx.dirUY + RcosV * theData.ZY,
                              -RsinV * theUCtx.dirUZ + RcosV * theData.ZZ),
-            D2U = new gp_Vec(-RcosV * theUCtx.dirUX, -RcosV * theUCtx.dirUY, -RcosV * theUCtx.dirUZ),
-            D2V = new gp_Vec(-RcosV * theUCtx.dirUX - RsinV * theData.ZX,
+            D2U = new Vector3D(-RcosV * theUCtx.dirUX, -RcosV * theUCtx.dirUY, -RcosV * theUCtx.dirUZ),
+            D2V = new Vector3D(-RcosV * theUCtx.dirUX - RsinV * theData.ZX,
                              -RcosV * theUCtx.dirUY - RsinV * theData.ZY,
                              -RcosV * theUCtx.dirUZ - RsinV * theData.ZZ),
-            D2UV = new gp_Vec(-RsinV * theUCtx.dDirUX, -RsinV * theUCtx.dDirUY, -RsinV * theUCtx.dDirUZ),
-            D3U = new gp_Vec(-RcosV * theUCtx.dDirUX, -RcosV * theUCtx.dDirUY, -RcosV * theUCtx.dDirUZ),
-            D3V = new gp_Vec(RsinV * theUCtx.dirUX - RcosV * theData.ZX,
+            D2UV = new Vector3D(-RsinV * theUCtx.dDirUX, -RsinV * theUCtx.dDirUY, -RsinV * theUCtx.dDirUZ),
+            D3U = new Vector3D(-RcosV * theUCtx.dDirUX, -RcosV * theUCtx.dDirUY, -RcosV * theUCtx.dDirUZ),
+            D3V = new Vector3D(RsinV * theUCtx.dirUX - RcosV * theData.ZX,
                              RsinV * theUCtx.dirUY - RcosV * theData.ZY,
                              RsinV * theUCtx.dirUZ - RcosV * theData.ZZ),
-            D3UUV = new gp_Vec(RsinV * theUCtx.dirUX, RsinV * theUCtx.dirUY, RsinV * theUCtx.dirUZ),
-            D3UVV = new gp_Vec(-RcosV * theUCtx.dDirUX, -RcosV * theUCtx.dDirUY, -RcosV * theUCtx.dDirUZ),
+            D3UUV = new Vector3D(RsinV * theUCtx.dirUX, RsinV * theUCtx.dirUY, RsinV * theUCtx.dirUZ),
+            D3UVV = new Vector3D(-RcosV * theUCtx.dDirUX, -RcosV * theUCtx.dDirUY, -RcosV * theUCtx.dDirUZ),
         };
     }
 
-    private static gp_Vec computeDN(in Data theData, in UContext theUCtx, double theV, int theNU, int theNV)
+    private static Vector3D computeDN(in Data theData, in UContext theUCtx, double theV, int theNU, int theNV)
     {
         double cosV = Math.Cos(theV);
         double sinV = Math.Sin(theV);
@@ -260,25 +262,25 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
             aZTermZ = aCoeffVZ * theData.ZZ;
         }
 
-        return new gp_Vec(theData.Radius * (aCoeffVXY * dirX + aZTermX),
+        return new Vector3D(theData.Radius * (aCoeffVXY * dirX + aZTermX),
                           theData.Radius * (aCoeffVXY * dirY + aZTermY),
                           theData.Radius * (aCoeffVXY * dirZ + aZTermZ));
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         Data aData = extractData();
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {
@@ -382,7 +384,7 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid; empty unless NU, NV &gt;= 0 and NU + NV &gt;= 1.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -390,14 +392,14 @@ public sealed class GeomGridEval_Sphere : GeomGridEval.ISurfaceEvaluator
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0 || theNV < 0
             || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         Data aData = extractData();
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {

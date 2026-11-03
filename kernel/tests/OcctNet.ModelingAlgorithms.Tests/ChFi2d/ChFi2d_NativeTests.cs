@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -57,16 +59,16 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
         public bool B() => D() != 0.0;
 
-        public gp_Pnt P()
+        public Point3D P()
         {
             double x = D(), y = D(), z = D();
-            return new gp_Pnt(x, y, z);
+            return new Point3D(x, y, z);
         }
 
-        public gp_Dir Dir()
+        public Direction3D Dir()
         {
             double x = D(), y = D(), z = D();
-            return new gp_Dir(x, y, z);
+            return new Direction3D(x, y, z);
         }
 
         public bool AtEnd => myPos == theIn.Length;
@@ -75,10 +77,10 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
     private sealed class EdgeData
     {
         public int Type;
-        public gp_Pnt P1, P2, Center;
-        public gp_Dir N = new(), X = new();
+        public Point3D P1, P2, Center;
+        public Direction3D N = new(), X = new();
         public double R1, R2;
-        public gp_Pnt[] Poles = [];
+        public Point3D[] Poles = [];
     }
 
     private static EdgeData ReadEdge(Reader r)
@@ -120,14 +122,14 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
                 aMaker = new BRepBuilderAPI_MakeEdge(V1, V2);
                 break;
             case 1:
-                aMaker = new BRepBuilderAPI_MakeEdge(new gp_Circ(new gp_Ax2(d.Center, d.N, d.X), d.R1), V1, V2);
+                aMaker = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(d.Center, d.N, d.X), d.R1), V1, V2);
                 break;
             case 2:
-                aMaker = new BRepBuilderAPI_MakeEdge(new gp_Elips(new gp_Ax2(d.Center, d.N, d.X), d.R1, d.R2), V1, V2);
+                aMaker = new BRepBuilderAPI_MakeEdge(new Ellipse3D(new Frame3D(d.Center, d.N, d.X), d.R1, d.R2), V1, V2);
                 break;
             default:
                 {
-                    NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
+                    NCollection_Array1<Point3D> aPoles = new(1, 4);
                     for (int i = 1; i <= 4; i++)
                     {
                         aPoles[i] = d.Poles[i - 1];
@@ -148,9 +150,9 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(in gp_Pnt theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(in Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
 
-    private static string ExcName(Exception theE) => "!" + theE.GetType().Name;
+    private static string ExcName(Exception theE) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType());
 
     private static string Desc(in TopoDS_Edge theE)
     {
@@ -163,7 +165,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         {
             return "nocurve";
         }
-        string s = aC.GetType().Name;
+        string s = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aC.GetType());
         s += "," + Hex(f) + "," + Hex(l) + "," + Hex(aC.Value(f)) + "," + Hex(aC.Value(0.5 * (f + l))) + "," + Hex(aC.Value(l));
         s += theE.Orientation() == TopAbs_Orientation.TopAbs_FORWARD ? ",F"
            : theE.Orientation() == TopAbs_Orientation.TopAbs_REVERSED ? ",R" : ",O";
@@ -184,7 +186,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             {
                 aVal = theF();
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
                 aVal = ExcName(e);
             }
@@ -194,17 +196,17 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         bool isFillet = theCase.Kind[0] == 'f';
         bool isWire = theCase.Kind[1] == 'w';
         var r = new Reader(theCase.Inputs);
-        gp_Pnt aLoc = r.P();
-        gp_Dir aN = r.Dir(), aX = r.Dir();
+        Point3D aLoc = r.P();
+        Direction3D aN = r.Dir(), aX = r.Dir();
         bool isDirect = r.B();
-        var anAx3 = new gp_Ax3(aLoc, aN, aX);
+        var anAx3 = new CoordinateSystem(aLoc, aN, aX);
         if (!isDirect)
         {
             anAx3.YReverse();
         }
-        var aPln = new gp_Pln(anAx3);
+        var aPln = new Plane3D(anAx3);
         bool isShared = r.B(), isRev1 = r.B(), isRev2 = r.B();
-        gp_Pnt aC = r.P();
+        Point3D aC = r.P();
         EdgeData d1 = ReadEdge(r), d2 = ReadEdge(r);
         double aRadius = 0.0, aL1 = 0.0, aL2 = 0.0;
         if (isFillet)
@@ -229,7 +231,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             anE1 = MakeEdge(d1, aV11, aV12);
             anE2 = MakeEdge(d2, aV21, aV22);
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aOut.Add("edges:" + ExcName(e));
         }
@@ -362,7 +364,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
             }
             catch (Exception e)
             {
-                aDifferences.Add($"{theKind} #{i}: the port threw {e.GetType().Name}: {e.Message}");
+                aDifferences.Add($"{theKind} #{i}: the port threw {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message}");
                 continue;
             }
             aTokens += aCase.Native.Length;

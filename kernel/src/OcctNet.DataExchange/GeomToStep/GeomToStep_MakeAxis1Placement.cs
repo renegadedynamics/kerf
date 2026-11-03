@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,13 +23,13 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D axis, its location divided by the length factor.</summary>
-    public GeomToStep_MakeAxis1Placement(in gp_Ax1 A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis1Placement(in Axis3D A, in StepData_Factors theLocalFactors)
     {
         Make(new GeomToStep_MakeCartesianPoint(A.Location(), theLocalFactors.LengthFactor()), new GeomToStep_MakeDirection(A.Direction()));
     }
 
     /// <summary>A 3D axis (default factors).</summary>
-    public GeomToStep_MakeAxis1Placement(in gp_Ax1 A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis1Placement(in Axis3D A) : this(A, new StepData_Factors())
     {
     }
 
@@ -36,13 +38,13 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D axis.</summary>
-    public GeomToStep_MakeAxis1Placement(in gp_Ax2d A, in StepData_Factors theLocalFactors)
+    public GeomToStep_MakeAxis1Placement(in Axis2D A, in StepData_Factors theLocalFactors)
     {
         Make(new GeomToStep_MakeCartesianPoint(A.Location(), theLocalFactors.LengthFactor()), new GeomToStep_MakeDirection(A.Direction()));
     }
 
     /// <summary>A 2D axis.</summary>
-    public GeomToStep_MakeAxis1Placement(in gp_Ax2d A) : this(A, new StepData_Factors())
+    public GeomToStep_MakeAxis1Placement(in Axis2D A) : this(A, new StepData_Factors())
     {
     }
 
@@ -54,7 +56,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     /// <summary>A 3D axis, its location divided by the length factor.</summary>
     public GeomToStep_MakeAxis1Placement(Geom_Axis1Placement Axis1, in StepData_Factors theLocalFactors)
     {
-        gp_Ax1 A;
+        Axis3D A;
         A = Axis1.Ax1();
         Make(new GeomToStep_MakeCartesianPoint(A.Location(), theLocalFactors.LengthFactor()), new GeomToStep_MakeDirection(A.Direction()));
     }
@@ -72,7 +74,7 @@ public sealed class GeomToStep_MakeAxis1Placement : GeomToStep_Root
     /// <summary>A 2D axis.</summary>
     public GeomToStep_MakeAxis1Placement(Geom2d_AxisPlacement Axis1, in StepData_Factors theLocalFactors)
     {
-        gp_Ax2d A;
+        Axis2D A;
         A = Axis1.Ax2d();
         Make(new GeomToStep_MakeCartesianPoint(A.Location(), theLocalFactors.LengthFactor()), new GeomToStep_MakeDirection(A.Direction()));
     }

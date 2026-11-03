@@ -5,20 +5,22 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Gives information on an object. Used as template to instantiate Mapper and SimpleBinder. This class is for Transient.</summary>
 public static class Transfer_DataInfo
 {
     /// <summary>Returns the Type attached to an object. Here, the Dynamic Type of a Transient.</summary>
-    public static Type? Type(Standard_Transient? ent)
+    public static Type? Type(Transient? ent)
     {
         return ent.DynamicType();
     }
 
     /// <summary>Returns Type Name (string). Allows to name type of non-handled objects.</summary>
-    public static string TypeName(Standard_Transient? ent)
+    public static string TypeName(Transient? ent)
     {
-        return ent.DynamicType().Name;
+        return ent.DynamicTypeName();
     }
 }

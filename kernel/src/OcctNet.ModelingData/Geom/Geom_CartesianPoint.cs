@@ -3,18 +3,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
-/// <summary>A point in 3D space defined by its Cartesian coordinates (a shareable <see cref="gp_Pnt"/>).</summary>
+/// <summary>A point in 3D space defined by its Cartesian coordinates (a shareable <see cref="Point3D"/>).</summary>
 public class Geom_CartesianPoint : Geom_Point
 {
-    private gp_Pnt gpPnt;
+    private Point3D gpPnt;
 
     /// <summary>A point equal to P.</summary>
-    public Geom_CartesianPoint(in gp_Pnt P) => gpPnt = P;
+    public Geom_CartesianPoint(in Point3D P) => gpPnt = P;
 
     /// <summary>The point (X, Y, Z).</summary>
-    public Geom_CartesianPoint(double X, double Y, double Z) => gpPnt = new gp_Pnt(X, Y, Z);
+    public Geom_CartesianPoint(double X, double Y, double Z) => gpPnt = new Point3D(X, Y, Z);
 
     /// <summary>A new, unfrozen point equal to this one.</summary>
     public override Geom_Geometry Copy()
@@ -30,7 +32,7 @@ public class Geom_CartesianPoint : Geom_Point
         gpPnt.SetCoord(X, Y, Z);
     }
 
-    internal void SetPnt(in gp_Pnt P)
+    internal void SetPnt(in Point3D P)
     {
         CheckMutable();
         gpPnt = P;
@@ -56,7 +58,7 @@ public class Geom_CartesianPoint : Geom_Point
 
     public override void Coord(out double X, out double Y, out double Z) => gpPnt.Coord(out X, out Y, out Z);
 
-    public override gp_Pnt Pnt() => gpPnt;
+    public override Point3D Pnt() => gpPnt;
 
     public override double X() => gpPnt.X();
 
@@ -65,7 +67,7 @@ public class Geom_CartesianPoint : Geom_Point
     public override double Z() => gpPnt.Z();
 
     /// <summary>Applies T to this point.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
         gpPnt.Transform(T);
@@ -80,7 +82,7 @@ public class Geom_CartesianPoint : Geom_Point
         return aCopy;
     }
 
-    public Geom_CartesianPoint WithPnt(in gp_Pnt P)
+    public Geom_CartesianPoint WithPnt(in Point3D P)
     {
         Geom_CartesianPoint aCopy = (Geom_CartesianPoint)Copy();
         aCopy.SetPnt(P);

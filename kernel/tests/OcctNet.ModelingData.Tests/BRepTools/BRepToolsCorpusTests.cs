@@ -46,7 +46,7 @@ public class BRepToolsCorpusTests
             BinTools.Write(aShape, aBinary);
             aBinary.Position = 0;
             BinTools.Read(out TopoDS_Shape aFromBinary, aBinary);
-            Assert.True(aFromBinary.TShape()!.IsFrozen());
+            Assert.True(aFromBinary.TShape()!.IsFrozen);
             string aText2 = BRepToolsIOTests.Write(aFromBinary);
 
             string[] aWords = Words(aText), aWords2 = Words(aText2);

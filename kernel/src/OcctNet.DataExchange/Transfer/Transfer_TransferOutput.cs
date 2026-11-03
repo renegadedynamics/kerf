@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 
 namespace Occt;
@@ -56,7 +57,7 @@ public class Transfer_TransferOutput
     /// Transfer checks that all taken Entities come from the same Model, then calls Transfer from TransientProcess.
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The entity is not in the model.</exception>
-    public void Transfer(Standard_Transient? obj, Message_ProgressRange theProgress = default)
+    public void Transfer(Transient? obj, ProgressRange theProgress = default)
     {
         if (themodel.Number(obj) == 0)
         {
@@ -81,7 +82,7 @@ public class Transfer_TransferOutput
     /// Runs transfer on the roots of the Interface Model. The Roots are computed with the model's protocol, where OCCT
     /// uses the process-wide active protocol (decision 1183).
     /// </summary>
-    public void TransferRoots(Message_ProgressRange theProgress = default)
+    public void TransferRoots(ProgressRange theProgress = default)
     {
         TransferRoots(themodel.Protocol(), theProgress);
     }
@@ -90,15 +91,15 @@ public class Transfer_TransferOutput
     /// Runs transfer on the roots of the Interface Model. The Roots are computed with a ShareFlags created from a
     /// Protocol given as Argument.
     /// </summary>
-    public void TransferRoots(Interface_Protocol? protocol, Message_ProgressRange theProgress = default)
+    public void TransferRoots(Interface_Protocol? protocol, ProgressRange theProgress = default)
     {
         theproc.SetRootManagement(false);
         var tool = new Interface_ShareFlags(themodel, protocol);
         Interface_EntityIterator list = tool.RootEntities();
-        using var aPS = new Message_ProgressScope(theProgress, null, list.NbEntities());
+        using var aPS = new ProgressScope(theProgress, null, list.NbEntities());
         for (list.Start(); list.More() && aPS.More(); list.Next())
         {
-            Standard_Transient? ent = list.Value();
+            Transient? ent = list.Value();
             //    int scope = 0;
             //    if (thescope) scope = theproc->NewScope (ent);
             if (theproc.Transfer(ent, aPS.Next()))
@@ -110,16 +111,16 @@ public class Transfer_TransferOutput
     }
 
     /// <summary>Runs transfer on the roots defined by a Graph of dependences (which detains also a Model and its Entities).</summary>
-    public void TransferRoots(Interface_Graph G, Message_ProgressRange theProgress = default)
+    public void TransferRoots(Interface_Graph G, ProgressRange theProgress = default)
     {
         theproc.SetRootManagement(false);
         var tool = new Interface_ShareFlags(G);
         theproc.SetModel(G.Model());
         Interface_EntityIterator list = tool.RootEntities();
-        using var aPS = new Message_ProgressScope(theProgress, null, list.NbEntities());
+        using var aPS = new ProgressScope(theProgress, null, list.NbEntities());
         for (list.Start(); list.More() && aPS.More(); list.Next())
         {
-            Standard_Transient? ent = list.Value();
+            Transient? ent = list.Value();
             //    int scope = 0;
             //    if (thescope) scope = theproc->NewScope (ent);
             if (theproc.Transfer(ent, aPS.Next()))

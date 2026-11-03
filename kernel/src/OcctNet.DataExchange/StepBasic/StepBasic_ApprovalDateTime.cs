@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added from StepBasic Rev2 to Rev4
 /// </summary>
-public class StepBasic_ApprovalDateTime : Standard_Transient
+public class StepBasic_ApprovalDateTime : Transient
 {
     private StepBasic_DateTimeSelect theDateTime = new StepBasic_DateTimeSelect();
     private StepBasic_Approval theDatedApproval;

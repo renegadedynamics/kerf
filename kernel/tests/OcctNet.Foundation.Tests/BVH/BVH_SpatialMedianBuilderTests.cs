@@ -2,18 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.BVH_Constants;
+using Kerf.Engine.Geometry.Bvh;
+using static Kerf.Engine.Geometry.Bvh.Constants;
 
 namespace OcctNet.Foundation.Tests;
 
 public class BVH_SpatialMedianBuilderTest
 {
     // Helper function to compute bounding box for a set
-    private static BVH_Box<T, TVec> ComputeSetBox<T, TVec>(BVH_Set<T, TVec> theSet)
+    private static Box<T, TVec> ComputeSetBox<T, TVec>(global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> theSet)
         where T : unmanaged, System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
         where TVec : unmanaged, INCollection_Vec<T, TVec>
     {
-        BVH_Box<T, TVec> aBox = new();
+        Box<T, TVec> aBox = new();
         int aSize = theSet.Size();
         for (int i = 0; i < aSize; ++i)
         {
@@ -26,7 +27,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void DefaultConstructor()
     {
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
         Assert.Equal(5, aBuilder.LeafNodeSize());
         Assert.Equal(32, aBuilder.MaxTreeDepth());
@@ -35,7 +36,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void CustomParameters()
     {
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(10, 20, true);
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(10, 20, true);
 
         Assert.Equal(10, aBuilder.LeafNodeSize());
         Assert.Equal(20, aBuilder.MaxTreeDepth());
@@ -44,11 +45,11 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void BuildEmptySet()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.Equal(0, aTree.Length());
@@ -57,17 +58,17 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void BuildSingleTriangle()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         aTriangulation.Vertices.Append(new BVH_Vec3d(0.0, 0.0, 0.0));
         aTriangulation.Vertices.Append(new BVH_Vec3d(1.0, 0.0, 0.0));
         aTriangulation.Vertices.Append(new BVH_Vec3d(0.0, 1.0, 0.0));
         aTriangulation.Elements.Append(new BVH_Vec4i(0, 1, 2, 0));
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.Equal(1, aTree.Length());
@@ -78,7 +79,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void BuildMultipleTriangles()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 10;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -91,10 +92,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.True(aTree.Length() > 0);
@@ -104,7 +105,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void LeafNodeSizeRespected()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 20;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -118,10 +119,10 @@ public class BVH_SpatialMedianBuilderTest
         }
 
         int aLeafSize = 3;
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(aLeafSize, 32);
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(aLeafSize, 32);
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         // Check all leaf nodes respect the leaf size
@@ -137,7 +138,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void MaxDepthRespected()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 100;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -151,10 +152,10 @@ public class BVH_SpatialMedianBuilderTest
         }
 
         int aMaxDepth = 5;
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(1, aMaxDepth);
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(1, aMaxDepth);
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.True(aTree.Depth() <= aMaxDepth);
@@ -163,7 +164,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void SplitsAtSpatialMedian()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 8;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -176,10 +177,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(2, 32);
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new(2, 32);
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         // For uniformly distributed data, spatial median should create balanced splits
@@ -206,7 +207,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void Build2D()
     {
-        BVH_Triangulation<double, BVH_Vec2d> aTriangulation = new();
+        Triangulation<double, BVH_Vec2d> aTriangulation = new();
         int aNumTriangles = 10;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -219,10 +220,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec2d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec2d> aBuilder = new();
+        Tree<double, BVH_Vec2d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec2d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec2d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec2d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.True(aTree.Length() > 0);
@@ -232,7 +233,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void UseMainAxisFlag()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 20;
 
         // Create elongated distribution along X axis
@@ -246,10 +247,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTreeMainAxis = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilderMainAxis = new(5, 32, true);
+        Tree<double, BVH_Vec3d> aTreeMainAxis = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilderMainAxis = new(5, 32, true);
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilderMainAxis.Build(aTriangulation, aTreeMainAxis, aBox);
 
         Assert.True(aTreeMainAxis.Length() > 0);
@@ -258,7 +259,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void CompareWithBinnedBuilder()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 50;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -271,16 +272,16 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         // Build with SpatialMedianBuilder (uses 2 bins)
-        BVH_Tree<double, BVH_Vec3d> aTreeMedian = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilderMedian = new();
+        Tree<double, BVH_Vec3d> aTreeMedian = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilderMedian = new();
         aBuilderMedian.Build(aTriangulation, aTreeMedian, aBox);
 
         // Build with BinnedBuilder with 2 bins (should be identical)
-        BVH_Tree<double, BVH_Vec3d> aTreeBinned = new();
-        BVH_BinnedBuilder<double, BVH_Vec3d> aBuilderBinned = new(theBins: 2);
+        Tree<double, BVH_Vec3d> aTreeBinned = new();
+        BinnedBuilder<double, BVH_Vec3d> aBuilderBinned = new(bins: 2);
         aBuilderBinned.Build(aTriangulation, aTreeBinned, aBox);
 
         // Both should produce trees (exact structure may vary but both should be valid)
@@ -291,7 +292,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void ClusteredData()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 30;
 
         // Create two clusters: 15 triangles at x=0, 15 at x=100
@@ -306,10 +307,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         // Spatial median should split the two clusters
@@ -320,7 +321,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void FloatPrecision()
     {
-        BVH_Triangulation<float, BVH_Vec3f> aTriangulation = new();
+        Triangulation<float, BVH_Vec3f> aTriangulation = new();
         int aNumTriangles = 10;
 
         for (int i = 0; i < aNumTriangles; ++i)
@@ -333,10 +334,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<float, BVH_Vec3f> aTree = new();
-        BVH_SpatialMedianBuilder<float, BVH_Vec3f> aBuilder = new();
+        Tree<float, BVH_Vec3f> aTree = new();
+        SpatialMedianBuilder<float, BVH_Vec3f> aBuilder = new();
 
-        BVH_Box<float, BVH_Vec3f> aBox = ComputeSetBox(aTriangulation);
+        Box<float, BVH_Vec3f> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.True(aTree.Length() > 0);
@@ -345,7 +346,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void IdenticalBoxes()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 10;
 
         // All triangles at the same position
@@ -357,10 +358,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         // Should create a single leaf containing all triangles
@@ -370,7 +371,7 @@ public class BVH_SpatialMedianBuilderTest
     [Fact]
     public void LargeDataSet()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
         int aNumTriangles = 500;
 
         // Random-ish distribution
@@ -386,10 +387,10 @@ public class BVH_SpatialMedianBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_Tree<double, BVH_Vec3d> aTree = new();
-        BVH_SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
+        Tree<double, BVH_Vec3d> aTree = new();
+        SpatialMedianBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
         aBuilder.Build(aTriangulation, aTree, aBox);
 
         Assert.True(aTree.Length() > 0);

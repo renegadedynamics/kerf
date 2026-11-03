@@ -5,14 +5,17 @@
 
 //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
 /// <summary>Projects elementary curves on a sphere: circles that are U or V isolines.</summary>
 public class ProjLib_Sphere : ProjLib_Projector
 {
-    private gp_Sphere mySphere = new();
+    private Sphere mySphere = new();
 
     /// <summary>Undefined projection.</summary>
     public ProjLib_Sphere()
@@ -20,37 +23,37 @@ public class ProjLib_Sphere : ProjLib_Projector
     }
 
     /// <summary>Projection on the sphere Sp.</summary>
-    public ProjLib_Sphere(in gp_Sphere Sp)
+    public ProjLib_Sphere(in Sphere Sp)
     {
         Init(Sp);
     }
 
     /// <summary>Projection of the circle C on the sphere Sp.</summary>
-    public ProjLib_Sphere(in gp_Sphere Sp, in gp_Circ C)
+    public ProjLib_Sphere(in Sphere Sp, in Circle3D C)
     {
         Init(Sp);
         Project(C);
     }
 
-    public void Init(in gp_Sphere Sp)
+    public void Init(in Sphere Sp)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         mySphere = Sp;
         myIsPeriodic = false;
         isDone = false;
     }
 
-    private static gp_Pnt2d EvalPnt2d(in gp_Vec P, in gp_Sphere Sp)
+    private static Point2D EvalPnt2d(in Vector3D P, in Sphere Sp)
     {
-        double X = P.Dot(new gp_Vec(Sp.Position().XDirection()));
-        double Y = P.Dot(new gp_Vec(Sp.Position().YDirection()));
-        double Z = P.Dot(new gp_Vec(Sp.Position().Direction()));
+        double X = P.Dot(new Vector3D(Sp.Position().XDirection()));
+        double Y = P.Dot(new Vector3D(Sp.Position().YDirection()));
+        double Z = P.Dot(new Vector3D(Sp.Position().Direction()));
         double U, V;
 
-        if (Math.Abs(X) > Precision.PConfusion() || Math.Abs(Y) > Precision.PConfusion())
+        if (Math.Abs(X) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(Y) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             double UU = Math.Atan2(Y, X);
-            U = ElCLib.InPeriod(UU, 0.0, 2 * M_PI);
+            U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(UU, 0.0, 2 * M_PI);
         }
         else
         {
@@ -67,14 +70,14 @@ public class ProjLib_Sphere : ProjLib_Projector
         }
         V = Math.Asin(Z);
 
-        return new gp_Pnt2d(U, V);
+        return new Point2D(U, V);
     }
 
-    public override void Project(in gp_Circ C)
+    public override void Project(in Circle3D C)
     {
-        gp_Pnt O;          // O Location of Sp;
-        gp_Dir Xc, Yc, Zc; // X Y Z Direction of C;
-        gp_Dir Xs, Ys, Zs; // X Y Z Direction of Sp;
+        Point3D O;          // O Location of Sp;
+        Direction3D Xc, Yc, Zc; // X Y Z Direction of C;
+        Direction3D Xs, Ys, Zs; // X Y Z Direction of Sp;
 
         // Check the validity :
         //                      Xc & Yc must be perpendicular to Zs ->IsoV;
@@ -89,30 +92,30 @@ public class ProjLib_Sphere : ProjLib_Projector
         Zs = mySphere.Position().Direction();
 
         bool isIsoU, isIsoV;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         isIsoU = Zc.IsNormal(Zs, Tol) && O.IsEqual(C.Location(), Tol);
         isIsoV = Xc.IsNormal(Zs, Tol) && Yc.IsNormal(Zs, Tol);
 
-        gp_Pnt2d P2d1 = new(), P2d2;
-        gp_Dir2d D2d = new();
+        Point2D P2d1 = new(), P2d2;
+        Direction2D D2d = new();
 
         if (isIsoU)
         {
-            myType = GeomAbs_Line;
+            myType = global::Kerf.Geometry.CurveKind.Line;
 
-            P2d1 = EvalPnt2d(new gp_Vec(Xc), mySphere);
-            P2d2 = EvalPnt2d(new gp_Vec(Yc), mySphere);
+            P2d1 = EvalPnt2d(new Vector3D(Xc), mySphere);
+            P2d2 = EvalPnt2d(new Vector3D(Yc), mySphere);
 
             if (isIsoU
-                && (Math.Abs(P2d1.Y() - M_PI / 2.0) < Precision.PConfusion()
-                    || Math.Abs(P2d1.Y() + M_PI / 2.0) < Precision.PConfusion()))
+                && (Math.Abs(P2d1.Y() - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    || Math.Abs(P2d1.Y() + M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 // then P1 is on the apex of the sphere and U is undefined
                 // The value of U is given by P2d2.Y() .
                 P2d1.SetX(P2d2.X());
             }
-            else if (Math.Abs(Math.Abs(P2d1.X() - P2d2.X()) - M_PI) < Precision.PConfusion())
+            else if (Math.Abs(Math.Abs(P2d1.X() - P2d2.X()) - M_PI) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // then we have U2 = U1 + PI; V2;
                 // we have to assume that U1 = U2
@@ -132,12 +135,12 @@ public class ProjLib_Sphere : ProjLib_Projector
                 P2d2.SetX(P2d1.X());
             }
 
-            D2d = new gp_Dir2d(new gp_Vec2d(P2d1, P2d2));
+            D2d = new Direction2D(new Vector2D(P2d1, P2d2));
             isDone = true;
         }
         else if (isIsoV)
         {
-            myType = GeomAbs_Line;
+            myType = global::Kerf.Geometry.CurveKind.Line;
 
             // P2d(U,V) :first point of the PCurve.
             double U = Xs.AngleWithRef(Xc, Xs ^ Ys);
@@ -145,67 +148,67 @@ public class ProjLib_Sphere : ProjLib_Projector
             {
                 U += 2 * M_PI;
             }
-            double Z = new gp_Vec(O, C.Location()).Dot(new gp_Vec(Zs));
+            double Z = new Vector3D(O, C.Location()).Dot(new Vector3D(Zs));
             double V = Math.Asin(Z / mySphere.Radius());
-            P2d1 = new gp_Pnt2d(U, V);
-            D2d = new gp_Dir2d((Xc ^ Yc).Dot(Xs ^ Ys), 0.0);
+            P2d1 = new Point2D(U, V);
+            D2d = new Direction2D((Xc ^ Yc).Dot(Xs ^ Ys), 0.0);
             isDone = true;
         }
-        myLin = new gp_Lin2d(P2d1, D2d);
+        myLin = new Line2D(P2d1, D2d);
     }
 
-    public override void Project(in gp_Lin L)
+    public override void Project(in Line3D L)
     {
         base.Project(L);
     }
 
-    public override void Project(in gp_Elips E)
+    public override void Project(in Ellipse3D E)
     {
         base.Project(E);
     }
 
-    public override void Project(in gp_Parab P)
+    public override void Project(in Parabola3D P)
     {
         base.Project(P);
     }
 
-    public override void Project(in gp_Hypr H)
+    public override void Project(in Hyperbola3D H)
     {
         base.Project(H);
     }
 
     /// <summary>Sets the point of parameter U on C in the natural restrictions of the sphere.</summary>
-    /// <exception cref="StdFail_NotDone">The projection is not done.</exception>
+    /// <exception cref="NotDoneException">The projection is not done.</exception>
     public void SetInBounds(double U)
     {
         StdFail_NotDone_Raise_if(!isDone, "ProjLib_Sphere:SetInBounds");
 
         // first set the y of the first point in -pi/2 pi/2
-        double newY, Y = ElCLib.Value(U, myLin).Y();
-        newY = ElCLib.InPeriod(Y, -M_PI, M_PI);
+        double newY, Y = global::Kerf.Engine.Geometry.ElCLib.Value(U, myLin).Y();
+        newY = global::Kerf.Engine.Geometry.ElCLib.InPeriod(Y, -M_PI, M_PI);
 
-        myLin.Translate(new gp_Vec2d(0.0, newY - Y));
+        myLin.Translate(new Vector2D(0.0, newY - Y));
 
-        gp_Pnt2d P = ElCLib.Value(U, myLin);
-        gp_Trsf2d Trsf = new();
-        gp_Ax2d Axis;
+        Point2D P = global::Kerf.Engine.Geometry.ElCLib.Value(U, myLin);
+        Transform2D Trsf = new();
+        Axis2D Axis;
         double Tol = 1.0e-7;
-        gp_Dir2d D2d = myLin.Direction();
+        Direction2D D2d = myLin.Direction();
         //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 Begin
         //   if ((P.Y() > M_PI/2) ||
         if ((P.Y() - M_PI / 2 > Tol) ||
             //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 End
-            (Math.Abs(P.Y() - M_PI / 2) < Tol && D2d.IsEqual(gp.DY2d(), Tol)))
+            (Math.Abs(P.Y() - M_PI / 2) < Tol && D2d.IsEqual(Constants.DY2d(), Tol)))
         {
-            Axis = new gp_Ax2d(new gp_Pnt2d(0.0, M_PI / 2.0), gp.DX2d());
+            Axis = new Axis2D(new Point2D(0.0, M_PI / 2.0), Constants.DX2d());
         }
         //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 Begin
         //   else if ((P.Y() < -M_PI/2) ||
         else if ((P.Y() + M_PI / 2 < -Tol) ||
                  //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 End
-                 (Math.Abs(P.Y() + M_PI / 2) < Tol && D2d.IsOpposite(gp.DY2d(), Tol)))
+                 (Math.Abs(P.Y() + M_PI / 2) < Tol && D2d.IsOpposite(Constants.DY2d(), Tol)))
         {
-            Axis = new gp_Ax2d(new gp_Pnt2d(0.0, -M_PI / 2.0), gp.DX2d());
+            Axis = new Axis2D(new Point2D(0.0, -M_PI / 2.0), Constants.DX2d());
         }
         else
         {
@@ -214,11 +217,11 @@ public class ProjLib_Sphere : ProjLib_Projector
         Trsf.SetMirror(Axis);
         myLin.Transform(Trsf);
 
-        myLin.Translate(new gp_Vec2d(M_PI, 0.0));
+        myLin.Translate(new Vector2D(M_PI, 0.0));
 
         // Now we need to adjust the U parameter
-        double newX, X = ElCLib.Value(U, myLin).X();
-        newX = ElCLib.InPeriod(X, 0.0, 2.0 * M_PI);
-        myLin.Translate(new gp_Vec2d(newX - X, 0.0));
+        double newX, X = global::Kerf.Engine.Geometry.ElCLib.Value(U, myLin).X();
+        newX = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X, 0.0, 2.0 * M_PI);
+        myLin.Translate(new Vector2D(newX - X, 0.0));
     }
 }

@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -23,8 +26,8 @@ public sealed partial class GccAna_Circ2dTanOnRad
     //  Fill the fields.                                                +
     //=========================================================================
     /// <summary>Circles of radius Radius tangent to a qualified line, centred on a line.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
-    public GccAna_Circ2dTanOnRad(in GccEnt_QualifiedLin Qualified1, in gp_Lin2d OnLine, double Radius, double Tolerance)
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
+    public GccAna_Circ2dTanOnRad(in GccEnt_QualifiedLin Qualified1, in Line2D OnLine, double Radius, double Tolerance)
     {
         cirsol = new(1, 2);
         qualifier1 = new(1, 2);
@@ -37,7 +40,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
 
 
         double   Tol = Math.Abs(Tolerance);
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         WellDone = false;
         NbrSol   = 0;
         if (!(Qualified1.IsEnclosed() || Qualified1.IsOutside() || Qualified1.IsUnqualified()))
@@ -46,14 +49,14 @@ public sealed partial class GccAna_Circ2dTanOnRad
         }
         int                     nbsol = 0;
         NCollection_Array1<int> eps = new(1, 2);
-        gp_Lin2d                L1 = Qualified1.Qualified();
-        gp_Pnt2d origin1 = L1.Location();
-        gp_Dir2d dir1 = L1.Direction();
-        gp_Dir2d normL1 = new(-dir1.Y(), dir1.X());
+        Line2D                L1 = Qualified1.Qualified();
+        Point2D origin1 = L1.Location();
+        Direction2D dir1 = L1.Direction();
+        Direction2D normL1 = new(-dir1.Y(), dir1.X());
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else if ((OnLine.Direction()).IsParallel(dir1, Tol))
         {
@@ -86,7 +89,7 @@ public sealed partial class GccAna_Circ2dTanOnRad
             double ly1 = origin1.Y();
             for (int j = 1; j <= nbsol; j++)
             {
-                gp_Lin2d L1para = new(new gp_Pnt2d(lx1 + eps[j] * Radius * dy1, ly1 - eps[j] * Radius * dx1), dir1);
+                Line2D L1para = new(new Point2D(lx1 + eps[j] * Radius * dy1, ly1 - eps[j] * Radius * dx1), dir1);
                 IntAna2d_AnaIntersection Intp = new(OnLine, L1para);
                 if (Intp.IsDone())
                 {
@@ -95,10 +98,10 @@ public sealed partial class GccAna_Circ2dTanOnRad
                         for (int i = 1; i <= Intp.NbPoints(); i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =====================================================
-                            gp_Dir2d dc1 = new(origin1.XY() - Center.XY());
+                            Direction2D dc1 = new(origin1.XY() - Center.XY());
                             if (!Qualified1.IsUnqualified())
                             {
                                 qualifier1[NbrSol] = Qualified1.Qualifier();
@@ -112,19 +115,19 @@ public sealed partial class GccAna_Circ2dTanOnRad
                                 qualifier1[NbrSol] = GccEnt_enclosed;
                             }
                             TheSame1[NbrSol] = 0;
-                            if (new gp_Vec2d(Center, origin1).Dot(new gp_Vec2d(new gp_Dir2d(-dy1, dx1))) > 0.0)
+                            if (new Vector2D(Center, origin1).Dot(new Vector2D(new Direction2D(-dy1, dx1))) > 0.0)
                             {
-                                pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * new gp_XY(-dy1, dx1));
+                                pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * new Xy(-dy1, dx1));
                                 pntcen3[NbrSol]   = cirsol[1].Location(); // OCCT: cirsol(1), not cirsol(NbrSol)
                             }
                             else
                             {
-                                pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() - Radius * new gp_XY(-dy1, dx1));
+                                pnttg1sol[NbrSol] = new Point2D(Center.XY() - Radius * new Xy(-dy1, dx1));
                                 pntcen3[NbrSol]   = cirsol[1].Location(); // OCCT: cirsol(1), not cirsol(NbrSol)
                             }
-                            par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pararg1[NbrSol] = ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
-                            parcen3[NbrSol] = ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
+                            parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
                         }
                     }
                     WellDone = true;

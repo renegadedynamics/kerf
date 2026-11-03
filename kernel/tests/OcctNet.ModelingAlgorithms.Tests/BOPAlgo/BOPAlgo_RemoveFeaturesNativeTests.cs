@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -99,10 +100,10 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         return aCases;
     }
 
-    private static string Alerts(Message_Report theReport, Message_Gravity theGravity)
+    private static string Alerts(Report theReport, Gravity theGravity)
     {
         StringBuilder aB = new();
-        foreach (Message_Alert anAlert in theReport.GetAlerts(theGravity))
+        foreach (Alert anAlert in theReport.GetAlerts(theGravity))
         {
             aB.Append(' ').Append(anAlert.GetMessageKey());
         }
@@ -130,12 +131,12 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         {
             aDF.Build();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return ("throws\n", null, "", anInput);
         }
-        string anOutcome = "errors" + Alerts(aDF.GetReport(), Message_Gravity.Message_Fail) + "\nwarnings"
-                           + Alerts(aDF.GetReport(), Message_Gravity.Message_Warning) + "\n";
+        string anOutcome = "errors" + Alerts(aDF.GetReport(), Gravity.Fail) + "\nwarnings"
+                           + Alerts(aDF.GetReport(), Gravity.Warning) + "\n";
         if (aDF.HasErrors())
         {
             return (anOutcome, "", "no history", anInput);
@@ -278,7 +279,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                 ++aNativeVaries;
             }
             (string anOutcome, string? aResult, string aHistory, TopoDS_Shape anInput) = Run(aCase, aCase.Parallel);
-            Assert.True(anInput.TShape()!.IsFrozen());
+            Assert.True(anInput.TShape()!.IsFrozen);
             if (anOutcome != aCase.Native)
             {
                 aFailures.Add($"{aCase.Id} {aCase.Name}: outcome native [{aCase.Native.Trim()}] port [{anOutcome.Trim()}]");

@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -109,7 +112,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
         }
         ShapeBuild_ReShape aContext = Context()!;
 
-        double prec = (Precision() > 0.0) ? Precision() : Occt.Precision.Confusion();
+        double prec = (Precision() > 0.0) ? Precision() : Kerf.Engine.Foundation.Precision.Confusion();
         var    cont = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         if (myShape.ShapeType() == TopAbs_COMPOUND)
         {
@@ -121,7 +124,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
             for (var it = new TopoDS_Iterator(savShape); it.More(); it.Next())
             {
                 TopoDS_Shape    shape1 = it.Value();
-                TopLoc_Location L = shape1.Location(), nullLoc = new();
+                Placement L = shape1.Location(), nullLoc = new();
                 shape1.Location(nullLoc);
                 TopoDS_Shape res;
                 if (cont.IsBound(shape1))
@@ -194,7 +197,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                 }
                 if (sfw.StatusGaps3d(ShapeExtend_DONE) || sfw.StatusGaps2d(ShapeExtend_DONE))
                 {
-                    SendWarning(itw.Value(), new Message_Msg("FixWireframe.FixFixWireGaps.MSG0"));
+                    SendWarning(itw.Value(), new Msg("FixWireframe.FixFixWireGaps.MSG0"));
                 }
             }
         }
@@ -221,7 +224,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
             }
             if (sfw.StatusGaps3d(ShapeExtend_DONE))
             {
-                SendWarning(expw.Current(), new Message_Msg("FixWireframe.FixFixWireGaps.MSG0"));
+                SendWarning(expw.Current(), new Msg("FixWireframe.FixFixWireGaps.MSG0"));
             }
         }
         // End Part1========================================================
@@ -443,7 +446,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
             E3 = newedge;
             return ReplaceFirst;
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return ReplaceFirst;
         }
@@ -496,7 +499,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
             for (var it = new TopoDS_Iterator(savShape); it.More(); it.Next())
             {
                 TopoDS_Shape    shape1 = it.Value();
-                TopLoc_Location L = shape1.Location(), nullLoc = new();
+                Placement L = shape1.Location(), nullLoc = new();
                 shape1.Location(nullLoc);
                 TopoDS_Shape res;
                 if (cont.IsBound(shape1))
@@ -818,8 +821,8 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                     {
                                         // Compare angles between edges
                                         // double Ang1, Ang2;
-                                        C1!.D1(last1, out _, out gp_Vec Vec1);
-                                        C2!.D1(first2, out _, out gp_Vec Vec2);
+                                        C1!.D1(last1, out _, out Vector3D Vec1);
+                                        C2!.D1(first2, out _, out Vector3D Vec2);
                                         if (edge1.Orientation() == TopAbs_REVERSED)
                                         {
                                             Vec1.Reverse();
@@ -828,7 +831,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                         {
                                             Vec2.Reverse();
                                         }
-                                        double tol2 = Occt.Precision.SquareConfusion();
+                                        double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
                                         if (Vec1.SquareMagnitude() < tol2 || Vec2.SquareMagnitude() < tol2)
                                         {
                                             Ang1 = Math.PI / 2.0;
@@ -917,7 +920,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                     if (same_set1 && same_set2)
                                     {
                                         same_set = true;
-                                        if (Math.Abs(Ang2 - Ang1) > Occt.Precision.Angular())
+                                        if (Math.Abs(Ang2 - Ang1) > Kerf.Engine.Foundation.Precision.Angular())
                                         {
                                             take_next = (Ang2 < Ang1);
                                         }
@@ -1054,13 +1057,13 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                             {
                                                 aContext.Replace(edge1, edge3);
                                                 aContext.Remove(edge2);
-                                                SendWarning(edge2, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                                SendWarning(edge2, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                             }
                                             else
                                             {
                                                 aContext.Replace(edge2, edge3);
                                                 aContext.Remove(edge1);
-                                                SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                                SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                             }
                                             if (take_next)
                                             {
@@ -1164,7 +1167,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                             aTmpShape = aContext.InternalApply(tmpedge2);
                                             TopoDS_Edge anewedge2 = TopoDS.Edge(aTmpShape);
                                             aContext.Remove(remedge);
-                                            SendWarning(remedge, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                            SendWarning(remedge, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                             if (theSmallEdges.Contains(remedge))
                                             {
                                                 theSmallEdges.Remove(remedge);
@@ -1236,9 +1239,9 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                         var         sae = new ShapeAnalysis_Edge();
                                         if (sae.Curve3d(ed, out Geom_Curve? c3d, out double f1, out double l1, false))
                                         {
-                                            c3d!.D0(f1, out gp_Pnt p1);
-                                            c3d.D0(l1, out gp_Pnt p2);
-                                            c3d.D0((f1 + l1) * 0.5, out gp_Pnt p3);
+                                            c3d!.D0(f1, out Point3D p1);
+                                            c3d.D0(l1, out Point3D p2);
+                                            c3d.D0((f1 + l1) * 0.5, out Point3D p3);
 
                                             if (p1.Distance(p3) > p1.Distance(p2))
                                             {
@@ -1253,7 +1256,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                             {
                                                 SFW.WireData()!.Remove(index);
                                                 aContext.Remove(edge1);
-                                                SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                                SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                                 if (theSmallEdges.Contains(edge1))
                                                 {
                                                     theSmallEdges.Remove(edge1);
@@ -1273,7 +1276,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                             {
                                                 SFW.WireData()!.Remove(index);
                                                 aContext.Remove(edge2);
-                                                SendWarning(edge2, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                                SendWarning(edge2, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                                 if (theSmallEdges.Contains(edge2))
                                                 {
                                                     theSmallEdges.Remove(edge2);
@@ -1304,11 +1307,11 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                 {
                                     SFW.WireData()!.Remove(1);
                                     aContext.Remove(edge1);
-                                    SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                    SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                     theSmallEdges.Remove(edge1);
                                     theEdgeToFaces.UnBind(edge1);
                                     aContext.Remove(aWire);
-                                    SendWarning(aWire, new Message_Msg("FixWireframe.FixSmallEdges.MSG1"));
+                                    SendWarning(aWire, new Msg("FixWireframe.FixSmallEdges.MSG1"));
                                     myStatusSmallEdges |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
                                 }
                             }
@@ -1324,7 +1327,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                         if (!aIter.More())
                         {
                             aContext.Remove(anewShape);
-                            SendWarning(face, new Message_Msg("FixWireframe.FixSmallEdges.MSG2"));
+                            SendWarning(face, new Msg("FixWireframe.FixSmallEdges.MSG2"));
                         }
                     }
                 }
@@ -1370,8 +1373,8 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                         {
                             // Compare angles between edges
                             // double Ang1, Ang2;
-                            C1!.D1(last1, out _, out gp_Vec Vec1);
-                            C2!.D1(first2, out _, out gp_Vec Vec2);
+                            C1!.D1(last1, out _, out Vector3D Vec1);
+                            C2!.D1(first2, out _, out Vector3D Vec2);
                             if (edge1.Orientation() == TopAbs_REVERSED)
                             {
                                 Vec1.Reverse();
@@ -1380,7 +1383,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                             {
                                 Vec2.Reverse();
                             }
-                            double tol2 = Occt.Precision.SquareConfusion();
+                            double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
                             if (Vec1.SquareMagnitude() < tol2 || Vec2.SquareMagnitude() < tol2)
                             {
                                 Ang1 = Math.PI / 2.0;
@@ -1467,7 +1470,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                         if (same_set1 && same_set2)
                         {
                             same_set = true;
-                            if (Math.Abs(Ang2 - Ang1) > Occt.Precision.Angular())
+                            if (Math.Abs(Ang2 - Ang1) > Kerf.Engine.Foundation.Precision.Angular())
                             {
                                 take_next = (Ang2 < Ang1);
                             }
@@ -1603,13 +1606,13 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                 {
                                     aContext.Replace(edge1, edge3);
                                     aContext.Remove(edge2);
-                                    SendWarning(edge2, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                    SendWarning(edge2, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                 }
                                 else
                                 {
                                     aContext.Replace(edge2, edge3);
                                     aContext.Remove(edge1);
-                                    SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                    SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                 }
                                 if (take_next)
                                 {
@@ -1713,7 +1716,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                 aTmpShape = aContext.InternalApply(tmpedge2);
                                 TopoDS_Edge anewedge2 = TopoDS.Edge(aTmpShape);
                                 aContext.Remove(remedge);
-                                SendWarning(remedge, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                SendWarning(remedge, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                 if (theSmallEdges.Contains(remedge))
                                 {
                                     theSmallEdges.Remove(remedge);
@@ -1785,9 +1788,9 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                             var         sae = new ShapeAnalysis_Edge();
                             if (sae.Curve3d(ed, out Geom_Curve? c3d, out double f1, out double l1, false))
                             {
-                                c3d!.D0(f1, out gp_Pnt p1);
-                                c3d.D0(l1, out gp_Pnt p2);
-                                c3d.D0((f1 + l1) * 0.5, out gp_Pnt p3);
+                                c3d!.D0(f1, out Point3D p1);
+                                c3d.D0(l1, out Point3D p2);
+                                c3d.D0((f1 + l1) * 0.5, out Point3D p3);
 
                                 if (p1.Distance(p3) > p1.Distance(p2))
                                 {
@@ -1802,7 +1805,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                 {
                                     SFW.WireData()!.Remove(index);
                                     aContext.Remove(edge1);
-                                    SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                    SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                     if (theSmallEdges.Contains(edge1))
                                     {
                                         theSmallEdges.Remove(edge1);
@@ -1822,7 +1825,7 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                                 {
                                     SFW.WireData()!.Remove(index);
                                     aContext.Remove(edge2);
-                                    SendWarning(edge2, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                                    SendWarning(edge2, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                     if (theSmallEdges.Contains(edge2))
                                     {
                                         theSmallEdges.Remove(edge2);
@@ -1853,11 +1856,11 @@ public class ShapeFix_Wireframe : ShapeFix_Root
                     {
                         SFW.WireData()!.Remove(1);
                         aContext.Remove(edge1);
-                        SendWarning(edge1, new Message_Msg("FixWireframe.FixSmallEdges.MSG0"));
+                        SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                         theSmallEdges.Remove(edge1);
                         theEdgeToFaces.UnBind(edge1);
                         aContext.Remove(aWire);
-                        SendWarning(aWire, new Message_Msg("FixWireframe.FixSmallEdges.MSG1"));
+                        SendWarning(aWire, new Msg("FixWireframe.FixSmallEdges.MSG1"));
                         myStatusSmallEdges |= ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
                     }
                 }

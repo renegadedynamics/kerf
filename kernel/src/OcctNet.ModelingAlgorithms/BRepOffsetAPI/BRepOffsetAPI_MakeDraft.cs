@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.BRepFill_TransitionStyle;
 
@@ -18,8 +20,8 @@ public sealed class BRepOffsetAPI_MakeDraft : BRepBuilderAPI_MakeShape
     private readonly BRepFill_Draft myDraft;
 
     /// <summary>The draft of <paramref name="Shape"/> (a wire, face or shell) along <paramref name="Dir"/> at <paramref name="Angle"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Another shape type, or a shell without a free boundary wire.</exception>
-    public BRepOffsetAPI_MakeDraft(in TopoDS_Shape Shape, in gp_Dir Dir, double Angle)
+    /// <exception cref="ConstructionErrorException">Another shape type, or a shell without a free boundary wire.</exception>
+    public BRepOffsetAPI_MakeDraft(in TopoDS_Shape Shape, in Direction3D Dir, double Angle)
     {
         myDraft = new BRepFill_Draft(Shape, Dir, Angle);
         NotDone();

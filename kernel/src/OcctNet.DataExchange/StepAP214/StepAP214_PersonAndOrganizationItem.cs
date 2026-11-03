@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepAP214_PersonAndOrganizationItem : StepAP214_ApprovalItem
@@ -36,7 +38,7 @@ public class StepAP214_PersonAndOrganizationItem : StepAP214_ApprovalItem
     /// 15 -&gt; Approval
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         if (ent is null)
         {

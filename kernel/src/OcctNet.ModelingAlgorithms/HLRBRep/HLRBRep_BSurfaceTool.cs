@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -31,31 +32,31 @@ public static class HLRBRep_BSurfaceTool
 
     public static double VPeriod(BRepAdaptor_Surface S) => S.VPeriod();
 
-    public static GeomAbs_SurfaceType GetType(BRepAdaptor_Surface S) => S.GetType();
+    public static SurfaceKind GetType(BRepAdaptor_Surface S) => S.GetType();
 
-    public static gp_Pln Plane(BRepAdaptor_Surface S) => S.Plane();
+    public static Plane3D Plane(BRepAdaptor_Surface S) => S.Plane();
 
-    public static gp_Cylinder Cylinder(BRepAdaptor_Surface S) => S.Cylinder();
+    public static Cylinder Cylinder(BRepAdaptor_Surface S) => S.Cylinder();
 
-    public static gp_Cone Cone(BRepAdaptor_Surface S) => S.Cone();
+    public static Cone Cone(BRepAdaptor_Surface S) => S.Cone();
 
-    public static gp_Sphere Sphere(BRepAdaptor_Surface S) => S.Sphere();
+    public static Sphere Sphere(BRepAdaptor_Surface S) => S.Sphere();
 
-    public static gp_Torus Torus(BRepAdaptor_Surface S) => S.Torus();
+    public static Torus Torus(BRepAdaptor_Surface S) => S.Torus();
 
     public static Geom_BezierSurface Bezier(BRepAdaptor_Surface S) => S.Bezier();
 
     public static Geom_BSplineSurface BSpline(BRepAdaptor_Surface S) => S.BSpline();
 
-    public static gp_Ax1 AxeOfRevolution(BRepAdaptor_Surface S) => S.AxeOfRevolution();
+    public static Axis3D AxeOfRevolution(BRepAdaptor_Surface S) => S.AxeOfRevolution();
 
-    public static gp_Dir Direction(BRepAdaptor_Surface S) => S.Direction();
+    public static Direction3D Direction(BRepAdaptor_Surface S) => S.Direction();
 
     public static Adaptor3d_Curve BasisCurve(BRepAdaptor_Surface S) => S.BasisCurve();
 
-    public static GeomAbs_Shape UContinuity(BRepAdaptor_Surface S) => S.UContinuity();
+    public static Continuity UContinuity(BRepAdaptor_Surface S) => S.UContinuity();
 
-    public static GeomAbs_Shape VContinuity(BRepAdaptor_Surface S) => S.VContinuity();
+    public static Continuity VContinuity(BRepAdaptor_Surface S) => S.VContinuity();
 
     public static int UDegree(BRepAdaptor_Surface S) => S.UDegree();
 
@@ -73,16 +74,16 @@ public static class HLRBRep_BSurfaceTool
 
     public static bool IsVRational(BRepAdaptor_Surface S) => S.IsVRational();
 
-    public static int NbUIntervals(BRepAdaptor_Surface Surf, GeomAbs_Shape S) => Surf.NbUIntervals(S);
+    public static int NbUIntervals(BRepAdaptor_Surface Surf, Continuity S) => Surf.NbUIntervals(S);
 
-    public static int NbVIntervals(BRepAdaptor_Surface Surf, GeomAbs_Shape S) => Surf.NbVIntervals(S);
+    public static int NbVIntervals(BRepAdaptor_Surface Surf, Continuity S) => Surf.NbVIntervals(S);
 
-    public static void UIntervals(BRepAdaptor_Surface Surf, NCollection_Array1<double> Tab, GeomAbs_Shape S)
+    public static void UIntervals(BRepAdaptor_Surface Surf, NCollection_Array1<double> Tab, Continuity S)
     {
         Surf.UIntervals(Tab, S);
     }
 
-    public static void VIntervals(BRepAdaptor_Surface Surf, NCollection_Array1<double> Tab, GeomAbs_Shape S)
+    public static void VIntervals(BRepAdaptor_Surface Surf, NCollection_Array1<double> Tab, Continuity S)
     {
         Surf.VIntervals(Tab, S);
     }
@@ -93,32 +94,32 @@ public static class HLRBRep_BSurfaceTool
     public static Adaptor3d_Surface VTrim(BRepAdaptor_Surface Surf, double F, double L, double Tol) =>
         Surf.VTrim(F, L, Tol);
 
-    public static gp_Pnt Value(BRepAdaptor_Surface S, double U, double V) => S.Value(U, V);
+    public static Point3D Value(BRepAdaptor_Surface S, double U, double V) => S.Value(U, V);
 
-    public static void D0(BRepAdaptor_Surface S, double U, double V, out gp_Pnt P)
+    public static void D0(BRepAdaptor_Surface S, double U, double V, out Point3D P)
     {
         S.D0(U, V, out P);
     }
 
-    public static void D1(BRepAdaptor_Surface S, double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V)
+    public static void D1(BRepAdaptor_Surface S, double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V)
     {
         S.D1(U, V, out P, out D1U, out D1V);
     }
 
-    public static void D2(BRepAdaptor_Surface S, double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V,
-                          out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV)
+    public static void D2(BRepAdaptor_Surface S, double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V,
+                          out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV)
     {
         S.D2(U, V, out P, out D1U, out D1V, out D2U, out D2V, out D2UV);
     }
 
-    public static void D3(BRepAdaptor_Surface S, double U, double V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V,
-                          out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV, out gp_Vec D3U, out gp_Vec D3V,
-                          out gp_Vec D3UUV, out gp_Vec D3UVV)
+    public static void D3(BRepAdaptor_Surface S, double U, double V, out Point3D P, out Vector3D D1U, out Vector3D D1V,
+                          out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV, out Vector3D D3U, out Vector3D D3V,
+                          out Vector3D D3UUV, out Vector3D D3UVV)
     {
         S.D3(U, V, out P, out D1U, out D1V, out D2U, out D2V, out D2UV, out D3U, out D3V, out D3UUV, out D3UVV);
     }
 
-    public static gp_Vec DN(BRepAdaptor_Surface S, double U, double V, int Nu, int Nv) => S.DN(U, V, Nu, Nv);
+    public static Vector3D DN(BRepAdaptor_Surface S, double U, double V, int Nu, int Nv) => S.DN(U, V, Nu, Nv);
 
     public static double UResolution(BRepAdaptor_Surface S, double R3d) => S.UResolution(R3d);
 
@@ -128,16 +129,16 @@ public static class HLRBRep_BSurfaceTool
     public static int NbSamplesU(BRepAdaptor_Surface S)
     {
         int nbs;
-        GeomAbs_SurfaceType typS = S.GetType();
+        SurfaceKind typS = S.GetType();
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 nbs = 3 + S.NbUPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 nbs = S.NbUKnots();
                 nbs *= S.UDegree();
                 if (nbs < 2)
@@ -145,14 +146,14 @@ public static class HLRBRep_BSurfaceTool
                     nbs = 2;
                 }
                 break;
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 nbs = 20;
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
                 nbs = 10;
                 break;
             default:
@@ -166,16 +167,16 @@ public static class HLRBRep_BSurfaceTool
     public static int NbSamplesV(BRepAdaptor_Surface S)
     {
         int nbs;
-        GeomAbs_SurfaceType typS = S.GetType();
+        SurfaceKind typS = S.GetType();
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 nbs = 3 + S.NbVPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 nbs = S.NbVKnots();
                 nbs *= S.VDegree();
                 if (nbs < 2)
@@ -183,12 +184,12 @@ public static class HLRBRep_BSurfaceTool
                     nbs = 2;
                 }
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
                 nbs = 15;
                 break;
             default:

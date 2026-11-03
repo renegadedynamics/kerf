@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The polygon of a Bisector_BisecCC: its points (Bisector_PointOnBis), indexed from 1.</summary>
@@ -59,14 +63,14 @@ public sealed class Bisector_PolyBis
     /// <summary>The index of the polygon's segment that contains the parameter U on the bisector.</summary>
     public int Interval(double U)
     {
-        if (Last().ParamOnBis() - U < gp.Resolution())
+        if (Last().ParamOnBis() - U < Constants.Resolution())
         {
             return nbPoints - 1;
         }
 
         double dU = (Last().ParamOnBis() - First().ParamOnBis()) / (nbPoints - 1);
 
-        if (dU <= gp.Resolution())
+        if (dU <= Constants.Resolution())
         {
             return 1;
         }
@@ -100,11 +104,11 @@ public sealed class Bisector_PolyBis
         return IntU;
     }
 
-    internal void Transform(in gp_Trsf2d T)
+    internal void Transform(in Transform2D T)
     {
         for (int i = 1; i <= nbPoints; i++)
         {
-            gp_Pnt2d P = thePoints[i].Point();
+            Point2D P = thePoints[i].Point();
             P.Transform(T);
             thePoints[i].Point(P);
         }

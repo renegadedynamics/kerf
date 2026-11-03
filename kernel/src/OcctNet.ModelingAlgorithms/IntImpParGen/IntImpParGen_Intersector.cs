@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 
 namespace Occt;
@@ -16,9 +20,9 @@ public interface IIntImpParGen_ParTool<ParCurve>
 
     static abstract int NbSamples(in ParCurve C, double U0, double U1);
 
-    static abstract gp_Pnt2d Value(in ParCurve C, double X);
+    static abstract Point2D Value(in ParCurve C, double X);
 
-    static abstract void D2(in ParCurve C, double U, out gp_Pnt2d P, out gp_Vec2d T, out gp_Vec2d N);
+    static abstract void D2(in ParCurve C, double U, out Point2D P, out Vector2D T, out Vector2D N);
 }
 
 /// <summary>
@@ -28,13 +32,13 @@ public interface IIntImpParGen_ParTool<ParCurve>
 public interface IIntImpParGen_ProjectOnPCurveTool<ParCurve>
 {
     /// <summary>The parameter of the point of <paramref name="C"/> nearest to <paramref name="Pnt"/>.</summary>
-    static abstract double FindParameter(in ParCurve C, in gp_Pnt2d Pnt, double Tol);
+    static abstract double FindParameter(in ParCurve C, in Point2D Pnt, double Tol);
 
     /// <summary>
     /// The parameter of the point of <paramref name="C"/> nearest to <paramref name="Pnt"/>, searched between the
     /// two parameters.
     /// </summary>
-    static abstract double FindParameter(in ParCurve C, in gp_Pnt2d Pnt, double LowParameter, double HighParameter,
+    static abstract double FindParameter(in ParCurve C, in Point2D Pnt, double LowParameter, double HighParameter,
                                          double Tol);
 }
 
@@ -45,7 +49,7 @@ public interface IIntImpParGen_ProjectOnPCurveTool<ParCurve>
 /// Geom2dInt_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfGInter).
 /// </summary>
 public interface IIntImpParGen_MyImpParTool<TSelf, ImpTool, ParCurve>
-    where TSelf : math_FunctionWithDerivative, IIntImpParGen_MyImpParTool<TSelf, ImpTool, ParCurve>
+    where TSelf : FunctionWithDerivative, IIntImpParGen_MyImpParTool<TSelf, ImpTool, ParCurve>
 {
     /// <summary>OCCT's constructor <c>MyImpParTool(const ImpTool&amp; IT, const ParCurve&amp; PC)</c>.</summary>
     static abstract TSelf Create(in ImpTool IT, in ParCurve PC);
@@ -66,7 +70,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
     where ImpTool : IIntImpParGen_ImpTool
     where ParTool : IIntImpParGen_ParTool<ParCurve>
     where ProjectOnPCurveTool : IIntImpParGen_ProjectOnPCurveTool<ParCurve>
-    where MyImpParTool : math_FunctionWithDerivative, IIntImpParGen_MyImpParTool<MyImpParTool, ImpTool, ParCurve>
+    where MyImpParTool : FunctionWithDerivative, IIntImpParGen_MyImpParTool<MyImpParTool, ImpTool, ParCurve>
 {
     //======================================================================
     //--     C o n s t r u c t e u r s     e t     P e r f o r m
@@ -78,7 +82,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
     }
 
     /// <summary>Intersection between an implicit curve and a parametric curve.</summary>
-    /// <exception cref="Standard_ConstructionError">The domain of the parametric curve is not bounded on both sides.</exception>
+    /// <exception cref="ConstructionErrorException">The domain of the parametric curve is not bounded on both sides.</exception>
     public IntImpParGen_Intersector(in ImpTool TheImpTool,
                                     in IntRes2d_Domain TheImpCurveDomain,
                                     in ParCurve TheParCurve,
@@ -90,7 +94,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
     }
 
     /// <summary>Intersection between an implicit curve and a parametric curve.</summary>
-    /// <exception cref="Standard_ConstructionError">The domain of the parametric curve is not bounded on both sides.</exception>
+    /// <exception cref="ConstructionErrorException">The domain of the parametric curve is not bounded on both sides.</exception>
     public void Perform(in ImpTool TheImpTool,
                         in IntRes2d_Domain TheImpCurveDomain,
                         in ParCurve TheParCurve,
@@ -102,8 +106,8 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
         double param1, param2, EpsX, EpsNul, EpsDist;
 
         IntRes2d_Transition Trans1 = new(), Trans2 = new();
-        gp_Pnt2d pt1, pt2;
-        gp_Vec2d Tan1, Tan2, Norm1, Norm2;
+        Point2D pt1, pt2;
+        Vector2D Tan1, Tan2, Norm1, Norm2;
         IntRes2d_Position Pos1, Pos2;
 
         //----------------------------------------------
@@ -121,7 +125,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
 
         if (!(TheParCurveDomain.HasFirstPoint() && TheParCurveDomain.HasLastPoint()))
         {
-            throw new Standard_ConstructionError("Domaine sur courbe incorrect");
+            throw new ConstructionErrorException("Domaine sur courbe incorrect");
         }
 
         int nb_echantillons = ParTool.NbSamples(TheParCurve,
@@ -144,26 +148,26 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
             EpsX = (TheParCurveDomain.LastParameter() - TheParCurveDomain.FirstParameter()) * 0.01;
         }
 
-        math_FunctionSample Sample2 = new(TheParCurveDomain.FirstParameter(),
+        FunctionSample Sample2 = new(TheParCurveDomain.FirstParameter(),
                                           TheParCurveDomain.LastParameter(),
                                           nb_echantillons);
 
-        math_FunctionAllRoots Sol = new(TheImpParTool, Sample2, EpsX, EpsDist, EpsNul);
+        FunctionAllRoots Sol = new(TheImpParTool, Sample2, EpsX, EpsDist, EpsNul);
 
-        if (!Sol.IsDone())
+        if (!Sol.IsDone)
         {
             done = false;
             return;
         }
 
-        nb_segments_solution = Sol.NbIntervals();
-        nb_points_solution = Sol.NbPoints();
+        nb_segments_solution = Sol.IntervalCount;
+        nb_points_solution = Sol.PointCount;
 
         //--------------------------------------------------------------------
         //--   T r a i t e m e n t    d e s   P o i n t s   S o l u t i o n s
         for (i = 1; i <= nb_points_solution; i++)
         {
-            gp_Pnt2d Pt;
+            Point2D Pt;
             param2 = Sol.GetPoint(i);
             param1 = FindU(param2, out Pt, TheParCurve, TheImpTool);
 
@@ -254,7 +258,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
         {
             double param2_inf, param2_sup;
             double param1_inf, param1_sup;
-            gp_Pnt2d Ptemp;
+            Point2D Ptemp;
 
             Sol.GetInterval(j, out param2_inf, out param2_sup);
             param1_inf = FindU(param2_inf, out Ptemp, TheParCurve, TheImpTool);
@@ -265,7 +269,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
 
             if (TheImpCurveDomain.IsClosed())
             {
-                gp_Vec2d T1, T2, N1, N2;
+                Vector2D T1, T2, N1, N2;
                 double param1_origine, param1_fin;
 
                 TheImpCurveDomain.EquivalentParameters(out param1_origine, out param1_fin);
@@ -283,12 +287,12 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
 
                 ParTool.D2(TheParCurve, param2_inf, out Ptemp, out T2, out N2);
                 TheImpTool.D2(param1_inf, out Ptemp, out T1, out N1);
-                if (T1.Magnitude() <= gp.Resolution())
+                if (T1.Magnitude() <= Constants.Resolution())
                 {
                     T1 = N1;
                 }
 
-                if (T2.Magnitude() <= gp.Resolution())
+                if (T2.Magnitude() <= Constants.Resolution())
                 {
                     T2 = N2;
                 }
@@ -385,7 +389,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
         //~~~~~       D acces aux methodes Protected APPEND
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         {
-            gp_Pnt2d Pt1_on1, Pt2_on1, Pt1_on2, Pt2_on2;
+            Point2D Pt1_on1, Pt2_on1, Pt1_on2, Pt2_on2;
             double Param1_on1, Param2_on1, Param1_on2, Param2_on2;
 
             double Dist_Mini_ImpCurve = TolConf; // EPSNUL
@@ -663,7 +667,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
     }
 
     /// <summary>The parameter on the implicit curve of the point at <paramref name="parameter"/> on the parametric curve.</summary>
-    public double FindU(double parameter, out gp_Pnt2d point, in ParCurve TheParCurve, in ImpTool TheImpTool)
+    public double FindU(double parameter, out Point2D point, in ParCurve TheParCurve, in ImpTool TheImpTool)
     {
         point = ParTool.Value(TheParCurve, parameter);
         return (TheImpTool.FindParameter(point));
@@ -675,7 +679,7 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
     /// <paramref name="V1"/> and clamped to them.
     /// </summary>
     public double FindV(double parameter,
-                        out gp_Pnt2d point,
+                        out Point2D point,
                         in ImpTool TheImpTool,
                         in ParCurve TheParCurve,
                         in IntRes2d_Domain TheParCurveDomain,
@@ -751,9 +755,9 @@ public class IntImpParGen_Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurv
                 indice_2 = i;
             }
 
-            gp_Pnt2d Pt1 = TheImpTool.Value(param1);
-            gp_Pnt2d Pt2 = TheImpTool.Value(param2);
-            gp_Pnt2d Pt;
+            Point2D Pt1 = TheImpTool.Value(param1);
+            Point2D Pt2 = TheImpTool.Value(param2);
+            Point2D Pt;
 
             bool IsOnTheImpCurveDomain1 = true;
             bool IsOnTheImpCurveDomain2 = true;

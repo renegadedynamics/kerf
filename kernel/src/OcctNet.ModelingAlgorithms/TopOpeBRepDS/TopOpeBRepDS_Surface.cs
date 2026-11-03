@@ -92,6 +92,6 @@ public partial struct TopOpeBRepDS_Surface : IEquatable<TopOpeBRepDS_Surface>
 
     /// <inheritdoc/>
     public override readonly string ToString()
-        => "TopOpeBRepDS_Surface(" + (mySurface is null ? "null" : mySurface.GetType().Name) + ", " + myTolerance.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
+        => "TopOpeBRepDS_Surface(" + (mySurface is null ? "null" : global::Kerf.Engine.Foundation.OcctTypeNames.Of(mySurface.GetType())) + ", " + myTolerance.ToString("R", System.Globalization.CultureInfo.InvariantCulture)
            + (myKeep ? ", kept)" : ")");
 }

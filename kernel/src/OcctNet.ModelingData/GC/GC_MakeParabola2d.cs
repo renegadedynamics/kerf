@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.gce_ErrorType;
 
 namespace Occt;
@@ -17,14 +19,14 @@ public sealed class GC_MakeParabola2d : GC_Root
     private Geom2d_Parabola? TheParabola;
 
     /// <summary>A parabola from the gp_Parab2d Prb.</summary>
-    public GC_MakeParabola2d(in gp_Parab2d Prb)
+    public GC_MakeParabola2d(in Parabola2D Prb)
     {
         TheError = gce_Done;
         TheParabola = new Geom2d_Parabola(Prb);
     }
 
     /// <summary>A parabola of mirror axis MirrorAxis; fails with gce_NullFocusLength if Focal is negative.</summary>
-    public GC_MakeParabola2d(in gp_Ax2d MirrorAxis, double Focal, bool Sense)
+    public GC_MakeParabola2d(in Axis2D MirrorAxis, double Focal, bool Sense)
     {
         if (Focal < 0.0)
         {
@@ -38,7 +40,7 @@ public sealed class GC_MakeParabola2d : GC_Root
     }
 
     /// <summary>A parabola in the axis system Axis; fails with gce_NullFocusLength if Focal is negative.</summary>
-    public GC_MakeParabola2d(in gp_Ax22d Axis, double Focal)
+    public GC_MakeParabola2d(in Frame2D Axis, double Focal)
     {
         if (Focal < 0.0)
         {
@@ -52,15 +54,15 @@ public sealed class GC_MakeParabola2d : GC_Root
     }
 
     /// <summary>A parabola of directrix D and focus F.</summary>
-    public GC_MakeParabola2d(in gp_Ax2d D, in gp_Pnt2d F, bool Sense = true)
+    public GC_MakeParabola2d(in Axis2D D, in Point2D F, bool Sense = true)
     {
         TheError = gce_Done;
-        gp_Parab2d para = new gp_Parab2d(D, F, Sense);
+        Parabola2D para = new Parabola2D(D, F, Sense);
         TheParabola = new Geom2d_Parabola(para);
     }
 
     /// <summary>A parabola of focus S1 and apex O; fails with the status of gce_MakeParab2d.</summary>
-    public GC_MakeParabola2d(in gp_Pnt2d S1, in gp_Pnt2d O)
+    public GC_MakeParabola2d(in Point2D S1, in Point2D O)
     {
         gce_MakeParab2d P = new gce_MakeParab2d(S1, O);
         TheError = P.Status();
@@ -71,7 +73,7 @@ public sealed class GC_MakeParabola2d : GC_Root
     }
 
     /// <summary>The constructed parabola (frozen).</summary>
-    /// <exception cref="StdFail_NotDone">No parabola was constructed.</exception>
+    /// <exception cref="NotDoneException">No parabola was constructed.</exception>
     public Geom2d_Parabola Value()
     {
         StdFail_NotDone_Raise_if(TheError != gce_Done, "GC_MakeParabola2d::Value() - no result");

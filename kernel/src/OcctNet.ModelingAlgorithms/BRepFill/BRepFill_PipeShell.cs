@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepFill_TransitionStyle;
 using static Occt.BRepFill_TypeOfContact;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.GeomFill_PipeError;
 using static Occt.GeomFill_Trihedron;
@@ -32,7 +34,7 @@ namespace Occt;
 /// is keyed by the caller's own sub-shapes of the profiles and the spine.
 /// </para>
 /// </remarks>
-public sealed class BRepFill_PipeShell : Standard_Transient
+public sealed class BRepFill_PipeShell : Transient
 {
     private TopoDS_Wire mySpine;
     private TopoDS_Shape myFirst = new();
@@ -81,9 +83,9 @@ public sealed class BRepFill_PipeShell : Standard_Transient
         CW.Perform();
         if (!CW.IsDone())
         {
-            throw new StdFail_NotDone("Uncompatible wires");
+            throw new NotDoneException("Uncompatible wires");
         }
-        NCollection_Sequence<gp_Trsf> EmptyTrsfs = new();
+        NCollection_Sequence<Transform3D> EmptyTrsfs = new();
         BRepFill_NSections SL = new(CW.InternalShape(), EmptyTrsfs, SR, 0.0, 1.0);
         double US = p1 / (p1 + p2);
         TopoDS_Shape aW = new();
@@ -210,7 +212,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             TopExp.Vertices(mySpine, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
             if (Vf.IsSame(Vl))
             {
-                if (mySpine.TShape()!.IsFrozen())
+                if (mySpine.TShape()!.IsFrozen)
                 {
                     // OCCT.NET: OCCT sets the flag on the caller's wire; the port on a new wire of the same edges
                     // (decision 926)
@@ -271,10 +273,10 @@ public sealed class BRepFill_PipeShell : Standard_Transient
     //=================================================================================================
 
     /// <summary>A fixed trihedron: the sections keep the orientation they have relative to <paramref name="Axe"/>.</summary>
-    public void Set(in gp_Ax2 Axe)
+    public void Set(in Frame3D Axe)
     {
         myTrihedron = GeomFill_IsFixed;
-        gp_Vec V1 = new(), V2 = new();
+        Vector3D V1 = new(), V2 = new();
         V1.SetXYZ(Axe.Direction().XYZ());
         V2.SetXYZ(Axe.XDirection().XYZ());
         GeomFill_Fixed TLaw = new(V1, V2);
@@ -288,7 +290,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
     // purpose  : Construct a law of location of binormal fixed type
     //=======================================================================
     /// <summary>A trihedron with the constant binormal <paramref name="BiNormal"/>.</summary>
-    public void Set(in gp_Dir BiNormal)
+    public void Set(in Direction3D BiNormal)
     {
         myTrihedron = GeomFill_IsConstantNormal;
 
@@ -357,7 +359,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             CW.Perform();
             if (!CW.IsDone())
             {
-                throw new StdFail_NotDone("Uncompatible wires");
+                throw new NotDoneException("Uncompatible wires");
             }
             TheGuide = TopoDS.Wire(CW.InternalShape().Value(2));
         }
@@ -365,14 +367,14 @@ public sealed class BRepFill_PipeShell : Standard_Transient
         {
             // Case guide closed : Determination of the origin
             // & reorientation of the guide
-            gp_Vec Dir;
-            gp_Pnt SpOr;
+            Vector3D Dir;
+            Point3D SpOr;
             if (!SpClose)
             {
                 TopExp.Vertices(mySpine, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
                 SpOr = BRep_Tool.Pnt(Vf);
-                gp_Pnt P = BRep_Tool.Pnt(Vl);
-                gp_Vec V = new(P, SpOr);
+                Point3D P = BRep_Tool.Pnt(Vl);
+                Vector3D V = new(P, SpOr);
                 SpOr.BaryCenter(0.5, P, 0.5);
                 Dir = V;
             }
@@ -490,12 +492,12 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             ResetLoc();
 
             GeomFill_LocationGuide Loc = (GeomFill_LocationGuide)myLocation!.Law(1);
-            Loc.ComputeAutomaticLaw(out NCollection_HArray1<gp_Pnt2d> ParAndRad);
+            Loc.ComputeAutomaticLaw(out NCollection_HArray1<Point2D> ParAndRad);
 
             // Compuite initial width of section (this will be 1.)
             GProp_GProps GlobalProps = new();
             BRepGProp.LinearProperties(Profile, GlobalProps);
-            gp_Pnt BaryCenter = GlobalProps.CentreOfMass();
+            Point3D BaryCenter = GlobalProps.CentreOfMass();
 
             TopoDS_Face ProfileFace = new BRepLib_MakeFace(TopoDS.Wire(Profile), true).InternalFace(); // only plane
             Geom_Surface thePlane = BRep_Tool.Surface(ProfileFace)!;
@@ -504,7 +506,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             Adaptor3d_Curve[] aHCurve = new Adaptor3d_Curve[2];
             aHCurve[0] = Loc.GetCurve()!;
             aHCurve[1] = Loc.Guide();
-            gp_Pnt[] PointsOnSpines = [new(), new()];
+            Point3D[] PointsOnSpines = [new(), new()];
             int i, j;
 
             for (i = 0; i < 2; i++)
@@ -513,7 +515,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
                 double MinDist = RealLast();
                 for (j = 1; j <= Intersector.NbPoints(); j++)
                 {
-                    gp_Pnt aPint = Intersector.Point(j).Pnt();
+                    Point3D aPint = Intersector.Point(j).Pnt();
                     double aDist = BaryCenter.Distance(aPint);
                     if (aDist < MinDist)
                     {
@@ -528,14 +530,14 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             int NbParRad = ParAndRad.Upper();
             for (i = 1; i <= NbParRad; i++)
             {
-                gp_Pnt2d aParRad = ParAndRad.Value(i);
+                Point2D aParRad = ParAndRad.Value(i);
                 aParRad.SetY(aParRad.Y() / InitialWidth);
                 ParAndRad.SetValue(i, aParRad);
             }
 
             myLaw = new Law_Interpol();
 
-            bool IsPeriodic = (Math.Abs(ParAndRad.Value(1).Y() - ParAndRad.Value(NbParRad).Y()) < Precision.Confusion());
+            bool IsPeriodic = (Math.Abs(ParAndRad.Value(1).Y() - ParAndRad.Value(NbParRad).Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());
 
             ((Law_Interpol)myLaw).Set(ParAndRad.Array1(), IsPeriodic);
         }
@@ -763,10 +765,10 @@ public sealed class BRepFill_PipeShell : Standard_Transient
         MkSw.SetForceApproxC1(myForceApproxC1);
         MkSw.SetBounds(TopoDS.Wire(myFirst), TopoDS.Wire(myLast));
 
-        GeomAbs_Shape theContinuity = GeomAbs_C2;
+        Continuity theContinuity = C2;
         if (myTrihedron == GeomFill_IsDiscreteTrihedron)
         {
-            theContinuity = GeomAbs_C0;
+            theContinuity = C0;
         }
         NCollection_Map<TopoDS_Shape> Dummy = new(TopTools_ShapeMapHasher.Instance);
         NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> Dummy2 = new(TopTools_ShapeMapHasher.Instance);
@@ -837,12 +839,12 @@ public sealed class BRepFill_PipeShell : Standard_Transient
     /// <summary>
     /// Closes the shell with planar faces at its ends and makes a solid of it. False if it can't.
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The shell isn't built.</exception>
+    /// <exception cref="NotDoneException">The shell isn't built.</exception>
     public bool MakeSolid()
     {
         if (myShape.IsNull())
         {
-            throw new StdFail_NotDone("PipeShell is not built");
+            throw new NotDoneException("PipeShell is not built");
         }
         bool B = myShape.Closed();
         BRep_Builder BS = new();
@@ -862,7 +864,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
                     B = PerformPlan(ref myLast);
                     if (B)
                     {
-                        if (myShape.TShape()!.IsFrozen())
+                        if (myShape.TShape()!.IsFrozen)
                         {
                             // OCCT.NET: OCCT adds the end faces to the shell the caller may already hold (Shape()); a
                             // published shell is frozen, so the port adds them to a new shell of the same faces
@@ -904,7 +906,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             BS.MakeSolid(ref solid);
             BS.Add(solid, TopoDS.Shell(myShape));
             BRepClass3d_SolidClassifier SC = new(solid);
-            SC.PerformInfinitePoint(Precision.Confusion());
+            SC.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
             if (SC.State() == TopAbs_IN)
             {
                 BS.MakeSolid(ref solid);
@@ -1005,7 +1007,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
         TopoDS_Wire theSect;
         if (!IsReady())
         {
-            throw new StdFail_NotDone("PipeShell");
+            throw new NotDoneException("PipeShell");
         }
         if (myLocation is not null && mySection is not null)
         {
@@ -1025,7 +1027,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             }
             if (wdeg)
             {
-                throw new Standard_Failure("Wrong usage of punctual sections");
+                throw new FailureException("Wrong usage of punctual sections");
             }
         }
         if (mySeq.Length() <= 2)
@@ -1041,7 +1043,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             }
             if (wdeg)
             {
-                throw new Standard_Failure("Wrong usage of punctual sections");
+                throw new FailureException("Wrong usage of punctual sections");
             }
         }
 
@@ -1059,7 +1061,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
                 }
                 default:
                 { // Not planned!
-                    throw new Standard_ConstructionError("PipeShell");
+                    throw new ConstructionErrorException("PipeShell");
                 }
             }
         }
@@ -1098,7 +1100,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
         {
             NCollection_Sequence<double> Param = new();
             NCollection_Sequence<int> IndSec = new();
-            NCollection_Sequence<gp_Trsf> Transformations = new();
+            NCollection_Sequence<Transform3D> Transformations = new();
             int NbL = myLocation.NbLaw();
             double V1, V2;
             myLocation.CurvilinearBounds(NbL, out V1, out V2);
@@ -1108,7 +1110,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             for (iseq = 1; iseq <= mySeq.Length(); iseq++)
             {
                 IndSec.Append(iseq);
-                Place(mySeq[iseq], out theSect, out gp_Trsf aTrsf, out double param);
+                Place(mySeq[iseq], out theSect, out Transform3D aTrsf, out double param);
                 Param.Append(param);
                 WSeq.Append(theSect);
                 Transformations.Append(aTrsf);
@@ -1228,7 +1230,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
             }
             else
             {
-                throw new Standard_ConstructionError("PipeShell : uncompatible wires");
+                throw new ConstructionErrorException("PipeShell : uncompatible wires");
             }
             mySection = new BRepFill_NSections(WorkingSections, Transformations, Param, V1, V2);
         } // else
@@ -1265,7 +1267,7 @@ public sealed class BRepFill_PipeShell : Standard_Transient
     // purpose  : Implement a Section in the local reference frame
     //           and return its parameter on the trajectory
     //=======================================================================
-    private void Place(in BRepFill_Section Sec, out TopoDS_Wire W, out gp_Trsf aTrsf, out double param)
+    private void Place(in BRepFill_Section Sec, out TopoDS_Wire W, out Transform3D aTrsf, out double param)
     {
         BRepFill_SectionPlacement Place = new(myLocation!, Sec.InternalWire(), Sec.Vertex(), Sec.WithContact(), Sec.WithCorrection());
         TopoDS_Wire TmpWire = Sec.InternalWire();

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -28,8 +29,8 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     public ShapeFix_FixSmallSolid()
     {
         myFixMode              = 0;
-        myVolumeThreshold      = Occt.Precision.Infinite();
-        myWidthFactorThreshold = Occt.Precision.Infinite();
+        myVolumeThreshold      = Kerf.Engine.Foundation.Precision.Infinite();
+        myWidthFactorThreshold = Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>
@@ -44,13 +45,13 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
     /// <summary>Sets (or clears, with a negative value) the volume threshold for small solids.</summary>
     public void SetVolumeThreshold(double theThreshold = -1.0)
     {
-        myVolumeThreshold = theThreshold >= 0.0 ? theThreshold : Occt.Precision.Infinite();
+        myVolumeThreshold = theThreshold >= 0.0 ? theThreshold : Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>Sets (or clears, with a negative value) the width factor threshold for small solids.</summary>
     public void SetWidthFactorThreshold(double theThreshold = -1.0)
     {
-        myWidthFactorThreshold = theThreshold >= 0.0 ? theThreshold : Occt.Precision.Infinite();
+        myWidthFactorThreshold = theThreshold >= 0.0 ? theThreshold : Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     // Check if an input shape is valid
@@ -96,7 +97,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
             if (IsSmall(aSolid))
             {
                 theContext.Remove(aSolid);
-                SendWarning(aSolid, new Message_Msg("ShapeFix.FixSmallSolid.MSG0"));
+                SendWarning(aSolid, new Msg("ShapeFix.FixSmallSolid.MSG0"));
             }
         }
 
@@ -466,7 +467,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
                     // remove the small solid
                     theContext.Remove(aSmallSolid);
-                    SendWarning(aSmallSolid, new Message_Msg("ShapeFix.FixSmallSolid.MSG1"));
+                    SendWarning(aSmallSolid, new Msg("ShapeFix.FixSmallSolid.MSG1"));
 
                     aSmallSolids.Remove(aSmallIter);
                 }
@@ -517,8 +518,8 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
 
     // Check if at least one smallness criterion is set
     private bool IsThresholdsSet() =>
-        (IsUsedVolumeThreshold() && myVolumeThreshold < Occt.Precision.Infinite())
-        || (IsUsedWidthFactorThreshold() && myWidthFactorThreshold < Occt.Precision.Infinite());
+        (IsUsedVolumeThreshold() && myVolumeThreshold < Kerf.Engine.Foundation.Precision.Infinite())
+        || (IsUsedWidthFactorThreshold() && myWidthFactorThreshold < Kerf.Engine.Foundation.Precision.Infinite());
 
     // Check if a solid meets the smallness criteria
     private bool IsSmall(in TopoDS_Shape theSolid)
@@ -534,7 +535,7 @@ public class ShapeFix_FixSmallSolid : ShapeFix_Root
         // If the width factor threshold is used and set,
         // and the solid's width factor exceeds threshold value,
         // consider the solid as not small
-        if (IsUsedWidthFactorThreshold() && myWidthFactorThreshold < Occt.Precision.Infinite())
+        if (IsUsedWidthFactorThreshold() && myWidthFactorThreshold < Kerf.Engine.Foundation.Precision.Infinite())
         {
             double anArea = ShapeArea(theSolid);
             if (aVolume > myWidthFactorThreshold * anArea * 0.5)

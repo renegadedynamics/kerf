@@ -3,7 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IMeshData_Status;
 using static Occt.TopAbs_Orientation;
 
@@ -36,7 +41,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
     /// <summary>Pre-processes the model; false without a model.</summary>
     protected override bool performInternal(IMeshData_Model? theModel,
                                             in IMeshTools_Parameters theParameters,
-                                            Message_ProgressRange theRange)
+                                            ProgressRange theRange)
     {
         _ = theRange;
         if (theModel is null)
@@ -46,8 +51,8 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
 
         int aFacesNb = theModel.FacesNb();
         bool isOneThread = !theParameters.InParallel;
-        OSD_Parallel.For(0, aFacesNb, new SeamEdgeAmplifier(theModel, theParameters).Process, isOneThread);
-        OSD_Parallel.For(0,
+        OsdParallel.For(0, aFacesNb, new SeamEdgeAmplifier(theModel, theParameters).Process, isOneThread);
+        OsdParallel.For(0,
                          aFacesNb,
                          new TriangulationConsistency(theModel, theParameters.AllowQualityDecrease).Process,
                          isOneThread);
@@ -61,7 +66,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             {
                 if (aDEdge.IsSet(IMeshData_Outdated))
                 {
-                    BRep_Tool.Polygon3D(aDEdge.GetEdge(), out TopLoc_Location aLoc);
+                    BRep_Tool.Polygon3D(aDEdge.GetEdge(), out Placement aLoc);
                     BRepMesh_ShapeTool.NullifyEdge(aDEdge.GetEdge(), aLoc);
                 }
 
@@ -77,7 +82,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
                     aUsedFaces.Add(aDFace);
                     if (aDFace.IsSet(IMeshData_Outdated))
                     {
-                        Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out TopLoc_Location aLoc);
+                        Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement aLoc);
 
                         // Clean all edges of oudated face.
                         for (int aWireIt = 0; aWireIt < aDFace.WiresNb(); ++aWireIt)
@@ -120,15 +125,15 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
                 return;
             }
 
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out TopLoc_Location _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
             if (aTriangulation is not null)
             {
                 // If there is an info about initial parameters, use it due to deflection kept
                 // by Poly_Triangulation is generally an estimation upon generated mesh and can
                 // be either less or even greater than specified value.
-                Poly_TriangulationParameters? aSourceParams = aTriangulation.Parameters();
-                double aDeflection = (aSourceParams is not null && aSourceParams.HasDeflection())
+                TriangulationParameters? aSourceParams = aTriangulation.Parameters();
+                double aDeflection = (aSourceParams is not null && aSourceParams.HasDeflection)
                                          ? aSourceParams.Deflection()
                                          : aTriangulation.Deflection();
 
@@ -140,14 +145,14 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
                 {
                     // #25080: check that indices of links forming triangles are in range.
                     Span<int> aNode = stackalloc int[3];
-                    for (int i = 1; i <= aTriangulation.NbTriangles() && isTriangulationConsistent; ++i)
+                    for (int i = 1; i <= aTriangulation.TriangleCount && isTriangulationConsistent; ++i)
                     {
-                        Poly_Triangle aTriangle = aTriangulation.Triangle(i);
+                        Triangle1 aTriangle = aTriangulation.Triangle(i);
 
                         aTriangle.Get(out aNode[0], out aNode[1], out aNode[2]);
                         for (int j = 0; j < 3 && isTriangulationConsistent; ++j)
                         {
-                            isTriangulationConsistent = (aNode[j] >= 1 && aNode[j] <= aTriangulation.NbNodes());
+                            isTriangulationConsistent = (aNode[j] >= 1 && aNode[j] <= aTriangulation.NodeCount);
                         }
                     }
                 }
@@ -181,7 +186,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
         public void Process(int theFaceIndex)
         {
             IMeshData_Face aDFace = myModel.GetFace(theFaceIndex);
-            if (aDFace.GetSurface().GetType() != GeomAbs_Cone || aDFace.IsSet(IMeshData_Failure))
+            if (aDFace.GetSurface().GetType() != SurfaceKind.Cone || aDFace.IsSet(IMeshData_Failure))
             {
                 return;
             }
@@ -197,8 +202,8 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
                     {
                         if (splitEdge(aDEdge, aDFace, Math.Abs(getConeStep(aDFace))))
                         {
-                            Poly_Triangulation? aTriangulation =
-                                BRep_Tool.Triangulation(aDFace.GetFace(), out TopLoc_Location _);
+                            Triangulation? aTriangulation =
+                                BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
                             if (aTriangulation is not null)
                             {
@@ -225,7 +230,7 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
 
                 for (int aPointIt = 0; aPointIt < aPCurve.ParametersNb(); ++aPointIt)
                 {
-                    gp_Pnt2d aPnt2d = aPCurve.GetPoint(aPointIt);
+                    Point2D aPnt2d = aPCurve.GetPoint(aPointIt);
                     aSplitter.AddPoint(aPnt2d);
                 }
             }
@@ -246,11 +251,11 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             IMeshData_PCurve aIPC2 = theDEdge.GetPCurve(1);
 
             // Calculate the step by parameter of the curve.
-            gp_Pnt2d aFPntOfIPC1 = aIPC1.GetPoint(0);
-            gp_Pnt2d aLPntOfIPC1 = aIPC1.GetPoint(aIPC1.ParametersNb() - 1);
+            Point2D aFPntOfIPC1 = aIPC1.GetPoint(0);
+            Point2D aLPntOfIPC1 = aIPC1.GetPoint(aIPC1.ParametersNb() - 1);
             double aMod = Math.Abs(aFPntOfIPC1.Y() - aLPntOfIPC1.Y());
 
-            if (aMod < gp.Resolution())
+            if (aMod < Constants.Resolution())
             {
                 return false;
             }
@@ -275,9 +280,9 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             }
 
             // Select the correct pcurve of the seam-edge.
-            gp_Pnt2d aFPntOfPC1 = aPC1.Value(aPC1.FirstParameter());
+            Point2D aFPntOfPC1 = aPC1.Value(aPC1.FirstParameter());
 
-            if (Math.Abs(aLPntOfIPC1.X() - aFPntOfPC1.X()) > Precision.Confusion())
+            if (Math.Abs(aLPntOfIPC1.X() - aFPntOfPC1.X()) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 (aPC1, aPC2) = (aPC2, aPC1);
             }
@@ -300,8 +305,8 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             for (int aPointIdx = 1; ; ++aPointIdx)
             {
                 double aCurrParam = aFirstParam + aPointIdx * theDT * (isReversed ? -1.0 : 1.0);
-                if ((isReversed && (aCurrParam - aLastParam < Precision.PConfusion()))
-                    || (!isReversed && !(aCurrParam - aLastParam < -Precision.PConfusion())))
+                if ((isReversed && (aCurrParam - aLastParam < global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    || (!isReversed && !(aCurrParam - aLastParam < -global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
                     break;
                 }
@@ -328,8 +333,8 @@ public class BRepMesh_ModelPreProcessor : IMeshTools_ModelAlgo
             for (int aPointIdx = 1; ; ++aPointIdx)
             {
                 double aCurrParam = aFirstParam + aPointIdx * theDT * (isReversed ? -1.0 : 1.0);
-                if ((isReversed && (aCurrParam - aLastParam < Precision.PConfusion()))
-                    || (!isReversed && !(aCurrParam - aLastParam < -Precision.PConfusion())))
+                if ((isReversed && (aCurrParam - aLastParam < global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    || (!isReversed && !(aCurrParam - aLastParam < -global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
                     break;
                 }

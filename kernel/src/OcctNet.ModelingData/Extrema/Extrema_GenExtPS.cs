@@ -3,12 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Extrema_ElementType;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -27,29 +33,29 @@ public class Extrema_GenExtPS
 {
     // The selectors of the sphere tree (Extrema_GenExtPS.cxx). OCCT keeps references to the sphere array and to the
     // caller's solution; the port keeps the array and the solution itself, which Sphere() returns.
-    private abstract class Bnd_SphereUBTreeSelector : NCollection_UBTree<int, Bnd_Sphere>.Selector
+    private abstract class Bnd_SphereUBTreeSelector : SpatialTree<int, BoundingSphere>.Selector
     {
-        protected gp_Pnt myXYZ;
-        protected readonly NCollection_HArray1<Bnd_Sphere> mySphereArray;
-        protected Bnd_Sphere mySol;
+        protected Point3D myXYZ;
+        protected readonly NCollection_HArray1<BoundingSphere> mySphereArray;
+        protected BoundingSphere mySol;
 
-        protected Bnd_SphereUBTreeSelector(NCollection_HArray1<Bnd_Sphere> theSphereArray, in Bnd_Sphere theSol)
+        protected Bnd_SphereUBTreeSelector(NCollection_HArray1<BoundingSphere> theSphereArray, in BoundingSphere theSol)
         {
-            myXYZ = new gp_Pnt(0, 0, 0);
+            myXYZ = new Point3D(0, 0, 0);
             mySphereArray = theSphereArray;
             mySol = theSol;
         }
 
-        public void DefineCheckPoint(in gp_Pnt theXYZ) => myXYZ = theXYZ;
+        public void DefineCheckPoint(in Point3D theXYZ) => myXYZ = theXYZ;
 
-        public Bnd_Sphere Sphere() => mySol;
+        public BoundingSphere Sphere() => mySol;
     }
 
     private sealed class Bnd_SphereUBTreeSelectorMin : Bnd_SphereUBTreeSelector
     {
         private double myMinDist;
 
-        public Bnd_SphereUBTreeSelectorMin(NCollection_HArray1<Bnd_Sphere> theSphereArray, in Bnd_Sphere theSol)
+        public Bnd_SphereUBTreeSelectorMin(NCollection_HArray1<BoundingSphere> theSphereArray, in BoundingSphere theSol)
             : base(theSphereArray, theSol)
         {
             myMinDist = RealLast();
@@ -59,7 +65,7 @@ public class Extrema_GenExtPS
 
         public double MinDist() => myMinDist;
 
-        public override bool Reject(in Bnd_Sphere theBnd)
+        public override bool Reject(in BoundingSphere theBnd)
         {
             // myMinDist is decreased each time a nearer object is found
             return theBnd.IsOut(myXYZ.XYZ(), ref myMinDist);
@@ -67,7 +73,7 @@ public class Extrema_GenExtPS
 
         public override bool Accept(in int theInd)
         {
-            Bnd_Sphere aSph = mySphereArray.Value(theInd);
+            BoundingSphere aSph = mySphereArray.Value(theInd);
             double aCurDist;
 
             //    if ( (aCurDist = aSph.SquareDistance(myXYZ.XYZ())) < mySol.SquareDistance(myXYZ.XYZ()) )
@@ -90,7 +96,7 @@ public class Extrema_GenExtPS
     {
         private double myMaxDist;
 
-        public Bnd_SphereUBTreeSelectorMax(NCollection_HArray1<Bnd_Sphere> theSphereArray, in Bnd_Sphere theSol)
+        public Bnd_SphereUBTreeSelectorMax(NCollection_HArray1<BoundingSphere> theSphereArray, in BoundingSphere theSol)
             : base(theSphereArray, theSol)
         {
             // OCCT: Reject reads this as a maximal distance (Bnd_Sphere::IsOut), so with 0 every sphere is rejected
@@ -102,7 +108,7 @@ public class Extrema_GenExtPS
 
         public double MaxDist() => myMaxDist;
 
-        public override bool Reject(in Bnd_Sphere theBnd)
+        public override bool Reject(in BoundingSphere theBnd)
         {
             // myMaxDist is decreased each time a nearer object is found
             return theBnd.IsOut(myXYZ.XYZ(), ref myMaxDist);
@@ -110,7 +116,7 @@ public class Extrema_GenExtPS
 
         public override bool Accept(in int theInd)
         {
-            Bnd_Sphere aSph = mySphereArray.Value(theInd);
+            BoundingSphere aSph = mySphereArray.Value(theInd);
             double aCurDist;
 
             //    if ( (aCurDist = aSph.SquareDistance(myXYZ.XYZ())) > mySol.SquareDistance(myXYZ.XYZ()) )
@@ -141,8 +147,8 @@ public class Extrema_GenExtPS
     private double mytolv;
 
     private readonly NCollection_Array2<Extrema_POnSurfParams> myPoints = new();
-    private NCollection_UBTree<int, Bnd_Sphere>? mySphereUBTree;
-    private NCollection_HArray1<Bnd_Sphere>? mySphereArray;
+    private SpatialTree<int, BoundingSphere>? mySphereUBTree;
+    private NCollection_HArray1<BoundingSphere>? mySphereArray;
     private readonly Extrema_FuncPSNorm myF;
     private Adaptor3d_Surface? myS;
     private Extrema_ExtFlag myFlag;
@@ -198,7 +204,7 @@ public class Extrema_GenExtPS
     /// Computes all the extrema of the distance between P and S on S's whole range, starting from a sampling NbU x NbV;
     /// TolU and TolV stop the iterations.
     /// </summary>
-    public Extrema_GenExtPS(in gp_Pnt P, Adaptor3d_Surface S, int NbU, int NbV, double TolU, double TolV,
+    public Extrema_GenExtPS(in Point3D P, Adaptor3d_Surface S, int NbU, int NbV, double TolU, double TolV,
         Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX, Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad)
     {
         myF = new Extrema_FuncPSNorm(P, S);
@@ -212,7 +218,7 @@ public class Extrema_GenExtPS
     /// Computes all the extrema of the distance between P and S on [Umin, Usup] x [Vmin, Vsup], starting from a
     /// sampling NbU x NbV; TolU and TolV stop the iterations.
     /// </summary>
-    public Extrema_GenExtPS(in gp_Pnt P, Adaptor3d_Surface S, int NbU, int NbV, double Umin, double Usup, double Vmin,
+    public Extrema_GenExtPS(in Point3D P, Adaptor3d_Surface S, int NbU, int NbV, double Umin, double Usup, double Vmin,
         double Vsup, double TolU, double TolV, Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX,
         Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad)
     {
@@ -247,7 +253,7 @@ public class Extrema_GenExtPS
 
         if ((myusample < 2) || (myvsample < 2))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         myF.Initialize(S);
@@ -267,9 +273,9 @@ public class Extrema_GenExtPS
         aParams.Append(aPrevPar);
         // calculation the array of parametric points depending on the knots array variation and degree of
         // given surface
-        for (; i < theKnots.Length() && theKnots[i] < (theParMax - Precision.PConfusion()); i++)
+        for (; i < theKnots.Length() && theKnots[i] < (theParMax - global::Kerf.Engine.Foundation.Precision.PConfusion()); i++)
         {
-            if (theKnots[i + 1] < theParMin + Precision.PConfusion())
+            if (theKnots[i + 1] < theParMin + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 continue;
             }
@@ -279,11 +285,11 @@ public class Extrema_GenExtPS
             for (; k <= theDegree; k++)
             {
                 double aPar = theKnots[i] + k * aStep;
-                if (aPar > theParMax - Precision.PConfusion())
+                if (aPar > theParMax - global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     break;
                 }
-                if (aPar > aPrevPar + Precision.PConfusion())
+                if (aPar > aPrevPar + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aParams.Append(aPar);
                     aPrevPar = aPar;
@@ -309,12 +315,12 @@ public class Extrema_GenExtPS
     {
         // creation parametric points for BSpline and Bezier surfaces
         // with taking into account of Degree and NbKnots of BSpline or Bezier geometry
-        if (theSurf.GetType() == GeomAbs_OffsetSurface)
+        if (theSurf.GetType() == OffsetSurface)
         {
             GetGridPoints(theSurf.BasisSurface());
         }
         // parametric points for BSpline surfaces
-        else if (theSurf.GetType() == GeomAbs_BSplineSurface)
+        else if (theSurf.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface? aBspl = theSurf.BSpline();
             if (aBspl is not null)
@@ -326,7 +332,7 @@ public class Extrema_GenExtPS
             }
         }
         // calculation parametric points for Bezier surfaces
-        else if (theSurf.GetType() == GeomAbs_BezierSurface)
+        else if (theSurf.GetType() == BezierSurface)
         {
             Geom_BezierSurface? aBezier = theSurf.Bezier();
             if (aBezier is null)
@@ -341,11 +347,11 @@ public class Extrema_GenExtPS
             fillParams(aVKnots, aBezier.VDegree(), myvmin, myvsup, ref myVParams, myvsample);
         }
         // creation points for surfaces based on BSpline or Bezier curves
-        else if (theSurf.GetType() == GeomAbs_SurfaceOfRevolution || theSurf.GetType() == GeomAbs_SurfaceOfExtrusion)
+        else if (theSurf.GetType() == SurfaceOfRevolution || theSurf.GetType() == SurfaceOfExtrusion)
         {
             NCollection_HArray1<double>? anArrKnots = null;
             int aDegree = 0;
-            if (theSurf.BasisCurve().GetType() == GeomAbs_BSplineCurve)
+            if (theSurf.BasisCurve().GetType() == BSplineCurve)
             {
                 Geom_BSplineCurve? aBspl = theSurf.BasisCurve().BSpline();
                 if (aBspl is not null)
@@ -354,7 +360,7 @@ public class Extrema_GenExtPS
                     aDegree = aBspl.Degree();
                 }
             }
-            if (theSurf.BasisCurve().GetType() == GeomAbs_BezierCurve)
+            if (theSurf.BasisCurve().GetType() == BezierCurve)
             {
                 Geom_BezierCurve? aBez = theSurf.BasisCurve().Bezier();
                 if (aBez is not null)
@@ -369,7 +375,7 @@ public class Extrema_GenExtPS
             {
                 return;
             }
-            if (theSurf.GetType() == GeomAbs_SurfaceOfRevolution)
+            if (theSurf.GetType() == SurfaceOfRevolution)
             {
                 fillParams(anArrKnots.Array1(), aDegree, myvmin, myvsup, ref myVParams, myvsample);
             }
@@ -392,7 +398,7 @@ public class Extrema_GenExtPS
     // Computes the point on surface parameters on an edge. If it coincides with theParam0 or theParam1, that one is
     // returned. (OCCT returns a reference to theParam0, theParam1 or myGridParam; the callers copy it.)
     private Extrema_POnSurfParams ComputeEdgeParameters(bool IsUEdge, in Extrema_POnSurfParams theParam0,
-        in Extrema_POnSurfParams theParam1, in gp_Pnt thePoint, double theDiffTol)
+        in Extrema_POnSurfParams theParam1, in Point3D thePoint, double theDiffTol)
     {
         double aSqrDist01 = theParam0.Value().SquareDistance(theParam1.Value());
 
@@ -422,8 +428,8 @@ public class Extrema_GenExtPS
             else
             {
                 // The shortest distance is inside the edge.
-                gp_XYZ aPoP = thePoint.XYZ().Subtracted(theParam0.Value().XYZ());
-                gp_XYZ aPoP1 = theParam1.Value().XYZ().Subtracted(theParam0.Value().XYZ());
+                Xyz aPoP = thePoint.XYZ().Subtracted(theParam0.Value().XYZ());
+                Xyz aPoP1 = theParam1.Value().XYZ().Subtracted(theParam0.Value().XYZ());
                 double aRatio = aPoP.Dot(aPoP1) / aSqrDist01;
                 Span<double> aU = stackalloc double[2];
                 Span<double> aV = stackalloc double[2];
@@ -456,7 +462,7 @@ public class Extrema_GenExtPS
     }
 
     // Creation of the grid of parametric points.
-    private void BuildGrid(in gp_Pnt thePoint)
+    private void BuildGrid(in Point3D thePoint)
     {
         // if grid was already built skip its creation
         if (!myInit)
@@ -499,7 +505,7 @@ public class Extrema_GenExtPS
 
             GeomGridEval_Surface aGridEval = new(myS!);
 
-            NCollection_Array2<gp_Pnt> aGridPoints = aGridEval.EvaluateGrid(myUParams.Array1(), myVParams.Array1());
+            NCollection_Array2<Point3D> aGridPoints = aGridEval.EvaluateGrid(myUParams.Array1(), myVParams.Array1());
 
             if (aGridPoints.IsEmpty())
             {
@@ -510,7 +516,7 @@ public class Extrema_GenExtPS
             {
                 for (int NoV = 1; NoV <= myvsample; NoV++)
                 {
-                    gp_Pnt aP1 = aGridPoints.Value(NoU, NoV);
+                    Point3D aP1 = aGridPoints.Value(NoU, NoV);
                     Extrema_POnSurfParams aParam = new(myUParams.Value(NoU), myVParams.Value(NoV), aP1);
                     aParam.SetElementType(Extrema_Node);
                     aParam.SetIndices(NoU, NoV);
@@ -680,15 +686,15 @@ public class Extrema_GenExtPS
         }
     }
 
-    private static double LengthOfIso(Adaptor3d_Surface theS, GeomAbs_IsoType theIso, double thePar1, double thePar2,
+    private static double LengthOfIso(Adaptor3d_Surface theS, IsoType theIso, double thePar1, double thePar2,
         int theNbPnts, double thePar)
     {
         double aLen = 0.0;
         int i;
         double dPar = (thePar2 - thePar1) / (theNbPnts - 1);
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
         double aPar = thePar1 + dPar;
-        if (theIso == GeomAbs_IsoU)
+        if (theIso == IsoU)
         {
             aP1 = theS.Value(thePar, thePar1);
         }
@@ -699,7 +705,7 @@ public class Extrema_GenExtPS
 
         for (i = 2; i <= theNbPnts; ++i)
         {
-            if (theIso == GeomAbs_IsoU)
+            if (theIso == IsoU)
             {
                 aP2 = theS.Value(thePar, aPar);
             }
@@ -719,29 +725,29 @@ public class Extrema_GenExtPS
     {
         double aMinLen = 1.0e-3;
         int nbp = Min(23, theNbV);
-        double aLenU1 = LengthOfIso(theS, GeomAbs_IsoU, theV1, theV2, nbp, theU1);
+        double aLenU1 = LengthOfIso(theS, IsoU, theV1, theV2, nbp, theU1);
         if (aLenU1 <= aMinLen)
         {
-            double aL = LengthOfIso(theS, GeomAbs_IsoU, theV1, theV2, nbp, .7 * theU1 + 0.3 * theU2);
+            double aL = LengthOfIso(theS, IsoU, theV1, theV2, nbp, .7 * theU1 + 0.3 * theU2);
             aLenU1 = Max(aL, aLenU1);
         }
-        double aLenU2 = LengthOfIso(theS, GeomAbs_IsoU, theV1, theV2, nbp, theU2);
+        double aLenU2 = LengthOfIso(theS, IsoU, theV1, theV2, nbp, theU2);
         if (aLenU2 <= aMinLen)
         {
-            double aL = LengthOfIso(theS, GeomAbs_IsoU, theV1, theV2, nbp, .3 * theU1 + 0.7 * theU2);
+            double aL = LengthOfIso(theS, IsoU, theV1, theV2, nbp, .3 * theU1 + 0.7 * theU2);
             aLenU2 = Max(aL, aLenU2);
         }
         nbp = Min(23, theNbV);
-        double aLenV1 = LengthOfIso(theS, GeomAbs_IsoV, theU1, theU2, nbp, theV1);
+        double aLenV1 = LengthOfIso(theS, IsoV, theU1, theU2, nbp, theV1);
         if (aLenV1 <= aMinLen)
         {
-            double aL = LengthOfIso(theS, GeomAbs_IsoV, theU1, theU2, nbp, .7 * theV1 + 0.3 * theV2);
+            double aL = LengthOfIso(theS, IsoV, theU1, theU2, nbp, .7 * theV1 + 0.3 * theV2);
             aLenV1 = Max(aL, aLenV1);
         }
-        double aLenV2 = LengthOfIso(theS, GeomAbs_IsoV, theU1, theU2, nbp, theV2);
+        double aLenV2 = LengthOfIso(theS, IsoV, theU1, theU2, nbp, theV2);
         if (aLenV2 <= aMinLen)
         {
-            double aL = LengthOfIso(theS, GeomAbs_IsoV, theU1, theU2, nbp, .3 * theV1 + 0.7 * theV2);
+            double aL = LengthOfIso(theS, IsoV, theU1, theU2, nbp, .3 * theV1 + 0.7 * theV2);
             aLenV2 = Max(aL, aLenV2);
         }
         //
@@ -780,7 +786,7 @@ public class Extrema_GenExtPS
             return;
         }
 
-        if (myS!.GetType() == GeomAbs_BSplineSurface)
+        if (myS!.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface aBspl = myS.BSpline();
             int aUValue = aBspl.UDegree() * aBspl.NbUKnots();
@@ -823,23 +829,23 @@ public class Extrema_GenExtPS
 
         // Build UB-tree with surface points for fast proximity search.
         // Use optimized grid evaluator with span-based caching for B-spline surfaces.
-        mySphereUBTree = new NCollection_UBTree<int, Bnd_Sphere>();
-        NCollection_UBTreeFiller<int, Bnd_Sphere> aFiller = new(mySphereUBTree);
+        mySphereUBTree = new SpatialTree<int, BoundingSphere>();
+        SpatialTreeFiller<int, BoundingSphere> aFiller = new(mySphereUBTree);
         int i = 0;
 
-        mySphereArray = new NCollection_HArray1<Bnd_Sphere>(0, myusample * myvsample);
+        mySphereArray = new NCollection_HArray1<BoundingSphere>(0, myusample * myvsample);
 
         // Use unified grid evaluator for all surface types (optimized for BSpline, Bezier, etc.)
         GeomGridEval_Surface aGridEval = new(myS);
 
-        NCollection_Array2<gp_Pnt> aGridPoints = aGridEval.EvaluateGrid(myUParams.Array1(), myVParams.Array1());
+        NCollection_Array2<Point3D> aGridPoints = aGridEval.EvaluateGrid(myUParams.Array1(), myVParams.Array1());
 
         for (NoU = 1; NoU <= myusample; NoU++)
         {
             for (NoV = 1; NoV <= myvsample; NoV++)
             {
-                gp_Pnt aP1 = aGridPoints.Value(NoU, NoV);
-                Bnd_Sphere aSph = new(aP1.XYZ(), 0 /*mytolu < mytolv ? mytolu : mytolv*/, NoU, NoV);
+                Point3D aP1 = aGridPoints.Value(NoU, NoV);
+                BoundingSphere aSph = new(aP1.XYZ(), 0 /*mytolu < mytolv ? mytolu : mytolv*/, NoU, NoV);
                 aFiller.Add(i, aSph);
                 mySphereArray.SetValue(i, aSph);
                 i++;
@@ -848,7 +854,7 @@ public class Extrema_GenExtPS
         aFiller.Fill();
     }
 
-    private void FindSolution(in gp_Pnt P, in Extrema_POnSurfParams theParams)
+    private void FindSolution(in Point3D P, in Extrema_POnSurfParams theParams)
     {
         _ = P;
         math_Vector Tol = new(1, 2);
@@ -864,7 +870,7 @@ public class Extrema_GenExtPS
         UVsup[1] = myusup;
         UVsup[2] = myvsup;
 
-        math_FunctionSetRoot S = new(myF, Tol);
+        FunctionSetRoot S = new(myF, Tol);
         S.Perform(myF, UV, UVinf, UVsup);
 
         myDone = true;
@@ -882,7 +888,7 @@ public class Extrema_GenExtPS
     }
 
     /// <summary>Computes the extrema for the point P. Throws if the surface has not been initialized.</summary>
-    public void Perform(in gp_Pnt P)
+    public void Perform(in Point3D P)
     {
         myDone = false;
         myF.SetPoint(P);
@@ -1034,13 +1040,13 @@ public class Extrema_GenExtPS
             BuildTree();
             if (myFlag == Extrema_ExtFlag_MIN || myFlag == Extrema_ExtFlag_MINMAX)
             {
-                Bnd_Sphere aSol = mySphereArray!.Value(0);
+                BoundingSphere aSol = mySphereArray!.Value(0);
                 Bnd_SphereUBTreeSelectorMin aSelector = new(mySphereArray, aSol);
                 // aSelector.SetMaxDist( RealLast() );
                 aSelector.DefineCheckPoint(P);
                 mySphereUBTree!.Select(aSelector);
                 // TODO: check if no solution in binary tree
-                Bnd_Sphere aSph = aSelector.Sphere();
+                BoundingSphere aSph = aSelector.Sphere();
                 double aU = myUParams!.Value(aSph.U());
                 double aV = myVParams!.Value(aSph.V());
                 Extrema_POnSurfParams aParams = new(aU, aV, myS!.Value(aU, aV));
@@ -1051,13 +1057,13 @@ public class Extrema_GenExtPS
             }
             if (myFlag == Extrema_ExtFlag_MAX || myFlag == Extrema_ExtFlag_MINMAX)
             {
-                Bnd_Sphere aSol = mySphereArray!.Value(0);
+                BoundingSphere aSol = mySphereArray!.Value(0);
                 Bnd_SphereUBTreeSelectorMax aSelector = new(mySphereArray, aSol);
                 // aSelector.SetMaxDist( RealLast() );
                 aSelector.DefineCheckPoint(P);
                 mySphereUBTree!.Select(aSelector);
                 // TODO: check if no solution in binary tree
-                Bnd_Sphere aSph = aSelector.Sphere();
+                BoundingSphere aSph = aSelector.Sphere();
                 double aU = myUParams!.Value(aSph.U());
                 double aV = myVParams!.Value(aSph.V());
                 Extrema_POnSurfParams aParams = new(aU, aV, myS!.Value(aU, aV));
@@ -1077,7 +1083,7 @@ public class Extrema_GenExtPS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.NbExt();
     }
@@ -1087,7 +1093,7 @@ public class Extrema_GenExtPS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.SquareDistance(N);
@@ -1098,7 +1104,7 @@ public class Extrema_GenExtPS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return myF.Point(N);

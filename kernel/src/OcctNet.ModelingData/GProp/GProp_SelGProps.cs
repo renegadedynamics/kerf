@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Global properties of bounded elementary surfaces in 3D space (gp cylinders, cones, spheres and tori).</summary>
@@ -13,12 +19,12 @@ public class GProp_SelGProps : GProp_GProps
     {
     }
 
-    public void SetLocation(in gp_Pnt SLocation)
+    public void SetLocation(in Point3D SLocation)
     {
         loc = SLocation;
     }
 
-    public void Perform(in gp_Cylinder S, double Alpha1, double Alpha2, double Z1, double Z2)
+    public void Perform(in Cylinder S, double Alpha1, double Alpha2, double Z1, double Z2)
     {
         S.Location().Coord(out double X0, out double Y0, out double Z0);
         double R = S.Radius();
@@ -43,7 +49,7 @@ public class GProp_SelGProps : GProp_GProps
         double ICnz  = (Z2 + Z1) * (SA2 - SA1) / 2.0;
         double ISnz  = (Z2 + Z1) * (CA1 - CA2) / 2.0;
 
-        var Dm = new math_Matrix(1, 3, 1, 3);
+        var Dm = new Matrix(1, 3, 1, 3);
 
         Dm[1, 1] = ISn2 + IZ2;
         Dm[2, 2] = ICn2 + IZ2;
@@ -52,7 +58,7 @@ public class GProp_SelGProps : GProp_GProps
         Dm[1, 3] = Dm[3, 1] = -ICnz;
         Dm[3, 2] = Dm[2, 3] = -ISnz;
 
-        var Passage = new math_Matrix(1, 3, 1, 3);
+        var Passage = new Matrix(1, 3, 1, 3);
         Passage[1, 1] = Xa1;
         Passage[1, 2] = Xa2;
         Passage[1, 3] = Xa3;
@@ -63,7 +69,7 @@ public class GProp_SelGProps : GProp_GProps
         Passage[3, 2] = Za2;
         Passage[3, 3] = Za3;
 
-        var J = new math_Jacobi(Dm);
+        var J = new Jacobi(Dm);
         R = R * (Z2 - Z1);
         var V1 = new math_Vector(1, 3);
         var V2 = new math_Vector(1, 3);
@@ -81,12 +87,12 @@ public class GProp_SelGProps : GProp_GProps
         // OCCT: P V L (each eigenvector scaled by its value) is not the matrix P V L V^T P^T, and math_Jacobi sorts
         // the values, so the result is permuted or wrong except in special cases (docs/occt-issues.md). The
         // V.Multiply(Passage, V) above also reads V while overwriting it, as in OCCT.
-        inertia = new gp_Mat(new gp_XYZ(V1[1], V2[1], V3[1]), new gp_XYZ(V1[2], V2[2], V3[2]), new gp_XYZ(V1[3], V2[3], V3[3]));
-        GProp.HOperator(g, loc, dim, out gp_Mat Hop);
+        inertia = new Matrix3x3(new Xyz(V1[1], V2[1], V3[1]), new Xyz(V1[2], V2[2], V3[2]), new Xyz(V1[3], V2[3], V3[3]));
+        GProp.HOperator(g, loc, dim, out Matrix3x3 Hop);
         inertia = inertia + Hop;
     }
 
-    public void Perform(in gp_Cone S, double Alpha1, double Alpha2, double Z1, double Z2)
+    public void Perform(in Cone S, double Alpha1, double Alpha2, double Z1, double Z2)
 
     {
         S.Location().Coord(out double X0, out double Y0, out double Z0);
@@ -131,7 +137,7 @@ public class GProp_SelGProps : GProp_GProps
         double ICnz  = Cnt * Snt * ZZ * (R * (Z1 + Z2) / 2.0 + Auxi2) * (Sn2 - Sn1);
         double ISnz  = Cnt * Snt * ZZ * (R * (Z1 + Z2) / 2.0 + Auxi2) * (Cn1 - Cn2);
 
-        var Dm = new math_Matrix(1, 3, 1, 3);
+        var Dm = new Matrix(1, 3, 1, 3);
         Dm[1, 1] = ISn2 + IZ2;
         Dm[2, 2] = ICn2 + IZ2;
         Dm[3, 3] = IR2 * (Alpha2 - Alpha1);
@@ -139,7 +145,7 @@ public class GProp_SelGProps : GProp_GProps
         Dm[1, 3] = Dm[3, 1] = -ICnz;
         Dm[3, 2] = Dm[2, 3] = -ISnz;
 
-        var Passage = new math_Matrix(1, 3, 1, 3);
+        var Passage = new Matrix(1, 3, 1, 3);
         Passage[1, 1] = Xa1;
         Passage[1, 2] = Xa2;
         Passage[1, 3] = Xa3;
@@ -150,7 +156,7 @@ public class GProp_SelGProps : GProp_GProps
         Passage[3, 2] = Za2;
         Passage[3, 3] = Za3;
 
-        var J = new math_Jacobi(Dm);
+        var J = new Jacobi(Dm);
         var V1 = new math_Vector(1, 3);
         var V2 = new math_Vector(1, 3);
         var V3 = new math_Vector(1, 3);
@@ -167,12 +173,12 @@ public class GProp_SelGProps : GProp_GProps
         // OCCT: P V L (each eigenvector scaled by its value) is not the matrix P V L V^T P^T, and math_Jacobi sorts
         // the values, so the result is permuted or wrong except in special cases (docs/occt-issues.md). The
         // V.Multiply(Passage, V) above also reads V while overwriting it, as in OCCT.
-        inertia = new gp_Mat(new gp_XYZ(V1[1], V2[1], V3[1]), new gp_XYZ(V1[2], V2[2], V3[2]), new gp_XYZ(V1[3], V2[3], V3[3]));
-        GProp.HOperator(g, loc, dim, out gp_Mat Hop);
+        inertia = new Matrix3x3(new Xyz(V1[1], V2[1], V3[1]), new Xyz(V1[2], V2[2], V3[2]), new Xyz(V1[3], V2[3], V3[3]));
+        GProp.HOperator(g, loc, dim, out Matrix3x3 Hop);
         inertia = inertia + Hop;
     }
 
-    public void Perform(in gp_Sphere S, double Teta1, double Teta2, double Alpha1, double Alpha2)
+    public void Perform(in Sphere S, double Teta1, double Teta2, double Alpha1, double Alpha2)
     {
         S.Location().Coord(out double X0, out double Y0, out double Z0);
         S.Position().XDirection().Coord(out double Xa1, out double Ya1, out double Za1);
@@ -206,7 +212,7 @@ public class GProp_SelGProps : GProp_GProps
         double ICnz  = (Snt2 - Snt1) * (Cnf1 * Cnf1 * Cnf1 - Cnf2 * Cnf2 * Cnf2) / 3.0;
         double ISnz  = (Cnt1 - Cnt2) * (Cnf1 * Cnf1 * Cnf1 - Cnf2 * Cnf2 * Cnf2) / 3.0;
 
-        var Dm = new math_Matrix(1, 3, 1, 3);
+        var Dm = new Matrix(1, 3, 1, 3);
         Dm[1, 1] = ISn2 + IZ2;
         Dm[2, 2] = ICn2 + IZ2;
         Dm[3, 3] = IR2 * (Teta2 - Teta1);
@@ -214,7 +220,7 @@ public class GProp_SelGProps : GProp_GProps
         Dm[1, 3] = Dm[3, 1] = -ICnz;
         Dm[3, 2] = Dm[2, 3] = -ISnz;
 
-        var Passage = new math_Matrix(1, 3, 1, 3);
+        var Passage = new Matrix(1, 3, 1, 3);
         Passage[1, 1] = Xa1;
         Passage[1, 2] = Xa2;
         Passage[1, 3] = Xa3;
@@ -225,7 +231,7 @@ public class GProp_SelGProps : GProp_GProps
         Passage[3, 2] = Za2;
         Passage[3, 3] = Za3;
 
-        var J = new math_Jacobi(Dm);
+        var J = new Jacobi(Dm);
         R = R * R * R * R;
         var V1 = new math_Vector(1, 3);
         var V2 = new math_Vector(1, 3);
@@ -243,12 +249,12 @@ public class GProp_SelGProps : GProp_GProps
         // OCCT: P V L (each eigenvector scaled by its value) is not the matrix P V L V^T P^T, and math_Jacobi sorts
         // the values, so the result is permuted or wrong except in special cases (docs/occt-issues.md). The
         // V.Multiply(Passage, V) above also reads V while overwriting it, as in OCCT.
-        inertia = new gp_Mat(new gp_XYZ(V1[1], V2[1], V3[1]), new gp_XYZ(V1[2], V2[2], V3[2]), new gp_XYZ(V1[3], V2[3], V3[3]));
-        GProp.HOperator(g, loc, dim, out gp_Mat Hop);
+        inertia = new Matrix3x3(new Xyz(V1[1], V2[1], V3[1]), new Xyz(V1[2], V2[2], V3[2]), new Xyz(V1[3], V2[3], V3[3]));
+        GProp.HOperator(g, loc, dim, out Matrix3x3 Hop);
         inertia = inertia + Hop;
     }
 
-    public void Perform(in gp_Torus S, double Teta1, double Teta2, double Alpha1, double Alpha2)
+    public void Perform(in Torus S, double Teta1, double Teta2, double Alpha1, double Alpha2)
     {
         S.Location().Coord(out double X0, out double Y0, out double Z0);
         S.XAxis().Direction().Coord(out double Xa1, out double Ya1, out double Za1);
@@ -284,7 +290,7 @@ public class GProp_SelGProps : GProp_GProps
         double ICnz  = Rmin * (Snt2 - Snt1) * (Cnf1 - Cnf2) * (RMax + Rmin * (Cnf1 + Cnf2) / 2.0);
         double ISnz  = Rmin * (Cnt2 - Cnt1) * (Cnf1 - Cnf2) * (RMax + Rmin * (Cnf1 + Cnf2) / 2.0);
 
-        var Dm = new math_Matrix(1, 3, 1, 3);
+        var Dm = new Matrix(1, 3, 1, 3);
         Dm[1, 1] = ISn2 + IZ2;
         Dm[2, 2] = ICn2 + IZ2;
         Dm[3, 3] = IR2 * (Teta2 - Teta1);
@@ -292,7 +298,7 @@ public class GProp_SelGProps : GProp_GProps
         Dm[1, 3] = Dm[3, 1] = -ICnz;
         Dm[3, 2] = Dm[2, 3] = -ISnz;
 
-        var Passage = new math_Matrix(1, 3, 1, 3);
+        var Passage = new Matrix(1, 3, 1, 3);
         Passage[1, 1] = Xa1;
         Passage[1, 2] = Xa2;
         Passage[1, 3] = Xa3;
@@ -303,7 +309,7 @@ public class GProp_SelGProps : GProp_GProps
         Passage[3, 2] = Za2;
         Passage[3, 3] = Za3;
 
-        var J = new math_Jacobi(Dm);
+        var J = new Jacobi(Dm);
         RMax = RMax * Rmin;
         var V1 = new math_Vector(1, 3);
         var V2 = new math_Vector(1, 3);
@@ -321,30 +327,30 @@ public class GProp_SelGProps : GProp_GProps
         // OCCT: P V L (each eigenvector scaled by its value) is not the matrix P V L V^T P^T, and math_Jacobi sorts
         // the values, so the result is permuted or wrong except in special cases (docs/occt-issues.md). The
         // V.Multiply(Passage, V) above also reads V while overwriting it, as in OCCT.
-        inertia = new gp_Mat(new gp_XYZ(V1[1], V2[1], V3[1]), new gp_XYZ(V1[2], V2[2], V3[2]), new gp_XYZ(V1[3], V2[3], V3[3]));
-        GProp.HOperator(g, loc, dim, out gp_Mat Hop);
+        inertia = new Matrix3x3(new Xyz(V1[1], V2[1], V3[1]), new Xyz(V1[2], V2[2], V3[2]), new Xyz(V1[3], V2[3], V3[3]));
+        GProp.HOperator(g, loc, dim, out Matrix3x3 Hop);
         inertia = inertia + Hop;
     }
 
-    public GProp_SelGProps(in gp_Cone S, double Alpha1, double Alpha2, double Z1, double Z2, in gp_Pnt SLocation)
+    public GProp_SelGProps(in Cone S, double Alpha1, double Alpha2, double Z1, double Z2, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S, Alpha1, Alpha2, Z1, Z2);
     }
 
-    public GProp_SelGProps(in gp_Cylinder S, double Alpha1, double Alpha2, double Z1, double Z2, in gp_Pnt SLocation)
+    public GProp_SelGProps(in Cylinder S, double Alpha1, double Alpha2, double Z1, double Z2, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S, Alpha1, Alpha2, Z1, Z2);
     }
 
-    public GProp_SelGProps(in gp_Sphere S, double Teta1, double Teta2, double Alpha1, double Alpha2, in gp_Pnt SLocation)
+    public GProp_SelGProps(in Sphere S, double Teta1, double Teta2, double Alpha1, double Alpha2, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S, Teta1, Teta2, Alpha1, Alpha2);
     }
 
-    public GProp_SelGProps(in gp_Torus S, double Teta1, double Teta2, double Alpha1, double Alpha2, in gp_Pnt SLocation)
+    public GProp_SelGProps(in Torus S, double Teta1, double Teta2, double Alpha1, double Alpha2, in Point3D SLocation)
     {
         SetLocation(SLocation);
         Perform(S, Teta1, Teta2, Alpha1, Alpha2);

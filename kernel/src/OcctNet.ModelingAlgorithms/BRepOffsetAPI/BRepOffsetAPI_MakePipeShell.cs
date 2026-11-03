@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepBuilderAPI_PipeError;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.BRepFill_TypeOfContact;
@@ -47,13 +49,13 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>A fixed trihedron, given by <paramref name="Axe"/>.</summary>
-    public void SetMode(in gp_Ax2 Axe)
+    public void SetMode(in Frame3D Axe)
     {
         myPipe.Set(Axe);
     }
 
     /// <summary>A trihedron with the constant binormal <paramref name="BiNormal"/>.</summary>
-    public void SetMode(in gp_Dir BiNormal)
+    public void SetMode(in Direction3D BiNormal)
     {
         myPipe.Set(BiNormal);
     }
@@ -191,7 +193,7 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>Builds the shell.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         bool Ok;
         Ok = myPipe.Build();
@@ -207,12 +209,12 @@ public class BRepOffsetAPI_MakePipeShell : BRepPrimAPI_MakeSweep
     }
 
     /// <summary>Closes the shell with planar faces at its ends and makes a solid of it; false if it can't.</summary>
-    /// <exception cref="StdFail_NotDone">The shell isn't built.</exception>
+    /// <exception cref="NotDoneException">The shell isn't built.</exception>
     public bool MakeSolid()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone("BRepOffsetAPI_MakePipeShell::MakeSolid");
+            throw new NotDoneException("BRepOffsetAPI_MakePipeShell::MakeSolid");
         }
         bool Ok;
         Ok = myPipe.MakeSolid();

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
 
@@ -41,7 +42,7 @@ public class BRepAlgoAPI_CheckTests
     [Fact]
     public void Types_invalid_for_the_operation()
     {
-        TopoDS_Shape aVertex = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 2, 3)).Shape();
+        TopoDS_Shape aVertex = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Shape();
         BRepAlgoAPI_Check aCheck = new(Box(0, 0, 0, 1, 1, 1), aVertex, BOPAlgo_FUSE);
         Assert.False(aCheck.IsValid());
         Assert.Equal([BOPAlgo_BadType], aCheck.Result().Select(r => r.GetCheckStatus()));
@@ -54,9 +55,9 @@ public class BRepAlgoAPI_CheckTests
     public void A_topologically_invalid_shape_is_not_valid()
     {
         // a face whose wire isn't closed
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         TopoDS_Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
-        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(), aWire, true).Shape();
+        TopoDS_Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), aWire, true).Shape();
         BRepAlgoAPI_Check aCheck = new(aFace, false, false);
         Assert.False(aCheck.IsValid());
         Assert.Equal(BOPAlgo_NotValid, aCheck.Result().Last().GetCheckStatus());

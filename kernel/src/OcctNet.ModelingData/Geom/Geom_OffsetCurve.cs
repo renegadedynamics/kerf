@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -20,13 +23,13 @@ namespace Occt;
 /// </remarks>
 public class Geom_OffsetCurve : Geom_Curve
 {
-    private static readonly double MyAngularToleranceForG1 = Precision.Angular();
+    private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 
     private Geom_Curve basisCurve = null!;
     private GeomEval_RepCurveDesc.Base? myEvalRep;
-    private gp_Dir direction;
+    private Direction3D direction;
     private double offsetValue;
-    private GeomAbs_Shape myBasisCurveContinuity;
+    private Continuity myBasisCurveContinuity;
 
     /// <summary>True if an evaluation representation is attached.</summary>
     public bool HasEvalRepresentation() => myEvalRep is not null;
@@ -66,10 +69,10 @@ public class Geom_OffsetCurve : Geom_Curve
     /// <summary>
     /// The curve at distance theOffset from theCurve, in the direction theCurve' ^ theDir.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// The basis curve is a C0 B-spline that is not G1 (unless isTheNotCheckC0).
     /// </exception>
-    public Geom_OffsetCurve(Geom_Curve theCurve, double theOffset, in gp_Dir theDir, bool isTheNotCheckC0 = false)
+    public Geom_OffsetCurve(Geom_Curve theCurve, double theOffset, in Direction3D theDir, bool isTheNotCheckC0 = false)
     {
         direction = theDir;
         offsetValue = theOffset;
@@ -79,7 +82,7 @@ public class Geom_OffsetCurve : Geom_Curve
     // OCCT.NET: the basis curve may have been handed out (and frozen) by BasisCurve(); copy it before changing it.
     private void ownBasisCurve()
     {
-        if (basisCurve.IsFrozen())
+        if (basisCurve.IsFrozen)
         {
             basisCurve = (Geom_Curve)basisCurve.Copy();
         }
@@ -99,9 +102,9 @@ public class Geom_OffsetCurve : Geom_Curve
     public sealed override double ReversedParameter(double U) => basisCurve.ReversedParameter(U);
 
     /// <summary>The reference direction.</summary>
-    public gp_Dir Direction() => direction;
+    public Direction3D Direction() => direction;
 
-    internal void SetDirection(in gp_Dir V)
+    internal void SetDirection(in Direction3D V)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -123,7 +126,7 @@ public class Geom_OffsetCurve : Geom_Curve
     /// <summary>
     /// Changes the basis curve (a copy of C, with nested offsets folded into this one's offset and direction).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">C is a C0 B-spline that is not G1 (unless isNotCheckC0).</exception>
+    /// <exception cref="ConstructionErrorException">C is a C0 B-spline that is not G1 (unless isNotCheckC0).</exception>
     internal void SetBasisCurve(Geom_Curve C, bool isNotCheckC0 = false)
     {
         CheckMutable();
@@ -144,9 +147,9 @@ public class Geom_OffsetCurve : Geom_Curve
             {
                 aCheckingCurve = aOC.BasisCurve();
                 double PrevOff = aOC.Offset();
-                gp_Vec V1 = new gp_Vec(aOC.Direction());
-                gp_Vec V2 = new gp_Vec(direction);
-                gp_Vec Vdir = PrevOff * V1 + offsetValue * V2;
+                Vector3D V1 = new Vector3D(aOC.Direction());
+                Vector3D V2 = new Vector3D(direction);
+                Vector3D Vdir = PrevOff * V1 + offsetValue * V2;
 
                 if (offsetValue >= 0.0)
                 {
@@ -163,7 +166,7 @@ public class Geom_OffsetCurve : Geom_Curve
 
         myBasisCurveContinuity = aCheckingCurve.Continuity();
 
-        bool isC0 = !isNotCheckC0 && (myBasisCurveContinuity == GeomAbs_C0);
+        bool isC0 = !isNotCheckC0 && (myBasisCurveContinuity == C0);
 
         // Basis curve must be at least C1
         if (isC0 && aCheckingCurve is Geom_BSplineCurve aBC)
@@ -172,14 +175,14 @@ public class Geom_OffsetCurve : Geom_Curve
             {
                 // Checking if basis curve has more smooth (C1, G2 and above) is not done.
                 // It can be done in case of need.
-                myBasisCurveContinuity = GeomAbs_G1;
+                myBasisCurveContinuity = G1;
                 isC0 = false;
             }
 
             // Raise exception if still C0
             if (isC0)
             {
-                throw new Standard_ConstructionError("Offset on C0 curve");
+                throw new ConstructionErrorException("Offset on C0 curve");
             }
         }
         //
@@ -201,45 +204,45 @@ public class Geom_OffsetCurve : Geom_Curve
     }
 
     /// <summary>The continuity of the basis curve lowered by one (C1 gives C0, G1 and G2 are kept).</summary>
-    public sealed override GeomAbs_Shape Continuity()
+    public sealed override Continuity Continuity()
     {
-        GeomAbs_Shape OffsetShape = GeomAbs_C0;
+        Continuity OffsetShape = C0;
         switch (myBasisCurveContinuity)
         {
-            case GeomAbs_C0:
-                OffsetShape = GeomAbs_C0;
+            case C0:
+                OffsetShape = C0;
                 break;
-            case GeomAbs_C1:
-                OffsetShape = GeomAbs_C0;
+            case C1:
+                OffsetShape = C0;
                 break;
-            case GeomAbs_C2:
-                OffsetShape = GeomAbs_C1;
+            case C2:
+                OffsetShape = C1;
                 break;
-            case GeomAbs_C3:
-                OffsetShape = GeomAbs_C2;
+            case C3:
+                OffsetShape = C2;
                 break;
-            case GeomAbs_CN:
-                OffsetShape = GeomAbs_CN;
+            case CN:
+                OffsetShape = CN;
                 break;
-            case GeomAbs_G1:
-                OffsetShape = GeomAbs_G1;
+            case G1:
+                OffsetShape = G1;
                 break;
-            case GeomAbs_G2:
-                OffsetShape = GeomAbs_G2;
+            case G2:
+                OffsetShape = G2;
                 break;
         }
         return OffsetShape;
     }
 
     /// <exception cref="Geom_UndefinedValue">The normal is undefined at theU.</exception>
-    public sealed override gp_Pnt EvalD0(double theU)
+    public sealed override Point3D EvalD0(double theU)
     {
-        if (GeomEval_RepUtils.TryEvalCurveD0(myEvalRep, theU, out gp_Pnt aEvalRepResult))
+        if (GeomEval_RepUtils.TryEvalCurveD0(myEvalRep, theU, out Point3D aEvalRepResult))
         {
             return aEvalRepResult;
         }
         ResD1 aBasisD1 = basisCurve.EvalD1(theU);
-        gp_Pnt aValue = aBasisD1.Point;
+        Point3D aValue = aBasisD1.Point;
         if (!Geom_OffsetCurveUtils.CalculateD0(ref aValue, aBasisD1.D1, direction.XYZ(), offsetValue))
         {
             throw new Geom_UndefinedValue("Geom_OffsetCurve::EvalD0");
@@ -255,8 +258,8 @@ public class Geom_OffsetCurve : Geom_Curve
             return aEvalRepResult;
         }
         ResD2 aBasisD2 = basisCurve.EvalD2(theU);
-        gp_Pnt aValue = aBasisD2.Point;
-        gp_Vec aD1 = aBasisD2.D1;
+        Point3D aValue = aBasisD2.Point;
+        Vector3D aD1 = aBasisD2.D1;
         if (!Geom_OffsetCurveUtils.CalculateD1(ref aValue, ref aD1, aBasisD2.D2, direction.XYZ(), offsetValue))
         {
             throw new Geom_UndefinedDerivative("Geom_OffsetCurve::EvalD1");
@@ -272,13 +275,13 @@ public class Geom_OffsetCurve : Geom_Curve
             return aEvalRepResult;
         }
         ResD3 aBasisD3 = basisCurve.EvalD3(theU);
-        gp_Pnt aValue = aBasisD3.Point;
-        gp_Vec aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
+        Point3D aValue = aBasisD3.Point;
+        Vector3D aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
 
         bool isDirectionChange = false;
-        if (aD1.SquareMagnitude() <= gp.Resolution())
+        if (aD1.SquareMagnitude() <= Constants.Resolution())
         {
-            gp_Vec aDummyD4 = new gp_Vec();
+            Vector3D aDummyD4 = new Vector3D();
             if (!Geom_OffsetCurveUtils.AdjustDerivative(basisCurve,
                                                         3,
                                                         theU,
@@ -313,13 +316,13 @@ public class Geom_OffsetCurve : Geom_Curve
             return aEvalRepResult;
         }
         ResD3 aBasisD3 = basisCurve.EvalD3(theU);
-        gp_Vec aD4Basis = basisCurve.EvalDN(theU, 4);
-        gp_Pnt aValue = aBasisD3.Point;
-        gp_Vec aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
-        gp_Vec aD4 = aD4Basis;
+        Vector3D aD4Basis = basisCurve.EvalDN(theU, 4);
+        Point3D aValue = aBasisD3.Point;
+        Vector3D aD1 = aBasisD3.D1, aD2 = aBasisD3.D2, aD3 = aBasisD3.D3;
+        Vector3D aD4 = aD4Basis;
 
         bool isDirectionChange = false;
-        if (aD1.SquareMagnitude() <= gp.Resolution())
+        if (aD1.SquareMagnitude() <= Constants.Resolution())
         {
             if (!Geom_OffsetCurveUtils.AdjustDerivative(basisCurve,
                                                         4,
@@ -350,14 +353,14 @@ public class Geom_OffsetCurve : Geom_Curve
 
     /// <summary>The derivative of order N; above 3, the basis curve's (as in OCCT).</summary>
     /// <exception cref="Geom_UndefinedDerivative">N &lt; 1, or the derivative is undefined at U.</exception>
-    public sealed override gp_Vec EvalDN(double U, int N)
+    public sealed override Vector3D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom_UndefinedDerivative("Geom_OffsetCurve::EvalDN");
         }
 
-        if (GeomEval_RepUtils.TryEvalCurveDN(myEvalRep, U, N, out gp_Vec aEvalRepResult))
+        if (GeomEval_RepUtils.TryEvalCurveDN(myEvalRep, U, N, out Vector3D aEvalRepResult))
         {
             return aEvalRepResult;
         }
@@ -391,14 +394,14 @@ public class Geom_OffsetCurve : Geom_Curve
     /// <summary>True if the end points are within Precision::Computational() (squared distance).</summary>
     public sealed override bool IsClosed()
     {
-        gp_Pnt PF, PL;
+        Point3D PF, PL;
         D0(FirstParameter(), out PF);
         D0(LastParameter(), out PL);
-        return PF.SquareDistance(PL) <= Precision.Computational();
+        return PF.SquareDistance(PL) <= global::Kerf.Engine.Foundation.Precision.Computational();
     }
 
     /// <summary>True if the basis curve is C(N + 1).</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCN(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -406,7 +409,7 @@ public class Geom_OffsetCurve : Geom_Curve
     }
 
     /// <summary>Applies T to the basis curve and the direction; the offset is scaled by T.ScaleFactor().</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -417,17 +420,17 @@ public class Geom_OffsetCurve : Geom_Curve
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf T) => basisCurve.TransformedParameter(U, T);
+    public sealed override double TransformedParameter(double U, in Transform3D T) => basisCurve.TransformedParameter(U, T);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf T) => basisCurve.ParametricTransformation(T);
+    public sealed override double ParametricTransformation(in Transform3D T) => basisCurve.ParametricTransformation(T);
 
     /// <summary>The continuity of the basis curve (G1 for a G1 C0 B-spline).</summary>
-    public GeomAbs_Shape GetBasisCurveContinuity() => myBasisCurveContinuity;
+    public Continuity GetBasisCurveContinuity() => myBasisCurveContinuity;
 
     // Non-mutating twins (OCCT.NET)
 
-    public Geom_OffsetCurve WithDirection(in gp_Dir V)
+    public Geom_OffsetCurve WithDirection(in Direction3D V)
     {
         Geom_OffsetCurve aCopy = (Geom_OffsetCurve)Copy();
         aCopy.SetDirection(V);

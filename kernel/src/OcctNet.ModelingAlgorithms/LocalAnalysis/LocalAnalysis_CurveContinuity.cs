@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.LocalAnalysis_StatusErrorType;
 
 namespace Occt;
@@ -15,7 +17,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// A working result (decision 21): the constructor computes, the queries read. The queries but <see cref="IsDone"/>
-/// and <see cref="StatusError"/> throw <see cref="StdFail_NotDone"/> when the analysis failed. <see cref="StatusError"/>
+/// and <see cref="StatusError"/> throw <see cref="NotDoneException"/> when the analysis failed. <see cref="StatusError"/>
 /// of a successful analysis is uninitialised in OCCT; here it is <c>LocalAnalysis_NullFirstDerivative</c>.
 /// </remarks>
 public class LocalAnalysis_CurveContinuity
@@ -30,7 +32,7 @@ public class LocalAnalysis_CurveContinuity
     private double myG2Variation;
     private double myLambda1;
     private double myLambda2;
-    private readonly GeomAbs_Shape myTypeCont;
+    private readonly Continuity myTypeCont;
     private readonly double myepsnul;
     private readonly double myepsC0;
     private readonly double myepsC1;
@@ -49,7 +51,7 @@ public class LocalAnalysis_CurveContinuity
 
     private void CurvC1(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
     {
-        gp_Vec V1, V2;
+        Vector3D V1, V2;
         double ang;
         V1 = Curv1.D1();
         V2 = Curv2.D1();
@@ -86,7 +88,7 @@ public class LocalAnalysis_CurveContinuity
 
     private void CurvC2(GeomLProp_CLProps Curv1, GeomLProp_CLProps Curv2)
     {
-        gp_Vec V1, V2, V12, V22;
+        Vector3D V1, V2, V12, V22;
         double norm1, norm2, norm12, norm22, ang;
         V1 = Curv1.D1();
         V2 = Curv2.D1();
@@ -139,8 +141,8 @@ public class LocalAnalysis_CurveContinuity
         double ang;
         if (Curv1.IsTangentDefined() && Curv2.IsTangentDefined())
         {
-            Curv1.Tangent(out gp_Dir Tang1);
-            Curv2.Tangent(out gp_Dir Tang2);
+            Curv1.Tangent(out Direction3D Tang1);
+            Curv2.Tangent(out Direction3D Tang2);
             ang = Tang1.Angle(Tang2);
             if (ang > M_PI / 2)
             {
@@ -172,8 +174,8 @@ public class LocalAnalysis_CurveContinuity
                 // OCCT reads the first derivatives here (V1, V2) and never uses them
                 _ = Curv1.D1();
                 _ = Curv2.D1();
-                Curv1.Normal(out gp_Dir D1);
-                Curv2.Normal(out gp_Dir D2);
+                Curv1.Normal(out Direction3D D1);
+                Curv2.Normal(out Direction3D D2);
                 ang = D1.Angle(D2);
                 if (ang > M_PI / 2)
                 {
@@ -211,7 +213,7 @@ public class LocalAnalysis_CurveContinuity
     /// for G2; <paramref name="Maxlen"/> is the curves' greatest length, used to detect null curvature. Angles are
     /// between 0 and PI/2.
     /// </remarks>
-    public LocalAnalysis_CurveContinuity(Geom_Curve Curv1, double u1, Geom_Curve Curv2, double u2, GeomAbs_Shape Order,
+    public LocalAnalysis_CurveContinuity(Geom_Curve Curv1, double u1, Geom_Curve Curv2, double u2, Continuity Order,
                                          double EpsNul = 0.001, double EpsC0 = 0.001, double EpsC1 = 0.001,
                                          double EpsC2 = 0.001, double EpsG1 = 0.001, double EpsG2 = 0.001,
                                          double Percent = 0.01, double Maxlen = 10000)
@@ -241,14 +243,14 @@ public class LocalAnalysis_CurveContinuity
 
         switch (Order)
         {
-            case GeomAbs_C0:
+            case C0:
             {
                 var Curve1 = new GeomLProp_CLProps(Curv1, u1, 0, myepsnul);
                 var Curve2 = new GeomLProp_CLProps(Curv2, u2, 0, myepsnul);
                 CurvC0(Curve1, Curve2);
                 break;
             }
-            case GeomAbs_C1:
+            case C1:
             {
                 var Curve1 = new GeomLProp_CLProps(Curv1, u1, 1, myepsnul);
                 var Curve2 = new GeomLProp_CLProps(Curv2, u2, 1, myepsnul);
@@ -256,7 +258,7 @@ public class LocalAnalysis_CurveContinuity
                 CurvC1(Curve1, Curve2);
                 break;
             }
-            case GeomAbs_C2:
+            case C2:
             {
                 var Curve1 = new GeomLProp_CLProps(Curv1, u1, 2, myepsnul);
                 var Curve2 = new GeomLProp_CLProps(Curv2, u2, 2, myepsnul);
@@ -265,7 +267,7 @@ public class LocalAnalysis_CurveContinuity
                 CurvC2(Curve1, Curve2);
                 break;
             }
-            case GeomAbs_G1:
+            case G1:
             {
                 var Curve1 = new GeomLProp_CLProps(Curv1, u1, 1, myepsnul);
                 var Curve2 = new GeomLProp_CLProps(Curv2, u2, 1, myepsnul);
@@ -273,7 +275,7 @@ public class LocalAnalysis_CurveContinuity
                 CurvG1(Curve1, Curve2);
                 break;
             }
-            case GeomAbs_G2:
+            case G2:
             {
                 var Curve1 = new GeomLProp_CLProps(Curv1, u1, 2, myepsnul);
                 var Curve2 = new GeomLProp_CLProps(Curv2, u2, 2, myepsnul);
@@ -291,7 +293,7 @@ public class LocalAnalysis_CurveContinuity
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
     }
 
@@ -456,7 +458,7 @@ public class LocalAnalysis_CurveContinuity
 
     public LocalAnalysis_StatusErrorType StatusError() => myErrorStatus;
 
-    public GeomAbs_Shape ContinuityStatus()
+    public Continuity ContinuityStatus()
     {
         CheckDone();
         return (myTypeCont);

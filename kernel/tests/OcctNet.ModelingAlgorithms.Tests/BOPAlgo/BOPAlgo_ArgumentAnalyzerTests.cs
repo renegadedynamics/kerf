@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.BOPAlgo_CheckStatus;
 using static Occt.BOPAlgo_Operation;
@@ -76,7 +77,7 @@ public class BOPAlgo_ArgumentAnalyzerTests
         Assert.InRange(aResult.GetFaultyShapes1().Count, 1, 2);
         Assert.Empty(aResult.GetFaultyShapes2());
         // the published shapes are frozen
-        Assert.All(aResult.GetFaultyShapes1(), s => Assert.True(s.TShape()!.IsFrozen()));
+        Assert.All(aResult.GetFaultyShapes1(), s => Assert.True(s.TShape()!.IsFrozen));
         Assert.All(Statuses(anAnalyzer), s => Assert.Equal(BOPAlgo_SelfIntersect, s));
     }
 
@@ -94,7 +95,7 @@ public class BOPAlgo_ArgumentAnalyzerTests
     public void Bad_types_for_the_operation()
     {
         TopoDS_Shape aSolid = Box(0, 0, 0, 10, 10, 10);
-        TopoDS_Shape aVertex = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 2, 3)).Shape();
+        TopoDS_Shape aVertex = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Shape();
         // a fuse of a solid and a vertex: dimensions differ
         BOPAlgo_ArgumentAnalyzer anAnalyzer = Analyzer(aSolid, aVertex, BOPAlgo_FUSE);
         anAnalyzer.Perform();
@@ -123,9 +124,9 @@ public class BOPAlgo_ArgumentAnalyzerTests
     public void Vertices_and_edges_that_would_merge_with_several_of_the_others()
     {
         // two edges along one line, each touching both halves of the other shape
-        TopoDS_Shape aE1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Shape();
-        TopoDS_Shape aE2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(5, 0, 0)).Shape();
-        TopoDS_Shape aE3 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(5, 0, 0), new gp_Pnt(10, 0, 0)).Shape();
+        TopoDS_Shape aE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Shape();
+        TopoDS_Shape aE2 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(5, 0, 0)).Shape();
+        TopoDS_Shape aE3 = new BRepBuilderAPI_MakeEdge(new Point3D(5, 0, 0), new Point3D(10, 0, 0)).Shape();
         TopoDS_Shape aW = BOPAlgo_CheckerSITests.Compound(aE2, aE3);
         BOPAlgo_ArgumentAnalyzer anAnalyzer = Analyzer(aE1, aW, BOPAlgo_SECTION);
         anAnalyzer.Perform();
@@ -139,10 +140,10 @@ public class BOPAlgo_ArgumentAnalyzerTests
     public void C0_geometry_and_curves_off_their_surfaces()
     {
         // a B-spline edge of continuity C0 (a knot of full multiplicity inside)
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 1, 0);
-        aPoles[3] = new gp_Pnt(2, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 1, 0);
+        aPoles[3] = new Point3D(2, 0, 0);
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots[1] = 0;
         aKnots[2] = 1;
@@ -177,7 +178,7 @@ public class BOPAlgo_ArgumentAnalyzerTests
     public void Serial_equals_parallel()
     {
         TopoDS_Shape aC = BOPAlgo_CheckerSITests.Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10),
-                                                         new BRepPrimAPI_MakeSphere(new gp_Pnt(10, 10, 10), 4).Shape());
+                                                         new BRepPrimAPI_MakeSphere(new Point3D(10, 10, 10), 4).Shape());
         string Run(bool theParallel)
         {
             BOPAlgo_ArgumentAnalyzer anAnalyzer = Analyzer(aC, Box(1, 1, 1, 3, 3, 3), BOPAlgo_FUSE);

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -66,9 +67,9 @@ public class BOPAlgo_Section : BOPAlgo_Builder
         theSteps.SetStep((int)BOPAlgo_PIOperation.PIOperation_BuildSection, aNbShapes.NbEdges() + aNbShapes.NbFaces());
     }
 
-    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, Message_ProgressRange theRange)
+    protected override void PerformInternal1(BOPAlgo_PaveFiller theFiller, ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Building result of SECTION operation", 100);
+        using var aPS = new ProgressScope(theRange, "Building result of SECTION operation", 100);
         myPaveFiller = theFiller;
         myDS = myPaveFiller.PDS();
         myContext = myPaveFiller.Context();
@@ -131,9 +132,9 @@ public class BOPAlgo_Section : BOPAlgo_Builder
     }
 
     /// <summary>Builds the section: the section edges and vertices, and the arguments' shared boundaries.</summary>
-    protected virtual void BuildSection(Message_ProgressRange theRange)
+    protected virtual void BuildSection(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Building the result of Section operation", 1);
+        using var aPS = new ProgressScope(theRange, "Building the result of Section operation", 1);
         int i, aNbMS, aNbLE;
         int j, nE, nV, aNb, aNbF, aNbPBSc;
         TopoDS_Shape aRC = new(), aRC1 = new();

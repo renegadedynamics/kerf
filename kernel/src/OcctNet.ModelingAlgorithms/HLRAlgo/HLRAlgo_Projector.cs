@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +19,7 @@ namespace Occt;
 /// is all zeros, so ported code writes <c>new()</c>. <see cref="Set"/> and <see cref="Scaled"/> are internal
 /// mutators, with the constructors and <see cref="WithScaled"/> as their twins. For four exact view matrices (top,
 /// front and two axonometric ones) OCCT projects with hard-coded formulas, as the port does. In
-/// <see cref="Project(in gp_Pnt, ref gp_Pnt2d)"/> OCCT forgets to write the result for the first of them, so the
+/// <see cref="Project(in Point3D, ref Point2D)"/> OCCT forgets to write the result for the first of them, so the
 /// point is <c>ref</c> and keeps the caller's value there (decision 1078).
 /// </remarks>
 public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
@@ -30,12 +34,12 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     private int myType;
     private bool myPersp;
     private double myFocus;
-    private gp_Trsf myScaledTrsf;
-    private gp_Trsf myTrsf;
-    private gp_Trsf myInvTrsf;
-    private gp_Vec2d myD1;
-    private gp_Vec2d myD2;
-    private gp_Vec2d myD3;
+    private Transform3D myScaledTrsf;
+    private Transform3D myTrsf;
+    private Transform3D myInvTrsf;
+    private Vector2D myD1;
+    private Vector2D myD2;
+    private Vector2D myD3;
 
     /// <summary>The identity, parallel projector.</summary>
     public HLRAlgo_Projector()
@@ -43,39 +47,39 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
         myType = -1;
         myPersp = false;
         myFocus = 0;
-        myScaledTrsf = new gp_Trsf();
-        myTrsf = new gp_Trsf();
-        myInvTrsf = new gp_Trsf();
-        myD1 = new gp_Vec2d();
-        myD2 = new gp_Vec2d();
-        myD3 = new gp_Vec2d();
+        myScaledTrsf = new Transform3D();
+        myTrsf = new Transform3D();
+        myInvTrsf = new Transform3D();
+        myD1 = new Vector2D();
+        myD2 = new Vector2D();
+        myD3 = new Vector2D();
         Scaled();
     }
 
     /// <summary>An axonometric (parallel) projector; <paramref name="CS"/> is the viewing coordinate system.</summary>
-    public HLRAlgo_Projector(in gp_Ax2 CS)
+    public HLRAlgo_Projector(in Frame3D CS)
         : this()
     {
         myPersp = false;
         myFocus = 0;
-        myScaledTrsf.SetTransformation(new gp_Ax3(CS));
+        myScaledTrsf.SetTransformation(new CoordinateSystem(CS));
         Scaled();
         SetDirection();
     }
 
     /// <summary>A perspective projector of focal length <paramref name="Focus"/>; <paramref name="CS"/> is the viewing coordinate system.</summary>
-    public HLRAlgo_Projector(in gp_Ax2 CS, double Focus)
+    public HLRAlgo_Projector(in Frame3D CS, double Focus)
         : this()
     {
         myPersp = true;
         myFocus = Focus;
-        myScaledTrsf.SetTransformation(new gp_Ax3(CS));
+        myScaledTrsf.SetTransformation(new CoordinateSystem(CS));
         Scaled();
         SetDirection();
     }
 
     /// <summary>A projector with automatic min-max directions.</summary>
-    public HLRAlgo_Projector(in gp_Trsf T, bool Persp, double Focus)
+    public HLRAlgo_Projector(in Transform3D T, bool Persp, double Focus)
         : this()
     {
         myPersp = Persp;
@@ -86,7 +90,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>A projector with the given min-max directions.</summary>
-    public HLRAlgo_Projector(in gp_Trsf T, bool Persp, double Focus, in gp_Vec2d v1, in gp_Vec2d v2, in gp_Vec2d v3)
+    public HLRAlgo_Projector(in Transform3D T, bool Persp, double Focus, in Vector2D v1, in Vector2D v2, in Vector2D v3)
         : this()
     {
         myPersp = Persp;
@@ -100,7 +104,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
 
     // Mutators (internal: see docs/translation-rules.md)
 
-    internal void Set(in gp_Trsf T, bool Persp, double Focus)
+    internal void Set(in Transform3D T, bool Persp, double Focus)
     {
         myPersp = Persp;
         myFocus = Focus;
@@ -109,9 +113,9 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
         SetDirection();
     }
 
-    private static int TrsfType(in gp_Trsf Trsf)
+    private static int TrsfType(in Transform3D Trsf)
     {
-        gp_Mat Mat = Trsf.VectorialPart();
+        Matrix3x3 Mat = Trsf.VectorialPart();
         if ((Math.Abs(Mat.Value(1, 1) - 1.0) < 1e-15) && (Math.Abs(Mat.Value(2, 2) - 1.0) < 1e-15)
             && (Math.Abs(Mat.Value(3, 3) - 1.0) < 1e-15))
         {
@@ -162,7 +166,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
             myTrsf.SetScaleFactor(1.0);
             if (!myPersp)
             {
-                myTrsf.SetTranslationPart(new gp_Vec(0.0, 0.0, 0.0));
+                myTrsf.SetTranslationPart(new Vector3D(0.0, 0.0, 0.0));
                 myType = TrsfType(myTrsf);
             }
         }
@@ -179,7 +183,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>A copy set to <paramref name="T"/>, <paramref name="Persp"/> and <paramref name="Focus"/> (<see cref="Set"/>'s twin).</summary>
-    public readonly HLRAlgo_Projector WithSet(in gp_Trsf T, bool Persp, double Focus)
+    public readonly HLRAlgo_Projector WithSet(in Transform3D T, bool Persp, double Focus)
     {
         HLRAlgo_Projector aCopy = this;
         aCopy.Set(T, Persp, Focus);
@@ -189,7 +193,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     // Queries
 
     /// <summary>The min-max directions.</summary>
-    public readonly void Directions(out gp_Vec2d D1, out gp_Vec2d D2, out gp_Vec2d D3)
+    public readonly void Directions(out Vector2D D1, out Vector2D D2, out Vector2D D3)
     {
         D1 = myD1;
         D2 = myD2;
@@ -200,13 +204,13 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     public readonly bool Perspective() => myPersp;
 
     /// <summary>The active transformation.</summary>
-    public readonly gp_Trsf Transformation() => myTrsf;
+    public readonly Transform3D Transformation() => myTrsf;
 
     /// <summary>The active inverted transformation.</summary>
-    public readonly gp_Trsf InvertedTransformation() => myInvTrsf;
+    public readonly Transform3D InvertedTransformation() => myInvTrsf;
 
     /// <summary>The original transformation.</summary>
-    public readonly gp_Trsf FullTransformation() => myScaledTrsf;
+    public readonly Transform3D FullTransformation() => myScaledTrsf;
 
     /// <summary>The focal length; throws Standard_NoSuchObject on a parallel projector.</summary>
     public readonly double Focus()
@@ -216,13 +220,13 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>Transforms <paramref name="D"/> by the active transformation.</summary>
-    public readonly void Transform(ref gp_Vec D)
+    public readonly void Transform(ref Vector3D D)
     {
         D.Transform(myTrsf);
     }
 
     /// <summary>Transforms <paramref name="Pnt"/> by the active transformation.</summary>
-    public readonly void Transform(ref gp_Pnt Pnt)
+    public readonly void Transform(ref Point3D Pnt)
     {
         Pnt.Transform(myTrsf);
     }
@@ -231,7 +235,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     /// Transforms <paramref name="P"/> and applies the perspective if needed. For OCCT's first standard axonometric
     /// matrix the result is not written (an OCCT slip): <paramref name="Pout"/> keeps the caller's value.
     /// </summary>
-    public readonly void Project(in gp_Pnt P, ref gp_Pnt2d Pout)
+    public readonly void Project(in Point3D P, ref Point2D Pout)
     {
         if (myType != -1)
         {
@@ -275,7 +279,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
                 }
                 default:
                 {
-                    gp_Pnt P2 = P;
+                    Point3D P2 = P;
                     Transform(ref P2);
                     if (myPersp)
                     {
@@ -292,7 +296,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
         }
         else
         {
-            gp_Pnt P2 = P;
+            Point3D P2 = P;
             Transform(ref P2);
             if (myPersp)
             {
@@ -307,7 +311,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>Transforms <paramref name="P"/> and applies the perspective if needed (X and Y; Z is the depth).</summary>
-    public readonly void Project(in gp_Pnt P, out double X, out double Y, out double Z)
+    public readonly void Project(in Point3D P, out double X, out double Y, out double Z)
     {
         if (myType != -1)
         {
@@ -348,7 +352,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
                 }
                 default:
                 {
-                    gp_Pnt P2 = P;
+                    Point3D P2 = P;
                     Transform(ref P2);
                     P2.Coord(out X, out Y, out Z);
                     break;
@@ -357,7 +361,7 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
         }
         else
         {
-            gp_Pnt P2 = P;
+            Point3D P2 = P;
             Transform(ref P2);
             P2.Coord(out X, out Y, out Z);
             if (myPersp)
@@ -370,13 +374,13 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>Transforms the point and its derivative and applies the perspective if needed.</summary>
-    public readonly void Project(in gp_Pnt P, in gp_Vec D1, out gp_Pnt2d Pout, out gp_Vec2d D1out)
+    public readonly void Project(in Point3D P, in Vector3D D1, out Point2D Pout, out Vector2D D1out)
     {
-        Pout = new gp_Pnt2d();
-        D1out = new gp_Vec2d();
-        gp_Pnt PP = P;
+        Pout = new Point2D();
+        D1out = new Vector2D();
+        Point3D PP = P;
         PP.Transform(myTrsf);
-        gp_Vec DD1 = D1;
+        Vector3D DD1 = D1;
         DD1.Transform(myTrsf);
         if (myPersp)
         {
@@ -393,16 +397,16 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
     }
 
     /// <summary>The line through the eye towards the 2D point (<paramref name="X"/>, <paramref name="Y"/>).</summary>
-    public readonly gp_Lin Shoot(double X, double Y)
+    public readonly Line3D Shoot(double X, double Y)
     {
-        gp_Lin L;
+        Line3D L;
         if (myPersp)
         {
-            L = new gp_Lin(new gp_Pnt(0, 0, myFocus), new gp_Dir(X, Y, -myFocus));
+            L = new Line3D(new Point3D(0, 0, myFocus), new Direction3D(X, Y, -myFocus));
         }
         else
         {
-            L = new gp_Lin(new gp_Pnt(X, Y, 0), new gp_Dir(gp_Dir.D.NZ));
+            L = new Line3D(new Point3D(X, Y, 0), new Direction3D(Direction3D.D.NZ));
         }
         L.Transform(myInvTrsf);
         return L;
@@ -410,29 +414,29 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
 
     private void SetDirection()
     {
-        gp_Vec V1 = new(1, 0, 0);
+        Vector3D V1 = new(1, 0, 0);
         V1.Transform(myTrsf);
-        if ((Math.Abs(V1.X()) + Math.Abs(V1.Y())) < Precision.Angular())
+        if ((Math.Abs(V1.X()) + Math.Abs(V1.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             V1.SetCoord(1, 1, 0);
         }
-        gp_Vec2d D1 = new(V1.X(), V1.Y());
+        Vector2D D1 = new(V1.X(), V1.Y());
         myD1.SetCoord(-D1.Y(), D1.X());
-        gp_Vec V2 = new(0, 1, 0);
+        Vector3D V2 = new(0, 1, 0);
         V2.Transform(myTrsf);
-        if ((Math.Abs(V2.X()) + Math.Abs(V2.Y())) < Precision.Angular())
+        if ((Math.Abs(V2.X()) + Math.Abs(V2.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             V2.SetCoord(1, 1, 0);
         }
-        gp_Vec2d D2 = new(V2.X(), V2.Y());
+        Vector2D D2 = new(V2.X(), V2.Y());
         myD2.SetCoord(-D2.Y(), D2.X());
-        gp_Vec V3 = new(0, 0, 1);
+        Vector3D V3 = new(0, 0, 1);
         V3.Transform(myTrsf);
-        if ((Math.Abs(V3.X()) + Math.Abs(V3.Y())) < Precision.Angular())
+        if ((Math.Abs(V3.X()) + Math.Abs(V3.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             V3.SetCoord(1, 1, 0);
         }
-        gp_Vec2d D3 = new(V3.X(), V3.Y());
+        Vector2D D3 = new(V3.X(), V3.Y());
         myD3.SetCoord(-D3.Y(), D3.X());
     }
 
@@ -453,5 +457,5 @@ public partial struct HLRAlgo_Projector : IEquatable<HLRAlgo_Projector>
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("HLRAlgo_Projector", myFocus)} persp {myPersp} {myScaledTrsf}";
+        => $"{Constants.Format("HLRAlgo_Projector", myFocus)} persp {myPersp} {myScaledTrsf}";
 }

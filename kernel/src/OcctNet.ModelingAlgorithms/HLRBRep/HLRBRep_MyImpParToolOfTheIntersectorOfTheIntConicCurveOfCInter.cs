@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>Keeps a reference to the curve, as OCCT keeps a pointer.</remarks>
 public sealed class HLRBRep_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter
-    : math_FunctionWithDerivative,
+    : FunctionWithDerivative,
       IIntImpParGen_MyImpParTool<HLRBRep_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter,
                                  IntCurve_IConicTool, HLRBRep_Curve>
 {
@@ -37,8 +41,8 @@ public sealed class HLRBRep_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInt
 
     public override bool Derivative(double Param, out double D_ApproxDistance_DV)
     {
-        gp_Vec2d Grad = TheImpTool.GradDistance(HLRBRep_CurveTool.Value(TheParCurve, Param));
-        HLRBRep_CurveTool.D1(TheParCurve, Param, out _, out gp_Vec2d TanParCurve);
+        Vector2D Grad = TheImpTool.GradDistance(HLRBRep_CurveTool.Value(TheParCurve, Param));
+        HLRBRep_CurveTool.D1(TheParCurve, Param, out _, out Vector2D TanParCurve);
         D_ApproxDistance_DV = Grad.Dot(TanParCurve);
         return (true);
     }

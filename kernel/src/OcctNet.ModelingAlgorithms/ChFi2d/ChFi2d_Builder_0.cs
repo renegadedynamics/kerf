@@ -8,8 +8,10 @@
 //              des droites ou des cercles; fonction IsLineOrCircle
 //              (BUC60288)
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ChFi2d_ConstructionError;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -371,7 +373,7 @@ public sealed partial class ChFi2d_Builder
         TopoDS_Edge newEdge1 = new(), newEdge2 = new();
         TopoDS_Vertex v, v1, v2;
         var makeEdge = new BRepLib_MakeEdge();
-        TopLoc_Location loc;
+        Placement loc;
         double first, last;
 
         TopExp.Vertices(E1, out firstVertex, out lastVertex);
@@ -520,10 +522,10 @@ public sealed partial class ChFi2d_Builder
         } // if ( D1 <=0 ...
 
         double param1, param2;
-        gp_Pnt p1 = ComputePoint(V, AdjEdge1, D1, out param1);
-        gp_Pnt p2 = ComputePoint(V, AdjEdge2, D2, out param2);
+        Point3D p1 = ComputePoint(V, AdjEdge1, D1, out param1);
+        Point3D p2 = ComputePoint(V, AdjEdge2, D2, out param2);
 
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         var B = new BRep_Builder();
         B.MakeVertex(ref NewExtr1, p1, tol);
         B.MakeVertex(ref NewExtr2, p2, tol);
@@ -531,13 +533,13 @@ public sealed partial class ChFi2d_Builder
         NewExtr2.Orientation(TopAbs_REVERSED);
 
         // chamfer edge construction
-        Geom_Surface? refSurf = BRep_Tool.Surface(refFace, out TopLoc_Location loc);
+        Geom_Surface? refSurf = BRep_Tool.Surface(refFace, out Placement loc);
         _ = refSurf; // unused, as in OCCT
         _ = loc;
-        var myVec = new gp_Vec(p1, p2);
-        var myDir = new gp_Dir(myVec);
+        var myVec = new Vector3D(p1, p2);
+        var myDir = new Direction3D(myVec);
         var newLine = new Geom_Line(p1, myDir);
-        double param = ElCLib.Parameter(newLine.Lin(), p2);
+        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
         B.MakeEdge(ref chamfer, newLine, tol);
         B.Range(chamfer, 0.0, param);
         B.Add(chamfer, NewExtr1);
@@ -595,9 +597,9 @@ public sealed partial class ChFi2d_Builder
         } // if ( D <= 0 ...
 
         double param1, param2;
-        gp_Pnt p1 = ComputePoint(V, AdjEdge1, D, out param1);
-        gp_Pnt p = BRep_Tool.Pnt(V);
-        var myVec = new gp_Vec(p1, p);
+        Point3D p1 = ComputePoint(V, AdjEdge1, D, out param1);
+        Point3D p = BRep_Tool.Pnt(V);
+        var myVec = new Vector3D(p1, p);
 
         // compute the tangent vector on AdjEdge2 at the vertex V.
         var c = new BRepAdaptor_Curve(AdjEdge2, refFace);
@@ -605,10 +607,10 @@ public sealed partial class ChFi2d_Builder
         first = c.FirstParameter();
         last = c.LastParameter();
 
-        gp_Pnt aPoint;
-        gp_Vec tan;
+        Point3D aPoint;
+        Vector3D tan;
         c.D1(first, out aPoint, out tan);
-        if (aPoint.Distance(p) > Precision.Confusion())
+        if (aPoint.Distance(p) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             c.D1(last, out aPoint, out tan);
         }
@@ -629,15 +631,15 @@ public sealed partial class ChFi2d_Builder
         }
 
         // compute the chamfer geometric support
-        var RotAxe = new gp_Ax1(p1, new gp_Dir(tan ^ myVec));
-        gp_Vec vecLin = myVec.Rotated(RotAxe, -Ang);
-        var myDir = new gp_Dir(vecLin);
+        var RotAxe = new Axis3D(p1, new Direction3D(tan ^ myVec));
+        Vector3D vecLin = myVec.Rotated(RotAxe, -Ang);
+        var myDir = new Direction3D(vecLin);
         var newLine = new Geom_Line(p1, myDir);
         var B1 = new BRep_Builder();
-        B1.MakeEdge(ref chamfer, newLine, Precision.Confusion());
-        gp_Pnt p2 = ComputePoint(refFace, newLine, AdjEdge2, out param2);
+        B1.MakeEdge(ref chamfer, newLine, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point3D p2 = ComputePoint(refFace, newLine, AdjEdge2, out param2);
 
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         var B = new BRep_Builder();
         B.MakeVertex(ref NewExtr1, p1, tol);
         B.MakeVertex(ref NewExtr2, p2, tol);
@@ -645,7 +647,7 @@ public sealed partial class ChFi2d_Builder
         NewExtr2.Orientation(TopAbs_REVERSED);
 
         // chamfer edge construction
-        double param = ElCLib.Parameter(newLine.Lin(), p2);
+        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
         B.MakeEdge(ref chamfer, newLine, tol);
         B.Range(chamfer, 0.0, param);
         B.Add(chamfer, NewExtr1);
@@ -690,7 +692,7 @@ public sealed partial class ChFi2d_Builder
     // location: the vertex gets OCCT's points, and the edge's flag is left as it is.
     private static void UpdateNewVertex(BRep_Builder B, in TopoDS_Vertex V, double Par, in TopoDS_Edge E, double Tol)
     {
-        if (E.TShape()!.IsFrozen() && !BRep_Tool.Degenerated(E))
+        if (E.TShape()!.IsFrozen && !BRep_Tool.Degenerated(E))
         {
             B.UpdateVertex(V, Par, TopoDS.Edge(E.EmptyCopied()), Tol);
             return;
@@ -701,7 +703,7 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // The point at the distance D from V along E (its parameter in Param).
-    private static gp_Pnt ComputePoint(in TopoDS_Vertex V, in TopoDS_Edge E, double D, out double Param)
+    private static Point3D ComputePoint(in TopoDS_Vertex V, in TopoDS_Edge E, double D, out double Param)
     {
         // geometric support
         var c = new BRepAdaptor_Curve(E);
@@ -709,14 +711,14 @@ public sealed partial class ChFi2d_Builder
         first = c.FirstParameter();
         last = c.LastParameter();
 
-        gp_Pnt thePoint = new();
-        if (c.GetType() == GeomAbs_Line)
+        Point3D thePoint = new();
+        if (c.GetType() == Line)
         {
-            gp_Pnt p1, p2;
+            Point3D p1, p2;
             TopExp.Vertices(E, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
             p1 = BRep_Tool.Pnt(v1);
             p2 = BRep_Tool.Pnt(v2);
-            var myVec = new gp_Vec(p1, p2);
+            var myVec = new Vector3D(p1, p2);
             myVec.Normalize();
             myVec *= D;
             if (v2.IsSame(V))
@@ -729,16 +731,16 @@ public sealed partial class ChFi2d_Builder
                 thePoint = p1.Translated(myVec);
             }
 
-            Param = ElCLib.Parameter(c.Line(), thePoint);
+            Param = global::Kerf.Engine.Geometry.ElCLib.Parameter(c.Line(), thePoint);
             // szv:OCC20823-begin
             c.D0(Param, out thePoint);
             // szv:OCC20823-end
             return thePoint;
         } // if (C->IsKind(TYPE ...
 
-        if (c.GetType() == GeomAbs_Circle)
+        if (c.GetType() == Circle)
         {
-            gp_Circ cir = c.Circle();
+            Circle3D cir = c.Circle();
             double radius = cir.Radius();
             TopExp.Vertices(E, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
             double param1, param2;
@@ -768,7 +770,7 @@ public sealed partial class ChFi2d_Builder
         else
         {
             // in all other case than lines and circles.
-            gp_Pnt p;
+            Point3D p;
             TopExp.Vertices(E, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
             if (V.IsSame(v1))
             {
@@ -780,7 +782,7 @@ public sealed partial class ChFi2d_Builder
             }
 
             GeomAdaptor_Curve cc = c.Curve();
-            if (p.Distance(c.Value(first)) <= Precision.Confusion())
+            if (p.Distance(c.Value(first)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 var computePoint = new GCPnts_AbscissaPoint(cc, D, first);
                 Param = computePoint.Parameter();
@@ -798,7 +800,7 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // The first intersection (along L) of the line L with the edge E on the face F; Param is its parameter on E.
-    private static gp_Pnt ComputePoint(in TopoDS_Face F, Geom_Line L, in TopoDS_Edge E, out double Param)
+    private static Point3D ComputePoint(in TopoDS_Face F, Geom_Line L, in TopoDS_Edge E, out double Param)
     {
         var Adaptor3dSurface = new BRepAdaptor_Surface(F);
         var refSurf = new Geom_Plane(Adaptor3dSurface.Plane());
@@ -810,10 +812,10 @@ public sealed partial class ChFi2d_Builder
         var adaptorC = new Geom2dAdaptor_Curve(c2d!);
         var Intersection = new Geom2dInt_GInter(adaptorL,
                                                 adaptorC,
-                                                Precision.PIntersection(),
-                                                Precision.PIntersection());
+                                                global::Kerf.Engine.Foundation.Precision.PIntersection(),
+                                                global::Kerf.Engine.Foundation.Precision.PIntersection());
         double paramOnLine = 1E300;
-        gp_Pnt2d p2d = new();
+        Point2D p2d = new();
         // OCCT: Param is left unset, and p2d at the origin of the plane, when the line meets nothing
         Param = 0.0;
         if (Intersection.IsDone())
@@ -832,7 +834,7 @@ public sealed partial class ChFi2d_Builder
             } // while ( i <= ...
         } // if (Intersection.IsDone ...
 
-        gp_Pnt thePoint = Adaptor3dSurface.Value(p2d.X(), p2d.Y());
+        Point3D thePoint = Adaptor3dSurface.Value(p2d.X(), p2d.Y());
         return thePoint;
     } // ComputePoint
 

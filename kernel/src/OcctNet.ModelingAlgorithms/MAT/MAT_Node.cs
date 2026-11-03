@@ -3,13 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.MAT_Side;
 
 namespace Occt;
 
 /// <summary>A node of the bisecting locus: the end of arcs, at a distance from the contour.</summary>
 /// <remarks>OCCT keeps its linked arc as a raw pointer; the port keeps a reference. The setters are internal.</remarks>
-public sealed class MAT_Node : Standard_Transient
+public sealed class MAT_Node : Transient
 {
     private int nodeIndex;
     private readonly int geomIndex;
@@ -97,7 +98,7 @@ public sealed class MAT_Node : Standard_Transient
     public bool OnBasicElt() => Distance() == 0.0;
 
     /// <summary>True if the node is at infinity.</summary>
-    public bool Infinite() => Distance() == Precision.Infinite();
+    public bool Infinite() => Distance() == global::Kerf.Engine.Foundation.Precision.Infinite();
 
     internal void SetIndex(int anIndex) => nodeIndex = anIndex;
 

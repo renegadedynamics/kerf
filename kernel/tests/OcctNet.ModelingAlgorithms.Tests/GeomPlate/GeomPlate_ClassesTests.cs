@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -11,44 +17,44 @@ public class GeomPlate_ClassesTests
     private static Plate_Plate SolvedPlate()
     {
         var aPlate = new Plate_Plate();
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(0, 0), new gp_XYZ(0, 0, 0)));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(1, 0), new gp_XYZ(0, 0, 0)));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(0, 1), new gp_XYZ(0, 0, 0)));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(1, 1), new gp_XYZ(0, 0, 0)));
-        aPlate.Load(new Plate_PinpointConstraint(new gp_XY(0.5, 0.5), new gp_XYZ(0, 0, 0.3)));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(0, 0), new Xyz(0, 0, 0)));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(1, 0), new Xyz(0, 0, 0)));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(0, 1), new Xyz(0, 0, 0)));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(1, 1), new Xyz(0, 0, 0)));
+        aPlate.Load(new Plate_PinpointConstraint(new Xy(0.5, 0.5), new Xyz(0, 0, 0.3)));
         aPlate.SolveTI(3);
         Assert.True(aPlate.IsDone());
         return aPlate;
     }
 
-    private static Geom_Plane XYPlane() => new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+    private static Geom_Plane XYPlane() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
     [Fact]
     public void Aij_compares_by_value()
     {
-        var anA = new GeomPlate_Aij(1, 2, new gp_Vec(0, 0, 1));
-        Assert.Equal(anA, new GeomPlate_Aij(1, 2, new gp_Vec(0, 0, 1)));
-        Assert.NotEqual(anA, new GeomPlate_Aij(2, 1, new gp_Vec(0, 0, 1)));
-        Assert.Equal(new GeomPlate_Aij(0, 0, new gp_Vec()), new GeomPlate_Aij());
+        var anA = new GeomPlate_Aij(1, 2, new Vector3D(0, 0, 1));
+        Assert.Equal(anA, new GeomPlate_Aij(1, 2, new Vector3D(0, 0, 1)));
+        Assert.NotEqual(anA, new GeomPlate_Aij(2, 1, new Vector3D(0, 0, 1)));
+        Assert.Equal(new GeomPlate_Aij(0, 0, new Vector3D()), new GeomPlate_Aij());
     }
 
     [Fact]
     public void Point_constraints_hold_their_point_and_derivatives()
     {
-        var aP = new GeomPlate_PointConstraint(new gp_Pnt(1, 2, 3), 0, 0.5);
-        aP.D0(out gp_Pnt aPnt);
-        Assert.Equal(new gp_Pnt(1, 2, 3), aPnt);
+        var aP = new GeomPlate_PointConstraint(new Point3D(1, 2, 3), 0, 0.5);
+        aP.D0(out Point3D aPnt);
+        Assert.Equal(new Point3D(1, 2, 3), aPnt);
         Assert.Equal(0.5, aP.G0Criterion());
         Assert.False(aP.HasPnt2dOnSurf());
-        aP.SetPnt2dOnSurf(new gp_Pnt2d(4, 5));
+        aP.SetPnt2dOnSurf(new Point2D(4, 5));
         Assert.True(aP.HasPnt2dOnSurf());
-        Assert.Equal(new gp_Pnt2d(4, 5), aP.Pnt2dOnSurf());
-        Assert.Throws<Standard_Failure>(() => new GeomPlate_PointConstraint(new gp_Pnt(), 2));
+        Assert.Equal(new Point2D(4, 5), aP.Pnt2dOnSurf());
+        Assert.Throws<FailureException>(() => new GeomPlate_PointConstraint(new Point3D(), 2));
 
-        var aSphere = new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aSphere = new Geom_SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aS = new GeomPlate_PointConstraint(0.3, 0.4, aSphere, 2, 1e-4, 1e-3, 1e-2);
-        aS.D2(out gp_Pnt aP2, out gp_Vec aD1U, out gp_Vec aD1V, out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
-        aSphere.D2(0.3, 0.4, out gp_Pnt aQ, out gp_Vec aE1U, out gp_Vec aE1V, out gp_Vec aE2U, out gp_Vec aE2V, out gp_Vec aE2UV);
+        aS.D2(out Point3D aP2, out Vector3D aD1U, out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
+        aSphere.D2(0.3, 0.4, out Point3D aQ, out Vector3D aE1U, out Vector3D aE1V, out Vector3D aE2U, out Vector3D aE2V, out Vector3D aE2UV);
         Assert.Equal(aQ, aP2);
         Assert.Equal(aE1U, aD1U);
         Assert.Equal(aE2UV, aD2UV);
@@ -65,15 +71,15 @@ public class GeomPlate_ClassesTests
     public void Curve_constraints_on_a_surface_evaluate_through_it()
     {
         var aPlane = XYPlane();
-        var aLine = new Geom2d_Line(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0));
+        var aLine = new Geom2d_Line(new Point2D(1, 1), new Direction2D(1, 0));
         var aCOS = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine, 0, 5), new GeomAdaptor_Surface(aPlane));
         var aC = new GeomPlate_CurveConstraint(aCOS, 1, 12);
         Assert.Equal(12, aC.NbPoints());
         Assert.Equal(0.0, aC.FirstParameter());
         Assert.Equal(5.0, aC.LastParameter());
         Assert.Equal(5.0, aC.Length(), 9);
-        aC.D1(2.0, out gp_Pnt aP, out gp_Vec aV1, out gp_Vec aV2);
-        Assert.Equal(new gp_Pnt(3, 1, 0), aP);
+        aC.D1(2.0, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
+        Assert.Equal(new Point3D(3, 1, 0), aP);
         Assert.Equal(1.0, (aV1 ^ aV2).Z());
         Assert.Equal(0.0, aC.LPropSurf(2.0).GaussianCurvature());
         Assert.Equal(0.01, aC.G1Criterion(1.0));
@@ -82,11 +88,11 @@ public class GeomPlate_ClassesTests
         Assert.Null(aC.Curve2dOnSurf());
 
         // a 3D curve: only G0 queries
-        var a3d = new GeomPlate_CurveConstraint(new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 1), 0);
-        Assert.Throws<Standard_Failure>(() => a3d.D1(0.5, out _, out _, out _));
-        Assert.Throws<Standard_Failure>(() => a3d.G1Criterion(0.5));
-        Assert.Throws<Standard_Failure>(() => a3d.LPropSurf(0.5));
-        Assert.Throws<Standard_Failure>(() => new GeomPlate_CurveConstraint(aCOS, 3));
+        var a3d = new GeomPlate_CurveConstraint(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1), 0);
+        Assert.Throws<FailureException>(() => a3d.D1(0.5, out _, out _, out _));
+        Assert.Throws<FailureException>(() => a3d.G1Criterion(0.5));
+        Assert.Throws<FailureException>(() => a3d.LPropSurf(0.5));
+        Assert.Throws<FailureException>(() => new GeomPlate_CurveConstraint(aCOS, 3));
     }
 
     [Fact]
@@ -94,14 +100,14 @@ public class GeomPlate_ClassesTests
     {
         Plate_Plate aPlate = SolvedPlate();
         var aSurf = new GeomPlate_Surface(XYPlane(), aPlate);
-        gp_Pnt aP = aSurf.Value(0.5, 0.5);
+        Point3D aP = aSurf.Value(0.5, 0.5);
         Assert.Equal(0.3, aP.Z(), 12);
-        gp_XYZ aD = aPlate.Evaluate(new gp_XY(0.25, 0.75));
-        Assert.Equal(new gp_Pnt(0.25 + aD.X(), 0.75 + aD.Y(), aD.Z()), aSurf.Value(0.25, 0.75));
-        aSurf.D2(0.3, 0.6, out gp_Pnt aP2, out gp_Vec aD1U, out _, out gp_Vec aD2U, out _, out _);
+        Xyz aD = aPlate.Evaluate(new Xy(0.25, 0.75));
+        Assert.Equal(new Point3D(0.25 + aD.X(), 0.75 + aD.Y(), aD.Z()), aSurf.Value(0.25, 0.75));
+        aSurf.D2(0.3, 0.6, out Point3D aP2, out Vector3D aD1U, out _, out Vector3D aD2U, out _, out _);
         Assert.Equal(aSurf.Value(0.3, 0.6), aP2);
-        Assert.Equal(new gp_Vec(1, 0, 0) + new gp_Vec(aPlate.EvaluateDerivative(new gp_XY(0.3, 0.6), 1, 0)), aD1U);
-        Assert.Equal(new gp_Vec(aPlate.EvaluateDerivative(new gp_XY(0.3, 0.6), 2, 0)), aD2U);
+        Assert.Equal(new Vector3D(1, 0, 0) + new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 1, 0)), aD1U);
+        Assert.Equal(new Vector3D(aPlate.EvaluateDerivative(new Xy(0.3, 0.6), 2, 0)), aD2U);
         Assert.Throws<Geom_UndefinedDerivative>(() => aSurf.D3(0.3, 0.6, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _));
 
         // the surface keeps its own copy of the plate
@@ -113,21 +119,21 @@ public class GeomPlate_ClassesTests
         aSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.0, 0.0, 1.0), (u1, u2, v1, v2));
         aSurf.Freeze();
-        Assert.Throws<Standard_ImmutableObject>(() => aSurf.SetBounds(0, 2, 0, 2));
+        Assert.Throws<ImmutableObjectException>(() => aSurf.SetBounds(0, 2, 0, 2));
         GeomPlate_Surface aWider = aSurf.WithBounds(-1, 2, -1, 2);
         aWider.Bounds(out u1, out u2, out _, out _);
         Assert.Equal((-1.0, 2.0), (u1, u2));
         ((GeomPlate_Surface)aSurf.Copy()).Bounds(out u1, out u2, out _, out _);
         Assert.Equal((0.0, 0.0), (u1, u2));
-        Assert.Throws<Standard_Failure>(() => aSurf.WithBounds(1, 0, 0, 1));
-        Assert.Throws<Standard_Failure>(() => aSurf.WithBounds(0, 0, 0, 1));
+        Assert.Throws<FailureException>(() => aSurf.WithBounds(1, 0, 0, 1));
+        Assert.Throws<FailureException>(() => aSurf.WithBounds(0, 0, 0, 1));
         aSurf.RealBounds(out u1, out u2, out v1, out v2);
         Assert.Equal((0.0, 1.0, 0.0, 1.0), (u1, u2, v1, v2));
-        var aSeq = new NCollection_Sequence<gp_XY>();
+        var aSeq = new NCollection_Sequence<Xy>();
         aSurf.Constraints(aSeq);
         Assert.Equal(5, aSeq.Length());
         Assert.Null(aSurf.UIso(0.5));
-        Assert.Throws<Standard_Failure>(() => aSurf.IsCNu(1));
+        Assert.Throws<FailureException>(() => aSurf.IsCNu(1));
     }
 
     [Fact]
@@ -144,8 +150,8 @@ public class GeomPlate_ClassesTests
     [Fact]
     public void The_average_plane_of_planar_points_is_their_plane()
     {
-        var aPts = new NCollection_HArray1<gp_Pnt>(1, 6);
-        gp_Pnt[] aValues = [new(0, 0, 1), new(4, 0, 1), new(4, 3, 1), new(0, 3, 1), new(2, 1, 1), new(1, 2, 1)];
+        var aPts = new NCollection_HArray1<Point3D>(1, 6);
+        Point3D[] aValues = [new(0, 0, 1), new(4, 0, 1), new(4, 3, 1), new(0, 3, 1), new(2, 1, 1), new(1, 2, 1)];
         for (int i = 1; i <= 6; i++)
         {
             aPts.SetValue(i, aValues[i - 1]);
@@ -154,27 +160,27 @@ public class GeomPlate_ClassesTests
         Assert.True(aBAP.IsPlane());
         Assert.False(aBAP.IsLine());
         Geom_Plane aPlane = aBAP.Plane()!;
-        Assert.True(aPlane.IsFrozen());
+        Assert.True(aPlane.IsFrozen);
         Assert.Equal(1.0, Math.Abs(aPlane.Pln().Axis().Direction().Z()), 12);
         Assert.Equal(1.0, aPlane.Pln().Location().Z(), 12);
-        Assert.Throws<Standard_NoSuchObject>(() => aBAP.Line());
+        Assert.Throws<NoSuchObjectException>(() => aBAP.Line());
         aBAP.MinMaxBox(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal(5.0, Math.Sqrt((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1)), 9);
 
         // aligned points: a plane through their line (a line only where BasePlan's axes degenerate)
-        var aLinePts = new NCollection_HArray1<gp_Pnt>(1, 3);
-        aLinePts.SetValue(1, new gp_Pnt(0, 0, 0));
-        aLinePts.SetValue(2, new gp_Pnt(1, 1, 1));
-        aLinePts.SetValue(3, new gp_Pnt(2, 2, 2));
+        var aLinePts = new NCollection_HArray1<Point3D>(1, 3);
+        aLinePts.SetValue(1, new Point3D(0, 0, 0));
+        aLinePts.SetValue(2, new Point3D(1, 1, 1));
+        aLinePts.SetValue(3, new Point3D(2, 2, 2));
         var aLine = new GeomPlate_BuildAveragePlane(aLinePts, 0, 1e-7, 2, 1);
         Assert.NotEqual(aLine.IsPlane(), aLine.IsLine());
-        Assert.Equal(0.0, aLine.Plane()!.Pln().Distance(new gp_Pnt(2, 2, 2)), 9);
+        Assert.Equal(0.0, aLine.Plane()!.Pln().Distance(new Point3D(2, 2, 2)), 9);
 
         // from normals
-        var aNormals = new NCollection_Sequence<gp_Vec>();
-        aNormals.Append(new gp_Vec(0, 0.2, 1).Normalized());
-        aNormals.Append(new gp_Vec(0, -0.2, 1).Normalized());
-        aNormals.Append(new gp_Vec(0.2, 0, 1).Normalized());
+        var aNormals = new NCollection_Sequence<Vector3D>();
+        aNormals.Append(new Vector3D(0, 0.2, 1).Normalized());
+        aNormals.Append(new Vector3D(0, -0.2, 1).Normalized());
+        aNormals.Append(new Vector3D(0.2, 0, 1).Normalized());
         var aFromNormals = new GeomPlate_BuildAveragePlane(aNormals, aPts);
         Assert.Equal(1.0, Math.Abs(aFromNormals.Plane()!.Pln().Axis().Direction().Z()), 3);
     }
@@ -182,19 +188,19 @@ public class GeomPlate_ClassesTests
     [Fact]
     public void HalfSpace_accepts_normals_in_a_half_space_and_restores_on_failure()
     {
-        var aNormals = new NCollection_Sequence<gp_Vec>();
+        var aNormals = new NCollection_Sequence<Vector3D>();
         var aBset = new NCollection_Sequence<GeomPlate_Aij>();
-        var aNew = new NCollection_Sequence<gp_Vec>();
-        aNew.Append(new gp_Vec(0, 0, 1));
-        aNew.Append(new gp_Vec(1, 0, 1).Normalized());
+        var aNew = new NCollection_Sequence<Vector3D>();
+        aNew.Append(new Vector3D(0, 0, 1));
+        aNew.Append(new Vector3D(1, 0, 1).Normalized());
         Assert.True(GeomPlate_BuildAveragePlane.HalfSpace(aNew, aNormals, aBset, 1e-3, 1e-3));
         Assert.Equal(2, aNormals.Length());
         Assert.Equal(2, aBset.Length());
 
         // an opposite normal leaves no half-space: both sequences are restored
-        var anOpposite = new NCollection_Sequence<gp_Vec>();
-        anOpposite.Append(new gp_Vec(-1, 0, -1).Normalized());
-        anOpposite.Append(new gp_Vec(0, 0, -1));
+        var anOpposite = new NCollection_Sequence<Vector3D>();
+        anOpposite.Append(new Vector3D(-1, 0, -1).Normalized());
+        anOpposite.Append(new Vector3D(0, 0, -1));
         Assert.False(GeomPlate_BuildAveragePlane.HalfSpace(anOpposite, aNormals, aBset, 1e-3, 1e-3));
         Assert.Equal(2, aNormals.Length());
         Assert.Equal(2, aBset.Length());
@@ -207,9 +213,9 @@ public class GeomPlate_ClassesTests
         aSurf.SetBounds(0, 1, 0, 1);
         foreach (int aCrit in new[] { -1, 0, 1 })
         {
-            var anApprox = new GeomPlate_MakeApprox(aSurf, 1e-4, 4, 6, 1e-5, aCrit, GeomAbs_Shape.GeomAbs_C1, 1.0);
+            var anApprox = new GeomPlate_MakeApprox(aSurf, 1e-4, 4, 6, 1e-5, aCrit, Continuity.C1, 1.0);
             Geom_BSplineSurface aBS = anApprox.Surface()!;
-            Assert.True(aBS.IsFrozen());
+            Assert.True(aBS.IsFrozen);
             Assert.True(anApprox.ApproxError() < 1e-3, $"{aCrit}: {anApprox.ApproxError()}");
             Assert.Equal(aSurf.Value(0.4, 0.7).Z(), aBS.Value(0.4, 0.7).Z(), 3);
             if (aCrit == -1)

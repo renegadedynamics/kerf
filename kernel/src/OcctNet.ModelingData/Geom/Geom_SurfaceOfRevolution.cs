@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,13 +24,13 @@ namespace Occt;
 public class Geom_SurfaceOfRevolution : Geom_SweptSurface
 {
     private GeomEval_RepSurfaceDesc.Base? myEvalRep;
-    private gp_Pnt loc;
+    private Point3D loc;
 
     /// <summary>
     /// The revolution of a copy of C about A1. C must be planar and lie in the same plane as A1 (not checked);
     /// the surface may be self-intersecting otherwise.
     /// </summary>
-    public Geom_SurfaceOfRevolution(Geom_Curve C, in gp_Ax1 A1)
+    public Geom_SurfaceOfRevolution(Geom_Curve C, in Axis3D A1)
     {
         loc = A1.Location();
         direction = A1.Direction();
@@ -62,7 +68,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>Changes the axis of revolution.</summary>
-    internal void SetAxis(in gp_Ax1 A1)
+    internal void SetAxis(in Axis3D A1)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -71,7 +77,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>Changes the direction of the axis of revolution.</summary>
-    internal void SetDirection(in gp_Dir V)
+    internal void SetDirection(in Direction3D V)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -88,7 +94,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>Changes the location point of the axis of revolution.</summary>
-    internal void SetLocation(in gp_Pnt P)
+    internal void SetLocation(in Point3D P)
     {
         CheckMutable();
         ClearEvalRepresentation();
@@ -96,7 +102,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>A copy revolved about A1.</summary>
-    public Geom_SurfaceOfRevolution WithAxis(in gp_Ax1 A1)
+    public Geom_SurfaceOfRevolution WithAxis(in Axis3D A1)
     {
         Geom_SurfaceOfRevolution aCopy = (Geom_SurfaceOfRevolution)Copy();
         aCopy.SetAxis(A1);
@@ -104,7 +110,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>A copy whose axis of revolution has the direction V.</summary>
-    public Geom_SurfaceOfRevolution WithDirection(in gp_Dir V)
+    public Geom_SurfaceOfRevolution WithDirection(in Direction3D V)
     {
         Geom_SurfaceOfRevolution aCopy = (Geom_SurfaceOfRevolution)Copy();
         aCopy.SetDirection(V);
@@ -120,7 +126,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>A copy whose axis of revolution passes through P.</summary>
-    public Geom_SurfaceOfRevolution WithLocation(in gp_Pnt P)
+    public Geom_SurfaceOfRevolution WithLocation(in Point3D P)
     {
         Geom_SurfaceOfRevolution aCopy = (Geom_SurfaceOfRevolution)Copy();
         aCopy.SetLocation(P);
@@ -128,16 +134,16 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <summary>The axis of revolution.</summary>
-    public gp_Ax1 Axis() => new gp_Ax1(loc, direction);
+    public Axis3D Axis() => new Axis3D(loc, direction);
 
     /// <summary>The location point of the axis of revolution.</summary>
-    public gp_Pnt Location() => loc;
+    public Point3D Location() => loc;
 
     /// <summary>Not implemented in OCCT.</summary>
-    /// <exception cref="Standard_NotImplemented">Always.</exception>
-    public gp_Ax2 ReferencePlane()
+    /// <exception cref="MethodNotImplementedException">Always.</exception>
+    public Frame3D ReferencePlane()
     {
-        throw new Standard_NotImplemented();
+        throw new MethodNotImplementedException();
     }
 
     /// <summary>Reverses the U direction (the direction of the axis of revolution).</summary>
@@ -164,16 +170,16 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     public sealed override double VReversedParameter(double V) => basisCurve!.ReversedParameter(V);
 
     /// <summary>V changed into the transformed parameter of the basis curve; U unchanged.</summary>
-    public sealed override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public sealed override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
         V = basisCurve!.TransformedParameter(V, T);
     }
 
     /// <summary>An affinity along V of the basis curve's parametric transformation.</summary>
-    public sealed override gp_GTrsf2d ParametricTransformation(in gp_Trsf T)
+    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D T)
     {
-        gp_GTrsf2d T2 = new gp_GTrsf2d();
-        gp_Ax2d Axis = new gp_Ax2d(gp.Origin2d(), gp.DX2d());
+        GeneralTransform2D T2 = new GeneralTransform2D();
+        Axis2D Axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
         T2.SetAffinity(Axis, basisCurve!.ParametricTransformation(T));
         return T2;
     }
@@ -197,7 +203,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     public sealed override bool IsCNu(int N) => true;
 
     /// <summary>True if the basis curve is CN.</summary>
-    /// <exception cref="Standard_RangeError">N &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">N &lt; 0.</exception>
     public sealed override bool IsCNv(int N)
     {
         Standard_RangeError_Raise_if(N < 0, " ");
@@ -214,7 +220,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     public sealed override Geom_Curve UIso(double U)
     {
         Geom_Curve C = (Geom_Curve)basisCurve!.Copy();
-        gp_Ax1 RotAxis = new gp_Ax1(loc, direction);
+        Axis3D RotAxis = new Axis3D(loc, direction);
         C.Rotate(RotAxis, U);
         return C;
     }
@@ -223,45 +229,45 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     public sealed override Geom_Curve VIso(double V)
     {
         Geom_Circle Circ;
-        gp_Pnt Pc = basisCurve!.Value(V);
-        gp_Lin L1 = new gp_Lin(loc, direction);
+        Point3D Pc = basisCurve!.Value(V);
+        Line3D L1 = new Line3D(loc, direction);
         double Rad = L1.Distance(Pc);
-        gp_Ax2 Rep;
-        if (Rad > gp.Resolution())
+        Frame3D Rep;
+        if (Rad > Constants.Resolution())
         {
-            gp_XYZ P = Pc.XYZ();
-            gp_XYZ C = new gp_XYZ();
+            Xyz P = Pc.XYZ();
+            Xyz C = new Xyz();
             C.SetLinearForm((P - loc.XYZ()).Dot(direction.XYZ()), direction.XYZ(), loc.XYZ());
             P = P - C;
-            if (P.Modulus() > gp.Resolution())
+            if (P.Modulus() > Constants.Resolution())
             {
-                gp_Dir D = new gp_Dir(P.Normalized());
-                Rep = new gp_Ax2(new gp_Pnt(C), direction, D);
+                Direction3D D = new Direction3D(P.Normalized());
+                Rep = new Frame3D(new Point3D(C), direction, D);
             }
             else
             {
-                Rep = new gp_Ax2(new gp_Pnt(C), direction);
+                Rep = new Frame3D(new Point3D(C), direction);
             }
         }
         else
         {
-            Rep = new gp_Ax2(Pc, direction);
+            Rep = new Frame3D(Pc, direction);
         }
         Circ = new Geom_Circle(Rep, Rad);
         return Circ;
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V)
+    public sealed override Point3D EvalD0(double U, double V)
     {
-        gp_Pnt aEvalRepResult;
+        Point3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceD0(myEvalRep, U, V, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
-        gp_Pnt aBasisD0 = basisCurve!.EvalD0(V);
-        gp_Pnt aP;
-        Geom_RevolutionUtils.CalculateD0(aBasisD0, U, new gp_Ax1(loc, direction), out aP);
+        Point3D aBasisD0 = basisCurve!.EvalD0(V);
+        Point3D aP;
+        Geom_RevolutionUtils.CalculateD0(aBasisD0, U, new Axis3D(loc, direction), out aP);
         return aP;
     }
 
@@ -278,7 +284,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
         Geom_RevolutionUtils.CalculateD1(aBasisD1.Point,
                                          aBasisD1.D1,
                                          U,
-                                         new gp_Ax1(loc, direction),
+                                         new Axis3D(loc, direction),
                                          out aResult.Point,
                                          out aResult.D1U,
                                          out aResult.D1V);
@@ -299,7 +305,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
                                          aBasisD2.D1,
                                          aBasisD2.D2,
                                          U,
-                                         new gp_Ax1(loc, direction),
+                                         new Axis3D(loc, direction),
                                          out aResult.Point,
                                          out aResult.D1U,
                                          out aResult.D1V,
@@ -324,7 +330,7 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
                                          aBasisD3.D2,
                                          aBasisD3.D3,
                                          U,
-                                         new gp_Ax1(loc, direction),
+                                         new Axis3D(loc, direction),
                                          out aResult.Point,
                                          out aResult.D1U,
                                          out aResult.D1V,
@@ -339,38 +345,38 @@ public class Geom_SurfaceOfRevolution : Geom_SweptSurface
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
 
-        gp_Vec aEvalRepResult;
+        Vector3D aEvalRepResult;
         if (GeomEval_RepUtils.TryEvalSurfaceDN(myEvalRep, U, V, Nu, Nv, out aEvalRepResult))
         {
             return aEvalRepResult;
         }
 
-        gp_Vec aCurvePtOrDN;
+        Vector3D aCurvePtOrDN;
         if (Nu == 0)
         {
             aCurvePtOrDN = basisCurve!.EvalDN(V, Nv);
         }
         else if (Nv == 0)
         {
-            gp_Pnt aD0 = basisCurve!.EvalD0(V);
-            aCurvePtOrDN = new gp_Vec(aD0.XYZ() - loc.XYZ());
+            Point3D aD0 = basisCurve!.EvalD0(V);
+            aCurvePtOrDN = new Vector3D(aD0.XYZ() - loc.XYZ());
         }
         else
         {
             aCurvePtOrDN = basisCurve!.EvalDN(V, Nv);
         }
-        return Geom_RevolutionUtils.CalculateDN(aCurvePtOrDN, U, new gp_Ax1(loc, direction), Nu, Nv);
+        return Geom_RevolutionUtils.CalculateDN(aCurvePtOrDN, U, new Axis3D(loc, direction), Nu, Nv);
     }
 
     /// <summary>Transforms the axis and the basis curve; a transformation reversing orientation also reverses U.</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         ClearEvalRepresentation();

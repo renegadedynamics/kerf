@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepCheck_Status;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.IntRes2d_Position;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -380,7 +384,7 @@ public class BRepCheck_Wire : BRepCheck_Result
     }
 
     // Return true if distance between thePnt_f and thePnt_l is not more, than aTol3d
-    private static bool IsDistanceIn3DTolerance(in gp_Pnt thePnt_f, in gp_Pnt thePnt_l, double aTol3d)
+    private static bool IsDistanceIn3DTolerance(in Point3D thePnt_f, in Point3D thePnt_l, double aTol3d)
     {
         double Dist = thePnt_f.Distance(thePnt_l);
 
@@ -389,8 +393,8 @@ public class BRepCheck_Wire : BRepCheck_Result
 
     // OCCT's PrintWarnings argument only prints in debug builds; it is left out.
     private static bool IsDistanceIn2DTolerance(BRepAdaptor_Surface aFaceSurface,
-                                                in gp_Pnt2d thePnt,
-                                                in gp_Pnt2d thePntRef,
+                                                in Point2D thePnt,
+                                                in Point2D thePntRef,
                                                 double aTol3d)
     {
         double dumax = 0.01 * (aFaceSurface.LastUParameter() - aFaceSurface.FirstUParameter());
@@ -407,15 +411,15 @@ public class BRepCheck_Wire : BRepCheck_Result
         dvmax = aFaceSurface.VResolution(aTol3d);
         double um = (thePnt.X() + thePntRef.X()) / 2.0;
         double vm = (thePnt.Y() + thePntRef.Y()) / 2.0;
-        aFaceSurface.D1(um, vm, out gp_Pnt _, out gp_Vec aDU, out gp_Vec aDV);
+        aFaceSurface.D1(um, vm, out Point3D _, out Vector3D aDU, out Vector3D aDV);
         double aMDU = aDU.Magnitude();
-        if (aMDU > Precision.Confusion())
+        if (aMDU > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             dumax = Max((aTol3d / aMDU), dumax);
         }
 
         double aMDV = aDV.Magnitude();
-        if (aMDV > Precision.Confusion())
+        if (aMDV > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             dvmax = Max((aTol3d / aMDV), dvmax);
         }
@@ -506,8 +510,8 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         anOri = aFirstEdge.Orientation();
         BRep_Tool.Range(aFirstEdge, out double aF, out double aL);
-        if ((anOri == TopAbs_FORWARD && Precision.IsNegativeInfinite(aF))
-            || (anOri == TopAbs_REVERSED && Precision.IsPositiveInfinite(aL)))
+        if ((anOri == TopAbs_FORWARD && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF))
+            || (anOri == TopAbs_REVERSED && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL)))
         {
             isFirstInfinite = true;
         }
@@ -515,8 +519,8 @@ public class BRepCheck_Wire : BRepCheck_Result
         anOri = aLastEdge.Orientation();
         BRep_Tool.Range(aLastEdge, out aF, out aL);
 
-        if ((anOri == TopAbs_FORWARD && Precision.IsPositiveInfinite(aL))
-            || (anOri == TopAbs_REVERSED && Precision.IsNegativeInfinite(aF)))
+        if ((anOri == TopAbs_FORWARD && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(aL))
+            || (anOri == TopAbs_REVERSED && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(aF)))
         {
             isLastInfinite = true;
         }
@@ -542,7 +546,7 @@ public class BRepCheck_Wire : BRepCheck_Result
             return aClosedStat;
         }
 
-        gp_Pnt2d aP_first, aP_last, aP_temp; // ends of prev edge, next edge, bidon
+        Point2D aP_first, aP_last, aP_temp; // ends of prev edge, next edge, bidon
 
         // get last point
         BRep_Tool.UVPoints(aLastEdge, theFace, out aP_temp, out aP_last);
@@ -576,8 +580,8 @@ public class BRepCheck_Wire : BRepCheck_Result
         // check distance
         double aTol3d = Max(BRep_Tool.Tolerance(aFirstVertex), BRep_Tool.Tolerance(aWireExp.CurrentVertex()));
 
-        gp_Pnt aPntRef = BRep_Tool.Pnt(aFirstVertex);
-        gp_Pnt aPnt = BRep_Tool.Pnt(aWireExp.CurrentVertex());
+        Point3D aPntRef = BRep_Tool.Pnt(aFirstVertex);
+        Point3D aPnt = BRep_Tool.Pnt(aWireExp.CurrentVertex());
 
         if (!IsDistanceIn2DTolerance(aFaceSurface, aP_first, aP_last, aTol3d))
         {
@@ -965,8 +969,8 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         int i, j, Nbedges;
         double first1, last1, first2, last2, tolint;
-        gp_Pnt2d pfirst1, plast1, pfirst2, plast2;
-        gp_Pnt P3d, P3d2;
+        Point2D pfirst1, plast1, pfirst2, plast2;
+        Point3D P3d, P3d2;
         BRepAdaptor_Surface HS;
         var C1 = new Geom2dAdaptor_Curve();
         var C2 = new Geom2dAdaptor_Curve();
@@ -1010,7 +1014,7 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
 
         var tabCur = new NCollection_Array1<Geom2d_Curve?>(1, Nbedges);
-        var boxes = new NCollection_Array1<Bnd_Box2d>(1, Nbedges);
+        var boxes = new NCollection_Array1<Box2d>(1, Nbedges);
         //
         for (i = 1; i <= Nbedges; i++)
         {
@@ -1049,7 +1053,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                 BRep_Tool.UVPoints(E1, F, out pfirst1, out plast1);
                 myDomain1.SetValues(pfirst1, first1, tolint, plast1, last1, tolint);
                 //
-                BndLib_Add2dCurve.Add(C1, first1, last1, Precision.PConfusion(), ref boxes[i]);
+                BndLib_Add2dCurve.Add(C1, first1, last1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[i]);
             } // if (i == 1) {
             else
             {
@@ -1076,7 +1080,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                         //-- If the point of intersection is within the tolerance of a vertex
                         //-- this intersection is considered correct (no error)
                         bool localok = false;
-                        Geom_Curve? ConS = BRep_Tool.Curve(E1, out TopLoc_Location L, out double _, out double _);
+                        Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double _, out double _);
                         if (ConS is not null)
                         {
                             //-- try to test in 3d. (ParamOnSecond gives the same result)
@@ -1085,14 +1089,14 @@ public class BRepCheck_Wire : BRepCheck_Result
                         }
                         else
                         {
-                            gp_Pnt2d aP2d = C1.Value(IP.ParamOnFirst());
+                            Point2D aP2d = C1.Value(IP.ParamOnFirst());
                             P3d = HS.Value(aP2d.X(), aP2d.Y());
                         }
 
                         var ExplVtx = new TopExp_Explorer();
                         for (ExplVtx.Init(E1, TopAbs_VERTEX); !localok && ExplVtx.More(); ExplVtx.Next())
                         {
-                            gp_Pnt p3dvtt;
+                            Point3D p3dvtt;
                             double tolvtt, p3dvttDistanceP3d;
                             //
                             TopoDS_Vertex vtt = TopoDS.Vertex(ExplVtx.Current());
@@ -1148,7 +1152,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                         BRep_Tool.UVPoints(E2, F, out pfirst2, out plast2);
                         tabDom[j - 1].SetValues(pfirst2, first2, tolint, plast2, last2, tolint);
 
-                        BndLib_Add2dCurve.Add(C2, first2, last2, Precision.PConfusion(), ref boxes[j]);
+                        BndLib_Add2dCurve.Add(C2, first2, last2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref boxes[j]);
                     }
                     else
                     {
@@ -1230,13 +1234,13 @@ public class BRepCheck_Wire : BRepCheck_Result
                             //-- this intersection is considered correct (no error)
                             bool localok = false;
                             //
-                            Geom_Curve? ConS = BRep_Tool.Curve(E1, out TopLoc_Location L, out double f1, out double l1);
-                            Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out TopLoc_Location L2, out double f2, out double l2);
+                            Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double f1, out double l1);
+                            Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out Placement L2, out double f2, out double l2);
                             // gka protect against working out of edge range
-                            if (f1 - IP_ParamOnFirst > Precision.PConfusion()
-                                || IP_ParamOnFirst - l1 > Precision.PConfusion()
-                                || f2 - IP_ParamOnSecond > Precision.PConfusion()
-                                || IP_ParamOnSecond - l2 > Precision.PConfusion())
+                            if (f1 - IP_ParamOnFirst > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                || IP_ParamOnFirst - l1 > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                || f2 - IP_ParamOnSecond > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                || IP_ParamOnSecond - l2 > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 continue;
                             }
@@ -1249,7 +1253,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                             }
                             else
                             {
-                                gp_Pnt2d aP2d = C1.Value(IP_ParamOnFirst);
+                                Point2D aP2d = C1.Value(IP_ParamOnFirst);
                                 P3d = HS.Value(aP2d.X(), aP2d.Y());
                             }
 
@@ -1261,7 +1265,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                             }
                             else
                             {
-                                gp_Pnt2d aP2d = C2.Value(IP_ParamOnSecond);
+                                Point2D aP2d = C2.Value(IP_ParamOnSecond);
                                 P3d2 = HS.Value(aP2d.X(), aP2d.Y());
                             }
 
@@ -1269,7 +1273,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                             for (; itl.More(); itl.Next())
                             {
                                 double p3dvttDistanceP3d, p3dvttDistanceP3d2;
-                                gp_Pnt p3dvtt;
+                                Point3D p3dvtt;
                                 //
                                 TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
                                 p3dvtt = BRep_Tool.Pnt(vtt);
@@ -1294,7 +1298,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                             if (!localok && !CommonVertices.IsEmpty())
                             {
                                 double distauvtxleplusproche, VParaOnEdge1, VParaOnEdge2;
-                                gp_Pnt VertexLePlusProche = new();
+                                Point3D VertexLePlusProche = new();
                                 //
                                 VParaOnEdge1 = 0.0;
                                 VParaOnEdge2 = 0.0;
@@ -1304,7 +1308,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 for (; itl.More(); itl.Next())
                                 {
                                     double disptvtx;
-                                    gp_Pnt p3dvtt;
+                                    Point3D p3dvtt;
                                     //
                                     TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
                                     p3dvtt = BRep_Tool.Pnt(vtt);
@@ -1335,14 +1339,14 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                                 // Patch: extraordinar situation (e.g. tolerance(v) == 0.)
                                 //   Modified by skv - Wed Jul 23 12:28:11 2003 OCC1764
-                                if (VertexLePlusProche.Distance(P3d) <= gp.Resolution()
-                                    || VertexLePlusProche.Distance(P3d2) <= gp.Resolution())
+                                if (VertexLePlusProche.Distance(P3d) <= Constants.Resolution()
+                                    || VertexLePlusProche.Distance(P3d2) <= Constants.Resolution())
                                 {
                                     localok = true;
                                 }
                                 else
                                 {
-                                    var Lig = new gp_Lin(VertexLePlusProche, new gp_Dir(new gp_Vec(VertexLePlusProche, P3d)));
+                                    var Lig = new Line3D(VertexLePlusProche, new Direction3D(new Vector3D(VertexLePlusProche, P3d)));
                                     double du1 = 0.1 * (IP_ParamOnFirst - VParaOnEdge1);
                                     double du2 = 0.1 * (IP_ParamOnSecond - VParaOnEdge2);
                                     double maxd1 = 0.0, maxd2 = 0.0;
@@ -1353,7 +1357,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                     for (k = 2; localok && k < 9; k++)
                                     {
                                         double u = VParaOnEdge1 + k * du1; // check if it works
-                                        gp_Pnt P1;
+                                        Point3D P1;
                                         if (ConS is not null)
                                         {
                                             P1 = ConS.Value(u);
@@ -1361,7 +1365,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                         }
                                         else
                                         {
-                                            gp_Pnt2d aP2d = C1.Value(u);
+                                            Point2D aP2d = C1.Value(u);
                                             P1 = HS.Value(aP2d.X(), aP2d.Y());
                                         }
 
@@ -1379,14 +1383,14 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                                     //-- same for edge2
                                     //  Modified by skv - Wed Jul 23 12:22:20 2003 OCC1764
-                                    var aTmpDir = new gp_Dir(P3d2.XYZ().Subtracted(VertexLePlusProche.XYZ()));
+                                    var aTmpDir = new Direction3D(P3d2.XYZ().Subtracted(VertexLePlusProche.XYZ()));
 
                                     Lig.SetDirection(aTmpDir);
                                     double tole2 = BRep_Tool.Tolerance(E2);
                                     for (k = 2; localok && k < 9; k++)
                                     {
                                         double u = VParaOnEdge2 + k * du2; // check if it works
-                                        gp_Pnt P2;
+                                        Point3D P2;
                                         if (ConS2 is not null)
                                         {
                                             P2 = ConS2.Value(u);
@@ -1394,7 +1398,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                         }
                                         else
                                         {
-                                            gp_Pnt2d aP2d = C2.Value(u);
+                                            Point2D aP2d = C2.Value(u);
                                             P2 = HS.Value(aP2d.X(), aP2d.Y());
                                         }
 
@@ -1455,17 +1459,17 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 //
                                 if (aPCR1 != IntRes2d_Middle && aPCR2 != IntRes2d_Middle)
                                 {
-                                    GeomAbs_CurveType aCT1, aCT2;
+                                    CurveKind aCT1, aCT2;
                                     // ZZ
                                     aCT1 = C1.GetType();
                                     aCT2 = C2.GetType();
-                                    if (aCT1 == GeomAbs_Line && aCT2 == GeomAbs_Line)
+                                    if (aCT1 == Line && aCT2 == Line)
                                     {
                                         // check for the two lines coincidence
                                         double aPAR_T, aT11, aT12, aT21, aT22, aT1m, aT2m;
                                         double aD2, aTolE1, aTolE2, aTol2;
-                                        gp_Lin2d aL1, aL2;
-                                        gp_Pnt2d aP1m;
+                                        Line2D aL1, aL2;
+                                        Point2D aP1m;
                                         //
                                         aPAR_T = 0.43213918;
                                         //
@@ -1488,12 +1492,12 @@ public class BRepCheck_Wire : BRepCheck_Result
                                         aD2 = aL2.SquareDistance(aP1m);
                                         if (aD2 < aTol2)
                                         {
-                                            aT2m = ElCLib.Parameter(aL2, aP1m);
+                                            aT2m = global::Kerf.Engine.Geometry.ElCLib.Parameter(aL2, aP1m);
                                             if (aT2m > aT21 && aT2m < aT22)
                                             {
-                                                gp_Dir2d aDir1 = aL1.Direction();
-                                                gp_Dir2d aDir2 = aL2.Direction();
-                                                if (aDir1.IsParallel(aDir2, Precision.Angular()))
+                                                Direction2D aDir1 = aL1.Direction();
+                                                Direction2D aDir2 = aL2.Direction();
+                                                if (aDir1.IsParallel(aDir2, global::Kerf.Engine.Foundation.Precision.Angular()))
                                                 {
                                                     localok = false;
                                                     break; // from for (k = 0; k < 2; ++k){...
@@ -1509,8 +1513,8 @@ public class BRepCheck_Wire : BRepCheck_Result
 
                                 //
                                 double tolvtt;
-                                Geom_Curve? ConS = BRep_Tool.Curve(E1, out TopLoc_Location L, out double _, out double _);
-                                Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out TopLoc_Location L2, out double _, out double _);
+                                Geom_Curve? ConS = BRep_Tool.Curve(E1, out Placement L, out double _, out double _);
+                                Geom_Curve? ConS2 = BRep_Tool.Curve(E2, out Placement L2, out double _, out double _);
                                 if (ConS is not null)
                                 {
                                     P3d = ConS.Value(IP_ParamOnFirst);
@@ -1518,7 +1522,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 }
                                 else
                                 {
-                                    gp_Pnt2d aP2d = C1.Value(IP_ParamOnFirst);
+                                    Point2D aP2d = C1.Value(IP_ParamOnFirst);
                                     P3d = HS.Value(aP2d.X(), aP2d.Y());
                                 }
 
@@ -1529,7 +1533,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 }
                                 else
                                 {
-                                    gp_Pnt2d aP2d = C2.Value(IP_ParamOnSecond);
+                                    Point2D aP2d = C2.Value(IP_ParamOnSecond);
                                     P3d2 = HS.Value(aP2d.X(), aP2d.Y());
                                 }
 
@@ -1537,7 +1541,7 @@ public class BRepCheck_Wire : BRepCheck_Result
                                 for (; itl.More(); itl.Next())
                                 {
                                     double p3dvttDistanceP3d, p3dvttDistanceP3d2;
-                                    gp_Pnt p3dvtt;
+                                    Point3D p3dvtt;
                                     //
                                     TopoDS_Vertex vtt = TopoDS.Vertex(itl.Value());
                                     p3dvtt = BRep_Tool.Pnt(vtt);
@@ -1698,10 +1702,10 @@ public class BRepCheck_Wire : BRepCheck_Result
 
         int anIndex = 0, anIndMin = 0;
         TopoDS_Edge anEFound;
-        gp_Pnt2d aPntRef, aPnt = new();
-        gp_Vec2d aDerRef, aDer;
+        Point2D aPntRef, aPnt = new();
+        Vector2D aDerRef, aDer;
         double aMinAngle, aMaxAngle, anAngle;
-        double a_gpResolution = gp.Resolution();
+        double a_gpResolution = Constants.Resolution();
         TopAbs_Orientation aVOrientation, anEdgOrientation;
         double aParam = 0.0, aFirstParam, aLastParam, aParPiv;
         var aFaceSurface = new BRepAdaptor_Surface(theFace, false); // no restriction
@@ -1809,8 +1813,8 @@ public class BRepCheck_Wire : BRepCheck_Result
                     // IsDistanceIn3DTolerance
                     var bcEdg = new BRepAdaptor_Curve(theEdge, theFace);
                     var bcEvois = new BRepAdaptor_Curve(anEFound, theFace);
-                    gp_Pnt pEdg = bcEdg.Value(aParPiv);
-                    gp_Pnt pEFound = bcEvois.Value(aParam);
+                    Point3D pEdg = bcEdg.Value(aParPiv);
+                    Point3D pEFound = bcEvois.Value(aParam);
 
                     IsFound = IsDistanceIn3DTolerance(pEdg, pEFound, aTol3d);
                 }
@@ -1845,9 +1849,9 @@ public class BRepCheck_Wire : BRepCheck_Result
         }
     } // End of function
 
-    private static void CurveDirForParameter(Geom2dAdaptor_Curve aC2d, double aPrm, out gp_Pnt2d Pnt, out gp_Vec2d aVec2d)
+    private static void CurveDirForParameter(Geom2dAdaptor_Curve aC2d, double aPrm, out Point2D Pnt, out Vector2D aVec2d)
     {
-        double aTol = gp.Resolution();
+        double aTol = Constants.Resolution();
         int i;
 
         aC2d.D1(aPrm, out Pnt, out aVec2d);
@@ -1867,7 +1871,7 @@ public class BRepCheck_Wire : BRepCheck_Result
 
     // Returns the parametric point of theVertex on theFace through theEdge; false if theVertex isn't a vertex of
     // theEdge or theEdge has no pcurve on theFace.
-    private static bool GetPnt2d(in TopoDS_Vertex theVertex, in TopoDS_Edge theEdge, in TopoDS_Face theFace, ref gp_Pnt2d aPnt)
+    private static bool GetPnt2d(in TopoDS_Vertex theVertex, in TopoDS_Edge theEdge, in TopoDS_Face theFace, ref Point2D aPnt)
     {
         Geom2d_Curve? aPCurve;
         double aParOnEdge;
@@ -1895,8 +1899,8 @@ public class BRepCheck_Wire : BRepCheck_Result
     // Checks the distance between first point of the first edge and last point of the last edge in 2d for
     // periodic face.
     private static bool IsClosed2dForPeriodicFace(in TopoDS_Face theFace,
-                                                  in gp_Pnt2d theP1,
-                                                  in gp_Pnt2d theP2,
+                                                  in Point2D theP1,
+                                                  in Point2D theP2,
                                                   in TopoDS_Vertex theVertex)
     {
         // Check 2d distance for periodic faces with seam edge.
@@ -1955,8 +1959,8 @@ public class BRepCheck_Wire : BRepCheck_Result
                 //  to be lower than the computed tolerance.
                 if (IsOriented(aVtx) && aVtx.IsSame(theVertex))
                 {
-                    gp_Pnt2d aPnt1 = new();
-                    gp_Pnt2d aPnt2 = new();
+                    Point2D aPnt1 = new();
+                    Point2D aPnt2 = new();
                     double a2dTol;
 
                     if (!GetPnt2d(theVertex, aSeamEdge, theFace, ref aPnt1))

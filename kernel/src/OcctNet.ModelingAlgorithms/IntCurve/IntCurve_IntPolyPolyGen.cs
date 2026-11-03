@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.IntRes2d_Position;
 
 namespace Occt;
@@ -229,8 +232,8 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
     protected void Perform(in TheCurve C1, in IntRes2d_Domain D1, double TolConf, double Tol, int NbIter,
                            double DeltaU, double DeltaV)
     {
-        gp_Vec2d Tan1, Tan2, Norm1, Norm2;
-        gp_Pnt2d P1, P2;
+        Vector2D Tan1, Tan2, Norm1, Norm2;
+        Point2D P1, P2;
         int nbsamples;
         done = false;
 
@@ -680,8 +683,8 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
                                        ref bool EndOn2,
                                        int PosSegment)
     {
-        gp_Pnt2d P1, P2, SP1 = new(), SP2 = new();
-        gp_Vec2d T1, T2, N1, N2;
+        Point2D P1, P2, SP1 = new(), SP2 = new();
+        Vector2D T1, T2, N1, N2;
         double u = tu;
         double v = tv;
         double svu = u;
@@ -952,8 +955,8 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
                                IntCurve_Polygon2dGen<TheCurve, TheCurveTool> thePoly2,
                                bool isFullPolygon)
     {
-        gp_Vec2d Tan1, Tan2, Norm1, Norm2;
-        gp_Pnt2d P1, P2;
+        Vector2D Tan1, Tan2, Norm1, Norm2;
+        Point2D P1, P2;
         Intf_InterferencePolygon2d InterPP = new(thePoly1, thePoly2);
         IntCurve_ExactIntersectionPoint<TheCurve, TheCurveTool> EIP = new(C1, C2, TolConf);
         double U = 0.0, V = 0.0;
@@ -1346,10 +1349,10 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
         theCount++;
         //
         double aTol2 = theTolConf * theTolConf;
-        double aPTol1 = Max(100.0 * Epsilon(Max(Math.Abs(theT1f), Math.Abs(theT1l))), Precision.PConfusion());
-        double aPTol2 = Max(100.0 * Epsilon(Max(Math.Abs(theT2f), Math.Abs(theT2l))), Precision.PConfusion());
-        gp_Pnt2d aP1f, aP1l, aP2f, aP2l;
-        Bnd_Box2d aB1 = new(), aB2 = new();
+        double aPTol1 = Max(100.0 * Epsilon(Max(Math.Abs(theT1f), Math.Abs(theT1l))), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        double aPTol2 = Max(100.0 * Epsilon(Max(Math.Abs(theT2f), Math.Abs(theT2l))), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Point2D aP1f, aP1l, aP2f, aP2l;
+        Box2d aB1 = new(), aB2 = new();
         //
         TheCurveTool.D0(theC1, theT1f, out aP1f);
         TheCurveTool.D0(theC1, theT1l, out aP1l);
@@ -1376,8 +1379,8 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
         {
             // Seems to be intersection
             // Simple treatment of segment intersection
-            Span<gp_XY> aPnts1 = [aP1f.XY(), (aP1f.XY() + aP1l.XY()) / 2.0, aP1l.XY()];
-            Span<gp_XY> aPnts2 = [aP2f.XY(), (aP2f.XY() + aP2l.XY()) / 2.0, aP2l.XY()];
+            Span<Xy> aPnts1 = [aP1f.XY(), (aP1f.XY() + aP1l.XY()) / 2.0, aP1l.XY()];
+            Span<Xy> aPnts2 = [aP2f.XY(), (aP2f.XY() + aP2l.XY()) / 2.0, aP2l.XY()];
             int i, j, imin = -1, jmin = -1;
             double dmin = RealLast(), d;
             for (i = 0; i < 3; i++)
@@ -1427,7 +1430,7 @@ public class IntCurve_IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : IntR
                     t2 = theT2l;
                 }
                 //
-                gp_Pnt2d aPint = new((aPnts1[imin] + aPnts2[jmin]) / 2.0);
+                Point2D aPint = new((aPnts1[imin] + aPnts2[jmin]) / 2.0);
                 //
                 IntRes2d_Transition aTrans1 = new(), aTrans2 = new();
                 thePInt.SetValues(aPint, t1, t2, aTrans1, aTrans2, false);

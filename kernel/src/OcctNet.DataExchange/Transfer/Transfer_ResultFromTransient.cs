@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -14,7 +15,7 @@ namespace Occt;
 /// TransientProcess. A ResultFromTransient records a couple (Transient,Binder for the result and checks) plus a list of
 /// "sub-results", which have been recorded in the TransientProcess, under scope attached to the starting transient.
 /// </summary>
-public class Transfer_ResultFromTransient : Standard_Transient
+public class Transfer_ResultFromTransient : Transient
 {
     /// <summary>Creates a ResultFromTransient, empty.</summary>
     public Transfer_ResultFromTransient()
@@ -22,7 +23,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
     }
 
     /// <summary>Sets starting entity.</summary>
-    public void SetStart(Standard_Transient? start)
+    public void SetStart(Transient? start)
     {
         thestart = start;
     }
@@ -34,7 +35,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
     }
 
     /// <summary>Returns the starting entity.</summary>
-    public Standard_Transient? Start()
+    public Transient? Start()
     {
         return thestart;
     }
@@ -74,7 +75,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
     }
 
     /// <summary>Returns the ResultFromTransient attached to a given starting entity (the key). Returns a null handle if not found.</summary>
-    public Transfer_ResultFromTransient? ResultFromKey(Standard_Transient? key)
+    public Transfer_ResultFromTransient? ResultFromKey(Transient? key)
     {
         Transfer_ResultFromTransient? res = null;
         if (key == thestart)
@@ -97,7 +98,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
     /// This method is used by ResultFromModel to collate the list of ResultFromTransient, avoiding duplications with a
     /// map. Remark : this object is already in the map and has not to be bound.
     /// </summary>
-    public void FillMap(NCollection_IndexedMap<Standard_Transient> map)
+    public void FillMap(NCollection_IndexedMap<Transient> map)
     {
         if (thesubs is null)
         {
@@ -131,7 +132,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
         }
         if (thesubs is null)
         {
-            thesubs = new NCollection_HSequence<Standard_Transient>();
+            thesubs = new NCollection_HSequence<Transient>();
         }
         thesubs.Append(sub);
     }
@@ -181,7 +182,7 @@ public class Transfer_ResultFromTransient : Standard_Transient
         // abv: WARNING: to be removed (scopes)
     }
 
-    private Standard_Transient? thestart;
+    private Transient? thestart;
     private Transfer_Binder? thebinder;
-    private NCollection_HSequence<Standard_Transient>? thesubs;
+    private NCollection_HSequence<Transient>? thesubs;
 }

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -33,7 +37,7 @@ public class StlAPI_Writer
     public void SetASCIIMode(bool theASCIIMode) => myASCIIMode = theASCIIMode;
 
     /// <summary>Converts the shape to STL and writes it to the file. False on an error or with no triangulation.</summary>
-    public bool Write(in TopoDS_Shape theShape, string theFileName, Message_ProgressRange theProgress = default)
+    public bool Write(in TopoDS_Shape theShape, string theFileName, ProgressRange theProgress = default)
     {
         FileStream? aStream = RWStl.CreateFile(theFileName);
         if (aStream is null)
@@ -48,7 +52,7 @@ public class StlAPI_Writer
     }
 
     /// <summary>Converts the shape to STL and writes it to the stream. False on an error or with no triangulation.</summary>
-    public bool Write(in TopoDS_Shape theShape, Stream theStream, Message_ProgressRange theProgress = default)
+    public bool Write(in TopoDS_Shape theShape, Stream theStream, ProgressRange theProgress = default)
     {
         int aNbNodes = 0;
         int aNbTriangles = 0;
@@ -56,11 +60,11 @@ public class StlAPI_Writer
         // calculate total number of the nodes and triangles
         for (var anExpSF = new TopExp_Explorer(theShape, TopAbs_FACE); anExpSF.More(); anExpSF.Next())
         {
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpSF.Current()), out _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(anExpSF.Current()), out _);
             if (aTriangulation is not null)
             {
-                aNbNodes += aTriangulation.NbNodes();
-                aNbTriangles += aTriangulation.NbTriangles();
+                aNbNodes += aTriangulation.NodeCount;
+                aNbTriangles += aTriangulation.TriangleCount;
             }
         }
 
@@ -71,7 +75,7 @@ public class StlAPI_Writer
         }
 
         // create temporary triangulation
-        var aMesh = new Poly_Triangulation(aNbNodes, aNbTriangles, false);
+        var aMesh = new Triangulation(aNbNodes, aNbTriangles, false);
         // count faces missing triangulation
         int aNbFacesNoTri = 0;
         // fill temporary triangulation
@@ -80,7 +84,7 @@ public class StlAPI_Writer
         for (var anExpSF = new TopExp_Explorer(theShape, TopAbs_FACE); anExpSF.More(); anExpSF.Next())
         {
             TopoDS_Shape aFace = anExpSF.Current();
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out TopLoc_Location aLoc);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aFace), out Placement aLoc);
             if (aTriangulation is null)
             {
                 ++aNbFacesNoTri;
@@ -88,19 +92,19 @@ public class StlAPI_Writer
             }
 
             // copy nodes
-            gp_Trsf aTrsf = aLoc.Transformation();
-            for (int aNodeIter = 1; aNodeIter <= aTriangulation.NbNodes(); ++aNodeIter)
+            Transform3D aTrsf = aLoc.Transformation();
+            for (int aNodeIter = 1; aNodeIter <= aTriangulation.NodeCount; ++aNodeIter)
             {
-                gp_Pnt aPnt = aTriangulation.Node(aNodeIter);
+                Point3D aPnt = aTriangulation.Node(aNodeIter);
                 aPnt.Transform(aTrsf);
                 aMesh.SetNode(aNodeIter + aNodeOffset, aPnt);
             }
 
             // copy triangles
             TopAbs_Orientation anOrientation = anExpSF.Current().Orientation();
-            for (int aTriIter = 1; aTriIter <= aTriangulation.NbTriangles(); ++aTriIter)
+            for (int aTriIter = 1; aTriIter <= aTriangulation.TriangleCount; ++aTriIter)
             {
-                Poly_Triangle aTri = aTriangulation.Triangle(aTriIter);
+                Triangle1 aTri = aTriangulation.Triangle(aTriIter);
 
                 aTri.Get(out int anId0, out int anId1, out int anId2);
                 if (anOrientation == TopAbs_REVERSED)
@@ -118,8 +122,8 @@ public class StlAPI_Writer
                 aMesh.SetTriangle(aTriIter + aTriangleOffet, aTri);
             }
 
-            aNodeOffset += aTriangulation.NbNodes();
-            aTriangleOffet += aTriangulation.NbTriangles();
+            aNodeOffset += aTriangulation.NodeCount;
+            aTriangleOffet += aTriangulation.TriangleCount;
         }
 
         bool isDone = myASCIIMode ? RWStl.WriteAscii(aMesh, theStream, theProgress)
@@ -131,7 +135,7 @@ public class StlAPI_Writer
             string aWarningMsg = "Warning: " + aNbFacesNoTri
                                  + ((aNbFacesNoTri == 1) ? " face has" : " faces have")
                                  + " been skipped due to null triangulation";
-            Message.SendWarning(aWarningMsg);
+            global::Kerf.Engine.Foundation.Message.SendWarning(aWarningMsg);
         }
 
         return isDone;

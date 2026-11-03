@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -15,14 +19,14 @@ public class IntWalkPWalkingTests
     private const double Increment = 0.1;
 
     private static Adaptor3d_Surface PlaneXY() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new gp_Ax3()), -10.0, 10.0, -10.0, 10.0);
+        new GeomAdaptor_Surface(new Geom_Plane(new CoordinateSystem()), -10.0, 10.0, -10.0, 10.0);
 
     private static Adaptor3d_Surface PlaneYZ() =>
-        new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), -10.0, 10.0, -10.0, 10.0);
+        new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -10.0, 10.0, -10.0, 10.0);
 
-    private static readonly gp_Pln PlaneX2 = new(new gp_Pnt(2, 0, 0), new gp_Dir(1, 0, 0));
+    private static readonly Plane3D PlaneX2 = new(new Point3D(2, 0, 0), new Direction3D(1, 0, 0));
 
-    private static readonly gp_Cylinder Cylinder5 = new(new gp_Ax3(), 5.0);
+    private static readonly Cylinder Cylinder5 = new(new CoordinateSystem(), 5.0);
 
     private static (Adaptor3d_Surface Plane, Adaptor3d_Surface Cylinder) PlaneAndCylinder() =>
         (new GeomAdaptor_Surface(new Geom_Plane(PlaneX2), -20.0, 20.0, -20.0, 20.0),
@@ -30,9 +34,9 @@ public class IntWalkPWalkingTests
 
     private static NCollection_Array1<double> StartOnPlaneAndCylinder()
     {
-        gp_Pnt aP = new(2.0, Math.Sqrt(21.0), 0.0);
-        ElSLib.Parameters(PlaneX2, aP, out double u1, out double v1);
-        ElSLib.Parameters(Cylinder5, aP, out double u2, out double v2);
+        Point3D aP = new(2.0, Math.Sqrt(21.0), 0.0);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(PlaneX2, aP, out double u1, out double v1);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder5, aP, out double u2, out double v2);
         NCollection_Array1<double> aPar = new(1, 4);
         aPar[1] = u1;
         aPar[2] = v1;
@@ -73,7 +77,7 @@ public class IntWalkPWalkingTests
         AssertOnSurfaces(aWalk, aS1, aS2, 1.0e-7);
         for (int i = 1; i <= aWalk.NbPoints(); i++)
         {
-            gp_Pnt aP = aWalk.Value(i).Value();
+            Point3D aP = aWalk.Value(i).Value();
             Assert.True(Math.Abs(aP.X()) < 1.0e-7 && Math.Abs(aP.Z()) < 1.0e-7, $"point {i} off the Y axis");
         }
 
@@ -103,7 +107,7 @@ public class IntWalkPWalkingTests
         double aZmin = double.MaxValue, aZmax = double.MinValue;
         for (int i = 1; i <= aWalk.NbPoints(); i++)
         {
-            gp_Pnt aP = aWalk.Value(i).Value();
+            Point3D aP = aWalk.Value(i).Value();
             Assert.True(Math.Abs(aP.X() - 2.0) < 1.0e-6 && Math.Abs(aP.Y() - Math.Sqrt(21.0)) < 1.0e-6,
                         $"point {i} off the generator");
             aZmin = Math.Min(aZmin, aP.Z());
@@ -179,8 +183,8 @@ public class IntWalkPWalkingTests
         // Coincident planes: tangent everywhere, the walking stops before marching and is not done
         aWalk.Perform(Origin());
         Assert.False(aWalk.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => aWalk.NbPoints());
+        Assert.Throws<NotDoneException>(() => aWalk.NbPoints());
         Assert.Equal(aWalk.MaxStep(0), aWalk.MaxStep(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aWalk.MaxStep(4));
+        Assert.ThrowsAny<OutOfRangeException>(() => aWalk.MaxStep(4));
     }
 }

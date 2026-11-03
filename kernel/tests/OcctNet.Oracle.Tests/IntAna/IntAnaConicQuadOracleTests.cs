@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -25,17 +26,17 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     // MSVC and .NET reach 1e-11 relative, and more near double roots (a conic tangent to the quadric).
     private const double QuadricTolerance = 1.0e-9;
 
-    private static gp_Ax3 SettledAx3(Oracle theOracle, in gp_Pnt theLoc)
+    private static CoordinateSystem SettledAx3(Oracle theOracle, in Point3D theLoc)
     {
-        gp_Ax3 anAx = theOracle.Ax3();
-        var aSettled = new gp_Ax3(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
+        CoordinateSystem anAx = theOracle.Ax3();
+        var aSettled = new CoordinateSystem(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
         return anAx.Direct() ? aSettled : aSettled.YReversed();
     }
 
-    private static gp_Ax2 SettledAx2(Oracle theOracle, in gp_Pnt theLoc)
+    private static Frame3D SettledAx2(Oracle theOracle, in Point3D theLoc)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
-        return new gp_Ax2(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
+        Frame3D anAx = theOracle.Ax2();
+        return new Frame3D(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
     }
 
     public enum Surf { Plane, Cylinder, Cone, Sphere }
@@ -45,8 +46,8 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     private readonly record struct PortPoint(double U, double V, double W);
 
     /// <summary>The points IntCurveSurface keeps (ComputeAppendPoint): parameters put in the period, then bounded.</summary>
-    private static List<PortPoint> Keep(IntAna_IntConicQuad theInter, Conic theConic, Surf theSurf, in gp_Pln thePln,
-                                        in gp_Cylinder theCyl, in gp_Cone theCone, in gp_Sphere theSph)
+    private static List<PortPoint> Keep(IntAna_IntConicQuad theInter, Conic theConic, Surf theSurf, in Plane3D thePln,
+                                        in Cylinder theCyl, in Cone theCone, in Sphere theSph)
     {
         var aResult = new List<PortPoint>();
         if (!theInter.IsDone() || theInter.IsInQuadric() || theInter.IsParallel())
@@ -56,23 +57,23 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
 
         for (int i = 1; i <= theInter.NbPoints(); i++)
         {
-            gp_Pnt aP = theInter.Point(i);
+            Point3D aP = theInter.Point(i);
             double aW = theInter.ParamOnConic(i), aU = 0, aV = 0;
             switch (theSurf)
             {
-                case Surf.Plane: ElSLib.Parameters(thePln, aP, out aU, out aV); break;
-                case Surf.Cylinder: ElSLib.Parameters(theCyl, aP, out aU, out aV); break;
-                case Surf.Cone: ElSLib.Parameters(theCone, aP, out aU, out aV); break;
-                case Surf.Sphere: ElSLib.Parameters(theSph, aP, out aU, out aV); break;
+                case Surf.Plane: global::Kerf.Engine.Geometry.ElSLib.Parameters(thePln, aP, out aU, out aV); break;
+                case Surf.Cylinder: global::Kerf.Engine.Geometry.ElSLib.Parameters(theCyl, aP, out aU, out aV); break;
+                case Surf.Cone: global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, aP, out aU, out aV); break;
+                case Surf.Sphere: global::Kerf.Engine.Geometry.ElSLib.Parameters(theSph, aP, out aU, out aV); break;
             }
 
             if (theConic is Conic.Circle or Conic.Ellipse)
             {
-                aW = ElCLib.InPeriod(aW, 0.0, 2 * Math.PI);
+                aW = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aW, 0.0, 2 * Math.PI);
             }
             if (theSurf != Surf.Plane)
             {
-                aU = ElCLib.InPeriod(aU, 0.0, 2 * Math.PI);
+                aU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU, 0.0, 2 * Math.PI);
             }
             if (theSurf == Surf.Sphere
                 && ((-Math.PI / 2 - aV) >= TolTangency || (aV - Math.PI / 2) >= TolTangency))
@@ -85,7 +86,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     }
 
     private static void Compare(Oracle theOracle, N.Geom_Curve theC, N.Geom_Surface theS, List<PortPoint> thePort,
-                                Func<double, gp_Pnt> theValue, double theTol, string theWhat)
+                                Func<double, Point3D> theValue, double theTol, string theWhat)
     {
         using var anIntCS = new N.GeomAPI_IntCS(theC, theS);
         theOracle.Same(true, anIntCS.IsDone(), $"{theWhat} IsDone");
@@ -109,13 +110,13 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             string aWhat = $"{theConic}/{theSurf} case {i}";
-            gp_Ax3 aSAx = SettledAx3(anOracle, anOracle.Pnt());
+            CoordinateSystem aSAx = SettledAx3(anOracle, anOracle.Pnt());
             double aR = anOracle.Real(1, 20);
             double aSemiAngle = anOracle.Real(0.1, 1.4);
-            var aPln = new gp_Pln(aSAx);
-            var aCyl = new gp_Cylinder(aSAx, aR);
-            var aCone = new gp_Cone(aSAx, aSemiAngle, aR);
-            var aSph = new gp_Sphere(aSAx, aR);
+            var aPln = new Plane3D(aSAx);
+            var aCyl = new Cylinder(aSAx, aR);
+            var aCone = new Cone(aSAx, aSemiAngle, aR);
+            var aSph = new Sphere(aSAx, aR);
             using var aNSAx = Oracle.ToNative(aSAx);
             using N.Geom_Surface aNS = theSurf switch
             {
@@ -133,19 +134,19 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             };
 
             // The conic near the surface's location
-            gp_Pnt aLoc = aSAx.Location().Translated(new gp_Vec(anOracle.Real(-aR, aR), anOracle.Real(-aR, aR),
+            Point3D aLoc = aSAx.Location().Translated(new Vector3D(anOracle.Real(-aR, aR), anOracle.Real(-aR, aR),
                                                                   anOracle.Real(-aR, aR)));
-            gp_Ax2 aCAx = SettledAx2(anOracle, aLoc);
+            Frame3D aCAx = SettledAx2(anOracle, aLoc);
             double aMaj = anOracle.Real(0.5, 2 * aR), aMin = anOracle.Real(0.2, aMaj);
             using var aNCAx = Oracle.ToNative(aCAx);
             var anInter = new IntAna_IntConicQuad();
             N.Geom_Curve aNC;
-            Func<double, gp_Pnt> aValue;
+            Func<double, Point3D> aValue;
             switch (theConic)
             {
                 case Conic.Line:
                 {
-                    var aLin = new gp_Lin(aCAx.Axis());
+                    var aLin = new Line3D(aCAx.Axis());
                     using var aNAx1 = Oracle.ToNative(aCAx.Axis());
                     aNC = new N.Geom_Line(aNAx1);
                     if (theSurf == Surf.Plane)
@@ -156,12 +157,12 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                     {
                         anInter.Perform(aLin, aQuad);
                     }
-                    aValue = w => ElCLib.Value(w, aLin);
+                    aValue = w => global::Kerf.Engine.Geometry.ElCLib.Value(w, aLin);
                     break;
                 }
                 case Conic.Circle:
                 {
-                    var aCirc = new gp_Circ(aCAx, aMaj);
+                    var aCirc = new Circle3D(aCAx, aMaj);
                     aNC = new N.Geom_Circle(aNCAx, aMaj);
                     if (theSurf == Surf.Plane)
                     {
@@ -171,12 +172,12 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                     {
                         anInter.Perform(aCirc, aQuad);
                     }
-                    aValue = w => ElCLib.Value(w, aCirc);
+                    aValue = w => global::Kerf.Engine.Geometry.ElCLib.Value(w, aCirc);
                     break;
                 }
                 case Conic.Ellipse:
                 {
-                    var anElips = new gp_Elips(aCAx, aMaj, aMin);
+                    var anElips = new Ellipse3D(aCAx, aMaj, aMin);
                     aNC = new N.Geom_Ellipse(aNCAx, aMaj, aMin);
                     if (theSurf == Surf.Plane)
                     {
@@ -186,12 +187,12 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                     {
                         anInter.Perform(anElips, aQuad);
                     }
-                    aValue = w => ElCLib.Value(w, anElips);
+                    aValue = w => global::Kerf.Engine.Geometry.ElCLib.Value(w, anElips);
                     break;
                 }
                 case Conic.Parabola:
                 {
-                    var aParab = new gp_Parab(aCAx, aMin);
+                    var aParab = new Parabola3D(aCAx, aMin);
                     aNC = new N.Geom_Parabola(aNCAx, aMin);
                     if (theSurf == Surf.Plane)
                     {
@@ -201,12 +202,12 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                     {
                         anInter.Perform(aParab, aQuad);
                     }
-                    aValue = w => ElCLib.Value(w, aParab);
+                    aValue = w => global::Kerf.Engine.Geometry.ElCLib.Value(w, aParab);
                     break;
                 }
                 default:
                 {
-                    var aHypr = new gp_Hypr(aCAx, aMaj, aMin);
+                    var aHypr = new Hyperbola3D(aCAx, aMaj, aMin);
                     aNC = new N.Geom_Hyperbola(aNCAx, aMaj, aMin);
                     if (theSurf == Surf.Plane)
                     {
@@ -216,7 +217,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                     {
                         anInter.Perform(aHypr, aQuad);
                     }
-                    aValue = w => ElCLib.Value(w, aHypr);
+                    aValue = w => global::Kerf.Engine.Geometry.ElCLib.Value(w, aHypr);
                     break;
                 }
             }
@@ -264,16 +265,16 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
         for (int i = 0; i < Cases; i++)
         {
             string aWhat = $"Line/torus case {i}";
-            gp_Ax3 aSAx = SettledAx3(anOracle, anOracle.Pnt());
+            CoordinateSystem aSAx = SettledAx3(anOracle, anOracle.Pnt());
             double aMajor = anOracle.Real(3, 20), aMinor = anOracle.Real(0.5, aMajor - 0.5);
-            var aTorus = new gp_Torus(aSAx, aMajor, aMinor);
+            var aTorus = new Torus(aSAx, aMajor, aMinor);
             using var aNSAx = Oracle.ToNative(aSAx);
             using var aNS = new N.Geom_ToroidalSurface(aNSAx, aMajor, aMinor);
 
-            gp_Pnt aLoc = aSAx.Location().Translated(new gp_Vec(anOracle.Real(-aMajor, aMajor),
+            Point3D aLoc = aSAx.Location().Translated(new Vector3D(anOracle.Real(-aMajor, aMajor),
                                                                   anOracle.Real(-aMajor, aMajor),
                                                                   anOracle.Real(-aMinor, aMinor)));
-            var aLin = new gp_Lin(aLoc, Oracle.Settled(anOracle.Dir()));
+            var aLin = new Line3D(aLoc, Oracle.Settled(anOracle.Dir()));
             using var aNAx1 = Oracle.ToNative(aLin.Position());
             using var aNC = new N.Geom_Line(aNAx1);
 
@@ -292,8 +293,8 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
                 anIntCS.Parameters(j, ref aU, ref aV, ref aW);
                 anInter.ParamOnTorus(j, out double aFi, out double aTheta);
                 anOracle.Same(aW, anInter.ParamOnLine(j), $"{aWhat} point {j} W");
-                anOracle.Same(aU, ElCLib.InPeriod(aFi, 0.0, 2 * Math.PI), $"{aWhat} point {j} U");
-                anOracle.Same(aV, ElCLib.InPeriod(aTheta, 0.0, 2 * Math.PI), $"{aWhat} point {j} V");
+                anOracle.Same(aU, global::Kerf.Engine.Geometry.ElCLib.InPeriod(aFi, 0.0, 2 * Math.PI), $"{aWhat} point {j} U");
+                anOracle.Same(aV, global::Kerf.Engine.Geometry.ElCLib.InPeriod(aTheta, 0.0, 2 * Math.PI), $"{aWhat} point {j} V");
                 using var aNP = anIntCS.Point(j);
                 anOracle.Same(aNP, anInter.Value(j), $"{aWhat} point {j}");
             }

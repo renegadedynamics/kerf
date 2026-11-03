@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -40,7 +43,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     private bool myIsIntersectionPossible;
     private bool myIsDegenerated;
     private double myDeflection;
-    private Bnd_Box myBox;
+    private Box myBox;
 
     /// <summary>A triangle with no points and no edges.</summary>
     public IntPolyh_Triangle()
@@ -49,7 +52,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
         myIsIntersectionPossible = true;
         myIsDegenerated = false;
         myDeflection = 0.0;
-        myBox = new Bnd_Box();
+        myBox = new Box();
         myPoints[0] = -1;
         myPoints[1] = -1;
         myPoints[2] = -1;
@@ -68,7 +71,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
         myIsIntersectionPossible = true;
         myIsDegenerated = false;
         myDeflection = 0.0;
-        myBox = new Bnd_Box();
+        myBox = new Box();
         myPoints[0] = thePoint1;
         myPoints[1] = thePoint2;
         myPoints[2] = thePoint3;
@@ -118,7 +121,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
         => (theEdgeIndex >= 1 && theEdgeIndex <= 3) ? myEdgesOrientations[theEdgeIndex - 1] : 0;
 
     /// <summary>The cached bounding box, void until <see cref="BoundingBox"/> has computed it.</summary>
-    public readonly Bnd_Box CachedBoundingBox() => myBox;
+    public readonly Box CachedBoundingBox() => myBox;
 
     // Mutators (internal: see docs/translation-rules.md)
 
@@ -292,7 +295,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
         // Compute point on the surface
         double Gu = (P1.U() + P2.U() + P3.U()) / 3.0;
         double Gv = (P1.V() + P2.V() + P3.V()) / 3.0;
-        gp_Pnt PtXYZ = theSurface.Value(Gu, Gv);
+        Point3D PtXYZ = theSurface.Value(Gu, Gv);
         // Point on the surface
         IntPolyh_Point BarycentreReel = new(PtXYZ.X(), PtXYZ.Y(), PtXYZ.Z(), Gu, Gv);
         // compute distance to plane
@@ -730,7 +733,7 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     /// Splits the triangle, then the new triangles, while their deflection is above the criterion, marking those out of
     /// the box; at most about twice the number of triangles there were before.
     /// </summary>
-    internal void MultipleMiddleRefinement(double theRefineCriterion, in Bnd_Box theBox, int theTriangleNumber,
+    internal void MultipleMiddleRefinement(double theRefineCriterion, in Box theBox, int theTriangleNumber,
                                            Adaptor3d_Surface theSurface, IntPolyh_Array<IntPolyh_Point> TPoints,
                                            IntPolyh_Array<IntPolyh_Triangle> TTriangles, IntPolyh_Array<IntPolyh_Edge> TEdges)
     {
@@ -800,17 +803,17 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
     /// The bounding box of the triangle, enlarged by its deflection; computed on the first call and cached (the cache is
     /// never reset, as in OCCT).
     /// </summary>
-    internal Bnd_Box BoundingBox(IntPolyh_Array<IntPolyh_Point> thePoints)
+    internal Box BoundingBox(IntPolyh_Array<IntPolyh_Point> thePoints)
     {
-        if (myBox.IsVoid())
+        if (myBox.IsVoid)
         {
             ref readonly IntPolyh_Point aP1 = ref thePoints.Value(myPoints[0]);
             ref readonly IntPolyh_Point aP2 = ref thePoints.Value(myPoints[1]);
             ref readonly IntPolyh_Point aP3 = ref thePoints.Value(myPoints[2]);
-            myBox.Add(new gp_Pnt(aP1.X(), aP1.Y(), aP1.Z()));
-            myBox.Add(new gp_Pnt(aP2.X(), aP2.Y(), aP2.Z()));
-            myBox.Add(new gp_Pnt(aP3.X(), aP3.Y(), aP3.Z()));
-            myBox.SetGap(myDeflection + Precision.Confusion());
+            myBox.Add(new Point3D(aP1.X(), aP1.Y(), aP1.Z()));
+            myBox.Add(new Point3D(aP2.X(), aP2.Y(), aP2.Z()));
+            myBox.Add(new Point3D(aP3.X(), aP3.Y(), aP3.Z()));
+            myBox.SetGap(myDeflection + global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         return myBox;
@@ -850,5 +853,5 @@ public partial struct IntPolyh_Triangle : IEquatable<IntPolyh_Triangle>
 
     public override readonly string ToString()
         => $"IntPolyh_Triangle(P {myPoints[0]}, {myPoints[1]}, {myPoints[2]}; E {myEdges[0]}, {myEdges[1]}, {myEdges[2]}; "
-           + $"{gp.Format("deflection", myDeflection)}, possible {myIsIntersectionPossible}, intersection {myHasIntersection})";
+           + $"{Constants.Format("deflection", myDeflection)}, possible {myIsIntersectionPossible}, intersection {myHasIntersection})";
 }

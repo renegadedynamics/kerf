@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -27,12 +30,12 @@ public class Approx_SweepApproximationTests
 
         public static double Radius(double v) => 1.0 + 0.5 * v;
 
-        public static gp_Pnt Pole(int i, double v) =>
+        public static Point3D Pole(int i, double v) =>
             new(Radius(v) * theQx[i - 1], Radius(v) * theQy[i - 1], v);
 
         public static Geom_BSplineCurve Section(double v)
         {
-            NCollection_Array1<gp_Pnt> aPoles = new(1, 9);
+            NCollection_Array1<Point3D> aPoles = new(1, 9);
             NCollection_Array1<double> aWeights = new(1, 9);
             for (int i = 1; i <= 9; i++)
             {
@@ -54,8 +57,8 @@ public class Approx_SweepApproximationTests
             }
         }
 
-        public override bool D0(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                                NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weigths)
+        public override bool D0(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                                NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weigths)
         {
             for (int i = 1; i <= 9; i++)
             {
@@ -64,14 +67,14 @@ public class Approx_SweepApproximationTests
             }
             if (myWith2d)
             {
-                Poles2d[1] = new gp_Pnt2d(Param, 2.0 * Param);
+                Poles2d[1] = new Point2D(Param, 2.0 * Param);
             }
             return true;
         }
 
-        public override bool D1(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                                NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<double> Weigths,
+        public override bool D1(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                                NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Point2D> Poles2d,
+                                NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<double> Weigths,
                                 NCollection_Array1<double> DWeigths)
         {
             if (!myDerivatives)
@@ -81,20 +84,20 @@ public class Approx_SweepApproximationTests
             D0(Param, First, Last, Poles, Poles2d, Weigths);
             for (int i = 1; i <= 9; i++)
             {
-                DPoles[i] = new gp_Vec(0.5 * theQx[i - 1], 0.5 * theQy[i - 1], 1.0);
+                DPoles[i] = new Vector3D(0.5 * theQx[i - 1], 0.5 * theQy[i - 1], 1.0);
                 DWeigths[i] = 0.0;
             }
             if (myWith2d)
             {
-                DPoles2d[1] = new gp_Vec2d(1.0, 2.0);
+                DPoles2d[1] = new Vector2D(1.0, 2.0);
             }
             return true;
         }
 
-        public override bool D2(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                                NCollection_Array1<gp_Vec> DPoles, NCollection_Array1<gp_Vec> D2Poles,
-                                NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
-                                NCollection_Array1<gp_Vec2d> D2Poles2d, NCollection_Array1<double> Weigths,
+        public override bool D2(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                                NCollection_Array1<Vector3D> DPoles, NCollection_Array1<Vector3D> D2Poles,
+                                NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
+                                NCollection_Array1<Vector2D> D2Poles2d, NCollection_Array1<double> Weigths,
                                 NCollection_Array1<double> DWeigths, NCollection_Array1<double> D2Weigths)
         {
             if (!D1(Param, First, Last, Poles, DPoles, Poles2d, DPoles2d, Weigths, DWeigths))
@@ -103,12 +106,12 @@ public class Approx_SweepApproximationTests
             }
             for (int i = 1; i <= 9; i++)
             {
-                D2Poles[i] = new gp_Vec(0.0, 0.0, 0.0);
+                D2Poles[i] = new Vector3D(0.0, 0.0, 0.0);
                 D2Weigths[i] = 0.0;
             }
             if (myWith2d)
             {
-                D2Poles2d[1] = new gp_Vec2d(0.0, 0.0);
+                D2Poles2d[1] = new Vector2D(0.0, 0.0);
             }
             return true;
         }
@@ -130,9 +133,9 @@ public class Approx_SweepApproximationTests
 
         public override bool IsRational() => true;
 
-        public override int NbIntervals(GeomAbs_Shape S) => 1;
+        public override int NbIntervals(Continuity S) => 1;
 
-        public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+        public override void Intervals(NCollection_Array1<double> T, Continuity S)
         {
             T[1] = 0.0;
             T[2] = 2.0;
@@ -153,7 +156,7 @@ public class Approx_SweepApproximationTests
         {
         }
 
-        public override gp_Pnt BarycentreOfSurf() => new(0.0, 0.0, 1.0);
+        public override Point3D BarycentreOfSurf() => new(0.0, 0.0, 1.0);
 
         public override double MaximalSection() => 2.0 * Math.PI * Radius(2.0);
 
@@ -169,10 +172,10 @@ public class Approx_SweepApproximationTests
     // A non-rational quadratic section (three poles) moved along a sine, without derivatives.
     private sealed class SineSection : Approx_SweepFunction
     {
-        public static gp_Pnt Pole(int i, double v) => new(i, Math.Sin(v) * (i == 2 ? 1.0 : 0.25), v);
+        public static Point3D Pole(int i, double v) => new(i, Math.Sin(v) * (i == 2 ? 1.0 : 0.25), v);
 
-        public override bool D0(double Param, double First, double Last, NCollection_Array1<gp_Pnt> Poles,
-                                NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weigths)
+        public override bool D0(double Param, double First, double Last, NCollection_Array1<Point3D> Poles,
+                                NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weigths)
         {
             for (int i = 1; i <= 3; i++)
             {
@@ -205,9 +208,9 @@ public class Approx_SweepApproximationTests
 
         public override bool IsRational() => false;
 
-        public override int NbIntervals(GeomAbs_Shape S) => 1;
+        public override int NbIntervals(Continuity S) => 1;
 
-        public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+        public override void Intervals(NCollection_Array1<double> T, Continuity S)
         {
             T[1] = 0.0;
             T[2] = 6.0;
@@ -228,7 +231,7 @@ public class Approx_SweepApproximationTests
     private static Geom_BSplineSurface BuildSurface(Approx_SweepApproximation theApprox)
     {
         theApprox.SurfShape(out int aUDeg, out int aVDeg, out int aNbUP, out int aNbVP, out int aNbUK, out int aNbVK);
-        NCollection_Array2<gp_Pnt> aPoles = new(1, aNbUP, 1, aNbVP);
+        NCollection_Array2<Point3D> aPoles = new(1, aNbUP, 1, aNbVP);
         NCollection_Array2<double> aWeights = new(1, aNbUP, 1, aNbVP);
         NCollection_Array1<double> aUKnots = new(1, aNbUK), aVKnots = new(1, aNbVK);
         NCollection_Array1<int> aUMults = new(1, aNbUK), aVMults = new(1, aNbVK);
@@ -239,16 +242,16 @@ public class Approx_SweepApproximationTests
     }
 
     [Theory]
-    [InlineData(GeomAbs_C0, true)]
-    [InlineData(GeomAbs_C1, true)]
-    [InlineData(GeomAbs_C2, true)]
-    [InlineData(GeomAbs_C2, false)]
-    public void RationalGrowingCircle_WithA2dCurve(GeomAbs_Shape theContinuity, bool theDerivatives)
+    [InlineData(C0, true)]
+    [InlineData(C1, true)]
+    [InlineData(C2, true)]
+    [InlineData(C2, false)]
+    public void RationalGrowingCircle_WithA2dCurve(Continuity theContinuity, bool theDerivatives)
     {
         GrowingCircle aFunc = new(true, theDerivatives);
         Approx_SweepApproximation anApprox = new(aFunc);
         Assert.False(anApprox.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => anApprox.UDegree());
+        Assert.Throws<NotDoneException>(() => anApprox.UDegree());
         anApprox.Perform(0.0, 2.0, 1.0e-6, 1.0e-6, 1.0e-5, 1.0e-4, theContinuity, 11, 50);
 
         Assert.True(anApprox.IsDone());
@@ -273,7 +276,7 @@ public class Approx_SweepApproximationTests
         Assert.Equal(1, anApprox.NbCurves2d());
         anApprox.Curves2dShape(out int aDeg2d, out int aNbPoles2d, out int aNbKnots2d);
         Assert.Equal(anApprox.VDegree(), aDeg2d);
-        NCollection_Array1<gp_Pnt2d> aPoles2d = new(1, aNbPoles2d);
+        NCollection_Array1<Point2D> aPoles2d = new(1, aNbPoles2d);
         NCollection_Array1<double> aKnots2d = new(1, aNbKnots2d);
         NCollection_Array1<int> aMults2d = new(1, aNbKnots2d);
         anApprox.Curve2d(1, aPoles2d, aKnots2d, aMults2d);
@@ -282,7 +285,7 @@ public class Approx_SweepApproximationTests
         for (int j = 0; j <= 10; j++)
         {
             double v = 0.2 * j;
-            Assert.True(aC2d.Value(v).Distance(new gp_Pnt2d(v, 2.0 * v)) < 1.0e-6);
+            Assert.True(aC2d.Value(v).Distance(new Point2D(v, 2.0 * v)) < 1.0e-6);
         }
         Assert.True(anApprox.Max2dError(1) <= 1.0e-5);
         Assert.True(anApprox.Average2dError(1) <= anApprox.Max2dError(1));
@@ -299,7 +302,7 @@ public class Approx_SweepApproximationTests
 
         Assert.True(anApprox.IsDone());
         Assert.Equal(0, anApprox.NbCurves2d());
-        Assert.Throws<Standard_DomainError>(() => anApprox.Curves2dDegree());
+        Assert.Throws<DomainErrorException>(() => anApprox.Curves2dDegree());
         Assert.True(anApprox.MaxErrorOnSurf() < 1.0e-6);
         Assert.Equal(1.0, anApprox.SurfWeights()[2, 2]);
 
@@ -308,12 +311,12 @@ public class Approx_SweepApproximationTests
         for (int j = 0; j <= 12; j++)
         {
             double v = 0.5 * j;
-            gp_Pnt P1 = SineSection.Pole(1, v), P2 = SineSection.Pole(2, v), P3 = SineSection.Pole(3, v);
+            Point3D P1 = SineSection.Pole(1, v), P2 = SineSection.Pole(2, v), P3 = SineSection.Pole(3, v);
             for (int i = 0; i <= 4; i++)
             {
                 double u = 0.25 * i;
-                gp_XYZ anExpected = P1.XYZ() * ((1 - u) * (1 - u)) + P2.XYZ() * (2 * u * (1 - u)) + P3.XYZ() * (u * u);
-                Assert.True(aSurf.Value(u, v).Distance(new gp_Pnt(anExpected)) < 1.0e-6);
+                Xyz anExpected = P1.XYZ() * ((1 - u) * (1 - u)) + P2.XYZ() * (2 * u * (1 - u)) + P3.XYZ() * (u * u);
+                Assert.True(aSurf.Value(u, v).Distance(new Point3D(anExpected)) < 1.0e-6);
             }
         }
         Assert.Contains("Segment(s) of degree", anApprox.ToString());
@@ -324,8 +327,8 @@ public class Approx_SweepApproximationTests
     {
         // OCCT checks D1 by calling it; the base class's D1 throws.
         Approx_SweepApproximation anApprox = new(new SineSection());
-        Assert.Throws<Standard_NotImplemented>(
-            () => anApprox.Perform(0.0, 6.0, 1.0e-7, 1.0e-7, 1.0e-5, 1.0e-4, GeomAbs_C1));
+        Assert.Throws<MethodNotImplementedException>(
+            () => anApprox.Perform(0.0, 6.0, 1.0e-7, 1.0e-7, 1.0e-5, 1.0e-4, C1));
         Assert.Contains(" Not Done ", anApprox.ToString());
     }
 }

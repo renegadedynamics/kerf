@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
@@ -35,7 +36,7 @@ public class BOPTools_ParallelTests
             Result = aSum;
             if (theIndex == -1)
             {
-                throw new Standard_DomainError("solver failed");
+                throw new DomainErrorException("solver failed");
             }
         }
     }
@@ -106,7 +107,7 @@ public class BOPTools_ParallelTests
     {
         (List<Solver> aSolvers, _) = Solvers(100);
         TestContext aMain = new();
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             BOPTools_Parallel.Perform(true, aSolvers, aMain);
         }
@@ -143,8 +144,8 @@ public class BOPTools_ParallelTests
     {
         ConcurrentDictionary<TestContext, ConcurrentBag<int>> aMap = new(ReferenceEqualityComparer.Instance);
         List<Solver> aSolvers = [.. Enumerable.Range(0, 64).Select(i => new Solver(i == 40 ? -1 : i, aMap))];
-        Assert.Throws<Standard_DomainError>(() => BOPTools_Parallel.Perform(true, aSolvers, new TestContext()));
-        Assert.Throws<Standard_DomainError>(() => BOPTools_Parallel.Perform(false, aSolvers, new TestContext()));
+        Assert.Throws<DomainErrorException>(() => BOPTools_Parallel.Perform(true, aSolvers, new TestContext()));
+        Assert.Throws<DomainErrorException>(() => BOPTools_Parallel.Perform(false, aSolvers, new TestContext()));
     }
 
     [Fact]

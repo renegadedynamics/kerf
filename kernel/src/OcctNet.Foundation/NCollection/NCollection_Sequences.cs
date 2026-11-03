@@ -6,6 +6,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2002-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
 using System.Collections;
 using System.Runtime.InteropServices;
 
@@ -15,144 +17,144 @@ namespace Occt;
 /// OCCT's sequence: a list indexed from 1. Not OCCT's linked implementation but a .NET list with OCCT's API;
 /// allocator arguments are dropped. A class: copy with <c>new(other)</c> or <c>Assign</c>.
 /// </summary>
-public class NCollection_Sequence<T> : Standard_Transient, IEnumerable<T>
+public class NCollection_Sequence<T> : Transient, IEnumerable<T>
 {
-    private readonly List<T> myItems;
+    private readonly List<T> _items;
 
-    public NCollection_Sequence() => myItems = [];
+    public NCollection_Sequence() => _items = [];
 
-    public NCollection_Sequence(NCollection_Sequence<T> theOther) => myItems = [.. theOther.myItems];
+    public NCollection_Sequence(NCollection_Sequence<T> other) => _items = [.. other._items];
 
     public static int Lower() => 1;
 
-    public int Upper() => myItems.Count;
+    public int Upper() => _items.Count;
 
-    public int Size() => myItems.Count;
+    public int Size() => _items.Count;
 
-    public int Length() => myItems.Count;
+    public int Length() => _items.Count;
 
-    public bool IsEmpty() => myItems.Count == 0;
+    public bool IsEmpty() => _items.Count == 0;
 
-    public void Clear() => myItems.Clear();
+    public void Clear() => _items.Clear();
 
-    public NCollection_Sequence<T> Assign(NCollection_Sequence<T> theOther)
+    public NCollection_Sequence<T> Assign(NCollection_Sequence<T> other)
     {
-        if (!ReferenceEquals(this, theOther))
+        if (!ReferenceEquals(this, other))
         {
-            myItems.Clear();
-            myItems.AddRange(theOther.myItems);
+            _items.Clear();
+            _items.AddRange(other._items);
         }
 
         return this;
     }
 
-    public void Reverse() => myItems.Reverse();
+    public void Reverse() => _items.Reverse();
 
-    public void Exchange(int I, int J)
+    public void Exchange(int i, int j)
     {
-        Check(I);
-        Check(J);
-        (myItems[I - 1], myItems[J - 1]) = (myItems[J - 1], myItems[I - 1]);
+        Check(i);
+        Check(j);
+        (_items[i - 1], _items[j - 1]) = (_items[j - 1], _items[i - 1]);
     }
 
-    public void Append(T theItem) => myItems.Add(theItem);
+    public void Append(T item) => _items.Add(item);
 
-    /// <summary>Moves the items of <paramref name="theSeq"/> to the end of this sequence, leaving it empty.</summary>
-    public void Append(NCollection_Sequence<T> theSeq)
+    /// <summary>Moves the items of <paramref name="seq"/> to the end of this sequence, leaving it empty.</summary>
+    public void Append(NCollection_Sequence<T> seq)
     {
-        myItems.AddRange(theSeq.myItems);
-        theSeq.myItems.Clear();
+        _items.AddRange(seq._items);
+        seq._items.Clear();
     }
 
-    public void Prepend(T theItem) => myItems.Insert(0, theItem);
+    public void Prepend(T item) => _items.Insert(0, item);
 
-    public void Prepend(NCollection_Sequence<T> theSeq)
+    public void Prepend(NCollection_Sequence<T> seq)
     {
-        myItems.InsertRange(0, theSeq.myItems);
-        theSeq.myItems.Clear();
+        _items.InsertRange(0, seq._items);
+        seq._items.Clear();
     }
 
-    public void InsertBefore(int theIndex, T theItem)
+    public void InsertBefore(int index, T item)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myItems.Count + 1, "NCollection_Sequence::InsertBefore");
-        myItems.Insert(theIndex - 1, theItem);
+        Standard_OutOfRange_Raise_if(index < 1 || index > _items.Count + 1, "NCollection_Sequence::InsertBefore");
+        _items.Insert(index - 1, item);
     }
 
-    public void InsertBefore(int theIndex, NCollection_Sequence<T> theSeq)
+    public void InsertBefore(int index, NCollection_Sequence<T> seq)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myItems.Count + 1, "NCollection_Sequence::InsertBefore");
-        myItems.InsertRange(theIndex - 1, theSeq.myItems);
-        theSeq.myItems.Clear();
+        Standard_OutOfRange_Raise_if(index < 1 || index > _items.Count + 1, "NCollection_Sequence::InsertBefore");
+        _items.InsertRange(index - 1, seq._items);
+        seq._items.Clear();
     }
 
-    public void InsertAfter(int theIndex, T theItem)
+    public void InsertAfter(int index, T item)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 0 || theIndex > myItems.Count, "NCollection_Sequence::InsertAfter");
-        myItems.Insert(theIndex, theItem);
+        Standard_OutOfRange_Raise_if(index < 0 || index > _items.Count, "NCollection_Sequence::InsertAfter");
+        _items.Insert(index, item);
     }
 
-    public void InsertAfter(int theIndex, NCollection_Sequence<T> theSeq)
+    public void InsertAfter(int index, NCollection_Sequence<T> seq)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 0 || theIndex > myItems.Count, "NCollection_Sequence::InsertAfter");
-        myItems.InsertRange(theIndex, theSeq.myItems);
-        theSeq.myItems.Clear();
+        Standard_OutOfRange_Raise_if(index < 0 || index > _items.Count, "NCollection_Sequence::InsertAfter");
+        _items.InsertRange(index, seq._items);
+        seq._items.Clear();
     }
 
-    public void Remove(int theIndex)
+    public void Remove(int index)
     {
-        Check(theIndex);
-        myItems.RemoveAt(theIndex - 1);
+        Check(index);
+        _items.RemoveAt(index - 1);
     }
 
-    public void Remove(int theFromIndex, int theToIndex)
+    public void Remove(int fromIndex, int toIndex)
     {
-        Standard_OutOfRange_Raise_if(theFromIndex < 1 || theToIndex > myItems.Count || theFromIndex > theToIndex,
+        Standard_OutOfRange_Raise_if(fromIndex < 1 || toIndex > _items.Count || fromIndex > toIndex,
                                      "NCollection_Sequence::Remove");
-        myItems.RemoveRange(theFromIndex - 1, theToIndex - theFromIndex + 1);
+        _items.RemoveRange(fromIndex - 1, toIndex - fromIndex + 1);
     }
 
-    /// <summary>Moves the items from <paramref name="theIndex"/> on into <paramref name="theSeq"/>, replacing its content.</summary>
-    public void Split(int theIndex, NCollection_Sequence<T> theSeq)
+    /// <summary>Moves the items from <paramref name="index"/> on into <paramref name="seq"/>, replacing its content.</summary>
+    public void Split(int index, NCollection_Sequence<T> seq)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myItems.Count + 1, "NCollection_Sequence::Split");
-        theSeq.myItems.Clear();
-        theSeq.myItems.AddRange(myItems.GetRange(theIndex - 1, myItems.Count - theIndex + 1));
-        myItems.RemoveRange(theIndex - 1, myItems.Count - theIndex + 1);
+        Standard_OutOfRange_Raise_if(index < 1 || index > _items.Count + 1, "NCollection_Sequence::Split");
+        seq._items.Clear();
+        seq._items.AddRange(_items.GetRange(index - 1, _items.Count - index + 1));
+        _items.RemoveRange(index - 1, _items.Count - index + 1);
     }
 
     public T First() => Value(1);
 
     public ref T ChangeFirst() => ref ChangeValue(1);
 
-    public T Last() => Value(myItems.Count);
+    public T Last() => Value(_items.Count);
 
-    public ref T ChangeLast() => ref ChangeValue(myItems.Count);
+    public ref T ChangeLast() => ref ChangeValue(_items.Count);
 
-    public T Value(int theIndex)
+    public T Value(int index)
     {
-        Check(theIndex);
-        return myItems[theIndex - 1];
+        Check(index);
+        return _items[index - 1];
     }
 
-    public ref T ChangeValue(int theIndex)
+    public ref T ChangeValue(int index)
     {
-        Check(theIndex);
-        return ref CollectionsMarshal.AsSpan(myItems)[theIndex - 1];
+        Check(index);
+        return ref CollectionsMarshal.AsSpan(_items)[index - 1];
     }
 
     /// <summary>OCCT's <c>operator()</c>, for reading and writing.</summary>
-    public ref T this[int theIndex] => ref ChangeValue(theIndex);
+    public ref T this[int index] => ref ChangeValue(index);
 
-    public void SetValue(int theIndex, T theItem) => ChangeValue(theIndex) = theItem;
+    public void SetValue(int index, T item) => ChangeValue(index) = item;
 
-    public List<T>.Enumerator GetEnumerator() => myItems.GetEnumerator();
+    public List<T>.Enumerator GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 
-    private void Check(int theIndex)
-        => Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myItems.Count, "NCollection_Sequence::Value");
+    private void Check(int index)
+        => Standard_OutOfRange_Raise_if(index < 1 || index > _items.Count, "NCollection_Sequence::Value");
 }
 
 /// <summary>OCCT's handle-able sequence.</summary>
@@ -160,7 +162,7 @@ public class NCollection_HSequence<T> : NCollection_Sequence<T>
 {
     public NCollection_HSequence() { }
 
-    public NCollection_HSequence(NCollection_Sequence<T> theOther) : base(theOther) { }
+    public NCollection_HSequence(NCollection_Sequence<T> other) : base(other) { }
 
     public NCollection_Sequence<T> Sequence() => this;
 
@@ -173,176 +175,176 @@ public class NCollection_HSequence<T> : NCollection_Sequence<T>
 /// </summary>
 public class NCollection_List<T> : IEnumerable<T>
 {
-    private readonly List<T> myItems;
+    private readonly List<T> _items;
 
-    public NCollection_List() => myItems = [];
+    public NCollection_List() => _items = [];
 
-    public NCollection_List(NCollection_List<T> theOther) => myItems = [.. theOther.myItems];
+    public NCollection_List(NCollection_List<T> other) => _items = [.. other._items];
 
-    public NCollection_List(IEnumerable<T> theItems) => myItems = [.. theItems];
+    public NCollection_List(IEnumerable<T> items) => _items = [.. items];
 
-    public int Extent() => myItems.Count;
+    public int Extent() => _items.Count;
 
-    public int Size() => myItems.Count;
+    public int Size() => _items.Count;
 
-    public bool IsEmpty() => myItems.Count == 0;
+    public bool IsEmpty() => _items.Count == 0;
 
-    public void Clear() => myItems.Clear();
+    public void Clear() => _items.Clear();
 
-    public NCollection_List<T> Assign(NCollection_List<T> theOther)
+    public NCollection_List<T> Assign(NCollection_List<T> other)
     {
-        if (!ReferenceEquals(this, theOther))
+        if (!ReferenceEquals(this, other))
         {
-            myItems.Clear();
-            myItems.AddRange(theOther.myItems);
+            _items.Clear();
+            _items.AddRange(other._items);
         }
 
         return this;
     }
 
-    public T First() => myItems.Count > 0 ? myItems[0] : throw new Standard_NoSuchObject("NCollection_List::First");
+    public T First() => _items.Count > 0 ? _items[0] : throw new NoSuchObjectException("NCollection_List::First");
 
     public ref T ChangeFirst() => ref ItemAt(0, "NCollection_List::First");
 
-    public T Last() => myItems.Count > 0 ? myItems[^1] : throw new Standard_NoSuchObject("NCollection_List::Last");
+    public T Last() => _items.Count > 0 ? _items[^1] : throw new NoSuchObjectException("NCollection_List::Last");
 
-    public ref T ChangeLast() => ref ItemAt(myItems.Count - 1, "NCollection_List::Last");
+    public ref T ChangeLast() => ref ItemAt(_items.Count - 1, "NCollection_List::Last");
 
-    public ref T Append(T theItem)
+    public ref T Append(T item)
     {
-        myItems.Add(theItem);
-        return ref CollectionsMarshal.AsSpan(myItems)[^1];
+        _items.Add(item);
+        return ref CollectionsMarshal.AsSpan(_items)[^1];
     }
 
-    /// <summary>Appends, and sets <paramref name="theIter"/> to the new item.</summary>
-    public void Append(T theItem, Iterator theIter)
+    /// <summary>Appends, and sets <paramref name="iter"/> to the new item.</summary>
+    public void Append(T item, Iterator iter)
     {
-        myItems.Add(theItem);
-        theIter.Reset(this, myItems.Count - 1);
+        _items.Add(item);
+        iter.Reset(this, _items.Count - 1);
     }
 
-    /// <summary>Moves the items of <paramref name="theOther"/> to the end of this list, leaving it empty.</summary>
-    public void Append(NCollection_List<T> theOther)
+    /// <summary>Moves the items of <paramref name="other"/> to the end of this list, leaving it empty.</summary>
+    public void Append(NCollection_List<T> other)
     {
-        if (ReferenceEquals(this, theOther))
+        if (ReferenceEquals(this, other))
         {
             return;
         }
 
-        myItems.AddRange(theOther.myItems);
-        theOther.myItems.Clear();
+        _items.AddRange(other._items);
+        other._items.Clear();
     }
 
-    public ref T Prepend(T theItem)
+    public ref T Prepend(T item)
     {
-        myItems.Insert(0, theItem);
-        return ref CollectionsMarshal.AsSpan(myItems)[0];
+        _items.Insert(0, item);
+        return ref CollectionsMarshal.AsSpan(_items)[0];
     }
 
-    public void Prepend(NCollection_List<T> theOther)
+    public void Prepend(NCollection_List<T> other)
     {
-        if (ReferenceEquals(this, theOther))
+        if (ReferenceEquals(this, other))
         {
             return;
         }
 
-        myItems.InsertRange(0, theOther.myItems);
-        theOther.myItems.Clear();
+        _items.InsertRange(0, other._items);
+        other._items.Clear();
     }
 
     public void RemoveFirst()
     {
-        if (myItems.Count > 0)
+        if (_items.Count > 0)
         {
-            myItems.RemoveAt(0);
+            _items.RemoveAt(0);
         }
     }
 
     /// <summary>Removes the iterator's item; the iterator moves to the next one.</summary>
-    public void Remove(Iterator theIter)
+    public void Remove(Iterator iter)
     {
-        myItems.RemoveAt(theIter.Index);
+        _items.RemoveAt(iter.Index);
     }
 
     /// <summary>Removes the first item equal to <paramref name="theObject"/>.</summary>
-    public bool Remove(T theObject) => myItems.Remove(theObject);
+    public bool Remove(T theObject) => _items.Remove(theObject);
 
-    public ref T InsertBefore(T theItem, Iterator theIter)
+    public ref T InsertBefore(T item, Iterator iter)
     {
-        myItems.Insert(theIter.Index, theItem);
-        int anIndex = theIter.Index;
-        theIter.Reset(this, anIndex + 1);
-        return ref CollectionsMarshal.AsSpan(myItems)[anIndex];
+        _items.Insert(iter.Index, item);
+        int index = iter.Index;
+        iter.Reset(this, index + 1);
+        return ref CollectionsMarshal.AsSpan(_items)[index];
     }
 
-    public ref T InsertAfter(T theItem, Iterator theIter)
+    public ref T InsertAfter(T item, Iterator iter)
     {
-        myItems.Insert(theIter.Index + 1, theItem);
-        return ref CollectionsMarshal.AsSpan(myItems)[theIter.Index + 1];
+        _items.Insert(iter.Index + 1, item);
+        return ref CollectionsMarshal.AsSpan(_items)[iter.Index + 1];
     }
 
-    public void Reverse() => myItems.Reverse();
+    public void Reverse() => _items.Reverse();
 
-    public void Exchange(NCollection_List<T> theOther)
+    public void Exchange(NCollection_List<T> other)
     {
-        var aTemp = new List<T>(myItems);
-        myItems.Clear();
-        myItems.AddRange(theOther.myItems);
-        theOther.myItems.Clear();
-        theOther.myItems.AddRange(aTemp);
+        var temp = new List<T>(_items);
+        _items.Clear();
+        _items.AddRange(other._items);
+        other._items.Clear();
+        other._items.AddRange(temp);
     }
 
-    public bool Contains(T theObject) => myItems.Contains(theObject);
+    public bool Contains(T theObject) => _items.Contains(theObject);
 
-    public List<T>.Enumerator GetEnumerator() => myItems.GetEnumerator();
+    public List<T>.Enumerator GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 
-    private ref T ItemAt(int theIndex, string theWhere)
+    private ref T ItemAt(int index, string theWhere)
     {
-        if (theIndex < 0 || theIndex >= myItems.Count)
+        if (index < 0 || index >= _items.Count)
         {
-            throw new Standard_NoSuchObject(theWhere);
+            throw new NoSuchObjectException(theWhere);
         }
 
-        return ref CollectionsMarshal.AsSpan(myItems)[theIndex];
+        return ref CollectionsMarshal.AsSpan(_items)[index];
     }
 
     /// <summary>OCCT's list iterator: <c>for (It it(list); it.More(); it.Next()) it.Value();</c></summary>
     public sealed class Iterator
     {
-        private NCollection_List<T>? myList;
+        private NCollection_List<T>? _list;
 
         public Iterator() { }
 
-        public Iterator(NCollection_List<T> theList) => Initialize(theList);
+        public Iterator(NCollection_List<T> list) => Initialize(list);
 
         /// <summary>OCCT's copy: an iterator on the same list at the same item.</summary>
-        public Iterator(Iterator theOther)
+        public Iterator(Iterator other)
         {
-            myList = theOther.myList;
-            Index = theOther.Index;
+            _list = other._list;
+            Index = other.Index;
         }
 
         internal int Index { get; private set; }
 
-        public void Initialize(NCollection_List<T> theList) => Reset(theList, 0);
+        public void Initialize(NCollection_List<T> list) => Reset(list, 0);
 
-        internal void Reset(NCollection_List<T> theList, int theIndex)
+        internal void Reset(NCollection_List<T> list, int index)
         {
-            myList = theList;
-            Index = theIndex;
+            _list = list;
+            Index = index;
         }
 
-        public bool More() => myList is not null && Index < myList.myItems.Count;
+        public bool More() => _list is not null && Index < _list._items.Count;
 
         public void Next() => Index++;
 
-        public T Value() => myList!.myItems[Index];
+        public T Value() => _list!._items[Index];
 
-        public ref T ChangeValue() => ref CollectionsMarshal.AsSpan(myList!.myItems)[Index];
+        public ref T ChangeValue() => ref CollectionsMarshal.AsSpan(_list!._items)[Index];
     }
 }
 
@@ -352,125 +354,125 @@ public class NCollection_List<T> : IEnumerable<T>
 /// </summary>
 public class NCollection_DynamicArray<T> : IEnumerable<T>
 {
-    private readonly List<T> myItems;
-    private readonly int myIncrement;
+    private readonly List<T> _items;
+    private readonly int _increment;
 
     /// <summary>
     /// OCCT's increment is the size of its blocks; here it is the list's first capacity (at most 256), taken when
     /// the first element is added, as OCCT allocates its first block (unit 9E: most arrays stay empty). Elements move
     /// only when the list grows past it, as before.
     /// </summary>
-    public NCollection_DynamicArray(int theIncrement = 256)
+    public NCollection_DynamicArray(int increment = 256)
     {
-        myItems = [];
-        myIncrement = Math.Max(0, Math.Min(theIncrement, 256));
+        _items = [];
+        _increment = Math.Max(0, Math.Min(increment, 256));
     }
 
-    public NCollection_DynamicArray(NCollection_DynamicArray<T> theOther) => myItems = [.. theOther.myItems];
+    public NCollection_DynamicArray(NCollection_DynamicArray<T> other) => _items = [.. other._items];
 
     /// <summary>Takes the first capacity before the first element is added.</summary>
     private void Reserve()
     {
-        if (myItems.Capacity == 0 && myIncrement > 0)
+        if (_items.Capacity == 0 && _increment > 0)
         {
-            myItems.Capacity = myIncrement;
+            _items.Capacity = _increment;
         }
     }
 
-    public int Size() => myItems.Count;
+    public int Size() => _items.Count;
 
-    public int Length() => myItems.Count;
+    public int Length() => _items.Count;
 
     public int Lower() => 0;
 
-    public int Upper() => myItems.Count - 1;
+    public int Upper() => _items.Count - 1;
 
-    public bool IsEmpty() => myItems.Count == 0;
+    public bool IsEmpty() => _items.Count == 0;
 
-    public void Clear() => myItems.Clear();
+    public void Clear() => _items.Clear();
 
-    public NCollection_DynamicArray<T> Assign(NCollection_DynamicArray<T> theOther)
+    public NCollection_DynamicArray<T> Assign(NCollection_DynamicArray<T> other)
     {
-        if (!ReferenceEquals(this, theOther))
+        if (!ReferenceEquals(this, other))
         {
-            myItems.Clear();
+            _items.Clear();
             Reserve();
-            myItems.AddRange(theOther.myItems);
+            _items.AddRange(other._items);
         }
 
         return this;
     }
 
-    public ref T Append(T theValue)
+    public ref T Append(T value)
     {
         Reserve();
-        myItems.Add(theValue);
-        return ref CollectionsMarshal.AsSpan(myItems)[^1];
+        _items.Add(value);
+        return ref CollectionsMarshal.AsSpan(_items)[^1];
     }
 
     /// <summary>Appends a default-constructed element and returns it for writing.</summary>
-    public ref T Appended() => ref Append(NCollection_Default<T>.Value);
+    public ref T Appended() => ref Append(Default<T>.Value);
 
-    public ref T InsertBefore(int theIndex, T theValue)
+    public ref T InsertBefore(int index, T value)
     {
         Reserve();
-        myItems.Insert(theIndex, theValue);
-        return ref CollectionsMarshal.AsSpan(myItems)[theIndex];
+        _items.Insert(index, value);
+        return ref CollectionsMarshal.AsSpan(_items)[index];
     }
 
-    public ref T InsertAfter(int theIndex, T theValue) => ref InsertBefore(theIndex + 1, theValue);
+    public ref T InsertAfter(int index, T value) => ref InsertBefore(index + 1, value);
 
     public void EraseLast()
     {
-        if (myItems.Count > 0)
+        if (_items.Count > 0)
         {
-            myItems.RemoveAt(myItems.Count - 1);
+            _items.RemoveAt(_items.Count - 1);
         }
     }
 
-    public T Value(int theIndex) => myItems[theIndex];
+    public T Value(int index) => _items[index];
 
-    public ref T ChangeValue(int theIndex) => ref CollectionsMarshal.AsSpan(myItems)[theIndex];
+    public ref T ChangeValue(int index) => ref CollectionsMarshal.AsSpan(_items)[index];
 
-    public ref T this[int theIndex] => ref ChangeValue(theIndex);
+    public ref T this[int index] => ref ChangeValue(index);
 
-    public T First() => myItems[0];
+    public T First() => _items[0];
 
     public ref T ChangeFirst() => ref ChangeValue(0);
 
-    public T Last() => myItems[^1];
+    public T Last() => _items[^1];
 
-    public ref T ChangeLast() => ref ChangeValue(myItems.Count - 1);
+    public ref T ChangeLast() => ref ChangeValue(_items.Count - 1);
 
     /// <summary>Sets an element, first growing the array with default elements if the index is beyond the end.</summary>
-    public ref T SetValue(int theIndex, T theValue)
+    public ref T SetValue(int index, T value)
     {
         Reserve();
-        while (myItems.Count <= theIndex)
+        while (_items.Count <= index)
         {
-            myItems.Add(NCollection_Default<T>.Value);
+            _items.Add(Default<T>.Value);
         }
 
-        myItems[theIndex] = theValue;
-        return ref ChangeValue(theIndex);
+        _items[index] = value;
+        return ref ChangeValue(index);
     }
 
     /// <summary>The elements, without copying. Valid until the array next grows.</summary>
-    public Span<T> AsSpan() => CollectionsMarshal.AsSpan(myItems);
+    public Span<T> AsSpan() => CollectionsMarshal.AsSpan(_items);
 
-    public List<T>.Enumerator GetEnumerator() => myItems.GetEnumerator();
+    public List<T>.Enumerator GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 }
 
 /// <summary>OCCT's NCollection_Vector, which OCCT 8 makes the same container as NCollection_DynamicArray.</summary>
 public class NCollection_Vector<T> : NCollection_DynamicArray<T>
 {
-    public NCollection_Vector(int theIncrement = 256) : base(theIncrement) { }
+    public NCollection_Vector(int increment = 256) : base(increment) { }
 
-    public NCollection_Vector(NCollection_Vector<T> theOther) : base(theOther) { }
+    public NCollection_Vector(NCollection_Vector<T> other) : base(other) { }
 }
 
 /// <summary>
@@ -479,31 +481,31 @@ public class NCollection_Vector<T> : NCollection_DynamicArray<T>
 /// </summary>
 public sealed class NCollection_LocalArray<T>
 {
-    private T[] myData;
+    private T[] _data;
 
-    public NCollection_LocalArray() => myData = [];
+    public NCollection_LocalArray() => _data = [];
 
-    public NCollection_LocalArray(int theSize) => myData = new T[theSize];
+    public NCollection_LocalArray(int size) => _data = new T[size];
 
-    public void Allocate(int theSize) => myData = new T[theSize];
+    public void Allocate(int size) => _data = new T[size];
 
-    public void Reallocate(int theNewSize, bool theToCopy = true)
+    public void Reallocate(int newSize, bool toCopy = true)
     {
-        if (theToCopy)
+        if (toCopy)
         {
-            Array.Resize(ref myData, theNewSize);
+            Array.Resize(ref _data, newSize);
         }
         else
         {
-            myData = new T[theNewSize];
+            _data = new T[newSize];
         }
     }
 
-    public int Size() => myData.Length;
+    public int Size() => _data.Length;
 
-    public ref T this[int theIndex] => ref myData[theIndex];
+    public ref T this[int index] => ref _data[index];
 
-    public Span<T> AsSpan() => myData;
+    public Span<T> AsSpan() => _data;
 
-    public NCollection_Array1<T> ToArray1() => NCollection_Array1<T>.From(myData, 0);
+    public NCollection_Array1<T> ToArray1() => NCollection_Array1<T>.From(_data, 0);
 }

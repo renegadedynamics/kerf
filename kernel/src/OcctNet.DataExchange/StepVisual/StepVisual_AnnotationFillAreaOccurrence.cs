@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepVisual_AnnotationFillAreaOccurrence : StepVisual_AnnotationOccurrence
@@ -22,7 +24,7 @@ public class StepVisual_AnnotationFillAreaOccurrence : StepVisual_AnnotationOccu
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> theStyles, Standard_Transient theItem, StepGeom_GeometricRepresentationItem theFillStyleTarget)
+    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<StepVisual_PresentationStyleAssignment> theStyles, Transient theItem, StepGeom_GeometricRepresentationItem theFillStyleTarget)
     {
         base.Init(theName, theStyles, theItem);
         myFillStyleTarget = theFillStyleTarget;

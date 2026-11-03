@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_State;
 
@@ -17,7 +18,7 @@ public class BRepClass3d_SolidPassiveClassifier
 {
     private bool isSet;
     private TopoDS_Face myFace = new();
-    private gp_Lin myLin = new();
+    private Line3D myLin = new();
     private double myParam;
     private double myTolerance;
     private TopAbs_State myState;
@@ -38,7 +39,7 @@ public class BRepClass3d_SolidPassiveClassifier
     /// Starts a classification of the origin of <paramref name="L"/>, with the tolerance <paramref name="Tol"/> of
     /// the intersections. <paramref name="P"/> is unused (OCCT's).
     /// </summary>
-    public void Reset(in gp_Lin L, double P, double Tol)
+    public void Reset(in Line3D L, double P, double Tol)
     {
         myLin = L;
         myParam = RealLast();

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ namespace Occt;
 /// "forgotten" entities; duplicated entities), exploitation (generation of derivated Models, each of them
 /// generating an output file)
 /// </summary>
-public class IFSelect_ShareOut : Standard_Transient
+public class IFSelect_ShareOut : Transient
 {
 
     /// <summary>
@@ -69,7 +71,7 @@ public class IFSelect_ShareOut : Standard_Transient
     /// its type). Returns True if done, False if has not been found or if it is neither a Dispatch, nor a
     /// Modifier.
     /// </summary>
-    public bool RemoveItem(Standard_Transient? item)
+    public bool RemoveItem(Transient? item)
     {
         IFSelect_GeneralModifier modifier = item as IFSelect_GeneralModifier;
         if (modifier is not null)

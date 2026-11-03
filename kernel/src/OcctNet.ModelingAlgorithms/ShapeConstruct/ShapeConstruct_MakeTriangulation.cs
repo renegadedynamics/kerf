@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -24,9 +27,9 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     private readonly TopoDS_Wire myWire = new();
 
     /// <summary>Triangulates the closed polygon through <paramref name="pnts"/>.</summary>
-    public ShapeConstruct_MakeTriangulation(NCollection_Array1<gp_Pnt> pnts, double prec = 0.0)
+    public ShapeConstruct_MakeTriangulation(NCollection_Array1<Point3D> pnts, double prec = 0.0)
     {
-        myPrecision = (prec > 0.0) ? prec : Precision.Confusion();
+        myPrecision = (prec > 0.0) ? prec : global::Kerf.Engine.Foundation.Precision.Confusion();
         // Make polygonal wire from points
         BRepBuilderAPI_MakePolygon mkPoly = new();
         for (int i = pnts.Lower(); i <= pnts.Upper(); i++)
@@ -45,13 +48,13 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     /// <summary>Triangulates the closed polygonal wire.</summary>
     public ShapeConstruct_MakeTriangulation(in TopoDS_Wire wire, double prec = 0.0)
     {
-        myPrecision = (prec > 0.0) ? prec : Precision.Confusion();
+        myPrecision = (prec > 0.0) ? prec : global::Kerf.Engine.Foundation.Precision.Confusion();
         myWire = wire;
         Build();
     }
 
     /// <summary>Triangulates the wire (once).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         if (myShape.IsNull())
         {
@@ -84,7 +87,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
         {
             // Fill array of end points
             ShapeAnalysis_Edge sae = new();
-            NCollection_HArray1<gp_Pnt>? theAPnt = new(1, NbEdges);
+            NCollection_HArray1<Point3D>? theAPnt = new(1, NbEdges);
             for (int i = 1; i <= NbEdges; i++)
             {
                 theAPnt.SetValue(i, BRep_Tool.Pnt(sae.FirstVertex(TopoDS.Edge(theEdges.Value(i)))));
@@ -93,7 +96,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
             TopoDS_Wire theNewWire = new();
 
             // Check planarity on array of points
-            gp_XYZ Norm = new(0, 0, 0);
+            Xyz Norm = new(0, 0, 0);
             if (ShapeAnalysis_Curve.IsPlanar(theAPnt.Array1(), ref Norm, myPrecision))
             {
                 AddFacet(wire);
@@ -124,7 +127,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                         break;
                     }
 
-                    NCollection_Sequence<gp_Pnt> theSPnt = new();
+                    NCollection_Sequence<Point3D> theSPnt = new();
 
                     // Add 3 points of minimal facet
                     int lindex = (cindex == 1 ? NbEdges : cindex - 1);
@@ -220,7 +223,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                 cindex = theSegments.Length();
                 if (cindex % 4 == 0)
                 {
-                    gp_Vec theBaseNorm = MeanNormal(theAPnt.Array1());
+                    Vector3D theBaseNorm = MeanNormal(theAPnt.Array1());
                     // Identify sequence of matching facets
                     int len = cindex / 2, lindex, rindex, seqlen, j;
                     double theC, theC1 = 0.0, theC2 = 0.0;
@@ -231,7 +234,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                         lindex = theSegments[ii * 2 + 1];
                         rindex = theSegments[ii * 2 + 2];
                         seqlen = ((rindex > lindex) ? rindex - lindex + 1 : NbEdges - lindex + rindex + 1);
-                        NCollection_Array1<gp_Pnt> theArr = new(1, seqlen);
+                        NCollection_Array1<Point3D> theArr = new(1, seqlen);
                         for (j = 1; j <= seqlen; j++)
                         {
                             theArr[j] = theAPnt.Value(lindex);
@@ -347,7 +350,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
 
         // Fill sequence of points
         ShapeAnalysis_Edge sae = new();
-        NCollection_Sequence<gp_Pnt> pts = new();
+        NCollection_Sequence<Point3D> pts = new();
         for (TopoDS_Iterator ite = new(wire); ite.More(); ite.Next())
         {
             pts.Append(BRep_Tool.Pnt(sae.FirstVertex(TopoDS.Edge(ite.Value()))));
@@ -360,11 +363,11 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
 
         // Create mean plane
         double cMod, maxMod = 0.0;
-        gp_XYZ maxVec = new(), Normal = new(0, 0, 0);
+        Xyz maxVec = new(), Normal = new(0, 0, 0);
         for (i = 1; i <= nbp; i++)
         {
-            gp_XYZ vb = pts[i].XYZ();
-            gp_XYZ v1 = pts[i == nbp ? 1 : i + 1].XYZ() - vb;
+            Xyz vb = pts[i].XYZ();
+            Xyz v1 = pts[i == nbp ? 1 : i + 1].XYZ() - vb;
             cMod = v1.SquareModulus();
             if (cMod == 0.0)
             {
@@ -375,7 +378,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
                 maxMod = cMod;
                 maxVec = v1;
             }
-            gp_XYZ v2 = pts[i == 1 ? nbp : i - 1].XYZ() - vb;
+            Xyz v2 = pts[i == 1 ? nbp : i - 1].XYZ() - vb;
             cMod = v2.SquareModulus();
             if (cMod == 0.0)
             {
@@ -392,29 +395,29 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
         {
             if (maxMod == 0.0)
             {
-                Normal = new gp_XYZ(0, 0, 1);
+                Normal = new Xyz(0, 0, 1);
             }
             else if (maxVec.X() != 0.0)
             {
-                Normal = new gp_XYZ(-maxVec.Y() / maxVec.X(), 1, 0);
+                Normal = new Xyz(-maxVec.Y() / maxVec.X(), 1, 0);
             }
             else if (maxVec.Y() != 0.0)
             {
-                Normal = new gp_XYZ(0, -maxVec.Z() / maxVec.Y(), 1);
+                Normal = new Xyz(0, -maxVec.Z() / maxVec.Y(), 1);
             }
             else
             {
-                Normal = new gp_XYZ(1, 0, 0);
+                Normal = new Xyz(1, 0, 0);
             }
         }
 
-        gp_Pln Pln = new(pts[1], new gp_Dir(Normal));
+        Plane3D Pln = new(pts[1], new Direction3D(Normal));
         Geom_Plane thePlane = new(Pln);
 
         // Mean plane created - build face
         BRep_Builder B = new();
         TopoDS_Face theFace = new();
-        B.MakeFace(ref theFace, thePlane, Precision.Confusion());
+        B.MakeFace(ref theFace, thePlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         B.Add(theFace, wire);
 
         // Add new face to the shell
@@ -437,7 +440,7 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     }
 
     // True if the points (four or more) make a planar polygon that doesn't intersect itself.
-    private static bool IsRightContour(NCollection_Sequence<gp_Pnt> pts, double prec)
+    private static bool IsRightContour(NCollection_Sequence<Point3D> pts, double prec)
     {
         int len = pts.Length();
         if (len < 4)
@@ -445,14 +448,14 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
             return true;
         }
 
-        NCollection_Array1<gp_Pnt> thePts = new(1, len);
+        NCollection_Array1<Point3D> thePts = new(1, len);
         int i;
         for (i = 1; i <= len; i++)
         {
             thePts[i] = pts[i];
         }
 
-        gp_XYZ Norm = new(0, 0, 0);
+        Xyz Norm = new(0, 0, 0);
         if (ShapeAnalysis_Curve.IsPlanar(thePts, ref Norm, prec))
         {
             // Make polygonal wire from points
@@ -466,20 +469,20 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
             if (mkPoly.IsDone())
             {
                 // Create mean plane
-                gp_XYZ center = new(0, 0, 0);
+                Xyz center = new(0, 0, 0);
                 for (i = 1; i <= len; i++)
                 {
                     center += thePts[i].XYZ();
                 }
                 center /= len;
-                gp_Pnt pc = new(center);
-                gp_Dir pd = new(Norm);
-                gp_Pln pl = new(pc, pd);
+                Point3D pc = new(center);
+                Direction3D pd = new(Norm);
+                Plane3D pl = new(pc, pd);
                 Geom_Plane thePlane = new(pl);
 
                 BRep_Builder B = new();
                 TopoDS_Face theFace = new();
-                B.MakeFace(ref theFace, thePlane, Precision.Confusion());
+                B.MakeFace(ref theFace, thePlane, global::Kerf.Engine.Foundation.Precision.Confusion());
                 TopoDS_Wire theWire = mkPoly.InternalWire();
                 B.Add(theFace, theWire);
                 ShapeAnalysis_Wire saw = new(theWire, theFace, prec);
@@ -491,30 +494,30 @@ public sealed class ShapeConstruct_MakeTriangulation : BRepBuilderAPI_MakeShape
     }
 
     // The mean normal of a closed polygon (unit, or null for fewer than three points).
-    private static gp_Vec MeanNormal(NCollection_Array1<gp_Pnt> pts)
+    private static Vector3D MeanNormal(NCollection_Array1<Point3D> pts)
     {
         int len = pts.Length();
         if (len < 3)
         {
-            return new gp_Vec(0, 0, 0);
+            return new Vector3D(0, 0, 0);
         }
 
         int i;
-        gp_XYZ theCenter = new(0, 0, 0);
+        Xyz theCenter = new(0, 0, 0);
         for (i = 1; i <= len; i++)
         {
             theCenter += pts[i].XYZ();
         }
         theCenter /= len;
 
-        gp_XYZ theNorm = new(0, 0, 0);
+        Xyz theNorm = new(0, 0, 0);
         for (i = 1; i <= len; i++)
         {
-            gp_Vec v1 = new(pts[i].XYZ() - theCenter);
-            gp_Vec v2 = new(pts[(i == len) ? 1 : i + 1].XYZ() - theCenter);
+            Vector3D v1 = new(pts[i].XYZ() - theCenter);
+            Vector3D v2 = new(pts[(i == len) ? 1 : i + 1].XYZ() - theCenter);
             theNorm += (v1 ^ v2).XYZ();
         }
 
-        return new gp_Vec(theNorm).Normalized();
+        return new Vector3D(theNorm).Normalized();
     }
 }

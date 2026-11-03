@@ -1,7 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
-using static Occt.Standard;
+using static Kerf.Engine.Foundation.Standard;
 
 namespace OcctNet.DrawLite;
 
@@ -106,7 +107,7 @@ internal static class GeometryTestFairCurveCommands
         }
 
         double a1 = theDI.Atof(argv[3]), a2 = theDI.Atof(argv[4]), h = theDI.Atof(argv[5]);
-        gp_Pnt2d P1 = new(), P2 = new();
+        Point2D P1 = new(), P2 = new();
 
         if (!DrawTrSurf.GetPoint2d(theDI, argv[1], ref P1))
         {
@@ -137,7 +138,7 @@ internal static class GeometryTestFairCurveCommands
         }
 
         double a1 = theDI.Atof(argv[3]), a2 = theDI.Atof(argv[4]), h = theDI.Atof(argv[5]);
-        gp_Pnt2d P1 = new(), P2 = new();
+        Point2D P1 = new(), P2 = new();
 
         if (!DrawTrSurf.GetPoint2d(theDI, argv[1], ref P1))
         {
@@ -168,14 +169,14 @@ internal static class GeometryTestFairCurveCommands
 
         int cote = theDI.Atoi(argv[1]);
 
-        gp_Pnt2d Pnt;
+        Point2D Pnt;
         switch ((theDI.GetDrawable(argv[2]) as DrawGeometry)?.Geometry)
         {
-            case gp_Pnt2d aPnt2d:
+            case Point2D aPnt2d:
                 Pnt = aPnt2d;
                 break;
-            case gp_Pnt aPnt:
-                Pnt = new gp_Pnt2d(aPnt.X(), aPnt.Y());
+            case Point3D aPnt:
+                Pnt = new Point2D(aPnt.X(), aPnt.Y());
                 break;
             default:
                 return 1;

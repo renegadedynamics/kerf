@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using Occt;
 
@@ -54,8 +55,8 @@ internal static class GeometryTestProjCommands
         {
             aNbP = theDI.Atoi(a[5]);
         }
-        double anErrTol = n > 6 ? theDI.Atof(a[6]) : Standard.RealLast();
-        double aWarnTol = n > 7 ? theDI.Atof(a[7]) : Standard.RealLast();
+        double anErrTol = n > 6 ? theDI.Atof(a[6]) : global::Kerf.Engine.Foundation.Standard.RealLast();
+        double aWarnTol = n > 7 ? theDI.Atof(a[7]) : global::Kerf.Engine.Foundation.Standard.RealLast();
 
         double dT = (aT2 - aT1) / (aNbP - 1);
         double aMaxParam = 0.0;
@@ -69,7 +70,7 @@ internal static class GeometryTestProjCommands
                 aT = aT2;
             }
 
-            aC.D0(aT, out gp_Pnt aP);
+            aC.D0(aT, out Point3D aP);
             aPPS.Init(aP, aS, aTol);
             if (!aPPS.IsDone())
             {

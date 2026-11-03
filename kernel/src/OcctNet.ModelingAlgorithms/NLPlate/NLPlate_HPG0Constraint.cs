@@ -3,16 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A G0 constraint of a non-linear plate: the surface passes through a target point at a UV point.</summary>
 public class NLPlate_HPG0Constraint : NLPlate_HGPPConstraint
 {
-    private readonly gp_XYZ myXYZTarget;
+    private readonly Xyz myXYZTarget;
     private bool UVIsFree;
     private bool IncrementalLoadingAllowed;
 
-    public NLPlate_HPG0Constraint(in gp_XY UV, in gp_XYZ Value)
+    public NLPlate_HPG0Constraint(in Xy UV, in Xyz Value)
     {
         myXYZTarget = Value;
         SetUV(UV);
@@ -49,5 +51,5 @@ public class NLPlate_HPG0Constraint : NLPlate_HGPPConstraint
 
     public override bool IsG0() => true;
 
-    public override gp_XYZ G0Target() => myXYZTarget;
+    public override Xyz G0Target() => myXYZTarget;
 }

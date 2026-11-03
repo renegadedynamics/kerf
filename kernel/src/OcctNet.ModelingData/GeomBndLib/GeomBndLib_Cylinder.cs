@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,54 +27,54 @@ public sealed class GeomBndLib_Cylinder : GeomBndLib_Surface.ISurfaceEvaluator
     public Geom_CylindricalSurface Geometry() => myGeom;
 
     /// <summary>Compute bounding box for full cylinder.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
         myGeom.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         return Box(aU1, aU2, aV1, aV2, theTol);
     }
 
     /// <summary>For analytical surfaces, BoxOptimal is same as Box.</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
         => Box(theUMin, theUMax, theVMin, theVMax, theTol);
 
     /// <summary>Compute optimal bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol) => Box(theTol);
+    public Box BoxOptimal(double theTol) => Box(theTol);
 
     /// <summary>Compute bounding box for a finite cylinder patch.</summary>
-    private static void computeCylinder(in gp_Cylinder theCyl,
+    private static void computeCylinder(in Cylinder theCyl,
                                         double theUMin,
                                         double theUMax,
                                         double theVMin,
                                         double theVMax,
-                                        ref Bnd_Box theBox)
+                                        ref Box theBox)
     {
         // Add circle at VMin.
-        gp_Circ aC = ElSLib.CylinderVIso(theCyl.Position(), theCyl.Radius(), theVMin);
+        Circle3D aC = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(theCyl.Position(), theCyl.Radius(), theVMin);
         theBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
 
         // Add circle at VMax by translating.
-        gp_Vec aT = (theVMax - theVMin) * new gp_Vec(theCyl.Axis().Direction());
+        Vector3D aT = (theVMax - theVMin) * new Vector3D(theCyl.Axis().Direction());
         aC.Translate(aT);
         theBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
     }
 
     /// <summary>Compute bounding box for cylinder patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        Bnd_Box aBox = new();
-        gp_Cylinder aCyl = myGeom.Cylinder();
-        gp_Dir aDir = aCyl.Axis().Direction();
+        Box aBox = new();
+        Cylinder aCyl = myGeom.Cylinder();
+        Direction3D aDir = aCyl.Axis().Direction();
 
-        if (Precision.IsNegativeInfinite(theVMin))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theVMin))
         {
-            if (Precision.IsNegativeInfinite(theVMax))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theVMax))
             {
-                throw new Standard_Failure("GeomBndLib_Cylinder::Box - bad parameter");
+                throw new FailureException("GeomBndLib_Cylinder::Box - bad parameter");
             }
-            else if (Precision.IsPositiveInfinite(theVMax))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theVMax))
             {
                 // Fully infinite V: add the arc at V=0 to give the box finite radial extent.
-                gp_Circ aC = ElSLib.CylinderVIso(aCyl.Position(), aCyl.Radius(), 0.0);
+                Circle3D aC = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(aCyl.Position(), aCyl.Radius(), 0.0);
                 aBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
                 GeomBndLib_InfiniteHelpers.OpenMinMax(aDir, ref aBox);
             }
@@ -78,18 +84,18 @@ public sealed class GeomBndLib_Cylinder : GeomBndLib_Surface.ISurfaceEvaluator
                 GeomBndLib_InfiniteHelpers.OpenMin(aDir, ref aBox);
             }
         }
-        else if (Precision.IsPositiveInfinite(theVMin))
+        else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theVMin))
         {
-            if (Precision.IsNegativeInfinite(theVMax))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theVMax))
             {
                 // Reversed infinite V: add the arc at V=0 to give the box finite radial extent.
-                gp_Circ aC = ElSLib.CylinderVIso(aCyl.Position(), aCyl.Radius(), 0.0);
+                Circle3D aC = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(aCyl.Position(), aCyl.Radius(), 0.0);
                 aBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
                 GeomBndLib_InfiniteHelpers.OpenMinMax(aDir, ref aBox);
             }
-            else if (Precision.IsPositiveInfinite(theVMax))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theVMax))
             {
-                throw new Standard_Failure("GeomBndLib_Cylinder::Box - bad parameter");
+                throw new FailureException("GeomBndLib_Cylinder::Box - bad parameter");
             }
             else
             {
@@ -99,12 +105,12 @@ public sealed class GeomBndLib_Cylinder : GeomBndLib_Surface.ISurfaceEvaluator
         }
         else
         {
-            if (Precision.IsNegativeInfinite(theVMax))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theVMax))
             {
                 computeCylinder(aCyl, theUMin, theUMax, theVMin, 0.0, ref aBox);
                 GeomBndLib_InfiniteHelpers.OpenMin(aDir, ref aBox);
             }
-            else if (Precision.IsPositiveInfinite(theVMax))
+            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theVMax))
             {
                 computeCylinder(aCyl, theUMin, theUMax, theVMin, 0.0, ref aBox);
                 GeomBndLib_InfiniteHelpers.OpenMax(aDir, ref aBox);

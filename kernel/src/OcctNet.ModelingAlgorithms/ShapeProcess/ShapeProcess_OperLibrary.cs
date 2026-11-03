@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -66,7 +69,7 @@ public static class ShapeProcess_OperLibrary
             for (var it = new TopoDS_Iterator(SF); it.More(); it.Next())
             {
                 TopoDS_Shape shape = it.Value();
-                TopLoc_Location L = shape.Location(), nullLoc = new();
+                Placement L = shape.Location(), nullLoc = new();
                 shape.Location(nullLoc);
                 TopoDS_Shape res;
                 if (map.IsBound(shape))
@@ -118,7 +121,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool directfaces(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool directfaces(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -132,7 +135,7 @@ public static class ShapeProcess_OperLibrary
         return ApplyModification(ctx, DM, msg);
     }
 
-    private static bool sameparam(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool sameparam(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -143,8 +146,8 @@ public static class ShapeProcess_OperLibrary
 
         ShapeFix.SameParameter(ctx.InternalResult(),
                                ctx.BooleanVal("Force", false),
-                               ctx.RealVal("Tolerance3d", Precision.Confusion() /* -1 */),
-                               new Message_ProgressRange(),
+                               ctx.RealVal("Tolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion() /* -1 */),
+                               new ProgressRange(),
                                msg);
 
         if (msg is not null)
@@ -156,7 +159,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool settol(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool settol(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -186,7 +189,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool splitangle(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool splitangle(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -210,7 +213,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool bsplinerestriction(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool bsplinerestriction(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -226,8 +229,8 @@ public static class ShapeProcess_OperLibrary
         double aTol3d = ctx.RealVal("Tolerance3d", 0.01);
         double aTol2d = ctx.RealVal("Tolerance2d", 1e-06);
 
-        GeomAbs_Shape aCont3d = ctx.ContinuityVal("Continuity3d", GeomAbs_C1);
-        GeomAbs_Shape aCont2d = ctx.ContinuityVal("Continuity2d", GeomAbs_C2);
+        Continuity aCont3d = ctx.ContinuityVal("Continuity3d", C1);
+        Continuity aCont2d = ctx.ContinuityVal("Continuity2d", C2);
 
         int aMaxDeg = ctx.IntegerVal("RequiredDegree", 9);
         int aMaxSeg = ctx.IntegerVal("RequiredNbSegments", 10000);
@@ -271,7 +274,7 @@ public static class ShapeProcess_OperLibrary
         return ApplyModification(ctx, LD, msg);
     }
 
-    private static bool torevol(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool torevol(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -285,7 +288,7 @@ public static class ShapeProcess_OperLibrary
         return ApplyModification(ctx, CR, msg);
     }
 
-    private static bool swepttoelem(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool swepttoelem(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -299,7 +302,7 @@ public static class ShapeProcess_OperLibrary
         return ApplyModification(ctx, SE, msg);
     }
 
-    private static bool shapetobezier(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool shapetobezier(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -368,7 +371,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool converttobspline(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool converttobspline(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -390,7 +393,7 @@ public static class ShapeProcess_OperLibrary
         return ApplyModification(ctx, CBspl, msg);
     }
 
-    private static bool splitcontinuity(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool splitcontinuity(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -401,9 +404,9 @@ public static class ShapeProcess_OperLibrary
 
         double aTol = ctx.RealVal("Tolerance3d", 1.0e-7);
         double aTol2D = ctx.RealVal("Tolerance2d", 1.0e-9);
-        GeomAbs_Shape aCrvCont = ctx.ContinuityVal("CurveContinuity", GeomAbs_C1);
-        GeomAbs_Shape aSrfCont = ctx.ContinuityVal("SurfaceContinuity", GeomAbs_C1);
-        GeomAbs_Shape aCrv2dCont = ctx.ContinuityVal("Curve2dContinuity", GeomAbs_C1);
+        Continuity aCrvCont = ctx.ContinuityVal("CurveContinuity", C1);
+        Continuity aSrfCont = ctx.ContinuityVal("SurfaceContinuity", C1);
+        Continuity aCrv2dCont = ctx.ContinuityVal("Curve2dContinuity", C1);
         var tool = new ShapeUpgrade_ShapeDivideContinuity(ctx.InternalResult());
         tool.SetBoundaryCriterion(aCrvCont);
         tool.SetSurfaceCriterion(aSrfCont);
@@ -430,7 +433,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool splitclosedfaces(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool splitclosedfaces(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -471,7 +474,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool fixfacesize(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool fixfacesize(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -504,7 +507,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool fixwgaps(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool fixwgaps(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -513,7 +516,7 @@ public static class ShapeProcess_OperLibrary
 
         ShapeExtend_MsgRegistrator? msg = NewMessages(ctx);
 
-        double aTol3d = ctx.RealVal("Tolerance3d", Precision.Confusion());
+        double aTol3d = ctx.RealVal("Tolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion());
 
         var reshape = new ShapeBuild_ReShape();
         var sfwf = new ShapeFix_Wireframe(ctx.InternalResult());
@@ -531,7 +534,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool dropsmallsolids(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool dropsmallsolids(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -584,7 +587,7 @@ public static class ShapeProcess_OperLibrary
 
     // OCCT: dropsmalledges, an older version written for another framework, is commented out
 
-    private static bool mergesmalledges(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool mergesmalledges(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -593,7 +596,7 @@ public static class ShapeProcess_OperLibrary
 
         ShapeExtend_MsgRegistrator? msg = NewMessages(ctx);
 
-        double aTol3d = ctx.RealVal("Tolerance3d", Precision.Confusion());
+        double aTol3d = ctx.RealVal("Tolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion());
 
         var reshape = new ShapeBuild_ReShape();
         var ShapeFixWireframe = new ShapeFix_Wireframe(ctx.InternalResult());
@@ -608,7 +611,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool fixshape(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool fixshape(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -622,9 +625,9 @@ public static class ShapeProcess_OperLibrary
         ShapeFix_Wire sfw = sfs.FixWireTool();
         sfs.SetMsgRegistrator(msg);
 
-        sfs.SetPrecision(ctx.RealVal("Tolerance3d", Precision.Confusion()));
-        sfs.SetMinTolerance(ctx.RealVal("MinTolerance3d", Precision.Confusion()));
-        sfs.SetMaxTolerance(ctx.RealVal("MaxTolerance3d", Precision.Confusion()));
+        sfs.SetPrecision(ctx.RealVal("Tolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion()));
+        sfs.SetMinTolerance(ctx.RealVal("MinTolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion()));
+        sfs.SetMaxTolerance(ctx.RealVal("MaxTolerance3d", global::Kerf.Engine.Foundation.Precision.Confusion()));
 
         sfs.FixFreeShellMode() = ctx.IntegerVal("FixFreeShellMode", -1);
         sfs.FixFreeFaceMode() = ctx.IntegerVal("FixFreeFaceMode", -1);
@@ -681,7 +684,7 @@ public static class ShapeProcess_OperLibrary
         sfw.FixSelfIntersectingEdgeMode() = ctx.IntegerVal("FixSelfIntersectingEdgeMode", -1);
         sfw.FixIntersectingEdgesMode() = ctx.IntegerVal("FixIntersectingEdgesMode", -1);
         sfw.FixNonAdjacentIntersectingEdgesMode() = ctx.IntegerVal("FixNonAdjacentIntersectingEdgesMode", -1);
-        using var aPS = new Message_ProgressScope(theProgress, null, 2);
+        using var aPS = new ProgressScope(theProgress, null, 2);
         if (sfw.FixTailMode() == 1)
         {
             sfw.FixTailMode() = 0;
@@ -717,7 +720,7 @@ public static class ShapeProcess_OperLibrary
         return true;
     }
 
-    private static bool spltclosededges(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool spltclosededges(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {
@@ -746,7 +749,7 @@ public static class ShapeProcess_OperLibrary
     // Two wires have common vertex - this case is valid in BRep model
     // and isn't valid in STEP => before writing into STEP it is necessary
     // to split this vertex (each wire must has one vertex)
-    private static bool splitcommonvertex(ShapeProcess_Context context, Message_ProgressRange theProgress)
+    private static bool splitcommonvertex(ShapeProcess_Context context, ProgressRange theProgress)
     {
         if (context is not ShapeProcess_ShapeContext ctx)
         {

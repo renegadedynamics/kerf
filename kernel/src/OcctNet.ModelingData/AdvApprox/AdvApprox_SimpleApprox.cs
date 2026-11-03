@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics.Polynomials;
+using Kerf.Geometry;
 using System.Globalization;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -24,7 +27,7 @@ public class AdvApprox_SimpleApprox
     private readonly int myNbGaussPoints;
     private readonly int myWorkDegree;
     private readonly int myNivConstr;
-    private readonly PLib_JacobiPolynomial myJacPol;
+    private readonly JacobiPolynomial myJacPol;
     private readonly NCollection_HArray1<double> myTabPoints;
     private readonly NCollection_HArray2<double> myTabWeights;
     private readonly AdvApprox_EvaluatorFunction myEvaluator;
@@ -42,8 +45,8 @@ public class AdvApprox_SimpleApprox
     /// Prepares the approximation of <paramref name="Func"/>, of dimension <paramref name="TotalDimension"/>
     /// split into <paramref name="TotalNumSS"/> subspaces, with the continuity C0, C1 or C2 at the ends.
     /// </summary>
-    public AdvApprox_SimpleApprox(int TotalDimension, int TotalNumSS, GeomAbs_Shape Continuity, int WorkDegree,
-                                  int NbGaussPoints, PLib_JacobiPolynomial JacobiBase, AdvApprox_EvaluatorFunction Func)
+    public AdvApprox_SimpleApprox(int TotalDimension, int TotalNumSS, Continuity Continuity, int WorkDegree,
+                                  int NbGaussPoints, JacobiPolynomial JacobiBase, AdvApprox_EvaluatorFunction Func)
     {
         myTotalNumSS = TotalNumSS;
         myTotalDimension = TotalDimension;
@@ -56,17 +59,17 @@ public class AdvApprox_SimpleApprox
 
         switch (Continuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 myNivConstr = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myNivConstr = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 myNivConstr = 2;
                 break;
             default:
-                throw new Standard_ConstructionError("Invalid Continuity");
+                throw new ConstructionErrorException("Invalid Continuity");
         }
 
         int DegreeQ = myWorkDegree - 2 * (myNivConstr + 1);
@@ -157,7 +160,7 @@ public class AdvApprox_SimpleApprox
             }
         }
 
-        PLib.HermiteInterpolate(myTotalDimension, -1.0, 1.0, myNivConstr, myNivConstr, myFirstConstr.Array2(),
+        global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteInterpolate(myTotalDimension, -1.0, 1.0, myNivConstr, myNivConstr, myFirstConstr.Array2(),
                                 myLastConstr.Array2(), myCoeff.ChangeArray1());
 
         // ===== the computation of the coefficients of Qq(t) (the second part of Pp) ======
@@ -200,9 +203,9 @@ public class AdvApprox_SimpleApprox
                 return; // Evaluation error
             }
 
-            PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rpti.AsSpan());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rpti.AsSpan());
             ti = -ti;
-            PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rmti.AsSpan());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rmti.AsSpan());
 
             for (idim = 1; idim <= myTotalDimension; idim++)
             {
@@ -222,7 +225,7 @@ public class AdvApprox_SimpleApprox
             {
                 return; // Evaluation error
             }
-            PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rpti.AsSpan());
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPolynomial(ti, derive, DegreeR, myTotalDimension, Coef1, Rpti.AsSpan());
             for (idim = 1; idim <= myTotalDimension; idim++)
             {
                 mySomTab.SetValue(idim - 1, Fti[idim] - Rpti[idim]);

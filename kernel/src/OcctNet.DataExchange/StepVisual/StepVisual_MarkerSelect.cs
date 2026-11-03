@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -23,7 +24,7 @@ public class StepVisual_MarkerSelect : StepData_SelectType
     /// Recognizes a MarkerSelect Kind Entity that is :
     /// 0 else
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         return 0;
     }

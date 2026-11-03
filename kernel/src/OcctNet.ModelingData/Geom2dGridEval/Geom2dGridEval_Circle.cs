@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,21 +24,21 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
     public Geom2d_Circle? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNb);
+        NCollection_Array1<Point2D> aResult = new(1, aNb);
 
         // Extract circle data from geometry
-        gp_Circ2d aCirc = myGeom.Circ2d();
-        gp_Pnt2d aCenter = aCirc.Location();
-        gp_Dir2d aXDir = aCirc.Position().XDirection();
-        gp_Dir2d aYDir = aCirc.Position().YDirection();
+        Circle2D aCirc = myGeom.Circ2d();
+        Point2D aCenter = aCirc.Location();
+        Direction2D aXDir = aCirc.Position().XDirection();
+        Direction2D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         // Pre-extract coordinates for performance
@@ -54,7 +56,7 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
             double sinU = Math.Sin(u);
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt2d(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                             new Point2D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                           aCY + aRadius * (cosU * aXY + sinU * aYY)));
         }
         return aResult;
@@ -71,10 +73,10 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Circ2d aCirc = myGeom.Circ2d();
-        gp_Pnt2d aCenter = aCirc.Location();
-        gp_Dir2d aXDir = aCirc.Position().XDirection();
-        gp_Dir2d aYDir = aCirc.Position().YDirection();
+        Circle2D aCirc = myGeom.Circ2d();
+        Point2D aCenter = aCirc.Location();
+        Direction2D aXDir = aCirc.Position().XDirection();
+        Direction2D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         double aCX = aCenter.X();
@@ -94,9 +96,9 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
             // D1 = R * (-sin(u) * X + cos(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD1
             {
-                Point = new gp_Pnt2d(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point2D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                      aCY + aRadius * (cosU * aXY + sinU * aYY)),
-                D1 = new gp_Vec2d(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
+                D1 = new Vector2D(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
             };
         }
         return aResult;
@@ -113,10 +115,10 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Circ2d aCirc = myGeom.Circ2d();
-        gp_Pnt2d aCenter = aCirc.Location();
-        gp_Dir2d aXDir = aCirc.Position().XDirection();
-        gp_Dir2d aYDir = aCirc.Position().YDirection();
+        Circle2D aCirc = myGeom.Circ2d();
+        Point2D aCenter = aCirc.Location();
+        Direction2D aXDir = aCirc.Position().XDirection();
+        Direction2D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         double aCX = aCenter.X();
@@ -137,10 +139,10 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
             // D2 = R * (-cos(u) * X - sin(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD2
             {
-                Point = new gp_Pnt2d(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point2D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                      aCY + aRadius * (cosU * aXY + sinU * aYY)),
-                D1 = new gp_Vec2d(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
-                D2 = new gp_Vec2d(aRadius * (-cosU * aXX - sinU * aYX), aRadius * (-cosU * aXY - sinU * aYY)),
+                D1 = new Vector2D(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
+                D2 = new Vector2D(aRadius * (-cosU * aXX - sinU * aYX), aRadius * (-cosU * aXY - sinU * aYY)),
             };
         }
         return aResult;
@@ -157,10 +159,10 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Circ2d aCirc = myGeom.Circ2d();
-        gp_Pnt2d aCenter = aCirc.Location();
-        gp_Dir2d aXDir = aCirc.Position().XDirection();
-        gp_Dir2d aYDir = aCirc.Position().YDirection();
+        Circle2D aCirc = myGeom.Circ2d();
+        Point2D aCenter = aCirc.Location();
+        Direction2D aXDir = aCirc.Position().XDirection();
+        Direction2D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         double aCX = aCenter.X();
@@ -182,30 +184,30 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
             // D3 = R * (sin(u) * X - cos(u) * Y)
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD3
             {
-                Point = new gp_Pnt2d(aCX + aRadius * (cosU * aXX + sinU * aYX),
+                Point = new Point2D(aCX + aRadius * (cosU * aXX + sinU * aYX),
                                      aCY + aRadius * (cosU * aXY + sinU * aYY)),
-                D1 = new gp_Vec2d(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
-                D2 = new gp_Vec2d(aRadius * (-cosU * aXX - sinU * aYX), aRadius * (-cosU * aXY - sinU * aYY)),
-                D3 = new gp_Vec2d(aRadius * (sinU * aXX - cosU * aYX), aRadius * (sinU * aXY - cosU * aYY)),
+                D1 = new Vector2D(aRadius * (-sinU * aXX + cosU * aYX), aRadius * (-sinU * aXY + cosU * aYY)),
+                D2 = new Vector2D(aRadius * (-cosU * aXX - sinU * aYX), aRadius * (-cosU * aXY - sinU * aYY)),
+                D3 = new Vector2D(aRadius * (sinU * aXX - cosU * aYX), aRadius * (sinU * aXY - cosU * aYY)),
             };
         }
         return aResult;
     }
 
     /// <summary>Evaluates the Nth derivative at all grid points; derivatives cycle with period 4.</summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
+        NCollection_Array1<Vector2D> aResult = new(1, aNb);
 
-        gp_Circ2d aCirc = myGeom.Circ2d();
-        gp_Dir2d aXDir = aCirc.Position().XDirection();
-        gp_Dir2d aYDir = aCirc.Position().YDirection();
+        Circle2D aCirc = myGeom.Circ2d();
+        Direction2D aXDir = aCirc.Position().XDirection();
+        Direction2D aYDir = aCirc.Position().YDirection();
         double aRadius = aCirc.Radius();
 
         double aXX = aXDir.X();
@@ -248,7 +250,7 @@ public sealed class Geom2dGridEval_Circle : Geom2dGridEval.ICurveEvaluator
             }
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Vec2d(aRadius * (aCoeffX * aXX + aCoeffY * aYX),
+                             new Vector2D(aRadius * (aCoeffX * aXX + aCoeffY * aYX),
                                           aRadius * (aCoeffX * aXY + aCoeffY * aYY)));
         }
         return aResult;

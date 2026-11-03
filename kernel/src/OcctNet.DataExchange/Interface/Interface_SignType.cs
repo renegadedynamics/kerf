@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +20,7 @@ public abstract class Interface_SignType : MoniTool_SignText
     /// Returns an identification of the Signature (a word), given at initialization time Specialised to consider
     /// context as an InterfaceModel
     /// </summary>
-    public override string Text(Standard_Transient? ent, Standard_Transient? context)
+    public override string Text(Transient? ent, Transient? context)
     {
         string atext = "";
         Interface_InterfaceModel model = (context as Interface_InterfaceModel);
@@ -34,7 +36,7 @@ public abstract class Interface_SignType : MoniTool_SignText
     /// Returns the Signature for a Transient object. It is specific of each sub-class of Signature. For a Null
     /// Handle, it should provide "" It can work with the model which contains the entity
     /// </summary>
-    public abstract string Value(Standard_Transient? ent, Interface_InterfaceModel? model);
+    public abstract string Value(Transient? ent, Interface_InterfaceModel? model);
 
     /// <summary>
     /// From a CDL Type Name, returns the Class part (package dropped) WARNING : buffered, to be immediately

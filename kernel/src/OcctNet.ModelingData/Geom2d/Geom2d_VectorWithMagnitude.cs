@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
-/// <summary>A vector with a magnitude, possibly zero, in the plane (a shareable <see cref="gp_Vec2d"/>).</summary>
+/// <summary>A vector with a magnitude, possibly zero, in the plane (a shareable <see cref="Vector2D"/>).</summary>
 /// <remarks>
 /// OCCT's compound operators (<c>+=</c>, <c>-=</c>, <c>*=</c>, <c>/=</c>) mutate in place, so they are left out;
 /// ported code calls <c>Add</c>, <c>Subtract</c>, <c>Multiply</c>, <c>Divide</c>. The binary operators return new
@@ -14,13 +18,13 @@ namespace Occt;
 public class Geom2d_VectorWithMagnitude : Geom2d_Vector
 {
     /// <summary>A vector equal to V.</summary>
-    public Geom2d_VectorWithMagnitude(in gp_Vec2d V) => gpVec2d = V;
+    public Geom2d_VectorWithMagnitude(in Vector2D V) => gpVec2d = V;
 
     /// <summary>The vector (X, Y).</summary>
-    public Geom2d_VectorWithMagnitude(double X, double Y) => gpVec2d = new gp_Vec2d(X, Y);
+    public Geom2d_VectorWithMagnitude(double X, double Y) => gpVec2d = new Vector2D(X, Y);
 
     /// <summary>The vector from P1 to P2.</summary>
-    public Geom2d_VectorWithMagnitude(in gp_Pnt2d P1, in gp_Pnt2d P2) => gpVec2d = new gp_Vec2d(P1, P2);
+    public Geom2d_VectorWithMagnitude(in Point2D P1, in Point2D P2) => gpVec2d = new Vector2D(P1, P2);
 
     /// <summary>A new, unfrozen vector equal to this one.</summary>
     public override Geom2d_Geometry Copy()
@@ -33,10 +37,10 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     internal void SetCoord(double X, double Y)
     {
         CheckMutable();
-        gpVec2d = new gp_Vec2d(X, Y);
+        gpVec2d = new Vector2D(X, Y);
     }
 
-    internal void SetVec2d(in gp_Vec2d V)
+    internal void SetVec2d(in Vector2D V)
     {
         CheckMutable();
         gpVec2d = V;
@@ -67,7 +71,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     /// <summary>this + Other.</summary>
     public Geom2d_VectorWithMagnitude Added(Geom2d_Vector Other)
     {
-        gp_Vec2d Temp = Other.Vec2d();
+        Vector2D Temp = Other.Vec2d();
         Temp.Add(gpVec2d);
         return new Geom2d_VectorWithMagnitude(Temp);
     }
@@ -89,7 +93,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     /// <summary>this / Scalar.</summary>
     public Geom2d_VectorWithMagnitude Divided(double Scalar)
     {
-        gp_Vec2d V = gpVec2d;
+        Vector2D V = gpVec2d;
         V.Divide(Scalar);
         return new Geom2d_VectorWithMagnitude(V);
     }
@@ -100,7 +104,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     /// <summary>this * Scalar.</summary>
     public Geom2d_VectorWithMagnitude Multiplied(double Scalar)
     {
-        gp_Vec2d V = gpVec2d;
+        Vector2D V = gpVec2d;
         V.Multiply(Scalar);
         return new Geom2d_VectorWithMagnitude(V);
     }
@@ -111,7 +115,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
         gpVec2d.Multiply(Scalar);
     }
 
-    /// <exception cref="Standard_ConstructionError">The magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     internal void Normalize()
     {
         CheckMutable();
@@ -119,10 +123,10 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     }
 
     /// <summary>The unit vector of this one.</summary>
-    /// <exception cref="Standard_ConstructionError">The magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     public Geom2d_VectorWithMagnitude Normalized()
     {
-        gp_Vec2d V = gpVec2d.Normalized();
+        Vector2D V = gpVec2d.Normalized();
         return new Geom2d_VectorWithMagnitude(V);
     }
 
@@ -135,7 +139,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
     /// <summary>this - Other.</summary>
     public Geom2d_VectorWithMagnitude Subtracted(Geom2d_Vector Other)
     {
-        gp_Vec2d V = gpVec2d;
+        Vector2D V = gpVec2d;
         V.Subtract(Other.Vec2d());
         return new Geom2d_VectorWithMagnitude(V);
     }
@@ -144,7 +148,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
         theLeft.Subtracted(Other);
 
     /// <summary>Applies T to this vector.</summary>
-    protected internal override void Transform(in gp_Trsf2d T)
+    protected internal override void Transform(in Transform2D T)
     {
         CheckMutable();
         gpVec2d.Transform(T);
@@ -159,7 +163,7 @@ public class Geom2d_VectorWithMagnitude : Geom2d_Vector
         return aCopy;
     }
 
-    public Geom2d_VectorWithMagnitude WithVec2d(in gp_Vec2d V)
+    public Geom2d_VectorWithMagnitude WithVec2d(in Vector2D V)
     {
         Geom2d_VectorWithMagnitude aCopy = (Geom2d_VectorWithMagnitude)Copy();
         aCopy.SetVec2d(V);

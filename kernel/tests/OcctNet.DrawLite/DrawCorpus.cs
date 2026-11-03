@@ -275,7 +275,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
         catch (Exception anError) when (anError is not OutOfMemoryException)
         {
             // an exception from the port that a command didn't turn into a Tcl error
-            aLog.WriteLine("Tcl Exception: " + anError.GetType().Name + ": " + anError.Message);
+            aLog.WriteLine("Tcl Exception: " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message);
         }
         finally
         {

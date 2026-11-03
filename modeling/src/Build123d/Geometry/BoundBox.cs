@@ -24,7 +24,7 @@ namespace Build123d;
 public sealed class BoundBox
 {
     /// <summary>The OCCT box, or null for an empty box. Never modified.</summary>
-    internal Bnd_Box? Wrapped { get; }
+    internal global::Kerf.Engine.Geometry.Bounds.Box? Wrapped { get; }
 
     /// <summary>The minimum corner; the origin for an empty box.</summary>
     public Vector Min { get; }
@@ -36,11 +36,11 @@ public sealed class BoundBox
     public Vector Size { get; }
 
     /// <summary>The bounding box of nothing.</summary>
-    public static BoundBox Empty { get; } = Own(new Bnd_Box());
+    public static BoundBox Empty { get; } = Own(new global::Kerf.Engine.Geometry.Bounds.Box());
 
-    BoundBox(Bnd_Box box)
+    BoundBox(global::Kerf.Engine.Geometry.Bounds.Box box)
     {
-        if (box.IsVoid())
+        if (box.IsVoid)
         {
             return;   // all corners at the origin
         }
@@ -51,10 +51,10 @@ public sealed class BoundBox
     }
 
     /// <summary>Wraps a Bnd_Box.</summary>
-    internal static BoundBox Own(Bnd_Box box) => new(box);
+    internal static BoundBox Own(global::Kerf.Engine.Geometry.Bounds.Box box) => new(box);
 
     /// <summary>A bounding box from an OCCT Bnd_Box.</summary>
-    public static BoundBox FromBndBox(Bnd_Box box) => new(box);
+    public static BoundBox FromBndBox(global::Kerf.Engine.Geometry.Bounds.Box box) => new(box);
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
@@ -68,14 +68,14 @@ public sealed class BoundBox
     public static BoundBox FromTopoDS(TopoDS_Shape shape, double? tolerance = null, bool optimal = true)
     {
         _ = tolerance;   // accepted, as build123d accepts it, but unused
-        var box = new Bnd_Box();
+        var box = new global::Kerf.Engine.Geometry.Bounds.Box();
         // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape
         if (optimal)
             BRepBndLib.AddOptimal(shape, ref box, false);
         else
             BRepBndLib.Add(shape, ref box, false);
         // A shape with faces holding only triangles (STL, glTF) has no geometry to bound but its mesh: use it then
-        if (box.IsVoid())
+        if (box.IsVoid)
             BRepBndLib.Add(shape, ref box, true);
         return new BoundBox(box);
     }
@@ -122,9 +122,9 @@ public sealed class BoundBox
         return new BoundBox(box);
     }
 
-    Bnd_Box Start(double? tolerance)
+    global::Kerf.Engine.Geometry.Bounds.Box Start(double? tolerance)
     {
-        var box = new Bnd_Box();
+        var box = new global::Kerf.Engine.Geometry.Bounds.Box();
         box = box.WithGap(tolerance ?? Constants.LooseTolerance);
         if (Wrapped is { } own)
             box = box.Added(own);

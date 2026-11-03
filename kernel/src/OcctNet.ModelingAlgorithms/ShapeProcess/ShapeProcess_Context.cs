@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Foundation.Resources;
+
 namespace Occt;
 
 /// <summary>
@@ -19,23 +23,23 @@ namespace Occt;
 /// Resource files (open question 26, decision 1023): OCCT finds the file <c>name</c> in the directories the environment
 /// variables <c>CSF_nameDefaults</c> and <c>CSF_nameUserDefaults</c> name. The port reads no environment variable:
 /// without directories it loads OCCT's own resource file of that name, compiled in
-/// (<see cref="Resource_Manager.EmbeddedDefaults"/>: <c>IGES</c>, <c>STEP</c>) or nothing; files are read only from
+/// (<see cref="Manager.EmbeddedDefaults"/>: <c>IGES</c>, <c>STEP</c>) or nothing; files are read only from
 /// the directories the caller gives (the optional arguments, which OCCT doesn't have). The process-wide cache of the
 /// last file loaded (OCCT's, behind a static mutex) is kept: it is reloaded when the name, the directories or the files'
 /// modification times change, and each context gets its own copy.
 /// </para>
 /// <para>A working object (decision 21).</para>
 /// </remarks>
-public class ShapeProcess_Context : Standard_Transient
+public class ShapeProcess_Context : Transient
 {
-    private Resource_Manager? myRC;
+    private Manager? myRC;
     private NCollection_Sequence<string>? myScope;
-    private Message_Messenger myMessenger;
+    private Messenger myMessenger;
     private int myTraceLev;
 
     // The process-wide cache of LoadResourceManager (OCCT's statics, behind its static mutex)
     private static readonly Lock THE_SHAPE_PROCESS_MUTEX = new();
-    private static Resource_Manager? sRC;
+    private static Manager? sRC;
     private static long sMtime, sUMtime;
     private static string sName = "";
     private static string sPath = "", sUPath = ""; // OCCT.NET: the files, part of the name (decision 1023)
@@ -43,7 +47,7 @@ public class ShapeProcess_Context : Standard_Transient
     /// <summary>Creates an empty context (no resource manager), trace level 1.</summary>
     public ShapeProcess_Context()
     {
-        myMessenger = Message.DefaultMessenger();
+        myMessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         myTraceLev = 1;
     }
 
@@ -55,7 +59,7 @@ public class ShapeProcess_Context : Standard_Transient
                                 string? theUserDefaultsDirectory = null)
     {
         Init(file, scope, theDefaultsDirectory, theUserDefaultsDirectory);
-        myMessenger = Message.DefaultMessenger();
+        myMessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         myTraceLev = 1;
     }
 
@@ -74,7 +78,7 @@ public class ShapeProcess_Context : Standard_Transient
         }
         else
         {
-            myRC = new Resource_Manager();
+            myRC = new Manager();
         }
         if (!string.IsNullOrEmpty(scope))
         {
@@ -88,7 +92,7 @@ public class ShapeProcess_Context : Standard_Transient
     /// process-wide cached one, loaded again only if the name, the directories or the files' modification times
     /// changed.
     /// </summary>
-    public Resource_Manager LoadResourceManager(string name, string? theDefaultsDirectory = null,
+    public Manager LoadResourceManager(string name, string? theDefaultsDirectory = null,
                                                 string? theUserDefaultsDirectory = null)
     {
         // Mutex is needed because we are initializing and changing static variables here, so
@@ -98,8 +102,8 @@ public class ShapeProcess_Context : Standard_Transient
             // Optimisation of loading resource file: file is load only once
             // and reloaded only if file date has changed
             long aMtime = 0, aUMtime = 0;
-            string aPath = string.IsNullOrEmpty(theDefaultsDirectory) ? "" : Resource_Manager.ResourcePath(theDefaultsDirectory, name);
-            string aUserPath = string.IsNullOrEmpty(theUserDefaultsDirectory) ? "" : Resource_Manager.ResourcePath(theUserDefaultsDirectory, name);
+            string aPath = string.IsNullOrEmpty(theDefaultsDirectory) ? "" : Manager.ResourcePath(theDefaultsDirectory, name);
+            string aUserPath = string.IsNullOrEmpty(theUserDefaultsDirectory) ? "" : Manager.ResourcePath(theUserDefaultsDirectory, name);
             if (aPath.Length != 0)
             {
                 aMtime = ModificationTime(aPath);
@@ -138,8 +142,8 @@ public class ShapeProcess_Context : Standard_Transient
             {
                 // OCCT_DEBUG: an info message on reloading, left out
                 sRC = aPath.Length == 0 && aUserPath.Length == 0
-                    ? new Resource_Manager(name)
-                    : new Resource_Manager(name, aPath.Length == 0 ? null : theDefaultsDirectory, aUserPath.Length == 0 ? null : theUserDefaultsDirectory);
+                    ? new Manager(name)
+                    : new Manager(name, aPath.Length == 0 ? null : theDefaultsDirectory, aUserPath.Length == 0 ? null : theUserDefaultsDirectory);
                 if (!isFileModified)
                 {
                     sName = name;
@@ -152,7 +156,7 @@ public class ShapeProcess_Context : Standard_Transient
             // Creating copy of sRC for thread safety of Resource_Manager variables
             // We should return copy because calling of Resource_Manager::SetResource() for one object
             // in multiple threads causes race condition
-            return new Resource_Manager(sRC);
+            return new Manager(sRC);
         }
     }
 
@@ -188,7 +192,7 @@ public class ShapeProcess_Context : Standard_Transient
     }
 
     /// <summary>The resource manager (null for a context made empty).</summary>
-    public Resource_Manager? ResourceManager() => myRC;
+    public Manager? ResourceManager() => myRC;
 
     /// <summary>Enters the scope <paramref name="scope"/>, nested in the current one.</summary>
     public void SetScope(string scope)
@@ -340,7 +344,7 @@ public class ShapeProcess_Context : Standard_Transient
     {
         if (theString.Length == 0)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::Value : parameter theWhere");
+            throw new OutOfRangeException("TCollection_AsciiString::Value : parameter theWhere");
         }
         return theString[0];
     }
@@ -360,7 +364,7 @@ public class ShapeProcess_Context : Standard_Transient
             val = myRC.Integer(MakeName(myScope, param)) != 0;
             return true;
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             // OCCT_DEBUG: the exception printed, left out
         }
@@ -399,7 +403,7 @@ public class ShapeProcess_Context : Standard_Transient
         {
             return myRC.Value(MakeName(myScope, param));
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             // OCCT_DEBUG: the exception printed, left out
         }
@@ -407,11 +411,11 @@ public class ShapeProcess_Context : Standard_Transient
     }
 
     /// <summary>Sets the messenger for the messages (null: the default messenger).</summary>
-    public void SetMessenger(Message_Messenger? messenger)
+    public void SetMessenger(Messenger? messenger)
     {
         if (messenger is null)
         {
-            myMessenger = Message.DefaultMessenger();
+            myMessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         }
         else
         {
@@ -420,7 +424,7 @@ public class ShapeProcess_Context : Standard_Transient
     }
 
     /// <summary>The messenger used for the messages.</summary>
-    public Message_Messenger Messenger() => myMessenger;
+    public Messenger Messenger() => myMessenger;
 
     /// <summary>
     /// Sets the trace level for the messages: 0 none, 1 errors (the default), 2 errors and warnings, 3 all.

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -34,7 +36,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
     /// Bounds empty entities to records, works with the Protocol (in fact its GeneralLib) recorded in the Library.
     /// Called by Prepare (which may not be called if Prepare with a Recognizer is called).
     /// </summary>
-    public override bool Recognize(int num, ref Interface_Check? ach, ref Standard_Transient? ent)
+    public override bool Recognize(int num, ref Interface_Check? ach, ref Transient? ent)
     {
         // Recognizer: It ensures the Recognition (-> Restrictive list of types)
         // If a specific recognizer is available, use it for type recognition
@@ -77,9 +79,9 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
                 stepdat.SetEntityNumbers(optim);
                 SetEntities();
             }
-            catch (Standard_Failure anException)
+            catch (FailureException anException)
             {
-                using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+                using global::Kerf.Engine.Foundation.Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append(" Exception Raised during Preparation :\n");
                 sout.Append(anException.Message);
                 sout.Append("\n Now, trying to continue, but with presomption of failure\n");
@@ -108,7 +110,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
         StepData_StepReaderData stepdat = Data() as StepData_StepReaderData;
         while ((i = stepdat.FindNextHeaderRecord(i)) != 0)
         {
-            Standard_Transient ent = null;
+            Transient ent = null;
             // A Recognizer was provided: it sets a restrictive list of recognized types
             if (reco is not null)
             {
@@ -144,7 +146,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
     /// <summary>Fills model's header; that is, gives to it Header entities and commands their loading. Also fills StepModel's Global Check from StepReaderData's GlobalCheck.</summary>
     public override void BeginRead(Interface_InterfaceModel? amodel)
     {
-        using Message_Messenger.StreamBuffer sout = Message.SendTrace();
+        using global::Kerf.Engine.Foundation.Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendTrace();
 
         StepData_StepModel model = amodel as StepData_StepModel;
         StepData_StepReaderData stepdat = Data() as StepData_StepReaderData;
@@ -154,7 +156,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
         int i = 0;
         while ((i = stepdat.FindNextHeaderRecord(i)) != 0)
         {
-            Standard_Transient ent = stepdat.BoundEntity(i);
+            Transient ent = stepdat.BoundEntity(i);
             Interface_Check ach = new Interface_Check(ent);
             AnalyseRecord(i, ent, ref ach);
             if (ent is StepData_UndefinedEntity)
@@ -175,7 +177,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
                 sout.Append(nbmess).Append(" Warnings on Reading Header Entity N0.").Append(i).Append(":");
                 if (ent is not null)
                 {
-                    sout.Append(ent.DynamicType().Name).Append('\n');
+                    sout.Append(ent.DynamicTypeName()).Append('\n');
                 }
                 for (int nf = 1; nf <= nbmess; nf++)
                 {
@@ -188,7 +190,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
                 sout.Append(" Fails on Reading Header Entity N0.").Append(i).Append(":");
                 if (ent is not null)
                 {
-                    sout.Append(ent.DynamicType().Name).Append('\n');
+                    sout.Append(ent.DynamicTypeName()).Append('\n');
                 }
                 for (int nf = 1; nf <= nbmess; nf++)
                 {
@@ -202,7 +204,7 @@ public class StepData_StepReaderTool : Interface_FileReaderTool
     // Returns true if analysis was successful (no failures)
 
     /// <summary>Fills an entity, given record no; works by using a ReaderLib to load each entity, which must be a Transient. Actually, returned value is True if no fail, False else.</summary>
-    public override bool AnalyseRecord(int num, Standard_Transient? anent, ref Interface_Check? acheck)
+    public override bool AnalyseRecord(int num, Transient? anent, ref Interface_Check? acheck)
     {
         StepData_StepReaderData stepdat = Data() as StepData_StepReaderData;
         // Try to find appropriate reader module for this entity type

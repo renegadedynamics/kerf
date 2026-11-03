@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace OcctNet.DataExchange.Tests.Interface;
 
 /// <summary>
@@ -7,7 +9,7 @@ namespace OcctNet.DataExchange.Tests.Interface;
 /// model, and a general module registered once in <see cref="Interface_GeneralLib"/>'s global list. Before StepData
 /// exists (unit 8B), this is the only way to drive the graph, share, check and copy tools.
 /// </summary>
-internal sealed class ToyEntity(string theName) : Standard_Transient
+internal sealed class ToyEntity(string theName) : Transient
 {
     public string Name = theName;
     public readonly List<ToyEntity> Refs = [];
@@ -24,7 +26,7 @@ internal sealed class ToyEntity(string theName) : Standard_Transient
     public override string ToString() => Name;
 }
 
-internal sealed class ToyUnknown : Standard_Transient
+internal sealed class ToyUnknown : Transient
 {
 }
 
@@ -41,14 +43,14 @@ internal sealed class ToyProtocol : Interface_Protocol
 
     public override bool IsSuitableModel(Interface_InterfaceModel? model) => model is ToyModel;
 
-    public override Standard_Transient? UnknownEntity() => new ToyUnknown();
+    public override Transient? UnknownEntity() => new ToyUnknown();
 
-    public override bool IsUnknownEntity(Standard_Transient? ent) => ent is ToyUnknown;
+    public override bool IsUnknownEntity(Transient? ent) => ent is ToyUnknown;
 }
 
 internal sealed class ToyGeneralModule : Interface_GeneralModule
 {
-    public override void FillSharedCase(int CN, Standard_Transient? ent, Interface_EntityIterator iter)
+    public override void FillSharedCase(int CN, Transient? ent, Interface_EntityIterator iter)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -59,7 +61,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override void ListImpliedCase(int CN, Standard_Transient? ent, Interface_EntityIterator iter)
+    public override void ListImpliedCase(int CN, Transient? ent, Interface_EntityIterator iter)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -70,7 +72,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override void CheckCase(int CN, Standard_Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
+    public override void CheckCase(int CN, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -85,7 +87,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override bool NewVoid(int CN, out Standard_Transient? entto)
+    public override bool NewVoid(int CN, out Transient? entto)
     {
         entto = CN switch
         {
@@ -96,7 +98,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         return entto is not null;
     }
 
-    public override void CopyCase(int CN, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC)
+    public override void CopyCase(int CN, Transient? entfrom, Transient? entto, Interface_CopyTool TC)
     {
         if (entfrom is ToyEntity aFrom && entto is ToyEntity aTo)
         {
@@ -108,10 +110,10 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override int CategoryNumber(int CN, Standard_Transient? ent, Interface_ShareTool shares) =>
+    public override int CategoryNumber(int CN, Transient? ent, Interface_ShareTool shares) =>
         CN == 1 ? Interface_Category.Number("Structure") : 0;
 
-    public override TCollection_HAsciiString? Name(int CN, Standard_Transient? ent, Interface_ShareTool shares) =>
+    public override TCollection_HAsciiString? Name(int CN, Transient? ent, Interface_ShareTool shares) =>
         ent is ToyEntity anEnt ? new TCollection_HAsciiString(anEnt.Name) : null;
 }
 
@@ -133,9 +135,9 @@ internal sealed class ToyModel : Interface_InterfaceModel
 
     public override void DumpHeader(TextWriter S, int level = 0) => S.Write("toy header");
 
-    public override void PrintLabel(Standard_Transient? ent, TextWriter S) => S.Write(StringLabel(ent)?.ToCString());
+    public override void PrintLabel(Transient? ent, TextWriter S) => S.Write(StringLabel(ent)?.ToCString());
 
-    public override TCollection_HAsciiString? StringLabel(Standard_Transient? ent) =>
+    public override TCollection_HAsciiString? StringLabel(Transient? ent) =>
         ent is ToyEntity anEnt ? new TCollection_HAsciiString("#" + anEnt.Name) : new TCollection_HAsciiString("?");
 }
 

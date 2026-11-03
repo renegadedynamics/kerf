@@ -5,6 +5,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,19 +28,19 @@ namespace Occt;
 /// <see cref="SetUV"/> grow it, and the other edits make it unknown again.
 /// </para>
 /// </remarks>
-public class IntSurf_LineOn2S : Standard_Transient
+public class IntSurf_LineOn2S : Transient
 {
     private readonly NCollection_Sequence<IntSurf_PntOn2S> mySeq;
-    private Bnd_Box2d myBuv1;
-    private Bnd_Box2d myBuv2;
-    private Bnd_Box myBxyz;
+    private Box2d myBuv1;
+    private Box2d myBuv2;
+    private Box myBxyz;
 
     public IntSurf_LineOn2S()
     {
         mySeq = new NCollection_Sequence<IntSurf_PntOn2S>();
-        myBuv1 = new Bnd_Box2d();
-        myBuv2 = new Bnd_Box2d();
-        myBxyz = new Bnd_Box();
+        myBuv1 = new Box2d();
+        myBuv2 = new Box2d();
+        myBxyz = new Box();
         myBuv1.SetWhole();
         myBuv2.SetWhole();
         myBxyz.SetWhole();
@@ -44,15 +50,15 @@ public class IntSurf_LineOn2S : Standard_Transient
     public void Add(in IntSurf_PntOn2S P)
     {
         mySeq.Append(P);
-        if (!myBxyz.IsWhole())
+        if (!myBxyz.IsWhole)
         {
             myBxyz.Add(P.Value());
         }
-        if (!myBuv1.IsWhole())
+        if (!myBuv1.IsWhole)
         {
             myBuv1.Add(P.ValueOnSurface(true));
         }
-        if (!myBuv2.IsWhole())
+        if (!myBuv2.IsWhole)
         {
             myBuv2.Add(P.ValueOnSurface(false));
         }
@@ -92,7 +98,7 @@ public class IntSurf_LineOn2S : Standard_Transient
     }
 
     /// <summary>Sets the 3D point of the point of range <paramref name="Index"/>.</summary>
-    public void SetPoint(int Index, in gp_Pnt thePnt)
+    public void SetPoint(int Index, in Point3D thePnt)
     {
         mySeq[Index].SetValue(thePnt);
         myBuv1.SetWhole();
@@ -105,13 +111,13 @@ public class IntSurf_LineOn2S : Standard_Transient
     {
         mySeq[Index].SetValue(OnFirst, U, V);
 
-        if (OnFirst && !myBuv1.IsWhole())
+        if (OnFirst && !myBuv1.IsWhole)
         {
-            myBuv1.Add(new gp_Pnt2d(U, V));
+            myBuv1.Add(new Point2D(U, V));
         }
-        else if (!OnFirst && !myBuv2.IsWhole())
+        else if (!OnFirst && !myBuv2.IsWhole)
         {
-            myBuv2.Add(new gp_Pnt2d(U, V));
+            myBuv2.Add(new Point2D(U, V));
         }
     }
 
@@ -135,17 +141,17 @@ public class IntSurf_LineOn2S : Standard_Transient
             mySeq.InsertBefore(index, P);
         }
 
-        if (!myBxyz.IsWhole())
+        if (!myBxyz.IsWhole)
         {
             myBxyz.Add(P.Value());
         }
 
-        if (!myBuv1.IsWhole())
+        if (!myBuv1.IsWhole)
         {
             myBuv1.Add(P.ValueOnSurface(true));
         }
 
-        if (!myBuv2.IsWhole())
+        if (!myBuv2.IsWhole)
         {
             myBuv2.Add(P.ValueOnSurface(false));
         }
@@ -160,13 +166,13 @@ public class IntSurf_LineOn2S : Standard_Transient
     }
 
     /// <summary>True if <paramref name="theP"/> is out of the box of the parameters on the first surface.</summary>
-    public bool IsOutSurf1Box(in gp_Pnt2d theP)
+    public bool IsOutSurf1Box(in Point2D theP)
     {
         if (NbPoints() == 0)
         {
             return false;
         }
-        if (myBuv1.IsWhole())
+        if (myBuv1.IsWhole)
         {
             int n = NbPoints();
             double pu1, pu2, pv1, pv2;
@@ -174,7 +180,7 @@ public class IntSurf_LineOn2S : Standard_Transient
             for (int i = 1; i <= n; i++)
             {
                 mySeq[i].Parameters(out pu1, out pv1, out pu2, out pv2);
-                myBuv1.Add(new gp_Pnt2d(pu1, pv1));
+                myBuv1.Add(new Point2D(pu1, pv1));
             }
             myBuv1.Get(out pu1, out pv1, out pu2, out pv2);
             pu2 -= pu1;
@@ -193,13 +199,13 @@ public class IntSurf_LineOn2S : Standard_Transient
     }
 
     /// <summary>True if <paramref name="theP"/> is out of the box of the parameters on the second surface.</summary>
-    public bool IsOutSurf2Box(in gp_Pnt2d theP)
+    public bool IsOutSurf2Box(in Point2D theP)
     {
         if (NbPoints() == 0)
         {
             return false;
         }
-        if (myBuv2.IsWhole())
+        if (myBuv2.IsWhole)
         {
             int n = NbPoints();
             double pu1, pu2, pv1, pv2;
@@ -207,7 +213,7 @@ public class IntSurf_LineOn2S : Standard_Transient
             for (int i = 1; i <= n; i++)
             {
                 mySeq[i].Parameters(out pu1, out pv1, out pu2, out pv2);
-                myBuv2.Add(new gp_Pnt2d(pu2, pv2));
+                myBuv2.Add(new Point2D(pu2, pv2));
             }
             myBuv2.Get(out pu1, out pv1, out pu2, out pv2);
             pu2 -= pu1;
@@ -226,19 +232,19 @@ public class IntSurf_LineOn2S : Standard_Transient
     }
 
     /// <summary>True if <paramref name="theP"/> is out of the box of the 3D points.</summary>
-    public bool IsOutBox(in gp_Pnt theP)
+    public bool IsOutBox(in Point3D theP)
     {
         if (NbPoints() == 0)
         {
             return false;
         }
-        if (myBxyz.IsWhole())
+        if (myBxyz.IsWhole)
         {
             int n = NbPoints();
             myBxyz.SetVoid();
             for (int i = 1; i <= n; i++)
             {
-                gp_Pnt P = mySeq[i].Value();
+                Point3D P = mySeq[i].Value();
                 myBxyz.Add(P);
             }
             myBxyz.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);

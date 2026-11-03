@@ -5,13 +5,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// An actor of a <see cref="Transfer_ProcessForTransient"/>: it recognizes starting objects and transfers them. Actors
 /// form a list (<see cref="SetNext"/>); the "Last" ones (defaults) stay at its end.
 /// </summary>
-public class Transfer_ActorOfProcessForTransient : Standard_Transient
+public class Transfer_ActorOfProcessForTransient : Transient
 {
     public Transfer_ActorOfProcessForTransient()
     {
@@ -24,7 +26,7 @@ public class Transfer_ActorOfProcessForTransient : Standard_Transient
     /// reject by returning a Null Binder (afterwards rejection), the next actor is then invoked. The provided default
     /// returns True, can be redefined.
     /// </summary>
-    public virtual bool Recognize(Standard_Transient? start)
+    public virtual bool Recognize(Transient? start)
     {
         return true;
     }
@@ -33,14 +35,14 @@ public class Transfer_ActorOfProcessForTransient : Standard_Transient
     /// Specific action of Transfer. The Result is stored in the returned Binder, or a Null Handle for "No result"
     /// (Default defined as doing nothing; should be deferred).
     /// </summary>
-    public virtual Transfer_Binder? Transferring(Standard_Transient? start, Transfer_ProcessForTransient? TP,
-                                                 Message_ProgressRange theProgress = default)
+    public virtual Transfer_Binder? Transferring(Transient? start, Transfer_ProcessForTransient? TP,
+                                                 ProgressRange theProgress = default)
     {
         return NullResult();
     }
 
     /// <summary>Prepares and Returns a Binder for a Transient Result. Returns a Null Handle if <paramref name="res"/> is itself Null.</summary>
-    public Transfer_SimpleBinderOfTransient? TransientResult(Standard_Transient? res)
+    public Transfer_SimpleBinderOfTransient? TransientResult(Transient? res)
     {
         Transfer_SimpleBinderOfTransient? binder = null;
         if (res is null)

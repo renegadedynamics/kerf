@@ -14,7 +14,7 @@ file static class MathInteg_TestConstants
 }
 
 // Constant function: f(x) = 5
-file sealed class ConstantFunc : MathUtils.IScalarFunction
+file sealed class ConstantFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -24,7 +24,7 @@ file sealed class ConstantFunc : MathUtils.IScalarFunction
 }
 
 // Linear function: f(x) = 2x + 1
-file sealed class LinearFunc : MathUtils.IScalarFunction
+file sealed class LinearFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -34,7 +34,7 @@ file sealed class LinearFunc : MathUtils.IScalarFunction
 }
 
 // Quadratic function: f(x) = x^2
-file sealed class QuadraticFunc : MathUtils.IScalarFunction
+file sealed class QuadraticFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -44,7 +44,7 @@ file sealed class QuadraticFunc : MathUtils.IScalarFunction
 }
 
 // Sine function: f(x) = sin(x)
-file sealed class SinFunc : MathUtils.IScalarFunction
+file sealed class SinFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -54,7 +54,7 @@ file sealed class SinFunc : MathUtils.IScalarFunction
 }
 
 // Cosine function: f(x) = cos(x)
-file sealed class CosFunc : MathUtils.IScalarFunction
+file sealed class CosFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -64,7 +64,7 @@ file sealed class CosFunc : MathUtils.IScalarFunction
 }
 
 // Exponential function: f(x) = e^x
-file sealed class ExpFunc : MathUtils.IScalarFunction
+file sealed class ExpFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -74,7 +74,7 @@ file sealed class ExpFunc : MathUtils.IScalarFunction
 }
 
 // Polynomial: f(x) = x^5 - 3x^3 + 2x
-file sealed class PolynomialFunc : MathUtils.IScalarFunction
+file sealed class PolynomialFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -86,7 +86,7 @@ file sealed class PolynomialFunc : MathUtils.IScalarFunction
 }
 
 // Gaussian function: f(x) = e^(-x^2)
-file sealed class GaussianFunc : MathUtils.IScalarFunction
+file sealed class GaussianFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -96,7 +96,7 @@ file sealed class GaussianFunc : MathUtils.IScalarFunction
 }
 
 // Reciprocal function: f(x) = 1/x
-file sealed class ReciprocalFunc : MathUtils.IScalarFunction
+file sealed class ReciprocalFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -106,7 +106,7 @@ file sealed class ReciprocalFunc : MathUtils.IScalarFunction
 }
 
 // Oscillatory function: f(x) = sin(10x)
-file sealed class OscillatoryFunc : MathUtils.IScalarFunction
+file sealed class OscillatoryFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -116,7 +116,7 @@ file sealed class OscillatoryFunc : MathUtils.IScalarFunction
 }
 
 // Square root: f(x) = sqrt(x)
-file sealed class SqrtFunc : MathUtils.IScalarFunction
+file sealed class SqrtFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -126,7 +126,7 @@ file sealed class SqrtFunc : MathUtils.IScalarFunction
 }
 
 // f(x) = 1/(1+x^2), integral from -inf to inf = PI
-file sealed class LorentzianFunc : MathUtils.IScalarFunction
+file sealed class LorentzianFunc : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
 {
     public bool Value(double theX, out double theF)
     {
@@ -145,8 +145,8 @@ public class MathInteg_GaussTest
     {
         ConstantFunc aFunc = new();
         // Integral of 5 from 0 to 2 = 10
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 2.0, 3);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 2.0, 3);
+        Assert.True(aResult.IsDone);
         Assert.Equal(10.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -155,8 +155,8 @@ public class MathInteg_GaussTest
     {
         LinearFunc aFunc = new();
         // Integral of (2x+1) from 0 to 3 = [x^2 + x]_0^3 = 9 + 3 = 12
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 3.0, 3);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 3.0, 3);
+        Assert.True(aResult.IsDone);
         Assert.Equal(12.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -164,8 +164,8 @@ public class MathInteg_GaussTest
     public void QuadraticFunction()
     {
         QuadraticFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 3);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 3);
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -173,8 +173,8 @@ public class MathInteg_GaussTest
     public void SineFunction()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -182,8 +182,8 @@ public class MathInteg_GaussTest
     public void CosineFunction()
     {
         CosFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI / 2.0, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI / 2.0, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -191,8 +191,8 @@ public class MathInteg_GaussTest
     public void ExponentialFunction()
     {
         ExpFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(Math.Exp(1.0) - 1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -200,8 +200,8 @@ public class MathInteg_GaussTest
     public void ReciprocalFunction()
     {
         ReciprocalFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 1.0, Math.Exp(1.0), 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 1.0, Math.Exp(1.0), 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -209,8 +209,8 @@ public class MathInteg_GaussTest
     public void Order3()
     {
         QuadraticFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 3);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 3);
+        Assert.True(aResult.IsDone);
         Assert.Equal(3, aResult.NbPoints);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -219,8 +219,8 @@ public class MathInteg_GaussTest
     public void Order5()
     {
         QuadraticFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 5);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 5);
+        Assert.True(aResult.IsDone);
         Assert.Equal(5, aResult.NbPoints);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -229,8 +229,8 @@ public class MathInteg_GaussTest
     public void Order7()
     {
         QuadraticFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 1.0, 7);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 1.0, 7);
+        Assert.True(aResult.IsDone);
         Assert.Equal(7, aResult.NbPoints);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -239,8 +239,8 @@ public class MathInteg_GaussTest
     public void Order15()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(15, aResult.NbPoints);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -249,8 +249,8 @@ public class MathInteg_GaussTest
     public void Order21()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 21);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 21);
+        Assert.True(aResult.IsDone);
         Assert.Equal(21, aResult.NbPoints);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -259,8 +259,8 @@ public class MathInteg_GaussTest
     public void Order9()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 9);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 9);
+        Assert.True(aResult.IsDone);
         Assert.Equal(9, aResult.NbPoints);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -269,8 +269,8 @@ public class MathInteg_GaussTest
     public void Order61()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 61);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 61);
+        Assert.True(aResult.IsDone);
         Assert.Equal(61, aResult.NbPoints);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -279,8 +279,8 @@ public class MathInteg_GaussTest
     public void InvalidOrderNonPositive()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 0);
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 0);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 
     [Fact]
@@ -289,8 +289,8 @@ public class MathInteg_GaussTest
         // 3-point Gauss should be exact for polynomials up to degree 5
         PolynomialFunc aFunc = new();
         // Integral of (x^5 - 3x^3 + 2x) from -1 to 1 = 0 (odd function)
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, -1.0, 1.0, 3);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, -1.0, 1.0, 3);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -299,8 +299,8 @@ public class MathInteg_GaussTest
     {
         // 7-point Gauss should be exact for polynomials up to degree 13
         PolynomialFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, -1.0, 1.0, 7);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, -1.0, 1.0, 7);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 }
@@ -314,11 +314,11 @@ public class MathInteg_GaussAdaptiveTest
     public void SineFunction()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegConfig aConfig = new();
         aConfig.Tolerance = 1.0e-12;
 
-        MathUtils.IntegResult aResult = MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, 1.0e-11);
     }
 
@@ -326,11 +326,11 @@ public class MathInteg_GaussAdaptiveTest
     public void ExponentialFunction()
     {
         ExpFunc aFunc = new();
-        MathUtils.IntegConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegConfig aConfig = new();
         aConfig.Tolerance = 1.0e-12;
 
-        MathUtils.IntegResult aResult = MathInteg.GaussAdaptive(aFunc, 0.0, 1.0, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussAdaptive(aFunc, 0.0, 1.0, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.Equal(Math.Exp(1.0) - 1.0, aResult.Value!.Value, 1.0e-11);
     }
 
@@ -338,13 +338,13 @@ public class MathInteg_GaussAdaptiveTest
     public void OscillatoryFunction()
     {
         OscillatoryFunc aFunc = new();
-        MathUtils.IntegConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegConfig aConfig = new();
         aConfig.Tolerance = 1.0e-8;
         aConfig.MaxIterations = 20;
 
         // Integral of sin(10x) from 0 to PI = (1 - cos(10*PI))/10 = 0
-        MathUtils.IntegResult aResult = MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
     }
 
@@ -352,11 +352,11 @@ public class MathInteg_GaussAdaptiveTest
     public void ProvidesErrorEstimate()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegConfig aConfig = new();
         aConfig.Tolerance = 1.0e-8;
 
-        MathUtils.IntegResult aResult = MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussAdaptive(aFunc, 0.0, THE_PI, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.True(aResult.AbsoluteError.HasValue);
         Assert.True(aResult.RelativeError.HasValue);
         Assert.True(double.IsFinite(aResult.AbsoluteError!.Value));
@@ -370,14 +370,14 @@ public class MathInteg_GaussAdaptiveTest
     public void UsesConfiguredOrders()
     {
         QuadraticFunc aFunc = new();
-        MathUtils.IntegConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegConfig aConfig = new();
         aConfig.InitialOrder = 9;
         aConfig.MaxOrder = 18;
         aConfig.Tolerance = 1.0e-12;
         aConfig.MaxIterations = 2;
 
-        MathUtils.IntegResult aResult = MathInteg.GaussAdaptive(aFunc, 0.0, 1.0, aConfig);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussAdaptive(aFunc, 0.0, 1.0, aConfig);
+        Assert.True(aResult.IsDone);
         Assert.Equal(18, aResult.NbPoints);
         Assert.Equal(1.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
@@ -393,8 +393,8 @@ public class MathInteg_GaussCompositeTest
     {
         SinFunc aFunc = new();
         // 10 subintervals with 7-point Gauss each
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 10, 7);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 10, 7);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Value!.Value, THE_TOLERANCE);
         Assert.Equal(70, aResult.NbPoints); // 10 * 7
     }
@@ -403,8 +403,8 @@ public class MathInteg_GaussCompositeTest
     public void OscillatoryFunction()
     {
         OscillatoryFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 50, 7);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 50, 7);
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
     }
 
@@ -413,8 +413,8 @@ public class MathInteg_GaussCompositeTest
     {
         GaussianFunc aFunc = new();
         // Integral from -3 to 3 (approximates -inf to inf)
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, -3.0, 3.0, 50, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, -3.0, 3.0, 50, 15);
+        Assert.True(aResult.IsDone);
         // Should be close to sqrt(PI) ~= 1.7724538509
         Assert.Equal(Math.Sqrt(THE_PI), aResult.Value!.Value, 1.0e-4);
     }
@@ -423,8 +423,8 @@ public class MathInteg_GaussCompositeTest
     public void InvalidSubintervals()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 0, 7);
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, 0.0, THE_PI, 0, 7);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 }
 
@@ -438,8 +438,8 @@ public class MathInteg_BoundsTest
     {
         SinFunc aFunc = new();
         // Integral from PI to 0 should be -2
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, THE_PI, 0.0, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, THE_PI, 0.0, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(-2.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -448,8 +448,8 @@ public class MathInteg_BoundsTest
     {
         QuadraticFunc aFunc = new();
         // Integral of x^2 from -1 to 1 = 2/3
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, -1.0, 1.0, 7);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, -1.0, 1.0, 7);
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0 / 3.0, aResult.Value!.Value, THE_TOLERANCE);
     }
 
@@ -457,8 +457,8 @@ public class MathInteg_BoundsTest
     public void SmallInterval()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, 0.001, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, 0.001, 15);
+        Assert.True(aResult.IsDone);
         // sin(x) ~= x for small x, so integral ~= x^2/2 = 0.0000005
         Assert.Equal(0.0000005, aResult.Value!.Value, 1.0e-10);
     }
@@ -468,8 +468,8 @@ public class MathInteg_BoundsTest
     {
         LorentzianFunc aFunc = new();
         // Approximate with large but finite bounds
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, -100.0, 100.0, 200, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, -100.0, 100.0, 200, 15);
+        Assert.True(aResult.IsDone);
         Assert.Equal(THE_PI, aResult.Value!.Value, 0.05); // Wide tolerance for infinite integral approximation
     }
 }
@@ -481,8 +481,8 @@ public class MathInteg_SpecialTest
     {
         SqrtFunc aFunc = new();
         // Integral of sqrt(x) from 0.001 to 1, avoiding the derivative singularity at x=0
-        MathUtils.IntegResult aResult = MathInteg.GaussComposite(aFunc, 0.001, 1.0, 20, 15);
-        Assert.True(aResult.IsDone());
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.GaussComposite(aFunc, 0.001, 1.0, 20, 15);
+        Assert.True(aResult.IsDone);
         double aExpected = (2.0 / 3.0) * (1.0 - Math.Pow(0.001, 1.5));
         Assert.Equal(aExpected, aResult.Value!.Value, 1.0e-6);
     }
@@ -496,7 +496,7 @@ public class MathInteg_BoolConversionTest
     public void SuccessfulResultIsTrue()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
         Assert.True((bool)aResult);
     }
 
@@ -504,7 +504,7 @@ public class MathInteg_BoolConversionTest
     public void InvalidInputIsFalse()
     {
         SinFunc aFunc = new();
-        MathUtils.IntegResult aResult = MathInteg.Gauss(aFunc, 0.0, THE_PI, 0);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 0);
         Assert.False((bool)aResult);
     }
 }
@@ -519,13 +519,13 @@ public class MathInteg_AccuracyTest
         SinFunc aFunc = new();
         double aExact = 2.0;
 
-        MathUtils.IntegResult aResult3 = MathInteg.Gauss(aFunc, 0.0, THE_PI, 3);
-        MathUtils.IntegResult aResult7 = MathInteg.Gauss(aFunc, 0.0, THE_PI, 7);
-        MathUtils.IntegResult aResult15 = MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult3 = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 3);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult7 = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 7);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.IntegResult aResult15 = global::Kerf.Engine.Numerics.Integration.MathInteg.Gauss(aFunc, 0.0, THE_PI, 15);
 
-        Assert.True(aResult3.IsDone());
-        Assert.True(aResult7.IsDone());
-        Assert.True(aResult15.IsDone());
+        Assert.True(aResult3.IsDone);
+        Assert.True(aResult7.IsDone);
+        Assert.True(aResult15.IsDone);
 
         double aError3 = Math.Abs(aResult3.Value!.Value - aExact);
         double aError7 = Math.Abs(aResult7.Value!.Value - aExact);

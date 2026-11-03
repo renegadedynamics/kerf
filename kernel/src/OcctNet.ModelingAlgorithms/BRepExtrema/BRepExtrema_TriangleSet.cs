@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.BVH_Constants;
+using Kerf.Engine.Geometry.Bvh;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Engine.Geometry.Bvh.Constants;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -17,7 +21,7 @@ namespace Occt;
 /// OCCT, <see cref="Clear"/> (and so <see cref="Init"/>) doesn't clear the per-shape vectors, so a set initialised
 /// twice keeps the first shapes' entries in front (occt-issues.md).
 /// </remarks>
-public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3<double>>
+public class BRepExtrema_TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 {
     /// <summary>The vertex indices of the triangles (x, y, z) and their shape index (w).</summary>
     protected NCollection_LinearVector<NCollection_Vec4<int>> myTriangles = new();
@@ -39,14 +43,14 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
 
     /// <summary>An empty triangle set.</summary>
     public BRepExtrema_TriangleSet()
-        : base(new BVH_LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
+        : base(new LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         // Set default builder - linear BVH (LBVH)
     }
 
     /// <summary>A triangle set of the given shapes.</summary>
     public BRepExtrema_TriangleSet(NCollection_DynamicArray<TopoDS_Shape> theFaces)
-        : base(new BVH_LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
+        : base(new LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         // Set default builder - linear BVH (LBVH)
         Init(theFaces);
@@ -56,16 +60,16 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     public override int Size() => myTriangles.Size();
 
     /// <summary>The AABB of the given triangle.</summary>
-    public override BVH_Box<double, NCollection_Vec3<double>> Box(int theIndex)
+    public override Box<double, NCollection_Vec3<double>> Box(int theIndex)
     {
         NCollection_Vec4<int> aTriangle = myTriangles[theIndex];
 
-        NCollection_Vec3<double> aMinPnt = myVertexArray[aTriangle.x()].cwiseMin(
-            myVertexArray[aTriangle.y()].cwiseMin(myVertexArray[aTriangle.z()]));
-        NCollection_Vec3<double> aMaxPnt = myVertexArray[aTriangle.x()].cwiseMax(
-            myVertexArray[aTriangle.y()].cwiseMax(myVertexArray[aTriangle.z()]));
+        NCollection_Vec3<double> aMinPnt = myVertexArray[aTriangle.X()].CwiseMin(
+            myVertexArray[aTriangle.Y()].CwiseMin(myVertexArray[aTriangle.Z()]));
+        NCollection_Vec3<double> aMaxPnt = myVertexArray[aTriangle.X()].CwiseMax(
+            myVertexArray[aTriangle.Y()].CwiseMax(myVertexArray[aTriangle.Z()]));
 
-        return new BVH_Box<double, NCollection_Vec3<double>>(aMinPnt, aMaxPnt);
+        return new Box<double, NCollection_Vec3<double>>(aMinPnt, aMaxPnt);
     }
 
     /// <summary>The centroid of the given triangle along the axis.</summary>
@@ -76,20 +80,20 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
         if (theAxis == 0)
         {
             return (1.0 / 3.0)
-                   * (myVertexArray[aTriangle.x()].x() + myVertexArray[aTriangle.y()].x()
-                      + myVertexArray[aTriangle.z()].x());
+                   * (myVertexArray[aTriangle.X()].X() + myVertexArray[aTriangle.Y()].X()
+                      + myVertexArray[aTriangle.Z()].X());
         }
         else if (theAxis == 1)
         {
             return (1.0 / 3.0)
-                   * (myVertexArray[aTriangle.x()].y() + myVertexArray[aTriangle.y()].y()
-                      + myVertexArray[aTriangle.z()].y());
+                   * (myVertexArray[aTriangle.X()].Y() + myVertexArray[aTriangle.Y()].Y()
+                      + myVertexArray[aTriangle.Z()].Y());
         }
         else
         {
             return (1.0 / 3.0)
-                   * (myVertexArray[aTriangle.x()].z() + myVertexArray[aTriangle.y()].z()
-                      + myVertexArray[aTriangle.z()].z());
+                   * (myVertexArray[aTriangle.X()].Z() + myVertexArray[aTriangle.Y()].Z()
+                      + myVertexArray[aTriangle.Z()].Z());
         }
     }
 
@@ -101,7 +105,7 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     }
 
     /// <summary>The shape index of the given triangle.</summary>
-    public int GetFaceID(int theIndex) => myTriangles[theIndex].w();
+    public int GetFaceID(int theIndex) => myTriangles[theIndex].W();
 
     /// <summary>The shape index of the given vertex.</summary>
     public int GetShapeIDOfVtx(int theIndex) => myShapeIdxOfVtxVec.Value(theIndex);
@@ -147,9 +151,9 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     {
         NCollection_Vec4<int> aTriangle = myTriangles[theIndex];
 
-        theVertex1 = myVertexArray[aTriangle.x()];
-        theVertex2 = myVertexArray[aTriangle.y()];
-        theVertex3 = myVertexArray[aTriangle.z()];
+        theVertex1 = myVertexArray[aTriangle.X()];
+        theVertex2 = myVertexArray[aTriangle.Y()];
+        theVertex3 = myVertexArray[aTriangle.Z()];
     }
 
     /// <summary>The vertex indices of the given triangle, in a new array indexed from 0.</summary>
@@ -157,9 +161,9 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
     {
         NCollection_Vec4<int> aTriangle = myTriangles[theIndex];
         theVtxIndices = new NCollection_Array1<int>(0, 2);
-        theVtxIndices.SetValue(0, aTriangle.x());
-        theVtxIndices.SetValue(1, aTriangle.y());
-        theVtxIndices.SetValue(2, aTriangle.z());
+        theVtxIndices.SetValue(0, aTriangle.X());
+        theVtxIndices.SetValue(1, aTriangle.Y());
+        theVtxIndices.SetValue(2, aTriangle.Z());
     }
 
     /// <summary>Clears the triangles and the vertices.</summary>
@@ -212,7 +216,7 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
 
     private bool initFace(in TopoDS_Face theFace, int theIndex)
     {
-        Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(theFace, out TopLoc_Location aLocation);
+        Triangulation? aTriangulation = BRep_Tool.Triangulation(theFace, out Placement aLocation);
         if (aTriangulation is null)
         {
             return false;
@@ -222,7 +226,7 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
 
         initNodes(aTriangulation.MapNodeArray()!.ChangeArray1(), aLocation.Transformation(), theIndex);
 
-        for (int aTriIdx = 1; aTriIdx <= aTriangulation.NbTriangles(); ++aTriIdx)
+        for (int aTriIdx = 1; aTriIdx <= aTriangulation.TriangleCount; ++aTriIdx)
         {
             aTriangulation.Triangle(aTriIdx).Get(out int aVertex1, out int aVertex2, out int aVertex3);
 
@@ -232,14 +236,14 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
                                                          theIndex));
         }
 
-        myNumTrgInShapeVec.SetValue(theIndex, aTriangulation.NbTriangles());
+        myNumTrgInShapeVec.SetValue(theIndex, aTriangulation.TriangleCount);
 
         return true;
     }
 
     private bool initEdge(in TopoDS_Edge theEdge, int theIndex)
     {
-        Poly_Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out TopLoc_Location aLocation);
+        Polygon3D? aPolygon = BRep_Tool.Polygon3D(theEdge, out Placement aLocation);
         if (aPolygon is null)
         {
             return false;
@@ -249,7 +253,7 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
 
         initNodes(aPolygon.Nodes(), aLocation.Transformation(), theIndex);
 
-        for (int aVertIdx = 1; aVertIdx < aPolygon.NbNodes(); ++aVertIdx)
+        for (int aVertIdx = 1; aVertIdx < aPolygon.NodeCount; ++aVertIdx)
         {
             // segment as degenerate triangle
             myTriangles.Append(new NCollection_Vec4<int>(aVertIdx + aVertOffset,
@@ -260,11 +264,11 @@ public class BRepExtrema_TriangleSet : BVH_PrimitiveSet<double, NCollection_Vec3
         return true;
     }
 
-    private void initNodes(NCollection_Array1<gp_Pnt> theNodes, in gp_Trsf theTrsf, int theIndex)
+    private void initNodes(NCollection_Array1<Point3D> theNodes, in Transform3D theTrsf, int theIndex)
     {
         for (int aVertIdx = 1; aVertIdx <= theNodes.Length(); ++aVertIdx)
         {
-            gp_Pnt aVertex = theNodes.Value(aVertIdx);
+            Point3D aVertex = theNodes.Value(aVertIdx);
 
             aVertex.Transform(theTrsf);
 

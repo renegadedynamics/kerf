@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 using static Occt.ShapeExtend_Status;
 
@@ -273,7 +275,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         var theTool = new ShapeUpgrade_SplitCurve3dContinuity();
         theTool.Init(GC);
         theTool.SetTolerance(Tol);
-        theTool.SetCriterion(GeomAbs_Shape.GeomAbs_C1);
+        theTool.SetCriterion(Continuity.C1);
         if (Split == 1)
         {
             var spval = new NCollection_HSequence<double>();
@@ -316,7 +318,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         var theTool = new ShapeUpgrade_SplitCurve2dContinuity();
         theTool.Init(GC);
         theTool.SetTolerance(Tol);
-        theTool.SetCriterion(GeomAbs_Shape.GeomAbs_C1);
+        theTool.SetCriterion(Continuity.C1);
         if (Split == 1)
         {
             var spval = new NCollection_HSequence<double>();
@@ -354,7 +356,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         // OCCT reads a[4] even when it isn't given (argv[argc] is null); Draw-lite takes no split values then
         int Split = n > 4 ? theDI.Atoi(a[4]) : 0;
         theTool.SetTolerance(Tol);
-        theTool.SetCriterion(GeomAbs_Shape.GeomAbs_C1);
+        theTool.SetCriterion(Continuity.C1);
         Geom_Surface? GS = DrawTrSurf.GetSurface(theDI, a[2]);
         // Case of single surface
         di.Append("single surf\n");
@@ -443,9 +445,9 @@ internal static partial class SWDrawShapeUpgradeCommands
         {
             return 1;
         }
-        var point = new gp_Pnt();
+        var point = new Point3D();
         DrawTrSurf.GetPoint(theDI, argv[4], ref point);
-        var dir = new gp_Dir(point.XYZ());
+        var dir = new Direction3D(point.XYZ());
         var offcrv = new Geom_OffsetCurve(GC, Offset, dir);
         DrawTrSurf.Set(theDI, argv[1], offcrv);
         return 0;
@@ -477,7 +479,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         else if (Uf > Umin)
         {
-            if (Precision.IsInfinite(Umin))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Umin))
             {
                 Uf -= 100;
             }
@@ -492,7 +494,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         else if (Vf > Vmin)
         {
-            if (Precision.IsInfinite(Vmin))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Vmin))
             {
                 Vf -= 100;
             }
@@ -507,7 +509,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         else if (Ul < Umax)
         {
-            if (Precision.IsInfinite(Umax))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Umax))
             {
                 Ul += 100;
             }
@@ -522,7 +524,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         else if (Vl < Vmax)
         {
-            if (Precision.IsInfinite(Vmax))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Vmax))
             {
                 Vl += 100;
             }
@@ -551,13 +553,13 @@ internal static partial class SWDrawShapeUpgradeCommands
             {
                 double val = theDI.Atof(argv[i]);
                 NCollection_Sequence<double> vals = (byV ? vval : uval);
-                if (vals.Length() > 0 && val - vals.Last() < Precision.PConfusion())
+                if (vals.Length() > 0 && val - vals.Last() < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     di.Append("Values should be sorted in increasing order; skipped\n");
                     continue;
                 }
-                if ((byV && (val < Vf + Precision.PConfusion() || val > Vl - Precision.PConfusion()))
-                    || (!byV && (val < Uf + Precision.PConfusion() || val > Ul - Precision.PConfusion())))
+                if ((byV && (val < Vf + global::Kerf.Engine.Foundation.Precision.PConfusion() || val > Vl - global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    || (!byV && (val < Uf + global::Kerf.Engine.Foundation.Precision.PConfusion() || val > Ul - global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
                     di.Append("Values should be inside range of surface; skipped\n");
                     continue;
@@ -630,8 +632,8 @@ internal static partial class SWDrawShapeUpgradeCommands
         TopoDS_Shape sh = SWDRAWShapeFixCommands.InPlace(theDI, face, aWork =>
         {
             var SUCS = new ShapeFix_ComposeShell();
-            var l = new TopLoc_Location();
-            SUCS.Init(Grid, l, TopoDS.Face(aWork), Precision.Confusion());
+            var l = new Placement();
+            SUCS.Init(Grid, l, TopoDS.Face(aWork), global::Kerf.Engine.Foundation.Precision.Confusion());
             var RS = new ShapeBuild_ReShape();
             SUCS.SetContext(RS);
             SUCS.Perform();

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -50,8 +52,8 @@ internal class RWStepRepr_RWParallelOffset
 
         // Own fields of ParallelOffset
 
-        Standard_Transient anOffset = null;
-        data.ReadEntity(num, 5, "offset", ach, typeof(Standard_Transient), ref anOffset);
+        Transient anOffset = null;
+        data.ReadEntity(num, 5, "offset", ach, typeof(Transient), ref anOffset);
 
         // Initialize entity
         ent.Init(aShapeAspect_Name, aShapeAspect_Description, aShapeAspect_OfShape, aShapeAspect_ProductDefinitional, anOffset);

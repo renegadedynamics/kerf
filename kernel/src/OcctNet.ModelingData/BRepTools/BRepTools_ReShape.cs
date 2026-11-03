@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -25,7 +28,7 @@ namespace Occt;
 /// overrides.
 /// </para>
 /// </remarks>
-public class BRepTools_ReShape : Standard_Transient
+public class BRepTools_ReShape : Transient
 {
     /// <summary>The kinds of the replacements.</summary>
     protected enum TReplacementKind
@@ -133,7 +136,7 @@ public class BRepTools_ReShape : Standard_Transient
         TopoDS_Shape shape = ashape;
         if (myConsiderLocation)
         {
-            TopLoc_Location nullLoc = new();
+            Placement nullLoc = new();
             shape.Location(nullLoc);
         }
         if (shape.IsNull())
@@ -160,7 +163,7 @@ public class BRepTools_ReShape : Standard_Transient
         TopoDS_Shape shape = ashape;
         if (myConsiderLocation)
         {
-            TopLoc_Location nullLoc = new();
+            Placement nullLoc = new();
             shape.Location(nullLoc);
         }
 
@@ -270,10 +273,10 @@ public class BRepTools_ReShape : Standard_Transient
         }
 
         TopoDS_Shape shape = ashape;
-        TopLoc_Location aLocSh = shape.Location();
+        Placement aLocSh = shape.Location();
         if (myConsiderLocation)
         {
-            TopLoc_Location nullLoc = new();
+            Placement nullLoc = new();
             shape.Location(nullLoc);
         }
 
@@ -316,8 +319,8 @@ public class BRepTools_ReShape : Standard_Transient
         }
         if (myConsiderLocation && !newsh.IsNull())
         {
-            TopLoc_Location aResLoc =
-                (res > 0 && !newsh.Location().IsIdentity() ? aLocSh * newsh.Location() : aLocSh);
+            Placement aResLoc =
+                (res > 0 && !newsh.Location().IsIdentity ? aLocSh * newsh.Location() : aLocSh);
             newsh.Location(aResLoc, false);
         }
         return res;
@@ -553,7 +556,7 @@ public class BRepTools_ReShape : Standard_Transient
     /// <summary>
     /// A copy of the vertex at a new position, as <see cref="CopyVertex(in TopoDS_Vertex, double)"/>.
     /// </summary>
-    internal TopoDS_Vertex CopyVertex(in TopoDS_Vertex theV, in gp_Pnt theNewPos, double theTol)
+    internal TopoDS_Vertex CopyVertex(in TopoDS_Vertex theV, in Point3D theNewPos, double theTol)
     {
         TopoDS_Vertex aVertexCopy;
         bool isRecorded = IsRecorded(theV);
@@ -669,7 +672,7 @@ public class BRepTools_ReShape : Standard_Transient
         {
             // sln 29.11.01 Bug22: Change location of 'newshape' in accordance with location of 'shape'
             newshape.Location(newshape.Location().Multiplied(shape.Location().Inverted()), false);
-            TopLoc_Location nullLoc = new();
+            Placement nullLoc = new();
             shape.Location(nullLoc);
         }
 
@@ -815,7 +818,7 @@ public class BRepTools_ReShape : Standard_Transient
             }
 
             Geom_Surface? surface = null;
-            TopLoc_Location L = new();
+            Placement L = new();
             if (!isC3d)
             {
                 surface = fromGC.Surface();

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepBuilderAPI_EdgeError;
 using static Occt.BRepLib_EdgeError;
 
@@ -38,127 +39,127 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Lin L)
+    public BRepBuilderAPI_MakeEdge(in Line3D L)
     {
         myMakeEdge = new BRepLib_MakeEdge(L);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Lin L, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(in Line3D L, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Lin L, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Line3D L, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Lin L, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge(in Line3D L, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Circ C)
+    public BRepBuilderAPI_MakeEdge(in Circle3D C)
     {
         myMakeEdge = new BRepLib_MakeEdge(C);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Circ C, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(in Circle3D C, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(C, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Circ C, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Circle3D C, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(C, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Circ C, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge(in Circle3D C, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
         myMakeEdge = new BRepLib_MakeEdge(C, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Elips E)
+    public BRepBuilderAPI_MakeEdge(in Ellipse3D E)
     {
         myMakeEdge = new BRepLib_MakeEdge(E);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Elips E, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(in Ellipse3D E, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(E, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Elips E, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Ellipse3D E, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(E, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Elips E, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge(in Ellipse3D E, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
         myMakeEdge = new BRepLib_MakeEdge(E, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Hypr H)
+    public BRepBuilderAPI_MakeEdge(in Hyperbola3D H)
     {
         myMakeEdge = new BRepLib_MakeEdge(H);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Hypr H, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(in Hyperbola3D H, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(H, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Hypr H, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Hyperbola3D H, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(H, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Hypr H, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge(in Hyperbola3D H, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
         myMakeEdge = new BRepLib_MakeEdge(H, V1, V2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Parab P)
+    public BRepBuilderAPI_MakeEdge(in Parabola3D P)
     {
         myMakeEdge = new BRepLib_MakeEdge(P);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Parab P, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(in Parabola3D P, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(P, p1, p2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Parab P, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(in Parabola3D P, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(P, P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(in gp_Parab P, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
+    public BRepBuilderAPI_MakeEdge(in Parabola3D P, in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
         myMakeEdge = new BRepLib_MakeEdge(P, V1, V2);
         TakeResult();
@@ -176,7 +177,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(Geom_Curve L, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(Geom_Curve L, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, P1, P2);
         TakeResult();
@@ -188,7 +189,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(Geom_Curve L, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(Geom_Curve L, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, P1, P2, p1, p2);
         TakeResult();
@@ -212,7 +213,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(Geom2d_Curve L, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakeEdge(Geom2d_Curve L, Geom_Surface S, in Point3D P1, in Point3D P2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, S, P1, P2);
         TakeResult();
@@ -224,7 +225,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakeEdge(Geom2d_Curve L, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public BRepBuilderAPI_MakeEdge(Geom2d_Curve L, Geom_Surface S, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         myMakeEdge = new BRepLib_MakeEdge(L, S, P1, P2, p1, p2);
         TakeResult();
@@ -248,7 +249,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public void Init(Geom_Curve C, in gp_Pnt P1, in gp_Pnt P2)
+    public void Init(Geom_Curve C, in Point3D P1, in Point3D P2)
     {
         myMakeEdge.Init(C, P1, P2);
         TakeResult();
@@ -260,7 +261,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public void Init(Geom_Curve C, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public void Init(Geom_Curve C, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         myMakeEdge.Init(C, P1, P2, p1, p2);
         TakeResult();
@@ -284,7 +285,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2)
+    public void Init(Geom2d_Curve C, Geom_Surface S, in Point3D P1, in Point3D P2)
     {
         myMakeEdge.Init(C, S, P1, P2);
         TakeResult();
@@ -296,7 +297,7 @@ public class BRepBuilderAPI_MakeEdge : BRepBuilderAPI_MakeShape
         TakeResult();
     }
 
-    public void Init(Geom2d_Curve C, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public void Init(Geom2d_Curve C, Geom_Surface S, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         myMakeEdge.Init(C, S, P1, P2, p1, p2);
         TakeResult();

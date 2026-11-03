@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +29,7 @@ public class BlendFunc_ConstThroatWithPenetrationInv : BlendFunc_ConstThroatInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out _);
+        csurf!.D1(X[1], out Point2D p2d, out _);
 
         param = X[2];
         curv.D2(param, out ptgui, out d1gui, out d2gui);
@@ -55,24 +59,24 @@ public class BlendFunc_ConstThroatWithPenetrationInv : BlendFunc_ConstThroatInv
         F[1] = nplan.XYZ().Dot(pts1.XYZ()) + theD;
         F[2] = nplan.XYZ().Dot(pts2.XYZ()) + theD;
 
-        gp_Vec vref = new gp_Vec(ptgui, pts1);
+        Vector3D vref = new Vector3D(ptgui, pts1);
 
         F[3] = vref.SquareMagnitude() - Throat * Throat;
 
-        gp_Vec vec12 = new gp_Vec(pts1, pts2);
+        Vector3D vec12 = new Vector3D(pts1, pts2);
 
         F[4] = vref.Dot(vec12);
 
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec(), temp1 = new gp_Vec(), temp2 = new gp_Vec(),
-               temp3 = new gp_Vec();
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), temp1 = new Vector3D(), temp2 = new Vector3D(),
+               temp3 = new Vector3D();
         math_Vector XX = new(1, 4);
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
 
         param = X[2];
         curv.D2(param, out ptgui, out d1gui, out d2gui);

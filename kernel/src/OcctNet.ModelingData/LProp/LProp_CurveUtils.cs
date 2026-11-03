@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,7 +20,7 @@ namespace Occt;
 internal static class LProp_CurveUtils
 {
     /// <summary>|D1 x D2| / |D1|^3, or 0 if the derivatives are collinear or D2 is null.</summary>
-    internal static double ComputeCurvature(in gp_Vec theD1, in gp_Vec theD2, double theTolSq)
+    internal static double ComputeCurvature(in Vector3D theD1, in Vector3D theD2, double theTolSq)
     {
         double aDD1 = theD1.SquareMagnitude();
         double aDD2 = theD2.SquareMagnitude();
@@ -38,8 +40,8 @@ internal static class LProp_CurveUtils
         return Math.Sqrt(aN) / aDD1 / Math.Sqrt(aDD1);
     }
 
-    /// <inheritdoc cref="ComputeCurvature(in gp_Vec, in gp_Vec, double)"/>
-    internal static double ComputeCurvature(in gp_Vec2d theD1, in gp_Vec2d theD2, double theTolSq)
+    /// <inheritdoc cref="ComputeCurvature(in Vector3D, in Vector3D, double)"/>
+    internal static double ComputeCurvature(in Vector2D theD1, in Vector2D theD2, double theTolSq)
     {
         double aDD1 = theD1.SquareMagnitude();
         double aDD2 = theD2.SquareMagnitude();
@@ -60,34 +62,34 @@ internal static class LProp_CurveUtils
     }
 
     /// <summary>The normal direction D2*(D1.D1) - D1*(D1.D2) (the vector triple product).</summary>
-    internal static void ComputeNormal(in gp_Vec theD1, in gp_Vec theD2, out gp_Dir theDir)
+    internal static void ComputeNormal(in Vector3D theD1, in Vector3D theD2, out Direction3D theDir)
     {
-        gp_Vec aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
-        theDir = new gp_Dir(aNorm);
+        Vector3D aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
+        theDir = new Direction3D(aNorm);
     }
 
-    /// <inheritdoc cref="ComputeNormal(in gp_Vec, in gp_Vec, out gp_Dir)"/>
-    internal static void ComputeNormal(in gp_Vec2d theD1, in gp_Vec2d theD2, out gp_Dir2d theDir)
+    /// <inheritdoc cref="ComputeNormal(in Vector3D, in Vector3D, out Direction3D)"/>
+    internal static void ComputeNormal(in Vector2D theD1, in Vector2D theD2, out Direction2D theDir)
     {
-        gp_Vec2d aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
-        theDir = new gp_Dir2d(aNorm);
+        Vector2D aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
+        theDir = new Direction2D(aNorm);
     }
 
     /// <summary>The centre of curvature: the point plus the unit normal divided by the curvature.</summary>
-    internal static void ComputeCentreOfCurvature(in gp_Pnt thePnt, in gp_Vec theD1, in gp_Vec theD2, double theCurvature,
-                                                  out gp_Pnt theCentre)
+    internal static void ComputeCentreOfCurvature(in Point3D thePnt, in Vector3D theD1, in Vector3D theD2, double theCurvature,
+                                                  out Point3D theCentre)
     {
-        gp_Vec aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
+        Vector3D aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
         aNorm.Normalize();
         aNorm.Divide(theCurvature);
         theCentre = thePnt.Translated(aNorm);
     }
 
-    /// <inheritdoc cref="ComputeCentreOfCurvature(in gp_Pnt, in gp_Vec, in gp_Vec, double, out gp_Pnt)"/>
-    internal static void ComputeCentreOfCurvature(in gp_Pnt2d thePnt, in gp_Vec2d theD1, in gp_Vec2d theD2,
-                                                  double theCurvature, out gp_Pnt2d theCentre)
+    /// <inheritdoc cref="ComputeCentreOfCurvature(in Point3D, in Vector3D, in Vector3D, double, out Point3D)"/>
+    internal static void ComputeCentreOfCurvature(in Point2D thePnt, in Vector2D theD1, in Vector2D theD2,
+                                                  double theCurvature, out Point2D theCentre)
     {
-        gp_Vec2d aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
+        Vector2D aNorm = theD2 * (theD1 * theD1) - theD1 * (theD1 * theD2);
         aNorm.Normalize();
         aNorm.Divide(theCurvature);
         theCentre = thePnt.Translated(aNorm);

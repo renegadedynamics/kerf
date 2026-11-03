@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 // The C++ functor adapters (structs holding references, called through operator()) are structs here implementing
 // the small interfaces below, whose single method `Invoke` is the operator(). FindAllRootsImpl is generic over them,
@@ -23,7 +25,7 @@ public static partial class MathRoot
     /// </remarks>
     public struct MultipleResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Total iterations across all roots.</summary>
         public int NbIterations = 0;
         /// <summary>Found roots (sorted).</summary>
@@ -37,19 +39,19 @@ public static partial class MathRoot
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(MultipleResult theResult) => theResult.IsDone();
+        public static explicit operator bool(MultipleResult result) => result.IsDone;
 
-        public static bool operator true(MultipleResult theResult) => theResult.IsDone();
+        public static bool operator true(MultipleResult result) => result.IsDone;
 
-        public static bool operator false(MultipleResult theResult) => !theResult.IsDone();
+        public static bool operator false(MultipleResult result) => !result.IsDone;
 
         /// <summary>Returns the number of roots found.</summary>
-        public readonly int NbRoots() => Roots.Length();
+        public readonly int RootCount => Roots.Length();
 
         /// <summary>Access root by index (0-based).</summary>
-        public readonly double this[int theIndex] => Roots.Value(theIndex);
+        public readonly double this[int index] => Roots.Value(index);
     }
 
     /// <summary>Configuration for multiple root finding.</summary>
@@ -73,14 +75,14 @@ public static partial class MathRoot
         {
         }
 
-        public MultipleConfig(MultipleConfig theOther)
+        public MultipleConfig(MultipleConfig other)
         {
-            NbSamples = theOther.NbSamples;
-            XTolerance = theOther.XTolerance;
-            FTolerance = theOther.FTolerance;
-            NullTolerance = theOther.NullTolerance;
-            MaxIterations = theOther.MaxIterations;
-            Offset = theOther.Offset;
+            NbSamples = other.NbSamples;
+            XTolerance = other.XTolerance;
+            FTolerance = other.FTolerance;
+            NullTolerance = other.NullTolerance;
+            MaxIterations = other.MaxIterations;
+            Offset = other.Offset;
         }
     }
 
@@ -91,25 +93,25 @@ public static partial class MathRoot
     /// <summary>SampleFn: callable (int theIndex, double theX) -> bool.</summary>
     public interface IMultipleSampleFn
     {
-        bool Invoke(int theIndex, double theX);
+        bool Invoke(int index, double x);
     }
 
     /// <summary>GetValueFn: callable (int theIndex) -> double, returns f(x)-offset at sample.</summary>
     public interface IMultipleGetValueFn
     {
-        double Invoke(int theIndex);
+        double Invoke(int index);
     }
 
     /// <summary>GetRootValueFn: callable (double theX) -> double, returns original f(x).</summary>
     public interface IMultipleGetRootValueFn
     {
-        double Invoke(double theX);
+        double Invoke(double x);
     }
 
     /// <summary>IntervalExtraFn: callable (int, x0, x1, f0, f1, result, epsX) -> void.</summary>
     public interface IMultipleIntervalExtraFn
     {
-        void Invoke(int theIndex, double theX0, double theX1, double theF0, double theF1, ref MultipleResult theResult, double theEpsX);
+        void Invoke(int index, double x0, double x1, double f0, double f1, ref MultipleResult result, double epsX);
     }
 
     // ============================================================================
@@ -117,43 +119,43 @@ public static partial class MathRoot
     // ============================================================================
 
     /// <summary>In-place insertion sort of roots and corresponding values by ascending root value.</summary>
-    public static void SortRoots(ref MultipleResult theResult)
+    public static void SortRoots(ref MultipleResult result)
     {
-        for (int i = 1; i < theResult.Roots.Length(); ++i)
+        for (int i = 1; i < result.Roots.Length(); ++i)
         {
-            double aKeyRoot = theResult.Roots[i];
-            double aKeyVal = theResult.Values[i];
+            double keyRoot = result.Roots[i];
+            double keyVal = result.Values[i];
             int j = i - 1;
-            while (j >= 0 && theResult.Roots[j] > aKeyRoot)
+            while (j >= 0 && result.Roots[j] > keyRoot)
             {
-                theResult.Roots[j + 1] = theResult.Roots[j];
-                theResult.Values[j + 1] = theResult.Values[j];
+                result.Roots[j + 1] = result.Roots[j];
+                result.Values[j + 1] = result.Values[j];
                 --j;
             }
-            theResult.Roots[j + 1] = aKeyRoot;
-            theResult.Values[j + 1] = aKeyVal;
+            result.Roots[j + 1] = keyRoot;
+            result.Values[j + 1] = keyVal;
         }
     }
 
     /// <summary>Helper to add a root if it is not a duplicate of an already found root.</summary>
-    public static void AddRoot(ref MultipleResult theResult, double theEpsX, double theRoot, double theValue)
+    public static void AddRoot(ref MultipleResult result, double epsX, double root, double value)
     {
-        for (int k = 0; k < theResult.Roots.Length(); ++k)
+        for (int k = 0; k < result.Roots.Length(); ++k)
         {
-            if (Math.Abs(theRoot - theResult.Roots.Value(k)) < theEpsX)
+            if (Math.Abs(root - result.Roots.Value(k)) < epsX)
             {
                 return;
             }
         }
-        theResult.Roots.Append(theRoot);
-        theResult.Values.Append(theValue);
+        result.Roots.Append(root);
+        result.Values.Append(value);
     }
 
     /// <summary>Compute the minimal X tolerance compatible with the established multi-root behavior.</summary>
-    public static double EffectiveXTolerance(double theLower, double theUpper, double theXTolerance)
+    public static double EffectiveXTolerance(double lower, double upper, double xTolerance)
     {
-        double aMinEpsX = 1.0e-10 * (Math.Abs(theLower) + Math.Abs(theUpper));
-        return Max(theXTolerance, aMinEpsX);
+        double minEpsX = 1.0e-10 * (Math.Abs(lower) + Math.Abs(upper));
+        return Max(xTolerance, minEpsX);
     }
 
     // ============================================================================
@@ -162,24 +164,24 @@ public static partial class MathRoot
 
     /// <summary>Samples a Value-only function and stores f(x)-offset into a math_Vector.</summary>
     public readonly struct MultipleSampleValueFn<Function> : IMultipleSampleFn
-        where Function : MathUtils.IScalarFunction
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        private readonly Function myFunc;
-        private readonly math_Vector mySamples;
-        private readonly double myOffset;
+        private readonly Function _func;
+        private readonly math_Vector _samples;
+        private readonly double _offset;
 
-        public MultipleSampleValueFn(Function theFunc, math_Vector theSamples, double theOffset)
+        public MultipleSampleValueFn(Function func, math_Vector samples, double offset)
         {
-            myFunc = theFunc;
-            mySamples = theSamples;
-            myOffset = theOffset;
+            _func = func;
+            _samples = samples;
+            _offset = offset;
         }
 
-        public bool Invoke(int theIndex, double theX)
+        public bool Invoke(int index, double x)
         {
-            if (!myFunc.Value(theX, out double aF))
+            if (!_func.Value(x, out double f))
                 return false;
-            mySamples[theIndex] = aF - myOffset;
+            _samples[index] = f - _offset;
             return true;
         }
     }
@@ -187,53 +189,53 @@ public static partial class MathRoot
     /// <summary>Returns the sampled value at a given index from a math_Vector.</summary>
     public readonly struct MultipleGetValueFn : IMultipleGetValueFn
     {
-        private readonly math_Vector mySamples;
+        private readonly math_Vector _samples;
 
-        public MultipleGetValueFn(math_Vector theSamples)
+        public MultipleGetValueFn(math_Vector samples)
         {
-            mySamples = theSamples;
+            _samples = samples;
         }
 
-        public double Invoke(int theIndex) => mySamples[theIndex];
+        public double Invoke(int index) => _samples[index];
     }
 
     /// <summary>Brent wrapper that adapts a Value-only function for offset root finding.</summary>
-    public readonly struct MultipleBrentValueWrapper<Function> : MathUtils.IScalarFunction
-        where Function : MathUtils.IScalarFunction
+    public readonly struct MultipleBrentValueWrapper<Function> : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        private readonly Function myFunc;
-        private readonly double myOffset;
+        private readonly Function _func;
+        private readonly double _offset;
 
-        public MultipleBrentValueWrapper(Function theFunc, double theOffset)
+        public MultipleBrentValueWrapper(Function func, double offset)
         {
-            myFunc = theFunc;
-            myOffset = theOffset;
+            _func = func;
+            _offset = offset;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            if (!myFunc.Value(theX, out theY))
+            if (!_func.Value(x, out y))
                 return false;
-            theY -= myOffset;
+            y -= _offset;
             return true;
         }
     }
 
     /// <summary>Evaluates original (non-offset) function value at a root point via Value interface.</summary>
     public readonly struct MultipleGetRootValueFn<Function> : IMultipleGetRootValueFn
-        where Function : MathUtils.IScalarFunction
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        private readonly Function myFunc;
+        private readonly Function _func;
 
-        public MultipleGetRootValueFn(Function theFunc)
+        public MultipleGetRootValueFn(Function func)
         {
-            myFunc = theFunc;
+            _func = func;
         }
 
-        public double Invoke(double theX)
+        public double Invoke(double x)
         {
-            myFunc.Value(theX, out double aF);
-            return aF;
+            _func.Value(x, out double f);
+            return f;
         }
     }
 
@@ -242,213 +244,213 @@ public static partial class MathRoot
     // ============================================================================
 
     /// <summary>Wrapper exposing a function derivative through the Value() contract required by Brent.</summary>
-    public readonly struct MultipleDerivativeValueWrapper<Function> : MathUtils.IScalarFunction
-        where Function : MathUtils.IScalarFunctionWithDerivative
+    public readonly struct MultipleDerivativeValueWrapper<Function> : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        private readonly Function myFunc;
+        private readonly Function _func;
 
-        public MultipleDerivativeValueWrapper(Function theFunc)
+        public MultipleDerivativeValueWrapper(Function func)
         {
-            myFunc = theFunc;
+            _func = func;
         }
 
-        public bool Value(double theX, out double theY)
+        public bool Value(double x, out double y)
         {
-            return myFunc.Values(theX, out _, out theY);
+            return _func.Values(x, out _, out y);
         }
     }
 
     /// <summary>Evaluate the original function value.</summary>
-    public static bool EvaluateValue<Function>(Function theFunc, double theX, out double theValue)
-        where Function : MathUtils.IScalarFunction
+    public static bool EvaluateValue<Function>(Function func, double x, out double value)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        return theFunc.Value(theX, out theValue);
+        return func.Value(x, out value);
     }
 
     /// <summary>Evaluate the function value shifted by the requested offset.</summary>
-    public static bool EvaluateShiftedValue<Function>(Function theFunc, double theX, double theOffset, out double theValue)
-        where Function : MathUtils.IScalarFunction
+    public static bool EvaluateShiftedValue<Function>(Function func, double x, double offset, out double value)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        if (!theFunc.Value(theX, out theValue))
+        if (!func.Value(x, out value))
         {
             return false;
         }
 
-        theValue -= theOffset;
+        value -= offset;
         return true;
     }
 
     /// <summary>Evaluate the function value and derivative, then shift the value by the requested offset.</summary>
-    public static bool EvaluateShiftedValues<Function>(Function theFunc,
-                                                       double theX,
-                                                       double theOffset,
-                                                       out double theValue,
-                                                       out double theDerivative)
-        where Function : MathUtils.IScalarFunctionWithDerivative
+    public static bool EvaluateShiftedValues<Function>(Function func,
+                                                       double x,
+                                                       double offset,
+                                                       out double value,
+                                                       out double derivative)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        if (!theFunc.Values(theX, out theValue, out theDerivative))
+        if (!func.Values(x, out value, out derivative))
         {
             return false;
         }
 
-        theValue -= theOffset;
+        value -= offset;
         return true;
     }
 
     /// <summary>Refine a bracketed sign change using the same Brent/Newton sequence as math_FunctionRoots.</summary>
-    public static bool RefineBracketedRoot<Function>(Function theFunc,
-                                                     double theOffset,
-                                                     double theX1,
-                                                     double theY1,
-                                                     double theX2,
-                                                     double theY2,
-                                                     double theTolerance,
-                                                     double theEpsX,
-                                                     ref MultipleResult theResult)
-        where Function : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    public static bool RefineBracketedRoot<Function>(Function func,
+                                                     double offset,
+                                                     double x1,
+                                                     double y1,
+                                                     double x2,
+                                                     double y2,
+                                                     double tolerance,
+                                                     double epsX,
+                                                     ref MultipleResult result)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
         const int THE_MAX_ITERATIONS = 100;
         const double THE_EPS2 = 2.0e-14;
         const double THE_DERIV_EPS = 1.0e-10;
 
-        int anIter = 0;
-        double aTol2 = 0.5 * theTolerance;
-        double aA = theX1;
-        double aB = theX2;
-        double aC = theX2;
-        double aD = 0.0;
-        double anE = 0.0;
-        double aFa = theY1;
-        double aFb = theY2;
-        double aFc = theY2;
+        int iter = 0;
+        double tol2 = 0.5 * tolerance;
+        double a = x1;
+        double b = x2;
+        double c = x2;
+        double d = 0.0;
+        double e = 0.0;
+        double fa = y1;
+        double fb = y2;
+        double fc = y2;
 
-        for (anIter = 1; anIter <= THE_MAX_ITERATIONS; ++anIter)
+        for (iter = 1; iter <= THE_MAX_ITERATIONS; ++iter)
         {
-            if ((aFb > 0.0 && aFc > 0.0) || (aFb < 0.0 && aFc < 0.0))
+            if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0))
             {
-                aC = aA;
-                aFc = aFa;
-                anE = aD = aB - aA;
+                c = a;
+                fc = fa;
+                e = d = b - a;
             }
 
-            if (Math.Abs(aFc) < Math.Abs(aFb))
+            if (Math.Abs(fc) < Math.Abs(fb))
             {
-                double aPrevA = aA;
-                double aPrevFa = aFa;
-                aA = aB;
-                aB = aC;
-                aC = aPrevA;
-                aFa = aFb;
-                aFb = aFc;
-                aFc = aPrevFa;
+                double prevA = a;
+                double prevFa = fa;
+                a = b;
+                b = c;
+                c = prevA;
+                fa = fb;
+                fb = fc;
+                fc = prevFa;
             }
 
-            double aTol1 = THE_EPS2 * Math.Abs(aB) + aTol2;
-            double aXm = 0.5 * (aC - aB);
-            if (Math.Abs(aXm) < aTol1 || aFb == 0.0)
+            double tol1 = THE_EPS2 * Math.Abs(b) + tol2;
+            double xm = 0.5 * (c - b);
+            if (Math.Abs(xm) < tol1 || fb == 0.0)
             {
-                double aNewtonX = aB;
-                for (int aNewtonIter = 0; aNewtonIter < 5; ++aNewtonIter)
+                double newtonX = b;
+                for (int newtonIter = 0; newtonIter < 5; ++newtonIter)
                 {
-                    if (!EvaluateShiftedValues(theFunc, aNewtonX, theOffset, out double aY, out double aDfdx))
+                    if (!EvaluateShiftedValues(func, newtonX, offset, out double y, out double dfdx))
                     {
                         return false;
                     }
 
-                    if (Math.Abs(aDfdx) <= THE_DERIV_EPS)
+                    if (Math.Abs(dfdx) <= THE_DERIV_EPS)
                     {
                         break;
                     }
 
-                    aNewtonX -= aY / aDfdx;
-                    if (aNewtonX < theX1 || aNewtonX > theX2)
+                    newtonX -= y / dfdx;
+                    if (newtonX < x1 || newtonX > x2)
                     {
                         break;
                     }
 
-                    if (!EvaluateShiftedValue(theFunc, aNewtonX, theOffset, out aY))
+                    if (!EvaluateShiftedValue(func, newtonX, offset, out y))
                     {
                         return false;
                     }
 
-                    if (Math.Abs(aY) < Math.Abs(aFb))
+                    if (Math.Abs(y) < Math.Abs(fb))
                     {
-                        aB = aNewtonX;
-                        aFb = aY;
+                        b = newtonX;
+                        fb = y;
                     }
                 }
 
-                if (!EvaluateValue(theFunc, aB, out double aRootValue))
+                if (!EvaluateValue(func, b, out double rootValue))
                 {
                     return false;
                 }
 
-                theResult.NbIterations += anIter;
-                AddRoot(ref theResult, theEpsX, aB, aRootValue);
+                result.NbIterations += iter;
+                AddRoot(ref result, epsX, b, rootValue);
                 return true;
             }
 
-            if (Math.Abs(anE) >= aTol1 && Math.Abs(aFa) > Math.Abs(aFb))
+            if (Math.Abs(e) >= tol1 && Math.Abs(fa) > Math.Abs(fb))
             {
-                double aP = 0.0;
-                double aQ = 0.0;
-                double aS = aFb / aFa;
-                if (aA == aC)
+                double p = 0.0;
+                double q = 0.0;
+                double s = fb / fa;
+                if (a == c)
                 {
-                    aP = 2.0 * aXm * aS;
-                    aQ = 1.0 - aS;
+                    p = 2.0 * xm * s;
+                    q = 1.0 - s;
                 }
                 else
                 {
-                    aQ = aFa / aFc;
-                    double aR = aFb / aFc;
-                    aP = aS * (2.0 * aXm * aQ * (aQ - aR) - (aB - aA) * (aR - 1.0));
-                    aQ = (aQ - 1.0) * (aR - 1.0) * (aS - 1.0);
+                    q = fa / fc;
+                    double r = fb / fc;
+                    p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
+                    q = (q - 1.0) * (r - 1.0) * (s - 1.0);
                 }
 
-                if (aP > 0.0)
+                if (p > 0.0)
                 {
-                    aQ = -aQ;
+                    q = -q;
                 }
 
-                aP = Math.Abs(aP);
-                double aMin1 = 3.0 * aXm * aQ - Math.Abs(aTol1 * aQ);
-                double aMin2 = Math.Abs(anE * aQ);
-                if (2.0 * aP < Min(aMin1, aMin2))
+                p = Math.Abs(p);
+                double min1 = 3.0 * xm * q - Math.Abs(tol1 * q);
+                double min2 = Math.Abs(e * q);
+                if (2.0 * p < Min(min1, min2))
                 {
-                    anE = aD;
-                    aD = aP / aQ;
+                    e = d;
+                    d = p / q;
                 }
                 else
                 {
-                    aD = aXm;
-                    anE = aD;
+                    d = xm;
+                    e = d;
                 }
             }
             else
             {
-                aD = aXm;
-                anE = aD;
+                d = xm;
+                e = d;
             }
 
-            aA = aB;
-            aFa = aFb;
-            if (Math.Abs(aD) > aTol1)
+            a = b;
+            fa = fb;
+            if (Math.Abs(d) > tol1)
             {
-                aB += aD;
+                b += d;
             }
             else
             {
-                aB += (aXm >= 0.0) ? Math.Abs(aTol1) : -Math.Abs(aTol1);
+                b += (xm >= 0.0) ? Math.Abs(tol1) : -Math.Abs(tol1);
             }
 
-            if (!EvaluateShiftedValue(theFunc, aB, theOffset, out aFb))
+            if (!EvaluateShiftedValue(func, b, offset, out fb))
             {
                 return false;
             }
         }
 
-        theResult.NbIterations += THE_MAX_ITERATIONS;
+        result.NbIterations += THE_MAX_ITERATIONS;
         return true;
     }
 
@@ -456,191 +458,191 @@ public static partial class MathRoot
     /// Derivative-aware implementation mirroring the math_FunctionRoots heuristics while operating on the modern
     /// callable-based MathRoot API.
     /// </summary>
-    public static MultipleResult FindAllRootsWithDerivativeImpl<Function>(Function theFunc,
-                                                                          double theLower,
-                                                                          double theUpper,
-                                                                          MultipleConfig theConfig)
-        where Function : MathUtils.IScalarFunction, MathUtils.IScalarFunctionWithDerivative
+    public static MultipleResult FindAllRootsWithDerivativeImpl<Function>(Function func,
+                                                                          double lower,
+                                                                          double upper,
+                                                                          MultipleConfig config)
+        where Function : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction, global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunctionWithDerivative
     {
-        MultipleResult aResult = new();
-        aResult.Status = MathUtils.Status.OK;
+        MultipleResult result = new();
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        double aLower = Min(theLower, theUpper);
-        double aUpper = Max(theLower, theUpper);
-        int aNbSamples = Max(2 * theConfig.NbSamples, 20);
-        double aDx = (aUpper - aLower) / aNbSamples;
-        double aEpsX = EffectiveXTolerance(aLower, aUpper, theConfig.XTolerance);
-        double aRawXTolerance = theConfig.XTolerance;
-        double aMajorDx = 5.0 * aDx;
+        double aLower = Min(lower, upper);
+        double aUpper = Max(lower, upper);
+        int nbSamples = Max(2 * config.NbSamples, 20);
+        double dx = (aUpper - aLower) / nbSamples;
+        double epsX = EffectiveXTolerance(aLower, aUpper, config.XTolerance);
+        double rawXTolerance = config.XTolerance;
+        double majorDx = 5.0 * dx;
 
-        math_Vector aValues = new(0, aNbSamples);
-        double aX = aLower;
-        for (int i = 0; i <= aNbSamples; ++i, aX += aDx)
+        math_Vector values = new(0, nbSamples);
+        double x = aLower;
+        for (int i = 0; i <= nbSamples; ++i, x += dx)
         {
-            if (aX > aUpper)
+            if (x > aUpper)
             {
-                aX = aUpper;
+                x = aUpper;
             }
 
-            if (!EvaluateShiftedValue(theFunc, aX, theConfig.Offset, out aValues[i]))
+            if (!EvaluateShiftedValue(func, x, config.Offset, out values[i]))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
             }
         }
 
-        aResult.IsAllNull = true;
-        for (int i = 0; i <= aNbSamples; ++i)
+        result.IsAllNull = true;
+        for (int i = 0; i <= nbSamples; ++i)
         {
-            if (aValues[i] > theConfig.NullTolerance || aValues[i] < -theConfig.NullTolerance)
+            if (values[i] > config.NullTolerance || values[i] < -config.NullTolerance)
             {
-                aResult.IsAllNull = false;
+                result.IsAllNull = false;
                 break;
             }
         }
-        if (aResult.IsAllNull)
+        if (result.IsAllNull)
         {
-            return aResult;
+            return result;
         }
 
-        double aTolerance = aEpsX;
-        double aX1 = aLower;
-        for (int i = 0, anIp1 = 1; i < aNbSamples; ++i, ++anIp1, aX1 += aDx)
+        double tolerance = epsX;
+        double x1 = aLower;
+        for (int i = 0, ip1 = 1; i < nbSamples; ++i, ++ip1, x1 += dx)
         {
-            double aX2 = aX1 + aDx;
-            if (aX2 > aUpper)
+            double x2 = x1 + dx;
+            if (x2 > aUpper)
             {
-                aX2 = aUpper;
+                x2 = aUpper;
             }
 
-            if ((aValues[i] < 0.0 && aValues[anIp1] > 0.0) || (aValues[i] > 0.0 && aValues[anIp1] < 0.0))
+            if ((values[i] < 0.0 && values[ip1] > 0.0) || (values[i] > 0.0 && values[ip1] < 0.0))
             {
-                if (!RefineBracketedRoot(theFunc,
-                                         theConfig.Offset,
-                                         aX1,
-                                         aValues[i],
-                                         aX2,
-                                         aValues[anIp1],
-                                         aTolerance,
-                                         aEpsX,
-                                         ref aResult))
+                if (!RefineBracketedRoot(func,
+                                         config.Offset,
+                                         x1,
+                                         values[i],
+                                         x2,
+                                         values[ip1],
+                                         tolerance,
+                                         epsX,
+                                         ref result))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
             }
         }
 
-        for (int i = 0; i <= aNbSamples; ++i)
+        for (int i = 0; i <= nbSamples; ++i)
         {
-            if (aValues[i] != 0.0)
+            if (values[i] != 0.0)
             {
                 continue;
             }
 
-            double aZeroX = Min(aLower + i * aDx, aUpper);
-            double aLeftX = aZeroX - 0.5 * aDx;
-            double aRightX = aZeroX + 0.5 * aDx;
-            if (aLeftX < aLower)
+            double zeroX = Min(aLower + i * dx, aUpper);
+            double leftX = zeroX - 0.5 * dx;
+            double rightX = zeroX + 0.5 * dx;
+            if (leftX < aLower)
             {
-                aLeftX = aLower;
+                leftX = aLower;
             }
-            if (aLeftX > aUpper)
+            if (leftX > aUpper)
             {
-                aLeftX = aUpper;
+                leftX = aUpper;
             }
-            if (aRightX < aLower)
+            if (rightX < aLower)
             {
-                aRightX = aLower;
+                rightX = aLower;
             }
-            if (aRightX > aUpper)
+            if (rightX > aUpper)
             {
-                aRightX = aUpper;
-            }
-
-            double aLeftY = 0.0;
-            double aRightY = 0.0;
-            if (!EvaluateShiftedValue(theFunc, aLeftX, theConfig.Offset, out aLeftY)
-                || !EvaluateShiftedValue(theFunc, aRightX, theConfig.Offset, out aRightY))
-            {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                rightX = aUpper;
             }
 
-            if (aLeftY * aRightY < 0.0)
+            double leftY = 0.0;
+            double rightY = 0.0;
+            if (!EvaluateShiftedValue(func, leftX, config.Offset, out leftY)
+                || !EvaluateShiftedValue(func, rightX, config.Offset, out rightY))
             {
-                if (!RefineBracketedRoot(theFunc,
-                                         theConfig.Offset,
-                                         aLeftX,
-                                         aLeftY,
-                                         aRightX,
-                                         aRightY,
-                                         aTolerance,
-                                         aEpsX,
-                                         ref aResult))
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
+            }
+
+            if (leftY * rightY < 0.0)
+            {
+                if (!RefineBracketedRoot(func,
+                                         config.Offset,
+                                         leftX,
+                                         leftY,
+                                         rightX,
+                                         rightY,
+                                         tolerance,
+                                         epsX,
+                                         ref result))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
             }
-            else if (aLeftY != 0.0 || aRightY != 0.0)
+            else if (leftY != 0.0 || rightY != 0.0)
             {
-                if (!EvaluateValue(theFunc, aZeroX, out double aRootValue))
+                if (!EvaluateValue(func, zeroX, out double rootValue))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
-                AddRoot(ref aResult, aEpsX, aZeroX, aRootValue);
+                AddRoot(ref result, epsX, zeroX, rootValue);
             }
         }
 
-        if (aValues[0] <= theConfig.FTolerance && aValues[0] >= -theConfig.FTolerance)
+        if (values[0] <= config.FTolerance && values[0] >= -config.FTolerance)
         {
-            if (!EvaluateValue(theFunc, aLower, out double aRootValue))
+            if (!EvaluateValue(func, aLower, out double rootValue))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
             }
-            AddRoot(ref aResult, aEpsX, aLower, aRootValue);
+            AddRoot(ref result, epsX, aLower, rootValue);
         }
 
-        if (aValues[aNbSamples] <= theConfig.FTolerance && aValues[aNbSamples] >= -theConfig.FTolerance)
+        if (values[nbSamples] <= config.FTolerance && values[nbSamples] >= -config.FTolerance)
         {
-            if (!EvaluateValue(theFunc, aUpper, out double aRootValue))
+            if (!EvaluateValue(func, aUpper, out double rootValue))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
             }
-            AddRoot(ref aResult, aEpsX, aUpper, aRootValue);
+            AddRoot(ref result, epsX, aUpper, rootValue);
         }
 
-        int anIm1 = 0;
-        int anIp1b = 2;
-        double aMidX = aLower + aDx;
-        for (int i = 1; i < aNbSamples; ++i, ++anIm1, ++anIp1b, aMidX += aDx)
+        int im1 = 0;
+        int ip1b = 2;
+        double midX = aLower + dx;
+        for (int i = 1; i < nbSamples; ++i, ++im1, ++ip1b, midX += dx)
         {
-            int anIp1 = anIp1b; // C++'s anIp1 (the name is taken by the loop above in C#)
-            if (aMidX > aUpper)
+            int ip1 = ip1b; // C++'s anIp1 (the name is taken by the loop above in C#)
+            if (midX > aUpper)
             {
-                aMidX = aUpper;
+                midX = aUpper;
             }
 
             bool isRediscretize = false;
-            if (aValues[i] > 0.0)
+            if (values[i] > 0.0)
             {
-                if (aValues[anIm1] > aValues[i] && aValues[anIp1] > aValues[i])
+                if (values[im1] > values[i] && values[ip1] > values[i])
                 {
-                    double aProbeX = Max(aLower, aMidX - aDx);
-                    if (!EvaluateShiftedValues(theFunc, aProbeX, theConfig.Offset, out double aProbeY, out double aProbeDy))
+                    double probeX = Max(aLower, midX - dx);
+                    if (!EvaluateShiftedValues(func, probeX, config.Offset, out double probeY, out double probeDy))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
 
-                    if (Math.Abs(aProbeDy) > 1.0e-10)
+                    if (Math.Abs(probeDy) > 1.0e-10)
                     {
-                        double aStep = aProbeY / aProbeDy;
-                        if (aStep < aMajorDx && aStep > -aMajorDx)
+                        double step = probeY / probeDy;
+                        if (step < majorDx && step > -majorDx)
                         {
                             isRediscretize = true;
                         }
@@ -648,17 +650,17 @@ public static partial class MathRoot
 
                     if (!isRediscretize)
                     {
-                        aProbeX = Min(aUpper, aMidX + aDx);
-                        if (!EvaluateShiftedValues(theFunc, aProbeX, theConfig.Offset, out aProbeY, out aProbeDy))
+                        probeX = Min(aUpper, midX + dx);
+                        if (!EvaluateShiftedValues(func, probeX, config.Offset, out probeY, out probeDy))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
 
-                        if (Math.Abs(aProbeDy) > 1.0e-10)
+                        if (Math.Abs(probeDy) > 1.0e-10)
                         {
-                            double aStep = aProbeY / aProbeDy;
-                            if (aStep < aMajorDx && aStep > -aMajorDx)
+                            double step = probeY / probeDy;
+                            if (step < majorDx && step > -majorDx)
                             {
                                 isRediscretize = true;
                             }
@@ -666,21 +668,21 @@ public static partial class MathRoot
                     }
                 }
             }
-            else if (aValues[i] < 0.0)
+            else if (values[i] < 0.0)
             {
-                if (aValues[anIm1] < aValues[i] && aValues[anIp1] < aValues[i])
+                if (values[im1] < values[i] && values[ip1] < values[i])
                 {
-                    double aProbeX = Max(aLower, aMidX - aDx);
-                    if (!EvaluateShiftedValues(theFunc, aProbeX, theConfig.Offset, out double aProbeY, out double aProbeDy))
+                    double probeX = Max(aLower, midX - dx);
+                    if (!EvaluateShiftedValues(func, probeX, config.Offset, out double probeY, out double probeDy))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
 
-                    if (Math.Abs(aProbeDy) > 1.0e-10)
+                    if (Math.Abs(probeDy) > 1.0e-10)
                     {
-                        double aStep = aProbeY / aProbeDy;
-                        if (aStep < aMajorDx && aStep > -aMajorDx)
+                        double step = probeY / probeDy;
+                        if (step < majorDx && step > -majorDx)
                         {
                             isRediscretize = true;
                         }
@@ -688,17 +690,17 @@ public static partial class MathRoot
 
                     if (!isRediscretize)
                     {
-                        aProbeX = Min(aUpper, aMidX + aDx);
-                        if (!EvaluateShiftedValues(theFunc, aProbeX, theConfig.Offset, out aProbeY, out aProbeDy))
+                        probeX = Min(aUpper, midX + dx);
+                        if (!EvaluateShiftedValues(func, probeX, config.Offset, out probeY, out probeDy))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
 
-                        if (Math.Abs(aProbeDy) > 1.0e-10)
+                        if (Math.Abs(probeDy) > 1.0e-10)
                         {
-                            double aStep = aProbeY / aProbeDy;
-                            if (aStep < aMajorDx && aStep > -aMajorDx)
+                            double step = probeY / probeDy;
+                            if (step < majorDx && step > -majorDx)
                             {
                                 isRediscretize = true;
                             }
@@ -712,248 +714,248 @@ public static partial class MathRoot
                 continue;
             }
 
-            double aX0 = Max(aLower, aMidX - aDx);
-            double aX3 = Min(aUpper, aMidX + aDx);
-            double aRoot1 = 0.0;
-            double aRoot2 = 0.0;
-            double aVal1 = 0.0;
-            double aVal2 = 0.0;
-            double aDer1 = 0.0;
-            double aDer2 = 0.0;
+            double x0 = Max(aLower, midX - dx);
+            double x3 = Min(aUpper, midX + dx);
+            double root1 = 0.0;
+            double root2 = 0.0;
+            double val1 = 0.0;
+            double val2 = 0.0;
+            double der1 = 0.0;
+            double der2 = 0.0;
             bool hasRoot1 = false;
             bool hasRoot2 = false;
 
-            MultipleDerivativeValueWrapper<Function> aDerivativeWrapper = new(theFunc);
-            MathUtils.Config aDerivativeConfig = new();
-            aDerivativeConfig.XTolerance = aRawXTolerance;
-            aDerivativeConfig.FTolerance = 0.0;
-            aDerivativeConfig.MaxIterations = theConfig.MaxIterations;
+            MultipleDerivativeValueWrapper<Function> derivativeWrapper = new(func);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.Config derivativeConfig = new();
+            derivativeConfig.XTolerance = rawXTolerance;
+            derivativeConfig.FTolerance = 0.0;
+            derivativeConfig.MaxIterations = config.MaxIterations;
 
-            MathUtils.ScalarResult aDerivativeRoot =
-              Brent(aDerivativeWrapper, aX0, aX3, aDerivativeConfig);
-            aResult.NbIterations += aDerivativeRoot.NbIterations;
-            if (aDerivativeRoot.IsDone() && aDerivativeRoot.Root.HasValue)
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult derivativeRoot =
+              Brent(derivativeWrapper, x0, x3, derivativeConfig);
+            result.NbIterations += derivativeRoot.NbIterations;
+            if (derivativeRoot.IsDone && derivativeRoot.Root.HasValue)
             {
-                aRoot1 = aDerivativeRoot.Root.Value;
-                if (!EvaluateValue(theFunc, aRoot1, out double aOriginalValue))
+                root1 = derivativeRoot.Root.Value;
+                if (!EvaluateValue(func, root1, out double originalValue))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
-                aVal1 = Math.Abs(aOriginalValue - theConfig.Offset);
-                if (aVal1 < theConfig.FTolerance)
+                val1 = Math.Abs(originalValue - config.Offset);
+                if (val1 < config.FTolerance)
                 {
                     hasRoot1 = true;
-                    if (!EvaluateShiftedValues(theFunc, aRoot1, theConfig.Offset, out aOriginalValue, out aDer1))
+                    if (!EvaluateShiftedValues(func, root1, config.Offset, out originalValue, out der1))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
                 }
             }
 
-            double aXProbe1 = 0.0;
-            double aXProbe2 = 0.0;
-            const double THE_GOLDEN_INV_RATIO = 1.0 / MathUtils.THE_GOLDEN_RATIO;
+            double xProbe1 = 0.0;
+            double xProbe2 = 0.0;
+            const double THE_GOLDEN_INV_RATIO = 1.0 / global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_GOLDEN_RATIO;
             const double THE_GOLDEN_INV_COMP = 1.0 - THE_GOLDEN_INV_RATIO;
-            double aTolCR = aEpsX * 10.0;
-            double aLocalTolX = 0.001 * aEpsX;
-            double aF0 = aValues[anIm1];
-            double aF3 = aValues[anIp1];
-            bool isSearchMinimum = (aF0 > 0.0);
+            double tolCR = epsX * 10.0;
+            double localTolX = 0.001 * epsX;
+            double f0 = values[im1];
+            double f3 = values[ip1];
+            bool isSearchMinimum = (f0 > 0.0);
 
-            if (Math.Abs(aX3 - aMidX) > Math.Abs(aX0 - aMidX))
+            if (Math.Abs(x3 - midX) > Math.Abs(x0 - midX))
             {
-                aXProbe1 = aMidX;
-                aXProbe2 = aMidX + THE_GOLDEN_INV_COMP * (aX3 - aMidX);
+                xProbe1 = midX;
+                xProbe2 = midX + THE_GOLDEN_INV_COMP * (x3 - midX);
             }
             else
             {
-                aXProbe2 = aMidX;
-                aXProbe1 = aMidX - THE_GOLDEN_INV_COMP * (aMidX - aX0);
+                xProbe2 = midX;
+                xProbe1 = midX - THE_GOLDEN_INV_COMP * (midX - x0);
             }
 
-            double aF1 = 0.0;
-            double aF2 = 0.0;
-            if (!EvaluateShiftedValue(theFunc, aXProbe1, theConfig.Offset, out aF1)
-                || !EvaluateShiftedValue(theFunc, aXProbe2, theConfig.Offset, out aF2))
+            double f1 = 0.0;
+            double f2 = 0.0;
+            if (!EvaluateShiftedValue(func, xProbe1, config.Offset, out f1)
+                || !EvaluateShiftedValue(func, xProbe2, config.Offset, out f2))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
             }
 
-            while (Math.Abs(aX3 - aX0) > aTolCR * (Math.Abs(aXProbe1) + Math.Abs(aXProbe2))
-                   && Math.Abs(aXProbe1 - aXProbe2) > aLocalTolX)
+            while (Math.Abs(x3 - x0) > tolCR * (Math.Abs(xProbe1) + Math.Abs(xProbe2))
+                   && Math.Abs(xProbe1 - xProbe2) > localTolX)
             {
                 if (isSearchMinimum)
                 {
-                    if (aF2 < aF1)
+                    if (f2 < f1)
                     {
-                        aX0 = aXProbe1;
-                        aXProbe1 = aXProbe2;
-                        aXProbe2 = THE_GOLDEN_INV_RATIO * aXProbe1 + THE_GOLDEN_INV_COMP * aX3;
-                        aF0 = aF1;
-                        aF1 = aF2;
-                        if (!EvaluateShiftedValue(theFunc, aXProbe2, theConfig.Offset, out aF2))
+                        x0 = xProbe1;
+                        xProbe1 = xProbe2;
+                        xProbe2 = THE_GOLDEN_INV_RATIO * xProbe1 + THE_GOLDEN_INV_COMP * x3;
+                        f0 = f1;
+                        f1 = f2;
+                        if (!EvaluateShiftedValue(func, xProbe2, config.Offset, out f2))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
                     }
                     else
                     {
-                        aX3 = aXProbe2;
-                        aXProbe2 = aXProbe1;
-                        aXProbe1 = THE_GOLDEN_INV_RATIO * aXProbe2 + THE_GOLDEN_INV_COMP * aX0;
-                        aF3 = aF2;
-                        aF2 = aF1;
-                        if (!EvaluateShiftedValue(theFunc, aXProbe1, theConfig.Offset, out aF1))
+                        x3 = xProbe2;
+                        xProbe2 = xProbe1;
+                        xProbe1 = THE_GOLDEN_INV_RATIO * xProbe2 + THE_GOLDEN_INV_COMP * x0;
+                        f3 = f2;
+                        f2 = f1;
+                        if (!EvaluateShiftedValue(func, xProbe1, config.Offset, out f1))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
                     }
                 }
                 else
                 {
-                    if (aF2 > aF1)
+                    if (f2 > f1)
                     {
-                        aX0 = aXProbe1;
-                        aXProbe1 = aXProbe2;
-                        aXProbe2 = THE_GOLDEN_INV_RATIO * aXProbe1 + THE_GOLDEN_INV_COMP * aX3;
-                        aF0 = aF1;
-                        aF1 = aF2;
-                        if (!EvaluateShiftedValue(theFunc, aXProbe2, theConfig.Offset, out aF2))
+                        x0 = xProbe1;
+                        xProbe1 = xProbe2;
+                        xProbe2 = THE_GOLDEN_INV_RATIO * xProbe1 + THE_GOLDEN_INV_COMP * x3;
+                        f0 = f1;
+                        f1 = f2;
+                        if (!EvaluateShiftedValue(func, xProbe2, config.Offset, out f2))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
                     }
                     else
                     {
-                        aX3 = aXProbe2;
-                        aXProbe2 = aXProbe1;
-                        aXProbe1 = THE_GOLDEN_INV_RATIO * aXProbe2 + THE_GOLDEN_INV_COMP * aX0;
-                        aF3 = aF2;
-                        aF2 = aF1;
-                        if (!EvaluateShiftedValue(theFunc, aXProbe1, theConfig.Offset, out aF1))
+                        x3 = xProbe2;
+                        xProbe2 = xProbe1;
+                        xProbe1 = THE_GOLDEN_INV_RATIO * xProbe2 + THE_GOLDEN_INV_COMP * x0;
+                        f3 = f2;
+                        f2 = f1;
+                        if (!EvaluateShiftedValue(func, xProbe1, config.Offset, out f1))
                         {
-                            aResult.Status = MathUtils.Status.NumericalError;
-                            return aResult;
+                            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                            return result;
                         }
                     }
                 }
 
-                if (aF1 * aF0 < 0.0)
+                if (f1 * f0 < 0.0)
                 {
-                    if (!RefineBracketedRoot(theFunc,
-                                             theConfig.Offset,
-                                             aX0,
-                                             aF0,
-                                             aXProbe1,
-                                             aF1,
-                                             aTolerance,
-                                             aEpsX,
-                                             ref aResult))
+                    if (!RefineBracketedRoot(func,
+                                             config.Offset,
+                                             x0,
+                                             f0,
+                                             xProbe1,
+                                             f1,
+                                             tolerance,
+                                             epsX,
+                                             ref result))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
                 }
 
-                if (aF2 * aF3 < 0.0)
+                if (f2 * f3 < 0.0)
                 {
-                    if (!RefineBracketedRoot(theFunc,
-                                             theConfig.Offset,
-                                             aXProbe2,
-                                             aF2,
-                                             aX3,
-                                             aF3,
-                                             aTolerance,
-                                             aEpsX,
-                                             ref aResult))
+                    if (!RefineBracketedRoot(func,
+                                             config.Offset,
+                                             xProbe2,
+                                             f2,
+                                             x3,
+                                             f3,
+                                             tolerance,
+                                             epsX,
+                                             ref result))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
                 }
             }
 
-            if ((isSearchMinimum && aF1 < aF2) || (!isSearchMinimum && aF1 > aF2))
+            if ((isSearchMinimum && f1 < f2) || (!isSearchMinimum && f1 > f2))
             {
-                if (Math.Abs(aF1) < theConfig.FTolerance)
+                if (Math.Abs(f1) < config.FTolerance)
                 {
                     hasRoot2 = true;
-                    aRoot2 = aXProbe1;
-                    aVal2 = Math.Abs(aF1);
+                    root2 = xProbe1;
+                    val2 = Math.Abs(f1);
                 }
             }
-            else if (Math.Abs(aF2) < theConfig.FTolerance)
+            else if (Math.Abs(f2) < config.FTolerance)
             {
                 hasRoot2 = true;
-                aRoot2 = aXProbe2;
-                aVal2 = Math.Abs(aF2);
+                root2 = xProbe2;
+                val2 = Math.Abs(f2);
             }
 
             if (hasRoot1 && hasRoot2)
             {
-                if (aVal2 - aVal1 > theConfig.FTolerance)
+                if (val2 - val1 > config.FTolerance)
                 {
-                    if (!EvaluateValue(theFunc, aRoot1, out double aRootValue))
+                    if (!EvaluateValue(func, root1, out double rootValue))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
-                    AddRoot(ref aResult, aEpsX, aRoot1, aRootValue);
+                    AddRoot(ref result, epsX, root1, rootValue);
                 }
-                else if (aVal1 - aVal2 > theConfig.FTolerance)
+                else if (val1 - val2 > config.FTolerance)
                 {
-                    if (!EvaluateValue(theFunc, aRoot2, out double aRootValue))
+                    if (!EvaluateValue(func, root2, out double rootValue))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
-                    AddRoot(ref aResult, aEpsX, aRoot2, aRootValue);
+                    AddRoot(ref result, epsX, root2, rootValue);
                 }
                 else
                 {
-                    if (!EvaluateShiftedValues(theFunc, aRoot2, theConfig.Offset, out double aShiftedValue, out aDer2))
+                    if (!EvaluateShiftedValues(func, root2, config.Offset, out double shiftedValue, out der2))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
 
-                    double aChosenRoot = (Math.Abs(aDer1) < Math.Abs(aDer2)) ? aRoot1 : aRoot2;
-                    if (!EvaluateValue(theFunc, aChosenRoot, out double aRootValue))
+                    double chosenRoot = (Math.Abs(der1) < Math.Abs(der2)) ? root1 : root2;
+                    if (!EvaluateValue(func, chosenRoot, out double rootValue))
                     {
-                        aResult.Status = MathUtils.Status.NumericalError;
-                        return aResult;
+                        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                        return result;
                     }
-                    AddRoot(ref aResult, aEpsX, aChosenRoot, aRootValue);
+                    AddRoot(ref result, epsX, chosenRoot, rootValue);
                 }
             }
             else if (hasRoot1)
             {
-                if (!EvaluateValue(theFunc, aRoot1, out double aRootValue))
+                if (!EvaluateValue(func, root1, out double rootValue))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
-                AddRoot(ref aResult, aEpsX, aRoot1, aRootValue);
+                AddRoot(ref result, epsX, root1, rootValue);
             }
             else if (hasRoot2)
             {
-                if (!EvaluateValue(theFunc, aRoot2, out double aRootValue))
+                if (!EvaluateValue(func, root2, out double rootValue))
                 {
-                    aResult.Status = MathUtils.Status.NumericalError;
-                    return aResult;
+                    result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                    return result;
                 }
-                AddRoot(ref aResult, aEpsX, aRoot2, aRootValue);
+                AddRoot(ref result, epsX, root2, rootValue);
             }
         }
 
-        SortRoots(ref aResult);
-        return aResult;
+        SortRoots(ref result);
+        return result;
     }
 
     // ============================================================================
@@ -963,7 +965,7 @@ public static partial class MathRoot
     /// <summary>No-op interval handler for functions without derivative.</summary>
     public readonly struct MultipleNoExtraHandler : IMultipleIntervalExtraFn
     {
-        public void Invoke(int theIndex, double theX0, double theX1, double theF0, double theF1, ref MultipleResult theResult, double theEpsX)
+        public void Invoke(int index, double x0, double x1, double f0, double f1, ref MultipleResult result, double epsX)
         {
         }
     }
@@ -977,111 +979,111 @@ public static partial class MathRoot
     /// derivative) interfaces.
     /// </summary>
     public static MultipleResult FindAllRootsImpl<SampleFn, GetValueFn, BrentWrapperT, GetRootValueFn, IntervalExtraFn>(
-        double theLower,
-        double theUpper,
-        MultipleConfig theConfig,
-        SampleFn theSampleFn,
-        GetValueFn theGetValue,
-        BrentWrapperT theBrentWrapper,
-        GetRootValueFn theGetRootValue,
-        IntervalExtraFn theIntervalExtra)
+        double lower,
+        double upper,
+        MultipleConfig config,
+        SampleFn sampleFn,
+        GetValueFn getValue,
+        BrentWrapperT brentWrapper,
+        GetRootValueFn getRootValue,
+        IntervalExtraFn intervalExtra)
         where SampleFn : IMultipleSampleFn
         where GetValueFn : IMultipleGetValueFn
-        where BrentWrapperT : MathUtils.IScalarFunction
+        where BrentWrapperT : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
         where GetRootValueFn : IMultipleGetRootValueFn
         where IntervalExtraFn : IMultipleIntervalExtraFn
     {
-        MultipleResult aResult = new();
-        aResult.Status = MathUtils.Status.OK;
+        MultipleResult result = new();
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
         // Ensure proper ordering
-        double aLower = Min(theLower, theUpper);
-        double aUpper = Max(theLower, theUpper);
+        double aLower = Min(lower, upper);
+        double aUpper = Max(lower, upper);
 
         // Minimum samples
-        int aNbSamples = Max(2 * theConfig.NbSamples, 20);
-        double aDx = (aUpper - aLower) / aNbSamples;
+        int nbSamples = Max(2 * config.NbSamples, 20);
+        double dx = (aUpper - aLower) / nbSamples;
 
         // Ensure EpsX is not too small relative to interval
-        double aEpsX = EffectiveXTolerance(aLower, aUpper, theConfig.XTolerance);
+        double epsX = EffectiveXTolerance(aLower, aUpper, config.XTolerance);
 
         // Sample function values
-        math_Vector aXValues = new(0, aNbSamples);
-        for (int i = 0; i <= aNbSamples; ++i)
+        math_Vector xValues = new(0, nbSamples);
+        for (int i = 0; i <= nbSamples; ++i)
         {
-            double aX = aLower + i * aDx;
-            if (aX > aUpper)
-                aX = aUpper;
-            aXValues[i] = aX;
+            double x = aLower + i * dx;
+            if (x > aUpper)
+                x = aUpper;
+            xValues[i] = x;
 
-            if (!theSampleFn.Invoke(i, aX))
+            if (!sampleFn.Invoke(i, x))
             {
-                aResult.Status = MathUtils.Status.NumericalError;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NumericalError;
+                return result;
             }
         }
 
         // Check if function is essentially null everywhere
-        aResult.IsAllNull = true;
-        for (int i = 0; i <= aNbSamples; ++i)
+        result.IsAllNull = true;
+        for (int i = 0; i <= nbSamples; ++i)
         {
-            if (Math.Abs(theGetValue.Invoke(i)) > theConfig.NullTolerance)
+            if (Math.Abs(getValue.Invoke(i)) > config.NullTolerance)
             {
-                aResult.IsAllNull = false;
+                result.IsAllNull = false;
                 break;
             }
         }
 
-        if (aResult.IsAllNull)
+        if (result.IsAllNull)
         {
-            return aResult;
+            return result;
         }
 
         // Find sign changes
-        for (int i = 0; i < aNbSamples; ++i)
+        for (int i = 0; i < nbSamples; ++i)
         {
-            double aF0 = theGetValue.Invoke(i);
-            double aF1 = theGetValue.Invoke(i + 1);
-            double aX0 = aXValues[i];
-            double aX1 = aXValues[i + 1];
+            double f0 = getValue.Invoke(i);
+            double f1 = getValue.Invoke(i + 1);
+            double x0 = xValues[i];
+            double x1 = xValues[i + 1];
 
             // Exact zero at sample point
-            if (Math.Abs(aF0) < theConfig.FTolerance)
+            if (Math.Abs(f0) < config.FTolerance)
             {
-                AddRoot(ref aResult, aEpsX, aX0, aF0 + theConfig.Offset);
+                AddRoot(ref result, epsX, x0, f0 + config.Offset);
                 continue;
             }
 
             // Sign change detected
-            if (aF0 * aF1 < 0.0)
+            if (f0 * f1 < 0.0)
             {
-                MathUtils.Config aBrentConfig = new();
-                aBrentConfig.XTolerance = aEpsX;
-                aBrentConfig.FTolerance = theConfig.FTolerance;
-                aBrentConfig.MaxIterations = theConfig.MaxIterations;
+                global::Kerf.Engine.Numerics.Utilities.MathUtils.Config brentConfig = new();
+                brentConfig.XTolerance = epsX;
+                brentConfig.FTolerance = config.FTolerance;
+                brentConfig.MaxIterations = config.MaxIterations;
 
-                MathUtils.ScalarResult aBrentResult = Brent(theBrentWrapper, aX0, aX1, aBrentConfig);
-                aResult.NbIterations += aBrentResult.NbIterations;
+                global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult brentResult = Brent(brentWrapper, x0, x1, brentConfig);
+                result.NbIterations += brentResult.NbIterations;
 
-                if (aBrentResult.IsDone() && aBrentResult.Root.HasValue)
+                if (brentResult.IsDone && brentResult.Root.HasValue)
                 {
-                    AddRoot(ref aResult, aEpsX, aBrentResult.Root.Value, theGetRootValue.Invoke(aBrentResult.Root.Value));
+                    AddRoot(ref result, epsX, brentResult.Root.Value, getRootValue.Invoke(brentResult.Root.Value));
                 }
             }
             else
             {
                 // Additional per-interval processing (e.g., tangential root detection)
-                theIntervalExtra.Invoke(i, aX0, aX1, aF0, aF1, ref aResult, aEpsX);
+                intervalExtra.Invoke(i, x0, x1, f0, f1, ref result, epsX);
             }
         }
 
         // Check last sample point
-        if (Math.Abs(theGetValue.Invoke(aNbSamples)) < theConfig.FTolerance)
+        if (Math.Abs(getValue.Invoke(nbSamples)) < config.FTolerance)
         {
-            AddRoot(ref aResult, aEpsX, aXValues[aNbSamples], theGetValue.Invoke(aNbSamples) + theConfig.Offset);
+            AddRoot(ref result, epsX, xValues[nbSamples], getValue.Invoke(nbSamples) + config.Offset);
         }
 
-        SortRoots(ref aResult);
-        return aResult;
+        SortRoots(ref result);
+        return result;
     }
 }

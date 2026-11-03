@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
@@ -93,15 +95,15 @@ public class IntPatch_ALine : IntPatch_Line
     }
 
     /// <summary>The point of parameter <paramref name="U"/> (Standard_DomainError out of the domain).</summary>
-    public gp_Pnt Value(double U) => curv.Value(U); // Value leve l exception DomainError
+    public Point3D Value(double U) => curv.Value(U); // Value leve l exception DomainError
 
     /// <summary>
     /// The point at <paramref name="U"/>, and true with the derivative <paramref name="Du"/> where it is defined.
     /// </summary>
-    public bool D1(double U, out gp_Pnt P, out gp_Vec Du) => curv.D1u(U, out P, out Du); // D1u leve l exception DomainError
+    public bool D1(double U, out Point3D P, out Vector3D Du) => curv.D1u(U, out P, out Du); // D1u leve l exception DomainError
 
     /// <summary>The parameters of the point <paramref name="theP"/> on the curve, sorted ascending (none if it is not on it).</summary>
-    public void FindParameter(in gp_Pnt theP, NCollection_List<double> theParams) => curv.FindParameter(theP, theParams);
+    public void FindParameter(in Point3D theP, NCollection_List<double> theParams) => curv.FindParameter(theP, theParams);
 
     /// <summary>True if the line has a known first point (<see cref="FirstPoint"/>).</summary>
     public bool HasFirstPoint() => fipt;
@@ -114,7 +116,7 @@ public class IntPatch_ALine : IntPatch_Line
     {
         if (!fipt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indf);
     }
@@ -124,7 +126,7 @@ public class IntPatch_ALine : IntPatch_Line
     {
         if (!lapt)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return svtx.Value(indl);
     }
@@ -179,7 +181,7 @@ public class IntPatch_ALine : IntPatch_Line
             double pmpimpi = p - M_PI - M_PI;
             if (pmpimpi >= ParamMinOnLine)
             {
-                gp_Pnt P1 = Value(pmpimpi);
+                Point3D P1 = Value(pmpimpi);
                 double d1 = P1.Distance(VTX.Value());
                 if (d1 < Tol)
                 {
@@ -191,7 +193,7 @@ public class IntPatch_ALine : IntPatch_Line
             pmpimpi = p + M_PI + M_PI;
             if (pmpimpi <= ParamMaxOnLine)
             {
-                gp_Pnt P1 = Value(pmpimpi);
+                Point3D P1 = Value(pmpimpi);
                 double d1 = P1.Distance(VTX.Value());
                 if (d1 < Tol)
                 {
@@ -483,7 +485,7 @@ public class IntPatch_ALine : IntPatch_Line
             {
                 if (VTXN.ParameterOnLine() != ParamMaxOnLine)
                 {
-                    gp_Pnt PN = Value(ParamMaxOnLine);
+                    Point3D PN = Value(ParamMaxOnLine);
                     double d = PN.Distance(VTX0.Value());
                     if (d <= Tol)
                     {
@@ -500,7 +502,7 @@ public class IntPatch_ALine : IntPatch_Line
                     {
                         if (VTX0.ParameterOnLine() != ParamMinOnLine)
                         {
-                            gp_Pnt P0 = Value(ParamMinOnLine);
+                            Point3D P0 = Value(ParamMinOnLine);
                             double d = P0.Distance(VTX0.Value());
                             if (d <= Tol)
                             {

@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.CSLib_DerivativeStatus;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.DerivativeStatus;
 using static Occt.LProp_Status;
 
 namespace Occt;
@@ -23,8 +26,8 @@ internal static class LProp_SurfaceUtils
     /// The order (1 or 2) of the first derivative in one direction longer than the tolerance; the status is
     /// LProp_Defined if there is one, LProp_Undefined otherwise.
     /// </summary>
-    internal static bool FindSurfTangentOrder(in gp_Vec theD1,
-                                              in gp_Vec theD2,
+    internal static bool FindSurfTangentOrder(in Vector3D theD1,
+                                              in Vector3D theD2,
                                               int theCN,
                                               double theTolSq,
                                               out int theOrder,
@@ -56,31 +59,31 @@ internal static class LProp_SurfaceUtils
     }
 
     /// <summary>The normal by CSLib::Normal; true if it is defined.</summary>
-    internal static bool ComputeSurfNormal(in gp_Vec theD1u, in gp_Vec theD1v, double theLinTol, ref gp_Dir theNormal)
+    internal static bool ComputeSurfNormal(in Vector3D theD1u, in Vector3D theD1v, double theLinTol, ref Direction3D theNormal)
     {
-        CSLib_DerivativeStatus aStatus;
-        CSLib.Normal(theD1u, theD1v, theLinTol, out aStatus, ref theNormal);
-        return aStatus == CSLib_Done;
+        DerivativeStatus aStatus;
+        global::Kerf.Engine.Geometry.CSLib.Normal(theD1u, theD1v, theLinTol, out aStatus, ref theNormal);
+        return aStatus == Done;
     }
 
     /// <summary>
     /// The principal curvatures and directions, the mean and the Gaussian curvatures, from the first and second
     /// fundamental forms; false if they can't be computed (the outputs may then be partly written, as in OCCT).
     /// </summary>
-    internal static bool ComputeSurfCurvatures(in gp_Vec theD1u,
-                                               in gp_Vec theD1v,
-                                               in gp_Vec theD2u,
-                                               in gp_Vec theD2v,
-                                               in gp_Vec theDuv,
-                                               in gp_Dir theNormal,
+    internal static bool ComputeSurfCurvatures(in Vector3D theD1u,
+                                               in Vector3D theD1v,
+                                               in Vector3D theD2u,
+                                               in Vector3D theD2v,
+                                               in Vector3D theDuv,
+                                               in Direction3D theNormal,
                                                ref double theMinCurv,
                                                ref double theMaxCurv,
-                                               ref gp_Dir theDirMin,
-                                               ref gp_Dir theDirMax,
+                                               ref Direction3D theDirMin,
+                                               ref Direction3D theDirMax,
                                                ref double theMeanCurv,
                                                ref double theGausCurv)
     {
-        gp_Vec aNorm = new(theNormal);
+        Vector3D aNorm = new(theNormal);
 
         double anE = theD1u.SquareMagnitude();
         double anF = theD1u.Dot(theD1v);
@@ -105,8 +108,8 @@ internal static class LProp_SurfaceUtils
 
             theMinCurv = aN / aG;
             theMaxCurv = theMinCurv;
-            theDirMin = new gp_Dir(theD1u);
-            theDirMax = new gp_Dir(theD1u.Crossed(aNorm));
+            theDirMin = new Direction3D(theD1u);
+            theDirMax = new Direction3D(theD1u.Crossed(aNorm));
             theMeanCurv = theMinCurv;
             theGausCurv = theMinCurv * theMinCurv;
             return true;
@@ -117,12 +120,12 @@ internal static class LProp_SurfaceUtils
         double aC = aC0 / aMaxABC;
 
         double aCurv1, aCurv2;
-        gp_Vec aVectCurv1, aVectCurv2;
+        Vector3D aVectCurv1, aVectCurv2;
 
         if (Math.Abs(anA) > RealEpsilon())
         {
-            var aRoot = new math_DirectPolynomialRoots(anA, aB, aC);
-            if (aRoot.NbSolutions() != 2)
+            var aRoot = new DirectPolynomialRoots(anA, aB, aC);
+            if (aRoot.SolutionCount != 2)
             {
                 return false;
             }
@@ -136,8 +139,8 @@ internal static class LProp_SurfaceUtils
         }
         else if (Math.Abs(aC) > RealEpsilon())
         {
-            var aRoot = new math_DirectPolynomialRoots(aC, aB, anA);
-            if (aRoot.NbSolutions() != 2)
+            var aRoot = new DirectPolynomialRoots(aC, aB, anA);
+            if (aRoot.SolutionCount != 2)
             {
                 return false;
             }
@@ -161,15 +164,15 @@ internal static class LProp_SurfaceUtils
         {
             theMinCurv = aCurv1;
             theMaxCurv = aCurv2;
-            theDirMin = new gp_Dir(aVectCurv1);
-            theDirMax = new gp_Dir(aVectCurv2);
+            theDirMin = new Direction3D(aVectCurv1);
+            theDirMax = new Direction3D(aVectCurv2);
         }
         else
         {
             theMinCurv = aCurv2;
             theMaxCurv = aCurv1;
-            theDirMin = new gp_Dir(aVectCurv2);
-            theDirMax = new gp_Dir(aVectCurv1);
+            theDirMin = new Direction3D(aVectCurv2);
+            theDirMax = new Direction3D(aVectCurv1);
         }
 
         double anEG_FF = (anE * aG) - (anF * anF);
@@ -179,10 +182,10 @@ internal static class LProp_SurfaceUtils
     }
 
     /// <summary>The normal status, computing the normal if it is undecided.</summary>
-    internal static bool IsNormalDefined(in gp_Vec theD1u,
-                                         in gp_Vec theD1v,
+    internal static bool IsNormalDefined(in Vector3D theD1u,
+                                         in Vector3D theD1v,
                                          double theLinTol,
-                                         ref gp_Dir theNormal,
+                                         ref Direction3D theNormal,
                                          ref LProp_Status theNormStatus)
     {
         if (theNormStatus == LProp_Undefined)

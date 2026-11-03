@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT loads the text with <c>Message_MsgFile::LoadFromString</c>, which the port leaves out (decision 520): the
-/// keywords and texts are a table added with <see cref="Message_MsgFile.AddMsg"/>. Note that the file's keyword
+/// keywords and texts are a table added with <see cref="MsgFile.AddMsg"/>. Note that the file's keyword
 /// <c>BOPAlgo_AlertBOPIsNotSet</c> doesn't match the alert class <see cref="BOPAlgo_AlertBOPNotSet"/>, and
 /// <c>BOPAlgo_AlertNullFace</c> has no class, as in OCCT.
 /// </remarks>
@@ -79,11 +81,11 @@ internal static class BOPAlgo_BOPAlgo_msg
             {
                 return;
             }
-            if (!Message_MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"))
+            if (!MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"))
             {
                 foreach ((string aKey, string aText) in Messages)
                 {
-                    Message_MsgFile.AddMsg(aKey, aText);
+                    MsgFile.AddMsg(aKey, aText);
                 }
             }
             Volatile.Write(ref BOPAlgo_InitMessages, true);

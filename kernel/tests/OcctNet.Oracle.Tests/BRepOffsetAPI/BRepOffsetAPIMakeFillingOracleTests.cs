@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Reflection;
 using OcctNet.TestHarness;
@@ -67,8 +70,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     private static string? ErrorOf(Exception theException) => theException switch
     {
         N.OcctException e => e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message,
-        Standard_Failure f => f.GetType().Name,
-        _ => theException.GetType().Name,
+        FailureException f => global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType()),
+        _ => global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()),
     };
 
     // ---- the operations replayed on both sides ----
@@ -84,8 +87,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         Build,      // Build() and compare
     }
 
-    private sealed record Step(Op Kind, int A = 0, int B = 0, GeomAbs_Shape Order = GeomAbs_Shape.GeomAbs_C0, bool Bound = true,
-                               gp_Pnt Point = default, double U = 0, double V = 0);
+    private sealed record Step(Op Kind, int A = 0, int B = 0, Continuity Order = Continuity.C0, bool Bound = true,
+                               Point3D Point = default, double U = 0, double V = 0);
 
     private sealed class FillingCase
     {
@@ -93,7 +96,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         public bool Build123dParams;
         public required List<N.TopoDS_Shape> Inputs;
         public List<Step> Steps = [];
-        public gp_Pnt Center;
+        public Point3D Center;
     }
 
     private static N.TopoDS_Shape NativeCompound(IEnumerable<N.TopoDS_Shape> theShapes)
@@ -220,7 +223,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
         catch (Exception e)
         {
-            return ErrorOf(e) ?? e.GetType().Name;
+            return ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
         }
     }
 
@@ -325,7 +328,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             }
             return;
         }
-        Assert.True(aPRes.TShape()!.IsFrozen());
+        Assert.True(aPRes.TShape()!.IsFrozen);
 
         string aNT = NativeText(aNRes), aPT = PortText(aPRes);
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
@@ -452,17 +455,17 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
 
     // ---- inputs ----
 
-    private static N.TopoDS_Vertex NVertex(in gp_Pnt theP) => new N.BRepBuilderAPI_MakeVertex(Oracle.ToNative(theP)).Vertex();
+    private static N.TopoDS_Vertex NVertex(in Point3D theP) => new N.BRepBuilderAPI_MakeVertex(Oracle.ToNative(theP)).Vertex();
 
     // An edge between two vertices: straight, an arc through a lifted midpoint, or a B-spline through jittered points.
-    private static N.TopoDS_Edge NEdge(Oracle theOracle, N.TopoDS_Vertex theV1, in gp_Pnt theP1, N.TopoDS_Vertex theV2, in gp_Pnt theP2,
+    private static N.TopoDS_Edge NEdge(Oracle theOracle, N.TopoDS_Vertex theV1, in Point3D theP1, N.TopoDS_Vertex theV2, in Point3D theP2,
                                        int theKind, out string theWhat)
     {
         switch (theKind)
         {
             case 1:
             {
-                gp_Pnt aMid = new gp_Pnt((theP1.XYZ() + theP2.XYZ()) * 0.5).Translated(theOracle.Vec() * (0.02 * theP1.Distance(theP2) / 100.0 * theOracle.Real(1, 10)));
+                Point3D aMid = new Point3D((theP1.XYZ() + theP2.XYZ()) * 0.5).Translated(theOracle.Vec() * (0.02 * theP1.Distance(theP2) / 100.0 * theOracle.Real(1, 10)));
                 using var anArc = new N.GC_MakeArcOfCircle(Oracle.ToNative(theP1), Oracle.ToNative(aMid), Oracle.ToNative(theP2));
                 theWhat = "arc";
                 return new N.BRepBuilderAPI_MakeEdge(anArc.Value(), theV1, theV2).Edge();
@@ -470,11 +473,11 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             case 2:
             {
                 int aNb = theOracle.Int(3, 6);
-                var aPoles = new NCollection_Array1<gp_Pnt>(1, aNb);
+                var aPoles = new NCollection_Array1<Point3D>(1, aNb);
                 for (int i = 1; i <= aNb; i++)
                 {
                     double t = (i - 1.0) / (aNb - 1.0);
-                    gp_Pnt aP = new gp_Pnt(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
+                    Point3D aP = new Point3D(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
                     aPoles[i] = i == 1 || i == aNb ? aP : aP.Translated(theOracle.Vec() * (0.002 * theP1.Distance(theP2)));
                 }
                 using var anApprox = new N.GeomAPI_PointsToBSpline(Oracle.ToNative(aPoles));
@@ -490,17 +493,17 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     // A closed contour of edges on shared vertices around a random non-planar polygon (as build123d's MakeSurface takes).
     private static List<N.TopoDS_Shape> Contour(Oracle theOracle, int theMaxKind, out string theWhat)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         double R = theOracle.Real(2.0, 50.0);
         int aNb = theOracle.Int(3, 7);
-        var aPnts = new gp_Pnt[aNb];
+        var aPnts = new Point3D[aNb];
         for (int i = 0; i < aNb; i++)
         {
             double a = 2.0 * Math.PI * i / aNb + theOracle.Real(-0.2, 0.2);
             double r = R * theOracle.Real(0.7, 1.3);
-            aPnts[i] = anAx.Location().Translated(new gp_Vec(anAx.XDirection()) * (r * Math.Cos(a)))
-                .Translated(new gp_Vec(anAx.YDirection()) * (r * Math.Sin(a)))
-                .Translated(new gp_Vec(anAx.Direction()) * (R * theOracle.Real(-0.4, 0.4)));
+            aPnts[i] = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * (r * Math.Cos(a)))
+                .Translated(new Vector3D(anAx.YDirection()) * (r * Math.Sin(a)))
+                .Translated(new Vector3D(anAx.Direction()) * (R * theOracle.Real(-0.4, 0.4)));
         }
         var aVs = aPnts.Select(p => NVertex(p)).ToArray();
         var anEdges = new List<N.TopoDS_Shape>();
@@ -515,29 +518,29 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         return anEdges;
     }
 
-    private static gp_Pnt InsidePoint(Oracle theOracle, List<N.TopoDS_Shape> theEdges)
+    private static Point3D InsidePoint(Oracle theOracle, List<N.TopoDS_Shape> theEdges)
     {
         // a point near the centroid of the edges' vertices, lifted a little
-        var aSum = new gp_XYZ(0, 0, 0);
+        var aSum = new Xyz(0, 0, 0);
         int aNb = 0;
         double aSize = 0.0;
-        gp_Pnt? aPrev = null;
+        Point3D? aPrev = null;
         foreach (N.TopoDS_Shape anEdge in theEdges)
         {
             var aV1 = new N.TopoDS_Vertex();
             var aV2 = new N.TopoDS_Vertex();
             N.TopExp.Vertices(N.TopoDS.Edge(anEdge), aV1, aV2);
             using var aP = N.BRep_Tool.Pnt(aV1);
-            var aPnt = new gp_Pnt(aP.X(), aP.Y(), aP.Z());
+            var aPnt = new Point3D(aP.X(), aP.Y(), aP.Z());
             aSum += aPnt.XYZ();
             aNb++;
-            if (aPrev is gp_Pnt aQ)
+            if (aPrev is Point3D aQ)
             {
                 aSize = Math.Max(aSize, aQ.Distance(aPnt));
             }
             aPrev = aPnt;
         }
-        return new gp_Pnt(aSum / aNb).Translated(theOracle.Vec() * (aSize * 0.001 * theOracle.Real(0, 2)));
+        return new Point3D(aSum / aNb).Translated(theOracle.Vec() * (aSize * 0.001 * theOracle.Real(0, 2)));
     }
 
     [Fact]
@@ -551,7 +554,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             var aCase = new FillingCase { What = $"MakeSurface {c} ({aWhat})", Build123dParams = true, Inputs = anEdges };
             for (int i = 0; i < anEdges.Count; i++)
             {
-                aCase.Steps.Add(new Step(Op.Edge, i, Order: GeomAbs_Shape.GeomAbs_C0));
+                aCase.Steps.Add(new Step(Op.Edge, i, Order: Continuity.C0));
             }
             aCase.Steps.Add(new Step(Op.Build));
             int aNbPoints = c % 3;
@@ -570,9 +573,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     }
 
     // A box's faces but the top; the top's edges, each with the side face it bounds.
-    private static FillingCase BoxHole(Oracle theOracle, int theIndex, GeomAbs_Shape theOrder, bool theFreeConstraint)
+    private static FillingCase BoxHole(Oracle theOracle, int theIndex, Continuity theOrder, bool theFreeConstraint)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         double dx = theOracle.Real(1, 30), dy = theOracle.Real(1, 30), dz = theOracle.Real(1, 30);
         using var aBox = new N.BRepPrimAPI_MakeBox(Oracle.ToNative(anAx), dx, dy, dz);
         N.TopoDS_Face[] aSides = [aBox.FrontFace(), aBox.RightFace(), aBox.BackFace(), aBox.LeftFace()];
@@ -586,8 +589,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         anInputs.Add(aBox.TopFace()); // input 8, for the initial surface
         var aCase = new FillingCase
         {
-            Center = anAx.Location().Translated(new gp_Vec(anAx.XDirection()) * (dx / 2)).Translated(new gp_Vec(anAx.YDirection()) * (dy / 2))
-                .Translated(new gp_Vec(anAx.Direction()) * (dz * theOracle.Real(0.9, 1.3))),
+            Center = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * (dx / 2)).Translated(new Vector3D(anAx.YDirection()) * (dy / 2))
+                .Translated(new Vector3D(anAx.Direction()) * (dz * theOracle.Real(0.9, 1.3))),
             What = $"box hole {theIndex} ({dx:G3} x {dy:G3} x {dz:G3}, {theOrder}{(theFreeConstraint ? ", one side free" : "")})",
             Inputs = anInputs,
         };
@@ -619,9 +622,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     }
 
     // A cylinder's lateral face (or half of it) and its top circle(s).
-    private static FillingCase CylinderCap(Oracle theOracle, int theIndex, GeomAbs_Shape theOrder)
+    private static FillingCase CylinderCap(Oracle theOracle, int theIndex, Continuity theOrder)
     {
-        gp_Ax2 anAx = theOracle.Ax2();
+        Frame3D anAx = theOracle.Ax2();
         double R = theOracle.Real(1, 20), H = theOracle.Real(1, 20);
         using var aCyl = new N.BRepPrimAPI_MakeCylinder(Oracle.ToNative(anAx), R, H);
         N.TopoDS_Face aLateral = aCyl.Face();
@@ -638,7 +641,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 continue;
             }
             using var aP = aCurve.Value(aCurve.FirstParameter());
-            double h = (new gp_Pnt(aP.X(), aP.Y(), aP.Z()).XYZ() - anAx.Location().XYZ()).Dot(anAx.Direction().XYZ());
+            double h = (new Point3D(aP.X(), aP.Y(), aP.Z()).XYZ() - anAx.Location().XYZ()).Dot(anAx.Direction().XYZ());
             if (h > aBest)
             {
                 aBest = h;
@@ -657,7 +660,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         var anOracle = new Oracle(output, 5942);
         foreach (int c in Tape.Budget(30))
         {
-            GeomAbs_Shape anOrder = c % 3 == 2 ? GeomAbs_Shape.GeomAbs_G2 : GeomAbs_Shape.GeomAbs_G1;
+            Continuity anOrder = c % 3 == 2 ? Continuity.G2 : Continuity.G1;
             FillingCase aCase = BoxHole(anOracle, c, anOrder, false);
             if (c % 4 == 1)
             {
@@ -669,7 +672,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
         foreach (int c in Tape.Budget(20))
         {
-            FillingCase aCase = CylinderCap(anOracle, c, c % 2 == 0 ? GeomAbs_Shape.GeomAbs_G1 : GeomAbs_Shape.GeomAbs_C0);
+            FillingCase aCase = CylinderCap(anOracle, c, c % 2 == 0 ? Continuity.G1 : Continuity.C0);
             aCase.Steps.Add(new Step(Op.Build));
             Run(aCase);
         }
@@ -689,7 +692,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             var aCase = new FillingCase { What = $"mixed {c} ({aWhat})", Inputs = anEdges };
             for (int i = 0; i < anEdges.Count; i++)
             {
-                aCase.Steps.Add(new Step(Op.Edge, i, Order: GeomAbs_Shape.GeomAbs_C0));
+                aCase.Steps.Add(new Step(Op.Edge, i, Order: Continuity.C0));
             }
             for (int k = 0; k < 1 + c % 4; k++)
             {
@@ -701,9 +704,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         foreach (int c in Tape.Budget(15))
         {
             // a box hole with a point given by U, V on a side face
-            FillingCase aCase = BoxHole(anOracle, c, GeomAbs_Shape.GeomAbs_G1, false);
+            FillingCase aCase = BoxHole(anOracle, c, Continuity.G1, false);
             aCase.What = "box hole with a point on a face: " + aCase.What;
-            aCase.Steps.Add(new Step(Op.PointOnFace, 0, Order: c % 2 == 0 ? GeomAbs_Shape.GeomAbs_C0 : GeomAbs_Shape.GeomAbs_G1,
+            aCase.Steps.Add(new Step(Op.PointOnFace, 0, Order: c % 2 == 0 ? Continuity.C0 : Continuity.G1,
                                      U: anOracle.Real(0.1, 0.9), V: anOracle.Real(0.1, 0.9)));
             aCase.Steps.Add(new Step(Op.Build));
             Run(aCase);
@@ -711,14 +714,14 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         for (int c = 0; c < 10; c++)
         {
             // one side of the hole given by its face only (a free constraint)
-            FillingCase aCase = BoxHole(anOracle, c, GeomAbs_Shape.GeomAbs_G1, true);
+            FillingCase aCase = BoxHole(anOracle, c, Continuity.G1, true);
             aCase.Steps.Add(new Step(Op.Build));
             Run(aCase);
         }
         for (int c = 0; c < 10; c++)
         {
             // the hole filled from the bottom face as initial surface
-            FillingCase aCase = BoxHole(anOracle, c, c % 2 == 0 ? GeomAbs_Shape.GeomAbs_C0 : GeomAbs_Shape.GeomAbs_G1, false);
+            FillingCase aCase = BoxHole(anOracle, c, c % 2 == 0 ? Continuity.C0 : Continuity.G1, false);
             aCase.What = "initial surface: " + aCase.What;
             aCase.Steps.Insert(0, new Step(Op.Init, 8));
             aCase.Steps.Add(new Step(Op.Build));
@@ -802,7 +805,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             {
                 w++;
             }
-            var anOrder = (GeomAbs_Shape)(int.TryParse(aWords[w++], out int o) ? o : 0);
+            var anOrder = (Continuity)(int.TryParse(aWords[w++], out int o) ? o : 0);
             if (anE is not null && aFace is not null)
             {
                 aCase.Steps.Add(new Step(Op.EdgeFace, Index(anE), Index(aFace), anOrder));
@@ -834,20 +837,20 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     public void MakeFilling_on_faces_extruded_from_the_constraint_edges_matches_native_OCCT()
     {
         var aWatch = Stopwatch.StartNew();
-        gp_Pnt[][] aSplines =
+        Point3D[][] aSplines =
         [
             [new(0, 0, 0), new(1, 0, 0), new(10, 0, -10)],
             [new(0, 0, 0), new(0, 1, 0), new(0, 10, -10)],
             [new(10, 0, -10), new(7, 7, -10), new(0, 10, -10)],
         ];
-        gp_Vec[] aDirs = [new(0, -1, 0), new(-1, 0, 0), new(0, 0, -1)];
+        Vector3D[] aDirs = [new(0, -1, 0), new(-1, 0, 0), new(0, 0, -1)];
         // (edge, with its face or not, order) for each case
-        (int Edge, bool OnFace, GeomAbs_Shape Order)[][] aCases =
+        (int Edge, bool OnFace, Continuity Order)[][] aCases =
         [
-            [(0, true, GeomAbs_Shape.GeomAbs_G1), (1, true, GeomAbs_Shape.GeomAbs_G1), (2, true, GeomAbs_Shape.GeomAbs_G1)],
-            [(0, true, GeomAbs_Shape.GeomAbs_G1), (1, true, GeomAbs_Shape.GeomAbs_G1), (2, false, GeomAbs_Shape.GeomAbs_C0)],
-            [(0, true, GeomAbs_Shape.GeomAbs_C1), (1, false, GeomAbs_Shape.GeomAbs_C0), (2, false, GeomAbs_Shape.GeomAbs_C0)],
-            [(0, true, GeomAbs_Shape.GeomAbs_G2), (1, true, GeomAbs_Shape.GeomAbs_C0), (2, true, GeomAbs_Shape.GeomAbs_G1)],
+            [(0, true, Continuity.G1), (1, true, Continuity.G1), (2, true, Continuity.G1)],
+            [(0, true, Continuity.G1), (1, true, Continuity.G1), (2, false, Continuity.C0)],
+            [(0, true, Continuity.C1), (1, false, Continuity.C0), (2, false, Continuity.C0)],
+            [(0, true, Continuity.G2), (1, true, Continuity.C0), (2, true, Continuity.G1)],
         ];
         for (int c = 0; c < aCases.Length; c++)
         {
@@ -859,7 +862,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             for (int k = 0; k < 3; k++)
             {
                 using var aNPnts = new N.TColgp_HArray1OfPnt(1, 3);
-                var aPPnts = new NCollection_HArray1<gp_Pnt>(1, 3);
+                var aPPnts = new NCollection_HArray1<Point3D>(1, 3);
                 for (int i = 0; i < 3; i++)
                 {
                     using N.gp_Pnt aNP = Oracle.ToNative(aSplines[k][i]);
@@ -878,7 +881,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 aNEdges.Add(aNE);
                 aPEdges.Add(aPE);
             }
-            Assert.True(aPEdges[0].TShape()!.IsFrozen());
+            Assert.True(aPEdges[0].TShape()!.IsFrozen);
             Assert.Null(BRep_Tool.CurveOnSurface(TopoDS.Edge(aPEdges[0]), aPFaces[0], out _, out _)); // the port's edge has none
             List<TopoDS_Shape> aPIn = [.. aPEdges, .. aPFaces.Select(f => (TopoDS_Shape)f)];
             List<string> anInputTexts = aPIn.Select(x => PortText(x)).ToList();
@@ -896,7 +899,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             using var aN = new N.BRepOffsetAPI_MakeFilling();
             var aP = new BRepOffsetAPI_MakeFilling();
             int aNb = 0;
-            foreach ((int anEdge, bool anOnFace, GeomAbs_Shape anOrder) in aCases[c])
+            foreach ((int anEdge, bool anOnFace, Continuity anOrder) in aCases[c])
             {
                 string w = $"extruded supports {c}";
                 if (anOnFace)
@@ -932,7 +935,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             }
             catch (Exception e)
             {
-                aPErr = ErrorOf(e) ?? e.GetType().Name;
+                aPErr = ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
             }
             if (aNErr is not null || aPErr is not null || aNRes is null || aPRes.IsNull())
             {
@@ -1005,7 +1008,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             TopExp.Vertices(anE, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
             foreach (TopoDS_Vertex aV in new[] { aV1, aV2 })
             {
-                gp_Pnt aP = BRep_Tool.Pnt(aV);
+                Point3D aP = BRep_Tool.Pnt(aV);
                 aW.WriteLine($"vertex {aP.X():R} {aP.Y():R} {aP.Z():R} {BRep_Tool.Tolerance(aV):R}");
             }
         }

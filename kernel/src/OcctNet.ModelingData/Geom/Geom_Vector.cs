@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +15,7 @@ namespace Occt;
 /// </summary>
 public abstract class Geom_Vector : Geom_Geometry
 {
-    protected gp_Vec gpVec;
+    protected Vector3D gpVec;
 
     /// <summary>Reverses the vector in place.</summary>
     internal void Reverse()
@@ -29,14 +33,14 @@ public abstract class Geom_Vector : Geom_Geometry
     }
 
     /// <summary>The angle to Other, in [0, PI].</summary>
-    /// <exception cref="gp_VectorWithNullMagnitude">Either magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="NullVectorException">Either magnitude is at most <c>gp::Resolution()</c>.</exception>
     public double Angle(Geom_Vector Other) => gpVec.Angle(Other.Vec());
 
     /// <summary>
     /// The angle to Other, in [-PI, PI], positive if this ^ Other has the orientation of VRef.
     /// </summary>
-    /// <exception cref="Standard_DomainError">The three vectors are coplanar and this and Other are not parallel.</exception>
-    /// <exception cref="gp_VectorWithNullMagnitude">A magnitude is at most <c>gp::Resolution()</c>.</exception>
+    /// <exception cref="DomainErrorException">The three vectors are coplanar and this and Other are not parallel.</exception>
+    /// <exception cref="NullVectorException">A magnitude is at most <c>gp::Resolution()</c>.</exception>
     public double AngleWithRef(Geom_Vector Other, Geom_Vector VRef) => gpVec.AngleWithRef(Other.Vec(), VRef.Vec());
 
     /// <summary>The coordinates.</summary>
@@ -58,11 +62,11 @@ public abstract class Geom_Vector : Geom_Geometry
     public double Z() => gpVec.Z();
 
     /// <summary>Replaces this vector by this ^ Other.</summary>
-    /// <exception cref="Standard_ConstructionError">This is a direction and the vectors are parallel.</exception>
+    /// <exception cref="ConstructionErrorException">This is a direction and the vectors are parallel.</exception>
     protected internal abstract void Cross(Geom_Vector Other);
 
     /// <summary>this ^ Other, as a new vector of the same kind.</summary>
-    /// <exception cref="Standard_ConstructionError">This is a direction and the vectors are parallel.</exception>
+    /// <exception cref="ConstructionErrorException">This is a direction and the vectors are parallel.</exception>
     public abstract Geom_Vector Crossed(Geom_Vector Other);
 
     /// <summary>Replaces this vector by this ^ (V1 ^ V2).</summary>
@@ -77,6 +81,6 @@ public abstract class Geom_Vector : Geom_Geometry
     /// <summary>The triple scalar product this . (V1 ^ V2).</summary>
     public double DotCross(Geom_Vector V1, Geom_Vector V2) => gpVec.DotCross(V1.Vec(), V2.Vec());
 
-    /// <summary>The vector as a <see cref="gp_Vec"/>.</summary>
-    public gp_Vec Vec() => gpVec;
+    /// <summary>The vector as a <see cref="Vector3D"/>.</summary>
+    public Vector3D Vec() => gpVec;
 }

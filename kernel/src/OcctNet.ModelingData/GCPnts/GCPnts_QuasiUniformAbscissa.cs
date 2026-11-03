@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -88,7 +90,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
     public bool IsDone() => myDone;
 
     /// <summary>The number of points computed.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbPoints()
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_QuasiUniformAbscissa::NbPoints()");
@@ -96,7 +98,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
     }
 
     /// <summary>The parameter of the point of index Index (1 to NbPoints).</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Parameter(int Index)
     {
         StdFail_NotDone_Raise_if(!myDone, "GCPnts_QuasiUniformAbscissa::Parameter()");
@@ -109,7 +111,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
     // It returns array of parameters in the control points.
     private void initialize(Adaptor3d_Curve theC, int theNbPoints, double theU1, double theU2)
     {
-        if (theC.GetType() != GeomAbs_BezierCurve && theC.GetType() != GeomAbs_BSplineCurve)
+        if (theC.GetType() != BezierCurve && theC.GetType() != BSplineCurve)
         {
             GCPnts_UniformAbscissa aUA = new(theC, theNbPoints, theU1, theU2);
             myDone = aUA.IsDone();
@@ -133,8 +135,8 @@ public sealed class GCPnts_QuasiUniformAbscissa
         double aLength = 0.0;
         double dU = (theU2 - theU1) / (2 * theNbPoints - 1);
 
-        NCollection_Array1<gp_Pnt2d> aLP = new(1, 2 * theNbPoints); // table Length <-> Param
-        gp_Pnt aP1, aP2;
+        NCollection_Array1<Point2D> aLP = new(1, 2 * theNbPoints); // table Length <-> Param
+        Point3D aP1, aP2;
         aP1 = theC.Value(theU1);
 
         // Sum all distances
@@ -143,7 +145,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
             aP2 = theC.Value(theU1 + i * dU);
             double aDist = aP1.Distance(aP2);
             aLength += aDist;
-            aLP[i + 1] = new gp_Pnt2d(aLength, theU1 + (i * dU));
+            aLP[i + 1] = new Point2D(aLength, theU1 + (i * dU));
             aP1 = aP2;
         }
 
@@ -188,7 +190,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
     // It returns array of parameters in the control points.
     private void initialize(Adaptor2d_Curve2d theC, int theNbPoints, double theU1, double theU2)
     {
-        if (theC.GetType() != GeomAbs_BezierCurve && theC.GetType() != GeomAbs_BSplineCurve)
+        if (theC.GetType() != BezierCurve && theC.GetType() != BSplineCurve)
         {
             GCPnts_UniformAbscissa aUA = new(theC, theNbPoints, theU1, theU2);
             myDone = aUA.IsDone();
@@ -212,8 +214,8 @@ public sealed class GCPnts_QuasiUniformAbscissa
         double aLength = 0.0;
         double dU = (theU2 - theU1) / (2 * theNbPoints - 1);
 
-        NCollection_Array1<gp_Pnt2d> aLP = new(1, 2 * theNbPoints); // table Length <-> Param
-        gp_Pnt2d aP1, aP2;
+        NCollection_Array1<Point2D> aLP = new(1, 2 * theNbPoints); // table Length <-> Param
+        Point2D aP1, aP2;
         aP1 = theC.Value(theU1);
 
         // Sum all distances
@@ -222,7 +224,7 @@ public sealed class GCPnts_QuasiUniformAbscissa
             aP2 = theC.Value(theU1 + i * dU);
             double aDist = aP1.Distance(aP2);
             aLength += aDist;
-            aLP[i + 1] = new gp_Pnt2d(aLength, theU1 + (i * dU));
+            aLP[i + 1] = new Point2D(aLength, theU1 + (i * dU));
             aP1 = aP2;
         }
 

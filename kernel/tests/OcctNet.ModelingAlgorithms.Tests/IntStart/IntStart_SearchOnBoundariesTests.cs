@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_Orientation;
 
@@ -26,7 +29,7 @@ public class IntStart_SearchOnBoundariesTests
     private sealed record Search(IntPatch_TheSOnBounds Result, BRepAdaptor_Surface Surface, BRepTopAdaptor_TopolTool Domain,
                                  IntSurf_Quadric Quadric, List<Adaptor2d_Curve2d> Arcs);
 
-    private static Search Run(TopoDS_Face theFace, gp_Pln thePlane)
+    private static Search Run(TopoDS_Face theFace, Plane3D thePlane)
     {
         BRepAdaptor_Surface aSurf = new(theFace);
         BRepTopAdaptor_TopolTool aDomain = new(aSurf);
@@ -52,8 +55,8 @@ public class IntStart_SearchOnBoundariesTests
 
     private static TopoDS_Face Sphere() => new BRepPrimAPI_MakeSphere(2).Face();
 
-    private static gp_Pln Plane(double x, double y, double z, double nx, double ny, double nz) =>
-        new(new gp_Pnt(x, y, z), new gp_Dir(nx, ny, nz));
+    private static Plane3D Plane(double x, double y, double z, double nx, double ny, double nz) =>
+        new(new Point3D(x, y, z), new Direction3D(nx, ny, nz));
 
     // (arc rank in wire order, parameter, is new, tolerance) of every point, in the order found
     private static (int Arc, double Param, bool IsNew, double Tol)[] Points(Search theSearch)
@@ -65,8 +68,8 @@ public class IntStart_SearchOnBoundariesTests
 
     private static void OnBoth(Search theSearch, in IntPatch_ThePathPointOfTheSOnBounds theP, double theTol)
     {
-        gp_Pnt2d aUV = theP.Arc().Value(theP.Parameter());
-        gp_Pnt anOnSurf = theSearch.Surface.Value(aUV.X(), aUV.Y());
+        Point2D aUV = theP.Arc().Value(theP.Parameter());
+        Point3D anOnSurf = theSearch.Surface.Value(aUV.X(), aUV.Y());
         Assert.True(anOnSurf.Distance(theP.Value()) <= theTol, $"{theP} is not at its arc parameter");
         Assert.True(Math.Abs(theSearch.Quadric.Distance(theP.Value())) <= theTol, $"{theP} is not on the plane");
     }
@@ -75,22 +78,22 @@ public class IntStart_SearchOnBoundariesTests
     private static (IntSurf_TypeTrans Line, IntSurf_TypeTrans Arc) Transitions(Search theSearch,
                                                                                 in IntPatch_ThePathPointOfTheSOnBounds theP)
     {
-        theP.Arc().D1(theP.Parameter(), out gp_Pnt2d aUV, out gp_Vec2d aD2d);
-        theSearch.Surface.D1(aUV.X(), aUV.Y(), out _, out gp_Vec aD1u, out gp_Vec aD1v);
+        theP.Arc().D1(theP.Parameter(), out Point2D aUV, out Vector2D aD2d);
+        theSearch.Surface.D1(aUV.X(), aUV.Y(), out _, out Vector3D aD1u, out Vector3D aD1v);
 
         IntPatch_TheSurfFunction aFunc = new(theSearch.Surface, theSearch.Quadric);
         math_Vector aX = new(1, 2);
         aX[1] = aUV.X();
         aX[2] = aUV.Y();
         math_Vector aF = new(1, 1);
-        math_Matrix aD = new(1, 1, 1, 2);
+        Matrix aD = new(1, 1, 1, 2);
         aFunc.Values(aX, aF, aD);
         Assert.False(aFunc.IsTangent());
-        gp_Vec aTgLine = aFunc.Direction3d();
+        Vector3D aTgLine = aFunc.Direction3d();
 
-        gp_Vec aTgRst = new();
+        Vector3D aTgRst = new();
         aTgRst.SetLinearForm(aD2d.X(), aD1u, aD2d.Y(), aD1v);
-        gp_Dir aNormal = new(aD1u.Crossed(aD1v));
+        Direction3D aNormal = new(aD1u.Crossed(aD1v));
         IntSurf_Transition aTLine = new(), aTArc = new();
         IntSurf.MakeTransition(aTgLine, aTgRst, aNormal, ref aTLine, ref aTArc);
         return (aTLine.TransitionType(), aTArc.TransitionType());
@@ -176,7 +179,7 @@ public class IntStart_SearchOnBoundariesTests
             Assert.Same(aS.Arcs[2 * i - 1], aSeg.Curve()); // the seams, arcs 2 and 4
             Assert.Equal(0.0, aSeg.FirstPoint().Parameter());
             Assert.Equal(2.0, aSeg.LastPoint().Parameter());
-            Assert.Equal(0.0, new gp_Pnt(1, 0, 2).Distance(aSeg.LastPoint().Value()), 1e-15);
+            Assert.Equal(0.0, new Point3D(1, 0, 2).Distance(aSeg.LastPoint().Value()), 1e-15);
         }
     }
 
@@ -228,10 +231,10 @@ public class IntStart_SearchOnBoundariesTests
     {
         IntPatch_TheSOnBounds aSearch = new();
         Assert.False(aSearch.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aSearch.NbPoints());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aSearch.AllArcSolution());
-        Assert.ThrowsAny<Standard_DomainError>(() => new IntPatch_ThePathPointOfTheSOnBounds().Vertex());
-        Assert.ThrowsAny<Standard_DomainError>(() => new IntPatch_TheSegmentOfTheSOnBounds().FirstPoint());
+        Assert.ThrowsAny<NotDoneException>(() => aSearch.NbPoints());
+        Assert.ThrowsAny<NotDoneException>(() => aSearch.AllArcSolution());
+        Assert.ThrowsAny<DomainErrorException>(() => new IntPatch_ThePathPointOfTheSOnBounds().Vertex());
+        Assert.ThrowsAny<DomainErrorException>(() => new IntPatch_TheSegmentOfTheSOnBounds().FirstPoint());
     }
 
     [Fact]
@@ -254,7 +257,7 @@ public class IntStart_SearchInsideTests
         TopoDS_Face aFace = new BRepPrimAPI_MakeCylinder(1, 2).Face();
         BRepAdaptor_Surface aSurf = new(aFace);
         BRepTopAdaptor_TopolTool aDomain = new(aSurf);
-        IntSurf_Quadric aQuad = new(new gp_Pln(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)));
+        IntSurf_Quadric aQuad = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
         IntPatch_TheSurfFunction aFunc = new(aQuad);
         aFunc.Set(IntSurf_QuadricTool.Tolerance(aQuad));
 
@@ -264,13 +267,13 @@ public class IntStart_SearchInsideTests
         for (int i = 1; i <= aSearch.NbPoints(); i++)
         {
             IntSurf_InteriorPoint aP = aSearch.Value(i);
-            gp_Pnt aPnt = aP.Value();
+            Point3D aPnt = aP.Value();
             Assert.Equal(1.0, aPnt.Z(), 1e-9);
             Assert.Equal(1.0, Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y()), 1e-9);
             Assert.True(aP.UParameter() > 0 && aP.UParameter() < 2 * Math.PI && Math.Abs(aP.VParameter() - 1) < 1e-9);
             // the tangent of the circle: horizontal, perpendicular to the radius; in (u, v), along u
             Assert.Equal(0.0, aP.Direction().Z(), 1e-12);
-            Assert.Equal(0.0, aP.Direction().Dot(new gp_Vec(aPnt.X(), aPnt.Y(), 0)), 1e-12);
+            Assert.Equal(0.0, aP.Direction().Dot(new Vector3D(aPnt.X(), aPnt.Y(), 0)), 1e-12);
             Assert.Equal(0.0, aP.Direction2d().Y(), 1e-12);
             for (int j = 1; j < i; j++)
             {
@@ -292,17 +295,17 @@ public class IntStart_SearchInsideTests
     [Fact]
     public void ZerImpFunc_is_tangent_where_the_surfaces_are()
     {
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 1));
-        IntPatch_TheSurfFunction aFunc = new(aCyl, new IntSurf_Quadric(new gp_Pln(new gp_Pnt(1, 0, 0), new gp_Dir(1, 0, 0))));
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 1));
+        IntPatch_TheSurfFunction aFunc = new(aCyl, new IntSurf_Quadric(new Plane3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0))));
         math_Vector aX = new(1, 2);
         math_Vector aF = new(1, 1);
-        math_Matrix aD = new(1, 1, 1, 2);
+        Matrix aD = new(1, 1, 1, 2);
         aX[1] = 0.0;
         aX[2] = 0.5;
         aFunc.Values(aX, aF, aD);
         Assert.Equal(0.0, aFunc.Root(), 1e-15);
         Assert.True(aFunc.IsTangent()); // the plane x = 1 touches the cylinder along u = 0
-        Assert.ThrowsAny<StdFail_UndefinedDerivative>(() => aFunc.Direction3d());
+        Assert.ThrowsAny<UndefinedDerivativeException>(() => aFunc.Direction3d());
 
         aX[1] = 0.3;
         aFunc.Value(aX, aF); // Value alone: IsTangent evaluates the derivatives itself
@@ -313,10 +316,10 @@ public class IntStart_SearchInsideTests
     [Fact]
     public void Int2S_finds_a_point_of_two_surfaces_and_the_tangent_there()
     {
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new gp_Pln(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1))), -5, 5, -5, 5);
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 1), 0, 2 * Math.PI, -5, 5);
+        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1))), -5, 5, -5, 5);
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, -5, 5);
         IntImp_Int2S<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool> anInt = new(aPln, aCyl, 1e-6);
-        math_FunctionSetRoot aRsnld = new(anInt.Function());
+        FunctionSetRoot aRsnld = new(anInt.Function());
 
         // near (cos 0.7, sin 0.7, 1): u1, v1 on the plane, u2, v2 on the cylinder
         NCollection_Array1<double> aParam = new(1, 4);
@@ -328,7 +331,7 @@ public class IntStart_SearchInsideTests
         Assert.True(anInt.IsDone());
         Assert.False(anInt.IsEmpty());
         Assert.False(anInt.IsTangent());
-        gp_Pnt aP = anInt.Point().Value();
+        Point3D aP = anInt.Point().Value();
         Assert.Equal(1.0, aP.Z(), 1e-9);
         Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-9);
         anInt.Point().Parameters(out double u1, out double v1, out double u2, out double v2);
@@ -336,14 +339,14 @@ public class IntStart_SearchInsideTests
         Assert.Equal(aP.Y(), v1, 1e-9);
         Assert.Equal(Math.Atan2(aP.Y(), aP.X()), u2, 1e-9);
         Assert.Equal(1.0, v2, 1e-9);
-        gp_Dir aT = anInt.Direction();
+        Direction3D aT = anInt.Direction();
         Assert.Equal(0.0, aT.Z(), 1e-9);
         Assert.Equal(0.0, aT.X() * aP.X() + aT.Y() * aP.Y(), 1e-9);
         Assert.Equal(0.0, anInt.DirectionOnS2().Y(), 1e-9);
 
         ref IntSurf_PntOn2S aChange = ref anInt.ChangePoint();
-        aChange.SetValue(new gp_Pnt(9, 9, 9));
-        Assert.Equal(new gp_Pnt(9, 9, 9), anInt.Point().Value());
+        aChange.SetValue(new Point3D(9, 9, 9));
+        Assert.Equal(new Point3D(9, 9, 9), anInt.Point().Value());
 
         // the constructor that searches at once
         IntImp_Int2S<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool> anAtOnce = new(aParam, aPln, aCyl, 1e-6);
@@ -354,26 +357,26 @@ public class IntStart_SearchInsideTests
     [Fact]
     public void Int2S_reports_parallel_planes_as_tangent()
     {
-        GeomAdaptor_Surface aP1 = new(new Geom_Plane(new gp_Pln()), -5, 5, -5, 5);
-        GeomAdaptor_Surface aP2 = new(new Geom_Plane(new gp_Pln()), -5, 5, -5, 5);
+        GeomAdaptor_Surface aP1 = new(new Geom_Plane(new Plane3D()), -5, 5, -5, 5);
+        GeomAdaptor_Surface aP2 = new(new Geom_Plane(new Plane3D()), -5, 5, -5, 5);
         IntImp_Int2S<Adaptor3d_Surface, IntCurveSurface_TheHSurfaceTool> anInt = new(aP1, aP2, 1e-6);
         NCollection_Array1<double> aParam = new(1, 4);
         aParam[1] = 1;
         aParam[2] = 1;
         aParam[3] = 1;
         aParam[4] = 1;
-        anInt.Perform(aParam, new math_FunctionSetRoot(anInt.Function()));
+        anInt.Perform(aParam, new FunctionSetRoot(anInt.Function()));
         Assert.True(anInt.IsEmpty()); // ComputeTangence: the surfaces are tangent, no search
-        Assert.ThrowsAny<Standard_DomainError>(() => anInt.Point());
+        Assert.ThrowsAny<DomainErrorException>(() => anInt.Point());
     }
 
     [Fact]
     public void CurvIntSurf_intersects_a_curve_on_a_surface_with_another_surface()
     {
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new gp_Pln(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1))), -5, 5, -5, 5);
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 1));
+        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1))), -5, 5, -5, 5);
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 1));
         // the line u = 0.3 on the cylinder, v from -5 to 5
-        Geom2dAdaptor_Curve anArc = new(new Geom2d_Line(new gp_Pnt2d(0.3, 0), new gp_Dir2d(0, 1)), -5, 5);
+        Geom2dAdaptor_Curve anArc = new(new Geom2d_Line(new Point2D(0.3, 0), new Direction2D(0, 1)), -5, 5);
         IntPatch_CSFunction aFunc = new(aPln, anArc, aCyl);
         IntPatch_CurvIntSurf anInt = new(0.0, 0.0, 0.0, aFunc, 1e-9);
         Assert.True(anInt.IsDone());
@@ -382,7 +385,7 @@ public class IntStart_SearchInsideTests
         anInt.ParameterOnSurface(out double u, out double v);
         Assert.Equal(Math.Cos(0.3), u, 1e-9);
         Assert.Equal(Math.Sin(0.3), v, 1e-9);
-        Assert.Equal(0.0, anInt.Point().Distance(new gp_Pnt(Math.Cos(0.3), Math.Sin(0.3), 1)), 1e-9);
+        Assert.Equal(0.0, anInt.Point().Distance(new Point3D(Math.Cos(0.3), Math.Sin(0.3), 1)), 1e-9);
         Assert.Same(aFunc, anInt.Function());
     }
 }
@@ -394,7 +397,7 @@ public class IntPatch_HInterToolTests
     public void Sample_points_follow_OCCT_s_grid_and_its_perturbations()
     {
         // A cylinder on u in [0, 2π], v in [0, 3]: 10 samples in u, 15 in v, so a grid of 5 x 8 interior points.
-        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new gp_Ax3(), 1), 0, 2 * Math.PI, 0, 3);
+        GeomAdaptor_Surface aCyl = new(new Geom_CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, 0, 3);
         IntPatch_HInterTool aTool = new();
         Assert.Equal(6 * 8, aTool.NbSamplePoints(aCyl));
         double du = 2 * Math.PI / 6, dv = 3.0 / 9;
@@ -409,13 +412,13 @@ public class IntPatch_HInterToolTests
         Assert.Equal(dv * 1.001, v);
 
         // A plane has a 2 x 2 grid only: the five fixed points.
-        GeomAdaptor_Surface aPln = new(new Geom_Plane(new gp_Pln()), 0, 10, 0, 10);
+        GeomAdaptor_Surface aPln = new(new Geom_Plane(new Plane3D()), 0, 10, 0, 10);
         Assert.Equal(4, aTool.NbSamplePoints(aPln));
         aTool.SamplePoint(aPln, 1, out u, out v);
         Assert.Equal((0.24 * 10, 0.26 * 10), (u, v));
 
-        Assert.Equal(2, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(), new gp_Dir2d(1, 0)))));
-        Assert.Equal(10, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Circle(new gp_Ax2d(), 1))));
-        Assert.Equal(2, IntPatch_HCurve2dTool.NbSamples(new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(), new gp_Dir2d(1, 0))), 0, 1));
+        Assert.Equal(2, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(), new Direction2D(1, 0)))));
+        Assert.Equal(10, IntPatch_HInterTool.NbSamplesOnArc(new Geom2dAdaptor_Curve(new Geom2d_Circle(new Axis2D(), 1))));
+        Assert.Equal(2, IntPatch_HCurve2dTool.NbSamples(new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(), new Direction2D(1, 0))), 0, 1));
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 using static OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI.BOPTest_Utilities;
 
@@ -95,11 +96,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void IdenticalNurbsBoxMinusBox_A6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -109,11 +110,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void IdenticalBoxMinusNurbsBox_A7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aBox, aNurbsBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -123,11 +124,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusLargerBox_A8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aLargerBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.5, 1.0);
+            TopoDS_Shape aLargerBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aLargerBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -137,11 +138,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void LargerBoxMinusNurbsBox_A9()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aLargerBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.5, 1.0);
+            TopoDS_Shape aLargerBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aLargerBox, aNurbsBox);
             ValidateResult(aResult, 4.0);
@@ -152,12 +153,12 @@ public static class BRepAlgoAPI_CutTests
         public void NurbsBoxMinusBox_B1()
         {
             // Create first box and convert to NURBS
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aBox1 = ConvertToNurbs(aBox1);
             Assert.False(aBox1.IsNull(), "Failed to convert to NURBS");
 
             // Create second box
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(0, 1, 0), 1.0, 0.5, 1.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(0, 1, 0), 1.0, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aBox1, aBox2);
             ValidateResult(aResult, 6.0);
@@ -168,12 +169,12 @@ public static class BRepAlgoAPI_CutTests
         public void BoxMinusNurbsBox_B2()
         {
             // Create first box and convert to NURBS
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
             // Create second box
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 1, 0), 1.0, 0.5, 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 1, 0), 1.0, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aBox, aNurbsBox);
             ValidateResult(aResult, 4.0);
@@ -183,11 +184,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusAdjacentBox_B3()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aAdjacentBox = CreateBox(new gp_Pnt(1, 1, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aAdjacentBox = CreateBox(new Point3D(1, 1, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aAdjacentBox);
             ValidateResult(aResult, 6.0);
@@ -197,11 +198,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void AdjacentBoxMinusNurbsBox_B4()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aAdjacentBox = CreateBox(new gp_Pnt(1, 1, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aAdjacentBox = CreateBox(new Point3D(1, 1, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aAdjacentBox, aNurbsBox);
             ValidateResult(aResult, 6.0);
@@ -211,11 +212,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusSmallerBox_B5()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aSmallerBox = CreateBox(new gp_Pnt(0, 0, 0), 0.5, 1.0, 0.5);
+            TopoDS_Shape aSmallerBox = CreateBox(new Point3D(0, 0, 0), 0.5, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aSmallerBox);
             ValidateResult(aResult, 5.5);
@@ -225,11 +226,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void SmallerBoxMinusNurbsBox_B6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aSmallerBox = CreateBox(new gp_Pnt(0, 0, 0), 0.5, 1.0, 0.5);
+            TopoDS_Shape aSmallerBox = CreateBox(new Point3D(0, 0, 0), 0.5, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aSmallerBox, aNurbsBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -239,11 +240,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusPartiallyOverlappingBox_B7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aPartialBox = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aPartialBox = CreateBox(new Point3D(0, -0.5, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aPartialBox);
             ValidateResult(aResult, 6.0);
@@ -253,11 +254,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void PartiallyOverlappingBoxMinusNurbsBox_B8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aPartialBox = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aPartialBox = CreateBox(new Point3D(0, -0.5, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aPartialBox, aNurbsBox);
             ValidateResult(aResult, 2.5);
@@ -267,11 +268,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusExtendedBox_B9()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedBox = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 1.5, 1.0);
+            TopoDS_Shape aExtendedBox = CreateBox(new Point3D(0, -0.5, 0), 0.5, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aExtendedBox);
             ValidateResult(aResult, 4.0);
@@ -281,11 +282,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ExtendedBoxMinusNurbsBox_C1()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedBox = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 1.5, 1.0);
+            TopoDS_Shape aExtendedBox = CreateBox(new Point3D(0, -0.5, 0), 0.5, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aExtendedBox, aNurbsBox);
             ValidateResult(aResult, 2.5);
@@ -295,11 +296,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusShiftedBox_C2()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedBox = CreateBox(new gp_Pnt(0, 0.5, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aShiftedBox = CreateBox(new Point3D(0, 0.5, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aShiftedBox);
             ValidateResult(aResult, 4.0);
@@ -309,11 +310,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ShiftedBoxMinusNurbsBox_C3()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedBox = CreateBox(new gp_Pnt(0, 0.5, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aShiftedBox = CreateBox(new Point3D(0, 0.5, 0), 1.0, 1.0, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aShiftedBox, aNurbsBox);
             ValidateResult(aResult, 4.0);
@@ -323,11 +324,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusNarrowBox_C4()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aNarrowBox = CreateBox(new gp_Pnt(0, 0.25, 0), 1.0, 0.5, 1.0);
+            TopoDS_Shape aNarrowBox = CreateBox(new Point3D(0, 0.25, 0), 1.0, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aNarrowBox);
             ValidateResult(aResult, 6.0);
@@ -337,11 +338,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NarrowBoxMinusNurbsBox_C5()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aNarrowBox = CreateBox(new gp_Pnt(0, 0.25, 0), 1.0, 0.5, 1.0);
+            TopoDS_Shape aNarrowBox = CreateBox(new Point3D(0, 0.25, 0), 1.0, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNarrowBox, aNurbsBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -351,11 +352,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusCornerCube_C6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aCornerCube = CreateBox(new gp_Pnt(0, 0, 0), 0.5, 0.5, 0.5);
+            TopoDS_Shape aCornerCube = CreateBox(new Point3D(0, 0, 0), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aCornerCube);
             ValidateResult(aResult, 6.0);
@@ -365,11 +366,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void CornerCubeMinusNurbsBox_C7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aCornerCube = CreateBox(new gp_Pnt(0, 0, 0), 0.5, 0.5, 0.5);
+            TopoDS_Shape aCornerCube = CreateBox(new Point3D(0, 0, 0), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aCornerCube, aNurbsBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -379,11 +380,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusOffsetCube_C8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetCube = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetCube = CreateBox(new Point3D(0, -0.5, 0), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aOffsetCube);
             ValidateResult(aResult, 6.0);
@@ -393,11 +394,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void OffsetCubeMinusNurbsBox_C9()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetCube = CreateBox(new gp_Pnt(0, -0.5, 0), 0.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetCube = CreateBox(new Point3D(0, -0.5, 0), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aOffsetCube, aNurbsBox);
             ValidateResult(aResult, 1.5);
@@ -407,11 +408,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusOffsetCornerCube_D1()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetCornerCube = CreateBox(new gp_Pnt(0, -0.5, -0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetCornerCube = CreateBox(new Point3D(0, -0.5, -0.5), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aOffsetCornerCube);
             ValidateResult(aResult, 6.0);
@@ -421,11 +422,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void OffsetCornerCubeMinusNurbsBox_D2()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetCornerCube = CreateBox(new gp_Pnt(0, -0.5, -0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetCornerCube = CreateBox(new Point3D(0, -0.5, -0.5), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aOffsetCornerCube, aNurbsBox);
             ValidateResult(aResult, 1.5);
@@ -435,11 +436,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusShiftedCornerCube_D3()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedCornerCube = CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aShiftedCornerCube = CreateBox(new Point3D(-0.5, -0.5, -0.5), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aShiftedCornerCube);
             ValidateResult(aResult, 6.0);
@@ -449,11 +450,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ShiftedCornerCubeMinusNurbsBox_D4()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedCornerCube = CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 0.5, 0.5, 0.5);
+            TopoDS_Shape aShiftedCornerCube = CreateBox(new Point3D(-0.5, -0.5, -0.5), 0.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aShiftedCornerCube, aNurbsBox);
             ValidateResult(aResult, 1.5);
@@ -463,11 +464,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusExtendedXBox_D5()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedXBox = CreateBox(new gp_Pnt(0, 0, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aExtendedXBox = CreateBox(new Point3D(0, 0, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aExtendedXBox);
             ValidateResult(aResult, 5.5);
@@ -477,11 +478,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ExtendedXBoxMinusNurbsBox_D6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedXBox = CreateBox(new gp_Pnt(0, 0, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aExtendedXBox = CreateBox(new Point3D(0, 0, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aExtendedXBox, aNurbsBox);
             ValidateResult(aResult, 1.5);
@@ -491,11 +492,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusOffsetExtendedXBox_D7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetExtendedXBox = CreateBox(new gp_Pnt(0, -0.5, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetExtendedXBox = CreateBox(new Point3D(0, -0.5, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aOffsetExtendedXBox);
             ValidateResult(aResult, 6.0);
@@ -505,11 +506,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void OffsetExtendedXBoxMinusNurbsBox_D8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetExtendedXBox = CreateBox(new gp_Pnt(0, -0.5, 0), 1.5, 0.5, 0.5);
+            TopoDS_Shape aOffsetExtendedXBox = CreateBox(new Point3D(0, -0.5, 0), 1.5, 0.5, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aOffsetExtendedXBox, aNurbsBox);
             ValidateResult(aResult, 3.5);
@@ -519,11 +520,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusShiftedNarrowBox_D9()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, 0, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aShiftedNarrowBox = CreateBox(new Point3D(0.25, 0, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aShiftedNarrowBox);
             ValidateResult(aResult, 6.5);
@@ -533,11 +534,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ShiftedNarrowBoxMinusNurbsBox_E1()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, 0, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aShiftedNarrowBox = CreateBox(new Point3D(0.25, 0, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aShiftedNarrowBox, aNurbsBox);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
@@ -547,11 +548,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusOffsetShiftedNarrowBox_E2()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, -0.5, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aOffsetShiftedNarrowBox = CreateBox(new Point3D(0.25, -0.5, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aOffsetShiftedNarrowBox);
             ValidateResult(aResult, 6.0);
@@ -561,11 +562,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void OffsetShiftedNarrowBoxMinusNurbsBox_E3()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, -0.5, 0), 0.5, 0.5, 1.0);
+            TopoDS_Shape aOffsetShiftedNarrowBox = CreateBox(new Point3D(0.25, -0.5, 0), 0.5, 0.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aOffsetShiftedNarrowBox, aNurbsBox);
             ValidateResult(aResult, 2.5);
@@ -575,11 +576,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusExtendedYShiftedNarrowBox_E4()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedYShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, 0, 0), 0.5, 1.5, 1.0);
+            TopoDS_Shape aExtendedYShiftedNarrowBox = CreateBox(new Point3D(0.25, 0, 0), 0.5, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aExtendedYShiftedNarrowBox);
             ValidateResult(aResult, 6.0);
@@ -589,11 +590,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void ExtendedYShiftedNarrowBoxMinusNurbsBox_E5()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aExtendedYShiftedNarrowBox = CreateBox(new gp_Pnt(0.25, 0, 0), 0.5, 1.5, 1.0);
+            TopoDS_Shape aExtendedYShiftedNarrowBox = CreateBox(new Point3D(0.25, 0, 0), 0.5, 1.5, 1.0);
 
             TopoDS_Shape aResult = PerformCut(aExtendedYShiftedNarrowBox, aNurbsBox);
             ValidateResult(aResult, 2.5);
@@ -603,11 +604,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusRightHalfBox_E6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aRightHalfBox = CreateBox(new gp_Pnt(0.5, 0, 0), 1.0, 1.0, 0.5);
+            TopoDS_Shape aRightHalfBox = CreateBox(new Point3D(0.5, 0, 0), 1.0, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aRightHalfBox);
             ValidateResult(aResult, 5.5);
@@ -617,11 +618,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RightHalfBoxMinusNurbsBox_E7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aRightHalfBox = CreateBox(new gp_Pnt(0.5, 0, 0), 1.0, 1.0, 0.5);
+            TopoDS_Shape aRightHalfBox = CreateBox(new Point3D(0.5, 0, 0), 1.0, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aRightHalfBox, aNurbsBox);
             ValidateResult(aResult, 2.5);
@@ -631,11 +632,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusOffsetRightHalfBox_E8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetRightHalfBox = CreateBox(new gp_Pnt(0.5, 0, -0.5), 1.0, 1.0, 0.5);
+            TopoDS_Shape aOffsetRightHalfBox = CreateBox(new Point3D(0.5, 0, -0.5), 1.0, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aOffsetRightHalfBox);
             ValidateResult(aResult, 6.0);
@@ -645,11 +646,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void OffsetRightHalfBoxMinusNurbsBox_E9()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             Assert.False(aNurbsBox.IsNull(), "Failed to convert to NURBS");
 
-            TopoDS_Shape aOffsetRightHalfBox = CreateBox(new gp_Pnt(0.5, 0, -0.5), 1.0, 1.0, 0.5);
+            TopoDS_Shape aOffsetRightHalfBox = CreateBox(new Point3D(0.5, 0, -0.5), 1.0, 1.0, 0.5);
 
             TopoDS_Shape aResult = PerformCut(aOffsetRightHalfBox, aNurbsBox);
             ValidateResult(aResult, 4.0);
@@ -659,11 +660,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusRotatedRectangularBox_F1()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = M_SQRT2;
-            TopoDS_Shape aRectangularBox = CreateBox(new gp_Pnt(0, 0, 0), r, r / 2.0, 1.0);
-            aRectangularBox = RotateShape(aRectangularBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aRectangularBox = CreateBox(new Point3D(0, 0, 0), r, r / 2.0, 1.0);
+            aRectangularBox = RotateShape(aRectangularBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aRectangularBox);
             ValidateResult(aResult, 4.41421);
         }
@@ -672,11 +673,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedRectangularBoxMinusNurbsBox_F2()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = M_SQRT2;
-            TopoDS_Shape aRectangularBox = CreateBox(new gp_Pnt(0, 0, 0), r, r / 2.0, 1.0);
-            aRectangularBox = RotateShape(aRectangularBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aRectangularBox = CreateBox(new Point3D(0, 0, 0), r, r / 2.0, 1.0);
+            aRectangularBox = RotateShape(aRectangularBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aRectangularBox, aNurbsBox);
             ValidateResult(aResult, 5.82843);
         }
@@ -685,11 +686,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusRotatedSquareBox_F3()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             double r = Math.Sqrt(2.0) / 2.0;
-            TopoDS_Shape aSquareBox = CreateBox(new gp_Pnt(0, 0, 0), r, r, 1.0);
-            aSquareBox = RotateShape(aSquareBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aSquareBox = CreateBox(new Point3D(0, 0, 0), r, r, 1.0);
+            aSquareBox = RotateShape(aSquareBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aSquareBox);
             ValidateResult(aResult, 5.91421);
         }
@@ -698,11 +699,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedSquareBoxMinusNurbsBox_F4()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             double r = Math.Sqrt(2.0) / 2.0;
-            TopoDS_Shape aSquareBox = CreateBox(new gp_Pnt(0, 0, 0), r, r, 1.0);
-            aSquareBox = RotateShape(aSquareBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aSquareBox = CreateBox(new Point3D(0, 0, 0), r, r, 1.0);
+            aSquareBox = RotateShape(aSquareBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aSquareBox, aNurbsBox);
             ValidateResult(aResult, 2.91421);
         }
@@ -711,11 +712,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusRotatedThinBox_F5()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = M_SQRT2;
-            TopoDS_Shape aThinBox = CreateBox(new gp_Pnt(0, 0, 0), r, 0.25, 1.0);
-            aThinBox = RotateShape(aThinBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aThinBox = CreateBox(new Point3D(0, 0, 0), r, 0.25, 1.0);
+            aThinBox = RotateShape(aThinBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aThinBox);
             ValidateResult(aResult, 7.03921);
         }
@@ -724,11 +725,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedThinBoxMinusNurbsBox_F6()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = M_SQRT2;
-            TopoDS_Shape aThinBox = CreateBox(new gp_Pnt(0, 0, 0), r, 0.25, 1.0);
-            aThinBox = RotateShape(aThinBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 45.0 * M_PI / 180.0);
+            TopoDS_Shape aThinBox = CreateBox(new Point3D(0, 0, 0), r, 0.25, 1.0);
+            aThinBox = RotateShape(aThinBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 45.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aThinBox, aNurbsBox);
             ValidateResult(aResult, 1.83211);
         }
@@ -737,11 +738,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void NurbsBoxMinusRotatedNarrowBox_F7()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = 5.5677643628300219; // sqrt(31.0)
-            TopoDS_Shape aNarrowBox = CreateBox(new gp_Pnt(0, 0, 0), r / 4.0, 0.25, 1.0);
-            aNarrowBox = RotateShape(aNarrowBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 34.73 * M_PI / 180.0);
+            TopoDS_Shape aNarrowBox = CreateBox(new Point3D(0, 0, 0), r / 4.0, 0.25, 1.0);
+            aNarrowBox = RotateShape(aNarrowBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 34.73 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aNurbsBox, aNarrowBox);
             ValidateResult(aResult, 7.21677);
         }
@@ -750,11 +751,11 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedNarrowBoxMinusNurbsBox_F8()
         {
-            TopoDS_Shape aNurbsBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aNurbsBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             aNurbsBox = ConvertToNurbs(aNurbsBox);
             const double r = 5.5677643628300219;
-            TopoDS_Shape aNarrowBox = CreateBox(new gp_Pnt(0, 0, 0), r / 4.0, 0.25, 1.0);
-            aNarrowBox = RotateShape(aNarrowBox, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), 34.73 * M_PI / 180.0);
+            TopoDS_Shape aNarrowBox = CreateBox(new Point3D(0, 0, 0), r / 4.0, 0.25, 1.0);
+            aNarrowBox = RotateShape(aNarrowBox, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 34.73 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aNarrowBox, aNurbsBox);
             ValidateResult(aResult, 1.54631);
         }
@@ -763,8 +764,8 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void SphereMinusBox_F9()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformCut(aSphere, aBox);
             ValidateResult(aResult, 13.3518);
         }
@@ -773,8 +774,8 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void BoxMinusSphere_G1()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformCut(aBox, aSphere);
             ValidateResult(aResult, 5.2146);
         }
@@ -783,10 +784,10 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedSphereMinusBox_G2()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            aSphere = RotateShape(aSphere, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), -90.0 * M_PI / 180.0);
-            aSphere = RotateShape(aSphere, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Y)), -45.0 * M_PI / 180.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            aSphere = RotateShape(aSphere, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), -90.0 * M_PI / 180.0);
+            aSphere = RotateShape(aSphere, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), -45.0 * M_PI / 180.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformCut(aSphere, aBox);
             ValidateResult(aResult, 13.3517);
         }
@@ -795,10 +796,10 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void BoxMinusRotatedSphere_G3()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            aSphere = RotateShape(aSphere, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z)), -90.0 * M_PI / 180.0);
-            aSphere = RotateShape(aSphere, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Y)), -45.0 * M_PI / 180.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            aSphere = RotateShape(aSphere, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), -90.0 * M_PI / 180.0);
+            aSphere = RotateShape(aSphere, new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), -45.0 * M_PI / 180.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformCut(aBox, aSphere);
             ValidateResult(aResult, 5.2146);
         }
@@ -807,9 +808,9 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void SphereMinusRotatedBox_G4()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
-            aBox = RotateShape(aBox, new gp_Ax1(new gp_Pnt(0, 0, 1), new gp_Dir(gp_Dir.D.Y)), 90.0 * M_PI / 180.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            aBox = RotateShape(aBox, new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aSphere, aBox);
             ValidateResult(aResult, 13.3517);
         }
@@ -818,9 +819,9 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void RotatedBoxMinusSphere_G5()
         {
-            TopoDS_Shape aSphere = CreateSphere(new gp_Pnt(0, 0, 0), 1.0);
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 1.0, 1.0, 1.0);
-            aBox = RotateShape(aBox, new gp_Ax1(new gp_Pnt(0, 0, 1), new gp_Dir(gp_Dir.D.Y)), 90.0 * M_PI / 180.0);
+            TopoDS_Shape aSphere = CreateSphere(new Point3D(0, 0, 0), 1.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
+            aBox = RotateShape(aBox, new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
             TopoDS_Shape aResult = PerformCut(aBox, aSphere);
             ValidateResult(aResult, 5.2146);
         }
@@ -830,10 +831,10 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileRevolOperation_G6()
         {
             // Create box: "box b 100 100 40"
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(0, 0, 0), 100.0, 100.0, 40.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(0, 0, 0), 100.0, 100.0, 40.0);
 
             // Create exact G6 profile: "profile rev S b_4 F 50 20 Y 50 C 10 180 Y -50 C 10 180"
-            gp_Pln aPlane = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z)); // Face b_4 of box (top face at Z=40)
+            Plane3D aPlane = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z)); // Face b_4 of box (top face at Z=40)
             List<ProfileOperation> aProfileOps =
             [
                 new ProfileOperation(ProfileCmd.F, 50.0, 20.0), // F 50 20
@@ -845,7 +846,7 @@ public static class BRepAlgoAPI_CutTests
             TopoDS_Shape aProfile = CreateProfile(aPlane, aProfileOps);
 
             // Create revolution: "revol rev2 rev 0 0 50 0 1 0 360" (around Y-axis at Z=50)
-            TopoDS_Shape aRevolution = CreateRevolution(aProfile, new gp_Ax1(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Y)), 2.0 * M_PI);
+            TopoDS_Shape aRevolution = CreateRevolution(aProfile, new Axis3D(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Y)), 2.0 * M_PI);
 
             // Perform boolean cut operation: "bcut result b rev2"
             TopoDS_Shape aResult = PerformCut(aBox, aRevolution);
@@ -856,8 +857,8 @@ public static class BRepAlgoAPI_CutTests
         [Fact]
         public void BoxMinusTranslatedBox_G7()
         {
-            TopoDS_Shape aBox1 = CreateBox(new gp_Pnt(0, 0, 0), 3.0, 3.0, 3.0);
-            TopoDS_Shape aBox2 = CreateBox(new gp_Pnt(0, 3, 0), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 3.0, 3.0, 3.0);
+            TopoDS_Shape aBox2 = CreateBox(new Point3D(0, 3, 0), 1.0, 1.0, 1.0);
             TopoDS_Shape aResult = PerformCut(aBox1, aBox2);
             ValidateResult(aResult, 54.0);
         }
@@ -867,17 +868,17 @@ public static class BRepAlgoAPI_CutTests
         public void BoxMinusPrism_G8()
         {
             // Create box mb (-0.5, -0.5, -0.5, 1, 1, 1)
-            TopoDS_Shape aBoxMb = CreateBox(new gp_Pnt(-0.5, -0.5, -0.5), 1.0, 1.0, 1.0);
+            TopoDS_Shape aBoxMb = CreateBox(new Point3D(-0.5, -0.5, -0.5), 1.0, 1.0, 1.0);
 
             // Get face mb_1 (approximated as first face)
             TopoDS_Face aFace = GetFaceByIndex(aBoxMb, 1);
 
             // Create semi-infinite prism (simulated with very large prism: prism pryz mb_1 1 0 0 SemiInf)
             // Semi-infinite prism approximated as large prism extending 1000 units in X direction
-            TopoDS_Shape aSemiInfPrism = CreatePrism(aFace, new gp_Vec(1000.0, 0.0, 0.0));
+            TopoDS_Shape aSemiInfPrism = CreatePrism(aFace, new Vector3D(1000.0, 0.0, 0.0));
 
             // Create box ab (0, -1, -1, 2, 2, 2)
-            TopoDS_Shape aBoxAb = CreateBox(new gp_Pnt(0, -1, -1), 2.0, 2.0, 2.0);
+            TopoDS_Shape aBoxAb = CreateBox(new Point3D(0, -1, -1), 2.0, 2.0, 2.0);
 
             // Perform boolean cut operation: bcut result ab pryz
             TopoDS_Shape aResult = PerformCut(aBoxAb, aSemiInfPrism);
@@ -898,7 +899,7 @@ public static class BRepAlgoAPI_CutTests
 
             // Create small cylinder and translate it
             TopoDS_Shape aSmallCylinder = CreateCylinder(1.0, 9.0);
-            aSmallCylinder = TranslateShape(aSmallCylinder, new gp_Vec(5.0, 0.0, -2.0));
+            aSmallCylinder = TranslateShape(aSmallCylinder, new Vector3D(5.0, 0.0, -2.0));
 
             TopoDS_Shape aResult = PerformCut(aBody, aSmallCylinder);
             ValidateResult(aResult, 727.481);
@@ -910,23 +911,23 @@ public static class BRepAlgoAPI_CutTests
         {
             // Create custom polygon from H1 test vertices: v1(0,0,0) v2(1,0,0) v3(1,3,0) v4(2,3,0) v5(2,0,0)
             // v6(3,0,0) v7(3,5,0) v8(0,5,0)
-            List<gp_Pnt> aPoints = [];
-            aPoints.Add(new gp_Pnt(0, 0, 0)); // v1
-            aPoints.Add(new gp_Pnt(1, 0, 0)); // v2
-            aPoints.Add(new gp_Pnt(1, 3, 0)); // v3
-            aPoints.Add(new gp_Pnt(2, 3, 0)); // v4
-            aPoints.Add(new gp_Pnt(2, 0, 0)); // v5
-            aPoints.Add(new gp_Pnt(3, 0, 0)); // v6
-            aPoints.Add(new gp_Pnt(3, 5, 0)); // v7
-            aPoints.Add(new gp_Pnt(0, 5, 0)); // v8
+            List<Point3D> aPoints = [];
+            aPoints.Add(new Point3D(0, 0, 0)); // v1
+            aPoints.Add(new Point3D(1, 0, 0)); // v2
+            aPoints.Add(new Point3D(1, 3, 0)); // v3
+            aPoints.Add(new Point3D(2, 3, 0)); // v4
+            aPoints.Add(new Point3D(2, 0, 0)); // v5
+            aPoints.Add(new Point3D(3, 0, 0)); // v6
+            aPoints.Add(new Point3D(3, 5, 0)); // v7
+            aPoints.Add(new Point3D(0, 5, 0)); // v8
 
             // Create wire and extrude to solid (prism sol p 0 0 2)
             TopoDS_Wire aWire = CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = CreateFaceFromWire(aWire);
-            TopoDS_Shape aSolid = CreatePrism(aFace, new gp_Vec(0, 0, 2));
+            TopoDS_Shape aSolid = CreatePrism(aFace, new Vector3D(0, 0, 2));
 
             // Create box: box b -1 2 1 5 1 3 (corner at (-1,2,1), dimensions 5x1x3)
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(-1, 2, 1), 5.0, 1.0, 3.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(-1, 2, 1), 5.0, 1.0, 3.0);
 
             // Perform boolean cut: bcut result sol b
             TopoDS_Shape aResult = PerformCut(aSolid, aBox);
@@ -940,23 +941,23 @@ public static class BRepAlgoAPI_CutTests
             // H2 is identical to H1 - same polygon and same box
             // Create custom polygon from H2 test vertices (same as H1): v1(0,0,0) v2(1,0,0) v3(1,3,0)
             // v4(2,3,0) v5(2,0,0) v6(3,0,0) v7(3,5,0) v8(0,5,0)
-            List<gp_Pnt> aPoints = [];
-            aPoints.Add(new gp_Pnt(0, 0, 0)); // v1
-            aPoints.Add(new gp_Pnt(1, 0, 0)); // v2
-            aPoints.Add(new gp_Pnt(1, 3, 0)); // v3
-            aPoints.Add(new gp_Pnt(2, 3, 0)); // v4
-            aPoints.Add(new gp_Pnt(2, 0, 0)); // v5
-            aPoints.Add(new gp_Pnt(3, 0, 0)); // v6
-            aPoints.Add(new gp_Pnt(3, 5, 0)); // v7
-            aPoints.Add(new gp_Pnt(0, 5, 0)); // v8
+            List<Point3D> aPoints = [];
+            aPoints.Add(new Point3D(0, 0, 0)); // v1
+            aPoints.Add(new Point3D(1, 0, 0)); // v2
+            aPoints.Add(new Point3D(1, 3, 0)); // v3
+            aPoints.Add(new Point3D(2, 3, 0)); // v4
+            aPoints.Add(new Point3D(2, 0, 0)); // v5
+            aPoints.Add(new Point3D(3, 0, 0)); // v6
+            aPoints.Add(new Point3D(3, 5, 0)); // v7
+            aPoints.Add(new Point3D(0, 5, 0)); // v8
 
             // Create wire and extrude to solid (prism sol p 0 0 2)
             TopoDS_Wire aWire = CreatePolygonWire(aPoints, true);
             TopoDS_Shape aFace = CreateFaceFromWire(aWire);
-            TopoDS_Shape aSolid = CreatePrism(aFace, new gp_Vec(0, 0, 2));
+            TopoDS_Shape aSolid = CreatePrism(aFace, new Vector3D(0, 0, 2));
 
             // Create box: box b -1 2 1 5 1 3 (corner at (-1,2,1), dimensions 5x1x3)
-            TopoDS_Shape aBox = CreateBox(new gp_Pnt(-1, 2, 1), 5.0, 1.0, 3.0);
+            TopoDS_Shape aBox = CreateBox(new Point3D(-1, 2, 1), 5.0, 1.0, 3.0);
 
             // Perform boolean cut: bcut result sol b
             TopoDS_Shape aResult = PerformCut(aSolid, aBox);
@@ -978,7 +979,7 @@ public static class BRepAlgoAPI_CutTests
 
             // Create small cylinder and translate it (x direction as per comment)
             TopoDS_Shape aSmallCylinder = CreateCylinder(1.0, 9.0);
-            aSmallCylinder = TranslateShape(aSmallCylinder, new gp_Vec(5.0, 0.0, -2.0));
+            aSmallCylinder = TranslateShape(aSmallCylinder, new Vector3D(5.0, 0.0, -2.0));
 
             TopoDS_Shape aResult = PerformCut(aBody, aSmallCylinder);
             ValidateResult(aResult, 727.481);
@@ -989,7 +990,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardForward_H4()
         {
             // Create profile p1: "profile p1 o 0 0 40 x 150 y 200 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -998,10 +999,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1011,7 +1012,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: bcut po1 pr1 pr2
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
@@ -1028,7 +1029,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Final cut operation: bcut result po1 pr3
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
@@ -1042,7 +1043,7 @@ public static class BRepAlgoAPI_CutTests
             // H5 has same profiles as H4, but p3 has different sequence: "f 50 -75 y -100 x 75 y 100"
 
             // Create profile p1: same as H4 "profile p1 o 0 0 40 x 150 y 200 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1051,10 +1052,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as H4 "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1064,7 +1065,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1080,7 +1081,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1091,7 +1092,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardReversed_H6()
         {
             // Create profile p1: same as H4/H5 "profile p1 o 0 0 40 x 150 y 200 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1100,10 +1101,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as H4/H5 "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1113,7 +1114,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1129,7 +1130,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1140,7 +1141,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardReversedVariation_H7()
         {
             // Create profile p1: same as other H tests "profile p1 o 0 0 40 x 150 y 200 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1149,10 +1150,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as other H tests "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1162,7 +1163,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1178,7 +1179,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1189,7 +1190,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedForward_H8()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z)); // Use same approach as working H4/H5
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z)); // Use same approach as working H4/H5
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1198,10 +1199,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 200.0), // y 200
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1211,7 +1212,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1227,7 +1228,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1238,7 +1239,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedForwardVariation_H9()
         {
             // Create profile p1: same as H8 "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1247,10 +1248,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 200.0), // y 200
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as H8 "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1260,7 +1261,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1276,7 +1277,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1287,7 +1288,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedReversed_I1()
         {
             // Create profile p1: same as H8/H9 "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1296,11 +1297,11 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 200.0), // y 200
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as H8/H9 "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x
             // -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1310,7 +1311,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1326,7 +1327,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1337,7 +1338,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedReversedVariation_I2()
         {
             // Create profile p1: same as I1 "profile p1 p 0 0 -1 1 0 0 o 0 0 40 y -200 x 150 y 200"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1346,10 +1347,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 200.0), // y 200
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as I1 "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1359,7 +1360,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1375,7 +1376,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 98000.0);
@@ -1386,7 +1387,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardForwardVariation2_I3()
         {
             // Create profile p1: "profile p1 o 0 0 40 f 0 50 x 150 y 100 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1396,11 +1397,11 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as I1/I2 but different plane "profile p2 o 0 0 50 f 25 25 y 100 x 75 y
             // -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1410,7 +1411,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1426,7 +1427,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1437,7 +1438,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardForwardVariation3_I4()
         {
             // Create profile p1: same as I3 "profile p1 o 0 0 40 f 0 50 x 150 y 100 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1447,10 +1448,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as I3 "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1460,7 +1461,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1477,7 +1478,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -3)); // Note: -3, not -30!
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -3)); // Note: -3, not -30!
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 53000.0);
@@ -1488,7 +1489,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardReversedVariation2_I5()
         {
             // Create profile p1: same as I3/I4 "profile p1 o 0 0 40 f 0 50 x 150 y 100 x -150"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1498,10 +1499,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0), // x -150
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: same as I3/I4 "profile p2 o 0 0 50 f 25 25 y 100 x 75 y -100"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1511,7 +1512,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0), // y -100
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1527,7 +1528,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1538,7 +1539,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileForwardReversedVariation3_I6()
         {
             // Same profiles as I5 but different p3 - "profile p3 o 0 0 50 f 50 75 y 100 x 75 y -100"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0),
@@ -1548,9 +1549,9 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -150.0),
         ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0),
@@ -1560,7 +1561,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0),
         ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1575,7 +1576,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, -100.0),
         ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1586,7 +1587,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedForwardVariation2_I7()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 f 0 -50 y -100 x 150 y 100"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1596,10 +1597,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1609,7 +1610,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1625,7 +1626,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1636,7 +1637,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedForwardVariation3_I8()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 f 0 -50 y -100 x 150 y 100"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1646,10 +1647,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1659,7 +1660,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1675,7 +1676,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1686,7 +1687,7 @@ public static class BRepAlgoAPI_CutTests
         public void ComplexProfileReversedReversedVariation2_I9()
         {
             // Create profile p1: "profile p1 p 0 0 -1 1 0 0 o 0 0 40 f 0 -50 y -100 x 150 y 100"
-            gp_Pln aPlane1 = new(new gp_Pnt(0, 0, 40), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane1 = new(new Point3D(0, 0, 40), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps1 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 40.0), // o 0 0 40
@@ -1696,10 +1697,10 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.Y, 100.0), // y 100
             ];
             TopoDS_Shape aProfile1 = CreateProfile(aPlane1, aProfileOps1);
-            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new gp_Vec(0, 0, -40));
+            TopoDS_Shape aPrism1 = CreatePrism(aProfile1, new Vector3D(0, 0, -40));
 
             // Create profile p2: "profile p2 p 0 0 -1 1 0 0 o 0 0 50 f 25 -25 x 75 y -100 x -75"
-            gp_Pln aPlane2 = new(new gp_Pnt(0, 0, 50), new gp_Dir(gp_Dir.D.Z));
+            Plane3D aPlane2 = new(new Point3D(0, 0, 50), new Direction3D(Direction3D.D.Z));
             List<ProfileOperation> aProfileOps2 =
             [
                 new ProfileOperation(ProfileCmd.O, 0.0, 0.0, 50.0), // o 0 0 50
@@ -1709,7 +1710,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile2 = CreateProfile(aPlane2, aProfileOps2);
-            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism2 = CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
             Assert.True(aCutOp1.IsDone(), "First cut operation failed");
@@ -1725,7 +1726,7 @@ public static class BRepAlgoAPI_CutTests
                 new ProfileOperation(ProfileCmd.X, -75.0), // x -75
             ];
             TopoDS_Shape aProfile3 = CreateProfile(aPlane2, aProfileOps3);
-            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new gp_Vec(0, 0, -30));
+            TopoDS_Shape aPrism3 = CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             TopoDS_Shape aResult = PerformCut(aIntermediate, aPrism3);
             ValidateResult(aResult, 52000.0);
@@ -1745,7 +1746,7 @@ public static class BRepAlgoAPI_CutTests
         public void Bug825_SphereHalfSpaceCut()
         {
             const double aSize = 50.0;
-            NCollection_Array2<gp_Pnt> aPoles = new(1, 2, 1, 2);
+            NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
             aPoles[1, 1].SetCoord(-aSize, 0, -aSize);
             aPoles[1, 2].SetCoord(-aSize, 0, aSize);
             aPoles[2, 1].SetCoord(aSize, 0, -aSize);
@@ -1753,16 +1754,16 @@ public static class BRepAlgoAPI_CutTests
 
             Geom_BezierSurface aBezSurf = new(aPoles);
             Geom_BSplineSurface aBSpSurf = GeomConvert.SurfaceToBSplineSurface(aBezSurf);
-            BRepBuilderAPI_MakeFace aFaceMaker = new(aBSpSurf, Precision.Confusion());
+            BRepBuilderAPI_MakeFace aFaceMaker = new(aBSpSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
             Assert.True(aFaceMaker.IsDone());
             TopoDS_Face aFace = aFaceMaker.Face();
 
-            BRepPrimAPI_MakeHalfSpace aHSpaceMaker = new(aFace, new gp_Pnt(0, aSize, 0));
+            BRepPrimAPI_MakeHalfSpace aHSpaceMaker = new(aFace, new Point3D(0, aSize, 0));
             Assert.True(aHSpaceMaker.IsDone());
             TopoDS_Shape aHsp = aHSpaceMaker.Solid();
 
-            TopoDS_Shape aSph1 = new BRepPrimAPI_MakeSphere(new gp_Pnt(0.0, 0.0, 0.0), 25.0).Shape();
-            TopoDS_Shape aSph2 = new BRepPrimAPI_MakeSphere(new gp_Pnt(0.0, 0.00001, 0.0), 25.0).Shape();
+            TopoDS_Shape aSph1 = new BRepPrimAPI_MakeSphere(new Point3D(0.0, 0.0, 0.0), 25.0).Shape();
+            TopoDS_Shape aSph2 = new BRepPrimAPI_MakeSphere(new Point3D(0.0, 0.00001, 0.0), 25.0).Shape();
 
             BRepAlgoAPI_Cut aCut1 = new(aSph1, aHsp);
             Assert.True(aCut1.IsDone(), "BRepAlgoAPI_Cut failed for first sphere");

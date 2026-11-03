@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_FunctionRootTest
@@ -9,7 +11,7 @@ public class math_FunctionRootTest
     // Test function classes for root finding
 
     // Simple quadratic function: f(x) = x^2 - 4 (roots at x = +/-2)
-    private class QuadraticFunction : math_FunctionWithDerivative
+    private class QuadraticFunction : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -32,7 +34,7 @@ public class math_FunctionRootTest
     }
 
     // Cubic function: f(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3) (roots at x = 1, 2, 3)
-    private class CubicFunction : math_FunctionWithDerivative
+    private class CubicFunction : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -55,7 +57,7 @@ public class math_FunctionRootTest
     }
 
     // Trigonometric function: f(x) = Math.Sin(x) (root at x = PI)
-    private class SinFunction : math_FunctionWithDerivative
+    private class SinFunction : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -78,7 +80,7 @@ public class math_FunctionRootTest
     }
 
     // Function with zero derivative at root: f(x) = x^2 (root at x = 0)
-    private class ZeroDerivativeFunction : math_FunctionWithDerivative
+    private class ZeroDerivativeFunction : FunctionWithDerivative
     {
         public override bool Value(double theX, out double theF)
         {
@@ -108,13 +110,13 @@ public class math_FunctionRootTest
         double            aTolerance     = 1.0e-6;
         double            anInitialGuess = 3.0; // Should converge to +2
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(2.0, aRootFinder.Root(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         Assert.Equal(4.0, aRootFinder.Derivative(), aTolerance);
-        Assert.True(aRootFinder.NbIterations() > 0);
+        Assert.True(aRootFinder.IterationCount > 0);
     }
 
     [Fact]
@@ -124,9 +126,9 @@ public class math_FunctionRootTest
         double            aTolerance     = 1.0e-6;
         double            anInitialGuess = -3.0; // Should converge to -2
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(-2.0, aRootFinder.Root(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         Assert.Equal(-4.0, aRootFinder.Derivative(), aTolerance);
@@ -141,9 +143,9 @@ public class math_FunctionRootTest
         double            aLowerBound    = 1.0;
         double            anUpperBound   = 3.0;
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aLowerBound, anUpperBound);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aLowerBound, anUpperBound);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(2.0, aRootFinder.Root(), aTolerance);
         Assert.True(aRootFinder.Root() >= aLowerBound);
         Assert.True(aRootFinder.Root() <= anUpperBound);
@@ -158,9 +160,9 @@ public class math_FunctionRootTest
         // Test finding root near x = 1
         {
             double            anInitialGuess = 0.8;
-            math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+            FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-            Assert.True(aRootFinder.IsDone());
+            Assert.True(aRootFinder.IsDone);
             Assert.Equal(1.0, aRootFinder.Root(), aTolerance);
             Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         }
@@ -168,9 +170,9 @@ public class math_FunctionRootTest
         // Test finding root near x = 2
         {
             double            anInitialGuess = 1.8;
-            math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+            FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-            Assert.True(aRootFinder.IsDone());
+            Assert.True(aRootFinder.IsDone);
             Assert.Equal(2.0, aRootFinder.Root(), aTolerance);
             Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         }
@@ -178,9 +180,9 @@ public class math_FunctionRootTest
         // Test finding root near x = 3
         {
             double            anInitialGuess = 3.2;
-            math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+            FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-            Assert.True(aRootFinder.IsDone());
+            Assert.True(aRootFinder.IsDone);
             Assert.Equal(3.0, aRootFinder.Root(), aTolerance);
             Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         }
@@ -193,9 +195,9 @@ public class math_FunctionRootTest
         double      aTolerance     = 1.0e-6;
         double      anInitialGuess = 3.5; // Should converge to PI approximately 3.14159
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(M_PI, aRootFinder.Root(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         Assert.Equal(-1.0, aRootFinder.Derivative(), aTolerance);
@@ -208,9 +210,9 @@ public class math_FunctionRootTest
         double            aTolerance     = 1.0e-12;
         double            anInitialGuess = 2.1;
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(2.0, aRootFinder.Root(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
     }
@@ -225,12 +227,12 @@ public class math_FunctionRootTest
 
         // Wrap in try-catch to handle potential exceptions in debug mode
         {
-            math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aMaxIterations);
+            FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aMaxIterations);
 
             // Should either succeed within iterations or fail gracefully
-            if (aRootFinder.IsDone())
+            if (aRootFinder.IsDone)
             {
-                Assert.True(aRootFinder.NbIterations() <= aMaxIterations);
+                Assert.True(aRootFinder.IterationCount <= aMaxIterations);
                 Assert.Equal(2.0, aRootFinder.Root(), 1.0e-3);
             }
             else
@@ -250,11 +252,11 @@ public class math_FunctionRootTest
         double            aLowerBound    = 2.5;
         double            anUpperBound   = 3.0; // No root in this interval
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aLowerBound, anUpperBound);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aLowerBound, anUpperBound);
 
         // Test that the algorithm respects bounds - the solution should be within bounds
         // if one is found, or the algorithm should fail
-        if (aRootFinder.IsDone())
+        if (aRootFinder.IsDone)
         {
             double aRoot = aRootFinder.Root();
             Assert.True(aRoot >= aLowerBound);
@@ -284,9 +286,9 @@ public class math_FunctionRootTest
         double                 aTolerance     = 1.0e-6;
         double                 anInitialGuess = 0.1; // Close to the root at x = 0
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
+        Assert.True(aRootFinder.IsDone);
         Assert.Equal(0.0, aRootFinder.Root(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Value(), aTolerance);
         Assert.Equal(0.0, aRootFinder.Derivative(), aTolerance);
@@ -303,19 +305,19 @@ public class math_FunctionRootTest
 
         // Wrap in try-catch to handle potential exceptions in debug mode
         {
-            math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aMaxIterations);
+            FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance, aMaxIterations);
 
             // Test state handling for constrained convergence conditions
-            if (!aRootFinder.IsDone())
+            if (!aRootFinder.IsDone)
             {
                 // Verify consistent state reporting
-                Assert.False(aRootFinder.IsDone());
-                Assert.True(aRootFinder.NbIterations() >= 0);
+                Assert.False(aRootFinder.IsDone);
+                Assert.True(aRootFinder.IterationCount >= 0);
             }
             else
             {
                 // If it succeeds, verify the results are reasonable
-                Assert.True(aRootFinder.NbIterations() > 0);
+                Assert.True(aRootFinder.IterationCount > 0);
                 Assert.True(Math.Abs(aRootFinder.Root() - 2.0) < 0.5
                                         || Math.Abs(aRootFinder.Root() - (-2.0)) < 0.5);
             }
@@ -340,9 +342,9 @@ public class math_FunctionRootTest
 
         foreach (var aTestCase in aTestCases)
         {
-            math_FunctionRoot aRootFinder = new(aFunc, aTestCase.initialGuess, aTestCase.tolerance);
+            FunctionRoot aRootFinder = new(aFunc, aTestCase.initialGuess, aTestCase.tolerance);
 
-            Assert.True(aRootFinder.IsDone());
+            Assert.True(aRootFinder.IsDone);
             Assert.Equal(aTestCase.expectedRoot, aRootFinder.Root(), aTestCase.tolerance);
         }
     }
@@ -355,10 +357,10 @@ public class math_FunctionRootTest
         double            aTolerance     = 1.0e-10;
         double            anInitialGuess = 2.1;
 
-        math_FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
+        FunctionRoot aRootFinder = new(aFunc, anInitialGuess, aTolerance);
 
-        Assert.True(aRootFinder.IsDone());
-        Assert.True(aRootFinder.NbIterations() < 50);
+        Assert.True(aRootFinder.IsDone);
+        Assert.True(aRootFinder.IterationCount < 50);
         Assert.Equal(2.0, aRootFinder.Root(), aTolerance);
     }
 }

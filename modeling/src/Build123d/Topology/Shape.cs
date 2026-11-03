@@ -1,3 +1,4 @@
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -28,7 +29,7 @@ public abstract partial class Shape : IEquatable<Shape>
     private bool? _isEmpty;
     // The root Location the history describes: the shape's Location when it was recorded. A relocated copy shares
     // the record, so selection maps its sub-shapes back by the difference between this and its own.
-    private TopLoc_Location? _historyAt;
+    private Placement? _historyAt;
 
     private protected Shape(TopoDS_Shape? obj, string label = "", Color? color = null)
     {

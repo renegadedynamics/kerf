@@ -2,18 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.BVH_Constants;
+using Kerf.Engine.Geometry.Bvh;
+using static Kerf.Engine.Geometry.Bvh.Constants;
 
 namespace OcctNet.Foundation.Tests;
 
 public class BVH_SweepPlaneBuilderTest
 {
     // Helper function to compute bounding box for a set
-    private static BVH_Box<T, TVec> ComputeSetBox<T, TVec>(BVH_Set<T, TVec> theSet)
+    private static Box<T, TVec> ComputeSetBox<T, TVec>(global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> theSet)
         where T : unmanaged, System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
         where TVec : unmanaged, INCollection_Vec<T, TVec>
     {
-        BVH_Box<T, TVec> aBox = new();
+        Box<T, TVec> aBox = new();
         int aSize = theSet.Size();
         for (int i = 0; i < aSize; ++i)
         {
@@ -26,7 +27,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void DefaultConstructor()
     {
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new();
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new();
         Assert.Equal(BVH_Constants_LeafNodeSizeDefault, aBuilder.LeafNodeSize());
         Assert.Equal(BVH_Constants_MaxTreeDepth, aBuilder.MaxTreeDepth());
     }
@@ -34,7 +35,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void CustomParameters()
     {
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(5, 20, 1);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(5, 20, 1);
         Assert.Equal(5, aBuilder.LeafNodeSize());
         Assert.Equal(20, aBuilder.MaxTreeDepth());
     }
@@ -46,11 +47,11 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void BuildEmptyTriangulation()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new();
 
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = new();
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = new();
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -60,7 +61,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void BuildSingleTriangle()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Add vertices
         aTriangulation.Vertices.Append(new BVH_Vec3d(0.0, 0.0, 0.0));
@@ -70,9 +71,9 @@ public class BVH_SweepPlaneBuilderTest
         // Add triangle
         aTriangulation.Elements.Append(new BVH_Vec4i(0, 1, 2, 0));
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -86,7 +87,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void BuildTwoTriangles()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Create two triangles forming a quad
         aTriangulation.Vertices.Append(new BVH_Vec3d(0.0, 0.0, 0.0));
@@ -97,9 +98,9 @@ public class BVH_SweepPlaneBuilderTest
         aTriangulation.Elements.Append(new BVH_Vec4i(0, 1, 2, 0));
         aTriangulation.Elements.Append(new BVH_Vec4i(0, 2, 3, 0));
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -111,7 +112,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void BuildMultipleTriangles_Grid()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Create a 2x2 grid of quads (8 triangles)
         int aGridSize = 3;
@@ -138,9 +139,9 @@ public class BVH_SweepPlaneBuilderTest
             }
         }
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(2, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(2, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -149,10 +150,10 @@ public class BVH_SweepPlaneBuilderTest
         Assert.True(aBVH.Depth() >= 1);
 
         // Verify tree bounds contain all triangles
-        BVH_Box<double, BVH_Vec3d> aRootBox = new(aBVH.MinPoint(0), aBVH.MaxPoint(0));
+        Box<double, BVH_Vec3d> aRootBox = new(aBVH.MinPoint(0), aBVH.MaxPoint(0));
         for (int i = 0; i < aTotalTriangles; ++i)
         {
-            BVH_Box<double, BVH_Vec3d> aTriBox = aTriangulation.Box(i);
+            Box<double, BVH_Vec3d> aTriBox = aTriangulation.Box(i);
             Assert.False(aRootBox.IsOut(aTriBox));
         }
     }
@@ -160,7 +161,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void SplitAlongDifferentAxes()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Create triangles spread along X axis (should prefer X-axis split)
         for (int i = 0; i < 10; ++i)
@@ -173,9 +174,9 @@ public class BVH_SweepPlaneBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -187,7 +188,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void DegenerateCase_AllSamePosition()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // All triangles at same position (degenerate case)
         for (int i = 0; i < 5; ++i)
@@ -199,9 +200,9 @@ public class BVH_SweepPlaneBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(1, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -216,7 +217,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void SAHQuality_VerifyBetter()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Create well-separated triangle groups (should result in good SAH)
         // Group 1: left side
@@ -239,9 +240,9 @@ public class BVH_SweepPlaneBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i((5 + i) * 3, (5 + i) * 3 + 1, (5 + i) * 3 + 2, 0));
         }
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(2, 32, 1);
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(2, 32, 1);
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 
@@ -254,8 +255,8 @@ public class BVH_SweepPlaneBuilderTest
             int aLeftChild  = aBVH.Child(0, 0);
             int aRightChild = aBVH.Child(1, 0);
 
-            BVH_Box<double, BVH_Vec3d> aLeftBox = new(aBVH.MinPoint(aLeftChild), aBVH.MaxPoint(aLeftChild));
-            BVH_Box<double, BVH_Vec3d> aRightBox = new(aBVH.MinPoint(aRightChild), aBVH.MaxPoint(aRightChild));
+            Box<double, BVH_Vec3d> aLeftBox = new(aBVH.MinPoint(aLeftChild), aBVH.MaxPoint(aLeftChild));
+            Box<double, BVH_Vec3d> aRightBox = new(aBVH.MinPoint(aRightChild), aBVH.MaxPoint(aRightChild));
 
             // Boxes should not significantly overlap for well-separated geometry
             double aOverlap = 0.0;
@@ -282,7 +283,7 @@ public class BVH_SweepPlaneBuilderTest
     [Fact]
     public void LeafSize_RespectMaxSize()
     {
-        BVH_Triangulation<double, BVH_Vec3d> aTriangulation = new();
+        Triangulation<double, BVH_Vec3d> aTriangulation = new();
 
         // Create 20 triangles
         for (int i = 0; i < 20; ++i)
@@ -294,9 +295,9 @@ public class BVH_SweepPlaneBuilderTest
             aTriangulation.Elements.Append(new BVH_Vec4i(i * 3, i * 3 + 1, i * 3 + 2, 0));
         }
 
-        BVH_SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(5, 32, 1); // Leaf size = 5
-        BVH_Tree<double, BVH_Vec3d> aBVH = new();
-        BVH_Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
+        SweepPlaneBuilder<double, BVH_Vec3d> aBuilder = new(5, 32, 1); // Leaf size = 5
+        Tree<double, BVH_Vec3d> aBVH = new();
+        Box<double, BVH_Vec3d> aBox = ComputeSetBox(aTriangulation);
 
         aBuilder.Build(aTriangulation, aBVH, aBox);
 

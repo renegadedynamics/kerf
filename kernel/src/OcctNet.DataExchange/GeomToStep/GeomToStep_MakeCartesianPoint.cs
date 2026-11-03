@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +21,7 @@ public sealed class GeomToStep_MakeCartesianPoint : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D point, its coordinates divided by <paramref name="aFactor"/> (the length factor).</summary>
-    public GeomToStep_MakeCartesianPoint(in gp_Pnt P, double aFactor)
+    public GeomToStep_MakeCartesianPoint(in Point3D P, double aFactor)
     {
         StepGeom_CartesianPoint Pstep = new StepGeom_CartesianPoint();
         P.Coord(out double X, out double Y, out double Z);
@@ -34,7 +36,7 @@ public sealed class GeomToStep_MakeCartesianPoint : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D point (the factor isn't used: 2D points are parameters).</summary>
-    public GeomToStep_MakeCartesianPoint(in gp_Pnt2d P, double aFactor)
+    public GeomToStep_MakeCartesianPoint(in Point2D P, double aFactor)
     {
         StepGeom_CartesianPoint Pstep = new StepGeom_CartesianPoint();
         P.Coord(out double X, out double Y);

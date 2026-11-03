@@ -10,6 +10,7 @@
 // (MaxDegreeOfParallelismScope), several times. Both scopes are AsyncLocal, so tests running in parallel don't
 // interfere.
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Text;
 
@@ -29,7 +30,7 @@ internal static class DeterminismHarness
     public static string AssertSerialEqualsParallel(Func<string> theRun, int theRepeats = 3, params int[] theDegrees)
     {
         string aReference;
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             aReference = theRun();
         }
@@ -39,7 +40,7 @@ internal static class DeterminismHarness
             for (int aRepeat = 1; aRepeat <= theRepeats; ++aRepeat)
             {
                 string anOutput;
-                using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+                using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
                 {
                     anOutput = theRun();
                 }

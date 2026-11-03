@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2014 OPEN CASCADE SAS; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepFill_TransitionStyle;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -21,8 +22,8 @@ namespace Occt;
 internal sealed class BRepFill_TrimShellCorner
 {
     private readonly BRepFill_TransitionStyle myTransition;
-    private readonly gp_Ax2 myAxeOfBisPlane;
-    private readonly gp_Vec myIntPointCrossDir;
+    private readonly Frame3D myAxeOfBisPlane;
+    private readonly Vector3D myIntPointCrossDir;
     private TopoDS_Shape myShape1 = new();
     private TopoDS_Shape myShape2 = new();
     private NCollection_HArray2<TopoDS_Shape>? myBounds;
@@ -41,8 +42,8 @@ internal sealed class BRepFill_TrimShellCorner
     /// </summary>
     public BRepFill_TrimShellCorner(NCollection_HArray2<TopoDS_Shape> theFaces,
                                     BRepFill_TransitionStyle theTransition,
-                                    in gp_Ax2 theAxeOfBisPlane,
-                                    in gp_Vec theIntPointCrossDir)
+                                    in Frame3D theAxeOfBisPlane,
+                                    in Vector3D theIntPointCrossDir)
     {
         myTransition = theTransition;
         myAxeOfBisPlane = theAxeOfBisPlane;
@@ -145,13 +146,13 @@ internal sealed class BRepFill_TrimShellCorner
             aMaxTol = Max(aMaxTol, BRep_Tool.Tolerance(TopoDS.Vertex(anExp.Current())));
         }
 
-        double aFuzzy = 4.0 * Precision.Confusion();
+        double aFuzzy = 4.0 * global::Kerf.Engine.Foundation.Precision.Confusion();
         BOPAlgo_PaveFiller aPF = new();
         NCollection_List<TopoDS_Shape> aLS = new();
         aLS.Append(myShape1);
         aLS.Append(myShape2);
         aPF.SetArguments(aLS);
-        if (aMaxTol < 1.005 * Precision.Confusion())
+        if (aMaxTol < 1.005 * global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             aFuzzy = Max(aPF.FuzzyValue(), aFuzzy);
             aPF.SetFuzzyValue(aFuzzy);
@@ -424,7 +425,7 @@ internal sealed class BRepFill_TrimShellCorner
                 aNewEdge.Orientation(TopAbs_FORWARD);
 
                 // Refer to BrepFill_Sweep.cxx BuildEdge Construct an edge via an iso
-                gp_Pnt P1, P2;
+                Point3D P1, P2;
                 double p11, p12, p21, p22;
                 P1 = BRep_Tool.Pnt(TopExp.FirstVertex(TopoDS.Edge(aNewEdge)));
                 P2 = BRep_Tool.Pnt(TopExp.LastVertex(TopoDS.Edge(aNewEdge)));
@@ -654,7 +655,7 @@ internal sealed class BRepFill_TrimShellCorner
                          out _);
 
         TopoDS_Shape SecWire = new();
-        gp_Pln SecPlane = new();
+        Plane3D SecPlane = new();
         bool WireFound = ChooseSection(aSecEdges, FirstVertex, LastVertex, ref SecWire, ref SecPlane, out _);
 
         if (WireFound)
@@ -835,7 +836,7 @@ internal sealed class BRepFill_TrimShellCorner
                                in TopoDS_Vertex theFirstVertex,
                                in TopoDS_Vertex theLastVertex,
                                ref TopoDS_Shape resWire,
-                               ref gp_Pln resPlane,
+                               ref Plane3D resPlane,
                                out bool IsSingular)
     {
         IsSingular = false;
@@ -928,9 +929,9 @@ internal sealed class BRepFill_TrimShellCorner
                             double aMinDist = Math.Sqrt(Extrema.SquareDistance(imin));
                             double ParamOnFirstEdge = Extrema.ParameterOnE1(imin);
                             double ParamOnLastEdge = Extrema.ParameterOnE2(imin);
-                            gp_Pnt PointOnFirstEdge = Extrema.PointOnE1(imin);
-                            gp_Pnt PointOnLastEdge = Extrema.PointOnE2(imin);
-                            gp_Pnt MidPnt = new((PointOnFirstEdge.XYZ() + PointOnLastEdge.XYZ()) / 2);
+                            Point3D PointOnFirstEdge = Extrema.PointOnE1(imin);
+                            Point3D PointOnLastEdge = Extrema.PointOnE2(imin);
+                            Point3D MidPnt = new((PointOnFirstEdge.XYZ() + PointOnLastEdge.XYZ()) / 2);
                             aCommonVertex = new BRepLib_MakeVertex(MidPnt).InternalVertex();
                             BB.UpdateVertex(aCommonVertex, 1.001 * aMinDist / 2);
 
@@ -944,7 +945,7 @@ internal sealed class BRepFill_TrimShellCorner
             }
 
             resWire = NewWire;
-            resPlane = new gp_Pln(new gp_Ax3(myAxeOfBisPlane));
+            resPlane = new Plane3D(new CoordinateSystem(myAxeOfBisPlane));
             return true;
         }
 
@@ -1025,7 +1026,7 @@ internal sealed class BRepFill_TrimShellCorner
                     for (j = 1; j <= Edges.Length(); j++)
                     {
                         TopoDS_Wire aWire = new BRepLib_MakeWire(NewWire, TopoDS.Edge(Edges[j])).InternalWire();
-                        gp_Pln aPlane = new();
+                        Plane3D aPlane = new();
                         double Deviation = ComputeAveragePlaneAndMaxDeviation(aWire, ref aPlane, out _);
                         if (Deviation < MinDeviation)
                         {
@@ -1063,7 +1064,7 @@ internal sealed class BRepFill_TrimShellCorner
                 for (i = 1; i <= Wseq.Length(); i++)
                 {
                     TopoDS_Wire aWire = TopoDS.Wire(Wseq[i]);
-                    gp_Pln aPln = new();
+                    Plane3D aPln = new();
                     ComputeAveragePlaneAndMaxDeviation(aWire, ref aPln, out bool issing);
                     if (issing)
                     {
@@ -1093,7 +1094,7 @@ internal sealed class BRepFill_TrimShellCorner
 
     private static bool SplitUEdges(NCollection_HArray2<TopoDS_Shape> theUEdges,
                                     BOPDS_DS theDS,
-                                    in gp_Vec theCrossDirection,
+                                    in Vector3D theCrossDirection,
                                     NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theHistMap)
     {
         NCollection_DynamicArray<BOPDS_InterfVV> aVVs = theDS.InterfVV();
@@ -1237,7 +1238,7 @@ internal sealed class BRepFill_TrimShellCorner
     private static bool FindCommonVertex(BOPDS_DS theDS,
                                          int theEIndex1,
                                          int theEIndex2,
-                                         in gp_Vec theCrossDirection,
+                                         in Vector3D theCrossDirection,
                                          out TopoDS_Vertex theCommonVertex,
                                          out double theParamOnE1,
                                          out double theParamOnE2)
@@ -1284,15 +1285,15 @@ internal sealed class BRepFill_TrimShellCorner
                         IntTools_Tools.VertexParameters(aCP, out theParamOnE2, out theParamOnE1);
                     }
 
-                    gp_Dir aIntersectPointCrossDir;
+                    Direction3D aIntersectPointCrossDir;
 
                     // intersect point aDirOnE1.cross(aDirOnE2) should same direction with path
                     // theCrossDirection
-                    aBC1.D1(theParamOnE1, out _, out gp_Vec aDirOnE1);
-                    aBC2.D1(theParamOnE2, out _, out gp_Vec aDirOnE2);
-                    aIntersectPointCrossDir = new gp_Dir(aDirOnE1.Crossed(aDirOnE2));
+                    aBC1.D1(theParamOnE1, out _, out Vector3D aDirOnE1);
+                    aBC2.D1(theParamOnE2, out _, out Vector3D aDirOnE2);
+                    aIntersectPointCrossDir = new Direction3D(aDirOnE1.Crossed(aDirOnE2));
 
-                    if (aIntersectPointCrossDir.Dot(new gp_Dir(theCrossDirection)) > Precision.SquareConfusion())
+                    if (aIntersectPointCrossDir.Dot(new Direction3D(theCrossDirection)) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         bvertexfound = true;
                         break;
@@ -1346,7 +1347,7 @@ internal sealed class BRepFill_TrimShellCorner
         {
             return false;
         }
-        gp_Pnt2d PU1 = (theRank == 0) ? C1.Value(l) : C1.Value(f);
+        Point2D PU1 = (theRank == 0) ? C1.Value(l) : C1.Value(f);
         Geom2d_Curve? C2 = BRep_Tool.CurveOnSurface(theBoundEdge, aFace, out f, out l);
 
         if (C2 is null)
@@ -1354,7 +1355,7 @@ internal sealed class BRepFill_TrimShellCorner
             return false;
         }
         BRep_Tool.Range(theBoundEdge, out f, out l);
-        gp_Pnt2d pf = C2.Value(f);
+        Point2D pf = C2.Value(f);
         TopoDS_Vertex aV = (theRank == 0) ? TopExp.LastVertex(E1) : TopExp.FirstVertex(E1);
         double aTolerance = BRep_Tool.Tolerance(aV);
         BRepAdaptor_Surface aBAS = new(aFace, false);
@@ -1374,8 +1375,8 @@ internal sealed class BRepFill_TrimShellCorner
 
     private static bool FillGap(in TopoDS_Vertex theFirstVertex,
                                 in TopoDS_Vertex theLastVertex,
-                                in gp_Pnt2d theFirstPoint,
-                                in gp_Pnt2d theLastPoint,
+                                in Point2D theFirstPoint,
+                                in Point2D theLastPoint,
                                 in TopoDS_Face theFace,
                                 in TopoDS_Compound theSectionEdges,
                                 NCollection_List<TopoDS_Shape> theOrderedList)
@@ -1493,8 +1494,8 @@ internal sealed class BRepFill_TrimShellCorner
     //=================================================================================================
 
     private static bool CheckAndOrientEdges(NCollection_List<TopoDS_Shape> theOrderedList,
-                                            in gp_Pnt2d theFirstPoint,
-                                            in gp_Pnt2d theLastPoint,
+                                            in Point2D theFirstPoint,
+                                            in Point2D theLastPoint,
                                             in TopoDS_Face theFace,
                                             NCollection_List<TopoDS_Shape> theOrientedList)
     {
@@ -1512,8 +1513,8 @@ internal sealed class BRepFill_TrimShellCorner
         TopExp.Vertices(aEPrev, out TopoDS_Vertex Vf, out TopoDS_Vertex Vl);
         BRepAdaptor_Surface aBAS = new(theFace, false);
 
-        double aTolerance1 = (Vf.IsNull()) ? Precision.Confusion() : BRep_Tool.Tolerance(Vf);
-        double aTolerance2 = (Vl.IsNull()) ? Precision.Confusion() : BRep_Tool.Tolerance(Vl);
+        double aTolerance1 = (Vf.IsNull()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : BRep_Tool.Tolerance(Vf);
+        double aTolerance2 = (Vl.IsNull()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : BRep_Tool.Tolerance(Vl);
         double utol = aBAS.UResolution(aTolerance1);
         double vtol = aBAS.VResolution(aTolerance1);
         aTolerance1 = (utol > vtol) ? utol : vtol;
@@ -1521,7 +1522,7 @@ internal sealed class BRepFill_TrimShellCorner
         vtol = aBAS.VResolution(aTolerance2);
         aTolerance2 = (utol > vtol) ? utol : vtol;
 
-        gp_Pnt2d ap = aCurve.Value(f);
+        Point2D ap = aCurve.Value(f);
         bool bFirstFound = false;
         bool bLastFound = false;
 
@@ -1575,8 +1576,8 @@ internal sealed class BRepFill_TrimShellCorner
             theOrientedList.Append(aE.Oriented(anOri));
             aEPrev = TopoDS.Edge(theOrientedList.Last());
 
-            aTolerance1 = (aV21.IsNull()) ? Precision.Confusion() : BRep_Tool.Tolerance(aV21);
-            aTolerance2 = (aV22.IsNull()) ? Precision.Confusion() : BRep_Tool.Tolerance(aV22);
+            aTolerance1 = (aV21.IsNull()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : BRep_Tool.Tolerance(aV21);
+            aTolerance2 = (aV22.IsNull()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : BRep_Tool.Tolerance(aV22);
             utol = aBAS.UResolution(aTolerance1);
             vtol = aBAS.VResolution(aTolerance1);
             aTolerance1 = (utol > vtol) ? utol : vtol;
@@ -1761,7 +1762,7 @@ internal sealed class BRepFill_TrimShellCorner
         NCollection_List<TopoDS_Shape> aListOfWireEdges = new();
 
         BOPDS_Pave aPave1 = new(), aPave2 = new();
-        gp_Pnt2d p1, p2;
+        Point2D p1, p2;
         TopoDS_Vertex aFirstV, aLastV;
         BOPDS_Pave atmpPave = new();
 
@@ -1899,7 +1900,7 @@ internal sealed class BRepFill_TrimShellCorner
             }
         }
 
-        gp_Pnt2d p1 = new(0.0, 0.0), p2 = new(0.0, 0.0);
+        Point2D p1 = new(0.0, 0.0), p2 = new(0.0, 0.0);
         TopoDS_Vertex aFirstV, aLastV;
         Geom2d_Curve aC1 = BRep_Tool.CurveOnSurface(theUE1Old, aFaceF, out double f, out double l)!;
         _ = aC1;
@@ -1935,7 +1936,7 @@ internal sealed class BRepFill_TrimShellCorner
         int k = 0;
         BOPDS_Pave aFirstPave = aPave1;
         TopoDS_Vertex aFirstVertex = aPrevVertex;
-        gp_Pnt2d apfirst = p1;
+        Point2D apfirst = p1;
         NCollection_List<BOPDS_Pave> aFirstPaves = new(), aLastPaves = new();
         NCollection_List<int> aListOfFlags = new();
         int apaircounter = 1;
@@ -2073,7 +2074,7 @@ internal sealed class BRepFill_TrimShellCorner
                     if ((aPave2.Index() == aPIt2.Value().Index()) && (aPave2.Index() > 0))
                     {
                         Geom2d_Curve pc = BRep_Tool.CurveOnSurface(theUE2Old, aFaceF, out f, out l)!;
-                        gp_Pnt2d p3 = pc.Value(aPIt2.Value().Parameter());
+                        Point2D p3 = pc.Value(aPIt2.Value().Parameter());
                         TopoDS_Vertex aV = TopoDS.Vertex(theDS.Shape(aPave2.Index()));
                         BRepAdaptor_Surface aBAS = new(aFaceF, false);
                         double aTolerance = BRep_Tool.Tolerance(aV);
@@ -2326,7 +2327,7 @@ internal sealed class BRepFill_TrimShellCorner
                         {
                             IntTools_Range aRange = anIntersector.Result().Value(r);
 
-                            if (((aRange.First() - f) < Precision.PConfusion()) && ((l - aRange.Last()) < Precision.PConfusion()))
+                            if (((aRange.First() - f) < global::Kerf.Engine.Foundation.Precision.PConfusion()) && ((l - aRange.Last()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
                                 bAddEdge = true;
                                 break;
@@ -2347,12 +2348,12 @@ internal sealed class BRepFill_TrimShellCorner
 
     //=================================================================================================
 
-    private static double ComputeAveragePlaneAndMaxDeviation(in TopoDS_Shape aWire, ref gp_Pln thePlane, out bool IsSingular)
+    private static double ComputeAveragePlaneAndMaxDeviation(in TopoDS_Shape aWire, ref Plane3D thePlane, out bool IsSingular)
     {
         int N = 40;
         int nedges = aWire.NbChildren();
 
-        NCollection_Array1<gp_Pnt> Pnts = new(1, nedges * N);
+        NCollection_Array1<Point3D> Pnts = new(1, nedges * N);
         int ind = 1, i;
         for (TopoDS_Iterator iter = new(aWire); iter.More(); iter.Next())
         {
@@ -2366,13 +2367,13 @@ internal sealed class BRepFill_TrimShellCorner
             }
         }
 
-        GeomLib.AxeOfInertia(Pnts, out gp_Ax2 Axe, out IsSingular);
+        GeomLib.AxeOfInertia(Pnts, out Frame3D Axe, out IsSingular);
         if (IsSingular)
         {
             return -1;
         }
 
-        thePlane = new gp_Pln(new gp_Ax3(Axe));
+        thePlane = new Plane3D(new CoordinateSystem(Axe));
         double MaxDeviation = 0;
         for (i = 1; i <= Pnts.Length(); i++)
         {
@@ -2431,7 +2432,7 @@ internal sealed class BRepFill_TrimShellCorner
     //<theAxis> is the axis of bisector plane
     private static TopoDS_Edge FindEdgeCloseToBisectorPlane(in TopoDS_Vertex theVertex,
                                                             in TopoDS_Compound theComp,
-                                                            in gp_Ax1 theAxis)
+                                                            in Axis3D theAxis)
     {
         NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> VEmap = new(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(theComp, TopAbs_VERTEX, TopAbs_EDGE, VEmap);
@@ -2459,17 +2460,17 @@ internal sealed class BRepFill_TrimShellCorner
                 TopoDS_Wire aWire = new();
                 BB.MakeWire(ref aWire);
                 BB.Add(aWire, anEdge);
-                gp_Pln aPln = new();
+                Plane3D aPln = new();
                 ComputeAveragePlaneAndMaxDeviation(aWire, ref aPln, out bool issing);
                 double anAngle;
                 if (issing) // edge is a segment of line
                 {
                     //<anAngle> is angle between <anEdge> and its projection on bisector plane
                     BRepAdaptor_Curve BAcurve = new(anEdge);
-                    gp_Pnt FirstPnt = BAcurve.Value(BAcurve.FirstParameter());
-                    gp_Pnt LastPnt = BAcurve.Value(BAcurve.LastParameter());
-                    gp_Vec EdgeVec = new(FirstPnt, LastPnt);
-                    gp_Ax1 EdgeAxis = new(FirstPnt, new gp_Dir(EdgeVec));
+                    Point3D FirstPnt = BAcurve.Value(BAcurve.FirstParameter());
+                    Point3D LastPnt = BAcurve.Value(BAcurve.LastParameter());
+                    Vector3D EdgeVec = new(FirstPnt, LastPnt);
+                    Axis3D EdgeAxis = new(FirstPnt, new Direction3D(EdgeVec));
                     anAngle = EdgeAxis.Direction().Angle(theAxis.Direction());
                     if (anAngle > M_PI / 2)
                     {
@@ -2500,7 +2501,7 @@ internal sealed class BRepFill_TrimShellCorner
 
     private static bool FindMiddleEdges(in TopoDS_Vertex theVertex1,
                                         in TopoDS_Vertex theVertex2,
-                                        in gp_Ax1 theAxis,
+                                        in Axis3D theAxis,
                                         in TopoDS_Compound theComp,
                                         NCollection_List<TopoDS_Shape> theElist)
     {

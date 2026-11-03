@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -28,7 +29,7 @@ public class ShapeFix_FreeBoundsTests
     {
         var aV = new TopoDS_Vertex();
         var aB = new BRep_Builder();
-        aB.MakeVertex(ref aV, new gp_Pnt(x, y, z), 1e-7);
+        aB.MakeVertex(ref aV, new Point3D(x, y, z), 1e-7);
         return aV;
     }
 
@@ -48,7 +49,7 @@ public class ShapeFix_FreeBoundsTests
         aB.Add(aW, Edge(v3, v4, theUnfrozen));
         aB.Add(aW, Edge(v4, v5, theUnfrozen));
         var aF = new TopoDS_Face();
-        aB.MakeFace(ref aF, new Geom_Plane(new gp_Pln()), 1e-7);
+        aB.MakeFace(ref aF, new Geom_Plane(new Plane3D()), 1e-7);
         aB.Add(aF, aW);
         return aF;
     }
@@ -92,7 +93,7 @@ public class ShapeFix_FreeBoundsTests
         Assert.Equal(1, NbChildren(aFB.GetClosedWires()));
         Assert.Equal(0, NbChildren(aFB.GetOpenWires()));
         Assert.Equal(4, Count(aFB.GetClosedWires(), TopAbs_EDGE));
-        Assert.True(aFB.GetClosedWires().TShape()!.IsFrozen());
+        Assert.True(aFB.GetClosedWires().TShape()!.IsFrozen);
         Assert.True(aFB.GetShape().IsSame(aShape)); // nothing to connect: the input itself
         // the free edges are the caller's own
         var anEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
@@ -122,7 +123,7 @@ public class ShapeFix_FreeBoundsTests
         Assert.Equal(1, NbChildren(aFB2.GetClosedWires()));
         Assert.Equal(0, NbChildren(aFB2.GetOpenWires()));
         TopoDS_Shape aResult = aFB2.GetShape();
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.False(aResult.IsSame(aShape));
         Assert.Equal(4, Count(aResult, TopAbs_VERTEX)); // the two corner vertices merged
         // the two edges not touching the corner are the caller's own
@@ -140,8 +141,8 @@ public class ShapeFix_FreeBoundsTests
     public void SewingForm_TwoSquaresSewn_OneClosedWire_SplitOptions()
     {
         // two unit squares side by side with their own edges, 1e-7 apart
-        TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).Face();
-        TopoDS_Face aF2 = new BRepBuilderAPI_MakeFace(new gp_Pln(), 1 + 1e-7, 2, 0, 1).Face();
+        TopoDS_Face aF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
+        TopoDS_Face aF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + 1e-7, 2, 0, 1).Face();
         TopoDS_Compound aShape = Compound(aF1, aF2);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 

@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -119,7 +121,7 @@ internal class RWStepShape_RWEdgeCurve
         }
     }
 
-    private static StepShapeType GetSharing<StepShapeType>(Standard_Transient theStepEntity, Interface_ShareTool theShareTool) where StepShapeType : Standard_Transient
+    private static StepShapeType GetSharing<StepShapeType>(Transient theStepEntity, Interface_ShareTool theShareTool) where StepShapeType : Transient
     {
         Interface_EntityIterator aSharedEntitiesIt = theShareTool.Sharings(theStepEntity);
         aSharedEntitiesIt.SelectType(typeof(StepShapeType), true);
@@ -160,6 +162,6 @@ internal class RWStepShape_RWEdgeCurve
         }
 
         double aDistance = Math.Sqrt((aStartPoint.CoordinatesValue(1) - anEndPoint.CoordinatesValue(1)) * (aStartPoint.CoordinatesValue(1) - anEndPoint.CoordinatesValue(1)) + (aStartPoint.CoordinatesValue(2) - anEndPoint.CoordinatesValue(2)) * (aStartPoint.CoordinatesValue(2) - anEndPoint.CoordinatesValue(2)) + (aStartPoint.CoordinatesValue(3) - anEndPoint.CoordinatesValue(3)) * (aStartPoint.CoordinatesValue(3) - anEndPoint.CoordinatesValue(3)));
-        return aDistance < Precision.Confusion();
+        return aDistance < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 }

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -64,9 +66,9 @@ public partial class BOPAlgo_PaveFiller
         // Update edge
         TopoDS_Edge aE = TopoDS.Edge(myDS.Shape(nE));
         new BRep_Builder().UpdateEdge(aE, theTol);
-        ref Bnd_Box aBoxE = ref aSIE.ChangeBox();
+        ref Box aBoxE = ref aSIE.ChangeBox();
         BRepBndLib.Add(aE, ref aBoxE);
-        aBoxE.SetGap(aBoxE.GetGap() + Precision.Confusion());
+        aBoxE.SetGap(aBoxE.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Update vertices
         NCollection_List<int>.Iterator itLI = new(aLI);
@@ -97,9 +99,9 @@ public partial class BOPAlgo_PaveFiller
             {
                 aBB.UpdateVertex(aVSD, aTolNew);
                 BOPDS_ShapeInfo aSIV = myDS.ChangeShapeInfo(nVNew);
-                ref Bnd_Box aBoxV = ref aSIV.ChangeBox();
+                ref Box aBoxV = ref aSIV.ChangeBox();
                 BRepBndLib.Add(aVSD, ref aBoxV);
-                aBoxV.SetGap(aBoxV.GetGap() + Precision.Confusion());
+                aBoxV.SetGap(aBoxV.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
                 myIncreasedSS.Add(nV);
             }
             return nVNew;
@@ -111,7 +113,7 @@ public partial class BOPAlgo_PaveFiller
         //
         // create new vertex
         TopoDS_Vertex aVNew = new();
-        gp_Pnt aPV = BRep_Tool.Pnt(aV);
+        Point3D aPV = BRep_Tool.Pnt(aV);
         aBB.MakeVertex(ref aVNew, aPV, Max(aTolV, aTolNew));
         //
         // append new vertex to DS
@@ -122,9 +124,9 @@ public partial class BOPAlgo_PaveFiller
         //
         // bounding box for the new vertex
         BOPDS_ShapeInfo aSIDS = myDS.ChangeShapeInfo(nVNew);
-        ref Bnd_Box aBoxDS = ref aSIDS.ChangeBox();
+        ref Box aBoxDS = ref aSIDS.ChangeBox();
         BRepBndLib.Add(aVNew, ref aBoxDS);
-        aBoxDS.SetGap(aBoxDS.GetGap() + Precision.Confusion());
+        aBoxDS.SetGap(aBoxDS.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // add vertex to SD map
         myDS.AddShapeSD(nV, nVNew);
@@ -166,7 +168,7 @@ public partial class BOPAlgo_PaveFiller
         NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
         BOPDS_PaveBlock aPB;
         //
-        aTolV = Precision.Confusion();
+        aTolV = global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         for (i = 0; i < aNbPBP; ++i)
         {

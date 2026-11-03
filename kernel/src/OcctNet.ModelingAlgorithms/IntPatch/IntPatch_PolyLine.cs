@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 
 namespace Occt;
@@ -20,7 +22,7 @@ public class IntPatch_PolyLine : IntPatch_Polygo
 {
     //-- lbr le 12 juin : Ajout des fleches sur les Lines
     //-- msv 13.03.2002 : compute deflection for WLine; Error() returns deflection
-    private static double INITDEFLE => Precision.PConfusion() * 100.0;
+    private static double INITDEFLE => global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0;
 
     private IntPatch_IType typ;
     private bool onfirst;
@@ -65,7 +67,7 @@ public class IntPatch_PolyLine : IntPatch_Polygo
         int n = NbPoints();
         double eps_2 = myError * myError;
 
-        gp_Pnt2d P1 = new(), P2 = new();
+        Point2D P1 = new(), P2 = new();
         if (n >= 3)
         {
             P1 = Point(1);
@@ -73,11 +75,11 @@ public class IntPatch_PolyLine : IntPatch_Polygo
         }
         for (i = 1; i <= n; i++)
         {
-            gp_Pnt2d P3 = Point(i);
+            Point2D P3 = Point(i);
             if (i >= 3)
             {
-                gp_XY V13 = P3.XY() - P1.XY();
-                gp_XY V12 = P2.XY() - P1.XY();
+                Xy V13 = P3.XY() - P1.XY();
+                Xy V12 = P2.XY() - P1.XY();
                 double d13_2 = V13.SquareModulus(), d_2;
                 if (d13_2 > eps_2)
                 {
@@ -90,7 +92,7 @@ public class IntPatch_PolyLine : IntPatch_Polygo
                 if (d_2 > myError * myError)
                 {
                     // try to compute deflection more precisely using parabola interpolation
-                    gp_XY V23 = P3.XY() - P2.XY();
+                    Xy V23 = P3.XY() - P2.XY();
                     double d12 = V12.Modulus(), d23 = V23.Modulus();
                     // compute parameter of P2 (assume parameters of P1,P3 are 0,1)
                     double tm = d12 / (d12 + d23);
@@ -150,7 +152,7 @@ public class IntPatch_PolyLine : IntPatch_Polygo
 
     public override int NbPoints() => (typ == IntPatch_Walking ? wpoly!.NbPnts() : rpoly!.NbPnts());
 
-    public override gp_Pnt2d Point(int Index)
+    public override Point2D Point(int Index)
     {
         double X, Y, X1, Y1, DX, DY;
         DX = DY = 0;
@@ -201,6 +203,6 @@ public class IntPatch_PolyLine : IntPatch_Polygo
             }
         }
 
-        return (new gp_Pnt2d(X + DX, Y + DY));
+        return (new Point2D(X + DX, Y + DY));
     }
 }

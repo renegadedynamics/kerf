@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
@@ -102,7 +105,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> of the profile slides on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">F isn't a face of the basis shape, or E an edge of the profile.</exception>
+    /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in TopoDS_Edge E, in TopoDS_Face F)
     {
         TopExp_Explorer exp = new();
@@ -115,7 +118,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (exp.Init(myPbase, TopAbs_EDGE); exp.More(); exp.Next())
@@ -127,7 +130,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySlface.IsBound(F))
@@ -212,17 +215,17 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Builds a draft prism up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape Until)
     {
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         myGluedF.Clear();
@@ -332,12 +335,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Builds a draft prism from the shape <paramref name="From"/> up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">From or Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in TopoDS_Shape From, in TopoDS_Shape Until)
     {
         if (From.IsNull() || Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (!mySkface.IsNull())
@@ -369,12 +372,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         TopExp_Explorer exp = new(From, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         mySFrom = Working(From);
         bool Trff = TransformShapeFU(0);
@@ -539,12 +542,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Builds a draft prism from the end of the basis shape up to the shape <paramref name="Until"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until is null or has no face.</exception>
+    /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void PerformFromEnd(in TopoDS_Shape Until)
     {
         if (Until.IsNull())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (!mySkface.IsNull() && Working(Until).IsSame(mySkface))
         {
@@ -555,7 +558,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         exp.Init(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myPerfSelection = BRepFeat_SelectionShU;
         PerfSelectionValid();
@@ -641,7 +644,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                 {
                     S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
                 }
-                BRepLib_MakeFace fac = new(S, Precision.Confusion());
+                BRepLib_MakeFace fac = new(S, global::Kerf.Engine.Foundation.Precision.Confusion());
                 mySFrom = fac.InternalFace();
                 Trf = TransformShapeFU(0);
             }
@@ -738,7 +741,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
     }
 
     /// <summary>Builds a draft prism up to the shape <paramref name="Until"/>, at the height <paramref name="Height"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">Until has no face (a null Until included, see below).</exception>
+    /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
     public void PerformUntilHeight(in TopoDS_Shape Until, double Height)
     {
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero height goes on
@@ -754,7 +757,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         TopExp_Explorer exp = new(Until, TopAbs_FACE);
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myGluedF.Clear();
         myPerfSelection = BRepFeat_NoSelection;
@@ -996,7 +999,7 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
                                     in TopoDS_Shape theSFrom,  // shape from
                                     in TopoDS_Shape theSUntil) // shape until
     {
-        Bnd_Box Box = new();
+        Box Box = new();
         BRepBndLib.Add(theSbase, ref Box);
         BRepBndLib.Add(theSkface, ref Box);
         if (!theSFrom.IsNull())
@@ -1086,12 +1089,12 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
 
     private static Geom_Curve? TestCurve(in TopoDS_Face Base)
     {
-        gp_Pnt bar = new(0.0, 0.0, 0.0);
-        NCollection_Sequence<gp_Pnt> spt = new();
+        Point3D bar = new(0.0, 0.0, 0.0);
+        NCollection_Sequence<Point3D> spt = new();
         LocOpe.SampleEdges(Base, spt);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             bar.ChangeCoord() += pvt.XYZ();
         }
         bar.ChangeCoord().Divide(spt.Length());
@@ -1104,9 +1107,9 @@ public sealed class BRepFeat_MakeDPrism : BRepFeat_Form
         {
             return null;
         }
-        gp_Pln pp = P.Pln();
-        gp_Dir Normale = pp.Position().XDirection() ^ pp.Position().YDirection();
-        gp_Ax1 theAx = new(bar, Normale);
+        Plane3D pp = P.Pln();
+        Direction3D Normale = pp.Position().XDirection() ^ pp.Position().YDirection();
+        Axis3D theAx = new(bar, Normale);
         Geom_Line theLin = new(theAx);
         return theLin;
     }

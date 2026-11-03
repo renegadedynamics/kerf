@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Buffers.Binary;
 using System.Text;
 
@@ -76,14 +78,14 @@ public class BinToolsFormatTests
         Assert.True(aBool);
 
         // the end of the stream (OCCT: Storage_StreamTypeMismatchError, or garbage from a byte read)
-        Assert.Throws<Storage_StreamFormatError>(() => BinTools.GetInteger(aStream, out _));
-        Assert.Throws<Storage_StreamFormatError>(() => BinTools.GetBool(aStream, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => BinTools.GetInteger(aStream, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.StreamFormatErrorException>(() => BinTools.GetBool(aStream, out _));
     }
 
     [Fact]
     public void A_vertex_in_version_4()
     {
-        TopoDS_Vertex aVertex = TestShapes.Vertex(new gp_Pnt(1, 2, 3));
+        TopoDS_Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
         byte[] anExpected = new Expected()
             .Text("\nOpen CASCADE Topology V4, (c) Open Cascade\n")
             .Text("Locations 0\n")
@@ -95,7 +97,7 @@ public class BinToolsFormatTests
             .Text("Triangulations 0\n")
             .Text("\nTShapes 1\n")
             .Byte(7) // TopAbs_VERTEX
-            .Real(Precision.Confusion()).Real(1).Real(2).Real(3)
+            .Real(global::Kerf.Engine.Foundation.Precision.Confusion()).Real(1).Real(2).Real(3)
             .Byte(0) // no point representations
             .Byte(1).Byte(1).Byte(0).Byte(1).Byte(1).Byte(0).Byte(1) // Free, Modified, Checked, Orientable, Closed, Infinite, Convex
             .Byte('*') // no sub-shapes
@@ -113,7 +115,7 @@ public class BinToolsFormatTests
     public void An_edge_on_a_line_in_version_2()
     {
         // an edge with a 3D curve and its two vertices, each with no point representation
-        var aLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        var aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         TopoDS_Edge anEdge = TestShapes.Edge(aLine, 0, 2);
         byte[] aBytes = BinToolsRoundTripTests.WriteSet(anEdge, 2);
         string aText = Encoding.ASCII.GetString(aBytes);
@@ -130,7 +132,7 @@ public class BinToolsFormatTests
         // index from the end, location) and the end
         byte[] anEdgeBytes = new Expected()
             .Byte(6) // TopAbs_EDGE
-            .Real(Precision.Confusion()).Byte(1).Byte(1).Byte(0)
+            .Real(global::Kerf.Engine.Foundation.Precision.Confusion()).Byte(1).Byte(1).Byte(0)
             .Byte(1).Int(1).Int(0).Real(0).Real(2)
             .Byte(0)
             .Byte(1).Byte(1).Byte(0).Byte(1).Byte(0).Byte(0).Byte(0)
@@ -145,12 +147,12 @@ public class BinToolsFormatTests
     [Fact]
     public void Locations_elementary_and_complex()
     {
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(1, 2, 3));
-        var aR = new gp_Trsf();
-        aR.SetScale(new gp_Pnt(), 2.0);
-        var aL1 = new TopLoc_Location(aT);
-        var aL2 = new TopLoc_Location(aR);
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(1, 2, 3));
+        var aR = new Transform3D();
+        aR.SetScale(new Point3D(), 2.0);
+        var aL1 = new Placement(aT);
+        var aL2 = new Placement(aR);
         var aSet = new BinTools_LocationSet();
         aSet.Add(aL1 * aL2.Powered(3));
 
@@ -168,7 +170,7 @@ public class BinToolsFormatTests
     [Fact]
     public void The_position_based_format()
     {
-        TopoDS_Vertex aVertex = TestShapes.Vertex(new gp_Pnt(1, 2, 3));
+        TopoDS_Vertex aVertex = TestShapes.Vertex(new Point3D(1, 2, 3));
         var aStream = new MemoryStream();
         var aWriter = new BinTools_ShapeWriter();
         aWriter.Write(aVertex, aStream);
@@ -176,7 +178,7 @@ public class BinToolsFormatTests
         byte[] anExpected = new Expected()
             .Byte(200 + 4 * 7 + 0) // a FORWARD vertex
             .Byte(7) // no location
-            .Real(Precision.Confusion()).Real(1).Real(2).Real(3)
+            .Real(global::Kerf.Engine.Foundation.Precision.Confusion()).Real(1).Real(2).Real(3)
             .Byte(0) // no point representations
             .Byte(1 | 2 | 8 | 16 | 64) // Free, Modified, Orientable, Closed, Convex
             .Byte(199) // the end of the shape
@@ -187,17 +189,17 @@ public class BinToolsFormatTests
 
         // a null shape, then a location: written, then a new location with the same transformation (another datum, so
         // written again), then that one by reference
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(0, 0, 1));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(0, 0, 1));
         var aLocations = new MemoryStream();
         var aWriter2 = new BinTools_ShapeWriter();
         aWriter2.Write(new TopoDS_Shape(), aLocations);
         var anOStream = new BinTools_OStream(aLocations);
-        aWriter2.WriteLocation(anOStream, new TopLoc_Location(aT));
-        var aLoc = new TopLoc_Location(aT);
+        aWriter2.WriteLocation(anOStream, new Placement(aT));
+        var aLoc = new Placement(aT);
         aWriter2.WriteLocation(anOStream, aLoc);
         aWriter2.WriteLocation(anOStream, aLoc);
-        aWriter2.WriteLocation(anOStream, new TopLoc_Location());
+        aWriter2.WriteLocation(anOStream, new Placement());
         byte[] anExpected2 = new Expected()
             .Byte(198)
             .Byte(6).Real(1).Real(0).Real(0).Real(0).Real(0).Real(1).Real(0).Real(0).Real(0).Real(0).Real(1).Real(1)

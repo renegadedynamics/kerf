@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,9 +27,9 @@ public static class GeomEval_RepCurveDesc
         }
 
         public readonly bool IsIdentity() =>
-            Math.Abs(Scale - 1.0) < Precision.Confusion() && Math.Abs(Offset) < Precision.Confusion();
+            Math.Abs(Scale - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(Offset) < global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        public readonly bool IsValid() => Math.Abs(Scale) > Precision.Confusion();
+        public readonly bool IsValid() => Math.Abs(Scale) > global::Kerf.Engine.Foundation.Precision.Confusion();
 
         public readonly double Map(double theU) => Scale * theU + Offset;
     }
@@ -46,11 +48,11 @@ public static class GeomEval_RepCurveDesc
         }
 
         public readonly bool Contains(double theU) =>
-            (theU >= First - Precision.Confusion()) && (theU <= Last + Precision.Confusion());
+            (theU >= First - global::Kerf.Engine.Foundation.Precision.Confusion()) && (theU <= Last + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>Abstract base descriptor: the representation and a kind tag for dispatch.</summary>
-    public abstract class Base : Standard_Transient
+    public abstract class Base : Transient
     {
         /// <summary>Descriptor kind for switch-based dispatch.</summary>
         public enum Kind

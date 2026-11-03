@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_Orientation;
@@ -33,7 +38,7 @@ public class BRepClass3d_SClassifier
     }
 
     /// <summary>Classifies the point <paramref name="P"/> with the tolerance <paramref name="Tol"/> in the solid of <paramref name="S"/>.</summary>
-    public BRepClass3d_SClassifier(BRepClass3d_SolidExplorer S, in gp_Pnt P, double Tol)
+    public BRepClass3d_SClassifier(BRepClass3d_SolidExplorer S, in Point3D P, double Tol)
     {
         if (S.Reject(P))
         {
@@ -62,7 +67,7 @@ public class BRepClass3d_SClassifier
         // else take the next random point inside the min.par.-intersected face
         // and continue
 
-        if (aSE.Reject(new gp_Pnt(0, 0, 0)))
+        if (aSE.Reject(new Point3D(0, 0, 0)))
         {
             myState = 3; //-- in ds solid case without face
             return;
@@ -73,10 +78,10 @@ public class BRepClass3d_SClassifier
         // 1
         bool bFound;
         double aParam, aU = 0.0, aV = 0.0;
-        gp_Pnt aPoint = new();
-        gp_Dir aDN = new();
+        Point3D aPoint = new();
+        Direction3D aDN = new();
 
-        var aRandomGenerator = new math_BullardGenerator();
+        var aRandomGenerator = new BullardGenerator();
         myFace.Nullify();
         myState = 2;
 
@@ -108,7 +113,7 @@ public class BRepClass3d_SClassifier
                     continue;
                 }
 
-                var aLin = new gp_Lin(aPoint, -aDN);
+                var aLin = new Line3D(aPoint, -aDN);
                 double parmin = RealLast();
                 for (aSE.InitShell(); aSE.MoreShell(); aSE.NextShell())
                 {
@@ -170,7 +175,7 @@ public class BRepClass3d_SClassifier
     }
 
     /// <summary>Classifies the point <paramref name="P"/> with the tolerance <paramref name="Tol"/> in the solid of <paramref name="SolidExplorer"/>.</summary>
-    public void Perform(BRepClass3d_SolidExplorer SolidExplorer, in gp_Pnt P, double Tol)
+    public void Perform(BRepClass3d_SolidExplorer SolidExplorer, in Point3D P, double Tol)
     {
         if (SolidExplorer.Reject(P))
         {
@@ -179,7 +184,7 @@ public class BRepClass3d_SClassifier
             return;
         }
 
-        NCollection_UBTree<int, Bnd_Box> aTree = SolidExplorer.GetTree();
+        SpatialTree<int, Box> aTree = SolidExplorer.GetTree();
         NCollection_IndexedMap<TopoDS_Shape> aMapEV = SolidExplorer.GetMapEV();
 
         // Vertices/Edges vs Point.
@@ -204,7 +209,7 @@ public class BRepClass3d_SClassifier
         myFace.Nullify();
         myState = 0;
 
-        gp_Lin L = new();
+        Line3D L = new();
         double Par = 0.0;
         // We compute the intersection between the line built in the Solid Explorer and the shape.
         //-- --------------------------------------------------------------------------------
@@ -342,10 +347,10 @@ public class BRepClass3d_SClassifier
                             double addW = Max(10 * Tol, 0.01 * Par);
                             double AddW = addW;
 
-                            Bnd_Box aBoxF = Intersector3d.Bounding();
+                            Box aBoxF = Intersector3d.Bounding();
 
                             // The box must be finite in order to correctly prolong the segment to its bounds.
-                            if (!aBoxF.IsVoid() && !aBoxF.IsWhole())
+                            if (!aBoxF.IsVoid && !aBoxF.IsWhole)
                             {
                                 aBoxF.Get(out double _, out double _, out double _, out double _, out double _, out double _);
 
@@ -366,8 +371,8 @@ public class BRepClass3d_SClassifier
                                         var aBAS = new BRepAdaptor_Surface(f, false);
                                         var aProj = new Extrema_ExtPS(P,
                                                                       aBAS,
-                                                                      Precision.PConfusion(),
-                                                                      Precision.PConfusion(),
+                                                                      global::Kerf.Engine.Foundation.Precision.PConfusion(),
+                                                                      global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                                                       Extrema_ExtFlag_MIN);
                                         if (aProj.IsDone() && aProj.NbExt() > 0)
                                         {
@@ -388,7 +393,7 @@ public class BRepClass3d_SClassifier
                                                 {
                                                     Extrema_POnSurf aPonS = aProj.Point(indmin);
                                                     aPonS.Parameter(out double anU, out double anV);
-                                                    gp_Pnt2d aP2d = new(anU, anV);
+                                                    Point2D aP2d = new(anU, anV);
                                                     TopAbs_State aSt = Intersector3d.ClassifyUVPoint(aP2d);
                                                     if (aSt == TopAbs_IN || aSt == TopAbs_ON)
                                                     {
@@ -406,7 +411,7 @@ public class BRepClass3d_SClassifier
                                 for (int i = 1; i <= Intersector3d.NbPnt(); i++)
                                 {
                                     if (Math.Abs(Intersector3d.WParameter(i))
-                                        < Math.Abs(parmin) - Precision.PConfusion())
+                                        < Math.Abs(parmin) - global::Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
                                         parmin = Intersector3d.WParameter(i);
                                         TopAbs_State aState = Intersector3d.State(i);
@@ -470,7 +475,7 @@ public class BRepClass3d_SClassifier
             } //-- Exploration of the shells
 
             if (NearFaultPar != RealLast()
-                && Math.Abs(parmin) >= Math.Abs(NearFaultPar) - Precision.PConfusion())
+                && Math.Abs(parmin) >= Math.Abs(NearFaultPar) - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 isFaultyLine = true;
             }
@@ -512,7 +517,7 @@ public class BRepClass3d_SClassifier
     /// <summary>Sets the state to OUT.</summary>
     protected void ForceOut() => myState = 4;
 
-    private static double GetAddToParam(in gp_Lin L, double P, in Bnd_Box B)
+    private static double GetAddToParam(in Line3D L, double P, in Box B)
     {
         B.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax, out double aZmax);
         Span<double> x = [aXmin, aXmax];
@@ -531,8 +536,8 @@ public class BRepClass3d_SClassifier
                     double Z = Math.Abs(z[k] - L.Location().Z());
                     if (X < 1.0e+20 && Y < 1.0e+20 && Z < 1.0e+20)
                     {
-                        gp_Pnt aP = new(x[i], y[j], z[k]);
-                        double par = ElCLib.Parameter(L, aP);
+                        Point3D aP = new(x[i], y[j], z[k]);
+                        double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(L, aP);
                         if (par > Par)
                         {
                             Par = par;
@@ -550,12 +555,12 @@ public class BRepClass3d_SClassifier
     }
 
     // modified by NIZHNY-MKK  Mon Jun 21 15:13:40 2004
-    private static bool FaceNormal(in TopoDS_Face aF, double U, double V, ref gp_Dir aDN)
+    private static bool FaceNormal(in TopoDS_Face aF, double U, double V, ref Direction3D aDN)
     {
         Geom_Surface aS = BRep_Tool.Surface(aF)!;
-        aS.D1(U, V, out gp_Pnt _, out gp_Vec aD1U, out gp_Vec aD1V);
-        gp_Vec aN = aD1U.Crossed(aD1V);
-        if (aN.Magnitude() <= gp.Resolution())
+        aS.D1(U, V, out Point3D _, out Vector3D aD1U, out Vector3D aD1V);
+        Vector3D aN = aD1U.Crossed(aD1V);
+        if (aN.Magnitude() <= Constants.Resolution())
         {
             return false;
         }
@@ -570,7 +575,7 @@ public class BRepClass3d_SClassifier
         return true;
     }
 
-    private static bool GetNormalOnFaceBound(in TopoDS_Edge E, in TopoDS_Face F, double param, ref gp_Dir OutDir)
+    private static bool GetNormalOnFaceBound(in TopoDS_Edge E, in TopoDS_Face F, double param, ref Direction3D OutDir)
     {
         Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(E, F, out double f, out double l);
         if (c2d is null)
@@ -583,7 +588,7 @@ public class BRepClass3d_SClassifier
             return false;
         }
 
-        c2d.D0(param, out gp_Pnt2d P2d);
+        c2d.D0(param, out Point2D P2d);
         return FaceNormal(F, P2d.X(), P2d.Y(), ref OutDir);
     }
 
@@ -593,14 +598,14 @@ public class BRepClass3d_SClassifier
                                  in TopoDS_Face f2,
                                  in TopoDS_Edge e,
                                  double param,
-                                 in gp_Lin L,
+                                 in Line3D L,
                                  ref IntCurveSurface_TransitionOnCurve trans)
     {
         // return statuses:
         // 1 => OK
         // 0 => skip
         //-1 => probably a faulty line
-        gp_Dir nf1 = new(), nf2 = new();
+        Direction3D nf1 = new(), nf2 = new();
         if (!GetNormalOnFaceBound(e, f1, param, ref nf1))
         {
             return -1;
@@ -611,20 +616,20 @@ public class BRepClass3d_SClassifier
             return -1;
         }
 
-        gp_Dir LDir = L.Direction();
+        Direction3D LDir = L.Direction();
 
-        if (Math.Abs(LDir.Dot(nf1)) < Precision.Angular()
-            || Math.Abs(LDir.Dot(nf2)) < Precision.Angular())
+        if (Math.Abs(LDir.Dot(nf1)) < global::Kerf.Engine.Foundation.Precision.Angular()
+            || Math.Abs(LDir.Dot(nf2)) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             // line is orthogonal to normal(s)
             // trans = IntCurveSurface_Tangent;
             return -1;
         }
 
-        if (nf1.IsParallel(nf2, Precision.Angular()))
+        if (nf1.IsParallel(nf2, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             double angD = nf1.Dot(LDir);
-            if (Math.Abs(angD) < Precision.Angular())
+            if (Math.Abs(angD) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return -1;
             }
@@ -641,19 +646,19 @@ public class BRepClass3d_SClassifier
             return 1;
         }
 
-        gp_Vec N = new(nf1 ^ nf2);
+        Vector3D N = new(nf1 ^ nf2);
 
         //proj LDir on the plane defined by nf1/nf2 directions
-        gp_Dir ProjL = new((N.XYZ() ^ LDir.XYZ()) ^ N.XYZ());
+        Direction3D ProjL = new((N.XYZ() ^ LDir.XYZ()) ^ N.XYZ());
 
         double fAD = nf1.Dot(ProjL);
         double sAD = nf2.Dot(ProjL);
 
-        if (fAD < -Precision.Angular() && sAD < -Precision.Angular())
+        if (fAD < -global::Kerf.Engine.Foundation.Precision.Angular() && sAD < -global::Kerf.Engine.Foundation.Precision.Angular())
         {
             trans = IntCurveSurface_In;
         }
-        else if (fAD > Precision.Angular() && sAD > Precision.Angular())
+        else if (fAD > global::Kerf.Engine.Foundation.Precision.Angular() && sAD > global::Kerf.Engine.Foundation.Precision.Angular())
         {
             trans = IntCurveSurface_Out;
         }

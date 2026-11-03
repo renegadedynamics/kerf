@@ -27,7 +27,7 @@ public partial struct BRepClass_Edge
         myEdge = new TopoDS_Edge();
         myFace = new TopoDS_Face();
         myNextEdge = new TopoDS_Edge();
-        myMaxTolerance = Precision.Infinite();
+        myMaxTolerance = global::Kerf.Engine.Foundation.Precision.Infinite();
         myUseBndBox = false;
     }
 
@@ -37,7 +37,7 @@ public partial struct BRepClass_Edge
         myEdge = E;
         myFace = F;
         myNextEdge = new TopoDS_Edge();
-        myMaxTolerance = Precision.Infinite();
+        myMaxTolerance = global::Kerf.Engine.Foundation.Precision.Infinite();
         myUseBndBox = false;
     }
 

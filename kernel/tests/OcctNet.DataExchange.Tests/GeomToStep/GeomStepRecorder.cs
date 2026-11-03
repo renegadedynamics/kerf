@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -23,19 +25,19 @@ internal static class GeomStepRecorder
     // ---------------------------------------------------------------------------------------------------------
     // Text (as the recorder's ostream at precision 17)
 
-    private static string R(double theValue) => Standard_Stream.FormatReal(theValue, 17);
+    private static string R(double theValue) => StreamUtilities.FormatReal(theValue, 17);
 
     private static string OneLine(string theText) => theText.Replace('\n', ' ').Replace('\r', ' ').TrimEnd(' ');
 
-    private static string Pnt(in gp_Pnt P) => R(P.X()) + " " + R(P.Y()) + " " + R(P.Z());
-    private static string Pnt(in gp_Pnt2d P) => R(P.X()) + " " + R(P.Y());
-    private static string Dir(in gp_Dir D) => R(D.X()) + " " + R(D.Y()) + " " + R(D.Z());
-    private static string Dir(in gp_Dir2d D) => R(D.X()) + " " + R(D.Y());
+    private static string Pnt(in Point3D P) => R(P.X()) + " " + R(P.Y()) + " " + R(P.Z());
+    private static string Pnt(in Point2D P) => R(P.X()) + " " + R(P.Y());
+    private static string Dir(in Direction3D D) => R(D.X()) + " " + R(D.Y()) + " " + R(D.Z());
+    private static string Dir(in Direction2D D) => R(D.X()) + " " + R(D.Y());
 
     private static StringWriter Writer()
     {
         var aWriter = new StringWriter(CultureInfo.InvariantCulture);
-        Standard_Stream.Precision(aWriter, 17);
+        StreamUtilities.Precision(aWriter, 17);
         return aWriter;
     }
 
@@ -60,7 +62,7 @@ internal static class GeomStepRecorder
         return OneLine(aS.ToString());
     }
 
-    private static string Trsf(in gp_Trsf T)
+    private static string Trsf(in Transform3D T)
     {
         var aRes = new StringBuilder("trsf");
         for (int r = 1; r <= 3; r++)
@@ -74,7 +76,7 @@ internal static class GeomStepRecorder
         return aRes.Append(' ').Append(R(T.ScaleFactor())).Append(' ').Append((int)T.Form()).ToString();
     }
 
-    private static string Trsf2d(in gp_Trsf2d T)
+    private static string Trsf2d(in Transform2D T)
     {
         var aRes = new StringBuilder("trsf2d");
         for (int r = 1; r <= 2; r++)
@@ -108,7 +110,7 @@ internal static class GeomStepRecorder
 
     private static string Null<T>(T? theValue, Func<T, string> theText) where T : class => theValue is null ? "null" : theText(theValue);
 
-    public static void StepToGeomLines(Standard_Transient? theEnt, StepData_Factors F, string thePrefix, List<string> theLines)
+    public static void StepToGeomLines(Transient? theEnt, StepData_Factors F, string thePrefix, List<string> theLines)
     {
         if (theEnt is StepGeom_CartesianPoint P)
         {
@@ -122,8 +124,8 @@ internal static class GeomStepRecorder
         }
         else if (theEnt is StepGeom_Vector V)
         {
-            Try(theLines, thePrefix, "vec", () => Null(StepToGeom.MakeVectorWithMagnitude(V, F), r => Pnt(new gp_Pnt(r.Vec().XYZ()))));
-            Try(theLines, thePrefix, "vec2d", () => Null(StepToGeom.MakeVectorWithMagnitude2d(V), r => Pnt(new gp_Pnt2d(r.Vec2d().XY()))));
+            Try(theLines, thePrefix, "vec", () => Null(StepToGeom.MakeVectorWithMagnitude(V, F), r => Pnt(new Point3D(r.Vec().XYZ()))));
+            Try(theLines, thePrefix, "vec2d", () => Null(StepToGeom.MakeVectorWithMagnitude2d(V), r => Pnt(new Point2D(r.Vec2d().XY()))));
         }
         else if (theEnt is StepGeom_Axis1Placement A1)
         {
@@ -142,7 +144,7 @@ internal static class GeomStepRecorder
         {
             Try(theLines, thePrefix, "trsf", () =>
             {
-                gp_Trsf T = new gp_Trsf();
+                Transform3D T = new Transform3D();
                 return StepToGeom.MakeTransformation3d(T3, ref T, F) ? Trsf(T) : "false";
             });
         }
@@ -150,7 +152,7 @@ internal static class GeomStepRecorder
         {
             Try(theLines, thePrefix, "trsf2d", () =>
             {
-                gp_Trsf2d T = new gp_Trsf2d();
+                Transform2D T = new Transform2D();
                 return StepToGeom.MakeTransformation2d(T2, ref T, F) ? Trsf2d(T) : "false";
             });
         }
@@ -187,7 +189,7 @@ internal static class GeomStepRecorder
     // ---------------------------------------------------------------------------------------------------------
     // GeomToStep: a result written as STEP entities, then converted back
 
-    public static string Written(Standard_Transient theEnt, StepData_Protocol theProtocol)
+    public static string Written(Transient theEnt, StepData_Protocol theProtocol)
     {
         var aModel = new StepData_StepModel();
         aModel.SetProtocol(theProtocol);
@@ -215,9 +217,9 @@ internal static class GeomStepRecorder
         public readonly List<string> Lines = theLines;
 
         // One maker: "<id> <maker> <entities>" or NOTDONE or EXC, then the entity converted back
-        public void Make(string theId, string theName, Func<(bool Done, Func<Standard_Transient?> Value)> theMaker)
+        public void Make(string theId, string theName, Func<(bool Done, Func<Transient?> Value)> theMaker)
         {
-            Standard_Transient? anEnt = null;
+            Transient? anEnt = null;
             string aRes;
             try
             {
@@ -246,11 +248,11 @@ internal static class GeomStepRecorder
         }
     }
 
-    private static (bool, Func<Standard_Transient?>) M(GeomToStep_Root theMaker, Func<Standard_Transient?> theValue) => (theMaker.IsDone(), theValue);
+    private static (bool, Func<Transient?>) M(GeomToStep_Root theMaker, Func<Transient?> theValue) => (theMaker.IsDone(), theValue);
 
     private static void CurveMakers(string theId, Geom_Curve C, Context X)
     {
-        X.Lines.Add(theId + " " + C.GetType().Name);
+        X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(C.GetType()));
         var F = X.F;
         X.Make(theId, "curve", () => { var m = new GeomToStep_MakeCurve(C, F); return M(m, m.Value); });
         if (C is Geom_Line L)
@@ -300,7 +302,7 @@ internal static class GeomStepRecorder
 
     private static void Curve2dMakers(string theId, Geom2d_Curve C, Context X)
     {
-        X.Lines.Add(theId + " " + C.GetType().Name);
+        X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(C.GetType()));
         var F = X.F;
         X.Make(theId, "curve", () => { var m = new GeomToStep_MakeCurve(C, F); return M(m, m.Value); });
         if (C is Geom2d_Line L)
@@ -348,7 +350,7 @@ internal static class GeomStepRecorder
 
     private static void SurfaceMakers(string theId, Geom_Surface S, Context X)
     {
-        X.Lines.Add(theId + " " + S.GetType().Name);
+        X.Lines.Add(theId + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(S.GetType()));
         var F = X.F;
         X.Make(theId, "surface", () => { var m = new GeomToStep_MakeSurface(S, F); return M(m, m.Value); });
         if (S is Geom_BoundedSurface B)
@@ -417,17 +419,17 @@ internal static class GeomStepRecorder
     // ---------------------------------------------------------------------------------------------------------
     // The cases
 
-    private static gp_Trsf MakeTrsf(List<double> v)
+    private static Transform3D MakeTrsf(List<double> v)
     {
-        gp_Trsf T = new gp_Trsf();
+        Transform3D T = new Transform3D();
         for (int i = 0; i + 7 < v.Count; i += 8)
         {
-            gp_Trsf t = new gp_Trsf();
-            gp_Pnt p = new gp_Pnt(v[i + 1], v[i + 2], v[i + 3]);
+            Transform3D t = new Transform3D();
+            Point3D p = new Point3D(v[i + 1], v[i + 2], v[i + 3]);
             switch ((int)v[i])
             {
-                case 1: t.SetRotation(new gp_Ax1(p, new gp_Dir(v[i + 4], v[i + 5], v[i + 6])), v[i + 7]); break;
-                case 2: t.SetTranslation(new gp_Vec(v[i + 1], v[i + 2], v[i + 3])); break;
+                case 1: t.SetRotation(new Axis3D(p, new Direction3D(v[i + 4], v[i + 5], v[i + 6])), v[i + 7]); break;
+                case 2: t.SetTranslation(new Vector3D(v[i + 1], v[i + 2], v[i + 3])); break;
                 case 3: t.SetScale(p, v[i + 7]); break;
                 default: t.SetMirror(p); break;
             }
@@ -438,7 +440,7 @@ internal static class GeomStepRecorder
         return T;
     }
 
-    private static void Add(Context X, string theId, string theName, Func<Standard_Transient> theValue)
+    private static void Add(Context X, string theId, string theName, Func<Transient> theValue)
     {
         try
         {
@@ -475,67 +477,67 @@ internal static class GeomStepRecorder
         {
             case "PNT":
             {
-                gp_Pnt P = new gp_Pnt(v[0], v[1], v[2]);
+                Point3D P = new Point3D(v[0], v[1], v[2]);
                 Add(X, theId, "pnt", () => new GeomToStep_MakeCartesianPoint(P, F.LengthFactor()).Value());
                 Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new Geom_CartesianPoint(P), F.LengthFactor()).Value());
                 break;
             }
             case "PNT2":
             {
-                gp_Pnt2d P = new gp_Pnt2d(v[0], v[1]);
+                Point2D P = new Point2D(v[0], v[1]);
                 Add(X, theId, "pnt", () => new GeomToStep_MakeCartesianPoint(P, F.LengthFactor()).Value());
                 Add(X, theId, "gpnt", () => new GeomToStep_MakeCartesianPoint(new Geom2d_CartesianPoint(P)).Value());
                 break;
             }
             case "DIR":
             {
-                gp_Dir D = new gp_Dir(v[0], v[1], v[2]);
+                Direction3D D = new Direction3D(v[0], v[1], v[2]);
                 X.Make(theId, "dir", () => { var m = new GeomToStep_MakeDirection(D); return M(m, m.Value); });
                 X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Geom_Direction(D)); return M(m, m.Value); });
                 break;
             }
             case "DIR2":
             {
-                gp_Dir2d D = new gp_Dir2d(v[0], v[1]);
+                Direction2D D = new Direction2D(v[0], v[1]);
                 X.Make(theId, "dir", () => { var m = new GeomToStep_MakeDirection(D); return M(m, m.Value); });
                 X.Make(theId, "gdir", () => { var m = new GeomToStep_MakeDirection(new Geom2d_Direction(D)); return M(m, m.Value); });
                 break;
             }
             case "VEC":
             {
-                gp_Vec V = new gp_Vec(v[0], v[1], v[2]);
+                Vector3D V = new Vector3D(v[0], v[1], v[2]);
                 X.Make(theId, "vec", () => { var m = new GeomToStep_MakeVector(V, F); return M(m, m.Value); });
                 X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new Geom_VectorWithMagnitude(V), F); return M(m, m.Value); });
                 break;
             }
             case "VEC2":
             {
-                gp_Vec2d V = new gp_Vec2d(v[0], v[1]);
+                Vector2D V = new Vector2D(v[0], v[1]);
                 X.Make(theId, "vec", () => { var m = new GeomToStep_MakeVector(V, F); return M(m, m.Value); });
                 X.Make(theId, "gvec", () => { var m = new GeomToStep_MakeVector(new Geom2d_VectorWithMagnitude(V), F); return M(m, m.Value); });
                 break;
             }
             case "AX1":
             {
-                gp_Ax1 A = new gp_Ax1(new gp_Pnt(v[0], v[1], v[2]), new gp_Dir(v[3], v[4], v[5]));
+                Axis3D A = new Axis3D(new Point3D(v[0], v[1], v[2]), new Direction3D(v[3], v[4], v[5]));
                 X.Make(theId, "ax1", () => { var m = new GeomToStep_MakeAxis1Placement(A, F); return M(m, m.Value); });
                 X.Make(theId, "gax1", () => { var m = new GeomToStep_MakeAxis1Placement(new Geom_Axis1Placement(A), F); return M(m, m.Value); });
                 break;
             }
             case "AX2D":
             {
-                gp_Ax2d A = new gp_Ax2d(new gp_Pnt2d(v[0], v[1]), new gp_Dir2d(v[2], v[3]));
+                Axis2D A = new Axis2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]));
                 X.Make(theId, "ax2d", () => { var m = new GeomToStep_MakeAxis1Placement(A, F); return M(m, m.Value); });
                 X.Make(theId, "gax2d", () => { var m = new GeomToStep_MakeAxis1Placement(new Geom2d_AxisPlacement(A), F); return M(m, m.Value); });
                 break;
             }
             case "AX2":
             {
-                gp_Ax2 A = new gp_Ax2(new gp_Pnt(v[0], v[1], v[2]), new gp_Dir(v[3], v[4], v[5]), new gp_Dir(v[6], v[7], v[8]));
+                Frame3D A = new Frame3D(new Point3D(v[0], v[1], v[2]), new Direction3D(v[3], v[4], v[5]), new Direction3D(v[6], v[7], v[8]));
                 X.Make(theId, "ax2", () => { var m = new GeomToStep_MakeAxis2Placement3d(A, F); return M(m, m.Value); });
                 X.Make(theId, "gax2", () => { var m = new GeomToStep_MakeAxis2Placement3d(new Geom_Axis2Placement(A), F); return M(m, m.Value); });
                 X.Make(theId, "ax2to2d", () => { var m = new GeomToStep_MakeAxis2Placement2d(A, F); return M(m, m.Value); });
-                gp_Ax3 A3 = new gp_Ax3(A);
+                CoordinateSystem A3 = new CoordinateSystem(A);
                 if (v.Count > 9 && v[9] == 0.0)
                 {
                     A3.YReverse();
@@ -546,13 +548,13 @@ internal static class GeomStepRecorder
             }
             case "AX22D":
             {
-                gp_Ax22d A = new gp_Ax22d(new gp_Pnt2d(v[0], v[1]), new gp_Dir2d(v[2], v[3]), v[4] != 0.0);
+                Frame2D A = new Frame2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]), v[4] != 0.0);
                 X.Make(theId, "ax22d", () => { var m = new GeomToStep_MakeAxis2Placement2d(A, F); return M(m, m.Value); });
                 break;
             }
             case "TRSF":
             {
-                gp_Trsf T = MakeTrsf(v);
+                Transform3D T = MakeTrsf(v);
                 X.Lines.Add(theId + " " + Trsf(T));
                 X.Make(theId, "cto", () => { var m = new GeomToStep_MakeCartesianTransformationOperator(T, F); return M(m, m.Value); });
                 X.Make(theId, "ax2trsf", () => { var m = new GeomToStep_MakeAxis2Placement3d(T, F); return M(m, m.Value); });
@@ -564,10 +566,10 @@ internal static class GeomStepRecorder
             case "PL3":
             {
                 int n = (int)v[0];
-                var P = new NCollection_Array1<gp_Pnt>(1, n);
+                var P = new NCollection_Array1<Point3D>(1, n);
                 for (int i = 1; i <= n; i++)
                 {
-                    P.SetValue(i, new gp_Pnt(v[3 * i - 2], v[3 * i - 1], v[3 * i]));
+                    P.SetValue(i, new Point3D(v[3 * i - 2], v[3 * i - 1], v[3 * i]));
                 }
 
                 X.Make(theId, "polyline", () => { var m = new GeomToStep_MakePolyline(P, F); return M(m, m.Value); });
@@ -576,10 +578,10 @@ internal static class GeomStepRecorder
             case "PL2":
             {
                 int n = (int)v[0];
-                var P = new NCollection_Array1<gp_Pnt2d>(1, n);
+                var P = new NCollection_Array1<Point2D>(1, n);
                 for (int i = 1; i <= n; i++)
                 {
-                    P.SetValue(i, new gp_Pnt2d(v[2 * i - 1], v[2 * i]));
+                    P.SetValue(i, new Point2D(v[2 * i - 1], v[2 * i]));
                 }
 
                 X.Make(theId, "polyline", () => { var m = new GeomToStep_MakePolyline(P, F); return M(m, m.Value); });

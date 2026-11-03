@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity GeometricToleranceRelationship
 /// </summary>
-public class StepDimTol_GeometricToleranceRelationship : Standard_Transient
+public class StepDimTol_GeometricToleranceRelationship : Transient
 {
     private TCollection_HAsciiString myName;
     private TCollection_HAsciiString myDescription;

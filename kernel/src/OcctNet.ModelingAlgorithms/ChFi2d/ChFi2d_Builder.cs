@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.ChFi2d_ConstructionError;
 using static Occt.GccEnt_Position;
@@ -132,7 +135,7 @@ public sealed partial class ChFi2d_Builder
         fillets.Clear();
         chamfers.Clear();
         history.Clear();
-        TopLoc_Location loc;
+        Placement loc;
         //  syntaxe invalide sur NT
         //  const occ::handle<Geom_Surface>&  surf = BRep_Tool::Surface( RefFace, Loc);
         //  if (!surf->IsKind(STANDARD_TYPE(Geom_Plane))) {
@@ -389,7 +392,7 @@ public sealed partial class ChFi2d_Builder
         TopoDS_Edge newEdge1 = new(), newEdge2 = new();
         TopoDS_Vertex v, v1, v2;
         var makeEdge = new BRepLib_MakeEdge();
-        TopLoc_Location loc;
+        Placement loc;
         double first, last;
 
         TopExp.Vertices(E1, out firstVertex, out lastVertex);
@@ -660,9 +663,9 @@ public sealed partial class ChFi2d_Builder
         double first, last;
         IsDegenerated = false;
         TopExp.Vertices(E1, out TopoDS_Vertex firstVertex, out TopoDS_Vertex lastVertex);
-        gp_Pnt Pnew = BRep_Tool.Pnt(NewExtr);
+        Point3D Pnew = BRep_Tool.Pnt(NewExtr);
         bool PonctualEdge = false;
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         //  syntax wrong on NT
         //      const occ::handle<Geom_Curve>& curve =
         //	BRep_Tool::Curve(E1, first, last);
@@ -670,13 +673,13 @@ public sealed partial class ChFi2d_Builder
         if (firstVertex.IsSame(OldExtr))
         {
             makeEdge.Init(curve!, NewExtr, lastVertex);
-            gp_Pnt PV = BRep_Tool.Pnt(lastVertex);
+            Point3D PV = BRep_Tool.Pnt(lastVertex);
             PonctualEdge = (Pnew.Distance(PV) < Tol);
         }
         else
         {
             makeEdge.Init(curve!, firstVertex, NewExtr);
-            gp_Pnt PV = BRep_Tool.Pnt(firstVertex);
+            Point3D PV = BRep_Tool.Pnt(firstVertex);
             PonctualEdge = (Pnew.Distance(PV) < Tol);
         }
         TopoDS_Edge anEdge;
@@ -856,9 +859,9 @@ public sealed partial class ChFi2d_Builder
         //   Determination of the face for fillet.                                +
         //========================================================================
 
-        gp_Pnt2d p;
-        gp_Vec2d Ve1, Ve2;
-        gp_Vec2d Ve3, Ve4;
+        Point2D p;
+        Vector2D Ve1, Ve2;
+        Vector2D Ve3, Ve4;
         bool Sens1, Sens2;
 
         Geom2d_Curve basisC1, basisC2;
@@ -882,25 +885,25 @@ public sealed partial class ChFi2d_Builder
         if (basisC1.DynamicType() == typeof(Geom2d_Circle))
         {
             var CC1 = (Geom2d_Circle)basisC1;
-            ElCLib.D1(param1, CC1.Circ2d(), out p, out Ve1);
-            Sens1 = (CC1.Circ2d()).IsDirect();
+            global::Kerf.Engine.Geometry.ElCLib.D1(param1, CC1.Circ2d(), out p, out Ve1);
+            Sens1 = (CC1.Circ2d()).IsDirect;
         } // if (C1->DynamicType() ...
         else
         {
             var CC1 = (basisC1 as Geom2d_Line)!; // OCCT dereferences down_cast's result unchecked
-            ElCLib.D1(param1, CC1.Lin2d(), out p, out Ve1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(param1, CC1.Lin2d(), out p, out Ve1);
             Sens1 = true;
         } // else ...
         if (basisC2.DynamicType() == typeof(Geom2d_Circle))
         {
             var CC2 = (Geom2d_Circle)basisC2;
-            ElCLib.D1(param3, CC2.Circ2d(), out p, out Ve2);
-            Sens2 = (CC2.Circ2d()).IsDirect();
+            global::Kerf.Engine.Geometry.ElCLib.D1(param3, CC2.Circ2d(), out p, out Ve2);
+            Sens2 = (CC2.Circ2d()).IsDirect;
         } // if (C2->DynamicType() ...
         else
         {
             var CC2 = (basisC2 as Geom2d_Line)!;
-            ElCLib.D1(param3, CC2.Lin2d(), out p, out Ve2);
+            global::Kerf.Engine.Geometry.ElCLib.D1(param3, CC2.Lin2d(), out p, out Ve2);
             Sens2 = true;
         } // else ...
 
@@ -911,7 +914,7 @@ public sealed partial class ChFi2d_Builder
         Ve4 = Ve2;
 
         // processing of tangency or downcast point
-        if (Ve1.IsParallel(Ve2, Precision.Angular()))
+        if (Ve1.IsParallel(Ve2, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // Ve1 and Ve2 are parallel : cross at 0
             cross = 0.0;
@@ -924,7 +927,7 @@ public sealed partial class ChFi2d_Builder
                 Ve4 = -Ve2;
             }
 
-            if (!Ve4.IsOpposite(Ve3, Precision.Angular()))
+            if (!Ve4.IsOpposite(Ve3, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 // There is a true tangency point and the calculation is stopped
                 status = ChFi2d_TangencyError;
@@ -1029,7 +1032,7 @@ public sealed partial class ChFi2d_Builder
             }
         } // else ...
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // C++ converts the handles to adaptors implicitly (decision 805)
         var Fillet = new Geom2dGcc_Circ2d2TanRad(new Geom2dGcc_QualifiedCurve(new Geom2dAdaptor_Curve(basisC1), Qual1),
                                                  new Geom2dGcc_QualifiedCurve(new Geom2dAdaptor_Curve(basisC2), Qual2),
@@ -1046,7 +1049,7 @@ public sealed partial class ChFi2d_Builder
             int numsol = 1;
             int nsol = 1;
             TopoDS_Vertex Vertex1 = new(), Vertex2 = new();
-            gp_Pnt2d Ptg1, Ptg2;
+            Point2D Ptg1, Ptg2;
             double dist;
             double dist1 = 1.0e40;
             bool inside = false;
@@ -1135,26 +1138,26 @@ public sealed partial class ChFi2d_Builder
                 return filletEdge;
             }
 
-            gp_Pnt p1 = Adaptor3dSurface.Value(Ptg1.X(), Ptg1.Y());
-            gp_Pnt p2 = Adaptor3dSurface.Value(Ptg2.X(), Ptg2.Y());
+            Point3D p1 = Adaptor3dSurface.Value(Ptg1.X(), Ptg1.Y());
+            Point3D p2 = Adaptor3dSurface.Value(Ptg2.X(), Ptg2.Y());
             B.MakeVertex(ref Vertex1, p1, Tol);
             NewExtr1 = Vertex1;
-            if (Math.Abs(U2 - ufirst1) <= Precision.PConfusion())
+            if (Math.Abs(U2 - ufirst1) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 NewExtr1 = V1;
             }
-            if (Math.Abs(U2 - ulast1) <= Precision.PConfusion())
+            if (Math.Abs(U2 - ulast1) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 NewExtr1 = V2;
             }
 
             B.MakeVertex(ref Vertex2, p2, Tol);
             NewExtr2 = Vertex2;
-            if (Math.Abs(Vv2 - ufirst2) <= Precision.PConfusion())
+            if (Math.Abs(Vv2 - ufirst2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 NewExtr2 = V3;
             }
-            if (Math.Abs(Vv2 - ulast2) <= Precision.PConfusion())
+            if (Math.Abs(Vv2 - ulast2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 NewExtr2 = V4;
             }
@@ -1162,42 +1165,42 @@ public sealed partial class ChFi2d_Builder
             //=======================================================================
             //   Update tops of the fillet.                                  +
             //=======================================================================
-            gp_Pnt Pntbid;
-            gp_Pnt2d sommet;
+            Point3D Pntbid;
+            Point2D sommet;
             Pntbid = BRep_Tool.Pnt(V);
-            sommet = new gp_Pnt2d(Pntbid.X(), Pntbid.Y());
+            sommet = new Point2D(Pntbid.X(), Pntbid.Y());
 
-            gp_Pnt pntBid;
-            gp_Pnt2d somBid;
+            Point3D pntBid;
+            Point2D somBid;
             if (V1.IsSame(V))
             {
                 pntBid = BRep_Tool.Pnt(V2);
-                somBid = new gp_Pnt2d(pntBid.X(), pntBid.Y());
+                somBid = new Point2D(pntBid.X(), pntBid.Y());
             }
             else
             {
                 pntBid = BRep_Tool.Pnt(V1);
-                somBid = new gp_Pnt2d(pntBid.X(), pntBid.Y());
+                somBid = new Point2D(pntBid.X(), pntBid.Y());
             }
 
-            gp_Vec2d vec;
-            ElCLib.D1(U1, cir, out Ptg1, out vec);
+            Vector2D vec;
+            global::Kerf.Engine.Geometry.ElCLib.D1(U1, cir, out Ptg1, out vec);
 
-            gp_Vec2d vec1 = new();
+            Vector2D vec1 = new();
             if (basisC1.DynamicType() == typeof(Geom2d_Circle))
             {
                 var CC1 = (Geom2d_Circle)basisC1;
-                gp_Circ2d cir2d = CC1.Circ2d();
-                double par = ElCLib.Parameter(cir2d, Ptg1);
-                ElCLib.D1(par, cir2d, out _, out vec1);
+                Circle2D cir2d = CC1.Circ2d();
+                double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cir2d, Ptg1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(par, cir2d, out _, out vec1);
             } // if (C1->DynamicType() ...
             else if (basisC1.DynamicType() == typeof(Geom2d_Line))
             {
                 var CC1 = (Geom2d_Line)basisC1;
-                gp_Lin2d lin2d = CC1.Lin2d();
-                double par = ElCLib.Parameter(lin2d, sommet);
-                vec1 = new gp_Vec2d(sommet.X() - somBid.X(), sommet.Y() - somBid.Y()); // OCCT: overwritten at once
-                ElCLib.D1(par, lin2d, out _, out vec1);
+                Line2D lin2d = CC1.Lin2d();
+                double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, sommet);
+                vec1 = new Vector2D(sommet.X() - somBid.X(), sommet.Y() - somBid.Y()); // OCCT: overwritten at once
+                global::Kerf.Engine.Geometry.ElCLib.D1(par, lin2d, out _, out vec1);
             } // else if ...
 
             if (OE1 == TopAbs_REVERSED)
@@ -1207,7 +1210,7 @@ public sealed partial class ChFi2d_Builder
             bool Sense = (vec1 * vec) > 0.0;
             if (U1 > Vv1 && U1 > 2.0 * M_PI)
             {
-                ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Precision.Confusion(), ref U1, ref Vv1);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, global::Kerf.Engine.Foundation.Precision.Confusion(), ref U1, ref Vv1);
             } // if (U1 ...
             if ((O1 == TopAbs_FORWARD && OE1 == TopAbs_FORWARD)
                 || (O1 == TopAbs_REVERSED && OE1 == TopAbs_REVERSED))
@@ -1358,7 +1361,7 @@ public sealed partial class ChFi2d_Builder
     /// <summary>
     /// The edge trimmed from <paramref name="E"/> (frozen with the face that holds it).
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="E"/> has no descendant.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="E"/> has no descendant.</exception>
     public TopoDS_Edge DescendantEdge(in TopoDS_Edge E)
     {
         FreezeResult();

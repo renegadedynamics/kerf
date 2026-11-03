@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GeomFill_PipeError;
 using static Occt.TopAbs_Orientation;
 
@@ -17,7 +20,7 @@ namespace Occt;
 /// new vertex, and <see cref="InternalPerformVertex"/> the same vertex unfrozen for the sweeps that keep building on it
 /// (decision 900).
 /// </remarks>
-public abstract class BRepFill_LocationLaw : Standard_Transient
+public abstract class BRepFill_LocationLaw : Transient
 {
     protected TopoDS_Wire myPath = new();
     protected double myTol;
@@ -32,10 +35,10 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
 
     //=================================================================================================
 
-    private static double Norm(in gp_Mat M)
+    private static double Norm(in Matrix3x3 M)
     {
         double R, Norme;
-        gp_XYZ Coord;
+        Xyz Coord;
         Coord = M.Row(1);
         Norme = Math.Abs(Coord.X()) + Math.Abs(Coord.Y()) + Math.Abs(Coord.Z());
         Coord = M.Row(2);
@@ -59,7 +62,7 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     // purpose  : Calculate transformation T such as T.M2 = M1
     //=======================================================================
 
-    private static void ToG0(in gp_Mat M1, in gp_Mat M2, out gp_Mat T)
+    private static void ToG0(in Matrix3x3 M1, in Matrix3x3 M2, out Matrix3x3 T)
     {
         T = M2.Inverted();
         T *= M1;
@@ -146,9 +149,9 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
 
         double Angle;
         int ipath;
-        gp_Mat Trsf = new(), M1 = new(), M2 = new();
-        gp_Vec V = new(), T1 = new(), T2 = new(), N1 = new(), N2 = new();
-        gp_XYZ OZ = new(0, 0, 1);
+        Matrix3x3 Trsf = new(), M1 = new(), M2 = new();
+        Vector3D V = new(), T1 = new(), T2 = new(), N1 = new(), N2 = new();
+        Xyz OZ = new(0, 0, 1);
 
         myLaws!.Value(1).GetDomain(out double First, out double Last);
 
@@ -168,10 +171,10 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
             else
             {
                 double alpha;
-                gp_Vec cross = T1;
+                Vector3D cross = T1;
                 cross.Cross(T2);
                 alpha = T2.AngleWithRef(T1, cross);
-                gp_Ax1 axe = new(gp.Origin(), new gp_Dir(cross.XYZ()));
+                Axis3D axe = new(Constants.Origin(), new Direction3D(cross.XYZ()));
                 N2.Rotate(axe, alpha);
 
                 Angle = N2.AngleWithRef(N1, T1);
@@ -188,15 +191,15 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     {
 
         int ipath;
-        gp_Mat M1 = new(), M2 = new(); //,Trsf
-        gp_Vec V = new();
+        Matrix3x3 M1 = new(), M2 = new(); //,Trsf
+        Vector3D V = new();
         myLaws!.Value(1).GetDomain(out double First, out double Last);
         for (ipath = 2; ipath <= myLaws.Length(); ipath++)
         {
             myLaws.Value(ipath - 1).D0(Last, ref M1, ref V);
             myLaws.Value(ipath).GetDomain(out First, out Last);
             myLaws.Value(ipath).D0(First, ref M2, ref V);
-            ToG0(M1, M2, out gp_Mat aux);
+            ToG0(M1, M2, out Matrix3x3 aux);
             myLaws.Value(ipath).SetTrsf(aux);
         }
 
@@ -217,7 +220,7 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     /// <summary>Removes the transformations set by <see cref="TransformInG0Law"/> or TransformInCompatibleLaw.</summary>
     public void DeleteTransform()
     {
-        gp_Mat Id = new();
+        Matrix3x3 Id = new();
         Id.SetIdentity();
         for (int ii = 1; ii <= myEdges!.Length(); ii++)
         {
@@ -355,9 +358,9 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
         BRep_Builder B = new();
         bool IsBary = (ILoc == 0);
         double First, Last;
-        gp_Pnt P;
-        gp_Vec V1 = new(), V2 = new(); //, V;
-        gp_Mat M1 = new(), M2 = new();
+        Point3D P;
+        Vector3D V1 = new(), V2 = new(); //, V;
+        Matrix3x3 M1 = new(), M2 = new();
 
         if (Index > 0 && Index < myLaws!.Length())
         {
@@ -424,7 +427,7 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
 
         if (IsBary)
         {
-            gp_XYZ P1 = P.XYZ(), P2 = P.XYZ();
+            Xyz P1 = P.XYZ(), P2 = P.XYZ();
             P1 *= M1;
             P1 += V1.XYZ();
             P2 *= M2;
@@ -491,15 +494,15 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     /// </summary>
     public int IsG1(int Index, double SpatialTolerance = 1.0e-7, double AngularTolerance = 1.0e-4)
     {
-        gp_Vec V1 = new(), DV1 = new(), V2 = new(), DV2 = new();
-        gp_Mat M1 = new(), M2 = new(), DM1 = new(), DM2 = new();
+        Vector3D V1 = new(), DV1 = new(), V2 = new(), DV2 = new();
+        Matrix3x3 M1 = new(), M2 = new(), DM1 = new(), DM2 = new();
         double First, Last, EpsNul = 1.0e-12;
         double TolEps = SpatialTolerance;
         bool Ok_D1 = false;
         TopoDS_Vertex V;
         TopoDS_Edge E = new();
-        NCollection_Array1<gp_Pnt2d> Bid1 = new(1, 1);
-        NCollection_Array1<gp_Vec2d> Bid2 = new(1, 1);
+        NCollection_Array1<Point2D> Bid1 = new(1, 1);
+        NCollection_Array1<Vector2D> Bid2 = new(1, 1);
 
         if (Index > 0 && Index < myLaws!.Length())
         {
@@ -697,15 +700,15 @@ public abstract class BRepFill_LocationLaw : Standard_Transient
     internal void InternalD0(double Abcissa, ref TopoDS_Shape W)
     {
         double u = 0;
-        gp_Mat M = new();
-        gp_Vec V = new();
+        Matrix3x3 M = new();
+        Vector3D V = new();
 
         Parameter(Abcissa, out int ind, ref u);
         if (ind != 0)
         {
             // Positionement
             myLaws!.Value(ind).D0(u, ref M, ref V);
-            gp_Trsf fila = new();
+            Transform3D fila = new();
             fila.SetValues(M[1, 1],
                            M[1, 2],
                            M[1, 3],

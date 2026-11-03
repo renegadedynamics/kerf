@@ -3,7 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Engine.Numerics.Polynomials;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -29,7 +33,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     private int IF;
     private int IL;
 
-    private static int order(PLib_HermitJacobi B)
+    private static int order(HermitJacobi B)
     {
         return B.NivConstr();
     }
@@ -63,17 +67,17 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
             int MxDeg = myCurve.Base().WorkDegree(), NbDim = myCurve.Dimension(),
                 Order = order(myCurve.Base());
 
-            GeomAbs_Shape ConstraintOrder = GeomAbs_C0;
+            Continuity ConstraintOrder = C0;
             switch (Order)
             {
                 case 0:
-                    ConstraintOrder = GeomAbs_C0;
+                    ConstraintOrder = C0;
                     break;
                 case 1:
-                    ConstraintOrder = GeomAbs_C1;
+                    ConstraintOrder = C1;
                     break;
                 case 2:
-                    ConstraintOrder = GeomAbs_C2;
+                    ConstraintOrder = C2;
                     break;
             }
 
@@ -99,17 +103,17 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
 
             if (MxDeg != OldMxDeg || Order != OldOrder)
             {
-                GeomAbs_Shape ConstraintOrder = GeomAbs_C0;
+                Continuity ConstraintOrder = C0;
                 switch (Order)
                 {
                     case 0:
-                        ConstraintOrder = GeomAbs_C0;
+                        ConstraintOrder = C0;
                         break;
                     case 1:
-                        ConstraintOrder = GeomAbs_C1;
+                        ConstraintOrder = C1;
                         break;
                     case 2:
-                        ConstraintOrder = GeomAbs_C2;
+                        ConstraintOrder = C2;
                         break;
                 }
 
@@ -162,7 +166,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::AssemblyTable");
+            throw new DomainErrorException("AppDef_LinearCriteria::AssemblyTable");
         }
 
         int NbDim = myCurve.Dimension(), NbElm = myCurve.NbElements(), nc1 = order(myCurve.Base()) + 1;
@@ -245,7 +249,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::DependenceTable");
+            throw new DomainErrorException("AppDef_LinearCriteria::DependenceTable");
         }
 
         int Dim = myCurve.Dimension();
@@ -265,7 +269,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::QualityValues");
+            throw new DomainErrorException("AppDef_LinearCriteria::QualityValues");
         }
 
         int NbDim = myCurve.Dimension(), NbElm = myCurve.NbElements();
@@ -403,7 +407,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::ErrorValues");
+            throw new DomainErrorException("AppDef_LinearCriteria::ErrorValues");
         }
 
         int NbDim = myCurve.Dimension();
@@ -412,14 +416,14 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
 
         if (NbDim != (2 * myNbP2d + 3 * myNbP3d))
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::ErrorValues");
+            throw new DomainErrorException("AppDef_LinearCriteria::ErrorValues");
         }
 
-        NCollection_Array1<gp_Pnt> TabP3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Point3D> TabP3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Point2D> TabP2d = new(1, Max(1, myNbP2d));
         NCollection_Array1<double> BasePoint = new(1, NbDim);
-        gp_Pnt2d P2d = new();
-        gp_Pnt P3d = new();
+        Point2D P2d = new();
+        Point3D P3d = new();
 
         int i, ipnt, c0 = 0;
         double SqrDist, Dist;
@@ -464,22 +468,22 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
         }
     }
 
-    public override void Hessian(int Element, int Dimension1, int Dimension2, math_Matrix H)
+    public override void Hessian(int Element, int Dimension1, int Dimension2, Matrix H)
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::Hessian");
+            throw new DomainErrorException("AppDef_LinearCriteria::Hessian");
         }
 
         if (DependenceTable().Value(Dimension1, Dimension2) == 0)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::Hessian");
+            throw new DomainErrorException("AppDef_LinearCriteria::Hessian");
         }
 
         int MxDeg = myCurve.Base().WorkDegree(),
             Order = order(myCurve.Base());
 
-        math_Matrix AuxH = new(0, H.RowNumber() - 1, 0, H.ColNumber() - 1, 0.0);
+        Matrix AuxH = new(0, H.RowNumber() - 1, 0, H.ColNumber() - 1, 0.0);
 
         NCollection_Array1<double> Knots = myCurve.Knots();
         double UFirst, ULast;
@@ -570,18 +574,18 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (myCurve is null)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::ErrorValues");
+            throw new DomainErrorException("AppDef_LinearCriteria::ErrorValues");
         }
 
         int myNbP2d = AppDef_MyLineTool.NbP2d(mySSP), myNbP3d = AppDef_MyLineTool.NbP3d(mySSP);
 
         if (Dimension > (2 * myNbP2d + 3 * myNbP3d))
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::ErrorValues");
+            throw new DomainErrorException("AppDef_LinearCriteria::ErrorValues");
         }
 
-        NCollection_Array1<gp_Pnt> TabP3d = new(1, Max(1, myNbP3d));
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, Max(1, myNbP2d));
+        NCollection_Array1<Point3D> TabP3d = new(1, Max(1, myNbP3d));
+        NCollection_Array1<Point2D> TabP2d = new(1, Max(1, myNbP2d));
 
         bool In3d;
         int IndPnt, IndCrd;
@@ -623,7 +627,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
 
         int Order = order(myCurve.Base());
 
-        PLib_HermitJacobi myBase = myCurve.Base();
+        HermitJacobi myBase = myCurve.Base();
         int MxDeg = myBase.WorkDegree();
 
         double curcoeff;
@@ -707,11 +711,11 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
     {
         if (QuadraticWeight < 0.0 || QualityWeight < 0.0)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::SetWeight");
+            throw new DomainErrorException("AppDef_LinearCriteria::SetWeight");
         }
         if (percentJ1 < 0.0 || percentJ2 < 0.0 || percentJ3 < 0.0)
         {
-            throw new Standard_DomainError("AppDef_LinearCriteria::SetWeight");
+            throw new DomainErrorException("AppDef_LinearCriteria::SetWeight");
         }
 
         myQuadraticWeight = QuadraticWeight;
@@ -762,7 +766,7 @@ public class AppDef_LinearCriteria : AppDef_SmoothCriterion
 
         if (IF != 0)
         {
-            PLib_HermitJacobi myBase = myCurve.Base();
+            HermitJacobi myBase = myCurve.Base();
             int order = myBase.WorkDegree() + 1;
             myCache = new NCollection_HArray1<double>(1, (IL - IF + 1) * (order));
 

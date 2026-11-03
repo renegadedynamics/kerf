@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepToTopoDS_TranslateShellError;
 
 namespace Occt;
@@ -24,7 +25,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
 
     /// <summary>Translates a connected_face_set.</summary>
     public void Init(StepShape_ConnectedFaceSet CFS, StepToTopoDS_Tool aTool, StepToTopoDS_NMTool NMTool, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
         // bug15697
         if (CFS is null)
@@ -48,7 +49,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
             myTranFace.SetPrecision(Precision()); // gka
             myTranFace.SetMaxTol(MaxTol());
 
-            using var PS = new Message_ProgressScope(theProgress, "Face", NbFc);
+            using var PS = new ProgressScope(theProgress, "Face", NbFc);
             for (int i = 1; i <= NbFc && PS.More(); i++, PS.Next())
             {
                 StepFace = CFS.CfsFacesValue(i);
@@ -97,7 +98,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
     /// </remarks>
     public void Init(StepVisual_TessellatedShell theTSh, StepToTopoDS_Tool theTool, StepToTopoDS_NMTool theNMTool,
                      bool theReadTessellatedWhenNoBRepOnly, ref bool theHasGeom, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
         if (theTSh is null)
         {
@@ -108,7 +109,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
         TopoDS_Shell aSh = new TopoDS_Shell();
 
         int aNb = theTSh.NbItems();
-        using var aPS = new Message_ProgressScope(theProgress, "Face", theTSh.HasTopologicalLink() ? aNb + 1 : aNb);
+        using var aPS = new ProgressScope(theProgress, "Face", theTSh.HasTopologicalLink() ? aNb + 1 : aNb);
 
         Transfer_TransientProcess aTP = theTool.TransientProcess();
 
@@ -174,7 +175,7 @@ public sealed class StepToTopoDS_TranslateShell : StepToTopoDS_Root
         => Init(theTSh, theTool, theNMTool, theReadTessellatedWhenNoBRepOnly, ref theHasGeom, new StepData_Factors());
 
     /// <summary>The shell, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

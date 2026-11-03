@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,11 +21,11 @@ namespace Occt;
 public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
 {
     private GeomAdaptor_Curve curve = new();
-    private gp_Pnt ptfirst = new();
-    private gp_Pnt ptlast = new();
-    private gp_Vec tgfirst = new();
-    private gp_Vec tglast = new();
-    private NCollection_Sequence<gp_Ax1> VerticesWithTangents = new();
+    private Point3D ptfirst = new();
+    private Point3D ptlast = new();
+    private Vector3D tgfirst = new();
+    private Vector3D tglast = new();
+    private NCollection_Sequence<Axis3D> VerticesWithTangents = new();
     private ChFiDS_SurfData? previous;
     private ChFiDS_SurfData? next;
     private double pfirst;
@@ -37,8 +41,8 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         plast = 0.0;
         period = 0.0;
         periodic = false;
-        pfirstsav = Precision.Infinite();
-        plastsav = Precision.Infinite();
+        pfirstsav = global::Kerf.Engine.Foundation.Precision.Infinite();
+        plastsav = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>Shallow copy of the adaptor.</summary>
@@ -53,7 +57,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         aCopy.ptlast = ptlast;
         aCopy.tgfirst = tgfirst;
         aCopy.tglast = tglast;
-        aCopy.VerticesWithTangents = new NCollection_Sequence<gp_Ax1>(VerticesWithTangents);
+        aCopy.VerticesWithTangents = new NCollection_Sequence<Axis3D>(VerticesWithTangents);
         aCopy.previous = previous;
         aCopy.next = next;
         aCopy.pfirst = pfirst;
@@ -86,17 +90,17 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return plastsav;
     }
 
-    public override GeomAbs_Shape Continuity()
+    public override Continuity Continuity()
     {
         return curve.Continuity();
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return curve.NbIntervals(S);
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         curve.Intervals(T, S);
     }
@@ -112,7 +116,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return curve.Resolution(R3d);
     }
 
-    public override GeomAbs_CurveType GetType()
+    public override CurveKind GetType()
     {
         return curve.GetType();
     }
@@ -132,13 +136,13 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
     {
         if (!periodic)
         {
-            throw new Standard_Failure("ElSpine non periodique");
+            throw new FailureException("ElSpine non periodique");
         }
 
         return period;
     }
 
-    public override gp_Pnt EvalD0(double theAbsC)
+    public override Point3D EvalD0(double theAbsC)
     {
         return curve.EvalD0(theAbsC);
     }
@@ -186,41 +190,41 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
     {
         if (!periodic)
         {
-            throw new Standard_Failure("Elspine non periodique");
+            throw new FailureException("Elspine non periodique");
         }
 
         Geom_BSplineCurve? bs = curve.Curve() as Geom_BSplineCurve;
         if (bs is not null)
         {
-            bs.SetOrigin(O, Precision.PConfusion());
+            bs.SetOrigin(O, global::Kerf.Engine.Foundation.Precision.PConfusion());
             curve.Load(bs);
         }
     }
 
-    internal void SetFirstPointAndTgt(in gp_Pnt P, in gp_Vec T)
+    internal void SetFirstPointAndTgt(in Point3D P, in Vector3D T)
     {
         ptfirst = P;
         tgfirst = T;
     }
 
-    internal void SetLastPointAndTgt(in gp_Pnt P, in gp_Vec T)
+    internal void SetLastPointAndTgt(in Point3D P, in Vector3D T)
     {
         ptlast = P;
         tglast = T;
     }
 
-    internal void AddVertexWithTangent(in gp_Ax1 anAx1)
+    internal void AddVertexWithTangent(in Axis3D anAx1)
     {
         VerticesWithTangents.Append(anAx1);
     }
 
-    public void FirstPointAndTgt(out gp_Pnt P, out gp_Vec T)
+    public void FirstPointAndTgt(out Point3D P, out Vector3D T)
     {
         P = ptfirst;
         T = tgfirst;
     }
 
-    public void LastPointAndTgt(out gp_Pnt P, out gp_Vec T)
+    public void LastPointAndTgt(out Point3D P, out Vector3D T)
     {
         P = ptlast;
         T = tglast;
@@ -231,7 +235,7 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
         return VerticesWithTangents.Length();
     }
 
-    public gp_Ax1 VertexWithTangent(int Index)
+    public Axis3D VertexWithTangent(int Index)
     {
         return VerticesWithTangents[Index];
     }
@@ -255,27 +259,27 @@ public sealed class ChFiDS_ElSpine : Adaptor3d_Curve
 
     internal ref ChFiDS_SurfData? ChangeNext() => ref next;
 
-    public override gp_Lin Line()
+    public override Line3D Line()
     {
         return curve.Line();
     }
 
-    public override gp_Circ Circle()
+    public override Circle3D Circle()
     {
         return curve.Circle();
     }
 
-    public override gp_Elips Ellipse()
+    public override Ellipse3D Ellipse()
     {
         return curve.Ellipse();
     }
 
-    public override gp_Hypr Hyperbola()
+    public override Hyperbola3D Hyperbola()
     {
         return curve.Hyperbola();
     }
 
-    public override gp_Parab Parabola()
+    public override Parabola3D Parabola()
     {
         return curve.Parabola();
     }

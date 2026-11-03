@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -27,14 +28,14 @@ public sealed class TopCnx_EdgeFaceTransition
     }
 
     /// <summary>Initializes with the local description of the edge.</summary>
-    public void Reset(in gp_Dir Tgt, in gp_Dir Norm, double Curv)
+    public void Reset(in Direction3D Tgt, in Direction3D Norm, double Curv)
     {
         myCurveTransition.Reset(Tgt, Norm, Curv);
         nbBoundForward = nbBoundReversed = 0;
     }
 
     /// <summary>Initializes with a linear edge.</summary>
-    public void Reset(in gp_Dir Tgt)
+    public void Reset(in Direction3D Tgt)
     {
         myCurveTransition.Reset(Tgt);
         nbBoundForward = nbBoundReversed = 0;
@@ -44,7 +45,7 @@ public sealed class TopCnx_EdgeFaceTransition
     /// Adds a curve element of the boundary: <paramref name="Or"/> is the orientation of the interference on the
     /// boundary curve, <paramref name="Tr"/> its transition and <paramref name="BTr"/> its boundary transition.
     /// </summary>
-    public void AddInterference(double Tole, in gp_Dir Tang, in gp_Dir Norm, double Curv, TopAbs_Orientation Or,
+    public void AddInterference(double Tole, in Direction3D Tang, in Direction3D Norm, double Curv, TopAbs_Orientation Or,
                                 TopAbs_Orientation Tr, TopAbs_Orientation BTr)
     {
         myCurveTransition.Compare(Tole, Tang, Norm, Curv, Tr, Or);

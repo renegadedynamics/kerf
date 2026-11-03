@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +21,7 @@ public sealed class IntTools_CurveRangeLocalizeData
     private readonly int myNbSampleC;
     private readonly double myMinRangeC;
     private readonly NCollection_Map<IntTools_CurveRangeSample> myMapRangeOut = new();
-    private readonly NCollection_DataMap<IntTools_CurveRangeSample, Bnd_Box> myMapBox = new();
+    private readonly NCollection_DataMap<IntTools_CurveRangeSample, Box> myMapBox = new();
 
     public IntTools_CurveRangeLocalizeData(int theNbSample, double theMinRange)
     {
@@ -38,10 +40,10 @@ public sealed class IntTools_CurveRangeLocalizeData
         myMapBox.UnBind(theRange);
     }
 
-    public void AddBox(in IntTools_CurveRangeSample theRange, in Bnd_Box theBox) => myMapBox.Bind(theRange, theBox);
+    public void AddBox(in IntTools_CurveRangeSample theRange, in Box theBox) => myMapBox.Bind(theRange, theBox);
 
     /// <summary>The box of the range, and true, if recorded; otherwise false, the box left as it was.</summary>
-    public bool FindBox(in IntTools_CurveRangeSample theRange, ref Bnd_Box theBox)
+    public bool FindBox(in IntTools_CurveRangeSample theRange, ref Box theBox)
     {
         if (myMapBox.IsBound(theRange))
         {

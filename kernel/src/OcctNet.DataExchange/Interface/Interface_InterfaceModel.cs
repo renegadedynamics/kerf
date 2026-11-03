@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_DataState;
 
 namespace Occt;
@@ -23,7 +24,7 @@ namespace Occt;
 /// name. It is possible to define a template from another one (get it, edit it then record it under another
 /// name). See also Graph, ShareTool, CheckTool for more
 /// </summary>
-public abstract class Interface_InterfaceModel : Standard_Transient
+public abstract class Interface_InterfaceModel : Transient
 {
     // An Interface Model is a closed set of interface Entities: each one
     // is in a single model at a time; it has a number (Number) which allows to
@@ -165,7 +166,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// Returns True if a Model contains an Entity (for a ReportEntity, looks for the ReportEntity itself AND its
     /// Concerned Entity)
     /// </summary>
-    public bool Contains(Standard_Transient? anentity)
+    public bool Contains(Transient? anentity)
     {
         if (theentities.Contains(anentity))
         {
@@ -184,7 +185,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// at Concerned Entity. Returns the Directory entry Number of an Entity in the Model if it contains it. Else
     /// returns 0. For a ReportEntity, looks at Concerned Entity.
     /// </summary>
-    public int Number(Standard_Transient? anentity)
+    public int Number(Transient? anentity)
     {
         if (anentity is null)
         {
@@ -212,7 +213,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// working by calling Value Remark : For a Reported Entity, (Erroneous, Corrected, Unknown), this method
     /// returns this Reported Entity. See ReportEntity for other questions.
     /// </summary>
-    public Standard_Transient? Value(int num)
+    public Transient? Value(int num)
     {
         return theentities.FindKey(num);
     }
@@ -221,7 +222,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// Returns the count of DISTINCT types under which an entity may be processed. Defined by the Protocol,
     /// which gives default as 1 (dynamic Type).
     /// </summary>
-    public int NbTypes(Standard_Transient? ent)
+    public int NbTypes(Transient? ent)
     {
         if (Protocol() is null)
         {
@@ -233,7 +234,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// <summary>
     /// Returns a type, given its rank : defined by the Protocol (by default, the first one)
     /// </summary>
-    public Type Type(Standard_Transient? ent, int nt = 1)
+    public Type Type(Transient? ent, int nt = 1)
     {
         if (Protocol() is null)
         {
@@ -247,13 +248,13 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// gives the complete type, else packages are removed WARNING : buffered, to be immediately copied or
     /// printed
     /// </summary>
-    public string TypeName(Standard_Transient? ent, bool complet = true)
+    public string TypeName(Transient? ent, bool complet = true)
     {
         if (thegtool is not null)
         {
             return thegtool.SignValue(ent, this);
         }
-        string tn = ent.DynamicType().Name;
+        string tn = ent.DynamicTypeName();
         if (complet)
         {
             return tn;
@@ -403,7 +404,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     public bool SetReportEntity(int num, Interface_ReportEntity? rep)
     {
         int nm = num;
-        Standard_Transient ent = null;
+        Transient ent = null;
         if (num > 0)
         {
             ent = Value(nm);
@@ -455,7 +456,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         {
             return false;
         }
-        Standard_Transient ent = rep.Concerned();
+        Transient ent = rep.Concerned();
         if (ent is null)
         {
             return false;
@@ -499,8 +500,8 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     {
         if (checks.Model() is not null)
         {
-            Standard_Transient t1 = checks.Model();
-            Standard_Transient t2 = this;
+            Transient t1 = checks.Model();
+            Transient t2 = this;
             if (t2 != t1)
             {
                 return;
@@ -528,7 +529,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
             }
             else
             {
-                Standard_Transient ent = Value(num);
+                Transient ent = Value(num);
                 Interface_ReportEntity rep = new Interface_ReportEntity(ach, ent);
                 therepch.Bind(num, rep);
             }
@@ -566,7 +567,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         {
             return nulch();
         }
-        Standard_Transient trep = null;
+        Transient trep = null;
         if (syntactic)
         {
             trep = thereports.Find(num);
@@ -602,7 +603,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// ReportEntity, it is added to the list of Reports, its Concerned Entity (Erroneous or Corrected, else
     /// Unknown) is added to the list of Entities. That is, the ReportEntity must be created before Adding
     /// </summary>
-    public virtual void AddEntity(Standard_Transient? anentity)
+    public virtual void AddEntity(Transient? anentity)
     {
         // int newnum; svv #2
         if (!anentity.IsKind(typeof(Interface_ReportEntity)))
@@ -632,7 +633,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// &lt;listall&gt; is True, all items are analysed (this allows to ensure the consistency of an adding made
     /// by steps)
     /// </summary>
-    public void AddWithRefs(Standard_Transient? anent, Interface_Protocol? proto, int level = 0, bool listall = false)
+    public void AddWithRefs(Transient? anent, Interface_Protocol? proto, int level = 0, bool listall = false)
     {
         if (anent is null)
         {
@@ -656,7 +657,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// <summary>
     /// Same as above, but works with the Protocol of the Model
     /// </summary>
-    public void AddWithRefs(Standard_Transient? anent, int level = 0, bool listall = false)
+    public void AddWithRefs(Transient? anent, int level = 0, bool listall = false)
     {
         Interface_Protocol proto = Protocol();
         if (proto is null)
@@ -669,7 +670,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// <summary>
     /// Same as above, but works with an already created GeneralLib
     /// </summary>
-    public void AddWithRefs(Standard_Transient? anent, Interface_GeneralLib lib, int level = 0, bool listall = false)
+    public void AddWithRefs(Transient? anent, Interface_GeneralLib lib, int level = 0, bool listall = false)
     {
         if (anent is null)
         {
@@ -711,7 +712,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// <summary>
     /// Replace Entity with Number=nument on other entity - "anent"
     /// </summary>
-    public void ReplaceEntity(int nument, Standard_Transient? anent)
+    public void ReplaceEntity(int nument, Transient? anent)
     {
         theentities.Substitute(nument, anent);
     }
@@ -728,7 +729,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         {
             return;
         }
-        NCollection_Array1<Standard_Transient> ents = new NCollection_Array1<Standard_Transient>(1, nb);
+        NCollection_Array1<Transient> ents = new NCollection_Array1<Transient>(1, nb);
         int i; // svv #1
         for (i = 1; i <= nb; i++)
         {
@@ -750,7 +751,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         for (i = nb; i > after; i--)
         {
             int i2 = nb + after - i;
-            Standard_Transient rep1 = null, rep2 = null;
+            Transient rep1 = null, rep2 = null;
             if (thereports.IsBound(i))
             {
                 rep1 = thereports.Find(i);
@@ -791,7 +792,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         {
             return;
         }
-        NCollection_Array1<Standard_Transient> ents = new NCollection_Array1<Standard_Transient>(1, nb);
+        NCollection_Array1<Transient> ents = new NCollection_Array1<Transient>(1, nb);
         //  We will prepare the change
         int minum = (oldnum > newnum ? newnum : oldnum);
         int mxnum = (oldnum < newnum ? newnum : oldnum);
@@ -827,7 +828,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         int difnum = mxnum - minum;
         for (i = minum; i < minum + cnt; i++)
         {
-            Standard_Transient rep1 = null, rep2 = null;
+            Transient rep1 = null, rep2 = null;
             if (thereports.IsBound(i))
             {
                 rep1 = thereports.Find(i);
@@ -863,7 +864,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         theentities.Clear();
         for (aniter.Start(); aniter.More(); aniter.Next())
         {
-            Standard_Transient ent = aniter.Value();
+            Transient ent = aniter.Value();
             AddEntity(ent);
         }
     }
@@ -959,7 +960,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         Interface_EntityIterator iter = new Interface_EntityIterator();
         if (semantic)
         {
-            NCollection_IntDataMap<Standard_Transient>.Iterator itmap = new NCollection_IntDataMap<Standard_Transient>.Iterator(therepch);
+            NCollection_IntDataMap<Transient>.Iterator itmap = new NCollection_IntDataMap<Transient>.Iterator(therepch);
             for (; itmap.More(); itmap.Next())
             {
                 iter.AddItem(itmap.Value());
@@ -967,7 +968,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         }
         else
         {
-            NCollection_IntDataMap<Standard_Transient>.Iterator itmap = new NCollection_IntDataMap<Standard_Transient>.Iterator(thereports);
+            NCollection_IntDataMap<Transient>.Iterator itmap = new NCollection_IntDataMap<Transient>.Iterator(thereports);
             for (; itmap.More(); itmap.Next())
             {
                 iter.AddItem(itmap.Value());
@@ -983,7 +984,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     public Interface_EntityIterator Redefineds()
     {
         Interface_EntityIterator iter = new Interface_EntityIterator();
-        NCollection_IntDataMap<Standard_Transient>.Iterator itmap = new NCollection_IntDataMap<Standard_Transient>.Iterator(thereports);
+        NCollection_IntDataMap<Transient>.Iterator itmap = new NCollection_IntDataMap<Transient>.Iterator(thereports);
         for (; itmap.More(); itmap.Next())
         {
             Interface_ReportEntity rep = (itmap.Value() as Interface_ReportEntity);
@@ -1046,7 +1047,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// (D) : prints its number plus '/' plus PrintLabel If &lt;ent&gt; == &lt;me&gt;, simply prints "Global" If
     /// &lt;ent&gt; is unknown, prints "??/its type"
     /// </summary>
-    public void Print(Standard_Transient? ent, TextWriter S, int mode = 0)
+    public void Print(Transient? ent, TextWriter S, int mode = 0)
     {
         if (ent is null)
         {
@@ -1080,13 +1081,13 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// Prints label specific to each norm, for a given entity. Must only print label itself, in order to be
     /// included in a phrase. Can call the result of StringLabel, but not obliged.
     /// </summary>
-    public abstract void PrintLabel(Standard_Transient? ent, TextWriter S);
+    public abstract void PrintLabel(Transient? ent, TextWriter S);
 
     /// <summary>
     /// Prints label specific to each norm in log format, for a given entity. By default, just calls PrintLabel,
     /// can be redefined
     /// </summary>
-    public virtual void PrintToLog(Standard_Transient? ent, TextWriter S)
+    public virtual void PrintToLog(Transient? ent, TextWriter S)
     {
         PrintLabel(ent, S);
     }
@@ -1095,7 +1096,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
     /// Returns a string with the label attached to a given entity. Warning : While this string may be edited on
     /// the spot, if it is a read field, the returned value must be copied before.
     /// </summary>
-    public abstract TCollection_HAsciiString? StringLabel(Standard_Transient? ent);
+    public abstract TCollection_HAsciiString? StringLabel(Transient? ent);
 
     /// <summary>
     /// Searches a label which matches with one entity. Begins from &lt;lastnum&gt;+1 (default:1) and scans the
@@ -1148,7 +1149,7 @@ public abstract class Interface_InterfaceModel : Standard_Transient
         i = 0;
         if (labs.IsIntegerValue())
         {
-            i = atoi(labs.ToCString());
+            i = Atoi(labs.ToCString());
         }
         if (i <= 0 || i > n)
         {
@@ -1168,9 +1169,9 @@ public abstract class Interface_InterfaceModel : Standard_Transient
 
     // Entities by reference, numbered in insertion order (OCCT's map of handles); the reports in OCCT's order of
     // integer maps, which Reports() and Redefineds() follow (decision 784's rule)
-    private readonly NCollection_IndexedMap<Standard_Transient> theentities = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IntDataMap<Standard_Transient> thereports = new();
-    private readonly NCollection_IntDataMap<Standard_Transient> therepch = new();
+    private readonly NCollection_IndexedMap<Transient> theentities = new(ReferenceEqualityComparer.Instance);
+    private readonly NCollection_IntDataMap<Transient> thereports = new();
+    private readonly NCollection_IntDataMap<Transient> therepch = new();
     private Interface_Check? thecheckstx;
     private Interface_Check? thechecksem;
     private bool haschecksem;

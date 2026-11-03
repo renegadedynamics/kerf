@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -12,7 +15,7 @@ namespace Occt;
 /// sin(n*alpha*t), cos(n*alpha*t)} in each direction: <c>S(u,v) = sum_i sum_j P_ij * Bu_i(u) * Bv_j(v)</c>, or
 /// for a rational surface <c>sum(w_ij*P_ij*Bu_i*Bv_j) / sum(w_ij*Bu_i*Bv_j)</c>. The poles form a
 /// (2*nU + 1) x (2*nV + 1) grid (rows are U, columns V); the domain is [0, Pi/alphaU] x [0, Pi/alphaV].
-/// Reversal, transformation and iso-curves are not supported (they throw <see cref="Standard_NotImplemented"/>),
+/// Reversal, transformation and iso-curves are not supported (they throw <see cref="MethodNotImplementedException"/>),
 /// nor are rational derivatives of order above 3 (<see cref="Geom_UndefinedDerivative"/>).
 /// </summary>
 public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
@@ -25,7 +28,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
             string aMsg = "GeomEval_TBezierSurface: ";
             aMsg += theName;
             aMsg += " pole count must be odd and >= 3";
-            throw new Standard_ConstructionError(aMsg);
+            throw new ConstructionErrorException(aMsg);
         }
     }
 
@@ -135,7 +138,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         }
     }
 
-    private NCollection_Array2<gp_Pnt> myPoles;   // Control points grid
+    private NCollection_Array2<Point3D> myPoles;   // Control points grid
     private NCollection_Array2<double> myWeights; // Weights grid (empty if non-rational)
     private double myAlphaU;                      // Frequency parameter in U
     private double myAlphaV;                      // Frequency parameter in V
@@ -145,10 +148,10 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
     /// <param name="thePoles">The control points; the numbers of rows (U) and columns (V) must be odd and at least 3.</param>
     /// <param name="theAlphaU">The frequency parameter in U (&gt; 0).</param>
     /// <param name="theAlphaV">The frequency parameter in V (&gt; 0).</param>
-    /// <exception cref="Standard_ConstructionError">The validation fails.</exception>
-    public GeomEval_TBezierSurface(NCollection_Array2<gp_Pnt> thePoles, double theAlphaU, double theAlphaV)
+    /// <exception cref="ConstructionErrorException">The validation fails.</exception>
+    public GeomEval_TBezierSurface(NCollection_Array2<Point3D> thePoles, double theAlphaU, double theAlphaV)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array2<Point3D>(thePoles);
         myWeights = new NCollection_Array2<double>();
         myAlphaU = theAlphaU;
         myAlphaV = theAlphaV;
@@ -157,11 +160,11 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         validateDimension(thePoles.NbColumns(), "V");
         if (theAlphaU <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_TBezierSurface: alphaU must be > 0");
+            throw new ConstructionErrorException("GeomEval_TBezierSurface: alphaU must be > 0");
         }
         if (theAlphaV <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_TBezierSurface: alphaV must be > 0");
+            throw new ConstructionErrorException("GeomEval_TBezierSurface: alphaV must be > 0");
         }
     }
 
@@ -170,11 +173,11 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
     /// <param name="theWeights">The weights, with the dimensions of the poles, all &gt; 0.</param>
     /// <param name="theAlphaU">The frequency parameter in U (&gt; 0).</param>
     /// <param name="theAlphaV">The frequency parameter in V (&gt; 0).</param>
-    /// <exception cref="Standard_ConstructionError">The validation fails.</exception>
-    public GeomEval_TBezierSurface(NCollection_Array2<gp_Pnt> thePoles, NCollection_Array2<double> theWeights,
+    /// <exception cref="ConstructionErrorException">The validation fails.</exception>
+    public GeomEval_TBezierSurface(NCollection_Array2<Point3D> thePoles, NCollection_Array2<double> theWeights,
                                    double theAlphaU, double theAlphaV)
     {
-        myPoles = new NCollection_Array2<gp_Pnt>(thePoles);
+        myPoles = new NCollection_Array2<Point3D>(thePoles);
         myWeights = new NCollection_Array2<double>(theWeights);
         myAlphaU = theAlphaU;
         myAlphaV = theAlphaV;
@@ -183,15 +186,15 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         validateDimension(thePoles.NbColumns(), "V");
         if (theAlphaU <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_TBezierSurface: alphaU must be > 0");
+            throw new ConstructionErrorException("GeomEval_TBezierSurface: alphaU must be > 0");
         }
         if (theAlphaV <= 0.0)
         {
-            throw new Standard_ConstructionError("GeomEval_TBezierSurface: alphaV must be > 0");
+            throw new ConstructionErrorException("GeomEval_TBezierSurface: alphaV must be > 0");
         }
         if (theWeights.NbRows() != thePoles.NbRows() || theWeights.NbColumns() != thePoles.NbColumns())
         {
-            throw new Standard_ConstructionError(
+            throw new ConstructionErrorException(
                 "GeomEval_TBezierSurface: weights dimensions must match poles dimensions");
         }
         for (int i = theWeights.LowerRow(); i <= theWeights.UpperRow(); ++i)
@@ -200,7 +203,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
             {
                 if (theWeights.Value(i, j) <= 0.0)
                 {
-                    throw new Standard_ConstructionError("GeomEval_TBezierSurface: all weights must be > 0");
+                    throw new ConstructionErrorException("GeomEval_TBezierSurface: all weights must be > 0");
                 }
             }
         }
@@ -209,7 +212,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
     /// <summary>
     /// The poles grid, row by row: the pole of (0-based) U index i and V index j is at <c>i * NbVPoles() + j</c>.
     /// </summary>
-    public PackedList<gp_Pnt> Poles() => PackedList.Create<gp_Pnt>(myPoles.AsSpan());
+    public PackedList<Point3D> Poles() => PackedList.Create<Point3D>(myPoles.AsSpan());
 
     /// <summary>The weights grid, laid out as <see cref="Poles"/>; empty if the surface is non-rational.</summary>
     public PackedList<double> Weights() => PackedList.Create<double>(myWeights.AsSpan());
@@ -235,30 +238,30 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
     /// <summary>True if the surface is rational.</summary>
     public bool IsRational() => myRational;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::VReversedParameter");
     }
 
     /// <summary>[0, Pi/alphaU] x [0, Pi/alphaV].</summary>
@@ -281,7 +284,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         int aUR = myPoles.UpperRow();
         for (int j = myPoles.LowerCol(); j <= myPoles.UpperCol(); ++j)
         {
-            if (myPoles.Value(aLR, j).Distance(myPoles.Value(aUR, j)) > Precision.Confusion())
+            if (myPoles.Value(aLR, j).Distance(myPoles.Value(aUR, j)) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -298,7 +301,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         int aUC = myPoles.UpperCol();
         for (int i = myPoles.LowerRow(); i <= myPoles.UpperRow(); ++i)
         {
-            if (myPoles.Value(i, aLC).Distance(myPoles.Value(i, aUC)) > Precision.Confusion())
+            if (myPoles.Value(i, aLC).Distance(myPoles.Value(i, aUC)) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -310,22 +313,22 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
 
     public override bool IsVPeriodic() => false;
 
-    public override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public override Continuity Continuity() => CN;
 
     public override bool IsCNu(int N) => true;
 
     public override bool IsCNv(int N) => true;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::UIso");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::VIso");
     }
 
     // Evaluates a single trigonometric basis array for the given alpha. Unused, as in OCCT.
@@ -374,7 +377,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         evalTrigBasisDeriv(theV, myAlphaV, OrderV(), theOrder, theBasisDeriv);
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
         int aNbU = myPoles.NbRows();
         int aNbV = myPoles.NbColumns();
@@ -385,7 +388,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
 
         if (!myRational)
         {
-            gp_XYZ aSum = new(0.0, 0.0, 0.0);
+            Xyz aSum = new(0.0, 0.0, 0.0);
             for (int i = 0; i < aNbU; ++i)
             {
                 double aBu = aBasisU[i];
@@ -395,11 +398,11 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                         (aBu * aBasisV[j]) * myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
                 }
             }
-            return new gp_Pnt(aSum);
+            return new Point3D(aSum);
         }
 
         // Rational evaluation.
-        gp_XYZ aNumer = new(0.0, 0.0, 0.0);
+        Xyz aNumer = new(0.0, 0.0, 0.0);
         double aDenom = 0.0;
         for (int i = 0; i < aNbU; ++i)
         {
@@ -412,7 +415,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                 aDenom += aWBuBv;
             }
         }
-        return new gp_Pnt(aNumer / aDenom);
+        return new Point3D(aNumer / aDenom);
     }
 
     public override ResD1 EvalD1(double U, double V)
@@ -433,9 +436,9 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
 
         if (!myRational)
         {
-            gp_XYZ aS = new(0.0, 0.0, 0.0);
-            gp_XYZ aDU = new(0.0, 0.0, 0.0);
-            gp_XYZ aDV = new(0.0, 0.0, 0.0);
+            Xyz aS = new(0.0, 0.0, 0.0);
+            Xyz aDU = new(0.0, 0.0, 0.0);
+            Xyz aDV = new(0.0, 0.0, 0.0);
             for (int i = 0; i < aNbU; ++i)
             {
                 double aBu = aBasisU[i];
@@ -444,22 +447,22 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                 {
                     double aBv = aBasisV[j];
                     double aBvD = aBasisDV[j];
-                    gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                    Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
                     aS += (aBu * aBv) * aPij;
                     aDU += (aBuD * aBv) * aPij;
                     aDV += (aBu * aBvD) * aPij;
                 }
             }
-            aResult.Point = new gp_Pnt(aS);
-            aResult.D1U = new gp_Vec(aDU);
-            aResult.D1V = new gp_Vec(aDV);
+            aResult.Point = new Point3D(aS);
+            aResult.D1U = new Vector3D(aDU);
+            aResult.D1V = new Vector3D(aDV);
             return aResult;
         }
 
         // Rational: S = Sw/w, dS/du = (Sw_u - w_u*S)/w, dS/dv = (Sw_v - w_v*S)/w
-        gp_XYZ aSw = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDU = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDV = new(0.0, 0.0, 0.0);
+        Xyz aSw = new(0.0, 0.0, 0.0);
+        Xyz aSwDU = new(0.0, 0.0, 0.0);
+        Xyz aSwDV = new(0.0, 0.0, 0.0);
         double aW = 0.0;
         double aWDU = 0.0;
         double aWDV = 0.0;
@@ -472,7 +475,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                 double aBv = aBasisV[j];
                 double aBvD = aBasisDV[j];
                 double aWij = myWeights.Value(myWeights.LowerRow() + i, myWeights.LowerCol() + j);
-                gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
                 double aWBuBv = aWij * aBu * aBv;
                 double aWBuDBv = aWij * aBuD * aBv;
                 double aWBuBvD = aWij * aBu * aBvD;
@@ -485,10 +488,10 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
             }
         }
 
-        gp_XYZ aSr = aSw / aW;
-        aResult.Point = new gp_Pnt(aSr);
-        aResult.D1U = new gp_Vec((aSwDU - aWDU * aSr) / aW);
-        aResult.D1V = new gp_Vec((aSwDV - aWDV * aSr) / aW);
+        Xyz aSr = aSw / aW;
+        aResult.Point = new Point3D(aSr);
+        aResult.D1U = new Vector3D((aSwDU - aWDU * aSr) / aW);
+        aResult.D1V = new Vector3D((aSwDV - aWDV * aSr) / aW);
         return aResult;
     }
 
@@ -512,12 +515,12 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
 
         if (!myRational)
         {
-            gp_XYZ aS = new(0.0, 0.0, 0.0);
-            gp_XYZ aDU = new(0.0, 0.0, 0.0);
-            gp_XYZ aDV = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2U = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2V = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2UV = new(0.0, 0.0, 0.0);
+            Xyz aS = new(0.0, 0.0, 0.0);
+            Xyz aDU = new(0.0, 0.0, 0.0);
+            Xyz aDV = new(0.0, 0.0, 0.0);
+            Xyz aD2U = new(0.0, 0.0, 0.0);
+            Xyz aD2V = new(0.0, 0.0, 0.0);
+            Xyz aD2UV = new(0.0, 0.0, 0.0);
             for (int i = 0; i < aNbU; ++i)
             {
                 double aBu = aBasisU[i];
@@ -528,7 +531,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                     double aBv = aBasisV[j];
                     double aBvD = aBasisDV[j];
                     double aBvD2 = aBasisD2V[j];
-                    gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                    Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
                     aS += (aBu * aBv) * aPij;
                     aDU += (aBuD * aBv) * aPij;
                     aDV += (aBu * aBvD) * aPij;
@@ -537,22 +540,22 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                     aD2UV += (aBuD * aBvD) * aPij;
                 }
             }
-            aResult.Point = new gp_Pnt(aS);
-            aResult.D1U = new gp_Vec(aDU);
-            aResult.D1V = new gp_Vec(aDV);
-            aResult.D2U = new gp_Vec(aD2U);
-            aResult.D2V = new gp_Vec(aD2V);
-            aResult.D2UV = new gp_Vec(aD2UV);
+            aResult.Point = new Point3D(aS);
+            aResult.D1U = new Vector3D(aDU);
+            aResult.D1V = new Vector3D(aDV);
+            aResult.D2U = new Vector3D(aD2U);
+            aResult.D2V = new Vector3D(aD2V);
+            aResult.D2UV = new Vector3D(aD2UV);
             return aResult;
         }
 
         // Rational second derivatives using quotient rule.
-        gp_XYZ aSw = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDU = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDV = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD2U = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD2V = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDUV = new(0.0, 0.0, 0.0);
+        Xyz aSw = new(0.0, 0.0, 0.0);
+        Xyz aSwDU = new(0.0, 0.0, 0.0);
+        Xyz aSwDV = new(0.0, 0.0, 0.0);
+        Xyz aSwD2U = new(0.0, 0.0, 0.0);
+        Xyz aSwD2V = new(0.0, 0.0, 0.0);
+        Xyz aSwDUV = new(0.0, 0.0, 0.0);
         double aW = 0.0;
         double aWDU = 0.0;
         double aWDV = 0.0;
@@ -570,7 +573,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                 double aBvD = aBasisDV[j];
                 double aBvD2 = aBasisD2V[j];
                 double aWij = myWeights.Value(myWeights.LowerRow() + i, myWeights.LowerCol() + j);
-                gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
 
                 double aWBuBv = aWij * aBu * aBv;
                 double aWBuDBv = aWij * aBuD * aBv;
@@ -595,21 +598,21 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         }
 
         // S = Sw / w
-        gp_XYZ aSr = aSw / aW;
+        Xyz aSr = aSw / aW;
         // First derivatives: S_u = (Sw_u - w_u * S) / w
-        gp_XYZ aSD1U = (aSwDU - aWDU * aSr) / aW;
-        gp_XYZ aSD1V = (aSwDV - aWDV * aSr) / aW;
+        Xyz aSD1U = (aSwDU - aWDU * aSr) / aW;
+        Xyz aSD1V = (aSwDV - aWDV * aSr) / aW;
         // Second derivatives: S_uu = (Sw_uu - 2*w_u*S_u - w_uu*S) / w
-        gp_XYZ aSD2U = (aSwD2U - 2.0 * aWDU * aSD1U - aWD2U * aSr) / aW;
-        gp_XYZ aSD2V = (aSwD2V - 2.0 * aWDV * aSD1V - aWD2V * aSr) / aW;
-        gp_XYZ aSD2UV = (aSwDUV - aWDU * aSD1V - aWDV * aSD1U - aWDUV * aSr) / aW;
+        Xyz aSD2U = (aSwD2U - 2.0 * aWDU * aSD1U - aWD2U * aSr) / aW;
+        Xyz aSD2V = (aSwD2V - 2.0 * aWDV * aSD1V - aWD2V * aSr) / aW;
+        Xyz aSD2UV = (aSwDUV - aWDU * aSD1V - aWDV * aSD1U - aWDUV * aSr) / aW;
 
-        aResult.Point = new gp_Pnt(aSr);
-        aResult.D1U = new gp_Vec(aSD1U);
-        aResult.D1V = new gp_Vec(aSD1V);
-        aResult.D2U = new gp_Vec(aSD2U);
-        aResult.D2V = new gp_Vec(aSD2V);
-        aResult.D2UV = new gp_Vec(aSD2UV);
+        aResult.Point = new Point3D(aSr);
+        aResult.D1U = new Vector3D(aSD1U);
+        aResult.D1V = new Vector3D(aSD1V);
+        aResult.D2U = new Vector3D(aSD2U);
+        aResult.D2V = new Vector3D(aSD2V);
+        aResult.D2UV = new Vector3D(aSD2UV);
         return aResult;
     }
 
@@ -635,16 +638,16 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
 
         if (!myRational)
         {
-            gp_XYZ aS = new(0.0, 0.0, 0.0);
-            gp_XYZ aDU = new(0.0, 0.0, 0.0);
-            gp_XYZ aDV = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2U = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2V = new(0.0, 0.0, 0.0);
-            gp_XYZ aD2UV = new(0.0, 0.0, 0.0);
-            gp_XYZ aD3U = new(0.0, 0.0, 0.0);
-            gp_XYZ aD3V = new(0.0, 0.0, 0.0);
-            gp_XYZ aD3UUV = new(0.0, 0.0, 0.0);
-            gp_XYZ aD3UVV = new(0.0, 0.0, 0.0);
+            Xyz aS = new(0.0, 0.0, 0.0);
+            Xyz aDU = new(0.0, 0.0, 0.0);
+            Xyz aDV = new(0.0, 0.0, 0.0);
+            Xyz aD2U = new(0.0, 0.0, 0.0);
+            Xyz aD2V = new(0.0, 0.0, 0.0);
+            Xyz aD2UV = new(0.0, 0.0, 0.0);
+            Xyz aD3U = new(0.0, 0.0, 0.0);
+            Xyz aD3V = new(0.0, 0.0, 0.0);
+            Xyz aD3UUV = new(0.0, 0.0, 0.0);
+            Xyz aD3UVV = new(0.0, 0.0, 0.0);
 
             for (int i = 0; i < aNbU; ++i)
             {
@@ -658,7 +661,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                     double aBvD = aBasisDV[j];
                     double aBvD2 = aBasisD2V[j];
                     double aBvD3 = aBasisD3V[j];
-                    gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                    Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
 
                     aS += (aBu * aBv) * aPij;
                     aDU += (aBuD * aBv) * aPij;
@@ -672,30 +675,30 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                     aD3UVV += (aBuD * aBvD2) * aPij;
                 }
             }
-            aResult.Point = new gp_Pnt(aS);
-            aResult.D1U = new gp_Vec(aDU);
-            aResult.D1V = new gp_Vec(aDV);
-            aResult.D2U = new gp_Vec(aD2U);
-            aResult.D2V = new gp_Vec(aD2V);
-            aResult.D2UV = new gp_Vec(aD2UV);
-            aResult.D3U = new gp_Vec(aD3U);
-            aResult.D3V = new gp_Vec(aD3V);
-            aResult.D3UUV = new gp_Vec(aD3UUV);
-            aResult.D3UVV = new gp_Vec(aD3UVV);
+            aResult.Point = new Point3D(aS);
+            aResult.D1U = new Vector3D(aDU);
+            aResult.D1V = new Vector3D(aDV);
+            aResult.D2U = new Vector3D(aD2U);
+            aResult.D2V = new Vector3D(aD2V);
+            aResult.D2UV = new Vector3D(aD2UV);
+            aResult.D3U = new Vector3D(aD3U);
+            aResult.D3V = new Vector3D(aD3V);
+            aResult.D3UUV = new Vector3D(aD3UUV);
+            aResult.D3UVV = new Vector3D(aD3UVV);
             return aResult;
         }
 
         // Rational third derivatives: accumulate all weighted sums.
-        gp_XYZ aSw = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDU = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDV = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD2U = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD2V = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDUV = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD3U = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD3V = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwD2UDV = new(0.0, 0.0, 0.0);
-        gp_XYZ aSwDUD2V = new(0.0, 0.0, 0.0);
+        Xyz aSw = new(0.0, 0.0, 0.0);
+        Xyz aSwDU = new(0.0, 0.0, 0.0);
+        Xyz aSwDV = new(0.0, 0.0, 0.0);
+        Xyz aSwD2U = new(0.0, 0.0, 0.0);
+        Xyz aSwD2V = new(0.0, 0.0, 0.0);
+        Xyz aSwDUV = new(0.0, 0.0, 0.0);
+        Xyz aSwD3U = new(0.0, 0.0, 0.0);
+        Xyz aSwD3V = new(0.0, 0.0, 0.0);
+        Xyz aSwD2UDV = new(0.0, 0.0, 0.0);
+        Xyz aSwDUD2V = new(0.0, 0.0, 0.0);
         double aW = 0.0;
         double aWDU = 0.0;
         double aWDV = 0.0;
@@ -720,7 +723,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                 double aBvD2 = aBasisD2V[j];
                 double aBvD3 = aBasisD3V[j];
                 double aWij = myWeights.Value(myWeights.LowerRow() + i, myWeights.LowerCol() + j);
-                gp_XYZ aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
+                Xyz aPij = myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
 
                 double aWBuBv = aWij * aBu * aBv;
                 double aWBuDBv = aWij * aBuD * aBv;
@@ -757,48 +760,48 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
         }
 
         // S = Sw / w
-        gp_XYZ aSr = aSw / aW;
+        Xyz aSr = aSw / aW;
         // First derivatives: S_u = (Sw_u - w_u * S) / w
-        gp_XYZ aSD1U = (aSwDU - aWDU * aSr) / aW;
-        gp_XYZ aSD1V = (aSwDV - aWDV * aSr) / aW;
+        Xyz aSD1U = (aSwDU - aWDU * aSr) / aW;
+        Xyz aSD1V = (aSwDV - aWDV * aSr) / aW;
         // Second derivatives: S_uu = (Sw_uu - 2*w_u*S_u - w_uu*S) / w
-        gp_XYZ aSD2U = (aSwD2U - 2.0 * aWDU * aSD1U - aWD2U * aSr) / aW;
-        gp_XYZ aSD2V = (aSwD2V - 2.0 * aWDV * aSD1V - aWD2V * aSr) / aW;
-        gp_XYZ aSD2UV = (aSwDUV - aWDU * aSD1V - aWDV * aSD1U - aWDUV * aSr) / aW;
+        Xyz aSD2U = (aSwD2U - 2.0 * aWDU * aSD1U - aWD2U * aSr) / aW;
+        Xyz aSD2V = (aSwD2V - 2.0 * aWDV * aSD1V - aWD2V * aSr) / aW;
+        Xyz aSD2UV = (aSwDUV - aWDU * aSD1V - aWDV * aSD1U - aWDUV * aSr) / aW;
         // Third derivatives: obtained by differentiating the Leibniz rule expressions.
         // S_uuu = (Sw_uuu - 3*w_u*S_uu - 3*w_uu*S_u - w_uuu*S) / w
-        gp_XYZ aSD3U = (aSwD3U - 3.0 * aWDU * aSD2U - 3.0 * aWD2U * aSD1U - aWD3U * aSr) / aW;
+        Xyz aSD3U = (aSwD3U - 3.0 * aWDU * aSD2U - 3.0 * aWD2U * aSD1U - aWD3U * aSr) / aW;
         // S_vvv = (Sw_vvv - 3*w_v*S_vv - 3*w_vv*S_v - w_vvv*S) / w
-        gp_XYZ aSD3V = (aSwD3V - 3.0 * aWDV * aSD2V - 3.0 * aWD2V * aSD1V - aWD3V * aSr) / aW;
+        Xyz aSD3V = (aSwD3V - 3.0 * aWDV * aSD2V - 3.0 * aWD2V * aSD1V - aWD3V * aSr) / aW;
         // S_uuv: differentiate w*S_uu = Sw_uu - 2*w_u*S_u - w_uu*S with respect to v.
-        gp_XYZ aSD3UUV = (aSwD2UDV - aWD2UDV * aSr - 2.0 * aWDU * aSD2UV - aWDV * aSD2U
+        Xyz aSD3UUV = (aSwD2UDV - aWD2UDV * aSr - 2.0 * aWDU * aSD2UV - aWDV * aSD2U
                           - aWD2U * aSD1V - 2.0 * aWDUV * aSD1U)
                          / aW;
         // S_uvv: differentiate w*S_vv = Sw_vv - 2*w_v*S_v - w_vv*S with respect to u.
-        gp_XYZ aSD3UVV = (aSwDUD2V - aWDUD2V * aSr - 2.0 * aWDV * aSD2UV - aWDU * aSD2V
+        Xyz aSD3UVV = (aSwDUD2V - aWDUD2V * aSr - 2.0 * aWDV * aSD2UV - aWDU * aSD2V
                           - aWD2V * aSD1U - 2.0 * aWDUV * aSD1V)
                          / aW;
 
-        aResult.Point = new gp_Pnt(aSr);
-        aResult.D1U = new gp_Vec(aSD1U);
-        aResult.D1V = new gp_Vec(aSD1V);
-        aResult.D2U = new gp_Vec(aSD2U);
-        aResult.D2V = new gp_Vec(aSD2V);
-        aResult.D2UV = new gp_Vec(aSD2UV);
-        aResult.D3U = new gp_Vec(aSD3U);
-        aResult.D3V = new gp_Vec(aSD3V);
-        aResult.D3UUV = new gp_Vec(aSD3UUV);
-        aResult.D3UVV = new gp_Vec(aSD3UVV);
+        aResult.Point = new Point3D(aSr);
+        aResult.D1U = new Vector3D(aSD1U);
+        aResult.D1V = new Vector3D(aSD1V);
+        aResult.D2U = new Vector3D(aSD2U);
+        aResult.D2V = new Vector3D(aSD2V);
+        aResult.D2UV = new Vector3D(aSD2UV);
+        aResult.D3U = new Vector3D(aSD3U);
+        aResult.D3V = new Vector3D(aSD3V);
+        aResult.D3UUV = new Vector3D(aSD3UUV);
+        aResult.D3UVV = new Vector3D(aSD3UVV);
         return aResult;
     }
 
-    /// <exception cref="Standard_RangeError">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
+    /// <exception cref="RangeErrorException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
     /// <exception cref="Geom_UndefinedDerivative">A rational surface and Nu + Nv &gt; 3.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
-            throw new Standard_RangeError("GeomEval_TBezierSurface::EvalDN: invalid derivative order");
+            throw new RangeErrorException("GeomEval_TBezierSurface::EvalDN: invalid derivative order");
         }
 
         // For non-rational surfaces, compute directly from basis derivatives.
@@ -811,7 +814,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
             evalTrigAxisNthDeriv(U, myAlphaU, (aNbU - 1) / 2, Nu, aBasisU);
             evalTrigAxisNthDeriv(V, myAlphaV, (aNbV - 1) / 2, Nv, aBasisV);
 
-            gp_XYZ aSum = new(0.0, 0.0, 0.0);
+            Xyz aSum = new(0.0, 0.0, 0.0);
             for (int i = 0; i < aNbU; ++i)
             {
                 double aBu = aBasisU[i];
@@ -821,7 +824,7 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
                         (aBu * aBasisV[j]) * myPoles.Value(myPoles.LowerRow() + i, myPoles.LowerCol() + j).XYZ();
                 }
             }
-            return new gp_Vec(aSum);
+            return new Vector3D(aSum);
         }
 
         // For rational surfaces, delegate to the specialized methods for low orders.
@@ -870,11 +873,11 @@ public sealed class GeomEval_TBezierSurface : Geom_BoundedSurface
             "GeomEval_TBezierSurface::EvalDN: rational derivatives of order > 3 not implemented");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_TBezierSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_TBezierSurface::Transform");
     }
 
     public override Geom_Geometry Copy()

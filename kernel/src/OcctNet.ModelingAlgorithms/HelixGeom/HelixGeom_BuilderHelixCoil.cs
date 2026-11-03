@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Builds one helix coil about the Z axis, approximated by a B-spline curve.</summary>
@@ -22,7 +24,7 @@ public sealed class HelixGeom_BuilderHelixCoil : HelixGeom_BuilderHelixGen
     /// <summary>
     /// Approximates the coil. <see cref="HelixGeom_BuilderApproxCurve.ErrorStatus"/> is 2 if the approximation fails.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The helix parameters are invalid (see <see cref="HelixGeom_HelixCurve.Load(double, double, double, double, double, bool)"/>).</exception>
+    /// <exception cref="ConstructionErrorException">The helix parameters are invalid (see <see cref="HelixGeom_HelixCurve.Load(double, double, double, double, double, bool)"/>).</exception>
     public override void Perform()
     {
         myErrorStatus = 0;

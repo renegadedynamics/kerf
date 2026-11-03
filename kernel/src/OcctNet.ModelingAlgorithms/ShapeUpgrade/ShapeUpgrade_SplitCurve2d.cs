@@ -36,7 +36,7 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
         Geom2d_Curve CopyOfC = (Geom2d_Curve)C.Copy();
         myCurve = CopyOfC;
 
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double firstPar = First;
         double lastPar = Last;
         Geom2d_Curve aCurve = myCurve;
@@ -137,8 +137,8 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
         if (myNbCurves == 1)
         {
             bool filled = true;
-            if (Math.Abs(myCurve!.FirstParameter() - First) < Occt.Precision.PConfusion()
-                && Math.Abs(myCurve.LastParameter() - Last) < Occt.Precision.PConfusion())
+            if (Math.Abs(myCurve!.FirstParameter() - First) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(myCurve.LastParameter() - Last) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 myResultingCurves.SetValue(1, myCurve);
             }
@@ -191,11 +191,11 @@ public class ShapeUpgrade_SplitCurve2d : ShapeUpgrade_SplitCurve
                 double spval = mySplitValues.Value(ii);
                 for (; j <= LastInd; j++)
                 {
-                    if (spval > BsCurve.Knot(j) + Occt.Precision.PConfusion())
+                    if (spval > BsCurve.Knot(j) + Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
-                    if (spval < BsCurve.Knot(j) - Occt.Precision.PConfusion())
+                    if (spval < BsCurve.Knot(j) - Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         break;
                     }

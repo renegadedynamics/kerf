@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -21,7 +22,7 @@ public class BRepMesh_ExtrusionRangeSplitter : BRepMesh_NURBSRangeSplitter
     /// </summary>
     protected override int getUndefinedIntervalNb(Adaptor3d_Surface theSurface,
                                                   bool isU,
-                                                  GeomAbs_Shape theContinuity)
+                                                  Continuity theContinuity)
     {
         // Here we need just a regular grid along dimension with no
         // geometrical data regarding intervals like extrusion surface.
@@ -29,9 +30,9 @@ public class BRepMesh_ExtrusionRangeSplitter : BRepMesh_NURBSRangeSplitter
         int aIntervalsNb = aCurve.NbIntervals(theContinuity);
         if (aIntervalsNb == 1)
         {
-            GeomAbs_CurveType aCurveType = aCurve.GetType();
+            CurveKind aCurveType = aCurve.GetType();
             bool isBSplineCurve =
-                aCurveType == GeomAbs_BezierCurve || aCurveType == GeomAbs_BSplineCurve;
+                aCurveType == BezierCurve || aCurveType == BSplineCurve;
 
             if (isBSplineCurve)
             {

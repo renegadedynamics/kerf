@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -16,37 +17,37 @@ namespace Occt;
 /// <remarks>A working object (decision 21).</remarks>
 public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
 {
-    private GeomAbs_Shape myCriterion;
+    private Continuity myCriterion;
     private int myCont;
     private double myTolerance;
 
     /// <summary>Empty constructor (criterion C1, tolerance PConfusion).</summary>
     public ShapeUpgrade_SplitCurve2dContinuity()
     {
-        myCriterion = GeomAbs_C1;
-        myTolerance = Occt.Precision.PConfusion();
+        myCriterion = C1;
+        myTolerance = Kerf.Engine.Foundation.Precision.PConfusion();
         myCont = 1;
     }
 
     /// <summary>Sets the criterion of continuity (C0, C1, C2, C3 or CN; G1 and G2 count as C1).</summary>
-    public void SetCriterion(GeomAbs_Shape Criterion)
+    public void SetCriterion(Continuity Criterion)
     {
         myCriterion = Criterion;
         switch (myCriterion)
         {
-            case GeomAbs_C0:
+            case C0:
                 myCont = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 myCont = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 myCont = 2;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 myCont = 3;
                 break;
-            case GeomAbs_CN:
+            case CN:
                 myCont = 4;
                 break;
             default:
@@ -72,7 +73,7 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
         }
-        double precision = Occt.Precision.PConfusion();
+        double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         double First = mySplitValues.Value(1);
         double Last = mySplitValues.Value(mySplitValues.Length());
         if (myCurve is Geom2d_TrimmedCurve tmp)
@@ -93,19 +94,19 @@ public class ShapeUpgrade_SplitCurve2dContinuity : ShapeUpgrade_SplitCurve2d
         }
         else if (myCurve is Geom2d_OffsetCurve tmpOffset)
         {
-            GeomAbs_Shape BasCriterion;
+            Continuity BasCriterion;
             switch (myCriterion)
             {
                 default:
-                case GeomAbs_C1:
-                    BasCriterion = GeomAbs_C2;
+                case C1:
+                    BasCriterion = C2;
                     break;
-                case GeomAbs_C2:
-                    BasCriterion = GeomAbs_C3;
+                case C2:
+                    BasCriterion = C3;
                     break;
-                case GeomAbs_C3: // OCCT_DEBUG warning left out: criterion C3 for Offset curve
-                case GeomAbs_CN:
-                    BasCriterion = GeomAbs_CN;
+                case C3: // OCCT_DEBUG warning left out: criterion C3 for Offset curve
+                case CN:
+                    BasCriterion = CN;
                     break;
             }
             Geom2d_Curve BasCurve = tmpOffset.BasisCurve();

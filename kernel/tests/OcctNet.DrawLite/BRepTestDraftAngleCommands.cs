@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 using static Occt.BRepBuilderAPI_TransitionMode;
 using static Occt.Draft_ErrorStatus;
@@ -53,12 +54,12 @@ internal static class BRepTestDraftAngleCommands
         TopoDS_Shape V = theDI.GetShape(a[2]);
         BRepOffsetAPI_DraftAngle drft = new(V);
 
-        gp_Dir Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
         TopoDS_Face F;
         double Angle;
-        gp_Pnt Pax = new();
-        gp_Dir Dax = new();
+        Point3D Pax = new();
+        Direction3D Dax = new();
         for (int ii = 0; ii < (narg - 6) / 8; ii++)
         {
             TopoDS_Shape aLocalShape = theDI.GetShape(a[8 * ii + 6], TopAbs_FACE);
@@ -67,7 +68,7 @@ internal static class BRepTestDraftAngleCommands
             Angle = theDI.Atof(a[8 * ii + 7]) * Math.PI / 180.0;
             Pax.SetCoord(theDI.Atof(a[8 * ii + 8]), theDI.Atof(a[8 * ii + 9]), theDI.Atof(a[8 * ii + 10]));
             Dax.SetCoord(theDI.Atof(a[8 * ii + 11]), theDI.Atof(a[8 * ii + 12]), theDI.Atof(a[8 * ii + 13]));
-            drft.Add(F, Dirextract, Angle, new gp_Pln(Pax, Dax));
+            drft.Add(F, Dirextract, Angle, new Plane3D(Pax, Dax));
             if (!drft.AddDone())
             {
                 break;
@@ -110,12 +111,12 @@ internal static class BRepTestDraftAngleCommands
 
         BRepOffsetAPI_DraftAngle drft = new(V);
 
-        gp_Dir Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
         TopoDS_Face F;
         double Angle;
-        gp_Pnt Pax = new();
-        gp_Dir Dax = new();
+        Point3D Pax = new();
+        Direction3D Dax = new();
         bool Flag;
         for (int ii = 0; ii < (narg - 6) / 9; ii++)
         {
@@ -133,7 +134,7 @@ internal static class BRepTestDraftAngleCommands
             Angle = theDI.Atof(a[9 * ii + 8]) * Math.PI / 180.0;
             Pax.SetCoord(theDI.Atof(a[9 * ii + 9]), theDI.Atof(a[9 * ii + 10]), theDI.Atof(a[9 * ii + 11]));
             Dax.SetCoord(theDI.Atof(a[9 * ii + 12]), theDI.Atof(a[9 * ii + 13]), theDI.Atof(a[9 * ii + 14]));
-            drft.Add(F, Dirextract, Angle, new gp_Pln(Pax, Dax), Flag);
+            drft.Add(F, Dirextract, Angle, new Plane3D(Pax, Dax), Flag);
             if (!drft.AddDone())
             {
                 break;
@@ -178,7 +179,7 @@ internal static class BRepTestDraftAngleCommands
         z = theDI.Atof(a[5]);
         teta = theDI.Atof(a[6]); // angle de depouille (teta)
 
-        gp_Dir D = new(x, y, z);
+        Direction3D D = new(x, y, z);
 
         BRepOffsetAPI_MakeDraft MkDraft = new(SInit, D, teta);
 

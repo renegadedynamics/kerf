@@ -102,7 +102,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         }
         catch (Exception anException)
         {
-            return "exception " + anException.GetType().Name;
+            return "exception " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
         }
     }
 

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -12,7 +14,7 @@ namespace Occt;
 /// <summary>The geometry of a linear sweep (a prism): lines, extruded surfaces and translated caps.</summary>
 internal sealed class BRepSweep_Translation : BRepSweep_Trsf
 {
-    private readonly gp_Vec myVec;
+    private readonly Vector3D myVec;
     private readonly bool myCanonize;
 
     private static void SetThePCurve(BRep_Builder B, in TopoDS_Edge E, in TopoDS_Face F, TopAbs_Orientation O, Geom2d_Curve C)
@@ -20,24 +22,24 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         // check if there is already a pcurve on non planar faces
         double f, l;
         Geom2d_Curve? OC = null;
-        var GP = BRep_Tool.Surface(F, out TopLoc_Location _) as Geom_Plane;
+        var GP = BRep_Tool.Surface(F, out Placement _) as Geom_Plane;
         if (GP is null)
         {
             OC = BRep_Tool.CurveOnSurface(E, F, out f, out l);
         }
         if (OC is null)
         {
-            B.UpdateEdge(E, C, F, Precision.Confusion());
+            B.UpdateEdge(E, C, F, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else
         {
             if (O == TopAbs_REVERSED)
             {
-                B.UpdateEdge(E, OC, C, F, Precision.Confusion());
+                B.UpdateEdge(E, OC, C, F, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
-                B.UpdateEdge(E, C, OC, F, Precision.Confusion());
+                B.UpdateEdge(E, C, OC, F, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
     }
@@ -47,12 +49,12 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
     /// <paramref name="L"/> (the translation of <paramref name="V"/>); with <paramref name="C"/> the generating shape
     /// is copied; with <paramref name="Canonize"/> extrusions of lines and circles are planes and cylinders.
     /// </summary>
-    public BRepSweep_Translation(in TopoDS_Shape S, in Sweep_NumShape N, in TopLoc_Location L, in gp_Vec V, bool C, bool Canonize = true)
+    public BRepSweep_Translation(in TopoDS_Shape S, in Sweep_NumShape N, in Placement L, in Vector3D V, bool C, bool Canonize = true)
         : base(new BRep_Builder(), S, N, L, C)
     {
         myVec = V;
         myCanonize = Canonize;
-        Standard_ConstructionError_Raise_if(V.Magnitude() < Precision.Confusion(), "BRepSweep_Translation::Constructor");
+        Standard_ConstructionError_Raise_if(V.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Translation::Constructor");
         Init();
     }
 
@@ -60,7 +62,7 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
     {
         // Only called when the option of construction is with copy.
         Standard_ConstructionError_Raise_if(!myCopy, "BRepSweep_Translation::MakeEmptyVertex");
-        gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
+        Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
         if (aDirV.Index() == 2)
         {
             P.Transform(myLocation.Transformation());
@@ -75,8 +77,8 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
 
     public override TopoDS_Shape MakeEmptyDirectingEdge(in TopoDS_Shape aGenV, in Sweep_NumShape aDirE)
     {
-        gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
-        var L = new gp_Lin(P, new gp_Dir(myVec));
+        Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
+        var L = new Line3D(P, new Direction3D(myVec));
         var GL = new Geom_Line(L);
         TopoDS_Edge E = new();
         myBuilder.Builder().MakeEdge(ref E, GL, BRep_Tool.Tolerance(TopoDS.Vertex(aGenV)));
@@ -96,7 +98,7 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         }
         else
         {
-            Geom_Curve? C = BRep_Tool.Curve(TopoDS.Edge(aGenE), out TopLoc_Location L, out double First, out double Last);
+            Geom_Curve? C = BRep_Tool.Curve(TopoDS.Edge(aGenE), out Placement L, out double First, out double Last);
             if (C is not null)
             {
                 C = (Geom_Curve)C.Copy();
@@ -115,9 +117,9 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
                                        in TopoDS_Shape aGenV, in Sweep_NumShape aDirV)
     {
         // Glue the parameter of vertices directly included in cap faces.
-        gp_Pnt2d pnt2d = BRep_Tool.Parameters(TopoDS.Vertex(aGenV), TopoDS.Face(aGenF));
+        Point2D pnt2d = BRep_Tool.Parameters(TopoDS.Vertex(aGenV), TopoDS.Face(aGenF));
         myBuilder.Builder().UpdateVertex(TopoDS.Vertex(aNewVertex), pnt2d.X(), pnt2d.Y(), TopoDS.Face(aNewFace),
-                                         Precision.PConfusion());
+                                         global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetDirectingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenV,
@@ -129,7 +131,7 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
             param = myVec.Magnitude();
         }
         // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
-        myBuilder.Builder().UpdateVertexOfFrozen(TopoDS.Vertex(aNewVertex), param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
+        myBuilder.Builder().UpdateVertexOfFrozen(TopoDS.Vertex(aNewVertex), param, TopoDS.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenE,
@@ -138,7 +140,7 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         TopoDS_Vertex vbid = TopoDS.Vertex(aNewVertex);
         vbid.Orientation(aGenV.Orientation());
         myBuilder.Builder().UpdateVertex(vbid, BRep_Tool.Parameter(TopoDS.Vertex(aGenV), TopoDS.Edge(aGenE)),
-                                         TopoDS.Edge(aNewEdge), Precision.PConfusion());
+                                         TopoDS.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override TopoDS_Shape MakeEmptyFace(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS)
@@ -148,13 +150,13 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         Geom_Surface? S;
         if (myDirShapeTool.Type(aDirS) == TopAbs_EDGE)
         {
-            Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(aGenS), out TopLoc_Location L, out double First, out double Last)!;
+            Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(aGenS), out Placement L, out double First, out double Last)!;
             toler = BRep_Tool.Tolerance(TopoDS.Edge(aGenS));
-            gp_Trsf Tr = L.Transformation();
+            Transform3D Tr = L.Transformation();
             C = (Geom_Curve)C.Copy();
             // extruded surfaces are inverted correspondingly to the topology, so reverse.
             C.Transform(Tr);
-            var D = new gp_Dir(myVec);
+            var D = new Direction3D(myVec);
             D.Reverse();
             if (myCanonize)
             {
@@ -162,10 +164,10 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
                 var AS = new GeomAdaptor_SurfaceOfLinearExtrusion(HC, D);
                 switch (AS.GetType())
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                         S = new Geom_Plane(AS.Plane());
                         break;
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                         S = new Geom_CylindricalSurface(AS.Cylinder());
                         break;
                     default:
@@ -180,9 +182,9 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         }
         else
         {
-            S = BRep_Tool.Surface(TopoDS.Face(aGenS), out TopLoc_Location L)!;
+            S = BRep_Tool.Surface(TopoDS.Face(aGenS), out Placement L)!;
             toler = BRep_Tool.Tolerance(TopoDS.Face(aGenS));
-            gp_Trsf Tr = L.Transformation();
+            Transform3D Tr = L.Transformation();
             S = (Geom_Surface)S.Copy();
             S.Transform(Tr);
             if (aDirS.Index() == 2)
@@ -206,24 +208,24 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
             Geom2d_Curve? aC1 = BRep_Tool.CurveOnSurface(anE, TopoDS.Face(aGenF), out _, out _);
             anE.Reverse();
             Geom2d_Curve? aC2 = BRep_Tool.CurveOnSurface(anE, TopoDS.Face(aGenF), out _, out _);
-            myBuilder.Builder().UpdateEdge(TopoDS.Edge(aNewEdge), aC1, aC2, TopoDS.Face(aNewFace), Precision.PConfusion());
+            myBuilder.Builder().UpdateEdge(TopoDS.Edge(aNewEdge), aC1, aC2, TopoDS.Face(aNewFace), global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
         else
         {
             myBuilder.Builder().UpdateEdge(TopoDS.Edge(aNewEdge),
                                            BRep_Tool.CurveOnSurface(TopoDS.Edge(aGenE), TopoDS.Face(aGenF), out _, out _),
-                                           TopoDS.Face(aNewFace), Precision.PConfusion());
+                                           TopoDS.Face(aNewFace), global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
     }
 
     public override void SetGeneratingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
                                              in Sweep_NumShape aDirE, in Sweep_NumShape aDirV, TopAbs_Orientation orien)
     {
-        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out TopLoc_Location _)!);
-        var L = new gp_Lin2d();
+        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out Placement _)!);
+        var L = new Line2D();
         TopoDS_Edge aNewOrientedEdge = TopoDS.Edge(aNewEdge);
         aNewOrientedEdge.Orientation(orien);
-        if (AS.GetType() == GeomAbs_Plane)
+        if (AS.GetType() == Plane)
         {
             // nothing is done JAG (OCCT's commented-out computation of the line on the plane)
         }
@@ -234,8 +236,8 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
             {
                 v = -myVec.Magnitude();
             }
-            L.SetLocation(new gp_Pnt2d(0, v));
-            L.SetDirection(new gp_Dir2d(gp_Dir2d.D.X));
+            L.SetLocation(new Point2D(0, v));
+            L.SetDirection(new Direction2D(Direction2D.D.X));
             //  }
             var GL = new Geom2d_Line(L);
             SetThePCurve(myBuilder.Builder(), TopoDS.Edge(aNewEdge), TopoDS.Face(aNewFace), orien, GL);
@@ -245,12 +247,12 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
     public override void SetDirectingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
                                             in TopoDS_Shape aGenV, in Sweep_NumShape aDirE, TopAbs_Orientation orien)
     {
-        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out TopLoc_Location _)!);
-        var L = new gp_Lin2d();
-        if (AS.GetType() != GeomAbs_Plane)
+        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out Placement _)!);
+        var L = new Line2D();
+        if (AS.GetType() != Plane)
         {
-            L.SetLocation(new gp_Pnt2d(BRep_Tool.Parameter(TopoDS.Vertex(aGenV), TopoDS.Edge(aGenE)), 0));
-            L.SetDirection(new gp_Dir2d(gp_Dir2d.D.NY));
+            L.SetLocation(new Point2D(BRep_Tool.Parameter(TopoDS.Vertex(aGenV), TopoDS.Edge(aGenE)), 0));
+            L.SetDirection(new Direction2D(Direction2D.D.NY));
             // JAG: OCCT's commented-out computation on planes
             var GL = new Geom2d_Line(L);
             SetThePCurve(myBuilder.Builder(), TopoDS.Edge(aNewEdge), TopoDS.Face(aNewFace), orien, GL);
@@ -262,7 +264,7 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
         // compare the face normal and the direction
         var surf = new BRepAdaptor_Surface(TopoDS.Face(aGenS));
         surf.D1((surf.FirstUParameter() + surf.LastUParameter()) / 2.0,
-                (surf.FirstVParameter() + surf.LastVParameter()) / 2.0, out gp_Pnt _, out gp_Vec du, out gp_Vec dv);
+                (surf.FirstVParameter() + surf.LastVParameter()) / 2.0, out Point3D _, out Vector3D du, out Vector3D dv);
         double x = myVec.DotCross(du, dv);
         TopAbs_Orientation orient = (x > 0) ? TopAbs_REVERSED : TopAbs_FORWARD;
         return orient;
@@ -321,5 +323,5 @@ internal sealed class BRepSweep_Translation : BRepSweep_Trsf
     }
 
     /// <summary>The vector of the translation.</summary>
-    public gp_Vec Vec() => myVec;
+    public Vector3D Vec() => myVec;
 }

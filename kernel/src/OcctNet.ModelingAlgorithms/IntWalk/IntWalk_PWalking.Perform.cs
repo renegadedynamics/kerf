@@ -1,6 +1,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
 using static Occt.IntWalk_StatusDeflection;
 
@@ -64,7 +67,7 @@ public partial class IntWalk_PWalking
         }
 
         //-- calculate the first solution point
-        math_FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
+        FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
         //
         ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld);
         if (!myIntersectionOn2S.IsDone())
@@ -86,7 +89,7 @@ public partial class IntWalk_PWalking
         bool Arrive, DejaReparti;
         const int RejectIndexMAX = 250000;
         int IncKey, RejectIndex;
-        gp_Pnt pf, pl;
+        Point3D pf, pl;
         //
         DejaReparti = false;
         IncKey = 0;
@@ -799,9 +802,9 @@ public partial class IntWalk_PWalking
 
                                             IntSurf_PntOn2S previousPointSave = previousPoint;
                                             bool previoustgSave = previoustg;
-                                            gp_Dir previousdSave = previousd;
-                                            gp_Dir2d previousd1Save = previousd1;
-                                            gp_Dir2d previousd2Save = previousd2;
+                                            Direction3D previousdSave = previousd;
+                                            Direction2D previousd1Save = previousd1;
+                                            Direction2D previousd2Save = previousd2;
 
                                             previousPoint = myIntersectionOn2S.Point();
                                             previoustg = myIntersectionOn2S.IsTangent();
@@ -822,8 +825,8 @@ public partial class IntWalk_PWalking
                                                                          out double v2);
 
                                                 // To save initial 2d points
-                                                gp_Pnt2d ParamPntOnS1 = new(Param[1], Param[2]);
-                                                gp_Pnt2d ParamPntOnS2 = new(Param[3], Param[4]);
+                                                Point2D ParamPntOnS1 = new(Param[1], Param[2]);
+                                                Point2D ParamPntOnS2 = new(Param[3], Param[4]);
 
                                                 ///////////////////////////
                                                 Param[1] = u1;
@@ -849,10 +852,10 @@ public partial class IntWalk_PWalking
                                                                                  out double ppU2, out double ppV2);
                                                         previousPointSave.Parameters(out double pU1, out double pV1,
                                                                                      out double pU2, out double pV2);
-                                                        gp_Vec2d V1onS1 = new(new gp_Pnt2d(ppU1, ppV1), new gp_Pnt2d(pU1, pV1));
-                                                        gp_Vec2d V2onS1 = new(new gp_Pnt2d(pU1, pV1), new gp_Pnt2d(u1, v1));
-                                                        gp_Vec2d V1onS2 = new(new gp_Pnt2d(ppU2, ppV2), new gp_Pnt2d(pU2, pV2));
-                                                        gp_Vec2d V2onS2 = new(new gp_Pnt2d(pU2, pV2), new gp_Pnt2d(u2, v2));
+                                                        Vector2D V1onS1 = new(new Point2D(ppU1, ppV1), new Point2D(pU1, pV1));
+                                                        Vector2D V2onS1 = new(new Point2D(pU1, pV1), new Point2D(u1, v1));
+                                                        Vector2D V1onS2 = new(new Point2D(ppU2, ppV2), new Point2D(pU2, pV2));
+                                                        Vector2D V2onS2 = new(new Point2D(pU2, pV2), new Point2D(u2, v2));
 
                                                         double aDot1 = V1onS1 * V2onS1;
                                                         double aDot2 = V1onS2 * V2onS2;
@@ -897,12 +900,12 @@ public partial class IntWalk_PWalking
 
                                                         previousPointSave.Parameters(out double prevU1, out double prevV1,
                                                                                      out double prevU2, out double prevV2);
-                                                        gp_Pnt2d prevPntOnS1 = new(prevU1, prevV1), prevPntOnS2 = new(prevU2, prevV2);
-                                                        gp_Pnt2d curPntOnS1 = new(u1, v1), curPntOnS2 = new(u2, v2);
-                                                        gp_Vec2d PrevToParamOnS1 = new(prevPntOnS1, ParamPntOnS1);
-                                                        gp_Vec2d PrevToCurOnS1 = new(prevPntOnS1, curPntOnS1);
-                                                        gp_Vec2d PrevToParamOnS2 = new(prevPntOnS2, ParamPntOnS2);
-                                                        gp_Vec2d PrevToCurOnS2 = new(prevPntOnS2, curPntOnS2);
+                                                        Point2D prevPntOnS1 = new(prevU1, prevV1), prevPntOnS2 = new(prevU2, prevV2);
+                                                        Point2D curPntOnS1 = new(u1, v1), curPntOnS2 = new(u2, v2);
+                                                        Vector2D PrevToParamOnS1 = new(prevPntOnS1, ParamPntOnS1);
+                                                        Vector2D PrevToCurOnS1 = new(prevPntOnS1, curPntOnS1);
+                                                        Vector2D PrevToParamOnS2 = new(prevPntOnS2, ParamPntOnS2);
+                                                        Vector2D PrevToCurOnS2 = new(prevPntOnS2, curPntOnS2);
                                                         double MaxAngle = 3 * M_PI / 4;
                                                         double anAngleS1 = 0.0, anAngleS2 = 0.0;
                                                         double aSQMParS1 = PrevToParamOnS1.SquareMagnitude();
@@ -910,14 +913,14 @@ public partial class IntWalk_PWalking
                                                         double aSQMCurS1 = PrevToCurOnS1.SquareMagnitude();
                                                         double aSQMCurS2 = PrevToCurOnS2.SquareMagnitude();
 
-                                                        if (aSQMCurS1 < gp.Resolution())
+                                                        if (aSQMCurS1 < Constants.Resolution())
                                                         {
                                                             // We came back to the one of previous point.
                                                             // Therefore, we must break;
 
                                                             anAngleS1 = M_PI;
                                                         }
-                                                        else if (aSQMParS1 < gp.Resolution())
+                                                        else if (aSQMParS1 < Constants.Resolution())
                                                         {
                                                             // We are walking along tangent zone.
                                                             // It should be continued.
@@ -928,14 +931,14 @@ public partial class IntWalk_PWalking
                                                             anAngleS1 = Math.Abs(PrevToParamOnS1.Angle(PrevToCurOnS1));
                                                         }
 
-                                                        if (aSQMCurS2 < gp.Resolution())
+                                                        if (aSQMCurS2 < Constants.Resolution())
                                                         {
                                                             // We came back to the one of previous point.
                                                             // Therefore, we must break;
 
                                                             anAngleS2 = M_PI;
                                                         }
-                                                        else if (aSQMParS2 < gp.Resolution())
+                                                        else if (aSQMParS2 < Constants.Resolution())
                                                         {
                                                             // We are walking along tangent zone.
                                                             // It should be continued;
@@ -962,15 +965,15 @@ public partial class IntWalk_PWalking
                                                             // this case (we cannot find another 3D-point if we go thus).
 
                                                             // Direction chosen along 1st and 2nd surface correspondingly
-                                                            gp_Vec2d aDirS1 = new(prevPntOnS1, curPntOnS1),
+                                                            Vector2D aDirS1 = new(prevPntOnS1, curPntOnS1),
                                                                      aDirS2 = new(prevPntOnS2, curPntOnS2);
 
                                                             myIntersectionOn2S.Function().AuxillarSurface1().D1(
-                                                                curPntOnS1.X(), curPntOnS1.Y(), out gp_Pnt aPtemp,
-                                                                out gp_Vec aDuS1, out gp_Vec aDvS1);
+                                                                curPntOnS1.X(), curPntOnS1.Y(), out Point3D aPtemp,
+                                                                out Vector3D aDuS1, out Vector3D aDvS1);
                                                             myIntersectionOn2S.Function().AuxillarSurface2().D1(
                                                                 curPntOnS2.X(), curPntOnS2.Y(), out aPtemp,
-                                                                out gp_Vec aDuS2, out gp_Vec aDvS2);
+                                                                out Vector3D aDuS2, out Vector3D aDvS2);
 
                                                             // Derivative WLine along (it is vector-function indeed)
                                                             // directions chosen
@@ -986,7 +989,7 @@ public partial class IntWalk_PWalking
                                                             double aF1 = aF1x * aF1x + aF1y * aF1y + aF1z * aF1z;
                                                             double aF2 = aF2x * aF2x + aF2y * aF2y + aF2z * aF2z;
 
-                                                            if ((aF1 < gp.Resolution()) && (aF2 < gp.Resolution()))
+                                                            if ((aF1 < Constants.Resolution()) && (aF2 < Constants.Resolution()))
                                                             {
                                                                 // All derivative are equal to 0. Therefore, there is
                                                                 // no point in going along direction chosen.

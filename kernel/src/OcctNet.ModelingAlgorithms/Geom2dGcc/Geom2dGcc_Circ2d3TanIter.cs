@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -19,16 +23,16 @@ namespace Occt;
 public sealed class Geom2dGcc_Circ2d3TanIter
 {
     private bool WellDone;
-    private gp_Circ2d cirsol = new();
+    private Circle2D cirsol = new();
     private GccEnt_Position qualifier1;
     private GccEnt_Position qualifier2;
     private GccEnt_Position qualifier3;
     private bool TheSame1;
     // OCCT's TheSame2 is written but never read (IsTheSame2 reads TheSame3): left out.
     private bool TheSame3;
-    private gp_Pnt2d pnttg1sol = new();
-    private gp_Pnt2d pnttg2sol = new();
-    private gp_Pnt2d pnttg3sol = new();
+    private Point2D pnttg1sol = new();
+    private Point2D pnttg2sol = new();
+    private Point2D pnttg3sol = new();
     private double par1sol;
     private double par2sol;
     private double par3sol;
@@ -82,14 +86,14 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
         tol[2]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d point1 = new(), point2 = new(), point3 = new();
-            gp_Vec2d Tan1 = new(), Tan2 = new(), Tan3 = new();
+            Point2D point1 = new(), point2 = new(), point3 = new();
+            Vector2D Tan1 = new(), Tan2 = new(), Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[1], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
@@ -97,18 +101,18 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             if (circ.IsDone())
             {
                 cirsol             = circ.ThisSolution(1);
-                gp_Pnt2d centre    = cirsol.Location();
+                Point2D centre    = cirsol.Location();
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -116,7 +120,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -124,7 +128,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -196,7 +200,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1  = Qualified1.Qualified();
+        Circle2D                   C1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
         Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, Cu2, Cu3);
@@ -216,39 +220,39 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = C1.Location();
+            Point2D centre1 = C1.Location();
             double   R1 = C1.Radius();
-            gp_Pnt2d point1 = new(centre1.XY() + R1 * new gp_XY(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
-            gp_Vec2d Tan1 = new(new gp_XY(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1])));
-            gp_Pnt2d point2 = new(), point3 = new();
+            Point2D point1 = new(centre1.XY() + R1 * new Xy(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
+            Vector2D Tan1 = new(new Xy(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1])));
+            Point2D point2 = new(), point3 = new();
             //     gp_Vec2d Tan2,Tan3,Nor2,Nor3;
-            gp_Vec2d Tan2 = new(), Tan3 = new();
+            Vector2D Tan2 = new(), Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
+                Point2D centre = cirsol.Location();
                 double   dist      = centre1.Distance(centre);
                 double   Rsol      = cirsol.Radius();
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -256,7 +260,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -264,7 +268,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -335,8 +339,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1  = Qualified1.Qualified();
-        gp_Circ2d                   C2  = Qualified2.Qualified();
+        Circle2D                   C1  = Qualified1.Qualified();
+        Circle2D                   C2  = Qualified2.Qualified();
         Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C2, Cu3);
         math_Vector                 Umin = new(1, 3);
@@ -355,41 +359,41 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = 2.0e-15 * M_PI;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = C1.Location();
+            Point2D centre1 = C1.Location();
             double   R1 = C1.Radius();
-            gp_Pnt2d point1 = new(centre1.XY() + R1 * new gp_XY(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
-            gp_Vec2d Tan1 = new(new gp_XY(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1])));
-            gp_Pnt2d centre2 = C2.Location();
+            Point2D point1 = new(centre1.XY() + R1 * new Xy(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
+            Vector2D Tan1 = new(new Xy(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1])));
+            Point2D centre2 = C2.Location();
             double   R2 = C2.Radius();
-            gp_Pnt2d point2 = new(centre2.XY() + R2 * new gp_XY(Math.Cos(Ufirst[2]), Math.Sin(Ufirst[2])));
-            gp_Vec2d Tan2 = new(new gp_XY(-Math.Sin(Ufirst[2]), Math.Cos(Ufirst[2])));
-            gp_Pnt2d point3 = new();
-            gp_Vec2d Tan3 = new();
+            Point2D point2 = new(centre2.XY() + R2 * new Xy(Math.Cos(Ufirst[2]), Math.Sin(Ufirst[2])));
+            Vector2D Tan2 = new(new Xy(-Math.Sin(Ufirst[2]), Math.Cos(Ufirst[2])));
+            Point2D point3 = new();
+            Vector2D Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
+                Point2D centre = cirsol.Location();
                 double   dist      = centre1.Distance(centre);
                 double   Rsol      = cirsol.Radius();
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -397,7 +401,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -405,7 +409,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -425,7 +429,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                                 || (Qualified1.IsOutside() && dist >= Rsol)
                                 || (Qualified1.IsEnclosed() && Rsol <= R2 && dist <= Rsol))
                         {
-                            gp_Vec2d Vec = new(point3, centre);
+                            Vector2D Vec = new(point3, centre);
                             double   Angle1 = Vec.Angle(Tan3);
                             if (Qualified3.IsUnqualified() || (Qualified3.IsEnclosing() && Angle1 <= 0.0)
                                     || (Qualified3.IsOutside() && Angle1 >= 0)
@@ -476,7 +480,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Lin2d                    L1  = Qualified1.Qualified();
+        Line2D                    L1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
         Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(L1, Cu2, Cu3);
@@ -496,41 +500,41 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 1.0e-15;
         tol[2]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = L1.Location();
-            gp_Pnt2d point1 = new(centre1.XY() + Ufirst[1] * L1.Direction().XY());
-            gp_Pnt2d point2 = new(), point3 = new();
-            gp_Vec2d Tan2 = new(), Tan3 = new();
+            Point2D centre1 = L1.Location();
+            Point2D point1 = new(centre1.XY() + Ufirst[1] * L1.Direction().XY());
+            Point2D point2 = new(), point3 = new();
+            Vector2D Tan2 = new(), Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2);
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
+                Point2D centre = cirsol.Location();
 
                 // creation vaariables intermediaires pour WNT
-                gp_XY  dummy1 = centre.XY() - L1.Location().XY();
-                gp_XY  dummy2 = new(-L1.Direction().Y(), L1.Direction().X());
+                Xy  dummy1 = centre.XY() - L1.Location().XY();
+                Xy  dummy2 = new(-L1.Direction().Y(), L1.Direction().X());
                 double pscal = dummy1.Dot(dummy2);
 
-                gp_Vec2d Tan1 = new(L1.Direction().XY());
+                Vector2D Tan1 = new(L1.Direction().XY());
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -538,7 +542,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -546,7 +550,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -560,13 +564,13 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                     if (Qualified1.IsUnqualified() || (Qualified1.IsOutside() && pscal <= 0.0)
                             || (Qualified1.IsEnclosed() && pscal >= 0.0))
                     {
-                        gp_Vec2d Vec = new(point2, centre);
+                        Vector2D Vec = new(point2, centre);
                         double   Angle1 = Vec.Angle(Tan2);
                         if (Qualified2.IsUnqualified() || (Qualified2.IsEnclosing() && Angle1 <= 0.0)
                                 || (Qualified2.IsOutside() && Angle1 >= 0)
                                 || (Qualified2.IsEnclosed() && Angle1 <= 0.0))
                         {
-                            Vec    = new gp_Vec2d(point3, centre);
+                            Vec    = new Vector2D(point3, centre);
                             Angle1 = Vec.Angle(Tan3);
                             if (Qualified3.IsUnqualified() || (Qualified3.IsEnclosing() && Angle1 <= 0.0)
                                     || (Qualified3.IsOutside() && Angle1 >= 0)
@@ -616,8 +620,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Lin2d                    L1  = Qualified1.Qualified();
-        gp_Lin2d                    L2  = Qualified2.Qualified();
+        Line2D                    L1  = Qualified1.Qualified();
+        Line2D                    L2  = Qualified2.Qualified();
         Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(L1, L2, Cu3);
         math_Vector                 Umin = new(1, 3);
@@ -636,41 +640,41 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 1.0e-15;
         tol[2]    = 1.0e-15;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = L1.Location();
-            gp_Pnt2d point1 = new(centre1.XY() + Ufirst[1] * L1.Direction().XY());
-            gp_Pnt2d centre2 = L2.Location();
-            gp_Pnt2d point2 = new(centre2.XY() + Ufirst[2] * L2.Direction().XY());
-            gp_Pnt2d point3 = new();
-            gp_Vec2d Tan3 = new();
+            Point2D centre1 = L1.Location();
+            Point2D point1 = new(centre1.XY() + Ufirst[1] * L1.Direction().XY());
+            Point2D centre2 = L2.Location();
+            Point2D point2 = new(centre2.XY() + Ufirst[2] * L2.Direction().XY());
+            Point2D point3 = new();
+            Vector2D Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                double   pscal = centre.XY().Dot(new gp_XY(-L1.Direction().Y(), L1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1 (the next test likewise for L2)
+                Point2D centre = cirsol.Location();
+                double   pscal = centre.XY().Dot(new Xy(-L1.Direction().Y(), L1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1 (the next test likewise for L2)
                 if (Qualified1.IsUnqualified() || (Qualified1.IsOutside() && pscal <= 0.0)
                         || (Qualified1.IsEnclosed() && pscal >= 0.0))
                 {
-                    gp_Vec2d Tan1 = new(L1.Direction().XY());
-                    gp_Vec2d Tan2 = new(L2.Direction().XY());
+                    Vector2D Tan1 = new(L1.Direction().XY());
+                    Vector2D Tan2 = new(L2.Direction().XY());
                     double   normetan1 = Tan1.Magnitude();
                     double   normetan2 = Tan2.Magnitude();
                     double   normetan3 = Tan3.Magnitude();
-                    gp_Vec2d Vec1 = new(point1, centre);
-                    gp_Vec2d Vec2 = new(point2, centre);
-                    gp_Vec2d Vec3 = new(point3, centre);
+                    Vector2D Vec1 = new(point1, centre);
+                    Vector2D Vec2 = new(point2, centre);
+                    Vector2D Vec3 = new(point3, centre);
                     double   normevec1 = Vec1.Magnitude();
                     double   normevec2 = Vec2.Magnitude();
                     double   normevec3 = Vec3.Magnitude();
                     double   dot1, dot2, dot3;
-                    if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                    if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                     {
                         dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                     }
@@ -678,7 +682,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                     {
                         dot1 = 0.0;
                     }
-                    if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                    if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                     {
                         dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                     }
@@ -686,7 +690,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                     {
                         dot2 = 0.0;
                     }
-                    if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                    if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                     {
                         dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                     }
@@ -726,7 +730,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
     }
 
-    public Geom2dGcc_Circ2d3TanIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Pnt2d Point3, double Param1, double Param2, double Tolerance)
+    public Geom2dGcc_Circ2d3TanIter(in Geom2dGcc_QCurve Qualified1, in Geom2dGcc_QCurve Qualified2, in Point2D Point3, double Param1, double Param2, double Tolerance)
     {
         TheSame1 = false;
         TheSame3 = false;
@@ -749,7 +753,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1 = new(new gp_Ax2d(Point3, new gp_Dir2d(gp_Dir2d.D.X)), 0.0);
+        Circle2D                   C1 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dAdaptor_Curve         Cu1 = Qualified1.Qualified();
         Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, Cu1, Cu2);
@@ -769,34 +773,34 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d point1 = new(), point2 = new();
+            Point2D point1 = new(), point2 = new();
             //     gp_Vec2d Tan1,Tan2,Nor1,Nor2;
-            gp_Vec2d Tan1 = new(), Tan2 = new();
+            Vector2D Tan1 = new(), Tan2 = new();
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[2], out point1, out Tan1);
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[3], out point2, out Tan2);
             GccAna_Circ2d3Tan circ = new(Point3, point1, point2, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                gp_Vec2d Tan3 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
+                Point2D centre = cirsol.Location();
+                Vector2D Tan3 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(Point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(Point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -804,7 +808,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -812,7 +816,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -852,7 +856,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
     }
 
-    public Geom2dGcc_Circ2d3TanIter(in Geom2dGcc_QCurve Qualified1, in gp_Pnt2d Point2, in gp_Pnt2d Point3, double Param1, double Tolerance)
+    public Geom2dGcc_Circ2d3TanIter(in Geom2dGcc_QCurve Qualified1, in Point2D Point2, in Point2D Point3, double Param1, double Tolerance)
     {
         TheSame1 = false;
         TheSame3 = false;
@@ -873,8 +877,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1 = new(new gp_Ax2d(Point2, new gp_Dir2d(gp_Dir2d.D.X)), 0.0);
-        gp_Circ2d                   C2 = new(new gp_Ax2d(Point3, new gp_Dir2d(gp_Dir2d.D.X)), 0.0);
+        Circle2D                   C1 = new(new Axis2D(Point2, new Direction2D(Direction2D.D.X)), 0.0);
+        Circle2D                   C2 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dAdaptor_Curve         Cu1 = Qualified1.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C2, Cu1);
         math_Vector                 Umin = new(1, 3);
@@ -893,34 +897,34 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = 2.0e-15 * M_PI;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu1, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d point3 = new();
+            Point2D point3 = new();
             //     gp_Vec2d Tan3,Nor3;
-            gp_Vec2d Tan3 = new();
+            Vector2D Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu1, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(Point2, Point3, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                gp_Vec2d Tan2 = new(-Math.Sin(Ufirst[2]), Math.Cos(Ufirst[2]));
-                gp_Vec2d Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
+                Point2D centre = cirsol.Location();
+                Vector2D Tan2 = new(-Math.Sin(Ufirst[2]), Math.Cos(Ufirst[2]));
+                Vector2D Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(Point2, centre);
-                gp_Vec2d Vec2 = new(Point3, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(Point2, centre);
+                Vector2D Vec2 = new(Point3, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -928,7 +932,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -936,7 +940,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -970,7 +974,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
     }
 
-    public Geom2dGcc_Circ2d3TanIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Pnt2d Point3, double Param1, double Param2, double Tolerance)
+    public Geom2dGcc_Circ2d3TanIter(in GccEnt_QualifiedLin Qualified1, in Geom2dGcc_QCurve Qualified2, in Point2D Point3, double Param1, double Param2, double Tolerance)
     {
         TheSame1 = false;
         TheSame3 = false;
@@ -992,9 +996,9 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Lin2d                    L1  = Qualified1.Qualified();
+        Line2D                    L1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
-        gp_Circ2d                   C3 = new(new gp_Ax2d(Point3, new gp_Dir2d(gp_Dir2d.D.X)), 0.0);
+        Circle2D                   C3 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dGcc_FunctionTanCuCuCu Func = new(C3, L1, Cu2);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -1012,36 +1016,36 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15;
         tol[2]    = 1.0e-15;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = L1.Location();
-            gp_Pnt2d point1 = new(centre1.XY() + Ufirst[2] * L1.Direction().XY());
-            gp_Pnt2d point2 = new();
-            gp_Vec2d Tan2 = new();
+            Point2D centre1 = L1.Location();
+            Point2D point1 = new(centre1.XY() + Ufirst[2] * L1.Direction().XY());
+            Point2D point2 = new();
+            Vector2D Tan2 = new();
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2); // OCCT: Cu2's parameter is Ufirst(3); Ufirst(2) is the one on L1
             GccAna_Circ2d3Tan circ = new(point1, point2, Point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                double   pscal = centre.XY().Dot(new gp_XY(-L1.Direction().Y(), L1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1
-                gp_Vec2d Tan1 = new(L1.Direction().XY());
-                gp_Vec2d Tan3 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
+                Point2D centre = cirsol.Location();
+                double   pscal = centre.XY().Dot(new Xy(-L1.Direction().Y(), L1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1
+                Vector2D Tan1 = new(L1.Direction().XY());
+                Vector2D Tan3 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(Point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(Point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -1049,7 +1053,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -1057,7 +1061,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -1120,8 +1124,8 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1  = Qualified1.Qualified();
-        gp_Lin2d                    L2  = Qualified2.Qualified();
+        Circle2D                   C1  = Qualified1.Qualified();
+        Line2D                    L2  = Qualified2.Qualified();
         Geom2dAdaptor_Curve         Cu3 = Qualified3.Qualified();
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, L2, Cu3);
         math_Vector                 Umin = new(1, 3);
@@ -1140,38 +1144,38 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = 1.0e-15;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu3, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Func.Value(Ufirst, Umin);
             Root.Root(Ufirst);
-            gp_Pnt2d centre1 = C1.Location();
+            Point2D centre1 = C1.Location();
             double   R1 = C1.Radius();
-            gp_Pnt2d point1 = new(centre1.XY() + R1 * new gp_XY(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
-            gp_Pnt2d centre2 = L2.Location();
-            gp_Pnt2d point2 = new(centre2.XY() + Ufirst[2] * L2.Direction().XY());
-            gp_Pnt2d point3 = new();
-            gp_Vec2d Tan3 = new();
+            Point2D point1 = new(centre1.XY() + R1 * new Xy(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
+            Point2D centre2 = L2.Location();
+            Point2D point2 = new(centre2.XY() + Ufirst[2] * L2.Direction().XY());
+            Point2D point3 = new();
+            Vector2D Tan3 = new();
             Geom2dGcc_CurveTool.D1(Cu3, Ufirst[3], out point3, out Tan3);
             GccAna_Circ2d3Tan circ = new(point1, point2, point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                gp_Vec2d Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
-                gp_Vec2d Tan2 = new(L2.Direction().XY());
+                Point2D centre = cirsol.Location();
+                Vector2D Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
+                Vector2D Tan2 = new(L2.Direction().XY());
                 double   normetan1 = Tan1.Magnitude();
                 double   normetan2 = Tan2.Magnitude();
                 double   normetan3 = Tan3.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution() && normetan1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1 * normetan1);
                 }
@@ -1179,7 +1183,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -1187,7 +1191,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution() && normetan3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution() && normetan3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3 * normetan3);
                 }
@@ -1204,7 +1208,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                             || (Qualified1.IsOutside() && dist >= Rsol)
                             || (Qualified1.IsEnclosed() && Rsol <= R1 && dist <= Rsol))
                     {
-                        double pscal = centre.XY().Dot(new gp_XY(-L2.Direction().Y(), L2.Direction().X())); // OCCT: the side of L2 from the origin, not from a point of L2
+                        double pscal = centre.XY().Dot(new Xy(-L2.Direction().Y(), L2.Direction().X())); // OCCT: the side of L2 from the origin, not from a point of L2
                         if (Qualified2.IsUnqualified() || (Qualified2.IsOutside() && pscal <= 0.0)
                                 || (Qualified2.IsEnclosed() && pscal >= 0.0))
                         {
@@ -1234,7 +1238,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         }
     }
 
-    public Geom2dGcc_Circ2d3TanIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in gp_Pnt2d Point3, double Param1, double Param2, double Tolerance)
+    public Geom2dGcc_Circ2d3TanIter(in GccEnt_QualifiedCirc Qualified1, in Geom2dGcc_QCurve Qualified2, in Point2D Point3, double Param1, double Param2, double Tolerance)
     {
         TheSame1 = false;
         TheSame3 = false;
@@ -1257,9 +1261,9 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d                   C1  = Qualified1.Qualified();
+        Circle2D                   C1  = Qualified1.Qualified();
         Geom2dAdaptor_Curve         Cu2 = Qualified2.Qualified();
-        gp_Circ2d                   C3 = new(new gp_Ax2d(Point3, new gp_Dir2d(gp_Dir2d.D.X)), 0.0);
+        Circle2D                   C3 = new(new Axis2D(Point3, new Direction2D(Direction2D.D.X)), 0.0);
         Geom2dGcc_FunctionTanCuCuCu Func = new(C1, C3, Cu2);
         math_Vector                 Umin = new(1, 3);
         math_Vector                 Umax = new(1, 3);
@@ -1277,35 +1281,35 @@ public sealed class Geom2dGcc_Circ2d3TanIter
         tol[1]    = 2.0e-15 * M_PI;
         tol[2]    = 2.0e-15 * M_PI;
         tol[3]    = Geom2dGcc_CurveTool.EpsX(Cu2, Math.Abs(Tolerance));
-        math_FunctionSetRoot Root = new(Func, tol);
+        FunctionSetRoot Root = new(Func, tol);
         Root.Perform(Func, Ufirst, Umin, Umax);
-        if (Root.IsDone())
+        if (Root.IsDone)
         {
             Root.Root(Ufirst);
             Func.Value(Ufirst, Umin);
-            gp_Pnt2d centre1 = C1.Location();
+            Point2D centre1 = C1.Location();
             double   R1 = C1.Radius();
-            gp_Pnt2d point1 = new(centre1.XY() + R1 * new gp_XY(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
-            gp_Pnt2d point2 = new();
+            Point2D point1 = new(centre1.XY() + R1 * new Xy(Math.Cos(Ufirst[1]), Math.Sin(Ufirst[1])));
+            Point2D point2 = new();
             //     gp_Vec2d Tan2,Nor2;
-            gp_Vec2d Tan2 = new();
+            Vector2D Tan2 = new();
             Geom2dGcc_CurveTool.D1(Cu2, Ufirst[2], out point2, out Tan2); // OCCT: Cu2's parameter is Ufirst(3); Ufirst(2) is the one on the point's circle
             GccAna_Circ2d3Tan circ = new(point1, point2, Point3, Tol);
             if (circ.IsDone())
             {
                 cirsol = circ.ThisSolution(1);
-                gp_Pnt2d centre = cirsol.Location();
-                gp_Vec2d Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
-                gp_Vec2d Tan3 = new(-Math.Sin(Ufirst[3]), Math.Cos(Ufirst[3])); // OCCT: the point's circle parameter is Ufirst(2) (likewise above)
+                Point2D centre = cirsol.Location();
+                Vector2D Tan1 = new(-Math.Sin(Ufirst[1]), Math.Cos(Ufirst[1]));
+                Vector2D Tan3 = new(-Math.Sin(Ufirst[3]), Math.Cos(Ufirst[3])); // OCCT: the point's circle parameter is Ufirst(2) (likewise above)
                 double   normetan2 = Tan2.Magnitude();
-                gp_Vec2d Vec1 = new(point1, centre);
-                gp_Vec2d Vec2 = new(point2, centre);
-                gp_Vec2d Vec3 = new(Point3, centre);
+                Vector2D Vec1 = new(point1, centre);
+                Vector2D Vec2 = new(point2, centre);
+                Vector2D Vec3 = new(Point3, centre);
                 double   normevec1 = Vec1.Magnitude();
                 double   normevec2 = Vec2.Magnitude();
                 double   normevec3 = Vec3.Magnitude();
                 double   dot1, dot2, dot3;
-                if (normevec1 >= gp.Resolution())
+                if (normevec1 >= Constants.Resolution())
                 {
                     dot1 = Vec1.Dot(Tan1) / (normevec1);
                 }
@@ -1313,7 +1317,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot1 = 0.0;
                 }
-                if (normevec2 >= gp.Resolution() && normetan2 >= gp.Resolution())
+                if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
                     dot2 = Vec2.Dot(Tan2) / (normevec2 * normetan2);
                 }
@@ -1321,7 +1325,7 @@ public sealed class Geom2dGcc_Circ2d3TanIter
                 {
                     dot2 = 0.0;
                 }
-                if (normevec3 >= gp.Resolution())
+                if (normevec3 >= Constants.Resolution())
                 {
                     dot3 = Vec3.Dot(Tan3) / (normevec3);
                 }
@@ -1370,18 +1374,18 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     }
 
     /// <summary>The solution (not checked: an unset circle if the construction failed).</summary>
-    public gp_Circ2d ThisSolution()
+    public Circle2D ThisSolution()
     {
         return cirsol;
     }
 
     /// <summary>The qualifiers of the arguments for the solution.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public void WhichQualifier(out GccEnt_Position Qualif1, out GccEnt_Position Qualif2, out GccEnt_Position Qualif3)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1392,12 +1396,12 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     }
 
     /// <summary>The tangency point on the first argument: its parameter on the solution and on the argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the first argument.</exception>
-    public void Tangency1(out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the first argument.</exception>
+    public void Tangency1(out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1409,18 +1413,18 @@ public sealed class Geom2dGcc_Circ2d3TanIter
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
 
     /// <summary>The tangency point on the second argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    public void Tangency2(out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    public void Tangency2(out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1431,12 +1435,12 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     }
 
     /// <summary>The tangency point on the third argument.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    public void Tangency3(out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    public void Tangency3(out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else
         {
@@ -1447,12 +1451,12 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     }
 
     /// <summary>True if the solution is the first argument (never, as OCCT sets it).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame1()
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (!TheSame1)
@@ -1464,12 +1468,12 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     }
 
     /// <summary>True if the solution is the second argument (OCCT answers for the third).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame2()
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (!TheSame3) // OCCT: tests TheSame3 (always false, so no effect)
@@ -1484,12 +1488,12 @@ public sealed class Geom2dGcc_Circ2d3TanIter
     /// True if the solution is the third argument. OCCT answers true whenever the construction is done, so
     /// Geom2dGcc_Circ2d3Tan's Tangency3 throws for every iterative solution.
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
     public bool IsTheSame3()
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return true; // OCCT: always true (occt-issues.md)

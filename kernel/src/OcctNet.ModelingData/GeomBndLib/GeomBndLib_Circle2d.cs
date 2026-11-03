@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,22 +29,22 @@ public sealed class GeomBndLib_Circle2d : GeomBndLib_Curve2d.ICurve2dEvaluator
     Geom2d_Curve? GeomBndLib_Curve2d.ICurve2dEvaluator.CurveGeometry() => myGeom;
 
     /// <summary>Compute bounding box for full circle.</summary>
-    public Bnd_Box2d Box(double theTol) => Box(myGeom.Circ2d(), theTol);
+    public Box2d Box(double theTol) => Box(myGeom.Circ2d(), theTol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Bnd_Box2d Box(double theU1, double theU2, double theTol) => Box(myGeom.Circ2d(), theU1, theU2, theTol);
+    public Box2d Box(double theU1, double theU2, double theTol) => Box(myGeom.Circ2d(), theU1, theU2, theTol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
-    public Bnd_Box2d BoxOptimal(double theU1, double theU2, double theTol) => Box(theU1, theU2, theTol);
+    public Box2d BoxOptimal(double theU1, double theU2, double theTol) => Box(theU1, theU2, theTol);
 
     /// <summary>Compute bounding box for a full circle defined by gp_Circ2d.</summary>
-    public static Bnd_Box2d Box(in gp_Circ2d theCirc, double theTol)
+    public static Box2d Box(in Circle2D theCirc, double theTol)
     {
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         double aR = theCirc.Radius();
-        gp_XY aO = theCirc.Location().XY();
-        gp_XY aXd = theCirc.XAxis().Direction().XY();
-        gp_XY aYd = theCirc.YAxis().Direction().XY();
+        Xy aO = theCirc.Location().XY();
+        Xy aXd = theCirc.XAxis().Direction().XY();
+        Xy aYd = theCirc.YAxis().Direction().XY();
 
         // For a full circle, compute per-coordinate analytical extrema.
         Span<double> aMin = stackalloc double[2];
@@ -57,21 +63,21 @@ public sealed class GeomBndLib_Circle2d : GeomBndLib_Curve2d.ICurve2dEvaluator
     }
 
     /// <summary>Compute bounding box for a circle arc [theU1, theU2] defined by gp_Circ2d.</summary>
-    public static Bnd_Box2d Box(in gp_Circ2d theCirc, double theU1, double theU2, double theTol)
+    public static Box2d Box(in Circle2D theCirc, double theU1, double theU2, double theTol)
     {
-        Bnd_Box2d aBox = new();
+        Box2d aBox = new();
         double aR = theCirc.Radius();
-        gp_XY aO = theCirc.Location().XY();
-        gp_XY aXd = theCirc.XAxis().Direction().XY();
-        gp_XY aYd = theCirc.YAxis().Direction().XY();
+        Xy aO = theCirc.Location().XY();
+        Xy aXd = theCirc.XAxis().Direction().XY();
+        Xy aYd = theCirc.YAxis().Direction().XY();
 
-        if (theU2 - theU1 >= 2.0 * M_PI - Precision.PConfusion())
+        if (theU2 - theU1 >= 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return Box(theCirc, theTol);
         }
 
         // Add arc endpoints (OCCT's lambda aEval).
-        gp_Pnt2d aEval(double theT) => new(aO + aR * Math.Cos(theT) * aXd + aR * Math.Sin(theT) * aYd);
+        Point2D aEval(double theT) => new(aO + aR * Math.Cos(theT) * aXd + aR * Math.Sin(theT) * aYd);
 
         aBox.Add(aEval(theU1));
         aBox.Add(aEval(theU2));
@@ -83,10 +89,10 @@ public sealed class GeomBndLib_Circle2d : GeomBndLib_Curve2d.ICurve2dEvaluator
             double aYk = aYd.Coord(k);
 
             double aTExtrMin;
-            if (Math.Abs(aXk) > gp.Resolution())
+            if (Math.Abs(aXk) > Constants.Resolution())
             {
                 aTExtrMin = Math.Atan(aYk / aXk);
-                aTExtrMin = ElCLib.InPeriod(aTExtrMin, 0.0, 2.0 * M_PI);
+                aTExtrMin = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aTExtrMin, 0.0, 2.0 * M_PI);
             }
             else
             {
@@ -94,12 +100,12 @@ public sealed class GeomBndLib_Circle2d : GeomBndLib_Curve2d.ICurve2dEvaluator
             }
             double aTExtrMax = aTExtrMin <= M_PI ? aTExtrMin + M_PI : aTExtrMin - M_PI;
 
-            double aTk = ElCLib.InPeriod(aTExtrMin, theU1, theU1 + 2.0 * M_PI);
+            double aTk = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aTExtrMin, theU1, theU1 + 2.0 * M_PI);
             if (aTk >= theU1 && aTk <= theU2)
             {
                 aBox.Add(aEval(aTExtrMin));
             }
-            aTk = ElCLib.InPeriod(aTExtrMax, theU1, theU1 + 2.0 * M_PI);
+            aTk = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aTExtrMax, theU1, theU1 + 2.0 * M_PI);
             if (aTk >= theU1 && aTk <= theU2)
             {
                 aBox.Add(aEval(aTExtrMax));

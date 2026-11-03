@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -17,7 +21,7 @@ namespace Occt;
 internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
 {
     private readonly double myAng;
-    private readonly gp_Ax1 myAxe;
+    private readonly Axis3D myAxe;
 
     private static double ComputeTolerance(in TopoDS_Edge E, in TopoDS_Face F, Geom2d_Curve C)
     {
@@ -36,12 +40,12 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         {
             double t = unsurnn * i;
             double u = first * (1.0 - t) + last * t;
-            gp_Pnt Pc3d = c3d.Value(u);
-            gp_Pnt2d UV = C.Value(u);
-            gp_Pnt Pcons = surf.Value(UV.X(), UV.Y());
-            if (Precision.IsInfinite(Pcons.X()) || Precision.IsInfinite(Pcons.Y()) || Precision.IsInfinite(Pcons.Z()))
+            Point3D Pc3d = c3d.Value(u);
+            Point2D UV = C.Value(u);
+            Point3D Pcons = surf.Value(UV.X(), UV.Y());
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Z()))
             {
-                d2 = Precision.Infinite();
+                d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
             double temp = Pc3d.SquareDistance(Pcons);
@@ -62,7 +66,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     {
         // check if there is already a pcurve
         Geom2d_Curve? OC = null;
-        var GP = BRep_Tool.Surface(F, out TopLoc_Location _) as Geom_Plane;
+        var GP = BRep_Tool.Surface(F, out Placement _) as Geom_Plane;
         if (GP is null)
         {
             OC = BRep_Tool.CurveOnSurface(E, F, out _, out _);
@@ -85,12 +89,12 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     }
 
     /// <summary>The rotation of <paramref name="S"/> around <paramref name="A"/> by the angle <paramref name="D"/>.</summary>
-    public BRepSweep_Rotation(in TopoDS_Shape S, in Sweep_NumShape N, in TopLoc_Location L, in gp_Ax1 A, double D, bool C)
+    public BRepSweep_Rotation(in TopoDS_Shape S, in Sweep_NumShape N, in Placement L, in Axis3D A, double D, bool C)
         : base(new BRep_Builder(), S, N, L, C)
     {
         myAng = D;
         myAxe = A;
-        Standard_ConstructionError_Raise_if(D < Precision.Angular(), "BRepSweep_Rotation::Constructor");
+        Standard_ConstructionError_Raise_if(D < global::Kerf.Engine.Foundation.Precision.Angular(), "BRepSweep_Rotation::Constructor");
         Init();
     }
 
@@ -98,7 +102,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     {
         // call only in construction mode with copy.
         Standard_ConstructionError_Raise_if(!myCopy, "BRepSweep_Rotation::MakeEmptyVertex");
-        gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
+        Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
         TopoDS_Vertex V = new();
         if (aDirV.Index() == 2)
         {
@@ -119,25 +123,25 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     public override TopoDS_Shape MakeEmptyDirectingEdge(in TopoDS_Shape aGenV, in Sweep_NumShape aDirE)
     {
         TopoDS_Edge E = new();
-        gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
-        gp_Dir Dirz = myAxe.Direction();
-        var V = new gp_Vec(Dirz);
-        gp_Pnt O = myAxe.Location();
-        O.Translate(V.Dot(new gp_Vec(O, P)) * V);
-        if (O.IsEqual(P, Precision.Confusion()))
+        Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
+        Direction3D Dirz = myAxe.Direction();
+        var V = new Vector3D(Dirz);
+        Point3D O = myAxe.Location();
+        O.Translate(V.Dot(new Vector3D(O, P)) * V);
+        if (O.IsEqual(P, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // make a degenerated edge
             // temporary make 3D curve null so that
             // parameters should be registered.
             // myBuilder.Builder().MakeEdge(E);
-            var Axis = new gp_Ax2(O, Dirz);
+            var Axis = new Frame3D(O, Dirz);
             var GC = new Geom_Circle(Axis, 0.0);
             myBuilder.Builder().MakeEdge(ref E, GC, BRep_Tool.Tolerance(TopoDS.Vertex(aGenV)));
             myBuilder.Builder().Degenerated(E, true);
         }
         else
         {
-            var Axis = new gp_Ax2(O, Dirz, new gp_Dir(new gp_Vec(O, P)));
+            var Axis = new Frame3D(O, Dirz, new Direction3D(new Vector3D(O, P)));
             var GC = new Geom_Circle(Axis, O.Distance(P));
             double tol = BRep_Tool.Tolerance(TopoDS.Vertex(aGenV));
             myBuilder.Builder().MakeEdge(ref E, GC, tol);
@@ -158,7 +162,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         else
         {
             // OCCT dereferences the curve (Copy()) before testing it for null: an edge without a 3D curve crashes there
-            Geom_Curve? C = (Geom_Curve)BRep_Tool.Curve(TopoDS.Edge(aGenE), out TopLoc_Location Loc, out _, out _)!.Copy();
+            Geom_Curve? C = (Geom_Curve)BRep_Tool.Curve(TopoDS.Edge(aGenE), out Placement Loc, out _, out _)!.Copy();
             if (C is not null)
             {
                 C.Transform(Loc.Transformation());
@@ -181,9 +185,9 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
                                        in TopoDS_Shape aGenV, in Sweep_NumShape aDirV)
     {
         // Glue the parameter of vertices directly included in cap faces.
-        gp_Pnt2d pnt2d = BRep_Tool.Parameters(TopoDS.Vertex(aGenV), TopoDS.Face(aGenF));
+        Point2D pnt2d = BRep_Tool.Parameters(TopoDS.Vertex(aGenV), TopoDS.Face(aGenF));
         myBuilder.Builder().UpdateVertex(TopoDS.Vertex(aNewVertex), pnt2d.X(), pnt2d.Y(), TopoDS.Face(aNewFace),
-                                         Precision.PConfusion());
+                                         global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetDirectingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenV,
@@ -199,7 +203,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         TopoDS_Vertex V_wnt = TopoDS.Vertex(aNewVertex);
         V_wnt.Orientation(ori);
         // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
-        myBuilder.Builder().UpdateVertexOfFrozen(V_wnt, param, TopoDS.Edge(aNewEdge), Precision.PConfusion());
+        myBuilder.Builder().UpdateVertexOfFrozen(V_wnt, param, TopoDS.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in TopoDS_Shape aNewEdge, ref TopoDS_Shape aNewVertex, in TopoDS_Shape aGenE,
@@ -208,7 +212,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         TopoDS_Vertex vbid = TopoDS.Vertex(aNewVertex);
         vbid.Orientation(aGenV.Orientation());
         myBuilder.Builder().UpdateVertex(vbid, BRep_Tool.Parameter(TopoDS.Vertex(aGenV), TopoDS.Edge(aGenE)),
-                                         TopoDS.Edge(aNewEdge), Precision.PConfusion());
+                                         TopoDS.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override TopoDS_Shape MakeEmptyFace(in TopoDS_Shape aGenS, in Sweep_NumShape aDirS)
@@ -218,9 +222,9 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         Geom_Surface S;
         if (aGenS.ShapeType() == TopAbs_EDGE)
         {
-            Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(aGenS), out TopLoc_Location L, out double First, out double Last)!;
+            Geom_Curve C = BRep_Tool.Curve(TopoDS.Edge(aGenS), out Placement L, out double First, out double Last)!;
             toler = BRep_Tool.Tolerance(TopoDS.Edge(aGenS));
-            gp_Trsf Tr = L.Transformation();
+            Transform3D Tr = L.Transformation();
             C = (Geom_Curve)C.Copy();
             //// modified by jgv, 9.12.03 ////
             C = new Geom_TrimmedCurve(C, First, Last);
@@ -232,31 +236,31 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             var AS = new GeomAdaptor_SurfaceOfRevolution(HC, myAxe);
             switch (AS.GetType())
             {
-                case GeomAbs_Plane:
+                case Plane:
                 {
                     var Pl = new Geom_Plane(AS.Plane());
                     S = Pl;
                 }
                 break;
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
                     var Cy = new Geom_CylindricalSurface(AS.Cylinder());
                     S = Cy;
                 }
                 break;
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                 {
                     var Sp = new Geom_SphericalSurface(AS.Sphere());
                     S = Sp;
                 }
                 break;
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                 {
                     var Co = new Geom_ConicalSurface(AS.Cone());
                     S = Co;
                 }
                 break;
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                 {
                     var To = new Geom_ToroidalSurface(AS.Torus());
                     S = To;
@@ -272,9 +276,9 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         }
         else
         {
-            S = BRep_Tool.Surface(TopoDS.Face(aGenS), out TopLoc_Location L)!;
+            S = BRep_Tool.Surface(TopoDS.Face(aGenS), out Placement L)!;
             toler = BRep_Tool.Tolerance(TopoDS.Face(aGenS));
-            gp_Trsf Tr = L.Transformation();
+            Transform3D Tr = L.Transformation();
             S = (Geom_Surface)S.Copy();
             S.Transform(Tr);
             if (aDirS.Index() == 2)
@@ -298,16 +302,16 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     public override void SetGeneratingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
                                              in Sweep_NumShape aDirE, in Sweep_NumShape aDirV, TopAbs_Orientation orien)
     {
-        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out TopLoc_Location Loc)!);
+        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out Placement Loc)!);
         double u, v;
-        gp_Pnt point;
-        var pnt2d = new gp_Pnt2d();
-        var dir2d = new gp_Dir2d();
-        var L = new gp_Lin2d();
-        if (AS.GetType() == GeomAbs_Plane)
+        Point3D point;
+        var pnt2d = new Point2D();
+        var dir2d = new Direction2D();
+        var L = new Line2D();
+        if (AS.GetType() == Plane)
         {
-            gp_Pln pln = AS.Plane();
-            gp_Ax3 ax3 = pln.Position();
+            Plane3D pln = AS.Plane();
+            CoordinateSystem ax3 = pln.Position();
             Geom_Curve? aC = BRep_Tool.Curve(TopoDS.Edge(aNewEdge), out Loc, out _, out _);
             Geom_Line? GL = aC as Geom_Line;
             if (GL is null)
@@ -317,27 +321,27 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
                     GL = aTrimmedCurve.BasisCurve() as Geom_Line;
                     if (GL is null)
                     {
-                        throw new Standard_ConstructionError("BRepSweep_Rotation::SetGeneratingPCurve");
+                        throw new ConstructionErrorException("BRepSweep_Rotation::SetGeneratingPCurve");
                     }
                 }
             }
-            gp_Lin gl = GL!.Lin();
+            Line3D gl = GL!.Lin();
             gl.Transform(Loc.Transformation());
             point = gl.Location();
-            gp_Dir dir = gl.Direction();
-            ElSLib.PlaneParameters(ax3, point, out u, out v);
+            Direction3D dir = gl.Direction();
+            global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax3, point, out u, out v);
             pnt2d.SetCoord(u, v);
             dir2d.SetCoord(dir.Dot(ax3.XDirection()), dir.Dot(ax3.YDirection()));
             L.SetLocation(pnt2d);
             L.SetDirection(dir2d);
         }
-        else if (AS.GetType() == GeomAbs_Torus)
+        else if (AS.GetType() == SurfaceKind.Torus)
         {
-            gp_Torus tor = AS.Torus();
+            Torus tor = AS.Torus();
             var BC = new BRepAdaptor_Curve(TopoDS.Edge(aNewEdge));
             double U = BC.FirstParameter();
             point = BC.Value(U);
-            if (point.Distance(tor.Location()) < Precision.Confusion())
+            if (point.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 v = Math.PI;
                 //  modified by NIZHNY-EAP Wed Mar  1 17:49:29 2000 ___BEGIN___
@@ -345,36 +349,36 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             }
             else
             {
-                ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), point, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), point, out u, out v);
             }
             //    u = 0.;
-            v = ElCLib.InPeriod(v, 0.0, 2 * Math.PI);
-            if ((2 * Math.PI - v) <= Precision.PConfusion())
+            v = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, 0.0, 2 * Math.PI);
+            if ((2 * Math.PI - v) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 v -= 2 * Math.PI;
             }
             if (aDirV.Index() == 2)
             {
                 double uLeft = u - myAng;
-                ElCLib.AdjustPeriodic(-Math.PI, Math.PI, Precision.PConfusion(), ref uLeft, ref u);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref uLeft, ref u);
             }
             else
             {
                 double uRight = u + myAng;
-                ElCLib.AdjustPeriodic(-Math.PI, Math.PI, Precision.PConfusion(), ref u, ref uRight);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref u, ref uRight);
             }
             //  modified by NIZHNY-EAP Wed Mar  1 17:49:32 2000 ___END___
             pnt2d.SetCoord(u, v - U);
             L.SetLocation(pnt2d);
-            L.SetDirection(gp.DY2d());
+            L.SetDirection(Constants.DY2d());
         }
-        else if (AS.GetType() == GeomAbs_Sphere)
+        else if (AS.GetType() == SurfaceKind.Sphere)
         {
-            gp_Sphere sph = AS.Sphere();
+            Sphere sph = AS.Sphere();
             var BC = new BRepAdaptor_Curve(TopoDS.Edge(aNewEdge));
             double U = BC.FirstParameter();
             point = BC.Value(U);
-            ElSLib.SphereParameters(sph.Position(), sph.Radius(), point, out u, out v);
+            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position(), sph.Radius(), point, out u, out v);
             u = 0.0;
             if (aDirV.Index() == 2)
             {
@@ -382,7 +386,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             }
             pnt2d.SetCoord(u, v - U);
             L.SetLocation(pnt2d);
-            L.SetDirection(gp.DY2d());
+            L.SetDirection(Constants.DY2d());
         }
         else
         {
@@ -391,8 +395,8 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             {
                 anAngleTemp = myAng;
             }
-            L.SetLocation(new gp_Pnt2d(anAngleTemp, 0));
-            L.SetDirection(gp.DY2d());
+            L.SetLocation(new Point2D(anAngleTemp, 0));
+            L.SetDirection(Constants.DY2d());
         }
         var GL2 = new Geom2d_Line(L);
         SetThePCurve(myBuilder.Builder(), TopoDS.Edge(aNewEdge), TopoDS.Face(aNewFace), orien, GL2);
@@ -401,57 +405,57 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     public override void SetDirectingPCurve(in TopoDS_Shape aNewFace, ref TopoDS_Shape aNewEdge, in TopoDS_Shape aGenE,
                                             in TopoDS_Shape aGenV, in Sweep_NumShape aDirE, TopAbs_Orientation orien)
     {
-        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out TopLoc_Location _)!);
+        var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewFace), out Placement _)!);
         double par = BRep_Tool.Parameter(TopoDS.Vertex(aGenV), TopoDS.Edge(aGenE));
-        gp_Pnt p2 = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
-        var p22d = new gp_Pnt2d();
+        Point3D p2 = BRep_Tool.Pnt(TopoDS.Vertex(aGenV));
+        var p22d = new Point2D();
         double u, v;
         Geom2d_Curve thePCurve;
 
         switch (AS.GetType())
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                gp_Pln pln = AS.Plane();
-                gp_Ax3 ax3 = pln.Position();
-                gp_Pnt p1 = pln.Location();
+                Plane3D pln = AS.Plane();
+                CoordinateSystem ax3 = pln.Position();
+                Point3D p1 = pln.Location();
                 double R = p1.Distance(p2);
-                ElSLib.PlaneParameters(ax3, p2, out u, out v);
-                var dx2d = new gp_Dir2d(u, v);
-                var axe = new gp_Ax22d(gp.Origin2d(), dx2d, gp.DY2d());
-                var C = new gp_Circ2d(axe, R);
+                global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax3, p2, out u, out v);
+                var dx2d = new Direction2D(u, v);
+                var axe = new Frame2D(Constants.Origin2d(), dx2d, Constants.DY2d());
+                var C = new Circle2D(axe, R);
                 var GC = new Geom2d_Circle(C);
                 thePCurve = GC;
             }
             break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                gp_Cone cone = AS.Cone();
-                ElSLib.ConeParameters(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p2, out u, out v);
+                Cone cone = AS.Cone();
+                global::Kerf.Engine.Geometry.ElSLib.ConeParameters(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p2, out u, out v);
                 p22d.SetCoord(0.0, v);
-                var L = new gp_Lin2d(p22d, gp.DX2d());
+                var L = new Line2D(p22d, Constants.DX2d());
                 var GL = new Geom2d_Line(L);
                 thePCurve = GL;
             }
             break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                gp_Sphere sph = AS.Sphere();
-                ElSLib.SphereParameters(sph.Position(), sph.Radius(), p2, out u, out v);
+                Sphere sph = AS.Sphere();
+                global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position(), sph.Radius(), p2, out u, out v);
                 p22d.SetCoord(0.0, v);
-                var L = new gp_Lin2d(p22d, gp.DX2d());
+                var L = new Line2D(p22d, Constants.DX2d());
                 var GL = new Geom2d_Line(L);
                 thePCurve = GL;
             }
             break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
-                gp_Pnt p1;
+                Point3D p1;
                 double u1, u2, v1, v2;
-                gp_Torus tor = AS.Torus();
+                Torus tor = AS.Torus();
                 var BC = new BRepAdaptor_Curve(TopoDS.Edge(aGenE));
                 p1 = BC.Value(BC.FirstParameter());
-                if (p1.Distance(tor.Location()) < Precision.Confusion())
+                if (p1.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     v1 = Math.PI;
                     //  modified by NIZHNY-EAP Thu Mar  2 09:43:26 2000 ___BEGIN___
@@ -460,21 +464,21 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
                 }
                 else
                 {
-                    ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p1, out u1, out v1);
+                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p1, out u1, out v1);
                 }
                 p2 = BC.Value(BC.LastParameter());
-                if (p2.Distance(tor.Location()) < Precision.Confusion())
+                if (p2.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     v2 = Math.PI;
                 }
                 else
                 {
-                    ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p2, out u2, out v2);
+                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p2, out u2, out v2);
                 }
-                ElCLib.AdjustPeriodic(0.0, 2 * Math.PI, Precision.PConfusion(), ref v1, ref v2);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref v1, ref v2);
                 //  modified by NIZHNY-EAP Thu Mar  2 15:29:04 2000 ___BEGIN___
                 u2 = u1 + myAng;
-                ElCLib.AdjustPeriodic(-Math.PI, Math.PI, Precision.PConfusion(), ref u1, ref u2);
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref u1, ref u2);
                 if (aGenV.Orientation() == TopAbs_FORWARD)
                 {
                     p22d.SetCoord(u1, v1);
@@ -484,7 +488,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
                     p22d.SetCoord(u1, v2);
                     //  modified by NIZHNY-EAP Thu Mar  2 09:43:32 2000 ___END___
                 }
-                var L = new gp_Lin2d(p22d, gp.DX2d());
+                var L = new Line2D(p22d, Constants.DX2d());
                 var GL = new Geom2d_Line(L);
                 thePCurve = GL;
             }
@@ -492,7 +496,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             default:
             {
                 p22d.SetCoord(0.0, par);
-                var L = new gp_Lin2d(p22d, gp.DX2d());
+                var L = new Line2D(p22d, Constants.DX2d());
                 var GL = new Geom2d_Line(L);
                 thePCurve = GL;
             }
@@ -508,11 +512,11 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         TopAbs_Orientation aOr;
         var surf = new BRepAdaptor_Surface(TopoDS.Face(aGenS));
         //
-        aTol2 = Precision.Confusion();
+        aTol2 = global::Kerf.Engine.Foundation.Precision.Confusion();
         aTol2 = aTol2 * aTol2;
         //
-        gp_Pnt aPAxeLoc = myAxe.Location();
-        gp_Dir aPAxeDir = myAxe.Direction();
+        Point3D aPAxeLoc = myAxe.Location();
+        Direction3D aPAxeDir = myAxe.Direction();
         //
         aU1 = surf.FirstUParameter();
         aU2 = surf.LastUParameter();
@@ -522,10 +526,10 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         aTx = 0.5;
         aUx = aTx * (aU1 + aU2);
         aVx = aTx * (aV1 + aV2);
-        surf.D1(aUx, aVx, out gp_Pnt aP, out gp_Vec du, out gp_Vec dv);
+        surf.D1(aUx, aVx, out Point3D aP, out Vector3D du, out Vector3D dv);
         //
-        var aV = new gp_Vec(aPAxeLoc, aP);
-        aV.Cross(new gp_Vec(aPAxeDir));
+        var aV = new Vector3D(aPAxeLoc, aP);
+        aV.Cross(new Vector3D(aPAxeDir));
         aMV2 = aV.SquareMagnitude();
         if (aMV2 < aTol2)
         {
@@ -534,7 +538,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             aVx = aV1 * (1.0 - aTx) + aV2 * aTx;
             surf.D1(aUx, aVx, out aP, out du, out dv);
             aV.SetXYZ(aP.XYZ() - aPAxeLoc.XYZ());
-            aV.Cross(new gp_Vec(aPAxeDir));
+            aV.Cross(new Vector3D(aPAxeDir));
         }
         //
         aX = aV.DotCross(du, dv);
@@ -551,8 +555,8 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             && aGenS.ShapeType() == TopAbs_EDGE && aSubGenS.ShapeType() == TopAbs_VERTEX
             && aDirS.Type() == TopAbs_EDGE)
         {
-            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out TopLoc_Location _)!);
-            if (AS.GetType() == GeomAbs_Plane)
+            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out Placement _)!);
+            if (AS.GetType() == Plane)
             {
                 return (!IsInvariant(aSubGenS));
             }
@@ -573,15 +577,15 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         if (aNewShape.ShapeType() == TopAbs_SOLID && aNewSubShape.ShapeType() == TopAbs_FACE
             && aGenS.ShapeType() == TopAbs_FACE && aDirS.Type() == TopAbs_EDGE && aSubDirS.Type() == TopAbs_VERTEX)
         {
-            return (Math.Abs(myAng - 2 * Math.PI) > Precision.Angular());
+            return (Math.Abs(myAng - 2 * Math.PI) > global::Kerf.Engine.Foundation.Precision.Angular());
         }
         else if (aNewShape.ShapeType() == TopAbs_FACE && aNewSubShape.ShapeType() == TopAbs_EDGE
                  && aGenS.ShapeType() == TopAbs_EDGE && aDirS.Type() == TopAbs_EDGE && aSubDirS.Type() == TopAbs_VERTEX)
         {
-            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out TopLoc_Location _)!);
-            if (AS.GetType() == GeomAbs_Plane)
+            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out Placement _)!);
+            if (AS.GetType() == Plane)
             {
-                return (Math.Abs(myAng - 2 * Math.PI) > Precision.Angular());
+                return (Math.Abs(myAng - 2 * Math.PI) > global::Kerf.Engine.Foundation.Precision.Angular());
             }
             else
             {
@@ -601,10 +605,10 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
             && aGenS.ShapeType() == TopAbs_EDGE && aSubGenS.ShapeType() == TopAbs_VERTEX
             && aDirS.Type() == TopAbs_EDGE)
         {
-            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out TopLoc_Location _)!);
-            if (AS.GetType() == GeomAbs_Plane)
+            var AS = new GeomAdaptor_Surface(BRep_Tool.Surface(TopoDS.Face(aNewShape), out Placement _)!);
+            if (AS.GetType() == Plane)
             {
-                return (Math.Abs(myAng - 2 * Math.PI) <= Precision.Angular());
+                return (Math.Abs(myAng - 2 * Math.PI) <= global::Kerf.Engine.Foundation.Precision.Angular());
             }
             else
             {
@@ -637,7 +641,7 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
                 return false;
             }
 
-            Geom_Curve? aCurve = BRep_Tool.Curve(anEdge, out TopLoc_Location _, out _, out _);
+            Geom_Curve? aCurve = BRep_Tool.Curve(anEdge, out Placement _, out _, out _);
             if (aCurve is null)
             {
                 return false;
@@ -672,19 +676,19 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         if (aGenS.ShapeType() == TopAbs_EDGE)
         {
             var aC = new BRepAdaptor_Curve(TopoDS.Edge(aGenS));
-            if (aC.GetType() == GeomAbs_Line || aC.GetType() == GeomAbs_BSplineCurve || aC.GetType() == GeomAbs_BezierCurve)
+            if (aC.GetType() == Line || aC.GetType() == BSplineCurve || aC.GetType() == BezierCurve)
             {
                 TopExp.Vertices(TopoDS.Edge(aGenS), out TopoDS_Vertex V1, out TopoDS_Vertex V2);
                 if (IsInvariant(V1) && IsInvariant(V2))
                 {
-                    if (aC.GetType() == GeomAbs_Line)
+                    if (aC.GetType() == Line)
                     {
                         return true;
                     }
 
                     double aTol = Max(BRep_Tool.Tolerance(V1), BRep_Tool.Tolerance(V2));
-                    var Lin = new gp_Lin(myAxe.Location(), myAxe.Direction());
-                    if (aC.GetType() == GeomAbs_BSplineCurve)
+                    var Lin = new Line3D(myAxe.Location(), myAxe.Direction());
+                    if (aC.GetType() == BSplineCurve)
                     {
                         Geom_BSplineCurve aBS = aC.BSpline()!;
                         for (int i = 1; i <= aBS.NbPoles(); i++)
@@ -712,8 +716,8 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
         }
         else if (aGenS.ShapeType() == TopAbs_VERTEX)
         {
-            gp_Pnt P = BRep_Tool.Pnt(TopoDS.Vertex(aGenS));
-            var Lin = new gp_Lin(myAxe.Location(), myAxe.Direction());
+            Point3D P = BRep_Tool.Pnt(TopoDS.Vertex(aGenS));
+            var Lin = new Line3D(myAxe.Location(), myAxe.Direction());
             return (Lin.Distance(P) <= BRep_Tool.Tolerance(TopoDS.Vertex(aGenS)));
         }
         return false;
@@ -723,5 +727,5 @@ internal sealed class BRepSweep_Rotation : BRepSweep_Trsf
     public double Angle() => myAng;
 
     /// <summary>The axis of the rotation.</summary>
-    public gp_Ax1 Axe() => myAxe;
+    public Axis3D Axe() => myAxe;
 }

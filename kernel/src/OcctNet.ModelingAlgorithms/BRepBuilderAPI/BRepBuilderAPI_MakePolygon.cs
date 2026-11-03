@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Builds a polygonal wire from points or vertices: a sequence of connected rectilinear edges. A point identical to the previous one adds no edge (see <see cref="Added"/>).</summary>
@@ -29,19 +31,19 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
         myMakePolygon = new BRepLib_MakePolygon();
     }
 
-    public BRepBuilderAPI_MakePolygon(in gp_Pnt P1, in gp_Pnt P2)
+    public BRepBuilderAPI_MakePolygon(in Point3D P1, in Point3D P2)
     {
         myMakePolygon = new BRepLib_MakePolygon(P1, P2);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakePolygon(in gp_Pnt P1, in gp_Pnt P2, in gp_Pnt P3, bool Cl = false)
+    public BRepBuilderAPI_MakePolygon(in Point3D P1, in Point3D P2, in Point3D P3, bool Cl = false)
     {
         myMakePolygon = new BRepLib_MakePolygon(P1, P2, P3, Cl);
         TakeResult();
     }
 
-    public BRepBuilderAPI_MakePolygon(in gp_Pnt P1, in gp_Pnt P2, in gp_Pnt P3, in gp_Pnt P4, bool Cl = false)
+    public BRepBuilderAPI_MakePolygon(in Point3D P1, in Point3D P2, in Point3D P3, in Point3D P4, bool Cl = false)
     {
         myMakePolygon = new BRepLib_MakePolygon(P1, P2, P3, P4, Cl);
         TakeResult();
@@ -68,7 +70,7 @@ public class BRepBuilderAPI_MakePolygon : BRepBuilderAPI_MakeShape
 
 
     /// <summary>Adds the point <paramref name="P"/> at the end of the polygon.</summary>
-    public void Add(in gp_Pnt P)
+    public void Add(in Point3D P)
     {
         myMakePolygon.Add(P);
         if (myMakePolygon.IsDone())

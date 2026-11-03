@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -28,13 +34,13 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     private double last_param;
     private double first_tol;
     private double last_tol;
-    private gp_Pnt2d first_point;
-    private gp_Pnt2d last_point;
+    private Point2D first_point;
+    private Point2D last_point;
     private double periodfirst;
     private double periodlast;
 
     // limit infinite points and parameters in order to make arithmetic operation on them safe
-    private static readonly double infVal = Precision.Infinite();
+    private static readonly double infVal = global::Kerf.Engine.Foundation.Precision.Infinite();
 
     private static double LimitInfinite(double Val)
     {
@@ -49,14 +55,14 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
         last_param = 0.0;
         first_tol = 0.0;
         last_tol = 0.0;
-        first_point = new gp_Pnt2d(0.0, 0.0);
-        last_point = new gp_Pnt2d(0.0, 0.0);
+        first_point = new Point2D(0.0, 0.0);
+        last_point = new Point2D(0.0, 0.0);
         periodfirst = 0.0;
         periodlast = 0.0;
     }
 
     /// <summary>Creates a bounded domain.</summary>
-    public IntRes2d_Domain(in gp_Pnt2d Pnt1, double Par1, double Tol1, in gp_Pnt2d Pnt2, double Par2, double Tol2)
+    public IntRes2d_Domain(in Point2D Pnt1, double Par1, double Tol1, in Point2D Pnt2, double Par2, double Tol2)
         : this()
     {
         SetValues(Pnt1, Par1, Tol1, Pnt2, Par2, Tol2);
@@ -66,7 +72,7 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     /// Creates a semi-infinite domain: the given point is its first point if <paramref name="First"/> is true,
     /// its last point otherwise.
     /// </summary>
-    public IntRes2d_Domain(in gp_Pnt2d Pnt, double Par, double Tol, bool First)
+    public IntRes2d_Domain(in Point2D Pnt, double Par, double Tol, bool First)
         : this()
     {
         SetValues(Pnt, Par, Tol, First);
@@ -75,7 +81,7 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the values for a bounded domain.</summary>
-    internal void SetValues(in gp_Pnt2d Pnt1, double Par1, double Tol1, in gp_Pnt2d Pnt2, double Par2, double Tol2)
+    internal void SetValues(in Point2D Pnt1, double Par1, double Tol1, in Point2D Pnt2, double Par2, double Tol2)
     {
         status = 3;
         periodfirst = periodlast = 0.0;
@@ -97,7 +103,7 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     }
 
     /// <summary>Sets the values for a semi-infinite domain.</summary>
-    internal void SetValues(in gp_Pnt2d Pnt, double Par, double Tol, bool First)
+    internal void SetValues(in Point2D Pnt, double Par, double Tol, bool First)
     {
         periodfirst = periodlast = 0.0;
         if (First)
@@ -117,12 +123,12 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     }
 
     /// <summary>Defines a closed domain.</summary>
-    /// <exception cref="Standard_DomainError">The domain is not bounded on both sides.</exception>
+    /// <exception cref="DomainErrorException">The domain is not bounded on both sides.</exception>
     internal void SetEquivalentParameters(double p_first, double p_last)
     {
         if ((status & 3) != 3)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         status |= 4;
@@ -136,36 +142,36 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     public readonly bool HasFirstPoint() => (status & 1) != 0;
 
     /// <summary>The parameter of the first point of the domain.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasFirstPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasFirstPoint"/> is false.</exception>
     public readonly double FirstParameter()
     {
         if ((status & 1) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (first_param);
     }
 
     /// <summary>The first point of the domain.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasFirstPoint"/> is false.</exception>
-    public readonly gp_Pnt2d FirstPoint()
+    /// <exception cref="DomainErrorException"><see cref="HasFirstPoint"/> is false.</exception>
+    public readonly Point2D FirstPoint()
     {
         if ((status & 1) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (first_point);
     }
 
     /// <summary>The tolerance of the first (left) bound.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasFirstPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasFirstPoint"/> is false.</exception>
     public readonly double FirstTolerance()
     {
         if ((status & 1) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (first_tol);
@@ -175,36 +181,36 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     public readonly bool HasLastPoint() => (status & 2) != 0;
 
     /// <summary>The parameter of the last point of the domain.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasLastPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasLastPoint"/> is false.</exception>
     public readonly double LastParameter()
     {
         if ((status & 2) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (last_param);
     }
 
     /// <summary>The last point of the domain.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasLastPoint"/> is false.</exception>
-    public readonly gp_Pnt2d LastPoint()
+    /// <exception cref="DomainErrorException"><see cref="HasLastPoint"/> is false.</exception>
+    public readonly Point2D LastPoint()
     {
         if ((status & 2) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (last_point);
     }
 
     /// <summary>The tolerance of the last (right) bound.</summary>
-    /// <exception cref="Standard_DomainError"><see cref="HasLastPoint"/> is false.</exception>
+    /// <exception cref="DomainErrorException"><see cref="HasLastPoint"/> is false.</exception>
     public readonly double LastTolerance()
     {
         if ((status & 2) == 0)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
 
         return (last_tol);
@@ -226,7 +232,7 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
     // Non-mutating twins
 
     /// <summary>A closed copy of this bounded domain (the twin of SetEquivalentParameters).</summary>
-    /// <exception cref="Standard_DomainError">The domain is not bounded on both sides.</exception>
+    /// <exception cref="DomainErrorException">The domain is not bounded on both sides.</exception>
     public readonly IntRes2d_Domain WithEquivalentParameters(double p_first, double p_last)
     {
         IntRes2d_Domain aCopy = this;
@@ -263,7 +269,7 @@ public partial struct IntRes2d_Domain : IEquatable<IntRes2d_Domain>
 
     public override readonly string ToString()
         => $"IntRes2d_Domain(status: {status}, "
-           + gp.Format("first", first_param, first_tol, first_point.X(), first_point.Y()) + ", "
-           + gp.Format("last", last_param, last_tol, last_point.X(), last_point.Y()) + ", "
-           + gp.Format("period", periodfirst, periodlast) + ")";
+           + Constants.Format("first", first_param, first_tol, first_point.X(), first_point.Y()) + ", "
+           + Constants.Format("last", last_param, last_tol, last_point.X(), last_point.Y()) + ", "
+           + Constants.Format("period", periodfirst, periodlast) + ")";
 }

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,24 +22,24 @@ namespace Occt;
 public sealed class BRepMesh_CircleTool
 {
     private double myTolerance;
-    private readonly NCollection_CellFilter<BRepMesh_CircleInspector, int, gp_XY> myCellFilter;
+    private readonly CellFilter<BRepMesh_CircleInspector, int, Xy> myCellFilter;
     private BRepMesh_CircleInspector mySelector;
-    private gp_XY myFaceMax;
-    private gp_XY myFaceMin;
+    private Xy myFaceMax;
+    private Xy myFaceMin;
 
     /// <summary>An empty tool.</summary>
     public BRepMesh_CircleTool()
     {
-        myTolerance = Precision.PConfusion();
-        myCellFilter = new NCollection_CellFilter<BRepMesh_CircleInspector, int, gp_XY>(10.0);
+        myTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        myCellFilter = new CellFilter<BRepMesh_CircleInspector, int, Xy>(10.0);
         mySelector = new BRepMesh_CircleInspector(myTolerance, 64);
     }
 
     /// <summary>An empty tool reserving room for <paramref name="theReservedSize"/> circles.</summary>
     public BRepMesh_CircleTool(int theReservedSize)
     {
-        myTolerance = Precision.PConfusion();
-        myCellFilter = new NCollection_CellFilter<BRepMesh_CircleInspector, int, gp_XY>(10.0);
+        myTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        myCellFilter = new CellFilter<BRepMesh_CircleInspector, int, Xy>(10.0);
         mySelector = new BRepMesh_CircleInspector(myTolerance, Max(theReservedSize, 64));
     }
 
@@ -41,7 +47,7 @@ public sealed class BRepMesh_CircleTool
     public void Init(int theReservedSize)
     {
         _ = theReservedSize;
-        myTolerance = Precision.PConfusion();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>Sets the size of the cells, the same in both directions, and clears the cells.</summary>
@@ -57,7 +63,7 @@ public sealed class BRepMesh_CircleTool
     }
 
     /// <summary>Sets the limits of the face, to which the circles' extents are clipped.</summary>
-    public void SetMinMaxSize(in gp_XY theMin, in gp_XY theMax)
+    public void SetMinMaxSize(in Xy theMin, in Xy theMax)
     {
         myFaceMin = theMin;
         myFaceMax = theMax;
@@ -67,9 +73,9 @@ public sealed class BRepMesh_CircleTool
     public bool IsEmpty() => mySelector.Circles().IsEmpty();
 
     /// <summary>Binds the circle to the index.</summary>
-    public void Bind(int theIndex, gp_Circ2d theCircle)
+    public void Bind(int theIndex, Circle2D theCircle)
     {
-        gp_XY aCoord = theCircle.Location().Coord();
+        Xy aCoord = theCircle.Location().Coord();
         double aRadius = theCircle.Radius();
         bind(theIndex, aCoord, aRadius);
     }
@@ -78,32 +84,32 @@ public sealed class BRepMesh_CircleTool
     /// Computes the circle through three points: false if two of them are within <c>Precision::PConfusion()</c> or
     /// they are collinear. The radius is the largest distance from the centre to the points plus 2 RealEpsilon().
     /// </summary>
-    public static bool MakeCircle(in gp_XY thePoint1,
-                                  in gp_XY thePoint2,
-                                  in gp_XY thePoint3,
-                                  out gp_XY theLocation,
+    public static bool MakeCircle(in Xy thePoint1,
+                                  in Xy thePoint2,
+                                  in Xy thePoint3,
+                                  out Xy theLocation,
                                   out double theRadius)
     {
-        double aPrecision = Precision.PConfusion();
+        double aPrecision = global::Kerf.Engine.Foundation.Precision.PConfusion();
         double aSqPrecision = aPrecision * aPrecision;
-        theLocation = new gp_XY();
+        theLocation = new Xy();
         theRadius = 0.0;
 
-        gp_XY aLink1 = new(thePoint3.Coord(1) - thePoint2.Coord(1),
+        Xy aLink1 = new(thePoint3.Coord(1) - thePoint2.Coord(1),
                            thePoint2.Coord(2) - thePoint3.Coord(2));
         if (aLink1.SquareModulus() < aSqPrecision)
         {
             return false;
         }
 
-        gp_XY aLink2 = new(thePoint1.Coord(1) - thePoint3.Coord(1),
+        Xy aLink2 = new(thePoint1.Coord(1) - thePoint3.Coord(1),
                            thePoint3.Coord(2) - thePoint1.Coord(2));
         if (aLink2.SquareModulus() < aSqPrecision)
         {
             return false;
         }
 
-        gp_XY aLink3 = new(thePoint2.Coord(1) - thePoint1.Coord(1),
+        Xy aLink3 = new(thePoint2.Coord(1) - thePoint1.Coord(1),
                            thePoint1.Coord(2) - thePoint2.Coord(2));
         if (aLink3.SquareModulus() < aSqPrecision)
         {
@@ -115,7 +121,7 @@ public sealed class BRepMesh_CircleTool
                        + thePoint2.Coord(1) * aLink2.Y()
                        + thePoint3.Coord(1) * aLink3.Y());
 
-        if (Math.Abs(aD) < gp.Resolution())
+        if (Math.Abs(aD) < Constants.Resolution())
         {
             return false;
         }
@@ -139,9 +145,9 @@ public sealed class BRepMesh_CircleTool
     }
 
     /// <summary>Binds the circle through three points to the index; false if <see cref="MakeCircle"/> fails.</summary>
-    public bool Bind(int theIndex, in gp_XY thePoint1, in gp_XY thePoint2, in gp_XY thePoint3)
+    public bool Bind(int theIndex, in Xy thePoint1, in Xy thePoint2, in Xy thePoint3)
     {
-        if (!MakeCircle(thePoint1, thePoint2, thePoint3, out gp_XY aLocation, out double aRadius))
+        if (!MakeCircle(thePoint1, thePoint2, thePoint3, out Xy aLocation, out double aRadius))
         {
             return false;
         }
@@ -153,7 +159,7 @@ public sealed class BRepMesh_CircleTool
     /// <summary>Binds a null circle (radius -1) to the index, outside the cells.</summary>
     public void MocBind(int theIndex)
     {
-        BRepMesh_Circle aNullCir = new(gp.Origin2d().Coord(), -1.0);
+        BRepMesh_Circle aNullCir = new(Constants.Origin2d().Coord(), -1.0);
         mySelector.Bind(theIndex, aNullCir);
     }
 
@@ -171,14 +177,14 @@ public sealed class BRepMesh_CircleTool
     /// The indices of the circles containing the point. The list is the tool's own, valid until the next call; callers
     /// remove items from it, as OCCT's do.
     /// </summary>
-    public NCollection_List<int> Select(in gp_XY thePoint)
+    public NCollection_List<int> Select(in Xy thePoint)
     {
         mySelector.SetPoint(thePoint);
         myCellFilter.Inspect(thePoint, ref mySelector);
         return mySelector.GetShotCircles();
     }
 
-    private void bind(int theIndex, in gp_XY theLocation, double theRadius)
+    private void bind(int theIndex, in Xy theLocation, double theRadius)
     {
         BRepMesh_Circle aCirle = new(theLocation, theRadius);
 
@@ -188,8 +194,8 @@ public sealed class BRepMesh_CircleTool
         double aMaxY = Min(theLocation.Y() + theRadius, myFaceMax.Y());
         double aMinY = Max(theLocation.Y() - theRadius, myFaceMin.Y());
 
-        gp_XY aMinPnt = new(aMinX, aMinY);
-        gp_XY aMaxPnt = new(aMaxX, aMaxY);
+        Xy aMinPnt = new(aMinX, aMinY);
+        Xy aMaxPnt = new(aMaxX, aMaxY);
 
         myCellFilter.Add(theIndex, aMinPnt, aMaxPnt);
         mySelector.Bind(theIndex, aCirle);

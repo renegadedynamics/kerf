@@ -2,7 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -153,9 +153,9 @@ public class MathOpt_PowellTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.Powell(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
         Assert.Equal(0.0, aResult.Solution[1], 1.0e-4);
@@ -173,9 +173,9 @@ public class MathOpt_PowellTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.Powell(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
         Assert.Equal(1.0, aResult.Solution[1], 1.0e-4);
@@ -193,9 +193,9 @@ public class MathOpt_PowellTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.Powell(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
         for (int i = 1; i <= 3; ++i)
@@ -218,9 +218,9 @@ public class MathOpt_BFGSTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-12;
 
-        VectorResult aResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         Assert.Equal(0.0, aResult.Solution[1], 1.0e-6);
@@ -239,9 +239,9 @@ public class MathOpt_BFGSTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-12;
 
-        VectorResult aResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         Assert.Equal(1.0, aResult.Solution[1], 1.0e-6);
@@ -259,9 +259,9 @@ public class MathOpt_BFGSTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
         Assert.Equal(1.0, aResult.Solution[1], 1.0e-3);
@@ -279,9 +279,9 @@ public class MathOpt_BFGSTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
         Assert.Equal(3.0, aResult.Solution[1], 1.0e-3);
@@ -303,9 +303,9 @@ public class MathOpt_BFGSTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-12;
 
-        VectorResult aResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         for (int i = 1; i <= 5; ++i)
@@ -343,9 +343,9 @@ public class MathOpt_BFGSNumericalTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aResult = MathOpt.BFGSNumerical(aFunc, aStart, 1.0e-7, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGSNumerical(aFunc, aStart, 1.0e-7, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
         Assert.Equal(0.0, aResult.Solution[1], 1.0e-4);
@@ -366,9 +366,9 @@ public class MathOpt_LBFGSTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-12;
 
-        VectorResult aResult = MathOpt.LBFGS(aFunc, aStart, 10, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.LBFGS(aFunc, aStart, 10, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         Assert.Equal(0.0, aResult.Solution[1], 1.0e-6);
@@ -386,9 +386,9 @@ public class MathOpt_LBFGSTest
         aConfig.XTolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-12;
 
-        VectorResult aResult = MathOpt.LBFGS(aFunc, aStart, 10, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.LBFGS(aFunc, aStart, 10, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         Assert.Equal(1.0, aResult.Solution[1], 1.0e-6);
@@ -411,9 +411,9 @@ public class MathOpt_LBFGSTest
         aConfig.FTolerance = 1.0e-12;
 
         // Use small memory size for L-BFGS
-        VectorResult aResult = MathOpt.LBFGS(aFunc, aStart, 5, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.LBFGS(aFunc, aStart, 5, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.NotNull(aResult.Solution);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-8);
         for (int i = 1; i <= 10; ++i)
@@ -436,11 +436,11 @@ public class MathOpt_ComparisonTest
         aConfig.XTolerance = 1.0e-8;
         aConfig.FTolerance = 1.0e-10;
 
-        VectorResult aPowellResult = MathOpt.Powell(aFunc, aStart, aConfig);
-        VectorResult aBFGSResult = MathOpt.BFGS(aFunc, aStart, aConfig);
+        VectorResult aPowellResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Powell(aFunc, aStart, aConfig);
+        VectorResult aBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aFunc, aStart, aConfig);
 
-        Assert.True(aPowellResult.IsDone());
-        Assert.True(aBFGSResult.IsDone());
+        Assert.True(aPowellResult.IsDone);
+        Assert.True(aBFGSResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aBFGSResult.Value!.Value, aPowellResult.Value!.Value, 1.0e-4);

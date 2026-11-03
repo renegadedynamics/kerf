@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.StepToTopoDS_TranslatePolyLoopError;
 using static Occt.TopAbs_Orientation;
 
@@ -52,8 +54,8 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
             TopoDS_Wire W = new TopoDS_Wire();
             Geom_Line L;
             Geom2d_Line L2d;
-            gp_Vec V;
-            gp_Vec2d V2d;
+            Vector3D V;
+            Vector2D V2d;
             double Magn;
             Geom_Plane SP = GeomSurf as Geom_Plane;
             if (SP is null)
@@ -80,7 +82,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
             }
             else
             {
-                B.MakeVertex(ref V1, GP1.Pnt(), Occt.Precision.Confusion()); //: S4136: preci
+                B.MakeVertex(ref V1, GP1.Pnt(), Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
                 aTool.BindVertex(P1, V1);
             }
 
@@ -105,13 +107,13 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                     }
                     else
                     {
-                        B.MakeVertex(ref V2, GP2.Pnt(), Occt.Precision.Confusion()); //: S4136: preci
+                        B.MakeVertex(ref V2, GP2.Pnt(), Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
                         aTool.BindVertex(P2, V2);
                     }
 
-                    V = new gp_Vec(GP1.Pnt(), GP2.Pnt());
-                    L = new Geom_Line(GP1.Pnt(), new gp_Dir(V));
-                    B.MakeEdge(ref E, L, Occt.Precision.Confusion()); //: S4136: preci
+                    V = new Vector3D(GP1.Pnt(), GP2.Pnt());
+                    L = new Geom_Line(GP1.Pnt(), new Direction3D(V));
+                    B.MakeEdge(ref E, L, Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
                     V1.Orientation(TopAbs_FORWARD);
                     V2.Orientation(TopAbs_REVERSED);
                     B.Add(E, V1);
@@ -135,17 +137,17 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                     V2 = aTool.FindVertex(P2);
                 }
 
-                gp_Pnt2d V2p1 = STSU.ValueOfUV(GP1.Pnt(), Precision());
-                gp_Pnt2d V2p2 = STSU.ValueOfUV(GP2.Pnt(), Precision());
+                Point2D V2p1 = STSU.ValueOfUV(GP1.Pnt(), Precision());
+                Point2D V2p2 = STSU.ValueOfUV(GP2.Pnt(), Precision());
                 if (E.Orientation() == TopAbs_FORWARD)
                 {
-                    V2d = new gp_Vec2d(V2p1, V2p2);
-                    L2d = new Geom2d_Line(V2p1, new gp_Dir2d(V2d));
+                    V2d = new Vector2D(V2p1, V2p2);
+                    L2d = new Geom2d_Line(V2p1, new Direction2D(V2d));
                 }
                 else
                 {
-                    V2d = new gp_Vec2d(V2p2, V2p1);
-                    L2d = new Geom2d_Line(V2p2, new gp_Dir2d(V2d));
+                    V2d = new Vector2D(V2p2, V2p1);
+                    L2d = new Geom2d_Line(V2p2, new Direction2D(V2d));
                 }
 
                 B.UpdateEdge(E, L2d, TopoFace, 0.0);
@@ -184,7 +186,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
         => Init(PL, aTool, GeomSurf, TopoFace, new StepData_Factors());
 
     /// <summary>The wire, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The translation wasn't done.</exception>
+    /// <exception cref="NotDoneException">The translation wasn't done.</exception>
     public TopoDS_Shape Value()
     {
         TopoDS_Shape aShape = InternalValue();

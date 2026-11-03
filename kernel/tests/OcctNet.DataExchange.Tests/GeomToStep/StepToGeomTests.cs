@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_BSplineCurveForm;
 using static Occt.StepGeom_KnotType;
@@ -48,7 +49,7 @@ public sealed class StepToGeomTests
         return A;
     }
 
-    private static StepGeom_Axis2Placement Select(Standard_Transient thePlacement)
+    private static StepGeom_Axis2Placement Select(global::Kerf.Engine.Foundation.Transient thePlacement)
     {
         var S = new StepGeom_Axis2Placement();
         S.SetValue(thePlacement);
@@ -60,12 +61,12 @@ public sealed class StepToGeomTests
     {
         Geom_CartesianPoint? P = StepToGeom.MakeCartesianPoint(Point(1, -2, 0.5), Inches);
         Assert.NotNull(P);
-        Assert.Equal(new gp_Pnt(25.4, -50.8, 12.7), P.Pnt());
+        Assert.Equal(new Point3D(25.4, -50.8, 12.7), P.Pnt());
         Assert.Null(StepToGeom.MakeCartesianPoint(Point2d(1, 2)));
         Assert.Null(StepToGeom.MakeCartesianPoint(null!));
 
         // 2D points are parameters: no factor
-        Assert.Equal(new gp_Pnt2d(1, 2), StepToGeom.MakeCartesianPoint2d(Point2d(1, 2), Inches)!.Pnt2d());
+        Assert.Equal(new Point2D(1, 2), StepToGeom.MakeCartesianPoint2d(Point2d(1, 2), Inches)!.Pnt2d());
         Assert.Null(StepToGeom.MakeCartesianPoint2d(Point(1, 2, 3)));
     }
 
@@ -75,9 +76,9 @@ public sealed class StepToGeomTests
         Assert.Null(StepToGeom.MakeDirection(Direction(0, 0, 0)));
         Assert.Null(StepToGeom.MakeDirection(Direction(0, 1e300, 0)));
         Assert.Null(StepToGeom.MakeDirection(Direction(1, 0)));
-        Assert.Equal(new gp_Dir(0, 0, 1), StepToGeom.MakeDirection(Direction(0, 0, 5))!.Dir());
+        Assert.Equal(new Direction3D(0, 0, 1), StepToGeom.MakeDirection(Direction(0, 0, 5))!.Dir());
         Assert.Null(StepToGeom.MakeDirection2d(Direction(0, 0, 1)));
-        Assert.Equal(new gp_Dir2d(1, 0), StepToGeom.MakeDirection2d(Direction(3, 0, 7))!.Dir2d());
+        Assert.Equal(new Direction2D(1, 0), StepToGeom.MakeDirection2d(Direction(3, 0, 7))!.Dir2d());
     }
 
     [Fact]
@@ -85,13 +86,13 @@ public sealed class StepToGeomTests
     {
         Geom_Axis2Placement? A = StepToGeom.MakeAxis2Placement(Placement());
         Assert.NotNull(A);
-        Assert.Equal(new gp_Pnt(1, 2, 3), A.Ax2().Location());
-        Assert.Equal(new gp_Dir(0, 0, 1), A.Ax2().Direction());
+        Assert.Equal(new Point3D(1, 2, 3), A.Ax2().Location());
+        Assert.Equal(new Direction3D(0, 0, 1), A.Ax2().Direction());
 
         // a reference direction parallel to the axis is ignored
         Geom_Axis2Placement? B = StepToGeom.MakeAxis2Placement(Placement(Direction(1, 0, 0), Direction(-2, 0, 0)));
-        Assert.Equal(new gp_Dir(1, 0, 0), B!.Ax2().Direction());
-        Assert.True(B.Ax2().XDirection().IsNormal(new gp_Dir(1, 0, 0), 1e-12));
+        Assert.Equal(new Direction3D(1, 0, 0), B!.Ax2().Direction());
+        Assert.True(B.Ax2().XDirection().IsNormal(new Direction3D(1, 0, 0), 1e-12));
     }
 
     [Fact]
@@ -103,7 +104,7 @@ public sealed class StepToGeomTests
         Assert.NotNull(G);
         Assert.Equal(5, G.MajorRadius());
         Assert.Equal(2, G.MinorRadius());
-        Assert.True(G.XAxis().Direction().IsParallel(new gp_Dir(0, 1, 0), 1e-12));
+        Assert.True(G.XAxis().Direction().IsParallel(new Direction3D(0, 1, 0), 1e-12));
     }
 
     [Fact]
@@ -117,7 +118,7 @@ public sealed class StepToGeomTests
         Assert.Equal(2 * 25.4, G.RefRadius());
 
         C.SetSemiAngle(0);
-        Assert.Equal(Precision.Angular(), StepToGeom.MakeConicalSurface(C)!.SemiAngle());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), StepToGeom.MakeConicalSurface(C)!.SemiAngle());
     }
 
     [Fact]
@@ -165,8 +166,8 @@ public sealed class StepToGeomTests
         Geom_BSplineCurve? G = StepToGeom.MakeBSplineCurve(B);
         Assert.NotNull(G);
         Assert.Equal(2, G.NbPoles());
-        Assert.Equal(new gp_Pnt(2, 4, 0), G.Pole(1));
-        Assert.Equal(new gp_Pnt(3, 9, 0), G.Pole(2));
+        Assert.Equal(new Point3D(2, 4, 0), G.Pole(1));
+        Assert.Equal(new Point3D(3, 9, 0), G.Pole(2));
     }
 
     [Fact]
@@ -196,16 +197,16 @@ public sealed class StepToGeomTests
         anOperator.SetLocalOrigin(Point(1, 2, 3));
         anOperator.SetAxis1(Direction(0, 1, 0));
         anOperator.SetAxis2(Direction(-1, 0, 0));
-        gp_Trsf T = new gp_Trsf();
+        Transform3D T = new Transform3D();
         Assert.True(StepToGeom.MakeTransformation3d(anOperator, ref T));
         // the inverse of the change of coordinates into the operator's system: its origin is the global origin's
         // image, and its first axis the X axis's
-        Assert.True(new gp_Pnt(0, 0, 0).Transformed(T).Distance(new gp_Pnt(1, 2, 3)) < 1e-12);
-        Assert.True(new gp_Dir(1, 0, 0).Transformed(T).IsEqual(new gp_Dir(0, 1, 0), 1e-12));
+        Assert.True(new Point3D(0, 0, 0).Transformed(T).Distance(new Point3D(1, 2, 3)) < 1e-12);
+        Assert.True(new Direction3D(1, 0, 0).Transformed(T).IsEqual(new Direction3D(0, 1, 0), 1e-12));
 
         var aNoOrigin = new StepGeom_CartesianTransformationOperator3d();
         aNoOrigin.SetLocalOrigin(Point2d(1, 2));
-        gp_Trsf U = new gp_Trsf();
+        Transform3D U = new Transform3D();
         Assert.False(StepToGeom.MakeTransformation3d(aNoOrigin, ref U));
     }
 }

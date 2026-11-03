@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Root and minimum bracketing algorithms.</summary>
 public static partial class MathUtils
@@ -23,56 +25,56 @@ public static partial class MathUtils
     }
 
     /// <summary>Bracket a root by expanding [theA, theB] outward (golden ratio) until a sign change is found.</summary>
-    public static BracketResult BracketRoot<Function>(Function theFunc, double theA, double theB, int theMaxIter = 50)
+    public static BracketResult BracketRoot<Function>(Function func, double a, double b, int maxIter = 50)
         where Function : IScalarFunction
     {
-        BracketResult aResult = new();
-        aResult.A = theA;
-        aResult.B = theB;
+        BracketResult result = new();
+        result.A = a;
+        result.B = b;
 
-        if (!theFunc.Value(aResult.A, out aResult.Fa))
+        if (!func.Value(result.A, out result.Fa))
         {
-            return aResult;
+            return result;
         }
-        if (!theFunc.Value(aResult.B, out aResult.Fb))
+        if (!func.Value(result.B, out result.Fb))
         {
-            return aResult;
+            return result;
         }
 
-        for (int i = 0; i < theMaxIter; ++i)
+        for (int i = 0; i < maxIter; ++i)
         {
-            if (aResult.Fa * aResult.Fb < 0.0)
+            if (result.Fa * result.Fb < 0.0)
             {
-                aResult.IsValid = true;
+                result.IsValid = true;
                 // Ensure A < B
-                if (aResult.A > aResult.B)
+                if (result.A > result.B)
                 {
-                    (aResult.A, aResult.B) = (aResult.B, aResult.A);
-                    (aResult.Fa, aResult.Fb) = (aResult.Fb, aResult.Fa);
+                    (result.A, result.B) = (result.B, result.A);
+                    (result.Fa, result.Fb) = (result.Fb, result.Fa);
                 }
-                return aResult;
+                return result;
             }
 
             // Expand the interval using golden ratio
-            if (Math.Abs(aResult.Fa) < Math.Abs(aResult.Fb))
+            if (Math.Abs(result.Fa) < Math.Abs(result.Fb))
             {
-                aResult.A += THE_GOLDEN_RATIO * (aResult.A - aResult.B);
-                if (!theFunc.Value(aResult.A, out aResult.Fa))
+                result.A += THE_GOLDEN_RATIO * (result.A - result.B);
+                if (!func.Value(result.A, out result.Fa))
                 {
-                    return aResult;
+                    return result;
                 }
             }
             else
             {
-                aResult.B += THE_GOLDEN_RATIO * (aResult.B - aResult.A);
-                if (!theFunc.Value(aResult.B, out aResult.Fb))
+                result.B += THE_GOLDEN_RATIO * (result.B - result.A);
+                if (!func.Value(result.B, out result.Fb))
                 {
-                    return aResult;
+                    return result;
                 }
             }
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>Result of minimum bracketing operation.</summary>
@@ -116,54 +118,54 @@ public static partial class MathUtils
         {
         }
 
-        public MinBracketOptions(MinBracketOptions theOther)
+        public MinBracketOptions(MinBracketOptions other)
         {
-            MaxIterations = theOther.MaxIterations;
-            UseLimits = theOther.UseLimits;
-            LeftLimit = theOther.LeftLimit;
-            RightLimit = theOther.RightLimit;
-            HasFA = theOther.HasFA;
-            HasFB = theOther.HasFB;
-            FA = theOther.FA;
-            FB = theOther.FB;
+            MaxIterations = other.MaxIterations;
+            UseLimits = other.UseLimits;
+            LeftLimit = other.LeftLimit;
+            RightLimit = other.RightLimit;
+            HasFA = other.HasFA;
+            HasFB = other.HasFB;
+            FA = other.FA;
+            FB = other.FB;
         }
     }
 
     internal static partial class detail
     {
-        internal static double Limited(double theValue, MinBracketOptions theOptions)
+        internal static double Limited(double value, MinBracketOptions options)
         {
-            if (!theOptions.UseLimits)
+            if (!options.UseLimits)
             {
-                return theValue;
+                return value;
             }
-            return Max(theOptions.LeftLimit, Min(theOptions.RightLimit, theValue));
+            return Max(options.LeftLimit, Min(options.RightLimit, value));
         }
 
-        internal static bool LimitAndMayBeSwap<Function>(Function theFunc,
-                                                         MinBracketOptions theOptions,
-                                                         double theA,
-                                                         ref double theB,
-                                                         ref double theFB,
-                                                         ref double theC,
-                                                         ref double theFC)
+        internal static bool LimitAndMayBeSwap<Function>(Function func,
+                                                         MinBracketOptions options,
+                                                         double a,
+                                                         ref double b,
+                                                         ref double fb,
+                                                         ref double c,
+                                                         ref double fc)
             where Function : IScalarFunction
         {
-            theC = Limited(theC, theOptions);
-            if (Math.Abs(theB - theC) < THE_ZERO_TOL)
+            c = Limited(c, options);
+            if (Math.Abs(b - c) < THE_ZERO_TOL)
             {
                 return false;
             }
-            if (!theFunc.Value(theC, out theFC))
+            if (!func.Value(c, out fc))
             {
                 return false;
             }
 
             // Keep B between A and C
-            if ((theA - theB) * (theB - theC) < 0.0)
+            if ((a - b) * (b - c) < 0.0)
             {
-                (theB, theC) = (theC, theB);
-                (theFB, theFC) = (theFC, theFB);
+                (b, c) = (c, b);
+                (fb, fc) = (fc, fb);
             }
             return true;
         }
@@ -173,233 +175,233 @@ public static partial class MathUtils
     /// Bracket a minimum by finding three points a &lt; b &lt; c with f(b) &lt; f(a) and f(b) &lt; f(c), using golden
     /// section expansion with parabolic interpolation.
     /// </summary>
-    public static MinBracketResult BracketMinimum<Function>(Function theFunc, double theA, double theB, MinBracketOptions? theOptions = null)
+    public static MinBracketResult BracketMinimum<Function>(Function func, double a, double b, MinBracketOptions? options = null)
         where Function : IScalarFunction
     {
-        theOptions ??= new MinBracketOptions();
-        MinBracketResult aResult = new();
-        if (theOptions.MaxIterations < 1)
+        options ??= new MinBracketOptions();
+        MinBracketResult result = new();
+        if (options.MaxIterations < 1)
         {
-            return aResult;
+            return result;
         }
-        if (theOptions.UseLimits && theOptions.LeftLimit > theOptions.RightLimit)
+        if (options.UseLimits && options.LeftLimit > options.RightLimit)
         {
-            return aResult;
+            return result;
         }
 
-        aResult.A = detail.Limited(theA, theOptions);
-        aResult.B = detail.Limited(theB, theOptions);
-        if (Math.Abs(aResult.A - aResult.B) < THE_ZERO_TOL)
+        result.A = detail.Limited(a, options);
+        result.B = detail.Limited(b, options);
+        if (Math.Abs(result.A - result.B) < THE_ZERO_TOL)
         {
-            return aResult;
+            return result;
         }
 
         bool isUseFA =
-          theOptions.HasFA && (!theOptions.UseLimits || Math.Abs(aResult.A - theA) < THE_ZERO_TOL);
+          options.HasFA && (!options.UseLimits || Math.Abs(result.A - a) < THE_ZERO_TOL);
         bool isUseFB =
-          theOptions.HasFB && (!theOptions.UseLimits || Math.Abs(aResult.B - theB) < THE_ZERO_TOL);
+          options.HasFB && (!options.UseLimits || Math.Abs(result.B - b) < THE_ZERO_TOL);
 
         if (isUseFA)
         {
-            aResult.Fa = theOptions.FA;
+            result.Fa = options.FA;
         }
-        else if (!theFunc.Value(aResult.A, out aResult.Fa))
+        else if (!func.Value(result.A, out result.Fa))
         {
-            return aResult;
+            return result;
         }
 
         if (isUseFB)
         {
-            aResult.Fb = theOptions.FB;
+            result.Fb = options.FB;
         }
-        else if (!theFunc.Value(aResult.B, out aResult.Fb))
+        else if (!func.Value(result.B, out result.Fb))
         {
-            return aResult;
+            return result;
         }
 
         // Ensure we go downhill from A to B
-        if (aResult.Fb > aResult.Fa)
+        if (result.Fb > result.Fa)
         {
-            (aResult.A, aResult.B) = (aResult.B, aResult.A);
-            (aResult.Fa, aResult.Fb) = (aResult.Fb, aResult.Fa);
+            (result.A, result.B) = (result.B, result.A);
+            (result.Fa, result.Fb) = (result.Fb, result.Fa);
         }
 
         // Initial guess for C using golden ratio
-        aResult.C = aResult.B + THE_GOLDEN_RATIO * (aResult.B - aResult.A);
-        if (theOptions.UseLimits)
+        result.C = result.B + THE_GOLDEN_RATIO * (result.B - result.A);
+        if (options.UseLimits)
         {
-            if (!detail.LimitAndMayBeSwap(theFunc,
-                                          theOptions,
-                                          aResult.A,
-                                          ref aResult.B,
-                                          ref aResult.Fb,
-                                          ref aResult.C,
-                                          ref aResult.Fc))
+            if (!detail.LimitAndMayBeSwap(func,
+                                          options,
+                                          result.A,
+                                          ref result.B,
+                                          ref result.Fb,
+                                          ref result.C,
+                                          ref result.Fc))
             {
-                return aResult;
+                return result;
             }
         }
-        else if (!theFunc.Value(aResult.C, out aResult.Fc))
+        else if (!func.Value(result.C, out result.Fc))
         {
-            return aResult;
+            return result;
         }
 
         // Keep expanding until we bracket a minimum
-        for (int anIter = 0; anIter < theOptions.MaxIterations && aResult.Fb >= aResult.Fc; ++anIter)
+        for (int iter = 0; iter < options.MaxIterations && result.Fb >= result.Fc; ++iter)
         {
             // Parabolic extrapolation
-            double aR = (aResult.B - aResult.A) * (aResult.Fb - aResult.Fc);
-            double aQ = (aResult.B - aResult.C) * (aResult.Fb - aResult.Fa);
-            double aDenom = 2.0 * SignTransfer(Max(Math.Abs(aQ - aR), THE_ZERO_TOL), aQ - aR);
+            double r = (result.B - result.A) * (result.Fb - result.Fc);
+            double q = (result.B - result.C) * (result.Fb - result.Fa);
+            double denom = 2.0 * SignTransfer(Max(Math.Abs(q - r), THE_ZERO_TOL), q - r);
 
-            double aU = aResult.B - ((aResult.B - aResult.C) * aQ - (aResult.B - aResult.A) * aR) / aDenom;
+            double u = result.B - ((result.B - result.C) * q - (result.B - result.A) * r) / denom;
 
-            double aULim = aResult.B + 100.0 * (aResult.C - aResult.B);
-            if (theOptions.UseLimits)
+            double uLim = result.B + 100.0 * (result.C - result.B);
+            if (options.UseLimits)
             {
-                aULim = detail.Limited(aULim, theOptions);
+                uLim = detail.Limited(uLim, options);
             }
-            double aFu = 0.0;
+            double fu = 0.0;
 
-            if ((aResult.B - aU) * (aU - aResult.C) > 0.0)
+            if ((result.B - u) * (u - result.C) > 0.0)
             {
                 // U is between B and C
-                if (!theFunc.Value(aU, out aFu))
+                if (!func.Value(u, out fu))
                 {
-                    return aResult;
+                    return result;
                 }
 
-                if (aFu < aResult.Fc)
+                if (fu < result.Fc)
                 {
-                    aResult.A = aResult.B;
-                    aResult.B = aU;
-                    aResult.Fa = aResult.Fb;
-                    aResult.Fb = aFu;
-                    aResult.IsValid = true;
-                    return aResult;
+                    result.A = result.B;
+                    result.B = u;
+                    result.Fa = result.Fb;
+                    result.Fb = fu;
+                    result.IsValid = true;
+                    return result;
                 }
-                else if (aFu > aResult.Fb)
+                else if (fu > result.Fb)
                 {
-                    aResult.C = aU;
-                    aResult.Fc = aFu;
-                    aResult.IsValid = true;
-                    return aResult;
+                    result.C = u;
+                    result.Fc = fu;
+                    result.IsValid = true;
+                    return result;
                 }
 
                 // Parabolic step didn't help, use golden section
-                aU = aResult.C + THE_GOLDEN_RATIO * (aResult.C - aResult.B);
-                if (theOptions.UseLimits)
+                u = result.C + THE_GOLDEN_RATIO * (result.C - result.B);
+                if (options.UseLimits)
                 {
-                    if (!detail.LimitAndMayBeSwap(theFunc, theOptions, aResult.B, ref aResult.C, ref aResult.Fc, ref aU, ref aFu))
+                    if (!detail.LimitAndMayBeSwap(func, options, result.B, ref result.C, ref result.Fc, ref u, ref fu))
                     {
-                        return aResult;
+                        return result;
                     }
                 }
-                else if (!theFunc.Value(aU, out aFu))
+                else if (!func.Value(u, out fu))
                 {
-                    return aResult;
+                    return result;
                 }
             }
-            else if ((aResult.C - aU) * (aU - aULim) > 0.0)
+            else if ((result.C - u) * (u - uLim) > 0.0)
             {
                 // U is between C and limit
-                if (theOptions.UseLimits)
+                if (options.UseLimits)
                 {
-                    if (!detail.LimitAndMayBeSwap(theFunc, theOptions, aResult.B, ref aResult.C, ref aResult.Fc, ref aU, ref aFu))
+                    if (!detail.LimitAndMayBeSwap(func, options, result.B, ref result.C, ref result.Fc, ref u, ref fu))
                     {
-                        return aResult;
+                        return result;
                     }
                 }
-                else if (!theFunc.Value(aU, out aFu))
+                else if (!func.Value(u, out fu))
                 {
-                    return aResult;
+                    return result;
                 }
 
-                if (aFu < aResult.Fc)
+                if (fu < result.Fc)
                 {
-                    aResult.B = aResult.C;
-                    aResult.C = aU;
-                    aU = aResult.C + THE_GOLDEN_RATIO * (aResult.C - aResult.B);
-                    aResult.Fb = aResult.Fc;
-                    aResult.Fc = aFu;
-                    if (theOptions.UseLimits)
+                    result.B = result.C;
+                    result.C = u;
+                    u = result.C + THE_GOLDEN_RATIO * (result.C - result.B);
+                    result.Fb = result.Fc;
+                    result.Fc = fu;
+                    if (options.UseLimits)
                     {
-                        if (!detail.LimitAndMayBeSwap(theFunc, theOptions, aResult.B, ref aResult.C, ref aResult.Fc, ref aU, ref aFu))
+                        if (!detail.LimitAndMayBeSwap(func, options, result.B, ref result.C, ref result.Fc, ref u, ref fu))
                         {
-                            return aResult;
+                            return result;
                         }
                     }
-                    else if (!theFunc.Value(aU, out aFu))
+                    else if (!func.Value(u, out fu))
                     {
-                        return aResult;
+                        return result;
                     }
                 }
             }
-            else if ((aU - aULim) * (aULim - aResult.C) >= 0.0)
+            else if ((u - uLim) * (uLim - result.C) >= 0.0)
             {
                 // U is beyond limit
-                aU = aULim;
-                if (theOptions.UseLimits)
+                u = uLim;
+                if (options.UseLimits)
                 {
-                    if (!detail.LimitAndMayBeSwap(theFunc, theOptions, aResult.B, ref aResult.C, ref aResult.Fc, ref aU, ref aFu))
+                    if (!detail.LimitAndMayBeSwap(func, options, result.B, ref result.C, ref result.Fc, ref u, ref fu))
                     {
-                        return aResult;
+                        return result;
                     }
                 }
-                else if (!theFunc.Value(aU, out aFu))
+                else if (!func.Value(u, out fu))
                 {
-                    return aResult;
+                    return result;
                 }
             }
             else
             {
                 // Default golden section step
-                aU = aResult.C + THE_GOLDEN_RATIO * (aResult.C - aResult.B);
-                if (theOptions.UseLimits)
+                u = result.C + THE_GOLDEN_RATIO * (result.C - result.B);
+                if (options.UseLimits)
                 {
-                    if (!detail.LimitAndMayBeSwap(theFunc, theOptions, aResult.B, ref aResult.C, ref aResult.Fc, ref aU, ref aFu))
+                    if (!detail.LimitAndMayBeSwap(func, options, result.B, ref result.C, ref result.Fc, ref u, ref fu))
                     {
-                        return aResult;
+                        return result;
                     }
                 }
-                else if (!theFunc.Value(aU, out aFu))
+                else if (!func.Value(u, out fu))
                 {
-                    return aResult;
+                    return result;
                 }
             }
 
             // Shift points
-            aResult.A = aResult.B;
-            aResult.B = aResult.C;
-            aResult.C = aU;
-            aResult.Fa = aResult.Fb;
-            aResult.Fb = aResult.Fc;
-            aResult.Fc = aFu;
+            result.A = result.B;
+            result.B = result.C;
+            result.C = u;
+            result.Fa = result.Fb;
+            result.Fb = result.Fc;
+            result.Fc = fu;
         }
 
-        aResult.IsValid = (aResult.Fb < aResult.Fa && aResult.Fb < aResult.Fc);
+        result.IsValid = (result.Fb < result.Fa && result.Fb < result.Fc);
 
         // Ensure A < B < C ordering
-        if (aResult.IsValid && aResult.A > aResult.C)
+        if (result.IsValid && result.A > result.C)
         {
-            (aResult.A, aResult.C) = (aResult.C, aResult.A);
-            (aResult.Fa, aResult.Fc) = (aResult.Fc, aResult.Fa);
+            (result.A, result.C) = (result.C, result.A);
+            (result.Fa, result.Fc) = (result.Fc, result.Fa);
         }
 
-        if (aResult.IsValid && !(aResult.A < aResult.B && aResult.B < aResult.C))
+        if (result.IsValid && !(result.A < result.B && result.B < result.C))
         {
-            aResult.IsValid = false;
+            result.IsValid = false;
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>Backward-compatible convenience overload with only max-iterations argument.</summary>
-    public static MinBracketResult BracketMinimum<Function>(Function theFunc, double theA, double theB, int theMaxIter)
+    public static MinBracketResult BracketMinimum<Function>(Function func, double a, double b, int maxIter)
         where Function : IScalarFunction
     {
-        MinBracketOptions anOptions = new();
-        anOptions.MaxIterations = theMaxIter;
-        return BracketMinimum(theFunc, theA, theB, anOptions);
+        MinBracketOptions options = new();
+        options.MaxIterations = maxIter;
+        return BracketMinimum(func, a, b, options);
     }
 }

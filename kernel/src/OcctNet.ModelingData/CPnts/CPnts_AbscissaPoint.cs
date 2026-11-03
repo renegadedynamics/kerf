@@ -13,7 +13,10 @@
 //  by successive iteration find the point and its associated parameter
 //  call to FunctionRoot
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -37,13 +40,13 @@ public sealed class CPnts_AbscissaPoint
     // auxiliary functions to compute the length of the derivative
     private static double f3d(double X, object? C)
     {
-        ((Adaptor3d_Curve)C!).D1(X, out _, out gp_Vec V);
+        ((Adaptor3d_Curve)C!).D1(X, out _, out Vector3D V);
         return V.Magnitude();
     }
 
     private static double f2d(double X, object? C)
     {
-        ((Adaptor2d_Curve2d)C!).D1(X, out _, out gp_Vec2d V);
+        ((Adaptor2d_Curve2d)C!).D1(X, out _, out Vector2D V);
         return V.Magnitude();
     }
 
@@ -55,16 +58,16 @@ public sealed class CPnts_AbscissaPoint
     {
         switch (C.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return 2;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 return 5;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 return Min(24, 2 * C.Degree());
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 return Min(24, 2 * C.NbPoles() - 1);
 
             default:
@@ -76,16 +79,16 @@ public sealed class CPnts_AbscissaPoint
     {
         switch (C.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
                 return 2;
 
-            case GeomAbs_Parabola:
+            case Parabola:
                 return 5;
 
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 return Min(24, 2 * C.Bezier().Degree());
 
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 return Min(24, 2 * C.BSpline().NbPoles() - 1);
 
             default:
@@ -118,61 +121,61 @@ public sealed class CPnts_AbscissaPoint
     }
 
     /// <summary>The length of the curve between the parameters U1 and U2.</summary>
-    /// <exception cref="Standard_ConstructionError">The integration fails.</exception>
+    /// <exception cref="ConstructionErrorException">The integration fails.</exception>
     public static double Length(Adaptor3d_Curve C, double U1, double U2)
     {
         CPnts_MyGaussFunction FG = new();
         CPnts_RealFunction rf = s_f3d;
         FG.Init(rf, C);
-        math_GaussSingleIntegration TheLength = new(FG, U1, U2, order(C));
-        if (!TheLength.IsDone())
+        GaussSingleIntegration TheLength = new(FG, U1, U2, order(C));
+        if (!TheLength.IsDone)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         return Math.Abs(TheLength.Value());
     }
 
     /// <summary>The length of the curve between the parameters U1 and U2.</summary>
-    /// <exception cref="Standard_ConstructionError">The integration fails.</exception>
+    /// <exception cref="ConstructionErrorException">The integration fails.</exception>
     public static double Length(Adaptor2d_Curve2d C, double U1, double U2)
     {
         CPnts_MyGaussFunction FG = new();
         CPnts_RealFunction rf = s_f2d;
         FG.Init(rf, C);
-        math_GaussSingleIntegration TheLength = new(FG, U1, U2, order(C));
-        if (!TheLength.IsDone())
+        GaussSingleIntegration TheLength = new(FG, U1, U2, order(C));
+        if (!TheLength.IsDone)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         return Math.Abs(TheLength.Value());
     }
 
     /// <summary>The length of the curve between the parameters U1 and U2 with the given tolerance.</summary>
-    /// <exception cref="Standard_ConstructionError">The integration fails.</exception>
+    /// <exception cref="ConstructionErrorException">The integration fails.</exception>
     public static double Length(Adaptor3d_Curve C, double U1, double U2, double Tol)
     {
         CPnts_MyGaussFunction FG = new();
         CPnts_RealFunction rf = s_f3d;
         FG.Init(rf, C);
-        math_GaussSingleIntegration TheLength = new(FG, U1, U2, order(C), Tol);
-        if (!TheLength.IsDone())
+        GaussSingleIntegration TheLength = new(FG, U1, U2, order(C), Tol);
+        if (!TheLength.IsDone)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         return Math.Abs(TheLength.Value());
     }
 
     /// <summary>The length of the curve between the parameters U1 and U2 with the given tolerance.</summary>
-    /// <exception cref="Standard_ConstructionError">The integration fails.</exception>
+    /// <exception cref="ConstructionErrorException">The integration fails.</exception>
     public static double Length(Adaptor2d_Curve2d C, double U1, double U2, double Tol)
     {
         CPnts_MyGaussFunction FG = new();
         CPnts_RealFunction rf = s_f2d;
         FG.Init(rf, C);
-        math_GaussSingleIntegration TheLength = new(FG, U1, U2, order(C), Tol);
-        if (!TheLength.IsDone())
+        GaussSingleIntegration TheLength = new(FG, U1, U2, order(C), Tol);
+        if (!TheLength.IsDone)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         return Math.Abs(TheLength.Value());
     }
@@ -295,7 +298,7 @@ public sealed class CPnts_AbscissaPoint
     /// <summary>Computes the point at the distance Abscissa from the point of parameter U0.</summary>
     public void Perform(double Abscissa, double U0, double Resolution)
     {
-        if (myL < Precision.Confusion())
+        if (myL < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             //
             //  leave less violently : it is expected that
@@ -315,7 +318,7 @@ public sealed class CPnts_AbscissaPoint
     /// <summary>Computes the point at the distance Abscissa from the point of parameter U0, starting from Ui.</summary>
     public void Perform(double Abscissa, double U0, double Ui, double Resolution)
     {
-        if (myL < Precision.Confusion())
+        if (myL < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             //
             //  leave less violently :
@@ -328,12 +331,12 @@ public sealed class CPnts_AbscissaPoint
             myDone = false;
             myF.Init(U0, Abscissa);
 
-            math_FunctionRoot Solution = new(myF, Ui, Resolution, myUMin, myUMax);
+            FunctionRoot Solution = new(myF, Ui, Resolution, myUMin, myUMax);
 
             // Temporarily suspend the validity test of the solution
             // it is necessary to make a tolreached as soon as one will make a cdl
             // lbo 21/03/97
-            if (Solution.IsDone())
+            if (Solution.IsDone)
             {
                 myDone = true;
                 myParam = Solution.Root();
@@ -347,7 +350,7 @@ public sealed class CPnts_AbscissaPoint
     /// </summary>
     public void AdvPerform(double Abscissa, double U0, double Ui, double Resolution)
     {
-        if (myL < Precision.Confusion())
+        if (myL < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             //
             //  leave less violently :
@@ -361,12 +364,12 @@ public sealed class CPnts_AbscissaPoint
             //    myF.Init(U0, Abscissa);
             myF.Init(U0, Abscissa, Resolution / 10); // rbv's modification
 
-            math_FunctionRoot Solution = new(myF, Ui, Resolution, myUMin, myUMax);
+            FunctionRoot Solution = new(myF, Ui, Resolution, myUMin, myUMax);
 
             // Temporarily suspend the validity test of the solution
             // it is necessary to make a tolreached as soon as one will make a cdl
             // lbo 21/03/97
-            if (Solution.IsDone())
+            if (Solution.IsDone)
             {
                 myDone = true;
                 myParam = Solution.Root();
@@ -378,7 +381,7 @@ public sealed class CPnts_AbscissaPoint
     public bool IsDone() => myDone;
 
     /// <summary>The parameter of the solution.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double Parameter()
     {
         StdFail_NotDone_Raise_if(!myDone, "CPnts_AbscissaPoint::Parameter() - no result");

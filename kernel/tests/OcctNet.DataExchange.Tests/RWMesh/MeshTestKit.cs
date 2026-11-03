@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 
 namespace OcctNet.DataExchange.Tests;
@@ -7,9 +11,9 @@ namespace OcctNet.DataExchange.Tests;
 /// <summary>Shapes, trees and comparisons shared by the assembly tree's and the mesh formats' tests (unit 8T).</summary>
 internal static class MeshTestKit
 {
-    public static readonly Quantity_ColorRGBA Red = new(1.0f, 0.0f, 0.0f, 1.0f);
-    public static readonly Quantity_ColorRGBA Green = new(0.0f, 1.0f, 0.0f, 1.0f);
-    public static readonly Quantity_ColorRGBA Blue = new(0.0f, 0.0f, 1.0f, 0.5f);
+    public static readonly ColorWithAlpha Red = new(1.0f, 0.0f, 0.0f, 1.0f);
+    public static readonly ColorWithAlpha Green = new(0.0f, 1.0f, 0.0f, 1.0f);
+    public static readonly ColorWithAlpha Blue = new(0.0f, 0.0f, 1.0f, 0.5f);
 
     public static IMeshTools_Parameters MeshParameters => new() { Deflection = 0.1, Angle = 0.5 };
 
@@ -21,13 +25,13 @@ internal static class MeshTestKit
     public static TopoDS_Shape MeshedBox(double theDx, double theDy, double theDz)
         => BRepMesh_IncrementalMesh.Meshed(Box(theDx, theDy, theDz), MeshParameters);
 
-    public static TopLoc_Location Translation(double theX, double theY, double theZ)
-        => new(gp_Trsf.Translation(new gp_Vec(theX, theY, theZ)));
+    public static Placement Translation(double theX, double theY, double theZ)
+        => new(Transform3D.Translation(new Vector3D(theX, theY, theZ)));
 
     /// <summary>A quarter turn about Z, then a translation.</summary>
-    public static TopLoc_Location QuarterTurn(double theX, double theY, double theZ)
-        => new(gp_Trsf.Translation(new gp_Vec(theX, theY, theZ))
-               * gp_Trsf.Rotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Math.PI / 2));
+    public static Placement QuarterTurn(double theX, double theY, double theZ)
+        => new(Transform3D.Translation(new Vector3D(theX, theY, theZ))
+               * Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 2));
 
     /// <summary>
     /// A sample assembly placed at (1, 2, 3): a red box "Box" twice (the second turned, green, named "Box2" on the
@@ -60,14 +64,14 @@ internal static class MeshTestKit
             for (var anExp = new TopExp_Explorer(anItem.Shape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
             {
                 TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+                Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
                 if (aTri is null)
                 {
                     continue;
                 }
-                gp_Trsf aTrsf = aLoc.Transformation();
+                Transform3D aTrsf = aLoc.Transformation();
                 bool toSwap = (aFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED) ^ (aTrsf.VectorialPart().Determinant() < 0);
-                for (int i = 1; i <= aTri.NbTriangles(); i++)
+                for (int i = 1; i <= aTri.TriangleCount; i++)
                 {
                     aTri.Triangle(i).Get(out int a, out int b, out int c);
                     if (toSwap)
@@ -82,7 +86,7 @@ internal static class MeshTestKit
         return aResult;
     }
 
-    public static string Canonical(gp_Pnt theA, gp_Pnt theB, gp_Pnt theC)
+    public static string Canonical(Point3D theA, Point3D theB, Point3D theC)
     {
         string[] aPoints = [Key(theA), Key(theB), Key(theC)];
         int aFirst = 0;
@@ -96,7 +100,7 @@ internal static class MeshTestKit
         return aPoints[aFirst] + "|" + aPoints[(aFirst + 1) % 3] + "|" + aPoints[(aFirst + 2) % 3];
     }
 
-    public static string Key(gp_Pnt theP)
+    public static string Key(Point3D theP)
     {
         static string r(double v)
         {
@@ -126,11 +130,11 @@ internal static class MeshTestKit
         int aTris = 0, aNodes = 0;
         for (var anExp = new TopExp_Explorer(theShape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
         {
-            Poly_Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(anExp.Current()), out _);
+            Triangulation? aTri = BRep_Tool.Triangulation(TopoDS.Face(anExp.Current()), out _);
             if (aTri is not null)
             {
-                aTris += aTri.NbTriangles();
-                aNodes += aTri.NbNodes();
+                aTris += aTri.TriangleCount;
+                aNodes += aTri.NodeCount;
             }
         }
         return (aTris, aNodes);

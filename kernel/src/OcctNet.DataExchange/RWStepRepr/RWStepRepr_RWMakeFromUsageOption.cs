@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -64,8 +66,8 @@ internal class RWStepRepr_RWMakeFromUsageOption
         TCollection_HAsciiString aRankingRationale = null;
         data.ReadString(num, 7, "ranking_rationale", ach, ref aRankingRationale);
 
-        Standard_Transient aQuantity = null;
-        data.ReadEntity(num, 8, "quantity", ach, typeof(Standard_Transient), ref aQuantity);
+        Transient aQuantity = null;
+        data.ReadEntity(num, 8, "quantity", ach, typeof(Transient), ref aQuantity);
 
         // Initialize entity
         ent.Init(aProductDefinitionRelationship_Id, aProductDefinitionRelationship_Name, hasProductDefinitionRelationship_Description, aProductDefinitionRelationship_Description, aProductDefinitionRelationship_RelatingProductDefinition, aProductDefinitionRelationship_RelatedProductDefinition, aRanking, aRankingRationale, aQuantity);

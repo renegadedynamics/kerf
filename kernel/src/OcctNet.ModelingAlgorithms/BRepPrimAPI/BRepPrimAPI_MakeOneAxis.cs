@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The root of the makers of primitives with one axis of revolution (cylinder, cone, sphere, torus, revolution).</summary>
@@ -20,7 +22,7 @@ public abstract class BRepPrimAPI_MakeOneAxis : BRepBuilderAPI_MakeShape
     internal abstract BRepPrim_OneAxis OneAxis();
 
     /// <summary>Stores the solid in the result (a new solid holding the shell each time, as OCCT).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         var B = new BRep_Builder();
         // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).

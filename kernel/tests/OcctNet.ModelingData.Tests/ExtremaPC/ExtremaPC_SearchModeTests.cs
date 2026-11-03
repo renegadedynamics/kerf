@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_SearchMode_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_SearchModeTest
@@ -94,10 +96,10 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void Line_MinMode()
     {
-        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
 
-        gp_Pnt aPoint = new(25.0, 10.0, 0.0);
+        Point3D aPoint = new(25.0, 10.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -120,10 +122,10 @@ public class ExtremaPC_SearchModeTest
     {
         // For bounded lines, Max mode with endpoints includes endpoint maxima.
         // The maximum distance is at the farthest endpoint, not the perpendicular projection.
-        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine, -50.0, 50.0);
 
-        gp_Pnt aPoint = new(0.0, 10.0, 0.0);
+        Point3D aPoint = new(0.0, 10.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -143,10 +145,10 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void Line_MinMaxMode()
     {
-        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine, -50.0, 50.0);
 
-        gp_Pnt aPoint = new(10.0, 5.0, 0.0);
+        Point3D aPoint = new(10.0, 5.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -172,10 +174,10 @@ public class ExtremaPC_SearchModeTest
     public void Circle_MinMode_PointOutside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -197,10 +199,10 @@ public class ExtremaPC_SearchModeTest
     public void Circle_MaxMode_PointOutside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -222,10 +224,10 @@ public class ExtremaPC_SearchModeTest
     public void Circle_MinMode_PointInside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(3.0, 0.0, 0.0);
+        Point3D aPoint = new(3.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -242,10 +244,10 @@ public class ExtremaPC_SearchModeTest
     public void Circle_MaxMode_PointInside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(3.0, 0.0, 0.0);
+        Point3D aPoint = new(3.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -262,10 +264,10 @@ public class ExtremaPC_SearchModeTest
     public void Circle_MinMaxMode()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(15.0, 0.0, 0.0);
+        Point3D aPoint = new(15.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -291,11 +293,11 @@ public class ExtremaPC_SearchModeTest
     public void Circle_PartialArc_MinMode()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         // Only first quadrant: 0 to PI/2
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle, 0.0, M_PI / 2.0);
 
-        gp_Pnt aPoint = new(15.0, 15.0, 0.0);
+        Point3D aPoint = new(15.0, 15.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -318,11 +320,11 @@ public class ExtremaPC_SearchModeTest
         // endpoint (which is not a true extremum in the mathematical sense).
         // This test verifies the implementation completes successfully.
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         // Only first quadrant: 0 to PI/2
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle, 0.0, M_PI / 2.0);
 
-        gp_Pnt aPoint = new(15.0, 15.0, 0.0);
+        Point3D aPoint = new(15.0, 15.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -338,7 +340,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter >= 0.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= M_PI / 2.0 + THE_TOL);
             // Point should be on the curve
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
         }
     }
@@ -351,10 +353,10 @@ public class ExtremaPC_SearchModeTest
     public void Ellipse_MinMode_OnMajorAxis()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -376,10 +378,10 @@ public class ExtremaPC_SearchModeTest
     public void Ellipse_MaxMode_OnMajorAxis()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -401,10 +403,10 @@ public class ExtremaPC_SearchModeTest
     public void Ellipse_MinMode_General()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(15.0, 12.0, 0.0);
+        Point3D aPoint = new(15.0, 12.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -424,10 +426,10 @@ public class ExtremaPC_SearchModeTest
     public void Ellipse_MinMaxMode()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(15.0, 8.0, 0.0);
+        Point3D aPoint = new(15.0, 8.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -455,10 +457,10 @@ public class ExtremaPC_SearchModeTest
     public void Parabola_MinMode_AtVertex()
     {
         Geom_Parabola aGeomParabola =
-            new Geom_Parabola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+            new Geom_Parabola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -20.0, 20.0);
 
-        gp_Pnt aPoint = new(0.0, 5.0, 0.0);
+        Point3D aPoint = new(0.0, 5.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -478,10 +480,10 @@ public class ExtremaPC_SearchModeTest
     public void Parabola_MaxMode()
     {
         Geom_Parabola aGeomParabola =
-            new Geom_Parabola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+            new Geom_Parabola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -20.0, 20.0);
 
-        gp_Pnt aPoint = new(0.0, 5.0, 0.0);
+        Point3D aPoint = new(0.0, 5.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         // Use PerformWithEndpoints to find maximum which includes endpoints
@@ -497,7 +499,7 @@ public class ExtremaPC_SearchModeTest
             var aExtremum = aNewResult[aNewResult.MaxIndex()];
             Assert.True(aExtremum.Parameter >= -20.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 20.0 + THE_TOL);
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
         }
     }
@@ -506,10 +508,10 @@ public class ExtremaPC_SearchModeTest
     public void Parabola_MinMode_OffAxis()
     {
         Geom_Parabola aGeomParabola =
-            new Geom_Parabola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 5.0);
+            new Geom_Parabola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -20.0, 20.0);
 
-        gp_Pnt aPoint = new(10.0, -5.0, 0.0);
+        Point3D aPoint = new(10.0, -5.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -533,10 +535,10 @@ public class ExtremaPC_SearchModeTest
     public void Hyperbola_MinMode()
     {
         Geom_Hyperbola aGeomHyperbola =
-            new Geom_Hyperbola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 5.0);
+            new Geom_Hyperbola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
 
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -558,10 +560,10 @@ public class ExtremaPC_SearchModeTest
         // NOTE: Max mode for bounded curves may not find extrema if the max is at
         // an endpoint (which is not a true extremum in the mathematical sense).
         Geom_Hyperbola aGeomHyperbola =
-            new Geom_Hyperbola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 5.0);
+            new Geom_Hyperbola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
 
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -575,7 +577,7 @@ public class ExtremaPC_SearchModeTest
             var aExtremum = aNewResult[aNewResult.MaxIndex()];
             Assert.True(aExtremum.Parameter >= -2.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 2.0 + THE_TOL);
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
         }
     }
@@ -587,11 +589,11 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void BSpline_MinMode()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(3, 2, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(3, 2, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -604,7 +606,7 @@ public class ExtremaPC_SearchModeTest
         Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
-        gp_Pnt aPoint = new(2.0, 3.0, 0.0);
+        Point3D aPoint = new(2.0, 3.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -625,11 +627,11 @@ public class ExtremaPC_SearchModeTest
     public void BSpline_MaxMode()
     {
         // NOTE: Max mode for BSpline may not find extrema if the max is at an endpoint.
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(3, 2, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(3, 2, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -642,7 +644,7 @@ public class ExtremaPC_SearchModeTest
         Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
-        gp_Pnt aPoint = new(2.0, 1.0, 0.0);
+        Point3D aPoint = new(2.0, 1.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -656,7 +658,7 @@ public class ExtremaPC_SearchModeTest
             var aExtremum = aNewResult[aNewResult.MaxIndex()];
             Assert.True(aExtremum.Parameter >= 0.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 1.0 + THE_TOL);
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
         }
     }
@@ -664,11 +666,11 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void BSpline_MinMaxMode()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(3, 2, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(3, 2, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -681,7 +683,7 @@ public class ExtremaPC_SearchModeTest
         Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
-        gp_Pnt aPoint = new(2.0, 1.5, 0.0);
+        Point3D aPoint = new(2.0, 1.5, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -696,7 +698,7 @@ public class ExtremaPC_SearchModeTest
             var aExtremum = aNewResult[i];
             Assert.True(aExtremum.Parameter >= 0.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 1.0 + THE_TOL);
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
         }
 
@@ -717,16 +719,16 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void Bezier_MinMode()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 3, 0);
-        aPoles[3] = new gp_Pnt(3, 3, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 3, 0);
+        aPoles[3] = new Point3D(3, 3, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         Geom_BezierCurve aBezier = new Geom_BezierCurve(aPoles);
         GeomAdaptor_Curve anAdaptor = new(aBezier);
 
-        gp_Pnt aPoint = new(2.0, 4.0, 0.0);
+        Point3D aPoint = new(2.0, 4.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -745,16 +747,16 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void Bezier_MaxMode()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 3, 0);
-        aPoles[3] = new gp_Pnt(3, 3, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 3, 0);
+        aPoles[3] = new Point3D(3, 3, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         Geom_BezierCurve aBezier = new Geom_BezierCurve(aPoles);
         GeomAdaptor_Curve anAdaptor = new(aBezier);
 
-        gp_Pnt aPoint = new(2.0, 1.0, 0.0);
+        Point3D aPoint = new(2.0, 1.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -778,12 +780,12 @@ public class ExtremaPC_SearchModeTest
     public void OffsetCircle_MinMode()
     {
         Geom_Circle aBaseCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         Geom_OffsetCurve anOffsetCurve =
-            new Geom_OffsetCurve(aBaseCircle, 5.0, new gp_Dir(0, 0, 1));
+            new Geom_OffsetCurve(aBaseCircle, 5.0, new Direction3D(0, 0, 1));
         GeomAdaptor_Curve anAdaptor = new(anOffsetCurve);
 
-        gp_Pnt aPoint = new(25.0, 0.0, 0.0);
+        Point3D aPoint = new(25.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -806,12 +808,12 @@ public class ExtremaPC_SearchModeTest
         // NOTE: Max mode for offset curves may not find extrema depending on the
         // BVH subdivision strategy.
         Geom_Circle aBaseCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         Geom_OffsetCurve anOffsetCurve =
-            new Geom_OffsetCurve(aBaseCircle, 5.0, new gp_Dir(0, 0, 1));
+            new Geom_OffsetCurve(aBaseCircle, 5.0, new Direction3D(0, 0, 1));
         GeomAdaptor_Curve anAdaptor = new(anOffsetCurve);
 
-        gp_Pnt aPoint = new(25.0, 0.0, 0.0);
+        Point3D aPoint = new(25.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult =
@@ -823,7 +825,7 @@ public class ExtremaPC_SearchModeTest
         if (aNewResult.NbExt() > 0)
         {
             var aExtremum = aNewResult[aNewResult.MaxIndex()];
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
 
             // The max distance should be around 40 (25 + 15)
@@ -840,14 +842,14 @@ public class ExtremaPC_SearchModeTest
     public void Circle_RandomPoints_MinMode()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         Mt19937 aGen = new(12345); // std::mt19937
 
         for (int i = 0; i < 50; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
+            Point3D aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult =
@@ -873,14 +875,14 @@ public class ExtremaPC_SearchModeTest
     public void Circle_RandomPoints_MaxMode()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         Mt19937 aGen = new(12345); // std::mt19937
 
         for (int i = 0; i < 50; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
+            Point3D aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult =
@@ -906,14 +908,14 @@ public class ExtremaPC_SearchModeTest
     public void Ellipse_RandomPoints_MinMode()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
         Mt19937 aGen = new(54321); // std::mt19937
 
         for (int i = 0; i < 50; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
+            Point3D aPoint = new(aGen.NextReal(-50.0, 50.0), aGen.NextReal(-50.0, 50.0), 0.0);
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult =
@@ -938,11 +940,11 @@ public class ExtremaPC_SearchModeTest
     [Fact]
     public void BSpline_RandomPoints_MinMode()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(3, 2, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(3, 2, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -962,7 +964,7 @@ public class ExtremaPC_SearchModeTest
 
         for (int i = 0; i < 30; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-2.0, 6.0), aGen.NextReal(-2.0, 6.0), 0.0);
+            Point3D aPoint = new(aGen.NextReal(-2.0, 6.0), aGen.NextReal(-2.0, 6.0), 0.0);
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult =

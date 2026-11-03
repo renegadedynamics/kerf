@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
@@ -23,11 +25,11 @@ public class ShapeUpgrade_UnifySameDomainTests
     private static TopoDS_Shell TwoCoplanarFaces(bool theToFreeze, out TopoDS_Edge theSharedEdge)
     {
         var B = new BRep_Builder();
-        gp_Pnt[] aP = [new(0, 0, 0), new(5, 0, 0), new(10, 0, 0), new(10, 4, 0), new(5, 4, 0), new(0, 4, 0)];
+        Point3D[] aP = [new(0, 0, 0), new(5, 0, 0), new(10, 0, 0), new(10, 4, 0), new(5, 4, 0), new(0, 4, 0)];
         var aV = new TopoDS_Vertex[6];
         for (int i = 0; i < 6; i++)
         {
-            B.MakeVertex(ref aV[i], aP[i], Precision.Confusion());
+            B.MakeVertex(ref aV[i], aP[i], global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         TopoDS_Edge E(int i, int j) => new BRepBuilderAPI_MakeEdge(aV[i], aV[j]).InternalEdge();
         TopoDS_Edge e01 = E(0, 1), e12 = E(1, 2), e23 = E(2, 3), e34 = E(3, 4), e45 = E(4, 5), e50 = E(5, 0), e14 = E(1, 4);
@@ -41,7 +43,7 @@ public class ShapeUpgrade_UnifySameDomainTests
                 B.Add(aW, anEdge);
             }
             aW.Closed(true);
-            return new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Ax3(gp.XOY())), aW).InternalFace();
+            return new BRepBuilderAPI_MakeFace(new Plane3D(new CoordinateSystem(Constants.XOY())), aW).InternalFace();
         }
         TopoDS_Face aLeft = F(e01, e14, e45, e50);
         TopoDS_Face aRight = F(e12, e23, e34, TopoDS.Edge(e14.Reversed()));
@@ -79,7 +81,7 @@ public class ShapeUpgrade_UnifySameDomainTests
     {
         var aMap = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(theShape, aMap);
-        return aMap.All(s => s.TShape()!.IsFrozen());
+        return aMap.All(s => s.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -122,7 +124,7 @@ public class ShapeUpgrade_UnifySameDomainTests
     [Fact]
     public void NothingToUnify_GivesBackTheInputItself()
     {
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 10)).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aBox, true, true, true);
         aUnifier.Build();
         TopoDS_Shape aResult = aUnifier.Shape();
@@ -157,11 +159,11 @@ public class ShapeUpgrade_UnifySameDomainTests
         var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell, false, true);
         aUnifier.Build();
         TopoDS_Shape anInternal = aUnifier.InternalShape();
-        Assert.False(anInternal.TShape()!.IsFrozen());
+        Assert.False(anInternal.TShape()!.IsFrozen);
         Assert.Equal(1, Count(anInternal, TopAbs_FACE));
         // no copy: the boundary edges are the input's, as in OCCT
         Assert.Equal(6, TShapes(anInternal, TopAbs_EDGE).Intersect(anEdges).Count());
-        Assert.True(aUnifier.Shape().TShape()!.IsFrozen());
+        Assert.True(aUnifier.Shape().TShape()!.IsFrozen);
     }
 
     [Fact]

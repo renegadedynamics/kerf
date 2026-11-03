@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The root of the Boolean API algorithms.</summary>
@@ -51,7 +53,7 @@ public abstract class BRepAlgoAPI_Algo : BRepBuilderAPI_MakeShape
     public void SetFuzzyValue(double theFuzz) => myOptions.SetFuzzyValue(theFuzz);
 
     /// <summary>The report of warnings and errors.</summary>
-    public Message_Report GetReport() => myOptions.GetReport();
+    public Report GetReport() => myOptions.GetReport();
 
     /// <summary>True if the algorithm failed with an error of exactly this type.</summary>
     public bool HasError(Type theType) => myOptions.HasError(theType);
@@ -78,8 +80,8 @@ public abstract class BRepAlgoAPI_Algo : BRepBuilderAPI_MakeShape
     public bool UseOBB() => myOptions.UseOBB();
 
     /// <summary>Adds an error (BOPAlgo_Options' <c>AddError</c>, for the derived algorithms).</summary>
-    private protected void AddError(Message_Alert theAlert) => myOptions.AddError(theAlert);
+    private protected void AddError(Alert theAlert) => myOptions.AddError(theAlert);
 
     /// <summary>Adds a warning.</summary>
-    private protected void AddWarning(Message_Alert theAlert) => myOptions.AddWarning(theAlert);
+    private protected void AddWarning(Alert theAlert) => myOptions.AddWarning(theAlert);
 }

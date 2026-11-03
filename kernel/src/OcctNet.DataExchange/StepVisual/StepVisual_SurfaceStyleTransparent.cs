@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceStyleTransparent
 /// </summary>
-public class StepVisual_SurfaceStyleTransparent : Standard_Transient
+public class StepVisual_SurfaceStyleTransparent : Transient
 {
     private double myTransparency;
 

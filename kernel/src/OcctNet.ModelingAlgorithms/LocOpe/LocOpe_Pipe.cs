@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -116,7 +119,7 @@ public sealed class LocOpe_Pipe
                     {
                         P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
                     }
-                    gp_Pln Plref = ((Geom_Plane)P).Pln();
+                    Plane3D Plref = ((Geom_Plane)P).Pln();
 
                     for (int itm = 2; itm <= MapFac.Extent(); itm++)
                     {
@@ -125,9 +128,9 @@ public sealed class LocOpe_Pipe
                         {
                             P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
                         }
-                        gp_Pln Pl0 = ((Geom_Plane)P).Pln();
-                        if (Pl0.Axis().IsParallel(Plref.Axis(), Precision.Angular())
-                            && Plref.Contains(Pl0.Location(), Precision.Confusion()))
+                        Plane3D Pl0 = ((Geom_Plane)P).Pln();
+                        if (Pl0.Axis().IsParallel(Plref.Axis(), global::Kerf.Engine.Foundation.Precision.Angular())
+                            && Plref.Contains(Pl0.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             FacFuse.Append(MapFac[itm]);
                         }
@@ -147,7 +150,7 @@ public sealed class LocOpe_Pipe
                             P = ((Geom_RectangularTrimmedSurface)P).BasisSurface();
                         }
                         Plref = ((Geom_Plane)P).Pln();
-                        gp_Dir Dirref = Plref.Axis().Direction();
+                        Direction3D Dirref = Plref.Axis().Direction();
                         if ((Plref.Direct() && orref == TopAbs_REVERSED) || (!Plref.Direct() && orref == TopAbs_FORWARD))
                         {
                             Dirref.Reverse();
@@ -194,8 +197,8 @@ public sealed class LocOpe_Pipe
                                 {
                                     OtherP = ((Geom_RectangularTrimmedSurface)OtherP).BasisSurface();
                                 }
-                                gp_Pln Pl = ((Geom_Plane)OtherP).Pln();
-                                gp_Dir Dirpl = Pl.Axis().Direction();
+                                Plane3D Pl = ((Geom_Plane)OtherP).Pln();
+                                Direction3D Dirpl = Pl.Axis().Direction();
                                 // OCCT: the second test reads the reference plane's Direct (occt-issues.md)
                                 if ((Pl.Direct() && orrelat == TopAbs_REVERSED) || (!Plref.Direct() && orrelat == TopAbs_FORWARD))
                                 {
@@ -319,7 +322,7 @@ public sealed class LocOpe_Pipe
         TopAbs_ShapeEnum typS = S.ShapeType();
         if (typS != TopAbs_EDGE && typS != TopAbs_VERTEX)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         TopExp_Explorer exp = new(myWork.Copied(myProfile), typS);
         for (; exp.More(); exp.Next())
@@ -331,7 +334,7 @@ public sealed class LocOpe_Pipe
         }
         if (!exp.More())
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
 
         myGShap = new NCollection_List<TopoDS_Shape>(); // OCCT clears the list it returned before
@@ -356,10 +359,10 @@ public sealed class LocOpe_Pipe
 
     // OCCT.NET: OCCT segments and re-knots the converted curve in place; a frozen one is changed on a copy
     private static Geom_BSplineCurve Writable(Geom_BSplineCurve theCurve) =>
-        theCurve.IsFrozen() ? (Geom_BSplineCurve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom_BSplineCurve)theCurve.Copy() : theCurve;
 
     /// <summary>The curves along the pipe through the points <paramref name="Spt"/> (one per point, null if none).</summary>
-    public NCollection_Sequence<Geom_Curve?> Curves(NCollection_Sequence<gp_Pnt> Spt)
+    public NCollection_Sequence<Geom_Curve?> Curves(NCollection_Sequence<Point3D> Spt)
     {
         myCrvs.Clear();
 
@@ -367,7 +370,7 @@ public sealed class LocOpe_Pipe
 
         for (i = 1; i <= Nbpnt; i++)
         {
-            gp_Pnt P1 = Spt[i];
+            Point3D P1 = Spt[i];
             int MaxDeg = 0;
             NCollection_Sequence<Geom_Curve> seq = new();
             TopoDS_Wire W = myPipe.InternalPipeLine(P1);
@@ -389,7 +392,7 @@ public sealed class LocOpe_Pipe
                     C.Segment(p1, p2);
                 }
                 NCollection_Array1<double> Tkn = new(C.InternalKnots());
-                BSplCLib.Reparametrize(seq.Length(), seq.Length() + 1, Tkn);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(seq.Length(), seq.Length() + 1, Tkn);
                 C.SetKnots(Tkn);
                 seq.Append(C);
             }
@@ -415,7 +418,7 @@ public sealed class LocOpe_Pipe
             Nbkn -= Nbcurv - 1;
             NCollection_Array1<double> Tkn2 = new(1, Nbkn);
             NCollection_Array1<int> Tmu = new(1, Nbkn);
-            NCollection_Array1<gp_Pnt> Tpol = new(1, Nbp);
+            NCollection_Array1<Point3D> Tpol = new(1, Nbp);
             int Ik = 0, Ip = 0;
 
             Bsp = (Geom_BSplineCurve)seq[1];
@@ -466,7 +469,7 @@ public sealed class LocOpe_Pipe
                 return exp.Current().Orientation();
             }
         }
-        throw new Standard_NoSuchObject();
+        throw new NoSuchObjectException();
     }
 
     /// <summary>The curve along the pipe through the barycentre of the first shape's sample points.</summary>
@@ -474,19 +477,19 @@ public sealed class LocOpe_Pipe
     {
         int j, k;
 
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         TopoDS_Shape Base = InternalFirstShape();
         LocOpe.SampleEdges(Base, spt);
-        gp_XYZ aBar = new(0.0, 0.0, 0.0);
+        Xyz aBar = new(0.0, 0.0, 0.0);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             aBar += pvt.XYZ();
         }
         aBar.Divide(spt.Length());
-        gp_Pnt bar = new(aBar);
+        Point3D bar = new(aBar);
 
-        gp_Pnt P1 = bar;
+        Point3D P1 = bar;
 
         int MaxDeg = 0;
         NCollection_Sequence<Geom_Curve> seq = new();
@@ -510,7 +513,7 @@ public sealed class LocOpe_Pipe
                 C.Segment(p1, p2);
             }
             NCollection_Array1<double> Tkn0 = new(C.InternalKnots());
-            BSplCLib.Reparametrize(seq.Length(), seq.Length() + 1, Tkn0);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(seq.Length(), seq.Length() + 1, Tkn0);
             C.SetKnots(Tkn0);
             seq.Append(C);
         }
@@ -533,7 +536,7 @@ public sealed class LocOpe_Pipe
         Nbkn -= Nbcurv - 1;
         NCollection_Array1<double> Tkn = new(1, Nbkn);
         NCollection_Array1<int> Tmu = new(1, Nbkn);
-        NCollection_Array1<gp_Pnt> Tpol = new(1, Nbp);
+        NCollection_Array1<Point3D> Tpol = new(1, Nbp);
         int Ik = 0, Ip = 0;
 
         Bsp = (Geom_BSplineCurve)seq[1];

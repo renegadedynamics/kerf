@@ -3,10 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>An edge tessellation tool: the points of a tessellation, indexed from 1.</summary>
-public abstract class IMeshTools_CurveTessellator : Standard_Transient
+public abstract class IMeshTools_CurveTessellator : Transient
 {
     /// <summary>A tessellator.</summary>
     protected IMeshTools_CurveTessellator()
@@ -19,5 +23,5 @@ public abstract class IMeshTools_CurveTessellator : Standard_Transient
     /// <summary>
     /// The tessellation point with the given index and its parameter on the pcurve; false if the result isn't valid.
     /// </summary>
-    public abstract bool Value(int theIndex, out gp_Pnt thePoint, out double theParameter);
+    public abstract bool Value(int theIndex, out Point3D thePoint, out double theParameter);
 }

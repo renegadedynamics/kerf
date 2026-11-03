@@ -2,13 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// The function whose roots are the inflection points of a 2D curve: F = (V1 ^ V2) / (|V1| |V2|), V1 and V2 the first
 /// and second derivatives, with its analytic derivative.
 /// </summary>
-internal sealed class GeomLProp_FuncCurNul2d : math_FunctionWithDerivative
+internal sealed class GeomLProp_FuncCurNul2d : FunctionWithDerivative
 {
     private readonly Geom2d_Curve myCurve; // The analyzed curve.
 
@@ -33,7 +39,7 @@ internal sealed class GeomLProp_FuncCurNul2d : math_FunctionWithDerivative
     /// </summary>
     public override bool Values(double theU, out double theF, out double theD)
     {
-        myCurve.D3(theU, out gp_Pnt2d _, out gp_Vec2d aDeriv1, out gp_Vec2d aDeriv2, out gp_Vec2d aDeriv3);
+        myCurve.D3(theU, out Point2D _, out Vector2D aDeriv1, out Vector2D aDeriv2, out Vector2D aDeriv3);
         double aCross12 = aDeriv1.Crossed(aDeriv2);
         double aCross13 = aDeriv1.Crossed(aDeriv3);
         double aDot12 = aDeriv1.Dot(aDeriv2);
@@ -48,7 +54,7 @@ internal sealed class GeomLProp_FuncCurNul2d : math_FunctionWithDerivative
         {
             return true;
         }
-        else if (aNorm1 * aNorm2 < gp.Resolution())
+        else if (aNorm1 * aNorm2 < Constants.Resolution())
         {
             return false;
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Schematiq.Collections;
 
 namespace OcctNet.Foundation.Tests.Collections;
@@ -9,14 +10,14 @@ public class PackedListTests
     [Fact]
     public void Reads_as_a_list_and_a_span()
     {
-        var aList = PackedList.Create(new gp_Pnt(1, 2, 3), new gp_Pnt(4, 5, 6), new gp_Pnt(7, 8, 9));
+        var aList = PackedList.Create(new Point3D(1, 2, 3), new Point3D(4, 5, 6), new Point3D(7, 8, 9));
 
         Assert.Equal(3, aList.Count);
-        Assert.Equal(new gp_Pnt(4, 5, 6), aList[1]);
-        Assert.Equal(new gp_Pnt(1, 2, 3), aList.PeekFront);
-        Assert.Equal(new gp_Pnt(7, 8, 9), aList.Peek);
+        Assert.Equal(new Point3D(4, 5, 6), aList[1]);
+        Assert.Equal(new Point3D(1, 2, 3), aList.PeekFront);
+        Assert.Equal(new Point3D(7, 8, 9), aList.Peek);
         Assert.Equal(3, aList.AsSpan().Length);
-        Assert.Equal([new gp_Pnt(1, 2, 3), new gp_Pnt(4, 5, 6), new gp_Pnt(7, 8, 9)], aList);
+        Assert.Equal([new Point3D(1, 2, 3), new Point3D(4, 5, 6), new Point3D(7, 8, 9)], aList);
     }
 
     [Fact]

@@ -4,13 +4,15 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_1;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -38,7 +40,7 @@ public partial class ChFi3d_Builder
         myVFMap.Fill(myShape, TopAbs_VERTEX, TopAbs_FACE);
         myVEMap.Fill(myShape, TopAbs_VERTEX, TopAbs_EDGE);
         SetParams(Ta, 1.0e-4, 1.0e-5, 1.0e-4, 1.0e-5, 1.0e-3);
-        SetContinuity(GeomAbs_C1, Ta);
+        SetContinuity(C1, Ta);
     }
 
     //=================================================================================================
@@ -55,7 +57,7 @@ public partial class ChFi3d_Builder
 
     //=================================================================================================
 
-    public void SetContinuity(GeomAbs_Shape InternalContinuity, double AngularTolerance)
+    public void SetContinuity(Continuity InternalContinuity, double AngularTolerance)
     {
         myConti = InternalContinuity;
         tolappangle = AngularTolerance;
@@ -71,7 +73,7 @@ public partial class ChFi3d_Builder
     //=================================================================================================
 
     /// <summary>The result (frozen: a publication point, decision 414).</summary>
-    /// <exception cref="Standard_NoSuchObject">The computation is not done.</exception>
+    /// <exception cref="NoSuchObjectException">The computation is not done.</exception>
     public TopoDS_Shape Shape()
     {
         TopoDS_Shape aResult = InternalShape();
@@ -214,7 +216,7 @@ public partial class ChFi3d_Builder
     //=================================================================================================
 
     /// <summary>The partial result when a vertex failed (frozen).</summary>
-    /// <exception cref="Standard_NoSuchObject">There is no partial result (<see cref="HasResult"/> is false).</exception>
+    /// <exception cref="NoSuchObjectException">There is no partial result (<see cref="HasResult"/> is false).</exception>
     public TopoDS_Shape BadShape()
     {
         Standard_NoSuchObject_Raise_if(!hasresult, "ChFi3d_Builder.BadShape() - no result");
@@ -272,7 +274,7 @@ public partial class ChFi3d_Builder
         {
             if (Nbf > 1)
             {
-                throw new Standard_ConstructionError("ChFi3d_Builder:only 2 faces");
+                throw new ConstructionErrorException("ChFi3d_Builder:only 2 faces");
             }
             F[Nbf] = TopoDS.Face(It.Value());
         }
@@ -298,7 +300,7 @@ public partial class ChFi3d_Builder
                 {
                     if (Nbf > 1)
                     {
-                        throw new Standard_ConstructionError("ChFi3d_Builder:only 2 faces");
+                        throw new ConstructionErrorException("ChFi3d_Builder:only 2 faces");
                     }
                     F[Nbf] = TopoDS.Face(It.Value());
                 }
@@ -384,7 +386,7 @@ public partial class ChFi3d_Builder
                     }
                     TopoDS_Face F1 = new(), F2 = new();
                     ChFi3d_conexfaces(anEdge, out F1, out F2, myEFMap);
-                    if (!F2.IsNull() && ChFi3d.IsTangentFaces(anEdge, F1, F2, GeomAbs_G2)) // smooth edge
+                    if (!F2.IsNull() && ChFi3d.IsTangentFaces(anEdge, F1, F2, G2)) // smooth edge
                     {
                         if (!F1.IsSame(F2))
                         {
@@ -516,8 +518,8 @@ public partial class ChFi3d_Builder
         NCollection_List<TopoDS_Shape>.Iterator Jt = new();
         double Wl = 0.0, Wf = 0.0;
         bool degeneOnEc = false;
-        gp_Pnt P2 = new();
-        gp_Vec V1 = new(), V2 = new();
+        Point3D P2 = new();
+        Vector3D V1 = new(), V2 = new();
         TopoDS_Vertex Ve1 = new(), VStart = new(), FVEc = new(), LVEc = new(), FVEv = new(), LVEv = new();
         TopoDS_Edge Ev = new(), Ec = Spine.Edges(1);
         if (BRep_Tool.Degenerated(Ec))
@@ -1081,14 +1083,14 @@ internal static class ChFi3d_Builder_1
         Geom_Surface? GS2 = BRep_Tool.Surface(F2);
         Geom_Surface? TrGS2 = new Geom_RectangularTrimmedSurface(GS2, S2.FirstUParameter(), S2.LastUParameter(),
                                                                  S2.FirstVParameter(), S2.LastVParameter());
-        GeomInt_IntSS Intersector = new(OffsetTrGS1, TrGS2, Precision.Confusion());
+        GeomInt_IntSS Intersector = new(OffsetTrGS1, TrGS2, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (!Intersector.IsDone() || Intersector.NbLines() == 0)
         {
             return OffsetEdge;
         }
 
         Geom_Curve? IntCurve = Intersector.Line(1);
-        gp_Pnt[] Ends = new gp_Pnt[2];
+        Point3D[] Ends = new Point3D[2];
         BRepAdaptor_Curve aBAcurve = new(theEdge);
         Ends[0] = aBAcurve.Value(aBAcurve.FirstParameter());
         Ends[1] = aBAcurve.Value(aBAcurve.LastParameter());
@@ -1140,7 +1142,7 @@ internal static class ChFi3d_Builder_1
             }
             Extrema_ExtPC Projector = new(Ends[ind_end], GAcurve2);
             double[] param = new double[4], dist = new double[4];
-            gp_Pnt[] Pnt = new gp_Pnt[4];
+            Point3D[] Pnt = new Point3D[4];
             param[1] = GAcurve2.FirstParameter();
             param[2] = GAcurve2.LastParameter();
             Projector.TrimmedSquareDistances(out dist[1], out dist[2], out Pnt[1], out Pnt[2]);
@@ -1178,9 +1180,9 @@ internal static class ChFi3d_Builder_1
         if (Params[0] > Params[1])
         {
             bool IsClosed = false;
-            gp_Pnt fpnt = IntCurve.Value(IntCurve.FirstParameter());
-            gp_Pnt lpnt = IntCurve.Value(IntCurve.LastParameter());
-            if (fpnt.SquareDistance(lpnt) <= Precision.SquareConfusion())
+            Point3D fpnt = IntCurve.Value(IntCurve.FirstParameter());
+            Point3D lpnt = IntCurve.Value(IntCurve.LastParameter());
+            if (fpnt.SquareDistance(lpnt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 IsClosed = true;
             }
@@ -1200,8 +1202,8 @@ internal static class ChFi3d_Builder_1
         }
         if (aBAcurve.IsClosed() /*HGuide.IsPeriodic()*/ /*HGuide.IsClosed()*/) // check the direction of closed curve
         {
-            gp_Pnt aPnt = new(), anOffsetPnt = new();
-            gp_Vec Tangent = new(), OffsetTangent = new();
+            Point3D aPnt = new(), anOffsetPnt = new();
+            Vector3D Tangent = new(), OffsetTangent = new();
             aBAcurve.D1(aBAcurve.FirstParameter(), out aPnt, out Tangent);
             IntCurve.D1(Params[0], out anOffsetPnt, out OffsetTangent);
             if (Tangent * OffsetTangent < 0)
@@ -1234,7 +1236,7 @@ internal static class ChFi3d_Builder_1
 
     // OCCT reverses the intersection curve in place; a frozen one is reversed on a copy (decision 1088).
     private static Geom_Curve Reversible(Geom_Curve theCurve) =>
-        theCurve.IsFrozen() ? (Geom_Curve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom_Curve)theCurve.Copy() : theCurve;
 
     internal static TopOpeBRepDS_BuildTool mkbuildtool()
     {
@@ -1264,7 +1266,7 @@ internal static class ChFi3d_Builder_1
         double p1 = BRep_Tool.Parameter(V, e1, f1);
         double p2 = BRep_Tool.Parameter(V, e2, f2);
         double u = 0.0, v = 0.0, f = 0.0, l = 0.0, Eps = 1.0e-9;
-        gp_Vec n1 = new(), n2 = new();//   gp_Pnt pt1,pt2;
+        Vector3D n1 = new(), n2 = new();//   gp_Pnt pt1,pt2;
         Geom2d_Curve? pc1 = BRep_Tool.CurveOnSurface(e1, f1, out f, out l);
         pc1.Value(p1).Coord(out u, out v);
         BRepLProp_SLProps theProp1 = new(hs1, u, v, 1, Eps);

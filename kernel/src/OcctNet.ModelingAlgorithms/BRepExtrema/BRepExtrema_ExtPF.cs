@@ -3,9 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -41,15 +42,15 @@ public sealed class BRepExtrema_ExtPF
         // pas de copie et prend seulement un pointeur dessus.
         mySurf.Initialize(TheFace, false);
 
-        if (mySurf.GetType() == GeomAbs_OtherSurface)
+        if (mySurf.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
 
-        double Tol = Min(BRep_Tool.Tolerance(TheFace), Precision.Confusion());
+        double Tol = Min(BRep_Tool.Tolerance(TheFace), global::Kerf.Engine.Foundation.Precision.Confusion());
         double aTolU, aTolV;
-        aTolU = Max(mySurf.UResolution(Tol), Precision.PConfusion());
-        aTolV = Max(mySurf.VResolution(Tol), Precision.PConfusion());
+        aTolU = Max(mySurf.UResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        aTolV = Max(mySurf.VResolution(Tol), global::Kerf.Engine.Foundation.Precision.PConfusion());
         double U1, U2, V1, V2;
         BRepTools.UVBounds(TheFace, out U1, out U2, out V1, out V2);
         myExtPS.SetFlag(TheFlag);
@@ -66,8 +67,8 @@ public sealed class BRepExtrema_ExtPF
         mySqDist.Clear();
         myPoints.Clear();
 
-        gp_Pnt P = BRep_Tool.Pnt(TheVertex);
-        if (mySurf.GetType() == GeomAbs_OtherSurface)
+        Point3D P = BRep_Tool.Pnt(TheVertex);
+        if (mySurf.GetType() == OtherSurface)
         {
             return; // protect against non-geometric type (e.g. triangulation)
         }
@@ -83,7 +84,7 @@ public sealed class BRepExtrema_ExtPF
             for (int i = 1; i <= myExtPS.NbExt(); i++)
             {
                 myExtPS.Point(i).Parameter(out U1, out U2);
-                var Puv = new gp_Pnt2d(U1, U2);
+                var Puv = new Point2D(U1, U2);
                 classifier.Perform(TheFace, Puv, Tol);
                 TopAbs_State state = classifier.State();
                 if (state == TopAbs_ON || state == TopAbs_IN)
@@ -108,7 +109,7 @@ public sealed class BRepExtrema_ExtPF
     public void Parameter(int N, out double U, out double V) => myPoints.Value(N).Parameter(out U, out V);
 
     /// <summary>The point of the <paramref name="N"/>th extremum distance.</summary>
-    public gp_Pnt Point(int N) => myPoints.Value(N).Value();
+    public Point3D Point(int N) => myPoints.Value(N).Value();
 
     public void SetFlag(Extrema_ExtFlag F) => myExtPS.SetFlag(F);
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Text;
 using Occt;
@@ -30,7 +31,7 @@ public sealed class DrawResult
     /// <summary>Draw_Interpretor::Append(double): <c>%.17g</c>.</summary>
     public DrawResult Append(double theValue)
     {
-        myText.Append(Standard_Stream.FormatReal(theValue, 17));
+        myText.Append(StreamUtilities.FormatReal(theValue, 17));
         return this;
     }
 
@@ -57,7 +58,7 @@ internal static class DrawFormat
     {
         if (double.IsNaN(theValue) || double.IsInfinity(theValue))
         {
-            return Standard_Stream.FormatReal(theValue, thePrecision);
+            return StreamUtilities.FormatReal(theValue, thePrecision);
         }
 
         // .NET's "E" format is exact and rounds ties to even, as the C runtime does; it writes three exponent digits
@@ -70,8 +71,8 @@ internal static class DrawFormat
     }
 
     /// <summary>A real as <c>std::setw(theWidth) &lt;&lt; theValue</c> on a stream of the default precision 6.</summary>
-    public static string Setw(int theWidth, double theValue) => Standard_Stream.FormatReal(theValue, 6).PadLeft(theWidth);
+    public static string Setw(int theWidth, double theValue) => StreamUtilities.FormatReal(theValue, 6).PadLeft(theWidth);
 
     /// <summary>TCollection_AsciiString(double): <c>%g</c>.</summary>
-    public static string AsciiString(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+    public static string AsciiString(double theValue) => StreamUtilities.FormatReal(theValue, 6);
 }

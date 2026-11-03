@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_Orientation;
@@ -68,7 +70,7 @@ public partial class IntPatch_ImpPrmIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return empt;
     }
@@ -78,7 +80,7 @@ public partial class IntPatch_ImpPrmIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Length();
     }
@@ -88,7 +90,7 @@ public partial class IntPatch_ImpPrmIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Value(Index);
     }
@@ -98,7 +100,7 @@ public partial class IntPatch_ImpPrmIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin.Length();
     }
@@ -108,7 +110,7 @@ public partial class IntPatch_ImpPrmIntersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin.Value(Index);
     }
@@ -137,16 +139,16 @@ public partial class IntPatch_ImpPrmIntersection
         IntPatch_IType typ;
         IntSurf_Transition TLine = new(), TArc = new();
         IntSurf_TypeTrans trans1, trans2;
-        gp_Pnt valpt;
-        gp_Vec tgline, tgrst = new(), norm1, norm2, d1u = new(), d1v = new();
-        gp_Dir DirNormale;
-        gp_Vec VecNormale;
+        Point3D valpt;
+        Vector3D tgline, tgrst = new(), norm1, norm2, d1u = new(), d1v = new();
+        Direction3D DirNormale;
+        Vector3D VecNormale;
 
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
+        Point2D p2d;
+        Vector2D d2d;
 
         Adaptor2d_Curve2d currentarc;
-        GeomAbs_SurfaceType typeS1, typeS2;
+        SurfaceKind typeS1, typeS2;
         IntSurf_Quadric Quad = new();
         IntPatch_TheSurfFunction Func = new();
         IntPatch_ArcFunction AFunc = new();
@@ -167,19 +169,19 @@ public partial class IntPatch_ImpPrmIntersection
         reversed = false;
         switch (typeS1)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 Quad.SetValue(Surf1.Plane());
                 break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 Quad.SetValue(Surf1.Cylinder());
                 break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 Quad.SetValue(Surf1.Sphere());
                 break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 Quad.SetValue(Surf1.Cone());
                 break;
 
@@ -188,23 +190,23 @@ public partial class IntPatch_ImpPrmIntersection
                 reversed = true;
                 switch (typeS2)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                         Quad.SetValue(Surf2.Plane());
                         break;
 
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                         Quad.SetValue(Surf2.Cylinder());
                         break;
 
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                         Quad.SetValue(Surf2.Sphere());
                         break;
 
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                         Quad.SetValue(Surf2.Cone());
                         break;
                     default:
-                        throw new Standard_ConstructionError();
+                        throw new ConstructionErrorException();
                 }
             }
             break;
@@ -267,7 +269,7 @@ public partial class IntPatch_ImpPrmIntersection
         }
         //
         bool SearchIns = true;
-        if (Quad.TypeQuadric() == GeomAbs_Plane && solrst.NbSegments() > 0)
+        if (Quad.TypeQuadric() == Plane && solrst.NbSegments() > 0)
         {
             // For such kind of cases it is possible that whole surface is on one side of plane,
             // plane only touches surface and does not cross it,
@@ -284,7 +286,7 @@ public partial class IntPatch_ImpPrmIntersection
             }
             int aNbSamples = T.NbSamples();
             math_Vector Valf = new(1, 1), UVap = new(1, 2);
-            T.SamplePoint(1, out gp_Pnt2d s2d, out _);
+            T.SamplePoint(1, out Point2D s2d, out _);
             UVap[1] = s2d.X();
             UVap[2] = s2d.Y();
             Func.Value(UVap, Valf);
@@ -406,7 +408,7 @@ public partial class IntPatch_ImpPrmIntersection
                     //
                     double AnU1 = 0.0, AnU2, AnV2;
 
-                    GeomAbs_SurfaceType typQuad = Quad.TypeQuadric();
+                    SurfaceKind typQuad = Quad.TypeQuadric();
                     bool arecadr = false;
                     valpt = thelin.Value(1).Value();
                     Quad.Parameters(valpt, ref AnU1, ref V1);
@@ -431,7 +433,7 @@ public partial class IntPatch_ImpPrmIntersection
                         thelin.Value(1).ParametersOnS2(out AnU2, out AnV2);
                     }
 
-                    if (typQuad == GeomAbs_Cylinder || typQuad == GeomAbs_Cone || typQuad == GeomAbs_Sphere)
+                    if (typQuad == SurfaceKind.Cylinder || typQuad == SurfaceKind.Cone || typQuad == SurfaceKind.Sphere)
                     {
                         arecadr = true;
                     }
@@ -482,10 +484,10 @@ public partial class IntPatch_ImpPrmIntersection
                             thelin.Value(k).ParametersOnS1(out U2, out V2);
                             switch (typeS1)
                             {
-                                case GeomAbs_Cylinder:
-                                case GeomAbs_Cone:
-                                case GeomAbs_Sphere:
-                                case GeomAbs_Torus:
+                                case SurfaceKind.Cylinder:
+                                case SurfaceKind.Cone:
+                                case SurfaceKind.Sphere:
+                                case SurfaceKind.Torus:
                                     while (U2 < (AnU2 - 1.5 * M_PI))
                                     {
                                         U2 += M_PI + M_PI;
@@ -498,7 +500,7 @@ public partial class IntPatch_ImpPrmIntersection
                                 default:
                                     break;
                             }
-                            if (typeS2 == GeomAbs_Torus)
+                            if (typeS2 == SurfaceKind.Torus)
                             {
                                 while (V2 < (AnV2 - 1.5 * M_PI))
                                 {
@@ -518,10 +520,10 @@ public partial class IntPatch_ImpPrmIntersection
                             thelin.Value(k).ParametersOnS2(out U2, out V2);
                             switch (typeS2)
                             {
-                                case GeomAbs_Cylinder:
-                                case GeomAbs_Cone:
-                                case GeomAbs_Sphere:
-                                case GeomAbs_Torus:
+                                case SurfaceKind.Cylinder:
+                                case SurfaceKind.Cone:
+                                case SurfaceKind.Sphere:
+                                case SurfaceKind.Torus:
                                     while (U2 < (AnU2 - 1.5 * M_PI))
                                     {
                                         U2 += M_PI + M_PI;
@@ -534,7 +536,7 @@ public partial class IntPatch_ImpPrmIntersection
                                 default:
                                     break;
                             }
-                            if (typeS2 == GeomAbs_Torus)
+                            if (typeS2 == SurfaceKind.Torus)
                             {
                                 while (V2 < (AnV2 - 1.5 * M_PI))
                                 {
@@ -615,7 +617,7 @@ public partial class IntPatch_ImpPrmIntersection
                                 double squaremagnitudeVecNormale = VecNormale.SquareMagnitude();
                                 if (squaremagnitudeVecNormale > 1e-13)
                                 {
-                                    DirNormale = new gp_Dir(VecNormale);
+                                    DirNormale = new Direction3D(VecNormale);
                                     IntSurf.MakeTransition(tgline, tgrst, DirNormale, ref TLine, ref TArc);
                                 }
                                 else
@@ -641,7 +643,7 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else if (iwline.IsTangentAtBegining())
                     {
-                        gp_Pnt psol = thelin.Value(1).Value();
+                        Point3D psol = thelin.Value(1).Value();
                         thelin.Value(1).ParametersOnS1(out U1, out V1);
                         thelin.Value(1).ParametersOnS2(out U2, out V2);
                         ptdeb.SetValue(psol, TolArc, true);
@@ -652,7 +654,7 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else
                     {
-                        gp_Pnt psol = thelin.Value(1).Value();
+                        Point3D psol = thelin.Value(1).Value();
                         thelin.Value(1).ParametersOnS1(out U1, out V1);
                         thelin.Value(1).ParametersOnS2(out U2, out V2);
                         ptdeb.SetValue(psol, TolArc, false);
@@ -721,7 +723,7 @@ public partial class IntPatch_ImpPrmIntersection
                                 double squaremagnitudeVecNormale = VecNormale.SquareMagnitude();
                                 if (squaremagnitudeVecNormale > 1e-13)
                                 {
-                                    DirNormale = new gp_Dir(VecNormale);
+                                    DirNormale = new Direction3D(VecNormale);
                                     IntSurf.MakeTransition(tgline, tgrst, DirNormale, ref TLine, ref TArc);
                                 }
                                 else
@@ -747,7 +749,7 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else if (iwline.IsTangentAtEnd())
                     {
-                        gp_Pnt psol = thelin.Value(Nbpts).Value();
+                        Point3D psol = thelin.Value(Nbpts).Value();
                         thelin.Value(Nbpts).ParametersOnS1(out U1, out V1);
                         thelin.Value(Nbpts).ParametersOnS2(out U2, out V2);
                         ptfin.SetValue(psol, TolArc, true);
@@ -758,7 +760,7 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else
                     {
-                        gp_Pnt psol = thelin.Value(Nbpts).Value();
+                        Point3D psol = thelin.Value(Nbpts).Value();
                         thelin.Value(Nbpts).ParametersOnS1(out U1, out V1);
                         thelin.Value(Nbpts).ParametersOnS2(out U2, out V2);
                         ptfin.SetValue(psol, TolArc, false);
@@ -888,17 +890,17 @@ public partial class IntPatch_ImpPrmIntersection
                 // Check if segment is degenerated
                 if (thesegm.HasFirstPoint() && thesegm.HasLastPoint())
                 {
-                    double tol2 = Precision.Confusion();
+                    double tol2 = global::Kerf.Engine.Foundation.Precision.Confusion();
                     tol2 *= tol2;
-                    gp_Pnt aPf = thesegm.FirstPoint().Value();
-                    gp_Pnt aPl = thesegm.LastPoint().Value();
+                    Point3D aPf = thesegm.FirstPoint().Value();
+                    Point3D aPl = thesegm.LastPoint().Value();
                     if (aPf.SquareDistance(aPl) <= tol2)
                     {
                         // segment can be degenerated - check inner point
                         paramf = thesegm.FirstPoint().Parameter();
                         paraml = thesegm.LastPoint().Parameter();
-                        gp_Pnt2d _p2d = thesegm.Curve().Value(.57735 * paramf + 0.42265 * paraml);
-                        gp_Pnt aPm;
+                        Point2D _p2d = thesegm.Curve().Value(.57735 * paramf + 0.42265 * paraml);
+                        Point3D aPm;
                         if (reversed)
                         {
                             Surf1.D0(_p2d.X(), _p2d.Y(), out aPm);
@@ -942,13 +944,13 @@ public partial class IntPatch_ImpPrmIntersection
                     PStartf = thesegm.FirstPoint();
                     paramf = PStartf.Parameter();
 
-                    gp_Pnt2d _p2d = thesegm.Curve().Value(paramf);
+                    Point2D _p2d = thesegm.Curve().Value(paramf);
                     Adaptor3d_HVertex? _vtx = null;
                     if (!PStartf.IsNew())
                     {
                         _vtx = PStartf.Vertex();
                     }
-                    gp_Pnt _Pp = PStartf.Value();
+                    Point3D _Pp = PStartf.Value();
                     _thepointAtBeg.SetValue(_Pp, PStartf.Tolerance(), false);
                     if (!reversed)
                     { //-- typeS1 = Pln || Cyl || Sph || Cone
@@ -970,13 +972,13 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     _thepointAtBeg.SetArc(reversed, thesegm.Curve(), paramf, TLineUnk, TArcUnk);
 
-                    Surf1.D1(_u1, _v1, out _, out gp_Vec d1u1, out gp_Vec d1v1);
+                    Surf1.D1(_u1, _v1, out _, out Vector3D d1u1, out Vector3D d1v1);
                     norm1 = d1u1.Crossed(d1v1);
-                    Surf2.D1(_u2, _v2, out _, out gp_Vec d1u2, out gp_Vec d1v2);
+                    Surf2.D1(_u2, _v2, out _, out Vector3D d1u2, out Vector3D d1v2);
                     norm2 = d1u2.Crossed(d1v2);
 
-                    thesegm.Curve().D1(paramf, out _p2d, out gp_Vec2d _d2d);
-                    tgline = new gp_Vec();
+                    thesegm.Curve().D1(paramf, out _p2d, out Vector2D _d2d);
+                    tgline = new Vector3D();
                     if (reversed)
                     {
                         tgline.SetLinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
@@ -1010,13 +1012,13 @@ public partial class IntPatch_ImpPrmIntersection
                     PStartl = thesegm.LastPoint();
                     paraml = PStartl.Parameter();
 
-                    gp_Pnt2d _p2d = thesegm.Curve().Value(paraml);
+                    Point2D _p2d = thesegm.Curve().Value(paraml);
                     Adaptor3d_HVertex? _vtx = null;
                     if (!PStartl.IsNew())
                     {
                         _vtx = PStartl.Vertex();
                     }
-                    gp_Pnt _Pp = PStartl.Value();
+                    Point3D _Pp = PStartl.Value();
                     _thepointAtEnd.SetValue(_Pp, PStartl.Tolerance(), false);
                     if (!reversed)
                     { //-- typeS1 = Pln || Cyl || Sph || Cone
@@ -1038,13 +1040,13 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     _thepointAtEnd.SetArc(reversed, thesegm.Curve(), paraml, TLineUnk, TArcUnk);
 
-                    Surf1.D1(_u1, _v1, out _, out gp_Vec d1u1, out gp_Vec d1v1);
+                    Surf1.D1(_u1, _v1, out _, out Vector3D d1u1, out Vector3D d1v1);
                     norm1 = d1u1.Crossed(d1v1);
-                    Surf2.D1(_u2, _v2, out _, out gp_Vec d1u2, out gp_Vec d1v2);
+                    Surf2.D1(_u2, _v2, out _, out Vector3D d1u2, out Vector3D d1v2);
                     norm2 = d1u2.Crossed(d1v2);
 
-                    thesegm.Curve().D1(paraml, out _p2d, out gp_Vec2d _d2d);
-                    tgline = new gp_Vec();
+                    thesegm.Curve().D1(paraml, out _p2d, out Vector2D _d2d);
+                    tgline = new Vector3D();
                     if (reversed)
                     {
                         tgline.SetLinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
@@ -1116,7 +1118,7 @@ public partial class IntPatch_ImpPrmIntersection
                 if (dofirst && dolast)
                 {
                     double prm;
-                    gp_Pnt ptpoly;
+                    Point3D ptpoly;
                     IntSurf_PntOn2S p2s = new();
                     IntSurf_LineOn2S Thelin = new();
                     Adaptor2d_Curve2d arcsegm = thesegm.Curve();
@@ -1258,7 +1260,7 @@ public partial class IntPatch_ImpPrmIntersection
                 bool aCond = aL.NbPnts() < 2;
                 if (!aCond)
                 {
-                    aCond = (aL.Point(1).IsSame(aL.Point(2), Precision.Confusion()));
+                    aCond = (aL.Point(1).IsSame(aL.Point(2), global::Kerf.Engine.Foundation.Precision.Confusion()));
                 }
 
                 if (aCond)
@@ -1299,7 +1301,7 @@ public partial class IntPatch_ImpPrmIntersection
             }
 
             Adaptor2d_Curve2d anArc = (aRL1.IsArcOnS1() ? aRL1.ArcOnS1() : aRL1.ArcOnS2())!;
-            if (anArc.GetType() != GeomAbs_CurveType.GeomAbs_Line)
+            if (anArc.GetType() != CurveKind.Line)
             {
                 // Restriction line must be isoline.
                 // Other cases are not supported by
@@ -1321,7 +1323,7 @@ public partial class IntPatch_ImpPrmIntersection
                 if (aRL2 is not null)
                 {
                     Adaptor2d_Curve2d anArc2 = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
-                    if (anArc2.GetType() != GeomAbs_CurveType.GeomAbs_Line)
+                    if (anArc2.GetType() != CurveKind.Line)
                     {
                         // Restriction line must be isoline.
                         // Other cases are not supported by
@@ -1334,7 +1336,7 @@ public partial class IntPatch_ImpPrmIntersection
                 // aDir can be equal to one of following four values only
                 //(because Reastriction line is boundary of rectangular surface):
                 // either {0, 1} or {0, -1} or {1, 0} or {-1, 0}.
-                gp_Dir2d aDir = anArc.Line().Direction();
+                Direction2D aDir = anArc.Line().Direction();
 
                 double aTol2d = anOtherSurf.UResolution(aTol3d),
                        aPeriod = anOtherSurf.IsVPeriodic() ? anOtherSurf.VPeriod() : 0.0;
@@ -1390,9 +1392,9 @@ public partial class IntPatch_ImpPrmIntersection
             return;
         }
 
-        bool isDecomposeRequired = (Quad.TypeQuadric() == GeomAbs_Cone) || (Quad.TypeQuadric() == GeomAbs_Sphere)
-                                   || (Quad.TypeQuadric() == GeomAbs_Cylinder)
-                                   || (Quad.TypeQuadric() == GeomAbs_Torus);
+        bool isDecomposeRequired = (Quad.TypeQuadric() == SurfaceKind.Cone) || (Quad.TypeQuadric() == SurfaceKind.Sphere)
+                                   || (Quad.TypeQuadric() == SurfaceKind.Cylinder)
+                                   || (Quad.TypeQuadric() == SurfaceKind.Torus);
 
         if (!isDecomposeRequired)
         {

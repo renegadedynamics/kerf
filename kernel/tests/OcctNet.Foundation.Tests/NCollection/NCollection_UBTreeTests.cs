@@ -4,10 +4,14 @@
 
 // The file's NCollection_EBTree tests are in NCollection_EBTreeTests.cs.
 
+using Kerf.Engine.Collections;
+
+using Kerf.Engine.Foundation.Std;
+
 namespace OcctNet.Foundation.Tests;
 
 /// <summary>Simple 1D interval bounding type for testing: Add, IsOut, SquareExtent.</summary>
-internal struct TestBnd1D : INCollection_UBTreeBnd<TestBnd1D>
+internal struct TestBnd1D : ISpatialTreeBox<TestBnd1D>
 {
     public double Min;
     public double Max;
@@ -46,7 +50,7 @@ internal struct TestBnd1D : INCollection_UBTreeBnd<TestBnd1D>
 }
 
 /// <summary>Selector that collects all objects overlapping a given query interval.</summary>
-internal sealed class TestSelector1D(TestBnd1D theQuery) : NCollection_UBTree<int, TestBnd1D>.Selector
+internal sealed class TestSelector1D(TestBnd1D theQuery) : SpatialTree<int, TestBnd1D>.Selector
 {
     private readonly List<int> myResults = [];
 
@@ -62,7 +66,7 @@ internal sealed class TestSelector1D(TestBnd1D theQuery) : NCollection_UBTree<in
 }
 
 /// <summary>Selector that stops after accepting a given number of objects.</summary>
-internal sealed class TestStopSelector1D(TestBnd1D theQuery, int theMaxAccept) : NCollection_UBTree<int, TestBnd1D>.Selector
+internal sealed class TestStopSelector1D(TestBnd1D theQuery, int theMaxAccept) : SpatialTree<int, TestBnd1D>.Selector
 {
     private int myAccepted;
     private readonly List<int> myResults = [];
@@ -75,7 +79,7 @@ internal sealed class TestStopSelector1D(TestBnd1D theQuery, int theMaxAccept) :
         myAccepted++;
         if (myAccepted >= theMaxAccept)
         {
-            myStop = true;
+            _stop = true;
         }
         return true;
     }
@@ -88,9 +92,9 @@ public class NCollection_UBTreeTest
     [Fact]
     public void EmptyTree()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
-        Assert.True(aTree.IsEmpty());
+        Assert.True(aTree.IsEmpty);
 
         TestSelector1D aSelector = new(new TestBnd1D(0.0, 10.0));
         int nSel = aTree.Select(aSelector);
@@ -100,10 +104,10 @@ public class NCollection_UBTreeTest
     [Fact]
     public void AddAndSelect_SingleObject()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 5.0));
-        Assert.False(aTree.IsEmpty());
+        Assert.False(aTree.IsEmpty);
 
         // Query overlapping
         TestSelector1D aSelector = new(new TestBnd1D(3.0, 7.0));
@@ -121,7 +125,7 @@ public class NCollection_UBTreeTest
     [Fact]
     public void AddAndSelect_MultipleObjects()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         // Add intervals: [0,2], [3,5], [4,6], [8,10]
         aTree.Add(1, new TestBnd1D(0.0, 2.0));
@@ -149,7 +153,7 @@ public class NCollection_UBTreeTest
     [Fact]
     public void StopSelector()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         for (int i = 0; i < 10; ++i)
         {
@@ -166,15 +170,15 @@ public class NCollection_UBTreeTest
     [Fact]
     public void Clear()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         aTree.Add(1, new TestBnd1D(0.0, 5.0));
         aTree.Add(2, new TestBnd1D(3.0, 7.0));
 
-        Assert.False(aTree.IsEmpty());
+        Assert.False(aTree.IsEmpty);
 
         aTree.Clear();
-        Assert.True(aTree.IsEmpty());
+        Assert.True(aTree.IsEmpty);
 
         TestSelector1D aSelector = new(new TestBnd1D(0.0, 10.0));
         Assert.Equal(0, aTree.Select(aSelector));
@@ -183,7 +187,7 @@ public class NCollection_UBTreeTest
     [Fact]
     public void ManyObjects()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         const int N = 100;
         for (int i = 0; i < N; ++i)
@@ -203,7 +207,7 @@ public class NCollection_UBTreeTest
         // Insert sorted non-overlapping intervals to create a deeply unbalanced tree.
         // Each new interval is "out" of all previous bounds, forcing the tree
         // to grow on one side -- producing depth ~ N.
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
 
         const int N = 200; // well over the initial stack size of 64
         for (int i = 0; i < N; ++i)
@@ -221,18 +225,18 @@ public class NCollection_UBTreeTest
     [Fact]
     public void MoveConstructor()
     {
-        NCollection_UBTree<int, TestBnd1D> aSrc = new();
+        SpatialTree<int, TestBnd1D> aSrc = new();
         aSrc.Add(1, new TestBnd1D(0.0, 2.0));
         aSrc.Add(2, new TestBnd1D(3.0, 5.0));
         aSrc.Add(3, new TestBnd1D(4.0, 6.0));
 
-        NCollection_UBTree<int, TestBnd1D> aDst = new(aSrc);
+        SpatialTree<int, TestBnd1D> aDst = new(aSrc);
 
         // Source is empty
-        Assert.True(aSrc.IsEmpty());
+        Assert.True(aSrc.IsEmpty);
 
         // Destination has all objects
-        Assert.False(aDst.IsEmpty());
+        Assert.False(aDst.IsEmpty);
         TestSelector1D aSelector = new(new TestBnd1D(0.0, 10.0));
         int nSel = aDst.Select(aSelector);
         Assert.Equal(3, nSel);
@@ -241,17 +245,17 @@ public class NCollection_UBTreeTest
     [Fact]
     public void MoveAssignment()
     {
-        NCollection_UBTree<int, TestBnd1D> aSrc = new();
+        SpatialTree<int, TestBnd1D> aSrc = new();
         aSrc.Add(1, new TestBnd1D(0.0, 2.0));
         aSrc.Add(2, new TestBnd1D(3.0, 5.0));
 
-        NCollection_UBTree<int, TestBnd1D> aDst = new();
+        SpatialTree<int, TestBnd1D> aDst = new();
         aDst.Add(10, new TestBnd1D(100.0, 200.0));
 
         aDst.Move(aSrc);
 
-        Assert.True(aSrc.IsEmpty());
-        Assert.False(aDst.IsEmpty());
+        Assert.True(aSrc.IsEmpty);
+        Assert.False(aDst.IsEmpty);
 
         TestSelector1D aSelector = new(new TestBnd1D(0.0, 10.0));
         int nSel = aDst.Select(aSelector);
@@ -263,8 +267,8 @@ public class NCollection_UBTreeTest
     [Fact]
     public void Filler_AddsAllObjectsInRandomOrder()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
-        using (NCollection_UBTreeFiller<int, TestBnd1D> aFiller = new(aTree))
+        SpatialTree<int, TestBnd1D> aTree = new();
+        using (SpatialTreeFiller<int, TestBnd1D> aFiller = new(aTree))
         {
             for (int i = 0; i < 1000; ++i)
             {
@@ -280,8 +284,8 @@ public class NCollection_UBTreeTest
         Assert.Equal(11, aTree.Select(aSelector));
 
         // Dispose fills the tree with what Fill has not added, as OCCT's destructor
-        NCollection_UBTree<int, TestBnd1D> aTree2 = new();
-        using (NCollection_UBTreeFiller<int, TestBnd1D> aFiller = new(aTree2, false))
+        SpatialTree<int, TestBnd1D> aTree2 = new();
+        using (SpatialTreeFiller<int, TestBnd1D> aFiller = new(aTree2, false))
         {
             aFiller.Add(1, new TestBnd1D(0, 1));
             aFiller.Add(2, new TestBnd1D(2, 3));
@@ -292,19 +296,19 @@ public class NCollection_UBTreeTest
     [Fact]
     public void Gemmate_KeepsParentLinks()
     {
-        NCollection_UBTree<int, TestBnd1D> aTree = new();
+        SpatialTree<int, TestBnd1D> aTree = new();
         for (int i = 0; i < 20; ++i)
         {
             aTree.Add(i, new TestBnd1D(i % 7, i % 7 + 2));
         }
         int aLeaves = 0;
-        Stack<NCollection_UBTree<int, TestBnd1D>.TreeNode> aStack = new();
+        Stack<SpatialTree<int, TestBnd1D>.TreeNode> aStack = new();
         aStack.Push(aTree.Root());
-        Assert.True(aTree.Root().IsRoot());
+        Assert.True(aTree.Root().IsRoot);
         while (aStack.Count > 0)
         {
             var aNode = aStack.Pop();
-            if (aNode.IsLeaf())
+            if (aNode.IsLeaf)
             {
                 aLeaves++;
                 continue;
@@ -323,7 +327,7 @@ public class NCollection_UBTreeTest
     public void Mt19937_MatchesTheStandardSequence()
     {
         // The C++ standard requires the 10000th value of a default-constructed std::mt19937 to be 4123659995
-        std_mt19937 aGen = new();
+        Mt19937 aGen = new();
         uint aValue = 0;
         for (int i = 0; i < 10000; ++i)
         {

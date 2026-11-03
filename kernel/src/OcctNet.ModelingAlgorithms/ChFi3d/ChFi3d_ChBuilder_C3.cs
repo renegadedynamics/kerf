@@ -6,14 +6,16 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFiKPart_ComputeData_Fcts;
 using static Occt.ChFi3d_ChBuilder_C3;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -171,11 +173,11 @@ public partial class ChFi3d_ChBuilder
         }
         else
         {
-            throw new Standard_Failure("FD en vis a vis non trouvees");
+            throw new FailureException("FD en vis a vis non trouvees");
         }
         if (!okinter)
         {
-            throw new Standard_Failure("Echec intersection PCurves OnCommonFace");
+            throw new FailureException("Echec intersection PCurves OnCommonFace");
         }
 
         // on a le pivot, le CD deb et le CD fin (enfin on espere !?!) :
@@ -188,7 +190,7 @@ public partial class ChFi3d_ChBuilder
               NON TRAITE !!!!!! (pour l instant)*/
         if (i[pivot, deb] != i[pivot, fin])
         {
-            throw new Standard_NotImplemented("coin mutant non programme");
+            throw new MethodNotImplementedException("coin mutant non programme");
         }
         /* Autre Remarque : dans le cas ou les indices des Surf data
               du deb = new(de la fin) sur lesquelles ont ete trouvees les intersections
@@ -197,7 +199,7 @@ public partial class ChFi3d_ChBuilder
               PerformSetOfSurf adapte.*/
         if (oksea[pivot] && (i[deb, pivot] != i[deb, fin] || i[fin, pivot] != i[fin, deb]))
         {
-            throw new Standard_NotImplemented("coin sur plusieurs faces non programme");
+            throw new MethodNotImplementedException("coin sur plusieurs faces non programme");
         }
 
         // OCCT holds references to the sequences' handles, never assigned through: plain locals
@@ -230,9 +232,9 @@ public partial class ChFi3d_ChBuilder
         GeomAdaptor_Surface? HSfin = new GeomAdaptor_Surface(DStr.Surface(fdfin.Surf()).Surface());
         GeomAdaptor_Surface? HSpiv = new GeomAdaptor_Surface(DStr.Surface(fdpiv.Surf()).Surface());
 
-        gp_Pnt2d[] p2d = [new(), new(), new(), new()];
-        gp_Pnt[] p3d = [new(), new(), new(), new()];
-        gp_Pnt PSom = new();
+        Point2D[] p2d = [new(), new(), new(), new()];
+        Point3D[] p3d = [new(), new(), new(), new()];
+        Point3D PSom = new();
 
         ChFi3d_ComputesIntPC(fdpiv.Interference(jf[pivot, deb]), fddeb.Interference(jf[deb, pivot]), HSpiv, HSdeb,
                                                   ref p[pivot, deb], ref p[deb, pivot], ref p3d[fin]);
@@ -256,7 +258,7 @@ public partial class ChFi3d_ChBuilder
         //    c1triangle = (std::abs(p[deb, pivot]-p[deb, fin])<tolesp &&
         //		  std::abs(p[fin, pivot]-p[fin, deb])<tolesp);
 
-        gp_Vec2d Tg3 = new(), Tgpiv = new();
+        Vector2D Tg3 = new(), Tgpiv = new();
 
         //  if (c1triangle)
         //    p2d[pivot] = fddeb->Interference(jf[deb, fin]).PCurveOnFace()->Value(p[deb, pivot]);
@@ -276,12 +278,12 @@ public partial class ChFi3d_ChBuilder
         p2d[deb] = fdpiv.Interference(jf[pivot, fin]).PCurveOnSurf().Value(p[pivot, fin]);
 
         //  gp_Pnt pnt;
-        gp_Vec deru = new(), derv = new();
+        Vector3D deru = new(), derv = new();
 
         //  p3d[fin] = HSpiv->Value(p2d[fin].X(),p2d[fin].Y());
         //  p3d[deb] = HSpiv->Value(p2d[deb].X(),p2d[deb].Y());
         Fac.D1(p2d[pivot].X(), p2d[pivot].Y(), out p3d[pivot], out deru, out derv);
-        gp_Vec norpl = deru.Crossed(derv);
+        Vector3D norpl = deru.Crossed(derv);
         //  if (!c1triangle)
         p3d[3] = Fac.Value(p2d[3].X(), p2d[3].Y());
 
@@ -313,9 +315,9 @@ public partial class ChFi3d_ChBuilder
         // le chanfrein est porte par le plan passant par les 3  premiers p3d.
         // Sinon, on construit le chanfrein par la methode GeomFill_ConstrainedFilling
         bool c1plan = c1triangle;
-        gp_Vec v1 = new(p3d[pivot], p3d[deb]);
-        gp_Vec v2 = new(p3d[pivot], p3d[fin]);
-        gp_Vec nor = v1.Crossed(v2);
+        Vector3D v1 = new(p3d[pivot], p3d[deb]);
+        Vector3D v2 = new(p3d[pivot], p3d[fin]);
+        Vector3D nor = v1.Crossed(v2);
 
         done = false;
 
@@ -333,11 +335,11 @@ public partial class ChFi3d_ChBuilder
             //-------
 
             // on construit le plan
-            gp_Dir ndir = new(nor);
+            Direction3D ndir = new(nor);
             //    gp_Dir xdir(gp_Vec(p3d[fin],p3d[deb]));
-            gp_Dir xdir = new gp_Dir(new gp_Vec(p3d[fin], p3d[deb]));
-            gp_Ax3 planAx3 = new(p3d[pivot], ndir, xdir);
-            if (planAx3.YDirection().Dot(new gp_Dir(v1)) <= 0.0)
+            Direction3D xdir = new Direction3D(new Vector3D(p3d[fin], p3d[deb]));
+            CoordinateSystem planAx3 = new(p3d[pivot], ndir, xdir);
+            if (planAx3.YDirection().Dot(new Direction3D(v1)) <= 0.0)
             {
                 planAx3.YReverse();
             }
@@ -345,12 +347,12 @@ public partial class ChFi3d_ChBuilder
             coin.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, DStr));
 
             // on oriente coin
-            gp_Vec norface = norpl;
+            Vector3D norface = norpl;
             if (face[pivot].Orientation() == TopAbs_REVERSED)
             {
                 norface.Reverse();
             }
-            gp_Vec norcoin = new(gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection()));
+            Vector3D norcoin = new(gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection()));
             if (norcoin.Dot(norface) <= 0.0)
             {
                 coin.ChangeOrientation() = TopAbs_REVERSED;
@@ -364,20 +366,20 @@ public partial class ChFi3d_ChBuilder
             Geom_Curve? gcpiv = null, gcdeb = null, gcfin = null;
             Geom_TrimmedCurve? gcface = null;
             Geom2d_Curve? pivpc1 = null, pivpc2 = null, debpc2 = null, finpc2 = null, facepc1 = null, facepc2 = null;
-            gp_Pnt2d ptbid = new();
+            Point2D ptbid = new();
 
             // intersection coin-pivot
             double tolrcoinpiv = 0.0;
             if (!ComputeIntersection(DStr, fdpiv, coin, p3d[fin], p2d[fin], p3d[deb], p2d[deb], ref gcpiv, ref pivpc1, ref pivpc2,
                                      ref deru, ref derv, ref ptbid, tolapp3d, tol2d, ref tolrcoinpiv))
             {
-                throw new StdFail_NotDone("echec calcul intersection coin-pivot");
+                throw new NotDoneException("echec calcul intersection coin-pivot");
             }
-            gp_Vec norpiv = deru.Crossed(derv);
+            Vector3D norpiv = deru.Crossed(derv);
 
             // intersection coin-deb
             double tolrcoindeb = 0.0;
-            gp_Pnt2d p2d1 = new(), p2d2 = new();
+            Point2D p2d1 = new(), p2d2 = new();
             if (c1triangle)
             {
                 p2d1 = fddeb.Interference(jf[deb, fin]).PCurveOnSurf().Value(p[deb, fin]);
@@ -392,13 +394,13 @@ public partial class ChFi3d_ChBuilder
             if (!ComputeIntersection(DStr, fddeb, coin, p3d[pivot], p2d1, p3d[fin], p2d2, ref gcdeb, ref debpc1,
                                      ref debpc2, ref deru, ref derv, ref ptbid, tolapp3d, tol2d, ref tolrcoindeb))
             {
-                throw new StdFail_NotDone("echec calcul intersection coin-deb");
+                throw new NotDoneException("echec calcul intersection coin-deb");
             }
             Icf = DStr.AddCurve(new TopOpeBRepDS_Curve(gcdeb, tolrcoindeb));
 
             // intersection coin-fin
             double tolrcoinfin = 0.0;
-            gp_Pnt p3dface = new();
+            Point3D p3dface = new();
             if (c1triangle)
             {
                 p3dface = p3d[pivot];
@@ -413,7 +415,7 @@ public partial class ChFi3d_ChBuilder
             if (!ComputeIntersection(DStr, fdfin, coin, p3dface, p2d1, p3d[deb], p2d2, ref gcfin, ref finpc1,
                                      ref finpc2, ref deru, ref derv, ref ptbid, tolapp3d, tol2d, ref tolrcoinfin))
             {
-                throw new StdFail_NotDone("echec calcul intersection coin-face");
+                throw new NotDoneException("echec calcul intersection coin-face");
             }
             Icl = DStr.AddCurve(new TopOpeBRepDS_Curve(gcfin, tolrcoinfin));
 
@@ -423,7 +425,7 @@ public partial class ChFi3d_ChBuilder
                 GeomInt_IntSS inter = new();
                 BRepAdaptor_Surface facebid = new(face[pivot]);
                 Geom_Surface? surfbid = facebid.GeomSurfaceTransformed();
-                inter.Perform(gpl, surfbid, Precision.Intersection());
+                inter.Perform(gpl, surfbid, global::Kerf.Engine.Foundation.Precision.Intersection());
                 if (inter.IsDone())
                 {
                     int nbl = inter.NbLines();
@@ -520,8 +522,8 @@ public partial class ChFi3d_ChBuilder
             GeomFill_Boundary? Bdeb = null, Bfin = null, Bpiv = null, Bfac = null;
             int ind1 = fddeb.Interference(jf[deb, pivot]).LineIndex();
             int ind2 = fdfin.Interference(jf[fin, pivot]).LineIndex();
-            gp_Pnt Pfin = new(), Pdeb = new();
-            gp_Vec vpfin = new(), vpdeb = new();
+            Point3D Pfin = new(), Pdeb = new();
+            Vector3D vpfin = new(), vpdeb = new();
 
             DStr.Curve(ind1).Curve().D1(p[deb, pivot], out Pfin, out vpfin);
             DStr.Curve(ind2).Curve().D1(p[fin, pivot], out Pdeb, out vpdeb);
@@ -544,10 +546,10 @@ public partial class ChFi3d_ChBuilder
                 Bpiv = ChFi3d_mkbound(Surf, out PCurveOnPiv, p2d[fin], p2d[deb], tolapp3d, 2.0e-4);
             }
 
-            gp_Pnt2d pdeb1 = fddeb.Interference(jf[deb, pivot]).PCurveOnSurf().Value(p[deb, pivot]);
-            gp_Pnt2d pdeb2 = fddeb.Interference(jf[deb, fin]).PCurveOnSurf().Value(p[deb, pivot]);
-            gp_Pnt2d pfin1 = fdfin.Interference(jf[fin, pivot]).PCurveOnSurf().Value(p[fin, pivot]);
-            gp_Pnt2d pfin2 = fdfin.Interference(jf[fin, deb]).PCurveOnSurf().Value(p[fin, pivot]);
+            Point2D pdeb1 = fddeb.Interference(jf[deb, pivot]).PCurveOnSurf().Value(p[deb, pivot]);
+            Point2D pdeb2 = fddeb.Interference(jf[deb, fin]).PCurveOnSurf().Value(p[deb, pivot]);
+            Point2D pfin1 = fdfin.Interference(jf[fin, pivot]).PCurveOnSurf().Value(p[fin, pivot]);
+            Point2D pfin2 = fdfin.Interference(jf[fin, deb]).PCurveOnSurf().Value(p[fin, pivot]);
 
             if (issmooth)
             {
@@ -610,7 +612,7 @@ public partial class ChFi3d_ChBuilder
             coin.ChangeIndexOfS2(-fdpiv.Surf());
 
             // first points
-            gp_Pnt2d pp1 = new(), pp2 = new();
+            Point2D pp1 = new(), pp2 = new();
             if (c1plan)
             {
                 P1deb = DStr.Curve(Icf).Curve().FirstParameter();
@@ -811,11 +813,11 @@ public partial class ChFi3d_ChBuilder
 
 internal static class ChFi3d_ChBuilder_C3
 {
-    internal static bool CoPlanar(in gp_Pnt PntA, in gp_Pnt PntB, in gp_Pnt PntC, in gp_Pnt PntD)
+    internal static bool CoPlanar(in Point3D PntA, in Point3D PntB, in Point3D PntC, in Point3D PntD)
     {
-        gp_Vec vecAB = new(PntA, PntB);
-        gp_Vec vecAC = new(PntA, PntC);
-        gp_Vec vecAD = new(PntA, PntD);
+        Vector3D vecAB = new(PntA, PntB);
+        Vector3D vecAC = new(PntA, PntC);
+        Vector3D vecAD = new(PntA, PntD);
 
         double nor2AB = vecAB.SquareMagnitude();
         double nor2AC = vecAC.SquareMagnitude();
@@ -823,7 +825,7 @@ internal static class ChFi3d_ChBuilder_C3
 
         double Alpha = nor2AB * nor2AC - ProABAC * ProABAC;
 
-        if (Alpha < Precision.Confusion())
+        if (Alpha < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return true;
         }
@@ -832,12 +834,12 @@ internal static class ChFi3d_ChBuilder_C3
         double ProACAD = vecAC.Dot(vecAD);
         double Alpha1 = ProABAD * nor2AC - ProABAC * ProACAD;
         double Alpha2 = ProACAD * nor2AB - ProABAC * ProABAD;
-        gp_Vec vecDABC = Alpha1 * vecAB + Alpha2 * vecAC - Alpha * vecAD;
+        Vector3D vecDABC = Alpha1 * vecAB + Alpha2 * vecAC - Alpha * vecAD;
 
-        return (vecDABC.Magnitude() / Alpha) < Precision.Confusion();
+        return (vecDABC.Magnitude() / Alpha) < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
-    internal static GeomAdaptor_Surface? BoundSurf(Geom_Surface? S, in gp_Pnt2d Pdeb, in gp_Pnt2d Pfin)
+    internal static GeomAdaptor_Surface? BoundSurf(Geom_Surface? S, in Point2D Pdeb, in Point2D Pfin)
     {
         GeomAdaptor_Surface? HS = new GeomAdaptor_Surface();
         GeomAdaptor_Surface GAS = HS;
@@ -857,8 +859,8 @@ internal static class ChFi3d_ChBuilder_C3
         return HS;
     }
 
-    internal static bool ComputeIntersection(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData? SD, ChFiDS_SurfData? SDCoin, in gp_Pnt pdeb, in gp_Pnt2d p2ddeb, in gp_Pnt pfin, in gp_Pnt2d p2dfin, ref Geom_Curve? gc, ref Geom2d_Curve? pc1, ref Geom2d_Curve? pc2, ref gp_Vec derudeb,
-                                             ref gp_Vec dervdeb, ref gp_Pnt2d ptcoindeb, double tol3d, double tol2d,
+    internal static bool ComputeIntersection(TopOpeBRepDS_DataStructure DStr, ChFiDS_SurfData? SD, ChFiDS_SurfData? SDCoin, in Point3D pdeb, in Point2D p2ddeb, in Point3D pfin, in Point2D p2dfin, ref Geom_Curve? gc, ref Geom2d_Curve? pc1, ref Geom2d_Curve? pc2, ref Vector3D derudeb,
+                                             ref Vector3D dervdeb, ref Point2D ptcoindeb, double tol3d, double tol2d,
                                              ref double tolreached)
     {
         //  gp_Pnt2d UVf1,UVf2,UVl1,UVl2;
@@ -874,7 +876,7 @@ internal static class ChFi3d_ChBuilder_C3
         // compute pardeb
         NCollection_Array1<double> Pardeb = new(1, 4), Parfin = new(1, 4);
         double u = 0.0, v = 0.0;
-        gp_Pnt Pbidon = new();
+        Point3D Pbidon = new();
         u = p2ddeb.X();
         v = p2ddeb.Y();
         gSD.D1(u, v, out Pbidon, out derudeb, out dervdeb);
@@ -898,7 +900,7 @@ internal static class ChFi3d_ChBuilder_C3
         ChFi3d_Parameters(gpl, pfin, out u, out v);
         Parfin[3] = u;
         Parfin[4] = v;
-        gp_Pnt2d cpf2 = new(u, v);
+        Point2D cpf2 = new(u, v);
 
         // Trims the chamfer surface to allow the intersection computation
         // and computes a GeomAdaptor_Surface for using the ComputeCurves

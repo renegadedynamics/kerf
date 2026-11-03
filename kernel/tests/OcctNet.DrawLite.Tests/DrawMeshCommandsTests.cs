@@ -206,7 +206,7 @@ public class DrawMeshCommandsTests
         TopoDS_Shape aBefore = i.GetShape("s");
         Assert.Equal("Some corrections in source shape have been made!\n", i.Eval("correctnormals s"));
         Assert.False(i.GetShape("s").IsSame(aBefore));
-        Assert.True(BRep_Tool.Triangulation(TopoDS.Face(FirstFace(i.GetShape("s"))), out _)!.HasNormals());
+        Assert.True(BRep_Tool.Triangulation(TopoDS.Face(FirstFace(i.GetShape("s"))), out _)!.HasNormals);
 
         // the normals are there now and agree: nothing to do, the shape stays bound
         TopoDS_Shape aCorrected = i.GetShape("s");

@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_DateAndTime : Standard_Transient
+public class StepBasic_DateAndTime : Transient
 {
     private StepBasic_Date dateComponent;
     private StepBasic_LocalTime timeComponent;

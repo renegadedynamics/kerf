@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -28,7 +32,7 @@ namespace Occt;
 /// are only read.
 /// </para>
 /// </remarks>
-public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
+public class ShapeConstruct_ProjectCurveOnSurface : Transient
 {
     //! Default number of control points for discretization.
     private const int THE_NCONTROL = 23;
@@ -39,12 +43,12 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     private int myAdjustOverDegen; // Seam adjustment flag
 
     // Cached 3D/2D point pairs for projection optimization (0-based, OCCT's CacheArray)
-    private (gp_Pnt first, gp_Pnt2d second)[] myCache = [];
+    private (Point3D first, Point2D second)[] myCache = [];
 
     /// <summary>An empty projector: Init or SetSurface, then Perform.</summary>
     public ShapeConstruct_ProjectCurveOnSurface()
     {
-        myPreci = Precision.Confusion();
+        myPreci = global::Kerf.Engine.Foundation.Precision.Confusion();
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         myAdjustOverDegen = 1;
     }
@@ -149,15 +153,15 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         // Generate curve points
-        NCollection_Array1<gp_Pnt> aPoints = new();
+        NCollection_Array1<Point3D> aPoints = new();
         NCollection_Array1<double> aParams = new();
         int aNbPnt = generateCurvePoints(theC3D, theFirst, theLast, THE_NCONTROL, aPoints, aParams);
 
         // Approximate pcurve
-        NCollection_Array1<gp_Pnt2d> aPoints2d = new(1, aNbPnt);
+        NCollection_Array1<Point2D> aPoints2d = new(1, aNbPnt);
         for (int i = 1; i <= aNbPnt; i++)
         {
-            aPoints2d.SetValue(i, new gp_Pnt2d(0.0, 0.0));
+            aPoints2d.SetValue(i, new Point2D(0.0, 0.0));
         }
 
         approxPCurve(aNbPnt, theC3D, theTolFirst, theTolLast, ref aPoints, ref aParams, ref aPoints2d, out theC2D);
@@ -197,22 +201,22 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
             switch (aProjector.GetType())
             {
-                case GeomAbs_Line:
+                case Line:
                     theC2D = new Geom2d_Line(aProjector.Line());
                     break;
-                case GeomAbs_Circle:
+                case Circle:
                     theC2D = new Geom2d_Circle(aProjector.Circle());
                     break;
-                case GeomAbs_Ellipse:
+                case Ellipse:
                     theC2D = new Geom2d_Ellipse(aProjector.Ellipse());
                     break;
-                case GeomAbs_Parabola:
+                case Parabola:
                     theC2D = new Geom2d_Parabola(aProjector.Parabola());
                     break;
-                case GeomAbs_Hyperbola:
+                case Hyperbola:
                     theC2D = new Geom2d_Hyperbola(aProjector.Hyperbola());
                     break;
-                case GeomAbs_BSplineCurve:
+                case BSplineCurve:
                     theC2D = aProjector.BSpline();
                     break;
                 default:
@@ -230,7 +234,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 return true;
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL3);
             theC2D = null;
@@ -285,15 +289,15 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     // OCCT's projectPoint lambda of getLine: projects a point, first through the end-point cache.
-    private void projectPoint(SurfaceProjectorWithCache aProjector, in gp_Pnt thePoint, out gp_Pnt2d theResult, int theIndex,
-                              double aTol2, double aTolWorking, ref int aSavedPointNum, ref gp_Pnt2d aSavedPoint,
+    private void projectPoint(SurfaceProjectorWithCache aProjector, in Point3D thePoint, out Point2D theResult, int theIndex,
+                              double aTol2, double aTolWorking, ref int aSavedPointNum, ref Point2D aSavedPoint,
                               ref bool theIsFromCache)
     {
         // Try existing endpoint cache first
         int aNbCache = myCache.Length;
         for (int j = 0; j < aNbCache; ++j)
         {
-            (gp_Pnt first, gp_Pnt2d second) aCachePnt = myCache[j];
+            (Point3D first, Point2D second) aCachePnt = myCache[j];
             if (aCachePnt.first.SquareDistance(thePoint) < aTol2)
             {
                 theResult = aProjector.NextValueOfUV(aCachePnt.second, thePoint, aTolWorking, aTol2, aTolWorking);
@@ -315,18 +319,18 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     /// Tries to represent the pcurve by a Geom2d_Line or a degree-1 B-spline within <paramref name="theTol"/>; null
     /// if the 3D points aren't on such a line of the parametric space.
     /// </summary>
-    protected Geom2d_Curve? getLine(NCollection_Array1<gp_Pnt> thePoints, NCollection_Array1<double> theParams,
-                                    NCollection_Array1<gp_Pnt2d> thePoints2d, double theTol, ref bool theIsRecompute,
+    protected Geom2d_Curve? getLine(NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams,
+                                    NCollection_Array1<Point2D> thePoints2d, double theTol, ref bool theIsRecompute,
                                     ref bool theIsFromCache)
     {
         int aNb = thePoints.Length();
-        Span<gp_Pnt> aP = stackalloc gp_Pnt[4];
+        Span<Point3D> aP = stackalloc Point3D[4];
         aP[0] = thePoints[1];
         aP[1] = thePoints[2];
         aP[2] = thePoints[aNb - 1];
         aP[3] = thePoints[aNb];
 
-        Span<gp_Pnt2d> aP2d = stackalloc gp_Pnt2d[4];
+        Span<Point2D> aP2d = stackalloc Point2D[4];
         int i = 0;
 
         double aTol2 = theTol * theTol;
@@ -337,17 +341,17 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         // Protection against bad tolerance shapes
         if (aTol2 > 1.0)
         {
-            aTolWorking = Precision.Confusion();
+            aTolWorking = global::Kerf.Engine.Foundation.Precision.Confusion();
             aTol2 = aTolWorking * aTolWorking;
         }
-        if (aTol2 < Precision.SquareConfusion())
+        if (aTol2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            aTol2 = Precision.SquareConfusion();
+            aTol2 = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
         }
         double anOldTol2 = aTol2;
 
         int aSavedPointNum = -1;
-        gp_Pnt2d aSavedPoint = new();
+        Point2D aSavedPoint = new();
 
         // Create projector with B-spline surface pole cache optimization
         SurfaceProjectorWithCache aProjector = new(mySurf);
@@ -407,13 +411,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         aTol2 = anOldTol2;
 
         double dPar = theParams[aNb] - theParams[1];
-        if (Math.Abs(dPar) < Precision.PConfusion())
+        if (Math.Abs(dPar) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return null;
         }
 
-        gp_Vec2d aVec0 = new(aP2d[0], aP2d[3]);
-        gp_Vec2d aVec = aVec0 / dPar;
+        Vector2D aVec0 = new(aP2d[0], aP2d[3]);
+        Vector2D aVec = aVec0 / dPar;
         Geom_Surface aSurf = mySurf.Surface()!;
         bool isNormalCheck = aSurf.IsCNu(1) && aSurf.IsCNv(1);
 
@@ -421,15 +425,15 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         {
             for (i = 1; i <= aNb; i++)
             {
-                gp_XY aCurPoint = aP2d[0].XY() + aVec.XY() * (theParams[i] - theParams[1]);
-                aSurf.D1(aCurPoint.X(), aCurPoint.Y(), out gp_Pnt aCurP, out gp_Vec aDu, out gp_Vec aDv);
-                gp_Vec aNormalVec = aDu ^ aDv;
-                if (aNormalVec.SquareMagnitude() < Precision.SquareConfusion())
+                Xy aCurPoint = aP2d[0].XY() + aVec.XY() * (theParams[i] - theParams[1]);
+                aSurf.D1(aCurPoint.X(), aCurPoint.Y(), out Point3D aCurP, out Vector3D aDu, out Vector3D aDv);
+                Vector3D aNormalVec = aDu ^ aDv;
+                if (aNormalVec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     isNormalCheck = false;
                     break;
                 }
-                gp_Lin aNormalLine = new(aCurP, new gp_Dir(aNormalVec));
+                Line3D aNormalLine = new(aCurP, new Direction3D(aNormalVec));
                 double aDist = aNormalLine.Distance(thePoints[i]);
                 if (aDist > aTolWorking)
                 {
@@ -444,8 +448,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             aTol2 = Max(aTol2, aTol2 * 2 * aFirstPointDist);
             for (i = 2; i < aNb; i++)
             {
-                gp_XY aCurPoint = aP2d[0].XY() + aVec.XY() * (theParams[i] - theParams[1]);
-                aSurf.D0(aCurPoint.X(), aCurPoint.Y(), out gp_Pnt aCurP);
+                Xy aCurPoint = aP2d[0].XY() + aVec.XY() * (theParams[i] - theParams[1]);
+                aSurf.D0(aCurPoint.X(), aCurPoint.Y(), out Point3D aCurP);
                 double aDist1 = aCurP.SquareDistance(thePoints[i]);
 
                 if (Math.Abs(aFirstPointDist - aDist1) > aTol2)
@@ -457,15 +461,15 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
         // Check if pcurve can be represented by Geom2d_Line
         double aLLength = aVec0.Magnitude();
-        if (Math.Abs(aLLength - dPar) <= Precision.PConfusion())
+        if (Math.Abs(aLLength - dPar) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            gp_XY aDirL = aVec0.XY() / aLLength;
-            gp_Pnt2d aPL = new(aP2d[0].XY() - theParams[1] * aDirL);
-            return new Geom2d_Line(aPL, new gp_Dir2d(aDirL));
+            Xy aDirL = aVec0.XY() / aLLength;
+            Point2D aPL = new(aP2d[0].XY() - theParams[1] * aDirL);
+            return new Geom2d_Line(aPL, new Direction2D(aDirL));
         }
 
         // Create straight bspline
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 2);
+        NCollection_Array1<Point2D> aPoles = new(1, 2);
         aPoles[1] = aP2d[0];
         aPoles[2] = aP2d[3];
 
@@ -486,8 +490,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     /// <paramref name="thePoints2d"/>). The arrays may grow by inserted points.
     /// </summary>
     protected bool approxPCurve(int theNbPnt, Geom_Curve theC3D, double theTolFirst, double theTolLast,
-                                ref NCollection_Array1<gp_Pnt> thePoints, ref NCollection_Array1<double> theParams,
-                                ref NCollection_Array1<gp_Pnt2d> thePoints2d, out Geom2d_Curve? theC2D)
+                                ref NCollection_Array1<Point3D> thePoints, ref NCollection_Array1<double> theParams,
+                                ref NCollection_Array1<Point2D> thePoints2d, out Geom2d_Curve? theC2D)
     {
         // For performance, first try to handle typical case when pcurve is straight
         bool isRecompute = false;
@@ -500,12 +504,12 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             bool aChangeCycle1 = false;
             if (myCache.Length != 0
                 && myCache[0].first.Distance(thePoints[1]) > myCache[0].first.Distance(thePoints[theNbPnt])
-                && myCache[0].first.Distance(thePoints[theNbPnt]) < Precision.Confusion())
+                && myCache[0].first.Distance(thePoints[theNbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aChangeCycle1 = true;
             }
 
-            myCache = new (gp_Pnt, gp_Pnt2d)[2];
+            myCache = new (Point3D, Point2D)[2];
             if (aChangeCycle1)
             {
                 myCache[0] = (thePoints[1], thePoints2d[1]);
@@ -525,7 +529,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         bool isoParam, isoTypeU = false, p1OnIso = false, p2OnIso = false, isoClosed;
         // OCCT leaves these unset when isAnIsoparametric doesn't write them; they're read only where it did
         bool isoPar2d3d = false;
-        gp_Pnt2d valueP1 = new(), valueP2 = new();
+        Point2D valueP1 = new(), valueP2 = new();
         Geom_Curve? cIso = null;
         double t1 = 0.0, t2 = 0.0;
 
@@ -549,8 +553,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                                      ref valueP2, ref isoPar2d3d, ref cIso, ref t1, ref t2, pout);
 
         // Projection of the points on surfaces
-        gp_Pnt p3d;
-        gp_Pnt2d p2d = new();
+        Point3D p3d;
+        Point2D p2d = new();
         double isoValue = 0.0, isoPar1 = 0.0, isoPar2 = 0.0, tPar = 0.0, tdeb, tfin;
         double Cf, Cl, parf, parl;
 
@@ -578,11 +582,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             {
                 Cf = cIso!.FirstParameter();
                 Cl = cIso.LastParameter();
-                if (Precision.IsInfinite(Cf))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cf))
                 {
                     Cf = -1000;
                 }
-                if (Precision.IsInfinite(Cl))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cl))
                 {
                     Cl = +1000;
                 }
@@ -634,7 +638,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     if ((Math.Abs(tdeb - isoPar1) > Math.Abs(tdeb - isoPar2))
                         && (Math.Abs(pout[theNbPnt - 1] - isoPar2) > Math.Abs(pout[theNbPnt - 1] - isoPar1)))
                     {
-                        gp_Pnt2d valueTmp = valueP1;
+                        Point2D valueTmp = valueP1;
                         valueP1 = valueP2;
                         valueP2 = valueTmp;
                         if (isoTypeU)
@@ -660,12 +664,12 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         bool aChangeCycle = false;
 
         bool isFromCache = false;
-        gp_Pnt2d aSavedPoint = new();
+        Point2D aSavedPoint = new();
 
         if (myCache.Length != 0
             && myCache[0].first.Distance(thePoints[1]) > myCache[0].first.Distance(thePoints[theNbPnt]))
         {
-            if (myCache[0].first.Distance(thePoints[theNbPnt]) < Precision.Confusion())
+            if (myCache[0].first.Distance(thePoints[theNbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aChangeCycle = true;
             }
@@ -673,8 +677,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
         bool needResolveUJump = false;
         bool needResolveVJump = false;
-        gp_Pnt prevP3d = new();
-        gp_Pnt2d prevP2d = new();
+        Point3D prevP3d = new();
+        Point2D prevP2d = new();
 
         for (int ii = 1; ii <= theNbPnt; ii++)
         {
@@ -722,7 +726,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     }
                     else
                     {
-                        p2d = mySurf.NextValueOfUV(p2d, p3d, myPreci, Precision.Confusion() + 1000 * gap);
+                        p2d = mySurf.NextValueOfUV(p2d, p3d, myPreci, global::Kerf.Engine.Foundation.Precision.Confusion() + 1000 * gap);
                         gap = mySurf.Gap();
                     }
                 }
@@ -771,10 +775,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                             int aNbCache = myCache.Length;
                             for (; j < aNbCache; ++j)
                             {
-                                (gp_Pnt first, gp_Pnt2d second) aCachePnt = myCache[j];
+                                (Point3D first, Point2D second) aCachePnt = myCache[j];
                                 if (aCachePnt.first.SquareDistance(p3d) < myPreci * myPreci)
                                 {
-                                    p2d = mySurf.NextValueOfUV(aCachePnt.second, p3d, myPreci, Precision.Confusion() + gap);
+                                    p2d = mySurf.NextValueOfUV(aCachePnt.second, p3d, myPreci, global::Kerf.Engine.Foundation.Precision.Confusion() + gap);
                                     if (aPntIndex == 1)
                                     {
                                         isFromCache = true;
@@ -791,7 +795,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     }
                     else
                     {
-                        p2d = mySurf.NextValueOfUV(p2d, p3d, myPreci, Precision.Confusion() + 1000 * gap);
+                        p2d = mySurf.NextValueOfUV(p2d, p3d, myPreci, global::Kerf.Engine.Foundation.Precision.Confusion() + 1000 * gap);
                     }
                     gap = mySurf.Gap();
                 }
@@ -835,27 +839,27 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         // Check extremities for singularities
-        gp_Pnt aPointFirst = thePoints.First();
-        gp_Pnt aPointLast = thePoints.Last();
-        double aTolFirst = (theTolFirst < 0) ? Precision.Confusion() : theTolFirst;
-        double aTolLast = (theTolLast < 0) ? Precision.Confusion() : theTolLast;
+        Point3D aPointFirst = thePoints.First();
+        Point3D aPointLast = thePoints.Last();
+        double aTolFirst = (theTolFirst < 0) ? global::Kerf.Engine.Foundation.Precision.Confusion() : theTolFirst;
+        double aTolLast = (theTolLast < 0) ? global::Kerf.Engine.Foundation.Precision.Confusion() : theTolLast;
 
         for (int i = 1;; i++)
         {
             double aPreci = 0.0, aFirstPar = 0.0, aLastPar = 0.0;
-            gp_Pnt aP3d = new();
-            gp_Pnt2d aFirstP2d = new(), aLastP2d = new();
+            Point3D aP3d = new();
+            Point2D aFirstP2d = new(), aLastP2d = new();
             bool IsUiso = false;
             if (!mySurf.Singularity(i, ref aPreci, ref aP3d, ref aFirstP2d, ref aLastP2d, ref aFirstPar, ref aLastPar,
                                     ref IsUiso))
             {
                 break;
             }
-            if (aPreci <= Precision.Confusion() && aPointFirst.Distance(aP3d) <= aTolFirst)
+            if (aPreci <= global::Kerf.Engine.Foundation.Precision.Confusion() && aPointFirst.Distance(aP3d) <= aTolFirst)
             {
                 correctExtremity(theC3D, theParams, thePoints2d, true, aFirstP2d, IsUiso);
             }
-            if (aPreci <= Precision.Confusion() && aPointLast.Distance(aP3d) <= aTolLast)
+            if (aPreci <= global::Kerf.Engine.Foundation.Precision.Confusion() && aPointLast.Distance(aP3d) <= aTolLast)
             {
                 correctExtremity(theC3D, theParams, thePoints2d, false, aFirstP2d, IsUiso);
             }
@@ -863,8 +867,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
         // Handle U-closed surfaces
         double dist2d;
-        double TolOnUPeriod = Precision.Confusion() * Up;
-        double TolOnVPeriod = Precision.Confusion() * Vp;
+        double TolOnUPeriod = global::Kerf.Engine.Foundation.Precision.Confusion() * Up;
+        double TolOnVPeriod = global::Kerf.Engine.Foundation.Precision.Confusion() * Vp;
 
         if (mySurf.IsUClosed(myPreci) || needResolveUJump)
         {
@@ -1095,7 +1099,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         {
             if (mySurf.IsUClosed(myPreci))
             {
-                mySurf.IsDegenerated(new gp_Pnt(0, 0, 0), myPreci);
+                mySurf.IsDegenerated(new Point3D(0, 0, 0), myPreci);
                 if (mySurf.NbSingularities(myPreci) > 0)
                 {
                     double PrevX = 0.0;
@@ -1105,11 +1109,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     for (ind = 1; ind <= thePoints2d.Length(); ind++)
                     {
                         double CurX = thePoints2d[ind].X();
-                        if (mySurf.IsDegenerated(thePoints[ind], Precision.Confusion()))
+                        if (mySurf.IsDegenerated(thePoints[ind], global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             continue;
                         }
-                        OnBound = (Math.Abs(Math.Abs(CurX - 0.5 * (ul + uf)) - Up / 2) <= Precision.PConfusion()) ? 1 : 0;
+                        OnBound = (Math.Abs(Math.Abs(CurX - 0.5 * (ul + uf)) - Up / 2) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) ? 1 : 0;
                         if (!start && Math.Abs(Math.Abs(CurX - PrevX) - Up / 2) <= 0.01 * Up)
                         {
                             break;
@@ -1121,7 +1125,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     if (ind <= thePoints2d.Length())
                     {
                         PrevX = (myAdjustOverDegen != 0 ? uf : ul);
-                        double dU = Up / 2 + Precision.PConfusion();
+                        double dU = Up / 2 + global::Kerf.Engine.Foundation.Precision.PConfusion();
                         if (PrevOnBound != 0)
                         {
                             thePoints2d[ind - 1].SetX(PrevX);
@@ -1164,7 +1168,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
             else if (mySurf.IsVClosed(myPreci))
             {
-                mySurf.IsDegenerated(new gp_Pnt(0, 0, 0), myPreci);
+                mySurf.IsDegenerated(new Point3D(0, 0, 0), myPreci);
                 if (mySurf.NbSingularities(myPreci) > 0)
                 {
                     double PrevY = 0.0;
@@ -1174,11 +1178,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     for (ind = 1; ind <= thePoints2d.Length(); ind++)
                     {
                         double CurY = thePoints2d[ind].Y();
-                        if (mySurf.IsDegenerated(thePoints[ind], Precision.Confusion()))
+                        if (mySurf.IsDegenerated(thePoints[ind], global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             continue;
                         }
-                        OnBound = (Math.Abs(Math.Abs(CurY - 0.5 * (vl + vf)) - Vp / 2) <= Precision.PConfusion()) ? 1 : 0;
+                        OnBound = (Math.Abs(Math.Abs(CurY - 0.5 * (vl + vf)) - Vp / 2) <= global::Kerf.Engine.Foundation.Precision.PConfusion()) ? 1 : 0;
                         if (!start && Math.Abs(Math.Abs(CurY - PrevY) - Vp / 2) <= 0.01 * Vp)
                         {
                             break;
@@ -1190,7 +1194,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     if (ind <= thePoints2d.Length())
                     {
                         PrevY = (myAdjustOverDegen != 0 ? vf : vl);
-                        double dV = Vp / 2 + Precision.PConfusion();
+                        double dV = Vp / 2 + global::Kerf.Engine.Foundation.Precision.PConfusion();
                         if (PrevOnBound != 0)
                         {
                             thePoints2d[ind - 1].SetY(PrevY);
@@ -1234,7 +1238,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         // Fill cache
-        myCache = new (gp_Pnt, gp_Pnt2d)[2];
+        myCache = new (Point3D, Point2D)[2];
         if (aChangeCycle)
         {
             myCache[0] = (thePoints[1], thePoints2d[1]);
@@ -1251,22 +1255,22 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
     /// <summary>Corrects an end point of the pcurve near a singularity of the surface.</summary>
     protected void correctExtremity(Geom_Curve theC3D, NCollection_Array1<double> theParams,
-                                    NCollection_Array1<gp_Pnt2d> thePoints2d, bool theIsFirstPoint,
-                                    in gp_Pnt2d thePointOnIsoLine, bool theIsUIso)
+                                    NCollection_Array1<Point2D> thePoints2d, bool theIsFirstPoint,
+                                    in Point2D thePointOnIsoLine, bool theIsUIso)
     {
         int NbPnt = thePoints2d.Length();
         int IndCoord = (theIsUIso) ? 2 : 1;
         double SingularityCoord = thePointOnIsoLine.Coord(3 - IndCoord);
-        gp_Pnt2d EndPoint = (theIsFirstPoint) ? thePoints2d[1] : thePoints2d[NbPnt];
+        Point2D EndPoint = (theIsFirstPoint) ? thePoints2d[1] : thePoints2d[NbPnt];
         double FinishCoord = EndPoint.Coord(3 - IndCoord);
 
-        gp_Dir2d aDir = (theIsUIso) ? gp.DY2d() : gp.DX2d();
-        gp_Lin2d anIsoLine = new(EndPoint, aDir);
+        Direction2D aDir = (theIsUIso) ? Constants.DY2d() : Constants.DX2d();
+        Line2D anIsoLine = new(EndPoint, aDir);
         IntRes2d_Domain Dom1 = new(), Dom2 = new();
 
         bool IsPeriodic = (theIsUIso) ? mySurf!.Surface()!.IsVPeriodic() : mySurf!.Surface()!.IsUPeriodic();
 
-        gp_Pnt2d FirstPointOfLine, SecondPointOfLine;
+        Point2D FirstPointOfLine, SecondPointOfLine;
         double FinishParam, FirstParam, SecondParam;
 
         if (theIsFirstPoint)
@@ -1304,17 +1308,17 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
         }
 
-        gp_Pnt2d FinishPoint = (theIsUIso) ? new gp_Pnt2d(FinishCoord, SecondPointOfLine.Y())
-                                           : new gp_Pnt2d(SecondPointOfLine.X(), FinishCoord);
+        Point2D FinishPoint = (theIsUIso) ? new Point2D(FinishCoord, SecondPointOfLine.Y())
+                                           : new Point2D(SecondPointOfLine.X(), FinishCoord);
 
         for (;;)
         {
-            if (Math.Abs(SecondPointOfLine.Coord(3 - IndCoord) - FinishCoord) <= 2 * Precision.PConfusion())
+            if (Math.Abs(SecondPointOfLine.Coord(3 - IndCoord) - FinishCoord) <= 2 * global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
             }
 
-            gp_Vec2d aVec = new(FirstPointOfLine, SecondPointOfLine);
+            Vector2D aVec = new(FirstPointOfLine, SecondPointOfLine);
             double aSqMagnitude = aVec.SquareMagnitude();
             if (aSqMagnitude <= 1.0e-32)
             {
@@ -1322,7 +1326,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
             aDir.SetCoord(aVec.X(), aVec.Y());
 
-            gp_Lin2d aLine = new(FirstPointOfLine, aDir);
+            Line2D aLine = new(FirstPointOfLine, aDir);
             IntCurve_IntConicConic Intersector = new(anIsoLine, Dom1, aLine, Dom2, 1.0e-10, 1.0e-10);
             if (Intersector.IsDone() && !Intersector.IsEmpty())
             {
@@ -1331,20 +1335,20 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
             else
             {
-                FinishPoint = (theIsUIso) ? new gp_Pnt2d(FinishCoord, SecondPointOfLine.Y())
-                                          : new gp_Pnt2d(SecondPointOfLine.X(), FinishCoord);
+                FinishPoint = (theIsUIso) ? new Point2D(FinishCoord, SecondPointOfLine.Y())
+                                          : new Point2D(SecondPointOfLine.X(), FinishCoord);
             }
 
-            gp_Pnt2d PrevPoint = FirstPointOfLine;
+            Point2D PrevPoint = FirstPointOfLine;
             FirstPointOfLine = SecondPointOfLine;
             FirstParam = SecondParam;
             SecondParam = (FirstParam + FinishParam) / 2;
-            if (Math.Abs(SecondParam - FirstParam) <= 2 * Precision.PConfusion())
+            if (Math.Abs(SecondParam - FirstParam) <= 2 * global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
             }
-            theC3D.D0(SecondParam, out gp_Pnt aP3d);
-            SecondPointOfLine = mySurf.NextValueOfUV(FirstPointOfLine, aP3d, myPreci, Precision.Confusion());
+            theC3D.D0(SecondParam, out Point3D aP3d);
+            SecondPointOfLine = mySurf.NextValueOfUV(FirstPointOfLine, aP3d, myPreci, global::Kerf.Engine.Foundation.Precision.Confusion());
             if (IsPeriodic)
             {
                 adjustSecondToFirstPoint(FirstPointOfLine, ref SecondPointOfLine, mySurf.Surface()!);
@@ -1375,11 +1379,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     protected void insertAdditionalPointOrAdjust(ref bool theToAdjust, int theIndCoord, double thePeriod,
                                                  double theTolOnPeriod, ref double theCurCoord, double thePrevCoord,
                                                  Geom_Curve theC3D, ref int theIndex,
-                                                 ref NCollection_Array1<gp_Pnt> thePoints,
+                                                 ref NCollection_Array1<Point3D> thePoints,
                                                  ref NCollection_Array1<double> theParams,
-                                                 ref NCollection_Array1<gp_Pnt2d> thePoints2d)
+                                                 ref NCollection_Array1<Point2D> thePoints2d)
     {
-        double CorrectedCurCoord = ElCLib.InPeriod(theCurCoord, thePrevCoord - thePeriod / 2,
+        double CorrectedCurCoord = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theCurCoord, thePrevCoord - thePeriod / 2,
                                                    thePrevCoord + thePeriod / 2);
 
         if (!theToAdjust)
@@ -1387,10 +1391,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             double CurPar = theParams[theIndex];
             double PrevPar = theParams[theIndex - 1];
             double MidPar = (PrevPar + CurPar) / 2;
-            theC3D.D0(MidPar, out gp_Pnt MidP3d);
-            gp_Pnt2d MidP2d = mySurf!.ValueOfUV(MidP3d, myPreci);
+            theC3D.D0(MidPar, out Point3D MidP3d);
+            Point2D MidP2d = mySurf!.ValueOfUV(MidP3d, myPreci);
             double MidCoord = MidP2d.Coord(theIndCoord);
-            MidCoord = ElCLib.InPeriod(MidCoord, thePrevCoord - thePeriod / 2, thePrevCoord + thePeriod / 2);
+            MidCoord = global::Kerf.Engine.Geometry.ElCLib.InPeriod(MidCoord, thePrevCoord - thePeriod / 2, thePrevCoord + thePeriod / 2);
             double FirstCoord = thePrevCoord, LastCoord = CorrectedCurCoord;
             if (LastCoord < FirstCoord)
             {
@@ -1415,7 +1419,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 while (Math.Abs(MidCoord - thePrevCoord) >= thePeriod / 2 - theTolOnPeriod
                        || Math.Abs(theCurCoord - MidCoord) >= thePeriod / 2 - theTolOnPeriod)
                 {
-                    if (MidPar - FirstT <= Precision.PConfusion() || LastT - MidPar <= Precision.PConfusion())
+                    if (MidPar - FirstT <= global::Kerf.Engine.Foundation.Precision.PConfusion() || LastT - MidPar <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         Success = false;
                         break;
@@ -1437,9 +1441,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 {
                     // Insert additional point - need to resize arrays
                     int aNewLength = thePoints.Length() + 1;
-                    NCollection_Array1<gp_Pnt> aNewPoints = new(1, aNewLength);
+                    NCollection_Array1<Point3D> aNewPoints = new(1, aNewLength);
                     NCollection_Array1<double> aNewParams = new(1, aNewLength);
-                    NCollection_Array1<gp_Pnt2d> aNewPoints2d = new(1, aNewLength);
+                    NCollection_Array1<Point2D> aNewPoints2d = new(1, aNewLength);
 
                     for (int i = 1; i < theIndex; i++)
                     {
@@ -1476,7 +1480,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     /// <summary>Interpolates the pcurve through the points (Geom2dAPI_Interpolate), or null on failure.</summary>
-    protected Geom2d_Curve? interpolatePCurve(int theNbPnt, NCollection_Array1<gp_Pnt2d> thePoints2d,
+    protected Geom2d_Curve? interpolatePCurve(int theNbPnt, NCollection_Array1<Point2D> thePoints2d,
                                               NCollection_Array1<double> theParams)
     {
         Geom2d_Curve? aC2D = null;
@@ -1485,7 +1489,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         try
         {
             // Convert to HArrays for Geom2dAPI_Interpolate
-            NCollection_HArray1<gp_Pnt2d> aPnts2d = new(1, theNbPnt);
+            NCollection_HArray1<Point2D> aPnts2d = new(1, theNbPnt);
             NCollection_HArray1<double> aParams = new(1, theNbPnt);
 
             for (int i = 1; i <= theNbPnt; i++)
@@ -1495,7 +1499,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
 
             // Check for coincident points
-            NCollection_Array1<gp_Pnt2d> aTmpPnts2d = new(thePoints2d);
+            NCollection_Array1<Point2D> aTmpPnts2d = new(thePoints2d);
             NCollection_Array1<double> aTmpParams = new(theParams);
             double aPreci = theTolerance2d;
             checkPoints2d(ref aTmpPnts2d, ref aTmpParams, ref aPreci);
@@ -1508,7 +1512,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             // Rebuild HArrays if points were removed
             if (aTmpPnts2d.Length() != theNbPnt)
             {
-                aPnts2d = new NCollection_HArray1<gp_Pnt2d>(1, aTmpPnts2d.Length());
+                aPnts2d = new NCollection_HArray1<Point2D>(1, aTmpPnts2d.Length());
                 aParams = new NCollection_HArray1<double>(1, aTmpParams.Length());
                 for (int i = 1; i <= aTmpPnts2d.Length(); i++)
                 {
@@ -1524,7 +1528,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 aC2D = myInterPol2d.InternalCurve();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             aC2D = null;
         }
@@ -1532,14 +1536,14 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     /// <summary>Approximates the pcurve through the points (GeomAPI_PointsToBSpline), or null on failure.</summary>
-    protected Geom2d_Curve? approximatePCurve(NCollection_Array1<gp_Pnt2d> thePoints2d, NCollection_Array1<double> theParams)
+    protected Geom2d_Curve? approximatePCurve(NCollection_Array1<Point2D> thePoints2d, NCollection_Array1<double> theParams)
     {
         double theTolerance2d = myPreci;
         Geom2d_Curve? aC2D;
 
         try
         {
-            NCollection_Array1<gp_Pnt2d> aTmpPnts2d = new(thePoints2d);
+            NCollection_Array1<Point2D> aTmpPnts2d = new(thePoints2d);
             NCollection_Array1<double> aTmpParams = new(theParams);
             double aPreci = theTolerance2d;
             checkPoints2d(ref aTmpPnts2d, ref aTmpParams, ref aPreci);
@@ -1550,22 +1554,22 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 return null;
             }
 
-            NCollection_Array1<gp_Pnt> points3d = new(1, numberPnt);
+            NCollection_Array1<Point3D> points3d = new(1, numberPnt);
             NCollection_Array1<double> @params = new(1, numberPnt);
 
             for (int i = 1; i <= numberPnt; i++)
             {
-                gp_Pnt2d pnt2d = aTmpPnts2d[i];
+                Point2D pnt2d = aTmpPnts2d[i];
                 points3d[i].SetCoord(pnt2d.X(), pnt2d.Y(), 0);
                 @params[i] = aTmpParams[i];
             }
 
-            GeomAPI_PointsToBSpline appr = new(points3d, @params, 1, 10, GeomAbs_C1, theTolerance2d);
+            GeomAPI_PointsToBSpline appr = new(points3d, @params, 1, 10, C1, theTolerance2d);
             Geom_BSplineCurve crv3d = appr.Curve();
 
             int NbPoles = crv3d.NbPoles();
-            NCollection_Array1<gp_Pnt> poles3d = crv3d.InternalPoles();
-            NCollection_Array1<gp_Pnt2d> poles2d = new(1, NbPoles);
+            NCollection_Array1<Point3D> poles3d = crv3d.InternalPoles();
+            NCollection_Array1<Point2D> poles2d = new(1, NbPoles);
 
             for (int i = 1; i <= NbPoles; i++)
             {
@@ -1579,7 +1583,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             aC2D = new Geom2d_BSplineCurve(poles2d, weights, knots, multiplicities, crv3d.Degree(), crv3d.IsPeriodic());
             return aC2D;
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             aC2D = null;
         }
@@ -1587,7 +1591,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     /// <summary>Removes coincident 3D points (with their parameters); sets the precision from the smallest gap.</summary>
-    protected void checkPoints(ref NCollection_Array1<gp_Pnt> thePoints, ref NCollection_Array1<double> theParams,
+    protected void checkPoints(ref NCollection_Array1<Point3D> thePoints, ref NCollection_Array1<double> theParams,
                                ref double thePreci)
     {
         int firstElem = thePoints.Lower();
@@ -1603,13 +1607,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         double DistMin2 = RealLast();
-        gp_Pnt Prev = thePoints.Value(lastValid);
+        Point3D Prev = thePoints.Value(lastValid);
 
         for (int i = firstElem + 1; i <= lastElem; i++)
         {
-            gp_Pnt Curr = thePoints.Value(i);
+            Point3D Curr = thePoints.Value(i);
             double CurDist2 = Prev.SquareDistance(Curr);
-            if (CurDist2 < gp.Resolution())
+            if (CurDist2 < Constants.Resolution())
             {
                 nbPntDropped++;
                 if (i == lastElem)
@@ -1648,7 +1652,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             return;
         }
 
-        NCollection_Array1<gp_Pnt> newPnts = new(firstElem, newLast);
+        NCollection_Array1<Point3D> newPnts = new(firstElem, newLast);
         NCollection_Array1<double> newParams = new(firstElem, newLast);
         int newCurr = firstElem;
 
@@ -1670,7 +1674,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     /// Removes coincident 2D points (with their parameters); sets the precision from the smallest gap. If fewer than two
     /// points would remain, keeps the ends, the last moved by the precision.
     /// </summary>
-    protected void checkPoints2d(ref NCollection_Array1<gp_Pnt2d> thePoints2d, ref NCollection_Array1<double> theParams,
+    protected void checkPoints2d(ref NCollection_Array1<Point2D> thePoints2d, ref NCollection_Array1<double> theParams,
                                  ref double thePreci)
     {
         int firstElem = thePoints2d.Lower();
@@ -1686,13 +1690,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         double DistMin2 = RealLast();
-        gp_Pnt2d Prev = thePoints2d.Value(lastValid);
+        Point2D Prev = thePoints2d.Value(lastValid);
 
         for (int i = firstElem + 1; i <= lastElem; i++)
         {
-            gp_Pnt2d Curr = thePoints2d.Value(i);
+            Point2D Curr = thePoints2d.Value(i);
             double CurDist2 = Prev.SquareDistance(Curr);
-            if (CurDist2 < gp.Resolution())
+            if (CurDist2 < Constants.Resolution())
             {
                 nbPntDropped++;
                 if (i == lastElem)
@@ -1731,13 +1735,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             // Create minimal length pcurve
             tmpParam.SetValue(firstElem, 1);
             tmpParam.SetValue(lastElem, 1);
-            gp_XY lastPnt = thePoints2d.Value(lastElem).XY();
-            lastPnt.Add(new gp_XY(thePreci, thePreci));
+            Xy lastPnt = thePoints2d.Value(lastElem).XY();
+            lastPnt.Add(new Xy(thePreci, thePreci));
             thePoints2d[lastElem].SetXY(lastPnt);
             newLast = firstElem + 1;
         }
 
-        NCollection_Array1<gp_Pnt2d> newPnts = new(firstElem, newLast);
+        NCollection_Array1<Point2D> newPnts = new(firstElem, newLast);
         NCollection_Array1<double> newParams = new(firstElem, newLast);
         int newCurr = firstElem;
 
@@ -1760,15 +1764,15 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     /// <paramref name="theIsTypeU"/>), with the end points' parameters, the iso-curve and the points' parameters on it.
     /// The outputs are <c>ref</c>: OCCT leaves some of them unset on some paths.
     /// </summary>
-    protected bool isAnIsoparametric(int theNbPnt, NCollection_Array1<gp_Pnt> thePoints, NCollection_Array1<double> theParams,
-                                     ref bool theIsTypeU, ref bool theP1OnIso, ref gp_Pnt2d theValueP1,
-                                     ref bool theP2OnIso, ref gp_Pnt2d theValueP2, ref bool theIsoPar2d3d,
+    protected bool isAnIsoparametric(int theNbPnt, NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams,
+                                     ref bool theIsTypeU, ref bool theP1OnIso, ref Point2D theValueP1,
+                                     ref bool theP2OnIso, ref Point2D theValueP2, ref bool theIsoPar2d3d,
                                      ref Geom_Curve? theCIso, ref double theT1, ref double theT2,
                                      NCollection_Array1<double> theParamsOut)
     {
         try
         {
-            double prec = Precision.Confusion();
+            double prec = global::Kerf.Engine.Foundation.Precision.Confusion();
 
             bool isoParam = false;
             theIsoPar2d3d = false;
@@ -1780,7 +1784,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 sTrim.Bounds(out U1, out U2, out V1, out V2);
             }
 
-            gp_Pnt pt;
+            Point3D pt;
             Span<int> mpt = stackalloc int[2];
             mpt[0] = mpt[1] = 0;
             double t;
@@ -1792,7 +1796,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
             theP1OnIso = false;
             theP2OnIso = false;
-            Bnd_Box aBox = new();
+            Box aBox = new();
             Span<double> currd2 = stackalloc double[2];
             Span<double> tp = stackalloc double[2];
             Span<int> mp = stackalloc int[2];
@@ -1806,7 +1810,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
                 if (j == 1)
                 {
-                    if (Precision.IsInfinite(U1))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U1))
                     {
                         continue;
                     }
@@ -1817,7 +1821,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 }
                 else if (j == 2)
                 {
-                    if (Precision.IsInfinite(U2))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
                     {
                         continue;
                     }
@@ -1828,7 +1832,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 }
                 else if (j == 3)
                 {
-                    if (Precision.IsInfinite(V1))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V1))
                     {
                         continue;
                     }
@@ -1839,7 +1843,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 }
                 else if (j == 4)
                 {
-                    if (Precision.IsInfinite(V2))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
                     {
                         continue;
                     }
@@ -1864,10 +1868,10 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     tt2 = U2;
                 }
 
-                cI.D0(tt1, out gp_Pnt ext1);
-                cI.D0(tt2, out gp_Pnt ext2);
+                cI.D0(tt1, out Point3D ext1);
+                cI.D0(tt2, out Point3D ext2);
 
-                cI.D0((tt1 + tt2) / 2, out gp_Pnt extmi);
+                cI.D0((tt1 + tt2) / 2, out Point3D extmi);
                 if (ext1.IsEqual(ext2, prec) && ext1.IsEqual(extmi, prec))
                 {
                     continue;
@@ -1913,11 +1917,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
                     double Cf1 = cI.FirstParameter();
                     double Cl1 = cI.LastParameter();
-                    if (Precision.IsInfinite(Cf1))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cf1))
                     {
                         Cf1 = -1000;
                     }
-                    if (Precision.IsInfinite(Cl1))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cl1))
                     {
                         Cl1 = +1000;
                     }
@@ -1932,7 +1936,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     }
                 }
 
-                if (mp[0] > 0 && mp[1] > 0 && Math.Abs(tp[0] - tp[1]) < Precision.PConfusion())
+                if (mp[0] > 0 && mp[1] > 0 && Math.Abs(tp[0] - tp[1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     continue;
                 }
@@ -2034,11 +2038,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     bool isoByDistance = true;
                     Cf = theCIso!.FirstParameter();
                     Cl = theCIso.LastParameter();
-                    if (Precision.IsInfinite(Cf))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cf))
                     {
                         Cf = -1000;
                     }
-                    if (Precision.IsInfinite(Cl))
+                    if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Cl))
                     {
                         Cl = +1000;
                     }
@@ -2062,7 +2066,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
             return isoParam;
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -2078,8 +2082,8 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     private sealed class SurfaceProjectorWithCache
     {
         private readonly ShapeAnalysis_Surface? mySurf; // Surface to project on
-        private readonly List<gp_Pnt> myCorners3d = []; // 3D positions of B-spline surface corners
-        private readonly List<gp_Pnt2d> myCorners2d = []; // UV parameters of B-spline surface corners
+        private readonly List<Point3D> myCorners3d = []; // 3D positions of B-spline surface corners
+        private readonly List<Point2D> myCorners2d = []; // UV parameters of B-spline surface corners
 
         public SurfaceProjectorWithCache(ShapeAnalysis_Surface? theSurf)
         {
@@ -2096,9 +2100,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         // Projects a 3D point onto the surface: first the B-spline corner cache, then ValueOfUV.
-        public gp_Pnt2d ValueOfUV(in gp_Pnt thePoint, double theTol, double theTolSq)
+        public Point2D ValueOfUV(in Point3D thePoint, double theTol, double theTolSq)
         {
-            if (findInCornerCache(thePoint, theTolSq, out gp_Pnt2d aResult))
+            if (findInCornerCache(thePoint, theTolSq, out Point2D aResult))
             {
                 // Corner UV is exact, but refine for numerical stability
                 return mySurf!.NextValueOfUV(aResult, thePoint, theTol, theTol);
@@ -2107,9 +2111,9 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         // Projects a 3D point with a hint: first the B-spline corner cache, then NextValueOfUV.
-        public gp_Pnt2d NextValueOfUV(in gp_Pnt2d theHint, in gp_Pnt thePoint, double theTol, double theTolSq, double theStep)
+        public Point2D NextValueOfUV(in Point2D theHint, in Point3D thePoint, double theTol, double theTolSq, double theStep)
         {
-            if (findInCornerCache(thePoint, theTolSq, out gp_Pnt2d aResult))
+            if (findInCornerCache(thePoint, theTolSq, out Point2D aResult))
             {
                 // Corner UV is exact, but refine for numerical stability
                 return mySurf!.NextValueOfUV(aResult, thePoint, theTol, theTol);
@@ -2149,33 +2153,33 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             if (isUFirstClamped && isVFirstClamped)
             {
                 myCorners3d.Add(theSurface.Pole(1, 1));
-                myCorners2d.Add(new gp_Pnt2d(aUFirst, aVFirst));
+                myCorners2d.Add(new Point2D(aUFirst, aVFirst));
             }
 
             // Corner (NbPolesU, 1) - ULast, VFirst
             if (isULastClamped && isVFirstClamped)
             {
                 myCorners3d.Add(theSurface.Pole(aNbPolesU, 1));
-                myCorners2d.Add(new gp_Pnt2d(aULast, aVFirst));
+                myCorners2d.Add(new Point2D(aULast, aVFirst));
             }
 
             // Corner (1, NbPolesV) - UFirst, VLast
             if (isUFirstClamped && isVLastClamped)
             {
                 myCorners3d.Add(theSurface.Pole(1, aNbPolesV));
-                myCorners2d.Add(new gp_Pnt2d(aUFirst, aVLast));
+                myCorners2d.Add(new Point2D(aUFirst, aVLast));
             }
 
             // Corner (NbPolesU, NbPolesV) - ULast, VLast
             if (isULastClamped && isVLastClamped)
             {
                 myCorners3d.Add(theSurface.Pole(aNbPolesU, aNbPolesV));
-                myCorners2d.Add(new gp_Pnt2d(aULast, aVLast));
+                myCorners2d.Add(new Point2D(aULast, aVLast));
             }
         }
 
         // Finds the first corner within tolerance of the point.
-        private bool findInCornerCache(in gp_Pnt thePoint, double theTolSq, out gp_Pnt2d theUV)
+        private bool findInCornerCache(in Point3D thePoint, double theTolSq, out Point2D theUV)
         {
             for (int i = 0; i < myCorners3d.Count; ++i)
             {
@@ -2185,7 +2189,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                     return true;
                 }
             }
-            theUV = new gp_Pnt2d();
+            theUV = new Point2D();
             return false;
         }
     }
@@ -2205,26 +2209,26 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     // Adjusts the second point to the first within half a period of a periodic surface.
-    private static void adjustSecondToFirstPoint(in gp_Pnt2d theFirstPoint, ref gp_Pnt2d theSecondPoint, Geom_Surface theSurf)
+    private static void adjustSecondToFirstPoint(in Point2D theFirstPoint, ref Point2D theSecondPoint, Geom_Surface theSurf)
     {
         if (theSurf.IsUPeriodic())
         {
             double anUPeriod = theSurf.UPeriod();
-            double aNewU = ElCLib.InPeriod(theSecondPoint.X(), theFirstPoint.X() - anUPeriod / 2,
+            double aNewU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theSecondPoint.X(), theFirstPoint.X() - anUPeriod / 2,
                                            theFirstPoint.X() + anUPeriod / 2);
             theSecondPoint.SetX(aNewU);
         }
         if (theSurf.IsVPeriodic())
         {
             double aVPeriod = theSurf.VPeriod();
-            double aNewV = ElCLib.InPeriod(theSecondPoint.Y(), theFirstPoint.Y() - aVPeriod / 2,
+            double aNewV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(theSecondPoint.Y(), theFirstPoint.Y() - aVPeriod / 2,
                                            theFirstPoint.Y() + aVPeriod / 2);
             theSecondPoint.SetY(aNewV);
         }
     }
 
     // Fixes possible period jumps in an array of 4 points. Returns true if a period jump was found and fixed.
-    private static bool fixPeriodicityTroubles(Span<gp_Pnt2d> thePnt, int theIdx, double thePeriod, int theSavedPoint,
+    private static bool fixPeriodicityTroubles(Span<Point2D> thePnt, int theIdx, double thePeriod, int theSavedPoint,
                                                double theSavedParam)
     {
         double aSavedParam;
@@ -2254,7 +2258,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
         double aFixIsoParam = aMinParam;
         bool isIsoLine = false;
-        if (aMaxParam - aSavedParam < Precision.PConfusion() || aSavedParam - aMinParam < Precision.PConfusion())
+        if (aMaxParam - aSavedParam < global::Kerf.Engine.Foundation.Precision.PConfusion() || aSavedParam - aMinParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             aFixIsoParam = aSavedParam;
             isIsoLine = true;
@@ -2269,18 +2273,18 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
 
             if (isIsoLine)
             {
-                if (aMaxParam - aParam < Precision.PConfusion() || aParam - aMinParam < Precision.PConfusion())
+                if (aMaxParam - aParam < global::Kerf.Engine.Foundation.Precision.PConfusion() || aParam - aMinParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aParam = aFixIsoParam;
                 }
             }
             else
             {
-                if (aMaxParam - aParam < Precision.PConfusion())
+                if (aMaxParam - aParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aParam = aMaxParam;
                 }
-                if (aParam - aMinParam < Precision.PConfusion())
+                if (aParam - aMinParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aParam = aMinParam;
                 }
@@ -2296,11 +2300,11 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         for (int i = 0; i < 3; i++)
         {
             double aDiff = thePnt[i + 1].Coord(theIdx) - thePnt[i].Coord(theIdx);
-            if (aDiff < -Precision.PConfusion())
+            if (aDiff < -global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 aSumDiff *= -1.0;
             }
-            if (aDiff * aPrevDiff < -Precision.PConfusion())
+            if (aDiff * aPrevDiff < -global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 isJump = true;
             }
@@ -2376,7 +2380,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         GeomAdaptor_Curve aC3DAdaptor = new(theCurve);
-        double aMinParSpeed = Precision.Infinite();
+        double aMinParSpeed = global::Kerf.Engine.Foundation.Precision.Infinite();
         NCollection_Sequence<double> aKnotCoeffs = new();
 
         for (; anIdx <= theBSpline.NbKnots() && aFirstParam < theLast; anIdx++)
@@ -2404,13 +2408,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             double aStep = (aLastParam - aFirstParam) / (aNbIntPnts - 1);
 
             // Start filling from first point
-            aC3DAdaptor.D0(aFirstParam, out gp_Pnt p3d1);
+            aC3DAdaptor.D0(aFirstParam, out Point3D p3d1);
 
             double aLength3d = 0.0;
             for (int anIntIdx = 1; anIntIdx < aNbIntPnts; anIntIdx++)
             {
                 double aParam = aFirstParam + aStep * anIntIdx;
-                aC3DAdaptor.D0(aParam, out gp_Pnt p3d2);
+                aC3DAdaptor.D0(aParam, out Point3D p3d2);
                 double aDist = p3d2.Distance(p3d1);
 
                 aLength3d += aDist;
@@ -2420,7 +2424,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
             }
 
             double aCoeff = aLength3d / (aLastParam - aFirstParam);
-            if (Math.Abs(aCoeff) > gp.Resolution())
+            if (Math.Abs(aCoeff) > Constants.Resolution())
             {
                 aKnotCoeffs.Append(aCoeff);
             }
@@ -2447,13 +2451,13 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
         }
 
         const double aMaxQuotientCoeff = 1500.0;
-        return (anEvenlyCoeff > aMaxQuotientCoeff && aMinParSpeed > Precision.Confusion());
+        return (anEvenlyCoeff > aMaxQuotientCoeff && aMinParSpeed > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Generates the discretization points of a curve: uniform, at least theNbControlPoints, more for B-splines with
     // many spans. Resizes the arrays and returns the number of points.
     private static int generateCurvePoints(Geom_Curve theCurve, double theFirst, double theLast, int theNbControlPoints,
-                                           NCollection_Array1<gp_Pnt> thePoints, NCollection_Array1<double> theParams)
+                                           NCollection_Array1<Point3D> thePoints, NCollection_Array1<double> theParams)
     {
         Geom_BSplineCurve? aBSpline = extractBSplineCurve(theCurve);
         int aNbPini = theNbControlPoints;
@@ -2496,7 +2500,7 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
                 aParam = theFirst + (i - 1) * aDeltaParam;
             }
 
-            theCurve.D0(aParam, out gp_Pnt aPoint);
+            theCurve.D0(aParam, out Point3D aPoint);
             thePoints.SetValue(i, aPoint);
             theParams.SetValue(i, aParam);
         }
@@ -2505,12 +2509,12 @@ public class ShapeConstruct_ProjectCurveOnSurface : Standard_Transient
     }
 
     // ShapeAnalysis_Surface::ProjectDegenerated over the arrays (it takes sequences).
-    private static void projectDegeneratedPoints(ShapeAnalysis_Surface theSurf, int theNbPnt, NCollection_Array1<gp_Pnt> thePoints,
-                                                 NCollection_Array1<gp_Pnt2d> thePoints2d, double thePreci, bool theDirect)
+    private static void projectDegeneratedPoints(ShapeAnalysis_Surface theSurf, int theNbPnt, NCollection_Array1<Point3D> thePoints,
+                                                 NCollection_Array1<Point2D> thePoints2d, double thePreci, bool theDirect)
     {
         // Convert arrays to sequences for ShapeAnalysis_Surface::ProjectDegenerated
-        NCollection_Sequence<gp_Pnt> aPoints3d = new();
-        NCollection_Sequence<gp_Pnt2d> aPoints2d = new();
+        NCollection_Sequence<Point3D> aPoints3d = new();
+        NCollection_Sequence<Point2D> aPoints2d = new();
 
         for (int i = 1; i <= theNbPnt; ++i)
         {

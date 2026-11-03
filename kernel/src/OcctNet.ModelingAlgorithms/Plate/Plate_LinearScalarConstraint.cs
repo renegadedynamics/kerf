@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -18,28 +22,28 @@ namespace Occt;
 public class Plate_LinearScalarConstraint
 {
     private readonly NCollection_HArray1<Plate_PinpointConstraint> myPPC = null!;
-    private readonly NCollection_HArray2<gp_XYZ> myCoef = null!;
+    private readonly NCollection_HArray2<Xyz> myCoef = null!;
 
     public Plate_LinearScalarConstraint()
     {
     }
 
-    public Plate_LinearScalarConstraint(in Plate_PinpointConstraint PPC1, in gp_XYZ coeff)
+    public Plate_LinearScalarConstraint(in Plate_PinpointConstraint PPC1, in Xyz coeff)
     {
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, 1);
-        myCoef = new NCollection_HArray2<gp_XYZ>(1, 1, 1, 1);
+        myCoef = new NCollection_HArray2<Xyz>(1, 1, 1, 1);
         myPPC.ChangeValue(1) = PPC1;
         myCoef.ChangeValue(1, 1) = coeff;
     }
 
-    public Plate_LinearScalarConstraint(NCollection_Array1<Plate_PinpointConstraint> thePPC, NCollection_Array1<gp_XYZ> theCoeff)
+    public Plate_LinearScalarConstraint(NCollection_Array1<Plate_PinpointConstraint> thePPC, NCollection_Array1<Xyz> theCoeff)
     {
         if (theCoeff.Length() != thePPC.Length())
         {
-            throw new Standard_DimensionMismatch();
+            throw new DimensionMismatchException();
         }
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, thePPC.Length());
-        myCoef = new NCollection_HArray2<gp_XYZ>(1, 1, 1, theCoeff.Length());
+        myCoef = new NCollection_HArray2<Xyz>(1, 1, 1, theCoeff.Length());
         myPPC.ChangeArray1().Assign(thePPC);
         for (int i = 1; i <= theCoeff.Length(); i++)
         {
@@ -47,14 +51,14 @@ public class Plate_LinearScalarConstraint
         }
     }
 
-    public Plate_LinearScalarConstraint(NCollection_Array1<Plate_PinpointConstraint> thePPC, NCollection_Array2<gp_XYZ> theCoeff)
+    public Plate_LinearScalarConstraint(NCollection_Array1<Plate_PinpointConstraint> thePPC, NCollection_Array2<Xyz> theCoeff)
     {
         if (theCoeff.RowLength() != thePPC.Length())
         {
-            throw new Standard_DimensionMismatch();
+            throw new DimensionMismatchException();
         }
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, thePPC.Length());
-        myCoef = new NCollection_HArray2<gp_XYZ>(1, theCoeff.ColLength(), 1, theCoeff.RowLength());
+        myCoef = new NCollection_HArray2<Xyz>(1, theCoeff.ColLength(), 1, theCoeff.RowLength());
         myPPC.ChangeArray1().Assign(thePPC);
         myCoef.ChangeArray2().Assign(theCoeff);
     }
@@ -62,15 +66,15 @@ public class Plate_LinearScalarConstraint
     public Plate_LinearScalarConstraint(int ColLen, int RowLen)
     {
         myPPC = new NCollection_HArray1<Plate_PinpointConstraint>(1, RowLen);
-        myCoef = new NCollection_HArray2<gp_XYZ>(1, ColLen, 1, RowLen);
-        myCoef.Init(new gp_XYZ(0.0, 0.0, 0.0));
+        myCoef = new NCollection_HArray2<Xyz>(1, ColLen, 1, RowLen);
+        myCoef.Init(new Xyz(0.0, 0.0, 0.0));
     }
 
     /// <summary>The pinpoint constraints (the array this constraint holds, shared as OCCT's handle).</summary>
     public NCollection_Array1<Plate_PinpointConstraint> GetPPC() => myPPC.Array1();
 
     /// <summary>The coefficients (the array this constraint holds, shared as OCCT's handle).</summary>
-    public NCollection_Array2<gp_XYZ> Coeff() => myCoef.Array2();
+    public NCollection_Array2<Xyz> Coeff() => myCoef.Array2();
 
     /// <summary>Sets the pinpoint constraint of index <paramref name="Index"/>.</summary>
     public void SetPPC(int Index, in Plate_PinpointConstraint Value)
@@ -79,7 +83,7 @@ public class Plate_LinearScalarConstraint
     }
 
     /// <summary>Sets the coefficient (<paramref name="Row"/>, <paramref name="Col"/>).</summary>
-    public void SetCoeff(int Row, int Col, in gp_XYZ Value)
+    public void SetCoeff(int Row, int Col, in Xyz Value)
     {
         myCoef.ChangeValue(Row, Col) = Value;
     }

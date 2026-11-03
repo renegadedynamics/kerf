@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -20,10 +22,10 @@ public sealed class Geom2dGcc_Lin2dTanObl
     private readonly bool WellDone;
     // OCCT's Paral2 (always false, read only by the undefined IsParallel2) is left out.
     private readonly int NbrSol;
-    private readonly NCollection_Array1<gp_Lin2d> linsol;
+    private readonly NCollection_Array1<Line2D> linsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pntint2sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pntint2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -33,7 +35,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
     /// Lines tangent to the qualified curve at an angle Angle (radians) to TheLin; TolAng is the angular tolerance.
     /// </summary>
     /// <exception cref="Geom2dGcc_IsParallel">The angle is 0 or pi (within TolAng) and the curve isn't a circle.</exception>
-    public Geom2dGcc_Lin2dTanObl(in Geom2dGcc_QualifiedCurve Qualified1, in gp_Lin2d TheLine, double TolAng, double Angle)
+    public Geom2dGcc_Lin2dTanObl(in Geom2dGcc_QualifiedCurve Qualified1, in Line2D TheLine, double TolAng, double Angle)
     {
         linsol     = new(1, 2);
         qualifier1 = new(1, 2);
@@ -46,7 +48,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
 
         Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
+        CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
@@ -54,10 +56,10 @@ public sealed class Geom2dGcc_Lin2dTanObl
 
         WellDone = false;
         NbrSol   = 0;
-        if (Type1 == GeomAbs_Circle)
+        if (Type1 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2dTanObl   Lin  = new(Qc1, TheLine, Angle);
             WellDone                  = Lin.IsDone();
@@ -106,7 +108,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
     /// The line tangent to the qualified curve at an angle Angle to TheLin, found from the parameter Param1 on the
     /// curve (a circle still goes to GccAna).
     /// </summary>
-    public Geom2dGcc_Lin2dTanObl(in Geom2dGcc_QualifiedCurve Qualified1, in gp_Lin2d TheLine, double TolAng, double Param1,
+    public Geom2dGcc_Lin2dTanObl(in Geom2dGcc_QualifiedCurve Qualified1, in Line2D TheLine, double TolAng, double Param1,
                                  double Angle)
     {
         linsol     = new(1, 2);
@@ -120,7 +122,7 @@ public sealed class Geom2dGcc_Lin2dTanObl
 
         Geom2dAdaptor_Curve C1    = Qualified1.Qualified();
         Geom2d_Curve?       CC1   = C1.Curve();
-        GeomAbs_CurveType   Type1 = C1.GetType();
+        CurveKind   Type1 = C1.GetType();
 
         //=============================================================================
         //                            Appel a GccAna.                                 +
@@ -128,10 +130,10 @@ public sealed class Geom2dGcc_Lin2dTanObl
 
         WellDone = false;
         NbrSol   = 0;
-        if (Type1 == GeomAbs_Circle)
+        if (Type1 == Circle)
         {
             Geom2d_Circle        CCC1 = (CC1 as Geom2d_Circle)!;
-            gp_Circ2d            c1   = CCC1.Circ2d();
+            Circle2D            c1   = CCC1.Circ2d();
             GccEnt_QualifiedCirc Qc1  = new(c1, Qualified1.Qualifier());
             GccAna_Lin2dTanObl   Lin  = new(Qc1, TheLine, Angle);
             WellDone                  = Lin.IsDone();
@@ -177,12 +179,12 @@ public sealed class Geom2dGcc_Lin2dTanObl
     }
 
     /// <summary>The solution of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is not in 1..NbSolutions().</exception>
-    public gp_Lin2d ThisSolution(int Index)
+    /// <exception cref="OutOfRangeException">Index is not in 1..NbSolutions().</exception>
+    public Line2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return linsol[Index];
     }
@@ -192,11 +194,11 @@ public sealed class Geom2dGcc_Lin2dTanObl
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -205,15 +207,15 @@ public sealed class Geom2dGcc_Lin2dTanObl
     }
 
     /// <summary>The tangency point between the solution of index Index and the curve, and its parameters.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -224,15 +226,15 @@ public sealed class Geom2dGcc_Lin2dTanObl
     }
 
     /// <summary>The intersection point between the solution of index Index and the line, and its parameters.</summary>
-    public void Intersection2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Intersection2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -247,11 +249,11 @@ public sealed class Geom2dGcc_Lin2dTanObl
     private bool Add(int theIndex, Geom2dGcc_Lin2dTanOblIter theLin, double theTol, Geom2dAdaptor_Curve theC1)
     {
         int      i;
-        gp_Lin2d aLin = theLin.ThisSolution();
+        Line2D aLin = theLin.ThisSolution();
 
-        theLin.Tangency1(out double aPar1sol, out double aPar1arg, out gp_Pnt2d aPnt1Sol);
+        theLin.Tangency1(out double aPar1sol, out double aPar1arg, out Point2D aPnt1Sol);
         // Throws Geom2dGcc_IsParallel when the angle is 0 or pi
-        theLin.Intersection2(out double aPar2sol, out double aPar2arg, out gp_Pnt2d aPnt2Sol);
+        theLin.Intersection2(out double aPar2sol, out double aPar2arg, out Point2D aPnt2Sol);
 
         for (i = 1; i < theIndex; i++)
         {
@@ -261,11 +263,11 @@ public sealed class Geom2dGcc_Lin2dTanObl
             }
         }
 
-        gp_Dir2d aLinDir = aLin.Direction();
+        Direction2D aLinDir = aLin.Direction();
 
-        Geom2dGcc_CurveTool.D1(theC1, aPar1arg, out _, out gp_Vec2d aVTan);
+        Geom2dGcc_CurveTool.D1(theC1, aPar1arg, out _, out Vector2D aVTan);
 
-        if (Math.Abs(aLinDir.Crossed(new gp_Dir2d(aVTan))) > theTol)
+        if (Math.Abs(aLinDir.Crossed(new Direction2D(aVTan))) > theTol)
         {
             return false;
         }

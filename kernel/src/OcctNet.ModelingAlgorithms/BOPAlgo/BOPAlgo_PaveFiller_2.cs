@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -78,7 +80,7 @@ internal sealed class BOPAlgo_VertexEdge : BOPAlgo_ParallelAlgo, BOPTools_Parall
     //
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (UserBreak(aPS))
         {
             return;
@@ -87,7 +89,7 @@ internal sealed class BOPAlgo_VertexEdge : BOPAlgo_ParallelAlgo, BOPTools_Parall
         {
             myFlag = myContext!.ComputeVE(myV, myE, ref myT, ref myTolVNew, myFuzzyValue);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertIntersectionFailed());
         }
@@ -97,12 +99,12 @@ internal sealed class BOPAlgo_VertexEdge : BOPAlgo_ParallelAlgo, BOPTools_Parall
 public partial class BOPAlgo_PaveFiller
 {
     /// <summary>The vertex/edge interferences.</summary>
-    protected virtual void PerformVE(Message_ProgressRange theRange)
+    protected virtual void PerformVE(ProgressRange theRange)
     {
         FillShrunkData(TopAbs_VERTEX, TopAbs_EDGE);
         //
         myIterator!.Initialize(TopAbs_VERTEX, TopAbs_EDGE);
-        using var aPS = new Message_ProgressScope(theRange, null, 1);
+        using var aPS = new ProgressScope(theRange, null, 1);
 
         int iSize = myIterator.ExpectedLength();
         if (iSize == 0)
@@ -167,7 +169,7 @@ public partial class BOPAlgo_PaveFiller
     /// the pave blocks; with <paramref name="theAddInterfs"/> the vertex/edge interferences are added to the DS.
     /// </summary>
     protected void IntersectVE(NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<int>> theVEPairs,
-                               Message_ProgressRange theRange, bool theAddInterfs = true)
+                               ProgressRange theRange, bool theAddInterfs = true)
     {
         int i, aNbVE = theVEPairs.Extent();
         if (aNbVE == 0)
@@ -185,7 +187,7 @@ public partial class BOPAlgo_PaveFiller
         // intersection of the same SD vertex with edge
         NCollection_DataMap<BOPDS_Pair, NCollection_List<int>> aDMVSD = new();
         //
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 10);
+        using var aPSOuter = new ProgressScope(theRange, null, 10);
         for (i = 1; i <= aNbVE; ++i)
         {
             if (UserBreak(aPSOuter))
@@ -242,7 +244,7 @@ public partial class BOPAlgo_PaveFiller
         //
         aNbVE = aVVE.Length();
 
-        using (var aPS = new Message_ProgressScope(aPSOuter.Next(9), "Performing Vertex-Edge intersection", aNbVE))
+        using (var aPS = new ProgressScope(aPSOuter.Next(9), "Performing Vertex-Edge intersection", aNbVE))
         {
             for (i = 0; i < aNbVE; i++)
             {
@@ -512,7 +514,7 @@ public partial class BOPAlgo_PaveFiller
                     // Pave blocks forming the common block
                     NCollection_List<BOPDS_PaveBlock> aLPBCB = new();
                     // Point in the middle of the first pave block in the common block
-                    gp_Pnt aPMFirst = new(0.0, 0.0, 0.0);
+                    Point3D aPMFirst = new(0.0, 0.0, 0.0);
                     // Tolerance of the first edge in the common block
                     double aTolEFirst = 0.0;
                     //

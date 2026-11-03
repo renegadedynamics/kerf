@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -25,7 +26,7 @@ public class StepData_DefaultGeneral : StepData_GeneralModule
     }
 
     /// <summary>Specific filling of the list of Entities shared by an Entity ent, which is an UnknownEntity from StepData.</summary>
-    public override void FillSharedCase(int casenum, Standard_Transient? ent, Interface_EntityIterator iter)
+    public override void FillSharedCase(int casenum, Transient? ent, Interface_EntityIterator iter)
     {
         // Fill iterator with shared entities from UndefinedEntity parameters
         if (casenum != 1)
@@ -53,12 +54,12 @@ public class StepData_DefaultGeneral : StepData_GeneralModule
     }
 
     /// <summary>Specific Checking of an Entity ent.</summary>
-    public override void CheckCase(int casenum, Standard_Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
+    public override void CheckCase(int casenum, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
     {
     } //  No validation check performed on an UndefinedEntity
 
     /// <summary>Specific creation of a new void entity.</summary>
-    public override bool NewVoid(int CN, out Standard_Transient? ent)
+    public override bool NewVoid(int CN, out Transient? ent)
     {
         ent = null;
         // Create a new empty entity instance (only UndefinedEntity supported)
@@ -71,7 +72,7 @@ public class StepData_DefaultGeneral : StepData_GeneralModule
     }
 
     /// <summary>Specific Copy ("Deep") from entfrom to entto (same type) by using a CopyTool which provides its working Map.</summary>
-    public override void CopyCase(int casenum, Standard_Transient? entfrom, Standard_Transient? entto, Interface_CopyTool TC)
+    public override void CopyCase(int casenum, Transient? entfrom, Transient? entto, Interface_CopyTool TC)
     {
         // Copy content from source UndefinedEntity to target UndefinedEntity
         if (casenum != 1)

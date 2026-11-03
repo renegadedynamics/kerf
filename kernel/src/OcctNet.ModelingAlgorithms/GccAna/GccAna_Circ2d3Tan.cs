@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -22,16 +26,16 @@ public sealed partial class GccAna_Circ2d3Tan
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol;
+    private readonly NCollection_Array1<Circle2D> cirsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
     private readonly NCollection_Array1<GccEnt_Position> qualifier2;
     private readonly NCollection_Array1<GccEnt_Position> qualifier3;
     private readonly NCollection_Array1<int> TheSame1;
     private readonly NCollection_Array1<int> TheSame2;
     private readonly NCollection_Array1<int> TheSame3;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg2sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg3sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pnttg2sol;
+    private readonly NCollection_Array1<Point2D> pnttg3sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> par3sol;
@@ -47,16 +51,16 @@ public sealed partial class GccAna_Circ2d3Tan
         in GccEnt_QualifiedCirc Qualified3,
         double Tolerance)
     {
-        cirsol = new NCollection_Array1<gp_Circ2d>(1, 16);
+        cirsol = new NCollection_Array1<Circle2D>(1, 16);
         qualifier1 = new NCollection_Array1<GccEnt_Position>(1, 16);
         qualifier2 = new NCollection_Array1<GccEnt_Position>(1, 16);
         qualifier3 = new NCollection_Array1<GccEnt_Position>(1, 16);
         TheSame1 = new NCollection_Array1<int>(1, 16);
         TheSame2 = new NCollection_Array1<int>(1, 16);
         TheSame3 = new NCollection_Array1<int>(1, 16);
-        pnttg1sol = new NCollection_Array1<gp_Pnt2d>(1, 16);
-        pnttg2sol = new NCollection_Array1<gp_Pnt2d>(1, 16);
-        pnttg3sol = new NCollection_Array1<gp_Pnt2d>(1, 16);
+        pnttg1sol = new NCollection_Array1<Point2D>(1, 16);
+        pnttg2sol = new NCollection_Array1<Point2D>(1, 16);
+        pnttg3sol = new NCollection_Array1<Point2D>(1, 16);
         par1sol = new NCollection_Array1<double>(1, 16);
         par2sol = new NCollection_Array1<double>(1, 16);
         par3sol = new NCollection_Array1<double>(1, 16);
@@ -64,7 +68,7 @@ public sealed partial class GccAna_Circ2d3Tan
         pararg2 = new NCollection_Array1<double>(1, 16);
         pararg3 = new NCollection_Array1<double>(1, 16);
 
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Direction2D dirx = new(Direction2D.D.X);
         double Tol = Math.Abs(Tolerance);
         WellDone = false;
         NbrSol = 0;
@@ -82,15 +86,15 @@ public sealed partial class GccAna_Circ2d3Tan
         //   Processing.                                                          +
         //=========================================================================
 
-        gp_Circ2d Cir1 = Qualified1.Qualified();
-        gp_Circ2d Cir2 = Qualified2.Qualified();
-        gp_Circ2d Cir3 = Qualified3.Qualified();
+        Circle2D Cir1 = Qualified1.Qualified();
+        Circle2D Cir2 = Qualified2.Qualified();
+        Circle2D Cir3 = Qualified3.Qualified();
         double R1 = Cir1.Radius();
         double R2 = Cir2.Radius();
         double R3 = Cir3.Radius();
-        gp_Pnt2d center1 = Cir1.Location();
-        gp_Pnt2d center2 = Cir2.Location();
-        gp_Pnt2d center3 = Cir3.Location();
+        Point2D center1 = Cir1.Location();
+        Point2D center2 = Cir2.Location();
+        Point2D center3 = Cir3.Location();
 
         double X1 = center1.X();
         double X2 = center2.X();
@@ -100,8 +104,8 @@ public sealed partial class GccAna_Circ2d3Tan
         double Y2 = center2.Y();
         double Y3 = center3.Y();
 
-        gp_XY dir2 = center1.XY() - center2.XY();
-        gp_XY dir3 = center1.XY() - center3.XY();
+        Xy dir2 = center1.XY() - center2.XY();
+        Xy dir3 = center1.XY() - center3.XY();
 
         //////////
         if ((Math.Abs(R1 - R2) <= Tolerance && center1.IsEqual(center2, Tolerance))
@@ -398,10 +402,10 @@ public sealed partial class GccAna_Circ2d3Tan
                 A = c2;
                 B = 2.0 * e2;
                 C = f2;
-                math_DirectPolynomialRoots yRoots = new(A, B, C);
-                if (yRoots.IsDone() && !yRoots.InfiniteRoots())
+                DirectPolynomialRoots yRoots = new(A, B, C);
+                if (yRoots.IsDone && !yRoots.InfiniteRoots())
                 {
-                    for (k = 1; k <= yRoots.NbSolutions(); k++)
+                    for (k = 1; k <= yRoots.SolutionCount; k++)
                     {
                         //   for each y solution:
                         y = yRoots.Value(k);
@@ -412,10 +416,10 @@ public sealed partial class GccAna_Circ2d3Tan
                             A = a3;
                             B = 2 * (b3 * y + d3);
                             C = c3 * (y * y) + 2 * e3 * y + f3;
-                            math_DirectPolynomialRoots xRoots = new(A, B, C);
-                            if (xRoots.IsDone() && !xRoots.InfiniteRoots())
+                            DirectPolynomialRoots xRoots = new(A, B, C);
+                            if (xRoots.IsDone && !xRoots.InfiniteRoots())
                             {
-                                for (j = 1; j <= xRoots.NbSolutions(); j++)
+                                for (j = 1; j <= xRoots.SolutionCount; j++)
                                 {
                                     x = xRoots.Value(j);
                                     if (j != 2 || Math.Abs(x - xRoots.Value(1)) > 10 * Tolerance)
@@ -446,10 +450,10 @@ public sealed partial class GccAna_Circ2d3Tan
                 {
                     // Derivation of the equation Ay4 + By3 + Cy2 + Dy + E
                     // yRootsD is OCCT's yRoots1 (C# forbids reusing the name of the yRoots1 declared below)
-                    math_DirectPolynomialRoots yRootsD = new(4 * A, 3 * B, 2 * C, D);
-                    if (yRootsD.IsDone() && !yRootsD.InfiniteRoots())
+                    DirectPolynomialRoots yRootsD = new(4 * A, 3 * B, 2 * C, D);
+                    if (yRootsD.IsDone && !yRootsD.InfiniteRoots())
                     {
-                        for (k = 1; k <= yRootsD.NbSolutions(); k++)
+                        for (k = 1; k <= yRootsD.SolutionCount; k++)
                         {
                             y = yRootsD.Value(k);
                             // Check if this value is already caught
@@ -480,10 +484,10 @@ public sealed partial class GccAna_Circ2d3Tan
                     }
                 }
 
-                math_DirectPolynomialRoots yRoots1 = new(A, B, C, D, E);
-                if (yRoots1.IsDone() && !yRoots1.InfiniteRoots())
+                DirectPolynomialRoots yRoots1 = new(A, B, C, D, E);
+                if (yRoots1.IsDone && !yRoots1.InfiniteRoots())
                 {
-                    for (k = 1; k <= yRoots1.NbSolutions(); k++)
+                    for (k = 1; k <= yRoots1.SolutionCount; k++)
                     {
                         y = yRoots1.Value(k);
                         // Check if this value is already caught
@@ -522,10 +526,10 @@ public sealed partial class GccAna_Circ2d3Tan
                 // If s = v = 0
                 if (Math.Abs(s) <= Tolerance && Math.Abs(v) <= Tolerance)
                 {
-                    math_DirectPolynomialRoots yRoots = new(m, n, t);
-                    if (yRoots.IsDone() && !yRoots.InfiniteRoots())
+                    DirectPolynomialRoots yRoots = new(m, n, t);
+                    if (yRoots.IsDone && !yRoots.InfiniteRoots())
                     {
-                        for (k = 1; k <= yRoots.NbSolutions(); k++)
+                        for (k = 1; k <= yRoots.SolutionCount; k++)
                         {
                             //   for each y solution:
                             y = yRoots.Value(k);
@@ -542,10 +546,10 @@ public sealed partial class GccAna_Circ2d3Tan
                                 A = a2;
                                 B = 2 * (b2 * y + d2);
                                 C = c2 * y * y + 2 * e2 * y + f2;
-                                math_DirectPolynomialRoots xRoots = new(A, B, C);
-                                if (xRoots.IsDone() && !xRoots.InfiniteRoots())
+                                DirectPolynomialRoots xRoots = new(A, B, C);
+                                if (xRoots.IsDone && !xRoots.InfiniteRoots())
                                 {
-                                    for (l = 1; l <= xRoots.NbSolutions(); l++)
+                                    for (l = 1; l <= xRoots.SolutionCount; l++)
                                     {
                                         //   for each x solution:
                                         x = xRoots.Value(l);
@@ -579,10 +583,10 @@ public sealed partial class GccAna_Circ2d3Tan
                     if (IsTouch)
                     {
                         // Derivation of the equation Ay4 + By3 + Cy2 + Dy + E
-                        math_DirectPolynomialRoots yRoots1 = new(4 * A, 3 * B, 2 * C, D);
-                        if (yRoots1.IsDone() && !yRoots1.InfiniteRoots())
+                        DirectPolynomialRoots yRoots1 = new(4 * A, 3 * B, 2 * C, D);
+                        if (yRoots1.IsDone && !yRoots1.InfiniteRoots())
                         {
-                            for (k = 1; k <= yRoots1.NbSolutions(); k++)
+                            for (k = 1; k <= yRoots1.SolutionCount; k++)
                             {
                                 y = yRoots1.Value(k);
 
@@ -615,10 +619,10 @@ public sealed partial class GccAna_Circ2d3Tan
                                         A = a2;
                                         B = 2 * (b2 * y + d2);
                                         C = c2 * y * y + 2 * e2 * y + f2;
-                                        math_DirectPolynomialRoots xRoots = new(A, B, C);
-                                        if (xRoots.IsDone() && !xRoots.InfiniteRoots())
+                                        DirectPolynomialRoots xRoots = new(A, B, C);
+                                        if (xRoots.IsDone && !xRoots.InfiniteRoots())
                                         {
-                                            for (l = 1; l <= xRoots.NbSolutions(); l++)
+                                            for (l = 1; l <= xRoots.SolutionCount; l++)
                                             {
                                                 //   for each x solution:
                                                 x = xRoots.Value(l);
@@ -637,10 +641,10 @@ public sealed partial class GccAna_Circ2d3Tan
                         }
                     }
 
-                    math_DirectPolynomialRoots yRoots = new(A, B, C, D, E);
-                    if (yRoots.IsDone() && !yRoots.InfiniteRoots())
+                    DirectPolynomialRoots yRoots = new(A, B, C, D, E);
+                    if (yRoots.IsDone && !yRoots.InfiniteRoots())
                     {
-                        for (k = 1; k <= yRoots.NbSolutions(); k++)
+                        for (k = 1; k <= yRoots.SolutionCount; k++)
                         {
                             //   for each y solution:
                             y = yRoots.Value(k);
@@ -667,10 +671,10 @@ public sealed partial class GccAna_Circ2d3Tan
                                 A = a2;
                                 B = 2 * (b2 * y + d2);
                                 C = c2 * y * y + 2 * e2 * y + f2;
-                                math_DirectPolynomialRoots xRoots = new(A, B, C);
-                                if (xRoots.IsDone() && !xRoots.InfiniteRoots())
+                                DirectPolynomialRoots xRoots = new(A, B, C);
+                                if (xRoots.IsDone && !xRoots.InfiniteRoots())
                                 {
-                                    for (l = 1; l <= xRoots.NbSolutions(); l++)
+                                    for (l = 1; l <= xRoots.SolutionCount; l++)
                                     {
                                         //   for each x solution:
                                         x = xRoots.Value(l);
@@ -908,9 +912,9 @@ public sealed partial class GccAna_Circ2d3Tan
                     NbrSol = cirsol.Upper();
                 }
 
-                gp_Pnt2d Center = new gp_Pnt2d(xSol[j], ySol[j]);
+                Point2D Center = new Point2D(xSol[j], ySol[j]);
 
-                cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), rSol[j]);
+                cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), rSol[j]);
 
                 //   ==========================================================
                 double distcc1 = Center.Distance(center1);
@@ -978,7 +982,7 @@ public sealed partial class GccAna_Circ2d3Tan
                 else
                 {
                     TheSame1[NbrSol] = 0;
-                    gp_Dir2d dc = new();
+                    Direction2D dc = new();
                     if ((i == 2 || i == 5 || i == 6 || i == 8) || rSol[j] > R1)
                     {
                         dc.SetXY(Cir1.Location().XY() - Center.XY());
@@ -987,9 +991,9 @@ public sealed partial class GccAna_Circ2d3Tan
                     {
                         dc.SetXY(Center.XY() - Cir1.Location().XY());
                     }
-                    pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + rSol[j] * dc.XY());
-                    par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                    pararg1[NbrSol] = ElCLib.Parameter(Cir1, pnttg1sol[NbrSol]);
+                    pnttg1sol[NbrSol] = new Point2D(Center.XY() + rSol[j] * dc.XY());
+                    par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                    pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Cir1, pnttg1sol[NbrSol]);
                 }
 
                 if (Center.Distance(Cir2.Location()) <= Tolerance)
@@ -999,7 +1003,7 @@ public sealed partial class GccAna_Circ2d3Tan
                 else
                 {
                     TheSame2[NbrSol] = 0;
-                    gp_Dir2d dc = new();
+                    Direction2D dc = new();
                     if ((i == 3 || i == 5 || i == 7 || i == 8) || rSol[j] > R2)
                     {
                         dc.SetXY(Cir2.Location().XY() - Center.XY());
@@ -1008,9 +1012,9 @@ public sealed partial class GccAna_Circ2d3Tan
                     {
                         dc.SetXY(Center.XY() - Cir2.Location().XY());
                     }
-                    pnttg2sol[NbrSol] = new gp_Pnt2d(Center.XY() + rSol[j] * dc.XY());
-                    par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                    pararg2[NbrSol] = ElCLib.Parameter(Cir2, pnttg2sol[NbrSol]);
+                    pnttg2sol[NbrSol] = new Point2D(Center.XY() + rSol[j] * dc.XY());
+                    par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                    pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Cir2, pnttg2sol[NbrSol]);
                 }
 
                 if (Center.Distance(Cir3.Location()) <= Tolerance)
@@ -1020,7 +1024,7 @@ public sealed partial class GccAna_Circ2d3Tan
                 else
                 {
                     TheSame3[NbrSol] = 0;
-                    gp_Dir2d dc = new();
+                    Direction2D dc = new();
                     if ((i == 4 || i == 6 || i == 7 || i == 8) || rSol[j] > R3)
                     {
                         dc.SetXY(Cir3.Location().XY() - Center.XY());
@@ -1029,9 +1033,9 @@ public sealed partial class GccAna_Circ2d3Tan
                     {
                         dc.SetXY(Center.XY() - Cir3.Location().XY());
                     }
-                    pnttg3sol[NbrSol] = new gp_Pnt2d(Center.XY() + rSol[j] * dc.XY());
-                    par3sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
-                    pararg3[NbrSol] = ElCLib.Parameter(Cir3, pnttg3sol[NbrSol]);
+                    pnttg3sol[NbrSol] = new Point2D(Center.XY() + rSol[j] * dc.XY());
+                    par3sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
+                    pararg3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(Cir3, pnttg3sol[NbrSol]);
                 }
             }
         }
@@ -1053,18 +1057,18 @@ public sealed partial class GccAna_Circ2d3Tan
     /// <summary>
     /// The solution number Index. The index only enumerates the solutions of this algorithm object.
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is outside [1, NbSolutions()].</exception>
-    public gp_Circ2d ThisSolution(int Index)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is outside [1, NbSolutions()].</exception>
+    public Circle2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return cirsol[Index];
@@ -1078,11 +1082,11 @@ public sealed partial class GccAna_Circ2d3Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1096,16 +1100,16 @@ public sealed partial class GccAna_Circ2d3Tan
     /// The tangency point of the solution number Index with argument 1: ParSol its parameter on the solution, ParArg
     /// on the argument (0 for a point).
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the argument itself (IsTheSame1).</exception>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the argument itself (IsTheSame1).</exception>
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1117,7 +1121,7 @@ public sealed partial class GccAna_Circ2d3Tan
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
@@ -1126,16 +1130,16 @@ public sealed partial class GccAna_Circ2d3Tan
     /// The tangency point of the solution number Index with argument 2: ParSol its parameter on the solution, ParArg
     /// on the argument (0 for a point).
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the argument itself (IsTheSame2).</exception>
-    public void Tangency2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the argument itself (IsTheSame2).</exception>
+    public void Tangency2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1147,7 +1151,7 @@ public sealed partial class GccAna_Circ2d3Tan
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
@@ -1156,16 +1160,16 @@ public sealed partial class GccAna_Circ2d3Tan
     /// The tangency point of the solution number Index with argument 3: ParSol its parameter on the solution, ParArg
     /// on the argument (0 for a point).
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the argument itself (IsTheSame3).</exception>
-    public void Tangency3(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the argument itself (IsTheSame3).</exception>
+    public void Tangency3(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1177,7 +1181,7 @@ public sealed partial class GccAna_Circ2d3Tan
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
@@ -1187,12 +1191,12 @@ public sealed partial class GccAna_Circ2d3Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame1[Index] == 0)
@@ -1208,12 +1212,12 @@ public sealed partial class GccAna_Circ2d3Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame2[Index] == 0)
@@ -1229,12 +1233,12 @@ public sealed partial class GccAna_Circ2d3Tan
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame3[Index] == 0)

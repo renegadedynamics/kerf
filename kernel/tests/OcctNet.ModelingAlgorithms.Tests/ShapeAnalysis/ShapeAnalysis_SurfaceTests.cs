@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
@@ -11,9 +15,9 @@ public class ShapeAnalysis_SurfaceTests
 {
     private const double Preci = 1e-7;
 
-    private static readonly gp_Ax3 XOY = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+    private static readonly CoordinateSystem XOY = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
-    private static void AssertUV(double theU, double theV, gp_Pnt2d theUV, double theTol = 1e-9)
+    private static void AssertUV(double theU, double theV, Point2D theUV, double theTol = 1e-9)
     {
         Assert.Equal(theU, theUV.X(), theTol);
         Assert.Equal(theV, theUV.Y(), theTol);
@@ -33,14 +37,14 @@ public class ShapeAnalysis_SurfaceTests
     /// <summary>The saddle z = x·y on [0, 1]², as a Bezier surface of degree 2 x 2 scaled by <paramref name="theL"/>.</summary>
     private static Geom_BezierSurface Saddle(double theL)
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 3, 1, 3);
+        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 3; j++)
             {
                 double x = (i - 1) * 0.5, y = (j - 1) * 0.5;
                 // bilinear (x, y) and the Bezier control net of x*y: z_ij = x_i*y_j
-                aPoles[i, j] = new gp_Pnt(theL * x, theL * y, theL * x * y);
+                aPoles[i, j] = new Point3D(theL * x, theL * y, theL * x * y);
             }
         }
 
@@ -53,13 +57,13 @@ public class ShapeAnalysis_SurfaceTests
     /// </summary>
     private static Geom_BSplineSurface Degenerated()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 3, 1, 2);
-        aPoles[1, 1] = new gp_Pnt(0, 0, 1);
-        aPoles[1, 2] = new gp_Pnt(0, 0, 1);
-        aPoles[2, 1] = new gp_Pnt(1, 0, 0.5);
-        aPoles[2, 2] = new gp_Pnt(1, 1, 0.5);
-        aPoles[3, 1] = new gp_Pnt(2, 0, 0);
-        aPoles[3, 2] = new gp_Pnt(2, 2, 0);
+        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 1);
+        aPoles[1, 2] = new Point3D(0, 0, 1);
+        aPoles[2, 1] = new Point3D(1, 0, 0.5);
+        aPoles[2, 2] = new Point3D(1, 1, 0.5);
+        aPoles[3, 1] = new Point3D(2, 0, 0);
+        aPoles[3, 2] = new Point3D(2, 2, 0);
         return new Geom_BSplineSurface(aPoles, Array(0.0, 1.0), Array(0.0, 1.0), Array(3, 3), Array(2, 2), 2, 1);
     }
 
@@ -67,7 +71,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Plane()
     {
         var aSAS = new ShapeAnalysis_Surface(new Geom_Plane(XOY));
-        AssertUV(3, 4, aSAS.ValueOfUV(new gp_Pnt(3, 4, 5), Preci));
+        AssertUV(3, 4, aSAS.ValueOfUV(new Point3D(3, 4, 5), Preci));
         Assert.Equal(5.0, aSAS.Gap(), 1e-12);
         Assert.Equal(0, aSAS.NbSingularities(1e10));
         Assert.False(aSAS.HasSingularities(1));
@@ -75,24 +79,24 @@ public class ShapeAnalysis_SurfaceTests
         Assert.False(aSAS.IsVClosed());
         Assert.Equal(Math.Sqrt(RealLast()), aSAS.UCloseVal()); // the square root of RealLast, as the distances
         double aDummy = 0;
-        gp_Pnt aP = new gp_Pnt();
-        gp_Pnt2d aF = new gp_Pnt2d(), aL = new gp_Pnt2d();
+        Point3D aP = new Point3D();
+        Point2D aF = new Point2D(), aL = new Point2D();
         bool aUIso = false;
         Assert.False(aSAS.Singularity(1, ref aDummy, ref aP, ref aF, ref aL, ref aDummy, ref aDummy, ref aUIso));
         // NextValueOfUV on a plane is ValueOfUV
-        AssertUV(-1, 2, aSAS.NextValueOfUV(new gp_Pnt2d(0, 0), new gp_Pnt(-1, 2, 0.5), Preci));
+        AssertUV(-1, 2, aSAS.NextValueOfUV(new Point2D(0, 0), new Point3D(-1, 2, 0.5), Preci));
         // a straight pcurve is never degenerated on a plane
-        Assert.False(aSAS.IsDegenerated(new gp_Pnt2d(0, 0), new gp_Pnt2d(0, 1), 1e-3, 10));
+        Assert.False(aSAS.IsDegenerated(new Point2D(0, 0), new Point2D(0, 1), 1e-3, 10));
     }
 
     [Fact]
     public void Cylinder()
     {
         var aSAS = new ShapeAnalysis_Surface(new Geom_CylindricalSurface(XOY, 2));
-        AssertUV(0, 3, aSAS.ValueOfUV(new gp_Pnt(2, 0, 3), Preci));
-        AssertUV(1.5 * M_PI, 1, aSAS.ValueOfUV(new gp_Pnt(0, -2, 1), Preci));
+        AssertUV(0, 3, aSAS.ValueOfUV(new Point3D(2, 0, 3), Preci));
+        AssertUV(1.5 * M_PI, 1, aSAS.ValueOfUV(new Point3D(0, -2, 1), Preci));
         Assert.Equal(0.0, aSAS.Gap(), 1e-15);
-        AssertUV(0.5 * M_PI, -1, aSAS.ValueOfUV(new gp_Pnt(0, 5, -1), Preci));
+        AssertUV(0.5 * M_PI, -1, aSAS.ValueOfUV(new Point3D(0, 5, -1), Preci));
         Assert.Equal(3.0, aSAS.Gap(), 1e-12);
         Assert.True(aSAS.IsUClosed());
         Assert.Equal(0.0, aSAS.UCloseVal());
@@ -102,7 +106,7 @@ public class ShapeAnalysis_SurfaceTests
         // iso-curves: a line along V and a circle; bound isos are cached, all are frozen
         Geom_Curve? anIso = aSAS.UIso(0);
         Assert.IsType<Geom_Line>(anIso);
-        Assert.True(anIso!.IsFrozen());
+        Assert.True(anIso!.IsFrozen);
         Assert.Same(anIso, aSAS.UIso(0));
         Assert.IsType<Geom_Circle>(aSAS.VIso(1));
         Assert.NotSame(aSAS.VIso(1), aSAS.VIso(1));
@@ -115,8 +119,8 @@ public class ShapeAnalysis_SurfaceTests
         var aSAS = new ShapeAnalysis_Surface(aCone);
         Assert.Equal(1, aSAS.NbSingularities(0));
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
-        gp_Pnt aP = new gp_Pnt();
-        gp_Pnt2d aF = new gp_Pnt2d(), aL = new gp_Pnt2d();
+        Point3D aP = new Point3D();
+        Point2D aF = new Point2D(), aL = new Point2D();
         bool aUIso = true;
         Assert.True(aSAS.Singularity(1, ref aPreci, ref aP, ref aF, ref aL, ref aFirstPar, ref aLastPar, ref aUIso));
         Assert.Equal(0.0, aPreci);
@@ -127,18 +131,18 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(2 * M_PI, aL.X());
 
         Assert.True(aSAS.IsDegenerated(aCone.Apex(), Preci));
-        Assert.False(aSAS.IsDegenerated(new gp_Pnt(1, 0, 0), Preci));
+        Assert.False(aSAS.IsDegenerated(new Point3D(1, 0, 0), Preci));
 
         // ProjectDegenerated sets U from the neighbour
-        var aResult = new gp_Pnt2d(0, -2);
-        Assert.True(aSAS.ProjectDegenerated(aCone.Apex(), Preci, new gp_Pnt2d(1.25, -1.5), ref aResult));
+        var aResult = new Point2D(0, -2);
+        Assert.True(aSAS.ProjectDegenerated(aCone.Apex(), Preci, new Point2D(1.25, -1.5), ref aResult));
         AssertUV(1.25, -2, aResult, 0);
 
         // the straight pcurve along the apex is degenerated
-        Assert.True(aSAS.IsDegenerated(new gp_Pnt2d(0, -2), new gp_Pnt2d(3, -2), 1e-3, 10));
-        Assert.False(aSAS.IsDegenerated(new gp_Pnt2d(0, 0), new gp_Pnt2d(3, 0), 1e-3, 10));
+        Assert.True(aSAS.IsDegenerated(new Point2D(0, -2), new Point2D(3, -2), 1e-3, 10));
+        Assert.False(aSAS.IsDegenerated(new Point2D(0, 0), new Point2D(3, 0), 1e-3, 10));
 
-        gp_Pnt2d aUV = aSAS.ValueOfUV(aCone.Value(2.5, 0.75), Preci);
+        Point2D aUV = aSAS.ValueOfUV(aCone.Value(2.5, 0.75), Preci);
         AssertUV(2.5, 0.75, aUV);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
@@ -153,45 +157,45 @@ public class ShapeAnalysis_SurfaceTests
         Assert.True(aSAS.HasSingularities(0));
 
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
-        gp_Pnt aP = new gp_Pnt();
-        gp_Pnt2d aF = new gp_Pnt2d(), aL = new gp_Pnt2d();
+        Point3D aP = new Point3D();
+        Point2D aF = new Point2D(), aL = new Point2D();
         bool aUIso = true;
         Assert.True(aSAS.Singularity(1, ref aPreci, ref aP, ref aF, ref aL, ref aFirstPar, ref aLastPar, ref aUIso));
         Assert.Equal(1.0, aP.Z(), 1e-15); // the northern pole first
         AssertUV(2 * M_PI, M_PI / 2, aF, 0);
         AssertUV(0, M_PI / 2, aL, 0);
 
-        var aNorth = new gp_Pnt(0, 0, 1.0000001);
-        gp_Pnt2d aDF = new gp_Pnt2d(), aDL = new gp_Pnt2d();
+        var aNorth = new Point3D(0, 0, 1.0000001);
+        Point2D aDF = new Point2D(), aDL = new Point2D();
         Assert.True(aSAS.DegeneratedValues(aNorth, 1e-6, ref aDF, ref aDL, ref aFirstPar, ref aLastPar));
         AssertUV(2 * M_PI, M_PI / 2, aDF, 0);
         Assert.Equal(1e-7, aSAS.Gap(), 1e-12);
-        Assert.False(aSAS.DegeneratedValues(new gp_Pnt(1, 0, 0), 1e-6, ref aDF, ref aDL, ref aFirstPar, ref aLastPar));
+        Assert.False(aSAS.DegeneratedValues(new Point3D(1, 0, 0), 1e-6, ref aDF, ref aDL, ref aFirstPar, ref aLastPar));
 
         AssertUV(M_PI / 2, M_PI / 4, aSAS.ValueOfUV(aSphere.Value(M_PI / 2, M_PI / 4), Preci));
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
 
         // the multi-point form: points at the start lying in the south pole take their U from the first other point
-        var aPoints = new NCollection_Sequence<gp_Pnt>();
-        var aUVs = new NCollection_Sequence<gp_Pnt2d>();
-        aPoints.Append(new gp_Pnt(0, 0, -1));
-        aUVs.Append(new gp_Pnt2d(0, -M_PI / 2));
+        var aPoints = new NCollection_Sequence<Point3D>();
+        var aUVs = new NCollection_Sequence<Point2D>();
+        aPoints.Append(new Point3D(0, 0, -1));
+        aUVs.Append(new Point2D(0, -M_PI / 2));
         aPoints.Append(aSphere.Value(1.0, -1.0));
-        aUVs.Append(new gp_Pnt2d(1.0, -1.0));
+        aUVs.Append(new Point2D(1.0, -1.0));
         aPoints.Append(aSphere.Value(1.0, 0.0));
-        aUVs.Append(new gp_Pnt2d(1.0, 0.0));
+        aUVs.Append(new Point2D(1.0, 0.0));
         Assert.True(aSAS.ProjectDegenerated(3, aPoints, aUVs, Preci, true));
         AssertUV(1.0, -M_PI / 2, aUVs[1], 0);
         Assert.False(aSAS.ProjectDegenerated(3, aPoints, aUVs, Preci, false));
 
         // all points degenerated: distributed evenly between the ends
-        aPoints = new NCollection_Sequence<gp_Pnt>();
-        aUVs = new NCollection_Sequence<gp_Pnt2d>();
+        aPoints = new NCollection_Sequence<Point3D>();
+        aUVs = new NCollection_Sequence<Point2D>();
         for (int i = 0; i < 3; i++)
         {
-            aPoints.Append(new gp_Pnt(0, 0, 1));
-            aUVs.Append(new gp_Pnt2d(i == 2 ? 2.0 : 0.0, M_PI / 2));
+            aPoints.Append(new Point3D(0, 0, 1));
+            aUVs.Append(new Point2D(i == 2 ? 2.0 : 0.0, M_PI / 2));
         }
 
         Assert.True(aSAS.ProjectDegenerated(3, aPoints, aUVs, Preci, true));
@@ -218,12 +222,12 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Surface_of_revolution()
     {
-        var aProfile = new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(1, 0, 0), new gp_Dir(0, 0, 1)), 0, 2);
-        var aRev = new Geom_SurfaceOfRevolution(aProfile, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+        var aProfile = new Geom_TrimmedCurve(new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0, 2);
+        var aRev = new Geom_SurfaceOfRevolution(aProfile, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         var aSAS = new ShapeAnalysis_Surface(aRev);
-        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new gp_Pnt(0, 1, 1), Preci), 1e-7);
+        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 1, 1), Preci), 1e-7);
         Assert.Equal(0.0, aSAS.Gap(), 1e-7);
-        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new gp_Pnt(0, 3, 1), Preci), 1e-7);
+        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 3, 1), Preci), 1e-7);
         Assert.Equal(2.0, aSAS.Gap(), 1e-7);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
@@ -231,21 +235,21 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0, aSAS.NbSingularities(1));
 
         // NextValueOfUV by Newton from a neighbour
-        gp_Pnt2d aNext = aSAS.NextValueOfUV(new gp_Pnt2d(1.5, 0.9), aRev.Value(1.6, 1.1), Preci);
+        Point2D aNext = aSAS.NextValueOfUV(new Point2D(1.5, 0.9), aRev.Value(1.6, 1.1), Preci);
         AssertUV(1.6, 1.1, aNext, 1e-9);
 
         // a revolved line through the axis: a cone with its apex as a degenerated boundary
-        var aSlant = new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 1)), 0, 2);
-        var aConeRev = new ShapeAnalysis_Surface(new Geom_SurfaceOfRevolution(aSlant, new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))));
+        var aSlant = new Geom_TrimmedCurve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)), 0, 2);
+        var aConeRev = new ShapeAnalysis_Surface(new Geom_SurfaceOfRevolution(aSlant, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
         Assert.Equal(1, aConeRev.NbSingularities(Preci));
-        Assert.True(aConeRev.IsDegenerated(new gp_Pnt(0, 0, 0), Preci));
+        Assert.True(aConeRev.IsDegenerated(new Point3D(0, 0, 0), Preci));
     }
 
     [Fact]
     public void Surface_of_linear_extrusion()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2);
-        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new gp_Dir(0, 0, 1));
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        var anExtr = new Geom_SurfaceOfLinearExtrusion(aCircle, new Direction3D(0, 0, 1));
         var aSAS = new ShapeAnalysis_Surface(anExtr);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
@@ -253,13 +257,13 @@ public class ShapeAnalysis_SurfaceTests
 
         // an open profile (an arc of half a circle): U isn't closed
         var anArc = new Geom_TrimmedCurve(aCircle, 0, M_PI);
-        var aSAS2 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anArc, new gp_Dir(0, 0, 1)));
+        var aSAS2 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anArc, new Direction3D(0, 0, 1)));
         Assert.False(aSAS2.IsUClosed());
         Assert.Equal(4.0, aSAS2.Gap(), 1e-12);
         Assert.Equal(RealLast(), aSAS2.UCloseVal()); // the ends are farther apart than the start and the middle
         // an almost closed profile is closed with a large enough precision
         var anAlmost = new Geom_TrimmedCurve(aCircle, 0, 2 * M_PI - 1e-4);
-        var aSAS3 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anAlmost, new gp_Dir(0, 0, 1)));
+        var aSAS3 = new ShapeAnalysis_Surface(new Geom_SurfaceOfLinearExtrusion(anAlmost, new Direction3D(0, 0, 1)));
         Assert.False(aSAS3.IsUClosed());
         Assert.True(aSAS3.IsUClosed(1e-3));
     }
@@ -272,21 +276,21 @@ public class ShapeAnalysis_SurfaceTests
         AssertUV(0.3, 0.6, aSAS.ValueOfUV(aSaddle.Value(0.3, 0.6), Preci), 1e-8);
         Assert.True(aSAS.Gap() < 1e-8);
         // a point off the surface near a corner
-        gp_Pnt2d aUV = aSAS.ValueOfUV(new gp_Pnt(-0.1, -0.1, 0), Preci);
-        Assert.Equal(aSaddle.Value(aUV.X(), aUV.Y()).Distance(new gp_Pnt(-0.1, -0.1, 0)), aSAS.Gap(), 1e-12);
+        Point2D aUV = aSAS.ValueOfUV(new Point3D(-0.1, -0.1, 0), Preci);
+        Assert.Equal(aSaddle.Value(aUV.X(), aUV.Y()).Distance(new Point3D(-0.1, -0.1, 0)), aSAS.Gap(), 1e-12);
         Assert.False(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
         Assert.Equal(4, aSAS.NbSingularities(1e10));
         Assert.Equal(0, aSAS.NbSingularities(1));
-        AssertUV(0.35, 0.55, aSAS.NextValueOfUV(new gp_Pnt2d(0.3, 0.6), aSaddle.Value(0.35, 0.55), Preci), 1e-9);
+        AssertUV(0.35, 0.55, aSAS.NextValueOfUV(new Point2D(0.3, 0.6), aSaddle.Value(0.35, 0.55), Preci), 1e-9);
 
         // the iso boxes
-        Bnd_Box aBox = aSAS.GetBoxUF();
+        Box aBox = aSAS.GetBoxUF();
         aBox.Get(out double aXmin, out double aYmin, out _, out double aXmax, out double aYmax, out _);
         Assert.Equal(0.0, aXmin, 1e-6);
         Assert.Equal(0.0, aXmax, 1e-6);
         Assert.Equal(2.0, aYmax, 1e-6);
-        Assert.False(aSAS.GetBoxVL().IsVoid());
+        Assert.False(aSAS.GetBoxVL().IsVoid);
     }
 
     [Fact]
@@ -295,10 +299,10 @@ public class ShapeAnalysis_SurfaceTests
         Geom_BSplineSurface aBS = Degenerated();
         var aSAS = new ShapeAnalysis_Surface(aBS);
         Assert.Equal(1, aSAS.NbSingularities(Preci));
-        Assert.True(aSAS.IsDegenerated(new gp_Pnt(0, 0, 1), Preci));
+        Assert.True(aSAS.IsDegenerated(new Point3D(0, 0, 1), Preci));
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
-        gp_Pnt aP = new gp_Pnt();
-        gp_Pnt2d aF = new gp_Pnt2d(), aL = new gp_Pnt2d();
+        Point3D aP = new Point3D();
+        Point2D aF = new Point2D(), aL = new Point2D();
         bool aUIso = false;
         Assert.True(aSAS.Singularity(1, ref aPreci, ref aP, ref aF, ref aL, ref aFirstPar, ref aLastPar, ref aUIso));
         Assert.Equal(0.0, aPreci);
@@ -306,19 +310,19 @@ public class ShapeAnalysis_SurfaceTests
         AssertUV(0, 1, aF, 0);
         AssertUV(0, 0, aL, 0);
 
-        Assert.True(aSAS.IsDegenerated(new gp_Pnt2d(0, 0), new gp_Pnt2d(0, 1), 1e-3, 10));
-        Assert.False(aSAS.IsDegenerated(new gp_Pnt2d(1, 0), new gp_Pnt2d(1, 1), 1e-3, 10));
+        Assert.True(aSAS.IsDegenerated(new Point2D(0, 0), new Point2D(0, 1), 1e-3, 10));
+        Assert.False(aSAS.IsDegenerated(new Point2D(1, 0), new Point2D(1, 1), 1e-3, 10));
 
         // projecting the apex: ValueOfUV finds U = 0, any V
-        gp_Pnt2d aUV = aSAS.ValueOfUV(new gp_Pnt(0, 0, 1), Preci);
+        Point2D aUV = aSAS.ValueOfUV(new Point3D(0, 0, 1), Preci);
         Assert.Equal(0.0, aUV.X(), 1e-7);
         Assert.True(aSAS.Gap() < 1e-7);
         var aResult = aUV;
-        Assert.True(aSAS.ProjectDegenerated(new gp_Pnt(0, 0, 1), Preci, new gp_Pnt2d(0.3, 0.7), ref aResult));
+        Assert.True(aSAS.ProjectDegenerated(new Point3D(0, 0, 1), Preci, new Point2D(0.3, 0.7), ref aResult));
         Assert.Equal(0.7, aResult.Y());
 
         AssertUV(0.4, 0.3, aSAS.ValueOfUV(aBS.Value(0.4, 0.3), Preci), 1e-8);
-        AssertUV(0.45, 0.35, aSAS.NextValueOfUV(new gp_Pnt2d(0.4, 0.3), aBS.Value(0.45, 0.35), Preci), 1e-9);
+        AssertUV(0.45, 0.35, aSAS.NextValueOfUV(new Point2D(0.4, 0.3), aBS.Value(0.45, 0.35), Preci), 1e-9);
 
         Assert.False(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
@@ -328,12 +332,12 @@ public class ShapeAnalysis_SurfaceTests
     public void Closed_BSpline_surface()
     {
         // a cylinder-like B-spline: four rows of poles around a square, the last equal to the first
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 5, 1, 2);
+        var aPoles = new NCollection_Array2<Point3D>(1, 5, 1, 2);
         double[] aXs = [1, 0, -1, 0, 1], aYs = [0, 1, 0, -1, 0];
         for (int i = 1; i <= 5; i++)
         {
-            aPoles[i, 1] = new gp_Pnt(aXs[i - 1], aYs[i - 1], 0);
-            aPoles[i, 2] = new gp_Pnt(aXs[i - 1], aYs[i - 1], 1);
+            aPoles[i, 1] = new Point3D(aXs[i - 1], aYs[i - 1], 0);
+            aPoles[i, 2] = new Point3D(aXs[i - 1], aYs[i - 1], 1);
         }
 
         var aBS = new Geom_BSplineSurface(aPoles, Array(0.0, 1.0, 2.0, 3.0, 4.0), Array(0.0, 1.0), Array(2, 1, 1, 1, 2), Array(2, 2), 1, 1);
@@ -342,7 +346,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.False(aSAS.IsVClosed());
         AssertUV(1.5, 0.25, aSAS.ValueOfUV(aBS.Value(1.5, 0.25), Preci), 1e-8);
         // near a C0 knot, NextValueOfUV goes through ValueOfUV
-        AssertUV(2.0, 0.5, aSAS.NextValueOfUV(new gp_Pnt2d(2.0, 0.4), aBS.Value(2.0, 0.5), Preci), 1e-8);
+        AssertUV(2.0, 0.5, aSAS.NextValueOfUV(new Point2D(2.0, 0.4), aBS.Value(2.0, 0.5), Preci), 1e-8);
     }
 
     [Fact]
@@ -361,7 +365,7 @@ public class ShapeAnalysis_SurfaceTests
 
         // an offset of a cylinder is (for GeomAdaptor) a cylinder
         var aCylOffset = new ShapeAnalysis_Surface(new Geom_OffsetSurface(new Geom_CylindricalSurface(XOY, 2), 1));
-        AssertUV(M_PI / 2, 4, aCylOffset.ValueOfUV(new gp_Pnt(0, 3, 4), Preci));
+        AssertUV(M_PI / 2, 4, aCylOffset.ValueOfUV(new Point3D(0, 3, 4), Preci));
     }
 
     [Fact]
@@ -380,10 +384,10 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0.0, aV1);
         // trimmed surfaces are bounded: 4 boundaries, none degenerated
         Assert.Equal(0, aSAS.NbSingularities(Preci));
-        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new gp_Pnt(0, 1, 1), Preci));
+        AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 1, 1), Preci));
 
         // boxes of the bound isos
-        Bnd_Box aBox = aSAS.GetBoxUL();
+        Box aBox = aSAS.GetBoxUL();
         aBox.Get(out double aXmin, out _, out double aZmin, out double aXmax, out _, out double aZmax);
         Assert.Equal(-1.0, aXmin, 1e-6);
         Assert.Equal(-1.0, aXmax, 1e-6);
@@ -450,7 +454,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Value_evaluates_the_adaptor()
     {
         var aSAS = new ShapeAnalysis_Surface(new Geom_CylindricalSurface(XOY, 2));
-        Assert.True(aSAS.Value(M_PI / 2, 3).IsEqual(new gp_Pnt(0, 2, 3), 1e-15));
-        Assert.True(aSAS.Value(new gp_Pnt2d(0, 1)).IsEqual(new gp_Pnt(2, 0, 1), 1e-15));
+        Assert.True(aSAS.Value(M_PI / 2, 3).IsEqual(new Point3D(0, 2, 3), 1e-15));
+        Assert.True(aSAS.Value(new Point2D(0, 1)).IsEqual(new Point3D(2, 0, 1), 1e-15));
     }
 }

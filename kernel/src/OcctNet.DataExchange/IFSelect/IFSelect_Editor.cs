@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_EditValue;
 
 namespace Occt;
@@ -14,7 +15,7 @@ namespace Occt;
 /// header) Each Value is controlled by a TypedValue, with a number (it is an Integer) and a name under two
 /// forms (complete and short) and an edit mode
 /// </summary>
-public abstract class IFSelect_Editor : Standard_Transient
+public abstract class IFSelect_Editor : Transient
 {
 
     /// <summary>
@@ -148,7 +149,7 @@ public abstract class IFSelect_Editor : Standard_Transient
         {
             return res;
         }
-        res = atoi(name); // if it's an integer, we try it
+        res = Atoi(name); // if it's an integer, we try it
         if (res < 1 || res > NbValues())
         {
             res = 0;
@@ -373,7 +374,7 @@ public abstract class IFSelect_Editor : Standard_Transient
     /// &lt;model&gt; is concerned Also &lt;model&gt; may be Null, if no context applies for &lt;ent&gt; And both
     /// &lt;ent&gt; and &lt;model&gt; may be Null, for a full static editor
     /// </summary>
-    public abstract bool Load(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model);
+    public abstract bool Load(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model);
 
     /// <summary>
     /// Updates the EditForm when a parameter is modified I.E. default does nothing, can be redefined, as follows
@@ -400,7 +401,7 @@ public abstract class IFSelect_Editor : Standard_Transient
     /// &lt;model&gt; is concerned Also &lt;model&gt; may be Null, if no context applies for &lt;ent&gt; And both
     /// &lt;ent&gt; and &lt;model&gt; may be Null, for a full static editor
     /// </summary>
-    public abstract bool Apply(IFSelect_EditForm? form, Standard_Transient? ent, Interface_InterfaceModel? model);
+    public abstract bool Apply(IFSelect_EditForm? form, Transient? ent, Interface_InterfaceModel? model);
 
     /// <summary>
     /// Prepares the list of Typed Values (gives its count) This count can be tuned later, to a LOWER value, this
@@ -427,7 +428,7 @@ public abstract class IFSelect_Editor : Standard_Transient
     {
         if (nbval > thevalues.Upper())
         {
-            throw new Standard_OutOfRange("IFSelect_Editor:SetNbValues");
+            throw new OutOfRangeException("IFSelect_Editor:SetNbValues");
         }
         thenbval = nbval;
     }

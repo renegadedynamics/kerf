@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepAP242_IdAttribute : Standard_Transient
+public class StepAP242_IdAttribute : Transient
 {
     private TCollection_HAsciiString attributeValue;
     private StepAP242_IdAttributeSelect identifiedItem = new StepAP242_IdAttributeSelect();

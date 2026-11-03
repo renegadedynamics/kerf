@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -89,8 +92,8 @@ public class GeomPlate_MakeApprox
             }
 
             int Order = UOrder + VOrder;
-            gp_Pnt pnt;
-            gp_Vec v1, v2, v3, v4, v5;
+            Point3D pnt;
+            Vector3D v1, v2, v3, v4, v5;
 
             if (FavorIso == 1)
             {
@@ -218,9 +221,9 @@ public class GeomPlate_MakeApprox
     }
 
     /// <summary>Approximates <paramref name="SurfPlate"/> under the criterion <paramref name="PlateCrit"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">The approximation fails.</exception>
+    /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
     public GeomPlate_MakeApprox(GeomPlate_Surface SurfPlate, AdvApp2Var_Criterion PlateCrit, double Tol3d, int Nbmax,
-                                int dgmax, GeomAbs_Shape Continuity = GeomAbs_C1, double EnlargeCoeff = 1.1)
+                                int dgmax, Continuity Continuity = C1, double EnlargeCoeff = 1.1)
     {
         myPlate = SurfPlate;
 
@@ -240,7 +243,7 @@ public class GeomPlate_MakeApprox
         eps3D.Init(Tol3d);
         NCollection_HArray2<double> epsfr = new NCollection_HArray2<double>(1, 1, 1, 4);
         epsfr.Init(Tol3d);
-        GeomAbs_IsoType myType = GeomAbs_IsoType.GeomAbs_IsoV;
+        IsoType myType = IsoType.IsoV;
         int myPrec = 0;
 
         AdvApprox_DichoCutting myDec = new AdvApprox_DichoCutting();
@@ -260,14 +263,14 @@ public class GeomPlate_MakeApprox
     /// the plate's constraints, or none (-1). <paramref name="dmax"/> is the largest distance to the constraints:
     /// the criterion's threshold is at least ten times it.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The approximation fails.</exception>
+    /// <exception cref="ConstructionErrorException">The approximation fails.</exception>
     public GeomPlate_MakeApprox(GeomPlate_Surface SurfPlate, double Tol3d, int Nbmax, int dgmax, double dmax,
-                                int CritOrder = 0, GeomAbs_Shape Continuity = GeomAbs_C1, double EnlargeCoeff = 1.1)
+                                int CritOrder = 0, Continuity Continuity = C1, double EnlargeCoeff = 1.1)
     {
         myPlate = SurfPlate;
 
-        NCollection_Sequence<gp_XY> Seq2d = new NCollection_Sequence<gp_XY>();
-        NCollection_Sequence<gp_XYZ> Seq3d = new NCollection_Sequence<gp_XYZ>();
+        NCollection_Sequence<Xy> Seq2d = new NCollection_Sequence<Xy>();
+        NCollection_Sequence<Xyz> Seq3d = new NCollection_Sequence<Xyz>();
 
         if (CritOrder >= 0)
         {
@@ -278,14 +281,14 @@ public class GeomPlate_MakeApprox
             int i, nbp = Seq2d.Length();
             for (i = 1; i <= nbp; i++)
             {
-                gp_XY P2d = Seq2d.Value(i);
-                gp_Pnt PP;
-                gp_Vec v1h, v2h, v3h;
+                Xy P2d = Seq2d.Value(i);
+                Point3D PP;
+                Vector3D v1h, v2h, v3h;
                 if (CritOrder == 0)
                 {
                     //    a l'ordre 0
                     myPlate.D0(P2d.X(), P2d.Y(), out PP);
-                    gp_XYZ P3d = new gp_XYZ(PP.X(), PP.Y(), PP.Z());
+                    Xyz P3d = new Xyz(PP.X(), PP.Y(), PP.Z());
                     Seq3d.Append(P3d);
                 }
                 else
@@ -293,7 +296,7 @@ public class GeomPlate_MakeApprox
                     //    a l'ordre 1
                     myPlate.D1(P2d.X(), P2d.Y(), out PP, out v1h, out v2h);
                     v3h = v1h ^ v2h;
-                    gp_XYZ P3d = new gp_XYZ(v3h.X(), v3h.Y(), v3h.Z());
+                    Xyz P3d = new Xyz(v3h.X(), v3h.Y(), v3h.Z());
                     Seq3d.Append(P3d);
                 }
             }
@@ -325,7 +328,7 @@ public class GeomPlate_MakeApprox
         NCollection_HArray2<double> epsfr = new NCollection_HArray2<double>(1, 1, 1, 4);
         epsfr.Init(Tol3d);
 
-        GeomAbs_IsoType myType = GeomAbs_IsoType.GeomAbs_IsoV;
+        IsoType myType = IsoType.IsoV;
         int myPrec = 0;
 
         AdvApprox_DichoCutting myDec = new AdvApprox_DichoCutting();

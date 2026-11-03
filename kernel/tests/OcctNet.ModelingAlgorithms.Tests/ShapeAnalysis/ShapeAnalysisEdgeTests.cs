@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
@@ -12,7 +14,7 @@ public class ShapeAnalysisEdgeTests
 {
     private const double Conf = 1e-7;
 
-    private static Geom_Plane XOY() => new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+    private static Geom_Plane XOY() => new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
     private static IEnumerable<(TopoDS_Edge E, TopoDS_Face F)> EdgesOnFaces(in TopoDS_Shape theShape)
     {
@@ -63,18 +65,18 @@ public class ShapeAnalysisEdgeTests
             Assert.False(sae.CheckVertexTolerance(anE, out aTol1, out aTol2));
 
             // the pcurve's ends are the vertices' points on the surface, in the edge's direction
-            Assert.True(sae.BoundUV(anE, aF, out gp_Pnt2d aUV1, out gp_Pnt2d aUV2));
+            Assert.True(sae.BoundUV(anE, aF, out Point2D aUV1, out Point2D aUV2));
             Geom_Surface aS = BRep_Tool.Surface(aF)!;
             Assert.True(aS.Value(aUV1.X(), aUV1.Y()).Distance(BRep_Tool.Pnt(sae.FirstVertex(anE))) < 1e-9);
             Assert.True(aS.Value(aUV2.X(), aUV2.Y()).Distance(BRep_Tool.Pnt(sae.LastVertex(anE))) < 1e-9);
 
             // the tangent at the start points from the first UV point to the last (straight pcurves)
-            Assert.True(sae.GetEndTangent2d(anE, aF, false, out gp_Pnt2d aPos, out gp_Vec2d aTan));
+            Assert.True(sae.GetEndTangent2d(anE, aF, false, out Point2D aPos, out Vector2D aTan));
             Assert.True(aPos.Distance(aUV1) < 1e-12);
-            Assert.True(aTan.IsParallel(new gp_Vec2d(aUV1, aUV2), 1e-12) && aTan * new gp_Vec2d(aUV1, aUV2) > 0);
+            Assert.True(aTan.IsParallel(new Vector2D(aUV1, aUV2), 1e-12) && aTan * new Vector2D(aUV1, aUV2) > 0);
             Assert.True(sae.GetEndTangent2d(anE, aF, true, out aPos, out aTan, 0.1));
             Assert.True(aPos.Distance(aUV2) < 1e-12);
-            Assert.True(aTan * new gp_Vec2d(aUV1, aUV2) > 0);
+            Assert.True(aTan * new Vector2D(aUV1, aUV2) > 0);
         }
         Assert.Equal(24, aCount);
     }
@@ -82,7 +84,7 @@ public class ShapeAnalysisEdgeTests
     [Fact]
     public void Orientation_swaps_ranges_and_vertices()
     {
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         TopoDS_Edge aRev = TopoDS.Edge(anE.Reversed());
         var sae = new ShapeAnalysis_Edge();
 
@@ -108,10 +110,10 @@ public class ShapeAnalysisEdgeTests
     [Fact]
     public void Curve3d_applies_the_location()
     {
-        var aT = new gp_Trsf();
-        aT.SetTranslation(new gp_Vec(0, 0, 5));
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
-        TopoDS_Edge aMoved = TopoDS.Edge(anE.Moved(new TopLoc_Location(aT)));
+        var aT = new Transform3D();
+        aT.SetTranslation(new Vector3D(0, 0, 5));
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        TopoDS_Edge aMoved = TopoDS.Edge(anE.Moved(new Placement(aT)));
         var sae = new ShapeAnalysis_Edge();
         Assert.True(sae.Curve3d(aMoved, out Geom_Curve? aC, out double f, out double l));
         Assert.Equal(5.0, aC!.Value(f).Z());
@@ -132,8 +134,8 @@ public class ShapeAnalysisEdgeTests
                 continue;
             }
             aSeams++;
-            Assert.True(sae.BoundUV(anE, aF, out gp_Pnt2d aF1, out _));
-            Assert.True(sae.BoundUV(TopoDS.Edge(anE.Reversed()), aF, out gp_Pnt2d aR1, out _));
+            Assert.True(sae.BoundUV(anE, aF, out Point2D aF1, out _));
+            Assert.True(sae.BoundUV(TopoDS.Edge(anE.Reversed()), aF, out Point2D aR1, out _));
             Assert.Equal(2 * Math.PI, Math.Abs(aF1.X() - aR1.X()), 1e-12);
             Assert.False(sae.CheckCurve3dWithPCurve(anE, aF));
             Assert.True(sae.Status(ShapeExtend_OK));
@@ -176,9 +178,9 @@ public class ShapeAnalysisEdgeTests
     public void Vertices_off_the_curve_are_reported()
     {
         // a segment from (0,0,0) to (10,0,0) whose vertices are 0.01 and 0.02 off, tolerance 1e-7
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(0, 0.01, 0));
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new gp_Pnt(10, 0, 0.02));
-        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0, 10, aV1, aV2);
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(0, 0.01, 0));
+        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0.02));
+        TopoDS_Edge anE = TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10, aV1, aV2);
         var sae = new ShapeAnalysis_Edge();
 
         Assert.True(sae.CheckVerticesWithCurve3d(anE));
@@ -206,9 +208,9 @@ public class ShapeAnalysisEdgeTests
         aB.MakeFace(ref aF, XOY(), Conf);
         TopoDS_Edge anE = new();
         aB.MakeEdge(ref anE);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(0, 0, 0)).Oriented(TopAbs_FORWARD));
-        aB.Add(anE, TestShapes.Vertex(new gp_Pnt(4, 0, 0)).Oriented(TopAbs_REVERSED));
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
+        aB.Add(anE, TestShapes.Vertex(new Point3D(0, 0, 0)).Oriented(TopAbs_FORWARD));
+        aB.Add(anE, TestShapes.Vertex(new Point3D(4, 0, 0)).Oriented(TopAbs_REVERSED));
         aB.Range(anE, aF, 0, 4);
 
         var sae = new ShapeAnalysis_Edge();
@@ -228,12 +230,12 @@ public class ShapeAnalysisEdgeTests
         // no pcurve on another plane
         var aB2 = new BRep_Builder();
         TopoDS_Face aG = new();
-        aB2.MakeFace(ref aG, new Geom_Plane(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)), Conf);
+        aB2.MakeFace(ref aG, new Geom_Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), Conf);
         Assert.False(sae.HasPCurve(anE, aG));
         Assert.False(sae.PCurve(anE, aG, out Geom2d_Curve? aPC, out _, out _));
         Assert.Null(aPC);
         Assert.False(sae.BoundUV(anE, aG, out _, out _));
-        Assert.False(sae.GetEndTangent2d(anE, aG, false, out _, out gp_Vec2d aTan));
+        Assert.False(sae.GetEndTangent2d(anE, aG, false, out _, out Vector2D aTan));
         Assert.Equal(0.0, aTan.Magnitude());
         Assert.False(sae.CheckVerticesWithPCurve(anE, aG));
         Assert.True(sae.Status(ShapeExtend_FAIL1));
@@ -247,8 +249,8 @@ public class ShapeAnalysisEdgeTests
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, XOY(), Conf);
-        TopoDS_Edge anE = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0));
-        var aPC = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(2, 0), new gp_Pnt2d(10, 0)]),
+        TopoDS_Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
+        var aPC = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(2, 0), new Point2D(10, 0)]),
                                           NCollection_Array1<double>.From([0.0, 10.0]), NCollection_Array1<int>.From([3, 3]), 2);
         aB.UpdateEdge(anE, aPC, aF, Conf);
         aB.SameParameter(anE, false);
@@ -278,23 +280,23 @@ public class ShapeAnalysisEdgeTests
     public void Curve3d_against_pcurve_on_a_cylinder()
     {
         // an arc on a cylinder whose pcurve runs the other way: the ends match reversed (DONE1)
-        var aCylS = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1);
+        var aCylS = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1);
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aCylS, Conf);
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 1);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 1);
         TopoDS_Edge anE = TestShapes.Edge(aCircle, 0, 1);
         var sae = new ShapeAnalysis_Edge();
 
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         Assert.False(sae.CheckCurve3dWithPCurve(anE, aF));
         Assert.True(sae.Status(ShapeExtend_OK));
 
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(1, 0), new gp_Dir2d(-1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(1, 0), new Direction2D(-1, 0)), aF, Conf);
         Assert.True(sae.CheckCurve3dWithPCurve(anE, aF));
         Assert.True(sae.Status(ShapeExtend_DONE1));
 
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 3), new gp_Dir2d(1, 0)), aF, Conf);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 3), new Direction2D(1, 0)), aF, Conf);
         Assert.True(sae.CheckCurve3dWithPCurve(anE, aF));
         Assert.False(sae.Status(ShapeExtend_DONE1));
     }
@@ -303,10 +305,10 @@ public class ShapeAnalysisEdgeTests
     public void CheckPCurveRange_of_lines_circles_and_trimmed_curves()
     {
         var sae = new ShapeAnalysis_Edge();
-        var aLine = new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        var aLine = new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0));
         Assert.True(sae.CheckPCurveRange(-1e10, 1e10, aLine));
 
-        var aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1);
+        var aCircle = new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1);
         Assert.True(sae.CheckPCurveRange(-1, 2 * Math.PI - 1, aCircle));
         Assert.True(sae.CheckPCurveRange(0, 2 * Math.PI + 0.5e-9, aCircle));
         Assert.False(sae.CheckPCurveRange(0, 2 * Math.PI + 1e-6, aCircle));
@@ -317,7 +319,7 @@ public class ShapeAnalysisEdgeTests
         Assert.False(sae.CheckPCurveRange(-4, 4, aTrimmed));
 
         // a trimmed segment of a B-spline over [0, 1]: the basis's range counts, not the trimming
-        var aBS = new Geom2d_BSplineCurve(NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(0, 0), new gp_Pnt2d(1, 1)]),
+        var aBS = new Geom2d_BSplineCurve(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(1, 1)]),
                                           NCollection_Array1<double>.From([0.0, 1.0]), NCollection_Array1<int>.From([2, 2]), 1);
         var aTrimmedBS = new Geom2d_TrimmedCurve(aBS, 0.2, 0.4);
         Assert.True(sae.CheckPCurveRange(0, 1, aTrimmedBS));
@@ -328,10 +330,10 @@ public class ShapeAnalysisEdgeTests
     [Fact]
     public void CheckOverlapping_of_collinear_and_parallel_segments()
     {
-        TopoDS_Edge aLong = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
-        TopoDS_Edge aShort = new BRepBuilderAPI_MakeEdge(new gp_Pnt(2, 0, 0), new gp_Pnt(8, 0, 0)).Edge();
-        TopoDS_Edge aParallel = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 1, 0), new gp_Pnt(10, 1, 0)).Edge();
-        TopoDS_Edge aCrossing = new BRepBuilderAPI_MakeEdge(new gp_Pnt(5, -5, 0), new gp_Pnt(5, 5, 0)).Edge();
+        TopoDS_Edge aLong = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        TopoDS_Edge aShort = new BRepBuilderAPI_MakeEdge(new Point3D(2, 0, 0), new Point3D(8, 0, 0)).Edge();
+        TopoDS_Edge aParallel = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(10, 1, 0)).Edge();
+        TopoDS_Edge aCrossing = new BRepBuilderAPI_MakeEdge(new Point3D(5, -5, 0), new Point3D(5, 5, 0)).Edge();
 
         var sae = new ShapeAnalysis_Edge();
         double aTol = 1e-3;
@@ -360,7 +362,7 @@ public class ShapeAnalysisEdgeTests
         var sae = new ShapeAnalysis_Edge();
         foreach ((TopoDS_Edge anE, TopoDS_Face aF) in EdgesOnFaces(aBox))
         {
-            Geom_Surface aS = BRep_Tool.Surface(aF, out TopLoc_Location aL)!;
+            Geom_Surface aS = BRep_Tool.Surface(aF, out Placement aL)!;
             Assert.True(sae.HasPCurve(anE, aS, aL));
             Assert.True(sae.PCurve(anE, aS, aL, out Geom2d_Curve? aPC1, out double f1, out double l1));
             Assert.True(sae.PCurve(anE, aF, out Geom2d_Curve? aPC2, out double f2, out double l2));

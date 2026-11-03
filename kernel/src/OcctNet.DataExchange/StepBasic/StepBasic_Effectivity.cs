@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_Effectivity : Standard_Transient
+public class StepBasic_Effectivity : Transient
 {
     private TCollection_HAsciiString theid;
 

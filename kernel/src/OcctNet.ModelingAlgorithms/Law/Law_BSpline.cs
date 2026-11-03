@@ -3,10 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_BSplKnotDistribution;
-using static Occt.GeomAbs_Shape;
-using static Occt.BSplCLib_KnotDistribution;
-using static Occt.BSplCLib_MultDistribution;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Engine.Geometry.Splines.KnotDistribution;
+using static Kerf.Engine.Geometry.Splines.MultDistribution;
 
 namespace Occt;
 
@@ -29,12 +33,12 @@ namespace Occt;
 /// copy those bounds, occt-issues.md).
 /// </para>
 /// </remarks>
-public sealed class Law_BSpline : Standard_Transient
+public sealed class Law_BSpline : Transient
 {
     private bool rational;
     private bool periodic;
-    private GeomAbs_BSplKnotDistribution knotSet;
-    private GeomAbs_Shape smooth;
+    private BSplKnotDistribution knotSet;
+    private Continuity smooth;
     private int deg;
     private NCollection_HArray1<double> poles;
     private NCollection_HArray1<double>? weights;
@@ -74,79 +78,79 @@ public sealed class Law_BSpline : Standard_Transient
     {
         if (Degree < 1 || Degree > Law_BSpline.MaxDegree())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         if (CPoles.Length() < 2)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (CKnots.Length() != CMults.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         for (int I = CKnots.Lower(); I < CKnots.Upper(); I++)
         {
             if (CKnots[I + 1] - CKnots[I] <= Epsilon(Math.Abs(CKnots[I])))
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
 
-        if (CPoles.Length() != BSplCLib.NbPoles(Degree, Periodic, CMults))
+        if (CPoles.Length() != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(Degree, Periodic, CMults))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
     }
 
     private static void KnotAnalysis(int Degree, bool Periodic, NCollection_Array1<double> CKnots,
-                                     NCollection_Array1<int> CMults, out GeomAbs_BSplKnotDistribution KnotForm,
+                                     NCollection_Array1<int> CMults, out BSplKnotDistribution KnotForm,
                                      out int MaxKnotMult)
     {
-        KnotForm = GeomAbs_NonUniform;
+        KnotForm = BSplKnotDistribution.NonUniform;
 
-        BSplCLib_KnotDistribution KSet = BSplCLib.KnotForm(CKnots, 1, CKnots.Length());
+        KnotDistribution KSet = global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotForm(CKnots, 1, CKnots.Length());
 
-        if (KSet == BSplCLib_Uniform)
+        if (KSet == Kerf.Engine.Geometry.Splines.KnotDistribution.Uniform)
         {
-            BSplCLib_MultDistribution MSet = BSplCLib.MultForm(CMults, 1, CMults.Length());
+            MultDistribution MSet = global::Kerf.Engine.Geometry.Splines.BSplCLib.MultForm(CMults, 1, CMults.Length());
             switch (MSet)
             {
-                case BSplCLib_NonConstant:
+                case NonConstant:
                     break;
-                case BSplCLib_Constant:
+                case Constant:
                     if (CKnots.Length() == 2)
                     {
-                        KnotForm = GeomAbs_PiecewiseBezier;
+                        KnotForm = PiecewiseBezier;
                     }
                     else
                     {
                         if (CMults[1] == 1)
                         {
-                            KnotForm = GeomAbs_Uniform;
+                            KnotForm = BSplKnotDistribution.Uniform;
                         }
                     }
                     break;
-                case BSplCLib_QuasiConstant:
+                case QuasiConstant:
                     if (CMults[1] == Degree + 1)
                     {
                         double M = CMults[2];
                         if (M == Degree)
                         {
-                            KnotForm = GeomAbs_PiecewiseBezier;
+                            KnotForm = PiecewiseBezier;
                         }
                         else if (M == 1)
                         {
-                            KnotForm = GeomAbs_QuasiUniform;
+                            KnotForm = QuasiUniform;
                         }
                     }
                     break;
             }
         }
 
-        int FirstKM = Periodic ? CKnots.Lower() : BSplCLib.FirstUKnotIndex(Degree, CMults);
-        int LastKM = Periodic ? CKnots.Upper() : BSplCLib.LastUKnotIndex(Degree, CMults);
+        int FirstKM = Periodic ? CKnots.Lower() : global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(Degree, CMults);
+        int LastKM = Periodic ? CKnots.Upper() : global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(Degree, CMults);
         MaxKnotMult = 0;
         if (LastKM - FirstKM != 1)
         {
@@ -167,7 +171,7 @@ public sealed class Law_BSpline : Standard_Transient
         bool rat = false;
         for (i = 1; i < n; i++)
         {
-            rat = Math.Abs(W[i] - W[i + 1]) > gp.Resolution();
+            rat = Math.Abs(W[i] - W[i + 1]) > Constants.Resolution();
             if (rat)
             {
                 break;
@@ -192,7 +196,7 @@ public sealed class Law_BSpline : Standard_Transient
     }
 
     /// <summary>A non-rational B-spline of the given poles, knots, multiplicities and degree.</summary>
-    /// <exception cref="Standard_ConstructionError">The data don't define a B-spline (see Geom2d_BSplineCurve).</exception>
+    /// <exception cref="ConstructionErrorException">The data don't define a B-spline (see Geom2d_BSplineCurve).</exception>
     public Law_BSpline(NCollection_Array1<double> Poles, NCollection_Array1<double> Knots, NCollection_Array1<int> Mults,
                        int Degree, bool Periodic = false)
     {
@@ -221,7 +225,7 @@ public sealed class Law_BSpline : Standard_Transient
     }
 
     /// <summary>A rational B-spline (non-rational if all the weights are equal).</summary>
-    /// <exception cref="Standard_ConstructionError">The data don't define a B-spline, or a weight is not positive.</exception>
+    /// <exception cref="ConstructionErrorException">The data don't define a B-spline, or a weight is not positive.</exception>
     public Law_BSpline(NCollection_Array1<double> Poles, NCollection_Array1<double> Weights,
                        NCollection_Array1<double> Knots, NCollection_Array1<int> Mults, int Degree,
                        bool Periodic = false)
@@ -236,15 +240,15 @@ public sealed class Law_BSpline : Standard_Transient
 
         if (Weights.Length() != Poles.Length())
         {
-            throw new Standard_ConstructionError("Law_BSpline");
+            throw new ConstructionErrorException("Law_BSpline");
         }
 
         int i;
         for (i = Weights.Lower(); i <= Weights.Upper(); i++)
         {
-            if (Weights[i] <= gp.Resolution())
+            if (Weights[i] <= Constants.Resolution())
             {
-                throw new Standard_ConstructionError("Law_BSpline");
+                throw new ConstructionErrorException("Law_BSpline");
             }
         }
 
@@ -271,7 +275,7 @@ public sealed class Law_BSpline : Standard_Transient
         UpdateKnots();
     }
 
-    public static int MaxDegree() => BSplCLib.MaxDegree();
+    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Raises the degree to Degree (no change if it is the current degree).</summary>
     internal void IncreaseDegree(int Degree)
@@ -284,7 +288,7 @@ public sealed class Law_BSpline : Standard_Transient
 
         if (Degree < deg || Degree > Law_BSpline.MaxDegree())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         int FromK1 = FirstUKnotIndex();
@@ -294,7 +298,7 @@ public sealed class Law_BSpline : Standard_Transient
 
         NCollection_HArray1<double> npoles = new NCollection_HArray1<double>(1, poles.Length() + Step * (ToK2 - FromK1));
 
-        int nbknots = BSplCLib.IncreaseDegreeCountKnots(deg, Degree, periodic, mults.Array1());
+        int nbknots = global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegreeCountKnots(deg, Degree, periodic, mults.Array1());
 
         NCollection_HArray1<double> nknots = new NCollection_HArray1<double>(1, nbknots);
 
@@ -308,13 +312,13 @@ public sealed class Law_BSpline : Standard_Transient
             NCollection_Array1<double> adimpol = new NCollection_Array1<double>(1, 2 * poles.Upper());
             SetPoles(poles.Array1(), weights!.Array1(), adimpol);
             NCollection_Array1<double> adimnpol = new NCollection_Array1<double>(1, 2 * npoles.Upper());
-            BSplCLib.IncreaseDegree(deg, Degree, periodic, 2, adimpol, knots.Array1(), mults.Array1(), adimnpol,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(deg, Degree, periodic, 2, adimpol, knots.Array1(), mults.Array1(), adimnpol,
                                     nknots.ChangeArray1(), nmults.ChangeArray1());
             GetPoles(adimnpol, npoles.ChangeArray1(), nweights.ChangeArray1());
         }
         else
         {
-            BSplCLib.IncreaseDegree(deg, Degree, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(deg, Degree, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(),
                                     npoles.ChangeArray1(), nknots.ChangeArray1(), nmults.ChangeArray1());
         }
 
@@ -377,7 +381,7 @@ public sealed class Law_BSpline : Standard_Transient
     }
 
     /// <summary>Inserts the knots Knots with the multiplicities Mults.</summary>
-    /// <exception cref="Standard_ConstructionError">The knots can't be inserted.</exception>
+    /// <exception cref="ConstructionErrorException">The knots can't be inserted.</exception>
     internal void InsertKnots(NCollection_Array1<double> Knots, NCollection_Array1<int> Mults, double Epsilon = 0.0,
                               bool Add = false)
     {
@@ -385,10 +389,10 @@ public sealed class Law_BSpline : Standard_Transient
         // Check and compute new sizes
         int nbpoles, nbknots;
 
-        if (!BSplCLib.PrepareInsertKnots(deg, periodic, knots.Array1(), mults.Array1(), Knots, Mults, out nbpoles,
+        if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(deg, periodic, knots.Array1(), mults.Array1(), Knots, Mults, out nbpoles,
                                          out nbknots, Epsilon, Add))
         {
-            throw new Standard_ConstructionError("Law_BSpline::InsertKnots");
+            throw new ConstructionErrorException("Law_BSpline::InsertKnots");
         }
 
         if (nbpoles == poles.Length())
@@ -412,14 +416,14 @@ public sealed class Law_BSpline : Standard_Transient
             NCollection_Array1<double> adimpol = new NCollection_Array1<double>(1, 2 * poles.Upper());
             SetPoles(poles.Array1(), weights!.Array1(), adimpol);
             NCollection_Array1<double> adimnpol = new NCollection_Array1<double>(1, 2 * npoles.Upper());
-            BSplCLib.InsertKnots(deg, periodic, 2, adimpol, knots.Array1(), mults.Array1(), Knots, Mults, adimnpol,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(deg, periodic, 2, adimpol, knots.Array1(), mults.Array1(), Knots, Mults, adimnpol,
                                  nknots.ChangeArray1(), nmults.ChangeArray1(), Epsilon, Add);
             GetPoles(adimnpol, npoles.ChangeArray1(), nweights.ChangeArray1());
             weights = nweights;
         }
         else
         {
-            BSplCLib.InsertKnots(deg, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(), Knots, Mults,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(deg, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(), Knots, Mults,
                                  npoles.ChangeArray1(), nknots.ChangeArray1(), nmults.ChangeArray1(), Epsilon, Add);
         }
 
@@ -446,11 +450,11 @@ public sealed class Law_BSpline : Standard_Transient
 
         if (!periodic && (Index <= I1 || Index >= I2))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else if (periodic && (Index < I1 || Index > I2))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         NCollection_Array1<double> oldpoles = poles.Array1();
@@ -477,7 +481,7 @@ public sealed class Law_BSpline : Standard_Transient
             NCollection_Array1<double> adimpol = new NCollection_Array1<double>(1, 2 * poles.Upper());
             SetPoles(poles.Array1(), weights!.Array1(), adimpol);
             NCollection_Array1<double> adimnpol = new NCollection_Array1<double>(1, 2 * npoles.Upper());
-            if (!BSplCLib.RemoveKnot(Index, M, deg, periodic, 2, adimpol, knots.Array1(), mults.Array1(), adimnpol,
+            if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.RemoveKnot(Index, M, deg, periodic, 2, adimpol, knots.Array1(), mults.Array1(), adimnpol,
                                      nknots.ChangeArray1(), nmults.ChangeArray1(), Tolerance))
             {
                 return false;
@@ -487,7 +491,7 @@ public sealed class Law_BSpline : Standard_Transient
         }
         else
         {
-            if (!BSplCLib.RemoveKnot(Index, M, deg, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(),
+            if (!global::Kerf.Engine.Geometry.Splines.BSplCLib.RemoveKnot(Index, M, deg, periodic, 1, poles.Array1(), knots.Array1(), mults.Array1(),
                                      npoles.ChangeArray1(), nknots.ChangeArray1(), nmults.ChangeArray1(), Tolerance))
             {
                 return false;
@@ -506,8 +510,8 @@ public sealed class Law_BSpline : Standard_Transient
     internal void Reverse()
     {
         CheckMutable();
-        BSplCLib.Reverse(knots.ChangeArray1());
-        BSplCLib.Reverse(mults.ChangeArray1());
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(knots.ChangeArray1());
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(mults.ChangeArray1());
         int last;
         if (periodic)
         {
@@ -517,10 +521,10 @@ public sealed class Law_BSpline : Standard_Transient
         {
             last = poles.Upper();
         }
-        BSplCLib.Reverse(poles.ChangeArray1(), last);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(poles.ChangeArray1(), last);
         if (rational)
         {
-            BSplCLib.Reverse(weights!.ChangeArray1(), last);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reverse(weights!.ChangeArray1(), last);
         }
         UpdateKnots();
     }
@@ -543,9 +547,9 @@ public sealed class Law_BSpline : Standard_Transient
         NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, 2);
         NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, 2);
 
-        BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U1, periodic, knots.Lower(), knots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U1, periodic, knots.Lower(), knots.Upper(),
                                  out index, out NewU1);
-        BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U2, periodic, knots.Lower(), knots.Upper(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U2, periodic, knots.Lower(), knots.Upper(),
                                  out index, out NewU2);
         Knots[1] = Min(NewU1, NewU2);
         Knots[2] = Max(NewU1, NewU2);
@@ -555,7 +559,7 @@ public sealed class Law_BSpline : Standard_Transient
         if (periodic)
         { // set the origine at NewU1
             int index0;
-            BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U1, periodic, knots.Lower(), knots.Upper(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), U1, periodic, knots.Lower(), knots.Upper(),
                                      out index0, out U);
             if (Math.Abs(knots.Value(index0 + 1) - U) < Eps)
             {
@@ -569,10 +573,10 @@ public sealed class Law_BSpline : Standard_Transient
         int index1, index2;
         int FromU1 = knots.Lower();
         int ToU2 = knots.Upper();
-        BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), NewU1, periodic, FromU1, ToU2, out index1, out U);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), NewU1, periodic, FromU1, ToU2, out index1, out U);
         // OCCT: NewU1 + delta can round one ulp below the knot inserted at U2, and the strict test against Eps
         // (Epsilon(max(|U1|, |U2|))) then misses it, so the segment ends at the previous knot
-        BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), NewU1 + delta, periodic, FromU1, ToU2,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, knots.Array1(), mults.Array1(), NewU1 + delta, periodic, FromU1, ToU2,
                                  out index2, out U);
         if (Math.Abs(knots.Value(index2 + 1) - U) < Eps)
         {
@@ -595,8 +599,8 @@ public sealed class Law_BSpline : Standard_Transient
         nmults.SetValue(nbknots, deg + 1);
 
         // compute index1 and index2 to set the new poles and weights
-        int pindex1 = BSplCLib.PoleIndex(deg, index1, periodic, mults.Array1());
-        int pindex2 = BSplCLib.PoleIndex(deg, index2, periodic, mults.Array1());
+        int pindex1 = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(deg, index1, periodic, mults.Array1());
+        int pindex2 = global::Kerf.Engine.Geometry.Splines.BSplCLib.PoleIndex(deg, index2, periodic, mults.Array1());
 
         pindex1++;
         pindex2 = Min(pindex2 + 1, poles.Length());
@@ -638,34 +642,34 @@ public sealed class Law_BSpline : Standard_Transient
     }
 
     /// <summary>Changes the value of the knot Index to K.</summary>
-    /// <exception cref="Standard_ConstructionError">K is not between the neighbouring knots.</exception>
+    /// <exception cref="ConstructionErrorException">K is not between the neighbouring knots.</exception>
     internal void SetKnot(int Index, double K)
     {
         CheckMutable();
         if (Index < 1 || Index > knots.Length())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         double DK = Math.Abs(Epsilon(K));
         if (Index == 1)
         {
             if (K >= knots.Value(2) - DK)
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
         else if (Index == knots.Length())
         {
             if (K <= knots.Value(knots.Length() - 1) + DK)
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
         else
         {
             if (K <= knots.Value(Index - 1) + DK || K >= knots.Value(Index + 1) - DK)
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
         if (K != knots.Value(Index))
@@ -731,7 +735,7 @@ public sealed class Law_BSpline : Standard_Transient
         mults.ChangeArray1().CopyValues(cmults);
 
         // compute new number of poles;
-        int nbp = BSplCLib.NbPoles(deg, true, cmults);
+        int nbp = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(deg, true, cmults);
 
         NCollection_Array1<double> cpoles = new NCollection_Array1<double>(poles.Array1(), 1, 1, nbp);
         poles = new NCollection_HArray1<double>(1, nbp);
@@ -846,7 +850,7 @@ public sealed class Law_BSpline : Standard_Transient
         if (periodic)
         {
             int NbKnots, NbPoles;
-            BSplCLib.PrepareUnperiodize(deg, mults.Array1(), out NbKnots, out NbPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareUnperiodize(deg, mults.Array1(), out NbKnots, out NbPoles);
 
             NCollection_HArray1<double> npoles = new NCollection_HArray1<double>(1, NbPoles);
 
@@ -863,13 +867,13 @@ public sealed class Law_BSpline : Standard_Transient
                 NCollection_Array1<double> adimpol = new NCollection_Array1<double>(1, 2 * poles.Upper());
                 SetPoles(poles.Array1(), weights!.Array1(), adimpol);
                 NCollection_Array1<double> adimnpol = new NCollection_Array1<double>(1, 2 * npoles.Upper());
-                BSplCLib.Unperiodize(deg, 1, mults.Array1(), knots.Array1(), adimpol, nmults.ChangeArray1(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Unperiodize(deg, 1, mults.Array1(), knots.Array1(), adimpol, nmults.ChangeArray1(),
                                      nknots.ChangeArray1(), adimnpol);
                 GetPoles(adimnpol, npoles.ChangeArray1(), nweights.ChangeArray1());
             }
             else
             {
-                BSplCLib.Unperiodize(deg, 1, mults.Array1(), knots.Array1(), poles.Array1(), nmults.ChangeArray1(),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Unperiodize(deg, 1, mults.Array1(), knots.Array1(), poles.Array1(), nmults.ChangeArray1(),
                                      nknots.ChangeArray1(), npoles.ChangeArray1());
             }
             poles = npoles;
@@ -888,7 +892,7 @@ public sealed class Law_BSpline : Standard_Transient
         CheckMutable();
         if (Index < 1 || Index > poles.Length())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         poles.SetValue(Index, P);
     }
@@ -907,15 +911,15 @@ public sealed class Law_BSpline : Standard_Transient
         CheckMutable();
         if (Index < 1 || Index > poles.Length())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
-        if (W <= gp.Resolution())
+        if (W <= Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
-        bool rat = IsRational() || (Math.Abs(W - 1.0) > gp.Resolution());
+        bool rat = IsRational() || (Math.Abs(W - 1.0) > Constants.Resolution());
 
         if (rat)
         {
@@ -946,39 +950,39 @@ public sealed class Law_BSpline : Standard_Transient
 
         KnotAnalysis(deg, periodic, knots.Array1(), mults.Array1(), out knotSet, out int MaxKnotMult);
 
-        if (knotSet == GeomAbs_Uniform && !periodic)
+        if (knotSet == BSplKnotDistribution.Uniform && !periodic)
         {
             flatknots = knots;
         }
         else
         {
-            flatknots = new NCollection_HArray1<double>(1, BSplCLib.KnotSequenceLength(mults.Array1(), deg, periodic));
+            flatknots = new NCollection_HArray1<double>(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(mults.Array1(), deg, periodic));
 
-            BSplCLib.KnotSequence(knots.Array1(), mults.Array1(), deg, periodic, flatknots.ChangeArray1());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knots.Array1(), mults.Array1(), deg, periodic, flatknots.ChangeArray1());
         }
 
         if (MaxKnotMult == 0)
         {
-            smooth = GeomAbs_CN;
+            smooth = CN;
         }
         else
         {
             switch (deg - MaxKnotMult)
             {
                 case 0:
-                    smooth = GeomAbs_C0;
+                    smooth = C0;
                     break;
                 case 1:
-                    smooth = GeomAbs_C1;
+                    smooth = C1;
                     break;
                 case 2:
-                    smooth = GeomAbs_C2;
+                    smooth = C2;
                     break;
                 case 3:
-                    smooth = GeomAbs_C3;
+                    smooth = C3;
                     break;
                 default:
-                    smooth = GeomAbs_C3;
+                    smooth = C3;
                     break;
             }
         }
@@ -991,30 +995,30 @@ public sealed class Law_BSpline : Standard_Transient
 
         switch (smooth)
         {
-            case GeomAbs_CN:
+            case CN:
                 return true;
-            case GeomAbs_C0:
+            case C0:
                 return N <= 0;
-            case GeomAbs_G1:
+            case G1:
                 return N <= 0;
-            case GeomAbs_C1:
+            case C1:
                 return N <= 1;
-            case GeomAbs_G2:
+            case G2:
                 return N <= 1;
-            case GeomAbs_C2:
+            case C2:
                 return N <= 2;
-            case GeomAbs_C3:
-                return N <= 3 ? true : N <= deg - BSplCLib.MaxKnotMult(mults.Array1(), mults.Lower() + 1, mults.Upper() - 1);
+            case C3:
+                return N <= 3 ? true : N <= deg - global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(mults.Array1(), mults.Lower() + 1, mults.Upper() - 1);
             default:
                 return false;
         }
     }
 
-    public bool IsClosed() => (Math.Abs(StartPoint() - EndPoint())) <= gp.Resolution();
+    public bool IsClosed() => (Math.Abs(StartPoint() - EndPoint())) <= Constants.Resolution();
 
     public bool IsPeriodic() => periodic;
 
-    public GeomAbs_Shape Continuity() => smooth;
+    public Continuity Continuity() => smooth;
 
     public int Degree() => deg;
 
@@ -1030,11 +1034,11 @@ public sealed class Law_BSpline : Standard_Transient
         PeriodicNormalization(ref NewU);
         if (rational)
         {
-            BSplCLib.D0(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P);
         }
         else
         {
-            BSplCLib.D0(NewU, 0, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(NewU, 0, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P);
         }
     }
 
@@ -1044,11 +1048,11 @@ public sealed class Law_BSpline : Standard_Transient
         PeriodicNormalization(ref NewU);
         if (rational)
         {
-            BSplCLib.D1(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1);
         }
         else
         {
-            BSplCLib.D1(NewU, 0, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(NewU, 0, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1);
         }
     }
@@ -1059,12 +1063,12 @@ public sealed class Law_BSpline : Standard_Transient
         PeriodicNormalization(ref NewU);
         if (rational)
         {
-            BSplCLib.D2(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1,
                         out V2);
         }
         else
         {
-            BSplCLib.D2(NewU, 0, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(NewU, 0, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1, out V2);
         }
     }
@@ -1075,12 +1079,12 @@ public sealed class Law_BSpline : Standard_Transient
         PeriodicNormalization(ref NewU);
         if (rational)
         {
-            BSplCLib.D3(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(NewU, 0, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1,
                         out V2, out V3);
         }
         else
         {
-            BSplCLib.D3(NewU, 0, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(NewU, 0, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1, out V2, out V3);
         }
     }
@@ -1091,11 +1095,11 @@ public sealed class Law_BSpline : Standard_Transient
         double V;
         if (rational)
         {
-            BSplCLib.DN(U, N, 0, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out V);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(U, N, 0, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out V);
         }
         else
         {
-            BSplCLib.DN(U, N, 0, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out V);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(U, N, 0, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out V);
         }
         return V;
     }
@@ -1120,7 +1124,7 @@ public sealed class Law_BSpline : Standard_Transient
         }
         else
         {
-            return BSplCLib.FirstUKnotIndex(deg, mults.Array1());
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(deg, mults.Array1());
         }
     }
 
@@ -1132,7 +1136,7 @@ public sealed class Law_BSpline : Standard_Transient
         return knots.Value(Index);
     }
 
-    public GeomAbs_BSplKnotDistribution KnotDistribution() => knotSet;
+    public BSplKnotDistribution KnotDistribution() => knotSet;
 
     /// <summary>Copies the knots into K (OCCT's array assignment: K must have NbKnots() elements).</summary>
     public void Knots(NCollection_Array1<double> K)
@@ -1168,7 +1172,7 @@ public sealed class Law_BSpline : Standard_Transient
         }
         else
         {
-            return BSplCLib.LastUKnotIndex(deg, mults.Array1());
+            return global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(deg, mults.Array1());
         }
     }
 
@@ -1184,30 +1188,30 @@ public sealed class Law_BSpline : Standard_Transient
     public void LocalD0(double U, int FromK1, int ToK2, out double P)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Law_BSpline::LocalValue");
-        BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
-        index = BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
         if (rational)
         {
-            BSplCLib.D0(u, index, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u, index, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P);
         }
         else
         {
-            BSplCLib.D0(u, index, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u, index, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P);
         }
     }
 
     public void LocalD1(double U, int FromK1, int ToK2, out double P, out double V1)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Law_BSpline::LocalD1");
-        BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
-        index = BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
         if (rational)
         {
-            BSplCLib.D1(u, index, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(u, index, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1);
         }
         else
         {
-            BSplCLib.D1(u, index, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(u, index, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1);
         }
     }
@@ -1215,16 +1219,16 @@ public sealed class Law_BSpline : Standard_Transient
     public void LocalD2(double U, int FromK1, int ToK2, out double P, out double V1, out double V2)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Law_BSpline::LocalD2");
-        BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
-        index = BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
         if (rational)
         {
-            BSplCLib.D2(u, index, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, index, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1,
                         out V2);
         }
         else
         {
-            BSplCLib.D2(u, index, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, index, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1, out V2);
         }
     }
@@ -1232,16 +1236,16 @@ public sealed class Law_BSpline : Standard_Transient
     public void LocalD3(double U, int FromK1, int ToK2, out double P, out double V1, out double V2, out double V3)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Law_BSpline::LocalD3");
-        BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
-        index = BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
         if (rational)
         {
-            BSplCLib.D3(u, index, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out P, out V1,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(u, index, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P, out V1,
                         out V2, out V3);
         }
         else
         {
-            BSplCLib.D3(u, index, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out P,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(u, index, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out P,
                         out V1, out V2, out V3);
         }
     }
@@ -1249,17 +1253,17 @@ public sealed class Law_BSpline : Standard_Transient
     public double LocalDN(double U, int FromK1, int ToK2, int N)
     {
         Standard_DomainError_Raise_if(FromK1 == ToK2, "Law_BSpline::LocalD3");
-        BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
-        index = BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(deg, flatknots, U, periodic, FromK1, ToK2, out int index, out double u);
+        index = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, index, mults.Array1(), periodic);
 
         double V;
         if (rational)
         {
-            BSplCLib.DN(u, N, index, deg, periodic, poles, weights!.Array1(), flatknots, BSplCLib.NoMults(), out V);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(u, N, index, deg, periodic, poles, weights!.Array1(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out V);
         }
         else
         {
-            BSplCLib.DN(u, N, index, deg, periodic, poles, BSplCLib.NoWeights(), flatknots, BSplCLib.NoMults(), out V);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(u, N, index, deg, periodic, poles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoMults(), out V);
         }
         return V;
     }
@@ -1399,7 +1403,7 @@ public sealed class Law_BSpline : Standard_Transient
         }
         else
         {
-            BSplCLib.Hunt(CKnots, NewU, out I1);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Hunt(CKnots, NewU, out I1);
             I1 = Max(Min(I1, CKnots.Upper()), CKnots.Lower());
             while (I1 + 1 <= CKnots.Upper() && Math.Abs(CKnots[I1 + 1] - NewU) <= Math.Abs(ParametricTolerance))
             {
@@ -1433,8 +1437,8 @@ public sealed class Law_BSpline : Standard_Transient
         delta_derivative = Tangent - delta_derivative;
         ReadOnlySpan<double> aDelta = [delta];
         ReadOnlySpan<double> aDeltaDerivative = [delta_derivative];
-        BSplCLib.MovePointAndTangent(U, dimension, aDelta, aDeltaDerivative, Tolerance, deg, StartingCondition,
-                                     EndingCondition, poles.AsSpan(), rational ? weights!.Array1() : BSplCLib.NoWeights(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.MovePointAndTangent(U, dimension, aDelta, aDeltaDerivative, Tolerance, deg, StartingCondition,
+                                     EndingCondition, poles.AsSpan(), rational ? weights!.Array1() : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                      flatknots.Array1(), new_poles.AsSpan(), out ErrorStatus);
         if (ErrorStatus == 0)
         {
@@ -1447,12 +1451,12 @@ public sealed class Law_BSpline : Standard_Transient
     {
         if (rational)
         {
-            BSplCLib.Resolution(poles.AsSpan(), 1, poles.Length(), weights!.Array1(), flatknots, deg, Tolerance3D,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Resolution(poles.AsSpan(), 1, poles.Length(), weights!.Array1(), flatknots, deg, Tolerance3D,
                                 out UTolerance);
         }
         else
         {
-            BSplCLib.Resolution(poles.AsSpan(), 1, poles.Length(), BSplCLib.NoWeights(), flatknots, deg, Tolerance3D,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Resolution(poles.AsSpan(), 1, poles.Length(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), flatknots, deg, Tolerance3D,
                                 out UTolerance);
         }
     }

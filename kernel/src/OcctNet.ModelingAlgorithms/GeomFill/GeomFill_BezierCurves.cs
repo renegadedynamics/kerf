@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GeomFill_FillingStyle;
 
 namespace Occt;
@@ -27,7 +29,7 @@ public class GeomFill_BezierCurves
     private static void SetSameWeights(NCollection_Array1<double> W1, NCollection_Array1<double> W2,
                                        NCollection_Array1<double> W3, NCollection_Array1<double> W4)
     {
-        double Eps = Precision.Confusion();
+        double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         int NU = W1.Length();
         int NV = W2.Length();
@@ -127,9 +129,9 @@ public class GeomFill_BezierCurves
     }
 
     // OCCT's Poles() and WeightsArray() const references: copies of the values (the curves are this object's own).
-    private static NCollection_Array1<gp_Pnt> PolesOf(Geom_BezierCurve C)
+    private static NCollection_Array1<Point3D> PolesOf(Geom_BezierCurve C)
     {
-        NCollection_Array1<gp_Pnt> P = new(1, C.NbPoles());
+        NCollection_Array1<Point3D> P = new(1, C.NbPoles());
         C.Poles(P);
         return P;
     }
@@ -172,7 +174,7 @@ public class GeomFill_BezierCurves
         // On ordonne les courbes
         Geom_BezierCurve CC1, CC2, CC3, CC4;
 
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         // OCCT's release build ignores the result (No_Exception); the port checks it (decision 9).
         bool IsOK = Arrange(C1, C2, C3, C4, out CC1, out CC2, out CC3, out CC4, Tol);
 
@@ -205,10 +207,10 @@ public class GeomFill_BezierCurves
             CC4.Increase(DegV);
         }
 
-        NCollection_Array1<gp_Pnt> P1 = PolesOf(CC1);
-        NCollection_Array1<gp_Pnt> P2 = PolesOf(CC2);
-        NCollection_Array1<gp_Pnt> P3 = PolesOf(CC3);
-        NCollection_Array1<gp_Pnt> P4 = PolesOf(CC4);
+        NCollection_Array1<Point3D> P1 = PolesOf(CC1);
+        NCollection_Array1<Point3D> P2 = PolesOf(CC2);
+        NCollection_Array1<Point3D> P3 = PolesOf(CC3);
+        NCollection_Array1<Point3D> P4 = PolesOf(CC4);
 
         // Traitement des courbes rationelles
         bool isRat = (CC1.IsRational() || CC2.IsRational() || CC3.IsRational() || CC4.IsRational());
@@ -255,7 +257,7 @@ public class GeomFill_BezierCurves
 
         int NbUPoles = Caro.NbUPoles();
         int NbVPoles = Caro.NbVPoles();
-        NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+        NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
         Caro.Poles(Poles);
 
         if (Caro.isRational())
@@ -274,8 +276,8 @@ public class GeomFill_BezierCurves
     public void Init(Geom_BezierCurve C1, Geom_BezierCurve C2, Geom_BezierCurve C3, GeomFill_FillingStyle Type)
     {
         Geom_BezierCurve C4;
-        NCollection_Array1<gp_Pnt> Poles = new(1, 2);
-        double Tol = Precision.Confusion();
+        NCollection_Array1<Point3D> Poles = new(1, 2);
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         Tol = Tol * Tol;
         if (C1.StartPoint().SquareDistance(C2.StartPoint()) > Tol
             && C1.StartPoint().SquareDistance(C2.EndPoint()) > Tol)
@@ -327,9 +329,9 @@ public class GeomFill_BezierCurves
                 CC2.Increase(DegU);
             }
 
-            NCollection_Array2<gp_Pnt> Poles = new(1, DegU + 1, 1, 2);
-            NCollection_Array1<gp_Pnt> P1 = PolesOf(CC1);
-            NCollection_Array1<gp_Pnt> P2 = PolesOf(CC2);
+            NCollection_Array2<Point3D> Poles = new(1, DegU + 1, 1, 2);
+            NCollection_Array1<Point3D> P1 = PolesOf(CC1);
+            NCollection_Array1<Point3D> P2 = PolesOf(CC2);
 
             int i;
             for (i = 1; i <= DegU + 1; i++)
@@ -356,7 +358,7 @@ public class GeomFill_BezierCurves
         }
         else
         {
-            double Eps = Precision.Confusion();
+            double Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             bool IsOK = false;
             if (CC1.StartPoint().IsEqual(CC2.StartPoint(), Eps))
             {
@@ -383,11 +385,11 @@ public class GeomFill_BezierCurves
 
             if (!IsOK)
             {
-                throw new Standard_OutOfRange("GeomFill_BezierCurves: Courbes non jointives");
+                throw new OutOfRangeException("GeomFill_BezierCurves: Courbes non jointives");
             }
 
-            NCollection_Array1<gp_Pnt> P1 = PolesOf(CC1);
-            NCollection_Array1<gp_Pnt> P2 = PolesOf(CC2);
+            NCollection_Array1<Point3D> P1 = PolesOf(CC1);
+            NCollection_Array1<Point3D> P2 = PolesOf(CC2);
 
             GeomFill_Filling Caro;
             if (isRat)
@@ -403,7 +405,7 @@ public class GeomFill_BezierCurves
 
             int NbUPoles = Caro.NbUPoles();
             int NbVPoles = Caro.NbVPoles();
-            NCollection_Array2<gp_Pnt> Poles = new(1, NbUPoles, 1, NbVPoles);
+            NCollection_Array2<Point3D> Poles = new(1, NbUPoles, 1, NbVPoles);
             Caro.Poles(Poles);
 
             if (Caro.isRational())

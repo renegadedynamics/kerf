@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -14,17 +15,17 @@ namespace Occt;
 public static class Contap_SurfProps
 {
     /// <summary>Computes the point <paramref name="P"/> and the normal <paramref name="Norm"/> of <paramref name="S"/> at (U, V).</summary>
-    public static void Normale(Adaptor3d_Surface S, double U, double V, out gp_Pnt P, out gp_Vec Norm)
+    public static void Normale(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D Norm)
     {
-        Norm = new gp_Vec();
-        GeomAbs_SurfaceType typS = Adaptor3d_HSurfaceTool.GetType(S);
+        Norm = new Vector3D();
+        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                gp_Pln pl = Adaptor3d_HSurfaceTool.Plane(S);
-                Norm = new gp_Vec(pl.Axis().Direction());
-                P = ElSLib.Value(U, V, pl);
+                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                Norm = new Vector3D(pl.Axis().Direction());
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, pl);
                 if (!pl.Direct())
                 {
                     Norm.Reverse();
@@ -32,11 +33,11 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                gp_Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
-                P = ElSLib.Value(U, V, sp);
-                Norm = new gp_Vec(sp.Location(), P);
+                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, sp);
+                Norm = new Vector3D(sp.Location(), P);
                 if (sp.Direct())
                 {
                     Norm.Divide(sp.Radius());
@@ -48,12 +49,12 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
-                P = ElSLib.Value(U, V, cy);
-                Norm.SetLinearForm(Math.Cos(U), new gp_Vec(cy.XAxis().Direction()), Math.Sin(U),
-                                   new gp_Vec(cy.YAxis().Direction()));
+                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, cy);
+                Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
+                                   new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
                     Norm.Reverse();
@@ -61,10 +62,10 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                gp_Cone co = Adaptor3d_HSurfaceTool.Cone(S);
-                P = ElSLib.Value(U, V, co);
+                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, co);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
                 double Cosa = Math.Cos(Angle);
@@ -79,15 +80,15 @@ public static class Contap_SurfProps
 
                 if (Rad + Vcalc * Sina < 0.0)
                 {
-                    Norm.SetLinearForm(Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    Norm.SetLinearForm(-Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(-Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
                 if (!co.Direct())
                 {
@@ -97,7 +98,7 @@ public static class Contap_SurfProps
             break;
             default:
             {
-                Adaptor3d_HSurfaceTool.D1(S, U, V, out P, out gp_Vec d1u, out gp_Vec d1v);
+                Adaptor3d_HSurfaceTool.D1(S, U, V, out P, out Vector3D d1u, out Vector3D d1v);
                 Norm = d1u.Crossed(d1v);
             }
             break;
@@ -105,18 +106,18 @@ public static class Contap_SurfProps
     }
 
     /// <summary>Computes the point, the first derivatives and the normal of <paramref name="S"/> at (U, V).</summary>
-    public static void DerivAndNorm(Adaptor3d_Surface S, double U, double V, out gp_Pnt P, out gp_Vec d1u,
-                                    out gp_Vec d1v, out gp_Vec Norm)
+    public static void DerivAndNorm(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D d1u,
+                                    out Vector3D d1v, out Vector3D Norm)
     {
-        Norm = new gp_Vec();
-        GeomAbs_SurfaceType typS = Adaptor3d_HSurfaceTool.GetType(S);
+        Norm = new Vector3D();
+        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                gp_Pln pl = Adaptor3d_HSurfaceTool.Plane(S);
-                Norm = new gp_Vec(pl.Axis().Direction());
-                ElSLib.D1(U, V, pl, out P, out d1u, out d1v);
+                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                Norm = new Vector3D(pl.Axis().Direction());
+                global::Kerf.Engine.Geometry.ElSLib.D1(U, V, pl, out P, out d1u, out d1v);
                 if (!pl.Direct())
                 {
                     Norm.Reverse();
@@ -124,11 +125,11 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                gp_Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
-                ElSLib.D1(U, V, sp, out P, out d1u, out d1v);
-                Norm = new gp_Vec(sp.Location(), P);
+                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                global::Kerf.Engine.Geometry.ElSLib.D1(U, V, sp, out P, out d1u, out d1v);
+                Norm = new Vector3D(sp.Location(), P);
                 if (sp.Direct())
                 {
                     Norm.Divide(sp.Radius());
@@ -140,12 +141,12 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
-                ElSLib.D1(U, V, cy, out P, out d1u, out d1v);
-                Norm.SetLinearForm(Math.Cos(U), new gp_Vec(cy.XAxis().Direction()), Math.Sin(U),
-                                   new gp_Vec(cy.YAxis().Direction()));
+                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                global::Kerf.Engine.Geometry.ElSLib.D1(U, V, cy, out P, out d1u, out d1v);
+                Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
+                                   new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
                     Norm.Reverse();
@@ -153,10 +154,10 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                gp_Cone co = Adaptor3d_HSurfaceTool.Cone(S);
-                ElSLib.D1(U, V, co, out P, out d1u, out d1v);
+                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                global::Kerf.Engine.Geometry.ElSLib.D1(U, V, co, out P, out d1u, out d1v);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
                 double Cosa = Math.Cos(Angle);
@@ -178,15 +179,15 @@ public static class Contap_SurfProps
 
                 if (Rad + Vcalc * Sina < 0.0)
                 {
-                    Norm.SetLinearForm(Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    Norm.SetLinearForm(-Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(-Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
                 if (!co.Direct())
                 {
@@ -204,33 +205,33 @@ public static class Contap_SurfProps
     }
 
     /// <summary>Computes the point, the normal and its derivatives of <paramref name="S"/> at (U, V).</summary>
-    public static void NormAndDn(Adaptor3d_Surface S, double U, double V, out gp_Pnt P, out gp_Vec Norm,
-                                 out gp_Vec Dnu, out gp_Vec Dnv)
+    public static void NormAndDn(Adaptor3d_Surface S, double U, double V, out Point3D P, out Vector3D Norm,
+                                 out Vector3D Dnu, out Vector3D Dnv)
     {
-        Norm = new gp_Vec();
-        Dnu = new gp_Vec();
-        Dnv = new gp_Vec();
-        GeomAbs_SurfaceType typS = Adaptor3d_HSurfaceTool.GetType(S);
+        Norm = new Vector3D();
+        Dnu = new Vector3D();
+        Dnv = new Vector3D();
+        SurfaceKind typS = Adaptor3d_HSurfaceTool.GetType(S);
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                gp_Pln pl = Adaptor3d_HSurfaceTool.Plane(S);
-                P = ElSLib.Value(U, V, pl);
-                Norm = new gp_Vec(pl.Axis().Direction());
+                Plane3D pl = Adaptor3d_HSurfaceTool.Plane(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, pl);
+                Norm = new Vector3D(pl.Axis().Direction());
                 if (!pl.Direct())
                 {
                     Norm.Reverse();
                 }
-                Dnu = Dnv = new gp_Vec(0.0, 0.0, 0.0);
+                Dnu = Dnv = new Vector3D(0.0, 0.0, 0.0);
             }
             break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                gp_Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
-                ElSLib.D1(U, V, sp, out P, out Dnu, out Dnv);
-                Norm = new gp_Vec(sp.Location(), P);
+                Sphere sp = Adaptor3d_HSurfaceTool.Sphere(S);
+                global::Kerf.Engine.Geometry.ElSLib.D1(U, V, sp, out P, out Dnu, out Dnv);
+                Norm = new Vector3D(sp.Location(), P);
                 double Rad = sp.Radius();
                 if (!sp.Direct())
                 {
@@ -242,27 +243,27 @@ public static class Contap_SurfProps
             }
             break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
-                P = ElSLib.Value(U, V, cy);
-                Norm.SetLinearForm(Math.Cos(U), new gp_Vec(cy.XAxis().Direction()), Math.Sin(U),
-                                   new gp_Vec(cy.YAxis().Direction()));
-                Dnu.SetLinearForm(-Math.Sin(U), new gp_Vec(cy.XAxis().Direction()), Math.Cos(U),
-                                  new gp_Vec(cy.YAxis().Direction()));
+                Cylinder cy = Adaptor3d_HSurfaceTool.Cylinder(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, cy);
+                Norm.SetLinearForm(Math.Cos(U), new Vector3D(cy.XAxis().Direction()), Math.Sin(U),
+                                   new Vector3D(cy.YAxis().Direction()));
+                Dnu.SetLinearForm(-Math.Sin(U), new Vector3D(cy.XAxis().Direction()), Math.Cos(U),
+                                  new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
                     Norm.Reverse();
                     Dnu.Reverse();
                 }
-                Dnv = new gp_Vec(0.0, 0.0, 0.0);
+                Dnv = new Vector3D(0.0, 0.0, 0.0);
             }
             break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                gp_Cone co = Adaptor3d_HSurfaceTool.Cone(S);
-                P = ElSLib.Value(U, V, co);
+                Cone co = Adaptor3d_HSurfaceTool.Cone(S);
+                P = global::Kerf.Engine.Geometry.ElSLib.Value(U, V, co);
                 double Angle = co.SemiAngle();
                 double Sina = Math.Sin(Angle);
                 double Cosa = Math.Cos(Angle);
@@ -283,31 +284,31 @@ public static class Contap_SurfProps
 
                 if (Rad + Vcalc * Sina < 0.0)
                 {
-                    Norm.SetLinearForm(Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    Norm.SetLinearForm(-Sina, new gp_Vec(co.Axis().Direction()), Cosa * Math.Cos(U),
-                                       new gp_Vec(co.XAxis().Direction()), Cosa * Math.Sin(U),
-                                       new gp_Vec(co.YAxis().Direction()));
+                    Norm.SetLinearForm(-Sina, new Vector3D(co.Axis().Direction()), Cosa * Math.Cos(U),
+                                       new Vector3D(co.XAxis().Direction()), Cosa * Math.Sin(U),
+                                       new Vector3D(co.YAxis().Direction()));
                 }
-                Dnu.SetLinearForm(-Cosa * Math.Sin(U), new gp_Vec(co.XAxis().Direction()), Cosa * Math.Cos(U),
-                                  new gp_Vec(co.YAxis().Direction()));
+                Dnu.SetLinearForm(-Cosa * Math.Sin(U), new Vector3D(co.XAxis().Direction()), Cosa * Math.Cos(U),
+                                  new Vector3D(co.YAxis().Direction()));
                 if (!co.Direct())
                 {
                     Norm.Reverse();
                     Dnu.Reverse();
                 }
-                Dnv = new gp_Vec(0.0, 0.0, 0.0);
+                Dnv = new Vector3D(0.0, 0.0, 0.0);
             }
             break;
 
             default:
             {
-                Adaptor3d_HSurfaceTool.D2(S, U, V, out P, out gp_Vec d1u, out gp_Vec d1v, out gp_Vec d2u,
-                                          out gp_Vec d2v, out gp_Vec d2uv);
+                Adaptor3d_HSurfaceTool.D2(S, U, V, out P, out Vector3D d1u, out Vector3D d1v, out Vector3D d2u,
+                                          out Vector3D d2v, out Vector3D d2uv);
                 Norm = d1u.Crossed(d1v);
                 Dnu = d2u.Crossed(d1v) + d1u.Crossed(d2uv);
                 Dnv = d2uv.Crossed(d1v) + d1u.Crossed(d2v);

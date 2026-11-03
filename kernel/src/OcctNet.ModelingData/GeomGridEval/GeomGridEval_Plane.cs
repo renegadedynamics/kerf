@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,23 +23,23 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
     public Geom_Plane? Geometry() => myGeom;
 
     /// <summary>Evaluates grid points at the Cartesian product of U and V parameters; [1..NbU, 1..NbV].</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
         if (myGeom is null || aNbU == 0 || aNbV == 0)
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         // Extract plane data from geometry
-        gp_Pln aPln = myGeom.Pln();
-        gp_Pnt aLoc = aPln.Location();
-        gp_Dir aXDir = aPln.Position().XDirection();
-        gp_Dir aYDir = aPln.Position().YDirection();
+        Plane3D aPln = myGeom.Pln();
+        Point3D aLoc = aPln.Location();
+        Direction3D aXDir = aPln.Position().XDirection();
+        Direction3D aYDir = aPln.Position().YDirection();
 
         // Pre-extract coordinates for performance
         double aLocX = aLoc.X();
@@ -60,7 +62,7 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
             for (int iV = 1; iV <= aNbV; ++iV)
             {
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
-                aResult.SetValue(iU, iV, new gp_Pnt(uX + v * aYX, uY + v * aYY, uZ + v * aYZ));
+                aResult.SetValue(iU, iV, new Point3D(uX + v * aYX, uY + v * aYY, uZ + v * aYZ));
             }
         }
         return aResult;
@@ -79,10 +81,10 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
 
         NCollection_Array2<Geom_Surface.ResD1> aResult = new(1, aNbU, 1, aNbV);
 
-        gp_Pln aPln = myGeom.Pln();
-        gp_Pnt aLoc = aPln.Location();
-        gp_Dir aXDir = aPln.Position().XDirection();
-        gp_Dir aYDir = aPln.Position().YDirection();
+        Plane3D aPln = myGeom.Pln();
+        Point3D aLoc = aPln.Location();
+        Direction3D aXDir = aPln.Position().XDirection();
+        Direction3D aYDir = aPln.Position().YDirection();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -95,8 +97,8 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
         double aYZ = aYDir.Z();
 
         // D1U and D1V are constant for a plane
-        gp_Vec aD1U = new(aXX, aXY, aXZ);
-        gp_Vec aD1V = new(aYX, aYY, aYZ);
+        Vector3D aD1U = new(aXX, aXY, aXZ);
+        Vector3D aD1V = new(aYX, aYY, aYZ);
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {
@@ -110,7 +112,7 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
                 aResult[iU, iV] = new Geom_Surface.ResD1
                 {
-                    Point = new gp_Pnt(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
+                    Point = new Point3D(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
                     D1U = aD1U,
                     D1V = aD1V,
                 };
@@ -132,10 +134,10 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
 
         NCollection_Array2<Geom_Surface.ResD2> aResult = new(1, aNbU, 1, aNbV);
 
-        gp_Pln aPln = myGeom.Pln();
-        gp_Pnt aLoc = aPln.Location();
-        gp_Dir aXDir = aPln.Position().XDirection();
-        gp_Dir aYDir = aPln.Position().YDirection();
+        Plane3D aPln = myGeom.Pln();
+        Point3D aLoc = aPln.Location();
+        Direction3D aXDir = aPln.Position().XDirection();
+        Direction3D aYDir = aPln.Position().YDirection();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -147,9 +149,9 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
-        gp_Vec aD1U = new(aXX, aXY, aXZ);
-        gp_Vec aD1V = new(aYX, aYY, aYZ);
-        gp_Vec aZero = new(0, 0, 0); // All second derivatives are zero for a plane
+        Vector3D aD1U = new(aXX, aXY, aXZ);
+        Vector3D aD1V = new(aYX, aYY, aYZ);
+        Vector3D aZero = new(0, 0, 0); // All second derivatives are zero for a plane
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {
@@ -163,7 +165,7 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
                 aResult[iU, iV] = new Geom_Surface.ResD2
                 {
-                    Point = new gp_Pnt(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
+                    Point = new Point3D(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
                     D1U = aD1U,
                     D1V = aD1V,
                     D2U = aZero,
@@ -188,10 +190,10 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
 
         NCollection_Array2<Geom_Surface.ResD3> aResult = new(1, aNbU, 1, aNbV);
 
-        gp_Pln aPln = myGeom.Pln();
-        gp_Pnt aLoc = aPln.Location();
-        gp_Dir aXDir = aPln.Position().XDirection();
-        gp_Dir aYDir = aPln.Position().YDirection();
+        Plane3D aPln = myGeom.Pln();
+        Point3D aLoc = aPln.Location();
+        Direction3D aXDir = aPln.Position().XDirection();
+        Direction3D aYDir = aPln.Position().YDirection();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -203,9 +205,9 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
         double aYY = aYDir.Y();
         double aYZ = aYDir.Z();
 
-        gp_Vec aD1U = new(aXX, aXY, aXZ);
-        gp_Vec aD1V = new(aYX, aYY, aYZ);
-        gp_Vec aZero = new(0, 0, 0); // All derivatives of order >= 2 are zero for a plane
+        Vector3D aD1U = new(aXX, aXY, aXZ);
+        Vector3D aD1V = new(aYX, aYY, aYZ);
+        Vector3D aZero = new(0, 0, 0); // All derivatives of order >= 2 are zero for a plane
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {
@@ -219,7 +221,7 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
                 double v = theVParams.Value(theVParams.Lower() + iV - 1);
                 aResult[iU, iV] = new Geom_Surface.ResD3
                 {
-                    Point = new gp_Pnt(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
+                    Point = new Point3D(uX + v * aYX, uY + v * aYY, uZ + v * aYZ),
                     D1U = aD1U,
                     D1V = aD1V,
                     D2U = aZero,
@@ -236,7 +238,7 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative d^(NU+NV)S/(dU^NU dV^NV) at all grid points.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -245,24 +247,24 @@ public sealed class GeomGridEval_Plane : GeomGridEval.ISurfaceEvaluator
         int aNbV = theVParams.Length();
         if (myGeom is null || aNbU == 0 || aNbV == 0 || theNU < 0 || theNV < 0 || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         // For a plane, only D1U (1,0) and D1V (0,1) are non-zero
-        gp_Vec aDerivative = new(0, 0, 0);
+        Vector3D aDerivative = new(0, 0, 0);
         if (theNU == 1 && theNV == 0)
         {
             // D1U = XDir
-            gp_Dir aXDir = myGeom.Pln().Position().XDirection();
-            aDerivative = new gp_Vec(aXDir.X(), aXDir.Y(), aXDir.Z());
+            Direction3D aXDir = myGeom.Pln().Position().XDirection();
+            aDerivative = new Vector3D(aXDir.X(), aXDir.Y(), aXDir.Z());
         }
         else if (theNU == 0 && theNV == 1)
         {
             // D1V = YDir
-            gp_Dir aYDir = myGeom.Pln().Position().YDirection();
-            aDerivative = new gp_Vec(aYDir.X(), aYDir.Y(), aYDir.Z());
+            Direction3D aYDir = myGeom.Pln().Position().YDirection();
+            aDerivative = new Vector3D(aYDir.X(), aYDir.Y(), aYDir.Z());
         }
         // All other derivatives are zero
 

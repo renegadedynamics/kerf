@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -13,8 +14,8 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(300, 30);
 
-    private static readonly GeomAbs_Shape[] Shapes =
-        { GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3, GeomAbs_Shape.GeomAbs_CN };
+    private static readonly Continuity[] Shapes =
+        { Continuity.C0, Continuity.C1, Continuity.C2, Continuity.C3, Continuity.CN };
 
     /// <summary>D0 to D3, Value, DN and the Eval forms at U.</summary>
     private static void SameEval(Oracle theOracle, N.Geom2dAdaptor_Curve theNative, Geom2dAdaptor_Curve thePort, double U,
@@ -26,7 +27,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         using var aNV3 = new N.gp_Vec2d();
 
         theNative.D0(U, aNP);
-        thePort.D0(U, out gp_Pnt2d aP);
+        thePort.D0(U, out Point2D aP);
         theOracle.Same(aNP, aP, $"{theWhat} D0({U})");
 
         using (var aNVal = theNative.Value(U))
@@ -39,18 +40,18 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         }
 
         theNative.D1(U, aNP, aNV1);
-        thePort.D1(U, out aP, out gp_Vec2d aV1);
+        thePort.D1(U, out aP, out Vector2D aV1);
         theOracle.Same(aNP, aP, $"{theWhat} D1 P");
         theOracle.Same(aNV1, aV1, $"{theWhat} D1 V1");
 
         theNative.D2(U, aNP, aNV1, aNV2);
-        thePort.D2(U, out aP, out aV1, out gp_Vec2d aV2);
+        thePort.D2(U, out aP, out aV1, out Vector2D aV2);
         theOracle.Same(aNP, aP, $"{theWhat} D2 P");
         theOracle.Same(aNV1, aV1, $"{theWhat} D2 V1");
         theOracle.Same(aNV2, aV2, $"{theWhat} D2 V2");
 
         theNative.D3(U, aNP, aNV1, aNV2, aNV3);
-        thePort.D3(U, out aP, out aV1, out aV2, out gp_Vec2d aV3);
+        thePort.D3(U, out aP, out aV1, out aV2, out Vector2D aV3);
         theOracle.Same(aNP, aP, $"{theWhat} D3 P");
         theOracle.Same(aNV1, aV1, $"{theWhat} D3 V1");
         theOracle.Same(aNV2, aV2, $"{theWhat} D3 V2");
@@ -85,7 +86,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             theOracle.SameRelative(theNative.Resolution(aR), thePort.Resolution(aR), $"{theWhat} Resolution({aR})");
         }
 
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             int aNb = theNative.NbIntervals((N.GeomAbs_Shape)(int)aS);
             theOracle.Same(aNb, thePort.NbIntervals(aS), $"{theWhat} NbIntervals({aS})");
@@ -222,7 +223,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom2dAdaptor_Curve on B-splines");
     }
 
-    private static (gp_Ax2d Port, N.gp_Ax2d Native) Ax2d(Oracle theOracle)
+    private static (Axis2D Port, N.gp_Ax2d Native) Ax2d(Oracle theOracle)
     {
         double aX = theOracle.Real(), aY = theOracle.Real();
         double aDX, aDY;
@@ -234,7 +235,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
         while (aDX * aDX + aDY * aDY < 0.01);
         using var aNP = new N.gp_Pnt2d(aX, aY);
         using var aND = new N.gp_Dir2d(aDX, aDY);
-        return (new gp_Ax2d(new gp_Pnt2d(aX, aY), new gp_Dir2d(aDX, aDY)), new N.gp_Ax2d(aNP, aND));
+        return (new Axis2D(new Point2D(aX, aY), new Direction2D(aDX, aDY)), new N.gp_Ax2d(aNP, aND));
     }
 
     [Fact]
@@ -288,7 +289,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                             using var aNL = aNative.Line();
                             using var aNLoc = aNL.Location();
                             using var aNDir = aNL.Direction();
-                            gp_Lin2d aL = aPort.Line();
+                            Line2D aL = aPort.Line();
                             anOracle.Same(aNLoc, aL.Location(), $"{aWhat} Line location");
                             anOracle.Same(aNDir.X(), aL.Direction().X(), $"{aWhat} Line direction X");
                             anOracle.Same(aNDir.Y(), aL.Direction().Y(), $"{aWhat} Line direction Y");
@@ -298,7 +299,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                         {
                             using var aNC = aNative.Circle();
                             using var aNLoc = aNC.Location();
-                            gp_Circ2d aC = aPort.Circle();
+                            Circle2D aC = aPort.Circle();
                             anOracle.Same(aNLoc, aC.Location(), $"{aWhat} Circle location");
                             anOracle.Same(aNC.Radius(), aC.Radius(), $"{aWhat} Circle radius");
                             break;
@@ -307,7 +308,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                         {
                             using var aNE = aNative.Ellipse();
                             using var aNLoc = aNE.Location();
-                            gp_Elips2d anE = aPort.Ellipse();
+                            Ellipse2D anE = aPort.Ellipse();
                             anOracle.Same(aNLoc, anE.Location(), $"{aWhat} Ellipse location");
                             anOracle.Same(aNE.MajorRadius(), anE.MajorRadius(), $"{aWhat} Ellipse major radius");
                             anOracle.Same(aNE.MinorRadius(), anE.MinorRadius(), $"{aWhat} Ellipse minor radius");

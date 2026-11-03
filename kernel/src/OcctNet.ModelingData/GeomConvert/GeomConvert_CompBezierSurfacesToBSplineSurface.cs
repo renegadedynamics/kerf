@@ -4,7 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -25,7 +27,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     private NCollection_HArray1<int> myUMults = null!;
     private NCollection_HArray1<double> myUKnots;
     private NCollection_HArray1<double> myVKnots;
-    private NCollection_HArray2<gp_Pnt> myPoles = null!;
+    private NCollection_HArray2<Point3D> myPoles = null!;
     private bool isrational;
     private bool myDone;
 
@@ -33,7 +35,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     /// The data of a C0 "piecewise Bezier" B-spline surface equivalent to the grid: knots 0, 1, 2, ... in each
     /// direction, the degrees the highest of the grid's, inner multiplicities equal to the degrees.
     /// </summary>
-    /// <exception cref="Standard_NotImplemented">A patch is rational.</exception>
+    /// <exception cref="MethodNotImplementedException">A patch is rational.</exception>
     public GeomConvert_CompBezierSurfacesToBSplineSurface(NCollection_Array2<Geom_BezierSurface> Beziers)
     {
         int ii;
@@ -60,7 +62,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     /// along the iso-curves at 0.3, and as many inner knots removed as Tolerance allows (C0 is imposed without
     /// check). With RemoveKnots false, the knots are kept with multiplicity at least 1.
     /// </summary>
-    /// <exception cref="Standard_NotImplemented">A patch is rational.</exception>
+    /// <exception cref="MethodNotImplementedException">A patch is rational.</exception>
     /// <remarks>
     /// OCCT: the V knot removal loop tests the U multiplicity (occt-issues.md), so V knots are only removed when
     /// the last U removal failed, and then the loop may not end.
@@ -71,9 +73,9 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     {
         int ii, jj, multU = 0, multV, minus;
         bool Ok;
-        gp_Vec vec;
+        Vector3D vec;
         double V1, V2, V3, Ratio, L1, L2, Tol, val;
-        gp_Pnt P1, P2, P3;
+        Point3D P1, P2, P3;
         Geom_Curve FirstCurve, SecondCurve;
 
         myDone = true;
@@ -123,12 +125,12 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
             }
 
             Ratio = 1;
-            if ((V1 > Precision.Confusion()) && (V2 > Precision.Confusion()))
+            if ((V1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (V2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = V2 / V1;
             }
 
-            if ((Ratio < Precision.Confusion()) || (Ratio > 1 / Precision.Confusion()))
+            if ((Ratio < global::Kerf.Engine.Foundation.Precision.Confusion()) || (Ratio > 1 / global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = 1;
             }
@@ -183,12 +185,12 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
             }
 
             Ratio = 1;
-            if ((V1 > Precision.Confusion()) && (V2 > Precision.Confusion()))
+            if ((V1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (V2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = V2 / V1;
             }
 
-            if ((Ratio < Precision.Confusion()) || (Ratio > 1 / Precision.Confusion()))
+            if ((Ratio < global::Kerf.Engine.Foundation.Precision.Confusion()) || (Ratio > 1 / global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 Ratio = 1;
             }
@@ -247,7 +249,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
         }
 
         // The new fields have been computed....
-        myPoles = new NCollection_HArray2<gp_Pnt>(Surface.InternalPoles());
+        myPoles = new NCollection_HArray2<Point3D>(Surface.InternalPoles());
         myUMults = new NCollection_HArray1<int>(Surface.InternalUMultiplicities());
         myVMults = new NCollection_HArray1<int>(Surface.InternalVMultiplicities());
         myUKnots = new NCollection_HArray1<double>(Surface.InternalUKnots());
@@ -259,15 +261,15 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     /// each direction), made of continuity UContinuity and VContinuity (C0 to C3) by knot removal where the
     /// deformation stays below Tolerance; IsDone is false where it doesn't.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// A continuity above C3 or G1/G2, or a continuity not below the degree in a direction with several patches.
     /// </exception>
-    /// <exception cref="Standard_NotImplemented">A patch is rational.</exception>
+    /// <exception cref="MethodNotImplementedException">A patch is rational.</exception>
     public GeomConvert_CompBezierSurfacesToBSplineSurface(NCollection_Array2<Geom_BezierSurface> Beziers,
                                                           NCollection_Array1<double> UKnots,
                                                           NCollection_Array1<double> VKnots,
-                                                          GeomAbs_Shape UContinuity = GeomAbs_C0,
-                                                          GeomAbs_Shape VContinuity = GeomAbs_C0,
+                                                          Continuity UContinuity = C0,
+                                                          Continuity VContinuity = C0,
                                                           double Tolerance = 1.0e-4)
     {
         int decu = 0, decv = 0;
@@ -289,38 +291,38 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
 
         switch (UContinuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 decu = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 decu = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 decu = 2;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 decu = 3;
                 break;
             default:
-                throw new Standard_ConstructionError("GeomConvert_CompBezierSurfacesToBSpl:: UContinuity error");
+                throw new ConstructionErrorException("GeomConvert_CompBezierSurfacesToBSpl:: UContinuity error");
         }
 
         switch (VContinuity)
         {
-            case GeomAbs_C0:
+            case C0:
                 decv = 0;
                 break;
-            case GeomAbs_C1:
+            case C1:
                 decv = 1;
                 break;
-            case GeomAbs_C2:
+            case C2:
                 decv = 2;
                 break;
-            case GeomAbs_C3:
+            case C3:
                 decv = 3;
                 break;
             default:
-                throw new Standard_ConstructionError("GeomConvert_CompBezierSurfacesToBSpl:: VContinuity error");
+                throw new ConstructionErrorException("GeomConvert_CompBezierSurfacesToBSpl:: VContinuity error");
         }
 
         if ((decu > 0) || (decv > 0))
@@ -369,7 +371,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
             }
 
             // The new fields have been computed....
-            myPoles = new NCollection_HArray2<gp_Pnt>(Surface.InternalPoles());
+            myPoles = new NCollection_HArray2<Point3D>(Surface.InternalPoles());
             myUMults = new NCollection_HArray1<int>(Surface.InternalUMultiplicities());
             myVMults = new NCollection_HArray1<int>(Surface.InternalVMultiplicities());
         }
@@ -408,7 +410,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
         int UIndex, VIndex, uindex, vindex, udeb, vdeb;
         int upol, vpol, ii;
 
-        myPoles = new NCollection_HArray2<gp_Pnt>(
+        myPoles = new NCollection_HArray2<Point3D>(
             1,
             (myUDegree + 1) * Beziers.ColLength() - myUKnots.Length() + 2,
             1,
@@ -530,7 +532,7 @@ public sealed class GeomConvert_CompBezierSurfacesToBSplineSurface
     public int NbVPoles() => myPoles.RowLength();
 
     /// <summary>A copy of the poles of the computed surface.</summary>
-    public NCollection_HArray2<gp_Pnt> Poles() => new(myPoles);
+    public NCollection_HArray2<Point3D> Poles() => new(myPoles);
 
     /// <summary>A copy of the U knots of the computed surface.</summary>
     public NCollection_HArray1<double> UKnots() => new(myUKnots);

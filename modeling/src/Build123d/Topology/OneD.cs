@@ -1,3 +1,6 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -41,7 +44,7 @@ public static class OneD
                 {
                     sum = JoinedWire(summandEdges, [], brought);
                 }
-                catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
                 {
                     sum = summands[0].Fuse(summands.Skip(1));
                     if (sum.History is not null)
@@ -55,7 +58,7 @@ public static class OneD
             {
                 sum = JoinedWire([.. self.Edges(), .. summandEdges], [self.TopoShape], brought);
             }
-            catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
             {
                 sum = self.Fuse(summands);
             }
@@ -108,14 +111,14 @@ public static class OneD
             var actual = BRepLProp.Continuity(curve1, curve2, u1, u2, Constants.Tolerance, Constants.Tolerance);
             var level = actual switch
             {
-                GeomAbs_Shape.GeomAbs_C0 => ContinuityLevel.C0,
-                GeomAbs_Shape.GeomAbs_G1 or GeomAbs_Shape.GeomAbs_C1 => ContinuityLevel.C1,
+                Continuity.C0 => ContinuityLevel.C0,
+                Continuity.G1 or Continuity.C1 => ContinuityLevel.C1,
                 _ => ContinuityLevel.C2,
             };
             if (level >= continuity && !connected.Any(c => c.IsSame(other)))
                 connected.Add(other);
         }
-        return relocation.IsIdentity()
+        return relocation.IsIdentity
             ? new ShapeList<Edge>(connected.Select(e => new Edge(TopoDS.Edge(e))))
             : new ShapeList<Edge>(connected.Select(e => new Edge(TopoDS.Edge(e.Moved(relocation)))));
     }
@@ -189,13 +192,13 @@ public static class OneD
         for (int i = 0; i < samples; i++)
         {
             var param = first + (last - first) * (i + 0.5) / samples;
-            var point = new gp_Pnt();
-            var tangent = new gp_Vec();
+            var point = new Point3D();
+            var tangent = new Vector3D();
             curve.D1(param, out point, out tangent);
             var uv1 = pcurve1.Value(param);
             var uv2 = pcurve2.Value(param);
-            var normal1 = new gp_Vec();
-            var normal2 = new gp_Vec();
+            var normal1 = new Vector3D();
+            var normal2 = new Vector3D();
             props1.Normal(uv1.X(), uv1.Y(), out point, out normal1);
             props2.Normal(uv2.X(), uv2.Y(), out point, out normal2);
             if (Math.Min(tangent.Magnitude(), Math.Min(normal1.Magnitude(), normal2.Magnitude())) < 1e-12)
@@ -295,11 +298,11 @@ public static class OneD
             }
             var adaptor = edge.GeomAdaptor();
             // Fit only the part of the offset curve the edge uses, as it lies before the edge's location
-            var curveLocation = new TopLoc_Location();
+            var curveLocation = new Placement();
             double f = 0, l = 0;
             var curve = BRep_Tool.Curve(edge.TopoEdge, out curveLocation, out f, out l);
             var trimmed = new Geom_TrimmedCurve(curve!, adaptor.FirstParameter(), adaptor.LastParameter());
-            var approximation = new GeomConvert_ApproxCurve(trimmed, Constants.Tolerance / 10, GeomAbs_Shape.GeomAbs_C2, 100, 9);
+            var approximation = new GeomConvert_ApproxCurve(trimmed, Constants.Tolerance / 10, Continuity.C2, 100, 9);
             if (!approximation.HasResult())
                 throw new InvalidOperationException("2D offset curve could not be converted to a spline");
             var spline = approximation.Curve();
@@ -337,9 +340,9 @@ public abstract partial class Shape1D
     {
         var join = kind switch
         {
-            Kind.Arc => GeomAbs_JoinType.GeomAbs_Arc,
-            Kind.Intersection => GeomAbs_JoinType.GeomAbs_Intersection,
-            _ => GeomAbs_JoinType.GeomAbs_Tangent,
+            Kind.Arc => JoinKind.Arc,
+            Kind.Intersection => JoinKind.Intersection,
+            _ => JoinKind.Tangent,
         };
         var line = this as Wire ?? new Wire([(Edge)this]);
         var lineEdges = line.Edges();

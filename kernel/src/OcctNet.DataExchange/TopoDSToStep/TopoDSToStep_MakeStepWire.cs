@@ -6,6 +6,7 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopoDSToStep_MakeWireError;
 
@@ -61,7 +62,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             return;
         }
 
-        var mySeq = new NCollection_Sequence<Standard_Transient>();
+        var mySeq = new NCollection_Sequence<Transient>();
 
         // --------
         // Polyloop
@@ -147,7 +148,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             var MkEdge = new TopoDSToStep_MakeStepEdge();
 
             TopoDS_Wire ForwardWire = TopoDS.Wire(aWire.Oriented(TopAbs_FORWARD));
-            var STW = new ShapeFix_Wire(ForwardWire, aTool.CurrentFace(), Precision.Confusion());
+            var STW = new ShapeFix_Wire(ForwardWire, aTool.CurrentFace(), global::Kerf.Engine.Foundation.Precision.Confusion());
             // for toroidal like surfaces we need to use both (3d and 2d) mode to correctly reorder the
             // edges
             STW.FixReorder(true);
@@ -284,7 +285,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
     public void Init(in TopoDS_Wire aWire, TopoDSToStep_Tool aTool, Transfer_FinderProcess FP)
         => Init(aWire, aTool, FP, new StepData_Factors());
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_TopologicalRepresentationItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeStepWire::Value() - no result");

@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 using static Occt.StepDimTol_GeometricToleranceModifier;
 using static Occt.StepDimTol_GeometricToleranceType;
@@ -34,8 +35,8 @@ internal class RWStepDimTol_RWGeoTolAndGeoTolWthMaxTol
         data.ReadString(num, 1, "name", ach, ref aName);
         TCollection_HAsciiString aDescription = null;
         data.ReadString(num, 2, "description", ach, ref aDescription);
-        Standard_Transient aMagnitude = null;
-        data.ReadEntity(num, 3, "magnitude", ach, typeof(Standard_Transient), ref aMagnitude);
+        Transient aMagnitude = null;
+        data.ReadEntity(num, 3, "magnitude", ach, typeof(Transient), ref aMagnitude);
         StepDimTol_GeometricToleranceTarget aTolerancedShapeAspect = new StepDimTol_GeometricToleranceTarget();
         data.ReadEntity(num, 4, "toleranced_shape_aspect", ach, aTolerancedShapeAspect);
 

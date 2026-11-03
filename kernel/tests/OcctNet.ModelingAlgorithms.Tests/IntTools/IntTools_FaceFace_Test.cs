@@ -2,18 +2,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's IntTools_FaceFace GTest (suite IntTools_FaceFaceTest).</summary>
 public class IntTools_FaceFace_Test
 {
     //! Create a half-cylinder face.
-    private static TopoDS_Face CreateHalfCylinderFace(gp_Pnt theCenter, gp_Dir theAxis, double theRadius,
+    private static TopoDS_Face CreateHalfCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius,
                                                       double theVMin, double theVMax, double theUMin = 0.0,
                                                       double theUMax = Math.PI)
     {
         // Create cylinder surface
-        gp_Ax3 anAx3 = new(theCenter, theAxis);
+        CoordinateSystem anAx3 = new(theCenter, theAxis);
         Geom_CylindricalSurface aCylSurf = new(anAx3, theRadius);
 
         // Create face with parameter bounds
@@ -22,20 +24,20 @@ public class IntTools_FaceFace_Test
     }
 
     //! Create a full cylinder face with finite V range.
-    private static TopoDS_Face CreateCylinderFace(gp_Pnt theCenter, gp_Dir theAxis, double theRadius, double theVMin,
+    private static TopoDS_Face CreateCylinderFace(Point3D theCenter, Direction3D theAxis, double theRadius, double theVMin,
                                                   double theVMax)
         => CreateHalfCylinderFace(theCenter, theAxis, theRadius, theVMin, theVMax, 0.0, 2.0 * Math.PI);
 
     //! Create a circular planar face.
-    private static TopoDS_Face CreateCircularPlaneFace(gp_Pnt theCenter, gp_Dir theNormal, double theRadius)
+    private static TopoDS_Face CreateCircularPlaneFace(Point3D theCenter, Direction3D theNormal, double theRadius)
     {
         // Create plane
-        gp_Pln aPln = new(theCenter, theNormal);
+        Plane3D aPln = new(theCenter, theNormal);
         Geom_Plane aPlane = new(aPln);
 
         // Create circular edge on the plane
-        gp_Ax2 aCircAx = new(theCenter, theNormal);
-        gp_Circ aCirc = new(aCircAx, theRadius);
+        Frame3D aCircAx = new(theCenter, theNormal);
+        Circle3D aCirc = new(aCircAx, theRadius);
 
         BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCirc);
         TopoDS_Edge aCircEdge = anEdgeMaker.Edge();
@@ -55,15 +57,15 @@ public class IntTools_FaceFace_Test
     public void PerpendicularCylinderBoundaryTouch_OrderIndependent()
     {
         // Cylinder 1: axis along Z, long finite segment.
-        gp_Pnt aCyl1Center = new(0.0, 0.0, 0.0);
-        gp_Dir aCyl1Axis = new(0.0, 0.0, 1.0);
+        Point3D aCyl1Center = new(0.0, 0.0, 0.0);
+        Direction3D aCyl1Axis = new(0.0, 0.0, 1.0);
         const double aCyl1Radius = 2.0;
         const double aCyl1VMin = -5.0;
         const double aCyl1VMax = 5.0;
 
         // Cylinder 2: axis along X, one V-boundary at X=0 touches cylinder 1.
-        gp_Pnt aCyl2Center = new(0.0, 2.0, 0.0);
-        gp_Dir aCyl2Axis = new(1.0, 0.0, 0.0);
+        Point3D aCyl2Center = new(0.0, 2.0, 0.0);
+        Direction3D aCyl2Axis = new(1.0, 0.0, 0.0);
         const double aCyl2Radius = 0.5;
         const double aCyl2VMin = 0.0;
         const double aCyl2VMax = 4.0;
@@ -99,13 +101,13 @@ public class IntTools_FaceFace_Test
     public void HalfCylinderOutsideCircularPlane_NoIntersection()
     {
         // Plane at Y = 0, with circular boundary of radius 10, centered at origin
-        gp_Pnt aPlaneCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aPlaneNormal = new(0.0, 1.0, 0.0);
+        Point3D aPlaneCenter = new(0.0, 0.0, 0.0);
+        Direction3D aPlaneNormal = new(0.0, 1.0, 0.0);
         const double aPlaneRadius = 10.0;
 
         // Half cylinder with axis along Y, positioned far from plane center
-        gp_Pnt aCylCenter = new(20.0, 0.0, 0.0);
-        gp_Dir aCylAxis = new(0.0, 1.0, 0.0);
+        Point3D aCylCenter = new(20.0, 0.0, 0.0);
+        Direction3D aCylAxis = new(0.0, 1.0, 0.0);
         const double aCylRadius = 2.0;
         const double aVMin = -1.0;
         const double aVMax = 1.0;
@@ -132,12 +134,12 @@ public class IntTools_FaceFace_Test
     [Fact]
     public void HalfCylinderInsideCircularPlane_HasIntersection()
     {
-        gp_Pnt aPlaneCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aPlaneNormal = new(0.0, 1.0, 0.0);
+        Point3D aPlaneCenter = new(0.0, 0.0, 0.0);
+        Direction3D aPlaneNormal = new(0.0, 1.0, 0.0);
         const double aPlaneRadius = 20.0;
 
-        gp_Pnt aCylCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aCylAxis = new(0.0, 1.0, 0.0);
+        Point3D aCylCenter = new(0.0, 0.0, 0.0);
+        Direction3D aCylAxis = new(0.0, 1.0, 0.0);
         const double aCylRadius = 5.0;
         const double aVMin = -1.0;
         const double aVMax = 1.0;
@@ -162,12 +164,12 @@ public class IntTools_FaceFace_Test
     [Fact]
     public void OppositeHalfInsideCircle_HasIntersection()
     {
-        gp_Pnt aPlaneCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aPlaneNormal = new(0.0, 1.0, 0.0);
+        Point3D aPlaneCenter = new(0.0, 0.0, 0.0);
+        Direction3D aPlaneNormal = new(0.0, 1.0, 0.0);
         const double aPlaneRadius = 15.0;
 
-        gp_Pnt aCylCenter = new(10.0, 0.0, -5.0);
-        gp_Dir aCylAxis = new(0.0, 1.0, 0.0);
+        Point3D aCylCenter = new(10.0, 0.0, -5.0);
+        Direction3D aCylAxis = new(0.0, 1.0, 0.0);
         const double aCylRadius = 3.0;
         const double aVMin = -1.0;
         const double aVMax = 1.0;
@@ -194,12 +196,12 @@ public class IntTools_FaceFace_Test
     [Fact]
     public void PartialCrossing_ProperlyTrimmed()
     {
-        gp_Pnt aPlaneCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aPlaneNormal = new(0.0, 1.0, 0.0);
+        Point3D aPlaneCenter = new(0.0, 0.0, 0.0);
+        Direction3D aPlaneNormal = new(0.0, 1.0, 0.0);
         const double aPlaneRadius = 15.0;
 
-        gp_Pnt aCylCenter = new(12.0, 0.0, -8.0);
-        gp_Dir aCylAxis = new(0.0, 1.0, 0.0);
+        Point3D aCylCenter = new(12.0, 0.0, -8.0);
+        Direction3D aCylAxis = new(0.0, 1.0, 0.0);
         const double aCylRadius = 3.0;
         const double aVMin = -1.0;
         const double aVMax = 1.0;
@@ -225,12 +227,12 @@ public class IntTools_FaceFace_Test
     [Fact]
     public void BothHalvesCompletelyOutside_NoIntersection()
     {
-        gp_Pnt aPlaneCenter = new(0.0, 0.0, 0.0);
-        gp_Dir aPlaneNormal = new(0.0, 1.0, 0.0);
+        Point3D aPlaneCenter = new(0.0, 0.0, 0.0);
+        Direction3D aPlaneNormal = new(0.0, 1.0, 0.0);
         const double aPlaneRadius = 5.0;
 
-        gp_Pnt aCylCenter = new(20.0, 0.0, 20.0);
-        gp_Dir aCylAxis = new(0.0, 1.0, 0.0);
+        Point3D aCylCenter = new(20.0, 0.0, 20.0);
+        Direction3D aCylAxis = new(0.0, 1.0, 0.0);
         const double aCylRadius = 2.0;
         const double aVMin = -1.0;
         const double aVMax = 1.0;
@@ -272,23 +274,23 @@ public class IntTools_FaceFace_Test
     public void OCC24005_PlaneCylinderIntersection()
     {
         // Hardcoded geometry from the original regression test
-        Geom_Plane aPlane = new(new gp_Ax3(new gp_Pnt(-72.948737453424499, 754.30437716359393, 259.52151854671678),
-                                           new gp_Dir(6.2471473085930200e-007, -0.99999999999980493, 0.00000000000000000),
-                                           new gp_Dir(0.99999999999980493, 6.2471473085930200e-007, 0.00000000000000000)));
+        Geom_Plane aPlane = new(new CoordinateSystem(new Point3D(-72.948737453424499, 754.30437716359393, 259.52151854671678),
+                                           new Direction3D(6.2471473085930200e-007, -0.99999999999980493, 0.00000000000000000),
+                                           new Direction3D(0.99999999999980493, 6.2471473085930200e-007, 0.00000000000000000)));
 
         Geom_CylindricalSurface aCylinder =
-            new(new gp_Ax3(new gp_Pnt(-6.4812490053250649, 753.39408794522092, 279.16400974257465),
-                           new gp_Dir(1.0000000000000000, 0.0, 0.00000000000000000),
-                           new gp_Dir(0.0, 1.0000000000000000, 0.00000000000000000)),
+            new(new CoordinateSystem(new Point3D(-6.4812490053250649, 753.39408794522092, 279.16400974257465),
+                           new Direction3D(1.0000000000000000, 0.0, 0.00000000000000000),
+                           new Direction3D(0.0, 1.0000000000000000, 0.00000000000000000)),
                 19.712534607908712);
 
         BRep_Builder aBuilder = new();
         TopoDS_Face aFace1 = new(), aFace2 = new();
-        aBuilder.MakeFace(ref aFace1, aPlane, Precision.Confusion());
-        aBuilder.MakeFace(ref aFace2, aCylinder, Precision.Confusion());
+        aBuilder.MakeFace(ref aFace1, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aBuilder.MakeFace(ref aFace2, aCylinder, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         IntTools_FaceFace anInters = new();
-        anInters.SetParameters(false, true, true, Precision.Confusion());
+        anInters.SetParameters(false, true, true, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInters.Perform(aFace1, aFace2);
 
         Assert.True(anInters.IsDone(), "IntTools_FaceFace::Perform did not complete");

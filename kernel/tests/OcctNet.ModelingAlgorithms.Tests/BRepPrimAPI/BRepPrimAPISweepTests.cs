@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -29,7 +31,7 @@ public class BRepPrimAPISweepTests
         TopExp.MapShapes(theS, aMap);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            if (!aMap[i].TShape()!.IsFrozen())
+            if (!aMap[i].TShape()!.IsFrozen)
             {
                 return false;
             }
@@ -44,10 +46,10 @@ public class BRepPrimAPISweepTests
         return aMap.Contains(theSub);
     }
 
-    private static TopoDS_Wire Polygon(bool theClosed, params gp_Pnt[] thePoints)
+    private static TopoDS_Wire Polygon(bool theClosed, params Point3D[] thePoints)
     {
         var aMP = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aMP.Add(aP);
         }
@@ -58,11 +60,11 @@ public class BRepPrimAPISweepTests
         return aMP.Wire();
     }
 
-    private static TopoDS_Face Face(params gp_Pnt[] thePoints) =>
+    private static TopoDS_Face Face(params Point3D[] thePoints) =>
         new BRepBuilderAPI_MakeFace(Polygon(true, thePoints), true).Face();
 
     private static TopoDS_Face UnitSquare() =>
-        Face(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0), new gp_Pnt(0, 1, 0));
+        Face(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
     private static double Volume(in TopoDS_Shape theS) => BRepGProp.VolumeProperties(theS).Mass();
 
@@ -75,28 +77,28 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void Prism_of_a_vertex_is_an_edge_of_the_vector_s_length()
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 2, 3)).Vertex();
-        var aMP = new BRepPrimAPI_MakePrism(aV, new gp_Vec(0, 3, 4));
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Vertex();
+        var aMP = new BRepPrimAPI_MakePrism(aV, new Vector3D(0, 3, 4));
         TopoDS_Shape aS = aMP.Shape();
         Assert.Equal(TopAbs_EDGE, aS.ShapeType());
         Assert.Equal(5.0, BRepGProp.LinearProperties(aS).Mass(), Tol);
         Assert.True(aMP.FirstShape().IsSame(aV));
-        Assert.True(BRep_Tool.Pnt(TopoDS.Vertex(aMP.LastShape())).IsEqual(new gp_Pnt(1, 5, 7), Tol));
+        Assert.True(BRep_Tool.Pnt(TopoDS.Vertex(aMP.LastShape())).IsEqual(new Point3D(1, 5, 7), Tol));
         Assert.True(AllFrozen(aS));
     }
 
     [Fact]
     public void Prism_of_an_edge_is_a_planar_face_and_of_an_open_wire_a_shell()
     {
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
-        TopoDS_Shape aF = new BRepPrimAPI_MakePrism(anE, new gp_Vec(0, 0, 3)).Shape();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
+        TopoDS_Shape aF = new BRepPrimAPI_MakePrism(anE, new Vector3D(0, 0, 3)).Shape();
         Assert.Equal(TopAbs_FACE, aF.ShapeType());
         Assert.Equal(6.0, Area(aF), Tol);
         Assert.IsType<Geom_Plane>(BRep_Tool.Surface(TopoDS.Face(aF)));
         Assert.Equal(4, Count(aF, TopAbs_EDGE));
 
-        TopoDS_Wire aW = Polygon(false, new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0), new gp_Pnt(0, 1, 0));
-        TopoDS_Shape aSh = new BRepPrimAPI_MakePrism(aW, new gp_Vec(0, 0, 2)).Shape();
+        TopoDS_Wire aW = Polygon(false, new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
+        TopoDS_Shape aSh = new BRepPrimAPI_MakePrism(aW, new Vector3D(0, 0, 2)).Shape();
         Assert.Equal(TopAbs_SHELL, aSh.ShapeType());
         Assert.Equal(3, Count(aSh, TopAbs_FACE));
         Assert.Equal(10, Count(aSh, TopAbs_EDGE));
@@ -108,8 +110,8 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void Prism_of_a_face_is_a_valid_solid()
     {
-        TopoDS_Face aF = Face(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0), new gp_Pnt(2, 1, 0), new gp_Pnt(0, 1, 0));
-        var aMP = new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, 3));
+        TopoDS_Face aF = Face(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 1, 0), new Point3D(0, 1, 0));
+        var aMP = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 3));
         TopoDS_Shape aS = aMP.Shape();
         Assert.Equal(TopAbs_SOLID, aS.ShapeType());
         Assert.Equal(6, Count(aS, TopAbs_FACE));
@@ -120,7 +122,7 @@ public class BRepPrimAPISweepTests
         Assert.True(IsValid(aS));
 
         // downwards: the shell is oriented by DirectSolid, so the volume stays positive
-        TopoDS_Shape aDown = new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, -3)).Shape();
+        TopoDS_Shape aDown = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, -3)).Shape();
         Assert.Equal(6.0, Volume(aDown), Tol);
         Assert.True(IsValid(aDown));
     }
@@ -128,11 +130,11 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void Prism_of_a_disk_is_a_cylinder_canonized_or_an_extrusion()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
         TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(aW, true).Face();
 
-        TopoDS_Shape aCyl = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 5)).Shape();
+        TopoDS_Shape aCyl = new BRepPrimAPI_MakePrism(aDisk, new Vector3D(0, 0, 5)).Shape();
         Assert.Equal(Math.PI * 4 * 5, Volume(aCyl), 1e-9);
         Assert.Equal(3, Count(aCyl, TopAbs_FACE));
         Assert.Equal(3, Count(aCyl, TopAbs_EDGE)); // two circles and the seam
@@ -144,7 +146,7 @@ public class BRepPrimAPISweepTests
         Assert.True(aHasCylinder);
         Assert.True(IsValid(aCyl));
 
-        TopoDS_Shape anExtr = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 5), false, false).Shape();
+        TopoDS_Shape anExtr = new BRepPrimAPI_MakePrism(aDisk, new Vector3D(0, 0, 5), false, false).Shape();
         bool aHasExtrusion = false;
         for (var anExp = new TopExp_Explorer(anExtr, TopAbs_FACE); anExp.More(); anExp.Next())
         {
@@ -158,8 +160,8 @@ public class BRepPrimAPISweepTests
     public void Prism_of_a_shell_is_a_compsolid()
     {
         // a shell of one face on a plane
-        TopoDS_Shape aShell = new BRepBuilderAPI_MakeShell(new Geom_Plane(new gp_Ax3()), 0, 2, 0, 1).Shape();
-        TopoDS_Shape aCS = new BRepPrimAPI_MakePrism(aShell, new gp_Vec(0, 0, 1)).Shape();
+        TopoDS_Shape aShell = new BRepBuilderAPI_MakeShell(new Geom_Plane(new CoordinateSystem()), 0, 2, 0, 1).Shape();
+        TopoDS_Shape aCS = new BRepPrimAPI_MakePrism(aShell, new Vector3D(0, 0, 1)).Shape();
         Assert.Equal(TopAbs_COMPSOLID, aCS.ShapeType());
         Assert.Equal(1, Count(aCS, TopAbs_SOLID));
         Assert.Equal(2.0, Volume(aCS), Tol);
@@ -169,14 +171,14 @@ public class BRepPrimAPISweepTests
     public void Semi_infinite_and_infinite_prisms()
     {
         TopoDS_Face aF = UnitSquare();
-        var aSemi = new BRepPrimAPI_MakePrism(aF, new gp_Dir(0, 0, 1), false);
+        var aSemi = new BRepPrimAPI_MakePrism(aF, new Direction3D(0, 0, 1), false);
         TopoDS_Shape aS = aSemi.Shape();
         Assert.Equal(TopAbs_SOLID, aS.ShapeType());
         Assert.Equal(5, Count(aS, TopAbs_FACE)); // the base and four half-infinite walls
         Assert.True(aSemi.FirstShape().IsSame(aF));
         Assert.True(aSemi.LastShape().IsNull());
 
-        var anInf = new BRepPrimAPI_MakePrism(aF, new gp_Dir(0, 0, 1), true);
+        var anInf = new BRepPrimAPI_MakePrism(aF, new Direction3D(0, 0, 1), true);
         TopoDS_Shape anI = anInf.Shape();
         Assert.Equal(4, Count(anI, TopAbs_FACE));
         Assert.Equal(0, Count(anI, TopAbs_VERTEX));
@@ -187,16 +189,16 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void A_null_vector_throws()
     {
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new BRepPrimAPI_MakePrism(UnitSquare(), new gp_Vec(0, 0, 0)));
+        Assert.ThrowsAny<ConstructionErrorException>(() => new BRepPrimAPI_MakePrism(UnitSquare(), new Vector3D(0, 0, 0)));
     }
 
     [Fact]
     public void Prism_of_a_frozen_face_shares_its_unchanged_sub_shapes_and_leaves_it_unchanged()
     {
         TopoDS_Face aF = UnitSquare();
-        Assert.True(aF.TShape()!.IsFrozen());
+        Assert.True(aF.TShape()!.IsFrozen);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aF);
-        var aMP = new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, 1));
+        var aMP = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 1));
         TopoDS_Shape aS = aMP.Shape();
         aSnap.AssertUnchanged(aF);
         Assert.Equal(1.0, Volume(aS), Tol);
@@ -230,7 +232,7 @@ public class BRepPrimAPISweepTests
         Assert.Equal(TopAbs_SOLID, Assert.Single(aMP.Generated(aF)).ShapeType());
 
         // a copy shares nothing with the base
-        var aCopied = new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, 1), true);
+        var aCopied = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 1), true);
         for (var anExp = new TopExp_Explorer(aF, TopAbs_VERTEX); anExp.More(); anExp.Next())
         {
             Assert.False(Contains(aCopied.Shape(), anExp.Current()));
@@ -243,9 +245,9 @@ public class BRepPrimAPISweepTests
     public void Prism_of_a_frozen_edge_keeps_the_edge_when_only_its_vertices_change_nothing()
     {
         // an edge without pcurves: the planar wall gets none (planes need none), so the edge itself is unchanged
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        var aMP = new BRepPrimAPI_MakePrism(anE, new gp_Vec(0, 1, 0));
+        var aMP = new BRepPrimAPI_MakePrism(anE, new Vector3D(0, 1, 0));
         TopoDS_Shape aS = aMP.Shape();
         aSnap.AssertUnchanged(anE);
         Assert.True(Contains(aS, anE));
@@ -259,10 +261,10 @@ public class BRepPrimAPISweepTests
         // decision 1102: natively FirstShape() IsSame the caller's disk, whose circle gets its pcurve on the wall in
         // place; the caller's frozen disk can't take it, so the bottom face is a copy holding a changed copy of the
         // circle, and FirstShape(disk) and the history answer for the caller's disk with it
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire(), true).Face();
-        Assert.True(aDisk.TShape()!.IsFrozen());
-        var aMP = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 1));
+        Assert.True(aDisk.TShape()!.IsFrozen);
+        var aMP = new BRepPrimAPI_MakePrism(aDisk, new Vector3D(0, 0, 1));
         TopoDS_Shape aS = aMP.Shape();
         TopoDS_Shape aBottom = aMP.FirstShape();
         Assert.False(aBottom.IsSame(aDisk));
@@ -282,11 +284,11 @@ public class BRepPrimAPISweepTests
     {
         // ported code passing its own unfrozen shape: no copy, the result holds the profile's own edges, which get
         // their pcurves on the walls in place
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         var aMW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).InternalEdge());
         TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(aMW.InternalWire(), true).InternalFace();
-        Assert.False(aDisk.TShape()!.IsFrozen());
-        var aMP = new BRepPrimAPI_MakePrism(aDisk, new gp_Vec(0, 0, 1));
+        Assert.False(aDisk.TShape()!.IsFrozen);
+        var aMP = new BRepPrimAPI_MakePrism(aDisk, new Vector3D(0, 0, 1));
         TopoDS_Shape aS = aMP.Shape();
         Assert.True(aMP.FirstShape().IsSame(aDisk));
         TopoDS_Edge aCircle = TopoDS.Edge(new TopExp_Explorer(aDisk, TopAbs_EDGE).Current());
@@ -298,10 +300,10 @@ public class BRepPrimAPISweepTests
 
     // ------------------------------------------------------------ revolutions
 
-    private static readonly gp_Ax1 OZ = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+    private static readonly Axis3D OZ = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
     private static TopoDS_Face XZRectangle(double x0, double x1, double z0, double z1) =>
-        Face(new gp_Pnt(x0, 0, z0), new gp_Pnt(x1, 0, z0), new gp_Pnt(x1, 0, z1), new gp_Pnt(x0, 0, z1));
+        Face(new Point3D(x0, 0, z0), new Point3D(x1, 0, z0), new Point3D(x1, 0, z1), new Point3D(x0, 0, z1));
 
     [Fact]
     public void Revolution_of_a_rectangle_off_the_axis_is_a_tube()
@@ -349,7 +351,7 @@ public class BRepPrimAPISweepTests
     public void Revolution_of_a_triangle_with_a_vertex_on_the_axis_is_a_cone_with_degenerated_edges()
     {
         // apex on the axis at the top, base edge on the XY plane from the axis
-        TopoDS_Face aF = Face(new gp_Pnt(0, 0, 0), new gp_Pnt(2, 0, 0), new gp_Pnt(0, 0, 3));
+        TopoDS_Face aF = Face(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(0, 0, 3));
         var aMR = new BRepPrimAPI_MakeRevol(aF, OZ);
         TopoDS_Shape aS = aMR.Shape();
         Assert.Equal(Math.PI * 4 * 3 / 3, Volume(aS), 1e-9);
@@ -365,14 +367,14 @@ public class BRepPrimAPISweepTests
         foreach (TopoDS_Shape aD in aPart.Degenerated())
         {
             Assert.True(BRep_Tool.Degenerated(TopoDS.Edge(aD)));
-            Assert.True(aD.TShape()!.IsFrozen());
+            Assert.True(aD.TShape()!.IsFrozen);
         }
     }
 
     [Fact]
     public void Revolution_of_a_disk_off_the_axis_is_a_torus()
     {
-        var aCirc = new gp_Circ(new gp_Ax2(new gp_Pnt(3, 0, 0), new gp_Dir(0, 1, 0)), 1.0);
+        var aCirc = new Circle3D(new Frame3D(new Point3D(3, 0, 0), new Direction3D(0, 1, 0)), 1.0);
         TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
         TopoDS_Face aDisk = new BRepBuilderAPI_MakeFace(aW, true).Face();
         TopoDS_Shape aS = new BRepPrimAPI_MakeRevol(aDisk, OZ).Shape();
@@ -389,12 +391,12 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void Revolutions_of_a_vertex_and_an_edge()
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(2, 0, 1)).Vertex();
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(2, 0, 1)).Vertex();
         TopoDS_Shape aCircle = new BRepPrimAPI_MakeRevol(aV, OZ).Shape();
         Assert.Equal(TopAbs_EDGE, aCircle.ShapeType());
         Assert.Equal(4 * Math.PI, BRepGProp.LinearProperties(aCircle).Mass(), 1e-9);
 
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(1, 0, 2)).Edge();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 0, 2)).Edge();
         var aMR = new BRepPrimAPI_MakeRevol(anE, OZ, Math.PI);
         TopoDS_Shape aF = aMR.Shape();
         Assert.Equal(TopAbs_FACE, aF.ShapeType());
@@ -416,10 +418,10 @@ public class BRepPrimAPISweepTests
     [Fact]
     public void Revolution_of_an_edge_crossing_the_axis_is_null()
     {
-        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new gp_Pnt(-1, 0, 1), new gp_Pnt(1, 0, 1)).Edge();
+        TopoDS_Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(-1, 0, 1), new Point3D(1, 0, 1)).Edge();
         var aMR = new BRepPrimAPI_MakeRevol(anE, OZ);
         Assert.False(aMR.IsDone());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aMR.Shape());
+        Assert.ThrowsAny<NotDoneException>(() => aMR.Shape());
     }
 
     [Fact]

@@ -5,6 +5,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2002-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Collections;
 using System.Runtime.InteropServices;
 
@@ -17,369 +18,369 @@ namespace Occt;
 /// <summary>OCCT's set (<c>NCollection_Map</c>).</summary>
 public class NCollection_Map<TKey> : IEnumerable<TKey> where TKey : notnull
 {
-    private HashSet<TKey> myItems;
+    private HashSet<TKey> _items;
 
-    public NCollection_Map(IEqualityComparer<TKey>? theHasher = null) => myItems = new HashSet<TKey>(theHasher);
+    public NCollection_Map(IEqualityComparer<TKey>? hasher = null) => _items = new HashSet<TKey>(hasher);
 
-    public NCollection_Map(NCollection_Map<TKey> theOther) => myItems = new HashSet<TKey>(theOther.myItems, theOther.myItems.Comparer);
+    public NCollection_Map(NCollection_Map<TKey> other) => _items = new HashSet<TKey>(other._items, other._items.Comparer);
 
-    public int Extent() => myItems.Count;
+    public int Extent() => _items.Count;
 
-    public int Size() => myItems.Count;
+    public int Size() => _items.Count;
 
-    public bool IsEmpty() => myItems.Count == 0;
+    public bool IsEmpty() => _items.Count == 0;
 
-    public void Clear() => myItems.Clear();
+    public void Clear() => _items.Clear();
 
     /// <summary>Adds the key; false if it was already there.</summary>
-    public bool Add(TKey theKey) => myItems.Add(theKey);
+    public bool Add(TKey key) => _items.Add(key);
 
-    public bool Contains(TKey theKey) => myItems.Contains(theKey);
+    public bool Contains(TKey key) => _items.Contains(key);
 
-    public bool Remove(TKey theKey) => myItems.Remove(theKey);
+    public bool Remove(TKey key) => _items.Remove(key);
 
     /// <summary>Exchanges the contents (and hashers) of the two maps.</summary>
-    public void Exchange(NCollection_Map<TKey> theOther) => (myItems, theOther.myItems) = (theOther.myItems, myItems);
+    public void Exchange(NCollection_Map<TKey> other) => (_items, other._items) = (other._items, _items);
 
-    public HashSet<TKey>.Enumerator GetEnumerator() => myItems.GetEnumerator();
+    public HashSet<TKey>.Enumerator GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 }
 
 /// <summary>OCCT's indexed set: each key gets an index from 1 in the order added.</summary>
 public class NCollection_IndexedMap<TKey> : IEnumerable<TKey> where TKey : notnull
 {
-    private readonly Dictionary<TKey, int> myIndices;
-    private readonly List<TKey> myKeys;
+    private readonly Dictionary<TKey, int> _indices;
+    private readonly List<TKey> _keys;
 
-    public NCollection_IndexedMap(IEqualityComparer<TKey>? theHasher = null)
+    public NCollection_IndexedMap(IEqualityComparer<TKey>? hasher = null)
     {
-        myIndices = new Dictionary<TKey, int>(theHasher);
-        myKeys = [];
+        _indices = new Dictionary<TKey, int>(hasher);
+        _keys = [];
     }
 
-    public NCollection_IndexedMap(NCollection_IndexedMap<TKey> theOther)
+    public NCollection_IndexedMap(NCollection_IndexedMap<TKey> other)
     {
-        myIndices = new Dictionary<TKey, int>(theOther.myIndices, theOther.myIndices.Comparer);
-        myKeys = [.. theOther.myKeys];
+        _indices = new Dictionary<TKey, int>(other._indices, other._indices.Comparer);
+        _keys = [.. other._keys];
     }
 
-    public int Extent() => myKeys.Count;
+    public int Extent() => _keys.Count;
 
-    public int Size() => myKeys.Count;
+    public int Size() => _keys.Count;
 
-    public bool IsEmpty() => myKeys.Count == 0;
+    public bool IsEmpty() => _keys.Count == 0;
 
     public void Clear()
     {
-        myIndices.Clear();
-        myKeys.Clear();
+        _indices.Clear();
+        _keys.Clear();
     }
 
     /// <summary>Adds the key if new, and returns its index.</summary>
-    public int Add(TKey theKey)
+    public int Add(TKey key)
     {
-        if (myIndices.TryGetValue(theKey, out int anIndex))
+        if (_indices.TryGetValue(key, out int index))
         {
-            return anIndex;
+            return index;
         }
 
-        myKeys.Add(theKey);
-        myIndices.Add(theKey, myKeys.Count);
-        return myKeys.Count;
+        _keys.Add(key);
+        _indices.Add(key, _keys.Count);
+        return _keys.Count;
     }
 
-    public bool Contains(TKey theKey) => myIndices.ContainsKey(theKey);
+    public bool Contains(TKey key) => _indices.ContainsKey(key);
 
     /// <summary>The key's index, or 0 if it isn't there.</summary>
-    public int FindIndex(TKey theKey) => myIndices.TryGetValue(theKey, out int anIndex) ? anIndex : 0;
+    public int FindIndex(TKey key) => _indices.TryGetValue(key, out int index) ? index : 0;
 
-    public TKey FindKey(int theIndex)
+    public TKey FindKey(int index)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myKeys.Count, "NCollection_IndexedMap::FindKey");
-        return myKeys[theIndex - 1];
+        Standard_OutOfRange_Raise_if(index < 1 || index > _keys.Count, "NCollection_IndexedMap::FindKey");
+        return _keys[index - 1];
     }
 
-    public TKey this[int theIndex] => FindKey(theIndex);
+    public TKey this[int index] => FindKey(index);
 
     /// <summary>Removes the last key.</summary>
     public void RemoveLast()
     {
-        Standard_OutOfRange_Raise_if(myKeys.Count == 0, "NCollection_IndexedMap::RemoveLast");
-        myIndices.Remove(myKeys[^1]);
-        myKeys.RemoveAt(myKeys.Count - 1);
+        Standard_OutOfRange_Raise_if(_keys.Count == 0, "NCollection_IndexedMap::RemoveLast");
+        _indices.Remove(_keys[^1]);
+        _keys.RemoveAt(_keys.Count - 1);
     }
 
     /// <summary>Removes the key at an index; the last key takes its index, as in OCCT.</summary>
-    public void RemoveFromIndex(int theIndex)
+    public void RemoveFromIndex(int index)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myKeys.Count, "NCollection_IndexedMap::RemoveFromIndex");
-        if (theIndex != myKeys.Count)
+        Standard_OutOfRange_Raise_if(index < 1 || index > _keys.Count, "NCollection_IndexedMap::RemoveFromIndex");
+        if (index != _keys.Count)
         {
-            Swap(theIndex, myKeys.Count);
+            Swap(index, _keys.Count);
         }
 
         RemoveLast();
     }
 
-    public bool RemoveKey(TKey theKey)
+    public bool RemoveKey(TKey key)
     {
-        int anIndex = FindIndex(theKey);
-        if (anIndex == 0)
+        int index = FindIndex(key);
+        if (index == 0)
         {
             return false;
         }
 
-        RemoveFromIndex(anIndex);
+        RemoveFromIndex(index);
         return true;
     }
 
     /// <summary>
-    /// Replaces the key at an index. Throws <see cref="Standard_DomainError"/> if an equal key is already in the map at
+    /// Replaces the key at an index. Throws <see cref="DomainErrorException"/> if an equal key is already in the map at
     /// another index; an equal key at the same index is replaced by the new one.
     /// </summary>
-    public void Substitute(int theIndex, TKey theKey1)
+    public void Substitute(int index, TKey key1)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myKeys.Count, "NCollection_IndexedMap::Substitute : Index is out of range");
-        if (myIndices.TryGetValue(theKey1, out int anIndex))
+        Standard_OutOfRange_Raise_if(index < 1 || index > _keys.Count, "NCollection_IndexedMap::Substitute : Index is out of range");
+        if (_indices.TryGetValue(key1, out int anIndex))
         {
-            if (anIndex != theIndex)
+            if (anIndex != index)
             {
-                throw new Standard_DomainError("NCollection_IndexedMap::Substitute : Attempt to substitute existing key");
+                throw new DomainErrorException("NCollection_IndexedMap::Substitute : Attempt to substitute existing key");
             }
 
-            myIndices.Remove(theKey1);
+            _indices.Remove(key1);
         }
         else
         {
-            myIndices.Remove(myKeys[theIndex - 1]);
+            _indices.Remove(_keys[index - 1]);
         }
 
-        myKeys[theIndex - 1] = theKey1;
-        myIndices.Add(theKey1, theIndex);
+        _keys[index - 1] = key1;
+        _indices.Add(key1, index);
     }
 
-    public void Swap(int theIndex1, int theIndex2)
+    public void Swap(int index1, int index2)
     {
-        Standard_OutOfRange_Raise_if(theIndex1 < 1 || theIndex1 > myKeys.Count || theIndex2 < 1 || theIndex2 > myKeys.Count,
+        Standard_OutOfRange_Raise_if(index1 < 1 || index1 > _keys.Count || index2 < 1 || index2 > _keys.Count,
                                      "NCollection_IndexedMap::Swap");
-        (myKeys[theIndex1 - 1], myKeys[theIndex2 - 1]) = (myKeys[theIndex2 - 1], myKeys[theIndex1 - 1]);
-        myIndices[myKeys[theIndex1 - 1]] = theIndex1;
-        myIndices[myKeys[theIndex2 - 1]] = theIndex2;
+        (_keys[index1 - 1], _keys[index2 - 1]) = (_keys[index2 - 1], _keys[index1 - 1]);
+        _indices[_keys[index1 - 1]] = index1;
+        _indices[_keys[index2 - 1]] = index2;
     }
 
-    public List<TKey>.Enumerator GetEnumerator() => myKeys.GetEnumerator();
+    public List<TKey>.Enumerator GetEnumerator() => _keys.GetEnumerator();
 
-    IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => myKeys.GetEnumerator();
+    IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => _keys.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myKeys.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _keys.GetEnumerator();
 }
 
 /// <summary>OCCT's map from keys to values (<c>NCollection_DataMap</c>).</summary>
 public class NCollection_DataMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
-    private readonly Dictionary<TKey, TValue> myItems;
+    private readonly Dictionary<TKey, TValue> _items;
 
-    public NCollection_DataMap(IEqualityComparer<TKey>? theHasher = null) => myItems = new Dictionary<TKey, TValue>(theHasher);
+    public NCollection_DataMap(IEqualityComparer<TKey>? hasher = null) => _items = new Dictionary<TKey, TValue>(hasher);
 
-    public NCollection_DataMap(NCollection_DataMap<TKey, TValue> theOther)
-        => myItems = new Dictionary<TKey, TValue>(theOther.myItems, theOther.myItems.Comparer);
+    public NCollection_DataMap(NCollection_DataMap<TKey, TValue> other)
+        => _items = new Dictionary<TKey, TValue>(other._items, other._items.Comparer);
 
-    public int Extent() => myItems.Count;
+    public int Extent() => _items.Count;
 
-    public int Size() => myItems.Count;
+    public int Size() => _items.Count;
 
-    public bool IsEmpty() => myItems.Count == 0;
+    public bool IsEmpty() => _items.Count == 0;
 
-    public void Clear() => myItems.Clear();
+    public void Clear() => _items.Clear();
 
-    /// <summary>OCCT's ReSize: room for <paramref name="theExtent"/> items (the bindings are kept).</summary>
-    public void ReSize(int theExtent) => myItems.EnsureCapacity(theExtent);
+    /// <summary>OCCT's ReSize: room for <paramref name="extent"/> items (the bindings are kept).</summary>
+    public void ReSize(int extent) => _items.EnsureCapacity(extent);
 
     /// <summary>Binds the key to the value, replacing any existing value; false if the key was already bound.</summary>
-    public bool Bind(TKey theKey, TValue theItem)
+    public bool Bind(TKey key, TValue item)
     {
-        bool anIsNew = !myItems.ContainsKey(theKey);
-        myItems[theKey] = theItem;
-        return anIsNew;
+        bool isNew = !_items.ContainsKey(key);
+        _items[key] = item;
+        return isNew;
     }
 
     /// <summary>
     /// Binds the key to the value, replacing any existing value (as <see cref="Bind"/>), and returns the value for
     /// writing (OCCT returns a pointer to it).
     /// </summary>
-    public ref TValue Bound(TKey theKey, TValue theItem)
+    public ref TValue Bound(TKey key, TValue item)
     {
-        ref TValue? aValue = ref CollectionsMarshal.GetValueRefOrAddDefault(myItems, theKey, out _);
-        aValue = theItem;
-        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref aValue);
+        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(_items, key, out _);
+        value = item;
+        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref value);
     }
 
     /// <summary>Binds the key to the value only if the key isn't bound yet; false if it was (its value is kept).</summary>
-    public bool TryBind(TKey theKey, TValue theItem) => myItems.TryAdd(theKey, theItem);
+    public bool TryBind(TKey key, TValue item) => _items.TryAdd(key, item);
 
     /// <summary>
     /// Binds the key to the value only if the key isn't bound yet, and returns the key's value (the existing one or
     /// the new one) for writing.
     /// </summary>
-    public ref TValue TryBound(TKey theKey, TValue theItem)
+    public ref TValue TryBound(TKey key, TValue item)
     {
-        ref TValue? aValue = ref CollectionsMarshal.GetValueRefOrAddDefault(myItems, theKey, out bool anExists);
-        if (!anExists)
+        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(_items, key, out bool exists);
+        if (!exists)
         {
-            aValue = theItem;
+            value = item;
         }
 
-        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref aValue);
+        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref value);
     }
 
-    public bool IsBound(TKey theKey) => myItems.ContainsKey(theKey);
+    public bool IsBound(TKey key) => _items.ContainsKey(key);
 
-    public bool Contains(TKey theKey) => myItems.ContainsKey(theKey);
+    public bool Contains(TKey key) => _items.ContainsKey(key);
 
-    public bool UnBind(TKey theKey) => myItems.Remove(theKey);
+    public bool UnBind(TKey key) => _items.Remove(key);
 
-    public TValue Find(TKey theKey)
-        => myItems.TryGetValue(theKey, out TValue? aValue) ? aValue : throw new Standard_NoSuchObject("NCollection_DataMap::Find");
+    public TValue Find(TKey key)
+        => _items.TryGetValue(key, out TValue? value) ? value : throw new NoSuchObjectException("NCollection_DataMap::Find");
 
-    public bool Find(TKey theKey, out TValue theValue) => myItems.TryGetValue(theKey, out theValue!);
+    public bool Find(TKey key, out TValue value) => _items.TryGetValue(key, out value!);
 
-    public ref TValue ChangeFind(TKey theKey)
+    public ref TValue ChangeFind(TKey key)
     {
-        ref TValue aValue = ref CollectionsMarshal.GetValueRefOrNullRef(myItems, theKey);
-        if (System.Runtime.CompilerServices.Unsafe.IsNullRef(ref aValue))
+        ref TValue value = ref CollectionsMarshal.GetValueRefOrNullRef(_items, key);
+        if (System.Runtime.CompilerServices.Unsafe.IsNullRef(ref value))
         {
-            throw new Standard_NoSuchObject("NCollection_DataMap::ChangeFind");
+            throw new NoSuchObjectException("NCollection_DataMap::ChangeFind");
         }
 
-        return ref aValue;
+        return ref value;
     }
 
-    public ref TValue this[TKey theKey] => ref ChangeFind(theKey);
+    public ref TValue this[TKey key] => ref ChangeFind(key);
 
-    public IEnumerable<TKey> Keys => myItems.Keys;
+    public IEnumerable<TKey> Keys => _items.Keys;
 
-    public Dictionary<TKey, TValue>.Enumerator GetEnumerator() => myItems.GetEnumerator();
+    public Dictionary<TKey, TValue>.Enumerator GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() => _items.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => myItems.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 }
 
 /// <summary>OCCT's indexed map from keys to values: each key gets an index from 1 in the order added.</summary>
 public class NCollection_IndexedDataMap<TKey, TValue> where TKey : notnull
 {
-    private readonly NCollection_IndexedMap<TKey> myKeys;
-    private readonly List<TValue> myValues;
+    private readonly NCollection_IndexedMap<TKey> _keys;
+    private readonly List<TValue> _values;
 
-    public NCollection_IndexedDataMap(IEqualityComparer<TKey>? theHasher = null)
+    public NCollection_IndexedDataMap(IEqualityComparer<TKey>? hasher = null)
     {
-        myKeys = new NCollection_IndexedMap<TKey>(theHasher);
-        myValues = [];
+        _keys = new NCollection_IndexedMap<TKey>(hasher);
+        _values = [];
     }
 
-    public NCollection_IndexedDataMap(NCollection_IndexedDataMap<TKey, TValue> theOther)
+    public NCollection_IndexedDataMap(NCollection_IndexedDataMap<TKey, TValue> other)
     {
-        myKeys = new NCollection_IndexedMap<TKey>(theOther.myKeys);
-        myValues = [.. theOther.myValues];
+        _keys = new NCollection_IndexedMap<TKey>(other._keys);
+        _values = [.. other._values];
     }
 
-    public int Extent() => myValues.Count;
+    public int Extent() => _values.Count;
 
-    public int Size() => myValues.Count;
+    public int Size() => _values.Count;
 
-    public bool IsEmpty() => myValues.Count == 0;
+    public bool IsEmpty() => _values.Count == 0;
 
     public void Clear()
     {
-        myKeys.Clear();
-        myValues.Clear();
+        _keys.Clear();
+        _values.Clear();
     }
 
     /// <summary>Adds the key with the value if the key is new, and returns the key's index either way.</summary>
-    public int Add(TKey theKey, TValue theItem)
+    public int Add(TKey key, TValue item)
     {
-        int anIndex = myKeys.Add(theKey);
-        if (anIndex > myValues.Count)
+        int index = _keys.Add(key);
+        if (index > _values.Count)
         {
-            myValues.Add(theItem);
+            _values.Add(item);
         }
 
-        return anIndex;
+        return index;
     }
 
-    public bool Contains(TKey theKey) => myKeys.Contains(theKey);
+    public bool Contains(TKey key) => _keys.Contains(key);
 
-    public int FindIndex(TKey theKey) => myKeys.FindIndex(theKey);
+    public int FindIndex(TKey key) => _keys.FindIndex(key);
 
-    public TKey FindKey(int theIndex) => myKeys.FindKey(theIndex);
+    public TKey FindKey(int index) => _keys.FindKey(index);
 
-    public TValue FindFromIndex(int theIndex)
+    public TValue FindFromIndex(int index)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myValues.Count, "NCollection_IndexedDataMap::FindFromIndex");
-        return myValues[theIndex - 1];
+        Standard_OutOfRange_Raise_if(index < 1 || index > _values.Count, "NCollection_IndexedDataMap::FindFromIndex");
+        return _values[index - 1];
     }
 
-    public ref TValue ChangeFromIndex(int theIndex)
+    public ref TValue ChangeFromIndex(int index)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myValues.Count, "NCollection_IndexedDataMap::ChangeFromIndex");
-        return ref CollectionsMarshal.AsSpan(myValues)[theIndex - 1];
+        Standard_OutOfRange_Raise_if(index < 1 || index > _values.Count, "NCollection_IndexedDataMap::ChangeFromIndex");
+        return ref CollectionsMarshal.AsSpan(_values)[index - 1];
     }
 
-    public ref TValue this[int theIndex] => ref ChangeFromIndex(theIndex);
+    public ref TValue this[int index] => ref ChangeFromIndex(index);
 
-    public TValue FindFromKey(TKey theKey)
+    public TValue FindFromKey(TKey key)
     {
-        int anIndex = myKeys.FindIndex(theKey);
-        return anIndex > 0 ? myValues[anIndex - 1] : throw new Standard_NoSuchObject("NCollection_IndexedDataMap::FindFromKey");
+        int index = _keys.FindIndex(key);
+        return index > 0 ? _values[index - 1] : throw new NoSuchObjectException("NCollection_IndexedDataMap::FindFromKey");
     }
 
-    public bool FindFromKey(TKey theKey, out TValue theValue)
+    public bool FindFromKey(TKey key, out TValue value)
     {
-        int anIndex = myKeys.FindIndex(theKey);
-        theValue = anIndex > 0 ? myValues[anIndex - 1] : default!;
-        return anIndex > 0;
+        int index = _keys.FindIndex(key);
+        value = index > 0 ? _values[index - 1] : default!;
+        return index > 0;
     }
 
-    public ref TValue ChangeFromKey(TKey theKey)
+    public ref TValue ChangeFromKey(TKey key)
     {
-        int anIndex = myKeys.FindIndex(theKey);
-        Standard_NoSuchObject_Raise_if(anIndex == 0, "NCollection_IndexedDataMap::ChangeFromKey");
-        return ref CollectionsMarshal.AsSpan(myValues)[anIndex - 1];
+        int index = _keys.FindIndex(key);
+        Standard_NoSuchObject_Raise_if(index == 0, "NCollection_IndexedDataMap::ChangeFromKey");
+        return ref CollectionsMarshal.AsSpan(_values)[index - 1];
     }
 
     public void RemoveLast()
     {
-        myKeys.RemoveLast();
-        myValues.RemoveAt(myValues.Count - 1);
+        _keys.RemoveLast();
+        _values.RemoveAt(_values.Count - 1);
     }
 
     /// <summary>Removes the entry at an index; the last entry takes its index, as in OCCT.</summary>
-    public void RemoveFromIndex(int theIndex)
+    public void RemoveFromIndex(int index)
     {
-        Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > myValues.Count, "NCollection_IndexedDataMap::RemoveFromIndex");
-        if (theIndex != myValues.Count)
+        Standard_OutOfRange_Raise_if(index < 1 || index > _values.Count, "NCollection_IndexedDataMap::RemoveFromIndex");
+        if (index != _values.Count)
         {
-            Swap(theIndex, myValues.Count);
+            Swap(index, _values.Count);
         }
 
         RemoveLast();
     }
 
-    public void RemoveKey(TKey theKey)
+    public void RemoveKey(TKey key)
     {
-        int anIndex = myKeys.FindIndex(theKey);
-        if (anIndex > 0)
+        int index = _keys.FindIndex(key);
+        if (index > 0)
         {
-            RemoveFromIndex(anIndex);
+            RemoveFromIndex(index);
         }
     }
 
-    public void Swap(int theIndex1, int theIndex2)
+    public void Swap(int index1, int index2)
     {
-        myKeys.Swap(theIndex1, theIndex2);
-        (myValues[theIndex1 - 1], myValues[theIndex2 - 1]) = (myValues[theIndex2 - 1], myValues[theIndex1 - 1]);
+        _keys.Swap(index1, index2);
+        (_values[index1 - 1], _values[index2 - 1]) = (_values[index2 - 1], _values[index1 - 1]);
     }
 }

@@ -1,20 +1,21 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.GeomConvert_ConvType;
 
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomConvert_SurfToAnaSurfTests
 {
-    private static readonly gp_Ax3 TheAx3 = new(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 1), new gp_Dir(1, -1, 0));
+    private static readonly CoordinateSystem TheAx3 = new(new Point3D(1, 2, 3), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0));
 
     private static Geom_BSplineSurface AsBSpline(Geom_Surface theS, double U1, double U2, double V1, double V2) =>
         GeomConvert.SurfaceToBSplineSurface(new Geom_RectangularTrimmedSurface(theS, U1, U2, V1, V2));
 
     private static Geom_Surface? Convert(Geom_Surface theS, double theTol, out double theGap,
                                          GeomConvert_ConvType theType = GeomConvert_Simplest,
-                                         GeomAbs_SurfaceType theTarget = GeomAbs_Plane)
+                                         SurfaceKind theTarget = Plane)
     {
         var aConv = new GeomConvert_SurfToAnaSurf(theS);
         aConv.SetConvType(theType);
@@ -33,7 +34,7 @@ public class GeomConvert_SurfToAnaSurfTests
         {
             for (int j = 0; j <= 10; j++)
             {
-                gp_Pnt aP = theS.Value(U1 + (U2 - U1) * i / 10, V1 + (V2 - V1) * j / 10);
+                Point3D aP = theS.Value(U1 + (U2 - U1) * i / 10, V1 + (V2 - V1) * j / 10);
                 var anExt = new GeomAPI_ProjectPointOnSurfLite(aP, theAna);
                 aMax = Math.Max(aMax, anExt.Distance);
             }
@@ -112,14 +113,14 @@ public class GeomConvert_SurfToAnaSurfTests
     [Fact]
     public void RevolutionOfParallelLine_BecomesCylinder_AndTiltedLine_Cone()
     {
-        var anAxis = new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        var aPar = new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 0, 5);
+        var anAxis = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        var aPar = new Geom_TrimmedCurve(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0, 5);
         var aCyl = Assert.IsType<Geom_CylindricalSurface>(
             Convert(new Geom_SurfaceOfRevolution(aPar, anAxis), 1e-5, out double aGap1));
         Assert.Equal(2.0, aCyl.Radius(), 1e-9);
         Assert.True(aGap1 < 1e-9);
 
-        var aTilted = new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0.3, 0, 1)), 0, 5);
+        var aTilted = new Geom_TrimmedCurve(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0.3, 0, 1)), 0, 5);
         var aCone = Assert.IsType<Geom_ConicalSurface>(
             Convert(new Geom_SurfaceOfRevolution(aTilted, anAxis), 1e-5, out double aGap2));
         Assert.Equal(Math.Atan(0.3), aCone.SemiAngle(), 1e-9);
@@ -129,14 +130,14 @@ public class GeomConvert_SurfToAnaSurfTests
     [Fact]
     public void RevolutionOfCircle_BecomesTorus_OrSphere()
     {
-        var anAxis = new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(5, 0, 0), new gp_Dir(0, 1, 0)), 1);
+        var anAxis = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0)), 1);
         var aRev = new Geom_RectangularTrimmedSurface(new Geom_SurfaceOfRevolution(aCircle, anAxis), 0.1, 2, 0.2, 2.5);
         var aTor = Assert.IsType<Geom_ToroidalSurface>(Convert(aRev, 1e-5, out _));
         Assert.Equal(5.0, aTor.MajorRadius(), 1e-9);
         Assert.Equal(1.0, aTor.MinorRadius(), 1e-9);
 
-        var aCentred = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 1, 0)), 2);
+        var aCentred = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 2);
         var aSphRev = new Geom_RectangularTrimmedSurface(new Geom_SurfaceOfRevolution(aCentred, anAxis),
                                                          0.1, 2, 0.2, 1.3);
         var aSph = Assert.IsType<Geom_SphericalSurface>(Convert(aSphRev, 1e-5, out _));
@@ -146,8 +147,8 @@ public class GeomConvert_SurfToAnaSurfTests
     [Fact]
     public void ExtrusionOfCircle_BecomesCylinder()
     {
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(1, 1, 0), new gp_Dir(0, 0, 1)), 3);
-        var anExt = new Geom_RectangularTrimmedSurface(new Geom_SurfaceOfLinearExtrusion(aCircle, new gp_Dir(0, 0, 1)),
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(1, 1, 0), new Direction3D(0, 0, 1)), 3);
+        var anExt = new Geom_RectangularTrimmedSurface(new Geom_SurfaceOfLinearExtrusion(aCircle, new Direction3D(0, 0, 1)),
                                                        0.5, 2.5, -1, 2);
         var aCyl = Assert.IsType<Geom_CylindricalSurface>(Convert(anExt, 1e-5, out double aGap));
         Assert.Equal(3.0, aCyl.Radius(), 1e-9);
@@ -157,12 +158,12 @@ public class GeomConvert_SurfToAnaSurfTests
     [Fact]
     public void FreeFormBSpline_IsNotConverted()
     {
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, Math.Sin(i * 1.7) * Math.Cos(j * 2.3));
+                aPoles[i, j] = new Point3D(i, j, Math.Sin(i * 1.7) * Math.Cos(j * 2.3));
             }
         }
         var aConv = new GeomConvert_SurfToAnaSurf(new Geom_BezierSurface(aPoles));
@@ -174,10 +175,10 @@ public class GeomConvert_SurfToAnaSurfTests
     public void Target_OtherType_GivesNull()
     {
         Geom_BSplineSurface aBS = AsBSpline(new Geom_CylindricalSurface(TheAx3, 2.5), 0.3, 2.5, -1, 3);
-        Assert.Null(Convert(aBS, 1e-4, out _, GeomConvert_Target, GeomAbs_Plane));
-        Assert.Null(Convert(aBS, 1e-4, out double aGap, GeomConvert_Target, GeomAbs_Sphere));
+        Assert.Null(Convert(aBS, 1e-4, out _, GeomConvert_Target, Plane));
+        Assert.Null(Convert(aBS, 1e-4, out double aGap, GeomConvert_Target, SurfaceKind.Sphere));
         Assert.Equal(RealLast(), aGap);
-        Assert.IsType<Geom_CylindricalSurface>(Convert(aBS, 1e-4, out _, GeomConvert_Target, GeomAbs_Cylinder));
+        Assert.IsType<Geom_CylindricalSurface>(Convert(aBS, 1e-4, out _, GeomConvert_Target, SurfaceKind.Cylinder));
         Assert.IsType<Geom_CylindricalSurface>(Convert(aBS, 1e-4, out _, GeomConvert_MinGap));
     }
 
@@ -206,7 +207,7 @@ public class GeomConvert_SurfToAnaSurfTests
     public void IsSame_And_IsCanonical()
     {
         var aCyl1 = new Geom_CylindricalSurface(TheAx3, 2);
-        var aCyl2 = new Geom_CylindricalSurface(TheAx3.Translated(new gp_Vec(TheAx3.Direction()) * 5), 2);
+        var aCyl2 = new Geom_CylindricalSurface(TheAx3.Translated(new Vector3D(TheAx3.Direction()) * 5), 2);
         var aCyl3 = new Geom_CylindricalSurface(TheAx3, 2.1);
         Assert.True(GeomConvert_SurfToAnaSurf.IsSame(aCyl1, aCyl2, 1e-7));
         Assert.False(GeomConvert_SurfToAnaSurf.IsSame(aCyl1, aCyl3, 1e-7));
@@ -226,7 +227,7 @@ public class GeomConvert_SurfToAnaSurfTests
     {
         public readonly double Distance;
 
-        public GeomAPI_ProjectPointOnSurfLite(in gp_Pnt theP, Geom_Surface theS)
+        public GeomAPI_ProjectPointOnSurfLite(in Point3D theP, Geom_Surface theS)
         {
             var anAd = new GeomAdaptor_Surface(theS, -100, 100, -100, 100);
             var anExt = new Extrema_ExtPS(theP, anAd, 1e-9, 1e-9);

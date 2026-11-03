@@ -2,30 +2,32 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.gp_TrsfForm;
+using Kerf.Engine.Geometry;
+using Occt;
+using static Kerf.Geometry.TransformForm;
 
-namespace Occt;
+namespace Kerf.Geometry;
 
 // The constructor of gp_Trsf from a gp_Trsf2d; the rest of gp_Trsf is in gp_Trsf.cs.
-public partial struct gp_Trsf
+public partial struct Transform3D
 {
-    /// <summary>The 3D transformation that applies <paramref name="T"/> in the XY plane and leaves Z unchanged.</summary>
-    public gp_Trsf(in gp_Trsf2d T)
+    /// <summary>The 3D transformation that applies <paramref name="t"/> in the XY plane and leaves Z unchanged.</summary>
+    public Transform3D(in Transform2D t)
     {
-        scale = T.ScaleFactor();
-        shape = T.Form();
-        matrix = new gp_Mat();
-        loc = new gp_XYZ(T.TranslationPart().X(), T.TranslationPart().Y(), 0.0);
-        gp_Mat2d M = T.HVectorialPart();
-        matrix.ChangeValue(1, 1) = M[1, 1];
-        matrix.ChangeValue(1, 2) = M[1, 2];
-        matrix.ChangeValue(2, 1) = M[2, 1];
-        matrix.ChangeValue(2, 2) = M[2, 2];
-        matrix.ChangeValue(3, 3) = 1.0;
-        if (shape == gp_Ax1Mirror)
+        _scale = t.ScaleFactor();
+        _shape = t.Form();
+        _matrix = new Matrix3x3();
+        _loc = new Xyz(t.TranslationPart().X(), t.TranslationPart().Y(), 0.0);
+        Matrix2x2 m = t.HVectorialPart();
+        _matrix.ChangeValue(1, 1) = m[1, 1];
+        _matrix.ChangeValue(1, 2) = m[1, 2];
+        _matrix.ChangeValue(2, 1) = m[2, 1];
+        _matrix.ChangeValue(2, 2) = m[2, 2];
+        _matrix.ChangeValue(3, 3) = 1.0;
+        if (_shape == Ax1Mirror)
         {
-            scale = 1;
-            matrix.Multiply(-1);
+            _scale = 1;
+            _matrix.Multiply(-1);
         }
     }
 }

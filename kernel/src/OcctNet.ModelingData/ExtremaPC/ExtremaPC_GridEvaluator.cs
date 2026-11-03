@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,9 +23,9 @@ public sealed class ExtremaPC_GridEvaluator
         /// <summary>Parameter value.</summary>
         public double Param;
         /// <summary>Curve point C(u).</summary>
-        public gp_Pnt Point;
+        public Point3D Point;
         /// <summary>First derivative C'(u).</summary>
-        public gp_Vec D1;
+        public Vector3D D1;
     }
 
     /// <summary>Type of candidate extremum detected during grid scan.</summary>
@@ -97,8 +99,8 @@ public sealed class ExtremaPC_GridEvaluator
 
     /// <summary>Extrema computation on the cached grid (interior only).</summary>
     public ExtremaPC.Result Perform(Adaptor3d_Curve theCurve,
-                                    in gp_Pnt theP,
-                                    in MathUtils.Domain1D theDomain,
+                                    in Point3D theP,
+                                    in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain,
                                     double theTol,
                                     ExtremaPC.SearchMode theMode)
     {
@@ -129,7 +131,7 @@ public sealed class ExtremaPC_GridEvaluator
     }
 
     // Scans the grid to find candidate intervals for extrema.
-    private void scanGrid(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode)
+    private void scanGrid(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode)
     {
         myCandidates.Clear();
         int aNbGrid = myGrid.Length();
@@ -155,7 +157,7 @@ public sealed class ExtremaPC_GridEvaluator
             GridPoint aGP = myGrid[i];
 
             // Compute distance function value: F(u) = (C(u) - P) . C'(u)
-            gp_Vec aVec = new(theP, aGP.Point);
+            Vector3D aVec = new(theP, aGP.Point);
             double aF = aVec.Dot(aGP.D1);
             double aDist = aVec.SquareMagnitude();
 
@@ -231,8 +233,8 @@ public sealed class ExtremaPC_GridEvaluator
 
     // Refines candidates using Newton's method.
     private void refineCandidates(Adaptor3d_Curve theCurve,
-                                  in gp_Pnt theP,
-                                  in MathUtils.Domain1D theDomain,
+                                  in Point3D theP,
+                                  in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain,
                                   double theTol,
                                   ExtremaPC.SearchMode theMode)
     {
@@ -243,7 +245,7 @@ public sealed class ExtremaPC_GridEvaluator
         ExtremaPC_DistanceFunction aFunc = new(theCurve, theP);
 
         // Newton configuration
-        MathUtils.Config aConfig = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.Config aConfig = new();
         aConfig.XTolerance = theTol * ExtremaPC.THE_NEWTON_XTOL_FACTOR;
         aConfig.FTolerance = theTol * ExtremaPC.THE_NEWTON_FTOL_FACTOR;
         aConfig.MaxIterations = ExtremaPC.THE_MAX_NEWTON_ITERATIONS;
@@ -321,13 +323,13 @@ public sealed class ExtremaPC_GridEvaluator
             }
 
             // Try Newton refinement
-            MathUtils.ScalarResult aNewtonRes =
-              MathRoot.NewtonBounded(aFunc, aCand.StartU, aULo, aUHi, aConfig);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aNewtonRes =
+              global::Kerf.Engine.Numerics.Roots.MathRoot.NewtonBounded(aFunc, aCand.StartU, aULo, aUHi, aConfig);
 
             double aRootU = 0.0;
             bool aConverged = false;
 
-            if (aNewtonRes.IsDone())
+            if (aNewtonRes.IsDone)
             {
                 aRootU = Max(theDomain.Min, Min(theDomain.Max, aNewtonRes.Root!.Value));
                 aConverged = true;
@@ -348,7 +350,7 @@ public sealed class ExtremaPC_GridEvaluator
                     for (int i = 0; i < aNbSamples; ++i)
                     {
                         double aU = aRefUMin + i * aStep0;
-                        gp_Pnt aPt0 = theCurve.Value(aU);
+                        Point3D aPt0 = theCurve.Value(aU);
                         double aDist = theP.SquareDistance(aPt0);
 
                         if (aDist < aBestDist)
@@ -364,9 +366,9 @@ public sealed class ExtremaPC_GridEvaluator
                     aRefUMax = Min(theDomain.Max, aBestU + aRangeHalf);
 
                     // Try Newton with refined point
-                    MathUtils.ScalarResult aRetryRes =
-                      MathRoot.NewtonBounded(aFunc, aBestU, aRefUMin, aRefUMax, aConfig);
-                    if (aRetryRes.IsDone())
+                    global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult aRetryRes =
+                      global::Kerf.Engine.Numerics.Roots.MathRoot.NewtonBounded(aFunc, aBestU, aRefUMin, aRefUMax, aConfig);
+                    if (aRetryRes.IsDone)
                     {
                         aRootU = Max(theDomain.Min, Min(theDomain.Max, aRetryRes.Root!.Value));
                         aConverged = true;
@@ -377,8 +379,8 @@ public sealed class ExtremaPC_GridEvaluator
                 // Use best grid point as fallback
                 if (!aConverged)
                 {
-                    theCurve.D1(aBestU, out gp_Pnt aPt0, out gp_Vec aD1);
-                    gp_Vec aVec = new(theP, aPt0);
+                    theCurve.D1(aBestU, out Point3D aPt0, out Vector3D aD1);
+                    Vector3D aVec = new(theP, aPt0);
                     double aF = aVec.Dot(aD1);
 
                     if (Math.Abs(aF) < theTol * ExtremaPC.THE_FALLBACK_F_FACTOR)
@@ -405,7 +407,7 @@ public sealed class ExtremaPC_GridEvaluator
             if (aDuplicate)
                 continue;
 
-            gp_Pnt aPt = theCurve.Value(aRootU);
+            Point3D aPt = theCurve.Value(aRootU);
             double aSqDist = theP.SquareDistance(aPt);
 
             // Classify as min/max using neighbor sampling

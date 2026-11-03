@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepLib_EdgeError;
 using static Occt.TopAbs_Orientation;
 
@@ -30,12 +33,12 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         double Eps2 = BRep_Tool.Tolerance(V);
         Eps2 *= Eps2;
 
-        gp_Pnt P = BRep_Tool.Pnt(V);
+        Point3D P = BRep_Tool.Pnt(V);
         var GAC = new GeomAdaptor_Curve(C);
 
         // Afin de faire les extremas, on verifie les distances en bout
         double D1, D2;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         P1 = GAC.Value(GAC.FirstParameter());
         P2 = GAC.Value(GAC.LastParameter());
         D1 = P1.SquareDistance(P);
@@ -85,7 +88,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
     private static bool Project(Geom2d_Curve C, Geom_Surface S, in TopoDS_Vertex V, out double p)
     {
         p = 0.0;
-        gp_Pnt P = BRep_Tool.Pnt(V);
+        Point3D P = BRep_Tool.Pnt(V);
         double Eps2 = BRep_Tool.Tolerance(V);
         Eps2 *= Eps2;
 
@@ -94,7 +97,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         var ACOS = new Adaptor3d_CurveOnSurface(HG2AHC, HGAHS);
 
         double D1, D2;
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         P1 = ACOS.Value(ACOS.FirstParameter());
         P2 = ACOS.Value(ACOS.LastParameter());
         D1 = P1.SquareDistance(P);
@@ -130,7 +133,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
             if (index != 0)
             {
                 Extrema_POnCurv POC = extrema.Point(index);
-                if (P.SquareDistance(POC.Value()) <= Precision.SquareConfusion())
+                if (P.SquareDistance(POC.Value()) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     p = POC.Parameter();
                     return true;
@@ -147,81 +150,81 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
 
     public BRepLib_MakeEdge(in TopoDS_Vertex V1, in TopoDS_Vertex V2)
     {
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
         double l = P1.Distance(P2);
-        if (l <= gp.Resolution())
+        if (l <= Constants.Resolution())
         {
             myError = BRepLib_LineThroughIdenticPoints;
             return;
         }
-        var L = new gp_Lin(P1, new gp_Dir(new gp_Vec(P1, P2)));
+        var L = new Line3D(P1, new Direction3D(new Vector3D(P1, P2)));
         var GL = new Geom_Line(L);
         Init(GL, V1, V2, 0, l);
     }
 
-    public BRepLib_MakeEdge(in gp_Pnt P1, in gp_Pnt P2)
+    public BRepLib_MakeEdge(in Point3D P1, in Point3D P2)
     {
         double l = P1.Distance(P2);
-        if (l <= gp.Resolution())
+        if (l <= Constants.Resolution())
         {
             myError = BRepLib_LineThroughIdenticPoints;
             return;
         }
-        var L = new gp_Lin(P1, new gp_Dir(new gp_Vec(P1, P2)));
+        var L = new Line3D(P1, new Direction3D(new Vector3D(P1, P2)));
         var GL = new Geom_Line(L);
         Init(GL, P1, P2, 0, l);
     }
 
-    public BRepLib_MakeEdge(in gp_Lin L) => Init(new Geom_Line(L));
+    public BRepLib_MakeEdge(in Line3D L) => Init(new Geom_Line(L));
 
-    public BRepLib_MakeEdge(in gp_Lin L, double p1, double p2) => Init(new Geom_Line(L), p1, p2);
+    public BRepLib_MakeEdge(in Line3D L, double p1, double p2) => Init(new Geom_Line(L), p1, p2);
 
-    public BRepLib_MakeEdge(in gp_Lin L, in gp_Pnt P1, in gp_Pnt P2) => Init(new Geom_Line(L), P1, P2);
+    public BRepLib_MakeEdge(in Line3D L, in Point3D P1, in Point3D P2) => Init(new Geom_Line(L), P1, P2);
 
-    public BRepLib_MakeEdge(in gp_Lin L, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Line(L), V1, V2);
+    public BRepLib_MakeEdge(in Line3D L, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Line(L), V1, V2);
 
-    public BRepLib_MakeEdge(in gp_Circ C) => Init(new Geom_Circle(C));
+    public BRepLib_MakeEdge(in Circle3D C) => Init(new Geom_Circle(C));
 
-    public BRepLib_MakeEdge(in gp_Circ C, double p1, double p2) => Init(new Geom_Circle(C), p1, p2);
+    public BRepLib_MakeEdge(in Circle3D C, double p1, double p2) => Init(new Geom_Circle(C), p1, p2);
 
-    public BRepLib_MakeEdge(in gp_Circ C, in gp_Pnt P1, in gp_Pnt P2) => Init(new Geom_Circle(C), P1, P2);
+    public BRepLib_MakeEdge(in Circle3D C, in Point3D P1, in Point3D P2) => Init(new Geom_Circle(C), P1, P2);
 
-    public BRepLib_MakeEdge(in gp_Circ C, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Circle(C), V1, V2);
+    public BRepLib_MakeEdge(in Circle3D C, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Circle(C), V1, V2);
 
-    public BRepLib_MakeEdge(in gp_Elips E) => Init(new Geom_Ellipse(E));
+    public BRepLib_MakeEdge(in Ellipse3D E) => Init(new Geom_Ellipse(E));
 
-    public BRepLib_MakeEdge(in gp_Elips E, double p1, double p2) => Init(new Geom_Ellipse(E), p1, p2);
+    public BRepLib_MakeEdge(in Ellipse3D E, double p1, double p2) => Init(new Geom_Ellipse(E), p1, p2);
 
-    public BRepLib_MakeEdge(in gp_Elips E, in gp_Pnt P1, in gp_Pnt P2) => Init(new Geom_Ellipse(E), P1, P2);
+    public BRepLib_MakeEdge(in Ellipse3D E, in Point3D P1, in Point3D P2) => Init(new Geom_Ellipse(E), P1, P2);
 
-    public BRepLib_MakeEdge(in gp_Elips E, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Ellipse(E), V1, V2);
+    public BRepLib_MakeEdge(in Ellipse3D E, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Ellipse(E), V1, V2);
 
-    public BRepLib_MakeEdge(in gp_Hypr H) => Init(new Geom_Hyperbola(H));
+    public BRepLib_MakeEdge(in Hyperbola3D H) => Init(new Geom_Hyperbola(H));
 
-    public BRepLib_MakeEdge(in gp_Hypr H, double p1, double p2) => Init(new Geom_Hyperbola(H), p1, p2);
+    public BRepLib_MakeEdge(in Hyperbola3D H, double p1, double p2) => Init(new Geom_Hyperbola(H), p1, p2);
 
-    public BRepLib_MakeEdge(in gp_Hypr H, in gp_Pnt P1, in gp_Pnt P2) => Init(new Geom_Hyperbola(H), P1, P2);
+    public BRepLib_MakeEdge(in Hyperbola3D H, in Point3D P1, in Point3D P2) => Init(new Geom_Hyperbola(H), P1, P2);
 
-    public BRepLib_MakeEdge(in gp_Hypr H, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Hyperbola(H), V1, V2);
+    public BRepLib_MakeEdge(in Hyperbola3D H, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Hyperbola(H), V1, V2);
 
-    public BRepLib_MakeEdge(in gp_Parab P) => Init(new Geom_Parabola(P));
+    public BRepLib_MakeEdge(in Parabola3D P) => Init(new Geom_Parabola(P));
 
-    public BRepLib_MakeEdge(in gp_Parab P, double p1, double p2) => Init(new Geom_Parabola(P), p1, p2);
+    public BRepLib_MakeEdge(in Parabola3D P, double p1, double p2) => Init(new Geom_Parabola(P), p1, p2);
 
-    public BRepLib_MakeEdge(in gp_Parab P, in gp_Pnt P1, in gp_Pnt P2) => Init(new Geom_Parabola(P), P1, P2);
+    public BRepLib_MakeEdge(in Parabola3D P, in Point3D P1, in Point3D P2) => Init(new Geom_Parabola(P), P1, P2);
 
-    public BRepLib_MakeEdge(in gp_Parab P, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Parabola(P), V1, V2);
+    public BRepLib_MakeEdge(in Parabola3D P, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(new Geom_Parabola(P), V1, V2);
 
     public BRepLib_MakeEdge(Geom_Curve L) => Init(L);
 
     public BRepLib_MakeEdge(Geom_Curve L, double p1, double p2) => Init(L, p1, p2);
 
-    public BRepLib_MakeEdge(Geom_Curve L, in gp_Pnt P1, in gp_Pnt P2) => Init(L, P1, P2);
+    public BRepLib_MakeEdge(Geom_Curve L, in Point3D P1, in Point3D P2) => Init(L, P1, P2);
 
     public BRepLib_MakeEdge(Geom_Curve L, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(L, V1, V2);
 
-    public BRepLib_MakeEdge(Geom_Curve L, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2) => Init(L, P1, P2, p1, p2);
+    public BRepLib_MakeEdge(Geom_Curve L, in Point3D P1, in Point3D P2, double p1, double p2) => Init(L, P1, P2, p1, p2);
 
     public BRepLib_MakeEdge(Geom_Curve L, in TopoDS_Vertex V1, in TopoDS_Vertex V2, double p1, double p2)
         => Init(L, V1, V2, p1, p2);
@@ -230,11 +233,11 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
 
     public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, double p1, double p2) => Init(L, S, p1, p2);
 
-    public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2) => Init(L, S, P1, P2);
+    public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in Point3D P1, in Point3D P2) => Init(L, S, P1, P2);
 
     public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in TopoDS_Vertex V1, in TopoDS_Vertex V2) => Init(L, S, V1, V2);
 
-    public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in Point3D P1, in Point3D P2, double p1, double p2)
         => Init(L, S, P1, P2, p1, p2);
 
     public BRepLib_MakeEdge(Geom2d_Curve L, Geom_Surface S, in TopoDS_Vertex V1, in TopoDS_Vertex V2, double p1, double p2)
@@ -251,7 +254,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         Init(C, V1, V2, p1, p2);
     }
 
-    public void Init(Geom_Curve C, in gp_Pnt P1, in gp_Pnt P2)
+    public void Init(Geom_Curve C, in Point3D P1, in Point3D P2)
     {
         double Tol = BRepLib.Precision();
 
@@ -298,7 +301,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         Init(C, V1, V2, p1, p2);
     }
 
-    public void Init(Geom_Curve C, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public void Init(Geom_Curve C, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         double Tol = BRepLib.Precision();
         var B = new BRep_Builder();
@@ -334,7 +337,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         double p2 = pp2;
         double cf = C.FirstParameter();
         double cl = C.LastParameter();
-        double epsilon = Precision.PConfusion();
+        double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool periodic = C.IsPeriodic();
         var aCA = new GeomAdaptor_Curve(C);
 
@@ -342,7 +345,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         if (periodic)
         {
             // adjust in period
-            ElCLib.AdjustPeriodic(cf, cl, epsilon, ref p1, ref p2);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, epsilon, ref p1, ref p2);
             V1 = VV1;
             V2 = VV2;
         }
@@ -371,7 +374,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
             }
 
             // check ponctuallity
-            if ((p2 - p1) <= gp.Resolution())
+            if ((p2 - p1) <= Constants.Resolution())
             {
                 myError = BRepLib_LineThroughIdenticPoints;
                 return;
@@ -379,9 +382,9 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         }
 
         // compute points on the curve
-        bool p1inf = Precision.IsNegativeInfinite(p1);
-        bool p2inf = Precision.IsPositiveInfinite(p2);
-        gp_Pnt P1 = new(), P2 = new();
+        bool p1inf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p1);
+        bool p2inf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2);
+        Point3D P1 = new(), P2 = new();
         if (!p1inf)
         {
             P1 = aCA.Value(p1);
@@ -432,7 +435,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
                 }
                 else
                 {
-                    gp_Pnt PM = aCA.Value((p1 + p2) / 2);
+                    Point3D PM = aCA.Value((p1 + p2) / 2);
                     if (P1.Distance(PM) < preci)
                     {
                         degenerated = true;
@@ -525,7 +528,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         Init(C, S, V1, V2, p1, p2);
     }
 
-    public void Init(Geom2d_Curve C, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2)
+    public void Init(Geom2d_Curve C, Geom_Surface S, in Point3D P1, in Point3D P2)
     {
         double Tol = BRepLib.Precision();
 
@@ -572,7 +575,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         Init(C, S, V1, V2, p1, p2);
     }
 
-    public void Init(Geom2d_Curve C, Geom_Surface S, in gp_Pnt P1, in gp_Pnt P2, double p1, double p2)
+    public void Init(Geom2d_Curve C, Geom_Surface S, in Point3D P1, in Point3D P2, double p1, double p2)
     {
         double Tol = BRepLib.Precision();
         var B = new BRep_Builder();
@@ -611,7 +614,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         double p2 = pp2;
         double cf = C.FirstParameter();
         double cl = C.LastParameter();
-        double epsilon = Precision.PConfusion();
+        double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool periodic = C.IsPeriodic();
 
         TopoDS_Vertex V1, V2;
@@ -620,7 +623,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         if (periodic)
         {
             // adjust in period
-            ElCLib.AdjustPeriodic(cf, cl, epsilon, ref p1, ref p2);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, epsilon, ref p1, ref p2);
             V1 = VV1;
             V2 = VV2;
         }
@@ -651,10 +654,10 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         }
 
         // compute points on the curve
-        bool p1inf = Precision.IsNegativeInfinite(p1);
-        bool p2inf = Precision.IsPositiveInfinite(p2);
-        gp_Pnt P1 = new(), P2 = new();
-        gp_Pnt2d P2d1, P2d2;
+        bool p1inf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p1);
+        bool p2inf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2);
+        Point3D P1 = new(), P2 = new();
+        Point2D P2d1, P2d2;
         if (!p1inf)
         {
             P2d1 = C.Value(p1);
@@ -761,7 +764,7 @@ public class BRepLib_MakeEdge : BRepLib_MakeShape
         // OCCT.NET: a new variable, as in the 3D Init.
         TopoDS_Edge E = new();
         B.MakeEdge(ref E);
-        B.UpdateEdge(E, C, S, new TopLoc_Location(), preci);
+        B.UpdateEdge(E, C, S, new Placement(), preci);
 
         if (!V1.IsNull())
         {

@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -41,7 +47,7 @@ public class Extrema_EPCOfExtPC2d
     }
 
     /// <summary>All the extrema between theP and theC, from theNbSample samples of the curve's whole range.</summary>
-    public Extrema_EPCOfExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, int theNbSample, double theTolU, double theTolF)
+    public Extrema_EPCOfExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, int theNbSample, double theTolU, double theTolF)
     {
         myF = new Extrema_PCFOfEPCOfExtPC2d(theP, theC);
         Initialize(theC, theNbSample, theTolU, theTolF);
@@ -49,7 +55,7 @@ public class Extrema_EPCOfExtPC2d
     }
 
     /// <summary>All the extrema between theP and theC on [theUmin, theUsup], from theNbSample samples.</summary>
-    public Extrema_EPCOfExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC, int theNbSample, double theUmin, double theUsup,
+    public Extrema_EPCOfExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC, int theNbSample, double theUmin, double theUsup,
         double theTolU, double theTolF)
     {
         myF = new Extrema_PCFOfEPCOfExtPC2d(theP, theC);
@@ -96,14 +102,14 @@ public class Extrema_EPCOfExtPC2d
     public void Initialize(Adaptor2d_Curve2d theC) => myF.Initialize(theC);
 
     /// <summary>Searches the extrema for the point theP.</summary>
-    public void Perform(in gp_Pnt2d theP)
+    public void Perform(in Point2D theP)
     {
         myF.SetPoint(theP);
         myF.SubIntervalInitialize(myumin, myusup);
         myDone = false;
 
-        math_FunctionRoots S = new(myF, myumin, myusup, mynbsample, mytolu, mytolF, mytolF);
-        if (!S.IsDone() || S.IsAllNull())
+        FunctionRoots S = new(myF, myumin, myusup, mynbsample, mytolu, mytolF, mytolF);
+        if (!S.IsDone || S.IsAllNull)
         {
             return;
         }
@@ -115,45 +121,45 @@ public class Extrema_EPCOfExtPC2d
     public bool IsDone() => myDone;
 
     /// <summary>The number of extremum distances.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbExt()
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myF.NbExt();
     }
 
     /// <summary>The Nth extremum square distance.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public double SquareDistance(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myF.SquareDistance(theN);
     }
 
     /// <summary>True if the Nth extremum distance is a minimum.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public bool IsMin(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myF.IsMin(theN);
     }
 
     /// <summary>The point of the Nth extremum distance.</summary>
-    /// <exception cref="Standard_OutOfRange">theN is not in 1..NbExt().</exception>
+    /// <exception cref="OutOfRangeException">theN is not in 1..NbExt().</exception>
     public Extrema_POnCurv2d Point(int theN)
     {
         if ((theN < 1) || (theN > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myF.Point(theN);
     }

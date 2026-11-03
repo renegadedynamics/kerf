@@ -6,16 +6,18 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity GeometricTolerance
 /// </summary>
-public class StepDimTol_GeometricTolerance : Standard_Transient
+public class StepDimTol_GeometricTolerance : Transient
 {
     private TCollection_HAsciiString myName;
     private TCollection_HAsciiString myDescription;
-    private Standard_Transient myMagnitude;
+    private Transient myMagnitude;
     private StepDimTol_GeometricToleranceTarget myTolerancedShapeAspect = new StepDimTol_GeometricToleranceTarget();
 
     /// <summary>
@@ -28,7 +30,7 @@ public class StepDimTol_GeometricTolerance : Standard_Transient
     /// <summary>
     /// Initialize all fields (own and inherited) AP214
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect)
     {
         myName = theName;
 
@@ -42,7 +44,7 @@ public class StepDimTol_GeometricTolerance : Standard_Transient
     /// <summary>
     /// Initialize all fields (own and inherited) AP242
     /// </summary>
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect)
     {
         myName = theName;
 
@@ -88,7 +90,7 @@ public class StepDimTol_GeometricTolerance : Standard_Transient
     /// <summary>
     /// Returns field Magnitude
     /// </summary>
-    public Standard_Transient Magnitude()
+    public Transient Magnitude()
     {
         return myMagnitude;
     }
@@ -96,7 +98,7 @@ public class StepDimTol_GeometricTolerance : Standard_Transient
     /// <summary>
     /// Set field Magnitude
     /// </summary>
-    public void SetMagnitude(Standard_Transient theMagnitude)
+    public void SetMagnitude(Transient theMagnitude)
     {
         myMagnitude = theMagnitude;
     }

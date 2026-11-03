@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
@@ -30,7 +36,7 @@ namespace Occt;
 /// caller's own again, in the result and in every answer (decision 583). The queries take the caller's shapes or the
 /// shapes they handed out. The context (<see cref="GetContext"/>) then records the working copies' sub-shapes.</para>
 /// </remarks>
-public class BRepBuilderAPI_Sewing : Standard_Transient
+public class BRepBuilderAPI_Sewing : Transient
 {
     protected double myTolerance;
     protected bool mySewing;
@@ -183,7 +189,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     private static void substituteTShapes(TopoDS_TShape theTShape, Dictionary<TopoDS_TShape, TopoDS_TShape> theMap,
                                           HashSet<TopoDS_TShape> theVisited)
     {
-        if (theTShape.IsFrozen() || !theVisited.Add(theTShape))
+        if (theTShape.IsFrozen || !theVisited.Add(theTShape))
         {
             return;
         }
@@ -306,7 +312,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         Geom2d_Curve? NewCurvePtr = null;
         try
         {
-            GeomLib.SameRange(Precision.PConfusion(),
+            GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                               CurvePtr,
                               FirstOnCurve,
                               LastOnCurve,
@@ -314,7 +320,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                               RequestedLast,
                               ref NewCurvePtr);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
         }
         return NewCurvePtr;
@@ -388,8 +394,8 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
         if (TotLength > 0.0)
         {
-            gp_Pnt p1 = BRep_Tool.Pnt(TopoDS.Vertex(v1));
-            gp_Pnt p2 = BRep_Tool.Pnt(TopoDS.Vertex(v2));
+            Point3D p1 = BRep_Tool.Pnt(TopoDS.Vertex(v1));
+            Point3D p2 = BRep_Tool.Pnt(TopoDS.Vertex(v2));
             return (p1.Distance(p2) < TotLength / (1.2 * M_PI));
         }
         return false;
@@ -405,9 +411,9 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     {
         bool isClosed = false;
 
-        gp_Pnt2d psurf1 = (acrv2d.IsPeriodic() ? acrv2d.Value(f2d)
+        Point2D psurf1 = (acrv2d.IsPeriodic() ? acrv2d.Value(f2d)
                                                : acrv2d.Value(Max(f2d, acrv2d.FirstParameter())));
-        gp_Pnt2d psurf2 = (acrv2d.IsPeriodic() ? acrv2d.Value(l2d)
+        Point2D psurf2 = (acrv2d.IsPeriodic() ? acrv2d.Value(l2d)
                                                : acrv2d.Value(Min(l2d, acrv2d.LastParameter())));
         Geom_Curve aCrv1;
         Geom_Curve aCrv2;
@@ -421,7 +427,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             aCrv1 = thesurf.VIso(psurf1.Y());
             aCrv2 = thesurf.VIso(psurf2.Y());
         }
-        gp_Pnt p11 = new(), p1m = new(), p12 = new(), p21 = new(), p2m = new(), p22 = new();
+        Point3D p11 = new(), p1m = new(), p12 = new(), p21 = new(), p2m = new(), p22 = new();
         double af1 = aCrv1.FirstParameter();
         double al1 = aCrv1.LastParameter();
         double af2 = aCrv2.FirstParameter();
@@ -433,16 +439,16 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         aCrv2.D0((af2 + al2) * 0.5, out p2m);
         aCrv2.D0(al2, out p22);
         isClosed = (((p11.XYZ() - p12.XYZ()).Modulus()
-                     < (p11.XYZ() - p1m.XYZ()).Modulus() - Precision.Confusion())
+                     < (p11.XYZ() - p1m.XYZ()).Modulus() - global::Kerf.Engine.Foundation.Precision.Confusion())
                     && ((p21.XYZ() - p22.XYZ()).Modulus()
-                        < (p21.XYZ() - p2m.XYZ()).Modulus() - Precision.Confusion()));
+                        < (p21.XYZ() - p2m.XYZ()).Modulus() - global::Kerf.Engine.Foundation.Precision.Confusion()));
         return isClosed;
     }
 
     //=================================================================================================
 
     /// <summary>Defines if the surface is U-closed (along the edge).</summary>
-    protected virtual bool IsUClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in TopLoc_Location theloc)
+    protected virtual bool IsUClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in Placement theloc)
     {
         Geom_Surface tmpsurf = surf;
         if (tmpsurf is Geom_RectangularTrimmedSurface aRTS)
@@ -473,7 +479,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=================================================================================================
 
     /// <summary>Defines if the surface is V-closed (along the edge).</summary>
-    protected virtual bool IsVClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in TopLoc_Location theloc)
+    protected virtual bool IsVClosedSurface(Geom_Surface surf, in TopoDS_Shape theEdge, in Placement theloc)
     {
         Geom_Surface tmpsurf = surf;
         if (tmpsurf is Geom_RectangularTrimmedSurface aRTS)
@@ -510,7 +516,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         {
             BRepLib.SameParameter(edge);
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
         }
     }
@@ -702,12 +708,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         var GAC = new GeomAdaptor_Curve(c3d!);
         var locProj = new Extrema_ExtPC();
         locProj.Initialize(GAC, first, last);
-        gp_Pnt pfirst = GAC.Value(first), plast = GAC.Value(last);
+        Point3D pfirst = GAC.Value(first), plast = GAC.Value(last);
 
         for (int i = 1; i <= nbV; i++)
         {
             TopoDS_Vertex aV = TopoDS.Vertex(theSeqNMVert.Value(i));
-            gp_Pnt pt = BRep_Tool.Pnt(aV);
+            Point3D pt = BRep_Tool.Pnt(aV);
 
             double distF2 = pfirst.SquareDistance(pt);
             double distL2 = plast.SquareDistance(pt);
@@ -744,7 +750,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         double dR, aD, aEps;
         Span<double> aR = stackalloc double[2];
         var aV = new TopoDS_Vertex[2];
-        var aP = new gp_Pnt[2];
+        var aP = new Point3D[2];
         var aBB = new BRep_Builder();
         //
         aEps = RealEpsilon();
@@ -765,7 +771,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
         //
         dR = aR[m] - aR[n]; // dR >= 0.
-        var aVD = new gp_Vec(aP[m], aP[n]);
+        var aVD = new Vector3D(aP[m], aP[n]);
         aD = aVD.Magnitude();
         //
         if (aD <= dR || aD < aEps)
@@ -775,8 +781,8 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         else
         {
             double aRr;
-            gp_XYZ aXYZr;
-            var aPr = new gp_Pnt();
+            Xyz aXYZr;
+            var aPr = new Point3D();
             //
             aRr = 0.5 * (aR[m] + aR[n] + aD);
             aXYZr = 0.5 * (aP[m].XYZ() + aP[n].XYZ() - aVD.XYZ() * (dR / aD));
@@ -792,11 +798,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                                                ref TopoDS_Vertex theNewV)
     {
         double aDi, aDmax;
-        var aCenter = new gp_Pnt();
-        var aP = new gp_Pnt[3];
+        var aCenter = new Point3D();
+        var aP = new Point3D[3];
         Span<double> aR = stackalloc double[3];
         var aV = new TopoDS_Vertex[3];
-        var aXYZ = new gp_XYZ(0.0, 0.0, 0.0);
+        var aXYZ = new Xyz(0.0, 0.0, 0.0);
         aV[0] = theV1;
         aV[1] = theV2;
         aV[2] = theV3;
@@ -898,8 +904,8 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         edge.Orientation(edge1.Orientation());
 
         // Retrieve edge curve
-        Geom_Curve? c3d = BRep_Tool.Curve(edge1, out TopLoc_Location loc3d, out double first3d, out double last3d);
-        if (!loc3d.IsIdentity())
+        Geom_Curve? c3d = BRep_Tool.Curve(edge1, out Placement loc3d, out double first3d, out double last3d);
+        if (!loc3d.IsIdentity)
         {
             c3d = (Geom_Curve)c3d!.Copy();
             c3d.Transform(loc3d.Transformation());
@@ -1014,7 +1020,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
 
         // Retrieve second PCurves
-        var loc2 = new TopLoc_Location();
+        var loc2 = new Placement();
         Geom_Surface? surf2 = null;
 
         var itf2 = new NCollection_List<TopoDS_Shape>.Iterator();
@@ -1110,7 +1116,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 Geom2d_Curve? c2d1 = null, c2d11 = null;
                 TopoDS_Face fac1 = TopoDS.Face(itf1.Value());
 
-                Geom_Surface? surf1 = BRep_Tool.Surface(fac1, out TopLoc_Location loc1);
+                Geom_Surface? surf1 = BRep_Tool.Surface(fac1, out Placement loc1);
 
                 double first2d, last2d;
                 bool isSeam1 = ((IsUClosedSurface(surf1!, edge1, loc1) || IsVClosedSurface(surf1!, edge1, loc1))
@@ -1160,9 +1166,9 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                         if (uclosed || vclosed)
                         {
                             double pf = c2d1!.FirstParameter();
-                            gp_Pnt2d p1n = c2d1.Value(Max(first, pf));
-                            gp_Pnt2d p21n = c2d2.Value(Max(first, c2d2.FirstParameter()));
-                            gp_Pnt2d p22n = c2d2.Value(Min(last, c2d2.LastParameter()));
+                            Point2D p1n = c2d1.Value(Max(first, pf));
+                            Point2D p21n = c2d2.Value(Max(first, c2d2.FirstParameter()));
+                            Point2D p22n = c2d2.Value(Min(last, c2d2.LastParameter()));
                             double aDist = Min(p1n.Distance(p21n), p1n.Distance(p22n));
                             surf2!.Bounds(out double U1, out double U2, out double V1, out double V2);
                             isSeam = ((uclosed && aDist > 0.75 * (Math.Abs(U2 - U1)))
@@ -1180,11 +1186,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 {
                     if (Ori == TopAbs_FORWARD)
                     {
-                        aBuilder.UpdateEdge(edge, c2d1, c2d2, surf2, loc2, Precision.Confusion());
+                        aBuilder.UpdateEdge(edge, c2d1, c2d2, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                     else
                     {
-                        aBuilder.UpdateEdge(edge, c2d2, c2d1, surf2, loc2, Precision.Confusion());
+                        aBuilder.UpdateEdge(edge, c2d2, c2d1, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                 }
                 else if (isSeam2)
@@ -1203,20 +1209,20 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
 
                     if (InitOri == TopAbs_FORWARD)
                     {
-                        aBuilder.UpdateEdge(edge, c2d2, c2d21, surf2, loc2, Precision.Confusion());
+                        aBuilder.UpdateEdge(edge, c2d2, c2d21, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                     else
                     {
-                        aBuilder.UpdateEdge(edge, c2d21, c2d2, surf2, loc2, Precision.Confusion());
+                        aBuilder.UpdateEdge(edge, c2d21, c2d2, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                 }
                 else
                 {
-                    aBuilder.UpdateEdge(edge, c2d2, surf2, loc2, Precision.Confusion());
+                    aBuilder.UpdateEdge(edge, c2d2, surf2, loc2, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
             }
         }
-        double tolReached = Precision.Infinite();
+        double tolReached = global::Kerf.Engine.Foundation.Precision.Infinite();
         bool isSamePar = false;
         try
         {
@@ -1231,7 +1237,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 tolReached = BRep_Tool.Tolerance(edge);
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             isSamePar = false;
         }
@@ -1267,7 +1273,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 // Discretize edge curve
                 int i, j, nbp = 23;
                 double deltaT = (last3d - first3d) / (nbp - 1);
-                var c3dpnt = new NCollection_Array1<gp_Pnt>(1, nbp);
+                var c3dpnt = new NCollection_Array1<Point3D>(1, nbp);
                 for (i = 1; i <= nbp; i++)
                 {
                     c3dpnt[i] = c3dAdapt.Value(first3d + (i - 1) * deltaT);
@@ -1285,7 +1291,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     if (more)
                     {
                         Geom_Surface aS = surf2!;
-                        if (!loc2.IsIdentity())
+                        if (!loc2.IsIdentity)
                         {
                             aS = (Geom_Surface)surf2!.Transformed(loc2.Transformation());
                         }
@@ -1294,16 +1300,16 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                         deltaT = (last - first) / (nbp - 1);
                         for (i = 1; i <= nbp; i++)
                         {
-                            gp_Pnt2d aP2d = c2d2!.Value(first + (i - 1) * deltaT);
-                            aS.D0(aP2d.X(), aP2d.Y(), out gp_Pnt aP2);
-                            gp_Pnt aP1 = c3dpnt[i];
+                            Point2D aP2d = c2d2!.Value(first + (i - 1) * deltaT);
+                            aS.D0(aP2d.X(), aP2d.Y(), out Point3D aP2);
+                            Point3D aP1 = c3dpnt[i];
                             dist = aP2.SquareDistance(aP1);
                             if (dist > dist2)
                             {
                                 dist2 = dist;
                             }
                         }
-                        maxTol = Max(Math.Sqrt(dist2) * (1.0 + 1e-7), Precision.Confusion());
+                        maxTol = Max(Math.Sqrt(dist2) * (1.0 + 1e-7), global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
                 }
                 if (maxTol >= 0.0 && maxTol < tolReached)
@@ -1345,12 +1351,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
 
         TopoDS_Edge edge;
         TopoDS_Face face;
-        TopLoc_Location loc;
+        Placement loc;
         double first = 0.0, last = 0.0;
         Geom_Curve? c3d;
         Geom2d_Curve? c2d = null;
         Geom_Surface? surf = null;
-        var normRef = new NCollection_Array1<gp_Vec>(1, npt);
+        var normRef = new NCollection_Array1<Vector3D>(1, npt);
 
         for (i = indRef; i <= lengSec; i++)
         {
@@ -1365,7 +1371,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             {
                 face = TopoDS.Face(myBoundFaces.FindFromKey(bnd).First());
                 surf = BRep_Tool.Surface(face, out loc);
-                if (!loc.IsIdentity())
+                if (!loc.IsIdentity)
                 {
                     surf = (Geom_Surface)surf!.Copy();
                     surf.Transform(loc.Transformation());
@@ -1382,7 +1388,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             }
 
             c3d = BRep_Tool.Curve(edge, out loc, out first, out last);
-            if (!loc.IsIdentity())
+            if (!loc.IsIdentity)
             {
                 c3d = (Geom_Curve)c3d!.Copy();
                 c3d.Transform(loc.Transformation());
@@ -1396,14 +1402,14 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
 
             for (j = 1; j <= npt; j++)
             {
-                c2d!.D0(uniAbs.Parameter((secForward[i] || i == indRef) ? j : npt - j + 1), out gp_Pnt2d P);
-                surf!.D1(P.X(), P.Y(), out _, out gp_Vec w1, out gp_Vec w2);
-                gp_Vec n = w1 ^ w2; // Compute the normal vector
+                c2d!.D0(uniAbs.Parameter((secForward[i] || i == indRef) ? j : npt - j + 1), out Point2D P);
+                surf!.D1(P.X(), P.Y(), out _, out Vector3D w1, out Vector3D w2);
+                Vector3D n = w1 ^ w2; // Compute the normal vector
                 if (i == indRef)
                 {
                     normRef[j] = n;
                 }
-                else if ((n.Magnitude() > gp.Resolution()) && (normRef[j].Magnitude() > gp.Resolution()))
+                else if ((n.Magnitude() > Constants.Resolution()) && (normRef[j].Magnitude() > Constants.Resolution()))
                 {
                     nbComputedAngle++;
                     double angular = n.Angle(normRef[j]);
@@ -1443,10 +1449,10 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         secForward.Init(true);
         tabDst.Init(-1.0);
         arrLen.Init(0.0);
-        tabMinDist.Init(Precision.Infinite());
+        tabMinDist.Init(global::Kerf.Engine.Foundation.Precision.Infinite());
         const int npt = 8; // Number of points for curve discretization
-        var ptsRef = new NCollection_Array1<gp_Pnt>(1, npt);
-        var ptsSec = new NCollection_Array1<gp_Pnt>(1, npt);
+        var ptsRef = new NCollection_Array1<Point3D>(1, npt);
+        var ptsSec = new NCollection_Array1<Point3D>(1, npt);
 
         int i, j, lengSec = sequenceSec.Length();
 
@@ -1458,12 +1464,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             // reading of the edge (attention for the first one: reference)
             TopoDS_Edge sec = TopoDS.Edge(sequenceSec[i]);
 
-            Geom_Curve? c3d = BRep_Tool.Curve(sec, out TopLoc_Location loc, out double first, out double last);
+            Geom_Curve? c3d = BRep_Tool.Curve(sec, out Placement loc, out double first, out double last);
             if (c3d is null)
             {
                 continue;
             }
-            if (!loc.IsIdentity())
+            if (!loc.IsIdentity)
             {
                 c3d = (Geom_Curve)c3d.Copy();
                 c3d.Transform(loc.Transformation());
@@ -1476,8 +1482,8 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 lastRef = last;
             }
 
-            double dist = Precision.Infinite(), distFor = -1.0, distRev = -1.0;
-            double aMinDist = Precision.Infinite();
+            double dist = global::Kerf.Engine.Foundation.Precision.Infinite(), distFor = -1.0, distRev = -1.0;
+            double aMinDist = global::Kerf.Engine.Foundation.Precision.Infinite();
 
             double T, deltaT = (last - first) / (npt - 1);
             double aLenSec2 = 0.0;
@@ -1500,7 +1506,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 }
 
                 // Take point on curve
-                gp_Pnt pt = c3d.Value(T);
+                Point3D pt = c3d.Value(T);
 
                 if (i == indRef)
                 {
@@ -1540,11 +1546,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     }
 
                     // Check that point lays between vertices of reference curve
-                    gp_Pnt p11 = ptsRef[1];
-                    gp_Pnt p12 = ptsRef[npt];
-                    var aVec1 = new gp_Vec(pt, p11);
-                    var aVec2 = new gp_Vec(pt, p12);
-                    var aVecRef = new gp_Vec(p11, p12);
+                    Point3D p11 = ptsRef[1];
+                    Point3D p12 = ptsRef[npt];
+                    var aVec1 = new Vector3D(pt, p11);
+                    var aVec2 = new Vector3D(pt, p12);
+                    var aVecRef = new Vector3D(p11, p12);
                     if ((aVecRef * aVec1) * (aVecRef * aVec2) < 0.0)
                     {
                         nbFound++;
@@ -1570,9 +1576,9 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             else
             {
                 nbFound = 0;
-                aMinDist = Precision.Infinite();
+                aMinDist = global::Kerf.Engine.Foundation.Precision.Infinite();
                 dist = -1;
-                var arrProj = new NCollection_Array1<gp_Pnt>(1, npt);
+                var arrProj = new NCollection_Array1<Point3D>(1, npt);
                 var arrDist = new NCollection_Array1<double>(1, npt);
                 var arrPara = new NCollection_Array1<double>(1, npt);
                 if (arrLen[indRef] >= arrLen[i])
@@ -1614,7 +1620,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     protected bool IsMergedClosed(in TopoDS_Edge Edge1, in TopoDS_Edge Edge2, in TopoDS_Face face)
     {
         // Check for closed surface
-        Geom_Surface? surf = BRep_Tool.Surface(face, out TopLoc_Location loc);
+        Geom_Surface? surf = BRep_Tool.Surface(face, out Placement loc);
         bool isUClosed = IsUClosedSurface(surf!, Edge1, loc);
         bool isVClosed = IsVClosedSurface(surf!, Edge1, loc);
         if (!isUClosed && !isVClosed)
@@ -1633,11 +1639,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         double C1Umin, C1Vmin, C1Umax, C1Vmax;
         double C2Umin, C2Vmin, C2Umax, C2Vmax;
         { // szv: Use brackets to destroy local variables
-            Bnd_Box2d B1 = new(), B2 = new();
+            Box2d B1 = new(), B2 = new();
             var aC2d1 = new Geom2dAdaptor_Curve(C2d1);
             var aC2d2 = new Geom2dAdaptor_Curve(C2d2);
-            BndLib_Add2dCurve.Add(aC2d1, first2d1, last2d1, Precision.PConfusion(), ref B1);
-            BndLib_Add2dCurve.Add(aC2d2, first2d2, last2d2, Precision.PConfusion(), ref B2);
+            BndLib_Add2dCurve.Add(aC2d1, first2d1, last2d1, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B1);
+            BndLib_Add2dCurve.Add(aC2d2, first2d2, last2d2, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref B2);
             B1.Get(out C1Umin, out C1Vmin, out C1Umax, out C1Vmax);
             B2.Get(out C2Umin, out C2Vmin, out C2Umax, out C2Vmax);
             double du, dv;
@@ -1743,7 +1749,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     {
                         if (mapFaces.Contains(lIt.Value()))
                         {
-                            Geom_Surface? surf = BRep_Tool.Surface(TopoDS.Face(lIt.Value()), out TopLoc_Location loc);
+                            Geom_Surface? surf = BRep_Tool.Surface(TopoDS.Face(lIt.Value()), out Placement loc);
                             isMerged = ((IsUClosedSurface(surf!, bnd2, loc) || IsVClosedSurface(surf!, bnd2, loc))
                                         && IsMergedClosed(TopoDS.Edge(sequenceSec.Value(index)),
                                                           TopoDS.Edge(workedge),
@@ -1929,7 +1935,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     {
                         double aDelta = arrDistance[i] - arrDistance[seqCandidates.Value(j)];
 
-                        if (aDelta < Precision.Confusion())
+                        if (aDelta < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             if (Math.Abs(aDelta) > RealSmall() || arrMinDist[i] < arrMinDist[seqCandidates.Value(j)])
                             {
@@ -2089,18 +2095,18 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                      bool optionNonmanifold = false)
     {
         // Set tolerance and Perform options
-        myTolerance = Max(tolerance, Precision.Confusion());
+        myTolerance = Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
         mySewing = optionSewing;
         myAnalysis = optionAnalysis;
         myCutting = optionCutting;
         myNonmanifold = optionNonmanifold;
         // Set min and max tolerances
         myMinTolerance = myTolerance * 1e-4; // szv: proposal
-        if (myMinTolerance < Precision.Confusion())
+        if (myMinTolerance < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            myMinTolerance = Precision.Confusion();
+            myMinTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
         }
-        myMaxTolerance = Precision.Infinite();
+        myMaxTolerance = global::Kerf.Engine.Foundation.Precision.Infinite();
         // Set other modes
         myFaceMode = true;
         myFloatingEdgesMode = false;
@@ -2171,7 +2177,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     /// When an input holds a frozen shape, the computation runs on an exact copy of the inputs, and the caller's own
     /// sub-shapes are given back wherever sewing left them unchanged (decision 583). The inputs are never written.
     /// </remarks>
-    public void Perform(Message_ProgressRange theProgress = default)
+    public void Perform(ProgressRange theProgress = default)
     {
         // OCCT.NET: copy at entry (decision 583).
         bool isCopied = beginWork(out TopoDS_Shape anOriginals, out TopoDS_Shape aCopy,
@@ -2184,10 +2190,10 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     }
 
     // OCCT's Perform.
-    private void performSewing(Message_ProgressRange theProgress)
+    private void performSewing(ProgressRange theProgress)
     {
         int aNumberOfStages = (myAnalysis ? 1 : 0) + (myCutting ? 1 : 0) + (mySewing ? 1 : 0) + 2;
-        using var aPS = new Message_ProgressScope(theProgress, "Sewing", aNumberOfStages);
+        using var aPS = new ProgressScope(theProgress, "Sewing", aNumberOfStages);
 
         // face analysis
         if (myAnalysis)
@@ -2366,7 +2372,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     /// The original edge (free boundary) that became the section, frozen. Sections make the common edges; the original
     /// edge gives the surface the section is attached to.
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject">The section isn't bound.</exception>
+    /// <exception cref="NoSuchObjectException">The section isn't bound.</exception>
     public TopoDS_Edge SectionToBoundary(in TopoDS_Edge section)
     {
         Standard_NoSuchObject_Raise_if(!IsSectionBound(section), "BRepBuilderAPI_Sewing::SectionToBoundary");
@@ -2553,7 +2559,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=======================================================================
 
     /// <summary>Makes small edges degenerated and removes small faces. Called from Perform only.</summary>
-    protected virtual void FaceAnalysis(Message_ProgressRange theProgress = default)
+    protected virtual void FaceAnalysis(ProgressRange theProgress = default)
     {
         if (!myShape.IsNull() && myOldShapes.IsEmpty())
         {
@@ -2565,7 +2571,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         var SmallEdges = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         var GluedVertices = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         int i = 1;
-        using var aPS = new Message_ProgressScope(theProgress, "Shape analysis", myOldShapes.Extent());
+        using var aPS = new ProgressScope(theProgress, "Shape analysis", myOldShapes.Extent());
         for (i = 1; i <= myOldShapes.Extent() && aPS.More(); i++, aPS.Next())
         {
             for (var fexp = new TopExp_Explorer(myOldShapes[i], TopAbs_FACE); fexp.More(); fexp.Next())
@@ -2626,7 +2632,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                             {
                                 // Evaluate curve compactness
                                 const int npt = 5;
-                                var cp = new gp_Pnt((c3d.Value(first).XYZ() + c3d.Value(last).XYZ()) * 0.5);
+                                var cp = new Point3D((c3d.Value(first).XYZ() + c3d.Value(last).XYZ()) * 0.5);
                                 double dist, maxdist = 0.0;
                                 double delta = (last - first) / (npt - 1);
                                 for (int idx = 0; idx < npt; idx++)
@@ -2708,7 +2714,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                             {
                                 var nedge = new TopoDS_Edge();
                                 B.MakeEdge(ref nedge);
-                                B.UpdateEdge(nedge, c2d, face, Precision.Confusion());
+                                B.UpdateEdge(nedge, c2d, face, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 B.Range(nedge, pfirst, plast);
                                 B.Degenerated(nedge, true);
                                 TopExp.Vertices(fedge, out TopoDS_Vertex v1, out TopoDS_Vertex v2);
@@ -2754,7 +2760,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         for (int aMIter = 1; aMIter <= GluedVertices.Extent(); aMIter++)
         {
             TopoDS_Vertex vnew = TopoDS.Vertex(GluedVertices.FindKey(aMIter));
-            var coord = new gp_XYZ(0.0, 0.0, 0.0);
+            var coord = new Xyz(0.0, 0.0, 0.0);
             int nbPoints = 0;
             NCollection_List<TopoDS_Shape> vlist = GluedVertices[aMIter];
             var liter1 = new NCollection_List<TopoDS_Shape>.Iterator(vlist);
@@ -2765,7 +2771,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             }
             if (nbPoints != 0)
             {
-                var vp = new gp_Pnt(coord / nbPoints);
+                var vp = new Point3D(coord / nbPoints);
                 double tol = 0.0, mtol = 0.0;
                 var liter2 = new NCollection_List<TopoDS_Shape>.Iterator(vlist);
                 for (; liter2.More(); liter2.Next())
@@ -3068,7 +3074,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         {
             TopoDS_Vertex newnode = TopoDS.Vertex(NewNodeOldNodes.FindKey(anIter1));
             // Calculate new node center point
-            var theCoordinates = new gp_XYZ(0.0, 0.0, 0.0);
+            var theCoordinates = new Xyz(0.0, 0.0, 0.0);
             var lvert = new NCollection_List<TopoDS_Shape>(); // Accumulate node vertices
             var medge = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
             var ledge = new NCollection_List<TopoDS_Shape>(); // Accumulate node edges
@@ -3105,7 +3111,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             }
             // Bind new node edges
             aNodeEdges.Bind(newnode, ledge);
-            var center = new gp_Pnt(theCoordinates / lvert.Extent());
+            var center = new Point3D(theCoordinates / lvert.Extent());
             // Calculate new node tolerance
             double toler = 0.0;
             var itv = new NCollection_List<TopoDS_Shape>.Iterator(lvert);
@@ -3195,11 +3201,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                                      NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aNodeEdges,
                                      NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aBoundFaces,
                                      double Tolerance,
-                                     Message_ProgressRange theProgress)
+                                     ProgressRange theProgress)
     {
         // Create map of node -> vertices
         var NodeVertices = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
-        var aFilter = new NCollection_CellFilter<BRepBuilderAPI_VertexInspector, int, gp_XYZ>(Tolerance);
+        var aFilter = new CellFilter<BRepBuilderAPI_VertexInspector, int, Xyz>(Tolerance);
         var anInspector = new BRepBuilderAPI_VertexInspector(Tolerance);
         for (int anIter1 = 1; anIter1 <= aVertexNode.Extent(); anIter1++)
         {
@@ -3214,7 +3220,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 var vlist = new NCollection_List<TopoDS_Shape>();
                 vlist.Append(vertex);
                 NodeVertices.Add(node, vlist);
-                gp_Pnt aPnt = BRep_Tool.Pnt(TopoDS.Vertex(node));
+                Point3D aPnt = BRep_Tool.Pnt(TopoDS.Vertex(node));
                 aFilter.Add(NodeVertices.FindIndex(node), aPnt.XYZ());
                 anInspector.Add(aPnt.XYZ());
             }
@@ -3222,15 +3228,15 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         int nbNodes = NodeVertices.Extent();
         // Merge nearest nodes
         var NodeNearestNode = new NCollection_IndexedDataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        using var aPS = new Message_ProgressScope(theProgress, "Glueing nodes", nbNodes, true);
+        using var aPS = new ProgressScope(theProgress, "Glueing nodes", nbNodes, true);
         for (int i = 1; i <= nbNodes && aPS.More(); i++, aPS.Next())
         {
             TopoDS_Vertex node1 = TopoDS.Vertex(NodeVertices.FindKey(i));
             // Find near nodes
-            gp_Pnt pt1 = BRep_Tool.Pnt(node1);
+            Point3D pt1 = BRep_Tool.Pnt(node1);
             anInspector.SetCurrent(pt1.XYZ());
-            gp_XYZ aPntMin = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), -Tolerance);
-            gp_XYZ aPntMax = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), Tolerance);
+            Xyz aPntMin = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), -Tolerance);
+            Xyz aPntMax = BRepBuilderAPI_VertexInspector.Shift(pt1.XYZ(), Tolerance);
             aFilter.Inspect(aPntMin, aPntMax, ref anInspector);
             if (anInspector.ResInd().IsEmpty())
             {
@@ -3362,14 +3368,14 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     listNodesSameEdge.Append(node2);
                 }
                 // Append near node to the sequence
-                gp_Pnt pt2 = BRep_Tool.Pnt(node2);
+                Point3D pt2 = BRep_Tool.Pnt(node2);
                 double dist = pt1.Distance(pt2);
                 if (dist < Tolerance)
                 {
                     bool isIns = false;
                     for (int kk = 1; kk <= SeqNodes.Length() && !isIns; kk++)
                     {
-                        gp_Pnt pt = BRep_Tool.Pnt(TopoDS.Vertex(SeqNodes.Value(kk)));
+                        Point3D pt = BRep_Tool.Pnt(TopoDS.Vertex(SeqNodes.Value(kk)));
                         if (dist < pt1.Distance(pt))
                         {
                             SeqNodes.InsertBefore(kk, node2);
@@ -3391,13 +3397,13 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     for (; lInt.More(); lInt.Next())
                     {
                         TopoDS_Vertex n2 = TopoDS.Vertex(lInt.Value());
-                        gp_Pnt p2 = BRep_Tool.Pnt(n2);
+                        Point3D p2 = BRep_Tool.Pnt(n2);
                         for (int k = 1; k <= SeqNodes.Length();)
                         {
                             TopoDS_Vertex n1 = TopoDS.Vertex(SeqNodes.Value(k));
                             if (n1 != n2)
                             {
-                                gp_Pnt p1 = BRep_Tool.Pnt(n1);
+                                Point3D p1 = BRep_Tool.Pnt(n1);
                                 if (p2.Distance(p1) >= pt1.Distance(p1))
                                 {
                                     k++;
@@ -3427,11 +3433,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     }
 
     /// <summary>Glues the vertices of the bounds within the tolerance into nodes. Called from Perform only.</summary>
-    protected virtual void VerticesAssembling(Message_ProgressRange theProgress = default)
+    protected virtual void VerticesAssembling(ProgressRange theProgress = default)
     {
         int nbVert = myVertexNode.Extent();
         int nbVertFree = myVertexNodeFree.Extent();
-        using var aPS = new Message_ProgressScope(theProgress, "Vertices assembling", 2);
+        using var aPS = new ProgressScope(theProgress, "Vertices assembling", 2);
         if (nbVert != 0 || nbVertFree != 0)
         {
             // Fill map node -> sections
@@ -3492,7 +3498,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             return;
         }
         BRep_Tool.Range(theEdge, out double first, out double last);
-        Geom_Curve? c3d = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out first, out last);
+        Geom_Curve? c3d = BRep_Tool.Curve(theEdge, out Placement aLoc, out first, out last);
         if (c3d is null)
         {
             return;
@@ -3504,12 +3510,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         for (; i <= nb; i++)
         {
             double apar = aSeqNMPars.Value(i);
-            if (Math.Abs(apar - first) <= Precision.PConfusion())
+            if (Math.Abs(apar - first) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 theReShape.Replace(aSeqNMVert.Value(i), theV1);
                 continue;
             }
-            if (Math.Abs(apar - last) <= Precision.PConfusion())
+            if (Math.Abs(apar - last) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 theReShape.Replace(aSeqNMVert.Value(i), theV2);
                 continue;
@@ -3519,7 +3525,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             for (; j <= aEdParams.Length(); j++)
             {
                 double apar2 = aEdParams.Value(j);
-                if (Math.Abs(apar - apar2) <= Precision.PConfusion())
+                if (Math.Abs(apar - apar2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     theReShape.Replace(aV, aEdVert.Value(j));
                     break;
@@ -3652,12 +3658,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=======================================================================
 
     /// <summary>Merges the bounds (or their cutting sections) with their nearest edges.</summary>
-    protected void Merging(bool passage, Message_ProgressRange theProgress = default)
+    protected void Merging(bool passage, ProgressRange theProgress = default)
     {
         _ = passage; // OCCT: unused (firstTime)
         var B = new BRep_Builder();
         //  NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> MergedEdges;
-        using var aPS = new Message_ProgressScope(theProgress, "Merging bounds", myBoundFaces.Extent());
+        using var aPS = new ProgressScope(theProgress, "Merging bounds", myBoundFaces.Extent());
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
             TopoDS_Shape bound = myBoundFaces.FindKey(anIterB);
@@ -4285,7 +4291,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=======================================================================
 
     /// <summary>Cuts the bounds at the projections of the nodes near them.</summary>
-    protected void Cutting(Message_ProgressRange theProgress = default)
+    protected void Cutting(ProgressRange theProgress = default)
     {
         int i, nbVertices = myVertexNode.Extent();
         if (nbVertices == 0)
@@ -4294,14 +4300,14 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
         // Create a box tree with vertices
         double eps = myTolerance * 0.5;
-        var aTree = new NCollection_UBTree<int, Bnd_Box>();
+        var aTree = new SpatialTree<int, Box>();
         var aSelector = new BRepBuilderAPI_BndBoxTreeSelector();
-        using (var aTreeFiller = new NCollection_UBTreeFiller<int, Bnd_Box>(aTree))
+        using (var aTreeFiller = new SpatialTreeFiller<int, Box>(aTree))
         {
             for (i = 1; i <= nbVertices; i++)
             {
-                gp_Pnt pt = BRep_Tool.Pnt(TopoDS.Vertex(myVertexNode.FindKey(i)));
-                var aBox = new Bnd_Box();
+                Point3D pt = BRep_Tool.Pnt(TopoDS.Vertex(myVertexNode.FindKey(i)));
+                var aBox = new Box();
                 aBox.Set(pt);
                 aBox.Enlarge(eps);
                 aTreeFiller.Add(i, aBox);
@@ -4310,11 +4316,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
 
         Geom_Curve? c3d;
-        TopLoc_Location loc;
+        Placement loc;
         double first, last;
         // Iterate on all boundaries
         int nbBounds = myBoundFaces.Extent();
-        using var aPS = new Message_ProgressScope(theProgress, "Cutting bounds", nbBounds);
+        using var aPS = new ProgressScope(theProgress, "Cutting bounds", nbBounds);
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
             TopoDS_Edge bound = TopoDS.Edge(myBoundFaces.FindKey(anIterB));
@@ -4329,7 +4335,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             {
                 continue;
             }
-            if (!loc.IsIdentity())
+            if (!loc.IsIdentity)
             {
                 c3d = (Geom_Curve)c3d.Copy();
                 c3d.Transform(loc.Transformation());
@@ -4342,7 +4348,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 var CandidateVertices = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
                 { // szv: Use brackets to destroy local variables
                     // Create bounding box around curve
-                    var aGlobalBox = new Bnd_Box();
+                    var aGlobalBox = new Box();
                     var adptC = new GeomAdaptor_Curve(c3d, first, last);
                     BndLib_Add3dCurve.Add(adptC, myTolerance, ref aGlobalBox);
                     // Sort vertices to find candidates
@@ -4379,8 +4385,8 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 // Project vertices on curve
                 var arrPara = new NCollection_Array1<double>(1, nbCandidates);
                 var arrDist = new NCollection_Array1<double>(1, nbCandidates);
-                var arrPnt = new NCollection_Array1<gp_Pnt>(1, nbCandidates);
-                var arrProj = new NCollection_Array1<gp_Pnt>(1, nbCandidates);
+                var arrPnt = new NCollection_Array1<Point3D>(1, nbCandidates);
+                var arrProj = new NCollection_Array1<Point3D>(1, nbCandidates);
                 for (int j = 1; j <= nbCandidates; j++)
                 {
                     arrPnt[j] = BRep_Tool.Pnt(TopoDS.Vertex(CandidateVertices[j]));
@@ -4587,17 +4593,17 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     V2 = Ve1;
                 }
             }
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(aIt.Value()), out TopLoc_Location loc, out double first, out double last);
+            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(aIt.Value()), out Placement loc, out double first, out double last);
             if (c3d is not null)
             {
                 c3d = (Geom_Curve)c3d.Copy();
-                if (!loc.IsIdentity())
+                if (!loc.IsIdentity)
                 {
                     c3d.Transform(loc.Transformation());
                 }
-                gp_Pnt pfirst = c3d.Value(first);
-                gp_Pnt plast = c3d.Value(last);
-                gp_Pnt pmid = c3d.Value((first + last) * 0.5);
+                Point3D pfirst = c3d.Value(first);
+                Point3D plast = c3d.Value(last);
+                Point3D pmid = c3d.Value((first + last) * 0.5);
                 double length = 0;
                 if (pfirst.Distance(plast) > pfirst.Distance(pmid))
                 {
@@ -4639,7 +4645,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         }
 
         // Retrieve edge curve
-        Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(section), out TopLoc_Location loc, out double first, out double last);
+        Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(section), out Placement loc, out double first, out double last);
         if (c3d is null)
         { // gka
             var aB = new BRep_Builder();
@@ -4647,7 +4653,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             aB.Degenerated(edge1, true);
             return edge1;
         }
-        if (!loc.IsIdentity())
+        if (!loc.IsIdentity)
         {
             c3d = (Geom_Curve)c3d.Copy();
             c3d.Transform(loc.Transformation());
@@ -4656,7 +4662,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         // Test if the new edge is degenerated
         TopExp.Vertices(TopoDS.Edge(section), out TopoDS_Vertex v1, out TopoDS_Vertex v2);
 
-        gp_Pnt p1, p2, p3;
+        Point3D p1, p2, p3;
         p1 = BRep_Tool.Pnt(v1);
         p3 = BRep_Tool.Pnt(v2);
         c3d.D0(0.5 * (first + last), out p2);
@@ -4729,12 +4735,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=======================================================================
 
     /// <summary>Makes the free wires that are degenerated into degenerated edges.</summary>
-    protected void EdgeProcessing(Message_ProgressRange theProgress = default)
+    protected void EdgeProcessing(ProgressRange theProgress = default)
     {
         // constructs sectionEdge
         var MapFreeEdges = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         var EdgeFace = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
-        using var aPS = new Message_ProgressScope(theProgress, "Edge processing", myBoundFaces.Extent());
+        using var aPS = new ProgressScope(theProgress, "Edge processing", myBoundFaces.Extent());
         for (int anIterB = 1; anIterB <= myBoundFaces.Extent() && aPS.More(); anIterB++, aPS.Next())
         {
             TopoDS_Shape bound = myBoundFaces.FindKey(anIterB);
@@ -4818,12 +4824,12 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     //=======================================================================
 
     /// <summary>Recomputes the regularity of the merged edges.</summary>
-    protected void EdgeRegularity(Message_ProgressRange theProgress = default)
+    protected void EdgeRegularity(ProgressRange theProgress = default)
     {
         var aMapEF = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(mySewedShape, TopAbs_EDGE, TopAbs_FACE, aMapEF);
 
-        using var aPS = new Message_ProgressScope(theProgress, "Encode edge regularity", myMergedEdges.Extent());
+        using var aPS = new ProgressScope(theProgress, "Encode edge regularity", myMergedEdges.Extent());
         // OCCT iterates its map in address order; the port in insertion order (decision 18). Each edge is encoded on
         // its own, so the order doesn't change the result.
         foreach (TopoDS_Shape aMergedEdge in myMergedEdges)
@@ -5181,13 +5187,13 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
     /// Projects the points on the curve: distances (-1 where a point isn't projected), parameters and projections.
     /// Called from Cutting only.
     /// </summary>
-    protected void ProjectPointsOnCurve(NCollection_Array1<gp_Pnt> arrPnt,
+    protected void ProjectPointsOnCurve(NCollection_Array1<Point3D> arrPnt,
                                         Geom_Curve? c3d,
                                         double first,
                                         double last,
                                         NCollection_Array1<double> arrDist,
                                         NCollection_Array1<double> arrPara,
-                                        NCollection_Array1<gp_Pnt> arrProj,
+                                        NCollection_Array1<Point3D> arrProj,
                                         bool isConsiderEnds)
     {
         arrDist.Init(-1.0);
@@ -5195,13 +5201,13 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         var GAC = new GeomAdaptor_Curve(c3d!);
         var locProj = new Extrema_ExtPC();
         locProj.Initialize(GAC, first, last);
-        gp_Pnt pfirst = GAC.Value(first), plast = GAC.Value(last);
+        Point3D pfirst = GAC.Value(first), plast = GAC.Value(last);
         int find = 1;              //(isConsiderEnds ? 1 : 2);
         int lind = arrPnt.Length(); //(isConsiderEnds ? arrPnt.Length() : arrPnt.Length() -1);
 
         for (int i1 = find; i1 <= lind; i1++)
         {
-            gp_Pnt pt = arrPnt[i1];
+            Point3D pt = arrPnt[i1];
             double worktol = myTolerance;
             double distF2 = pfirst.SquareDistance(pt);
             double distL2 = plast.SquareDistance(pt);
@@ -5213,7 +5219,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                 if (locProj.IsDone() && locProj.NbExt() > 0)
                 {
                     double dist2Min = (isConsiderEnds || i1 == find || i1 == lind ? Min(distF2, distL2)
-                                                                                 : Precision.Infinite());
+                                                                                 : global::Kerf.Engine.Foundation.Precision.Infinite());
                     int ind, indMin = 0;
                     for (ind = 1; ind <= locProj.NbExt(); ind++)
                     {
@@ -5229,7 +5235,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                         isProjected = true;
                         Extrema_POnCurv pOnC = locProj.Point(indMin);
                         double paramProj = pOnC.Parameter();
-                        gp_Pnt ptProj = GAC.Value(paramProj);
+                        Point3D ptProj = GAC.Value(paramProj);
                         double distProj2 = ptProj.SquareDistance(pt);
                         if (!locProj.IsMin(indMin))
                         {
@@ -5258,7 +5264,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                     }
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 worktol = MinTolerance();
             }
@@ -5292,7 +5298,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
                                               in TopoDS_Shape vlast,
                                               NCollection_Array1<double> arrDist,
                                               NCollection_Array1<double> arrPara,
-                                              NCollection_Array1<gp_Pnt> arrPnt,
+                                              NCollection_Array1<Point3D> arrPnt,
                                               NCollection_Sequence<TopoDS_Shape> seqVert,
                                               NCollection_Sequence<double> seqPara)
     {
@@ -5336,11 +5342,11 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
 
         // Insert two initial vertices (to be removed later)
         var seqDist = new NCollection_Sequence<double>();
-        var seqPnt = new NCollection_Sequence<gp_Pnt>();
+        var seqPnt = new NCollection_Sequence<Point3D>();
         { // szv: Use brackets to destroy local variables
             // Retrieve bound curve
-            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(bound), out TopLoc_Location loc, out double first, out double last);
-            if (!loc.IsIdentity())
+            Geom_Curve? c3d = BRep_Tool.Curve(TopoDS.Edge(bound), out Placement loc, out double first, out double last);
+            if (!loc.IsIdentity)
             {
                 c3d = (Geom_Curve)c3d!.Copy();
                 c3d.Transform(loc.Transformation());
@@ -5361,7 +5367,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
         {
             int index = seqOrderedIndex[i];
             double disProj = arrDist[index];
-            gp_Pnt pntProj = arrPnt[index];
+            Point3D pntProj = arrPnt[index];
 
             // Skip node if already bound to cutting vertex
             TopoDS_Shape node = myVertexNode.FindFromKey(MapVert[index]);
@@ -5405,7 +5411,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             {
                 // Build new cutting vertex
                 var cvertex = new TopoDS_Vertex();
-                aBuilder.MakeVertex(ref cvertex, pntProj, Precision.Confusion());
+                aBuilder.MakeVertex(ref cvertex, pntProj, global::Kerf.Engine.Foundation.Precision.Confusion());
                 // Bind new cutting vertex
                 NodeCuttingVertex.Add(node, cvertex);
                 // Insert cutting vertex in the sequences
@@ -5645,7 +5651,7 @@ public class BRepBuilderAPI_Sewing : Standard_Transient
             {
                 BRepLib.SameParameter(sec, BRep_Tool.Tolerance(sec));
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 continue;
             }

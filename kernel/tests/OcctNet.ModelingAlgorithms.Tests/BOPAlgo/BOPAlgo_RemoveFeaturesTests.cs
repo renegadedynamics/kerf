@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -42,9 +44,9 @@ public class BOPAlgo_RemoveFeaturesTests
         {
             return false;
         }
-        gp_Pln aPln = aPlane.Pln();
-        gp_Dir aN = aPln.Axis().Direction();
-        gp_Pnt aP = aPln.Location();
+        Plane3D aPln = aPlane.Pln();
+        Direction3D aN = aPln.Axis().Direction();
+        Point3D aP = aPln.Location();
         for (int i = 0; i < 3; ++i)
         {
             double aComp = i == 0 ? aN.X() : i == 1 ? aN.Y() : aN.Z();
@@ -60,21 +62,21 @@ public class BOPAlgo_RemoveFeaturesTests
     /// <summary>A box with a cylindrical hole through it, along z at (x, y).</summary>
     internal static TopoDS_Shape BoxWithHole(double theX = 5.0, double theY = 5.0, double theR = 2.0)
     {
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(theX, theY, -1), new gp_Dir(0, 0, 1)), theR, 12.0).Shape();
+        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(theX, theY, -1), new Direction3D(0, 0, 1)), theR, 12.0).Shape();
         return new BRepAlgoAPI_Cut(Box(), aTool).Shape();
     }
 
     /// <summary>A box with a cylindrical boss on its top face.</summary>
     internal static TopoDS_Shape BoxWithBoss()
     {
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(5, 5, 10), new gp_Dir(0, 0, 1)), 2.0, 3.0).Shape();
+        TopoDS_Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, 10), new Direction3D(0, 0, 1)), 2.0, 3.0).Shape();
         return new BRepAlgoAPI_Fuse(Box(), aTool).Shape();
     }
 
     /// <summary>A box with a rectangular pocket in its top face.</summary>
     internal static TopoDS_Shape BoxWithPocket()
     {
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeBox(new gp_Pnt(3, 3, 7), 4.0, 4.0, 5.0).Shape();
+        TopoDS_Shape aTool = new BRepPrimAPI_MakeBox(new Point3D(3, 3, 7), 4.0, 4.0, 5.0).Shape();
         return new BRepAlgoAPI_Cut(Box(), aTool).Shape();
     }
 
@@ -82,12 +84,12 @@ public class BOPAlgo_RemoveFeaturesTests
     internal static TopoDS_Shape BoxWithChamfer()
     {
         // a slab on the side y + z >= 18 of the plane through (y, z) = (8, 10) and (10, 8)
-        TopoDS_Shape aTool = new BRepPrimAPI_MakeBox(new gp_Pnt(-1, -10, 0), 12.0, 20.0, 10.0).Shape();
-        gp_Trsf aRot = new();
-        aRot.SetRotation(new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), -Math.PI / 4.0);
-        gp_Trsf aMove = new();
-        aMove.SetTranslation(new gp_Vec(0, 9.0, 9.0));
-        TopoDS_Shape aTurned = aTool.Moved(new TopLoc_Location(aMove * aRot));
+        TopoDS_Shape aTool = new BRepPrimAPI_MakeBox(new Point3D(-1, -10, 0), 12.0, 20.0, 10.0).Shape();
+        Transform3D aRot = new();
+        aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -Math.PI / 4.0);
+        Transform3D aMove = new();
+        aMove.SetTranslation(new Vector3D(0, 9.0, 9.0));
+        TopoDS_Shape aTurned = aTool.Moved(new Placement(aMove * aRot));
         return new BRepAlgoAPI_Cut(Box(), aTurned).Shape();
     }
 
@@ -122,7 +124,7 @@ public class BOPAlgo_RemoveFeaturesTests
         Assert.Equal(1000.0, Volume(aResult), 1.0e-6);
         Assert.Equal(6, SubShapes(aResult, TopAbs_FACE).Count);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
 
         // the history answers for the input's sub-shapes: the hole's faces are removed, the top and bottom faces modified
         foreach (TopoDS_Shape aF in aHole)
@@ -191,7 +193,7 @@ public class BOPAlgo_RemoveFeaturesTests
     public void Two_holes_are_two_features_removed_one_by_one()
     {
         TopoDS_Shape aShape = new BRepAlgoAPI_Cut(BoxWithHole(3.0, 3.0, 1.0),
-                                                  new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(7, 7, -1), new gp_Dir(0, 0, 1)), 1.5, 12.0).Shape()).Shape();
+                                                  new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(7, 7, -1), new Direction3D(0, 0, 1)), 1.5, 12.0).Shape()).Shape();
         List<TopoDS_Shape> aHoles = FacesOf<Geom_CylindricalSurface>(aShape);
         Assert.True(aHoles.Count >= 2);
         BOPAlgo_RemoveFeatures aRF = Remove(aShape, aHoles);
@@ -215,7 +217,7 @@ public class BOPAlgo_RemoveFeaturesTests
 
         // a compound of a solid and an edge: the edge is left out with a warning, and removed in the history
         TopoDS_Shape aSolid = BoxWithHole();
-        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(20, 0, 0), new gp_Pnt(30, 0, 0)).Shape();
+        TopoDS_Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(20, 0, 0), new Point3D(30, 0, 0)).Shape();
         TopoDS_Compound aC = new();
         new BRep_Builder().MakeCompound(ref aC);
         new BRep_Builder().Add(aC, aSolid);
@@ -251,7 +253,7 @@ public class BOPAlgo_RemoveFeaturesTests
         // the hole's box, with an internal edge on its face x = 0, away from the hole
         BOPAlgo_Splitter aSplitter = new();
         aSplitter.AddArgument(BoxWithHole());
-        aSplitter.AddTool(new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 2, 2), new gp_Pnt(0, 8, 8)).Shape());
+        aSplitter.AddTool(new BRepBuilderAPI_MakeEdge(new Point3D(0, 2, 2), new Point3D(0, 8, 8)).Shape());
         aSplitter.Perform();
         Assert.False(aSplitter.HasErrors());
         TopoDS_Shape aShape = aSplitter.Shape();
@@ -288,7 +290,7 @@ public class BOPAlgo_RemoveFeaturesTests
     public void Serial_equals_parallel()
     {
         TopoDS_Shape aShape = new BRepAlgoAPI_Cut(BoxWithPocket(),
-                                                  new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(1.5, 1.5, -1), new gp_Dir(0, 0, 1)), 1.0, 12.0).Shape()).Shape();
+                                                  new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1.5, 1.5, -1), new Direction3D(0, 0, 1)), 1.0, 12.0).Shape()).Shape();
         List<TopoDS_Shape> aFaces = NonBoxFaces(aShape);
         string aSerial = RunText(aShape, aFaces, false);
         Assert.Equal(aSerial, DeterminismHarness.AssertSerialEqualsParallel(() => RunText(aShape, aFaces, true), 2));

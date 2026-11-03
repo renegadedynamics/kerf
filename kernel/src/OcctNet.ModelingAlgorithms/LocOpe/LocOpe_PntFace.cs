@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +15,7 @@ namespace Occt;
 /// <remarks><c>default(LocOpe_PntFace)</c> is OCCT's empty point (its orientation is FORWARD).</remarks>
 public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
 {
-    private gp_Pnt myPnt;
+    private Point3D myPnt;
     private TopoDS_Face myFace;
     private TopAbs_Orientation myOri;
     private double myPar;
@@ -21,7 +25,7 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
     /// <summary>Empty constructor. Useful only for the list.</summary>
     public LocOpe_PntFace()
     {
-        myPnt = new gp_Pnt();
+        myPnt = new Point3D();
         myFace = new TopoDS_Face();
         myOri = TopAbs_Orientation.TopAbs_FORWARD; // OCCT: uninitialised
         myPar = 0.0;
@@ -29,7 +33,7 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
         myVPar = 0.0;
     }
 
-    public LocOpe_PntFace(in gp_Pnt P, in TopoDS_Face F, TopAbs_Orientation Or, double Param, double UPar, double VPar)
+    public LocOpe_PntFace(in Point3D P, in TopoDS_Face F, TopAbs_Orientation Or, double Param, double UPar, double VPar)
     {
         myPnt = P;
         myFace = F;
@@ -39,7 +43,7 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
         myVPar = VPar;
     }
 
-    public readonly gp_Pnt Pnt() => myPnt;
+    public readonly Point3D Pnt() => myPnt;
 
     public readonly TopoDS_Face Face() => myFace;
 
@@ -75,5 +79,5 @@ public partial struct LocOpe_PntFace : IEquatable<LocOpe_PntFace>
     public static bool operator !=(in LocOpe_PntFace theLeft, in LocOpe_PntFace theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString() =>
-        gp.Format("LocOpe_PntFace", myPnt.X(), myPnt.Y(), myPnt.Z(), (double)myOri, myPar, myUPar, myVPar);
+        Constants.Format("LocOpe_PntFace", myPnt.X(), myPnt.Y(), myPnt.Z(), (double)myOri, myPar, myUPar, myVPar);
 }

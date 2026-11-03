@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
 using static OcctNet.Foundation.Tests.MathLin_EigenSearch_Test_Helpers;
 
 namespace OcctNet.Foundation.Tests;
@@ -14,10 +15,10 @@ internal static class MathLin_EigenSearch_Test_Helpers
     internal const double THE_NORMALIZED_TOL = 1.0e-10;
     internal const int THE_RANDOM_NB_CASES = 120;
 
-    internal static math_Matrix BuildSymmetricTridiagonal(math_Vector theDiag, math_Vector theSubdiag)
+    internal static Matrix BuildSymmetricTridiagonal(math_Vector theDiag, math_Vector theSubdiag)
     {
         int aN = theDiag.Length();
-        math_Matrix aM = new(1, aN, 1, aN, 0.0);
+        Matrix aM = new(1, aN, 1, aN, 0.0);
         for (int i = 1; i <= aN; ++i)
         {
             aM[i, i] = theDiag[theDiag.Lower() + i - 1];
@@ -44,7 +45,7 @@ internal static class MathLin_EigenSearch_Test_Helpers
         }
     }
 
-    internal static List<double> SortedEigenValuesFromLegacy(math_EigenValuesSearcher theLegacy)
+    internal static List<double> SortedEigenValuesFromLegacy(EigenValuesSearcher theLegacy)
     {
         int aN = theLegacy.Dimension();
         List<double> aVals = new(aN);
@@ -56,7 +57,7 @@ internal static class MathLin_EigenSearch_Test_Helpers
         return aVals;
     }
 
-    internal static List<double> SortedEigenValuesFromModern(MathLin.EigenResult theModern)
+    internal static List<double> SortedEigenValuesFromModern(global::Kerf.Engine.Numerics.Linear.MathLin.EigenResult theModern)
     {
         List<double> aVals = new();
         if (theModern.EigenValues is null)
@@ -83,7 +84,7 @@ internal static class MathLin_EigenSearch_Test_Helpers
         return Math.Sqrt(aNorm2);
     }
 
-    internal static double PairResidualInfinity(math_Matrix theMatrix, double theLambda, math_Vector theVector)
+    internal static double PairResidualInfinity(Matrix theMatrix, double theLambda, math_Vector theVector)
     {
         int aN = theMatrix.RowNumber();
         double aMax = 0.0;
@@ -177,11 +178,11 @@ public class MathLin_EigenSearch_Test
         NCollection_Array1<double> aSubdiagLegacy = new(1, 3);
         BuildLegacyArrays(aDiag, aSubdiag, aDiagLegacy, aSubdiagLegacy);
 
-        math_EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
-        MathLin.EigenResult     aModern = MathLin.EigenTridiagonal(aDiag, aSubdiag);
+        EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
+        global::Kerf.Engine.Numerics.Linear.MathLin.EigenResult     aModern = global::Kerf.Engine.Numerics.Linear.MathLin.EigenTridiagonal(aDiag, aSubdiag);
 
-        Assert.True(aLegacy.IsDone());
-        Assert.True(aModern.IsDone());
+        Assert.True(aLegacy.IsDone);
+        Assert.True(aModern.IsDone);
         Assert.True(aModern.EigenValues is not null);
         Assert.True(aModern.EigenVectors is not null);
 
@@ -193,11 +194,11 @@ public class MathLin_EigenSearch_Test
             Assert.Equal(aModernSorted[i], aLegacySorted[i], THE_EIGEN_TOL);
         }
 
-        math_Matrix  aA       = BuildSymmetricTridiagonal(aDiag, aSubdiag);
+        Matrix  aA       = BuildSymmetricTridiagonal(aDiag, aSubdiag);
         math_Vector aEigVals = aModern.EigenValues!;
         for (int i = 1; i <= 3; ++i)
         {
-            math_Vector aVec = MathLin.GetEigenVector(aModern, i);
+            math_Vector aVec = global::Kerf.Engine.Numerics.Linear.MathLin.GetEigenVector(aModern, i);
             Assert.Equal(1.0, VectorNorm2(aVec), THE_NORMALIZED_TOL);
             Assert.Equal(0.0, PairResidualInfinity(aA, aEigVals[i], aVec), THE_RESIDUAL_TOL);
         }
@@ -227,11 +228,11 @@ public class MathLin_EigenSearch_Test
             aSubdiagLegacy[i] = aSubdiag[i];
         }
 
-        math_EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
-        MathLin.EigenResult     aModern = MathLin.EigenTridiagonal(aDiag, aSubdiag);
+        EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
+        global::Kerf.Engine.Numerics.Linear.MathLin.EigenResult     aModern = global::Kerf.Engine.Numerics.Linear.MathLin.EigenTridiagonal(aDiag, aSubdiag);
 
-        Assert.Equal(aModern.IsDone(), aLegacy.IsDone());
-        Assert.True(aLegacy.IsDone());
+        Assert.Equal(aModern.IsDone, aLegacy.IsDone);
+        Assert.True(aLegacy.IsDone);
 
         List<double> aLegacySorted = SortedEigenValuesFromLegacy(aLegacy);
         List<double> aModernSorted = SortedEigenValuesFromModern(aModern);
@@ -263,11 +264,11 @@ public class MathLin_EigenSearch_Test
             NCollection_Array1<double> aSubdiagLegacy = new(1, aN);
             BuildLegacyArrays(aDiag, aSubdiag, aDiagLegacy, aSubdiagLegacy);
 
-            math_EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
-            MathLin.EigenResult     aModern = MathLin.EigenTridiagonal(aDiag, aSubdiag);
+            EigenValuesSearcher aLegacy = new(aDiagLegacy, aSubdiagLegacy);
+            global::Kerf.Engine.Numerics.Linear.MathLin.EigenResult     aModern = global::Kerf.Engine.Numerics.Linear.MathLin.EigenTridiagonal(aDiag, aSubdiag);
 
-            Assert.Equal(aModern.IsDone(), aLegacy.IsDone());
-            if (!aLegacy.IsDone())
+            Assert.Equal(aModern.IsDone, aLegacy.IsDone);
+            if (!aLegacy.IsDone)
             {
                 continue;
             }
@@ -283,22 +284,22 @@ public class MathLin_EigenSearch_Test
                 Assert.Equal(aModernSorted[i], aLegacySorted[i], THE_EIGEN_TOL);
             }
 
-            math_Matrix  aA       = BuildSymmetricTridiagonal(aDiag, aSubdiag);
+            Matrix  aA       = BuildSymmetricTridiagonal(aDiag, aSubdiag);
             math_Vector aEigVals = aModern.EigenValues!;
 
             for (int i = 1; i <= aN; ++i)
             {
-                math_Vector aVec = MathLin.GetEigenVector(aModern, i);
+                math_Vector aVec = global::Kerf.Engine.Numerics.Linear.MathLin.GetEigenVector(aModern, i);
                 Assert.Equal(1.0, VectorNorm2(aVec), THE_NORMALIZED_TOL);
                 Assert.Equal(0.0, PairResidualInfinity(aA, aEigVals[i], aVec), THE_RESIDUAL_TOL);
             }
 
             for (int i = 1; i <= aN; ++i)
             {
-                math_Vector aVecI = MathLin.GetEigenVector(aModern, i);
+                math_Vector aVecI = global::Kerf.Engine.Numerics.Linear.MathLin.GetEigenVector(aModern, i);
                 for (int j = i + 1; j <= aN; ++j)
                 {
-                    math_Vector aVecJ = MathLin.GetEigenVector(aModern, j);
+                    math_Vector aVecJ = global::Kerf.Engine.Numerics.Linear.MathLin.GetEigenVector(aModern, j);
                     Assert.Equal(0.0, DotProduct(aVecI, aVecJ), THE_ORTHOGONAL_TOL);
                 }
             }

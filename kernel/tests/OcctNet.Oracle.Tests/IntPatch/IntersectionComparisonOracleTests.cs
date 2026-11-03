@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -14,8 +15,8 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
 {
     private static N.gp_Ax3 Axes(Oracle theO, double theRange)
     {
-        gp_Dir aN = theO.Dir();
-        gp_Dir aX = new(new gp_Vec(aN).Crossed(new gp_Vec(theO.Dir())));
+        Direction3D aN = theO.Dir();
+        Direction3D aX = new(new Vector3D(aN).Crossed(new Vector3D(theO.Dir())));
         return new N.gp_Ax3(new N.gp_Pnt(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange), theO.Real(-theRange, theRange)),
                             new N.gp_Dir(aN.X(), aN.Y(), aN.Z()), new N.gp_Dir(aX.X(), aX.Y(), aX.Z()));
     }
@@ -64,7 +65,7 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
             List<N.Geom_Curve> aRead = [.. aNative.Select(aSame.NativeRoundTrip)];
             aSame.CompareLines(aRead, aPort, $"pair {i}");
 
-            gp_Vec aShift = new(1.0e-9, -2.0e-9, 2.0e-9); // 3e-9 long
+            Vector3D aShift = new(1.0e-9, -2.0e-9, 2.0e-9); // 3e-9 long
             List<Geom_Curve> aShifted = [.. aPort.Select(c => (Geom_Curve)c.Translated(aShift))];
             aMoved.CompareLines(aNative, aShifted, $"pair {i}, moved");
             foreach (N.Geom_Curve aC in aNative.Concat(aRead))
@@ -89,7 +90,7 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
         using var aCompare = new IntersectionComparison();
         using var aNLine = new N.Geom_Line(new N.gp_Pnt(0, 0, 0), new N.gp_Dir(1, 0, 0));
         using var aNCircle = new N.Geom_Circle(new N.gp_Ax2(new N.gp_Pnt(0, 0, 0), new N.gp_Dir(0, 0, 1)), 1.0);
-        Geom_Curve aLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Curve aLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         Assert.ThrowsAny<Exception>(() => aCompare.CompareLines([aNLine, aNCircle], [aLine], "count"));
         Assert.ThrowsAny<Exception>(() => aCompare.CompareLine(aNCircle, aLine, "type"));
@@ -102,9 +103,9 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
     {
         using var aCompare = new IntersectionComparison();
         using var aNCircle = new N.Geom2d_Circle(new N.gp_Ax2d(new N.gp_Pnt2d(1, 2), new N.gp_Dir2d(1, 0)), 3.0);
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 3.0);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3.0);
         aCompare.CompareLine2d(aNCircle, aCircle, "same circle");
-        Geom2d_Circle aBigger = new(new gp_Ax2d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 3.0 + 1.0e-8);
+        Geom2d_Circle aBigger = new(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3.0 + 1.0e-8);
         aCompare.CompareLine2d(aNCircle, aBigger, "bigger circle");
         Assert.Equal(1, aCompare.IdenticalLines);
         Assert.InRange(aCompare.MaxDeviation, 0.99e-8, 1.01e-8);

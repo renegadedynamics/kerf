@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.IMeshData_Status;
 using static Occt.IMeshTools_MeshAlgoType;
@@ -75,10 +77,10 @@ public class BRepMeshDataTests
     {
         var aCurve = new BRepMeshData_Curve();
         Assert.Equal(0, aCurve.ParametersNb());
-        aCurve.AddPoint(new gp_Pnt(0, 0, 0), 0.0);
-        aCurve.AddPoint(new gp_Pnt(3, 0, 0), 3.0);
-        aCurve.InsertPoint(1, new gp_Pnt(1, 0, 0), 1.0);
-        aCurve.InsertPoint(2, new gp_Pnt(2, 0, 0), 2.0);
+        aCurve.AddPoint(new Point3D(0, 0, 0), 0.0);
+        aCurve.AddPoint(new Point3D(3, 0, 0), 3.0);
+        aCurve.InsertPoint(1, new Point3D(1, 0, 0), 1.0);
+        aCurve.InsertPoint(2, new Point3D(2, 0, 0), 2.0);
         Assert.Equal(4, aCurve.ParametersNb());
         for (int i = 0; i < 4; i++)
         {
@@ -110,21 +112,21 @@ public class BRepMeshDataTests
         aCurve.Clear(false);
         Assert.Equal(0, aCurve.ParametersNb());
 
-        BRepMeshData_Face aDFace = new(new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).Face());
+        BRepMeshData_Face aDFace = new(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face());
         var aPCurve = new BRepMeshData_PCurve(aDFace, TopAbs_REVERSED);
         Assert.False(aPCurve.IsForward());
         Assert.False(aPCurve.IsInternal());
         Assert.Same(aDFace, aPCurve.GetFace());
-        aPCurve.AddPoint(new gp_Pnt2d(0, 0), 0.0);
-        aPCurve.AddPoint(new gp_Pnt2d(1, 0), 1.0);
-        aPCurve.InsertPoint(1, new gp_Pnt2d(0.5, 0), 0.5);
+        aPCurve.AddPoint(new Point2D(0, 0), 0.0);
+        aPCurve.AddPoint(new Point2D(1, 0), 1.0);
+        aPCurve.InsertPoint(1, new Point2D(0.5, 0), 0.5);
         Assert.Equal(0, aPCurve.GetIndex(1));
         aPCurve.GetIndex(1) = 42;
         Assert.Equal(42, aPCurve.GetIndex(1));
         Assert.Equal(0.5, aPCurve.GetPoint(1).X());
-        Assert.Throws<Standard_OutOfRange>(() => aPCurve.GetPoint(3));
-        Assert.Throws<Standard_OutOfRange>(() => aPCurve.GetIndex(-1));
-        Assert.Throws<Standard_OutOfRange>(() => aPCurve.GetParameter(3));
+        Assert.Throws<OutOfRangeException>(() => aPCurve.GetPoint(3));
+        Assert.Throws<OutOfRangeException>(() => aPCurve.GetIndex(-1));
+        Assert.Throws<OutOfRangeException>(() => aPCurve.GetParameter(3));
         aPCurve.RemovePoint(0);
         Assert.Equal(2, aPCurve.ParametersNb());
         Assert.Equal(42, aPCurve.GetIndex(0));
@@ -198,12 +200,12 @@ public class BRepMeshDataTests
 
         // Clear keeps the end points of the curve and of every pcurve.
         IMeshData_Edge anE = aModel.GetEdge(0);
-        anE.GetCurve().AddPoint(new gp_Pnt(), 0);
-        anE.GetCurve().AddPoint(new gp_Pnt(), 1);
-        anE.GetCurve().AddPoint(new gp_Pnt(), 2);
-        anE.GetPCurve(1).AddPoint(new gp_Pnt2d(), 0);
-        anE.GetPCurve(1).AddPoint(new gp_Pnt2d(), 1);
-        anE.GetPCurve(1).AddPoint(new gp_Pnt2d(), 2);
+        anE.GetCurve().AddPoint(new Point3D(), 0);
+        anE.GetCurve().AddPoint(new Point3D(), 1);
+        anE.GetCurve().AddPoint(new Point3D(), 2);
+        anE.GetPCurve(1).AddPoint(new Point2D(), 0);
+        anE.GetPCurve(1).AddPoint(new Point2D(), 1);
+        anE.GetPCurve(1).AddPoint(new Point2D(), 2);
         anE.Clear(true);
         Assert.Equal(2, anE.GetCurve().ParametersNb());
         Assert.Equal(2, anE.GetPCurve(1).ParametersNb());
@@ -235,13 +237,13 @@ public class BRepMeshDataTests
 
         // The pcurves of another face aren't found by this one.
         BRepMeshData_Face anOther = new(aCyl);
-        Assert.Throws<Standard_NoSuchObject>(() => aDEdge.GetPCurves(anOther));
+        Assert.Throws<NoSuchObjectException>(() => aDEdge.GetPCurves(anOther));
     }
 
     [Fact]
     public void Status_owners_combine_flags()
     {
-        BRepMeshData_Face aDFace = new(new BRepBuilderAPI_MakeFace(new gp_Pln(), 0, 1, 0, 1).Face());
+        BRepMeshData_Face aDFace = new(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face());
         Assert.True(aDFace.IsEqual(IMeshData_NoError));
         aDFace.SetStatus(IMeshData_ReMesh);
         Assert.True(aDFace.IsValid());
@@ -259,7 +261,7 @@ public class BRepMeshDataTests
         aWire.SetStatus(IMeshData_OpenWire);
         Assert.Equal((int)IMeshData_OpenWire, aWire.GetStatusMask());
 
-        IMeshData_StatusOwner anEdge = new BRepMeshData_Edge(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
+        IMeshData_StatusOwner anEdge = new BRepMeshData_Edge(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         anEdge.SetStatus(IMeshData_Reused);
         anEdge.SetStatus(IMeshData_Outdated);
         Assert.Equal(0xC0, anEdge.GetStatusMask());
@@ -270,7 +272,7 @@ public class BRepMeshDataTests
     {
         // Decision 490: IMeshData's maps keyed by IFacePtr/IEdgePtr compare by reference and iterate in insertion
         // order, whatever the objects' hash codes.
-        TopoDS_Edge anEdge = TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0));
+        TopoDS_Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         var anEdges = Enumerable.Range(0, 200).Select(_ => (IMeshData_Edge)new BRepMeshData_Edge(anEdge)).ToList();
         var aMap = new NCollection_Map<IMeshData_Edge>(ReferenceEqualityComparer.Instance);
         foreach (IMeshData_Edge aE in anEdges)
@@ -290,8 +292,8 @@ public class BRepMeshDataTests
     public void EdgeParameterProvider_scales_parameters_of_an_edge_not_SameParameter()
     {
         // A straight edge on a plane: 3D range [0, 10], pcurve range [0, 10]; stored parameters on [0, 1].
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(), -1, 11, -1, 1).Face();
-        TopoDS_Edge anEdge = TopoDS.Edge(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)));
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), -1, 11, -1, 1).Face();
+        TopoDS_Edge anEdge = TopoDS.Edge(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         BRepMeshData_Face aDFace = new(aFace);
         BRepMeshData_Edge aDEdge = new(anEdge);
         var aStored = new NCollection_HArray1<double>(1, 3);
@@ -302,22 +304,22 @@ public class BRepMeshDataTests
         // SameParameter: the stored values as they are.
         Assert.True(aDEdge.GetSameParam());
         var aSame = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, TopAbs_FORWARD, aDFace, aStored);
-        Assert.Equal(0.5, aSame.Parameter(2, new gp_Pnt(5, 0, 0)));
+        Assert.Equal(0.5, aSame.Parameter(2, new Point3D(5, 0, 0)));
         Assert.NotNull(aSame.GetPCurve());
 
         // Not SameParameter: scaled to the pcurve's range and refined by projection.
         aDEdge.SetSameParam(false);
         var aScaled = new BRepMesh_EdgeParameterProvider<NCollection_HArray1<double>>(aDEdge, TopAbs_FORWARD, aDFace, aStored);
-        Assert.Equal(0.0, aScaled.Parameter(1, new gp_Pnt(0, 0, 0)), 1e-12);
-        Assert.Equal(5.0, aScaled.Parameter(2, new gp_Pnt(5, 0, 0)), 1e-9);
-        Assert.Equal(10.0, aScaled.Parameter(3, new gp_Pnt(10, 0, 0)), 1e-9);
+        Assert.Equal(0.0, aScaled.Parameter(1, new Point3D(0, 0, 0)), 1e-12);
+        Assert.Equal(5.0, aScaled.Parameter(2, new Point3D(5, 0, 0)), 1e-9);
+        Assert.Equal(10.0, aScaled.Parameter(3, new Point3D(10, 0, 0)), 1e-9);
 
         // Over a discrete curve through its array adaptor
         var aCurve = new BRepMeshData_Curve();
-        aCurve.AddPoint(new gp_Pnt(0, 0, 0), 0.0);
-        aCurve.AddPoint(new gp_Pnt(10, 0, 0), 10.0);
+        aCurve.AddPoint(new Point3D(0, 0, 0), 0.0);
+        aCurve.AddPoint(new Point3D(10, 0, 0), 10.0);
         var aProvider = new BRepMesh_EdgeParameterProvider<IMeshData_ParametersListArrayAdaptor<IMeshData_Curve>>();
         aProvider.Init(aDEdge, TopAbs_FORWARD, aDFace, new IMeshData_ParametersListArrayAdaptor<IMeshData_Curve>(aCurve));
-        Assert.Equal(10.0, aProvider.Parameter(1, new gp_Pnt(10, 0, 0)), 1e-9);
+        Assert.Equal(10.0, aProvider.Parameter(1, new Point3D(10, 0, 0)), 1e-9);
     }
 }

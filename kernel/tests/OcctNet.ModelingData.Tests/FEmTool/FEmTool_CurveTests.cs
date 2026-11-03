@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -37,7 +40,7 @@ public class FEmTool_CurveTests
 
     private static FEmTool_Curve MakeCurve()
     {
-        PLib_HermitJacobi aBase = new(WorkDegree, GeomAbs_C1);
+        global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C1);
         FEmTool_Curve aCurve = new(2, 2, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aCurve.Knots();
         aKnots[1] = 0;
@@ -113,9 +116,9 @@ public class FEmTool_CurveTests
 
         aCurve.SetDegree(2, 5);
         Assert.Equal(5, aCurve.Degree(2));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aCurve.SetDegree(2, WorkDegree + 1));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aCurve.SetElement(3, anElement));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aCurve.GetElement(0, anElement));
+        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.SetDegree(2, WorkDegree + 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.SetElement(3, anElement));
+        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.GetElement(0, anElement));
     }
 
     [Fact]
@@ -139,7 +142,7 @@ public class FEmTool_CurveTests
     public void Curve_length()
     {
         // A straight line P(U) = (U, 2U), as cubic elements
-        PLib_HermitJacobi aBase = new(WorkDegree, GeomAbs_C1);
+        global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C1);
         FEmTool_Curve aLine = new(2, 3, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aLine.Knots();
         aKnots[1] = 0;
@@ -168,7 +171,7 @@ public class FEmTool_CurveTests
         Assert.Equal(3 * aSqrt5, aLength, 1e-12);
         aLine.Length(0, 4, out aLength);
         Assert.Equal(4 * aSqrt5, aLength, 1e-12);
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aLine.Length(2, 1, out _));
+        Assert.ThrowsAny<OutOfRangeException>(() => aLine.Length(2, 1, out _));
     }
 
     private static NCollection_HArray2<double> CriterionCoeffs(double a, double b)
@@ -189,9 +192,9 @@ public class FEmTool_CurveTests
 
         FEmTool_ElementaryCriterion[] aCriteria =
         [
-            new FEmTool_LinearTension(WorkDegree, GeomAbs_C1),
-            new FEmTool_LinearFlexion(WorkDegree, GeomAbs_C1),
-            new FEmTool_LinearJerk(WorkDegree, GeomAbs_C1),
+            new FEmTool_LinearTension(WorkDegree, C1),
+            new FEmTool_LinearFlexion(WorkDegree, C1),
+            new FEmTool_LinearJerk(WorkDegree, C1),
         ];
         double[] anExpected = [aTension, aFlexion, aJerk];
         for (int c = 0; c < 3; c++)
@@ -206,13 +209,13 @@ public class FEmTool_CurveTests
             Assert.Equal(1, aDep[1, 1]);
             Assert.Equal(0, aDep[1, 2]);
             Assert.Equal(1, aDep[2, 2]);
-            Assert.ThrowsAny<Standard_DomainError>(() => aCriterion.Hessian(1, 2, new math_Matrix(0, WorkDegree, 0, WorkDegree)));
+            Assert.ThrowsAny<DomainErrorException>(() => aCriterion.Hessian(1, 2, new Matrix(0, WorkDegree, 0, WorkDegree)));
 
             // Value = 1/2 sum over the dimensions of tX H X, and G = H X
             double aSum = 0;
             for (int dim = 1; dim <= 2; dim++)
             {
-                math_Matrix aH = new(0, WorkDegree, 0, WorkDegree);
+                Matrix aH = new(0, WorkDegree, 0, WorkDegree);
                 aCriterion.Hessian(dim, dim, aH);
                 math_Vector aG = new(0, WorkDegree);
                 aCriterion.Gradient(dim, aG);
@@ -246,9 +249,9 @@ public class FEmTool_CurveTests
         aCoeffs[3, 1] = 1;
         aCoeffs[3, 2] = 2;
 
-        FEmTool_LinearTension aTension = new(WorkDegree, GeomAbs_C1);
-        FEmTool_LinearFlexion aFlexion = new(WorkDegree, GeomAbs_C1);
-        FEmTool_LinearJerk aJerk = new(WorkDegree, GeomAbs_C1);
+        FEmTool_LinearTension aTension = new(WorkDegree, C1);
+        FEmTool_LinearFlexion aFlexion = new(WorkDegree, C1);
+        FEmTool_LinearJerk aJerk = new(WorkDegree, C1);
         foreach (FEmTool_ElementaryCriterion aCriterion in new FEmTool_ElementaryCriterion[] { aTension, aFlexion, aJerk })
         {
             aCriterion.Set(aCoeffs);
@@ -264,10 +267,10 @@ public class FEmTool_CurveTests
     {
         // OCCT keeps the reference integrals of the last order only; the port caches each order. The results are
         // the same whatever the order of construction.
-        double Tension(GeomAbs_Shape theOrder)
+        double Tension(Continuity theOrder)
         {
             // The line P(U) = U on [0, 1], in the Hermite part of the order's base
-            int aNiv = PLib.NivConstr(theOrder);
+            int aNiv = global::Kerf.Engine.Numerics.Polynomials.PLib.NivConstr(theOrder);
             NCollection_HArray2<double> aCoeffs = new(0, 10, 1, 1, 0.0);
             aCoeffs[0, 1] = 0;
             aCoeffs[aNiv + 1, 1] = 1;
@@ -281,20 +284,20 @@ public class FEmTool_CurveTests
             aCriterion.Set(0.0, 1.0);
             return aCriterion.Value();
         }
-        Assert.Equal(1.0, Tension(GeomAbs_C0), 1e-12);
-        Assert.Equal(1.0, Tension(GeomAbs_C2), 1e-12);
-        Assert.Equal(1.0, Tension(GeomAbs_C1), 1e-12);
-        Assert.Equal(1.0, Tension(GeomAbs_C0), 1e-12);
+        Assert.Equal(1.0, Tension(C0), 1e-12);
+        Assert.Equal(1.0, Tension(C2), 1e-12);
+        Assert.Equal(1.0, Tension(C1), 1e-12);
+        Assert.Equal(1.0, Tension(C0), 1e-12);
 
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new FEmTool_LinearJerk(15, GeomAbs_C1));
-        FEmTool_LinearTension anUnset = new(5, GeomAbs_C0);
-        Assert.ThrowsAny<Standard_DomainError>(() => anUnset.DependenceTable());
+        Assert.ThrowsAny<ConstructionErrorException>(() => new FEmTool_LinearJerk(15, C1));
+        FEmTool_LinearTension anUnset = new(5, C0);
+        Assert.ThrowsAny<DomainErrorException>(() => anUnset.DependenceTable());
     }
 
     [Fact]
     public void ElementsOfRefMatrix_are_products_of_derivatives()
     {
-        PLib_HermitJacobi aBase = new(6, GeomAbs_C1);
+        global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(6, C1);
         for (int aDer = 0; aDer <= 3; aDer++)
         {
             FEmTool_ElementsOfRefMatrix anElem = new(aBase, aDer);
@@ -315,9 +318,9 @@ public class FEmTool_CurveTests
                     Assert.Equal(aB[i] * aB[j], aF[k++], 1e-12);
                 }
             }
-            Assert.ThrowsAny<Standard_OutOfRange>(() => anElem.Value(aX, new math_Vector(1, 27)));
+            Assert.ThrowsAny<OutOfRangeException>(() => anElem.Value(aX, new math_Vector(1, 27)));
         }
-        Assert.ThrowsAny<Standard_ConstructionError>(() => new FEmTool_ElementsOfRefMatrix(aBase, 4));
+        Assert.ThrowsAny<ConstructionErrorException>(() => new FEmTool_ElementsOfRefMatrix(aBase, 4));
     }
 
     [Fact]
@@ -327,7 +330,7 @@ public class FEmTool_CurveTests
         // just before the element's block (occt-issues.md). The port gives zero for the first element (OCCT reads
         // before the array) and the previous element's top second-derivative coefficients for the others.
         // A C0 base, where FEmTool_Curve::ReduceDegree may leave degree 1 elements; arbitrary coefficients.
-        PLib_HermitJacobi aBase = new(WorkDegree, GeomAbs_C0);
+        global::Kerf.Engine.Numerics.Polynomials.HermitJacobi aBase = new(WorkDegree, C0);
         FEmTool_Curve aCurve = new(2, 2, aBase, 1e-7);
         NCollection_Array1<double> aKnots = aCurve.Knots();
         aKnots[1] = 0;

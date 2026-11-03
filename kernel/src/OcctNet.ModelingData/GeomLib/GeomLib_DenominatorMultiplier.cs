@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Splines;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -33,9 +39,9 @@ public sealed class GeomLib_DenominatorMultiplier
     {
         double Dumaxv, Duminv, dDduumaxv, dDduuminv, Dv, Buv = 0.0;
         // gp_Pnt         HermPnt;
-        gp_Pnt N;
-        gp_Vec Nu, Nv;
-        NCollection_Array2<gp_Pnt> surface_poles = mySurface.InternalPoles();
+        Point3D N;
+        Vector3D Nu, Nv;
+        NCollection_Array2<Point3D> surface_poles = mySurface.InternalPoles();
         NCollection_Array2<double>? surface_weights = mySurface.InternalWeights();
         NCollection_Array1<double> surface_u_knots = mySurface.InternalUKnots();
         NCollection_Array1<int> surface_u_mults = mySurface.InternalUMultiplicities();
@@ -43,7 +49,7 @@ public sealed class GeomLib_DenominatorMultiplier
         NCollection_Array1<int> surface_v_mults = mySurface.InternalVMultiplicities();
         int udegree = mySurface.UDegree();
         int vdegree = mySurface.VDegree();
-        BSplSLib.HomogeneousD1(mySurface.UKnot(mySurface.LastUKnotIndex()),
+        SurfaceBSplSLib.HomogeneousD1(mySurface.UKnot(mySurface.LastUKnotIndex()),
                                VParameter,
                                0,
                                0,
@@ -65,7 +71,7 @@ public sealed class GeomLib_DenominatorMultiplier
                                out Dumaxv,
                                out dDduumaxv,
                                out Dv);
-        BSplSLib.HomogeneousD1(mySurface.UKnot(1),
+        SurfaceBSplSLib.HomogeneousD1(mySurface.UKnot(1),
                                VParameter,
                                0,
                                0,
@@ -87,17 +93,17 @@ public sealed class GeomLib_DenominatorMultiplier
                                out Duminv,
                                out dDduuminv,
                                out Dv);
-        math_Matrix BSplineBasisDeriv = new(1, 2, 1, 4, 0.0);
+        Matrix BSplineBasisDeriv = new(1, 2, 1, 4, 0.0);
         double B1prim0, Bprelastprim1,
           lambda = (mySurface.Weight(1, 1) / mySurface.Weight(mySurface.NbUPoles(), 1));
         int index, i;
 
-        BSplCLib.EvalBsplineBasis(1, 4, myKnotFlatVector, 0.0, out index, BSplineBasisDeriv);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(1, 4, myKnotFlatVector, 0.0, out index, BSplineBasisDeriv);
         B1prim0 = BSplineBasisDeriv[2, 2];
-        BSplCLib.EvalBsplineBasis(1, 4, myKnotFlatVector, 1.0, out index, BSplineBasisDeriv);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(1, 4, myKnotFlatVector, 1.0, out index, BSplineBasisDeriv);
         Bprelastprim1 = BSplineBasisDeriv[2, 3];
-        math_Matrix BSplineBasisValue = new(1, 1, 1, 4, 0.0);
-        BSplCLib.EvalBsplineBasis(0, 4, myKnotFlatVector, UParameter, out index, BSplineBasisValue);
+        Matrix BSplineBasisValue = new(1, 1, 1, 4, 0.0);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.EvalBsplineBasis(0, 4, myKnotFlatVector, UParameter, out index, BSplineBasisValue);
         NCollection_Array1<double> value = new(0, 5);
         NCollection_Array1<double> Polesenv = new(0, 5); // poles of a(u,v)
         for (i = 0; i <= 5; i++)

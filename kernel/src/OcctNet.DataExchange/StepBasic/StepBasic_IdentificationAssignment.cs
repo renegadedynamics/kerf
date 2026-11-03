@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity IdentificationAssignment
 /// </summary>
-public class StepBasic_IdentificationAssignment : Standard_Transient
+public class StepBasic_IdentificationAssignment : Transient
 {
     private TCollection_HAsciiString theAssignedId;
     private StepBasic_IdentificationRole theRole;

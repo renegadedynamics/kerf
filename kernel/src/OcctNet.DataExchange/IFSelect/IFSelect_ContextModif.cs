@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -79,7 +81,7 @@ public class IFSelect_ContextModif
         }
         for (list.Start(); list.More(); list.Next())
         {
-            Standard_Transient start;
+            Transient start;
             start = list.Value();
             int num = thegraf.EntityNumber(start);
             if (num > nb || num < 0)
@@ -188,7 +190,7 @@ public class IFSelect_ContextModif
     /// <summary>
     /// Returns True if a starting item has been transferred
     /// </summary>
-    public bool IsTransferred(Standard_Transient? ent)
+    public bool IsTransferred(Transient? ent)
     {
         if (themap is null)
         {
@@ -200,7 +202,7 @@ public class IFSelect_ContextModif
     /// <summary>
     /// Returns True if a starting item has been transferred and selected
     /// </summary>
-    public bool IsSelected(Standard_Transient? ent)
+    public bool IsSelected(Transient? ent)
     {
         //  Select already verified "IsTransferred"
         int num = thegraf.EntityNumber(ent);
@@ -239,7 +241,7 @@ public class IFSelect_ContextModif
         int nb = thelist.Length;
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient newent = null;
+            Transient newent = null;
             if (themap is null)
             {
                 newent = thegraf.Entity(i);
@@ -314,11 +316,11 @@ public class IFSelect_ContextModif
     /// <summary>
     /// Returns the current selected item in the original model
     /// </summary>
-    public Standard_Transient? ValueOriginal()
+    public Transient? ValueOriginal()
     {
         if (thecurr <= 0)
         {
-            throw new Standard_NoSuchObject("IFSelect_ContextModif");
+            throw new NoSuchObjectException("IFSelect_ContextModif");
         }
         return thegraf.Entity(thecurr);
     }
@@ -326,13 +328,13 @@ public class IFSelect_ContextModif
     /// <summary>
     /// Returns the result counterpart of current selected item (in the target model)
     /// </summary>
-    public Standard_Transient? ValueResult()
+    public Transient? ValueResult()
     {
         if (thecurr <= 0)
         {
-            throw new Standard_NoSuchObject("IFSelect_ContextModif");
+            throw new NoSuchObjectException("IFSelect_ContextModif");
         }
-        Standard_Transient ent, newent;
+        Transient ent, newent;
         ent = thegraf.Entity(thecurr);
         if (themap is null)
         {
@@ -358,7 +360,7 @@ public class IFSelect_ContextModif
             return;
         }
 
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         sout.Append("---   Run Modifier:");
         sout.Append('\n');
         IFSelect_Selection sel = modif.Selection();
@@ -410,7 +412,7 @@ public class IFSelect_ContextModif
         {
             return;
         }
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
         if (ValueOriginal() == ValueResult())
         {
             sout.Append("--  ContextModif. Entity  n0 ");
@@ -444,7 +446,7 @@ public class IFSelect_ContextModif
         {
             return;
         }
-        Standard_Transient ent = check.Entity();
+        Transient ent = check.Entity();
         int num = thegraf.EntityNumber(ent);
         if (num == 0 && ent is not null)
         {
@@ -457,7 +459,7 @@ public class IFSelect_ContextModif
     /// Adds a Warning Message for an Entity from the original Model If &lt;start&gt; is not an Entity from the
     /// original model (e.g. the model itself) this message is added to Global Check.
     /// </summary>
-    public void AddWarning(Standard_Transient? start, string mess, string orig = "")
+    public void AddWarning(Transient? start, string mess, string orig = "")
     {
         thechek.CCheck(thegraf.EntityNumber(start)).AddWarning(mess, orig);
     }
@@ -466,7 +468,7 @@ public class IFSelect_ContextModif
     /// Adds a Fail Message for an Entity from the original Model If &lt;start&gt; is not an Entity from the
     /// original model (e.g. the model itself) this message is added to Global Check.
     /// </summary>
-    public void AddFail(Standard_Transient? start, string mess, string orig = "")
+    public void AddFail(Transient? start, string mess, string orig = "")
     {
         thechek.CCheck(thegraf.EntityNumber(start)).AddFail(mess, orig);
     }
@@ -490,7 +492,7 @@ public class IFSelect_ContextModif
     /// Returns a Check attached to an Entity from the original Model It can then be acknowledged on the spot, in
     /// condition that the caller works by reference ("Interface_Check&amp; check = ...")
     /// </summary>
-    public Interface_Check? CCheck(Standard_Transient? ent)
+    public Interface_Check? CCheck(Transient? ent)
     {
         int num = thegraf.EntityNumber(ent);
         if (num == 0)

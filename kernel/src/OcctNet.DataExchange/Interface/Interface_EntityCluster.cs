@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +17,7 @@ namespace Occt;
 /// very little count. It is designed for a light management. Remark that a new Item may not be Null, because
 /// this is the criterium used for "End of List"
 /// </summary>
-public class Interface_EntityCluster : Standard_Transient
+public class Interface_EntityCluster : Transient
 {
 
     /// <summary>
@@ -28,7 +30,7 @@ public class Interface_EntityCluster : Standard_Transient
     /// <summary>
     /// Creates a non-chained EntityCluster, filled with one Entity
     /// </summary>
-    public Interface_EntityCluster(Standard_Transient? ent)
+    public Interface_EntityCluster(Transient? ent)
     {
         theents[0] = ent;
     }
@@ -45,7 +47,7 @@ public class Interface_EntityCluster : Standard_Transient
     /// Creates an EntityCluster, filled with a first Entity, and chained to another EntityCluster (BEFORE it, as
     /// above)
     /// </summary>
-    public Interface_EntityCluster(Standard_Transient? ent, Interface_EntityCluster? ec)
+    public Interface_EntityCluster(Transient? ent, Interface_EntityCluster? ec)
     {
         theents[0] = ent;
         thenext = ec;
@@ -55,11 +57,11 @@ public class Interface_EntityCluster : Standard_Transient
     /// Appends an Entity to the Cluster. If it is not full, adds the entity directly inside itself. Else,
     /// transmits to its Next and Creates it if it does not yet exist
     /// </summary>
-    public void Append(Standard_Transient? ent)
+    public void Append(Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityCluster Append");
+            throw new NullObjectException("Interface_EntityCluster Append");
         }
         if (theents[0] is null)
         {
@@ -99,11 +101,11 @@ public class Interface_EntityCluster : Standard_Transient
     /// Removes an Entity from the Cluster. If it is not found, calls its Next one to do so. Returns True if it
     /// becomes itself empty, False else (thus, a Cluster which becomes empty is deleted from the list)
     /// </summary>
-    public bool Remove(Standard_Transient? ent)
+    public bool Remove(Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityCluster Remove");
+            throw new NullObjectException("Interface_EntityCluster Remove");
         }
         int i;
         //  Is <ent> here? if yes, we have its rank
@@ -150,14 +152,14 @@ public class Interface_EntityCluster : Standard_Transient
     {
         if (num < 1)
         {
-            throw new Standard_OutOfRange("EntityCluster : Remove");
+            throw new OutOfRangeException("EntityCluster : Remove");
         }
         int n = NbLocal();
         if (num > n)
         {
             if (thenext is null)
             {
-                throw new Standard_OutOfRange("EntityCluster : Remove");
+                throw new OutOfRangeException("EntityCluster : Remove");
             }
             bool res = thenext.Remove(num - n);
             if (res)
@@ -192,12 +194,12 @@ public class Interface_EntityCluster : Standard_Transient
     /// <summary>
     /// Returns the Entity identified by its rank in the list (including Next)
     /// </summary>
-    public Standard_Transient? Value(int num)
+    public Transient? Value(int num)
     {
         int nb = NbLocal(), aLocalNum = num;
         if (num <= 0)
         {
-            throw new Standard_OutOfRange("Interface EntityCluster : Value");
+            throw new OutOfRangeException("Interface EntityCluster : Value");
         }
         if (num > nb)
         {
@@ -207,7 +209,7 @@ public class Interface_EntityCluster : Standard_Transient
             {
                 if (!aCurEntClust.HasNext())
                 {
-                    throw new Standard_OutOfRange("Interface EntityCluster : Value");
+                    throw new OutOfRangeException("Interface EntityCluster : Value");
                 }
                 aCurEntClust = aCurEntClust.thenext;
                 aLocalNum -= nb; // OCCT: the first cluster's count, not the current one's (equal while clusters are full)
@@ -220,16 +222,16 @@ public class Interface_EntityCluster : Standard_Transient
     /// <summary>
     /// Changes an Entity given its rank.
     /// </summary>
-    public void SetValue(int num, Standard_Transient? ent)
+    public void SetValue(int num, Transient? ent)
     {
         if (ent is null)
         {
-            throw new Standard_NullObject("Interface_EntityCluster SetValue");
+            throw new NullObjectException("Interface_EntityCluster SetValue");
         }
         int nb = NbLocal(), aLocalNum = num;
         if (num <= 0)
         {
-            throw new Standard_OutOfRange("Interface EntityCluster : SetValue");
+            throw new OutOfRangeException("Interface EntityCluster : SetValue");
         }
         if (num > nb)
         {
@@ -239,7 +241,7 @@ public class Interface_EntityCluster : Standard_Transient
             {
                 if (thenext is null) // OCCT: tests this cluster's next, not the current one's
                 {
-                    throw new Standard_OutOfRange("Interface EntityCluster : SetValue");
+                    throw new OutOfRangeException("Interface EntityCluster : SetValue");
                 }
                 aCurEntClust = aCurEntClust.thenext;
                 aLocalNum -= nb; // OCCT: the first cluster's count, not the current one's (equal while clusters are full)
@@ -335,6 +337,6 @@ public class Interface_EntityCluster : Standard_Transient
     }
 
 
-    private readonly Standard_Transient?[] theents = new Standard_Transient?[4];
+    private readonly Transient?[] theents = new Transient?[4];
     private Interface_EntityCluster? thenext;
 }

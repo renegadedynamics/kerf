@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
 using System.Globalization;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -111,8 +112,8 @@ internal static class ReconComparison
         {
             foreach (TopoDS_Shape aF in aCoup.NewFaces(iF))
             {
-                BRepLib.SameParameter(aF, Precision.Confusion(), true);
-                ShapeFix.SameParameter(aF, false, Precision.Confusion());
+                BRepLib.SameParameter(aF, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+                ShapeFix.SameParameter(aF, false, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
         return new Run(anInput, aHDS, aCoup, aResult);
@@ -218,10 +219,10 @@ internal static class ReconComparison
             d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine))
                   + (ok1 ? "" : " native " + Faults(aNative)));
         }
-        Bnd_Box b1 = new(), b2 = new();
+        Box b1 = new(), b2 = new();
         BRepBndLib.AddOptimal(aNative, ref b1, false, false);
         BRepBndLib.AddOptimal(aMine, ref b2, false, false);
-        if (!b1.IsVoid() && !b2.IsVoid())
+        if (!b1.IsVoid && !b2.IsVoid)
         {
             b1.Get(out double x1, out double y1, out double z1, out double X1, out double Y1, out double Z1);
             b2.Get(out double x2, out double y2, out double z2, out double X2, out double Y2, out double Z2);

@@ -4,7 +4,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.TopAbs_State;
 
@@ -158,19 +162,19 @@ public partial class IntPatch_Intersection
 
         switch (S1.GetType())
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Sphere:
-            case GeomAbs_Cone:
-            case GeomAbs_Torus:
+            case Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 break;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
-                gp_Dir aDirection = S1.Direction();
-                gp_Ax3 anAxis = new(gp.Origin(), aDirection);
+                Direction3D aDirection = S1.Direction();
+                CoordinateSystem anAxis = new(Constants.Origin(), aDirection);
                 Adaptor3d_Curve aBasisCurve = S1.BasisCurve();
                 ProjLib_ProjectOnPlane Projector = new(anAxis);
-                Projector.Load(aBasisCurve, Precision.Confusion());
+                Projector.Load(aBasisCurve, global::Kerf.Engine.Foundation.Precision.Confusion());
                 GeomAdaptor_Curve aProjCurve = Projector.GetResult()!;
                 Geom_Plane aPlane = new(anAxis);
                 GeomAdaptor_Surface aGAHsurf = new(aPlane);
@@ -178,7 +182,7 @@ public partial class IntPatch_Intersection
                 ProjLib.MakePCurveOfType(aProjectedCurve, out Geom2d_Curve aPCurve);
                 Geom2dAdaptor_Curve AC = new(aPCurve, aProjectedCurve.FirstParameter(),
                                              aProjectedCurve.LastParameter());
-                Geom2dInt_GInter Intersector = new(AC, Precision.Confusion(), Precision.Confusion());
+                Geom2dInt_GInter Intersector = new(AC, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (Intersector.IsDone() && (Intersector.IsEmpty() || (AC.IsClosed() && Intersector.NbPoints() == 1)))
                 {
                     break;
@@ -218,11 +222,11 @@ public partial class IntPatch_Intersection
     {
         myTolArc = TolArc;
         myTolTang = TolTang;
-        if (myFleche <= Precision.PConfusion())
+        if (myFleche <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             myFleche = 0.01;
         }
-        if (myUVMaxStep <= Precision.PConfusion())
+        if (myUVMaxStep <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             myUVMaxStep = 0.01;
         }
@@ -234,45 +238,45 @@ public partial class IntPatch_Intersection
         tgte = false;
         oppo = false;
 
-        GeomAbs_SurfaceType typs1 = theS1.GetType();
-        GeomAbs_SurfaceType typs2 = theS2.GetType();
+        SurfaceKind typs1 = theS1.GetType();
+        SurfaceKind typs2 = theS2.GetType();
 
         // treatment of the cases with cone or torus
         bool TreatAsBiParametric = false;
         int bGeomGeom = 0;
         //
-        if (typs1 == GeomAbs_Cone || typs2 == GeomAbs_Cone || typs1 == GeomAbs_Torus || typs2 == GeomAbs_Torus)
+        if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
         {
-            gp_Ax1 aCTAx = new(), aGeomAx = new();
-            GeomAbs_SurfaceType aCTType;
+            Axis3D aCTAx = new(), aGeomAx = new();
+            SurfaceKind aCTType;
             bool bToCheck;
             //
-            Adaptor3d_Surface aCTSurf = (typs1 == GeomAbs_Cone || typs1 == GeomAbs_Torus) ? theS1 : theS2;
-            Adaptor3d_Surface aGeomSurf = (typs1 == GeomAbs_Cone || typs1 == GeomAbs_Torus) ? theS2 : theS1;
+            Adaptor3d_Surface aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
+            Adaptor3d_Surface aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
             //
             aCTType = aCTSurf.GetType();
             bToCheck = false;
             //
-            if (typs1 == GeomAbs_Cone || typs2 == GeomAbs_Cone)
+            if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                gp_Cone aCon1 = (aCTType == GeomAbs_Cone) ? aCTSurf.Cone() : aGeomSurf.Cone();
+                Cone aCon1 = (aCTType == global::Kerf.Geometry.SurfaceKind.Cone) ? aCTSurf.Cone() : aGeomSurf.Cone();
                 double a1 = Math.Abs(aCon1.SemiAngle());
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
-                    gp_Cone aCon2 = aGeomSurf.Cone();
+                    Cone aCon2 = aGeomSurf.Cone();
                     double a2 = Math.Abs(aCon2.SemiAngle());
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
                     if (a1 > 1.55 && a2 > 1.55)
                     { // quasi-planes: if same domain, treat as canonic
-                        gp_Ax1 A1 = aCon1.Axis(), A2 = aCon2.Axis();
-                        if (A1.IsParallel(A2, Precision.Angular()))
+                        Axis3D A1 = aCon1.Axis(), A2 = aCon2.Axis();
+                        if (A1.IsParallel(A2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Pnt Apex1 = aCon1.Apex(), Apex2 = aCon2.Apex();
-                            gp_Pln Plan1 = new(Apex1, A1.Direction());
-                            if (Plan1.Distance(Apex2) <= Precision.Confusion())
+                            Point3D Apex1 = aCon1.Apex(), Apex2 = aCon2.Apex();
+                            Plane3D Plan1 = new(Apex1, A1.Direction());
+                            if (Plan1.Distance(Apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 bToCheck = false;
                             }
@@ -281,25 +285,25 @@ public partial class IntPatch_Intersection
                 }
                 //
                 TreatAsBiParametric = bToCheck;
-                if (aCTType == GeomAbs_Cone)
+                if (aCTType == global::Kerf.Geometry.SurfaceKind.Cone)
                 {
                     aCTAx = aCon1.Axis();
                 }
             }
             //
-            if (typs1 == GeomAbs_Torus || typs2 == GeomAbs_Torus)
+            if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
-                gp_Torus aTor1 = (aCTType == GeomAbs_Torus) ? aCTSurf.Torus() : aGeomSurf.Torus();
+                Torus aTor1 = (aCTType == global::Kerf.Geometry.SurfaceKind.Torus) ? aCTSurf.Torus() : aGeomSurf.Torus();
                 bToCheck = aTor1.MajorRadius() > aTor1.MinorRadius();
                 if (typs1 == typs2)
                 {
-                    gp_Torus aTor2 = aGeomSurf.Torus();
+                    Torus aTor2 = aGeomSurf.Torus();
                     // OCCT: this overload ignores aTor1's test for two tori (the list-of-points Perform combines
                     // both, and also accepts equal radii); ported as written.
                     bToCheck = aTor2.MajorRadius() > aTor2.MinorRadius();
                 }
                 //
-                if (aCTType == GeomAbs_Torus)
+                if (aCTType == global::Kerf.Geometry.SurfaceKind.Torus)
                 {
                     aCTAx = aTor1.Axis();
                 }
@@ -319,19 +323,19 @@ public partial class IntPatch_Intersection
         //   if(TreatAsBiParametric) { typs1 = typs2 = GeomAbs_BezierSurface; }
         if (TreatAsBiParametric)
         {
-            if (typs1 == GeomAbs_Cone && typs2 == GeomAbs_Plane)
+            if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone && typs2 == Plane)
             {
-                typs1 = GeomAbs_BezierSurface; // Using Imp-Prm Intersector
+                typs1 = BezierSurface; // Using Imp-Prm Intersector
             }
-            else if (typs1 == GeomAbs_Plane && typs2 == GeomAbs_Cone)
+            else if (typs1 == Plane && typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                typs2 = GeomAbs_BezierSurface; // Using Imp-Prm Intersector
+                typs2 = BezierSurface; // Using Imp-Prm Intersector
             }
             else
             {
                 // Using Prm-Prm Intersector
-                typs1 = GeomAbs_BezierSurface;
-                typs2 = GeomAbs_BezierSurface;
+                typs1 = BezierSurface;
+                typs2 = BezierSurface;
             }
         }
         //  Modified by skv - Mon Sep 26 14:58:30 2005 End
@@ -398,11 +402,11 @@ public partial class IntPatch_Intersection
     {
         myTolArc = TolArc;
         myTolTang = TolTang;
-        if (myFleche <= Precision.PConfusion())
+        if (myFleche <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             myFleche = 0.01;
         }
-        if (myUVMaxStep <= Precision.PConfusion())
+        if (myUVMaxStep <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             myUVMaxStep = 0.01;
         }
@@ -413,45 +417,45 @@ public partial class IntPatch_Intersection
         tgte = false;
         oppo = false;
 
-        GeomAbs_SurfaceType typs1 = theS1.GetType();
-        GeomAbs_SurfaceType typs2 = theS2.GetType();
+        SurfaceKind typs1 = theS1.GetType();
+        SurfaceKind typs2 = theS2.GetType();
         //
         // treatment of the cases with cone or torus
         bool TreatAsBiParametric = false;
         int bGeomGeom = 0;
         //
-        if (typs1 == GeomAbs_Cone || typs2 == GeomAbs_Cone || typs1 == GeomAbs_Torus || typs2 == GeomAbs_Torus)
+        if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
         {
-            gp_Ax1 aCTAx = new(), aGeomAx = new();
-            GeomAbs_SurfaceType aCTType;
+            Axis3D aCTAx = new(), aGeomAx = new();
+            SurfaceKind aCTType;
             bool bToCheck;
             //
-            Adaptor3d_Surface aCTSurf = (typs1 == GeomAbs_Cone || typs1 == GeomAbs_Torus) ? theS1 : theS2;
-            Adaptor3d_Surface aGeomSurf = (typs1 == GeomAbs_Cone || typs1 == GeomAbs_Torus) ? theS2 : theS1;
+            Adaptor3d_Surface aCTSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS1 : theS2;
+            Adaptor3d_Surface aGeomSurf = (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs1 == global::Kerf.Geometry.SurfaceKind.Torus) ? theS2 : theS1;
             //
             aCTType = aCTSurf.GetType();
             bToCheck = false;
             //
-            if (typs1 == GeomAbs_Cone || typs2 == GeomAbs_Cone)
+            if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                gp_Cone aCon1 = (aCTType == GeomAbs_Cone) ? aCTSurf.Cone() : aGeomSurf.Cone();
+                Cone aCon1 = (aCTType == global::Kerf.Geometry.SurfaceKind.Cone) ? aCTSurf.Cone() : aGeomSurf.Cone();
                 double a1 = Math.Abs(aCon1.SemiAngle());
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
-                    gp_Cone aCon2 = aGeomSurf.Cone();
+                    Cone aCon2 = aGeomSurf.Cone();
                     double a2 = Math.Abs(aCon2.SemiAngle());
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
                     if (a1 > 1.55 && a2 > 1.55)
                     { // quasi-planes: if same domain, treat as canonic
-                        gp_Ax1 A1 = aCon1.Axis(), A2 = aCon2.Axis();
-                        if (A1.IsParallel(A2, Precision.Angular()))
+                        Axis3D A1 = aCon1.Axis(), A2 = aCon2.Axis();
+                        if (A1.IsParallel(A2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            gp_Pnt Apex1 = aCon1.Apex(), Apex2 = aCon2.Apex();
-                            gp_Pln Plan1 = new(Apex1, A1.Direction());
-                            if (Plan1.Distance(Apex2) <= Precision.Confusion())
+                            Point3D Apex1 = aCon1.Apex(), Apex2 = aCon2.Apex();
+                            Plane3D Plan1 = new(Apex1, A1.Direction());
+                            if (Plan1.Distance(Apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 bToCheck = false;
                             }
@@ -460,25 +464,25 @@ public partial class IntPatch_Intersection
                 }
                 //
                 TreatAsBiParametric = bToCheck;
-                if (aCTType == GeomAbs_Cone)
+                if (aCTType == global::Kerf.Geometry.SurfaceKind.Cone)
                 {
                     aCTAx = aCon1.Axis();
                 }
             }
             //
-            if (typs1 == GeomAbs_Torus || typs2 == GeomAbs_Torus)
+            if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
-                gp_Torus aTor1 = (aCTType == GeomAbs_Torus) ? aCTSurf.Torus() : aGeomSurf.Torus();
+                Torus aTor1 = (aCTType == global::Kerf.Geometry.SurfaceKind.Torus) ? aCTSurf.Torus() : aGeomSurf.Torus();
                 bToCheck = aTor1.MajorRadius() > aTor1.MinorRadius();
                 if (typs1 == typs2)
                 {
-                    gp_Torus aTor2 = aGeomSurf.Torus();
+                    Torus aTor2 = aGeomSurf.Torus();
                     bToCheck = (bToCheck && (aTor2.MajorRadius() > aTor2.MinorRadius()))
                                || (Math.Abs(aTor1.MajorRadius() - aTor2.MajorRadius()) < TolTang
                                    && Math.Abs(aTor1.MinorRadius() - aTor2.MinorRadius()) < TolTang);
                 }
                 //
-                if (aCTType == GeomAbs_Torus)
+                if (aCTType == global::Kerf.Geometry.SurfaceKind.Torus)
                 {
                     aCTAx = aTor1.Axis();
                 }
@@ -497,8 +501,8 @@ public partial class IntPatch_Intersection
         if (TreatAsBiParametric)
         {
             // Using Prm-Prm Intersector
-            typs1 = GeomAbs_BezierSurface;
-            typs2 = GeomAbs_BezierSurface;
+            typs1 = BezierSurface;
+            typs2 = BezierSurface;
         }
 
         // Surface type definition
@@ -538,19 +542,19 @@ public partial class IntPatch_Intersection
     // The common tail of OCCT's two Performs above, written out in each: the switch on the type of the surface
     // that isn't the cone or the torus, then the coaxial test (decision 671's pattern for verbatim repeats).
     private static void CheckGeomGeom(ref bool bToCheck, ref int bGeomGeom, ref bool TreatAsBiParametric,
-                                      in gp_Ax1 aCTAx, ref gp_Ax1 aGeomAx, GeomAbs_SurfaceType aCTType,
+                                      in Axis3D aCTAx, ref Axis3D aGeomAx, SurfaceKind aCTType,
                                       Adaptor3d_Surface aCTSurf, Adaptor3d_Surface aGeomSurf)
     {
         if (bToCheck)
         {
-            gp_Lin aL1 = new(aCTAx);
+            Line3D aL1 = new(aCTAx);
             //
             switch (aGeomSurf.GetType())
             {
-                case GeomAbs_Plane:
+                case Plane:
                 {
                     aGeomAx = aGeomSurf.Plane().Axis();
-                    if (aCTType == GeomAbs_Cone)
+                    if (aCTType == global::Kerf.Geometry.SurfaceKind.Cone)
                     {
                         bGeomGeom = 1;
                         if (Math.Abs(aCTSurf.Cone().SemiAngle()) < 0.02)
@@ -564,9 +568,9 @@ public partial class IntPatch_Intersection
                     }
                     else
                     {
-                        if (aCTAx.IsParallel(aGeomAx, Precision.Angular())
-                            || (aCTAx.IsNormal(aGeomAx, Precision.Angular())
-                                && (aGeomSurf.Plane().Distance(aCTAx.Location()) < Precision.Confusion())))
+                        if (aCTAx.IsParallel(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
+                            || (aCTAx.IsNormal(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
+                                && (aGeomSurf.Plane().Distance(aCTAx.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())))
                         {
                             bGeomGeom = 1;
                         }
@@ -574,22 +578,22 @@ public partial class IntPatch_Intersection
                     bToCheck = false;
                     break;
                 }
-                case GeomAbs_Sphere:
+                case global::Kerf.Geometry.SurfaceKind.Sphere:
                 {
-                    if (aL1.Distance(aGeomSurf.Sphere().Location()) < Precision.Confusion())
+                    if (aL1.Distance(aGeomSurf.Sphere().Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         bGeomGeom = 1;
                     }
                     bToCheck = false;
                     break;
                 }
-                case GeomAbs_Cylinder:
+                case global::Kerf.Geometry.SurfaceKind.Cylinder:
                     aGeomAx = aGeomSurf.Cylinder().Axis();
                     break;
-                case GeomAbs_Cone:
+                case global::Kerf.Geometry.SurfaceKind.Cone:
                     aGeomAx = aGeomSurf.Cone().Axis();
                     break;
-                case GeomAbs_Torus:
+                case global::Kerf.Geometry.SurfaceKind.Torus:
                     aGeomAx = aGeomSurf.Torus().Axis();
                     break;
                 default:
@@ -599,8 +603,8 @@ public partial class IntPatch_Intersection
             //
             if (bToCheck)
             {
-                if (aCTAx.IsParallel(aGeomAx, Precision.Angular())
-                    && (aL1.Distance(aGeomAx.Location()) <= Precision.Confusion()))
+                if (aCTAx.IsParallel(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
+                    && (aL1.Distance(aGeomAx.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     bGeomGeom = 1;
                 }
@@ -614,18 +618,18 @@ public partial class IntPatch_Intersection
     }
 
     // OCCT's two "Surface type definition" switches (repeated verbatim for ts1 and ts2).
-    private static int SurfaceKind(GeomAbs_SurfaceType typs, int bGeomGeom)
+    private static int SurfaceKind(SurfaceKind typs, int bGeomGeom)
     {
         int ts = 0;
         switch (typs)
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Sphere:
-            case GeomAbs_Cone:
+            case Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
                 ts = 1;
                 break;
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 ts = bGeomGeom;
                 break;
             default:
@@ -668,8 +672,8 @@ public partial class IntPatch_Intersection
 
     private void ParamParamPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
                                   Adaptor3d_TopolTool theD2, double TolArc, double TolTang,
-                                  NCollection_List<IntSurf_PntOn2S> ListOfPnts, GeomAbs_SurfaceType typs1,
-                                  GeomAbs_SurfaceType typs2)
+                                  NCollection_List<IntSurf_PntOn2S> ListOfPnts, SurfaceKind typs1,
+                                  SurfaceKind typs2)
     {
         IntPatch_PrmPrmIntersection interpp = new();
         //
@@ -687,7 +691,7 @@ public partial class IntPatch_Intersection
         {
             if (theD1.DomainIsInfinite())
             {
-                FUN_GetMinMaxXYZPnt(theS2, out gp_Pnt pMinXYZ, out gp_Pnt pMaxXYZ);
+                FUN_GetMinMaxXYZPnt(theS2, out Point3D pMinXYZ, out Point3D pMaxXYZ);
                 double MU = Max(Math.Abs(theS2.FirstUParameter()), Math.Abs(theS2.LastUParameter()));
                 double MV = Max(Math.Abs(theS2.FirstVParameter()), Math.Abs(theS2.LastVParameter()));
                 double AP = Max(MU, MV);
@@ -696,7 +700,7 @@ public partial class IntPatch_Intersection
             }
             else
             {
-                FUN_GetMinMaxXYZPnt(theS1, out gp_Pnt pMinXYZ, out gp_Pnt pMaxXYZ);
+                FUN_GetMinMaxXYZPnt(theS1, out Point3D pMinXYZ, out Point3D pMaxXYZ);
                 double MU = Max(Math.Abs(theS1.FirstUParameter()), Math.Abs(theS1.LastUParameter()));
                 double MV = Max(Math.Abs(theS1.FirstVParameter()), Math.Abs(theS1.LastVParameter()));
                 double AP = Max(MU, MV);
@@ -706,14 +710,14 @@ public partial class IntPatch_Intersection
         } //(theD1->DomainIsInfinite()) ^ (theD2->DomainIsInfinite())
         else
         {
-            if (typs1 == GeomAbs_OtherSurface || typs2 == GeomAbs_OtherSurface)
+            if (typs1 == OtherSurface || typs2 == OtherSurface)
             {
                 done = false;
                 return;
             }
 
-            NCollection_Sequence<gp_Pnt> sop = new();
-            FUN_PL_Intersection(theS1, typs1, theS2, typs2, out bool IsPLInt, sop, out gp_Vec v);
+            NCollection_Sequence<Point3D> sop = new();
+            FUN_PL_Intersection(theS1, typs1, theS2, typs2, out bool IsPLInt, sop, out Vector3D v);
 
             if (IsPLInt)
             {
@@ -721,7 +725,7 @@ public partial class IntPatch_Intersection
                 {
                     for (int ip = 1; ip <= sop.Length(); ip++)
                     {
-                        gp_Lin lin = new(sop.Value(ip), new gp_Dir(v));
+                        Line3D lin = new(sop.Value(ip), new Direction3D(v));
                         IntPatch_Line gl = new IntPatch_GLine(lin, false);
                         slin.Append(gl);
                     }
@@ -772,8 +776,8 @@ public partial class IntPatch_Intersection
 
     private void GeomGeomPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
                                 Adaptor3d_TopolTool theD2, double TolArc, double TolTang,
-                                NCollection_List<IntSurf_PntOn2S> ListOfPnts, GeomAbs_SurfaceType theTyps1,
-                                GeomAbs_SurfaceType theTyps2, bool theIsReqToKeepRLine)
+                                NCollection_List<IntSurf_PntOn2S> ListOfPnts, SurfaceKind theTyps1,
+                                SurfaceKind theTyps2, bool theIsReqToKeepRLine)
     {
         IntPatch_ImpImpIntersection interii = new(theS1, theD1, theS2, theD2, myTolArc, myTolTang,
                                                   theIsReqToKeepRLine);
@@ -831,52 +835,52 @@ public partial class IntPatch_Intersection
             spnt.Append(interii.Point(i));
         }
 
-        if ((theTyps1 == GeomAbs_Cylinder) && (theTyps2 == GeomAbs_Cylinder))
+        if ((theTyps1 == global::Kerf.Geometry.SurfaceKind.Cylinder) && (theTyps2 == global::Kerf.Geometry.SurfaceKind.Cylinder))
         {
             IntPatch_WLineTool.JoinWLines(slin, spnt, theS1, theS2, TolTang);
         }
 
         if (isWLExist)
         {
-            Bnd_Box2d aBx1 = new(), aBx2 = new();
+            Box2d aBx1 = new(), aBx2 = new();
             double aU1F = theS1.FirstUParameter(), aU1L = theS1.LastUParameter(),
                    aV1F = theS1.FirstVParameter(), aV1L = theS1.LastVParameter(),
                    aU2F = theS2.FirstUParameter(), aU2L = theS2.LastUParameter(),
                    aV2F = theS2.FirstVParameter(), aV2L = theS2.LastVParameter();
-            aBx1.Add(new gp_Pnt2d(aU1F, aV1F));
-            aBx1.Add(new gp_Pnt2d(aU1L, aV1F));
-            aBx1.Add(new gp_Pnt2d(aU1L, aV1L));
-            aBx1.Add(new gp_Pnt2d(aU1F, aV1L));
-            aBx2.Add(new gp_Pnt2d(aU2F, aV2F));
-            aBx2.Add(new gp_Pnt2d(aU2L, aV2F));
-            aBx2.Add(new gp_Pnt2d(aU2L, aV2L));
-            aBx2.Add(new gp_Pnt2d(aU2F, aV2L));
+            aBx1.Add(new Point2D(aU1F, aV1F));
+            aBx1.Add(new Point2D(aU1L, aV1F));
+            aBx1.Add(new Point2D(aU1L, aV1L));
+            aBx1.Add(new Point2D(aU1F, aV1L));
+            aBx2.Add(new Point2D(aU2F, aV2F));
+            aBx2.Add(new Point2D(aU2L, aV2F));
+            aBx2.Add(new Point2D(aU2L, aV2L));
+            aBx2.Add(new Point2D(aU2F, aV2L));
 
-            aBx1.Enlarge(Precision.PConfusion());
-            aBx2.Enlarge(Precision.PConfusion());
+            aBx1.Enlarge(global::Kerf.Engine.Foundation.Precision.PConfusion());
+            aBx2.Enlarge(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             ReadOnlySpan<double> anArrOfPeriod = [theS1.IsUPeriodic() ? theS1.UPeriod() : 0.0,
                                                   theS1.IsVPeriodic() ? theS1.VPeriod() : 0.0,
                                                   theS2.IsUPeriodic() ? theS2.UPeriod() : 0.0,
                                                   theS2.IsVPeriodic() ? theS2.VPeriod() : 0.0];
 
-            NCollection_List<gp_Pnt> aListOfCriticalPoints = new();
+            NCollection_List<Point3D> aListOfCriticalPoints = new();
 
-            if (theS1.GetType() == GeomAbs_Cone)
+            if (theS1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
                 aListOfCriticalPoints.Append(theS1.Cone().Apex());
             }
-            else if (theS1.GetType() == GeomAbs_Sphere)
+            else if (theS1.GetType() == global::Kerf.Geometry.SurfaceKind.Sphere)
             {
                 aListOfCriticalPoints.Append(theS1.Value(0.0, M_PI_2));
                 aListOfCriticalPoints.Append(theS1.Value(0.0, -M_PI_2));
             }
 
-            if (theS2.GetType() == GeomAbs_Cone)
+            if (theS2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
                 aListOfCriticalPoints.Append(theS2.Cone().Apex());
             }
-            else if (theS2.GetType() == GeomAbs_Sphere)
+            else if (theS2.GetType() == global::Kerf.Geometry.SurfaceKind.Sphere)
             {
                 aListOfCriticalPoints.Append(theS2.Value(0.0, M_PI_2));
                 aListOfCriticalPoints.Append(theS2.Value(0.0, -M_PI_2));
@@ -890,8 +894,8 @@ public partial class IntPatch_Intersection
     //=================================================================================================
 
     private void GeomParamPerfom(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1, Adaptor3d_Surface theS2,
-                                 Adaptor3d_TopolTool theD2, bool isNotAnalitical, GeomAbs_SurfaceType typs1,
-                                 GeomAbs_SurfaceType typs2)
+                                 Adaptor3d_TopolTool theD2, bool isNotAnalitical, SurfaceKind typs1,
+                                 SurfaceKind typs2)
     {
         IntPatch_ImpPrmIntersection interip = new();
         if (myIsStartPnt)
@@ -908,8 +912,8 @@ public partial class IntPatch_Intersection
 
         if (theD1.DomainIsInfinite() && theD2.DomainIsInfinite())
         {
-            NCollection_Sequence<gp_Pnt> sop = new();
-            FUN_PL_Intersection(theS1, typs1, theS2, typs2, out bool IsPLInt, sop, out gp_Vec v);
+            NCollection_Sequence<Point3D> sop = new();
+            FUN_PL_Intersection(theS1, typs1, theS2, typs2, out bool IsPLInt, sop, out Vector3D v);
 
             if (IsPLInt)
             {
@@ -917,7 +921,7 @@ public partial class IntPatch_Intersection
                 {
                     for (int ip = 1; ip <= sop.Length(); ip++)
                     {
-                        gp_Lin lin = new(sop.Value(ip), new gp_Dir(v));
+                        Line3D lin = new(sop.Value(ip), new Direction3D(v));
                         IntPatch_Line gl = new IntPatch_GLine(lin, false);
                         slin.Append(gl);
                     }
@@ -1003,12 +1007,12 @@ public partial class IntPatch_Intersection
         tgte = false;
         oppo = false;
 
-        GeomAbs_SurfaceType typs1 = S1.GetType();
-        GeomAbs_SurfaceType typs2 = S2.GetType();
+        SurfaceKind typs1 = S1.GetType();
+        SurfaceKind typs2 = S2.GetType();
 
-        if (typs1 == GeomAbs_Plane || typs1 == GeomAbs_Cylinder || typs1 == GeomAbs_Sphere || typs1 == GeomAbs_Cone
-            || typs2 == GeomAbs_Plane || typs2 == GeomAbs_Cylinder || typs2 == GeomAbs_Sphere
-            || typs2 == GeomAbs_Cone)
+        if (typs1 == Plane || typs1 == global::Kerf.Geometry.SurfaceKind.Cylinder || typs1 == global::Kerf.Geometry.SurfaceKind.Sphere || typs1 == global::Kerf.Geometry.SurfaceKind.Cone
+            || typs2 == Plane || typs2 == global::Kerf.Geometry.SurfaceKind.Cylinder || typs2 == global::Kerf.Geometry.SurfaceKind.Sphere
+            || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
         {
             myIsStartPnt = true;
             myU1Start = U1;
@@ -1064,7 +1068,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return empt;
     }
@@ -1075,7 +1079,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return tgte;
     }
@@ -1086,11 +1090,11 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (!tgte)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return oppo;
     }
@@ -1100,7 +1104,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt.Length();
     }
@@ -1110,7 +1114,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return spnt[Index];
     }
@@ -1120,7 +1124,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin.Length();
     }
@@ -1130,7 +1134,7 @@ public partial class IntPatch_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return slin[Index];
     }
@@ -1144,7 +1148,7 @@ public partial class IntPatch_Intersection
     public static bool CheckSingularPoints(Adaptor3d_Surface theS1, Adaptor3d_TopolTool theD1,
                                            Adaptor3d_Surface theS2, out double theDist)
     {
-        theDist = Precision.Infinite();
+        theDist = global::Kerf.Engine.Foundation.Precision.Infinite();
         bool isSingular = false;
         if (ReferenceEquals(theS1, theS2))
         {
@@ -1152,7 +1156,7 @@ public partial class IntPatch_Intersection
         }
         //
         const int aNbBndPnts = 5;
-        double aTol = Precision.Confusion();
+        double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         int i;
         theD1.Init();
         bool isU = true;
@@ -1160,21 +1164,21 @@ public partial class IntPatch_Intersection
         {
             Adaptor2d_Curve2d aBnd = theD1.Value();
             double pinf = aBnd.FirstParameter(), psup = aBnd.LastParameter();
-            if (Precision.IsNegativeInfinite(pinf) || Precision.IsPositiveInfinite(psup))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(pinf) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(psup))
             {
                 continue;
             }
             double t, dt = (psup - pinf) / (aNbBndPnts - 1);
-            aBnd.D1((pinf + psup) / 2.0, out gp_Pnt2d aP1, out gp_Vec2d aDir);
+            aBnd.D1((pinf + psup) / 2.0, out Point2D aP1, out Vector2D aDir);
             isU = Math.Abs(aDir.X()) > Math.Abs(aDir.Y());
-            gp_Pnt aPP1 = new();
+            Point3D aPP1 = new();
             double aD1NormMax = 0.0;
-            gp_XYZ aPmid = new(0.0, 0.0, 0.0);
+            Xyz aPmid = new(0.0, 0.0, 0.0);
             int aNb = 0;
             for (t = pinf; t <= psup; t += dt)
             {
                 aP1 = aBnd.Value(t);
-                theS1.D1(aP1.X(), aP1.Y(), out aPP1, out gp_Vec aDU, out gp_Vec aDV);
+                theS1.D1(aP1.X(), aP1.Y(), out aPP1, out Vector3D aDU, out Vector3D aDV);
                 if (isU)
                 {
                     aD1NormMax = Max(aD1NormMax, aDU.Magnitude());
@@ -1198,7 +1202,7 @@ public partial class IntPatch_Intersection
                 // Singular point aPP1;
                 aPmid /= aNb;
                 aPP1.SetXYZ(aPmid);
-                double aTolU = Precision.PConfusion(), aTolV = Precision.PConfusion();
+                double aTolU = global::Kerf.Engine.Foundation.Precision.PConfusion(), aTolV = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 Extrema_ExtPS aProj = new(aPP1, theS2, aTolU, aTolV, Extrema_ExtFlag.Extrema_ExtFlag_MIN);
 
                 if (aProj.IsDone())
@@ -1211,7 +1215,7 @@ public partial class IntPatch_Intersection
                 }
             }
         }
-        if (!Precision.IsInfinite(theDist))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(theDist))
         {
             theDist = Math.Sqrt(theDist);
             isSingular = true;
@@ -1228,7 +1232,7 @@ public partial class IntPatch_Intersection
                                          Adaptor3d_TopolTool theD2)
     {
         double anUVMaxStep = 0.001;
-        double aTolMin = Precision.Confusion(), aTolMax = 1.0e-5;
+        double aTolMin = global::Kerf.Engine.Foundation.Precision.Confusion(), aTolMax = 1.0e-5;
         if (!ReferenceEquals(theS1, theS2))
         {
             bool isSing1 = CheckSingularPoints(theS1, theD1, theS2, out double aDistToSing1);
@@ -1263,21 +1267,21 @@ public partial class IntPatch_Intersection
     private static void splitCone(Adaptor3d_Surface theS, Adaptor3d_TopolTool theD, double theTol,
                                   NCollection_DynamicArray<Adaptor3d_Surface> theVecHS)
     {
-        if (theS.GetType() != GeomAbs_Cone)
+        if (theS.GetType() != global::Kerf.Geometry.SurfaceKind.Cone)
         {
-            throw new Standard_NoSuchObject("IntPatch_Intersection : Surface is not Cone");
+            throw new NoSuchObjectException("IntPatch_Intersection : Surface is not Cone");
         }
 
-        gp_Cone aCone = theS.Cone();
+        Cone aCone = theS.Cone();
 
         Adaptor3d_TopolTool.GetConeApexParam(aCone, out double aU0, out double aV0);
 
-        TopAbs_State aState = theD.Classify(new gp_Pnt2d(aU0, aV0), theTol);
+        TopAbs_State aState = theD.Classify(new Point2D(aU0, aV0), theTol);
 
         if (aState == TopAbs_IN || aState == TopAbs_ON)
         {
-            Adaptor3d_Surface aHSDn = theS.VTrim(theS.FirstVParameter(), aV0, Precision.PConfusion());
-            Adaptor3d_Surface aHSUp = theS.VTrim(aV0, theS.LastVParameter(), Precision.PConfusion());
+            Adaptor3d_Surface aHSDn = theS.VTrim(theS.FirstVParameter(), aV0, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            Adaptor3d_Surface aHSUp = theS.VTrim(aV0, theS.LastVParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             theVecHS.Append(aHSDn);
             theVecHS.Append(aHSUp);
@@ -1301,7 +1305,7 @@ public partial class IntPatch_Intersection
                                        NCollection_DynamicArray<Adaptor3d_Surface> theVecHS1,
                                        NCollection_DynamicArray<Adaptor3d_Surface> theVecHS2)
     {
-        if ((theS1.GetType() == GeomAbs_Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(theS1.Cone().SemiAngle())) < theTol))
+        if ((theS1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(theS1.Cone().SemiAngle())) < theTol))
         {
             splitCone(theS1, theD1, theTol, theVecHS1);
         }
@@ -1310,7 +1314,7 @@ public partial class IntPatch_Intersection
             theVecHS1.Append(theS1);
         }
 
-        if ((theS2.GetType() == GeomAbs_Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(theS2.Cone().SemiAngle())) < theTol))
+        if ((theS2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(theS2.Cone().SemiAngle())) < theTol))
         {
             splitCone(theS2, theD2, theTol, theVecHS2);
         }

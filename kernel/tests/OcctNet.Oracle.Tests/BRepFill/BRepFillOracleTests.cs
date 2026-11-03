@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -102,7 +105,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
     private void CompareShapes(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in TopoDS_Shape thePort)
     {
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen())
+        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
         {
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
         }
@@ -154,7 +157,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         {
             return;
         }
-        if (theN is not null && theP is not null && theN.OcctType == theP.GetType().Name)
+        if (theN is not null && theP is not null && theN.OcctType == global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType()))
         {
             theTally.Throws++;
             return;
@@ -184,21 +187,21 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
     // ---------------------------------------------------------------------------------------------- random inputs
 
-    private static TopLoc_Location Location(Oracle theO)
+    private static Placement Location(Oracle theO)
     {
-        gp_Trsf aT = gp_Trsf.Rotation(theO.Ax1(), theO.Angle());
+        Transform3D aT = Transform3D.Rotation(theO.Ax1(), theO.Angle());
         aT.SetTranslationPart(theO.Vec());
-        return new TopLoc_Location(aT);
+        return new Placement(aT);
     }
 
-    private static NCollection_Array1<gp_Pnt> Poles(Oracle theO, in gp_Pnt theStart, int theNb, double theScale)
+    private static NCollection_Array1<Point3D> Poles(Oracle theO, in Point3D theStart, int theNb, double theScale)
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, theNb);
-        gp_Pnt aP = theStart;
+        var aPoles = new NCollection_Array1<Point3D>(1, theNb);
+        Point3D aP = theStart;
         for (int i = 1; i <= theNb; i++)
         {
             aPoles[i] = aP;
-            aP = new gp_Pnt(aP.X() + theO.Real(-theScale, theScale), aP.Y() + theO.Real(-theScale, theScale),
+            aP = new Point3D(aP.X() + theO.Real(-theScale, theScale), aP.Y() + theO.Real(-theScale, theScale),
                             aP.Z() + theO.Real(-theScale, theScale));
         }
         return aPoles;
@@ -257,7 +260,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     {
                         aNbPoles += aMults[i];
                     }
-                    NCollection_Array1<gp_Pnt> aPoles = Poles(theO, theO.Pnt(), aNbPoles, 10);
+                    NCollection_Array1<Point3D> aPoles = Poles(theO, theO.Pnt(), aNbPoles, 10);
                     var aC = theO.Bool()
                                  ? new Geom_BSplineCurve(aPoles, theO.Weights(aNbPoles, true), aKnots, aMults, aDeg)
                                  : new Geom_BSplineCurve(aPoles, aKnots, aMults, aDeg);
@@ -274,7 +277,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             case 5:
                 {
                     int aNb = theO.Int(2, 6);
-                    NCollection_Array1<gp_Pnt> aPoles = Poles(theO, theO.Pnt(), aNb, 10);
+                    NCollection_Array1<Point3D> aPoles = Poles(theO, theO.Pnt(), aNb, 10);
                     var aC = theO.Bool() ? new Geom_BezierCurve(aPoles, theO.Weights(aNb, true)) : new Geom_BezierCurve(aPoles);
                     theU1 = 0;
                     theU2 = 1;
@@ -298,7 +301,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         return new BRepBuilderAPI_MakeEdge(aC, aU1, aU2).Edge();
     }
 
-    private static TopoDS_Shape Dressed(Oracle theO, in TopoDS_Shape theShape, TopLoc_Location? theLoc)
+    private static TopoDS_Shape Dressed(Oracle theO, in TopoDS_Shape theShape, Placement? theLoc)
     {
         TopoDS_Shape aS = theShape;
         if (theLoc is not null)
@@ -341,8 +344,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 var aA = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
                 var aB = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
                 aE1 = new BRepBuilderAPI_MakeEdge(aA, aB).Edge();
-                gp_Pnt aPA = BRep_Tool.Pnt(aA), aPB = BRep_Tool.Pnt(aB);
-                gp_Pnt aMid = new((aPA.X() + aPB.X()) / 2 + anO.Real(1, 5), (aPA.Y() + aPB.Y()) / 2, (aPA.Z() + aPB.Z()) / 2 + 3);
+                Point3D aPA = BRep_Tool.Pnt(aA), aPB = BRep_Tool.Pnt(aB);
+                Point3D aMid = new((aPA.X() + aPB.X()) / 2 + anO.Real(1, 5), (aPA.Y() + aPB.Y()) / 2, (aPA.Z() + aPB.Z()) / 2 + 3);
                 var aArc = new GC_MakeArcOfCircle(aPA, aMid, aPB).Value();
                 aE2 = new BRepBuilderAPI_MakeEdge(aArc, aA, aB).Edge();
                 aKind = "shared ends";
@@ -360,7 +363,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 aE2 = Edge(anO, aK2, out _);
                 aKind = $"kinds {aK1} {aK2}";
             }
-            TopLoc_Location? aL1 = null, aL2 = null;
+            Placement? aL1 = null, aL2 = null;
             int aLoc = anO.Int(0, 3);
             if (aLoc == 1)
             {
@@ -398,7 +401,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = BRepFill.Face(aE1, aE2);
             }
-            catch (Standard_Failure anEx)
+            catch (FailureException anEx)
             {
                 aPEx = anEx;
             }
@@ -416,16 +419,16 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
     // ---------------------------------------------------------------------------------------------------- Shell
 
-    private static gp_Pnt[] PolygonPoints(Oracle theO, int theNb)
+    private static Point3D[] PolygonPoints(Oracle theO, int theNb)
     {
-        gp_Ax3 anAx = theO.Ax3();
+        CoordinateSystem anAx = theO.Ax3();
         double aR = theO.Real(5, 30);
-        var aPnts = new gp_Pnt[theNb];
+        var aPnts = new Point3D[theNb];
         for (int i = 0; i < theNb; i++)
         {
             double anA = 2 * Math.PI * (i + theO.Real(0, 0.6)) / theNb;
             double aRi = aR * theO.Real(0.6, 1.2);
-            aPnts[i] = new gp_Pnt(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aRi * Math.Cos(anA))
+            aPnts[i] = new Point3D(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aRi * Math.Cos(anA))
                                   + anAx.YDirection().XYZ() * (aRi * Math.Sin(anA)) + anAx.Direction().XYZ() * theO.Real(-2, 2));
         }
         return aPnts;
@@ -433,13 +436,13 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
     private static TopoDS_Wire Wire(Oracle theO, int theKind, int theNb, bool theClosed)
     {
-        gp_Pnt[] aPnts = PolygonPoints(theO, theNb + (theClosed ? 0 : 1));
+        Point3D[] aPnts = PolygonPoints(theO, theNb + (theClosed ? 0 : 1));
         switch (theKind)
         {
             case 0:
                 {
                     var aMP = new BRepBuilderAPI_MakePolygon();
-                    foreach (gp_Pnt aP in aPnts)
+                    foreach (Point3D aP in aPnts)
                     {
                         aMP.Add(aP);
                     }
@@ -470,7 +473,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     {
                         for (int i = 0; i + 1 < aPnts.Length; i++)
                         {
-                            gp_Pnt aM = new((aPnts[i].X() + aPnts[i + 1].X()) / 2 + theO.Real(-2, 2),
+                            Point3D aM = new((aPnts[i].X() + aPnts[i + 1].X()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Y() + aPnts[i + 1].Y()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Z() + aPnts[i + 1].Z()) / 2 + theO.Real(-2, 2));
                             aMW.Add(new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
@@ -485,11 +488,11 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     int aNbE = theClosed ? aPnts.Length : aPnts.Length - 1;
                     for (int i = 0; i < aNbE; i++)
                     {
-                        gp_Pnt a1 = aPnts[i], a2 = aPnts[(i + 1) % aPnts.Length];
-                        var aPoles = new NCollection_Array1<gp_Pnt>(1, 4);
+                        Point3D a1 = aPnts[i], a2 = aPnts[(i + 1) % aPnts.Length];
+                        var aPoles = new NCollection_Array1<Point3D>(1, 4);
                         aPoles[1] = a1;
-                        aPoles[2] = new gp_Pnt(a1.X() + theO.Real(-3, 3), a1.Y() + theO.Real(-3, 3), a1.Z() + theO.Real(-3, 3));
-                        aPoles[3] = new gp_Pnt(a2.X() + theO.Real(-3, 3), a2.Y() + theO.Real(-3, 3), a2.Z() + theO.Real(-3, 3));
+                        aPoles[2] = new Point3D(a1.X() + theO.Real(-3, 3), a1.Y() + theO.Real(-3, 3), a1.Z() + theO.Real(-3, 3));
+                        aPoles[3] = new Point3D(a2.X() + theO.Real(-3, 3), a2.Y() + theO.Real(-3, 3), a2.Z() + theO.Real(-3, 3));
                         aPoles[4] = a2;
                         aMW.Add(new BRepBuilderAPI_MakeEdge(new Geom_BezierCurve(aPoles)).Edge());
                     }
@@ -514,7 +517,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             int aK1 = anO.Int(0, 2), aK2 = anO.Bool() ? aK1 : anO.Int(0, 2);
             TopoDS_Wire aW1 = Wire(anO, aK1, aNb, aClosed1);
             TopoDS_Wire aW2 = Wire(anO, aK2, aNb, aClosed2);
-            TopLoc_Location? aL1 = null, aL2 = null;
+            Placement? aL1 = null, aL2 = null;
             int aLoc = anO.Int(0, 3);
             if (aLoc == 1)
             {
@@ -550,7 +553,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = BRepFill.Shell(aW1, aW2);
             }
-            catch (Standard_Failure anEx)
+            catch (FailureException anEx)
             {
                 aPEx = anEx;
             }
@@ -575,15 +578,15 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var aModes = new int[3];
         foreach (int aCase in Tape.Budget(300))
         {
-            gp_Ax3 anAx = anO.Ax3();
+            CoordinateSystem anAx = anO.Ax3();
             int aNb = anO.Int(3, 7);
             double aR = anO.Real(5, 30);
             var aMP = new BRepBuilderAPI_MakePolygon();
-            var aSpinePnts = new gp_Pnt[aNb];
+            var aSpinePnts = new Point3D[aNb];
             for (int i = 0; i < aNb; i++)
             {
                 double anA = 2 * Math.PI * (i + anO.Real(0, 0.5)) / aNb;
-                aSpinePnts[i] = new gp_Pnt(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aR * Math.Cos(anA))
+                aSpinePnts[i] = new Point3D(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aR * Math.Cos(anA))
                                            + anAx.YDirection().XYZ() * (aR * Math.Sin(anA)));
                 aMP.Add(aSpinePnts[i]);
             }
@@ -602,7 +605,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             // the profile: from a spine vertex, from a point on a spine edge, or away from the spine
             int aMode = anO.Int(0, 2);
             aModes[aMode]++;
-            gp_Pnt aStart;
+            Point3D aStart;
             if (aMode == 0)
             {
                 aStart = aSpinePnts[anO.Int(0, aNb - 1)];
@@ -611,11 +614,11 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 int i = anO.Int(0, aNb - 1);
                 double t = anO.Real(0.1, 0.9);
-                gp_Pnt a = aSpinePnts[i], b = aSpinePnts[(i + 1) % aNb];
-                aStart = new gp_Pnt(a.XYZ() * (1 - t) + b.XYZ() * t);
+                Point3D a = aSpinePnts[i], b = aSpinePnts[(i + 1) % aNb];
+                aStart = new Point3D(a.XYZ() * (1 - t) + b.XYZ() * t);
                 if (aMode == 2)
                 {
-                    aStart = new gp_Pnt(aStart.XYZ() + anAx.Direction().XYZ() * anO.Real(0.5, 5));
+                    aStart = new Point3D(aStart.XYZ() + anAx.Direction().XYZ() * anO.Real(0.5, 5));
                 }
             }
             var aPP = new BRepBuilderAPI_MakePolygon();
@@ -623,7 +626,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             int aNbP = anO.Int(1, 3);
             for (int i = 0; i < aNbP; i++)
             {
-                aPP.Add(new gp_Pnt(aStart.X() + anO.Real(-5, 5), aStart.Y() + anO.Real(-5, 5), aStart.Z() + anO.Real(-5, 5)));
+                aPP.Add(new Point3D(aStart.X() + anO.Real(-5, 5), aStart.Y() + anO.Real(-5, 5), aStart.Z() + anO.Real(-5, 5)));
             }
             TopoDS_Wire aProfile = aPP.Wire();
             double aTol = anO.Int(0, 2) switch { 0 => 1e-7, 1 => 1e-3, _ => 1.0 };
@@ -637,7 +640,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
 
             using var aNAx = new N.gp_Ax3();
             bool aNOn = false;
-            gp_Ax3 aPAx = new();
+            CoordinateSystem aPAx = new();
             bool aPOn = false;
             N.OcctException? aNEx = null;
             Exception? aPEx = null;
@@ -653,7 +656,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 BRepFill.Axe(aSpine, aProfile, out aPAx, out aPOn, aTol);
             }
-            catch (Standard_Failure anEx)
+            catch (FailureException anEx)
             {
                 aPEx = anEx;
             }
@@ -670,8 +673,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             using N.gp_Pnt aNL = aNAx.Location();
             using N.gp_Dir aND = aNAx.Direction(), aNX = aNAx.XDirection(), aNY = aNAx.YDirection();
-            gp_Pnt aPL = aPAx.Location();
-            gp_Dir aPD = aPAx.Direction(), aPX = aPAx.XDirection(), aPY = aPAx.YDirection();
+            Point3D aPL = aPAx.Location();
+            Direction3D aPD = aPAx.Direction(), aPX = aPAx.XDirection(), aPY = aPAx.YDirection();
             CompareDouble(aTally, aWhat + " Loc.X", aNL.X(), aPL.X());
             CompareDouble(aTally, aWhat + " Loc.Y", aNL.Y(), aPL.Y());
             CompareDouble(aTally, aWhat + " Loc.Z", aNL.Z(), aPL.Z());
@@ -701,7 +704,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         {
             theNbEdges++;
         }
-        TopLoc_Location? aL = theO.Int(0, 3) == 0 ? Location(theO) : null;
+        Placement? aL = theO.Int(0, 3) == 0 ? Location(theO) : null;
         return TopoDS.Wire(Dressed(theO, aW, aL));
     }
 
@@ -781,7 +784,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             {
                 aPR = BRepFill.InsertACR(aW, aPCuts, aPrec);
             }
-            catch (Standard_Failure anEx)
+            catch (FailureException anEx)
             {
                 aPEx = anEx;
             }

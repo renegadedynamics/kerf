@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
@@ -51,16 +54,16 @@ public sealed class BRepExtrema_DistShapeShape
     private Extrema_ExtFlag myFlag;
     private Extrema_ExtAlgo myAlgo;
 #pragma warning restore CS0414
-    private readonly NCollection_Array1<Bnd_Box> myBV1 = new();
-    private readonly NCollection_Array1<Bnd_Box> myBV2 = new();
-    private readonly NCollection_Array1<Bnd_Box> myBE1 = new();
-    private readonly NCollection_Array1<Bnd_Box> myBE2 = new();
-    private readonly NCollection_Array1<Bnd_Box> myBF1 = new();
-    private readonly NCollection_Array1<Bnd_Box> myBF2 = new();
+    private readonly NCollection_Array1<Box> myBV1 = new();
+    private readonly NCollection_Array1<Box> myBV2 = new();
+    private readonly NCollection_Array1<Box> myBE1 = new();
+    private readonly NCollection_Array1<Box> myBE2 = new();
+    private readonly NCollection_Array1<Box> myBF1 = new();
+    private readonly NCollection_Array1<Box> myBF2 = new();
     private bool myIsMultiThread;
 
     /// <summary>OSD_ThreadPool::DefaultPool()->NbThreads(): one thread per logical processor.</summary>
-    private static int NbThreads() => OSD_Parallel.NbLogicalProcessors();
+    private static int NbThreads() => OsdParallel.LogicalProcessorCount;
 
     //=================================================================================================
 
@@ -77,11 +80,11 @@ public sealed class BRepExtrema_DistShapeShape
         TopExp.MapShapes(S, TopAbs_FACE, MapF);
     }
 
-    private static void BoxCalculation(NCollection_IndexedMap<TopoDS_Shape> Map, NCollection_Array1<Bnd_Box> SBox)
+    private static void BoxCalculation(NCollection_IndexedMap<TopoDS_Shape> Map, NCollection_Array1<Box> SBox)
     {
         for (int i = 1; i <= Map.Extent(); i++)
         {
-            var box = new Bnd_Box();
+            var box = new Box();
             BRepBndLib.Add(Map[i], ref box);
             SBox[i] = box;
         }
@@ -121,18 +124,18 @@ public sealed class BRepExtrema_DistShapeShape
         public readonly ThreadSolution Solution;
         public NCollection_IndexedMap<TopoDS_Shape>? Map1;
         public NCollection_IndexedMap<TopoDS_Shape>? Map2;
-        public readonly Message_ProgressScope Scope;
-        public readonly NCollection_Array1<Message_ProgressRange> Ranges;
+        public readonly ProgressScope Scope;
+        public readonly NCollection_Array1<ProgressRange> Ranges;
         public double Eps;
         public double StartDist;
 
-        public VertexFunctor(NCollection_Array1<IndexBand> theBandArray, Message_ProgressRange theRange)
+        public VertexFunctor(NCollection_Array1<IndexBand> theBandArray, ProgressRange theRange)
         {
             BandArray = theBandArray;
             Solution = new ThreadSolution(theBandArray.Length());
-            Scope = new Message_ProgressScope(theRange, "Vertices distances calculating", theBandArray.Length());
-            Ranges = new NCollection_Array1<Message_ProgressRange>(0, theBandArray.Length() - 1);
-            Eps = Precision.Confusion();
+            Scope = new ProgressScope(theRange, "Vertices distances calculating", theBandArray.Length());
+            Ranges = new NCollection_Array1<ProgressRange>(0, theBandArray.Length() - 1);
+            Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             StartDist = 0.0;
             for (int i = 0; i < theBandArray.Length(); ++i)
             {
@@ -147,7 +150,7 @@ public sealed class BRepExtrema_DistShapeShape
             int aLast = BandArray.Value(theIndex).Last;
             Solution.Dist[theIndex] = StartDist;
 
-            using var aScope = new Message_ProgressScope(Ranges[theIndex], null, (double)aLast - aFirst);
+            using var aScope = new ProgressScope(Ranges[theIndex], null, (double)aLast - aFirst);
 
             for (int anIdx1 = aFirst; anIdx1 <= aLast; ++anIdx1)
             {
@@ -158,11 +161,11 @@ public sealed class BRepExtrema_DistShapeShape
                 aScope.Next();
 
                 TopoDS_Vertex aVertex1 = TopoDS.Vertex(Map1!.FindKey(anIdx1));
-                gp_Pnt aPoint1 = BRep_Tool.Pnt(aVertex1);
+                Point3D aPoint1 = BRep_Tool.Pnt(aVertex1);
                 for (int anIdx2 = 1; anIdx2 <= aCount2; ++anIdx2)
                 {
                     TopoDS_Vertex aVertex2 = TopoDS.Vertex(Map2.FindKey(anIdx2));
-                    gp_Pnt aPoint2 = BRep_Tool.Pnt(aVertex2);
+                    Point3D aPoint2 = BRep_Tool.Pnt(aVertex2);
                     double aDist = aPoint1.Distance(aPoint2);
                     {
                         if (aDist < Solution.Dist[theIndex] - Eps)
@@ -199,7 +202,7 @@ public sealed class BRepExtrema_DistShapeShape
 
     private bool DistanceVertVert(NCollection_IndexedMap<TopoDS_Shape> theMap1,
                                   NCollection_IndexedMap<TopoDS_Shape> theMap2,
-                                  Message_ProgressRange theRange)
+                                  ProgressRange theRange)
     {
         int aCount1 = theMap1.Extent();
         int aMinTaskSize = aCount1 < 10 ? aCount1 : 10;
@@ -214,7 +217,7 @@ public sealed class BRepExtrema_DistShapeShape
 
         int aFirstIndex = 1;
         var aBandArray = new NCollection_Array1<IndexBand>(0, aNbTasks - 1);
-        using var aDistScope = new Message_ProgressScope(theRange, null, 1);
+        using var aDistScope = new ProgressScope(theRange, null, 1);
 
         for (int anI = 0; anI < aBandArray.Length(); ++anI)
         {
@@ -232,7 +235,7 @@ public sealed class BRepExtrema_DistShapeShape
         aFunctor.StartDist = myDistRef;
         aFunctor.Eps = myEps;
 
-        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OsdParallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
         if (!aDistScope.More())
         {
@@ -267,21 +270,21 @@ public sealed class BRepExtrema_DistShapeShape
         public readonly ThreadSolution Solution;
         public NCollection_IndexedMap<TopoDS_Shape>? Map1;
         public NCollection_IndexedMap<TopoDS_Shape>? Map2;
-        public NCollection_Array1<Bnd_Box>? LBox1;
-        public NCollection_Array1<Bnd_Box>? LBox2;
-        public readonly Message_ProgressScope Scope;
-        public readonly NCollection_Array1<Message_ProgressRange> Ranges;
+        public NCollection_Array1<Box>? LBox1;
+        public NCollection_Array1<Box>? LBox2;
+        public readonly ProgressScope Scope;
+        public readonly NCollection_Array1<ProgressRange> Ranges;
         public double Eps;
         public double StartDist;
 
         public DistanceFunctor(NCollection_Array1<NCollection_Array1<BRepExtrema_CheckPair>> theArrayOfArrays,
-                               Message_ProgressRange theRange)
+                               ProgressRange theRange)
         {
             ArrayOfArrays = theArrayOfArrays;
             Solution = new ThreadSolution(ArrayOfArrays.Length());
-            Scope = new Message_ProgressScope(theRange, "Shapes distances calculating", theArrayOfArrays.Length());
-            Ranges = new NCollection_Array1<Message_ProgressRange>(0, theArrayOfArrays.Length() - 1);
-            Eps = Precision.Confusion();
+            Scope = new ProgressScope(theRange, "Shapes distances calculating", theArrayOfArrays.Length());
+            Ranges = new NCollection_Array1<ProgressRange>(0, theArrayOfArrays.Length() - 1);
+            Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             StartDist = 0.0;
             for (int i = 0; i < theArrayOfArrays.Length(); ++i)
             {
@@ -291,7 +294,7 @@ public sealed class BRepExtrema_DistShapeShape
 
         public void Invoke(int theIndex)
         {
-            using var aScope = new Message_ProgressScope(Ranges[theIndex], null, ArrayOfArrays.Value(theIndex).Length());
+            using var aScope = new ProgressScope(Ranges[theIndex], null, ArrayOfArrays.Value(theIndex).Length());
             Solution.Dist[theIndex] = StartDist;
             for (int i = 0; i < ArrayOfArrays.Value(theIndex).Length(); i++)
             {
@@ -305,8 +308,8 @@ public sealed class BRepExtrema_DistShapeShape
                 {
                     break; // early search termination
                 }
-                Bnd_Box aBox1 = LBox1!.Value(aPair.Index1);
-                Bnd_Box aBox2 = LBox2!.Value(aPair.Index2);
+                Box aBox1 = LBox1!.Value(aPair.Index1);
+                Box aBox2 = LBox2!.Value(aPair.Index2);
                 TopoDS_Shape aShape1 = Map1!.FindKey(aPair.Index1);
                 TopoDS_Shape aShape2 = Map2!.FindKey(aPair.Index2);
                 var aDistTool = new BRepExtrema_DistanceSS(aShape1, aShape2, aBox1, aBox2, Solution.Dist[theIndex], Eps);
@@ -349,14 +352,14 @@ public sealed class BRepExtrema_DistShapeShape
     {
         public readonly NCollection_Array1<IndexBand> BandArray;
         public readonly NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>> PairList;
-        public NCollection_Array1<Bnd_Box>? LBox1;
-        public NCollection_Array1<Bnd_Box>? LBox2;
-        public readonly Message_ProgressScope Scope;
-        public readonly NCollection_Array1<Message_ProgressRange> Ranges;
+        public NCollection_Array1<Box>? LBox1;
+        public NCollection_Array1<Box>? LBox2;
+        public readonly ProgressScope Scope;
+        public readonly NCollection_Array1<ProgressRange> Ranges;
         public double DistRef;
         public double Eps;
 
-        public DistancePairFunctor(NCollection_Array1<IndexBand> theBandArray, Message_ProgressRange theRange)
+        public DistancePairFunctor(NCollection_Array1<IndexBand> theBandArray, ProgressRange theRange)
         {
             BandArray = theBandArray;
             PairList = new NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>>(0, theBandArray.Length() - 1);
@@ -364,10 +367,10 @@ public sealed class BRepExtrema_DistShapeShape
             {
                 PairList[i] = new NCollection_DynamicArray<BRepExtrema_CheckPair>();
             }
-            Scope = new Message_ProgressScope(theRange, "Boxes distances calculating", theBandArray.Length());
-            Ranges = new NCollection_Array1<Message_ProgressRange>(0, theBandArray.Length() - 1);
+            Scope = new ProgressScope(theRange, "Boxes distances calculating", theBandArray.Length());
+            Ranges = new NCollection_Array1<ProgressRange>(0, theBandArray.Length() - 1);
             DistRef = 0;
-            Eps = Precision.Confusion();
+            Eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             for (int i = 0; i < theBandArray.Length(); ++i)
             {
                 Ranges.SetValue(i, Scope.Next());
@@ -379,7 +382,7 @@ public sealed class BRepExtrema_DistShapeShape
             int aFirst = BandArray.Value(theIndex).First;
             int aLast = BandArray.Value(theIndex).Last;
 
-            using var aScope = new Message_ProgressScope(Ranges[theIndex], null, (double)aLast - aFirst);
+            using var aScope = new ProgressScope(Ranges[theIndex], null, (double)aLast - aFirst);
 
             for (int anIdx1 = aFirst; anIdx1 <= aLast; ++anIdx1)
             {
@@ -391,9 +394,9 @@ public sealed class BRepExtrema_DistShapeShape
 
                 for (int anIdx2 = 1; anIdx2 <= LBox2!.Length(); ++anIdx2)
                 {
-                    Bnd_Box aBox1 = LBox1!.Value(anIdx1);
-                    Bnd_Box aBox2 = LBox2.Value(anIdx2);
-                    if (aBox1.IsVoid() || aBox2.IsVoid())
+                    Box aBox1 = LBox1!.Value(anIdx1);
+                    Box aBox2 = LBox2.Value(anIdx2);
+                    if (aBox1.IsVoid || aBox2.IsVoid)
                     {
                         continue;
                     }
@@ -422,9 +425,9 @@ public sealed class BRepExtrema_DistShapeShape
 
     private bool DistanceMapMap(NCollection_IndexedMap<TopoDS_Shape> theMap1,
                                 NCollection_IndexedMap<TopoDS_Shape> theMap2,
-                                NCollection_Array1<Bnd_Box> theLBox1,
-                                NCollection_Array1<Bnd_Box> theLBox2,
-                                Message_ProgressRange theRange)
+                                NCollection_Array1<Box> theLBox1,
+                                NCollection_Array1<Box> theLBox2,
+                                ProgressRange theRange)
     {
         int aCount1 = theMap1.Extent();
         int aCount2 = theMap2.Extent();
@@ -434,7 +437,7 @@ public sealed class BRepExtrema_DistShapeShape
             return true;
         }
 
-        using var aTwinScope = new Message_ProgressScope(theRange, null, 1.0);
+        using var aTwinScope = new ProgressScope(theRange, null, 1.0);
 
         int aNbThreads = NbThreads();
         int aMinPairTaskSize = aCount1 < 10 ? aCount1 : 10;
@@ -466,7 +469,7 @@ public sealed class BRepExtrema_DistShapeShape
         aPairFunctor.DistRef = myDistRef;
         aPairFunctor.Eps = myEps;
 
-        OSD_Parallel.For(0, aNbPairTasks, aPairFunctor.Invoke, !myIsMultiThread);
+        OsdParallel.For(0, aNbPairTasks, aPairFunctor.Invoke, !myIsMultiThread);
         aPairFunctor.Scope.Close();
         if (!aTwinScope.More())
         {
@@ -539,7 +542,7 @@ public sealed class BRepExtrema_DistShapeShape
         aFunctor.Eps = myEps;
         aFunctor.StartDist = myDistRef;
 
-        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OsdParallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
         if (!aTwinScope.More())
         {
@@ -578,7 +581,7 @@ public sealed class BRepExtrema_DistShapeShape
         myDistRef = 0.0;
         myIsDone = false;
         myInnerSol = false;
-        myEps = Precision.Confusion();
+        myEps = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsInitS1 = false;
         myIsInitS2 = false;
         myFlag = Extrema_ExtFlag_MINMAX;
@@ -595,12 +598,12 @@ public sealed class BRepExtrema_DistShapeShape
                                       in TopoDS_Shape Shape2,
                                       Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX,
                                       Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad,
-                                      Message_ProgressRange theRange = default)
+                                      ProgressRange theRange = default)
     {
         myDistRef = 0.0;
         myIsDone = false;
         myInnerSol = false;
-        myEps = Precision.Confusion();
+        myEps = global::Kerf.Engine.Foundation.Precision.Confusion();
         myIsInitS1 = false;
         myIsInitS2 = false;
         myFlag = F;
@@ -621,7 +624,7 @@ public sealed class BRepExtrema_DistShapeShape
                                       double theDeflection,
                                       Extrema_ExtFlag F = Extrema_ExtFlag_MINMAX,
                                       Extrema_ExtAlgo A = Extrema_ExtAlgo_Grad,
-                                      Message_ProgressRange theRange = default)
+                                      ProgressRange theRange = default)
     {
         myDistRef = 0.0;
         myIsDone = false;
@@ -664,26 +667,26 @@ public sealed class BRepExtrema_DistShapeShape
         public NCollection_Sequence<BRepExtrema_SolutionElem>? SolutionsShape1;
         public NCollection_Sequence<BRepExtrema_SolutionElem>? SolutionsShape2;
         public TopoDS_Shape Shape;
-        public readonly Message_ProgressScope Scope;
-        public readonly NCollection_Array1<Message_ProgressRange> Ranges;
+        public readonly ProgressScope Scope;
+        public readonly NCollection_Array1<ProgressRange> Ranges;
         public double DistRef;
         public volatile bool InnerSol;
         public volatile bool IsDone;
         public Lock? Mutex;
 
         public TreatmentFunctor(NCollection_Array1<NCollection_Array1<TopoDS_Shape>> theArrayOfArrays,
-                                Message_ProgressRange theRange)
+                                ProgressRange theRange)
         {
             ArrayOfArrays = theArrayOfArrays;
-            Scope = new Message_ProgressScope(theRange, "Search for the inner solid", theArrayOfArrays.Length());
-            Ranges = new NCollection_Array1<Message_ProgressRange>(0, theArrayOfArrays.Length() - 1);
+            Scope = new ProgressScope(theRange, "Search for the inner solid", theArrayOfArrays.Length());
+            Ranges = new NCollection_Array1<ProgressRange>(0, theArrayOfArrays.Length() - 1);
             for (int i = 0; i < theArrayOfArrays.Length(); ++i)
             {
                 Ranges.SetValue(i, Scope.Next());
             }
         }
 
-        private void Record(in gp_Pnt aPnt, in TopoDS_Vertex aVertex)
+        private void Record(in Point3D aPnt, in TopoDS_Vertex aVertex)
         {
             InnerSol = true;
             DistRef = 0.0;
@@ -696,7 +699,7 @@ public sealed class BRepExtrema_DistShapeShape
         public void Invoke(int theIndex)
         {
             const double aTolerance = 0.001;
-            using var aScope = new Message_ProgressScope(Ranges[theIndex], null, ArrayOfArrays.Value(theIndex).Length());
+            using var aScope = new ProgressScope(Ranges[theIndex], null, ArrayOfArrays.Value(theIndex).Length());
             var aClassifier = new BRepClass3d_SolidClassifier(Shape);
 
             for (int i = 0; i < ArrayOfArrays.Value(theIndex).Length(); i++)
@@ -712,7 +715,7 @@ public sealed class BRepExtrema_DistShapeShape
                 }
 
                 TopoDS_Vertex aVertex = TopoDS.Vertex(ArrayOfArrays.Value(theIndex).Value(i));
-                gp_Pnt aPnt = BRep_Tool.Pnt(aVertex);
+                Point3D aPnt = BRep_Tool.Pnt(aVertex);
                 aClassifier.Perform(aPnt, aTolerance);
                 if (aClassifier.State() == TopAbs_IN)
                 {
@@ -737,7 +740,7 @@ public sealed class BRepExtrema_DistShapeShape
 
     private bool SolidTreatment(in TopoDS_Shape theShape,
                                 NCollection_IndexedMap<TopoDS_Shape> theVertexMap,
-                                Message_ProgressRange theRange)
+                                ProgressRange theRange)
     {
         int aMapSize = theVertexMap.Extent();
         const int aMinTaskSize = 3;
@@ -773,7 +776,7 @@ public sealed class BRepExtrema_DistShapeShape
         }
 
         // Local variables for thread-safe communication during the parallel section (OCCT's atomics)
-        using var aScope = new Message_ProgressScope(theRange, "Solid treatment", aNbTasks);
+        using var aScope = new ProgressScope(theRange, "Solid treatment", aNbTasks);
         var aFunctor = new TreatmentFunctor(anArrayOfArray, aScope.Next());
         aFunctor.SolutionsShape1 = mySolutionsShape1;
         aFunctor.SolutionsShape2 = mySolutionsShape2;
@@ -786,7 +789,7 @@ public sealed class BRepExtrema_DistShapeShape
             aFunctor.Mutex = new Lock();
         }
 
-        OSD_Parallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
+        OsdParallel.For(0, aNbTasks, aFunctor.Invoke, !myIsMultiThread);
         aFunctor.Scope.Close();
 
         // Copy the results back to the class members after the parallel section completes
@@ -803,7 +806,7 @@ public sealed class BRepExtrema_DistShapeShape
     /// Computes the minimum distance (value and pairs of points); solutions within the deflection of the minimum are
     /// kept. Returns <see cref="IsDone"/>.
     /// </summary>
-    public bool Perform(Message_ProgressRange theRange = default)
+    public bool Perform(ProgressRange theRange = default)
     {
         myIsDone = false;
         myInnerSol = false;
@@ -821,7 +824,7 @@ public sealed class BRepExtrema_DistShapeShape
         int aRootStepsNum = 9; // By num of DistanceMapMap calls
         aRootStepsNum = anIsSolid1 ? aRootStepsNum + 1 : aRootStepsNum;
         aRootStepsNum = anIsSolid2 ? aRootStepsNum + 1 : aRootStepsNum;
-        using var aRootScope = new Message_ProgressScope(theRange, "calculating distance", aRootStepsNum);
+        using var aRootScope = new ProgressScope(theRange, "calculating distance", aRootStepsNum);
 
         if (anIsSolid1)
         {
@@ -967,7 +970,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::Value: There's no solution ");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::Value: There's no solution ");
         }
 
         return myDistRef;
@@ -977,10 +980,10 @@ public sealed class BRepExtrema_DistShapeShape
     public bool InnerSolution() => myInnerSol;
 
     /// <summary>The point of the <paramref name="N"/>th solution on the first shape.</summary>
-    public gp_Pnt PointOnShape1(int N) => mySolutionsShape1.Value(N).Point();
+    public Point3D PointOnShape1(int N) => mySolutionsShape1.Value(N).Point();
 
     /// <summary>The point of the <paramref name="N"/>th solution on the second shape.</summary>
-    public gp_Pnt PointOnShape2(int N) => mySolutionsShape2.Value(N).Point();
+    public Point3D PointOnShape2(int N) => mySolutionsShape2.Value(N).Point();
 
     /// <summary>The kind of support of the <paramref name="N"/>th solution on the first shape.</summary>
     public BRepExtrema_SupportType SupportTypeShape1(int N) => mySolutionsShape1.Value(N).SupportKind();
@@ -993,7 +996,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::SupportOnShape1: There's no solution ");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::SupportOnShape1: There's no solution ");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape1.Value(N);
@@ -1014,7 +1017,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::SupportOnShape2: There's no solution ");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::SupportOnShape2: There's no solution ");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape2.Value(N);
@@ -1035,7 +1038,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::ParOnEdgeS1: There's no solution");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::ParOnEdgeS1: There's no solution");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape1.Value(N);
@@ -1053,7 +1056,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::ParOnEdgeS2: There's no solution");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::ParOnEdgeS2: There's no solution");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape2.Value(N);
@@ -1071,7 +1074,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::ParOnFaceS1: There's no solution");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::ParOnFaceS1: There's no solution");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape1.Value(N);
@@ -1089,7 +1092,7 @@ public sealed class BRepExtrema_DistShapeShape
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone("BRepExtrema_DistShapeShape::ParOnFaceS2: There's no solution");
+            throw new NotDoneException("BRepExtrema_DistShapeShape::ParOnFaceS2: There's no solution");
         }
 
         BRepExtrema_SolutionElem sol = mySolutionsShape2.Value(N);
@@ -1150,7 +1153,7 @@ public sealed class BRepExtrema_DistShapeShape
             o.Write('\n');
         }
 
-        static string F(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+        static string F(double theValue) => StreamUtilities.FormatReal(theValue, 6);
     }
 
     /// <summary>Sets an unused parameter (obsolete).</summary>

@@ -12,7 +12,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -82,7 +83,7 @@ public class ShapeUpgrade_ShapeDivideArea : ShapeUpgrade_ShapeDivide
     /// <summary>Empty constructor (no maximal area).</summary>
     public ShapeUpgrade_ShapeDivideArea()
     {
-        myMaxArea = Occt.Precision.Infinite();
+        myMaxArea = Kerf.Engine.Foundation.Precision.Infinite();
         myNbParts = 0;
         myUnbSplit = myVnbSplit = -1;
         myIsSplittingByNumber = false;
@@ -91,7 +92,7 @@ public class ShapeUpgrade_ShapeDivideArea : ShapeUpgrade_ShapeDivide
     /// <summary>Initializes by a shape.</summary>
     public ShapeUpgrade_ShapeDivideArea(in TopoDS_Shape S) : base(S)
     {
-        myMaxArea = Occt.Precision.Infinite();
+        myMaxArea = Kerf.Engine.Foundation.Precision.Infinite();
         myNbParts = 0;
         myUnbSplit = myVnbSplit = -1;
         myIsSplittingByNumber = false;
@@ -197,30 +198,30 @@ public class ShapeUpgrade_ShapeDivideClosedEdges : ShapeUpgrade_ShapeDivide
 /// <remarks>A working object (decision 21); see <see cref="ShapeUpgrade_ShapeDivide"/>.</remarks>
 public class ShapeUpgrade_ShapeDivideContinuity : ShapeUpgrade_ShapeDivide
 {
-    private GeomAbs_Shape myCurve3dCriterion;
-    private GeomAbs_Shape myCurve2dCriterion;
-    private GeomAbs_Shape mySurfaceCriterion;
+    private Continuity myCurve3dCriterion;
+    private Continuity myCurve2dCriterion;
+    private Continuity mySurfaceCriterion;
     private double myTolerance3d;
     private double myTolerance2d;
 
     /// <summary>Empty constructor (criteria C1, tolerances Confusion and PConfusion).</summary>
     public ShapeUpgrade_ShapeDivideContinuity()
     {
-        myCurve3dCriterion = GeomAbs_C1;
-        myCurve2dCriterion = GeomAbs_C1;
-        mySurfaceCriterion = GeomAbs_C1;
-        myTolerance3d = Occt.Precision.Confusion();
-        myTolerance2d = Occt.Precision.PConfusion();
+        myCurve3dCriterion = C1;
+        myCurve2dCriterion = C1;
+        mySurfaceCriterion = C1;
+        myTolerance3d = Kerf.Engine.Foundation.Precision.Confusion();
+        myTolerance2d = Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>Initializes by a shape.</summary>
     public ShapeUpgrade_ShapeDivideContinuity(in TopoDS_Shape S) : base(S)
     {
-        myCurve3dCriterion = GeomAbs_C1;
-        myCurve2dCriterion = GeomAbs_C1;
-        mySurfaceCriterion = GeomAbs_C1;
-        myTolerance3d = Occt.Precision.Confusion();
-        myTolerance2d = Occt.Precision.PConfusion();
+        myCurve3dCriterion = C1;
+        myCurve2dCriterion = C1;
+        mySurfaceCriterion = C1;
+        myTolerance3d = Kerf.Engine.Foundation.Precision.Confusion();
+        myTolerance2d = Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>Sets the 3D tolerance (for the 3D curves and the surfaces).</summary>
@@ -236,19 +237,19 @@ public class ShapeUpgrade_ShapeDivideContinuity : ShapeUpgrade_ShapeDivide
     }
 
     /// <summary>Defines the criterion of continuity for the 3D curves (C1 by default; G1 and G2 aren't authorized).</summary>
-    public void SetBoundaryCriterion(GeomAbs_Shape Criterion = GeomAbs_C1)
+    public void SetBoundaryCriterion(Continuity Criterion = C1)
     {
         myCurve3dCriterion = Criterion;
     }
 
     /// <summary>Defines the criterion of continuity for the pcurves (C1 by default; G1 and G2 aren't authorized).</summary>
-    public void SetPCurveCriterion(GeomAbs_Shape Criterion = GeomAbs_C1)
+    public void SetPCurveCriterion(Continuity Criterion = C1)
     {
         myCurve2dCriterion = Criterion;
     }
 
     /// <summary>Defines the criterion of continuity for the surfaces (C1 by default; G1 and G2 aren't authorized).</summary>
-    public void SetSurfaceCriterion(GeomAbs_Shape Criterion = GeomAbs_C1)
+    public void SetSurfaceCriterion(Continuity Criterion = C1)
     {
         mySurfaceCriterion = Criterion;
     }

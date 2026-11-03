@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -45,11 +47,11 @@ public abstract class BOPAlgo_BuilderArea : BOPAlgo_Algo
     /// <summary>True if the internal parts are not added into the result.</summary>
     public bool IsAvoidInternalShapes() => myAvoidInternalShapes;
 
-    protected abstract void PerformShapesToAvoid(Message_ProgressRange theRange);
+    protected abstract void PerformShapesToAvoid(ProgressRange theRange);
 
-    protected abstract void PerformLoops(Message_ProgressRange theRange);
+    protected abstract void PerformLoops(ProgressRange theRange);
 
-    protected abstract void PerformAreas(Message_ProgressRange theRange);
+    protected abstract void PerformAreas(ProgressRange theRange);
 
-    protected abstract void PerformInternalShapes(Message_ProgressRange theRange);
+    protected abstract void PerformInternalShapes(ProgressRange theRange);
 }

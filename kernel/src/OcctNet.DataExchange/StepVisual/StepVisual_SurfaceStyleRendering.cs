@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity SurfaceStyleRendering
 /// </summary>
-public class StepVisual_SurfaceStyleRendering : Standard_Transient
+public class StepVisual_SurfaceStyleRendering : Transient
 {
     private StepVisual_ShadingSurfaceMethod myRenderingMethod;
     private StepVisual_Colour mySurfaceColour;

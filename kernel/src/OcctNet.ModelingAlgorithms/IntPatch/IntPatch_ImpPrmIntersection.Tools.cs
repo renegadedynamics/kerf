@@ -2,8 +2,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The file-static functions of IntPatch_ImpPrmIntersection.cxx (see IntPatch_ImpPrmIntersection.cs).
 
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntPatch_SpecPntType;
 using static Occt.TopAbs_Orientation;
@@ -26,7 +28,7 @@ public partial class IntPatch_ImpPrmIntersection
         double aUQRef, aVQRef, aUPRef, aVPRef;
         double aUQNext, aVQNext, aUPNext, aVPNext;
 
-        gp_Pnt aP3d = theLine.Value(theRefIndex + 1).Value();
+        Point3D aP3d = theLine.Value(theRefIndex + 1).Value();
 
         if (IsReversed)
         {
@@ -39,22 +41,22 @@ public partial class IntPatch_ImpPrmIntersection
             theLine.Value(theRefIndex + 1).Parameters(out aUQNext, out aVQNext, out aUPNext, out aVPNext);
         }
 
-        GeomAbs_SurfaceType aType = theQSurf.GetType();
+        SurfaceKind aType = theQSurf.GetType();
 
-        if ((aType == GeomAbs_Cone) && (theQSurf.Cone().Apex().SquareDistance(aP3d) < theTol3D * theTol3D))
+        if ((aType == SurfaceKind.Cone) && (theQSurf.Cone().Apex().SquareDistance(aP3d) < theTol3D * theTol3D))
         {
             return IntPatch_SPntPoleSeamU;
         }
-        else if (aType == GeomAbs_Sphere)
+        else if (aType == SurfaceKind.Sphere)
         {
             double aSqTol = theTol3D * theTol3D;
-            gp_Pnt aP = ElSLib.Value(0.0, M_PI_2, theQSurf.Sphere());
+            Point3D aP = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, M_PI_2, theQSurf.Sphere());
             if (aP.SquareDistance(aP3d) < aSqTol)
             {
                 return IntPatch_SPntPoleSeamU;
             }
 
-            aP = ElSLib.Value(0.0, -M_PI_2, theQSurf.Sphere());
+            aP = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, theQSurf.Sphere());
             if (aP.SquareDistance(aP3d) < aSqTol)
             {
                 return IntPatch_SPntPoleSeamU;
@@ -63,17 +65,17 @@ public partial class IntPatch_ImpPrmIntersection
 
         double aDeltaU = Math.Abs(aUQRef - aUQNext);
 
-        if ((aType != GeomAbs_Torus) && (aDeltaU < theDeltaMax))
+        if ((aType != SurfaceKind.Torus) && (aDeltaU < theDeltaMax))
         {
             return IntPatch_SPntNone;
         }
 
         switch (aType)
         {
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 return IntPatch_SPntSeamU;
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 double aDeltaV = Math.Abs(aVQRef - aVQNext);
 
@@ -94,8 +96,8 @@ public partial class IntPatch_ImpPrmIntersection
             }
 
             break;
-            case GeomAbs_Sphere:
-            case GeomAbs_Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Cone:
                 return IntPatch_SPntPoleSeamU;
             default:
                 break;
@@ -118,15 +120,15 @@ public partial class IntPatch_ImpPrmIntersection
         Adaptor3d_HVertex? vtx = null, vtxbis;
         IntPatch_ThePathPointOfTheSOnBounds PStart;
         IntSurf_PathPoint PPoint = new();
-        gp_Vec vectg;
-        gp_Dir2d dirtg;
-        gp_Vec d1u, d1v, v1, v2 = new();
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
+        Vector3D vectg;
+        Direction2D dirtg;
+        Vector3D d1u, d1v, v1, v2 = new();
+        Point2D p2d;
+        Vector2D d2d;
         //
         math_Vector X = new(1, 2);
         math_Vector F = new(1, 1);
-        math_Matrix D = new(1, 1, 1, 2);
+        Matrix D = new(1, 1, 1, 2);
         //
         seqlength = 0;
         NbPoints = solrst.NbPoints();
@@ -208,11 +210,11 @@ public partial class IntPatch_ImpPrmIntersection
                     }
                     else
                     { // traiter la transition complexe
-                        gp_Dir bidnorm = new(1.0, 1.0, 1.0);
+                        Direction3D bidnorm = new(1.0, 1.0, 1.0);
                         double tole = 1.0e-8;
                         TopAbs_Orientation LocTrans;
                         TopTrans_CurveTransition comptrans = new();
-                        comptrans.Reset(new gp_Dir(vectg), bidnorm, 0.0);
+                        comptrans.Reset(new Direction3D(vectg), bidnorm, 0.0);
                         if (arcorien == TopAbs_FORWARD || arcorien == TopAbs_REVERSED)
                         {
                             // pour essai
@@ -240,7 +242,7 @@ public partial class IntPatch_ImpPrmIntersection
                                 }
                             }
 
-                            comptrans.Compare(tole, new gp_Dir(v2), bidnorm, 0.0, LocTrans, vtxorien);
+                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, LocTrans, vtxorien);
                         }
                         Destination.SetValue(i, seqlength + 1);
                         for (k = i + 1; k <= NbPoints; k++)
@@ -290,7 +292,7 @@ public partial class IntPatch_ImpPrmIntersection
                                                 }
                                             }
 
-                                            comptrans.Compare(tole, new gp_Dir(v2), bidnorm, 0.0, LocTrans, vtxorien);
+                                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, LocTrans, vtxorien);
                                         }
                                         Destination.SetValue(k, seqlength + 1);
                                     }
@@ -349,14 +351,14 @@ public partial class IntPatch_ImpPrmIntersection
         }
     }
 
-    private static void Recadre(bool _, GeomAbs_SurfaceType typeS1, GeomAbs_SurfaceType typeS2, ref IntPatch_Point pt,
+    private static void Recadre(bool _, SurfaceKind typeS1, SurfaceKind typeS2, ref IntPatch_Point pt,
                                 IntPatch_TheIWLineOfTheIWalking iwline, int Param, double U1, double V1, double U2,
                                 double V2)
     {
         iwline.Line().Value(Param).Parameters(out double U1p, out double V1p, out double U2p, out double V2p);
         switch (typeS1)
         {
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 while (V1 < (V1p - 1.5 * M_PI))
                 {
                     V1 += M_PI + M_PI;
@@ -365,10 +367,10 @@ public partial class IntPatch_ImpPrmIntersection
                 {
                     V1 -= M_PI + M_PI;
                 }
-                goto case GeomAbs_Cylinder;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+                goto case SurfaceKind.Cylinder;
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
                 while (U1 < (U1p - 1.5 * M_PI))
                 {
                     U1 += M_PI + M_PI;
@@ -383,7 +385,7 @@ public partial class IntPatch_ImpPrmIntersection
         }
         switch (typeS2)
         {
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 while (V2 < (V2p - 1.5 * M_PI))
                 {
                     V2 += M_PI + M_PI;
@@ -392,10 +394,10 @@ public partial class IntPatch_ImpPrmIntersection
                 {
                     V2 -= M_PI + M_PI;
                 }
-                goto case GeomAbs_Cylinder;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
+                goto case SurfaceKind.Cylinder;
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
                 while (U2 < (U2p - 1.5 * M_PI))
                 {
                     U2 += M_PI + M_PI;
@@ -414,18 +416,18 @@ public partial class IntPatch_ImpPrmIntersection
     private static double GetLocalStep(Adaptor3d_Surface theSurf, double theStep)
     {
         double aLocalStep = theStep;
-        if (theSurf.UContinuity() > GeomAbs_C0 && theSurf.VContinuity() > GeomAbs_C0)
+        if (theSurf.UContinuity() > C0 && theSurf.VContinuity() > C0)
         {
-            GeomAbs_SurfaceType aSType = theSurf.GetType();
+            SurfaceKind aSType = theSurf.GetType();
 
-            if (aSType == GeomAbs_BezierSurface || aSType == GeomAbs_BSplineSurface)
+            if (aSType == BezierSurface || aSType == BSplineSurface)
             {
                 double aMinRes;
                 int aMaxDeg;
                 double aLimRes = 1.0e-10;
 
-                aMinRes = Math.Min(theSurf.UResolution(Precision.Confusion()),
-                                   theSurf.VResolution(Precision.Confusion()));
+                aMinRes = Math.Min(theSurf.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
+                                   theSurf.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
                 aMaxDeg = Math.Max(theSurf.UDegree(), theSurf.VDegree());
                 if (aMinRes < aLimRes && aMaxDeg > 3)
                 {
@@ -433,14 +435,14 @@ public partial class IntPatch_ImpPrmIntersection
                 }
             }
         }
-        if (theSurf.UContinuity() == GeomAbs_C0)
+        if (theSurf.UContinuity() == C0)
         {
-            int aNbInt = theSurf.NbUIntervals(GeomAbs_C1);
+            int aNbInt = theSurf.NbUIntervals(C1);
             if (aNbInt > 1)
             {
                 NCollection_Array1<double> anInts = new(1, aNbInt + 1);
-                theSurf.UIntervals(anInts, GeomAbs_C1);
-                double aMinInt = Precision.Infinite();
+                theSurf.UIntervals(anInts, C1);
+                double aMinInt = global::Kerf.Engine.Foundation.Precision.Infinite();
                 for (int i = 1; i <= aNbInt; ++i)
                 {
                     aMinInt = Math.Min(aMinInt, anInts.Value(i + 1) - anInts.Value(i));
@@ -454,14 +456,14 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
 
-        if (theSurf.VContinuity() == GeomAbs_C0)
+        if (theSurf.VContinuity() == C0)
         {
-            int aNbInt = theSurf.NbVIntervals(GeomAbs_C1);
+            int aNbInt = theSurf.NbVIntervals(C1);
             if (aNbInt > 1)
             {
                 NCollection_Array1<double> anInts = new(1, aNbInt + 1);
-                theSurf.VIntervals(anInts, GeomAbs_C1);
-                double aMinInt = Precision.Infinite();
+                theSurf.VIntervals(anInts, C1);
+                double aMinInt = global::Kerf.Engine.Foundation.Precision.Infinite();
                 for (int i = 1; i <= aNbInt; ++i)
                 {
                     aMinInt = Math.Min(aMinInt, anInts.Value(i + 1) - anInts.Value(i));
@@ -661,7 +663,7 @@ public partial class IntPatch_ImpPrmIntersection
             for (int iv = 1; iv <= nbv; iv++)
             {
                 IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, Precision.Confusion(), Precision.PConfusion()))
+                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     type = iv;
                     break;
@@ -948,7 +950,7 @@ public partial class IntPatch_ImpPrmIntersection
             Line.Value(Index3).ParametersOnS1(out U3, out V3);
         }
 
-        if (!doU && Quad.TypeQuadric() == GeomAbs_Sphere)
+        if (!doU && Quad.TypeQuadric() == SurfaceKind.Sphere)
         {
             if (Math.Abs(Math.Abs(U1) - Math.Abs(U2)) > (M_PI / 16.0))
             {
@@ -967,7 +969,7 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
 
-        if (Quad.TypeQuadric() == GeomAbs_Cone)
+        if (Quad.TypeQuadric() == SurfaceKind.Cone)
         {
             double Uapx = 0.0, Vapx = 0.0;
             Quad.Parameters(Quad.Cone().Apex(), ref Uapx, ref Vapx);
@@ -1020,7 +1022,7 @@ public partial class IntPatch_ImpPrmIntersection
             aV.ParametersOnS2(out Uv, out Vv);
         }
         double Um = (Up + Uv) * 0.5, Vm = (Vp + Vv) * 0.5;
-        gp_Pnt2d a2DPntM = new(Um, Vm);
+        Point2D a2DPntM = new(Um, Vm);
         TopAbs_State PosM = PDomain.Classify(a2DPntM, ArcTol);
         if (PosM == TopAbs_ON || PosM == TopAbs_IN)
         {
@@ -1048,8 +1050,8 @@ public partial class IntPatch_ImpPrmIntersection
             aPF.ParametersOnS1(out UF, out VF);
             aPL.ParametersOnS1(out UL, out VL);
         }
-        gp_Pnt2d a2DPF = new(UF, VF);
-        gp_Pnt2d a2DPL = new(UL, VL);
+        Point2D a2DPF = new(UF, VF);
+        Point2D a2DPL = new(UL, VL);
         double DistMinF = 1.0e+100, DistMinL = 1.0e+100;
         int FConjugated = 0, LConjugated = 0;
 
@@ -1075,7 +1077,7 @@ public partial class IntPatch_ImpPrmIntersection
         for (iv = 1; iv <= nbv; iv++)
         {
             IntSurf_PntOn2S aV = Vertices.Value(iv);
-            if (aPF.IsSame(aV, Precision.Confusion(), Precision.PConfusion()))
+            if (aPF.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 FIndexSame = iv;
                 break;
@@ -1091,7 +1093,7 @@ public partial class IntPatch_ImpPrmIntersection
                 {
                     aV.ParametersOnS1(out Uv, out Vv);
                 }
-                gp_Pnt2d a2DV = new(Uv, Vv);
+                Point2D a2DV = new(Uv, Vv);
                 double Dist = a2DV.Distance(a2DPF);
                 if (Dist < DistMinF)
                 {
@@ -1105,7 +1107,7 @@ public partial class IntPatch_ImpPrmIntersection
                 if (IsSeamParameter(Uv, TOL2D))
                 {
                     double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    gp_Pnt2d a2DCV = new(Ucv, Vv);
+                    Point2D a2DCV = new(Ucv, Vv);
                     double CDist = a2DCV.Distance(a2DPF);
                     if (CDist < DistMinF)
                     {
@@ -1120,7 +1122,7 @@ public partial class IntPatch_ImpPrmIntersection
         for (iv = 1; iv <= nbv; iv++)
         {
             IntSurf_PntOn2S aV = Vertices.Value(iv);
-            if (aPL.IsSame(aV, Precision.Confusion(), Precision.PConfusion()))
+            if (aPL.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 LIndexSame = iv;
                 break;
@@ -1136,7 +1138,7 @@ public partial class IntPatch_ImpPrmIntersection
                 {
                     aV.ParametersOnS1(out Uv, out Vv);
                 }
-                gp_Pnt2d a2DV = new(Uv, Vv);
+                Point2D a2DV = new(Uv, Vv);
                 double Dist = a2DV.Distance(a2DPL);
                 if (Dist < DistMinL)
                 {
@@ -1150,7 +1152,7 @@ public partial class IntPatch_ImpPrmIntersection
                 if (IsSeamParameter(Uv, TOL2D))
                 {
                     double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    gp_Pnt2d a2DCV = new(Ucv, Vv);
+                    Point2D a2DCV = new(Ucv, Vv);
                     double CDist = a2DCV.Distance(a2DPL);
                     if (CDist < DistMinL)
                     {
@@ -1325,7 +1327,7 @@ public partial class IntPatch_ImpPrmIntersection
 
         IntPatch_RLine? aRLine = Line as IntPatch_RLine;
 
-        gp_Pnt aPnt;
+        Point3D aPnt;
         IntPatch_Point thePnt = new();
 
         for (int ip = 2; ip <= (nbp - 1); ip++)
@@ -1334,7 +1336,7 @@ public partial class IntPatch_ImpPrmIntersection
             for (int iv = 1; iv <= nbv; iv++)
             {
                 IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, Precision.Confusion(), Precision.PConfusion()))
+                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     aPnt = Result.Value(ip).Value();
                     Result.Value(ip).ParametersOnS1(out double U1, out double V1);
@@ -1351,19 +1353,19 @@ public partial class IntPatch_ImpPrmIntersection
                         // parametric surface, otherwise - point on quadric.
                         Adaptor2d_Curve2d anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
 
-                        gp_Lin2d aLin = anArc.Line();
-                        gp_Pnt2d aPSurf;
+                        Line2D aLin = anArc.Line();
+                        Point2D aPSurf;
 
                         if (theIsReversed)
                         {
-                            aPSurf = new gp_Pnt2d(U1, V1);
+                            aPSurf = new Point2D(U1, V1);
                         }
                         else
                         {
-                            aPSurf = new gp_Pnt2d(U2, V2);
+                            aPSurf = new Point2D(U2, V2);
                         }
 
-                        aParam = ElCLib.Parameter(aLin, aPSurf);
+                        aParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aPSurf);
                     }
 
                     thePnt.SetParameter(aParam);
@@ -1389,7 +1391,7 @@ public partial class IntPatch_ImpPrmIntersection
             for (int iv = 1; iv <= nbv; iv++)
             {
                 IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, Precision.Confusion(), Precision.PConfusion()))
+                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     result = true;
                     break;
@@ -1418,7 +1420,7 @@ public partial class IntPatch_ImpPrmIntersection
         IntPatch_WLine wline = new(sline, Tang, Trans1, Trans2);
         wline.SetCreatingWayInfo(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpPrm);
 
-        gp_Pnt aSPnt;
+        Point3D aSPnt;
         IntPatch_Point TPntF = new(), TPntL = new();
         double uu1, vv1, uu2, vv2;
 
@@ -1574,7 +1576,7 @@ public partial class IntPatch_ImpPrmIntersection
             if (theLine is IntPatch_RLine aRL)
             {
                 Adaptor2d_Curve2d anArc = (aRL.IsArcOnS1() ? aRL.ArcOnS1() : aRL.ArcOnS2())!;
-                if (anArc.GetType() != GeomAbs_CurveType.GeomAbs_Line)
+                if (anArc.GetType() != CurveKind.Line)
                 {
                     // Restriction line must be isoline.
                     // Other cases are not supported by
@@ -1586,7 +1588,7 @@ public partial class IntPatch_ImpPrmIntersection
         }
 
         double aDeltaUmax = M_PI_2;
-        double aTOL3D = 1.0e-10, aTOL2D = Precision.PConfusion(), aTOL2DS = Precision.PConfusion();
+        double aTOL3D = 1.0e-10, aTOL2D = global::Kerf.Engine.Foundation.Precision.PConfusion(), aTOL2DS = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         IntSurf_LineOn2S aSLine = theLine.Curve()!;
 
@@ -1720,8 +1722,8 @@ public partial class IntPatch_ImpPrmIntersection
                     ////
                     IntSurf_PntOn2S aRefPt = aSSLine.Value(aBindex - 1);
 
-                    double aCompareTol3D = Precision.Confusion();
-                    double aCompareTol2D = Precision.PConfusion();
+                    double aCompareTol3D = global::Kerf.Engine.Foundation.Precision.Confusion();
+                    double aCompareTol2D = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
                     IntSurf_PntOn2S aNewPoint = aRefPt;
                     IntPatch_SpecPntType aLastType = IntPatch_SPntNone;
@@ -1954,7 +1956,7 @@ public partial class IntPatch_ImpPrmIntersection
                 IntPatch_WLine wline = new(sline, false, theLine.TransitionOnS1(), theLine.TransitionOnS2());
                 wline.SetCreatingWayInfo(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpPrm);
 
-                gp_Pnt aSPnt = sline.Value(1).Value();
+                Point3D aSPnt = sline.Value(1).Value();
                 sline.Value(1).Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
                 aTPntF.SetValue(aSPnt, theArcTol, false);
                 aTPntF.SetParameters(aU1, aV1, aU2, aV2);
@@ -2002,8 +2004,8 @@ public partial class IntPatch_ImpPrmIntersection
                 }
 
                 IntPatch_Point aTPnt = new();
-                gp_Pnt2d aPSurf;
-                gp_Pnt aSPnt;
+                Point2D aPSurf;
+                Point3D aSPnt;
 
                 IntPatch_RLine aRLine = new((IntPatch_RLine)theLine);
 
@@ -2021,7 +2023,7 @@ public partial class IntPatch_ImpPrmIntersection
 
                 IntSurf_PntOn2S aRFirst = sline.Value(1), aRLast = sline.Value(sline.NbPoints());
 
-                gp_Lin2d aLin = anArc.Line();
+                Line2D aLin = anArc.Line();
 
                 for (int aFLIndex = 0; aFLIndex < 2; aFLIndex++)
                 {
@@ -2039,14 +2041,14 @@ public partial class IntPatch_ImpPrmIntersection
 
                     if (IsReversed)
                     {
-                        aPSurf = new gp_Pnt2d(aU1, aV1);
+                        aPSurf = new Point2D(aU1, aV1);
                     }
                     else
                     {
-                        aPSurf = new gp_Pnt2d(aU2, aV2);
+                        aPSurf = new Point2D(aU2, aV2);
                     }
 
-                    double aPar = ElCLib.Parameter(aLin, aPSurf);
+                    double aPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aPSurf);
 
                     if (aFLIndex == 0)
                     {
@@ -2066,7 +2068,7 @@ public partial class IntPatch_ImpPrmIntersection
                     aRLine.AddVertex(aTPnt);
                 }
 
-                if (aLPar - aFPar > Precision.PConfusion())
+                if (aLPar - aFPar > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     aRLine.SetFirstPoint(1);
                     aRLine.SetLastPoint(aRLine.NbVertex());
@@ -2120,7 +2122,7 @@ public partial class IntPatch_ImpPrmIntersection
             IntPatch_RLine aRL2 = (IntPatch_RLine)theLine;
             Adaptor2d_Curve2d anArc = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
 
-            if (anArc.GetType() != GeomAbs_CurveType.GeomAbs_Line)
+            if (anArc.GetType() != CurveKind.Line)
             {
                 // Restriction line must be isoline.
                 // Other cases are not supported by
@@ -2129,9 +2131,9 @@ public partial class IntPatch_ImpPrmIntersection
                 return false;
             }
 
-            gp_Lin2d aLin1 = theArc.Line(), aLin2 = anArc.Line();
+            Line2D aLin1 = theArc.Line(), aLin2 = anArc.Line();
 
-            if (!aLin1.Direction().IsParallel(aLin2.Direction(), Precision.Angular()))
+            if (!aLin1.Direction().IsParallel(aLin2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return false;
             }
@@ -2141,9 +2143,9 @@ public partial class IntPatch_ImpPrmIntersection
             {
                 double aRf = theArc.FirstParameter(), aRl = theArc.LastParameter();
                 double aParf = anArc.FirstParameter(), aParl = anArc.LastParameter();
-                gp_Pnt2d aP1 = ElCLib.Value(aParf, aLin2), aP2 = ElCLib.Value(aParl, aLin2);
+                Point2D aP1 = global::Kerf.Engine.Geometry.ElCLib.Value(aParf, aLin2), aP2 = global::Kerf.Engine.Geometry.ElCLib.Value(aParl, aLin2);
 
-                double aParam1 = ElCLib.Parameter(aLin1, aP1), aParam2 = ElCLib.Parameter(aLin1, aP2);
+                double aParam1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin1, aP1), aParam2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin1, aP2);
 
                 if (CheckSegmSegm(aRf, aRl, aParam1, aParam2))
                 {
@@ -2162,7 +2164,7 @@ public partial class IntPatch_ImpPrmIntersection
 
         int aNbPnts = theLine.NbPnts();
         double aUAf = theArc.FirstParameter(), aUAl = theArc.LastParameter();
-        gp_Lin2d anArcLin = theArc.Line();
+        Line2D anArcLin = theArc.Line();
 
         math_Vector aX = new(1, 2), aVal = new(1, 1);
 
@@ -2180,16 +2182,16 @@ public partial class IntPatch_ImpPrmIntersection
 
             // Take 2d-point in parametric surface (because theArc is
             // 2d-line in parametric surface).
-            gp_Pnt2d aPloc = new(aUf, aVf);
+            Point2D aPloc = new(aUf, aVf);
 
-            double aRParam = ElCLib.Parameter(anArcLin, aPloc);
+            double aRParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(anArcLin, aPloc);
 
             if ((aRParam < aUAf) || (aRParam > aUAl))
             {
                 return false;
             }
 
-            gp_Pnt2d aPmin = ElCLib.Value(aRParam, anArcLin);
+            Point2D aPmin = global::Kerf.Engine.Geometry.ElCLib.Value(aRParam, anArcLin);
 
             double aDist = aPloc.Distance(aPmin);
             if ((aDist < theToler2D) || (Math.Abs(aDist - thePeriod) < theToler2D))

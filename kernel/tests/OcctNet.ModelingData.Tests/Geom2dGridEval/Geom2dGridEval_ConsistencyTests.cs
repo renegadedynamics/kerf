@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.ModelingData.Tests;
@@ -45,7 +47,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         return aStats;
     }
 
-    private void Compare(string theKey, gp_XY theGrid, gp_XY? theCurve, gp_XY theAdaptor)
+    private void Compare(string theKey, Xy theGrid, Xy? theCurve, Xy theAdaptor)
     {
         Stats aStats = StatsOf(theKey);
         for (int aCoord = 1; aCoord <= 2; ++aCoord)
@@ -56,7 +58,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
             bool isExactA = aG == aA;
             double aRel = Math.Abs(aG - aA) / aScale;
             bool isExactC = false;
-            if (theCurve is gp_XY aCurve)
+            if (theCurve is Xy aCurve)
             {
                 double aC = aCurve.Coord(aCoord);
                 isExactC = aG == aC;
@@ -98,22 +100,22 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         return aParams;
     }
 
-    private static gp_Ax22d RandomAx22d(Random theRnd, bool theIsDirect)
+    private static Frame2D RandomAx22d(Random theRnd, bool theIsDirect)
     {
         double anAngle = theRnd.NextDouble() * 2 * M_PI;
-        return new gp_Ax22d(new gp_Pnt2d(theRnd.NextDouble() * 20 - 10, theRnd.NextDouble() * 20 - 10),
-                            new gp_Dir2d(Math.Cos(anAngle), Math.Sin(anAngle)),
+        return new Frame2D(new Point2D(theRnd.NextDouble() * 20 - 10, theRnd.NextDouble() * 20 - 10),
+                            new Direction2D(Math.Cos(anAngle), Math.Sin(anAngle)),
                             theIsDirect);
     }
 
-    private static gp_Ax22d RandomAx22d(Random theRnd) => RandomAx22d(theRnd, theRnd.Next(2) == 0);
+    private static Frame2D RandomAx22d(Random theRnd) => RandomAx22d(theRnd, theRnd.Next(2) == 0);
 
-    private static NCollection_Array1<gp_Pnt2d> RandomPoles(Random theRnd, int theNb)
+    private static NCollection_Array1<Point2D> RandomPoles(Random theRnd, int theNb)
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, theNb);
+        NCollection_Array1<Point2D> aPoles = new(1, theNb);
         for (int i = 1; i <= theNb; ++i)
         {
-            aPoles.SetValue(i, new gp_Pnt2d(i + theRnd.NextDouble() * 4 - 2, theRnd.NextDouble() * 10 - 5));
+            aPoles.SetValue(i, new Point2D(i + theRnd.NextDouble() * 4 - 2, theRnd.NextDouble() * 10 - 5));
         }
         return aPoles;
     }
@@ -146,7 +148,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
             aMults.SetValue(i, aMult);
             aNbPoles += aMult;
         }
-        NCollection_Array1<gp_Pnt2d> aPoles = RandomPoles(theRnd, aNbPoles);
+        NCollection_Array1<Point2D> aPoles = RandomPoles(theRnd, aNbPoles);
         Geom2d_BSplineCurve aCurve = theRational
             ? new Geom2d_BSplineCurve(aPoles, RandomWeights(theRnd, aNbPoles), aKnots, aMults, aDeg)
             : new Geom2d_BSplineCurve(aPoles, aKnots, aMults, aDeg);
@@ -156,7 +158,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     private static Geom2d_BezierCurve RandomBezier(Random theRnd, bool theRational)
     {
         int aNbPoles = theRnd.Next(2, 10);
-        NCollection_Array1<gp_Pnt2d> aPoles = RandomPoles(theRnd, aNbPoles);
+        NCollection_Array1<Point2D> aPoles = RandomPoles(theRnd, aNbPoles);
         return theRational ? new Geom2d_BezierCurve(aPoles, RandomWeights(theRnd, aNbPoles))
                            : new Geom2d_BezierCurve(aPoles);
     }
@@ -171,7 +173,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     {
         return theKind switch
         {
-            "Line" => new Geom2d_Line(new gp_Ax2d(RandomAx22d(theRnd).Location(), RandomAx22d(theRnd).XDirection())),
+            "Line" => new Geom2d_Line(new Axis2D(RandomAx22d(theRnd).Location(), RandomAx22d(theRnd).XDirection())),
             "Circle" => new Geom2d_Circle(RandomAx22d(theRnd), 0.1 + 10 * theRnd.NextDouble()),
             "Ellipse" => RandomEllipse(theRnd),
             "Hyperbola" => new Geom2d_Hyperbola(RandomAx22d(theRnd), 3 + 5 * theRnd.NextDouble(),
@@ -196,7 +198,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     {
         double aFirst = theCurve.FirstParameter();
         double aLast = theCurve.LastParameter();
-        if (Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             return Basis(theCurve) is Geom2d_Hyperbola ? (-3.0, 3.0) : (-10.0, 10.0);
         }
@@ -245,7 +247,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                            Geom2d_Curve? theCurve, NCollection_Array1<double> theParams, DnInfo theDn)
     {
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aD0 = theEval.EvaluateGrid(theParams);
+        NCollection_Array1<Point2D> aD0 = theEval.EvaluateGrid(theParams);
         NCollection_Array1<Geom2d_Curve.ResD1> aD1 = theEval.EvaluateGridD1(theParams);
         NCollection_Array1<Geom2d_Curve.ResD2> aD2 = theEval.EvaluateGridD2(theParams);
         NCollection_Array1<Geom2d_Curve.ResD3> aD3 = theEval.EvaluateGridD3(theParams);
@@ -257,11 +259,11 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         for (int i = 1; i <= aNb; ++i)
         {
             double aU = theParams.Value(i);
-            gp_Pnt2d aA0 = theAdaptor.EvalD0(aU);
+            Point2D aA0 = theAdaptor.EvalD0(aU);
             Geom2d_Curve.ResD1 aA1 = theAdaptor.EvalD1(aU);
             Geom2d_Curve.ResD2 aA2 = theAdaptor.EvalD2(aU);
             Geom2d_Curve.ResD3 aA3 = theAdaptor.EvalD3(aU);
-            gp_Pnt2d? aC0 = theCurve?.EvalD0(aU);
+            Point2D? aC0 = theCurve?.EvalD0(aU);
             Geom2d_Curve.ResD1? aC1 = theCurve?.EvalD1(aU);
             Geom2d_Curve.ResD2? aC2 = theCurve?.EvalD2(aU);
             Geom2d_Curve.ResD3? aC3 = theCurve?.EvalD3(aU);
@@ -287,16 +289,16 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                 continue;
             }
 
-            NCollection_Array1<gp_Vec2d> aDN;
+            NCollection_Array1<Vector2D> aDN;
             try
             {
                 aDN = theEval.EvaluateGridDN(theParams, aN);
             }
-            catch (Standard_NotImplemented)
+            catch (global::Kerf.Engine.Foundation.MethodNotImplementedException)
             {
                 // The adaptor fallback calls the adaptor's DN above 3, which Adaptor2d_OffsetCurve doesn't have
                 Assert.Null(theCurve);
-                Assert.Throws<Standard_NotImplemented>(() => theAdaptor.EvalDN(theParams.Value(1), aN));
+                Assert.Throws<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => theAdaptor.EvalDN(theParams.Value(1), aN));
                 continue;
             }
             Assert.Equal(aNb, aDN.Length());
@@ -315,8 +317,8 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
             for (int i = 1; i <= aNb; ++i)
             {
                 double aU = theParams.Value(i);
-                gp_XY? aCurveDN = theCurve?.EvalDN(aU, aN).XY();
-                gp_XY anAdaptorDN;
+                Xy? aCurveDN = theCurve?.EvalDN(aU, aN).XY();
+                Xy anAdaptorDN;
                 if (theCurve is null)
                 {
                     // The adaptor fallback evaluates DN1-DN3 through the adaptor's D1-D3
@@ -333,7 +335,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                     {
                         anAdaptorDN = theAdaptor.EvalDN(aU, aN).XY();
                     }
-                    catch (Standard_Failure)
+                    catch (global::Kerf.Engine.Foundation.FailureException)
                     {
                         // Geom2dAdaptor_Curve's offset DN3 can throw (Geom2d_OffsetCurveUtils::EvaluateDN)
                         anAdaptorDN = aCurveDN!.Value;
@@ -476,7 +478,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     public void BSplineDN_UsesFlatSpanIndexWithKnots()
     {
         // Cubic, knots 0..5 (flat index of the first span is 4, a valid knot index)
-        NCollection_Array1<gp_Pnt2d> aPoles = RandomPoles(new Random(3), 8);
+        NCollection_Array1<Point2D> aPoles = RandomPoles(new Random(3), 8);
         NCollection_Array1<double> aKnots = new(1, 6);
         NCollection_Array1<int> aMults = new(1, 6);
         for (int i = 1; i <= 6; ++i)
@@ -488,12 +490,12 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
 
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
-        gp_Vec2d aGrid = new Geom2dGridEval_BSplineCurve(aCurve).EvaluateGridDN(aParams, 1).Value(1);
-        gp_Vec2d aPoint = aCurve.EvalDN(0.5, 1);
+        Vector2D aGrid = new Geom2dGridEval_BSplineCurve(aCurve).EvaluateGridDN(aParams, 1).Value(1);
+        Vector2D aPoint = aCurve.EvalDN(0.5, 1);
         Assert.True((aGrid - aPoint).Magnitude() > 1e-3); // the span [3, 4] extrapolated to 0.5
 
         // What OCCT computes: BSplCLib::DN with knot index 4
-        BSplCLib.DN(0.5, 1, 4, 3, false, aCurve.InternalPoles(), null, aKnots, aMults, out gp_Vec2d aSpan4);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(0.5, 1, 4, 3, false, aCurve.InternalPoles(), null, aKnots, aMults, out Vector2D aSpan4);
         Assert.Equal(aSpan4, aGrid);
 
         // In the third span the flat index (6) is the last knot's: building the span's knots reads past the
@@ -507,11 +509,11 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     [Fact]
     public void RationalDN_AboveDegreeIsZero()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 3);
+        NCollection_Array1<Point2D> aPoles = new(1, 3);
         NCollection_Array1<double> aWeights = new(1, 3);
-        aPoles.SetValue(1, new gp_Pnt2d(1, 0));
-        aPoles.SetValue(2, new gp_Pnt2d(1, 1));
-        aPoles.SetValue(3, new gp_Pnt2d(0, 1));
+        aPoles.SetValue(1, new Point2D(1, 0));
+        aPoles.SetValue(2, new Point2D(1, 1));
+        aPoles.SetValue(3, new Point2D(0, 1));
         aWeights.SetValue(1, 1.0);
         aWeights.SetValue(2, 1.0 / Math.Sqrt(2.0));
         aWeights.SetValue(3, 1.0);
@@ -519,7 +521,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
 
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
-        gp_Vec2d aGrid = new Geom2dGridEval_BezierCurve(aBezier).EvaluateGridDN(aParams, 3).Value(1);
+        Vector2D aGrid = new Geom2dGridEval_BezierCurve(aBezier).EvaluateGridDN(aParams, 3).Value(1);
         Assert.Equal(0.0, aGrid.Magnitude());
         Assert.True(aBezier.EvalDN(0.5, 3).Magnitude() > 0.1);
     }
@@ -532,10 +534,10 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         Random aRnd = new(11);
         for (int aTry = 0; aTry < 20; ++aTry)
         {
-            gp_Ax22d anAxes = RandomAx22d(aRnd, false);
+            Frame2D anAxes = RandomAx22d(aRnd, false);
             double aFocal = 0.1 + 5 * aRnd.NextDouble();
             Geom2d_Parabola anIndirect = new(anAxes, aFocal);
-            Geom2d_Parabola aDirect = new(new gp_Ax22d(anAxes.Location(), anAxes.XDirection(), true), aFocal);
+            Geom2d_Parabola aDirect = new(new Frame2D(anAxes.Location(), anAxes.XDirection(), true), aFocal);
             NCollection_Array1<double> aParams = SortedParams(aRnd, -10, 10, 20, null);
 
             NCollection_Array1<Geom2d_Curve.ResD3> aGrid = new Geom2dGridEval_Parabola(anIndirect).EvaluateGridD3(aParams);
@@ -578,14 +580,14 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         }
 
         // DN of order below 1 is empty
-        Geom2dGridEval_Curve aCircle = new(new Geom2d_Circle(new gp_Ax22d(), 1.0));
+        Geom2dGridEval_Curve aCircle = new(new Geom2d_Circle(new Frame2D(), 1.0));
         Assert.True(aCircle.EvaluateGridDN(aParams, 0).IsEmpty());
 
         // Results are 1-based whatever the parameters' bounds
         NCollection_Array1<double> aShifted = new(-3, -2);
         aShifted.SetValue(-3, 0.0);
         aShifted.SetValue(-2, 1.0);
-        NCollection_Array1<gp_Pnt2d> aGrid = aCircle.EvaluateGrid(aShifted);
+        NCollection_Array1<Point2D> aGrid = aCircle.EvaluateGrid(aShifted);
         Assert.Equal(1, aGrid.Lower());
         Assert.Equal(2, aGrid.Upper());
     }
@@ -597,11 +599,11 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     [Fact]
     public void ZeroFocalParabola_GridIsNotFinite()
     {
-        Geom2d_Parabola aParab = new(new gp_Ax22d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0), new gp_Dir2d(0, 1)), 0.0);
+        Geom2d_Parabola aParab = new(new Frame2D(new Point2D(1, 2), new Direction2D(1, 0), new Direction2D(0, 1)), 0.0);
         NCollection_Array1<double> aParams = NCollection_Array1<double>.From([0.0, 1.5]);
 
-        Assert.Equal(new gp_Pnt2d(2.5, 2), aParab.EvalD0(1.5));
-        NCollection_Array1<gp_Pnt2d> aGrid = new Geom2dGridEval_Parabola(aParab).EvaluateGrid(aParams);
+        Assert.Equal(new Point2D(2.5, 2), aParab.EvalD0(1.5));
+        NCollection_Array1<Point2D> aGrid = new Geom2dGridEval_Parabola(aParab).EvaluateGrid(aParams);
         Assert.True(double.IsNaN(aGrid.Value(1).X())); // 0 * inf
         Assert.True(double.IsInfinity(aGrid.Value(2).X()));
     }

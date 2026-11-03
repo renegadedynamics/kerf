@@ -5,6 +5,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -64,7 +67,7 @@ public class XSAlgo_ShapeProcessor
     /// the input shape if no modifications were made.
     /// </summary>
     public TopoDS_Shape ProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
-                                     Message_ProgressRange theProgress = default)
+                                     ProgressRange theProgress = default)
     {
         if (theShape.IsNull())
         {
@@ -79,7 +82,7 @@ public class XSAlgo_ShapeProcessor
     /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
     /// </summary>
     internal TopoDS_Shape InternalProcessShape(in TopoDS_Shape theShape, ShapeProcess.OperationsFlags theOperations,
-                                               Message_ProgressRange theProgress = default)
+                                               ProgressRange theProgress = default)
     {
         if (theShape.IsNull())
         {
@@ -134,13 +137,13 @@ public class XSAlgo_ShapeProcessor
         {
             return;
         }
-        if (!theMessages.MapShape().Find(theShape, out NCollection_List<Message_Msg> aShapeMessages))
+        if (!theMessages.MapShape().Find(theShape, out NCollection_List<Msg> aShapeMessages))
         {
             return;
         }
-        for (var aMsgIter = new NCollection_List<Message_Msg>.Iterator(aShapeMessages); aMsgIter.More(); aMsgIter.Next())
+        for (var aMsgIter = new NCollection_List<Msg>.Iterator(aShapeMessages); aMsgIter.More(); aMsgIter.Next())
         {
-            Message_Msg aMessage = aMsgIter.Value();
+            Msg aMessage = aMsgIter.Value();
             theBinder.AddWarning(aMessage.Value(), aMessage.Original());
         }
     }
@@ -172,9 +175,9 @@ public class XSAlgo_ShapeProcessor
             {
                 aShapeBinder.SetResult(theModifiedShapesMap.Find(anOriginalShape));
             }
-            else if (!anOriginalShape.Location().IsIdentity())
+            else if (!anOriginalShape.Location().IsIdentity)
             {
-                var aNullLoc = new TopLoc_Location();
+                var aNullLoc = new Placement();
                 TopoDS_Shape aTemporaryShape = anOriginalShape.Located(aNullLoc);
                 if (theModifiedShapesMap.IsBound(aTemporaryShape))
                 {
@@ -268,7 +271,7 @@ public class XSAlgo_ShapeProcessor
                         {
                             continue;
                         }
-                        Standard_Transient? aTransientResult = theFinderProcess.FindTransient(aSubShapeMapper);
+                        Transient? aTransientResult = theFinderProcess.FindTransient(aSubShapeMapper);
                         if (aTransientResult is null)
                         {
                             continue;
@@ -326,8 +329,8 @@ public class XSAlgo_ShapeProcessor
         {
             return aResult;
         }
-        gp_Pnt aCurveStartPt = aSourceGeomCurve.Value(aStartParam);
-        gp_Pnt aCurveEndPt = aSourceGeomCurve.Value(anEndParam);
+        Point3D aCurveStartPt = aSourceGeomCurve.Value(aStartParam);
+        Point3D aCurveEndPt = aSourceGeomCurve.Value(anEndParam);
         var anEdgeMaker = new BRepBuilderAPI_MakeEdge(aSourceGeomCurve, aCurveStartPt, aCurveEndPt, aStartParam, anEndParam);
         var SBE = new ShapeBuild_Edge();
         SBE.SetRange3d(anEdgeMaker.InternalEdge(), aStartParam, anEndParam);
@@ -362,8 +365,8 @@ public class XSAlgo_ShapeProcessor
         // Check for pcurve longer than surface.
         Geom_Surface aSurface = BRep_Tool.Surface(theFace);
         aSurface.Bounds(out double aFaceSurfaceU1, out double aFaceSurfaceU2, out double aFaceSurfaceV1, out double aFaceSurfaceV2);
-        gp_Pnt2d aCurve2DPoint1 = aCurve2D.Value(aCurve2DParam1);
-        gp_Pnt2d aCurve2DPoint2 = aCurve2D.Value(aCurve2DParam2);
+        Point2D aCurve2DPoint1 = aCurve2D.Value(aCurve2DParam1);
+        Point2D aCurve2DPoint2 = aCurve2D.Value(aCurve2DParam2);
         // Multi-periodic? Better to discard (beware of infinite values)
         double anEdgeSpanX = Math.Abs(aCurve2DPoint1.X() - aCurve2DPoint2.X());
         double anEdgeSpanY = Math.Abs(aCurve2DPoint1.Y() - aCurve2DPoint2.Y());
@@ -381,12 +384,12 @@ public class XSAlgo_ShapeProcessor
         // Example: UVV in DEGREES on a surface in RADIANS, adjusted = 57 turns!
         anEdgeAnalyzer.Curve3d(theEdge, out Geom_Curve? aCurve3D, out double aCurve3DParam1, out double aCurve3DParam2, false);
 
-        gp_Pnt aCurve3DPoint1 = aSurface.Value(aCurve2DPoint1.X(), aCurve2DPoint1.Y());
-        gp_Pnt aCurve3DPoint2 = aSurface.Value(aCurve2DPoint2.X(), aCurve2DPoint2.Y());
+        Point3D aCurve3DPoint1 = aSurface.Value(aCurve2DPoint1.X(), aCurve2DPoint1.Y());
+        Point3D aCurve3DPoint2 = aSurface.Value(aCurve2DPoint2.X(), aCurve2DPoint2.Y());
         TopoDS_Vertex aVertex1 = TopExp.FirstVertex(theEdge);
         TopoDS_Vertex aVertex2 = TopExp.LastVertex(theEdge);
-        gp_Pnt aPV1 = aCurve3D is null ? BRep_Tool.Pnt(aVertex1) : aCurve3D.Value(aCurve3DParam1);
-        gp_Pnt aPV2 = aCurve3D is null ? BRep_Tool.Pnt(aVertex2) : aCurve3D.Value(aCurve3DParam2);
+        Point3D aPV1 = aCurve3D is null ? BRep_Tool.Pnt(aVertex1) : aCurve3D.Value(aCurve3DParam1);
+        Point3D aPV2 = aCurve3D is null ? BRep_Tool.Pnt(aVertex2) : aCurve3D.Value(aCurve3DParam2);
         double aDist11 = aPV1.Distance(aCurve3DPoint1);
         double aDist22 = aPV2.Distance(aCurve3DPoint2);
         if ((aDist11 > thePrecision) || (aDist22 > thePrecision))
@@ -500,7 +503,7 @@ public class XSAlgo_ShapeProcessor
     {
         string aFileName = theStatics.CVal(theFileResourceName);
         var aContext = new ShapeProcess_ShapeContext(new TopoDS_Shape(), aFileName);
-        if (!aContext.ResourceManager().IsInitialized())
+        if (!aContext.ResourceManager().IsInitialized)
         {
             // If resource file wasn't found, use static values instead
             theStatics.FillMap(aContext.ResourceManager().GetMap());
@@ -551,7 +554,7 @@ public class XSAlgo_ShapeProcessor
     {
         if (theToIndex > theString.Length || theFromIndex <= 0 || theFromIndex > theToIndex)
         {
-            throw new Standard_OutOfRange("TCollection_AsciiString::SubString : parameters out of range");
+            throw new OutOfRangeException("TCollection_AsciiString::SubString : parameters out of range");
         }
         return theString.Substring(theFromIndex - 1, theToIndex - theFromIndex + 1);
     }

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
 using static Occt.BOPAlgo_GlueEnum;
@@ -116,8 +119,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             for (int i = 0; i < 3; ++i)
             {
                 aB.Append("XYZ"[i]).Append(": ");
-                aB.Append(myPeriodic[i] ? gp.Format("periodic", myPeriod[i]) : "not periodic");
-                aB.Append(myIsTrimmed[i] ? ", trimmed" : ", " + gp.Format("first", myPeriodFirst[i]));
+                aB.Append(myPeriodic[i] ? Constants.Format("periodic", myPeriod[i]) : "not periodic");
+                aB.Append(myIsTrimmed[i] ? ", trimmed" : ", " + Constants.Format("first", myPeriodFirst[i]));
                 aB.Append(i < 2 ? "; " : "");
             }
             return aB.ToString();
@@ -125,7 +128,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     }
 
     // Periodic/Trim/Repeat directions
-    private static readonly gp_Dir[] MY_DIRECTIONS = [gp.DX(), gp.DY(), gp.DZ()];
+    private static readonly Direction3D[] MY_DIRECTIONS = [Constants.DX(), Constants.DY(), Constants.DZ()];
 
     protected TopoDS_Shape myInputShape = new();                    //!< Input shape to make periodic
     protected PeriodicityParams myPeriodicityParams = new();        //!< Periodicity parameters
@@ -374,9 +377,9 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
     /// <summary>Checks the validity of input data.</summary>
     protected void CheckData()
     {
-        if ((!IsXPeriodic() || XPeriod() < Precision.Confusion())
-            && (!IsYPeriodic() || YPeriod() < Precision.Confusion())
-            && (!IsZPeriodic() || ZPeriod() < Precision.Confusion()))
+        if ((!IsXPeriodic() || XPeriod() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            && (!IsYPeriodic() || YPeriod() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            && (!IsZPeriodic() || ZPeriod() < global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // Add error informing the user that no periodicity is required
             // or no valid period is set.
@@ -420,14 +423,14 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // Compute bounding box for the shape to use it as a starting
         // volume for trimming. If required, the volume will be modified
         // to the requested trimming size in requested directions.
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(myInputShape, ref aBox);
         // Enlarge box to avoid overlapping with the shape
         aBox.Enlarge(0.1 * Math.Sqrt(aBox.SquareExtent()));
 
         // Get Corner points of the bounding box
-        gp_Pnt aPMin = aBox.CornerMin();
-        gp_Pnt aPMax = aBox.CornerMax();
+        Point3D aPMin = aBox.CornerMin();
+        Point3D aPMax = aBox.CornerMax();
 
         // Update corner points according to the requested trim parameters
         for (int i = 0; i < 3; ++i)
@@ -530,8 +533,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             }
 
             // Translate the shape to the negative side
-            gp_Trsf aNegTrsf = new();
-            aNegTrsf.SetTranslationPart(new gp_Vec(MY_DIRECTIONS[i].Reversed()) * Period(i));
+            Transform3D aNegTrsf = new();
+            aNegTrsf.SetTranslationPart(new Vector3D(MY_DIRECTIONS[i].Reversed()) * Period(i));
             BRepBuilderAPI_Transform aNegT = new(myShape, aNegTrsf, false);
 
             // Split the negative side of the shape.
@@ -595,8 +598,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
             }
 
             // Translate the shape to the positive side
-            gp_Trsf aPosTrsf = new();
-            aPosTrsf.SetTranslationPart(new gp_Vec(MY_DIRECTIONS[i]) * Period(i));
+            Transform3D aPosTrsf = new();
+            aPosTrsf.SetTranslationPart(new Vector3D(MY_DIRECTIONS[i]) * Period(i));
             BRepBuilderAPI_Transform aTranslator = new(myShape, aPosTrsf, false);
             aTools.Append(aTranslator.InternalShape());
 
@@ -753,7 +756,7 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
 
         // Get the shape's period in the required direction
         int id = ToDirectionID(theDir);
-        if (myRepeatPeriod[id] < Precision.Confusion())
+        if (myRepeatPeriod[id] < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             myRepeatPeriod[id] = Period(id);
         }
@@ -792,8 +795,8 @@ public class BOPAlgo_MakePeriodic : BOPAlgo_Options
         // Create translated copies of the shape
         for (int i = 1; i <= Math.Abs(theTimes); ++i)
         {
-            gp_Trsf aTrsf = new();
-            aTrsf.SetTranslationPart(new gp_Vec(MY_DIRECTIONS[id]) * (iDir * i * aPeriod));
+            Transform3D aTrsf = new();
+            aTrsf.SetTranslationPart(new Vector3D(MY_DIRECTIONS[id]) * (iDir * i * aPeriod));
             BRepBuilderAPI_Transform aTranslator = new(myRepeatedShape, aTrsf, false);
             aShapes.Append(aTranslator.InternalShape());
 

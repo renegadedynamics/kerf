@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/ExtremaPC_Comparison_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class ExtremaPC_ComparisonTest
@@ -123,10 +125,10 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Line_PointOnLine()
     {
-        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
 
-        gp_Pnt aPoint = new(5.0, 0.0, 0.0);
+        Point3D aPoint = new(5.0, 0.0, 0.0);
 
         // New implementation
         ExtremaPC_Curve anExtPC = new(anAdaptor);
@@ -141,10 +143,10 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Line_PointOffLine()
     {
-        Geom_Line aGeomLine = new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aGeomLine = new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         GeomAdaptor_Curve anAdaptor = new(aGeomLine, -100.0, 100.0);
 
-        gp_Pnt aPoint = new(5.0, 3.0, 4.0);
+        Point3D aPoint = new(5.0, 3.0, 4.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -162,10 +164,10 @@ public class ExtremaPC_ComparisonTest
     public void Circle_PointOutside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(20.0, 0.0, 0.0);
+        Point3D aPoint = new(20.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -179,10 +181,10 @@ public class ExtremaPC_ComparisonTest
     public void Circle_PointInside()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(3.0, 0.0, 0.0);
+        Point3D aPoint = new(3.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -196,10 +198,10 @@ public class ExtremaPC_ComparisonTest
     public void Circle_PointOffPlane()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
-        gp_Pnt aPoint = new(15.0, 0.0, 5.0);
+        Point3D aPoint = new(15.0, 0.0, 5.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -217,10 +219,10 @@ public class ExtremaPC_ComparisonTest
     public void Ellipse_PointOnMajorAxis()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(30.0, 0.0, 0.0);
+        Point3D aPoint = new(30.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -234,10 +236,10 @@ public class ExtremaPC_ComparisonTest
     public void Ellipse_PointGeneral()
     {
         Geom_Ellipse aGeomEllipse =
-            new Geom_Ellipse(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 20.0, 10.0);
+            new Geom_Ellipse(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 20.0, 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomEllipse);
 
-        gp_Pnt aPoint = new(15.0, 12.0, 0.0);
+        Point3D aPoint = new(15.0, 12.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -255,10 +257,10 @@ public class ExtremaPC_ComparisonTest
     public void Parabola_PointNearVertex()
     {
         Geom_Parabola aGeomParabola =
-            new Geom_Parabola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+            new Geom_Parabola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomParabola, -10.0, 10.0);
 
-        gp_Pnt aPoint = new(1.0, 2.0, 0.0);
+        Point3D aPoint = new(1.0, 2.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -276,10 +278,10 @@ public class ExtremaPC_ComparisonTest
     public void Hyperbola_PointNearBranch()
     {
         Geom_Hyperbola aGeomHyperbola =
-            new Geom_Hyperbola(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0, 5.0);
+            new Geom_Hyperbola(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomHyperbola, -2.0, 2.0);
 
-        gp_Pnt aPoint = new(15.0, 3.0, 0.0);
+        Point3D aPoint = new(15.0, 3.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -296,11 +298,11 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void BSpline_CubicCurve()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(2, 2, 0);
-        aPoles[4] = new gp_Pnt(3, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(2, 2, 0);
+        aPoles[4] = new Point3D(3, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -313,7 +315,7 @@ public class ExtremaPC_ComparisonTest
         Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 3);
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
-        gp_Pnt aPoint = new(1.5, 3.0, 0.0);
+        Point3D aPoint = new(1.5, 3.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -328,13 +330,13 @@ public class ExtremaPC_ComparisonTest
     {
         // For degree 2, sum(mults) = n_poles + degree + 1 = 6 + 2 + 1 = 9
         // Using 4 knots with mults = 3,1,2,3 = 9
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 6);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 3, 0);
-        aPoles[3] = new gp_Pnt(2, 0, 0);
-        aPoles[4] = new gp_Pnt(3, 3, 0);
-        aPoles[5] = new gp_Pnt(4, 0, 0);
-        aPoles[6] = new gp_Pnt(5, 3, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 6);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 3, 0);
+        aPoles[3] = new Point3D(2, 0, 0);
+        aPoles[4] = new Point3D(3, 3, 0);
+        aPoles[5] = new Point3D(4, 0, 0);
+        aPoles[6] = new Point3D(5, 3, 0);
 
         NCollection_Array1<double> aKnots = new(1, 4);
         aKnots[1] = 0.0;
@@ -351,7 +353,7 @@ public class ExtremaPC_ComparisonTest
         Geom_BSplineCurve aBSpline = new Geom_BSplineCurve(aPoles, aKnots, aMults, 2);
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
-        gp_Pnt aPoint = new(3.0, 4.0, 0.0);
+        Point3D aPoint = new(3.0, 4.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -371,7 +373,7 @@ public class ExtremaPC_ComparisonTest
         {
             // Verify the found point is actually on the curve
             var aExtremum = aNewResult[aNewResult.MinIndex()];
-            gp_Pnt aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
+            Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
             Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 1.0e-6); // "Point should be on curve"
         }
 
@@ -400,16 +402,16 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void Bezier_CubicCurve()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 3, 0);
-        aPoles[3] = new gp_Pnt(3, 3, 0);
-        aPoles[4] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 3, 0);
+        aPoles[3] = new Point3D(3, 3, 0);
+        aPoles[4] = new Point3D(4, 0, 0);
 
         Geom_BezierCurve aBezier = new Geom_BezierCurve(aPoles);
         GeomAdaptor_Curve anAdaptor = new(aBezier);
 
-        gp_Pnt aPoint = new(2.0, 4.0, 0.0);
+        Point3D aPoint = new(2.0, 4.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -427,11 +429,11 @@ public class ExtremaPC_ComparisonTest
     public void OffsetCircle()
     {
         Geom_Circle aCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
-        Geom_OffsetCurve anOffsetCurve = new Geom_OffsetCurve(aCircle, 5.0, new gp_Dir(0, 0, 1));
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
+        Geom_OffsetCurve anOffsetCurve = new Geom_OffsetCurve(aCircle, 5.0, new Direction3D(0, 0, 1));
         GeomAdaptor_Curve anAdaptor = new(anOffsetCurve);
 
-        gp_Pnt aPoint = new(25.0, 0.0, 0.0);
+        Point3D aPoint = new(25.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -449,7 +451,7 @@ public class ExtremaPC_ComparisonTest
     public void Circle_RandomPoints()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         Mt19937 aGen = new(12345); // std::mt19937 // Fixed seed for reproducibility
@@ -459,7 +461,7 @@ public class ExtremaPC_ComparisonTest
 
         for (int i = 0; i < aNumTests; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0));
+            Point3D aPoint = new(aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0), aGen.NextReal(-30.0, 30.0));
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -492,12 +494,12 @@ public class ExtremaPC_ComparisonTest
     {
         // For degree 2, sum(mults) = n_poles + degree + 1 = 5 + 2 + 1 = 8
         // Using 4 knots with mults = 3,1,1,3 = 8
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 5);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 1);
-        aPoles[3] = new gp_Pnt(2, 1, 2);
-        aPoles[4] = new gp_Pnt(3, 3, 1);
-        aPoles[5] = new gp_Pnt(4, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 5);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 1);
+        aPoles[3] = new Point3D(2, 1, 2);
+        aPoles[4] = new Point3D(3, 3, 1);
+        aPoles[5] = new Point3D(4, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 4);
         aKnots[1] = 0.0;
@@ -521,7 +523,7 @@ public class ExtremaPC_ComparisonTest
 
         for (int i = 0; i < aNumTests; ++i)
         {
-            gp_Pnt aPoint = new(aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0));
+            Point3D aPoint = new(aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0), aGen.NextReal(-2.0, 7.0));
 
             ExtremaPC_Curve anExtPC = new(anAdaptor);
             ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -556,11 +558,11 @@ public class ExtremaPC_ComparisonTest
     public void PointOnCurve_Circle()
     {
         Geom_Circle aGeomCircle =
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 10.0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aGeomCircle);
 
         // Point exactly on the circle
-        gp_Pnt aPoint = new(10.0, 0.0, 0.0);
+        Point3D aPoint = new(10.0, 0.0, 0.0);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);
@@ -576,11 +578,11 @@ public class ExtremaPC_ComparisonTest
     [Fact]
     public void PointOnCurve_BSpline()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(1, 2, 0);
-        aPoles[3] = new gp_Pnt(2, 2, 0);
-        aPoles[4] = new gp_Pnt(3, 0, 0);
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(1, 2, 0);
+        aPoles[3] = new Point3D(2, 2, 0);
+        aPoles[4] = new Point3D(3, 0, 0);
 
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
@@ -594,7 +596,7 @@ public class ExtremaPC_ComparisonTest
         GeomAdaptor_Curve anAdaptor = new(aBSpline);
 
         // Point on curve at u=0.5
-        gp_Pnt aPoint = aBSpline.Value(0.5);
+        Point3D aPoint = aBSpline.Value(0.5);
 
         ExtremaPC_Curve anExtPC = new(anAdaptor);
         ExtremaPC.Result aNewResult = anExtPC.Perform(aPoint, THE_TOL);

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -15,7 +16,7 @@ namespace Occt;
 /// in the TransientProcess, while an Iterator gives a flat view of it. A ResultFromModel is intended to be attached to
 /// the transfer of one entity (typically root entity but it is not mandatory).
 /// </summary>
-public class Transfer_ResultFromModel : Standard_Transient
+public class Transfer_ResultFromModel : Transient
 {
     /// <summary>Creates a ResultFromModel, empty.</summary>
     public Transfer_ResultFromModel()
@@ -54,7 +55,7 @@ public class Transfer_ResultFromModel : Standard_Transient
     /// <paramref name="ent"/>. If <paramref name="ent"/> has no recorded result, it remains empty. Returns True if a
     /// result is recorded, False else.
     /// </summary>
-    public bool Fill(Transfer_TransientProcess? TP, Standard_Transient? ent)
+    public bool Fill(Transfer_TransientProcess? TP, Transient? ent)
     {
         if (TP is null || ent is null)
         {
@@ -106,7 +107,7 @@ public class Transfer_ResultFromModel : Standard_Transient
             themchk = ComputeCheckStatus(false);
             themodel = null;
             themain.ClearSubs();
-            Standard_Transient? nulh = null;
+            Transient? nulh = null;
             themain.SetStart(nulh);
             if (mode > 10)
             {
@@ -169,7 +170,7 @@ public class Transfer_ResultFromModel : Standard_Transient
     //  ############  INFORMATIONS  GLOBALES  ###########
 
     /// <summary>Searches for a key (starting entity) and returns its result. Returns a null handle if not found.</summary>
-    public Transfer_ResultFromTransient? ResultFromKey(Standard_Transient? start)
+    public Transfer_ResultFromTransient? ResultFromKey(Transient? start)
     {
         return themain.ResultFromKey(start);
     }
@@ -178,13 +179,13 @@ public class Transfer_ResultFromModel : Standard_Transient
     /// Internal method which returns the list of ResultFromTransient, according level (2:complete; 1:sub-level 1;
     /// 0:main only).
     /// </summary>
-    public NCollection_HSequence<Standard_Transient> Results(int level)
+    public NCollection_HSequence<Transient> Results(int level)
     {
         int i, nb;
-        var list = new NCollection_HSequence<Standard_Transient>();
+        var list = new NCollection_HSequence<Transient>();
         if (level > 1)
         {
-            var map = new NCollection_IndexedMap<Standard_Transient>(ReferenceEqualityComparer.Instance);
+            var map = new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
             map.Add(themain);
             themain.FillMap(map);
 
@@ -215,11 +216,11 @@ public class Transfer_ResultFromModel : Standard_Transient
     /// are ignored. <paramref name="level"/> = 2 (D), considers the complete list; 1 considers the main result plus
     /// immediate subs; 0 just the main result.
     /// </summary>
-    public NCollection_HSequence<Standard_Transient> TransferredList(int level = 2)
+    public NCollection_HSequence<Transient> TransferredList(int level = 2)
     {
         int i, nb;
-        var list = new NCollection_HSequence<Standard_Transient>();
-        NCollection_HSequence<Standard_Transient> res = Results(level);
+        var list = new NCollection_HSequence<Transient>();
+        NCollection_HSequence<Transient> res = Results(level);
         nb = res.Length();
         for (i = 1; i <= nb; i++)
         {
@@ -242,11 +243,11 @@ public class Transfer_ResultFromModel : Standard_Transient
     /// at all; 1 entities with warning but no fail; 2 entities with fail. <paramref name="result"/> : if True, only
     /// entities with an attached result.
     /// </summary>
-    public NCollection_HSequence<Standard_Transient> CheckedList(Interface_CheckStatus check, bool result)
+    public NCollection_HSequence<Transient> CheckedList(Interface_CheckStatus check, bool result)
     {
         int i, nb;
-        var list = new NCollection_HSequence<Standard_Transient>();
-        NCollection_HSequence<Standard_Transient> res = Results(2);
+        var list = new NCollection_HSequence<Transient>();
+        NCollection_HSequence<Transient> res = Results(2);
         nb = res.Length();
         for (i = 1; i <= nb; i++)
         {
@@ -277,7 +278,7 @@ public class Transfer_ResultFromModel : Standard_Transient
     {
         var chl = new Interface_CheckIterator();
         int i, nb;
-        NCollection_HSequence<Standard_Transient> res = Results(level);
+        NCollection_HSequence<Transient> res = Results(level);
         nb = res.Length();
         for (i = 1; i <= nb; i++)
         {

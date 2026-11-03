@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -40,7 +42,7 @@ public class TopoDS_Builder
     /// A frozen compound of the given shapes (OCCT.NET addition, the public way to group shapes). The shapes' Free
     /// flags don't change (docs/phase3-design.md, section 4.4).
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     public static TopoDS_Compound MakeCompound(params TopoDS_Shape[] theShapes)
         => MakeCompound((IEnumerable<TopoDS_Shape>)theShapes);
 
@@ -48,7 +50,7 @@ public class TopoDS_Builder
     /// A frozen compound of the given shapes (OCCT.NET addition, the public way to group shapes). The shapes' Free
     /// flags don't change (docs/phase3-design.md, section 4.4).
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     public static TopoDS_Compound MakeCompound(IEnumerable<TopoDS_Shape> theShapes)
     {
         var aBuilder = new TopoDS_Builder();
@@ -68,7 +70,7 @@ public class TopoDS_Builder
     /// A frozen wire of the given edges, as OCCT's <c>MakeWire</c> and <c>Add</c> make it (OCCT.NET addition, decision
     /// 10404): no flag is set and no geometry is checked.
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't an edge.</exception>
     public static TopoDS_Wire MakeWire(IEnumerable<TopoDS_Shape> theEdges)
     {
@@ -82,7 +84,7 @@ public class TopoDS_Builder
     /// A frozen shell of the given faces, as OCCT's <c>MakeShell</c> and <c>Add</c> make it (OCCT.NET addition,
     /// decision 1104): no flag is set (it isn't marked closed) and no geometry is checked.
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a face.</exception>
     public static TopoDS_Shell MakeShell(IEnumerable<TopoDS_Shape> theFaces)
     {
@@ -96,7 +98,7 @@ public class TopoDS_Builder
     /// A frozen solid of the given shells (or edges and vertices), as OCCT's <c>MakeSolid</c> and <c>Add</c> make it
     /// (OCCT.NET addition, decision 1104): the shells are taken as they are oriented, nothing is checked.
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a shell, an edge or a vertex.</exception>
     public static TopoDS_Solid MakeSolid(IEnumerable<TopoDS_Shape> theShells)
     {
@@ -110,7 +112,7 @@ public class TopoDS_Builder
     /// A frozen composite solid of the given solids, as OCCT's <c>MakeCompSolid</c> and <c>Add</c> make it (OCCT.NET
     /// addition, decision 1104).
     /// </summary>
-    /// <exception cref="Standard_NullObject">A shape is null.</exception>
+    /// <exception cref="NullObjectException">A shape is null.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">A shape isn't a solid.</exception>
     public static TopoDS_CompSolid MakeCompSolid(IEnumerable<TopoDS_Shape> theSolids)
     {
@@ -174,15 +176,15 @@ public class TopoDS_Builder
     /// </summary>
     /// <exception cref="TopoDS_FrozenShape">aShape isn't free.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">aShape can't contain aComponent.</exception>
-    /// <exception cref="Standard_ImmutableObject">aShape is frozen.</exception>
+    /// <exception cref="ImmutableObjectException">aShape is frozen.</exception>
     public void Add(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
     {
         // From now the Component cannot be edited
         // OCCT.NET: frozen: a frozen component keeps the Free flag it was frozen with, so its BRep text never
         // changes (docs/phase3-design.md, section 4.4; OCCT clears it).
         TopoDS_TShape aComponentTShape = aComponent.TShape()
-                                         ?? throw new Standard_NullObject("TopoDS_Builder::Add: the component is null");
-        if (!aComponentTShape.IsFrozen())
+                                         ?? throw new NullObjectException("TopoDS_Builder::Add: the component is null");
+        if (!aComponentTShape.IsFrozen)
         {
             aComponentTShape.Free(false);
         }
@@ -204,8 +206,8 @@ public class TopoDS_Builder
                 }
 
                 // and the Relative Location
-                TopLoc_Location aLoc = aShape.Location();
-                if (!aLoc.IsIdentity())
+                Placement aLoc = aShape.Location();
+                if (!aLoc.IsIdentity)
                 {
                     aChild.Move(aLoc.Inverted(), false);
                 }
@@ -255,7 +257,7 @@ public class TopoDS_Builder
     /// changes, so it is taken by <c>in</c>.
     /// </summary>
     /// <exception cref="TopoDS_FrozenShape">aShape isn't free.</exception>
-    /// <exception cref="Standard_ImmutableObject">aShape is frozen.</exception>
+    /// <exception cref="ImmutableObjectException">aShape is frozen.</exception>
     public void Remove(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
     {
         // check if aShape  is not Frozen
@@ -291,7 +293,7 @@ public class TopoDS_Builder
     private protected static void MakeShape(ref TopoDS_Shape S, TopoDS_TShape T)
     {
         S.TShape(T);
-        S.Location(new TopLoc_Location());
+        S.Location(new Placement());
         S.Orientation(TopAbs_FORWARD);
     }
 }

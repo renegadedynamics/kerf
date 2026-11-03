@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A section law built on a vertex or a wire: one GeomFill section law per non-degenerated edge.</summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// A working object (decisions 21 and 806). <see cref="Law"/> returns the law's own elementary laws, not copies;
 /// <see cref="CurrentEdge"/> advances the law's wire explorer.
 /// </remarks>
-public abstract class BRepFill_SectionLaw : Standard_Transient
+public abstract class BRepFill_SectionLaw : Transient
 {
     protected NCollection_HArray1<GeomFill_SectionLaw>? myLaws;
     protected bool uclosed;
@@ -35,7 +39,7 @@ public abstract class BRepFill_SectionLaw : Standard_Transient
     //=================================================================================================
 
     /// <summary>The index of <paramref name="anEdge"/> in the section (negative for a reversed edge of NSections).</summary>
-    /// <exception cref="Standard_NoSuchObject">The edge isn't in the section.</exception>
+    /// <exception cref="NoSuchObjectException">The edge isn't in the section.</exception>
     public int IndexOfEdge(in TopoDS_Shape anEdge) => myIndices.Find(anEdge);
 
     /// <summary>True if the law is constant.</summary>
@@ -63,7 +67,7 @@ public abstract class BRepFill_SectionLaw : Standard_Transient
     public abstract GeomFill_SectionLaw? ConcatenedLaw();
 
     /// <summary>The continuity of the section between its edges of ranks <paramref name="Index"/> and next.</summary>
-    public abstract GeomAbs_Shape Continuity(int Index, double TolAngular);
+    public abstract Continuity Continuity(int Index, double TolAngular);
 
     /// <summary>The gap between the edges of ranks <paramref name="Index"/> and next at the law's parameter.</summary>
     public abstract double VertexTol(int Index, double Param);

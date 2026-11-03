@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -82,7 +85,7 @@ public sealed class LocOpe_Generator
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -125,7 +128,7 @@ public sealed class LocOpe_Generator
     {
         if (myShape.IsNull())
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
         if (myOwnsWork)
         {
@@ -156,7 +159,7 @@ public sealed class LocOpe_Generator
     {
         if (myShape.IsNull())
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
         myDone = false;
         myRes.Nullify();
@@ -510,9 +513,9 @@ public sealed class LocOpe_Generator
         TopoDS_Face newface;
         TopoDS_Edge newedg;
         TopoDS_Vertex newvtx = new();
-        TopLoc_Location loc;
+        Placement loc;
         double tol = 0.0, prm = 0.0, f, l, Uminc = 0.0, Umaxc = 0.0;
-        gp_Pnt2d pf, pl;
+        Point2D pf, pl;
 
         Geom_Surface S;
         Geom_Plane? P;
@@ -699,7 +702,7 @@ public sealed class LocOpe_Generator
                                             // on ne devrait pas avoir de pb d`edge de couture.
                                             tol = BRep_Tool.Tolerance(edg);
                                             C = BRep_Tool.Curve(edg, out loc, out f, out l)!;
-                                            if (!loc.IsIdentity())
+                                            if (!loc.IsIdentity)
                                             {
                                                 Geom_Geometry GG = C.Transformed(loc.Transformation());
                                                 C = (Geom_Curve)GG;
@@ -714,17 +717,17 @@ public sealed class LocOpe_Generator
                                             // Tentative de recalage dans la facette
                                             pf = C2d0.Value(f);
                                             pl = C2d0.Value(l);
-                                            double tttol = Precision.Angular();
+                                            double tttol = global::Kerf.Engine.Foundation.Precision.Angular();
                                             while (Min(pf.X(), pl.X()) >= Umaxc - tttol)
                                             {
-                                                C2d0.Translate(new gp_Vec2d(-2.0 * Math.PI, 0));
+                                                C2d0.Translate(new Vector2D(-2.0 * Math.PI, 0));
                                                 pf = C2d0.Value(f);
                                                 pl = C2d0.Value(l);
                                             }
 
                                             while (Max(pf.X(), pl.X()) <= Uminc + tttol)
                                             {
-                                                C2d0.Translate(new gp_Vec2d(2.0 * Math.PI, 0));
+                                                C2d0.Translate(new Vector2D(2.0 * Math.PI, 0));
                                                 pf = C2d0.Value(f);
                                                 pl = C2d0.Value(l);
                                             }
@@ -765,7 +768,7 @@ public sealed class LocOpe_Generator
                             }
                             listofedg.Append(newedg.Oriented(orient));
                             C = BRep_Tool.Curve(newedg, out loc, out f, out l)!;
-                            if (!loc.IsIdentity())
+                            if (!loc.IsIdentity)
                             {
                                 Geom_Geometry GG = C.Transformed(loc.Transformation());
                                 C = (Geom_Curve)GG;
@@ -841,7 +844,7 @@ public sealed class LocOpe_Generator
                             if (AddPart)
                             {
                                 itl2.Initialize(theEEMap[edg]);
-                                gp_Vec dir1, dir2;
+                                Vector3D dir1, dir2;
                                 for (; itl2.More(); itl2.Next())
                                 {
                                     if (EdgAdded.Contains(itl2.Value()))
@@ -868,10 +871,10 @@ public sealed class LocOpe_Generator
                                     if (it1.More())
                                     {
                                         double prmvt = BRep_Tool.Parameter(TopoDS.Vertex(it1.Value()), newedg);
-                                        C.D1(prmvt, out gp_Pnt ptbid, out dir1);
+                                        C.D1(prmvt, out Point3D ptbid, out dir1);
 
                                         C = BRep_Tool.Curve(edgbis, out loc, out f, out l)!;
-                                        if (!loc.IsIdentity())
+                                        if (!loc.IsIdentity)
                                         {
                                             Geom_Geometry GG = C.Transformed(loc.Transformation());
                                             C = (Geom_Curve)GG;
@@ -885,7 +888,7 @@ public sealed class LocOpe_Generator
                                     }
                                     else
                                     {
-                                        dir1 = dir2 = new gp_Vec(1, 0, 0);
+                                        dir1 = dir2 = new Vector3D(1, 0, 0);
                                     }
                                     EdgAdded.Add(edgbis);
                                     if (dir1.Dot(dir2) < 0.0)
@@ -932,7 +935,7 @@ public sealed class LocOpe_Generator
 
                                             if (Math.Abs(NewU - Uref) > Epsilon(S.UPeriod()))
                                             {
-                                                PTC.Translate(new gp_Vec2d((Uref - NewU), 0.0));
+                                                PTC.Translate(new Vector2D((Uref - NewU), 0.0));
                                             }
                                         }
 
@@ -1040,7 +1043,7 @@ public sealed class LocOpe_Generator
                                         // on ne devrait pas avoir de pb d`edge de couture.
                                         tol = BRep_Tool.Tolerance(edg);
                                         C = BRep_Tool.Curve(edg, out loc, out f, out l)!;
-                                        if (!loc.IsIdentity())
+                                        if (!loc.IsIdentity)
                                         {
                                             Geom_Geometry GG = C.Transformed(loc.Transformation());
                                             C = (Geom_Curve)GG;
@@ -1055,17 +1058,17 @@ public sealed class LocOpe_Generator
                                         // Tentative de recalage dans la facette
                                         pf = C2d.Value(f);
                                         pl = C2d.Value(l);
-                                        double tttol = Precision.Angular();
+                                        double tttol = global::Kerf.Engine.Foundation.Precision.Angular();
                                         while (Min(pf.X(), pl.X()) >= Umaxc - tttol)
                                         {
-                                            C2d.Translate(new gp_Vec2d(-2.0 * Math.PI, 0));
+                                            C2d.Translate(new Vector2D(-2.0 * Math.PI, 0));
                                             pf = C2d.Value(f);
                                             pl = C2d.Value(l);
                                         }
 
                                         while (Max(pf.X(), pl.X()) <= Uminc + tttol)
                                         {
-                                            C2d.Translate(new gp_Vec2d(2.0 * Math.PI, 0));
+                                            C2d.Translate(new Vector2D(2.0 * Math.PI, 0));
                                             pf = C2d.Value(f);
                                             pl = C2d.Value(l);
                                         }
@@ -1201,14 +1204,14 @@ public sealed class LocOpe_Generator
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myModShapes[myWork.Copied(F)];
     }
 
     // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy
     private static Geom2d_Curve Translatable(Geom2d_Curve theCurve) =>
-        theCurve.IsFrozen() ? (Geom2d_Curve)theCurve.Copy() : theCurve;
+        theCurve.IsFrozen ? (Geom2d_Curve)theCurve.Copy() : theCurve;
 
     private static bool ToFuse(in TopoDS_Face F1, in TopoDS_Face F2)
     {
@@ -1217,11 +1220,11 @@ public sealed class LocOpe_Generator
             return false;
         }
 
-        double tollin = Precision.Confusion();
-        double tolang = Precision.Angular();
+        double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        Geom_Surface S1 = BRep_Tool.Surface(F1, out TopLoc_Location loc1)!;
-        Geom_Surface S2 = BRep_Tool.Surface(F2, out TopLoc_Location loc2)!;
+        Geom_Surface S1 = BRep_Tool.Surface(F1, out Placement loc1)!;
+        Geom_Surface S2 = BRep_Tool.Surface(F2, out Placement loc2)!;
 
         if (S1.GetType() == typeof(Geom_RectangularTrimmedSurface))
         {
@@ -1241,8 +1244,8 @@ public sealed class LocOpe_Generator
         bool ValRet = false;
         if (S1.GetType() == typeof(Geom_Plane))
         {
-            gp_Pln pl1 = ((Geom_Plane)S1).Pln();
-            gp_Pln pl2 = ((Geom_Plane)S2).Pln();
+            Plane3D pl1 = ((Geom_Plane)S1).Pln();
+            Plane3D pl2 = ((Geom_Plane)S2).Pln();
 
             pl1.Transform(loc1.Transformation());
             pl2.Transform(loc2.Transformation());
@@ -1263,18 +1266,18 @@ public sealed class LocOpe_Generator
             return false;
         }
 
-        double tollin = Precision.Confusion();
-        double tolang = Precision.Angular();
+        double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
 
-        Geom_Curve C1 = BRep_Tool.Curve(E1, out TopLoc_Location loc1, out _, out _)!;
-        if (!loc1.IsIdentity())
+        Geom_Curve C1 = BRep_Tool.Curve(E1, out Placement loc1, out _, out _)!;
+        if (!loc1.IsIdentity)
         {
             Geom_Geometry CC1 = C1.Transformed(loc1.Transformation());
             C1 = (Geom_Curve)CC1;
         }
 
-        Geom_Curve C2 = BRep_Tool.Curve(E2, out TopLoc_Location loc2, out _, out _)!;
-        if (!loc2.IsIdentity())
+        Geom_Curve C2 = BRep_Tool.Curve(E2, out Placement loc2, out _, out _)!;
+        if (!loc2.IsIdentity)
         {
             Geom_Geometry CC2 = C2.Transformed(loc2.Transformation());
             C2 = (Geom_Curve)CC2;
@@ -1297,8 +1300,8 @@ public sealed class LocOpe_Generator
         bool ValRet = false;
         if (C1.GetType() == typeof(Geom_Line))
         {
-            gp_Lin li1 = ((Geom_Line)C1).Lin();
-            gp_Lin li2 = ((Geom_Line)C2).Lin();
+            Line3D li1 = ((Geom_Line)C1).Lin();
+            Line3D li2 = ((Geom_Line)C2).Lin();
 
             if (li1.Position().IsCoaxial(li2.Position(), tolang, tollin))
             {
@@ -1329,10 +1332,10 @@ public sealed class LocOpe_Generator
 
     private static double NewParameter(in TopoDS_Edge Edg, in TopoDS_Vertex Vtx, in TopoDS_Edge NewEdg, in TopoDS_Vertex NewVtx)
     {
-        gp_Pnt P = BRep_Tool.Pnt(NewVtx);
+        Point3D P = BRep_Tool.Pnt(NewVtx);
 
-        Geom_Curve C = BRep_Tool.Curve(Edg, out TopLoc_Location loc, out _, out _)!;
-        if (!loc.IsIdentity())
+        Geom_Curve C = BRep_Tool.Curve(Edg, out Placement loc, out _, out _)!;
+        if (!loc.IsIdentity)
         {
             Geom_Geometry GG = C.Transformed(loc.Transformation());
             C = (Geom_Curve)GG;
@@ -1344,11 +1347,11 @@ public sealed class LocOpe_Generator
 
         if (C.GetType() == typeof(Geom_Line))
         {
-            return ElCLib.Parameter(((Geom_Line)C).Lin(), P);
+            return global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Line)C).Lin(), P);
         }
         else if (C.GetType() == typeof(Geom_Circle))
         {
-            double prm = ElCLib.Parameter(((Geom_Circle)C).Circ(), P);
+            double prm = global::Kerf.Engine.Geometry.ElCLib.Parameter(((Geom_Circle)C).Circ(), P);
             // Vtx vient d`une exploration de Edg orientee FORWARD
 
             TopAbs_Orientation orient = TopAbs.Reverse(Vtx.Orientation());

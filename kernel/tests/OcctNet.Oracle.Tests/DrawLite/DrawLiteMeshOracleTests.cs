@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -483,7 +484,7 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
             {
                 CheckFile(aFile, aWhat);
             }
-            catch (Exception anError) when (anError is DrawException or Standard_Failure)
+            catch (Exception anError) when (anError is DrawException or FailureException)
             {
                 Disagree($"{aWhat}: {anError.Message}");
             }

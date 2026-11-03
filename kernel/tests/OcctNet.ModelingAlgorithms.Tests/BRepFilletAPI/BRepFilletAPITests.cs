@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.FilletSurf_ErrorTypeStatus;
 using static Occt.FilletSurf_StatusDone;
 using static Occt.FilletSurf_StatusType;
@@ -63,7 +65,7 @@ public class BRepFilletAPITests
         aFillet.Add(2.0, E);
         TopoDS_Shape aResult = aFillet.Shape();
         Assert.True(aFillet.IsDone());
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(aBefore, VertexTolerances(aBox));
         Assert.Equal(aText, Text(aBox));
 
@@ -83,7 +85,7 @@ public class BRepFilletAPITests
                 aModified++;
                 Assert.False(aFillet.IsDeleted(F));
                 Assert.Single(aFillet.Modified(F));
-                Assert.True(aFillet.Modified(F)[0].TShape()!.IsFrozen());
+                Assert.True(aFillet.Modified(F)[0].TShape()!.IsFrozen);
                 Assert.Contains(aResultFaces, r => r.IsSame(aFillet.Modified(F)[0]));
             }
         }
@@ -131,14 +133,14 @@ public class BRepFilletAPITests
         L.Set(0.0, 1.0, aLaw.Length(1), 3.0);
         aLaw.SetRadius(L, 1, 1);
         Assert.False(aLaw.IsConstant(1));
-        Assert.Throws<Standard_OutOfRange>(() => aLaw.Build());
+        Assert.Throws<OutOfRangeException>(() => aLaw.Build());
         Assert.False(aLaw.IsDone());
 
         // the radius interpolating (parameter, radius) pairs
-        NCollection_Array1<gp_Pnt2d> UandR = new(1, 3);
-        UandR.SetValue(1, new gp_Pnt2d(0.0, 1.0));
-        UandR.SetValue(2, new gp_Pnt2d(0.5, 2.0));
-        UandR.SetValue(3, new gp_Pnt2d(1.0, 1.0));
+        NCollection_Array1<Point2D> UandR = new(1, 3);
+        UandR.SetValue(1, new Point2D(0.0, 1.0));
+        UandR.SetValue(2, new Point2D(0.5, 2.0));
+        UandR.SetValue(3, new Point2D(1.0, 1.0));
         BRepFilletAPI_MakeFillet aPairs = new(aBox);
         aPairs.Add(UandR, E);
         aPairs.Build();
@@ -158,7 +160,7 @@ public class BRepFilletAPITests
         Assert.Equal(1, aFillet.FaultyContour(1));
         Assert.NotEqual(ChFiDS_ErrorStatus.ChFiDS_Ok, aFillet.StripeStatus(1));
         Assert.False(aFillet.HasResult());
-        Assert.Throws<StdFail_NotDone>(() => aFillet.Shape());
+        Assert.Throws<NotDoneException>(() => aFillet.Shape());
     }
 
     [Fact]
@@ -198,7 +200,7 @@ public class BRepFilletAPITests
         aB.Perform();
         Assert.Equal(FilletSurf_IsOk, aB.IsDone());
         Assert.Equal(1, aB.NbSurface());
-        Assert.True(aB.SurfaceFillet(1).IsFrozen());
+        Assert.True(aB.SurfaceFillet(1).IsFrozen);
         Assert.Equal(FilletSurf_TwoExtremityOnEdge, aB.StartSectionStatus());
         Assert.Equal(FilletSurf_TwoExtremityOnEdge, aB.EndSectionStatus());
 
@@ -213,7 +215,7 @@ public class BRepFilletAPITests
         BRepAdaptor_Curve anEdge = new(E);
         foreach (Geom_Curve C in new[] { aB.CurveOnFace1(1), aB.CurveOnFace2(1) })
         {
-            gp_Pnt P = C.Value(0.5 * (C.FirstParameter() + C.LastParameter()));
+            Point3D P = C.Value(0.5 * (C.FirstParameter() + C.LastParameter()));
             Extrema_ExtPC anExt = new(P, anEdge);
             Assert.True(anExt.IsDone() && anExt.NbExt() > 0);
             Assert.Equal(2.0, Math.Sqrt(anExt.SquareDistance(1)), 1.0e-4);
@@ -238,7 +240,7 @@ public class BRepFilletAPITests
         FilletSurf_Builder anEmpty = new(aBox, new NCollection_List<TopoDS_Shape>(), 1.0);
         Assert.Equal(FilletSurf_IsNotOk, anEmpty.IsDone());
         Assert.Equal(FilletSurf_EmptyList, anEmpty.StatusError());
-        Assert.Throws<StdFail_NotDone>(() => anEmpty.NbSurface());
+        Assert.Throws<NotDoneException>(() => anEmpty.NbSurface());
 
         NCollection_List<TopoDS_Shape> aForeign = new();
         aForeign.Append(EdgeOf(Box(), 1));
@@ -257,7 +259,7 @@ public class BRepFilletAPITests
         TopoDS_Shape aTwin = BRepFilletAPI.Fillet(aBox, [E], 2.0, new BRepFilletAPI_FilletOptions(), out BRepTools_History aHistory);
         BRepFilletAPI_MakeFillet aMaker = new(aBox);
         aMaker.Add(2.0, E);
-        Assert.True(aTwin.TShape()!.IsFrozen());
+        Assert.True(aTwin.TShape()!.IsFrozen);
         Assert.Equal(ReconComparison.Volume(aMaker.Shape()), ReconComparison.Volume(aTwin), 1.0e-9);
         Assert.Single(aHistory.Generated(E));
         Assert.Equal(4, Faces(aBox).Count(f => aHistory.Modified(f).Count() == 1)); // the edge's two faces and the two at its ends
@@ -266,6 +268,6 @@ public class BRepFilletAPITests
         Assert.Equal(1000.0 - 0.5 * 10.0, ReconComparison.Volume(aChamfer), 1.0e-6);
 
         TopoDS_Shape aSmall = Box(1.0);
-        Assert.Throws<StdFail_NotDone>(() => BRepFilletAPI.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new BRepFilletAPI_FilletOptions()));
+        Assert.Throws<NotDoneException>(() => BRepFilletAPI.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new BRepFilletAPI_FilletOptions()));
     }
 }

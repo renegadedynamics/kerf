@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -25,7 +27,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     // Conversions and comparisons
     // ---------------------------------------------------------------------------------------------
 
-    private static gp_XYZ FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
+    private static Xyz FromNative(N.gp_Vec theV) => new(theV.X(), theV.Y(), theV.Z());
 
     private static Exception? Catch(Action theAction)
     {
@@ -45,7 +47,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     {
         Assert.True((theNative is null) == (thePort is null),
                     $"{theWhat}: native {(theNative is null ? "succeeded" : "threw " + theNative.Message)}, "
-                    + $"port {(thePort is null ? "succeeded" : "threw " + thePort.GetType().Name + " " + thePort.Message)}");
+                    + $"port {(thePort is null ? "succeeded" : "threw " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(thePort.GetType()) + " " + thePort.Message)}");
         return theNative is null;
     }
 
@@ -57,8 +59,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         using var aNV1 = new N.gp_Vec();
         using var aNV2 = new N.gp_Vec();
         using var aNV3 = new N.gp_Vec();
-        gp_Pnt aP = new();
-        gp_Vec aV1 = new(), aV2 = new(), aV3 = new();
+        Point3D aP = new();
+        Vector3D aV1 = new(), aV2 = new(), aV3 = new();
 
         if (SameOutcome(Catch(() => theN.D0(theU, aNP)), Catch(() => theP.D0(theU, out aP)), $"{theWhat} D0({theU})"))
         {
@@ -87,7 +89,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         for (int k = 1; k <= theMaxN; k++)
         {
             N.gp_Vec? aNVN = null;
-            gp_Vec aVN = new();
+            Vector3D aVN = new();
             if (SameOutcome(Catch(() => aNVN = theN.DN(theU, k)), Catch(() => aVN = theP.DN(theU, k)), $"{theWhat} DN({theU}, {k})"))
             {
                 theO.Same(FromNative(aNVN!), aVN.XYZ(), $"{theWhat} DN({theU}, {k})", theTol);
@@ -119,7 +121,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     private static List<double> Params(Oracle theO, Geom_Curve theP, double theFallbackMin, double theFallbackMax, bool theOutside = true)
     {
         double aF = theP.FirstParameter(), aL = theP.LastParameter();
-        if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             aF = theFallbackMin;
             aL = theFallbackMax;
@@ -147,54 +149,54 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A random transformation (rotation, translation, scale, mirror or a composition), native and port.</summary>
-    private static (N.gp_Trsf Native, gp_Trsf Port) RandomTrsf(Oracle theO)
+    private static (N.gp_Trsf Native, Transform3D Port) RandomTrsf(Oracle theO)
     {
         var aNative = new N.gp_Trsf();
         switch (theO.Int(0, 4))
         {
             case 0:
             {
-                (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theO);
+                (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theO);
                 using var aNAxisOwner = aNAxis;
                 double anAngle = theO.Angle();
                 aNative.SetRotation(aNAxis, anAngle);
-                return (aNative, gp_Trsf.Rotation(anAxis, anAngle));
+                return (aNative, Transform3D.Rotation(anAxis, anAngle));
             }
             case 1:
             {
-                gp_Vec aV = theO.Vec();
+                Vector3D aV = theO.Vec();
                 using var aNV = Oracle.ToNative(aV);
                 aNative.SetTranslation(aNV);
-                return (aNative, gp_Trsf.Translation(aV));
+                return (aNative, Transform3D.Translation(aV));
             }
             case 2:
             {
-                gp_Pnt aP = theO.Pnt();
+                Point3D aP = theO.Pnt();
                 double aS = theO.Real(0.2, 3) * (theO.Int(0, 1) == 0 ? 1 : -1);
                 using var aNP = Oracle.ToNative(aP);
                 aNative.SetScale(aNP, aS);
-                return (aNative, gp_Trsf.Scale(aP, aS));
+                return (aNative, Transform3D.Scale(aP, aS));
             }
             case 3:
             {
-                (N.gp_Ax2 aNAx, gp_Ax2 anAx) = Ax2sFromDirection(theO);
+                (N.gp_Ax2 aNAx, Frame3D anAx) = Ax2sFromDirection(theO);
                 using var aNAxOwner = aNAx;
                 aNative.SetMirror(aNAx);
-                return (aNative, gp_Trsf.Mirror(anAx));
+                return (aNative, Transform3D.Mirror(anAx));
             }
             default:
             {
-                (N.gp_Ax1 aNAxis, gp_Ax1 anAxis) = Ax1s(theO);
+                (N.gp_Ax1 aNAxis, Axis3D anAxis) = Ax1s(theO);
                 using var aNAxisOwner = aNAxis;
                 double anAngle = theO.Angle();
-                gp_Pnt aP = theO.Pnt();
+                Point3D aP = theO.Pnt();
                 double aS = theO.Real(0.2, 3);
                 using var aNP = Oracle.ToNative(aP);
                 using var aNS = new N.gp_Trsf();
                 aNative.SetRotation(aNAxis, anAngle);
                 aNS.SetScale(aNP, aS);
                 aNative.Multiply(aNS);
-                return (aNative, gp_Trsf.Rotation(anAxis, anAngle).Multiplied(gp_Trsf.Scale(aP, aS)));
+                return (aNative, Transform3D.Rotation(anAxis, anAngle).Multiplied(Transform3D.Scale(aP, aS)));
             }
         }
     }
@@ -218,7 +220,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             }
         }
 
-        (N.gp_Trsf aNT, gp_Trsf aT) = RandomTrsf(theO);
+        (N.gp_Trsf aNT, Transform3D aT) = RandomTrsf(theO);
         using (aNT)
         {
             theO.Same(theN.ParametricTransformation(aNT), theP.ParametricTransformation(aT), $"{theWhat} ParametricTransformation");
@@ -278,7 +280,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     // Random curves
     // ---------------------------------------------------------------------------------------------
 
-    private sealed record BSplineData(NCollection_Array1<gp_Pnt> Poles,
+    private sealed record BSplineData(NCollection_Array1<Point3D> Poles,
                                       NCollection_Array1<double>? Weights,
                                       NCollection_Array1<double> Knots,
                                       NCollection_Array1<int> Mults,
@@ -324,12 +326,12 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             {
                 aMults[1] = aMults[aNbKnots] = aDeg + 1;
             }
-            int aNbPoles = BSplCLib.NbPoles(aDeg, aPer, aMults);
+            int aNbPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, aPer, aMults);
             if (aNbPoles < 2 || (aPer && aNbPoles <= aDeg))
             {
                 continue;
             }
-            var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
             for (int i = 1; i <= aNbPoles; i++)
             {
                 aPoles[i] = theO.Pnt();
@@ -350,7 +352,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     private static (N.Geom_BezierCurve Native, Geom_BezierCurve Port) RandomBezier(Oracle theO, int theMaxDegree = 10)
     {
         int aNbPoles = theO.Int(2, theMaxDegree + 1);
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
             aPoles[i] = theO.Pnt();
@@ -372,13 +374,13 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     /// <summary>A random conic or line; the second value is a sensible parameter range for unbounded curves.</summary>
     private static (N.Geom_Curve Native, Geom_Curve Port, double Range, string Kind) RandomElementary(Oracle theO, bool theNoLine = false)
     {
-        (N.gp_Ax2 aNAx2, gp_Ax2 anAx2) = Ax2sFromDirection(theO);
+        (N.gp_Ax2 aNAx2, Frame3D anAx2) = Ax2sFromDirection(theO);
         using var aNAx2Owner = aNAx2;
         switch (theO.Int(theNoLine ? 1 : 0, 4))
         {
             case 0:
             {
-                (N.gp_Ax1 aNAx1, gp_Ax1 anAx1) = Ax1s(theO);
+                (N.gp_Ax1 aNAx1, Axis3D anAx1) = Ax1s(theO);
                 using var aNAx1Owner = aNAx1;
                 return (new N.Geom_Line(aNAx1), new Geom_Line(anAx1), 100, "line");
             }
@@ -502,7 +504,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     aU1 = anOracle.Real(-10, 10);
                     aU2 = anOracle.Real(-10, 10);
                 }
-                else if (Precision.IsInfinite(aF))
+                else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF))
                 {
                     aU1 = anOracle.Real(-aRange, aRange);
                     aU2 = anOracle.Real(-aRange, aRange);
@@ -588,7 +590,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             using var aN1 = theN.Value(theN.FirstParameter());
             using var aN2 = theN.Value(theN.LastParameter());
-            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {theP.GetType().Name} {((object)theP as Geom_OffsetCurve)?.BasisCurve().GetType().Name}: native {Oracle.FromNative(aN1).SquareDistance(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter()).SquareDistance(theP.Value(theP.LastParameter())):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter())} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter())}");
+            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())} {((object)theP as Geom_OffsetCurve)?.BasisCurve().GetType().Name}: native {Oracle.FromNative(aN1).SquareDistance(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter()).SquareDistance(theP.Value(theP.LastParameter())):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter())} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter())}");
         }
         theO.Same(theN.IsClosed(), theP.IsClosed(), $"{theWhat} IsClosed");
         for (int i = 1; i <= theP.NbPoles(); i++)
@@ -631,7 +633,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         case 1:
                         {
                             int anIndex = anOracle.Int(0, aNb);
-                            gp_Pnt aPnt = anOracle.Pnt();
+                            Point3D aPnt = anOracle.Pnt();
                             using var aNPnt = Oracle.ToNative(aPnt);
                             if (anOracle.Int(0, 1) == 0)
                             {
@@ -651,7 +653,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         case 2:
                         {
                             int anIndex = anOracle.Int(1, aNb);
-                            gp_Pnt aPnt = anOracle.Pnt();
+                            Point3D aPnt = anOracle.Pnt();
                             double aW = anOracle.Real(0.5, 2);
                             using var aNPnt = Oracle.ToNative(aPnt);
                             aWhat = $"InsertPoleBefore({anIndex}, w)";
@@ -682,7 +684,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         case 5:
                         {
                             int anIndex = anOracle.Int(1, aNb);
-                            gp_Pnt aPnt = anOracle.Pnt();
+                            Point3D aPnt = anOracle.Pnt();
                             using var aNPnt = Oracle.ToNative(aPnt);
                             aWhat = $"SetPole({anIndex})";
                             aNE = Catch(() => aN.SetPole(anIndex, aNPnt));
@@ -815,7 +817,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 using var aNV2 = new N.gp_Vec();
                 using var aNV3 = new N.gp_Vec();
                 aN.LocalD3(u, k, k + 1, aNP3, aNV1, aNV2, aNV3);
-                aP.LocalD3(u, k, k + 1, out gp_Pnt aP3, out gp_Vec aV1, out gp_Vec aV2, out gp_Vec aV3);
+                aP.LocalD3(u, k, k + 1, out Point3D aP3, out Vector3D aV1, out Vector3D aV2, out Vector3D aV3);
                 anOracle.Same(Oracle.FromNative(aNP3).XYZ(), aP3.XYZ(), "LocalD3 P");
                 anOracle.Same(FromNative(aNV1), aV1.XYZ(), "LocalD3 V1");
                 anOracle.Same(FromNative(aNV2), aV2.XYZ(), "LocalD3 V2");
@@ -926,7 +928,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     case 5:
                     {
                         int anIndex = anOracle.Int(1, aNbPoles);
-                        gp_Pnt aPnt = anOracle.Pnt();
+                        Point3D aPnt = anOracle.Pnt();
                         using var aNPnt = Oracle.ToNative(aPnt);
                         if (anOracle.Int(0, 1) == 0)
                         {
@@ -956,7 +958,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     {
                         double u = anOracle.Real(aF, aL);
                         int aI1 = anOracle.Int(1, aNbPoles), aI2 = anOracle.Int(aI1, aNbPoles);
-                        gp_Pnt aPnt = anOracle.Pnt();
+                        Point3D aPnt = anOracle.Pnt();
                         using var aNPnt = Oracle.ToNative(aPnt);
                         int aNF = 0, aNL = 0, aPF = 0, aPL = 0;
                         aWhat = $"MovePoint({u}, {aI1}, {aI2})";
@@ -978,8 +980,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                             continue;
                         }
                         double u = anOracle.Real(aF, aL);
-                        gp_Pnt aPnt = anOracle.Pnt();
-                        gp_Vec aTan = anOracle.Vec();
+                        Point3D aPnt = anOracle.Pnt();
+                        Vector3D aTan = anOracle.Vec();
                         int aStart = anOracle.Int(-1, 1), anEnd = anOracle.Int(-1, 1);
                         using var aNPnt = Oracle.ToNative(aPnt);
                         using var aNTan = Oracle.ToNative(aTan);
@@ -1125,7 +1127,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 N.Geom_Curve aNBasis = aNB;
                 Geom_Curve aPBasis = aPB;
                 N.Geom_TrimmedCurve? aNTrim = null;
-                if (anOracle.Int(0, 3) == 0 && !Precision.IsInfinite(aPB.FirstParameter()))
+                if (anOracle.Int(0, 3) == 0 && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aPB.FirstParameter()))
                 {
                     // offset of a trimmed curve: the trimmed curve is kept around a copy of its basis
                     double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
@@ -1136,7 +1138,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 }
                 using (aNTrim)
                 {
-                    (N.gp_Dir aNDir, gp_Dir aDir) = Dirs(anOracle);
+                    (N.gp_Dir aNDir, Direction3D aDir) = Dirs(anOracle);
                     using var aNDirOwner = aNDir;
                     double anOffset = anOracle.Real(0.1, 20) * (anOracle.Int(0, 1) == 0 ? 1 : -1);
                     using var aNO = new N.Geom_OffsetCurve(aNBasis, anOffset, aNDir);
@@ -1168,7 +1170,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
                     // the setters, through the twins
                     double anOffset3 = anOracle.Real(-10, 10);
-                    (N.gp_Dir aNDir3, gp_Dir aDir3) = Dirs(anOracle);
+                    (N.gp_Dir aNDir3, Direction3D aDir3) = Dirs(anOracle);
                     using var aNDir3Owner = aNDir3;
                     aNO.SetOffsetValue(anOffset3);
                     aNO.SetDirection(aNDir3);
@@ -1192,11 +1194,11 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         for (int i = 0; i < 50; i++)
         {
             double a = anOracle.Real(1, 10), h = anOracle.Real(1, 10);
-            var aPoles = NCollection_Array1<gp_Pnt>.From([new gp_Pnt(0, 0, 0), new gp_Pnt(a, h, 0), new gp_Pnt(0, h, 0), new gp_Pnt(a, 0, 0)]);
+            var aPoles = NCollection_Array1<Point3D>.From([new Point3D(0, 0, 0), new Point3D(a, h, 0), new Point3D(0, h, 0), new Point3D(a, 0, 0)]);
             using var aNPoles = Oracle.ToNative(aPoles);
             using var aNB = new N.Geom_BezierCurve(aNPoles);
             var aPB = new Geom_BezierCurve(aPoles);
-            gp_Dir aDir = new(0, 0, 1);
+            Direction3D aDir = new(0, 0, 1);
             using var aNDir = Oracle.ToNative(aDir);
             double anOffset = anOracle.Real(-3, 3);
             using var aNO = new N.Geom_OffsetCurve(aNB, anOffset, aNDir, true);

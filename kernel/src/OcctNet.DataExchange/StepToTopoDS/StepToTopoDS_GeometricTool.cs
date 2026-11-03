@@ -129,7 +129,7 @@ public static class StepToTopoDS_GeometricTool
                     double DeltaDirY = Math.Abs(line1.Dir().Orientation().DirectionRatiosValue(2)
                                                 - line2.Dir().Orientation().DirectionRatiosValue(2));
 
-                    double preci2d = Precision.PConfusion(); //:S4136: Parametric(BRepAPI::Precision(),10);
+                    double preci2d = global::Kerf.Engine.Foundation.Precision.PConfusion(); //:S4136: Parametric(BRepAPI::Precision(),10);
 
                     if ((DeltaX < preci2d) || (DeltaY < preci2d))
                     {
@@ -200,7 +200,7 @@ public static class StepToTopoDS_GeometricTool
 
         if (theCurve.IsPeriodic())
         {
-            ElCLib.AdjustPeriodic(cf, cl, Precision.PConfusion(), ref w1, ref w2); //:a7 abv 11 Feb 98: preci -> PConfusion()
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref w1, ref w2); //:a7 abv 11 Feb 98: preci -> PConfusion()
         }
         else if (theCurve.IsClosed())
         {
@@ -209,12 +209,12 @@ public static class StepToTopoDS_GeometricTool
             // DANGER precision 3d applique a une espace 1d
 
             // w2 = cf au lieu de w2 = cl
-            if (Math.Abs(w2 - cf) < Precision.PConfusion() /*preci*/)
+            if (Math.Abs(w2 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
             {
                 w2 = cl;
             }
             // w1 = cl au lieu de w1 = cf
-            else if (Math.Abs(w1 - cl) < Precision.PConfusion() /*preci*/)
+            else if (Math.Abs(w1 - cl) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
             {
                 w1 = cf;
             }
@@ -234,7 +234,7 @@ public static class StepToTopoDS_GeometricTool
                     w2 = cl;
                 }
 
-                if (Math.Abs(w2 - w1) < Precision.PConfusion())
+                if (Math.Abs(w2 - w1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     w1 = cf;
                     w2 = cl;
@@ -258,12 +258,12 @@ public static class StepToTopoDS_GeometricTool
                 // DANGER precision 3d applique a une espace 1d
 
                 // w2 = cf au lieu de w2 = cl
-                if (Math.Abs(w2 - cf) < Precision.PConfusion())
+                if (Math.Abs(w2 - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     w2 = cl;
                 }
                 // w1 = cl au lieu de w1 = cf
-                else if (Math.Abs(w1 - cl) < Precision.PConfusion())
+                else if (Math.Abs(w1 - cl) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     w1 = cf;
                 }
@@ -282,7 +282,7 @@ public static class StepToTopoDS_GeometricTool
             {
                 w1 = theCurve.ReversedParameter(w1);
                 w2 = theCurve.ReversedParameter(w2);
-                if (theCopyFrozen && theCurve.IsFrozen())
+                if (theCopyFrozen && theCurve.IsFrozen)
                 {
                     theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
@@ -306,7 +306,7 @@ public static class StepToTopoDS_GeometricTool
             {
                 w1 = theCurve.ReversedParameter(w1);
                 w2 = theCurve.ReversedParameter(w2);
-                if (theCopyFrozen && theCurve.IsFrozen())
+                if (theCopyFrozen && theCurve.IsFrozen)
                 {
                     theCurve = (Geom_Curve)theCurve.Copy(); // OCCT.NET: decision 1248
                 }
@@ -317,8 +317,8 @@ public static class StepToTopoDS_GeometricTool
             // pdn 11.01.99 #144 bm1_pe_t4 protection of exceptions in draw
             if (w1 == w2)
             {
-                w1 -= Precision.PConfusion();
-                w2 += Precision.PConfusion();
+                w1 -= global::Kerf.Engine.Foundation.Precision.PConfusion();
+                w2 += global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
 
             return false;

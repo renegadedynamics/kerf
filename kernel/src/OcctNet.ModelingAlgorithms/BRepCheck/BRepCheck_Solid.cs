@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -28,7 +29,7 @@ public class BRepCheck_Solid : BRepCheck_Result
     private sealed class BRepCheck_ToolSolid
     {
         private bool myIsHole;
-        private gp_Pnt myPnt;
+        private Point3D myPnt;
         private double myPntTol;
         private TopoDS_Solid mySolid;
         private BRepClass3d_SolidClassifier? myHSC;
@@ -36,8 +37,8 @@ public class BRepCheck_Solid : BRepCheck_Result
         public BRepCheck_ToolSolid()
         {
             myIsHole = false;
-            myPntTol = Precision.Confusion();
-            myPnt = new gp_Pnt(-1.0, -1.0, -1.0);
+            myPntTol = global::Kerf.Engine.Foundation.Precision.Confusion();
+            myPnt = new Point3D(-1.0, -1.0, -1.0);
             mySolid = new TopoDS_Solid();
         }
 
@@ -47,7 +48,7 @@ public class BRepCheck_Solid : BRepCheck_Result
 
         public bool IsHole() => myIsHole;
 
-        public gp_Pnt InnerPoint() => myPnt;
+        public Point3D InnerPoint() => myPnt;
 
         public double CheckTol() => myPntTol;
 

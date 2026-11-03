@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ElementDescriptor
 /// </summary>
-public class StepElement_ElementDescriptor : Standard_Transient
+public class StepElement_ElementDescriptor : Transient
 {
     private StepElement_ElementOrder theTopologyOrder;
     private TCollection_HAsciiString theDescription;

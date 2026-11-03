@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity Action
 /// </summary>
-public class StepBasic_Action : Standard_Transient
+public class StepBasic_Action : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;

@@ -1,17 +1,20 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/GeomBndLib_Curve_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static OcctNet.ModelingData.Tests.GeomBndLibSurfaceTestUtils;
 
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomBndLib_CurveTest
 {
-    private static readonly double Conf = Precision.Confusion();
+    private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
     /// <summary>Helper: verify that the new box conservatively encloses the old box.</summary>
-    private static void ExpectConservativeEnvelope(in Bnd_Box theNew, in Bnd_Box theOld, double theTol)
+    private static void ExpectConservativeEnvelope(in Box theNew, in Box theOld, double theTol)
     {
         var (aXminN, aXmaxN, aYminN, aYmaxN, aZminN, aZmaxN) = theNew.Get();
         var (aXminO, aXmaxO, aYminO, aYmaxO, aZminO, aZmaxO) = theOld.Get();
@@ -30,11 +33,11 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Line_FiniteSegment()
     {
-        Geom_Line aLine = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(1.0, 1.0, 0.0));
+        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 1.0, 0.0));
         GeomBndLib_Curve aCurve = new(aLine);
-        Assert.Equal(GeomAbs_Line, aCurve.GetType());
+        Assert.Equal(Line, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(0.0, 10.0, 0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -53,13 +56,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Line_CompareWithBndLib()
     {
-        Geom_Line aLine = new(new gp_Pnt(1.0, 2.0, 3.0), new gp_Dir(0.0, 0.0, 1.0));
+        Geom_Line aLine = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(0.0, 0.0, 1.0));
         GeomAdaptor_Curve anAdaptor = new(aLine);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aLine).Add(0.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, 0.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -73,11 +76,11 @@ public class GeomBndLib_CurveTest
     public void Circle_Full()
     {
         const double aRadius = 5.0;
-        Geom_Circle aCircle = new(gp.XOY(), aRadius);
+        Geom_Circle aCircle = new(Constants.XOY(), aRadius);
         GeomBndLib_Curve aCurve = new(aCircle);
-        Assert.Equal(GeomAbs_Circle, aCurve.GetType());
+        Assert.Equal(Circle, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -94,10 +97,10 @@ public class GeomBndLib_CurveTest
     public void Circle_Arc()
     {
         const double aRadius = 10.0;
-        Geom_Circle aCircle = new(gp.XOY(), aRadius);
+        Geom_Circle aCircle = new(Constants.XOY(), aRadius);
         GeomBndLib_Curve aCurve = new(aCircle);
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         // Pass 0 tolerance for precise reference comparison
         aCurve.Add(0.0, M_PI / 2.0, 0.0, ref aBox);
 
@@ -114,13 +117,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Circle_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 7.5);
+        Geom_Circle aCircle = new(Constants.XOY(), 7.5);
         GeomAdaptor_Curve anAdaptor = new(aCircle);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aCircle).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -129,13 +132,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Circle_Arc_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 7.5);
+        Geom_Circle aCircle = new(Constants.XOY(), 7.5);
         GeomAdaptor_Curve anAdaptor = new(aCircle);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aCircle).Add(0.5, 2.5, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, 0.5, 2.5, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -150,11 +153,11 @@ public class GeomBndLib_CurveTest
     {
         const double aMajR = 10.0;
         const double aMinR = 5.0;
-        Geom_Ellipse anEllipse = new(gp.XOY(), aMajR, aMinR);
+        Geom_Ellipse anEllipse = new(Constants.XOY(), aMajR, aMinR);
         GeomBndLib_Curve aCurve = new(anEllipse);
-        Assert.Equal(GeomAbs_Ellipse, aCurve.GetType());
+        Assert.Equal(Ellipse, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(0.0, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -170,13 +173,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Ellipse_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(gp.XOY(), 8.0, 3.0);
+        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
         GeomAdaptor_Curve anAdaptor = new(anEllipse);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(anEllipse).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -185,13 +188,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Ellipse_Arc_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(gp.XOY(), 8.0, 3.0);
+        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
         GeomAdaptor_Curve anAdaptor = new(anEllipse);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(anEllipse).Add(0.3, 2.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, 0.3, 2.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -206,11 +209,11 @@ public class GeomBndLib_CurveTest
     {
         const double aMajR = 5.0;
         const double aMinR = 3.0;
-        Geom_Hyperbola aHyp = new(gp.XOY(), aMajR, aMinR);
+        Geom_Hyperbola aHyp = new(Constants.XOY(), aMajR, aMinR);
         GeomBndLib_Curve aCurve = new(aHyp);
-        Assert.Equal(GeomAbs_Hyperbola, aCurve.GetType());
+        Assert.Equal(Hyperbola, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         const double aU = 1.0;
         aCurve.Add(-aU, aU, 0.0, ref aBox);
 
@@ -230,13 +233,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Hyperbola_CompareWithBndLib()
     {
-        Geom_Hyperbola aHyp = new(gp.XOY(), 5.0, 3.0);
+        Geom_Hyperbola aHyp = new(Constants.XOY(), 5.0, 3.0);
         GeomAdaptor_Curve anAdaptor = new(aHyp);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aHyp).Add(-1.0, 1.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, -1.0, 1.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -250,11 +253,11 @@ public class GeomBndLib_CurveTest
     public void Parabola_FiniteArc()
     {
         const double aFocal = 2.0;
-        Geom_Parabola aParab = new(gp.XOY(), aFocal);
+        Geom_Parabola aParab = new(Constants.XOY(), aFocal);
         GeomBndLib_Curve aCurve = new(aParab);
-        Assert.Equal(GeomAbs_Parabola, aCurve.GetType());
+        Assert.Equal(Parabola, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         const double aU = 5.0;
         aCurve.Add(-aU, aU, 0.0, ref aBox);
 
@@ -272,13 +275,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void Parabola_CompareWithBndLib()
     {
-        Geom_Parabola aParab = new(gp.XOY(), 2.0);
+        Geom_Parabola aParab = new(Constants.XOY(), 2.0);
         GeomAdaptor_Curve anAdaptor = new(aParab);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aParab).Add(-5.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, -5.0, 5.0, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -291,16 +294,16 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void BezierCurve_Simple()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 3);
-        aPoles.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt(5.0, 10.0, 0.0));
-        aPoles.SetValue(3, new gp_Pnt(10.0, 0.0, 0.0));
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, new Point3D(5.0, 10.0, 0.0));
+        aPoles.SetValue(3, new Point3D(10.0, 0.0, 0.0));
 
         Geom_BezierCurve aBez = new(aPoles);
         GeomBndLib_Curve aCurve = new(aBez);
-        Assert.Equal(GeomAbs_BezierCurve, aCurve.GetType());
+        Assert.Equal(BezierCurve, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(Conf, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -317,19 +320,19 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void BezierCurve_CompareWithBndLib()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt(3.0, 8.0, 1.0));
-        aPoles.SetValue(3, new gp_Pnt(7.0, 2.0, -1.0));
-        aPoles.SetValue(4, new gp_Pnt(10.0, 5.0, 0.0));
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, new Point3D(3.0, 8.0, 1.0));
+        aPoles.SetValue(3, new Point3D(7.0, 2.0, -1.0));
+        aPoles.SetValue(4, new Point3D(10.0, 5.0, 0.0));
 
         Geom_BezierCurve aBez = new(aPoles);
         GeomAdaptor_Curve anAdaptor = new(aBez);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aBez).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -341,11 +344,11 @@ public class GeomBndLib_CurveTest
 
     private static Geom_BSplineCurve QuadraticBSpline(double theZ2, double theZ3)
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 4);
-        aPoles.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt(2.0, 5.0, theZ2));
-        aPoles.SetValue(3, new gp_Pnt(8.0, 5.0, theZ3));
-        aPoles.SetValue(4, new gp_Pnt(10.0, 0.0, 0.0));
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, new Point3D(2.0, 5.0, theZ2));
+        aPoles.SetValue(3, new Point3D(8.0, 5.0, theZ3));
+        aPoles.SetValue(4, new Point3D(10.0, 0.0, 0.0));
 
         NCollection_Array1<double> aKnots = new(1, 3);
         aKnots.SetValue(1, 0.0);
@@ -365,9 +368,9 @@ public class GeomBndLib_CurveTest
     {
         Geom_BSplineCurve aBSpl = QuadraticBSpline(0.0, 0.0);
         GeomBndLib_Curve aCurve = new(aBSpl);
-        Assert.Equal(GeomAbs_BSplineCurve, aCurve.GetType());
+        Assert.Equal(BSplineCurve, aCurve.GetType());
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(Conf, ref aBox);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -386,10 +389,10 @@ public class GeomBndLib_CurveTest
         Geom_BSplineCurve aBSpl = QuadraticBSpline(1.0, -1.0);
         GeomAdaptor_Curve anAdaptor = new(aBSpl);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aBSpl).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -398,14 +401,14 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void BSplineCurve_TrimmedRange_CompareWithBndLib()
     {
-        NCollection_Array1<gp_Pnt> aPoles = new(1, 7);
-        aPoles.SetValue(1, new gp_Pnt(0.0, 0.0, 0.0));
-        aPoles.SetValue(2, new gp_Pnt(10.0, 20.0, 0.0));
-        aPoles.SetValue(3, new gp_Pnt(20.0, -10.0, 5.0));
-        aPoles.SetValue(4, new gp_Pnt(30.0, 40.0, 0.0));
-        aPoles.SetValue(5, new gp_Pnt(40.0, 5.0, -5.0));
-        aPoles.SetValue(6, new gp_Pnt(50.0, 15.0, 0.0));
-        aPoles.SetValue(7, new gp_Pnt(60.0, 0.0, 0.0));
+        NCollection_Array1<Point3D> aPoles = new(1, 7);
+        aPoles.SetValue(1, new Point3D(0.0, 0.0, 0.0));
+        aPoles.SetValue(2, new Point3D(10.0, 20.0, 0.0));
+        aPoles.SetValue(3, new Point3D(20.0, -10.0, 5.0));
+        aPoles.SetValue(4, new Point3D(30.0, 40.0, 0.0));
+        aPoles.SetValue(5, new Point3D(40.0, 5.0, -5.0));
+        aPoles.SetValue(6, new Point3D(50.0, 15.0, 0.0));
+        aPoles.SetValue(7, new Point3D(60.0, 0.0, 0.0));
 
         NCollection_Array1<double> aKnots = new(1, 5);
         for (int i = 1; i <= 5; ++i)
@@ -426,10 +429,10 @@ public class GeomBndLib_CurveTest
         const double aU1 = 1.82;
         const double aU2 = 2.04;
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aBSpl).Add(aU1, aU2, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, aU1, aU2, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -443,19 +446,19 @@ public class GeomBndLib_CurveTest
     public void AdaptorConstructor_Circle()
     {
         const double aRadius = 5.0;
-        Geom_Circle aCircle = new(gp.XOY(), aRadius);
+        Geom_Circle aCircle = new(Constants.XOY(), aRadius);
 
         // Construct from handle
         GeomBndLib_Curve aCurveH = new(aCircle);
-        Bnd_Box aBoxH = new();
+        Box aBoxH = new();
         aCurveH.Add(Conf, ref aBoxH);
 
         // Construct from adaptor
         GeomAdaptor_Curve anAdaptor = new(aCircle);
         GeomBndLib_Curve aCurveA = new(anAdaptor);
-        Assert.Equal(GeomAbs_Circle, aCurveA.GetType());
+        Assert.Equal(Circle, aCurveA.GetType());
 
-        Bnd_Box aBoxA = new();
+        Box aBoxA = new();
         aCurveA.Add(Conf, ref aBoxA);
 
         CompareBoxes(aBoxH, aBoxA, Conf);
@@ -469,13 +472,13 @@ public class GeomBndLib_CurveTest
     public void AddOptimal_Circle()
     {
         const double aRadius = 5.0;
-        Geom_Circle aCircle = new(gp.XOY(), aRadius);
+        Geom_Circle aCircle = new(Constants.XOY(), aRadius);
         GeomBndLib_Curve aCurve = new(aCircle);
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         aCurve.Add(Conf, ref aBox);
 
-        Bnd_Box aBoxOpt = new();
+        Box aBoxOpt = new();
         aCurve.AddOptimal(Conf, ref aBoxOpt);
 
         var (aXmin, aXmax, aYmin, aYmax, aZmin, aZmax) = aBox.Get();
@@ -493,13 +496,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void AddOptimal_CompareWithBndLib()
     {
-        Geom_Ellipse anEllipse = new(gp.XOY(), 8.0, 3.0);
+        Geom_Ellipse anEllipse = new(Constants.XOY(), 8.0, 3.0);
         GeomAdaptor_Curve anAdaptor = new(anEllipse);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(anEllipse).AddOptimal(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.AddOptimal(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -508,13 +511,13 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void AdaptorConstructor_TrimmedRangeUsedForFullAdd()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 10.0);
+        Geom_Circle aCircle = new(Constants.XOY(), 10.0);
         GeomAdaptor_Curve anAdaptor = new(aCircle, 0.0, M_PI / 2.0);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(anAdaptor).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
         CompareBoxes(aNewBox, anOldBox, Conf);
@@ -523,32 +526,32 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void TrimmedCurveHandle_Fallback_CompareWithBndLib()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 10.0);
+        Geom_Circle aCircle = new(Constants.XOY(), 10.0);
         Geom_TrimmedCurve aTrim = new(aCircle, 0.0, M_PI / 2.0);
         GeomAdaptor_Curve anAdaptor = new(aTrim);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Curve(aTrim).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
 
-        Assert.False(aNewBox.IsVoid());
+        Assert.False(aNewBox.IsVoid);
         ExpectConservativeEnvelope(aNewBox, anOldBox, Conf);
     }
 
     [Fact]
     public void TrimmedCurveHandle_UsesBasisSpecialization()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 10.0);
+        Geom_Circle aCircle = new(Constants.XOY(), 10.0);
         Geom_TrimmedCurve aTrim = new(aCircle, 0.0, M_PI / 2.0);
         GeomBndLib_Curve aCurve = new(aTrim);
-        Assert.Equal(GeomAbs_Circle, aCurve.GetType());
+        Assert.Equal(Circle, aCurve.GetType());
 
         GeomAdaptor_Curve anAdaptor = new(aTrim);
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         aCurve.Add(Conf, ref aNewBox);
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_Add3dCurve.Add(anAdaptor, Conf, ref anOldBox);
         CompareBoxes(aNewBox, anOldBox, Conf);
     }
@@ -556,18 +559,18 @@ public class GeomBndLib_CurveTest
     [Fact]
     public void SamplingHelpers3d_MatchesLegacyPolicy()
     {
-        Geom_Circle aCircle = new(gp.XOY(), 10.0);
+        Geom_Circle aCircle = new(Constants.XOY(), 10.0);
         GeomAdaptor_Curve aCircleGA = new(aCircle);
         Assert.Equal(33, GeomBndLib_SamplingHelpers.ComputeNbSamples(aCircleGA, 0.0, 1.0));
 
         const int aDegree = 3;
         const int aNbKnots = 40;
         const int aNbPoles = 42;
-        NCollection_Array1<gp_Pnt> aPoles = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPoles = new(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; ++i)
         {
             double t = (double)(i - 1) / (double)(aNbPoles - 1);
-            aPoles.SetValue(i, new gp_Pnt(10.0 * t, t, 0.0));
+            aPoles.SetValue(i, new Point3D(10.0 * t, t, 0.0));
         }
         NCollection_Array1<double> aKnots = new(1, aNbKnots);
         for (int i = 1; i <= aNbKnots; ++i)

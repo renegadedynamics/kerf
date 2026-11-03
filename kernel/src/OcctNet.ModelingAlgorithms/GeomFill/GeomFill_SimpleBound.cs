@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -24,7 +26,7 @@ public class GeomFill_SimpleBound : GeomFill_Boundary
         myC3d = Curve;
     }
 
-    public override gp_Pnt Value(double U)
+    public override Point3D Value(double U)
     {
         double x = U;
         if (myPar is not null)
@@ -34,7 +36,7 @@ public class GeomFill_SimpleBound : GeomFill_Boundary
         return myC3d.Value(x);
     }
 
-    public override void D1(double U, out gp_Pnt P, out gp_Vec V)
+    public override void D1(double U, out Point3D P, out Vector3D V)
     {
         double x = U, dx = 1.0;
         if (myPar is not null)

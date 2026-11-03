@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_SpecPntType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -35,7 +37,7 @@ public class IntPatch_ALineToWLine
     {
         if (theLine.NbPoints() > 0)
         {
-            if (thePoint.IsSame(theLine.Value(theLine.NbPoints()), Precision.Confusion()))
+            if (thePoint.IsSame(theLine.Value(theLine.NbPoints()), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return;
             }
@@ -53,7 +55,7 @@ public class IntPatch_ALineToWLine
     {
         if (theLine.NbPoints() > 0)
         {
-            if (thePoint.IsSame(theLine.Value(theLine.NbPoints()), Precision.Confusion()))
+            if (thePoint.IsSame(theLine.Value(theLine.NbPoints()), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return;
             }
@@ -95,15 +97,15 @@ public class IntPatch_ALineToWLine
         for (int i = 0; i < 2; i++)
         {
             bool isReversed = (i > 0);
-            GeomAbs_SurfaceType aType = isReversed ? theS2.GetType() : theS1.GetType();
+            SurfaceKind aType = isReversed ? theS2.GetType() : theS1.GetType();
 
             IntPatch_SpecPntType anAddedPType = IntPatch_SPntNone;
             IntSurf_PntOn2S anApexPoint = new();
 
             switch (aType)
             {
-                case GeomAbs_Sphere:
-                case GeomAbs_Cone:
+                case SurfaceKind.Sphere:
+                case SurfaceKind.Cone:
                 {
                     if (IntPatch_SpecialPoints.AddSingularPole((isReversed ? theS2 : theS1),
                                                                (isReversed ? theS1 : theS2), thePIsoRef,
@@ -113,9 +115,9 @@ public class IntPatch_ALineToWLine
                         break;
                     }
                 }
-                    goto case GeomAbs_Torus; // [[fallthrough]]
-                case GeomAbs_Torus:
-                    if (aType == GeomAbs_Torus)
+                    goto case SurfaceKind.Torus; // [[fallthrough]]
+                case SurfaceKind.Torus:
+                    if (aType == SurfaceKind.Torus)
                     {
                         if (IntPatch_SpecialPoints.AddCrossUVIsoPoint((isReversed ? theS2 : theS1),
                                                                       (isReversed ? theS1 : theS2), thePIsoRef,
@@ -125,8 +127,8 @@ public class IntPatch_ALineToWLine
                             break;
                         }
                     }
-                    goto case GeomAbs_Cylinder; // [[fallthrough]]
-                case GeomAbs_Cylinder:
+                    goto case SurfaceKind.Cylinder; // [[fallthrough]]
+                case SurfaceKind.Cylinder:
                     theSingularSurfaceID = i + 1;
                     AddVertexPoint(theLine, ref theVertex, theArrPeriods);
                     return IntPatch_SPntSeamU;
@@ -155,30 +157,30 @@ public class IntPatch_ALineToWLine
         myNbPointsInWline = theNbPoints;
         myTolOpenDomain = 1.0e-9;
         myTolTransition = 1.0e-8;
-        myTol3D = Precision.Confusion();
+        myTol3D = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        GeomAbs_SurfaceType aTyps1 = theS1.GetType();
-        GeomAbs_SurfaceType aTyps2 = theS2.GetType();
+        SurfaceKind aTyps1 = theS1.GetType();
+        SurfaceKind aTyps2 = theS2.GetType();
 
         switch (aTyps1)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 myQuad1.SetValue(theS1.Plane());
                 break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 myQuad1.SetValue(theS1.Cylinder());
                 break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 myQuad1.SetValue(theS1.Sphere());
                 break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 myQuad1.SetValue(theS1.Cone());
                 break;
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 myQuad1.SetValue(theS1.Torus());
                 break;
 
@@ -188,22 +190,22 @@ public class IntPatch_ALineToWLine
 
         switch (aTyps2)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 myQuad2.SetValue(theS2.Plane());
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 myQuad2.SetValue(theS2.Cylinder());
                 break;
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 myQuad2.SetValue(theS2.Sphere());
                 break;
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 myQuad2.SetValue(theS2.Cone());
                 break;
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 myQuad2.SetValue(theS2.Torus());
                 break;
 
@@ -258,16 +260,16 @@ public class IntPatch_ALineToWLine
             bool anIsOnFirst = (ii == 1);
 
             IntSurf_Quadric aQuad = (ii == 1) ? myQuad1 : myQuad2;
-            if (aQuad.TypeQuadric() == GeomAbs_Cone)
+            if (aQuad.TypeQuadric() == SurfaceKind.Cone)
             {
-                gp_Cone aCone = aQuad.Cone();
-                gp_Pnt anApex = aCone.Apex();
+                Cone aCone = aQuad.Cone();
+                Point3D anApex = aCone.Apex();
                 if (anApex.SquareDistance(aPntOn2S.Value()) > aSqTol)
                 {
                     continue;
                 }
             }
-            else if (aQuad.TypeQuadric() == GeomAbs_Sphere)
+            else if (aQuad.TypeQuadric() == SurfaceKind.Sphere)
             {
                 aPntOn2S.ParametersOnSurface(anIsOnFirst, out double aU, out double aV);
                 if (Math.Abs(aV - M_PI / 2) > aTol && Math.Abs(aV + M_PI / 2) > aTol)
@@ -280,13 +282,13 @@ public class IntPatch_ALineToWLine
                 continue;
             }
 
-            gp_Pnt2d PrevPrevP2d = theLine.Value(anIndFirst).ValueOnSurface(anIsOnFirst);
-            gp_Pnt2d PrevP2d = theLine.Value(anIndSecond).ValueOnSurface(anIsOnFirst);
-            gp_Dir2d aDir = new(new gp_Vec2d(PrevPrevP2d, PrevP2d));
+            Point2D PrevPrevP2d = theLine.Value(anIndFirst).ValueOnSurface(anIsOnFirst);
+            Point2D PrevP2d = theLine.Value(anIndSecond).ValueOnSurface(anIsOnFirst);
+            Direction2D aDir = new(new Vector2D(PrevPrevP2d, PrevP2d));
             double aX0 = PrevPrevP2d.X(), aY0 = PrevPrevP2d.Y();
             aPntOn2S.ParametersOnSurface(anIsOnFirst, out double aXend, out double aYend);
 
-            if (Math.Abs(aDir.Y()) < gp.Resolution())
+            if (Math.Abs(aDir.Y()) < Constants.Resolution())
             {
                 continue;
             }
@@ -301,25 +303,25 @@ public class IntPatch_ALineToWLine
 
     /// <summary>The radius of the smallest section of a cone or a sphere through the point (RealLast if neither
     /// surface is one).</summary>
-    protected internal double GetSectionRadius(in gp_Pnt thePnt3d)
+    protected internal double GetSectionRadius(in Point3D thePnt3d)
     {
         double aRetVal = RealLast();
         for (int i = 0; i < 2; i++)
         {
             IntSurf_Quadric aQuad = (i != 0) ? myQuad2 : myQuad1;
-            if (aQuad.TypeQuadric() == GeomAbs_Cone)
+            if (aQuad.TypeQuadric() == SurfaceKind.Cone)
             {
-                gp_Cone aCone = aQuad.Cone();
-                gp_XYZ aRVec = thePnt3d.XYZ() - aCone.Apex().XYZ();
-                gp_XYZ aDir = aCone.Axis().Direction().XYZ();
+                Cone aCone = aQuad.Cone();
+                Xyz aRVec = thePnt3d.XYZ() - aCone.Apex().XYZ();
+                Xyz aDir = aCone.Axis().Direction().XYZ();
 
                 aRetVal = Min(aRetVal, Math.Abs(aRVec.Dot(aDir) * Math.Tan(aCone.SemiAngle())));
             }
-            else if (aQuad.TypeQuadric() == GeomAbs_Sphere)
+            else if (aQuad.TypeQuadric() == SurfaceKind.Sphere)
             {
-                gp_Sphere aSphere = aQuad.Sphere();
-                gp_XYZ aRVec = thePnt3d.XYZ() - aSphere.Location().XYZ();
-                gp_XYZ aDir = aSphere.Position().Direction().XYZ();
+                Sphere aSphere = aQuad.Sphere();
+                Xyz aRVec = thePnt3d.XYZ() - aSphere.Location().XYZ();
+                Xyz aDir = aSphere.Position().Direction().XYZ();
                 double aR = aSphere.Radius();
                 double aD = aRVec.Dot(aDir);
                 double aDelta = aR * aR - aD * aD;
@@ -394,8 +396,8 @@ public class IntPatch_ALineToWLine
             }
         }
 
-        double aTol = 2.0 * myTol3D + Precision.Confusion();
-        double aPrmTol = Max(1.0e-4 * (theLPar - theFPar), Precision.PConfusion());
+        double aTol = 2.0 * myTol3D + global::Kerf.Engine.Foundation.Precision.Confusion();
+        double aPrmTol = Max(1.0e-4 * (theLPar - theFPar), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         IntPatch_SpecPntType aPrePointExist = IntPatch_SPntNone;
 
@@ -487,7 +489,7 @@ public class IntPatch_ALineToWLine
                 bool isPointValid = false;
                 double aTgMagn = 0.0;
                 {
-                    theALine.D1(aParameter, out gp_Pnt aPnt3d, out gp_Vec aTg);
+                    theALine.D1(aParameter, out Point3D aPnt3d, out Vector3D aTg);
                     if (GetSectionRadius(aPnt3d) < 5.0e-6)
                     {
                         // We cannot compute 2D-parameters of
@@ -538,8 +540,8 @@ public class IntPatch_ALineToWLine
 
                             if ((aParam - aPrevParam) < aPrmTol)
                             {
-                                gp_Pnt aPnt3dV = theALine.Value(aParam);
-                                if (aPOn2S.Value().SquareDistance(aPnt3dV) < Precision.SquareConfusion())
+                                Point3D aPnt3dV = theALine.Value(aParam);
+                                if (aPOn2S.Value().SquareDistance(aPnt3dV) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                 {
                                     // i-th vertex is the same as a Pole/Apex.
                                     // So, it should be ignored.
@@ -551,13 +553,13 @@ public class IntPatch_ALineToWLine
                             break;
                         }
 
-                        gp_Pnt aPnt3d = theALine.Value(aPrt);
+                        Point3D aPnt3d = theALine.Value(aPrt);
                         double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
                         myQuad1.Parameters(aPnt3d, ref u1, ref v1);
                         myQuad2.Parameters(aPnt3d, ref u2, ref v2);
                         aRPT.SetValue(aPnt3d, u1, v1, u2, v2);
 
-                        if (aPOn2S.IsSame(aPrevLPoint, Max(Precision.Approximation(), aTol)))
+                        if (aPOn2S.IsSame(aPrevLPoint, Max(global::Kerf.Engine.Foundation.Precision.Approximation(), aTol)))
                         {
                             // Set V-parameter as precise value found on the previous step.
                             if (aSingularSurfaceID == 1)
@@ -585,7 +587,7 @@ public class IntPatch_ALineToWLine
                     else if (aParameter + aStep < theLPar)
                     {
                         // Prediction of the next point
-                        theALine.D1(aParameter + aStep, out gp_Pnt aPnt3dNext, out _);
+                        theALine.D1(aParameter + aStep, out Point3D aPnt3dNext, out _);
                         double anU1 = 0.0, aV1 = 0.0, anU2 = 0.0, aV2 = 0.0;
                         myQuad1.Parameters(aPnt3dNext, ref anU1, ref aV1);
                         myQuad2.Parameters(aPnt3dNext, ref anU2, ref aV2);
@@ -685,10 +687,10 @@ public class IntPatch_ALineToWLine
                     for (int i = aVertexNumber + 1; i <= aVertexParams.Upper(); i++)
                     {
                         double aParam = aVertexParams[i];
-                        if ((aParam - aVertexParams[aVertexNumber]) > Precision.PConfusion())
+                        if ((aParam - aVertexParams[aVertexNumber]) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             double aPrm = 0.5 * (aParam + aVertexParams[aVertexNumber]);
-                            gp_Pnt aPnt3d = theALine.Value(aPrm);
+                            Point3D aPnt3d = theALine.Value(aPrm);
                             double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
                             myQuad1.Parameters(aPnt3d, ref u1, ref v1);
                             myQuad2.Parameters(aPnt3d, ref u2, ref v2);
@@ -752,7 +754,7 @@ public class IntPatch_ALineToWLine
                 {
                     bool isFound = false;
                     double aSqTol = aTol * aTol;
-                    gp_Pnt aP1 = theALine.Value(aCurVertParam);
+                    Point3D aP1 = theALine.Value(aCurVertParam);
                     IntSurf_PntOn2S aVertP2S = aVtx.PntOn2S();
                     double aVertToler = aVtx.Tolerance();
 
@@ -763,7 +765,7 @@ public class IntPatch_ALineToWLine
                             continue;
                         }
 
-                        gp_Pnt aP2 = theALine.Value(aVertexParams[i]);
+                        Point3D aP2 = theALine.Value(aVertexParams[i]);
 
                         if (aP1.SquareDistance(aP2) < aSqTol)
                         {
@@ -771,7 +773,7 @@ public class IntPatch_ALineToWLine
                             aLVtx.SetValue(aVertP2S);
                             aLVtx.SetTolerance(aVertToler);
                             double aParam = aLVtx.ParameterOnLine();
-                            if (Math.Abs(aParam - theLPar) <= Precision.PConfusion())
+                            if (Math.Abs(aParam - theLPar) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {                           // in the case of closed curve,
                                 aLVtx.SetParameter(-1); // we don't know yet the number of points in the curve
                             }
@@ -872,10 +874,10 @@ public class IntPatch_ALineToWLine
             {
                 // Computation of transitions of the line on two surfaces    ---
                 int indice1 = Max(aLinOn2S.NbPoints() / 3, 2);
-                gp_Pnt aPP0 = aLinOn2S.Value(indice1 - 1).Value(),
+                Point3D aPP0 = aLinOn2S.Value(indice1 - 1).Value(),
                        aPP1 = aLinOn2S.Value(indice1).Value();
-                gp_Vec tgvalid = new(aPP0, aPP1);
-                gp_Vec aNQ1 = myQuad1.Normale(aPP0), aNQ2 = myQuad2.Normale(aPP0);
+                Vector3D tgvalid = new(aPP0, aPP1);
+                Vector3D aNQ1 = myQuad1.Normale(aPP0), aNQ2 = myQuad2.Normale(aPP0);
 
                 double dotcross = tgvalid.DotCross(aNQ2, aNQ1);
 
@@ -926,15 +928,15 @@ public class IntPatch_ALineToWLine
     //            0  - step is normal
     //            +1 - step is too big
     //=======================================================================
-    protected internal int CheckDeflection(in gp_XYZ theMidPt, double theMaxDeflection)
+    protected internal int CheckDeflection(in Xyz theMidPt, double theMaxDeflection)
     {
-        double aDist = Math.Abs(myQuad1.Distance(new gp_Pnt(theMidPt)));
+        double aDist = Math.Abs(myQuad1.Distance(new Point3D(theMidPt)));
         if (aDist > theMaxDeflection)
         {
             return 1;
         }
 
-        aDist = Max(Math.Abs(myQuad2.Distance(new gp_Pnt(theMidPt))), aDist);
+        aDist = Max(Math.Abs(myQuad2.Distance(new Point3D(theMidPt))), aDist);
 
         if (aDist > theMaxDeflection)
         {
@@ -957,7 +959,7 @@ public class IntPatch_ALineToWLine
                                           double theCurParam, double theTgMagnitude, double theStepMin,
                                           double theStepMax, double theMaxDeflection, ref double theStep)
     {
-        if (theTgMagnitude < Precision.Confusion())
+        if (theTgMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
@@ -1004,8 +1006,8 @@ public class IntPatch_ALineToWLine
         {
             aNbIter++;
 
-            gp_XYZ aP1 = thePOn2S.Value().XYZ();
-            gp_XYZ aP2 = theALine.Value(theCurParam + theStep).XYZ();
+            Xyz aP1 = thePOn2S.Value().XYZ();
+            Xyz aP2 = theALine.Value(theCurParam + theStep).XYZ();
             int aStatus = CheckDeflection(0.5 * (aP1 + aP2), theMaxDeflection);
 
             if (aStatus == 0)
@@ -1023,7 +1025,7 @@ public class IntPatch_ALineToWLine
             }
 
             theStep = 0.5 * (aMinStep + aMaxStep);
-        } while (((aMaxStep - aMinStep) > Precision.PConfusion()) && (aNbIter <= aNbIterMax));
+        } while (((aMaxStep - aMinStep) > global::Kerf.Engine.Foundation.Precision.PConfusion()) && (aNbIter <= aNbIterMax));
 
         return aNbIter <= aNbIterMax;
     }

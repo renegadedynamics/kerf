@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -16,7 +17,7 @@ namespace Occt;
 /// algorithm never writes into the caller's shapes. <see cref="Debug(bool)"/> turns on OCCT's traces, written to
 /// standard output.
 /// </remarks>
-public class HLRBRep_InternalAlgo : Standard_Transient
+public class HLRBRep_InternalAlgo : Transient
 {
     private HLRBRep_Data? myDS;
     private HLRAlgo_Projector myProj = new();
@@ -171,7 +172,7 @@ public class HLRBRep_InternalAlgo : Standard_Transient
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception theException)
-        => theException is Standard_Failure
+        => theException is FailureException
                or NullReferenceException
                or InvalidCastException
                or IndexOutOfRangeException
@@ -179,7 +180,7 @@ public class HLRBRep_InternalAlgo : Standard_Transient
                or DivideByZeroException;
 
     /// <summary>Add the shape S, with the shape data SData and nbIso isolines.</summary>
-    public void Load(HLRTopoBRep_OutLiner S, Standard_Transient? SData, int nbIso = 0)
+    public void Load(HLRTopoBRep_OutLiner S, Transient? SData, int nbIso = 0)
     {
         myShapes.Append(new HLRBRep_ShapeBounds(S, SData, nbIso, 0, 0, 0, 0, 0, 0));
         myDS = null;
@@ -219,7 +220,7 @@ public class HLRBRep_InternalAlgo : Standard_Transient
     }
 
     /// <summary>Change the Shape Data of the Shape of index I.</summary>
-    public void ShapeData(int I, Standard_Transient? SData)
+    public void ShapeData(int I, Transient? SData)
     {
         Standard_OutOfRange_Raise_if(I == 0 || I > myShapes.Length(), "HLRBRep_InternalAlgo::ShapeData : unknown Shape");
 

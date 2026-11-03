@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -558,7 +559,7 @@ internal static class BRepTestCheckCommands
         {
             // OCCT prints what(): the message. The port's messages are its own, not OCCT's
             theCommands.Append("checkshape exception : ");
-            theCommands.Append(anException is Standard_Failure aFailure ? aFailure.GetMessageString() : anException.GetType().Name);
+            theCommands.Append(anException is FailureException aFailure ? aFailure.GetMessageString() : global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType()));
             theCommands.Append("\n");
             return 1;
         }
@@ -571,7 +572,7 @@ internal static class BRepTestCheckCommands
     /// stand for the signals OCCT turns into failures (as BRepCheck_Analyzer, decision 432).
     /// </summary>
     internal static bool IsCaughtByOcctSignals(Exception theException)
-        => theException is Standard_Failure or NullReferenceException or InvalidCastException or IndexOutOfRangeException or DivideByZeroException;
+        => theException is FailureException or NullReferenceException or InvalidCastException or IndexOutOfRangeException or DivideByZeroException;
 
     // -------------------------------------------------------------------------------------------------------------
     // checksection
@@ -663,7 +664,7 @@ internal static class BRepTestCheckCommands
         {
             var bce = new BRepCheck_Edge(TopoDS.Edge(S));
             tol = bce.Tolerance();
-            di.Append($"Tolerance de {Address(S)} : {Standard_Stream.FormatReal(tol, 6)}\n");
+            di.Append($"Tolerance de {Address(S)} : {StreamUtilities.FormatReal(tol, 6)}\n");
         }
         else
         {
@@ -674,7 +675,7 @@ internal static class BRepTestCheckCommands
                 {
                     var bce = new BRepCheck_Edge(TopoDS.Edge(exp.Current()));
                     tol = bce.Tolerance();
-                    di.Append($"Tolerance de {Address(exp.Current())} : {Standard_Stream.FormatReal(tol, 6)}\n");
+                    di.Append($"Tolerance de {Address(exp.Current())} : {StreamUtilities.FormatReal(tol, 6)}\n");
                 }
             }
 

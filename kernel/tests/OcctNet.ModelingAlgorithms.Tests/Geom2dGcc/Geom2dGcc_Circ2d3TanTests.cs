@@ -2,29 +2,31 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's GTests of Geom2dGcc_Circ2d3Tan (three circles, solved through GccAna_Circ2d3Tan).</summary>
 public class Geom2dGcc_Circ2d3TanTests
 {
-    private readonly double myTolerance = Precision.Confusion();
+    private readonly double myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
 
     /// <summary>Verify that a solution is tangent to all three input circles.</summary>
-    private static void verifyTangencyConstraints(in gp_Circ2d theSolution,
-                                                  in gp_Circ2d theCircle1,
-                                                  in gp_Circ2d theCircle2,
-                                                  in gp_Circ2d theCircle3,
+    private static void verifyTangencyConstraints(in Circle2D theSolution,
+                                                  in Circle2D theCircle1,
+                                                  in Circle2D theCircle2,
+                                                  in Circle2D theCircle3,
                                                   int theSolutionIndex,
                                                   double theTolerance = 1e-6)
     {
-        gp_Pnt2d aSolCenter = theSolution.Location();
+        Point2D aSolCenter = theSolution.Location();
         double aSolRadius = theSolution.Radius();
 
         // Check tangency to each input circle
         for (int i = 1; i <= 3; i++)
         {
-            gp_Circ2d aCircle = (i == 1) ? theCircle1 : (i == 2) ? theCircle2 : theCircle3;
-            gp_Pnt2d aCircCenter = aCircle.Location();
+            Circle2D aCircle = (i == 1) ? theCircle1 : (i == 2) ? theCircle2 : theCircle3;
+            Point2D aCircCenter = aCircle.Location();
             double aCircRadius = aCircle.Radius();
 
             double aDistanceCenters = aSolCenter.Distance(aCircCenter);
@@ -45,17 +47,17 @@ public class Geom2dGcc_Circ2d3TanTests
     /// <summary>Create a qualified curve from circle parameters.</summary>
     private static Geom2dGcc_QualifiedCurve createQualifiedCircle(double theX, double theY, double theRadius)
     {
-        gp_Pnt2d aCenter = new(theX, theY);
-        Geom2d_Circle aCircle = new(new gp_Circ2d(new gp_Ax2d(aCenter, new gp_Dir2d(1, 0)), theRadius));
+        Point2D aCenter = new(theX, theY);
+        Geom2d_Circle aCircle = new(new Circle2D(new Axis2D(aCenter, new Direction2D(1, 0)), theRadius));
         Geom2dAdaptor_Curve anAdaptor = new(aCircle);
         return Geom2dGcc.Unqualified(anAdaptor);
     }
 
-    private static gp_Circ2d Circ(double theX, double theY, double theR)
-        => new(new gp_Ax2d(new gp_Pnt2d(theX, theY), new gp_Dir2d(1, 0)), theR);
+    private static Circle2D Circ(double theX, double theY, double theR)
+        => new(new Axis2D(new Point2D(theX, theY), new Direction2D(1, 0)), theR);
 
     /// <summary>Verify solution validity.</summary>
-    private static void verifySolutionValidity(in gp_Circ2d theSolution,
+    private static void verifySolutionValidity(in Circle2D theSolution,
                                                int theSolutionIndex,
                                                double theMinX = -10000.0,
                                                double theMaxX = 10000.0,
@@ -66,7 +68,7 @@ public class Geom2dGcc_Circ2d3TanTests
         Assert.True(theSolution.Radius() > 0, $"Solution {theSolutionIndex} should have positive radius");
         Assert.True(theSolution.Radius() < theMaxRadius, $"Solution {theSolutionIndex} should have reasonable radius");
 
-        gp_Pnt2d aCenter = theSolution.Location();
+        Point2D aCenter = theSolution.Location();
         Assert.True(aCenter.X() > theMinX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
         Assert.True(aCenter.X() < theMaxX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
         Assert.True(aCenter.Y() > theMinY, $"Solution {theSolutionIndex} Y coordinate should be reasonable");
@@ -82,9 +84,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
 
-        gp_Circ2d aInputCirc1 = Circ(500.0, 1800.0, 500.0);
-        gp_Circ2d aInputCirc2 = Circ(500.0, 1900.0, 400.0);
-        gp_Circ2d aInputCirc3 = Circ(700.0, 1900.0, 200.0);
+        Circle2D aInputCirc1 = Circ(500.0, 1800.0, 500.0);
+        Circle2D aInputCirc2 = Circ(500.0, 1900.0, 400.0);
+        Circle2D aInputCirc3 = Circ(700.0, 1900.0, 200.0);
 
         Geom2dGcc_Circ2d3Tan aTangentSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -97,7 +99,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSolutions; i++)
         {
-            gp_Circ2d aSol = aTangentSolver.ThisSolution(i);
+            Circle2D aSol = aTangentSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i, -1000.0, 2000.0, 1000.0, 3000.0, 10000.0);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i);
         }
@@ -105,7 +107,7 @@ public class Geom2dGcc_Circ2d3TanTests
         if (aNbSolutions >= 3)
         {
             // Solution 1: center(500, 1900), radius=400 - this is actually one of the input circles
-            gp_Circ2d aSol1 = aTangentSolver.ThisSolution(1);
+            Circle2D aSol1 = aTangentSolver.ThisSolution(1);
             Assert.Equal(500.0, aSol1.Location().X(), 1.0);
             Assert.Equal(1900.0, aSol1.Location().Y(), 1.0);
             Assert.Equal(400.0, aSol1.Radius(), 1.0);
@@ -120,7 +122,7 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
 
-        double[] aTestTolerances = [Precision.Confusion(), 1e-12, 1e-10, 1e-8];
+        double[] aTestTolerances = [global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-12, 1e-10, 1e-8];
 
         int aDefaultSolCount = 0;
 
@@ -132,7 +134,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
             int aNbSol = aSolver.NbSolutions();
 
-            if (aTol == Precision.Confusion())
+            if (aTol == global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aDefaultSolCount = aNbSol;
                 Assert.True(aNbSol >= 1, "Should find at least 1 solution with default tolerance");
@@ -146,7 +148,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
             for (int i = 1; i <= aNbSol; i++)
             {
-                gp_Circ2d aSol = aSolver.ThisSolution(i);
+                Circle2D aSol = aSolver.ThisSolution(i);
                 verifySolutionValidity(aSol, i, -1000.0, 2000.0, 1000.0, 3000.0, 10000.0);
             }
         }
@@ -160,9 +162,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(10.0, 0.0, 2.0);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(5.0, 8.0, 2.0);
 
-        gp_Circ2d aInputCirc1 = Circ(0.0, 0.0, 2.0);
-        gp_Circ2d aInputCirc2 = Circ(10.0, 0.0, 2.0);
-        gp_Circ2d aInputCirc3 = Circ(5.0, 8.0, 2.0);
+        Circle2D aInputCirc1 = Circ(0.0, 0.0, 2.0);
+        Circle2D aInputCirc2 = Circ(10.0, 0.0, 2.0);
+        Circle2D aInputCirc3 = Circ(5.0, 8.0, 2.0);
 
         Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -173,7 +175,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSol; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i);
         }
@@ -204,9 +206,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(0.1, 0.0, 0.01);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(0.05, 0.08, 0.01);
 
-        gp_Circ2d aInputCirc1 = Circ(0.0, 0.0, 0.01);
-        gp_Circ2d aInputCirc2 = Circ(0.1, 0.0, 0.01);
-        gp_Circ2d aInputCirc3 = Circ(0.05, 0.08, 0.01);
+        Circle2D aInputCirc1 = Circ(0.0, 0.0, 0.01);
+        Circle2D aInputCirc2 = Circ(0.1, 0.0, 0.01);
+        Circle2D aInputCirc3 = Circ(0.05, 0.08, 0.01);
 
         Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -217,7 +219,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSol; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i, -10.0, 10.0, -10.0, 10.0, 10.0);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i, 1e-3);
         }
@@ -231,9 +233,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(5000.0, 0.0, 1500.0);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(2500.0, 4000.0, 800.0);
 
-        gp_Circ2d aInputCirc1 = Circ(0.0, 0.0, 1000.0);
-        gp_Circ2d aInputCirc2 = Circ(5000.0, 0.0, 1500.0);
-        gp_Circ2d aInputCirc3 = Circ(2500.0, 4000.0, 800.0);
+        Circle2D aInputCirc1 = Circ(0.0, 0.0, 1000.0);
+        Circle2D aInputCirc2 = Circ(5000.0, 0.0, 1500.0);
+        Circle2D aInputCirc3 = Circ(2500.0, 4000.0, 800.0);
 
         Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -244,7 +246,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSol; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i, -10000.0, 10000.0, -10000.0, 10000.0, 50000.0);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i, 1.0);
         }
@@ -258,9 +260,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(5.0, 0.0, 1.5);
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(10.0, 0.0, 1.2);
 
-        gp_Circ2d aInputCirc1 = Circ(0.0, 0.0, 1.0);
-        gp_Circ2d aInputCirc2 = Circ(5.0, 0.0, 1.5);
-        gp_Circ2d aInputCirc3 = Circ(10.0, 0.0, 1.2);
+        Circle2D aInputCirc1 = Circ(0.0, 0.0, 1.0);
+        Circle2D aInputCirc2 = Circ(5.0, 0.0, 1.5);
+        Circle2D aInputCirc3 = Circ(10.0, 0.0, 1.2);
 
         Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -271,7 +273,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSol; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i);
         }
@@ -286,9 +288,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(4.0, 0.0, 2.0); // Touch at (2,0)
         Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(2.0, 5.0, 1.5);
 
-        gp_Circ2d aInputCirc1 = Circ(0.0, 0.0, 2.0);
-        gp_Circ2d aInputCirc2 = Circ(4.0, 0.0, 2.0);
-        gp_Circ2d aInputCirc3 = Circ(2.0, 5.0, 1.5);
+        Circle2D aInputCirc1 = Circ(0.0, 0.0, 2.0);
+        Circle2D aInputCirc2 = Circ(4.0, 0.0, 2.0);
+        Circle2D aInputCirc3 = Circ(2.0, 5.0, 1.5);
 
         Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
@@ -299,7 +301,7 @@ public class Geom2dGcc_Circ2d3TanTests
 
         for (int i = 1; i <= aNbSol; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             verifySolutionValidity(aSol, i);
             verifyTangencyConstraints(aSol, aInputCirc1, aInputCirc2, aInputCirc3, i);
         }
@@ -311,9 +313,9 @@ public class Geom2dGcc_Circ2d3TanTests
     // uninitialised storage there (occt-issues.md), so these outcomes are the port's.
     private static Geom2dGcc_QualifiedCurve StraightBSpline()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 2);
-        aPoles[1] = new gp_Pnt2d(-5.0, 3.0);
-        aPoles[2] = new gp_Pnt2d(5.0, 3.0);
+        NCollection_Array1<Point2D> aPoles = new(1, 2);
+        aPoles[1] = new Point2D(-5.0, 3.0);
+        aPoles[2] = new Point2D(5.0, 3.0);
         NCollection_Array1<double> aKnots = new(1, 2);
         aKnots[1] = 0.0;
         aKnots[2] = 1.0;
@@ -331,7 +333,7 @@ public class Geom2dGcc_Circ2d3TanTests
                                            StraightBSpline(), 1.0e-9, anA, Math.PI - anA, 0.7);
         Assert.True(aSolver.IsDone());
         Assert.Equal(1, aSolver.NbSolutions());
-        gp_Circ2d aSol = aSolver.ThisSolution(1);
+        Circle2D aSol = aSolver.ThisSolution(1);
         Assert.Equal(2.0, aSol.Location().X(), 1.0e-9);
         Assert.Equal(1.5, aSol.Location().Y(), 1.0e-9);
         Assert.Equal(1.5, aSol.Radius(), 1.0e-9);
@@ -339,7 +341,7 @@ public class Geom2dGcc_Circ2d3TanTests
         Assert.Equal(anA, aPar1, 1.0e-12);
         // OCCT: Geom2dGcc_Circ2d3TanIter::IsTheSame3 is always true, so the third tangency is never given.
         Assert.True(aSolver.IsTheSame3(1));
-        Assert.Throws<StdFail_NotDone>(() => aSolver.Tangency3(1, out _, out _, out _));
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.Tangency3(1, out _, out _, out _));
     }
 
     [Fact]
@@ -349,6 +351,6 @@ public class Geom2dGcc_Circ2d3TanTests
                                            StraightBSpline(), 1.0e-9, 0.5, 2.5, 0.6);
         Assert.False(aSolver.IsDone());
         Assert.Equal(1, aSolver.NbSolutions());
-        Assert.Throws<StdFail_NotDone>(() => aSolver.ThisSolution(1));
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.ThisSolution(1));
     }
 }

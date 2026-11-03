@@ -1,5 +1,6 @@
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -82,15 +83,15 @@ public class IntTools_DataTests
     [Fact]
     public void Curve_CurvesTolerancesAndCopies()
     {
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
-        Geom2d_Line aL2d = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
+        Geom2d_Line aL2d = new(new Point2D(0, 0), new Direction2D(1, 0));
         IntTools_Curve aCurve = new(aLine, aL2d, null, 1.0e-5, 2.0e-5);
         Assert.Same(aLine, aCurve.Curve());
         Assert.Same(aL2d, aCurve.FirstCurve2d());
         Assert.Null(aCurve.SecondCurve2d());
         Assert.Equal(1.0e-5, aCurve.Tolerance());
         Assert.Equal(2.0e-5, aCurve.TangentialTolerance());
-        Assert.Equal(GeomAbs_Line, aCurve.Type());
+        Assert.Equal(Line, aCurve.Type());
 
         IntTools_Curve aCopy = aCurve; // a C++ copy shares the curves
         aCopy.SetTolerance(1.0);
@@ -108,36 +109,36 @@ public class IntTools_DataTests
     [Fact]
     public void Curve_Bounds()
     {
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntTools_Curve anUnbounded = new(aLine, null, null);
         double aFirst = -5, aLast = -5;
-        gp_Pnt aP1 = new(7, 7, 7), aP2 = new(7, 7, 7);
+        Point3D aP1 = new(7, 7, 7), aP2 = new(7, 7, 7);
         Assert.False(anUnbounded.HasBounds());
         Assert.False(anUnbounded.Bounds(ref aFirst, ref aLast, ref aP1, ref aP2));
         Assert.Equal(-5, aFirst); // left untouched
-        Assert.Equal(new gp_Pnt(7, 7, 7), aP1);
+        Assert.Equal(new Point3D(7, 7, 7), aP1);
 
         IntTools_Curve aBounded = new(new Geom_TrimmedCurve(aLine, 1.0, 3.0), null, null);
         Assert.True(aBounded.HasBounds());
         Assert.True(aBounded.Bounds(ref aFirst, ref aLast, ref aP1, ref aP2));
         Assert.Equal((1.0, 3.0), (aFirst, aLast));
-        Assert.True(aP1.IsEqual(new gp_Pnt(1, 0, 0), 0.0));
-        Assert.True(aP2.IsEqual(new gp_Pnt(3, 0, 0), 0.0));
+        Assert.True(aP1.IsEqual(new Point3D(1, 0, 0), 0.0));
+        Assert.True(aP2.IsEqual(new Point3D(3, 0, 0), 0.0));
     }
 
     [Fact]
     public void Curve_D0_OcctBug_EvaluatesOutsideTheBounds()
     {
         // OCCT tests "t >= First || t <= Last", so every parameter is inside and evaluated
-        Geom_Line aLine = new(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0));
+        Geom_Line aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         IntTools_Curve aCurve = new(new Geom_TrimmedCurve(aLine, 1.0, 3.0), null, null);
-        gp_Pnt aP = new();
+        Point3D aP = new();
         Assert.True(aCurve.D0(2.0, ref aP));
-        Assert.True(aP.IsEqual(new gp_Pnt(2, 0, 0), 0.0));
+        Assert.True(aP.IsEqual(new Point3D(2, 0, 0), 0.0));
         Assert.True(aCurve.D0(10.0, ref aP)); // outside [1, 3]: should be false
-        Assert.True(aP.IsEqual(new gp_Pnt(10, 0, 0), 0.0));
+        Assert.True(aP.IsEqual(new Point3D(10, 0, 0), 0.0));
         Assert.True(aCurve.D0(-4.0, ref aP));
-        Assert.True(aP.IsEqual(new gp_Pnt(-4, 0, 0), 0.0));
+        Assert.True(aP.IsEqual(new Point3D(-4, 0, 0), 0.0));
     }
 
     [Fact]
@@ -149,8 +150,8 @@ public class IntTools_DataTests
         Assert.Equal(0.0, aCP.VertexParameter1());
         Assert.Equal(0, aCP.Ranges2().Length());
 
-        TopoDS_Edge anE1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge anE2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 1, 0), new gp_Pnt(1, 1, 0)).Edge();
+        TopoDS_Edge anE1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge anE2 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(1, 1, 0)).Edge();
         aCP.SetEdge1(anE1);
         aCP.SetEdge2(anE2);
         aCP.SetType(TopAbs_EDGE);
@@ -159,7 +160,7 @@ public class IntTools_DataTests
         aCP.AppendRange2(new IntTools_Range(0.3, 0.4));
         aCP.SetVertexParameter1(0.5);
         aCP.SetVertexParameter2(0.6);
-        aCP.SetBoundingPoints(new gp_Pnt(1, 2, 3), new gp_Pnt(4, 5, 6));
+        aCP.SetBoundingPoints(new Point3D(1, 2, 3), new Point3D(4, 5, 6));
         aCP.SetAllNullFlag(true);
 
         Assert.True(aCP.Edge1().IsSame(anE1));
@@ -167,9 +168,9 @@ public class IntTools_DataTests
         aCP.Range1(out double tf, out double tl);
         Assert.Equal((0.1, 0.9), (tf, tl));
         Assert.Equal(2, aCP.Ranges2().Length());
-        aCP.BoundingPoints(out gp_Pnt aP1, out gp_Pnt aP2);
-        Assert.Equal(new gp_Pnt(4, 5, 6), aP2);
-        Assert.Equal(new gp_Pnt(1, 2, 3), aP1);
+        aCP.BoundingPoints(out Point3D aP1, out Point3D aP2);
+        Assert.Equal(new Point3D(4, 5, 6), aP2);
+        Assert.Equal(new Point3D(1, 2, 3), aP1);
 
         // Copy: no flag, no bounding points (as OCCT)
         IntTools_CommonPrt aCopied = new();
@@ -178,7 +179,7 @@ public class IntTools_DataTests
         Assert.Equal(2, aCopied.Ranges2().Length());
         Assert.False(aCopied.AllNullFlag());
         aCopied.BoundingPoints(out aP1, out _);
-        Assert.Equal(new gp_Pnt(0, 0, 0), aP1);
+        Assert.Equal(new Point3D(0, 0, 0), aP1);
 
         // the copy constructor copies the ranges into a sequence of its own
         IntTools_CommonPrt aConstructed = new(aCP);
@@ -186,7 +187,7 @@ public class IntTools_DataTests
         Assert.Equal(2, aCP.Ranges2().Length());
         Assert.Equal(3, aConstructed.Ranges2().Length());
         aConstructed.BoundingPoints(out aP1, out _);
-        Assert.Equal(new gp_Pnt(1, 2, 3), aP1);
+        Assert.Equal(new Point3D(1, 2, 3), aP1);
     }
 
     [Fact]
@@ -229,16 +230,16 @@ public class IntTools_DataTests
 
         TopoDS_Face aFace = ((TopoDS_Shape)TestShapes.Box(1, 1, 1)).Faces().First();
         IntTools_PntOnFace aPnt = new();
-        aPnt.Init(aFace, new gp_Pnt(1, 2, 3), 0.25, 0.75);
+        aPnt.Init(aFace, new Point3D(1, 2, 3), 0.25, 0.75);
         Assert.False(aPnt.Valid()); // Init doesn't set the flag
         aPnt.SetValid(true);
         Assert.True(aPnt.Valid());
         Assert.True(aPnt.Face().IsSame(aFace));
-        Assert.Equal(new gp_Pnt(1, 2, 3), aPnt.Pnt());
+        Assert.Equal(new Point3D(1, 2, 3), aPnt.Pnt());
         aPnt.Parameters(out u, out v);
         Assert.Equal((0.25, 0.75), (u, v));
 
-        IntTools_PntOnFace aTwin = aDefault.Inited(aFace, new gp_Pnt(1, 2, 3), 0.25, 0.75).WithValid(true);
+        IntTools_PntOnFace aTwin = aDefault.Inited(aFace, new Point3D(1, 2, 3), 0.25, 0.75).WithValid(true);
         Assert.Equal(aPnt, aTwin);
         Assert.Equal(aPnt.GetHashCode(), aTwin.GetHashCode());
         Assert.NotEqual(aPnt, aTwin.WithParameters(0.0, 0.0));
@@ -248,8 +249,8 @@ public class IntTools_DataTests
     [Fact]
     public void PntOn2Faces_Accessors()
     {
-        IntTools_PntOnFace aP1 = new IntTools_PntOnFace().WithPnt(new gp_Pnt(1, 0, 0));
-        IntTools_PntOnFace aP2 = new IntTools_PntOnFace().WithPnt(new gp_Pnt(2, 0, 0));
+        IntTools_PntOnFace aP1 = new IntTools_PntOnFace().WithPnt(new Point3D(1, 0, 0));
+        IntTools_PntOnFace aP2 = new IntTools_PntOnFace().WithPnt(new Point3D(2, 0, 0));
         IntTools_PntOn2Faces aPair = new(aP1, aP2);
         Assert.False(aPair.IsValid());
         Assert.Equal(aP1, aPair.P1());

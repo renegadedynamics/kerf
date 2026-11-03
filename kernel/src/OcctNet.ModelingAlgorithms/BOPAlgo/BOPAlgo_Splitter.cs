@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -19,7 +20,7 @@ public class BOPAlgo_Splitter : BOPAlgo_ToolsProvider
     }
 
     /// <summary>Intersects the objects and tools with a new pave filler and builds the result.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         GetReport().Clear();
         //
@@ -52,7 +53,7 @@ public class BOPAlgo_Splitter : BOPAlgo_ToolsProvider
         pPF.SetGlue(myGlue);
         pPF.SetUseOBB(myUseOBB);
         //
-        using var aPS = new Message_ProgressScope(theRange, "Performing Split operation", 10);
+        using var aPS = new ProgressScope(theRange, "Performing Split operation", 10);
         pPF.Perform(aPS.Next(9));
         //
         myEntryPoint = 1;

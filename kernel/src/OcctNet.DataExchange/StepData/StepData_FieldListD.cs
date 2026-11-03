@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Describes a list of fields, in a general way. This class is for a dynamic size list.</summary>
@@ -41,7 +43,7 @@ public class StepData_FieldListD : StepData_FieldList
     {
         if (thefields is null)
         {
-            throw new Standard_OutOfRange("StepData_FieldListD::Field");
+            throw new OutOfRangeException("StepData_FieldListD::Field");
         }
         return thefields.Value(num);
     }
@@ -50,7 +52,7 @@ public class StepData_FieldListD : StepData_FieldList
     {
         if (thefields is null)
         {
-            throw new Standard_OutOfRange("StepData_FieldListD::Field");
+            throw new OutOfRangeException("StepData_FieldListD::Field");
         }
         return thefields.ChangeValue(num);
     }

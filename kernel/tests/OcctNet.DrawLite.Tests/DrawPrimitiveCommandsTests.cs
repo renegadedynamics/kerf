@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using Occt;
 using OcctNet.DrawLite;
 using static Occt.TopAbs_ShapeEnum;
@@ -34,7 +36,7 @@ public class DrawPrimitiveCommandsTests
     {
         TopoDS_Shape aShape = theDI.GetShape(theName);
         Assert.False(aShape.IsNull());
-        Assert.True(aShape.TShape()!.IsFrozen());
+        Assert.True(aShape.TShape()!.IsFrozen);
         return (Count(aShape, TopAbs_VERTEX), Count(aShape, TopAbs_EDGE), Count(aShape, TopAbs_FACE));
     }
 
@@ -52,7 +54,7 @@ public class DrawPrimitiveCommandsTests
         return aProps.Mass();
     }
 
-    private static void BindPlane(DrawInterpreter theDI, string theName, gp_Ax3 theAxes)
+    private static void BindPlane(DrawInterpreter theDI, string theName, CoordinateSystem theAxes)
         => theDI.SetDrawable(theName, DrawGeometry.Of(new Geom_Plane(theAxes)));
 
     [Fact]
@@ -157,7 +159,7 @@ public class DrawPrimitiveCommandsTests
         Assert.Equal(Math.PI * 4 * 3 / 4, Volume(i, "c"), 1e-9);
         Assert.Equal(5, Counts(i, "c").F);
 
-        BindPlane(i, "pl", new gp_Ax3(new gp_Pnt(1, 2, 3), new gp_Dir(0, 1, 0), new gp_Dir(1, 0, 0)));
+        BindPlane(i, "pl", new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0)));
         i.Eval("pcylinder c pl 2 3");
         Assert.Equal(Math.PI * 4 * 3, Volume(i, "c"), 1e-9);
         i.Eval("pcylinder c pl 2 3 180");
@@ -262,7 +264,7 @@ public class DrawPrimitiveCommandsTests
         for (TopExp_Explorer anExp = new(i.GetShape("c"), TopAbs_EDGE); anExp.More(); anExp.Next())
         {
             // the edge x = -1, z = 0 along Y, through the X axis
-            var aBox = Bnd_Box.Void();
+            var aBox = Box.Void();
             BRepBndLib.Add(anExp.Current(), ref aBox, false);
             aBox.Get(out _, out double y0, out _, out double x1, out double y1, out double z1);
             if (x1 < -0.5 && z1 < 0.5 && y1 - y0 > 1)

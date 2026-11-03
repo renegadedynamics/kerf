@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Schematiq.Collections;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -44,11 +47,11 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
     /// Builds the evolved shape of <paramref name="theProfile"/> swept along <paramref name="theSpine"/> (a wire or a
     /// face).
     /// </summary>
-    /// <exception cref="Standard_TypeMismatch">The spine is neither a wire nor a face.</exception>
-    /// <exception cref="Standard_NotImplemented">A join other than GeomAbs_Arc (not in the volume mode).</exception>
+    /// <exception cref="TypeMismatchException">The spine is neither a wire nor a face.</exception>
+    /// <exception cref="MethodNotImplementedException">A join other than GeomAbs_Arc (not in the volume mode).</exception>
     public BRepOffsetAPI_MakeEvolved(in TopoDS_Shape theSpine,
                                      in TopoDS_Wire theProfile,
-                                     GeomAbs_JoinType theJoinType = GeomAbs_Arc,
+                                     global::Kerf.Geometry.JoinKind theJoinType = Arc,
                                      bool theIsAxeProf = true,
                                      bool theIsSolid = false,
                                      bool theIsProfOnSpine = false,
@@ -59,7 +62,7 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
         myIsVolume = theIsVolume;
         if (theSpine.ShapeType() != TopAbs_WIRE && theSpine.ShapeType() != TopAbs_FACE)
         {
-            throw new Standard_TypeMismatch("BRepOffsetAPI_MakeEvolved: face or wire is expected as a spine");
+            throw new TypeMismatchException("BRepOffsetAPI_MakeEvolved: face or wire is expected as a spine");
         }
         if (theIsVolume)
         {
@@ -81,11 +84,11 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
         }
         else
         {
-            gp_Ax3 Axis = new(gp.Origin(), gp.DZ(), gp.DX());
+            CoordinateSystem Axis = new(Constants.Origin(), Constants.DZ(), Constants.DX());
 
             if (!theIsAxeProf)
             {
-                BRepFill.Axe(theSpine, theProfile, out Axis, out bool POS, Max(theTol, Precision.Confusion()));
+                BRepFill.Axe(theSpine, theProfile, out Axis, out bool POS, Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion()));
                 if (theIsProfOnSpine && !POS)
                 {
                     return;
@@ -105,18 +108,18 @@ public class BRepOffsetAPI_MakeEvolved : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>The underlying algorithm.</summary>
-    /// <exception cref="Standard_TypeMismatch">In volume mode.</exception>
+    /// <exception cref="TypeMismatchException">In volume mode.</exception>
     public BRepFill_Evolved Evolved()
     {
         if (myIsVolume)
         {
-            throw new Standard_TypeMismatch("BRepOffsetAPI_MakeEvolved: myEvolved is accessed while in volume mode");
+            throw new TypeMismatchException("BRepOffsetAPI_MakeEvolved: myEvolved is accessed while in volume mode");
         }
         return myEvolved;
     }
 
     /// <summary>Takes the result of the algorithm.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         if (myEvolved.IsDone())
         {

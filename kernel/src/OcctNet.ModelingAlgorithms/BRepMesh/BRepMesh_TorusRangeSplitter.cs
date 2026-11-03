@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Extends the UV parameter range splitter to generate the internal nodes of a toroidal surface.</summary>
@@ -17,7 +21,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
     /// The nodes of a grid over the face's range, built from the border points' parameters; null when the steps are
     /// degenerate.
     /// </summary>
-    public override NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public override NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         (double first, double second) aRangeU = GetRangeU();
         (double first, double second) aRangeV = GetRangeV();
@@ -25,7 +29,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
         double aDiffU = aRangeU.second - aRangeU.first;
         double aDiffV = aRangeV.second - aRangeV.first;
 
-        gp_Torus aTorus = GetDFace().GetSurface().Torus();
+        Torus aTorus = GetDFace().GetSurface().Torus();
         double r = aTorus.MinorRadius();
         double R = aTorus.MajorRadius();
 
@@ -50,7 +54,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
                                                             theParameters.MinSize);
 
             double aa = Math.Sqrt(Du * Du + oldDv * oldDv);
-            if (aa < gp.Resolution())
+            if (aa < Constants.Resolution())
             {
                 return null;
             }
@@ -90,7 +94,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
 
         (double first, double second) aNewRangeV = (aRangeV.first + Dv * 0.1, aRangeV.second - Dv * 0.1);
 
-        NCollection_List<gp_Pnt2d> aNodes = new();
+        NCollection_List<Point2D> aNodes = new();
         for (int i = 1; i <= aParamU.Length(); ++i)
         {
             double aPasU = aParamU.Value(i);
@@ -101,7 +105,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
                     double aPasV = aParamV.Value(j);
                     if (aPasV >= aNewRangeV.first && aPasV < aNewRangeV.second)
                     {
-                        aNodes.Append(new gp_Pnt2d(aPasU, aPasV));
+                        aNodes.Append(new Point2D(aPasU, aPasV));
                     }
                 }
             }
@@ -111,7 +115,7 @@ public class BRepMesh_TorusRangeSplitter : BRepMesh_UVParamRangeSplitter
     }
 
     /// <summary>Registers a border point and its parameters.</summary>
-    public override void AddPoint(in gp_Pnt2d thePoint)
+    public override void AddPoint(in Point2D thePoint)
     {
         base.AddPoint(thePoint);
         GetParametersU().Add(thePoint.X());

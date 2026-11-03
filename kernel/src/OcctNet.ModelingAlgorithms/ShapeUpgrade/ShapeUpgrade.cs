@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -32,14 +38,14 @@ public static class ShapeUpgrade
 
         seqBS = new NCollection_HSequence<Geom_BoundedCurve>();
         // OCCT.NET: copy on write of a frozen curve (decision 998)
-        if (BS.IsFrozen())
+        if (BS.IsFrozen)
         {
             BS = (Geom_BSplineCurve)BS.Copy();
         }
         BS.SetNotPeriodic(); // to have equation NbPoles = NbKnots with Multiplicities - degree - 1
 
         int deg = BS.Degree();
-        NCollection_Array1<gp_Pnt> Poles = BS.InternalPoles();
+        NCollection_Array1<Point3D> Poles = BS.InternalPoles();
         NCollection_Array1<double> Weights = BS.InternalWeightsArray();
         NCollection_Array1<double> Knots = BS.InternalKnots();
         NCollection_Array1<int> Mults = BS.InternalMultiplicities();
@@ -55,9 +61,9 @@ public static class ShapeUpgrade
                 continue;
             }
 
-            int StartFlatIndex = BSplCLib.FlatIndex(deg, StartKnotIndex, Mults, false);
+            int StartFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, StartKnotIndex, Mults, false);
             //    StartFlatIndex += Mults (StartKnotIndex) - 1;
-            int EndFlatIndex = BSplCLib.FlatIndex(deg, EndKnotIndex, Mults, false);
+            int EndFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, EndKnotIndex, Mults, false);
             EndFlatIndex -= Mults[EndKnotIndex] - 1;
 
             var TempKnots = new NCollection_Array1<double>(1, Knots.Length());
@@ -68,7 +74,7 @@ public static class ShapeUpgrade
 
             for (j = StartFlatIndex - deg + 1; j <= EndFlatIndex + deg; j++)
             {
-                if (Math.Abs(KnotSequence[j] - KnotSequence[j - 1]) <= gp.Resolution())
+                if (Math.Abs(KnotSequence[j] - KnotSequence[j - 1]) <= Constants.Resolution())
                 {
                     TempMults[TempKnotIndex]++;
                 }
@@ -97,8 +103,8 @@ public static class ShapeUpgrade
                 newKnots[j] = TempKnots[j + TempStartIndex - 1];
             }
 
-            int NewNbPoles = BSplCLib.NbPoles(deg, false, newMults);
-            var newPoles = new NCollection_Array1<gp_Pnt>(1, NewNbPoles);
+            int NewNbPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(deg, false, newMults);
+            var newPoles = new NCollection_Array1<Point3D>(1, NewNbPoles);
             var newWeights = new NCollection_Array1<double>(1, NewNbPoles);
             int PoleIndex = StartFlatIndex - deg; // Index of starting pole when splitting B-Spline is an index of starting knot
             for (j = 1; j <= NewNbPoles; j++)
@@ -119,15 +125,15 @@ public static class ShapeUpgrade
     {
         int deg = BS.Degree();
         int NbPoles = BS.NbPoles();
-        NCollection_Array1<gp_Pnt2d> Poles2d = BS.InternalPoles();
+        NCollection_Array1<Point2D> Poles2d = BS.InternalPoles();
         NCollection_Array1<double> Weights = BS.InternalWeightsArray();
         NCollection_Array1<double> Knots = BS.InternalKnots();
         NCollection_Array1<int> Mults = BS.InternalMultiplicities();
 
-        var Poles3d = new NCollection_Array1<gp_Pnt>(1, NbPoles);
+        var Poles3d = new NCollection_Array1<Point3D>(1, NbPoles);
         for (int i = 1; i <= NbPoles; i++)
         {
-            Poles3d[i] = new gp_Pnt(Poles2d[i].X(), Poles2d[i].Y(), 0);
+            Poles3d[i] = new Point3D(Poles2d[i].X(), Poles2d[i].Y(), 0);
         }
 
         var BS3d = new Geom_BSplineCurve(Poles3d, Weights, Knots, Mults, deg, BS.IsPeriodic());
@@ -138,15 +144,15 @@ public static class ShapeUpgrade
     {
         int deg = BS.Degree();
         int NbPoles = BS.NbPoles();
-        NCollection_Array1<gp_Pnt> Poles3d = BS.InternalPoles();
+        NCollection_Array1<Point3D> Poles3d = BS.InternalPoles();
         NCollection_Array1<double> Weights = BS.InternalWeightsArray();
         NCollection_Array1<double> Knots = BS.InternalKnots();
         NCollection_Array1<int> Mults = BS.InternalMultiplicities();
 
-        var Poles2d = new NCollection_Array1<gp_Pnt2d>(1, NbPoles);
+        var Poles2d = new NCollection_Array1<Point2D>(1, NbPoles);
         for (int i = 1; i <= NbPoles; i++)
         {
-            Poles2d[i] = new gp_Pnt2d(Poles3d[i].X(), Poles3d[i].Y());
+            Poles2d[i] = new Point2D(Poles3d[i].X(), Poles3d[i].Y());
         }
 
         var BS2d = new Geom2d_BSplineCurve(Poles2d, Weights, Knots, Mults, deg, BS.IsPeriodic());
@@ -185,6 +191,6 @@ public static class ShapeUpgrade
     /// never a write into a frozen object (Standard_ImmutableObject, TopoDS_LockedShape: decision 423).
     /// </summary>
     internal static bool IsCaughtFailure(Exception theException)
-        => theException is not (Standard_ImmutableObject or TopoDS_LockedShape)
-           && theException is Standard_Failure or NullReferenceException;
+        => theException is not (ImmutableObjectException or TopoDS_LockedShape)
+           && theException is FailureException or NullReferenceException;
 }

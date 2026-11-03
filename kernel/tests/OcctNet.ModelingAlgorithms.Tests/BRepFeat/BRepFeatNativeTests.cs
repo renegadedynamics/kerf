@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -72,7 +74,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
     private static string Q(double theValue) =>
         ((long)Math.Round(theValue * 1e6, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture) + ";";
 
-    private static string P(gp_Pnt p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
+    private static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
 
     private static List<TopoDS_Shape> Map(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
     {
@@ -154,7 +156,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
             return "0 " + theStatus;
         }
         TopoDS_Shape aRes = theMaker.Shape();
-        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen())
+        if (!aRes.IsNull() && !aRes.TShape()!.IsFrozen)
         {
             throw new InvalidOperationException("the result isn't frozen");
         }
@@ -177,7 +179,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         {
             return theRun();
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             return "THROW " + e.OcctType;
         }
@@ -219,9 +221,9 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
             int aK = int.Parse(aHead[1], CultureInfo.InvariantCulture);
             TopoDS_Shape anIn = anInputs[aK];
             double[] aPar = aParams[aK];
-            var aC = new gp_Pnt(aPar[0], aPar[1], aPar[2]);
-            var aN = new gp_Dir(aPar[3], aPar[4], aPar[5]);
-            var aX = new gp_Dir(aPar[6], aPar[7], aPar[8]);
+            var aC = new Point3D(aPar[0], aPar[1], aPar[2]);
+            var aN = new Direction3D(aPar[3], aPar[4], aPar[5]);
+            var aX = new Direction3D(aPar[6], aPar[7], aPar[8]);
             double aSize = aPar[9];
             var anIt = new TopoDS_Iterator(anIn);
             TopoDS_Shape aS = anIt.Value();
@@ -242,7 +244,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                     int iUntil = -1;
                     for (int j = aFaces.Count - 1; j >= 0; j--)
                     {
-                        if (j != iF && new BRepAdaptor_Surface(TopoDS.Face(aFaces[j])).GetType() == GeomAbs_SurfaceType.GeomAbs_Plane)
+                        if (j != iF && new BRepAdaptor_Surface(TopoDS.Face(aFaces[j])).GetType() == SurfaceKind.Plane)
                         {
                             iUntil = j;
                             break;
@@ -268,7 +270,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         }),
                         "REVOL" => Run(() =>
                         {
-                            var anAxis = new gp_Ax1(aC.Translated(new gp_Vec(aN.Crossed(aX)) * (2.5 * aSize)), aX);
+                            var anAxis = new Axis3D(aC.Translated(new Vector3D(aN.Crossed(aX)) * (2.5 * aSize)), aX);
                             var aM = new BRepFeat_MakeRevol(aS, aP, aSk, anAxis, aFuse, isMod);
                             switch (anOp)
                             {
@@ -280,8 +282,8 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         }),
                         _ => Run(() =>
                         {
-                            gp_Dir aDir = aFuse != 0 ? aN : aN.Reversed();
-                            TopoDS_Edge aSpine = new BRepBuilderAPI_MakeEdge(aC, aC.Translated(new gp_Vec(aDir) * 5.0)).Edge();
+                            Direction3D aDir = aFuse != 0 ? aN : aN.Reversed();
+                            TopoDS_Edge aSpine = new BRepBuilderAPI_MakeEdge(aC, aC.Translated(new Vector3D(aDir) * 5.0)).Edge();
                             TopoDS_Wire aW = new BRepBuilderAPI_MakeWire(aSpine).Wire();
                             var aM = new BRepFeat_MakePipe(aS, aP, aSk, aW, aFuse, isMod);
                             aM.Perform();
@@ -296,7 +298,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                     aPort = Run(() =>
                     {
                         var aM = new BRepFeat_MakeCylindricalHole();
-                        aM.Init(aS, new gp_Ax1(aC.Translated(new gp_Vec(aN) * 1.0), aN.Reversed()));
+                        aM.Init(aS, new Axis3D(aC.Translated(new Vector3D(aN) * 1.0), aN.Reversed()));
                         switch (aMode)
                         {
                             case 0: aM.Perform(aSize / 2); break;

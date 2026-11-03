@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -29,8 +31,8 @@ public class ShapeExtendWireDataTests
     {
         TopoDS_Vertex[] aV =
         [
-            TestShapes.Vertex(new gp_Pnt(0, 0, 0)), TestShapes.Vertex(new gp_Pnt(1, 0, 0)),
-            TestShapes.Vertex(new gp_Pnt(1, 1, 0)), TestShapes.Vertex(new gp_Pnt(0, 1, 0)),
+            TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(1, 0, 0)),
+            TestShapes.Vertex(new Point3D(1, 1, 0)), TestShapes.Vertex(new Point3D(0, 1, 0)),
         ];
         return [TestShapes.Edge(aV[0], aV[1]), TestShapes.Edge(aV[1], aV[2]), TestShapes.Edge(aV[2], aV[3]), TestShapes.Edge(aV[3], aV[0])];
     }
@@ -75,17 +77,17 @@ public class ShapeExtendWireDataTests
         }
 
         TopoDS_Wire aNew = aWD.Wire();
-        Assert.True(aNew.TShape()!.IsFrozen());
+        Assert.True(aNew.TShape()!.IsFrozen);
         Assert.True(aNew.Closed());
         Assert.Equal(4, aNew.NbChildren());
 
         TopoDS_Wire anAPI = aWD.WireAPIMake();
         Assert.False(anAPI.IsNull());
-        Assert.True(anAPI.TShape()!.IsFrozen());
+        Assert.True(anAPI.TShape()!.IsFrozen);
         Assert.True(anAPI.Closed());
 
         TopoDS_Wire anInternal = aWD.InternalWire();
-        Assert.False(anInternal.TShape()!.IsFrozen());
+        Assert.False(anInternal.TShape()!.IsFrozen);
     }
 
     [Fact]
@@ -122,7 +124,7 @@ public class ShapeExtendWireDataTests
     public void Internal_edges_are_kept_apart_in_manifold_mode()
     {
         TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Edge anInternal = TestShapes.Edge(new gp_Pnt(0.2, 0.2, 0), new gp_Pnt(0.8, 0.8, 0));
+        TopoDS_Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
         TopoDS_Wire aW = WireOf(s[0], s[1], anInternal.Oriented(TopAbs_INTERNAL), s[2], s[3]);
 
         var aWD = new ShapeExtend_WireData(aW);
@@ -153,7 +155,7 @@ public class ShapeExtendWireDataTests
         // OCCT's Add(ShapeExtend_WireData) in non-manifold mode adds the other wire's i-th ordinary edge where it means
         // its i-th non-manifold edge
         TopoDS_Edge[] s = SquareEdges();
-        TopoDS_Edge anInternal = TestShapes.Edge(new gp_Pnt(0.2, 0.2, 0), new gp_Pnt(0.8, 0.8, 0));
+        TopoDS_Edge anInternal = TestShapes.Edge(new Point3D(0.2, 0.2, 0), new Point3D(0.8, 0.8, 0));
         var aSource = new ShapeExtend_WireData(WireOf(s[0], s[1], anInternal.Oriented(TopAbs_INTERNAL)));
         Assert.Equal(1, aSource.NbNonManifoldEdges());
 
@@ -293,7 +295,7 @@ public class ShapeExtendWireDataTests
 
         // on the frozen face's wire, the seam edge is frozen: the write throws
         var aFrozenWD = new ShapeExtend_WireData(BRepTools.OuterWire(aFrozen));
-        Assert.ThrowsAny<Standard_Failure>(() => aFrozenWD.Reverse(aFrozen));
+        Assert.ThrowsAny<FailureException>(() => aFrozenWD.Reverse(aFrozen));
         // without seams nothing is written
         TopoDS_Face aBoxF = FirstFace(new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
         var aBoxWD = new ShapeExtend_WireData(BRepTools.OuterWire(aBoxF));
@@ -305,8 +307,8 @@ public class ShapeExtendWireDataTests
     public void WireAPIMake_of_disconnected_edges_is_null()
     {
         var aWD = new ShapeExtend_WireData();
-        aWD.Add(TestShapes.Edge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)));
-        aWD.Add(TestShapes.Edge(new gp_Pnt(5, 0, 0), new gp_Pnt(6, 0, 0)));
+        aWD.Add(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
+        aWD.Add(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
         Assert.True(aWD.WireAPIMake().IsNull());
         Assert.False(aWD.Wire().Closed());
         Assert.True(IsPlanar(FirstFace(new BRepPrimAPI_MakeBox(1, 1, 1).Shape())));

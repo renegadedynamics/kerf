@@ -2,8 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -20,7 +22,7 @@ internal static partial class ChFi3d_Builder_0
     /// (<paramref name="wc"/> &lt; -1e100), the last one (&gt; 1e100), or the closest to <paramref name="wc"/>; its
     /// parameters on the surface and the curve.
     /// </summary>
-    internal static bool ChFi3d_IntCS(Adaptor3d_Surface S, Adaptor3d_Curve C, ref gp_Pnt2d p2dS, ref double wc)
+    internal static bool ChFi3d_IntCS(Adaptor3d_Surface S, Adaptor3d_Curve C, ref Point2D p2dS, ref double wc)
     {
         IntCurveSurface_HInter Intersection = new();
 
@@ -110,7 +112,7 @@ internal static partial class ChFi3d_Builder_0
                                               GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, ref double UInt1,
                                               ref double UInt2)
     {
-        gp_Pnt bid = new();
+        Point3D bid = new();
         ChFi3d_ComputesIntPC(Fi1, Fi2, HS1, HS2, ref UInt1, ref UInt2, ref bid);
     }
 
@@ -120,7 +122,7 @@ internal static partial class ChFi3d_Builder_0
     /// <paramref name="UInt1"/> and <paramref name="UInt2"/>; <paramref name="P"/> the point between them.</summary>
     internal static void ChFi3d_ComputesIntPC(in ChFiDS_FaceInterference Fi1, in ChFiDS_FaceInterference Fi2,
                                               GeomAdaptor_Surface HS1, GeomAdaptor_Surface HS2, ref double UInt1,
-                                              ref double UInt2, ref gp_Pnt P)
+                                              ref double UInt2, ref Point3D P)
     {
         // Only one intersection to be carried out, however, the effort
         // is taken to check the extremities by an extrema c3d/c3d
@@ -128,9 +130,9 @@ internal static partial class ChFi3d_Builder_0
 
         double x, y, distref2;
         Fi1.PCurveOnSurf()!.Value(UInt1).Coord(out x, out y);
-        gp_Pnt p3d1 = HS1.Value(x, y);
+        Point3D p3d1 = HS1.Value(x, y);
         Fi2.PCurveOnSurf()!.Value(UInt2).Coord(out x, out y);
-        gp_Pnt p3d2 = HS2.Value(x, y);
+        Point3D p3d2 = HS2.Value(x, y);
         distref2 = p3d1.SquareDistance(p3d2);
         P.SetXYZ(p3d1.XYZ().Added(p3d2.XYZ()).Multiplied(0.5));
         // recalculation of the extremums
@@ -149,8 +151,8 @@ internal static partial class ChFi3d_Builder_0
                 ext.Point(out Extrema_POnCurv ponc1, out Extrema_POnCurv ponc2);
                 UInt1 = ponc1.Parameter();
                 UInt2 = ponc2.Parameter();
-                gp_Pnt Pnt1 = ponc1.Value();
-                gp_Pnt Pnt2 = ponc2.Value();
+                Point3D Pnt1 = ponc1.Value();
+                Point3D Pnt2 = ponc2.Value();
                 P.SetXYZ(Pnt1.XYZ().Added(Pnt2.XYZ()).Multiplied(0.5));
             }
         }
@@ -185,15 +187,15 @@ internal static partial class ChFi3d_Builder_0
         ChFiDS_FaceInterference FiArc1 = Fd1.Interference(IFaArc1);
 
         double Du, Dv, mu, Mu, mv, Mv;
-        gp_Pnt2d UVf1, UVf2, UVl1, UVl2;
+        Point2D UVf1, UVf2, UVl1, UVl2;
 
         UVf1 = FiCo1.PCurveOnSurf()!.Value(FiCo1.FirstParameter());
         UVl1 = FiCo1.PCurveOnSurf()!.Value(FiCo1.LastParameter());
         UVf2 = FiArc1.PCurveOnSurf()!.Value(FiArc1.FirstParameter());
         UVl2 = FiArc1.PCurveOnSurf()!.Value(FiArc1.LastParameter());
         ChFi3d_Boite(UVf1, UVf2, UVl1, UVl2, out Du, out Dv, out mu, out Mu, out mv, out Mv);
-        GeomAbs_SurfaceType styp = S1.GetType();
-        if (styp == GeomAbs_Cylinder)
+        SurfaceKind styp = S1.GetType();
+        if (styp == SurfaceKind.Cylinder)
         {
             Dv = Math.Max(0.5 * Dv, 4.0 * S1.Cylinder().Radius());
             Du = 0.0;
@@ -201,13 +203,13 @@ internal static partial class ChFi3d_Builder_0
         }
         // In the case of a torus or cone, it is not necessary that the bounds create a surface with
         // period more than 2PI.
-        else if (styp == GeomAbs_Torus || styp == GeomAbs_Cone)
+        else if (styp == SurfaceKind.Torus || styp == SurfaceKind.Cone)
         {
             Du = Math.Min(Math.PI - 0.5 * Du, 0.1 * Du);
             Dv = 0.0;
             S1.Load(DStr.Surface(Fd1.Surf()).Surface()!, mu - Du, Mu + Du, mv, Mv);
         }
-        else if (styp == GeomAbs_Plane)
+        else if (styp == Plane)
         {
             Du = Math.Max(0.5 * Du, 4.0 * Dv);
             Dv = 0.0;
@@ -347,35 +349,35 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary>The parameters of <paramref name="p3d"/> on <paramref name="S"/>: analytic for the elementary
     /// surfaces, else by projection.</summary>
-    /// <exception cref="StdFail_NotDone">The projection does not give exactly one point.</exception>
-    internal static void ChFi3d_Parameters(Geom_Surface S, in gp_Pnt p3d, out double u, out double v)
+    /// <exception cref="NotDoneException">The projection does not give exactly one point.</exception>
+    internal static void ChFi3d_Parameters(Geom_Surface S, in Point3D p3d, out double u, out double v)
     {
         GeomAdaptor_Surface gas = new(S);
         switch (gas.GetType())
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(gas.Plane(), p3d, out u, out v);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Plane(), p3d, out u, out v);
                 break;
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(gas.Cylinder(), p3d, out u, out v);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Cylinder(), p3d, out u, out v);
                 break;
-            case GeomAbs_Cone:
-                ElSLib.Parameters(gas.Cone(), p3d, out u, out v);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Cone(), p3d, out u, out v);
                 break;
-            case GeomAbs_Sphere:
-                ElSLib.Parameters(gas.Sphere(), p3d, out u, out v);
+            case SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Sphere(), p3d, out u, out v);
                 break;
-            case GeomAbs_Torus:
-                ElSLib.Parameters(gas.Torus(), p3d, out u, out v);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(gas.Torus(), p3d, out u, out v);
                 break;
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
+            case BezierSurface:
+            case BSplineSurface:
             default:
             {
                 GeomAPI_ProjectPointOnSurf tool = new(p3d, S);
                 if (tool.NbPoints() != 1)
                 {
-                    throw new StdFail_NotDone("ChFi3d_Parameters() - no projection results");
+                    throw new NotDoneException("ChFi3d_Parameters() - no projection results");
                 }
                 else
                 {
@@ -394,42 +396,42 @@ internal static partial class ChFi3d_Builder_0
 
     /// <summary><paramref name="gc"/> trimmed between the parameters of <paramref name="FirstP"/> and
     /// <paramref name="LastP"/>.</summary>
-    /// <exception cref="StdFail_NotDone">A projection does not give exactly one point.</exception>
-    internal static void ChFi3d_TrimCurve(Geom_Curve gc, in gp_Pnt FirstP, in gp_Pnt LastP,
+    /// <exception cref="NotDoneException">A projection does not give exactly one point.</exception>
+    internal static void ChFi3d_TrimCurve(Geom_Curve gc, in Point3D FirstP, in Point3D LastP,
                                           out Geom_TrimmedCurve gtc)
     {
         double uf = 0.0, ul = 0.0;
         GeomAdaptor_Curve gac = new(gc);
         switch (gac.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
-                uf = ElCLib.Parameter(gac.Line(), FirstP);
-                ul = ElCLib.Parameter(gac.Line(), LastP);
+                uf = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Line(), FirstP);
+                ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Line(), LastP);
             }
                 break;
-            case GeomAbs_Circle:
+            case Circle:
             {
-                uf = ElCLib.Parameter(gac.Circle(), FirstP);
-                ul = ElCLib.Parameter(gac.Circle(), LastP);
+                uf = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Circle(), FirstP);
+                ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Circle(), LastP);
             }
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                uf = ElCLib.Parameter(gac.Ellipse(), FirstP);
-                ul = ElCLib.Parameter(gac.Ellipse(), LastP);
+                uf = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Ellipse(), FirstP);
+                ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Ellipse(), LastP);
             }
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                uf = ElCLib.Parameter(gac.Hyperbola(), FirstP);
-                ul = ElCLib.Parameter(gac.Hyperbola(), LastP);
+                uf = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Hyperbola(), FirstP);
+                ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Hyperbola(), LastP);
             }
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
             {
-                uf = ElCLib.Parameter(gac.Parabola(), FirstP);
-                ul = ElCLib.Parameter(gac.Parabola(), LastP);
+                uf = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Parabola(), FirstP);
+                ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(gac.Parabola(), LastP);
             }
                 break;
             default:
@@ -437,7 +439,7 @@ internal static partial class ChFi3d_Builder_0
                 GeomAPI_ProjectPointOnCurve tool = new(FirstP, gc);
                 if (tool.NbPoints() != 1)
                 {
-                    throw new StdFail_NotDone("ChFi3d_TrimCurve() - no projection results for the first point");
+                    throw new NotDoneException("ChFi3d_TrimCurve() - no projection results for the first point");
                 }
                 else
                 {
@@ -446,7 +448,7 @@ internal static partial class ChFi3d_Builder_0
                 tool.Init(LastP, gc);
                 if (tool.NbPoints() != 1)
                 {
-                    throw new StdFail_NotDone("ChFi3d_TrimCurve() - no projection results for the second point");
+                    throw new NotDoneException("ChFi3d_TrimCurve() - no projection results for the second point");
                 }
                 else
                 {
@@ -460,12 +462,12 @@ internal static partial class ChFi3d_Builder_0
 
     //=================================================================================================
 
-    private static bool GoodExt(Geom_Curve C, in gp_Vec V, double f, double l, double a)
+    private static bool GoodExt(Geom_Curve C, in Vector3D V, double f, double l, double a)
     {
         for (int i = 0; i < 6; i++)
         {
             double t = i * 0.2;
-            C.D1(((1 - t) * f + t * l), out gp_Pnt d0, out gp_Vec d1);
+            C.D1(((1 - t) * f + t * l), out Point3D d0, out Vector3D d1);
             double ang = d1.Angle(V);
             double angref = a * t + 0.002;
             if (ang > angref)

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -11,14 +13,14 @@ public class IntTools_ToolsTests
 {
     private static TopoDS_Vertex Vertex(double theX, double theY, double theZ, double theTol)
     {
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(theX, theY, theZ)).Vertex();
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(theX, theY, theZ)).Vertex();
         TopoDS_Vertex aCopy = TopoDS.Vertex(BRepTools.ExactCopyForWrite(aV, out _));
         new BRep_Builder().UpdateVertex(aCopy, theTol);
         return aCopy;
     }
 
     private static TopoDS_Edge Segment(double theX1, double theX2) =>
-        new BRepBuilderAPI_MakeEdge(new gp_Pnt(theX1, 0, 0), new gp_Pnt(theX2, 0, 0)).Edge();
+        new BRepBuilderAPI_MakeEdge(new Point3D(theX1, 0, 0), new Point3D(theX2, 0, 0)).Edge();
 
     [Fact]
     public void ComputeVV_compares_with_the_sum_of_tolerances()
@@ -37,8 +39,8 @@ public class IntTools_ToolsTests
         TopoDS_Vertex aV = Vertex(5, 0, 0, 0.5);
         Assert.True(IntTools_Tools.IsVertex(aE, aV, 5.4));
         Assert.False(IntTools_Tools.IsVertex(aE, aV, 5.6));
-        Assert.True(IntTools_Tools.IsVertex(new gp_Pnt(5.7, 0, 0), 0.2, aV));
-        Assert.False(IntTools_Tools.IsVertex(new gp_Pnt(5.8, 0, 0), 0.2, aV));
+        Assert.True(IntTools_Tools.IsVertex(new Point3D(5.7, 0, 0), 0.2, aV));
+        Assert.False(IntTools_Tools.IsVertex(new Point3D(5.8, 0, 0), 0.2, aV));
 
         IntTools_CommonPrt aCP = new();
         aCP.SetEdge1(aE);
@@ -71,8 +73,8 @@ public class IntTools_ToolsTests
         BRepAdaptor_Surface aBAS = new(aF);
         double aUm = 0.5 * (aBAS.FirstUParameter() + aBAS.LastUParameter());
         double aVm = 0.5 * (aBAS.FirstVParameter() + aBAS.LastVParameter());
-        Assert.Equal(TopAbs_IN, IntTools_Tools.ClassifyPointByFace(aF, new gp_Pnt2d(aUm, aVm)));
-        Assert.Equal(TopAbs_OUT, IntTools_Tools.ClassifyPointByFace(aF, new gp_Pnt2d(aUm + 10, aVm)));
+        Assert.Equal(TopAbs_IN, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm, aVm)));
+        Assert.Equal(TopAbs_OUT, IntTools_Tools.ClassifyPointByFace(aF, new Point2D(aUm + 10, aVm)));
     }
 
     [Fact]
@@ -85,18 +87,18 @@ public class IntTools_ToolsTests
     [Fact]
     public void IsDirsCoinside_equal_or_opposite()
     {
-        gp_Dir aX = new(1, 0, 0);
-        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new gp_Dir(-1, 0, 0)));
-        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new gp_Dir(1, 1.0e-4, 0)));
-        Assert.False(IntTools_Tools.IsDirsCoinside(aX, new gp_Dir(1, 1.0e-3, 0)));
-        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new gp_Dir(1, 1.0e-3, 0), 0.01));
-        Assert.False(IntTools_Tools.IsDirsCoinside(aX, new gp_Dir(0, 1, 0), 0.01));
+        Direction3D aX = new(1, 0, 0);
+        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new Direction3D(-1, 0, 0)));
+        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new Direction3D(1, 1.0e-4, 0)));
+        Assert.False(IntTools_Tools.IsDirsCoinside(aX, new Direction3D(1, 1.0e-3, 0)));
+        Assert.True(IntTools_Tools.IsDirsCoinside(aX, new Direction3D(1, 1.0e-3, 0), 0.01));
+        Assert.False(IntTools_Tools.IsDirsCoinside(aX, new Direction3D(0, 1, 0), 0.01));
     }
 
     [Fact]
     public void IsClosed_SplitCurve_RejectLines()
     {
-        Geom_Circle aCircle = new(new gp_Ax2(), 2.0);
+        Geom_Circle aCircle = new(new Frame3D(), 2.0);
         Assert.False(IntTools_Tools.IsClosed(aCircle)); // not bounded
         Geom_TrimmedCurve aClosed = new(aCircle, 0, 2 * Math.PI);
         Assert.True(IntTools_Tools.IsClosed(aClosed));
@@ -111,9 +113,9 @@ public class IntTools_ToolsTests
         Assert.Equal(1e-5, aCvs.Value(2).TangentialTolerance());
 
         // lines: the first one, then the first non-parallel one
-        Geom_Line aL1 = new(new gp_Pnt(), new gp_Dir(1, 0, 0));
-        Geom_Line aL2 = new(new gp_Pnt(0, 1, 0), new gp_Dir(-1, 0, 0));
-        Geom_Line aL3 = new(new gp_Pnt(), new gp_Dir(0, 1, 0));
+        Geom_Line aL1 = new(new Point3D(), new Direction3D(1, 0, 0));
+        Geom_Line aL2 = new(new Point3D(0, 1, 0), new Direction3D(-1, 0, 0));
+        Geom_Line aL3 = new(new Point3D(), new Direction3D(0, 1, 0));
         NCollection_Sequence<IntTools_Curve> aIn = new();
         aIn.Append(new IntTools_Curve(new Geom_TrimmedCurve(aL1, 0, 1), null, null, 0, 0));
         aIn.Append(new IntTools_Curve(aL2, null, null, 0, 0));
@@ -137,25 +139,25 @@ public class IntTools_ToolsTests
     [Fact]
     public void CurveTolerance_of_a_trimmed_parabola()
     {
-        Geom_Parabola aP = new(new gp_Ax2(), 0.5);
+        Geom_Parabola aP = new(new Frame3D(), 0.5);
         Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(aP, 1e-3)); // not trimmed
         Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(null, 1e-3));
         // at parameter t the point is (t^2/(4f), t): its projection on the axis is x = t^2/(4f) = t^2/2
         double aTol = IntTools_Tools.CurveTolerance(new Geom_TrimmedCurve(aP, -1, 2), 1e-3);
         Assert.Equal(1e-3 * Math.Sqrt(0.5 * 2.0 / 0.5), aTol, 1e-15);
-        Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(new Geom_TrimmedCurve(new Geom_Line(new gp_Pnt(), new gp_Dir(1, 0, 0)), 0, 1), 1e-3));
+        Assert.Equal(1e-3, IntTools_Tools.CurveTolerance(new Geom_TrimmedCurve(new Geom_Line(new Point3D(), new Direction3D(1, 0, 0)), 0, 1), 1e-3));
     }
 
     [Fact]
     public void CheckCurve_rejects_short_curves()
     {
-        Geom_Line aL = new(new gp_Pnt(), new gp_Dir(1, 0, 0));
-        Bnd_Box aBox = new();
+        Geom_Line aL = new(new Point3D(), new Direction3D(1, 0, 0));
+        Box aBox = new();
         Assert.True(IntTools_Tools.CheckCurve(new IntTools_Curve(new Geom_TrimmedCurve(aL, 0, 1), null, null, 1e-7, 1e-7), ref aBox));
-        Assert.False(aBox.IsVoid());
-        aBox = new Bnd_Box();
+        Assert.False(aBox.IsVoid);
+        aBox = new Box();
         Assert.False(IntTools_Tools.CheckCurve(new IntTools_Curve(new Geom_TrimmedCurve(aL, 0, 1e-8), null, null, 1e-7, 1e-7), ref aBox));
-        aBox = new Bnd_Box();
+        aBox = new Box();
         Assert.False(IntTools_Tools.CheckCurve(new IntTools_Curve(), ref aBox));
     }
 
@@ -190,9 +192,9 @@ public class IntTools_ToolsTests
     [Fact]
     public void SegPln_return_codes()
     {
-        gp_Lin aLin = new(new gp_Pnt(0, 0, -1), new gp_Dir(0, 0, 1));
-        gp_Pln aPln = new(new gp_Pnt(0, 0, 0.5), new gp_Dir(0, 0, 1));
-        gp_Pnt aP = new();
+        Line3D aLin = new(new Point3D(0, 0, -1), new Direction3D(0, 0, 1));
+        Plane3D aPln = new(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1));
+        Point3D aP = new();
         double aT = 0, aTolP = 0, aTmin = 0, aTmax = 0;
         Assert.Equal(0, IntTools_Tools.SegPln(aLin, 0, 3, 1e-3, aPln, 1e-2, ref aP, ref aT, ref aTolP, ref aTmin, ref aTmax));
         Assert.Equal(1.5, aT);
@@ -203,20 +205,20 @@ public class IntTools_ToolsTests
         Assert.Equal(2, IntTools_Tools.SegPln(aLin, 2, 3, 1e-3, aPln, 1e-2, ref aP, ref aT, ref aTolP, ref aTmin, ref aTmax));
         Assert.Equal(1, IntTools_Tools.SegPln(aLin, 0, 1, 1e-3, aPln, 1e-2, ref aP, ref aT, ref aTolP, ref aTmin, ref aTmax));
         // in the plane: both signed distances below the tolerance
-        gp_Lin aInPlane = new(new gp_Pnt(0, 0, 0.5), new gp_Dir(1, 0, 0));
+        Line3D aInPlane = new(new Point3D(0, 0, 0.5), new Direction3D(1, 0, 0));
         Assert.Equal(1, IntTools_Tools.SegPln(aInPlane, 0, 3, 1e-3, aPln, 1e-2, ref aP, ref aT, ref aTolP, ref aTmin, ref aTmax));
     }
 
     [Fact]
     public void ComputeTolerance_of_a_curve_on_a_plane()
     {
-        Geom_Plane aPlane = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
-        Geom_Line aL3 = new(new gp_Pnt(0, 0, 0.01), new gp_Dir(1, 0, 0));
-        Geom2d_Line aL2 = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom_Plane aPlane = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
+        Geom_Line aL3 = new(new Point3D(0, 0, 0.01), new Direction3D(1, 0, 0));
+        Geom2d_Line aL2 = new(new Point2D(0, 0), new Direction2D(1, 0));
         Assert.True(IntTools_Tools.ComputeTolerance(aL3, aL2, aPlane, 0, 1, out double aD, out double aT));
         Assert.Equal(0.01 * (1.0 + 1.0e-5), aD, 1e-15);
         Assert.InRange(aT, 0.0, 1.0);
-        Assert.True(IntTools_Tools.ComputeTolerance(aL3, aL2, aPlane, 0, 1, out double aDP, out double aTP, Precision.PConfusion(), true));
+        Assert.True(IntTools_Tools.ComputeTolerance(aL3, aL2, aPlane, 0, 1, out double aDP, out double aTP, global::Kerf.Engine.Foundation.Precision.PConfusion(), true));
         Assert.Equal(aD, aDP);
         Assert.Equal(aT, aTP);
     }

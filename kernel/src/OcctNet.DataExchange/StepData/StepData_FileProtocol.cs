@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -17,7 +19,7 @@ public class StepData_FileProtocol : StepData_Protocol
 {
     private const string thename = ""; // Empty schema name for file protocols
 
-    private readonly NCollection_Sequence<Standard_Transient> thecomps = new();
+    private readonly NCollection_Sequence<Transient> thecomps = new();
 
     //  Protocol factory created on demand with other Protocols
 

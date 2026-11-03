@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -114,8 +118,8 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     /// <summary>A native face triangulation pulled out of the binding.</summary>
     private sealed class NativeTriangulation
     {
-        public gp_XYZ[] Nodes = [];
-        public gp_XY[]? UVNodes;
+        public Xyz[] Nodes = [];
+        public Xy[]? UVNodes;
         public int[] Triangles = [];
         public double Deflection;
     }
@@ -129,8 +133,8 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
 
         var aT = new NativeTriangulation
         {
-            Nodes = new gp_XYZ[theT.NbNodes()],
-            UVNodes = theT.HasUVNodes() ? new gp_XY[theT.NbNodes()] : null,
+            Nodes = new Xyz[theT.NbNodes()],
+            UVNodes = theT.HasUVNodes() ? new Xy[theT.NbNodes()] : null,
             Triangles = new int[3 * theT.NbTriangles()],
             Deflection = theT.Deflection(),
         };
@@ -138,12 +142,12 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         {
             using (N.gp_Pnt aP = theT.Node(i))
             {
-                aT.Nodes[i - 1] = new gp_XYZ(aP.X(), aP.Y(), aP.Z());
+                aT.Nodes[i - 1] = new Xyz(aP.X(), aP.Y(), aP.Z());
             }
             if (aT.UVNodes is not null)
             {
                 using N.gp_Pnt2d aUV = theT.UVNode(i);
-                aT.UVNodes[i - 1] = new gp_XY(aUV.X(), aUV.Y());
+                aT.UVNodes[i - 1] = new Xy(aUV.X(), aUV.Y());
             }
         }
         for (int i = 1; i <= theT.NbTriangles(); i++)
@@ -217,12 +221,12 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         public double Share => Faces == 0 ? 1.0 : (double)BitSame / (Faces - BothUnmeshed);
     }
 
-    private static double Area(gp_XYZ[] theNodes, int[] theTriangles)
+    private static double Area(Xyz[] theNodes, int[] theTriangles)
     {
         double anArea = 0.0;
         for (int i = 0; i < theTriangles.Length; i += 3)
         {
-            gp_XYZ a = theNodes[theTriangles[i] - 1], b = theNodes[theTriangles[i + 1] - 1], c = theNodes[theTriangles[i + 2] - 1];
+            Xyz a = theNodes[theTriangles[i] - 1], b = theNodes[theTriangles[i + 1] - 1], c = theNodes[theTriangles[i + 2] - 1];
             anArea += 0.5 * (b - a).Crossed(c - a).Modulus();
         }
         return anArea;
@@ -231,7 +235,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     private static bool BitEqual(double a, double b) => BitConverter.DoubleToInt64Bits(a) == BitConverter.DoubleToInt64Bits(b);
 
     /// <summary>Compares the port's face triangulation with native's; returns the verdict for the tally.</summary>
-    private static void CompareFace(Tally theTally, string theWhat, Poly_Triangulation? thePort, NativeTriangulation? theNative)
+    private static void CompareFace(Tally theTally, string theWhat, Triangulation? thePort, NativeTriangulation? theNative)
     {
         theTally.Faces++;
         if (thePort is null && theNative is null)
@@ -249,13 +253,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
 
         theTally.Nodes += theNative.Nodes.Length;
         theTally.Triangles += theNative.Triangles.Length / 3;
-        var aPortNodes = new gp_XYZ[thePort.NbNodes()];
-        for (int i = 1; i <= thePort.NbNodes(); i++)
+        var aPortNodes = new Xyz[thePort.NodeCount];
+        for (int i = 1; i <= thePort.NodeCount; i++)
         {
             aPortNodes[i - 1] = thePort.Node(i).XYZ();
         }
-        var aPortTris = new int[3 * thePort.NbTriangles()];
-        for (int i = 1; i <= thePort.NbTriangles(); i++)
+        var aPortTris = new int[3 * thePort.TriangleCount];
+        for (int i = 1; i <= thePort.TriangleCount; i++)
         {
             thePort.Triangle(i).Get(out aPortTris[3 * i - 3], out aPortTris[3 * i - 2], out aPortTris[3 * i - 1]);
         }
@@ -271,20 +275,20 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             return;
         }
 
-        bool isBitSame = BitEqual(thePort.Deflection(), theNative.Deflection) && thePort.HasUVNodes() == (theNative.UVNodes is not null);
+        bool isBitSame = BitEqual(thePort.Deflection(), theNative.Deflection) && thePort.HasUVNodes == (theNative.UVNodes is not null);
         double aMaxDiff = 0.0;
         for (int i = 0; i < aPortNodes.Length; i++)
         {
-            gp_XYZ p = aPortNodes[i], n = theNative.Nodes[i];
+            Xyz p = aPortNodes[i], n = theNative.Nodes[i];
             if (!BitEqual(p.X(), n.X()) || !BitEqual(p.Y(), n.Y()) || !BitEqual(p.Z(), n.Z()))
             {
                 isBitSame = false;
                 double aScale = Math.Max(1.0, Math.Max(Math.Abs(n.X()), Math.Max(Math.Abs(n.Y()), Math.Abs(n.Z()))));
                 aMaxDiff = Math.Max(aMaxDiff, (p - n).Modulus() / aScale);
             }
-            if (theNative.UVNodes is not null && thePort.HasUVNodes())
+            if (theNative.UVNodes is not null && thePort.HasUVNodes)
             {
-                gp_XY pu = thePort.UVNode(i + 1).XY(), nu = theNative.UVNodes[i];
+                Xy pu = thePort.UVNode(i + 1).XY(), nu = theNative.UVNodes[i];
                 if (!BitEqual(pu.X(), nu.X()) || !BitEqual(pu.Y(), nu.Y()))
                 {
                     isBitSame = false;
@@ -319,9 +323,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         double aDeflection = theSetting.Deflection;
         if (aDeflection < 0)
         {
-            var aBox = new Bnd_Box();
+            var aBox = new Box();
             BRepBndLib.Add(aPortF1, ref aBox, false);
-            if (aBox.IsVoid())
+            if (aBox.IsVoid)
             {
                 return;
             }
@@ -331,11 +335,11 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         }
 
         string aWhat = $"{theName} ({theSetting})";
-        if (aDeflection < Precision.Confusion())
+        if (aDeflection < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // Both sides reject a deflection below the confusion tolerance (a tiny shape at a relative fraction).
             Assert.ThrowsAny<N.OcctException>(() => NativeMesh(theF1, aDeflection, theSetting));
-            Assert.Throws<Standard_NumericError>(() => new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
+            Assert.Throws<global::Kerf.Engine.Foundation.NumericErrorException>(() => new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
             theTally.BothRejected++;
             return;
         }
@@ -375,7 +379,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         Assert.Equal(aNativeTris.Length, aFaces.Extent());
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            Poly_Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
             CompareFace(theTally, $"{aWhat} face {i}", aT, aNativeTris[i - 1]);
         }
     }
@@ -572,9 +576,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     {
         for (int i = 0; i < theCount; i++)
         {
-            gp_Dir aZ = theO.Dir();
-            gp_Dir aRef = theO.Dir();
-            gp_Dir aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new gp_Dir(1, 0, 0), 0.1) ? new gp_Dir(0, 1, 0) : new gp_Dir(1, 0, 0)) : aRef);
+            Direction3D aZ = theO.Dir();
+            Direction3D aRef = theO.Dir();
+            Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
             using var aNAx2 = new N.gp_Ax2(Oracle.ToNative(theO.Pnt()), Oracle.ToNative(aZ), Oracle.ToNative(aX));
             double r = theO.Real(0.5, 20), h = theO.Real(0.5, 30);
             N.TopoDS_Shape? aShape = null;
@@ -646,12 +650,12 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                         using var aPoles = new N.TColgp_Array1OfPnt(1, aNb);
                         for (int k = 1; k <= aNb; k++)
                         {
-                            using N.gp_Pnt aP = Oracle.ToNative(new gp_Pnt(k * r / aNb, theO.Real(-r, r) * 0.3, theO.Real(-1, 1)));
+                            using N.gp_Pnt aP = Oracle.ToNative(new Point3D(k * r / aNb, theO.Real(-r, r) * 0.3, theO.Real(-1, 1)));
                             aPoles.SetValue(k, aP);
                         }
                         using var anApprox = new N.GeomAPI_PointsToBSpline(aPoles);
                         using var anEdge = new N.BRepBuilderAPI_MakeEdge(anApprox.Curve());
-                        using N.gp_Vec aDir = Oracle.ToNative(new gp_Vec(aZ.XYZ()) * h);
+                        using N.gp_Vec aDir = Oracle.ToNative(new Vector3D(aZ.XYZ()) * h);
                         using var aPrism = new N.BRepPrimAPI_MakePrism(anEdge.Shape(), aDir);
                         aShape = aPrism.Shape();
                         break;
@@ -659,12 +663,12 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                     default:
                     {
                         aKind = "revolution of an arc";
-                        using N.gp_Pnt aP1 = Oracle.ToNative(new gp_Pnt(r, 0, 0));
-                        using N.gp_Pnt aP2 = Oracle.ToNative(new gp_Pnt(r + h * 0.3, 0, h * 0.5));
-                        using N.gp_Pnt aP3 = Oracle.ToNative(new gp_Pnt(r, 0, h));
+                        using N.gp_Pnt aP1 = Oracle.ToNative(new Point3D(r, 0, 0));
+                        using N.gp_Pnt aP2 = Oracle.ToNative(new Point3D(r + h * 0.3, 0, h * 0.5));
+                        using N.gp_Pnt aP3 = Oracle.ToNative(new Point3D(r, 0, h));
                         using var anArc = new N.GC_MakeArcOfCircle(aP1, aP2, aP3);
                         using var anEdge = new N.BRepBuilderAPI_MakeEdge(anArc.Value());
-                        using var anAxis = new N.gp_Ax1(Oracle.ToNative(gp.Origin()), Oracle.ToNative(gp.DZ()));
+                        using var anAxis = new N.gp_Ax1(Oracle.ToNative(Constants.Origin()), Oracle.ToNative(Constants.DZ()));
                         using var aRevol = new N.BRepPrimAPI_MakeRevol(anEdge.Shape(), anAxis, theO.Real(1.0, 2 * Math.PI));
                         aShape = aRevol.Shape();
                         break;
@@ -762,9 +766,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (var aNB = new N.Bnd_Box())
                 {
                     N.BRepBndLib.Add(aNative, aNB, true);
-                    var aPB = new Bnd_Box();
+                    var aPB = new Box();
                     BRepBndLib.Add(aPort, ref aPB, true);
-                    anOracle.Same(aNB.IsVoid(), aPB.IsVoid(), aWhat + " box void");
+                    anOracle.Same(aNB.IsVoid(), aPB.IsVoid, aWhat + " box void");
                     if (!aNB.IsVoid())
                     {
                         double a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0;
@@ -789,21 +793,21 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         NCollection_IndexedMap<TopoDS_Shape> aFaces = Map(theShape, TopAbs_FACE);
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            Poly_Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = BRep_Tool.Triangulation(TopoDS.Face(aFaces.FindKey(i)), out _);
             if (aT is null)
             {
                 aBuilder.Append("null\n");
                 continue;
             }
             aBuilder.Append(BitConverter.DoubleToInt64Bits(aT.Deflection())).Append('\n');
-            for (int k = 1; k <= aT.NbNodes(); k++)
+            for (int k = 1; k <= aT.NodeCount; k++)
             {
-                gp_Pnt p = aT.Node(k);
+                Point3D p = aT.Node(k);
                 aBuilder.Append(BitConverter.DoubleToInt64Bits(p.X())).Append(' ').Append(BitConverter.DoubleToInt64Bits(p.Y())).Append(' ')
                         .Append(BitConverter.DoubleToInt64Bits(p.Z()));
-                if (aT.HasUVNodes())
+                if (aT.HasUVNodes)
                 {
-                    gp_Pnt2d uv = aT.UVNode(k);
+                    Point2D uv = aT.UVNode(k);
                     aBuilder.Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.X())).Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.Y()));
                 }
                 aBuilder.Append('\n');
@@ -837,7 +841,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                     string aParallel = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
                     Assert.True(aSerial == aParallel, $"{aFile} ({aDeflection}, {anAngle}) parallel run {aRun} differs from serial");
                 }
-                using (OSD_Parallel.ForceSerialScope())
+                using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
                 {
                     string aForced = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
                     Assert.True(aSerial == aForced, $"{aFile}: forced serial differs");

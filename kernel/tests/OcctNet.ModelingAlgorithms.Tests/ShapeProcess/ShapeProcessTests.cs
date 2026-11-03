@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Resources;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
@@ -20,14 +24,14 @@ public class ShapeProcessTests
     private static TopoDS_Shape FrozenBox()
     {
         TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        Assert.True(aBox.TShape()!.IsFrozen());
+        Assert.True(aBox.TShape()!.IsFrozen);
         return aBox;
     }
 
     private static TopoDS_Shape FrozenCylinder()
     {
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
-        Assert.True(aCyl.TShape()!.IsFrozen());
+        Assert.True(aCyl.TShape()!.IsFrozen);
         return aCyl;
     }
 
@@ -38,13 +42,13 @@ public class ShapeProcessTests
         return aMap.Extent();
     }
 
-    private sealed class Capture : Message_Printer
+    private sealed class Capture : Printer
     {
         public readonly System.Text.StringBuilder Text = new();
 
-        public Capture() => myTraceLevel = Message_Gravity.Message_Trace;
+        public Capture() => _traceLevel = Gravity.Trace;
 
-        protected override void send(string theString, Message_Gravity theGravity) => Text.Append(theString).Append('\n');
+        protected override void SendCore(string theString, Gravity theGravity) => Text.Append(theString).Append('\n');
     }
 
     private string WriteResource(string theName, string theText)
@@ -77,7 +81,7 @@ public class ShapeProcessTests
         Assert.Equal("x", aContext.StringVal("Bad", null));
         Assert.Equal("def", aContext.StringVal("Missing", "def"));
         // OCCT reads the first character of an empty value: Standard_OutOfRange, which the performer catches
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aContext.RealVal("Empty", 0));
+        Assert.ThrowsAny<OutOfRangeException>(() => aContext.RealVal("Empty", 0));
 
         aContext.UnSetScope();
         Assert.Equal(-1.0, aContext.RealVal("Real", -1.0));
@@ -85,8 +89,8 @@ public class ShapeProcessTests
         Assert.Equal(0.25, aContext.RealVal("Global.Tol", 0));
 
         var aShapeContext = new ShapeProcess_ShapeContext("Params", "Seq.Op", aDir);
-        Assert.Equal(GeomAbs_Shape.GeomAbs_C2, aShapeContext.ContinuityVal("Cont", GeomAbs_Shape.GeomAbs_C0));
-        Assert.Equal(GeomAbs_Shape.GeomAbs_C0, aShapeContext.ContinuityVal("Bad", GeomAbs_Shape.GeomAbs_C0));
+        Assert.Equal(Continuity.C2, aShapeContext.ContinuityVal("Cont", Continuity.C0));
+        Assert.Equal(Continuity.C0, aShapeContext.ContinuityVal("Bad", Continuity.C0));
 
         // an empty context has no resources
         var anEmpty = new ShapeProcess_Context();
@@ -100,7 +104,7 @@ public class ShapeProcessTests
     {
         string aDir = WriteResource("Cached", "a : 1\n");
         var aContext = new ShapeProcess_Context();
-        Resource_Manager aFirst = aContext.LoadResourceManager("Cached", aDir);
+        Manager aFirst = aContext.LoadResourceManager("Cached", aDir);
         Assert.Equal(1, aFirst.Integer("a"));
 
         // each context gets its own copy
@@ -160,13 +164,13 @@ public class ShapeProcessTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         var aPrinter = new Capture();
         var aContext = new ShapeProcess_ShapeContext(aCyl, "Seq", "", aDir);
-        aContext.SetMessenger(new Message_Messenger(aPrinter));
+        aContext.SetMessenger(new Messenger(aPrinter));
         Assert.True(ShapeProcess.Perform(aContext, "Run"));
         aSnap.AssertUnchanged(aCyl);
 
         Assert.Contains("Error: Shape Processing: Operator NoSuchOperator is not found", aPrinter.Text.ToString(), StringComparison.Ordinal);
         TopoDS_Shape aResult = aContext.Result();
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(6, Count(aResult, TopAbs_FACE)); // the lateral face in 4
         Assert.True(Math.Abs(BRep_Tool.Tolerance(TopoDS.Vertex(new TopExp_Explorer(aResult, TopAbs_VERTEX).Current())) - 1e-3) < 1e-9);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
@@ -177,10 +181,10 @@ public class ShapeProcessTests
         int aSplit = 0;
         for (var anExp = new TopExp_Explorer(aCyl, TopAbs_FACE); anExp.More(); anExp.Next())
         {
-            TopoDS_Shape aFace = anExp.Current().Located(new TopLoc_Location());
+            TopoDS_Shape aFace = anExp.Current().Located(new Placement());
             if (aMap.Find(aFace, out TopoDS_Shape aNew))
             {
-                Assert.True(aNew.TShape()!.IsFrozen());
+                Assert.True(aNew.TShape()!.IsFrozen);
                 aSplit += aNew.ShapeType() == TopAbs_COMPOUND || aNew.ShapeType() == TopAbs_SHELL ? 1 : 0;
             }
         }
@@ -189,7 +193,7 @@ public class ShapeProcessTests
         // the trace level 2 lists the sequence and the operators
         var aTraced = new ShapeProcess_ShapeContext(aCyl, "Seq", "", aDir);
         var aTrace = new Capture();
-        aTraced.SetMessenger(new Message_Messenger(aTrace));
+        aTraced.SetMessenger(new Messenger(aTrace));
         aTraced.SetTraceLevel(2);
         ShapeProcess.Perform(aTraced, "Run");
         Assert.Contains("Info: Shape Processing: Sequence of operators: SetTolerance,SameParameter,SplitAngle,NoSuchOperator",
@@ -227,7 +231,7 @@ public class ShapeProcessTests
                 var aContext = new ShapeProcess_ShapeContext(aShape, "");
                 ShapeProcess.Perform(aContext, new ShapeProcess.OperationsFlags(anOperation));
                 // ToBezier with its default modes (nothing converted) gives a null result, as natively
-                Assert.True(aContext.Result().IsNull() || aContext.Result().TShape()!.IsFrozen());
+                Assert.True(aContext.Result().IsNull() || aContext.Result().TShape()!.IsFrozen);
                 aSnap.AssertUnchanged(aShape);
             }
             // an operator run on its own works on a copy too
@@ -244,7 +248,7 @@ public class ShapeProcessTests
         ShapeProcess_OperLibrary.Init();
         var aPrinter = new Capture();
         var aContext = new ShapeProcess_ShapeContext(FrozenBox(), "IGES");
-        aContext.SetMessenger(new Message_Messenger(aPrinter));
+        aContext.SetMessenger(new Messenger(aPrinter));
         Assert.False(ShapeProcess.Perform(aContext, "NoSuchSequence"));
         Assert.Equal("Warning: Shape Processing: Sequence not defined for NoSuchSequence, nothing to do\n", aPrinter.Text.ToString());
         aContext.SetTraceLevel(0);
@@ -260,10 +264,10 @@ public class ShapeProcessTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         var aSeq = new ShapeProcessAPI_ApplySequence("MDTV", "ToV4", HealData);
         var aPrinter = new Capture();
-        aSeq.Context().SetMessenger(new Message_Messenger(aPrinter));
+        aSeq.Context().SetMessenger(new Messenger(aPrinter));
         TopoDS_Shape aResult = aSeq.PrepareShape(aCyl, true, TopAbs_FACE);
         aSnap.AssertUnchanged(aCyl);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
         Assert.True(aSeq.Map().Extent() > 0);
         aSeq.PrintPreparationResult();
@@ -297,7 +301,7 @@ public class ShapeProcessRegistryTests
             aRuns++;
             if (c.IntegerVal("Fail", 0) != 0)
             {
-                throw new Standard_ConstructionError("broken");
+                throw new ConstructionErrorException("broken");
             }
             return true;
         })));
@@ -309,15 +313,15 @@ public class ShapeProcessRegistryTests
 
         var aContext = new ShapeProcess_Context("Custom", "", aDir);
         var aPrinter = new System.Text.StringBuilder();
-        aContext.SetMessenger(new Message_Messenger(new StringPrinter(aPrinter)));
+        aContext.SetMessenger(new Messenger(new StringPrinter(aPrinter)));
         Assert.True(ShapeProcess.Perform(aContext, "Ok"));
         Assert.False(ShapeProcess.Perform(aContext, "Bad"));
         Assert.Equal(2, aRuns);
         Assert.Equal($"Error: Shape Processing: Operator {aName} failed with exception broken\n", aPrinter.ToString());
     }
 
-    private sealed class StringPrinter(System.Text.StringBuilder theText) : Message_Printer
+    private sealed class StringPrinter(System.Text.StringBuilder theText) : Printer
     {
-        protected override void send(string theString, Message_Gravity theGravity) => theText.Append(theString).Append('\n');
+        protected override void SendCore(string theString, Gravity theGravity) => theText.Append(theString).Append('\n');
     }
 }

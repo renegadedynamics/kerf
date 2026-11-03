@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2019-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -23,43 +24,43 @@ public class BRepMesh_DelabellaMeshAlgoFactory : IMeshTools_MeshAlgoFactory
     }
 
     /// <summary>A new meshing algorithm for the type of surface.</summary>
-    public override IMeshTools_MeshAlgo? GetAlgo(GeomAbs_SurfaceType theSurfaceType,
+    public override IMeshTools_MeshAlgo? GetAlgo(SurfaceKind theSurfaceType,
                                                  in IMeshTools_Parameters theParameters)
     {
         switch (theSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 return theParameters.InternalVerticesMode
                          ? new BRepMesh_DelaunayNodeInsertionMeshAlgoOfDelabella<BRepMesh_DefaultRangeSplitter>()
                          : new BRepMesh_DelabellaBaseMeshAlgo();
 
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 BRepMesh_DelaunayNodeInsertionMeshAlgoOfDelabella<BRepMesh_SphereRangeSplitter> aMeshAlgo = new();
                 aMeshAlgo.SetPreProcessSurfaceNodes(true);
                 return aMeshAlgo;
             }
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 return theParameters.InternalVerticesMode
                          ? new BRepMesh_DelaunayNodeInsertionMeshAlgo<BRepMesh_CylinderRangeSplitter>()
                          : new BRepMesh_DelaunayBaseMeshAlgo();
 
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 BRepMesh_DelaunayNodeInsertionMeshAlgoOfDelabella<BRepMesh_ConeRangeSplitter> aMeshAlgo = new();
                 aMeshAlgo.SetPreProcessSurfaceNodes(true);
                 return aMeshAlgo;
             }
 
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 BRepMesh_DelaunayNodeInsertionMeshAlgoOfDelabella<BRepMesh_TorusRangeSplitter> aMeshAlgo = new();
                 aMeshAlgo.SetPreProcessSurfaceNodes(true);
                 return aMeshAlgo;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 BRepMesh_DelaunayDeflectionControlMeshAlgoOfDelabella<BRepMesh_BoundaryParamsRangeSplitter> aMeshAlgo = new();
                 aMeshAlgo.SetPreProcessSurfaceNodes(true);

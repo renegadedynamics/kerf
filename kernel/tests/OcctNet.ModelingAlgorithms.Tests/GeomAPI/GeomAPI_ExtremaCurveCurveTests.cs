@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's GeomAPI_ExtremaCurveCurve GTest (in TKG3d's GTests in V8_0_1).</summary>
@@ -220,10 +224,10 @@ public class GeomAPI_ExtremaCurveCurve_Test
         const int aNbPoles = 195;
         const int aNbKnots = 17;
 
-        NCollection_Array1<gp_Pnt> aPolesArray = new(1, aNbPoles);
+        NCollection_Array1<Point3D> aPolesArray = new(1, aNbPoles);
         for (int i = 0; i < aNbPoles; i++)
         {
-            aPolesArray.SetValue(i + 1, new gp_Pnt(aPoles[i, 0], aPoles[i, 1], aPoles[i, 2]));
+            aPolesArray.SetValue(i + 1, new Point3D(aPoles[i, 0], aPoles[i, 1], aPoles[i, 2]));
         }
 
         NCollection_Array1<double> aKnotsArray = new(1, aNbKnots);
@@ -241,9 +245,9 @@ public class GeomAPI_ExtremaCurveCurve_Test
         const int aDegree = 14;
         Geom_BSplineCurve aC1 = new(aPolesArray, aKnotsArray, aMultsArray, aDegree);
 
-        gp_XYZ aP1 = new(60000, -7504.83, 6000);
-        gp_XYZ aP2 = new(60000, 7504.83, 6000);
-        Geom_Line aLine = new(new gp_Pnt(aP1), new gp_Dir(aP2 - aP1));
+        Xyz aP1 = new(60000, -7504.83, 6000);
+        Xyz aP2 = new(60000, 7504.83, 6000);
+        Geom_Line aLine = new(new Point3D(aP1), new Direction3D(aP2 - aP1));
         Geom_TrimmedCurve aC2 = new(aLine, 0.0, (aP2 - aP1).Modulus());
 
         GeomAPI_ExtremaCurveCurve anEx = new(aC1, aC2);
@@ -259,7 +263,7 @@ public class GeomAPI_ExtremaCurveCurve_Test
 
             if (aNbEx > 0)
             {
-                anEx.NearestPoints(out gp_Pnt aPoint1, out gp_Pnt aPoint2);
+                anEx.NearestPoints(out Point3D aPoint1, out Point3D aPoint2);
                 anEx.LowerDistanceParameters(out double aU1, out double aU2);
                 double aDistance = anEx.LowerDistance();
 
@@ -267,7 +271,7 @@ public class GeomAPI_ExtremaCurveCurve_Test
                 Assert.True(aU1 >= 0.0, "Parameter U1 should be non-negative");
                 Assert.True(aU1 <= 1.0, "Parameter U1 should not exceed 1.0");
                 Assert.True(aU2 >= 0.0, "Parameter U2 should be non-negative");
-                Assert.False(aPoint1.IsEqual(new gp_Pnt(0, 0, 0), 1e-10) && aPoint2.IsEqual(new gp_Pnt(0, 0, 0), 1e-10),
+                Assert.False(aPoint1.IsEqual(new Point3D(0, 0, 0), 1e-10) && aPoint2.IsEqual(new Point3D(0, 0, 0), 1e-10),
                              "Nearest points should not both be at origin");
             }
         }

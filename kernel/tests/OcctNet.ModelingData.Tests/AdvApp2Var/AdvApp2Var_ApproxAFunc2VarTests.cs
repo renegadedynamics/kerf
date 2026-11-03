@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AdvApp2Var_CriterionRepartition;
 using static Occt.AdvApp2Var_CriterionType;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -96,11 +99,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     internal static NCollection_HArray2<double> Tol2(double theTol) => new(1, 1, 1, 4, theTol);
 
     internal static AdvApp2Var_ApproxAFunc2Var Approximate(Function theF, double theU0, double theU1, double theV0,
-                                                          double theV1, double theTol, GeomAbs_Shape theUCont,
-                                                          GeomAbs_Shape theVCont, int theMaxDegU = 11,
+                                                          double theV1, double theTol, Continuity theUCont,
+                                                          Continuity theVCont, int theMaxDegU = 11,
                                                           int theMaxDegV = 11, int theMaxPatch = 50,
                                                           int thePrecisCode = 1,
-                                                          GeomAbs_IsoType theIso = GeomAbs_IsoV,
+                                                          IsoType theIso = IsoV,
                                                           AdvApp2Var_Criterion? theCrit = null)
     {
         Evaluator anEval = new(theF);
@@ -128,8 +131,8 @@ public class AdvApp2Var_ApproxAFunc2VarTests
             {
                 double u = theU0 + (theU1 - theU0) * i / theN, v = theV0 + (theV1 - theV0) * j / theN;
                 theF(u, v, 0, 0, r);
-                gp_Pnt p = theS.Value(u, v);
-                aMax = Math.Max(aMax, p.Distance(new gp_Pnt(r[0], r[1], r[2])));
+                Point3D p = theS.Value(u, v);
+                aMax = Math.Max(aMax, p.Distance(new Point3D(r[0], r[1], r[2])));
             }
         }
         return aMax;
@@ -138,11 +141,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Plane_IsReproduced()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Plane, -1, 2, 0, 3, 1e-6, GeomAbs_C1, GeomAbs_C1);
+        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Plane, -1, 2, 0, 3, 1e-6, C1, C1);
         Assert.True(anApprox.IsDone());
         Assert.True(anApprox.HasResult());
         Geom_BSplineSurface aS = anApprox.Surface(1);
-        Assert.True(aS.IsFrozen());
+        Assert.True(aS.IsFrozen);
         Assert.True(anApprox.MaxError(3, 1) < 1e-12);
         Assert.True(MaxDeviation(aS, Plane, -1, 2, 0, 3) < 1e-12);
         Assert.Equal(1, aS.NbUKnots() - 1);
@@ -152,7 +155,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Polynomial_IsReproduced()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Poly, -1, 1.5, -2, 1, 1e-7, GeomAbs_C2, GeomAbs_C1);
+        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Poly, -1, 1.5, -2, 1, 1e-7, C2, C1);
         Assert.True(anApprox.IsDone());
         Geom_BSplineSurface aS = anApprox.Surface(1);
         Assert.True(MaxDeviation(aS, Poly, -1, 1.5, -2, 1) < 1e-11, anApprox.ToString());
@@ -160,12 +163,12 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     }
 
     [Theory]
-    [InlineData(GeomAbs_C1, GeomAbs_C1, 1e-5, GeomAbs_IsoV)]
-    [InlineData(GeomAbs_C2, GeomAbs_C2, 1e-6, GeomAbs_IsoU)]
-    [InlineData(GeomAbs_C1, GeomAbs_C2, 1e-7, GeomAbs_NoneIso)]
-    [InlineData(GeomAbs_C2, GeomAbs_C0, 1e-5, GeomAbs_IsoV)]
-    public void SinCos_IsWithinTolerance(GeomAbs_Shape theUCont, GeomAbs_Shape theVCont, double theTol,
-                                         GeomAbs_IsoType theIso)
+    [InlineData(C1, C1, 1e-5, IsoV)]
+    [InlineData(C2, C2, 1e-6, IsoU)]
+    [InlineData(C1, C2, 1e-7, NoneIso)]
+    [InlineData(C2, C0, 1e-5, IsoV)]
+    public void SinCos_IsWithinTolerance(Continuity theUCont, Continuity theVCont, double theTol,
+                                         IsoType theIso)
     {
         double u1 = 2 * Math.PI, v1 = 2 * Math.PI;
         AdvApp2Var_ApproxAFunc2Var anApprox =
@@ -187,7 +190,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     {
         double u1 = 2 * Math.PI, v1 = 2 * Math.PI;
         AdvApp2Var_ApproxAFunc2Var anApprox =
-            Approximate(SinCos, 0, u1, 0, v1, 1e-4, GeomAbs_C0, GeomAbs_C0, theIso: GeomAbs_IsoV);
+            Approximate(SinCos, 0, u1, 0, v1, 1e-4, C0, C0, theIso: IsoV);
         Assert.True(anApprox.IsDone());
         Assert.Equal(1.0346934213069106E-05, anApprox.MaxError(3, 1));
         Assert.Equal(0.8660254037952803, anApprox.AverageError(3, 1));
@@ -197,10 +200,10 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     }
 
     /// <summary>The knots' multiplicities give at least the requested continuity.</summary>
-    internal static void AssertContinuity(Geom_BSplineSurface theS, GeomAbs_Shape theUCont, GeomAbs_Shape theVCont)
+    internal static void AssertContinuity(Geom_BSplineSurface theS, Continuity theUCont, Continuity theVCont)
     {
-        int anOrdU = theUCont == GeomAbs_C0 ? 0 : theUCont == GeomAbs_C1 ? 1 : 2;
-        int anOrdV = theVCont == GeomAbs_C0 ? 0 : theVCont == GeomAbs_C1 ? 1 : 2;
+        int anOrdU = theUCont == C0 ? 0 : theUCont == C1 ? 1 : 2;
+        int anOrdV = theVCont == C0 ? 0 : theVCont == C1 ? 1 : 2;
         for (int i = 2; i < theS.NbUKnots(); i++)
         {
             Assert.True(theS.UDegree() - theS.UMultiplicity(i) >= anOrdU);
@@ -212,10 +215,10 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     }
 
     [Theory]
-    [InlineData(GeomAbs_C1, GeomAbs_C1, 1e-5, 1)]
-    [InlineData(GeomAbs_C2, GeomAbs_C1, 1e-6, 2)]
-    [InlineData(GeomAbs_C2, GeomAbs_C2, 1e-7, 3)]
-    public void SpherePatch_IsWithinTolerance(GeomAbs_Shape theUCont, GeomAbs_Shape theVCont, double theTol,
+    [InlineData(C1, C1, 1e-5, 1)]
+    [InlineData(C2, C1, 1e-6, 2)]
+    [InlineData(C2, C2, 1e-7, 3)]
+    public void SpherePatch_IsWithinTolerance(Continuity theUCont, Continuity theVCont, double theTol,
                                               int thePrecisCode)
     {
         AdvApp2Var_ApproxAFunc2Var anApprox =
@@ -235,7 +238,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     public void LargeUDegree_SmallVDegree_Completes()
     {
         AdvApp2Var_ApproxAFunc2Var anApprox =
-            Approximate(Plane, -1, 2, 0, 3, 1e-6, GeomAbs_C0, GeomAbs_C2, theMaxDegU: 14, theMaxDegV: 5);
+            Approximate(Plane, -1, 2, 0, 3, 1e-6, C0, C2, theMaxDegU: 14, theMaxDegV: 5);
         Assert.True(anApprox.IsDone());
         Assert.True(MaxDeviation(anApprox.Surface(1), Plane, -1, 2, 0, 3) < 1e-12);
     }
@@ -270,7 +273,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         Assert.Equal(aCrit, aCriterion.MaxValue());
         Assert.Equal(theType, aCriterion.Type());
         Assert.Equal(theRepartition, aCriterion.Repartition());
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(SinCos, 0, 4, 0, 4, 1e-5, GeomAbs_C1, GeomAbs_C1,
+        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(SinCos, 0, 4, 0, 4, 1e-5, C1, C1,
                                                           theMaxDegU: 7, theMaxDegV: 7, theMaxPatch: 400,
                                                           theCrit: aCriterion);
         Assert.True(anApprox.HasResult());
@@ -295,12 +298,12 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Approximations_RunInParallel_AsSequentially()
     {
-        (Function F, double U1, double V1, GeomAbs_Shape C, double Tol)[] aCases =
+        (Function F, double U1, double V1, Continuity C, double Tol)[] aCases =
         [
-            (SinCos, 2 * Math.PI, 2 * Math.PI, GeomAbs_C1, 1e-6),
-            (Sphere, Math.PI, 1.0, GeomAbs_C2, 1e-7),
-            (Poly, 1.5, 1.0, GeomAbs_C2, 1e-8),
-            (SinCos, 3.0, 5.0, GeomAbs_C2, 1e-7),
+            (SinCos, 2 * Math.PI, 2 * Math.PI, C1, 1e-6),
+            (Sphere, Math.PI, 1.0, C2, 1e-7),
+            (Poly, 1.5, 1.0, C2, 1e-8),
+            (SinCos, 3.0, 5.0, C2, 1e-7),
         ];
         Geom_BSplineSurface Run(int i)
         {
@@ -333,7 +336,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void Accessors_ReturnCopies_AndNullForMissingDimensions()
     {
-        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Sphere, 0, 1, 0, 1, 1e-6, GeomAbs_C1, GeomAbs_C1);
+        AdvApp2Var_ApproxAFunc2Var anApprox = Approximate(Sphere, 0, 1, 0, 1, 1e-6, C1, C1);
         Assert.Equal(0, anApprox.NumSubSpaces(1));
         Assert.Equal(0, anApprox.NumSubSpaces(2));
         Assert.Equal(1, anApprox.NumSubSpaces(3));
@@ -351,11 +354,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         Assert.Equal(0.0, anApprox.CritError(3, 1));
         Assert.Same(anApprox.Surface(1), anApprox.Surface(1));
         Assert.Equal(anApprox.UDegree(), anApprox.Surface(1).UDegree());
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anApprox.MaxError(4));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anApprox.VFrontError(0));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anApprox.MaxError(2, 1));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anApprox.CritError(3, 2));
-        Assert.ThrowsAny<Standard_ImmutableObject>(() => anApprox.Surface(1).SetPole(1, 1, new gp_Pnt()));
+        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
+        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.VFrontError(0));
+        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(2, 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => anApprox.CritError(3, 2));
+        Assert.ThrowsAny<ImmutableObjectException>(() => anApprox.Surface(1).SetPole(1, 1, new Point3D()));
         string aDump = anApprox.ToString();
         Assert.Contains("There is a result within the requested tolerance 1E-06", aDump);
         Assert.Contains("Number of knots in U : ", aDump);
@@ -364,10 +367,10 @@ public class AdvApp2Var_ApproxAFunc2VarTests
     [Fact]
     public void InvalidContinuity_Throws()
     {
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => Approximate(Plane, 0, 1, 0, 1, 1e-6, GeomAbs_C3, GeomAbs_C1));
-        Assert.ThrowsAny<Standard_ConstructionError>(
-            () => Approximate(Plane, 0, 1, 0, 1, 1e-6, GeomAbs_C1, GeomAbs_G1));
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => Approximate(Plane, 0, 1, 0, 1, 1e-6, C3, C1));
+        Assert.ThrowsAny<ConstructionErrorException>(
+            () => Approximate(Plane, 0, 1, 0, 1, 1e-6, C1, G1));
     }
 
     [Fact]
@@ -376,9 +379,9 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         // one 1D subspace, which the evaluator refuses (it answers only in dimension 3): the iso approximation fails
         Evaluator anEval = new(Plane);
         AdvApprox_DichoCutting aCut = new();
-        Assert.ThrowsAny<Standard_ConstructionError>(
+        Assert.ThrowsAny<ConstructionErrorException>(
             () => new AdvApp2Var_ApproxAFunc2Var(1, 0, 0, Tol1(1e-6), null, null, Tol2(1e-6), null, null, 0, 1, 0, 1,
-                                                 GeomAbs_IsoV, GeomAbs_C1, GeomAbs_C1, 1, 8, 8, 4, anEval, aCut,
+                                                 IsoV, C1, C1, 1, 8, 8, 4, anEval, aCut,
                                                  aCut));
     }
 }

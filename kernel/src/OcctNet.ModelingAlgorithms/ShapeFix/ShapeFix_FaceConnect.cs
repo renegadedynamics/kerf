@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -322,7 +324,7 @@ public sealed class ShapeFix_FaceConnect
                                     {
                                         theSewer.Perform();
                                     }
-                                    catch (Standard_Failure)
+                                    catch (FailureException)
                                     {
                                         sewing_ok = false;
                                     }
@@ -418,7 +420,7 @@ public sealed class ShapeFix_FaceConnect
             // Replace old edges by resulting ones
             var theNewW = new TopoDS_Wire();
             TopoDS_Vertex theOldV1 = new(), theOldV2 = new(), theNewV1 = new(), theNewV2 = new();
-            gp_Pnt theOldP1, theOldP2;
+            Point3D theOldP1, theOldP2;
             double dist1, dist2, curdist1, curdist2;
             foreach (KeyValuePair<TopoDS_Shape, NCollection_List<TopoDS_Shape>> theOEIter in myOriFreeEdges)
             {
@@ -470,7 +472,7 @@ public sealed class ShapeFix_FaceConnect
                         for (var expv = new TopExp_Explorer(theNewW, TopAbs_VERTEX); expv.More(); expv.Next())
                         {
                             TopoDS_Vertex theNewVtx = TopoDS.Vertex(expv.Current());
-                            gp_Pnt theNewPt = BRep_Tool.Pnt(theNewVtx);
+                            Point3D theNewPt = BRep_Tool.Pnt(theNewVtx);
                             curdist1 = theOldP1.Distance(theNewPt);
                             curdist2 = theOldP2.Distance(theNewPt);
                             if (dist1 < 0 || curdist1 < dist1)
@@ -681,7 +683,7 @@ public sealed class ShapeFix_FaceConnect
                         {
                             theNewVert = TopoDS.Vertex(theRV2Iter.Key);
                             // Calculate the vertex position
-                            gp_Pnt theLBound, theRBound, thePosition;
+                            Point3D theLBound, theRBound, thePosition;
                             theLBound = theRBound = BRep_Tool.Pnt(theNewVert);
                             var theN2Iter = new NCollection_List<TopoDS_Shape>.Iterator();
                             for (theN2Iter.Initialize(theRV2Iter.Value); theN2Iter.More(); theN2Iter.Next())
@@ -715,7 +717,7 @@ public sealed class ShapeFix_FaceConnect
                                     theRBound.SetZ(val);
                                 }
                             }
-                            thePosition = new gp_Pnt((theLBound.XYZ() + theRBound.XYZ()) / 2.0);
+                            thePosition = new Point3D((theLBound.XYZ() + theRBound.XYZ()) / 2.0);
                             double theTolerance = 0.0, curtoler;
                             // Calculate the vertex tolerance
                             for (theN2Iter.Initialize(theRV2Iter.Value); theN2Iter.More(); theN2Iter.Next())

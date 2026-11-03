@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.TopAbs_State;
 
@@ -63,7 +64,7 @@ public partial class IntTools_FaceFace
         myTolF1 = 0.0;
         myTolF2 = 0.0;
         myTol = 0.0;
-        myFuzzyValue = Precision.Confusion();
+        myFuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         SetParameters(true, true, true, 1.0e-07);
     }
 
@@ -133,7 +134,7 @@ public partial class IntTools_FaceFace
     }
 
     /// <summary>Sets the fuzzy value (at least Precision::Confusion).</summary>
-    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, Precision.Confusion());
+    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <summary>The fuzzy value.</summary>
     public double FuzzyValue() => myFuzzyValue;
@@ -149,16 +150,16 @@ public partial class IntTools_FaceFace
         const double Tolang = 1.0e-8;
         double aHigh = 0.0;
 
-        GeomAbs_SurfaceType aType1 = theBAS1.GetType();
-        GeomAbs_SurfaceType aType2 = theBAS2.GetType();
+        SurfaceKind aType1 = theBAS1.GetType();
+        SurfaceKind aType2 = theBAS2.GetType();
 
-        gp_Pln aS1;
-        gp_Cylinder aS2;
-        if (aType1 == GeomAbs_Plane)
+        Plane3D aS1;
+        Cylinder aS2;
+        if (aType1 == Plane)
         {
             aS1 = theBAS1.Plane();
         }
-        else if (aType2 == GeomAbs_Plane)
+        else if (aType2 == Plane)
         {
             aS1 = theBAS2.Plane();
         }
@@ -167,13 +168,13 @@ public partial class IntTools_FaceFace
             return true;
         }
 
-        if (aType1 == GeomAbs_Cylinder)
+        if (aType1 == SurfaceKind.Cylinder)
         {
             aS2 = theBAS1.Cylinder();
             double VMin = theBAS1.FirstVParameter();
             double VMax = theBAS1.LastVParameter();
 
-            if (Precision.IsNegativeInfinite(VMin) || Precision.IsPositiveInfinite(VMax))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax))
             {
                 return true;
             }
@@ -182,14 +183,14 @@ public partial class IntTools_FaceFace
                 aHigh = VMax - VMin;
             }
         }
-        else if (aType2 == GeomAbs_Cylinder)
+        else if (aType2 == SurfaceKind.Cylinder)
         {
             aS2 = theBAS2.Cylinder();
 
             double VMin = theBAS2.FirstVParameter();
             double VMax = theBAS2.LastVParameter();
 
-            if (Precision.IsNegativeInfinite(VMin) || Precision.IsPositiveInfinite(VMax))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(VMin) || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(VMax))
             {
                 return true;
             }
@@ -207,7 +208,7 @@ public partial class IntTools_FaceFace
         inter.Perform(aS1, aS2, Tolang, theTol, aHigh);
         if (inter.TypeInter() == IntAna_ResultType.IntAna_Ellipse)
         {
-            gp_Elips anEl = inter.Ellipse(1);
+            Ellipse3D anEl = inter.Ellipse(1);
             double aMajorR = anEl.MajorRadius();
             double aMinorR = anEl.MinorRadius();
 
@@ -239,8 +240,8 @@ public partial class IntTools_FaceFace
 
         BRepAdaptor_Surface aBAS1 = myContext.SurfaceAdaptor(myFace1);
         BRepAdaptor_Surface aBAS2 = myContext.SurfaceAdaptor(myFace2);
-        GeomAbs_SurfaceType aType1 = aBAS1.GetType();
-        GeomAbs_SurfaceType aType2 = aBAS2.GetType();
+        SurfaceKind aType1 = aBAS1.GetType();
+        SurfaceKind aType2 = aBAS2.GetType();
 
         bool bReverse = SortTypes(aType1, aType2);
         if (bReverse)
@@ -280,11 +281,11 @@ public partial class IntTools_FaceFace
         double TolArc = myTol;
         double TolTang = TolArc;
 
-        bool isFace1Quad = (aType1 == GeomAbs_Cylinder || aType1 == GeomAbs_Cone || aType1 == GeomAbs_Torus);
+        bool isFace1Quad = (aType1 == SurfaceKind.Cylinder || aType1 == SurfaceKind.Cone || aType1 == SurfaceKind.Torus);
 
-        bool isFace2Quad = (aType2 == GeomAbs_Cylinder || aType2 == GeomAbs_Cone || aType2 == GeomAbs_Torus);
+        bool isFace2Quad = (aType2 == SurfaceKind.Cylinder || aType2 == SurfaceKind.Cone || aType2 == SurfaceKind.Torus);
 
-        if (aType1 == GeomAbs_Plane && aType2 == GeomAbs_Plane)
+        if (aType1 == Plane && aType2 == Plane)
         {
             double umin, umax, vmin, vmax;
             //
@@ -321,7 +322,7 @@ public partial class IntTools_FaceFace
             return;
         } // if(aType1==GeomAbs_Plane && aType2==GeomAbs_Plane){
 
-        if ((aType1 == GeomAbs_Plane) && isFace2Quad)
+        if ((aType1 == Plane) && isFace2Quad)
         {
             double umin, umax, vmin, vmax;
             // F1
@@ -333,7 +334,7 @@ public partial class IntTools_FaceFace
             CorrectSurfaceBoundaries(myFace2, myTol * 2.0, ref umin, ref umax, ref vmin, ref vmax);
             myHS2.Load(S2, umin, umax, vmin, vmax);
         }
-        else if ((aType2 == GeomAbs_Plane) && isFace1Quad)
+        else if ((aType2 == Plane) && isFace1Quad)
         {
             double umin, umax, vmin, vmax;
             // F1
@@ -366,18 +367,18 @@ public partial class IntTools_FaceFace
         {
             double UVMaxStep = IntPatch_Intersection.DefineUVMaxStep(myHS1, dom1, myHS2, dom2);
             double Deflection = 0.1;
-            if (aType1 == GeomAbs_BSplineSurface && aType2 == GeomAbs_BSplineSurface)
+            if (aType1 == BSplineSurface && aType2 == BSplineSurface)
             {
                 Deflection /= 10.0;
             }
             myIntersector.SetTolerances(TolArc, TolTang, UVMaxStep, Deflection);
         }
 
-        if ((aType1 != GeomAbs_BSplineSurface) && (aType1 != GeomAbs_BezierSurface)
-            && (aType1 != GeomAbs_OtherSurface) && (aType2 != GeomAbs_BSplineSurface)
-            && (aType2 != GeomAbs_BezierSurface) && (aType2 != GeomAbs_OtherSurface))
+        if ((aType1 != BSplineSurface) && (aType1 != BezierSurface)
+            && (aType1 != OtherSurface) && (aType2 != BSplineSurface)
+            && (aType2 != BezierSurface) && (aType2 != OtherSurface))
         {
-            if ((aType1 == GeomAbs_Torus) || (aType2 == GeomAbs_Torus))
+            if ((aType1 == SurfaceKind.Torus) || (aType2 == SurfaceKind.Torus))
             {
                 myListOfPnts.Clear();
             }
@@ -438,17 +439,17 @@ public partial class IntTools_FaceFace
             for (int i = 1; i <= aNbPnts; ++i)
             {
                 IntSurf_PntOn2S aISPnt = myIntersector.Point(i).PntOn2S();
-                gp_Pnt aPnt = aISPnt.Value();
+                Point3D aPnt = aISPnt.Value();
                 aISPnt.Parameters(out U1, out V1, out U2, out V2);
                 //
                 // check the validity of the intersection point for the faces
-                bValid2D1 = myContext.IsPointInOnFace(myFace1, new gp_Pnt2d(U1, V1));
+                bValid2D1 = myContext.IsPointInOnFace(myFace1, new Point2D(U1, V1));
                 if (!bValid2D1)
                 {
                     continue;
                 }
                 //
-                bValid2D2 = myContext.IsPointInOnFace(myFace2, new gp_Pnt2d(U2, V2));
+                bValid2D2 = myContext.IsPointInOnFace(myFace2, new Point2D(U2, V2));
                 if (!bValid2D2)
                 {
                     continue;
@@ -517,7 +518,7 @@ public partial class IntTools_FaceFace
                     // Look for the maximal deviation between 3D and 2D curves
                     Geom_Surface aS = j == 0 ? aS1 : aS2;
                     if (IntTools_Tools.ComputeTolerance(aC3D, aC2D, aS, aFirst, aLast, out double aD, out _,
-                                                        Precision.PConfusion(), theToRunParallel))
+                                                        global::Kerf.Engine.Foundation.Precision.PConfusion(), theToRunParallel))
                     {
                         if (aD > aTolC)
                         {
@@ -557,7 +558,7 @@ public partial class IntTools_FaceFace
     public void PrepareLines3D(bool bToSplit = true)
     {
         int i, aNbCurves;
-        GeomAbs_SurfaceType aType1, aType2;
+        SurfaceKind aType1, aType2;
         NCollection_Sequence<IntTools_Curve> aNewCvs = new();
         //
         // 1. Treatment closed  curves
@@ -595,15 +596,15 @@ public partial class IntTools_FaceFace
         aType2 = myHS2.GetType();
         aNbCurves = aNewCvs.Length();
         //
-        if ((aType1 == GeomAbs_Plane && aType2 == GeomAbs_Cone)
-            || (aType2 == GeomAbs_Plane && aType1 == GeomAbs_Cone))
+        if ((aType1 == Plane && aType2 == SurfaceKind.Cone)
+            || (aType2 == Plane && aType1 == SurfaceKind.Cone))
         {
             if (aNbCurves == 4)
             {
-                GeomAbs_CurveType aCType1;
+                CurveKind aCType1;
                 //
                 aCType1 = aNewCvs.Value(1).Type();
-                if (aCType1 == GeomAbs_CurveType.GeomAbs_Line)
+                if (aCType1 == CurveKind.Line)
                 {
                     NCollection_Sequence<IntTools_Curve> aSeqIn = new(), aSeqOut = new();
                     //

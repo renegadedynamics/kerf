@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepExtrema_SupportType;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
@@ -38,8 +40,8 @@ public sealed class ShapeAnalysis_Edge
     /// </summary>
     public bool Curve3d(in TopoDS_Edge edge, out Geom_Curve? C3d, out double cf, out double cl, bool orient = true)
     {
-        C3d = BRep_Tool.Curve(edge, out TopLoc_Location L, out cf, out cl);
-        if (C3d is not null && !L.IsIdentity())
+        C3d = BRep_Tool.Curve(edge, out Placement L, out cf, out cl);
+        if (C3d is not null && !L.IsIdentity)
         {
             C3d = (Geom_Curve)C3d.Transformed(L.Transformation());
             cf = C3d.TransformedParameter(cf, L.Transformation());
@@ -79,12 +81,12 @@ public sealed class ShapeAnalysis_Edge
     /// <summary>Tells if the edge has a pcurve on the face.</summary>
     public bool HasPCurve(in TopoDS_Edge edge, in TopoDS_Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return HasPCurve(edge, S, L);
     }
 
     /// <summary>Tells if the edge has a pcurve on the surface at the location.</summary>
-    public bool HasPCurve(in TopoDS_Edge edge, Geom_Surface? surface, in TopLoc_Location location)
+    public bool HasPCurve(in TopoDS_Edge edge, Geom_Surface? surface, in Placement location)
     {
         Geom2d_Curve? c2d = BRep_Tool.CurveOnSurface(edge, surface, location, out _, out _);
         return c2d is not null;
@@ -98,14 +100,14 @@ public sealed class ShapeAnalysis_Edge
     {
         //: abv 20.05.02: take into account face orientation
         // COMMENTED BACK - NEEDS MORE CHANGES IN ALL SHAPEHEALING
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return PCurve(edge, S, L, out C2d, out cf, out cl, orient);
     }
 
     /// <summary>The pcurve of the edge on the surface at the location, with its range (swapped as above).</summary>
     public bool PCurve(in TopoDS_Edge edge,
                        Geom_Surface? surface,
-                       in TopLoc_Location location,
+                       in Placement location,
                        out Geom2d_Curve? C2d,
                        out double cf,
                        out double cl,
@@ -124,19 +126,19 @@ public sealed class ShapeAnalysis_Edge
 
     /// <summary>The UV points of the ends of the edge's pcurve on the face; false if there is no pcurve.</summary>
     /// <remarks>The outputs are the origin when there is no pcurve (OCCT leaves them unchanged).</remarks>
-    public bool BoundUV(in TopoDS_Edge edge, in TopoDS_Face face, out gp_Pnt2d first, out gp_Pnt2d last)
+    public bool BoundUV(in TopoDS_Edge edge, in TopoDS_Face face, out Point2D first, out Point2D last)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return BoundUV(edge, S, L, out first, out last);
     }
 
     /// <summary>The UV points of the ends of the edge's pcurve on the surface; false if there is no pcurve.</summary>
-    public bool BoundUV(in TopoDS_Edge edge, Geom_Surface? surface, in TopLoc_Location location, out gp_Pnt2d first, out gp_Pnt2d last)
+    public bool BoundUV(in TopoDS_Edge edge, Geom_Surface? surface, in Placement location, out Point2D first, out Point2D last)
     {
         if (!PCurve(edge, surface, location, out Geom2d_Curve? c2d, out double uf, out double ul))
         {
-            first = new gp_Pnt2d();
-            last = new gp_Pnt2d();
+            first = new Point2D();
+            last = new Point2D();
             return false;
         }
 
@@ -152,7 +154,7 @@ public sealed class ShapeAnalysis_Edge
     }
 
     /// <summary>Tells if the edge is a seam of the surface at the location.</summary>
-    public bool IsSeam(in TopoDS_Edge edge, Geom_Surface? surface, in TopLoc_Location location)
+    public bool IsSeam(in TopoDS_Edge edge, Geom_Surface? surface, in Placement location)
     {
         return BRep_Tool.IsClosed(edge, surface, location);
     }
@@ -196,9 +198,9 @@ public sealed class ShapeAnalysis_Edge
     /// tangent there, in the edge's direction. With <paramref name="dparam"/> &gt; 0, the tangent is the chord to the
     /// point at that fraction of the range. False if there is no pcurve or the tangent is null.
     /// </summary>
-    public bool GetEndTangent2d(in TopoDS_Edge edge, in TopoDS_Face face, bool atEnd, out gp_Pnt2d pos, out gp_Vec2d tang, double dparam = 0.0)
+    public bool GetEndTangent2d(in TopoDS_Edge edge, in TopoDS_Face face, bool atEnd, out Point2D pos, out Vector2D tang, double dparam = 0.0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return GetEndTangent2d(edge, S, L, atEnd, out pos, out tang, dparam);
     }
 
@@ -206,38 +208,38 @@ public sealed class ShapeAnalysis_Edge
     /// <remarks><paramref name="pos"/> is the origin when there is no pcurve (OCCT leaves it unchanged).</remarks>
     public bool GetEndTangent2d(in TopoDS_Edge edge,
                                 Geom_Surface? S,
-                                in TopLoc_Location L,
+                                in Placement L,
                                 bool atEnd,
-                                out gp_Pnt2d pos,
-                                out gp_Vec2d tang,
+                                out Point2D pos,
+                                out Vector2D tang,
                                 double dparam = 0.0)
     {
-        pos = new gp_Pnt2d();
+        pos = new Point2D();
         if (!PCurve(edge, S, L, out Geom2d_Curve? c2d, out double cf, out double cl))
         {
-            tang = new gp_Vec2d(0, 0);
+            tang = new Vector2D(0, 0);
             return false;
         }
 
-        tang = new gp_Vec2d();
+        tang = new Vector2D();
         double dpnew = dparam;
-        if (dpnew > Precision.Confusion())
+        if (dpnew > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             double par1, par2, delta = (cl - cf) * dpnew;
-            if (Math.Abs(delta) < Precision.PConfusion())
+            if (Math.Abs(delta) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 dpnew = 0.0;
             }
             else
             {
-                gp_Pnt2d ptmp = new gp_Pnt2d();
+                Point2D ptmp = new Point2D();
                 if (atEnd)
                 {
                     par1 = cl;
                     par2 = cl - delta;
                     c2d!.D0(par1, out pos);
                     c2d.D0(par2, out ptmp);
-                    tang = new gp_Vec2d(pos.XY() - ptmp.XY());
+                    tang = new Vector2D(pos.XY() - ptmp.XY());
                 }
                 else
                 {
@@ -245,32 +247,32 @@ public sealed class ShapeAnalysis_Edge
                     par2 = cf + delta;
                     c2d!.D0(par1, out pos);
                     c2d.D0(par2, out ptmp);
-                    tang = new gp_Vec2d(ptmp.XY() - pos.XY());
+                    tang = new Vector2D(ptmp.XY() - pos.XY());
                 }
 
-                if (tang.SquareMagnitude() < Precision.PConfusion() * Precision.PConfusion())
+                if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     dpnew = 0.0;
                 }
             }
         }
 
-        if (dpnew <= Precision.Confusion())
+        if (dpnew <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // get non-null tangency searching until 3rd derivative, or as straight btw ends
             double par = (atEnd ? cl : cf);
             c2d!.D1(par, out pos, out tang);
-            if (tang.SquareMagnitude() < Precision.PConfusion() * Precision.PConfusion())
+            if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                c2d.D2(par, out pos, out gp_Vec2d d1, out tang);
-                if (tang.SquareMagnitude() < Precision.PConfusion() * Precision.PConfusion())
+                c2d.D2(par, out pos, out Vector2D d1, out tang);
+                if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    c2d.D3(par, out pos, out d1, out gp_Vec2d d2, out tang);
-                    if (tang.SquareMagnitude() < Precision.PConfusion() * Precision.PConfusion())
+                    c2d.D3(par, out pos, out d1, out Vector2D d2, out tang);
+                    if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
-                        c2d.D0((atEnd ? cf : cl), out gp_Pnt2d p2);
-                        tang = new gp_Vec2d(p2.XY() - pos.XY());
-                        if (tang.SquareMagnitude() < Precision.PConfusion() * Precision.PConfusion())
+                        c2d.D0((atEnd ? cf : cl), out Point2D p2);
+                        tang = new Vector2D(p2.XY() - pos.XY());
+                        if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             return false;
                         }
@@ -297,8 +299,8 @@ public sealed class ShapeAnalysis_Edge
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         TopoDS_Vertex V1 = FirstVertex(edge);
         TopoDS_Vertex V2 = LastVertex(edge);
-        gp_Pnt p1v = BRep_Tool.Pnt(V1);
-        gp_Pnt p2v = BRep_Tool.Pnt(V2);
+        Point3D p1v = BRep_Tool.Pnt(V1);
+        Point3D p2v = BRep_Tool.Pnt(V2);
 
         if (!Curve3d(edge, out Geom_Curve? c3d, out double cf, out double cl))
         {
@@ -310,7 +312,7 @@ public sealed class ShapeAnalysis_Edge
         if (vtx != 2)
         {
             //  1er VTX
-            gp_Pnt p13d = c3d!.Value(cf);
+            Point3D p13d = c3d!.Value(cf);
             if (p1v.Distance(p13d) > (preci < 0 ? BRep_Tool.Tolerance(V1) : preci))
             {
                 myStatus |= (int)ShapeExtend_DONE1; // OCCT ors the enumerator, which equals its encoding for DONE1 and DONE2
@@ -320,7 +322,7 @@ public sealed class ShapeAnalysis_Edge
         if (vtx != 1)
         {
             //  2me VTX
-            gp_Pnt p23d = c3d!.Value(cl);
+            Point3D p23d = c3d!.Value(cl);
             if (p2v.Distance(p23d) > (preci < 0 ? BRep_Tool.Tolerance(V2) : preci))
             {
                 myStatus |= (int)ShapeExtend_DONE2;
@@ -336,18 +338,18 @@ public sealed class ShapeAnalysis_Edge
     /// </summary>
     public bool CheckVerticesWithPCurve(in TopoDS_Edge edge, in TopoDS_Face face, double preci = -1, int vtx = 0)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return CheckVerticesWithPCurve(edge, S, L, preci, vtx); // szv#4:S4163:12Mar99 `vtx,preci` wrong parameters order
     }
 
     /// <summary>As the face form, on the surface at the location.</summary>
-    public bool CheckVerticesWithPCurve(in TopoDS_Edge edge, Geom_Surface? surf, in TopLoc_Location loc, double preci = -1, int vtx = 0)
+    public bool CheckVerticesWithPCurve(in TopoDS_Edge edge, Geom_Surface? surf, in Placement loc, double preci = -1, int vtx = 0)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         TopoDS_Vertex V1 = FirstVertex(edge);
         TopoDS_Vertex V2 = LastVertex(edge);
-        gp_Pnt p1v = BRep_Tool.Pnt(V1);
-        gp_Pnt p2v = BRep_Tool.Pnt(V2);
+        Point3D p1v = BRep_Tool.Pnt(V1);
+        Point3D p2v = BRep_Tool.Pnt(V2);
 
         if (!PCurve(edge, surf, loc, out Geom2d_Curve? c2d, out double cf, out double cl))
         {
@@ -358,9 +360,9 @@ public sealed class ShapeAnalysis_Edge
         // on va faire les checks ...
         if (vtx != 2)
         { //  1er VTX
-            gp_Pnt2d p1uv = c2d!.Value(cf);
-            gp_Pnt p12d = surf!.Value(p1uv.X(), p1uv.Y());
-            if (!loc.IsIdentity())
+            Point2D p1uv = c2d!.Value(cf);
+            Point3D p12d = surf!.Value(p1uv.X(), p1uv.Y());
+            if (!loc.IsIdentity)
             {
                 p12d.Transform(loc.Transformation());
             }
@@ -373,9 +375,9 @@ public sealed class ShapeAnalysis_Edge
 
         if (vtx != 1)
         { //  2me VTX
-            gp_Pnt2d p2uv = c2d!.Value(cl);
-            gp_Pnt p22d = surf!.Value(p2uv.X(), p2uv.Y());
-            if (!loc.IsIdentity())
+            Point2D p2uv = c2d!.Value(cl);
+            Point3D p22d = surf!.Value(p2uv.X(), p2uv.Y());
+            if (!loc.IsIdentity)
             {
                 p22d.Transform(loc.Transformation());
             }
@@ -406,8 +408,8 @@ public sealed class ShapeAnalysis_Edge
 
         double old1 = BRep_Tool.Tolerance(V1);
         double old2 = BRep_Tool.Tolerance(V2);
-        gp_Pnt pnt1 = BRep_Tool.Pnt(V1);
-        gp_Pnt pnt2 = BRep_Tool.Pnt(V2);
+        Point3D pnt1 = BRep_Tool.Pnt(V1);
+        Point3D pnt2 = BRep_Tool.Pnt(V2);
 
         double a, b;
         if (!sae.Curve3d(edge, out Geom_Curve? c3d, out a, out b, true))
@@ -436,12 +438,12 @@ public sealed class ShapeAnalysis_Edge
                 }
 
                 Geom_Surface S = GC.Surface()!;
-                TopLoc_Location L = edge.Location() * GC.Location();
+                Placement L = edge.Location() * GC.Location();
                 sae.PCurve(edge, S, L, out Geom2d_Curve? pcurve, out a, out b, true);
-                gp_Pnt2d p1 = pcurve!.Value(a);
-                gp_Pnt2d p2 = pcurve.Value(b);
-                gp_Pnt P1 = S.Value(p1.X(), p1.Y()).Transformed(L.Transformation());
-                gp_Pnt P2 = S.Value(p2.X(), p2.Y()).Transformed(L.Transformation());
+                Point2D p1 = pcurve!.Value(a);
+                Point2D p2 = pcurve.Value(b);
+                Point3D P1 = S.Value(p1.X(), p1.Y()).Transformed(L.Transformation());
+                Point3D P2 = S.Value(p2.X(), p2.Y()).Transformed(L.Transformation());
                 toler1 = Max(toler1, pnt1.SquareDistance(P1));
                 toler2 = Max(toler2, pnt2.SquareDistance(P2));
             }
@@ -450,13 +452,13 @@ public sealed class ShapeAnalysis_Edge
         // Check with given face is needed for plane surfaces (if no stored pcurves)
         else if (!face.IsNull())
         {
-            Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+            Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
             if (sae.PCurve(edge, S, L, out Geom2d_Curve? pcurve, out a, out b, true))
             {
-                gp_Pnt2d p1 = pcurve!.Value(a);
-                gp_Pnt2d p2 = pcurve.Value(b);
-                gp_Pnt P1 = S!.Value(p1.X(), p1.Y()).Transformed(L.Transformation());
-                gp_Pnt P2 = S.Value(p2.X(), p2.Y()).Transformed(L.Transformation());
+                Point2D p1 = pcurve!.Value(a);
+                Point2D p2 = pcurve.Value(b);
+                Point3D P1 = S!.Value(p1.X(), p1.Y()).Transformed(L.Transformation());
+                Point3D P2 = S.Value(p2.X(), p2.Y()).Transformed(L.Transformation());
                 toler1 = Max(toler1, pnt1.SquareDistance(P1));
                 toler2 = Max(toler2, pnt2.SquareDistance(P2));
             }
@@ -510,12 +512,12 @@ public sealed class ShapeAnalysis_Edge
     /// </summary>
     public bool CheckCurve3dWithPCurve(in TopoDS_Edge edge, in TopoDS_Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
         return CheckCurve3dWithPCurve(edge, S!, L);
     }
 
     /// <summary>As the face form, on the surface at the location.</summary>
-    public bool CheckCurve3dWithPCurve(in TopoDS_Edge edge, Geom_Surface surface, in TopLoc_Location location)
+    public bool CheckCurve3dWithPCurve(in TopoDS_Edge edge, Geom_Surface surface, in Placement location)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
 
@@ -546,7 +548,7 @@ public sealed class ShapeAnalysis_Edge
 
         double preci1 = BRep_Tool.Tolerance(aFirstVert), preci2 = BRep_Tool.Tolerance(aLastVert);
 
-        gp_Pnt2d p2d1 = c2d!.Value(f2d), p2d2 = c2d.Value(l2d);
+        Point2D p2d1 = c2d!.Value(f2d), p2d2 = c2d.Value(l2d);
 
         // #39 rln 17.11.98 S4054, annie_surf.igs entity 39
         return CheckPoints(c3d!.Value(f3d),
@@ -557,7 +559,7 @@ public sealed class ShapeAnalysis_Edge
                            preci2);
     }
 
-    private bool CheckPoints(in gp_Pnt P1A, in gp_Pnt P1B, in gp_Pnt P2A, in gp_Pnt P2B, double preci1, double preci2)
+    private bool CheckPoints(in Point3D P1A, in Point3D P1B, in Point3D P2A, in Point3D P2B, double preci1, double preci2)
     {
         myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
         if (P1A.SquareDistance(P2A) <= preci1 * preci1 && P1B.SquareDistance(P2B) <= preci2 * preci2)
@@ -607,16 +609,16 @@ public sealed class ShapeAnalysis_Edge
         bool SameParameter = TE.SameParameter();
 
         // Get 3D curve of the edge
-        Geom_Curve? aC3D = BRep_Tool.Curve(theEdge, out TopLoc_Location aCurveLoc, out double aFirst, out double aLast);
+        Geom_Curve? aC3D = BRep_Tool.Curve(theEdge, out Placement aCurveLoc, out double aFirst, out double aLast);
         if (aC3D is null)
         {
             myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
             return false;
         }
 
-        if (!aCurveLoc.IsIdentity())
+        if (!aCurveLoc.IsIdentity)
         {
-            gp_Trsf aTrsf = aCurveLoc.Transformation();
+            Transform3D aTrsf = aCurveLoc.Transformation();
             aC3D = (Geom_Curve)aC3D.Transformed(aTrsf);
             aFirst = aC3D.TransformedParameter(aFirst, aTrsf);
             aLast = aC3D.TransformedParameter(aLast, aTrsf);
@@ -626,7 +628,7 @@ public sealed class ShapeAnalysis_Edge
         var aGAC = new GeomAdaptor_Curve(aC3D, aFirst, aLast);
 
         Geom_Surface? aFaceSurf = null;
-        TopLoc_Location aFaceLoc = new TopLoc_Location();
+        Placement aFaceLoc = new Placement();
         if (!theFace.IsNull())
         {
             aFaceSurf = BRep_Tool.Surface(theFace, out aFaceLoc);
@@ -640,7 +642,7 @@ public sealed class ShapeAnalysis_Edge
         {
             Geom2d_Curve? aPC = null;
             Geom_Surface? aS = null;
-            TopLoc_Location aLoc = new TopLoc_Location();
+            Placement aLoc = new Placement();
             double f = 0, l = 0;
             BRep_Tool.CurveOnSurface(theEdge, ref aPC, ref aS, ref aLoc, ref f, ref l, i);
 
@@ -734,15 +736,15 @@ public sealed class ShapeAnalysis_Edge
         // OCCT: theStep is half the shorter edge's length, 0 for a degenerated edge, and the loop never ends
         for (double aS = theStartLength; aS <= theEndLength; aS += theStep / 2)
         {
-            gp_Pnt aPoint;
-            if (aS <= Precision.Confusion())
+            Point3D aPoint;
+            if (aS <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 TopoDS_Vertex V1 = TopExp.FirstVertex(theFirstEdge, true);
                 aPoint = BRep_Tool.Pnt(V1);
             }
             else
             {
-                var aAbsPoint = new GCPnts_AbscissaPoint(Precision.Confusion(), aAdCurve1, aS, aAdCurve1.FirstParameter());
+                var aAbsPoint = new GCPnts_AbscissaPoint(global::Kerf.Engine.Foundation.Precision.Confusion(), aAdCurve1, aS, aAdCurve1.FirstParameter());
                 if (aAbsPoint.IsDone())
                 {
                     aAdCurve1.D0(aAbsPoint.Parameter(), out aPoint);
@@ -755,7 +757,7 @@ public sealed class ShapeAnalysis_Edge
 
             var aB = new BRep_Builder();
             TopoDS_Vertex aV = new TopoDS_Vertex();
-            aB.MakeVertex(ref aV, aPoint, Precision.Confusion());
+            aB.MakeVertex(ref aV, aPoint, global::Kerf.Engine.Foundation.Precision.Confusion());
             aMinDist.LoadS2(aV);
             aMinDist.Perform();
             if (aMinDist.IsDone() && aMinDist.Value() >= theTolerance)
@@ -876,7 +878,7 @@ public sealed class ShapeAnalysis_Edge
     /// </summary>
     public bool CheckPCurveRange(double theFirst, double theLast, Geom2d_Curve thePC)
     {
-        double eps = Precision.PConfusion();
+        double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool isValid = true;
         bool IsPeriodic = thePC.IsPeriodic();
         double aPeriod = RealLast();

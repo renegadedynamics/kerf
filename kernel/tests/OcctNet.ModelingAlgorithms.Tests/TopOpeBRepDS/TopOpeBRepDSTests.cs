@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -86,7 +87,7 @@ public class TopOpeBRepDSTests
         T.IndexAfter(4);
         Assert.Equal(3, T.IndexBefore());
         Assert.Equal(4, T.IndexAfter());
-        Assert.Throws<Standard_Failure>(() => T.Index());
+        Assert.Throws<global::Kerf.Engine.Foundation.FailureException>(() => T.Index());
         // the complement keeps the indices
         Assert.Equal(4, T.Complement().IndexAfter());
     }
@@ -115,7 +116,7 @@ public class TopOpeBRepDSTests
         Assert.Equal(TopOpeBRepDS_FACE, FEI.SupportType());
         Assert.Equal(TopOpeBRepDS_EDGE, FEI.GeometryType());
 
-        Geom2d_Line PC = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
+        Geom2d_Line PC = new(new Point2D(0, 0), new Direction2D(1, 0));
         TopOpeBRepDS_SurfaceCurveInterference SCI = new(T, TopOpeBRepDS_FACE, 1, TopOpeBRepDS_CURVE, 3, PC);
         Assert.Same(PC, SCI.PCurve());
         // the copy keeps the transition, support and geometry, not the pcurve
@@ -205,7 +206,7 @@ public class TopOpeBRepDSTests
     {
         // two boxes, one on the other: the top of the first and the bottom of the second share their plane
         TopoDS_Shape B1 = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
-        TopoDS_Shape B2 = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 10), 10.0, 10.0, 10.0).Shape();
+        TopoDS_Shape B2 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 10), 10.0, 10.0, 10.0).Shape();
         TopoDS_Shape Top = TopoDS_Shape_Of(B1, 10.0), Bottom = TopoDS_Shape_Of(B2, 10.0);
 
         TopOpeBRepDS_HDataStructure HDS = new();
@@ -238,7 +239,7 @@ public class TopOpeBRepDSTests
         for (TopExp_Explorer ex = new(theBox, TopAbs_FACE); ex.More(); ex.Next())
         {
             BRepAdaptor_Surface S = new(TopoDS.Face(ex.Current()));
-            if (S.GetType() == GeomAbs_SurfaceType.GeomAbs_Plane && Math.Abs(S.Plane().Axis().Direction().Z()) > 0.5
+            if (S.GetType() == SurfaceKind.Plane && Math.Abs(S.Plane().Axis().Direction().Z()) > 0.5
                 && Math.Abs(S.Plane().Location().Z() - z) < 1.0e-9)
             {
                 return ex.Current();
@@ -253,12 +254,12 @@ public class TopOpeBRepDSTests
     public void DataStructure_Points()
     {
         TopOpeBRepDS_DataStructure DS = new();
-        Assert.Throws<Standard_ProgramError>(() => DS.Point(1));
-        Assert.Equal(1, DS.AddPoint(new TopOpeBRepDS_Point(new gp_Pnt(1, 2, 3), 0.1)));
-        Assert.Equal(2, DS.AddPointSS(new TopOpeBRepDS_Point(new gp_Pnt(1, 2, 3.05), 0.01), theBox, theBox));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(1));
+        Assert.Equal(1, DS.AddPoint(new TopOpeBRepDS_Point(new Point3D(1, 2, 3), 0.1)));
+        Assert.Equal(2, DS.AddPointSS(new TopOpeBRepDS_Point(new Point3D(1, 2, 3.05), 0.01), theBox, theBox));
         Assert.True(DS.Point(1).IsEqual(DS.Point(2))); // within the larger tolerance
-        Assert.False(DS.Point(2).IsEqual(new TopOpeBRepDS_Point(new gp_Pnt(1, 2, 3.2), 0.01)));
-        Assert.Throws<Standard_ProgramError>(() => DS.Point(3));
+        Assert.False(DS.Point(2).IsEqual(new TopOpeBRepDS_Point(new Point3D(1, 2, 3.2), 0.01)));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => DS.Point(3));
 
         DS.ChangePoint(1).Tolerance(0.5);
         Assert.Equal(0.5, DS.Point(1).Tolerance());
@@ -278,7 +279,7 @@ public class TopOpeBRepDSTests
         TopOpeBRepDS_Point PV = new(V);
         Assert.True(PV.Point().IsEqual(BRep_Tool.Pnt(TopoDS.Vertex(V)), 0.0));
         Assert.Equal(BRep_Tool.Tolerance(TopoDS.Vertex(V)), PV.Tolerance());
-        Assert.Throws<Standard_ProgramError>(() => new TopOpeBRepDS_Point(theBox));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => new TopOpeBRepDS_Point(theBox));
     }
 
     [Fact]
@@ -289,7 +290,7 @@ public class TopOpeBRepDSTests
         DS.AddShape(F1);
         DS.AddShape(F2);
 
-        Geom_Line L = new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        Geom_Line L = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopOpeBRepDS_Curve C = new(L, 1.0e-5);
         Assert.Equal(0, C.DSIndex());
         Assert.False(C.Range(out _, out _));
@@ -297,7 +298,7 @@ public class TopOpeBRepDSTests
         Assert.Null(C.Curve1());
 
         TopOpeBRepDS_SurfaceCurveInterference SCI1 = new(new TopOpeBRepDS_Transition(TopAbs_FORWARD), TopOpeBRepDS_FACE, 1,
-                                                         TopOpeBRepDS_CURVE, 1, new Geom2d_Line(new gp_Pnt2d(), new gp_Dir2d()));
+                                                         TopOpeBRepDS_CURVE, 1, new Geom2d_Line(new Point2D(), new Direction2D()));
         TopOpeBRepDS_SurfaceCurveInterference SCI2 = new(new TopOpeBRepDS_Transition(TopAbs_REVERSED), TopOpeBRepDS_FACE, 2,
                                                          TopOpeBRepDS_CURVE, 1, null);
         C.SetShapes(F1, F2);
@@ -320,7 +321,7 @@ public class TopOpeBRepDSTests
 
         // a curve that isn't there is the data structure's empty curve
         Assert.Null(DS.Curve(7).Curve());
-        Assert.Equal(Precision.Confusion(), DS.Curve(7).Tolerance());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), DS.Curve(7).Tolerance());
 
         // removing a curve takes its interferences off its shapes and stops keeping it
         DS.RemoveCurve(1);
@@ -334,7 +335,7 @@ public class TopOpeBRepDSTests
         Assert.Equal(1.0e-6, cex.Curve().Tolerance());
         Assert.Equal(1, cex.NbCurve());
         Assert.False(cex.More());
-        Assert.Equal(Precision.Confusion(), cex.Curve().Tolerance()); // the empty curve
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), cex.Curve().Tolerance()); // the empty curve
         Assert.Equal(2, new TopOpeBRepDS_CurveExplorer(DS, false).NbCurve());
         Assert.True(cex.IsCurve(1));
         Assert.False(cex.IsCurveKeep(1));
@@ -344,7 +345,7 @@ public class TopOpeBRepDSTests
     public void DataStructure_SurfacesAreNotKeptByDefault()
     {
         TopOpeBRepDS_DataStructure DS = new();
-        Geom_Plane P = new(new gp_Ax3());
+        Geom_Plane P = new(new CoordinateSystem());
         Assert.Equal(1, DS.AddSurface(new TopOpeBRepDS_Surface(P, 1.0e-7)));
         Assert.Equal(2, DS.AddSurface(new TopOpeBRepDS_Surface(P, 1.0e-6)));
         Assert.False(DS.KeepSurface(1));
@@ -437,7 +438,7 @@ public class TopOpeBRepDSTests
         TopOpeBRepDS_PointIterator pit = new(L);
         Assert.True(pit.IsPoint());
         Assert.Equal(TopAbs_REVERSED, pit.Orientation(TopAbs_IN));
-        Assert.Throws<Standard_ProgramError>(() => pit.SameOriented());
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => pit.SameOriented());
         pit.Next();
         Assert.True(pit.IsVertex());
         Assert.True(pit.SameOriented());
@@ -482,8 +483,8 @@ public class TopOpeBRepDSTests
         TopoDS_Shape F1 = Sub(theBox, TopAbs_FACE, 1), E1 = Sub(theBox, TopAbs_EDGE, 1);
         int iF = DS.AddShape(F1);
         DS.AddShape(E1);
-        int iC = DS.AddCurve(new TopOpeBRepDS_Curve(new Geom_Line(new gp_Ax1()), 0.0));
-        int iS = DS.AddSurface(new TopOpeBRepDS_Surface(new Geom_Plane(new gp_Ax3()), 0.0));
+        int iC = DS.AddCurve(new TopOpeBRepDS_Curve(new Geom_Line(new Axis3D()), 0.0));
+        int iS = DS.AddSurface(new TopOpeBRepDS_Surface(new Geom_Plane(new CoordinateSystem()), 0.0));
 
         TopOpeBRepDS_SurfaceCurveInterference SCI = new(new TopOpeBRepDS_Transition(TopAbs_FORWARD), TopOpeBRepDS_FACE, iF,
                                                         TopOpeBRepDS_CURVE, iC, null);
@@ -502,8 +503,8 @@ public class TopOpeBRepDSTests
         Assert.Equal(1, DS.ShapeInterferences(E1).Extent());
         Assert.True(HDS.EdgePoints(E1).More());
 
-        Assert.Throws<Standard_ProgramError>(() => HDS.StoreInterference(CPI, theBox));
-        Assert.Throws<Standard_ProgramError>(() => HDS.StoreInterference(CPI, 3));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, theBox));
+        Assert.Throws<global::Kerf.Engine.Foundation.ProgramErrorException>(() => HDS.StoreInterference(CPI, 3));
 
         Assert.Equal(1, HDS.FaceCurves(F1).Current());
         Assert.Equal(iC, HDS.FaceCurves(iF).Current());
@@ -568,14 +569,14 @@ public class TopOpeBRepDSTests
         TopoDS_Shape F1 = Sub(theBox, TopAbs_FACE, 1), F2 = Sub(theBox, TopAbs_FACE, 3);
         DS.AddShape(F1);
         DS.AddShape(F2);
-        TopOpeBRepDS_Curve C = new(new Geom_Line(new gp_Ax1()), 1.0e-7);
+        TopOpeBRepDS_Curve C = new(new Geom_Line(new Axis3D()), 1.0e-7);
         TopOpeBRepDS_SurfaceCurveInterference SCI1 = new(new TopOpeBRepDS_Transition(TopAbs_FORWARD), TopOpeBRepDS_FACE, 1,
                                                          TopOpeBRepDS_CURVE, 1, null);
         C.SetShapes(F1, F2);
         C.SetSCI(SCI1, null);
         int iC = DS.AddCurve(ref C);
 
-        TopOpeBRepDS_Curve N = new(new Geom_Line(new gp_Ax1()), 1.0e-6);
+        TopOpeBRepDS_Curve N = new(new Geom_Line(new Axis3D()), 1.0e-6);
         int iN = HDS.MakeCurve(DS.Curve(iC), ref N);
         Assert.Equal(2, iN);
         Assert.Equal(iC, DS.Curve(iN).Mother());
@@ -588,17 +589,17 @@ public class TopOpeBRepDSTests
         Assert.Same(aNewSCI, DS.ShapeInterferences(F1).First());
 
         // a point interference matched by its 3D point
-        int iP = DS.AddPoint(new TopOpeBRepDS_Point(new gp_Pnt(1, 1, 1), 1.0e-3));
+        int iP = DS.AddPoint(new TopOpeBRepDS_Point(new Point3D(1, 1, 1), 1.0e-3));
         NCollection_List<TopOpeBRepDS_Interference> L = new();
         L.Append(SCI1);
         L.Append(new TopOpeBRepDS_CurvePointInterference(new TopOpeBRepDS_Transition(), TopOpeBRepDS_CURVE, 1, TopOpeBRepDS_POINT, iP, 0.0));
         NCollection_List<TopOpeBRepDS_Interference>.Iterator it = new(L);
         int G = 0;
         TopOpeBRepDS_Kind K = TopOpeBRepDS_UNKNOWN;
-        Assert.True(HDS.GetGeometry(it, new TopOpeBRepDS_Point(new gp_Pnt(1, 1, 1.0005), 1.0e-4), ref G, ref K));
+        Assert.True(HDS.GetGeometry(it, new TopOpeBRepDS_Point(new Point3D(1, 1, 1.0005), 1.0e-4), ref G, ref K));
         Assert.Equal((iP, TopOpeBRepDS_POINT), (G, K));
         Assert.False(HDS.ScanInterfList(new NCollection_List<TopOpeBRepDS_Interference>.Iterator(L),
-                                        new TopOpeBRepDS_Point(new gp_Pnt(2, 1, 1), 1.0e-4)));
+                                        new TopOpeBRepDS_Point(new Point3D(2, 1, 1), 1.0e-4)));
 
         HDS.RemoveCurve(iN);
         Assert.False(DS.KeepCurve(iN));
@@ -622,21 +623,21 @@ public class TopOpeBRepDSTests
         int iV = DS.AddShape(V1);
         DS.ChangeKeepShape(iV, false);
 
-        int iP = DS.AddPoint(new TopOpeBRepDS_Point(new gp_Pnt(0.1, -0.0, 1.0e-20), 1.0e-7));
-        DS.AddPoint(new TopOpeBRepDS_Point(new gp_Pnt(1, 2, 3), 0.5));
+        int iP = DS.AddPoint(new TopOpeBRepDS_Point(new Point3D(0.1, -0.0, 1.0e-20), 1.0e-7));
+        DS.AddPoint(new TopOpeBRepDS_Point(new Point3D(1, 2, 3), 0.5));
         DS.RemovePoint(2);
 
         TopOpeBRepDS_Transition T = new TopOpeBRepDS_Transition(TopAbs_OUT, TopAbs_IN, TopAbs_EDGE, TopAbs_FACE).WithIndex(2);
         TopOpeBRepDS_SurfaceCurveInterference SCI1 = new(T, TopOpeBRepDS_FACE, iF1, TopOpeBRepDS_CURVE, 1,
-                                                         new Geom2d_Line(new gp_Pnt2d(0.5, 1.0 / 3.0), new gp_Dir2d(0, 1)));
+                                                         new Geom2d_Line(new Point2D(0.5, 1.0 / 3.0), new Direction2D(0, 1)));
         TopOpeBRepDS_SurfaceCurveInterference SCI2 = new(T.Complement(), TopOpeBRepDS_FACE, 2, TopOpeBRepDS_CURVE, 1, null);
-        TopOpeBRepDS_Curve C = new(new Geom_Circle(new gp_Ax2(new gp_Pnt(1, 2, 3), new gp_Dir(0, 0, 1)), 2.5), 1.0e-5, true);
+        TopOpeBRepDS_Curve C = new(new Geom_Circle(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2.5), 1.0e-5, true);
         C.SetShapes(F1, F2);
         C.SetSCI(SCI1, SCI2);
         C.SetRange(-1.0, Math.PI);
         DS.AddCurve(ref C);
         DS.AddCurve(new TopOpeBRepDS_Curve()); // a degenerated curve
-        DS.AddCurve(new TopOpeBRepDS_Curve(new Geom_Line(new gp_Ax1()), 0.0));
+        DS.AddCurve(new TopOpeBRepDS_Curve(new Geom_Line(new Axis3D()), 0.0));
         DS.myCurves.UnBind(3);
         HDS.StoreInterference(SCI1, F1);
         DS.ChangeCurveInterferences(1).Append(new TopOpeBRepDS_CurvePointInterference(T, TopOpeBRepDS_CURVE, 1, TopOpeBRepDS_POINT, iP, 0.75));
@@ -646,7 +647,7 @@ public class TopOpeBRepDSTests
         DS.AddShapeInterference(F2, new TopOpeBRepDS_ShapeShapeInterference(T, TopOpeBRepDS_FACE, 2, TopOpeBRepDS_EDGE, iE, true, TopOpeBRepDS_UNSHGEOMETRY));
         DS.ChangePointInterferences(iP).Append(new TopOpeBRepDS_Interference(T, TopOpeBRepDS_EDGE, iE, TopOpeBRepDS_POINT, iP));
 
-        Geom_Plane P = new(new gp_Ax3(new gp_Pnt(0, 0, 1), new gp_Dir(0, 0, 1)));
+        Geom_Plane P = new(new CoordinateSystem(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
         int iSu = DS.AddSurface(new TopOpeBRepDS_Surface(P, 1.0e-3));
         DS.ChangeKeepSurface(iSu, true);
         TopOpeBRepDS_SolidSurfaceInterference SSI = new(new TopOpeBRepDS_Transition(TopAbs_REVERSED), TopOpeBRepDS_SOLID, iS,
@@ -685,7 +686,7 @@ public class TopOpeBRepDSTests
     public void TextDump_AShapeOutsideTheInputIsWrittenButNotRead()
     {
         TopOpeBRepDS_DataStructure DS = new();
-        TopoDS_Shape V = new BRepBuilderAPI_MakeVertex(new gp_Pnt(1, 2, 3)).Shape();
+        TopoDS_Shape V = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3)).Shape();
         DS.AddShape(V);
         string aText = TopOpeBRepDS_TextDump.Write(DS, theBox);
         Assert.Contains("shape 1 VERTEX FORWARD new 1 2 3 keep 1", aText);

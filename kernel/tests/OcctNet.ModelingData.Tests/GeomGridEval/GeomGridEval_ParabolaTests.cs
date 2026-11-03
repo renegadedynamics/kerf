@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Parabola_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomGridEval_ParabolaTest
@@ -19,7 +21,7 @@ public class GeomGridEval_ParabolaTest
     }
 
     // Parabola in XY plane, Focal=1.0, center at origin
-    private static Geom_Parabola MakeCurve() => new(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
+    private static Geom_Parabola MakeCurve() => new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
 
     [Fact]
     public void BasicEvaluation()
@@ -38,13 +40,13 @@ public class GeomGridEval_ParabolaTest
         // Test from -2 to 2
         NCollection_Array1<double> aParams = CreateUniformParams(-2.0, 2.0, 5);
 
-        NCollection_Array1<gp_Pnt> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(5, aGrid.Size());
 
         // Verify points
         for (int i = 1; i <= 5; ++i)
         {
-            gp_Pnt aExpected = aCurve.Value(aParams.Value(i));
+            Point3D aExpected = aCurve.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -60,7 +62,7 @@ public class GeomGridEval_ParabolaTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aCurve.D1(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1);
+            aCurve.D1(aParams.Value(i), out Point3D aPnt, out Vector3D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -77,7 +79,7 @@ public class GeomGridEval_ParabolaTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aCurve.D2(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2);
+            aCurve.D2(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -95,7 +97,7 @@ public class GeomGridEval_ParabolaTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            aCurve.D3(aParams.Value(i), out gp_Pnt aPnt, out gp_Vec aD1, out gp_Vec aD2, out gp_Vec aD3);
+            aCurve.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);

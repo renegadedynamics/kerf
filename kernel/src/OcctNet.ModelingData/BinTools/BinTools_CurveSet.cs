@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,8 +14,8 @@ namespace Occt;
 /// BRep).
 /// </summary>
 /// <remarks>
-/// The curves that <see cref="Read(Stream, Message_ProgressRange)"/> creates are frozen: the set shares them with whoever asks. A curve that can't be
-/// read makes <see cref="Read(Stream, Message_ProgressRange)"/> throw (OCCT's binary sets don't keep null entries, unlike GeomTools).
+/// The curves that <see cref="Read(Stream, ProgressRange)"/> creates are frozen: the set shares them with whoever asks. A curve that can't be
+/// read makes <see cref="Read(Stream, ProgressRange)"/> throw (OCCT's binary sets don't keep null entries, unlike GeomTools).
 /// </remarks>
 public class BinTools_CurveSet
 {
@@ -70,7 +74,7 @@ public class BinTools_CurveSet
     private static void Write(BinTools_OStream OS, Geom_Line L)
     {
         OS = OS << LINE;
-        gp_Lin C = L.Lin();
+        Line3D C = L.Lin();
         OS = OS << C.Location();  // Pnt
         OS = OS << C.Direction(); // Dir
     }
@@ -78,7 +82,7 @@ public class BinTools_CurveSet
     private static void Write(BinTools_OStream OS, Geom_Circle CC)
     {
         OS = OS << CIRCLE;
-        gp_Circ C = CC.Circ();
+        Circle3D C = CC.Circ();
         OS = OS << C.Location();
         OS = OS << C.Axis().Direction();
         OS = OS << C.XAxis().Direction();
@@ -89,7 +93,7 @@ public class BinTools_CurveSet
     private static void Write(BinTools_OStream OS, Geom_Ellipse E)
     {
         OS = OS << ELLIPSE;
-        gp_Elips C = E.Elips();
+        Ellipse3D C = E.Elips();
         OS = OS << C.Location();
         OS = OS << C.Axis().Direction();
         OS = OS << C.XAxis().Direction();
@@ -101,7 +105,7 @@ public class BinTools_CurveSet
     private static void Write(BinTools_OStream OS, Geom_Parabola P)
     {
         OS = OS << PARABOLA;
-        gp_Parab C = P.Parab();
+        Parabola3D C = P.Parab();
         OS = OS << C.Location();
         OS = OS << C.Axis().Direction();
         OS = OS << C.XAxis().Direction();
@@ -112,7 +116,7 @@ public class BinTools_CurveSet
     private static void Write(BinTools_OStream OS, Geom_Hyperbola H)
     {
         OS = OS << HYPERBOLA;
-        gp_Hypr C = H.Hypr();
+        Hyperbola3D C = H.Hypr();
         OS = OS << C.Location();
         OS = OS << C.Axis().Direction();
         OS = OS << C.XAxis().Direction();
@@ -187,7 +191,7 @@ public class BinTools_CurveSet
     }
 
     /// <summary>Writes a curve (its type byte, then its data).</summary>
-    /// <exception cref="Standard_Failure">The curve is of a type the format doesn't know.</exception>
+    /// <exception cref="FailureException">The curve is of a type the format doesn't know.</exception>
     public static void WriteCurve(Geom_Curve C, BinTools_OStream OS)
     {
         Type TheType = C.GetType();
@@ -231,7 +235,7 @@ public class BinTools_CurveSet
             }
             else
             {
-                throw new Standard_Failure("UNKNOWN CURVE TYPE");
+                throw new FailureException("UNKNOWN CURVE TYPE");
             }
         }
         catch (Exception anException) when (BinTools.IsCaught(anException))
@@ -241,10 +245,10 @@ public class BinTools_CurveSet
     }
 
     /// <summary>Writes the set ("Curves", the count, then each curve).</summary>
-    public void Write(Stream OS, Message_ProgressRange theRange = default)
+    public void Write(Stream OS, ProgressRange theRange = default)
     {
         int i, nbcurv = myMap.Extent();
-        using var aPS = new Message_ProgressScope(theRange, "Writing curves", nbcurv);
+        using var aPS = new ProgressScope(theRange, "Writing curves", nbcurv);
         BinTools.PutText(OS, "Curves ");
         BinTools.PutText(OS, nbcurv);
         BinTools.PutText(OS, "\n");
@@ -255,15 +259,15 @@ public class BinTools_CurveSet
         }
     }
 
-    internal static void Read(Stream IS, out gp_Pnt P)
+    internal static void Read(Stream IS, out Point3D P)
     {
         BinTools.GetReal(IS, out double X);
         BinTools.GetReal(IS, out double Y);
         BinTools.GetReal(IS, out double Z);
-        P = new gp_Pnt(X, Y, Z);
+        P = new Point3D(X, Y, Z);
     }
 
-    internal static void Read(Stream IS, ref gp_Dir D)
+    internal static void Read(Stream IS, ref Direction3D D)
     {
         BinTools.GetReal(IS, out double X);
         BinTools.GetReal(IS, out double Y);
@@ -273,56 +277,56 @@ public class BinTools_CurveSet
 
     private static Geom_Line ReadLine(Stream IS)
     {
-        gp_Dir AX = new(gp_Dir.D.X);
-        Read(IS, out gp_Pnt P);
+        Direction3D AX = new(Direction3D.D.X);
+        Read(IS, out Point3D P);
         Read(IS, ref AX);
         return new Geom_Line(P, AX);
     }
 
     private static Geom_Circle ReadCircle(Stream IS)
     {
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
-        Read(IS, out gp_Pnt P);
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
+        Read(IS, out Point3D P);
         Read(IS, ref A);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R);
-        return new Geom_Circle(new gp_Ax2(P, A, AX), R);
+        return new Geom_Circle(new Frame3D(P, A, AX), R);
     }
 
     private static Geom_Ellipse ReadEllipse(Stream IS)
     {
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
-        Read(IS, out gp_Pnt P);
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
+        Read(IS, out Point3D P);
         Read(IS, ref A);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
         BinTools.GetReal(IS, out double R2);
-        return new Geom_Ellipse(new gp_Ax2(P, A, AX), R1, R2);
+        return new Geom_Ellipse(new Frame3D(P, A, AX), R1, R2);
     }
 
     private static Geom_Parabola ReadParabola(Stream IS)
     {
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
-        Read(IS, out gp_Pnt P);
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
+        Read(IS, out Point3D P);
         Read(IS, ref A);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
-        return new Geom_Parabola(new gp_Ax2(P, A, AX), R1);
+        return new Geom_Parabola(new Frame3D(P, A, AX), R1);
     }
 
     private static Geom_Hyperbola ReadHyperbola(Stream IS)
     {
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
-        Read(IS, out gp_Pnt P);
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
+        Read(IS, out Point3D P);
         Read(IS, ref A);
         Read(IS, ref AX);
         Read(IS, ref AY);
         BinTools.GetReal(IS, out double R1);
         BinTools.GetReal(IS, out double R2);
-        return new Geom_Hyperbola(new gp_Ax2(P, A, AX), R1, R2);
+        return new Geom_Hyperbola(new Frame3D(P, A, AX), R1, R2);
     }
 
     private static Geom_BezierCurve ReadBezier(Stream IS)
@@ -337,7 +341,7 @@ public class BinTools_CurveSet
         // OCCT.NET: untrusted input
         BinTools.CheckCount(IS, degree + 1L, rational ? 32 : 24, "poles");
 
-        var poles = new NCollection_Array1<gp_Pnt>(1, degree + 1);
+        var poles = new NCollection_Array1<Point3D>(1, degree + 1);
         var weights = new NCollection_Array1<double>(1, degree + 1);
         for (i = 1; i <= degree + 1; i++)
         {
@@ -371,7 +375,7 @@ public class BinTools_CurveSet
         BinTools.CheckCount(IS, nbpoles, rational ? 32 : 24, "poles");
         BinTools.CheckCount(IS, nbknots, 12, "knots");
 
-        var poles = new NCollection_Array1<gp_Pnt>(1, nbpoles);
+        var poles = new NCollection_Array1<Point3D>(1, nbpoles);
         var weights = new NCollection_Array1<double>(1, nbpoles);
         for (i = 1; i <= nbpoles; i++)
         {
@@ -409,14 +413,14 @@ public class BinTools_CurveSet
     private static Geom_OffsetCurve ReadOffset(Stream IS, int theDepth)
     {
         BinTools.GetReal(IS, out double p); // Offset
-        gp_Dir D = new(gp_Dir.D.X);
+        Direction3D D = new(Direction3D.D.X);
         Read(IS, ref D);
         ReadCurve(IS, out Geom_Curve? BC, theDepth + 1);
         return new Geom_OffsetCurve(BC!, p, D);
     }
 
     /// <summary>Reads a curve written by <see cref="WriteCurve"/>. The curve is new and not frozen.</summary>
-    /// <exception cref="Standard_Failure">The curve can't be read.</exception>
+    /// <exception cref="FailureException">The curve can't be read.</exception>
     public static Stream ReadCurve(Stream IS, out Geom_Curve? C) => ReadCurve(IS, out C, 0);
 
     internal static Stream ReadCurve(Stream IS, out Geom_Curve? C, int theDepth)
@@ -427,7 +431,7 @@ public class BinTools_CurveSet
             if (theDepth > BinTools.MaxGeometryNesting)
             {
                 // OCCT.NET: untrusted input: OCCT recurses without limit
-                throw new Storage_StreamFormatError("BinTools_CurveSet: curves nested too deeply");
+                throw new StreamFormatErrorException("BinTools_CurveSet: curves nested too deeply");
             }
 
             byte ctype = (byte)BinTools.Get(IS);
@@ -472,7 +476,7 @@ public class BinTools_CurveSet
                 default:
                 {
                     C = null;
-                    throw new Standard_Failure("UNKNOWN CURVE TYPE");
+                    throw new FailureException("UNKNOWN CURVE TYPE");
                 }
             }
         }
@@ -486,20 +490,20 @@ public class BinTools_CurveSet
     }
 
     /// <summary>
-    /// Reads a set written by <see cref="Write(Stream, Message_ProgressRange)"/>, adding its curves (frozen) to this one.
+    /// Reads a set written by <see cref="Write(Stream, ProgressRange)"/>, adding its curves (frozen) to this one.
     /// </summary>
-    /// <exception cref="Standard_Failure">The stream doesn't hold a curve table, or a curve can't be read.</exception>
-    public void Read(Stream IS, Message_ProgressRange theRange = default)
+    /// <exception cref="FailureException">The stream doesn't hold a curve table, or a curve can't be read.</exception>
+    public void Read(Stream IS, ProgressRange theRange = default)
     {
         string? buffer = BinTools.ReadWord(IS);
         if (buffer is null || buffer != "Curves")
         {
-            throw new Standard_Failure("BinTools_CurveSet::Read:  Not a Curve table" + "\n");
+            throw new FailureException("BinTools_CurveSet::Read:  Not a Curve table" + "\n");
         }
 
         int i, nbcurve;
         nbcurve = BinTools.ReadFormattedInteger(IS);
-        using var aPS = new Message_ProgressScope(theRange, "Reading curves", nbcurve);
+        using var aPS = new ProgressScope(theRange, "Reading curves", nbcurve);
 
         BinTools.Get(IS); // remove <lf>
         // OCCT.NET: untrusted input: a curve takes at least 28 bytes (a Bezier curve of degree 0)

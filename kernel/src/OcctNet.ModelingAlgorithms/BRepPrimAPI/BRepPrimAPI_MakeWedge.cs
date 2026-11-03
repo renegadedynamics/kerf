@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Builds wedges: boxes with inclined faces.</summary>
@@ -14,11 +18,11 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     /// <summary>A STEP right angular wedge (ltx >= 0).</summary>
     public BRepPrimAPI_MakeWedge(double dx, double dy, double dz, double ltx)
     {
-        myWedge = new BRepPrim_Wedge(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)), dx, dy, dz, ltx);
+        myWedge = new BRepPrim_Wedge(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)), dx, dy, dz, ltx);
     }
 
     /// <summary>A STEP right angular wedge (ltx >= 0) in the axes.</summary>
-    public BRepPrimAPI_MakeWedge(in gp_Ax2 Axes, double dx, double dy, double dz, double ltx)
+    public BRepPrimAPI_MakeWedge(in Frame3D Axes, double dx, double dy, double dz, double ltx)
     {
         myWedge = new BRepPrim_Wedge(Axes, dx, dy, dz, ltx);
     }
@@ -26,7 +30,7 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     /// <summary>A wedge whose face at dy is xmin,zmin xmax,zmax.</summary>
     public BRepPrimAPI_MakeWedge(double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax)
     {
-        myWedge = new BRepPrim_Wedge(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)),
+        myWedge = new BRepPrim_Wedge(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
                                      0,
                                      0,
                                      0,
@@ -40,7 +44,7 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>A wedge whose face at dy is xmin,zmin xmax,zmax, in the axes.</summary>
-    public BRepPrimAPI_MakeWedge(in gp_Ax2 Axes, double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax)
+    public BRepPrimAPI_MakeWedge(in Frame3D Axes, double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax)
     {
         myWedge = new BRepPrim_Wedge(Axes, 0, 0, 0, zmin, xmin, dx, dy, dz, zmax, xmax);
     }
@@ -67,7 +71,7 @@ public class BRepPrimAPI_MakeWedge : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Stores the solid in the result (a new solid holding the shell each time, as OCCT).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         var B = new BRep_Builder();
         // OCCT.NET: a new solid in a new variable (OCCT remakes the one in myShape, decision 414).

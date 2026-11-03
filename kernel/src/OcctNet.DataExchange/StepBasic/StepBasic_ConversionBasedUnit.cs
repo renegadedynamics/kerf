@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepBasic_ConversionBasedUnit : StepBasic_NamedUnit
 {
     private TCollection_HAsciiString name;
-    private Standard_Transient conversionFactor;
+    private Transient conversionFactor;
 
     /// <summary>
     /// Returns a ConversionBasedUnit
@@ -20,7 +22,7 @@ public class StepBasic_ConversionBasedUnit : StepBasic_NamedUnit
     {
     }
 
-    public void Init(StepBasic_DimensionalExponents aDimensions, TCollection_HAsciiString aName, Standard_Transient aConversionFactor)
+    public void Init(StepBasic_DimensionalExponents aDimensions, TCollection_HAsciiString aName, Transient aConversionFactor)
     {
         // --- classe own fields ---
         name = aName;
@@ -39,12 +41,12 @@ public class StepBasic_ConversionBasedUnit : StepBasic_NamedUnit
         return name;
     }
 
-    public void SetConversionFactor(Standard_Transient aConversionFactor)
+    public void SetConversionFactor(Transient aConversionFactor)
     {
         conversionFactor = aConversionFactor;
     }
 
-    public Standard_Transient ConversionFactor()
+    public Transient ConversionFactor()
     {
         return conversionFactor;
     }

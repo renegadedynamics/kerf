@@ -39,7 +39,7 @@ internal static class BRepTestSewingCommands
         bool aFaceMode = true;
         bool aSetMinTol = false;
         double aMinTol = 0.0;
-        double aMaxTol = Precision.Infinite();
+        double aMaxTol = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         static char At(string theWord, int theIndex) => theIndex < theWord.Length ? theWord[theIndex] : '\0';
 
@@ -146,13 +146,13 @@ internal static class BRepTestSewingCommands
         {
             aMinTol = aTol * 1e-4;
         }
-        if (aTol < Precision.Confusion())
+        if (aTol < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            aTol = Precision.Confusion();
+            aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         }
-        if (aMinTol < Precision.Confusion())
+        if (aMinTol < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            aMinTol = Precision.Confusion();
+            aMinTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         }
         if (aMinTol > aTol)
         {

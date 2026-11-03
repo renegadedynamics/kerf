@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The result of a curve/surface intersection: points and segments, and whether the curve is "parallel".</summary>
@@ -37,7 +39,7 @@ public abstract class IntCurveSurface_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lpnt.Length();
     }
@@ -47,7 +49,7 @@ public abstract class IntCurveSurface_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lseg.Length();
     }
@@ -57,7 +59,7 @@ public abstract class IntCurveSurface_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lpnt.Value(N);
     }
@@ -67,7 +69,7 @@ public abstract class IntCurveSurface_Intersection
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return lseg.Value(N);
     }

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +16,7 @@ namespace Occt;
 public static class BndLib_Add2dCurve
 {
     /// <summary>Adds the bounding box of the curve C, over its own range, enlarged by Tol, to B.</summary>
-    public static void Add(Adaptor2d_Curve2d aC, double aTol, ref Bnd_Box2d aBox2D)
+    public static void Add(Adaptor2d_Curve2d aC, double aTol, ref Box2d aBox2D)
     {
         Add(aC, aC.FirstParameter(), aC.LastParameter(), aTol, ref aBox2D);
     }
@@ -21,13 +25,13 @@ public static class BndLib_Add2dCurve
     /// Adds the bounding box of the arc [U1, U2] of C, enlarged by Tol, to B. A Geom2dAdaptor_Curve goes through its
     /// curve; any other adaptor is sampled at 33 points.
     /// </summary>
-    public static void Add(Adaptor2d_Curve2d aC, double aU1, double aU2, double aTol, ref Bnd_Box2d aBox2D)
+    public static void Add(Adaptor2d_Curve2d aC, double aU1, double aU2, double aTol, ref Box2d aBox2D)
     {
         if (aC is not Geom2dAdaptor_Curve pA)
         {
             double U, DU;
             int N, j;
-            gp_Pnt2d P;
+            Point2D P;
             N = 33;
             U = aU1;
             DU = (aU2 - aU1) / (N - 1);
@@ -49,7 +53,7 @@ public static class BndLib_Add2dCurve
     }
 
     /// <summary>Adds the bounding box of the curve C, over its own range, enlarged by Tol, to B.</summary>
-    public static void Add(Geom2d_Curve aC2D, double aTol, ref Bnd_Box2d aBox2D)
+    public static void Add(Geom2d_Curve aC2D, double aTol, ref Box2d aBox2D)
     {
         double aT1 = aC2D.FirstParameter();
         double aT2 = aC2D.LastParameter();
@@ -57,13 +61,13 @@ public static class BndLib_Add2dCurve
     }
 
     /// <summary>Adds the bounding box of the arc [T1, T2] of C, enlarged by Tol, to B.</summary>
-    public static void Add(Geom2d_Curve aC2D, double aT1, double aT2, double aTol, ref Bnd_Box2d aBox2D)
+    public static void Add(Geom2d_Curve aC2D, double aT1, double aT2, double aTol, ref Box2d aBox2D)
     {
         new GeomBndLib_Curve2d(aC2D).Add(aT1, aT2, aTol, ref aBox2D);
     }
 
     /// <summary>Adds the precise bounding box of the arc [T1, T2] of C to B (numerical search of the extrema; slower).</summary>
-    public static void AddOptimal(Geom2d_Curve aC2D, double aT1, double aT2, double aTol, ref Bnd_Box2d aBox2D)
+    public static void AddOptimal(Geom2d_Curve aC2D, double aT1, double aT2, double aTol, ref Box2d aBox2D)
     {
         new GeomBndLib_Curve2d(aC2D).AddOptimal(aT1, aT2, aTol, ref aBox2D);
     }

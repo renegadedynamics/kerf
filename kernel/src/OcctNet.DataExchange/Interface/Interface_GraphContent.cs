@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -41,7 +43,7 @@ public class Interface_GraphContent : Interface_EntityIterator
     /// <summary>
     /// Creates an Iterator with Shared entities of an entity (equivalente to EntityIterator but with a Graph)
     /// </summary>
-    public Interface_GraphContent(Interface_Graph agraph, Standard_Transient? ent)
+    public Interface_GraphContent(Interface_Graph agraph, Transient? ent)
     {
         Interface_EntityIterator list = agraph.Shareds(ent);
         int nb = list.NbEntities();
@@ -51,7 +53,7 @@ public class Interface_GraphContent : Interface_EntityIterator
         }
         for (; list.More(); list.Next())
         {
-            Standard_Transient curent = list.Value();
+            Transient curent = list.Value();
             if (agraph.IsPresent(agraph.EntityNumber(curent)))
             {
                 GetOneItem(curent);

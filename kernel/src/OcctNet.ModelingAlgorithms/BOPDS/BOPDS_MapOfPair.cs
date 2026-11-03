@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2002-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
 using System.Collections;
 
 namespace Occt;
@@ -82,7 +84,7 @@ public sealed class BOPDS_MapOfPair : IEnumerable<BOPDS_Pair>
     /// <summary>Resizes the buckets for about <paramref name="N"/> keys, as NCollection_BaseMap::BeginResize.</summary>
     public void ReSize(long N)
     {
-        long newBuck = NCollection_Primes.NextPrimeForMap(N);
+        long newBuck = Primes.NextPrimeForMap(N);
         if (newBuck <= myNbBuckets)
         {
             if (myData1 is null)
@@ -209,7 +211,7 @@ public sealed class BOPDS_MapOfPair : IEnumerable<BOPDS_Pair>
 
         public void Next() => PNext();
 
-        public BOPDS_Pair Value() => myNode is not null ? myNode.Key : throw new Standard_NoSuchObject("NCollection_Map::Iterator::Value");
+        public BOPDS_Pair Value() => myNode is not null ? myNode.Key : throw new NoSuchObjectException("NCollection_Map::Iterator::Value");
 
         public BOPDS_Pair Key() => Value();
     }

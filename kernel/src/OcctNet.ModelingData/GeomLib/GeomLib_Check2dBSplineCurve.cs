@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -41,12 +45,12 @@ public sealed class GeomLib_Check2dBSplineCurve
         if ((!myCurve.IsPeriodic()) && num_poles >= 4)
         {
 
-            gp_Vec2d tangent, tangent_normalized = new(), a_vector, avector_normalized;
+            Vector2D tangent, tangent_normalized = new(), a_vector, avector_normalized;
 
             double CrossProdTol = myAngularTolerance;
 
             // Near first
-            tangent = new gp_Vec2d(myCurve.Pole(1), myCurve.Pole(2));
+            tangent = new Vector2D(myCurve.Pole(1), myCurve.Pole(2));
             tangent_magnitude = tangent.Magnitude();
             if (tangent_magnitude > myTolerance)
             {
@@ -55,7 +59,7 @@ public sealed class GeomLib_Check2dBSplineCurve
 
             for (ii = 3; ii <= num_poles; ii++)
             {
-                a_vector = new gp_Vec2d(myCurve.Pole(1), myCurve.Pole(ii));
+                a_vector = new Vector2D(myCurve.Pole(1), myCurve.Pole(ii));
                 vector_magnitude = a_vector.Magnitude();
 
                 if (tangent_magnitude > myTolerance && vector_magnitude > myTolerance)
@@ -79,7 +83,7 @@ public sealed class GeomLib_Check2dBSplineCurve
             }
 
             // Near last
-            tangent = new gp_Vec2d(myCurve.Pole(num_poles), myCurve.Pole(num_poles - 1));
+            tangent = new Vector2D(myCurve.Pole(num_poles), myCurve.Pole(num_poles - 1));
             tangent_magnitude = tangent.Magnitude();
             if (tangent_magnitude > myTolerance)
             {
@@ -88,7 +92,7 @@ public sealed class GeomLib_Check2dBSplineCurve
 
             for (ii = num_poles - 2; ii >= 1; ii--)
             {
-                a_vector = new gp_Vec2d(myCurve.Pole(num_poles), myCurve.Pole(ii));
+                a_vector = new Vector2D(myCurve.Pole(num_poles), myCurve.Pole(ii));
                 vector_magnitude = a_vector.Magnitude();
 
                 if (tangent_magnitude > myTolerance && vector_magnitude > myTolerance)
@@ -155,13 +159,13 @@ public sealed class GeomLib_Check2dBSplineCurve
     {
         if (myFixFirstTangent && FirstFlag)
         {
-            gp_XY XY1 = theCurve.Pole(1).XY();
-            gp_XY XY2 = theCurve.Pole(myIndSecondPole).XY();
+            Xy XY1 = theCurve.Pole(1).XY();
+            Xy XY2 = theCurve.Pole(myIndSecondPole).XY();
             double NbSamples = myIndSecondPole - 1;
             for (int i = 2; i < myIndSecondPole; i++)
             {
                 double ii = i - 1;
-                gp_Pnt2d aNewPole = new((1.0 - ii / NbSamples) * XY1 + ii / NbSamples * XY2);
+                Point2D aNewPole = new((1.0 - ii / NbSamples) * XY1 + ii / NbSamples * XY2);
                 theCurve.SetPole(i, aNewPole);
             }
         }
@@ -170,13 +174,13 @@ public sealed class GeomLib_Check2dBSplineCurve
         {
             int num_poles = theCurve.NbPoles();
 
-            gp_XY XY1 = theCurve.Pole(num_poles).XY();
-            gp_XY XY2 = theCurve.Pole(myIndPrelastPole).XY();
+            Xy XY1 = theCurve.Pole(num_poles).XY();
+            Xy XY2 = theCurve.Pole(myIndPrelastPole).XY();
             double NbSamples = num_poles - myIndPrelastPole;
             for (int i = num_poles - 1; i > myIndPrelastPole; i--)
             {
                 double ii = num_poles - i;
-                gp_Pnt2d aNewPole = new((1.0 - ii / NbSamples) * XY1 + ii / NbSamples * XY2);
+                Point2D aNewPole = new((1.0 - ii / NbSamples) * XY1 + ii / NbSamples * XY2);
                 theCurve.SetPole(i, aNewPole);
             }
         }

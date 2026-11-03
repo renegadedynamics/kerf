@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -16,7 +18,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
 {
     private const int Cases = 300;
 
-    private static readonly GeomAbs_Shape[] Continuities = [GeomAbs_C0, GeomAbs_C1, GeomAbs_C2];
+    private static readonly Continuity[] Continuities = [C0, C1, C2];
 
     // Runs the native and the port computations; both must throw, or neither.
     private static bool Both(Oracle theO, Action theNative, Action thePort, string theWhat)
@@ -34,7 +36,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (FailureException anE)
         {
             aPortError = anE;
         }
@@ -251,7 +253,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                 double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
                 double aDefl = Math.Max(aSize, 1e-3) * anOracle.Real(0.002, 0.05);
                 bool aWithControl = anOracle.Bool();
-                GeomAbs_Shape aCont = Continuities[anOracle.Int(0, 2)];
+                Continuity aCont = Continuities[anOracle.Int(0, 2)];
                 string aW = $"{aKind} #{c} deflection {aDefl:R}";
 
                 N.GCPnts_UniformDeflection? aNU = null;
@@ -318,7 +320,7 @@ public class GCPntsOracleTests(ITestOutputHelper output)
                 double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
                 double aDefl = Math.Max(aSize, 1e-3) * anOracle.Real(0.002, 0.05);
                 bool aWithControl = anOracle.Bool();
-                GeomAbs_Shape aCont = Continuities[anOracle.Int(0, 2)];
+                Continuity aCont = Continuities[anOracle.Int(0, 2)];
                 string aW = $"{aKind} #{c} deflection {aDefl:R}";
 
                 N.GCPnts_UniformDeflection? aNU = null;

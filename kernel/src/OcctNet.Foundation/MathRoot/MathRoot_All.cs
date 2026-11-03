@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Roots;
 
 /// <summary>All roots of a function including null intervals.</summary>
 public static partial class MathRoot
@@ -22,7 +24,7 @@ public static partial class MathRoot
     /// <remarks>Holds array references, so a copy shares them; ported code writes `new AllRootsResult()`.</remarks>
     public struct AllRootsResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Isolated root locations.</summary>
         public NCollection_DynamicArray<double> Roots = new();
         /// <summary>State numbers for roots.</summary>
@@ -34,311 +36,311 @@ public static partial class MathRoot
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(AllRootsResult theResult) => theResult.IsDone();
+        public static explicit operator bool(AllRootsResult result) => result.IsDone;
 
-        public static bool operator true(AllRootsResult theResult) => theResult.IsDone();
+        public static bool operator true(AllRootsResult result) => result.IsDone;
 
-        public static bool operator false(AllRootsResult theResult) => !theResult.IsDone();
+        public static bool operator false(AllRootsResult result) => !result.IsDone;
 
-        public readonly int NbRoots() => Roots.Length();
+        public readonly int RootCount => Roots.Length();
 
-        public readonly int NbIntervals() => NullIntervals.Length();
+        public readonly int IntervalCount => NullIntervals.Length();
     }
 
     /// <summary>Find multiple roots of f(x) - theOffset = 0 in [theA, theB] (FindAllRoots with these settings).</summary>
-    public static MultipleResult FindMultipleRoots<Func>(Func theFunc,
-                                                         double theA,
-                                                         double theB,
-                                                         int theNbSamples,
-                                                         double theEpsX,
-                                                         double theEpsF,
-                                                         double theOffset = 0.0)
-        where Func : MathUtils.IScalarFunction
+    public static MultipleResult FindMultipleRoots<Func>(Func func,
+                                                         double a,
+                                                         double b,
+                                                         int nbSamples,
+                                                         double epsX,
+                                                         double epsF,
+                                                         double offset = 0.0)
+        where Func : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        MultipleConfig aConfig = new();
-        aConfig.NbSamples = theNbSamples;
-        aConfig.XTolerance = theEpsX;
-        aConfig.FTolerance = theEpsF;
-        aConfig.Offset = theOffset;
-        return FindAllRoots(theFunc, theA, theB, aConfig);
+        MultipleConfig config = new();
+        config.NbSamples = nbSamples;
+        config.XTolerance = epsX;
+        config.FTolerance = epsF;
+        config.Offset = offset;
+        return FindAllRoots(func, a, b, config);
     }
 
     /// <summary>
     /// Find all roots of a function from samples: null intervals (|F| &lt;= theEpsNul at 2+ consecutive samples, with
     /// refined boundaries) and isolated roots between them.
     /// </summary>
-    public static AllRootsResult FindAllRootsWithIntervals<Func>(Func theFunc,
-                                                                 math_Vector theSamples,
-                                                                 double theEpsX = 1.0e-10,
-                                                                 double theEpsF = 1.0e-10,
-                                                                 double theEpsNul = 1.0e-10)
-        where Func : MathUtils.IScalarFunction
+    public static AllRootsResult FindAllRootsWithIntervals<Func>(Func func,
+                                                                 math_Vector samples,
+                                                                 double epsX = 1.0e-10,
+                                                                 double epsF = 1.0e-10,
+                                                                 double epsNul = 1.0e-10)
+        where Func : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        AllRootsResult aResult = new();
+        AllRootsResult result = new();
 
-        int aNbp = theSamples.Length();
-        if (aNbp < 2)
+        int nbp = samples.Length();
+        if (nbp < 2)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
-        int aLower = theSamples.Lower();
+        int lower = samples.Lower();
 
         // Evaluate function at first sample point
-        if (!theFunc.Value(theSamples[aLower], out double aPrevVal))
+        if (!func.Value(samples[lower], out double prevVal))
         {
-            aResult.Status = MathUtils.Status.NotConverged;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
+            return result;
         }
 
-        bool aPrevNul = Math.Abs(aPrevVal) <= theEpsNul;
-        if (!aPrevNul)
+        bool prevNul = Math.Abs(prevVal) <= epsNul;
+        if (!prevNul)
         {
             // Save non-null value for later use
         }
 
-        bool aInInterval = false;
-        bool aNulStart = false;
-        bool aNulEnd = false;
-        double aDebNul = 0.0, aFinNul = 0.0;
-        double aValSav = aPrevVal;
+        bool inInterval = false;
+        bool nulStart = false;
+        bool nulEnd = false;
+        double debNul = 0.0, finNul = 0.0;
+        double valSav = prevVal;
 
-        NCollection_DynamicArray<double> aIntervalStarts = new(), aIntervalEnds = new();
+        NCollection_DynamicArray<double> intervalStarts = new(), intervalEnds = new();
 
         // Scan through samples to find null intervals
-        for (int i = 1; i < aNbp; ++i)
+        for (int i = 1; i < nbp; ++i)
         {
-            if (!theFunc.Value(theSamples[aLower + i], out double aVal))
+            if (!func.Value(samples[lower + i], out double val))
             {
-                aResult.Status = MathUtils.Status.NotConverged;
-                return aResult;
+                result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
+                return result;
             }
 
-            bool aCurNul = Math.Abs(aVal) <= theEpsNul;
-            if (!aCurNul)
+            bool curNul = Math.Abs(val) <= epsNul;
+            if (!curNul)
             {
-                aValSav = aVal;
+                valSav = val;
             }
 
-            if (aInInterval && !aCurNul)
+            if (inInterval && !curNul)
             {
                 // End of null interval
-                aInInterval = false;
-                aIntervalStarts.Append(aDebNul);
+                inInterval = false;
+                intervalStarts.Append(debNul);
 
                 // Refine end of null interval
-                double aCst = (aVal > 0.0) ? theEpsNul : -theEpsNul;
+                double cst = (val > 0.0) ? epsNul : -epsNul;
 
                 // Use root finding to locate precise boundary
-                MultipleResult aRes = FindMultipleRoots(theFunc,
-                                                        theSamples[aLower + i - 1],
-                                                        theSamples[aLower + i],
+                MultipleResult res = FindMultipleRoots(func,
+                                                        samples[lower + i - 1],
+                                                        samples[lower + i],
                                                         10,
-                                                        theEpsX,
-                                                        theEpsF,
-                                                        aCst);
-                if (aRes.IsDone() && aRes.NbRoots() > 0)
+                                                        epsX,
+                                                        epsF,
+                                                        cst);
+                if (res.IsDone && res.RootCount > 0)
                 {
-                    aFinNul = aRes.Roots[0];
+                    finNul = res.Roots[0];
                 }
                 else
                 {
-                    aFinNul = theSamples[aLower + i - 1];
+                    finNul = samples[lower + i - 1];
                 }
 
                 // Try opposite sign
-                aCst = -aCst;
-                MultipleResult aRes2 = FindMultipleRoots(theFunc,
-                                                         theSamples[aLower + i - 1],
-                                                         theSamples[aLower + i],
+                cst = -cst;
+                MultipleResult res2 = FindMultipleRoots(func,
+                                                         samples[lower + i - 1],
+                                                         samples[lower + i],
                                                          10,
-                                                         theEpsX,
-                                                         theEpsF,
-                                                         aCst);
-                if (aRes2.IsDone() && aRes2.NbRoots() > 0)
+                                                         epsX,
+                                                         epsF,
+                                                         cst);
+                if (res2.IsDone && res2.RootCount > 0)
                 {
-                    if (aRes2.Roots[0] < aFinNul)
+                    if (res2.Roots[0] < finNul)
                     {
-                        aFinNul = aRes2.Roots[0];
+                        finNul = res2.Roots[0];
                     }
                 }
 
-                aIntervalEnds.Append(aFinNul);
+                intervalEnds.Append(finNul);
             }
-            else if (!aInInterval && aPrevNul && aCurNul)
+            else if (!inInterval && prevNul && curNul)
             {
                 // Start of null interval
-                aInInterval = true;
+                inInterval = true;
                 if (i == 1)
                 {
-                    aDebNul = theSamples[aLower];
-                    aNulStart = true;
+                    debNul = samples[lower];
+                    nulStart = true;
                 }
                 else
                 {
                     // Refine start of null interval
-                    double aCst = (aValSav > 0.0) ? theEpsNul : -theEpsNul;
+                    double cst = (valSav > 0.0) ? epsNul : -epsNul;
 
-                    MultipleResult aRes = FindMultipleRoots(theFunc,
-                                                            theSamples[aLower + i - 2],
-                                                            theSamples[aLower + i - 1],
+                    MultipleResult res = FindMultipleRoots(func,
+                                                            samples[lower + i - 2],
+                                                            samples[lower + i - 1],
                                                             10,
-                                                            theEpsX,
-                                                            theEpsF,
-                                                            aCst);
-                    if (aRes.IsDone() && aRes.NbRoots() > 0)
+                                                            epsX,
+                                                            epsF,
+                                                            cst);
+                    if (res.IsDone && res.RootCount > 0)
                     {
-                        aDebNul = aRes.Roots[aRes.NbRoots() - 1];
+                        debNul = res.Roots[res.RootCount - 1];
                     }
                     else
                     {
-                        aDebNul = theSamples[aLower + i - 1];
+                        debNul = samples[lower + i - 1];
                     }
 
                     // Try opposite sign
-                    aCst = -aCst;
-                    MultipleResult aRes2 = FindMultipleRoots(theFunc,
-                                                             theSamples[aLower + i - 2],
-                                                             theSamples[aLower + i - 1],
+                    cst = -cst;
+                    MultipleResult res2 = FindMultipleRoots(func,
+                                                             samples[lower + i - 2],
+                                                             samples[lower + i - 1],
                                                              10,
-                                                             theEpsX,
-                                                             theEpsF,
-                                                             aCst);
-                    if (aRes2.IsDone() && aRes2.NbRoots() > 0)
+                                                             epsX,
+                                                             epsF,
+                                                             cst);
+                    if (res2.IsDone && res2.RootCount > 0)
                     {
-                        if (aRes2.Roots[aRes2.NbRoots() - 1] > aDebNul)
+                        if (res2.Roots[res2.RootCount - 1] > debNul)
                         {
-                            aDebNul = aRes2.Roots[aRes2.NbRoots() - 1];
+                            debNul = res2.Roots[res2.RootCount - 1];
                         }
                     }
                 }
             }
 
-            aPrevNul = aCurNul;
+            prevNul = curNul;
         }
 
         // Handle interval ending at last sample
-        if (aInInterval)
+        if (inInterval)
         {
-            aIntervalStarts.Append(aDebNul);
-            aFinNul = theSamples[aLower + aNbp - 1];
-            aIntervalEnds.Append(aFinNul);
-            aNulEnd = true;
+            intervalStarts.Append(debNul);
+            finNul = samples[lower + nbp - 1];
+            intervalEnds.Append(finNul);
+            nulEnd = true;
         }
 
         // Store null intervals
-        for (int k = 0; k < aIntervalStarts.Length(); ++k)
+        for (int k = 0; k < intervalStarts.Length(); ++k)
         {
             NullInterval anInt = new();
-            anInt.A = aIntervalStarts.Value(k);
-            anInt.B = aIntervalEnds.Value(k);
-            aResult.NullIntervals.Append(anInt);
+            anInt.A = intervalStarts.Value(k);
+            anInt.B = intervalEnds.Value(k);
+            result.NullIntervals.Append(anInt);
         }
 
-        double aSampleFirst = theSamples[aLower];
-        double aSampleLast = theSamples[aLower + aNbp - 1];
+        double sampleFirst = samples[lower];
+        double sampleLast = samples[lower + nbp - 1];
 
         // Find isolated roots between null intervals
-        if (aIntervalStarts.IsEmpty())
+        if (intervalStarts.IsEmpty())
         {
             // No null intervals - find all roots in entire range
-            MultipleResult aRes =
-              FindMultipleRoots(theFunc, aSampleFirst, aSampleLast, aNbp, theEpsX, theEpsF);
-            if (aRes.IsDone())
+            MultipleResult res =
+              FindMultipleRoots(func, sampleFirst, sampleLast, nbp, epsX, epsF);
+            if (res.IsDone)
             {
-                for (int j = 0; j < aRes.NbRoots(); ++j)
+                for (int j = 0; j < res.RootCount; ++j)
                 {
-                    aResult.Roots.Append(aRes.Roots[j]);
-                    aResult.RootStates.Append(0);
+                    result.Roots.Append(res.Roots[j]);
+                    result.RootStates.Append(0);
                 }
             }
         }
         else
         {
             // Find roots before first null interval
-            if (!aNulStart)
+            if (!nulStart)
             {
-                double aStart = aSampleFirst;
-                double aEnd = aIntervalStarts.Value(0);
-                int aNbrpt =
-                  Max(3, (int)(Math.Abs((aEnd - aStart) / (aSampleLast - aSampleFirst)) * aNbp));
+                double start = sampleFirst;
+                double end = intervalStarts.Value(0);
+                int nbrpt =
+                  Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
 
-                MultipleResult aRes = FindMultipleRoots(theFunc, aStart, aEnd, aNbrpt, theEpsX, theEpsF);
-                if (aRes.IsDone())
+                MultipleResult res = FindMultipleRoots(func, start, end, nbrpt, epsX, epsF);
+                if (res.IsDone)
                 {
-                    for (int j = 0; j < aRes.NbRoots(); ++j)
+                    for (int j = 0; j < res.RootCount; ++j)
                     {
-                        aResult.Roots.Append(aRes.Roots[j]);
-                        aResult.RootStates.Append(0);
+                        result.Roots.Append(res.Roots[j]);
+                        result.RootStates.Append(0);
                     }
                 }
             }
 
             // Find roots between null intervals
-            for (int k = 1; k < aIntervalStarts.Length(); ++k)
+            for (int k = 1; k < intervalStarts.Length(); ++k)
             {
-                double aStart = aIntervalEnds.Value(k - 1);
-                double aEnd = aIntervalStarts.Value(k);
-                int aNbrpt =
-                  Max(3, (int)(Math.Abs((aEnd - aStart) / (aSampleLast - aSampleFirst)) * aNbp));
+                double start = intervalEnds.Value(k - 1);
+                double end = intervalStarts.Value(k);
+                int nbrpt =
+                  Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
 
-                MultipleResult aRes = FindMultipleRoots(theFunc, aStart, aEnd, aNbrpt, theEpsX, theEpsF);
-                if (aRes.IsDone())
+                MultipleResult res = FindMultipleRoots(func, start, end, nbrpt, epsX, epsF);
+                if (res.IsDone)
                 {
-                    for (int j = 0; j < aRes.NbRoots(); ++j)
+                    for (int j = 0; j < res.RootCount; ++j)
                     {
-                        aResult.Roots.Append(aRes.Roots[j]);
-                        aResult.RootStates.Append(0);
+                        result.Roots.Append(res.Roots[j]);
+                        result.RootStates.Append(0);
                     }
                 }
             }
 
             // Find roots after last null interval
-            if (!aNulEnd)
+            if (!nulEnd)
             {
-                double aStart = aIntervalEnds.Value(aIntervalEnds.Length() - 1);
-                double aEnd = aSampleLast;
-                int aNbrpt =
-                  Max(3, (int)(Math.Abs((aEnd - aStart) / (aSampleLast - aSampleFirst)) * aNbp));
+                double start = intervalEnds.Value(intervalEnds.Length() - 1);
+                double end = sampleLast;
+                int nbrpt =
+                  Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
 
-                MultipleResult aRes = FindMultipleRoots(theFunc, aStart, aEnd, aNbrpt, theEpsX, theEpsF);
-                if (aRes.IsDone())
+                MultipleResult res = FindMultipleRoots(func, start, end, nbrpt, epsX, epsF);
+                if (res.IsDone)
                 {
-                    for (int j = 0; j < aRes.NbRoots(); ++j)
+                    for (int j = 0; j < res.RootCount; ++j)
                     {
-                        aResult.Roots.Append(aRes.Roots[j]);
-                        aResult.RootStates.Append(0);
+                        result.Roots.Append(res.Roots[j]);
+                        result.RootStates.Append(0);
                     }
                 }
             }
         }
 
-        aResult.Status = MathUtils.Status.OK;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+        return result;
     }
 
     /// <summary>Find all roots and null intervals using theNbSamples uniform samples on [theA, theB].</summary>
-    public static AllRootsResult FindAllRootsWithIntervals<Func>(Func theFunc,
-                                                                 double theA,
-                                                                 double theB,
-                                                                 int theNbSamples,
-                                                                 double theEpsX = 1.0e-10,
-                                                                 double theEpsF = 1.0e-10,
-                                                                 double theEpsNul = 1.0e-10)
-        where Func : MathUtils.IScalarFunction
+    public static AllRootsResult FindAllRootsWithIntervals<Func>(Func func,
+                                                                 double a,
+                                                                 double b,
+                                                                 int nbSamples,
+                                                                 double epsX = 1.0e-10,
+                                                                 double epsF = 1.0e-10,
+                                                                 double epsNul = 1.0e-10)
+        where Func : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
     {
-        math_Vector aSamples = new(0, theNbSamples - 1);
-        double aStep = (theB - theA) / (theNbSamples - 1);
-        for (int i = 0; i < theNbSamples; ++i)
+        math_Vector samples = new(0, nbSamples - 1);
+        double step = (b - a) / (nbSamples - 1);
+        for (int i = 0; i < nbSamples; ++i)
         {
-            aSamples[i] = theA + i * aStep;
+            samples[i] = a + i * step;
         }
         // Ensure last point is exactly theB
-        aSamples[theNbSamples - 1] = theB;
+        samples[nbSamples - 1] = b;
 
-        return FindAllRootsWithIntervals(theFunc, aSamples, theEpsX, theEpsF, theEpsNul);
+        return FindAllRootsWithIntervals(func, samples, epsX, epsF, epsNul);
     }
 }

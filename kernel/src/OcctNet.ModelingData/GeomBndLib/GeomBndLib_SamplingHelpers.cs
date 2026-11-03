@@ -2,8 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -18,10 +19,10 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbSamples(Adaptor3d_Curve theCurve, double theUMin, double theUMax)
     {
         int N;
-        GeomAbs_CurveType aType = theCurve.GetType();
+        CurveKind aType = theCurve.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 N = 2 * theCurve.NbPoles();
                 double du = theUMax - theUMin;
@@ -32,7 +33,7 @@ internal static class GeomBndLib_SamplingHelpers
                 }
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom_BSplineCurve aBC = theCurve.BSpline();
                 N = 2 * (aBC.Degree() + 1) * (aBC.NbKnots() - 1);
@@ -56,10 +57,10 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbSamples2d(Adaptor2d_Curve2d theCurve, double theUMin, double theUMax)
     {
         int N;
-        GeomAbs_CurveType aType = theCurve.GetType();
+        CurveKind aType = theCurve.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
             {
                 N = 2 * theCurve.NbPoles();
                 double du = theUMax - theUMin;
@@ -70,7 +71,7 @@ internal static class GeomBndLib_SamplingHelpers
                 }
                 break;
             }
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
             {
                 Geom2d_BSplineCurve aBC = theCurve.BSpline();
                 N = 2 * (aBC.Degree() + 1) * (aBC.NbKnots() - 1);
@@ -94,10 +95,10 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbUSamples(Adaptor3d_Surface theSurf, double theUMin, double theUMax)
     {
         int N;
-        GeomAbs_SurfaceType aType = theSurf.GetType();
+        SurfaceKind aType = theSurf.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 N = 2 * theSurf.NbUPoles();
                 double du = theUMax - theUMin;
@@ -108,7 +109,7 @@ internal static class GeomBndLib_SamplingHelpers
                 }
                 break;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBS = theSurf.BSpline();
                 N = 2 * (aBS.UDegree() + 1) * (aBS.NbUKnots() - 1);
@@ -132,10 +133,10 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbVSamples(Adaptor3d_Surface theSurf, double theVMin, double theVMax)
     {
         int N;
-        GeomAbs_SurfaceType aType = theSurf.GetType();
+        SurfaceKind aType = theSurf.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 N = 2 * theSurf.NbVPoles();
                 double dv = theVMax - theVMin;
@@ -146,7 +147,7 @@ internal static class GeomBndLib_SamplingHelpers
                 }
                 break;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBS = theSurf.BSpline();
                 N = 2 * (aBS.VDegree() + 1) * (aBS.NbVKnots() - 1);
@@ -170,13 +171,13 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbUSamples(Adaptor3d_Surface theSurf)
     {
         int N;
-        GeomAbs_SurfaceType aType = theSurf.GetType();
+        SurfaceKind aType = theSurf.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 N = 2 * theSurf.NbUPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBS = theSurf.BSpline();
                 N = 2 * (aBS.UDegree() + 1) * (aBS.NbUKnots() - 1);
@@ -193,13 +194,13 @@ internal static class GeomBndLib_SamplingHelpers
     internal static int ComputeNbVSamples(Adaptor3d_Surface theSurf)
     {
         int N;
-        GeomAbs_SurfaceType aType = theSurf.GetType();
+        SurfaceKind aType = theSurf.GetType();
         switch (aType)
         {
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 N = 2 * theSurf.NbVPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBS = theSurf.BSpline();
                 N = 2 * (aBS.VDegree() + 1) * (aBS.NbVKnots() - 1);

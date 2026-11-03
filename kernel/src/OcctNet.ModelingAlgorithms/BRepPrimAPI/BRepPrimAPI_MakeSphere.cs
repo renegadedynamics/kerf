@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,13 +21,13 @@ public class BRepPrimAPI_MakeSphere : BRepPrimAPI_MakeOneAxis
     /// <summary>A sphere of radius R.</summary>
     public BRepPrimAPI_MakeSphere(double R)
     {
-        mySphere = new BRepPrim_Sphere(gp.XOY(), R);
+        mySphere = new BRepPrim_Sphere(Constants.XOY(), R);
     }
 
     /// <summary>A spherical wedge (a negative angle turns the axis over).</summary>
     public BRepPrimAPI_MakeSphere(double R, double angle)
     {
-        mySphere = new BRepPrim_Sphere(new gp_Ax2(gp.Origin(), new gp_Dir((angle < 0.0 ? -1 : 1) * new gp_Vec(gp.DZ())), gp.DX()), R);
+        mySphere = new BRepPrim_Sphere(new Frame3D(Constants.Origin(), new Direction3D((angle < 0.0 ? -1 : 1) * new Vector3D(Constants.DZ())), Constants.DX()), R);
         mySphere.Angle(Math.Abs(angle));
     }
 
@@ -45,50 +49,50 @@ public class BRepPrimAPI_MakeSphere : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A sphere at Center.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Pnt Center, double R)
+    public BRepPrimAPI_MakeSphere(in Point3D Center, double R)
     {
-        mySphere = new BRepPrim_Sphere(new gp_Ax2(Center, new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)), R);
+        mySphere = new BRepPrim_Sphere(new Frame3D(Center, new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)), R);
     }
 
     /// <summary>A spherical wedge at Center.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Pnt Center, double R, double angle)
+    public BRepPrimAPI_MakeSphere(in Point3D Center, double R, double angle)
     {
-        mySphere = new BRepPrim_Sphere(new gp_Ax2(Center, new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)), R);
+        mySphere = new BRepPrim_Sphere(new Frame3D(Center, new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)), R);
         mySphere.Angle(angle);
     }
 
     /// <summary>A spherical segment at Center.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Pnt Center, double R, double angle1, double angle2)
+    public BRepPrimAPI_MakeSphere(in Point3D Center, double R, double angle1, double angle2)
     {
-        mySphere = new BRepPrim_Sphere(new gp_Ax2(Center, new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)), R);
+        mySphere = new BRepPrim_Sphere(new Frame3D(Center, new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)), R);
         mySphere.VMin(angle1);
         mySphere.VMax(angle2);
     }
 
     /// <summary>A spherical segment of angle3 in U at Center.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Pnt Center, double R, double angle1, double angle2, double angle3)
+    public BRepPrimAPI_MakeSphere(in Point3D Center, double R, double angle1, double angle2, double angle3)
     {
-        mySphere = new BRepPrim_Sphere(new gp_Ax2(Center, new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X)), R);
+        mySphere = new BRepPrim_Sphere(new Frame3D(Center, new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)), R);
         mySphere.VMin(angle1);
         mySphere.VMax(angle2);
         mySphere.Angle(angle3);
     }
 
     /// <summary>A sphere on the axes.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Ax2 Axis, double R)
+    public BRepPrimAPI_MakeSphere(in Frame3D Axis, double R)
     {
         mySphere = new BRepPrim_Sphere(Axis, R);
     }
 
     /// <summary>A spherical wedge on the axes.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Ax2 Axis, double R, double angle)
+    public BRepPrimAPI_MakeSphere(in Frame3D Axis, double R, double angle)
     {
         mySphere = new BRepPrim_Sphere(Axis, R);
         mySphere.Angle(angle);
     }
 
     /// <summary>A spherical segment on the axes.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Ax2 Axis, double R, double angle1, double angle2)
+    public BRepPrimAPI_MakeSphere(in Frame3D Axis, double R, double angle1, double angle2)
     {
         mySphere = new BRepPrim_Sphere(Axis, R);
         mySphere.VMin(angle1);
@@ -96,7 +100,7 @@ public class BRepPrimAPI_MakeSphere : BRepPrimAPI_MakeOneAxis
     }
 
     /// <summary>A spherical segment of angle3 in U on the axes.</summary>
-    public BRepPrimAPI_MakeSphere(in gp_Ax2 Axis, double R, double angle1, double angle2, double angle3)
+    public BRepPrimAPI_MakeSphere(in Frame3D Axis, double R, double angle1, double angle2, double angle3)
     {
         mySphere = new BRepPrim_Sphere(Axis, R);
         mySphere.VMin(angle1);

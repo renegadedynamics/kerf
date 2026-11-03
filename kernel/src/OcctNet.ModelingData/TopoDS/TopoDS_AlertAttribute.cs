@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2020-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
@@ -13,7 +14,7 @@ namespace Occt;
 /// shape's <see cref="TopoDS_Shape.ToString"/> ("Solid Forward", ...). OCCT's <c>operator&lt;&lt;</c> of a messenger and
 /// a shape is <see cref="Send"/>. <see cref="GetShape"/> freezes, as <see cref="TopoDS_AlertWithShape.GetShape"/>.
 /// </remarks>
-public class TopoDS_AlertAttribute : Message_AttributeStream
+public class TopoDS_AlertAttribute : AttributeStream
 {
     private readonly TopoDS_Shape myShape;
 
@@ -33,20 +34,20 @@ public class TopoDS_AlertAttribute : Message_AttributeStream
     }
 
     /// <summary>
-    /// Adds an alert with the shape (Info gravity) to the report of every <see cref="Message_PrinterToReport"/> of the
+    /// Adds an alert with the shape (Info gravity) to the report of every <see cref="PrinterToReport"/> of the
     /// messenger.
     /// </summary>
-    public static void Send(Message_Messenger theMessenger, in TopoDS_Shape theShape)
+    public static void Send(Messenger theMessenger, in TopoDS_Shape theShape)
     {
-        foreach (Message_Printer aPrinter in theMessenger.Printers())
+        foreach (Printer aPrinter in theMessenger.Printers())
         {
-            if (aPrinter is not Message_PrinterToReport aPrinterToReport)
+            if (aPrinter is not PrinterToReport aPrinterToReport)
             {
                 continue;
             }
 
-            Message_Report aReport = aPrinterToReport.Report();
-            Message_AlertExtended.AddAlert(aReport, new TopoDS_AlertAttribute(theShape), Message_Info);
+            Report aReport = aPrinterToReport.Report();
+            AlertExtended.AddAlert(aReport, new TopoDS_AlertAttribute(theShape), Info);
         }
     }
 }

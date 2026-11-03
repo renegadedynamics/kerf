@@ -6,6 +6,7 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -17,19 +18,19 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
     private StepVisual_TessellatedItem theTessellatedItem;
 
     public TopoDSToStep_MakeFacetedBrepAndBrepWithVoids(in TopoDS_Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
-                                                        Message_ProgressRange theProgress = default)
+                                                        ProgressRange theProgress = default)
     {
         done = false;
         TopoDS_Iterator It = new TopoDS_Iterator();
-        var aMap = new NCollection_DataMap<TopoDS_Shape, Standard_Transient>(TopTools_ShapeMapHasher.Instance);
-        var S = new NCollection_Sequence<Standard_Transient>();
+        var aMap = new NCollection_DataMap<TopoDS_Shape, Transient>(TopTools_ShapeMapHasher.Instance);
+        var S = new NCollection_Sequence<Transient>();
         TopoDS_Shell aOutShell;
 
         StepShape_TopologicalRepresentationItem aItem;
         StepShape_ClosedShell aOuter = null, aCShell;
         StepShape_OrientedClosedShell aOCShell;
         NCollection_HArray1<StepShape_OrientedClosedShell> aVoids;
-        var aTessShells = new NCollection_Sequence<Standard_Transient>();
+        var aTessShells = new NCollection_Sequence<Transient>();
 
         aOutShell = BRepClass3d.OuterShell(aSolid);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
@@ -47,12 +48,12 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
                 }
             }
 
-            using var aPS = new Message_ProgressScope(theProgress, null, nbshapes);
+            using var aPS = new ProgressScope(theProgress, null, nbshapes);
             for (It.Initialize(aSolid); It.More() && aPS.More(); It.Next())
             {
                 if (It.Value().ShapeType() == TopAbs_SHELL)
                 {
-                    Message_ProgressRange aRange = aPS.Next();
+                    ProgressRange aRange = aPS.Next();
                     TopoDS_Shell CurrentShell = TopoDS.Shell(It.Value());
                     if (It.Value().Closed())
                     {
@@ -155,7 +156,7 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
     {
     }
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepShape_FacetedBrepAndBrepWithVoids Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeFacetedBrepAndBrepWithVoids::Value() - no result");
@@ -163,7 +164,7 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
     }
 
     /// <summary>The tessellated item made, the optional result.</summary>
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepVisual_TessellatedItem TessellatedValue()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeFacetedBrepAndBrepWithVoids::TessellatedValue() - no result");

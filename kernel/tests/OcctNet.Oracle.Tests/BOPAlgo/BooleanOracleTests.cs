@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -147,7 +149,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         {
             double anOffset = anOffsets[i % anOffsets.Length];
             double aFuzzy = (i / anOffsets.Length) % 3 switch { 0 => 0.0, 1 => anOffset * 2, _ => anOffset / 2 };
-            gp_Ax2 aF = Frame(anOracle, i % 2 == 0);
+            Frame3D aF = Frame(anOracle, i % 2 == 0);
             double a = anOracle.Int(2, 10), b = anOracle.Int(2, 10), c = anOracle.Int(2, 10);
             N.TopoDS_Shape aS1, aS2;
             string aWhat;
@@ -210,7 +212,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         string aPRecord = (aPText ?? aPErr ?? "") + DeterminismHarness.HistoryText(aPArgs, aPRes ?? new TopoDS_Shape(), aPHist);
         foreach (int aDegree in new[] { 2, 3, Environment.ProcessorCount }.Distinct())
         {
-            using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+            using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
             {
                 (TopoDS_Shape? aPResPar, BRepTools_History? aPHistPar, string? aPErrPar) = RunPort(theCase, aPArgs, true);
                 string aRecordPar = (aPResPar is null ? aPErrPar ?? "" : theRun.PortText(aPResPar.Value))
@@ -242,7 +244,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             return;
         }
         TopoDS_Shape aPR = aPRes!.Value;
-        if (!aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (!aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
@@ -653,9 +655,9 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
-            return (null, null, "throws " + e.GetType().Name);
+            return (null, null, "throws " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
         }
     }
 
@@ -822,55 +824,55 @@ public class BooleanOracleTests(ITestOutputHelper output)
         return theRun.NativeText(aC);
     }
 
-    private static gp_Ax2 Frame(Oracle theO, bool theAxisAligned)
+    private static Frame3D Frame(Oracle theO, bool theAxisAligned)
     {
         if (theAxisAligned)
         {
-            return new gp_Ax2(new gp_Pnt(theO.Int(-20, 20), theO.Int(-20, 20), theO.Int(-20, 20)), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+            return new Frame3D(new Point3D(theO.Int(-20, 20), theO.Int(-20, 20), theO.Int(-20, 20)), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         }
-        gp_Dir aZ = theO.Dir();
-        gp_Dir aRef = theO.Dir();
-        gp_Dir aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new gp_Dir(1, 0, 0), 0.1) ? new gp_Dir(0, 1, 0) : new gp_Dir(1, 0, 0)) : aRef);
-        return new gp_Ax2(theO.Pnt(), aZ, aX);
+        Direction3D aZ = theO.Dir();
+        Direction3D aRef = theO.Dir();
+        Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
+        return new Frame3D(theO.Pnt(), aZ, aX);
     }
 
-    private static gp_Ax2 Moved(in gp_Ax2 theA, double dx, double dy, double dz, double theAngle = 0)
+    private static Frame3D Moved(in Frame3D theA, double dx, double dy, double dz, double theAngle = 0)
     {
-        gp_Pnt aP = theA.Location().Translated(new gp_Vec(theA.XDirection()) * dx + new gp_Vec(theA.YDirection()) * dy
-                                               + new gp_Vec(theA.Direction()) * dz);
-        gp_Ax2 aMoved = new gp_Ax2(aP, theA.Direction(), theA.XDirection());
-        return theAngle == 0 ? aMoved : aMoved.Rotated(new gp_Ax1(aP, theA.Direction()), theAngle);
+        Point3D aP = theA.Location().Translated(new Vector3D(theA.XDirection()) * dx + new Vector3D(theA.YDirection()) * dy
+                                               + new Vector3D(theA.Direction()) * dz);
+        Frame3D aMoved = new Frame3D(aP, theA.Direction(), theA.XDirection());
+        return theAngle == 0 ? aMoved : aMoved.Rotated(new Axis3D(aP, theA.Direction()), theAngle);
     }
 
-    private static N.TopoDS_Shape Box(in gp_Ax2 theA, double dx, double dy, double dz)
+    private static N.TopoDS_Shape Box(in Frame3D theA, double dx, double dy, double dz)
     {
         using N.gp_Ax2 aA = Oracle.ToNative(theA);
         using var aMaker = new N.BRepPrimAPI_MakeBox(aA, dx, dy, dz);
         return aMaker.Shape();
     }
 
-    private static N.TopoDS_Shape Cylinder(in gp_Ax2 theA, double r, double h)
+    private static N.TopoDS_Shape Cylinder(in Frame3D theA, double r, double h)
     {
         using N.gp_Ax2 aA = Oracle.ToNative(theA);
         using var aMaker = new N.BRepPrimAPI_MakeCylinder(aA, r, h);
         return aMaker.Shape();
     }
 
-    private static N.TopoDS_Shape Cone(in gp_Ax2 theA, double r1, double r2, double h)
+    private static N.TopoDS_Shape Cone(in Frame3D theA, double r1, double r2, double h)
     {
         using N.gp_Ax2 aA = Oracle.ToNative(theA);
         using var aMaker = new N.BRepPrimAPI_MakeCone(aA, r1, r2, h);
         return aMaker.Shape();
     }
 
-    private static N.TopoDS_Shape Sphere(in gp_Ax2 theA, double r)
+    private static N.TopoDS_Shape Sphere(in Frame3D theA, double r)
     {
         using N.gp_Ax2 aA = Oracle.ToNative(theA);
         using var aMaker = new N.BRepPrimAPI_MakeSphere(aA, r);
         return aMaker.Shape();
     }
 
-    private static N.TopoDS_Shape Torus(in gp_Ax2 theA, double r1, double r2)
+    private static N.TopoDS_Shape Torus(in Frame3D theA, double r1, double r2)
     {
         using N.gp_Ax2 aA = Oracle.ToNative(theA);
         using var aMaker = new N.BRepPrimAPI_MakeTorus(aA, r1, r2);
@@ -888,7 +890,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         for (int i = 0; i < theCount; i++)
         {
             bool isAligned = theO.Int(0, 1) == 0;
-            gp_Ax2 aF = Frame(theO, isAligned);
+            Frame3D aF = Frame(theO, isAligned);
             double a = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             double b = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             double c = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
@@ -968,10 +970,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     break;
                 default:
                 {
-                    gp_Ax2 aG = Frame(theO, false);
-                    aG = new gp_Ax2(aF.Location().Translated(new gp_Vec(theO.Real(-3, 3), theO.Real(-3, 3), theO.Real(-3, 3))), aG.Direction(), aG.XDirection());
+                    Frame3D aG = Frame(theO, false);
+                    aG = new Frame3D(aF.Location().Translated(new Vector3D(theO.Real(-3, 3), theO.Real(-3, 3), theO.Real(-3, 3))), aG.Direction(), aG.XDirection());
                     aName = "random";
-                    N.TopoDS_Shape First(int k, in gp_Ax2 theA) => k switch
+                    N.TopoDS_Shape First(int k, in Frame3D theA) => k switch
                     {
                         0 => Box(theA, a, b, c),
                         1 => Cylinder(theA, a / 2, c),

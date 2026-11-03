@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
@@ -12,14 +15,14 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 public class BOPTools_ParallelContextTests
 {
     /// <summary>One face's queries, as a BOPAlgo solver would make them through its context.</summary>
-    private sealed class FaceSolver(TopoDS_Face theFace, TopoDS_Solid theSolid, gp_Pnt[] thePoints)
+    private sealed class FaceSolver(TopoDS_Face theFace, TopoDS_Solid theSolid, Point3D[] thePoints)
         : BOPTools_Parallel.IContextSolver<IntTools_Context>
     {
         private IntTools_Context? myContext;
 
         public TopoDS_Face Face => theFace;
         public TopoDS_Solid Solid => theSolid;
-        public gp_Pnt[] Points => thePoints;
+        public Point3D[] Points => thePoints;
 
         public FaceSolver Fresh() => new(theFace, theSolid, thePoints);
 
@@ -30,14 +33,14 @@ public class BOPTools_ParallelContextTests
         public void Perform()
         {
             IntTools_Context aCtx = myContext!;
-            gp_Pnt aP = new();
-            gp_Pnt2d aP2D = new();
+            Point3D aP = new();
+            Point2D aP2D = new();
             int iErr = BOPTools_AlgoTools3D.PointInFace(theFace, ref aP, ref aP2D, aCtx);
             Result.Add(iErr);
             Result.Add(BitConverter.DoubleToInt64Bits(aP.X()));
             Result.Add(BitConverter.DoubleToInt64Bits(aP2D.Y()));
             Result.Add((long)aCtx.StatePointFace(theFace, aP2D));
-            foreach (gp_Pnt aPnt in thePoints)
+            foreach (Point3D aPnt in thePoints)
             {
                 Result.Add(aCtx.IsValidPointForFace(aPnt, theFace, 1.0e-3) ? 1 : 0);
                 Result.Add((long)BOPTools_AlgoTools.ComputeState(aPnt, theSolid, 1.0e-7, aCtx));
@@ -51,17 +54,17 @@ public class BOPTools_ParallelContextTests
     private static List<FaceSolver> MakeSolvers(TopoDS_Shape theShape, int theSeed)
     {
         TopoDS_Solid aSolid = TopoDS.Solid(new TopExp_Explorer(theShape, TopAbs_SOLID).Current());
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
         Random aRnd = new(theSeed);
         List<FaceSolver> aSolvers = [];
         foreach (TopoDS_Face aF in BOPToolsTestShapes.Faces(theShape))
         {
-            gp_Pnt[] aPnts = new gp_Pnt[3];
+            Point3D[] aPnts = new Point3D[3];
             for (int i = 0; i < aPnts.Length; i++)
             {
-                aPnts[i] = new gp_Pnt(x0 + (x1 - x0) * aRnd.NextDouble(), y0 + (y1 - y0) * aRnd.NextDouble(),
+                aPnts[i] = new Point3D(x0 + (x1 - x0) * aRnd.NextDouble(), y0 + (y1 - y0) * aRnd.NextDouble(),
                                       z0 + (z1 - z0) * aRnd.NextDouble());
             }
             aSolvers.Add(new FaceSolver(aF, aSolid, aPnts));
@@ -89,14 +92,14 @@ public class BOPTools_ParallelContextTests
                                                 .First(p => p.Name == theName).Shape;
         List<FaceSolver> aTemplate = MakeSolvers(aShape, 6401);
         List<List<long>> aSerial;
-        using (OSD_Parallel.ForceSerialScope())
+        using (OsdParallel.ForceSerialScope())
         {
             aSerial = Run(aTemplate, true);
         }
         Assert.Equal(aSerial, Run(aTemplate, false));
         foreach (int aDegree in new[] { 2, Environment.ProcessorCount })
         {
-            using (OSD_Parallel.MaxDegreeOfParallelismScope(aDegree))
+            using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
             {
                 for (int aRepeat = 0; aRepeat < 1; aRepeat++)
                 {

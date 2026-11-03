@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +14,7 @@ namespace Occt;
 /// BRep).
 /// </summary>
 /// <remarks>
-/// As in OCCT, the set can hold the null surface once (<see cref="Add"/> adds it). The surfaces that <see cref="Read(Stream, Message_ProgressRange)"/>
+/// As in OCCT, the set can hold the null surface once (<see cref="Add"/> adds it). The surfaces that <see cref="Read(Stream, ProgressRange)"/>
 /// creates are frozen.
 /// </remarks>
 public class BinTools_SurfaceSet
@@ -51,7 +55,7 @@ public class BinTools_SurfaceSet
     }
 
     /// <summary>The surface of index I (null for the null entry).</summary>
-    /// <exception cref="Standard_OutOfRange">There is no surface of index I.</exception>
+    /// <exception cref="OutOfRangeException">There is no surface of index I.</exception>
     public Geom_Surface? Surface(int I)
     {
         return myMap[I] as Geom_Surface;
@@ -69,7 +73,7 @@ public class BinTools_SurfaceSet
     private static void Write(BinTools_OStream OS, Geom_Plane S)
     {
         OS = OS << PLANE;
-        gp_Pln P = S.Pln();
+        Plane3D P = S.Pln();
         OS = OS << P.Location(); // Pnt
         OS = OS << P.Axis().Direction();
         OS = OS << P.XAxis().Direction();
@@ -79,7 +83,7 @@ public class BinTools_SurfaceSet
     private static void Write(BinTools_OStream OS, Geom_CylindricalSurface S)
     {
         OS = OS << CYLINDER;
-        gp_Cylinder P = S.Cylinder();
+        Cylinder P = S.Cylinder();
         OS = OS << P.Location(); // Pnt
         OS = OS << P.Axis().Direction();
         OS = OS << P.XAxis().Direction();
@@ -90,7 +94,7 @@ public class BinTools_SurfaceSet
     private static void Write(BinTools_OStream OS, Geom_ConicalSurface S)
     {
         OS = OS << CONE;
-        gp_Cone P = S.Cone();
+        Cone P = S.Cone();
         OS = OS << P.Location(); // Pnt
         OS = OS << P.Axis().Direction();
         OS = OS << P.XAxis().Direction();
@@ -102,7 +106,7 @@ public class BinTools_SurfaceSet
     private static void Write(BinTools_OStream OS, Geom_SphericalSurface S)
     {
         OS = OS << SPHERE;
-        gp_Sphere P = S.Sphere();
+        Sphere P = S.Sphere();
         OS = OS << P.Location(); // Pnt
         OS = OS << P.Position().Axis().Direction();
         OS = OS << P.XAxis().Direction();
@@ -113,7 +117,7 @@ public class BinTools_SurfaceSet
     private static void Write(BinTools_OStream OS, Geom_ToroidalSurface S)
     {
         OS = OS << TORUS;
-        gp_Torus P = S.Torus();
+        Torus P = S.Torus();
         OS = OS << P.Location(); // Pnt
         OS = OS << P.Axis().Direction();
         OS = OS << P.XAxis().Direction();
@@ -231,7 +235,7 @@ public class BinTools_SurfaceSet
     }
 
     /// <summary>Writes a surface (its type byte, then its data).</summary>
-    /// <exception cref="Standard_Failure">The surface is of a type the format doesn't know.</exception>
+    /// <exception cref="FailureException">The surface is of a type the format doesn't know.</exception>
     public static void WriteSurface(Geom_Surface S, BinTools_OStream OS)
     {
         Type TheType = S.GetType();
@@ -283,7 +287,7 @@ public class BinTools_SurfaceSet
             }
             else
             {
-                throw new Standard_Failure("UNKNOWN SURFACE TYPE");
+                throw new FailureException("UNKNOWN SURFACE TYPE");
             }
         }
         catch (Exception anException) when (BinTools.IsCaught(anException))
@@ -293,10 +297,10 @@ public class BinTools_SurfaceSet
     }
 
     /// <summary>Writes the set ("Surfaces", the count, then each surface).</summary>
-    public void Write(Stream OS, Message_ProgressRange theRange = default)
+    public void Write(Stream OS, ProgressRange theRange = default)
     {
         int i, nbsurf = myMap.Extent();
-        using var aPS = new Message_ProgressScope(theRange, "Writing surfaces", nbsurf);
+        using var aPS = new ProgressScope(theRange, "Writing surfaces", nbsurf);
         BinTools.PutText(OS, "Surfaces ");
         BinTools.PutText(OS, nbsurf);
         BinTools.PutText(OS, "\n");
@@ -305,19 +309,19 @@ public class BinTools_SurfaceSet
         {
             // OCCT dereferences the null entry outside its try block, and crashes; the port throws
             Geom_Surface aSurface = myMap[i] as Geom_Surface
-                                    ?? throw new Standard_Failure("BinTools_SurfaceSet::Write: a null surface");
+                                    ?? throw new FailureException("BinTools_SurfaceSet::Write: a null surface");
             WriteSurface(aSurface, aStream);
         }
     }
 
-    private static void Read(Stream IS, out gp_Ax3 A3)
+    private static void Read(Stream IS, out CoordinateSystem A3)
     {
-        gp_Dir A = new(gp_Dir.D.X), AX = new(gp_Dir.D.X), AY = new(gp_Dir.D.X);
-        BinTools_CurveSet.Read(IS, out gp_Pnt P);
+        Direction3D A = new(Direction3D.D.X), AX = new(Direction3D.D.X), AY = new(Direction3D.D.X);
+        BinTools_CurveSet.Read(IS, out Point3D P);
         BinTools_CurveSet.Read(IS, ref A);
         BinTools_CurveSet.Read(IS, ref AX);
         BinTools_CurveSet.Read(IS, ref AY);
-        gp_Ax3 ax3 = new(P, A, AX);
+        CoordinateSystem ax3 = new(P, A, AX);
         if (AY.DotCross(A, AX) < 0)
         {
             ax3.YReverse();
@@ -328,20 +332,20 @@ public class BinTools_SurfaceSet
 
     private static Geom_Plane ReadPlane(Stream IS)
     {
-        Read(IS, out gp_Ax3 A);
+        Read(IS, out CoordinateSystem A);
         return new Geom_Plane(A);
     }
 
     private static Geom_CylindricalSurface ReadCylinder(Stream IS)
     {
-        Read(IS, out gp_Ax3 A);
+        Read(IS, out CoordinateSystem A);
         BinTools.GetReal(IS, out double R);
         return new Geom_CylindricalSurface(A, R);
     }
 
     private static Geom_ConicalSurface ReadCone(Stream IS)
     {
-        Read(IS, out gp_Ax3 A);
+        Read(IS, out CoordinateSystem A);
         BinTools.GetReal(IS, out double R);
         BinTools.GetReal(IS, out double Ang);
         return new Geom_ConicalSurface(A, Ang, R);
@@ -349,14 +353,14 @@ public class BinTools_SurfaceSet
 
     private static Geom_SphericalSurface ReadSphere(Stream IS)
     {
-        Read(IS, out gp_Ax3 A);
+        Read(IS, out CoordinateSystem A);
         BinTools.GetReal(IS, out double R);
         return new Geom_SphericalSurface(A, R);
     }
 
     private static Geom_ToroidalSurface ReadTorus(Stream IS)
     {
-        Read(IS, out gp_Ax3 A);
+        Read(IS, out CoordinateSystem A);
         BinTools.GetReal(IS, out double R1);
         BinTools.GetReal(IS, out double R2);
         return new Geom_ToroidalSurface(A, R1, R2);
@@ -364,7 +368,7 @@ public class BinTools_SurfaceSet
 
     private static Geom_SurfaceOfLinearExtrusion ReadLinearExtrusion(Stream IS, int theDepth)
     {
-        gp_Dir D = new(gp_Dir.D.X);
+        Direction3D D = new(Direction3D.D.X);
         BinTools_CurveSet.Read(IS, ref D);
         BinTools_CurveSet.ReadCurve(IS, out Geom_Curve? C, theDepth + 1);
         return new Geom_SurfaceOfLinearExtrusion(C!, D);
@@ -372,11 +376,11 @@ public class BinTools_SurfaceSet
 
     private static Geom_SurfaceOfRevolution ReadRevolution(Stream IS, int theDepth)
     {
-        gp_Dir D = new(gp_Dir.D.X);
-        BinTools_CurveSet.Read(IS, out gp_Pnt P);
+        Direction3D D = new(Direction3D.D.X);
+        BinTools_CurveSet.Read(IS, out Point3D P);
         BinTools_CurveSet.Read(IS, ref D);
         BinTools_CurveSet.ReadCurve(IS, out Geom_Curve? C, theDepth + 1);
-        return new Geom_SurfaceOfRevolution(C!, new gp_Ax1(P, D));
+        return new Geom_SurfaceOfRevolution(C!, new Axis3D(P, D));
     }
 
     private static Geom_BezierSurface ReadBezier(Stream IS)
@@ -393,7 +397,7 @@ public class BinTools_SurfaceSet
         // OCCT.NET: untrusted input
         BinTools.CheckCount(IS, (udegree + 1L) * (vdegree + 1L), urational || vrational ? 32 : 24, "poles");
 
-        var poles = new NCollection_Array2<gp_Pnt>(1, udegree + 1, 1, vdegree + 1);
+        var poles = new NCollection_Array2<Point3D>(1, udegree + 1, 1, vdegree + 1);
         var weights = new NCollection_Array2<double>(1, udegree + 1, 1, vdegree + 1);
 
         int i, j;
@@ -440,7 +444,7 @@ public class BinTools_SurfaceSet
         BinTools.CheckCount(IS, (long)nbupoles * nbvpoles, urational || vrational ? 32 : 24, "poles");
         BinTools.CheckCount(IS, (long)nbuknots + nbvknots, 12, "knots");
 
-        var poles = new NCollection_Array2<gp_Pnt>(1, nbupoles, 1, nbvpoles);
+        var poles = new NCollection_Array2<Point3D>(1, nbupoles, 1, nbvpoles);
         var weights = new NCollection_Array2<double>(1, nbupoles, 1, nbvpoles);
 
         int i, j;
@@ -515,7 +519,7 @@ public class BinTools_SurfaceSet
     }
 
     /// <summary>Reads a surface written by <see cref="WriteSurface"/>. The surface is new and not frozen.</summary>
-    /// <exception cref="Standard_Failure">The surface can't be read.</exception>
+    /// <exception cref="FailureException">The surface can't be read.</exception>
     public static Stream ReadSurface(Stream IS, out Geom_Surface? S) => ReadSurface(IS, out S, 0);
 
     internal static Stream ReadSurface(Stream IS, out Geom_Surface? S, int theDepth)
@@ -526,7 +530,7 @@ public class BinTools_SurfaceSet
             if (theDepth > BinTools.MaxGeometryNesting)
             {
                 // OCCT.NET: untrusted input: OCCT recurses without limit
-                throw new Storage_StreamFormatError("BinTools_SurfaceSet: surfaces nested too deeply");
+                throw new StreamFormatErrorException("BinTools_SurfaceSet: surfaces nested too deeply");
             }
 
             byte stype = (byte)BinTools.Get(IS);
@@ -579,7 +583,7 @@ public class BinTools_SurfaceSet
                 default:
                 {
                     S = null;
-                    throw new Standard_Failure("UNKNOWN SURFACE TYPE");
+                    throw new FailureException("UNKNOWN SURFACE TYPE");
                 }
             }
         }
@@ -592,19 +596,19 @@ public class BinTools_SurfaceSet
         return IS;
     }
 
-    /// <summary>Reads a set written by <see cref="Write(Stream, Message_ProgressRange)"/>, adding its surfaces (frozen) to this one.</summary>
-    /// <exception cref="Standard_Failure">The stream doesn't hold a surface table, or a surface can't be read.</exception>
-    public void Read(Stream IS, Message_ProgressRange theRange = default)
+    /// <summary>Reads a set written by <see cref="Write(Stream, ProgressRange)"/>, adding its surfaces (frozen) to this one.</summary>
+    /// <exception cref="FailureException">The stream doesn't hold a surface table, or a surface can't be read.</exception>
+    public void Read(Stream IS, ProgressRange theRange = default)
     {
         string? buffer = BinTools.ReadWord(IS);
         if (buffer is null || buffer != "Surfaces")
         {
-            throw new Standard_Failure("BinTools_SurfaceSet::Read:  Not a surface table" + "\n");
+            throw new FailureException("BinTools_SurfaceSet::Read:  Not a surface table" + "\n");
         }
 
         int i, nbsurf;
         nbsurf = BinTools.ReadFormattedInteger(IS);
-        using var aPS = new Message_ProgressScope(theRange, "Reading surfaces", nbsurf);
+        using var aPS = new ProgressScope(theRange, "Reading surfaces", nbsurf);
         BinTools.Get(IS); // remove <lf>
         // OCCT.NET: untrusted input: a surface takes at least 31 bytes (a Bezier surface of degree 0)
         BinTools.CheckCount(IS, nbsurf, 31, "surfaces");

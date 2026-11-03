@@ -193,7 +193,7 @@ public sealed class MAT2d_Mat2d
                         edge.Distance(atool.IntersectBisector(firstbisector, secondbisector, ref intersectionpoint));
                         edge.IntersectionPoint(intersectionpoint);
 
-                        if (edge.Distance() == Precision.Infinite())
+                        if (edge.Distance() == global::Kerf.Engine.Foundation.Precision.Infinite())
                         {
                             if (firstbisector.IndexNumber() >= beginbisector
                                 || secondbisector.IndexNumber() >= beginbisector)
@@ -530,7 +530,7 @@ public sealed class MAT2d_Mat2d
                         edge.Distance(atool.IntersectBisector(firstbisector, secondbisector, ref intersectionpoint));
                         edge.IntersectionPoint(intersectionpoint);
 
-                        if (edge.Distance() == Precision.Infinite())
+                        if (edge.Distance() == global::Kerf.Engine.Foundation.Precision.Infinite())
                         {
                             if (firstbisector.IndexNumber() >= beginbisector
                                 || secondbisector.IndexNumber() >= beginbisector)
@@ -704,8 +704,8 @@ public sealed class MAT2d_Mat2d
                 previousedge = currentbisector.FirstEdge();
                 theedgelist!.Init(previousedge);
                 previousedge.Distance(-1.0);
-                previousedge.FirstBisector().SecondParameter(Precision.Infinite());
-                previousedge.SecondBisector().FirstParameter(Precision.Infinite());
+                previousedge.FirstBisector().SecondParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
+                previousedge.SecondBisector().FirstParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
 
                 // Cancelling the children of <currentbisector>.
                 while (currentbisectorlist.More())
@@ -721,14 +721,14 @@ public sealed class MAT2d_Mat2d
                     previousedge.SecondBisector(currentbisector);
 
                     // Cancelling the intersection: the children that made it are extended to infinity.
-                    currentbisector.FirstParameter(Precision.Infinite());
-                    currentbisector.SecondParameter(Precision.Infinite());
+                    currentbisector.FirstParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
+                    currentbisector.SecondParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
 
                     atool.TrimBisector(currentbisector);
 
                     currentedge.Distance(-1.0);
-                    currentedge.FirstBisector().SecondParameter(Precision.Infinite());
-                    currentedge.SecondBisector().FirstParameter(Precision.Infinite());
+                    currentedge.FirstBisector().SecondParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
+                    currentedge.SecondBisector().FirstParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
 
                     previousedge = currentedge;
                     currentbisectorlist.Next();
@@ -761,18 +761,18 @@ public sealed class MAT2d_Mat2d
     private static void ParamSigns(MAT2d_Tool2d atool, MAT_Bisector currentbisector, double toleranceofconfusion,
         out int parama, out int paramb)
     {
-        if (currentbisector.FirstParameter() == Precision.Infinite()
-            && currentbisector.SecondParameter() == Precision.Infinite())
+        if (currentbisector.FirstParameter() == global::Kerf.Engine.Foundation.Precision.Infinite()
+            && currentbisector.SecondParameter() == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             parama = -1;
             paramb = -1;
         }
-        else if (currentbisector.FirstParameter() == Precision.Infinite())
+        else if (currentbisector.FirstParameter() == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             parama = -1;
             paramb = 1;
         }
-        else if (currentbisector.SecondParameter() == Precision.Infinite())
+        else if (currentbisector.SecondParameter() == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             paramb = -1;
             parama = 1;
@@ -878,8 +878,8 @@ public sealed class MAT2d_Mat2d
         theedges.PreviousItem().Distance(-1);
         theedges.Current().Distance(-1);
 
-        theedges.PreviousItem().FirstBisector().SecondParameter(Precision.Infinite());
-        theedges.Current().SecondBisector().FirstParameter(Precision.Infinite());
+        theedges.PreviousItem().FirstBisector().SecondParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
+        theedges.Current().SecondBisector().FirstParameter(global::Kerf.Engine.Foundation.Precision.Infinite());
     }
 
     // Step 3 when the main loop ended without interruption: if two edges are left, their last two bisectors
@@ -964,11 +964,11 @@ public sealed class MAT2d_Mat2d
         MAT_Bisector[] firstbisectortoremove = [firstbisectortoremove1, firstbisectortoremove2];
         MAT_Bisector?[] lastbisectortoremove = [lastbisectortoremove1, lastbisectortoremove2];
 
-        if (distance1 < Precision.Infinite() && distance2 == Precision.Infinite())
+        if (distance1 < global::Kerf.Engine.Foundation.Precision.Infinite() && distance2 == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             index = 0;
         }
-        else if (distance2 < Precision.Infinite() && distance1 == Precision.Infinite())
+        else if (distance2 < global::Kerf.Engine.Foundation.Precision.Infinite() && distance1 == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             index = 1;
         }
@@ -1022,8 +1022,8 @@ public sealed class MAT2d_Mat2d
         MAT_Bisector[] firstbisectortoremove = new MAT_Bisector[2];
         MAT_Bisector?[] lastbisectortoremove = new MAT_Bisector?[2];
 
-        distance[0] = Precision.Infinite();
-        distance[1] = Precision.Infinite();
+        distance[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
+        distance[1] = global::Kerf.Engine.Foundation.Precision.Infinite();
 
         for (bisectornumber = 0; bisectornumber < 2; bisectornumber++)
         {
@@ -1095,7 +1095,7 @@ public sealed class MAT2d_Mat2d
                     previousbisector.SecondParameter(saveparameter);
                 }
 
-                if (distant < Precision.Infinite())
+                if (distant < global::Kerf.Engine.Foundation.Precision.Infinite())
                 {
                     distance[bisectornumber] = distant;
                     lastbisectortoremove[bisectornumber] = lastbisector;

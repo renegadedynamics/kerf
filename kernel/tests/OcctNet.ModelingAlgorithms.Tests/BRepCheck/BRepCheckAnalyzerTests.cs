@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Text;
 using OcctNet.ModelingData.Tests;
 using static Occt.BRepCheck_Status;
@@ -28,20 +29,20 @@ public class BRepCheckAnalyzerTests
     {
         var aB = new BRep_Builder();
         TopoDS_Face aF = new();
-        aB.MakeFace(ref aF, theSurface ?? new Geom_Plane(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))), Tol);
+        aB.MakeFace(ref aF, theSurface ?? new Geom_Plane(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         return aF;
     }
 
-    private static TopoDS_Vertex V(double x, double y) => TestShapes.Vertex(new gp_Pnt(x, y, 0));
+    private static TopoDS_Vertex V(double x, double y) => TestShapes.Vertex(new Point3D(x, y, 0));
 
     /// <summary>A segment between two vertices of the plane z = 0 with its pcurve on the face (UV = XY).</summary>
     private static TopoDS_Edge Seg(in TopoDS_Face theFace, in TopoDS_Vertex theV1, in TopoDS_Vertex theV2, double theShift = 0)
     {
         var aB = new BRep_Builder();
-        gp_Pnt aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
+        Point3D aP1 = BRep_Tool.Pnt(theV1), aP2 = BRep_Tool.Pnt(theV2);
         TopoDS_Edge anE = TestShapes.Edge(theV1, theV2);
         aB.UpdateEdge(anE,
-                      new Geom2d_Line(new gp_Pnt2d(aP1.X(), aP1.Y() + theShift), new gp_Dir2d(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
+                      new Geom2d_Line(new Point2D(aP1.X(), aP1.Y() + theShift), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
                       theFace, Tol);
         return anE;
     }
@@ -183,7 +184,7 @@ public class BRepCheckAnalyzerTests
         Assert.Equal(aDump, Dump(aParallel, theShape));
         Assert.Equal(aSerial.IsValid(), aParallel.IsValid());
         // and the parallel analysis run by OSD_Parallel's serial fallback (no threads, as in WebAssembly)
-        using (OSD_Parallel.ForceSerialScope())
+        using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
         {
             var aFallback = new BRepCheck_Analyzer(theShape, theGeomControls, true, theIsExact);
             Assert.Equal(aDump, Dump(aFallback, theShape));
@@ -215,7 +216,7 @@ public class BRepCheckAnalyzerTests
         {
             return theA.Result(theSub);
         }
-        catch (Standard_NoSuchObject)
+        catch (global::Kerf.Engine.Foundation.NoSuchObjectException)
         {
             return null;
         }
@@ -265,10 +266,10 @@ public class BRepCheckAnalyzerTests
     [Fact]
     public void The_analyzer_checks_a_null_shape_never()
     {
-        Assert.Throws<Standard_NullObject>(() => new BRepCheck_Analyzer(new TopoDS_Shape()));
+        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepCheck_Analyzer(new TopoDS_Shape()));
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var anA = new BRepCheck_Analyzer(aBox);
-        Assert.ThrowsAny<Standard_Failure>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
         anA.SetParallel(true);
         anA.SetExactMethod(true);
         anA.Init(aBox, false);
@@ -284,9 +285,9 @@ public class BRepCheckAnalyzerTests
     public void A_vertex_off_its_edge_is_an_invalid_point_on_curve()
     {
         // the line goes from (0,0,0) to (10,0,0); the second vertex is 0.1 above its end
-        var aLine = new Geom_Line(new gp_Pnt(), new gp_Dir(1, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt());
-        TopoDS_Vertex aV2 = TestShapes.Vertex(new gp_Pnt(10, 0, 0.1));
+        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D());
+        TopoDS_Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0.1));
         TopoDS_Edge anE = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV2));
         BRepCheck_Analyzer anA = Analyze(anE);
         Assert.False(anA.IsValid());
@@ -295,12 +296,12 @@ public class BRepCheckAnalyzerTests
         Assert.Equal([BRepCheck_NoError], StatusIn(anA, aV1, anE));
         var aCheck = (BRepCheck_Vertex)TryResult(anA, aV2.Oriented(TopAbs_REVERSED))!;
         // a vertex without point representations: its own tolerance, with OCCT's 5% margin on the square
-        Assert.Equal(Math.Sqrt(Precision.Confusion() * Precision.Confusion() * 1.05), aCheck.Tolerance(), 1e-20);
+        Assert.Equal(Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion() * 1.05), aCheck.Tolerance(), 1e-20);
 
         // within a larger tolerance
         var aB = new BRep_Builder();
         TopoDS_Vertex aV3 = new();
-        aB.MakeVertex(ref aV3, new gp_Pnt(10, 0, 0.1), 0.2);
+        aB.MakeVertex(ref aV3, new Point3D(10, 0, 0.1), 0.2);
         TopoDS_Edge anE2 = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV3));
         Assert.True(Analyze(anE2).IsValid());
     }
@@ -309,7 +310,7 @@ public class BRepCheckAnalyzerTests
     public void Edge_minimum_finds_bad_flags_ranges_and_curves()
     {
         var aB = new BRep_Builder();
-        var aLine = new Geom_Line(new gp_Pnt(), new gp_Dir(1, 0, 0));
+        var aLine = new Geom_Line(new Point3D(), new Direction3D(1, 0, 0));
 
         // a reversed range
         TopoDS_Edge aRange = TestShapes.Edge(aLine, 0, 10);
@@ -338,9 +339,9 @@ public class BRepCheckAnalyzerTests
         Assert.Equal([BRepCheck_InvalidSameParameterFlag], StatusOf(Analyze(aFlags), aFlags));
 
         // a range beyond a bounded curve; a trimmed curve is measured against its basis curve, as OCCT does
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 2);
-        aPoles[1] = new gp_Pnt();
-        aPoles[2] = new gp_Pnt(10, 0, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 2);
+        aPoles[1] = new Point3D();
+        aPoles[2] = new Point3D(10, 0, 0);
         TopoDS_Edge aBeyond = TestShapes.Edge(new Geom_BezierCurve(aPoles), 0, 1);
         aB.Range(aBeyond, -1, 1);
         aBeyond = TestShapes.Frozen(aBeyond);
@@ -356,7 +357,7 @@ public class BRepCheckAnalyzerTests
             var aBB = new BRep_Builder();
             TopoDS_Edge anE = new();
             aBB.MakeEdge(ref anE);
-            aBB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), f, Tol);
+            aBB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), f, Tol);
             aBB.Add(anE, v1.Oriented(TopAbs_FORWARD));
             aBB.Add(anE, v2.Oriented(TopAbs_REVERSED));
             aBB.Range(anE, 0, 10);
@@ -415,20 +416,20 @@ public class BRepCheckAnalyzerTests
     {
         // TestShapes.CylinderFace without the top circle's pcurve
         var aB = new BRep_Builder();
-        var aSurf = new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 2);
+        var aSurf = new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2);
         double aTwoPi = 2.0 * Math.PI;
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new gp_Pnt(2, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(2, 0, 3));
-        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 2),
+        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(2, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(2, 0, 3));
+        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
                                               0.0, aTwoPi, aV0, aV0);
-        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 3), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 2),
+        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2),
                                            0.0, aTwoPi, aV1, aV1);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 0.0, 3, aV0, aV1);
+        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0.0, 3, aV0, aV1);
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aSurf, Tol);
-        aB.UpdateEdge(aBottom, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aF, Tol);
-        aB.UpdateEdge(aSeam, new Geom2d_Line(new gp_Pnt2d(aTwoPi, 0), new gp_Dir2d(0, 1)),
-                      new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)), aF, Tol);
+        aB.UpdateEdge(aBottom, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aF, Tol);
+        aB.UpdateEdge(aSeam, new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                      new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)), aF, Tol);
         TopoDS_Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, aBottom);
@@ -462,7 +463,7 @@ public class BRepCheckAnalyzerTests
         TopoDS_Solid aRepeated = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Append(aFaces[0]), true)));
         aCheck.InContext(aRepeated);
         Assert.Equal([BRepCheck_InvalidMultiConnexity], L(aCheck.StatusOnShape(aRepeated)));
-        TopoDS_Edge anOther = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(), new gp_Pnt(1, 1, 1)));
+        TopoDS_Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 1, 1)));
         aCheck.InContext(anOther);
         Assert.Equal([BRepCheck_SubshapeNotInShape], L(aCheck.StatusOnShape(anOther)));
         Assert.Equal(BRepCheck_NoError, aCheck.CheckPolygonOnTriangulation(aFree));
@@ -609,7 +610,7 @@ public class BRepCheckAnalyzerTests
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         TopoDS_Shell aShell = FirstShell(aBox);
-        TopoDS_Shape aFar = ClassificationTestShapes.Translated(aShell, new gp_Vec(5, 0, 0));
+        TopoDS_Shape aFar = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0));
 
         // two disjoint closed shells: two growths, and one outside the other
         TopoDS_Solid aTwo = TestShapes.Frozen(SolidOf(aShell, aFar));
@@ -622,7 +623,7 @@ public class BRepCheckAnalyzerTests
         Assert.Equal([BRepCheck_InvalidImbricationOfShells], StatusOf(Analyze(aShared), aShared));
 
         // a stray vertex, internal or not
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt(0.5, 0.5, 0.5));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0.5, 0.5));
         TopoDS_Solid aStray = TestShapes.Frozen(SolidOf(aShell, aV));
         Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusOf(Analyze(aStray), aStray));
         TopoDS_Solid anInternal = TestShapes.Frozen(SolidOf(aShell, aV.Oriented(TopAbs_INTERNAL)));
@@ -634,7 +635,7 @@ public class BRepCheckAnalyzerTests
         Assert.Contains(BRepCheck_BadOrientationOfSubshape, StatusOf(Analyze(anOnlyInternal), anOnlyInternal));
 
         // a box with a void is valid; a void outside is not in the shape
-        TopoDS_Shape aFarVoid = ClassificationTestShapes.Translated(aShell, new gp_Vec(5, 0, 0)).Reversed();
+        TopoDS_Shape aFarVoid = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0)).Reversed();
         TopoDS_Solid aVoidOutside = TestShapes.Frozen(SolidOf(aShell, aFarVoid));
         Assert.Equal([BRepCheck_SubshapeNotInShape], StatusOf(Analyze(aVoidOutside), aVoidOutside));
         var aSolidCheck = new BRepCheck_Solid(aVoidOutside);

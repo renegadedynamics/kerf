@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2009-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Up to two indices: the triangles connected to a link. Storing a third throws.</summary>
@@ -20,7 +22,7 @@ public partial struct BRepMesh_PairOfIndex : IEquatable<BRepMesh_PairOfIndex>
     /// <summary>Empties the pair.</summary>
     internal void Clear() => myIndex0 = myIndex1 = -1;
 
-    /// <summary>Appends an index; throws <see cref="Standard_OutOfRange"/> if the pair is full.</summary>
+    /// <summary>Appends an index; throws <see cref="OutOfRangeException"/> if the pair is full.</summary>
     internal void Append(int theIndex)
     {
         if (myIndex0 < 0)
@@ -31,19 +33,19 @@ public partial struct BRepMesh_PairOfIndex : IEquatable<BRepMesh_PairOfIndex>
         {
             if (myIndex1 >= 0)
             {
-                throw new Standard_OutOfRange("BRepMesh_PairOfIndex::Append, more than two index to store");
+                throw new OutOfRangeException("BRepMesh_PairOfIndex::Append, more than two index to store");
             }
 
             myIndex1 = theIndex;
         }
     }
 
-    /// <summary>Prepends an index; throws <see cref="Standard_OutOfRange"/> if the pair is full.</summary>
+    /// <summary>Prepends an index; throws <see cref="OutOfRangeException"/> if the pair is full.</summary>
     internal void Prepend(int theIndex)
     {
         if (myIndex1 >= 0)
         {
-            throw new Standard_OutOfRange("BRepMesh_PairOfIndex::Prepend, more than two index to store");
+            throw new OutOfRangeException("BRepMesh_PairOfIndex::Prepend, more than two index to store");
         }
 
         myIndex1 = myIndex0;
@@ -62,23 +64,23 @@ public partial struct BRepMesh_PairOfIndex : IEquatable<BRepMesh_PairOfIndex>
     /// <summary>The last index stored.</summary>
     public readonly int LastIndex() => myIndex1 < 0 ? myIndex0 : myIndex1;
 
-    /// <summary>The index at position 1 or 2; throws <see cref="Standard_OutOfRange"/> otherwise.</summary>
+    /// <summary>The index at position 1 or 2; throws <see cref="OutOfRangeException"/> otherwise.</summary>
     public readonly int Index(int thePairPos)
     {
         if (thePairPos != 1 && thePairPos != 2)
         {
-            throw new Standard_OutOfRange("BRepMesh_PairOfIndex::Index, requested index is out of range");
+            throw new OutOfRangeException("BRepMesh_PairOfIndex::Index, requested index is out of range");
         }
 
         return thePairPos == 1 ? myIndex0 : myIndex1;
     }
 
-    /// <summary>Sets the index at position 1 or 2; throws <see cref="Standard_OutOfRange"/> otherwise.</summary>
+    /// <summary>Sets the index at position 1 or 2; throws <see cref="OutOfRangeException"/> otherwise.</summary>
     internal void SetIndex(int thePairPos, int theIndex)
     {
         if (thePairPos != 1 && thePairPos != 2)
         {
-            throw new Standard_OutOfRange("BRepMesh_PairOfIndex::SetIndex, requested index is out of range");
+            throw new OutOfRangeException("BRepMesh_PairOfIndex::SetIndex, requested index is out of range");
         }
 
         if (thePairPos == 1)
@@ -91,12 +93,12 @@ public partial struct BRepMesh_PairOfIndex : IEquatable<BRepMesh_PairOfIndex>
         }
     }
 
-    /// <summary>Removes the index at position 1 or 2; throws <see cref="Standard_OutOfRange"/> otherwise.</summary>
+    /// <summary>Removes the index at position 1 or 2; throws <see cref="OutOfRangeException"/> otherwise.</summary>
     internal void RemoveIndex(int thePairPos)
     {
         if (thePairPos != 1 && thePairPos != 2)
         {
-            throw new Standard_OutOfRange("BRepMesh_PairOfIndex::RemoveIndex, requested index is out of range");
+            throw new OutOfRangeException("BRepMesh_PairOfIndex::RemoveIndex, requested index is out of range");
         }
 
         if (thePairPos == 1)

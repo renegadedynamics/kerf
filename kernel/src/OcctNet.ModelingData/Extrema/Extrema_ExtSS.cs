@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -36,7 +38,7 @@ public class Extrema_ExtSS
     private double mytolS1;
     private double mytolS2;
     private readonly NCollection_Sequence<double> mySqDist = new();
-    private GeomAbs_SurfaceType myStype;
+    private SurfaceKind myStype;
 
     /// <summary>An empty algorithm.</summary>
     public Extrema_ExtSS()
@@ -54,7 +56,7 @@ public class Extrema_ExtSS
         myvsup2 = 0.0;
         mytolS1 = 0.0;
         mytolS2 = 0.0;
-        myStype = GeomAbs_OtherSurface;
+        myStype = OtherSurface;
     }
 
     /// <summary>Computes the extrema between S1 and S2 over their whole ranges.</summary>
@@ -91,7 +93,7 @@ public class Extrema_ExtSS
     {
         if (myS2 is null)
         {
-            throw new StdFail_NotDone("Extrema_ExtSS: the second surface is not initialized");
+            throw new NotDoneException("Extrema_ExtSS: the second surface is not initialized");
         }
         myuinf1 = Uinf1;
         myusup1 = Usup1;
@@ -102,16 +104,16 @@ public class Extrema_ExtSS
         myPOnS2.Clear();
         mySqDist.Clear();
         int i;
-        GeomAbs_SurfaceType myS1type = S1.GetType();
+        SurfaceKind myS1type = S1.GetType();
         const int NbU = 20, NbV = 20;
 
         switch (myS1type)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 switch (myStype)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                     {
                         myExtElSS.Perform(S1.Plane(), myS2.Plane());
                     }
@@ -134,19 +136,19 @@ public class Extrema_ExtSS
                                 PS2.Parameter(out U2, out V2);
                                 if (S1.IsUPeriodic())
                                 {
-                                    U1 = ElCLib.InPeriod(U1, myuinf1, myuinf1 + S1.UPeriod());
+                                    U1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U1, myuinf1, myuinf1 + S1.UPeriod());
                                 }
                                 if (S1.IsVPeriodic())
                                 {
-                                    V1 = ElCLib.InPeriod(V1, myvinf1, myvinf1 + S1.VPeriod());
+                                    V1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V1, myvinf1, myvinf1 + S1.VPeriod());
                                 }
                                 if (myS2.IsUPeriodic())
                                 {
-                                    U2 = ElCLib.InPeriod(U2, myuinf2, myuinf2 + myS2.UPeriod());
+                                    U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, myuinf2, myuinf2 + myS2.UPeriod());
                                 }
                                 if (myS2.IsVPeriodic())
                                 {
-                                    V2 = ElCLib.InPeriod(V2, myvinf2, myvinf2 + myS2.VPeriod());
+                                    V2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V2, myvinf2, myvinf2 + myS2.VPeriod());
                                 }
 
                                 if ((myuinf1 - U1) <= mytolS1 && (U1 - myusup1) <= mytolS1
@@ -183,19 +185,19 @@ public class Extrema_ExtSS
                         PS2.Parameter(out U2, out V2);
                         if (S1.IsUPeriodic())
                         {
-                            U1 = ElCLib.InPeriod(U1, myuinf1, myuinf1 + S1.UPeriod());
+                            U1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U1, myuinf1, myuinf1 + S1.UPeriod());
                         }
                         if (S1.IsVPeriodic())
                         {
-                            V1 = ElCLib.InPeriod(V1, myvinf1, myvinf1 + S1.VPeriod());
+                            V1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V1, myvinf1, myvinf1 + S1.VPeriod());
                         }
                         if (myS2.IsUPeriodic())
                         {
-                            U2 = ElCLib.InPeriod(U2, myuinf2, myuinf2 + myS2.UPeriod());
+                            U2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U2, myuinf2, myuinf2 + myS2.UPeriod());
                         }
                         if (myS2.IsVPeriodic())
                         {
-                            V2 = ElCLib.InPeriod(V2, myvinf2, myvinf2 + myS2.VPeriod());
+                            V2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V2, myvinf2, myvinf2 + myS2.VPeriod());
                         }
 
                         if ((myuinf1 - U1) <= mytolS1 && (U1 - myusup1) <= mytolS1 && (myvinf1 - V1) <= mytolS1
@@ -250,7 +252,7 @@ public class Extrema_ExtSS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myIsPar;
     }
@@ -260,7 +262,7 @@ public class Extrema_ExtSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return mySqDist.Value(N);
@@ -271,7 +273,7 @@ public class Extrema_ExtSS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist.Length();
     }
@@ -281,7 +283,7 @@ public class Extrema_ExtSS
     {
         if (N < 1 || N > NbExt())
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         P1 = myPOnS1.Value(N);

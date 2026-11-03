@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -83,7 +85,7 @@ public abstract partial class Shape1D : Shape
             if (geom is BRepAdaptor_CompCurve)
                 // A wire: its comp curve reports OtherCurve, so ask its first edge
                 return Edges().First.Radius;
-            if (geom.GetType() != GeomAbs_CurveType.GeomAbs_Circle)
+            if (geom.GetType() != CurveKind.Circle)
                 throw new InvalidOperationException("Shape could not be reduced to a circle");
             var circle = geom.Circle();
             return circle.Radius();
@@ -167,7 +169,7 @@ public abstract partial class Shape1D : Shape
         var curve = GeomAdaptor();
         var parameters = new List<double>();
         // GCPnts_UniformDeflection gives the best results but needs C2 continuity
-        if (curve.Continuity() is GeomAbs_Shape.GeomAbs_C2 or GeomAbs_Shape.GeomAbs_C3 or GeomAbs_Shape.GeomAbs_CN)
+        if (curve.Continuity() is Continuity.C2 or Continuity.C3 or Continuity.CN)
         {
             var discretizer = new GCPnts_UniformDeflection();
             discretizer.Initialize(curve, deflection, curve.FirstParameter(), curve.LastParameter());
@@ -344,24 +346,24 @@ public abstract partial class Shape1D : Shape
     /// <summary>The Location at a curve parameter, framed by a trihedron law on that curve.</summary>
     private Location FrameLocation(Adaptor3d_Curve curve, double param, GeomFill_TrihedronLaw law, Vector? xDir)
     {
-        var tangent = new gp_Vec();
-        var normal = new gp_Vec();
-        var binormal = new gp_Vec();
+        var tangent = new Vector3D();
+        var normal = new Vector3D();
+        var binormal = new Vector3D();
         law.D0(param, ref tangent, ref normal, ref binormal);
         var pnt = curve.Value(param);
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         var tangentXyz = tangent.XYZ();
-        var zDir = new gp_Dir(tangentXyz);
-        var target = new gp_Ax3();
+        var zDir = new Direction3D(tangentXyz);
+        var target = new CoordinateSystem();
         if (xDir is { } x)
         {
             try
             {
                 var xd = x.ToGpDir();
-                var ax3 = new gp_Ax3(pnt, zDir, xd);
+                var ax3 = new CoordinateSystem(pnt, zDir, xd);
                 trsf = trsf.WithTransformation(ax3, target);
             }
-            catch (Standard_Failure e) when (e.OcctType == "Standard_ConstructionError")
+            catch (FailureException e) when (e.OcctType == "Standard_ConstructionError")
             {
                 throw new ArgumentException(
                     $"Unable to create location with given x_dir {x}. x_dir must be perpendicular to shape's tangent {new Vector(tangent)}.", e);
@@ -370,8 +372,8 @@ public abstract partial class Shape1D : Shape
         else
         {
             var normalXyz = normal.XYZ();
-            var nd = new gp_Dir(normalXyz);
-            var ax3 = new gp_Ax3(pnt, zDir, nd);
+            var nd = new Direction3D(normalXyz);
+            var ax3 = new CoordinateSystem(pnt, zDir, nd);
             trsf = trsf.WithTransformation(ax3, target);
         }
         var loc = new Location(trsf);

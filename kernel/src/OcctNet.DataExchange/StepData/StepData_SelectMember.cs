@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 using static Occt.StepData_Logical;
 
@@ -20,7 +21,7 @@ namespace Occt;
 /// more to describe a select with several names. This class itself could be deferred: at least one of its virtual
 /// methods must be redefined to be usable.
 /// </remarks>
-public class StepData_SelectMember : Standard_Transient
+public class StepData_SelectMember : Transient
 {
     //  Definitions taken from Field:
     private const int KindInteger = 1;

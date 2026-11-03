@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,19 +23,19 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
     public Geom_Line? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
-        NCollection_Array1<gp_Pnt> aResult = new(1, theParams.Length());
+        NCollection_Array1<Point3D> aResult = new(1, theParams.Length());
 
         // Extract line data
-        gp_Lin aLin = myGeom.Lin();
-        gp_Pnt aLoc = aLin.Location();
-        gp_Dir aDir = aLin.Direction();
+        Line3D aLin = myGeom.Lin();
+        Point3D aLoc = aLin.Location();
+        Direction3D aDir = aLin.Direction();
 
         // Pre-extract coordinates for vectorization potential
         double aLocX = aLoc.X();
@@ -47,7 +49,7 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
         {
             double t = theParams.Value(i);
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ));
+                             new Point3D(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ));
         }
         return aResult;
     }
@@ -62,9 +64,9 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
 
         NCollection_Array1<Geom_Curve.ResD1> aResult = new(1, theParams.Length());
 
-        gp_Lin aLin = myGeom.Lin();
-        gp_Pnt aLoc = aLin.Location();
-        gp_Dir aDir = aLin.Direction();
+        Line3D aLin = myGeom.Lin();
+        Point3D aLoc = aLin.Location();
+        Direction3D aDir = aLin.Direction();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -74,14 +76,14 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
         double aDirZ = aDir.Z();
 
         // D1 is constant for a line
-        gp_Vec aD1 = new(aDirX, aDirY, aDirZ);
+        Vector3D aD1 = new(aDirX, aDirY, aDirZ);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
             double t = theParams.Value(i);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD1
             {
-                Point = new gp_Pnt(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
+                Point = new Point3D(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
                 D1 = aD1,
             };
         }
@@ -98,9 +100,9 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
 
         NCollection_Array1<Geom_Curve.ResD2> aResult = new(1, theParams.Length());
 
-        gp_Lin aLin = myGeom.Lin();
-        gp_Pnt aLoc = aLin.Location();
-        gp_Dir aDir = aLin.Direction();
+        Line3D aLin = myGeom.Lin();
+        Point3D aLoc = aLin.Location();
+        Direction3D aDir = aLin.Direction();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -109,15 +111,15 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
         double aDirY = aDir.Y();
         double aDirZ = aDir.Z();
 
-        gp_Vec aD1 = new(aDirX, aDirY, aDirZ);
-        gp_Vec aD2 = new(0, 0, 0); // Second derivative is zero for a line
+        Vector3D aD1 = new(aDirX, aDirY, aDirZ);
+        Vector3D aD2 = new(0, 0, 0); // Second derivative is zero for a line
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
             double t = theParams.Value(i);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD2
             {
-                Point = new gp_Pnt(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
+                Point = new Point3D(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
                 D1 = aD1,
                 D2 = aD2,
             };
@@ -135,9 +137,9 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
 
         NCollection_Array1<Geom_Curve.ResD3> aResult = new(1, theParams.Length());
 
-        gp_Lin aLin = myGeom.Lin();
-        gp_Pnt aLoc = aLin.Location();
-        gp_Dir aDir = aLin.Direction();
+        Line3D aLin = myGeom.Lin();
+        Point3D aLoc = aLin.Location();
+        Direction3D aDir = aLin.Direction();
 
         double aLocX = aLoc.X();
         double aLocY = aLoc.Y();
@@ -146,15 +148,15 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
         double aDirY = aDir.Y();
         double aDirZ = aDir.Z();
 
-        gp_Vec aD1 = new(aDirX, aDirY, aDirZ);
-        gp_Vec aZero = new(0, 0, 0);
+        Vector3D aD1 = new(aDirX, aDirY, aDirZ);
+        Vector3D aZero = new(0, 0, 0);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
             double t = theParams.Value(i);
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD3
             {
-                Point = new gp_Pnt(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
+                Point = new Point3D(aLocX + t * aDirX, aLocY + t * aDirY, aLocZ + t * aDirZ),
                 D1 = aD1,
                 D2 = aZero,
                 D3 = aZero,
@@ -164,20 +166,20 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative at all grid points: the direction for N = 1, zero above.</summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
-        NCollection_Array1<gp_Vec> aResult = new(1, theParams.Length());
+        NCollection_Array1<Vector3D> aResult = new(1, theParams.Length());
 
         if (theN == 1)
         {
             // D1 is constant for a line (the direction)
-            gp_Dir aDir = myGeom.Lin().Direction();
-            gp_Vec aD1 = new(aDir.X(), aDir.Y(), aDir.Z());
+            Direction3D aDir = myGeom.Lin().Direction();
+            Vector3D aD1 = new(aDir.X(), aDir.Y(), aDir.Z());
             for (int i = 1; i <= theParams.Length(); ++i)
             {
                 aResult.SetValue(i, aD1);
@@ -186,7 +188,7 @@ public sealed class GeomGridEval_Line : GeomGridEval.ICurveEvaluator
         else
         {
             // All higher derivatives are zero for a line
-            gp_Vec aZero = new(0, 0, 0);
+            Vector3D aZero = new(0, 0, 0);
             for (int i = 1; i <= theParams.Length(); ++i)
             {
                 aResult.SetValue(i, aZero);

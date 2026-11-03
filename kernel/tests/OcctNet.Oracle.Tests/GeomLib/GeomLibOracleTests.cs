@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -33,12 +34,12 @@ public class GeomLibOracleTests(ITestOutputHelper output)
 
         double aNbSKnots = 0, aNbC2dKnots = 0;
 
-        if (aSurf.GetType() == GeomAbs_BSplineSurface)
+        if (aSurf.GetType() == BSplineSurface)
         {
             Geom_BSplineSurface aBSpline = aSurf.BSpline();
             aNbSKnots = Math.Max(aBSpline.NbUKnots(), aBSpline.NbVKnots());
         }
-        if (aCurv2d.GetType() == GeomAbs_BSplineCurve)
+        if (aCurv2d.GetType() == BSplineCurve)
         {
             aNbC2dKnots = aCurv2d.NbKnots();
         }
@@ -50,12 +51,12 @@ public class GeomLibOracleTests(ITestOutputHelper output)
     private static (double U1, double U2, double V1, double V2) Box(Oracle theO, Geom_Surface theS)
     {
         theS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        if (Precision.IsInfinite(aU1) || Precision.IsInfinite(aU2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
         {
             aU1 = -4;
             aU2 = 4;
         }
-        if (Precision.IsInfinite(aV1) || Precision.IsInfinite(aV2))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aV1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aV2))
         {
             aV1 = -4;
             aV2 = 4;
@@ -86,19 +87,19 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             {
                 bool anIsU = theO.Bool(), aFwd = theO.Bool();
                 double aFix = anIsU ? theO.Real(u1, u2) : theO.Real(v1, v2);
-                gp_Pnt2d aS = anIsU ? new gp_Pnt2d(aFix, aFwd ? v1 : v2) : new gp_Pnt2d(aFwd ? u1 : u2, aFix);
-                gp_Pnt2d aE = anIsU ? new gp_Pnt2d(aFix, aFwd ? v2 : v1) : new gp_Pnt2d(aFwd ? u2 : u1, aFix);
+                Point2D aS = anIsU ? new Point2D(aFix, aFwd ? v1 : v2) : new Point2D(aFwd ? u1 : u2, aFix);
+                Point2D aE = anIsU ? new Point2D(aFix, aFwd ? v2 : v1) : new Point2D(aFwd ? u2 : u1, aFix);
                 double aLen = aS.Distance(aE);
                 if (theO.Bool())
                 {
                     double dx = anIsU ? 0.0 : (aFwd ? 1.0 : -1.0), dy = anIsU ? (aFwd ? 1.0 : -1.0) : 0.0;
-                    gp_Pnt2d aP = new(aS.X() - c * dx, aS.Y() - c * dy);
+                    Point2D aP = new(aS.X() - c * dx, aS.Y() - c * dy);
                     using var aNP = Oracle.ToNative(aP);
                     using var aND = new N.gp_Dir2d(dx, dy);
-                    return new PCurve { Port = new Geom2d_Line(aP, new gp_Dir2d(dx, dy)), Native = new N.Geom2d_Line(aNP, aND),
+                    return new PCurve { Port = new Geom2d_Line(aP, new Direction2D(dx, dy)), Native = new N.Geom2d_Line(aNP, aND),
                         First = c, Last = c + aLen, Kind = "iso line" };
                 }
-                NCollection_Array1<gp_Pnt2d> aPoles = NCollection_Array1<gp_Pnt2d>.From([aS, aE]);
+                NCollection_Array1<Point2D> aPoles = NCollection_Array1<Point2D>.From([aS, aE]);
                 NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([c, c + aLen]);
                 NCollection_Array1<int> aMults = NCollection_Array1<int>.From([2, 2]);
                 return new PCurve { Port = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, 1),
@@ -107,19 +108,19 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             }
             case 2:
             {
-                gp_Pnt2d aS = new(theO.Real(u1, u2), theO.Real(v1, v2));
-                gp_Pnt2d aE = new(theO.Real(u1, u2), theO.Real(v1, v2));
+                Point2D aS = new(theO.Real(u1, u2), theO.Real(v1, v2));
+                Point2D aE = new(theO.Real(u1, u2), theO.Real(v1, v2));
                 double dx = aE.X() - aS.X(), dy = aE.Y() - aS.Y();
                 double aLen = Math.Sqrt(dx * dx + dy * dy);
                 if (aLen < 1e-3)
                 {
-                    aE = new gp_Pnt2d(u2, v2);
-                    aS = new gp_Pnt2d(u1, v1);
+                    aE = new Point2D(u2, v2);
+                    aS = new Point2D(u1, v1);
                     dx = aE.X() - aS.X();
                     dy = aE.Y() - aS.Y();
                     aLen = Math.Sqrt(dx * dx + dy * dy);
                 }
-                gp_Dir2d aD = new(dx, dy);
+                Direction2D aD = new(dx, dy);
                 using var aNP = Oracle.ToNative(aS);
                 using var aND = new N.gp_Dir2d(dx, dy);
                 return new PCurve { Port = new Geom2d_Line(aS, aD), Native = new N.Geom2d_Line(aNP, aND), First = 0.0,
@@ -128,12 +129,12 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             case 3:
             {
                 double r = 0.4 * Math.Min(u2 - u1, v2 - v1);
-                gp_Pnt2d aC = new(0.5 * (u1 + u2), 0.5 * (v1 + v2));
+                Point2D aC = new(0.5 * (u1 + u2), 0.5 * (v1 + v2));
                 using var aNC = Oracle.ToNative(aC);
                 using var aNX = new N.gp_Dir2d(1, 0);
                 using var aNA = new N.gp_Ax2d(aNC, aNX);
                 double a = theO.Real(0, 3), b = a + theO.Real(0.3, 3);
-                return new PCurve { Port = new Geom2d_Circle(new gp_Ax2d(aC, new gp_Dir2d(1, 0)), r),
+                return new PCurve { Port = new Geom2d_Circle(new Axis2D(aC, new Direction2D(1, 0)), r),
                     Native = new N.Geom2d_Circle(aNA, r), First = a, Last = b, Kind = "circle" };
             }
             default:
@@ -149,11 +150,11 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                     k += theO.Real(0.3, 2);
                     aMults[i] = (i == 1 || i == aNbKnots) ? aDeg + 1 : theO.Int(1, aDeg);
                 }
-                int aNbPoles = Occt.BSplCLib.NbPoles(aDeg, false, aMults);
-                NCollection_Array1<gp_Pnt2d> aPoles = new(1, aNbPoles);
+                int aNbPoles = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, false, aMults);
+                NCollection_Array1<Point2D> aPoles = new(1, aNbPoles);
                 for (int i = 1; i <= aNbPoles; i++)
                 {
-                    aPoles[i] = new gp_Pnt2d(theO.Real(u1, u2), theO.Real(v1, v2));
+                    aPoles[i] = new Point2D(theO.Real(u1, u2), theO.Real(v1, v2));
                 }
                 return new PCurve { Port = new Geom2d_BSplineCurve(aPoles, aKnots, aMults, aDeg),
                     Native = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false), First = aKnots[1],
@@ -192,7 +193,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             using var aNP = new N.gp_Pnt();
             using var aNV = new N.gp_Vec();
             theN.D1(t, aNP, aNV);
-            theP.D1(t, out gp_Pnt aP, out gp_Vec aV);
+            theP.D1(t, out Point3D aP, out Vector3D aV);
             theO.Same(aNP, aP, $"{theWhat} D1({t}) point");
             theO.Same(aNV, aV, $"{theWhat} D1({t}) derivative");
         }
@@ -235,7 +236,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                 aPC = RandomPCurve(anOracle, u1, u2, v1, v2);
             }
             double aTol = anOracle.Int(0, 2) switch { 0 => 1e-7, 1 => 1e-5, _ => 1e-3 };
-            GeomAbs_Shape aCont = (GeomAbs_Shape)(anOracle.Int(0, 2) * 2); // C0, C1, C2
+            Continuity aCont = (Continuity)(anOracle.Int(0, 2) * 2); // C0, C1, C2
             int aMaxDeg = anOracle.Int(8, 14);
             int aMaxSeg = anOracle.Int(0, 2) switch { 0 => 0, 1 => 10, _ => 30 };
             string aWhat = $"case {c} ({AdaptorOracleInputs.SurfaceKinds[aKind]}, {aPC.Kind}, tol {aTol}, {aCont}, deg {aMaxDeg}, seg {aMaxSeg})";

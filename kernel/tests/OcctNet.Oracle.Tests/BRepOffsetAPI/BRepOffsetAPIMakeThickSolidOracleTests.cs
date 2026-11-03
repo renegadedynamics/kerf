@@ -1,12 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
 using static Occt.BRepOffset_Mode;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.JoinKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -28,7 +31,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 {
     internal enum Kind { OffsetShape, ThickSolid, MakeOffset }
 
-    internal sealed record Run(string Name, Kind Kind, double Offset, double Tol = 1.0e-7, GeomAbs_JoinType Join = GeomAbs_Arc,
+    internal sealed record Run(string Name, Kind Kind, double Offset, double Tol = 1.0e-7, JoinKind Join = Arc,
                                bool Inter = false, bool Thickening = false, bool RemoveIntEdges = false, int[]? Closing = null,
                                bool ThreeArgs = false);
 
@@ -60,23 +63,23 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     private static TopoDS_Shape Moved(in TopoDS_Shape theS, double x, double y, double z)
     {
-        gp_Trsf aT = new();
-        aT.SetTranslation(new gp_Vec(x, y, z));
+        Transform3D aT = new();
+        aT.SetTranslation(new Vector3D(x, y, z));
         return new BRepBuilderAPI_Transform(theS, aT, true).Shape();
     }
 
-    private static gp_Ax2 Ax(double x, double y, double z) => new(new gp_Pnt(x, y, z), new gp_Dir(0, 0, 1));
+    private static Frame3D Ax(double x, double y, double z) => new(new Point3D(x, y, z), new Direction3D(0, 0, 1));
 
     private static TopoDS_Shape Prism(double h, params (double X, double Y)[] thePoints)
     {
         var aP = new BRepBuilderAPI_MakePolygon();
         foreach ((double x, double y) in thePoints)
         {
-            aP.Add(new gp_Pnt(x, y, 0));
+            aP.Add(new Point3D(x, y, 0));
         }
         aP.Close();
         TopoDS_Face aF = new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
-        return new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, h)).Shape();
+        return new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, h)).Shape();
     }
 
     /// <summary>Solids: primitives and Boolean results.</summary>
@@ -99,9 +102,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         ("box with pocket", Cut(Box(20, 20, 10), Moved(Box(10, 10, 10), 5, 5, 4))),
         ("box and cylinder fuse", Fuse(Box(20, 20, 5), new BRepPrimAPI_MakeCylinder(Ax(10, 10, 5), 4, 8).Shape())),
         ("cylinder T", Fuse(new BRepPrimAPI_MakeCylinder(Ax(0, 0, 0), 3, 20).Shape(),
-                            new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(-10, 0, 10), new gp_Dir(1, 0, 0)), 2, 20).Shape())),
-        ("box common sphere", new BRepAlgoAPI_Common(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new gp_Pnt(5, 5, 5), 6.5).Shape()).Shape()),
-        ("box minus sphere", Cut(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new gp_Pnt(10, 10, 10), 5).Shape())),
+                            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 10), new Direction3D(1, 0, 0)), 2, 20).Shape())),
+        ("box common sphere", new BRepAlgoAPI_Common(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new Point3D(5, 5, 5), 6.5).Shape()).Shape()),
+        ("box minus sphere", Cut(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new Point3D(10, 10, 10), 5).Shape())),
     ];
 
     /// <summary>Faces and shells to offset and thicken.</summary>
@@ -113,7 +116,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         TopoDS_Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
         var aCylFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(aCyl, TopAbs_FACE, aCylFaces);
-        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new gp_Pnt(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
+        TopoDS_Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
         var aSphFaces = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapes(aSph, TopAbs_FACE, aSphFaces);
         BRep_Builder aB = new();
@@ -129,12 +132,12 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             aB.Add(aShell2, aFaces[i]);
         }
         // a B-spline face: a lofted patch
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, 4, 1, 4);
+        var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i * 3, j * 3, ((i + j) % 3) * 0.8);
+                aPoles[i, j] = new Point3D(i * 3, j * 3, ((i + j) % 3) * 0.8);
             }
         }
         var aSurf = new GeomAPI_PointsToBSplineSurface(aPoles).Surface();
@@ -182,13 +185,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             {
                 double d = aSign * aD;
                 // build123d.NET's Thicken, OffsetCore and OffsetTopodsFace
-                Compare(aRun, aTally, new Run($"{aName} thicken {d:g4}", Kind.MakeOffset, d, 1.0e-5, GeomAbs_Intersection, true, true, true), aShape);
-                Compare(aRun, aTally, new Run($"{aName} offset core {d:g4}", Kind.MakeOffset, d, 1.0e-5, GeomAbs_Intersection, true, false, true), aShape);
+                Compare(aRun, aTally, new Run($"{aName} thicken {d:g4}", Kind.MakeOffset, d, 1.0e-5, Intersection, true, true, true), aShape);
+                Compare(aRun, aTally, new Run($"{aName} offset core {d:g4}", Kind.MakeOffset, d, 1.0e-5, Intersection, true, false, true), aShape);
                 Compare(aRun, aTally, new Run($"{aName} offset face {d:g4}", Kind.MakeOffset, d, 1.0e-5, ThreeArgs: true), aShape);
                 // the arc join, thickened and not
-                Compare(aRun, aTally, new Run($"{aName} thicken arc {d:g4}", Kind.MakeOffset, d, 1.0e-5, GeomAbs_Arc, false, true), aShape);
-                Compare(aRun, aTally, new Run($"{aName} offset shape arc {d:g4}", Kind.OffsetShape, d, 1.0e-5, GeomAbs_Arc), aShape);
-                Compare(aRun, aTally, new Run($"{aName} offset shape inter {d:g4}", Kind.OffsetShape, d, 1.0e-5, GeomAbs_Intersection), aShape);
+                Compare(aRun, aTally, new Run($"{aName} thicken arc {d:g4}", Kind.MakeOffset, d, 1.0e-5, Arc, false, true), aShape);
+                Compare(aRun, aTally, new Run($"{aName} offset shape arc {d:g4}", Kind.OffsetShape, d, 1.0e-5, Arc), aShape);
+                Compare(aRun, aTally, new Run($"{aName} offset shape inter {d:g4}", Kind.OffsetShape, d, 1.0e-5, Intersection), aShape);
             }
         }
         Report(aTally, "faces and shells");
@@ -218,19 +221,19 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             foreach (double aSign in new[] { 1.0, -1.0 })
             {
                 double d = aSign * aD;
-                foreach (GeomAbs_JoinType aJoin in new[] { GeomAbs_Arc, GeomAbs_Intersection })
+                foreach (JoinKind aJoin in new[] { Arc, Intersection })
                 {
                     Compare(aRun, aTally, new Run($"{aName} offset {aJoin} {d:g4}", Kind.OffsetShape, d, 1.0e-7, aJoin), aShape);
                 }
                 if (isSolid)
                 {
-                    Compare(aRun, aTally, new Run($"{aName} hollow arc {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Arc, true, Closing: [1]), aShape);
-                    Compare(aRun, aTally, new Run($"{aName} hollow inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Intersection, true, Closing: [1]), aShape);
-                    Compare(aRun, aTally, new Run($"{aName} offset3d inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, GeomAbs_Intersection, true, RemoveIntEdges: true, Closing: []), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} hollow arc {d:g4}", Kind.ThickSolid, d, 1.0e-4, Arc, true, Closing: [1]), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} hollow inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, Intersection, true, Closing: [1]), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} offset3d inter {d:g4}", Kind.ThickSolid, d, 1.0e-4, Intersection, true, RemoveIntEdges: true, Closing: []), aShape);
                 }
                 else
                 {
-                    Compare(aRun, aTally, new Run($"{aName} thicken {d:g4}", Kind.MakeOffset, d, 1.0e-5, GeomAbs_Intersection, true, true, true), aShape);
+                    Compare(aRun, aTally, new Run($"{aName} thicken {d:g4}", Kind.MakeOffset, d, 1.0e-5, Intersection, true, true, true), aShape);
                 }
             }
         }
@@ -243,9 +246,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         foreach (double aSign in new[] { 1.0, -1.0 })
         {
             double d = aSign * theD;
-            foreach (GeomAbs_JoinType aJoin in new[] { GeomAbs_Arc, GeomAbs_Intersection })
+            foreach (JoinKind aJoin in new[] { Arc, Intersection })
             {
-                string j = aJoin == GeomAbs_Arc ? "arc" : "inter";
+                string j = aJoin == Arc ? "arc" : "inter";
                 yield return new Run($"{theName} offset {j} {d:g4}", Kind.OffsetShape, d, 1.0e-7, aJoin);
                 yield return new Run($"{theName} offset {j} complete {d:g4}", Kind.OffsetShape, d, 1.0e-7, aJoin, true, RemoveIntEdges: true);
                 // build123d.NET's Hollow (one opening) and Offset3D (no opening, remove the internal edges)
@@ -259,7 +262,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
 
     private static double Diagonal(in TopoDS_Shape theShape)
     {
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox);
         return Math.Sqrt(aBox.SquareExtent());
     }
@@ -292,7 +295,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             theTally.InputsChanged++;
             theTally.Differences.Add($"{aWhat}: the port's input changed");
         }
-        if (aP.PortResult is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen())
+        if (aP.PortResult is TopoDS_Shape aPR && !aPR.IsNull() && !aPR.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{aWhat}: the port's result isn't frozen");
@@ -477,7 +480,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         }
     }
 
-    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? e.GetType().Name;
+    private static string NativeErrorOf(Exception e) => ShapeFixOracleRun.ErrorOf(e) ?? global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType());
 
     internal Outcome RunNative(ShapeFixOracleRun theRun, Run theCase, N.TopoDS_Shape theInput)
     {
@@ -689,9 +692,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             }
             return new Outcome(null, aStatus, aText, aSb.ToString(), aRes);
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
-            return new Outcome(e.GetType().Name, "", null, "", null);
+            return new Outcome(global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()), "", null, "", null);
         }
     }
 

@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepShape_PlusMinusTolerance : Standard_Transient
+public class StepShape_PlusMinusTolerance : Transient
 {
     private StepShape_ToleranceMethodDefinition theRange = new StepShape_ToleranceMethodDefinition();
     private StepShape_DimensionalCharacteristic theTolerancedDimension = new StepShape_DimensionalCharacteristic();

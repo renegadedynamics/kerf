@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -29,8 +31,8 @@ internal class RWStepBasic_RWConversionBasedUnitAndPlaneAngleUnit
         }
         TCollection_HAsciiString aName = null;
         data.ReadString(num, 1, "name", ach, ref aName);
-        Standard_Transient aConversionFactor = null;
-        data.ReadEntity(num, 2, "conversion_factor", ach, typeof(Standard_Transient), ref aConversionFactor);
+        Transient aConversionFactor = null;
+        data.ReadEntity(num, 2, "conversion_factor", ach, typeof(Transient), ref aConversionFactor);
 
         // NAMED_UNIT
         // num = 0; //gka TRJ9 c2-id-214.stp

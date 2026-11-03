@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Sampling and pole-hull helpers for spline bounding boxes (OCCT's namespace GeomBndLib_SplineHelpers).</summary>
@@ -16,26 +22,26 @@ namespace Occt;
 internal static class GeomBndLib_SplineHelpers
 {
     /// <summary>Fill box with sampled points and return maximum deflection.</summary>
-    internal static double FillBox(ref Bnd_Box theBox, GeomAdaptor_Curve theCurve, double theFirst, double theLast, int theN)
+    internal static double FillBox(ref Box theBox, GeomAdaptor_Curve theCurve, double theFirst, double theLast, int theN)
     {
         theBox.Add(theCurve.EvalD0(theFirst));
         double aP = theFirst;
         double aTol = 0.0;
         double aDP = theLast - theFirst;
-        if (Math.Abs(aDP) > Precision.PConfusion())
+        if (Math.Abs(aDP) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            gp_Pnt aP1 = theCurve.EvalD0(theFirst);
+            Point3D aP1 = theCurve.EvalD0(theFirst);
             double aStep = aDP / (2 * theN);
             for (int anIdx = 1; anIdx <= theN; ++anIdx)
             {
                 aP += aStep;
-                gp_Pnt aP2 = theCurve.EvalD0(aP);
+                Point3D aP2 = theCurve.EvalD0(aP);
                 theBox.Add(aP2);
                 aP += aStep;
-                gp_Pnt aP3 = theCurve.EvalD0(aP);
+                Point3D aP3 = theCurve.EvalD0(aP);
                 theBox.Add(aP3);
                 // PointOps<gp_Pnt>::Mid
-                gp_Pnt aPc = new((aP1.XYZ() + aP3.XYZ()) / 2.0);
+                Point3D aPc = new((aP1.XYZ() + aP3.XYZ()) / 2.0);
                 aTol = Max(aTol, aPc.Distance(aP2));
                 aP1 = aP3;
             }
@@ -48,16 +54,16 @@ internal static class GeomBndLib_SplineHelpers
     }
 
     /// <summary>Reduce box using poles convex hull.</summary>
-    internal static void ReduceSplineBox(NCollection_Array1<gp_Pnt> thePoles, in Bnd_Box theOrigBox, ref Bnd_Box theReducedBox)
+    internal static void ReduceSplineBox(NCollection_Array1<Point3D> thePoles, in Box theOrigBox, ref Box theReducedBox)
     {
-        Bnd_Box aPolesBox = new();
+        Box aPolesBox = new();
         for (int anIdx = thePoles.Lower(); anIdx <= thePoles.Upper(); ++anIdx)
         {
             aPolesBox.Add(thePoles.Value(anIdx));
         }
 
         (double aXMin, double aXMax, double aYMin, double aYMax, double aZMin, double aZMax) = theOrigBox.Get();
-        if (!aPolesBox.IsVoid())
+        if (!aPolesBox.IsVoid)
         {
             (double aPXMin, double aPXMax, double aPYMin, double aPYMax, double aPZMin, double aPZMax) = aPolesBox.Get();
             theReducedBox.Update(Max(aXMin, aPXMin),
@@ -74,7 +80,7 @@ internal static class GeomBndLib_SplineHelpers
     }
 
     /// <summary>Compute precise bounding box for a 3D curve using sampling + numerical optimization.</summary>
-    internal static Bnd_Box CurveBoxOptimal(GeomAdaptor_Curve theAdaptor, double theU1, double theU2, double theTol)
+    internal static Box CurveBoxOptimal(GeomAdaptor_Curve theAdaptor, double theU1, double theU2, double theTol)
     {
         const int NDim = 3;
         int aNbSamples = GeomBndLib_SamplingHelpers.ComputeNbSamplesT(theAdaptor, theU1, theU2);
@@ -91,11 +97,11 @@ internal static class GeomBndLib_SplineHelpers
 
         double aDU = (theU2 - theU1) / (aNbSamples - 1);
         double aDU2 = aDU / 2.0;
-        NCollection_Array1<gp_XYZ> aPnts = new(1, aNbSamples);
+        NCollection_Array1<Xyz> aPnts = new(1, aNbSamples);
         for (int anI = 1, aJ = 0; anI <= aNbSamples; anI++, aJ++)
         {
             double aU = theU1 + aJ * aDU;
-            gp_Pnt aP = theAdaptor.EvalD0(aU);
+            Point3D aP = theAdaptor.EvalD0(aU);
             aPnts[anI] = aP.XYZ();
             for (int aK = 0; aK < NDim; ++aK)
             {
@@ -110,9 +116,9 @@ internal static class GeomBndLib_SplineHelpers
             }
             if (anI > 1)
             {
-                gp_XYZ aPm = 0.5 * (aPnts[anI - 1] + aPnts[anI]);
-                gp_Pnt aPMid = theAdaptor.EvalD0(aU - aDU2);
-                gp_XYZ aD = aPMid.XYZ() - aPm;
+                Xyz aPm = 0.5 * (aPnts[anI - 1] + aPnts[anI]);
+                Point3D aPMid = theAdaptor.EvalD0(aU - aDU2);
+                Xyz aD = aPMid.XYZ() - aPm;
                 for (int aK = 0; aK < NDim; ++aK)
                 {
                     if (aCoordMin[aK] > aPMid.Coord(aK + 1))
@@ -132,7 +138,7 @@ internal static class GeomBndLib_SplineHelpers
             }
         }
 
-        double anEps = Max(theTol, Precision.Confusion());
+        double anEps = Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int aK = 0; aK < NDim; ++aK)
         {
             double aDiff = aDeflMax[aK];
@@ -169,15 +175,15 @@ internal static class GeomBndLib_SplineHelpers
             aCoordMax[aK] = aCMax;
         }
 
-        Bnd_Box aBox = new();
-        aBox.Add(new gp_Pnt(aCoordMin[0], aCoordMin[1], aCoordMin[2]));
-        aBox.Add(new gp_Pnt(aCoordMax[0], aCoordMax[1], aCoordMax[2]));
+        Box aBox = new();
+        aBox.Add(new Point3D(aCoordMin[0], aCoordMin[1], aCoordMin[2]));
+        aBox.Add(new Point3D(aCoordMax[0], aCoordMax[1], aCoordMax[2]));
         aBox.Enlarge(anEps);
         return aBox;
     }
 
     /// <summary>Compute precise bounding box for a 2D curve using sampling + numerical optimization.</summary>
-    internal static Bnd_Box2d CurveBoxOptimal(Geom2dAdaptor_Curve theAdaptor, double theU1, double theU2, double theTol)
+    internal static Box2d CurveBoxOptimal(Geom2dAdaptor_Curve theAdaptor, double theU1, double theU2, double theTol)
     {
         const int NDim = 2;
         int aNbSamples = GeomBndLib_SamplingHelpers.ComputeNbSamplesT(theAdaptor, theU1, theU2);
@@ -194,11 +200,11 @@ internal static class GeomBndLib_SplineHelpers
 
         double aDU = (theU2 - theU1) / (aNbSamples - 1);
         double aDU2 = aDU / 2.0;
-        NCollection_Array1<gp_XY> aPnts = new(1, aNbSamples);
+        NCollection_Array1<Xy> aPnts = new(1, aNbSamples);
         for (int anI = 1, aJ = 0; anI <= aNbSamples; anI++, aJ++)
         {
             double aU = theU1 + aJ * aDU;
-            gp_Pnt2d aP = theAdaptor.EvalD0(aU);
+            Point2D aP = theAdaptor.EvalD0(aU);
             aPnts[anI] = aP.XY();
             for (int aK = 0; aK < NDim; ++aK)
             {
@@ -213,9 +219,9 @@ internal static class GeomBndLib_SplineHelpers
             }
             if (anI > 1)
             {
-                gp_XY aPm = 0.5 * (aPnts[anI - 1] + aPnts[anI]);
-                gp_Pnt2d aPMid = theAdaptor.EvalD0(aU - aDU2);
-                gp_XY aD = aPMid.XY() - aPm;
+                Xy aPm = 0.5 * (aPnts[anI - 1] + aPnts[anI]);
+                Point2D aPMid = theAdaptor.EvalD0(aU - aDU2);
+                Xy aD = aPMid.XY() - aPm;
                 for (int aK = 0; aK < NDim; ++aK)
                 {
                     if (aCoordMin[aK] > aPMid.Coord(aK + 1))
@@ -235,7 +241,7 @@ internal static class GeomBndLib_SplineHelpers
             }
         }
 
-        double anEps = Max(theTol, Precision.Confusion());
+        double anEps = Max(theTol, global::Kerf.Engine.Foundation.Precision.Confusion());
         for (int aK = 0; aK < NDim; ++aK)
         {
             double aDiff = aDeflMax[aK];
@@ -272,9 +278,9 @@ internal static class GeomBndLib_SplineHelpers
             aCoordMax[aK] = aCMax;
         }
 
-        Bnd_Box2d aBox = new();
-        aBox.Add(new gp_Pnt2d(aCoordMin[0], aCoordMin[1]));
-        aBox.Add(new gp_Pnt2d(aCoordMax[0], aCoordMax[1]));
+        Box2d aBox = new();
+        aBox.Add(new Point2D(aCoordMin[0], aCoordMin[1]));
+        aBox.Add(new Point2D(aCoordMax[0], aCoordMax[1]));
         aBox.Enlarge(anEps);
         return aBox;
     }

@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_State;
 
 namespace Occt;
@@ -193,10 +194,10 @@ public partial class GeomInt_IntSS
     public int NbPoints() => myIntersector.NbPnts();
 
     /// <summary>The isolated intersection point of index Index.</summary>
-    public gp_Pnt Point(int Index) => myIntersector.Point(Index).Value();
+    public Point3D Point(int Index) => myIntersector.Point(Index).Value();
 
     /// <summary>The parameters on the first (OnFirst) or second surface of the point of index Index.</summary>
-    public gp_Pnt2d Pnt2d(int Index, bool OnFirst)
+    public Point2D Pnt2d(int Index, bool OnFirst)
     {
         IntPatch_Point thept = myIntersector.Point(Index);
         double U, V;
@@ -208,7 +209,7 @@ public partial class GeomInt_IntSS
         {
             thept.ParametersOnS2(out U, out V);
         }
-        return new gp_Pnt2d(U, V);
+        return new Point2D(U, V);
     }
 
     /// <summary>Sets the tolerances of GeomLib_CheckBSplineCurve's tangent fixes of the approximated curves.</summary>
@@ -236,7 +237,7 @@ public partial class GeomInt_IntSS
         double TolArc = Tol;
         double TolTang = Tol;
         double Deflection = 0.1;
-        if (myHS1!.GetType() == GeomAbs_BSplineSurface && myHS2!.GetType() == GeomAbs_BSplineSurface)
+        if (myHS1!.GetType() == BSplineSurface && myHS2!.GetType() == BSplineSurface)
         {
             Deflection /= 10.0;
         }
@@ -283,8 +284,8 @@ public partial class GeomInt_IntSS
                 }
                 else
                 {
-                    TopAbs_State aState1 = aDom1.Classify(new gp_Pnt2d(U1, V1), Tol);
-                    TopAbs_State aState2 = aDom2.Classify(new gp_Pnt2d(U2, V2), Tol);
+                    TopAbs_State aState1 = aDom1.Classify(new Point2D(U1, V1), Tol);
+                    TopAbs_State aState2 = aDom2.Classify(new Point2D(U2, V2), Tol);
 
                     if ((aState1 == TopAbs_IN || aState1 == TopAbs_ON) && (aState2 == TopAbs_IN || aState2 == TopAbs_ON))
                     {

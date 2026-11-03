@@ -29,6 +29,10 @@
 //   each iteration calculates at maximum 3 points
 //-------------------------------------------------------------------------
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -48,36 +52,36 @@ public sealed class CPnts_UniformDeflection
     private int myIPoint;
     private int myNbPoints;
     private readonly double[] myParams = new double[3];
-    private readonly gp_Pnt[] myPoints = new gp_Pnt[3];
+    private readonly Point3D[] myPoints = new Point3D[3];
     private double myDwmax;
     private double myDeflection;
     private double myFirstParam;
     private double myLastParam;
     private double myDu;
 
-    private static void D03d(object C, double U, out gp_Pnt P)
+    private static void D03d(object C, double U, out Point3D P)
     {
         ((Adaptor3d_Curve)C).D0(U, out P);
     }
 
-    private static void D02d(object C, double U, out gp_Pnt PP)
+    private static void D02d(object C, double U, out Point3D PP)
     {
-        ((Adaptor2d_Curve2d)C).D0(U, out gp_Pnt2d P);
-        PP = new gp_Pnt();
+        ((Adaptor2d_Curve2d)C).D0(U, out Point2D P);
+        PP = new Point3D();
         PP.SetCoord(P.X(), P.Y(), 0.0);
     }
 
-    private static void D23d(object C, double U, out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    private static void D23d(object C, double U, out Point3D P, out Vector3D V1, out Vector3D V2)
     {
         ((Adaptor3d_Curve)C).D2(U, out P, out V1, out V2);
     }
 
-    private static void D22d(object C, double U, out gp_Pnt PP, out gp_Vec VV1, out gp_Vec VV2)
+    private static void D22d(object C, double U, out Point3D PP, out Vector3D VV1, out Vector3D VV2)
     {
-        ((Adaptor2d_Curve2d)C).D2(U, out gp_Pnt2d P, out gp_Vec2d V1, out gp_Vec2d V2);
-        PP = new gp_Pnt();
-        VV1 = new gp_Vec();
-        VV2 = new gp_Vec();
+        ((Adaptor2d_Curve2d)C).D2(U, out Point2D P, out Vector2D V1, out Vector2D V2);
+        PP = new Point3D();
+        VV1 = new Vector3D();
+        VV2 = new Vector3D();
         PP.SetCoord(P.X(), P.Y(), 0.0);
         VV1.SetCoord(V1.X(), V1.Y(), 0.0);
         VV2.SetCoord(V2.X(), V2.Y(), 0.0);
@@ -85,8 +89,8 @@ public sealed class CPnts_UniformDeflection
 
     private void Perform()
     {
-        gp_Pnt P, P1, P2;
-        gp_Vec V1, V2, VV;
+        Point3D P, P1, P2;
+        Vector3D V1, V2, VV;
         double Un1;
         double NormD1, NormD2;
 
@@ -144,11 +148,11 @@ public sealed class CPnts_UniformDeflection
                     D02d(myCurve!, myFirstParam + myDu, out P);
                     D02d(myCurve!, myFirstParam + (myDu / 2.0), out P1);
                 }
-                V1 = new gp_Vec(myPoints[myNbPoints], P);
+                V1 = new Vector3D(myPoints[myNbPoints], P);
                 NormD1 = V1.Magnitude();
                 if (NormD1 >= myDeflection)
                 {
-                    V2 = new gp_Vec(myPoints[myNbPoints], P1);
+                    V2 = new Vector3D(myPoints[myNbPoints], P1);
                     NormD2 = V2.CrossMagnitude(V1) / NormD1;
 
                     // passing of arrow starting from which the redivision is done is arbitrary
@@ -200,7 +204,7 @@ public sealed class CPnts_UniformDeflection
                         D22d(myCurve!, myLastParam, out P1, out V1, out V2);
                     }
                     P = myPoints[0];
-                    VV = new gp_Vec(P1, P);
+                    VV = new Vector3D(P1, P);
                     NormD1 = VV.Magnitude();
                     if (NormD1 < myDeflection)
                     {
@@ -218,7 +222,7 @@ public sealed class CPnts_UniformDeflection
                         {
                             D02d(myCurve!, myFirstParam, out P2);
                         }
-                        if ((VV.CrossMagnitude(new gp_Vec(P2, P)) / NormD1 < myDeflection)
+                        if ((VV.CrossMagnitude(new Vector3D(P2, P)) / NormD1 < myDeflection)
                             && (Un1 >= myLastParam - myDwmax))
                         {
                             // point n is removed
@@ -308,7 +312,7 @@ public sealed class CPnts_UniformDeflection
     {
         for (int i = 0; i < myPoints.Length; i++)
         {
-            myPoints[i] = new gp_Pnt();
+            myPoints[i] = new Point3D();
         }
     }
 
@@ -380,7 +384,7 @@ public sealed class CPnts_UniformDeflection
     public bool IsAllDone() => myDone;
 
     /// <summary>Moves to the next point.</summary>
-    /// <exception cref="Standard_OutOfRange">There are no more points.</exception>
+    /// <exception cref="OutOfRangeException">There are no more points.</exception>
     public void Next()
     {
         Standard_OutOfRange_Raise_if(myIPoint >= myNbPoints,
@@ -421,7 +425,7 @@ public sealed class CPnts_UniformDeflection
     }
 
     /// <summary>The current point.</summary>
-    public gp_Pnt Point()
+    public Point3D Point()
     {
         StdFail_NotDone_Raise_if(!myDone, "CPnts_UniformDeflection::Point() - no result");
         return myPoints[myIPoint + 1];

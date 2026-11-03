@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepBasic_SiPrefix;
 using static Occt.StepBasic_SiUnitName;
 
@@ -285,7 +286,7 @@ public class STEPConstruct_UnitContext
             StepBasic_MeasureWithUnit aMWU = null;
             if (theCBU is not null)
             {
-                Standard_Transient aConvFactor = theCBU.ConversionFactor();
+                Transient aConvFactor = theCBU.ConversionFactor();
                 if (aConvFactor.IsKind(typeof(StepBasic_MeasureWithUnit)))
                 {
                     aMWU = aConvFactor as StepBasic_MeasureWithUnit;

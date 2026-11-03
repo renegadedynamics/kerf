@@ -1,8 +1,10 @@
+using Kerf.Engine.Foundation.Std;
+
 namespace OcctNet.Foundation.Tests.Standard;
 
 public class std_sortTests
 {
-    private readonly struct ByKey : std_heap.ILess<(int Key, int Id)>
+    private readonly struct ByKey : Heap.ILess<(int Key, int Id)>
     {
         public bool Less((int Key, int Id) theLeft, (int Key, int Id) theRight) => theLeft.Key < theRight.Key;
     }
@@ -29,7 +31,7 @@ public class std_sortTests
                 anItems[i] = (aRandom.Next(aKeys), i);
             }
             var aSorted = ((int Key, int Id)[])anItems.Clone();
-            std_sort.sort<(int Key, int Id), ByKey>(aSorted, default);
+            Sorting.Sort<(int Key, int Id), ByKey>(aSorted, default);
             for (int i = 1; i < theSize; ++i)
             {
                 Assert.True(aSorted[i - 1].Key <= aSorted[i].Key);
@@ -48,7 +50,7 @@ public class std_sortTests
         {
             anItems[i] = (aRandom.Next(4), i);
         }
-        std_sort.sort<(int Key, int Id), ByKey>(anItems, default);
+        Sorting.Sort<(int Key, int Id), ByKey>(anItems, default);
         Assert.Equal(anItems.OrderBy(x => x.Key).ThenBy(x => x.Id), anItems);
     }
 
@@ -58,7 +60,7 @@ public class std_sortTests
         foreach (Func<int, int> aKey in new Func<int, int>[] { _ => 5, i => i, i => -i, i => i % 7 })
         {
             var anItems = Enumerable.Range(0, 5000).Select(i => (aKey(i), i)).ToArray();
-            std_sort.sort<(int Key, int Id), ByKey>(anItems, default);
+            Sorting.Sort<(int Key, int Id), ByKey>(anItems, default);
             for (int i = 1; i < anItems.Length; ++i)
             {
                 Assert.True(anItems[i - 1].Item1 <= anItems[i].Item1);
@@ -75,7 +77,7 @@ public class std_sortTests
         {
             anItems[i] = (aRandom.Next(10), i);
         }
-        std_sort.stable_sort<(int Key, int Id), ByKey>(anItems, default);
+        Sorting.stable_sort<(int Key, int Id), ByKey>(anItems, default);
         Assert.Equal(anItems.OrderBy(x => x.Key).ThenBy(x => x.Id), anItems);
     }
 }

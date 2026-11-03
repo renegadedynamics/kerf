@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.ChFiDS_TypeOfConcavity;
 using static Occt.TopAbs_ShapeEnum;
@@ -35,12 +36,12 @@ public class BRepOffset_AnalyseTests
     // A stadium (two half discs joined by straight sides) extruded: planes tangent to half cylinders
     private static TopoDS_Shape Stadium()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(new gp_Pnt(10, 0, 0), new gp_Pnt(15, 5, 0), new gp_Pnt(10, 10, 0)).Value()).Edge();
-        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)).Edge();
-        TopoDS_Edge e4 = new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(new gp_Pnt(0, 10, 0), new gp_Pnt(-5, 5, 0), new gp_Pnt(0, 0, 0)).Value()).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(new Point3D(10, 0, 0), new Point3D(15, 5, 0), new Point3D(10, 10, 0)).Value()).Edge();
+        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 10, 0), new Point3D(0, 10, 0)).Edge();
+        TopoDS_Edge e4 = new BRepBuilderAPI_MakeEdge(new GC_MakeArcOfCircle(new Point3D(0, 10, 0), new Point3D(-5, 5, 0), new Point3D(0, 0, 0)).Value()).Edge();
         TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(e1, e2, e3, e4).Wire()).Face();
-        return new BRepPrimAPI_MakePrism(aF, new gp_Vec(0, 0, 4)).Shape();
+        return new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 4)).Shape();
     }
 
     [Fact]
@@ -69,8 +70,8 @@ public class BRepOffset_AnalyseTests
     [Fact]
     public void LShape_HasOneConcaveEdge()
     {
-        TopoDS_Shape aB1 = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 10, 10)).Shape();
-        TopoDS_Shape aB2 = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 20, 5)).Shape();
+        TopoDS_Shape aB1 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
+        TopoDS_Shape aB2 = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 5)).Shape();
         TopoDS_Shape aL = new BRepAlgoAPI_Fuse(aB1, aB2).Shape();
         var aU = new ShapeUpgrade_UnifySameDomain(aL, true, true, true);
         aU.Build();
@@ -80,7 +81,7 @@ public class BRepOffset_AnalyseTests
         Assert.Equal(1, aTypes[ChFiDS_Concave]);
         TopoDS_Edge aConcave = TopoDS.Edge(SubShapes(aShape, TopAbs_EDGE).Single(e => anA.Type(TopoDS.Edge(e)).First().Type() == ChFiDS_Concave));
         var aC = new BRepAdaptor_Curve(aConcave);
-        gp_Pnt aMid = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
+        Point3D aMid = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
         Assert.Equal(10.0, aMid.Y(), 9);
         Assert.Equal(5.0, aMid.Z(), 9);
     }
@@ -114,7 +115,7 @@ public class BRepOffset_AnalyseTests
     public void TangentFaces_WithDifferentOffsets_OnAFrozenShape_LeaveItUnchanged()
     {
         TopoDS_Shape aS = Stadium();
-        Assert.True(aS.TShape()!.IsFrozen());
+        Assert.True(aS.TShape()!.IsFrozen);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aS);
         var aMap = new NCollection_DataMap<TopoDS_Shape, double>(TopTools_ShapeMapHasher.Instance);
         foreach (TopoDS_Shape aF in SubShapes(aS, TopAbs_FACE))

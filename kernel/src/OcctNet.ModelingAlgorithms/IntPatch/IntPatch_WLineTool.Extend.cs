@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2014 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -60,7 +62,7 @@ public static partial class IntPatch_WLineTool
 
     // Returns True if thePmid is intersection point between theS1 and theS2 with given tolerance. In this case,
     // parameters of thePmid on every quadric will be recomputed and returned.
-    private static bool IsIntersectionPoint(in gp_Pnt thePmid, Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
+    private static bool IsIntersectionPoint(in Point3D thePmid, Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                             in IntSurf_PntOn2S theRefPt, double theTol,
                                             ReadOnlySpan<double> theArrPeriods, ref IntSurf_PntOn2S theNewPt)
     {
@@ -68,24 +70,24 @@ public static partial class IntPatch_WLineTool
 
         switch (theS1.GetType())
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(theS1.Plane(), thePmid, out aU1, out aV1);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Plane(), thePmid, out aU1, out aV1);
                 break;
 
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(theS1.Cylinder(), thePmid, out aU1, out aV1);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Cylinder(), thePmid, out aU1, out aV1);
                 break;
 
-            case GeomAbs_Sphere:
-                ElSLib.Parameters(theS1.Sphere(), thePmid, out aU1, out aV1);
+            case SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Sphere(), thePmid, out aU1, out aV1);
                 break;
 
-            case GeomAbs_Cone:
-                ElSLib.Parameters(theS1.Cone(), thePmid, out aU1, out aV1);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Cone(), thePmid, out aU1, out aV1);
                 break;
 
-            case GeomAbs_Torus:
-                ElSLib.Parameters(theS1.Torus(), thePmid, out aU1, out aV1);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Torus(), thePmid, out aU1, out aV1);
                 break;
 
             default:
@@ -94,24 +96,24 @@ public static partial class IntPatch_WLineTool
 
         switch (theS2.GetType())
         {
-            case GeomAbs_Plane:
-                ElSLib.Parameters(theS2.Plane(), thePmid, out aU2, out aV2);
+            case Plane:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Plane(), thePmid, out aU2, out aV2);
                 break;
 
-            case GeomAbs_Cylinder:
-                ElSLib.Parameters(theS2.Cylinder(), thePmid, out aU2, out aV2);
+            case SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Cylinder(), thePmid, out aU2, out aV2);
                 break;
 
-            case GeomAbs_Sphere:
-                ElSLib.Parameters(theS2.Sphere(), thePmid, out aU2, out aV2);
+            case SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Sphere(), thePmid, out aU2, out aV2);
                 break;
 
-            case GeomAbs_Cone:
-                ElSLib.Parameters(theS2.Cone(), thePmid, out aU2, out aV2);
+            case SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Cone(), thePmid, out aU2, out aV2);
                 break;
 
-            case GeomAbs_Torus:
-                ElSLib.Parameters(theS2.Torus(), thePmid, out aU2, out aV2);
+            case SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Torus(), thePmid, out aU2, out aV2);
                 break;
 
             default:
@@ -122,8 +124,8 @@ public static partial class IntPatch_WLineTool
 
         IntPatch_SpecialPoints.AdjustPointAndVertex(theRefPt, theArrPeriods, ref theNewPt);
 
-        gp_Pnt aP1 = theS1.Value(aU1, aV1);
-        gp_Pnt aP2 = theS2.Value(aU2, aV2);
+        Point3D aP1 = theS1.Value(aU1, aV1);
+        Point3D aP2 = theS2.Value(aU2, aV2);
 
         return (aP1.SquareDistance(aP2) <= theTol * theTol);
     }
@@ -133,7 +135,7 @@ public static partial class IntPatch_WLineTool
     {
         theAddedPt.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
 
-        if (theAddedPt.IsSame(theWline.Point(1), Precision.Confusion()))
+        if (theAddedPt.IsSame(theWline.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             theWline.Curve().Value(1, theAddedPt);
             for (int i = 1; i <= theWline.NbVertex(); i++)
@@ -175,7 +177,7 @@ public static partial class IntPatch_WLineTool
         theAddedPt.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
 
         int aNbPnts = theWline.NbPnts();
-        if (theAddedPt.IsSame(theWline.Point(aNbPnts), Precision.Confusion()))
+        if (theAddedPt.IsSame(theWline.Point(aNbPnts), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             theWline.Curve().Value(aNbPnts, theAddedPt);
         }
@@ -199,7 +201,7 @@ public static partial class IntPatch_WLineTool
     }
 
     // Checks, if 2D-representation of thePOn2S is in surfaces domain, defined by bounding-boxes theBoxS1 and theBoxS2.
-    private static bool IsOutOfDomain(in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, in IntSurf_PntOn2S thePOn2S,
+    private static bool IsOutOfDomain(in Box2d theBoxS1, in Box2d theBoxS2, in IntSurf_PntOn2S thePOn2S,
                                       ReadOnlySpan<double> theArrPeriods)
     {
         thePOn2S.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
@@ -207,19 +209,19 @@ public static partial class IntPatch_WLineTool
         theBoxS1.Get(out double aU1min, out double aV1min, out double aU1max, out double aV1max);
         theBoxS2.Get(out double aU2min, out double aV2min, out double aU2max, out double aV2max);
 
-        aU1 = ElCLib.InPeriod(aU1, aU1min, aU1min + theArrPeriods[0]);
-        aV1 = ElCLib.InPeriod(aV1, aV1min, aV1min + theArrPeriods[1]);
-        aU2 = ElCLib.InPeriod(aU2, aU2min, aU2min + theArrPeriods[2]);
-        aV2 = ElCLib.InPeriod(aV2, aV2min, aV2min + theArrPeriods[3]);
+        aU1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU1, aU1min, aU1min + theArrPeriods[0]);
+        aV1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV1, aV1min, aV1min + theArrPeriods[1]);
+        aU2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU2, aU2min, aU2min + theArrPeriods[2]);
+        aV2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV2, aV2min, aV2min + theArrPeriods[3]);
 
-        return (theBoxS1.IsOut(new gp_Pnt2d(aU1, aV1)) || theBoxS2.IsOut(new gp_Pnt2d(aU2, aV2)));
+        return (theBoxS1.IsOut(new Point2D(aU1, aV1)) || theBoxS2.IsOut(new Point2D(aU2, aV2)));
     }
 
     // Check if extending is possible (see ExtendTwoWLines).
     private static IntPatchWT_WLsConnectionType CheckArgumentsToExtend(
         Adaptor3d_Surface theS1, Adaptor3d_Surface theS2, in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-        ref IntSurf_PntOn2S theNewPoint, in gp_Vec theVec1, in gp_Vec theVec2, in gp_Vec theVec3,
-        in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, double theToler3D, ReadOnlySpan<double> theArrPeriods)
+        ref IntSurf_PntOn2S theNewPoint, in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
+        in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D, ReadOnlySpan<double> theArrPeriods)
     {
         double aSqToler = theToler3D * theToler3D;
         IntPatchWT_WLsConnectionType aRetVal = IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
@@ -240,7 +242,7 @@ public static partial class IntPatch_WLineTool
             return aRetVal;
         }
 
-        gp_Pnt aPmid = new gp_Pnt(0.5 * (thePtWL1.Value().XYZ() + thePtWL2.Value().XYZ()));
+        Point3D aPmid = new Point3D(0.5 * (thePtWL1.Value().XYZ() + thePtWL2.Value().XYZ()));
 
         Span<double> aNewPar = stackalloc double[4];
 
@@ -265,7 +267,7 @@ public static partial class IntPatch_WLineTool
         thePtWL2.Parameters(out aParWL2[0], out aParWL2[1], out aParWL2[2], out aParWL2[3]);
         theNewPoint.Parameters(out aNewPar[0], out aNewPar[1], out aNewPar[2], out aNewPar[3]);
 
-        Bnd_Range aR1 = new Bnd_Range(), aR2 = new Bnd_Range();
+        BoundRange aR1 = new BoundRange(), aR2 = new BoundRange();
 
         bool isOnBoundary = false;
         for (int i = 0; i < 4; i++)
@@ -280,7 +282,7 @@ public static partial class IntPatch_WLineTool
             aR1.Add(aParWL1[i]);
             aR1.Add(aParWL2[i]);
 
-            if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out)
+            if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
             {
                 // Check, if we intersect surface boundary when we will extend Wline1 or Wline2
                 // to theNewPoint
@@ -330,8 +332,8 @@ public static partial class IntPatch_WLineTool
                 aR2.Add(aNewPar[i]);
                 aR2.Add(aParWL2[i]);
 
-                if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out
-                    || aR2.IsIntersected(aParLBC[i], theArrPeriods[i]) != Bnd_Range.IntersectStatus.IntersectStatus_Out)
+                if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out
+                    || aR2.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
                 {
                     return IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
                 }
@@ -359,8 +361,8 @@ public static partial class IntPatch_WLineTool
     private static void ExtendTwoWLFirstFirst(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                               IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                               in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                              in gp_Vec theVec1, in gp_Vec theVec2, in gp_Vec theVec3,
-                                              in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, double theToler3D,
+                                              in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
+                                              in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
                                               ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
                                               ref bool theHasBeenJoined, List<PntRef> theRefs)
     {
@@ -429,8 +431,8 @@ public static partial class IntPatch_WLineTool
     private static void ExtendTwoWLFirstLast(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                              IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                              in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                             in gp_Vec theVec1, in gp_Vec theVec2, in gp_Vec theVec3,
-                                             in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, double theToler3D,
+                                             in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
+                                             in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
                                              ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
                                              ref bool theHasBeenJoined, List<PntRef> theRefs)
     {
@@ -497,8 +499,8 @@ public static partial class IntPatch_WLineTool
     private static void ExtendTwoWLLastFirst(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                              IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                              in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                             in gp_Vec theVec1, in gp_Vec theVec2, in gp_Vec theVec3,
-                                             in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, double theToler3D,
+                                             in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
+                                             in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
                                              ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
                                              ref bool theHasBeenJoined, List<PntRef> theRefs)
     {
@@ -560,8 +562,8 @@ public static partial class IntPatch_WLineTool
     private static void ExtendTwoWLLastLast(Adaptor3d_Surface theS1, Adaptor3d_Surface theS2,
                                             IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
                                             in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                            in gp_Vec theVec1, in gp_Vec theVec2, in gp_Vec theVec3,
-                                            in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2, double theToler3D,
+                                            in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
+                                            in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
                                             ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
                                             ref bool theHasBeenJoined)
     {
@@ -619,7 +621,7 @@ public static partial class IntPatch_WLineTool
         theHasBeenJoined = true;
     }
 
-    private static bool IsNeedSkipWL(IntPatch_WLine theWL, in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2,
+    private static bool IsNeedSkipWL(IntPatch_WLine theWL, in Box2d theBoxS1, in Box2d theBoxS2,
                                      ReadOnlySpan<double> theArrPeriods)
     {
         double aFirstp, aLastp;
@@ -651,15 +653,15 @@ public static partial class IntPatch_WLineTool
     /// </summary>
     public static void ExtendTwoWLines(NCollection_Sequence<IntPatch_Line> theSlin, Adaptor3d_Surface theS1,
                                        Adaptor3d_Surface theS2, double theToler3D, ReadOnlySpan<double> theArrPeriods,
-                                       in Bnd_Box2d theBoxS1, in Bnd_Box2d theBoxS2,
-                                       NCollection_List<gp_Pnt> theListOfCriticalPoints)
+                                       in Box2d theBoxS1, in Box2d theBoxS2,
+                                       NCollection_List<Point3D> theListOfCriticalPoints)
     {
         if (theSlin.Length() < 2)
         {
             return;
         }
 
-        gp_Vec aVec1 = new gp_Vec(), aVec2 = new gp_Vec(), aVec3 = new gp_Vec();
+        Vector3D aVec1 = new Vector3D(), aVec2 = new Vector3D(), aVec3 = new Vector3D();
 
         uint hasBeenJoinedCounter = 0;
 
@@ -730,8 +732,8 @@ public static partial class IntPatch_WLineTool
                 IntSurf_PntOn2S aPntFWL2 = aWLine2.Point(1);
                 IntSurf_PntOn2S aPntLWL2 = aWLine2.Point(aWLine2.NbPnts());
 
-                if (!(aPntFWL1.Value().IsSame(aPntFWL2, theToler3D, Precision.PConfusion()))
-                    && !(aPntFWL1.Value().IsSame(aPntLWL2, theToler3D, Precision.PConfusion())))
+                if (!(aPntFWL1.Value().IsSame(aPntFWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    && !(aPntFWL1.Value().IsSame(aPntLWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
                     if (aPntFWL1.Value().IsSame(aPntFWL2, theToler3D) || aPntFWL1.Value().IsSame(aPntLWL2, theToler3D))
                     {
@@ -739,8 +741,8 @@ public static partial class IntPatch_WLineTool
                     }
                 }
 
-                if (!(aPntLWL1.Value().IsSame(aPntFWL2, theToler3D, Precision.PConfusion()))
-                    && !(aPntLWL1.Value().IsSame(aPntLWL2, theToler3D, Precision.PConfusion())))
+                if (!(aPntLWL1.Value().IsSame(aPntFWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    && !(aPntLWL1.Value().IsSame(aPntLWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
                     if (aPntLWL1.Value().IsSame(aPntFWL2, theToler3D) || aPntLWL1.Value().IsSame(aPntLWL2, theToler3D))
                     {
@@ -750,13 +752,13 @@ public static partial class IntPatch_WLineTool
 
                 if (!theListOfCriticalPoints.IsEmpty())
                 {
-                    for (NCollection_List<gp_Pnt>.Iterator anItr = new(theListOfCriticalPoints); anItr.More();
+                    for (NCollection_List<Point3D>.Iterator anItr = new(theListOfCriticalPoints); anItr.More();
                          anItr.Next())
                     {
-                        gp_Pnt aPt = anItr.Value();
+                        Point3D aPt = anItr.Value();
                         if ((aCheckResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntFWL1.Value().Value()) < Precision.Confusion())
+                            if (aPt.SquareDistance(aPntFWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 aCheckResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
                             }
@@ -764,7 +766,7 @@ public static partial class IntPatch_WLineTool
 
                         if ((aCheckResult & (IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntLWL1.Value().Value()) < Precision.Confusion())
+                            if (aPt.SquareDistance(aPntLWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 aCheckResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
                             }
@@ -772,7 +774,7 @@ public static partial class IntPatch_WLineTool
 
                         if ((aCheckResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntFWL2.Value()) < Precision.Confusion())
+                            if (aPt.SquareDistance(aPntFWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 aCheckResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst;
                             }
@@ -780,7 +782,7 @@ public static partial class IntPatch_WLineTool
 
                         if ((aCheckResult & (IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntLWL2.Value()) < Precision.Confusion())
+                            if (aPt.SquareDistance(aPntLWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 aCheckResult |= IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast;
                             }

@@ -5,9 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using static Occt.BRepCheck_Status;
-using static Occt.gp_TrsfForm;
+using static Kerf.Geometry.TransformForm;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -44,7 +47,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         myModel = theModel;
     }
 
-    public override bool Recognize(Standard_Transient start)
+    public override bool Recognize(Transient start)
     {
         if (start is null)
         {
@@ -176,8 +179,8 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     }
 
     /// <summary>recursive method that accesses the root entities and starts the mapping</summary>
-    public override Transfer_Binder Transfer(Standard_Transient start, Transfer_TransientProcess TP,
-                                             Message_ProgressRange theProgress = default)
+    public override Transfer_Binder Transfer(Transient start, Transfer_TransientProcess TP,
+                                             ProgressRange theProgress = default)
     {
         // [BEGIN] Get version of preprocessor (to detect I-Deas case) (ssv; 23.11.2010)
         StepData_Factors aLocalFactors = new StepData_Factors();
@@ -217,30 +220,30 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     // ============================================================================
     // auxiliary function : ApplyTransformation
     // ============================================================================
-    private static void ApplyTransformation(ref TopoDS_Shape shape, in gp_Trsf Trsf)
+    private static void ApplyTransformation(ref TopoDS_Shape shape, in Transform3D Trsf)
     {
-        if (Trsf.Form() == gp_Identity)
+        if (Trsf.Form() == Identity)
         {
             return;
         }
-        TopLoc_Location theLoc = new TopLoc_Location(Trsf);
+        Placement theLoc = new Placement(Trsf);
         shape.Move(theLoc);
     }
 
-    private static void ApplyTransformation(ref TopoDS_Compound shape, in gp_Trsf Trsf)
+    private static void ApplyTransformation(ref TopoDS_Compound shape, in Transform3D Trsf)
     {
-        if (Trsf.Form() == gp_Identity)
+        if (Trsf.Form() == Identity)
         {
             return;
         }
-        TopLoc_Location theLoc = new TopLoc_Location(Trsf);
+        Placement theLoc = new Placement(Trsf);
         shape.Move(theLoc);
     }
 
     // ============================================================================
     // auxiliary function : FindContext
     // ============================================================================
-    private static StepRepr_Representation FindContext(Standard_Transient start, Transfer_TransientProcess TP, int level = 10)
+    private static StepRepr_Representation FindContext(Transient start, Transfer_TransientProcess TP, int level = 10)
     {
         StepRepr_Representation rep = null;
         Interface_Graph graph = TP.Graph();
@@ -261,7 +264,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     // purpose  : Returns integer corresponding to the type of the representation
     //           as defined in read.step.shape.repr_level parameter
     //=======================================================================
-    private static int FindShapeReprType(Standard_Transient start)
+    private static int FindShapeReprType(Transient start)
     {
         if (start.IsKind(typeof(StepShape_AdvancedBrepShapeRepresentation)))
         {
@@ -295,7 +298,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     // purpose  : Get SDRs assigned to ShapeAspect, which may potentially
     //           correspond to hybrid models in AP203 before 1998
     //=======================================================================
-    private static void getListSDR(StepRepr_ShapeAspect sa, NCollection_HSequence<Standard_Transient> listSDR, Transfer_TransientProcess TP)
+    private static void getListSDR(StepRepr_ShapeAspect sa, NCollection_HSequence<Transient> listSDR, Transfer_TransientProcess TP)
     {
         Interface_Graph graph = TP.Graph();
 
@@ -339,8 +342,8 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     // function : getSDR
     // purpose  : Find all SDRs related to given PDS
     //=======================================================================
-    private static void getSDR(StepRepr_ProductDefinitionShape PDS, NCollection_HSequence<Standard_Transient> listSDR,
-                               NCollection_HSequence<Standard_Transient> listNAUO, NCollection_HSequence<Standard_Transient> listSDRAspect,
+    private static void getSDR(StepRepr_ProductDefinitionShape PDS, NCollection_HSequence<Transient> listSDR,
+                               NCollection_HSequence<Transient> listNAUO, NCollection_HSequence<Transient> listSDRAspect,
                                Transfer_TransientProcess TP)
     {
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
@@ -416,7 +419,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>Transfers product definition entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepBasic_ProductDefinition PD, Transfer_TransientProcess TP,
                                                       in StepData_Factors theLocalFactors, bool theUseTrsf = false,
-                                                      Message_ProgressRange theProgress = default)
+                                                      ProgressRange theProgress = default)
     {
         TransferBRep_ShapeBinder shbinder = null;
 
@@ -427,9 +430,9 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
         // Find subcomponents of assembly (NAUO)
         // and definitions of shape of the current product (SDR)
-        NCollection_HSequence<Standard_Transient> listSDR = new NCollection_HSequence<Standard_Transient>();
-        NCollection_HSequence<Standard_Transient> listNAUO = new NCollection_HSequence<Standard_Transient>();
-        NCollection_HSequence<Standard_Transient> listSDRAspect = new NCollection_HSequence<Standard_Transient>();
+        NCollection_HSequence<Transient> listSDR = new NCollection_HSequence<Transient>();
+        NCollection_HSequence<Transient> listNAUO = new NCollection_HSequence<Transient>();
+        NCollection_HSequence<Transient> listSDRAspect = new NCollection_HSequence<Transient>();
         Interface_Graph graph = TP.Graph();
         Interface_EntityIterator subs3 = graph.Sharings(PD);
         for (subs3.Start(); subs3.More(); subs3.Next())
@@ -497,7 +500,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         }
 
         // common progress indicator for translation of own shapes and sub-assemblies
-        using Message_ProgressScope PS = new Message_ProgressScope(theProgress, "Part", nbEnt);
+        using ProgressScope PS = new ProgressScope(theProgress, "Part", nbEnt);
         int nbComponents = 0;
 
         // translate sub-assemblies
@@ -508,12 +511,12 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             // TRANSLOG
             if (TP.TraceLevel() > 1)
             {
-                using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+                using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
                 sout.Append(" -- Actor : Ent.n0 ").Append(TP.Model().Number(PD)).Append(" -> Shared Ent.no")
                     .Append(TP.Model().Number(NAUO)).Append('\n');
             }
             Transfer_Binder binder;
-            Message_ProgressRange aRange = PS.Next();
+            ProgressRange aRange = PS.Next();
             if (!TP.IsBound(NAUO))
             {
                 binder = TransferEntity(NAUO, TP, theLocalFactors, aRange);
@@ -556,7 +559,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                 continue;
             }
 
-            using Message_ProgressScope aPS1 = new Message_ProgressScope(PS.Next(), null, 2);
+            using ProgressScope aPS1 = new ProgressScope(PS.Next(), null, 2);
 
             // translate SDR representation
             bool isBound = true;
@@ -642,12 +645,12 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
     /// <summary>Transfers next assembly usage occurrence entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepRepr_NextAssemblyUsageOccurrence NAUO, Transfer_TransientProcess TP,
-                                                      in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                                                      in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeBinder shbinder = null;
         StepBasic_ProductDefinition PD = null;
         Interface_Graph graph = TP.Graph();
-        gp_Trsf Trsf = new gp_Trsf();
+        Transform3D Trsf = new Transform3D();
         bool iatrsf = false, SRRReversed = false, IsDepend = false;
         StepRepr_ShapeRepresentationRelationship SRR = null;
         Interface_EntityIterator subs1 = graph.Sharings(NAUO);
@@ -683,7 +686,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                 Interface_EntityIterator subs3 = TP.Graph().Sharings(rep);
                 for (subs3.Start(); subs3.More(); subs3.Next())
                 {
-                    Standard_Transient aSubs3Val = subs3.Value();
+                    Transient aSubs3Val = subs3.Value();
                     if (aSubs3Val is StepShape_ShapeDefinitionRepresentation SDR)
                     {
                         StepRepr_ProductDefinitionShape PDS1 = SDR.Definition().PropertyDefinition() as StepRepr_ProductDefinitionShape;
@@ -712,7 +715,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
         if (IsDepend)
         {
-            using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, 2);
+            using ProgressScope aPS = new ProgressScope(theProgress, null, 2);
 
             if (PD is not null)
             {
@@ -760,7 +763,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>Transfers shape representation entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepShape_ShapeRepresentation sr, Transfer_TransientProcess TP,
                                                       in StepData_Factors theLocalFactors, ref bool isBound, bool theUseTrsf = false,
-                                                      Message_ProgressRange theProgress = default)
+                                                      ProgressRange theProgress = default)
     {
         NM_DETECTED = false;
         TransferBRep_ShapeBinder shbinder = null;
@@ -775,7 +778,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         // TRANSLOG
         if (TP.TraceLevel() > 2)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
             sout.Append(" -- Actor : case  ShapeRepr. NbItems=").Append(nb).Append('\n');
         }
 
@@ -813,17 +816,17 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         myNMTool.SetActive(!isManifold && isNMMode);
         // [END] Proceed with non-manifold topology (ssv; 12.11.2010)
 
-        gp_Trsf aTrsf = new gp_Trsf();
-        using Message_ProgressScope aPSRoot = new Message_ProgressScope(theProgress, "Sub-assembly", isManifold ? 1 : 2);
-        using Message_ProgressScope aPS = new Message_ProgressScope(aPSRoot.Next(), "Transfer", nb);
+        Transform3D aTrsf = new Transform3D();
+        using ProgressScope aPSRoot = new ProgressScope(theProgress, "Sub-assembly", isManifold ? 1 : 2);
+        using ProgressScope aPS = new ProgressScope(aPSRoot.Next(), "Transfer", nb);
         NCollection_IndexedMap<TopoDS_Shape> aCompoundedShapes = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         for (int i = 1; i <= nb && aPS.More(); i++)
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             // TRANSLOG
             if (TP.TraceLevel() > 2)
             {
-                using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+                using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
                 sout.Append(" -- Actor, shape_representation.item n0. ").Append(i).Append('\n');
             }
             StepRepr_RepresentationItem anitem = sr.ItemsValue(i);
@@ -852,11 +855,11 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                         Geom_Axis2Placement aTargAP = StepToGeom.MakeAxis2Placement(aCS, aLocalFactors);
                         if (aTargAP is not null)
                         {
-                            gp_Ax3 ax3Orig = new gp_Ax3(new gp_Pnt(0.0, 0.0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
-                            gp_Ax3 ax3Targ = new gp_Ax3(aTargAP.Ax2());
-                            if (ax3Targ.Location().SquareDistance(ax3Orig.Location()) < Precision.SquareConfusion()
-                                && ax3Targ.Direction().IsEqual(ax3Orig.Direction(), Precision.Angular())
-                                && ax3Targ.XDirection().IsEqual(ax3Orig.XDirection(), Precision.Angular()))
+                            CoordinateSystem ax3Orig = new CoordinateSystem(new Point3D(0.0, 0.0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
+                            CoordinateSystem ax3Targ = new CoordinateSystem(aTargAP.Ax2());
+                            if (ax3Targ.Location().SquareDistance(ax3Orig.Location()) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                                && ax3Targ.Direction().IsEqual(ax3Orig.Direction(), global::Kerf.Engine.Foundation.Precision.Angular())
+                                && ax3Targ.XDirection().IsEqual(ax3Orig.XDirection(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 continue;
                             }
@@ -893,7 +896,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         // [BEGIN] Proceed with non-manifold topology (ssv; 12.11.2010)
         if (!isManifold)
         {
-            using Message_ProgressScope aPS1 = new Message_ProgressScope(aPSRoot.Next(), "Process", 1);
+            using ProgressScope aPS1 = new ProgressScope(aPSRoot.Next(), "Process", 1);
 
             // Set tolerances for shape processing.
             // These parameters are calculated inside STEPControl_ActorRead::Transfer() and cannot be set
@@ -988,18 +991,18 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         }
         else if (nsh == 1)
         {
-            if (aTrsf.Form() != gp_Identity)
+            if (aTrsf.Form() != Identity)
             {
-                TopLoc_Location aLoc = new TopLoc_Location(aTrsf);
+                Placement aLoc = new Placement(aTrsf);
                 OneResult.Move(aLoc);
             }
             shbinder = new TransferBRep_ShapeBinder(OneResult);
         }
         else
         {
-            if (aTrsf.Form() != gp_Identity)
+            if (aTrsf.Form() != Identity)
             {
-                TopLoc_Location aLoc = new TopLoc_Location(aTrsf);
+                Placement aLoc = new Placement(aTrsf);
                 comp.Move(aLoc);
             }
             shbinder = new TransferBRep_ShapeBinder(comp);
@@ -1013,7 +1016,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
     /// <summary>Transfers context dependent shape representation entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepShape_ContextDependentShapeRepresentation CDSR, Transfer_TransientProcess TP,
-                                                      in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                                                      in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         TransferBRep_ShapeBinder shbinder = null;
         //: j2: treat SRRs here in order to compare them with NAUO
@@ -1034,7 +1037,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
         TopoDS_Shape theResult;
 
-        gp_Trsf Trsf = new gp_Trsf();
+        Transform3D Trsf = new Transform3D();
         bool iatrsf = ComputeSRRWT(SRR, TP, ref Trsf, theLocalFactors);
 
         Transfer_Binder binder;
@@ -1075,7 +1078,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>Transfers shape representation relationship entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepRepr_ShapeRepresentationRelationship und, Transfer_TransientProcess TP,
                                                       in StepData_Factors theLocalFactors, int nbrep = 0, bool theUseTrsf = false,
-                                                      Message_ProgressRange theProgress = default)
+                                                      ProgressRange theProgress = default)
     {
         //  REPRESENTATION_RELATIONSHIP et la famille
         TransferBRep_ShapeBinder shbinder = null;
@@ -1094,14 +1097,14 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         B.MakeCompound(ref Cund);
         int nsh = 0;
 
-        gp_Trsf Trsf = new gp_Trsf();
+        Transform3D Trsf = new Transform3D();
         bool iatrsf = ComputeSRRWT(und, TP, ref Trsf, theLocalFactors);
 
         //    Transfert : que faut-il prendre au juste ?
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPS = new ProgressScope(theProgress, null, 2);
         for (int i = 1; i <= 2 && aPS.More(); i++)
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             if (nbrep != 0 && nbrep != i)
             {
                 continue;
@@ -1205,9 +1208,9 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                     {
                         continue;
                     }
-                    Geom_Plane aPlane = new Geom_Plane(new gp_Ax3(anAxis.Ax2()));
+                    Geom_Plane aPlane = new Geom_Plane(new CoordinateSystem(anAxis.Ax2()));
                     TopoDS_Face aPlaneFace = new TopoDS_Face();
-                    aB.MakeFace(ref aPlaneFace, aPlane, Precision.Confusion());
+                    aB.MakeFace(ref aPlaneFace, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
                     TransferBRep_ShapeBinder axisbinder = new TransferBRep_ShapeBinder(aPlaneFace);
                     theTP.Bind(aStepAxis, axisbinder);
                     aB.Add(aComp, aPlaneFace);
@@ -1229,7 +1232,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>Transfers MechanicalDesignAndDraughtingRelationship entity</summary>
     private TransferBRep_ShapeBinder TransferEntity(StepRepr_MechanicalDesignAndDraughtingRelationship theMDADR,
                                                     Transfer_TransientProcess theTP, in StepData_Factors theLocalFactors,
-                                                    Message_ProgressRange theProgress)
+                                                    ProgressRange theProgress)
     {
         TransferBRep_ShapeBinder aShBinder = null;
         if (theMDADR is null)
@@ -1244,10 +1247,10 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         BRep_Builder aBuilder = new BRep_Builder();
         aBuilder.MakeCompound(ref aComp);
 
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPS = new ProgressScope(theProgress, null, 2);
         for (int anIndex = 1; anIndex <= 2; anIndex++)
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             StepRepr_Representation aRepr = (anIndex == 1) ? theMDADR.Rep1() : theMDADR.Rep2();
             if (aRepr is null)
             {
@@ -1346,7 +1349,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>
     /// Translates file by old way when CDSR are roots. Acts only if "read.step.product_mode" is equal Off.
     /// </summary>
-    protected TransferBRep_ShapeBinder OldWay(Standard_Transient start, Transfer_TransientProcess TP, Message_ProgressRange theProgress)
+    protected TransferBRep_ShapeBinder OldWay(Transient start, Transfer_TransientProcess TP, ProgressRange theProgress)
     {
         Interface_Graph graph = TP.Graph();
         TransferBRep_ShapeBinder shbinder = null;
@@ -1369,17 +1372,17 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             }
         }
 
-        using Message_ProgressScope aPSRoot = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPSRoot = new ProgressScope(theProgress, null, 2);
 
         // TRANSLOG
         if (TP.TraceLevel() > 2)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
             sout.Append(" -- Actor : case  shape_definition_representation.").Append('\n');
         }
         Transfer_Binder binder = TP.Find(rep);
         {
-            Message_ProgressRange aRange = aPSRoot.Next();
+            ProgressRange aRange = aPSRoot.Next();
             if (binder is null)
             {
                 binder = TP.Transferring(rep, aRange);
@@ -1423,11 +1426,11 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         {
             nbitem++;
         }
-        using Message_ProgressScope PS = new Message_ProgressScope(aPSRoot.Next(), "Sub", nbitem);
+        using ProgressScope PS = new ProgressScope(aPSRoot.Next(), "Sub", nbitem);
         for (subs.Start(); subs.More() && PS.More(); subs.Next())
         {
-            Message_ProgressRange aRange = PS.Next();
-            Standard_Transient anitem = subs.Value();
+            ProgressRange aRange = PS.Next();
+            Transient anitem = subs.Value();
             if (anitem.DynamicType() != tCDSR && anitem.DynamicType() != tSRR)
             {
                 continue;
@@ -1435,7 +1438,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             // TRANSLOG
             if (TP.TraceLevel() > 1)
             {
-                using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+                using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
                 sout.Append(" -- Actor : Ent.n0 ").Append(TP.Model().Number(start)).Append(" -> Shared Ent.no")
                     .Append(TP.Model().Number(anitem)).Append('\n');
             }
@@ -1476,7 +1479,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>Transfers geometric representation item entity such as ManifoldSolidBRep ,...etc</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepGeom_GeometricRepresentationItem start, Transfer_TransientProcess TP,
                                                       in StepData_Factors theLocalFactors, bool isManifold,
-                                                      Message_ProgressRange theProgress)
+                                                      ProgressRange theProgress)
     {
         TransferBRep_ShapeBinder shbinder = null;
         bool found = false;
@@ -1486,8 +1489,8 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         // TRANSLOG (OCCT's chronometer, shown at trace level 3, left out)
         if (TP.TraceLevel() > 2)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
-            sout.Append("Begin transfer STEP -> CASCADE, Type ").Append(start.DynamicType().Name).Append('\n');
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            sout.Append("Begin transfer STEP -> CASCADE, Type ").Append(start.DynamicTypeName()).Append('\n');
         }
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
         //: S4136
@@ -1510,12 +1513,12 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         myShapeBuilder.SetMaxTol(myMaxTol);
 
         // Start progress scope (no need to check if progress exists -- it is safe)
-        using Message_ProgressScope aPS = new Message_ProgressScope(theProgress, "Transfer stage", isManifold ? 2 : 1);
+        using ProgressScope aPS = new ProgressScope(theProgress, "Transfer stage", isManifold ? 2 : 1);
         bool aReadTessellatedWhenNoBRepOnly = (aStepModel.InternalParameters.ReadTessellated == DESTEP_Parameters.RWMode_Tessellated.RWMode_Tessellated_OnNoBRep);
         bool aHasGeom = true;
         try
         {
-            Message_ProgressRange aRange = aPS.Next();
+            ProgressRange aRange = aPS.Next();
             if (start.IsKind(typeof(StepShape_FacetedBrep)))
             {
                 myShapeBuilder.Init(start as StepShape_FacetedBrep, TP, aLocalFactors, aRange);
@@ -1580,7 +1583,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                 found = true;
             }
         }
-        catch (Exception anException) when (anException is Standard_Failure || StepToTopoDS_Root.CaughtBySignals(anException))
+        catch (Exception anException) when (anException is FailureException || StepToTopoDS_Root.CaughtBySignals(anException))
         {
             TP.AddFail(start, "Exception is raised. Entity was not translated.");
             TP.Bind(start, shbinder);
@@ -1618,7 +1621,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         // TRANSLOG
         if (TP.TraceLevel() > 2)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
             sout.Append("End transfer STEP -> CASCADE :").Append(found ? "OK" : " : no result").Append('\n');
         }
         if (oldSRContext is null && mySRContext is not null)
@@ -1631,7 +1634,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
     /// <summary>Transfers mapped item</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepRepr_MappedItem mapit, Transfer_TransientProcess TP,
-                                                      in StepData_Factors theLocalFactors, Message_ProgressRange theProgress)
+                                                      in StepData_Factors theLocalFactors, ProgressRange theProgress)
     {
         TransferBRep_ShapeBinder shbinder = null;
 
@@ -1646,7 +1649,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         //  La Shape, et la mise en position
         StepShape_ShapeRepresentation maprep = mapit.MappingSource().MappedRepresentation() as StepShape_ShapeRepresentation;
         bool isBound = false;
-        using Message_ProgressScope aPSRoot = new Message_ProgressScope(theProgress, null, 2);
+        using ProgressScope aPSRoot = new ProgressScope(theProgress, null, 2);
         Transfer_Binder binder = TP.Find(maprep);
         if (binder is null)
         {
@@ -1666,7 +1669,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
                 //  1/ Ax2 dans Source et comme Target  : passage de Source a Target
                 //  2/ CartesianOperator3d comme Target : on applique
 
-                gp_Trsf Trsf = new gp_Trsf();
+                Transform3D Trsf = new Transform3D();
                 bool ok = false;
 
                 StepGeom_CartesianTransformationOperator3d CartOp = mapit.MappingTarget() as StepGeom_CartesianTransformationOperator3d;
@@ -1720,7 +1723,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             {
                 ++aSRRnum;
             }
-            using Message_ProgressScope aPS = new Message_ProgressScope(aPSRoot.Next(), "Part", aSRRnum);
+            using ProgressScope aPS = new ProgressScope(aPSRoot.Next(), "Part", aSRRnum);
             TopoDS_Shape aNewResult = TransferRelatedSRR(TP, maprep, false, aStepModel.InternalParameters.ReadConstrRelation,
                                                          theLocalFactors, aCund, aPS);
             if (!aNewResult.IsNull())
@@ -1743,7 +1746,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
 
     /// <summary>Transfers FaceSurface entity</summary>
     protected TransferBRep_ShapeBinder TransferEntity(StepShape_FaceSurface fs, Transfer_TransientProcess TP,
-                                                      in StepData_Factors theLocalFactors, Message_ProgressRange theProgress)
+                                                      in StepData_Factors theLocalFactors, ProgressRange theProgress)
     {
         //    Cas bien utile meme si non reconnu explicitement
         TransferBRep_ShapeBinder sb = null;
@@ -1808,7 +1811,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             TP.Bind(fs, sb);
             return sb; // TP->Find (start);
         }
-        catch (Exception anException) when (anException is Standard_Failure || StepToTopoDS_Root.CaughtBySignals(anException))
+        catch (Exception anException) when (anException is FailureException || StepToTopoDS_Root.CaughtBySignals(anException))
         {
             TP.AddFail(fs, "Exception is raised. Entity was not translated.");
             sb = null;
@@ -1820,8 +1823,8 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// <summary>
     /// theUseTrsf - special flag for using Axis2Placement from ShapeRepresentation for transform root shape
     /// </summary>
-    public Transfer_Binder TransferShape(Standard_Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
-                                         bool isManifold = true, bool theUseTrsf = false, Message_ProgressRange theProgress = default)
+    public Transfer_Binder TransferShape(Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
+                                         bool isManifold = true, bool theUseTrsf = false, ProgressRange theProgress = default)
     {
         if (start is null)
         {
@@ -1834,9 +1837,9 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         //  POUR MISE AU POINT, a supprimer ensuite
         if (TP.TraceLevel() > 1)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
             sout.Append(" -- Actor : Transfer Ent.n0 ").Append(TP.Model().Number(start)).Append("  Type ")
-                .Append(start.DynamicType().Name).Append('\n');
+                .Append(start.DynamicTypeName()).Append('\n');
         }
 
         TransferBRep_ShapeBinder shbinder = null;
@@ -1915,11 +1918,11 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         return shbinder;
     }
 
-    public Transfer_Binder TransferShape(Standard_Transient start, Transfer_TransientProcess TP)
+    public Transfer_Binder TransferShape(Transient start, Transfer_TransientProcess TP)
         => TransferShape(start, TP, new StepData_Factors());
 
-    Transfer_Binder StepToTopoDS_IActorRead.TransferShape(Standard_Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
-                                                          bool isManifold, bool theUseTrsf, Message_ProgressRange theProgress)
+    Transfer_Binder StepToTopoDS_IActorRead.TransferShape(Transient start, Transfer_TransientProcess TP, in StepData_Factors theLocalFactors,
+                                                          bool isManifold, bool theUseTrsf, ProgressRange theProgress)
         => TransferShape(start, TP, theLocalFactors, isManifold, theUseTrsf, theProgress);
 
     /// <summary>set units and tolerances context by given ShapeRepresentation</summary>
@@ -2019,7 +2022,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         // TRANSLOG
         if (TP.TraceLevel() > 1)
         {
-            using Message_Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
+            using Messenger.StreamBuffer sout = TP.Messenger().SendInfo();
             sout.Append("  Cc1ToTopoDS : Length Unit = ").Append(myUnit.LengthFactor()).Append("  Tolerance CASCADE = ")
                 .Append(myPrecision).Append('\n');
         }
@@ -2039,10 +2042,10 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     /// transformation is computed and is not an identity.
     /// </summary>
     public bool ComputeTransformation(StepGeom_Axis2Placement3d Origin, StepGeom_Axis2Placement3d Target, StepRepr_Representation OrigContext,
-                                      StepRepr_Representation TargContext, Transfer_TransientProcess TP, ref gp_Trsf Trsf,
+                                      StepRepr_Representation TargContext, Transfer_TransientProcess TP, ref Transform3D Trsf,
                                       in StepData_Factors theLocalFactors)
     {
-        Trsf = new gp_Trsf(); // reinit
+        Trsf = new Transform3D(); // reinit
         if (Origin is null || Target is null)
         {
             return false;
@@ -2108,23 +2111,23 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             PrepareUnits(oldSRContext, TP, ref aLocalFactors);
         }
 
-        gp_Ax3 ax3Orig = new gp_Ax3(theOrig.Ax2());
-        gp_Ax3 ax3Targ = new gp_Ax3(theTarg.Ax2());
+        CoordinateSystem ax3Orig = new CoordinateSystem(theOrig.Ax2());
+        CoordinateSystem ax3Targ = new CoordinateSystem(theTarg.Ax2());
 
         //  ne pas se tromper de sens !
         Trsf.SetTransformation(ax3Targ, ax3Orig);
-        return Trsf.Form() != gp_Identity;
+        return Trsf.Form() != Identity;
     }
 
     public bool ComputeTransformation(StepGeom_Axis2Placement3d Origin, StepGeom_Axis2Placement3d Target, StepRepr_Representation OrigContext,
-                                      StepRepr_Representation TargContext, Transfer_TransientProcess TP, ref gp_Trsf Trsf)
+                                      StepRepr_Representation TargContext, Transfer_TransientProcess TP, ref Transform3D Trsf)
         => ComputeTransformation(Origin, Target, OrigContext, TargContext, TP, ref Trsf, new StepData_Factors());
 
     /// <summary>Computes transformation defined by given REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION</summary>
-    public bool ComputeSRRWT(StepRepr_RepresentationRelationship SRR, Transfer_TransientProcess TP, ref gp_Trsf Trsf,
+    public bool ComputeSRRWT(StepRepr_RepresentationRelationship SRR, Transfer_TransientProcess TP, ref Transform3D Trsf,
                              in StepData_Factors theLocalFactors)
     {
-        Trsf = new gp_Trsf(); // init
+        Trsf = new Transform3D(); // init
 
         StepRepr_ShapeRepresentationRelationshipWithTransformation srwt = SRR as StepRepr_ShapeRepresentationRelationshipWithTransformation;
         if (srwt is null)
@@ -2149,7 +2152,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             {
                 PrepareUnits(oldSRContext, TP, ref aLocalFactors);
             }
-            return Trsf.Form() != gp_Identity;
+            return Trsf.Form() != Identity;
         }
 
         // item-defined transformation
@@ -2168,7 +2171,7 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         return ComputeTransformation(Ax1, Ax2, SRR.Rep1(), SRR.Rep2(), TP, ref Trsf, aLocalFactors);
     }
 
-    public bool ComputeSRRWT(StepRepr_RepresentationRelationship SRR, Transfer_TransientProcess TP, ref gp_Trsf Trsf)
+    public bool ComputeSRRWT(StepRepr_RepresentationRelationship SRR, Transfer_TransientProcess TP, ref Transform3D Trsf)
         => ComputeSRRWT(SRR, TP, ref Trsf, new StepData_Factors());
 
     //=======================================================================
@@ -2288,14 +2291,14 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
     //=======================================================================
     private TopoDS_Shape TransferRelatedSRR(Transfer_TransientProcess theTP, StepShape_ShapeRepresentation theRep, bool theUseTrsf,
                                             bool theReadConstructiveGeomRR, in StepData_Factors theLocalFactors, TopoDS_Compound theCund,
-                                            Message_ProgressScope thePS)
+                                            ProgressScope thePS)
     {
         BRep_Builder aBuilder = new BRep_Builder();
         TopoDS_Shape aResult = new TopoDS_Shape();
         Interface_Graph aGraph = theTP.Graph();
         for (Interface_EntityIterator aSubsIt = aGraph.Sharings(theRep); aSubsIt.More() && thePS.More(); aSubsIt.Next())
         {
-            Standard_Transient anItem = aSubsIt.Value();
+            Transient anItem = aSubsIt.Value();
             if (!anItem.IsKind(typeof(StepRepr_RepresentationRelationship)))
             {
                 continue;

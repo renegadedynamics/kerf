@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -44,11 +48,11 @@ public class GeomAPI_IntCS
     public bool IsDone() => myIntCS.IsDone();
 
     /// <summary>The number of intersection points.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public int NbPoints() => myIntCS.NbPoints();
 
     /// <summary>The intersection point of range <paramref name="Index"/>.</summary>
-    public gp_Pnt Point(int Index) => myIntCS.Point(Index).Pnt();
+    public Point3D Point(int Index) => myIntCS.Point(Index).Pnt();
 
     /// <summary>
     /// The parameters (<paramref name="U"/>, <paramref name="V"/>) on the surface and <paramref name="W"/> on the

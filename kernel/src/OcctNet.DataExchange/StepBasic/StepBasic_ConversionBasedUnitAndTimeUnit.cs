@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepBasic_ConversionBasedUnitAndTimeUnit : StepBasic_ConversionBasedUnit
@@ -19,7 +21,7 @@ public class StepBasic_ConversionBasedUnitAndTimeUnit : StepBasic_ConversionBase
     {
     }
 
-    public new void Init(StepBasic_DimensionalExponents aDimensions, TCollection_HAsciiString aName, Standard_Transient aConversionFactor)
+    public new void Init(StepBasic_DimensionalExponents aDimensions, TCollection_HAsciiString aName, Transient aConversionFactor)
     {
         // --- ANDOR component fields ---
         base.Init(aDimensions, aName, aConversionFactor);

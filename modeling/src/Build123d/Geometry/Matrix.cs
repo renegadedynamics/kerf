@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Text;
 using Occt;
 
@@ -10,18 +12,18 @@ namespace Build123d;
 public sealed class Matrix
 {
     /// <summary>The OCCT transformation. Never modified.</summary>
-    internal gp_GTrsf GTrsf { get; }
+    internal GeneralTransform3D GTrsf { get; }
 
-    Matrix(gp_GTrsf gtrsf, bool owned) => GTrsf = gtrsf;
+    Matrix(GeneralTransform3D gtrsf, bool owned) => GTrsf = gtrsf;
 
     /// <summary>The identity matrix.</summary>
-    public Matrix() : this(new gp_GTrsf(), owned: true) { }
+    public Matrix() : this(new GeneralTransform3D(), owned: true) { }
 
     /// <summary>A matrix from an OCCT gp_GTrsf (copied).</summary>
-    public Matrix(gp_GTrsf gtrsf) : this(Copy(gtrsf), owned: true) { }
+    public Matrix(GeneralTransform3D gtrsf) : this(Copy(gtrsf), owned: true) { }
 
     /// <summary>A matrix from an OCCT gp_Trsf.</summary>
-    public Matrix(gp_Trsf trsf) : this(new gp_GTrsf(trsf), owned: true) { }
+    public Matrix(Transform3D trsf) : this(new GeneralTransform3D(trsf), owned: true) { }
 
     /// <summary>
     /// A matrix from its values: 3 rows of 4 (the fourth row is implied), or 4 rows of 4 whose last row
@@ -30,21 +32,21 @@ public sealed class Matrix
     /// <exception cref="ArgumentException">The array isn't 3×4 or 4×4, or its last row isn't (0, 0, 0, 1).</exception>
     public Matrix(double[,] values) : this(FromValues(values), owned: true) { }
 
-    static gp_GTrsf Copy(gp_GTrsf source)
+    static GeneralTransform3D Copy(GeneralTransform3D source)
     {
         // A similarity is copied through its gp_Trsf, which keeps OCCT's record of its form and scale; a
         // general affine transform, which Trsf() refuses, from its matrix and translation
-        if (source.Form() != gp_TrsfForm.gp_Other)
+        if (source.Form() != TransformForm.Other)
         {
             var trsf = source.Trsf();
-            return new gp_GTrsf(trsf);
+            return new GeneralTransform3D(trsf);
         }
         var linear = source.VectorialPart();
         var translation = source.TranslationPart();
-        return new gp_GTrsf(linear, translation);
+        return new GeneralTransform3D(linear, translation);
     }
 
-    static gp_GTrsf FromValues(double[,] values)
+    static GeneralTransform3D FromValues(double[,] values)
     {
         int rows = values.GetLength(0), cols = values.GetLength(1);
         if (cols != 4 || rows is not (3 or 4))
@@ -59,14 +61,14 @@ public sealed class Matrix
             // A rotation, translation, uniform scale or mirror, or a product of them: build it as a
             // gp_Trsf so OCCT records its form and scale factor and it converts back to a gp_Trsf where
             // one is needed. Filling a gp_GTrsf value by value marks it gp_Other whatever it holds.
-            var similarity = new gp_Trsf().WithValues(values[0, 0], values[0, 1], values[0, 2], values[0, 3],
+            var similarity = new Transform3D().WithValues(values[0, 0], values[0, 1], values[0, 2], values[0, 3],
                                                       values[1, 0], values[1, 1], values[1, 2], values[1, 3],
                                                       values[2, 0], values[2, 1], values[2, 2], values[2, 3]);
-            return new gp_GTrsf(similarity);
+            return new GeneralTransform3D(similarity);
         }
 
         // A general affine transformation (non-uniform scale, shear, projection) is legitimately gp_Other
-        var gtrsf = new gp_GTrsf();
+        var gtrsf = new GeneralTransform3D();
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 4; j++)
                 gtrsf = gtrsf.WithValue(i + 1, j + 1, values[i, j]);
@@ -112,20 +114,20 @@ public sealed class Matrix
     }
 
     /// <summary>A new OCCT gp_GTrsf for this matrix.</summary>
-    public gp_GTrsf ToGpGTrsf() => Copy(GTrsf);
+    public GeneralTransform3D ToGpGTrsf() => Copy(GTrsf);
 
     /// <summary>This matrix followed by a rotation about an axis by an angle in degrees.</summary>
     public Matrix Rotated(Axis axis, double angle)
     {
-        var rotation = new gp_Trsf();
+        var rotation = new Transform3D();
         var ax1 = axis.ToGpAx1();
         rotation = rotation.WithRotation(ax1, angle * Constants.DegToRad);
-        var g = new gp_GTrsf(rotation);
+        var g = new GeneralTransform3D(rotation);
         return new Matrix(GTrsf.Multiplied(g), owned: true);
     }
 
     /// <summary>The inverse matrix.</summary>
-    /// <exception cref="Standard_Failure">The matrix is singular.</exception>
+    /// <exception cref="FailureException">The matrix is singular.</exception>
     public Matrix Inverse() => new(GTrsf.Inverted(), owned: true);
 
     /// <summary>A vector transformed by this matrix.</summary>

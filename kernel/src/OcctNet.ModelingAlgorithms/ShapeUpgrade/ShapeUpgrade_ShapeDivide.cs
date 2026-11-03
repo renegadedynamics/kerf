@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using Kerf.Topology;
+using static Kerf.Engine.Foundation.Gravity;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -59,7 +61,7 @@ public class ShapeUpgrade_ShapeDivide
         myShape = new TopoDS_Shape();
         myResult = new TopoDS_Shape();
         myStatus = 0;
-        myPrecision = myMinTol = Occt.Precision.Confusion();
+        myPrecision = myMinTol = Kerf.Engine.Foundation.Precision.Confusion();
         myMaxTol = 1; // Precision::Infinite() ?? pdn
         mySplitFaceTool = new ShapeUpgrade_FaceDivide();
         myContext = new ShapeBuild_ReShape();
@@ -179,10 +181,10 @@ public class ShapeUpgrade_ShapeDivide
             for (var it = new TopoDS_Iterator(savShape, false); it.More(); it.Next())
             {
                 TopoDS_Shape shape = it.Value();
-                TopLoc_Location L = shape.Location();
+                Placement L = shape.Location();
                 if (myContext.ModeConsiderLocation())
                 {
-                    var nullLoc = new TopLoc_Location();
+                    var nullLoc = new Placement();
                     shape.Location(nullLoc);
                 }
                 myShape = myContext.InternalApply(shape);
@@ -221,7 +223,7 @@ public class ShapeUpgrade_ShapeDivide
                 SplitWireTool.SetMinTolerance(myMinTol);
                 SplitWireTool.SetEdgeMode(myEdgeMode);
             }
-            Message_Msg doneMsg = GetFaceMsg();
+            Msg doneMsg = GetFaceMsg();
 
             for (var exp = new TopExp_Explorer(myShape, TopAbs_FACE); exp.More(); exp.Next())
             {
@@ -245,7 +247,7 @@ public class ShapeUpgrade_ShapeDivide
                             if (SplitFace.Status(ShapeExtend_DONE))
                             {
                                 myContext.Replace(face, SplitFace.InternalResult());
-                                SendMsg(face, doneMsg, Message_Info);
+                                SendMsg(face, doneMsg, Info);
                                 if (SplitFace.Status(ShapeExtend_DONE1))
                                 {
                                     myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
@@ -280,7 +282,7 @@ public class ShapeUpgrade_ShapeDivide
             SplitWire.SetMaxTolerance(myMaxTol);
             SplitWire.SetMinTolerance(myMinTol);
             SplitWire.SetEdgeMode(myEdgeMode);
-            Message_Msg doneMsg = GetWireMsg();
+            Msg doneMsg = GetWireMsg();
 
             var exp = new TopExp_Explorer(); // svv Jan 10 2000 : porting on DEC
             for (exp.Init(myShape, TopAbs_WIRE, TopAbs_FACE); exp.More(); exp.Next())
@@ -302,14 +304,14 @@ public class ShapeUpgrade_ShapeDivide
                     if (SplitWire.Status(ShapeExtend_DONE))
                     {
                         myContext.Replace(wire, SplitWire.InternalWire());
-                        SendMsg(wire, doneMsg, Message_Info);
+                        SendMsg(wire, doneMsg, Info);
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
                     }
                 }
             }
 
             // Process free EDGEs
-            Message_Msg edgeDoneMsg = GetEdgeMsg();
+            Msg edgeDoneMsg = GetEdgeMsg();
             for (exp.Init(myShape, TopAbs_EDGE, TopAbs_WIRE); exp.More(); exp.Next())
             {
                 // smh#8
@@ -334,7 +336,7 @@ public class ShapeUpgrade_ShapeDivide
                     if (SplitWire.Status(ShapeExtend_DONE))
                     {
                         myContext.Replace(edge, SplitWire.InternalWire());
-                        SendMsg(edge, edgeDoneMsg, Message_Info);
+                        SendMsg(edge, edgeDoneMsg, Info);
                         myStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
                     }
                 }
@@ -373,7 +375,7 @@ public class ShapeUpgrade_ShapeDivide
     public ShapeExtend_BasicMsgRegistrator? MsgRegistrator() => myMsgReg;
 
     /// <summary>Sends a message attached to the shape, through the message registrator.</summary>
-    public void SendMsg(in TopoDS_Shape shape, Message_Msg message, Message_Gravity gravity = Message_Info)
+    public void SendMsg(in TopoDS_Shape shape, Msg message, Gravity gravity = Info)
     {
         myMsgReg?.Send(shape, message, gravity);
     }
@@ -400,11 +402,11 @@ public class ShapeUpgrade_ShapeDivide
     protected virtual ShapeUpgrade_FaceDivide? GetSplitFaceTool() => mySplitFaceTool;
 
     /// <summary>The message sent for a divided face.</summary>
-    protected virtual Message_Msg GetFaceMsg() => new("ShapeDivide.FaceDivide.MSG0");
+    protected virtual Msg GetFaceMsg() => new("ShapeDivide.FaceDivide.MSG0");
 
     /// <summary>The message sent for a divided free wire.</summary>
-    protected virtual Message_Msg GetWireMsg() => new("ShapeDivide.WireDivide.MSG0");
+    protected virtual Msg GetWireMsg() => new("ShapeDivide.WireDivide.MSG0");
 
     /// <summary>The message sent for a divided free edge.</summary>
-    protected virtual Message_Msg GetEdgeMsg() => new("ShapeDivide.EdgeDivide.MSG0");
+    protected virtual Msg GetEdgeMsg() => new("ShapeDivide.EdgeDivide.MSG0");
 }

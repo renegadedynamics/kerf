@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 /// A working object, compared by reference (plan section 6). The first pave block is the one with the smallest
 /// original edge index (<see cref="AddPaveBlock"/>), unless <see cref="SetRealPaveBlock"/> chose another.
 /// </remarks>
-public class BOPDS_CommonBlock : Standard_Transient
+public class BOPDS_CommonBlock : Transient
 {
     protected NCollection_List<BOPDS_PaveBlock> myPaveBlocks = new(); //!< Pave blocks of the common block
     protected NCollection_List<int> myFaces = new();                   //!< Faces on which the pave blocks are lying

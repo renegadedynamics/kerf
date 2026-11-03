@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Conversion;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Joins a sequence of MultiCurves (Bezier) into one MultiBSpCurve.</summary>
@@ -61,15 +65,15 @@ public class Approx_MCurvesToBSpCurve
             int nb3d = P.NbPoints();
             int nb2d = P.NbPoints2d();
 
-            Convert_CompBezierCurvesToBSplineCurve conv = new();
-            Convert_CompBezierCurves2dToBSplineCurve2d conv2d = new();
+            CompBezierCurvesToBSplineCurve conv = new();
+            CompBezierCurves2dToBSplineCurve2d conv2d = new();
 
             if (nb3d != 0)
             {
                 for (i = 1; i <= nbcu; i++)
                 {
                     CU = TheSeq.Value(i);
-                    NCollection_Array1<gp_Pnt> ThePoles3d = new(1, CU.NbPoles());
+                    NCollection_Array1<Point3D> ThePoles3d = new(1, CU.NbPoles());
                     CU.Curve(1, ThePoles3d);
                     conv.AddCurve(ThePoles3d);
                 }
@@ -80,7 +84,7 @@ public class Approx_MCurvesToBSpCurve
                 for (i = 1; i <= nbcu; i++)
                 {
                     CU = TheSeq.Value(i);
-                    NCollection_Array1<gp_Pnt2d> ThePoles2d = new(1, CU.NbPoles());
+                    NCollection_Array1<Point2D> ThePoles2d = new(1, CU.NbPoles());
                     CU.Curve(1 + nb3d, ThePoles2d);
                     conv2d.AddCurve(ThePoles2d);
                 }
@@ -90,18 +94,18 @@ public class Approx_MCurvesToBSpCurve
             // Recuperation:
             if (nb3d != 0)
             {
-                nbpolesspl = conv.NbPoles();
-                nbknots = conv.NbKnots();
+                nbpolesspl = conv.PoleCount;
+                nbknots = conv.KnotCount;
             }
             else if (nb2d != 0)
             {
-                nbpolesspl = conv2d.NbPoles();
-                nbknots = conv2d.NbKnots();
+                nbpolesspl = conv2d.PoleCount;
+                nbknots = conv2d.KnotCount;
             }
 
             NCollection_Array1<AppParCurves_MultiPoint> tabMU = new(1, nbpolesspl);
-            NCollection_Array1<gp_Pnt> PolesSpl = new(1, nbpolesspl);
-            NCollection_Array1<gp_Pnt2d> PolesSpl2d = new(1, nbpolesspl);
+            NCollection_Array1<Point3D> PolesSpl = new(1, nbpolesspl);
+            NCollection_Array1<Point2D> PolesSpl2d = new(1, nbpolesspl);
             NCollection_Array1<int> TheMults = new(1, nbknots);
             NCollection_Array1<double> TheKnots = new(1, nbknots);
 
@@ -173,14 +177,14 @@ public class Approx_MCurvesToBSpCurve
                 for (j = 2; j <= nb3d; j++)
                 {
                     kpol = kpoles3d;
-                    NCollection_Array1<gp_Pnt> ThePoles = new(1, CU.NbPoles());
+                    NCollection_Array1<Point3D> ThePoles = new(1, CU.NbPoles());
                     CU.Curve(j, ThePoles);
 
                     Inc = deg - mydegre;
-                    NCollection_Array1<gp_Pnt> Points = new(1, deg + 1);
+                    NCollection_Array1<Point3D> Points = new(1, deg + 1);
                     if (Inc > 0)
                     {
-                        BSplCLib.IncreaseDegree(deg, ThePoles, BSplCLib.NoWeights(), Points, BSplCLib.NoWeights());
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(deg, ThePoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Points, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
                     }
                     else
                     {
@@ -197,14 +201,14 @@ public class Approx_MCurvesToBSpCurve
                 for (j = thefirst; j <= nb2d; j++)
                 {
                     kpol = kpoles2d;
-                    NCollection_Array1<gp_Pnt2d> ThePoles2d = new(1, CU.NbPoles());
+                    NCollection_Array1<Point2D> ThePoles2d = new(1, CU.NbPoles());
                     CU.Curve(j + nb3d, ThePoles2d);
 
                     Inc = deg - mydegre;
-                    NCollection_Array1<gp_Pnt2d> Points2d = new(1, deg + 1);
+                    NCollection_Array1<Point2D> Points2d = new(1, deg + 1);
                     if (Inc > 0)
                     {
-                        BSplCLib.IncreaseDegree(deg, ThePoles2d, BSplCLib.NoWeights(), Points2d, BSplCLib.NoWeights());
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(deg, ThePoles2d, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), Points2d, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights());
                     }
                     else
                     {

@@ -2,18 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bvh;
 using System.Numerics;
 
 namespace Occt;
 
 /// <summary>A box set built with the linear builder by default (OCCT's <c>BOPTools_BoxSet</c>).</summary>
-public class BOPTools_BoxSet<T, TVec, TData> : BVH_BoxSet<T, TVec, TData>
+public class BOPTools_BoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
-    /// <summary>A set built with the given builder, or with <see cref="BVH_LinearBuilder{T, TVec}"/> if null.</summary>
-    public BOPTools_BoxSet(BVH_Builder<T, TVec>? theBuilder = null)
-        : base(theBuilder ?? new BVH_LinearBuilder<T, TVec>())
+    /// <summary>A set built with the given builder, or with <see cref="LinearBuilder{T, TVec}"/> if null.</summary>
+    public BOPTools_BoxSet(Builder<T, TVec>? theBuilder = null)
+        : base(theBuilder ?? new LinearBuilder<T, TVec>())
     {
     }
 }
@@ -21,7 +22,7 @@ public class BOPTools_BoxSet<T, TVec, TData> : BVH_BoxSet<T, TVec, TData>
 /// <summary>The 3D box tree of the Boolean component (OCCT's typedef <c>BOPTools_BoxSet&lt;double, 3, int&gt;</c>).</summary>
 public sealed class BOPTools_BoxTree : BOPTools_BoxSet<double, NCollection_Vec3<double>, int>
 {
-    public BOPTools_BoxTree(BVH_Builder<double, NCollection_Vec3<double>>? theBuilder = null)
+    public BOPTools_BoxTree(Builder<double, NCollection_Vec3<double>>? theBuilder = null)
         : base(theBuilder)
     {
     }
@@ -30,7 +31,7 @@ public sealed class BOPTools_BoxTree : BOPTools_BoxSet<double, NCollection_Vec3<
 /// <summary>The 2D box tree (OCCT's typedef <c>BOPTools_BoxSet&lt;double, 2, int&gt;</c>).</summary>
 public sealed class BOPTools_Box2dTree : BOPTools_BoxSet<double, NCollection_Vec2<double>, int>
 {
-    public BOPTools_Box2dTree(BVH_Builder<double, NCollection_Vec2<double>>? theBuilder = null)
+    public BOPTools_Box2dTree(Builder<double, NCollection_Vec2<double>>? theBuilder = null)
         : base(theBuilder)
     {
     }

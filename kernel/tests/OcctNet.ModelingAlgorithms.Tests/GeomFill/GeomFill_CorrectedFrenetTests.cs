@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.GeomFill_TrihedronTests;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -20,11 +22,11 @@ public class GeomFill_CorrectedFrenetTests
     // A helix approximated by a B-spline: Frenet turns about the tangent there, the corrected law much less.
     private static Geom_BSplineCurve Helix()
     {
-        gp_Pnt[] aPts = new gp_Pnt[17];
+        Point3D[] aPts = new Point3D[17];
         for (int i = 0; i < aPts.Length; i++)
         {
             double t = i * 0.5;
-            aPts[i] = new gp_Pnt(Math.Cos(t), Math.Sin(t), 0.3 * t);
+            aPts[i] = new Point3D(Math.Cos(t), Math.Sin(t), 0.3 * t);
         }
         return BSpline(aPts);
     }
@@ -32,7 +34,7 @@ public class GeomFill_CorrectedFrenetTests
     [Fact]
     public void Conic_IsFrenet()
     {
-        var aCircle = new Geom_Circle(gp.XOY(), 2);
+        var aCircle = new Geom_Circle(Constants.XOY(), 2);
         GeomFill_CorrectedFrenet aLaw = Law(aCircle);
         var aFrenet = new GeomFill_Frenet();
         aFrenet.SetCurve(new GeomAdaptor_Curve(aCircle));
@@ -41,7 +43,7 @@ public class GeomFill_CorrectedFrenetTests
         Assert.Equal(GeomFill_Trihedron.GeomFill_IsFrenet, aLaw.EvaluateBestMode());
         Assert.False(aLaw.IsConstant());
         Assert.True(aLaw.IsOnlyBy3dCurve());
-        Assert.True(Law(new Geom_Line(gp.OX())).IsConstant());
+        Assert.True(Law(new Geom_Line(Constants.OX())).IsConstant());
     }
 
     [Fact]
@@ -79,10 +81,10 @@ public class GeomFill_CorrectedFrenetTests
     public void Planar_SCurve_NormalStaysOnOneSide()
     {
         // Frenet's normal flips at the inflexion; the corrected one keeps a constant binormal (the plane's normal)
-        Geom_BSplineCurve aS = BSpline(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 2, 0), new gp_Pnt(2, -2, 0), new gp_Pnt(3, 0, 0));
+        Geom_BSplineCurve aS = BSpline(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, -2, 0), new Point3D(3, 0, 0));
         GeomFill_CorrectedFrenet aLaw = Law(aS);
         // (not at the inflexion itself, u = 0.5, where Frenet's frame and the angle law meet from either side)
-        gp_Vec aB0 = D0(aLaw, 0.05).B;
+        Vector3D aB0 = D0(aLaw, 0.05).B;
         foreach (double u in new[] { 0.05, 0.2, 0.35, 0.45, 0.55, 0.65, 0.8, 0.95 })
         {
             Frame aF = D0(aLaw, u);
@@ -95,7 +97,7 @@ public class GeomFill_CorrectedFrenetTests
     public void Intervals_FuseFrenetAndTheAngleLaw()
     {
         GeomFill_CorrectedFrenet aLaw = Law(Twisted());
-        foreach (GeomAbs_Shape aS in new[] { GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_C2 })
+        foreach (Continuity aS in new[] { Continuity.C0, Continuity.C1, Continuity.C2 })
         {
             int aNb = aLaw.NbIntervals(aS);
             Assert.True(aNb >= 1);
@@ -137,7 +139,7 @@ public class GeomFill_CorrectedFrenetTests
     public void AverageLaw_IsAFrame()
     {
         GeomFill_CorrectedFrenet aLaw = Law(Helix());
-        gp_Vec aT = new(), aN = new(), aB = new();
+        Vector3D aT = new(), aN = new(), aB = new();
         aLaw.GetAverageLaw(ref aT, ref aN, ref aB);
         Assert.True(aT.Magnitude() > 0.1);
         AssertNear(aT.Crossed(aN), aB, 1.0e-12, "B = T ^ N");
@@ -148,7 +150,7 @@ public class GeomFill_CorrectedFrenetTests
     {
         // On a planar curve the plane search makes the angle law constant on each span; for evaluation it is
         // interpolated, which here gives the same frames to within the interpolation.
-        Geom_BSplineCurve aS = BSpline(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 2, 0), new gp_Pnt(2, -2, 0), new gp_Pnt(3, 0, 0));
+        Geom_BSplineCurve aS = BSpline(new Point3D(0, 0, 0), new Point3D(1, 2, 0), new Point3D(2, -2, 0), new Point3D(3, 0, 0));
         GeomFill_CorrectedFrenet aSweep = Law(aS), anEval = Law(aS, true);
         for (double u = 0.1; u < 0.95; u += 0.2)
         {
@@ -174,18 +176,18 @@ public class GeomFill_CorrectedFrenetTests
         // path: the Z axis; guide: the parallel line through (2, 0); the normal points at the guide
         // (the guide is matched by curvilinear abscissa over a range LocationGuide extends by a hundredth, so the
         // frame is close to, not exactly, the path's)
-        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(2, 0, 0), new gp_Dir(0, 0, 1)), 0, 4);
+        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0, 4);
         var aTri = new GeomFill_GuideTrihedronAC(aGuide);
         var aLaw = new GeomFill_LocationGuide(aTri);
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(gp.OZ()), 0, 4)));
-        gp_Mat M = new();
-        gp_Vec V = new();
+        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(Constants.OZ()), 0, 4)));
+        Matrix3x3 M = new();
+        Vector3D V = new();
         Assert.True(aLaw.D0(1.5, ref M, ref V));
         // the columns are (N, B, T)
-        AssertNear(new gp_Vec(0, 0, 1.5), V, 1.0e-12, "V");
-        AssertNear(new gp_Vec(0, 0, 1), new gp_Vec(M.Column(3)), 1.0e-2, "T");
+        AssertNear(new Vector3D(0, 0, 1.5), V, 1.0e-12, "V");
+        AssertNear(new Vector3D(0, 0, 1), new Vector3D(M.Column(3)), 1.0e-2, "T");
         Assert.Equal(1.0, Math.Abs(M.Column(1).X()), 1.0e-3);
-        gp_Pnt aOnGuide = aTri.CurrentPointOnGuide();
+        Point3D aOnGuide = aTri.CurrentPointOnGuide();
         Assert.Equal(2.0, aOnGuide.X(), 1.0e-9);
         Assert.Equal(1.5, aOnGuide.Z(), 2.0e-2);
     }
@@ -193,15 +195,15 @@ public class GeomFill_CorrectedFrenetTests
     [Fact]
     public void LocationGuide_GuideTrihedronPlan_ParallelLines()
     {
-        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 2, 0), new gp_Dir(0, 0, 1)), -1, 5);
+        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 2, 0), new Direction3D(0, 0, 1)), -1, 5);
         var aTri = new GeomFill_GuideTrihedronPlan(aGuide);
         var aLaw = new GeomFill_LocationGuide(aTri);
-        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(gp.OZ()), 0, 4)));
-        gp_Mat M = new();
-        gp_Vec V = new();
+        Assert.True(aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(Constants.OZ()), 0, 4)));
+        Matrix3x3 M = new();
+        Vector3D V = new();
         Assert.True(aLaw.D0(2.5, ref M, ref V));
-        AssertNear(new gp_Vec(0, 0, 2.5), V, 1.0e-12, "V");
-        AssertNear(new gp_Vec(0, 0, 1), new gp_Vec(M.Column(3)), 1.0e-9, "T");
+        AssertNear(new Vector3D(0, 0, 2.5), V, 1.0e-12, "V");
+        AssertNear(new Vector3D(0, 0, 1), new Vector3D(M.Column(3)), 1.0e-9, "T");
         Assert.Equal(1.0, Math.Abs(M.Column(1).Y()), 1.0e-9);
         Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
     }

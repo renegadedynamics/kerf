@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace Occt;
@@ -22,7 +24,7 @@ namespace Occt;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFunctionWithGradient
+public class AppParCurves_BSpFunction<MultiLine, ToolLine> : MultipleVarFunctionWithGradient
     where ToolLine : struct, IAppParCurves_LineTool<MultiLine>
 {
     // OCCT's Done field is written but never read; it is left out
@@ -32,12 +34,12 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
     private readonly math_Vector myParameters;
     private double FVal;
     private readonly math_Vector ValGrad_F;
-    private readonly math_Matrix MyF;
-    private readonly math_Matrix PTLX;
-    private readonly math_Matrix PTLY;
-    private readonly math_Matrix PTLZ;
-    private readonly math_Matrix A;
-    private readonly math_Matrix DA;
+    private readonly Matrix MyF;
+    private readonly Matrix PTLX;
+    private readonly Matrix PTLY;
+    private readonly Matrix PTLZ;
+    private readonly Matrix A;
+    private readonly Matrix DA;
     private readonly AppParCurves_LeastSquare<MultiLine, ToolLine> MyLeastSquare;
     private readonly bool Contraintes;
     private readonly int NbP;
@@ -68,12 +70,12 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
         MyMultiBSpCurve = new AppParCurves_MultiBSpCurve(NbPol);
         myParameters = new math_Vector(Parameters.Lower(), Parameters.Upper());
         ValGrad_F = new math_Vector(FirstPoint, LastPoint);
-        MyF = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLX = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLY = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLZ = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        A = new math_Matrix(FirstPoint, LastPoint, 1, NbPol);
-        DA = new math_Matrix(FirstPoint, LastPoint, 1, NbPol);
+        MyF = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLX = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLY = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLZ = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        A = new Matrix(FirstPoint, LastPoint, 1, NbPol);
+        DA = new Matrix(FirstPoint, LastPoint, 1, NbPol);
         MyLeastSquare = new AppParCurves_LeastSquare<MultiLine, ToolLine>(SSP,
                                                                           Knots,
                                                                           Mults,
@@ -160,8 +162,8 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
                 }
             }
 
-            NCollection_Array1<gp_Pnt> TabP = new(1, mynb3d);
-            NCollection_Array1<gp_Pnt2d> TabP2d = new(1, mynb2d);
+            NCollection_Array1<Point3D> TabP = new(1, mynb3d);
+            NCollection_Array1<Point2D> TabP2d = new(1, mynb2d);
 
             for (i = FirstP; i <= LastP; i++)
             {
@@ -303,7 +305,7 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
     public void SetLastLambda(double l2) => mylambda2 = l2;
 
     /// <summary>The number of variables: the number of points.</summary>
-    public override int NbVariables() => NbP;
+    public override int VariableCount => NbP;
 
     /// <summary>The gradient of F at <paramref name="X"/>.</summary>
     public override bool Gradient(math_Vector X, math_Vector G)
@@ -336,7 +338,7 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
     /// <summary>The distance between the point <paramref name="IPoint"/> and the curve <paramref name="CurveIndex"/>.</summary>
     public double Error(int IPoint, int CurveIndex)
     {
-        math_Matrix DD = MyLeastSquare.Distance();
+        Matrix DD = MyLeastSquare.Distance();
         double d = DD.Value(IPoint, CurveIndex);
         if (!Contraintes)
         {
@@ -358,10 +360,10 @@ public class AppParCurves_BSpFunction<MultiLine, ToolLine> : math_MultipleVarFun
     public math_Vector NewParameters() => myParameters;
 
     /// <summary>The function matrix of the least squares (shared: don't modify).</summary>
-    public math_Matrix FunctionMatrix() => MyLeastSquare.FunctionMatrix();
+    public Matrix FunctionMatrix() => MyLeastSquare.FunctionMatrix();
 
     /// <summary>The derivative function matrix of the least squares (shared: don't modify).</summary>
-    public math_Matrix DerivativeFunctionMatrix() => MyLeastSquare.DerivativeFunctionMatrix();
+    public Matrix DerivativeFunctionMatrix() => MyLeastSquare.DerivativeFunctionMatrix();
 
     /// <summary>The index of the first non-zero basis function at each point (see KIndex; shared: don't modify).</summary>
     public math_IntegerVector Index() => MyLeastSquare.KIndex();

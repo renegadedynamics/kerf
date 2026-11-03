@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -163,7 +165,7 @@ public sealed class LocOpe_BuildShape
                         B.MakeSolid(ref newSo);
                         B.Add(newSo, newSh); // newSh est FORWARD
                         BRepClass3d_SolidClassifier Class = new(newSo);
-                        Class.PerformInfinitePoint(Precision.Confusion());
+                        Class.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
                         if (Class.State() == TopAbs_IN)
                         {
                             lresult.Append(newSh.Oriented(TopAbs_REVERSED));
@@ -307,7 +309,7 @@ public sealed class LocOpe_BuildShape
     {
         if (!mapI.Add(ind))
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
 
         NCollection_List<TopoDS_Shape>.Iterator itl = new(mapEF[ind]);
@@ -323,7 +325,7 @@ public sealed class LocOpe_BuildShape
                     int indedg = mapEF.FindIndex(edg);
                     if (indedg == 0)
                     {
-                        throw new Standard_ConstructionError();
+                        throw new ConstructionErrorException();
                     }
                     if (!mapI.Contains(indedg))
                     {
@@ -410,7 +412,7 @@ public sealed class LocOpe_BuildShape
         for (exp.Init(S1, TopAbs_VERTEX); exp.More(); exp.Next())
         {
             TopoDS_Vertex vtx = TopoDS.Vertex(exp.Current());
-            gp_Pnt Pttest = BRep_Tool.Pnt(vtx);
+            Point3D Pttest = BRep_Tool.Pnt(vtx);
             double Tol = BRep_Tool.Tolerance(vtx);
             Class.Perform(Pttest, Tol);
             if (Class.State() == TopAbs_IN)

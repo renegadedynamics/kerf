@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -14,8 +16,8 @@ namespace Occt;
 public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
 {
     private NCollection_HArray1<int> myPnindex;
-    private NCollection_HArray1<Standard_Transient> myTriangleStrips;
-    private NCollection_HArray1<Standard_Transient> myTriangleFans;
+    private NCollection_HArray1<Transient> myTriangleStrips;
+    private NCollection_HArray1<Transient> myTriangleFans;
 
     /// <summary>
     /// default constructor
@@ -27,7 +29,7 @@ public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
     /// <summary>
     /// Initialize all fields (own and inherited)
     /// </summary>
-    public void Init(TCollection_HAsciiString theRepresentationItem_Name, StepVisual_CoordinatesList theTessellatedFace_Coordinates, int theTessellatedFace_Pnmax, NCollection_HArray2<double> theTessellatedFace_Normals, bool theHasTessellatedFace_GeometricLink, StepVisual_FaceOrSurface theTessellatedFace_GeometricLink, NCollection_HArray1<int> thePnindex, NCollection_HArray1<Standard_Transient> theTriangleStrips, NCollection_HArray1<Standard_Transient> theTriangleFans)
+    public void Init(TCollection_HAsciiString theRepresentationItem_Name, StepVisual_CoordinatesList theTessellatedFace_Coordinates, int theTessellatedFace_Pnmax, NCollection_HArray2<double> theTessellatedFace_Normals, bool theHasTessellatedFace_GeometricLink, StepVisual_FaceOrSurface theTessellatedFace_GeometricLink, NCollection_HArray1<int> thePnindex, NCollection_HArray1<Transient> theTriangleStrips, NCollection_HArray1<Transient> theTriangleFans)
     {
         base.Init(theRepresentationItem_Name, theTessellatedFace_Coordinates, theTessellatedFace_Pnmax, theTessellatedFace_Normals, theHasTessellatedFace_GeometricLink, theTessellatedFace_GeometricLink);
 
@@ -77,7 +79,7 @@ public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
     /// <summary>
     /// Returns field TriangleStrips
     /// </summary>
-    public NCollection_HArray1<Standard_Transient> TriangleStrips()
+    public NCollection_HArray1<Transient> TriangleStrips()
     {
         return myTriangleStrips;
     }
@@ -85,7 +87,7 @@ public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
     /// <summary>
     /// Sets field TriangleStrips
     /// </summary>
-    public void SetTriangleStrips(NCollection_HArray1<Standard_Transient> theTriangleStrips)
+    public void SetTriangleStrips(NCollection_HArray1<Transient> theTriangleStrips)
     {
         myTriangleStrips = theTriangleStrips;
     }
@@ -105,7 +107,7 @@ public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
     /// <summary>
     /// Returns field TriangleFans
     /// </summary>
-    public NCollection_HArray1<Standard_Transient> TriangleFans()
+    public NCollection_HArray1<Transient> TriangleFans()
     {
         return myTriangleFans;
     }
@@ -113,7 +115,7 @@ public class StepVisual_ComplexTriangulatedFace : StepVisual_TessellatedFace
     /// <summary>
     /// Sets field TriangleFans
     /// </summary>
-    public void SetTriangleFans(NCollection_HArray1<Standard_Transient> theTriangleFans)
+    public void SetTriangleFans(NCollection_HArray1<Transient> theTriangleFans)
     {
         myTriangleFans = theTriangleFans;
     }

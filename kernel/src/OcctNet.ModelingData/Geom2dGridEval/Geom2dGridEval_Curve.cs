@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -20,7 +21,7 @@ namespace Occt;
 public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
 {
     private Geom2dGridEval.ICurveEvaluator? myEvaluator;
-    private GeomAbs_CurveType myCurveType;
+    private CurveKind myCurveType;
 
     /// <summary>
     /// Constructor from an adaptor: a Geom2dAdaptor_Curve is evaluated through its curve, any other adaptor point by
@@ -29,7 +30,7 @@ public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
     public Geom2dGridEval_Curve(Adaptor2d_Curve2d theCurve)
     {
         myEvaluator = null;
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
         initialization(theCurve);
     }
 
@@ -37,12 +38,12 @@ public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
     public Geom2dGridEval_Curve(Geom2d_Curve? theCurve)
     {
         myEvaluator = null;
-        myCurveType = GeomAbs_OtherCurve;
+        myCurveType = OtherCurve;
         initialization(theCurve);
     }
 
     /// <summary>Returns the detected curve type.</summary>
-    public new GeomAbs_CurveType GetType() => myCurveType;
+    public new CurveKind GetType() => myCurveType;
 
     // Extracts basis curve from potentially nested TrimmedCurve wrappers.
     private static Geom2d_Curve ExtractBasisCurve(Geom2d_Curve theCurve)
@@ -74,7 +75,7 @@ public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
         if (theCurve is null)
         {
             myEvaluator = null;
-            myCurveType = GeomAbs_OtherCurve;
+            myCurveType = OtherCurve;
             return;
         }
 
@@ -83,56 +84,56 @@ public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
 
         if (aBasisCurve is Geom2d_Line aLine)
         {
-            myCurveType = GeomAbs_Line;
+            myCurveType = Line;
             myEvaluator = new Geom2dGridEval_Line(aLine);
         }
         else if (aBasisCurve is Geom2d_Circle aCircle)
         {
-            myCurveType = GeomAbs_Circle;
+            myCurveType = Circle;
             myEvaluator = new Geom2dGridEval_Circle(aCircle);
         }
         else if (aBasisCurve is Geom2d_Ellipse anEllipse)
         {
-            myCurveType = GeomAbs_Ellipse;
+            myCurveType = Ellipse;
             myEvaluator = new Geom2dGridEval_Ellipse(anEllipse);
         }
         else if (aBasisCurve is Geom2d_Hyperbola aHyperbola)
         {
-            myCurveType = GeomAbs_Hyperbola;
+            myCurveType = Hyperbola;
             myEvaluator = new Geom2dGridEval_Hyperbola(aHyperbola);
         }
         else if (aBasisCurve is Geom2d_Parabola aParabola)
         {
-            myCurveType = GeomAbs_Parabola;
+            myCurveType = Parabola;
             myEvaluator = new Geom2dGridEval_Parabola(aParabola);
         }
         else if (aBasisCurve is Geom2d_BezierCurve aBezier)
         {
-            myCurveType = GeomAbs_BezierCurve;
+            myCurveType = BezierCurve;
             myEvaluator = new Geom2dGridEval_BezierCurve(aBezier);
         }
         else if (aBasisCurve is Geom2d_BSplineCurve aBSpline)
         {
-            myCurveType = GeomAbs_BSplineCurve;
+            myCurveType = BSplineCurve;
             myEvaluator = new Geom2dGridEval_BSplineCurve(aBSpline);
         }
         else if (aBasisCurve is Geom2d_OffsetCurve anOffset)
         {
-            myCurveType = GeomAbs_OffsetCurve;
+            myCurveType = OffsetCurve;
             myEvaluator = new Geom2dGridEval_OffsetCurve(anOffset);
         }
         else
         {
             // Unknown curve type - set uninitialized
             myEvaluator = null;
-            myCurveType = GeomAbs_OtherCurve;
+            myCurveType = OtherCurve;
         }
     }
 
     /// <summary>Evaluates grid points at all parameters; 1-based, or empty.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
-        return myEvaluator is null ? new NCollection_Array1<gp_Pnt2d>() : myEvaluator.EvaluateGrid(theParams);
+        return myEvaluator is null ? new NCollection_Array1<Point2D>() : myEvaluator.EvaluateGrid(theParams);
     }
 
     /// <summary>Evaluates grid points with the first derivative; 1-based, or empty.</summary>
@@ -154,8 +155,8 @@ public sealed class Geom2dGridEval_Curve : Geom2dGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative (N &gt;= 1) at all grid points; 1-based, or empty.</summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
-        return myEvaluator is null ? new NCollection_Array1<gp_Vec2d>() : myEvaluator.EvaluateGridDN(theParams, theN);
+        return myEvaluator is null ? new NCollection_Array1<Vector2D>() : myEvaluator.EvaluateGridDN(theParams, theN);
     }
 }

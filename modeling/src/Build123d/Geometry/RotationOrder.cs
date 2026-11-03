@@ -1,3 +1,4 @@
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -28,36 +29,36 @@ public readonly record struct RotationOrder
     public static implicit operator RotationOrder(Extrinsic order) => new(12 + (int)order);
 
     /// <summary>The matching OCCT Euler sequence.</summary>
-    internal gp_EulerSequence ToOcct() => IsExtrinsic
+    internal EulerSequence ToOcct() => IsExtrinsic
         ? (Build123d.Extrinsic)(_value - 12) switch
         {
-            Build123d.Extrinsic.XYZ => gp_EulerSequence.gp_Extrinsic_XYZ,
-            Build123d.Extrinsic.XZY => gp_EulerSequence.gp_Extrinsic_XZY,
-            Build123d.Extrinsic.YZX => gp_EulerSequence.gp_Extrinsic_YZX,
-            Build123d.Extrinsic.YXZ => gp_EulerSequence.gp_Extrinsic_YXZ,
-            Build123d.Extrinsic.ZXY => gp_EulerSequence.gp_Extrinsic_ZXY,
-            Build123d.Extrinsic.ZYX => gp_EulerSequence.gp_Extrinsic_ZYX,
-            Build123d.Extrinsic.XYX => gp_EulerSequence.gp_Extrinsic_XYX,
-            Build123d.Extrinsic.XZX => gp_EulerSequence.gp_Extrinsic_XZX,
-            Build123d.Extrinsic.YZY => gp_EulerSequence.gp_Extrinsic_YZY,
-            Build123d.Extrinsic.YXY => gp_EulerSequence.gp_Extrinsic_YXY,
-            Build123d.Extrinsic.ZXZ => gp_EulerSequence.gp_Extrinsic_ZXZ,
-            _ => gp_EulerSequence.gp_Extrinsic_ZYZ,
+            Build123d.Extrinsic.XYZ => EulerSequence.Extrinsic_XYZ,
+            Build123d.Extrinsic.XZY => EulerSequence.Extrinsic_XZY,
+            Build123d.Extrinsic.YZX => EulerSequence.Extrinsic_YZX,
+            Build123d.Extrinsic.YXZ => EulerSequence.Extrinsic_YXZ,
+            Build123d.Extrinsic.ZXY => EulerSequence.Extrinsic_ZXY,
+            Build123d.Extrinsic.ZYX => EulerSequence.Extrinsic_ZYX,
+            Build123d.Extrinsic.XYX => EulerSequence.Extrinsic_XYX,
+            Build123d.Extrinsic.XZX => EulerSequence.Extrinsic_XZX,
+            Build123d.Extrinsic.YZY => EulerSequence.Extrinsic_YZY,
+            Build123d.Extrinsic.YXY => EulerSequence.Extrinsic_YXY,
+            Build123d.Extrinsic.ZXZ => EulerSequence.Extrinsic_ZXZ,
+            _ => EulerSequence.Extrinsic_ZYZ,
         }
         : (Build123d.Intrinsic)_value switch
         {
-            Build123d.Intrinsic.XYZ => gp_EulerSequence.gp_Intrinsic_XYZ,
-            Build123d.Intrinsic.XZY => gp_EulerSequence.gp_Intrinsic_XZY,
-            Build123d.Intrinsic.YZX => gp_EulerSequence.gp_Intrinsic_YZX,
-            Build123d.Intrinsic.YXZ => gp_EulerSequence.gp_Intrinsic_YXZ,
-            Build123d.Intrinsic.ZXY => gp_EulerSequence.gp_Intrinsic_ZXY,
-            Build123d.Intrinsic.ZYX => gp_EulerSequence.gp_Intrinsic_ZYX,
-            Build123d.Intrinsic.XYX => gp_EulerSequence.gp_Intrinsic_XYX,
-            Build123d.Intrinsic.XZX => gp_EulerSequence.gp_Intrinsic_XZX,
-            Build123d.Intrinsic.YZY => gp_EulerSequence.gp_Intrinsic_YZY,
-            Build123d.Intrinsic.YXY => gp_EulerSequence.gp_Intrinsic_YXY,
-            Build123d.Intrinsic.ZXZ => gp_EulerSequence.gp_Intrinsic_ZXZ,
-            _ => gp_EulerSequence.gp_Intrinsic_ZYZ,
+            Build123d.Intrinsic.XYZ => EulerSequence.Intrinsic_XYZ,
+            Build123d.Intrinsic.XZY => EulerSequence.Intrinsic_XZY,
+            Build123d.Intrinsic.YZX => EulerSequence.Intrinsic_YZX,
+            Build123d.Intrinsic.YXZ => EulerSequence.Intrinsic_YXZ,
+            Build123d.Intrinsic.ZXY => EulerSequence.Intrinsic_ZXY,
+            Build123d.Intrinsic.ZYX => EulerSequence.Intrinsic_ZYX,
+            Build123d.Intrinsic.XYX => EulerSequence.Intrinsic_XYX,
+            Build123d.Intrinsic.XZX => EulerSequence.Intrinsic_XZX,
+            Build123d.Intrinsic.YZY => EulerSequence.Intrinsic_YZY,
+            Build123d.Intrinsic.YXY => EulerSequence.Intrinsic_YXY,
+            Build123d.Intrinsic.ZXZ => EulerSequence.Intrinsic_ZXZ,
+            _ => EulerSequence.Intrinsic_ZYZ,
         };
 
     /// <inheritdoc/>

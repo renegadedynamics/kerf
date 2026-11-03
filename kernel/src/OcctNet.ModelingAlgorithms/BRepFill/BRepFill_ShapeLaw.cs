@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -46,9 +47,9 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
         {
             myLaws = new NCollection_HArray1<GeomFill_SectionLaw>(1, 1);
             //    gp_Pnt Origine;
-            gp_Dir D = new(gp_Dir.D.X); // Following the normal
+            Direction3D D = new(Direction3D.D.X); // Following the normal
             Geom_Line L = new(BRep_Tool.Pnt(V), D);
-            double Last = 2 * BRep_Tool.Tolerance(V) + Precision.PConfusion();
+            double Last = 2 * BRep_Tool.Tolerance(V) + global::Kerf.Engine.Foundation.Precision.PConfusion();
             Geom_TrimmedCurve TC = new(L, 0, Last);
 
             myLaws.ChangeValue(1) = new GeomFill_UniformSection(TC);
@@ -137,7 +138,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
                         }
 
                         bool IsClosed = BRep_Tool.IsClosed(E);
-                        if (IsClosed && Math.Abs(C.FirstParameter() - First) > Precision.PConfusion())
+                        if (IsClosed && Math.Abs(C.FirstParameter() - First) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             IsClosed = false; // trimmed curve differs
                         }
@@ -255,8 +256,8 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
 
         if (TheLaw is not null)
         {
-            gp_Trsf T = new();
-            T.SetScale(new gp_Pnt(0, 0, 0), TheLaw.Value(Param));
+            Transform3D T = new();
+            T.SetScale(new Point3D(0, 0, 0), TheLaw.Value(Param));
             // TopLoc_Location L(T);
             // V.Move(L);
             V = TopoDS.Vertex(new BRepBuilderAPI_Transform(V, T).Shape());
@@ -272,7 +273,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
     /// <summary>The gap between the end of the edge of rank <paramref name="Index"/> and the start of the next one.</summary>
     public override double VertexTol(int Index, double Param)
     {
-        double Tol = Precision.Confusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         int I1, I2;
         if ((Index == 0) || (Index == myEdges!.Length()))
         {
@@ -291,15 +292,15 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
 
         GeomFill_SectionLaw Loi;
         int NbPoles, NbKnots, Degree;
-        NCollection_HArray1<gp_Pnt> Poles;
+        NCollection_HArray1<Point3D> Poles;
         NCollection_HArray1<double> Knots, Weigth;
         NCollection_HArray1<int> Mults;
         Geom_BSplineCurve BS;
-        gp_Pnt PFirst;
+        Point3D PFirst;
 
         Loi = myLaws!.Value(I1);
         Loi.SectionShape(out NbPoles, out NbKnots, out Degree);
-        Poles = new NCollection_HArray1<gp_Pnt>(1, NbPoles);
+        Poles = new NCollection_HArray1<Point3D>(1, NbPoles);
         Weigth = new NCollection_HArray1<double>(1, NbPoles);
         Loi.D0(Param, Poles.ChangeArray1(), Weigth.ChangeArray1());
         Knots = new NCollection_HArray1<double>(1, NbKnots);
@@ -316,7 +317,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
 
         Loi = myLaws.Value(I2);
         Loi.SectionShape(out NbPoles, out NbKnots, out Degree);
-        Poles = new NCollection_HArray1<gp_Pnt>(1, NbPoles);
+        Poles = new NCollection_HArray1<Point3D>(1, NbPoles);
         Weigth = new NCollection_HArray1<double>(1, NbPoles);
         Loi.D0(Param, Poles.ChangeArray1(), Weigth.ChangeArray1());
         Knots = new NCollection_HArray1<double>(1, NbKnots);
@@ -374,7 +375,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
                     }
                     else
                     {
-                        epsV = 10 * Precision.PConfusion();
+                        epsV = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
                     }
                     Bof = Concat.Add(TC, epsV, true, false, 20);
                     if (!Bof)
@@ -400,7 +401,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
     //=================================================================================================
 
     /// <summary>The continuity of the section at the vertex between its edges of ranks <paramref name="Index"/> and next.</summary>
-    public override GeomAbs_Shape Continuity(int Index, double TolAngular)
+    public override Continuity Continuity(int Index, double TolAngular)
     {
 
         TopoDS_Edge Edge1, Edge2;
@@ -408,7 +409,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
         {
             if (!uclosed)
             {
-                return GeomAbs_C0; // The least possible error
+                return C0; // The least possible error
             }
 
             Edge1 = TopoDS.Edge(myEdges!.Value(myEdges.Length()));
@@ -449,7 +450,7 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
         BRepAdaptor_Curve Curve1 = new(Edge1);
         BRepAdaptor_Curve Curve2 = new(Edge2);
         double Eps = BRep_Tool.Tolerance(V2) + BRep_Tool.Tolerance(V1);
-        GeomAbs_Shape cont;
+        Continuity cont;
         cont = BRepLProp.Continuity(Curve1, Curve2, U1, U2, Eps, TolAngular);
 
         return cont;
@@ -466,8 +467,8 @@ public class BRepFill_ShapeLaw : BRepFill_SectionLaw
         S = myShape;
         if (TheLaw is not null)
         {
-            gp_Trsf T = new();
-            T.SetScale(new gp_Pnt(0, 0, 0), TheLaw.Value(U));
+            Transform3D T = new();
+            T.SetScale(new Point3D(0, 0, 0), TheLaw.Value(U));
             // TopLoc_Location L(T);
             // S.Move(L);
             S = new BRepBuilderAPI_Transform(S, T).Shape();

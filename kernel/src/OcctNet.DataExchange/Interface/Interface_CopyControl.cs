@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// correspond basically to the management of an indexed map. But they can be provided by various classes
 /// which can control a Transfer. Each Starting Entity have at most one Result (Mapping one-one)
 /// </summary>
-public abstract class Interface_CopyControl : Standard_Transient
+public abstract class Interface_CopyControl : Transient
 {
 
     /// <summary>
@@ -23,11 +25,11 @@ public abstract class Interface_CopyControl : Standard_Transient
     /// <summary>
     /// Bind a Result to a Starting Entity identified by its Number
     /// </summary>
-    public abstract void Bind(Standard_Transient? ent, Standard_Transient? res);
+    public abstract void Bind(Transient? ent, Transient? res);
 
     /// <summary>
     /// Searches for the Result bound to a Startingf Entity identified by its Number. If Found, returns True and
     /// fills &lt;res&gt; Else, returns False and nullifies &lt;res&gt;
     /// </summary>
-    public abstract bool Search(Standard_Transient? ent, out Standard_Transient? res);
+    public abstract bool Search(Transient? ent, out Transient? res);
 }

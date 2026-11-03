@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -14,7 +15,7 @@ namespace Occt;
 /// </summary>
 public class Geom2d_Line : Geom2d_Curve
 {
-    private gp_Ax2d pos;
+    private Axis2D pos;
 
     /// <summary>A new, unfrozen line equal to this one.</summary>
     public sealed override Geom2d_Geometry Copy()
@@ -25,49 +26,49 @@ public class Geom2d_Line : Geom2d_Curve
     }
 
     /// <summary>The line on the axis A: the origin and direction of A give the parametrization.</summary>
-    public Geom2d_Line(in gp_Ax2d A) => pos = A;
+    public Geom2d_Line(in Axis2D A) => pos = A;
 
     /// <summary>The line equal to L.</summary>
-    public Geom2d_Line(in gp_Lin2d L) => pos = L.Position();
+    public Geom2d_Line(in Line2D L) => pos = L.Position();
 
     /// <summary>The line through P with the direction V.</summary>
-    public Geom2d_Line(in gp_Pnt2d P, in gp_Dir2d V) => pos = new gp_Ax2d(P, V);
+    public Geom2d_Line(in Point2D P, in Direction2D V) => pos = new Axis2D(P, V);
 
-    internal void SetDirection(in gp_Dir2d V)
+    internal void SetDirection(in Direction2D V)
     {
         CheckMutable();
         pos.SetDirection(V);
     }
 
     /// <summary>The unit direction of the line.</summary>
-    public gp_Dir2d Direction() => pos.Direction();
+    public Direction2D Direction() => pos.Direction();
 
-    internal void SetLin2d(in gp_Lin2d L)
+    internal void SetLin2d(in Line2D L)
     {
         CheckMutable();
         pos = L.Position();
     }
 
-    internal void SetLocation(in gp_Pnt2d P)
+    internal void SetLocation(in Point2D P)
     {
         CheckMutable();
         pos.SetLocation(P);
     }
 
     /// <summary>The origin of the line.</summary>
-    public gp_Pnt2d Location() => pos.Location();
+    public Point2D Location() => pos.Location();
 
-    internal void SetPosition(in gp_Ax2d A)
+    internal void SetPosition(in Axis2D A)
     {
         CheckMutable();
         pos = A;
     }
 
     /// <summary>The axis of the line.</summary>
-    public gp_Ax2d Position() => pos;
+    public Axis2D Position() => pos;
 
     /// <summary>The line as a gp_Lin2d.</summary>
-    public gp_Lin2d Lin2d() => new gp_Lin2d(pos);
+    public Line2D Lin2d() => new Line2D(pos);
 
     /// <summary>Reverses the direction of the line.</summary>
     protected internal sealed override void Reverse()
@@ -80,10 +81,10 @@ public class Geom2d_Line : Geom2d_Curve
     public sealed override double ReversedParameter(double U) => (-U);
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -Precision.Infinite();
+    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => Precision.Infinite();
+    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
     public sealed override bool IsClosed() => false;
@@ -92,31 +93,31 @@ public class Geom2d_Line : Geom2d_Curve
     public sealed override bool IsPeriodic() => false;
 
     /// <summary>CN.</summary>
-    public sealed override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public sealed override Continuity Continuity() => CN;
 
     /// <summary>The distance between P and the line.</summary>
-    public double Distance(in gp_Pnt2d P)
+    public double Distance(in Point2D P)
     {
-        gp_Lin2d L = new gp_Lin2d(pos);
+        Line2D L = new Line2D(pos);
         return L.Distance(P);
     }
 
     /// <summary>True.</summary>
     public sealed override bool IsCN(int N) => true;
 
-    public sealed override gp_Pnt2d EvalD0(double U) => ElCLib.LineValue(U, pos);
+    public sealed override Point2D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.LineValue(U, pos);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult;
-        ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult = new ResD2();
-        ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
         aResult.D2.SetCoord(0.0, 0.0);
         return aResult;
     }
@@ -124,7 +125,7 @@ public class Geom2d_Line : Geom2d_Curve
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult = new ResD3();
-        ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.LineD1(U, pos, out aResult.Point, out aResult.D1);
         aResult.D2.SetCoord(0.0, 0.0);
         aResult.D3.SetCoord(0.0, 0.0);
         return aResult;
@@ -132,7 +133,7 @@ public class Geom2d_Line : Geom2d_Curve
 
     /// <summary>The direction for N = 1, a null vector above.</summary>
     /// <exception cref="Geom2d_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec2d EvalDN(double U, int N)
+    public sealed override Vector2D EvalDN(double U, int N)
     {
         if (N < 1)
         {
@@ -140,25 +141,25 @@ public class Geom2d_Line : Geom2d_Curve
         }
         if (N == 1)
         {
-            return new gp_Vec2d(pos.Direction());
+            return new Vector2D(pos.Direction());
         }
         else
         {
-            return new gp_Vec2d(0.0, 0.0);
+            return new Vector2D(0.0, 0.0);
         }
     }
 
     /// <summary>Applies T to the line's axis.</summary>
-    protected internal sealed override void Transform(in gp_Trsf2d T)
+    protected internal sealed override void Transform(in Transform2D T)
     {
         CheckMutable();
         pos.Transform(T);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    public sealed override double TransformedParameter(double U, in gp_Trsf2d T)
+    public sealed override double TransformedParameter(double U, in Transform2D T)
     {
-        if (Precision.IsInfinite(U))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(U))
         {
             return U;
         }
@@ -166,12 +167,12 @@ public class Geom2d_Line : Geom2d_Curve
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in gp_Trsf2d T) => Math.Abs(T.ScaleFactor());
+    public sealed override double ParametricTransformation(in Transform2D T) => Math.Abs(T.ScaleFactor());
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 
     /// <summary>A copy equal to L.</summary>
-    public Geom2d_Line WithLin2d(in gp_Lin2d L)
+    public Geom2d_Line WithLin2d(in Line2D L)
     {
         Geom2d_Line aCopy = (Geom2d_Line)Copy();
         aCopy.SetLin2d(L);
@@ -179,7 +180,7 @@ public class Geom2d_Line : Geom2d_Curve
     }
 
     /// <summary>A copy with the direction V.</summary>
-    public Geom2d_Line WithDirection(in gp_Dir2d V)
+    public Geom2d_Line WithDirection(in Direction2D V)
     {
         Geom2d_Line aCopy = (Geom2d_Line)Copy();
         aCopy.SetDirection(V);
@@ -187,7 +188,7 @@ public class Geom2d_Line : Geom2d_Curve
     }
 
     /// <summary>A copy with the origin P.</summary>
-    public Geom2d_Line WithLocation(in gp_Pnt2d P)
+    public Geom2d_Line WithLocation(in Point2D P)
     {
         Geom2d_Line aCopy = (Geom2d_Line)Copy();
         aCopy.SetLocation(P);
@@ -195,7 +196,7 @@ public class Geom2d_Line : Geom2d_Curve
     }
 
     /// <summary>A copy on the axis A.</summary>
-    public Geom2d_Line WithPosition(in gp_Ax2d A)
+    public Geom2d_Line WithPosition(in Axis2D A)
     {
         Geom2d_Line aCopy = (Geom2d_Line)Copy();
         aCopy.SetPosition(A);

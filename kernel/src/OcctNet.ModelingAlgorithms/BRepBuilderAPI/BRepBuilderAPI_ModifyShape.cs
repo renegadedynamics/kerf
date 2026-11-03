@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -54,7 +56,7 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
     {
         if (myInitialShape.IsNull() || myModification is null)
         {
-            throw new Standard_NullObject();
+            throw new NullObjectException();
         }
         myModifier.Perform(myModification);
         if (myModifier.IsDone())
@@ -98,7 +100,7 @@ public abstract class BRepBuilderAPI_ModifyShape : BRepBuilderAPI_MakeShape
     /// <summary>
     /// The modified shape corresponding to <paramref name="S"/>, the initial shape or one of its sub-shapes (frozen).
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="S"/> isn't the initial shape or one of its sub-shapes.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="S"/> isn't the initial shape or one of its sub-shapes.</exception>
     public TopoDS_Shape ModifiedShape(in TopoDS_Shape S)
     {
         TopoDS_Shape aShape = InternalModifiedShape(S);

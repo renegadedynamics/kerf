@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -20,7 +23,7 @@ namespace Occt;
 /// <see cref="GetModifiedShapesMap"/> hand out frozen shapes; ported callers read them through the
 /// <c>Internal</c> forms.
 /// </remarks>
-public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
+public sealed class ShapeUpgrade_RemoveLocations : Transient
 {
     private TopAbs_ShapeEnum myLevelRemoving;
     private TopoDS_Shape myShape = new();
@@ -119,9 +122,9 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
     private static bool RebuildShape(in TopoDS_Face theFace, ref TopoDS_Face theNewFace)
     {
         BRep_Builder aB = new();
-        Geom_Surface aSurf = BRep_Tool.Surface(theFace, out TopLoc_Location aLoc)!;
+        Geom_Surface aSurf = BRep_Tool.Surface(theFace, out Placement aLoc)!;
         bool isRebuild = false;
-        if (!aLoc.IsIdentity())
+        if (!aLoc.IsIdentity)
         {
             Geom_Surface anewSurf = (Geom_Surface)aSurf.Transformed(aLoc.Transformation());
             aB.MakeFace(ref theNewFace, anewSurf, BRep_Tool.Tolerance(theFace));
@@ -143,11 +146,11 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
         if (!isBound)
         {
             Geom_Curve? C3d;
-            C3d = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out double First3d, out double Last3d);
+            C3d = BRep_Tool.Curve(theEdge, out Placement aLoc, out double First3d, out double Last3d);
             aB.MakeEdge(ref theNewEdge);
             if (C3d is not null)
             {
-                if (!aLoc.IsIdentity())
+                if (!aLoc.IsIdentity)
                 {
                     Geom_Curve anewC3d = (Geom_Curve)C3d.Transformed(aLoc.Transformation());
                     C3d = anewC3d;
@@ -216,7 +219,7 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
         BRep_Builder aB = new();
         aB.MakeVertex(ref theNewVertex);
         theNewVertex.Orientation(theVertex.Orientation());
-        gp_Pnt p1 = BRep_Tool.Pnt(theVertex);
+        Point3D p1 = BRep_Tool.Pnt(theVertex);
         aB.UpdateVertex(theNewVertex, p1, BRep_Tool.Tolerance(theVertex));
         return true;
     }
@@ -233,9 +236,9 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
         TopAbs_ShapeEnum shtype = theShape.ShapeType();
         BRep_Builder aB = new();
         TopoDS_Shape aShape = theShape;
-        if (!theRemoveLoc && !theShape.Location().IsIdentity())
+        if (!theRemoveLoc && !theShape.Location().IsIdentity)
         {
-            TopLoc_Location nulLoc = new();
+            Placement nulLoc = new();
             aShape.Location(nulLoc);
         }
         bool isBound = myMapNewShapes.IsBound(aShape);
@@ -243,9 +246,9 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
         {
             aNewShape = myMapNewShapes.Find(aShape);
             aNewShape.Orientation(theShape.Orientation());
-            if (!theRemoveLoc && !theShape.Location().IsIdentity())
+            if (!theRemoveLoc && !theShape.Location().IsIdentity)
             {
-                TopLoc_Location aL = theShape.Location();
+                Placement aL = theShape.Location();
                 aNewShape.Location(aL);
             }
             if (shtype != TopAbs_EDGE)
@@ -269,7 +272,7 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
             anAncShape = aShape;
         }
         if (isRemoveLoc
-            && (!aShape.Location().IsIdentity() || shtype == TopAbs_EDGE || shtype == TopAbs_FACE))
+            && (!aShape.Location().IsIdentity || shtype == TopAbs_EDGE || shtype == TopAbs_FACE))
         {
 
             // Rebuild geometry for shape with location.
@@ -329,9 +332,9 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
                 // it is safe to simply copy Closed flag since this operation does not change topology
                 aNewShape.Closed(theShape.Closed());
             }
-            TopLoc_Location oldLoc, nullloc = new();
+            Placement oldLoc, nullloc = new();
             oldLoc = theShape.Location();
-            if (!oldLoc.IsIdentity())
+            if (!oldLoc.IsIdentity)
             {
                 aNewShape.Location(nullloc);
             }
@@ -355,7 +358,7 @@ public sealed class ShapeUpgrade_RemoveLocations : Standard_Transient
                 aNewShape = aShape;
             }
             myMapNewShapes.Bind(aShape, aNewShape);
-            if (!theRemoveLoc && !oldLoc.IsIdentity())
+            if (!theRemoveLoc && !oldLoc.IsIdentity)
             {
                 aNewShape.Location(oldLoc);
             }

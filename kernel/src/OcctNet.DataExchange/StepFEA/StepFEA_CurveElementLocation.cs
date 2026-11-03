@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity CurveElementLocation
 /// </summary>
-public class StepFEA_CurveElementLocation : Standard_Transient
+public class StepFEA_CurveElementLocation : Transient
 {
     private StepFEA_FeaParametricPoint theCoordinate;
 

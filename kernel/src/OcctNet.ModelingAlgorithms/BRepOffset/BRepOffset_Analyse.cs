@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.ChFiDS_TypeOfConcavity;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -57,7 +60,7 @@ public sealed class BRepOffset_Analyse
     // Binding between edge and face generated from the edge
     private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> myGenerated = new(TopTools_ShapeMapHasher.Instance);
 
-    private static void CorrectOrientationOfTangent(ref gp_Vec TangVec, in TopoDS_Vertex aVertex, in TopoDS_Edge anEdge)
+    private static void CorrectOrientationOfTangent(ref Vector3D TangVec, in TopoDS_Vertex aVertex, in TopoDS_Edge anEdge)
     {
         TopoDS_Vertex Vlast = TopExp.LastVertex(anEdge);
         if (aVertex.IsSame(Vlast))
@@ -96,18 +99,18 @@ public sealed class BRepOffset_Analyse
         I.Last(l);
         //
         BRepAdaptor_Surface aBAsurf1 = new(F1, false);
-        GeomAbs_SurfaceType aSurfType1 = aBAsurf1.GetType();
+        SurfaceKind aSurfType1 = aBAsurf1.GetType();
 
         BRepAdaptor_Surface aBAsurf2 = new(F2, false);
-        GeomAbs_SurfaceType aSurfType2 = aBAsurf2.GetType();
+        SurfaceKind aSurfType2 = aBAsurf2.GetType();
 
-        bool isTwoPlanes = (aSurfType1 == GeomAbs_Plane && aSurfType2 == GeomAbs_Plane);
+        bool isTwoPlanes = (aSurfType1 == Plane && aSurfType2 == Plane);
 
         ChFiDS_TypeOfConcavity ConnectType = ChFiDS_Other;
 
         if (isTwoPlanes) // then use only strong condition
         {
-            if (BRep_Tool.Continuity(E, F1, F2) > GeomAbs_C0)
+            if (BRep_Tool.Continuity(E, F1, F2) > C0)
             {
                 ConnectType = ChFiDS_Tangential;
             }
@@ -119,8 +122,8 @@ public sealed class BRepOffset_Analyse
         else
         {
             bool isTwoSplines =
-                (aSurfType1 == GeomAbs_BSplineSurface || aSurfType1 == GeomAbs_BezierSurface)
-                && (aSurfType2 == GeomAbs_BSplineSurface || aSurfType2 == GeomAbs_BezierSurface);
+                (aSurfType1 == BSplineSurface || aSurfType1 == BezierSurface)
+                && (aSurfType2 == BSplineSurface || aSurfType2 == BezierSurface);
             bool isMixedConcavity = false;
             if (isTwoSplines)
             {
@@ -155,8 +158,8 @@ public sealed class BRepOffset_Analyse
                                              double theAngTol)
     {
         bool aMixedCont = false;
-        GeomAbs_Shape aCurrOrder = BRep_Tool.Continuity(theEdge, theFace1, theFace2);
-        if (aCurrOrder > GeomAbs_C0)
+        Continuity aCurrOrder = BRep_Tool.Continuity(theEdge, theFace1, theFace2);
+        if (aCurrOrder > C0)
         {
             // Method BRep_Tool::Continuity(...) always returns minimal continuity between faces
             // so, if aCurrOrder > C0 it means that faces are tangent along whole edge.
@@ -237,7 +240,7 @@ public sealed class BRepOffset_Analyse
         {
             double aPar = (i == aNbSamples) ? aLast : aFirst + (i - 1) * aDelta;
 
-            LocalAnalysis_SurfaceContinuity aCont = new(aC2d1, aC2d2, aPar, aSurf1, aSurf2, GeomAbs_G1, 0.001, TolC0,
+            LocalAnalysis_SurfaceContinuity aCont = new(aC2d1, aC2d2, aPar, aSurf1, aSurf2, G1, 0.001, TolC0,
                                                         theAngTol, theAngTol, theAngTol);
             if (!aCont.IsDone())
             {
@@ -277,7 +280,7 @@ public sealed class BRepOffset_Analyse
     //=================================================================================================
 
     /// <summary>Performs the analysis of <paramref name="theS"/> with the tangency angle <paramref name="theAngle"/>.</summary>
-    public void Perform(in TopoDS_Shape theS, double theAngle, Message_ProgressRange theRange = default)
+    public void Perform(in TopoDS_Shape theS, double theAngle, ProgressRange theRange = default)
     {
         TopoDS_Shape S = theS;
         double Angle = theAngle;
@@ -295,8 +298,8 @@ public sealed class BRepOffset_Analyse
 
         NCollection_List<TopoDS_Shape> aLETang = new();
         TopExp_Explorer Exp = new(S.Oriented(TopAbs_FORWARD), TopAbs_EDGE);
-        using Message_ProgressScope aPSOuter = new(theRange, null, 2);
-        using Message_ProgressScope aPS = new(aPSOuter.Next(), "Performing edges analysis", 1, true);
+        using ProgressScope aPSOuter = new(theRange, null, 2);
+        using ProgressScope aPS = new(aPSOuter.Next(), "Performing edges analysis", 1, true);
         for (; Exp.More(); Exp.Next(), aPS.Next())
         {
             if (!aPS.More())
@@ -358,7 +361,7 @@ public sealed class BRepOffset_Analyse
     //=================================================================================================
 
     // Treatment of the tangential cases: theLE are the edges connecting tangent faces
-    private void TreatTangentFaces(NCollection_List<TopoDS_Shape> theLE, Message_ProgressRange theRange)
+    private void TreatTangentFaces(NCollection_List<TopoDS_Shape> theLE, ProgressRange theRange)
     {
         if (theLE.IsEmpty() || myFaceOffsetMap.IsEmpty())
         {
@@ -375,8 +378,8 @@ public sealed class BRepOffset_Analyse
         // Bind vertices of the tangent edges with connected edges
         // of the face with smaller offset value
         NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> aDMVEMin = new(TopTools_ShapeMapHasher.Instance);
-        using Message_ProgressScope aPSOuter = new(theRange, null, 3);
-        using Message_ProgressScope aPS1 = new(aPSOuter.Next(), "Binding vertices with connected edges", theLE.Extent());
+        using ProgressScope aPSOuter = new(theRange, null, 3);
+        using ProgressScope aPS1 = new(aPSOuter.Next(), "Binding vertices with connected edges", theLE.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator it = new(theLE); it.More(); it.Next(), aPS1.Next())
         {
             if (!aPS1.More())
@@ -432,7 +435,7 @@ public sealed class BRepOffset_Analyse
         // Create map of Face ancestors for the vertices on tangent edges
         NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> aDMVFAnc = new(TopTools_ShapeMapHasher.Instance);
 
-        using Message_ProgressScope aPS2 = new(aPSOuter.Next(), "Creating map of Face ancestors", theLE.Extent());
+        using ProgressScope aPS2 = new(aPSOuter.Next(), "Creating map of Face ancestors", theLE.Extent());
         for (NCollection_List<TopoDS_Shape>.Iterator itE = new(theLE); itE.More(); itE.Next(), aPS2.Next())
         {
             if (!aPS2.More())
@@ -496,7 +499,7 @@ public sealed class BRepOffset_Analyse
         BOPTools_AlgoTools.MakeConnexityBlocks(aCETangent, TopAbs_VERTEX, TopAbs_EDGE, aLCB, aMVEMap);
 
         // Analyze each block to find co-planar edges
-        using Message_ProgressScope aPS3 = new(aPSOuter.Next(), "Analyzing blocks to find co-planar edges", aLCB.Extent());
+        using ProgressScope aPS3 = new(aPSOuter.Next(), "Analyzing blocks to find co-planar edges", aLCB.Extent());
         for (NCollection_List<NCollection_List<TopoDS_Shape>>.Iterator itLCB = new(aLCB); itLCB.More();
              itLCB.Next(), aPS3.Next())
         {
@@ -522,7 +525,7 @@ public sealed class BRepOffset_Analyse
                 double anOffset = anEdgeOffsetMap.Find(aE1);
                 NCollection_List<TopoDS_Shape> aLF1 = Ancestors(aE1);
 
-                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE1, TopoDS.Face(aLF1.First()), out gp_Dir aDN1);
+                BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE1, TopoDS.Face(aLF1.First()), out Direction3D aDN1);
 
                 NCollection_List<TopoDS_Shape>.Iterator itCB2 = new();
                 itCB2.Reset(aCB, itCB1.Index); // itCB2 = itCB1
@@ -536,7 +539,7 @@ public sealed class BRepOffset_Analyse
 
                     NCollection_List<TopoDS_Shape> aLF2 = Ancestors(aE2);
 
-                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE2, TopoDS.Face(aLF2.First()), out gp_Dir aDN2);
+                    BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE2, TopoDS.Face(aLF2.First()), out Direction3D aDN2);
 
                     if (aDN1.XYZ().Crossed(aDN2.XYZ()).Modulus() < aSinTol)
                     {
@@ -547,7 +550,7 @@ public sealed class BRepOffset_Analyse
                 }
 
                 // Make the prism
-                BRepPrimAPI_MakePrism aMP = new(aBlock, new gp_Vec(aDN1.XYZ()) * anOffset);
+                BRepPrimAPI_MakePrism aMP = new(aBlock, new Vector3D(aDN1.XYZ()) * anOffset);
                 if (!aMP.IsDone())
                 {
                     continue;
@@ -580,7 +583,7 @@ public sealed class BRepOffset_Analyse
                     // Orient the face so its normal is directed to smaller offset face
                     {
                         // get normal of the new face
-                        BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aFNew, out gp_Dir aDN);
+                        BOPTools_AlgoTools3D.GetNormalToFaceOnEdge(aE, aFNew, out Direction3D aDN);
 
                         // get bi-normal for the aFOpposite
                         TopoDS_Edge aEInF = new();
@@ -593,16 +596,16 @@ public sealed class BRepOffset_Analyse
                             }
                         }
 
-                        gp_Pnt2d aP2d = new();
-                        gp_Pnt aPInF = new();
+                        Point2D aP2d = new();
+                        Point3D aPInF = new();
                         Geom_Curve aC3D = BRep_Tool.Curve(aEInF, out double f, out double l)!;
-                        gp_Pnt aPOnE = aC3D.Value((f + l) / 2.0);
+                        Point3D aPOnE = aC3D.Value((f + l) / 2.0);
                         BOPTools_AlgoTools3D.PointNearEdge(aEInF, TopoDS.Face(aFOpposite), (f + l) / 2.0, 1.0e-5,
                                                            ref aP2d, ref aPInF);
 
-                        gp_Vec aBN = new(aPOnE, aPInF);
+                        Vector3D aBN = new(aPOnE, aPInF);
 
-                        if (aBN.Dot(new gp_Vec(aDN)) < 0)
+                        if (aBN.Dot(new Vector3D(aDN)) < 0)
                         {
                             aFNew.Reverse();
                         }
@@ -938,7 +941,7 @@ public sealed class BRepOffset_Analyse
     /// </summary>
     public void TangentEdges(in TopoDS_Edge Edge, in TopoDS_Vertex Vertex, NCollection_List<TopoDS_Shape> Edges)
     {
-        gp_Vec V, VRef;
+        Vector3D V, VRef;
 
         double U, URef;
         BRepAdaptor_Curve C3d, C3dRef;
@@ -947,7 +950,7 @@ public sealed class BRepOffset_Analyse
         C3dRef = new BRepAdaptor_Curve(Edge);
         VRef = C3dRef.DN(URef, 1);
         CorrectOrientationOfTangent(ref VRef, Vertex, Edge);
-        if (VRef.SquareMagnitude() < gp.Resolution())
+        if (VRef.SquareMagnitude() < Constants.Resolution())
         {
             return;
         }
@@ -967,7 +970,7 @@ public sealed class BRepOffset_Analyse
             C3d = new BRepAdaptor_Curve(CurE);
             V = C3d.DN(U, 1);
             CorrectOrientationOfTangent(ref V, Vertex, CurE);
-            if (V.SquareMagnitude() < gp.Resolution())
+            if (V.SquareMagnitude() < Constants.Resolution())
             {
                 continue;
             }

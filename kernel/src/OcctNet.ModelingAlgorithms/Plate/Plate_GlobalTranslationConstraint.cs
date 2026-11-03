@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A constraint that the plate's deformation is the same translation at every given 2D point.</summary>
@@ -12,13 +14,13 @@ public class Plate_GlobalTranslationConstraint
 {
     private readonly Plate_LinearXYZConstraint myLXYZC;
 
-    public Plate_GlobalTranslationConstraint(NCollection_Sequence<gp_XY> SOfXY)
+    public Plate_GlobalTranslationConstraint(NCollection_Sequence<Xy> SOfXY)
     {
         myLXYZC = new Plate_LinearXYZConstraint(SOfXY.Length() - 1, SOfXY.Length());
         int i;
         for (i = 1; i <= SOfXY.Length(); i++)
         {
-            myLXYZC.SetPPC(i, new Plate_PinpointConstraint(SOfXY.Value(i), new gp_XYZ(0.0, 0.0, 0.0), 0, 0));
+            myLXYZC.SetPPC(i, new Plate_PinpointConstraint(SOfXY.Value(i), new Xyz(0.0, 0.0, 0.0), 0, 0));
         }
         for (i = 1; i <= SOfXY.Length() - 1; i++)
         {

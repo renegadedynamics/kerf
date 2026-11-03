@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,18 +25,18 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
     public Geom_SphericalSurface Geometry() => myGeom;
 
     /// <summary>For analytical surfaces, BoxOptimal is same as Box.</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
         => Box(theUMin, theUMax, theVMin, theVMax, theTol);
 
     /// <summary>Compute optimal bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol) => Box(theTol);
+    public Box BoxOptimal(double theTol) => Box(theTol);
 
     /// <summary>Compute bounding box for full sphere.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
-        Bnd_Box aBox = new();
-        gp_Sphere aSphere = myGeom.Sphere();
-        gp_Pnt aP = aSphere.Location();
+        Box aBox = new();
+        Sphere aSphere = myGeom.Sphere();
+        Point3D aP = aSphere.Location();
         double aR = aSphere.Radius();
         aBox.Update(aP.X() - aR, aP.Y() - aR, aP.Z() - aR, aP.X() + aR, aP.Y() + aR, aP.Z() + aR);
         aBox.Enlarge(theTol);
@@ -40,14 +44,14 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
     }
 
     /// <summary>Compute bounding box for a sphere patch.</summary>
-    private static void computeSphere(in gp_Sphere theSphere,
+    private static void computeSphere(in Sphere theSphere,
                                       double theUMin,
                                       double theUMax,
                                       double theVMin,
                                       double theVMax,
-                                      ref Bnd_Box theBox)
+                                      ref Box theBox)
     {
-        gp_Pnt aP = theSphere.Location();
+        Point3D aP = theSphere.Location();
         double aR = theSphere.Radius();
 
         double aXmin = aP.X() - aR;
@@ -57,8 +61,8 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
         double aZmin = aP.Z() - aR;
         double aZmax = aP.Z() + aR;
 
-        double anUper = 2.0 * M_PI - Precision.PConfusion();
-        double aVper = M_PI - Precision.PConfusion();
+        double anUper = 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
+        double aVper = M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (theUMax - theUMin >= anUper && theVMax - theVMin >= aVper)
         {
             // Whole sphere.
@@ -69,21 +73,21 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
         // Check 6 extremal points (axis-aligned extrema of the full sphere).
         double anU, aV;
         double anUmax = theUMin + 2.0 * M_PI;
-        gp_Ax3 aPos = theSphere.Position();
-        gp_Pnt aPExt = aP;
+        CoordinateSystem aPos = theSphere.Position();
+        Point3D aPExt = aP;
 
         // -X extremum
         aPExt.SetX(aXmin);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
         }
         // +X extremum
         aPExt.SetX(aXmax);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
@@ -91,16 +95,16 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
         aPExt.SetX(aP.X());
         // -Y extremum
         aPExt.SetY(aYmin);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
         }
         // +Y extremum
         aPExt.SetY(aYmax);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
@@ -108,47 +112,47 @@ public sealed class GeomBndLib_Sphere : GeomBndLib_Surface.ISurfaceEvaluator
         aPExt.SetY(aP.Y());
         // -Z extremum
         aPExt.SetZ(aZmin);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
         }
         // +Z extremum
         aPExt.SetZ(aZmax);
-        ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
-        anU = ElCLib.InPeriod(anU, theUMin, anUmax);
+        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(aPos, aR, aPExt, out anU, out aV);
+        anU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(anU, theUMin, anUmax);
         if (anU >= theUMin && anU <= theUMax && aV >= theVMin && aV <= theVMax)
         {
             theBox.Add(aPExt);
         }
 
         // Add boundary iso-curves of the patch.
-        gp_Circ aC = ElSLib.SphereUIso(aPos, aR, theUMin);
+        Circle3D aC = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(aPos, aR, theUMin);
         theBox.Add(GeomBndLib_Circle.Box(aC, theVMin, theVMax, 0.0));
-        aC = ElSLib.SphereUIso(aPos, aR, theUMax);
+        aC = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(aPos, aR, theUMax);
         theBox.Add(GeomBndLib_Circle.Box(aC, theVMin, theVMax, 0.0));
-        aC = ElSLib.SphereVIso(aPos, aR, theVMin);
+        aC = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(aPos, aR, theVMin);
         theBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
-        aC = ElSLib.SphereVIso(aPos, aR, theVMax);
+        aC = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(aPos, aR, theVMax);
         theBox.Add(GeomBndLib_Circle.Box(aC, theUMin, theUMax, 0.0));
     }
 
     /// <summary>Compute bounding box for sphere patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        gp_Sphere aSphere = myGeom.Sphere();
+        Sphere aSphere = myGeom.Sphere();
 
         // Check if it is a whole sphere.
-        if (Math.Abs(theUMin) < Precision.Angular()
-            && Math.Abs(theUMax - 2.0 * M_PI) < Precision.Angular()
-            && Math.Abs(theVMin + M_PI / 2.0) < Precision.Angular()
-            && Math.Abs(theVMax - M_PI / 2.0) < Precision.Angular())
+        if (Math.Abs(theUMin) < global::Kerf.Engine.Foundation.Precision.Angular()
+            && Math.Abs(theUMax - 2.0 * M_PI) < global::Kerf.Engine.Foundation.Precision.Angular()
+            && Math.Abs(theVMin + M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.Angular()
+            && Math.Abs(theVMax - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return Box(theTol);
         }
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         computeSphere(aSphere, theUMin, theUMax, theVMin, theVMax, ref aBox);
         aBox.Enlarge(theTol);
         return aBox;

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Reflection;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
@@ -58,8 +59,8 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
                 BRepGProp.LinearProperties(theShape, aProps);
                 break;
         }
-        gp_Pnt aG = aProps.CentreOfMass();
-        gp_Mat aM = aProps.MatrixOfInertia();
+        Point3D aG = aProps.CentreOfMass();
+        Matrix3x3 aM = aProps.MatrixOfInertia();
         return [aG.X(), aG.Y(), aG.Z(),
                 aM.Value(1, 1), aM.Value(1, 2), aM.Value(1, 3),
                 aM.Value(2, 1), aM.Value(2, 2), aM.Value(2, 3),
@@ -111,7 +112,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         TopoDS_Shape aResult = theMerge ? aFSS.Merge(aShape, aReShape) : aFSS.Remove(aShape, aReShape);
 
         aSnap.AssertUnchanged(aShape);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         foreach (TopAbs_ShapeEnum aType in new[] { TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX })
         {
             Assert.True(Count(aRef, aType) == Count(aResult, aType), $"{theCase}: {aType}");
@@ -139,7 +140,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
     }
 
     private static TopoDS_Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), dx, dy, dz).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     private static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
     {
@@ -235,7 +236,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         TopoDS_Shape aResult = aFSS.Merge(aShape, aContext);
 
         aSnap.AssertUnchanged(aShape);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(1, Count(aResult, TopAbs_SOLID));
         // the merged shell: 5 + 5 faces, the shared one dropped
         Assert.Equal(10, Count(aResult, TopAbs_FACE));

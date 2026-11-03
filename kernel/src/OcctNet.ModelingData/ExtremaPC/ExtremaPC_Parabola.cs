@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -12,8 +14,8 @@ namespace Occt;
 /// unbounded.</remarks>
 public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
 {
-    private readonly gp_Parab myParabola;                   // Parabola geometry
-    private readonly MathUtils.Domain1D? myDomain;          // Parameter domain (null for infinite)
+    private readonly Parabola3D myParabola;                   // Parabola geometry
+    private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? myDomain;          // Parameter domain (null for infinite)
     private readonly ExtremaPC.Result myResult = new();     // Reusable result storage
 
     // Cached geometry components for fast computation
@@ -26,7 +28,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
     private double my2F;                            // Precomputed 2*F
 
     /// <summary>Constructor with parabola geometry (unbounded).</summary>
-    public ExtremaPC_Parabola(in gp_Parab theParabola)
+    public ExtremaPC_Parabola(in Parabola3D theParabola)
     {
         myParabola = theParabola;
         myDomain = null;
@@ -34,7 +36,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Constructor with parabola geometry and parameter domain (fixed for all queries).</summary>
-    public ExtremaPC_Parabola(in gp_Parab theParabola, in MathUtils.Domain1D theDomain)
+    public ExtremaPC_Parabola(in Parabola3D theParabola, in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain)
     {
         myParabola = theParabola;
         myDomain = theDomain.IsFinite() ? theDomain : null;
@@ -42,11 +44,11 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Evaluates point on parabola at parameter.</summary>
-    public gp_Pnt Value(double theU)
+    public Point3D Value(double theU)
     {
         // Parabola: P(u) = Vertex + (u^2/4F)*XDir + u*YDir
         double aX = theU * theU * my1Over4F;
-        return new gp_Pnt(myVertexX + aX * myXDirX + theU * myYDirX,
+        return new Point3D(myVertexX + aX * myXDirX + theU * myYDirX,
                           myVertexY + aX * myXDirY + theU * myYDirY,
                           myVertexZ + aX * myXDirZ + theU * myYDirZ);
     }
@@ -55,17 +57,17 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
     public bool IsBounded() => myDomain.HasValue;
 
     /// <summary>Returns the domain (only valid if IsBounded() is true).</summary>
-    public MathUtils.Domain1D Domain() => myDomain!.Value;
+    public global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D Domain() => myDomain!.Value;
 
     /// <summary>Computes the extrema between point P and the parabola.</summary>
-    public ExtremaPC.Result Perform(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result Perform(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         performCore(theP, myDomain, theTol, theMode);
         return myResult;
     }
 
     /// <summary>Computes the extrema between point P and the parabola including endpoints.</summary>
-    public ExtremaPC.Result PerformWithEndpoints(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result PerformWithEndpoints(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         _ = Perform(theP, theTol, theMode);
 
@@ -79,26 +81,26 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Returns the parabola geometry.</summary>
-    public gp_Parab Parabola() => myParabola;
+    public Parabola3D Parabola() => myParabola;
 
     private void cacheGeometry()
     {
-        gp_Pnt aVertex = myParabola.Location();
+        Point3D aVertex = myParabola.Location();
         myVertexX = aVertex.X();
         myVertexY = aVertex.Y();
         myVertexZ = aVertex.Z();
 
-        gp_Dir aXDir = myParabola.XAxis().Direction();
+        Direction3D aXDir = myParabola.XAxis().Direction();
         myXDirX = aXDir.X();
         myXDirY = aXDir.Y();
         myXDirZ = aXDir.Z();
 
-        gp_Dir aYDir = myParabola.YAxis().Direction();
+        Direction3D aYDir = myParabola.YAxis().Direction();
         myYDirX = aYDir.X();
         myYDirY = aYDir.Y();
         myYDirZ = aYDir.Z();
 
-        gp_Dir aAxis = myParabola.Axis().Direction();
+        Direction3D aAxis = myParabola.Axis().Direction();
         myAxisX = aAxis.X();
         myAxisY = aAxis.Y();
         myAxisZ = aAxis.Z();
@@ -108,7 +110,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
         my2F = 2.0 * myFocal;
     }
 
-    private MathUtils.PolyResult solveCubic(in gp_Pnt theP)
+    private global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult solveCubic(in Point3D theP)
     {
         // Vector from vertex to point
         double aDx = theP.X() - myVertexX;
@@ -134,23 +136,23 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
         double aY = aOPpX * myYDirX + aOPpY * myYDirY + aOPpZ * myYDirZ;
 
         // Solve cubic equation: (1/(4F)) * u^3 + (2F - X) * u - 2F*Y = 0
-        return MathPoly.Cubic(my1Over4F, 0.0, my2F - aX, -my2F * aY);
+        return global::Kerf.Engine.Numerics.Polynomials.MathPoly.Cubic(my1Over4F, 0.0, my2F - aX, -my2F * aY);
     }
 
-    private void performCore(in gp_Pnt theP, MathUtils.Domain1D? theDomain, double theTol, ExtremaPC.SearchMode theMode)
+    private void performCore(in Point3D theP, global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? theDomain, double theTol, ExtremaPC.SearchMode theMode)
     {
         _ = theTol; // Tolerance used for endpoint detection
 
         myResult.Clear();
 
-        MathUtils.PolyResult aPolyRes = solveCubic(theP);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult aPolyRes = solveCubic(theP);
 
-        if (!aPolyRes.IsDone())
+        if (!aPolyRes.IsDone)
         {
-            if (aPolyRes.Status == MathUtils.Status.InfiniteSolutions)
+            if (aPolyRes.Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InfiniteSolutions)
             {
                 myResult.Status = ExtremaPC.Status.InfiniteSolutions;
-                gp_Pnt aPtOnCurve = Value(0.0);
+                Point3D aPtOnCurve = Value(0.0);
                 myResult.InfiniteSquareDistance = theP.SquareDistance(aPtOnCurve);
             }
             else
@@ -160,7 +162,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
             return;
         }
 
-        double aTol2 = Precision.SquareConfusion();
+        double aTol2 = global::Kerf.Engine.Foundation.Precision.SquareConfusion();
 
         // Process all roots
         for (int i = 0; i < aPolyRes.NbRoots; ++i)
@@ -174,7 +176,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
                     continue;
             }
 
-            gp_Pnt aCurvePt = Value(aU);
+            Point3D aCurvePt = Value(aU);
 
             // Check for duplicates
             bool aDuplicate = false;
@@ -203,7 +205,7 @@ public sealed class ExtremaPC_Parabola : ExtremaPC.ICurveEvaluator
                 // For unbounded case, just use +1.0
                 aNeighborU = aU + 1.0;
             }
-            gp_Pnt aNeighborPt = Value(aNeighborU);
+            Point3D aNeighborPt = Value(aNeighborU);
             double aNeighborDist = theP.SquareDistance(aNeighborPt);
             bool aIsMin = aSqDist <= aNeighborDist;
 

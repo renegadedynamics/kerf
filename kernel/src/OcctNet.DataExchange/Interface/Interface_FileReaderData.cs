@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 
 namespace Occt;
@@ -19,7 +20,7 @@ namespace Occt;
 /// Handle : this allows FileReaderTool to define more easily the specific methods, and improves memory
 /// management.
 /// </summary>
-public abstract class Interface_FileReaderData : Standard_Transient
+public abstract class Interface_FileReaderData : Transient
 {
     //  Stores Data from a File (Preserved in Literal form)
     //  Each standard can use it as a base (literal parameter lists,
@@ -205,7 +206,7 @@ public abstract class Interface_FileReaderData : Standard_Transient
     /// <summary>
     /// Returns the StepEntity referenced by a parameter Error if none
     /// </summary>
-    public Standard_Transient? ParamEntity(int num, int nump)
+    public Transient? ParamEntity(int num, int nump)
     {
         return BoundEntity(Param(num, nump).EntityNumber());
     }
@@ -222,7 +223,7 @@ public abstract class Interface_FileReaderData : Standard_Transient
     /// <summary>
     /// Returns the entity bound to a record, set by SetEntities
     /// </summary>
-    public Standard_Transient? BoundEntity(int num)
+    public Transient? BoundEntity(int num)
     {
         if (num >= theents.Lower() && num <= theents.Upper())
         {
@@ -237,7 +238,7 @@ public abstract class Interface_FileReaderData : Standard_Transient
     /// <summary>
     /// Binds an entity to a record
     /// </summary>
-    public void BindEntity(int num, Standard_Transient? ent)
+    public void BindEntity(int num, Transient? ent)
     {
         theents.SetValue(num,ent);
     }
@@ -287,7 +288,7 @@ public abstract class Interface_FileReaderData : Standard_Transient
     /// </summary>
     public static double Fastof(string ligne)
     {
-        return Standard_Stream.Strtod(ligne);
+        return StreamUtilities.Strtod(ligne);
     }
 
     /// <summary>
@@ -302,7 +303,7 @@ public abstract class Interface_FileReaderData : Standard_Transient
     {
         therrload = 0;
         thenumpar = new NCollection_Array1<int>(0, nbr);
-        theents = new NCollection_Array1<Standard_Transient>(0, nbr);
+        theents = new NCollection_Array1<Transient>(0, nbr);
         theparams = new Interface_ParamSet(npar);
         thenumpar.Init(0);
         thenm0 = -1;
@@ -347,5 +348,5 @@ public abstract class Interface_FileReaderData : Standard_Transient
     private int therrload;
     private Interface_ParamSet theparams;
     private NCollection_Array1<int> thenumpar;
-    private NCollection_Array1<Standard_Transient?> theents;
+    private NCollection_Array1<Transient?> theents;
 }

@@ -3,14 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Status;
+using Kerf.Engine.Geometry.Bounds;
+using static Kerf.Engine.Foundation.Status;
 
 namespace Occt;
 
 /// <summary>Builds the default discrete model (<see cref="BRepMeshData_Model"/>) of a shape.</summary>
 /// <remarks>
-/// Statuses: <see cref="Message_Done1"/>, the model is built; <see cref="Message_Fail1"/>, an empty shape (a void
-/// bounding box); <see cref="Message_Fail2"/>, the model wasn't built for an unexpected reason.
+/// Statuses: <see cref="Done1"/>, the model is built; <see cref="Fail1"/>, an empty shape (a void
+/// bounding box); <see cref="Fail2"/>, the model wasn't built for an unexpected reason.
 /// </remarks>
 public class BRepMesh_ModelBuilder : IMeshTools_ModelBuilder
 {
@@ -24,10 +25,10 @@ public class BRepMesh_ModelBuilder : IMeshTools_ModelBuilder
     {
         BRepMeshData_Model? aModel = null;
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         BRepBndLib.Add(theShape, ref aBox, false);
 
-        if (!aBox.IsVoid())
+        if (!aBox.IsVoid)
         {
             // Build data model for further processing.
             aModel = new BRepMeshData_Model(theShape);
@@ -47,11 +48,11 @@ public class BRepMesh_ModelBuilder : IMeshTools_ModelBuilder
 
             IMeshTools_ShapeExplorer aExplorer = new(theShape);
             aExplorer.Accept(aVisitor);
-            SetStatus(Message_Done1);
+            SetStatus(Done1);
         }
         else
         {
-            SetStatus(Message_Fail1);
+            SetStatus(Fail1);
         }
 
         return aModel;

@@ -6,11 +6,13 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 public class StepVisual_CoordinatesList : StepVisual_TessellatedItem
 {
-    private NCollection_HArray1<gp_XYZ> myPoints;
+    private NCollection_HArray1<Xyz> myPoints;
 
     /// <summary>
     /// Returns a coordinate list
@@ -19,13 +21,13 @@ public class StepVisual_CoordinatesList : StepVisual_TessellatedItem
     {
     }
 
-    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<gp_XYZ> thePoints)
+    public void Init(TCollection_HAsciiString theName, NCollection_HArray1<Xyz> thePoints)
     {
         base.Init(theName);
         myPoints = thePoints;
     }
 
-    public NCollection_HArray1<gp_XYZ> Points()
+    public NCollection_HArray1<Xyz> Points()
     {
         return myPoints;
     }

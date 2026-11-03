@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using static Kerf.Geometry.Continuity;
 using static Occt.LocalAnalysis_StatusErrorType;
 
 namespace Occt;
@@ -12,7 +13,7 @@ namespace Occt;
 public static class LocalAnalysis
 {
     // OCCT's `o << value`: the writer's precision (6 by default), as printf's %g
-    private static string R(TextWriter o, double theValue) => Standard_Stream.FormatReal(theValue, Standard_Stream.Precision(o));
+    private static string R(TextWriter o, double theValue) => StreamUtilities.FormatReal(theValue, StreamUtilities.Precision(o));
 
     /// <summary>Writes the status and values of a surface continuity analysis.</summary>
     public static void Dump(LocalAnalysis_SurfaceContinuity surfconti, TextWriter o)
@@ -41,7 +42,7 @@ public static class LocalAnalysis
         {
             switch (surfconti.ContinuityStatus())
             {
-                case GeomAbs_C0:
+                case C0:
                     if (surfconti.IsC0())
                     {
                         o.Write(" Continuity Status : C0 " + '\n');
@@ -52,7 +53,7 @@ public static class LocalAnalysis
                     }
                     o.Write(" C0Value = " + R(o, surfconti.C0Value()) + '\n');
                     break;
-                case GeomAbs_C1:
+                case C1:
                     if (surfconti.IsC1())
                     {
                         o.Write(" Continuity Status : C1 " + '\n');
@@ -74,7 +75,7 @@ public static class LocalAnalysis
                     o.Write(" C1VAngle = " + R(o, surfconti.C1VAngle()) + '\n');
                     o.Write(" C1VRatio = " + R(o, surfconti.C1VRatio()) + '\n');
                     break;
-                case GeomAbs_C2:
+                case C2:
                     if (surfconti.IsC2())
                     {
                         o.Write(" Continuity Status : C2 " + '\n');
@@ -108,7 +109,7 @@ public static class LocalAnalysis
                     o.Write(" C2URatio = " + R(o, surfconti.C2URatio()) + '\n');
                     o.Write(" C2VRatio = " + R(o, surfconti.C2VRatio()) + '\n');
                     break;
-                case GeomAbs_G1:
+                case G1:
                     if (surfconti.IsG1())
                     {
                         o.Write(" Continuity Status : G1 " + '\n');
@@ -127,7 +128,7 @@ public static class LocalAnalysis
                     o.Write(" G0Value = " + R(o, surfconti.C0Value()) + '\n');
                     o.Write(" G1Angle = " + R(o, surfconti.G1Angle()) + '\n' + '\n');
                     break;
-                case GeomAbs_G2:
+                case G2:
                     if (surfconti.IsG2())
                     {
                         o.Write(" Continuity Status : G2 " + '\n');
@@ -188,7 +189,7 @@ public static class LocalAnalysis
         {
             switch (curvconti.ContinuityStatus())
             {
-                case GeomAbs_C0:
+                case C0:
                     if (curvconti.IsC0())
                     {
                         o.Write(" Continuity Status : C0 " + '\n');
@@ -199,7 +200,7 @@ public static class LocalAnalysis
                     }
                     o.Write(" C0Value = " + R(o, curvconti.C0Value()) + '\n');
                     break;
-                case GeomAbs_C1:
+                case C1:
                     if (curvconti.IsC1())
                     {
                         o.Write(" Continuity Status : C1 " + '\n');
@@ -219,7 +220,7 @@ public static class LocalAnalysis
                     o.Write(" C1Angle = " + R(o, curvconti.C1Angle()) + '\n');
                     o.Write(" C1Ratio = " + R(o, curvconti.C1Ratio()) + '\n');
                     break;
-                case GeomAbs_C2:
+                case C2:
                     if (curvconti.IsC2())
                     {
                         o.Write(" Continuity Status : C2 " + '\n');
@@ -249,7 +250,7 @@ public static class LocalAnalysis
                     o.Write(" C2Ratio = " + R(o, curvconti.C2Ratio()) + '\n');
                     break;
 
-                case GeomAbs_G1:
+                case G1:
                     if (curvconti.IsG1())
                     {
                         o.Write(" Continuity Status : G1 " + '\n');
@@ -268,7 +269,7 @@ public static class LocalAnalysis
                     o.Write(" G0Value = " + R(o, curvconti.C0Value()) + '\n');
                     o.Write(" G1Angle = " + R(o, curvconti.G1Angle()) + '\n');
                     break;
-                case GeomAbs_G2:
+                case G2:
                     if (curvconti.IsG2())
                     {
                         o.Write(" Continuity Status : G2 " + '\n');

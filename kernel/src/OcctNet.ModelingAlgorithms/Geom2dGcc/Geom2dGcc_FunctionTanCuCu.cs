@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.Geom2dGcc_Type3;
 
 namespace Occt;
@@ -12,20 +14,20 @@ namespace Occt;
 /// curve): the line through the two points is tangent to the first curve, and the two tangents are parallel.
 /// </summary>
 /// <remarks>OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class Geom2dGcc_FunctionTanCuCu : math_FunctionSetWithDerivatives
+public sealed class Geom2dGcc_FunctionTanCuCu : FunctionSetWithDerivatives
 {
     private readonly Geom2dAdaptor_Curve TheCurve1 = new();
     private readonly Geom2dAdaptor_Curve TheCurve2 = new();
-    private readonly gp_Circ2d TheCirc1 = new();
+    private readonly Circle2D TheCirc1 = new();
     private readonly Geom2dGcc_Type3 TheType;
 
     public void InitDerivative(math_Vector X,
-                               out gp_Pnt2d Point1,
-                               out gp_Pnt2d Point2,
-                               out gp_Vec2d Tan1,
-                               out gp_Vec2d Tan2,
-                               out gp_Vec2d D21,
-                               out gp_Vec2d D22)
+                               out Point2D Point1,
+                               out Point2D Point2,
+                               out Vector2D Tan1,
+                               out Vector2D Tan2,
+                               out Vector2D D21,
+                               out Vector2D D22)
     {
         switch (TheType)
         {
@@ -37,19 +39,19 @@ public sealed class Geom2dGcc_FunctionTanCuCu : math_FunctionSetWithDerivatives
             break;
             case Geom2dGcc_CiCu:
             {
-                ElCLib.D2(X[1], TheCirc1, out Point1, out Tan1, out D21);
+                global::Kerf.Engine.Geometry.ElCLib.D2(X[1], TheCirc1, out Point1, out Tan1, out D21);
                 Geom2dGcc_CurveTool.D2(TheCurve2, X[2], out Point2, out Tan2, out D22);
             }
             break;
             default:
             {
                 // The caller's default-constructed values stay (OCCT writes nothing here; unreachable).
-                Point1 = new gp_Pnt2d();
-                Point2 = new gp_Pnt2d();
-                Tan1   = new gp_Vec2d();
-                Tan2   = new gp_Vec2d();
-                D21    = new gp_Vec2d();
-                D22    = new gp_Vec2d();
+                Point1 = new Point2D();
+                Point2 = new Point2D();
+                Tan1   = new Vector2D();
+                Tan2   = new Vector2D();
+                D21    = new Vector2D();
+                D22    = new Vector2D();
             }
             break;
         }
@@ -62,7 +64,7 @@ public sealed class Geom2dGcc_FunctionTanCuCu : math_FunctionSetWithDerivatives
         TheType   = Geom2dGcc_CuCu;
     }
 
-    public Geom2dGcc_FunctionTanCuCu(in gp_Circ2d C1, Geom2dAdaptor_Curve C2)
+    public Geom2dGcc_FunctionTanCuCu(in Circle2D C1, Geom2dAdaptor_Curve C2)
     {
         TheCirc1  = C1;
         TheCurve2 = C2;
@@ -107,24 +109,24 @@ public sealed class Geom2dGcc_FunctionTanCuCu : math_FunctionSetWithDerivatives
 
     public override bool Value(math_Vector X, math_Vector Fval)
     {
-        InitDerivative(X, out gp_Pnt2d Point1, out gp_Pnt2d Point2, out gp_Vec2d Vect11, out gp_Vec2d Vect21,
+        InitDerivative(X, out Point2D Point1, out Point2D Point2, out Vector2D Vect11, out Vector2D Vect21,
                        out _, out _);
         double   NormeD11     = Vect11.Magnitude();
         double   NormeD21     = Vect21.Magnitude();
-        gp_Vec2d TheDirection = new(Point1, Point2);
+        Vector2D TheDirection = new(Point1, Point2);
         double   squaredir    = TheDirection.Dot(TheDirection);
         Fval[1]               = TheDirection.Crossed(Vect11) / (NormeD11 * squaredir);
         Fval[2]               = Vect11.Crossed(Vect21) / (NormeD11 * NormeD21);
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix Deriv)
+    public override bool Derivatives(math_Vector X, Matrix Deriv)
     {
-        InitDerivative(X, out gp_Pnt2d Point1, out gp_Pnt2d Point2, out gp_Vec2d Vect11, out gp_Vec2d Vect21,
-                       out gp_Vec2d Vect12, out gp_Vec2d Vect22);
+        InitDerivative(X, out Point2D Point1, out Point2D Point2, out Vector2D Vect11, out Vector2D Vect21,
+                       out Vector2D Vect12, out Vector2D Vect22);
         double   NormeD11     = Vect11.Magnitude();
         double   NormeD21     = Vect21.Magnitude();
-        gp_Vec2d TheDirection = new(Point1, Point2);
+        Vector2D TheDirection = new(Point1, Point2);
         double   squaredir    = TheDirection.Dot(TheDirection);
         Deriv[1, 1]           = TheDirection.Crossed(Vect12) / (NormeD11 * squaredir)
                       + (TheDirection.Crossed(Vect11) * NormeD11 * NormeD11 * Vect11.Dot(TheDirection))
@@ -141,13 +143,13 @@ public sealed class Geom2dGcc_FunctionTanCuCu : math_FunctionSetWithDerivatives
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector Fval, math_Matrix Deriv)
+    public override bool Values(math_Vector X, math_Vector Fval, Matrix Deriv)
     {
-        InitDerivative(X, out gp_Pnt2d Point1, out gp_Pnt2d Point2, out gp_Vec2d Vect11, out gp_Vec2d Vect21,
-                       out gp_Vec2d Vect12, out gp_Vec2d Vect22);
+        InitDerivative(X, out Point2D Point1, out Point2D Point2, out Vector2D Vect11, out Vector2D Vect21,
+                       out Vector2D Vect12, out Vector2D Vect22);
         double   NormeD11     = Vect11.Magnitude();
         double   NormeD21     = Vect21.Magnitude();
-        gp_Vec2d TheDirection = new(Point1, Point2);
+        Vector2D TheDirection = new(Point1, Point2);
         double   squaredir    = TheDirection.Dot(TheDirection);
         Fval[1]               = TheDirection.Crossed(Vect11) / (NormeD11 * squaredir);
         Fval[2]               = Vect11.Crossed(Vect21) / (NormeD11 * NormeD21);

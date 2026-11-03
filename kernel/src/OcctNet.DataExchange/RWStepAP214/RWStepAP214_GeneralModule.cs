@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -36,7 +38,7 @@ internal class RWStepAP214_GeneralModule : StepData_GeneralModule
     /// &lt;ent&gt;, according to a Case Number &lt;CN&gt; (provided by StepAP214
     /// Protocol).
     /// </summary>
-    public override void FillSharedCase(int CN, Standard_Transient ent, Interface_EntityIterator iter)
+    public override void FillSharedCase(int CN, Transient ent, Interface_EntityIterator iter)
     {
         switch (CN)
         {
@@ -4477,7 +4479,7 @@ internal class RWStepAP214_GeneralModule : StepData_GeneralModule
     /// <summary>
     /// Specific Checking of an Entity &lt;ent&gt;
     /// </summary>
-    public override void CheckCase(int CN, Standard_Transient ent, Interface_ShareTool shares, ref Interface_Check ach)
+    public override void CheckCase(int CN, Transient ent, Interface_ShareTool shares, ref Interface_Check ach)
     {
         switch (CN)
         {
@@ -4589,11 +4591,11 @@ internal class RWStepAP214_GeneralModule : StepData_GeneralModule
     /// by using a CopyTool which provides its working Map.
     /// Use method Transferred from CopyTool to work
     /// </summary>
-    public override void CopyCase(int CN, Standard_Transient entfrom, Standard_Transient entto, Interface_CopyTool TC)
+    public override void CopyCase(int CN, Transient entfrom, Transient entto, Interface_CopyTool TC)
     {
     }
 
-    public override bool NewVoid(int CN, out Standard_Transient ent)
+    public override bool NewVoid(int CN, out Transient ent)
     {
         ent = null;
         if (CN == 0)
@@ -6776,7 +6778,7 @@ internal class RWStepAP214_GeneralModule : StepData_GeneralModule
         return true;
     }
 
-    public override int CategoryNumber(int CN, Standard_Transient ent, Interface_ShareTool shares)
+    public override int CategoryNumber(int CN, Transient ent, Interface_ShareTool shares)
     {
         switch (CN)
         {
@@ -7703,7 +7705,7 @@ internal class RWStepAP214_GeneralModule : StepData_GeneralModule
     /// <summary>
     /// Returns the name of a STEP Entity according to its type
     /// </summary>
-    public override TCollection_HAsciiString Name(int CN, Standard_Transient ent, Interface_ShareTool shares)
+    public override TCollection_HAsciiString Name(int CN, Transient ent, Interface_ShareTool shares)
     {
         //   On joue par down-cast et non par CN, car Name est en general heritee
         //   (on pourrait filtrer par CN pour decider quel down-cast faire ...)

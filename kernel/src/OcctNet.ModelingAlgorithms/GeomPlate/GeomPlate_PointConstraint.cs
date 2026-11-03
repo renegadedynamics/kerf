@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,18 +17,18 @@ namespace Occt;
 /// A working object (decision 21), as OCCT's: its setters are public, and GeomPlate_BuildPlateSurface sets the
 /// order and the 2D point it finds. It keeps the caller's surface, read only.
 /// </remarks>
-public class GeomPlate_PointConstraint : Standard_Transient
+public class GeomPlate_PointConstraint : Transient
 {
     protected int myOrder;
     private readonly GeomLProp_SLProps myLProp;
-    private readonly gp_Pnt myPoint;
-    private gp_Pnt2d myPt2d;
+    private readonly Point3D myPoint;
+    private Point2D myPt2d;
     private readonly Geom_Surface? mySurf;
-    private readonly gp_Vec myD11;
-    private readonly gp_Vec myD12;
-    private readonly gp_Vec myD21;
-    private readonly gp_Vec myD22;
-    private readonly gp_Vec myD23;
+    private readonly Vector3D myD11;
+    private readonly Vector3D myD12;
+    private readonly Vector3D myD21;
+    private readonly Vector3D myD22;
+    private readonly Vector3D myD23;
     private readonly double myU;
     private readonly double myV;
     private double myTolDist;
@@ -33,12 +37,12 @@ public class GeomPlate_PointConstraint : Standard_Transient
     private bool hasPnt2dOnSurf;
 
     /// <summary>A point the plate passes through (order 0) or approaches (order -1).</summary>
-    public GeomPlate_PointConstraint(in gp_Pnt Pt, int Order, double TolDist = 0.0001)
+    public GeomPlate_PointConstraint(in Point3D Pt, int Order, double TolDist = 0.0001)
     {
         myOrder = Order;
         myLProp = new GeomLProp_SLProps(2, TolDist);
         myPoint = Pt;
-        myPt2d = new gp_Pnt2d();
+        myPt2d = new Point2D();
         myU = 0.0;
         myV = 0.0;
         myTolDist = TolDist;
@@ -47,7 +51,7 @@ public class GeomPlate_PointConstraint : Standard_Transient
         hasPnt2dOnSurf = false;
         if ((myOrder > 1) || (myOrder < -1))
         {
-            throw new Standard_Failure("GeomPlate_PointConstraint : the constraint must 0 or -1 with a point");
+            throw new FailureException("GeomPlate_PointConstraint : the constraint must 0 or -1 with a point");
         }
     }
 
@@ -58,7 +62,7 @@ public class GeomPlate_PointConstraint : Standard_Transient
         myOrder = Order;
         myLProp = new GeomLProp_SLProps(2, TolDist);
         mySurf = Surf;
-        myPt2d = new gp_Pnt2d();
+        myPt2d = new Point2D();
         myU = U;
         myV = V;
         myTolDist = TolDist;
@@ -69,19 +73,19 @@ public class GeomPlate_PointConstraint : Standard_Transient
         myLProp.SetSurface(Surf);
     }
 
-    public void D0(out gp_Pnt P)
+    public void D0(out Point3D P)
     {
         P = myPoint;
     }
 
-    public void D1(out gp_Pnt P, out gp_Vec V1, out gp_Vec V2)
+    public void D1(out Point3D P, out Vector3D V1, out Vector3D V2)
     {
         P = myPoint;
         V1 = myD11;
         V2 = myD12;
     }
 
-    public void D2(out gp_Pnt P, out gp_Vec V1, out gp_Vec V2, out gp_Vec V3, out gp_Vec V4, out gp_Vec V5)
+    public void D2(out Point3D P, out Vector3D V1, out Vector3D V2, out Vector3D V3, out Vector3D V4, out Vector3D V5)
     {
         P = myPoint;
         V1 = myD11;
@@ -128,11 +132,11 @@ public class GeomPlate_PointConstraint : Standard_Transient
 
     public bool HasPnt2dOnSurf() => hasPnt2dOnSurf;
 
-    public void SetPnt2dOnSurf(in gp_Pnt2d Pnt2d)
+    public void SetPnt2dOnSurf(in Point2D Pnt2d)
     {
         myPt2d = Pnt2d;
         hasPnt2dOnSurf = true;
     }
 
-    public gp_Pnt2d Pnt2dOnSurf() => myPt2d;
+    public Point2D Pnt2dOnSurf() => myPt2d;
 }

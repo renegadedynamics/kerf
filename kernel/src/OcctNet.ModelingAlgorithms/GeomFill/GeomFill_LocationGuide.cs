@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.GeomFill_PipeError;
 
 namespace Occt;
@@ -20,7 +24,7 @@ namespace Occt;
 /// </remarks>
 public class GeomFill_LocationGuide : GeomFill_LocationLaw
 {
-    protected NCollection_HArray2<gp_Pnt2d> myPoles2d;
+    protected NCollection_HArray2<Point2D> myPoles2d;
 
     private readonly GeomFill_TrihedronWithGuide myLaw;
     private GeomFill_SectionLaw? mySec;
@@ -37,7 +41,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     private double myLastS;
     private double ratio;
     private bool WithTrans;
-    private gp_Mat Trans;
+    private Matrix3x3 Trans;
     private readonly math_Vector TolRes;
     private readonly math_Vector Inf;
     private readonly math_Vector Sup;
@@ -90,11 +94,11 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         } // if
         myGuide = aGuide;
 
-        myPoles2d = new NCollection_HArray2<gp_Pnt2d>(1, 2, 1, myNbPts);
+        myPoles2d = new NCollection_HArray2<Point2D>(1, 2, 1, myNbPts);
         rotation = false;  // contact ou non
         OrigParam1 = 0;    // param pour ACR quand trajectoire
         OrigParam2 = 1;    // et guide pas meme sens de parcourt
-        Trans = new gp_Mat();
+        Trans = new Matrix3x3();
         Trans.SetIdentity();
         WithTrans = false;
     }
@@ -103,23 +107,23 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     {
         if (myCurve is null)
         {
-            throw new Standard_ConstructionError("GeomFill_LocationGuide::The path is not set !!");
+            throw new ConstructionErrorException("GeomFill_LocationGuide::The path is not set !!");
         }
 
         // repere fixe
-        gp_Ax3 Rep = new gp_Ax3(gp.Origin(), gp.DZ(), gp.DX());
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        CoordinateSystem Rep = new CoordinateSystem(Constants.Origin(), Constants.DZ(), Constants.DX());
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
         int ii, Deg;
         bool isconst, israt = false;
         double t, v, w, OldAngle = 0, Angle, DeltaG, Diff;
         double CurAngle = PrecAngle, a1;
-        gp_Pnt2d p1 = new gp_Pnt2d(), p2 = new gp_Pnt2d();
+        Point2D p1 = new Point2D(), p2 = new Point2D();
         Geom_SurfaceOfRevolution Revol; // surface de revolution
         Geom_TrimmedCurve S;
         IntCurveSurface_IntersectionPoint PInt = new IntCurveSurface_IntersectionPoint(); // intersection guide/Revol
         NCollection_HArray1<int>? Mult = null;
         NCollection_HArray1<double>? Knots = null, Weights = null;
-        NCollection_HArray1<gp_Pnt>? Poles = null;
+        NCollection_HArray1<Point3D>? Poles = null;
 
         double U = 0, UPeriod = 0;
         double f = myCurve.FirstParameter();
@@ -148,7 +152,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
             mySec.Mults(Mult);
             Knots = new NCollection_HArray1<double>(1, NbKnots);
             mySec.Knots(Knots);
-            Poles = new NCollection_HArray1<gp_Pnt>(1, NbPoles);
+            Poles = new NCollection_HArray1<Point3D>(1, NbPoles);
             Weights = new NCollection_HArray1<double>(1, NbPoles);
             Uf = Knots.Value(1);
             Ul = Knots.Value(NbKnots);
@@ -177,26 +181,26 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         {
             t = (double)(myNbPts - ii) * f + (double)(ii - 1) * l;
             t /= myNbPts - 1;
-            myCurve.D0(t, out gp_Pnt P);
+            myCurve.D0(t, out Point3D P);
             Ok = myLaw.D0(t, ref T, ref N, ref B);
             if (!Ok)
             {
                 myStatus = myLaw.ErrorStatus();
                 return; // Y a rien a faire.
             }
-            gp_Dir D = new gp_Dir(T);
+            Direction3D D = new Direction3D(T);
             if (WithTrans)
             {
-                gp_Mat M = new gp_Mat(N.XYZ(), B.XYZ(), T.XYZ());
+                Matrix3x3 M = new Matrix3x3(N.XYZ(), B.XYZ(), T.XYZ());
                 M *= Trans;
-                D = new gp_Dir(M.Column(3));
+                D = new Direction3D(M.Column(3));
             }
-            gp_Ax1 Ax = new gp_Ax1(P, D); // axe pour la surface de revoltuion
+            Axis3D Ax = new Axis3D(P, D); // axe pour la surface de revoltuion
 
             // calculer transfo entre triedre et Oxyz
-            gp_Dir N2 = new gp_Dir(N);
-            gp_Ax3 N3 = new gp_Ax3(P, D, N2);
-            gp_Trsf Transfo = new gp_Trsf();
+            Direction3D N2 = new Direction3D(N);
+            CoordinateSystem N3 = new CoordinateSystem(P, D, N2);
+            Transform3D Transfo = new Transform3D();
             Transfo.SetTransformation(N3, Rep);
 
             // transformer la section
@@ -225,7 +229,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
             Revol = new Geom_SurfaceOfRevolution(S, Ax);
 
             GeomAdaptor_Surface GArevol = new GeomAdaptor_Surface(Revol);
-            Extrema_ExtCS DistMini = new Extrema_ExtCS(myGuide, GArevol, Precision.Confusion(), Precision.Confusion());
+            Extrema_ExtCS DistMini = new Extrema_ExtCS(myGuide, GArevol, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
             Extrema_POnCurv Pc = new Extrema_POnCurv();
             Extrema_POnSurf Ps;
             double theU = 0.0, theV = 0.0;
@@ -243,10 +247,10 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
                     GeomFill_FunctionGuide E = new GeomFill_FunctionGuide(mySec, myGuide, U);
                     E.SetParam(U, P, T.XYZ(), N.XYZ());
                     // resolution   =>  angle
-                    math_FunctionSetRoot Result = new math_FunctionSetRoot(E, TolRes);
+                    FunctionSetRoot Result = new FunctionSetRoot(E, TolRes);
                     Result.Perform(E, X, Inf, Sup);
 
-                    if (Result.IsDone() && (Result.FunctionSetErrors().Norm() < TolRes[1] * TolRes[1]))
+                    if (Result.IsDone && (Result.FunctionSetErrors().Norm() < TolRes[1] * TolRes[1]))
                     {
                         SOS = true;
                         math_Vector RR = new math_Vector(1, 3);
@@ -424,10 +428,10 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
     public override Adaptor3d_Curve? GetCurve() => myCurve;
 
-    public override void SetTrsf(in gp_Mat Transfo)
+    public override void SetTrsf(in Matrix3x3 Transfo)
     {
         Trans = Transfo;
-        gp_Mat Aux = new gp_Mat();
+        Matrix3x3 Aux = new Matrix3x3();
         Aux.SetIdentity();
         Aux -= Trans;
         WithTrans = false; // Au cas ou Trans = I
@@ -443,12 +447,12 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         }
     }
 
-    public override bool D0(double Param, ref gp_Mat M, ref gp_Vec V)
+    public override bool D0(double Param, ref Matrix3x3 M, ref Vector3D V)
     {
         bool Ok;
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
 
-        myCurve!.D0(Param, out gp_Pnt P);
+        myCurve!.D0(Param, out Point3D P);
         V.SetXYZ(P.XYZ());
         Ok = myLaw.D0(Param, ref T, ref N, ref B);
         if (!Ok)
@@ -474,13 +478,13 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
     // The rotation of D0 and D0 with poles (OCCT writes it twice): the angle about the tangent that puts the
     // section on the guide, applied to the normal and binormal columns of M.
-    private bool Rotate(double Param, double U, in gp_Pnt P, ref gp_Mat M)
+    private bool Rotate(double Param, double U, in Point3D P, ref Matrix3x3 M)
     {
         // initialisations germe
         InitX(Param);
 
         int Iter = 100;
-        gp_XYZ t, b, n;
+        Xyz t, b, n;
         t = M.Column(3);
         b = M.Column(2);
         n = M.Column(1);
@@ -491,16 +495,16 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         E.SetParam(Param, P, t, n);
 
         // resolution   =>  angle
-        math_FunctionSetRoot Result = new math_FunctionSetRoot(E, TolRes, Iter);
+        FunctionSetRoot Result = new FunctionSetRoot(E, TolRes, Iter);
         Result.Perform(E, X, Inf, Sup);
 
-        if (Result.IsDone())
+        if (Result.IsDone)
         {
             // solution
             Result.Root(R);
 
             // rotation
-            gp_Mat Rot = new gp_Mat();
+            Matrix3x3 Rot = new Matrix3x3();
             Rot.SetRotation(t, R[2]);
             b *= Rot;
             n *= Rot;
@@ -516,12 +520,12 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     }
 
     /// <summary>The location; with a rotation, the intersection (C0) of the surface of revolution and the guide.</summary>
-    public override bool D0(double Param, ref gp_Mat M, ref gp_Vec V, NCollection_Array1<gp_Pnt2d> Poles2d)
+    public override bool D0(double Param, ref Matrix3x3 M, ref Vector3D V, NCollection_Array1<Point2D> Poles2d)
     {
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
         bool Ok;
 
-        myCurve!.D0(Param, out gp_Pnt P);
+        myCurve!.D0(Param, out Point3D P);
         V.SetXYZ(P.XYZ());
         Ok = myLaw.D0(Param, ref T, ref N, ref B);
         if (!Ok)
@@ -545,14 +549,14 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     }
 
     /// <summary>The location and its first derivative; false with a rotation (OCCT's computation is commented out).</summary>
-    public override bool D1(double Param, ref gp_Mat M, ref gp_Vec V, ref gp_Mat DM, ref gp_Vec DV,
-                            NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d)
+    public override bool D1(double Param, ref Matrix3x3 M, ref Vector3D V, ref Matrix3x3 DM, ref Vector3D DV,
+                            NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d)
     {
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec(), DT = new gp_Vec(), DN = new gp_Vec(),
-               DB = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D(), DT = new Vector3D(), DN = new Vector3D(),
+               DB = new Vector3D();
         bool Ok;
 
-        myCurve!.D1(Param, out gp_Pnt P, out DV);
+        myCurve!.D1(Param, out Point3D P, out DV);
         V.SetXYZ(P.XYZ());
         Ok = myLaw.D1(Param, ref T, ref DT, ref N, ref DN, ref B, ref DB);
         if (!Ok)
@@ -579,15 +583,15 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     }
 
     /// <summary>The location and its first two derivatives; false with a rotation (OCCT's computation is commented out).</summary>
-    public override bool D2(double Param, ref gp_Mat M, ref gp_Vec V, ref gp_Mat DM, ref gp_Vec DV, ref gp_Mat D2M,
-                            ref gp_Vec D2V, NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
-                            NCollection_Array1<gp_Vec2d> D2Poles2d)
+    public override bool D2(double Param, ref Matrix3x3 M, ref Vector3D V, ref Matrix3x3 DM, ref Vector3D DV, ref Matrix3x3 D2M,
+                            ref Vector3D D2V, NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
+                            NCollection_Array1<Vector2D> D2Poles2d)
     {
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec(), DT = new gp_Vec(), DN = new gp_Vec(),
-               DB = new gp_Vec(), D2T = new gp_Vec(), D2N = new gp_Vec(), D2B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D(), DT = new Vector3D(), DN = new Vector3D(),
+               DB = new Vector3D(), D2T = new Vector3D(), D2N = new Vector3D(), D2B = new Vector3D();
         bool Ok;
 
-        myCurve!.D2(Param, out gp_Pnt P, out DV, out D2V);
+        myCurve!.D2(Param, out Point3D P, out DV, out D2V);
         V.SetXYZ(P.XYZ());
         Ok = myLaw.D2(Param, ref T, ref DT, ref D2T, ref N, ref DN, ref D2N, ref B, ref DB, ref D2B);
         if (!Ok)
@@ -627,7 +631,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
     public override GeomFill_PipeError ErrorStatus() => myStatus;
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int Nb_Sec, Nb_Law;
         Nb_Sec = myTrimmed!.NbIntervals(S);
@@ -648,11 +652,11 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int Nb_Sec, Nb_Law;
         Nb_Sec = myTrimmed!.NbIntervals(S);
@@ -675,7 +679,7 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         myTrimmed.Intervals(IntC, S);
         myLaw.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntC, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntC, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (int ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];
@@ -715,11 +719,11 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     /// <summary>1: the trihedrons are normed.</summary>
     public override double GetMaximalNorm() => 1.0;
 
-    public override void GetAverageLaw(ref gp_Mat AM, ref gp_Vec AV)
+    public override void GetAverageLaw(ref Matrix3x3 AM, ref Vector3D AV)
     {
         int ii;
         double U, delta;
-        gp_Vec V = new gp_Vec(), V1 = new gp_Vec(), V2 = new gp_Vec(), V3 = new gp_Vec();
+        Vector3D V = new Vector3D(), V1 = new Vector3D(), V2 = new Vector3D(), V3 = new Vector3D();
 
         myLaw.GetAverageLaw(ref V1, ref V2, ref V3);
         // OCCT: the columns are (tangent, normal, binormal) here, but (normal, binormal, tangent) in D0, D1 and D2.
@@ -745,9 +749,9 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
     public override bool IsRotation(ref double Error) => false;
 
-    public override void Rotation(ref gp_Pnt Center)
+    public override void Rotation(ref Point3D Center)
     {
-        throw new Standard_NotImplemented("GeomFill_LocationGuide::Rotation");
+        throw new MethodNotImplementedException("GeomFill_LocationGuide::Rotation");
     }
 
     public override bool IsTranslation(ref double Error) => false;
@@ -799,8 +803,8 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         double W1, W2;
         W1 = myPoles2d.Value(1, Ideb).Coord(2);
         W2 = myPoles2d.Value(1, Ifin).Coord(2);
-        gp_Pnt2d P1 = myPoles2d.Value(2, Ideb);
-        gp_Pnt2d P2 = myPoles2d.Value(2, Ifin);
+        Point2D P1 = myPoles2d.Value(2, Ideb);
+        Point2D P2 = myPoles2d.Value(2, Ifin);
 
         if (diff > 1.0e-7)
         {
@@ -818,12 +822,12 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
 
         if (myGuide.IsPeriodic())
         {
-            X[1] = ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
+            X[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
         }
-        X[2] = ElCLib.InPeriod(X[2], 0, 2 * M_PI);
+        X[2] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[2], 0, 2 * M_PI);
         if (mySec!.IsUPeriodic())
         {
-            X[3] = ElCLib.InPeriod(X[3], Uf, Ul);
+            X[3] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[3], Uf, Ul);
         }
     }
 
@@ -835,9 +839,9 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
     }
 
     /// <summary>The distance from the path to the guide (the current point on it) at myNbPts parameters.</summary>
-    public GeomFill_PipeError ComputeAutomaticLaw(out NCollection_HArray1<gp_Pnt2d> ParAndRad)
+    public GeomFill_PipeError ComputeAutomaticLaw(out NCollection_HArray1<Point2D> ParAndRad)
     {
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
         int ii;
         double t;
 
@@ -846,22 +850,22 @@ public class GeomFill_LocationGuide : GeomFill_LocationLaw
         double f = myCurve!.FirstParameter();
         double l = myCurve.LastParameter();
 
-        ParAndRad = new NCollection_HArray1<gp_Pnt2d>(1, myNbPts);
+        ParAndRad = new NCollection_HArray1<Point2D>(1, myNbPts);
         for (ii = 1; ii <= myNbPts; ii++)
         {
             t = (double)(myNbPts - ii) * f + (double)(ii - 1) * l;
             t /= myNbPts - 1;
-            myCurve.D0(t, out gp_Pnt P);
+            myCurve.D0(t, out Point3D P);
             bool Ok = myLaw.D0(t, ref T, ref N, ref B);
             if (!Ok)
             {
                 theStatus = myLaw.ErrorStatus();
                 return theStatus;
             }
-            gp_Pnt PointOnGuide = myLaw.CurrentPointOnGuide();
+            Point3D PointOnGuide = myLaw.CurrentPointOnGuide();
             double CurWidth = P.Distance(PointOnGuide);
 
-            gp_Pnt2d aParamWithRadius = new gp_Pnt2d(t, CurWidth);
+            Point2D aParamWithRadius = new Point2D(t, CurWidth);
             ParAndRad.SetValue(ii, aParamWithRadius);
         }
 

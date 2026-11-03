@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -19,14 +22,14 @@ public class BRepGProp_Cinert : GProp_GProps
     }
 
     /// <summary>The global properties of <paramref name="C"/>, inertia at <paramref name="CLocation"/>.</summary>
-    public BRepGProp_Cinert(BRepAdaptor_Curve C, in gp_Pnt CLocation)
+    public BRepGProp_Cinert(BRepAdaptor_Curve C, in Point3D CLocation)
     {
         SetLocation(CLocation);
         Perform(C);
     }
 
     /// <summary>Sets the reference point.</summary>
-    public void SetLocation(in gp_Pnt CLocation) => loc = CLocation;
+    public void SetLocation(in Point3D CLocation) => loc = CLocation;
 
     /// <summary>Computes the global properties of <paramref name="C"/>.</summary>
     public void Perform(BRepAdaptor_Curve C)
@@ -36,10 +39,10 @@ public class BRepGProp_Cinert : GProp_GProps
 
         double Lower = BRepGProp_EdgeTool.FirstParameter(C);
         double Upper = BRepGProp_EdgeTool.LastParameter(C);
-        int Order = Min(BRepGProp_EdgeTool.IntegrationOrder(C), math.GaussPointsMax());
+        int Order = Min(BRepGProp_EdgeTool.IntegrationOrder(C), NumericTables.GaussPointsMax());
 
-        gp_Pnt P = new(); // value on the curve
-        gp_Vec V1;        // first derivative on the curve
+        Point3D P = new(); // value on the curve
+        Vector3D V1;        // first derivative on the curve
         double ds;        // curvilign abscissae
         double ur, um, u;
         double x, y, z;
@@ -49,17 +52,17 @@ public class BRepGProp_Cinert : GProp_GProps
         var GaussW = new math_Vector(1, Order);
 
         // Recuperation des points de Gauss dans le fichier GaussPoints.
-        math.GaussPoints(Order, GaussP);
-        math.GaussWeights(Order, GaussW);
+        NumericTables.GaussPoints(Order, GaussP);
+        NumericTables.GaussWeights(Order, GaussW);
 
         // modified by NIZHNY-MKK  Thu Jun  9 12:13:21 2005.BEGIN
-        int nbIntervals = BRepGProp_EdgeTool.NbIntervals(C, GeomAbs_CN);
+        int nbIntervals = BRepGProp_EdgeTool.NbIntervals(C, CN);
         bool bHasIntervals = (nbIntervals > 1);
         var TI = new NCollection_Array1<double>(1, nbIntervals + 1);
 
         if (bHasIntervals)
         {
-            BRepGProp_EdgeTool.Intervals(C, TI, GeomAbs_CN);
+            BRepGProp_EdgeTool.Intervals(C, TI, CN);
         }
         else
         {
@@ -145,9 +148,9 @@ public class BRepGProp_Cinert : GProp_GProps
         }
         // modified by NIZHNY-MKK  Thu Jun  9 12:13:55 2005.END
 
-        inertia = new gp_Mat(new gp_XYZ(Ixx, -Ixy, -Ixz), new gp_XYZ(-Ixy, Iyy, -Iyz), new gp_XYZ(-Ixz, -Iyz, Izz));
+        inertia = new Matrix3x3(new Xyz(Ixx, -Ixy, -Ixz), new Xyz(-Ixy, Iyy, -Iyz), new Xyz(-Ixz, -Iyz, Izz));
 
-        if (Math.Abs(dim) < gp.Resolution())
+        if (Math.Abs(dim) < Constants.Resolution())
         {
             g = P;
         }

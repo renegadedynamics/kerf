@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -64,8 +67,8 @@ internal static class ClassificationScenes
             {
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
-                (N.TopLoc_Location aNL1, TopLoc_Location aL1) = RandomLocation(theOracle, false);
-                (N.TopLoc_Location aNL2, TopLoc_Location aL2) = RandomLocation(theOracle, false);
+                (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle, false);
+                (N.TopLoc_Location aNL2, Placement aL2) = RandomLocation(theOracle, false);
                 Twin<N.TopoDS_Compound, TopoDS_Compound> aCompound = aTwins.Twins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
@@ -97,7 +100,7 @@ internal static class ClassificationScenes
         Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
         if (theOracle.Bool())
         {
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
+            (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
             aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
         }
 
@@ -105,13 +108,13 @@ internal static class ClassificationScenes
     }
 
     /// <summary>A location built from the same raw numbers on both sides: a rotation, a translation or both, and a scale if asked.</summary>
-    public static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle, bool theScale)
+    public static (N.TopLoc_Location, Placement) RandomLocation(Oracle theOracle, bool theScale)
     {
         var aNT = new N.gp_Trsf();
-        var aT = new gp_Trsf();
+        var aT = new Transform3D();
         if (theOracle.Bool())
         {
-            (N.gp_Ax1 aNAx, gp_Ax1 anAx) = GeomOracleInputs.Ax1s(theOracle);
+            (N.gp_Ax1 aNAx, Axis3D anAx) = GeomOracleInputs.Ax1s(theOracle);
             double anAngle = theOracle.Angle();
             using (aNAx)
             {
@@ -123,50 +126,50 @@ internal static class ClassificationScenes
 
         if (theOracle.Bool())
         {
-            gp_Vec aV = new(theOracle.Real(-20, 20), theOracle.Real(-20, 20), theOracle.Real(-20, 20));
+            Vector3D aV = new(theOracle.Real(-20, 20), theOracle.Real(-20, 20), theOracle.Real(-20, 20));
             using var aNV = Oracle.ToNative(aV);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetTranslation(aNV);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Translation(aV).Multiplied(aT);
+            aT = Transform3D.Translation(aV).Multiplied(aT);
         }
 
         if (theScale)
         {
-            gp_Pnt aP = new(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+            Point3D aP = new(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
             double aS = theOracle.Real(0.3, 3);
             using var aNP = Oracle.ToNative(aP);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetScale(aNP, aS);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Scale(aP, aS).Multiplied(aT);
+            aT = Transform3D.Scale(aP, aS).Multiplied(aT);
         }
 
-        return (new N.TopLoc_Location(aNT), new TopLoc_Location(aT));
+        return (new N.TopLoc_Location(aNT), new Placement(aT));
     }
 
     /// <summary>A square face with a rectangular hole, on a random plane (the hole's wire first).</summary>
     public static Twin<N.TopoDS_Face, TopoDS_Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
     {
-        gp_Pnt anOrigin = new(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
-        gp_XYZ aNormal = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ aRef = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ anX = aNormal.Crossed(aRef);
+        Point3D anOrigin = new(theOracle.Real(-10, 10), theOracle.Real(-10, 10), theOracle.Real(-10, 10));
+        global::Kerf.Engine.Geometry.Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz aRef = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz anX = aNormal.Crossed(aRef);
         while (anX.Modulus() < 0.1)
         {
             aRef = GeomOracleInputs.RawDir(theOracle);
             anX = aNormal.Crossed(aRef);
         }
 
-        var aPln = new gp_Pln(new gp_Ax3(anOrigin, new gp_Dir(aNormal), new gp_Dir(anX)));
+        var aPln = new Plane3D(new CoordinateSystem(anOrigin, new Direction3D(aNormal), new Direction3D(anX)));
         double aSize = theOracle.Real(4, 10);
         double hu1 = theOracle.Real(0.5, 1.5), hu2 = theOracle.Real(2, 3.5), hv1 = theOracle.Real(0.5, 1.5), hv2 = theOracle.Real(2, 3.5);
         (double U, double V)[] aUV = [(0, 0), (aSize, 0), (aSize, aSize), (0, aSize), (hu1, hv1), (hu1, hv2), (hu2, hv2), (hu2, hv1)];
-        var aPoints = new gp_Pnt[8];
+        var aPoints = new Point3D[8];
         var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
-            aPoints[i] = ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
+            aPoints[i] = global::Kerf.Engine.Geometry.ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
             aV[i] = theTwins.Vertex(aPoints[i], 1e-6);
         }
 
@@ -186,22 +189,22 @@ internal static class ClassificationScenes
         const double Tol = 1e-7;
         double aTwoPi = 2.0 * Math.PI;
         TwinShapes aTw = theTwins.Twins;
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = aTw.Vertex(new gp_Pnt(r, 0, 0)), aV1 = aTw.Vertex(new gp_Pnt(r, 0, h));
+        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = aTw.Vertex(new Point3D(r, 0, 0)), aV1 = aTw.Vertex(new Point3D(r, 0, h));
         using var aNO = new N.gp_Pnt(0, 0, 0);
         using var aNOh = new N.gp_Pnt(0, 0, h);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNX = new N.gp_Dir(1, 0, 0);
         using var aNAx2 = new N.gp_Ax2(aNO, aNZ, aNX);
         using var aNAx2h = new N.gp_Ax2(aNOh, aNZ, aNX);
-        var aNoLoc = new TopLoc_Location();
+        var aNoLoc = new Placement();
         var aNBottomCircle = new N.Geom_Circle(aNAx2, r);
-        var aBottomCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r);
+        var aBottomCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aBottom = aTw.EdgeOn(aNBottomCircle, aBottomCircle, aNoLoc, null, 0, aTwoPi, aV0, aV0);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aTop = aTw.EdgeOn(new N.Geom_Circle(aNAx2h, r),
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, h), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
         using var aNSeamP = new N.gp_Pnt(r, 0, 0);
         var aNSeamLine = new N.Geom_Line(aNSeamP, aNZ);
-        var aSeamLine = new Geom_Line(new gp_Pnt(r, 0, 0), new gp_Dir(0, 0, 1));
+        var aSeamLine = new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1));
         Twin<N.TopoDS_Edge, TopoDS_Edge> aSeam = aTw.EdgeOn(aNSeamLine, aSeamLine, aNoLoc, null, 0, h, aV0, aV1);
 
         N.Geom_Surface aNS;
@@ -210,12 +213,12 @@ internal static class ClassificationScenes
         {
             using var aNAx1 = new N.gp_Ax1(aNO, aNZ);
             aNS = new N.Geom_SurfaceOfRevolution(new N.Geom_Line(aNSeamP, aNZ), aNAx1);
-            aS = new Geom_SurfaceOfRevolution(new Geom_Line(new gp_Pnt(r, 0, 0), new gp_Dir(0, 0, 1)), new gp_Ax1(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+            aS = new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         }
         else
         {
             aNS = new N.Geom_SurfaceOfLinearExtrusion(new N.Geom_Circle(aNAx2, r), aNZ);
-            aS = new Geom_SurfaceOfLinearExtrusion(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r), new gp_Dir(0, 0, 1));
+            aS = new Geom_SurfaceOfLinearExtrusion(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), new Direction3D(0, 0, 1));
         }
 
         var aNF = new N.TopoDS_Face();
@@ -234,7 +237,7 @@ internal static class ClassificationScenes
                 return new N.Geom2d_Line(aP, aD);
             }
 
-            static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new gp_Pnt2d(l.X, l.Y), new gp_Dir2d(l.DX, l.DY));
+            static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
 
             if (theL2 is null)
             {
@@ -274,7 +277,7 @@ internal static class ClassificationScenes
         var aNF = new N.TopoDS_Face();
         theNB.MakeFace(aNF, new N.Geom_Plane(aNAx3), Tol);
         TopoDS_Face aF = new();
-        thePB.MakeFace(ref aF, new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))), Tol);
+        thePB.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         using (var aNC = new N.gp_Pnt2d(0, 0))
         using (var aND = new N.gp_Dir2d(1, 0))
         using (var aNAx = new N.gp_Ax2d(aNC, aND))
@@ -282,7 +285,7 @@ internal static class ClassificationScenes
             theNB.UpdateEdge(theCircle.N, new N.Geom2d_Circle(aNAx, r), aNF, Tol);
         }
 
-        thePB.UpdateEdge(theCircle.P, new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), r), aF, Tol);
+        thePB.UpdateEdge(theCircle.P, new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
         var aNW = new N.TopoDS_Wire();
         theNB.MakeWire(aNW);
         TopoDS_Wire aW = new();
@@ -353,15 +356,15 @@ internal static class ClassificationScenes
     /// (from random UV in the faces' bounds) with small and large offsets along the normal, points on its edges and
     /// its vertices.
     /// </summary>
-    public static List<gp_Pnt> SamplePoints(Oracle theOracle, in TopoDS_Shape theShape, int theNbRandom, int thePerFace)
+    public static List<Point3D> SamplePoints(Oracle theOracle, in TopoDS_Shape theShape, int theNbRandom, int thePerFace)
     {
-        var aPoints = new List<gp_Pnt>();
-        Bnd_Box aBox = BRepBndLib.Box(theShape);
+        var aPoints = new List<Point3D>();
+        Box aBox = BRepBndLib.Box(theShape);
         aBox.Get(out double x1, out double y1, out double z1, out double x2, out double y2, out double z2);
         double dx = (x2 - x1) * 0.2, dy = (y2 - y1) * 0.2, dz = (z2 - z1) * 0.2;
         for (int i = 0; i < theNbRandom; i++)
         {
-            aPoints.Add(new gp_Pnt(theOracle.Real(x1 - dx, x2 + dx), theOracle.Real(y1 - dy, y2 + dy), theOracle.Real(z1 - dz, z2 + dz)));
+            aPoints.Add(new Point3D(theOracle.Real(x1 - dx, x2 + dx), theOracle.Real(y1 - dy, y2 + dy), theOracle.Real(z1 - dz, z2 + dz)));
         }
 
         for (var anExp = new TopExp_Explorer(theShape, TopAbs_FACE); anExp.More(); anExp.Next())
@@ -377,8 +380,8 @@ internal static class ClassificationScenes
             for (int i = 0; i < thePerFace; i++)
             {
                 double u = theOracle.Real(u1, u2), v = theOracle.Real(v1, v2);
-                aS.D1(u, v, out gp_Pnt aP, out gp_Vec aDU, out gp_Vec aDV);
-                gp_Vec aN = aDU.Crossed(aDV);
+                aS.D1(u, v, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
+                Vector3D aN = aDU.Crossed(aDV);
                 double anOffset = theOracle.Int(0, 4) switch
                 {
                     0 => 0.0,

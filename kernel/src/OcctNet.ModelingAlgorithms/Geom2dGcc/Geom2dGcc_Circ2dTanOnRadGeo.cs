@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -19,11 +21,11 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     private readonly bool WellDone;
     private readonly int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Circle2D> cirsol = new(1, aNbSolMAX);
     private readonly NCollection_Array1<GccEnt_Position> qualifier1 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<int> TheSame1 = new(1, aNbSolMAX);
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol = new(1, aNbSolMAX);
-    private readonly NCollection_Array1<gp_Pnt2d> pntcen3 = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Point2D> pnttg1sol = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Point2D> pntcen3 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> par1sol = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> pararg1 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> parcen3 = new(1, aNbSolMAX);
@@ -46,14 +48,14 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     //=========================================================================
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the line OnLine.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, in gp_Lin2d OnLine, double Radius, double Tolerance)
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
+    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, in Line2D OnLine, double Radius, double Tolerance)
     {
         //=========================================================================
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   Tol      = Math.Abs(Tolerance);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
@@ -72,7 +74,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -118,8 +120,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                         for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             qualifier1[NbrSol] = Qualified1.Qualifier();
                             TheSame1[NbrSol]   = 0;
@@ -127,7 +129,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                             parcen3[NbrSol]    = Intp.Point(i).ParamOnFirst();
                             // OCCT: reads pnttg1sol(NbrSol) before it is set (the origin, as the array is
                             // default-constructed)
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
                             pnttg1sol[NbrSol] = Geom2dGcc_CurveTool.Value(Cu1, pararg1[NbrSol]);
                             pntcen3[NbrSol]   = Center;
                         }
@@ -140,14 +142,14 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the circle OnCirc.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, in gp_Circ2d OnCirc, double Radius, double Tolerance)
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
+    public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, in Circle2D OnCirc, double Radius, double Tolerance)
     {
         //=========================================================================
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
         double   firstparam;
@@ -166,7 +168,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -189,10 +191,10 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                 cote1[1] = Radius;
                 cote1[2] = -Radius;
             }
-            IntRes2d_Domain D1 = new(ElCLib.Value(0.0, OnCirc),
+            IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, OnCirc),
                                      0.0,
                                      Tol,
-                                     ElCLib.Value(2.0 * M_PI, OnCirc),
+                                     global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, OnCirc),
                                      2.0 * M_PI,
                                      Tol);
             D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -218,15 +220,15 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                         for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             qualifier1[NbrSol] = Qualified1.Qualifier();
                             TheSame1[NbrSol]   = 0;
                             pararg1[NbrSol]    = Intp.Point(i).ParamOnSecond();
                             parcen3[NbrSol]    = Intp.Point(i).ParamOnFirst();
                             // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
                             pnttg1sol[NbrSol] = Geom2dGcc_CurveTool.Value(Cu1, pararg1[NbrSol]);
                             pntcen3[NbrSol]   = Center;
                         }
@@ -239,7 +241,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     /// <summary>Circles of radius Radius tangent to the qualified circle, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedCirc Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
                                        double Tolerance)
     {
@@ -247,7 +249,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
         double   firstparam;
@@ -262,13 +264,13 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             throw new GccEnt_BadQualifier();
         }
         NCollection_Array1<double> cote1   = new(1, 2);
-        gp_Circ2d                  C1      = Qualified1.Qualified();
-        gp_Pnt2d                   center1 = C1.Location();
+        Circle2D                  C1      = Qualified1.Qualified();
+        Point2D                   center1 = C1.Location();
         double                     R1      = C1.Radius();
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -294,11 +296,11 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             Geom2dInt_TheIntConicCurveOfGInter Intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                gp_Circ2d       Circ = new(C1.XAxis(), R1 + cote1[jcote1]);
-                IntRes2d_Domain D1   = new(ElCLib.Value(0.0, Circ),
+                Circle2D       Circ = new(C1.XAxis(), R1 + cote1[jcote1]);
+                IntRes2d_Domain D1   = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ),
                                            0.0,
                                            Tol,
-                                           ElCLib.Value(2.0 * M_PI, Circ),
+                                           global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Circ),
                                            2.0 * M_PI,
                                            Tol);
                 D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -318,8 +320,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                         for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             double distcc1 = Center.Distance(center1);
                             if (!Qualified1.IsUnqualified())
@@ -342,8 +344,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                             pararg1[NbrSol]  = Intp.Point(i).ParamOnFirst();
                             parcen3[NbrSol]  = Intp.Point(i).ParamOnSecond();
                             // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pnttg1sol[NbrSol] = ElCLib.Value(pararg1[NbrSol], C1);
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pnttg1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Value(pararg1[NbrSol], C1);
                             pntcen3[NbrSol]   = Center;
                         }
                     }
@@ -355,7 +357,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     /// <summary>Circles of radius Radius tangent to the qualified line, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The line is qualified enclosing or has no qualifier.</exception>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public Geom2dGcc_Circ2dTanOnRadGeo(in GccEnt_QualifiedLin Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
                                        double Tolerance)
     {
@@ -363,7 +365,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
         double   firstparam;
@@ -377,14 +379,14 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
         }
         int                        nbrcote1 = 0;
         NCollection_Array1<double> cote1    = new(1, 2);
-        gp_Lin2d                   L1       = Qualified1.Qualified();
-        gp_Pnt2d                   origin1  = L1.Location();
-        gp_Dir2d                   dir1     = L1.Direction();
-        gp_Dir2d                   norm1    = new(-dir1.Y(), dir1.X());
+        Line2D                   L1       = Qualified1.Qualified();
+        Point2D                   origin1  = L1.Location();
+        Direction2D                   dir1     = L1.Direction();
+        Direction2D                   norm1    = new(-dir1.Y(), dir1.X());
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -412,8 +414,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
             {
                 // OCCT: offsets the line's direction, not its origin, so the line is in the wrong place unless the
                 // qualified line passes through dir1 (and pararg1 below is a parameter on that line, not on L1)
-                gp_Pnt2d        Point = new(dir1.XY() + cote1[jcote1] * norm1.XY());
-                gp_Lin2d        Line  = new(Point, dir1); // ligne avec deport.
+                Point2D        Point = new(dir1.XY() + cote1[jcote1] * norm1.XY());
+                Line2D        Line  = new(Point, dir1); // ligne avec deport.
                 IntRes2d_Domain D1    = new();
                 firstparam            = Max(Geom2dGcc_CurveTool.FirstParameter(OnCurv), thefirst);
                 lastparam             = Min(Geom2dGcc_CurveTool.LastParameter(OnCurv), thelast);
@@ -431,10 +433,10 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                         for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
-                            gp_Dir2d dc1 = new(origin1.XY() - Center.XY());
+                            Direction2D dc1 = new(origin1.XY() - Center.XY());
                             if (!Qualified1.IsUnqualified())
                             {
                                 qualifier1[NbrSol] = Qualified1.Qualifier();
@@ -451,8 +453,8 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                             pararg1[NbrSol]  = Intp.Point(i).ParamOnFirst();
                             parcen3[NbrSol]  = Intp.Point(i).ParamOnSecond();
                             // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pnttg1sol[NbrSol] = ElCLib.Value(pararg1[NbrSol], L1);
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pnttg1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Value(pararg1[NbrSol], L1);
                             pntcen3[NbrSol]   = Center;
                         }
                     }
@@ -464,7 +466,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
     /// <summary>Circles of radius Radius tangent to the qualified curve, centred on the curve OnCurv.</summary>
     /// <exception cref="GccEnt_BadQualifier">The qualifier is GccEnt_noqualifier.</exception>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
     public Geom2dGcc_Circ2dTanOnRadGeo(in Geom2dGcc_QCurve Qualified1, Geom2dAdaptor_Curve OnCurv, double Radius,
                                        double Tolerance)
     {
@@ -472,7 +474,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
         double   firstparam;
@@ -491,7 +493,7 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
@@ -548,15 +550,15 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                         for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                         {
                             NbrSol++;
-                            gp_Pnt2d Center = Intp.Point(i).Value();
-                            cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            Point2D Center = Intp.Point(i).Value();
+                            cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             qualifier1[NbrSol] = Qualified1.Qualifier();
                             TheSame1[NbrSol]   = 0;
                             pararg1[NbrSol]    = Intp.Point(i).ParamOnFirst();
                             parcen3[NbrSol]    = Intp.Point(i).ParamOnSecond();
                             // OCCT: reads pnttg1sol(NbrSol) before it is set
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
                             pnttg1sol[NbrSol] = Geom2dGcc_CurveTool.Value(Cu1, pararg1[NbrSol]);
                             pntcen3[NbrSol]   = Center;
                         }
@@ -568,14 +570,14 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     }
 
     /// <summary>Circles of radius Radius through Point1, centred on the curve OnCurv.</summary>
-    /// <exception cref="Standard_NegativeValue">Radius is negative.</exception>
-    public Geom2dGcc_Circ2dTanOnRadGeo(in gp_Pnt2d Point1, Geom2dAdaptor_Curve OnCurv, double Radius, double Tolerance)
+    /// <exception cref="NegativeValueException">Radius is negative.</exception>
+    public Geom2dGcc_Circ2dTanOnRadGeo(in Point2D Point1, Geom2dAdaptor_Curve OnCurv, double Radius, double Tolerance)
     {
         //=========================================================================
         // Traitement.                                                            +
         //=========================================================================
 
-        gp_Dir2d dirx     = new(gp_Dir2d.D.X);
+        Direction2D dirx     = new(Direction2D.D.X);
         double   thefirst = -100000.0;
         double   thelast  = 100000.0;
         double   firstparam;
@@ -586,16 +588,16 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
 
         if (Radius < 0.0)
         {
-            throw new Standard_NegativeValue();
+            throw new NegativeValueException();
         }
         else
         {
             //     gp_Dir2d Dir(-y1dir,x1dir);
-            gp_Circ2d       Circ = new(new gp_Ax2d(Point1, new gp_Dir2d(gp_Dir2d.D.X)), Radius);
-            IntRes2d_Domain D1   = new(ElCLib.Value(0.0, Circ),
+            Circle2D       Circ = new(new Axis2D(Point1, new Direction2D(Direction2D.D.X)), Radius);
+            IntRes2d_Domain D1   = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ),
                                        0.0,
                                        Tol,
-                                       ElCLib.Value(2.0 * M_PI, Circ),
+                                       global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Circ),
                                        2 * M_PI,
                                        Tol);
             D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -615,15 +617,15 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
                     for (int i = 1; i <= Intp.NbPoints() && NbrSol < aNbSolMAX; i++)
                     {
                         NbrSol++;
-                        gp_Pnt2d Center = Intp.Point(i).Value();
-                        cirsol[NbrSol]  = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                        Point2D Center = Intp.Point(i).Value();
+                        cirsol[NbrSol]  = new Circle2D(new Axis2D(Center, dirx), Radius);
                         //         =======================================================
                         qualifier1[NbrSol] = GccEnt_noqualifier;
                         TheSame1[NbrSol]   = 0;
                         pararg1[NbrSol]    = Intp.Point(i).ParamOnFirst();
                         parcen3[NbrSol]    = Intp.Point(i).ParamOnSecond();
                         // OCCT: reads pnttg1sol(NbrSol) before it is set
-                        par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                        par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
                         pnttg1sol[NbrSol] = Point1;
                         pntcen3[NbrSol]   = Center;
                     }
@@ -648,12 +650,12 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     }
 
     /// <summary>The solution of index Index.</summary>
-    /// <exception cref="Standard_OutOfRange">Index is not in 1..NbSolutions().</exception>
-    public gp_Circ2d ThisSolution(int Index)
+    /// <exception cref="OutOfRangeException">Index is not in 1..NbSolutions().</exception>
+    public Circle2D ThisSolution(int Index)
     {
         if (Index > NbrSol || Index <= 0)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return cirsol[Index];
     }
@@ -663,11 +665,11 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -676,15 +678,15 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     }
 
     /// <summary>The tangency point between the solution of index Index and the argument, and its parameters.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -695,15 +697,15 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     }
 
     /// <summary>The parameter of the centre of the solution of index Index on the curve it lies on, and (OCCT) the tangency point.</summary>
-    public void CenterOn3(int Index, out double ParArg, out gp_Pnt2d PntSol)
+    public void CenterOn3(int Index, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -717,11 +719,11 @@ public sealed class Geom2dGcc_Circ2dTanOnRadGeo
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame1[Index] == 0)

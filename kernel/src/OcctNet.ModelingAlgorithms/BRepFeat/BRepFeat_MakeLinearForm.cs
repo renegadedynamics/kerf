@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.BRepFeat_PerfSelection;
 using static Occt.BRepFeat_StatusError;
 using static Occt.TopAbs_Orientation;
@@ -28,8 +30,8 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
 #pragma warning disable CS0169 // declared, never used: as in OCCT
     private Geom_Curve? myCrv;
 #pragma warning restore CS0169
-    private gp_Vec myDir = new();
-    private gp_Vec myDir1 = new();
+    private Vector3D myDir = new();
+    private Vector3D myDir1 = new();
     private Geom_Plane? myPln;
     private double myBnd;
     private NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>> mySlface = new(TopTools_ShapeMapHasher.Instance);
@@ -50,14 +52,14 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
     /// <paramref name="Sbase"/>, thickened along <paramref name="Direction"/> and <paramref name="Direction1"/> (null
     /// for one side); <paramref name="Fuse"/> 0 cuts, 1 fuses; <paramref name="Modify"/> asks for sliding.
     /// </summary>
-    public BRepFeat_MakeLinearForm(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane P, in gp_Vec Direction,
-                                   in gp_Vec Direction1, int Fuse, bool Modify)
+    public BRepFeat_MakeLinearForm(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane P, in Vector3D Direction,
+                                   in Vector3D Direction1, int Fuse, bool Modify)
     {
         Init(Sbase, W, P, Direction, Direction1, Fuse, Modify);
     }
 
     /// <summary>Initializes the linear form (see the constructor).</summary>
-    public void Init(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane Plane, in gp_Vec Direc, in gp_Vec Direc1,
+    public void Init(in TopoDS_Shape Sbase, in TopoDS_Wire W, Geom_Plane Plane, in Vector3D Direc, in Vector3D Direc1,
                      int Mode, bool Modify)
     {
         bool RevolRib = false;
@@ -94,7 +96,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
         myFuse = Mode != 0;
 
         // ---Determine Tolerance : max tolerance on parameters
-        myTol = Precision.Confusion();
+        myTol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         TopExp_Explorer exx = new();
         exx.Init(myWire, TopAbs_VERTEX);
@@ -119,7 +121,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
 
         // ---Control of directions
         //    the wire should be in the rib
-        gp_Vec nulldir = new(0, 0, 0);
+        Vector3D nulldir = new(0, 0, 0);
         if (!myDir1.IsEqual(nulldir, myTol, myTol))
         {
             double ang = myDir1.Angle(myDir);
@@ -133,8 +135,8 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
         else
         {
             // Rib is centre in the middle of translation
-            gp_Vec DirTranslation = (Direc + Direc1) * 0.5;
-            gp_Trsf T = new();
+            Vector3D DirTranslation = (Direc + Direc1) * 0.5;
+            Transform3D T = new();
             T.SetTranslation(DirTranslation);
             BRepBuilderAPI_Transform trf = new(T);
             trf.Perform(myWire);
@@ -142,7 +144,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             myDir = Direc - DirTranslation;
             myDir1 = Direc1 - DirTranslation;
             // OCCT.NET: OCCT translates the caller's plane; a frozen one is translated on a copy (decision 974)
-            if (myPln.IsFrozen())
+            if (myPln.IsFrozen)
             {
                 myPln = (Geom_Plane)myPln.Copy();
             }
@@ -156,7 +158,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
 
         TopoDS_Shape U = new();
         U.Nullify();
-        gp_Pnt FirstCorner = new(), LastCorner = new();
+        Point3D FirstCorner = new(), LastCorner = new();
         double bnd = HeightMax(mySbase, U, ref FirstCorner, ref LastCorner);
         myBnd = bnd;
 
@@ -200,7 +202,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
         }
 
         // ---Proofing Point for the side of the wire to be filled - side material
-        gp_Pnt CheckPnt = CheckPoint(FirstEdge, bnd / 10.0, myPln);
+        Point3D CheckPnt = CheckPoint(FirstEdge, bnd / 10.0, myPln);
 
         // ---Control sliding valuable
         // Many cases when the sliding is abandoned
@@ -234,13 +236,13 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
         // is too expensive - improve
         if (Sliding)
         {
-            gp_Pnt p1 = new(myFirstPnt.X() + myDir.X(), myFirstPnt.Y() + myDir.Y(), myFirstPnt.Z() + myDir.Z());
+            Point3D p1 = new(myFirstPnt.X() + myDir.X(), myFirstPnt.Y() + myDir.Y(), myFirstPnt.Z() + myDir.Z());
             BRepLib_MakeEdge ee1 = new(myFirstPnt, p1);
             BRepExtrema_ExtCF ext1 = new(ee1.InternalEdge(), FirstFace);
             if (ext1.NbExt() == 1
                 && ext1.SquareDistance(1) <= BRep_Tool.Tolerance(FirstFace) * BRep_Tool.Tolerance(FirstFace))
             {
-                gp_Pnt p2 = new(myLastPnt.X() + myDir.X(), myLastPnt.Y() + myDir.Y(), myLastPnt.Z() + myDir.Z());
+                Point3D p2 = new(myLastPnt.X() + myDir.X(), myLastPnt.Y() + myDir.Y(), myLastPnt.Z() + myDir.Z());
                 BRepLib_MakeEdge ee2 = new(myLastPnt, p2);
                 BRepExtrema_ExtCF ext2 = new(ee2.InternalEdge(), LastFace); // ExtCF : curves and surfaces
                 Sliding = ext2.NbExt() == 1
@@ -252,17 +254,17 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             }
         }
 
-        if (!myDir1.IsEqual(nulldir, Precision.Confusion(), Precision.Confusion()))
+        if (!myDir1.IsEqual(nulldir, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             if (Sliding)
             {
-                gp_Pnt p1 = new(myFirstPnt.X() + myDir1.X(), myFirstPnt.Y() + myDir1.Y(), myFirstPnt.Z() + myDir1.Z());
+                Point3D p1 = new(myFirstPnt.X() + myDir1.X(), myFirstPnt.Y() + myDir1.Y(), myFirstPnt.Z() + myDir1.Z());
                 BRepLib_MakeEdge ee1 = new(myFirstPnt, p1);
                 BRepExtrema_ExtCF ext1 = new(ee1.InternalEdge(), FirstFace);
                 if (ext1.NbExt() == 1
                     && ext1.SquareDistance(1) <= BRep_Tool.Tolerance(FirstFace) * BRep_Tool.Tolerance(FirstFace))
                 {
-                    gp_Pnt p2 = new(myLastPnt.X() + myDir1.X(), myLastPnt.Y() + myDir1.Y(), myLastPnt.Z() + myDir1.Z());
+                    Point3D p2 = new(myLastPnt.X() + myDir1.X(), myLastPnt.Y() + myDir1.Y(), myLastPnt.Z() + myDir1.Z());
                     BRepLib_MakeEdge ee2 = new(myLastPnt, p2);
                     BRepExtrema_ExtCF ext2 = new(ee2.InternalEdge(), LastFace);
                     Sliding = ext2.NbExt() == 1
@@ -335,7 +337,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
                 {
                     Geom_Curve cc = BRep_Tool.Curve(E, out double f, out double l)!;
                     cc = new Geom_TrimmedCurve(cc, f, l);
-                    gp_Pnt pt;
+                    Point3D pt;
                     if (!FirstEdge.IsSame(LastEdge))
                     {
                         pt = BRep_Tool.Pnt(TopExp.LastVertex(E, true));
@@ -422,8 +424,8 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
                     else
                     {
                         Geom_Curve cc = BRep_Tool.Curve(E, out double f, out double l)!;
-                        gp_Pnt pf = BRep_Tool.Pnt(TopExp.FirstVertex(E, true));
-                        gp_Pnt pl = myLastPnt;
+                        Point3D pf = BRep_Tool.Pnt(TopExp.FirstVertex(E, true));
+                        Point3D pl = myLastPnt;
                         TopoDS_Edge ee;
                         if (thePreviousEdge.IsNull())
                         {
@@ -456,7 +458,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             bool FirstOK = false;
             bool LastOK = false;
 
-            gp_Pnt theLastPnt = myLastPnt;
+            Point3D theLastPnt = myLastPnt;
             int sens = 0;
             TopoDS_Edge theEdge = new(), theLEdge = new(), theFEdge = new();
             int counter1 = counter;
@@ -465,7 +467,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             while (!FirstOK)
             {
                 TopoDS_Edge edg = TopoDS.Edge(it.Value());
-                gp_Pnt fp, lp;
+                Point3D fp, lp;
                 Geom_Curve ccc = BRep_Tool.Curve(edg, out double f, out double l)!;
                 Geom_TrimmedCurve cc = new(ccc, f, l);
                 if (edg.Orientation() == TopAbs_REVERSED)
@@ -705,7 +707,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
     }
 
     /// <summary>Adds an element of sliding: the edge <paramref name="E"/> slides on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">F isn't a face of the basis shape.</exception>
+    /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape.</exception>
     public void Add(in TopoDS_Edge E, in TopoDS_Face F)
     {
         if (mySlface.IsEmpty())
@@ -720,7 +722,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             }
             if (!exp.More())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
 
             if (!mySlface.IsBound(F))
@@ -753,7 +755,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             return;
         }
 
-        gp_Vec nulldir = new(0, 0, 0);
+        Vector3D nulldir = new(0, 0, 0);
 
         double Length = myDir.Magnitude() + myDir1.Magnitude();
 
@@ -768,12 +770,12 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
             myPerfSelection = BRepFeat_NoSelection;
         }
 
-        gp_Dir dir = new(myDir);
-        gp_Vec V = Length * new gp_Vec(dir);
+        Direction3D dir = new(myDir);
+        Vector3D V = Length * new Vector3D(dir);
 
         LocOpe_LinearForm theForm = new();
 
-        if (myDir1.IsEqual(nulldir, Precision.Confusion(), Precision.Confusion()))
+        if (myDir1.IsEqual(nulldir, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             theForm.Perform(myPbase, V, myFirstPnt, myLastPnt);
         }
@@ -873,11 +875,11 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
     /// <paramref name="SliList"/>, adding the faces the rib meets; <paramref name="falseside"/> becomes false when the
     /// material isn't on the profile's side.
     /// </summary>
-    public bool Propagate(NCollection_List<TopoDS_Shape> SliList, in TopoDS_Face fac, in gp_Pnt Firstpnt,
-                          in gp_Pnt Lastpnt, ref bool falseside)
+    public bool Propagate(NCollection_List<TopoDS_Shape> SliList, in TopoDS_Face fac, in Point3D Firstpnt,
+                          in Point3D Lastpnt, ref bool falseside)
     {
-        gp_Pnt Firstpoint = Firstpnt;
-        gp_Pnt Lastpoint = Lastpnt;
+        Point3D Firstpoint = Firstpnt;
+        Point3D Lastpoint = Lastpnt;
 
         bool result = true;
         TopoDS_Face CurrentFace, saveFace;
@@ -895,7 +897,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
 
         TopExp_Explorer Ex = new();
         TopoDS_Edge eb = new(), ec;
-        gp_Pnt p1 = new(), p2 = new();
+        Point3D p1 = new(), p2 = new();
         double t1 = 0.0, t2 = 0.0;
         bool c1f, c2f, c1l, c2l;
 
@@ -960,7 +962,7 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
         BRep_Builder BB = new();
 
         TopoDS_Vertex Vprevious;
-        gp_Pnt ptprev;
+        Point3D ptprev;
         double dp;
 
         while (!(LastOK && FirstOK))
@@ -1010,11 +1012,11 @@ public sealed class BRepFeat_MakeLinearForm : BRepFeat_RibSlot
                                 BRepExtrema_ExtPF perp = new(ve1, fac);
                                 if (perp.IsDone())
                                 {
-                                    gp_Pnt pe1 = perp.Point(1);
+                                    Point3D pe1 = perp.Point(1);
                                     perp.Perform(ve2, fac);
                                     if (perp.IsDone())
                                     {
-                                        gp_Pnt pe2 = perp.Point(1);
+                                        Point3D pe2 = perp.Point(1);
                                         if (pe1.Distance(pe2) <= BRep_Tool.Tolerance(rfe))
                                         {
                                             result = true;

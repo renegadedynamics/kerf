@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -75,7 +77,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
     private static void CompareText(Tally theTally, string theWhat, string theNative, in TopoDS_Shape thePort)
     {
         theTally.Results++;
-        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen())
+        if (!thePort.IsNull() && !thePort.TShape()!.IsFrozen)
         {
             theTally.NotFrozen++;
             theTally.Differences.Add($"{theWhat}: the port's result isn't frozen");
@@ -203,8 +205,8 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 double Nx = double.Parse(theHead[3], CultureInfo.InvariantCulture);
                 double Ny = double.Parse(theHead[4], CultureInfo.InvariantCulture);
                 double Nz = double.Parse(theHead[5], CultureInfo.InvariantCulture);
-                gp_Ax2 aAxes = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(Nx, Ny, Nz));
-                gp_Dir aDX = aAxes.XDirection();
+                Frame3D aAxes = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Nx, Ny, Nz));
+                Direction3D aDX = aAxes.XDirection();
                 HLRAppli_ReflectLines aReflector = new(theInputs[0]);
                 aReflector.SetAxes(Nx, Ny, Nz, 0.0, 0.0, 0.0, aDX.X(), aDX.Y(), aDX.Z());
                 aReflector.Perform();
@@ -277,9 +279,9 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             {
                 aPort = RunCase(aWords, aShapes);
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                aTally.Differences.Add($"{aCase}: the port throws {e.GetType().Name} ({e.Message}), native {(isException ? "throws too" : "doesn't")}");
+                aTally.Differences.Add($"{aCase}: the port throws {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())} ({e.Message}), native {(isException ? "throws too" : "doesn't")}");
                 continue;
             }
             Assert.False(isException, aCase);

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Stores the links between shapes and the shapes obtained from them (their images).</summary>
@@ -57,12 +59,12 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Links <paramref name="NewS"/> as the image of <paramref name="OldS"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">OldS already has images.</exception>
+    /// <exception cref="ConstructionErrorException">OldS already has images.</exception>
     public void Bind(in TopoDS_Shape OldS, in TopoDS_Shape NewS)
     {
         if (down.IsBound(OldS))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::Bind");
+            throw new ConstructionErrorException(" BRepAlgo_Image::Bind");
         }
         NCollection_List<TopoDS_Shape> L = new();
         down.Bind(OldS, L);
@@ -71,12 +73,12 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Links the shapes of <paramref name="L"/> as the images of <paramref name="OldS"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">OldS already has images.</exception>
+    /// <exception cref="ConstructionErrorException">OldS already has images.</exception>
     public void Bind(in TopoDS_Shape OldS, NCollection_List<TopoDS_Shape> L)
     {
         if (HasImage(OldS))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::Bind");
+            throw new ConstructionErrorException(" BRepAlgo_Image::Bind");
         }
         NCollection_List<TopoDS_Shape>.Iterator it = new(L);
         for (; it.More(); it.Next())
@@ -101,12 +103,12 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Adds <paramref name="NewS"/> to the images of <paramref name="OldS"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">OldS has no images.</exception>
+    /// <exception cref="ConstructionErrorException">OldS has no images.</exception>
     public void Add(in TopoDS_Shape OldS, in TopoDS_Shape NewS)
     {
         if (!HasImage(OldS))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::Add");
+            throw new ConstructionErrorException(" BRepAlgo_Image::Add");
         }
         down[OldS].Append(NewS);
         up.Bind(NewS, OldS);
@@ -123,12 +125,12 @@ public sealed class BRepAlgo_Image
     }
 
     /// <summary>Removes the image <paramref name="S"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">S isn't an image.</exception>
+    /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public void Remove(in TopoDS_Shape S)
     {
         if (!up.IsBound(S))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::Remove");
+            throw new ConstructionErrorException(" BRepAlgo_Image::Remove");
         }
         TopoDS_Shape OldS = up[S];
         NCollection_List<TopoDS_Shape> L = down[OldS];
@@ -156,23 +158,23 @@ public sealed class BRepAlgo_Image
     public bool IsImage(in TopoDS_Shape S) => up.IsBound(S);
 
     /// <summary>The shape <paramref name="S"/> is an image of.</summary>
-    /// <exception cref="Standard_ConstructionError">S isn't an image.</exception>
+    /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public TopoDS_Shape ImageFrom(in TopoDS_Shape S)
     {
         if (!up.IsBound(S))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::ImageFrom");
+            throw new ConstructionErrorException(" BRepAlgo_Image::ImageFrom");
         }
         return up[S];
     }
 
     /// <summary>The first generator of <paramref name="S"/>.</summary>
-    /// <exception cref="Standard_ConstructionError">S isn't an image.</exception>
+    /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public TopoDS_Shape Root(in TopoDS_Shape S)
     {
         if (!up.IsBound(S))
         {
-            throw new Standard_ConstructionError(" BRepAlgo_Image::FirstImageFrom");
+            throw new ConstructionErrorException(" BRepAlgo_Image::FirstImageFrom");
         }
 
         TopoDS_Shape S1 = up[S];

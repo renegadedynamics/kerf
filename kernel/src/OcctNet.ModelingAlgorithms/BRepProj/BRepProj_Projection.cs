@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -34,7 +38,7 @@ public sealed class BRepProj_Projection
     //=======================================================================
     private static double DistanceOut(in TopoDS_Shape S1, in TopoDS_Shape S2)
     {
-        Bnd_Box BBox1 = new(), BBox2 = new();
+        Box BBox1 = new(), BBox2 = new();
         BRepBndLib.Add(S1, ref BBox1);
         BRepBndLib.Add(S2, ref BBox2);
         return BBox1.Distance(BBox2);
@@ -49,7 +53,7 @@ public sealed class BRepProj_Projection
 
     private static double DistanceIn(in TopoDS_Shape S1, in TopoDS_Shape S2)
     {
-        Bnd_Box LBBox = new(), SBBox = new();
+        Box LBBox = new(), SBBox = new();
         BRepBndLib.Add(S1, ref SBBox);
         BRepBndLib.Add(S2, ref LBBox);
 
@@ -57,8 +61,8 @@ public sealed class BRepProj_Projection
         LBBox.Get(out double LXmin, out double LYmin, out double LZmin, out double LXmax, out double LYmax, out double LZmax);
 
         // Compute the max distance between input shapes------------//
-        gp_XYZ Lmin = new(LXmin, LYmin, LZmin), Lmax = new(LXmax, LYmax, LZmax);
-        gp_XYZ Smin = new(SXmin, SYmin, SZmin), Smax = new(SXmax, SYmax, SZmax);
+        Xyz Lmin = new(LXmin, LYmin, LZmin), Lmax = new(LXmax, LYmax, LZmax);
+        Xyz Smin = new(SXmin, SYmin, SZmin), Smax = new(SXmax, SYmax, SZmax);
         Lmax.Subtract(Lmin);
         Smax.Subtract(Smin);
         return Lmax.Modulus() + Smax.Modulus() + DistanceOut(S1, S2);
@@ -102,7 +106,7 @@ public sealed class BRepProj_Projection
         }
         if (aShape.IsNull())
         {
-            throw new Standard_ConstructionError("BRepProj_Projection.cxx: target shape has no faces");
+            throw new ConstructionErrorException("BRepProj_Projection.cxx: target shape has no faces");
         }
 
         // build section computing p-curves on both shapes to get higher precision
@@ -142,7 +146,7 @@ public sealed class BRepProj_Projection
         }
 
         // connect edges to wires using ShapeAnalysis functionality
-        mySection = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anEdges, Precision.Confusion(), true);
+        mySection = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anEdges, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         myIsDone = (mySection is not null && mySection.Length() > 0);
 
         // collect all resulting wires to compound
@@ -169,10 +173,10 @@ public sealed class BRepProj_Projection
     /// The projection of <paramref name="Wire"/> (a wire or an edge) onto <paramref name="Shape"/> along the direction
     /// <paramref name="D"/>.
     /// </summary>
-    /// <exception cref="Standard_NullObject">A null input shape.</exception>
-    /// <exception cref="Standard_ConstructionError">The projected shape is neither a wire nor an edge, or the target
+    /// <exception cref="NullObjectException">A null input shape.</exception>
+    /// <exception cref="ConstructionErrorException">The projected shape is neither a wire nor an edge, or the target
     /// has no faces.</exception>
-    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in gp_Dir D)
+    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in Direction3D D)
     {
         myIsDone = false;
         myItr = 0;
@@ -180,16 +184,16 @@ public sealed class BRepProj_Projection
         Standard_NullObject_Raise_if((Wire.IsNull() || Shape.IsNull()), "BRepProj_Projection.cxx: null input shape");
         if (Wire.ShapeType() != TopAbs_EDGE && Wire.ShapeType() != TopAbs_WIRE)
         {
-            throw new Standard_ConstructionError("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
+            throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
 
         // compute the "length" of the cylindrical surface to build
         double mdis = DistanceIn(Wire, Shape);
-        gp_Vec Vsup = new(D.XYZ() * 2 * mdis);
-        gp_Vec Vinf = new(D.XYZ() * -mdis);
+        Vector3D Vsup = new(D.XYZ() * 2 * mdis);
+        Vector3D Vinf = new(D.XYZ() * -mdis);
 
         // move the base of the cylindrical surface by translating it by -mdis
-        gp_Trsf T = new();
+        Transform3D T = new();
         T.SetTranslation(Vinf);
         // Note: it is necessary to create copy of wire to avoid adding new pcurves into it
         BRepTools_TrsfModification Trsf = new(T);
@@ -209,10 +213,10 @@ public sealed class BRepProj_Projection
     /// The projection of <paramref name="Wire"/> (a wire or an edge) onto <paramref name="Shape"/> from the point
     /// <paramref name="P"/>.
     /// </summary>
-    /// <exception cref="Standard_NullObject">A null input shape.</exception>
-    /// <exception cref="Standard_ConstructionError">The projected shape is neither a wire nor an edge, the point is the
+    /// <exception cref="NullObjectException">A null input shape.</exception>
+    /// <exception cref="ConstructionErrorException">The projected shape is neither a wire nor an edge, the point is the
     /// wire's first vertex, or the target has no faces.</exception>
-    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in gp_Pnt P)
+    public BRepProj_Projection(in TopoDS_Shape Wire, in TopoDS_Shape Shape, in Point3D P)
     {
         myIsDone = false;
         myItr = 0;
@@ -220,7 +224,7 @@ public sealed class BRepProj_Projection
         Standard_NullObject_Raise_if((Wire.IsNull() || Shape.IsNull()), "BRepProj_Projection.cxx: null input shape");
         if (Wire.ShapeType() != TopAbs_EDGE && Wire.ShapeType() != TopAbs_WIRE)
         {
-            throw new Standard_ConstructionError("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
+            throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
 
         // if Wire is only an edge, transform it into a Wire
@@ -244,18 +248,18 @@ public sealed class BRepProj_Projection
         ExpWire.Init(aWire, TopAbs_VERTEX);
 
         // get the first Point of the first sub-shape os the Wire
-        gp_Pnt PC = BRep_Tool.Pnt(TopoDS.Vertex(ExpWire.Current()));
+        Point3D PC = BRep_Tool.Pnt(TopoDS.Vertex(ExpWire.Current()));
 
         // compute the ratio of the scale transformation
         double Scale = PC.Distance(P);
-        if (Math.Abs(Scale) < Precision.Confusion())
+        if (Math.Abs(Scale) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            throw new Standard_ConstructionError("Projection");
+            throw new ConstructionErrorException("Projection");
         }
         Scale = 1.0 + mdis / Scale;
 
         // move the base of the conical surface by scaling it with ratio Scale
-        gp_Trsf T = new();
+        Transform3D T = new();
         T.SetScale(P, Scale);
         BRepTools_TrsfModification Tsca = new(T);
         BRepTools_Modifier ModifScale = new(aWire, Tsca);

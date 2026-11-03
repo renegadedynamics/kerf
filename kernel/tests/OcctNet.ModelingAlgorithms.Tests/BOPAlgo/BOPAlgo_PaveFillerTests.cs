@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -62,7 +63,7 @@ public class BOPAlgo_PaveFillerTests
 
     private static TopoDS_Wire CreateCircularWire(double theRadius, double theZ)
     {
-        gp_Circ aCircle = new(new gp_Ax2(new gp_Pnt(0, 0, theZ), new gp_Dir(0, 0, 1)), theRadius);
+        Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius);
         BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCircle);
         BRepBuilderAPI_MakeWire aWireMaker = new(anEdgeMaker.Edge());
         return aWireMaker.Wire();
@@ -74,7 +75,7 @@ public class BOPAlgo_PaveFillerTests
         // Create a loft from a circular wire to a point (apex)
         // This creates a cone-like shape with a degenerated edge at the top
         TopoDS_Wire aBaseWire = CreateCircularWire(10.0, 0.0);
-        TopoDS_Vertex anApex = new BRepBuilderAPI_MakeVertex(new gp_Pnt(0, 0, 20.0)).Vertex();
+        TopoDS_Vertex anApex = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 20.0)).Vertex();
 
         BRepOffsetAPI_ThruSections aLoftMaker = new(true, true); // solid, ruled
         aLoftMaker.AddWire(aBaseWire);
@@ -86,7 +87,7 @@ public class BOPAlgo_PaveFillerTests
         Assert.False(aLoft.IsNull());
 
         // Create a box that intersects the loft
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, 5), 10.0, 10.0, 10.0).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 5), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse - this should not crash even if there are
         // degenerated edges without pcurves
@@ -112,7 +113,7 @@ public class BOPAlgo_PaveFillerTests
         Assert.False(aCone.IsNull());
 
         // Create a box that intersects near the apex
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse
         BRepAlgoAPI_Fuse aFuser = new(aCone, aBox);
@@ -123,7 +124,7 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(aResultVolume > 0.0); // Result should have positive volume
     }
 
-    private static TopoDS_Wire Quadrilateral(params gp_Pnt[] thePoints)
+    private static TopoDS_Wire Quadrilateral(params Point3D[] thePoints)
     {
         BRepBuilderAPI_MakeWire aWireMaker = new();
         for (int i = 0; i < 4; i++)
@@ -137,8 +138,8 @@ public class BOPAlgo_PaveFillerTests
     public void FuseTwoLofts_RobustnessCheck()
     {
         // Create first loft: quadrilateral wire to quadrilateral wire
-        TopoDS_Wire aBottom1 = Quadrilateral(new gp_Pnt(10, -10, 0), new gp_Pnt(100, -10, 0), new gp_Pnt(100, -100, 0), new gp_Pnt(10, -100, 0));
-        TopoDS_Wire aTop1 = Quadrilateral(new gp_Pnt(0, 0, 10), new gp_Pnt(100, 0, 10), new gp_Pnt(100, -100, 10), new gp_Pnt(0, -100, 10));
+        TopoDS_Wire aBottom1 = Quadrilateral(new Point3D(10, -10, 0), new Point3D(100, -10, 0), new Point3D(100, -100, 0), new Point3D(10, -100, 0));
+        TopoDS_Wire aTop1 = Quadrilateral(new Point3D(0, 0, 10), new Point3D(100, 0, 10), new Point3D(100, -100, 10), new Point3D(0, -100, 10));
 
         BRepOffsetAPI_ThruSections aLoft1 = new(true, true);
         aLoft1.AddWire(aBottom1);
@@ -147,8 +148,8 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(aLoft1.IsDone()); // First loft should succeed
 
         // Create second loft
-        TopoDS_Wire aBottom2 = Quadrilateral(new gp_Pnt(0, 0, 10), new gp_Pnt(100, 0, 10), new gp_Pnt(100, -100, 10), new gp_Pnt(0, -100, 10));
-        TopoDS_Wire aTop2 = Quadrilateral(new gp_Pnt(0, 0, 250), new gp_Pnt(100, 0, 250), new gp_Pnt(100, -100, 250), new gp_Pnt(0, -100, 250));
+        TopoDS_Wire aBottom2 = Quadrilateral(new Point3D(0, 0, 10), new Point3D(100, 0, 10), new Point3D(100, -100, 10), new Point3D(0, -100, 10));
+        TopoDS_Wire aTop2 = Quadrilateral(new Point3D(0, 0, 250), new Point3D(100, 0, 250), new Point3D(100, -100, 250), new Point3D(0, -100, 250));
 
         BRepOffsetAPI_ThruSections aLoft2 = new(true, true);
         aLoft2.AddWire(aBottom2);
@@ -235,7 +236,7 @@ public class BOPAlgo_PaveFillerTests
 
         // Create new face with the modified wire
         TopoDS_Face aNewFace = new();
-        aBuilder.MakeFace(ref aNewFace, aSurf, Precision.Confusion());
+        aBuilder.MakeFace(ref aNewFace, aSurf, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.Add(aNewFace, aNewWire);
 
         // Build a new shell/solid with the modified face
@@ -255,7 +256,7 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(HasDegeneratedEdgesWithoutPCurves(aNewSolid));
 
         // Create a box that intersects near the apex
-        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+        TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse - this should NOT crash with the fix
         // We expect either success or graceful failure, but NOT a crash
@@ -268,8 +269,8 @@ public class BOPAlgo_PaveFillerTests
     [Fact]
     public void TwoBoxes_SectionEdgesAndSplits()
     {
-        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 1, 1, 1).Shape();
-        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new gp_Pnt(0.5, 0.25, 0.25), 1, 0.5, 0.5).Shape();
+        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
+        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new Point3D(0.5, 0.25, 0.25), 1, 0.5, 0.5).Shape();
         BOPAlgo_PaveFiller aPF = Fill(false, a, b);
         Assert.False(aPF.HasErrors());
         Assert.True(aPF.NonDestructive()); // the arguments are frozen, so locked
@@ -288,8 +289,8 @@ public class BOPAlgo_PaveFillerTests
     [Fact]
     public void DisjointArguments_NoInterference()
     {
-        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 1, 1, 1).Shape();
-        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new gp_Pnt(5, 0, 0), 1, 1, 1).Shape();
+        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
+        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new Point3D(5, 0, 0), 1, 1, 1).Shape();
         BOPAlgo_PaveFiller aPF = Fill(true, a, b);
         Assert.False(aPF.HasErrors());
         Assert.Equal(0, aPF.DS().Interferences().Extent());
@@ -314,8 +315,8 @@ public class BOPAlgo_PaveFillerTests
     public void NonDestructive_FromLockedArguments()
     {
         // unfrozen arguments: the mode is the caller's
-        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new gp_Pnt(0, 0, 0), 1, 1, 1).InternalShape();
-        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new gp_Pnt(0.5, 0.5, 0.5), 1, 1, 1).InternalShape();
+        TopoDS_Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).InternalShape();
+        TopoDS_Shape b = new BRepPrimAPI_MakeBox(new Point3D(0.5, 0.5, 0.5), 1, 1, 1).InternalShape();
         BOPAlgo_PaveFiller aPF = Fill(false, a, b);
         Assert.False(aPF.HasErrors());
         Assert.False(aPF.NonDestructive());
@@ -331,7 +332,7 @@ public class BOPAlgo_PaveFillerTests
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             TopoDS_Shape aCone = new BRepPrimAPI_MakeCone(10.0, 0.0, 20.0).Shape();
-            TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new gp_Pnt(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+            TopoDS_Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
             BOPAlgo_PaveFiller aPF = Fill(true, aCone, aBox);
             Assert.False(aPF.HasErrors());
             return PaveFillerDump.Write(aPF.DS());

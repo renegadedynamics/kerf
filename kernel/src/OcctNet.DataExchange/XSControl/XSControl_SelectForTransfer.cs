@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -72,7 +74,7 @@ public class XSControl_SelectForTransfer : IFSelect_SelectExtract
     /// Returns True for an Entity which is recognized by the Actor, either the precised one, or the one defined
     /// by TransferReader
     /// </summary>
-    public override bool Sort(int rank, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Sort(int rank, Transient? ent, Interface_InterfaceModel? model)
     {
         Transfer_ActorOfTransientProcess act = theAC;
         if (act is null && theTR is not null)

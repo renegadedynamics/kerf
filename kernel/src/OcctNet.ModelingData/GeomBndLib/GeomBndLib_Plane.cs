@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,48 +26,48 @@ public sealed class GeomBndLib_Plane : GeomBndLib_Surface.ISurfaceEvaluator
     public Geom_Plane Geometry() => myGeom;
 
     /// <summary>Compute bounding box for full plane (infinite).</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
         myGeom.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         return Box(aU1, aU2, aV1, aV2, theTol);
     }
 
     /// <summary>Compute bounding box for plane patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
     {
-        gp_Pln aPln = myGeom.Pln();
-        Bnd_Box aBox = new();
+        Plane3D aPln = myGeom.Pln();
+        Box aBox = new();
 
-        if (Precision.IsInfinite(theVMin) || Precision.IsInfinite(theVMax)
-            || Precision.IsInfinite(theUMin) || Precision.IsInfinite(theUMax))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theVMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theVMax)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(theUMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theUMax))
         {
             TreatInfinitePlane(aPln, theUMin, theUMax, theVMin, theVMax, theTol, ref aBox);
             return aBox;
         }
 
-        aBox.Add(ElSLib.Value(theUMin, theVMin, aPln));
-        aBox.Add(ElSLib.Value(theUMin, theVMax, aPln));
-        aBox.Add(ElSLib.Value(theUMax, theVMin, aPln));
-        aBox.Add(ElSLib.Value(theUMax, theVMax, aPln));
+        aBox.Add(global::Kerf.Engine.Geometry.ElSLib.Value(theUMin, theVMin, aPln));
+        aBox.Add(global::Kerf.Engine.Geometry.ElSLib.Value(theUMin, theVMax, aPln));
+        aBox.Add(global::Kerf.Engine.Geometry.ElSLib.Value(theUMax, theVMin, aPln));
+        aBox.Add(global::Kerf.Engine.Geometry.ElSLib.Value(theUMax, theVMax, aPln));
         aBox.Enlarge(theTol);
         return aBox;
     }
 
     /// <summary>For analytical surfaces, BoxOptimal is same as Box.</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
         => Box(theUMin, theUMax, theVMin, theVMax, theTol);
 
     /// <summary>Compute optimal bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol) => Box(theTol);
+    public Box BoxOptimal(double theTol) => Box(theTol);
 
     /// <summary>Compute barycenter point for infinite plane.</summary>
-    private static gp_Pnt BaryCenter(in gp_Pln thePlane, double theUMin, double theUMax, double theVMin, double theVMax)
+    private static Point3D BaryCenter(in Plane3D thePlane, double theUMin, double theUMax, double theVMin, double theVMax)
     {
         double aU, aV;
-        bool isU1Inf = Precision.IsInfinite(theUMin);
-        bool isU2Inf = Precision.IsInfinite(theUMax);
-        bool isV1Inf = Precision.IsInfinite(theVMin);
-        bool isV2Inf = Precision.IsInfinite(theVMax);
+        bool isU1Inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(theUMin);
+        bool isU2Inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(theUMax);
+        bool isV1Inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(theVMin);
+        bool isV2Inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(theVMax);
 
         if (isU1Inf && isU2Inf)
             aU = 0;
@@ -81,24 +87,24 @@ public sealed class GeomBndLib_Plane : GeomBndLib_Surface.ISurfaceEvaluator
         else
             aV = (theVMin + theVMax) / 2.0;
 
-        return ElSLib.Value(aU, aV, thePlane);
+        return global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, thePlane);
     }
 
     /// <summary>Handle infinite plane by opening appropriate box sides.</summary>
-    private static void TreatInfinitePlane(in gp_Pln thePlane,
+    private static void TreatInfinitePlane(in Plane3D thePlane,
                                            double theUMin,
                                            double theUMax,
                                            double theVMin,
                                            double theVMax,
                                            double theTol,
-                                           ref Bnd_Box theBox)
+                                           ref Box theBox)
     {
-        gp_Dir aNorm = thePlane.Axis().Direction();
+        Direction3D aNorm = thePlane.Axis().Direction();
         double anAngularTol = RealEpsilon();
 
-        gp_Pnt aLocation = BaryCenter(thePlane, theUMin, theUMax, theVMin, theVMax);
+        Point3D aLocation = BaryCenter(thePlane, theUMin, theUMax, theVMin, theVMax);
 
-        if (aNorm.IsParallel(gp.DX(), anAngularTol))
+        if (aNorm.IsParallel(Constants.DX(), anAngularTol))
         {
             theBox.Add(aLocation);
             theBox.OpenYmin();
@@ -106,7 +112,7 @@ public sealed class GeomBndLib_Plane : GeomBndLib_Surface.ISurfaceEvaluator
             theBox.OpenZmin();
             theBox.OpenZmax();
         }
-        else if (aNorm.IsParallel(gp.DY(), anAngularTol))
+        else if (aNorm.IsParallel(Constants.DY(), anAngularTol))
         {
             theBox.Add(aLocation);
             theBox.OpenXmin();
@@ -114,7 +120,7 @@ public sealed class GeomBndLib_Plane : GeomBndLib_Surface.ISurfaceEvaluator
             theBox.OpenZmin();
             theBox.OpenZmax();
         }
-        else if (aNorm.IsParallel(gp.DZ(), anAngularTol))
+        else if (aNorm.IsParallel(Constants.DZ(), anAngularTol))
         {
             theBox.Add(aLocation);
             theBox.OpenXmin();

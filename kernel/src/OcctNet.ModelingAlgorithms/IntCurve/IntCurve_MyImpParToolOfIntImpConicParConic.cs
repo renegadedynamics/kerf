@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,7 +18,7 @@ namespace Occt;
 /// changes).
 /// </remarks>
 public sealed class IntCurve_MyImpParToolOfIntImpConicParConic
-    : math_FunctionWithDerivative,
+    : FunctionWithDerivative,
       IIntImpParGen_MyImpParTool<IntCurve_MyImpParToolOfIntImpConicParConic, IntCurve_IConicTool, IntCurve_PConic>
 {
     private readonly IntCurve_PConic TheParCurve;
@@ -39,8 +43,8 @@ public sealed class IntCurve_MyImpParToolOfIntImpConicParConic
 
     public override bool Derivative(double Param, out double D_ApproxDistance_DV)
     {
-        gp_Vec2d Grad = TheImpTool.GradDistance(IntCurve_PConicTool.Value(TheParCurve, Param));
-        IntCurve_PConicTool.D1(TheParCurve, Param, out _, out gp_Vec2d TanParCurve);
+        Vector2D Grad = TheImpTool.GradDistance(IntCurve_PConicTool.Value(TheParCurve, Param));
+        IntCurve_PConicTool.D1(TheParCurve, Param, out _, out Vector2D TanParCurve);
         D_ApproxDistance_DV = Grad.Dot(TanParCurve);
         return (true);
     }

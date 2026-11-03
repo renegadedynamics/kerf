@@ -4,7 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -30,18 +31,18 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static double LastVParameter(in HLRBRep_Surface theSurf) =>
         theSurf.LastVParameter();
 
-    public static int NbUIntervals(in HLRBRep_Surface theSurf, GeomAbs_Shape theSh) =>
+    public static int NbUIntervals(in HLRBRep_Surface theSurf, Continuity theSh) =>
         theSurf.NbUIntervals(theSh);
 
-    public static int NbVIntervals(in HLRBRep_Surface theSurf, GeomAbs_Shape theSh) =>
+    public static int NbVIntervals(in HLRBRep_Surface theSurf, Continuity theSh) =>
         theSurf.NbVIntervals(theSh);
 
-    public static void UIntervals(in HLRBRep_Surface theSurf, NCollection_Array1<double> theTab, GeomAbs_Shape theSh)
+    public static void UIntervals(in HLRBRep_Surface theSurf, NCollection_Array1<double> theTab, Continuity theSh)
     {
         theSurf.Surface().UIntervals(theTab, theSh);
     }
 
-    public static void VIntervals(in HLRBRep_Surface theSurf, NCollection_Array1<double> theTab, GeomAbs_Shape theSh)
+    public static void VIntervals(in HLRBRep_Surface theSurf, NCollection_Array1<double> theTab, Continuity theSh)
     {
         theSurf.Surface().VIntervals(theTab, theSh);
     }
@@ -70,35 +71,35 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static double VPeriod(in HLRBRep_Surface theSurf) =>
         theSurf.VPeriod();
 
-    public static gp_Pnt Value(in HLRBRep_Surface theSurf, double theU, double theV) =>
+    public static Point3D Value(in HLRBRep_Surface theSurf, double theU, double theV) =>
         theSurf.Surface().Value(theU, theV);
 
-    public static void D0(in HLRBRep_Surface theSurf, double theU, double theV, out gp_Pnt theP)
+    public static void D0(in HLRBRep_Surface theSurf, double theU, double theV, out Point3D theP)
     {
         theSurf.Surface().D0(theU, theV, out theP);
     }
 
-    public static void D1(in HLRBRep_Surface theSurf, double theU, double theV, out gp_Pnt theP, out gp_Vec theD1U,
-                          out gp_Vec theD1V)
+    public static void D1(in HLRBRep_Surface theSurf, double theU, double theV, out Point3D theP, out Vector3D theD1U,
+                          out Vector3D theD1V)
     {
         theSurf.Surface().D1(theU, theV, out theP, out theD1U, out theD1V);
     }
 
-    public static void D2(in HLRBRep_Surface theSurf, double theU, double theV, out gp_Pnt theP, out gp_Vec theD1U,
-                          out gp_Vec theD1V, out gp_Vec theD2U, out gp_Vec theD2V, out gp_Vec theD2UV)
+    public static void D2(in HLRBRep_Surface theSurf, double theU, double theV, out Point3D theP, out Vector3D theD1U,
+                          out Vector3D theD1V, out Vector3D theD2U, out Vector3D theD2V, out Vector3D theD2UV)
     {
         theSurf.Surface().D2(theU, theV, out theP, out theD1U, out theD1V, out theD2U, out theD2V, out theD2UV);
     }
 
-    public static void D3(in HLRBRep_Surface theSurf, double theU, double theV, out gp_Pnt theP, out gp_Vec theD1U,
-                          out gp_Vec theD1V, out gp_Vec theD2U, out gp_Vec theD2V, out gp_Vec theD2UV, out gp_Vec theD3U,
-                          out gp_Vec theD3V, out gp_Vec theD3UUV, out gp_Vec theD3UVV)
+    public static void D3(in HLRBRep_Surface theSurf, double theU, double theV, out Point3D theP, out Vector3D theD1U,
+                          out Vector3D theD1V, out Vector3D theD2U, out Vector3D theD2V, out Vector3D theD2UV, out Vector3D theD3U,
+                          out Vector3D theD3V, out Vector3D theD3UUV, out Vector3D theD3UVV)
     {
         theSurf.Surface().D3(theU, theV, out theP, out theD1U, out theD1V, out theD2U, out theD2V, out theD2UV,
                              out theD3U, out theD3V, out theD3UUV, out theD3UVV);
     }
 
-    public static gp_Vec DN(in HLRBRep_Surface theSurf, double theU, double theV, int theNu, int theNv) =>
+    public static Vector3D DN(in HLRBRep_Surface theSurf, double theU, double theV, int theNu, int theNv) =>
         theSurf.Surface().DN(theU, theV, theNu, theNv);
 
     public static double UResolution(in HLRBRep_Surface theSurf, double theR3d) =>
@@ -107,22 +108,22 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static double VResolution(in HLRBRep_Surface theSurf, double theR3d) =>
         theSurf.Surface().VResolution(theR3d);
 
-    public static GeomAbs_SurfaceType GetType(in HLRBRep_Surface theSurf) =>
+    public static SurfaceKind GetType(in HLRBRep_Surface theSurf) =>
         theSurf.GetType();
 
-    public static gp_Pln Plane(in HLRBRep_Surface theSurf) =>
+    public static Plane3D Plane(in HLRBRep_Surface theSurf) =>
         theSurf.Plane();
 
-    public static gp_Cylinder Cylinder(in HLRBRep_Surface theSurf) =>
+    public static Cylinder Cylinder(in HLRBRep_Surface theSurf) =>
         theSurf.Cylinder();
 
-    public static gp_Cone Cone(in HLRBRep_Surface theSurf) =>
+    public static Cone Cone(in HLRBRep_Surface theSurf) =>
         theSurf.Cone();
 
-    public static gp_Sphere Sphere(in HLRBRep_Surface theSurf) =>
+    public static Sphere Sphere(in HLRBRep_Surface theSurf) =>
         theSurf.Sphere();
 
-    public static gp_Torus Torus(in HLRBRep_Surface theSurf) =>
+    public static Torus Torus(in HLRBRep_Surface theSurf) =>
         theSurf.Torus();
 
     public static Geom_BezierSurface Bezier(in HLRBRep_Surface theSurf) =>
@@ -131,10 +132,10 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static Geom_BSplineSurface BSpline(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().BSpline();
 
-    public static gp_Ax1 AxeOfRevolution(in HLRBRep_Surface theSurf) =>
+    public static Axis3D AxeOfRevolution(in HLRBRep_Surface theSurf) =>
         theSurf.Axis();
 
-    public static gp_Dir Direction(in HLRBRep_Surface theSurf) =>
+    public static Direction3D Direction(in HLRBRep_Surface theSurf) =>
         theSurf.Surface().Direction();
 
     public static Adaptor3d_Curve BasisCurve(in HLRBRep_Surface theSurf) =>
@@ -150,16 +151,16 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static int NbSamplesU(in HLRBRep_Surface theSurf)
     {
         int nbs;
-        GeomAbs_SurfaceType typS = theSurf.GetType();
+        SurfaceKind typS = theSurf.GetType();
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 nbs = 3 + theSurf.NbUPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 nbs = theSurf.NbUKnots();
                 nbs *= theSurf.UDegree();
                 if (nbs < 2)
@@ -167,14 +168,14 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
                     nbs = 2;
                 }
                 break;
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
                 nbs = 20;
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
                 nbs = 10;
                 break;
             default:
@@ -188,16 +189,16 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
     public static int NbSamplesV(in HLRBRep_Surface theSurf)
     {
         int nbs;
-        GeomAbs_SurfaceType typS = theSurf.GetType();
+        SurfaceKind typS = theSurf.GetType();
         switch (typS)
         {
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
                 nbs = 2;
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 nbs = 3 + theSurf.NbVPoles();
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 nbs = theSurf.NbVKnots();
                 nbs *= theSurf.VDegree();
                 if (nbs < 2)
@@ -205,12 +206,12 @@ public readonly struct HLRBRep_SurfaceTool : IIntCurveSurface_SurfaceTool<HLRBRe
                     nbs = 2;
                 }
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case SurfaceOfRevolution:
+            case SurfaceOfExtrusion:
                 nbs = 15;
                 break;
             default:

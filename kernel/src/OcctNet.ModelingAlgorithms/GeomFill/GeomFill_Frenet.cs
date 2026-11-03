@@ -3,8 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -19,33 +22,33 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
     private const double MaxSingular = 1.0e-5;
     private const int maxDerivOrder = 3;
 
-    private gp_Pnt P;
+    private Point3D P;
     private NCollection_HArray1<double>? mySngl;
     private NCollection_HArray1<double>? mySnglLen;
     private bool isSngl;
 
     /// <summary>Computes (F/|F|)'.</summary>
-    private static gp_Vec FDeriv(in gp_Vec F, in gp_Vec DF)
+    private static Vector3D FDeriv(in Vector3D F, in Vector3D DF)
     {
         double Norma = F.Magnitude();
-        gp_Vec Result = (DF - F * (F * DF) / (Norma * Norma)) / Norma;
+        Vector3D Result = (DF - F * (F * DF) / (Norma * Norma)) / Norma;
         return Result;
     }
 
     /// <summary>Computes (F/|F|)''.</summary>
-    private static gp_Vec DDeriv(in gp_Vec F, in gp_Vec DF, in gp_Vec D2F)
+    private static Vector3D DDeriv(in Vector3D F, in Vector3D DF, in Vector3D D2F)
     {
         double Norma = F.Magnitude();
-        gp_Vec Result = (D2F - 2 * DF * (F * DF) / (Norma * Norma)) / Norma
+        Vector3D Result = (D2F - 2 * DF * (F * DF) / (Norma * Norma)) / Norma
                         - F * ((DF.SquareMagnitude() + F * D2F - 3 * (F * DF) * (F * DF) / (Norma * Norma))
                                / (Norma * Norma * Norma));
         return Result;
     }
 
     /// <summary>The cosine of the angle between theV1 and theV2.</summary>
-    private static double CosAngle(in gp_Vec theV1, in gp_Vec theV2)
+    private static double CosAngle(in Vector3D theV1, in Vector3D theV2)
     {
-        double aTol = gp.Resolution();
+        double aTol = Constants.Resolution();
         double m1 = theV1.Magnitude(), m2 = theV2.Magnitude();
         if ((m1 <= aTol) || (m2 <= aTol))
         { // Vectors are codirectional
@@ -84,15 +87,15 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         base.SetCurve(C);
         if (C is not null)
         {
-            GeomAbs_CurveType type;
+            CurveKind type;
             type = C.GetType();
             switch (type)
             {
-                case GeomAbs_Circle:
-                case GeomAbs_Ellipse:
-                case GeomAbs_Hyperbola:
-                case GeomAbs_Parabola:
-                case GeomAbs_Line:
+                case Circle:
+                case Ellipse:
+                case Hyperbola:
+                case Parabola:
+                case Line:
                 {
                     // No problem
                     isSngl = false;
@@ -117,18 +120,18 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         const double TolF = 1.0e-10;
         const double Tol = 10 * TolF;
         const double Tol2 = Tol * Tol;
-        double PTol = Precision.PConfusion();
+        double PTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         // We want to determine if the curve has linear segments
-        int NbIntC2 = myCurve!.NbIntervals(GeomAbs_C2);
+        int NbIntC2 = myCurve!.NbIntervals(C2);
         NCollection_HArray1<double> myC2Disc = new NCollection_HArray1<double>(1, NbIntC2 + 1);
         NCollection_HArray1<bool> IsLin = new NCollection_HArray1<bool>(1, NbIntC2);
         NCollection_HArray1<bool> IsConst = new NCollection_HArray1<bool>(1, NbIntC2);
         NCollection_Array1<double> AveFunc = new NCollection_Array1<double>(1, NbIntC2);
-        myCurve.Intervals(myC2Disc.ChangeArray1(), GeomAbs_C2);
+        myCurve.Intervals(myC2Disc.ChangeArray1(), C2);
         int NbControl = 10;
         double Step, Average = 0, modulus;
-        gp_Pnt C, C1 = new gp_Pnt();
+        Point3D C, C1 = new Point3D();
         for (i = 1; i <= NbIntC2; i++)
         {
             Step = (myC2Disc.Value(i + 1) - myC2Disc.Value(i)) / NbControl;
@@ -169,7 +172,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         NCollection_Sequence<double> SnglSeq = new NCollection_Sequence<double>();
         double Value2, t;
         Extrema_ExtPC Ext = new Extrema_ExtPC();
-        gp_Pnt Origin = new gp_Pnt(0, 0, 0);
+        Point3D Origin = new Point3D(0, 0, 0);
 
         for (i = 1; i <= NbIntC2; i++)
         {
@@ -290,16 +293,16 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
 
             // computation of length of singular interval
             mySnglLen = new NCollection_HArray1<double>(1, mySngl.Length());
-            gp_Vec SnglDer, SnglDer2;
+            Vector3D SnglDer, SnglDer2;
             double norm;
             for (i = 1; i <= mySngl.Length(); i++)
             {
                 Func.D2(mySngl.Value(i), out C, out SnglDer, out SnglDer2);
-                if ((norm = SnglDer.Magnitude()) > gp.Resolution())
+                if ((norm = SnglDer.Magnitude()) > Constants.Resolution())
                 {
                     mySnglLen[i] = Min(NullTol / norm, MaxSingular);
                 }
-                else if ((norm = SnglDer2.Magnitude()) > gp.Resolution())
+                else if ((norm = SnglDer2.Magnitude()) > Constants.Resolution())
                 {
                     mySnglLen[i] = Min(Math.Sqrt(2 * NullTol / norm), MaxSingular);
                 }
@@ -312,8 +315,8 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             if (mySngl.Length() > 1)
             {
                 // we have to merge singular points that have common parts of singular intervals
-                NCollection_Sequence<gp_Pnt2d> tmpSeq = new NCollection_Sequence<gp_Pnt2d>();
-                tmpSeq.Append(new gp_Pnt2d(mySngl.Value(1), mySnglLen.Value(1)));
+                NCollection_Sequence<Point2D> tmpSeq = new NCollection_Sequence<Point2D>();
+                tmpSeq.Append(new Point2D(mySngl.Value(1), mySnglLen.Value(1)));
                 double U11, U12, U21, U22;
                 for (i = 2; i <= mySngl.Length(); i++)
                 {
@@ -323,11 +326,11 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
                     {
                         U11 = tmpSeq.Last().X() - tmpSeq.Last().Y();
                         U22 = mySngl.Value(i) + mySnglLen.Value(i);
-                        tmpSeq[tmpSeq.Length()] = new gp_Pnt2d((U11 + U22) / 2, (U22 - U11) / 2);
+                        tmpSeq[tmpSeq.Length()] = new Point2D((U11 + U22) / 2, (U22 - U11) / 2);
                     }
                     else
                     {
-                        tmpSeq.Append(new gp_Pnt2d(mySngl.Value(i), mySnglLen.Value(i)));
+                        tmpSeq.Append(new Point2D(mySngl.Value(i), mySnglLen.Value(i)));
                     }
                 }
                 mySngl = new NCollection_HArray1<double>(1, tmpSeq.Length());
@@ -349,12 +352,12 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
     /// <summary>
     /// Revolves the trihedron (Tangent, Normal, BiNormal) so that Tangent coincides with NewTangent.
     /// </summary>
-    private bool RotateTrihedron(ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal, in gp_Vec NewTangent)
+    private bool RotateTrihedron(ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal, in Vector3D NewTangent)
     {
-        double anInfCOS = Math.Cos(Precision.Angular()); // 0.99999995
-        double aTol = gp.Resolution();
+        double anInfCOS = Math.Cos(global::Kerf.Engine.Foundation.Precision.Angular()); // 0.99999995
+        double aTol = Constants.Resolution();
 
-        gp_Vec anAxis = Tangent.Crossed(NewTangent);
+        Vector3D anAxis = Tangent.Crossed(NewTangent);
 
         double NT = anAxis.Magnitude();
         if (NT <= aTol)
@@ -374,47 +377,47 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
 
         // According to rotate direction, sine of rotation angle might be positive or negative: rotate "Tangent"
         // in both directions, then choose the direction from the results.
-        gp_Vec aV11 = new gp_Vec(anAddCAng * aPx * aPx + aCAng,
+        Vector3D aV11 = new Vector3D(anAddCAng * aPx * aPx + aCAng,
                                  anAddCAng * aPx * aPy - aPz * aSAng,
                                  anAddCAng * aPx * aPz + aPy * aSAng);
-        gp_Vec aV12 = new gp_Vec(anAddCAng * aPx * aPx + aCAng,
+        Vector3D aV12 = new Vector3D(anAddCAng * aPx * aPx + aCAng,
                                  anAddCAng * aPx * aPy + aPz * aSAng,
                                  anAddCAng * aPx * aPz - aPy * aSAng);
-        gp_Vec aV21 = new gp_Vec(anAddCAng * aPx * aPy + aPz * aSAng,
+        Vector3D aV21 = new Vector3D(anAddCAng * aPx * aPy + aPz * aSAng,
                                  anAddCAng * aPy * aPy + aCAng,
                                  anAddCAng * aPy * aPz - aPx * aSAng);
-        gp_Vec aV22 = new gp_Vec(anAddCAng * aPx * aPy - aPz * aSAng,
+        Vector3D aV22 = new Vector3D(anAddCAng * aPx * aPy - aPz * aSAng,
                                  anAddCAng * aPy * aPy + aCAng,
                                  anAddCAng * aPy * aPz + aPx * aSAng);
-        gp_Vec aV31 = new gp_Vec(anAddCAng * aPx * aPz - aPy * aSAng,
+        Vector3D aV31 = new Vector3D(anAddCAng * aPx * aPz - aPy * aSAng,
                                  anAddCAng * aPy * aPz + aPx * aSAng,
                                  anAddCAng * aPz * aPz + aCAng);
-        gp_Vec aV32 = new gp_Vec(anAddCAng * aPx * aPz + aPy * aSAng,
+        Vector3D aV32 = new Vector3D(anAddCAng * aPx * aPz + aPy * aSAng,
                                  anAddCAng * aPy * aPz - aPx * aSAng,
                                  anAddCAng * aPz * aPz + aCAng);
 
-        gp_Vec aT1 = new gp_Vec(Tangent.Dot(aV11), Tangent.Dot(aV21), Tangent.Dot(aV31));
-        gp_Vec aT2 = new gp_Vec(Tangent.Dot(aV12), Tangent.Dot(aV22), Tangent.Dot(aV32));
+        Vector3D aT1 = new Vector3D(Tangent.Dot(aV11), Tangent.Dot(aV21), Tangent.Dot(aV31));
+        Vector3D aT2 = new Vector3D(Tangent.Dot(aV12), Tangent.Dot(aV22), Tangent.Dot(aV32));
 
         if (CosAngle(aT1, NewTangent) >= CosAngle(aT2, NewTangent))
         {
             Tangent = aT1;
-            Normal = new gp_Vec(Normal.Dot(aV11), Normal.Dot(aV21), Normal.Dot(aV31));
-            BiNormal = new gp_Vec(BiNormal.Dot(aV11), BiNormal.Dot(aV21), BiNormal.Dot(aV31));
+            Normal = new Vector3D(Normal.Dot(aV11), Normal.Dot(aV21), Normal.Dot(aV31));
+            BiNormal = new Vector3D(BiNormal.Dot(aV11), BiNormal.Dot(aV21), BiNormal.Dot(aV31));
         }
         else
         {
             Tangent = aT2;
-            Normal = new gp_Vec(Normal.Dot(aV12), Normal.Dot(aV22), Normal.Dot(aV32));
-            BiNormal = new gp_Vec(BiNormal.Dot(aV12), BiNormal.Dot(aV22), BiNormal.Dot(aV32));
+            Normal = new Vector3D(Normal.Dot(aV12), Normal.Dot(aV22), Normal.Dot(aV32));
+            BiNormal = new Vector3D(BiNormal.Dot(aV12), BiNormal.Dot(aV22), BiNormal.Dot(aV32));
         }
 
         return CosAngle(Tangent, NewTangent) >= anInfCOS;
     }
 
-    public override bool D0(double theParam, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double theParam, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
-        double aTol = gp.Resolution();
+        double aTol = Constants.Resolution();
 
         double norm;
         double Delta = 0.0;
@@ -437,7 +440,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
 
         if (Ndu <= aTol)
         {
-            gp_Vec aTn;
+            Vector3D aTn;
             // Derivative is approximated by Taylor-series
             int anIndex = 1; // Derivative order
             bool isDeriveFound = false;
@@ -462,10 +465,10 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
                     u = theParam - aDelta;
                 }
 
-                myTrimmed.D0(Min(theParam, u), out gp_Pnt P1);
-                myTrimmed.D0(Max(theParam, u), out gp_Pnt P2);
+                myTrimmed.D0(Min(theParam, u), out Point3D P1);
+                myTrimmed.D0(Max(theParam, u), out Point3D P2);
 
-                gp_Vec V1 = new gp_Vec(P1, P2);
+                Vector3D V1 = new Vector3D(P1, P2);
                 double aDirFactor = aTn.Dot(V1);
 
                 if (aDirFactor < 0.0)
@@ -476,8 +479,8 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             else
             {
                 // Derivative is approximated by three points
-                gp_Pnt Ptemp = new gp_Pnt(0.0, 0.0, 0.0); //(0,0,0)-coordinate
-                gp_Pnt P1, P2, P3;
+                Point3D Ptemp = new Point3D(0.0, 0.0, 0.0); //(0,0,0)-coordinate
+                Point3D P1, P2, P3;
                 bool IsParameterGrown;
 
                 if (theParam - anUinfium < 2 * aDelta)
@@ -495,7 +498,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
                     IsParameterGrown = false;
                 }
 
-                gp_Vec V1 = new gp_Vec(Ptemp, P1), V2 = new gp_Vec(Ptemp, P2), V3 = new gp_Vec(Ptemp, P3);
+                Vector3D V1 = new Vector3D(Ptemp, P1), V2 = new Vector3D(Ptemp, P2), V3 = new Vector3D(Ptemp, P3);
 
                 if (IsParameterGrown)
                 {
@@ -508,7 +511,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             } // else of "if(IsDeriveFound)" condition
 
             Ndu = aTn.Magnitude();
-            gp_Pnt Pt = P;
+            Point3D Pt = P;
 
             double dPar = 10.0 * aDelta;
             // Recursive calling is used for determine of trihedron for
@@ -541,9 +544,9 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             BiNormal = Tangent.Crossed(BiNormal);
 
             norm = BiNormal.Magnitude();
-            if (norm <= gp.Resolution())
+            if (norm <= Constants.Resolution())
             {
-                gp_Ax2 Axe = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(Tangent));
+                Frame3D Axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Tangent));
                 BiNormal.SetXYZ(Axe.YDirection().XYZ());
             }
             else
@@ -558,8 +561,8 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         double Delta = 0.0;
         if (IsSingular(Param, out int Index))
@@ -572,12 +575,12 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         }
 
         double theParam = Param + Delta;
-        myTrimmed!.D3(theParam, out P, out gp_Vec DC1, out gp_Vec DC2, out gp_Vec DC3);
+        myTrimmed!.D3(theParam, out P, out Vector3D DC1, out Vector3D DC2, out Vector3D DC3);
         Tangent = DC1.Normalized();
 
-        if (Tangent.Crossed(DC2).Magnitude() <= gp.Resolution())
+        if (Tangent.Crossed(DC2).Magnitude() <= Constants.Resolution())
         {
-            gp_Ax2 Axe = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(Tangent));
+            Frame3D Axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Tangent));
             Normal.SetXYZ(Axe.XDirection().XYZ());
             BiNormal.SetXYZ(Axe.YDirection().XYZ());
             DTangent.SetCoord(0, 0, 0);
@@ -594,7 +597,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
 
         DTangent = FDeriv(DC1, DC2);
 
-        gp_Vec instead_DC1, instead_DC2;
+        Vector3D instead_DC1, instead_DC2;
         instead_DC1 = Tangent.Crossed(DC2);
         instead_DC2 = DTangent.Crossed(DC2) + Tangent.Crossed(DC3);
 
@@ -604,9 +607,9 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
         double Delta = 0.0;
         if (IsSingular(Param, out int Index))
@@ -619,14 +622,14 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         }
 
         double theParam = Param + Delta;
-        myTrimmed!.D3(theParam, out P, out gp_Vec DC1, out gp_Vec DC2, out gp_Vec DC3);
-        gp_Vec DC4 = myTrimmed.DN(theParam, 4);
+        myTrimmed!.D3(theParam, out P, out Vector3D DC1, out Vector3D DC2, out Vector3D DC3);
+        Vector3D DC4 = myTrimmed.DN(theParam, 4);
 
         Tangent = DC1.Normalized();
 
-        if (Tangent.Crossed(DC2).Magnitude() <= gp.Resolution())
+        if (Tangent.Crossed(DC2).Magnitude() <= Constants.Resolution())
         {
-            gp_Ax2 Axe = new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(Tangent));
+            Frame3D Axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Tangent));
             Normal.SetXYZ(Axe.XDirection().XYZ());
             BiNormal.SetXYZ(Axe.YDirection().XYZ());
             DTangent.SetCoord(0, 0, 0);
@@ -647,7 +650,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         DTangent = FDeriv(DC1, DC2);
         D2Tangent = DDeriv(DC1, DC2, DC3);
 
-        gp_Vec instead_DC1, instead_DC2, instead_DC3;
+        Vector3D instead_DC1, instead_DC2, instead_DC3;
         instead_DC1 = Tangent.Crossed(DC2);
         instead_DC2 = DTangent.Crossed(DC2) + Tangent.Crossed(DC3);
         instead_DC3 = D2Tangent.Crossed(DC2) + 2 * DTangent.Crossed(DC3) + Tangent.Crossed(DC4);
@@ -662,26 +665,26 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    private static GeomAbs_Shape CurveShape(GeomAbs_Shape S)
+    private static Continuity CurveShape(Continuity S)
     {
         switch (S)
         {
-            case GeomAbs_C0:
-                return GeomAbs_C2;
-            case GeomAbs_C1:
-                return GeomAbs_C3;
-            case GeomAbs_C2:
-            case GeomAbs_C3:
-            case GeomAbs_CN:
-                return GeomAbs_CN;
+            case C0:
+                return C2;
+            case C1:
+                return C3;
+            case C2:
+            case C3:
+            case CN:
+                return CN;
             default:
-                throw new Standard_OutOfRange();
+                throw new OutOfRangeException();
         }
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
-        GeomAbs_Shape tmpS = CurveShape(S);
+        Continuity tmpS = CurveShape(S);
         int NbTrimmed;
 
         NbTrimmed = myCurve!.NbIntervals(tmpS);
@@ -695,14 +698,14 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         myCurve.Intervals(TrimInt, tmpS);
 
         NCollection_Sequence<double> Fusion = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, Precision.PConfusion(), true);
+        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         return Fusion.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        GeomAbs_Shape tmpS = CurveShape(S);
+        Continuity tmpS = CurveShape(S);
         int NbTrimmed;
 
         if (!isSngl)
@@ -716,7 +719,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         myCurve.Intervals(TrimInt, tmpS);
 
         NCollection_Sequence<double> Fusion = new NCollection_Sequence<double>();
-        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, Precision.PConfusion(), true);
+        GeomLib.FuseIntervals(TrimInt, mySngl!.Array1(), Fusion, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
 
         for (int i = 1; i <= Fusion.Length(); i++)
         {
@@ -724,13 +727,13 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         }
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         int Num = 20; // order of digitalization
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), BN = new gp_Vec();
-        ATangent = new gp_Vec(0, 0, 0);
-        ANormal = new gp_Vec(0, 0, 0);
-        ABiNormal = new gp_Vec(0, 0, 0);
+        Vector3D T = new Vector3D(), N = new Vector3D(), BN = new Vector3D();
+        ATangent = new Vector3D(0, 0, 0);
+        ANormal = new Vector3D(0, 0, 0);
+        ABiNormal = new Vector3D(0, 0, 0);
         double Step = (myTrimmed!.LastParameter() - myTrimmed.FirstParameter()) / Num;
         double Param;
         for (int i = 0; i <= Num; i++)
@@ -753,7 +756,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         ANormal = ABiNormal.Crossed(ATangent);
     }
 
-    public override bool IsConstant() => myCurve!.GetType() == GeomAbs_Line;
+    public override bool IsConstant() => myCurve!.GetType() == Line;
 
     /// <summary>Returns true.</summary>
     public override bool IsOnlyBy3dCurve() => true;
@@ -777,7 +780,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return false;
     }
 
-    private bool DoSingular(double U, int Index, ref gp_Vec Tangent, ref gp_Vec BiNormal, ref int n, ref int k,
+    private bool DoSingular(double U, int Index, ref Vector3D Tangent, ref Vector3D BiNormal, ref int n, ref int k,
                             ref int TFlag, ref int BNFlag, ref double Delta)
     {
         int i, MaxN = 20;
@@ -785,7 +788,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         double h;
         h = 2 * mySnglLen!.Value(Index);
 
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), BN = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), BN = new Vector3D();
         TFlag = 1;
         BNFlag = 1;
         GetInterval(out double A, out double B);
@@ -796,7 +799,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         for (i = 1; i <= MaxN; i++)
         {
             Tangent = myTrimmed!.DN(U, i);
-            if (Tangent.Magnitude() > Precision.Confusion())
+            if (Tangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 break;
             }
@@ -813,10 +816,10 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         {
             BiNormal = Tangent.Crossed(myTrimmed!.DN(U, i));
             double magn = BiNormal.Magnitude();
-            if (magn > Precision.Confusion())
+            if (magn > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 // modified by jgv, 12.08.03 for OCC605 ////
-                gp_Vec NextBiNormal = Tangent.Crossed(myTrimmed.DN(U, i + 1));
+                Vector3D NextBiNormal = Tangent.Crossed(myTrimmed.DN(U, i + 1));
                 if (NextBiNormal.Magnitude() > magn)
                 {
                     i++;
@@ -847,7 +850,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    private bool SingularD0(double Param, int Index, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal,
+    private bool SingularD0(double Param, int Index, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal,
                             ref double Delta)
     {
         int n = 0, k = 0, TFlag = 0, BNFlag = 0;
@@ -864,8 +867,8 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    private bool SingularD1(double Param, int Index, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal, ref double Delta)
+    private bool SingularD1(double Param, int Index, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D BiNormal, ref Vector3D DBiNormal, ref double Delta)
     {
         int n = 0, k = 0, TFlag = 0, BNFlag = 0;
         if (!DoSingular(Param, Index, ref Tangent, ref BiNormal, ref n, ref k, ref TFlag, ref BNFlag, ref Delta))
@@ -873,7 +876,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             return false;
         }
 
-        gp_Vec F, DF, Dtmp;
+        Vector3D F, DF, Dtmp;
         F = myTrimmed!.DN(Param, n);
         DF = myTrimmed.DN(Param, n + 1);
         DTangent = FDeriv(F, DF);
@@ -901,9 +904,9 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
         return true;
     }
 
-    private bool SingularD2(double Param, int Index, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent,
-                            ref gp_Vec Normal, ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal,
-                            ref gp_Vec DBiNormal, ref gp_Vec D2BiNormal, ref double Delta)
+    private bool SingularD2(double Param, int Index, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent,
+                            ref Vector3D Normal, ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal,
+                            ref Vector3D DBiNormal, ref Vector3D D2BiNormal, ref double Delta)
     {
         int n = 0, k = 0, TFlag = 0, BNFlag = 0;
         if (!DoSingular(Param, Index, ref Tangent, ref BiNormal, ref n, ref k, ref TFlag, ref BNFlag, ref Delta))
@@ -911,7 +914,7 @@ public class GeomFill_Frenet : GeomFill_TrihedronLaw
             return false;
         }
 
-        gp_Vec F, DF, D2F, Dtmp1, Dtmp2;
+        Vector3D F, DF, D2F, Dtmp1, Dtmp2;
         F = myTrimmed!.DN(Param, n);
         DF = myTrimmed.DN(Param, n + 1);
         D2F = myTrimmed.DN(Param, n + 2);

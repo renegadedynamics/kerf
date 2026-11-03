@@ -3,13 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Gravity;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace Occt;
 
 /// <summary>
 /// The options of the Boolean component's algorithms: error and warning reporting (alerts in a
-/// <see cref="Message_Report"/>), the parallel mode, the fuzzy tolerance and the use of oriented bounding boxes.
+/// <see cref="Report"/>), the parallel mode, the fuzzy tolerance and the use of oriented bounding boxes.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,14 +23,14 @@ namespace Occt;
 /// The global parallel mode (<see cref="GetParallelMode"/>) is process-wide, as in OCCT, with an internal setter
 /// (decisions 415 and 582): callers set the per-algorithm flag (<see cref="SetRunParallel"/>), and Draw-lite's
 /// <c>brunparallel</c> the global one. <c>DumpErrors</c> and <c>DumpWarnings</c> write to a <see cref="TextWriter"/>.
-/// The first construction loads BOPAlgo's message texts into <see cref="Message_MsgFile"/>, as OCCT does.
+/// The first construction loads BOPAlgo's message texts into <see cref="MsgFile"/>, as OCCT does.
 /// </para>
 /// </remarks>
 public class BOPAlgo_Options
 {
     private static volatile bool myGlobalRunParallel = false;
 
-    protected internal Message_Report myReport;
+    protected internal Report myReport;
     protected internal bool myRunParallel;
     protected internal double myFuzzyValue;
     protected internal bool myUseOBB;
@@ -37,9 +38,9 @@ public class BOPAlgo_Options
     /// <summary>Options with OCCT's defaults: the global parallel mode, the fuzzy value Precision::Confusion(), no OBB.</summary>
     public BOPAlgo_Options()
     {
-        myReport = new Message_Report();
+        myReport = new Report();
         myRunParallel = myGlobalRunParallel;
-        myFuzzyValue = Precision.Confusion();
+        myFuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         myUseOBB = false;
         BOPAlgo_BOPAlgo_msg.BOPAlgo_LoadMessages();
     }
@@ -50,34 +51,34 @@ public class BOPAlgo_Options
     //!@name Error reporting mechanism
 
     /// <summary>Adds the alert as an error (fail).</summary>
-    public void AddError(Message_Alert theAlert) => myReport.AddAlert(Message_Fail, theAlert);
+    public void AddError(Alert theAlert) => myReport.AddAlert(Fail, theAlert);
 
     /// <summary>Adds the alert as a warning.</summary>
-    public void AddWarning(Message_Alert theAlert) => myReport.AddAlert(Message_Warning, theAlert);
+    public void AddWarning(Alert theAlert) => myReport.AddAlert(Warning, theAlert);
 
     /// <summary>True if the algorithm has failed.</summary>
-    public bool HasErrors() => !myReport.GetAlerts(Message_Fail).IsEmpty();
+    public bool HasErrors() => !myReport.GetAlerts(Fail).IsEmpty();
 
     /// <summary>True if the algorithm has an error of exactly the type.</summary>
-    public bool HasError(Type theType) => myReport.HasAlert(theType, Message_Fail);
+    public bool HasError(Type theType) => myReport.HasAlert(theType, Fail);
 
     /// <summary>True if the algorithm has warnings.</summary>
-    public bool HasWarnings() => !myReport.GetAlerts(Message_Warning).IsEmpty();
+    public bool HasWarnings() => !myReport.GetAlerts(Warning).IsEmpty();
 
     /// <summary>True if the algorithm has a warning of exactly the type.</summary>
-    public bool HasWarning(Type theType) => myReport.HasAlert(theType, Message_Warning);
+    public bool HasWarning(Type theType) => myReport.HasAlert(theType, Warning);
 
     /// <summary>The report collecting the errors and warnings.</summary>
-    public Message_Report GetReport() => myReport;
+    public Report GetReport() => myReport;
 
     /// <summary>Writes the errors' message keys, one per line.</summary>
-    public void DumpErrors(TextWriter theOS) => myReport.Dump(theOS, Message_Fail);
+    public void DumpErrors(TextWriter theOS) => myReport.Dump(theOS, Fail);
 
     /// <summary>Writes the warnings' message keys, one per line.</summary>
-    public void DumpWarnings(TextWriter theOS) => myReport.Dump(theOS, Message_Warning);
+    public void DumpWarnings(TextWriter theOS) => myReport.Dump(theOS, Warning);
 
     /// <summary>Clears the warnings.</summary>
-    public void ClearWarnings() => myReport.Clear(Message_Warning);
+    public void ClearWarnings() => myReport.Clear(Warning);
 
     //!@name Parallel processing mode
 
@@ -96,7 +97,7 @@ public class BOPAlgo_Options
     //!@name Fuzzy tolerance
 
     /// <summary>Sets the additional tolerance; at least Precision::Confusion().</summary>
-    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, Precision.Confusion());
+    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <summary>The additional tolerance.</summary>
     public double FuzzyValue() => myFuzzyValue;
@@ -110,7 +111,7 @@ public class BOPAlgo_Options
     public bool UseOBB() => myUseOBB;
 
     /// <summary>Adds <see cref="BOPAlgo_AlertUserBreak"/> as an error if the user broke the operation; true then.</summary>
-    protected internal bool UserBreak(Message_ProgressScope thePS)
+    protected internal bool UserBreak(ProgressScope thePS)
     {
         if (thePS.UserBreak())
         {

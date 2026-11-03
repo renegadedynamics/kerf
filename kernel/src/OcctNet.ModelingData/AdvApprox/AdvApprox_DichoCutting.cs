@@ -13,7 +13,7 @@ public class AdvApprox_DichoCutting : AdvApprox_Cutting
     public override bool Value(double a, double b, out double cuttingvalue)
     {
         // Minimum length of an interval for F(U,V): EPS1=1.e-9 (cf. MEPS1)
-        double lgmin = 10 * Precision.PConfusion();
+        double lgmin = 10 * global::Kerf.Engine.Foundation.Precision.PConfusion();
         cuttingvalue = (a + b) / 2;
         return (Math.Abs(b - a) >= 2 * lgmin);
     }

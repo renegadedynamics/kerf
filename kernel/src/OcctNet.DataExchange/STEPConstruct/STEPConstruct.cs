@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -32,14 +34,14 @@ public static class STEPConstruct
     /// Loc corresponds to the location with which result is found (either location of the Shape, or Null)
     /// </summary>
     public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, TopoDS_Shape Shape,
-                                                         ref TopLoc_Location Loc)
+                                                         ref Placement Loc)
     {
         StepRepr_RepresentationItem item = null;
         Loc = Shape.Location();
         TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FinderProcess, Shape);
-        if (!FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item) && !Loc.IsIdentity())
+        if (!FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item) && !Loc.IsIdentity)
         {
-            Loc = new TopLoc_Location();
+            Loc = new Placement();
             TopoDS_Shape S = Shape.Located(Loc);
             mapper = TransferBRep.ShapeMapper(FinderProcess, S);
             FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item);

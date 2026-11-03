@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ public class IFGraph_AllShared : Interface_GraphContent
     /// <summary>
     /// creates an AllShared which memrizes Entities shared by a given one, at any level, including itself
     /// </summary>
-    public IFGraph_AllShared(Interface_Graph agraph, Standard_Transient? ent)
+    public IFGraph_AllShared(Interface_Graph agraph, Transient? ent)
     {
         thegraph = new Interface_Graph(agraph);
         if (!agraph.Model().Contains(ent))
@@ -39,7 +41,7 @@ public class IFGraph_AllShared : Interface_GraphContent
     /// <summary>
     /// adds an entity and its shared ones to the list (allows to cumulate all Entities shared by some ones)
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent)
+    public void GetFromEntity(Transient? ent)
     {
         thegraph.GetFromEntity(ent, true);
     }

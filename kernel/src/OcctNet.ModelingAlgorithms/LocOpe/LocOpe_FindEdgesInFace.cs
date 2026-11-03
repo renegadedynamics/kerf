@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -57,11 +59,11 @@ public sealed class LocOpe_FindEdgesInFace
         double f, l;
         Type Tc, Ts;
         bool ToAdd;
-        gp_Pln pl = new();
-        gp_Cylinder cy = new();
+        Plane3D pl = new();
+        Cylinder cy = new();
 
-        double Tol = Precision.Confusion();
-        double TolAng = Precision.Angular();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double TolAng = global::Kerf.Engine.Foundation.Precision.Angular();
 
         S = BRep_Tool.Surface(F)!;
         Ts = S.GetType();
@@ -102,7 +104,7 @@ public sealed class LocOpe_FindEdgesInFace
                 continue;
             }
 
-            C = BRep_Tool.Curve(edg, out TopLoc_Location Loc, out f, out l)!;
+            C = BRep_Tool.Curve(edg, out Placement Loc, out f, out l)!;
             C = (Geom_Curve)C.Transformed(Loc.Transformation());
             Tc = C.GetType();
             if (Tc == typeof(Geom_TrimmedCurve))
@@ -125,7 +127,7 @@ public sealed class LocOpe_FindEdgesInFace
 
             if (Tc == typeof(Geom_Line))
             {
-                gp_Lin li = ((Geom_Line)C).Lin();
+                Line3D li = ((Geom_Line)C).Lin();
                 if (Ts == typeof(Geom_Plane))
                 {
                     if (pl.Contains(li, Tol, TolAng))
@@ -143,10 +145,10 @@ public sealed class LocOpe_FindEdgesInFace
             }
             else
             { // Tt == STANDARD_TYPE(Geom_Circle)
-                gp_Circ ci = ((Geom_Circle)C).Circ();
+                Circle3D ci = ((Geom_Circle)C).Circ();
                 if (Ts == typeof(Geom_Plane))
                 {
-                    if (pl.Position().IsCoplanar(new gp_Ax3(ci.Position()), Tol, TolAng))
+                    if (pl.Position().IsCoplanar(new CoordinateSystem(ci.Position()), Tol, TolAng))
                     {
                         ToAdd = true;
                     }
@@ -163,7 +165,7 @@ public sealed class LocOpe_FindEdgesInFace
             if (ToAdd)
             {
                 // On classifie 3 points.
-                gp_Pnt[] p = new gp_Pnt[3];
+                Point3D[] p = new Point3D[3];
                 double U, V;
                 p[0] = C.Value(f);
                 p[1] = C.Value(l);
@@ -173,13 +175,13 @@ public sealed class LocOpe_FindEdgesInFace
                 {
                     if (Ts == typeof(Geom_Plane))
                     {
-                        ElSLib.Parameters(pl, p[i], out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, p[i], out U, out V);
                     }
                     else
                     {
-                        ElSLib.Parameters(cy, p[i], out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, p[i], out U, out V);
                     }
-                    if (TPT.Classify(new gp_Pnt2d(U, V), Precision.Confusion()) == TopAbs_OUT)
+                    if (TPT.Classify(new Point2D(U, V), global::Kerf.Engine.Foundation.Precision.Confusion()) == TopAbs_OUT)
                     {
                         break;
                     }

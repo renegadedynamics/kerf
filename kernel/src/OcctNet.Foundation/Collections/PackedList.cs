@@ -26,78 +26,78 @@ public static class PackedList
 /// <typeparam name="T">The type of the elements, usually a gp struct or a number.</typeparam>
 public sealed class PackedList<T> : ISchematiqList<T>
 {
-    private readonly T[] myItems;
-    private readonly int myOffset;
-    private readonly int myCount;
+    private readonly T[] _items;
+    private readonly int _offset;
+    private readonly int _count;
 
     /// <summary>The empty list.</summary>
     public static PackedList<T> Empty { get; } = new([]);
 
-    internal PackedList(T[] theItems) : this(theItems, 0, theItems.Length) { }
+    internal PackedList(T[] items) : this(items, 0, items.Length) { }
 
-    private PackedList(T[] theItems, int theOffset, int theCount)
+    private PackedList(T[] items, int offset, int count)
     {
-        myItems = theItems;
-        myOffset = theOffset;
-        myCount = theCount;
+        _items = items;
+        _offset = offset;
+        _count = count;
     }
 
     /// <summary>The elements, without copying.</summary>
-    public ReadOnlySpan<T> AsSpan() => new(myItems, myOffset, myCount);
+    public ReadOnlySpan<T> AsSpan() => new(_items, _offset, _count);
 
     /// <summary>The elements, without copying.</summary>
-    public ReadOnlyMemory<T> AsMemory() => new(myItems, myOffset, myCount);
+    public ReadOnlyMemory<T> AsMemory() => new(_items, _offset, _count);
 
-    public int Count => myCount;
+    public int Count => _count;
 
-    public bool IsEmpty => myCount == 0;
+    public bool IsEmpty => _count == 0;
 
     /// <summary>1 for a non-empty list (a single leaf, in Bento's terms), 0 for an empty one.</summary>
-    public int Depth => myCount == 0 ? 0 : 1;
+    public int Depth => _count == 0 ? 0 : 1;
 
     public T this[int index]
     {
         get
         {
-            if ((uint)index >= (uint)myCount)
+            if ((uint)index >= (uint)_count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return myItems[myOffset + index];
+            return _items[_offset + index];
         }
     }
 
-    public T Peek => myCount > 0 ? myItems[myOffset + myCount - 1] : throw new InvalidOperationException("The list is empty.");
+    public T Peek => _count > 0 ? _items[_offset + _count - 1] : throw new InvalidOperationException("The list is empty.");
 
-    public T PeekFront => myCount > 0 ? myItems[myOffset] : throw new InvalidOperationException("The list is empty.");
+    public T PeekFront => _count > 0 ? _items[_offset] : throw new InvalidOperationException("The list is empty.");
 
     /// <summary>Shares this list's array: O(1).</summary>
     public ISchematiqList<T> Subset(int start, int count)
     {
-        if (start < 0 || count < 0 || start > myCount - count)
+        if (start < 0 || count < 0 || start > _count - count)
         {
             throw new ArgumentOutOfRangeException(nameof(count));
         }
 
-        if (start == 0 && count == myCount)
+        if (start == 0 && count == _count)
         {
             return this;
         }
 
-        return count == 0 ? Empty : new PackedList<T>(myItems, myOffset + start, count);
+        return count == 0 ? Empty : new PackedList<T>(_items, _offset + start, count);
     }
 
     public ISchematiqList<T> Reverse()
     {
-        if (myCount < 2)
+        if (_count < 2)
         {
             return this;
         }
 
-        T[] aReversed = AsSpan().ToArray();
-        Array.Reverse(aReversed);
-        return new PackedList<T>(aReversed);
+        T[] reversed = AsSpan().ToArray();
+        Array.Reverse(reversed);
+        return new PackedList<T>(reversed);
     }
 
     /// <summary>Already as compact as a list can be.</summary>
@@ -109,11 +109,11 @@ public sealed class PackedList<T> : ISchematiqList<T>
 
     public ISchematiqList<T> Push(T value) => ToSchematiqList().Push(value);
 
-    public ISchematiqList<T> Pop() => myCount > 0 ? Subset(0, myCount - 1) : throw new InvalidOperationException("The list is empty.");
+    public ISchematiqList<T> Pop() => _count > 0 ? Subset(0, _count - 1) : throw new InvalidOperationException("The list is empty.");
 
     public ISchematiqList<T> PushFront(T value) => ToSchematiqList().PushFront(value);
 
-    public ISchematiqList<T> PopFront() => myCount > 0 ? Subset(1, myCount - 1) : throw new InvalidOperationException("The list is empty.");
+    public ISchematiqList<T> PopFront() => _count > 0 ? Subset(1, _count - 1) : throw new InvalidOperationException("The list is empty.");
 
     public ISchematiqList<T> Insert(int index, T item) => ToSchematiqList().Insert(index, item);
 
@@ -130,22 +130,22 @@ public sealed class PackedList<T> : ISchematiqList<T>
     /// <summary>Enumerates the elements without allocating.</summary>
     public struct Enumerator : IEnumerator<T>
     {
-        private readonly PackedList<T> myList;
-        private int myIndex;
+        private readonly PackedList<T> _list;
+        private int _index;
 
-        internal Enumerator(PackedList<T> theList)
+        internal Enumerator(PackedList<T> list)
         {
-            myList = theList;
-            myIndex = -1;
+            _list = list;
+            _index = -1;
         }
 
-        public readonly T Current => myList.myItems[myList.myOffset + myIndex];
+        public readonly T Current => _list._items[_list._offset + _index];
 
         readonly object? IEnumerator.Current => Current;
 
-        public bool MoveNext() => ++myIndex < myList.myCount;
+        public bool MoveNext() => ++_index < _list._count;
 
-        public void Reset() => myIndex = -1;
+        public void Reset() => _index = -1;
 
         public readonly void Dispose() { }
     }

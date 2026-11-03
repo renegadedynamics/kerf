@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.StepBasic_SiPrefix;
 using static Occt.StepBasic_SiUnitName;
@@ -84,32 +85,32 @@ public class STEPControl_Reader : XSControl_Reader
     }
 
     /// <summary>Loads a file and returns the read status Zero for a Model which complies with the Controller</summary>
-    public override IFSelect_ReturnStatus ReadFile(string filename, Message_ProgressRange theProgress = default)
+    public override IFSelect_ReturnStatus ReadFile(string filename, ProgressRange theProgress = default)
     {
         return ReadFile(filename, theProgress, null);
     }
 
-    /// <summary>As <see cref="ReadFile(string, Message_ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
-    public IFSelect_ReturnStatus ReadFile(string filename, Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+    /// <summary>As <see cref="ReadFile(string, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    public IFSelect_ReturnStatus ReadFile(string filename, ProgressRange theProgress, StepFile_ReadLimits theLimits)
     {
         return ReadInto(filename, null, ModelParameters(), theProgress, theLimits);
     }
 
     /// <summary>Loads a file from stream and returns the read status</summary>
-    public override IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress = default)
+    public override IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, ProgressRange theProgress = default)
     {
         return ReadStream(theName, theIStream, theProgress, null);
     }
 
-    /// <summary>As <see cref="ReadStream(string, Stream, Message_ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
-    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, Message_ProgressRange theProgress,
+    /// <summary>As <see cref="ReadStream(string, Stream, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
+    public IFSelect_ReturnStatus ReadStream(string theName, Stream theIStream, ProgressRange theProgress,
                                             StepFile_ReadLimits theLimits)
     {
         return ReadInto(theName, theIStream, ModelParameters(), theProgress, theLimits);
     }
 
     /// <summary>Loads a file and returns the read status Zero for a Model which complies with the Controller</summary>
-    public IFSelect_ReturnStatus ReadFile(string filename, in DESTEP_Parameters theParams, Message_ProgressRange theProgress = default,
+    public IFSelect_ReturnStatus ReadFile(string filename, in DESTEP_Parameters theParams, ProgressRange theProgress = default,
                                           StepFile_ReadLimits theLimits = null)
     {
         return ReadInto(filename, null, theParams, theProgress, theLimits);
@@ -117,7 +118,7 @@ public class STEPControl_Reader : XSControl_Reader
 
     /// <summary>Loads a file from stream and returns the read status</summary>
     public IFSelect_ReturnStatus ReadStream(string theName, in DESTEP_Parameters theParams, Stream theIStream,
-                                            Message_ProgressRange theProgress = default, StepFile_ReadLimits theLimits = null)
+                                            ProgressRange theProgress = default, StepFile_ReadLimits theLimits = null)
     {
         return ReadInto(theName, theIStream, theParams, theProgress, theLimits);
     }
@@ -132,7 +133,7 @@ public class STEPControl_Reader : XSControl_Reader
 
     // The four ReadFile/ReadStream bodies of OCCT, which differ only in the parameters and the stream
     private IFSelect_ReturnStatus ReadInto(string theName, Stream theIStream, in DESTEP_Parameters theParams,
-                                           Message_ProgressRange theProgress, StepFile_ReadLimits theLimits)
+                                           ProgressRange theProgress, StepFile_ReadLimits theLimits)
     {
         IFSelect_WorkLibrary aLibrary = WS().WorkLibrary();
         Interface_Protocol aProtocol = WS().Protocol();
@@ -179,9 +180,9 @@ public class STEPControl_Reader : XSControl_Reader
                 status = IFSelect_RetFail;
             }
         }
-        catch (Exception anException) when (anException is Standard_Failure || StepToTopoDS_Root.CaughtBySignals(anException))
+        catch (Exception anException) when (anException is FailureException || StepToTopoDS_Root.CaughtBySignals(anException))
         {
-            using Message_Messenger.StreamBuffer sout = Message.SendInfo();
+            using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    Interruption ReadFile par Exception :   ****\n");
             sout.Append(anException.Message);
             sout.Append("\n    Abandon").Append('\n');
@@ -203,7 +204,7 @@ public class STEPControl_Reader : XSControl_Reader
     }
 
     /// <summary>Transfers a root given its rank in the list of candidate roots Default is the first one Returns True if a shape has resulted, false else Same as inherited TransferOneRoot, kept for compatibility</summary>
-    public bool TransferRoot(int num = 1, Message_ProgressRange theProgress = default)
+    public bool TransferRoot(int num = 1, ProgressRange theProgress = default)
     {
         return TransferOneRoot(num, theProgress);
     }
@@ -222,7 +223,7 @@ public class STEPControl_Reader : XSControl_Reader
         int nb = Model().NbEntities();
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient ent = Model().Value(i);
+            Transient ent = Model().Value(i);
             if (aStepModel.InternalParameters.ReadAllShapes)
             {
                 // Special case to read invalid shape_representation without links to shapes.
@@ -476,7 +477,7 @@ public class STEPControl_Reader : XSControl_Reader
 
         for (int i = 1; i <= nbroots; i++)
         {
-            Standard_Transient anEnt = theroots.Value(i);
+            Transient anEnt = theroots.Value(i);
             int num = graph.EntityNumber(anEnt);
             if (num == 0)
             {
@@ -555,7 +556,7 @@ public class STEPControl_Reader : XSControl_Reader
             int nb = aModel.NbEntities();
             for (int i = 1; i <= nb; i++)
             {
-                Standard_Transient anEnt = aModel.Value(i);
+                Transient anEnt = aModel.Value(i);
                 StepRepr_RepresentationContext aRepCont = anEnt as StepRepr_RepresentationContext;
                 if (aRepCont is null)
                 {
@@ -719,7 +720,7 @@ public class STEPControl_Reader : XSControl_Reader
             if (aConvUnit is not null)
             {
                 StepBasic_MeasureWithUnit aMeasWithUnit = null;
-                Standard_Transient aConvFactor = aConvUnit.ConversionFactor();
+                Transient aConvFactor = aConvUnit.ConversionFactor();
                 if (aConvFactor.IsKind(typeof(StepBasic_MeasureWithUnit)))
                 {
                     aMeasWithUnit = aConvFactor as StepBasic_MeasureWithUnit;

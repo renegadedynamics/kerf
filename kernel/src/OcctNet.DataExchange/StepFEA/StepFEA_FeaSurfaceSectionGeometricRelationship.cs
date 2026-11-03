@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity FeaSurfaceSectionGeometricRelationship
 /// </summary>
-public class StepFEA_FeaSurfaceSectionGeometricRelationship : Standard_Transient
+public class StepFEA_FeaSurfaceSectionGeometricRelationship : Transient
 {
     private StepElement_SurfaceSection theSectionRef;
     private StepElement_AnalysisItemWithinRepresentation theItem;

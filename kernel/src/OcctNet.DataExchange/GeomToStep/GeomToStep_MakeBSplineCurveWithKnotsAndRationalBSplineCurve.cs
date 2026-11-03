@@ -6,7 +6,9 @@
 
 #nullable disable warnings
 
-using static Occt.GeomAbs_BSplKnotDistribution;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Occt.StepData_Logical;
 using static Occt.StepGeom_BSplineCurveForm;
 using static Occt.StepGeom_KnotType;
@@ -30,7 +32,7 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
     public GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve(Geom_BSplineCurve BS, in StepData_Factors theLocalFactors)
     {
         int N = BS.NbPoles();
-        NCollection_Array1<gp_Pnt> P = BS.InternalPoles();
+        NCollection_Array1<Point3D> P = BS.InternalPoles();
         NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, N);
         for (int i = P.Lower(); i <= P.Upper(); i++)
         {
@@ -55,7 +57,7 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
     public GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve(Geom2d_BSplineCurve BS, in StepData_Factors theLocalFactors)
     {
         int N = BS.NbPoles();
-        NCollection_Array1<gp_Pnt2d> P = BS.InternalPoles();
+        NCollection_Array1<Point2D> P = BS.InternalPoles();
         NCollection_HArray1<StepGeom_CartesianPoint> Listpoints = new NCollection_HArray1<StepGeom_CartesianPoint>(1, N);
         for (int i = P.Lower(); i <= P.Upper(); i++)
         {
@@ -80,7 +82,7 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
                       int Nknots,
                       NCollection_Array1<int> M,
                       NCollection_Array1<double> K,
-                      GeomAbs_BSplKnotDistribution Distribution,
+                      BSplKnotDistribution Distribution,
                       NCollection_Array1<double> W)
     {
         StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve BSWK;
@@ -114,15 +116,15 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
             rtampon = K.Value(i);
             ListKnots.SetValue(i, rtampon);
         }
-        if (Distribution == GeomAbs_NonUniform)
+        if (Distribution == NonUniform)
         {
             KnotSpec = StepGeom_ktUnspecified;
         }
-        else if (Distribution == GeomAbs_Uniform)
+        else if (Distribution == Uniform)
         {
             KnotSpec = StepGeom_ktUniformKnots;
         }
-        else if (Distribution == GeomAbs_QuasiUniform)
+        else if (Distribution == QuasiUniform)
         {
             KnotSpec = StepGeom_ktQuasiUniformKnots;
         }

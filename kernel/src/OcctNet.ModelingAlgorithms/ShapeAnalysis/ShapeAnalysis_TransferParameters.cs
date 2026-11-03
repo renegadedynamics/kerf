@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +17,7 @@ namespace Occt;
 /// A working object (decision 21). <see cref="TransferRange"/> writes the ranges of a new edge in place, so it is
 /// internal: ported code calls it on edges it is building.
 /// </remarks>
-public class ShapeAnalysis_TransferParameters : Standard_Transient
+public class ShapeAnalysis_TransferParameters : Transient
 {
     protected double myFirst;
     protected double myLast;
@@ -70,7 +74,7 @@ public class ShapeAnalysis_TransferParameters : Standard_Transient
 
         double ln2d = l2d - f2d;
         double ln3d = l - f;
-        myScale = (ln3d <= gp.Resolution() ? 1.0 : ln2d / ln3d);
+        myScale = (ln3d <= Constants.Resolution() ? 1.0 : ln2d / ln3d);
         myShift = f2d - f * myScale;
     }
 

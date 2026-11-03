@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>An evolution law interpolating (parameter, value) pairs: the X of each 2D point is the parameter, Y the value.</summary>
@@ -18,7 +20,7 @@ public class Law_Interpol : Law_BSpFunc
     }
 
     /// <summary>Defines the law by interpolating the points ParAndRad (X the parameter, Y the value).</summary>
-    public void Set(NCollection_Array1<gp_Pnt2d> ParAndRad, bool Periodic = false)
+    public void Set(NCollection_Array1<Point2D> ParAndRad, bool Periodic = false)
     {
         int l = ParAndRad.Lower();
         int nbp = ParAndRad.Length();
@@ -44,13 +46,13 @@ public class Law_Interpol : Law_BSpFunc
                 rad.SetValue(i, y);
             }
         }
-        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, Precision.Confusion());
+        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, global::Kerf.Engine.Foundation.Precision.Confusion());
         inter.Perform();
         SetCurve(inter.InternalCurve());
     }
 
     /// <summary>As Set, with the parameters of ParAndRad mapped linearly onto [Ud, Uf].</summary>
-    public void SetInRelative(NCollection_Array1<gp_Pnt2d> ParAndRad, double Ud, double Uf, bool Periodic = false)
+    public void SetInRelative(NCollection_Array1<Point2D> ParAndRad, double Ud, double Uf, bool Periodic = false)
     {
         int l = ParAndRad.Lower(), u = ParAndRad.Upper();
         double wd = ParAndRad[l].X(), wf = ParAndRad[u].X();
@@ -76,13 +78,13 @@ public class Law_Interpol : Law_BSpFunc
                 rad.SetValue(i, y);
             }
         }
-        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, Precision.Confusion());
+        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, global::Kerf.Engine.Foundation.Precision.Confusion());
         inter.Perform();
         SetCurve(inter.InternalCurve());
     }
 
     /// <summary>Defines the law by interpolating ParAndRad, with the derivatives Dd and Df at the first and last points.</summary>
-    public void Set(NCollection_Array1<gp_Pnt2d> ParAndRad, double Dd, double Df, bool Periodic = false)
+    public void Set(NCollection_Array1<Point2D> ParAndRad, double Dd, double Df, bool Periodic = false)
     {
         int l = ParAndRad.Lower();
         int nbp = ParAndRad.Length();
@@ -108,14 +110,14 @@ public class Law_Interpol : Law_BSpFunc
                 rad.SetValue(i, y);
             }
         }
-        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, Precision.Confusion());
+        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, global::Kerf.Engine.Foundation.Precision.Confusion());
         inter.Load(Dd, Df);
         inter.Perform();
         SetCurve(inter.InternalCurve());
     }
 
     /// <summary>As Set with derivatives, with the parameters of ParAndRad mapped linearly onto [Ud, Uf].</summary>
-    public void SetInRelative(NCollection_Array1<gp_Pnt2d> ParAndRad, double Ud, double Uf, double Dd, double Df,
+    public void SetInRelative(NCollection_Array1<Point2D> ParAndRad, double Ud, double Uf, double Dd, double Df,
                               bool Periodic = false)
     {
         int l = ParAndRad.Lower(), u = ParAndRad.Upper();
@@ -142,7 +144,7 @@ public class Law_Interpol : Law_BSpFunc
                 rad.SetValue(i, y);
             }
         }
-        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, Precision.Confusion());
+        Law_Interpolate inter = new Law_Interpolate(rad, par, Periodic, global::Kerf.Engine.Foundation.Precision.Confusion());
         inter.Load(Dd, Df);
         inter.Perform();
         SetCurve(inter.InternalCurve());

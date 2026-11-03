@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 /// <summary>
@@ -8,7 +12,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class Geom_ElementarySurfacesTests
 {
-    private static readonly gp_Ax3 Frame = new(new gp_Pnt(1, -2, 3), new gp_Dir(1, 2, 2), new gp_Dir(2, -1, 0));
+    private static readonly CoordinateSystem Frame = new(new Point3D(1, -2, 3), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0));
 
     private static Geom_ElementarySurface[] All() =>
     [
@@ -21,31 +25,31 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Constructors_Check_Their_Arguments()
     {
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_CylindricalSurface(Frame, -1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ConicalSurface(Frame, 0.4, -1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ConicalSurface(Frame, 0.0, 1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ConicalSurface(Frame, M_PI / 2, 1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_SphericalSurface(Frame, -1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ToroidalSurface(Frame, -1, 1));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ToroidalSurface(Frame, 1, -1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_CylindricalSurface(Frame, -1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, 0.4, -1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, 0.0, 1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ConicalSurface(Frame, M_PI / 2, 1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_SphericalSurface(Frame, -1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, -1, 1));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, 1, -1));
         // OCCT's constructor accepts MinorRadius > MajorRadius; SetMajorRadius and SetMinorRadius don't
         Geom_ToroidalSurface aTorus = new(Frame, 1, 2);
-        Assert.Throws<Standard_ConstructionError>(() => aTorus.WithMajorRadius(1.5));
-        Assert.Throws<Standard_ConstructionError>(() => new Geom_ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
+        Assert.Throws<ConstructionErrorException>(() => aTorus.WithMajorRadius(1.5));
+        Assert.Throws<ConstructionErrorException>(() => new Geom_ToroidalSurface(Frame, 3, 1).WithMinorRadius(3));
     }
 
     [Fact]
     public void From_gp_And_Back()
     {
-        gp_Cylinder aCyl = new(Frame, 2);
+        Cylinder aCyl = new(Frame, 2);
         Assert.Equal(2.0, new Geom_CylindricalSurface(aCyl).Cylinder().Radius());
-        gp_Cone aCone = new(Frame, 0.3, 4);
+        Cone aCone = new(Frame, 0.3, 4);
         Geom_ConicalSurface aGCone = new(aCone);
         Assert.Equal(0.3, aGCone.Cone().SemiAngle());
         Assert.Equal(4.0, aGCone.RefRadius());
         Assert.True(aGCone.Apex().IsEqual(aCone.Apex(), 1e-12));
-        Assert.Equal(7.0, new Geom_SphericalSurface(new gp_Sphere(Frame, 7)).Sphere().Radius());
-        Geom_ToroidalSurface aTor = new(new gp_Torus(Frame, 6, 2));
+        Assert.Equal(7.0, new Geom_SphericalSurface(new Sphere(Frame, 7)).Sphere().Radius());
+        Geom_ToroidalSurface aTor = new(new Torus(Frame, 6, 2));
         Assert.Equal(6.0, aTor.Torus().MajorRadius());
         Assert.Equal(2.0, aTor.MinorRadius());
         Assert.Equal(4.0 * M_PI * M_PI * 12.0, aTor.Area(), 1e-12);
@@ -71,9 +75,9 @@ public class Geom_ElementarySurfacesTests
         // right only when the local origin is the global one and the reference radius is 0, where gp_Cone agrees.
         Geom_ConicalSurface aBadCone = new(Frame, 0.4, 1.5);
         Assert.True(Math.Abs(Quadric(aBadCone.Coefficients, aBadCone.Value(0.3, 0.2))) > 1e-3);
-        Geom_ConicalSurface aApexCone = new(new gp_Ax3(new gp_Pnt(), new gp_Dir(1, 2, 2), new gp_Dir(2, -1, 0)), 0.4, 0.0);
+        Geom_ConicalSurface aApexCone = new(new CoordinateSystem(new Point3D(), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0)), 0.4, 0.0);
         Assert.Equal(0.0, Quadric(aApexCone.Coefficients, aApexCone.Value(0.3, 0.2)), 1e-12);
-        gp_Cone aGpCone = aBadCone.Cone();
+        Cone aGpCone = aBadCone.Cone();
         Assert.Equal(0.0, Quadric(aGpCone.Coefficients, aBadCone.Value(0.3, 0.2)), 1e-11);
 
         Geom_ToroidalSurface aTor = new(Frame, 5.0, 1.25);
@@ -87,7 +91,7 @@ public class Geom_ElementarySurfacesTests
     private delegate void QuadricCoefficients(out double A1, out double A2, out double A3, out double B1, out double B2,
                                               out double B3, out double C1, out double C2, out double C3, out double D);
 
-    private static double Quadric(QuadricCoefficients theCoefs, gp_Pnt P)
+    private static double Quadric(QuadricCoefficients theCoefs, Point3D P)
     {
         theCoefs(out double A1, out double A2, out double A3, out double B1, out double B2, out double B3,
                  out double C1, out double C2, out double C3, out double D);
@@ -141,8 +145,8 @@ public class Geom_ElementarySurfacesTests
         foreach (Geom_ElementarySurface S in All())
         {
             double U = 0.7, V = 0.3;
-            S.D3(U, V, out gp_Pnt P, out gp_Vec D1U, out gp_Vec D1V, out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV,
-                 out gp_Vec D3U, out gp_Vec D3V, out gp_Vec D3UUV, out gp_Vec D3UVV);
+            S.D3(U, V, out Point3D P, out Vector3D D1U, out Vector3D D1V, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV,
+                 out Vector3D D3U, out Vector3D D3V, out Vector3D D3UUV, out Vector3D D3UVV);
             Assert.Equal(P, S.Value(U, V));
             Assert.True(S.DN(U, V, 1, 0).IsEqual(D1U, 1e-12, 1e-12));
             Assert.True(S.DN(U, V, 0, 1).IsEqual(D1V, 1e-12, 1e-12));
@@ -158,12 +162,12 @@ public class Geom_ElementarySurfacesTests
             }
             else
             {
-                Assert.Equal(new gp_Vec(0, 0, 0), S.DN(U, V, 0, 2));
+                Assert.Equal(new Vector3D(0, 0, 0), S.DN(U, V, 0, 2));
             }
 
             // Finite differences of the point
             double h = 1e-6;
-            gp_Vec aFdU = new gp_Vec(S.Value(U - h, V), S.Value(U + h, V)) / (2 * h);
+            Vector3D aFdU = new Vector3D(S.Value(U - h, V), S.Value(U + h, V)) / (2 * h);
             Assert.True(aFdU.IsEqual(D1U, 1e-6, 1e-6));
             Assert.Throws<Geom_UndefinedDerivative>(() => S.DN(U, V, 0, 0));
         }
@@ -172,7 +176,7 @@ public class Geom_ElementarySurfacesTests
     [Fact]
     public void Transform_Scales_The_Radii_And_TransformParameters_Follows()
     {
-        gp_Trsf T = gp_Trsf.Scale(new gp_Pnt(1, 1, 1), -2.0);
+        Transform3D T = Transform3D.Scale(new Point3D(1, 1, 1), -2.0);
         foreach (Geom_ElementarySurface S in All())
         {
             Geom_Surface aMoved = (Geom_Surface)S.Transformed(T);
@@ -201,27 +205,27 @@ public class Geom_ElementarySurfacesTests
         foreach (Geom_ElementarySurface S in new Geom_ElementarySurface[] { aCyl, aCone, aSph, aTor })
         {
             S.Freeze();
-            Assert.Throws<Standard_ImmutableObject>(() => S.Transform(new gp_Trsf()));
-            Assert.Throws<Standard_ImmutableObject>(() => S.UReverse());
-            Assert.Throws<Standard_ImmutableObject>(() => S.VReverse());
-            Assert.Throws<Standard_ImmutableObject>(() => S.SetLocation(new gp_Pnt()));
-            Assert.False(S.Copy().IsFrozen());
+            Assert.Throws<ImmutableObjectException>(() => S.Transform(new Transform3D()));
+            Assert.Throws<ImmutableObjectException>(() => S.UReverse());
+            Assert.Throws<ImmutableObjectException>(() => S.VReverse());
+            Assert.Throws<ImmutableObjectException>(() => S.SetLocation(new Point3D()));
+            Assert.False(S.Copy().IsFrozen);
         }
-        Assert.Throws<Standard_ImmutableObject>(() => aCyl.SetRadius(1));
-        Assert.Throws<Standard_ImmutableObject>(() => aCone.SetSemiAngle(0.2));
-        Assert.Throws<Standard_ImmutableObject>(() => aSph.SetRadius(1));
-        Assert.Throws<Standard_ImmutableObject>(() => aTor.SetMinorRadius(1));
+        Assert.Throws<ImmutableObjectException>(() => aCyl.SetRadius(1));
+        Assert.Throws<ImmutableObjectException>(() => aCone.SetSemiAngle(0.2));
+        Assert.Throws<ImmutableObjectException>(() => aSph.SetRadius(1));
+        Assert.Throws<ImmutableObjectException>(() => aTor.SetMinorRadius(1));
 
         Assert.Equal(1.0, aCyl.WithRadius(1).Radius());
-        Assert.Equal(2.0, aCyl.WithCylinder(new gp_Cylinder(Frame, 2)).Radius());
+        Assert.Equal(2.0, aCyl.WithCylinder(new Cylinder(Frame, 2)).Radius());
         Assert.Equal(0.2, aCone.WithSemiAngle(0.2).SemiAngle());
         Assert.Equal(0.5, aCone.WithRadius(0.5).RefRadius());
-        Assert.Equal(0.1, aCone.WithCone(new gp_Cone(Frame, 0.1, 1)).SemiAngle());
+        Assert.Equal(0.1, aCone.WithCone(new Cone(Frame, 0.1, 1)).SemiAngle());
         Assert.Equal(1.0, aSph.WithRadius(1).Radius());
-        Assert.Equal(4.0, aSph.WithSphere(new gp_Sphere(Frame, 4)).Radius());
+        Assert.Equal(4.0, aSph.WithSphere(new Sphere(Frame, 4)).Radius());
         Assert.Equal(1.0, aTor.WithMinorRadius(1).MinorRadius());
         Assert.Equal(6.0, aTor.WithMajorRadius(6).MajorRadius());
-        Assert.Equal(3.0, aTor.WithTorus(new gp_Torus(Frame, 7, 3)).MinorRadius());
+        Assert.Equal(3.0, aTor.WithTorus(new Torus(Frame, 7, 3)).MinorRadius());
         Assert.Equal(2.5, aCyl.Radius());
     }
 

@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -77,7 +79,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
         aS.Append(CultureInfo.InvariantCulture, $"{aB.Degree()} {aB.NbPoles()} {aB.NbKnots()}");
         for (int i = 1; i <= aB.NbPoles(); ++i)
         {
-            gp_Pnt aP = aB.Pole(i);
+            Point3D aP = aB.Pole(i);
             aS.Append(' ').Append(Hex(aP.X())).Append(' ').Append(Hex(aP.Y())).Append(' ').Append(Hex(aP.Z()));
         }
         for (int i = 1; i <= aB.NbKnots(); ++i)
@@ -122,7 +124,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
         public readonly List<double> D = [], H = [], P = [];
     }
 
-    private static void SetParameters(HelixBRep_BuilderHelix theB, string theCmd, in gp_Ax3 theAxis, int theNb, double[] theV,
+    private static void SetParameters(HelixBRep_BuilderHelix theB, string theCmd, in CoordinateSystem theAxis, int theNb, double[] theV,
                                       Parts theParts)
     {
         if (theCmd == "comphelix")
@@ -185,7 +187,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
 
     private const int MaxLines = 250;
 
-    private static void RecordBRep(List<string> theOut, int theSet, string theCmd, in gp_Ax3 theAxis, int theNb, double[] theV,
+    private static void RecordBRep(List<string> theOut, int theSet, string theCmd, in CoordinateSystem theAxis, int theNb, double[] theV,
                                    Parts theParts)
     {
         try
@@ -194,7 +196,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             SetParameters(aB, theCmd, theAxis, theNb, theV, theParts);
             if (theSet == 1)
             {
-                aB.SetApproxParameters(1.0e-5, 8, GeomAbs_C2);
+                aB.SetApproxParameters(1.0e-5, 8, C2);
             }
             aB.Perform();
             string aText = "";
@@ -211,13 +213,13 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                 theOut.AddRange((aText[^1] == '\n' ? aText[..^1] : aText).Split('\n'));
             }
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
-            theOut.Add("THROW " + e.GetType().Name);
+            theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
         }
     }
 
-    private static void RecordGeom(List<string> theOut, in gp_Ax3 theAxis, Parts theParts)
+    private static void RecordGeom(List<string> theOut, in CoordinateSystem theAxis, Parts theParts)
     {
         double aTwoPI = 2.0 * Math.PI;
         for (int i = 0; i < theParts.H.Count; ++i)
@@ -234,7 +236,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                 aBH.SetPosition(theAxis.Ax2());
                 aBH.SetCurveParameters(0.0, aT2, theParts.P[i], aR, aTaper, aCW);
                 aBH.SetTolerance(1.0e-4);
-                aBH.SetApproxParameters(GeomAbs_C1, 8, 1000);
+                aBH.SetApproxParameters(C1, 8, 1000);
                 aBH.Perform();
                 var aCurves = aBH.Curves();
                 theOut.Add($"HELIX {aBH.ErrorStatus()} {Hex(aBH.ToleranceReached())} {aCurves.Count}");
@@ -243,9 +245,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aCurves[k - 1], k, aCurves.Count);
                 }
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                theOut.Add("THROW " + e.GetType().Name);
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
             }
             double aT2c = aT2 < aTwoPI ? aT2 : aTwoPI;
             try
@@ -260,9 +262,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aCurves[k - 1], k, aCurves.Count);
                 }
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                theOut.Add("THROW " + e.GetType().Name);
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
             }
             try
             {
@@ -275,9 +277,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
                     Curve(theOut, aBS, 1, 1);
                 }
             }
-            catch (Standard_Failure e)
+            catch (FailureException e)
             {
-                theOut.Add("THROW " + e.GetType().Name);
+                theOut.Add("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
             }
         }
     }
@@ -286,13 +288,13 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
     {
         List<string> anOut = [$"CASE {theCase.Id} {theCase.Command}", theCase.Axis, theCase.In];
         // the axis: OCCT's default, then the case's setaxis replayed as the command does
-        gp_Ax3 anAxis = new(new gp_Pnt(0.0, 0.0, 0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        CoordinateSystem anAxis = new(new Point3D(0.0, 0.0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         double[] aSet = theCase.Axis.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1).Select(FromHex).ToArray();
         if (aSet.Length == 9)
         {
-            anAxis.SetLocation(new gp_Pnt(aSet[0], aSet[1], aSet[2]));
-            anAxis.SetDirection(new gp_Dir(aSet[3], aSet[4], aSet[5]));
-            anAxis.SetXDirection(new gp_Dir(aSet[6], aSet[7], aSet[8]));
+            anAxis.SetLocation(new Point3D(aSet[0], aSet[1], aSet[2]));
+            anAxis.SetDirection(new Direction3D(aSet[3], aSet[4], aSet[5]));
+            anAxis.SetXDirection(new Direction3D(aSet[6], aSet[7], aSet[8]));
         }
         string[] anIn = theCase.In.Split(' ');
         int aNb = int.Parse(anIn[1], CultureInfo.InvariantCulture);

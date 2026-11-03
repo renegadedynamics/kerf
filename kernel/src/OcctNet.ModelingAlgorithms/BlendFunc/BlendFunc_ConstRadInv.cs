@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -114,14 +118,14 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             InfBound[4] = surf2.FirstVParameter();
             SupBound[3] = surf2.LastUParameter();
             SupBound[4] = surf2.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -134,14 +138,14 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             InfBound[4] = surf1.FirstVParameter();
             SupBound[3] = surf1.LastUParameter();
             SupBound[4] = surf1.LastVParameter();
-            if (!Precision.IsInfinite(InfBound[3]) && !Precision.IsInfinite(SupBound[3]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[3]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[3]))
             {
                 double range = (SupBound[3] - InfBound[3]);
                 InfBound[3] -= range;
                 SupBound[3] += range;
             }
 
-            if (!Precision.IsInfinite(InfBound[4]) && !Precision.IsInfinite(SupBound[4]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[4]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[4]))
             {
                 double range = (SupBound[4] - InfBound[4]);
                 InfBound[4] -= range;
@@ -160,13 +164,13 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        curv.D1(X[2], out gp_Pnt ptcur, out gp_Vec d1cur);
-        gp_Vec nplan = d1cur.Normalized();
+        curv.D1(X[2], out Point3D ptcur, out Vector3D d1cur);
+        Vector3D nplan = d1cur.Normalized();
         double theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
-        gp_Pnt2d pt2d = csurf!.Value(X[1]);
+        Point2D pt2d = csurf!.Value(X[1]);
 
-        gp_Pnt pts1, pts2;
-        gp_Vec d1u1, d1v1, d1u2, d1v2;
+        Point3D pts1, pts2;
+        Vector3D d1u1, d1v1, d1u2, d1v2;
         if (first)
         {
             surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
@@ -183,7 +187,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
                  / 2.0
                + theD;
 
-        gp_Vec ns1 = d1u1.Crossed(d1v1);
+        Vector3D ns1 = d1u1.Crossed(d1v1);
         if (ns1.Magnitude() < Eps)
         {
             if (first)
@@ -192,12 +196,12 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf1, P, ref ns1);
             }
         }
 
-        gp_Vec ns2 = d1u2.Crossed(d1v2);
+        Vector3D ns2 = d1u2.Crossed(d1v2);
         if (ns2.Magnitude() < Eps)
         {
             if (!first)
@@ -206,7 +210,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf2, P, ref ns2);
             }
         }
@@ -223,26 +227,26 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             norm2 = 1; // Unsatisfactory, but it is not necessary to stop
         }
 
-        gp_Vec resul = new gp_Vec();
+        Vector3D resul = new Vector3D();
         ns1.SetLinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
         ns2.SetLinearForm(nplan.Dot(ns2) / norm2, nplan, -1.0 / norm2, ns2);
-        resul.SetLinearForm(ray1, ns1, -1.0, new gp_Vec(pts2.XYZ()), -ray2, ns2, new gp_Vec(pts1.XYZ()));
+        resul.SetLinearForm(ray1, ns1, -1.0, new Vector3D(pts2.XYZ()), -ray2, ns2, new Vector3D(pts1.XYZ()));
         F[2] = resul.X();
         F[3] = resul.Y();
         F[4] = resul.Z();
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec d1u1, d1v1, d1u2, d1v2;
-        gp_Vec d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
-        gp_Vec ns1, ns2, nplan, dnplan = new gp_Vec(), ncrossns1, ncrossns2, temp = new gp_Vec();
-        gp_Pnt pts1, pts2;
+        Vector3D d1u1, d1v1, d1u2, d1v2;
+        Vector3D d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
+        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), ncrossns1, ncrossns2, temp = new Vector3D();
+        Point3D pts1, pts2;
         double norm1, norm2, ndotns1, ndotns2, normtgcur;
         double theD;
 
-        curv.D2(X[2], out gp_Pnt ptcur, out gp_Vec d1cur, out gp_Vec d2cur);
+        curv.D2(X[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
         normtgcur = d1cur.Magnitude();
         nplan = d1cur.Normalized();
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
@@ -251,7 +255,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
         dnplan.SetLinearForm(theD, nplan, d2cur);
         dnplan /= normtgcur;
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
 
         if (first)
         {
@@ -285,7 +289,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf1, P, ref ns1);
             }
         }
@@ -299,7 +303,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf2, P, ref ns2);
             }
         }
@@ -327,13 +331,13 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
     }
 
     // The derivatives in the 2nd to 4th rows, which Derivatives and Values compute with the same code.
-    private void DerivativesTail(math_Vector X, math_Matrix D, in gp_Vec d1u1, in gp_Vec d1v1, in gp_Vec d1u2,
-                                 in gp_Vec d1v2, in gp_Vec d2u1, in gp_Vec d2v1, in gp_Vec d2uv1, in gp_Vec d2u2,
-                                 in gp_Vec d2v2, in gp_Vec d2uv2, in gp_Vec ns1, in gp_Vec ns2, in gp_Vec nplan,
-                                 in gp_Vec dnplan, in gp_Vec ncrossns1, in gp_Vec ncrossns2, in gp_Vec2d v2d,
+    private void DerivativesTail(math_Vector X, Matrix D, in Vector3D d1u1, in Vector3D d1v1, in Vector3D d1u2,
+                                 in Vector3D d1v2, in Vector3D d2u1, in Vector3D d2v1, in Vector3D d2uv1, in Vector3D d2u2,
+                                 in Vector3D d2v2, in Vector3D d2uv2, in Vector3D ns1, in Vector3D ns2, in Vector3D nplan,
+                                 in Vector3D dnplan, in Vector3D ncrossns1, in Vector3D ncrossns2, in Vector2D v2d,
                                  double norm1, double norm2, double ndotns1, double ndotns2)
     {
-        gp_Vec resul1 = new gp_Vec(), resul2 = new gp_Vec(), temp;
+        Vector3D resul1 = new Vector3D(), resul2 = new Vector3D(), temp;
         double grosterme;
 
         // Derived compared to u1
@@ -409,24 +413,24 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
         }
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
-        gp_Vec d1u1, d1v1, d1u2, d1v2;
-        gp_Vec d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
-        gp_Vec ns1, ns2, nplan, dnplan = new gp_Vec(), ncrossns1, ncrossns2, resul1 = new gp_Vec(),
-               temp = new gp_Vec();
-        gp_Pnt pts1, pts2;
+        Vector3D d1u1, d1v1, d1u2, d1v2;
+        Vector3D d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
+        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), ncrossns1, ncrossns2, resul1 = new Vector3D(),
+               temp = new Vector3D();
+        Point3D pts1, pts2;
         double norm1, norm2, ndotns1, ndotns2, normtgcur;
         double theD;
 
-        curv.D2(X[2], out gp_Pnt ptcur, out gp_Vec d1cur, out gp_Vec d2cur);
+        curv.D2(X[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
         normtgcur = d1cur.Magnitude();
         nplan = d1cur.Normalized();
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
         dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
 
         if (first)
         {
@@ -465,7 +469,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf1, P, ref ns1);
             }
         }
@@ -479,7 +483,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
             }
             else
             {
-                gp_Pnt2d P = new gp_Pnt2d(X[3], X[4]);
+                Point2D P = new Point2D(X[3], X[4]);
                 BlendFunc.ComputeNormal(surf2, P, ref ns2);
             }
         }
@@ -502,7 +506,7 @@ public class BlendFunc_ConstRadInv : Blend_FuncInv
         ndotns2 = nplan.Dot(ns2);
 
         temp.SetLinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        resul1.SetLinearForm(ray1, temp, new gp_Vec(pts2, pts1));
+        resul1.SetLinearForm(ray1, temp, new Vector3D(pts2, pts1));
         temp.SetLinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
         resul1.Subtract(ray2 * temp);
 

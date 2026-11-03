@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,13 +11,13 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFix_IntersectionToolTests
 {
-    private static gp_Pnt P(double x, double y) => new(x, y, 0.0);
+    private static Point3D P(double x, double y) => new(x, y, 0.0);
 
     // An unfrozen planar face bounded by the polygon.
-    private static TopoDS_Face PlanarFace(params gp_Pnt[] thePoints)
+    private static TopoDS_Face PlanarFace(params Point3D[] thePoints)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aPoly.Add(aP);
         }
@@ -65,8 +66,8 @@ public class ShapeFix_IntersectionToolTests
         int aNbAtCross = 0;
         for (int i = 1; i <= sewd.NbEdges(); i++)
         {
-            gp_Pnt anEnd = BRep_Tool.Pnt(sae.LastVertex(sewd.Edge(i)));
-            if (anEnd.Distance(new gp_Pnt(1, 1, 0)) < 1.0e-9)
+            Point3D anEnd = BRep_Tool.Pnt(sae.LastVertex(sewd.Edge(i)));
+            if (anEnd.Distance(new Point3D(1, 1, 0)) < 1.0e-9)
             {
                 aNbAtCross++;
                 int j = i == sewd.NbEdges() ? 1 : i + 1;
@@ -105,8 +106,8 @@ public class ShapeFix_IntersectionToolTests
     {
         TopoDS_Face aFace = PlanarFace(P(0, 0), P(4, 0), P(4, 4), P(0, 4));
         // an inner rectangle crossing the side x = 4
-        var aPoly = new BRepBuilderAPI_MakePolygon(new gp_Pnt(3, 1, 0), new gp_Pnt(5, 1, 0), new gp_Pnt(5, 2, 0),
-                                                   new gp_Pnt(3, 2, 0), true);
+        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(3, 1, 0), new Point3D(5, 1, 0), new Point3D(5, 2, 0),
+                                                   new Point3D(3, 2, 0), true);
         TopoDS_Wire anInner = aPoly.InternalWire();
         anInner.Reverse();
         new BRep_Builder().Add(aFace, anInner);
@@ -141,8 +142,8 @@ public class ShapeFix_IntersectionToolTests
     public void SplitEdge_AtAParameter_GivesTwoEdgesSharingTheVertex()
     {
         TopoDS_Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).InternalEdge();
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(4, 0, 0)).InternalVertex();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(4, 0, 0)).InternalVertex();
         var aTool = new ShapeFix_IntersectionTool(null, 1.0e-7);
 
         TopoDS_Edge aE1 = new(), aE2 = new();
@@ -166,8 +167,8 @@ public class ShapeFix_IntersectionToolTests
     public void SplitEdge_VertexOffTheEdge_RaisesItsTolerance()
     {
         TopoDS_Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).InternalEdge();
-        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new gp_Pnt(4, 0.01, 0)).InternalVertex();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        TopoDS_Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(4, 0.01, 0)).InternalVertex();
         TopoDS_Edge aE1 = new(), aE2 = new();
         Assert.True(new ShapeFix_IntersectionTool(null, 1.0e-7).SplitEdge(anEdge, 4.0, aV, aFace, ref aE1, ref aE2, 1.0e-7));
         Assert.True(BRep_Tool.Tolerance(aV) >= 0.01);
@@ -177,7 +178,7 @@ public class ShapeFix_IntersectionToolTests
     public void CutEdge_ChangesTheRangeInPlace_AndRefusesFrozenEdges()
     {
         TopoDS_Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).InternalEdge();
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
         var aTool = new ShapeFix_IntersectionTool(null, 1.0e-7);
         bool isCutLine = false;
 
@@ -191,7 +192,7 @@ public class ShapeFix_IntersectionToolTests
         Assert.False(aTool.CutEdge(anEdge, 10.0, 10.0, aFace, ref isCutLine));
         Assert.False(aTool.CutEdge(anEdge, 10.0, 6.0, aFace, ref isCutLine));
 
-        TopoDS_Edge aFrozen = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0)).Edge();
+        TopoDS_Edge aFrozen = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         Assert.ThrowsAny<Exception>(() => aTool.CutEdge(aFrozen, 10.0, 6.0, aFace, ref isCutLine));
     }
 }

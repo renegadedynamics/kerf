@@ -6,23 +6,25 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepShape_MeasureQualification : Standard_Transient
+public class StepShape_MeasureQualification : Transient
 {
     private TCollection_HAsciiString theName;
     private TCollection_HAsciiString theDescription;
-    private Standard_Transient theQualifiedMeasure;
+    private Transient theQualifiedMeasure;
     private NCollection_HArray1<StepShape_ValueQualifier> theQualifiers;
 
     public StepShape_MeasureQualification()
     {
     }
 
-    public void Init(TCollection_HAsciiString name, TCollection_HAsciiString description, Standard_Transient qualified_measure, NCollection_HArray1<StepShape_ValueQualifier> qualifiers)
+    public void Init(TCollection_HAsciiString name, TCollection_HAsciiString description, Transient qualified_measure, NCollection_HArray1<StepShape_ValueQualifier> qualifiers)
     {
         theName = name;
         theDescription = description;
@@ -50,12 +52,12 @@ public class StepShape_MeasureQualification : Standard_Transient
         theDescription = description;
     }
 
-    public Standard_Transient QualifiedMeasure()
+    public Transient QualifiedMeasure()
     {
         return theQualifiedMeasure;
     }
 
-    public void SetQualifiedMeasure(Standard_Transient qualified_measure)
+    public void SetQualifiedMeasure(Transient qualified_measure)
     {
         theQualifiedMeasure = qualified_measure;
     }

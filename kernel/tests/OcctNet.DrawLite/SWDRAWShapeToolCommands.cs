@@ -178,7 +178,7 @@ internal static class SWDRAWShapeToolCommands
         {
             di.Append("Shape non Free -> Freeing\n");
             // OCCT.NET: a frozen shell keeps its flag, and BRep_Builder adds it all the same (see the class)
-            if (!Shape.TShape()!.IsFrozen())
+            if (!Shape.TShape()!.IsFrozen)
             {
                 Shape.Free(true);
             }
@@ -225,7 +225,7 @@ internal static class SWDRAWShapeToolCommands
                 for (var exp = new TopExp_Explorer(aWork, TopAbs_ShapeEnum.TopAbs_EDGE); exp.More(); exp.Next())
                 {
                     TopoDS_Edge edge = TopoDS.Edge(exp.Current());
-                    BRepLib.SameRange(edge, Precision.PConfusion());
+                    BRepLib.SameRange(edge, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 }
                 return aWork;
             });
@@ -243,7 +243,7 @@ internal static class SWDRAWShapeToolCommands
             double oldLast = theDI.Atof(argv[4]);
             double current_first = theDI.Atof(argv[5]);
             double current_last = theDI.Atof(argv[6]);
-            double Tol = Precision.PConfusion();
+            double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
             Geom2d_Curve? NewC2d = null;
             GeomLib.SameRange(Tol, C, oldFirst, oldLast, current_first, current_last, ref NewC2d);
             DrawTrSurf.Set(theDI, argv[1], NewC2d);

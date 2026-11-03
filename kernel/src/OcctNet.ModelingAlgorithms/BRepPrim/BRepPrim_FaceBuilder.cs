@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -37,7 +39,7 @@ internal sealed class BRepPrim_FaceBuilder
         Init(B, S, UMin, UMax, VMin, VMax);
     }
 
-    /// <exception cref="Standard_ConstructionError">The bounds are empty or out of the surface's.</exception>
+    /// <exception cref="ConstructionErrorException">The bounds are empty or out of the surface's.</exception>
     public void Init(BRep_Builder B, Geom_Surface S, double UMin, double UMax, double VMin, double VMax)
     {
         // Check the values
@@ -45,34 +47,34 @@ internal sealed class BRepPrim_FaceBuilder
 
         if (UMin >= UMax)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
         if (VMin >= VMax)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
         if (UMin < USMin)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
         if (UMax > USMax)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
         if (VMin < VSMin)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
         if (VMax > VSMax)
         {
-            throw new Standard_ConstructionError("BRepPrim_FaceBuilder");
+            throw new ConstructionErrorException("BRepPrim_FaceBuilder");
         }
 
         // Make the vertices
-        B.MakeVertex(ref myVertex[0], S.Value(UMin, VMin), Precision.Confusion());
-        B.MakeVertex(ref myVertex[1], S.Value(UMax, VMin), Precision.Confusion());
-        B.MakeVertex(ref myVertex[2], S.Value(UMax, VMax), Precision.Confusion());
-        B.MakeVertex(ref myVertex[3], S.Value(UMin, VMax), Precision.Confusion());
+        B.MakeVertex(ref myVertex[0], S.Value(UMin, VMin), global::Kerf.Engine.Foundation.Precision.Confusion());
+        B.MakeVertex(ref myVertex[1], S.Value(UMax, VMin), global::Kerf.Engine.Foundation.Precision.Confusion());
+        B.MakeVertex(ref myVertex[2], S.Value(UMax, VMax), global::Kerf.Engine.Foundation.Precision.Confusion());
+        B.MakeVertex(ref myVertex[3], S.Value(UMin, VMax), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Make the edges
         B.MakeEdge(ref myEdges[0]);
@@ -81,18 +83,18 @@ internal sealed class BRepPrim_FaceBuilder
         B.MakeEdge(ref myEdges[3]);
 
         // Make the face
-        B.MakeFace(ref myFace, S, Precision.Confusion());
+        B.MakeFace(ref myFace, S, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // set the pcurves
         Geom2d_Line L;
-        L = new Geom2d_Line(new gp_Pnt2d(UMin, VMin), new gp_Dir2d(gp_Dir2d.D.X));
-        B.UpdateEdge(myEdges[0], L, myFace, Precision.Confusion());
-        L = new Geom2d_Line(new gp_Pnt2d(UMax, VMin), new gp_Dir2d(gp_Dir2d.D.Y));
-        B.UpdateEdge(myEdges[1], L, myFace, Precision.Confusion());
-        L = new Geom2d_Line(new gp_Pnt2d(UMax, VMax), new gp_Dir2d(gp_Dir2d.D.NX));
-        B.UpdateEdge(myEdges[2], L, myFace, Precision.Confusion());
-        L = new Geom2d_Line(new gp_Pnt2d(UMin, VMax), new gp_Dir2d(gp_Dir2d.D.NY));
-        B.UpdateEdge(myEdges[3], L, myFace, Precision.Confusion());
+        L = new Geom2d_Line(new Point2D(UMin, VMin), new Direction2D(Direction2D.D.X));
+        B.UpdateEdge(myEdges[0], L, myFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+        L = new Geom2d_Line(new Point2D(UMax, VMin), new Direction2D(Direction2D.D.Y));
+        B.UpdateEdge(myEdges[1], L, myFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+        L = new Geom2d_Line(new Point2D(UMax, VMax), new Direction2D(Direction2D.D.NX));
+        B.UpdateEdge(myEdges[2], L, myFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+        L = new Geom2d_Line(new Point2D(UMin, VMax), new Direction2D(Direction2D.D.NY));
+        B.UpdateEdge(myEdges[3], L, myFace, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // set the parameters
         B.UpdateVertex(myVertex[0], 0, myEdges[0], 0);

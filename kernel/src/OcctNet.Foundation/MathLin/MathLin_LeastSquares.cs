@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: linear least squares (plain, weighted, regularized).</summary>
 public static partial class MathLin
@@ -23,7 +24,7 @@ public static partial class MathLin
     /// <summary>Result for least squares problems.</summary>
     public struct LeastSquaresResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Least squares solution x.</summary>
         public math_Vector? Solution;
         /// <summary>||Ax - b||_2 (L2 norm of residual).</summary>
@@ -37,311 +38,311 @@ public static partial class MathLin
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(LeastSquaresResult theResult) => theResult.IsDone();
+        public static explicit operator bool(LeastSquaresResult result) => result.IsDone;
 
-        public static bool operator true(LeastSquaresResult theResult) => theResult.IsDone();
+        public static bool operator true(LeastSquaresResult result) => result.IsDone;
 
-        public static bool operator false(LeastSquaresResult theResult) => !theResult.IsDone();
+        public static bool operator false(LeastSquaresResult result) => !result.IsDone;
     }
 
     /// <summary>Solve the linear least squares problem: minimize ||Ax - b||_2 (A is m x n, m &gt;= n).</summary>
-    public static LeastSquaresResult LeastSquares(math_Matrix theA,
-                                                  math_Vector theB,
-                                                  LeastSquaresMethod theMethod = LeastSquaresMethod.QR,
-                                                  double theTolerance = 1.0e-15)
+    public static LeastSquaresResult LeastSquares(Matrix a,
+                                                  math_Vector b,
+                                                  LeastSquaresMethod method = LeastSquaresMethod.QR,
+                                                  double tolerance = 1.0e-15)
     {
-        LeastSquaresResult aResult = new();
+        LeastSquaresResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1;
-        int aN = aColUpper - aColLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1;
+        int n = colUpper - colLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aM)
+        if (b.Length() != m)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        LinearResult aLinResult = new();
+        LinearResult linResult = new();
 
-        switch (theMethod)
+        switch (method)
         {
             case LeastSquaresMethod.NormalEquations:
             {
                 // Form normal equations: A^T * A * x = A^T * b
-                math_Matrix aAtA = new(aColLower, aColUpper, aColLower, aColUpper, 0.0);
-                math_Vector aAtb = new(aColLower, aColUpper, 0.0);
+                Matrix atA = new(colLower, colUpper, colLower, colUpper, 0.0);
+                math_Vector atb = new(colLower, colUpper, 0.0);
 
                 // Compute A^T * A
-                for (int i = aColLower; i <= aColUpper; ++i)
+                for (int i = colLower; i <= colUpper; ++i)
                 {
-                    for (int j = aColLower; j <= aColUpper; ++j)
+                    for (int j = colLower; j <= colUpper; ++j)
                     {
-                        double aSum = 0.0;
-                        for (int k = aRowLower; k <= aRowUpper; ++k)
+                        double sum = 0.0;
+                        for (int k = rowLower; k <= rowUpper; ++k)
                         {
-                            aSum += theA[k, i] * theA[k, j];
+                            sum += a[k, i] * a[k, j];
                         }
-                        aAtA[i, j] = aSum;
+                        atA[i, j] = sum;
                     }
                 }
 
                 // Compute A^T * b
-                for (int i = aColLower; i <= aColUpper; ++i)
+                for (int i = colLower; i <= colUpper; ++i)
                 {
-                    double aSum = 0.0;
-                    for (int k = aRowLower; k <= aRowUpper; ++k)
+                    double sum = 0.0;
+                    for (int k = rowLower; k <= rowUpper; ++k)
                     {
-                        aSum += theA[k, i] * theB[theB.Lower() + k - aRowLower];
+                        sum += a[k, i] * b[b.Lower() + k - rowLower];
                     }
-                    aAtb[i] = aSum;
+                    atb[i] = sum;
                 }
 
                 // Solve the normal equations
-                aLinResult = Solve(aAtA, aAtb, theTolerance);
-                aResult.Rank = (aLinResult.IsDone()) ? aN : 0;
+                linResult = Solve(atA, atb, tolerance);
+                result.Rank = (linResult.IsDone) ? n : 0;
             }
             break;
 
             case LeastSquaresMethod.QR:
             {
-                aLinResult = SolveQR(theA, theB, theTolerance);
-                if (aLinResult.IsDone())
+                linResult = SolveQR(a, b, tolerance);
+                if (linResult.IsDone)
                 {
                     // Estimate rank from QR (not exact)
-                    aResult.Rank = aN;
+                    result.Rank = n;
                 }
             }
             break;
 
             case LeastSquaresMethod.SVD:
             {
-                aLinResult = SolveSVD(theA, theB, theTolerance);
-                if (aLinResult.IsDone())
+                linResult = SolveSVD(a, b, tolerance);
+                if (linResult.IsDone)
                 {
                     // Get rank from SVD
-                    SVDResult aSVD = SVD(theA, theTolerance);
-                    aResult.Rank = aSVD.IsDone() ? aSVD.Rank : 0;
+                    SVDResult svd = SVD(a, tolerance);
+                    result.Rank = svd.IsDone ? svd.Rank : 0;
                 }
             }
             break;
         }
 
-        if (!aLinResult.IsDone())
+        if (!linResult.IsDone)
         {
-            aResult.Status = aLinResult.Status;
-            return aResult;
+            result.Status = linResult.Status;
+            return result;
         }
 
-        aResult.Solution = aLinResult.Solution;
+        result.Solution = linResult.Solution;
 
         // Compute residual ||Ax - b||_2
-        math_Vector aX = aResult.Solution!;
-        double aResidualSq = 0.0;
+        math_Vector x = result.Solution!;
+        double residualSq = 0.0;
 
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            double aAxi = 0.0;
-            for (int j = aColLower; j <= aColUpper; ++j)
+            double axi = 0.0;
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aAxi += theA[i, j] * aX[j];
+                axi += a[i, j] * x[j];
             }
-            double aRi = aAxi - theB[theB.Lower() + i - aRowLower];
-            aResidualSq += aRi * aRi;
+            double ri = axi - b[b.Lower() + i - rowLower];
+            residualSq += ri * ri;
         }
 
-        aResult.ResidualSq = aResidualSq;
-        aResult.Residual = Math.Sqrt(aResidualSq);
-        aResult.Status = Status.OK;
-        return aResult;
+        result.ResidualSq = residualSq;
+        result.Residual = Math.Sqrt(residualSq);
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Weighted least squares: minimize sum of w_i * (a_i^T * x - b_i)^2, weights positive.</summary>
-    public static LeastSquaresResult WeightedLeastSquares(math_Matrix theA,
-                                                          math_Vector theB,
-                                                          math_Vector theW,
-                                                          LeastSquaresMethod theMethod = LeastSquaresMethod.QR,
-                                                          double theTolerance = 1.0e-15)
+    public static LeastSquaresResult WeightedLeastSquares(Matrix a,
+                                                          math_Vector b,
+                                                          math_Vector w,
+                                                          LeastSquaresMethod method = LeastSquaresMethod.QR,
+                                                          double tolerance = 1.0e-15)
     {
-        LeastSquaresResult aResult = new();
+        LeastSquaresResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aM || theW.Length() != aM)
+        if (b.Length() != m || w.Length() != m)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Check weights are positive
-        for (int i = theW.Lower(); i <= theW.Upper(); ++i)
+        for (int i = w.Lower(); i <= w.Upper(); ++i)
         {
-            if (theW[i] <= 0.0)
+            if (w[i] <= 0.0)
             {
-                aResult.Status = Status.InvalidInput;
-                return aResult;
+                result.Status = Status.InvalidInput;
+                return result;
             }
         }
 
         // Apply weights: A' = W^{1/2} * A, b' = W^{1/2} * b
-        math_Matrix aWA = new(aRowLower, aRowUpper, aColLower, aColUpper);
-        math_Vector aWB = new(theB.Lower(), theB.Upper());
+        Matrix wa = new(rowLower, rowUpper, colLower, colUpper);
+        math_Vector wb = new(b.Lower(), b.Upper());
 
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            double aSqrtW = Math.Sqrt(theW[theW.Lower() + i - aRowLower]);
-            for (int j = aColLower; j <= aColUpper; ++j)
+            double sqrtW = Math.Sqrt(w[w.Lower() + i - rowLower]);
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aWA[i, j] = aSqrtW * theA[i, j];
+                wa[i, j] = sqrtW * a[i, j];
             }
-            aWB[theB.Lower() + i - aRowLower] = aSqrtW * theB[theB.Lower() + i - aRowLower];
+            wb[b.Lower() + i - rowLower] = sqrtW * b[b.Lower() + i - rowLower];
         }
 
         // Solve weighted system
-        return LeastSquares(aWA, aWB, theMethod, theTolerance);
+        return LeastSquares(wa, wb, method, tolerance);
     }
 
     /// <summary>
     /// Regularized (Tikhonov/ridge) least squares: minimize ||Ax - b||_2^2 + lambda*||x||_2^2 through the normal
     /// equations (A^T*A + lambda*I) x = A^T*b.
     /// </summary>
-    public static LeastSquaresResult RegularizedLeastSquares(math_Matrix theA,
-                                                             math_Vector theB,
-                                                             double theLambda,
-                                                             double theTolerance = 1.0e-15)
+    public static LeastSquaresResult RegularizedLeastSquares(Matrix a,
+                                                             math_Vector b,
+                                                             double lambda,
+                                                             double tolerance = 1.0e-15)
     {
-        LeastSquaresResult aResult = new();
+        LeastSquaresResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1;
-        int aN = aColUpper - aColLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1;
+        int n = colUpper - colLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aM)
+        if (b.Length() != m)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        if (theLambda < 0.0)
+        if (lambda < 0.0)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Form regularized normal equations: (A^T*A + lambda*I) * x = A^T * b
-        math_Matrix aAtA = new(aColLower, aColUpper, aColLower, aColUpper, 0.0);
-        math_Vector aAtb = new(aColLower, aColUpper, 0.0);
+        Matrix atA = new(colLower, colUpper, colLower, colUpper, 0.0);
+        math_Vector atb = new(colLower, colUpper, 0.0);
 
         // Compute A^T * A + lambda*I
-        for (int i = aColLower; i <= aColUpper; ++i)
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            for (int j = aColLower; j <= aColUpper; ++j)
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                double aSum = 0.0;
-                for (int k = aRowLower; k <= aRowUpper; ++k)
+                double sum = 0.0;
+                for (int k = rowLower; k <= rowUpper; ++k)
                 {
-                    aSum += theA[k, i] * theA[k, j];
+                    sum += a[k, i] * a[k, j];
                 }
-                aAtA[i, j] = aSum;
+                atA[i, j] = sum;
             }
             // Add regularization
-            aAtA[i, i] += theLambda;
+            atA[i, i] += lambda;
         }
 
         // Compute A^T * b
-        for (int i = aColLower; i <= aColUpper; ++i)
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            double aSum = 0.0;
-            for (int k = aRowLower; k <= aRowUpper; ++k)
+            double sum = 0.0;
+            for (int k = rowLower; k <= rowUpper; ++k)
             {
-                aSum += theA[k, i] * theB[theB.Lower() + k - aRowLower];
+                sum += a[k, i] * b[b.Lower() + k - rowLower];
             }
-            aAtb[i] = aSum;
+            atb[i] = sum;
         }
 
         // Solve the regularized normal equations
-        LinearResult aLinResult = Solve(aAtA, aAtb, theTolerance);
-        if (!aLinResult.IsDone())
+        LinearResult linResult = Solve(atA, atb, tolerance);
+        if (!linResult.IsDone)
         {
-            aResult.Status = aLinResult.Status;
-            return aResult;
+            result.Status = linResult.Status;
+            return result;
         }
 
-        aResult.Solution = aLinResult.Solution;
-        aResult.Rank = aN;
+        result.Solution = linResult.Solution;
+        result.Rank = n;
 
         // Compute residual
-        math_Vector aX = aResult.Solution!;
-        double aResidualSq = 0.0;
+        math_Vector x = result.Solution!;
+        double residualSq = 0.0;
 
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            double aAxi = 0.0;
-            for (int j = aColLower; j <= aColUpper; ++j)
+            double axi = 0.0;
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aAxi += theA[i, j] * aX[j];
+                axi += a[i, j] * x[j];
             }
-            double aRi = aAxi - theB[theB.Lower() + i - aRowLower];
-            aResidualSq += aRi * aRi;
+            double ri = axi - b[b.Lower() + i - rowLower];
+            residualSq += ri * ri;
         }
 
-        aResult.ResidualSq = aResidualSq;
-        aResult.Residual = Math.Sqrt(aResidualSq);
-        aResult.Status = Status.OK;
-        return aResult;
+        result.ResidualSq = residualSq;
+        result.Residual = Math.Sqrt(residualSq);
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>
     /// "Optimal" regularization parameter over a logarithmic grid of theNbPoints values in
     /// [theLambdaMin, theLambdaMax].
     /// </summary>
-    public static double OptimalRegularization(math_Matrix theA,
-                                               math_Vector theB,
-                                               double theLambdaMin = 1.0e-10,
-                                               double theLambdaMax = 1.0e2,
-                                               int theNbPoints = 20)
+    public static double OptimalRegularization(Matrix a,
+                                               math_Vector b,
+                                               double lambdaMin = 1.0e-10,
+                                               double lambdaMax = 1.0e2,
+                                               int nbPoints = 20)
     {
-        double aBestLambda = theLambdaMin;
-        double aBestScore = double.MaxValue;
+        double bestLambda = lambdaMin;
+        double bestScore = double.MaxValue;
 
         // Logarithmic grid search
-        double aLogMin = Math.Log10(theLambdaMin);
-        double aLogMax = Math.Log10(theLambdaMax);
-        double aLogStep = (aLogMax - aLogMin) / (theNbPoints - 1);
+        double logMin = Math.Log10(lambdaMin);
+        double logMax = Math.Log10(lambdaMax);
+        double logStep = (logMax - logMin) / (nbPoints - 1);
 
         // OCCT: documented as leave-one-out cross-validation, but scores each lambda by the plain residual of the
         // regularized fit, which grows with lambda, so the smallest lambda of the grid is (almost) always chosen.
-        for (int k = 0; k < theNbPoints; ++k)
+        for (int k = 0; k < nbPoints; ++k)
         {
-            double aLambda = Math.Pow(10.0, aLogMin + k * aLogStep);
+            double lambda = Math.Pow(10.0, logMin + k * logStep);
 
-            LeastSquaresResult aResult = RegularizedLeastSquares(theA, theB, aLambda);
-            if (aResult.IsDone() && aResult.ResidualSq is not null)
+            LeastSquaresResult result = RegularizedLeastSquares(a, b, lambda);
+            if (result.IsDone && result.ResidualSq is not null)
             {
-                double aScore = aResult.ResidualSq.Value;
-                if (aScore < aBestScore)
+                double score = result.ResidualSq.Value;
+                if (score < bestScore)
                 {
-                    aBestScore = aScore;
-                    aBestLambda = aLambda;
+                    bestScore = score;
+                    bestLambda = lambda;
                 }
             }
         }
 
-        return aBestLambda;
+        return bestLambda;
     }
 }

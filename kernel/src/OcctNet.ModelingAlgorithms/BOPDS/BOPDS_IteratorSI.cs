@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
 namespace Occt;
 
 /// <summary>
@@ -43,8 +45,8 @@ public class BOPDS_IteratorSI : BOPDS_Iterator
                 continue;
             }
             //
-            Bnd_Box aBoxEx = aSI.Box();
-            aBBTree.Add(i, Bnd_Tools.Bnd2BVH(aBoxEx));
+            Box aBoxEx = aSI.Box();
+            aBBTree.Add(i, Tools.Bnd2BVH(aBoxEx));
         }
 
         aBBTree.Build();
@@ -82,8 +84,8 @@ public class BOPDS_IteratorSI : BOPDS_Iterator
             if (theCheckOBB)
             {
                 // Check intersection of Oriented bounding boxes of the shapes
-                Bnd_OBB anOBB1 = theCtx!.OBB(aSI1.Shape(), theFuzzyValue);
-                Bnd_OBB anOBB2 = theCtx.OBB(aSI2.Shape(), theFuzzyValue);
+                OrientedBox anOBB1 = theCtx!.OBB(aSI1.Shape(), theFuzzyValue);
+                OrientedBox anOBB2 = theCtx.OBB(aSI2.Shape(), theFuzzyValue);
 
                 if (anOBB1.IsOut(anOBB2))
                 {

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
 
@@ -25,7 +26,7 @@ public sealed partial class GccAna_Circ2d2TanOn
     /// <summary>The circles tangent to two circles with their centre on a circle.</summary>
     public GccAna_Circ2d2TanOn(in GccEnt_QualifiedCirc Qualified1,
                                in GccEnt_QualifiedCirc Qualified2,
-                               in gp_Circ2d OnCirc,
+                               in Circle2D OnCirc,
                                double Tolerance)
         : this(8)
     {
@@ -41,13 +42,13 @@ public sealed partial class GccAna_Circ2d2TanOn
             throw new GccEnt_BadQualifier();
         }
         double Tol = Math.Abs(Tolerance);
-        gp_Circ2d C1 = Qualified1.Qualified();
-        gp_Circ2d C2 = Qualified2.Qualified();
-        gp_Dir2d dirx = new(gp_Dir2d.D.X);
+        Circle2D C1 = Qualified1.Qualified();
+        Circle2D C2 = Qualified2.Qualified();
+        Direction2D dirx = new(Direction2D.D.X);
         NCollection_Array1<double> Radius = new(1, 2);
         NCollection_Array1<double> Rradius = new(1, 2);
-        gp_Pnt2d center1 = C1.Location();
-        gp_Pnt2d center2 = C2.Location();
+        Point2D center1 = C1.Location();
+        Point2D center2 = C2.Location();
 
         double R1 = C1.Radius();
         double R2 = C2.Radius();
@@ -60,8 +61,8 @@ public sealed partial class GccAna_Circ2d2TanOn
         int nbsol2 = 0;
         double Ron = OnCirc.Radius();
         double distcco = OnCirc.Location().Distance(center1);
-        gp_Dir2d dircc = new(OnCirc.Location().XY() - center1.XY());
-        gp_Pnt2d pinterm = new(center1.XY() + (distcco - Ron) * dircc.XY());
+        Direction2D dircc = new(OnCirc.Location().XY() - center1.XY());
+        Point2D pinterm = new(center1.XY() + (distcco - Ron) * dircc.XY());
         double distcc2 = pinterm.Distance(center2);
         double distcc1 = pinterm.Distance(center1);
         double d1 = Math.Abs(distcc2 - R2 - Math.Abs(distcc1 - R1));
@@ -70,7 +71,7 @@ public sealed partial class GccAna_Circ2d2TanOn
         double d4 = Math.Abs(distcc2 + R2 - (distcc1 + R1));
         if (d1 > Tol || d2 > Tol || d3 > Tol || d4 > Tol)
         {
-            pinterm = new gp_Pnt2d(center1.XY() + (distcco + Ron) * dircc.XY());
+            pinterm = new Point2D(center1.XY() + (distcco + Ron) * dircc.XY());
             distcc2 = pinterm.Distance(center2);
             distcc1 = pinterm.Distance(center1);
             d1 = Math.Abs(distcc2 - R2 - Math.Abs(distcc1 - R1));
@@ -124,10 +125,10 @@ public sealed partial class GccAna_Circ2d2TanOn
                     {
                         WellDone = true;
                         NbrSol++;
-                        cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(pinterm, dirx), Radius[i]);
+                        cirsol[NbrSol] = new Circle2D(new Axis2D(pinterm, dirx), Radius[i]);
                         //        ===========================================================
-                        gp_Dir2d dc1 = new(center1.XY() - pinterm.XY());
-                        gp_Dir2d dc2 = new(center2.XY() - pinterm.XY());
+                        Direction2D dc1 = new(center1.XY() - pinterm.XY());
+                        Direction2D dc2 = new(center2.XY() - pinterm.XY());
                         distcc1 = pinterm.Distance(center1);
                         distcc2 = pinterm.Distance(center2);
                         if (!Qualified1.IsUnqualified())
@@ -162,14 +163,14 @@ public sealed partial class GccAna_Circ2d2TanOn
                         {
                             qualifier2[NbrSol] = GccEnt_enclosing;
                         }
-                        pnttg1sol[NbrSol] = new gp_Pnt2d(pinterm.XY() + Radius[i] * dc1.XY());
-                        pnttg2sol[NbrSol] = new gp_Pnt2d(pinterm.XY() + Radius[i] * dc2.XY());
+                        pnttg1sol[NbrSol] = new Point2D(pinterm.XY() + Radius[i] * dc1.XY());
+                        pnttg2sol[NbrSol] = new Point2D(pinterm.XY() + Radius[i] * dc2.XY());
                         pntcen[NbrSol] = cirsol[NbrSol].Location();
-                        par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                        pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-                        par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                        pararg2[NbrSol] = ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
-                        parcen3[NbrSol] = ElCLib.Parameter(OnCirc, pntcen[NbrSol]);
+                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                        pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                        pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
+                        parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnCirc, pntcen[NbrSol]);
                     }
                 }
             }
@@ -216,7 +217,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                     {
                         for (int j = 1; j <= Intp.NbPoints(); j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double dist1 = Center.Distance(center1);
                             double dist2 = Center.Distance(center2);
                             int nbsol = 0;
@@ -297,7 +298,7 @@ public sealed partial class GccAna_Circ2d2TanOn
                                 for (int k = 1; k <= nnsol; k++)
                                 {
                                     NbrSol++;
-                                    cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius[k]);
+                                    cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius[k]);
                                     //              ==========================================================
                                     distcc1 = Center.Distance(center1);
                                     distcc2 = Center.Distance(center2);
@@ -341,10 +342,10 @@ public sealed partial class GccAna_Circ2d2TanOn
                                     else
                                     {
                                         TheSame1[NbrSol] = 0;
-                                        gp_Dir2d dc1 = new(center1.XY() - Center.XY());
-                                        pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius[k] * dc1.XY());
-                                        par1sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                        pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                        Direction2D dc1 = new(center1.XY() - Center.XY());
+                                        pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc1.XY());
+                                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                        pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                                     }
                                     if (Center.Distance(center2) <= Tolerance
                                         && Math.Abs(Radius[k] - C2.Radius()) <= Tolerance)
@@ -354,13 +355,13 @@ public sealed partial class GccAna_Circ2d2TanOn
                                     else
                                     {
                                         TheSame2[NbrSol] = 0;
-                                        gp_Dir2d dc2 = new(center2.XY() - Center.XY());
-                                        pnttg2sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius[k] * dc2.XY());
-                                        par2sol[NbrSol] = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                        pararg2[NbrSol] = ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
+                                        Direction2D dc2 = new(center2.XY() - Center.XY());
+                                        pnttg2sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc2.XY());
+                                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                        pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
                                     }
                                     pntcen[NbrSol] = Center;
-                                    parcen3[NbrSol] = ElCLib.Parameter(OnCirc, pntcen[NbrSol]);
+                                    parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnCirc, pntcen[NbrSol]);
                                 }
                             }
                         }

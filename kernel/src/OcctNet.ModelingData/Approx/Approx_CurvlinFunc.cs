@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -16,7 +18,7 @@ namespace Occt;
 /// remember the last parameter found (OCCT casts const away to write it). The adaptors are kept as OCCT keeps the
 /// handles; <see cref="Trim"/> replaces them by trimmed adaptors and never changes the caller's.
 /// </remarks>
-public sealed class Approx_CurvlinFunc : Standard_Transient
+public sealed class Approx_CurvlinFunc : Transient
 {
     private Adaptor3d_Curve? myC3D;
     private Adaptor2d_Curve2d? myC2D1;
@@ -72,7 +74,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
         int NbInt = Si.Length() - 1;
         if (NbInt < 3)
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::GetUParameter");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::GetUParameter");
         }
 
         if (NInterval < 1)
@@ -200,12 +202,12 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
         LastU = C.LastParameter();
 
         NbInt = 10;
-        NbIntC3 = C.NbIntervals(GeomAbs_C3);
+        NbIntC3 = C.NbIntervals(C3);
         NCollection_Array1<double> Disc = new(1, NbIntC3 + 1);
 
         if (NbIntC3 > 1)
         {
-            C.Intervals(Disc, GeomAbs_C3);
+            C.Intervals(Disc, C3);
         }
         else
         {
@@ -250,7 +252,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     public double LastParameter() => myLastS;
 
     /// <summary>The number of intervals of continuity S.</summary>
-    public int NbIntervals(GeomAbs_Shape S)
+    public int NbIntervals(Continuity S)
     {
         Adaptor3d_CurveOnSurface CurOnSur = new();
 
@@ -289,7 +291,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     }
 
     /// <summary>Stores in T the curvilinear parameters bounding the intervals of continuity S.</summary>
-    public void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         Adaptor3d_CurveOnSurface CurOnSur = new();
         int i;
@@ -342,7 +344,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     {
         if (First < 0 || Last > 1)
         {
-            throw new Standard_OutOfRange("Approx_CurvlinFunc::Trim");
+            throw new OutOfRangeException("Approx_CurvlinFunc::Trim");
         }
         if ((Last - First) < Tol)
         {
@@ -487,7 +489,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
         NCollection_HArray1<double> InitUArray, InitSArray;
         if (S < 0 || S > 1)
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::GetUParameter");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::GetUParameter");
         }
 
         if (NumberOfCurve == 1)
@@ -568,11 +570,11 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     {
         if (myCase != 1)
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::EvalCase1");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::EvalCase1");
         }
 
-        gp_Pnt C;
-        gp_Vec dC_dU, dC_dS, d2C_dU2, d2C_dS2;
+        Point3D C;
+        Vector3D dC_dU, dC_dS, d2C_dU2, d2C_dS2;
         double U, Mag, dU_dS, d2U_dS2;
 
         U = GetUParameter(myC3D!, S, 1);
@@ -622,7 +624,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     {
         if (myCase != 2)
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::EvalCase2");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::EvalCase2");
         }
 
         bool Done;
@@ -640,7 +642,7 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
     {
         if (myCase != 3)
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::EvalCase3");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::EvalCase3");
         }
 
         NCollection_Array1<double> tmpRes1 = new(0, 4), tmpRes2 = new(0, 4);
@@ -692,14 +694,14 @@ public sealed class Approx_CurvlinFunc : Standard_Transient
         }
         else
         {
-            throw new Standard_ConstructionError("Approx_CurvlinFunc::EvalCurOnSur");
+            throw new ConstructionErrorException("Approx_CurvlinFunc::EvalCurOnSur");
         }
 
         double Mag, dU_dS, d2U_dS2, dV_dU, dW_dU, dV_dS, dW_dS, d2V_dS2, d2W_dS2, d2V_dU2, d2W_dU2;
-        gp_Pnt2d C2D;
-        gp_Pnt C;
-        gp_Vec2d dC2D_dU, d2C2D_dU2;
-        gp_Vec dC_dU, d2C_dU2, dC_dS, d2C_dS2, dS_dV, dS_dW, d2S_dV2, d2S_dW2, d2S_dVdW;
+        Point2D C2D;
+        Point3D C;
+        Vector2D dC2D_dU, d2C2D_dU2;
+        Vector3D dC_dU, d2C_dU2, dC_dS, d2C_dS2, dS_dV, dS_dW, d2S_dV2, d2S_dW2, d2S_dVdW;
 
         switch (Order)
         {

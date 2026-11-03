@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Integration;
 
 /// <summary>Gauss-Kronrod quadrature with embedded error estimation.</summary>
 public static partial class MathInteg
@@ -21,127 +22,127 @@ public static partial class MathInteg
         {
         }
 
-        public KronrodConfig(double theTolerance, int theMaxIter = 100)
-            : base(theTolerance, theMaxIter)
+        public KronrodConfig(double tolerance, int maxIter = 100)
+            : base(tolerance, maxIter)
         {
         }
 
-        public KronrodConfig(KronrodConfig theOther)
-            : base(theOther)
+        public KronrodConfig(KronrodConfig other)
+            : base(other)
         {
-            NbGaussPoints = theOther.NbGaussPoints;
-            Adaptive = theOther.Adaptive;
+            NbGaussPoints = other.NbGaussPoints;
+            Adaptive = other.Adaptive;
         }
     }
 
     /// <summary>
     /// One application of the (2n+1)-point Gauss-Kronrod rule (n = theNbGauss), with the QUADPACK error estimate.
     /// </summary>
-    public static IntegResult KronrodRule<Function>(Function theFunc, double theLower, double theUpper, int theNbGauss = 7)
+    public static IntegResult KronrodRule<Function>(Function func, double lower, double upper, int nbGauss = 7)
         where Function : IScalarFunction
     {
-        IntegResult aResult = new();
+        IntegResult result = new();
 
-        int aNbKronrod = 2 * theNbGauss + 1;
+        int nbKronrod = 2 * nbGauss + 1;
 
-        math_Vector aGaussP = new(1, theNbGauss);
-        math_Vector aGaussW = new(1, theNbGauss);
-        math_Vector aKronrodP = new(1, aNbKronrod);
-        math_Vector aKronrodW = new(1, aNbKronrod);
+        math_Vector gaussP = new(1, nbGauss);
+        math_Vector gaussW = new(1, nbGauss);
+        math_Vector kronrodP = new(1, nbKronrod);
+        math_Vector kronrodW = new(1, nbKronrod);
 
-        if (!GetKronrodPointsAndWeights(aNbKronrod, aKronrodP, aKronrodW)
-            || !GetOrderedGaussPointsAndWeights(theNbGauss, aGaussP, aGaussW))
+        if (!GetKronrodPointsAndWeights(nbKronrod, kronrodP, kronrodW)
+            || !GetOrderedGaussPointsAndWeights(nbGauss, gaussP, gaussW))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
-        double aHalfLen = 0.5 * (theUpper - theLower);
-        double aMid = 0.5 * (theUpper + theLower);
+        double halfLen = 0.5 * (upper - lower);
+        double mid = 0.5 * (upper + lower);
 
-        int aNPnt2 = (aNbKronrod + 1) / 2;
+        int nPnt2 = (nbKronrod + 1) / 2;
 
-        double aGaussVal = 0.0;
-        double aKronrodVal = 0.0;
+        double gaussVal = 0.0;
+        double kronrodVal = 0.0;
 
-        math_Vector aF1 = new(0, aNPnt2 - 1);
-        math_Vector aF2 = new(0, aNPnt2 - 1);
+        math_Vector f1 = new(0, nPnt2 - 1);
+        math_Vector f2 = new(0, nPnt2 - 1);
 
-        for (int i = 2; i < aNPnt2; i += 2)
+        for (int i = 2; i < nPnt2; i += 2)
         {
-            double aDx = aHalfLen * aKronrodP[i];
-            double aVal1 = 0.0, aVal2 = 0.0;
+            double dx = halfLen * kronrodP[i];
+            double val1 = 0.0, val2 = 0.0;
 
-            if (!theFunc.Value(aMid + aDx, out aVal1) || !theFunc.Value(aMid - aDx, out aVal2))
+            if (!func.Value(mid + dx, out val1) || !func.Value(mid - dx, out val2))
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
 
-            aF1[i] = aVal1;
-            aF2[i] = aVal2;
-            aGaussVal += (aVal1 + aVal2) * aGaussW[i / 2];
-            aKronrodVal += (aVal1 + aVal2) * aKronrodW[i];
+            f1[i] = val1;
+            f2[i] = val2;
+            gaussVal += (val1 + val2) * gaussW[i / 2];
+            kronrodVal += (val1 + val2) * kronrodW[i];
         }
 
-        if (!theFunc.Value(aMid, out double aFc))
+        if (!func.Value(mid, out double fc))
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
-        aKronrodVal += aFc * aKronrodW[aNPnt2];
+        kronrodVal += fc * kronrodW[nPnt2];
 
-        if (aNPnt2 % 2 == 0)
+        if (nPnt2 % 2 == 0)
         {
-            aGaussVal += aFc * aGaussW[aNPnt2 / 2];
+            gaussVal += fc * gaussW[nPnt2 / 2];
         }
 
-        for (int i = 1; i < aNPnt2; i += 2)
+        for (int i = 1; i < nPnt2; i += 2)
         {
-            double aDx = aHalfLen * aKronrodP[i];
-            double aVal1 = 0.0, aVal2 = 0.0;
+            double dx = halfLen * kronrodP[i];
+            double val1 = 0.0, val2 = 0.0;
 
-            if (!theFunc.Value(aMid + aDx, out aVal1) || !theFunc.Value(aMid - aDx, out aVal2))
+            if (!func.Value(mid + dx, out val1) || !func.Value(mid - dx, out val2))
             {
-                aResult.Status = Status.NumericalError;
-                return aResult;
+                result.Status = Status.NumericalError;
+                return result;
             }
 
-            aF1[i] = aVal1;
-            aF2[i] = aVal2;
-            aKronrodVal += (aVal1 + aVal2) * aKronrodW[i];
+            f1[i] = val1;
+            f2[i] = val2;
+            kronrodVal += (val1 + val2) * kronrodW[i];
         }
 
-        double aMean = 0.5 * aKronrodVal;
-        double aAsc = Math.Abs(aFc - aMean) * aKronrodW[aNPnt2];
-        for (int i = 1; i < aNPnt2; ++i)
+        double mean = 0.5 * kronrodVal;
+        double asc = Math.Abs(fc - mean) * kronrodW[nPnt2];
+        for (int i = 1; i < nPnt2; ++i)
         {
-            aAsc += aKronrodW[i] * (Math.Abs(aF1[i] - aMean) + Math.Abs(aF2[i] - aMean));
+            asc += kronrodW[i] * (Math.Abs(f1[i] - mean) + Math.Abs(f2[i] - mean));
         }
 
-        aAsc *= aHalfLen;
-        aKronrodVal *= aHalfLen;
-        aGaussVal *= aHalfLen;
+        asc *= halfLen;
+        kronrodVal *= halfLen;
+        gaussVal *= halfLen;
 
-        double aAbsError = Math.Abs(aKronrodVal - aGaussVal);
+        double absError = Math.Abs(kronrodVal - gaussVal);
 
-        if (aAsc != 0.0 && aAbsError != 0.0)
+        if (asc != 0.0 && absError != 0.0)
         {
-            double aScale = Math.Pow(200.0 * aAbsError / aAsc, 1.5);
-            if (aScale < 1.0)
+            double scale = Math.Pow(200.0 * absError / asc, 1.5);
+            if (scale < 1.0)
             {
-                aAbsError = Min(aAbsError, aAsc * aScale);
+                absError = Min(absError, asc * scale);
             }
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aKronrodVal;
-        aResult.AbsoluteError = aAbsError;
-        aResult.RelativeError = aAbsError / Max(Math.Abs(aKronrodVal), 1.0e-15);
-        aResult.NbPoints = aNbKronrod;
-        aResult.NbIterations = 1;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = kronrodVal;
+        result.AbsoluteError = absError;
+        result.RelativeError = absError / Max(Math.Abs(kronrodVal), 1.0e-15);
+        result.NbPoints = nbKronrod;
+        result.NbIterations = 1;
+        return result;
     }
 
     /// <summary>An interval of the adaptive Kronrod subdivision (a local struct in C++).</summary>
@@ -152,12 +153,12 @@ public static partial class MathInteg
         public double Value;
         public double Error;
 
-        public KronrodInterval(double theLower, double theUpper, double theValue, double theError)
+        public KronrodInterval(double lower, double upper, double value, double error)
         {
-            Lower = theLower;
-            Upper = theUpper;
-            Value = theValue;
-            Error = theError;
+            Lower = lower;
+            Upper = upper;
+            Value = value;
+            Error = error;
         }
     }
 
@@ -165,209 +166,209 @@ public static partial class MathInteg
     /// Adaptive Gauss-Kronrod integration: bisects the interval with the largest error estimate until the total
     /// error is within Tolerance or MaxIterations is reached. Without Adaptive, one KronrodRule.
     /// </summary>
-    public static IntegResult Kronrod<Function>(Function theFunc, double theLower, double theUpper, KronrodConfig? theConfig = null)
+    public static IntegResult Kronrod<Function>(Function func, double lower, double upper, KronrodConfig? config = null)
         where Function : IScalarFunction
     {
-        theConfig ??= new KronrodConfig();
-        IntegResult aResult = new();
+        config ??= new KronrodConfig();
+        IntegResult result = new();
 
-        if (!theConfig.Adaptive)
+        if (!config.Adaptive)
         {
-            return KronrodRule(theFunc, theLower, theUpper, theConfig.NbGaussPoints);
+            return KronrodRule(func, lower, upper, config.NbGaussPoints);
         }
 
-        IntegResult anInitResult = KronrodRule(theFunc, theLower, theUpper, theConfig.NbGaussPoints);
-        if (!anInitResult.IsDone())
+        IntegResult initResult = KronrodRule(func, lower, upper, config.NbGaussPoints);
+        if (!initResult.IsDone)
         {
-            return anInitResult;
+            return initResult;
         }
 
-        NCollection_DynamicArray<KronrodInterval> aHeap = new();
-        aHeap.Append(new KronrodInterval(theLower, theUpper, anInitResult.Value!.Value, anInitResult.AbsoluteError!.Value));
+        NCollection_DynamicArray<KronrodInterval> heap = new();
+        heap.Append(new KronrodInterval(lower, upper, initResult.Value!.Value, initResult.AbsoluteError!.Value));
 
-        double aTotalValue = anInitResult.Value.Value;
-        double aTotalError = anInitResult.AbsoluteError.Value;
-        int aTotalPoints = anInitResult.NbPoints;
-        int aIterations = 1;
+        double totalValue = initResult.Value.Value;
+        double totalError = initResult.AbsoluteError.Value;
+        int totalPoints = initResult.NbPoints;
+        int iterations = 1;
 
-        while (aIterations < theConfig.MaxIterations)
+        while (iterations < config.MaxIterations)
         {
-            if (aTotalError < theConfig.Tolerance * Max(Math.Abs(aTotalValue), 1.0e-15))
+            if (totalError < config.Tolerance * Max(Math.Abs(totalValue), 1.0e-15))
             {
                 break;
             }
 
-            int aMaxIdx = 0;
-            double aMaxError = 0.0;
-            for (int i = 0; i < aHeap.Length(); ++i)
+            int maxIdx = 0;
+            double maxError = 0.0;
+            for (int i = 0; i < heap.Length(); ++i)
             {
-                if (aHeap.Value(i).Error > aMaxError)
+                if (heap.Value(i).Error > maxError)
                 {
-                    aMaxError = aHeap.Value(i).Error;
-                    aMaxIdx = i;
+                    maxError = heap.Value(i).Error;
+                    maxIdx = i;
                 }
             }
 
-            if (aMaxError < MathUtils.THE_ZERO_TOL)
+            if (maxError < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
                 break; // No more refinement needed
             }
 
-            KronrodInterval aWorst = aHeap.Value(aMaxIdx);
-            double aBisMid = 0.5 * (aWorst.Lower + aWorst.Upper);
+            KronrodInterval worst = heap.Value(maxIdx);
+            double bisMid = 0.5 * (worst.Lower + worst.Upper);
 
-            IntegResult aLeftResult = KronrodRule(theFunc, aWorst.Lower, aBisMid, theConfig.NbGaussPoints);
-            IntegResult aRightResult = KronrodRule(theFunc, aBisMid, aWorst.Upper, theConfig.NbGaussPoints);
+            IntegResult leftResult = KronrodRule(func, worst.Lower, bisMid, config.NbGaussPoints);
+            IntegResult rightResult = KronrodRule(func, bisMid, worst.Upper, config.NbGaussPoints);
 
-            if (!aLeftResult.IsDone() || !aRightResult.IsDone())
+            if (!leftResult.IsDone || !rightResult.IsDone)
             {
-                aResult.Status = Status.NumericalError;
-                aResult.Value = aTotalValue;
-                aResult.AbsoluteError = aTotalError;
-                aResult.NbPoints = aTotalPoints;
-                aResult.NbIterations = aIterations;
-                return aResult;
+                result.Status = Status.NumericalError;
+                result.Value = totalValue;
+                result.AbsoluteError = totalError;
+                result.NbPoints = totalPoints;
+                result.NbIterations = iterations;
+                return result;
             }
 
-            aTotalValue -= aWorst.Value;
-            aTotalError -= aWorst.Error;
-            aTotalValue += aLeftResult.Value!.Value + aRightResult.Value!.Value;
-            aTotalError += aLeftResult.AbsoluteError!.Value + aRightResult.AbsoluteError!.Value;
-            aTotalPoints += aLeftResult.NbPoints + aRightResult.NbPoints;
-            ++aIterations;
+            totalValue -= worst.Value;
+            totalError -= worst.Error;
+            totalValue += leftResult.Value!.Value + rightResult.Value!.Value;
+            totalError += leftResult.AbsoluteError!.Value + rightResult.AbsoluteError!.Value;
+            totalPoints += leftResult.NbPoints + rightResult.NbPoints;
+            ++iterations;
 
-            aHeap.ChangeValue(aMaxIdx) = new KronrodInterval(aWorst.Lower, aBisMid, aLeftResult.Value.Value, aLeftResult.AbsoluteError.Value);
-            aHeap.Append(new KronrodInterval(aBisMid, aWorst.Upper, aRightResult.Value.Value, aRightResult.AbsoluteError.Value));
+            heap.ChangeValue(maxIdx) = new KronrodInterval(worst.Lower, bisMid, leftResult.Value.Value, leftResult.AbsoluteError.Value);
+            heap.Append(new KronrodInterval(bisMid, worst.Upper, rightResult.Value.Value, rightResult.AbsoluteError.Value));
         }
 
-        aResult.Status = Status.OK;
-        aResult.Value = aTotalValue;
-        aResult.AbsoluteError = aTotalError;
-        aResult.RelativeError = aTotalError / Max(Math.Abs(aTotalValue), 1.0e-15);
-        aResult.NbPoints = aTotalPoints;
-        aResult.NbIterations = aIterations;
-        return aResult;
+        result.Status = Status.OK;
+        result.Value = totalValue;
+        result.AbsoluteError = totalError;
+        result.RelativeError = totalError / Max(Math.Abs(totalValue), 1.0e-15);
+        result.NbPoints = totalPoints;
+        result.NbIterations = iterations;
+        return result;
     }
 
     /// <summary>
     /// Kronrod with automatic order selection: tries single rules of 7, 11, ..., theMaxOrder Gauss points and
     /// returns the first within theTolerance, else falls back to adaptive Kronrod.
     /// </summary>
-    public static IntegResult KronrodAuto<Function>(Function theFunc, double theLower, double theUpper,
-                                                    double theTolerance = 1.0e-10, int theMaxOrder = 30)
+    public static IntegResult KronrodAuto<Function>(Function func, double lower, double upper,
+                                                    double tolerance = 1.0e-10, int maxOrder = 30)
         where Function : IScalarFunction
     {
         // aBestResult is kept as in C++, though it is never returned
-        IntegResult aBestResult = new();
-        aBestResult.Status = Status.NotConverged;
+        IntegResult bestResult = new();
+        bestResult.Status = Status.NotConverged;
 
-        for (int aOrder = 7; aOrder <= theMaxOrder; aOrder += 4)
+        for (int order = 7; order <= maxOrder; order += 4)
         {
-            IntegResult aResult = KronrodRule(theFunc, theLower, theUpper, aOrder);
-            if (!aResult.IsDone())
+            IntegResult result = KronrodRule(func, lower, upper, order);
+            if (!result.IsDone)
             {
                 continue;
             }
 
-            aBestResult = aResult;
+            bestResult = result;
 
-            if (aResult.RelativeError.HasValue && aResult.RelativeError.Value < theTolerance)
+            if (result.RelativeError.HasValue && result.RelativeError.Value < tolerance)
             {
-                return aResult;
+                return result;
             }
         }
 
-        KronrodConfig aConfig = new();
-        aConfig.Tolerance = theTolerance;
-        aConfig.NbGaussPoints = 7;
-        aConfig.Adaptive = true;
-        aConfig.MaxIterations = 50;
+        KronrodConfig config = new();
+        config.Tolerance = tolerance;
+        config.NbGaussPoints = 7;
+        config.Adaptive = true;
+        config.MaxIterations = 50;
 
-        return Kronrod(theFunc, theLower, theUpper, aConfig);
+        return Kronrod(func, lower, upper, config);
     }
 
     /// <summary>f(a + t/(1-t)) / (1-t)^2 on [0, 1): the integrand of KronrodSemiInfinite (a local class in C++).</summary>
     private struct KronrodSemiInfiniteFunc<Function> : IScalarFunction
         where Function : IScalarFunction
     {
-        private Function myFunc;
-        private readonly double myA;
+        private Function _func;
+        private readonly double _a;
 
-        public KronrodSemiInfiniteFunc(Function theF, double theA)
+        public KronrodSemiInfiniteFunc(Function f, double a)
         {
-            myFunc = theF;
-            myA = theA;
+            _func = f;
+            _a = a;
         }
 
-        public bool Value(double theT, out double theF)
+        public bool Value(double t, out double f)
         {
-            if (theT >= 1.0)
+            if (t >= 1.0)
             {
-                theF = 0.0;
+                f = 0.0;
                 return true;
             }
 
-            double aX = myA + theT / (1.0 - theT);
-            double aJacob = 1.0 / MathUtils.Sqr(1.0 - theT);
+            double x = _a + t / (1.0 - t);
+            double jacob = 1.0 / global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(1.0 - t);
 
-            theF = 0.0;
-            if (!myFunc.Value(aX, out double aFx))
+            f = 0.0;
+            if (!_func.Value(x, out double fx))
             {
                 return false;
             }
 
-            theF = aFx * aJacob;
+            f = fx * jacob;
             return true;
         }
     }
 
     /// <summary>Kronrod integration over [theLower, +infinity) by the substitution x = a + t/(1-t).</summary>
-    public static IntegResult KronrodSemiInfinite<Function>(Function theFunc, double theLower, KronrodConfig? theConfig = null)
+    public static IntegResult KronrodSemiInfinite<Function>(Function func, double lower, KronrodConfig? config = null)
         where Function : IScalarFunction
     {
-        KronrodSemiInfiniteFunc<Function> aTransformed = new(theFunc, theLower);
-        return Kronrod(aTransformed, 0.0, 1.0, theConfig);
+        KronrodSemiInfiniteFunc<Function> transformed = new(func, lower);
+        return Kronrod(transformed, 0.0, 1.0, config);
     }
 
     /// <summary>f(t/(1-t^2)) (1+t^2)/(1-t^2)^2 on (-1, 1): the integrand of KronrodInfinite (a local class in C++).</summary>
     private struct KronrodInfiniteFunc<Function> : IScalarFunction
         where Function : IScalarFunction
     {
-        private Function myFunc;
+        private Function _func;
 
-        public KronrodInfiniteFunc(Function theF)
+        public KronrodInfiniteFunc(Function f)
         {
-            myFunc = theF;
+            _func = f;
         }
 
-        public bool Value(double theT, out double theF)
+        public bool Value(double t, out double f)
         {
-            if (Math.Abs(theT) >= 1.0)
+            if (Math.Abs(t) >= 1.0)
             {
-                theF = 0.0;
+                f = 0.0;
                 return true;
             }
 
-            double aT2 = theT * theT;
-            double aX = theT / (1.0 - aT2);
-            double aJacob = (1.0 + aT2) / MathUtils.Sqr(1.0 - aT2);
+            double t2 = t * t;
+            double x = t / (1.0 - t2);
+            double jacob = (1.0 + t2) / global::Kerf.Engine.Numerics.Utilities.MathUtils.Sqr(1.0 - t2);
 
-            theF = 0.0;
-            if (!myFunc.Value(aX, out double aFx))
+            f = 0.0;
+            if (!_func.Value(x, out double fx))
             {
                 return false;
             }
 
-            theF = aFx * aJacob;
+            f = fx * jacob;
             return true;
         }
     }
 
     /// <summary>Kronrod integration over (-infinity, +infinity) by the substitution x = t/(1-t^2).</summary>
-    public static IntegResult KronrodInfinite<Function>(Function theFunc, KronrodConfig? theConfig = null)
+    public static IntegResult KronrodInfinite<Function>(Function func, KronrodConfig? config = null)
         where Function : IScalarFunction
     {
-        KronrodInfiniteFunc<Function> aTransformed = new(theFunc);
-        return Kronrod(aTransformed, -1.0, 1.0, theConfig);
+        KronrodInfiniteFunc<Function> transformed = new(func);
+        return Kronrod(transformed, -1.0, 1.0, config);
     }
 }

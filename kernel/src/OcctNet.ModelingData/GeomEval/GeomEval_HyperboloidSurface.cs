@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +21,7 @@ namespace Occt;
 /// implicit equation <c>X^2/R2^2 + Y^2/R2^2 - Z^2/R1^2 = -1</c>.</item>
 /// </list>
 /// u in [0, 2*Pi] (periodic, closed), v in (-inf, +inf). Reversal, transformation and iso curves are not
-/// supported (they throw <see cref="Standard_NotImplemented"/>).
+/// supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
 public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
 {
@@ -34,8 +40,8 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
     private SheetMode myMode;
 
     /// <summary>Creates a hyperboloid with the given local coordinate system, radii and sheet mode.</summary>
-    /// <exception cref="Standard_ConstructionError">theR1 &lt;= 0 or theR2 &lt;= 0.</exception>
-    public GeomEval_HyperboloidSurface(in gp_Ax3 thePosition, double theR1, double theR2,
+    /// <exception cref="ConstructionErrorException">theR1 &lt;= 0 or theR2 &lt;= 0.</exception>
+    public GeomEval_HyperboloidSurface(in CoordinateSystem thePosition, double theR1, double theR2,
                                        SheetMode theMode = SheetMode.OneSheet)
     {
         myR1 = theR1;
@@ -43,7 +49,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         myMode = theMode;
         if (theR1 <= 0.0 || theR2 <= 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = thePosition;
     }
@@ -57,24 +63,24 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
     /// <summary>The sheet mode.</summary>
     public SheetMode Mode() => myMode;
 
-    /// <exception cref="Standard_ConstructionError">theR1 &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theR1 &lt;= 0.</exception>
     internal void SetR1(double theR1)
     {
         CheckMutable();
         if (theR1 <= 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myR1 = theR1;
     }
 
-    /// <exception cref="Standard_ConstructionError">theR2 &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theR2 &lt;= 0.</exception>
     internal void SetR2(double theR2)
     {
         CheckMutable();
         if (theR2 <= 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myR2 = theR2;
     }
@@ -86,7 +92,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy with the radius R1 set to theR1.</summary>
-    /// <exception cref="Standard_ConstructionError">theR1 &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theR1 &lt;= 0.</exception>
     public GeomEval_HyperboloidSurface WithR1(double theR1)
     {
         GeomEval_HyperboloidSurface aCopy = (GeomEval_HyperboloidSurface)Copy();
@@ -95,7 +101,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy with the radius R2 set to theR2.</summary>
-    /// <exception cref="Standard_ConstructionError">theR2 &lt;= 0.</exception>
+    /// <exception cref="ConstructionErrorException">theR2 &lt;= 0.</exception>
     public GeomEval_HyperboloidSurface WithR2(double theR2)
     {
         GeomEval_HyperboloidSurface aCopy = (GeomEval_HyperboloidSurface)Copy();
@@ -111,30 +117,30 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         return aCopy;
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void UReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::UReverse");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::UReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::VReverse");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::VReverse");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double UReversedParameter(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::UReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::UReversedParameter");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double VReversedParameter(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::VReversedParameter");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::VReversedParameter");
     }
 
     /// <summary>U in [0, 2*Pi], V in [-Precision::Infinite(), Precision::Infinite()].</summary>
@@ -142,8 +148,8 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
     {
         U1 = 0.0;
         U2 = 2.0 * M_PI;
-        V1 = -Precision.Infinite();
-        V2 = Precision.Infinite();
+        V1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        V2 = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>True: the hyperboloid is closed in U (period 2*Pi).</summary>
@@ -156,31 +162,31 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
 
     public override bool IsVPeriodic() => false;
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve UIso(double U)
     {
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::UIso");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::UIso");
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Geom_Curve VIso(double V)
     {
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::VIso");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::VIso");
     }
 
-    public override gp_Pnt EvalD0(double U, double V)
+    public override Point3D EvalD0(double U, double V)
     {
         double aCosU = Math.Cos(U);
         double aSinU = Math.Sin(U);
         double aCosH = Math.Cosh(V);
         double aSinH = Math.Sinh(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
-        gp_XYZ aP;
+        Xyz aP;
         if (myMode == SheetMode.OneSheet)
         {
             // P = O + R1*cosh(v)*cos(u)*XD + R1*cosh(v)*sin(u)*YD + R2*sinh(v)*ZD
@@ -191,7 +197,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
             // P = O + R2*sinh(v)*cos(u)*XD + R2*sinh(v)*sin(u)*YD + R1*cosh(v)*ZD
             aP = anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU) + aZD * (myR1 * aCosH);
         }
-        return new gp_Pnt(aP);
+        return new Point3D(aP);
     }
 
     public override ResD1 EvalD1(double U, double V)
@@ -201,31 +207,31 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         double aCosH = Math.Cosh(V);
         double aSinH = Math.Sinh(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD1 aResult;
         if (myMode == SheetMode.OneSheet)
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
                                        + aZD * (myR2 * aSinH));
             // dP/du = R1*cosh(v)*(-sin(u))*XD + R1*cosh(v)*cos(u)*YD
-            aResult.D1U = new gp_Vec(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
             // dP/dv = R1*sinh(v)*cos(u)*XD + R1*sinh(v)*sin(u)*YD + R2*cosh(v)*ZD
             aResult.D1V =
-                new gp_Vec(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
+                new Vector3D(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
         }
         else
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
                                        + aZD * (myR1 * aCosH));
             // dP/du = R2*sinh(v)*(-sin(u))*XD + R2*sinh(v)*cos(u)*YD
-            aResult.D1U = new gp_Vec(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
             // dP/dv = R2*cosh(v)*cos(u)*XD + R2*cosh(v)*sin(u)*YD + R1*sinh(v)*ZD
             aResult.D1V =
-                new gp_Vec(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
+                new Vector3D(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
         }
         return aResult;
     }
@@ -237,41 +243,41 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         double aCosH = Math.Cosh(V);
         double aSinH = Math.Sinh(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD2 aResult;
         if (myMode == SheetMode.OneSheet)
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
                                        + aZD * (myR2 * aSinH));
-            aResult.D1U = new gp_Vec(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
             aResult.D1V =
-                new gp_Vec(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
+                new Vector3D(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
             // d2P/du2 = R1*cosh(v)*(-cos(u))*XD + R1*cosh(v)*(-sin(u))*YD
-            aResult.D2U = new gp_Vec(aXD * (myR1 * aCosH * (-aCosU)) + aYD * (myR1 * aCosH * (-aSinU)));
+            aResult.D2U = new Vector3D(aXD * (myR1 * aCosH * (-aCosU)) + aYD * (myR1 * aCosH * (-aSinU)));
             // d2P/dv2 = R1*cosh(v)*cos(u)*XD + R1*cosh(v)*sin(u)*YD + R2*sinh(v)*ZD
             aResult.D2V =
-                new gp_Vec(aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU) + aZD * (myR2 * aSinH));
+                new Vector3D(aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU) + aZD * (myR2 * aSinH));
             // d2P/dudv = R1*sinh(v)*(-sin(u))*XD + R1*sinh(v)*cos(u)*YD
-            aResult.D2UV = new gp_Vec(aXD * (myR1 * aSinH * (-aSinU)) + aYD * (myR1 * aSinH * aCosU));
+            aResult.D2UV = new Vector3D(aXD * (myR1 * aSinH * (-aSinU)) + aYD * (myR1 * aSinH * aCosU));
         }
         else
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
                                        + aZD * (myR1 * aCosH));
-            aResult.D1U = new gp_Vec(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
             aResult.D1V =
-                new gp_Vec(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
+                new Vector3D(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
             // d2P/du2 = R2*sinh(v)*(-cos(u))*XD + R2*sinh(v)*(-sin(u))*YD
-            aResult.D2U = new gp_Vec(aXD * (myR2 * aSinH * (-aCosU)) + aYD * (myR2 * aSinH * (-aSinU)));
+            aResult.D2U = new Vector3D(aXD * (myR2 * aSinH * (-aCosU)) + aYD * (myR2 * aSinH * (-aSinU)));
             // d2P/dv2 = R2*sinh(v)*cos(u)*XD + R2*sinh(v)*sin(u)*YD + R1*cosh(v)*ZD
             aResult.D2V =
-                new gp_Vec(aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU) + aZD * (myR1 * aCosH));
+                new Vector3D(aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU) + aZD * (myR1 * aCosH));
             // d2P/dudv = R2*cosh(v)*(-sin(u))*XD + R2*cosh(v)*cos(u)*YD
-            aResult.D2UV = new gp_Vec(aXD * (myR2 * aCosH * (-aSinU)) + aYD * (myR2 * aCosH * aCosU));
+            aResult.D2UV = new Vector3D(aXD * (myR2 * aCosH * (-aSinU)) + aYD * (myR2 * aCosH * aCosU));
         }
         return aResult;
     }
@@ -283,68 +289,68 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         double aCosH = Math.Cosh(V);
         double aSinH = Math.Sinh(V);
 
-        gp_XYZ anO = pos.Location().XYZ();
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz anO = pos.Location().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         ResD3 aResult;
         if (myMode == SheetMode.OneSheet)
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU)
                                        + aZD * (myR2 * aSinH));
-            aResult.D1U = new gp_Vec(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
             aResult.D1V =
-                new gp_Vec(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
-            aResult.D2U = new gp_Vec(aXD * (myR1 * aCosH * (-aCosU)) + aYD * (myR1 * aCosH * (-aSinU)));
+                new Vector3D(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
+            aResult.D2U = new Vector3D(aXD * (myR1 * aCosH * (-aCosU)) + aYD * (myR1 * aCosH * (-aSinU)));
             aResult.D2V =
-                new gp_Vec(aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU) + aZD * (myR2 * aSinH));
-            aResult.D2UV = new gp_Vec(aXD * (myR1 * aSinH * (-aSinU)) + aYD * (myR1 * aSinH * aCosU));
+                new Vector3D(aXD * (myR1 * aCosH * aCosU) + aYD * (myR1 * aCosH * aSinU) + aZD * (myR2 * aSinH));
+            aResult.D2UV = new Vector3D(aXD * (myR1 * aSinH * (-aSinU)) + aYD * (myR1 * aSinH * aCosU));
             // d3P/du3 = R1*cosh(v)*sin(u)*XD + R1*cosh(v)*(-cos(u))*YD
-            aResult.D3U = new gp_Vec(aXD * (myR1 * aCosH * aSinU) + aYD * (myR1 * aCosH * (-aCosU)));
+            aResult.D3U = new Vector3D(aXD * (myR1 * aCosH * aSinU) + aYD * (myR1 * aCosH * (-aCosU)));
             // d3P/dv3 = R1*sinh(v)*cos(u)*XD + R1*sinh(v)*sin(u)*YD + R2*cosh(v)*ZD
             aResult.D3V =
-                new gp_Vec(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
+                new Vector3D(aXD * (myR1 * aSinH * aCosU) + aYD * (myR1 * aSinH * aSinU) + aZD * (myR2 * aCosH));
             // d3P/du2dv = R1*sinh(v)*(-cos(u))*XD + R1*sinh(v)*(-sin(u))*YD
-            aResult.D3UUV = new gp_Vec(aXD * (myR1 * aSinH * (-aCosU)) + aYD * (myR1 * aSinH * (-aSinU)));
+            aResult.D3UUV = new Vector3D(aXD * (myR1 * aSinH * (-aCosU)) + aYD * (myR1 * aSinH * (-aSinU)));
             // d3P/dudv2 = R1*cosh(v)*(-sin(u))*XD + R1*cosh(v)*cos(u)*YD
-            aResult.D3UVV = new gp_Vec(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
+            aResult.D3UVV = new Vector3D(aXD * (myR1 * aCosH * (-aSinU)) + aYD * (myR1 * aCosH * aCosU));
         }
         else
         {
-            aResult.Point = new gp_Pnt(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
+            aResult.Point = new Point3D(anO + aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU)
                                        + aZD * (myR1 * aCosH));
-            aResult.D1U = new gp_Vec(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
+            aResult.D1U = new Vector3D(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
             aResult.D1V =
-                new gp_Vec(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
-            aResult.D2U = new gp_Vec(aXD * (myR2 * aSinH * (-aCosU)) + aYD * (myR2 * aSinH * (-aSinU)));
+                new Vector3D(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
+            aResult.D2U = new Vector3D(aXD * (myR2 * aSinH * (-aCosU)) + aYD * (myR2 * aSinH * (-aSinU)));
             aResult.D2V =
-                new gp_Vec(aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU) + aZD * (myR1 * aCosH));
-            aResult.D2UV = new gp_Vec(aXD * (myR2 * aCosH * (-aSinU)) + aYD * (myR2 * aCosH * aCosU));
+                new Vector3D(aXD * (myR2 * aSinH * aCosU) + aYD * (myR2 * aSinH * aSinU) + aZD * (myR1 * aCosH));
+            aResult.D2UV = new Vector3D(aXD * (myR2 * aCosH * (-aSinU)) + aYD * (myR2 * aCosH * aCosU));
             // d3P/du3 = R2*sinh(v)*sin(u)*XD + R2*sinh(v)*(-cos(u))*YD
-            aResult.D3U = new gp_Vec(aXD * (myR2 * aSinH * aSinU) + aYD * (myR2 * aSinH * (-aCosU)));
+            aResult.D3U = new Vector3D(aXD * (myR2 * aSinH * aSinU) + aYD * (myR2 * aSinH * (-aCosU)));
             // d3P/dv3 = R2*cosh(v)*cos(u)*XD + R2*cosh(v)*sin(u)*YD + R1*sinh(v)*ZD
             aResult.D3V =
-                new gp_Vec(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
+                new Vector3D(aXD * (myR2 * aCosH * aCosU) + aYD * (myR2 * aCosH * aSinU) + aZD * (myR1 * aSinH));
             // d3P/du2dv = R2*cosh(v)*(-cos(u))*XD + R2*cosh(v)*(-sin(u))*YD
-            aResult.D3UUV = new gp_Vec(aXD * (myR2 * aCosH * (-aCosU)) + aYD * (myR2 * aCosH * (-aSinU)));
+            aResult.D3UUV = new Vector3D(aXD * (myR2 * aCosH * (-aCosU)) + aYD * (myR2 * aCosH * (-aSinU)));
             // d3P/dudv2 = R2*sinh(v)*(-sin(u))*XD + R2*sinh(v)*cos(u)*YD
-            aResult.D3UVV = new gp_Vec(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
+            aResult.D3UVV = new Vector3D(aXD * (myR2 * aSinH * (-aSinU)) + aYD * (myR2 * aSinH * aCosU));
         }
         return aResult;
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
             throw new Geom_UndefinedDerivative();
         }
 
-        gp_XYZ aXD = pos.XDirection().XYZ();
-        gp_XYZ aYD = pos.YDirection().XYZ();
-        gp_XYZ aZD = pos.Direction().XYZ();
+        Xyz aXD = pos.XDirection().XYZ();
+        Xyz aYD = pos.YDirection().XYZ();
+        Xyz aZD = pos.Direction().XYZ();
 
         // d^n/du^n[cos(u)] = cos(u + n*PI/2)
         // d^n/du^n[sin(u)] = sin(u + n*PI/2)
@@ -359,7 +365,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
         double aDnCosH = (Nv % 2 == 0) ? aCosH : aSinH;
         double aDnSinH = (Nv % 2 == 0) ? aSinH : aCosH;
 
-        gp_XYZ aVec;
+        Xyz aVec;
         if (myMode == SheetMode.OneSheet)
         {
             // XD coeff = R1 * d^Nv[cosh(v)] * d^Nu[cos(u)]
@@ -381,14 +387,14 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
             aVec = aXD * aXCoeff + aYD * aYCoeff + aZD * aZCoeff;
         }
 
-        return new gp_Vec(aVec);
+        return new Vector3D(aVec);
     }
 
-    /// <summary>Not supported: throws <see cref="Standard_NotImplemented"/>.</summary>
-    protected internal override void Transform(in gp_Trsf T)
+    /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        throw new Standard_NotImplemented("GeomEval_HyperboloidSurface::Transform");
+        throw new MethodNotImplementedException("GeomEval_HyperboloidSurface::Transform");
     }
 
     public override Geom_Geometry Copy() => new GeomEval_HyperboloidSurface(pos, myR1, myR2, myMode);
@@ -424,7 +430,7 @@ public sealed class GeomEval_HyperboloidSurface : Geom_ElementarySurface
 
         // Local equation: aA1Loc*X'^2 + aA2Loc*Y'^2 + aA3Loc*Z'^2 + aDLoc = 0
         // where (X',Y',Z') = T * (X,Y,Z), T = SetTransformation(pos).
-        gp_Trsf aTrsf = new gp_Trsf();
+        Transform3D aTrsf = new Transform3D();
         aTrsf.SetTransformation(pos);
         double T11 = aTrsf.Value(1, 1);
         double T12 = aTrsf.Value(1, 2);

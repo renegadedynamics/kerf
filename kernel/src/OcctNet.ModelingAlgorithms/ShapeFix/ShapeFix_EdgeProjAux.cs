@@ -6,9 +6,11 @@
 //: r5 abv 06.04.99: ec_turbine-A.stp, #4313: protect against null curve
 //    abv 09.04.99  S4136: add parameter preci (to eliminate BRepAPI::Precision)
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -21,7 +23,7 @@ namespace Occt;
 /// puts a reversed copy in its place in the edge's representations when the edge isn't frozen (decision 1263), so
 /// the parameters it computes are read on the curve they were computed for.
 /// </remarks>
-public class ShapeFix_EdgeProjAux : Standard_Transient
+public class ShapeFix_EdgeProjAux : Transient
 {
     protected TopoDS_Face myFace;
     protected TopoDS_Edge myEdge;
@@ -103,7 +105,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
     // Purpose : Computes the trimming parameter of Pt1 on COnS
     // ----------------------------------------------------------------------------
 
-    private static bool FindParameterWithExt(in gp_Pnt Pt1, Adaptor3d_CurveOnSurface COnS, double Uinf, double Usup,
+    private static bool FindParameterWithExt(in Point3D Pt1, Adaptor3d_CurveOnSurface COnS, double Uinf, double Usup,
                                              double preci, ref double w1)
     {
         try
@@ -127,7 +129,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                 return false;
             }
         } // end try
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }
@@ -147,7 +149,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         myFirstParam = 0.0;
         myLastParam  = 0.0;
         TopExp.Vertices(myEdge, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt Pt1, Pt2;
+        Point3D Pt1, Pt2;
         // pdn 28.12.98: r_39-db.stp #605: use ends of 3d curve instead of vertices
         var sae = new ShapeAnalysis_Edge();
         if (sae.Curve3d(myEdge, out Geom_Curve? C3d, out double a, out double b, false))
@@ -165,8 +167,8 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         if (V1.IsSame(V2))
         {
             var      stsu = new ShapeAnalysis_Surface(theSurface);
-            var      aPt1 = new gp_Pnt2d();
-            var      aPt2 = new gp_Pnt2d();
+            var      aPt1 = new Point2D();
+            var      aPt2 = new Point2D();
             double   firstpar = 0.0, lastpar = 0.0;
             if (stsu.DegeneratedValues(Pt1, preci, ref aPt1, ref aPt2, ref firstpar, ref lastpar))
             {
@@ -190,36 +192,36 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         cf = theCurve2d.FirstParameter();
         cl = theCurve2d.LastParameter();
         // pdn cutting pcurve by surface bounds
-        if (Occt.Precision.IsInfinite(cf) || Occt.Precision.IsInfinite(cl))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(cf) || Kerf.Engine.Foundation.Precision.IsInfinite(cl))
         {
             if (theCurve2d is Geom2d_Line)
             {
                 theSurface.Bounds(out double uf, out double ul, out double vf, out double vl);
                 // Correct surface limits for extrusion/revolution surfaces based on hyperbola
                 // 23 is ln(1.0e+10)
-                if (SA.GetType() == GeomAbs_SurfaceOfExtrusion)
+                if (SA.GetType() == SurfaceOfExtrusion)
                 {
-                    if (SA.BasisCurve().GetType() == GeomAbs_Hyperbola)
+                    if (SA.BasisCurve().GetType() == Hyperbola)
                     {
                         uf = Max(uf, -23.0);
                         ul = Min(ul, 23.0);
                     }
                 }
-                if (SA.GetType() == GeomAbs_SurfaceOfRevolution)
+                if (SA.GetType() == SurfaceOfRevolution)
                 {
-                    if (SA.BasisCurve().GetType() == GeomAbs_Hyperbola)
+                    if (SA.BasisCurve().GetType() == Hyperbola)
                     {
                         vf = Max(vf, -23.0);
                         vl = Min(vl, 23.0);
                     }
                 }
-                if (!Occt.Precision.IsInfinite(uf) && !Occt.Precision.IsInfinite(ul) && !Occt.Precision.IsInfinite(vf)
-                    && !Occt.Precision.IsInfinite(vl))
+                if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf) && !Kerf.Engine.Foundation.Precision.IsInfinite(ul) && !Kerf.Engine.Foundation.Precision.IsInfinite(vf)
+                    && !Kerf.Engine.Foundation.Precision.IsInfinite(vl))
                 {
                     double   cfi, cli;
                     var      lin = (Geom2d_Line)theCurve2d;
-                    gp_Pnt2d pnt = lin.Location();
-                    gp_Dir2d dir = lin.Direction();
+                    Point2D pnt = lin.Location();
+                    Direction2D dir = lin.Direction();
                     if (dir.Y() == 0)
                     {
                         parU = true;
@@ -261,17 +263,17 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                         cl = cfi;
                     }
                 }
-                else if (!Occt.Precision.IsInfinite(uf) && !Occt.Precision.IsInfinite(ul))
+                else if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf) && !Kerf.Engine.Foundation.Precision.IsInfinite(ul))
                 {
                     var      lin = (Geom2d_Line)theCurve2d;
-                    gp_Dir2d dir = lin.Direction();
+                    Direction2D dir = lin.Direction();
                     if (dir.X() != 0)
                     {
                         if (dir.Y() == 0)
                         {
                             parU = true;
                         }
-                        gp_Pnt2d pnt = lin.Location(); // szv#4:S4163:12Mar99 moved
+                        Point2D pnt = lin.Location(); // szv#4:S4163:12Mar99 moved
                         double   cfi = (uf - pnt.X()) / dir.X();
                         double   cli = (ul - pnt.X()) / dir.X();
                         if (cfi < cli)
@@ -308,7 +310,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                     // Try to reparametrize (CASE dxf read bug25899)
                     var aBspl     = (Geom2d_BSplineCurve)theCurve2d.Copy();
                     var aNewKnots = new NCollection_Array1<double>(aBspl.InternalKnots());
-                    BSplCLib.Reparametrize(cf, cl, aNewKnots);
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(cf, cl, aNewKnots);
                     aBspl.SetKnots(aNewKnots);
                     theCurve2d = aBspl;
                 }
@@ -327,9 +329,9 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
 
         double w1 = 0.0, w2 = 0.0;
         var    sac  = new ShapeAnalysis_Curve();
-        double dist = sac.Project(COnS, Pt1, preci, out gp_Pnt pnt0, out w1, false);
+        double dist = sac.Project(COnS, Pt1, preci, out Point3D pnt0, out w1, false);
         // if distance is infinite then projection is not performed
-        if (Occt.Precision.IsInfinite(dist))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(dist))
         {
             return;
         }
@@ -339,7 +341,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
 
         dist = sac.Project(COnS, Pt2, preci, out pnt0, out w2, false);
 
-        if (Occt.Precision.IsInfinite(dist))
+        if (Kerf.Engine.Foundation.Precision.IsInfinite(dist))
         {
             return;
         }
@@ -347,7 +349,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         myLastDone  = true;
         myLastParam = w2;
 
-        if (Math.Abs(w1 - w2) < Occt.Precision.PConfusion())
+        if (Math.Abs(w1 - w2) < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (!theSurface.IsUPeriodic() && !theSurface.IsVPeriodic())
             {
@@ -367,17 +369,17 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
             return;
         }
         //: abv 29.08.01: SAT: fix for closed case
-        if (COnS.Value(Uinf).Distance(COnS.Value(Usup)) < Occt.Precision.Confusion())
+        if (COnS.Value(Uinf).Distance(COnS.Value(Usup)) < Kerf.Engine.Foundation.Precision.Confusion())
         {
             // 18.11.2002 SKL OCC630 compare values with tolerance Precision::PConfusion() instead of "=="
-            if (Math.Abs(myFirstParam - Uinf) < Occt.Precision.PConfusion()
-                && Math.Abs(myLastParam - Uinf) < Occt.Precision.PConfusion())
+            if (Math.Abs(myFirstParam - Uinf) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(myLastParam - Uinf) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 myLastParam = w2 = Usup;
                 // 18.11.2002 SKL OCC630 compare values with tolerance Precision::PConfusion() instead of "=="
             }
-            else if (Math.Abs(myFirstParam - Usup) < Occt.Precision.PConfusion()
-                     && Math.Abs(myLastParam - Usup) < Occt.Precision.PConfusion())
+            else if (Math.Abs(myFirstParam - Usup) < Kerf.Engine.Foundation.Precision.PConfusion()
+                     && Math.Abs(myLastParam - Usup) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 myFirstParam = w1 = Uinf;
             }
@@ -397,7 +399,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
                 UpdateParam2d(ref theCurve2d);
                 return;
             }
-            gp_Pnt mid = C3d1!.Value((cf + cl) / 2);
+            Point3D mid = C3d1!.Value((cf + cl) / 2);
             sac.Project(COnS, mid, preci, out pnt0, out double wmid, false);
             wmid += ShapeAnalysis.AdjustToPeriod(wmid, 0, period);
             if (w1 >= w2)
@@ -444,8 +446,8 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
 
         TopoDS_Vertex V1  = TopExp.FirstVertex(myEdge);
         TopoDS_Vertex V2  = TopExp.LastVertex(myEdge);
-        gp_Pnt        Pt1 = BRep_Tool.Pnt(V1);
-        gp_Pnt        Pt2 = BRep_Tool.Pnt(V2);
+        Point3D        Pt1 = BRep_Tool.Pnt(V1);
+        Point3D        Pt2 = BRep_Tool.Pnt(V2);
 
         var myHSur = new GeomAdaptor_Surface(theSurface);
 
@@ -463,8 +465,8 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
 
         if (theCurve2d is Geom2d_BoundedCurve)
         {
-            gp_Pnt Pdeb = COnS.Value(Uinf);
-            gp_Pnt Pfin = COnS.Value(Usup);
+            Point3D Pdeb = COnS.Value(Uinf);
+            Point3D Pfin = COnS.Value(Usup);
 
             // szv#4:S4163:12Mar99 optimized
             if (Pdeb.IsEqual(Pt1, preci) && Pfin.IsEqual(Pt2, preci))
@@ -484,7 +486,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         double w1 = COnS.FirstParameter();
         double w2 = COnS.LastParameter();
 
-        if ((!Occt.Precision.IsInfinite(w1) && !Occt.Precision.IsInfinite(w2) && theCurve2d.Continuity() != GeomAbs_C0)
+        if ((!Kerf.Engine.Foundation.Precision.IsInfinite(w1) && !Kerf.Engine.Foundation.Precision.IsInfinite(w2) && theCurve2d.Continuity() != C0)
             || IsIso(theCurve2d))
         {
             // szv#4:S4163:12Mar99 optimized
@@ -511,12 +513,12 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
         double cf = theCurve2d.FirstParameter();
         double cl = theCurve2d.LastParameter();
         //: S4136  double preci = BRepAPI::Precision();
-        double preci2d = Occt.Precision.PConfusion(); //: S4136: Parametric(preci, 0.01);
+        double preci2d = Kerf.Engine.Foundation.Precision.PConfusion(); //: S4136: Parametric(preci, 0.01);
 
         // 15.11.2002 PTV OCC966
         if (ShapeAnalysis_Curve.IsPeriodic(theCurve2d))
         {
-            ElCLib.AdjustPeriodic(cf, cl, preci2d, ref myFirstParam, ref myLastParam);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(cf, cl, preci2d, ref myFirstParam, ref myLastParam);
         }
         else if (theCurve2d.IsClosed())
         {
@@ -568,7 +570,7 @@ public class ShapeFix_EdgeProjAux : Standard_Transient
     {
         var aReversed = (Geom2d_Curve)theCurve2d.Copy();
         aReversed.Reverse();
-        if (!myEdge.TShape()!.IsFrozen())
+        if (!myEdge.TShape()!.IsFrozen)
         {
             ShapeFix_Edge.InternalReplacePCurveObject(myEdge, theCurve2d, aReversed);
         }

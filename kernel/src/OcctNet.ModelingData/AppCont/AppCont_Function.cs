@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -48,10 +50,10 @@ public abstract class AppCont_Function
     public abstract double LastParameter();
 
     /// <summary>Fills the arrays with the points at <paramref name="theU"/>; false if they can't be computed.</summary>
-    public abstract bool Value(double theU, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt);
+    public abstract bool Value(double theU, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt);
 
     /// <summary>Fills the arrays with the derivatives at <paramref name="theU"/>; false if they can't be computed.</summary>
-    public abstract bool D1(double theU, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec);
+    public abstract bool D1(double theU, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec);
 
     /// <summary>
     /// The periodicity of the output coordinate <paramref name="theDimIdx"/> (1 to 3 * NbPnt + 2 * NbPnt2d: the

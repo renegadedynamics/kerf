@@ -2,7 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Kerf.Engine.Numerics;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -30,7 +31,7 @@ public class MathOpt_NewtonTest
             return true;
         }
 
-        public bool Hessian(math_Vector theX, math_Matrix theHess)
+        public bool Hessian(math_Vector theX, Matrix theHess)
         {
             theHess[1, 1] = 2.0;
             theHess[1, 2] = 0.0;
@@ -62,7 +63,7 @@ public class MathOpt_NewtonTest
             return true;
         }
 
-        public bool Hessian(math_Vector theX, math_Matrix theHess)
+        public bool Hessian(math_Vector theX, Matrix theHess)
         {
             double aX = theX[1];
             double aY = theX[2];
@@ -98,7 +99,7 @@ public class MathOpt_NewtonTest
             return true;
         }
 
-        public bool Hessian(math_Vector theX, math_Matrix theHess)
+        public bool Hessian(math_Vector theX, Matrix theHess)
         {
             theHess[1, 1] = 10.0; // 2 + 8
             theHess[1, 2] = 8.0;  // 4 + 4
@@ -130,7 +131,7 @@ public class MathOpt_NewtonTest
             return true;
         }
 
-        public bool Hessian(math_Vector theX, math_Matrix theHess)
+        public bool Hessian(math_Vector theX, Matrix theHess)
         {
             int aLower = theX.Lower();
             int aUpper = theX.Upper();
@@ -147,9 +148,9 @@ public class MathOpt_NewtonTest
 
     // Old API adapter classes
 
-    private sealed class QuadraticFuncOld : math_MultipleVarFunctionWithHessian
+    private sealed class QuadraticFuncOld : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -171,7 +172,7 @@ public class MathOpt_NewtonTest
             return Value(theX, out theF) && Gradient(theX, theG);
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             if (!Value(theX, out theF))
             {
@@ -189,9 +190,9 @@ public class MathOpt_NewtonTest
         }
     }
 
-    private sealed class BoothFuncOld : math_MultipleVarFunctionWithHessian
+    private sealed class BoothFuncOld : MultipleVarFunctionWithHessian
     {
-        public override int NbVariables() => 2;
+        public override int VariableCount => 2;
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -219,7 +220,7 @@ public class MathOpt_NewtonTest
             return Value(theX, out theF) && Gradient(theX, theG);
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             if (!Value(theX, out theF))
             {
@@ -268,9 +269,9 @@ public class MathOpt_NewtonTest
         }
     }
 
-    private static MathOpt.NewtonConfig MakeConfig(int theMaxIter, double theTolerance)
+    private static global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonConfig MakeConfig(int theMaxIter, double theTolerance)
     {
-        MathOpt.NewtonConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonConfig aConfig = new();
         aConfig.MaxIterations = theMaxIter;
         aConfig.Tolerance = theTolerance;
         return aConfig;
@@ -284,9 +285,9 @@ public class MathOpt_NewtonTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
-        VectorResult aResult = MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -301,9 +302,9 @@ public class MathOpt_NewtonTest
         BoothFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(0.0, 0.0);
 
-        VectorResult aResult = MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(3.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -315,9 +316,9 @@ public class MathOpt_NewtonTest
         RosenbrockFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(0.5, 0.5); // Start closer to solution for Newton
 
-        VectorResult aResult = MathOpt.Newton(aFunc, aStart, MakeConfig(100, 1.0e-8));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aFunc, aStart, MakeConfig(100, 1.0e-8));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-3);
         Assert.Equal(1.0, aResult.Solution![2], 1.0e-3);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
@@ -329,9 +330,9 @@ public class MathOpt_NewtonTest
         SphereFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(3.0, -2.0, 4.0);
 
-        VectorResult aResult = MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         for (int i = 1; i <= 3; ++i)
         {
             Assert.Equal(0.0, aResult.Solution![i], THE_TOLERANCE);
@@ -350,9 +351,9 @@ public class MathOpt_NewtonTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
-        VectorResult aResult = MathOpt.NewtonModified(aFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonModified(aFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(2.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -364,12 +365,12 @@ public class MathOpt_NewtonTest
         RosenbrockFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(-1.0, 1.0);
 
-        MathOpt.NewtonConfig aConfig = MakeConfig(200, 1.0e-6);
+        global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonConfig aConfig = MakeConfig(200, 1.0e-6);
         aConfig.Regularization = 1.0e-4; // Higher regularization for Rosenbrock from far start
 
-        VectorResult aResult = MathOpt.NewtonModified(aFunc, aStart, aConfig);
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonModified(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-3);
         Assert.Equal(1.0, aResult.Solution![2], 1.0e-3);
     }
@@ -382,9 +383,9 @@ public class MathOpt_NewtonTest
         QuadraticGradOnly aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
-        VectorResult aResult = MathOpt.NewtonNumericalHessian(aFunc, aStart, 1.0e-6, MakeConfig(50, 1.0e-8));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonNumericalHessian(aFunc, aStart, 1.0e-6, MakeConfig(50, 1.0e-8));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-4);
         Assert.Equal(2.0, aResult.Solution![2], 1.0e-4);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-6);
@@ -396,9 +397,9 @@ public class MathOpt_NewtonTest
         QuadraticValueOnly aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
-        VectorResult aResult = MathOpt.NewtonNumerical(aFunc, aStart, 1.0e-8, 1.0e-6, MakeConfig(50, 1.0e-6));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.NewtonNumerical(aFunc, aStart, 1.0e-8, 1.0e-6, MakeConfig(50, 1.0e-6));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], 1.0e-3);
         Assert.Equal(2.0, aResult.Solution![2], 1.0e-3);
         Assert.Equal(0.0, aResult.Value!.Value, 1.0e-4);
@@ -414,14 +415,14 @@ public class MathOpt_NewtonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(5.0, 7.0);
 
         // Old API
-        math_NewtonMinimum anOldSolver = new(anOldFunc, 1.0e-8, 50, 1.0e-10);
+        NewtonMinimum anOldSolver = new(anOldFunc, 1.0e-8, 50, 1.0e-10);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.Newton(aNewFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aNewFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -437,14 +438,14 @@ public class MathOpt_NewtonTest
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(0.0, 0.0);
 
         // Old API
-        math_NewtonMinimum anOldSolver = new(anOldFunc, 1.0e-8, 50, 1.0e-10);
+        NewtonMinimum anOldSolver = new(anOldFunc, 1.0e-8, 50, 1.0e-10);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        VectorResult aNewResult = MathOpt.Newton(aNewFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aNewResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aNewFunc, aStart, MakeConfig(50, 1.0e-10));
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aNewResult.Solution![1], anOldSolver.Location()[1], THE_TOLERANCE);
@@ -469,11 +470,11 @@ public class MathOpt_NewtonTest
         aBFGSConfig.XTolerance = 1.0e-10;
         aBFGSConfig.FTolerance = 1.0e-12;
 
-        VectorResult aNewtonResult = MathOpt.Newton(aQuadFunc, aStart, MakeConfig(50, 1.0e-10));
-        VectorResult aBFGSResult = MathOpt.BFGS(aBFGSFunc, aStart, aBFGSConfig);
+        VectorResult aNewtonResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aQuadFunc, aStart, MakeConfig(50, 1.0e-10));
+        VectorResult aBFGSResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.BFGS(aBFGSFunc, aStart, aBFGSConfig);
 
-        Assert.True(aNewtonResult.IsDone());
-        Assert.True(aBFGSResult.IsDone());
+        Assert.True(aNewtonResult.IsDone);
+        Assert.True(aBFGSResult.IsDone);
 
         // Both should find the same minimum
         Assert.Equal(aBFGSResult.Value!.Value, aNewtonResult.Value!.Value, THE_TOLERANCE);
@@ -490,9 +491,9 @@ public class MathOpt_NewtonTest
         QuadraticFunc aFunc = new();
         math_Vector aStart = MathOpt_NDim_TestFunctions.Vec(100.0, 100.0);
 
-        VectorResult aResult = MathOpt.Newton(aFunc, aStart, MakeConfig(10, 1.0e-12));
+        VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.Newton(aFunc, aStart, MakeConfig(10, 1.0e-12));
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Pure Newton should converge in exactly 1 iteration for a quadratic
         // (or 2 with line search)

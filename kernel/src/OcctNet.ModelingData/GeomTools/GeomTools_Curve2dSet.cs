@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -66,13 +68,13 @@ public class GeomTools_Curve2dSet
         return myMap.FindIndex((object?)S ?? GeomTools_CurveSet.theNullKey);
     }
 
-    private static void Out(TextWriter OS, double theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, double theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static void Out(TextWriter OS, int theValue) => Standard_Stream.Write(OS, theValue);
+    private static void Out(TextWriter OS, int theValue) => StreamUtilities.Write(OS, theValue);
 
-    private static string Setw(int theWidth, int theValue) => Standard_Stream.Setw(theWidth, theValue.ToString(CultureInfo.InvariantCulture));
+    private static string Setw(int theWidth, int theValue) => StreamUtilities.Setw(theWidth, theValue.ToString(CultureInfo.InvariantCulture));
 
-    private static void Print(gp_Pnt2d P, TextWriter OS, bool compact)
+    private static void Print(Point2D P, TextWriter OS, bool compact)
     {
         Out(OS, P.X());
         if (!compact)
@@ -85,7 +87,7 @@ public class GeomTools_Curve2dSet
         OS.Write(" ");
     }
 
-    private static void Print(gp_Dir2d D, TextWriter OS, bool compact)
+    private static void Print(Direction2D D, TextWriter OS, bool compact)
     {
         Out(OS, D.X());
         if (!compact)
@@ -110,7 +112,7 @@ public class GeomTools_Curve2dSet
             OS.Write("Line");
         }
 
-        gp_Lin2d C2d = L.Lin2d();
+        Line2D C2d = L.Lin2d();
         if (!compact)
         {
             OS.Write("\n  Origin :");
@@ -143,7 +145,7 @@ public class GeomTools_Curve2dSet
             OS.Write("Circle");
         }
 
-        gp_Circ2d C2d = C.Circ2d();
+        Circle2D C2d = C.Circ2d();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -188,7 +190,7 @@ public class GeomTools_Curve2dSet
             OS.Write("Ellipse");
         }
 
-        gp_Elips2d C2d = E.Elips2d();
+        Ellipse2D C2d = E.Elips2d();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -240,7 +242,7 @@ public class GeomTools_Curve2dSet
             OS.Write("Parabola");
         }
 
-        gp_Parab2d C2d = P.Parab2d();
+        Parabola2D C2d = P.Parab2d();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -285,7 +287,7 @@ public class GeomTools_Curve2dSet
             OS.Write("Hyperbola");
         }
 
-        gp_Hypr2d C2d = H.Hypr2d();
+        Hyperbola2D C2d = H.Hypr2d();
         if (!compact)
         {
             OS.Write("\n  Center :");
@@ -654,35 +656,35 @@ public class GeomTools_Curve2dSet
     /// Writes the set in the format <see cref="Read"/> reads: "Curve2ds", the count, then each curve, at 17
     /// significant digits (the writer's precision is restored afterwards).
     /// </summary>
-    public void Write(TextWriter OS, Message_ProgressRange theProgress = default)
+    public void Write(TextWriter OS, ProgressRange theProgress = default)
     {
-        int prec = Standard_Stream.Precision(OS, 17);
+        int prec = StreamUtilities.Precision(OS, 17);
 
         int i, nbsurf = myMap.Extent();
         OS.Write("Curve2ds ");
         Out(OS, nbsurf);
         OS.Write("\n");
-        using var aPS = new Message_ProgressScope(theProgress, "2D Curves", nbsurf);
+        using var aPS = new ProgressScope(theProgress, "2D Curves", nbsurf);
         for (i = 1; i <= nbsurf && aPS.More(); i++, aPS.Next())
         {
             // OCCT dereferences a null curve here
             PrintCurve2d(Curve2d(i)!, OS, true);
         }
 
-        Standard_Stream.Precision(OS, prec);
+        StreamUtilities.Precision(OS, prec);
     }
 
     // operator>> of the points, directions and curves
 
-    private static void ReadPnt(TextReader IS, out gp_Pnt2d P)
+    private static void ReadPnt(TextReader IS, out Point2D P)
     {
         double X, Y;
         GeomTools.GetReal(IS, out X);
         GeomTools.GetReal(IS, out Y);
-        P = new gp_Pnt2d(X, Y);
+        P = new Point2D(X, Y);
     }
 
-    private static void ReadDir(TextReader IS, ref gp_Dir2d D)
+    private static void ReadDir(TextReader IS, ref Direction2D D)
     {
         double X, Y;
         GeomTools.GetReal(IS, out X);
@@ -692,8 +694,8 @@ public class GeomTools_Curve2dSet
 
     private static Geom2d_Line ReadLine(TextReader IS)
     {
-        gp_Pnt2d P;
-        gp_Dir2d AX = new(gp_Dir2d.D.X);
+        Point2D P;
+        Direction2D AX = new(Direction2D.D.X);
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         return new Geom2d_Line(P, AX);
@@ -701,67 +703,67 @@ public class GeomTools_Curve2dSet
 
     private static Geom2d_Circle ReadCircle(TextReader IS)
     {
-        gp_Pnt2d P;
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
+        Point2D P;
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
         double R;
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R);
-        return new Geom2d_Circle(new gp_Ax22d(P, AX, AY), R);
+        return new Geom2d_Circle(new Frame2D(P, AX, AY), R);
     }
 
     private static Geom2d_Ellipse ReadEllipse(TextReader IS)
     {
-        gp_Pnt2d P;
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
+        Point2D P;
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
         double R1, R2;
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
         GeomTools.GetReal(IS, out R2);
-        return new Geom2d_Ellipse(new gp_Ax22d(P, AX, AY), R1, R2);
+        return new Geom2d_Ellipse(new Frame2D(P, AX, AY), R1, R2);
     }
 
     private static Geom2d_Parabola ReadParabola(TextReader IS)
     {
-        gp_Pnt2d P;
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
+        Point2D P;
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
         double R1;
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
-        return new Geom2d_Parabola(new gp_Ax22d(P, AX, AY), R1);
+        return new Geom2d_Parabola(new Frame2D(P, AX, AY), R1);
     }
 
     private static Geom2d_Hyperbola ReadHyperbola(TextReader IS)
     {
-        gp_Pnt2d P;
-        gp_Dir2d AX = new(gp_Dir2d.D.X), AY = new(gp_Dir2d.D.X);
+        Point2D P;
+        Direction2D AX = new(Direction2D.D.X), AY = new(Direction2D.D.X);
         double R1, R2;
         ReadPnt(IS, out P);
         ReadDir(IS, ref AX);
         ReadDir(IS, ref AY);
         GeomTools.GetReal(IS, out R1);
         GeomTools.GetReal(IS, out R2);
-        return new Geom2d_Hyperbola(new gp_Ax22d(P, AX, AY), R1, R2);
+        return new Geom2d_Hyperbola(new Frame2D(P, AX, AY), R1, R2);
     }
 
     private static Geom2d_BezierCurve ReadBezier(TextReader IS)
     {
         bool rational = false;
-        Standard_Stream.Read(IS, ref rational);
+        StreamUtilities.Read(IS, ref rational);
 
         // poles and weights
         int i = 0, degree = 0;
-        Standard_Stream.Read(IS, ref degree);
+        StreamUtilities.Read(IS, ref degree);
 
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(degree + 1L, 0), 4, "Bezier poles");
-        var poles = new NCollection_Array1<gp_Pnt2d>(1, degree + 1);
+        StreamUtilities.CheckCount(IS, Math.Max(degree + 1L, 0), 4, "Bezier poles");
+        var poles = new NCollection_Array1<Point2D>(1, degree + 1);
         var weights = new NCollection_Array1<double>(1, degree + 1);
 
         for (i = 1; i <= degree + 1; i++)
@@ -784,20 +786,20 @@ public class GeomTools_Curve2dSet
     private static Geom2d_BSplineCurve ReadBSpline(TextReader IS)
     {
         bool rational = false, periodic = false;
-        Standard_Stream.Read(IS, ref rational);
-        Standard_Stream.Read(IS, ref periodic);
+        StreamUtilities.Read(IS, ref rational);
+        StreamUtilities.Read(IS, ref periodic);
 
         // poles and weights
         int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
-        Standard_Stream.Read(IS, ref degree);
-        Standard_Stream.Read(IS, ref nbpoles);
-        Standard_Stream.Read(IS, ref nbknots);
+        StreamUtilities.Read(IS, ref degree);
+        StreamUtilities.Read(IS, ref nbpoles);
+        StreamUtilities.Read(IS, ref nbknots);
 
         // OCCT.NET: untrusted input: counts checked against the input before allocating (a pole takes at least 4
         // characters, a knot 4)
-        Standard_Stream.CheckCount(IS, Math.Max(nbpoles, 0), 4, "B-spline poles");
-        Standard_Stream.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
-        var poles = new NCollection_Array1<gp_Pnt2d>(1, nbpoles);
+        StreamUtilities.CheckCount(IS, Math.Max(nbpoles, 0), 4, "B-spline poles");
+        StreamUtilities.CheckCount(IS, Math.Max(nbknots, 0), 4, "B-spline knots");
+        var poles = new NCollection_Array1<Point2D>(1, nbpoles);
         var weights = new NCollection_Array1<double>(1, nbpoles);
 
         for (i = 1; i <= nbpoles; i++)
@@ -815,7 +817,7 @@ public class GeomTools_Curve2dSet
         for (i = 1; i <= nbknots; i++)
         {
             GeomTools.GetReal(IS, out knots[i]);
-            Standard_Stream.Read(IS, ref mults[i]);
+            StreamUtilities.Read(IS, ref mults[i]);
         }
 
         if (rational)
@@ -857,7 +859,7 @@ public class GeomTools_Curve2dSet
         using var aNesting = GeomTools.Nesting();
         try
         {
-            Standard_Stream.Read(IS, ref ctype);
+            StreamUtilities.Read(IS, ref ctype);
             switch (ctype)
             {
                 case LINE:
@@ -905,7 +907,7 @@ public class GeomTools_Curve2dSet
                     break;
             }
         }
-        catch (Standard_Failure anException) when (anException is not Storage_StreamFormatError)
+        catch (FailureException anException) when (anException is not StreamFormatErrorException)
         {
             // OCCT_DEBUG only: "EXCEPTION in GeomTools_Curve2dSet::ReadCurve2d(..)!!!"
         }
@@ -922,12 +924,12 @@ public class GeomTools_Curve2dSet
     /// Reads a set written by <see cref="Write"/>, adding its curves (frozen) to this one. Writes "Not a Curve2d
     /// table" to the console, as OCCT does, if the text doesn't start with "Curve2ds".
     /// </summary>
-    public void Read(TextReader IS, Message_ProgressRange theProgress = default)
+    public void Read(TextReader IS, ProgressRange theProgress = default)
     {
         // OCCT reads into char[255]: a longer word is an error (OCCT.NET: untrusted input)
         char[] buffer = new char[255];
-        bool isRead = Standard_Stream.ReadWord(IS, buffer);
-        if (!isRead || Standard_Stream.CString(buffer) != "Curve2ds")
+        bool isRead = StreamUtilities.ReadWord(IS, buffer);
+        if (!isRead || StreamUtilities.CString(buffer) != "Curve2ds")
         {
             Console.Out.Write("Not a Curve2d table" + "\n");
             return;
@@ -935,10 +937,10 @@ public class GeomTools_Curve2dSet
 
         // OCCT's nbcurve is uninitialised if the count can't be read
         int i, nbcurve = 0;
-        Standard_Stream.Read(IS, ref nbcurve);
+        StreamUtilities.Read(IS, ref nbcurve);
         // OCCT.NET: untrusted input: an object takes at least 2 characters
-        Standard_Stream.CheckCount(IS, Math.Max(nbcurve, 0), 2, "2D curves");
-        using var aPS = new Message_ProgressScope(theProgress, "2D Curves", nbcurve);
+        StreamUtilities.CheckCount(IS, Math.Max(nbcurve, 0), 2, "2D curves");
+        using var aPS = new ProgressScope(theProgress, "2D Curves", nbcurve);
         for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
         {
             Geom2d_Curve? C = ReadCurve2d(IS);

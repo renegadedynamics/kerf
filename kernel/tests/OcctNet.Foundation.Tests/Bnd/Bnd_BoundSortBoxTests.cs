@@ -2,18 +2,22 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 // Test fixture for Bnd_BoundSortBox tests (SetUp is the constructor: xUnit creates one instance per test)
 public class Bnd_BoundSortBoxTest
 {
     // Common test data
-    private readonly Bnd_Box mySmallBox;
-    private readonly Bnd_Box myLargeBox;
-    private readonly Bnd_Box myOffsetBox;
-    private readonly Bnd_Box myNonIntersectingBox;
-    private readonly Bnd_Box myGlobalBox;
-    private readonly NCollection_HArray1<Bnd_Box> myBoxes;
+    private readonly Box mySmallBox;
+    private readonly Box myLargeBox;
+    private readonly Box myOffsetBox;
+    private readonly Box myNonIntersectingBox;
+    private readonly Box myGlobalBox;
+    private readonly NCollection_HArray1<Box> myBoxes;
 
     public Bnd_BoundSortBoxTest()
     {
@@ -24,7 +28,7 @@ public class Bnd_BoundSortBoxTest
         myNonIntersectingBox = CreateBox(20.0, 20.0, 20.0, 30.0, 30.0, 30.0);
 
         // Create array of test boxes
-        myBoxes = new NCollection_HArray1<Bnd_Box>(1, 4);
+        myBoxes = new NCollection_HArray1<Box>(1, 4);
         myBoxes.SetValue(1, mySmallBox);
         myBoxes.SetValue(2, myLargeBox);
         myBoxes.SetValue(3, myOffsetBox);
@@ -34,9 +38,9 @@ public class Bnd_BoundSortBoxTest
         myGlobalBox = CreateBox(-20.0, -20.0, -20.0, 40.0, 40.0, 40.0);
     }
 
-    internal static Bnd_Box CreateBox(double xmin, double ymin, double zmin, double xmax, double ymax, double zmax)
+    internal static Box CreateBox(double xmin, double ymin, double zmin, double xmax, double ymax, double zmax)
     {
-        Bnd_Box box = new();
+        Box box = new();
         box.Update(xmin, ymin, zmin, xmax, ymax, zmax);
         return box;
     }
@@ -44,11 +48,11 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void InitializeWithBoxes()
     {
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(myBoxes);
 
         // Test comparing with a box that intersects mySmallBox
-        Bnd_Box testBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+        Box testBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
         NCollection_List<int> result = sortBox.Compare(testBox);
 
         Assert.Equal(2, result.Extent());
@@ -74,7 +78,7 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void InitializeWithEnclosingBox()
     {
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(myGlobalBox, myBoxes);
 
         // Test comparing with myOffsetBox
@@ -103,7 +107,7 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void InitializeWithCount()
     {
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(myGlobalBox, 3);
 
         // Add boxes manually
@@ -112,7 +116,7 @@ public class Bnd_BoundSortBoxTest
         sortBox.Add(myNonIntersectingBox, 3);
 
         // Test comparing with a box that should only intersect myLargeBox
-        Bnd_Box testBox = CreateBox(-5.0, -5.0, -5.0, -2.0, -2.0, -2.0);
+        Box testBox = CreateBox(-5.0, -5.0, -5.0, -2.0, -2.0, -2.0);
         NCollection_List<int> result = sortBox.Compare(testBox);
 
         Assert.Equal(1, result.Extent());
@@ -124,13 +128,13 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void CompareWithPlane()
     {
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(myBoxes);
 
         // Create a plane that intersects the large box but not others
-        gp_Pnt point = new(0.0, 0.0, 9.0);
-        gp_Dir direction = new(gp_Dir.D.Z);
-        gp_Pln plane = new(point, direction);
+        Point3D point = new(0.0, 0.0, 9.0);
+        Direction3D direction = new(Direction3D.D.Z);
+        Plane3D plane = new(point, direction);
 
         NCollection_List<int> result = sortBox.Compare(plane);
 
@@ -142,12 +146,12 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void VoidBoxes()
     {
-        NCollection_HArray1<Bnd_Box> boxes = new NCollection_HArray1<Bnd_Box>(1, 2);
-        Bnd_Box void_box = new(); // Default constructed box is void
+        NCollection_HArray1<Box> boxes = new NCollection_HArray1<Box>(1, 2);
+        Box void_box = new(); // Default constructed box is void
         boxes.SetValue(1, void_box);
         boxes.SetValue(2, mySmallBox);
 
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(boxes);
 
         // Test comparing with mySmallBox - should only find itself
@@ -165,14 +169,14 @@ public class Bnd_BoundSortBoxTest
     public void TouchingBoxes()
     {
         // Create boxes that touch at a single point
-        Bnd_Box box1 = CreateBox(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-        Bnd_Box box2 = CreateBox(1.0, 1.0, 1.0, 2.0, 2.0, 2.0); // Touches box1 at (1,1,1)
+        Box box1 = CreateBox(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+        Box box2 = CreateBox(1.0, 1.0, 1.0, 2.0, 2.0, 2.0); // Touches box1 at (1,1,1)
 
-        NCollection_HArray1<Bnd_Box> boxes = new NCollection_HArray1<Bnd_Box>(1, 2);
+        NCollection_HArray1<Box> boxes = new NCollection_HArray1<Box>(1, 2);
         boxes.SetValue(1, box1);
         boxes.SetValue(2, box2);
 
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(boxes);
 
         // Test comparing with box1
@@ -187,20 +191,20 @@ public class Bnd_BoundSortBoxTest
     [Fact]
     public void DisjointBoxes()
     {
-        Bnd_Box farBox = CreateBox(100.0, 100.0, 100.0, 110.0, 110.0, 110.0);
+        Box farBox = CreateBox(100.0, 100.0, 100.0, 110.0, 110.0, 110.0);
 
-        NCollection_HArray1<Bnd_Box> boxes = new NCollection_HArray1<Bnd_Box>(1, 2);
+        NCollection_HArray1<Box> boxes = new NCollection_HArray1<Box>(1, 2);
         boxes.SetValue(1, mySmallBox);
         boxes.SetValue(2, farBox);
 
         // Create enclosing box large enough
-        Bnd_Box enclosingBox = CreateBox(-10.0, -10.0, -10.0, 120.0, 120.0, 120.0);
+        Box enclosingBox = CreateBox(-10.0, -10.0, -10.0, 120.0, 120.0, 120.0);
 
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(enclosingBox, boxes);
 
         // Test comparing with a box near mySmallBox
-        Bnd_Box testBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+        Box testBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
         NCollection_List<int> result = sortBox.Compare(testBox);
 
         Assert.Equal(1, result.Extent());
@@ -211,31 +215,31 @@ public class Bnd_BoundSortBoxTest
     public void DegenerateBoxes()
     {
         // Create degenerate boxes
-        Bnd_Box pointBox = new();
+        Box pointBox = new();
         pointBox.Update(1.0, 1.0, 1.0, 1.0, 1.0, 1.0); // Point at (1,1,1)
 
-        Bnd_Box lineBox = new();
+        Box lineBox = new();
         lineBox.Update(2.0, 0.0, 0.0, 5.0, 0.0, 0.0); // Line along X from (2,0,0) to (5,0,0)
 
-        Bnd_Box planeBox = new();
+        Box planeBox = new();
         planeBox.Update(0.0, 0.0, 3.0, 3.0, 3.0, 3.0); // XY plane at Z=3
 
-        NCollection_HArray1<Bnd_Box> boxes = new NCollection_HArray1<Bnd_Box>(1, 3);
+        NCollection_HArray1<Box> boxes = new NCollection_HArray1<Box>(1, 3);
         boxes.SetValue(1, pointBox);
         boxes.SetValue(2, lineBox);
         boxes.SetValue(3, planeBox);
 
-        Bnd_BoundSortBox sortBox = new();
+        BoundSortBox sortBox = new();
         sortBox.Initialize(boxes);
 
         // Test with a box that should intersect all three degenerate boxes
-        Bnd_Box testBox = CreateBox(0.0, 0.0, 0.0, 6.0, 6.0, 6.0);
+        Box testBox = CreateBox(0.0, 0.0, 0.0, 6.0, 6.0, 6.0);
         NCollection_List<int> result = sortBox.Compare(testBox);
 
         Assert.Equal(3, result.Extent());
 
         // Test with a box that should intersect only the point
-        Bnd_Box pointTestBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+        Box pointTestBox = CreateBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
         NCollection_List<int> pointResult = sortBox.Compare(pointTestBox);
 
         Assert.Equal(1, pointResult.Extent());

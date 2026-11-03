@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.IntImp_ConstIsoparametric;
 
 namespace Occt;
@@ -20,18 +23,18 @@ namespace Occt;
 /// <see cref="IntImp_Int2S{ThePSurface, ThePSurfaceTool}"/> builds them. OCCT keeps pointers to the caller's surface
 /// handles; the port keeps the surfaces (adaptors, by reference, as the handles).
 /// </remarks>
-public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetWithDerivatives
+public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
     where ThePSurfaceTool : IIntImp_ZerCSParPSurfaceTool<ThePSurface>
 {
     private readonly ThePSurface surf1;
     private readonly ThePSurface surf2;
-    private gp_Pnt pntsol1;
-    private gp_Pnt pntsol2;
+    private Point3D pntsol1;
+    private Point3D pntsol2;
     private readonly double[] f = new double[3];
     // OCCT's field compute is written, never read: left out (decision 143).
     private bool tangent;
     private readonly double[] tgduv = new double[4];
-    private readonly gp_Vec[] dpuv = [new gp_Vec(), new gp_Vec(), new gp_Vec(), new gp_Vec()];
+    private readonly Vector3D[] dpuv = [new Vector3D(), new Vector3D(), new Vector3D(), new Vector3D()];
     private IntImp_ConstIsoparametric chxIso;
     private double paramConst;
     private readonly double ua0;
@@ -64,16 +67,16 @@ public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         ub1 = ThePSurfaceTool.LastUParameter(surf2); //-- ThePSurfaceTool::UIntervalLast(surf2);
         vb1 = ThePSurfaceTool.LastVParameter(surf2); //-- ThePSurfaceTool::VIntervalLast(surf2);
 
-        ures1 = ThePSurfaceTool.UResolution(surf1, Precision.Confusion());
-        vres1 = ThePSurfaceTool.VResolution(surf1, Precision.Confusion());
+        ures1 = ThePSurfaceTool.UResolution(surf1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        vres1 = ThePSurfaceTool.VResolution(surf1, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        ures2 = ThePSurfaceTool.UResolution(surf2, Precision.Confusion());
-        vres2 = ThePSurfaceTool.VResolution(surf2, Precision.Confusion());
+        ures2 = ThePSurfaceTool.UResolution(surf2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        vres2 = ThePSurfaceTool.VResolution(surf2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // memset(f, 0, sizeof(f)): the array is new
         tangent = false;
-        pntsol1 = new gp_Pnt();
-        pntsol2 = new gp_Pnt();
+        pntsol1 = new Point3D();
+        pntsol2 = new Point3D();
     }
 
     public override int NbVariables() => 3;
@@ -117,13 +120,13 @@ public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         FillDerivatives(X, D);
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         FillDerivatives(X, D);
 
@@ -135,7 +138,7 @@ public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     }
 
     // The switch that OCCT writes out twice, verbatim, in Derivatives and Values (decision 340's approach).
-    private void FillDerivatives(math_Vector X, math_Matrix D)
+    private void FillDerivatives(math_Vector X, Matrix D)
     {
         switch (chxIso)
         {
@@ -306,7 +309,7 @@ public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     public double Root() => f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
 
     /// <summary>The middle of the two last evaluated points.</summary>
-    public gp_Pnt Point() => new gp_Pnt((pntsol1.XYZ() + pntsol2.XYZ()) / 2.0);
+    public Point3D Point() => new Point3D((pntsol1.XYZ() + pntsol2.XYZ()) / 2.0);
 
     /// <summary>
     /// Writes the solution <paramref name="UVap"/> into <paramref name="Param"/> (u1, v1, u2, v2), and returns true
@@ -367,33 +370,33 @@ public class IntImp_ZerParFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     }
 
     /// <summary>The tangent of the intersection line. Throws StdFail_UndefinedDerivative at a tangent point.</summary>
-    public gp_Dir Direction()
+    public Direction3D Direction()
     {
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
-        return new gp_Dir(tgduv[0] * dpuv[0].XYZ() + tgduv[1] * dpuv[1].XYZ());
+        return new Direction3D(tgduv[0] * dpuv[0].XYZ() + tgduv[1] * dpuv[1].XYZ());
     }
 
     /// <summary>The tangent in the parametric space of the first surface.</summary>
-    public gp_Dir2d DirectionOnS1()
+    public Direction2D DirectionOnS1()
     {
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
-        return new gp_Dir2d(tgduv[0], tgduv[1]);
+        return new Direction2D(tgduv[0], tgduv[1]);
     }
 
     /// <summary>The tangent in the parametric space of the second surface.</summary>
-    public gp_Dir2d DirectionOnS2()
+    public Direction2D DirectionOnS2()
     {
         if (tangent)
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
-        return new gp_Dir2d(tgduv[2], tgduv[3]);
+        return new Direction2D(tgduv[2], tgduv[3]);
     }
 
     public ThePSurface AuxillarSurface1() => surf1;

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
 
@@ -40,7 +43,7 @@ public sealed class STEPCAFControlTests
         var aDoc = new XdeDoc_Document();
         XdeDoc_Label aPart = aDoc.AddShape(Box(10.0), false);
         aDoc.SetName(aPart, "box");
-        aDoc.SetColor(aPart, new Quantity_Color(0.25, 0.5, 0.75, Quantity_TypeOfColor.Quantity_TOC_RGB), XdeDoc_ColorType.XdeDoc_ColorSurf);
+        aDoc.SetColor(aPart, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), XdeDoc_ColorType.XdeDoc_ColorSurf);
         aDoc.SetLayer(aPart, "parts");
         aDoc.SetVolume(aPart, 1000.0);
         string aBefore = string.Join("\n", XdeDocDump.Dump(aDoc));
@@ -54,8 +57,8 @@ public sealed class STEPCAFControlTests
         XdeDoc_Label aLabel = aFree.Value(1);
         Assert.True(aRead.GetName(aLabel, out string? aName));
         Assert.Equal("box", aName);
-        Assert.True(aRead.GetColor(aLabel, XdeDoc_ColorType.XdeDoc_ColorSurf, out Quantity_Color aColor));
-        Assert.True(aColor.IsEqual(new Quantity_Color(0.25, 0.5, 0.75, Quantity_TypeOfColor.Quantity_TOC_RGB)));
+        Assert.True(aRead.GetColor(aLabel, XdeDoc_ColorType.XdeDoc_ColorSurf, out Color aColor));
+        Assert.True(aColor.IsEqual(new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb)));
         var aLayers = new NCollection_Sequence<string>();
         Assert.True(aRead.GetLayers(aLabel, aLayers));
         Assert.Equal("parts", aLayers.Value(1));
@@ -111,34 +114,34 @@ public sealed class STEPCAFControlTests
         TopoDS_Shape aBox = Box(1.0);
         XdeDoc_Label aPart = aDoc.AddShape(aBox, false);
         XdeDoc_Label anAssembly = aDoc.NewShape();
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(5.0, 0.0, 0.0));
-        var aLoc = new TopLoc_Location(aTrsf);
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(5.0, 0.0, 0.0));
+        var aLoc = new Placement(aTrsf);
         XdeDoc_Label aComp = aDoc.AddComponent(anAssembly, aPart, aLoc);
         var aLabels = new NCollection_Sequence<XdeDoc_Label>();
         Assert.True(aDoc.FindComponent(aBox.Located(aLoc), aLabels));
         Assert.Equal(aComp, aLabels.Value(1));
         Assert.True(aDoc.SetInstanceColor(aBox.Located(aLoc), XdeDoc_ColorType.XdeDoc_ColorSurf,
-                                          new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED)));
+                                          new Color(NameOfColor.NocRed)));
         Assert.True(aDoc.IsSet(aComp, XdeDoc_ColorType.XdeDoc_ColorSurf));
-        Assert.False(aDoc.FindComponent(aBox.Located(new TopLoc_Location(new gp_Trsf())), aLabels));
+        Assert.False(aDoc.FindComponent(aBox.Located(new Placement(new Transform3D())), aLabels));
     }
 
     [Fact]
     public void EncodesAndDecodesColours()
     {
-        StepVisual_Colour aRed = STEPConstruct_Styles.EncodeColor(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED));
+        StepVisual_Colour aRed = STEPConstruct_Styles.EncodeColor(new Color(NameOfColor.NocRed));
         Assert.IsType<StepVisual_DraughtingPreDefinedColour>(aRed);
-        var aColor = new Quantity_Color();
+        var aColor = new Color();
         Assert.True(STEPConstruct_Styles.DecodeColor(aRed, ref aColor));
-        Assert.True(aColor.IsEqual(new Quantity_Color(Quantity_NameOfColor.Quantity_NOC_RED)));
-        var aRgb = new Quantity_Color(0.25, 0.5, 0.75, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+        Assert.True(aColor.IsEqual(new Color(NameOfColor.NocRed)));
+        var aRgb = new Color(0.25, 0.5, 0.75, ColorSpace.TOC_sRGB);
         StepVisual_Colour anEncoded = STEPConstruct_Styles.EncodeColor(aRgb);
         Assert.IsType<StepVisual_ColourRgb>(anEncoded);
         Assert.True(STEPConstruct_Styles.DecodeColor(anEncoded, ref aColor));
         Assert.True(aColor.IsEqual(aRgb));
 
-        var aProps = new STEPConstruct_RenderingProperties(new Quantity_ColorRGBA(aRgb, 0.25f));
+        var aProps = new STEPConstruct_RenderingProperties(new ColorWithAlpha(aRgb, 0.25f));
         Assert.True(aProps.IsDefined());
         Assert.Equal(0.75, aProps.Transparency(), 6);
         var aBack = new STEPConstruct_RenderingProperties(aProps.CreateRenderingProperties());

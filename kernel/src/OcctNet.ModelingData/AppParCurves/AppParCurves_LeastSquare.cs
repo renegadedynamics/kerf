@@ -10,8 +10,11 @@
 // This program uses the least squares method for the following case:
 // passing points and tangencies at extremities.
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
-using static Occt.math_Recipes;
+using static Kerf.Engine.Numerics.Recipes;
 
 namespace Occt;
 
@@ -43,17 +46,17 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     private readonly AppParCurves_MultiBSpCurve SCU;
     private NCollection_HArray1<double>? myknots;
     private NCollection_HArray1<int>? mymults;
-    private readonly math_Matrix mypoles;
-    private readonly math_Matrix A;
-    private readonly math_Matrix DA;
-    private readonly math_Matrix B2;
-    private readonly math_Matrix mypoints;
+    private readonly Matrix mypoles;
+    private readonly Matrix A;
+    private readonly Matrix DA;
+    private readonly Matrix B2;
+    private readonly Matrix mypoints;
     private readonly math_Vector Vflatknots;
     private readonly math_Vector Vec1t;
     private readonly math_Vector Vec1c;
     private readonly math_Vector Vec2t;
     private readonly math_Vector Vec2c;
-    private readonly math_Matrix theError;
+    private readonly Matrix theError;
     private readonly math_IntegerVector myindex;
     private double lambda1;
     private double lambda2;
@@ -96,8 +99,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     //              The property of correlation between Tg3d and Tg2d is used here.
     //            Therefore, only 3D-coinciding is checked.
     //=======================================================================
-    private static void CheckTangents(NCollection_Array1<gp_Pnt> theArrPt1, NCollection_Array1<gp_Pnt> theArrPt2,
-                                      NCollection_Array1<gp_Vec> theArrTg3d, NCollection_Array1<gp_Vec2d> theArrTg2d)
+    private static void CheckTangents(NCollection_Array1<Point3D> theArrPt1, NCollection_Array1<Point3D> theArrPt2,
+                                      NCollection_Array1<Vector3D> theArrTg3d, NCollection_Array1<Vector2D> theArrTg2d)
     {
         if (theArrPt1.Lower() != theArrPt2.Lower())
         {
@@ -118,8 +121,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
 
         for (int i = theArrPt1.Lower(); i <= theArrPt1.Upper(); i++)
         {
-            gp_Vec aV1 = new(theArrPt1[i], theArrPt2[i]);
-            gp_Vec aV2 = theArrTg3d[i];
+            Vector3D aV1 = new(theArrPt1[i], theArrPt2[i]);
+            Vector3D aV2 = theArrTg3d[i];
 
             if (aV1.Dot(aV2) < 0.0)
             {
@@ -154,8 +157,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     //              theArrPt1 (as same as theArrPt2) is sub-set of all 2D-points in
     //            one multy-point (multy-point is union of sets of 2D- and 3D-points).
     //=======================================================================
-    private static void CheckTangents(NCollection_Array1<gp_Pnt2d> theArrPt1, NCollection_Array1<gp_Pnt2d> theArrPt2,
-                                      NCollection_Array1<gp_Vec2d> theArrTg2d)
+    private static void CheckTangents(NCollection_Array1<Point2D> theArrPt1, NCollection_Array1<Point2D> theArrPt2,
+                                      NCollection_Array1<Vector2D> theArrTg2d)
     {
         if (theArrPt1.Lower() != theArrPt2.Lower())
         {
@@ -169,8 +172,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
 
         for (int i = theArrPt1.Lower(); i <= theArrPt1.Upper(); i++)
         {
-            gp_Vec2d aV1 = new(theArrPt1[i], theArrPt2[i]);
-            gp_Vec2d aV2 = theArrTg2d[i];
+            Vector2D aV1 = new(theArrPt1[i], theArrPt2[i]);
+            Vector2D aV2 = theArrTg2d[i];
 
             if (aV1.Dot(aV2) < 0.0)
             {
@@ -184,20 +187,20 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
                                      AppParCurves_Constraint LastCons, int NbPol, int theFlatLength)
     {
         SCU = new AppParCurves_MultiBSpCurve(NbPol);
-        mypoles = new math_Matrix(1, NbPol, 1, NbBColumns(SSP));
-        A = new math_Matrix(FirstPoint, LastPoint, 1, NbPol);
-        DA = new math_Matrix(FirstPoint, LastPoint, 1, NbPol);
-        B2 = new math_Matrix(TheFirstPoint(FirstCons, FirstPoint),
+        mypoles = new Matrix(1, NbPol, 1, NbBColumns(SSP));
+        A = new Matrix(FirstPoint, LastPoint, 1, NbPol);
+        DA = new Matrix(FirstPoint, LastPoint, 1, NbPol);
+        B2 = new Matrix(TheFirstPoint(FirstCons, FirstPoint),
                              Math.Max(TheFirstPoint(FirstCons, FirstPoint), TheLastPoint(LastCons, LastPoint)),
                              1,
                              NbBColumns(SSP));
-        mypoints = new math_Matrix(FirstPoint, LastPoint, 1, NbBColumns(SSP));
+        mypoints = new Matrix(FirstPoint, LastPoint, 1, NbBColumns(SSP));
         Vflatknots = new math_Vector(1, theFlatLength);
         Vec1t = new math_Vector(1, NbBColumns(SSP));
         Vec1c = new math_Vector(1, NbBColumns(SSP));
         Vec2t = new math_Vector(1, NbBColumns(SSP));
         Vec2c = new math_Vector(1, NbBColumns(SSP));
-        theError = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        theError = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
         myindex = new math_IntegerVector(FirstPoint, LastPoint, 0);
         nbpoles = NbPol;
     }
@@ -280,8 +283,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
 
         nbP2d = ToolLine.NbP2d(SSP);
         nbP = ToolLine.NbP3d(SSP);
-        gp_Pnt Poi = new();
-        gp_Pnt2d Poi2d = new();
+        Point3D Poi = new();
+        Point2D Poi2d = new();
         int mynbP2d = nbP2d, mynbP = nbP;
         if (nbP2d == 0)
         {
@@ -291,8 +294,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
         {
             mynbP = 1;
         }
-        NCollection_Array1<gp_Pnt> TabP = new(1, mynbP);
-        NCollection_Array1<gp_Pnt2d> TabP2d = new(1, mynbP2d);
+        NCollection_Array1<Point3D> TabP = new(1, mynbP);
+        NCollection_Array1<Point2D> TabP2d = new(1, mynbP2d);
 
         deg = nbpoles - 1;
 
@@ -540,8 +543,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
             {
                 if (LastConstraint == AppParCurves_NoConstraint)
                 {
-                    math_Householder HouResol = new(A, mypoints);
-                    if (!(HouResol.IsDone()))
+                    Householder HouResol = new(A, mypoints);
+                    if (!(HouResol.IsDone))
                     {
                         done = false;
                         return;
@@ -600,7 +603,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
             }
             math_IntegerVector IndexB = new(1, NincxB);
             SearchIndex(IndexB);
-            math_Matrix mytab = new(resinit, resfin, 1, B2.ColNumber(), 0.0);
+            Matrix mytab = new(resinit, resfin, 1, B2.ColNumber(), 0.0);
             math_Vector TheAA = new(1, IndexB[NincxB], 0.0);
             math_Vector myTABB = new(1, NincxB, 0.0);
 
@@ -1050,7 +1053,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
 
         int Nincx = resfin - resinit + 1;
 
-        math_Matrix mytab = new(resinit, resfin, 1, B2.ColNumber(), 0.0);
+        Matrix mytab = new(resinit, resfin, 1, B2.ColNumber(), 0.0);
         math_IntegerVector Index = new(1, Nincx);
         SearchIndex(Index);
         math_Vector AA = new(1, Index[Nincx], 0.0);
@@ -1108,8 +1111,8 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
             {
                 mynbP = 1;
             }
-            NCollection_Array1<gp_Vec> TabV = new(1, mynbP);
-            NCollection_Array1<gp_Vec2d> TabV2d = new(1, mynbP2d);
+            NCollection_Array1<Vector3D> TabV = new(1, mynbP);
+            NCollection_Array1<Vector2D> TabV2d = new(1, mynbP2d);
 
             if (Cons == AppParCurves_CurvaturePoint)
             {
@@ -1183,7 +1186,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
 
                 if (Ok)
                 {
-                    NCollection_Array1<gp_Pnt> anArrPts3d1 = new(1, mynbP), anArrPts3d2 = new(1, mynbP);
+                    NCollection_Array1<Point3D> anArrPts3d1 = new(1, mynbP), anArrPts3d2 = new(1, mynbP);
 
                     if (nbP != 0)
                     {
@@ -1202,7 +1205,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
                     }
                     else if (nbP2d != 0)
                     {
-                        NCollection_Array1<gp_Pnt2d> anArrPts2d1 = new(1, mynbP2d), anArrPts2d2 = new(1, mynbP2d);
+                        NCollection_Array1<Point2D> anArrPts2d1 = new(1, mynbP2d), anArrPts2d2 = new(1, mynbP2d);
 
                         if (Index < ToolLine.LastPoint(SSP))
                         {
@@ -1250,7 +1253,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         int i, j, k, i2, indexdeb, indexfin;
         int i21, i22;
@@ -1333,7 +1336,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         int i, j, k, i2, indexdeb, indexfin;
         double AA, BB, CC, Fi, FX, FY, FZ, AIJ;
@@ -1429,7 +1432,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     /// The distances between the points of the MultiLine and the curves, after <see cref="Error"/> or
     /// <see cref="ErrorGradient"/> (shared: don't modify).
     /// </summary>
-    public math_Matrix Distance()
+    public Matrix Distance()
     {
         if (!iscalculated)
         {
@@ -1459,7 +1462,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     {
         if (myknots is not null)
         {
-            throw new Standard_NoSuchObject();
+            throw new NoSuchObjectException();
         }
         return new AppParCurves_MultiCurve(BSplineValue());
     }
@@ -1469,12 +1472,12 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         int i, j, j2, npoints = nbP + nbP2d;
-        gp_Pnt Pt = new();
-        gp_Pnt2d Pt2d = new();
+        Point3D Pt = new();
+        Point2D Pt2d = new();
         int ideb = resinit, ifin = resfin;
         if (ideb >= 2)
         {
@@ -1508,21 +1511,21 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     }
 
     /// <summary>The function matrix A (shared: don't modify).</summary>
-    public math_Matrix FunctionMatrix()
+    public Matrix FunctionMatrix()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return A;
     }
 
     /// <summary>The derivative function matrix DA (shared: don't modify).</summary>
-    public math_Matrix DerivativeFunctionMatrix()
+    public Matrix DerivativeFunctionMatrix()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return DA;
     }
@@ -1567,10 +1570,10 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     }
 
     /// <summary>The matrix of the point coordinates (shared: don't modify).</summary>
-    public math_Matrix Points() => mypoints;
+    public Matrix Points() => mypoints;
 
     /// <summary>The matrix of the pole coordinates (shared: don't modify).</summary>
-    public math_Matrix Poles() => mypoles;
+    public Matrix Poles() => mypoles;
 
     /// <summary>
     /// The index before the first non-zero value of A and DA for each point: they are non-zero from
@@ -1800,13 +1803,13 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
     }
 
     /// <summary>Builds the packed normal matrix tA A and the second members tA B2.</summary>
-    protected void MakeTAA(math_Vector AA, math_Matrix myTAB)
+    protected void MakeTAA(math_Vector AA, Matrix myTAB)
     {
         int i, j, k;
         int indexdeb, indexfin, jinit, jfin;
         int iinit, ifin;
         double Akj;
-        math_Matrix TheA = new(resinit, resfin, resinit, resfin);
+        Matrix TheA = new(resinit, resfin, resinit, resfin);
         TheA.Init(0.0);
 
         for (k = FirstP; k <= LastP; k++)
@@ -1869,7 +1872,7 @@ public class AppParCurves_LeastSquare<MultiLine, ToolLine>
         int indexdeb, indexfin, jinit, jfin;
         int iinit, ifin;
         double Akj;
-        math_Matrix TheA = new(resinit, resfin, resinit, resfin, 0.0);
+        Matrix TheA = new(resinit, resfin, resinit, resfin, 0.0);
 
         for (k = FirstP; k <= LastP; k++)
         {

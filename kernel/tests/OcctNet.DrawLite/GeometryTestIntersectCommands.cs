@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -40,14 +41,14 @@ internal static class GeometryTestIntersectCommands
             return 1;
         }
 
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n == 5 || n == 9 || n == 13 || n == 17)
         {
             tol = theDI.Atof(a[n - 1]);
         }
 
         Geom_Curve Result;
-        gp_Pnt Point;
+        Point3D Point;
 
         if (GC1 is null)
         {

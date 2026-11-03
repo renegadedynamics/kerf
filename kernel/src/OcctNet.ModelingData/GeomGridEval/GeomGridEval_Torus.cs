@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -42,11 +44,11 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
 
     private Data extractData()
     {
-        gp_Torus aTorus = myGeom!.Torus();
-        gp_Pnt aCenter = aTorus.Location();
-        gp_Dir aXDir = aTorus.Position().XDirection();
-        gp_Dir aYDir = aTorus.Position().YDirection();
-        gp_Dir aZDir = aTorus.Position().Direction();
+        Torus aTorus = myGeom!.Torus();
+        Point3D aCenter = aTorus.Location();
+        Direction3D aXDir = aTorus.Position().XDirection();
+        Direction3D aYDir = aTorus.Position().YDirection();
+        Direction3D aZDir = aTorus.Position().Direction();
         return new Data
         {
             CX = aCenter.X(),
@@ -83,7 +85,7 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
         };
     }
 
-    private static gp_Pnt computeD0(in Data theData, in UContext theUCtx, double theV)
+    private static Point3D computeD0(in Data theData, in UContext theUCtx, double theV)
     {
         double cosV = Math.Cos(theV);
         double sinV = Math.Sin(theV);
@@ -92,7 +94,7 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
         double K = theData.MajorRadius + theData.MinorRadius * cosV;
 
         // P = Center + K * DirU + MinorRadius * sinV * ZDir
-        return new gp_Pnt(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
+        return new Point3D(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
                           theData.CY + K * theUCtx.dirUY + theData.MinorRadius * sinV * theData.ZY,
                           theData.CZ + K * theUCtx.dirUZ + theData.MinorRadius * sinV * theData.ZZ);
     }
@@ -116,11 +118,11 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
 
         return new Geom_Surface.ResD1
         {
-            Point = new gp_Pnt(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
+            Point = new Point3D(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
                                theData.CY + K * theUCtx.dirUY + theData.MinorRadius * sinV * theData.ZY,
                                theData.CZ + K * theUCtx.dirUZ + theData.MinorRadius * sinV * theData.ZZ),
-            D1U = new gp_Vec(dU1, dU2, dU3),
-            D1V = new gp_Vec(dV1, dV2, dV3),
+            D1U = new Vector3D(dU1, dU2, dU3),
+            D1V = new Vector3D(dV1, dV2, dV3),
         };
     }
 
@@ -158,14 +160,14 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
 
         return new Geom_Surface.ResD2
         {
-            Point = new gp_Pnt(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
+            Point = new Point3D(theData.CX + K * theUCtx.dirUX + theData.MinorRadius * sinV * theData.ZX,
                                theData.CY + K * theUCtx.dirUY + theData.MinorRadius * sinV * theData.ZY,
                                theData.CZ + K * theUCtx.dirUZ + theData.MinorRadius * sinV * theData.ZZ),
-            D1U = new gp_Vec(dU1, dU2, dU3),
-            D1V = new gp_Vec(dV1, dV2, dV3),
-            D2U = new gp_Vec(d2U1, d2U2, d2U3),
-            D2V = new gp_Vec(d2V1, d2V2, d2V3),
-            D2UV = new gp_Vec(d2UV1, d2UV2, d2UV3),
+            D1U = new Vector3D(dU1, dU2, dU3),
+            D1V = new Vector3D(dV1, dV2, dV3),
+            D2U = new Vector3D(d2U1, d2U2, d2U3),
+            D2V = new Vector3D(d2V1, d2V2, d2V3),
+            D2UV = new Vector3D(d2UV1, d2UV2, d2UV3),
         };
     }
 
@@ -246,22 +248,22 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
 
         return new Geom_Surface.ResD3
         {
-            Point = new gp_Pnt(theData.CX + Som1X + R2 * theData.ZX,
+            Point = new Point3D(theData.CX + Som1X + R2 * theData.ZX,
                                theData.CY + Som1Y + R2 * theData.ZY,
                                theData.CZ + Som1Z + R2 * theData.ZZ),
-            D1U = new gp_Vec(dU1, dU2, dU3),
-            D1V = new gp_Vec(dV1, dV2, dV3),
-            D2U = new gp_Vec(d2U1, d2U2, d2U3),
-            D2V = new gp_Vec(d2V1, d2V2, d2V3),
-            D2UV = new gp_Vec(d2UV1, d2UV2, d2UV3),
-            D3U = new gp_Vec(d3U1, d3U2, d3U3),
-            D3V = new gp_Vec(d3V1, d3V2, d3V3),
-            D3UUV = new gp_Vec(d3UUV1, d3UUV2, d3UUV3),
-            D3UVV = new gp_Vec(d3UVV1, d3UVV2, d3UVV3),
+            D1U = new Vector3D(dU1, dU2, dU3),
+            D1V = new Vector3D(dV1, dV2, dV3),
+            D2U = new Vector3D(d2U1, d2U2, d2U3),
+            D2V = new Vector3D(d2V1, d2V2, d2V3),
+            D2UV = new Vector3D(d2UV1, d2UV2, d2UV3),
+            D3U = new Vector3D(d3U1, d3U2, d3U3),
+            D3V = new Vector3D(d3V1, d3V2, d3V3),
+            D3UUV = new Vector3D(d3UUV1, d3UUV2, d3UUV3),
+            D3UVV = new Vector3D(d3UVV1, d3UVV2, d3UVV3),
         };
     }
 
-    private static gp_Vec computeDN(in Data theData, in UContext theUCtx, double theV, int theNU, int theNV)
+    private static Vector3D computeDN(in Data theData, in UContext theUCtx, double theV, int theNU, int theNV)
     {
         // For torus P(u,v) = C + K(v)*DirU(u) + r*sin(v)*Z
         // where K(v) = R + r*cos(v), DirU(u) = cos(u)*X + sin(u)*Y
@@ -381,23 +383,23 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
             resZ = coeff * dirDnZ;
         }
 
-        return new gp_Vec(resX, resY, resZ);
+        return new Vector3D(resX, resY, resZ);
     }
 
     /// <summary>Evaluates all grid points; [1..NbU, 1..NbV], or empty if the geometry is null or a list is empty.</summary>
-    public NCollection_Array2<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Point3D> EvaluateGrid(NCollection_Array1<double> theUParams,
                                                    NCollection_Array1<double> theVParams)
     {
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty())
         {
-            return new NCollection_Array2<gp_Pnt>();
+            return new NCollection_Array2<Point3D>();
         }
 
         Data aData = extractData();
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Pnt> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Point3D> aResult = new(1, aNbU, 1, aNbV);
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {
@@ -501,7 +503,7 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
     }
 
     /// <summary>Evaluates the partial derivative of orders (NU, NV) on the grid; empty unless NU, NV &gt;= 0 and NU + NV &gt;= 1.</summary>
-    public NCollection_Array2<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theUParams,
+    public NCollection_Array2<Vector3D> EvaluateGridDN(NCollection_Array1<double> theUParams,
                                                      NCollection_Array1<double> theVParams,
                                                      int theNU,
                                                      int theNV)
@@ -509,14 +511,14 @@ public sealed class GeomGridEval_Torus : GeomGridEval.ISurfaceEvaluator
         if (myGeom is null || theUParams.IsEmpty() || theVParams.IsEmpty() || theNU < 0 || theNV < 0
             || (theNU + theNV) < 1)
         {
-            return new NCollection_Array2<gp_Vec>();
+            return new NCollection_Array2<Vector3D>();
         }
 
         Data aData = extractData();
         int aNbU = theUParams.Length();
         int aNbV = theVParams.Length();
 
-        NCollection_Array2<gp_Vec> aResult = new(1, aNbU, 1, aNbV);
+        NCollection_Array2<Vector3D> aResult = new(1, aNbU, 1, aNbV);
 
         for (int iU = 1; iU <= aNbU; ++iU)
         {

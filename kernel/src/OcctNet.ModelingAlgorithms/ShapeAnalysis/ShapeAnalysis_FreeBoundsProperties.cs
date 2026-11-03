@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -32,8 +34,8 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
     {
         int nbe = 0;
         double length = 0.0;
-        gp_XYZ area = new(0.0, 0.0, 0.0);
-        gp_XYZ prev = new(), cont = new();
+        Xyz area = new(0.0, 0.0, 0.0);
+        Xyz prev = new(), cont = new();
         for (var exp = new BRepTools_WireExplorer(wire); exp.More(); exp.Next())
         {
             TopoDS_Edge Edge = exp.Current();
@@ -46,7 +48,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             int ibeg = 0;
             if (nbe == 1)
             {
-                gp_Pnt pntIni = c3d!.Value(First);
+                Point3D pntIni = c3d!.Value(First);
                 prev = pntIni.XYZ();
                 cont = prev;
                 ibeg = 1;
@@ -54,9 +56,9 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             for (int i = ibeg; i < NbControl; i++)
             {
                 double prm = ((NbControl - 1 - i) * First + i * Last) / (NbControl - 1);
-                gp_Pnt pntCurr = c3d!.Value(prm);
-                gp_XYZ curr = pntCurr.XYZ();
-                gp_XYZ delta = curr - prev;
+                Point3D pntCurr = c3d!.Value(prm);
+                Xyz curr = pntCurr.XYZ();
+                Xyz delta = curr - prev;
                 length += delta.Modulus();
                 area += curr ^ prev;
                 prev = curr;
@@ -263,7 +265,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
 
     private bool checkNotches(in TopoDS_Wire wire, int num, out TopoDS_Wire notch, ref double distMax)
     {
-        double tol = Max(myTolerance, Occt.Precision.Confusion());
+        double tol = Max(myTolerance, Kerf.Engine.Foundation.Precision.Confusion());
         var wdt = new ShapeExtend_WireData(wire);
         BRep_Builder B = new();
         notch = new TopoDS_Wire();
@@ -300,8 +302,8 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             return false;
         }
 
-        c3d1!.D1(Last1, out _, out gp_Vec vec1);
-        c3d2!.D1(First2, out _, out gp_Vec vec2);
+        c3d1!.D1(Last1, out _, out Vector3D vec1);
+        c3d2!.D1(First2, out _, out Vector3D vec2);
         if (E1.Orientation() == TopAbs_REVERSED)
         {
             vec1.Reverse();
@@ -318,7 +320,7 @@ public sealed class ShapeAnalysis_FreeBoundsProperties
             for (int i = 0; i < NbControl; i++)
             {
                 double prm = ((NbControl - 1 - i) * First1 + i * Last1) / (NbControl - 1);
-                gp_Pnt pntCurr = c3d1.Value(prm);
+                Point3D pntCurr = c3d1.Value(prm);
 
                 double p1, p2;
                 if (First2 < Last2)

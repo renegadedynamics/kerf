@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Runtime.InteropServices;
 
 namespace Occt;
@@ -14,7 +16,7 @@ namespace Occt;
 /// </remarks>
 public sealed class Draft_VertexInfo
 {
-    private gp_Pnt myGeom = new();
+    private Point3D myGeom = new();
     private readonly List<TopoDS_Shape> myEdges = [];
     private readonly List<double> myParams = [];
     private int myItEd; // OCCT's NCollection_List<TopoDS_Shape>::Iterator
@@ -39,14 +41,14 @@ public sealed class Draft_VertexInfo
         }
     }
 
-    public gp_Pnt Geometry() => myGeom;
+    public Point3D Geometry() => myGeom;
 
-    public ref gp_Pnt ChangeGeometry() => ref myGeom;
+    public ref Point3D ChangeGeometry() => ref myGeom;
 
-    /// <exception cref="Standard_DomainError">The edge isn't one of the vertex's.</exception>
+    /// <exception cref="DomainErrorException">The edge isn't one of the vertex's.</exception>
     public double Parameter(in TopoDS_Edge E) => ChangeParameter(E);
 
-    /// <exception cref="Standard_DomainError">The edge isn't one of the vertex's.</exception>
+    /// <exception cref="DomainErrorException">The edge isn't one of the vertex's.</exception>
     public ref double ChangeParameter(in TopoDS_Edge E)
     {
         for (myItEd = 0; myItEd < myEdges.Count; myItEd++)
@@ -56,7 +58,7 @@ public sealed class Draft_VertexInfo
                 return ref CollectionsMarshal.AsSpan(myParams)[myItEd];
             }
         }
-        throw new Standard_DomainError();
+        throw new DomainErrorException();
     }
 
     public void InitEdgeIterator() => myItEd = 0;

@@ -1,3 +1,5 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -23,7 +25,7 @@ public abstract partial class Shape
     }
 
     /// <summary>A copy with the transformation applied to the geometry (not just the location), and the history carried through.</summary>
-    internal Shape ApplyTransform(gp_Trsf transformation)
+    internal Shape ApplyTransform(Transform3D transformation)
     {
         if (IsEmpty)
             return this;
@@ -64,7 +66,7 @@ public abstract partial class Shape
             var unified = ShapeHistory.FromUnify(upgrader);
             return Placed(TopoUtil.Downcast(upgrader.Shape())).MadeBy(record is null ? unified : record.Merge(unified));
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             Warnings.Warn($"Unable to clean {this}");
             return this;
@@ -83,10 +85,10 @@ public abstract partial class Shape
         mirrorPlane ??= Plane.XY;
         if (IsEmpty)
             return this;
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         var origin = mirrorPlane.Origin.ToGpPnt();
         var normal = mirrorPlane.ZDir.ToGpDir();
-        var ax2 = new gp_Ax2(origin, normal);
+        var ax2 = new Frame3D(origin, normal);
         trsf = trsf.WithMirror(ax2);
         return ApplyTransform(trsf);
     }
@@ -95,7 +97,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         var ax1 = axis.ToGpAx1();
         trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
@@ -105,7 +107,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         var vec = vector.ToGpVec();
         trsf = trsf.WithTranslation(vec);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
@@ -116,7 +118,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var point = about ?? Location.Position;
-        var trsf = new gp_Trsf();
+        var trsf = new Transform3D();
         var pnt = point.ToGpPnt();
         trsf = trsf.WithScale(pnt, factor);
         return ApplyTransform(trsf);
@@ -142,7 +144,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         TopoDS_Shape result;
-        if (matrix.GTrsf.Form() == gp_TrsfForm.gp_Other)
+        if (matrix.GTrsf.Form() == TransformForm.Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
             var builder = new BRepBuilderAPI_GTransform(_wrapped, matrix.GTrsf, true);
@@ -171,19 +173,19 @@ public abstract partial class Shape
     internal Shape TransformedCore(Vector rotate, Vector offset)
     {
         var radians = rotate * Constants.DegToRad;
-        var origin = new gp_Pnt(0, 0, 0);
-        gp_Trsf About(double x, double y, double z, double angle)
+        var origin = new Point3D(0, 0, 0);
+        Transform3D About(double x, double y, double z, double angle)
         {
-            var t = new gp_Trsf();
-            var dir = new gp_Dir(x, y, z);
-            var ax1 = new gp_Ax1(origin, dir);
+            var t = new Transform3D();
+            var dir = new Direction3D(x, y, z);
+            var ax1 = new Axis3D(origin, dir);
             t = t.WithRotation(ax1, angle);
             return t;
         }
         var rx = About(1, 0, 0, radians.X);
         var ry = About(0, 1, 0, radians.Y);
         var rz = About(0, 0, 1, radians.Z);
-        var to = new gp_Trsf();
+        var to = new Transform3D();
         var vec = offset.ToGpVec();
         to = to.WithTranslation(vec);
         var a = to.Multiplied(rx);
@@ -198,7 +200,7 @@ public abstract partial class Shape
             throw new InvalidOperationException("Cannot approximate an empty shape");
         var parameters = new ShapeCustom_RestrictionParameters();
         var result = ShapeCustom.BSplineRestriction(_wrapped, tolerance, tolerance, degree, 1,
-                                                    GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C0,
+                                                    Continuity.C0, Continuity.C0,
                                                     true, !nurbs, parameters);
         return CastLike(result);
     }

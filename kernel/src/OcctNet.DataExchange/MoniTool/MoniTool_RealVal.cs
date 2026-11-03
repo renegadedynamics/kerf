@@ -5,12 +5,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// A Real through a Handle (i.e. managed as TShared)
 /// </summary>
-public class MoniTool_RealVal : Standard_Transient
+public class MoniTool_RealVal : Transient
 {
 
     public MoniTool_RealVal(double val = 0.0)

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.HLRAlgo_PolyMask;
 
 namespace Occt;
@@ -15,7 +18,7 @@ namespace Occt;
 /// A working object (a transient), as OCCT's. <see cref="Hide"/> and <see cref="Show"/> return a reference to the
 /// current segment's points, as OCCT's.
 /// </remarks>
-public class HLRAlgo_PolyAlgo : Standard_Transient
+public class HLRAlgo_PolyAlgo : Transient
 {
     private NCollection_Array1<HLRAlgo_PolyShellData?> myHShell = new();
     private HLRAlgo_PolyData.Triangle myTriangle;
@@ -62,8 +65,8 @@ public class HLRAlgo_PolyAlgo : Standard_Transient
         double xTrianMax, yTrianMax, zTrianMax;
         double xSegmnMin, ySegmnMin, zSegmnMin;
         double xSegmnMax, ySegmnMax, zSegmnMax;
-        double Big = Precision.Infinite();
-        Bnd_Box aBox = new();
+        double Big = global::Kerf.Engine.Foundation.Precision.Infinite();
+        Box aBox = new();
 
         myNbrShell = myHShell.Length();
         for (int aShellIter = myHShell.Lower(); aShellIter <= myHShell.Upper(); ++aShellIter)
@@ -199,7 +202,7 @@ public class HLRAlgo_PolyAlgo : Standard_Transient
                     double adx1, ady1, adx2, ady2, adx3, ady3;
                     double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
                     ref HLRAlgo_PolyData.FaceIndices PolyTIndices = ref aPd.Indices();
-                    NCollection_Array1<gp_XYZ> Nodes = aPd.Nodes();
+                    NCollection_Array1<Xyz> Nodes = aPd.Nodes();
                     NCollection_Array1<HLRAlgo_TriangleData> TData = aPd.TData();
                     NCollection_Array1<HLRAlgo_PolyHidingData> PHDat = aPd.PHDat();
                     int nbT = TData.Upper();
@@ -209,9 +212,9 @@ public class HLRAlgo_PolyAlgo : Standard_Transient
                         ref HLRAlgo_TriangleData aTD = ref TData[otheri];
                         if ((aTD.Flags & HLRAlgo_PolyMask_FMskHiding) != 0)
                         {
-                            gp_XYZ P1 = Nodes.Value(aTD.Node1);
-                            gp_XYZ P2 = Nodes.Value(aTD.Node2);
-                            gp_XYZ P3 = Nodes.Value(aTD.Node3);
+                            Xyz P1 = Nodes.Value(aTD.Node1);
+                            Xyz P2 = Nodes.Value(aTD.Node2);
+                            Xyz P3 = Nodes.Value(aTD.Node3);
                             X1 = P1.X();
                             Y1 = P1.Y();
                             Z1 = P1.Z();

@@ -76,7 +76,7 @@ public class BRepToolsIOOracleTests(ITestOutputHelper output) : IDisposable
     private static TopoDS_Shape PortRead(string theFile)
     {
         Assert.True(BRepTools.Read(out TopoDS_Shape aShape, theFile), theFile);
-        Assert.True(aShape.TShape()!.IsFrozen());
+        Assert.True(aShape.TShape()!.IsFrozen);
         return aShape;
     }
 

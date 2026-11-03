@@ -3,9 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -22,12 +24,12 @@ namespace Occt;
 /// </remarks>
 public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
 {
-    private GeomAbs_SurfaceType mySurfaceType;
+    private SurfaceKind mySurfaceType;
 
     /// <summary>A splitter.</summary>
     public BRepMesh_NURBSRangeSplitter()
     {
-        mySurfaceType = GeomAbs_OtherSurface;
+        mySurfaceType = OtherSurface;
     }
 
     /// <summary>Updates the discrete range of the surface from its geometric range.</summary>
@@ -36,7 +38,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         base.AdjustRange();
         mySurfaceType = GetSurface().GetType();
 
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             (double first, double second) aRangeU = GetRangeU();
             (double first, double second) aRangeV = GetRangeV();
@@ -47,7 +49,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     }
 
     /// <summary>The nodes generated from the surface and the parameters; null when there are no parameters.</summary>
-    public override NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public override NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         if (!initParameters())
         {
@@ -82,7 +84,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         NCollection_Map<double>[] aParamsToRemove =
         [
             new AnalyticalFilter(GetDFace(),
-                                 GeomAbs_IsoV,
+                                 IsoV,
                                  aParams[1],
                                  aParams[0],
                                  aFixedParams[1],
@@ -90,7 +92,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
                 .GetControlParametersToRemove(theParameters),
 
             new AnalyticalFilter(GetDFace(),
-                                 GeomAbs_IsoU,
+                                 IsoU,
                                  aParams[0],
                                  aParams[1],
                                  aFixedParams[0],
@@ -102,7 +104,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         NCollection_MapAlgo.Subtract(aParamsToRemove[1], aFixedParams[1]);
 
         // insert nodes of the regular grid
-        NCollection_List<gp_Pnt2d> aNodes = new();
+        NCollection_List<Point2D> aNodes = new();
 
         // insert nodes of the regular grid
         for (int i = 1; i <= aParams[0].Length(); ++i)
@@ -121,7 +123,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
                     continue;
                 }
 
-                aNodes.Append(new gp_Pnt2d(aParam1, aParam2));
+                aNodes.Append(new Point2D(aParam1, aParam2));
             }
         }
 
@@ -131,7 +133,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     /// <summary>Initializes the U and V parameter lists from the CN continuity intervals.</summary>
     protected virtual bool initParameters()
     {
-        GeomAbs_Shape aContinuity = GeomAbs_CN;
+        Continuity aContinuity = CN;
         BRepAdaptor_Surface aSurface = GetSurface();
 
         NCollection_Array1<double>[] aIntervals = [new NCollection_Array1<double>(), new NCollection_Array1<double>()];
@@ -168,7 +170,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     /// <summary>The number of intervals computed from the available geometrical parameters: the poles less one.</summary>
     protected virtual int getUndefinedIntervalNb(Adaptor3d_Surface theSurface,
                                                  bool isU,
-                                                 GeomAbs_Shape theContinuity)
+                                                 Continuity theContinuity)
     {
         return (isU ? theSurface.NbUPoles() : theSurface.NbVPoles()) - 1;
     }
@@ -176,7 +178,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
     // Tries to compute intervals even for cases with no intervals at all using available geometrical parameters.
     private void getUndefinedInterval(Adaptor3d_Surface theSurface,
                                       bool isU,
-                                      GeomAbs_Shape theContinuity,
+                                      Continuity theContinuity,
                                       (double first, double second) theRange,
                                       ref NCollection_Array1<double> theIntervals)
     {
@@ -219,7 +221,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
                                                                         in IMeshTools_Parameters theParameters)
     {
         // Sort and filter sequence of parameters
-        double aMinDiff = Precision.PConfusion();
+        double aMinDiff = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (theDelta < 1.0)
         {
             aMinDiff /= theDelta;
@@ -349,7 +351,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
 
                         for (int aPointIt = 0; aPointIt < aDPCurve.ParametersNb(); ++aPointIt)
                         {
-                            gp_Pnt2d aPnt2d = aDPCurve.GetPoint(aPointIt);
+                            Point2D aPnt2d = aDPCurve.GetPoint(aPointIt);
                             if ((theParamDimensionFlag & (int)ParamDimension.Param_U) != 0)
                             {
                                 GetParametersU().Add(aPnt2d.X());
@@ -415,7 +417,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         for (; aIntervalU <= theIntervals[0].Upper(); ++aIntervalU)
         {
             double aParamU = theIntervals[0].Value(aIntervalU);
-            if (Precision.IsInfinite(aParamU))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aParamU))
             {
                 continue;
             }
@@ -423,14 +425,14 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
             int aIntervalV = theIntervals[1].Lower();
             for (; aIntervalV <= theIntervals[1].Upper(); ++aIntervalV)
             {
-                gp_Dir aNorm = new();
+                Direction3D aNorm = new();
                 double aParamV = theIntervals[1].Value(aIntervalV);
-                if (Precision.IsInfinite(aParamV))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aParamV))
                 {
                     continue;
                 }
 
-                if (GeomLib.NormEstim(theSurf, new gp_Pnt2d(aParamU, aParamV), Precision.Confusion(), ref aNorm)
+                if (GeomLib.NormEstim(theSurf, new Point2D(aParamU, aParamV), global::Kerf.Engine.Foundation.Precision.Confusion(), ref aNorm)
                     != 0)
                 {
                     return true;
@@ -463,15 +465,15 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         private double myCurrParam;
 
         private double myCurrControlParam;
-        private gp_Pnt myCurrControlPnt;
-        private gp_Vec myCurrControlVec;
+        private Point3D myCurrControlPnt;
+        private Vector3D myCurrControlVec;
 
         private double myPrevControlParam;
-        private gp_Pnt myPrevControlPnt;
-        private gp_Vec myPrevControlVec;
+        private Point3D myPrevControlPnt;
+        private Vector3D myPrevControlVec;
 
         public AnalyticalFilter(IMeshData_Face theDFace,
-                                GeomAbs_IsoType theIsoType,
+                                IsoType theIsoType,
                                 NCollection_Sequence<double> theParams,
                                 NCollection_Sequence<double> theControlParams,
                                 NCollection_Map<double> theParamsForbiddenToRemove,
@@ -479,7 +481,7 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         {
             myDFace = theDFace;
             mySurface = myDFace.GetSurface().GeomSurfaceOriginal()!;
-            myIsoU = theIsoType == GeomAbs_IsoU;
+            myIsoU = theIsoType == IsoU;
             myParams = theParams;
             myControlParams = theControlParams;
             myParamsForbiddenToRemove = theParamsForbiddenToRemove;
@@ -531,15 +533,15 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
             myIso!.D1(myCurrControlParam, out myCurrControlPnt, out myCurrControlVec);
 
             double aMidParam = 0.5 * (myPrevControlParam + myCurrControlParam);
-            gp_Pnt aMidPnt = myIso.Value(aMidParam);
+            Point3D aMidPnt = myIso.Value(aMidParam);
 
             double aSqDist =
                 BRepMesh_GeomTool.SquareDeflectionOfSegment(myPrevControlPnt, myCurrControlPnt, aMidPnt);
 
             double anAngle = 0.0;
 
-            if ((myPrevControlVec.SquareMagnitude() > Precision.SquareConfusion())
-                && (myCurrControlVec.SquareMagnitude() > Precision.SquareConfusion()))
+            if ((myPrevControlVec.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                && (myCurrControlVec.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()))
             {
                 anAngle = myPrevControlVec.Angle(myCurrControlVec);
             }
@@ -583,10 +585,10 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
         // Checks whether the given parameter suits the deflection. Updates the cache.
         private bool checkParameterForDeflectionAndUpdateCache(double theParam)
         {
-            myIso!.D1(theParam, out gp_Pnt aTmpPnt, out gp_Vec aTmpVec);
+            myIso!.D1(theParam, out Point3D aTmpPnt, out Vector3D aTmpVec);
 
             double aTmpMidParam = 0.5 * (myPrevControlParam + theParam);
-            gp_Pnt aTmpMidPnt = myIso.Value(aTmpMidParam);
+            Point3D aTmpMidPnt = myIso.Value(aTmpMidParam);
 
             // Lets check next parameter.
             // If it also fits deflection, we can remove previous parameter.
@@ -596,8 +598,8 @@ public class BRepMesh_NURBSRangeSplitter : BRepMesh_UVParamRangeSplitter
             if (aSqDist < myDFace.GetDeflection() * myDFace.GetDeflection())
             {
                 // Lets check parameters for angular deflection.
-                if (myPrevControlVec.SquareMagnitude() < gp.Resolution()
-                    || aTmpVec.SquareMagnitude() < gp.Resolution()
+                if (myPrevControlVec.SquareMagnitude() < Constants.Resolution()
+                    || aTmpVec.SquareMagnitude() < Constants.Resolution()
                     || myPrevControlVec.Angle(aTmpVec) < myParameters.AngleInterior)
                 {
                     // For current Iso line we can remove this parameter.

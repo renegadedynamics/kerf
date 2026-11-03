@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The function of a chamfer of constant throat with one end on a surface's boundary.</summary>
@@ -13,19 +17,19 @@ public class BlendFunc_ConstThroatInv : BlendFunc_GenChamfInv
     protected double sign1;
     protected double sign2;
 
-    protected gp_Pnt ptgui;
-    protected gp_Vec nplan;
+    protected Point3D ptgui;
+    protected Vector3D nplan;
     protected double normtg;
     protected double theD;
-    protected gp_Vec d1gui;
-    protected gp_Vec d2gui;
+    protected Vector3D d1gui;
+    protected Vector3D d2gui;
 
-    protected gp_Pnt pts1;
-    protected gp_Pnt pts2;
-    protected gp_Vec d1u1;
-    protected gp_Vec d1v1;
-    protected gp_Vec d1u2;
-    protected gp_Vec d1v2;
+    protected Point3D pts1;
+    protected Point3D pts2;
+    protected Vector3D d1u1;
+    protected Vector3D d1v1;
+    protected Vector3D d1u2;
+    protected Vector3D d1v2;
 
     public BlendFunc_ConstThroatInv(Adaptor3d_Surface S1, Adaptor3d_Surface S2, Adaptor3d_Curve C)
         : base(S1, S2, C)
@@ -90,7 +94,7 @@ public class BlendFunc_ConstThroatInv : BlendFunc_GenChamfInv
 
     public override bool Value(math_Vector X, math_Vector F)
     {
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out _);
+        csurf!.D1(X[1], out Point2D p2d, out _);
 
         param = X[2];
         curv.D2(param, out ptgui, out d1gui, out d2gui);
@@ -120,26 +124,26 @@ public class BlendFunc_ConstThroatInv : BlendFunc_GenChamfInv
         F[1] = nplan.XYZ().Dot(pts1.XYZ()) + theD;
         F[2] = nplan.XYZ().Dot(pts2.XYZ()) + theD;
 
-        gp_Pnt ptmid = new gp_Pnt((pts1.XYZ() + pts2.XYZ()) / 2);
-        gp_Vec vmid = new gp_Vec(ptgui, ptmid);
+        Point3D ptmid = new Point3D((pts1.XYZ() + pts2.XYZ()) / 2);
+        Vector3D vmid = new Vector3D(ptgui, ptmid);
 
         F[3] = vmid.SquareMagnitude() - Throat * Throat;
 
-        gp_Vec vref1 = new gp_Vec(ptgui, pts1);
-        gp_Vec vref2 = new gp_Vec(ptgui, pts2);
+        Vector3D vref1 = new Vector3D(ptgui, pts1);
+        Vector3D vref2 = new Vector3D(ptgui, pts2);
 
         F[4] = vref1.SquareMagnitude() - vref2.SquareMagnitude();
 
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
-        gp_Vec dnplan = new gp_Vec(), temp = new gp_Vec(), temp1 = new gp_Vec(), temp2 = new gp_Vec(),
-               tempmid = new gp_Vec();
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), temp1 = new Vector3D(), temp2 = new Vector3D(),
+               tempmid = new Vector3D();
         math_Vector XX = new(1, 4);
 
-        csurf!.D1(X[1], out gp_Pnt2d p2d, out gp_Vec2d v2d);
+        csurf!.D1(X[1], out Point2D p2d, out Vector2D v2d);
 
         param = X[2];
         curv.D2(param, out ptgui, out d1gui, out d2gui);
@@ -178,17 +182,17 @@ public class BlendFunc_ConstThroatInv : BlendFunc_GenChamfInv
             temp.SetLinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
             D[1, 1] = nplan.Dot(temp);
             D[2, 1] = 0.0;
-            D[3, 1] = new gp_Vec(ptgui, pts1).Dot(temp);
-            D[4, 1] = 2 * (new gp_Vec(ptgui, pts1).Dot(temp));
+            D[3, 1] = new Vector3D(ptgui, pts1).Dot(temp);
+            D[4, 1] = 2 * (new Vector3D(ptgui, pts1).Dot(temp));
 
             D[1, 3] = 0.0;
             D[1, 4] = 0.0;
             D[2, 3] = nplan.Dot(d1u2);
             D[2, 4] = nplan.Dot(d1v2);
-            D[3, 3] = new gp_Vec((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1u2);
-            D[3, 4] = new gp_Vec((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1v2);
-            D[4, 3] = -2.0 * new gp_Vec(ptgui, pts2).Dot(d1u2);
-            D[4, 4] = -2.0 * new gp_Vec(ptgui, pts2).Dot(d1v2);
+            D[3, 3] = new Vector3D((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1u2);
+            D[3, 4] = new Vector3D((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1v2);
+            D[4, 3] = -2.0 * new Vector3D(ptgui, pts2).Dot(d1u2);
+            D[4, 4] = -2.0 * new Vector3D(ptgui, pts2).Dot(d1v2);
         }
         else
         {
@@ -196,17 +200,17 @@ public class BlendFunc_ConstThroatInv : BlendFunc_GenChamfInv
             temp.SetLinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
             D[1, 1] = 0.0;
             D[2, 1] = nplan.Dot(temp);
-            D[3, 1] = new gp_Vec(ptgui, pts2).Dot(temp);
-            D[4, 1] = -2 * (new gp_Vec(ptgui, pts2).Dot(temp));
+            D[3, 1] = new Vector3D(ptgui, pts2).Dot(temp);
+            D[4, 1] = -2 * (new Vector3D(ptgui, pts2).Dot(temp));
 
             D[1, 3] = nplan.Dot(d1u1);
             D[1, 4] = nplan.Dot(d1v1);
             D[2, 3] = 0.0;
             D[2, 4] = 0.0;
-            D[3, 3] = new gp_Vec((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1u1);
-            D[3, 4] = new gp_Vec((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1v1);
-            D[4, 3] = 2.0 * new gp_Vec(ptgui, pts1).Dot(d1u1);
-            D[4, 4] = 2.0 * new gp_Vec(ptgui, pts1).Dot(d1v1);
+            D[3, 3] = new Vector3D((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1u1);
+            D[3, 4] = new Vector3D((pts1.XYZ() + pts2.XYZ()) / 2 - ptgui.XYZ()).Dot(d1v1);
+            D[4, 3] = 2.0 * new Vector3D(ptgui, pts1).Dot(d1u1);
+            D[4, 4] = 2.0 * new Vector3D(ptgui, pts1).Dot(d1v1);
         }
 
         D[1, 2] = dnplan.Dot(temp1) - nplan.Dot(d1gui);

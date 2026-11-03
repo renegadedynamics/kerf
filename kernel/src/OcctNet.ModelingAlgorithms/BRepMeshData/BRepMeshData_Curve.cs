@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.InteropServices;
 
 namespace Occt;
@@ -14,7 +15,7 @@ namespace Occt;
 /// </remarks>
 public class BRepMeshData_Curve : IMeshData_Curve
 {
-    private readonly List<gp_Pnt> myPoints = [];
+    private readonly List<Point3D> myPoints = [];
     private readonly List<double> myParameters = [];
 
     /// <summary>An empty curve.</summary>
@@ -23,21 +24,21 @@ public class BRepMeshData_Curve : IMeshData_Curve
     }
 
     /// <inheritdoc/>
-    public override void InsertPoint(int thePosition, in gp_Pnt thePoint, double theParamOnPCurve)
+    public override void InsertPoint(int thePosition, in Point3D thePoint, double theParamOnPCurve)
     {
         myPoints.Insert(thePosition, thePoint);
         myParameters.Insert(thePosition, theParamOnPCurve);
     }
 
     /// <inheritdoc/>
-    public override void AddPoint(in gp_Pnt thePoint, double theParamOnPCurve)
+    public override void AddPoint(in Point3D thePoint, double theParamOnPCurve)
     {
         myPoints.Add(thePoint);
         myParameters.Add(theParamOnPCurve);
     }
 
     /// <inheritdoc/>
-    public override ref gp_Pnt GetPoint(int theIndex) => ref at(myPoints, theIndex);
+    public override ref Point3D GetPoint(int theIndex) => ref at(myPoints, theIndex);
 
     /// <inheritdoc/>
     public override ref double GetParameter(int theIndex) => ref at(myParameters, theIndex);

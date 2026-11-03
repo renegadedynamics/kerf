@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_BracketMinimumTest
 {
     // Quadratic function with minimum: f(x) = (x-2)^2 + 1, minimum at x = 2
-    private sealed class QuadraticFunction : math_Function
+    private sealed class QuadraticFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -17,7 +19,7 @@ public class math_BracketMinimumTest
     }
 
     // Quartic function: f(x) = x^4 - 4*x^3 + 6*x^2 - 4*x + 5, minimum at x = 1
-    private sealed class QuarticFunction : math_Function
+    private sealed class QuarticFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -30,7 +32,7 @@ public class math_BracketMinimumTest
     }
 
     // Cosine function: f(x) = cos(x), minimum at x = PI in [0, 2*PI]
-    private sealed class CosFunction : math_Function
+    private sealed class CosFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -40,7 +42,7 @@ public class math_BracketMinimumTest
     }
 
     // Exponential function: f(x) = e^x, no minimum (always increasing)
-    private sealed class ExponentialFunction : math_Function
+    private sealed class ExponentialFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -50,7 +52,7 @@ public class math_BracketMinimumTest
     }
 
     // Multiple minima function: f(x) = sin(x) + 0.1*x, has local minima
-    private sealed class MultipleMinFunction : math_Function
+    private sealed class MultipleMinFunction : Function
     {
         public override bool Value(double theX, out double theF)
         {
@@ -67,9 +69,9 @@ public class math_BracketMinimumTest
         // Test bracketing minimum of quadratic function
         QuadraticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, 0.0, 1.0);
+        BracketMinimum aBracketer = new(aFunc, 0.0, 1.0);
 
-        Assert.True(aBracketer.IsDone(), "Should successfully bracket quadratic minimum");
+        Assert.True(aBracketer.IsDone, "Should successfully bracket quadratic minimum");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -99,9 +101,9 @@ public class math_BracketMinimumTest
         double aFA = (aA - 2.0) * (aA - 2.0) + 1.0; // F(0) = 5
         double aFB = (aB - 2.0) * (aB - 2.0) + 1.0; // F(1) = 2
 
-        math_BracketMinimum aBracketer = new(aFunc, aA, aB, aFA, aFB);
+        BracketMinimum aBracketer = new(aFunc, aA, aB, aFA, aFB);
 
-        Assert.True(aBracketer.IsDone(), "Should successfully bracket with precomputed values");
+        Assert.True(aBracketer.IsDone, "Should successfully bracket with precomputed values");
 
         double aRetA, aRetB, aRetC;
         aBracketer.Values(out aRetA, out aRetB, out aRetC);
@@ -118,9 +120,9 @@ public class math_BracketMinimumTest
         double aA = 0.0, aB = 1.0;
         double aFA = 5.0; // F(0) = 5
 
-        math_BracketMinimum aBracketer = new(aFunc, aA, aB, aFA);
+        BracketMinimum aBracketer = new(aFunc, aA, aB, aFA);
 
-        Assert.True(aBracketer.IsDone(), "Should successfully bracket with one precomputed value");
+        Assert.True(aBracketer.IsDone, "Should successfully bracket with one precomputed value");
     }
 
     [Fact]
@@ -129,9 +131,9 @@ public class math_BracketMinimumTest
         // Test with quartic function that has minimum at x = 1
         QuarticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, 0.0, 0.5);
+        BracketMinimum aBracketer = new(aFunc, 0.0, 0.5);
 
-        Assert.True(aBracketer.IsDone(), "Should bracket quartic function minimum");
+        Assert.True(aBracketer.IsDone, "Should bracket quartic function minimum");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -147,9 +149,9 @@ public class math_BracketMinimumTest
         // Test with cosine function which has minimum at PI
         CosFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, 2.0, 4.0);
+        BracketMinimum aBracketer = new(aFunc, 2.0, 4.0);
 
-        Assert.True(aBracketer.IsDone(), "Should bracket cosine function minimum");
+        Assert.True(aBracketer.IsDone, "Should bracket cosine function minimum");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -171,11 +173,11 @@ public class math_BracketMinimumTest
         // Test setting limits on the parameter range
         QuadraticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(0.0, 1.0);
+        BracketMinimum aBracketer = new(0.0, 1.0);
         aBracketer.SetLimits(1.5, 3.0); // Limit search to [1.5, 3.0]
         aBracketer.Perform(aFunc);
 
-        Assert.True(aBracketer.IsDone(), "Should find minimum within limits");
+        Assert.True(aBracketer.IsDone, "Should find minimum within limits");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -195,12 +197,12 @@ public class math_BracketMinimumTest
         // Test setting precomputed function values
         QuadraticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(0.0, 1.0);
+        BracketMinimum aBracketer = new(0.0, 1.0);
         aBracketer.SetFA(5.0); // F(0) = 5
         aBracketer.SetFB(2.0); // F(1) = 2
         aBracketer.Perform(aFunc);
 
-        Assert.True(aBracketer.IsDone(), "Should work with precomputed values");
+        Assert.True(aBracketer.IsDone, "Should work with precomputed values");
     }
 
     [Fact]
@@ -209,7 +211,7 @@ public class math_BracketMinimumTest
         // Test with function that has no minimum (exponential)
         ExponentialFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, -1.0, 0.0);
+        BracketMinimum aBracketer = new(aFunc, -1.0, 0.0);
 
         // Exponential function is monotonic, so may not find true bracketing
         // Implementation behavior varies - just check it doesn't crash
@@ -222,9 +224,9 @@ public class math_BracketMinimumTest
         // Test with function having multiple local minima
         MultipleMinFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, -2.0, 0.0);
+        BracketMinimum aBracketer = new(aFunc, -2.0, 0.0);
 
-        Assert.True(aBracketer.IsDone(), "Should bracket one of the minima");
+        Assert.True(aBracketer.IsDone, "Should bracket one of the minima");
 
         double aFA, aFB, aFC;
         aBracketer.FunctionValues(out aFA, out aFB, out aFC);
@@ -237,9 +239,9 @@ public class math_BracketMinimumTest
     public void UnperformedState()
     {
         // Test state handling for incomplete calculations
-        math_BracketMinimum aBracketer = new(0.0, 1.0);
+        BracketMinimum aBracketer = new(0.0, 1.0);
 
-        Assert.False(aBracketer.IsDone(), "Bracketer should not be done before Perform()");
+        Assert.False(aBracketer.IsDone, "Bracketer should not be done before Perform()");
     }
 
     [Fact]
@@ -248,9 +250,9 @@ public class math_BracketMinimumTest
         // Test with very close initial points
         QuadraticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, 1.99, 2.01); // Very close to minimum
+        BracketMinimum aBracketer = new(aFunc, 1.99, 2.01); // Very close to minimum
 
-        Assert.True(aBracketer.IsDone(), "Should handle narrow initial bounds");
+        Assert.True(aBracketer.IsDone, "Should handle narrow initial bounds");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -267,9 +269,9 @@ public class math_BracketMinimumTest
         // Test with initial points in reverse order (B < A)
         QuadraticFunction aFunc = new();
 
-        math_BracketMinimum aBracketer = new(aFunc, 4.0, 0.0); // B < A
+        BracketMinimum aBracketer = new(aFunc, 4.0, 0.0); // B < A
 
-        Assert.True(aBracketer.IsDone(), "Should handle reverse order initial points");
+        Assert.True(aBracketer.IsDone, "Should handle reverse order initial points");
 
         double aA, aB, aC;
         aBracketer.Values(out aA, out aB, out aC);
@@ -285,12 +287,12 @@ public class math_BracketMinimumTest
         // Test with very restrictive limits that may prevent finding minimum
         QuadraticFunction aFunc = new(); // Minimum at x = 2
 
-        math_BracketMinimum aBracketer = new(0.0, 0.5);
+        BracketMinimum aBracketer = new(0.0, 0.5);
         aBracketer.SetLimits(0.0, 1.0); // Limits exclude the actual minimum at x = 2
         aBracketer.Perform(aFunc);
 
         // May or may not succeed depending on implementation
-        if (aBracketer.IsDone())
+        if (aBracketer.IsDone)
         {
             double aA, aB, aC;
             aBracketer.Values(out aA, out aB, out aC);

@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 // The C++ tests pass lambdas; here each lambda is a private struct implementing MathSys.INewton3DFunction.
@@ -9,10 +13,10 @@ public class MathSys_Newton3DTest
 {
     private const double THE_TOL = 1.0e-10;
 
-    private struct LinearSystemFunc : MathSys.INewton3DFunction
+    private struct LinearSystemFunc : global::Kerf.Engine.Numerics.Systems.MathSys.INewton3DFunction
     {
         public bool Invoke(double theX1, double theX2, double theX3,
-                           ref std_array3<double> theF, ref std_array3<std_array3<double>> theJ)
+                           ref Array3<double> theF, ref Array3<Array3<double>> theJ)
         {
             theF[0] = 2.0 * theX1 + theX2 + theX3 - 4.0;
             theF[1] = theX1 + 3.0 * theX2 + theX3 - 5.0;
@@ -31,10 +35,10 @@ public class MathSys_Newton3DTest
         }
     }
 
-    private struct NonlinearSystemFunc : MathSys.INewton3DFunction
+    private struct NonlinearSystemFunc : global::Kerf.Engine.Numerics.Systems.MathSys.INewton3DFunction
     {
         public bool Invoke(double theX1, double theX2, double theX3,
-                           ref std_array3<double> theF, ref std_array3<std_array3<double>> theJ)
+                           ref Array3<double> theF, ref Array3<Array3<double>> theJ)
         {
             theF[0] = theX1 * theX1 + theX2 * theX2 + theX3 * theX3 - 3.0;
             theF[1] = theX1 + theX2 + theX3 - 3.0;
@@ -53,10 +57,10 @@ public class MathSys_Newton3DTest
         }
     }
 
-    private struct ShiftedIdentityFunc : MathSys.INewton3DFunction
+    private struct ShiftedIdentityFunc : global::Kerf.Engine.Numerics.Systems.MathSys.INewton3DFunction
     {
         public bool Invoke(double theX1, double theX2, double theX3,
-                           ref std_array3<double> theF, ref std_array3<std_array3<double>> theJ)
+                           ref Array3<double> theF, ref Array3<Array3<double>> theJ)
         {
             theF[0] = theX1 - 1.0;
             theF[1] = theX2 - 2.0;
@@ -75,10 +79,10 @@ public class MathSys_Newton3DTest
         }
     }
 
-    private struct HugeJacobianConstantResidualFunc : MathSys.INewton3DFunction
+    private struct HugeJacobianConstantResidualFunc : global::Kerf.Engine.Numerics.Systems.MathSys.INewton3DFunction
     {
         public bool Invoke(double theX1, double theX2, double theX3,
-                           ref std_array3<double> theF, ref std_array3<std_array3<double>> theJ)
+                           ref Array3<double> theF, ref Array3<Array3<double>> theJ)
         {
             theF[0] = 1.0;
             theF[1] = 1.0;
@@ -96,10 +100,10 @@ public class MathSys_Newton3DTest
         }
     }
 
-    private struct ZeroResidualFunc : MathSys.INewton3DFunction
+    private struct ZeroResidualFunc : global::Kerf.Engine.Numerics.Systems.MathSys.INewton3DFunction
     {
         public bool Invoke(double theX1, double theX2, double theX3,
-                           ref std_array3<double> theF, ref std_array3<std_array3<double>> theJ)
+                           ref Array3<double> theF, ref Array3<Array3<double>> theJ)
         {
             theF[0] = 0.0;
             theF[1] = 0.0;
@@ -117,9 +121,9 @@ public class MathSys_Newton3DTest
         }
     }
 
-    private static MathSys.NewtonBoundsN3 NoBounds()
+    private static global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 NoBounds()
     {
-        MathSys.NewtonBoundsN3 aBounds = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = new();
         aBounds.HasBounds = false;
         return aBounds;
     }
@@ -129,15 +133,15 @@ public class MathSys_Newton3DTest
     {
         LinearSystemFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = NoBounds();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = NoBounds();
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = THE_TOL;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.X[0], 1.0e-8);
         Assert.Equal(1.0, aResult.X[1], 1.0e-8);
         Assert.Equal(1.0, aResult.X[2], 1.0e-8);
@@ -148,16 +152,16 @@ public class MathSys_Newton3DTest
     {
         NonlinearSystemFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = NoBounds();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = NoBounds();
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = 1.0e-10;
         aOptions.MaxIterations = 50;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.8, 0.8, 1.4), aBounds, aOptions);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.8, 0.8, 1.4), aBounds, aOptions);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.X[0], 1.0e-5);
         Assert.Equal(1.0, aResult.X[1], 1.0e-5);
         Assert.Equal(1.0, aResult.X[2], 1.0e-5);
@@ -168,18 +172,18 @@ public class MathSys_Newton3DTest
     {
         ShiftedIdentityFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = NoBounds();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = NoBounds();
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = 1.0e-12;
         aOptions.XTolerance = 100.0;
         aOptions.MaxIterations = 5;
         aOptions.MaxStepRatio = 100.0;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
-        Assert.True(aResult.IsDone());
-        Assert.Equal(MathUtils.Status.OK, aResult.Status);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
+        Assert.True(aResult.IsDone);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK, aResult.Status);
         Assert.Equal(1.0, aResult.X[0], 1.0e-14);
         Assert.Equal(2.0, aResult.X[1], 1.0e-14);
         Assert.Equal(3.0, aResult.X[2], 1.0e-14);
@@ -190,17 +194,17 @@ public class MathSys_Newton3DTest
     {
         HugeJacobianConstantResidualFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = NoBounds();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = NoBounds();
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = 1.0e-8;
         aOptions.XTolerance = 1.0e-16;
         aOptions.MaxIterations = 10;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
-        Assert.False(aResult.IsDone());
-        Assert.Equal(MathUtils.Status.MaxIterations, aResult.Status);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
+        Assert.False(aResult.IsDone);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.MaxIterations, aResult.Status);
         Assert.True(aResult.ResidualNorm > 1.0e-2);
     }
 
@@ -209,17 +213,17 @@ public class MathSys_Newton3DTest
     {
         LinearSystemFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = new();
-        aBounds.Min = std_array3<double>.Of(-10.0, -10.0, -10.0);
-        aBounds.Max = std_array3<double>.Of(10.0, 10.0, 10.0);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = new();
+        aBounds.Min = Array3<double>.Of(-10.0, -10.0, -10.0);
+        aBounds.Max = Array3<double>.Of(10.0, 10.0, 10.0);
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = THE_TOL;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.X[0], 1.0e-8);
         Assert.Equal(1.0, aResult.X[1], 1.0e-8);
         Assert.Equal(1.0, aResult.X[2], 1.0e-8);
@@ -230,41 +234,41 @@ public class MathSys_Newton3DTest
     {
         ZeroResidualFunc aFunc = new();
 
-        MathSys.NewtonBoundsN3 aBounds = new();
-        aBounds.Min = std_array3<double>.Of(1.0, 0.0, 0.0);
-        aBounds.Max = std_array3<double>.Of(0.0, 1.0, 1.0);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = new();
+        aBounds.Min = Array3<double>.Of(1.0, 0.0, 0.0);
+        aBounds.Max = Array3<double>.Of(0.0, 1.0, 1.0);
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = THE_TOL;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.Solve3D(aFunc, std_array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.Solve3D(aFunc, Array3<double>.Of(0.0, 0.0, 0.0), aBounds, aOptions);
 
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
-        Assert.False(aResult.IsDone());
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
+        Assert.False(aResult.IsDone);
     }
 
-    private sealed class LineCurveEval : MathSys.ICurveD2Evaluator
+    private sealed class LineCurveEval : global::Kerf.Engine.Numerics.Systems.MathSys.ICurveD2Evaluator
     {
-        public void D2(double theT, out gp_Pnt theP, out gp_Vec theD1, out gp_Vec theD2)
+        public void D2(double theT, out Point3D theP, out Vector3D theD1, out Vector3D theD2)
         {
-            theP = new gp_Pnt(theT, 0.0, 0.0);
-            theD1 = new gp_Vec(1.0, 0.0, 0.0);
-            theD2 = new gp_Vec(0.0, 0.0, 0.0);
+            theP = new Point3D(theT, 0.0, 0.0);
+            theD1 = new Vector3D(1.0, 0.0, 0.0);
+            theD2 = new Vector3D(0.0, 0.0, 0.0);
         }
     }
 
-    private sealed class PlaneSurfaceEval : MathSys.ISurfaceD2Evaluator
+    private sealed class PlaneSurfaceEval : global::Kerf.Engine.Numerics.Systems.MathSys.ISurfaceD2Evaluator
     {
-        public void D2(double theU, double theV, out gp_Pnt theP, out gp_Vec theD1U, out gp_Vec theD1V,
-                       out gp_Vec theD2UU, out gp_Vec theD2VV, out gp_Vec theD2UV)
+        public void D2(double theU, double theV, out Point3D theP, out Vector3D theD1U, out Vector3D theD1V,
+                       out Vector3D theD2UU, out Vector3D theD2VV, out Vector3D theD2UV)
         {
-            theP = new gp_Pnt(theU, theV, 0.0);
-            theD1U = new gp_Vec(1.0, 0.0, 0.0);
-            theD1V = new gp_Vec(0.0, 1.0, 0.0);
-            theD2UU = new gp_Vec(0.0, 0.0, 0.0);
-            theD2VV = new gp_Vec(0.0, 0.0, 0.0);
-            theD2UV = new gp_Vec(0.0, 0.0, 0.0);
+            theP = new Point3D(theU, theV, 0.0);
+            theD1U = new Vector3D(1.0, 0.0, 0.0);
+            theD1V = new Vector3D(0.0, 1.0, 0.0);
+            theD2UU = new Vector3D(0.0, 0.0, 0.0);
+            theD2VV = new Vector3D(0.0, 0.0, 0.0);
+            theD2UV = new Vector3D(0.0, 0.0, 0.0);
         }
     }
 
@@ -274,22 +278,22 @@ public class MathSys_Newton3DTest
         LineCurveEval aCurve = new();
         PlaneSurfaceEval aSurface = new();
 
-        MathSys.NewtonBoundsN3 aBounds = new();
-        aBounds.Min = std_array3<double>.Of(-10.0, -10.0, -10.0);
-        aBounds.Max = std_array3<double>.Of(10.0, 10.0, 10.0);
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonBoundsN3 aBounds = new();
+        aBounds.Min = Array3<double>.Of(-10.0, -10.0, -10.0);
+        aBounds.Max = Array3<double>.Of(10.0, 10.0, 10.0);
 
-        MathSys.NewtonOptions aOptions = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonOptions aOptions = new();
         aOptions.FTolerance = THE_TOL;
         aOptions.MaxIterations = 20;
 
-        MathSys.NewtonResultN3 aResult =
-          MathSys.SolveCurveSurfaceExtrema3D(aCurve,
+        global::Kerf.Engine.Numerics.Systems.MathSys.NewtonResultN3 aResult =
+          global::Kerf.Engine.Numerics.Systems.MathSys.SolveCurveSurfaceExtrema3D(aCurve,
                                              aSurface,
-                                             std_array3<double>.Of(1.0, 1.0, 0.0),
+                                             Array3<double>.Of(1.0, 1.0, 0.0),
                                              aBounds,
                                              aOptions);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(0.0, aResult.ResidualNorm, 1.0e-12);
     }
 }

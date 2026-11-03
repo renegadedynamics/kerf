@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -42,10 +45,10 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
         return (aNShape, aPShape);
     }
 
-    private static TopoDS_Wire Polygon(IReadOnlyList<gp_Pnt> thePoints, bool theClosed)
+    private static TopoDS_Wire Polygon(IReadOnlyList<Point3D> thePoints, bool theClosed)
     {
         BRepBuilderAPI_MakePolygon aMP = new();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aMP.Add(aP);
         }
@@ -65,14 +68,14 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
         for (int aCase = 0; aCase < 300; aCase++)
         {
             // a convex or star-shaped polygon in a random plane
-            gp_Ax3 aPlane = anOracle.Bool() ? new gp_Ax3() : anOracle.Ax3();
+            CoordinateSystem aPlane = anOracle.Bool() ? new CoordinateSystem() : anOracle.Ax3();
             int aNb = anOracle.Int(3, 8);
-            List<gp_Pnt> aSpinePoints = [];
+            List<Point3D> aSpinePoints = [];
             for (int i = 0; i < aNb; i++)
             {
                 double anAngle = 2 * Math.PI * i / aNb + anOracle.Real(-0.2, 0.2);
                 double aRadius = anOracle.Real(5, 20);
-                gp_Pnt aP = new(aRadius * Math.Cos(anAngle), aRadius * Math.Sin(anAngle), 0);
+                Point3D aP = new(aRadius * Math.Cos(anAngle), aRadius * Math.Sin(anAngle), 0);
                 aSpinePoints.Add(aP.Transformed(TrsfFrom(aPlane)));
             }
             TopoDS_Wire aSpineWire = Polygon(aSpinePoints, true);
@@ -81,13 +84,13 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
 
             // a profile of 1 to 3 segments, starting on a spine vertex or somewhere near the spine
             bool isOnVertex = anOracle.Int(0, 3) == 0;
-            gp_Pnt aStart = isOnVertex ? aSpinePoints[anOracle.Int(0, aNb - 1)]
-                                       : aSpinePoints[0].Translated(new gp_Vec(anOracle.Real(-3, 3), anOracle.Real(-3, 3), anOracle.Real(-3, 3)));
-            List<gp_Pnt> aProfilePoints = [aStart];
+            Point3D aStart = isOnVertex ? aSpinePoints[anOracle.Int(0, aNb - 1)]
+                                       : aSpinePoints[0].Translated(new Vector3D(anOracle.Real(-3, 3), anOracle.Real(-3, 3), anOracle.Real(-3, 3)));
+            List<Point3D> aProfilePoints = [aStart];
             int aNbSeg = anOracle.Int(1, 3);
             for (int i = 0; i < aNbSeg; i++)
             {
-                aProfilePoints.Add(aProfilePoints[^1].Translated(new gp_Vec(anOracle.Real(-4, 4), anOracle.Real(-4, 4), anOracle.Real(-4, 4))));
+                aProfilePoints.Add(aProfilePoints[^1].Translated(new Vector3D(anOracle.Real(-4, 4), anOracle.Real(-4, 4), anOracle.Real(-4, 4))));
             }
             TopoDS_Wire aProfile = Polygon(aProfilePoints, false);
             double aTol = anOracle.Bool() ? 1.0e-7 : anOracle.Real(0.01, 3);
@@ -108,15 +111,15 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             {
                 aNError = e.Message.IndexOf(':') is int c and > 0 ? e.Message[..c] : e.Message;
             }
-            gp_Ax3 aPAxe = new();
+            CoordinateSystem aPAxe = new();
             bool aPOn = false;
             try
             {
                 BRepFill.Axe(aPSpine, TopoDS.Wire(aPProf), out aPAxe, out aPOn, aTol);
             }
-            catch (Standard_Failure f)
+            catch (FailureException f)
             {
-                aPError = f.GetType().Name;
+                aPError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(f.GetType());
             }
             string aWhat = $"case {aCase} ({(isFace ? "face" : "wire")}{(isOnVertex ? ", on a vertex" : "")})";
             if (aNError is not null || aPError is not null)
@@ -133,8 +136,8 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             {
                 aDifferences.Add($"{aWhat}: ProfOnSpine {aNOn} natively, {aPOn} in the port");
             }
-            gp_Pnt aNL = Oracle.FromNative(aNAxe.Location());
-            gp_XYZ aND = Oracle.FromNative(aNAxe.Direction().XYZ()), aNX = Oracle.FromNative(aNAxe.XDirection().XYZ());
+            Point3D aNL = Oracle.FromNative(aNAxe.Location());
+            Xyz aND = Oracle.FromNative(aNAxe.Direction().XYZ()), aNX = Oracle.FromNative(aNAxe.XDirection().XYZ());
             if (aNL.XYZ() != aPAxe.Location().XYZ() || aND != aPAxe.Direction().XYZ() || aNX != aPAxe.XDirection().XYZ())
             {
                 aDifferences.Add($"{aWhat}: native {aNL} {aND} {aNX}, port {aPAxe.Location()} {aPAxe.Direction()} {aPAxe.XDirection()}");
@@ -149,9 +152,9 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
         Assert.Empty(aDifferences);
     }
 
-    private static gp_Trsf TrsfFrom(in gp_Ax3 theAx3)
+    private static Transform3D TrsfFrom(in CoordinateSystem theAx3)
     {
-        gp_Trsf aT = new();
+        Transform3D aT = new();
         aT.SetTransformation(theAx3);
         return aT.Inverted();
     }

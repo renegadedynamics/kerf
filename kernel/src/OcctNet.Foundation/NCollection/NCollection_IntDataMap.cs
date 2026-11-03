@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2002-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,38 +29,38 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
         public Node? Next = theNext;
     }
 
-    private Node?[]? myData1;
-    private long myNbBuckets;
-    private int mySize;
+    private Node?[]? _data1;
+    private long _nbBuckets;
+    private int _size;
 
     /// <summary>An empty map with the given initial number of buckets (OCCT's default 1).</summary>
-    public NCollection_IntDataMap(int theNbBuckets = 1)
+    public NCollection_IntDataMap(int nbBuckets = 1)
     {
-        myNbBuckets = theNbBuckets > 0 ? theNbBuckets : 1;
+        _nbBuckets = nbBuckets > 0 ? nbBuckets : 1;
     }
 
-    public int Extent() => mySize;
+    public int Extent() => _size;
 
-    public int Size() => mySize;
+    public int Size() => _size;
 
-    public bool IsEmpty() => mySize == 0;
+    public bool IsEmpty() => _size == 0;
 
-    public long NbBuckets() => myNbBuckets;
+    public long NbBuckets() => _nbBuckets;
 
-    private static long HashCode(int theKey, long theUpperBound) =>
-        (long)((ulong)(long)theKey % (ulong)theUpperBound + 1);
+    private static long HashCode(int key, long upperBound) =>
+        (long)((ulong)(long)key % (ulong)upperBound + 1);
 
-    private bool Resizable() => IsEmpty() || mySize > myNbBuckets;
+    private bool Resizable() => IsEmpty() || _size > _nbBuckets;
 
-    /// <summary>Resizes the buckets for about <paramref name="N"/> keys, as NCollection_BaseMap::BeginResize.</summary>
-    public void ReSize(long N)
+    /// <summary>Resizes the buckets for about <paramref name="n"/> keys, as NCollection_BaseMap::BeginResize.</summary>
+    public void ReSize(long n)
     {
-        long newBuck = NCollection_Primes.NextPrimeForMap(N);
-        if (newBuck <= myNbBuckets)
+        long newBuck = Primes.NextPrimeForMap(n);
+        if (newBuck <= _nbBuckets)
         {
-            if (myData1 is null)
+            if (_data1 is null)
             {
-                newBuck = myNbBuckets;
+                newBuck = _nbBuckets;
             }
             else
             {
@@ -65,11 +69,11 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
         }
 
         Node?[] newdata = new Node?[newBuck + 1];
-        if (myData1 is not null)
+        if (_data1 is not null)
         {
-            for (long i = 0; i <= myNbBuckets; ++i)
+            for (long i = 0; i <= _nbBuckets; ++i)
             {
-                Node? p = myData1[i];
+                Node? p = _data1[i];
                 while (p is not null)
                 {
                     long k = HashCode(p.Key, newBuck);
@@ -81,22 +85,22 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
             }
         }
 
-        myNbBuckets = newBuck;
-        myData1 = newdata;
+        _nbBuckets = newBuck;
+        _data1 = newdata;
     }
 
-    private Node? lookup(int theKey)
+    private Node? Lookup(int key)
     {
         if (IsEmpty())
         {
             return null;
         }
 
-        for (Node? aNode = myData1![HashCode(theKey, myNbBuckets)]; aNode is not null; aNode = aNode.Next)
+        for (Node? node = _data1![HashCode(key, _nbBuckets)]; node is not null; node = node.Next)
         {
-            if (aNode.Key == theKey)
+            if (node.Key == key)
             {
-                return aNode;
+                return node;
             }
         }
 
@@ -104,86 +108,86 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
     }
 
     /// <summary>Binds the item to the key, replacing a previous item; true if the key was not bound.</summary>
-    public bool Bind(int theKey, TValue theItem)
+    public bool Bind(int key, TValue item)
     {
         if (Resizable())
         {
-            ReSize(mySize);
+            ReSize(_size);
         }
 
-        Node? aNode = lookup(theKey);
-        if (aNode is not null)
+        Node? node = this.Lookup(key);
+        if (node is not null)
         {
-            aNode.Value = theItem;
+            node.Value = item;
             return false;
         }
 
-        long aHash = HashCode(theKey, myNbBuckets);
-        myData1![aHash] = new Node(theKey, theItem, myData1[aHash]);
-        mySize++;
+        long hash = HashCode(key, _nbBuckets);
+        _data1![hash] = new Node(key, item, _data1[hash]);
+        _size++;
         return true;
     }
 
     /// <summary>Binds the item to the key if it is not bound yet; true if it was bound now.</summary>
-    public bool TryBind(int theKey, TValue theItem)
+    public bool TryBind(int key, TValue item)
     {
         if (Resizable())
         {
-            ReSize(mySize);
+            ReSize(_size);
         }
 
-        if (lookup(theKey) is not null)
+        if (this.Lookup(key) is not null)
         {
             return false;
         }
 
-        long aHash = HashCode(theKey, myNbBuckets);
-        myData1![aHash] = new Node(theKey, theItem, myData1[aHash]);
-        mySize++;
+        long hash = HashCode(key, _nbBuckets);
+        _data1![hash] = new Node(key, item, _data1[hash]);
+        _size++;
         return true;
     }
 
     /// <summary>Binds the item to the key (replacing a previous item) and returns the bound item for writing.</summary>
-    public ref TValue Bound(int theKey, TValue theItem)
+    public ref TValue Bound(int key, TValue item)
     {
-        Bind(theKey, theItem);
-        return ref lookup(theKey)!.Value;
+        Bind(key, item);
+        return ref this.Lookup(key)!.Value;
     }
 
     /// <summary>Binds the item to the key if it is not bound yet, and returns the bound item for writing.</summary>
-    public ref TValue TryBound(int theKey, TValue theItem)
+    public ref TValue TryBound(int key, TValue item)
     {
-        TryBind(theKey, theItem);
-        return ref lookup(theKey)!.Value;
+        TryBind(key, item);
+        return ref this.Lookup(key)!.Value;
     }
 
-    public bool IsBound(int theKey) => lookup(theKey) is not null;
+    public bool IsBound(int key) => this.Lookup(key) is not null;
 
-    public bool Contains(int theKey) => lookup(theKey) is not null;
+    public bool Contains(int key) => this.Lookup(key) is not null;
 
     /// <summary>Removes the key; false if it was not bound. The other keys keep their order.</summary>
-    public bool UnBind(int theKey)
+    public bool UnBind(int key)
     {
         if (IsEmpty())
         {
             return false;
         }
 
-        long k = HashCode(theKey, myNbBuckets);
-        Node? p = myData1![k];
+        long k = HashCode(key, _nbBuckets);
+        Node? p = _data1![k];
         Node? q = null;
         while (p is not null)
         {
-            if (p.Key == theKey)
+            if (p.Key == key)
             {
-                mySize--;
+                _size--;
                 if (q is not null)
                 {
                     q.Next = p.Next;
                 }
                 else
                 {
-                    myData1[k] = p.Next;
+                    _data1[k] = p.Next;
                 }
 
                 return true;
@@ -196,49 +200,49 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
         return false;
     }
 
-    /// <summary>The item bound to the key; throws <see cref="Standard_NoSuchObject"/> if it is not bound.</summary>
-    public TValue Find(int theKey)
+    /// <summary>The item bound to the key; throws <see cref="NoSuchObjectException"/> if it is not bound.</summary>
+    public TValue Find(int key)
     {
-        Node? aNode = lookup(theKey);
-        return aNode is not null ? aNode.Value : throw new Standard_NoSuchObject("NCollection_DataMap::Find");
+        Node? node = this.Lookup(key);
+        return node is not null ? node.Value : throw new NoSuchObjectException("NCollection_DataMap::Find");
     }
 
     /// <summary>The item bound to the key, if it is bound.</summary>
-    public bool Find(int theKey, out TValue theValue)
+    public bool Find(int key, out TValue value)
     {
-        Node? aNode = lookup(theKey);
-        if (aNode is null)
+        Node? node = this.Lookup(key);
+        if (node is null)
         {
-            theValue = default!;
+            value = default!;
             return false;
         }
 
-        theValue = aNode.Value;
+        value = node.Value;
         return true;
     }
 
-    /// <summary>The item bound to the key, for writing; throws <see cref="Standard_NoSuchObject"/> if it is not bound.</summary>
-    public ref TValue ChangeFind(int theKey)
+    /// <summary>The item bound to the key, for writing; throws <see cref="NoSuchObjectException"/> if it is not bound.</summary>
+    public ref TValue ChangeFind(int key)
     {
-        Node? aNode = lookup(theKey);
-        if (aNode is null)
+        Node? node = this.Lookup(key);
+        if (node is null)
         {
-            throw new Standard_NoSuchObject("NCollection_DataMap::Find");
+            throw new NoSuchObjectException("NCollection_DataMap::Find");
         }
 
-        return ref aNode.Value;
+        return ref node.Value;
     }
 
     /// <summary>OCCT's <c>operator()</c>.</summary>
-    public ref TValue this[int theKey] => ref ChangeFind(theKey);
+    public ref TValue this[int key] => ref ChangeFind(key);
 
     /// <summary>Removes every key; the buckets are kept (OCCT's <c>Clear(false)</c>).</summary>
     public void Clear()
     {
         if (!IsEmpty())
         {
-            Array.Clear(myData1!);
-            mySize = 0;
+            Array.Clear(_data1!);
+            _size = 0;
         }
     }
 
@@ -248,32 +252,32 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
         Clear();
         if (doReleaseMemory)
         {
-            myData1 = null;
+            _data1 = null;
         }
     }
 
     /// <summary>OCCT's iterator (More/Next/Key/Value), in OCCT's order.</summary>
     public sealed class Iterator
     {
-        private NCollection_IntDataMap<TValue>? myMap;
-        private long myBucket;
-        private Node? myNode;
+        private NCollection_IntDataMap<TValue>? _map;
+        private long _bucket;
+        private Node? _node;
 
         public Iterator() { }
 
-        public Iterator(NCollection_IntDataMap<TValue> theMap) => Initialize(theMap);
+        public Iterator(NCollection_IntDataMap<TValue> map) => Initialize(map);
 
-        public void Initialize(NCollection_IntDataMap<TValue> theMap)
+        public void Initialize(NCollection_IntDataMap<TValue> map)
         {
-            myMap = theMap;
+            _map = map;
             Reset();
         }
 
         public void Reset()
         {
-            myNode = null;
-            myBucket = -1;
-            if (myMap is null || myMap.IsEmpty())
+            _node = null;
+            _bucket = -1;
+            if (_map is null || _map.IsEmpty())
             {
                 return;
             }
@@ -283,38 +287,38 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
 
         private void PNext()
         {
-            Node?[] aData = myMap!.myData1!;
-            if (myNode is not null)
+            Node?[] data = _map!._data1!;
+            if (_node is not null)
             {
-                myNode = myNode.Next;
-                if (myNode is not null)
+                _node = _node.Next;
+                if (_node is not null)
                 {
                     return;
                 }
             }
 
-            while (myNode is null && ++myBucket <= myMap.myNbBuckets)
+            while (_node is null && ++_bucket <= _map._nbBuckets)
             {
-                myNode = aData[myBucket];
+                _node = data[_bucket];
             }
         }
 
-        public bool More() => myNode is not null;
+        public bool More() => _node is not null;
 
         public void Next() => PNext();
 
-        public int Key() => myNode is not null ? myNode.Key : throw new Standard_NoSuchObject("NCollection_DataMap::Iterator::Key");
+        public int Key() => _node is not null ? _node.Key : throw new NoSuchObjectException("NCollection_DataMap::Iterator::Key");
 
-        public TValue Value() => myNode is not null ? myNode.Value : throw new Standard_NoSuchObject("NCollection_DataMap::Iterator::Value");
+        public TValue Value() => _node is not null ? _node.Value : throw new NoSuchObjectException("NCollection_DataMap::Iterator::Value");
 
         public ref TValue ChangeValue()
         {
-            if (myNode is null)
+            if (_node is null)
             {
-                throw new Standard_NoSuchObject("NCollection_DataMap::Iterator::ChangeValue");
+                throw new NoSuchObjectException("NCollection_DataMap::Iterator::ChangeValue");
             }
 
-            return ref myNode.Value;
+            return ref _node.Value;
         }
     }
 
@@ -323,9 +327,9 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
     {
         get
         {
-            for (Iterator anIt = new(this); anIt.More(); anIt.Next())
+            for (Iterator it = new(this); it.More(); it.Next())
             {
-                yield return anIt.Key();
+                yield return it.Key();
             }
         }
     }
@@ -333,9 +337,9 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
     /// <summary>The keys and items in OCCT's order (the map's keys must not change meanwhile; items may).</summary>
     public IEnumerator<KeyValuePair<int, TValue>> GetEnumerator()
     {
-        for (Iterator anIt = new(this); anIt.More(); anIt.Next())
+        for (Iterator it = new(this); it.More(); it.Next())
         {
-            yield return new KeyValuePair<int, TValue>(anIt.Key(), anIt.Value());
+            yield return new KeyValuePair<int, TValue>(it.Key(), it.Value());
         }
     }
 
@@ -344,9 +348,9 @@ public sealed class NCollection_IntDataMap<TValue> : IEnumerable<KeyValuePair<in
     /// <summary>The keys and items in OCCT's order.</summary>
     public IEnumerable<(int Key, TValue Value)> Pairs()
     {
-        for (Iterator anIt = new(this); anIt.More(); anIt.Next())
+        for (Iterator it = new(this); it.More(); it.Next())
         {
-            yield return (anIt.Key(), anIt.Value());
+            yield return (it.Key(), it.Value());
         }
     }
 }

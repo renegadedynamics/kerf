@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -12,10 +15,10 @@ namespace Occt;
 /// stops at the first one).
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int, Bnd_Box>.Selector
+public sealed class BRepClass3d_BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 {
     private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfShape; // shapes (vertices + edges)
-    private gp_Pnt myP = new();
+    private Point3D myP = new();
 
     /// <summary>A selector over the shapes of <paramref name="theMapOfShape"/> (the tree's objects are their indices).</summary>
     public BRepClass3d_BndBoxTreeSelectorPoint(NCollection_IndexedMap<TopoDS_Shape> theMapOfShape)
@@ -24,7 +27,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int
     }
 
     /// <summary>True if the box doesn't contain the point.</summary>
-    public override bool Reject(in Bnd_Box theBox) => (theBox.IsOut(myP));
+    public override bool Reject(in Box theBox) => (theBox.IsOut(myP));
 
     /// <summary>True (and stops) if the point is within the tolerance of the edge or vertex.</summary>
     public override bool Accept(in int theObj)
@@ -53,7 +56,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int
                 {
                     if (ExtPC.SquareDistance(i) < EdgeTSq)
                     {
-                        myStop = true; // exit from selector
+                        _stop = true; // exit from selector
                         return true;
                     }
                 }
@@ -62,13 +65,13 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int
         else if (sht == TopAbs_VERTEX)
         {
             TopoDS_Vertex V = TopoDS.Vertex(shp);
-            gp_Pnt VPnt = BRep_Tool.Pnt(V);
+            Point3D VPnt = BRep_Tool.Pnt(V);
             double VertTSq = BRep_Tool.Tolerance(V);
             VertTSq *= VertTSq;
             // Vertex-Point interference.
             if (VPnt.SquareDistance(myP) < VertTSq)
             {
-                myStop = true;
+                _stop = true;
                 return true;
             }
         }
@@ -77,7 +80,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int
     }
 
     /// <summary>Sets the point.</summary>
-    public void SetCurrentPoint(in gp_Pnt theP) => myP = theP;
+    public void SetCurrentPoint(in Point3D theP) => myP = theP;
 }
 
 /// <summary>
@@ -85,7 +88,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : NCollection_UBTree<int
 /// tolerance of, with the parameters of the nearest points.
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BRepClass3d_BndBoxTreeSelectorLine : NCollection_UBTree<int, Bnd_Box>.Selector
+public sealed class BRepClass3d_BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
 {
     /// <summary>An edge met by the line: the parameters on the edge and on the line.</summary>
     public readonly record struct EdgeParam(TopoDS_Edge myE, double myParam, double myLParam);
@@ -94,7 +97,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : NCollection_UBTree<int,
     public readonly record struct VertParam(TopoDS_Vertex myV, double myLParam);
 
     private readonly NCollection_IndexedMap<TopoDS_Shape> myMapOfShape; // shapes (vertices + edges)
-    private gp_Lin myL = new();
+    private Line3D myL = new();
     private readonly NCollection_Sequence<EdgeParam> myEP = new(); // output result (edge vs line)
     private readonly NCollection_Sequence<VertParam> myVP = new(); // output result (vertex vs line)
     private readonly GeomAdaptor_Curve myLC = new();
@@ -108,7 +111,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : NCollection_UBTree<int,
     }
 
     /// <summary>True if the box doesn't meet the line.</summary>
-    public override bool Reject(in Bnd_Box theBox) => (theBox.IsOut(myL));
+    public override bool Reject(in Box theBox) => (theBox.IsOut(myL));
 
     /// <summary>True if the segment passes within the tolerance of the edge or vertex (recording the parameters).</summary>
     public override bool Accept(in int theObj)
@@ -170,9 +173,9 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : NCollection_UBTree<int,
             // Vertex-Line interference.
             var ExtPL = new Extrema_ExtPElC(BRep_Tool.Pnt(V),
                                             myL,
-                                            Precision.Confusion(),
-                                            -Precision.Infinite(),
-                                            Precision.Infinite());
+                                            global::Kerf.Engine.Foundation.Precision.Confusion(),
+                                            -global::Kerf.Engine.Foundation.Precision.Infinite(),
+                                            global::Kerf.Engine.Foundation.Precision.Infinite());
             if (ExtPL.IsDone() && ExtPL.NbExt() > 0)
             {
                 if (ExtPL.SquareDistance(1) < VertTSq)
@@ -192,10 +195,10 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : NCollection_UBTree<int,
     }
 
     /// <summary>Sets the line, and the segment of it from -PConfusion to <paramref name="theMaxParam"/> tested against the edges.</summary>
-    public void SetCurrentLine(in gp_Lin theL, double theMaxParam)
+    public void SetCurrentLine(in Line3D theL, double theMaxParam)
     {
         myL = theL;
-        myLC.Load(new Geom_Line(theL), -Precision.PConfusion(), theMaxParam);
+        myLC.Load(new Geom_Line(theL), -global::Kerf.Engine.Foundation.Precision.PConfusion(), theMaxParam);
     }
 
     /// <summary>The <paramref name="i"/>-th edge met, with the parameters on it and on the line.</summary>

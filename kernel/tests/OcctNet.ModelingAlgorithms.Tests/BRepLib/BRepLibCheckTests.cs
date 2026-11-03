@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -14,26 +16,26 @@ public class BRepLibCheckTests
     /// A segment from (0, 0, 0) to (2, 0, 0) on the plane z = 0 (located by <paramref name="theLoc"/>, curve and
     /// surface alike), with its pcurve moved by <paramref name="theOffset"/> in V.
     /// </summary>
-    private static (TopoDS_Edge Edge, TopoDS_Face Face) EdgeOnPlane(double theOffset, TopLoc_Location? theLoc = null)
+    private static (TopoDS_Edge Edge, TopoDS_Face Face) EdgeOnPlane(double theOffset, Placement? theLoc = null)
     {
-        TopLoc_Location aLoc = theLoc ?? new TopLoc_Location();
+        Placement aLoc = theLoc ?? new Placement();
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1));
+        var aPlane = new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, aLoc, Tol);
         TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), aLoc, Tol);
+        aB.MakeEdge(ref anE, new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aLoc, Tol);
         aB.Range(anE, 0.0, 2.0);
-        aB.UpdateEdge(anE, new Geom2d_Line(new gp_Pnt2d(0, theOffset), new gp_Dir2d(1, 0)), aF, Tol);
+        aB.UpdateEdge(anE, new Geom2d_Line(new Point2D(0, theOffset), new Direction2D(1, 0)), aF, Tol);
         return (anE, aF);
     }
 
     private static BRepLib_ValidateEdge Validate(double theOffset, bool theSameParameter, double theOtherShift = 0.0)
     {
-        var aRef = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 0.0, 2.0);
-        var aPC = new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(-theOtherShift, theOffset), new gp_Dir2d(1, 0)),
+        var aRef = new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0.0, 2.0);
+        var aPC = new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(-theOtherShift, theOffset), new Direction2D(1, 0)),
                                           0.0 + theOtherShift, 2.0 + theOtherShift);
-        var aCOS = new Adaptor3d_CurveOnSurface(aPC, new GeomAdaptor_Surface(new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1))));
+        var aCOS = new Adaptor3d_CurveOnSurface(aPC, new GeomAdaptor_Surface(new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
         return new BRepLib_ValidateEdge(aRef, aCOS, theSameParameter);
     }
 
@@ -68,10 +70,10 @@ public class BRepLibCheckTests
     [Fact]
     public void CheckCurveOnSurface_LocatedEdgeAndFace()
     {
-        var aT = new gp_Trsf();
-        aT.SetRotation(new gp_Ax1(new gp_Pnt(1, 2, 3), new gp_Dir(1, 1, 0)), 0.7);
-        aT.SetTranslationPart(new gp_Vec(5, -3, 2));
-        (TopoDS_Edge anE, TopoDS_Face aF) = EdgeOnPlane(0.02, new TopLoc_Location(aT));
+        var aT = new Transform3D();
+        aT.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7);
+        aT.SetTranslationPart(new Vector3D(5, -3, 2));
+        (TopoDS_Edge anE, TopoDS_Face aF) = EdgeOnPlane(0.02, new Placement(aT));
         var aCheck = new BRepLib_CheckCurveOnSurface(anE, aF);
         aCheck.Perform();
         Assert.True(aCheck.IsDone());
@@ -184,10 +186,10 @@ public class BRepLibCheckTests
     public void ValidateEdge_OnAnEdgeOfACone()
     {
         // the cone's numbers widen the tolerance by Epsilon(apex coordinates, radius)
-        var aCone = new Geom_ConicalSurface(new gp_Ax3(new gp_Pnt(0, 0, 1e6), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 0.5, 3.0);
-        var aPC = new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 0.0, 2 * Math.PI);
+        var aCone = new Geom_ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 1e6), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.5, 3.0);
+        var aPC = new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), 0.0, 2 * Math.PI);
         var aCOS = new Adaptor3d_CurveOnSurface(aPC, new GeomAdaptor_Surface(aCone));
-        var aCircle = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 1e6), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), 3.0);
+        var aCircle = new Geom_Circle(new Frame3D(new Point3D(0, 0, 1e6), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3.0);
         var aValidate = new BRepLib_ValidateEdge(new GeomAdaptor_Curve(aCircle, 0.0, 2 * Math.PI), aCOS, true);
         aValidate.Process();
         Assert.True(aValidate.IsDone());

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Describes a list of fields, in a general way. This basic class is for a null size list. Subclasses are for 1, N (fixed) or Dynamic sizes.</summary>
@@ -24,13 +26,13 @@ public class StepData_FieldList
     /// <summary>Returns the field n0 num between 1 and NbFields (read only).</summary>
     public virtual StepData_Field Field(int num)
     {
-        throw new Standard_OutOfRange("StepData_FieldList : Field");
+        throw new OutOfRangeException("StepData_FieldList : Field");
     }
 
     /// <summary>Returns the field n0 num between 1 and NbFields, in order to modify its content.</summary>
     public virtual StepData_Field CField(int num)
     {
-        throw new Standard_OutOfRange("StepData_FieldList : CField");
+        throw new OutOfRangeException("StepData_FieldList : CField");
     }
 
     /// <summary>Fills an iterator with the entities shared by this list.</summary>

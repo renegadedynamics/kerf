@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Numerics.Utilities;
 
 /// <summary>Line search algorithms for optimization.</summary>
 public static partial class MathUtils
@@ -24,615 +26,615 @@ public static partial class MathUtils
     /// Backtracking line search with the Armijo condition: finds alpha such that
     /// f(x + alpha*d) &lt;= f(x) + c1*alpha*grad(f).d.
     /// </summary>
-    public static LineSearchResult ArmijoBacktrack<Function>(Function theFunc,
-                                                             math_Vector theX,
-                                                             math_Vector theDir,
-                                                             math_Vector theGrad,
-                                                             double theFx,
-                                                             double theAlphaInit = 1.0,
-                                                             double theC1 = 1.0e-4,
-                                                             double theRho = 0.5,
-                                                             int theMaxIter = 50)
+    public static LineSearchResult ArmijoBacktrack<Function>(Function func,
+                                                             math_Vector x,
+                                                             math_Vector dir,
+                                                             math_Vector grad,
+                                                             double fx,
+                                                             double alphaInit = 1.0,
+                                                             double c1 = 1.0e-4,
+                                                             double rho = 0.5,
+                                                             int maxIter = 50)
         where Function : IVectorFunction
     {
-        LineSearchResult aResult = new();
-        aResult.Alpha = theAlphaInit;
-        aResult.NbEvals = 0;
+        LineSearchResult result = new();
+        result.Alpha = alphaInit;
+        result.NbEvals = 0;
 
-        int aLower = theX.Lower();
-        int aUpper = theX.Upper();
+        int lower = x.Lower();
+        int upper = x.Upper();
 
         // Compute directional derivative: grad(f) . d
-        double aDirDeriv = 0.0;
-        for (int i = aLower; i <= aUpper; ++i)
+        double dirDeriv = 0.0;
+        for (int i = lower; i <= upper; ++i)
         {
-            aDirDeriv += theGrad[i] * theDir[i];
+            dirDeriv += grad[i] * dir[i];
         }
 
         // Ensure descent direction
-        if (aDirDeriv >= 0.0)
+        if (dirDeriv >= 0.0)
         {
             // Not a descent direction, return failure
-            aResult.IsValid = false;
-            return aResult;
+            result.IsValid = false;
+            return result;
         }
 
         // Temporary vector for new point
-        math_Vector aXNew = new(aLower, aUpper);
+        math_Vector xNew = new(lower, upper);
 
-        for (int k = 0; k < theMaxIter; ++k)
+        for (int k = 0; k < maxIter; ++k)
         {
             // Compute new point: x + alpha*d
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = theX[i] + aResult.Alpha * theDir[i];
+                xNew[i] = x[i] + result.Alpha * dir[i];
             }
 
             // Evaluate function at new point
-            if (!theFunc.Value(aXNew, out double aFNew))
+            if (!func.Value(xNew, out double fNew))
             {
                 // Function evaluation failed, reduce step
-                aResult.Alpha *= theRho;
-                ++aResult.NbEvals;
+                result.Alpha *= rho;
+                ++result.NbEvals;
                 continue;
             }
-            ++aResult.NbEvals;
+            ++result.NbEvals;
 
             // Check Armijo condition: f(x + alpha*d) <= f(x) + c1*alpha*phi'(0)
-            if (aFNew <= theFx + theC1 * aResult.Alpha * aDirDeriv)
+            if (fNew <= fx + c1 * result.Alpha * dirDeriv)
             {
-                aResult.IsValid = true;
-                aResult.FNew = aFNew;
-                return aResult;
+                result.IsValid = true;
+                result.FNew = fNew;
+                return result;
             }
 
             // Reduce step size
-            aResult.Alpha *= theRho;
+            result.Alpha *= rho;
 
             // Check for too small step
-            if (aResult.Alpha < THE_EPSILON)
+            if (result.Alpha < THE_EPSILON)
             {
                 break;
             }
         }
 
         // Failed to satisfy Armijo condition
-        aResult.IsValid = false;
-        return aResult;
+        result.IsValid = false;
+        return result;
     }
 
     /// <summary>
     /// Strong Wolfe line search (Armijo plus curvature |grad(f)(x + alpha*d).d| &lt;= c2*|grad(f).d|), by bracketing
     /// and zoom.
     /// </summary>
-    public static LineSearchResult WolfeSearch<Function>(Function theFunc,
-                                                         math_Vector theX,
-                                                         math_Vector theDir,
-                                                         math_Vector theGrad,
-                                                         double theFx,
-                                                         double theAlphaInit = 1.0,
-                                                         double theC1 = 1.0e-4,
-                                                         double theC2 = 0.9,
-                                                         int theMaxIter = 20)
+    public static LineSearchResult WolfeSearch<Function>(Function func,
+                                                         math_Vector x,
+                                                         math_Vector dir,
+                                                         math_Vector grad,
+                                                         double fx,
+                                                         double alphaInit = 1.0,
+                                                         double c1 = 1.0e-4,
+                                                         double c2 = 0.9,
+                                                         int maxIter = 20)
         where Function : IVectorFunctionWithGradient
     {
-        LineSearchResult aResult = new();
-        aResult.NbEvals = 0;
+        LineSearchResult result = new();
+        result.NbEvals = 0;
 
-        int aLower = theX.Lower();
-        int aUpper = theX.Upper();
+        int lower = x.Lower();
+        int upper = x.Upper();
 
         // Compute initial directional derivative
-        double aPhi0Prime = 0.0;
-        for (int i = aLower; i <= aUpper; ++i)
+        double phi0Prime = 0.0;
+        for (int i = lower; i <= upper; ++i)
         {
-            aPhi0Prime += theGrad[i] * theDir[i];
+            phi0Prime += grad[i] * dir[i];
         }
 
-        if (aPhi0Prime >= 0.0)
+        if (phi0Prime >= 0.0)
         {
-            aResult.IsValid = false;
-            return aResult;
+            result.IsValid = false;
+            return result;
         }
 
-        math_Vector aXNew = new(aLower, aUpper);
-        math_Vector aGradNew = new(aLower, aUpper);
+        math_Vector xNew = new(lower, upper);
+        math_Vector gradNew = new(lower, upper);
 
-        double aAlphaLo = 0.0;
-        double aAlphaHi = theAlphaInit * 2.0;
-        double aAlpha = theAlphaInit;
+        double alphaLo = 0.0;
+        double alphaHi = alphaInit * 2.0;
+        double alpha = alphaInit;
 
-        double aPhiLo = theFx;
+        double phiLo = fx;
 
         // Phase 1: Bracket finding
-        for (int k = 0; k < theMaxIter; ++k)
+        for (int k = 0; k < maxIter; ++k)
         {
             // Evaluate at current alpha
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = theX[i] + aAlpha * theDir[i];
+                xNew[i] = x[i] + alpha * dir[i];
             }
 
-            if (!theFunc.Value(aXNew, out double aPhi))
+            if (!func.Value(xNew, out double phi))
             {
                 // Shrink interval
-                aAlphaHi = aAlpha;
-                aAlpha = 0.5 * (aAlphaLo + aAlphaHi);
-                ++aResult.NbEvals;
+                alphaHi = alpha;
+                alpha = 0.5 * (alphaLo + alphaHi);
+                ++result.NbEvals;
                 continue;
             }
-            ++aResult.NbEvals;
+            ++result.NbEvals;
 
             // Check Armijo
-            if (aPhi > theFx + theC1 * aAlpha * aPhi0Prime || (k > 0 && aPhi >= aPhiLo))
+            if (phi > fx + c1 * alpha * phi0Prime || (k > 0 && phi >= phiLo))
             {
                 // Found bracket [alpha_lo, alpha]
-                aAlphaHi = aAlpha;
+                alphaHi = alpha;
                 break;
             }
 
             // Evaluate gradient at new point
-            if (!theFunc.Gradient(aXNew, aGradNew))
+            if (!func.Gradient(xNew, gradNew))
             {
-                aResult.IsValid = false;
-                return aResult;
+                result.IsValid = false;
+                return result;
             }
 
-            double aPhiPrime = 0.0;
-            for (int i = aLower; i <= aUpper; ++i)
+            double phiPrime = 0.0;
+            for (int i = lower; i <= upper; ++i)
             {
-                aPhiPrime += aGradNew[i] * theDir[i];
+                phiPrime += gradNew[i] * dir[i];
             }
 
             // Check curvature condition
-            if (Math.Abs(aPhiPrime) <= -theC2 * aPhi0Prime)
+            if (Math.Abs(phiPrime) <= -c2 * phi0Prime)
             {
-                aResult.IsValid = true;
-                aResult.Alpha = aAlpha;
-                aResult.FNew = aPhi;
-                return aResult;
+                result.IsValid = true;
+                result.Alpha = alpha;
+                result.FNew = phi;
+                return result;
             }
 
-            if (aPhiPrime >= 0.0)
+            if (phiPrime >= 0.0)
             {
                 // Found bracket [alpha, alpha_lo]
-                aAlphaHi = aAlphaLo;
-                aAlphaLo = aAlpha;
-                aPhiLo = aPhi;
+                alphaHi = alphaLo;
+                alphaLo = alpha;
+                phiLo = phi;
                 break;
             }
 
             // Increase alpha
-            aAlphaLo = aAlpha;
-            aPhiLo = aPhi;
-            aAlpha = 0.5 * (aAlpha + aAlphaHi);
+            alphaLo = alpha;
+            phiLo = phi;
+            alpha = 0.5 * (alpha + alphaHi);
         }
 
         // Phase 2: Zoom
-        for (int k = 0; k < theMaxIter; ++k)
+        for (int k = 0; k < maxIter; ++k)
         {
             // Bisection
-            aAlpha = 0.5 * (aAlphaLo + aAlphaHi);
+            alpha = 0.5 * (alphaLo + alphaHi);
 
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = theX[i] + aAlpha * theDir[i];
+                xNew[i] = x[i] + alpha * dir[i];
             }
 
-            if (!theFunc.Value(aXNew, out double aPhi))
+            if (!func.Value(xNew, out double phi))
             {
-                aAlphaHi = aAlpha;
-                ++aResult.NbEvals;
+                alphaHi = alpha;
+                ++result.NbEvals;
                 continue;
             }
-            ++aResult.NbEvals;
+            ++result.NbEvals;
 
-            if (aPhi > theFx + theC1 * aAlpha * aPhi0Prime || aPhi >= aPhiLo)
+            if (phi > fx + c1 * alpha * phi0Prime || phi >= phiLo)
             {
-                aAlphaHi = aAlpha;
+                alphaHi = alpha;
             }
             else
             {
-                if (!theFunc.Gradient(aXNew, aGradNew))
+                if (!func.Gradient(xNew, gradNew))
                 {
                     break;
                 }
 
-                double aPhiPrime = 0.0;
-                for (int i = aLower; i <= aUpper; ++i)
+                double phiPrime = 0.0;
+                for (int i = lower; i <= upper; ++i)
                 {
-                    aPhiPrime += aGradNew[i] * theDir[i];
+                    phiPrime += gradNew[i] * dir[i];
                 }
 
-                if (Math.Abs(aPhiPrime) <= -theC2 * aPhi0Prime)
+                if (Math.Abs(phiPrime) <= -c2 * phi0Prime)
                 {
-                    aResult.IsValid = true;
-                    aResult.Alpha = aAlpha;
-                    aResult.FNew = aPhi;
-                    return aResult;
+                    result.IsValid = true;
+                    result.Alpha = alpha;
+                    result.FNew = phi;
+                    return result;
                 }
 
-                if (aPhiPrime * (aAlphaHi - aAlphaLo) >= 0.0)
+                if (phiPrime * (alphaHi - alphaLo) >= 0.0)
                 {
-                    aAlphaHi = aAlphaLo;
+                    alphaHi = alphaLo;
                 }
 
-                aAlphaLo = aAlpha;
-                aPhiLo = aPhi;
+                alphaLo = alpha;
+                phiLo = phi;
             }
 
             // Check for convergence
-            if (Math.Abs(aAlphaHi - aAlphaLo) < THE_EPSILON)
+            if (Math.Abs(alphaHi - alphaLo) < THE_EPSILON)
             {
                 break;
             }
         }
 
         // Return best found
-        aResult.IsValid = true;
-        aResult.Alpha = aAlpha;
-        aResult.FNew = aPhiLo;
-        return aResult;
+        result.IsValid = true;
+        result.Alpha = alpha;
+        result.FNew = phiLo;
+        return result;
     }
 
     /// <summary>
     /// Exact line search by Brent's method: minimizes f(x + alpha*d) over alpha in [-alpha_max, alpha_max].
     /// </summary>
-    public static LineSearchResult ExactLineSearch<Function>(Function theFunc,
-                                                             math_Vector theX,
-                                                             math_Vector theDir,
-                                                             double theAlphaMax = 10.0,
-                                                             double theTolerance = 1.0e-6,
-                                                             int theMaxIter = 100)
+    public static LineSearchResult ExactLineSearch<Function>(Function func,
+                                                             math_Vector x,
+                                                             math_Vector dir,
+                                                             double alphaMax = 10.0,
+                                                             double tolerance = 1.0e-6,
+                                                             int maxIter = 100)
         where Function : IVectorFunction
     {
-        LineSearchResult aResult = new();
-        aResult.NbEvals = 0;
+        LineSearchResult result = new();
+        result.NbEvals = 0;
 
-        int aLower = theX.Lower();
-        int aUpper = theX.Upper();
+        int lower = x.Lower();
+        int upper = x.Upper();
 
-        math_Vector aXNew = new(aLower, aUpper);
+        math_Vector xNew = new(lower, upper);
 
         // Lambda to evaluate phi(alpha) = f(x + alpha*d)
-        bool aEvalPhi(double theAlpha, out double thePhi)
+        bool aEvalPhi(double alpha, out double phi)
         {
-            for (int i = aLower; i <= aUpper; ++i)
+            for (int i = lower; i <= upper; ++i)
             {
-                aXNew[i] = theX[i] + theAlpha * theDir[i];
+                xNew[i] = x[i] + alpha * dir[i];
             }
-            ++aResult.NbEvals;
-            return theFunc.Value(aXNew, out thePhi);
+            ++result.NbEvals;
+            return func.Value(xNew, out phi);
         }
 
         // Brent's method for 1D minimization
         // Search in [-theAlphaMax, theAlphaMax] to handle both directions
-        double aA = -theAlphaMax;
-        double aB = theAlphaMax;
+        double a = -alphaMax;
+        double b = alphaMax;
         double aX = 0.0; // Start at the current point
-        double aW = aX;
-        double aV = aX;
+        double w = aX;
+        double v = aX;
 
-        if (!aEvalPhi(aX, out double aFx))
+        if (!aEvalPhi(aX, out double fx))
         {
-            aResult.IsValid = false;
-            return aResult;
+            result.IsValid = false;
+            return result;
         }
-        double aFw = aFx;
-        double aFv = aFx;
+        double fw = fx;
+        double fv = fx;
 
-        double aD = 0.0;
-        double aE = 0.0;
+        double d = 0.0;
+        double e = 0.0;
 
-        for (int anIter = 0; anIter < theMaxIter; ++anIter)
+        for (int iter = 0; iter < maxIter; ++iter)
         {
-            double aXm = 0.5 * (aA + aB);
-            double aTol1 = theTolerance * Math.Abs(aX) + THE_ZERO_TOL / 10.0;
-            double aTol2 = 2.0 * aTol1;
+            double xm = 0.5 * (a + b);
+            double tol1 = tolerance * Math.Abs(aX) + THE_ZERO_TOL / 10.0;
+            double tol2 = 2.0 * tol1;
 
             // Check convergence
-            if (Math.Abs(aX - aXm) <= (aTol2 - 0.5 * (aB - aA)))
+            if (Math.Abs(aX - xm) <= (tol2 - 0.5 * (b - a)))
             {
-                aResult.IsValid = true;
-                aResult.Alpha = aX;
-                aResult.FNew = aFx;
-                return aResult;
+                result.IsValid = true;
+                result.Alpha = aX;
+                result.FNew = fx;
+                return result;
             }
 
-            double aU = 0.0;
-            bool aUseParabolic = false;
+            double u = 0.0;
+            bool useParabolic = false;
 
             // Try parabolic interpolation
-            if (Math.Abs(aE) > aTol1)
+            if (Math.Abs(e) > tol1)
             {
-                double aR = (aX - aW) * (aFx - aFv);
-                double aQ = (aX - aV) * (aFx - aFw);
-                double aP = (aX - aV) * aQ - (aX - aW) * aR;
-                aQ = 2.0 * (aQ - aR);
+                double r = (aX - w) * (fx - fv);
+                double q = (aX - v) * (fx - fw);
+                double p = (aX - v) * q - (aX - w) * r;
+                q = 2.0 * (q - r);
 
-                if (aQ > 0.0)
+                if (q > 0.0)
                 {
-                    aP = -aP;
+                    p = -p;
                 }
                 else
                 {
-                    aQ = -aQ;
+                    q = -q;
                 }
 
-                double aETmp = aE;
-                aE = aD;
+                double eTmp = e;
+                e = d;
 
-                if (Math.Abs(aP) < Math.Abs(0.5 * aQ * aETmp) && aP > aQ * (aA - aX) && aP < aQ * (aB - aX))
+                if (Math.Abs(p) < Math.Abs(0.5 * q * eTmp) && p > q * (a - aX) && p < q * (b - aX))
                 {
-                    aD = aP / aQ;
-                    aU = aX + aD;
-                    if ((aU - aA) < aTol2 || (aB - aU) < aTol2)
+                    d = p / q;
+                    u = aX + d;
+                    if ((u - a) < tol2 || (b - u) < tol2)
                     {
-                        aD = SignTransfer(aTol1, aXm - aX);
+                        d = SignTransfer(tol1, xm - aX);
                     }
-                    aUseParabolic = true;
+                    useParabolic = true;
                 }
             }
 
-            if (!aUseParabolic)
+            if (!useParabolic)
             {
-                aE = (aX < aXm) ? (aB - aX) : (aA - aX);
-                aD = THE_GOLDEN_SECTION * aE;
+                e = (aX < xm) ? (b - aX) : (a - aX);
+                d = THE_GOLDEN_SECTION * e;
             }
 
-            if (Math.Abs(aD) >= aTol1)
+            if (Math.Abs(d) >= tol1)
             {
-                aU = aX + aD;
+                u = aX + d;
             }
             else
             {
-                aU = aX + SignTransfer(aTol1, aD);
+                u = aX + SignTransfer(tol1, d);
             }
 
-            if (!aEvalPhi(aU, out double aFu))
+            if (!aEvalPhi(u, out double fu))
             {
-                aResult.IsValid = false;
-                aResult.Alpha = aX;
-                aResult.FNew = aFx;
-                return aResult;
+                result.IsValid = false;
+                result.Alpha = aX;
+                result.FNew = fx;
+                return result;
             }
 
             // Update bracket
-            if (aFu <= aFx)
+            if (fu <= fx)
             {
-                if (aU < aX)
+                if (u < aX)
                 {
-                    aB = aX;
+                    b = aX;
                 }
                 else
                 {
-                    aA = aX;
+                    a = aX;
                 }
 
-                aV = aW;
-                aW = aX;
-                aX = aU;
-                aFv = aFw;
-                aFw = aFx;
-                aFx = aFu;
+                v = w;
+                w = aX;
+                aX = u;
+                fv = fw;
+                fw = fx;
+                fx = fu;
             }
             else
             {
-                if (aU < aX)
+                if (u < aX)
                 {
-                    aA = aU;
+                    a = u;
                 }
                 else
                 {
-                    aB = aU;
+                    b = u;
                 }
 
-                if (aFu <= aFw || aW == aX)
+                if (fu <= fw || w == aX)
                 {
-                    aV = aW;
-                    aW = aU;
-                    aFv = aFw;
-                    aFw = aFu;
+                    v = w;
+                    w = u;
+                    fv = fw;
+                    fw = fu;
                 }
-                else if (aFu <= aFv || aV == aX || aV == aW)
+                else if (fu <= fv || v == aX || v == w)
                 {
-                    aV = aU;
-                    aFv = aFu;
+                    v = u;
+                    fv = fu;
                 }
             }
         }
 
-        aResult.IsValid = true;
-        aResult.Alpha = aX;
-        aResult.FNew = aFx;
-        return aResult;
+        result.IsValid = true;
+        result.Alpha = aX;
+        result.FNew = fx;
+        return result;
     }
 
     /// <summary>Quadratic interpolation step for line search from phi(0), phi'(0) and phi(alpha1).</summary>
-    public static double QuadraticInterpolation(double thePhi0, double thePhi0Prime, double theAlpha1, double thePhi1)
+    public static double QuadraticInterpolation(double phi0, double phi0Prime, double alpha1, double phi1)
     {
         // Quadratic: phi(alpha) = phi(0) + phi'(0)*alpha + c*alpha^2
         // where c = (phi(alpha1) - phi(0) - phi'(0)*alpha1) / alpha1^2
         // Minimum at alpha* = -phi'(0) / (2c)
-        double aNum = thePhi0Prime * theAlpha1 * theAlpha1;
-        double aDenom = 2.0 * (thePhi1 - thePhi0 - thePhi0Prime * theAlpha1);
+        double num = phi0Prime * alpha1 * alpha1;
+        double denom = 2.0 * (phi1 - phi0 - phi0Prime * alpha1);
 
-        if (Math.Abs(aDenom) < THE_ZERO_TOL)
+        if (Math.Abs(denom) < THE_ZERO_TOL)
         {
-            return 0.5 * theAlpha1;
+            return 0.5 * alpha1;
         }
 
-        double aAlphaNew = -aNum / aDenom;
+        double alphaNew = -num / denom;
 
         // Safeguard: ensure we stay within reasonable bounds
-        if (aAlphaNew < 0.1 * theAlpha1)
+        if (alphaNew < 0.1 * alpha1)
         {
-            aAlphaNew = 0.1 * theAlpha1;
+            alphaNew = 0.1 * alpha1;
         }
-        else if (aAlphaNew > 0.9 * theAlpha1)
+        else if (alphaNew > 0.9 * alpha1)
         {
-            aAlphaNew = 0.5 * theAlpha1;
+            alphaNew = 0.5 * alpha1;
         }
 
-        return aAlphaNew;
+        return alphaNew;
     }
 
     /// <summary>
     /// Brent's method for 1D minimization along one coordinate of thePoint, in place: the coordinate is modified during
     /// the search and restored if no improvement is found. Returns true if thePoint and theFx were improved.
     /// </summary>
-    public static bool BrentAlongCoordinate<Function>(Function theFunc,
-                                                      math_Vector thePoint,
-                                                      int theDimIdx,
-                                                      double theLoBound,
-                                                      double theUpBound,
-                                                      ref double theFx,
-                                                      double theTolerance,
-                                                      int theMaxIter,
-                                                      ref int theEvalCount)
+    public static bool BrentAlongCoordinate<Function>(Function func,
+                                                      math_Vector point,
+                                                      int dimIdx,
+                                                      double loBound,
+                                                      double upBound,
+                                                      ref double fx,
+                                                      double tolerance,
+                                                      int maxIter,
+                                                      ref int evalCount)
         where Function : IVectorFunction
     {
-        double aOrigCoord = thePoint[theDimIdx];
+        double origCoord = point[dimIdx];
 
         // Search interval [aA, aB] in coordinate space (not alpha space)
-        double aA = theLoBound;
-        double aB = theUpBound;
-        double aX = aOrigCoord;
-        double aW = aX;
-        double aV = aX;
+        double a = loBound;
+        double b = upBound;
+        double x = origCoord;
+        double w = x;
+        double v = x;
 
-        double aFx = theFx;
-        double aFw = aFx;
-        double aFv = aFx;
+        double aFx = fx;
+        double fw = aFx;
+        double fv = aFx;
 
-        double aD = 0.0;
-        double aE = 0.0;
+        double d = 0.0;
+        double e = 0.0;
 
-        for (int anIter = 0; anIter < theMaxIter; ++anIter)
+        for (int iter = 0; iter < maxIter; ++iter)
         {
-            double aXm = 0.5 * (aA + aB);
-            double aTol1 = theTolerance * Math.Abs(aX) + THE_ZERO_TOL / 10.0;
-            double aTol2 = 2.0 * aTol1;
+            double xm = 0.5 * (a + b);
+            double tol1 = tolerance * Math.Abs(x) + THE_ZERO_TOL / 10.0;
+            double tol2 = 2.0 * tol1;
 
             // Check convergence
-            if (Math.Abs(aX - aXm) <= (aTol2 - 0.5 * (aB - aA)))
+            if (Math.Abs(x - xm) <= (tol2 - 0.5 * (b - a)))
             {
                 break;
             }
 
-            double aU = 0.0;
-            bool aUseParabolic = false;
+            double u = 0.0;
+            bool useParabolic = false;
 
             // Try parabolic interpolation
-            if (Math.Abs(aE) > aTol1)
+            if (Math.Abs(e) > tol1)
             {
-                double aR = (aX - aW) * (aFx - aFv);
-                double aQ = (aX - aV) * (aFx - aFw);
-                double aP = (aX - aV) * aQ - (aX - aW) * aR;
-                aQ = 2.0 * (aQ - aR);
+                double r = (x - w) * (aFx - fv);
+                double q = (x - v) * (aFx - fw);
+                double p = (x - v) * q - (x - w) * r;
+                q = 2.0 * (q - r);
 
-                if (aQ > 0.0)
+                if (q > 0.0)
                 {
-                    aP = -aP;
+                    p = -p;
                 }
                 else
                 {
-                    aQ = -aQ;
+                    q = -q;
                 }
 
-                double aETmp = aE;
-                aE = aD;
+                double eTmp = e;
+                e = d;
 
-                if (Math.Abs(aP) < Math.Abs(0.5 * aQ * aETmp) && aP > aQ * (aA - aX) && aP < aQ * (aB - aX))
+                if (Math.Abs(p) < Math.Abs(0.5 * q * eTmp) && p > q * (a - x) && p < q * (b - x))
                 {
-                    aD = aP / aQ;
-                    aU = aX + aD;
-                    if ((aU - aA) < aTol2 || (aB - aU) < aTol2)
+                    d = p / q;
+                    u = x + d;
+                    if ((u - a) < tol2 || (b - u) < tol2)
                     {
-                        aD = SignTransfer(aTol1, aXm - aX);
+                        d = SignTransfer(tol1, xm - x);
                     }
-                    aUseParabolic = true;
+                    useParabolic = true;
                 }
             }
 
-            if (!aUseParabolic)
+            if (!useParabolic)
             {
-                aE = (aX < aXm) ? (aB - aX) : (aA - aX);
-                aD = THE_GOLDEN_SECTION * aE;
+                e = (x < xm) ? (b - x) : (a - x);
+                d = THE_GOLDEN_SECTION * e;
             }
 
-            if (Math.Abs(aD) >= aTol1)
+            if (Math.Abs(d) >= tol1)
             {
-                aU = aX + aD;
+                u = x + d;
             }
             else
             {
-                aU = aX + SignTransfer(aTol1, aD);
+                u = x + SignTransfer(tol1, d);
             }
 
             // Evaluate: only modify the single coordinate
-            thePoint[theDimIdx] = aU;
-            if (!theFunc.Value(thePoint, out double aFu))
+            point[dimIdx] = u;
+            if (!func.Value(point, out double fu))
             {
                 // Restore and abort
-                thePoint[theDimIdx] = aOrigCoord;
+                point[dimIdx] = origCoord;
                 return false;
             }
-            ++theEvalCount;
+            ++evalCount;
 
             // Update bracket
-            if (aFu <= aFx)
+            if (fu <= aFx)
             {
-                if (aU < aX)
+                if (u < x)
                 {
-                    aB = aX;
+                    b = x;
                 }
                 else
                 {
-                    aA = aX;
+                    a = x;
                 }
-                aV = aW;
-                aW = aX;
-                aX = aU;
-                aFv = aFw;
-                aFw = aFx;
-                aFx = aFu;
+                v = w;
+                w = x;
+                x = u;
+                fv = fw;
+                fw = aFx;
+                aFx = fu;
             }
             else
             {
-                if (aU < aX)
+                if (u < x)
                 {
-                    aA = aU;
+                    a = u;
                 }
                 else
                 {
-                    aB = aU;
+                    b = u;
                 }
-                if (aFu <= aFw || aW == aX)
+                if (fu <= fw || w == x)
                 {
-                    aV = aW;
-                    aW = aU;
-                    aFv = aFw;
-                    aFw = aFu;
+                    v = w;
+                    w = u;
+                    fv = fw;
+                    fw = fu;
                 }
-                else if (aFu <= aFv || aV == aX || aV == aW)
+                else if (fu <= fv || v == x || v == w)
                 {
-                    aV = aU;
-                    aFv = aFu;
+                    v = u;
+                    fv = fu;
                 }
             }
         }
 
         // Accept if improved
-        if (aFx < theFx)
+        if (aFx < fx)
         {
-            thePoint[theDimIdx] = aX;
-            theFx = aFx;
+            point[dimIdx] = x;
+            fx = aFx;
             return true;
         }
 
         // Restore original coordinate
-        thePoint[theDimIdx] = aOrigCoord;
+        point[dimIdx] = origCoord;
         return false;
     }
 }

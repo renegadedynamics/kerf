@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Text.Json;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -317,7 +318,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
 
     private sealed record Chamfer2DCase(int NbVertices, bool HasReference, double D1, double D2);
 
-    private sealed record OffsetCase(GeomAbs_JoinType Join, double Distance);
+    private sealed record OffsetCase(JoinKind Join, double Distance);
 
     private sealed record SolverCase(TargetData[] Targets, double Radius = 0, double X = 0, double Y = 0, Vec3 P = default, Vec3 D = default,
                                      double Angle = 0);
@@ -422,9 +423,9 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                     break;
                 case 2:
                 {
-                    var anAx = new gp_Ax2();
-                    anAx.SetLocation(new gp_Pnt(theCall.Start!.Value.X, theCall.Start.Value.Y, theCall.Start.Value.Z));
-                    anAx.SetDirection(new gp_Dir(theCall.Dir!.Value.X, theCall.Dir.Value.Y, theCall.Dir.Value.Z));
+                    var anAx = new Frame3D();
+                    anAx.SetLocation(new Point3D(theCall.Start!.Value.X, theCall.Start.Value.Y, theCall.Start.Value.Z));
+                    anAx.SetDirection(new Direction3D(theCall.Dir!.Value.X, theCall.Dir.Value.Y, theCall.Dir.Value.Z));
                     aB.SetMode(anAx);
                     break;
                 }
@@ -545,7 +546,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var aF = new BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
             foreach (TopoDS_Shape anE in o)
             {
-                aF.Add(TopoDS.Edge(anE), GeomAbs_Shape.GeomAbs_C0);
+                aF.Add(TopoDS.Edge(anE), Continuity.C0);
             }
             aF.Build();
             TopoDS_Shape aFirst = aF.Shape();
@@ -555,7 +556,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             }
             foreach (Vec3 p in thePoints)
             {
-                aF.Add(new gp_Pnt(p.X, p.Y, p.Z));
+                aF.Add(new Point3D(p.X, p.Y, p.Z));
             }
             aF.Build();
             return PCompound(aFirst, aF.Shape());
@@ -590,15 +591,15 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var aF = new BRepOffsetAPI_MakeFilling();
             for (int i = 0; i < aNbOnFaces; i++)
             {
-                aF.Add(TopoDS.Edge(o[2 * i]), TopoDS.Face(o[2 * i + 1]), GeomAbs_Shape.GeomAbs_G1);
+                aF.Add(TopoDS.Edge(o[2 * i]), TopoDS.Face(o[2 * i + 1]), Continuity.G1);
             }
             foreach (TopoDS_Shape anE in o.Skip(2 * aNbOnFaces))
             {
-                aF.Add(TopoDS.Edge(anE), GeomAbs_Shape.GeomAbs_C0);
+                aF.Add(TopoDS.Edge(anE), Continuity.C0);
             }
             foreach (Vec3 p in thePoints)
             {
-                aF.Add(new gp_Pnt(p.X, p.Y, p.Z));
+                aF.Add(new Point3D(p.X, p.Y, p.Z));
             }
             aF.Build();
             return aF.Shape();
@@ -634,22 +635,22 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             return aMaker.Face();
         }, _ =>
         {
-            var anArray = new NCollection_Array2<gp_Pnt>(1, aRows, 1, aCols);
+            var anArray = new NCollection_Array2<Point3D>(1, aRows, 1, aCols);
             for (int i = 0; i < aRows; i++)
             {
                 for (int j = 0; j < aCols; j++)
                 {
-                    anArray.SetValue(i + 1, j + 1, new gp_Pnt(thePoints[i][j].X, thePoints[i][j].Y, thePoints[i][j].Z));
+                    anArray.SetValue(i + 1, j + 1, new Point3D(thePoints[i][j].X, thePoints[i][j].Y, thePoints[i][j].Z));
                 }
             }
             GeomAPI_PointsToBSplineSurface aB = theSmoothing is [var w1, var w2, var w3]
-                ? new(anArray, w1, w2, w3, Math.Max(theMaxDeg, 6), GeomAbs_Shape.GeomAbs_C2, 1e-2)
-                : new(anArray, theMinDeg, theMaxDeg, GeomAbs_Shape.GeomAbs_C2, 1e-2);
+                ? new(anArray, w1, w2, w3, Math.Max(theMaxDeg, 6), Continuity.C2, 1e-2)
+                : new(anArray, theMinDeg, theMaxDeg, Continuity.C2, 1e-2);
             if (!aB.IsDone())
             {
-                throw new StdFail_NotDone();
+                throw new global::Kerf.Engine.Foundation.NotDoneException();
             }
-            return new BRepBuilderAPI_MakeFace(aB.Surface(), Precision.Confusion()).Face();
+            return new BRepBuilderAPI_MakeFace(aB.Surface(), global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
         });
     }
 
@@ -684,8 +685,8 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             BRepProj_Projection aP = theDir is { } d
-                ? new(o[0], o[1], new gp_Dir(d.X, d.Y, d.Z))
-                : new(o[0], o[1], new gp_Pnt(theCenter!.Value.X, theCenter.Value.Y, theCenter.Value.Z));
+                ? new(o[0], o[1], new Direction3D(d.X, d.Y, d.Z))
+                : new(o[0], o[1], new Point3D(theCenter!.Value.X, theCenter.Value.Y, theCenter.Value.Z));
             return aP.Shape();
         });
     }
@@ -759,7 +760,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     /// <summary>MakeOffset initialised with the join (on a plane's face when given as the second operand), AddWire, Perform(distance).</summary>
     private void RunOffset2D(string theName, string theOperands, OffsetCase theCase)
     {
-        GeomAbs_JoinType aJoin = theCase.Join;
+        JoinKind aJoin = theCase.Join;
         double aDistance = theCase.Distance;
         Compare("MakeOffset", theName, theOperands, o =>
         {
@@ -822,7 +823,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         public double First, Last;
     }
 
-    private static readonly gp_Pln s_pPlnXY = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)));
+    private static readonly Plane3D s_pPlnXY = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
 
     private static List<NArg> NArgs(TargetData[] theTargets, List<N.TopoDS_Shape> theOps)
     {
@@ -856,7 +857,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         {
             if (!t.HasEdge)
             {
-                anArgs.Add(new PArg { P = new Geom2d_CartesianPoint(new gp_Pnt2d(t.X, t.Y)) });
+                anArgs.Add(new PArg { P = new Geom2d_CartesianPoint(new Point2D(t.X, t.Y)) });
                 continue;
             }
             TopoDS_Edge anE = TopoDS.Edge(theOps[k++]);
@@ -957,7 +958,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var a = PArgs(aTs, o);
-            return G.RunPort(() => G.PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(a[0].Q!.Value, new Geom2d_CartesianPoint(new gp_Pnt2d(theX, theY)), Tol)));
+            return G.RunPort(() => G.PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(a[0].Q!.Value, new Geom2d_CartesianPoint(new Point2D(theX, theY)), Tol)));
         });
     }
 
@@ -996,7 +997,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var a = PArgs(aTs, o);
             return G.RunPort(() => G.PLin2d2Tan(a[1].Q is not null
                 ? new Geom2dGcc_Lin2d2Tan(a[0].Q!.Value, a[1].Q!.Value, Tol)
-                : new Geom2dGcc_Lin2d2Tan(a[0].Q!.Value, new gp_Pnt2d(aTs[1].X, aTs[1].Y), Tol)));
+                : new Geom2dGcc_Lin2d2Tan(a[0].Q!.Value, new Point2D(aTs[1].X, aTs[1].Y), Tol)));
         });
     }
 
@@ -1013,7 +1014,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var a = PArgs(aTs, o);
-            var aLin = new gp_Lin2d(new gp_Ax2d(new gp_Pnt2d(p.X, p.Y), new gp_Dir2d(d.X, d.Y)));
+            var aLin = new Line2D(new Axis2D(new Point2D(p.X, p.Y), new Direction2D(d.X, d.Y)));
             return G.RunPort(() => G.PLin2dTanObl(new Geom2dGcc_Lin2dTanObl(a[0].Q!.Value, aLin, Tol, theAngle)));
         });
     }

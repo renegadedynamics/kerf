@@ -3,9 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_JoinType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.JoinKind;
 using static Occt.MAT_Side;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -37,7 +42,7 @@ public sealed class BRepFill_Evolved
 #pragma warning disable CS0414 // OCCT sets the spine type without reading it
     private bool mySpineType;
 #pragma warning restore CS0414
-    private GeomAbs_JoinType myJoinType;
+    private global::Kerf.Geometry.JoinKind myJoinType;
     private readonly NCollection_DataMap<TopoDS_Shape, NCollection_DataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>> myMap =
         new(TopTools_ShapeMapHasher.Instance);
     private TopoDS_Shape myTop = new();
@@ -75,14 +80,14 @@ public sealed class BRepFill_Evolved
     /// places the profile on the spine: it slides on the profile with its direction along the normal to the spine and
     /// its X direction along the spine's tangent.
     /// </summary>
-    public BRepFill_Evolved(in TopoDS_Wire Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join = GeomAbs_Arc, bool Solid = false)
+    public BRepFill_Evolved(in TopoDS_Wire Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool Solid = false)
     {
         myIsDone = false;
         Perform(Spine, Profile, AxeProf, Join, Solid);
     }
 
     /// <summary>The evolved shape of <paramref name="Profile"/> swept along the face <paramref name="Spine"/>.</summary>
-    public BRepFill_Evolved(in TopoDS_Face Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join = GeomAbs_Arc, bool Solid = false)
+    public BRepFill_Evolved(in TopoDS_Face Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool Solid = false)
     {
         myIsDone = false;
         Perform(Spine, Profile, AxeProf, Join, Solid);
@@ -91,13 +96,13 @@ public sealed class BRepFill_Evolved
     private static bool IsVertical(in TopoDS_Edge E)
     {
         TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
 
         if (Math.Abs(P1.Y() - P2.Y()) < BRepFill_Confusion())
         {
             // It is a Line ?
-            Geom_Curve? GC = BRep_Tool.Curve(E, out TopLoc_Location _, out double _, out double _);
+            Geom_Curve? GC = BRep_Tool.Curve(E, out Placement _, out double _, out double _);
             if (GC!.GetType() == typeof(Geom_Line))
             {
                 return true;
@@ -109,13 +114,13 @@ public sealed class BRepFill_Evolved
     private static bool IsPlanar(in TopoDS_Edge E)
     {
         TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
 
         if (Math.Abs(P1.Z() - P2.Z()) < BRepFill_Confusion())
         {
             // It is a Line ?
-            Geom_Curve? GC = BRep_Tool.Curve(E, out TopLoc_Location _, out double _, out double _);
+            Geom_Curve? GC = BRep_Tool.Curve(E, out Placement _, out double _, out double _);
             if (GC!.GetType() == typeof(Geom_Line))
             {
                 return true;
@@ -137,8 +142,8 @@ public sealed class BRepFill_Evolved
         TopoDS_Edge E = TopoDS.Edge(Explo.Current());
 
         TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
 
         if (P1.Y() < -Tol || P2.Y() < -Tol)
         {
@@ -160,7 +165,7 @@ public sealed class BRepFill_Evolved
     }
 
     /// <summary>Builds the evolved shape of <paramref name="Profile"/> swept along the wire <paramref name="Spine"/>.</summary>
-    public void Perform(in TopoDS_Wire Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join = GeomAbs_Arc, bool Solid = false)
+    public void Perform(in TopoDS_Wire Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool Solid = false)
     {
         mySpineType = false;
         TopoDS_Face aFace = new BRepLib_MakeFace(Spine, true).InternalFace();
@@ -168,7 +173,7 @@ public sealed class BRepFill_Evolved
     }
 
     /// <summary>Builds the evolved shape of <paramref name="Profile"/> swept along the face <paramref name="Spine"/>.</summary>
-    public void Perform(in TopoDS_Face Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join = GeomAbs_Arc, bool Solid = false)
+    public void Perform(in TopoDS_Face Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join = Arc, bool Solid = false)
     {
         mySpineType = true;
         PrivatePerform(Spine, Profile, AxeProf, Join, Solid);
@@ -181,7 +186,7 @@ public sealed class BRepFill_Evolved
     // copies, and afterwards the caller's own sub-shapes come back wherever the algorithm left their copies unchanged
     // (in the result, Top, Bottom and the generated lists), and the generated shapes are keyed by the caller's
     // sub-shapes.
-    private void PrivatePerform(in TopoDS_Face Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join, bool Solid)
+    private void PrivatePerform(in TopoDS_Face Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join, bool Solid)
     {
         BRepTools_CopyAtEntry aSpineEntry = new(Spine);
         BRepTools_CopyAtEntry aProfEntry = new(Profile);
@@ -232,7 +237,7 @@ public sealed class BRepFill_Evolved
         myProfile = TopoDS.Wire(Profile.Oriented(TopAbs_FORWARD));
     }
 
-    private void PrivatePerformInPlace(in TopoDS_Face Spine, in TopoDS_Wire Profile, in gp_Ax3 AxeProf, GeomAbs_JoinType Join, bool Solid)
+    private void PrivatePerformInPlace(in TopoDS_Face Spine, in TopoDS_Wire Profile, in CoordinateSystem AxeProf, global::Kerf.Geometry.JoinKind Join, bool Solid)
     {
         TopoDS_Shape aLocalShape = Spine.Oriented(TopAbs_FORWARD);
         mySpine = TopoDS.Face(aLocalShape);
@@ -241,9 +246,9 @@ public sealed class BRepFill_Evolved
         myJoinType = Join;
         myMap.Clear();
 
-        if (myJoinType > GeomAbs_Arc)
+        if (myJoinType > Arc)
         {
-            throw new Standard_NotImplemented();
+            throw new MethodNotImplementedException();
         }
 
         NCollection_List<TopoDS_Shape> WorkProf = new();
@@ -253,12 +258,12 @@ public sealed class BRepFill_Evolved
         //-------------------------------------------------------------------
         // Positioning of mySpine and myProfil in the workspace.
         //-------------------------------------------------------------------
-        TopLoc_Location LSpine = FindLocation(mySpine);
-        gp_Trsf T = new();
+        Placement LSpine = FindLocation(mySpine);
+        Transform3D T = new();
         T.SetTransformation(AxeProf);
-        TopLoc_Location LProfile = new(T);
-        TopLoc_Location InitLS = mySpine.Location();
-        TopLoc_Location InitLP = myProfile.Location();
+        Placement LProfile = new(T);
+        Placement InitLS = mySpine.Location();
+        Placement InitLP = myProfile.Location();
         TransformInitWork(LSpine, LProfile);
 
         //------------------------------------------------------------------
@@ -369,7 +374,7 @@ public sealed class BRepFill_Evolved
                 //----------------------------------------------
                 // Calculate the map to the right of the current wire.
                 //----------------------------------------------
-                BRepLib_MakeFace B = new(new gp_Pln(0.0, 0.0, 1.0, 0.0));
+                BRepLib_MakeFace B = new(new Plane3D(0.0, 0.0, 1.0, 0.0));
                 TopoDS_Shape aLocalShapeRev = SpineExp.Current().Reversed();
                 B.Add(TopoDS.Wire(aLocalShapeRev));
                 Face = B.InternalFace();
@@ -445,8 +450,8 @@ public sealed class BRepFill_Evolved
             return;
         }
 
-        gp_Pnt P;
-        gp_Vec DS, DC1, DC2;
+        Point3D P;
+        Vector3D DS, DC1, DC2;
         BRepAdaptor_Curve CS = new(TopoDS.Edge(S));
         if (S.Orientation() == TopAbs_FORWARD)
         {
@@ -517,9 +522,9 @@ public sealed class BRepFill_Evolved
             Geom2d_Curve? G2d = BRep_Tool.CurveOnSurface(TopoDS.Edge(S), F, out double f, out double l);
 
             Geom2dAdaptor_Curve AC = new(G2d!, f, l);
-            if (AC.GetType() == GeomAbs_Circle)
+            if (AC.GetType() == Circle)
             {
-                bool Direct = AC.Circle().IsDirect();
+                bool Direct = AC.Circle().IsDirect;
                 if (S.Orientation() == TopAbs_REVERSED)
                 {
                     Direct = (!Direct);
@@ -531,7 +536,7 @@ public sealed class BRepFill_Evolved
     }
 
     private void ElementaryPerform(in TopoDS_Face Sp, in TopoDS_Wire Pr, BRepMAT2d_BisectingLocus Locus, BRepMAT2d_LinkTopoBilo Link,
-                                   GeomAbs_JoinType Join)
+                                   global::Kerf.Geometry.JoinKind Join)
     {
         TopoDS_Shape aLocalShape = Sp.Oriented(TopAbs_FORWARD);
         mySpine = TopoDS.Face(aLocalShape);
@@ -561,7 +566,7 @@ public sealed class BRepFill_Evolved
         NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<double>> MapVerPar = new(TopTools_ShapeMapHasher.Instance);
 
         // mark of the profile.
-        gp_Ax3 AxeRef = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        CoordinateSystem AxeRef = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
 
         //---------------------------------------------------------------
         // Construction of revolutions and tubes.
@@ -623,10 +628,10 @@ public sealed class BRepFill_Evolved
             bool Concave1 = ConcaveSide(S[1], mySpine);
 
             NCollection_Sequence<TopoDS_Shape> VOnF = new(), VOnL = new();
-            NCollection_Sequence<gp_Pnt> ParOnF = new(), ParOnL = new();
+            NCollection_Sequence<Point3D> ParOnF = new(), ParOnL = new();
 
             NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<TopoDS_Shape>> MapSeqVer = new(TopTools_ShapeMapHasher.Instance);
-            NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<gp_Pnt>> MapSeqPar = new(TopTools_ShapeMapHasher.Instance);
+            NCollection_DataMap<TopoDS_Shape, NCollection_Sequence<Point3D>> MapSeqPar = new(TopTools_ShapeMapHasher.Instance);
 
             for (ProfExp.Init(myProfile); ProfExp.More(); ProfExp.Next())
             {
@@ -732,7 +737,7 @@ public sealed class BRepFill_Evolved
                 else
                 {
                     // OCCT assigns copies
-                    ParOnF = new NCollection_Sequence<gp_Pnt>(MapSeqPar[VF]);
+                    ParOnF = new NCollection_Sequence<Point3D>(MapSeqPar[VF]);
                     VOnF = new NCollection_Sequence<TopoDS_Shape>(MapSeqVer[VF]);
                 }
 
@@ -765,7 +770,7 @@ public sealed class BRepFill_Evolved
                 }
                 else
                 {
-                    ParOnL = new NCollection_Sequence<gp_Pnt>(MapSeqPar[VL]);
+                    ParOnL = new NCollection_Sequence<Point3D>(MapSeqPar[VL]);
                     VOnL = new NCollection_Sequence<TopoDS_Shape>(MapSeqVer[VL]);
                 }
 
@@ -799,7 +804,7 @@ public sealed class BRepFill_Evolved
                     TopoDS_Vertex V1 = TopoDS.Vertex(FirstV.Value(Ti));
                     TopoDS_Vertex V2 = TopoDS.Vertex(LastV.Value(Ti));
 
-                    Trim.Project(FirstPar.Value(Ti), LastPar.Value(Ti), out CBis, out PCurve1, out PCurve2, out GeomAbs_Shape Continuity);
+                    Trim.Project(FirstPar.Value(Ti), LastPar.Value(Ti), out CBis, out PCurve1, out PCurve2, out Continuity Continuity);
 
                     //-------------------------------------
                     // Coding of the edge.
@@ -918,9 +923,9 @@ public sealed class BRepFill_Evolved
                 //-----------------------------------------------------------------
 
                 // OCCT binds copies
-                MapSeqPar.Bind(VF, new NCollection_Sequence<gp_Pnt>(ParOnF));
+                MapSeqPar.Bind(VF, new NCollection_Sequence<Point3D>(ParOnF));
                 MapSeqVer.Bind(VF, new NCollection_Sequence<TopoDS_Shape>(VOnF));
-                MapSeqPar.Bind(VL, new NCollection_Sequence<gp_Pnt>(ParOnL));
+                MapSeqPar.Bind(VL, new NCollection_Sequence<Point3D>(ParOnL));
                 MapSeqVer.Bind(VL, new NCollection_Sequence<TopoDS_Shape>(VOnL));
             }
         }
@@ -1095,7 +1100,7 @@ public sealed class BRepFill_Evolved
     }
 
     private void PlanarPerform(in TopoDS_Face Sp, in TopoDS_Wire Pr, BRepMAT2d_BisectingLocus Locus, BRepMAT2d_LinkTopoBilo Link,
-                               GeomAbs_JoinType Join)
+                               global::Kerf.Geometry.JoinKind Join)
     {
         TopoDS_Shape aLocalShapeOriented = Sp.Oriented(TopAbs_FORWARD);
         mySpine = TopoDS.Face(aLocalShapeOriented);
@@ -1201,9 +1206,9 @@ public sealed class BRepFill_Evolved
             // Construction of faces limited by parallels.
             // - set to the height of the support face.
             //----------------------------------------------------
-            gp_Trsf T = new();
-            T.SetTranslation(new gp_Vec(0, 0, Alt));
-            TopLoc_Location LT = new(T);
+            Transform3D T = new();
+            T.SetTranslation(new Vector3D(0, 0, Alt));
+            Placement LT = new(T);
             TopoDS_Shape aLocalShape2 = mySpine.Moved(LT);
             FR.Init(TopoDS.Face(aLocalShape2));
             // the restrictor runs on the wires this algorithm made (5O1's notes)
@@ -1238,7 +1243,7 @@ public sealed class BRepFill_Evolved
     }
 
     private void VerticalPerform(in TopoDS_Face Sp, in TopoDS_Wire Pr, BRepMAT2d_BisectingLocus Locus, BRepMAT2d_LinkTopoBilo Link,
-                                 GeomAbs_JoinType Join)
+                                 global::Kerf.Geometry.JoinKind Join)
     {
         TopoDS_Shape aLocalShape = Sp.Oriented(TopAbs_FORWARD);
         mySpine = TopoDS.Face(aLocalShape);
@@ -1294,7 +1299,7 @@ public sealed class BRepFill_Evolved
                 First = false;
             }
 
-            BRepSweep_Prism PS = new(Base, new gp_Vec(0, 0, Alt2 - Alt1), false);
+            BRepSweep_Prism PS = new(Base, new Vector3D(0, 0, Alt2 - Alt1), false);
 
             Base = PS.LastShape();
 
@@ -1359,8 +1364,8 @@ public sealed class BRepFill_Evolved
         // to be carried out is a projection on plane yOz.
 
         // initialise the projection Plane and the Line to evaluate the extrema.
-        Geom_Plane Plane = new(new gp_Ax3(gp.YOZ()));
-        Geom2d_Line Line = new(gp.OY2d());
+        Geom_Plane Plane = new(new CoordinateSystem(Constants.YOZ()));
+        Geom2d_Line Line = new(Constants.OY2d());
 
         // Map initial vertex -> projected vertex.
         NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> MapVerRefMoved = new(TopTools_ShapeMapHasher.Instance);
@@ -1519,7 +1524,7 @@ public sealed class BRepFill_Evolved
         NCollection_List<TopoDS_Shape> Cuts = new();
         NCollection_List<TopoDS_Shape>.Iterator IteCuts = new();
 
-        Geom_Surface? S = BRep_Tool.Surface(mySpine, out TopLoc_Location L);
+        Geom_Surface? S = BRep_Tool.Surface(mySpine, out Placement L);
         double TolF = BRep_Tool.Tolerance(mySpine);
         B.MakeFace(ref WorkSpine, S, L, TolF);
 
@@ -1629,9 +1634,9 @@ public sealed class BRepFill_Evolved
         TopAbs_Orientation OO = TopAbs_FORWARD;
         TopExp.Vertices(E1, out TopoDS_Vertex V10, out TopoDS_Vertex _);
         TopExp.Vertices(E2, out TopoDS_Vertex V20, out TopoDS_Vertex V21);
-        gp_Pnt P1 = BRep_Tool.Pnt(V10);
-        gp_Pnt P2 = BRep_Tool.Pnt(V20);
-        gp_Pnt P3 = BRep_Tool.Pnt(V21);
+        Point3D P1 = BRep_Tool.Pnt(V10);
+        Point3D P2 = BRep_Tool.Pnt(V20);
+        Point3D P3 = BRep_Tool.Pnt(V21);
         if (P1.Distance(P3) < P1.Distance(P2))
         {
             OO = TopAbs_REVERSED;
@@ -1741,9 +1746,9 @@ public sealed class BRepFill_Evolved
     private void Transfert(BRepFill_Evolved Vevo,
                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> MapProf,
                            NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> MapSpine,
-                           in TopLoc_Location LS,
-                           in TopLoc_Location InitLS,
-                           in TopLoc_Location InitLP)
+                           in Placement LS,
+                           in Placement InitLS,
+                           in Placement InitLP)
     {
         //----------------------------------------------------------------
         // Transfer the shape from Vevo in myShape and Reposition shapes.
@@ -1836,7 +1841,7 @@ public sealed class BRepFill_Evolved
     }
 
     /// <summary>The join type of the parallels.</summary>
-    public GeomAbs_JoinType JoinType() => myJoinType;
+    public global::Kerf.Geometry.JoinKind JoinType() => myJoinType;
 
     private void AddTopAndBottom(BRepTools_Quilt Glue)
     {
@@ -1854,7 +1859,7 @@ public sealed class BRepFill_Evolved
         {
             BRepAlgo_Loop Loop = new();
             // Construction of supports.
-            gp_Pln S = new(0.0, 0.0, 1.0, -Altitud(V[i]));
+            Plane3D S = new(0.0, 0.0, 1.0, -Altitud(V[i]));
             TopoDS_Face F = new BRepLib_MakeFace(S).InternalFace();
             Loop.Init(F);
 
@@ -1879,8 +1884,8 @@ public sealed class BRepFill_Evolved
                         BRep_Tool.Range(ES, out double fs, out double ls);
                         double u = 0.3 * f + 0.7 * l;
                         double us = 0.3 * fs + 0.7 * ls;
-                        C1.D1(us, out gp_Pnt _, out gp_Vec V1);
-                        C2.D1(u, out gp_Pnt _, out gp_Vec V2);
+                        C1.D1(us, out Point3D _, out Vector3D V1);
+                        C2.D1(u, out Point3D _, out Vector3D V2);
                         ToReverse = (V1.Dot(V2) < 0.0);
                         ComputeOrientation = true;
                     }
@@ -1895,7 +1900,7 @@ public sealed class BRepFill_Evolved
                 }
             }
 
-            gp_Pnt PV = BRep_Tool.Pnt(V[i]);
+            Point3D PV = BRep_Tool.Pnt(V[i]);
             bool IsOut = PV.Y() < 0;
 
             for (ExpSpine.Init(mySpine, TopAbs_VERTEX); ExpSpine.More(); ExpSpine.Next())
@@ -1914,10 +1919,10 @@ public sealed class BRepFill_Evolved
                             BRepAdaptor_Curve C = new(E);
                             BRep_Tool.Range(E, out double f, out double l);
                             double u = 0.3 * f + 0.7 * l;
-                            gp_Pnt P = BRep_Tool.Pnt(ES);
-                            C.D1(u, out gp_Pnt PC, out gp_Vec VC);
-                            gp_Vec aPPC = new(P, PC);
-                            gp_Vec Prod = aPPC.Crossed(VC);
+                            Point3D P = BRep_Tool.Pnt(ES);
+                            C.D1(u, out Point3D PC, out Vector3D VC);
+                            Vector3D aPPC = new(P, PC);
+                            Vector3D Prod = aPPC.Crossed(VC);
                             if (IsOut)
                             {
                                 ToReverse = Prod.Z() < 0.0;
@@ -2011,23 +2016,23 @@ public sealed class BRepFill_Evolved
         }
     }
 
-    private void MakePipe(in TopoDS_Edge SE, in gp_Ax3 AxeRef)
+    private void MakePipe(in TopoDS_Edge SE, in CoordinateSystem AxeRef)
     {
         BRepTools_WireExplorer ProfExp = new();
 
-        gp_Trsf trsf = new();
+        Transform3D trsf = new();
         if (Side(myProfile, BRepFill_Confusion()) > 3)
         { // side right
-            trsf.SetRotation(gp.OZ(), Math.PI);
+            trsf.SetRotation(Constants.OZ(), Math.PI);
         }
-        TopLoc_Location DumLoc = new(trsf);
+        Placement DumLoc = new(trsf);
         TopoDS_Shape aLocalShape = myProfile.Moved(DumLoc);
         TopoDS_Wire DummyProf = PutProfilAt(TopoDS.Wire(aLocalShape), AxeRef, SE, mySpine, true);
 
         // Copy of the profile to avoid the accumulation of
         // locations on the Edges of myProfile!
 
-        BRepTools_TrsfModification TrsfMod = new(new gp_Trsf());
+        BRepTools_TrsfModification TrsfMod = new(new Transform3D());
         BRepTools_Modifier Modif = new(DummyProf, TrsfMod);
 
         TopoDS_Wire GenProf = TopoDS.Wire(Modif.InternalModifiedShape(DummyProf));
@@ -2061,26 +2066,26 @@ public sealed class BRepFill_Evolved
         }
     }
 
-    private void MakeRevol(in TopoDS_Edge SE, in TopoDS_Vertex VLast, in gp_Ax3 AxeRef)
+    private void MakeRevol(in TopoDS_Edge SE, in TopoDS_Vertex VLast, in CoordinateSystem AxeRef)
     {
         BRepTools_WireExplorer ProfExp = new();
 
-        gp_Trsf trsf = new();
+        Transform3D trsf = new();
         if (Side(myProfile, BRepFill_Confusion()) > 3)
         { // side right
-            trsf.SetRotation(gp.OZ(), Math.PI);
+            trsf.SetRotation(Constants.OZ(), Math.PI);
         }
-        TopLoc_Location DumLoc = new(trsf);
+        Placement DumLoc = new(trsf);
         TopoDS_Shape aLocalShape = myProfile.Moved(DumLoc);
         TopoDS_Wire GenProf = PutProfilAt(TopoDS.Wire(aLocalShape), AxeRef, SE, mySpine, false);
 
-        gp_Ax1 AxeRev = new(BRep_Tool.Pnt(VLast), gp.DZ().Reversed());
+        Axis3D AxeRev = new(BRep_Tool.Pnt(VLast), Constants.DZ().Reversed());
 
         // Position of the sewing on the edge of the spine
         // so that the bissectrices didn't cross the sewings.
-        gp_Trsf dummy = new();
+        Transform3D dummy = new();
         dummy.SetRotation(AxeRev, 1.5 * Math.PI);
-        TopLoc_Location DummyLoc = new(dummy);
+        Placement DummyLoc = new(dummy);
         GenProf.Move(DummyLoc);
 
         BRepSweep_Revol Rev = new(GenProf, AxeRev, true);
@@ -2120,9 +2125,9 @@ public sealed class BRepFill_Evolved
         }
     }
 
-    private static TopLoc_Location FindLocation(in TopoDS_Face Face)
+    private static Placement FindLocation(in TopoDS_Face Face)
     {
-        Geom_Surface S = BRep_Tool.Surface(Face, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(Face, out Placement L)!;
 
         if (S is not Geom_Plane)
         {
@@ -2134,27 +2139,27 @@ public sealed class BRepFill_Evolved
             }
             else
             {
-                throw new Standard_NoSuchObject("BRepFill_Evolved : The Face is not planar");
+                throw new NoSuchObjectException("BRepFill_Evolved : The Face is not planar");
             }
         }
 
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             S = (Geom_Surface)S.Transformed(L.Transformation());
         }
 
         Geom_Plane P = (Geom_Plane)S;
-        gp_Ax3 Axis = P.Position();
+        CoordinateSystem Axis = P.Position();
 
-        gp_Trsf T = new();
-        gp_Ax3 AxeRef = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(gp_Dir.D.Z), new gp_Dir(gp_Dir.D.X));
+        Transform3D T = new();
+        CoordinateSystem AxeRef = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         T.SetTransformation(AxeRef, Axis);
 
-        return new TopLoc_Location(T);
+        return new Placement(T);
     }
 
     // Moves the handles mySpine and myProfile (the caller's shapes are not changed).
-    private void TransformInitWork(in TopLoc_Location LS, in TopLoc_Location LP)
+    private void TransformInitWork(in Placement LS, in Placement LP)
     {
         mySpine.Move(LS);
         myProfile.Move(LP);
@@ -2189,9 +2194,9 @@ public sealed class BRepFill_Evolved
                 double U2 = BRep_Tool.Parameter(V, PrecE);
                 BRepAdaptor_Curve Curve1 = new(CurE);
                 BRepAdaptor_Curve Curve2 = new(PrecE);
-                GeomAbs_Shape Continuity = BRepLProp.Continuity(Curve1, Curve2, U1, U2);
+                Continuity Continuity = BRepLProp.Continuity(Curve1, Curve2, U1, U2);
 
-                if (Continuity >= GeomAbs_Shape.GeomAbs_G1)
+                if (Continuity >= global::Kerf.Geometry.Continuity.G1)
                 {
                     //-----------------------------------------------------
                     // Code continuity for all edges generated by V.
@@ -2224,9 +2229,9 @@ public sealed class BRepFill_Evolved
             double U2 = BRep_Tool.Parameter(VF, FirstE);
             BRepAdaptor_Curve Curve1 = new(CurE);
             BRepAdaptor_Curve Curve2 = new(FirstE);
-            GeomAbs_Shape Continuity = BRepLProp.Continuity(Curve1, Curve2, U1, U2);
+            Continuity Continuity = BRepLProp.Continuity(Curve1, Curve2, U1, U2);
 
-            if (Continuity >= GeomAbs_Shape.GeomAbs_G1)
+            if (Continuity >= global::Kerf.Geometry.Continuity.G1)
             {
                 //---------------------------------------------
                 // Code continuity for all edges generated by V.
@@ -2253,7 +2258,7 @@ public sealed class BRepFill_Evolved
     // of the map. Now it is enough to compare points UV of vertices on edges with a certain tolerance.
     private static void AddDegeneratedEdge(in TopoDS_Face F, in TopoDS_Wire W)
     {
-        Geom_Surface S = BRep_Tool.Surface(F, out TopLoc_Location _)!;
+        Geom_Surface S = BRep_Tool.Surface(F, out Placement _)!;
         if (S.GetType() == typeof(Geom_RectangularTrimmedSurface))
         {
             Geom_Surface SB = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
@@ -2277,7 +2282,7 @@ public sealed class BRepFill_Evolved
         {
             Change = false;
             BRepTools_WireExplorer WE = new(W, F);
-            gp_Pnt2d PF = new(), PrevP = new(), P1, P2 = new();
+            Point2D PF = new(), PrevP = new(), P1, P2 = new();
             TopoDS_Vertex VF = new(), V1, V2 = new();
 
             for (; WE.More(); WE.Next())
@@ -2303,8 +2308,8 @@ public sealed class BRepFill_Evolved
                     {
                         // degenerated edge to be inserted.
                         Change = true;
-                        gp_Vec2d V = new(PrevP, P1);
-                        Geom2d_Line C2d = new(PrevP, new gp_Dir2d(V));
+                        Vector2D V = new(PrevP, P1);
+                        Geom2d_Line C2d = new(PrevP, new Direction2D(V));
                         double f = 0, l = PrevP.Distance(P1);
                         TopoDS_Edge NE = new BRepLib_MakeEdge(C2d, S).InternalEdge();
                         B.Degenerated(NE, true);
@@ -2323,8 +2328,8 @@ public sealed class BRepFill_Evolved
                 {
                     // Degenerated edge to be inserted.
                     Change = true;
-                    gp_Vec2d V = new(P2, PF);
-                    Geom2d_Line C2d = new(P2, new gp_Dir2d(V));
+                    Vector2D V = new(P2, PF);
+                    Geom2d_Line C2d = new(P2, new Direction2D(V));
                     double f = 0, l = P2.Distance(PF);
                     TopoDS_Edge NE = new BRepLib_MakeEdge(C2d, S).InternalEdge();
                     B.Degenerated(NE, true);
@@ -2398,16 +2403,16 @@ public sealed class BRepFill_Evolved
         }
     }
 
-    private static TopoDS_Wire PutProfilAt(in TopoDS_Wire ProfRef, in gp_Ax3 AxeRef, in TopoDS_Edge E, in TopoDS_Face F, bool AtStart)
+    private static TopoDS_Wire PutProfilAt(in TopoDS_Wire ProfRef, in CoordinateSystem AxeRef, in TopoDS_Edge E, in TopoDS_Face F, bool AtStart)
     {
-        gp_Vec2d D1;
-        gp_Pnt2d P;
+        Vector2D D1;
+        Point2D P;
         TopoDS_Wire Prof;
 
         Geom2d_Curve? C2d = BRep_Tool.CurveOnSurface(E, F, out double First, out double Last);
         if (C2d is null)
         {
-            throw new Standard_ConstructionError("ConstructionError in PutProfilAt");
+            throw new ConstructionErrorException("ConstructionError in PutProfilAt");
         }
 
         if (E.Orientation() == TopAbs_REVERSED)
@@ -2433,13 +2438,13 @@ public sealed class BRepFill_Evolved
                 C2d.D1(First, out P, out D1);
             }
         }
-        gp_Pnt P3d = new(P.X(), P.Y(), 0.0);
-        gp_Vec V3d = new(D1.X(), D1.Y(), 0.0);
+        Point3D P3d = new(P.X(), P.Y(), 0.0);
+        Vector3D V3d = new(D1.X(), D1.Y(), 0.0);
 
-        gp_Ax3 Ax = new(P3d, gp.DZ(), new gp_Dir(V3d));
-        gp_Trsf Trans = new();
+        CoordinateSystem Ax = new(P3d, Constants.DZ(), new Direction3D(V3d));
+        Transform3D Trans = new();
         Trans.SetTransformation(Ax, AxeRef);
-        TopoDS_Shape aLocalShape = ProfRef.Moved(new TopLoc_Location(Trans));
+        TopoDS_Shape aLocalShape = ProfRef.Moved(new Placement(Trans));
         Prof = TopoDS.Wire(aLocalShape);
         return Prof;
     }
@@ -2540,8 +2545,8 @@ public sealed class BRepFill_Evolved
 
     private static void ComputeIntervals(NCollection_Sequence<TopoDS_Shape> VOnF,
                                          NCollection_Sequence<TopoDS_Shape> VOnL,
-                                         NCollection_Sequence<gp_Pnt> ParOnF,
-                                         NCollection_Sequence<gp_Pnt> ParOnL,
+                                         NCollection_Sequence<Point3D> ParOnF,
+                                         NCollection_Sequence<Point3D> ParOnL,
                                          BRepFill_TrimSurfaceTool Trim,
                                          Geom2d_Curve Bis,
                                          in TopoDS_Vertex VS,
@@ -2585,7 +2590,7 @@ public sealed class BRepFill_Evolved
             //---------------------------------------------------------------------
             if (!V1.IsNull() && !V2.IsSame(V1))
             {
-                gp_Pnt2d P = Bis.Value((U2 + U1) * 0.5);
+                Point2D P = Bis.Value((U2 + U1) * 0.5);
                 if (Trim.IsOnFace(P))
                 {
                     FirstPar.Append(U1);
@@ -2604,7 +2609,7 @@ public sealed class BRepFill_Evolved
             V2 = VE;
             if (!V2.IsSame(V1))
             {
-                gp_Pnt2d P = Bis.Value((U2 + U1) * 0.5);
+                Point2D P = Bis.Value((U2 + U1) * 0.5);
                 if (Trim.IsOnFace(P))
                 {
                     FirstPar.Append(U1);
@@ -2732,13 +2737,13 @@ public sealed class BRepFill_Evolved
 
     private static double DistanceToOZ(in TopoDS_Vertex V)
     {
-        gp_Pnt PV3d = BRep_Tool.Pnt(V);
+        Point3D PV3d = BRep_Tool.Pnt(V);
         return Math.Abs(PV3d.Y());
     }
 
     private static double Altitud(in TopoDS_Vertex V)
     {
-        gp_Pnt PV3d = BRep_Tool.Pnt(V);
+        Point3D PV3d = BRep_Tool.Pnt(V);
         return PV3d.Z();
     }
 
@@ -2774,24 +2779,24 @@ public sealed class BRepFill_Evolved
         Geom2d_Curve C2d;
 
         // Return the curve associated to each Edge
-        C = BRep_Tool.Curve(E, out TopLoc_Location L, out double f, out double l)!;
+        C = BRep_Tool.Curve(E, out Placement L, out double f, out double l)!;
         CT = new Geom_TrimmedCurve(C, f, l);
         CT.Transform(L.Transformation());
 
         // project it in the plane and return the associated PCurve
-        gp_Dir Normal = Plane.Pln().Axis().Direction();
+        Direction3D Normal = Plane.Pln().Axis().Direction();
         C = GeomProjLib.ProjectOnPlane(CT, Plane, Normal, false)!;
         C2d = GeomProjLib.Curve2d(C, Plane)!;
 
         // Calculate the extrema with the straight line
         NCollection_Sequence<double> Seq = new();
 
-        double U1 = -Precision.Infinite();
-        double U2 = Precision.Infinite();
+        double U1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        double U2 = global::Kerf.Engine.Foundation.Precision.Infinite();
         f = C2d.FirstParameter();
         l = C2d.LastParameter();
 
-        Bnd_Box2d B = new();
+        Box2d B = new();
         Geom2dAdaptor_Curve AC2d = new(C2d);
         BndLib_Add2dCurve.Add(AC2d, BRepFill_Confusion(), ref B);
         B.Get(out double _, out U1, out double _, out U2);
@@ -2813,7 +2818,7 @@ public sealed class BRepFill_Evolved
 
         // On calcule les intersection avec Oy.
         Geom2dAdaptor_Curve ALine = new(Line);
-        double Tol = Precision.Intersection();
+        double Tol = global::Kerf.Engine.Foundation.Precision.Intersection();
         double TolC = 0.0;
 
         Geom2dInt_GInter Intersector = new(ALine, AC2d, TolC, Tol);
@@ -2920,11 +2925,11 @@ public sealed class BRepFill_Evolved
             //---------------------------
             double m1 = (2 * f + l) / 3.0;
             double m2 = (f + 2 * l) / 3.0;
-            gp_Pnt2d P1 = CT2d.Value(m1);
-            gp_Pnt2d P2 = CT2d.Value(m2);
+            Point2D P1 = CT2d.Value(m1);
+            Point2D P2 = CT2d.Value(m2);
 
-            TopoDS_Vertex VL1 = new BRepLib_MakeVertex(new gp_Pnt(P1.X(), P1.Y(), 0.0)).InternalVertex();
-            TopoDS_Vertex VL2 = new BRepLib_MakeVertex(new gp_Pnt(P2.X(), P2.Y(), 0.0)).InternalVertex();
+            TopoDS_Vertex VL1 = new BRepLib_MakeVertex(new Point3D(P1.X(), P1.Y(), 0.0)).InternalVertex();
+            TopoDS_Vertex VL2 = new BRepLib_MakeVertex(new Point3D(P2.X(), P2.Y(), 0.0)).InternalVertex();
             TopoDS_Shape aLocalShape1 = E.EmptyCopied();
             TopoDS_Shape aLocalShape2 = E.EmptyCopied();
             TopoDS_Shape aLocalShape3 = E.EmptyCopied();
@@ -2985,8 +2990,8 @@ public sealed class BRepFill_Evolved
                 }
                 else
                 {
-                    gp_Pnt2d P = CC.Value(CC.LastParameter());
-                    VL = new BRepLib_MakeVertex(new gp_Pnt(P.X(), P.Y(), 0.0)).InternalVertex();
+                    Point2D P = CC.Value(CC.LastParameter());
+                    VL = new BRepLib_MakeVertex(new Point3D(P.X(), P.Y(), 0.0)).InternalVertex();
                 }
                 TopoDS_Shape aLocalShape = E.EmptyCopied();
                 TopoDS_Edge NE = TopoDS.Edge(aLocalShape);

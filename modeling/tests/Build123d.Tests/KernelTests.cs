@@ -28,7 +28,7 @@ public class KernelTests
     [Fact]
     public void OcctFailuresAreOcctNetsExceptions()
     {
-        var e = Assert.ThrowsAny<Occt.Standard_Failure>(() => new Occt.gp_Dir(0, 0, 0));
+        var e = Assert.ThrowsAny<Kerf.Engine.Foundation.FailureException>(() => new Kerf.Geometry.Direction3D(0, 0, 0));
         Assert.Equal("Standard_ConstructionError", e.OcctType);
     }
 }

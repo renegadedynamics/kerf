@@ -4,24 +4,28 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The representation of an edge by a curve in the parametric space of a surface.</summary>
 public class BRep_CurveOnSurface : BRep_GCurve
 {
-    protected gp_Pnt2d myUV1;
-    protected gp_Pnt2d myUV2;
+    protected Point2D myUV1;
+    protected Point2D myUV2;
     private Geom2d_Curve? myPCurve;
     private Geom_Surface? mySurface;
 
     /// <summary>The pcurve <paramref name="PC"/> on <paramref name="S"/> with location <paramref name="L"/> (both frozen here).</summary>
-    public BRep_CurveOnSurface(Geom2d_Curve PC, Geom_Surface? S, in TopLoc_Location L)
+    public BRep_CurveOnSurface(Geom2d_Curve PC, Geom_Surface? S, in Placement L)
         : base(L, PC.FirstParameter(), PC.LastParameter())
     {
         PC.Freeze(); // OCCT.NET: attached geometry is frozen
         S?.Freeze();
-        myUV1 = new gp_Pnt2d();
-        myUV2 = new gp_Pnt2d();
+        myUV1 = new Point2D();
+        myUV2 = new Point2D();
         myPCurve = PC;
         mySurface = S;
     }
@@ -37,7 +41,7 @@ public class BRep_CurveOnSurface : BRep_GCurve
         mySurface = S;
     }
 
-    internal void SetUVPoints(in gp_Pnt2d P1, in gp_Pnt2d P2)
+    internal void SetUVPoints(in Point2D P1, in Point2D P2)
     {
         CheckMutable();
         myUV1 = P1;
@@ -45,17 +49,17 @@ public class BRep_CurveOnSurface : BRep_GCurve
     }
 
     /// <summary>The UV points at the ends of the range.</summary>
-    public void UVPoints(out gp_Pnt2d P1, out gp_Pnt2d P2)
+    public void UVPoints(out Point2D P1, out Point2D P2)
     {
         P1 = myUV1;
         P2 = myUV2;
     }
 
     /// <summary>The point at parameter <paramref name="U"/>.</summary>
-    public override void D0(double U, out gp_Pnt P)
+    public override void D0(double U, out Point3D P)
     {
         // should be D0 NYI
-        gp_Pnt2d P2d = myPCurve!.Value(U);
+        Point2D P2d = myPCurve!.Value(U);
         P = mySurface!.Value(P2d.X(), P2d.Y());
         P.Transform(myLocation.Transformation());
     }
@@ -64,7 +68,7 @@ public class BRep_CurveOnSurface : BRep_GCurve
     public override bool IsCurveOnSurface() => true;
 
     /// <summary>A curve in the parametric space of <paramref name="S"/> with location <paramref name="L"/>.</summary>
-    public override bool IsCurveOnSurface(Geom_Surface? S, in TopLoc_Location L)
+    public override bool IsCurveOnSurface(Geom_Surface? S, in Placement L)
         => ReferenceEquals(S, mySurface) && (L == myLocation);
 
     public override Geom_Surface? Surface() => mySurface;
@@ -95,8 +99,8 @@ public class BRep_CurveOnSurface : BRep_GCurve
         CheckMutable();
         double f = First();
         double l = Last();
-        bool isneg = Precision.IsNegativeInfinite(f);
-        bool ispos = Precision.IsPositiveInfinite(l);
+        bool isneg = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f);
+        bool ispos = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l);
         if (!isneg)
         {
             myPCurve!.D0(f, out myUV1);

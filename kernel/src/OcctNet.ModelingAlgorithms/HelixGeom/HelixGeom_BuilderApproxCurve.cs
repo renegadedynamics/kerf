@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -20,7 +21,7 @@ public abstract class HelixGeom_BuilderApproxCurve
     protected int myErrorStatus;
     protected int myWarningStatus;
     protected double myTolerance;
-    protected GeomAbs_Shape myCont;
+    protected Continuity myCont;
     protected int myMaxDegree;
     protected int myMaxSeg;
     protected double myTolReached;
@@ -32,14 +33,14 @@ public abstract class HelixGeom_BuilderApproxCurve
         myErrorStatus = 0;
         myWarningStatus = 0;
         myTolerance = 0.0001;
-        myCont = GeomAbs_Shape.GeomAbs_C2;
+        myCont = Continuity.C2;
         myMaxDegree = 8;
         myMaxSeg = 150;
         myTolReached = 99.0;
     }
 
     /// <summary>Sets the approximation parameters.</summary>
-    public void SetApproxParameters(GeomAbs_Shape aCont, int aMaxDegree, int aMaxSeg)
+    public void SetApproxParameters(Continuity aCont, int aMaxDegree, int aMaxSeg)
     {
         myCont = aCont;
         myMaxDegree = aMaxDegree;
@@ -47,7 +48,7 @@ public abstract class HelixGeom_BuilderApproxCurve
     }
 
     /// <summary>The approximation parameters.</summary>
-    public void ApproxParameters(out GeomAbs_Shape aCont, out int aMaxDegree, out int aMaxSeg)
+    public void ApproxParameters(out Continuity aCont, out int aMaxDegree, out int aMaxSeg)
     {
         aCont = myCont;
         aMaxDegree = myMaxDegree;

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -24,13 +25,13 @@ public abstract class IMeshData_PCurve : IMeshData_ParametersList
     }
 
     /// <summary>Inserts a discretization point at the given position.</summary>
-    public abstract void InsertPoint(int thePosition, in gp_Pnt2d thePoint, double theParamOnPCurve);
+    public abstract void InsertPoint(int thePosition, in Point2D thePoint, double theParamOnPCurve);
 
     /// <summary>Adds a discretization point.</summary>
-    public abstract void AddPoint(in gp_Pnt2d thePoint, double theParamOnPCurve);
+    public abstract void AddPoint(in Point2D thePoint, double theParamOnPCurve);
 
     /// <summary>The discretization point with the given index, for reading and writing.</summary>
-    public abstract ref gp_Pnt2d GetPoint(int theIndex);
+    public abstract ref Point2D GetPoint(int theIndex);
 
     /// <summary>The index in the mesh of the discretization point with the given index, for reading and writing.</summary>
     public abstract ref int GetIndex(int theIndex);

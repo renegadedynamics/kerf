@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -36,8 +37,8 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Built_TwoFrozenEdgesWithAGap_ShareAVertexAtTheMiddle()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1.0002, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         TopoDS_Compound anInput = Compound(e1, e2);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anInput);
         var aConnect = new ShapeFix_EdgeConnect();
@@ -46,7 +47,7 @@ public class ShapeFix_EdgeConnectTests
         TopoDS_Shape aResult = aConnect.Built(anInput);
 
         aSnap.AssertUnchanged(anInput);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         List<TopoDS_Edge> anEdges = Edges(aResult);
         Assert.Equal(2, anEdges.Count);
         TopoDS_Vertex aShared = TopExp.LastVertex(anEdges[0]);
@@ -63,15 +64,15 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Build_InPlace_OnUnfrozenEdges_AndThrowsOnFrozenOnes()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).InternalEdge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1.0002, 0, 0), new gp_Pnt(2, 0, 0)).InternalEdge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).InternalEdge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).InternalEdge();
         var aConnect = new ShapeFix_EdgeConnect();
         aConnect.Add(e1, e2);
         aConnect.Build();
         Assert.True(TopExp.LastVertex(e1).IsSame(TopExp.FirstVertex(e2)));
 
-        TopoDS_Edge f1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge f2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1.0002, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
+        TopoDS_Edge f1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge f2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         aConnect.Add(f1, f2);
         Assert.ThrowsAny<Exception>(() => aConnect.Build());
     }
@@ -80,9 +81,9 @@ public class ShapeFix_EdgeConnectTests
     public void Built_ClosedWireOfSeparateEdges_ConnectsEveryJoint()
     {
         // a triangle of three edges with their own vertices, in a closed wire
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1, 0, 0), new gp_Pnt(0, 1, 0)).Edge();
-        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 1, 0), new gp_Pnt(0, 0, 0)).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(0, 1, 0)).Edge();
+        TopoDS_Edge e3 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(0, 0, 0)).Edge();
         var aWire = new TopoDS_Wire();
         var aB = new BRep_Builder();
         aB.MakeWire(ref aWire);
@@ -106,8 +107,8 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Clear_ForgetsTheConnections()
     {
-        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0)).Edge();
-        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new gp_Pnt(1.0002, 0, 0), new gp_Pnt(2, 0, 0)).Edge();
+        TopoDS_Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        TopoDS_Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         TopoDS_Compound anInput = Compound(e1, e2);
         var aConnect = new ShapeFix_EdgeConnect();
         aConnect.Add(e1, e2);

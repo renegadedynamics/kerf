@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -26,7 +28,7 @@ public abstract class IntPatch_Polygo : Intf_Polygon2d
 
     public abstract int NbPoints();
 
-    public abstract gp_Pnt2d Point(int Index);
+    public abstract Point2D Point(int Index);
 
     /// <summary>The tolerance of the polygon.</summary>
     public override double DeflectionOverEstimation() => myError;
@@ -35,7 +37,7 @@ public abstract class IntPatch_Polygo : Intf_Polygon2d
     public override int NbSegments() => NbPoints() - 1;
 
     /// <summary>The points of the segment <paramref name="theIndex"/>.</summary>
-    public override void Segment(int theIndex, out gp_Pnt2d theBegin, out gp_Pnt2d theEnd)
+    public override void Segment(int theIndex, out Point2D theBegin, out Point2D theEnd)
     {
         theBegin = Point(theIndex);
         theEnd = Point(theIndex + 1);
@@ -55,7 +57,7 @@ public abstract class IntPatch_Polygo : Intf_Polygon2d
         theOut.Write("\npol2d " + num.ToString(CultureInfo.InvariantCulture) + " " + nbs.ToString(CultureInfo.InvariantCulture)
                      + " ");
         theOut.Write(R(DeflectionOverEstimation()) + '\n');
-        gp_Pnt2d P = new(), PF = new();
+        Point2D P = new(), PF = new();
         for (int i = 1; i <= nbs; i++)
         {
             Segment(i, out P, out PF);
@@ -64,5 +66,5 @@ public abstract class IntPatch_Polygo : Intf_Polygon2d
         theOut.Write("pnt2d " + num.ToString(CultureInfo.InvariantCulture) + "  " + R(PF.X()) + " " + R(PF.Y()) + '\n');
     }
 
-    private static string R(double theValue) => Standard_Stream.FormatReal(theValue, 6);
+    private static string R(double theValue) => StreamUtilities.FormatReal(theValue, 6);
 }

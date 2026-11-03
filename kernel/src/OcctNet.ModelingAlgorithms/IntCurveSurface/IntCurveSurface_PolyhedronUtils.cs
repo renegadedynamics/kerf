@@ -2,6 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,8 +25,8 @@ internal static class IntCurveSurface_PolyhedronUtils
 
     /// <summary>Samples the surface on a uniform UV grid with the grid evaluator, and adds the points to the box.</summary>
     public static void InitUniform(GeomGridEval_Surface theEval, double theU0, double theV0, double theU1,
-                                   double theV1, int theNbDeltaU, int theNbDeltaV, gp_Pnt[] thePnts, double[] theU,
-                                   double[] theV, bool[] theIsOnBounds, ref Bnd_Box theBnd)
+                                   double theV1, int theNbDeltaU, int theNbDeltaV, Point3D[] thePnts, double[] theU,
+                                   double[] theV, bool[] theIsOnBounds, ref Box theBnd)
     {
         double dU = (theU1 - theU0) / (double)(theNbDeltaU);
         double dV = (theV1 - theV0) / (double)(theNbDeltaV);
@@ -42,7 +48,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         }
 
         // Evaluate grid
-        NCollection_Array2<gp_Pnt> aGrid = theEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = theEval.EvaluateGrid(aUParams, aVParams);
 
         // Copy results to output arrays (convert from 2D grid to 1D linear indexing)
         int Index = 1;
@@ -50,7 +56,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         {
             for (int i2 = 0; i2 < aNbV; ++i2)
             {
-                gp_Pnt TP = aGrid[i1 + 1, i2 + 1];
+                Point3D TP = aGrid[i1 + 1, i2 + 1];
                 thePnts[Index] = TP;
                 theU[Index] = aUParams[i1 + 1];
                 theV[Index] = aVParams[i2 + 1];
@@ -64,11 +70,11 @@ internal static class IntCurveSurface_PolyhedronUtils
     /// <summary>Samples the surface on the given UV parameters with the grid evaluator, and adds the points to the box.</summary>
     public static void InitWithParams(GeomGridEval_Surface theEval, NCollection_Array1<double> theUpars,
                                       NCollection_Array1<double> theVpars, int theNbDeltaU, int theNbDeltaV,
-                                      gp_Pnt[] thePnts, double[] theU, double[] theV, bool[] theIsOnBounds,
-                                      ref Bnd_Box theBnd)
+                                      Point3D[] thePnts, double[] theU, double[] theV, bool[] theIsOnBounds,
+                                      ref Box theBnd)
     {
         // Evaluate grid using provided parameters
-        NCollection_Array2<gp_Pnt> aGrid = theEval.EvaluateGrid(theUpars, theVpars);
+        NCollection_Array2<Point3D> aGrid = theEval.EvaluateGrid(theUpars, theVpars);
 
         int i0 = theUpars.Lower();
         int j0 = theVpars.Lower();
@@ -78,7 +84,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         {
             for (int i2 = 0; i2 <= theNbDeltaV; ++i2)
             {
-                gp_Pnt TP = aGrid[i1 + 1, i2 + 1];
+                Point3D TP = aGrid[i1 + 1, i2 + 1];
                 thePnts[Index] = TP;
                 theU[Index] = theUpars[i1 + i0];
                 theV[Index] = theVpars[i2 + j0];
@@ -124,7 +130,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         }
 
         // Evaluate grid: 1xN or Nx1 depending on isoline direction
-        NCollection_Array2<gp_Pnt> aGrid = theIsUIso ? theEval.EvaluateGrid(aFixedParams, aVaryingParams)
+        NCollection_Array2<Point3D> aGrid = theIsUIso ? theEval.EvaluateGrid(aFixedParams, aVaryingParams)
                                                      : theEval.EvaluateGrid(aVaryingParams, aFixedParams);
 
         // Compute max deflection from pre-evaluated points
@@ -134,7 +140,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         {
             // Boundary points at indices 2*i+1 and 2*i+3 (1-based)
             // Midpoint at index 2*i+2 (1-based)
-            gp_XYZ aP1, aP2, aPParMid;
+            Xyz aP1, aP2, aPParMid;
 
             if (theIsUIso)
             {
@@ -149,7 +155,7 @@ internal static class IntCurveSurface_PolyhedronUtils
                 aPParMid = aGrid[2 * i + 2, 1].XYZ();
             }
 
-            gp_XYZ aPMid = (aP2 + aP1) / 2.0;
+            Xyz aPMid = (aP2 + aP1) / 2.0;
             double aDist = (aPMid - aPParMid).Modulus();
 
             if (aDist > aDeflection)
@@ -409,14 +415,14 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>The plane equation of a triangle (a default normal and zero distance for a degenerate one).</summary>
-    public static void PlaneEquation(in gp_Pnt theP1, in gp_Pnt theP2, in gp_Pnt theP3, out gp_XYZ theNormalVector,
+    public static void PlaneEquation(in Point3D theP1, in Point3D theP2, in Point3D theP3, out Xyz theNormalVector,
                                      out double thePolarDistance)
     {
-        gp_XYZ v1 = theP2.XYZ() - theP1.XYZ();
-        gp_XYZ v2 = theP3.XYZ() - theP2.XYZ();
-        gp_XYZ v3 = theP1.XYZ() - theP3.XYZ();
+        Xyz v1 = theP2.XYZ() - theP1.XYZ();
+        Xyz v2 = theP3.XYZ() - theP2.XYZ();
+        Xyz v3 = theP1.XYZ() - theP3.XYZ();
 
-        theNormalVector = new gp_XYZ();
+        theNormalVector = new Xyz();
         if (v1.SquareModulus() <= THE_MIN_EDGE_LENGTH_SQUARED)
         {
             theNormalVector.SetCoord(1.0, 0.0, 0.0);
@@ -438,7 +444,7 @@ internal static class IntCurveSurface_PolyhedronUtils
 
         theNormalVector = (v1 ^ v2) + (v2 ^ v3) + (v3 ^ v1);
         double aNormLen = theNormalVector.Modulus();
-        if (aNormLen < gp.Resolution())
+        if (aNormLen < Constants.Resolution())
         {
             thePolarDistance = 0.0;
         }
@@ -450,28 +456,28 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>True if the point is inside the triangle.</summary>
-    public static bool Contain(in gp_Pnt theP1, in gp_Pnt theP2, in gp_Pnt theP3, in gp_Pnt theTestPnt)
+    public static bool Contain(in Point3D theP1, in Point3D theP2, in Point3D theP3, in Point3D theTestPnt)
     {
-        gp_XYZ v1 = (theP2.XYZ() - theP1.XYZ()) ^ (theTestPnt.XYZ() - theP1.XYZ());
-        gp_XYZ v2 = (theP3.XYZ() - theP2.XYZ()) ^ (theTestPnt.XYZ() - theP2.XYZ());
-        gp_XYZ v3 = (theP1.XYZ() - theP3.XYZ()) ^ (theTestPnt.XYZ() - theP3.XYZ());
+        Xyz v1 = (theP2.XYZ() - theP1.XYZ()) ^ (theTestPnt.XYZ() - theP1.XYZ());
+        Xyz v2 = (theP3.XYZ() - theP2.XYZ()) ^ (theTestPnt.XYZ() - theP2.XYZ());
+        Xyz v3 = (theP1.XYZ() - theP3.XYZ()) ^ (theTestPnt.XYZ() - theP3.XYZ());
 
         return (v1 * v2 >= 0.0 && v2 * v3 >= 0.0 && v3 * v1 >= 0.0);
     }
 
     /// <summary>Fills the boxes of all the triangles, enlarged by the deflection (void for degenerate triangles).</summary>
-    public static void FillBounding(gp_Pnt[] thePnts, int theNbDeltaU, int theNbDeltaV, double theDeflection,
-                                    NCollection_HArray1<Bnd_Box> theComponentsBnd)
+    public static void FillBounding(Point3D[] thePnts, int theNbDeltaU, int theNbDeltaV, double theDeflection,
+                                    NCollection_HArray1<Box> theComponentsBnd)
     {
-        Bnd_Box Boite = new();
+        Box Boite = new();
         int nbtriangles = NbTriangles(theNbDeltaU, theNbDeltaV);
 
         for (int iTri = 1; iTri <= nbtriangles; ++iTri)
         {
             Triangle(iTri, out int np1, out int np2, out int np3, theNbDeltaV);
-            gp_Pnt p1 = thePnts[np1];
-            gp_Pnt p2 = thePnts[np2];
-            gp_Pnt p3 = thePnts[np3];
+            Point3D p1 = thePnts[np1];
+            Point3D p2 = thePnts[np2];
+            Point3D p3 = thePnts[np3];
             Boite.SetVoid();
             if (p1.SquareDistance(p2) > THE_MIN_EDGE_LENGTH_SQUARED)
             {
@@ -492,8 +498,8 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>The deflection of a triangle: the distance from its plane to the surface point at its center.</summary>
-    public static double ComputeDeflectionWithCenter(in gp_Pnt theP1, in gp_Pnt theP2, in gp_Pnt theP3,
-                                                     in gp_Pnt theCenter)
+    public static double ComputeDeflectionWithCenter(in Point3D theP1, in Point3D theP2, in Point3D theP3,
+                                                     in Point3D theCenter)
     {
         // Check for degenerate triangles
         if (theP1.SquareDistance(theP2) <= THE_MIN_EDGE_LENGTH_SQUARED)
@@ -510,13 +516,13 @@ internal static class IntCurveSurface_PolyhedronUtils
         }
 
         // Compute normal vector
-        gp_XYZ XYZ1 = theP2.XYZ() - theP1.XYZ();
-        gp_XYZ XYZ2 = theP3.XYZ() - theP2.XYZ();
-        gp_XYZ XYZ3 = theP1.XYZ() - theP3.XYZ();
-        gp_Vec NormalVector = new((XYZ1 ^ XYZ2) + (XYZ2 ^ XYZ3) + (XYZ3 ^ XYZ1));
+        Xyz XYZ1 = theP2.XYZ() - theP1.XYZ();
+        Xyz XYZ2 = theP3.XYZ() - theP2.XYZ();
+        Xyz XYZ3 = theP1.XYZ() - theP3.XYZ();
+        Vector3D NormalVector = new((XYZ1 ^ XYZ2) + (XYZ2 ^ XYZ3) + (XYZ3 ^ XYZ1));
 
         double aNormLen = NormalVector.Magnitude();
-        if (aNormLen < gp.Resolution())
+        if (aNormLen < Constants.Resolution())
         {
             return 0.0;
         }
@@ -524,7 +530,7 @@ internal static class IntCurveSurface_PolyhedronUtils
         NormalVector.Divide(aNormLen);
 
         // Compute distance from center to triangle plane
-        gp_Vec P1P = new(theP1, theCenter);
+        Vector3D P1P = new(theP1, theCenter);
         return Math.Abs(P1P.Dot(NormalVector));
     }
 
@@ -545,14 +551,14 @@ internal static class IntCurveSurface_PolyhedronUtils
         {
             thePolyhedron.Triangle(i, out int i1, out int i2, out int i3);
 
-            gp_Pnt P1 = thePolyhedron.Point(i1, out double u1, out double v1);
-            gp_Pnt P2 = thePolyhedron.Point(i2, out double u2, out double v2);
-            gp_Pnt P3 = thePolyhedron.Point(i3, out double u3, out double v3);
+            Point3D P1 = thePolyhedron.Point(i1, out double u1, out double v1);
+            Point3D P2 = thePolyhedron.Point(i2, out double u2, out double v2);
+            Point3D P3 = thePolyhedron.Point(i3, out double u3, out double v3);
 
             double uCenter = (u1 + u2 + u3) / 3.0;
             double vCenter = (v1 + v2 + v3) / 3.0;
 
-            theSurface.D0(uCenter, vCenter, out gp_Pnt aCenter);
+            theSurface.D0(uCenter, vCenter, out Point3D aCenter);
 
             double tol1 = ComputeDeflectionWithCenter(P1, P2, P3, aCenter);
             if (tol1 > tol)
@@ -627,7 +633,7 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>Drops the arrays.</summary>
-    public static void Destroy(ref gp_Pnt[]? thePnts, ref double[]? theU, ref double[]? theV, ref bool[]? theIsOnBounds)
+    public static void Destroy(ref Point3D[]? thePnts, ref double[]? theU, ref double[]? theV, ref bool[]? theIsOnBounds)
     {
         thePnts = null;
         theU = null;
@@ -636,18 +642,18 @@ internal static class IntCurveSurface_PolyhedronUtils
     }
 
     /// <summary>Allocates the arrays: (nbdeltaU + 1) * (nbdeltaV + 1) + 1 elements, indexed from 1.</summary>
-    public static void AllocateArrays(int theNbDeltaU, int theNbDeltaV, out gp_Pnt[] thePnts, out double[] theU,
+    public static void AllocateArrays(int theNbDeltaU, int theNbDeltaV, out Point3D[] thePnts, out double[] theU,
                                       out double[] theV, out bool[] theIsOnBounds)
     {
         int t = (theNbDeltaU + 1) * (theNbDeltaV + 1) + 1;
-        thePnts = new gp_Pnt[t];
+        thePnts = new Point3D[t];
         theU = new double[t];
         theV = new double[t];
         theIsOnBounds = new bool[t];
     }
 
     /// <summary>Sets the deflection, at least 1e-4, and enlarges the box by it.</summary>
-    public static void SetDeflectionOverEstimation(double theFlec, out double theDeflection, ref Bnd_Box theBnd)
+    public static void SetDeflectionOverEstimation(double theFlec, out double theDeflection, ref Box theBnd)
     {
         const double THE_MIN_DEFLECTION = 0.0001;
         if (theFlec < THE_MIN_DEFLECTION)

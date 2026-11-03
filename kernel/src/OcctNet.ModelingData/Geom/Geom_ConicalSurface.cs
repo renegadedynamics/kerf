@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,21 +22,21 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     private double semiAngle;
 
     /// <summary>A cone of semi-angle Ang and reference radius Radius in the local coordinate system A3.</summary>
-    /// <exception cref="Standard_ConstructionError">Radius &lt; 0, or |Ang| &lt;= Resolution, or |Ang| &gt;= PI/2 - Resolution.</exception>
-    public Geom_ConicalSurface(in gp_Ax3 A3, double Ang, double Radius)
+    /// <exception cref="ConstructionErrorException">Radius &lt; 0, or |Ang| &lt;= Resolution, or |Ang| &gt;= PI/2 - Resolution.</exception>
+    public Geom_ConicalSurface(in CoordinateSystem A3, double Ang, double Radius)
     {
         radius = Radius;
         semiAngle = Ang;
-        if (Radius < 0.0 || Math.Abs(Ang) <= gp.Resolution()
-            || Math.Abs(Ang) >= M_PI / 2.0 - gp.Resolution())
+        if (Radius < 0.0 || Math.Abs(Ang) <= Constants.Resolution()
+            || Math.Abs(Ang) >= M_PI / 2.0 - Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A3;
     }
 
     /// <summary>A cone from a gp cone.</summary>
-    public Geom_ConicalSurface(in gp_Cone C)
+    public Geom_ConicalSurface(in Cone C)
     {
         radius = C.RefRadius();
         semiAngle = C.SemiAngle();
@@ -77,9 +83,9 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     public sealed override bool IsVPeriodic() => false;
 
     /// <summary>The non-persistent gp cone with the same geometry.</summary>
-    public gp_Cone Cone() => new gp_Cone(pos, semiAngle, radius);
+    public Cone Cone() => new Cone(pos, semiAngle, radius);
 
-    internal void SetCone(in gp_Cone C)
+    internal void SetCone(in Cone C)
     {
         CheckMutable();
         radius = C.RefRadius();
@@ -87,30 +93,30 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
         pos = C.Position();
     }
 
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     internal void SetRadius(double R)
     {
         CheckMutable();
         if (R < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         radius = R;
     }
 
-    /// <exception cref="Standard_ConstructionError">|Ang| &lt;= Resolution or |Ang| &gt;= PI/2 - Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">|Ang| &lt;= Resolution or |Ang| &gt;= PI/2 - Resolution.</exception>
     internal void SetSemiAngle(double Ang)
     {
         CheckMutable();
-        if (Math.Abs(Ang) <= gp.Resolution() || Math.Abs(Ang) >= M_PI / 2.0 - gp.Resolution())
+        if (Math.Abs(Ang) <= Constants.Resolution() || Math.Abs(Ang) >= M_PI / 2.0 - Constants.Resolution())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         semiAngle = Ang;
     }
 
     /// <summary>A copy that is the cone C.</summary>
-    public Geom_ConicalSurface WithCone(in gp_Cone C)
+    public Geom_ConicalSurface WithCone(in Cone C)
     {
         Geom_ConicalSurface aCopy = (Geom_ConicalSurface)Copy();
         aCopy.SetCone(C);
@@ -118,7 +124,7 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy of reference radius R.</summary>
-    /// <exception cref="Standard_ConstructionError">R &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
     public Geom_ConicalSurface WithRadius(double R)
     {
         Geom_ConicalSurface aCopy = (Geom_ConicalSurface)Copy();
@@ -127,7 +133,7 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     }
 
     /// <summary>A copy of semi-angle Ang.</summary>
-    /// <exception cref="Standard_ConstructionError">|Ang| &lt;= Resolution or |Ang| &gt;= PI/2 - Resolution.</exception>
+    /// <exception cref="ConstructionErrorException">|Ang| &lt;= Resolution or |Ang| &gt;= PI/2 - Resolution.</exception>
     public Geom_ConicalSurface WithSemiAngle(double Ang)
     {
         Geom_ConicalSurface aCopy = (Geom_ConicalSurface)Copy();
@@ -136,12 +142,12 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     }
 
     /// <summary>The apex of the cone, on its axis, on the side where the radius decreases.</summary>
-    public gp_Pnt Apex()
+    public Point3D Apex()
     {
-        gp_XYZ Coord = Position().Direction().XYZ();
+        Xyz Coord = Position().Direction().XYZ();
         Coord.Multiply(-radius / Math.Tan(semiAngle));
         Coord.Add(Position().Location().XYZ());
-        return new gp_Pnt(Coord);
+        return new Point3D(Coord);
     }
 
     /// <summary>U in [0, 2*PI], V infinite.</summary>
@@ -149,8 +155,8 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     {
         U1 = 0.0;
         U2 = 2.0 * M_PI;
-        V1 = -Precision.Infinite();
-        V2 = Precision.Infinite();
+        V1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
+        V2 = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
 
     /// <summary>
@@ -168,7 +174,7 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
                              out double C3,
                              out double D)
     {
-        gp_Trsf T = new gp_Trsf();
+        Transform3D T = new Transform3D();
         T.SetTransformation(pos);
         double KAng = Math.Tan(semiAngle);
         double T11 = T.Value(1, 1);
@@ -197,19 +203,19 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
         D = T14 * T14 + T24 * T24 - radius * radius - T34 * T34 + 2.0 * radius * T34;
     }
 
-    public sealed override gp_Pnt EvalD0(double U, double V) => ElSLib.ConeValue(U, V, pos, radius, semiAngle);
+    public sealed override Point3D EvalD0(double U, double V) => global::Kerf.Engine.Geometry.ElSLib.ConeValue(U, V, pos, radius, semiAngle);
 
     public sealed override ResD1 EvalD1(double U, double V)
     {
         ResD1 aResult;
-        ElSLib.ConeD1(U, V, pos, radius, semiAngle, out aResult.Point, out aResult.D1U, out aResult.D1V);
+        global::Kerf.Engine.Geometry.ElSLib.ConeD1(U, V, pos, radius, semiAngle, out aResult.Point, out aResult.D1U, out aResult.D1V);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U, double V)
     {
         ResD2 aResult;
-        ElSLib.ConeD2(U,
+        global::Kerf.Engine.Geometry.ElSLib.ConeD2(U,
                       V,
                       pos,
                       radius,
@@ -226,7 +232,7 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     public sealed override ResD3 EvalD3(double U, double V)
     {
         ResD3 aResult;
-        ElSLib.ConeD3(U,
+        global::Kerf.Engine.Geometry.ElSLib.ConeD3(U,
                       V,
                       pos,
                       radius,
@@ -245,7 +251,7 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     }
 
     /// <exception cref="Geom_UndefinedDerivative">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override gp_Vec EvalDN(double U, double V, int Nu, int Nv)
+    public sealed override Vector3D EvalDN(double U, double V, int Nu, int Nv)
     {
         if (Nu + Nv < 1 || Nu < 0 || Nv < 0)
         {
@@ -253,29 +259,29 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
         }
         if (Nv > 1)
         {
-            return new gp_Vec(0.0, 0.0, 0.0);
+            return new Vector3D(0.0, 0.0, 0.0);
         }
         else
         {
-            return ElSLib.ConeDN(U, V, pos, radius, semiAngle, Nu, Nv);
+            return global::Kerf.Engine.Geometry.ElSLib.ConeDN(U, V, pos, radius, semiAngle, Nu, Nv);
         }
     }
 
     /// <summary>The U iso-parametric line (a Geom_Line).</summary>
     public sealed override Geom_Curve UIso(double U)
     {
-        Geom_Line GL = new Geom_Line(ElSLib.ConeUIso(pos, radius, semiAngle, U));
+        Geom_Line GL = new Geom_Line(global::Kerf.Engine.Geometry.ElSLib.ConeUIso(pos, radius, semiAngle, U));
         return GL;
     }
 
     /// <summary>The V iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Geom_Curve VIso(double V)
     {
-        Geom_Circle GC = new Geom_Circle(ElSLib.ConeVIso(pos, radius, semiAngle, V));
+        Geom_Circle GC = new Geom_Circle(global::Kerf.Engine.Geometry.ElSLib.ConeVIso(pos, radius, semiAngle, V));
         return GC;
     }
 
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         radius = radius * Math.Abs(T.ScaleFactor());
@@ -283,19 +289,19 @@ public class Geom_ConicalSurface : Geom_ElementarySurface
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
-    public sealed override void TransformParameters(ref double U, ref double V, in gp_Trsf T)
+    public sealed override void TransformParameters(ref double U, ref double V, in Transform3D T)
     {
-        if (!Precision.IsInfinite(V))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(V))
         {
             V *= Math.Abs(T.ScaleFactor());
         }
     }
 
     /// <summary>An affinity of ratio |T.ScaleFactor()| along V.</summary>
-    public sealed override gp_GTrsf2d ParametricTransformation(in gp_Trsf T)
+    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D T)
     {
-        gp_GTrsf2d T2 = new gp_GTrsf2d();
-        gp_Ax2d Axis = new gp_Ax2d(gp.Origin2d(), gp.DX2d());
+        GeneralTransform2D T2 = new GeneralTransform2D();
+        Axis2D Axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
         T2.SetAffinity(Axis, Math.Abs(T.ScaleFactor()));
         return T2;
     }

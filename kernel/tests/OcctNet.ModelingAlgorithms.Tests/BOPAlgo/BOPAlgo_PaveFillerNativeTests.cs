@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -90,10 +91,10 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         return aLS;
     }
 
-    private static string Alerts(Message_Report theReport, Message_Gravity theGravity)
+    private static string Alerts(Report theReport, Gravity theGravity)
     {
         StringBuilder aB = new();
-        foreach (Message_Alert anAlert in theReport.GetAlerts(theGravity))
+        foreach (Alert anAlert in theReport.GetAlerts(theGravity))
         {
             aB.Append(' ').Append(anAlert.GetMessageKey());
         }
@@ -116,12 +117,12 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         {
             aPF.Perform();
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return "throws\n";
         }
-        string anOutcome = "errors" + Alerts(aPF.GetReport(), Message_Gravity.Message_Fail) + "\nwarnings"
-                           + Alerts(aPF.GetReport(), Message_Gravity.Message_Warning) + "\n";
+        string anOutcome = "errors" + Alerts(aPF.GetReport(), Gravity.Fail) + "\nwarnings"
+                           + Alerts(aPF.GetReport(), Gravity.Warning) + "\n";
         return anOutcome + (aPF.PDS() is { } aDS ? PaveFillerDump.Write(aDS) : "");
     }
 

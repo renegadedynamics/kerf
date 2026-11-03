@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Foundation.Resources;
+
 namespace OcctNet.Foundation.Tests;
 
 /// <summary>
@@ -45,7 +49,7 @@ public sealed class Resource_ManagerTests : IDisposable
             writeResourceFile(aDir, aResourceName, aKey, aExpected);
 
             // OCCT points CSF_TestResourceDefaults to the directory
-            var aManager = new Resource_Manager(aResourceName, aDir, null);
+            var aManager = new Manager(aResourceName, aDir, null);
 
             Assert.True(aManager.Find(aKey), "Resource key not found in path: " + aDir);
             Assert.Equal(aExpected, aManager.Value(aKey));
@@ -64,7 +68,7 @@ public sealed class Resource_ManagerTests : IDisposable
         writeResourceFile(aSourceDir, aFileName, "test.key", "test_value");
         Directory.CreateDirectory(aSaveDir);
 
-        var aManager = new Resource_Manager(aFileName, null, aSourceDir);
+        var aManager = new Manager(aFileName, null, aSourceDir);
 
         // Redirect Save() to a different directory
         Assert.True(aManager.Save(aSaveDir));
@@ -82,7 +86,7 @@ public sealed class Resource_ManagerTests : IDisposable
 
         writeResourceFile(aSourceDir, aFileName, "test.key", "test_value");
 
-        var aManager = new Resource_Manager(aFileName, null, aSourceDir);
+        var aManager = new Manager(aFileName, null, aSourceDir);
 
         Assert.True(aManager.Save(aSaveDir));
         Assert.True(File.Exists(Path.Combine(aSaveDir, aFileName)), "Saved resource file not found in nested path " + aSaveDir);
@@ -110,8 +114,8 @@ public sealed class Resource_ManagerTests : IDisposable
                           + "c : redefined\n"
                           + "last : no newline");
 
-        var aManager = new Resource_Manager("Syntax", aDir, "");
-        Assert.True(aManager.IsInitialized());
+        var aManager = new Manager("Syntax", aDir, "");
+        Assert.True(aManager.IsInitialized);
         Assert.Equal("value with spaces  ", aManager.Value("a.b"));
         Assert.Equal("redefined", aManager.Value("c"));
         Assert.Equal("", aManager.Value("empty"));
@@ -122,20 +126,20 @@ public sealed class Resource_ManagerTests : IDisposable
         Assert.Equal(42, aManager.Integer("int"));
         Assert.Equal(1.5e-3, aManager.Real("real"));
         Assert.Equal(4.5, aManager.Real("notint"));
-        Assert.ThrowsAny<Standard_TypeMismatch>(() => aManager.Integer("notint"));
-        Assert.ThrowsAny<Standard_TypeMismatch>(() => aManager.Real("a.b"));
-        Assert.ThrowsAny<Resource_NoSuchResource>(() => aManager.Value("missing"));
+        Assert.ThrowsAny<TypeMismatchException>(() => aManager.Integer("notint"));
+        Assert.ThrowsAny<TypeMismatchException>(() => aManager.Real("a.b"));
+        Assert.ThrowsAny<NoSuchResourceException>(() => aManager.Value("missing"));
         Assert.True(aManager.Find("int", out string aValue));
         Assert.Equal("42", aValue);
 
         // a missing file: not initialized
-        Assert.False(new Resource_Manager("Missing", aDir, null).IsInitialized());
+        Assert.False(new Manager("Missing", aDir, null).IsInitialized);
     }
 
     [Fact]
     public void User_resources_override_and_are_saved_sorted()
     {
-        var aManager = new Resource_Manager();
+        var aManager = new Manager();
         Assert.False(aManager.Find("x"));
         aManager.SetResource("z", 3);
         aManager.SetResource("a", 0.5);
@@ -146,39 +150,39 @@ public sealed class Resource_ManagerTests : IDisposable
         Assert.Equal(0, aManager.GetMap().Extent());
 
         // the copy is independent
-        var aCopy = new Resource_Manager(aManager);
+        var aCopy = new Manager(aManager);
         aCopy.SetResource("z", "4");
         Assert.Equal("3", aManager.Value("z"));
         Assert.Equal("4", aCopy.Value("z"));
 
         string aDir = Path.Combine(myTempBase, "save");
-        var aNamed = new Resource_Manager("Saved", null, null);
+        var aNamed = new Manager("Saved", null, null);
         aNamed.SetResource("z", 3);
         aNamed.SetResource("a", 0.5);
         aNamed.SetResource("m", " spaced");
         Assert.True(aNamed.Save(aDir));
         Assert.Equal("a:\t0.5\nm:\t\\ spaced\nz:\t3\n", File.ReadAllText(Path.Combine(aDir, "Saved")));
         // read back: the escaped leading space is kept
-        Assert.Equal(" spaced", new Resource_Manager("Saved", aDir, null).Value("m"));
+        Assert.Equal(" spaced", new Manager("Saved", aDir, null).Value("m"));
         Assert.False(aNamed.Save(null));
     }
 
     [Fact]
     public void OCCT_default_resource_files_are_compiled_in()
     {
-        var anIges = new Resource_Manager("IGES");
-        Assert.True(anIges.IsInitialized());
+        var anIges = new Manager("IGES");
+        Assert.True(anIges.IsInitialized);
         Assert.Equal("DirectFaces", anIges.Value("ToIGES.exec.op"));
         Assert.Equal("FixShape", anIges.Value("FromIGES.exec.op"));
         Assert.Equal("&Runtime.Tolerance", anIges.Value("FromIGES.FixShape.Tolerance3d"));
         Assert.Equal(-1, anIges.Integer("FromIGES.FixShape.FixFreeShellMode"));
 
-        var aStep = new Resource_Manager("STEP");
+        var aStep = new Manager("STEP");
         Assert.Equal("SplitCommonVertex,DirectFaces", aStep.Value("ToSTEP.exec.op"));
 
         // no environment variable is read: an unknown name has no resources
-        Assert.False(new Resource_Manager("SHAPEProcess").IsInitialized());
-        Assert.Null(Resource_Manager.EmbeddedDefaults("data"));
+        Assert.False(new Manager("SHAPEProcess").IsInitialized);
+        Assert.Null(Manager.EmbeddedDefaults("data"));
     }
 
     [Fact]
@@ -190,14 +194,14 @@ public sealed class Resource_ManagerTests : IDisposable
         Assert.False(TCollection_AsciiString.IsIntegerValue("1 x."));
         Assert.True(TCollection_AsciiString.IsIntegerValue("-7"));
         Assert.False(TCollection_AsciiString.IsIntegerValue("&Runtime.Tolerance"));
-        Assert.ThrowsAny<Standard_NumericError>(() => TCollection_AsciiString.IntegerValue("x"));
+        Assert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.IntegerValue("x"));
         Assert.Equal(int.MaxValue, TCollection_AsciiString.IntegerValue("99999999999"));
 
         Assert.True(TCollection_AsciiString.IsRealValue("1.e-7 "));
         Assert.False(TCollection_AsciiString.IsRealValue("1.e-7 ", true));
         Assert.Equal(1e-7, TCollection_AsciiString.RealValue("1.e-7"));
         Assert.False(TCollection_AsciiString.IsRealValue("C1"));
-        Assert.ThrowsAny<Standard_NumericError>(() => TCollection_AsciiString.RealValue("x"));
+        Assert.ThrowsAny<NumericErrorException>(() => TCollection_AsciiString.RealValue("x"));
 
         const string aSeq = " DirectFaces,ElementaryToRevolution;\tSplitAngle , ";
         Assert.Equal("DirectFaces", TCollection_AsciiString.Token(aSeq, " \t,;", 1));

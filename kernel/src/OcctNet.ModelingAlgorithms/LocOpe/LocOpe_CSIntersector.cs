@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.IntCurveSurface_TransitionOnCurve;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -57,11 +59,11 @@ public sealed class LocOpe_CSIntersector
         }
     }
 
-    public void Perform(NCollection_Sequence<gp_Lin> Slin)
+    public void Perform(NCollection_Sequence<Line3D> Slin)
     {
         if (myShape.IsNull() || Slin.Length() <= 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myDone = false;
 
@@ -74,7 +76,7 @@ public sealed class LocOpe_CSIntersector
         for (; exp.More(); exp.Next())
         {
             TopoDS_Face theface = TopoDS.Face(exp.Current());
-            IntCurvesFace_Intersector theInt = new(theface, Precision.PConfusion());
+            IntCurvesFace_Intersector theInt = new(theface, global::Kerf.Engine.Foundation.Precision.PConfusion());
             for (int i = 1; i <= myNbelem; i++)
             {
                 theInt.Perform(Slin[i], binf, bsup);
@@ -87,11 +89,11 @@ public sealed class LocOpe_CSIntersector
         myDone = true;
     }
 
-    public void Perform(NCollection_Sequence<gp_Circ> Scir)
+    public void Perform(NCollection_Sequence<Circle3D> Scir)
     {
         if (myShape.IsNull() || Scir.Length() <= 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myDone = false;
 
@@ -124,7 +126,7 @@ public sealed class LocOpe_CSIntersector
     {
         if (myShape.IsNull() || Scur.Length() <= 0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myDone = false;
 
@@ -165,11 +167,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoints![I - 1].Length();
     }
@@ -182,11 +184,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoints![I - 1].Value(Index);
     }
@@ -207,11 +209,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return LocAfter(myPoints![I - 1], From, Tol, ref Or, ref IndFrom, ref IndTo);
     }
@@ -224,11 +226,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return LocBefore(myPoints![I - 1], From, Tol, ref Or, ref IndFrom, ref IndTo);
     }
@@ -241,11 +243,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return LocAfter(myPoints![I - 1], FromInd, Tol, ref Or, ref IndFrom, ref IndTo);
     }
@@ -259,11 +261,11 @@ public sealed class LocOpe_CSIntersector
     {
         if (!myDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (I <= 0 || I > myNbelem)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         // OCCT: there is no LocBefore by index; the int converts to the parameter From
         return LocBefore(myPoints![I - 1], (double)FromInd, Tol, ref Or, ref IndFrom, ref IndTo);
@@ -459,7 +461,7 @@ public sealed class LocOpe_CSIntersector
         double param, paramu, paramv;
         for (int j = 1; j <= newpnt; j++)
         {
-            gp_Pnt thept = theInt.Pnt(j);
+            Point3D thept = theInt.Pnt(j);
             param = theInt.WParameter(j);
             paramu = theInt.UParameter(j);
             paramv = theInt.VParameter(j);

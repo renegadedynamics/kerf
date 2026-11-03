@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Occt;
 using Xunit;
 
@@ -11,8 +13,8 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ProjectPointOnCircle()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(1, 1), new gp_Dir2d(1, 0)), 2.0);
-        Geom2dAPI_ProjectPointOnCurve aProj = new(new gp_Pnt2d(4, 1), aCircle);
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
+        Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(4, 1), aCircle);
         Assert.Equal(2, aProj.NbPoints());
         Assert.Equal(1.0, aProj.LowerDistance(), 1e-12);
         Assert.Equal(0.0, aProj.LowerDistanceParameter(), 1e-10);
@@ -27,8 +29,8 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ProjectPointOnLine_WithRange()
     {
-        Geom2d_Line aLine = new(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0));
-        Geom2dAPI_ProjectPointOnCurve aProj = new(new gp_Pnt2d(3, 2), aLine, -10, 10);
+        Geom2d_Line aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
+        Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(3, 2), aLine, -10, 10);
         Assert.Equal(1, aProj.NbPoints());
         Assert.Equal(3.0, aProj.Parameter(1), 1e-12);
         aProj.Parameter(1, out double aU);
@@ -36,22 +38,22 @@ public class Geom2dAPI_ProjectionTests
         Assert.Equal(2.0, aProj.Distance(1), 1e-12);
 
         // Outside the range: no orthogonal projection.
-        aProj.Init(new gp_Pnt2d(30, 2), aLine, -10, 10);
+        aProj.Init(new Point2D(30, 2), aLine, -10, 10);
         Assert.Equal(0, aProj.NbPoints());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aProj.NearestPoint());
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aProj.Point(1));
+        Assert.ThrowsAny<NotDoneException>(() => aProj.NearestPoint());
+        Assert.ThrowsAny<OutOfRangeException>(() => aProj.Point(1));
     }
 
     [Fact]
     public void ProjectPointOnBSpline()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles = new(1, 4);
-        aPoles[1] = new gp_Pnt2d(0, 0);
-        aPoles[2] = new gp_Pnt2d(1, 2);
-        aPoles[3] = new gp_Pnt2d(3, 2);
-        aPoles[4] = new gp_Pnt2d(4, 0);
+        NCollection_Array1<Point2D> aPoles = new(1, 4);
+        aPoles[1] = new Point2D(0, 0);
+        aPoles[2] = new Point2D(1, 2);
+        aPoles[3] = new Point2D(3, 2);
+        aPoles[4] = new Point2D(4, 0);
         Geom2d_BezierCurve aBez = new(aPoles);
-        gp_Pnt2d aP = new(2, 3);
+        Point2D aP = new(2, 3);
         Geom2dAPI_ProjectPointOnCurve aProj = new(aP, aBez);
         Assert.True(aProj.NbPoints() >= 1);
         double aU = aProj.LowerDistanceParameter();
@@ -66,18 +68,18 @@ public class Geom2dAPI_ProjectionTests
     {
         Geom2dAPI_ProjectPointOnCurve aProj = new();
         Assert.Equal(0, aProj.NbPoints());
-        Assert.ThrowsAny<StdFail_NotDone>(() => aProj.LowerDistance());
+        Assert.ThrowsAny<NotDoneException>(() => aProj.LowerDistance());
     }
 
     [Fact]
     public void ExtremaCircleLine()
     {
-        Geom2d_Circle aCircle = new(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 1.0);
-        Geom2d_Line aLine = new(new gp_Pnt2d(-10, 3), new gp_Dir2d(1, 0));
+        Geom2d_Circle aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
+        Geom2d_Line aLine = new(new Point2D(-10, 3), new Direction2D(1, 0));
         Geom2dAPI_ExtremaCurveCurve anExt = new(aCircle, aLine, 0, 2 * Math.PI, -20, 20);
         Assert.True(anExt.NbExtrema() >= 1);
         Assert.Equal(2.0, anExt.LowerDistance(), 1e-12);
-        anExt.NearestPoints(out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+        anExt.NearestPoints(out Point2D aP1, out Point2D aP2);
         Assert.Equal(0.0, aP1.X(), 1e-10);
         Assert.Equal(1.0, aP1.Y(), 1e-10);
         Assert.Equal(0.0, aP2.X(), 1e-10);
@@ -92,14 +94,14 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ExtremaBSplineBSpline()
     {
-        NCollection_Array1<gp_Pnt2d> aPoles1 = new(1, 3);
-        aPoles1[1] = new gp_Pnt2d(0, 0);
-        aPoles1[2] = new gp_Pnt2d(1, 1);
-        aPoles1[3] = new gp_Pnt2d(2, 0);
-        NCollection_Array1<gp_Pnt2d> aPoles2 = new(1, 3);
-        aPoles2[1] = new gp_Pnt2d(0, 3);
-        aPoles2[2] = new gp_Pnt2d(1, 2);
-        aPoles2[3] = new gp_Pnt2d(2, 3);
+        NCollection_Array1<Point2D> aPoles1 = new(1, 3);
+        aPoles1[1] = new Point2D(0, 0);
+        aPoles1[2] = new Point2D(1, 1);
+        aPoles1[3] = new Point2D(2, 0);
+        NCollection_Array1<Point2D> aPoles2 = new(1, 3);
+        aPoles2[1] = new Point2D(0, 3);
+        aPoles2[2] = new Point2D(1, 2);
+        aPoles2[3] = new Point2D(2, 3);
         Geom2d_BezierCurve aC1 = new(aPoles1);
         Geom2d_BezierCurve aC2 = new(aPoles2);
         Geom2dAPI_ExtremaCurveCurve anExt = new(aC1, aC2, 0, 1, 0, 1);
@@ -109,6 +111,6 @@ public class Geom2dAPI_ProjectionTests
         anExt.LowerDistanceParameters(out double aU1, out double aU2);
         Assert.Equal(0.5, aU1, 1e-7);
         Assert.Equal(0.5, aU2, 1e-7);
-        Assert.ThrowsAny<Standard_OutOfRange>(() => anExt.Distance(anExt.NbExtrema() + 1));
+        Assert.ThrowsAny<OutOfRangeException>(() => anExt.Distance(anExt.NbExtrema() + 1));
     }
 }

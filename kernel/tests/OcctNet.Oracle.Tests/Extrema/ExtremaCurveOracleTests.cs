@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -33,7 +34,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (global::Kerf.Engine.Foundation.FailureException anE)
         {
             aPortError = anE;
         }
@@ -43,37 +44,37 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
     }
 
     // A point near the curve (on it, or at a random distance from a point of it) or anywhere.
-    private static gp_Pnt RandomPoint(Oracle theO, Adaptor3d_Curve theC)
+    private static Point3D RandomPoint(Oracle theO, Adaptor3d_Curve theC)
     {
         int aKind = theO.Int(0, 3);
         if (aKind == 3)
         {
             return theO.Pnt();
         }
-        gp_Pnt aP = theC.Value(theO.Real(theC.FirstParameter(), theC.LastParameter()));
+        Point3D aP = theC.Value(theO.Real(theC.FirstParameter(), theC.LastParameter()));
         if (aKind == 0)
         {
             return aP;
         }
         double aScale = aKind == 1 ? theO.Real(1e-3, 1) : theO.Real(1, 30);
-        return new gp_Pnt(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1),
+        return new Point3D(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1),
             aP.Z() + aScale * theO.Real(-1, 1));
     }
 
-    private static gp_Pnt2d RandomPoint2d(Oracle theO, Adaptor2d_Curve2d theC, double theFirst, double theLast)
+    private static Point2D RandomPoint2d(Oracle theO, Adaptor2d_Curve2d theC, double theFirst, double theLast)
     {
         int aKind = theO.Int(0, 3);
         if (aKind == 3)
         {
             return theO.Pnt2d();
         }
-        gp_Pnt2d aP = theC.Value(theO.Real(theFirst, theLast));
+        Point2D aP = theC.Value(theO.Real(theFirst, theLast));
         if (aKind == 0)
         {
             return aP;
         }
         double aScale = aKind == 1 ? theO.Real(1e-3, 1) : theO.Real(1, 30);
-        return new gp_Pnt2d(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1));
+        return new Point2D(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1));
     }
 
     private static void SameExtPC(Oracle theO, N.Extrema_ExtPC theN, Extrema_ExtPC theP, string theWhat,
@@ -98,7 +99,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
         double aND1 = 0.0, aND2 = 0.0;
         using N.gp_Pnt aNP1 = new(), aNP2 = new();
         theN.TrimmedSquareDistances(ref aND1, ref aND2, aNP1, aNP2);
-        theP.TrimmedSquareDistances(out double aD1, out double aD2, out gp_Pnt aP1, out gp_Pnt aP2);
+        theP.TrimmedSquareDistances(out double aD1, out double aD2, out Point3D aP1, out Point3D aP2);
         theO.Same(aND1, aD1, $"{theWhat} trimmed distance 1");
         theO.Same(aND2, aD2, $"{theWhat} trimmed distance 2");
         theO.Same(aNP1, aP1, $"{theWhat} trimmed point 1");
@@ -120,7 +121,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 && anOracle.Int(0, 2) == 0)
             {
                 // An offset of a smooth curve: the general path (C2 intervals or deflection intervals)
-                (N.gp_Dir aND, gp_Dir aD) = GeomOracleInputs.Dirs(anOracle);
+                (N.gp_Dir aND, Direction3D aD) = GeomOracleInputs.Dirs(anOracle);
                 double anOffset = anOracle.Real(-3, 3);
                 using (aND)
                 using (N.Geom_Curve aNBasis = aNC)
@@ -141,7 +142,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
 
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt aP = RandomPoint(anOracle, aPA);
+                    Point3D aP = RandomPoint(anOracle, aPA);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     N.Extrema_ExtPC? aN = null;
                     Extrema_ExtPC? aPort = null;
@@ -169,7 +170,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 aPR.Initialize(aPA, aU1, aU2, aTolF);
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt aP = RandomPoint(anOracle, aPA);
+                    Point3D aP = RandomPoint(anOracle, aPA);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     if (Both(anOracle, () => aNR.Perform(aNP), () => aPR.Perform(aP), $"{aW} range [{aU1:R}, {aU2:R}]"))
                     {
@@ -198,8 +199,8 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNC, Geom_Curve aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
-                bool aWithRange = anOracle.Bool() || Precision.IsInfinite(aPC.FirstParameter())
-                                  || Precision.IsInfinite(aPC.LastParameter());
+                bool aWithRange = anOracle.Bool() || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter())
+                                  || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter());
                 (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
                     aPC.LastParameter(), aPC.IsPeriodic());
                 // For the random points only
@@ -207,7 +208,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 string aW = $"{aKind} #{c}" + (aWithRange ? $" [{aFirst:R}, {aLast:R}]" : "");
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt aP = RandomPoint(anOracle, aMyC);
+                    Point3D aP = RandomPoint(anOracle, aMyC);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     N.GeomAPI_ProjectPointOnCurve? aN = null;
                     GeomAPI_ProjectPointOnCurve? aPort = null;
@@ -267,11 +268,11 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     : (aPC.FirstParameter(), aPC.LastParameter());
                 var aMyC = new Geom2dAdaptor_Curve();
                 aMyC.Load(aPC, aFirst, aLast);
-                (double aSF, double aSL) = Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast) ? (-50.0, 50.0) : (aFirst, aLast);
+                (double aSF, double aSL) = global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast) ? (-50.0, 50.0) : (aFirst, aLast);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt2d aP = RandomPoint2d(anOracle, aMyC, aSF, aSL);
+                    Point2D aP = RandomPoint2d(anOracle, aMyC, aSF, aSL);
                     using N.gp_Pnt2d aNP = Oracle.ToNative(aP);
                     N.Geom2dAPI_ProjectPointOnCurve? aN = null;
                     Extrema_ExtPC2d? aPort = null;
@@ -342,10 +343,10 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 {
                     // Move curve 2 near curve 1 (both sides translated by the same vector), so that the edges come
                     // close inside their ranges or cross
-                    gp_Pnt aOn1 = aPC1.Value(anOracle.Real(aF1, aL1)), aOn2 = aPC2.Value(anOracle.Real(aF2, aL2));
+                    Point3D aOn1 = aPC1.Value(anOracle.Real(aF1, aL1)), aOn2 = aPC2.Value(anOracle.Real(aF2, aL2));
                     double aGap = anOracle.Bool() ? 0.0 : anOracle.Real(0.01, 2.0);
-                    gp_Vec aV = new(aOn2, aOn1);
-                    aV += new gp_Vec(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
+                    Vector3D aV = new(aOn2, aOn1);
+                    aV += new Vector3D(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
                     using N.gp_Vec aNV = Oracle.ToNative(aV);
                     aNC2.Translate(aNV);
                     aPC2.Translate(aV);
@@ -366,10 +367,10 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                 var aC1 = new GeomAdaptor_Curve(aPC1, aF1, aL1);
                 var aC2 = new GeomAdaptor_Curve(aPC2, aF2, aL2);
                 var aPort = new Extrema_ExtCC();
-                double aTol2 = Math.Max(aC2.Resolution(Math.Min(Precision.Confusion(), Precision.Confusion())), Precision.PConfusion());
+                double aTol2 = Math.Max(aC2.Resolution(Math.Min(global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion())), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aPort.SetCurve(2, aC2, aF2, aL2);
                 aPort.SetTolerance(2, aTol2);
-                double aTol1 = Math.Max(aC1.Resolution(Math.Min(Precision.Confusion(), Precision.Confusion())), Precision.PConfusion());
+                double aTol1 = Math.Max(aC1.Resolution(Math.Min(global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion())), global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aPort.SetCurve(1, aC1, aF1, aL1);
                 aPort.SetTolerance(1, aTol1);
                 aPort.Perform();
@@ -392,7 +393,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     aN.ParOnEdgeS2(i, ref aT2);
                     // DistanceSS drops Extrema_ExtCC's solutions at the vertices (isOnBoundary): one there comes
                     // from PERFORM_C0, at the bound of a C1 interval
-                    double aEps = Precision.PConfusion();
+                    double aEps = global::Kerf.Engine.Foundation.Precision.PConfusion();
                     if (Math.Abs(aT1 - aF1) < aEps || Math.Abs(aT1 - aL1) < aEps || Math.Abs(aT2 - aF2) < aEps
                         || Math.Abs(aT2 - aL2) < aEps)
                     {
@@ -416,7 +417,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     {
                         // Not an Extrema_ExtCC solution: PERFORM_C0's projections of the C1 interval bounds (the ends
                         // included) of an edge whose whole curve is C0
-                        Assert.True(aPC1.Continuity() == GeomAbs_C0 || aPC2.Continuity() == GeomAbs_C0,
+                        Assert.True(aPC1.Continuity() == C0 || aPC2.Continuity() == C0,
                             $"{aW}: native solution ({aT1:R}, {aT2:R}) is not an extremum of the port's Extrema_ExtCC");
                         aSkipped++;
                         continue;
@@ -446,7 +447,7 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
     private static (double First, double Last) SubRange(Oracle theO, Geom_Curve theC)
     {
         double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
-        if (Precision.IsInfinite(aFirst) || Precision.IsInfinite(aLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);

@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: singular value decomposition and what it gives.</summary>
 public static partial class MathLin
@@ -12,13 +13,13 @@ public static partial class MathLin
     /// <summary>Result for SVD decomposition.</summary>
     public struct SVDResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Left singular vectors (m x n).</summary>
-        public math_Matrix? U;
+        public Matrix? U;
         /// <summary>Singular values (n elements).</summary>
         public math_Vector? SingularValues;
         /// <summary>Right singular vectors (n x n).</summary>
-        public math_Matrix? V;
+        public Matrix? V;
         /// <summary>Numerical rank.</summary>
         public int Rank = 0;
 
@@ -26,282 +27,282 @@ public static partial class MathLin
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(SVDResult theResult) => theResult.IsDone();
+        public static explicit operator bool(SVDResult result) => result.IsDone;
 
-        public static bool operator true(SVDResult theResult) => theResult.IsDone();
+        public static bool operator true(SVDResult result) => result.IsDone;
 
-        public static bool operator false(SVDResult theResult) => !theResult.IsDone();
+        public static bool operator false(SVDResult result) => !result.IsDone;
     }
 
     /// <summary>
     /// Singular value decomposition A = U * diag(S) * V^T of an m x n matrix (math_Recipes' SVD_Decompose). The rank
     /// counts singular values above theTolerance times the largest.
     /// </summary>
-    public static SVDResult SVD(math_Matrix theA, double theTolerance = 1.0e-15)
+    public static SVDResult SVD(Matrix a, double tolerance = 1.0e-15)
     {
-        SVDResult aResult = new();
+        SVDResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1; // Number of rows
-        int aN = aColUpper - aColLower + 1; // Number of columns
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1; // Number of rows
+        int n = colUpper - colLower + 1; // Number of columns
 
         // U matrix needs to be at least n x n for the algorithm
-        int aURows = Max(aM, aN);
+        int uRows = Max(m, n);
 
         // Create working matrices with 1-based indexing as required by SVD_Decompose
-        math_Matrix aU = new(1, aURows, 1, aN, 0.0);
-        math_Vector aW = new(1, aN);
-        math_Matrix aV = new(1, aN, 1, aN);
+        Matrix u = new(1, uRows, 1, n, 0.0);
+        math_Vector w = new(1, n);
+        Matrix v = new(1, n, 1, n);
 
         // Copy input matrix to U
-        for (int i = aRowLower; i <= aRowUpper; ++i)
+        for (int i = rowLower; i <= rowUpper; ++i)
         {
-            for (int j = aColLower; j <= aColUpper; ++j)
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aU[i - aRowLower + 1, j - aColLower + 1] = theA[i, j];
+                u[i - rowLower + 1, j - colLower + 1] = a[i, j];
             }
         }
 
         // Perform SVD decomposition
-        if (math_Recipes.SVD_Decompose(aU, aW, aV) != 0)
+        if (Recipes.SVD_Decompose(u, w, v) != 0)
         {
-            aResult.Status = Status.NumericalError;
-            return aResult;
+            result.Status = Status.NumericalError;
+            return result;
         }
 
         // Determine numerical rank
-        double aMaxSV = 0.0;
-        for (int i = 1; i <= aN; ++i)
+        double maxSV = 0.0;
+        for (int i = 1; i <= n; ++i)
         {
-            aMaxSV = Max(aMaxSV, aW[i]);
+            maxSV = Max(maxSV, w[i]);
         }
 
-        double aThreshold = theTolerance * aMaxSV;
-        aResult.Rank = 0;
-        for (int i = 1; i <= aN; ++i)
+        double threshold = tolerance * maxSV;
+        result.Rank = 0;
+        for (int i = 1; i <= n; ++i)
         {
-            if (aW[i] > aThreshold)
+            if (w[i] > threshold)
             {
-                ++aResult.Rank;
+                ++result.Rank;
             }
         }
 
         // Copy results back with original indexing
-        math_Matrix aResU = new(aRowLower, aRowLower + aM - 1, aColLower, aColLower + aN - 1);
-        aResult.U = aResU;
-        for (int i = 1; i <= aM; ++i)
+        Matrix resU = new(rowLower, rowLower + m - 1, colLower, colLower + n - 1);
+        result.U = resU;
+        for (int i = 1; i <= m; ++i)
         {
-            for (int j = 1; j <= aN; ++j)
+            for (int j = 1; j <= n; ++j)
             {
-                aResU[aRowLower + i - 1, aColLower + j - 1] = aU[i, j];
+                resU[rowLower + i - 1, colLower + j - 1] = u[i, j];
             }
         }
 
-        math_Vector aResW = new(aColLower, aColLower + aN - 1);
-        aResult.SingularValues = aResW;
-        for (int i = 1; i <= aN; ++i)
+        math_Vector resW = new(colLower, colLower + n - 1);
+        result.SingularValues = resW;
+        for (int i = 1; i <= n; ++i)
         {
-            aResW[aColLower + i - 1] = aW[i];
+            resW[colLower + i - 1] = w[i];
         }
 
-        math_Matrix aResV = new(aColLower, aColLower + aN - 1, aColLower, aColLower + aN - 1);
-        aResult.V = aResV;
-        for (int i = 1; i <= aN; ++i)
+        Matrix resV = new(colLower, colLower + n - 1, colLower, colLower + n - 1);
+        result.V = resV;
+        for (int i = 1; i <= n; ++i)
         {
-            for (int j = 1; j <= aN; ++j)
+            for (int j = 1; j <= n; ++j)
             {
-                aResV[aColLower + i - 1, aColLower + j - 1] = aV[i, j];
+                resV[colLower + i - 1, colLower + j - 1] = v[i, j];
             }
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>
     /// Solve Ax = b by SVD, ignoring singular values below theTolerance times the largest: least squares for
     /// overdetermined systems, minimum norm for underdetermined ones.
     /// </summary>
-    public static LinearResult SolveSVD(math_Matrix theA, math_Vector theB, double theTolerance = 1.0e-6)
+    public static LinearResult SolveSVD(Matrix a, math_Vector b, double tolerance = 1.0e-6)
     {
-        LinearResult aResult = new();
+        LinearResult result = new();
 
         // Perform SVD
-        SVDResult aSVD = SVD(theA, theTolerance);
-        if (!aSVD.IsDone())
+        SVDResult svd = SVD(a, tolerance);
+        if (!svd.IsDone)
         {
-            aResult.Status = aSVD.Status;
-            return aResult;
+            result.Status = svd.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aM = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int m = rowUpper - rowLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aM)
+        if (b.Length() != m)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        int aBLower = theB.Lower(); // B vector may have different indexing
+        int bLower = b.Lower(); // B vector may have different indexing
 
-        math_Matrix aU = aSVD.U!;
-        math_Vector aW = aSVD.SingularValues!;
-        math_Matrix aV = aSVD.V!;
+        Matrix u = svd.U!;
+        math_Vector w = svd.SingularValues!;
+        Matrix v = svd.V!;
 
         // Compute threshold for singular values
-        double aMaxSV = 0.0;
-        for (int i = aColLower; i <= aColUpper; ++i)
+        double maxSV = 0.0;
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            aMaxSV = Max(aMaxSV, aW[i]);
+            maxSV = Max(maxSV, w[i]);
         }
-        double aWMin = theTolerance * aMaxSV;
+        double wMin = tolerance * maxSV;
 
         // Solve: x = V * diag(1/w) * U^T * b
         // First compute tmp = U^T * b
-        math_Vector aTmp = new(aColLower, aColUpper, 0.0);
-        for (int j = aColLower; j <= aColUpper; ++j)
+        math_Vector tmp = new(colLower, colUpper, 0.0);
+        for (int j = colLower; j <= colUpper; ++j)
         {
-            double aSum = 0.0;
-            for (int i = aRowLower; i <= aRowUpper; ++i)
+            double sum = 0.0;
+            for (int i = rowLower; i <= rowUpper; ++i)
             {
                 // Map i to B's index space: B[aBLower + (i - aRowLower)]
-                aSum += aU[i, j] * theB[aBLower + (i - aRowLower)];
+                sum += u[i, j] * b[bLower + (i - rowLower)];
             }
             // Divide by singular value if above threshold
-            if (aW[j] > aWMin)
+            if (w[j] > wMin)
             {
-                aTmp[j] = aSum / aW[j];
+                tmp[j] = sum / w[j];
             }
             // else aTmp(j) remains 0 (regularization)
         }
 
         // Compute x = V * tmp
-        math_Vector aSolution = new(aColLower, aColUpper, 0.0);
-        aResult.Solution = aSolution;
-        for (int i = aColLower; i <= aColUpper; ++i)
+        math_Vector solution = new(colLower, colUpper, 0.0);
+        result.Solution = solution;
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            double aSum = 0.0;
-            for (int j = aColLower; j <= aColUpper; ++j)
+            double sum = 0.0;
+            for (int j = colLower; j <= colUpper; ++j)
             {
-                aSum += aV[i, j] * aTmp[j];
+                sum += v[i, j] * tmp[j];
             }
-            aSolution[i] = aSum;
+            solution[i] = sum;
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>
     /// Moore-Penrose pseudo-inverse A^+ = V * diag(1/w) * U^T (n x m), singular values below theTolerance times the
     /// largest treated as zero.
     /// </summary>
-    public static InverseResult PseudoInverse(math_Matrix theA, double theTolerance = 1.0e-6)
+    public static InverseResult PseudoInverse(Matrix a, double tolerance = 1.0e-6)
     {
-        InverseResult aResult = new();
+        InverseResult result = new();
 
         // Perform SVD
-        SVDResult aSVD = SVD(theA, theTolerance);
-        if (!aSVD.IsDone())
+        SVDResult svd = SVD(a, tolerance);
+        if (!svd.IsDone)
         {
-            aResult.Status = aSVD.Status;
-            return aResult;
+            result.Status = svd.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
 
-        math_Matrix aU = aSVD.U!;
-        math_Vector aW = aSVD.SingularValues!;
-        math_Matrix aV = aSVD.V!;
+        Matrix u = svd.U!;
+        math_Vector w = svd.SingularValues!;
+        Matrix v = svd.V!;
 
         // Compute threshold
-        double aMaxSV = 0.0;
-        for (int i = aColLower; i <= aColUpper; ++i)
+        double maxSV = 0.0;
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            aMaxSV = Max(aMaxSV, aW[i]);
+            maxSV = Max(maxSV, w[i]);
         }
-        double aWMin = theTolerance * aMaxSV;
+        double wMin = tolerance * maxSV;
 
         // Compute A^+ = V * diag(1/w) * U^T
         // Result is n x m
-        math_Matrix aInverse = new(aColLower, aColUpper, aRowLower, aRowUpper, 0.0);
-        aResult.Inverse = aInverse;
+        Matrix inverse = new(colLower, colUpper, rowLower, rowUpper, 0.0);
+        result.Inverse = inverse;
 
-        for (int i = aColLower; i <= aColUpper; ++i)
+        for (int i = colLower; i <= colUpper; ++i)
         {
-            for (int j = aRowLower; j <= aRowUpper; ++j)
+            for (int j = rowLower; j <= rowUpper; ++j)
             {
-                double aSum = 0.0;
-                for (int k = aColLower; k <= aColUpper; ++k)
+                double sum = 0.0;
+                for (int k = colLower; k <= colUpper; ++k)
                 {
-                    if (aW[k] > aWMin)
+                    if (w[k] > wMin)
                     {
-                        aSum += aV[i, k] * aU[j, k] / aW[k];
+                        sum += v[i, k] * u[j, k] / w[k];
                     }
                 }
-                aInverse[i, j] = aSum;
+                inverse[i, j] = sum;
             }
         }
 
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>
     /// Condition number sigma_max / sigma_min over the positive singular values; infinity if the SVD fails or none is
     /// positive.
     /// </summary>
-    public static double ConditionNumber(math_Matrix theA)
+    public static double ConditionNumber(Matrix a)
     {
-        SVDResult aSVD = SVD(theA);
-        if (!aSVD.IsDone())
+        SVDResult svd = SVD(a);
+        if (!svd.IsDone)
         {
             return double.PositiveInfinity;
         }
 
-        math_Vector aW = aSVD.SingularValues!;
-        int aLower = aW.Lower();
-        int aUpper = aW.Upper();
+        math_Vector w = svd.SingularValues!;
+        int lower = w.Lower();
+        int upper = w.Upper();
 
-        double aMaxSV = 0.0;
-        double aMinSV = double.MaxValue;
+        double maxSV = 0.0;
+        double minSV = double.MaxValue;
 
         // OCCT: zero singular values are skipped, so a singular matrix gets a finite condition number (the ratio of
         // its non-zero singular values) where the documentation promises infinity.
-        for (int i = aLower; i <= aUpper; ++i)
+        for (int i = lower; i <= upper; ++i)
         {
-            if (aW[i] > 0.0)
+            if (w[i] > 0.0)
             {
-                aMaxSV = Max(aMaxSV, aW[i]);
-                aMinSV = Min(aMinSV, aW[i]);
+                maxSV = Max(maxSV, w[i]);
+                minSV = Min(minSV, w[i]);
             }
         }
 
-        if (aMinSV <= 0.0 || aMaxSV <= 0.0)
+        if (minSV <= 0.0 || maxSV <= 0.0)
         {
             return double.PositiveInfinity;
         }
 
-        return aMaxSV / aMinSV;
+        return maxSV / minSV;
     }
 
     /// <summary>Numerical rank: the number of singular values above theTolerance times the largest.</summary>
-    public static int NumericalRank(math_Matrix theA, double theTolerance = 1.0e-15)
+    public static int NumericalRank(Matrix a, double tolerance = 1.0e-15)
     {
-        SVDResult aSVD = SVD(theA, theTolerance);
-        return aSVD.IsDone() ? aSVD.Rank : 0;
+        SVDResult svd = SVD(a, tolerance);
+        return svd.IsDone ? svd.Rank : 0;
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 using static Occt.Interface_ParamType;
 
@@ -15,7 +16,7 @@ public class StepFileParserTests
     private const string Tail = "ENDSEC;\nEND-ISO-10303-21;\n";
 
     private static (int Result, StepFile_ReadData Data, StepFile_Parser Parser) Parse(string theText,
-        StepFile_ReadLimits? theLimits = null, Message_ProgressRange theRange = default)
+        StepFile_ReadLimits? theLimits = null, ProgressRange theRange = default)
     {
         StepFile_ReadData aData = new();
         StepFile_Parser aParser = new(new StepFile_Scanner(aData, new MemoryStream(Encoding.Latin1.GetBytes(theText)), theLimits), theRange);
@@ -111,7 +112,7 @@ public class StepFileParserTests
         string aShort = Head + "#1=A('" + new string('x', StepFile_Scanner.MaxToken - 3) + "');\n" + Tail;
         Assert.Equal(0, Parse(aShort).Result);
         string aLong = Head + "#1=A('" + new string('x', StepFile_Scanner.MaxToken - 2) + "');\n" + Tail;
-        Standard_Failure anEx = Assert.Throws<Standard_Failure>(() => Parse(aLong));
+        FailureException anEx = Assert.Throws<FailureException>(() => Parse(aLong));
         Assert.Equal("input buffer overflow, can't enlarge buffer because scanner uses REJECT", anEx.Message);
     }
 
@@ -156,12 +157,12 @@ public class StepFileParserTests
         string aText = Head + string.Concat(Enumerable.Range(1, 30000).Select(i => $"#{i}=A({i});\n")) + Tail;
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
-        var (aResult, aData, aParser) = Parse(aText, theRange: new Message_ProgressIndicator(aSource.Token).Start());
+        var (aResult, aData, aParser) = Parse(aText, theRange: new ProgressIndicator(aSource.Token).Start());
         Assert.Equal(1, aResult);
         Assert.True(aParser.IsUserBreak);
         Assert.Contains("Reading cancelled", aData.GetLastError());
 
-        var anIndicator = new Message_ProgressIndicator();
+        var anIndicator = new ProgressIndicator();
         Assert.Equal(0, Parse(aText, theRange: anIndicator.Start()).Result);
         Assert.Equal(1.0, anIndicator.GetPosition(), 1e-9);
     }

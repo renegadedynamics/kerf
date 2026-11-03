@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -16,7 +17,7 @@ public class Transfer_TransientMapper : Transfer_Finder
     /// Creates a Mapper with a Value. This Value can then not be changed. It is used by the Hasher to compute the
     /// HashCode, which will then be stored for an immediate reading.
     /// </summary>
-    public Transfer_TransientMapper(Standard_Transient? akey)
+    public Transfer_TransientMapper(Transient? akey)
     {
         theval = akey;
         // OCCT: std::hash of the handle, its address
@@ -24,7 +25,7 @@ public class Transfer_TransientMapper : Transfer_Finder
     }
 
     /// <summary>Returns the contained value.</summary>
-    public Standard_Transient? Value()
+    public Transient? Value()
     {
         return theval;
     }
@@ -63,5 +64,5 @@ public class Transfer_TransientMapper : Transfer_Finder
         return Transfer_DataInfo.TypeName(theval);
     }
 
-    private readonly Standard_Transient? theval;
+    private readonly Transient? theval;
 }

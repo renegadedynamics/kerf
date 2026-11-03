@@ -3,6 +3,14 @@
 // coordinates, the winding swapped for a reversed face or a mirroring location, normals reversed for a reversed face.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Meshing;
+
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -15,7 +23,7 @@ internal sealed class RWMesh_ProductMesh
     /// <summary>A group of faces: the colour of their sub-shapes (null: the instance's), and their triangles.</summary>
     internal sealed class Group
     {
-        public Quantity_ColorRGBA? Color;
+        public ColorWithAlpha? Color;
         public readonly List<double> Positions = []; // x, y, z per node
         public readonly List<float> Normals = [];    // x, y, z per node, if every face has normals
         public readonly List<int> Indices = [];      // three per triangle, from 0
@@ -45,13 +53,13 @@ internal sealed class RWMesh_ProductMesh
     {
         Dictionary<TopoDS_Shape, XdeDoc_Style> aFaceStyles = faceStyles(thePart);
         var aGroups = new List<Group>();
-        var aByColor = new Dictionary<Quantity_ColorRGBA, Group>();
+        var aByColor = new Dictionary<ColorWithAlpha, Group>();
         Group? anInherited = null;
 
         for (var anExp = new TopExp_Explorer(thePart.Shape, TopAbs_ShapeEnum.TopAbs_FACE); anExp.More(); anExp.Next())
         {
             TopoDS_Face aFace = TopoDS.Face(anExp.Current());
-            Quantity_ColorRGBA? aColor = null;
+            ColorWithAlpha? aColor = null;
             if (aFaceStyles.TryGetValue(aFace, out XdeDoc_Style aStyle))
             {
                 if (!aStyle.IsVisible)
@@ -60,8 +68,8 @@ internal sealed class RWMesh_ProductMesh
                 }
                 aColor = aStyle.SurfaceColor;
             }
-            Poly_Triangulation? aTri = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
-            if (aTri is null || aTri.NbTriangles() == 0 || aTri.NbNodes() == 0)
+            Triangulation? aTri = BRep_Tool.Triangulation(aFace, out Placement aLoc);
+            if (aTri is null || aTri.TriangleCount == 0 || aTri.NodeCount == 0)
             {
                 continue;
             }
@@ -72,7 +80,7 @@ internal sealed class RWMesh_ProductMesh
                 aGroup = new Group { Color = aColor };
                 aGroups.Add(aGroup);
             }
-            else if (aColor is Quantity_ColorRGBA aKey)
+            else if (aColor is ColorWithAlpha aKey)
             {
                 if (!aByColor.TryGetValue(aKey, out aGroup!))
                 {
@@ -133,26 +141,26 @@ internal sealed class RWMesh_ProductMesh
         return aResult;
     }
 
-    private static void addFace(Group theGroup, in TopoDS_Face theFace, Poly_Triangulation theTri, in TopLoc_Location theLoc, bool toComputeNormals)
+    private static void addFace(Group theGroup, in TopoDS_Face theFace, Triangulation theTri, in Placement theLoc, bool toComputeNormals)
     {
-        gp_Trsf aTrsf = theLoc.Transformation();
-        bool isIdentity = theLoc.IsIdentity();
+        Transform3D aTrsf = theLoc.Transformation();
+        bool isIdentity = theLoc.IsIdentity;
         bool isMirrored = aTrsf.VectorialPart().Determinant() < 0.0;
         bool isReversed = theFace.Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
 
-        Poly_Triangulation? aNormalsTri = theTri.HasNormals()
+        Triangulation? aNormalsTri = theTri.HasNormals
                                             ? theTri
                                             : toComputeNormals ? BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri) : null;
-        if (aNormalsTri is null || !aNormalsTri.HasNormals())
+        if (aNormalsTri is null || !aNormalsTri.HasNormals)
         {
             theGroup.HasNormals = false;
         }
 
         int aBase = theGroup.NbNodes;
-        int aNbNodes = theTri.NbNodes();
+        int aNbNodes = theTri.NodeCount;
         for (int i = 1; i <= aNbNodes; i++)
         {
-            gp_Pnt aP = theTri.Node(i);
+            Point3D aP = theTri.Node(i);
             if (!isIdentity)
             {
                 aP = aP.Transformed(aTrsf);
@@ -162,7 +170,7 @@ internal sealed class RWMesh_ProductMesh
             theGroup.Positions.Add(aP.Z());
             if (theGroup.HasNormals)
             {
-                gp_Dir aN = aNormalsTri!.Normal(i);
+                Direction3D aN = aNormalsTri!.Normal(i);
                 if (isReversed)
                 {
                     aN = aN.Reversed();
@@ -178,7 +186,7 @@ internal sealed class RWMesh_ProductMesh
         }
 
         bool toSwap = isReversed ^ isMirrored;
-        int aNbTris = theTri.NbTriangles();
+        int aNbTris = theTri.TriangleCount;
         for (int i = 1; i <= aNbTris; i++)
         {
             theTri.Triangle(i).Get(out int aN1, out int aN2, out int aN3);

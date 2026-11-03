@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -16,7 +18,7 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
     private TopoDS_Vertex myV = new();
     private TopoDS_Solid myZ = new();
     private IntTools_Context? myContext;
-    private Message_ProgressRange myProgressRange;
+    private ProgressRange myProgressRange;
 
     public BOPAlgo_VertexSolid()
     {
@@ -61,19 +63,19 @@ internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<Int
     public TopAbs_State State() => myState;
 
     //
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     //
     public void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (!aPS.More())
         {
             return;
         }
 
         double aTol;
-        gp_Pnt aPV;
+        Point3D aPV;
         //
         BRepClass3d_SolidClassifier aSC = myContext!.SolidClassifier(myZ);
         //
@@ -93,7 +95,7 @@ internal class BOPAlgo_ShapeSolid : BOPTools_Parallel.ISolver
     protected int myIZ;
     protected bool myHasInterf;
     protected BOPDS_DS? myDS;
-    protected Message_ProgressRange myProgressRange;
+    protected ProgressRange myProgressRange;
 
     public BOPAlgo_ShapeSolid()
     {
@@ -124,12 +126,12 @@ internal class BOPAlgo_ShapeSolid : BOPTools_Parallel.ISolver
     public bool HasInterf() => myHasInterf;
 
     //
-    public void SetProgressRange(Message_ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
 
     //
     public virtual void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (!aPS.More())
         {
             return;
@@ -153,7 +155,7 @@ internal sealed class BOPAlgo_SolidSolid : BOPAlgo_ShapeSolid
     //
     public override void Perform()
     {
-        using var aPS = new Message_ProgressScope(myProgressRange, null, 1);
+        using var aPS = new ProgressScope(myProgressRange, null, 1);
         if (!aPS.More())
         {
             return;
@@ -175,9 +177,9 @@ internal sealed class BOPAlgo_SolidSolid : BOPAlgo_ShapeSolid
 public partial class BOPAlgo_CheckerSI
 {
     /// <summary>Vertex/solid intersection: a vertex classified IN a solid that doesn't share it.</summary>
-    protected virtual void PerformVZ(Message_ProgressRange theRange)
+    protected virtual void PerformVZ(ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         int iSize, nV, nZ, k, aNbVVS;
         TopAbs_State aState;
@@ -229,7 +231,7 @@ public partial class BOPAlgo_CheckerSI
         //
         aNbVVS = aVVS.Count;
 
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), "Performing Vertex-Solid intersection", aNbVVS);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(), "Performing Vertex-Solid intersection", aNbVVS);
         for (int iVS = 0; iVS < aNbVVS; ++iVS)
         {
             aVVS[iVS].SetProgressRange(aPSParallel.Next());
@@ -258,21 +260,21 @@ public partial class BOPAlgo_CheckerSI
     }
 
     /// <summary>Edge/solid intersection.</summary>
-    protected virtual void PerformEZ(Message_ProgressRange theRange)
+    protected virtual void PerformEZ(ProgressRange theRange)
     {
         PerformSZ(TopAbs_EDGE, theRange);
     }
 
     /// <summary>Face/solid intersection.</summary>
-    protected virtual void PerformFZ(Message_ProgressRange theRange)
+    protected virtual void PerformFZ(ProgressRange theRange)
     {
         PerformSZ(TopAbs_FACE, theRange);
     }
 
     /// <summary>Solid/solid intersection.</summary>
-    protected virtual void PerformZZ(Message_ProgressRange theRange)
+    protected virtual void PerformZZ(ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         bool bHasInterf;
         int iSize, nZ1, nZ, k, aNbSolidSolid;
@@ -298,7 +300,7 @@ public partial class BOPAlgo_CheckerSI
         //
         aNbSolidSolid = aVSolidSolid.Count;
 
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(), "Performing Solid-Solid intersection", aNbSolidSolid);
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(), "Performing Solid-Solid intersection", aNbSolidSolid);
         for (int iSS = 0; iSS < aNbSolidSolid; ++iSS)
         {
             aVSolidSolid[iSS].SetProgressRange(aPSParallel.Next());
@@ -330,9 +332,9 @@ public partial class BOPAlgo_CheckerSI
     }
 
     /// <summary>Edge/solid or face/solid intersection: the shape and the solid share interfering sub-shapes.</summary>
-    protected virtual void PerformSZ(TopAbs_ShapeEnum theTS, Message_ProgressRange theRange)
+    protected virtual void PerformSZ(TopAbs_ShapeEnum theTS, ProgressRange theRange)
     {
-        using var aPSOuter = new Message_ProgressScope(theRange, null, 1);
+        using var aPSOuter = new ProgressScope(theRange, null, 1);
 
         bool bHasInterf;
         int iSize, nS, nZ, k, aNbShapeSolid;
@@ -358,7 +360,7 @@ public partial class BOPAlgo_CheckerSI
         //
         aNbShapeSolid = aVShapeSolid.Count;
 
-        using var aPSParallel = new Message_ProgressScope(aPSOuter.Next(),
+        using var aPSParallel = new ProgressScope(aPSOuter.Next(),
                                                           theTS == TopAbs_EDGE ? "Performing Edge-Solid intersection"
                                                                                : "Performing Face-Solid intersection",
                                                           aNbShapeSolid);

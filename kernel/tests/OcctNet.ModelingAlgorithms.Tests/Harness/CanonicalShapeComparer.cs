@@ -8,6 +8,8 @@
 // "canonically identical" when IsIdentical holds, and its ToString() says which sub-shapes differ and by how much.
 // CanonicalKeys.Build(shape) gives each sub-shape's key, which HistoryComparison uses to compare histories.
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -177,12 +179,12 @@ internal sealed class CanonicalKeys
     public string Describe(string theKey) => myDescriptions.TryGetValue(theKey, out string? aText) ? aText : theKey;
 
     /// <summary>The exact vertex key of a point (the bits of its coordinates).</summary>
-    public static string PointKey(in gp_Pnt theP) =>
+    public static string PointKey(in Point3D theP) =>
         "V" + Bits(theP.X()) + Bits(theP.Y()) + Bits(theP.Z());
 
     private string VertexText(TopoDS_Vertex theV, out string theDescription)
     {
-        gp_Pnt aP = BRep_Tool.Pnt(theV);
+        Point3D aP = BRep_Tool.Pnt(theV);
         theDescription = string.Create(CultureInfo.InvariantCulture, $"vertex ({aP.X():R} {aP.Y():R} {aP.Z():R})");
         // '#' marks a ready key, not hashed: overriding keys are other vertices' keys
         return "#" + (myVertexKeyOverride?.Invoke(theV) ?? PointKey(aP));
@@ -192,7 +194,7 @@ internal sealed class CanonicalKeys
     {
         var aText = new StringBuilder("E ");
         BRep_Tool.Range(theE, out double aFirst, out double aLast);
-        Geom_Curve? aCurve = BRep_Tool.Curve(theE, out TopLoc_Location aLoc, out _, out _);
+        Geom_Curve? aCurve = BRep_Tool.Curve(theE, out Placement aLoc, out _, out _);
         string aCurveName;
         if (BRep_Tool.Degenerated(theE))
         {
@@ -206,11 +208,11 @@ internal sealed class CanonicalKeys
         }
         else
         {
-            Geom_Curve aGlobal = aLoc.IsIdentity() ? aCurve : (Geom_Curve)aCurve.Transformed(aLoc.Transformation());
+            Geom_Curve aGlobal = aLoc.IsIdentity ? aCurve : (Geom_Curve)aCurve.Transformed(aLoc.Transformation());
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
             GeomTools_CurveSet.PrintCurve(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
-            aCurveName = aCurve.GetType().Name;
+            aCurveName = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aCurve.GetType());
         }
         aText.Append(" range ").Append(Bits(aFirst)).Append(Bits(aLast));
         aText.Append(" vertices ").Append(ChildKeys(theE, TopAbs_VERTEX, false));
@@ -221,10 +223,10 @@ internal sealed class CanonicalKeys
     private string FaceText(TopoDS_Face theF, out string theDescription)
     {
         var aText = new StringBuilder("F ");
-        Geom_Surface? aSurface = BRep_Tool.Surface(theF, out TopLoc_Location aLoc);
+        Geom_Surface? aSurface = BRep_Tool.Surface(theF, out Placement aLoc);
         if (aSurface is not null)
         {
-            Geom_Surface aGlobal = aLoc.IsIdentity() ? aSurface : (Geom_Surface)aSurface.Transformed(aLoc.Transformation());
+            Geom_Surface aGlobal = aLoc.IsIdentity ? aSurface : (Geom_Surface)aSurface.Transformed(aLoc.Transformation());
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
             GeomTools_SurfaceSet.PrintSurface(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
@@ -418,7 +420,7 @@ internal static class CanonicalShapeComparer
         var aUsed = new HashSet<int>();
         return theV =>
         {
-            gp_Pnt aP = BRep_Tool.Pnt(theV);
+            Point3D aP = BRep_Tool.Pnt(theV);
             string anExactKey = CanonicalKeys.PointKey(aP);
             if (anExact.Contains(anExactKey))
             {
@@ -459,8 +461,8 @@ internal static class CanonicalShapeComparer
         Check("area", aNativeArea.Mass(), aPortArea.Mass());
         // the centroid of the volume if there is one, else of the area; compared relative to the shape's size
         bool aHasVolume = Math.Abs(aNativeVolume.Mass()) > 0.0;
-        gp_Pnt aNativeCentre = aHasVolume ? aNativeVolume.CentreOfMass() : aNativeArea.CentreOfMass();
-        gp_Pnt aPortCentre = aHasVolume ? aPortVolume.CentreOfMass() : aPortArea.CentreOfMass();
+        Point3D aNativeCentre = aHasVolume ? aNativeVolume.CentreOfMass() : aNativeArea.CentreOfMass();
+        Point3D aPortCentre = aHasVolume ? aPortVolume.CentreOfMass() : aPortArea.CentreOfMass();
         if (Math.Abs(aNativeArea.Mass()) > 0.0)
         {
             double aScale = Math.Max(Math.Sqrt(Math.Abs(aNativeArea.Mass())), aNativeCentre.XYZ().Modulus());

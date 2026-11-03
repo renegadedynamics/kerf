@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -17,11 +23,11 @@ public sealed class GccAna_CircLin2dBisec
 {
     private bool WellDone;
     private int NbrSol;
-    private gp_Circ2d circle;
-    private gp_Lin2d line;
+    private Circle2D circle;
+    private Line2D line;
 
     /// <summary>Constructs the bisecting curves of Circle and Line.</summary>
-    public GccAna_CircLin2dBisec(in gp_Circ2d Circle, in gp_Lin2d Line)
+    public GccAna_CircLin2dBisec(in Circle2D Circle, in Line2D Line)
     {
         circle = Circle;
         line = Line;
@@ -55,12 +61,12 @@ public sealed class GccAna_CircLin2dBisec
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         if ((Index <= 0) || (Index > NbrSol))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         GccInt_Bisec bissol;
@@ -72,9 +78,9 @@ public sealed class GccAna_CircLin2dBisec
         double ycencir = circle.Location().Y();
         double R1 = circle.Radius();
         double dist = line.Distance(circle.Location());
-        if ((Math.Abs(line.Distance(circle.Location()) - circle.Radius()) <= gp.Resolution()) && (Index == 1))
+        if ((Math.Abs(line.Distance(circle.Location()) - circle.Radius()) <= Constants.Resolution()) && (Index == 1))
         {
-            gp_Lin2d biscirlin1 = new(circle.Location(), new gp_Dir2d(-ydir, xdir));
+            Line2D biscirlin1 = new(circle.Location(), new Direction2D(-ydir, xdir));
             bissol = new GccInt_BLine(biscirlin1);
         }
         else
@@ -88,42 +94,42 @@ public sealed class GccAna_CircLin2dBisec
             {
                 signe = -1;
             }
-            gp_Ax2d axeparab1;
+            Axis2D axeparab1;
             //    gp_Ax2d axeparab2;
-            gp_Parab2d biscirlin;
+            Parabola2D biscirlin;
             if (dist != R1)
             {
                 if (Index == 1)
                 {
-                    axeparab1 = new gp_Ax2d(new gp_Pnt2d(new gp_XY(xcencir + signe * ydir * (dist + R1) / 2,
+                    axeparab1 = new Axis2D(new Point2D(new Xy(xcencir + signe * ydir * (dist + R1) / 2,
                                                                    ycencir - signe * xdir * (dist + R1) / 2.0)),
-                                            new gp_Dir2d(-signe * ydir, signe * xdir));
-                    biscirlin = new gp_Parab2d(axeparab1, (dist + R1) / 2.0);
+                                            new Direction2D(-signe * ydir, signe * xdir));
+                    biscirlin = new Parabola2D(axeparab1, (dist + R1) / 2.0);
                 }
                 else
                 {
                     if (dist < R1)
                     {
-                        axeparab1 = new gp_Ax2d(new gp_Pnt2d(new gp_XY(xcencir + signe * ydir * (dist - R1) / 2,
+                        axeparab1 = new Axis2D(new Point2D(new Xy(xcencir + signe * ydir * (dist - R1) / 2,
                                                                        ycencir - signe * xdir * (dist - R1) / 2.0)),
-                                                new gp_Dir2d(signe * ydir, -signe * xdir));
+                                                new Direction2D(signe * ydir, -signe * xdir));
                     }
                     else
                     {
-                        axeparab1 = new gp_Ax2d(new gp_Pnt2d(new gp_XY(xcencir + signe * ydir * (dist - R1) / 2,
+                        axeparab1 = new Axis2D(new Point2D(new Xy(xcencir + signe * ydir * (dist - R1) / 2,
                                                                        ycencir - signe * xdir * (dist - R1) / 2.0)),
-                                                new gp_Dir2d(-signe * ydir, signe * xdir));
+                                                new Direction2D(-signe * ydir, signe * xdir));
                     }
-                    biscirlin = new gp_Parab2d(axeparab1, Math.Abs(dist - R1) / 2.0);
+                    biscirlin = new Parabola2D(axeparab1, Math.Abs(dist - R1) / 2.0);
                 }
                 bissol = new GccInt_BParab(biscirlin);
             }
             else
             {
-                axeparab1 = new gp_Ax2d(new gp_Pnt2d(new gp_XY(xcencir + signe * ydir * (dist + R1) / 2.0,
+                axeparab1 = new Axis2D(new Point2D(new Xy(xcencir + signe * ydir * (dist + R1) / 2.0,
                                                                ycencir - signe * xdir * (dist + R1) / 2.0)),
-                                        new gp_Dir2d(signe * (-ydir), signe * xdir));
-                biscirlin = new gp_Parab2d(axeparab1, R1);
+                                        new Direction2D(signe * (-ydir), signe * xdir));
+                biscirlin = new Parabola2D(axeparab1, R1);
                 bissol = new GccInt_BParab(biscirlin);
             }
         }

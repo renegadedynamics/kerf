@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +22,7 @@ namespace Occt;
 /// </remarks>
 public class GeomPlate_BuildAveragePlane
 {
-    private readonly NCollection_HArray1<gp_Pnt> myPts;
+    private readonly NCollection_HArray1<Point3D> myPts;
     private double myUmax;
     private double myVmax;
     private double myVmin;
@@ -24,9 +30,9 @@ public class GeomPlate_BuildAveragePlane
     private readonly Geom_Plane? myPlane;
     private readonly double myTol;
     private readonly Geom_Line? myLine;
-    private gp_Vec myOX;
-    private gp_Vec myOY;
-    private gp_Pnt myG;
+    private Vector3D myOX;
+    private Vector3D myOY;
+    private Point3D myG;
     private readonly int myNbBoundPoints;
 
     /// <summary>
@@ -40,39 +46,39 @@ public class GeomPlate_BuildAveragePlane
     /// the points projected on it.</param>
     /// <param name="NOption">1: the normal of the axes of inertia (or of the boundary polygon if they differ by more
     /// than 60 degrees); 2: the normal of the boundary polygon.</param>
-    public GeomPlate_BuildAveragePlane(NCollection_HArray1<gp_Pnt> Pts, int NbBoundPoints, double Tol, int POption,
+    public GeomPlate_BuildAveragePlane(NCollection_HArray1<Point3D> Pts, int NbBoundPoints, double Tol, int POption,
                                        int NOption)
     {
         myPts = Pts;
         myTol = Tol;
         myNbBoundPoints = NbBoundPoints;
-        gp_Vec OZ = DefPlan(NOption);
+        Vector3D OZ = DefPlan(NOption);
 
         if (OZ.SquareMagnitude() > 0)
         {
             if (POption == 1)
             {
-                myPlane = new Geom_Plane(myG, new gp_Dir(OZ));
-                myOX = new gp_Vec(myPlane.Pln().XAxis().Direction());
-                myOY = new gp_Vec(myPlane.Pln().YAxis().Direction());
+                myPlane = new Geom_Plane(myG, new Direction3D(OZ));
+                myOX = new Vector3D(myPlane.Pln().XAxis().Direction());
+                myOY = new Vector3D(myPlane.Pln().YAxis().Direction());
             }
             else
             {
                 BasePlan(OZ);
-                gp_Dir NDir = new gp_Dir(myOX ^ myOY);
-                gp_Dir UDir = new gp_Dir(myOX);
-                gp_Ax3 triedre = new gp_Ax3(myG, NDir, UDir);
+                Direction3D NDir = new Direction3D(myOX ^ myOY);
+                Direction3D UDir = new Direction3D(myOX);
+                CoordinateSystem triedre = new CoordinateSystem(myG, NDir, UDir);
                 myPlane = new Geom_Plane(triedre);
             }
             int i, nb = myPts.Length();
-            gp_Pln P = myPlane.Pln();
-            ElSLib.Parameters(P, myG, out myUmax, out myVmax);
+            Plane3D P = myPlane.Pln();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(P, myG, out myUmax, out myVmax);
             myUmin = myUmax;
             myVmin = myVmax;
             double U = 0, V = 0;
             for (i = 1; i <= nb; i++)
             {
-                ElSLib.Parameters(P, myPts.Value(i), out U, out V);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(P, myPts.Value(i), out U, out V);
                 if (myUmax < U)
                 {
                     myUmax = U;
@@ -94,7 +100,7 @@ public class GeomPlate_BuildAveragePlane
 
         if (IsLine())
         {
-            myLine = new Geom_Line(myG, new gp_Dir(myOX));
+            myLine = new Geom_Line(myG, new Direction3D(myOX));
         }
     }
 
@@ -102,12 +108,12 @@ public class GeomPlate_BuildAveragePlane
     /// The plane through the axis of inertia of <paramref name="Pts"/> whose normal makes the smallest largest angle
     /// with <paramref name="Normals"/>.
     /// </summary>
-    public GeomPlate_BuildAveragePlane(NCollection_Sequence<gp_Vec> Normals, NCollection_HArray1<gp_Pnt> Pts)
+    public GeomPlate_BuildAveragePlane(NCollection_Sequence<Vector3D> Normals, NCollection_HArray1<Point3D> Pts)
     {
         myPts = Pts;
         int i, j, k, n, m;
 
-        gp_Vec BestVec = new gp_Vec();
+        Vector3D BestVec = new Vector3D();
         int NN = Normals.Length();
 
         if (NN == 1)
@@ -118,7 +124,7 @@ public class GeomPlate_BuildAveragePlane
         {
             BestVec = Normals.Value(1) + Normals.Value(2);
             double aSqMagn = BestVec.SquareMagnitude();
-            if (aSqMagn < Precision.SquareConfusion())
+            if (aSqMagn < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 double aSq1 = Normals.Value(1).SquareMagnitude(), aSq2 = Normals.Value(2).SquareMagnitude();
 
@@ -154,10 +160,10 @@ public class GeomPlate_BuildAveragePlane
             MaxAngle /= 2.0;
             int Nint = 50;
 
-            NCollection_Array1<gp_Vec> OptVec = new NCollection_Array1<gp_Vec>(1, NN * (NN - 1) / 2);
+            NCollection_Array1<Vector3D> OptVec = new NCollection_Array1<Vector3D>(1, NN * (NN - 1) / 2);
             NCollection_Array1<double> OptScal = new NCollection_Array1<double>(1, NN * (NN - 1) / 2);
-            gp_Vec Vec, Vec1;
-            gp_Dir Cross1, Cross2;
+            Vector3D Vec, Vec1;
+            Direction3D Cross1, Cross2;
 
             k = 1;
             for (i = 1; i <= NN - 1; i++)
@@ -171,16 +177,16 @@ public class GeomPlate_BuildAveragePlane
 
                     double aSqMagn = Vec.SquareMagnitude();
 
-                    if (aSqMagn < Precision.SquareConfusion())
+                    if (aSqMagn < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         continue;
                     }
 
                     Vec.Divide(Math.Sqrt(aSqMagn));
 
-                    Cross1 = new gp_Dir(Normals.Value(i) ^ Normals.Value(j));
-                    Cross2 = new gp_Dir(Vec ^ new gp_Vec(Cross1));
-                    gp_Ax1 Axe = new gp_Ax1(new gp_Pnt(0, 0, 0), Cross2);
+                    Cross1 = new Direction3D(Normals.Value(i) ^ Normals.Value(j));
+                    Cross2 = new Direction3D(Vec ^ new Vector3D(Cross1));
+                    Axis3D Axe = new Axis3D(new Point3D(0, 0, 0), Cross2);
 
                     Vec1 = Vec.Rotated(Axe, -MaxAngle);
 
@@ -220,34 +226,34 @@ public class GeomPlate_BuildAveragePlane
         }
 
         // Making the plane myPlane
-        gp_Ax2 Axe2;
+        Frame3D Axe2;
         bool IsSingular;
-        NCollection_Array1<gp_Pnt> PtsArray = new NCollection_Array1<gp_Pnt>(1, myPts.Length());
+        NCollection_Array1<Point3D> PtsArray = new NCollection_Array1<Point3D>(1, myPts.Length());
         for (i = 1; i <= myPts.Length(); i++)
         {
             PtsArray[i] = myPts.Value(i);
         }
         GeomLib.AxeOfInertia(PtsArray, out Axe2, out IsSingular);
-        gp_Dir BestDir = new gp_Dir(BestVec);
-        gp_Dir XDir = BestDir ^ Axe2.XDirection();
+        Direction3D BestDir = new Direction3D(BestVec);
+        Direction3D XDir = BestDir ^ Axe2.XDirection();
         XDir ^= BestDir;
 
-        gp_Ax3 Axe3 = new gp_Ax3(Axe2.Location(), BestDir, XDir);
+        CoordinateSystem Axe3 = new CoordinateSystem(Axe2.Location(), BestDir, XDir);
         myPlane = new Geom_Plane(Axe3);
 
         // Initializing myUmin, myVmin, myUmax, myVmax
-        gp_Pln Pln = myPlane.Pln();
-        ElSLib.Parameters(Pln, Axe2.Location(), out myUmax, out myVmax);
+        Plane3D Pln = myPlane.Pln();
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(Pln, Axe2.Location(), out myUmax, out myVmax);
         myUmin = myUmax;
         myVmin = myVmax;
         double U, V;
         for (i = 1; i <= myPts.Length(); i++)
         {
-            gp_Vec aVec = new gp_Vec(Pln.Location(), myPts.Value(i));
-            gp_Vec NormVec = new gp_Vec(Pln.Axis().Direction());
+            Vector3D aVec = new Vector3D(Pln.Location(), myPts.Value(i));
+            Vector3D NormVec = new Vector3D(Pln.Axis().Direction());
             NormVec = (aVec * NormVec) * NormVec;
 
-            ElSLib.Parameters(Pln, myPts.Value(i).Translated(-NormVec), out U, out V);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(Pln, myPts.Value(i).Translated(-NormVec), out U, out V);
             if (U > myUmax)
             {
                 myUmax = U;
@@ -266,12 +272,12 @@ public class GeomPlate_BuildAveragePlane
             }
         }
         // Initializing myOX, myOY
-        myOX = new gp_Vec(myPlane.Pln().XAxis().Direction());
-        myOY = new gp_Vec(myPlane.Pln().YAxis().Direction());
+        myOX = new Vector3D(myPlane.Pln().XAxis().Direction());
+        myOY = new Vector3D(myPlane.Pln().YAxis().Direction());
     }
 
     /// <summary>The average plane (frozen).</summary>
-    /// <exception cref="Standard_NoSuchObject">The points are aligned (<see cref="IsLine"/>).</exception>
+    /// <exception cref="NoSuchObjectException">The points are aligned (<see cref="IsLine"/>).</exception>
     public Geom_Plane? Plane()
     {
         Standard_NoSuchObject_Raise_if(
@@ -290,11 +296,11 @@ public class GeomPlate_BuildAveragePlane
         Vmin = myVmin;
     }
 
-    private gp_Vec DefPlan(int NOption)
+    private Vector3D DefPlan(int NOption)
     {
-        gp_Pnt GB = new gp_Pnt();
-        gp_Vec A = new gp_Vec(), B = new gp_Vec(), C = new gp_Vec(), D;
-        gp_Vec OZ = new gp_Vec();
+        Point3D GB = new Point3D();
+        Vector3D A = new Vector3D(), B = new Vector3D(), C = new Vector3D(), D;
+        Vector3D OZ = new Vector3D();
         int i, nb = myPts.Length();
         GB.SetCoord(0.0, 0.0, 0.0);
         for (i = 1; i <= nb; i++)
@@ -309,14 +315,14 @@ public class GeomPlate_BuildAveragePlane
 
         if (NOption == 1)
         {
-            gp_Ax2 Axe;
+            Frame3D Axe;
             bool IsSingular;
             GeomLib.AxeOfInertia(myPts.Array1(), out Axe, out IsSingular, myTol);
 
-            myOX = new gp_Vec(Axe.XDirection());
-            myOY = new gp_Vec(Axe.YDirection());
+            myOX = new Vector3D(Axe.XDirection());
+            myOY = new Vector3D(Axe.YDirection());
 
-            OZ = new gp_Vec(Axe.Direction());
+            OZ = new Vector3D(Axe.Direction());
 
             if (myNbBoundPoints != 0 && myPts.Length() != myNbBoundPoints)
             {
@@ -334,7 +340,7 @@ public class GeomPlate_BuildAveragePlane
                     A.SetCoord(2, A.Coord(2) + D.Coord(2));
                     A.SetCoord(3, A.Coord(3) + D.Coord(3));
                 }
-                gp_Vec OZ1 = A;
+                Vector3D OZ1 = A;
                 double theAngle = OZ.Angle(OZ1);
                 if (theAngle > M_PI / 2)
                 {
@@ -368,11 +374,11 @@ public class GeomPlate_BuildAveragePlane
         return OZ;
     }
 
-    private void BasePlan(in gp_Vec OZ)
+    private void BasePlan(in Vector3D OZ)
     {
-        math_Matrix M = new math_Matrix(1, 3, 1, 3);
+        Matrix M = new Matrix(1, 3, 1, 3);
         M.Init(0.0);
-        gp_Vec Proj = new gp_Vec();
+        Vector3D Proj = new Vector3D();
         int i, nb = myPts.Length();
         double scal;
 
@@ -396,7 +402,7 @@ public class GeomPlate_BuildAveragePlane
         M[2, 1] = M[1, 2];
         M[3, 1] = M[1, 3];
         M[3, 2] = M[2, 3];
-        math_Jacobi J = new math_Jacobi(M);
+        Jacobi J = new Jacobi(M);
         double n1, n2, n3;
         math_Vector V1 = new math_Vector(1, 3), V2 = new math_Vector(1, 3), V3 = new math_Vector(1, 3);
         n1 = J.Value(1);
@@ -472,7 +478,7 @@ public class GeomPlate_BuildAveragePlane
     }
 
     /// <summary>The line of the points (frozen).</summary>
-    /// <exception cref="Standard_NoSuchObject">The points aren't aligned (<see cref="IsPlane"/>).</exception>
+    /// <exception cref="NoSuchObjectException">The points aren't aligned (<see cref="IsPlane"/>).</exception>
     public Geom_Line? Line()
     {
         Standard_NoSuchObject_Raise_if(
@@ -484,13 +490,13 @@ public class GeomPlate_BuildAveragePlane
 
     public bool IsPlane()
     {
-        gp_Vec OZ = myOX ^ myOY;
+        Vector3D OZ = myOX ^ myOY;
         return OZ.SquareMagnitude() != 0;
     }
 
     public bool IsLine()
     {
-        gp_Vec OZ = myOX ^ myOY;
+        Vector3D OZ = myOX ^ myOY;
         return OZ.SquareMagnitude() == 0;
     }
 
@@ -499,18 +505,18 @@ public class GeomPlate_BuildAveragePlane
     /// half-space, updating the boundary pairs <paramref name="Bset"/>; otherwise leaves both unchanged and returns
     /// false.
     /// </summary>
-    public static bool HalfSpace(NCollection_Sequence<gp_Vec> NewNormals, NCollection_Sequence<gp_Vec> Normals,
+    public static bool HalfSpace(NCollection_Sequence<Vector3D> NewNormals, NCollection_Sequence<Vector3D> Normals,
                                  NCollection_Sequence<GeomPlate_Aij> Bset, double LinTol, double AngTol)
     {
         double SquareTol = LinTol * LinTol;
 
-        NCollection_Sequence<gp_Vec> SaveNormals;
+        NCollection_Sequence<Vector3D> SaveNormals;
         NCollection_Sequence<GeomPlate_Aij> SaveBset;
         // 1
-        SaveNormals = new NCollection_Sequence<gp_Vec>(Normals);
+        SaveNormals = new NCollection_Sequence<Vector3D>(Normals);
         SaveBset = new NCollection_Sequence<GeomPlate_Aij>(Bset);
 
-        gp_Vec Cross, NullVec = new gp_Vec(0, 0, 0);
+        Vector3D Cross, NullVec = new Vector3D(0, 0, 0);
         NCollection_Sequence<GeomPlate_Aij> B1set = new NCollection_Sequence<GeomPlate_Aij>(),
                                             B2set = new NCollection_Sequence<GeomPlate_Aij>();
         int i, j, k;
@@ -571,7 +577,7 @@ public class GeomPlate_BuildAveragePlane
                 {
                     if (B2set.Value(k).Vec.IsOpposite(-Cross, AngTol)) // if (B2set(k).Vec.IsEqual( Cross, LinTol, AngTol ))
                     {
-                        gp_Vec Cross1, Cross2;
+                        Vector3D Cross1, Cross2;
                         int ind1 = B2set.Value(k).Ind1, ind2 = B2set.Value(k).Ind2;
                         if (ind1 == ii || ind2 == ii)
                         {
@@ -623,7 +629,7 @@ public class GeomPlate_BuildAveragePlane
                 {
                     if (B2set.Value(k).Vec.IsOpposite(-Cross, AngTol)) // if (B2set(k).Vec.IsEqual( Cross, LinTol, AngTol ))
                     {
-                        gp_Vec Cross1, Cross2;
+                        Vector3D Cross1, Cross2;
                         int ind1 = B2set.Value(k).Ind1, ind2 = B2set.Value(k).Ind2;
                         if (ind1 == ii || ind2 == ii)
                         {

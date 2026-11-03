@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -28,13 +30,13 @@ internal class RWStepShape_RWToleranceValue
 
         // --- own field : lower_bound ---
 
-        Standard_Transient aLowerBound = null;
-        data.ReadEntity(num, 1, "lower_bound", ach, typeof(Standard_Transient), ref aLowerBound);
+        Transient aLowerBound = null;
+        data.ReadEntity(num, 1, "lower_bound", ach, typeof(Transient), ref aLowerBound);
 
         // --- own field : upper_bound ---
 
-        Standard_Transient anUpperBound = null;
-        data.ReadEntity(num, 2, "upper_bound", ach, typeof(Standard_Transient), ref anUpperBound);
+        Transient anUpperBound = null;
+        data.ReadEntity(num, 2, "upper_bound", ach, typeof(Transient), ref anUpperBound);
 
         //--- Initialisation of the read entity ---
         if ((aLowerBound is not null) && (anUpperBound is not null))

@@ -14,8 +14,12 @@
 //--      - Pour rester coherent avec cette facon de faire,
 //--      Chercher(Nbvtx++).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -34,7 +38,7 @@ public static class IntPatch_RstInt
 {
     private const double myInfinite = 1.0e15; // the same as was in Adaptor3d_TopolTool
 
-    private static void Recadre(GeomAbs_SurfaceType typeS1, GeomAbs_SurfaceType typeS2, IntPatch_WLine wlin, int Param,
+    private static void Recadre(SurfaceKind typeS1, SurfaceKind typeS2, IntPatch_WLine wlin, int Param,
                                 ref double U1, ref double V1, ref double U2, ref double V2)
     {
         int nbpnts = wlin.NbPnts();
@@ -50,10 +54,10 @@ public static class IntPatch_RstInt
 
         switch (typeS1)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 while (U1 < (U1p - 1.5 * M_PI))
                 {
                     U1 += M_PI + M_PI;
@@ -66,7 +70,7 @@ public static class IntPatch_RstInt
             default:
                 break;
         }
-        if (typeS1 == GeomAbs_Torus)
+        if (typeS1 == SurfaceKind.Torus)
         {
             while (V1 < (V1p - 1.5 * M_PI))
             {
@@ -80,10 +84,10 @@ public static class IntPatch_RstInt
 
         switch (typeS2)
         {
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
                 while (U2 < (U2p - 1.5 * M_PI))
                 {
                     U2 += M_PI + M_PI;
@@ -96,7 +100,7 @@ public static class IntPatch_RstInt
             default:
                 break;
         }
-        if (typeS2 == GeomAbs_Torus)
+        if (typeS2 == SurfaceKind.Torus)
         {
             while (V2 < (V1p - 1.5 * M_PI)) // OCCT: compares V2 with V1p, not V2p (reproduced)
             {
@@ -109,7 +113,7 @@ public static class IntPatch_RstInt
         }
     }
 
-    private static double Confusion => Precision.Confusion();
+    private static double Confusion => global::Kerf.Engine.Foundation.Precision.Confusion();
 
     private static double Tol3d(Adaptor3d_HVertex vtx, Adaptor3d_TopolTool Domain, double tolDef = 0.0) =>
         (Domain.Has3d() ? Domain.Tol3d(vtx) : tolDef < Confusion ? Confusion : tolDef);
@@ -117,7 +121,7 @@ public static class IntPatch_RstInt
     private static double Tol3d(Adaptor2d_Curve2d arc, Adaptor3d_TopolTool Domain, double tolDef = 0.0) =>
         (Domain.Has3d() ? Domain.Tol3d(arc) : tolDef < Confusion ? Confusion : tolDef);
 
-    private static bool CoincideOnArc(in gp_Pnt Ptsommet, Adaptor2d_Curve2d A, Adaptor3d_Surface Surf, double Toler,
+    private static bool CoincideOnArc(in Point3D Ptsommet, Adaptor2d_Curve2d A, Adaptor3d_Surface Surf, double Toler,
                                       Adaptor3d_TopolTool Domain, ref Adaptor3d_HVertex? Vtx)
     {
         double distmin = RealLast();
@@ -129,8 +133,8 @@ public static class IntPatch_RstInt
         {
             Adaptor3d_HVertex vtx1 = Domain.Vertex();
             double prm = IntPatch_HInterTool.Parameter(vtx1, A);
-            gp_Pnt2d p2d = A.Value(prm);
-            gp_Pnt point = Surf.Value(p2d.X(), p2d.Y());
+            Point2D p2d = A.Value(prm);
+            Point3D point = Surf.Value(p2d.X(), p2d.Y());
             double dist = point.Distance(Ptsommet);
             double tol = Max(tolarc, Tol3d(vtx1, Domain));
 
@@ -144,7 +148,7 @@ public static class IntPatch_RstInt
         return distmin < RealLast();
     }
 
-    private static void VerifyTgline(IntPatch_WLine wlin, int param, double Tol, ref gp_Vec Tgl)
+    private static void VerifyTgline(IntPatch_WLine wlin, int param, double Tol, ref Vector3D Tgl)
     {
         if (Math.Abs(Tgl.X()) < Tol && Math.Abs(Tgl.Y()) < Tol && Math.Abs(Tgl.Z()) < Tol)
         {
@@ -158,7 +162,7 @@ public static class IntPatch_RstInt
                 {
                     for (i = param + 1; i <= nbpt; i++)
                     {
-                        gp_Vec T = new(wlin.Point(param).Value(), wlin.Point(i).Value());
+                        Vector3D T = new(wlin.Point(param).Value(), wlin.Point(i).Value());
                         if (Math.Abs(T.X()) >= Tol || Math.Abs(T.Y()) >= Tol || Math.Abs(T.Z()) >= Tol)
                         {
                             Tgl = T;
@@ -170,7 +174,7 @@ public static class IntPatch_RstInt
                 {
                     for (i = param - 1; i >= 1; i--)
                     {
-                        gp_Vec T = new(wlin.Point(i).Value(), wlin.Point(param).Value());
+                        Vector3D T = new(wlin.Point(i).Value(), wlin.Point(param).Value());
                         if (Math.Abs(T.X()) >= Tol || Math.Abs(T.Y()) >= Tol || Math.Abs(T.Z()) >= Tol)
                         {
                             Tgl = T;
@@ -234,8 +238,8 @@ public static class IntPatch_RstInt
     }
 
     // MSV 28.03.2002: find parameter on WLine in 2d space
-    private static bool FindParameter(IntPatch_Line L, Adaptor3d_Surface OtherSurf, double Tol, in gp_Pnt Ptsom,
-                                      in gp_Pnt2d Ptsom2d, ref double Param, ref gp_Vec Tgl, int ParamApproche,
+    private static bool FindParameter(IntPatch_Line L, Adaptor3d_Surface OtherSurf, double Tol, in Point3D Ptsom,
+                                      in Point2D Ptsom2d, ref double Param, ref Vector3D Tgl, int ParamApproche,
                                       bool OnFirst)
     {
         // Si la ligne est de type restriction, c est qu on provient necessairement
@@ -248,8 +252,8 @@ public static class IntPatch_RstInt
 
         IntPatch_RLine? rlin = L as IntPatch_RLine; //-- aucune verification n est
         IntPatch_WLine? wlin = L as IntPatch_WLine; //-- faite au cast.
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
+        Point2D p2d;
+        Vector2D d2d;
 
         double Tol2 = Tol * Tol;
         IntPatch_IType typL = L.ArcType();
@@ -271,7 +275,7 @@ public static class IntPatch_RstInt
             {
                 return (false);
             }
-            OtherSurf.D1(p2d.X(), p2d.Y(), out gp_Pnt ptbid, out gp_Vec d1u, out gp_Vec d1v);
+            OtherSurf.D1(p2d.X(), p2d.Y(), out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
             if (ptbid.SquareDistance(Ptsom) > Tol2)
             {
                 return false;
@@ -320,10 +324,10 @@ public static class IntPatch_RstInt
             bool found = false;
             for (@is = 0; @is < 3 && !found; @is++)
             {
-                gp_Vec v1, v2;
-                gp_Pnt p1, p2;
+                Vector3D v1, v2;
+                Point3D p1, p2;
                 p1 = wlin.Point(inf[@is]).Value();
-                v1 = new gp_Vec(Ptsom, p1);
+                v1 = new Vector3D(Ptsom, p1);
                 norm1 = v1.SquareMagnitude();
                 double normmin = Tol2;
                 int ibest = 0;
@@ -335,12 +339,12 @@ public static class IntPatch_RstInt
                 for (i = inf[@is] + 1; i <= sup[@is] && !found; i++)
                 {
                     p2 = wlin.Point(i).Value();
-                    v2 = new gp_Vec(Ptsom, p2);
+                    v2 = new Vector3D(Ptsom, p2);
                     norm2 = v2.SquareMagnitude();
                     if (v1.Dot(v2) < 0.0)
                     {
                         Param = (double)(i - 1) + 1.0 / (1.0 + Math.Sqrt(norm2 / norm1));
-                        Tgl = new gp_Vec(p1, p2);
+                        Tgl = new Vector3D(p1, p2);
                         found = true;
                     }
                     else if (norm2 < normmin)
@@ -365,7 +369,7 @@ public static class IntPatch_RstInt
         }
         else
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return false;
     }
@@ -391,23 +395,23 @@ public static class IntPatch_RstInt
         double U1, V1, U2 = 0.0, V2 = 0.0;
         double paramarc = 0.0, paramline = 0.0;
         int i, j, k;
-        NCollection_Sequence<gp_Pnt> locpt = new();
-        NCollection_Sequence<gp_Pnt2d> locpt2 = new();
+        NCollection_Sequence<Point3D> locpt = new();
+        NCollection_Sequence<Point2D> locpt2 = new();
         IntPatch_RLine? rlin = L as IntPatch_RLine; //-- aucune verification n est
         IntPatch_WLine? wlin = L as IntPatch_WLine; //-- faite au cast.
         int Nbvtx = 0;
 
-        double tolPLin = Surf.UResolution(Precision.Confusion());
-        tolPLin = Max(tolPLin, Surf.VResolution(Precision.Confusion()));
-        tolPLin = Min(tolPLin, Precision.Confusion());
+        double tolPLin = Surf.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
+        tolPLin = Max(tolPLin, Surf.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
+        tolPLin = Min(tolPLin, global::Kerf.Engine.Foundation.Precision.Confusion());
         IntPatch_PolyLine PLin = new(tolPLin);
 
         double PFirst, PLast;
         int NbEchant;
-        gp_Pnt ptsommet = new();
-        gp_Vec tgline = new(), tgrst = new(), normsurf;
-        gp_Pnt2d p2d;
-        gp_Vec2d d2d;
+        Point3D ptsommet = new();
+        Vector3D tgline = new(), tgrst = new(), normsurf;
+        Point2D p2d;
+        Vector2D d2d;
 
         IntPatch_Point Sommet = new(), ptline = new();
         Adaptor3d_HVertex? vtxarc = null;
@@ -428,7 +432,7 @@ public static class IntPatch_RstInt
         }
         else
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         if (!Domain.Has3d())
         {
@@ -469,16 +473,16 @@ public static class IntPatch_RstInt
         //------------------------------------------------------------------------
         Adaptor3d_Surface Surf1 = (OnFirst ? Surf : OtherSurf);
         Adaptor3d_Surface Surf2 = (OnFirst ? OtherSurf : Surf);
-        GeomAbs_SurfaceType TypeS1 = Surf1.GetType();
-        GeomAbs_SurfaceType TypeS2 = Surf2.GetType();
+        SurfaceKind TypeS1 = Surf1.GetType();
+        SurfaceKind TypeS2 = Surf2.GetType();
         bool SurfaceIsPeriodic = false;
         bool SurfaceIsBiPeriodic = false;
-        GeomAbs_SurfaceType surfacetype = (OnFirst ? TypeS1 : TypeS2);
-        if (surfacetype == GeomAbs_Cylinder || surfacetype == GeomAbs_Cone || surfacetype == GeomAbs_Torus
-            || surfacetype == GeomAbs_Sphere)
+        SurfaceKind surfacetype = (OnFirst ? TypeS1 : TypeS2);
+        if (surfacetype == SurfaceKind.Cylinder || surfacetype == SurfaceKind.Cone || surfacetype == SurfaceKind.Torus
+            || surfacetype == SurfaceKind.Sphere)
         {
             SurfaceIsPeriodic = true;
-            if (surfacetype == GeomAbs_Torus)
+            if (surfacetype == SurfaceKind.Torus)
             {
                 SurfaceIsBiPeriodic = true;
             }
@@ -495,11 +499,11 @@ public static class IntPatch_RstInt
             double edgeTol = Tol3d(arc, Domain, Tol);
 
             IntPatch_HInterTool.Bounds(arc, out PFirst, out PLast);
-            if (Precision.IsNegativeInfinite(PFirst))
+            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(PFirst))
             {
                 PFirst = -myInfinite;
             }
-            if (Precision.IsPositiveInfinite(PLast))
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(PLast))
             {
                 PLast = myInfinite;
             }
@@ -516,30 +520,30 @@ public static class IntPatch_RstInt
             {
                 Adaptor3d_HVertex vtx = Domain.Vertex();
                 double prm = IntPatch_HInterTool.Parameter(vtx, arc);
-                if (Math.Abs(prm - PFirst) < Precision.PConfusion())
+                if (Math.Abs(prm - PFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     arc.D0(PFirst, out _);
                 }
-                else if (Math.Abs(prm - PLast) < Precision.PConfusion())
+                else if (Math.Abs(prm - PLast) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     arc.D0(PLast, out _);
                 }
             }
 
-            Bnd_Box2d BPLin = PLin.Bounding();
+            Box2d BPLin = PLin.Bounding();
             double OffsetV = 0.0;
             double OffsetU = 0.0;
 
             switch (arc.GetType())
             {
-                case GeomAbs_Line:
+                case Line:
                 {
                     NbEchant = 10;
 
                     BPLin.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
-                    gp_Lin2d aLin = arc.Line();
-                    gp_Pnt2d aLoc = aLin.Location();
-                    gp_Dir2d aDir = aLin.Direction();
+                    Line2D aLin = arc.Line();
+                    Point2D aLoc = aLin.Location();
+                    Direction2D aDir = aLin.Direction();
 
                     // Here, we consider rectangular axis-aligned domain only.
                     bool isAlongU = (Math.Abs(aDir.X()) > Math.Abs(aDir.Y()));
@@ -547,18 +551,18 @@ public static class IntPatch_RstInt
                     if (SurfaceIsPeriodic && !isAlongU)
                     {
                         // Shift along U-direction
-                        double aNewLocation = ElCLib.InPeriod(aLoc.X(), aXmin, aXmin + M_PI + M_PI);
+                        double aNewLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aLoc.X(), aXmin, aXmin + M_PI + M_PI);
                         OffsetU = aNewLocation - aLoc.X();
                     }
                     else if (SurfaceIsBiPeriodic && isAlongU)
                     {
                         // Shift along V-direction
-                        double aNewLocation = ElCLib.InPeriod(aLoc.Y(), aYmin, aYmin + M_PI + M_PI);
+                        double aNewLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aLoc.Y(), aYmin, aYmin + M_PI + M_PI);
                         OffsetV = aNewLocation - aLoc.Y();
                     }
                 }
                 break;
-                case GeomAbs_BezierCurve:
+                case BezierCurve:
                 {
                     NbEchant = (3 + arc.NbPoles());
                     if (NbEchant < 10)
@@ -571,7 +575,7 @@ public static class IntPatch_RstInt
                     }
                 }
                 break;
-                case GeomAbs_BSplineCurve:
+                case BSplineCurve:
                 {
                     // szv:const double nbs = (arc->NbKnots() * arc->Degree())*(arc->LastParameter() -
                     // arc->FirstParameter())/(PLast-PFirst);
@@ -688,10 +692,10 @@ public static class IntPatch_RstInt
                         {
                             ptsommet = IntCS.Point();
                             IntCS.ParameterOnSurface(out U2, out V2);
-                            OtherSurf.D0(U, V, out gp_Pnt anOldPnt);
-                            OtherSurf.D0(U2, V2, out gp_Pnt aNewPnt);
+                            OtherSurf.D0(U, V, out Point3D anOldPnt);
+                            OtherSurf.D0(U2, V2, out Point3D aNewPnt);
                             // if (anOldPnt.SquareDistance(aNewPnt) < Precision::SquareConfusion())
-                            double aTolConf = Max(Precision.Confusion(), edgeTol);
+                            double aTolConf = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), edgeTol);
 
                             if (anOldPnt.SquareDistance(aNewPnt) < aTolConf * aTolConf)
                             {
@@ -742,9 +746,9 @@ public static class IntPatch_RstInt
                                     }
                                 }
                                 locpt.Append(ptsommet);
-                                locpt2.Append(new gp_Pnt2d(U2, V2));
+                                locpt2.Append(new Point2D(U2, V2));
 
-                                found = FindParameter(L, OtherSurf, edgeTol, ptsommet, new gp_Pnt2d(U2, V2), ref paramline,
+                                found = FindParameter(L, OtherSurf, edgeTol, ptsommet, new Point2D(U2, V2), ref paramline,
                                                       ref tgline, ParamApproxOnLine, OnFirst);
 
                                 if (typL == IntPatch_Walking && found && possiblyClosed)
@@ -846,7 +850,7 @@ public static class IntPatch_RstInt
                                             {
                                                 ptline = Rptline;
                                                 ivtx = j;
-                                                if (surfacetype == GeomAbs_Cone)
+                                                if (surfacetype == SurfaceKind.Cone)
                                                 {
                                                     ivtx = 0;
                                                 }
@@ -887,18 +891,18 @@ public static class IntPatch_RstInt
                                     VerifyTgline(wlin!, (int)paramline, edgeTol, ref tgline);
                                 }
 
-                                Surf.D1(U1, V1, out _, out gp_Vec d1u, out gp_Vec d1v);
+                                Surf.D1(U1, V1, out _, out Vector3D d1u, out Vector3D d1v);
                                 tgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                 normsurf = d1u.Crossed(d1v);
-                                if (normsurf.Magnitude() < gp.Resolution())
+                                if (normsurf.Magnitude() < Constants.Resolution())
                                 {
                                     transline.SetValue(true, IntSurf_Undecided);
                                     transarc.SetValue(true, IntSurf_Undecided);
                                 }
                                 else
                                 {
-                                    IntSurf.MakeTransition(tgline, tgrst, new gp_Dir(normsurf), ref transline, ref transarc);
+                                    IntSurf.MakeTransition(tgline, tgrst, new Direction3D(normsurf), ref transline, ref transarc);
                                 }
 
                                 nbTreated++;
@@ -1172,12 +1176,12 @@ public static class IntPatch_RstInt
             pu1 = pv1 = pu2 = pv2 = 0.0;
             switch (TypeS1)
             {
-                case GeomAbs_Cylinder:
-                case GeomAbs_Cone:
-                case GeomAbs_Sphere:
+                case SurfaceKind.Cylinder:
+                case SurfaceKind.Cone:
+                case SurfaceKind.Sphere:
                     pu1 = M_PI + M_PI;
                     break;
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                     pu1 = pv1 = M_PI + M_PI;
                     break;
                 default:
@@ -1206,12 +1210,12 @@ public static class IntPatch_RstInt
 
             switch (TypeS2)
             {
-                case GeomAbs_Cylinder:
-                case GeomAbs_Cone:
-                case GeomAbs_Sphere:
+                case SurfaceKind.Cylinder:
+                case SurfaceKind.Cone:
+                case SurfaceKind.Sphere:
                     pu2 = M_PI + M_PI;
                     break;
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                     pu2 = pv2 = M_PI + M_PI;
                     break;
                 default:

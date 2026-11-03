@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +20,7 @@ public class Geom_Hyperbola : Geom_Conic
     private double minorRadius;
 
     /// <summary>A hyperbola equal to H.</summary>
-    public Geom_Hyperbola(in gp_Hypr H)
+    public Geom_Hyperbola(in Hyperbola3D H)
     {
         majorRadius = H.MajorRadius();
         minorRadius = H.MinorRadius();
@@ -24,14 +28,14 @@ public class Geom_Hyperbola : Geom_Conic
     }
 
     /// <summary>A hyperbola placed by A with the given radii.</summary>
-    /// <exception cref="Standard_ConstructionError">A radius is negative.</exception>
-    public Geom_Hyperbola(in gp_Ax2 A, double MajorRadius, double MinorRadius)
+    /// <exception cref="ConstructionErrorException">A radius is negative.</exception>
+    public Geom_Hyperbola(in Frame3D A, double MajorRadius, double MinorRadius)
     {
         majorRadius = MajorRadius;
         minorRadius = MinorRadius;
         if (MajorRadius < 0.0 || MinorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         pos = A;
     }
@@ -48,15 +52,15 @@ public class Geom_Hyperbola : Geom_Conic
 
     public sealed override bool IsPeriodic() => false;
 
-    public sealed override double FirstParameter() => -Precision.Infinite();
+    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public sealed override double LastParameter() => Precision.Infinite();
+    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public double MajorRadius() => majorRadius;
 
     public double MinorRadius() => minorRadius;
 
-    internal void SetHypr(in gp_Hypr H)
+    internal void SetHypr(in Hyperbola3D H)
     {
         CheckMutable();
         majorRadius = H.MajorRadius();
@@ -64,13 +68,13 @@ public class Geom_Hyperbola : Geom_Conic
         pos = H.Position();
     }
 
-    /// <exception cref="Standard_ConstructionError">MajorRadius &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">MajorRadius &lt; 0.</exception>
     internal void SetMajorRadius(double MajorRadius)
     {
         CheckMutable();
         if (MajorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -78,13 +82,13 @@ public class Geom_Hyperbola : Geom_Conic
         }
     }
 
-    /// <exception cref="Standard_ConstructionError">MinorRadius &lt; 0.</exception>
+    /// <exception cref="ConstructionErrorException">MinorRadius &lt; 0.</exception>
     internal void SetMinorRadius(double MinorRadius)
     {
         CheckMutable();
         if (MinorRadius < 0.0)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         else
         {
@@ -93,75 +97,75 @@ public class Geom_Hyperbola : Geom_Conic
     }
 
     /// <summary>The non-persistent hyperbola equal to this one.</summary>
-    public gp_Hypr Hypr() => new gp_Hypr(pos, majorRadius, minorRadius);
+    public Hyperbola3D Hypr() => new Hyperbola3D(pos, majorRadius, minorRadius);
 
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double U) => (-U);
 
     /// <summary>The first asymptote (see gp_Hypr).</summary>
-    /// <exception cref="Standard_ConstructionError">The major radius is 0.</exception>
-    public gp_Ax1 Asymptote1()
+    /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
+    public Axis3D Asymptote1()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.Asymptote1();
     }
 
     /// <summary>The second asymptote (see gp_Hypr).</summary>
-    /// <exception cref="Standard_ConstructionError">The major radius is 0.</exception>
-    public gp_Ax1 Asymptote2()
+    /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
+    public Axis3D Asymptote2()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.Asymptote2();
     }
 
     /// <summary>The conjugate branch on the positive side of the Y axis.</summary>
-    public gp_Hypr ConjugateBranch1()
+    public Hyperbola3D ConjugateBranch1()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.ConjugateBranch1();
     }
 
     /// <summary>The conjugate branch on the negative side of the Y axis.</summary>
-    public gp_Hypr ConjugateBranch2()
+    public Hyperbola3D ConjugateBranch2()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.ConjugateBranch2();
     }
 
     /// <summary>The first directrix (see gp_Hypr).</summary>
-    public gp_Ax1 Directrix1()
+    public Axis3D Directrix1()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.Directrix1();
     }
 
     /// <summary>The second directrix (see gp_Hypr).</summary>
-    public gp_Ax1 Directrix2()
+    public Axis3D Directrix2()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.Directrix2();
     }
 
-    public sealed override gp_Pnt EvalD0(double U) => ElCLib.HyperbolaValue(U, pos, majorRadius, minorRadius);
+    public sealed override Point3D EvalD0(double U) => global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(U, pos, majorRadius, minorRadius);
 
     public sealed override ResD1 EvalD1(double U)
     {
         ResD1 aResult = new ResD1();
-        ElCLib.HyperbolaD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
+        global::Kerf.Engine.Geometry.ElCLib.HyperbolaD1(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1);
         return aResult;
     }
 
     public sealed override ResD2 EvalD2(double U)
     {
         ResD2 aResult = new ResD2();
-        ElCLib.HyperbolaD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
+        global::Kerf.Engine.Geometry.ElCLib.HyperbolaD2(U, pos, majorRadius, minorRadius, out aResult.Point, out aResult.D1, out aResult.D2);
         return aResult;
     }
 
     public sealed override ResD3 EvalD3(double U)
     {
         ResD3 aResult = new ResD3();
-        ElCLib.HyperbolaD3(U,
+        global::Kerf.Engine.Geometry.ElCLib.HyperbolaD3(U,
                            pos,
                            majorRadius,
                            minorRadius,
@@ -173,17 +177,17 @@ public class Geom_Hyperbola : Geom_Conic
     }
 
     /// <exception cref="Geom_UndefinedDerivative">N &lt; 1.</exception>
-    public sealed override gp_Vec EvalDN(double U, int N)
+    public sealed override Vector3D EvalDN(double U, int N)
     {
         if (N < 1)
         {
             throw new Geom_UndefinedDerivative();
         }
-        return ElCLib.HyperbolaDN(U, pos, majorRadius, minorRadius, N);
+        return global::Kerf.Engine.Geometry.ElCLib.HyperbolaDN(U, pos, majorRadius, minorRadius, N);
     }
 
     /// <summary>sqrt(a² + b²) / a.</summary>
-    /// <exception cref="Standard_ConstructionError">The major radius is 0.</exception>
+    /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
     public sealed override double Eccentricity()
     {
         Standard_ConstructionError_Raise_if(majorRadius == 0.0, " ");
@@ -194,34 +198,34 @@ public class Geom_Hyperbola : Geom_Conic
     public double Focal() => 2.0 * Math.Sqrt(majorRadius * majorRadius + minorRadius * minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public gp_Pnt Focus1()
+    public Point3D Focus1()
     {
         double C = Math.Sqrt(majorRadius * majorRadius + minorRadius * minorRadius);
         double Xp, Yp, Zp, Xd, Yd, Zd;
         pos.Location().Coord(out Xp, out Yp, out Zp);
         pos.XDirection().Coord(out Xd, out Yd, out Zd);
-        return new gp_Pnt(Xp + C * Xd, Yp + C * Yd, Zp + C * Zd);
+        return new Point3D(Xp + C * Xd, Yp + C * Yd, Zp + C * Zd);
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public gp_Pnt Focus2()
+    public Point3D Focus2()
     {
         double C = Math.Sqrt(majorRadius * majorRadius + minorRadius * minorRadius);
         double Xp, Yp, Zp, Xd, Yd, Zd;
         pos.Location().Coord(out Xp, out Yp, out Zp);
         pos.XDirection().Coord(out Xd, out Yd, out Zd);
-        return new gp_Pnt(Xp - C * Xd, Yp - C * Yd, Zp - C * Zd);
+        return new Point3D(Xp - C * Xd, Yp - C * Yd, Zp - C * Zd);
     }
 
     /// <summary>The branch symmetric to this one about the Y axis.</summary>
-    public gp_Hypr OtherBranch()
+    public Hyperbola3D OtherBranch()
     {
-        gp_Hypr Hv = new gp_Hypr(pos, majorRadius, minorRadius);
+        Hyperbola3D Hv = new Hyperbola3D(pos, majorRadius, minorRadius);
         return Hv.OtherBranch();
     }
 
     /// <summary>The parameter of the hyperbola: b² / a.</summary>
-    /// <exception cref="Standard_ConstructionError">The major radius is 0.</exception>
+    /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
     public double Parameter()
     {
         Standard_ConstructionError_Raise_if(majorRadius == 0.0, " ");
@@ -229,7 +233,7 @@ public class Geom_Hyperbola : Geom_Conic
     }
 
     /// <summary>Applies T to this hyperbola (the radii are scaled by |T.ScaleFactor()|).</summary>
-    protected internal sealed override void Transform(in gp_Trsf T)
+    protected internal sealed override void Transform(in Transform3D T)
     {
         CheckMutable();
         majorRadius = majorRadius * Math.Abs(T.ScaleFactor());
@@ -239,7 +243,7 @@ public class Geom_Hyperbola : Geom_Conic
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 
-    public Geom_Hyperbola WithHypr(in gp_Hypr H)
+    public Geom_Hyperbola WithHypr(in Hyperbola3D H)
     {
         Geom_Hyperbola aCopy = (Geom_Hyperbola)Copy();
         aCopy.SetHypr(H);

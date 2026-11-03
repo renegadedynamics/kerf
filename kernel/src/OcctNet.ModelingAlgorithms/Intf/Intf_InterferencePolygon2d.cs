@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.Intf_PIType;
 
 namespace Occt;
@@ -12,7 +15,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
 {
     // Angular precision (sinus) below that value two right segments
     // are considered as having a potential zone of tangency.
-    private static readonly double PRCANG = Precision.Angular();
+    private static readonly double PRCANG = global::Kerf.Engine.Foundation.Precision.Angular();
 
     private bool oClos;
     private bool tClos;
@@ -106,20 +109,20 @@ public class Intf_InterferencePolygon2d : Intf_Interference
     }
 
     /// <summary>The 2D point of the intersection point of address <paramref name="Index"/> in the interference.</summary>
-    public gp_Pnt2d Pnt2dValue(int Index)
+    public Point2D Pnt2dValue(int Index)
     {
-        return new gp_Pnt2d((mySPoins[Index]).Pnt().X(), (mySPoins[Index]).Pnt().Y());
+        return new Point2D((mySPoins[Index]).Pnt().X(), (mySPoins[Index]).Pnt().Y());
     }
 
     private void Interference(Intf_Polygon2d Obje1, Intf_Polygon2d Obje2)
     {
-        Bnd_Box2d bSO = new();
-        Bnd_Box2d bST = new();
+        Box2d bSO = new();
+        Box2d bST = new();
 
         int iObje1, iObje2, n1 = nbso, n2 = Obje2.NbSegments();
         double d1 = Obje1.DeflectionOverEstimation(), d2 = Obje2.DeflectionOverEstimation();
 
-        gp_Pnt2d p1b, p1e, p2b, p2e;
+        Point2D p1b, p1e, p2b, p2e;
         for (iObje1 = 1; iObje1 <= n1; iObje1++)
         {
             bSO.SetVoid();
@@ -147,13 +150,13 @@ public class Intf_InterferencePolygon2d : Intf_Interference
 
     private void Interference(Intf_Polygon2d Obje)
     {
-        Bnd_Box2d bSO = new();
-        Bnd_Box2d bST = new();
+        Box2d bSO = new();
+        Box2d bST = new();
 
         int iObje1, iObje2, n = Obje.NbSegments();
         double d = Obje.DeflectionOverEstimation();
 
-        gp_Pnt2d p1b, p1e, p2b, p2e;
+        Point2D p1b, p1e, p2b, p2e;
         for (iObje1 = 1; iObje1 <= n; iObje1++)
         {
             bSO.SetVoid();
@@ -275,8 +278,8 @@ public class Intf_InterferencePolygon2d : Intf_Interference
     }
 
     /// <summary>Computes the intersection between the two segments <paramref name="BegO"/> <paramref name="EndO"/> and <paramref name="BegT"/> <paramref name="EndT"/>.</summary>
-    private void Intersect(int iObje1, int iObje2, in gp_Pnt2d BegO, in gp_Pnt2d EndO, in gp_Pnt2d BegT,
-                           in gp_Pnt2d EndT)
+    private void Intersect(int iObje1, int iObje2, in Point2D BegO, in Point2D EndO, in Point2D BegT,
+                           in Point2D EndT)
     {
         if (SelfIntf)
         {
@@ -290,8 +293,8 @@ public class Intf_InterferencePolygon2d : Intf_Interference
         Span<double> parO = stackalloc double[8];
         Span<double> parT = stackalloc double[8];
         NCollection_Sequence<Intf_SectionPoint> thePi = new();
-        gp_XY segT = EndT.XY() - BegT.XY();
-        gp_XY segO = EndO.XY() - BegO.XY();
+        Xy segT = EndT.XY() - BegT.XY();
+        Xy segO = EndO.XY() - BegO.XY();
 
         // If the length of segment is zero, nothing is done
         double lgT = Math.Sqrt(segT * segT);
@@ -451,7 +454,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
                 parO[nbpi] = parOSP;
                 parT[nbpi] = parTSP;
                 thePi.Append(
-                    new Intf_SectionPoint(new gp_Pnt2d(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
+                    new Intf_SectionPoint(new Point2D(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
                                           Intf_EDGE,
                                           iObje1,
                                           parOSP,
@@ -482,7 +485,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
                         nbpi++;
                         x = BegO.X() + (segO.X() * parO[nbpi]);
                         y = BegO.Y() + (segO.Y() * parO[nbpi]);
-                        thePi.Append(new Intf_SectionPoint(new gp_Pnt2d(x, y),
+                        thePi.Append(new Intf_SectionPoint(new Point2D(x, y),
                                                            Intf_EXTERNAL,
                                                            iObje1,
                                                            parO[nbpi],
@@ -516,10 +519,10 @@ public class Intf_InterferencePolygon2d : Intf_Interference
                         {
                             x = BegO.X() + (segO.X() * parO[nbpi + 1]);
                             y = BegO.Y() + (segO.Y() * parO[nbpi + 1]);
-                            if (thePi[1].Pnt().Distance(new gp_Pnt(x, y, 0)) >= (Tolerance / 4.0))
+                            if (thePi[1].Pnt().Distance(new Point3D(x, y, 0)) >= (Tolerance / 4.0))
                             {
                                 nbpi++;
-                                thePi.Append(new Intf_SectionPoint(new gp_Pnt2d(x, y),
+                                thePi.Append(new Intf_SectionPoint(new Point2D(x, y),
                                                                    Intf_EXTERNAL,
                                                                    iObje1,
                                                                    parO[nbpi],
@@ -601,7 +604,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
                             parT[nbpi] = Max(0.0, Min(1.0, parTdeb));
                             x = BegO.X() + (segO.X() * parO[nbpi]);
                             y = BegO.Y() + (segO.Y() * parO[nbpi]);
-                            thePi.Append(new Intf_SectionPoint(new gp_Pnt2d(x, y),
+                            thePi.Append(new Intf_SectionPoint(new Point2D(x, y),
                                                                Intf_EXTERNAL,
                                                                iObje1,
                                                                parO[nbpi],
@@ -620,7 +623,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
                             parT[nbpi] = Min(1.0, Max(0.0, parTfin));
                             x = BegO.X() + (segO.X() * parO[nbpi]);
                             y = BegO.Y() + (segO.Y() * parO[nbpi]);
-                            thePi.Append(new Intf_SectionPoint(new gp_Pnt2d(x, y),
+                            thePi.Append(new Intf_SectionPoint(new Point2D(x, y),
                                                                Intf_EXTERNAL,
                                                                iObje1,
                                                                parO[nbpi],
@@ -641,8 +644,8 @@ public class Intf_InterferencePolygon2d : Intf_Interference
             suppr = false;
             for (int i = 2; !suppr && i <= nbpi; i++)
             {
-                gp_Pnt Pim1 = thePi[i - 1].Pnt();
-                gp_Pnt Pi = thePi[i].Pnt();
+                Point3D Pim1 = thePi[i - 1].Pnt();
+                Point3D Pi = thePi[i].Pnt();
                 double d = Pi.Distance(Pim1);
                 d *= 50.0;
                 if (d < lgT && d < lgO)
@@ -663,7 +666,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
             if (edgeSP)
             {
                 thePi[1] =
-                    new Intf_SectionPoint(new gp_Pnt2d(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
+                    new Intf_SectionPoint(new Point2D(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
                                           Intf_EDGE,
                                           iObje1,
                                           parOSP,
@@ -753,7 +756,7 @@ public class Intf_InterferencePolygon2d : Intf_Interference
             if (edgeSP)
             {
                 TheTZ.PolygonInsert(
-                    new Intf_SectionPoint(new gp_Pnt2d(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
+                    new Intf_SectionPoint(new Point2D(BegO.X() + (segO.X() * parOSP), BegO.Y() + (segO.Y() * parOSP)),
                                           Intf_EDGE,
                                           iObje1,
                                           parOSP,

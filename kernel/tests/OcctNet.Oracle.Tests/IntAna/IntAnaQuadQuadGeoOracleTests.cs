@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Occt.IntAna_ResultType;
 
@@ -25,14 +26,14 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         return aTrimmed is null ? theC : aTrimmed.BasisCurve()!;
     }
 
-    private static gp_Ax3 Settled(Oracle theOracle)
+    private static CoordinateSystem Settled(Oracle theOracle)
     {
-        gp_Ax3 anAx = theOracle.Ax3();
-        var aSettled = new gp_Ax3(anAx.Location(), Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
+        CoordinateSystem anAx = theOracle.Ax3();
+        var aSettled = new CoordinateSystem(anAx.Location(), Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
         return anAx.Direct() ? aSettled : aSettled.YReversed();
     }
 
-    private static void SameAxisDirection(Oracle theOracle, N.gp_Dir theNative, in gp_Dir thePort, string theWhat)
+    private static void SameAxisDirection(Oracle theOracle, N.gp_Dir theNative, in Direction3D thePort, string theWhat)
     {
         // A circle's normal may be reversed by the native builder
         double aSign = theNative.X() * thePort.X() + theNative.Y() * thePort.Y() + theNative.Z() * thePort.Z() < 0 ? -1 : 1;
@@ -69,7 +70,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 using var aLin = aNLine.Lin();
                 using var aLoc = aLin.Location();
                 using var aDir = aLin.Direction();
-                gp_Lin aPort = thePort.Line(1);
+                Line3D aPort = thePort.Line(1);
                 theOracle.Same(aLoc, aPort.Location(), $"{theWhat} line location");
                 theOracle.Same(aDir.X(), aPort.Direction().X(), $"{theWhat} line direction X");
                 theOracle.Same(aDir.Y(), aPort.Direction().Y(), $"{theWhat} line direction Y");
@@ -83,7 +84,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 using var aLoc = aCirc.Location();
                 using var anAxis = aCirc.Axis();
                 using var aNormal = anAxis.Direction();
-                gp_Circ aPort = thePort.Circle(1);
+                Circle3D aPort = thePort.Circle(1);
                 theOracle.Same(aLoc, aPort.Location(), $"{theWhat} circle centre");
                 theOracle.Same(aCirc.Radius(), aPort.Radius(), $"{theWhat} circle radius");
                 SameAxisDirection(theOracle, aNormal, aPort.Axis().Direction(), $"{theWhat} circle");
@@ -93,7 +94,7 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
             {
                 using var aNEllipse = N.Geom_Ellipse.DownCast(aBasis)!;
                 using var aLoc = aNEllipse.Location();
-                gp_Elips aPort = thePort.Ellipse(1);
+                Ellipse3D aPort = thePort.Ellipse(1);
                 theOracle.Same(aLoc, aPort.Location(), $"{theWhat} ellipse centre");
                 theOracle.Same(aNEllipse.MajorRadius(), aPort.MajorRadius(), $"{theWhat} ellipse major radius");
                 theOracle.Same(aNEllipse.MinorRadius(), aPort.MinorRadius(), $"{theWhat} ellipse minor radius");
@@ -108,12 +109,12 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax3 anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
+            CoordinateSystem anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
             using var aNAx1 = Oracle.ToNative(anAx1);
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_Plane(aNAx2);
-            var aPort = new IntAna_QuadQuadGeo(new gp_Pln(anAx1), new gp_Pln(anAx2), TolAng, Tol);
+            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Plane3D(anAx2), TolAng, Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/plane");
@@ -125,13 +126,13 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax3 anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
+            CoordinateSystem anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
             double aR = anOracle.Real(0.5, 20);
             using var aNAx1 = Oracle.ToNative(anAx1);
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_CylindricalSurface(aNAx2, aR);
-            var aPort = new IntAna_QuadQuadGeo(new gp_Pln(anAx1), new gp_Cylinder(anAx2, aR), TolAng, Tol);
+            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Cylinder(anAx2, aR), TolAng, Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/cylinder");
@@ -143,13 +144,13 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax3 anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
+            CoordinateSystem anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
             double aR = anOracle.Real(10, 150);
             using var aNAx1 = Oracle.ToNative(anAx1);
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_Plane(aNAx1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR);
-            var aPort = new IntAna_QuadQuadGeo(new gp_Pln(anAx1), new gp_Sphere(anAx2, aR));
+            var aPort = new IntAna_QuadQuadGeo(new Plane3D(anAx1), new Sphere(anAx2, aR));
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo plane/sphere");
@@ -161,13 +162,13 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax3 anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
+            CoordinateSystem anAx1 = Settled(anOracle), anAx2 = Settled(anOracle);
             double aR1 = anOracle.Real(10, 150), aR2 = anOracle.Real(10, 150);
             using var aNAx1 = Oracle.ToNative(anAx1);
             using var aNAx2 = Oracle.ToNative(anAx2);
             using var aS1 = new N.Geom_SphericalSurface(aNAx1, aR1);
             using var aS2 = new N.Geom_SphericalSurface(aNAx2, aR2);
-            var aPort = new IntAna_QuadQuadGeo(new gp_Sphere(anAx1, aR1), new gp_Sphere(anAx2, aR2), Tol);
+            var aPort = new IntAna_QuadQuadGeo(new Sphere(anAx1, aR1), new Sphere(anAx2, aR2), Tol);
             Compare(anOracle, aS1, aS2, aPort, $"case {i}");
         }
         anOracle.Report("IntAna_QuadQuadGeo sphere/sphere");

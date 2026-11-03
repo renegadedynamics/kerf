@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +27,7 @@ public class StepDimTol_GeometricToleranceWithDatumReference : StepDimTol_Geomet
     /// <summary>
     /// Initialize all fields (own and inherited) AP214
     /// </summary>
-    public void Init(TCollection_HAsciiString theGeometricTolerance_Name, TCollection_HAsciiString theGeometricTolerance_Description, Standard_Transient theGeometricTolerance_Magnitude, StepRepr_ShapeAspect theGeometricTolerance_TolerancedShapeAspect, NCollection_HArray1<StepDimTol_DatumReference> theDatumSystem)
+    public void Init(TCollection_HAsciiString theGeometricTolerance_Name, TCollection_HAsciiString theGeometricTolerance_Description, Transient theGeometricTolerance_Magnitude, StepRepr_ShapeAspect theGeometricTolerance_TolerancedShapeAspect, NCollection_HArray1<StepDimTol_DatumReference> theDatumSystem)
     {
         base.Init(theGeometricTolerance_Name, theGeometricTolerance_Description, theGeometricTolerance_Magnitude, theGeometricTolerance_TolerancedShapeAspect);
 
@@ -41,7 +43,7 @@ public class StepDimTol_GeometricToleranceWithDatumReference : StepDimTol_Geomet
     /// <summary>
     /// Initialize all fields (own and inherited) AP242
     /// </summary>
-    public void Init(TCollection_HAsciiString theGeometricTolerance_Name, TCollection_HAsciiString theGeometricTolerance_Description, Standard_Transient theGeometricTolerance_Magnitude, StepDimTol_GeometricToleranceTarget theGeometricTolerance_TolerancedShapeAspect, NCollection_HArray1<StepDimTol_DatumSystemOrReference> theDatumSystem)
+    public void Init(TCollection_HAsciiString theGeometricTolerance_Name, TCollection_HAsciiString theGeometricTolerance_Description, Transient theGeometricTolerance_Magnitude, StepDimTol_GeometricToleranceTarget theGeometricTolerance_TolerancedShapeAspect, NCollection_HArray1<StepDimTol_DatumSystemOrReference> theDatumSystem)
     {
         base.Init(theGeometricTolerance_Name, theGeometricTolerance_Description, theGeometricTolerance_Magnitude, theGeometricTolerance_TolerancedShapeAspect);
 

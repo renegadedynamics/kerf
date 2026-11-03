@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -38,8 +40,8 @@ internal class RWStepShape_RWMeasureQualification
 
         // --- own field : qualified_measure ---
 
-        Standard_Transient aQM = null;
-        data.ReadEntity(num, 3, "qualified_measure", ach, typeof(Standard_Transient), ref aQM);
+        Transient aQM = null;
+        data.ReadEntity(num, 3, "qualified_measure", ach, typeof(Transient), ref aQM);
 
         // --- own field : qualifiers ---
 

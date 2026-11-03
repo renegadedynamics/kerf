@@ -4,8 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -56,7 +60,7 @@ public class IntTools_EdgeEdge
         myTol1 = 0.0;
         myTol2 = 0.0;
         myTol = 0.0;
-        myFuzzyValue = Precision.Confusion();
+        myFuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         myRes1 = 0.0;
         myRes2 = 0.0;
         myResCoeff1 = 0.0;
@@ -130,7 +134,7 @@ public class IntTools_EdgeEdge
     }
 
     /// <summary>Sets the fuzzy value (at least <see cref="Precision.Confusion"/>).</summary>
-    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, Precision.Confusion());
+    public void SetFuzzyValue(double theFuzz) => myFuzzyValue = Max(theFuzz, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <summary>True if the computation succeeded (common parts may still be none).</summary>
     public bool IsDone() => myErrorStatus == 0;
@@ -172,7 +176,7 @@ public class IntTools_EdgeEdge
     /// <summary>Prepares the data.</summary>
     protected void Prepare()
     {
-        GeomAbs_CurveType aCT1, aCT2;
+        CurveKind aCT1, aCT2;
         int iCT1, iCT2;
         //
         myCurve1.Initialize(myEdge1);
@@ -204,7 +208,7 @@ public class IntTools_EdgeEdge
                 double aC1, aC2;
                 //
                 aC2 = CurveDeflection(myCurve2, myRange2);
-                aC1 = (aC2 > Precision.Confusion()) ? CurveDeflection(myCurve1, myRange1) : 1.0;
+                aC1 = (aC2 > global::Kerf.Engine.Foundation.Precision.Confusion()) ? CurveDeflection(myCurve1, myRange1) : 1.0;
                 //
                 if (aC1 < aC2)
                 {
@@ -278,7 +282,7 @@ public class IntTools_EdgeEdge
         Prepare();
         //
         // 3.1. Check Line/Line case
-        if (myCurve1.GetType() == GeomAbs_Line && myCurve2.GetType() == GeomAbs_Line)
+        if (myCurve1.GetType() == Line && myCurve2.GetType() == Line)
         {
             ComputeLineLine();
             return;
@@ -297,8 +301,8 @@ public class IntTools_EdgeEdge
             }
         }
         //
-        if ((myCurve1.GetType() <= GeomAbs_Parabola && myCurve2.GetType() <= GeomAbs_Parabola)
-            && (myCurve1.GetType() == GeomAbs_Line || myCurve2.GetType() == GeomAbs_Line))
+        if ((myCurve1.GetType() <= Parabola && myCurve2.GetType() <= Parabola)
+            && (myCurve1.GetType() == Line || myCurve2.GetType() == Line))
         {
             // Improvement of performance for cases of searching common parts between line
             // and analytical curve. This code allows to define that edges have no
@@ -332,7 +336,7 @@ public class IntTools_EdgeEdge
         double dT, aT1, aCoeff, aTresh, aD;
         double aT11, aT12, aT21, aT22;
         GeomAPI_ProjectPointOnCurve aProjPC = new();
-        gp_Pnt aP1;
+        Point3D aP1;
         //
         aTresh = 0.5;
         aNbSeg = 23;
@@ -374,7 +378,7 @@ public class IntTools_EdgeEdge
     {
         bool bIsClosed2;
         double aT11, aT12, aT21, aT22;
-        Bnd_Box aB1 = new(), aB2 = new();
+        Box aB1 = new(), aB2 = new();
         //
         bSplit2 = false;
         myRange1.Range(out aT11, out aT12);
@@ -386,7 +390,7 @@ public class IntTools_EdgeEdge
         {
             BndBuildBox(myCurve1, aT11, aT12, myTol1, out aB1);
             //
-            gp_Pnt aP = myGeom2!.Value(aT21);
+            Point3D aP = myGeom2!.Value(aT21);
             bIsClosed2 = !aB1.IsOut(aP);
         }
         //
@@ -431,9 +435,9 @@ public class IntTools_EdgeEdge
 
     /// <summary>Looks for the exact intersection ranges.</summary>
     protected void FindSolutions(in IntTools_Range theR1,
-                                 in Bnd_Box theBox1,
+                                 in Box theBox1,
                                  in IntTools_Range theR2,
-                                 in Bnd_Box theBox2,
+                                 in Box theBox2,
                                  NCollection_Sequence<IntTools_Range> theRanges1,
                                  NCollection_Sequence<IntTools_Range> theRanges2)
     {
@@ -442,7 +446,7 @@ public class IntTools_EdgeEdge
         double aTB11, aTB12, aTB21, aTB22;
         double aSmallStep1, aSmallStep2;
         int iCom;
-        Bnd_Box aB1, aB2;
+        Box aB1, aB2;
         //
         theR1.Range(out aT11, out aT12);
         theR2.Range(out aT21, out aT22);
@@ -541,7 +545,7 @@ public class IntTools_EdgeEdge
                 // check intermediate points
                 bool bSol;
                 double aT1;
-                gp_Pnt aP1;
+                Point3D aP1;
                 GeomAPI_ProjectPointOnCurve aProjPC = new();
                 //
                 aT1 = (aT11 + aT12) * 0.5;
@@ -557,7 +561,7 @@ public class IntTools_EdgeEdge
                 else
                 {
                     double aT2;
-                    gp_Pnt aP2;
+                    Point3D aP2;
                     //
                     aT2 = (aT21 + aT22) * 0.5;
                     myGeom2!.D0(aT2, out aP2);
@@ -615,7 +619,7 @@ public class IntTools_EdgeEdge
                                          double theRes,
                                          double thePTol,
                                          double theResCoeff,
-                                         in Bnd_Box theCBox,
+                                         in Box theCBox,
                                          ref double aTB1,
                                          ref double aTB2)
     {
@@ -623,8 +627,8 @@ public class IntTools_EdgeEdge
         int aC, i;
         double aCf, aDiff, aDt, aT, aTB, aTOut, aTIn;
         double aDist, aDistP;
-        gp_Pnt aP;
-        Bnd_Box aCBx;
+        Point3D aP;
+        Box aCBx;
         //
         bRet = false;
         aCf = 0.6180339887498948482045868343656; // =0.5*(1.+sqrt(5.))/2.;
@@ -632,7 +636,7 @@ public class IntTools_EdgeEdge
         aCBx.SetGap(aCBx.GetGap() + theTol);
         //
         Geom_Curve aCurve = theBAC.Curve().Curve()!;
-        GeomAbs_CurveType aCurveType = theBAC.GetType();
+        CurveKind aCurveType = theBAC.GetType();
         double aMaxDt = (aT2 - aT1) * 0.01;
         //
         for (i = 0; i < 2; ++i)
@@ -884,7 +888,7 @@ public class IntTools_EdgeEdge
         // Both are written on every path below; C++ leaves them unset until then.
         aT1 = 0.0;
         aT2 = 0.0;
-        aDMin = Precision.Infinite();
+        aDMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         aSolCriteria = 5.0e-16;
         aTouchCriteria = 5.0e-13;
         bool bTouch = false;
@@ -949,14 +953,14 @@ public class IntTools_EdgeEdge
     {
         double aTol = myTol * myTol;
 
-        gp_Lin aL1 = myCurve1.Line();
-        gp_Lin aL2 = myCurve2.Line();
+        Line3D aL1 = myCurve1.Line();
+        Line3D aL2 = myCurve2.Line();
 
-        gp_Dir aD1 = aL1.Direction();
-        gp_Dir aD2 = aL2.Direction();
+        Direction3D aD1 = aL1.Direction();
+        Direction3D aD2 = aL2.Direction();
 
         double anAngle = aD1.Angle(aD2);
-        bool IsCoincide = anAngle < Precision.Angular();
+        bool IsCoincide = anAngle < global::Kerf.Engine.Foundation.Precision.Angular();
         if (IsCoincide)
         {
             if (aL1.SquareDistance(aL2.Location()) > aTol)
@@ -969,19 +973,19 @@ public class IntTools_EdgeEdge
         myRange1.Range(out aT11, out aT12);
         myRange2.Range(out aT21, out aT22);
 
-        gp_Pnt aP11 = ElCLib.Value(aT11, aL1);
-        gp_Pnt aP12 = ElCLib.Value(aT12, aL1);
+        Point3D aP11 = global::Kerf.Engine.Geometry.ElCLib.Value(aT11, aL1);
+        Point3D aP12 = global::Kerf.Engine.Geometry.ElCLib.Value(aT12, aL1);
 
         if (!IsCoincide)
         {
-            gp_Pnt O2 = aL2.Location();
-            if (!Precision.IsInfinite(aT21) && !Precision.IsInfinite(aT22))
+            Point3D O2 = aL2.Location();
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aT21) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aT22))
             {
-                O2 = ElCLib.Value((aT21 + aT22) / 2.0, aL2);
+                O2 = global::Kerf.Engine.Geometry.ElCLib.Value((aT21 + aT22) / 2.0, aL2);
             }
 
-            gp_Vec aVec1 = new gp_Vec(O2, aP11).Crossed(new gp_Vec(aD2));
-            gp_Vec aVec2 = new gp_Vec(O2, aP12).Crossed(new gp_Vec(aD2));
+            Vector3D aVec1 = new Vector3D(O2, aP11).Crossed(new Vector3D(aD2));
+            Vector3D aVec2 = new Vector3D(O2, aP12).Crossed(new Vector3D(aD2));
 
             double aSqDist1 = aVec1.SquareMagnitude();
             double aSqDist2 = aVec2.SquareMagnitude();
@@ -1001,8 +1005,8 @@ public class IntTools_EdgeEdge
 
         if (IsCoincide)
         {
-            double t21 = ElCLib.Parameter(aL2, aP11);
-            double t22 = ElCLib.Parameter(aL2, aP12);
+            double t21 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aL2, aP11);
+            double t22 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aL2, aP12);
 
             if ((t21 > aT22 && t22 > aT22) || (t21 < aT21 && t22 < aT21))
             {
@@ -1039,9 +1043,9 @@ public class IntTools_EdgeEdge
             return;
         }
 
-        gp_Vec O1O2 = new(aL1.Location(), aL2.Location());
-        gp_XYZ aCross = aD1.XYZ().Crossed(aD2.XYZ());
-        double aDistLL = O1O2.Dot(new gp_Vec(aCross.Normalized()));
+        Vector3D O1O2 = new(aL1.Location(), aL2.Location());
+        Xyz aCross = aD1.XYZ().Crossed(aD2.XYZ());
+        double aDistLL = O1O2.Dot(new Vector3D(aCross.Normalized()));
         if (Math.Abs(aDistLL) > myTol)
         {
             return;
@@ -1062,7 +1066,7 @@ public class IntTools_EdgeEdge
         }
 
         double aSqSin = aCross.SquareModulus();
-        double aT2 = (aD1.XYZ() * (O1O2.Dot(new gp_Vec(aD1))) - (O1O2.XYZ())).Dot(aD2.XYZ());
+        double aT2 = (aD1.XYZ() * (O1O2.Dot(new Vector3D(aD1))) - (O1O2.XYZ())).Dot(aD2.XYZ());
         aT2 /= aSqSin;
 
         if (aT2 < aT21 || aT2 > aT22)
@@ -1071,8 +1075,8 @@ public class IntTools_EdgeEdge
             return;
         }
 
-        gp_Pnt aP2 = ElCLib.Value(aT2, aL2);
-        double aT1 = new gp_Vec(aL1.Location(), aP2).Dot(new gp_Vec(aD1));
+        Point3D aP2 = global::Kerf.Engine.Geometry.ElCLib.Value(aT2, aL2);
+        double aT1 = new Vector3D(aL1.Location(), aP2).Dot(new Vector3D(aD1));
 
         if (aT1 < aT11 || aT1 > aT12)
         {
@@ -1080,7 +1084,7 @@ public class IntTools_EdgeEdge
             return;
         }
 
-        gp_Pnt aP1 = ElCLib.Value(aT1, aL1);
+        Point3D aP1 = global::Kerf.Engine.Geometry.ElCLib.Value(aT1, aL1);
         double aDist = aP1.SquareDistance(aP2);
 
         if (aDist > aTol)
@@ -1105,8 +1109,8 @@ public class IntTools_EdgeEdge
     protected bool IsIntersection(double aT11, double aT12, double aT21, double aT22)
     {
         bool bRet;
-        gp_Pnt aP11, aP12, aP21, aP22;
-        gp_Vec aV11, aV12, aV21, aV22;
+        Point3D aP11, aP12, aP21, aP22;
+        Vector3D aV11, aV12, aV21, aV22;
         double aD11_21, aD11_22, aD12_21, aD12_22, aCriteria, aCoef;
         bool bSmall_11_21, bSmall_11_22, bSmall_12_21, bSmall_12_22;
         //
@@ -1154,10 +1158,10 @@ public class IntTools_EdgeEdge
             double anAngle1 = 0.0, anAngle2 = 0.0;
             //
             anAngleCriteria = 5.0e-3;
-            if (aV11.SquareMagnitude() > Precision.SquareConfusion()
-                && aV12.SquareMagnitude() > Precision.SquareConfusion()
-                && aV21.SquareMagnitude() > Precision.SquareConfusion()
-                && aV22.SquareMagnitude() > Precision.SquareConfusion())
+            if (aV11.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && aV12.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && aV21.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && aV22.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 if (bSmall_11_21 && bSmall_12_22)
                 {
@@ -1178,7 +1182,7 @@ public class IntTools_EdgeEdge
                 int iErr;
                 double aD, aT1Min = 0.0, aT2Min = 0.0;
                 //
-                aD = Precision.Infinite();
+                aD = global::Kerf.Engine.Foundation.Precision.Infinite();
                 aProjPC.Init(myGeom2, aT21, aT22);
                 iErr = FindDistPC(aT11, aT12, myGeom1, myTol, myRes1, aProjPC, ref aD, ref aT1Min, ref aT2Min, false);
                 bRet = (iErr == 2);
@@ -1373,7 +1377,7 @@ public class IntTools_EdgeEdge
                               int iC = 1)
     {
         int iErr, aNbP2;
-        gp_Pnt aP1;
+        Point3D aP1;
         //
         iErr = 0;
         theC1.D0(aT1, out aP1);
@@ -1435,14 +1439,14 @@ public class IntTools_EdgeEdge
         return aNbSegments;
     }
 
-    private static void BndBuildBox(BRepAdaptor_Curve theBAC, double aT1, double aT2, double theTol, out Bnd_Box theBox)
+    private static void BndBuildBox(BRepAdaptor_Curve theBAC, double aT1, double aT2, double theTol, out Box theBox)
     {
-        Bnd_Box aB = new();
+        Box aB = new();
         BndLib_Add3dCurve.Add(theBAC, aT1, aT2, theTol, ref aB);
         theBox = aB;
     }
 
-    private static double PointBoxDistance(in Bnd_Box aB, in gp_Pnt aP)
+    private static double PointBoxDistance(in Box aB, in Point3D aP)
     {
         Span<double> aPCoord = stackalloc double[3];
         Span<double> aBMinCoord = stackalloc double[3];
@@ -1475,25 +1479,25 @@ public class IntTools_EdgeEdge
         return aDist;
     }
 
-    private static int TypeToInteger(GeomAbs_CurveType theCType)
+    private static int TypeToInteger(CurveKind theCType)
     {
         int iRet;
         //
         switch (theCType)
         {
-            case GeomAbs_Line:
+            case Line:
                 iRet = 0;
                 break;
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
+            case Hyperbola:
+            case Parabola:
                 iRet = 1;
                 break;
-            case GeomAbs_Circle:
-            case GeomAbs_Ellipse:
+            case Circle:
+            case Ellipse:
                 iRet = 2;
                 break;
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
+            case BezierCurve:
+            case BSplineCurve:
                 iRet = 3;
                 break;
             default:
@@ -1508,34 +1512,34 @@ public class IntTools_EdgeEdge
         double aResCoeff = 0.0;
         //
         Geom_Curve aCurve = theBAC.Curve().Curve()!;
-        GeomAbs_CurveType aCurveType = theBAC.GetType();
+        CurveKind aCurveType = theBAC.GetType();
         //
         // OCCT's switch with the offset case falling through to the sampled one
         bool aSample = false;
         switch (aCurveType)
         {
-            case GeomAbs_Circle:
+            case Circle:
                 aResCoeff = 1.0 / (2 * ((Geom_Circle)aCurve).Circ().Radius());
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 aResCoeff = 1.0 / ((Geom_Ellipse)aCurve).MajorRadius();
                 break;
-            case GeomAbs_OffsetCurve:
+            case OffsetCurve:
                 {
                     Geom_OffsetCurve anOffsetCurve = (Geom_OffsetCurve)aCurve;
                     Geom_Curve aBasisCurve = anOffsetCurve.BasisCurve();
                     GeomAdaptor_Curve aGBasisCurve = new(aBasisCurve);
-                    GeomAbs_CurveType aBCType = aGBasisCurve.GetType();
-                    if (aBCType == GeomAbs_Line)
+                    CurveKind aBCType = aGBasisCurve.GetType();
+                    if (aBCType == Line)
                     {
                         break;
                     }
-                    else if (aBCType == GeomAbs_Circle)
+                    else if (aBCType == Circle)
                     {
                         aResCoeff = 1.0 / (2 * (anOffsetCurve.Offset() + aGBasisCurve.Circle().Radius()));
                         break;
                     }
-                    else if (aBCType == GeomAbs_Ellipse)
+                    else if (aBCType == Ellipse)
                     {
                         aResCoeff = 1.0 / (anOffsetCurve.Offset() + aGBasisCurve.Ellipse().MajorRadius());
                         break;
@@ -1543,9 +1547,9 @@ public class IntTools_EdgeEdge
                     aSample = true;
                     break;
                 }
-            case GeomAbs_Hyperbola:
-            case GeomAbs_Parabola:
-            case GeomAbs_OtherCurve:
+            case Hyperbola:
+            case Parabola:
+            case OtherCurve:
                 aSample = true;
                 break;
             default:
@@ -1555,7 +1559,7 @@ public class IntTools_EdgeEdge
         {
             double k, kMin, aDist, aDt, aT1, aT2, aT;
             int aNbP, i;
-            gp_Pnt aP1, aP2;
+            Point3D aP1, aP2;
             //
             aNbP = 30;
             theRange.Range(out aT1, out aT2);
@@ -1583,37 +1587,37 @@ public class IntTools_EdgeEdge
         return aResCoeff;
     }
 
-    private static double Resolution(Geom_Curve theCurve, GeomAbs_CurveType theCurveType, double theResCoeff, double theR3D)
+    private static double Resolution(Geom_Curve theCurve, CurveKind theCurveType, double theResCoeff, double theR3D)
     {
         double aRes;
         //
         switch (theCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
                 aRes = theR3D;
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 {
                     double aDt = theResCoeff * theR3D;
                     aRes = (aDt <= 1.0) ? 2 * Math.Asin(aDt) : 2 * M_PI;
                     break;
                 }
-            case GeomAbs_BezierCurve:
+            case BezierCurve:
                 ((Geom_BezierCurve)theCurve).Resolution(theR3D, out aRes);
                 break;
-            case GeomAbs_BSplineCurve:
+            case BSplineCurve:
                 ((Geom_BSplineCurve)theCurve).Resolution(theR3D, out aRes);
                 break;
-            case GeomAbs_OffsetCurve:
+            case OffsetCurve:
                 {
                     Geom_Curve aBasisCurve = ((Geom_OffsetCurve)theCurve).BasisCurve();
-                    GeomAbs_CurveType aBCType = new GeomAdaptor_Curve(aBasisCurve).GetType();
-                    if (aBCType == GeomAbs_Line)
+                    CurveKind aBCType = new GeomAdaptor_Curve(aBasisCurve).GetType();
+                    if (aBCType == Line)
                     {
                         aRes = theR3D;
                         break;
                     }
-                    else if (aBCType == GeomAbs_Circle)
+                    else if (aBCType == Circle)
                     {
                         double aDt = theResCoeff * theR3D;
                         aRes = (aDt <= 1.0) ? 2 * Math.Asin(aDt) : 2 * M_PI;
@@ -1635,7 +1639,7 @@ public class IntTools_EdgeEdge
     {
         double aDt, aT, aT1, aT2, aDefl;
         int i, aNbP;
-        gp_Vec aV1, aV2;
+        Vector3D aV1, aV2;
         //
         aDefl = 0;
         aNbP = 10;
@@ -1648,9 +1652,9 @@ public class IntTools_EdgeEdge
         {
             aT += aDt;
             theBAC.D1(aT, out _, out aV2);
-            if (aV1.Magnitude() > gp.Resolution() && aV2.Magnitude() > gp.Resolution())
+            if (aV1.Magnitude() > Constants.Resolution() && aV2.Magnitude() > Constants.Resolution())
             {
-                gp_Dir aD1 = new(aV1), aD2 = new(aV2);
+                Direction3D aD1 = new(aV1), aD2 = new(aV2);
                 aDefl += aD1.Angle(aD2);
             }
             aV1 = aV2;
@@ -1666,7 +1670,7 @@ public class IntTools_EdgeEdge
             return false;
         }
 
-        gp_Pnt aP1, aP2;
+        Point3D aP1, aP2;
         theCurve.D0(aT1, out aP1);
         theCurve.D0(aT2, out aP2);
         //

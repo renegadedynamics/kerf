@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -13,5 +14,5 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 internal static class ShapeHealingMessages
 {
     [ModuleInitializer]
-    internal static void Load() => Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+    internal static void Load() => MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
 }

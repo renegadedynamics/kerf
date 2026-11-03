@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 using static Occt.Transfer_StatusResult;
 
@@ -25,7 +26,7 @@ namespace Occt;
 /// instantiation (decision 1199).
 /// </para>
 /// </remarks>
-public class Transfer_ProcessForTransient : Standard_Transient
+public class Transfer_ProcessForTransient : Transient
 {
     /// <summary>
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is
@@ -38,7 +39,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         therootm = false;
         thelevel = 0;
         therootl = 0;
-        themessenger = Message.DefaultMessenger();
+        themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         thetrace = 0;
         theindex = 0;
     }
@@ -47,7 +48,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is
     /// 10000). Sets a specified printer.
     /// </summary>
-    public Transfer_ProcessForTransient(Message_Messenger? messenger, int nb = 10000)
+    public Transfer_ProcessForTransient(Messenger? messenger, int nb = 10000)
     {
         themap = NewMap(nb);
         theerrh = true;
@@ -60,9 +61,9 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     // The initial size is indicative only: the port's map grows as needed
-    private static NCollection_IndexedDataMap<Standard_Transient, Transfer_Binder?> NewMap(int nb)
+    private static NCollection_IndexedDataMap<Transient, Transfer_Binder?> NewMap(int nb)
     {
-        return new NCollection_IndexedDataMap<Standard_Transient, Transfer_Binder?>(ReferenceEqualityComparer.Instance);
+        return new NCollection_IndexedDataMap<Transient, Transfer_Binder?>(ReferenceEqualityComparer.Instance);
     }
 
     /// <summary>Resets a TransferProcess as ready for a completely new work. Clears general data (roots) and the Map.</summary>
@@ -100,10 +101,10 @@ public class Transfer_ProcessForTransient : Standard_Transient
         // Redo the map -> offsets
         var unbs = new NCollection_Array1<int>(1, nb);
         unbs.Init(0);
-        NCollection_IndexedDataMap<Standard_Transient, Transfer_Binder?> newmap = NewMap(nb * 2);
+        NCollection_IndexedDataMap<Transient, Transfer_Binder?> newmap = NewMap(nb * 2);
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient? ent = Mapped(i);
+            Transient? ent = Mapped(i);
             Transfer_Binder? bnd = MapItem(i);
             if (bnd is null)
             {
@@ -182,7 +183,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Returns the Binder which is linked with a starting Object. It can either bring a Result (Transfer done) or none
     /// (for a pre-binding). If no Binder is linked with <paramref name="start"/>, returns a Null Handle.
     /// </summary>
-    public Transfer_Binder? Find(Standard_Transient? start)
+    public Transfer_Binder? Find(Transient? start)
     {
         if (thelastobj == start)
         {
@@ -204,7 +205,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Returns True if a Result (whatever its form) is Bound with a starting Object. I.e., if a Binder with a Result
     /// set, is linked with it.
     /// </summary>
-    public bool IsBound(Standard_Transient? start)
+    public bool IsBound(Transient? start)
     {
         Transfer_Binder? binder = Find(start);
         if (binder is null)
@@ -219,7 +220,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// change it.
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The object is not bound.</exception>
-    public bool IsAlreadyUsed(Standard_Transient? start)
+    public bool IsAlreadyUsed(Transient? start)
     {
         Transfer_Binder? binder = Find(start);
         if (binder is null)
@@ -231,7 +232,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     // Same as Find but stores the last access to the map, for a faster access on next calls (as Bind does too)
-    private Transfer_Binder? FindAndMask(Standard_Transient? start)
+    private Transfer_Binder? FindAndMask(Transient? start)
     {
         if (thelastobj == start)
         {
@@ -258,7 +259,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// (it can be set later : pre-binding).
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The object is bound to a result already used.</exception>
-    public void Bind(Standard_Transient? start, Transfer_Binder? binder)
+    public void Bind(Transient? start, Transfer_Binder? binder)
     {
         if (binder is null)
         {
@@ -310,7 +311,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Changes the Binder linked with a starting Object for its unitary transfer. This it can be useful when the exact
     /// form of the result is known once the transfer is widely engaged. This can be done only on first transfer.
     /// </summary>
-    public void Rebind(Standard_Transient? start, Transfer_Binder? binder)
+    public void Rebind(Transient? start, Transfer_Binder? binder)
     {
         Bind(start, binder);
     }
@@ -320,7 +321,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// VoidBinder. Also removes from the list of Roots as required. Returns True if done, False if
     /// <paramref name="start"/> was not bound.
     /// </summary>
-    public bool Unbind(Standard_Transient? start)
+    public bool Unbind(Transient? start)
     {
         Transfer_Binder? former = FindAndMask(start);
         if (theindex == 0)
@@ -360,7 +361,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Returns a Binder for a starting entity, as follows : Tries to Find the already bound one. If none found, creates
     /// a VoidBinder and Binds it.
     /// </summary>
-    public Transfer_Binder FindElseBind(Standard_Transient? start)
+    public Transfer_Binder FindElseBind(Transient? start)
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is not null)
@@ -373,11 +374,11 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Sets Messenger used for outputting messages (null: the default messenger).</summary>
-    public void SetMessenger(Message_Messenger? messenger)
+    public void SetMessenger(Messenger? messenger)
     {
         if (messenger is null)
         {
-            themessenger = Message.DefaultMessenger();
+            themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         }
         else
         {
@@ -386,7 +387,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns Messenger used for outputting messages. The returned object is guaranteed to be non-null.</summary>
-    public Message_Messenger Messenger()
+    public Messenger Messenger()
     {
         return themessenger;
     }
@@ -407,19 +408,19 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>New name for AddFail (Msg).</summary>
-    public void SendFail(Standard_Transient? start, Message_Msg amsg)
+    public void SendFail(Transient? start, Msg amsg)
     {
         AddFail(start, amsg);
     }
 
     /// <summary>New name for AddWarning (Msg).</summary>
-    public void SendWarning(Standard_Transient? start, Message_Msg amsg)
+    public void SendWarning(Transient? start, Msg amsg)
     {
         AddWarning(start, amsg);
     }
 
     /// <summary>Adds an information message. Trace is filled if trace level is at least 3.</summary>
-    public void SendMsg(Standard_Transient? start, Message_Msg amsg)
+    public void SendMsg(Transient? start, Msg amsg)
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is null)
@@ -431,9 +432,9 @@ public class Transfer_ProcessForTransient : Standard_Transient
         if (thetrace > 0)
         {
             StartTrace(binder, start, thelevel, 6);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             aSender.Append(amsg.Value());
-            if (amsg.IsEdited() && thetrace > 2)
+            if (amsg.IsEdited && thetrace > 2)
             {
                 aSender.Append(" [from: ").Append(amsg.Original()).Append("]");
             }
@@ -442,7 +443,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Adds an Error message to a starting entity (to the check of its Binder of category 0, as a Fail).</summary>
-    public void AddFail(Standard_Transient? start, string mess, string orig = "")
+    public void AddFail(Transient? start, string mess, string orig = "")
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is null)
@@ -454,7 +455,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         if (thetrace > 0)
         {
             StartTrace(binder, start, thelevel, 1);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendFail();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendFail();
             aSender.Append("    --> Fail : ").Append(mess);
             if (orig.Length != 0 && thetrace > 2)
             {
@@ -465,15 +466,15 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>(other name of AddFail, maintained for compatibility)</summary>
-    public void AddError(Standard_Transient? start, string mess, string orig = "")
+    public void AddError(Transient? start, string mess, string orig = "")
     {
         AddFail(start, mess, orig);
     }
 
     /// <summary>Adds an Error Message to a starting entity from the definition of a Msg (Original+Value).</summary>
-    public void AddFail(Standard_Transient? start, Message_Msg amsg)
+    public void AddFail(Transient? start, Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddFail(start, amsg.Value(), amsg.Original());
         }
@@ -484,7 +485,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Adds a Warning message to a starting entity (to the check of its Binder of category 0).</summary>
-    public void AddWarning(Standard_Transient? start, string mess, string orig = "")
+    public void AddWarning(Transient? start, string mess, string orig = "")
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is null)
@@ -496,7 +497,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         if (thetrace > 1)
         {
             StartTrace(binder, start, thelevel, 2);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendWarning();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendWarning();
             aSender.Append("    --> Warning : ").Append(mess);
             if (orig.Length != 0 && thetrace > 2)
             {
@@ -507,9 +508,9 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Adds a Warning Message to a starting entity from the definition of a Msg (Original+Value).</summary>
-    public void AddWarning(Standard_Transient? start, Message_Msg amsg)
+    public void AddWarning(Transient? start, Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddWarning(start, amsg.Value(), amsg.Original());
         }
@@ -519,7 +520,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         }
     }
 
-    public void Mend(Standard_Transient? start, string pref = "")
+    public void Mend(Transient? start, string pref = "")
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is null)
@@ -531,7 +532,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns the Check attached to a starting entity. If <paramref name="start"/> is unknown, returns a null Check.</summary>
-    public Interface_Check? Check(Standard_Transient? start)
+    public Interface_Check? Check(Transient? start)
     {
         Transfer_Binder? binder = Find(start);
         if (binder is null)
@@ -545,7 +546,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Binds a starting object with a Transient Result. Uses a SimpleBinderOfTransient to work. If there is already
     /// one but with no Result set, sets its Result.
     /// </summary>
-    public void BindTransient(Standard_Transient? start, Standard_Transient? res)
+    public void BindTransient(Transient? start, Transient? res)
     {
         if (res is null)
         {
@@ -577,7 +578,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Returns the Result of the Transfer of an object <paramref name="start"/> as a Transient Result. Returns a Null
     /// Handle if there is no Transient Result. Supposes that Binding is done with a SimpleBinderOfTransient.
     /// </summary>
-    public Standard_Transient? FindTransient(Standard_Transient? start)
+    public Transient? FindTransient(Transient? start)
     {
         Transfer_SimpleBinderOfTransient? binder = Find(start) as Transfer_SimpleBinderOfTransient;
         if (binder is null)
@@ -596,7 +597,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// it, a MultipleBinder is created, empty. If a Binder is already set, it must accept Multiple Binding.
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The binder already set is not a MultipleBinder.</exception>
-    public void BindMultiple(Standard_Transient? start)
+    public void BindMultiple(Transient? start)
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is not null)
@@ -615,7 +616,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
 
     /// <summary>Adds an item to a list of results bound to a starting object.</summary>
     /// <exception cref="Transfer_TransferFailure">Nothing is bound, or the binder is not a MultipleBinder.</exception>
-    public void AddMultiple(Standard_Transient? start, Standard_Transient? res)
+    public void AddMultiple(Transient? start, Transient? res)
     {
         Transfer_Binder? binder = FindAndMask(start);
         Transfer_MultipleBinder? multr = binder as Transfer_MultipleBinder;
@@ -640,7 +641,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// transient result IsKind(atype). Returns True and fills <paramref name="val"/> if found. Else, returns False
     /// (<paramref name="val"/> is not touched, not even nullified).
     /// </summary>
-    public bool FindTypedTransient(Standard_Transient? start, Type? atype, ref Standard_Transient? val)
+    public bool FindTypedTransient(Transient? start, Type? atype, ref Transient? val)
     {
         return GetTypedTransient(Find(start), atype, ref val);
     }
@@ -649,7 +650,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Searches for a transient result recorded in a Binder, whatever this Binder is recorded or not in this process.
     /// Strictly equivalent to <see cref="Transfer_SimpleBinderOfTransient.GetTypedResult"/>.
     /// </summary>
-    public bool GetTypedTransient(Transfer_Binder? binder, Type? atype, ref Standard_Transient? val)
+    public bool GetTypedTransient(Transfer_Binder? binder, Type? atype, ref Transient? val)
     {
         return Transfer_SimpleBinderOfTransient.GetTypedResult(binder, atype, ref val);
     }
@@ -661,14 +662,14 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns the Starting Object bound to an Index.</summary>
-    public Standard_Transient? Mapped(int num)
+    public Transient? Mapped(int num)
     {
-        Standard_Transient aKey = themap.FindKey(num);
+        Transient aKey = themap.FindKey(num);
         return ReferenceEquals(aKey, theNullStart) ? null : aKey;
     }
 
     /// <summary>Returns the Index value bound to a Starting Object, 0 if none.</summary>
-    public int MapIndex(Standard_Transient? start)
+    public int MapIndex(Transient? start)
     {
         return FindIndex(start);
     }
@@ -684,7 +685,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Declares <paramref name="start"/> (and its Result) as Root. This status will be later exploited by RootResult
     /// (Result can be produced at any time).
     /// </summary>
-    public void SetRoot(Standard_Transient? start)
+    public void SetRoot(Transient? start)
     {
         int index = MapIndex(start);
         if (index == 0)
@@ -716,8 +717,8 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns a Root Entity given its number in the list (1-NbRoots).</summary>
-    /// <exception cref="Standard_OutOfRange">No root has the number.</exception>
-    public Standard_Transient? Root(int num)
+    /// <exception cref="OutOfRangeException">No root has the number.</exception>
+    public Transient? Root(int num)
     {
         int ind = 0;
         if (num > 0 && num <= theroots.Extent())
@@ -728,7 +729,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns the Binder bound with a Root Entity given its number.</summary>
-    /// <exception cref="Standard_OutOfRange">No root has the number.</exception>
+    /// <exception cref="OutOfRangeException">No root has the number.</exception>
     public Transfer_Binder? RootItem(int num)
     {
         int ind = 0;
@@ -740,7 +741,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Returns the index in the list of roots for a starting item, or 0 if it is not recorded as a root.</summary>
-    public int RootIndex(Standard_Transient? start)
+    public int RootIndex(Transient? start)
     {
         int index = MapIndex(start);
         if (index == 0)
@@ -766,7 +767,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Tells if <paramref name="start"/> has been recognized as good candidate for Transfer, i.e. queries the Actor and its Nexts.</summary>
-    public bool Recognize(Standard_Transient? start)
+    public bool Recognize(Transient? start)
     {
         Transfer_ActorOfProcessForTransient? actor = theactor;
         // We scan the Next until we have a Result
@@ -786,7 +787,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Roots are managed : nothing is done if a Result is already Bound, an exception is raised in case of error.
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The object's transfer is in error status.</exception>
-    public Transfer_Binder? Transferring(Standard_Transient? start, Message_ProgressRange theProgress = default)
+    public Transfer_Binder? Transferring(Transient? start, ProgressRange theProgress = default)
     {
         Transfer_Binder? former = FindAndMask(start);
         // We consider that this new Transfer request therefore corresponds to a
@@ -800,7 +801,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
                 return former;
             }
 
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             Transfer_StatusExec statex = former.StatusExec();
             switch (statex)
             {
@@ -851,7 +852,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         // 2. former->StatusExec() == Transfer_StatusLoop (that's what triggered hasDeadLoop)
         if (hasDeadLoop)
         {
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             if (thetrace != 0)
             {
                 aSender.Append("                  *** Dead Loop : Finding head of Loop :").Append('\n');
@@ -867,7 +868,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
         }
         else if (theerrh)
         {
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             // Transfer under protection for exceptions (for notification in fact)
             int oldlev = thelevel;
             try
@@ -961,14 +962,14 @@ public class Transfer_ProcessForTransient : Standard_Transient
     // Internal action of Transfer, called by Transferring, with or without ErrorHandle. It invokes the Actor to work
     // (set by SetActor), and tries its Nexts if no result is produced, until a Non Null Binder is produced. But keep in
     // mind that a Null Binder can always be returned if a Starting Entity has not been recognized at all.
-    private Transfer_Binder? TransferProduct(Standard_Transient? start, Message_ProgressRange theProgress)
+    private Transfer_Binder? TransferProduct(Transient? start, ProgressRange theProgress)
     {
         thelevel++; // decrement and if == 0, root transfer
         Transfer_Binder? binder = null;
         Transfer_ActorOfProcessForTransient? actor = theactor;
 
         // We scan the Next until we have a Result
-        using var aScope = new Message_ProgressScope(theProgress, null, 1, true);
+        using var aScope = new ProgressScope(theProgress, null, 1, true);
         while (actor is not null)
         {
             if (actor.Recognize(start))
@@ -1011,7 +1012,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Same as Transferring but does not return the Binder. Simply returns True in case of success (for user call).</summary>
-    public bool Transfer(Standard_Transient? start, Message_ProgressRange theProgress = default)
+    public bool Transfer(Transient? start, ProgressRange theProgress = default)
     {
         Transfer_Binder? binder = Transferring(start, theProgress);
         return binder is not null;
@@ -1038,9 +1039,9 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// <paramref name="mode"/> controls the way the trace is done : 0 neutral, 1 for Error, 2 for Warning message, 3
     /// for new Root.
     /// </summary>
-    public void StartTrace(Transfer_Binder? binder, Standard_Transient? start, int level, int mode)
+    public void StartTrace(Transfer_Binder? binder, Transient? start, int level, int mode)
     {
-        using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+        using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
         // ###  Fail (Roots:50)  --  Start start->DynamicType()
         // ###  Fail (Roots:50)  --  Start id:#label.. Type:start->DynamicType()
         if (thetrace > 3)
@@ -1118,12 +1119,12 @@ public class Transfer_ProcessForTransient : Standard_Transient
     }
 
     /// <summary>Prints a short information on a starting object. By default prints its Dynamic Type. Can be redefined.</summary>
-    public virtual void PrintTrace(Standard_Transient? start, TextWriter S)
+    public virtual void PrintTrace(Transient? start, TextWriter S)
     {
         if (start is not null)
         {
             S.Write(" Type:");
-            S.Write(start.DynamicType().Name);
+            S.Write(start.DynamicTypeName());
         }
     }
 
@@ -1244,7 +1245,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
             {
                 continue;
             }
-            Standard_Transient? ent = Mapped(i);
+            Transient? ent = Mapped(i);
             num = CheckNum(ent);
             if (num == 0)
             {
@@ -1265,7 +1266,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// its immediate scoped ones; 2 : object plus all its scoped ones.
     /// </summary>
     /// <remarks>OCCT's scopes were removed: its list of indices is all zeros, so the iterator is always empty (occt-issues.md).</remarks>
-    public Transfer_IteratorOfProcessForTransient ResultOne(Standard_Transient? start, int level, bool withstart = false)
+    public Transfer_IteratorOfProcessForTransient ResultOne(Transient? start, int level, bool withstart = false)
     {
         var iter = new Transfer_IteratorOfProcessForTransient(withstart);
         int max = NbMapped();
@@ -1307,7 +1308,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// <paramref name="erronly"/> is True, checks with Warnings only are ignored.
     /// </summary>
     /// <remarks>As <see cref="ResultOne"/>, always empty (occt-issues.md).</remarks>
-    public Interface_CheckIterator CheckListOne(Standard_Transient? start, int level, bool erronly)
+    public Interface_CheckIterator CheckListOne(Transient? start, int level, bool erronly)
     {
         var list = new Interface_CheckIterator();
         int max = NbMapped();
@@ -1344,7 +1345,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
             {
                 continue;
             }
-            Standard_Transient? ent = Mapped(ind);
+            Transient? ent = Mapped(ind);
             num = CheckNum(ent);
             if (num == 0)
             {
@@ -1361,7 +1362,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// ResultOne. If <paramref name="erronly"/> is True, checks with Warnings only are ignored.
     /// </summary>
     /// <remarks>As <see cref="ResultOne"/>, nothing is looked at: true for any mapped object (occt-issues.md).</remarks>
-    public bool IsCheckListEmpty(Standard_Transient? start, int level, bool erronly)
+    public bool IsCheckListEmpty(Transient? start, int level, bool erronly)
     {
         int max = NbMapped();
         int ind = MapIndex(start);
@@ -1406,7 +1407,7 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// 1 : it plus its immediately owned sub-results(scope); 2 : it plus all its owned sub-results(scope).
     /// </summary>
     /// <remarks>OCCT's body unbinds nothing (the scopes were removed): it does nothing (occt-issues.md).</remarks>
-    public void RemoveResult(Standard_Transient? start, int level, bool compute = true)
+    public void RemoveResult(Transient? start, int level, bool compute = true)
     {
         // if (compute) ComputeScopes();
         int max = NbMapped();
@@ -1439,31 +1440,31 @@ public class Transfer_ProcessForTransient : Standard_Transient
     /// Computes a number to be associated to a starting object in a check or a check-list. By default, returns 0; can
     /// be redefined.
     /// </summary>
-    public virtual int CheckNum(Standard_Transient? start)
+    public virtual int CheckNum(Transient? start)
     {
         return 0;
     }
 
     // The index of a starting object, 0 if none. A null object is mapped as OCCT maps a null handle (a check
     // attached to a missing entity, StepToTopoDS's for instance), under a key of its own (decision 1253)
-    private int FindIndex(Standard_Transient? start)
+    private int FindIndex(Transient? start)
     {
         return themap.FindIndex(start ?? theNullStart);
     }
 
     // The key standing for a null starting object in the map (.NET's dictionaries refuse null keys)
-    private static readonly Standard_Transient theNullStart = new Transfer_VoidBinder();
+    private static readonly Transient theNullStart = new Transfer_VoidBinder();
 
     private bool theerrh;
     private int thetrace;
-    private Message_Messenger themessenger;
+    private Messenger themessenger;
     private int thelevel;
     private int therootl;
     private bool therootm;
     private NCollection_IndexedMap<int> theroots = new();
-    private Standard_Transient? thelastobj;
+    private Transient? thelastobj;
     private Transfer_Binder? thelastbnd;
     private int theindex;
     private Transfer_ActorOfProcessForTransient? theactor;
-    private NCollection_IndexedDataMap<Standard_Transient, Transfer_Binder?> themap;
+    private NCollection_IndexedDataMap<Transient, Transfer_Binder?> themap;
 }

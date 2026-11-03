@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.gce_ErrorType;
 
 namespace Occt;
@@ -17,28 +19,28 @@ public sealed class GC_MakeLine2d : GC_Root
     private Geom2d_Line? TheLine;
 
     /// <summary>A line along the axis A.</summary>
-    public GC_MakeLine2d(in gp_Ax2d A)
+    public GC_MakeLine2d(in Axis2D A)
     {
         TheError = gce_Done;
         TheLine = new Geom2d_Line(A);
     }
 
     /// <summary>A line from the gp_Lin2d L.</summary>
-    public GC_MakeLine2d(in gp_Lin2d L)
+    public GC_MakeLine2d(in Line2D L)
     {
         TheError = gce_Done;
         TheLine = new Geom2d_Line(L);
     }
 
     /// <summary>A line through P with direction V.</summary>
-    public GC_MakeLine2d(in gp_Pnt2d P, in gp_Dir2d V)
+    public GC_MakeLine2d(in Point2D P, in Direction2D V)
     {
         TheError = gce_Done;
         TheLine = new Geom2d_Line(P, V);
     }
 
     /// <summary>A line through P1 and P2; fails with gce_ConfusedPoints if they coincide.</summary>
-    public GC_MakeLine2d(in gp_Pnt2d P1, in gp_Pnt2d P2)
+    public GC_MakeLine2d(in Point2D P1, in Point2D P2)
     {
         gce_MakeLin2d L = new gce_MakeLin2d(P1, P2);
         TheError = L.Status();
@@ -49,7 +51,7 @@ public sealed class GC_MakeLine2d : GC_Root
     }
 
     /// <summary>A line parallel to Lin through Point.</summary>
-    public GC_MakeLine2d(in gp_Lin2d Lin, in gp_Pnt2d Point)
+    public GC_MakeLine2d(in Line2D Lin, in Point2D Point)
     {
         gce_MakeLin2d L = new gce_MakeLin2d(Lin, Point);
         TheError = L.Status();
@@ -60,7 +62,7 @@ public sealed class GC_MakeLine2d : GC_Root
     }
 
     /// <summary>A line parallel to Lin at the signed distance Dist.</summary>
-    public GC_MakeLine2d(in gp_Lin2d Lin, double Dist)
+    public GC_MakeLine2d(in Line2D Lin, double Dist)
     {
         gce_MakeLin2d L = new gce_MakeLin2d(Lin, Dist);
         TheError = L.Status();
@@ -71,7 +73,7 @@ public sealed class GC_MakeLine2d : GC_Root
     }
 
     /// <summary>The constructed line (frozen).</summary>
-    /// <exception cref="StdFail_NotDone">No line was constructed.</exception>
+    /// <exception cref="NotDoneException">No line was constructed.</exception>
     public Geom2d_Line Value()
     {
         StdFail_NotDone_Raise_if(TheError != gce_Done, "GC_MakeLine2d::Value() - no result");

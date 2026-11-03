@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_IsoType;
+using static Kerf.Engine.Geometry.IsoType;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -84,9 +87,9 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 // a compound sharing a solid at several locations (rigid, reversed, sometimes scaled), with free faces
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(aTwins.Twins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aCyl = TwinShapes.Up(aTwins.CylinderSolid(theOracle.Real(0.5, 2), theOracle.Real(0.5, 3)));
-                (N.TopLoc_Location aNL1, TopLoc_Location aL1) = RandomLocation(theOracle, false);
-                (N.TopLoc_Location aNL2, TopLoc_Location aL2) = RandomLocation(theOracle, theOracle.Bool());
-                (N.TopLoc_Location aNL3, TopLoc_Location aL3) = RandomLocation(theOracle, false);
+                (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle, false);
+                (N.TopLoc_Location aNL2, Placement aL2) = RandomLocation(theOracle, theOracle.Bool());
+                (N.TopLoc_Location aNL3, Placement aL3) = RandomLocation(theOracle, false);
                 Twin<N.TopoDS_Compound, TopoDS_Compound> aCompound = aTwins.Twins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
@@ -120,7 +123,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
         if (theOracle.Bool())
         {
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
+            (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
             aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
         }
 
@@ -128,13 +131,13 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A location built from the same raw numbers on both sides: a rotation, a translation or both, and a scale if asked.</summary>
-    private static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle, bool theScale)
+    private static (N.TopLoc_Location, Placement) RandomLocation(Oracle theOracle, bool theScale)
     {
         var aNT = new N.gp_Trsf();
-        var aT = new gp_Trsf();
+        var aT = new Transform3D();
         if (theOracle.Bool())
         {
-            (N.gp_Ax1 aNAx, gp_Ax1 anAx) = GeomOracleInputs.Ax1s(theOracle);
+            (N.gp_Ax1 aNAx, Axis3D anAx) = GeomOracleInputs.Ax1s(theOracle);
             double anAngle = theOracle.Angle();
             using (aNAx)
             {
@@ -146,50 +149,50 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
         if (theOracle.Bool())
         {
-            gp_Vec aV = theOracle.Vec();
+            Vector3D aV = theOracle.Vec();
             using var aNV = Oracle.ToNative(aV);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetTranslation(aNV);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Translation(aV).Multiplied(aT);
+            aT = Transform3D.Translation(aV).Multiplied(aT);
         }
 
         if (theScale)
         {
-            gp_Pnt aP = theOracle.Pnt();
+            Point3D aP = theOracle.Pnt();
             double aS = theOracle.Real(0.3, 3);
             using var aNP = Oracle.ToNative(aP);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetScale(aNP, aS);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Scale(aP, aS).Multiplied(aT);
+            aT = Transform3D.Scale(aP, aS).Multiplied(aT);
         }
 
-        return (new N.TopLoc_Location(aNT), new TopLoc_Location(aT));
+        return (new N.TopLoc_Location(aNT), new Placement(aT));
     }
 
     /// <summary>A square face with a rectangular hole, on a random plane (the hole's wire first).</summary>
     private static Twin<N.TopoDS_Face, TopoDS_Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
     {
-        gp_Pnt anOrigin = theOracle.Pnt();
-        gp_XYZ aNormal = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ aRef = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ anX = aNormal.Crossed(aRef);
+        Point3D anOrigin = theOracle.Pnt();
+        global::Kerf.Engine.Geometry.Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz aRef = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz anX = aNormal.Crossed(aRef);
         while (anX.Modulus() < 0.1)
         {
             aRef = GeomOracleInputs.RawDir(theOracle);
             anX = aNormal.Crossed(aRef);
         }
 
-        var aPln = new gp_Pln(new gp_Ax3(anOrigin, new gp_Dir(aNormal), new gp_Dir(anX)));
+        var aPln = new Plane3D(new CoordinateSystem(anOrigin, new Direction3D(aNormal), new Direction3D(anX)));
         double aSize = theOracle.Real(4, 10);
         double hu1 = theOracle.Real(0.5, 1.5), hu2 = theOracle.Real(2, 3.5), hv1 = theOracle.Real(0.5, 1.5), hv2 = theOracle.Real(2, 3.5);
         (double U, double V)[] aUV = [(0, 0), (aSize, 0), (aSize, aSize), (0, aSize), (hu1, hv1), (hu1, hv2), (hu2, hv2), (hu2, hv1)];
-        var aPoints = new gp_Pnt[8];
+        var aPoints = new Point3D[8];
         var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
-            aPoints[i] = ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
+            aPoints[i] = global::Kerf.Engine.Geometry.ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
             aV[i] = theTwins.Vertex(aPoints[i], 1e-6);
         }
 
@@ -207,13 +210,13 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
             theOracle.Same(aNC, theP.CentreOfMass(), theWhat + " centre");
         }
 
-        gp_Mat aN;
+        Matrix3x3 aN;
         using (N.gp_Mat aNM = theN.MatrixOfInertia())
         {
             aN = Oracle.FromNative(aNM);
         }
 
-        gp_Mat aP = theP.MatrixOfInertia();
+        Matrix3x3 aP = theP.MatrixOfInertia();
         // each entry relative to the largest entry of the native matrix (at least 1)
         double aScale = 1.0;
         for (int r = 1; r <= 3; r++)
@@ -318,12 +321,12 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 }
                 else
                 {
-                    gp_Pnt aPlnP = theOracle.Pnt();
-                    gp_XYZ aPlnD = GeomOracleInputs.RawDir(theOracle);
+                    Point3D aPlnP = theOracle.Pnt();
+                    global::Kerf.Engine.Geometry.Xyz aPlnD = GeomOracleInputs.RawDir(theOracle);
                     using var aNPlnP = Oracle.ToNative(aPlnP);
                     using var aNPlnD = new N.gp_Dir(aPlnD.X(), aPlnD.Y(), aPlnD.Z());
                     using var aNPln = new N.gp_Pln(aNPlnP, aNPlnD);
-                    var aPln = new gp_Pln(aPlnP, new gp_Dir(aPlnD.X(), aPlnD.Y(), aPlnD.Z()));
+                    var aPln = new Plane3D(aPlnP, new Direction3D(aPlnD.X(), aPlnD.Y(), aPlnD.Z()));
                     aNE = N.BRepGProp.VolumePropertiesGK(aNS, aN, aNPln, anEps, aClosed, aSpan, aCG, anI, aSkip);
                     aPE = BRepGProp.VolumePropertiesGK(aPS, aP, aPln, anEps, aClosed, aSpan, aCG, anI, aSkip);
                     aWhat += " plane";
@@ -371,7 +374,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
             using var aNP = new N.gp_Pnt();
             using var aNV = new N.gp_Vec();
             aNF.Normal(u, v, aNP, aNV);
-            aPF.Normal(u, v, out gp_Pnt aP, out gp_Vec aV);
+            aPF.Normal(u, v, out Point3D aP, out Vector3D aV);
             theOracle.Same(aNP, aP, aWhat + " Normal P");
             theOracle.Same(aNV, aV, aWhat + " Normal V");
         }
@@ -395,7 +398,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
         foreach (bool aFirst in new[] { true, false })
         {
-            foreach (GeomAbs_IsoType anIso in new[] { GeomAbs_IsoU, GeomAbs_IsoV })
+            foreach (global::Kerf.Engine.Geometry.IsoType anIso in new[] { IsoU, IsoV })
             {
                 aNF.Load(aFirst, (N.GeomAbs_IsoType)(int)anIso);
                 aPF.Load(aFirst, anIso);
@@ -423,7 +426,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         using (var aNV = new N.gp_Vec2d())
         {
             theNF.D12d(t, aNP, aNV);
-            thePF.D12d(t, out gp_Pnt2d aP, out gp_Vec2d aV);
+            thePF.D12d(t, out Point2D aP, out Vector2D aV);
             theOracle.Same(aNP, aP, theWhat + " D12d P");
             theOracle.Same(aNV, aV, theWhat + " D12d V");
         }
@@ -492,34 +495,34 @@ internal sealed class GPropTwins
 
     public TwinShapes Twins { get; } = new();
 
-    private static gp_Pnt Pnt(Oracle theOracle, double theMin, double theMax)
+    private static Point3D Pnt(Oracle theOracle, double theMin, double theMax)
         => new(theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax), theOracle.Real(theMin, theMax));
 
     /// <summary>A closed cylinder around Z: the lateral face and two discs sharing its circles, in a solid.</summary>
     public Twin<N.TopoDS_Solid, TopoDS_Solid> CylinderSolid(double r, double h)
     {
         double aTwoPi = 2.0 * Math.PI;
-        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = Twins.Vertex(new gp_Pnt(r, 0, 0)), aV1 = Twins.Vertex(new gp_Pnt(r, 0, h));
+        Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = Twins.Vertex(new Point3D(r, 0, 0)), aV1 = Twins.Vertex(new Point3D(r, 0, h));
         using var aNO = new N.gp_Pnt(0, 0, 0);
         using var aNOh = new N.gp_Pnt(0, 0, h);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNX = new N.gp_Dir(1, 0, 0);
         using var aNAx2 = new N.gp_Ax2(aNO, aNZ, aNX);
         using var aNAx2h = new N.gp_Ax2(aNOh, aNZ, aNX);
-        var aNoLoc = new TopLoc_Location();
+        var aNoLoc = new Placement();
         Twin<N.TopoDS_Edge, TopoDS_Edge> aBottom = Twins.EdgeOn(new N.Geom_Circle(aNAx2, r),
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV0, aV0);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV0, aV0);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aTop = Twins.EdgeOn(new N.Geom_Circle(aNAx2h, r),
-            new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, h), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
+            new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), aNoLoc, null, 0, aTwoPi, aV1, aV1);
         using var aNSeamP = new N.gp_Pnt(r, 0, 0);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aSeam = Twins.EdgeOn(new N.Geom_Line(aNSeamP, aNZ),
-            new Geom_Line(new gp_Pnt(r, 0, 0), new gp_Dir(0, 0, 1)), aNoLoc, null, 0, h, aV0, aV1);
+            new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), aNoLoc, null, 0, h, aV0, aV1);
 
         using var aNAx3 = new N.gp_Ax3(aNO, aNZ, aNX);
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, new N.Geom_CylindricalSurface(aNAx3, r), Tol);
         TopoDS_Face aF = new();
-        myP.MakeFace(ref aF, new Geom_CylindricalSurface(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r), Tol);
+        myP.MakeFace(ref aF, new Geom_CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r), Tol);
         UpdateEdge(aBottom, (0, 0, 1, 0), null, aNF, aF);
         UpdateEdge(aTop, (0, h, 1, 0), null, aNF, aF);
         UpdateEdge(aSeam, (aTwoPi, 0, 0, 1), (0, 0, 0, 1), aNF, aF);
@@ -547,7 +550,7 @@ internal sealed class GPropTwins
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, new N.Geom_Plane(aNAx3), Tol);
         TopoDS_Face aF = new();
-        myP.MakeFace(ref aF, new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0))), Tol);
+        myP.MakeFace(ref aF, new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))), Tol);
         using (var aNC = new N.gp_Pnt2d(0, 0))
         using (var aND = new N.gp_Dir2d(1, 0))
         using (var aNAx = new N.gp_Ax2d(aNC, aND))
@@ -555,7 +558,7 @@ internal sealed class GPropTwins
             myN.UpdateEdge(theCircle.N, new N.Geom2d_Circle(aNAx, r), aNF, Tol);
         }
 
-        myP.UpdateEdge(theCircle.P, new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), r), aF, Tol);
+        myP.UpdateEdge(theCircle.P, new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
         var aNW = new N.TopoDS_Wire();
         myN.MakeWire(aNW);
         TopoDS_Wire aW = new();
@@ -576,7 +579,7 @@ internal sealed class GPropTwins
             return new N.Geom2d_Line(aP, aD);
         }
 
-        static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new gp_Pnt2d(l.X, l.Y), new gp_Dir2d(l.DX, l.DY));
+        static Geom2d_Line PortLine((double X, double Y, double DX, double DY) l) => new(new Point2D(l.X, l.Y), new Direction2D(l.DX, l.DY));
 
         if (theL2 is null)
         {
@@ -635,12 +638,12 @@ internal sealed class GPropTwins
     }
 
     /// <summary>A coordinate system from raw coordinates on both sides.</summary>
-    private static (N.gp_Ax3, gp_Ax3) Ax3(Oracle theOracle)
+    private static (N.gp_Ax3, CoordinateSystem) Ax3(Oracle theOracle)
     {
-        gp_Pnt aP = Pnt(theOracle, -5, 5);
-        gp_XYZ aN = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ aRef = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ anX = aN.Crossed(aRef);
+        Point3D aP = Pnt(theOracle, -5, 5);
+        global::Kerf.Engine.Geometry.Xyz aN = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz aRef = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz anX = aN.Crossed(aRef);
         while (anX.Modulus() < 0.1)
         {
             aRef = GeomOracleInputs.RawDir(theOracle);
@@ -650,13 +653,13 @@ internal sealed class GPropTwins
         using var aNP = Oracle.ToNative(aP);
         using var aNN = new N.gp_Dir(aN.X(), aN.Y(), aN.Z());
         using var aNX = new N.gp_Dir(anX.X(), anX.Y(), anX.Z());
-        return (new N.gp_Ax3(aNP, aNN, aNX), new gp_Ax3(aP, new gp_Dir(aN.X(), aN.Y(), aN.Z()), new gp_Dir(anX.X(), anX.Y(), anX.Z())));
+        return (new N.gp_Ax3(aNP, aNN, aNX), new CoordinateSystem(aP, new Direction3D(aN.X(), aN.Y(), aN.Z()), new Direction3D(anX.X(), anX.Y(), anX.Z())));
     }
 
     /// <summary>A natural sphere or torus in a closed shell, or a natural patch of a trimmed sphere.</summary>
     public Twin<N.TopoDS_Shape, TopoDS_Shape> NaturalSurfaceShape(Oracle theOracle)
     {
-        (N.gp_Ax3 aNAx, gp_Ax3 anAx) = Ax3(theOracle);
+        (N.gp_Ax3 aNAx, CoordinateSystem anAx) = Ax3(theOracle);
         using (aNAx)
         {
             switch (theOracle.Int(0, 2))
@@ -692,13 +695,13 @@ internal sealed class GPropTwins
         int aUDeg = theOracle.Int(1, 3), aVDeg = theOracle.Int(1, 3);
         theOracle.BSplineKnots(aUDeg, false, out NCollection_Array1<double> aUKnots, out NCollection_Array1<int> aUMults);
         theOracle.BSplineKnots(aVDeg, false, out NCollection_Array1<double> aVKnots, out NCollection_Array1<int> aVMults);
-        int aNbU = BSplCLib.NbPoles(aUDeg, false, aUMults), aNbV = BSplCLib.NbPoles(aVDeg, false, aVMults);
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        int aNbU = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aUDeg, false, aUMults), aNbV = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aVDeg, false, aVMults);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         for (int i = 1; i <= aNbU; i++)
         {
             for (int j = 1; j <= aNbV; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i + theOracle.Real(-0.3, 0.3), j + theOracle.Real(-0.3, 0.3), theOracle.Real(-1, 1));
+                aPoles[i, j] = new Point3D(i + theOracle.Real(-0.3, 0.3), j + theOracle.Real(-0.3, 0.3), theOracle.Real(-1, 1));
             }
         }
 
@@ -713,8 +716,8 @@ internal sealed class GPropTwins
 
         int aDeg = theOracle.Int(1, 4);
         theOracle.BSplineKnots(aDeg, false, out NCollection_Array1<double> aKnots, out NCollection_Array1<int> aMults);
-        int aNb = BSplCLib.NbPoles(aDeg, false, aMults);
-        var aCPoles = new NCollection_Array1<gp_Pnt>(1, aNb);
+        int aNb = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDeg, false, aMults);
+        var aCPoles = new NCollection_Array1<Point3D>(1, aNb);
         for (int i = 1; i <= aNb; i++)
         {
             aCPoles[i] = Pnt(theOracle, -5, 5);
@@ -724,7 +727,7 @@ internal sealed class GPropTwins
         N.Geom_BSplineCurve aNCurve = Oracle.ToNativeCurve(aCPoles, null, aKnots, aMults, aDeg, false);
         double f = aKnots[aKnots.Lower()], l = aKnots[aKnots.Upper()];
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV1 = Twins.Vertex(aCurve.Value(f)), aV2 = Twins.Vertex(aCurve.Value(l));
-        Twin<N.TopoDS_Edge, TopoDS_Edge> anEdge = Twins.EdgeOn(aNCurve, aCurve, new TopLoc_Location(), null, f, l, aV1, aV2);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> anEdge = Twins.EdgeOn(aNCurve, aCurve, new Placement(), null, f, l, aV1, aV2);
         return TwinShapes.Up(Twins.Compound(TwinShapes.Up(aFace), TwinShapes.Up(anEdge)));
     }
 
@@ -735,7 +738,7 @@ internal sealed class GPropTwins
         for (var aPE = new TopExp_Explorer(theBox.P, TopAbs_FACE); aPE.More(); aPE.Next(), aNE.Next())
         {
             TopoDS_Face aF = TopoDS.Face(aPE.Current());
-            var aCorners = new List<gp_Pnt>();
+            var aCorners = new List<Point3D>();
             for (var aW = new TopExp_Explorer(aF.Oriented(TopAbs_FORWARD), TopAbs_EDGE); aW.More(); aW.Next())
             {
                 TopExp.Vertices(TopoDS.Edge(aW.Current()), out TopoDS_Vertex aFirst, out _, true);
@@ -743,7 +746,7 @@ internal sealed class GPropTwins
             }
 
             var aNT = new N.Poly_Triangulation(4, 2, false);
-            var aT = new Poly_Triangulation(4, 2, false);
+            var aT = new Triangulation(4, 2, false);
             for (int i = 0; i < 4; i++)
             {
                 using var aNP = Oracle.ToNative(aCorners[i]);
@@ -758,8 +761,8 @@ internal sealed class GPropTwins
                 aNT.SetTriangle(2, aT2);
             }
 
-            aT.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-            aT.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+            aT.SetTriangle(1, new Triangle1(1, 2, 3));
+            aT.SetTriangle(2, new Triangle1(1, 3, 4));
             myN.UpdateFace(N.TopoDS.Face(aNE.Current()), aNT);
             myP.UpdateFace(aF, aT);
         }
@@ -768,10 +771,10 @@ internal sealed class GPropTwins
     /// <summary>A tetrahedron of faces that are only a triangle each (no surface), in a closed shell, in a solid.</summary>
     public Twin<N.TopoDS_Shape, TopoDS_Shape> MeshTetra(Oracle theOracle)
     {
-        gp_Pnt[] aNodes = [Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3)];
+        Point3D[] aNodes = [Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3), Pnt(theOracle, -3, 3)];
         // orient the triangles outwards
-        gp_Vec aN = new gp_Vec(aNodes[0], aNodes[1]).Crossed(new gp_Vec(aNodes[0], aNodes[2]));
-        if (aN.Dot(new gp_Vec(aNodes[0], aNodes[3])) > 0)
+        Vector3D aN = new Vector3D(aNodes[0], aNodes[1]).Crossed(new Vector3D(aNodes[0], aNodes[2]));
+        if (aN.Dot(new Vector3D(aNodes[0], aNodes[3])) > 0)
         {
             (aNodes[1], aNodes[2]) = (aNodes[2], aNodes[1]);
         }
@@ -780,7 +783,7 @@ internal sealed class GPropTwins
         foreach ((int, int, int) aTri in new[] { (1, 2, 3), (1, 4, 2), (1, 3, 4), (2, 4, 3) })
         {
             var aNT = new N.Poly_Triangulation(4, 1, false);
-            var aT = new Poly_Triangulation(4, 1, false);
+            var aT = new Triangulation(4, 1, false);
             for (int i = 0; i < 4; i++)
             {
                 using var aNP = Oracle.ToNative(aNodes[i]);
@@ -793,7 +796,7 @@ internal sealed class GPropTwins
                 aNT.SetTriangle(1, aNTri);
             }
 
-            aT.SetTriangle(1, new Poly_Triangle(aTri.Item1, aTri.Item2, aTri.Item3));
+            aT.SetTriangle(1, new Triangle1(aTri.Item1, aTri.Item2, aTri.Item3));
             var aNF = new N.TopoDS_Face();
             myN.MakeFace(aNF, aNT);
             TopoDS_Face aF = new();

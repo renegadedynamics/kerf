@@ -2,12 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_FunctionAllRootsTest
 {
     // Test function with multiple roots: f(x) = x^3 - 6x^2 + 11x - 6 = (x-1)(x-2)(x-3)
-    private sealed class CubicFunction : math_FunctionWithDerivative
+    private sealed class CubicFunction : FunctionWithDerivative
     {
         public override bool Value(double X, out double F)
         {
@@ -30,7 +32,7 @@ public class math_FunctionAllRootsTest
     }
 
     // Sine function with multiple roots
-    private sealed class SineFunction : math_FunctionWithDerivative
+    private sealed class SineFunction : FunctionWithDerivative
     {
         public override bool Value(double X, out double F)
         {
@@ -53,7 +55,7 @@ public class math_FunctionAllRootsTest
     }
 
     // Function with a null interval: f(x) = 0 for x in [2, 4]
-    private sealed class NullIntervalFunctionImpl : math_FunctionWithDerivative
+    private sealed class NullIntervalFunctionImpl : FunctionWithDerivative
     {
         public override bool Value(double X, out double F)
         {
@@ -107,7 +109,7 @@ public class math_FunctionAllRootsTest
     }
 
     // Function with one root: f(x) = (x-1.5)^2 - 0.25 = (x-1)(x-2)
-    private sealed class QuadraticFunction : math_FunctionWithDerivative
+    private sealed class QuadraticFunction : FunctionWithDerivative
     {
         public override bool Value(double X, out double F)
         {
@@ -130,7 +132,7 @@ public class math_FunctionAllRootsTest
     }
 
     // Constant zero function
-    private sealed class ZeroFunctionImpl : math_FunctionWithDerivative
+    private sealed class ZeroFunctionImpl : FunctionWithDerivative
     {
         public override bool Value(double _, out double F)
         {
@@ -156,15 +158,15 @@ public class math_FunctionAllRootsTest
     public void CubicFunctionBasic()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(0.0, 5.0, 21);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(0.0, 5.0, 21);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Should find the three roots at x = 1, 2, 3
-        Assert.True(solver.NbPoints() >= 2);
+        Assert.True(solver.PointCount >= 2);
 
-        if (solver.NbPoints() >= 2)
+        if (solver.PointCount >= 2)
         {
             double root1 = solver.GetPoint(1);
             double root2 = solver.GetPoint(2);
@@ -181,15 +183,15 @@ public class math_FunctionAllRootsTest
     public void SineFunctionRoots()
     {
         SineFunction func = new();
-        math_FunctionSample sample = new(-1.0, 7.0, 41);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(-1.0, 7.0, 41);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Should find roots near 0, PI, 2*PI within the range
-        Assert.True(solver.NbPoints() >= 2);
+        Assert.True(solver.PointCount >= 2);
 
-        if (solver.NbPoints() >= 1)
+        if (solver.PointCount >= 1)
         {
             double root1 = solver.GetPoint(1);
             // Check if we found a root near 0 or PI
@@ -202,15 +204,15 @@ public class math_FunctionAllRootsTest
     public void NullIntervalFunction()
     {
         NullIntervalFunctionImpl func = new();
-        math_FunctionSample sample = new(0.0, 6.0, 31);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
+        FunctionSample sample = new(0.0, 6.0, 31);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Should find a null interval from x = 2 to x = 4
-        Assert.True(solver.NbIntervals() >= 1);
+        Assert.True(solver.IntervalCount >= 1);
 
-        if (solver.NbIntervals() >= 1)
+        if (solver.IntervalCount >= 1)
         {
             double a, b;
             solver.GetInterval(1, out a, out b);
@@ -223,15 +225,15 @@ public class math_FunctionAllRootsTest
     public void QuadraticTwoRoots()
     {
         QuadraticFunction func = new();
-        math_FunctionSample sample = new(0.0, 3.0, 16);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(0.0, 3.0, 16);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Should find roots at x = 1 and x = 2
-        Assert.True(solver.NbPoints() >= 1);
+        Assert.True(solver.PointCount >= 1);
 
-        if (solver.NbPoints() >= 1)
+        if (solver.PointCount >= 1)
         {
             double root1 = solver.GetPoint(1);
             Assert.True(Math.Abs(root1 - 1.0) < 1.0e-4 || Math.Abs(root1 - 2.0) < 1.0e-4);
@@ -242,15 +244,15 @@ public class math_FunctionAllRootsTest
     public void ZeroFunction()
     {
         ZeroFunctionImpl func = new();
-        math_FunctionSample sample = new(0.0, 1.0, 11);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
+        FunctionSample sample = new(0.0, 1.0, 11);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Should find the entire interval as null
-        Assert.True(solver.NbIntervals() >= 1);
+        Assert.True(solver.IntervalCount >= 1);
 
-        if (solver.NbIntervals() >= 1)
+        if (solver.IntervalCount >= 1)
         {
             double a, b;
             solver.GetInterval(1, out a, out b);
@@ -263,12 +265,12 @@ public class math_FunctionAllRootsTest
     public void GetIntervalState()
     {
         NullIntervalFunctionImpl func = new();
-        math_FunctionSample sample = new(0.0, 6.0, 31);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
+        FunctionSample sample = new(0.0, 6.0, 31);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        if (solver.NbIntervals() >= 1)
+        if (solver.IntervalCount >= 1)
         {
             int iFirst, iLast;
             solver.GetIntervalState(1, out iFirst, out iLast);
@@ -282,12 +284,12 @@ public class math_FunctionAllRootsTest
     public void GetPointState()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(0.0, 5.0, 21);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(0.0, 5.0, 21);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        if (solver.NbPoints() >= 1)
+        if (solver.PointCount >= 1)
         {
             int state = solver.GetPointState(1);
             Assert.True(state >= 0);
@@ -298,94 +300,94 @@ public class math_FunctionAllRootsTest
     public void LargeSampleSize()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(0.0, 5.0, 101);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-8, 1.0e-8, 1.0e-10);
+        FunctionSample sample = new(0.0, 5.0, 101);
+        FunctionAllRoots solver = new(func, sample, 1.0e-8, 1.0e-8, 1.0e-10);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbPoints() >= 2);
+        Assert.True(solver.IsDone);
+        Assert.True(solver.PointCount >= 2);
     }
 
     [Fact]
     public void SmallSampleSize()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(0.0, 5.0, 5);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-4, 1.0e-4, 1.0e-6);
+        FunctionSample sample = new(0.0, 5.0, 5);
+        FunctionAllRoots solver = new(func, sample, 1.0e-4, 1.0e-4, 1.0e-6);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
         // With small sample, might miss some roots
-        Assert.True(solver.NbPoints() >= 0);
+        Assert.True(solver.PointCount >= 0);
     }
 
     [Fact]
     public void TightTolerances()
     {
         QuadraticFunction func = new();
-        math_FunctionSample sample = new(0.0, 3.0, 31);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-10, 1.0e-10, 1.0e-12);
+        FunctionSample sample = new(0.0, 3.0, 31);
+        FunctionAllRoots solver = new(func, sample, 1.0e-10, 1.0e-10, 1.0e-12);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbPoints() >= 1);
+        Assert.True(solver.IsDone);
+        Assert.True(solver.PointCount >= 1);
     }
 
     [Fact]
     public void LooseTolerances()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(0.0, 5.0, 21);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-2, 1.0e-2, 1.0e-4);
+        FunctionSample sample = new(0.0, 5.0, 21);
+        FunctionAllRoots solver = new(func, sample, 1.0e-2, 1.0e-2, 1.0e-4);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbPoints() >= 0);
+        Assert.True(solver.IsDone);
+        Assert.True(solver.PointCount >= 0);
     }
 
     [Fact]
     public void NarrowRange()
     {
         QuadraticFunction func = new();
-        math_FunctionSample sample = new(0.5, 2.5, 21);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(0.5, 2.5, 21);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
         // Should find roots at x = 1 and x = 2 within this range
-        Assert.True(solver.NbPoints() >= 1);
+        Assert.True(solver.PointCount >= 1);
     }
 
     [Fact]
     public void WideRange()
     {
         SineFunction func = new();
-        math_FunctionSample sample = new(-10.0, 10.0, 81);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(-10.0, 10.0, 81);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
         // Should find multiple roots in this wide range
-        Assert.True(solver.NbPoints() >= 5);
+        Assert.True(solver.PointCount >= 5);
     }
 
     [Fact]
     public void EmptyRange()
     {
         CubicFunction func = new();
-        math_FunctionSample sample = new(10.0, 20.0, 11);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
+        FunctionSample sample = new(10.0, 20.0, 11);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-8);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
         // No roots expected in this range for cubic function
-        Assert.Equal(0, solver.NbPoints());
-        Assert.Equal(0, solver.NbIntervals());
+        Assert.Equal(0, solver.PointCount);
+        Assert.Equal(0, solver.IntervalCount);
     }
 
     [Fact]
     public void IntervalBounds()
     {
         NullIntervalFunctionImpl func = new();
-        math_FunctionSample sample = new(0.0, 6.0, 31);
-        math_FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
+        FunctionSample sample = new(0.0, 6.0, 31);
+        FunctionAllRoots solver = new(func, sample, 1.0e-6, 1.0e-6, 1.0e-6);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        if (solver.NbIntervals() >= 1)
+        if (solver.IntervalCount >= 1)
         {
             double a, b;
             solver.GetInterval(1, out a, out b);
@@ -405,11 +407,11 @@ public class math_FunctionAllRootsTest
 
         foreach (double tol in tolerances)
         {
-            math_FunctionSample sample = new(0.0, 5.0, 21);
-            math_FunctionAllRoots solver = new(func, sample, tol, tol, tol * 0.01);
+            FunctionSample sample = new(0.0, 5.0, 21);
+            FunctionAllRoots solver = new(func, sample, tol, tol, tol * 0.01);
 
-            Assert.True(solver.IsDone());
-            Assert.True(solver.NbPoints() >= 0);
+            Assert.True(solver.IsDone);
+            Assert.True(solver.PointCount >= 0);
         }
     }
 }

@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_Approval : Standard_Transient
+public class StepBasic_Approval : Transient
 {
     private StepBasic_ApprovalStatus status;
     private TCollection_HAsciiString level;

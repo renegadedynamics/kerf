@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -30,17 +36,17 @@ public class Extrema_ExtPElC2d
         }
     }
 
-    public Extrema_ExtPElC2d(in gp_Pnt2d P, in gp_Lin2d C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC2d(in Point2D P, in Line2D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt2d P, in gp_Lin2d L, double Tol, double Uinf, double Usup)
+    public void Perform(in Point2D P, in Line2D L, double Tol, double Uinf, double Usup)
     {
         myDone = true;
-        gp_Pnt2d OR, MyP;
+        Point2D OR, MyP;
         myNbExt = 0;
 
-        gp_Vec2d V1 = new(L.Direction());
+        Vector2D V1 = new(L.Direction());
         OR = L.Location();
-        gp_Vec2d V = new(OR, P);
+        Vector2D V = new(OR, P);
         double Mydist = V1.Dot(V);
         if ((Mydist >= Uinf - Tol) && (Mydist <= Usup + Tol))
         {
@@ -53,43 +59,43 @@ public class Extrema_ExtPElC2d
         }
     }
 
-    public Extrema_ExtPElC2d(in gp_Pnt2d P, in gp_Circ2d C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC2d(in Point2D P, in Circle2D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt2d P, in gp_Circ2d C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point2D P, in Circle2D C, double Tol, double Uinf, double Usup)
     {
-        gp_Pnt2d OC = C.Location();
+        Point2D OC = C.Location();
         myNbExt = 0;
 
-        if (OC.IsEqual(P, Precision.Confusion()))
+        if (OC.IsEqual(P, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             myDone = false;
         }
         else
         {
             double radius, U1, U2;
-            gp_Pnt2d P1, P2;
+            Point2D P1, P2;
 
             myDone = true;
-            gp_Dir2d V = new(new gp_Vec2d(P, OC));
+            Direction2D V = new(new Vector2D(P, OC));
             radius = C.Radius();
-            P1 = OC.Translated(radius * new gp_Vec2d(V));
-            U1 = ElCLib.Parameter(C, P1);
+            P1 = OC.Translated(radius * new Vector2D(V));
+            U1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, P1);
             U2 = U1 + M_PI;
-            P2 = OC.Translated(-radius * new gp_Vec2d(V));
+            P2 = OC.Translated(-radius * new Vector2D(V));
             double myuinf = Uinf;
-            ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, Precision.PConfusion(), ref myuinf, ref U1);
-            ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, Precision.PConfusion(), ref myuinf, ref U2);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref myuinf, ref U1);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(Uinf, Uinf + 2 * M_PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref myuinf, ref U2);
             if (((U1 - 2 * M_PI - Uinf) < Tol) && ((U1 - 2 * M_PI - Uinf) > -Tol))
             {
                 U1 = Uinf;
-                P1 = new gp_Pnt2d(OC.XY()
+                P1 = new Point2D(OC.XY()
                                   + radius * (Math.Cos(U1) * C.XAxis().Direction().XY() + Math.Sin(U1) * C.YAxis().Direction().XY()));
             }
 
             if (((U2 - 2 * M_PI - Uinf) < Tol) && ((U2 - 2 * M_PI - Uinf) > -Tol))
             {
                 U2 = Uinf;
-                P2 = new gp_Pnt2d(OC.XY()
+                P2 = new Point2D(OC.XY()
                                   + radius * (Math.Cos(U2) * C.XAxis().Direction().XY() + Math.Sin(U2) * C.YAxis().Direction().XY()));
             }
 
@@ -113,43 +119,43 @@ public class Extrema_ExtPElC2d
         }
     }
 
-    public Extrema_ExtPElC2d(in gp_Pnt2d P, in gp_Elips2d E, double Tol, double Uinf, double Usup) => Perform(P, E, Tol, Uinf, Usup);
+    public Extrema_ExtPElC2d(in Point2D P, in Ellipse2D E, double Tol, double Uinf, double Usup) => Perform(P, E, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt2d P, in gp_Elips2d E, double Tol, double Uinf, double Usup)
+    public void Perform(in Point2D P, in Ellipse2D E, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
-        gp_Pnt2d OR;
+        Point2D OR;
         OR = E.Location();
 
         int NoSol, NbSol;
         double A = E.MajorRadius();
         double B = E.MinorRadius();
-        gp_Vec2d V = new(OR, P);
+        Vector2D V = new(OR, P);
 
-        if (OR.IsEqual(P, Precision.Confusion()) && (Math.Abs(A - B) <= Tol))
+        if (OR.IsEqual(P, global::Kerf.Engine.Foundation.Precision.Confusion()) && (Math.Abs(A - B) <= Tol))
         {
             return;
         }
         else
         {
-            double X = V.Dot(new gp_Vec2d(E.XAxis().Direction()));
-            double Y = V.Dot(new gp_Vec2d(E.YAxis().Direction()));
+            double X = V.Dot(new Vector2D(E.XAxis().Direction()));
+            double Y = V.Dot(new Vector2D(E.YAxis().Direction()));
 
-            math_TrigonometricFunctionRoots Sol = new(0.0, (B * B - A * A) / 2.0, -B * Y, A * X, 0.0, Uinf, Usup);
+            TrigonometricFunctionRoots Sol = new(0.0, (B * B - A * A) / 2.0, -B * Y, A * X, 0.0, Uinf, Usup);
 
-            if (!Sol.IsDone())
+            if (!Sol.IsDone)
             {
                 return;
             }
-            gp_Pnt2d Cu;
+            Point2D Cu;
             double Us;
-            NbSol = Sol.NbSolutions();
+            NbSol = Sol.SolutionCount;
             myNbExt = 0;
             for (NoSol = 1; NoSol <= NbSol; NoSol++)
             {
                 Us = Sol.Value(NoSol);
-                Cu = ElCLib.Value(Us, E);
+                Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, E);
                 mySqDist[myNbExt] = Cu.SquareDistance(P);
                 myIsMin[myNbExt] = (NoSol == 0); // OCCT: always false (NoSol starts at 1)
                 myPoint[myNbExt] = new Extrema_POnCurv2d(Us, Cu);
@@ -159,32 +165,32 @@ public class Extrema_ExtPElC2d
         }
     }
 
-    public Extrema_ExtPElC2d(in gp_Pnt2d P, in gp_Hypr2d C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC2d(in Point2D P, in Hyperbola2D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt2d P, in gp_Hypr2d H, double Tol, double Uinf, double Usup)
+    public void Perform(in Point2D P, in Hyperbola2D H, double Tol, double Uinf, double Usup)
     {
-        gp_Pnt2d O = H.Location();
+        Point2D O = H.Location();
         myDone = false;
         myNbExt = 0;
 
         double R = H.MajorRadius();
         double r = H.MinorRadius();
-        gp_Vec2d OPp = new(O, P);
+        Vector2D OPp = new(O, P);
         double Tol2 = Tol * Tol;
-        double X = OPp.Dot(new gp_Vec2d(H.XAxis().Direction()));
-        double Y = OPp.Dot(new gp_Vec2d(H.YAxis().Direction()));
+        double X = OPp.Dot(new Vector2D(H.XAxis().Direction()));
+        double Y = OPp.Dot(new Vector2D(H.YAxis().Direction()));
         double C1 = (R * R + r * r) / 4.0;
-        math_DirectPolynomialRoots Sol = new(C1, -(X * R + Y * r) / 2.0, 0.0, (X * R - Y * r) / 2.0, -C1);
-        if (!Sol.IsDone())
+        DirectPolynomialRoots Sol = new(C1, -(X * R + Y * r) / 2.0, 0.0, (X * R - Y * r) / 2.0, -C1);
+        if (!Sol.IsDone)
         {
             return;
         }
-        gp_Pnt2d Cu;
+        Point2D Cu;
         double Us, Vs;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         bool DejaEnr;
         int NoExt;
-        Span<gp_Pnt2d> TbExt = [new(), new(), new(), new()];
+        Span<Point2D> TbExt = [new(), new(), new(), new()];
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             Vs = Sol.Value(NoSol);
@@ -193,7 +199,7 @@ public class Extrema_ExtPElC2d
                 Us = Math.Log(Vs);
                 if ((Us >= Uinf) && (Us <= Usup))
                 {
-                    Cu = ElCLib.Value(Us, H);
+                    Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, H);
                     DejaEnr = false;
                     for (NoExt = 0; NoExt < myNbExt; NoExt++)
                     {
@@ -217,37 +223,37 @@ public class Extrema_ExtPElC2d
         myDone = true;
     }
 
-    public Extrema_ExtPElC2d(in gp_Pnt2d P, in gp_Parab2d C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
+    public Extrema_ExtPElC2d(in Point2D P, in Parabola2D C, double Tol, double Uinf, double Usup) => Perform(P, C, Tol, Uinf, Usup);
 
-    public void Perform(in gp_Pnt2d P, in gp_Parab2d C, double Tol, double Uinf, double Usup)
+    public void Perform(in Point2D P, in Parabola2D C, double Tol, double Uinf, double Usup)
     {
         myDone = false;
         myNbExt = 0;
-        gp_Pnt2d O = C.Location();
+        Point2D O = C.Location();
 
         double Tol2 = Tol * Tol;
         double F = C.Focal();
-        gp_Vec2d OPp = new(O, P);
-        double X = OPp.Dot(new gp_Vec2d(C.MirrorAxis().Direction()));
-        double Y = OPp.Dot(new gp_Vec2d(C.Axis().YAxis().Direction()));
+        Vector2D OPp = new(O, P);
+        double X = OPp.Dot(new Vector2D(C.MirrorAxis().Direction()));
+        double Y = OPp.Dot(new Vector2D(C.Axis().YAxis().Direction()));
 
-        math_DirectPolynomialRoots Sol = new(1.0 / (4.0 * F), 0.0, 2.0 * F - X, -2.0 * F * Y);
-        if (!Sol.IsDone())
+        DirectPolynomialRoots Sol = new(1.0 / (4.0 * F), 0.0, 2.0 * F - X, -2.0 * F * Y);
+        if (!Sol.IsDone)
         {
             return;
         }
-        gp_Pnt2d Cu;
+        Point2D Cu;
         double Us;
-        int NbSol = Sol.NbSolutions();
+        int NbSol = Sol.SolutionCount;
         bool DejaEnr;
         int NoExt;
-        Span<gp_Pnt2d> TbExt = [new(), new(), new()];
+        Span<Point2D> TbExt = [new(), new(), new()];
         for (int NoSol = 1; NoSol <= NbSol; NoSol++)
         {
             Us = Sol.Value(NoSol);
             if ((Us >= Uinf) && (Us <= Usup))
             {
-                Cu = ElCLib.Value(Us, C);
+                Cu = global::Kerf.Engine.Geometry.ElCLib.Value(Us, C);
                 DejaEnr = false;
                 for (NoExt = 0; NoExt < myNbExt; NoExt++)
                 {
@@ -278,7 +284,7 @@ public class Extrema_ExtPElC2d
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myNbExt;
     }
@@ -288,7 +294,7 @@ public class Extrema_ExtPElC2d
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist[N - 1];
     }
@@ -298,7 +304,7 @@ public class Extrema_ExtPElC2d
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myIsMin[N - 1];
     }
@@ -308,7 +314,7 @@ public class Extrema_ExtPElC2d
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoint[N - 1];
     }

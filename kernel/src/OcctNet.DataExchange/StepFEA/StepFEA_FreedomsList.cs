@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity FreedomsList
 /// </summary>
-public class StepFEA_FreedomsList : Standard_Transient
+public class StepFEA_FreedomsList : Transient
 {
     private NCollection_HArray1<StepFEA_DegreeOfFreedom> theFreedoms;
 

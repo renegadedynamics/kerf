@@ -3,23 +3,27 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
 /// H(v) = (T1.P2(v) - P1) * ||T(v)||^2 - (T(v).P2(v) - P1) * ||T1||^2, used by Bisector_BisecCC to find the point of
 /// the second curve paired with a point of the first.
 /// </summary>
-public sealed class Bisector_FunctionH : math_FunctionWithDerivative
+public sealed class Bisector_FunctionH : FunctionWithDerivative
 {
     private readonly Geom2d_Curve curve2;
-    private readonly gp_Pnt2d p1;
-    private readonly gp_Vec2d t1;
+    private readonly Point2D p1;
+    private readonly Vector2D t1;
 
     /// <summary>The function of the curve C2, for the point P1 of tangent T1.</summary>
-    public Bisector_FunctionH(Geom2d_Curve C2, in gp_Pnt2d P1, in gp_Vec2d T1)
+    public Bisector_FunctionH(Geom2d_Curve C2, in Point2D P1, in Vector2D T1)
     {
         p1 = P1;
-        gp_Vec2d aT1 = T1;
+        Vector2D aT1 = T1;
         aT1.Normalize();
         t1 = aT1;
         curve2 = C2;
@@ -29,7 +33,7 @@ public sealed class Bisector_FunctionH : math_FunctionWithDerivative
     /// <inheritdoc/>
     public override bool Value(double X, out double F)
     {
-        curve2.D1(X, out gp_Pnt2d P2, out gp_Vec2d T2); // point on C2, tangent to C2 at V.
+        curve2.D1(X, out Point2D P2, out Vector2D T2); // point on C2, tangent to C2 at V.
         double NormT2 = T2.Magnitude();
         double Ax = NormT2 * t1.X() - T2.X();
         double Ay = NormT2 * t1.Y() - T2.Y();
@@ -49,7 +53,7 @@ public sealed class Bisector_FunctionH : math_FunctionWithDerivative
     public override bool Values(double X, out double F, out double D)
     {
         // point on C2, tangent to C2 at V, second derivative of C2 at V.
-        curve2.D2(X, out gp_Pnt2d P2, out gp_Vec2d T2, out gp_Vec2d T2v);
+        curve2.D2(X, out Point2D P2, out Vector2D T2, out Vector2D T2v);
 
         double NormT2 = T2.Magnitude();
         double Ax = NormT2 * t1.X() - T2.X();

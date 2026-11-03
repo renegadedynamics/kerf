@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>A G1 constraint of a non-linear plate: target first derivatives at a UV point, the position free.</summary>
@@ -12,7 +14,7 @@ public class NLPlate_HPG1Constraint : NLPlate_HGPPConstraint
     private readonly Plate_D1 myG1Target;
     private int myOrientation;
 
-    public NLPlate_HPG1Constraint(in gp_XY UV, in Plate_D1 D1T)
+    public NLPlate_HPG1Constraint(in Xy UV, in Plate_D1 D1T)
     {
         myG1Target = D1T;
         SetUV(UV);

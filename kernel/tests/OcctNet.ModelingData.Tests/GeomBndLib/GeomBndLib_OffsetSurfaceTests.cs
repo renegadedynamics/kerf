@@ -1,16 +1,20 @@
 // Port of OCCT's src/ModelingData/TKGeomBase/GTests/GeomBndLib_OffsetSurface_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomBndLib_OffsetSurfaceTest
 {
-    private static readonly double Conf = Precision.Confusion();
+    private static readonly double Conf = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-    private static gp_Ax3 XOY3() => GeomBndLibSurfaceTestUtils.XOY3();
+    private static CoordinateSystem XOY3() => GeomBndLibSurfaceTestUtils.XOY3();
 
     /// <summary>Helper: verify new box is no larger than old box (tighter or equal).</summary>
-    private static void ExpectNoLarger(in Bnd_Box theNew, in Bnd_Box theOld, double theTol)
+    private static void ExpectNoLarger(in Box theNew, in Box theOld, double theTol)
     {
         var (aXminN, aXmaxN, aYminN, aYmaxN, aZminN, aZmaxN) = theNew.Get();
         var (aXminO, aXmaxO, aYminO, aYmaxO, aZminO, aZmaxO) = theOld.Get();
@@ -23,7 +27,7 @@ public class GeomBndLib_OffsetSurfaceTest
     }
 
     /// <summary>Helper: verify box contains all sampled points of the offset surface.</summary>
-    private static void ExpectContainsOffsetSurface(in Bnd_Box theBox,
+    private static void ExpectContainsOffsetSurface(in Box theBox,
                                                     Geom_OffsetSurface theSurf,
                                                     double theUMin,
                                                     double theUMax,
@@ -41,7 +45,7 @@ public class GeomBndLib_OffsetSurfaceTest
             for (int j = 0; j <= theNbV; ++j)
             {
                 double aV = theVMin + j * aVStep;
-                gp_Pnt aPnt = theSurf.Value(aU, aV);
+                Point3D aPnt = theSurf.Value(aU, aV);
                 string aWhere = $"Point outside box at U={aU} V={aV}";
                 GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.X(), aXmin - Conf, aWhere);
                 GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.X(), aXmax + Conf, aWhere);
@@ -64,10 +68,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aSphere, 2.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -81,10 +85,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aSphere, 2.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, -M_PI / 4.0, M_PI / 4.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -102,10 +106,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aSphere, -3.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -123,10 +127,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aCyl, 1.5);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, -5.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -140,10 +144,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aCyl, 1.5);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, M_PI, 0.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -157,10 +161,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aCyl, -2.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -178,10 +182,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aPlane, 3.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(-5.0, 5.0, -5.0, 5.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, -5.0, 5.0, -5.0, 5.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -194,7 +198,7 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_Plane aPlane = new(XOY3());
         Geom_OffsetSurface anOff = new(aPlane, 3.0);
 
-        Bnd_Box aBox = new();
+        Box aBox = new();
         new GeomBndLib_Surface(anOff).Add(-4.0, 6.0, -2.0, 7.0, Conf, ref aBox);
 
         var (_, _, _, _, aZmin, aZmax) = aBox.Get();
@@ -210,10 +214,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aPlane, -5.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(-10.0, 10.0, -10.0, 10.0, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, -10.0, 10.0, -10.0, 10.0, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -231,10 +235,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aTorus, 1.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, 2.0 * M_PI, 0.0, 2.0 * M_PI, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, 2.0 * M_PI, 0.0, 2.0 * M_PI, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -248,10 +252,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aTorus, 1.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, M_PI, 0.0, M_PI, Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, 0.0, M_PI, 0.0, M_PI, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);
@@ -268,10 +272,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_Plane aPlane = new(XOY3());
         Geom_OffsetSurface anOff = new(aPlane, 3.0);
 
-        Bnd_Box aFastBox = new();
+        Box aFastBox = new();
         new GeomBndLib_Surface(anOff).Add(-5.0, 5.0, -5.0, 5.0, Conf, ref aFastBox);
 
-        Bnd_Box aOptBox = new();
+        Box aOptBox = new();
         new GeomBndLib_Surface(anOff).AddOptimal(-5.0, 5.0, -5.0, 5.0, Conf, ref aOptBox);
 
         // Offset plane is a plane - BoxOptimal should be at least as tight as Box.
@@ -289,10 +293,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_ToroidalSurface aTorus = new(XOY3(), 10.0, 3.0);
         Geom_OffsetSurface anOff = new(aTorus, 1.0);
 
-        Bnd_Box aFastBox = new();
+        Box aFastBox = new();
         new GeomBndLib_Surface(anOff).Add(0.0, 2.0 * M_PI, 0.0, 2.0 * M_PI, Conf, ref aFastBox);
 
-        Bnd_Box aOptBox = new();
+        Box aOptBox = new();
         new GeomBndLib_Surface(anOff).AddOptimal(0.0, 2.0 * M_PI, 0.0, 2.0 * M_PI, Conf, ref aOptBox);
 
         // PSO optimal should not exceed the fast box and must contain the actual surface.
@@ -310,10 +314,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_SphericalSurface aSphere = new(XOY3(), 5.0);
         Geom_OffsetSurface anOff = new(aSphere, 2.0);
 
-        Bnd_Box aFastBox = new();
+        Box aFastBox = new();
         new GeomBndLib_Surface(anOff).Add(Conf, ref aFastBox);
 
-        Bnd_Box aOptBox = new();
+        Box aOptBox = new();
         new GeomBndLib_Surface(anOff).AddOptimal(Conf, ref aOptBox);
 
         // Analytic path: offset sphere -> sphere, so BoxOptimal should be at least as tight.
@@ -332,10 +336,10 @@ public class GeomBndLib_OffsetSurfaceTest
         Geom_OffsetSurface anOff = new(aSphere, 20.0);
         GeomAdaptor_Surface anAdaptor = new(anOff);
 
-        Bnd_Box aNewBox = new();
+        Box aNewBox = new();
         new GeomBndLib_Surface(anOff).Add(Conf, ref aNewBox);
 
-        Bnd_Box anOldBox = new();
+        Box anOldBox = new();
         BndLib_AddSurface.Add(anAdaptor, Conf, ref anOldBox);
 
         ExpectNoLarger(aNewBox, anOldBox, Conf);

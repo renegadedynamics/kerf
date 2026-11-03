@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity RepresentationReference
 /// </summary>
-public class StepRepr_RepresentationReference : Standard_Transient
+public class StepRepr_RepresentationReference : Transient
 {
     private TCollection_HAsciiString myId;
     private StepRepr_RepresentationContextReference myContextOfItems;

@@ -3,9 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Approx_ParametrizationType;
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -24,16 +27,16 @@ internal static partial class ChFi3d_Builder_0
     /// writes into an edge only when the edge has no 3D curve (decision 1087). The curves made here are this
     /// function's own; the concatenation's result is taken unfrozen, as OCCT changes it in place.
     /// </remarks>
-    internal static void ChFi3d_PerformElSpine(ChFiDS_ElSpine HES, ChFiDS_Spine Spine, GeomAbs_Shape continuity,
+    internal static void ChFi3d_PerformElSpine(ChFiDS_ElSpine HES, ChFiDS_Spine Spine, Continuity continuity,
                                                double tol, bool IsOffset = false)
     {
         bool periodic, Bof, checkdeb, cepadur, bIsSmooth;
         int IEdge, IF, IL, nbed, iToApproxByC2;
         double WF, WL, Wrefdeb, Wreffin, nwf, nwl, period, pared = 0.0, tolpared;
         double First, Last, epsV, urefdeb, tolrac;
-        GeomAbs_Shape aContinuity;
-        gp_Pnt PDeb, PFin, Bout;
-        gp_Vec VrefDeb, VrefFin;
+        Continuity aContinuity;
+        Point3D PDeb, PFin, Bout;
+        Vector3D VrefDeb, VrefFin;
         Geom_Curve Cv;
         Geom_BoundedCurve TC;
         Geom_BSplineCurve BS, BSpline;
@@ -52,9 +55,9 @@ internal static partial class ChFi3d_Builder_0
         if (periodic)
         {
             period = Spine.Period();
-            nwf = ElCLib.InPeriod(WF, -tol, period - tol);
+            nwf = global::Kerf.Engine.Geometry.ElCLib.InPeriod(WF, -tol, period - tol);
             IF = Spine.Index(nwf, true);
-            nwl = ElCLib.InPeriod(WL, tol, period + tol);
+            nwl = global::Kerf.Engine.Geometry.ElCLib.InPeriod(WL, tol, period + tol);
             IL = Spine.Index(nwl, false);
             if (nwl < nwf + tol)
             {
@@ -88,8 +91,8 @@ internal static partial class ChFi3d_Builder_0
         if (ES.IsPeriodic())
         {
             double ParForElSpine = (E.Orientation() == TopAbs_FORWARD) ? First : Last;
-            Cv.D1(ParForElSpine, out gp_Pnt PntForElSpine, out gp_Vec DirForElSpine);
-            ES.AddVertexWithTangent(new gp_Ax1(PntForElSpine, new gp_Dir(DirForElSpine)));
+            Cv.D1(ParForElSpine, out Point3D PntForElSpine, out Vector3D DirForElSpine);
+            ES.AddVertexWithTangent(new Axis3D(PntForElSpine, new Direction3D(DirForElSpine)));
         }
         /////////////////////////
         urefdeb = Spine.FirstParameter(IF);
@@ -175,13 +178,13 @@ internal static partial class ChFi3d_Builder_0
         if (cepadur)
         {
             Geom_Line L;
-            gp_Pnt ptemp;
-            gp_Vec vtemp;
+            Point3D ptemp;
+            Vector3D vtemp;
             if (WL < Spine.FirstParameter(1) + tol)
             {
                 ES.LastPointAndTgt(out ptemp, out vtemp);
-                gp_Dir d = new(vtemp);
-                gp_Pnt olin = new();
+                Direction3D d = new(vtemp);
+                Point3D olin = new();
                 olin.ChangeCoord().SetLinearForm(-WL, d.XYZ(), PFin.XYZ());
                 L = new Geom_Line(olin, d);
                 ES.SetCurve(L);
@@ -189,8 +192,8 @@ internal static partial class ChFi3d_Builder_0
             else if (WF > Spine.LastParameter(nbed) - tol)
             {
                 ES.FirstPointAndTgt(out ptemp, out vtemp);
-                gp_Dir d = new(vtemp);
-                gp_Pnt olin = new();
+                Direction3D d = new(vtemp);
+                Point3D olin = new();
                 olin.ChangeCoord().SetLinearForm(-WF, d.XYZ(), PDeb.XYZ());
                 L = new Geom_Line(olin, d);
                 ES.SetCurve(L);
@@ -206,7 +209,7 @@ internal static partial class ChFi3d_Builder_0
         iToApproxByC2 = 0;
         aContinuity = TC.Continuity();
         bIsSmooth = ChFi3d_IsSmooth(TC);
-        if (aContinuity < GeomAbs_C2 && !bIsSmooth)
+        if (aContinuity < C2 && !bIsSmooth)
         {
             ++iToApproxByC2;
             BS = ChFi3d_ApproxByC2(TC);
@@ -214,7 +217,7 @@ internal static partial class ChFi3d_Builder_0
         }
         //
         //  Concatenation des aretes suivantes
-        GeomConvert_CompCurveToBSplineCurve Concat = new(TC, Convert_QuasiAngular);
+        GeomConvert_CompCurveToBSplineCurve Concat = new(TC, QuasiAngular);
         //
         Eold = E;
         for (IEdge = IF + 1; IEdge <= IL; ++IEdge)
@@ -241,14 +244,14 @@ internal static partial class ChFi3d_Builder_0
             Bof = BRepLib.BuildCurve3d(E);
             if (!Bof)
             {
-                throw new Standard_ConstructionError("PerformElSpine : BuildCurve3d error");
+                throw new ConstructionErrorException("PerformElSpine : BuildCurve3d error");
             }
             //
             Cv = BRep_Tool.Curve(E, out First, out Last)!;
             // Add vertex with tangent
             double ParForElSpine = (E.Orientation() == TopAbs_FORWARD) ? First : Last;
-            Cv.D1(ParForElSpine, out gp_Pnt PntForElSpine, out gp_Vec DirForElSpine);
-            ES.AddVertexWithTangent(new gp_Ax1(PntForElSpine, new gp_Dir(DirForElSpine)));
+            Cv.D1(ParForElSpine, out Point3D PntForElSpine, out Vector3D DirForElSpine);
+            ES.AddVertexWithTangent(new Axis3D(PntForElSpine, new Direction3D(DirForElSpine)));
             /////////////////////////
             if (IEdge == IL)
             {
@@ -290,7 +293,7 @@ internal static partial class ChFi3d_Builder_0
             // Smoothing of the curve
             aContinuity = TC.Continuity();
             bIsSmooth = ChFi3d_IsSmooth(TC);
-            if (aContinuity < GeomAbs_C2 && !bIsSmooth)
+            if (aContinuity < C2 && !bIsSmooth)
             {
                 ++iToApproxByC2;
                 BS = ChFi3d_ApproxByC2(TC);
@@ -309,7 +312,7 @@ internal static partial class ChFi3d_Builder_0
                 Bof = Concat.Add(TC, 200.0 * epsV, true);
                 if (!Bof)
                 {
-                    throw new Standard_ConstructionError("PerformElSpine: spine merged error");
+                    throw new ConstructionErrorException("PerformElSpine: spine merged error");
                 }
             }
             Eold = E;
@@ -322,7 +325,7 @@ internal static partial class ChFi3d_Builder_0
         BSpline = Concat.InternalBSplineCurve()!;
         // There is a reparametrisation to maximally connect the abscissas of edges.
         NCollection_Array1<double> BSNoeuds = new(BSpline.InternalKnots());
-        BSplCLib.Reparametrize(Wrefdeb, Wreffin, BSNoeuds);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(Wrefdeb, Wreffin, BSNoeuds);
         BSpline.SetKnots(BSNoeuds);
         //
         // Traitement des Extremites
@@ -457,7 +460,7 @@ internal static partial class ChFi3d_Builder_0
             lk -= carefin;
         }
         //
-        if (continuity == GeomAbs_C3)
+        if (continuity == C3)
         {
             if (BSpline.Degree() < 7)
             {
@@ -509,8 +512,8 @@ internal static partial class ChFi3d_Builder_0
             // Otherwise is it necessary to move the poles to adapt
             // them to new tangents ?
             bool adjust = false;
-            gp_Pnt P1, P2;
-            gp_Vec V1, V2;
+            Point3D P1, P2;
+            Vector3D V1, V2;
             BSpline.D1(WF, out P1, out V1);
             V1.Normalize();
             ES.FirstPointAndTgt(out PDeb, out VrefDeb);
@@ -556,7 +559,7 @@ internal static partial class ChFi3d_Builder_0
         double First = C.FirstParameter(), Last = C.LastParameter();
         int NbPoints = 101;
 
-        NCollection_Array1<gp_Pnt> Points = new(1, NbPoints);
+        NCollection_Array1<Point3D> Points = new(1, NbPoints);
         double delta = (Last - First) / (NbPoints - 1);
         for (int i = 1; i <= NbPoints - 1; i++)
         {
@@ -564,7 +567,7 @@ internal static partial class ChFi3d_Builder_0
         }
         Points[NbPoints] = C.Value(Last);
 
-        GeomAPI_PointsToBSpline Approx = new(Points, Approx_ChordLength, 3, 8, GeomAbs_C2, 1.000001e-3);
+        GeomAPI_PointsToBSpline Approx = new(Points, Approx_ChordLength, 3, 8, C2, 1.000001e-3);
         Geom_BSplineCurve BS = Approx.Curve();
         return BS;
     }
@@ -578,15 +581,15 @@ internal static partial class ChFi3d_Builder_0
         GeomAdaptor_Curve GAC = new(C);
 
         int ii;
-        int intrv, nbintv = GAC.NbIntervals(GeomAbs_CN);
+        int intrv, nbintv = GAC.NbIntervals(CN);
         NCollection_Array1<double> TI = new(1, nbintv + 1);
-        GAC.Intervals(TI, GeomAbs_CN);
-        double Resolution = gp.Resolution(), Curvature;
+        GAC.Intervals(TI, CN);
+        double Resolution = Constants.Resolution(), Curvature;
         GeomLProp_CLProps LProp = new(C, 2, Resolution);
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         int Discretisation = 30;
 
-        gp_Vec PrevVec = new();
+        Vector3D PrevVec = new();
         bool prevVecFound = false;
         int intrvFound = 0;
         for (intrv = 1; intrv <= nbintv; intrv++)
@@ -605,7 +608,7 @@ internal static partial class ChFi3d_Builder_0
                 {
                     C.D0(t, out P1);
                     LProp.CentreOfCurvature(out P2);
-                    PrevVec = new gp_Vec(P1, P2);
+                    PrevVec = new Vector3D(P1, P2);
                     prevVecFound = true;
                     break;
                 }
@@ -640,7 +643,7 @@ internal static partial class ChFi3d_Builder_0
                 {
                     C.D0(t, out P1);
                     LProp.CentreOfCurvature(out P2);
-                    gp_Vec Vec = new(P1, P2);
+                    Vector3D Vec = new(P1, P2);
                     double Angle = PrevVec.Angle(Vec);
                     if (Angle > Math.PI / 3.0)
                     {

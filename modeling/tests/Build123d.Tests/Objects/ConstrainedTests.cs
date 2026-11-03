@@ -8,6 +8,7 @@
 //   (an unexpected keyword, one tangency, a ("three", 0) tangency): argument-type checks the overloads rule out.
 // - test_higher_level_constrained_arcs/lines, the BuildLine parts: builder mode (phase 5); the selectors are
 //   checked in algebra form instead.
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d.Tests.Objects;
@@ -33,10 +34,10 @@ public class ConstrainedArcsTests
     [Fact]
     public void TwoArcEdgesFromParams()
     {
-        var p = new gp_Pnt2d(0, 0);
-        var d = new gp_Dir2d(1.0, 0.0);
-        var ax = new gp_Ax2d(p, d);
-        var circle = new gp_Circ2d(ax, 1);
+        var p = new Point2D(0, 0);
+        var d = new Direction2D(1.0, 0.0);
+        var ax = new Axis2D(p, d);
+        var circle = new Circle2D(ax, 1);
         Assert.Empty(ConstrainedSolvers.TwoArcEdgesFromParams(circle, 0, Constants.Tolerance / 10));
     }
 
@@ -423,8 +424,8 @@ public class ConstrainedLinesTests
     [Fact]
     public void EdgeFromLine()
     {
-        var p0 = new gp_Pnt2d(0, 0);
-        var p1 = new gp_Pnt2d(1, 0);
+        var p0 = new Point2D(0, 0);
+        var p1 = new Point2D(1, 0);
         Assert.Equal(1, new Edge(ConstrainedSolvers.EdgeFromLine(p0, p1)).Length);
 
         var e = Assert.Throws<InvalidOperationException>(() => ConstrainedSolvers.EdgeFromLine(p0, p0));

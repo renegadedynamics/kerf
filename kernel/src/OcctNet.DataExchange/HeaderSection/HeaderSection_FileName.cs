@@ -5,10 +5,12 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>The FILE_NAME entity of a STEP file's header.</summary>
-public class HeaderSection_FileName : Standard_Transient
+public class HeaderSection_FileName : Transient
 {
     private TCollection_HAsciiString name;
     private TCollection_HAsciiString timeStamp;

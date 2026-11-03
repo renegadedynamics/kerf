@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -39,7 +44,7 @@ public abstract class BRepLib_PointCloudShape
 
     /// <summary>A generator without a shape.</summary>
     protected BRepLib_PointCloudShape()
-        : this(new TopoDS_Shape(), Precision.Confusion())
+        : this(new TopoDS_Shape(), global::Kerf.Engine.Foundation.Precision.Confusion())
     {
     }
 
@@ -65,8 +70,8 @@ public abstract class BRepLib_PointCloudShape
     public int NbPointsByDensity(double theDensity = 0.0)
     {
         clear();
-        double aDensity = (theDensity < Precision.Confusion() ? computeDensity() : theDensity);
-        if (aDensity < Precision.Confusion())
+        double aDensity = (theDensity < global::Kerf.Engine.Foundation.Precision.Confusion() ? computeDensity() : theDensity);
+        if (aDensity < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return 0;
         }
@@ -92,13 +97,13 @@ public abstract class BRepLib_PointCloudShape
         int aNbPoints = 0;
         for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
         {
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aExpF.Current()), out _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(TopoDS.Face(aExpF.Current()), out _);
             if (aTriangulation is null)
             {
                 continue;
             }
 
-            aNbPoints += aTriangulation.NbNodes();
+            aNbPoints += aTriangulation.NodeCount;
         }
         return aNbPoints;
     }
@@ -160,7 +165,7 @@ public abstract class BRepLib_PointCloudShape
     protected double computeDensity()
     {
         // at first step find the face with smallest area
-        double anAreaMin = Precision.Infinite();
+        double anAreaMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         for (var aExpF = new TopExp_Explorer(myShape, TopAbs_FACE); aExpF.More(); aExpF.Next())
         {
             double anArea = faceArea(aExpF.Current());
@@ -189,22 +194,22 @@ public abstract class BRepLib_PointCloudShape
 
         TopoDS_Face aFace = TopoDS.Face(theFace);
         BRepTools.UVBounds(aFace, out double anUMin, out double anUMax, out double aVMin, out double aVMax);
-        var aClassifier = new BRepTopAdaptor_FClass2d(aFace, Precision.Confusion());
+        var aClassifier = new BRepTopAdaptor_FClass2d(aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        TopLoc_Location aLoc = theFace.Location();
-        gp_Trsf aTrsf = aLoc.Transformation();
+        Placement aLoc = theFace.Location();
+        Transform3D aTrsf = aLoc.Transformation();
         Geom_Surface? aSurf = BRep_Tool.Surface(aFace, out _);
         if (aSurf is null)
         {
             return false;
         }
 
-        var aRandomGenerator = new std_mt19937(0);
+        var aRandomGenerator = new Mt19937(0);
         for (int nbCurPnts = 1; nbCurPnts <= aNbPnts;)
         {
             double aU = uniformReal(aRandomGenerator, anUMin, anUMax);
             double aV = uniformReal(aRandomGenerator, aVMin, aVMax);
-            var aUVNode = new gp_Pnt2d(aU, aV);
+            var aUVNode = new Point2D(aU, aV);
             TopAbs_State aState = aClassifier.Perform(aUVNode);
             if (aState == TopAbs_OUT)
             {
@@ -213,27 +218,27 @@ public abstract class BRepLib_PointCloudShape
 
             nbCurPnts++;
 
-            aSurf.D1(aU, aV, out gp_Pnt aP1, out gp_Vec dU, out gp_Vec dV);
+            aSurf.D1(aU, aV, out Point3D aP1, out Vector3D dU, out Vector3D dV);
 
-            gp_Vec aNorm = dU ^ dV;
+            Vector3D aNorm = dU ^ dV;
             if (aFace.Orientation() == TopAbs_REVERSED)
             {
                 aNorm.Reverse();
             }
             double aNormMod = aNorm.Magnitude();
-            if (aNormMod > gp.Resolution())
+            if (aNormMod > Constants.Resolution())
             {
                 aNorm /= aNormMod;
             }
-            if (myDist > Precision.Confusion())
+            if (myDist > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                gp_XYZ aDeflPoint = aP1.XYZ() + aNorm.XYZ() * uniformReal(aRandomGenerator, 0.0, myDist);
+                Xyz aDeflPoint = aP1.XYZ() + aNorm.XYZ() * uniformReal(aRandomGenerator, 0.0, myDist);
                 aP1.SetXYZ(aDeflPoint);
             }
             aP1.Transform(aTrsf);
-            if (aNormMod > gp.Resolution())
+            if (aNormMod > Constants.Resolution())
             {
-                aNorm = new gp_Vec(new gp_Dir(aNorm).Transformed(aTrsf));
+                aNorm = new Vector3D(new Direction3D(aNorm).Transformed(aTrsf));
             }
             addPoint(aP1, aNorm, aUVNode, aFace);
         }
@@ -244,29 +249,29 @@ public abstract class BRepLib_PointCloudShape
     protected bool addTriangulationPoints(in TopoDS_Shape theFace)
     {
         TopoDS_Face aFace = TopoDS.Face(theFace);
-        Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+        Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
         if (aTriangulation is null)
         {
             return false;
         }
 
-        gp_Trsf aTrsf = aLoc.Transformation();
+        Transform3D aTrsf = aLoc.Transformation();
 
         // OCCT.NET: frozen. OCCT computes missing normals into the face's triangulation; the port on a copy.
         aTriangulation = BRepLib_ToolTriangulatedShape.NormalsComputed(aFace, aTriangulation)!;
-        bool aHasUVNode = aTriangulation.HasUVNodes();
-        for (int aNodeIter = 1; aNodeIter <= aTriangulation.NbNodes(); ++aNodeIter)
+        bool aHasUVNode = aTriangulation.HasUVNodes;
+        for (int aNodeIter = 1; aNodeIter <= aTriangulation.NodeCount; ++aNodeIter)
         {
-            gp_Pnt aP1 = aTriangulation.Node(aNodeIter);
-            gp_Dir aNormal = aTriangulation.Normal(aNodeIter);
-            if (!aLoc.IsIdentity())
+            Point3D aP1 = aTriangulation.Node(aNodeIter);
+            Direction3D aNormal = aTriangulation.Normal(aNodeIter);
+            if (!aLoc.IsIdentity)
             {
                 aP1.Transform(aTrsf);
                 aNormal.Transform(aTrsf);
             }
 
-            gp_Pnt2d anUVNode = aHasUVNode ? aTriangulation.UVNode(aNodeIter) : new gp_Pnt2d();
-            addPoint(aP1, new gp_Vec(aNormal), anUVNode, aFace);
+            Point2D anUVNode = aHasUVNode ? aTriangulation.UVNode(aNodeIter) : new Point2D();
+            addPoint(aP1, new Vector3D(aNormal), anUVNode, aFace);
         }
         return true;
     }
@@ -279,11 +284,11 @@ public abstract class BRepLib_PointCloudShape
     }
 
     /// <summary>Receives a point, the surface normal there, its UV parameters and its face.</summary>
-    protected abstract void addPoint(in gp_Pnt thePoint, in gp_Vec theNorm, in gp_Pnt2d theUV, in TopoDS_Shape theFace);
+    protected abstract void addPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in TopoDS_Shape theFace);
 
     // std::uniform_real_distribution<double>(a, b) on std::mt19937: generate_canonical<double, 53> takes two 32-bit
     // draws, (x0 + x1 * 2^32) / 2^64, then a + u * (b - a) (the same in MSVC's and GCC's libraries).
-    private static double uniformReal(std_mt19937 theGenerator, double theA, double theB)
+    private static double uniformReal(Mt19937 theGenerator, double theA, double theB)
     {
         double aSum = 0.0, aFactor = 1.0;
         for (int k = 0; k < 2; ++k)

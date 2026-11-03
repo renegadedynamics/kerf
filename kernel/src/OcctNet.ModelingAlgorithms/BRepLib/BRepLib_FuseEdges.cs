@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -118,28 +121,28 @@ public sealed class BRepLib_FuseEdges
         }
     }
 
-    private static void MakeClosedCurve(ref Geom_Curve C, in gp_Pnt PF, ref double f, ref double l)
+    private static void MakeClosedCurve(ref Geom_Curve C, in Point3D PF, ref double f, ref double l)
     {
         Geom_BSplineCurve aBC = (Geom_BSplineCurve)C;
         // OCCT.NET: frozen. OCCT makes the curve periodic and moves its origin in place, and the curve can be the old
         // edge's own (or the basis curve of its trimmed curve), shared with the caller's shape: the port works on a copy.
-        if (aBC.IsFrozen())
+        if (aBC.IsFrozen)
         {
             aBC = (Geom_BSplineCurve)aBC.Copy();
         }
-        GeomAbs_Shape aCont = aBC.Continuity();
+        Continuity aCont = aBC.Continuity();
         // Find new origin
         aBC.SetPeriodic();
         int fk = aBC.FirstUKnotIndex();
         int lk = aBC.LastUKnotIndex();
         int k;
-        double eps = Precision.Confusion();
+        double eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         eps *= eps;
         double porig = 2.0 * l;
         double dmin = 1.0e100, pmin = f;
         for (k = fk; k <= lk; k++)
         {
-            gp_Pnt aP = aBC.Value(aBC.Knot(k));
+            Point3D aP = aBC.Value(aBC.Knot(k));
             double d = PF.SquareDistance(aP);
             if (PF.SquareDistance(aP) > eps)
             {
@@ -158,24 +161,24 @@ public sealed class BRepLib_FuseEdges
         {
             // try to project
             var aGAC = new GeomAdaptor_Curve(aBC);
-            var aPrj = new Extrema_LocateExtPC(PF, aGAC, pmin, Precision.PConfusion());
+            var aPrj = new Extrema_LocateExtPC(PF, aGAC, pmin, global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (aPrj.IsDone())
             {
                 porig = aPrj.Point().Parameter();
             }
             else
             {
-                throw new Standard_ConstructionError("FuseEdges : Projection failed for closed curve");
+                throw new ConstructionErrorException("FuseEdges : Projection failed for closed curve");
             }
         }
 
-        aBC.SetOrigin(porig, Precision.PConfusion());
+        aBC.SetOrigin(porig, global::Kerf.Engine.Foundation.Precision.PConfusion());
         f = aBC.FirstParameter();
         l = aBC.LastParameter();
         aBC.Segment(f, l);
-        if (aCont > GeomAbs_Shape.GeomAbs_C0 && aBC.Continuity() == GeomAbs_Shape.GeomAbs_C0)
+        if (aCont > Continuity.C0 && aBC.Continuity() == Continuity.C0)
         {
-            BCSmoothing(aBC, 1, Precision.Confusion());
+            BCSmoothing(aBC, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         C = aBC;
         f = C.FirstParameter();
@@ -186,7 +189,7 @@ public sealed class BRepLib_FuseEdges
     /// Initialises the algorithm on <paramref name="theShape"/>. As in OCCT, <paramref name="PerformNow"/> is ignored:
     /// the work is done on demand.
     /// </summary>
-    /// <exception cref="Standard_NullObject">The shape is null.</exception>
+    /// <exception cref="NullObjectException">The shape is null.</exception>
     public BRepLib_FuseEdges(in TopoDS_Shape theShape, bool PerformNow = false)
     {
         _ = PerformNow;
@@ -426,7 +429,7 @@ public sealed class BRepLib_FuseEdges
         {
             TopoDS_Vertex VF, VL;
             Geom_Curve C;
-            TopLoc_Location loc;
+            Placement loc;
             double f, l;
             TopoDS_Edge NewEdge;
 
@@ -452,7 +455,7 @@ public sealed class BRepLib_FuseEdges
                 }
                 C = BRep_Tool.Curve(OldEdge, out loc, out f, out l)!;
 
-                if (!loc.IsIdentity())
+                if (!loc.IsIdentity)
                 {
                     C = (Geom_Curve)C.Transformed(loc.Transformation());
                 }
@@ -477,10 +480,10 @@ public sealed class BRepLib_FuseEdges
                         {
                             Geom_Curve aC = BRep_Tool.Curve(TopoDS.Edge(anEdgIter.Value()), out f, out l)!;
                             aTC = new Geom_TrimmedCurve(aC, f, l);
-                            if (!Concat.Add(aTC, Precision.Confusion()))
+                            if (!Concat.Add(aTC, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 // cannot merge curves
-                                throw new Standard_ConstructionError("FuseEdges : Concatenation failed");
+                                throw new ConstructionErrorException("FuseEdges : Concatenation failed");
                             }
                         }
                         // the concatenation is discarded at once: read it unfrozen (MakeClosedCurve may change it)
@@ -497,14 +500,14 @@ public sealed class BRepLib_FuseEdges
                     // closed edge
                     f = C.FirstParameter();
                     l = C.LastParameter();
-                    gp_Pnt aPf = C.Value(f);
-                    gp_Pnt aPl = C.Value(l);
-                    if (aPf.Distance(aPl) > Precision.Confusion())
+                    Point3D aPf = C.Value(f);
+                    Point3D aPl = C.Value(l);
+                    if (aPf.Distance(aPl) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        throw new Standard_ConstructionError("FuseEdges : Curve must be closed");
+                        throw new ConstructionErrorException("FuseEdges : Curve must be closed");
                     }
-                    gp_Pnt PF = BRep_Tool.Pnt(VF);
-                    if (PF.Distance(aPf) > Precision.Confusion())
+                    Point3D PF = BRep_Tool.Pnt(VF);
+                    if (PF.Distance(aPf) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         MakeClosedCurve(ref C, PF, ref f, ref l);
                     }
@@ -512,7 +515,7 @@ public sealed class BRepLib_FuseEdges
                     ME.Init(C, VF, VL, f, l);
                     if (!ME.IsDone())
                     {
-                        throw new Standard_ConstructionError("FuseEdges : MakeEdge failed for closed curve");
+                        throw new ConstructionErrorException("FuseEdges : MakeEdge failed for closed curve");
                     }
                 }
                 else
@@ -530,20 +533,20 @@ public sealed class BRepLib_FuseEdges
                     Geom_BoundedCurve? ExtC = C.Copy() as Geom_BoundedCurve;
                     if (ExtC is not null)
                     {
-                        gp_Pnt PF = BRep_Tool.Pnt(VF);
-                        gp_Pnt PL = BRep_Tool.Pnt(VL);
+                        Point3D PF = BRep_Tool.Pnt(VF);
+                        Point3D PL = BRep_Tool.Pnt(VL);
                         GeomLib.ExtendCurveToPoint(ref ExtC, PF, 1, false);
                         GeomLib.ExtendCurveToPoint(ref ExtC, PL, 1, true);
 
                         ME.Init(ExtC, VF, VL);
                         if (!ME.IsDone())
                         {
-                            throw new Standard_ConstructionError("FuseEdges : Fusion failed");
+                            throw new ConstructionErrorException("FuseEdges : Fusion failed");
                         }
                     }
                     else
                     {
-                        throw new Standard_ConstructionError("FuseEdges : Fusion failed");
+                        throw new ConstructionErrorException("FuseEdges : Fusion failed");
                     }
                 }
 
@@ -771,7 +774,7 @@ public sealed class BRepLib_FuseEdges
         }
 
         Geom_Curve? C1, C2;
-        TopLoc_Location loc;
+        Placement loc;
         double f1, l1, f2, l2;
         Type typC1, typC2;
 
@@ -783,7 +786,7 @@ public sealed class BRepLib_FuseEdges
             return false;
         }
 
-        if (!loc.IsIdentity())
+        if (!loc.IsIdentity)
         {
             Geom_Geometry GG1 = C1.Transformed(loc.Transformation());
             C1 = (Geom_Curve)GG1;
@@ -796,7 +799,7 @@ public sealed class BRepLib_FuseEdges
             return false;
         }
 
-        if (!loc.IsIdentity())
+        if (!loc.IsIdentity)
         {
             Geom_Geometry GG2 = C2.Transformed(loc.Transformation());
             C2 = (Geom_Curve)GG2;
@@ -830,39 +833,39 @@ public sealed class BRepLib_FuseEdges
         }
 
         // On a presomption de confusion
-        double tollin = Precision.Confusion();
-        double tolang = Precision.Angular();
+        double tollin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
         if (typC1 == typeof(Geom_Line))
         {
-            gp_Lin li1 = ((Geom_Line)C1).Lin();
-            gp_Lin li2 = ((Geom_Line)C2).Lin();
-            gp_Dir dir1 = li1.Direction();
-            gp_Dir dir2 = li2.Direction();
+            Line3D li1 = ((Geom_Line)C1).Lin();
+            Line3D li2 = ((Geom_Line)C2).Lin();
+            Direction3D dir1 = li1.Direction();
+            Direction3D dir2 = li2.Direction();
 
             if (dir1.IsParallel(dir2, tolang))
             {
                 // on verifie que l'on n'a pas de cas degenere. Par exemple E1 et E2 connexes
                 // mais bouclant l'un sur l'autre (cas tres rare)
-                gp_Pnt pf1 = BRep_Tool.Pnt(TopExp.FirstVertex(E1, true));
-                gp_Pnt pl1 = BRep_Tool.Pnt(TopExp.LastVertex(E1, true));
-                gp_Pnt pf2 = BRep_Tool.Pnt(TopExp.FirstVertex(E2, true));
-                gp_Pnt pl2 = BRep_Tool.Pnt(TopExp.LastVertex(E2, true));
+                Point3D pf1 = BRep_Tool.Pnt(TopExp.FirstVertex(E1, true));
+                Point3D pl1 = BRep_Tool.Pnt(TopExp.LastVertex(E1, true));
+                Point3D pf2 = BRep_Tool.Pnt(TopExp.FirstVertex(E2, true));
+                Point3D pl2 = BRep_Tool.Pnt(TopExp.LastVertex(E2, true));
                 return pl1.Distance(pf2) >= tollin || pl2.Distance(pf1) >= tollin;
             }
             return false;
         }
         else if (typC1 == typeof(Geom_Circle))
         {
-            gp_Circ ci1 = ((Geom_Circle)C1).Circ();
-            gp_Circ ci2 = ((Geom_Circle)C2).Circ();
+            Circle3D ci1 = ((Geom_Circle)C1).Circ();
+            Circle3D ci2 = ((Geom_Circle)C2).Circ();
             return Math.Abs(ci1.Radius() - ci2.Radius()) <= tollin
                    && ci1.Location().SquareDistance(ci2.Location()) <= tollin * tollin
                    && ci1.Axis().IsParallel(ci2.Axis(), tolang);
         }
         else if (typC1 == typeof(Geom_Ellipse))
         {
-            gp_Elips ci1 = ((Geom_Ellipse)C1).Elips();
-            gp_Elips ci2 = ((Geom_Ellipse)C2).Elips();
+            Ellipse3D ci1 = ((Geom_Ellipse)C1).Elips();
+            Ellipse3D ci2 = ((Geom_Ellipse)C2).Elips();
 
             return Math.Abs(ci1.MajorRadius() - ci2.MajorRadius()) <= tollin
                    && Math.Abs(ci1.MinorRadius() - ci2.MinorRadius()) <= tollin
@@ -874,8 +877,8 @@ public sealed class BRepLib_FuseEdges
             if (myConcatBSpl)
             {
                 // Check G1 continuity
-                gp_Pnt aPf1, aPl1, aPf2, aPl2;
-                gp_Vec aDf1, aDl1, aDf2, aDl2;
+                Point3D aPf1, aPl1, aPf2, aPl2;
+                Vector3D aDf1, aDl1, aDf2, aDl2;
 
                 C1.D1(f1, out aPf1, out aDf1);
                 C1.D1(l1, out aPl1, out aDl1);
@@ -923,8 +926,8 @@ public sealed class BRepLib_FuseEdges
                 return false;
             }
 
-            NCollection_Array1<gp_Pnt> P1 = B1.InternalPoles();
-            NCollection_Array1<gp_Pnt> P2 = B2.InternalPoles();
+            NCollection_Array1<Point3D> P1 = B1.InternalPoles();
+            NCollection_Array1<Point3D> P2 = B2.InternalPoles();
 
             double tol3d = BRep_Tool.Tolerance(E1);
             for (int p = 1; p <= nbpoles; p++)
@@ -1002,8 +1005,8 @@ public sealed class BRepLib_FuseEdges
                 return false;
             }
 
-            NCollection_Array1<gp_Pnt> P1 = B1.InternalPoles();
-            NCollection_Array1<gp_Pnt> P2 = B2.InternalPoles();
+            NCollection_Array1<Point3D> P1 = B1.InternalPoles();
+            NCollection_Array1<Point3D> P2 = B2.InternalPoles();
 
             for (int p = 1; p <= nbpoles; p++)
             {
@@ -1054,7 +1057,7 @@ public sealed class BRepLib_FuseEdges
         BRep_Builder B = new();
         Geom2d_Curve? Curv2d = null;
         Geom_Surface? Surf = null;
-        TopLoc_Location loc = new(), locbid;
+        Placement loc = new(), locbid;
         double ef, el, cf = 0.0, cl = 0.0;
         int iedg = 1;
 
@@ -1141,7 +1144,7 @@ public sealed class BRepLib_FuseEdges
                             {
                                 BC = new Geom2d_TrimmedCurve(C, first, last);
                             }
-                            if (!Concat.Add(BC, Precision.PConfusion()))
+                            if (!Concat.Add(BC, global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
                                 // cannot merge pcurves
                                 return false;
@@ -1153,12 +1156,12 @@ public sealed class BRepLib_FuseEdges
                         // check that new curve 2d is same range
                         double first2 = Curv2d.FirstParameter();
                         double last2 = Curv2d.LastParameter();
-                        if (Math.Abs(first2 - ef) > Precision.PConfusion()
-                            || Math.Abs(last2 - el) > Precision.PConfusion())
+                        if (Math.Abs(first2 - ef) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                            || Math.Abs(last2 - el) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             Geom2d_BSplineCurve bc = (Geom2d_BSplineCurve)Curv2d;
                             NCollection_Array1<double> Knots = new(bc.InternalKnots());
-                            BSplCLib.Reparametrize(ef, el, Knots);
+                            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(ef, el, Knots);
                             bc.SetKnots(Knots);
                         }
                         pcurveRebuilt = true;

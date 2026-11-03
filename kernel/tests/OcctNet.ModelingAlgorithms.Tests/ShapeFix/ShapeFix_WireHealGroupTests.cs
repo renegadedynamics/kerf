@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -104,15 +105,15 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                                 aFixed++;
                             }
                             TopoDS_Wire aRes = sfw.Wire();
-                            Assert.True(aRes.IsNull() || aRes.TShape()!.IsFrozen());
+                            Assert.True(aRes.IsNull() || aRes.TShape()!.IsFrozen);
                         }
-                        catch (Standard_Failure)
+                        catch (FailureException)
                         {
                             aOcctExceptions++;
                         }
                         catch (Exception e)
                         {
-                            aFailures.Add($"{Path.GetFileName(aFile)} face {f} (topology {isTopo}): {e.GetType().Name}: {e.Message} {e.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}");
+                            aFailures.Add($"{Path.GetFileName(aFile)} face {f} (topology {isTopo}): {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message} {e.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}");
                         }
                         foreach ((string aName, Func<ShapeExtend_Status, bool> aStatus) in new (string, Func<ShapeExtend_Status, bool>)[]
                                  {

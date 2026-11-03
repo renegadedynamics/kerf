@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,20 +24,20 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
     public Geom_Hyperbola? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point3D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt>();
+            return new NCollection_Array1<Point3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt> aResult = new(1, aNb);
+        NCollection_Array1<Point3D> aResult = new(1, aNb);
 
-        gp_Hypr aHypr = myGeom.Hypr();
-        gp_Pnt aCenter = aHypr.Location();
-        gp_Dir aXDir = aHypr.XAxis().Direction();
-        gp_Dir aYDir = aHypr.YAxis().Direction();
+        Hyperbola3D aHypr = myGeom.Hypr();
+        Point3D aCenter = aHypr.Location();
+        Direction3D aXDir = aHypr.XAxis().Direction();
+        Direction3D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -57,7 +59,7 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
 
             // P = Center + MajorR * cosh(u) * XDir + MinorR * sinh(u) * YDir
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                             new Point3D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                         aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                         aCZ + aMajR * coshU * aXZ + aMinR * sinhU * aYZ));
         }
@@ -75,10 +77,10 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Hypr aHypr = myGeom.Hypr();
-        gp_Pnt aCenter = aHypr.Location();
-        gp_Dir aXDir = aHypr.XAxis().Direction();
-        gp_Dir aYDir = aHypr.YAxis().Direction();
+        Hyperbola3D aHypr = myGeom.Hypr();
+        Point3D aCenter = aHypr.Location();
+        Direction3D aXDir = aHypr.XAxis().Direction();
+        Direction3D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -102,10 +104,10 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
             // D1 = MajorR * sinh(u) * XDir + MinorR * cosh(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD1
             {
-                Point = new gp_Pnt(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point3D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                    aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                    aCZ + aMajR * coshU * aXZ + aMinR * sinhU * aYZ),
-                D1 = new gp_Vec(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector3D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                 aMajR * sinhU * aXY + aMinR * coshU * aYY,
                                 aMajR * sinhU * aXZ + aMinR * coshU * aYZ),
             };
@@ -124,10 +126,10 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Hypr aHypr = myGeom.Hypr();
-        gp_Pnt aCenter = aHypr.Location();
-        gp_Dir aXDir = aHypr.XAxis().Direction();
-        gp_Dir aYDir = aHypr.YAxis().Direction();
+        Hyperbola3D aHypr = myGeom.Hypr();
+        Point3D aCenter = aHypr.Location();
+        Direction3D aXDir = aHypr.XAxis().Direction();
+        Direction3D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -152,13 +154,13 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
             // D2 = MajorR * cosh(u) * XDir + MinorR * sinh(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD2
             {
-                Point = new gp_Pnt(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point3D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                    aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                    aCZ + aMajR * coshU * aXZ + aMinR * sinhU * aYZ),
-                D1 = new gp_Vec(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector3D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                 aMajR * sinhU * aXY + aMinR * coshU * aYY,
                                 aMajR * sinhU * aXZ + aMinR * coshU * aYZ),
-                D2 = new gp_Vec(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                D2 = new Vector3D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                 aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                 aMajR * coshU * aXZ + aMinR * sinhU * aYZ),
             };
@@ -177,10 +179,10 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Hypr aHypr = myGeom.Hypr();
-        gp_Pnt aCenter = aHypr.Location();
-        gp_Dir aXDir = aHypr.XAxis().Direction();
-        gp_Dir aYDir = aHypr.YAxis().Direction();
+        Hyperbola3D aHypr = myGeom.Hypr();
+        Point3D aCenter = aHypr.Location();
+        Direction3D aXDir = aHypr.XAxis().Direction();
+        Direction3D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -206,16 +208,16 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
             // D3 = MajorR * sinh(u) * XDir + MinorR * cosh(u) * YDir = D1
             aResult[i - theParams.Lower() + 1] = new Geom_Curve.ResD3
             {
-                Point = new gp_Pnt(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                Point = new Point3D(aCX + aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                    aCY + aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                    aCZ + aMajR * coshU * aXZ + aMinR * sinhU * aYZ),
-                D1 = new gp_Vec(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D1 = new Vector3D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                 aMajR * sinhU * aXY + aMinR * coshU * aYY,
                                 aMajR * sinhU * aXZ + aMinR * coshU * aYZ),
-                D2 = new gp_Vec(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                D2 = new Vector3D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                 aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                 aMajR * coshU * aXZ + aMinR * sinhU * aYZ),
-                D3 = new gp_Vec(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                D3 = new Vector3D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                 aMajR * sinhU * aXY + aMinR * coshU * aYY,
                                 aMajR * sinhU * aXZ + aMinR * coshU * aYZ),
             };
@@ -224,19 +226,19 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative (N &gt;= 1) at all grid points; the derivatives cycle with period 2.</summary>
-    public NCollection_Array1<gp_Vec> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector3D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec>();
+            return new NCollection_Array1<Vector3D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec> aResult = new(1, aNb);
+        NCollection_Array1<Vector3D> aResult = new(1, aNb);
 
-        gp_Hypr aHypr = myGeom.Hypr();
-        gp_Dir aXDir = aHypr.XAxis().Direction();
-        gp_Dir aYDir = aHypr.YAxis().Direction();
+        Hyperbola3D aHypr = myGeom.Hypr();
+        Direction3D aXDir = aHypr.XAxis().Direction();
+        Direction3D aYDir = aHypr.YAxis().Direction();
         double aMajR = aHypr.MajorRadius();
         double aMinR = aHypr.MinorRadius();
 
@@ -263,7 +265,7 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
             {
                 // Odd derivatives (D1, D3, D5, ...): coefficients (sinh, cosh)
                 aResult.SetValue(i - theParams.Lower() + 1,
-                                 new gp_Vec(aMajR * sinhU * aXX + aMinR * coshU * aYX,
+                                 new Vector3D(aMajR * sinhU * aXX + aMinR * coshU * aYX,
                                             aMajR * sinhU * aXY + aMinR * coshU * aYY,
                                             aMajR * sinhU * aXZ + aMinR * coshU * aYZ));
             }
@@ -271,7 +273,7 @@ public sealed class GeomGridEval_Hyperbola : GeomGridEval.ICurveEvaluator
             {
                 // Even derivatives (D2, D4, D6, ...): coefficients (cosh, sinh) = D0
                 aResult.SetValue(i - theParams.Lower() + 1,
-                                 new gp_Vec(aMajR * coshU * aXX + aMinR * sinhU * aYX,
+                                 new Vector3D(aMajR * coshU * aXX + aMinR * sinhU * aYX,
                                             aMajR * coshU * aXY + aMinR * sinhU * aYY,
                                             aMajR * coshU * aXZ + aMinR * sinhU * aYZ));
             }

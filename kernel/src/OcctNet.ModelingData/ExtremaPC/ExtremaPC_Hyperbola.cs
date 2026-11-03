@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -12,8 +14,8 @@ namespace Occt;
 /// unbounded.</remarks>
 public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
 {
-    private readonly gp_Hypr myHyperbola;                   // Hyperbola geometry
-    private readonly MathUtils.Domain1D? myDomain;          // Parameter domain (null for infinite)
+    private readonly Hyperbola3D myHyperbola;                   // Hyperbola geometry
+    private readonly global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? myDomain;          // Parameter domain (null for infinite)
     private readonly ExtremaPC.Result myResult = new();     // Reusable result storage
 
     // Cached geometry components for fast computation
@@ -26,7 +28,7 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
     private double myR2PlusR2Over4;                 // Precomputed (R^2 + r^2)/4
 
     /// <summary>Constructor with hyperbola geometry (unbounded).</summary>
-    public ExtremaPC_Hyperbola(in gp_Hypr theHyperbola)
+    public ExtremaPC_Hyperbola(in Hyperbola3D theHyperbola)
     {
         myHyperbola = theHyperbola;
         myDomain = null;
@@ -34,7 +36,7 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Constructor with hyperbola geometry and parameter domain (fixed for all queries).</summary>
-    public ExtremaPC_Hyperbola(in gp_Hypr theHyperbola, in MathUtils.Domain1D theDomain)
+    public ExtremaPC_Hyperbola(in Hyperbola3D theHyperbola, in global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D theDomain)
     {
         myHyperbola = theHyperbola;
         myDomain = theDomain.IsFinite() ? theDomain : null;
@@ -42,14 +44,14 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Evaluates point on hyperbola at parameter.</summary>
-    public gp_Pnt Value(double theU)
+    public Point3D Value(double theU)
     {
         // Hyperbola: P(u) = Center + R*cosh(u)*XDir + r*sinh(u)*YDir
         double aCosh = Math.Cosh(theU);
         double aSinh = Math.Sinh(theU);
         double aRCosh = myMajorR * aCosh;
         double arSinh = myMinorR * aSinh;
-        return new gp_Pnt(myCenterX + aRCosh * myXDirX + arSinh * myYDirX,
+        return new Point3D(myCenterX + aRCosh * myXDirX + arSinh * myYDirX,
                           myCenterY + aRCosh * myXDirY + arSinh * myYDirY,
                           myCenterZ + aRCosh * myXDirZ + arSinh * myYDirZ);
     }
@@ -58,17 +60,17 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
     public bool IsBounded() => myDomain.HasValue;
 
     /// <summary>Returns the domain (only valid if IsBounded() is true).</summary>
-    public MathUtils.Domain1D Domain() => myDomain!.Value;
+    public global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D Domain() => myDomain!.Value;
 
     /// <summary>Computes the extrema between point P and the hyperbola.</summary>
-    public ExtremaPC.Result Perform(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result Perform(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         performCore(theP, myDomain, theTol, theMode);
         return myResult;
     }
 
     /// <summary>Computes the extrema between point P and the hyperbola including endpoints.</summary>
-    public ExtremaPC.Result PerformWithEndpoints(in gp_Pnt theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
+    public ExtremaPC.Result PerformWithEndpoints(in Point3D theP, double theTol, ExtremaPC.SearchMode theMode = ExtremaPC.SearchMode.MinMax)
     {
         _ = Perform(theP, theTol, theMode);
 
@@ -82,26 +84,26 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
     }
 
     /// <summary>Returns the hyperbola geometry.</summary>
-    public gp_Hypr Hyperbola() => myHyperbola;
+    public Hyperbola3D Hyperbola() => myHyperbola;
 
     private void cacheGeometry()
     {
-        gp_Pnt aCenter = myHyperbola.Location();
+        Point3D aCenter = myHyperbola.Location();
         myCenterX = aCenter.X();
         myCenterY = aCenter.Y();
         myCenterZ = aCenter.Z();
 
-        gp_Dir aXDir = myHyperbola.XAxis().Direction();
+        Direction3D aXDir = myHyperbola.XAxis().Direction();
         myXDirX = aXDir.X();
         myXDirY = aXDir.Y();
         myXDirZ = aXDir.Z();
 
-        gp_Dir aYDir = myHyperbola.YAxis().Direction();
+        Direction3D aYDir = myHyperbola.YAxis().Direction();
         myYDirX = aYDir.X();
         myYDirY = aYDir.Y();
         myYDirZ = aYDir.Z();
 
-        gp_Dir aAxis = myHyperbola.Axis().Direction();
+        Direction3D aAxis = myHyperbola.Axis().Direction();
         myAxisX = aAxis.X();
         myAxisY = aAxis.Y();
         myAxisZ = aAxis.Z();
@@ -111,7 +113,7 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
         myR2PlusR2Over4 = (myMajorR * myMajorR + myMinorR * myMinorR) / 4.0;
     }
 
-    private MathUtils.PolyResult solveQuartic(in gp_Pnt theP)
+    private global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult solveQuartic(in Point3D theP)
     {
         // Vector from center to point
         double aDx = theP.X() - myCenterX;
@@ -143,21 +145,21 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
         double aC4 = (aX * myMajorR - aY * myMinorR) / 2.0;
         double aC5 = -myR2PlusR2Over4;
 
-        return MathPoly.Quartic(aC1, aC2, aC3, aC4, aC5);
+        return global::Kerf.Engine.Numerics.Polynomials.MathPoly.Quartic(aC1, aC2, aC3, aC4, aC5);
     }
 
-    private void performCore(in gp_Pnt theP, MathUtils.Domain1D? theDomain, double theTol, ExtremaPC.SearchMode theMode)
+    private void performCore(in Point3D theP, global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D? theDomain, double theTol, ExtremaPC.SearchMode theMode)
     {
         myResult.Clear();
 
-        MathUtils.PolyResult aPolyRes = solveQuartic(theP);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult aPolyRes = solveQuartic(theP);
 
-        if (!aPolyRes.IsDone())
+        if (!aPolyRes.IsDone)
         {
-            if (aPolyRes.Status == MathUtils.Status.InfiniteSolutions)
+            if (aPolyRes.Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InfiniteSolutions)
             {
                 myResult.Status = ExtremaPC.Status.InfiniteSolutions;
-                gp_Pnt aPtOnCurve = Value(0.0);
+                Point3D aPtOnCurve = Value(0.0);
                 myResult.InfiniteSquareDistance = theP.SquareDistance(aPtOnCurve);
             }
             else
@@ -185,7 +187,7 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
                     continue;
             }
 
-            gp_Pnt aCurvePt = Value(aU);
+            Point3D aCurvePt = Value(aU);
 
             // Check for duplicates
             bool aDuplicate = false;
@@ -214,7 +216,7 @@ public sealed class ExtremaPC_Hyperbola : ExtremaPC.ICurveEvaluator
                 // For unbounded case, just use +1.0
                 aNeighborU = aU + 1.0;
             }
-            gp_Pnt aNeighborPt = Value(aNeighborU);
+            Point3D aNeighborPt = Value(aNeighborU);
             double aNeighborDist = theP.SquareDistance(aNeighborPt);
             bool aIsMin = aSqDist < aNeighborDist;
 

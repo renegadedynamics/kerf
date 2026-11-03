@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -105,7 +107,7 @@ public class STEPConstruct_Assembly
         PDS.Init(pdsname, true, pdsdesc, CD);
 
         // create transformation
-        Standard_Transient aTrsfItem;
+        Transient aTrsfItem;
         if (!myIsCartesianTrsf)
         {
             StepRepr_ItemDefinedTransformation ItemDef = new StepRepr_ItemDefinedTransformation();
@@ -136,7 +138,7 @@ public class STEPConstruct_Assembly
     }
 
     /// <summary>Returns the Value If no Make... has been called, returns the starting SR</summary>
-    public Standard_Transient ItemValue()
+    public Transient ItemValue()
     {
         if (theval is null)
         {
@@ -190,7 +192,7 @@ public class STEPConstruct_Assembly
         Interface_EntityIterator anIter = theGraph.Sharings(rep1);
         for (; anIter.More() && pd1 is null; anIter.Next())
         {
-            Standard_Transient enti = anIter.Value();
+            Transient enti = anIter.Value();
             if (enti.DynamicType() == tSDR)
             {
                 StepShape_ShapeDefinitionRepresentation SDR = enti as StepShape_ShapeDefinitionRepresentation;
@@ -208,7 +210,7 @@ public class STEPConstruct_Assembly
         anIter = theGraph.Sharings(rep2);
         for (; anIter.More() && pd2 is null; anIter.Next())
         {
-            Standard_Transient enti = anIter.Value();
+            Transient enti = anIter.Value();
             if (enti.DynamicType() == tSDR)
             {
                 StepShape_ShapeDefinitionRepresentation SDR = enti as StepShape_ShapeDefinitionRepresentation;
@@ -250,7 +252,7 @@ public class STEPConstruct_Assembly
     private StepShape_ShapeDefinitionRepresentation thesdr0;
     private StepShape_ShapeRepresentation thesr;
     private StepShape_ShapeRepresentation thesr0;
-    private Standard_Transient theval;
+    private Transient theval;
     private StepGeom_Axis2Placement3d theloc;
     private StepGeom_Axis2Placement3d theax0;
     private StepGeom_CartesianTransformationOperator3d myTrsfOp;

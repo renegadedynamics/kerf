@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ToleranceZoneDefinition
 /// </summary>
-public class StepDimTol_ToleranceZoneDefinition : Standard_Transient
+public class StepDimTol_ToleranceZoneDefinition : Transient
 {
     private NCollection_HArray1<StepRepr_ShapeAspect> myBoundaries;
     private StepDimTol_ToleranceZone myZone;

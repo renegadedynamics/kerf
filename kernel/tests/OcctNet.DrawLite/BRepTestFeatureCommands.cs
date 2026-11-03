@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Occt.BRepFeat_Status;
-using static Occt.Standard;
+using static Kerf.Engine.Foundation.Standard;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.DrawLite;
@@ -169,12 +170,12 @@ internal static partial class BRepTestFeatureCommands
         FeatureState aState = State(theDI);
         TopoDS_Shape S = theDI.GetShape(a[2]);
 
-        gp_Pnt Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-        gp_Dir Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+        Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
 
         double Radius = theDI.Atof(a[9]);
 
-        aState.Hole.Init(S, new gp_Ax1(Or, Di));
+        aState.Hole.Init(S, new Axis3D(Or, Di));
 
         if (narg <= 10)
         {
@@ -200,12 +201,12 @@ internal static partial class BRepTestFeatureCommands
         FeatureState aState = State(theDI);
         TopoDS_Shape S = theDI.GetShape(a[2]);
 
-        gp_Pnt Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-        gp_Dir Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+        Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
 
         double Radius = theDI.Atof(a[9]);
 
-        aState.Hole.Init(S, new gp_Ax1(Or, Di));
+        aState.Hole.Init(S, new Axis3D(Or, Di));
         aState.Hole.PerformThruNext(Radius, aState.WithControl);
 
         return HoleDone(theDI, theCommands, a, aState);
@@ -221,12 +222,12 @@ internal static partial class BRepTestFeatureCommands
         FeatureState aState = State(theDI);
         TopoDS_Shape S = theDI.GetShape(a[2]);
 
-        gp_Pnt Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-        gp_Dir Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+        Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
 
         double Radius = theDI.Atof(a[9]);
 
-        aState.Hole.Init(S, new gp_Ax1(Or, Di));
+        aState.Hole.Init(S, new Axis3D(Or, Di));
         aState.Hole.PerformUntilEnd(Radius, aState.WithControl);
 
         return HoleDone(theDI, theCommands, a, aState);
@@ -242,13 +243,13 @@ internal static partial class BRepTestFeatureCommands
         FeatureState aState = State(theDI);
         TopoDS_Shape S = theDI.GetShape(a[2]);
 
-        gp_Pnt Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
-        gp_Dir Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+        Point3D Or = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
+        Direction3D Di = new(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
 
         double Radius = theDI.Atof(a[9]);
         double Length = theDI.Atof(a[10]);
 
-        aState.Hole.Init(S, new gp_Ax1(Or, Di));
+        aState.Hole.Init(S, new Axis3D(Or, Di));
         aState.Hole.PerformBlind(Radius, Length, aState.WithControl);
 
         return HoleDone(theDI, theCommands, a, aState);
@@ -273,7 +274,7 @@ internal static partial class BRepTestFeatureCommands
     }
 
     // The search of the sliding faces of wprism and fprism: the faces of the shape parallel to the prism's direction
-    private static void AddSlidingFacesForPrism(in TopoDS_Shape S, in TopoDS_Shape ToPrism, in gp_Vec V,
+    private static void AddSlidingFacesForPrism(in TopoDS_Shape S, in TopoDS_Shape ToPrism, in Vector3D V,
                                                 BRepFeat_MakePrism thePFace)
     {
         LocOpe_FindEdgesInFace FEIF = new();
@@ -287,8 +288,8 @@ internal static partial class BRepTestFeatureCommands
             }
             if (Su.GetType() == typeof(Geom_Plane))
             {
-                gp_Pln pl = ((Geom_Plane)Su).Pln();
-                if (pl.Contains(new gp_Lin(pl.Location(), new gp_Dir(V)), Precision.Confusion(), Precision.Angular()))
+                Plane3D pl = ((Geom_Plane)Su).Pln();
+                if (pl.Contains(new Line3D(pl.Location(), new Direction3D(V)), global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -299,8 +300,8 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(Geom_CylindricalSurface))
             {
-                gp_Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
-                if (V.IsParallel(new gp_Vec(cy.Axis().Direction()), Precision.Angular()))
+                Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
+                if (V.IsParallel(new Vector3D(cy.Axis().Direction()), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -367,7 +368,7 @@ internal static partial class BRepTestFeatureCommands
         }
         TopoDS_Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakePrism thePFace = new();
-        gp_Vec V = new();
+        Vector3D V = new();
         TopoDS_Shape FFrom = new(), FUntil = new();
         int borne;
         bool fuse;
@@ -414,7 +415,7 @@ internal static partial class BRepTestFeatureCommands
             borne = 7;
         }
         double Length = V.Magnitude();
-        if (Length < Precision.Confusion())
+        if (Length < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return 1;
         }
@@ -448,7 +449,7 @@ internal static partial class BRepTestFeatureCommands
         IReadOnlyList<TopoDS_Shape> lleft = Spls.DirectLeft();
         if (lleft.Count == 1)
         {
-            thePFace.Init(S, lleft[0], F, new gp_Dir(V), fuse ? 1 : 0, true);
+            thePFace.Init(S, lleft[0], F, new Direction3D(V), fuse ? 1 : 0, true);
             ToPrism = lleft[0];
         }
         else
@@ -461,7 +462,7 @@ internal static partial class BRepTestFeatureCommands
                 B.Add(Sh, TopoDS.Face(aLeft));
             }
             Sh.Closed(BRep_Tool.IsClosed(Sh));
-            thePFace.Init(S, Sh, F, new gp_Dir(V), fuse ? 1 : 0, true);
+            thePFace.Init(S, Sh, F, new Direction3D(V), fuse ? 1 : 0, true);
             ToPrism = Sh;
         }
 
@@ -494,7 +495,7 @@ internal static partial class BRepTestFeatureCommands
         TopoDS_Shape S = theDI.GetShape(a[3]);
         BRepFeat_MakePrism thePFace = new();
         int borne;
-        gp_Vec V = new();
+        Vector3D V = new();
         TopoDS_Shape FFrom = new(), FUntil = new();
         bool fuse;
         if (At(a[1], 0) == 'f' || At(a[1], 0) == 'F')
@@ -540,7 +541,7 @@ internal static partial class BRepTestFeatureCommands
             V.SetCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
         }
         double Length = V.Magnitude();
-        if (Length < Precision.Confusion())
+        if (Length < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return 1;
         }
@@ -550,7 +551,7 @@ internal static partial class BRepTestFeatureCommands
         {
             TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
             TopoDS_Face F = TopoDS.Face(aLocalShape);
-            thePFace.Init(S, F, F, new gp_Dir(V), fuse ? 1 : 0, true);
+            thePFace.Init(S, F, F, new Direction3D(V), fuse ? 1 : 0, true);
             ToPrism = F;
         }
         else
@@ -568,7 +569,7 @@ internal static partial class BRepTestFeatureCommands
                 }
             }
             She.Closed(BRep_Tool.IsClosed(She));
-            thePFace.Init(S, She, new TopoDS_Face(), new gp_Dir(V), fuse ? 1 : 0, false);
+            thePFace.Init(S, She, new TopoDS_Face(), new Direction3D(V), fuse ? 1 : 0, false);
             ToPrism = She;
         }
 
@@ -812,7 +813,7 @@ internal static partial class BRepTestFeatureCommands
     }
 
     // The search of the sliding faces of wrotate and frotate: the faces of the shape around the axis
-    private static void AddSlidingFacesForRevol(in TopoDS_Shape S, in TopoDS_Shape ToRotate, in gp_Ax1 theAxis,
+    private static void AddSlidingFacesForRevol(in TopoDS_Shape S, in TopoDS_Shape ToRotate, in Axis3D theAxis,
                                                 BRepFeat_MakeRevol theRFace)
     {
         LocOpe_FindEdgesInFace FEIF = new();
@@ -826,8 +827,8 @@ internal static partial class BRepTestFeatureCommands
             }
             if (Su.GetType() == typeof(Geom_Plane))
             {
-                gp_Pln pl = ((Geom_Plane)Su).Pln();
-                if (pl.Axis().IsParallel(theAxis, Precision.Angular()))
+                Plane3D pl = ((Geom_Plane)Su).Pln();
+                if (pl.Axis().IsParallel(theAxis, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToRotate, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -838,8 +839,8 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(Geom_CylindricalSurface))
             {
-                gp_Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
-                if (cy.Axis().IsCoaxial(theAxis, Precision.Angular(), Precision.Confusion()))
+                Cylinder cy = ((Geom_CylindricalSurface)Su).Cylinder();
+                if (cy.Axis().IsCoaxial(theAxis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     FEIF.Set(ToRotate, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -916,9 +917,9 @@ internal static partial class BRepTestFeatureCommands
         }
 
         borne = i + 6;
-        gp_Pnt Or = new(theDI.Atof(a[i]), theDI.Atof(a[i + 1]), theDI.Atof(a[i + 2]));
-        gp_Dir D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
-        gp_Ax1 theAxis = new(Or, D);
+        Point3D Or = new(theDI.Atof(a[i]), theDI.Atof(a[i + 1]), theDI.Atof(a[i + 2]));
+        Direction3D D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
+        Axis3D theAxis = new(Or, D);
 
         TopoDS_Shape aLocalShape = theDI.GetShape(a[borne], TopAbs_FACE);
         TopoDS_Face F = TopoDS.Face(aLocalShape);
@@ -1019,9 +1020,9 @@ internal static partial class BRepTestFeatureCommands
         }
 
         borne = i + 6;
-        gp_Pnt Or = new(theDI.Atof(a[i]), theDI.Atof(a[i + 1]), theDI.Atof(a[i + 2]));
-        gp_Dir D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
-        gp_Ax1 theAxis = new(Or, D);
+        Point3D Or = new(theDI.Atof(a[i]), theDI.Atof(a[i + 1]), theDI.Atof(a[i + 2]));
+        Direction3D D = new(theDI.Atof(a[i + 3]), theDI.Atof(a[i + 4]), theDI.Atof(a[i + 5]));
+        Axis3D theAxis = new(Or, D);
 
         TopoDS_Shape ToRotate;
         if (narg == borne + 1)
@@ -1223,18 +1224,18 @@ internal static partial class BRepTestFeatureCommands
                 aState.theSbase = Sbase;
                 aState.thePbase = Pbase;
                 aState.theSkface = Skface;
-                aState.Prism.Init(Sbase, Pbase, Skface, new gp_Dir(X, Y, Z), Fuse, Modify);
+                aState.Prism.Init(Sbase, Pbase, Skface, new Direction3D(X, Y, Z), Fuse, Modify);
             }
             else if (narg == 14)
             {
                 aState.rfdef = true;
-                gp_Pnt Or = new(X, Y, Z);
+                Point3D Or = new(X, Y, Z);
                 X = theDI.Atof(a[7]);
                 Y = theDI.Atof(a[8]);
                 Z = theDI.Atof(a[9]);
                 double H1 = theDI.Atof(a[10]);
                 double H2 = theDI.Atof(a[11]);
-                gp_Ax1 ax1 = new(Or, new gp_Dir(X, Y, Z));
+                Axis3D ax1 = new(Or, new Direction3D(X, Y, Z));
                 aState.RevolutionForm.Init(Sbase, W, P!, ax1, H1, H2, Fuse, Modify);
                 if (!aState.RevolutionForm.IsDone())
                 {
@@ -1246,23 +1247,23 @@ internal static partial class BRepTestFeatureCommands
             else if (narg == 12 && !EqualsNoCase(a0, "FEATLF"))
             {
                 aState.rvdef = true;
-                gp_Pnt Or = new(X, Y, Z);
+                Point3D Or = new(X, Y, Z);
                 X = theDI.Atof(a[7]);
                 Y = theDI.Atof(a[8]);
                 Z = theDI.Atof(a[9]);
                 aState.theSbase = Sbase;
                 aState.thePbase = Pbase;
                 aState.theSkface = Skface;
-                aState.Revol.Init(Sbase, Pbase, Skface, new gp_Ax1(Or, new gp_Dir(X, Y, Z)), Fuse, Modify);
+                aState.Revol.Init(Sbase, Pbase, Skface, new Axis3D(Or, new Direction3D(X, Y, Z)), Fuse, Modify);
             }
             else
             {
                 aState.lfdef = true;
-                gp_Vec Direct = new(X, Y, Z);
+                Vector3D Direct = new(X, Y, Z);
                 X = theDI.Atof(a[7]);
                 Y = theDI.Atof(a[8]);
                 Z = theDI.Atof(a[9]);
-                aState.LinearForm.Init(Sbase, W, P!, Direct, new gp_Vec(X, Y, Z), Fuse, Modify);
+                aState.LinearForm.Init(Sbase, W, P!, Direct, new Vector3D(X, Y, Z), Fuse, Modify);
                 if (!aState.LinearForm.IsDone())
                 {
                     se = aState.LinearForm.CurrentStatusError();
@@ -1875,7 +1876,7 @@ internal static partial class BRepTestFeatureCommands
         BRepFilletAPI_MakeFillet Rakk = new(V, FSh);
         aState.Rakk = Rakk;
         Rakk.SetParams(ta, tesp, t2d, t3d, t2d, fl);
-        Rakk.SetContinuity(GeomAbs_Shape.GeomAbs_C1, tapp_angle);
+        Rakk.SetContinuity(Continuity.C1, tapp_angle);
         int nbedge = 0;
 
         if (Kas == 2)

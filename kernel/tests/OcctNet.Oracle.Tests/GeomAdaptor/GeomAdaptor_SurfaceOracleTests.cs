@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -18,9 +19,9 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(40, 4);
 
-    private static readonly GeomAbs_Shape[] Shapes =
-        [GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_G1, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_G2,
-         GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3, GeomAbs_Shape.GeomAbs_CN];
+    private static readonly Continuity[] Shapes =
+        [Continuity.C0, Continuity.G1, Continuity.C1, Continuity.G2,
+         Continuity.C2, Continuity.C3, Continuity.CN];
 
     private static void SameIntervals(Oracle theO, N.GeomAdaptor_Surface theN, GeomAdaptor_Surface theP, bool theU,
                                       string theWhat)
@@ -32,7 +33,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         {
             theO.Same(aNC, aPC, $"{theWhat} {aDir}Continuity");
         }
-        foreach (GeomAbs_Shape aS in Shapes)
+        foreach (Continuity aS in Shapes)
         {
             var aNS = (N.GeomAbs_Shape)(int)aS;
             int aNNb = 0, aPNb = 0;
@@ -129,14 +130,14 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
 
         switch (theP.GetType())
         {
-            case GeomAbs_SurfaceType.GeomAbs_Plane:
+            case SurfaceKind.Plane:
             {
                 using N.gp_Pln aN = theN.Plane();
                 using N.gp_Ax3 aNA = aN.Position();
                 SameAx3(theO, aNA, theP.Plane().Position(), theWhat + " Plane");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 using N.gp_Cylinder aN = theN.Cylinder();
                 using N.gp_Ax3 aNA = aN.Position();
@@ -144,7 +145,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 theO.Same(aN.Radius(), theP.Cylinder().Radius(), theWhat + " Cylinder radius");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 using N.gp_Cone aN = theN.Cone();
                 using N.gp_Ax3 aNA = aN.Position();
@@ -153,7 +154,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 theO.Same(aN.SemiAngle(), theP.Cone().SemiAngle(), theWhat + " Cone angle");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 using N.gp_Sphere aN = theN.Sphere();
                 using N.gp_Ax3 aNA = aN.Position();
@@ -161,7 +162,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 theO.Same(aN.Radius(), theP.Sphere().Radius(), theWhat + " Sphere radius");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 using N.gp_Torus aN = theN.Torus();
                 using N.gp_Ax3 aNA = aN.Position();
@@ -170,7 +171,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 theO.Same(aN.MinorRadius(), theP.Torus().MinorRadius(), theWhat + " Torus minor");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_BezierSurface:
+            case SurfaceKind.BezierSurface:
             {
                 using N.Geom_BezierSurface aN = theN.Bezier()!;
                 Geom_BezierSurface aP = theP.Bezier();
@@ -178,7 +179,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 SameSurfaceEval(theO, aN, aP, 0.3, 0.6, 2, theWhat + " Bezier()");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_BSplineSurface:
+            case SurfaceKind.BSplineSurface:
             {
                 using N.Geom_BSplineSurface aN = theN.BSpline()!;
                 Geom_BSplineSurface aP = theP.BSpline();
@@ -186,7 +187,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 SameSurfaceEval(theO, aN, aP, aP.UKnot(1), aP.VKnot(aP.NbVKnots()), 2, theWhat + " BSpline()");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution:
+            case SurfaceKind.SurfaceOfRevolution:
             {
                 using N.gp_Ax1 aNA = theN.AxeOfRevolution();
                 SameAx1(theO, aNA, theP.AxeOfRevolution(), theWhat + " AxeOfRevolution");
@@ -195,7 +196,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 SameCurveEval(theO, aNC, aPC, Param(theO, aPC.FirstParameter(), aPC.LastParameter()), 2, theWhat + " BasisCurve");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion:
+            case SurfaceKind.SurfaceOfExtrusion:
             {
                 using N.gp_Dir aND = theN.Direction();
                 SameDir(theO, aND, theP.Direction(), theWhat + " Direction");
@@ -204,7 +205,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                 SameCurveEval(theO, aNC, aPC, Param(theO, aPC.FirstParameter(), aPC.LastParameter()), 2, theWhat + " BasisCurve");
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_OffsetSurface:
+            case SurfaceKind.OffsetSurface:
             {
                 theO.Same(theN.OffsetValue(), theP.OffsetValue(), theWhat + " OffsetValue");
                 using N.Adaptor3d_Surface aNS = theN.BasisSurface()!;
@@ -235,18 +236,18 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         foreach ((List<double> aList, double aF, double aL, double aTol) in
                  new[] { (aUs, aU1, aU2, theP.ToleranceU()), (aVs, aV1, aV2, theP.ToleranceV()) })
         {
-            if (!Precision.IsInfinite(aF))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aF))
             {
                 aList.Add(aF);
                 aList.Add(aF + 0.5 * aTol);
             }
-            if (!Precision.IsInfinite(aL))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
             {
                 aList.Add(aL);
                 aList.Add(aL - 0.5 * aTol);
             }
         }
-        if (theP.GetType() == GeomAbs_SurfaceType.GeomAbs_BSplineSurface)
+        if (theP.GetType() == SurfaceKind.BSplineSurface)
         {
             Geom_BSplineSurface aBS = theP.BSpline();
             for (int i = 1; i <= aBS.NbUKnots(); i++)
@@ -353,7 +354,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
 
     private static (double, double) Bounds(Oracle theO, double theFirst, double theLast)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double aF = theO.Real(-10, 0);
             return (aF, aF + theO.Real(0.5, 10));

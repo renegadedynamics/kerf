@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -27,20 +29,20 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
     public Geom2d_Parabola? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNb);
+        NCollection_Array1<Point2D> aResult = new(1, aNb);
 
-        gp_Parab2d aParab = myGeom.Parab2d();
-        gp_Pnt2d aCenter = aParab.Location();
-        gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
-        gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Parabola2D aParab = myGeom.Parab2d();
+        Point2D aCenter = aParab.Location();
+        Direction2D aXDir = aParab.MirrorAxis().Direction();
+        Direction2D aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
         double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
@@ -58,7 +60,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
             // P = Center + (u^2 / 4F) * XDir + u * YDir
             double u2Term = u * u * aCoeff;
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt2d(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY));
+                             new Point2D(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY));
         }
         return aResult;
     }
@@ -74,10 +76,10 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Parab2d aParab = myGeom.Parab2d();
-        gp_Pnt2d aCenter = aParab.Location();
-        gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
-        gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Parabola2D aParab = myGeom.Parab2d();
+        Point2D aCenter = aParab.Location();
+        Direction2D aXDir = aParab.MirrorAxis().Direction();
+        Direction2D aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
         double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
@@ -99,8 +101,8 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
             double d1Term = u * aCoeff2;
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD1
             {
-                Point = new gp_Pnt2d(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
-                D1 = new gp_Vec2d(d1Term * aXX + aYX, d1Term * aXY + aYY),
+                Point = new Point2D(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
+                D1 = new Vector2D(d1Term * aXX + aYX, d1Term * aXY + aYY),
             };
         }
         return aResult;
@@ -117,10 +119,10 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Parab2d aParab = myGeom.Parab2d();
-        gp_Pnt2d aCenter = aParab.Location();
-        gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
-        gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Parabola2D aParab = myGeom.Parab2d();
+        Point2D aCenter = aParab.Location();
+        Direction2D aXDir = aParab.MirrorAxis().Direction();
+        Direction2D aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
         double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
@@ -134,7 +136,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         double aCoeff2 = 1.0 / (2.0 * aFocal);
 
         // D2 is constant for parabola: (1/2F) * XDir
-        gp_Vec2d aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
+        Vector2D aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -143,8 +145,8 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
             double d1Term = u * aCoeff2;
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD2
             {
-                Point = new gp_Pnt2d(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
-                D1 = new gp_Vec2d(d1Term * aXX + aYX, d1Term * aXY + aYY),
+                Point = new Point2D(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
+                D1 = new Vector2D(d1Term * aXX + aYX, d1Term * aXY + aYY),
                 D2 = aD2,
             };
         }
@@ -162,10 +164,10 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Parab2d aParab = myGeom.Parab2d();
-        gp_Pnt2d aCenter = aParab.Location();
-        gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
-        gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Parabola2D aParab = myGeom.Parab2d();
+        Point2D aCenter = aParab.Location();
+        Direction2D aXDir = aParab.MirrorAxis().Direction();
+        Direction2D aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
         double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aCX = aCenter.X();
@@ -178,8 +180,8 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         double aCoeff = 1.0 / (4.0 * aFocal);
         double aCoeff2 = 1.0 / (2.0 * aFocal);
 
-        gp_Vec2d aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
-        gp_Vec2d aD3 = new(0.0, 0.0);
+        Vector2D aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
+        Vector2D aD3 = new(0.0, 0.0);
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -188,8 +190,8 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
             double d1Term = u * aCoeff2;
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD3
             {
-                Point = new gp_Pnt2d(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
-                D1 = new gp_Vec2d(d1Term * aXX + aYX, d1Term * aXY + aYY),
+                Point = new Point2D(aCX + u2Term * aXX + u * aYX, aCY + u2Term * aXY + u * aYY),
+                D1 = new Vector2D(d1Term * aXX + aYX, d1Term * aXY + aYY),
                 D2 = aD2,
                 D3 = aD3,
             };
@@ -198,19 +200,19 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
     }
 
     /// <summary>Evaluates the Nth derivative at all grid points (zero for N &gt;= 3).</summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
+        NCollection_Array1<Vector2D> aResult = new(1, aNb);
 
-        gp_Parab2d aParab = myGeom.Parab2d();
-        gp_Dir2d aXDir = aParab.MirrorAxis().Direction();
-        gp_Dir2d aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Parabola2D aParab = myGeom.Parab2d();
+        Direction2D aXDir = aParab.MirrorAxis().Direction();
+        Direction2D aYDir = new(-aXDir.Y(), aXDir.X()); // OCCT: ignores the sense of the parabola's axes
         double aFocal = aParab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double aXX = aXDir.X();
@@ -227,13 +229,13 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
             {
                 double u = theParams.Value(i);
                 double d1Term = u * aCoeff2;
-                aResult.SetValue(i - theParams.Lower() + 1, new gp_Vec2d(d1Term * aXX + aYX, d1Term * aXY + aYY));
+                aResult.SetValue(i - theParams.Lower() + 1, new Vector2D(d1Term * aXX + aYX, d1Term * aXY + aYY));
             }
         }
         else if (theN == 2)
         {
             // D2 = (1/2F) * X (constant)
-            gp_Vec2d aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
+            Vector2D aD2 = new(aCoeff2 * aXX, aCoeff2 * aXY);
             for (int i = 1; i <= aNb; ++i)
             {
                 aResult.SetValue(i, aD2);
@@ -242,7 +244,7 @@ public sealed class Geom2dGridEval_Parabola : Geom2dGridEval.ICurveEvaluator
         else
         {
             // DN = 0 for N >= 3
-            gp_Vec2d aZero = new(0.0, 0.0);
+            Vector2D aZero = new(0.0, 0.0);
             for (int i = 1; i <= aNb; ++i)
             {
                 aResult.SetValue(i, aZero);

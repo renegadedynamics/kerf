@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_CheckStatus;
 
 namespace Occt;
@@ -17,7 +18,7 @@ namespace Occt;
 /// (integers, reals, strings) The original form can be more suitable for some operations such as counting
 /// messages
 /// </summary>
-public class Interface_Check : Standard_Transient
+public class Interface_Check : Transient
 {
 
     /// <summary>
@@ -31,7 +32,7 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Defines a Check on an Entity
     /// </summary>
-    public Interface_Check(Standard_Transient? anentity)
+    public Interface_Check(Transient? anentity)
     {
         theent = anentity;
     }
@@ -39,7 +40,7 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// New name for AddFail (Msg)
     /// </summary>
-    public void SendFail(Message_Msg amsg)
+    public void SendFail(Msg amsg)
     {
         AddFail(amsg);
     }
@@ -101,9 +102,9 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Records a new Fail from the definition of a Msg (Original+Value)
     /// </summary>
-    public void AddFail(Message_Msg amsg)
+    public void AddFail(Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddFail(new TCollection_HAsciiString((amsg.Value())),
                             new TCollection_HAsciiString((amsg.Original())));
@@ -137,7 +138,7 @@ public class Interface_Check : Standard_Transient
     {
         if (thefails is null)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return (final ? thefails.Value(num) : thefailo.Value(num));
     }
@@ -167,7 +168,7 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// New name for AddWarning
     /// </summary>
-    public void SendWarning(Message_Msg amsg)
+    public void SendWarning(Msg amsg)
     {
         AddWarning(amsg);
     }
@@ -229,9 +230,9 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Records a new Warning from the definition of a Msg (Original+Value)
     /// </summary>
-    public void AddWarning(Message_Msg amsg)
+    public void AddWarning(Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddWarning(new TCollection_HAsciiString((amsg.Value())),
                                   new TCollection_HAsciiString((amsg.Original())));
@@ -265,7 +266,7 @@ public class Interface_Check : Standard_Transient
     {
         if (thewarns is null)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return (final ? thewarns.Value(num) : thewarno.Value(num));
     }
@@ -295,11 +296,11 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Records an information message This does not change the status of the Check
     /// </summary>
-    public void SendMsg(Message_Msg amsg)
+    public void SendMsg(Msg amsg)
     {
         TCollection_HAsciiString mess = new TCollection_HAsciiString(amsg.Value());
         TCollection_HAsciiString orig = mess;
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             orig = new TCollection_HAsciiString(amsg.Original());
         }
@@ -331,7 +332,7 @@ public class Interface_Check : Standard_Transient
     {
         if (theinfos is null)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return (final ? theinfos.Value(num) : theinfoo.Value(num));
     }
@@ -488,7 +489,7 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Returns the entity on which the Check has been defined
     /// </summary>
-    public Standard_Transient? Entity()
+    public Transient? Entity()
     {
         return theent;
     }
@@ -703,7 +704,7 @@ public class Interface_Check : Standard_Transient
     /// <summary>
     /// Receives an entity result of a Transfer
     /// </summary>
-    public void SetEntity(Standard_Transient? anentity)
+    public void SetEntity(Transient? anentity)
     {
         theent = anentity;
     }
@@ -712,7 +713,7 @@ public class Interface_Check : Standard_Transient
     /// same as SetEntity (old form kept for compatibility) Warning : Does nothing if Entity field is not yet
     /// clear
     /// </summary>
-    public void GetEntity(Standard_Transient? anentity)
+    public void GetEntity(Transient? anentity)
     {
         if (theent is null)
         {
@@ -918,7 +919,7 @@ public class Interface_Check : Standard_Transient
     public void Trace(int level = -1, int final = 1)
     {
         // clang-format off
-        using Message_Messenger.StreamBuffer sout = Message.SendInfo(); // shouldn't it be changed to SendTrace()?
+        using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo(); // shouldn't it be changed to SendTrace()?
         // clang-format on
         var aText = new StringWriter();
         Print(aText, level, final);
@@ -931,5 +932,5 @@ public class Interface_Check : Standard_Transient
     private NCollection_HSequence<TCollection_HAsciiString>? thewarno;
     private NCollection_HSequence<TCollection_HAsciiString>? theinfos;
     private NCollection_HSequence<TCollection_HAsciiString>? theinfoo;
-    private Standard_Transient? theent;
+    private Transient? theent;
 }

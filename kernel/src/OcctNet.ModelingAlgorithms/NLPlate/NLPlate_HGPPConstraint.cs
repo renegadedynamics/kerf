@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -14,14 +18,14 @@ namespace Occt;
 /// moves the UV point of a sliding constraint (<c>SetUV</c>). The base's targets are zero and its setters, but
 /// <c>SetActiveOrder</c> and <c>SetUV</c>, do nothing, as in OCCT.
 /// </remarks>
-public abstract class NLPlate_HGPPConstraint : Standard_Transient
+public abstract class NLPlate_HGPPConstraint : Transient
 {
-    private static readonly gp_XYZ XYZnull = new(0.0, 0.0, 0.0);
+    private static readonly Xyz XYZnull = new(0.0, 0.0, 0.0);
     private static readonly Plate_D1 D1null = new(XYZnull, XYZnull);
     private static readonly Plate_D2 D2null = new(XYZnull, XYZnull, XYZnull);
     private static readonly Plate_D3 D3null = new(XYZnull, XYZnull, XYZnull, XYZnull);
 
-    protected gp_XY myUV;
+    protected Xy myUV;
     protected int myActiveOrder;
 
     protected NLPlate_HGPPConstraint()
@@ -42,7 +46,7 @@ public abstract class NLPlate_HGPPConstraint : Standard_Transient
         myActiveOrder = ActiveOrder;
     }
 
-    public virtual void SetUV(in gp_XY UV)
+    public virtual void SetUV(in Xy UV)
     {
         myUV = UV;
     }
@@ -73,14 +77,14 @@ public abstract class NLPlate_HGPPConstraint : Standard_Transient
 
     public abstract int ActiveOrder();
 
-    public virtual gp_XY UV() => myUV;
+    public virtual Xy UV() => myUV;
 
     public virtual int Orientation() => 0;
 
     public abstract bool IsG0();
 
     /// <summary>The target position (zero in the base: OCCT says it should not be called).</summary>
-    public virtual gp_XYZ G0Target() => XYZnull;
+    public virtual Xyz G0Target() => XYZnull;
 
     /// <summary>The target first derivatives (zero in the base: OCCT says it should not be called).</summary>
     public virtual Plate_D1 G1Target() => D1null;

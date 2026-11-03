@@ -1,3 +1,6 @@
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Text;
 
 using Occt;
@@ -14,7 +17,7 @@ internal static partial class Extras
     public static bool WriteStl(TopoDS_Shape meshed, Stream stream, bool ascii, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var progress = new Message_ProgressIndicator(cancellationToken);
+        var progress = new ProgressIndicator(cancellationToken);
         var writer = new StlAPI_Writer();
         writer.SetASCIIMode(ascii);
         var done = writer.Write(meshed, stream, progress.Start());
@@ -30,7 +33,7 @@ internal static partial class Extras
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
-        var progress = new Message_ProgressIndicator(cancellationToken);
+        var progress = new ProgressIndicator(cancellationToken);
         var stlLimits = new RWStl_ReadLimits
         {
             MaxBytes = limits.MaxBytes,
@@ -38,16 +41,16 @@ internal static partial class Extras
         };
         var mesh = RWStl.ReadFile(stream, Math.PI / 2.0, progress.Start(), stlLimits);
         cancellationToken.ThrowIfCancellationRequested();
-        if (mesh is null || mesh.NbTriangles() == 0)
+        if (mesh is null || mesh.TriangleCount == 0)
             throw new InvalidDataException("The STL data holds no triangles, or is larger than the limits");
         if (scale != 1.0)
         {
             // RWStl's triangulations are published (frozen): scale a copy, as build123d scales the nodes it read
             mesh = mesh.Copy();
-            for (int i = 1; i <= mesh.NbNodes(); i++)
+            for (int i = 1; i <= mesh.NodeCount; i++)
             {
                 var p = mesh.Node(i);
-                mesh.SetNode(i, new gp_Pnt(p.X() * scale, p.Y() * scale, p.Z() * scale));
+                mesh.SetNode(i, new Point3D(p.X() * scale, p.Y() * scale, p.Z() * scale));
             }
         }
         var face = new TopoDS_Face();
@@ -69,7 +72,7 @@ internal static partial class Extras
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(stream);
-        var progress = new Message_ProgressIndicator(cancellationToken);
+        var progress = new ProgressIndicator(cancellationToken);
         var writer = new RWGltf_TreeWriter(new RWGltf_WriteOptions { InputLengthUnit = unitInMetres, Generator = "build123d.NET" });
         var tree = ToTree(root);
         bool done;
@@ -100,7 +103,7 @@ internal static partial class Extras
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(stream);
-        var progress = new Message_ProgressIndicator(cancellationToken);
+        var progress = new ProgressIndicator(cancellationToken);
         var writer = new RW3mf_TreeWriter(new RW3mf_WriteOptions { InputLengthUnit = unitInMetres });
         var done = writer.Write(ToTree(root), stream, progress.Start());
         cancellationToken.ThrowIfCancellationRequested();
@@ -116,7 +119,7 @@ internal static partial class Extras
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
-        var progress = new Message_ProgressIndicator(cancellationToken);
+        var progress = new ProgressIndicator(cancellationToken);
         var options = new RWGltf_ReadOptions
         {
             OutputLengthUnit = unitInMetres,
@@ -162,7 +165,7 @@ internal static partial class Extras
         // from the file's folder and refused outside it
         if (externalFiles)
             reader.SetExternFileResolver(STEPCAFControl_Reader.FolderResolver(Path.GetDirectoryName(Path.GetFullPath(name))!));
-        var status = reader.ReadStream(name, stream, new Message_ProgressIndicator(cancellationToken).Start(), stepLimits);
+        var status = reader.ReadStream(name, stream, new ProgressIndicator(cancellationToken).Start(), stepLimits);
         cancellationToken.ThrowIfCancellationRequested();
         if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
             return (IFSelect_ReturnStatus)status;
@@ -174,7 +177,7 @@ internal static partial class Extras
                 throw new InvalidDataException($"{name} refers to {references.NbExternRefs()} other STEP file(s), which aren't read from a stream");
         }
         var document = new XdeDoc_Document();
-        reader.Transfer(document, new Message_ProgressIndicator(cancellationToken).Start());
+        reader.Transfer(document, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         var roots = document.ToTree().Roots.Select(r => FromInstance(r, productNames: true)).ToList();
         root = roots.Count switch
@@ -212,7 +215,7 @@ internal static partial class Extras
         parameters.WriteSurfaceCurMode = settings.WritePcurves;
         parameters.WritePrecisionMode = (DESTEP_Parameters.WriteMode_PrecisionMode)settings.PrecisionMode;
         var done = writer.Transfer(document, in parameters, STEPControl_StepModelType.STEPControl_AsIs, null,
-                                   new Message_ProgressIndicator(cancellationToken).Start());
+                                   new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         return done && writer.WriteStream(stream) == IFSelect_ReturnStatus.IFSelect_RetDone;
     }
@@ -235,14 +238,14 @@ internal static partial class Extras
     {
         if (node.Shape is not { } shape)
         {
-            var location = node.Location ?? new TopLoc_Location();
+            var location = node.Location ?? new Placement();
             var assembly = XdeDoc_Product.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products)));
             if (node.Color is { } c)
                 assembly = assembly.WithColor(XdeDoc_ColorType.XdeDoc_ColorSurf, Rgba(c));
             return new XdeDoc_Instance(assembly, location);
         }
         // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
-        var origin = shape.Located(new TopLoc_Location());
+        var origin = shape.Located(new Placement());
         var key = new ProductKey(origin.TShape()!, origin.Orientation(), node.Name, node.Color);
         if (!products.ByKey.TryGetValue(key, out var product))
         {
@@ -260,7 +263,7 @@ internal static partial class Extras
         return new XdeDoc_Instance(product, shape.Location());
     }
 
-    private static Quantity_ColorRGBA Rgba((double R, double G, double B, double A) c)
+    private static ColorWithAlpha Rgba((double R, double G, double B, double A) c)
         => new((float)c.R, (float)c.G, (float)c.B, (float)c.A);
 
     // A node of the tree read: named by its instance, else its product (glTF's nodes name instances), or by its

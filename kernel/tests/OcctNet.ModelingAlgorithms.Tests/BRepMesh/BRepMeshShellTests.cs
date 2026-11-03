@@ -1,8 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
-using static Occt.Message_Status;
+using static Kerf.Engine.Foundation.Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -41,18 +46,18 @@ public class BRepMeshShellTests
         {
             if (ToThrow)
             {
-                throw new Standard_Failure("stub");
+                throw new FailureException("stub");
             }
 
             if (theShape.IsNull())
             {
-                SetStatus(Message_Fail1);
+                SetStatus(Fail1);
                 return null;
             }
 
             var aModel = new BRepMeshData_Model(theShape);
             new IMeshTools_ShapeExplorer(theShape).Accept(new Visitor(aModel));
-            SetStatus(Message_Done1);
+            SetStatus(Done1);
             return aModel;
         }
     }
@@ -63,12 +68,12 @@ public class BRepMeshShellTests
         public int Calls;
 
         protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
-                                                Message_ProgressRange theRange)
+                                                ProgressRange theRange)
         {
             Calls++;
             if (theToThrow)
             {
-                throw new Standard_ConstructionError("stub");
+                throw new ConstructionErrorException("stub");
             }
             return theResult;
         }
@@ -81,7 +86,7 @@ public class BRepMeshShellTests
     private sealed class StubFaceDiscret(bool theToReplace = false) : IMeshTools_ModelAlgo
     {
         protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
-                                                Message_ProgressRange theRange)
+                                                ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
@@ -100,12 +105,12 @@ public class BRepMeshShellTests
     private sealed class StubPostProcessor : IMeshTools_ModelAlgo
     {
         protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
-                                                Message_ProgressRange theRange)
+                                                ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
-                Poly_Triangulation? aTri = BRep_Tool.Triangulation(theModel.GetFace(i).GetFace(), out _);
-                if (aTri is not null && !aTri.IsFrozen())
+                Triangulation? aTri = BRep_Tool.Triangulation(theModel.GetFace(i).GetFace(), out _);
+                if (aTri is not null && !aTri.IsFrozen)
                 {
                     aTri.Deflection(theParameters.Deflection);
                 }
@@ -128,7 +133,7 @@ public class BRepMeshShellTests
     private static void FanMesh(in TopoDS_Face theFace)
     {
         TopoDS_Face aFwd = TopoDS.Face(theFace.Oriented(TopAbs_FORWARD));
-        gp_Pln aPln = ((Geom_Plane)BRep_Tool.Surface(aFwd)!).Pln();
+        Plane3D aPln = ((Geom_Plane)BRep_Tool.Surface(aFwd)!).Pln();
         var aVertices = new List<TopoDS_Vertex>();
         for (var anExp = new TopExp_Explorer(aFwd, TopAbs_EDGE); anExp.More(); anExp.Next())
         {
@@ -137,17 +142,17 @@ public class BRepMeshShellTests
         }
 
         int n = aVertices.Count;
-        var aTri = new Poly_Triangulation(n, n - 2, true);
+        var aTri = new Triangulation(n, n - 2, true);
         for (int i = 0; i < n; i++)
         {
-            gp_Pnt aP = BRep_Tool.Pnt(aVertices[i]).Transformed(theFace.Location().Transformation());
+            Point3D aP = BRep_Tool.Pnt(aVertices[i]).Transformed(theFace.Location().Transformation());
             aTri.SetNode(i + 1, aP);
-            ElSLib.Parameters(aPln, BRep_Tool.Pnt(aVertices[i]), out double u, out double v);
-            aTri.SetUVNode(i + 1, new gp_Pnt2d(u, v));
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, BRep_Tool.Pnt(aVertices[i]), out double u, out double v);
+            aTri.SetUVNode(i + 1, new Point2D(u, v));
         }
         for (int i = 1; i <= n - 2; i++)
         {
-            aTri.SetTriangle(i, new Poly_Triangle(1, i + 1, i + 2));
+            aTri.SetTriangle(i, new Triangle1(1, i + 1, i + 2));
         }
         BRepMesh_ShapeTool.AddInFace(theFace, aTri);
 
@@ -158,13 +163,13 @@ public class BRepMeshShellTests
             var aNodes = new NCollection_Array1<int>(1, 2);
             aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
             aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
-            BRepMesh_ShapeTool.UpdateEdge(anE, new Poly_PolygonOnTriangulation(aNodes), aTri, theFace.Location());
+            BRepMesh_ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Location());
         }
     }
 
     private static List<TopoDS_Face> Faces(in TopoDS_Shape theShape) => BRepGPropTestShapes.Faces(theShape);
 
-    private static Poly_Triangulation? Triangulation(in TopoDS_Face theFace) => BRep_Tool.Triangulation(theFace, out _);
+    private static Triangulation? Triangulation(in TopoDS_Face theFace) => BRep_Tool.Triangulation(theFace, out _);
 
     // ------------------------------------------------------------------------------------------- the copy for write
 
@@ -220,19 +225,19 @@ public class BRepMeshShellTests
 
         // The result is meshed and frozen, meshes included; the post-processor could write them before publication.
         Assert.NotSame(aBox.TShape(), aResult.TShape());
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         List<TopoDS_Face> aFaces = Faces(aResult);
         Assert.Equal(6, aFaces.Count);
         foreach (TopoDS_Face aF in aFaces)
         {
-            Poly_Triangulation aTri = Triangulation(aF)!;
-            Assert.True(aTri.IsFrozen());
+            Triangulation aTri = Triangulation(aF)!;
+            Assert.True(aTri.IsFrozen);
             Assert.Equal(0.25, aTri.Deflection());
-            Assert.Throws<Standard_ImmutableObject>(() => aTri.Deflection(1.0));
+            Assert.Throws<ImmutableObjectException>(() => aTri.Deflection(1.0));
             for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
             {
-                Poly_PolygonOnTriangulation aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aTri, aF.Location())!;
-                Assert.True(aPoly.IsFrozen());
+                PolygonOnTriangulation aPoly = BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aTri, aF.Location())!;
+                Assert.True(aPoly.IsFrozen);
             }
         }
 
@@ -273,7 +278,7 @@ public class BRepMeshShellTests
     public void Meshing_an_unfrozen_shape_writes_it_in_place()
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 2, 3);
-        Assert.False(aBox.TShape()!.IsFrozen());
+        Assert.False(aBox.TShape()!.IsFrozen);
 
         var aMesh = new BRepMesh_IncrementalMesh();
         aMesh.SetShape(aBox);
@@ -285,8 +290,8 @@ public class BRepMeshShellTests
         // Attached unfrozen (decision 488): the shape isn't published.
         foreach (TopoDS_Face aF in Faces(aBox))
         {
-            Poly_Triangulation aTri = Triangulation(aF)!;
-            Assert.False(aTri.IsFrozen());
+            Triangulation aTri = Triangulation(aF)!;
+            Assert.False(aTri.IsFrozen);
             Assert.Equal(0.25, aTri.Deflection());
         }
 
@@ -294,11 +299,11 @@ public class BRepMeshShellTests
         aBox.TShape()!.FreezeGraph();
         foreach (TopoDS_Face aF in Faces(aBox))
         {
-            Poly_Triangulation aTri = Triangulation(aF)!;
-            Assert.True(aTri.IsFrozen());
+            Triangulation aTri = Triangulation(aF)!;
+            Assert.True(aTri.IsFrozen);
             for (var anExp = new TopExp_Explorer(aF, TopAbs_EDGE); anExp.More(); anExp.Next())
             {
-                Assert.True(BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aTri, aF.Location())!.IsFrozen());
+                Assert.True(BRep_Tool.PolygonOnTriangulation(TopoDS.Edge(anExp.Current()), aTri, aF.Location())!.IsFrozen);
             }
         }
     }
@@ -308,7 +313,7 @@ public class BRepMeshShellTests
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 1, 1);
         TopoDS_Shape aResult = BRepMesh_IncrementalMesh.Meshed(aBox, new IMeshTools_Parameters { Deflection = 0.1 });
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         foreach (TopoDS_Face aF in Faces(aResult))
         {
             Assert.NotNull(Triangulation(aF));
@@ -324,8 +329,8 @@ public class BRepMeshShellTests
     public void Parameters_are_checked_and_completed()
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<Standard_NumericError>(() => new BRepMesh_IncrementalMesh(aBox, 1e-8));
-        Assert.Throws<Standard_NumericError>(() => new BRepMesh_IncrementalMesh(aBox, 0.1, false, 1e-13));
+        Assert.Throws<NumericErrorException>(() => new BRepMesh_IncrementalMesh(aBox, 1e-8));
+        Assert.Throws<NumericErrorException>(() => new BRepMesh_IncrementalMesh(aBox, 0.1, false, 1e-13));
 
         var aMesh = new BRepMesh_IncrementalMesh(aBox, 0.2, true, 0.3, true);
         IMeshTools_Parameters aP = aMesh.Parameters();
@@ -365,7 +370,7 @@ public class BRepMeshShellTests
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         using var aCancel = new CancellationTokenSource();
         aCancel.Cancel();
-        var anIndicator = new Message_ProgressIndicator(aCancel.Token);
+        var anIndicator = new ProgressIndicator(aCancel.Token);
         var aMesh = new BRepMesh_IncrementalMesh();
         aMesh.SetShape(aBox);
         aMesh.Perform(StubContext(), anIndicator.Start());
@@ -383,53 +388,53 @@ public class BRepMeshShellTests
         TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
 
         var aNoContext = new IMeshTools_MeshBuilder();
-        aNoContext.Perform(new Message_ProgressRange());
-        Assert.True(aNoContext.GetStatus().IsSet(Message_Fail1));
+        aNoContext.Perform(new ProgressRange());
+        Assert.True(aNoContext.GetStatus().IsSet(Fail1));
 
-        Message_Status Run(IMeshTools_Context theContext, in TopoDS_Shape theShape)
+        Status Run(IMeshTools_Context theContext, in TopoDS_Shape theShape)
         {
             theContext.SetShape(theShape);
             var aBuilder = new IMeshTools_MeshBuilder(theContext);
-            aBuilder.Perform(new Message_ProgressRange());
-            foreach (Message_Status aS in Enum.GetValues<Message_Status>())
+            aBuilder.Perform(new ProgressRange());
+            foreach (Status aS in Enum.GetValues<Status>())
             {
-                if (aS != Message_None && aBuilder.GetStatus().IsSet(aS))
+                if (aS != None && aBuilder.GetStatus().IsSet(aS))
                 {
                     return aS;
                 }
             }
-            return Message_None;
+            return None;
         }
 
-        Assert.Equal(Message_Fail1, Run(new IMeshTools_Context(), aCopy)); // no model builder
-        Assert.Equal(Message_Warn1, Run(StubContext(), new TopoDS_Shape())); // nothing to mesh
+        Assert.Equal(Fail1, Run(new IMeshTools_Context(), aCopy)); // no model builder
+        Assert.Equal(Warn1, Run(StubContext(), new TopoDS_Shape())); // nothing to mesh
         IMeshTools_Context aThrowing = StubContext();
         ((StubModelBuilder)aThrowing.GetModelBuilder()!).ToThrow = true;
-        Assert.Equal(Message_Fail2, Run(aThrowing, aCopy));
+        Assert.Equal(Fail2, Run(aThrowing, aCopy));
 
         IMeshTools_Context aNoEdges = StubContext();
         aNoEdges.SetEdgeDiscret(null);
-        Assert.Equal(Message_Fail3, Run(aNoEdges, aCopy));
+        Assert.Equal(Fail3, Run(aNoEdges, aCopy));
         IMeshTools_Context aHealer = StubContext();
         aHealer.SetModelHealer(new StubAlgo(false));
-        Assert.Equal(Message_Fail4, Run(aHealer, aCopy));
+        Assert.Equal(Fail4, Run(aHealer, aCopy));
         IMeshTools_Context aPre = StubContext();
         aPre.SetPreProcessor(new StubAlgo(true, theToThrow: true)); // an exception is a failure
-        Assert.Equal(Message_Fail5, Run(aPre, aCopy));
+        Assert.Equal(Fail5, Run(aPre, aCopy));
         IMeshTools_Context aFaces = StubContext();
         aFaces.SetFaceDiscret(new StubAlgo(false));
-        Assert.Equal(Message_Fail6, Run(aFaces, aCopy));
+        Assert.Equal(Fail6, Run(aFaces, aCopy));
         IMeshTools_Context aPost = StubContext();
         aPost.SetPostProcessor(new StubAlgo(false));
-        Assert.Equal(Message_Fail7, Run(aPost, aCopy));
+        Assert.Equal(Fail7, Run(aPost, aCopy));
 
         // Done, and the model is cleaned when the parameters ask for it.
         IMeshTools_Context aGood = StubContext();
-        Assert.Equal(Message_Done1, Run(aGood, aCopy));
+        Assert.Equal(Done1, Run(aGood, aCopy));
         Assert.Null(aGood.GetModel());
         IMeshTools_Context aKeep = StubContext();
         aKeep.ChangeParameters().CleanModel = false;
-        Assert.Equal(Message_Done1, Run(aKeep, BRepTools.ExactCopyForWrite(aBox, out _)));
+        Assert.Equal(Done1, Run(aKeep, BRepTools.ExactCopyForWrite(aBox, out _)));
         Assert.Equal(6, aKeep.GetModel()!.FacesNb());
         Assert.Equal(12, aKeep.GetModel()!.EdgesNb());
     }
@@ -445,7 +450,7 @@ public class BRepMeshShellTests
         aContext.SetFaceDiscret(new StubFaceDiscret());
         aContext.SetShape(aBox);
         var aBuilder = new IMeshTools_MeshBuilder(aContext);
-        Assert.ThrowsAny<Standard_DomainError>(() => aBuilder.Perform(new Message_ProgressRange()));
+        Assert.ThrowsAny<DomainErrorException>(() => aBuilder.Perform(new ProgressRange()));
     }
 
     // ------------------------------------------------------------------------------------------- IMeshTools_ShapeExplorer
@@ -463,10 +468,10 @@ public class BRepMeshShellTests
     public void ShapeExplorer_visits_free_edges_then_each_face_once()
     {
         TopoDS_Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        TopoDS_Edge aFree = TestShapes.Frozen(TestShapes.Edge(new gp_Pnt(5, 0, 0), new gp_Pnt(6, 0, 0)));
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(0, 0, 10));
-        TopoDS_Edge aMovedFree = TopoDS.Edge(aFree.Moved(new TopLoc_Location(aTrsf)));
+        TopoDS_Edge aFree = TestShapes.Frozen(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(0, 0, 10));
+        TopoDS_Edge aMovedFree = TopoDS.Edge(aFree.Moved(new Placement(aTrsf)));
         TopoDS_Face aFace = Faces(aBox)[0];
 
         TopoDS_Compound aCompound = TopoDS_Builder.MakeCompound([aMovedFree, aBox, aFace.Reversed()]);
@@ -476,7 +481,7 @@ public class BRepMeshShellTests
         // the free edge first, at the identity location
         Assert.Equal(TopAbs_EDGE, aVisitor.Visited[0].ShapeType());
         Assert.True(aVisitor.Visited[0].IsSame(aFree));
-        Assert.True(aVisitor.Visited[0].Location().IsIdentity());
+        Assert.True(aVisitor.Visited[0].Location().IsIdentity);
 
         // then each face once (the reversed copy of a box face is the same face), forward, after its edges
         List<TopoDS_Shape> aFaces = aVisitor.Visited.Where(s => s.ShapeType() == TopAbs_FACE).ToList();
@@ -506,20 +511,20 @@ public class BRepMeshShellTests
         Assert.Equal(aMax, BRepMesh_ShapeTool.MaxFaceTolerance(aFace));
 
         double aDim = -1.0;
-        BRepMesh_ShapeTool.BoxMaxDimension(new Bnd_Box(), ref aDim);
+        BRepMesh_ShapeTool.BoxMaxDimension(new Box(), ref aDim);
         Assert.Equal(-1.0, aDim); // void box: unchanged
-        var aBnd = new Bnd_Box(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 5, 2));
+        var aBnd = new Box(new Point3D(0, 0, 0), new Point3D(1, 5, 2));
         BRepMesh_ShapeTool.BoxMaxDimension(aBnd, ref aDim);
         Assert.Equal(5.0, aDim);
 
         // A located edge: the 3D range is the located curve's, reversed with the orientation if asked.
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(0, 0, 7));
-        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(1, 0, 0)), 1, 3));
-        TopoDS_Edge aMoved = TopoDS.Edge(anEdge.Moved(new TopLoc_Location(aTrsf)).Reversed());
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(0, 0, 7));
+        TopoDS_Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1, 3));
+        TopoDS_Edge aMoved = TopoDS.Edge(anEdge.Moved(new Placement(aTrsf)).Reversed());
         Assert.True(BRepMesh_ShapeTool.Range(aMoved, out Geom_Curve? aCurve, out double aF, out double aL));
         Assert.Equal((1.0, 3.0), (aF, aL));
-        Assert.True(aCurve!.Value(aF).IsEqual(new gp_Pnt(1, 0, 7), 1e-15));
+        Assert.True(aCurve!.Value(aF).IsEqual(new Point3D(1, 0, 7), 1e-15));
         Assert.True(BRepMesh_ShapeTool.Range(aMoved, out _, out aF, out aL, true));
         Assert.Equal((3.0, 1.0), (aF, aL));
 
@@ -527,14 +532,14 @@ public class BRepMeshShellTests
         TopoDS_Edge aBoxEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
         Assert.True(BRepMesh_ShapeTool.Range(aBoxEdge, aFace, out Geom2d_Curve? aPC, out aF, out aL));
         Assert.NotNull(aPC);
-        Assert.True(BRepMesh_ShapeTool.UVPoints(aBoxEdge, aFace, out gp_Pnt2d aUV1, out gp_Pnt2d aUV2));
+        Assert.True(BRepMesh_ShapeTool.UVPoints(aBoxEdge, aFace, out Point2D aUV1, out Point2D aUV2));
         Assert.True(aUV1.IsEqual(aPC!.Value(aF), 0.0));
         Assert.True(aUV2.IsEqual(aPC.Value(aL), 0.0));
         // (an edge not on a plane still has a pcurve there: BRep_Tool projects it)
         Assert.True(BRepMesh_ShapeTool.Range(anEdge, aFace, out _, out _, out _));
 
-        Assert.True(BRepMesh_ShapeTool.UseLocation(new gp_Pnt(1, 2, 3), new TopLoc_Location(aTrsf)).IsEqual(new gp_Pnt(1, 2, 10), 0.0));
-        Assert.True(BRepMesh_ShapeTool.UseLocation(new gp_Pnt(1, 2, 3), new TopLoc_Location()).IsEqual(new gp_Pnt(1, 2, 3), 0.0));
+        Assert.True(BRepMesh_ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement(aTrsf)).IsEqual(new Point3D(1, 2, 10), 0.0));
+        Assert.True(BRepMesh_ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement()).IsEqual(new Point3D(1, 2, 3), 0.0));
     }
 
     [Fact]
@@ -559,12 +564,12 @@ public class BRepMeshShellTests
         Assert.True(aDEdge.GetDegenerated());
 
         // A closed edge shorter than its vertex tolerance is degenerated.
-        TopoDS_Vertex aV = TestShapes.Vertex(new gp_Pnt(0, 0, 0));
+        TopoDS_Vertex aV = TestShapes.Vertex(new Point3D(0, 0, 0));
         var aB = new BRep_Builder();
         aB.UpdateVertex(aV, 0.1);
-        Geom_Circle aTiny = new(new gp_Ax2(new gp_Pnt(0.001, 0, 0), gp.DZ()), 0.001);
+        Geom_Circle aTiny = new(new Frame3D(new Point3D(0.001, 0, 0), global::Kerf.Engine.Geometry.Constants.DZ()), 0.001);
         TopoDS_Edge aLoop = TestShapes.Edge(aTiny, 0, 2 * Math.PI, aV, TopoDS.Vertex(aV.Reversed()));
-        aB.UpdateEdge(aLoop, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aFace, 1e-7);
+        aB.UpdateEdge(aLoop, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aFace, 1e-7);
         var aDLoop = new BRepMeshData_Edge(aLoop);
         IMeshData_PCurve aLoopPCurve = aDLoop.AddPCurve(aDFace, TopAbs_FORWARD);
         Assert.False(aDLoop.GetDegenerated());
@@ -576,24 +581,24 @@ public class BRepMeshShellTests
     public void ShapeTool_attaches_unfrozen_and_moves_nodes_by_the_face_location()
     {
         TopoDS_Solid aBox = TestShapes.Box(1, 1, 1); // unfrozen: ported code meshing in place
-        var aTrsf = new gp_Trsf();
-        aTrsf.SetTranslation(new gp_Vec(10, 0, 0));
+        var aTrsf = new Transform3D();
+        aTrsf.SetTranslation(new Vector3D(10, 0, 0));
         TopoDS_Face aFace = Faces(aBox)[0];
-        TopoDS_Face aMoved = TopoDS.Face(aFace.Moved(new TopLoc_Location(aTrsf)));
+        TopoDS_Face aMoved = TopoDS.Face(aFace.Moved(new Placement(aTrsf)));
 
-        var aTri = new Poly_Triangulation(3, 1, false);
-        aTri.SetNode(1, new gp_Pnt(10, 0, 0));
-        aTri.SetNode(2, new gp_Pnt(11, 0, 0));
-        aTri.SetNode(3, new gp_Pnt(10, 1, 0));
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        var aTri = new Triangulation(3, 1, false);
+        aTri.SetNode(1, new Point3D(10, 0, 0));
+        aTri.SetNode(2, new Point3D(11, 0, 0));
+        aTri.SetNode(3, new Point3D(10, 1, 0));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         BRepMesh_ShapeTool.AddInFace(aMoved, aTri);
 
         // The nodes are in the face's definition: the location is taken off.
-        Poly_Triangulation aStored = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc)!;
+        Triangulation aStored = BRep_Tool.Triangulation(aFace, out Placement aLoc)!;
         Assert.Same(aTri, aStored);
-        Assert.True(aLoc.IsIdentity());
-        Assert.True(aStored.Node(2).IsEqual(new gp_Pnt(1, 0, 0), 1e-15));
-        Assert.False(aStored.IsFrozen());
+        Assert.True(aLoc.IsIdentity);
+        Assert.True(aStored.Node(2).IsEqual(new Point3D(1, 0, 0), 1e-15));
+        Assert.False(aStored.IsFrozen);
         aStored.Deflection(0.5); // writable until published
 
         // Polygons: on the triangulation, a seam's pair, a 3D polygon; all unfrozen; removed by Nullify.
@@ -601,32 +606,32 @@ public class BRepMeshShellTests
         var aNodes = new NCollection_Array1<int>(1, 2);
         aNodes[1] = 1;
         aNodes[2] = 2;
-        var aPoly = new Poly_PolygonOnTriangulation(aNodes);
-        BRepMesh_ShapeTool.UpdateEdge(anEdge, aPoly, aTri, new TopLoc_Location());
-        Assert.Same(aPoly, BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new TopLoc_Location()));
-        Assert.False(aPoly.IsFrozen());
+        var aPoly = new PolygonOnTriangulation(aNodes);
+        BRepMesh_ShapeTool.UpdateEdge(anEdge, aPoly, aTri, new Placement());
+        Assert.Same(aPoly, BRep_Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
+        Assert.False(aPoly.IsFrozen);
 
-        var aPoly2 = new Poly_PolygonOnTriangulation(aNodes);
+        var aPoly2 = new PolygonOnTriangulation(aNodes);
         TopoDS_Edge anOther = TopoDS.Edge(new TopExp_Explorer(Faces(aBox)[1], TopAbs_EDGE).Current());
-        BRepMesh_ShapeTool.UpdateEdge(anOther, aPoly, aPoly2, aTri, new TopLoc_Location());
-        Assert.False(aPoly2.IsFrozen());
+        BRepMesh_ShapeTool.UpdateEdge(anOther, aPoly, aPoly2, aTri, new Placement());
+        Assert.False(aPoly2.IsFrozen);
 
-        var aP3dNodes = new NCollection_Array1<gp_Pnt>(1, 2);
-        aP3dNodes[1] = new gp_Pnt(0, 0, 0);
-        aP3dNodes[2] = new gp_Pnt(1, 0, 0);
-        var aP3d = new Poly_Polygon3D(aP3dNodes);
+        var aP3dNodes = new NCollection_Array1<Point3D>(1, 2);
+        aP3dNodes[1] = new Point3D(0, 0, 0);
+        aP3dNodes[2] = new Point3D(1, 0, 0);
+        var aP3d = new Polygon3D(aP3dNodes);
         BRepMesh_ShapeTool.UpdateEdge(anEdge, aP3d);
         Assert.Same(aP3d, BRep_Tool.Polygon3D(anEdge, out _));
-        Assert.False(aP3d.IsFrozen());
+        Assert.False(aP3d.IsFrozen);
 
         // Publication freezes all of them.
         aBox.TShape()!.FreezeGraph();
-        Assert.True(aTri.IsFrozen());
-        Assert.True(aPoly.IsFrozen());
-        Assert.True(aPoly2.IsFrozen());
-        Assert.True(aP3d.IsFrozen());
-        Assert.ThrowsAny<Standard_DomainError>(() => BRepMesh_ShapeTool.NullifyFace(aFace));
-        Assert.ThrowsAny<Standard_DomainError>(() => BRepMesh_ShapeTool.NullifyEdge(anEdge, new TopLoc_Location()));
+        Assert.True(aTri.IsFrozen);
+        Assert.True(aPoly.IsFrozen);
+        Assert.True(aPoly2.IsFrozen);
+        Assert.True(aP3d.IsFrozen);
+        Assert.ThrowsAny<DomainErrorException>(() => BRepMesh_ShapeTool.NullifyFace(aFace));
+        Assert.ThrowsAny<DomainErrorException>(() => BRepMesh_ShapeTool.NullifyEdge(anEdge, new Placement()));
     }
 
     [Fact]
@@ -641,8 +646,8 @@ public class BRepMeshShellTests
 
         TopoDS_Shape aCopy = BRepTools.ExactCopyForWrite(aBox, out _);
         TopoDS_Face aFace = Faces(aCopy)[0];
-        Poly_Triangulation aTri = Triangulation(aFace)!;
-        Assert.True(aTri.IsFrozen()); // shared with the frozen input
+        Triangulation aTri = Triangulation(aFace)!;
+        Assert.True(aTri.IsFrozen); // shared with the frozen input
 
         TopoDS_Edge anEdge = TopoDS.Edge(new TopExp_Explorer(aFace, TopAbs_EDGE).Current());
         Assert.NotNull(BRep_Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Location()));

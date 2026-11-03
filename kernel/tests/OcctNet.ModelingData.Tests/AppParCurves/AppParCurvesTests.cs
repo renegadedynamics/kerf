@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace OcctNet.ModelingData.Tests;
@@ -21,8 +24,8 @@ public class AppParCurvesTests
     // A cubic MultiCurve: one 3d curve and one 2d curve
     private static AppParCurves_MultiCurve Cubic()
     {
-        gp_Pnt[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(3, 2.5, -1), new(4, 0, 1)];
-        gp_Pnt2d[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(4, 0.5)];
+        Point3D[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(3, 2.5, -1), new(4, 0, 1)];
+        Point2D[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(4, 0.5)];
         AppParCurves_MultiCurve aCurve = new(4);
         for (int i = 1; i <= 4; i++)
         {
@@ -37,8 +40,8 @@ public class AppParCurvesTests
     // A cubic B-spline MultiCurve with an interior knot at 0.4: 5 poles, one 3d curve and one 2d curve
     private static AppParCurves_MultiBSpCurve CubicBSpline()
     {
-        gp_Pnt[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(2, 2.5, -1), new(3, 0, 1), new(4, 1, 0)];
-        gp_Pnt2d[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(3, 0.5), new(5, 1)];
+        Point3D[] aP3d = [new(0, 0, 0), new(1, 2, 0.5), new(2, 2.5, -1), new(3, 0, 1), new(4, 1, 0)];
+        Point2D[] aP2d = [new(0, 1), new(1, 3), new(2, -1), new(3, 0.5), new(5, 1)];
         NCollection_Array1<AppParCurves_MultiPoint> aPoles = new(1, 5);
         for (int i = 1; i <= 5; i++)
         {
@@ -103,7 +106,7 @@ public class AppParCurvesTests
     {
         const int aNbPoles = 6;
         math_Vector U = Vector([0.0, 0.1, 0.37, 0.5, 0.9, 1.0]);
-        math_Matrix A = new(1, 6, 1, aNbPoles), DA = new(1, 6, 1, aNbPoles), A2 = new(1, 6, 1, aNbPoles);
+        global::Kerf.Engine.Numerics.Matrix A = new(1, 6, 1, aNbPoles), DA = new(1, 6, 1, aNbPoles), A2 = new(1, 6, 1, aNbPoles);
         AppParCurves.Bernstein(aNbPoles, U, A, DA);
         AppParCurves.BernsteinMatrix(aNbPoles, U, A2);
         const double h = 1e-6;
@@ -151,7 +154,7 @@ public class AppParCurvesTests
             math_Vector DDA = new(1, aNbPoles);
             AppParCurves.SecondDerivativeBernstein(u, DDA);
             math_Vector U = Vector([u - h, u + h]);
-            math_Matrix A = new(1, 2, 1, aNbPoles), DA = new(1, 2, 1, aNbPoles);
+            global::Kerf.Engine.Numerics.Matrix A = new(1, 2, 1, aNbPoles), DA = new(1, 2, 1, aNbPoles);
             AppParCurves.Bernstein(aNbPoles, U, A, DA);
             for (int j = 1; j <= aNbPoles; j++)
             {
@@ -175,7 +178,7 @@ public class AppParCurvesTests
         // flat knots of the cubic with an interior knot at 0.4
         math_Vector aFlat = Vector([0, 0, 0, 0, 0.4, 1, 1, 1, 1]);
         math_Vector U = Vector([0.0, 0.1, 0.4, 0.55, 0.99, 1.0]);
-        math_Matrix A = new(1, 6, 1, 5), DA = new(1, 6, 1, 5);
+        global::Kerf.Engine.Numerics.Matrix A = new(1, 6, 1, 5), DA = new(1, 6, 1, 5);
         math_IntegerVector anIndex = new(1, 6);
         AppParCurves.SplineFunction(5, 3, U, aFlat, A, DA, anIndex);
 
@@ -184,7 +187,7 @@ public class AppParCurvesTests
         for (int i = 1; i <= 6; i++)
         {
             double aSum = 0;
-            gp_XYZ aP = new(), aD = new();
+            Xyz aP = new(), aD = new();
             for (int j = 1; j <= 5; j++)
             {
                 aSum += A[i, j];
@@ -196,7 +199,7 @@ public class AppParCurvesTests
                 }
             }
             Assert.Equal(1.0, aSum, 1e-14);
-            aCurve.D1(1, U[i], out gp_Pnt aPnt, out gp_Vec aV);
+            aCurve.D1(1, U[i], out Point3D aPnt, out Vector3D aV);
             Assert.True(aPnt.XYZ().IsEqual(aP, 1e-13));
             Assert.True(aV.XYZ().IsEqual(aD, 1e-12));
         }
@@ -221,28 +224,28 @@ public class AppParCurvesTests
     [Fact]
     public void MultiPoint_IndexesAndTransform()
     {
-        AppParCurves_MultiPoint aMP = new(NCollection_Array1<gp_Pnt>.From([new gp_Pnt(1, 2, 3)]),
-                                          NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(4, 5), new gp_Pnt2d(6, 7)], 0));
+        AppParCurves_MultiPoint aMP = new(NCollection_Array1<Point3D>.From([new Point3D(1, 2, 3)]),
+                                          NCollection_Array1<Point2D>.From([new Point2D(4, 5), new Point2D(6, 7)], 0));
         Assert.Equal(1, aMP.NbPoints());
         Assert.Equal(2, aMP.NbPoints2d());
         Assert.Equal(3, aMP.Dimension(1));
         Assert.Equal(2, aMP.Dimension(3));
-        Assert.Equal(new gp_Pnt2d(6, 7), aMP.Point2d(3));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aMP.Point(2));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aMP.Point2d(1));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aMP.Dimension(4));
+        Assert.Equal(new Point2D(6, 7), aMP.Point2d(3));
+        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Point(2));
+        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Point2d(1));
+        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Dimension(4));
         aMP.Transform(1, 1, 2, 0, 1, 0, -1);
-        Assert.Equal(new gp_Pnt(3, 2, -3), aMP.Point(1));
+        Assert.Equal(new Point3D(3, 2, -3), aMP.Point(1));
         aMP.Transform2d(2, 1, 1, 1, 1);
-        Assert.Equal(new gp_Pnt2d(5, 6), aMP.Point2d(2));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aMP.Transform2d(1, 0, 1, 0, 1));
+        Assert.Equal(new Point2D(5, 6), aMP.Point2d(2));
+        Assert.ThrowsAny<OutOfRangeException>(() => aMP.Transform2d(1, 0, 1, 0, 1));
         Assert.Contains("3D-Point #1", aMP.ToString());
         Assert.Contains(" Pole z = -3", aMP.ToString());
 
         // OCCT's copy shares the points
         AppParCurves_MultiPoint aCopy = new(aMP);
-        aCopy.SetPoint(1, new gp_Pnt(9, 9, 9));
-        Assert.Equal(new gp_Pnt(9, 9, 9), aMP.Point(1));
+        aCopy.SetPoint(1, new Point3D(9, 9, 9));
+        Assert.Equal(new Point3D(9, 9, 9), aMP.Point(1));
     }
 
     [Fact]
@@ -257,20 +260,20 @@ public class AppParCurvesTests
         Assert.Equal(0, new AppParCurves_MultiCurve().NbCurves());
         Assert.Equal(0, new AppParCurves_MultiCurve(3).NbCurves()); // empty MultiPoints, as C++ default-constructs them
 
-        aCurve.D2(1, 0.0, out gp_Pnt aP, out gp_Vec aV1, out gp_Vec aV2);
-        Assert.Equal(new gp_Pnt(0, 0, 0), aP);
-        Assert.True(aV1.IsEqual(new gp_Vec(3, 6, 1.5), 1e-14, 1e-14));
-        aCurve.D2(2, 1.0, out gp_Pnt2d aP2, out gp_Vec2d aV12, out _);
-        Assert.Equal(new gp_Pnt2d(4, 0.5), aP2);
-        Assert.True(aV12.IsEqual(new gp_Vec2d(6, 4.5), 1e-14, 1e-14));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => aCurve.Value(2, 0.5, out gp_Pnt _));
+        aCurve.D2(1, 0.0, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
+        Assert.Equal(new Point3D(0, 0, 0), aP);
+        Assert.True(aV1.IsEqual(new Vector3D(3, 6, 1.5), 1e-14, 1e-14));
+        aCurve.D2(2, 1.0, out Point2D aP2, out Vector2D aV12, out _);
+        Assert.Equal(new Point2D(4, 0.5), aP2);
+        Assert.True(aV12.IsEqual(new Vector2D(6, 4.5), 1e-14, 1e-14));
+        Assert.ThrowsAny<OutOfRangeException>(() => aCurve.Value(2, 0.5, out Point3D _));
 
-        NCollection_Array1<gp_Pnt2d> aPoles2d = new(1, 4);
+        NCollection_Array1<Point2D> aPoles2d = new(1, 4);
         aCurve.Curve(2, aPoles2d);
-        Assert.Equal(new gp_Pnt2d(2, -1), aPoles2d[3]);
+        Assert.Equal(new Point2D(2, -1), aPoles2d[3]);
 
         aCurve.Transform(1, 1, 1, 0, 1, 0, 1);
-        Assert.Equal(new gp_Pnt(5, 0, 1), aCurve.Pole(1, 4));
+        Assert.Equal(new Point3D(5, 0, 1), aCurve.Pole(1, 4));
         Assert.Contains("2 Bezier curves of degree 3", aCurve.ToString());
     }
 
@@ -280,13 +283,13 @@ public class AppParCurvesTests
         AppParCurves_MultiBSpCurve aCurve = CubicBSpline();
         Assert.Equal(3, aCurve.Degree());
         Assert.Equal(5, aCurve.NbPoles());
-        aCurve.Value(1, 0.0, out gp_Pnt aP0);
-        aCurve.Value(1, 1.0, out gp_Pnt aP1);
-        Assert.True(aP0.IsEqual(new gp_Pnt(0, 0, 0), 1e-15));
-        Assert.True(aP1.IsEqual(new gp_Pnt(4, 1, 0), 1e-14));
-        aCurve.D1(2, 1.0, out gp_Pnt2d _, out gp_Vec2d aV);
+        aCurve.Value(1, 0.0, out Point3D aP0);
+        aCurve.Value(1, 1.0, out Point3D aP1);
+        Assert.True(aP0.IsEqual(new Point3D(0, 0, 0), 1e-15));
+        Assert.True(aP1.IsEqual(new Point3D(4, 1, 0), 1e-14));
+        aCurve.D1(2, 1.0, out Point2D _, out Vector2D aV);
         // end derivative of a clamped cubic: 3 (P5 - P4) / (1 - 0.4)
-        Assert.True(aV.IsEqual(new gp_Vec2d(10, 2.5), 1e-12, 1e-12));
+        Assert.True(aV.IsEqual(new Vector2D(10, 2.5), 1e-12, 1e-12));
 
         NCollection_Array1<double> aKnots = aCurve.Knots();
         aKnots[2] = 0.9;
@@ -297,7 +300,7 @@ public class AppParCurvesTests
         AppParCurves_MultiBSpCurve aCopy = new(aCurve);
         Assert.Equal(3, aCopy.Degree());
         aCopy.Transform2d(2, 0, 2, 0, 2);
-        Assert.Equal(new gp_Pnt2d(10, 2), aCurve.Pole2d(2, 5));
+        Assert.Equal(new Point2D(10, 2), aCurve.Pole2d(2, 5));
         Assert.Contains("2 BSpline curves", aCurve.ToString());
     }
 
@@ -326,9 +329,9 @@ public class AppParCurvesTests
         Assert.True(F < 1e-20);
         Assert.True(aMax3d < 1e-10);
         Assert.True(aMax2d < 1e-10);
-        math_Matrix aDist = aLSQ.Distance();
+        global::Kerf.Engine.Numerics.Matrix aDist = aLSQ.Distance();
         Assert.True(aDist[5, 1] < 1e-10);
-        Assert.Throws<Standard_NoSuchObject>(() => new LeastSquare(aLine, Knots(), Mults(), 1, 12, theFirst, theLast,
+        Assert.Throws<NoSuchObjectException>(() => new LeastSquare(aLine, Knots(), Mults(), 1, 12, theFirst, theLast,
                                                                    Vector(aParams), 5).BezierValue());
 
         if (theFirst == AppParCurves_TangencyPoint)
@@ -361,11 +364,11 @@ public class AppParCurvesTests
         AppParCurves_MultiCurve aResult = aLSQ.BezierValue();
         foreach (double u in new[] { 0.0, 0.3, 0.71, 1.0 })
         {
-            aRef.Value(1, u, out gp_Pnt aP);
-            aResult.Value(1, u, out gp_Pnt aQ);
+            aRef.Value(1, u, out Point3D aP);
+            aResult.Value(1, u, out Point3D aQ);
             Assert.True(aP.Distance(aQ) < 1e-10);
-            aRef.Value(2, u, out gp_Pnt2d aP2);
-            aResult.Value(2, u, out gp_Pnt2d aQ2);
+            aRef.Value(2, u, out Point2D aP2);
+            aResult.Value(2, u, out Point2D aQ2);
             Assert.True(aP2.Distance(aQ2) < 1e-10);
         }
         // P2 = P1 + lambda1 * V1, with V1 = 4 (P2 - P1) for the degree-4 form
@@ -393,10 +396,10 @@ public class AppParCurvesTests
         LeastSquare aLSQ = new(aLine, 1, 10, AppParCurves_PassPoint, AppParCurves_PassPoint, 5);
 
         // tangents (3d then 2d coordinates) of the cubic, as a degree-4 curve: P2 = P1 + l1 V1 with V1 = derivative
-        aRef.D1(1, 0.0, out gp_Pnt _, out gp_Vec aV3a);
-        aRef.D1(2, 0.0, out gp_Pnt2d _, out gp_Vec2d aV2a);
-        aRef.D1(1, 1.0, out gp_Pnt _, out gp_Vec aV3b);
-        aRef.D1(2, 1.0, out gp_Pnt2d _, out gp_Vec2d aV2b);
+        aRef.D1(1, 0.0, out Point3D _, out Vector3D aV3a);
+        aRef.D1(2, 0.0, out Point2D _, out Vector2D aV2a);
+        aRef.D1(1, 1.0, out Point3D _, out Vector3D aV3b);
+        aRef.D1(2, 1.0, out Point2D _, out Vector2D aV2b);
         math_Vector V1t = Vector([aV3a.X(), aV3a.Y(), aV3a.Z(), aV2a.X(), aV2a.Y()]);
         math_Vector V2t = Vector([aV3b.X(), aV3b.Y(), aV3b.Z(), aV2b.X(), aV2b.Y()]);
         aLSQ.Perform(Vector(aParams), V1t, V2t, 0.25, 0.25);
@@ -405,11 +408,11 @@ public class AppParCurvesTests
         Assert.Equal(5, aResult.NbPoles());
         foreach (double u in new[] { 0.0, 0.3, 0.71, 1.0 })
         {
-            aRef.Value(1, u, out gp_Pnt aP);
-            aResult.Value(1, u, out gp_Pnt aQ);
+            aRef.Value(1, u, out Point3D aP);
+            aResult.Value(1, u, out Point3D aQ);
             Assert.True(aP.Distance(aQ) < 1e-10);
-            aRef.Value(2, u, out gp_Pnt2d aP2);
-            aResult.Value(2, u, out gp_Pnt2d aQ2);
+            aRef.Value(2, u, out Point2D aP2);
+            aResult.Value(2, u, out Point2D aQ2);
             Assert.True(aP2.Distance(aQ2) < 1e-10);
         }
     }
@@ -450,9 +453,9 @@ public class AppParCurvesTests
         LeastSquare aLSQ = new(aLine, 1, 6, AppParCurves_PassPoint, AppParCurves_PassPoint, 2);
         aLSQ.Perform(Vector(Params(6)));
         Assert.False(aLSQ.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => aLSQ.BSplineValue());
-        Assert.Throws<StdFail_NotDone>(() => aLSQ.Error(out _, out _, out _));
-        Assert.Throws<StdFail_NotDone>(() => aLSQ.FunctionMatrix());
+        Assert.Throws<NotDoneException>(() => aLSQ.BSplineValue());
+        Assert.Throws<NotDoneException>(() => aLSQ.Error(out _, out _, out _));
+        Assert.Throws<NotDoneException>(() => aLSQ.FunctionMatrix());
     }
 
     // ---------------------------------------------------------------- constraints and gradients
@@ -466,10 +469,10 @@ public class AppParCurvesTests
         {
             double t = (double)i / (theNb - 1);
             theParams[i] = t;
-            aLine.P3d[i][0] = new gp_Pnt(Math.Cos(2.5 * t), Math.Sin(2.5 * t), 0.8 * t);
+            aLine.P3d[i][0] = new Point3D(Math.Cos(2.5 * t), Math.Sin(2.5 * t), 0.8 * t);
             if (theNbP2d > 0)
             {
-                aLine.P2d[i][0] = new gp_Pnt2d(2 * t, Math.Sin(3 * t));
+                aLine.P2d[i][0] = new Point2D(2 * t, Math.Sin(3 * t));
             }
         }
         return aLine;
@@ -483,7 +486,7 @@ public class AppParCurvesTests
         math_Vector U = Vector(aParams);
         LeastSquare aLSQ = new(aLine, 1, 15, AppParCurves_PassPoint, AppParCurves_PassPoint, U, 4);
         AppParCurves_MultiCurve aCurve = aLSQ.BezierValue();
-        aCurve.Value(1, aParams[7], out gp_Pnt aBefore);
+        aCurve.Value(1, aParams[7], out Point3D aBefore);
         Assert.True(aBefore.Distance(aLine.P3d[7][0]) > 1e-4);
 
         var aConstraints = Constraints((1, AppParCurves_PassPoint), (8, AppParCurves_PassPoint), (15, AppParCurves_PassPoint));
@@ -497,11 +500,11 @@ public class AppParCurvesTests
 
         foreach (int k in new[] { 0, 7, 14 })
         {
-            aCurve.Value(1, aParams[k], out gp_Pnt aP);
+            aCurve.Value(1, aParams[k], out Point3D aP);
             Assert.True(aP.Distance(aLine.P3d[k][0]) < 1e-8, $"3d point {k + 1}");
         }
 
-        math_Matrix aDK = aResol.ConstraintDerivative(aLine, U, 3, aLSQ.DerivativeFunctionMatrix());
+        global::Kerf.Engine.Numerics.Matrix aDK = aResol.ConstraintDerivative(aLine, U, 3, aLSQ.DerivativeFunctionMatrix());
         Assert.Equal(aLSQ.DerivativeFunctionMatrix()[8, 2], aDK[2, 2]);
     }
 
@@ -514,9 +517,9 @@ public class AppParCurvesTests
         {
             double t = i / 14.0;
             aParams[i] = t;
-            aLine.P3d[i][0] = new gp_Pnt(Math.Cos(2.5 * t), Math.Sin(2.5 * t), 0.8 * t);
+            aLine.P3d[i][0] = new Point3D(Math.Cos(2.5 * t), Math.Sin(2.5 * t), 0.8 * t);
         }
-        gp_Vec aTangent = new(-Math.Sin(2.5 * 0.5), Math.Cos(2.5 * 0.5), 0.3);
+        Vector3D aTangent = new(-Math.Sin(2.5 * 0.5), Math.Cos(2.5 * 0.5), 0.3);
         aLine.Tangents[8] = ([aTangent], []);
         math_Vector U = Vector(aParams);
         LeastSquare aLSQ = new(aLine, 1, 15, AppParCurves_PassPoint, AppParCurves_PassPoint, U, 5);
@@ -525,7 +528,7 @@ public class AppParCurvesTests
         var aConstraints = Constraints((1, AppParCurves_PassPoint), (8, AppParCurves_TangencyPoint), (15, AppParCurves_PassPoint));
         ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
         Assert.True(aResol.IsDone());
-        aCurve.D1(1, aParams[7], out gp_Pnt aP, out gp_Vec aV);
+        aCurve.D1(1, aParams[7], out Point3D aP, out Vector3D aV);
         Assert.True(aP.Distance(aLine.P3d[7][0]) < 1e-8);
         Assert.True(aV.Crossed(aTangent).Magnitude() < 1e-8 * aV.Magnitude());
     }
@@ -536,7 +539,7 @@ public class AppParCurvesTests
         AppParCurves_TestLine aLine = Helix(12, out double[] aParams);
         var aConstraints = Constraints((1, AppParCurves_PassPoint), (12, AppParCurves_PassPoint));
         Function aF = new(aLine, 1, 12, aConstraints, Vector(aParams), 4);
-        Assert.Equal(12, aF.NbVariables());
+        Assert.Equal(12, aF.VariableCount);
         Assert.Equal(AppParCurves_PassPoint, aF.FirstConstraint(aConstraints, 1));
 
         math_Vector X = Vector(aParams);
@@ -611,7 +614,7 @@ public class AppParCurvesTests
         Assert.Equal(aGrad.IsDone(), aGrad.MaxError3d() <= 1e-3);
 
         // the interior passing point holds at its (possibly moved) parameter
-        aCurve.Value(1, U[8], out gp_Pnt aP);
+        aCurve.Value(1, U[8], out Point3D aP);
         Assert.True(aP.Distance(aLine.P3d[7][0]) < 1e-6);
         Assert.Equal(0.0, U[1]);
         Assert.Equal(1.0, U[15]);
@@ -623,7 +626,7 @@ public class AppParCurvesTests
         // OCCT reads the 2d points of a mixed line at the curve index (occt-issues.md); the port's range check throws
         AppParCurves_TestLine aLine = Helix(10, out double[] aParams);
         var aConstraints = Constraints((1, AppParCurves_PassPoint), (5, AppParCurves_PassPoint), (10, AppParCurves_PassPoint));
-        Assert.ThrowsAny<Standard_OutOfRange>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
+        Assert.ThrowsAny<OutOfRangeException>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
     }
 
     [Fact]
@@ -654,7 +657,7 @@ public class AppParCurvesTests
         Assert.Equal(aParams[0], U[1]);
 
         // the curve passes through the end points
-        aCurve.Value(1, U[20], out gp_Pnt aEnd);
+        aCurve.Value(1, U[20], out Point3D aEnd);
         Assert.True(aEnd.Distance(aLine.P3d[19][0]) < 1e-12);
     }
 

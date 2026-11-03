@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class GeomLib_CheckCurveOnSurfaceTest
@@ -14,41 +16,41 @@ public class GeomLib_CheckCurveOnSurfaceTest
         double aFirst = 0.0, aLast = 2.0 * Math.PI;
 
         Geom_Circle aCirc = new(
-            new gp_Ax2(new gp_Pnt(0.0, 0.0, theHeight), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)),
+            new Frame3D(new Point3D(0.0, 0.0, theHeight), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
             theCircRadius);
         GeomAdaptor_Curve aC3d = new(aCirc, aFirst, aLast);
 
         Geom_CylindricalSurface aCyl = new(
-            new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)),
+            new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
             theCylRadius);
-        Geom2d_Line aPLine = new(new gp_Pnt2d(0.0, theHeight), new gp_Dir2d(1.0, 0.0));
+        Geom2d_Line aPLine = new(new Point2D(0.0, theHeight), new Direction2D(1.0, 0.0));
 
         Geom2dAdaptor_Curve aC2d = new(aPLine, aFirst, aLast);
         GeomAdaptor_Surface aSurf = new(aCyl);
         Adaptor3d_CurveOnSurface aCoS = new(aC2d, aSurf);
 
         GeomLib_CheckCurveOnSurface aCheck = new();
-        aCheck.Init(aC3d, Precision.PConfusion());
+        aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.Perform(aCoS);
         return aCheck;
     }
 
-    private static GeomLib_CheckCurveOnSurface makeLineOnPlaneCheck(gp_Dir theCurveDirection,
-                                                                    gp_Dir2d thePCurveDirection,
+    private static GeomLib_CheckCurveOnSurface makeLineOnPlaneCheck(Direction3D theCurveDirection,
+                                                                    Direction2D thePCurveDirection,
                                                                     double theFirst, double theLast)
     {
-        Geom_Line aLine = new(new gp_Pnt(0.0, 0.0, 0.0), theCurveDirection);
+        Geom_Line aLine = new(new Point3D(0.0, 0.0, 0.0), theCurveDirection);
         GeomAdaptor_Curve aC3d = new(aLine, theFirst, theLast);
 
         Geom_Plane aPlane =
-            new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)));
-        Geom2d_Line aPLine = new(new gp_Pnt2d(0.0, 0.0), thePCurveDirection);
+            new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)));
+        Geom2d_Line aPLine = new(new Point2D(0.0, 0.0), thePCurveDirection);
         Geom2dAdaptor_Curve aC2d = new(aPLine, theFirst, theLast);
         GeomAdaptor_Surface aSurf = new(aPlane);
         Adaptor3d_CurveOnSurface aCoS = new(aC2d, aSurf);
 
         GeomLib_CheckCurveOnSurface aCheck = new();
-        aCheck.Init(aC3d, Precision.PConfusion());
+        aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.Perform(aCoS);
         return aCheck;
     }
@@ -57,19 +59,19 @@ public class GeomLib_CheckCurveOnSurfaceTest
                                                                          double theFirst, double theLast)
     {
         Geom_Circle aCircle =
-            new(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)), 2.0);
+            new(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)), 2.0);
         GeomAdaptor_Curve aC3d = new(aCircle, theFirst, theLast);
 
         Geom2d_Ellipse anEllipse =
-            new(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), theMajorRadius, theMinorRadius);
+            new(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), theMajorRadius, theMinorRadius);
         Geom2dAdaptor_Curve aC2d = new(anEllipse, theFirst, theLast);
         Geom_Plane aPlane =
-            new(new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)));
+            new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)));
         GeomAdaptor_Surface aSurf = new(aPlane);
         Adaptor3d_CurveOnSurface aCoS = new(aC2d, aSurf);
 
         GeomLib_CheckCurveOnSurface aCheck = new();
-        aCheck.Init(aC3d, Precision.PConfusion());
+        aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.Perform(aCoS);
         return aCheck;
     }
@@ -80,7 +82,7 @@ public class GeomLib_CheckCurveOnSurfaceTest
         GeomLib_CheckCurveOnSurface aCheck = makeCircleOnCylinderCheck(2.0, 2.0, 5.0);
 
         Assert.True(aCheck.IsDone());
-        Assert.True(aCheck.MaxDistance() <= Precision.Confusion());
+        Assert.True(aCheck.MaxDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -99,20 +101,20 @@ public class GeomLib_CheckCurveOnSurfaceTest
     public void LineOnPlane_ReportsZeroDeviation()
     {
         GeomLib_CheckCurveOnSurface aCheck =
-            makeLineOnPlaneCheck(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir2d(1.0, 0.0), -10.0, 10.0);
+            makeLineOnPlaneCheck(new Direction3D(1.0, 0.0, 0.0), new Direction2D(1.0, 0.0), -10.0, 10.0);
 
         Assert.True(aCheck.IsDone());
-        Assert.True(aCheck.MaxDistance() <= Precision.Confusion());
+        Assert.True(aCheck.MaxDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void DeviatingLines_ReportsEndpointMaximum()
     {
         GeomLib_CheckCurveOnSurface aCheck =
-            makeLineOnPlaneCheck(new gp_Dir(1.0, 0.0, 0.0), new gp_Dir2d(0.0, 1.0), -2.0, 3.0);
+            makeLineOnPlaneCheck(new Direction3D(1.0, 0.0, 0.0), new Direction2D(0.0, 1.0), -2.0, 3.0);
 
         Assert.True(aCheck.IsDone());
-        Assert.Equal(Math.Sqrt(18.0), aCheck.MaxDistance(), Precision.Confusion());
+        Assert.Equal(Math.Sqrt(18.0), aCheck.MaxDistance(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aCheck.MaxParameter());
     }
 
@@ -122,7 +124,7 @@ public class GeomLib_CheckCurveOnSurfaceTest
         GeomLib_CheckCurveOnSurface aCheck = makeCircleAndEllipseCheck(4.0, 1.0, 0.0, 2.0 * Math.PI);
 
         Assert.True(aCheck.IsDone());
-        Assert.Equal(2.0, aCheck.MaxDistance(), Precision.Confusion());
+        Assert.Equal(2.0, aCheck.MaxDistance(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -131,8 +133,8 @@ public class GeomLib_CheckCurveOnSurfaceTest
         GeomLib_CheckCurveOnSurface aCheck = makeCircleAndEllipseCheck(2.0, 1.0, -2.0, -1.0);
 
         Assert.True(aCheck.IsDone());
-        Assert.Equal(1.0, aCheck.MaxDistance(), Precision.Confusion());
-        Assert.Equal(-0.5 * Math.PI, aCheck.MaxParameter(), Precision.PConfusion());
+        Assert.Equal(1.0, aCheck.MaxDistance(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-0.5 * Math.PI, aCheck.MaxParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     [Fact]
@@ -141,21 +143,21 @@ public class GeomLib_CheckCurveOnSurfaceTest
         double aFirst = 0.0, aLast = 80.0 * Math.PI;
 
         Geom_Circle aCircle =
-            new(new gp_Ax2(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)), 4.0);
+            new(new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)), 4.0);
         GeomAdaptor_Curve aC3d = new(aCircle, aFirst, aLast);
 
         Geom_ToroidalSurface aTorus = new(
-            new gp_Ax3(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0)), 3.0, 1.0);
-        Geom2d_Line aPLine = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(3.0, 4.0));
+            new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)), 3.0, 1.0);
+        Geom2d_Line aPLine = new(new Point2D(0.0, 0.0), new Direction2D(3.0, 4.0));
         Geom2dAdaptor_Curve aC2d = new(aPLine, aFirst, aLast);
         GeomAdaptor_Surface aSurf = new(aTorus);
         Adaptor3d_CurveOnSurface aCoS = new(aC2d, aSurf);
 
         GeomLib_CheckCurveOnSurface aCheck = new();
-        aCheck.Init(aC3d, Precision.PConfusion());
+        aCheck.Init(aC3d, global::Kerf.Engine.Foundation.Precision.PConfusion());
         aCheck.Perform(aCoS);
 
         Assert.True(aCheck.IsDone());
-        Assert.Equal(8.0, aCheck.MaxDistance(), Precision.Confusion());
+        Assert.Equal(8.0, aCheck.MaxDistance(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

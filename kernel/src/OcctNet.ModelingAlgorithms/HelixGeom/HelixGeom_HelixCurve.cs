@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -61,7 +65,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
     }
 
     /// <summary>Sets the helix parameters.</summary>
-    /// <exception cref="Standard_ConstructionError">
+    /// <exception cref="ConstructionErrorException">
     /// <paramref name="aT1"/> ≥ <paramref name="aT2"/>, a negative pitch or radius, or a taper angle outside (-π/2, π/2).
     /// </exception>
     public void Load(double aT1, double aT2, double aPitch, double aRStart, double aTaperAngle, bool aIsCW)
@@ -81,19 +85,19 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
         // Validate input parameters
         if (aT1 >= aT2)
         {
-            throw new Standard_ConstructionError(buf);
+            throw new ConstructionErrorException(buf);
         }
         if (myPitch < 0.0)
         {
-            throw new Standard_ConstructionError(buf);
+            throw new ConstructionErrorException(buf);
         }
         if (myRStart < 0.0)
         {
-            throw new Standard_ConstructionError(buf);
+            throw new ConstructionErrorException(buf);
         }
         if (myTaperAngle <= -aHalfPI || myTaperAngle >= aHalfPI)
         {
-            throw new Standard_ConstructionError(buf);
+            throw new ConstructionErrorException(buf);
         }
         // Calculate helix coefficient
         myC1 = myPitch / aTwoPI;
@@ -110,32 +114,32 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
     public override double LastParameter() => myLast;
 
     /// <summary>GeomAbs_CN.</summary>
-    public override GeomAbs_Shape Continuity() => GeomAbs_Shape.GeomAbs_CN;
+    public override Continuity Continuity() => global::Kerf.Geometry.Continuity.CN;
 
     /// <summary>1, whatever the continuity.</summary>
-    public override int NbIntervals(GeomAbs_Shape S) => 1;
+    public override int NbIntervals(Continuity S) => 1;
 
     /// <summary>Stores the first and last parameters in T(1) and T(2).</summary>
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         T[1] = myFirst;
         T[2] = myLast;
     }
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
-    public override double Resolution(double R3d) => throw new Standard_NotImplemented("HelixGeom_HelixCurve::Resolution");
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
+    public override double Resolution(double R3d) => throw new MethodNotImplementedException("HelixGeom_HelixCurve::Resolution");
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
-    public override bool IsClosed() => throw new Standard_NotImplemented("HelixGeom_HelixCurve::IsClosed");
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
+    public override bool IsClosed() => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsClosed");
 
-    /// <summary>Not implemented: throws <see cref="Standard_NotImplemented"/>.</summary>
-    public override bool IsPeriodic() => throw new Standard_NotImplemented("HelixGeom_HelixCurve::IsPeriodic");
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
+    public override bool IsPeriodic() => throw new MethodNotImplementedException("HelixGeom_HelixCurve::IsPeriodic");
 
-    /// <summary>Throws <see cref="Standard_DomainError"/>: the helix isn't periodic.</summary>
-    public override double Period() => throw new Standard_DomainError("HelixGeom_HelixCurve::Period");
+    /// <summary>Throws <see cref="DomainErrorException"/>: the helix isn't periodic.</summary>
+    public override double Period() => throw new DomainErrorException("HelixGeom_HelixCurve::Period");
 
     /// <summary>The point of parameter <paramref name="theT"/>.</summary>
-    public sealed override gp_Pnt EvalD0(double theT)
+    public sealed override Point3D EvalD0(double theT)
     {
         double aST, aCT, aX, aY, aZ, a1;
         // Calculate trigonometric values and radius
@@ -150,7 +154,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = myC1 * theT;
-        return new gp_Pnt(aX, aY, aZ);
+        return new Point3D(aX, aY, aZ);
     }
 
     /// <summary>The point and first derivative at <paramref name="theT"/>.</summary>
@@ -170,7 +174,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = myC1 * theT;
-        gp_Pnt aP = new(aX, aY, aZ);
+        Point3D aP = new(aX, aY, aZ);
         // Calculate first derivative coefficients
         a1 = myC1 * myTgBeta;
         a2 = myRStart + a1 * theT;
@@ -182,7 +186,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = myC1;
-        gp_Vec aV1 = new(aX, aY, aZ);
+        Vector3D aV1 = new(aX, aY, aZ);
         return new Geom_Curve.ResD1 { Point = aP, D1 = aV1 };
     }
 
@@ -203,7 +207,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = myC1 * theT;
-        gp_Pnt aP = new(aX, aY, aZ);
+        Point3D aP = new(aX, aY, aZ);
         // Calculate first derivative coefficients
         a1 = myC1 * myTgBeta;
         a2 = myRStart + a1 * theT;
@@ -215,7 +219,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = myC1;
-        gp_Vec aV1 = new(aX, aY, aZ);
+        Vector3D aV1 = new(aX, aY, aZ);
         // Calculate second derivative
         a1 = 2.0 * a1;
         aX = -a2 * aCT - a1 * aST;
@@ -225,12 +229,12 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
             aY = -aY;
         }
         aZ = 0.0;
-        gp_Vec aV2 = new(aX, aY, aZ);
+        Vector3D aV2 = new(aX, aY, aZ);
         return new Geom_Curve.ResD2 { Point = aP, D1 = aV1, D2 = aV2 };
     }
 
-    /// <summary>The derivative of order 1 or 2 at <paramref name="theT"/>; throws <see cref="Standard_NotImplemented"/> for other orders.</summary>
-    public sealed override gp_Vec EvalDN(double theT, int theN)
+    /// <summary>The derivative of order 1 or 2 at <paramref name="theT"/>; throws <see cref="MethodNotImplementedException"/> for other orders.</summary>
+    public sealed override Vector3D EvalDN(double theT, int theN)
     {
         // Compute derivative based on order
         switch (theN)
@@ -246,7 +250,7 @@ public class HelixGeom_HelixCurve : Adaptor3d_Curve
                 return aRes.D2;
             }
             default:
-                throw new Standard_NotImplemented("HelixGeom_HelixCurve::EvalDN");
+                throw new MethodNotImplementedException("HelixGeom_HelixCurve::EvalDN");
         }
     }
 }

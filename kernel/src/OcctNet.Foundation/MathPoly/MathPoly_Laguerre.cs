@@ -2,10 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Occt;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Polynomials;
 
 // std::complex<double> is System.Numerics.Complex (same principal branch for Sqrt; Abs is the magnitude). Coefficient
 // pointers are spans. The 20-element std::arrays of GeneralPolyResult are the inline array MathPoly.RootArray<T>.
@@ -20,13 +21,13 @@ public static partial class MathPoly
     [InlineArray(THE_MAX_POLY_DEGREE)]
     public struct RootArray<T>
     {
-        private T myElement0;
+        private T _element0;
     }
 
     /// <summary>Result for general polynomial solver: real roots (sorted) and complex roots (conjugate pairs).</summary>
     public struct GeneralPolyResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         public RootArray<double> Roots;
         public RootArray<Complex> ComplexRoots;
         public int NbRoots = 0;
@@ -36,178 +37,178 @@ public static partial class MathPoly
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(GeneralPolyResult theResult) => theResult.IsDone();
+        public static explicit operator bool(GeneralPolyResult result) => result.IsDone;
 
-        public static bool operator true(GeneralPolyResult theResult) => theResult.IsDone();
+        public static bool operator true(GeneralPolyResult result) => result.IsDone;
 
-        public static bool operator false(GeneralPolyResult theResult) => !theResult.IsDone();
+        public static bool operator false(GeneralPolyResult result) => !result.IsDone;
     }
 
     internal static partial class detail
     {
         /// <summary>Evaluate polynomial (c[0] = constant term) and its first two derivatives at complex x.</summary>
-        internal static void EvaluatePolynomialWithDerivatives(ReadOnlySpan<double> theCoeffs,
-                                                               int theDegree,
-                                                               Complex theX,
-                                                               out Complex theP,
-                                                               out Complex theDP,
-                                                               out Complex theD2P)
+        internal static void EvaluatePolynomialWithDerivatives(ReadOnlySpan<double> coeffs,
+                                                               int degree,
+                                                               Complex x,
+                                                               out Complex p,
+                                                               out Complex dp,
+                                                               out Complex d2P)
         {
             // Horner's method with derivative computation
-            theP = new Complex(theCoeffs[theDegree], 0.0);
-            theDP = new Complex(0.0, 0.0);
-            theD2P = new Complex(0.0, 0.0);
+            p = new Complex(coeffs[degree], 0.0);
+            dp = new Complex(0.0, 0.0);
+            d2P = new Complex(0.0, 0.0);
 
-            for (int i = theDegree - 1; i >= 0; --i)
+            for (int i = degree - 1; i >= 0; --i)
             {
-                theD2P = theD2P * theX + theDP;
-                theDP = theDP * theX + theP;
-                theP = theP * theX + new Complex(theCoeffs[i], 0.0);
+                d2P = d2P * x + dp;
+                dp = dp * x + p;
+                p = p * x + new Complex(coeffs[i], 0.0);
             }
-            theD2P *= 2.0;
+            d2P *= 2.0;
         }
 
         /// <summary>Laguerre iteration to find one root of polynomial.</summary>
-        internal static Complex LaguerreIteration(ReadOnlySpan<double> theCoeffs,
-                                                  int theDegree,
-                                                  Complex theX0,
-                                                  double theTol,
-                                                  int theMaxIter)
+        internal static Complex LaguerreIteration(ReadOnlySpan<double> coeffs,
+                                                  int degree,
+                                                  Complex x0,
+                                                  double tol,
+                                                  int maxIter)
         {
-            Complex aX = theX0;
-            double aN = (double)theDegree;
+            Complex x = x0;
+            double n = (double)degree;
 
-            for (int anIter = 0; anIter < theMaxIter; ++anIter)
+            for (int iter = 0; iter < maxIter; ++iter)
             {
-                EvaluatePolynomialWithDerivatives(theCoeffs, theDegree, aX, out Complex aP, out Complex aDP, out Complex aD2P);
+                EvaluatePolynomialWithDerivatives(coeffs, degree, x, out Complex p, out Complex dp, out Complex d2P);
 
-                double aAbsP = Complex.Abs(aP);
-                if (aAbsP < theTol)
+                double absP = Complex.Abs(p);
+                if (absP < tol)
                 {
-                    return aX;
+                    return x;
                 }
 
                 // Laguerre's formula: x_new = x - n*P / (P' +/- sqrt((n-1)*((n-1)*P'^2 - n*P*P'')))
-                Complex aG = aDP / aP;
-                Complex aH = aG * aG - aD2P / aP;
-                Complex aSq = Complex.Sqrt((aN - 1.0) * (aN * aH - aG * aG));
+                Complex g = dp / p;
+                Complex h = g * g - d2P / p;
+                Complex sq = Complex.Sqrt((n - 1.0) * (n * h - g * g));
 
                 // Choose denominator with larger magnitude for stability
-                Complex aDenom1 = aG + aSq;
-                Complex aDenom2 = aG - aSq;
-                Complex aDenom = (Complex.Abs(aDenom1) > Complex.Abs(aDenom2)) ? aDenom1 : aDenom2;
+                Complex denom1 = g + sq;
+                Complex denom2 = g - sq;
+                Complex denom = (Complex.Abs(denom1) > Complex.Abs(denom2)) ? denom1 : denom2;
 
-                Complex aDelta;
-                if (Complex.Abs(aDenom) < MathUtils.THE_ZERO_TOL)
+                Complex delta;
+                if (Complex.Abs(denom) < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     // Fallback: simple Newton step
-                    if (Complex.Abs(aDP) < MathUtils.THE_ZERO_TOL)
+                    if (Complex.Abs(dp) < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                     {
-                        aDelta = new Complex(1.0 + Complex.Abs(aX), 0.0);
+                        delta = new Complex(1.0 + Complex.Abs(x), 0.0);
                     }
                     else
                     {
-                        aDelta = aP / aDP;
+                        delta = p / dp;
                     }
                 }
                 else
                 {
-                    aDelta = new Complex(aN, 0.0) / aDenom;
+                    delta = new Complex(n, 0.0) / denom;
                 }
 
-                aX -= aDelta;
+                x -= delta;
 
                 // Check convergence
-                if (Complex.Abs(aDelta) < theTol * (1.0 + Complex.Abs(aX)))
+                if (Complex.Abs(delta) < tol * (1.0 + Complex.Abs(x)))
                 {
-                    return aX;
+                    return x;
                 }
             }
 
-            return aX;
+            return x;
         }
 
         /// <summary>Deflate polynomial by removing a real root (synthetic division by (x - root)).</summary>
-        internal static void DeflateReal(Span<double> theCoeffs, ref int theDegree, double theRoot)
+        internal static void DeflateReal(Span<double> coeffs, ref int degree, double root)
         {
             // Synthetic division
-            double aCarry = theCoeffs[theDegree];
-            for (int i = theDegree - 1; i >= 0; --i)
+            double carry = coeffs[degree];
+            for (int i = degree - 1; i >= 0; --i)
             {
-                double aTemp = theCoeffs[i];
-                theCoeffs[i] = aCarry;
-                aCarry = aTemp + aCarry * theRoot;
+                double temp = coeffs[i];
+                coeffs[i] = carry;
+                carry = temp + carry * root;
             }
-            --theDegree;
+            --degree;
         }
 
         /// <summary>Deflate polynomial by removing a complex conjugate pair (division by x^2 - 2 Re(root) x + |root|^2).</summary>
-        internal static void DeflateComplex(Span<double> theCoeffs, ref int theDegree, Complex theRoot)
+        internal static void DeflateComplex(Span<double> coeffs, ref int degree, Complex root)
         {
             // Quadratic factor: x^2 + b*x + c where b = -2*re, c = re^2 + im^2
-            double aRe = theRoot.Real;
-            double aIm = theRoot.Imaginary;
-            double aB = -2.0 * aRe;
-            double aC = aRe * aRe + aIm * aIm;
+            double re = root.Real;
+            double im = root.Imaginary;
+            double b = -2.0 * re;
+            double c = re * re + im * im;
 
             // Synthetic division by (x^2 + b*x + c)
-            Span<double> aQuotient = stackalloc double[THE_MAX_POLY_DEGREE + 1];
-            aQuotient.Fill(0.0);
+            Span<double> quotient = stackalloc double[THE_MAX_POLY_DEGREE + 1];
+            quotient.Fill(0.0);
 
             // Work from highest degree down
-            aQuotient[theDegree - 2] = theCoeffs[theDegree];
-            if (theDegree >= 3)
+            quotient[degree - 2] = coeffs[degree];
+            if (degree >= 3)
             {
-                aQuotient[theDegree - 3] = theCoeffs[theDegree - 1] - aB * aQuotient[theDegree - 2];
+                quotient[degree - 3] = coeffs[degree - 1] - b * quotient[degree - 2];
             }
 
-            for (int i = theDegree - 4; i >= 0; --i)
+            for (int i = degree - 4; i >= 0; --i)
             {
-                aQuotient[i] = theCoeffs[i + 2] - aB * aQuotient[i + 1] - aC * aQuotient[i + 2];
+                quotient[i] = coeffs[i + 2] - b * quotient[i + 1] - c * quotient[i + 2];
             }
 
             // Copy quotient back to coefficients
-            for (int i = 0; i <= theDegree - 2; ++i)
+            for (int i = 0; i <= degree - 2; ++i)
             {
-                theCoeffs[i] = aQuotient[i];
+                coeffs[i] = quotient[i];
             }
-            theDegree -= 2;
+            degree -= 2;
         }
 
         /// <summary>Refine a real root using Newton-Raphson on the original polynomial.</summary>
-        internal static double RefineRealRoot(ReadOnlySpan<double> theOrigCoeffs, int theOrigDegree, double theRoot)
+        internal static double RefineRealRoot(ReadOnlySpan<double> origCoeffs, int origDegree, double root)
         {
             const int THE_MAX_ITER = 10;
             const double THE_TOL = 1.0e-14;
 
-            double aX = theRoot;
-            for (int anIter = 0; anIter < THE_MAX_ITER; ++anIter)
+            double x = root;
+            for (int iter = 0; iter < THE_MAX_ITER; ++iter)
             {
                 // Evaluate P and P' using Horner
-                double aP = theOrigCoeffs[theOrigDegree];
-                double aDP = 0.0;
-                for (int i = theOrigDegree - 1; i >= 0; --i)
+                double p = origCoeffs[origDegree];
+                double dp = 0.0;
+                for (int i = origDegree - 1; i >= 0; --i)
                 {
-                    aDP = aDP * aX + aP;
-                    aP = aP * aX + theOrigCoeffs[i];
+                    dp = dp * x + p;
+                    p = p * x + origCoeffs[i];
                 }
 
-                if (Math.Abs(aDP) < MathUtils.THE_ZERO_TOL)
+                if (Math.Abs(dp) < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     break;
                 }
 
-                double aDelta = aP / aDP;
-                aX -= aDelta;
+                double delta = p / dp;
+                x -= delta;
 
-                if (Math.Abs(aDelta) < THE_TOL * (1.0 + Math.Abs(aX)))
+                if (Math.Abs(delta) < THE_TOL * (1.0 + Math.Abs(x)))
                 {
                     break;
                 }
             }
-            return aX;
+            return x;
         }
     }
 
@@ -215,197 +216,197 @@ public static partial class MathPoly
     /// Solve a polynomial equation a0 + a1*x + ... + an*x^n = 0 (degree 1 to THE_MAX_POLY_DEGREE) by Laguerre's
     /// method with deflation; real roots are refined by Newton on the original polynomial, sorted and deduplicated.
     /// </summary>
-    public static GeneralPolyResult Laguerre(ReadOnlySpan<double> theCoeffs, int theDegree, double theTol = 1.0e-12)
+    public static GeneralPolyResult Laguerre(ReadOnlySpan<double> coeffs, int degree, double tol = 1.0e-12)
     {
-        GeneralPolyResult aResult = new();
+        GeneralPolyResult result = new();
 
         // Validate input
-        if (theDegree < 1 || theDegree > THE_MAX_POLY_DEGREE)
+        if (degree < 1 || degree > THE_MAX_POLY_DEGREE)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
         // Check leading coefficient
-        if (Math.Abs(theCoeffs[theDegree]) < MathUtils.THE_ZERO_TOL)
+        if (Math.Abs(coeffs[degree]) < global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
         {
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
 
         // Copy coefficients for deflation
-        Span<double> aWorkCoeffs = stackalloc double[THE_MAX_POLY_DEGREE + 1];
-        for (int i = 0; i <= theDegree; ++i)
+        Span<double> workCoeffs = stackalloc double[THE_MAX_POLY_DEGREE + 1];
+        for (int i = 0; i <= degree; ++i)
         {
-            aWorkCoeffs[i] = theCoeffs[i];
+            workCoeffs[i] = coeffs[i];
         }
 
         // Store original for refinement
-        Span<double> aOrigCoeffs = stackalloc double[THE_MAX_POLY_DEGREE + 1];
-        for (int i = 0; i <= theDegree; ++i)
+        Span<double> origCoeffs = stackalloc double[THE_MAX_POLY_DEGREE + 1];
+        for (int i = 0; i <= degree; ++i)
         {
-            aOrigCoeffs[i] = theCoeffs[i];
+            origCoeffs[i] = coeffs[i];
         }
 
-        int aDeg = theDegree;
+        int deg = degree;
 
         // Use different starting points to improve convergence
         // Rotate through starting positions
-        ReadOnlySpan<Complex> aStartPoints = [new Complex(0.0, 0.1),
+        ReadOnlySpan<Complex> startPoints = [new Complex(0.0, 0.1),
                                               new Complex(1.0, 0.5),
                                               new Complex(-0.5, 0.3),
                                               new Complex(0.5, -0.3)];
 
         // Find all roots
-        int aStartIdx = 0;
-        while (aDeg > 0)
+        int startIdx = 0;
+        while (deg > 0)
         {
-            Complex aX0 = aStartPoints[aStartIdx % 4];
-            ++aStartIdx;
+            Complex x0 = startPoints[startIdx % 4];
+            ++startIdx;
 
             // Use Laguerre iteration
-            Complex aRoot = detail.LaguerreIteration(aWorkCoeffs, aDeg, aX0, theTol, 100);
+            Complex root = detail.LaguerreIteration(workCoeffs, deg, x0, tol, 100);
 
             // Determine if root is real or complex
-            double aImagPart = Math.Abs(aRoot.Imaginary);
-            double aRealPart = Math.Abs(aRoot.Real);
-            double aScale = Max(1.0, aRealPart);
+            double imagPart = Math.Abs(root.Imaginary);
+            double realPart = Math.Abs(root.Real);
+            double scale = Max(1.0, realPart);
 
-            if (aImagPart < theTol * aScale)
+            if (imagPart < tol * scale)
             {
                 // Real root
-                double aRealRoot = aRoot.Real;
+                double realRoot = root.Real;
 
                 // Refine using Newton on original polynomial
-                aRealRoot = detail.RefineRealRoot(aOrigCoeffs, theDegree, aRealRoot);
+                realRoot = detail.RefineRealRoot(origCoeffs, degree, realRoot);
 
-                aResult.Roots[aResult.NbRoots++] = aRealRoot;
+                result.Roots[result.NbRoots++] = realRoot;
 
                 // Deflate
-                detail.DeflateReal(aWorkCoeffs, ref aDeg, aRealRoot);
+                detail.DeflateReal(workCoeffs, ref deg, realRoot);
             }
             else
             {
                 // Complex conjugate pair
-                aResult.ComplexRoots[aResult.NbComplexRoots++] = aRoot;
-                aResult.ComplexRoots[aResult.NbComplexRoots++] = Complex.Conjugate(aRoot);
+                result.ComplexRoots[result.NbComplexRoots++] = root;
+                result.ComplexRoots[result.NbComplexRoots++] = Complex.Conjugate(root);
 
                 // Deflate by quadratic
-                detail.DeflateComplex(aWorkCoeffs, ref aDeg, aRoot);
+                detail.DeflateComplex(workCoeffs, ref deg, root);
             }
         }
 
         // Sort real roots
-        Span<double> aRoots = aResult.Roots;
-        aRoots[..aResult.NbRoots].Sort();
+        Span<double> roots = result.Roots;
+        roots[..result.NbRoots].Sort();
 
         // Remove duplicate real roots
-        if (aResult.NbRoots > 1)
+        if (result.NbRoots > 1)
         {
-            int aNewCount = 1;
-            for (int i = 1; i < aResult.NbRoots; ++i)
+            int newCount = 1;
+            for (int i = 1; i < result.NbRoots; ++i)
             {
-                if (Math.Abs(aRoots[i] - aRoots[aNewCount - 1]) > theTol)
+                if (Math.Abs(roots[i] - roots[newCount - 1]) > tol)
                 {
-                    aRoots[aNewCount++] = aRoots[i];
+                    roots[newCount++] = roots[i];
                 }
             }
-            aResult.NbRoots = aNewCount;
+            result.NbRoots = newCount;
         }
 
-        aResult.Status = MathUtils.Status.OK;
-        return aResult;
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+        return result;
     }
 
     /// <summary>Laguerre for a coefficient array of theSize values (degree theSize - 1).</summary>
-    public static GeneralPolyResult LaguerreN(ReadOnlySpan<double> theCoeffs, int theSize, double theTol = 1.0e-12)
+    public static GeneralPolyResult LaguerreN(ReadOnlySpan<double> coeffs, int size, double tol = 1.0e-12)
     {
-        if (theSize < 2)
+        if (size < 2)
         {
-            GeneralPolyResult aResult = new();
-            aResult.Status = MathUtils.Status.InvalidInput;
-            return aResult;
+            GeneralPolyResult result = new();
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput;
+            return result;
         }
-        return Laguerre(theCoeffs, theSize - 1, theTol);
+        return Laguerre(coeffs, size - 1, tol);
     }
 
     /// <summary>Real roots of a*x^6 + b*x^5 + c*x^4 + d*x^3 + e*x^2 + f*x + g = 0 (at most 4 kept).</summary>
-    public static MathUtils.PolyResult Sextic(double theA, double theB, double theC, double theD, double theE, double theF, double theG)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult Sextic(double a, double b, double c, double d, double e, double f, double g)
     {
-        MathUtils.PolyResult aResult = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult result = new();
 
         // Handle leading zero coefficient
-        if (MathUtils.IsZero(theA))
+        if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(a))
         {
             // Reduce to quintic, then use Laguerre
-            ReadOnlySpan<double> aCoeffs5 = [theG, theF, theE, theD, theC, theB];
-            GeneralPolyResult aGenResult5 = Laguerre(aCoeffs5, 5);
-            if (!aGenResult5.IsDone())
+            ReadOnlySpan<double> coeffs5 = [g, f, e, d, c, b];
+            GeneralPolyResult genResult5 = Laguerre(coeffs5, 5);
+            if (!genResult5.IsDone)
             {
-                aResult.Status = aGenResult5.Status;
-                return aResult;
+                result.Status = genResult5.Status;
+                return result;
             }
-            aResult.Status = MathUtils.Status.OK;
-            aResult.NbRoots = Min(aGenResult5.NbRoots, 4); // OCCT: real roots beyond the fourth are dropped
-            for (int i = 0; i < aResult.NbRoots; ++i)
+            result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+            result.NbRoots = Min(genResult5.NbRoots, 4); // OCCT: real roots beyond the fourth are dropped
+            for (int i = 0; i < result.NbRoots; ++i)
             {
-                aResult.Roots[i] = aGenResult5.Roots[i];
+                result.Roots[i] = genResult5.Roots[i];
             }
-            return aResult;
+            return result;
         }
 
-        ReadOnlySpan<double> aCoeffs = [theG, theF, theE, theD, theC, theB, theA];
-        GeneralPolyResult aGenResult = Laguerre(aCoeffs, 6);
+        ReadOnlySpan<double> coeffs = [g, f, e, d, c, b, a];
+        GeneralPolyResult genResult = Laguerre(coeffs, 6);
 
-        if (!aGenResult.IsDone())
+        if (!genResult.IsDone)
         {
-            aResult.Status = aGenResult.Status;
-            return aResult;
+            result.Status = genResult.Status;
+            return result;
         }
 
-        aResult.Status = MathUtils.Status.OK;
-        aResult.NbRoots = Min(aGenResult.NbRoots, 4); // OCCT: real roots beyond the fourth are dropped
-        for (int i = 0; i < aResult.NbRoots; ++i)
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+        result.NbRoots = Min(genResult.NbRoots, 4); // OCCT: real roots beyond the fourth are dropped
+        for (int i = 0; i < result.NbRoots; ++i)
         {
-            aResult.Roots[i] = aGenResult.Roots[i];
+            result.Roots[i] = genResult.Roots[i];
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>Real roots of a*x^5 + b*x^4 + c*x^3 + d*x^2 + e*x + f = 0 (at most 4 kept).</summary>
-    public static MathUtils.PolyResult Quintic(double theA, double theB, double theC, double theD, double theE, double theF)
+    public static global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult Quintic(double a, double b, double c, double d, double e, double f)
     {
-        MathUtils.PolyResult aResult = new();
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult result = new();
 
-        if (MathUtils.IsZero(theA))
+        if (global::Kerf.Engine.Numerics.Utilities.MathUtils.IsZero(a))
         {
             // Reduce to quartic - use existing solver
-            return Quartic(theB, theC, theD, theE, theF);
+            return Quartic(b, c, d, e, f);
         }
 
-        ReadOnlySpan<double> aCoeffs = [theF, theE, theD, theC, theB, theA];
-        GeneralPolyResult aGenResult = Laguerre(aCoeffs, 5);
+        ReadOnlySpan<double> coeffs = [f, e, d, c, b, a];
+        GeneralPolyResult genResult = Laguerre(coeffs, 5);
 
-        if (!aGenResult.IsDone())
+        if (!genResult.IsDone)
         {
-            aResult.Status = aGenResult.Status;
-            return aResult;
+            result.Status = genResult.Status;
+            return result;
         }
 
-        aResult.Status = MathUtils.Status.OK;
-        aResult.NbRoots = Min(aGenResult.NbRoots, 4); // OCCT: a fifth real root is dropped
-        for (int i = 0; i < aResult.NbRoots; ++i)
+        result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
+        result.NbRoots = Min(genResult.NbRoots, 4); // OCCT: a fifth real root is dropped
+        for (int i = 0; i < result.NbRoots; ++i)
         {
-            aResult.Roots[i] = aGenResult.Roots[i];
+            result.Roots[i] = genResult.Roots[i];
         }
 
-        return aResult;
+        return result;
     }
 
     /// <summary>Solve the octic a0 + a1*x + ... + a8*x^8 = 0 (9 coefficients) by Laguerre's method.</summary>
-    public static GeneralPolyResult Octic(ReadOnlySpan<double> theCoeffs)
+    public static GeneralPolyResult Octic(ReadOnlySpan<double> coeffs)
     {
-        return Laguerre(theCoeffs, 8);
+        return Laguerre(coeffs, 8);
     }
 }

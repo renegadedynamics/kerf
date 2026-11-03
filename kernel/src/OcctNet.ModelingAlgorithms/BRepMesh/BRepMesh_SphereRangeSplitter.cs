@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Extends the default range splitter to generate the internal nodes of a spherical surface.</summary>
@@ -14,7 +16,7 @@ public class BRepMesh_SphereRangeSplitter : BRepMesh_DefaultRangeSplitter
     }
 
     /// <summary>The nodes of a staggered grid over the face's range.</summary>
-    public override NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public override NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         // Calculate parameters for iteration in V direction
         double aStep =
@@ -31,7 +33,7 @@ public class BRepMesh_SphereRangeSplitter : BRepMesh_DefaultRangeSplitter
         computeStep(aRange0, aStep, out (double first, double second) aStepAndOffset0);
         computeStep(aRange1, aStep, out (double first, double second) aStepAndOffset1);
 
-        NCollection_List<gp_Pnt2d> aNodes = new();
+        NCollection_List<Point2D> aNodes = new();
 
         double aHalfDu = aStepAndOffset1.first * 0.5;
         bool Shift = false;
@@ -43,7 +45,7 @@ public class BRepMesh_SphereRangeSplitter : BRepMesh_DefaultRangeSplitter
             double aPasU = aRange1.first + d;
             for (; aPasU < aStepAndOffset1.second; aPasU += aStepAndOffset1.first)
             {
-                aNodes.Append(new gp_Pnt2d(aPasU, aPasV));
+                aNodes.Append(new Point2D(aPasU, aPasV));
             }
         }
 
@@ -57,6 +59,6 @@ public class BRepMesh_SphereRangeSplitter : BRepMesh_DefaultRangeSplitter
     {
         double aDiff = theRange.second - theRange.first;
         theStepAndOffset.first = aDiff / ((int)(aDiff / theDefaultStep) + 1);
-        theStepAndOffset.second = theRange.second - Precision.PConfusion();
+        theStepAndOffset.second = theRange.second - global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 }

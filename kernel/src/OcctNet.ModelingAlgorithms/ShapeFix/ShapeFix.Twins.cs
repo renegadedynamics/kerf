@@ -2,6 +2,8 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public static partial class ShapeFix
@@ -14,7 +16,7 @@ public static partial class ShapeFix
     /// break).
     /// </summary>
     public static TopoDS_Shape SameParametered(in TopoDS_Shape shape, bool enforce, out bool theIsDone, double preci = 0.0,
-                                               Message_ProgressRange theProgress = default,
+                                               ProgressRange theProgress = default,
                                                ShapeExtend_BasicMsgRegistrator? theMsgReg = null)
     {
         var anEntry = new BRepTools_CopyAtEntry(shape);

@@ -8,6 +8,12 @@
 //-- lbr : the method using coefficients is catastrophic.
 //--       Implementation of a proper solution.
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Intersection between a line and a torus.</summary>
@@ -16,7 +22,7 @@ public class IntAna_IntLinTorus
 {
     private bool done;
     private int nbpt;
-    private readonly gp_Pnt[] thePoint = new gp_Pnt[4];
+    private readonly Point3D[] thePoint = new Point3D[4];
     private readonly double[] theParam = new double[4];
     private readonly double[] theFi = new double[4];
     private readonly double[] theTheta = new double[4];
@@ -28,27 +34,27 @@ public class IntAna_IntLinTorus
     }
 
     /// <summary>Creates the intersection between a line and a torus.</summary>
-    public IntAna_IntLinTorus(in gp_Lin L, in gp_Torus T)
+    public IntAna_IntLinTorus(in Line3D L, in Torus T)
     {
         Perform(L, T);
     }
 
     /// <summary>Intersects a line and a torus.</summary>
-    public void Perform(in gp_Lin L, in gp_Torus T)
+    public void Perform(in Line3D L, in Torus T)
     {
-        gp_Pnt PL = L.Location();
-        gp_Dir DL = L.Direction();
+        Point3D PL = L.Location();
+        Direction3D DL = L.Direction();
 
         // Reparametrize the line:
         // set its location as nearest to the location of torus
-        gp_Pnt TorLoc = T.Location();
-        double ParamOfNewPL = new gp_Vec(PL, TorLoc).Dot(new gp_Vec(DL));
-        gp_Pnt NewPL = new(PL.XYZ() + ParamOfNewPL * DL.XYZ());
+        Point3D TorLoc = T.Location();
+        double ParamOfNewPL = new Vector3D(PL, TorLoc).Dot(new Vector3D(DL));
+        Point3D NewPL = new(PL.XYZ() + ParamOfNewPL * DL.XYZ());
 
         //--------------------------------------------------------------
         //-- Coefficients of the line in the torus reference frame
         //--
-        gp_Trsf trsf = new();
+        Transform3D trsf = new();
         trsf.SetTransformation(T.Position());
         NewPL.Transform(trsf);
         DL.Transform(trsf);
@@ -79,19 +85,19 @@ public class IntAna_IntLinTorus
         a0 = c * c + 4.0 * R2 * (z0 * z0 - r2);
 
         double u, v;
-        math_DirectPolynomialRoots mdpr = new(a4, a3, a2, a1, a0);
-        if (mdpr.IsDone())
+        DirectPolynomialRoots mdpr = new(a4, a3, a2, a1, a0);
+        if (mdpr.IsDone)
         {
             int nbsolvalid = 0;
-            int n = mdpr.NbSolutions();
+            int n = mdpr.SolutionCount;
             int aNbBadSol = 0;
             for (int i = 1; i <= n; i++)
             {
                 double t = mdpr.Value(i);
                 t += ParamOfNewPL;
-                gp_Pnt PSolL = ElCLib.Value(t, L);
-                ElSLib.Parameters(T, PSolL, out u, out v);
-                gp_Pnt PSolT = ElSLib.Value(u, v, T);
+                Point3D PSolL = global::Kerf.Engine.Geometry.ElCLib.Value(t, L);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(T, PSolL, out u, out v);
+                Point3D PSolT = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, T);
                 a0 = PSolT.SquareDistance(PSolL);
 
                 if (a0 > 0.0000000001)
@@ -129,60 +135,60 @@ public class IntAna_IntLinTorus
     public bool IsDone() => done;
 
     /// <summary>The number of intersection points.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
     public int NbPoints()
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return nbpt;
     }
 
     /// <summary>The intersection point of range Index.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbPoints].</exception>
-    public gp_Pnt Value(int Index)
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbPoints].</exception>
+    public Point3D Value(int Index)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > nbpt)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return thePoint[Index - 1];
     }
 
     /// <summary>The parameter on the line of the intersection point of range Index.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbPoints].</exception>
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbPoints].</exception>
     public double ParamOnLine(int Index)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > nbpt)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return theParam[Index - 1];
     }
 
     /// <summary>The parameters on the torus of the intersection point of range Index.</summary>
-    /// <exception cref="StdFail_NotDone">The computation was not done.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbPoints].</exception>
+    /// <exception cref="NotDoneException">The computation was not done.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbPoints].</exception>
     public void ParamOnTorus(int Index, out double FI, out double THETA)
     {
         if (!done)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > nbpt)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         FI = theFi[Index - 1];
         THETA = theTheta[Index - 1];

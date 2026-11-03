@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG3d/GTests/GeomGridEval_Cone_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public partial class GeomGridEval_ConeTest
@@ -19,7 +21,7 @@ public partial class GeomGridEval_ConeTest
     }
 
     private static Geom_ConicalSurface MakeSurface() =>
-        new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), M_PI / 4, 1.0);
+        new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 4, 1.0);
 
     //=================================================================================================
     // Grid evaluation tests
@@ -37,7 +39,7 @@ public partial class GeomGridEval_ConeTest
         NCollection_Array1<double> aUParams = CreateUniformParams(0.0, 2 * M_PI, 9); // Angle
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 6); // Linear param
 
-        NCollection_Array2<gp_Pnt> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.Equal(6, aGrid.RowLength());
         Assert.Equal(9, aGrid.ColLength());
 
@@ -46,7 +48,7 @@ public partial class GeomGridEval_ConeTest
         {
             for (int iV = 1; iV <= 6; ++iV)
             {
-                gp_Pnt aExpected = aSurf.Value(aUParams.Value(iU), aVParams.Value(iV));
+                Point3D aExpected = aSurf.Value(aUParams.Value(iU), aVParams.Value(iV));
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
             }
         }
@@ -67,7 +69,7 @@ public partial class GeomGridEval_ConeTest
         {
             for (int iV = 1; iV <= 6; ++iV)
             {
-                aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V);
+                aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -90,8 +92,8 @@ public partial class GeomGridEval_ConeTest
         {
             for (int iV = 1; iV <= 6; ++iV)
             {
-                aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out gp_Pnt aPnt, out gp_Vec aD1U, out gp_Vec aD1V,
-                         out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+                aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
+                         out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -119,16 +121,16 @@ public partial class GeomGridEval_ConeTest
             {
                 aSurf.D3(aUParams.Value(iU),
                          aVParams.Value(iV),
-                         out gp_Pnt aPnt,
-                         out gp_Vec aD1U,
-                         out gp_Vec aD1V,
-                         out gp_Vec aD2U,
-                         out gp_Vec aD2V,
-                         out gp_Vec aD2UV,
-                         out gp_Vec aD3U,
-                         out gp_Vec aD3V,
-                         out gp_Vec aD3UUV,
-                         out gp_Vec aD3UVV);
+                         out Point3D aPnt,
+                         out Vector3D aD1U,
+                         out Vector3D aD1V,
+                         out Vector3D aD2U,
+                         out Vector3D aD2V,
+                         out Vector3D aD2UV,
+                         out Vector3D aD3U,
+                         out Vector3D aD3V,
+                         out Vector3D aD3UUV,
+                         out Vector3D aD3UVV);
                 Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
                 Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
@@ -153,12 +155,12 @@ public partial class GeomGridEval_ConeTest
         NCollection_Array1<double> aVParams = CreateUniformParams(0.0, 5.0, 4);
 
         // Test D4U (4th derivative in U)
-        NCollection_Array2<gp_Vec> aD4U = anEval.EvaluateGridDN(aUParams, aVParams, 4, 0);
+        NCollection_Array2<Vector3D> aD4U = anEval.EvaluateGridDN(aUParams, aVParams, 4, 0);
         for (int iU = 1; iU <= 5; ++iU)
         {
             for (int iV = 1; iV <= 4; ++iV)
             {
-                gp_Vec aExpected = aSurf.DN(aUParams.Value(iU), aVParams.Value(iV), 4, 0);
+                Vector3D aExpected = aSurf.DN(aUParams.Value(iU), aVParams.Value(iV), 4, 0);
                 Assert.Equal(0.0, (aD4U.Value(iU, iV) - aExpected).Magnitude(), THE_TOLERANCE);
             }
         }

@@ -9,26 +9,26 @@ namespace Occt;
 public static class NCollection_PackedMapAlgo
 {
     /// <summary>
-    /// Adds the values of <paramref name="theOtherMap"/> to <paramref name="theMap"/> (boolean OR). True if
-    /// <paramref name="theMap"/> changed.
+    /// Adds the values of <paramref name="otherMap"/> to <paramref name="map"/> (boolean OR). True if
+    /// <paramref name="map"/> changed.
     /// </summary>
-    public static bool Unite(NCollection_PackedMapOfInteger theMap, NCollection_PackedMapOfInteger theOtherMap)
+    public static bool Unite(NCollection_PackedMapOfInteger map, NCollection_PackedMapOfInteger otherMap)
     {
-        if (theOtherMap.IsEmpty() || ReferenceEquals(theMap, theOtherMap))
+        if (otherMap.IsEmpty() || ReferenceEquals(map, otherMap))
         {
             return false;
         }
-        else if (theMap.IsEmpty())
+        else if (map.IsEmpty())
         {
-            theMap.Assign(theOtherMap);
+            map.Assign(otherMap);
             return true;
         }
 
-        int anOldExtent = theMap.Extent();
-        for (NCollection_PackedMapOfInteger.Iterator anIter = new(theOtherMap); anIter.More(); anIter.Next())
+        int oldExtent = map.Extent();
+        for (NCollection_PackedMapOfInteger.Iterator iter = new(otherMap); iter.More(); iter.Next())
         {
-            theMap.Add(anIter.Key());
+            map.Add(iter.Key());
         }
-        return anOldExtent != theMap.Extent();
+        return oldExtent != map.Extent();
     }
 }

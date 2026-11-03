@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Occt;
 /// and Libraries. It also gives control of type definitions. By default, types are provided by CDL, but
 /// specific implementations, or topics like multi-typing, may involve another way
 /// </summary>
-public abstract class Interface_Protocol : Standard_Transient
+public abstract class Interface_Protocol : Transient
 {
     // OCCT.NET: OCCT's Active, SetActive and ClearActive (one process-wide "active" protocol, set by
     // IFSelect_WorkSession and read by Interface_CopyTool and Transfer_TransferOutput) are left out: the port
@@ -33,7 +35,7 @@ public abstract class Interface_Protocol : Standard_Transient
     /// Returns a unique positive CaseNumber for each Recognized Object. By default, recognition is based on
     /// Type(1) By default, calls the following one which is deferred.
     /// </summary>
-    public virtual int CaseNumber(Standard_Transient? obj)
+    public virtual int CaseNumber(Transient? obj)
     {
         if (obj is null)
         {
@@ -46,7 +48,7 @@ public abstract class Interface_Protocol : Standard_Transient
     /// Returns True if type of &lt;obj&gt; is that defined from CDL This is the default but it may change
     /// according implementation
     /// </summary>
-    public virtual bool IsDynamicType(Standard_Transient? obj)
+    public virtual bool IsDynamicType(Transient? obj)
     {
         return true;
     }
@@ -56,7 +58,7 @@ public abstract class Interface_Protocol : Standard_Transient
     /// recognized by TypeNumber, &lt;obj&gt; is then processed according it By default, returns 1 (the
     /// DynamicType)
     /// </summary>
-    public virtual int NbTypes(Standard_Transient? obj)
+    public virtual int NbTypes(Transient? obj)
     {
         return 1;
     }
@@ -65,11 +67,11 @@ public abstract class Interface_Protocol : Standard_Transient
     /// Returns a type under which &lt;obj&gt; can be recognized and processed, according its rank in its
     /// definition list (see NbTypes). By default, returns DynamicType
     /// </summary>
-    public Type Type(Standard_Transient? obj, int nt = 1)
+    public Type Type(Transient? obj, int nt = 1)
     {
         if (obj is null)
         {
-            return typeof(Standard_Transient);
+            return typeof(Transient);
         }
         return obj.DynamicType();
     }
@@ -103,11 +105,11 @@ public abstract class Interface_Protocol : Standard_Transient
     /// <summary>
     /// Creates a new Unknown Entity for the considered Norm
     /// </summary>
-    public abstract Standard_Transient? UnknownEntity();
+    public abstract Transient? UnknownEntity();
 
     /// <summary>
     /// Returns True if &lt;ent&gt; is an Unknown Entity for the Norm, i.e. same Type as them created by method
     /// UnknownEntity (for an Entity out of the Norm, answer can be unpredictable)
     /// </summary>
-    public abstract bool IsUnknownEntity(Standard_Transient? ent);
+    public abstract bool IsUnknownEntity(Transient? ent);
 }

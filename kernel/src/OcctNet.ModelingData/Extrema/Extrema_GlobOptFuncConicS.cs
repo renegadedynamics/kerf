@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2020-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -17,18 +19,18 @@ namespace Occt;
 /// without a curve leave it unset until <see cref="LoadConic"/> (OCCT leaves the pointer and the curve type
 /// uninitialised). Outside the parameter range <see cref="Value"/> returns false and writes 0 (decision 221).
 /// </remarks>
-public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
+public class Extrema_GlobOptFuncConicS : MultipleVarFunction
 {
     private Adaptor3d_Curve? myC;
     private readonly Adaptor3d_Surface myS;
-    private GeomAbs_CurveType myCType;
-    private gp_Lin myLin = new();
-    private gp_Circ myCirc = new();
-    private gp_Elips myElips = new();
-    private gp_Hypr myHypr = new();
-    private gp_Parab myParab = new();
-    private gp_Pnt myCPf = new();
-    private gp_Pnt myCPl = new();
+    private CurveKind myCType;
+    private Line3D myLin = new();
+    private Circle3D myCirc = new();
+    private Ellipse3D myElips = new();
+    private Hyperbola3D myHypr = new();
+    private Parabola3D myParab = new();
+    private Point3D myCPf = new();
+    private Point3D myCPl = new();
     // Boundaries
     private double myTf;
     private double myTl;
@@ -42,32 +44,32 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
     private void value(double su, double sv, out double F)
     {
         double ct;
-        gp_Pnt aPS = myS.Value(su, sv);
+        Point3D aPS = myS.Value(su, sv);
         switch (myCType)
         {
-            case GeomAbs_Line:
-                ct = ElCLib.Parameter(myLin, aPS);
+            case Line:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myLin, aPS);
                 break;
-            case GeomAbs_Circle:
-                ct = ElCLib.Parameter(myCirc, aPS);
+            case Circle:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myCirc, aPS);
                 break;
-            case GeomAbs_Ellipse:
-                ct = ElCLib.Parameter(myElips, aPS);
+            case Ellipse:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myElips, aPS);
                 break;
-            case GeomAbs_Hyperbola:
-                ct = ElCLib.Parameter(myHypr, aPS);
+            case Hyperbola:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myHypr, aPS);
                 break;
-            case GeomAbs_Parabola:
-                ct = ElCLib.Parameter(myParab, aPS);
+            case Parabola:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myParab, aPS);
                 break;
             default:
-                F = Precision.Infinite();
+                F = global::Kerf.Engine.Foundation.Precision.Infinite();
                 return;
         }
         //
-        if (myCType == GeomAbs_Circle || myCType == GeomAbs_Ellipse)
+        if (myCType == Circle || myCType == Ellipse)
         {
-            if (myTl > 2.0 * M_PI + Precision.PConfusion())
+            if (myTl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 ct += 2.0 * M_PI;
             }
@@ -75,7 +77,7 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         F = RealLast();
         if (ct >= myTf && ct <= myTl)
         {
-            gp_Pnt aPC = myC!.Value(ct);
+            Point3D aPC = myC!.Value(ct);
             F = Min(F, aPS.SquareDistance(aPC));
         }
         F = Min(F, aPS.SquareDistance(myCPf));
@@ -132,10 +134,10 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         myTl = theTl;
         if (myC.IsPeriodic())
         {
-            double aTMax = 2.0 * M_PI + Precision.PConfusion();
-            if (myTf > aTMax || myTf < -Precision.PConfusion() || Math.Abs(myTl - myTf) > aTMax)
+            double aTMax = 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion();
+            if (myTf > aTMax || myTf < -global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(myTl - myTf) > aTMax)
             {
-                ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myTl - myTf) / 2, Precision.PConfusion()),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, Min(Math.Abs(myTl - myTf) / 2, global::Kerf.Engine.Foundation.Precision.PConfusion()),
                     ref myTf, ref myTl);
             }
         }
@@ -144,19 +146,19 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         myCType = myC.GetType();
         switch (myCType)
         {
-            case GeomAbs_Line:
+            case Line:
                 myLin = myC.Line();
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 myCirc = myC.Circle();
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 myElips = myC.Ellipse();
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 myHypr = myC.Hyperbola();
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 myParab = myC.Parabola();
                 break;
             default:
@@ -164,7 +166,7 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         }
     }
 
-    public override int NbVariables() => 2;
+    public override int VariableCount => 2;
 
     public override bool Value(math_Vector X, out double F)
     {
@@ -175,39 +177,39 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         }
 
         value(su, sv, out F);
-        return !Precision.IsInfinite(F);
+        return !global::Kerf.Engine.Foundation.Precision.IsInfinite(F);
     }
 
     /// <summary>The parameter on the conic for the point of the surface at theUV.</summary>
     public double ConicParameter(math_Vector theUV)
     {
         double ct;
-        gp_Pnt aPS = myS.Value(theUV[1], theUV[2]);
+        Point3D aPS = myS.Value(theUV[1], theUV[2]);
         switch (myCType)
         {
-            case GeomAbs_Line:
-                ct = ElCLib.Parameter(myLin, aPS);
+            case Line:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myLin, aPS);
                 break;
-            case GeomAbs_Circle:
-                ct = ElCLib.Parameter(myCirc, aPS);
+            case Circle:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myCirc, aPS);
                 break;
-            case GeomAbs_Ellipse:
-                ct = ElCLib.Parameter(myElips, aPS);
+            case Ellipse:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myElips, aPS);
                 break;
-            case GeomAbs_Hyperbola:
-                ct = ElCLib.Parameter(myHypr, aPS);
+            case Hyperbola:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myHypr, aPS);
                 break;
-            case GeomAbs_Parabola:
-                ct = ElCLib.Parameter(myParab, aPS);
+            case Parabola:
+                ct = global::Kerf.Engine.Geometry.ElCLib.Parameter(myParab, aPS);
                 break;
             default:
                 ct = myTf;
                 return ct;
         }
         //
-        if (myCType == GeomAbs_Circle || myCType == GeomAbs_Ellipse)
+        if (myCType == Circle || myCType == Ellipse)
         {
-            if (myTl > 2.0 * M_PI + Precision.PConfusion())
+            if (myTl > 2.0 * M_PI + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 ct += 2.0 * M_PI;
             }
@@ -215,7 +217,7 @@ public class Extrema_GlobOptFuncConicS : math_MultipleVarFunction
         double F = RealLast();
         if (ct >= myTf && ct <= myTl)
         {
-            gp_Pnt aPC = myC!.Value(ct);
+            Point3D aPC = myC!.Value(ct);
             F = Min(F, aPS.SquareDistance(aPC));
         }
         double Fext = aPS.SquareDistance(myCPf);

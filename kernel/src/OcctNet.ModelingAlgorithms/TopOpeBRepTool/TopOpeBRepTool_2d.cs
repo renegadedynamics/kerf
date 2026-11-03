@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -119,11 +123,11 @@ public static class TopOpeBRepTool_2d
         }
 
         // pas de 2D
-        Geom_Curve? C1 = BRep_Tool.Curve(E, out TopLoc_Location eloc, out double f3d, out double l3d);
+        Geom_Curve? C1 = BRep_Tool.Curve(E, out Placement eloc, out double f3d, out double l3d);
         bool hasC3D = C1 is not null;
         if (hasC3D)
         {
-            bool elocid = eloc.IsIdentity();
+            bool elocid = eloc.IsIdentity;
             Geom_Curve C2;
             if (elocid)
             {
@@ -147,14 +151,14 @@ public static class TopOpeBRepTool_2d
 
         // OCCT: without a 3D curve, FC2D_FancestorE looks for a face of the edge in a map that only FC2D_Prepare (the
         // Booleans, not ported) creates; called without it, native dereferences a null pointer. The port throws.
-        throw new Standard_NullObject("FC2D_FancestorE: the ancestor map of FC2D_Prepare does not exist");
+        throw new NullObjectException("FC2D_FancestorE: the ancestor map of FC2D_Prepare does not exist");
     } // make2d1
 
     /// <summary>
     /// Computes the pcurve of <paramref name="E"/> on <paramref name="F"/> (the stored one, or the projection of its 3D
     /// curve, trimmed to its range with <paramref name="trim3d"/>) and adds it to the cache of new pcurves.
     /// </summary>
-    /// <exception cref="Standard_NullObject">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
+    /// <exception cref="NullObjectException">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
     public static Geom2d_Curve? FC2D_MakeCurveOnSurface(in TopoDS_Edge E,
                                                         in TopoDS_Face F,
                                                         ref double f,
@@ -171,7 +175,7 @@ public static class TopOpeBRepTool_2d
     /// The pcurve of <paramref name="E"/> on <paramref name="F"/>, its range and tolerance: the stored one, or a
     /// computed one (<see cref="FC2D_MakeCurveOnSurface"/>).
     /// </summary>
-    /// <exception cref="Standard_NullObject">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
+    /// <exception cref="NullObjectException">The edge has neither a pcurve on the face nor a 3D curve (native crashes).</exception>
     public static Geom2d_Curve? FC2D_CurveOnSurface(in TopoDS_Edge E,
                                                     in TopoDS_Face F,
                                                     out double f,

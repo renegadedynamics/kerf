@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -12,7 +14,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
 {
-    private static readonly gp_Ax3 Std = new(new gp_Pnt(0.0, 0.0, 0.0), new gp_Dir(0.0, 0.0, 1.0), new gp_Dir(1.0, 0.0, 0.0));
+    private static readonly CoordinateSystem Std = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0));
 
     private static void CheckOnCurve(Geom2d_Curve? thePCurve, Adaptor3d_Surface theSurf, Adaptor3d_Curve theCurve,
                                      double theTol, int theNb = 50)
@@ -24,8 +26,8 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         for (int i = 0; i <= theNb; i++)
         {
             double t = aFirst + (aLast - aFirst) * i / theNb;
-            gp_Pnt2d aUV = thePCurve.Value(t);
-            gp_Pnt aP = theSurf.Value(aUV.X(), aUV.Y());
+            Point2D aUV = thePCurve.Value(t);
+            Point3D aP = theSurf.Value(aUV.X(), aUV.Y());
             double aDist = aP.Distance(theCurve.Value(t));
             Assert.True(aDist <= theTol, $"distance {aDist} at t = {t}");
         }
@@ -58,7 +60,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     public void Sphere_TiltedGreatCircle()
     {
         var aSphere = new Geom_SphericalSurface(Std, 3.0);
-        var aC = new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0), new gp_Dir(0.3, 0.2, 1.0)), 3.0);
+        var aC = new Geom_Circle(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, 0.2, 1.0)), 3.0);
         Project(aC, aSphere);
     }
 
@@ -67,9 +69,9 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         // A circle around a point close to the north pole, not containing it.
         var aSphere = new Geom_SphericalSurface(Std, 2.0);
-        gp_Dir aN = new(0.15, 0.0, 1.0);
+        Direction3D aN = new(0.15, 0.0, 1.0);
         double aR = 0.1, aD = Math.Sqrt(4.0 - aR * aR);
-        var aC = new Geom_Circle(new gp_Ax2(new gp_Pnt(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
+        var aC = new Geom_Circle(new Frame3D(new Point3D(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
         Project(aC, aSphere);
     }
 
@@ -80,7 +82,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         var aSphere = new Geom_SphericalSurface(Std, 2.0);
         var aC = new Geom_TrimmedCurve(aSphere.UIso(0.4), 0.0, M_PI / 2.0);
         Geom2d_BSplineCurve aRes = Project(aC, aSphere);
-        gp_Pnt2d aEnd = aRes.Value(aRes.LastParameter());
+        Point2D aEnd = aRes.Value(aRes.LastParameter());
         Assert.Equal(M_PI / 2.0, aEnd.Y(), 1.0e-6);
     }
 
@@ -95,9 +97,9 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     public void Cone_GeneratorToApex()
     {
         var aCone = new Geom_ConicalSurface(Std, M_PI / 6.0, 2.0);
-        gp_Pnt anApex = aCone.Apex();
-        gp_Pnt aBase = aCone.Value(0.8, 0.0);
-        var aC = new Geom_TrimmedCurve(new Geom_Line(aBase, new gp_Dir(new gp_Vec(aBase, anApex))), 0.0,
+        Point3D anApex = aCone.Apex();
+        Point3D aBase = aCone.Value(0.8, 0.0);
+        var aC = new Geom_TrimmedCurve(new Geom_Line(aBase, new Direction3D(new Vector3D(aBase, anApex))), 0.0,
                                        aBase.Distance(anApex));
         Project(aC, aCone);
     }
@@ -115,7 +117,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         var aCyl = new Geom_CylindricalSurface(Std, 2.0);
         // A helix: the image of a 2D line through the cylinder, more than one turn.
-        var aLine2d = new Geom2d_Line(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.3));
+        var aLine2d = new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.3));
         var aS = new GeomAdaptor_Surface(aCyl);
         var aHelix = new Adaptor3d_CurveOnSurface(new Geom2dAdaptor_Curve(aLine2d, 0.0, 8.0), aS);
         Project(aHelix, aS, 1.0e-6);
@@ -135,12 +137,12 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     [Fact]
     public void BezierSurface_IsoCurves()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 4, 1, 4);
+        NCollection_Array2<Point3D> aPoles = new(1, 4, 1, 4);
         for (int i = 1; i <= 4; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, 0.3 * Math.Sin(i + 2.0 * j));
+                aPoles[i, j] = new Point3D(i, j, 0.3 * Math.Sin(i + 2.0 * j));
             }
         }
         var aBez = new Geom_BezierSurface(aPoles);
@@ -151,12 +153,12 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     [Fact]
     public void OffsetSurface_IsoCurve()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 3; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, 0.2 * ((i - 2) * (i - 2) - (j - 2) * (j - 2)));
+                aPoles[i, j] = new Point3D(i, j, 0.2 * ((i - 2) * (i - 2) - (j - 2) * (j - 2)));
             }
         }
         var anOffset = new Geom_OffsetSurface(new Geom_BezierSurface(aPoles), 0.5);
@@ -165,12 +167,12 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
 
     private static (Geom_BSplineSurface, Geom_BSplineCurve) PlanarSurfaceAndC0Curve()
     {
-        NCollection_Array2<gp_Pnt> aSP = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aSP = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 3; j++)
             {
-                aSP[i, j] = new gp_Pnt(5.0 * (i - 1), 5.0 * (j - 1), 0.0);
+                aSP[i, j] = new Point3D(5.0 * (i - 1), 5.0 * (j - 1), 0.0);
             }
         }
         NCollection_Array1<double> aSK = new(1, 2);
@@ -181,12 +183,12 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         var aSurf = new Geom_BSplineSurface(aSP, aSK, aSK, aSM, aSM, 2, 2);
 
         // A degree 2 curve in the plane with a C0 knot in the middle.
-        NCollection_Array1<gp_Pnt> aCP = new(1, 5);
-        aCP[1] = new gp_Pnt(1.0, 1.0, 0.0);
-        aCP[2] = new gp_Pnt(3.0, 4.0, 0.0);
-        aCP[3] = new gp_Pnt(5.0, 2.0, 0.0);
-        aCP[4] = new gp_Pnt(8.0, 5.0, 0.0);
-        aCP[5] = new gp_Pnt(9.0, 9.0, 0.0);
+        NCollection_Array1<Point3D> aCP = new(1, 5);
+        aCP[1] = new Point3D(1.0, 1.0, 0.0);
+        aCP[2] = new Point3D(3.0, 4.0, 0.0);
+        aCP[3] = new Point3D(5.0, 2.0, 0.0);
+        aCP[4] = new Point3D(8.0, 5.0, 0.0);
+        aCP[5] = new Point3D(9.0, 9.0, 0.0);
         NCollection_Array1<double> aCK = new(1, 3);
         aCK[1] = 0.0;
         aCK[2] = 1.0;
@@ -203,7 +205,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         (Geom_BSplineSurface aSurf, Geom_BSplineCurve aCurve) = PlanarSurfaceAndC0Curve();
         var aC = new GeomAdaptor_Curve(aCurve);
-        Assert.Equal(2, aC.NbIntervals(GeomAbs_C1));
+        Assert.Equal(2, aC.NbIntervals(C1));
         Geom2d_BSplineCurve aRes = Project(aCurve, aSurf);
         // The two pieces are concatenated with a knot of multiplicity = degree at the C0 parameter.
         Assert.Equal(1.0, aRes.Knot(2), 1.0e-12);
@@ -215,11 +217,11 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         (Geom_BSplineSurface aSurf, Geom_BSplineCurve aCurve) = PlanarSurfaceAndC0Curve();
         // The exact pcurve (the surface maps (u, v) to (10 u, 10 v)), with the same C0 knot.
-        NCollection_Array1<gp_Pnt2d> aP2d = new(1, aCurve.NbPoles());
+        NCollection_Array1<Point2D> aP2d = new(1, aCurve.NbPoles());
         for (int i = 1; i <= aCurve.NbPoles(); i++)
         {
-            gp_Pnt aP = aCurve.Pole(i);
-            aP2d[i] = new gp_Pnt2d(aP.X() / 10.0, aP.Y() / 10.0);
+            Point3D aP = aCurve.Pole(i);
+            aP2d[i] = new Point2D(aP.X() / 10.0, aP.Y() / 10.0);
         }
         var anInit = new Geom2d_BSplineCurve(aP2d, aCurve.InternalKnots(), aCurve.InternalMultiplicities(), 2);
         var aC = new GeomAdaptor_Curve(aCurve);
@@ -245,7 +247,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
 
         Geom2d_BSplineCurve? aRes = aProj.Perform(anInit, aC, aS);
         Assert.NotNull(aRes);
-        Assert.False(aRes.IsFrozen());
+        Assert.False(aRes.IsFrozen);
         CheckOnCurve(aRes, aS, aC, 1.0e-5);
         // Not stored: BSpline() is still the initial curve.
         Assert.NotSame(aRes, aProj.InternalBSpline());
@@ -259,10 +261,10 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
                                                             new GeomAdaptor_Surface(aSphere));
         Geom2d_BSplineCurve? anInternal = aProj.InternalBSpline();
         Assert.NotNull(anInternal);
-        Assert.False(anInternal.IsFrozen());
+        Assert.False(anInternal.IsFrozen);
         Geom2d_BSplineCurve? aRes = aProj.BSpline();
         Assert.Same(anInternal, aRes);
-        Assert.True(aRes!.IsFrozen());
+        Assert.True(aRes!.IsFrozen);
         Assert.Same(aRes, aProj.BSpline());
         Assert.Null(aProj.Curve2d());
     }
@@ -272,9 +274,9 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         var aCyl = new Geom_CylindricalSurface(Std, 2.0);
         var aSeam = new Geom_TrimmedCurve(aCyl.UIso(0.0), 0.0, 3.0);
-        var aInit = new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(0.0, 1.0)), 0.0, 3.0);
+        var aInit = new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(0.0, 0.0), new Direction2D(0.0, 1.0)), 0.0, 3.0);
         var aInitBis =
-            new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Pnt2d(2.0 * M_PI, 0.0), new gp_Dir2d(0.0, 1.0)), 0.0, 3.0);
+            new Geom2dAdaptor_Curve(new Geom2d_Line(new Point2D(2.0 * M_PI, 0.0), new Direction2D(0.0, 1.0)), 0.0, 3.0);
         var aC = new GeomAdaptor_Curve(aSeam);
         var aS = new GeomAdaptor_Surface(aCyl);
         var aProj = new ProjLib_ComputeApproxOnPolarSurface(aInit, aInitBis, aC, aS, 1.0e-6);
@@ -283,7 +285,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         Geom2d_Curve? aSecond = aProj.Curve2d();
         Assert.NotNull(aFirst);
         Assert.NotNull(aSecond);
-        Assert.True(aSecond.IsFrozen());
+        Assert.True(aSecond.IsFrozen);
         CheckOnCurve(aFirst, aS, aC, 1.0e-5);
         CheckOnCurve(aSecond, aS, aC, 1.0e-5);
         double aDU = Math.Abs(aFirst.Value(1.0).X() - aSecond.Value(1.0).X());
@@ -294,7 +296,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     public void Settings_DegreeSegmentsAndBoundaries()
     {
         var aTorus = new Geom_ToroidalSurface(Std, 5.0, 1.5);
-        var aC = new GeomAdaptor_Curve(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, 0.5), new gp_Dir(0.05, 0.0, 1.0)), 5.5));
+        var aC = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(new Point3D(0, 0, 0.5), new Direction3D(0.05, 0.0, 1.0)), 5.5));
         var aS = new GeomAdaptor_Surface(aTorus);
         var aProj = new ProjLib_ComputeApproxOnPolarSurface();
         aProj.SetTolerance(1.0e-4);
@@ -313,17 +315,17 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     [Fact]
     public void MaxDist_StopsFarCurves()
     {
-        NCollection_Array2<gp_Pnt> aPoles = new(1, 3, 1, 3);
+        NCollection_Array2<Point3D> aPoles = new(1, 3, 1, 3);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 3; j++)
             {
-                aPoles[i, j] = new gp_Pnt(i, j, 0.1 * i * j);
+                aPoles[i, j] = new Point3D(i, j, 0.1 * i * j);
             }
         }
         var aBez = new Geom_BezierSurface(aPoles);
         // An iso-curve lifted by 1 along Z.
-        Geom_Curve aLifted = aBez.UIso(0.5).Translated(new gp_Vec(0.0, 0.0, 1.0)) as Geom_Curve ?? throw new InvalidOperationException();
+        Geom_Curve aLifted = aBez.UIso(0.5).Translated(new Vector3D(0.0, 0.0, 1.0)) as Geom_Curve ?? throw new InvalidOperationException();
         var aC = new GeomAdaptor_Curve(aLifted);
         var aS = new GeomAdaptor_Surface(aBez);
 
@@ -346,12 +348,12 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     public void UnsupportedSurfaces_Throw()
     {
         // As in OCCT: planes and swept surfaces aren't polar surfaces; BuildInitialCurve2d throws for them.
-        var aC = new GeomAdaptor_Curve(new Geom_Circle(new gp_Ax2(), 1.0));
-        var aPlane = new GeomAdaptor_Surface(new Geom_Plane(new gp_Pln()));
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => new ProjLib_ComputeApproxOnPolarSurface(aC, aPlane));
+        var aC = new GeomAdaptor_Curve(new Geom_Circle(new Frame3D(), 1.0));
+        var aPlane = new GeomAdaptor_Surface(new Geom_Plane(new Plane3D()));
+        Assert.ThrowsAny<NoSuchObjectException>(() => new ProjLib_ComputeApproxOnPolarSurface(aC, aPlane));
         var aRev = new GeomAdaptor_Surface(
-            new Geom_SurfaceOfRevolution(new Geom_Line(new gp_Pnt(1, 0, 0), new gp_Dir(0, 0, 1)), new gp_Ax1()));
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => new ProjLib_ComputeApproxOnPolarSurface(aC, aRev));
+            new Geom_SurfaceOfRevolution(new Geom_Line(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), new Axis3D()));
+        Assert.ThrowsAny<NoSuchObjectException>(() => new ProjLib_ComputeApproxOnPolarSurface(aC, aRev));
     }
 
     [Fact]
@@ -360,11 +362,11 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         // OCCT tests Geom_BSplineSurface::MaxDegree() == 1, but MaxDegree() is static (25), so the pole-wise
         // projection of a curve on a bilinear surface (which would set Tolerance() to the 3D tolerance exactly) is
         // never taken: the curve is approximated instead (occt-issues.md).
-        NCollection_Array2<gp_Pnt> aSP = new(1, 2, 1, 2);
-        aSP[1, 1] = new gp_Pnt(0, 0, 0);
-        aSP[2, 1] = new gp_Pnt(10, 0, 0);
-        aSP[1, 2] = new gp_Pnt(0, 10, 0);
-        aSP[2, 2] = new gp_Pnt(10, 10, 0);
+        NCollection_Array2<Point3D> aSP = new(1, 2, 1, 2);
+        aSP[1, 1] = new Point3D(0, 0, 0);
+        aSP[2, 1] = new Point3D(10, 0, 0);
+        aSP[1, 2] = new Point3D(0, 10, 0);
+        aSP[2, 2] = new Point3D(10, 10, 0);
         NCollection_Array1<double> aK = new(1, 2);
         aK[1] = 0.0;
         aK[2] = 1.0;
@@ -374,11 +376,11 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         Assert.Equal(1, aSurf.UDegree());
         Assert.Equal(25, Geom_BSplineSurface.MaxDegree());
 
-        NCollection_Array1<gp_Pnt> aCP = new(1, 4);
-        aCP[1] = new gp_Pnt(1, 1, 0);
-        aCP[2] = new gp_Pnt(3, 7, 0);
-        aCP[3] = new gp_Pnt(6, 2, 0);
-        aCP[4] = new gp_Pnt(9, 8, 0);
+        NCollection_Array1<Point3D> aCP = new(1, 4);
+        aCP[1] = new Point3D(1, 1, 0);
+        aCP[2] = new Point3D(3, 7, 0);
+        aCP[3] = new Point3D(6, 2, 0);
+        aCP[4] = new Point3D(9, 8, 0);
         var aCurve = new Geom_BezierCurve(aCP);
         var aC = new GeomAdaptor_Curve(aCurve);
         var aS = new GeomAdaptor_Surface(aSurf);
@@ -395,7 +397,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     {
         var aProj = new ProjLib_ComputeApproxOnPolarSurface();
         Assert.False(aProj.IsDone());
-        Assert.ThrowsAny<Standard_NoSuchObject>(() => aProj.Curve2d());
+        Assert.ThrowsAny<NoSuchObjectException>(() => aProj.Curve2d());
         Assert.Equal(-1.0, aProj.Tolerance());
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -23,23 +25,23 @@ internal static class BRepGPropTestShapes
     {
         var aB = new BRep_Builder();
         double aTwoPi = 2.0 * Math.PI;
-        var anAx3 = new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+        var anAx3 = new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
         var aSurf = new Geom_CylindricalSurface(anAx3, r);
-        TopoDS_Vertex aV0 = TestShapes.Vertex(new gp_Pnt(r, 0, 0));
-        TopoDS_Vertex aV1 = TestShapes.Vertex(new gp_Pnt(r, 0, h));
-        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r),
+        TopoDS_Vertex aV0 = TestShapes.Vertex(new Point3D(r, 0, 0));
+        TopoDS_Vertex aV1 = TestShapes.Vertex(new Point3D(r, 0, h));
+        TopoDS_Edge aBottom = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                                               0.0, aTwoPi, aV0, aV0);
-        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new gp_Ax2(new gp_Pnt(0, 0, h), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r),
+        TopoDS_Edge aTop = TestShapes.Edge(new Geom_Circle(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                                            0.0, aTwoPi, aV1, aV1);
-        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new gp_Pnt(r, 0, 0), new gp_Dir(0, 0, 1)), 0.0, h, aV0, aV1);
+        TopoDS_Edge aSeam = TestShapes.Edge(new Geom_Line(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), 0.0, h, aV0, aV1);
 
         TopoDS_Face aLateral = new();
         aB.MakeFace(ref aLateral, aSurf, Tol);
-        aB.UpdateEdge(aBottom, new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), aLateral, Tol);
-        aB.UpdateEdge(aTop, new Geom2d_Line(new gp_Pnt2d(0, h), new gp_Dir2d(1, 0)), aLateral, Tol);
+        aB.UpdateEdge(aBottom, new Geom2d_Line(new Point2D(0, 0), new Direction2D(1, 0)), aLateral, Tol);
+        aB.UpdateEdge(aTop, new Geom2d_Line(new Point2D(0, h), new Direction2D(1, 0)), aLateral, Tol);
         aB.UpdateEdge(aSeam,
-                      new Geom2d_Line(new gp_Pnt2d(aTwoPi, 0), new gp_Dir2d(0, 1)),
-                      new Geom2d_Line(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)),
+                      new Geom2d_Line(new Point2D(aTwoPi, 0), new Direction2D(0, 1)),
+                      new Geom2d_Line(new Point2D(0, 0), new Direction2D(0, 1)),
                       aLateral,
                       Tol);
         TopoDS_Wire aW = new();
@@ -71,10 +73,10 @@ internal static class BRepGPropTestShapes
     private static TopoDS_Face Disc(in TopoDS_Edge theCircle, double z, double r)
     {
         var aB = new BRep_Builder();
-        var aPlane = new Geom_Plane(new gp_Ax3(new gp_Pnt(0, 0, z), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)));
+        var aPlane = new Geom_Plane(new CoordinateSystem(new Point3D(0, 0, z), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         TopoDS_Face aF = new();
         aB.MakeFace(ref aF, aPlane, Tol);
-        aB.UpdateEdge(theCircle, new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), r), aF, Tol);
+        aB.UpdateEdge(theCircle, new Geom2d_Circle(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), r), aF, Tol);
         TopoDS_Wire aW = new();
         aB.MakeWire(ref aW);
         aB.Add(aW, theCircle);
@@ -97,7 +99,7 @@ internal static class BRepGPropTestShapes
     public static TopoDS_Solid SphereSolid(double r)
     {
         var aB = new BRep_Builder();
-        TopoDS_Face aF = NaturalFace(new Geom_SphericalSurface(new gp_Ax3(new gp_Pnt(), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r));
+        TopoDS_Face aF = NaturalFace(new Geom_SphericalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r));
         TopoDS_Shell aShell = new();
         aB.MakeShell(ref aShell);
         aB.Add(aShell, aF);
@@ -155,7 +157,7 @@ internal static class BRepGPropTestShapes
         {
             TopoDS_Face aFwd = TopoDS.Face(aF.Oriented(TopAbs_FORWARD));
             // the corners in wire order, which runs counter-clockwise around the plane's normal
-            var aCorners = new List<gp_Pnt>();
+            var aCorners = new List<Point3D>();
             for (var aW = new TopExp_Explorer(aFwd, TopAbs_EDGE); aW.More(); aW.Next())
             {
                 TopoDS_Edge anE = TopoDS.Edge(aW.Current());
@@ -163,22 +165,22 @@ internal static class BRepGPropTestShapes
                 aCorners.Add(BRep_Tool.Pnt(aFirst));
             }
 
-            var aTri = new Poly_Triangulation(4, 2, false);
+            var aTri = new Triangulation(4, 2, false);
             for (int i = 0; i < 4; i++)
             {
                 aTri.SetNode(i + 1, aCorners[i]);
             }
 
-            aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-            aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+            aTri.SetTriangle(1, new Triangle1(1, 2, 3));
+            aTri.SetTriangle(2, new Triangle1(1, 3, 4));
             aB.UpdateFace(aF, aTri);
         }
     }
 
     /// <summary>A face with no surface carrying a triangulation of the given points and triangles.</summary>
-    public static TopoDS_Face MeshFace(gp_Pnt[] theNodes, params (int, int, int)[] theTriangles)
+    public static TopoDS_Face MeshFace(Point3D[] theNodes, params (int, int, int)[] theTriangles)
     {
-        var aTri = new Poly_Triangulation(theNodes.Length, theTriangles.Length, false);
+        var aTri = new Triangulation(theNodes.Length, theTriangles.Length, false);
         for (int i = 0; i < theNodes.Length; i++)
         {
             aTri.SetNode(i + 1, theNodes[i]);
@@ -186,7 +188,7 @@ internal static class BRepGPropTestShapes
 
         for (int i = 0; i < theTriangles.Length; i++)
         {
-            aTri.SetTriangle(i + 1, new Poly_Triangle(theTriangles[i].Item1, theTriangles[i].Item2, theTriangles[i].Item3));
+            aTri.SetTriangle(i + 1, new Triangle1(theTriangles[i].Item1, theTriangles[i].Item2, theTriangles[i].Item3));
         }
 
         var aB = new BRep_Builder();
@@ -196,9 +198,9 @@ internal static class BRepGPropTestShapes
     }
 
     /// <summary>An edge with no curve carrying a 3D polygon through the points.</summary>
-    public static TopoDS_Edge PolygonEdge(params gp_Pnt[] thePoints)
+    public static TopoDS_Edge PolygonEdge(params Point3D[] thePoints)
     {
-        var aNodes = new NCollection_Array1<gp_Pnt>(1, thePoints.Length);
+        var aNodes = new NCollection_Array1<Point3D>(1, thePoints.Length);
         for (int i = 0; i < thePoints.Length; i++)
         {
             aNodes[i + 1] = thePoints[i];
@@ -206,7 +208,7 @@ internal static class BRepGPropTestShapes
 
         var aB = new BRep_Builder();
         TopoDS_Edge anE = new();
-        aB.MakeEdge(ref anE, new Poly_Polygon3D(aNodes));
+        aB.MakeEdge(ref anE, new Polygon3D(aNodes));
         return anE;
     }
 }

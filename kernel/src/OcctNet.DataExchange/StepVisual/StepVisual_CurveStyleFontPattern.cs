@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_CurveStyleFontPattern : Standard_Transient
+public class StepVisual_CurveStyleFontPattern : Transient
 {
     private double visibleSegmentLength;
     private double invisibleSegmentLength;

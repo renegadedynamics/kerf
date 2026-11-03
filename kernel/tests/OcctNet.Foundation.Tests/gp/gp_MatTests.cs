@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.Foundation.Tests;
 
 public class gp_MatTest
@@ -9,7 +11,7 @@ public class gp_MatTest
     [Fact]
     public void OCC22595_DefaultConstructor()
     {
-        gp_Mat aM0 = new();
+        Matrix3x3 aM0 = new();
 
         // Bug OCC22595: gp_Mat's constructors incompletely initialize memory
         // Test that default constructor properly initializes all matrix elements to zero

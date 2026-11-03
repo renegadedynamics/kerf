@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -46,7 +47,7 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
         }
         if (!exp.More())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myMap.Add(exp.Current()); // bonne orientation
     }
@@ -80,7 +81,7 @@ public sealed class LocOpe_GluedShape : LocOpe_GeneratedShape
                 // Est-ce un edge de connexite entre les faces collees
                 if (theMapEF.FindFromKey(edg).Extent() != 2)
                 {
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
                 }
                 for (itl.Initialize(theMapEF.FindFromKey(edg)); itl.More(); itl.Next())
                 {

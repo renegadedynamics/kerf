@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -17,7 +19,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// <c>AdjustCurve</c>, <c>AdjustCurveSegment</c> and <c>AdjustCurve2d</c> change the given curve in place, as OCCT:
-/// on a frozen curve (one taken from a shape) they throw <see cref="Standard_ImmutableObject"/>, so callers pass a
+/// on a frozen curve (one taken from a shape) they throw <see cref="ImmutableObjectException"/>, so callers pass a
 /// <c>Copy()</c>, or use the functional twins <see cref="CurveAdjusted"/>, <see cref="CurveSegmentAdjusted"/> and
 /// <see cref="Curve2dAdjusted"/>, which adjust a copy (decision 506's pattern). <c>ConvertToBSpline</c> returns its
 /// result frozen; ported code calls <c>InternalConvertToBSpline</c>, whose result it may go on editing. When the
@@ -31,7 +33,7 @@ public sealed class ShapeConstruct_Curve
     /// (if <paramref name="take2"/>): the end poles of a B-spline, the whole line of a line (both points). Returns
     /// false for other curves. In place: throws on a frozen curve. Doesn't check whether the curve should be reversed.
     /// </summary>
-    public bool AdjustCurve(Geom_Curve C3D, in gp_Pnt P1, in gp_Pnt P2, bool take1 = true, bool take2 = true)
+    public bool AdjustCurve(Geom_Curve C3D, in Point3D P1, in Point3D P2, bool take1 = true, bool take2 = true)
     {
         if (!take1 && !take2)
         {
@@ -54,11 +56,11 @@ public sealed class ShapeConstruct_Curve
         if (C3D is Geom_Line L3D)
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
-            gp_Vec avec = new(P1, P2);
-            gp_Dir adir = new(avec);
-            gp_Lin alin = new(P1, adir);
-            double theParam = ElCLib.Parameter(alin, L3D.Lin().Location());
-            alin.SetLocation(ElCLib.Value(theParam, alin));
+            Vector3D avec = new(P1, P2);
+            Direction3D adir = new(avec);
+            Line3D alin = new(P1, adir);
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, L3D.Lin().Location());
+            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             L3D.SetLin(alin);
             return true;
         }
@@ -70,7 +72,7 @@ public sealed class ShapeConstruct_Curve
     /// As <see cref="AdjustCurve"/>, a B-spline being first segmented to [<paramref name="U1"/>, <paramref name="U2"/>]
     /// (within its range). In place: throws on a frozen curve.
     /// </summary>
-    public bool AdjustCurveSegment(Geom_Curve C3D, in gp_Pnt P1, in gp_Pnt P2, double U1, double U2)
+    public bool AdjustCurveSegment(Geom_Curve C3D, in Point3D P1, in Point3D P2, double U1, double U2)
     {
         if (C3D is Geom_BSplineCurve BSPL)
         {
@@ -92,11 +94,11 @@ public sealed class ShapeConstruct_Curve
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
             //   NB : on ne s aide pas de U1 et U2
-            gp_Vec avec = new(P1, P2);
-            gp_Dir adir = new(avec);
-            gp_Lin alin = new(P1, adir);
-            double theParam = ElCLib.Parameter(alin, L3D.Lin().Location());
-            alin.SetLocation(ElCLib.Value(theParam, alin));
+            Vector3D avec = new(P1, P2);
+            Direction3D adir = new(avec);
+            Line3D alin = new(P1, adir);
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, L3D.Lin().Location());
+            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             L3D.SetLin(alin);
             return true;
         }
@@ -105,7 +107,7 @@ public sealed class ShapeConstruct_Curve
     }
 
     /// <summary>The 2D form of <see cref="AdjustCurve"/>. In place: throws on a frozen curve.</summary>
-    public bool AdjustCurve2d(Geom2d_Curve C2D, in gp_Pnt2d P1, in gp_Pnt2d P2, bool take1 = true, bool take2 = true)
+    public bool AdjustCurve2d(Geom2d_Curve C2D, in Point2D P1, in Point2D P2, bool take1 = true, bool take2 = true)
     {
         if (!take1 && !take2)
         {
@@ -128,11 +130,11 @@ public sealed class ShapeConstruct_Curve
         if (C2D is Geom2d_Line L2D)
         {
             //   ATTENTION, P1 et P2 sont supposes tous deux pertinents ...
-            gp_Vec2d avec = new(P1, P2);
-            gp_Dir2d adir = new(avec);
-            gp_Lin2d alin = new(P1, adir);
-            double theParam = ElCLib.Parameter(alin, L2D.Lin2d().Location());
-            alin.SetLocation(ElCLib.Value(theParam, alin));
+            Vector2D avec = new(P1, P2);
+            Direction2D adir = new(avec);
+            Line2D alin = new(P1, adir);
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, L2D.Lin2d().Location());
+            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             L2D.SetLin2d(alin);
             return true;
         }
@@ -172,7 +174,7 @@ public sealed class ShapeConstruct_Curve
             {
                 bspl = GeomConvert.CurveToBSplineCurve(tc);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
             }
         }
@@ -182,12 +184,12 @@ public sealed class ShapeConstruct_Curve
             // take segment if trim and range differ
             double fbsp = bspl.FirstParameter(), lbsp = bspl.LastParameter();
             bool segment = false;
-            if (first > fbsp + Precision.PConfusion())
+            if (first > fbsp + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 fbsp = first;
                 segment = true;
             }
-            if (last < lbsp - Precision.PConfusion())
+            if (last < lbsp - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 lbsp = last;
                 segment = true;
@@ -202,7 +204,7 @@ public sealed class ShapeConstruct_Curve
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
             }
         }
@@ -216,13 +218,13 @@ public sealed class ShapeConstruct_Curve
         }
         try
         {
-            Approx_Curve3d Conv = new(new GeomAdaptor_Curve(newc, first, last), prec, GeomAbs_C1, 9, 1000);
+            Approx_Curve3d Conv = new(new GeomAdaptor_Curve(newc, first, last), prec, C1, 9, 1000);
             if (Conv.IsDone() || Conv.HasResult())
             {
                 bspl = Conv.InternalCurve();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
         }
         return bspl;
@@ -255,7 +257,7 @@ public sealed class ShapeConstruct_Curve
             {
                 bspl = Geom2dConvert.CurveToBSplineCurve(tc);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
             }
         }
@@ -265,12 +267,12 @@ public sealed class ShapeConstruct_Curve
             // take segment if trim and range differ
             double fbsp = bspl.FirstParameter(), lbsp = bspl.LastParameter();
             bool segment = false;
-            if (first > fbsp + Precision.PConfusion())
+            if (first > fbsp + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 fbsp = first;
                 segment = true;
             }
-            if (last < lbsp - Precision.PConfusion())
+            if (last < lbsp - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 lbsp = last;
                 segment = true;
@@ -285,7 +287,7 @@ public sealed class ShapeConstruct_Curve
                 bspl.Segment(fbsp, lbsp);
                 return bspl;
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
             }
         }
@@ -299,14 +301,14 @@ public sealed class ShapeConstruct_Curve
         }
         try
         {
-            Approx_Curve2d Conv = new(new Geom2dAdaptor_Curve(newc, first, last), first, last, prec, prec, GeomAbs_C1, 9,
+            Approx_Curve2d Conv = new(new Geom2dAdaptor_Curve(newc, first, last), first, last, prec, prec, C1, 9,
                                       1000);
             if (Conv.IsDone() || Conv.HasResult())
             {
                 bspl = Conv.InternalCurve();
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
         }
         return bspl;
@@ -364,7 +366,7 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurve"/>: an adjusted copy of the curve (frozen), or the curve itself
     /// when <paramref name="isDone"/> is false or nothing is taken.
     /// </summary>
-    public Geom_Curve CurveAdjusted(Geom_Curve C3D, in gp_Pnt P1, in gp_Pnt P2, out bool isDone, bool take1 = true,
+    public Geom_Curve CurveAdjusted(Geom_Curve C3D, in Point3D P1, in Point3D P2, out bool isDone, bool take1 = true,
                                     bool take2 = true)
     {
         if (!take1 && !take2)
@@ -386,7 +388,7 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurveSegment"/>: an adjusted copy (frozen), or the curve itself when
     /// <paramref name="isDone"/> is false.
     /// </summary>
-    public Geom_Curve CurveSegmentAdjusted(Geom_Curve C3D, in gp_Pnt P1, in gp_Pnt P2, double U1, double U2, out bool isDone)
+    public Geom_Curve CurveSegmentAdjusted(Geom_Curve C3D, in Point3D P1, in Point3D P2, double U1, double U2, out bool isDone)
     {
         Geom_Curve aCopy = (Geom_Curve)C3D.Copy();
         isDone = AdjustCurveSegment(aCopy, P1, P2, U1, U2);
@@ -402,7 +404,7 @@ public sealed class ShapeConstruct_Curve
     /// The functional twin of <see cref="AdjustCurve2d"/>: an adjusted copy (frozen), or the curve itself when
     /// <paramref name="isDone"/> is false or nothing is taken.
     /// </summary>
-    public Geom2d_Curve Curve2dAdjusted(Geom2d_Curve C2D, in gp_Pnt2d P1, in gp_Pnt2d P2, out bool isDone, bool take1 = true,
+    public Geom2d_Curve Curve2dAdjusted(Geom2d_Curve C2D, in Point2D P1, in Point2D P2, out bool isDone, bool take1 = true,
                                         bool take2 = true)
     {
         if (!take1 && !take2)

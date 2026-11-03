@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -95,7 +97,7 @@ public sealed class Law_Interpolate
             parameter_array[1] = ParametersArray.Value(ParametersArray.Lower());
             parameter_array[2] = ParametersArray.Value(ParametersArray.Lower() + 1);
             TangentFlags.SetValue(1, true);
-            PLib.EvalLagrange(parameter_array[1], 1, degree, 1, point_array, parameter_array, eval_result);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(parameter_array[1], 1, degree, 1, point_array, parameter_array, eval_result);
             TangentsArray.SetValue(1, eval_result[1]);
         }
     }
@@ -108,7 +110,7 @@ public sealed class Law_Interpolate
 
         if (PointsArray.Length() < 3)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         if (PointsArray.Length() == 3)
         {
@@ -119,7 +121,7 @@ public sealed class Law_Interpolate
             ReadOnlySpan<double> point_array = PointsArray.AsSpan(PointsArray.Lower());
             ReadOnlySpan<double> parameter_array = ParametersArray.AsSpan(1);
             TangentFlags.SetValue(1, true);
-            PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 1, point_array, parameter_array, eval_result);
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(1), 1, degree, 1, point_array, parameter_array, eval_result);
             TangentsArray.SetValue(1, eval_result[1]);
         }
         if (!TangentFlags.Value(TangentFlags.Upper()))
@@ -128,7 +130,7 @@ public sealed class Law_Interpolate
             TangentFlags.SetValue(TangentFlags.Upper(), true);
             int iup = ParametersArray.Upper() - degree;
             ReadOnlySpan<double> parameter_array = ParametersArray.AsSpan(iup);
-            PLib.EvalLagrange(ParametersArray.Value(ParametersArray.Upper()), 1, degree, 1, point_array,
+            global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(ParametersArray.Value(ParametersArray.Upper()), 1, degree, 1, point_array,
                               parameter_array, eval_result);
             TangentsArray.SetValue(TangentsArray.Upper(), eval_result[1]);
         }
@@ -153,7 +155,7 @@ public sealed class Law_Interpolate
     /// <summary>
     /// Interpolates the values Points at the parameters Parameters (one more than the values for a periodic law).
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">The parameters don't match the values or don't increase.</exception>
+    /// <exception cref="ConstructionErrorException">The parameters don't match the values or don't increase.</exception>
     public Law_Interpolate(NCollection_HArray1<double> PointsPtr, NCollection_HArray1<double> ParametersPtr,
                            bool PeriodicFlag, double Tolerance)
     {
@@ -167,7 +169,7 @@ public sealed class Law_Interpolate
         {
             if ((PointsPtr.Length()) + 1 != ParametersPtr.Length())
             {
-                throw new Standard_ConstructionError();
+                throw new ConstructionErrorException();
             }
         }
         myTangents = new NCollection_HArray1<double>(myPoints.Lower(), myPoints.Upper());
@@ -175,7 +177,7 @@ public sealed class Law_Interpolate
         bool result = CheckParameters(ParametersPtr.Array1());
         if (!result)
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myTangentFlags.Init(false);
     }
@@ -188,7 +190,7 @@ public sealed class Law_Interpolate
         myTangentFlags = TangentFlagsPtr;
         if (Tangents.Length() != myPoints.Length() || TangentFlagsPtr.Length() != myPoints.Length())
         {
-            throw new Standard_ConstructionError();
+            throw new ConstructionErrorException();
         }
         myTangents = new NCollection_HArray1<double>(Tangents.Lower(), Tangents.Upper());
         for (ii = Tangents.Lower(); ii <= Tangents.Upper(); ii++)
@@ -335,7 +337,7 @@ public sealed class Law_Interpolate
         parameters.SetValue(num_poles, myParameters.Value(myParameters.Upper()));
         poles.SetValue(num_poles, myPoints.Value(1));
 
-        BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, 1, poles.AsSpan(1),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, 1, poles.AsSpan(1),
                              out inversion_problem);
         if (inversion_problem == 0)
         {
@@ -415,7 +417,7 @@ public sealed class Law_Interpolate
                 {
                     poles.SetValue(ii, myPoints.Value(ii));
                 }
-                BSplCLib.Interpolate(degree, flatknots, myParameters.Array1(), contact_order_array, 1, poles.AsSpan(1),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, myParameters.Array1(), contact_order_array, 1, poles.AsSpan(1),
                                      out inversion_problem);
                 if (inversion_problem == 0)
                 {
@@ -503,7 +505,7 @@ public sealed class Law_Interpolate
 
                 poles.SetValue(num_poles, myPoints.Value(num_points));
 
-                BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, 1, poles.AsSpan(1),
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree, flatknots, parameters, contact_order_array, 1, poles.AsSpan(1),
                                      out inversion_problem);
                 if (inversion_problem == 0)
                 {
@@ -515,7 +517,7 @@ public sealed class Law_Interpolate
     }
 
     /// <summary>The interpolating curve, frozen.</summary>
-    /// <exception cref="StdFail_NotDone">The interpolation was not done.</exception>
+    /// <exception cref="NotDoneException">The interpolation was not done.</exception>
     public Law_BSpline Curve()
     {
         Law_BSpline aCurve = InternalCurve();
@@ -528,7 +530,7 @@ public sealed class Law_Interpolate
     {
         if (!myIsDone)
         {
-            throw new StdFail_NotDone(" ");
+            throw new NotDoneException(" ");
         }
         return myCurve!;
     }

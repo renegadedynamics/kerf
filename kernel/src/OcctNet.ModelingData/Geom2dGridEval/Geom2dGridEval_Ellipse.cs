@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -23,20 +25,20 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
     public Geom2d_Ellipse? Geometry() => myGeom;
 
     /// <summary>Evaluates all grid points; 1-based, or empty if the geometry is null or there are no parameters.</summary>
-    public NCollection_Array1<gp_Pnt2d> EvaluateGrid(NCollection_Array1<double> theParams)
+    public NCollection_Array1<Point2D> EvaluateGrid(NCollection_Array1<double> theParams)
     {
         if (myGeom is null || theParams.IsEmpty())
         {
-            return new NCollection_Array1<gp_Pnt2d>();
+            return new NCollection_Array1<Point2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Pnt2d> aResult = new(1, aNb);
+        NCollection_Array1<Point2D> aResult = new(1, aNb);
 
-        gp_Elips2d anElips = myGeom.Elips2d();
-        gp_Pnt2d aCenter = anElips.Location();
-        gp_Dir2d aXDir = anElips.XAxis().Direction();
-        gp_Dir2d aYDir = anElips.YAxis().Direction();
+        Ellipse2D anElips = myGeom.Elips2d();
+        Point2D aCenter = anElips.Location();
+        Direction2D aXDir = anElips.XAxis().Direction();
+        Direction2D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -55,7 +57,7 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
 
             // P = Center + MajorR * cos(u) * XDir + MinorR * sin(u) * YDir
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Pnt2d(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                             new Point2D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                           aCY + aMajR * cosU * aXY + aMinR * sinU * aYY));
         }
         return aResult;
@@ -72,10 +74,10 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD1> aResult = new(1, aNb);
 
-        gp_Elips2d anElips = myGeom.Elips2d();
-        gp_Pnt2d aCenter = anElips.Location();
-        gp_Dir2d aXDir = anElips.XAxis().Direction();
-        gp_Dir2d aYDir = anElips.YAxis().Direction();
+        Ellipse2D anElips = myGeom.Elips2d();
+        Point2D aCenter = anElips.Location();
+        Direction2D aXDir = anElips.XAxis().Direction();
+        Direction2D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -96,9 +98,9 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
             // D1 = -MajorR * sin(u) * XDir + MinorR * cos(u) * YDir
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD1
             {
-                Point = new gp_Pnt2d(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point2D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                      aCY + aMajR * cosU * aXY + aMinR * sinU * aYY),
-                D1 = new gp_Vec2d(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
+                D1 = new Vector2D(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
             };
         }
         return aResult;
@@ -115,10 +117,10 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD2> aResult = new(1, aNb);
 
-        gp_Elips2d anElips = myGeom.Elips2d();
-        gp_Pnt2d aCenter = anElips.Location();
-        gp_Dir2d aXDir = anElips.XAxis().Direction();
-        gp_Dir2d aYDir = anElips.YAxis().Direction();
+        Ellipse2D anElips = myGeom.Elips2d();
+        Point2D aCenter = anElips.Location();
+        Direction2D aXDir = anElips.XAxis().Direction();
+        Direction2D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -140,10 +142,10 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
             // D2 = -MajorR * cos(u) * XDir - MinorR * sin(u) * YDir = -(P - Center)
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD2
             {
-                Point = new gp_Pnt2d(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point2D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                      aCY + aMajR * cosU * aXY + aMinR * sinU * aYY),
-                D1 = new gp_Vec2d(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
-                D2 = new gp_Vec2d(-aMajR * cosU * aXX - aMinR * sinU * aYX, -aMajR * cosU * aXY - aMinR * sinU * aYY),
+                D1 = new Vector2D(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
+                D2 = new Vector2D(-aMajR * cosU * aXX - aMinR * sinU * aYX, -aMajR * cosU * aXY - aMinR * sinU * aYY),
             };
         }
         return aResult;
@@ -160,10 +162,10 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
         int aNb = theParams.Length();
         NCollection_Array1<Geom2d_Curve.ResD3> aResult = new(1, aNb);
 
-        gp_Elips2d anElips = myGeom.Elips2d();
-        gp_Pnt2d aCenter = anElips.Location();
-        gp_Dir2d aXDir = anElips.XAxis().Direction();
-        gp_Dir2d aYDir = anElips.YAxis().Direction();
+        Ellipse2D anElips = myGeom.Elips2d();
+        Point2D aCenter = anElips.Location();
+        Direction2D aXDir = anElips.XAxis().Direction();
+        Direction2D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -186,30 +188,30 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
             // D3 =  MajorR * sin(u) * XDir - MinorR * cos(u) * YDir = -D1
             aResult[i - theParams.Lower() + 1] = new Geom2d_Curve.ResD3
             {
-                Point = new gp_Pnt2d(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
+                Point = new Point2D(aCX + aMajR * cosU * aXX + aMinR * sinU * aYX,
                                      aCY + aMajR * cosU * aXY + aMinR * sinU * aYY),
-                D1 = new gp_Vec2d(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
-                D2 = new gp_Vec2d(-aMajR * cosU * aXX - aMinR * sinU * aYX, -aMajR * cosU * aXY - aMinR * sinU * aYY),
-                D3 = new gp_Vec2d(aMajR * sinU * aXX - aMinR * cosU * aYX, aMajR * sinU * aXY - aMinR * cosU * aYY),
+                D1 = new Vector2D(-aMajR * sinU * aXX + aMinR * cosU * aYX, -aMajR * sinU * aXY + aMinR * cosU * aYY),
+                D2 = new Vector2D(-aMajR * cosU * aXX - aMinR * sinU * aYX, -aMajR * cosU * aXY - aMinR * sinU * aYY),
+                D3 = new Vector2D(aMajR * sinU * aXX - aMinR * cosU * aYX, aMajR * sinU * aXY - aMinR * cosU * aYY),
             };
         }
         return aResult;
     }
 
     /// <summary>Evaluates the Nth derivative at all grid points; derivatives cycle with period 4.</summary>
-    public NCollection_Array1<gp_Vec2d> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
+    public NCollection_Array1<Vector2D> EvaluateGridDN(NCollection_Array1<double> theParams, int theN)
     {
         if (myGeom is null || theParams.IsEmpty() || theN < 1)
         {
-            return new NCollection_Array1<gp_Vec2d>();
+            return new NCollection_Array1<Vector2D>();
         }
 
         int aNb = theParams.Length();
-        NCollection_Array1<gp_Vec2d> aResult = new(1, aNb);
+        NCollection_Array1<Vector2D> aResult = new(1, aNb);
 
-        gp_Elips2d anElips = myGeom.Elips2d();
-        gp_Dir2d aXDir = anElips.XAxis().Direction();
-        gp_Dir2d aYDir = anElips.YAxis().Direction();
+        Ellipse2D anElips = myGeom.Elips2d();
+        Direction2D aXDir = anElips.XAxis().Direction();
+        Direction2D aYDir = anElips.YAxis().Direction();
         double aMajR = anElips.MajorRadius();
         double aMinR = anElips.MinorRadius();
 
@@ -253,7 +255,7 @@ public sealed class Geom2dGridEval_Ellipse : Geom2dGridEval.ICurveEvaluator
             }
 
             aResult.SetValue(i - theParams.Lower() + 1,
-                             new gp_Vec2d(aMajR * aCoeffMajR * aXX + aMinR * aCoeffMinR * aYX,
+                             new Vector2D(aMajR * aCoeffMajR * aXX + aMinR * aCoeffMinR * aYX,
                                           aMajR * aCoeffMajR * aXY + aMinR * aCoeffMinR * aYY));
         }
         return aResult;

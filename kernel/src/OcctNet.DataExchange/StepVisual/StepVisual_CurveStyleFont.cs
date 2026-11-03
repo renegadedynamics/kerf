@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_CurveStyleFont : Standard_Transient
+public class StepVisual_CurveStyleFont : Transient
 {
     private TCollection_HAsciiString name;
     private NCollection_HArray1<StepVisual_CurveStyleFontPattern> patternList;

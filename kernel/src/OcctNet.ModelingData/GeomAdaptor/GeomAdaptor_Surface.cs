@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Splines;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -15,7 +19,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>Polynomial coefficients of B-spline and Bezier surfaces are cached in the adaptor (a
-/// <see cref="BSplSLib_Cache"/>, rebuilt when the evaluated span changes), so evaluating one adaptor from several
+/// <see cref="SurfaceCache"/>, rebuilt when the evaluated span changes), so evaluating one adaptor from several
 /// threads at once is not safe; give each thread its own (<see cref="ShallowCopy"/> doesn't copy the cache).</para>
 /// <para>A rectangular trimmed surface is replaced by its basis surface (with the given bounds); the surface and
 /// the surfaces returned by <see cref="BSpline"/>, <see cref="Bezier"/> and <see cref="Surface"/> are the shared
@@ -23,7 +27,7 @@ namespace Occt;
 /// </remarks>
 public class GeomAdaptor_Surface : Adaptor3d_Surface
 {
-    private static readonly double PosTol = Precision.PConfusion() * 0.5;
+    private static readonly double PosTol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.5;
 
     /// <summary>Evaluation data of a surface of linear extrusion.</summary>
     internal sealed class ExtrusionData
@@ -32,7 +36,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         public Adaptor3d_Curve BasisCurve = null!;
 
         /// <summary>Extrusion direction XYZ (normalized).</summary>
-        public gp_XYZ Direction;
+        public Xyz Direction;
 
         /// <summary>Evaluation representation descriptor (shared with the surface: don't modify).</summary>
         public GeomEval_RepSurfaceDesc.Base? EvalRep;
@@ -45,7 +49,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         public Adaptor3d_Curve BasisCurve = null!;
 
         /// <summary>Revolution axis.</summary>
-        public gp_Ax1 Axis;
+        public Axis3D Axis;
 
         /// <summary>Evaluation representation descriptor (shared with the surface: don't modify).</summary>
         public GeomEval_RepSurfaceDesc.Base? EvalRep;
@@ -77,7 +81,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         public Geom_BezierSurface Surface = null!;
 
         /// <summary>Cached data for evaluation.</summary>
-        public BSplSLib_Cache? Cache;
+        public SurfaceCache? Cache;
 
         /// <summary>Evaluation representation descriptor (shared with the surface: don't modify).</summary>
         public GeomEval_RepSurfaceDesc.Base? EvalRep;
@@ -90,7 +94,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         public Geom_BSplineSurface Surface = null!;
 
         /// <summary>Cached data for evaluation.</summary>
-        public BSplSLib_Cache? Cache;
+        public SurfaceCache? Cache;
 
         /// <summary>Evaluation representation descriptor (shared with the surface: don't modify).</summary>
         public GeomEval_RepSurfaceDesc.Base? EvalRep;
@@ -103,7 +107,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     protected double myVLast;
     protected double myTolU;
     protected double myTolV;
-    protected GeomAbs_SurfaceType mySurfaceType;
+    protected SurfaceKind mySurfaceType;
 
     // OCCT's std::variant<monostate, gp_Pln, gp_Cylinder, gp_Cone, gp_Sphere, gp_Torus, ExtrusionData,
     // RevolutionData, OffsetData, BezierData, BSplineData>: null, a boxed gp_* value or one of the data classes.
@@ -118,11 +122,11 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         myVLast = 0.0;
         myTolU = 0.0;
         myTolV = 0.0;
-        mySurfaceType = GeomAbs_OtherSurface;
+        mySurfaceType = OtherSurface;
     }
 
     /// <summary>An adaptor of theSurf over its bounds.</summary>
-    /// <exception cref="Standard_NullObject">theSurf is null.</exception>
+    /// <exception cref="NullObjectException">theSurf is null.</exception>
     public GeomAdaptor_Surface(Geom_Surface theSurf)
     {
         myTolU = 0.0;
@@ -134,7 +138,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     /// An adaptor of theSurf over [theUFirst, theULast] x [theVFirst, theVLast]. Evaluation snaps parameters
     /// within theTolU (theTolV) of a bound to the bound.
     /// </summary>
-    /// <exception cref="Standard_ConstructionError">theUFirst &gt; theULast or theVFirst &gt; theVLast.</exception>
+    /// <exception cref="ConstructionErrorException">theUFirst &gt; theULast or theVFirst &gt; theVLast.</exception>
     public GeomAdaptor_Surface(Geom_Surface theSurf,
                                double theUFirst,
                                double theULast,
@@ -171,7 +175,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         return false;
     }
 
-    private static GeomAbs_Shape LocalContinuity(int Degree,
+    private static Continuity LocalContinuity(int Degree,
                                                  int Nb,
                                                  NCollection_Array1<double> TK,
                                                  NCollection_Array1<int> TM,
@@ -183,9 +187,9 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         int Index1;
         int Index2;
         double newFirst, newLast;
-        BSplCLib.LocateParameter(Degree, TK, TM, PFirst, IsPeriodic, 1, Nb, out Index1, out newFirst);
-        BSplCLib.LocateParameter(Degree, TK, TM, PLast, IsPeriodic, 1, Nb, out Index2, out newLast);
-        double EpsKnot = Precision.PConfusion();
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(Degree, TK, TM, PFirst, IsPeriodic, 1, Nb, out Index1, out newFirst);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(Degree, TK, TM, PLast, IsPeriodic, 1, Nb, out Index2, out newLast);
+        double EpsKnot = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (Math.Abs(newFirst - TK[Index1 + 1]) < EpsKnot)
         {
             Index1++;
@@ -213,24 +217,24 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             Multmax = Degree - Multmax;
             if (Multmax <= 0)
             {
-                return GeomAbs_C0;
+                return C0;
             }
             switch (Multmax)
             {
                 case 1:
-                    return GeomAbs_C1;
+                    return C1;
                 case 2:
-                    return GeomAbs_C2;
+                    return C2;
                 case 3:
-                    return GeomAbs_C3;
+                    return C3;
             }
         }
-        return GeomAbs_CN;
+        return CN;
     }
 
     // Offset surface evaluation with retry mechanism for singular points; uses the equivalent surface adaptor
     // for faster evaluation when available. Return true if evaluation succeeded.
-    private static bool offsetD0(double theU, double theV, OffsetData theData, out gp_Pnt theValue)
+    private static bool offsetD0(double theU, double theV, OffsetData theData, out Point3D theValue)
     {
         if (theData.EquivalentAdaptor is not null)
         {
@@ -307,7 +311,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     }
 
     private static bool offsetDN(double theU, double theV, OffsetData theData, int theNu, int theNv,
-                                 out gp_Vec theResult)
+                                 out Vector3D theResult)
     {
         if (theData.EquivalentAdaptor is not null)
         {
@@ -394,20 +398,20 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     }
 
     /// <summary>Loads theSurf over its bounds.</summary>
-    /// <exception cref="Standard_NullObject">theSurf is null.</exception>
+    /// <exception cref="NullObjectException">theSurf is null.</exception>
     public void Load(Geom_Surface theSurf)
     {
         if (theSurf is null)
         {
-            throw new Standard_NullObject("GeomAdaptor_Surface::Load");
+            throw new NullObjectException("GeomAdaptor_Surface::Load");
         }
         theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         load(theSurf, aU1, aU2, aV1, aV2);
     }
 
     /// <summary>Loads theSurf over [theUFirst, theULast] x [theVFirst, theVLast].</summary>
-    /// <exception cref="Standard_NullObject">theSurf is null.</exception>
-    /// <exception cref="Standard_ConstructionError">theUFirst &gt; theULast or theVFirst &gt; theVLast.</exception>
+    /// <exception cref="NullObjectException">theSurf is null.</exception>
+    /// <exception cref="ConstructionErrorException">theUFirst &gt; theULast or theVFirst &gt; theVLast.</exception>
     public void Load(Geom_Surface theSurf,
                      double theUFirst,
                      double theULast,
@@ -418,11 +422,11 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     {
         if (theSurf is null)
         {
-            throw new Standard_NullObject("GeomAdaptor_Surface::Load");
+            throw new NullObjectException("GeomAdaptor_Surface::Load");
         }
         if (theUFirst > theULast || theVFirst > theVLast)
         {
-            throw new Standard_ConstructionError("GeomAdaptor_Surface::Load");
+            throw new ConstructionErrorException("GeomAdaptor_Surface::Load");
         }
         load(theSurf, theUFirst, theULast, theVFirst, theVLast, theTolU, theTolV);
     }
@@ -480,32 +484,32 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else if (TheType == typeof(Geom_Plane))
             {
-                mySurfaceType = GeomAbs_Plane;
+                mySurfaceType = global::Kerf.Geometry.SurfaceKind.Plane;
                 mySurfaceData = ((Geom_Plane)S).Pln();
             }
             else if (TheType == typeof(Geom_CylindricalSurface))
             {
-                mySurfaceType = GeomAbs_Cylinder;
+                mySurfaceType = global::Kerf.Geometry.SurfaceKind.Cylinder;
                 mySurfaceData = ((Geom_CylindricalSurface)S).Cylinder();
             }
             else if (TheType == typeof(Geom_ConicalSurface))
             {
-                mySurfaceType = GeomAbs_Cone;
+                mySurfaceType = global::Kerf.Geometry.SurfaceKind.Cone;
                 mySurfaceData = ((Geom_ConicalSurface)S).Cone();
             }
             else if (TheType == typeof(Geom_SphericalSurface))
             {
-                mySurfaceType = GeomAbs_Sphere;
+                mySurfaceType = global::Kerf.Geometry.SurfaceKind.Sphere;
                 mySurfaceData = ((Geom_SphericalSurface)S).Sphere();
             }
             else if (TheType == typeof(Geom_ToroidalSurface))
             {
-                mySurfaceType = GeomAbs_Torus;
+                mySurfaceType = global::Kerf.Geometry.SurfaceKind.Torus;
                 mySurfaceData = ((Geom_ToroidalSurface)S).Torus();
             }
             else if (TheType == typeof(Geom_SurfaceOfRevolution))
             {
-                mySurfaceType = GeomAbs_SurfaceOfRevolution;
+                mySurfaceType = SurfaceOfRevolution;
                 Geom_SurfaceOfRevolution aRevSurf = (Geom_SurfaceOfRevolution)mySurface;
                 // Populate revolution surface data
                 RevolutionData aRevData = new RevolutionData();
@@ -516,7 +520,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else if (TheType == typeof(Geom_SurfaceOfLinearExtrusion))
             {
-                mySurfaceType = GeomAbs_SurfaceOfExtrusion;
+                mySurfaceType = SurfaceOfExtrusion;
                 Geom_SurfaceOfLinearExtrusion anExtSurf = (Geom_SurfaceOfLinearExtrusion)mySurface;
                 // Populate extrusion surface data with XYZ for fast evaluation
                 ExtrusionData anExtData = new ExtrusionData();
@@ -527,7 +531,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else if (TheType == typeof(Geom_BezierSurface))
             {
-                mySurfaceType = GeomAbs_BezierSurface;
+                mySurfaceType = BezierSurface;
                 BezierData aBezierData = new BezierData();
                 aBezierData.Surface = (Geom_BezierSurface)mySurface;
                 aBezierData.EvalRep = aBezierData.Surface.EvalRepresentation();
@@ -535,7 +539,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else if (TheType == typeof(Geom_BSplineSurface))
             {
-                mySurfaceType = GeomAbs_BSplineSurface;
+                mySurfaceType = BSplineSurface;
                 BSplineData aBSplineData = new BSplineData();
                 aBSplineData.Surface = (Geom_BSplineSurface)mySurface;
                 aBSplineData.EvalRep = aBSplineData.Surface.EvalRepresentation();
@@ -543,7 +547,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else if (TheType == typeof(Geom_OffsetSurface))
             {
-                mySurfaceType = GeomAbs_OffsetSurface;
+                mySurfaceType = OffsetSurface;
                 Geom_OffsetSurface anOffSurf = (Geom_OffsetSurface)mySurface;
                 // Populate offset surface data - reuse the original surface for osculating queries
                 OffsetData anOffsetData = new OffsetData();
@@ -573,7 +577,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
             }
             else
             {
-                mySurfaceType = GeomAbs_OtherSurface;
+                mySurfaceType = OtherSurface;
             }
         }
     }
@@ -582,270 +586,270 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     //    --     Global methods - Apply to the whole Surface.
     //    --
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a Geom surface this adaptor knows.</exception>
-    public override GeomAbs_Shape UContinuity()
+    /// <exception cref="NoSuchObjectException">The surface is not a Geom surface this adaptor knows.</exception>
+    public override Continuity UContinuity()
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 NCollection_Array1<double> TK = new(aBSpl.InternalUKnots());
                 NCollection_Array1<int> TM = new(aBSpl.InternalUMultiplicities());
                 return LocalContinuity(aBSpl.UDegree(), aBSpl.NbUKnots(), TK, TM, myUFirst, myULast, IsUPeriodic());
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 switch (BasisSurface().UContinuity())
                 {
-                    case GeomAbs_CN:
-                    case GeomAbs_C3:
-                        return GeomAbs_CN;
-                    case GeomAbs_G2:
-                    case GeomAbs_C2:
-                        return GeomAbs_C1;
-                    case GeomAbs_G1:
-                    case GeomAbs_C1:
-                    case GeomAbs_C0:
-                        return GeomAbs_C0;
+                    case CN:
+                    case C3:
+                        return CN;
+                    case G2:
+                    case C2:
+                        return C1;
+                    case G1:
+                    case C1:
+                    case C0:
+                        return C0;
                 }
-                throw new Standard_NoSuchObject("GeomAdaptor_Surface::UContinuity");
+                throw new NoSuchObjectException("GeomAdaptor_Surface::UContinuity");
             }
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 return ((ExtrusionData)mySurfaceData!).BasisCurve.Continuity();
             }
-            case GeomAbs_OtherSurface:
-                throw new Standard_NoSuchObject("GeomAdaptor_Surface::UContinuity");
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_SurfaceOfRevolution:
+            case OtherSurface:
+                throw new NoSuchObjectException("GeomAdaptor_Surface::UContinuity");
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case SurfaceOfRevolution:
                 break;
         }
-        return GeomAbs_CN;
+        return CN;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a Geom surface this adaptor knows.</exception>
-    public override GeomAbs_Shape VContinuity()
+    /// <exception cref="NoSuchObjectException">The surface is not a Geom surface this adaptor knows.</exception>
+    public override Continuity VContinuity()
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 NCollection_Array1<double> TK = new(aBSpl.InternalVKnots());
                 NCollection_Array1<int> TM = new(aBSpl.InternalVMultiplicities());
                 return LocalContinuity(aBSpl.VDegree(), aBSpl.NbVKnots(), TK, TM, myVFirst, myVLast, IsVPeriodic());
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 switch (BasisSurface().VContinuity())
                 {
-                    case GeomAbs_CN:
-                    case GeomAbs_C3:
-                        return GeomAbs_CN;
-                    case GeomAbs_G2:
-                    case GeomAbs_C2:
-                        return GeomAbs_C1;
-                    case GeomAbs_G1:
-                    case GeomAbs_C1:
-                    case GeomAbs_C0:
-                        return GeomAbs_C0;
+                    case CN:
+                    case C3:
+                        return CN;
+                    case G2:
+                    case C2:
+                        return C1;
+                    case G1:
+                    case C1:
+                    case C0:
+                        return C0;
                 }
-                throw new Standard_NoSuchObject("GeomAdaptor_Surface::VContinuity");
+                throw new NoSuchObjectException("GeomAdaptor_Surface::VContinuity");
             }
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 return ((RevolutionData)mySurfaceData!).BasisCurve.Continuity();
             }
-            case GeomAbs_OtherSurface:
-                throw new Standard_NoSuchObject("GeomAdaptor_Surface::VContinuity");
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_SurfaceOfExtrusion:
+            case OtherSurface:
+                throw new NoSuchObjectException("GeomAdaptor_Surface::VContinuity");
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case SurfaceOfExtrusion:
                 break;
         }
-        return GeomAbs_CN;
+        return CN;
     }
 
-    /// <exception cref="Standard_DomainError">S is G1 or G2 on an offset surface.</exception>
-    public override int NbUIntervals(GeomAbs_Shape S)
+    /// <exception cref="DomainErrorException">S is G1 or G2 on an offset surface.</exception>
+    public override int NbUIntervals(Continuity S)
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 GeomAdaptor_Curve myBasisCurve = new(aBSpl.VIso(aBSpl.VKnot(aBSpl.FirstVKnotIndex())), myUFirst, myULast);
                 return myBasisCurve.NbIntervals(S);
             }
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 Geom_SurfaceOfLinearExtrusion myExtSurf = (Geom_SurfaceOfLinearExtrusion)mySurface!;
                 GeomAdaptor_Curve myBasisCurve = new(myExtSurf.BasisCurve(), myUFirst, myULast);
-                if (myBasisCurve.GetType() == GeomAbs_BSplineCurve)
+                if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     return myBasisCurve.NbIntervals(S);
                 }
                 break;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
-                GeomAbs_Shape BaseS = GeomAbs_CN;
+                Continuity BaseS = CN;
                 switch (S)
                 {
-                    case GeomAbs_G1:
-                    case GeomAbs_G2:
-                        throw new Standard_DomainError("GeomAdaptor_Curve::NbUIntervals");
-                    case GeomAbs_C0:
-                        BaseS = GeomAbs_C1;
+                    case G1:
+                    case G2:
+                        throw new DomainErrorException("GeomAdaptor_Curve::NbUIntervals");
+                    case C0:
+                        BaseS = C1;
                         break;
-                    case GeomAbs_C1:
-                        BaseS = GeomAbs_C2;
+                    case C1:
+                        BaseS = C2;
                         break;
-                    case GeomAbs_C2:
-                        BaseS = GeomAbs_C3;
+                    case C2:
+                        BaseS = C3;
                         break;
-                    case GeomAbs_C3:
-                    case GeomAbs_CN:
+                    case C3:
+                    case CN:
                         break;
                 }
                 return ((OffsetData)mySurfaceData!).BasisAdaptor.NbUIntervals(BaseS);
             }
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_OtherSurface:
-            case GeomAbs_SurfaceOfRevolution:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case OtherSurface:
+            case SurfaceOfRevolution:
                 break;
         }
         return 1;
     }
 
-    /// <exception cref="Standard_DomainError">S is G1 or G2 on an offset surface.</exception>
-    public override int NbVIntervals(GeomAbs_Shape S)
+    /// <exception cref="DomainErrorException">S is G1 or G2 on an offset surface.</exception>
+    public override int NbVIntervals(Continuity S)
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 GeomAdaptor_Curve myBasisCurve = new(aBSpl.UIso(aBSpl.UKnot(aBSpl.FirstUKnotIndex())), myVFirst, myVLast);
                 return myBasisCurve.NbIntervals(S);
             }
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 Geom_SurfaceOfRevolution myRevSurf = (Geom_SurfaceOfRevolution)mySurface!;
                 GeomAdaptor_Curve myBasisCurve = new(myRevSurf.BasisCurve(), myVFirst, myVLast);
-                if (myBasisCurve.GetType() == GeomAbs_BSplineCurve)
+                if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     return myBasisCurve.NbIntervals(S);
                 }
                 break;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
-                GeomAbs_Shape BaseS = GeomAbs_CN;
+                Continuity BaseS = CN;
                 switch (S)
                 {
-                    case GeomAbs_G1:
-                    case GeomAbs_G2:
-                        throw new Standard_DomainError("GeomAdaptor_Curve::NbVIntervals");
-                    case GeomAbs_C0:
-                        BaseS = GeomAbs_C1;
+                    case G1:
+                    case G2:
+                        throw new DomainErrorException("GeomAdaptor_Curve::NbVIntervals");
+                    case C0:
+                        BaseS = C1;
                         break;
-                    case GeomAbs_C1:
-                        BaseS = GeomAbs_C2;
+                    case C1:
+                        BaseS = C2;
                         break;
-                    case GeomAbs_C2:
-                        BaseS = GeomAbs_C3;
+                    case C2:
+                        BaseS = C3;
                         break;
-                    case GeomAbs_C3:
-                    case GeomAbs_CN:
+                    case C3:
+                    case CN:
                         break;
                 }
                 return ((OffsetData)mySurfaceData!).BasisAdaptor.NbVIntervals(BaseS);
             }
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_OtherSurface:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case OtherSurface:
+            case SurfaceOfExtrusion:
                 break;
         }
         return 1;
     }
 
-    /// <exception cref="Standard_DomainError">S is G1 or G2 on an offset surface.</exception>
-    public override void UIntervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    /// <exception cref="DomainErrorException">S is G1 or G2 on an offset surface.</exception>
+    public override void UIntervals(NCollection_Array1<double> T, Continuity S)
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 GeomAdaptor_Curve myBasisCurve = new(aBSpl.VIso(aBSpl.VKnot(aBSpl.FirstVKnotIndex())), myUFirst, myULast);
                 myBasisCurve.Intervals(T, S);
                 return;
             }
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 GeomAdaptor_Curve myBasisCurve = new(((Geom_SurfaceOfLinearExtrusion)mySurface!).BasisCurve(),
                                                      myUFirst,
                                                      myULast);
-                if (myBasisCurve.GetType() == GeomAbs_BSplineCurve)
+                if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     myBasisCurve.Intervals(T, S);
                     return;
                 }
                 break;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
-                GeomAbs_Shape BaseS = GeomAbs_CN;
+                Continuity BaseS = CN;
                 switch (S)
                 {
-                    case GeomAbs_G1:
-                    case GeomAbs_G2:
-                        throw new Standard_DomainError("GeomAdaptor_Curve::UIntervals");
-                    case GeomAbs_C0:
-                        BaseS = GeomAbs_C1;
+                    case G1:
+                    case G2:
+                        throw new DomainErrorException("GeomAdaptor_Curve::UIntervals");
+                    case C0:
+                        BaseS = C1;
                         break;
-                    case GeomAbs_C1:
-                        BaseS = GeomAbs_C2;
+                    case C1:
+                        BaseS = C2;
                         break;
-                    case GeomAbs_C2:
-                        BaseS = GeomAbs_C3;
+                    case C2:
+                        BaseS = C3;
                         break;
-                    case GeomAbs_C3:
-                    case GeomAbs_CN:
+                    case C3:
+                    case CN:
                         break;
                 }
                 ((OffsetData)mySurfaceData!).BasisAdaptor.UIntervals(T, BaseS);
                 return;
             }
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_OtherSurface:
-            case GeomAbs_SurfaceOfRevolution:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case OtherSurface:
+            case SurfaceOfRevolution:
                 break;
         }
 
@@ -853,61 +857,61 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         T[T.Lower() + 1] = myULast;
     }
 
-    /// <exception cref="Standard_DomainError">S is G1 or G2 on an offset surface.</exception>
-    public override void VIntervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    /// <exception cref="DomainErrorException">S is G1 or G2 on an offset surface.</exception>
+    public override void VIntervals(NCollection_Array1<double> T, Continuity S)
     {
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 Geom_BSplineSurface aBSpl = ((BSplineData)mySurfaceData!).Surface;
                 GeomAdaptor_Curve myBasisCurve = new(aBSpl.UIso(aBSpl.UKnot(aBSpl.FirstUKnotIndex())), myVFirst, myVLast);
                 myBasisCurve.Intervals(T, S);
                 return;
             }
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 Geom_SurfaceOfRevolution myRevSurf = (Geom_SurfaceOfRevolution)mySurface!;
                 GeomAdaptor_Curve myBasisCurve = new(myRevSurf.BasisCurve(), myVFirst, myVLast);
-                if (myBasisCurve.GetType() == GeomAbs_BSplineCurve)
+                if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     myBasisCurve.Intervals(T, S);
                     return;
                 }
                 break;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
-                GeomAbs_Shape BaseS = GeomAbs_CN;
+                Continuity BaseS = CN;
                 switch (S)
                 {
-                    case GeomAbs_G1:
-                    case GeomAbs_G2:
-                        throw new Standard_DomainError("GeomAdaptor_Curve::VIntervals");
-                    case GeomAbs_C0:
-                        BaseS = GeomAbs_C1;
+                    case G1:
+                    case G2:
+                        throw new DomainErrorException("GeomAdaptor_Curve::VIntervals");
+                    case C0:
+                        BaseS = C1;
                         break;
-                    case GeomAbs_C1:
-                        BaseS = GeomAbs_C2;
+                    case C1:
+                        BaseS = C2;
                         break;
-                    case GeomAbs_C2:
-                        BaseS = GeomAbs_C3;
+                    case C2:
+                        BaseS = C3;
                         break;
-                    case GeomAbs_C3:
-                    case GeomAbs_CN:
+                    case C3:
+                    case CN:
                         break;
                 }
                 ((OffsetData)mySurfaceData!).BasisAdaptor.VIntervals(T, BaseS);
                 return;
             }
-            case GeomAbs_Plane:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
-            case GeomAbs_BezierSurface:
-            case GeomAbs_OtherSurface:
-            case GeomAbs_SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+            case BezierSurface:
+            case OtherSurface:
+            case SurfaceOfExtrusion:
                 break;
         }
 
@@ -938,10 +942,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         mySurface.Bounds(out double U1, out double U2, out _, out _);
         if (mySurface.IsUPeriodic())
         {
-            return (Math.Abs(Math.Abs(U1 - U2) - Math.Abs(myUFirst - myULast)) < Precision.PConfusion());
+            return (Math.Abs(Math.Abs(U1 - U2) - Math.Abs(myUFirst - myULast)) < global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
 
-        return (Math.Abs(U1 - myUFirst) < Precision.PConfusion() && Math.Abs(U2 - myULast) < Precision.PConfusion());
+        return (Math.Abs(U1 - myUFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion() && Math.Abs(U2 - myULast) < global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     /// <summary>True if the surface is V-closed and the adaptor spans its whole V range (a period if periodic).</summary>
@@ -955,15 +959,15 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
         mySurface.Bounds(out _, out _, out double V1, out double V2);
         if (mySurface.IsVPeriodic())
         {
-            return (Math.Abs(Math.Abs(V1 - V2) - Math.Abs(myVFirst - myVLast)) < Precision.PConfusion());
+            return (Math.Abs(Math.Abs(V1 - V2) - Math.Abs(myVFirst - myVLast)) < global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
 
-        return (Math.Abs(V1 - myVFirst) < Precision.PConfusion() && Math.Abs(V2 - myVLast) < Precision.PConfusion());
+        return (Math.Abs(V1 - myVFirst) < global::Kerf.Engine.Foundation.Precision.PConfusion() && Math.Abs(V2 - myVLast) < global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override bool IsUPeriodic() => (mySurface!.IsUPeriodic());
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not U-periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not U-periodic.</exception>
     public override double UPeriod()
     {
         Standard_NoSuchObject_Raise_if(!IsUPeriodic(), " ");
@@ -972,7 +976,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
     public override bool IsVPeriodic() => (mySurface!.IsVPeriodic());
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not V-periodic.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not V-periodic.</exception>
     public override double VPeriod()
     {
         Standard_NoSuchObject_Raise_if(!IsVPeriodic(), " ");
@@ -981,18 +985,18 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
     private void RebuildCache(double theU, double theV)
     {
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             // Create cache for Bezier
             BezierData aBezData = (BezierData)mySurfaceData!;
             Geom_BezierSurface aBezier = (Geom_BezierSurface)mySurface!;
             int aDegU = aBezier.UDegree();
             int aDegV = aBezier.VDegree();
-            NCollection_Array1<double> aFlatKnotsU = NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(aDegU));
-            NCollection_Array1<double> aFlatKnotsV = NCollection_Array1<double>.From(BSplCLib.FlatBezierKnots(aDegV));
+            NCollection_Array1<double> aFlatKnotsU = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDegU));
+            NCollection_Array1<double> aFlatKnotsV = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDegV));
             if (aBezData.Cache is null)
             {
-                aBezData.Cache = new BSplSLib_Cache(aDegU,
+                aBezData.Cache = new SurfaceCache(aDegU,
                                                     aBezier.IsUPeriodic(),
                                                     aFlatKnotsU,
                                                     aDegV,
@@ -1007,14 +1011,14 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                                       aBezier.InternalPoles(),
                                       aBezier.InternalWeights());
         }
-        else if (mySurfaceType == GeomAbs_BSplineSurface)
+        else if (mySurfaceType == BSplineSurface)
         {
             // Create cache for B-spline
             BSplineData aBSplData = (BSplineData)mySurfaceData!;
             Geom_BSplineSurface aBSpl = aBSplData.Surface;
             if (aBSplData.Cache is null)
             {
-                aBSplData.Cache = new BSplSLib_Cache(aBSpl.UDegree(),
+                aBSplData.Cache = new SurfaceCache(aBSpl.UDegree(),
                                                      aBSpl.IsUPeriodic(),
                                                      aBSpl.InternalUKnotSequence(),
                                                      aBSpl.VDegree(),
@@ -1032,30 +1036,30 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     }
 
     /// <exception cref="Geom_UndefinedValue">The point is undefined at (theU, theV) (swept or offset surfaces).</exception>
-    public sealed override gp_Pnt EvalD0(double theU, double theV)
+    public sealed override Point3D EvalD0(double theU, double theV)
     {
         double U = theU;
         double V = theV;
-        gp_Pnt P;
+        Point3D P;
         switch (mySurfaceType)
         {
-            case GeomAbs_Plane:
-                ElSLib.D0(U, V, (gp_Pln)mySurfaceData!, out P);
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Plane3D)mySurfaceData!, out P);
                 return P;
-            case GeomAbs_Cylinder:
-                ElSLib.D0(U, V, (gp_Cylinder)mySurfaceData!, out P);
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cylinder)mySurfaceData!, out P);
                 return P;
-            case GeomAbs_Cone:
-                ElSLib.D0(U, V, (gp_Cone)mySurfaceData!, out P);
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Cone)mySurfaceData!, out P);
                 return P;
-            case GeomAbs_Sphere:
-                ElSLib.D0(U, V, (gp_Sphere)mySurfaceData!, out P);
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Sphere)mySurfaceData!, out P);
                 return P;
-            case GeomAbs_Torus:
-                ElSLib.D0(U, V, (gp_Torus)mySurfaceData!, out P);
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.D0(U, V, (Torus)mySurfaceData!, out P);
                 return P;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1069,7 +1073,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 aBezData.Cache!.D0(U, V, out P);
                 return P;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1084,7 +1088,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return P;
             }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1098,7 +1102,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return P;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1112,7 +1116,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return P;
             }
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1170,23 +1174,23 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_Plane:
-                ElSLib.D1(u, v, (gp_Pln)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Plane3D)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
-            case GeomAbs_Cylinder:
-                ElSLib.D1(u, v, (gp_Cylinder)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cylinder)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
-            case GeomAbs_Cone:
-                ElSLib.D1(u, v, (gp_Cone)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Cone)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
-            case GeomAbs_Sphere:
-                ElSLib.D1(u, v, (gp_Sphere)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Sphere)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
-            case GeomAbs_Torus:
-                ElSLib.D1(u, v, (gp_Torus)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Torus)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1200,7 +1204,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 aBezData.Cache!.D1(U, V, out aResult.Point, out aResult.D1U, out aResult.D1V);
                 return aResult;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1224,7 +1228,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1244,7 +1248,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1264,7 +1268,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1293,16 +1297,16 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_Plane:
-                ElSLib.D1(u, v, (gp_Pln)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
-                aResult.D2U = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D2V = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D2UV = new gp_Vec(0.0, 0.0, 0.0);
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Plane3D)mySurfaceData!, out aResult.Point, out aResult.D1U, out aResult.D1V);
+                aResult.D2U = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D2V = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D2UV = new Vector3D(0.0, 0.0, 0.0);
                 return aResult;
-            case GeomAbs_Cylinder:
-                ElSLib.D2(u,
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (gp_Cylinder)mySurfaceData!,
+                          (Cylinder)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1310,10 +1314,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D2V,
                           out aResult.D2UV);
                 return aResult;
-            case GeomAbs_Cone:
-                ElSLib.D2(u,
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (gp_Cone)mySurfaceData!,
+                          (Cone)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1321,10 +1325,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D2V,
                           out aResult.D2UV);
                 return aResult;
-            case GeomAbs_Sphere:
-                ElSLib.D2(u,
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (gp_Sphere)mySurfaceData!,
+                          (Sphere)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1332,10 +1336,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D2V,
                           out aResult.D2UV);
                 return aResult;
-            case GeomAbs_Torus:
-                ElSLib.D2(u,
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.D2(u,
                           v,
-                          (gp_Torus)mySurfaceData!,
+                          (Torus)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1344,7 +1348,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D2UV);
                 return aResult;
 
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1365,7 +1369,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                                    out aResult.D2UV);
                 return aResult;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1407,7 +1411,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1430,7 +1434,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1453,7 +1457,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1482,24 +1486,24 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_Plane:
-                ElSLib.D1(u, v, (gp_Pln)mySurfaceData!, out gp_Pnt aPlnP, out gp_Vec aPlnD1U, out gp_Vec aPlnD1V);
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+                global::Kerf.Engine.Geometry.ElSLib.D1(u, v, (Plane3D)mySurfaceData!, out Point3D aPlnP, out Vector3D aPlnD1U, out Vector3D aPlnD1V);
                 aResult = new Geom_Surface.ResD3();
                 aResult.Point = aPlnP;
                 aResult.D1U = aPlnD1U;
                 aResult.D1V = aPlnD1V;
-                aResult.D2U = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D2V = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D2UV = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D3U = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D3V = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D3UUV = new gp_Vec(0.0, 0.0, 0.0);
-                aResult.D3UVV = new gp_Vec(0.0, 0.0, 0.0);
+                aResult.D2U = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D2V = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D2UV = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D3U = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D3V = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D3UUV = new Vector3D(0.0, 0.0, 0.0);
+                aResult.D3UVV = new Vector3D(0.0, 0.0, 0.0);
                 return aResult;
-            case GeomAbs_Cylinder:
-                ElSLib.D3(u,
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+                global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (gp_Cylinder)mySurfaceData!,
+                          (Cylinder)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1511,10 +1515,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D3UUV,
                           out aResult.D3UVV);
                 return aResult;
-            case GeomAbs_Cone:
-                ElSLib.D3(u,
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+                global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (gp_Cone)mySurfaceData!,
+                          (Cone)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1526,10 +1530,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D3UUV,
                           out aResult.D3UVV);
                 return aResult;
-            case GeomAbs_Sphere:
-                ElSLib.D3(u,
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+                global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (gp_Sphere)mySurfaceData!,
+                          (Sphere)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1541,10 +1545,10 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D3UUV,
                           out aResult.D3UVV);
                 return aResult;
-            case GeomAbs_Torus:
-                ElSLib.D3(u,
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+                global::Kerf.Engine.Geometry.ElSLib.D3(u,
                           v,
-                          (gp_Torus)mySurfaceData!,
+                          (Torus)mySurfaceData!,
                           out aResult.Point,
                           out aResult.D1U,
                           out aResult.D1V,
@@ -1557,7 +1561,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                           out aResult.D3UVV);
                 return aResult;
 
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1597,7 +1601,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1624,7 +1628,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1651,7 +1655,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 return aResult;
             }
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1673,7 +1677,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     /// <exception cref="Geom_UndefinedDerivative">
     /// The derivative is undefined at (theU, theV), or the orders are invalid.
     /// </exception>
-    public sealed override gp_Vec EvalDN(double theU, double theV, int theNu, int theNv)
+    public sealed override Vector3D EvalDN(double theU, double theV, int theNu, int theNv)
     {
         double U = theU;
         double V = theV;
@@ -1683,7 +1687,7 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
@@ -1707,61 +1711,61 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 }
             }
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
                     return mySurface!.EvalDN(U, V, Nu, Nv);
                 }
                 ExtrusionData anExtData = (ExtrusionData)mySurfaceData!;
-                if (!Geom_ExtrusionUtils.DN(u, anExtData.BasisCurve, anExtData.Direction, Nu, Nv, out gp_Vec aDN))
+                if (!Geom_ExtrusionUtils.DN(u, anExtData.BasisCurve, anExtData.Direction, Nu, Nv, out Vector3D aDN))
                 {
                     throw new Geom_UndefinedDerivative("GeomAdaptor_Surface::EvalDN: evaluation failed");
                 }
                 return aDN;
             }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
                     return mySurface!.EvalDN(U, V, Nu, Nv);
                 }
                 RevolutionData aRevData = (RevolutionData)mySurfaceData!;
-                if (!Geom_RevolutionUtils.DN(u, v, aRevData.BasisCurve, aRevData.Axis, Nu, Nv, out gp_Vec aDN))
+                if (!Geom_RevolutionUtils.DN(u, v, aRevData.BasisCurve, aRevData.Axis, Nu, Nv, out Vector3D aDN))
                 {
                     throw new Geom_UndefinedDerivative("GeomAdaptor_Surface::EvalDN: evaluation failed");
                 }
                 return aDN;
             }
 
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 if (hasEvalRep(mySurfaceData))
                 {
                     return mySurface!.EvalDN(U, V, Nu, Nv);
                 }
                 OffsetData anOffData = (OffsetData)mySurfaceData!;
-                if (!offsetDN(u, v, anOffData, Nu, Nv, out gp_Vec aDN))
+                if (!offsetDN(u, v, anOffData, Nu, Nv, out Vector3D aDN))
                 {
                     throw new Geom_UndefinedDerivative("GeomAdaptor_Surface::EvalDN: evaluation failed");
                 }
                 return aDN;
             }
 
-            case GeomAbs_Plane:
-                return ElSLib.DN(u, v, (gp_Pln)mySurfaceData!, Nu, Nv);
-            case GeomAbs_Cylinder:
-                return ElSLib.DN(u, v, (gp_Cylinder)mySurfaceData!, Nu, Nv);
-            case GeomAbs_Cone:
-                return ElSLib.DN(u, v, (gp_Cone)mySurfaceData!, Nu, Nv);
-            case GeomAbs_Sphere:
-                return ElSLib.DN(u, v, (gp_Sphere)mySurfaceData!, Nu, Nv);
-            case GeomAbs_Torus:
-                return ElSLib.DN(u, v, (gp_Torus)mySurfaceData!, Nu, Nv);
+            case global::Kerf.Geometry.SurfaceKind.Plane:
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Plane3D)mySurfaceData!, Nu, Nv);
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cylinder)mySurfaceData!, Nu, Nv);
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Cone)mySurfaceData!, Nu, Nv);
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Sphere)mySurfaceData!, Nu, Nv);
+            case global::Kerf.Geometry.SurfaceKind.Torus:
+                return global::Kerf.Engine.Geometry.ElSLib.DN(u, v, (Torus)mySurfaceData!, Nu, Nv);
 
-            case GeomAbs_BezierSurface:
-            case GeomAbs_OtherSurface:
+            case BezierSurface:
+            case OtherSurface:
             default:
                 break;
         }
@@ -1776,46 +1780,46 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
             {
                 return ((ExtrusionData)mySurfaceData!).BasisCurve.Resolution(R3d);
             }
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
             {
                 Geom_ToroidalSurface S = (Geom_ToroidalSurface)mySurface!;
                 double R = S.MajorRadius() + S.MinorRadius();
-                if (R > Precision.Confusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Res = R3d / (2.0 * R);
                 }
                 break;
             }
-            case GeomAbs_Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
             {
                 Geom_SphericalSurface S = (Geom_SphericalSurface)mySurface!;
                 double R = S.Radius();
-                if (R > Precision.Confusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Res = R3d / (2.0 * R);
                 }
                 break;
             }
-            case GeomAbs_Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
             {
                 Geom_CylindricalSurface S = (Geom_CylindricalSurface)mySurface!;
                 double R = S.Radius();
-                if (R > Precision.Confusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Res = R3d / (2.0 * R);
                 }
                 break;
             }
-            case GeomAbs_Cone:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
             {
                 if (myVLast - myVFirst > 1.0e10)
                 {
                     // Not truly bounded => unknown resolution
-                    return Precision.Parametric(R3d);
+                    return global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
                 }
                 Geom_ConicalSurface S = (Geom_ConicalSurface)mySurface!;
                 Geom_Curve C = S.VIso(myVLast);
@@ -1823,28 +1827,28 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                 C = S.VIso(myVFirst);
                 double Rayon2 = ((Geom_Circle)C).Radius();
                 double R = (Rayon1 > Rayon2) ? Rayon1 : Rayon2;
-                return (R > Precision.Confusion() ? (R3d / R) : 0.0);
+                return (R > global::Kerf.Engine.Foundation.Precision.Confusion() ? (R3d / R) : 0.0);
             }
-            case GeomAbs_Plane:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
             {
                 return R3d;
             }
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 ((Geom_BezierSurface)mySurface!).Resolution(R3d, out double Ures, out _);
                 return Ures;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 ((BSplineData)mySurfaceData!).Surface.Resolution(R3d, out double Ures, out _);
                 return Ures;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 return ((OffsetData)mySurfaceData!).BasisAdaptor.UResolution(R3d);
             }
             default:
-                return Precision.Parametric(R3d);
+                return global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
         }
 
         if (Res <= 1.0)
@@ -1862,53 +1866,53 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
 
         switch (mySurfaceType)
         {
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
             {
                 return ((RevolutionData)mySurfaceData!).BasisCurve.Resolution(R3d);
             }
-            case GeomAbs_Torus:
+            case global::Kerf.Geometry.SurfaceKind.Torus:
             {
                 Geom_ToroidalSurface S = (Geom_ToroidalSurface)mySurface!;
                 double R = S.MinorRadius();
-                if (R > Precision.Confusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Res = R3d / (2.0 * R);
                 }
                 break;
             }
-            case GeomAbs_Sphere:
+            case global::Kerf.Geometry.SurfaceKind.Sphere:
             {
                 Geom_SphericalSurface S = (Geom_SphericalSurface)mySurface!;
                 double R = S.Radius();
-                if (R > Precision.Confusion())
+                if (R > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     Res = R3d / (2.0 * R);
                 }
                 break;
             }
-            case GeomAbs_SurfaceOfExtrusion:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Cone:
-            case GeomAbs_Plane:
+            case SurfaceOfExtrusion:
+            case global::Kerf.Geometry.SurfaceKind.Cylinder:
+            case global::Kerf.Geometry.SurfaceKind.Cone:
+            case global::Kerf.Geometry.SurfaceKind.Plane:
             {
                 return R3d;
             }
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
             {
                 ((Geom_BezierSurface)mySurface!).Resolution(R3d, out _, out double Vres);
                 return Vres;
             }
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
             {
                 ((BSplineData)mySurfaceData!).Surface.Resolution(R3d, out _, out double Vres);
                 return Vres;
             }
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
             {
                 return ((OffsetData)mySurfaceData!).BasisAdaptor.VResolution(R3d);
             }
             default:
-                return Precision.Parametric(R3d);
+                return global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
         }
 
         if (Res <= 1.0)
@@ -1920,162 +1924,162 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     }
 
     /// <summary>The type of the surface (GeomAbs_OtherSurface before a Load).</summary>
-    public override GeomAbs_SurfaceType GetType() => mySurfaceType;
+    public override SurfaceKind GetType() => mySurfaceType;
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a plane.</exception>
-    public override gp_Pln Plane()
+    /// <exception cref="NoSuchObjectException">The surface is not a plane.</exception>
+    public override Plane3D Plane()
     {
-        if (mySurfaceType != GeomAbs_Plane)
+        if (mySurfaceType != global::Kerf.Geometry.SurfaceKind.Plane)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Plane");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Plane");
         }
-        return (gp_Pln)mySurfaceData!;
+        return (Plane3D)mySurfaceData!;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a cylinder.</exception>
-    public override gp_Cylinder Cylinder()
+    /// <exception cref="NoSuchObjectException">The surface is not a cylinder.</exception>
+    public override Cylinder Cylinder()
     {
-        if (mySurfaceType != GeomAbs_Cylinder)
+        if (mySurfaceType != global::Kerf.Geometry.SurfaceKind.Cylinder)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Cylinder");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Cylinder");
         }
-        return (gp_Cylinder)mySurfaceData!;
+        return (Cylinder)mySurfaceData!;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a cone.</exception>
-    public override gp_Cone Cone()
+    /// <exception cref="NoSuchObjectException">The surface is not a cone.</exception>
+    public override Cone Cone()
     {
-        if (mySurfaceType != GeomAbs_Cone)
+        if (mySurfaceType != global::Kerf.Geometry.SurfaceKind.Cone)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Cone");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Cone");
         }
-        return (gp_Cone)mySurfaceData!;
+        return (Cone)mySurfaceData!;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a sphere.</exception>
-    public override gp_Sphere Sphere()
+    /// <exception cref="NoSuchObjectException">The surface is not a sphere.</exception>
+    public override Sphere Sphere()
     {
-        if (mySurfaceType != GeomAbs_Sphere)
+        if (mySurfaceType != global::Kerf.Geometry.SurfaceKind.Sphere)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Sphere");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Sphere");
         }
-        return (gp_Sphere)mySurfaceData!;
+        return (Sphere)mySurfaceData!;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a torus.</exception>
-    public override gp_Torus Torus()
+    /// <exception cref="NoSuchObjectException">The surface is not a torus.</exception>
+    public override Torus Torus()
     {
-        if (mySurfaceType != GeomAbs_Torus)
+        if (mySurfaceType != global::Kerf.Geometry.SurfaceKind.Torus)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Torus");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Torus");
         }
-        return (gp_Torus)mySurfaceData!;
+        return (Torus)mySurfaceData!;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline, Bezier or extrusion surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline, Bezier or extrusion surface.</exception>
     public override int UDegree()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.UDegree();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).UDegree();
         }
-        if (mySurfaceType == GeomAbs_SurfaceOfExtrusion)
+        if (mySurfaceType == SurfaceOfExtrusion)
         {
             return ((ExtrusionData)mySurfaceData!).BasisCurve.Degree();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::UDegree");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::UDegree");
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline, Bezier or extrusion surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline, Bezier or extrusion surface.</exception>
     public override int NbUPoles()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.NbUPoles();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).NbUPoles();
         }
-        if (mySurfaceType == GeomAbs_SurfaceOfExtrusion)
+        if (mySurfaceType == SurfaceOfExtrusion)
         {
             return ((ExtrusionData)mySurfaceData!).BasisCurve.NbPoles();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::NbUPoles");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::NbUPoles");
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline, Bezier or revolution surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline, Bezier or revolution surface.</exception>
     public override int VDegree()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.VDegree();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).VDegree();
         }
-        if (mySurfaceType == GeomAbs_SurfaceOfRevolution)
+        if (mySurfaceType == SurfaceOfRevolution)
         {
             return ((RevolutionData)mySurfaceData!).BasisCurve.Degree();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::VDegree");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::VDegree");
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline, Bezier or revolution surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline, Bezier or revolution surface.</exception>
     public override int NbVPoles()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.NbVPoles();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).NbVPoles();
         }
-        if (mySurfaceType == GeomAbs_SurfaceOfRevolution)
+        if (mySurfaceType == SurfaceOfRevolution)
         {
             return ((RevolutionData)mySurfaceData!).BasisCurve.NbPoles();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::NbVPoles");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::NbVPoles");
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline or extrusion surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline or extrusion surface.</exception>
     public override int NbUKnots()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.NbUKnots();
         }
-        if (mySurfaceType == GeomAbs_SurfaceOfExtrusion)
+        if (mySurfaceType == SurfaceOfExtrusion)
         {
             return ((ExtrusionData)mySurfaceData!).BasisCurve.NbKnots();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::NbUKnots");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::NbUKnots");
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline surface.</exception>
     public override int NbVKnots()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.NbVKnots();
         }
-        throw new Standard_NoSuchObject("GeomAdaptor_Surface::NbVKnots");
+        throw new NoSuchObjectException("GeomAdaptor_Surface::NbVKnots");
     }
 
     /// <summary>True for a B-spline or Bezier surface rational in U; false for any other surface.</summary>
     public override bool IsURational()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.IsURational();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).IsURational();
         }
@@ -2085,11 +2089,11 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     /// <summary>True for a B-spline or Bezier surface rational in V; false for any other surface.</summary>
     public override bool IsVRational()
     {
-        if (mySurfaceType == GeomAbs_BSplineSurface)
+        if (mySurfaceType == BSplineSurface)
         {
             return ((BSplineData)mySurfaceData!).Surface.IsVRational();
         }
-        if (mySurfaceType == GeomAbs_BezierSurface)
+        if (mySurfaceType == BezierSurface)
         {
             return ((Geom_BezierSurface)mySurface!).IsVRational();
         }
@@ -2097,74 +2101,74 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
     }
 
     /// <summary>The Bezier surface (shared).</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not a Bezier surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a Bezier surface.</exception>
     public override Geom_BezierSurface Bezier()
     {
-        if (mySurfaceType != GeomAbs_BezierSurface)
+        if (mySurfaceType != BezierSurface)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Bezier");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Bezier");
         }
         return (Geom_BezierSurface)mySurface!;
     }
 
     /// <summary>The B-spline surface (shared).</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not a B-spline surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a B-spline surface.</exception>
     public override Geom_BSplineSurface BSpline()
     {
-        if (mySurfaceType != GeomAbs_BSplineSurface)
+        if (mySurfaceType != BSplineSurface)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::BSpline");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::BSpline");
         }
         return ((BSplineData)mySurfaceData!).Surface;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a surface of revolution.</exception>
-    public override gp_Ax1 AxeOfRevolution()
+    /// <exception cref="NoSuchObjectException">The surface is not a surface of revolution.</exception>
+    public override Axis3D AxeOfRevolution()
     {
-        if (mySurfaceType != GeomAbs_SurfaceOfRevolution)
+        if (mySurfaceType != SurfaceOfRevolution)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::AxeOfRevolution");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::AxeOfRevolution");
         }
         return ((Geom_SurfaceOfRevolution)mySurface!).Axis();
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not a surface of linear extrusion.</exception>
-    public override gp_Dir Direction()
+    /// <exception cref="NoSuchObjectException">The surface is not a surface of linear extrusion.</exception>
+    public override Direction3D Direction()
     {
-        if (mySurfaceType != GeomAbs_SurfaceOfExtrusion)
+        if (mySurfaceType != SurfaceOfExtrusion)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::Direction");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::Direction");
         }
         return ((Geom_SurfaceOfLinearExtrusion)mySurface!).Direction();
     }
 
     /// <summary>A new adaptor of the basis curve of a swept surface (over the whole curve).</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not a swept surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not a swept surface.</exception>
     public override Adaptor3d_Curve BasisCurve()
     {
         Geom_Curve C;
-        if (mySurfaceType == GeomAbs_SurfaceOfExtrusion)
+        if (mySurfaceType == SurfaceOfExtrusion)
         {
             C = ((Geom_SurfaceOfLinearExtrusion)mySurface!).BasisCurve();
         }
-        else if (mySurfaceType == GeomAbs_SurfaceOfRevolution)
+        else if (mySurfaceType == SurfaceOfRevolution)
         {
             C = ((Geom_SurfaceOfRevolution)mySurface!).BasisCurve();
         }
         else
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::BasisCurve");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::BasisCurve");
         }
         return new GeomAdaptor_Curve(C);
     }
 
     /// <summary>A new adaptor of the basis surface of an offset surface, over this adaptor's bounds.</summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not an offset surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not an offset surface.</exception>
     public override Adaptor3d_Surface BasisSurface()
     {
-        if (mySurfaceType != GeomAbs_OffsetSurface)
+        if (mySurfaceType != OffsetSurface)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::BasisSurface");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::BasisSurface");
         }
         return new GeomAdaptor_Surface(((Geom_OffsetSurface)mySurface!).BasisSurface(),
                                        myUFirst,
@@ -2173,12 +2177,12 @@ public class GeomAdaptor_Surface : Adaptor3d_Surface
                                        myVLast);
     }
 
-    /// <exception cref="Standard_NoSuchObject">The surface is not an offset surface.</exception>
+    /// <exception cref="NoSuchObjectException">The surface is not an offset surface.</exception>
     public override double OffsetValue()
     {
-        if (mySurfaceType != GeomAbs_OffsetSurface)
+        if (mySurfaceType != OffsetSurface)
         {
-            throw new Standard_NoSuchObject("GeomAdaptor_Surface::BasisSurface");
+            throw new NoSuchObjectException("GeomAdaptor_Surface::BasisSurface");
         }
         return ((Geom_OffsetSurface)mySurface!).Offset();
     }

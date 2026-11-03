@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_SurfaceStyleParameterLine : Standard_Transient
+public class StepVisual_SurfaceStyleParameterLine : Transient
 {
     private StepVisual_CurveStyle styleOfParameterLines;
     private NCollection_HArray1<StepVisual_DirectionCountSelect> directionCounts;

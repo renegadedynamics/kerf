@@ -4,6 +4,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -47,7 +50,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         myPrecision = -1.0;
     }
 
-    private static void MinMaxPnt(in gp_Pnt p, ref int nb, ref double minx, ref double miny, ref double minz,
+    private static void MinMaxPnt(in Point3D p, ref int nb, ref double minx, ref double miny, ref double minz,
                                   ref double maxx, ref double maxy, ref double maxz)
     {
         p.Coord(out double x, out double y, out double z);
@@ -93,8 +96,8 @@ public sealed class ShapeAnalysis_CheckSmallFace
         double dy = maxy - miny;
         double dz = maxz - minz;
 
-        return (dx <= toler || Occt.Precision.IsInfinite(dx)) && (dy <= toler || Occt.Precision.IsInfinite(dy))
-               && (dz <= toler || Occt.Precision.IsInfinite(dz));
+        return (dx <= toler || Kerf.Engine.Foundation.Precision.IsInfinite(dx)) && (dy <= toler || Kerf.Engine.Foundation.Precision.IsInfinite(dy))
+               && (dz <= toler || Kerf.Engine.Foundation.Precision.IsInfinite(dz));
     }
 
     /// <summary>
@@ -103,7 +106,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// <paramref name="spot"/> is its location and <paramref name="spotol"/> half the largest dimension of its box. A
     /// face without wires gives 1 with <paramref name="spot"/> and <paramref name="spotol"/> unchanged, as in OCCT.
     /// </summary>
-    public int IsSpotFace(in TopoDS_Face F, ref gp_Pnt spot, ref double spotol, double tol = -1.0)
+    public int IsSpotFace(in TopoDS_Face F, ref Point3D spot, ref double spotol, double tol = -1.0)
     {
         double toler = tol;
         double tolv = tol;
@@ -131,8 +134,8 @@ public sealed class ShapeAnalysis_CheckSmallFace
             return 1; // OCCT returns true (1) for a face without wires (occt-issues.md)
         }
         int nbv = 0;
-        double minx = 0, miny = 0, minz = 0, maxx = Occt.Precision.Infinite(), maxy = Occt.Precision.Infinite(),
-               maxz = Occt.Precision.Infinite();
+        double minx = 0, miny = 0, minz = 0, maxx = Kerf.Engine.Foundation.Precision.Infinite(), maxy = Kerf.Engine.Foundation.Precision.Infinite(),
+               maxz = Kerf.Engine.Foundation.Precision.Infinite();
         TopoDS_Vertex V0 = new();
         bool same = true;
         for (var iv = new TopExp_Explorer(F, TopAbs_VERTEX); iv.More(); iv.Next())
@@ -150,7 +153,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 }
             }
 
-            gp_Pnt pnt = BRep_Tool.Pnt(V);
+            Point3D pnt = BRep_Tool.Pnt(V);
             MinMaxPnt(pnt, ref nbv, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
 
             if (tol < 0)
@@ -180,8 +183,8 @@ public sealed class ShapeAnalysis_CheckSmallFace
             {
                 continue;
             }
-            gp_Pnt debut = C3D.Value(cf);
-            gp_Pnt milieu = C3D.Value((cf + cl) / 2);
+            Point3D debut = C3D.Value(cf);
+            Point3D milieu = C3D.Value((cf + cl) / 2);
             if (debut.SquareDistance(milieu) > toler * toler)
             {
                 return 0;
@@ -200,7 +203,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// <summary>As <see cref="IsSpotFace"/>, recording the result in <see cref="StatusSpot"/> (DONE1, DONE2).</summary>
     public bool CheckSpotFace(in TopoDS_Face F, double tol = -1.0)
     {
-        gp_Pnt spot = new();
+        Point3D spot = new();
         double spotol = 0.0;
         int stat = IsSpotFace(F, ref spot, ref spotol, tol);
         if (stat == 0)
@@ -233,7 +236,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             toler = 1.0e-07; // ?? better to compute tolerance zones
         }
 
-        Geom_Surface? surf = BRep_Tool.Surface(F, out TopLoc_Location _);
+        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
         if (surf is null)
         {
             return false;
@@ -268,7 +271,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 int nb = 0;
                 for (iv = 1; iv <= nbv; iv++)
                 {
-                    gp_Pnt unp = (cbz ? bz!.Pole(iu, iv) : bs!.Pole(iu, iv));
+                    Point3D unp = (cbz ? bz!.Pole(iu, iv) : bs!.Pole(iu, iv));
                     MinMaxPnt(unp, ref nb, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
                 }
                 if (!MinMaxSmall(minx, miny, minz, maxx, maxy, maxz, toler))
@@ -289,7 +292,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 int nb = 0;
                 for (iu = 1; iu <= nbu; iu++)
                 {
-                    gp_Pnt unp = (cbz ? bz!.Pole(iu, iv) : bs!.Pole(iu, iv));
+                    Point3D unp = (cbz ? bz!.Pole(iu, iv) : bs!.Pole(iu, iv));
                     MinMaxPnt(unp, ref nb, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
                 }
                 if (!MinMaxSmall(minx, miny, minz, maxx, maxy, maxz, toler))
@@ -372,10 +375,10 @@ public sealed class ShapeAnalysis_CheckSmallFace
             }
             for (int nump = 0; nump <= nbint; nump++)
             {
-                gp_Pnt p1 = C1T.Value(u);
+                Point3D p1 = C1T.Value(u);
                 // pdn Adaptor curve is used to avoid of enhancing of domain.
                 GeomAdaptor_Curve GAC = new(C2T);
-                double dist = SAC.Project(GAC, p1, toler, out gp_Pnt _, out double para);
+                double dist = SAC.Project(GAC, p1, toler, out Point3D _, out double para);
                 // pdn check if parameter of projection is in the domain of the edge.
                 if (para < f || para > l)
                 {
@@ -412,7 +415,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 continue; // ignore seam edge
             }
             TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-            gp_Pnt p1, p2;
+            Point3D p1, p2;
             p1 = BRep_Tool.Pnt(V1);
             p2 = BRep_Tool.Pnt(V2);
             double toler = tol;
@@ -428,7 +431,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             bool isNullLength = true;
             if (CC is not null)
             {
-                gp_Pnt pp = CC.Value((cf + cl) / 2.0);
+                Point3D pp = CC.Value((cf + cl) / 2.0);
                 if (pp.Distance(p1) < toler && pp.Distance(p2) < toler)
                 {
                     continue;
@@ -547,11 +550,11 @@ public sealed class ShapeAnalysis_CheckSmallFace
                     continue; // DGNR
                 }
                 int np = 0;
-                gp_Pnt deb = C3D.Value(cf);
+                Point3D deb = C3D.Value(cf);
                 MinMaxPnt(deb, ref np, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
-                gp_Pnt fin = C3D.Value(cl);
+                Point3D fin = C3D.Value(cl);
                 MinMaxPnt(fin, ref np, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
-                gp_Pnt mid = C3D.Value((cf + cl) / 2.0);
+                Point3D mid = C3D.Value((cf + cl) / 2.0);
                 MinMaxPnt(mid, ref np, ref minx, ref miny, ref minz, ref maxx, ref maxy, ref maxz);
                 if (!MinMaxSmall(minx, miny, minz, maxx, maxy, maxz, toler))
                 {
@@ -675,7 +678,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             return 0;
         }
         NCollection_Array1<TopoDS_Shape> vtx = new(1, nbv);
-        NCollection_Array1<gp_Pnt> vtp = new(1, nbv);
+        NCollection_Array1<Point3D> vtp = new(1, nbv);
         NCollection_Array1<double> vto = new(1, nbv);
 
         nbp = 0;
@@ -684,7 +687,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             nbp++;
             TopoDS_Vertex unv = TopoDS.Vertex(itv.Current());
             vtx.SetValue(nbp, unv);
-            gp_Pnt unp = BRep_Tool.Pnt(unv);
+            Point3D unp = BRep_Tool.Pnt(unv);
             vtp.SetValue(nbp, unp);
             double unt = myPrecision;
             if (unt < 0)
@@ -717,9 +720,9 @@ public sealed class ShapeAnalysis_CheckSmallFace
                 {
                     continue;
                 }
-                gp_Pnt unp = vtp.Value(iv);
+                Point3D unp = vtp.Value(iv);
                 double unt = vto.Value(iv);
-                double dist = SAC.Project(C3D, unp, unt * 10.0, out gp_Pnt _, out double param, cf, cl);
+                double dist = SAC.Project(C3D, unp, unt * 10.0, out Point3D _, out double param, cf, cl);
                 if (dist == 0.0)
                 {
                     continue; // smh
@@ -759,7 +762,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         return nbp;
     }
 
-    private static int IsoStat(NCollection_Array2<gp_Pnt> poles, int uorv, int rank, double tolpin, double toler)
+    private static int IsoStat(NCollection_Array2<Point3D> poles, int uorv, int rank, double tolpin, double toler)
     {
         int i, np = 0;
         int i0 = (uorv == 1 ? poles.LowerCol() : poles.LowerRow());
@@ -787,7 +790,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         return 2;
     }
 
-    private static bool CheckPoles(NCollection_Array2<gp_Pnt> poles, int uorv, int rank)
+    private static bool CheckPoles(NCollection_Array2<Point3D> poles, int uorv, int rank)
     {
         int i0 = (uorv == 1 ? poles.LowerCol() : poles.LowerRow());
         int i1 = (uorv == 1 ? poles.UpperCol() : poles.UpperRow());
@@ -815,7 +818,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// </summary>
     public bool CheckPin(in TopoDS_Face F, ref int whatrow, ref int sence)
     {
-        Geom_Surface? surf = BRep_Tool.Surface(F, out TopLoc_Location _);
+        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
         // OCCT dereferences a null surface here; the port throws NullReferenceException.
         if (surf!.IsKind(typeof(Geom_ElementarySurface)))
         {
@@ -850,7 +853,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
             return false;
         }
 
-        NCollection_Array2<gp_Pnt> allpoles = null!;
+        NCollection_Array2<Point3D> allpoles = null!;
         if (bs is not null)
         {
             allpoles = bs.InternalPoles();
@@ -933,7 +936,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
     /// </summary>
     public bool CheckTwisted(in TopoDS_Face F, ref double paramu, ref double paramv)
     {
-        Geom_Surface? surf = BRep_Tool.Surface(F, out TopLoc_Location _);
+        Geom_Surface? surf = BRep_Tool.Surface(F, out Placement _);
         // OCCT dereferences a null surface here; the port throws NullReferenceException.
         if (surf!.IsKind(typeof(Geom_ElementarySurface)))
         {
@@ -963,8 +966,8 @@ public sealed class ShapeAnalysis_CheckSmallFace
         {
             for (iv = 1; iv <= nbint; iv++)
             {
-                GAS.D1(u, v, out gp_Pnt _, out gp_Vec V1, out gp_Vec V2);
-                gp_Vec VXnorm = V1.Crossed(V2);
+                GAS.D1(u, v, out Point3D _, out Vector3D V1, out Vector3D V2);
+                Vector3D VXnorm = V1.Crossed(V2);
                 nx.SetValue(iu, iv, VXnorm.X());
                 ny.SetValue(iu, iv, VXnorm.Y());
                 nz.SetValue(iu, iv, VXnorm.Z());
@@ -1031,13 +1034,13 @@ public sealed class ShapeAnalysis_CheckSmallFace
         _ = theCurWire;
         i = 1;
         bool done = false;
-        double tol = Occt.Precision.Confusion();
+        double tol = Kerf.Engine.Foundation.Precision.Confusion();
         TopoDS_Edge theFirstEdge = new(), theSecondEdge;
         double d1 = 0, d2 = 0;
         for (var exp_e = new TopExp_Explorer(F, TopAbs_EDGE); exp_e.More(); exp_e.Next())
         {
             TopoDS_Vertex V1, V2;
-            gp_Pnt p1, p2;
+            Point3D p1, p2;
             if (i == 1)
             {
                 theFirstEdge = TopoDS.Edge(exp_e.Current());
@@ -1140,7 +1143,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         Geom_Curve? C1, C2, C3;
         C1 = BRep_Tool.Curve(theFirstEdge, out double cf1, out double cl1);
         C2 = BRep_Tool.Curve(theSecondEdge, out double cf2, out double cl2);
-        gp_Pnt p1, p2, pp1, pp2, pv;
+        Point3D p1, p2, pp1, pp2, pv;
         double d1 = (cf1 - cl1) / coef1;
         double d2 = (cf2 - cl2) / coef2;
         // OCCT dereferences null curves here; the port throws NullReferenceException.
@@ -1176,7 +1179,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         {
             paramc2 = cl2;
         }
-        gp_Pnt proj;
+        Point3D proj;
         if (p1.Distance(p2) < pp1.Distance(pp2))
         {
             C3 = C1;
@@ -1205,7 +1208,7 @@ public sealed class ShapeAnalysis_CheckSmallFace
         double f = C3.FirstParameter();
         double l = C3.LastParameter();
         ShapeAnalysis_Curve SAC = new();
-        double dist = SAC.Project(GAC, proj, tol, out gp_Pnt _, out double param);
+        double dist = SAC.Project(GAC, proj, tol, out Point3D _, out double param);
         // pdn check if parameter of projection is in the domain of the edge.
         if (param < f || param > l)
         {
@@ -1218,15 +1221,15 @@ public sealed class ShapeAnalysis_CheckSmallFace
         if (dist <= tol)
         {
             // Computing first derivative vectors and compare angle
-            C1.D2(paramc1, out gp_Pnt _, out gp_Vec V11, out gp_Vec V21);
-            C2.D2(paramc2, out gp_Pnt _, out gp_Vec V12, out gp_Vec V22);
+            C1.D2(paramc1, out Point3D _, out Vector3D V11, out Vector3D V21);
+            C2.D2(paramc2, out Point3D _, out Vector3D V12, out Vector3D V22);
             double angle1 = 0, angle2 = 0;
             try
             {
                 angle1 = V11.Angle(V12);
                 angle2 = V21.Angle(V22);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }

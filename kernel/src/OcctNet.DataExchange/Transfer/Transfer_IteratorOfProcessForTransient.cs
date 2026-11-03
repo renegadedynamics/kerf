@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>An iterator on the results of a <see cref="Transfer_ProcessForTransient"/>, with their starting objects if asked.</summary>
@@ -18,17 +20,17 @@ public class Transfer_IteratorOfProcessForTransient : Transfer_TransferIterator
     {
         if (withstarts)
         {
-            thestarts = new NCollection_HSequence<Standard_Transient>();
+            thestarts = new NCollection_HSequence<Transient>();
         }
     }
 
     /// <summary>Adds a Binder to the iteration list (construction) with no corresponding Starting Object.</summary>
-    /// <exception cref="Standard_NoSuchObject">The iterator was created with starting objects.</exception>
+    /// <exception cref="NoSuchObjectException">The iterator was created with starting objects.</exception>
     public void Add(Transfer_Binder? binder)
     {
         if (thestarts is not null)
         {
-            throw new Standard_NoSuchObject(
+            throw new NoSuchObjectException(
                 "Transfer_IteratorOfProcessForTransient : Add, Starting Object required not provided");
         }
         AddItem(binder);
@@ -38,7 +40,7 @@ public class Transfer_IteratorOfProcessForTransient : Transfer_TransferIterator
     /// Adds a Binder to the iteration list, associated with its corresponding Starting Object "start". Starting
     /// Object is ignored if not required at Creation time.
     /// </summary>
-    public void Add(Transfer_Binder? binder, Standard_Transient? start)
+    public void Add(Transfer_Binder? binder, Transient? start)
     {
         AddItem(binder);
         if (thestarts is not null)
@@ -52,7 +54,7 @@ public class Transfer_IteratorOfProcessForTransient : Transfer_TransferIterator
     /// <paramref name="list"/>. <paramref name="keep"/> = True (D) : keeps. False : rejects. Does nothing if
     /// <c>withstarts</c> was False.
     /// </summary>
-    public void Filter(NCollection_HSequence<Standard_Transient>? list, bool keep = true)
+    public void Filter(NCollection_HSequence<Transient>? list, bool keep = true)
     {
         if (list is null || thestarts is null)
         {
@@ -64,7 +66,7 @@ public class Transfer_IteratorOfProcessForTransient : Transfer_TransferIterator
             return;
         }
         Transfer_Binder? factice = null;
-        var amap = new NCollection_IndexedDataMap<Standard_Transient, Transfer_Binder?>(ReferenceEqualityComparer.Instance);
+        var amap = new NCollection_IndexedDataMap<Transient, Transfer_Binder?>(ReferenceEqualityComparer.Instance);
         for (i = 1; i <= nb; i++)
         {
             j = amap.Add(thestarts.Value(i), factice);
@@ -90,15 +92,15 @@ public class Transfer_IteratorOfProcessForTransient : Transfer_TransferIterator
     }
 
     /// <summary>Returns corresponding Starting Object.</summary>
-    /// <exception cref="Standard_NoSuchObject">No starting objects were asked.</exception>
-    public Standard_Transient? Starting()
+    /// <exception cref="NoSuchObjectException">No starting objects were asked.</exception>
+    public Transient? Starting()
     {
         if (thestarts is null)
         {
-            throw new Standard_NoSuchObject("TransferIterator : No Starting defined at all");
+            throw new NoSuchObjectException("TransferIterator : No Starting defined at all");
         }
         return thestarts.Value(thecurr);
     }
 
-    private readonly NCollection_HSequence<Standard_Transient>? thestarts;
+    private readonly NCollection_HSequence<Transient>? thestarts;
 }

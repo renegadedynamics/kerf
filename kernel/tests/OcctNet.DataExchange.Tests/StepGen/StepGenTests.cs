@@ -5,8 +5,8 @@ using System.Reflection;
 namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
-/// tools/stepgen (units 8C1 and 8C2): the committed STEP entity classes are the generator's output, and the generator is
-/// deterministic.
+/// tools/stepgen (units 8C1 and 8C2): the generator is deterministic. Its output was the committed STEP entity classes
+/// until unit 10E renamed them.
 /// </summary>
 public sealed class StepGenTests
 {
@@ -34,7 +34,9 @@ public sealed class StepGenTests
 
     private static readonly string[] Packages = global::StepGen.Generator.AllPackages;
 
-    [Fact]
+    // Unit 10E renamed the committed classes by the name map (docs/api/kerf.map); the generator still writes OCCT's
+    // names, so its output is no longer the committed source. The classes are maintained by hand from here on.
+    [Fact(Skip = "The committed STEP classes are renamed (unit 10E); stepgen writes OCCT's names")]
     public void CommittedSourcesAreTheGeneratorsOutput()
     {
         string? anOcct = OcctSource();

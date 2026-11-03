@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -8,10 +9,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>The ShapeAnalysis package statics: periods, wire bounds, signed areas, outer wires and UV bounds.</summary>
 public class ShapeAnalysisTests
 {
-    private static TopoDS_Wire Polygon(bool theClose, params gp_Pnt[] thePoints)
+    private static TopoDS_Wire Polygon(bool theClose, params Point3D[] thePoints)
     {
         var aMaker = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aMaker.Add(aP);
         }
@@ -38,7 +39,7 @@ public class ShapeAnalysisTests
     [Fact]
     public void FindBounds_OfWireEdgeAndVertex()
     {
-        gp_Pnt aP1 = new(0, 0, 0), aP2 = new(1, 0, 0), aP3 = new(1, 2, 0);
+        Point3D aP1 = new(0, 0, 0), aP2 = new(1, 0, 0), aP3 = new(1, 2, 0);
         TopoDS_Wire aW = Polygon(false, aP1, aP2, aP3);
         ShapeAnalysis.FindBounds(aW, out TopoDS_Vertex aV1, out TopoDS_Vertex aV2);
         Assert.True(BRep_Tool.Pnt(aV1).IsEqual(aP1, 0.0));
@@ -52,7 +53,7 @@ public class ShapeAnalysisTests
         ShapeAnalysis.FindBounds(aV1, out TopoDS_Vertex aV3, out TopoDS_Vertex aV4);
         Assert.True(aV3.IsSame(aV1) && aV4.IsSame(aV1));
 
-        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new gp_Pln()).Face();
+        TopoDS_Face aF = new BRepBuilderAPI_MakeFace(new Plane3D()).Face();
         ShapeAnalysis.FindBounds(aF, out aV3, out aV4);
         Assert.True(aV3.IsNull() && aV4.IsNull());
     }
@@ -85,7 +86,7 @@ public class ShapeAnalysisTests
         Assert.True(ShapeAnalysis.OuterWire(aHoleFace).IsSame(aHole1));
 
         // no wire at all
-        Assert.True(ShapeAnalysis.OuterWire(new BRepBuilderAPI_MakeFace(new gp_Pln()).Face()).IsNull());
+        Assert.True(ShapeAnalysis.OuterWire(new BRepBuilderAPI_MakeFace(new Plane3D()).Face()).IsNull());
     }
 
     [Fact]
@@ -125,7 +126,7 @@ public class ShapeAnalysisTests
         // no edges: the surface's bounds
         var aB = new BRep_Builder();
         TopoDS_Face aBare = new();
-        aB.MakeFace(ref aBare, new Geom_RectangularTrimmedSurface(new Geom_Plane(new gp_Pln()), -1, 2, -3, 4), 1e-7);
+        aB.MakeFace(ref aBare, new Geom_RectangularTrimmedSurface(new Geom_Plane(new Plane3D()), -1, 2, -3, 4), 1e-7);
         ShapeAnalysis.GetFaceUVBounds(aBare, out aU1, out aU2, out aV1, out aV2);
         Assert.Equal([-1.0, 2.0, -3.0, 4.0], new[] { aU1, aU2, aV1, aV2 });
     }

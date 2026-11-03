@@ -2,6 +2,7 @@
 // an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Schematiq.Collections;
 
 namespace Occt;
@@ -62,14 +63,14 @@ public static partial class BRepLib
         => onCopy(S, aCopy => UpdateInnerTolerances(aCopy), out theHistory);
 
     /// <summary>
-    /// The functional twin of <see cref="BuildCurves3d(in TopoDS_Shape, double, GeomAbs_Shape, int, int)"/>: the shape
+    /// The functional twin of <see cref="BuildCurves3d(in TopoDS_Shape, double, Continuity, int, int)"/>: the shape
     /// whose edges without a 3D curve have one, computed from their pcurves. <paramref name="theIsDone"/> is
     /// BuildCurves3d's result (false if one of the computations failed).
     /// </summary>
     public static TopoDS_Shape Curves3dBuilt(in TopoDS_Shape S,
                                              double Tolerance,
                                              out bool theIsDone,
-                                             GeomAbs_Shape Continuity = GeomAbs_Shape.GeomAbs_C1,
+                                             Continuity Continuity = Continuity.C1,
                                              int MaxDegree = 14,
                                              int MaxSegment = 0)
         => Curves3dBuilt(S, Tolerance, out theIsDone, out _, Continuity, MaxDegree, MaxSegment);
@@ -79,7 +80,7 @@ public static partial class BRepLib
                                              double Tolerance,
                                              out bool theIsDone,
                                              out BRepTools_History theHistory,
-                                             GeomAbs_Shape Continuity = GeomAbs_Shape.GeomAbs_C1,
+                                             Continuity Continuity = Continuity.C1,
                                              int MaxDegree = 14,
                                              int MaxSegment = 0)
     {

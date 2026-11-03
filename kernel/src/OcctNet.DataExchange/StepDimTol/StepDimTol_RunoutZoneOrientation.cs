@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepDimTol_RunoutZoneOrientation : Standard_Transient
+public class StepDimTol_RunoutZoneOrientation : Transient
 {
     private StepBasic_PlaneAngleMeasureWithUnit myAngle;
 

@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 // The test functions are named <C++ name>Func: C++ keeps them in a namespace apart from the test names.
@@ -18,7 +20,7 @@ public class MathSys_LM_Test
     // Simple linear system: F(x) = A*x - b
     // System: x1 + x2 = 3, x1 - x2 = 1
     // Solution: x1 = 2, x2 = 1
-    private sealed class LinearSystem2DFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class LinearSystem2DFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public int NbVariables() { return 2; }
 
@@ -31,7 +33,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = 1.0;
             theD[1, 2] = 1.0;
@@ -40,7 +42,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -50,7 +52,7 @@ public class MathSys_LM_Test
     // F1(x,y) = x^2 + y^2 - 4
     // F2(x,y) = x*y - 1
     // Solution near (1.93, 0.52) for starting point (1,1)
-    private sealed class CircleHyperbolaFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class CircleHyperbolaFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public int NbVariables() { return 2; }
 
@@ -63,7 +65,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = 2.0 * theX[1];
             theD[1, 2] = 2.0 * theX[2];
@@ -72,7 +74,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -82,7 +84,7 @@ public class MathSys_LM_Test
     // F1(x,y) = 10*(y - x^2)
     // F2(x,y) = 1 - x
     // Minimum at (1,1) with F = (0,0)
-    private sealed class RosenbrockResidualFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class RosenbrockResidualFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public int NbVariables() { return 2; }
 
@@ -95,7 +97,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = -20.0 * theX[1];
             theD[1, 2] = 10.0;
@@ -104,7 +106,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -116,7 +118,7 @@ public class MathSys_LM_Test
     // F3 = (x2 - 2*x3)^2
     // F4 = sqrt(10)*(x1 - x4)^2
     // Minimum at origin with F = 0
-    private sealed class PowellSingularFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class PowellSingularFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public int NbVariables() { return 4; }
 
@@ -131,7 +133,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD.Init(0.0);
             // F1 = x1 + 10*x2
@@ -151,7 +153,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -160,7 +162,7 @@ public class MathSys_LM_Test
     // Exponential fitting problem
     // Data: (t_i, y_i), Model: f(t) = x1 * exp(x2 * t)
     // Residuals: F_i = y_i - x1 * exp(x2 * t_i)
-    private sealed class ExponentialFitFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class ExponentialFitFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         private readonly double[] myT = [0.0, 1.0, 2.0, 3.0, 4.0];
         private readonly double[] myY = [1.0, 2.7, 7.4, 20.1, 54.6]; // Approx e^t
@@ -178,7 +180,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             for (int i = 0; i < 5; ++i)
             {
@@ -189,7 +191,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -200,7 +202,7 @@ public class MathSys_LM_Test
     // F2 = x1 - x2 - 0
     // F3 = 2*x1 + x2 - 3
     // Least squares solution: x1 = 1, x2 = 1
-    private sealed class OverdeterminedSystemFunc : MathSys.IFunctionSetWithDerivatives
+    private sealed class OverdeterminedSystemFunc : global::Kerf.Engine.Numerics.Systems.MathSys.IFunctionSetWithDerivatives
     {
         public int NbVariables() { return 2; }
 
@@ -214,7 +216,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Derivatives(math_Vector theX, math_Matrix theD)
+        public bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = 1.0;
             theD[1, 2] = 1.0;
@@ -225,7 +227,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -235,7 +237,7 @@ public class MathSys_LM_Test
     // Old API adapters for comparison
     // ============================================================================
 
-    private sealed class CircleHyperbolaOld : math_FunctionSetWithDerivatives
+    private sealed class CircleHyperbolaOld : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -248,7 +250,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public override bool Derivatives(math_Vector theX, math_Matrix theD)
+        public override bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = 2.0 * theX[1];
             theD[1, 2] = 2.0 * theX[2];
@@ -257,13 +259,13 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public override bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public override bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
     }
 
-    private sealed class RosenbrockResidualOld : math_FunctionSetWithDerivatives
+    private sealed class RosenbrockResidualOld : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -276,7 +278,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public override bool Derivatives(math_Vector theX, math_Matrix theD)
+        public override bool Derivatives(math_Vector theX, Matrix theD)
         {
             theD[1, 1] = -20.0 * theX[1];
             theD[1, 2] = 10.0;
@@ -285,7 +287,7 @@ public class MathSys_LM_Test
             return true;
         }
 
-        public override bool Values(math_Vector theX, math_Vector theF, math_Matrix theD)
+        public override bool Values(math_Vector theX, math_Vector theF, Matrix theD)
         {
             return Value(theX, theF) && Derivatives(theX, theD);
         }
@@ -304,14 +306,14 @@ public class MathSys_LM_Test
         aStart[1] = 0.0;
         aStart[2] = 0.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(2.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(1.0, aResult.Solution![2], THE_TOLERANCE);
         Assert.Equal(0.0, aResult.Value!.Value, THE_TOLERANCE);
@@ -326,14 +328,14 @@ public class MathSys_LM_Test
         aStart[1] = 1.5;
         aStart[2] = 0.5;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Verify solution satisfies both equations
         double aX = aResult.Solution![1];
@@ -352,14 +354,14 @@ public class MathSys_LM_Test
         aStart[1] = -1.0;
         aStart[2] = 1.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 200;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_LOOSE_TOL);
         Assert.Equal(1.0, aResult.Solution![2], THE_LOOSE_TOL);
         Assert.True(aResult.Value!.Value < 0.01);
@@ -376,14 +378,14 @@ public class MathSys_LM_Test
         aStart[3] = 0.0;
         aStart[4] = 1.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 500;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Powell singular function converges to origin
         for (int i = 1; i <= 4; ++i)
@@ -406,13 +408,13 @@ public class MathSys_LM_Test
         aStart[1] = 0.0;
         aStart[2] = 0.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_TOLERANCE);
         Assert.Equal(1.0, aResult.Solution![2], THE_TOLERANCE);
     }
@@ -426,13 +428,13 @@ public class MathSys_LM_Test
         aStart[1] = 0.5; // Initial guess for amplitude
         aStart[2] = 0.5; // Initial guess for rate
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-8;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // The fit should be approximately f(t) = 1 * exp(1 * t)
         Assert.Equal(1.0, aResult.Solution![1], 0.1);
@@ -460,14 +462,14 @@ public class MathSys_LM_Test
         aUpper[1] = 5.0;
         aUpper[2] = 5.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Verify solution is within bounds
         double aX = aResult.Solution![1];
@@ -500,14 +502,14 @@ public class MathSys_LM_Test
         aUpper[1] = 5.0;
         aUpper[2] = 5.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 200;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
         Assert.Equal(1.0, aResult.Solution![1], THE_LOOSE_TOL);
         Assert.Equal(1.0, aResult.Solution![2], THE_LOOSE_TOL);
     }
@@ -531,11 +533,11 @@ public class MathSys_LM_Test
         aUpper[1] = 1.5;
         aUpper[2] = 10.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
 
         // Solution should be at or near the bound
         Assert.True(aResult.Solution![1] <= 1.5 + THE_TOLERANCE);
@@ -559,15 +561,15 @@ public class MathSys_LM_Test
 
         foreach (double aLambda in aLambdas)
         {
-            MathSys.LMConfig aConfig = new();
+            global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
             aConfig.Tolerance = 1.0e-10;
             aConfig.FTolerance = 1.0e-10;
             aConfig.MaxIterations = 200;
             aConfig.LambdaInit = aLambda;
 
-            MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-            Assert.True(aResult.IsDone());
+            Assert.True(aResult.IsDone);
 
             double aX = aResult.Solution![1];
             double aY = aResult.Solution![2];
@@ -591,16 +593,16 @@ public class MathSys_LM_Test
 
         foreach ((double myIncrease, double myDecrease) aFactor in aFactors)
         {
-            MathSys.LMConfig aConfig = new();
+            global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
             aConfig.Tolerance = 1.0e-10;
             aConfig.FTolerance = 1.0e-10;
             aConfig.MaxIterations = 300;
             aConfig.LambdaIncrease = aFactor.myIncrease;
             aConfig.LambdaDecrease = aFactor.myDecrease;
 
-            MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-            Assert.True(aResult.IsDone());
+            Assert.True(aResult.IsDone);
             Assert.True(aResult.Value!.Value < 0.1);
         }
     }
@@ -622,18 +624,18 @@ public class MathSys_LM_Test
         math_Vector aTol = new(1, 2, 1.0e-10);
 
         // Old API
-        math_FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 100);
+        FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 100);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
-        MathUtils.VectorResult aNewResult = MathSys.LevenbergMarquardt(aNewFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aNewFunc, aStart, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find a valid solution
         math_Vector anOldSol = anOldSolver.Root();
@@ -659,17 +661,17 @@ public class MathSys_LM_Test
         math_Vector aTol = new(1, 2, 1.0e-10);
 
         // Old API
-        math_FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 200);
+        FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 200);
         anOldSolver.Perform(anOldFunc, aStart);
 
         // New API
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 200;
-        MathUtils.VectorResult aNewResult = MathSys.LevenbergMarquardt(aNewFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aNewFunc, aStart, aConfig);
 
-        Assert.True(aNewResult.IsDone());
+        Assert.True(aNewResult.IsDone);
 
         // New API should find the optimal solution
         Assert.Equal(1.0, aNewResult.Solution![1], THE_LOOSE_TOL);
@@ -697,18 +699,18 @@ public class MathSys_LM_Test
         math_Vector aTol = new(1, 2, 1.0e-10);
 
         // Old API with bounds
-        math_FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 100);
+        FunctionSetRoot anOldSolver = new(anOldFunc, aTol, 100);
         anOldSolver.Perform(anOldFunc, aStart, aLower, aUpper);
 
         // New API with bounds
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-10;
         aConfig.FTolerance = 1.0e-10;
         aConfig.MaxIterations = 100;
-        MathUtils.VectorResult aNewResult = MathSys.LevenbergMarquardtBounded(aNewFunc, aStart, aLower, aUpper, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aNewResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardtBounded(aNewFunc, aStart, aLower, aUpper, aConfig);
 
-        Assert.True(anOldSolver.IsDone());
-        Assert.True(aNewResult.IsDone());
+        Assert.True(anOldSolver.IsDone);
+        Assert.True(aNewResult.IsDone);
 
         // Both should find solutions within bounds
         math_Vector anOldSol = anOldSolver.Root();
@@ -743,14 +745,14 @@ public class MathSys_LM_Test
             aStart[1] = aStartPt[0];
             aStart[2] = aStartPt[1];
 
-            MathSys.LMConfig aConfig = new();
+            global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
             aConfig.Tolerance = 1.0e-10;
             aConfig.FTolerance = 1.0e-10;
             aConfig.MaxIterations = 100;
 
-            MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-            Assert.True(aResult.IsDone());
+            Assert.True(aResult.IsDone);
 
             double aX = aResult.Solution![1];
             double aY = aResult.Solution![2];
@@ -769,14 +771,14 @@ public class MathSys_LM_Test
         aStart[1] = 0.0;
         aStart[2] = 0.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-12;
         aConfig.FTolerance = 1.0e-12;
         aConfig.MaxIterations = 100;
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.True(aResult.IsDone());
+        Assert.True(aResult.IsDone);
 
         // Linear system should converge quickly
         Assert.True(aResult.NbIterations < 20);
@@ -798,11 +800,11 @@ public class MathSys_LM_Test
         aStart[1] = -1.0;
         aStart[2] = 1.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
         aConfig.Tolerance = 1.0e-15; // Very tight tolerance
         aConfig.MaxIterations = 5;       // Very few iterations
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
         // Should either succeed or reach max iterations (not crash)
         Assert.True(aResult.Solution is not null);
@@ -819,12 +821,12 @@ public class MathSys_LM_Test
         aStart[2] = 0.0;
         aStart[3] = 0.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardt(aFunc, aStart, aConfig);
 
-        Assert.False(aResult.IsDone());
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        Assert.False(aResult.IsDone);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 
     [Fact]
@@ -845,11 +847,11 @@ public class MathSys_LM_Test
         aUpper[1] = 10.0;
         aUpper[2] = 10.0;
 
-        MathSys.LMConfig aConfig = new();
+        global::Kerf.Engine.Numerics.Systems.MathSys.LMConfig aConfig = new();
 
-        MathUtils.VectorResult aResult = MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
+        global::Kerf.Engine.Numerics.Utilities.MathUtils.VectorResult aResult = global::Kerf.Engine.Numerics.Systems.MathSys.LevenbergMarquardtBounded(aFunc, aStart, aLower, aUpper, aConfig);
 
-        Assert.False(aResult.IsDone());
-        Assert.Equal(MathUtils.Status.InvalidInput, aResult.Status);
+        Assert.False(aResult.IsDone);
+        Assert.Equal(global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.InvalidInput, aResult.Status);
     }
 }

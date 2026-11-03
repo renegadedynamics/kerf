@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -18,8 +22,8 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 {
     private const int Scenes = 48;
 
-    private static readonly GeomAbs_Shape[] theShapes =
-        [GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C1, GeomAbs_Shape.GeomAbs_C2, GeomAbs_Shape.GeomAbs_C3, GeomAbs_Shape.GeomAbs_CN];
+    private static readonly Continuity[] theShapes =
+        [Continuity.C0, Continuity.C1, Continuity.C2, Continuity.C3, Continuity.CN];
 
     private sealed class Counts
     {
@@ -58,9 +62,9 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
     private static Twin<N.TopoDS_Shape, TopoDS_Shape> PCurveScene(Oracle theOracle)
     {
         var aTwins = new TwinShapes();
-        gp_Pnt anOrigin = theOracle.Pnt();
-        gp_XYZ aNormal = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ anX = aNormal.Crossed(GeomOracleInputs.RawDir(theOracle));
+        Point3D anOrigin = theOracle.Pnt();
+        Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
+        Xyz anX = aNormal.Crossed(GeomOracleInputs.RawDir(theOracle));
         while (anX.Modulus() < 0.1)
         {
             anX = aNormal.Crossed(GeomOracleInputs.RawDir(theOracle));
@@ -83,10 +87,10 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         // a B-spline curve from raw numbers
         int aDegree = theOracle.Int(2, 3);
         int aNbPoles = theOracle.Int(aDegree + 1, 7);
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, aNbPoles);
+        var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
-            aPoles[i] = new gp_Pnt(i * 2.0 + theOracle.Real(-0.5, 0.5), theOracle.Real(-2, 2), theOracle.Real(-2, 2));
+            aPoles[i] = new Point3D(i * 2.0 + theOracle.Real(-0.5, 0.5), theOracle.Real(-2, 2), theOracle.Real(-2, 2));
         }
 
         int aNbKnots = aNbPoles - aDegree + 1;
@@ -108,24 +112,24 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         double f = aKnots[1], l = aKnots[aNbKnots];
 
         // the vertices where the port's curves put them (both sides use these coordinates)
-        gp_Pnt aP1 = aBS.Value(f), aP2 = aBS.Value(l);
-        gp_Pnt aP0 = new gp_Pnt(aP1.X() - theOracle.Real(1, 3), aP1.Y() + theOracle.Real(-1, 1), aP1.Z());
+        Point3D aP1 = aBS.Value(f), aP2 = aBS.Value(l);
+        Point3D aP0 = new Point3D(aP1.X() - theOracle.Real(1, 3), aP1.Y() + theOracle.Real(-1, 1), aP1.Z());
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV0 = aTwins.Vertex(aP0), aV1 = aTwins.Vertex(aP1, 1e-6), aV2 = aTwins.Vertex(aP2, 1e-6);
         Twin<N.TopoDS_Edge, TopoDS_Edge> aLine = aTwins.Segment(aV0, aP0, aV1, aP1);
-        Twin<N.TopoDS_Edge, TopoDS_Edge> aSpline = aTwins.EdgeOn(aNBS, aBS, new TopLoc_Location(), null, f, l, aV1, aV2);
+        Twin<N.TopoDS_Edge, TopoDS_Edge> aSpline = aTwins.EdgeOn(aNBS, aBS, new Placement(), null, f, l, aV1, aV2);
 
         // an arc of a circle in a plane through aP2: centre aP2 + r X, from angle Pi
         double r = theOracle.Real(0.5, 3), anArc = theOracle.Real(0.5, 2.5);
-        gp_Pnt aCentre = new gp_Pnt(aP2.X() + r, aP2.Y(), aP2.Z());
+        Point3D aCentre = new Point3D(aP2.X() + r, aP2.Y(), aP2.Z());
         using var aNC = Oracle.ToNative(aCentre);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNXd = new N.gp_Dir(1, 0, 0);
         using var aNAx2 = new N.gp_Ax2(aNC, aNZ, aNXd);
-        var aCircle = new Geom_Circle(new gp_Ax2(aCentre, new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0)), r);
-        gp_Pnt aP3 = aCircle.Value(Math.PI + anArc);
+        var aCircle = new Geom_Circle(new Frame3D(aCentre, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
+        Point3D aP3 = aCircle.Value(Math.PI + anArc);
         Twin<N.TopoDS_Vertex, TopoDS_Vertex> aV3 = aTwins.Vertex(aP3, 1e-6);
         Twin<N.TopoDS_Edge, TopoDS_Edge> anArcEdge =
-            aTwins.EdgeOn(new N.Geom_Circle(aNAx2, r), aCircle, new TopLoc_Location(), null, Math.PI, Math.PI + anArc, aV2, aV3);
+            aTwins.EdgeOn(new N.Geom_Circle(aNAx2, r), aCircle, new Placement(), null, Math.PI, Math.PI + anArc, aV2, aV3);
 
         var anEdges = new List<Twin<N.TopoDS_Edge, TopoDS_Edge>> { aLine, aSpline, anArcEdge };
         bool isClosed = theOracle.Bool();
@@ -157,7 +161,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
         if (theOracle.Bool())
         {
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = TopologyOracleTests.RandomLocation(theOracle);
+            (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
             aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
         }
 
@@ -246,7 +250,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
         }
 
         theOracle.SameRelative(theN.Resolution(1e-3), theP.Resolution(1e-3), theWhat + " Resolution");
-        foreach (GeomAbs_Shape aS in theShapes)
+        foreach (Continuity aS in theShapes)
         {
             int n = theN.NbIntervals((N.GeomAbs_Shape)(int)aS);
             theOracle.Same(n, theP.NbIntervals(aS), theWhat + " NbIntervals");
@@ -262,10 +266,10 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
         switch (theP.GetType())
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 using N.gp_Lin aNL = theN.Line();
-                gp_Lin aL = theP.Line();
+                Line3D aL = theP.Line();
                 using N.gp_Pnt aNLoc = aNL.Location();
                 theOracle.Same(aNLoc, aL.Location(), theWhat + " Line.Location");
                 using N.gp_Dir aND = aNL.Direction();
@@ -274,17 +278,17 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                 theOracle.Same(aND.Z(), aL.Direction().Z(), theWhat + " Line.Direction");
                 break;
             }
-            case GeomAbs_Circle:
+            case Circle:
             {
                 using N.gp_Circ aNCi = theN.Circle();
-                gp_Circ aCi = theP.Circle();
+                Circle3D aCi = theP.Circle();
                 using N.gp_Pnt aNLoc = aNCi.Location();
                 theOracle.Same(aNLoc, aCi.Location(), theWhat + " Circle.Location");
                 theOracle.Same(aNCi.Radius(), aCi.Radius(), theWhat + " Circle.Radius");
                 break;
             }
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_BezierCurve:
+            case BSplineCurve:
+            case BezierCurve:
                 theOracle.Same(theN.Degree(), theP.Degree(), theWhat + " Degree");
                 theOracle.Same(theN.NbPoles(), theP.NbPoles(), theWhat + " NbPoles");
                 theOracle.Same(theN.IsRational(), theP.IsRational(), theWhat + " IsRational");
@@ -301,16 +305,16 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             using N.gp_Pnt aNP0 = theN.EvalD0(u);
             theOracle.Same(aNP0, theP.EvalD0(u), theWhat + " D0");
             theN.D1(u, aNP, aNV1);
-            theP.D1(u, out gp_Pnt aP, out gp_Vec aV1);
+            theP.D1(u, out Point3D aP, out Vector3D aV1);
             theOracle.Same(aNP, aP, theWhat + " D1.P");
             theOracle.Same(aNV1, aV1, theWhat + " D1.V1");
             theN.D2(u, aNP, aNV1, aNV2);
-            theP.D2(u, out aP, out aV1, out gp_Vec aV2);
+            theP.D2(u, out aP, out aV1, out Vector3D aV2);
             theOracle.Same(aNP, aP, theWhat + " D2.P");
             theOracle.Same(aNV1, aV1, theWhat + " D2.V1");
             theOracle.Same(aNV2, aV2, theWhat + " D2.V2");
             theN.D3(u, aNP, aNV1, aNV2, aNV3);
-            theP.D3(u, out aP, out aV1, out aV2, out gp_Vec aV3);
+            theP.D3(u, out aP, out aV1, out aV2, out Vector3D aV3);
             theOracle.Same(aNP, aP, theWhat + " D3.P");
             theOracle.Same(aNV1, aV1, theWhat + " D3.V1");
             theOracle.Same(aNV2, aV2, theWhat + " D3.V2");
@@ -347,7 +351,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             using var aNV2 = new N.gp_Vec2d();
             using var aNV3 = new N.gp_Vec2d();
             theN.D3(u, aNP, aNV1, aNV2, aNV3);
-            theP.D3(u, out gp_Pnt2d aP, out gp_Vec2d aV1, out gp_Vec2d aV2, out gp_Vec2d aV3);
+            theP.D3(u, out Point2D aP, out Vector2D aV1, out Vector2D aV2, out Vector2D aV3);
             theOracle.Same(aNP, aP, "Curve2d D3.P");
             theOracle.Same(aNV1, aV1, "Curve2d D3.V1");
             theOracle.Same(aNV2, aV2, "Curve2d D3.V2");
@@ -402,7 +406,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                     double u2 = aPE.Orientation() == TopAbs_REVERSED ? aPC.LastParameter() : aPC.FirstParameter();
                     bool isNThrow = false, isPThrow = false;
                     N.GeomAbs_Shape aNCont = N.GeomAbs_Shape.GeomAbs_C0;
-                    GeomAbs_Shape aPCont = GeomAbs_Shape.GeomAbs_C0;
+                    Continuity aPCont = Continuity.C0;
                     try
                     {
                         aNCont = N.BRepLProp.Continuity(aNPrev!, aNC, u1, u2);
@@ -416,7 +420,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                     {
                         aPCont = BRepLProp.Continuity(aPrev, aPC, u1, u2);
                     }
-                    catch (Standard_Failure)
+                    catch (FailureException)
                     {
                         isPThrow = true;
                     }
@@ -523,7 +527,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             if (isN)
             {
                 using N.gp_Dir aNN = aNP.Normal();
-                gp_Dir aPN = aP.Normal();
+                Direction3D aPN = aP.Normal();
                 theOracle.Same(aNN.X(), aPN.X(), "SLProps.Normal");
                 theOracle.Same(aNN.Y(), aPN.Y(), "SLProps.Normal");
                 theOracle.Same(aNN.Z(), aPN.Z(), "SLProps.Normal");

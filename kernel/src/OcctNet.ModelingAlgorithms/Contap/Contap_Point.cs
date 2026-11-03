@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -19,7 +25,7 @@ namespace Occt;
 /// </remarks>
 public partial struct Contap_Point : IEquatable<Contap_Point>
 {
-    private gp_Pnt pt;
+    private Point3D pt;
     private double uparam;
     private double vparam;
     private double paraline;
@@ -36,7 +42,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     /// <summary>Empty constructor.</summary>
     public Contap_Point()
     {
-        pt = new gp_Pnt();
+        pt = new Point3D();
         uparam = 0.0;
         vparam = 0.0;
         paraline = 0.0;
@@ -52,7 +58,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     }
 
     /// <summary>A point of the surface at (U, V).</summary>
-    public Contap_Point(in gp_Pnt Pt, double U, double V)
+    public Contap_Point(in Point3D Pt, double U, double V)
         : this()
     {
         pt = Pt;
@@ -63,7 +69,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the point and its parameters on the surface (and clears the logical information but the arc's).</summary>
-    internal void SetValue(in gp_Pnt Pt, double U, double V)
+    internal void SetValue(in Point3D Pt, double U, double V)
     {
         pt = Pt;
         uparam = U;
@@ -110,7 +116,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     // Queries
 
     /// <summary>The point.</summary>
-    public readonly gp_Pnt Value() => pt;
+    public readonly Point3D Value() => pt;
 
     /// <summary>The parameter on the contour line (meaningless when the point is on none).</summary>
     public readonly double ParameterOnLine() => paraline;
@@ -130,7 +136,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     {
         if (!onarc)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return arc!;
     }
@@ -140,7 +146,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     {
         if (!onarc)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return prmarc;
     }
@@ -150,7 +156,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     {
         if (!onarc)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return traline;
     }
@@ -160,7 +166,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     {
         if (!onarc)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return traarc;
     }
@@ -173,7 +179,7 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     {
         if (!isvtx)
         {
-            throw new Standard_DomainError();
+            throw new DomainErrorException();
         }
         return vtx!;
     }
@@ -200,5 +206,5 @@ public partial struct Contap_Point : IEquatable<Contap_Point>
     public static bool operator !=(in Contap_Point theLeft, in Contap_Point theRight) => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("Contap_Point", pt.X(), pt.Y(), pt.Z(), uparam, vparam, paraline)} onarc {onarc} vertex {isvtx}";
+        => $"{Constants.Format("Contap_Point", pt.X(), pt.Y(), pt.Z(), uparam, vparam, paraline)} onarc {onarc} vertex {isvtx}";
 }

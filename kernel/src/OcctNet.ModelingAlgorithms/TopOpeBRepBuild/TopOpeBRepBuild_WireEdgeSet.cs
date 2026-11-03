@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -70,8 +73,8 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
         if (isedge)
         {
             BRepAdaptor_Curve cac = new(TopoDS.Edge(S));
-            GeomAbs_CurveType t = cac.GetType();
-            bool b = t == GeomAbs_BSplineCurve || t == GeomAbs_BezierCurve;
+            CurveKind t = cac.GetType();
+            bool b = t == BSplineCurve || t == BezierCurve;
             tocheck = !b;
         }
         bool chk = true;
@@ -171,8 +174,8 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
                 // on ne garde,parmi les aretes de couture connexes,
                 // que l'arete A qui verifie tg(E) ^ tg(A) > 0
 
-                gp_Vec2d d1E;
-                gp_Pnt2d pE;
+                Vector2D d1E;
+                Point2D pE;
                 double parE = BRep_Tool.Parameter(V, E);
                 bool trim3d = true;
                 Geom2d_Curve? PCE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out _, trim3d);
@@ -201,8 +204,8 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
                     }
 
                     TopoDS_Edge EE = TopoDS.Edge(lclo.Value());
-                    gp_Vec2d d1EE;
-                    gp_Pnt2d pEE;
+                    Vector2D d1EE;
+                    Point2D pEE;
                     double parEE = BRep_Tool.Parameter(V, EE);
                     Geom2d_Curve? PCEE = TopOpeBRepTool_2d.FC2D_CurveOnSurface(EE, F, out _, out _, out _, trim3d);
                     if (PCEE is not null)
@@ -340,26 +343,26 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     // The point and first derivative at V of the projection of E's 3D curve on F's surface
-    private void LocalD1(in TopoDS_Shape SF, in TopoDS_Shape SE, in TopoDS_Shape SV, out gp_Pnt2d pE, out gp_Vec2d d1E)
+    private void LocalD1(in TopoDS_Shape SF, in TopoDS_Shape SE, in TopoDS_Shape SV, out Point2D pE, out Vector2D d1E)
     {
         TopoDS_Face F = TopoDS.Face(SF);
         TopoDS_Edge E = TopoDS.Edge(SE);
         TopoDS_Vertex V = TopoDS.Vertex(SV);
         double parE = BRep_Tool.Parameter(V, E);
 
-        Geom_Curve CE = BRep_Tool.Curve(E, out TopLoc_Location Loc, out _, out _)!;
+        Geom_Curve CE = BRep_Tool.Curve(E, out Placement Loc, out _, out _)!;
         CE = (Geom_Curve)CE.Transformed(Loc.Transformation());
 
-        CE.D1(parE, out gp_Pnt p3dE, out gp_Vec d3dE);
+        CE.D1(parE, out Point3D p3dE, out Vector3D d3dE);
 
         Geom_Surface S = BRep_Tool.Surface(F)!;
         GeomAPI_ProjectPointOnSurf proj = new(p3dE, S);
         proj.LowerDistanceParameters(out double u, out double v);
-        pE = new gp_Pnt2d(u, v);
-        S.D1(u, v, out gp_Pnt _, out gp_Vec d1u, out gp_Vec d1v);
+        pE = new Point2D(u, v);
+        S.D1(u, v, out Point3D _, out Vector3D d1u, out Vector3D d1v);
         u = d3dE.Dot(d1u);
         v = d3dE.Dot(d1v);
-        d1E = new gp_Vec2d(u, v);
+        d1E = new Vector2D(u, v);
     }
 
     // Whether E is a closing edge of myFace
@@ -371,7 +374,7 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
     }
 
     /// <summary>Whether the pcurve of <paramref name="E"/> on <paramref name="F"/> is a U or V isoline.</summary>
-    /// <exception cref="Standard_ProgramError">The edge has no pcurve on the face.</exception>
+    /// <exception cref="ProgramErrorException">The edge has no pcurve on the face.</exception>
     public static void IsUVISO(in TopoDS_Edge E, in TopoDS_Face F, out bool uiso, out bool viso)
     {
         uiso = viso = false;
@@ -380,20 +383,20 @@ public class TopOpeBRepBuild_WireEdgeSet : TopOpeBRepBuild_ShapeSet
         PC = TopOpeBRepTool_2d.FC2D_CurveOnSurface(E, F, out _, out _, out _, trim3d);
         if (PC is null)
         {
-            throw new Standard_ProgramError("TopOpeBRepBuild_WireEdgeSet::IsUVISO");
+            throw new ProgramErrorException("TopOpeBRepBuild_WireEdgeSet::IsUVISO");
         }
 
         if (PC.GetType() == typeof(Geom2d_Line))
         {
             Geom2d_Line HL = (Geom2d_Line)PC;
-            gp_Dir2d D = HL.Direction();
-            double tol = Precision.Angular();
+            Direction2D D = HL.Direction();
+            double tol = global::Kerf.Engine.Foundation.Precision.Angular();
 
-            if (D.IsParallel(new gp_Dir2d(gp_Dir2d.D.Y), tol))
+            if (D.IsParallel(new Direction2D(Direction2D.D.Y), tol))
             {
                 uiso = true;
             }
-            else if (D.IsParallel(new gp_Dir2d(gp_Dir2d.D.X), tol))
+            else if (D.IsParallel(new Direction2D(Direction2D.D.X), tol))
             {
                 viso = true;
             }

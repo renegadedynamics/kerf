@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -52,7 +54,7 @@ public class Transfer_TransferInput
             }
             else if (multi is not null)
             {
-                NCollection_HSequence<Standard_Transient>? mulres = multi.MultipleResult();
+                NCollection_HSequence<Transient>? mulres = multi.MultipleResult();
                 int nbres = 0;
                 if (mulres is not null)
                 {

@@ -3,14 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
 /// <summary>Projects elementary curves on a torus: circles that are U or V isolines.</summary>
 public class ProjLib_Torus : ProjLib_Projector
 {
-    private gp_Torus myTorus = new();
+    private Torus myTorus = new();
 
     /// <summary>Undefined projection.</summary>
     public ProjLib_Torus()
@@ -18,33 +20,33 @@ public class ProjLib_Torus : ProjLib_Projector
     }
 
     /// <summary>Projection on the torus To.</summary>
-    public ProjLib_Torus(in gp_Torus To)
+    public ProjLib_Torus(in Torus To)
     {
         Init(To);
     }
 
     /// <summary>Projection of the circle C on the torus To.</summary>
-    public ProjLib_Torus(in gp_Torus To, in gp_Circ C)
+    public ProjLib_Torus(in Torus To, in Circle3D C)
     {
         Init(To);
         Project(C);
     }
 
-    public void Init(in gp_Torus To)
+    public void Init(in Torus To)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
         myTorus = To;
         myIsPeriodic = false;
         isDone = false;
     }
 
-    private static gp_Pnt2d EvalPnt2d(in gp_Vec Ve, in gp_Torus To)
+    private static Point2D EvalPnt2d(in Vector3D Ve, in Torus To)
     {
-        double X = Ve.Dot(new gp_Vec(To.Position().XDirection()));
-        double Y = Ve.Dot(new gp_Vec(To.Position().YDirection()));
+        double X = Ve.Dot(new Vector3D(To.Position().XDirection()));
+        double Y = Ve.Dot(new Vector3D(To.Position().YDirection()));
         double U, V;
 
-        if (Math.Abs(X) > Precision.PConfusion() || Math.Abs(Y) > Precision.PConfusion())
+        if (Math.Abs(X) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(Y) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             U = Math.Atan2(Y, X);
         }
@@ -54,31 +56,31 @@ public class ProjLib_Torus : ProjLib_Projector
         }
 
         V = 0.0;
-        return new gp_Pnt2d(U, V);
+        return new Point2D(U, V);
     }
 
-    public override void Project(in gp_Circ C)
+    public override void Project(in Circle3D C)
     {
-        myType = GeomAbs_Line;
+        myType = global::Kerf.Geometry.CurveKind.Line;
 
-        gp_Vec Xc = new(C.Position().XDirection());
-        gp_Vec Yc = new(C.Position().YDirection());
-        gp_Vec Xt = new(myTorus.Position().XDirection());
-        gp_Vec Yt = new(myTorus.Position().YDirection());
-        gp_Vec Zt = new(myTorus.Position().Direction());
-        gp_Vec OC = new(myTorus.Location(), C.Location());
+        Vector3D Xc = new(C.Position().XDirection());
+        Vector3D Yc = new(C.Position().YDirection());
+        Vector3D Xt = new(myTorus.Position().XDirection());
+        Vector3D Yt = new(myTorus.Position().YDirection());
+        Vector3D Zt = new(myTorus.Position().Direction());
+        Vector3D OC = new(myTorus.Location(), C.Location());
 
         //  if (OC.Magnitude() < Precision::Confusion()      ||
         //      OC.IsParallel(myTorus.Position().Direction(),
         //		    Precision::Angular())) {
 
-        if (OC.Magnitude() < Precision.Confusion()
-            || C.Position().Direction().IsParallel(myTorus.Position().Direction(), Precision.Angular()))
+        if (OC.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion()
+            || C.Position().Direction().IsParallel(myTorus.Position().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // Iso V
-            gp_Pnt2d P1 = EvalPnt2d(Xc, myTorus); // evaluate U1
-            gp_Pnt2d P2 = EvalPnt2d(Yc, myTorus); // evaluate U2
-            double Z = OC.Dot(new gp_Vec(myTorus.Position().Direction()));
+            Point2D P1 = EvalPnt2d(Xc, myTorus); // evaluate U1
+            Point2D P2 = EvalPnt2d(Yc, myTorus); // evaluate U2
+            double Z = OC.Dot(new Vector3D(myTorus.Position().Direction()));
             Z /= myTorus.MinorRadius();
 
             double V;
@@ -106,7 +108,7 @@ public class ProjLib_Torus : ProjLib_Projector
             }
             P1.SetY(V);
             P2.SetY(V);
-            gp_Vec2d V2d = new(P1, P2);
+            Vector2D V2d = new(P1, P2);
             // Normally std::abs( P1.X() - P2.X()) = PI/2
             // If != PI/2, we crossed the period => Reverse the Direction
             if (Math.Abs(P1.X() - P2.X()) > M_PI)
@@ -114,12 +116,12 @@ public class ProjLib_Torus : ProjLib_Projector
                 V2d.Reverse();
             }
 
-            gp_Dir2d D2 = new(V2d);
+            Direction2D D2 = new(V2d);
             if (P1.X() < 0)
             {
                 P1.SetX(2 * M_PI + P1.X());
             }
-            myLin = new gp_Lin2d(P1, D2);
+            myLin = new Line2D(P1, D2);
         }
         else
         {
@@ -137,36 +139,36 @@ public class ProjLib_Torus : ProjLib_Projector
                 V1 += 2 * M_PI;
             }
 
-            gp_Pnt2d P1 = new(U, V1);
+            Point2D P1 = new(U, V1);
 
             // Direction of the line
-            gp_Dir2d D2 = gp.DY2d();
+            Direction2D D2 = Constants.DY2d();
             if (((OC ^ Zt) * (Xc ^ Yc)) < 0.0)
             {
                 D2.Reverse();
             }
 
-            myLin = new gp_Lin2d(P1, D2);
+            myLin = new Line2D(P1, D2);
         }
         isDone = true;
     }
 
-    public override void Project(in gp_Lin L)
+    public override void Project(in Line3D L)
     {
         base.Project(L);
     }
 
-    public override void Project(in gp_Elips E)
+    public override void Project(in Ellipse3D E)
     {
         base.Project(E);
     }
 
-    public override void Project(in gp_Parab P)
+    public override void Project(in Parabola3D P)
     {
         base.Project(P);
     }
 
-    public override void Project(in gp_Hypr H)
+    public override void Project(in Hyperbola3D H)
     {
         base.Project(H);
     }

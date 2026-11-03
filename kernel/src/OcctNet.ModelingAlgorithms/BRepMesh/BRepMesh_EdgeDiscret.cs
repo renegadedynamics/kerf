@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -88,7 +92,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
 
         if (theUpdateEnds)
         {
-            theTessellator.Value(1, out gp_Pnt _, out double aParam);
+            theTessellator.Value(1, out Point3D _, out double aParam);
             aCurve.AddPoint(BRep_Tool.Pnt(aFirstVertex), aParam);
         }
 
@@ -96,7 +100,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
         {
             for (int i = 2; i < theTessellator.PointsNb(); ++i)
             {
-                if (!theTessellator.Value(i, out gp_Pnt aPoint, out double aParam))
+                if (!theTessellator.Value(i, out Point3D aPoint, out double aParam))
                 {
                     continue;
                 }
@@ -114,7 +118,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
 
         if (theUpdateEnds)
         {
-            theTessellator.Value(theTessellator.PointsNb(), out gp_Pnt _, out double aParam);
+            theTessellator.Value(theTessellator.PointsNb(), out Point3D _, out double aParam);
             aCurve.AddPoint(BRep_Tool.Pnt(aLastVertex), aParam);
         }
     }
@@ -152,7 +156,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
             {
                 double aParam = aProvider.Parameter(aParamIdx, aCurve.GetPoint(aParamIdx));
 
-                aGeomPCurve.D0(aParam, out gp_Pnt2d aPoint2d);
+                aGeomPCurve.D0(aParam, out Point2D aPoint2d);
                 if (theUpdateEnds)
                 {
                     aPCurve.AddPoint(aPoint2d, aParam);
@@ -168,7 +172,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
     /// <summary>Discretizes the model's edges; false without a model.</summary>
     protected override bool performInternal(IMeshData_Model? theModel,
                                             in IMeshTools_Parameters theParameters,
-                                            Message_ProgressRange theRange)
+                                            ProgressRange theRange)
     {
         _ = theRange;
         myModel = theModel;
@@ -179,7 +183,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
             return false;
         }
 
-        OSD_Parallel.For(0, myModel.EdgesNb(), process, !myParameters.InParallel);
+        OsdParallel.For(0, myModel.EdgesNb(), process, !myParameters.InParallel);
 
         myModel = null; // Do not hold link to model.
         return true;
@@ -232,10 +236,10 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
             }
             else
             {
-                Poly_Polygon3D? aPoly3D = BRep_Tool.Polygon3D(aDEdge.GetEdge(), out TopLoc_Location _);
+                Polygon3D? aPoly3D = BRep_Tool.Polygon3D(aDEdge.GetEdge(), out Placement _);
                 if (aPoly3D is not null)
                 {
-                    if (aPoly3D.HasParameters()
+                    if (aPoly3D.HasParameters
                         && BRepMesh_Deflection.IsConsistent(aPoly3D.Deflection(),
                                                             aDEdge.GetDeflection(),
                                                             myParameters.AllowQualityDecrease))
@@ -272,7 +276,7 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
         TopoDS_Edge aEdge = theDEdge.GetEdge();
         TopoDS_Face aFace = thePCurve.GetFace().GetFace();
 
-        Poly_Triangulation? aFaceTriangulation = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+        Triangulation? aFaceTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
 
         double aDeflection = RealLast();
         if (aFaceTriangulation is null)
@@ -280,11 +284,11 @@ public class BRepMesh_EdgeDiscret : IMeshTools_ModelAlgo
             return aDeflection;
         }
 
-        Poly_PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(aEdge, aFaceTriangulation, aLoc);
+        PolygonOnTriangulation? aPolygon = BRep_Tool.PolygonOnTriangulation(aEdge, aFaceTriangulation, aLoc);
 
         if (aPolygon is not null)
         {
-            bool isConsistent = aPolygon.HasParameters()
+            bool isConsistent = aPolygon.HasParameters
                                 && BRepMesh_Deflection.IsConsistent(aPolygon.Deflection(),
                                                                     theDEdge.GetDeflection(),
                                                                     myParameters.AllowQualityDecrease);

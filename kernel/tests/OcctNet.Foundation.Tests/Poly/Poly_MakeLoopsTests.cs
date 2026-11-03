@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Link = Occt.Poly_MakeLoops.Link;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Link = Kerf.Engine.Meshing.MakeLoops.Link;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -8,13 +11,13 @@ namespace OcctNet.Foundation.Tests;
 public class Poly_MakeLoopsTest
 {
     // nodes 1-4 a unit square, node 5 off its corner 3
-    private static readonly Dictionary<int, gp_Pnt2d> THE_NODES = new()
+    private static readonly Dictionary<int, Point2D> THE_NODES = new()
     {
-        [1] = new gp_Pnt2d(0, 0),
-        [2] = new gp_Pnt2d(1, 0),
-        [3] = new gp_Pnt2d(1, 1),
-        [4] = new gp_Pnt2d(0, 1),
-        [5] = new gp_Pnt2d(2, 2),
+        [1] = new Point2D(0, 0),
+        [2] = new Point2D(1, 0),
+        [3] = new Point2D(1, 1),
+        [4] = new Point2D(0, 1),
+        [5] = new Point2D(2, 2),
     };
 
     private static readonly Link[] THE_LINKS = [new(1, 2), new(2, 3), new(3, 4), new(4, 1), new(3, 5)];
@@ -22,47 +25,47 @@ public class Poly_MakeLoopsTest
     private static NCollection_List<Link> Adjacent(int theNode)
         => new(THE_LINKS.Where(aL => aL.node1 == theNode || aL.node2 == theNode));
 
-    private static gp_Vec2d Tangent(in Link theLink)
+    private static Vector2D Tangent(in Link theLink)
     {
-        gp_Pnt2d aP1 = THE_NODES[theLink.node1];
-        gp_Pnt2d aP2 = THE_NODES[theLink.node2];
-        return theLink.IsReversed() ? new gp_Vec2d(aP2, aP1) : new gp_Vec2d(aP1, aP2);
+        Point2D aP1 = THE_NODES[theLink.node1];
+        Point2D aP2 = THE_NODES[theLink.node2];
+        return theLink.IsReversed ? new Vector2D(aP2, aP1) : new Vector2D(aP1, aP2);
     }
 
-    private sealed class Helper2D : Poly_MakeLoops2D.Helper
-    {
-        public override NCollection_List<Link> GetAdjacentLinks(int theNode) => Adjacent(theNode);
-
-        public override bool GetFirstTangent(in Link theLink, out gp_Dir2d theDir)
-        {
-            theDir = new gp_Dir2d(Tangent(theLink));
-            return true;
-        }
-
-        public override bool GetLastTangent(in Link theLink, out gp_Dir2d theDir) => GetFirstTangent(theLink, out theDir);
-    }
-
-    private sealed class Helper3D : Poly_MakeLoops3D.Helper
+    private sealed class Helper2D : MakeLoops2D.Helper
     {
         public override NCollection_List<Link> GetAdjacentLinks(int theNode) => Adjacent(theNode);
 
-        public override bool GetFirstTangent(in Link theLink, out gp_Dir theDir)
+        public override bool GetFirstTangent(in Link theLink, out Direction2D theDir)
         {
-            gp_Vec2d aT = Tangent(theLink);
-            theDir = new gp_Dir(aT.X(), aT.Y(), 0);
+            theDir = new Direction2D(Tangent(theLink));
             return true;
         }
 
-        public override bool GetLastTangent(in Link theLink, out gp_Dir theDir) => GetFirstTangent(theLink, out theDir);
+        public override bool GetLastTangent(in Link theLink, out Direction2D theDir) => GetFirstTangent(theLink, out theDir);
+    }
 
-        public override bool GetNormal(int theNode, out gp_Dir theDir)
+    private sealed class Helper3D : MakeLoops3D.Helper
+    {
+        public override NCollection_List<Link> GetAdjacentLinks(int theNode) => Adjacent(theNode);
+
+        public override bool GetFirstTangent(in Link theLink, out Direction3D theDir)
         {
-            theDir = new gp_Dir(0, 0, 1);
+            Vector2D aT = Tangent(theLink);
+            theDir = new Direction3D(aT.X(), aT.Y(), 0);
+            return true;
+        }
+
+        public override bool GetLastTangent(in Link theLink, out Direction3D theDir) => GetFirstTangent(theLink, out theDir);
+
+        public override bool GetNormal(int theNode, out Direction3D theDir)
+        {
+            theDir = new Direction3D(0, 0, 1);
             return true;
         }
     }
 
-    private static void CheckSquareLoop(Poly_MakeLoops theAlgo)
+    private static void CheckSquareLoop(MakeLoops theAlgo)
     {
         foreach (Link aLink in THE_LINKS)
         {
@@ -70,7 +73,7 @@ public class Poly_MakeLoopsTest
         }
 
         int aResult = theAlgo.Perform();
-        Assert.Equal((int)(Poly_MakeLoops.ResultCode.RC_LoopsDone | Poly_MakeLoops.ResultCode.RC_HangingLinks), aResult);
+        Assert.Equal((int)(MakeLoops.ResultCode.RC_LoopsDone | MakeLoops.ResultCode.RC_HangingLinks), aResult);
         Assert.Equal(1, theAlgo.GetNbLoops());
         var aLoop = theAlgo.GetLoop(1).Select(aL => (aL.node1, aL.node2)).ToList();
         Assert.Equal([(1, 2), (2, 3), (3, 4), (4, 1)], aLoop);
@@ -84,13 +87,13 @@ public class Poly_MakeLoopsTest
     [Fact]
     public void MakeLoops2D_LeftWay()
     {
-        CheckSquareLoop(new Poly_MakeLoops2D(true, new Helper2D()));
+        CheckSquareLoop(new MakeLoops2D(true, new Helper2D()));
     }
 
     [Fact]
     public void MakeLoops3D_LeftWay()
     {
-        CheckSquareLoop(new Poly_MakeLoops3D(new Helper3D()));
+        CheckSquareLoop(new MakeLoops3D(new Helper3D()));
     }
 
     [Fact]
@@ -98,14 +101,14 @@ public class Poly_MakeLoopsTest
     {
         // turning right at node 3 leads to the hanging link 3-5, which ends the contour open and is marked hanging; the
         // next contour from link 1 then has one way at node 3 and closes the loop
-        var anAlgo = new Poly_MakeLoops2D(false, new Helper2D());
+        var anAlgo = new MakeLoops2D(false, new Helper2D());
         foreach (Link aLink in THE_LINKS)
         {
             anAlgo.AddLink(aLink);
         }
 
         int aResult = anAlgo.Perform();
-        Assert.Equal((int)(Poly_MakeLoops.ResultCode.RC_LoopsDone | Poly_MakeLoops.ResultCode.RC_HangingLinks), aResult);
+        Assert.Equal((int)(MakeLoops.ResultCode.RC_LoopsDone | MakeLoops.ResultCode.RC_HangingLinks), aResult);
         Assert.Equal(1, anAlgo.GetNbLoops());
         Assert.Equal(4, anAlgo.GetLoop(1).Extent());
         Assert.Equal(1, anAlgo.GetNbHanging());
@@ -114,39 +117,39 @@ public class Poly_MakeLoopsTest
     [Fact]
     public void Links_FlagsAndLookup()
     {
-        var anAlgo = new Poly_MakeLoops2D(true, new Helper2D());
+        var anAlgo = new MakeLoops2D(true, new Helper2D());
         anAlgo.AddLink(new Link(1, 2));
-        anAlgo.AddLink(new Link(2, 1) { flags = (int)Poly_MakeLoops.LinkFlag.LF_Rev });
+        anAlgo.AddLink(new Link(2, 1) { flags = (int)MakeLoops.LinkFlag.LF_Rev });
         anAlgo.AddLink(new Link(3, 3));
 
         Link aFound = anAlgo.FindLink(new Link(2, 1));
         Assert.Equal((1, 2), (aFound.node1, aFound.node2));
-        Assert.Equal((int)Poly_MakeLoops.LinkFlag.LF_Both, aFound.flags);
-        Assert.True(anAlgo.FindLink(new Link(3, 3)).IsNull());
+        Assert.Equal((int)MakeLoops.LinkFlag.LF_Both, aFound.flags);
+        Assert.True(anAlgo.FindLink(new Link(3, 3)).IsNull);
 
-        Assert.Equal(Poly_MakeLoops.LinkFlag.LF_Both, anAlgo.SetLinkOrientation(new Link(1, 2), Poly_MakeLoops.LinkFlag.LF_None));
+        Assert.Equal(MakeLoops.LinkFlag.LF_Both, anAlgo.SetLinkOrientation(new Link(1, 2), MakeLoops.LinkFlag.LF_None));
         Assert.Equal(0, anAlgo.FindLink(new Link(1, 2)).flags);
 
         anAlgo.ReplaceLink(new Link(1, 2), new Link(2, 4));
-        Assert.True(anAlgo.FindLink(new Link(1, 2)).IsNull());
+        Assert.True(anAlgo.FindLink(new Link(1, 2)).IsNull);
         Assert.Equal((2, 4), (anAlgo.FindLink(new Link(4, 2)).node1, anAlgo.FindLink(new Link(4, 2)).node2));
 
         var aLink = new Link(7, 8);
         Assert.True(aLink == new Link(8, 7));
         Assert.Equal(aLink.GetHashCode(), new Link(8, 7).GetHashCode());
-        Assert.True(aLink.Reversed().IsReversed());
-        Assert.False(aLink.IsReversed());
+        Assert.True(aLink.Reversed().IsReversed);
+        Assert.False(aLink.IsReversed);
         aLink.Nullify();
-        Assert.True(aLink.IsNull());
+        Assert.True(aLink.IsNull);
 
         anAlgo.Reset(new Helper2D());
-        Assert.True(anAlgo.FindLink(new Link(2, 4)).IsNull());
+        Assert.True(anAlgo.FindLink(new Link(2, 4)).IsNull);
     }
 
     [Fact]
     public void HeapOfInteger()
     {
-        var aHeap = new Poly_MakeLoops.HeapOfInteger();
+        var aHeap = new MakeLoops.HeapOfInteger();
         Assert.True(aHeap.IsEmpty());
         aHeap.Add(7);
         aHeap.Add(-3);
@@ -186,7 +189,7 @@ public class Poly_MakeLoopsTest
         aMap.Clear();
         Assert.True(aMap.IsEmpty());
         Assert.Empty(Keys(aMap));
-        Assert.Throws<Standard_NoSuchObject>(() => new NCollection_PackedMapOfInteger.Iterator(aMap).Key());
+        Assert.Throws<NoSuchObjectException>(() => new NCollection_PackedMapOfInteger.Iterator(aMap).Key());
 
         // past the bucket count, the map grows to the next prime
         for (int i = 0; i < 200 * 32; i += 32)

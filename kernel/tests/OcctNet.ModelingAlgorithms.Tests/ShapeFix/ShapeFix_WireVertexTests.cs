@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -11,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFix_WireVertexTests
 {
-    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new gp_Pnt(x, y, 0)).Vertex();
+    private static TopoDS_Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
 
     private static TopoDS_Edge E(in TopoDS_Vertex v1, in TopoDS_Vertex v2) => new BRepBuilderAPI_MakeEdge(v1, v2).Edge();
 
@@ -69,13 +70,13 @@ public class ShapeFix_WireVertexTests
 
         TopoDS_Wire aWire = sfwv.Wire();
         aSnap.AssertUnchanged(anInput);
-        Assert.True(aWire.TShape()!.IsFrozen());
+        Assert.True(aWire.TShape()!.IsFrozen);
         List<TopoDS_Edge> aResult = Edges(aWire);
         Assert.Equal(4, aResult.Count);
         var sae = new ShapeAnalysis_Edge();
         for (int i = 0; i < 4; i++)
         {
-            Assert.True(aResult[i].TShape()!.IsFrozen());
+            Assert.True(aResult[i].TShape()!.IsFrozen);
             Assert.True(sae.LastVertex(aResult[i]).IsSame(sae.FirstVertex(aResult[(i + 1) % 4])));
             Assert.False(ReferenceEquals(aResult[i].TShape(), anEdges[i].TShape())); // every edge was rebuilt
         }
@@ -128,8 +129,8 @@ public class ShapeFix_WireVertexTests
         // OCCT: FixSame compares the last vertex of an edge (REVERSED) with the first of the next (FORWARD) with ==,
         // which compares orientations, so a shared vertex is added again; and it adds it without making the edge Free
         // (Fix does), so on the edges of a wire TopoDS_Builder::Add throws TopoDS_FrozenShape.
-        TopoDS_Wire aSquare = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0),
-                                                             new gp_Pnt(1, 1, 0), new gp_Pnt(0, 1, 0), true).Wire();
+        TopoDS_Wire aSquare = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0),
+                                                             new Point3D(1, 1, 0), new Point3D(0, 1, 0), true).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSquare);
         var sfwv = new ShapeFix_WireVertex();
         sfwv.Init(aSquare, 1.0e-3);
@@ -168,7 +169,7 @@ public class ShapeFix_WireVertexTests
     [Fact]
     public void UnfrozenEdges_AreFixedInPlace()
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon(new gp_Pnt(0, 0, 0), new gp_Pnt(1, 0, 0), new gp_Pnt(1, 1, 0), true);
+        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true);
         TopoDS_Wire aWire = aPoly.InternalWire();
         var sbwd = new ShapeExtend_WireData(aWire);
         TopoDS_Edge aFirst = sbwd.Edge(1);
@@ -176,7 +177,7 @@ public class ShapeFix_WireVertexTests
         sfwv.Init(sbwd, 1.0e-3);
         Assert.Equal(3, sfwv.Fix());
         TopoDS_Wire aResult = sfwv.InternalWire();
-        Assert.False(aResult.TShape()!.IsFrozen());
+        Assert.False(aResult.TShape()!.IsFrozen);
         Assert.True(ReferenceEquals(sbwd.Edge(1).TShape(), aFirst.TShape())); // in place: the same edges
         Assert.Equal(TopAbs_EDGE, sbwd.Edge(1).ShapeType());
     }

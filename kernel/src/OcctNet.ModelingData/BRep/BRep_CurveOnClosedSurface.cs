@@ -4,32 +4,36 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The representation of an edge by two pcurves on a closed surface (a seam).</summary>
 public class BRep_CurveOnClosedSurface : BRep_CurveOnSurface
 {
     private Geom2d_Curve? myPCurve2;
-    private GeomAbs_Shape myContinuity;
-    private gp_Pnt2d myUV21;
-    private gp_Pnt2d myUV22;
+    private Continuity myContinuity;
+    private Point2D myUV21;
+    private Point2D myUV22;
 
     /// <summary>The pcurves <paramref name="PC1"/> and <paramref name="PC2"/> on <paramref name="S"/> (all frozen here).</summary>
     public BRep_CurveOnClosedSurface(Geom2d_Curve PC1,
                                      Geom2d_Curve? PC2,
                                      Geom_Surface? S,
-                                     in TopLoc_Location L,
-                                     GeomAbs_Shape C)
+                                     in Placement L,
+                                     Continuity C)
         : base(PC1, S, L)
     {
         PC2?.Freeze(); // OCCT.NET: attached geometry is frozen
         myPCurve2 = PC2;
         myContinuity = C;
-        myUV21 = new gp_Pnt2d();
-        myUV22 = new gp_Pnt2d();
+        myUV21 = new Point2D();
+        myUV22 = new Point2D();
     }
 
-    internal void SetUVPoints2(in gp_Pnt2d P1, in gp_Pnt2d P2)
+    internal void SetUVPoints2(in Point2D P1, in Point2D P2)
     {
         CheckMutable();
         myUV21 = P1;
@@ -37,7 +41,7 @@ public class BRep_CurveOnClosedSurface : BRep_CurveOnSurface
     }
 
     /// <summary>The UV points of the second pcurve at the ends of the range.</summary>
-    public void UVPoints2(out gp_Pnt2d P1, out gp_Pnt2d P2)
+    public void UVPoints2(out Point2D P1, out Point2D P2)
     {
         P1 = myUV21;
         P2 = myUV22;
@@ -50,7 +54,7 @@ public class BRep_CurveOnClosedSurface : BRep_CurveOnSurface
     public override bool IsRegularity() => true;
 
     /// <summary>A curve on two surfaces (continuity).</summary>
-    public override bool IsRegularity(Geom_Surface? S1, Geom_Surface? S2, in TopLoc_Location L1, in TopLoc_Location L2)
+    public override bool IsRegularity(Geom_Surface? S1, Geom_Surface? S2, in Placement L1, in Placement L2)
         => ReferenceEquals(Surface(), S1) && ReferenceEquals(Surface(), S2) && (Location() == L1) && (Location() == L2);
 
     public override Geom2d_Curve? PCurve2() => myPCurve2;
@@ -59,11 +63,11 @@ public class BRep_CurveOnClosedSurface : BRep_CurveOnSurface
     public override Geom_Surface? Surface2() => Surface();
 
     /// <summary>Location().</summary>
-    public override TopLoc_Location Location2() => Location();
+    public override Placement Location2() => Location();
 
-    public override GeomAbs_Shape Continuity() => myContinuity;
+    public override Continuity Continuity() => myContinuity;
 
-    internal override void Continuity(GeomAbs_Shape C)
+    internal override void Continuity(Continuity C)
     {
         CheckMutable();
         myContinuity = C;
@@ -93,12 +97,12 @@ public class BRep_CurveOnClosedSurface : BRep_CurveOnSurface
     internal override void Update()
     {
         CheckMutable();
-        if (!Precision.IsNegativeInfinite(First()))
+        if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(First()))
         {
             myPCurve2!.D0(First(), out myUV21);
         }
 
-        if (!Precision.IsPositiveInfinite(Last()))
+        if (!global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Last()))
         {
             myPCurve2!.D0(Last(), out myUV22);
         }

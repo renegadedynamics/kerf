@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopoDSToStep_BuilderError;
 using static Occt.TopoDSToStep_MakeEdgeError;
 using static Occt.TopoDSToStep_MakeFaceError;
@@ -118,7 +119,7 @@ public static class TopoDSToStep
     }
 
     /// <summary>Adds an entity to the results (binders) of a shape in the finder process.</summary>
-    public static void AddResult(Transfer_FinderProcess FP, in TopoDS_Shape Shape, Standard_Transient? ent)
+    public static void AddResult(Transfer_FinderProcess FP, in TopoDS_Shape Shape, Transient? ent)
     {
         var result = new Transfer_SimpleBinderOfTransient();
         result.SetResult(ent);
@@ -142,7 +143,7 @@ public static class TopoDSToStep
     /// </summary>
     public static void AddResult(Transfer_FinderProcess FP, TopoDSToStep_Tool Tool)
     {
-        foreach (KeyValuePair<TopoDS_Shape, Standard_Transient> it in Tool.Map())
+        foreach (KeyValuePair<TopoDS_Shape, Transient> it in Tool.Map())
         {
             AddResult(FP, it.Key, it.Value);
         }

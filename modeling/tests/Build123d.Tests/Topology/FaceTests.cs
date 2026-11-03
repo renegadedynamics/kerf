@@ -24,6 +24,7 @@
 // test_wire is SingleWire (the C# name of wire(); a method can't be named after the Wire type it uses).
 // test_zero_offset_returns_a_copy doesn't check identity: shapes are immutable, so returning the same face is fine.
 // test_is_convex_concave's BuildPart is the offset and fillet operations in algebra form.
+using Kerf.Geometry;
 using Occt;
 using Ops = Build123d.Operations;
 
@@ -524,7 +525,7 @@ public class FaceTests
         Check.AlmostEqual(5, kv, 6);
 
         // a face across both seams of a torus: periodic parameters land in the face's own range, in u and in v
-        var ax3 = new gp_Ax3();
+        var ax3 = new CoordinateSystem();
         var toroidal = new Geom_ToroidalSurface(ax3, 10, 2);
         var maker = new BRepBuilderAPI_MakeFace(toroidal, -Math.PI / 2, Math.PI / 2, -Math.PI / 3, Math.PI / 3, 1e-6);
         var across = new Face(maker.Face());
@@ -901,9 +902,9 @@ public class FaceTests
         Check.AlmostEqual((0, 0, 0), t.AxisOfRotation!.Value.Position, 5);
 
         // Geom_RectangularTrimmedSurface
-        var origin = new gp_Pnt(0, 0, 0);
-        var up = new gp_Dir(0, 0, 1);
-        var ax3 = new gp_Ax3(origin, up);
+        var origin = new Point3D(0, 0, 0);
+        var up = new Direction3D(0, 0, 1);
+        var ax3 = new CoordinateSystem(origin, up);
         var cylSurf = new Geom_CylindricalSurface(ax3, 2.0);
         var trimSurf = new Geom_RectangularTrimmedSurface(cylSurf, 0.0, 1.0, 0.5, 1.5);
         var trimMaker = new BRepBuilderAPI_MakeFace(trimSurf, 1e-6);

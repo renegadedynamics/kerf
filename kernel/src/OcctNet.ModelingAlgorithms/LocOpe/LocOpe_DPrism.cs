@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -42,12 +46,12 @@ public sealed class LocOpe_DPrism
         double y = Height1 * Math.Sin(Angle);
         double z = Height1 * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new gp_Pnt(0, y, z)).InternalVertex();
+        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
 
         double y1 = -Height2 * Math.Sin(Angle);
         double z1 = -Height2 * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new gp_Pnt(0, y1, z1)).InternalVertex();
+        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, y1, z1)).InternalVertex();
 
         myProfile2 = new BRepLib_MakeEdge(Vert1, Vert2).InternalEdge();
 
@@ -56,21 +60,21 @@ public sealed class LocOpe_DPrism
         double Deltay = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y);
         Deltay *= 2;
 
-        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new gp_Pnt(0, y + Deltay, z)).InternalVertex();
+        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
         myProfile3 = new BRepLib_MakeEdge(Vert2, Vert3).InternalEdge();
 
         BRepTools.UVBounds(Spine, out Umin, out Umax, out Vmin, out Vmax);
         double Deltay1 = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y1);
         Deltay1 *= 2;
 
-        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new gp_Pnt(0, y1 + Deltay1, z1)).InternalVertex();
+        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, y1 + Deltay1, z1)).InternalVertex();
         myProfile1 = new BRepLib_MakeEdge(Vert4, Vert1).InternalEdge();
 
         myProfile = new BRepLib_MakeWire(myProfile1, myProfile2, myProfile3).InternalWire();
 
         // OCCT.NET: the evolved shape shares the spine's sub-shapes, whose tolerances are raised below (decision 1014)
         TopoDS_Face aSpine = TopoDS.Face(myWork.Working(mySpine));
-        myDPrism.Perform(aSpine, myProfile, new gp_Ax3(gp.XOY()));
+        myDPrism.Perform(aSpine, myProfile, new CoordinateSystem(Constants.XOY()));
 
         if (myDPrism.IsDone())
         {
@@ -253,25 +257,25 @@ public sealed class LocOpe_DPrism
         double y = Height * Math.Sin(Angle);
         double z = Height * Math.Cos(Angle);
 
-        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new gp_Pnt(0, 0, 0)).InternalVertex();
-        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new gp_Pnt(0, y, z)).InternalVertex();
+        TopoDS_Vertex Vert1 = new BRepLib_MakeVertex(new Point3D(0, 0, 0)).InternalVertex();
+        TopoDS_Vertex Vert2 = new BRepLib_MakeVertex(new Point3D(0, y, z)).InternalVertex();
         myProfile2 = new BRepLib_MakeEdge(Vert1, Vert2).InternalEdge();
 
         BRepTools.UVBounds(Spine, out double Umin, out double Umax, out double Vmin, out double Vmax);
         double Deltay = Max(Umax - Umin, Vmax - Vmin) + Math.Abs(y);
         Deltay *= 2;
 
-        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new gp_Pnt(0, y + Deltay, z)).InternalVertex();
+        TopoDS_Vertex Vert3 = new BRepLib_MakeVertex(new Point3D(0, y + Deltay, z)).InternalVertex();
         myProfile3 = new BRepLib_MakeEdge(Vert2, Vert3).InternalEdge();
 
-        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new gp_Pnt(0, Deltay, 0)).InternalVertex();
+        TopoDS_Vertex Vert4 = new BRepLib_MakeVertex(new Point3D(0, Deltay, 0)).InternalVertex();
         myProfile1 = new BRepLib_MakeEdge(Vert4, Vert1).InternalEdge();
 
         myProfile = new BRepLib_MakeWire(myProfile1, myProfile2, myProfile3).InternalWire();
 
         // OCCT.NET: the evolved shape shares the spine's sub-shapes, whose tolerances are raised below (decision 1014)
         TopoDS_Face aSpine = TopoDS.Face(myWork.Working(mySpine));
-        myDPrism.Perform(aSpine, myProfile, new gp_Ax3(gp.XOY()));
+        myDPrism.Perform(aSpine, myProfile, new CoordinateSystem(Constants.XOY()));
 
         if (myDPrism.IsDone())
         {
@@ -434,7 +438,7 @@ public sealed class LocOpe_DPrism
     {
         if (!myDPrism.IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return myRes;
     }
@@ -465,7 +469,7 @@ public sealed class LocOpe_DPrism
     {
         if (!myDPrism.IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         TopoDS_Shape aS = myWork.Copied(S);
         if (myMap.IsBound(aS))
@@ -483,8 +487,8 @@ public sealed class LocOpe_DPrism
     {
         // Retrieves dy and dz with myProfile2
         TopExp.Vertices(myProfile2, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
         double dy = P2.Y() - P1.Y();
         double dz = P2.Z() - P1.Z();
         Scurves.Clear();
@@ -494,10 +498,10 @@ public sealed class LocOpe_DPrism
             S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
         }
 
-        Geom_Plane PP = S as Geom_Plane ?? throw new Standard_ConstructionError();
+        Geom_Plane PP = S as Geom_Plane ?? throw new ConstructionErrorException();
 
-        gp_Pln P = PP.Pln();
-        gp_Dir Normale = P.Axis().Direction();
+        Plane3D P = PP.Pln();
+        Direction3D Normale = P.Axis().Direction();
         if (!P.Direct())
         {
             Normale.Reverse();
@@ -517,7 +521,7 @@ public sealed class LocOpe_DPrism
             }
             if (!BRep_Tool.Degenerated(edg))
             {
-                Geom_Curve C = BRep_Tool.Curve(edg, out TopLoc_Location Loc, out double f, out double l)!;
+                Geom_Curve C = BRep_Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
                 C = (Geom_Curve)C.Transformed(Loc.Transformation());
                 double u1 = -2 * Math.Abs(myHeight);
                 double u2 = 2 * Math.Abs(myHeight);
@@ -525,15 +529,15 @@ public sealed class LocOpe_DPrism
                 for (i = 0; i <= NECHANT; i++)
                 {
                     prm = ((NECHANT - i) * f + i * l) / NECHANT;
-                    C.D1(prm, out gp_Pnt pt, out gp_Vec d1);
+                    C.D1(prm, out Point3D pt, out Vector3D d1);
                     if (exp.Current().Orientation() == TopAbs_REVERSED)
                     {
                         d1.Reverse();
                     }
                     d1.Normalize();
-                    gp_Dir locy = Normale.Crossed(new gp_Dir(d1));
-                    gp_Vec ldir = new(dy * locy.XYZ() + dz * Normale.XYZ());
-                    gp_Lin lin = new(pt, new gp_Dir(ldir));
+                    Direction3D locy = Normale.Crossed(new Direction3D(d1));
+                    Vector3D ldir = new(dy * locy.XYZ() + dz * Normale.XYZ());
+                    Line3D lin = new(pt, new Direction3D(ldir));
                     Geom_Line Lin = new(lin);
                     Geom_TrimmedCurve trlin = new(Lin, u1, u2, true);
                     Scurves.Append(trlin);
@@ -546,8 +550,8 @@ public sealed class LocOpe_DPrism
     public Geom_Curve BarycCurve()
     {
         TopExp.Vertices(myProfile2, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-        gp_Pnt P1 = BRep_Tool.Pnt(V1);
-        gp_Pnt P2 = BRep_Tool.Pnt(V2);
+        Point3D P1 = BRep_Tool.Pnt(V1);
+        Point3D P2 = BRep_Tool.Pnt(V2);
         double dz = P2.Z() - P1.Z();
 
         Geom_Surface S = BRep_Tool.Surface(mySpine)!;
@@ -556,10 +560,10 @@ public sealed class LocOpe_DPrism
             S = ((Geom_RectangularTrimmedSurface)S).BasisSurface();
         }
 
-        Geom_Plane PP = S as Geom_Plane ?? throw new Standard_ConstructionError();
+        Geom_Plane PP = S as Geom_Plane ?? throw new ConstructionErrorException();
 
-        gp_Pln P = PP.Pln();
-        gp_Dir Normale = P.Axis().Direction();
+        Plane3D P = PP.Pln();
+        Direction3D Normale = P.Axis().Direction();
         if (!P.Direct())
         {
             Normale.Reverse();
@@ -569,9 +573,9 @@ public sealed class LocOpe_DPrism
             // OCCT_DEBUG trace left out
             //    Normale.Reverse();  //cts20871
         }
-        gp_Vec Vec = new(dz * Normale.XYZ());
+        Vector3D Vec = new(dz * Normale.XYZ());
 
-        NCollection_Sequence<gp_Pnt> spt = new();
+        NCollection_Sequence<Point3D> spt = new();
         if (!myFirstShape.IsNull())
         {
             LocOpe.SampleEdges(myFirstShape, spt);
@@ -580,15 +584,15 @@ public sealed class LocOpe_DPrism
         {
             LocOpe.SampleEdges(mySpine, spt);
         }
-        gp_XYZ aBar = new(0.0, 0.0, 0.0);
+        Xyz aBar = new(0.0, 0.0, 0.0);
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
-            gp_Pnt pvt = spt[jj];
+            Point3D pvt = spt[jj];
             aBar += pvt.XYZ();
         }
         aBar.Divide(spt.Length());
-        gp_Pnt bar = new(aBar);
-        gp_Ax1 newAx = new(bar, new gp_Dir(Vec));
+        Point3D bar = new(aBar);
+        Axis3D newAx = new(bar, new Direction3D(Vec));
         Geom_Line theLin = new(newAx);
         return theLin;
     }

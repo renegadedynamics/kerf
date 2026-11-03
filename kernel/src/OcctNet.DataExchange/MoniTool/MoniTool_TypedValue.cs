@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.MoniTool_ValueType;
 
 namespace Occt;
@@ -17,16 +18,16 @@ namespace Occt;
 /// occ::handle&lt;HAsciiString&gt; can be shared by other data structures, hence gives a direct on line
 /// access to its value.
 /// </summary>
-public class MoniTool_TypedValue : Standard_Transient
+public class MoniTool_TypedValue : Transient
 {
     // The library of typed values (OCCT's static thelibtv): the standard types, built once (decision 1181). OCCT's
     // AddLib, which adds to it, and the static dictionary of "static" values (OCCT's astats, Stats(), StaticValue)
     // are left out: the static values are a parameter set's (Interface_StaticSet), passed explicitly.
-    private static readonly Lazy<NCollection_DataMap<string, Standard_Transient>> thelibtv = new(MakeLib);
+    private static readonly Lazy<NCollection_DataMap<string, Transient>> thelibtv = new(MakeLib);
 
-    private static NCollection_DataMap<string, Standard_Transient> MakeLib()
+    private static NCollection_DataMap<string, Transient> MakeLib()
     {
-        var aLib = new NCollection_DataMap<string, Standard_Transient>();
+        var aLib = new NCollection_DataMap<string, Transient>();
         MoniTool_TypedValue tv;
         tv = new MoniTool_TypedValue("Integer", MoniTool_ValueInteger);
         aLib.Bind("Integer", tv);
@@ -50,7 +51,7 @@ public class MoniTool_TypedValue : Standard_Transient
         return aLib;
     }
 
-    private static NCollection_DataMap<string, Standard_Transient> libtv() => thelibtv.Value;
+    private static NCollection_DataMap<string, Transient> libtv() => thelibtv.Value;
 
     /// <summary>
     /// Creates a TypedValue, with a name type gives the type of the parameter, default is free text Also
@@ -75,7 +76,7 @@ public class MoniTool_TypedValue : Standard_Transient
         if (type != MoniTool_ValueInteger && type != MoniTool_ValueReal && type != MoniTool_ValueEnum
                 && type != MoniTool_ValueText && type != MoniTool_ValueIdent)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : Type not supported");
+            throw new ConstructionErrorException("MoniTool_TypedValue : Type not supported");
         }
         if (init.Length > 0)
         {
@@ -377,7 +378,7 @@ public class MoniTool_TypedValue : Standard_Transient
             if (thetype == MoniTool_ValueIdent)
             {
                 S.Write(" (type) ");
-                S.Write(theoval.DynamicType().Name);
+                S.Write(theoval.DynamicTypeName());
             }
             if (thehval is not null)
             {
@@ -435,11 +436,11 @@ public class MoniTool_TypedValue : Standard_Transient
         //  Recognition of sub-case and routing
         if (CStringChar(init, 0) == 'i' && CStringChar(init, 2) == 'i')
         { // imin ival
-            SetIntegerLimit(false, atoi(init.Substring(iblc)));
+            SetIntegerLimit(false, Atoi(init.Substring(iblc)));
         }
         else if (CStringChar(init, 0) == 'i' && CStringChar(init, 2) == 'a')
         { // imax ival
-            SetIntegerLimit(true, atoi(init.Substring(iblc)));
+            SetIntegerLimit(true, Atoi(init.Substring(iblc)));
         }
         else if (CStringChar(init, 0) == 'r' && CStringChar(init, 2) == 'i')
         { // rmin rval
@@ -455,11 +456,11 @@ public class MoniTool_TypedValue : Standard_Transient
         }
         else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'm')
         { // ematch istart
-            StartEnum(atoi(init.Substring(iblc)), true);
+            StartEnum(Atoi(init.Substring(iblc)), true);
         }
         else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'n')
         { // enum istart
-            StartEnum(atoi(init.Substring(iblc)), false);
+            StartEnum(Atoi(init.Substring(iblc)), false);
         }
         else if (CStringChar(init, 0) == 'e' && CStringChar(init, 1) == 'v')
         { // eval text
@@ -467,7 +468,7 @@ public class MoniTool_TypedValue : Standard_Transient
         }
         else if (CStringChar(init, 0) == 't' && CStringChar(init, 1) == 'm')
         { // tmax length
-            SetMaxLength(atoi(init.Substring(iblc)));
+            SetMaxLength(Atoi(init.Substring(iblc)));
         }
         else
         {
@@ -522,7 +523,7 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueInteger)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : SetIntegerLimit, not an Integer");
+            throw new ConstructionErrorException("MoniTool_TypedValue : SetIntegerLimit, not an Integer");
         }
 
         if (max)
@@ -565,7 +566,7 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueReal)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : SetRealLimit, not a Real");
+            throw new ConstructionErrorException("MoniTool_TypedValue : SetRealLimit, not a Real");
         }
 
         if (max)
@@ -627,7 +628,7 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueEnum)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : StartEnum, Not an Enum");
+            throw new ConstructionErrorException("MoniTool_TypedValue : StartEnum, Not an Enum");
         }
 
         thelims |= 4;
@@ -646,7 +647,7 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueEnum)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : AddEnum, Not an Enum");
+            throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Enum");
         }
         if (theenums is null)
         {
@@ -735,11 +736,11 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueEnum)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : AddEnum, Not an Enum");
+            throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Enum");
         }
         if (num < theintlow)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : AddEnum, out of range");
+            throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, out of range");
         }
         if (val.Length == 0)
         {
@@ -844,7 +845,7 @@ public class MoniTool_TypedValue : Standard_Transient
                 return (theintlow - 1);
             }
         }
-        return atoi(val);
+        return Atoi(val);
     }
 
     /// <summary>
@@ -854,7 +855,7 @@ public class MoniTool_TypedValue : Standard_Transient
     {
         if (thetype != MoniTool_ValueIdent)
         {
-            throw new Standard_ConstructionError("MoniTool_TypedValue : AddEnum, Not an Entity/Object");
+            throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Entity/Object");
         }
         theotyp = typ;
     }
@@ -869,7 +870,7 @@ public class MoniTool_TypedValue : Standard_Transient
         {
             return theotyp;
         }
-        return typeof(Standard_Transient);
+        return typeof(Transient);
     }
 
     /// <summary>
@@ -1027,7 +1028,7 @@ public class MoniTool_TypedValue : Standard_Transient
                     return false;
                 }
                 int ival, ilim;
-                ival = atoi(val.ToCString());
+                ival = Atoi(val.ToCString());
                 if (IntegerLimit(false, out ilim))
                 {
                     if (ilim > ival)
@@ -1129,7 +1130,7 @@ public class MoniTool_TypedValue : Standard_Transient
         if (thetype == MoniTool_ValueInteger)
         {
             thehval.Clear();
-            theival = atoi(val);
+            theival = Atoi(val);
             thehval.AssignCat(val);
         }
         else if (thetype == MoniTool_ValueEnum)
@@ -1172,7 +1173,7 @@ public class MoniTool_TypedValue : Standard_Transient
         thehval = hval;
         if (thetype == MoniTool_ValueInteger)
         {
-            theival = atoi(hval.ToCString());
+            theival = Atoi(hval.ToCString());
         }
         else if (thetype == MoniTool_ValueEnum)
         {
@@ -1258,7 +1259,7 @@ public class MoniTool_TypedValue : Standard_Transient
     /// Returns the value as Transient Object, only for Object/Entity Remark that the "HString value" is IGNORED
     /// here Null if not set; remains to be casted
     /// </summary>
-    public Standard_Transient? ObjectValue()
+    public Transient? ObjectValue()
     {
         return theoval;
     }
@@ -1267,7 +1268,7 @@ public class MoniTool_TypedValue : Standard_Transient
     /// Same as ObjectValue, but avoids DownCast : the receiving variable is directly loaded. It is assumed that
     /// it complies with the definition of ObjectType ! Otherwise, big trouble
     /// </summary>
-    public void GetObjectValue(out Standard_Transient? val)
+    public void GetObjectValue(out Transient? val)
     {
         val = theoval;
     }
@@ -1276,7 +1277,7 @@ public class MoniTool_TypedValue : Standard_Transient
     /// Changes the value as Transient Object, only for Object/Entity Returns False if DynamicType does not
     /// satisfy ObjectType Can be redefined to be managed (in a subclass)
     /// </summary>
-    public virtual bool SetObjectValue(Standard_Transient? obj)
+    public virtual bool SetObjectValue(Transient? obj)
     {
         if (thetype != MoniTool_ValueIdent)
         {
@@ -1312,7 +1313,7 @@ public class MoniTool_TypedValue : Standard_Transient
         {
             return elm.ValueTypeName();
         }
-        return theoval.DynamicType().Name;
+        return theoval.DynamicTypeName();
     }
 
     // OCCT.NET: AddLib (which adds a typed value to the process-wide library) is left out (decision 1181).
@@ -1324,7 +1325,7 @@ public class MoniTool_TypedValue : Standard_Transient
     public static MoniTool_TypedValue? Lib(string defin)
     {
         MoniTool_TypedValue val;
-        if (libtv().Find(defin, out Standard_Transient aTVal))
+        if (libtv().Find(defin, out Transient aTVal))
         {
             val = (aTVal as MoniTool_TypedValue);
         }
@@ -1360,7 +1361,7 @@ public class MoniTool_TypedValue : Standard_Transient
         {
             return list;
         }
-        foreach (KeyValuePair<string, Standard_Transient> it in libtv())
+        foreach (KeyValuePair<string, Transient> it in libtv())
         {
             list.Append(it.Key);
         }
@@ -1389,5 +1390,5 @@ public class MoniTool_TypedValue : Standard_Transient
     private string thesatisn = "";
     private int theival;
     private TCollection_HAsciiString? thehval;
-    private Standard_Transient? theoval;
+    private Transient? theoval;
 }

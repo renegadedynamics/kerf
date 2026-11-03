@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.gce_ErrorType;
 
 namespace Occt;
@@ -14,10 +16,10 @@ namespace Occt;
 /// </summary>
 public sealed class gce_MakeParab : gce_Root
 {
-    private gp_Parab TheParab = new();
+    private Parabola3D TheParab = new();
 
     /// <summary>A parabola from its axis system and focal length; fails with gce_NullFocusLength if Focal &lt; 0.</summary>
-    public gce_MakeParab(in gp_Ax2 A2, double Focal)
+    public gce_MakeParab(in Frame3D A2, double Focal)
     {
         if (Focal < 0.0)
         {
@@ -25,29 +27,29 @@ public sealed class gce_MakeParab : gce_Root
         }
         else
         {
-            TheParab = new gp_Parab(A2, Focal);
+            TheParab = new Parabola3D(A2, Focal);
             TheError = gce_Done;
         }
     }
 
     /// <summary>A parabola from its directrix D and focus F.</summary>
-    public gce_MakeParab(in gp_Ax1 D, in gp_Pnt F)
+    public gce_MakeParab(in Axis3D D, in Point3D F)
     {
-        TheParab = new gp_Parab(D, F);
+        TheParab = new Parabola3D(D, F);
         TheError = gce_Done;
     }
 
     /// <summary>The constructed parabola.</summary>
-    /// <exception cref="StdFail_NotDone">No parabola was constructed.</exception>
-    public gp_Parab Value()
+    /// <exception cref="NotDoneException">No parabola was constructed.</exception>
+    public Parabola3D Value()
     {
         StdFail_NotDone_Raise_if(TheError != gce_Done, "gce_MakeParab::Value() - no result");
         return TheParab;
     }
 
     /// <summary>Alias for Value().</summary>
-    public gp_Parab Operator() => Value();
+    public Parabola3D Operator() => Value();
 
     /// <summary>The constructed parabola (OCCT's implicit conversion operator).</summary>
-    public static explicit operator gp_Parab(gce_MakeParab theMaker) => theMaker.Operator();
+    public static explicit operator Parabola3D(gce_MakeParab theMaker) => theMaker.Operator();
 }

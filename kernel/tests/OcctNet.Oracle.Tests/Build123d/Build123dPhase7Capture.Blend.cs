@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Text;
 
@@ -237,7 +238,7 @@ internal static partial class Build123dPhase7Capture
         {
             aRes = aB.Shape();
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
             anError = ErrorOf(e);
         }
@@ -397,7 +398,7 @@ internal static partial class Build123dPhase7Capture
                     {
                         aRes = aB.Shape();
                     }
-                    catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+                    catch (Exception e) when (e is FailureException or NullReferenceException)
                     {
                         anError = ErrorOf(e);
                     }
@@ -439,7 +440,7 @@ internal static partial class Build123dPhase7Capture
                 }
             }
         }
-        catch (Exception e) when (e is Standard_Failure or NullReferenceException)
+        catch (Exception e) when (e is FailureException or NullReferenceException)
         {
             return new P7Port(ErrorOf(e), "", null, "");
         }

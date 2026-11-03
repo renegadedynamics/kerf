@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -23,9 +24,9 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         bool aRational = theOracle.Int(0, 1) == 1;
         theOracle.BSplineKnots(aUDeg, aUPer, out NCollection_Array1<double> aUKnots, out NCollection_Array1<int> aUMults);
         theOracle.BSplineKnots(aVDeg, aVPer, out NCollection_Array1<double> aVKnots, out NCollection_Array1<int> aVMults);
-        int aNbU = Occt.BSplCLib.NbPoles(aUDeg, aUPer, aUMults);
-        int aNbV = Occt.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
-        var aPoles = new NCollection_Array2<gp_Pnt>(1, aNbU, 1, aNbV);
+        int aNbU = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aUDeg, aUPer, aUMults);
+        int aNbV = Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aVDeg, aVPer, aVMults);
+        var aPoles = new NCollection_Array2<Point3D>(1, aNbU, 1, aNbV);
         var aWeights = new NCollection_Array2<double>(1, aNbU, 1, aNbV);
         NCollection_Array1<double> aUW = theOracle.Weights(aNbU, aRational);
         NCollection_Array1<double> aVW = theOracle.Weights(aNbV, aRational);
@@ -34,7 +35,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         {
             for (int j = 1; j <= aNbV; j++)
             {
-                aPoles[i, j] = new gp_Pnt(theOracle.Real(0, 10), theOracle.Real(0, 10), theOracle.Real(0, 10));
+                aPoles[i, j] = new Point3D(theOracle.Real(0, 10), theOracle.Real(0, 10), theOracle.Real(0, 10));
                 aWeights[i, j] = !aRational ? 1.0 : aMode == 0 ? theOracle.Real(0.5, 1.5) : aMode == 1 ? aUW[i] : aVW[j];
             }
         }
@@ -189,7 +190,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         using (var aNV = new N.gp_Vec(0, 0, 0))
         {
             theN.D1(aU, aV, aNP, aNU, aNV);
-            theP.D1(aU, aV, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V);
+            theP.D1(aU, aV, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
             theOracle.Same(aNP, aP, theWhat + " D1 P");
             theOracle.Same(aNU, aD1U, theWhat + " D1 U");
             theOracle.Same(aNV, aD1V, theWhat + " D1 V");
@@ -203,7 +204,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         using (var aNUV = new N.gp_Vec(0, 0, 0))
         {
             theN.D2(aU, aV, aNP, aNU, aNV, aNUU, aNVV, aNUV);
-            theP.D2(aU, aV, out gp_Pnt aP, out gp_Vec aD1U, out gp_Vec aD1V, out gp_Vec aD2U, out gp_Vec aD2V, out gp_Vec aD2UV);
+            theP.D2(aU, aV, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
             theOracle.Same(aNP, aP, theWhat + " D2 P");
             theOracle.Same(aNU, aD1U, theWhat + " D2 U");
             theOracle.Same(aNV, aD1V, theWhat + " D2 V");
@@ -224,8 +225,8 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
         using (var aNUVV = new N.gp_Vec(0, 0, 0))
         {
             theN.D3(aU, aV, aNP, aNU, aNV, aNUU, aNVV, aNUV, aNUUU, aNVVV, aNUUV, aNUVV);
-            theP.D3(aU, aV, out gp_Pnt aP, out gp_Vec a1U, out gp_Vec a1V, out gp_Vec a2U, out gp_Vec a2V, out gp_Vec a2UV,
-                    out gp_Vec a3U, out gp_Vec a3V, out gp_Vec a3UUV, out gp_Vec a3UVV);
+            theP.D3(aU, aV, out Point3D aP, out Vector3D a1U, out Vector3D a1V, out Vector3D a2U, out Vector3D a2V, out Vector3D a2UV,
+                    out Vector3D a3U, out Vector3D a3V, out Vector3D a3UUV, out Vector3D a3UVV);
             theOracle.Same(aNP, aP, theWhat + " D3 P");
             theOracle.Same(aNU, a1U, theWhat + " D3 U");
             theOracle.Same(aNV, a1V, theWhat + " D3 V");
@@ -521,7 +522,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             {
                 theWhat = "SetPole";
                 int ii = theOracle.Int(1, theP.NbUPoles()), jj = theOracle.Int(1, theP.NbVPoles());
-                gp_Pnt aPnt = theOracle.Pnt();
+                Point3D aPnt = theOracle.Pnt();
                 using N.gp_Pnt aNPnt = Oracle.ToNative(aPnt);
                 if (theOracle.Int(0, 1) == 0)
                 {
@@ -554,7 +555,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 theWhat = "SetPoleRow/Col";
                 bool aRow = theOracle.Int(0, 1) == 0;
                 int aNb = aRow ? theP.NbVPoles() : theP.NbUPoles();
-                var aPs = new NCollection_Array1<gp_Pnt>(1, aNb);
+                var aPs = new NCollection_Array1<Point3D>(1, aNb);
                 for (int k = 1; k <= aNb; k++)
                 {
                     aPs[k] = theOracle.Pnt();
@@ -610,7 +611,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
                 }
 
                 double aU = theOracle.Real(aU1, aU2), aV = theOracle.Real(aV1, aV2);
-                gp_Pnt aTarget = theP.Value(aU, aV).Translated(new gp_Vec(theOracle.Real(-1, 1), theOracle.Real(-1, 1), theOracle.Real(-1, 1)));
+                Point3D aTarget = theP.Value(aU, aV).Translated(new Vector3D(theOracle.Real(-1, 1), theOracle.Real(-1, 1), theOracle.Real(-1, 1)));
                 int aUI1 = 1, aUI2 = theP.NbUPoles();
                 int aVI1 = 1, aVI2 = theP.NbVPoles();
                 using N.gp_Pnt aNTarget = Oracle.ToNative(aTarget);
@@ -637,7 +638,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
             case 18:
             {
                 theWhat = "Transform";
-                (N.gp_Trsf aNT, gp_Trsf aT) = RandomTrsf(theOracle);
+                (N.gp_Trsf aNT, Transform3D aT) = RandomTrsf(theOracle);
                 using (aNT)
                 {
                     return Both(() => theN.Transform(aNT), () => theP.Transform(aT), theWhat);

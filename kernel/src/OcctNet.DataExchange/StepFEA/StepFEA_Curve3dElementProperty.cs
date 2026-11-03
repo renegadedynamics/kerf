@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity Curve3dElementProperty
 /// </summary>
-public class StepFEA_Curve3dElementProperty : Standard_Transient
+public class StepFEA_Curve3dElementProperty : Transient
 {
     private TCollection_HAsciiString thePropertyId;
     private TCollection_HAsciiString theDescription;

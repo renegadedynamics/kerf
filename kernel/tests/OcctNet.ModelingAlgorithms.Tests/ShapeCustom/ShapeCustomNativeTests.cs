@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.Continuity;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -84,7 +84,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             Records.Add(($"{theHead} {aNb}", theText.Length > 0 && theText[^1] != '\n' ? theText + "\n" : theText));
         }
 
-        public void Throw(Exception theException) => Line("THROW " + theException.GetType().Name);
+        public void Throw(Exception theException) => Line("THROW " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theException.GetType()));
     }
 
     private static string Text(Action<StringWriter> theWrite)
@@ -132,12 +132,12 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         try
         {
             TopoDS_Shape aRes = theSet == 1
-                                  ? ShapeCustom.BSplineRestriction(theShape, 1e-3, 1e-3, 5, 100, GeomAbs_C1, GeomAbs_C1, true, true, Parameters(1))
-                                  : ShapeCustom.BSplineRestriction(theShape, 1e-2, 1e-4, 3, 4, GeomAbs_C2, GeomAbs_C1, false, false, Parameters(2));
-            Assert.True(aRes.TShape()!.IsFrozen());
+                                  ? ShapeCustom.BSplineRestriction(theShape, 1e-3, 1e-3, 5, 100, C1, C1, true, true, Parameters(1))
+                                  : ShapeCustom.BSplineRestriction(theShape, 1e-2, 1e-4, 3, 4, C2, C1, false, false, Parameters(2));
+            Assert.True(aRes.TShape()!.IsFrozen);
             theW.Block("OUT", Text(w => BRepTools.Write(aRes, w, true, false, TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3)));
         }
-        catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+        catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
         {
             theW.Throw(e);
         }
@@ -168,7 +168,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                     Geom_Surface? aRes = aTool.ConvertToAnalytical(aTol, false);
                     theW.Block($"ANA {Hex(aTol)} {Hex(aTool.Gap())}", Text(aRes));
                 }
-                catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
                 {
                     theW.Throw(e);
                 }
@@ -182,7 +182,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 Assert.True(aRes is null || !ReferenceEquals(aRes, aS));
                 theW.Block("PER", Text(aRes));
             }
-            catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
             {
                 theW.Throw(e);
             }
@@ -205,7 +205,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 Assert.Equal(wasPeriodic, aC.IsPeriodic());
                 theW.Block("PER", Text(aRes));
             }
-            catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+            catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
             {
                 theW.Throw(e);
             }
@@ -233,7 +233,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                     Geom2d_Line? aLine = ShapeCustom_Curve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
                     theW.Block($"LINE {Hex(cf)} {Hex(cl)} {Hex(aDev)}", Text(aLine));
                 }
-                catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
                 {
                     theW.Throw(e);
                 }
@@ -244,11 +244,11 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                         // the caller's frozen pcurve itself: the port removes the knots from a copy (decision 974)
                         int aNbKnots = aBS.NbKnots();
                         Geom2d_BSplineCurve aCurve = aBS;
-                        bool isDone = ShapeCustom_Curve2d.SimplifyBSpline2d(ref aCurve, Precision.Approximation());
+                        bool isDone = ShapeCustom_Curve2d.SimplifyBSpline2d(ref aCurve, global::Kerf.Engine.Foundation.Precision.Approximation());
                         Assert.Equal(aNbKnots, aBS.NbKnots());
                         theW.Block("SIMP " + (isDone ? "1" : "0"), Text(aCurve));
                     }
-                    catch (Standard_Failure e) when (e is not (Standard_ImmutableObject or TopoDS_LockedShape))
+                    catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or TopoDS_LockedShape))
                     {
                         theW.Throw(e);
                     }

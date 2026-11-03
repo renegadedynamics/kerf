@@ -5,9 +5,13 @@
 
 // modified by NIZHNY-OFV  Thu Jan 20 11:04:19 2005
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -41,31 +45,31 @@ public class ProjLib_ComputeApprox
         private readonly double DXx, DXy, DXz; // X direction components
         private readonly double DYx, DYy, DYz; // Y direction components
 
-        public PlaneProjector(in gp_Ax3 thePos)
+        public PlaneProjector(in CoordinateSystem thePos)
         {
-            gp_Pnt aLoc = thePos.Location();
+            Point3D aLoc = thePos.Location();
             OX = aLoc.X();
             OY = aLoc.Y();
             OZ = aLoc.Z();
 
-            gp_Dir aXDir = thePos.XDirection();
+            Direction3D aXDir = thePos.XDirection();
             DXx = aXDir.X();
             DXy = aXDir.Y();
             DXz = aXDir.Z();
 
-            gp_Dir aYDir = thePos.YDirection();
+            Direction3D aYDir = thePos.YDirection();
             DYx = aYDir.X();
             DYy = aYDir.Y();
             DYz = aYDir.Z();
         }
 
         /// <summary>The 2D point X = (P - Origin) . XDirection, Y = (P - Origin) . YDirection.</summary>
-        public gp_Pnt2d Project(in gp_Pnt theP)
+        public Point2D Project(in Point3D theP)
         {
             double dX = theP.X() - OX;
             double dY = theP.Y() - OY;
             double dZ = theP.Z() - OZ;
-            return new gp_Pnt2d(dX * DXx + dY * DXy + dZ * DXz, dX * DYx + dY * DYy + dZ * DYz);
+            return new Point2D(dX * DXx + dY * DXy + dZ * DXz, dX * DYx + dY * DYy + dZ * DYz);
         }
     }
 
@@ -75,7 +79,7 @@ public class ProjLib_ComputeApprox
         return (Math.Abs(Check - With) < Toler);
     }
 
-    private static gp_Pnt2d Function_Value(double U,
+    private static Point2D Function_Value(double U,
                                            Adaptor3d_Curve myCurve,
                                            Adaptor3d_Surface mySurface,
                                            double U1,
@@ -87,56 +91,56 @@ public class ProjLib_ComputeApprox
     {
         double S = 0.0, T = 0.0;
 
-        gp_Pnt P3d = myCurve.Value(U);
-        GeomAbs_SurfaceType SType = mySurface.GetType();
+        Point3D P3d = myCurve.Value(U);
+        SurfaceKind SType = mySurface.GetType();
 
         switch (SType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
-                gp_Pln Plane = mySurface.Plane();
-                ElSLib.Parameters(Plane, P3d, out S, out T);
+                Plane3D Plane = mySurface.Plane();
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(Plane, P3d, out S, out T);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder Cylinder = mySurface.Cylinder();
-                ElSLib.Parameters(Cylinder, P3d, out S, out T);
+                Cylinder Cylinder = mySurface.Cylinder();
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P3d, out S, out T);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                gp_Cone Cone = mySurface.Cone();
-                ElSLib.Parameters(Cone, P3d, out S, out T);
+                Cone Cone = mySurface.Cone();
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P3d, out S, out T);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                gp_Sphere Sphere = mySurface.Sphere();
-                ElSLib.Parameters(Sphere, P3d, out S, out T);
+                Sphere Sphere = mySurface.Sphere();
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, P3d, out S, out T);
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
-                gp_Torus Torus = mySurface.Torus();
-                ElSLib.Parameters(Torus, P3d, out S, out T);
+                Torus Torus = mySurface.Torus();
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, P3d, out S, out T);
                 break;
             }
             default:
-                throw new Standard_NoSuchObject("ProjLib_ComputeApprox::Value");
+                throw new NoSuchObjectException("ProjLib_ComputeApprox::Value");
         }
 
         if (UCouture)
         {
             if (S < U1 || S > U2)
             {
-                S = ElCLib.InPeriod(S, U1, U2);
+                S = global::Kerf.Engine.Geometry.ElCLib.InPeriod(S, U1, U2);
             }
         }
 
         if (VCouture)
         {
-            if (SType == GeomAbs_Sphere)
+            if (SType == SurfaceKind.Sphere)
             {
                 if (Math.Abs(S - U1) > M_PI)
                 {
@@ -147,21 +151,21 @@ public class ProjLib_ComputeApprox
                 // leaves a value already in [U1, U2[ unchanged, so only a value at U2 moves.
                 if (S > U1 || S < U2)
                 {
-                    S = ElCLib.InPeriod(S, U1, U2);
+                    S = global::Kerf.Engine.Geometry.ElCLib.InPeriod(S, U1, U2);
                 }
             }
             if (T < V1 || T > V2)
             {
-                T = ElCLib.InPeriod(T, V1, V2);
+                T = global::Kerf.Engine.Geometry.ElCLib.InPeriod(T, V1, V2);
             }
         }
 
-        return new gp_Pnt2d(S, T);
+        return new Point2D(S, T);
     }
 
     private static bool Function_D1(double U,
-                                    out gp_Pnt2d P,
-                                    out gp_Vec2d D,
+                                    out Point2D P,
+                                    out Vector2D D,
                                     Adaptor3d_Curve myCurve,
                                     Adaptor3d_Surface mySurface,
                                     double U1,
@@ -171,25 +175,25 @@ public class ProjLib_ComputeApprox
                                     bool UCouture,
                                     bool VCouture)
     {
-        gp_Pnt P3d;
+        Point3D P3d;
         double dU, dV;
 
         // D is left unset on failure in OCCT; the port gives a zero vector (decision 32).
-        D = new gp_Vec2d();
+        D = new Vector2D();
         P = Function_Value(U, myCurve, mySurface, U1, U2, V1, V2, UCouture, VCouture);
 
-        GeomAbs_SurfaceType Type = mySurface.GetType();
+        SurfaceKind Type = mySurface.GetType();
 
         switch (Type)
         {
-            case GeomAbs_Plane:
-            case GeomAbs_Cone:
-            case GeomAbs_Cylinder:
-            case GeomAbs_Sphere:
-            case GeomAbs_Torus:
+            case Plane:
+            case SurfaceKind.Cone:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Sphere:
+            case SurfaceKind.Torus:
             {
-                gp_Vec D1U, D1V;
-                gp_Vec T;
+                Vector3D D1U, D1V;
+                Vector3D T;
                 myCurve.D1(U, out P3d, out T);
                 mySurface.D1(P.X(), P.Y(), out P3d, out D1U, out D1V);
 
@@ -205,7 +209,7 @@ public class ProjLib_ComputeApprox
 
                 dU /= Nu;
                 dV /= Nv;
-                D = new gp_Vec2d(dU, dV);
+                D = new Vector2D(dU, dV);
             }
             break;
 
@@ -247,7 +251,7 @@ public class ProjLib_ComputeApprox
                                              Adaptor3d_Surface mySurface)
     {
         double W1, W2, W;
-        gp_Pnt P1, P2, P;
+        Point3D P1, P2, P;
         //
         W1 = myCurve.FirstParameter();
         W2 = myCurve.LastParameter();
@@ -261,15 +265,15 @@ public class ProjLib_ComputeApprox
 
         switch (mySurface.GetType())
         {
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 double tol = Epsilon(1.0);
-                double ptol = Precision.PConfusion();
-                gp_Cone Cone = mySurface.Cone();
+                double ptol = global::Kerf.Engine.Foundation.Precision.PConfusion();
+                Cone Cone = mySurface.Cone();
                 VCouture = false;
                 // Calculation of cone parameters for P == ConeApex often produces wrong
                 // values of U
-                gp_Pnt ConeApex = Cone.Apex();
+                Point3D ConeApex = Cone.Apex();
                 if (ConeApex.XYZ().IsEqual(P1.XYZ(), tol))
                 {
                     W1 += ptol;
@@ -288,14 +292,14 @@ public class ProjLib_ComputeApprox
 
                 switch (myCurve.GetType())
                 {
-                    case GeomAbs_Parabola:
-                    case GeomAbs_Hyperbola:
-                    case GeomAbs_Ellipse:
+                    case Parabola:
+                    case Hyperbola:
+                    case Ellipse:
                     {
                         double U1, U2, V1, V2, U, V;
-                        ElSLib.Parameters(Cone, P1, out U1, out V1);
-                        ElSLib.Parameters(Cone, P2, out U2, out V2);
-                        ElSLib.Parameters(Cone, P, out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P1, out U1, out V1);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P2, out U2, out V2);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P, out U, out V);
                         myU1 = Min(U1, U2);
                         myU2 = Max(U1, U2);
                         if ((U1 < U && U < U2) && !myCurve.IsClosed())
@@ -312,16 +316,16 @@ public class ProjLib_ComputeApprox
                     default:
                     {
                         double U1, V1, U, V, Delta = 0.0, d = 0.0, pmin = W1, pmax = W1, dmax = 0.0, Uf, Ul;
-                        ElSLib.Parameters(Cone, P1, out U1, out V1);
-                        ElSLib.Parameters(Cone, P2, out Ul, out V1);
-                        gp_Ax1 anAx1 = Cone.Axis();
-                        gp_Lin aLin = new(anAx1);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P1, out U1, out V1);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P2, out Ul, out V1);
+                        Axis3D anAx1 = Cone.Axis();
+                        Line3D aLin = new(anAx1);
                         double R = (aLin.Distance(P1) + aLin.Distance(P2) + aLin.Distance(P)) / 3.0;
                         double Step;
                         myU1 = U1;
                         myU2 = U1;
                         Uf = U1;
-                        if (myCurve.GetType() == GeomAbs_Line)
+                        if (myCurve.GetType() == Line)
                         {
                             int nbp = 3;
                             Step = (W2 - W1) / (nbp - 1);
@@ -340,7 +344,7 @@ public class ProjLib_ComputeApprox
                                 par += Step;
                             }
                             P = myCurve.Value(par);
-                            ElSLib.Parameters(Cone, P, out U, out V);
+                            global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P, out U, out V);
                             U += Delta;
                             d = U - U1;
                             if (d > M_PI)
@@ -412,13 +416,13 @@ public class ProjLib_ComputeApprox
                             isFirst = false;
                         } // for(double par = W1 + Step; par <= W2; par += Step)
 
-                        if (Math.Abs(pmin - W1) > Precision.PConfusion()
-                            && Math.Abs(pmin - W2) > Precision.PConfusion())
+                        if (Math.Abs(pmin - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                            && Math.Abs(pmin - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             myU1 -= dmax * .5;
                         }
-                        if (Math.Abs(pmax - W1) > Precision.PConfusion()
-                            && Math.Abs(pmax - W2) > Precision.PConfusion())
+                        if (Math.Abs(pmax - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                            && Math.Abs(pmax - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             myU2 += dmax * .5;
                         }
@@ -440,17 +444,17 @@ public class ProjLib_ComputeApprox
             } // case Cone
             break;
 
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                gp_Cylinder Cylinder = mySurface.Cylinder();
+                Cylinder Cylinder = mySurface.Cylinder();
                 VCouture = false;
 
-                if (myCurve.GetType() == GeomAbs_Ellipse)
+                if (myCurve.GetType() == Ellipse)
                 {
                     double U1, U2, V1, V2, U, V;
-                    ElSLib.Parameters(Cylinder, P1, out U1, out V1);
-                    ElSLib.Parameters(Cylinder, P2, out U2, out V2);
-                    ElSLib.Parameters(Cylinder, P, out U, out V);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P1, out U1, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P2, out U2, out V2);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P, out U, out V);
                     myU1 = Min(U1, U2);
                     myU2 = Max(U1, U2);
 
@@ -480,9 +484,9 @@ public class ProjLib_ComputeApprox
                     }
                     else
                     {
-                        gp_Vec D1U, D1V;
-                        gp_Vec T;
-                        gp_Pnt P3d;
+                        Vector3D D1U, D1V;
+                        Vector3D T;
+                        Point3D P3d;
                         myCurve.D1(W1, out P3d, out T);
                         // OCCT: evaluates the surface at (U1, U2), two U parameters, where (U1, V1) was meant; on a
                         // cylinder D1U depends only on U, so only the sign test below is affected, through U1.
@@ -504,7 +508,7 @@ public class ProjLib_ComputeApprox
                 else
                 {
                     double U1, V1, U, V;
-                    ElSLib.Parameters(Cylinder, P1, out U1, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P1, out U1, out V1);
                     double R = Cylinder.Radius();
                     double Delta = 0.0, Step;
                     double eps = M_PI, dmax = 0.0, d = 0.0;
@@ -515,7 +519,7 @@ public class ProjLib_ComputeApprox
                     for (double par = W1 + Step; par <= plim; par += Step)
                     {
                         P = myCurve.Value(par);
-                        ElSLib.Parameters(Cylinder, P, out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P, out U, out V);
                         U += Delta;
                         d = U - U1;
                         if (d > eps)
@@ -546,13 +550,13 @@ public class ProjLib_ComputeApprox
                         U1 = U;
                     }
 
-                    if (Math.Abs(pmin - W1) > Precision.PConfusion()
-                        && Math.Abs(pmin - W2) > Precision.PConfusion())
+                    if (Math.Abs(pmin - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(pmin - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         myU1 -= dmax * .5;
                     }
-                    if (Math.Abs(pmax - W1) > Precision.PConfusion()
-                        && Math.Abs(pmax - W2) > Precision.PConfusion())
+                    if (Math.Abs(pmax - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(pmax - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         myU2 += dmax * .5;
                     }
@@ -572,11 +576,11 @@ public class ProjLib_ComputeApprox
             }
             break;
             //
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 VCouture = false;
-                gp_Sphere SP = mySurface.Sphere();
-                if (myCurve.GetType() == GeomAbs_Circle)
+                Sphere SP = mySurface.Sphere();
+                if (myCurve.GetType() == Circle)
                 {
                     UCouture = true;
 
@@ -597,14 +601,14 @@ public class ProjLib_ComputeApprox
                     int NbSolutions = 0;
                     double A, B, C, D, R, Tol = 1.0e-10;
                     double U1, U2, V1, V2;
-                    gp_Trsf Trsf = new();
+                    Transform3D Trsf = new();
                     //
-                    gp_Circ Circle = myCurve.Circle();
+                    Circle3D Circle = myCurve.Circle();
                     Trsf.SetTransformation(SP.Position());
                     Circle.Transform(Trsf);
                     //
                     R = SP.Radius();
-                    gp_Pln Plane = new(new gp_Ax3(Circle.Position()));
+                    Plane3D Plane = new(new CoordinateSystem(Circle.Position()));
                     Plane.Coefficients(out A, out B, out C, out D);
                     //
                     if (Math.Abs(C) < Tol)
@@ -661,15 +665,15 @@ public class ProjLib_ComputeApprox
 
                     // box+sphere >>
                     double UU = 0.0;
-                    ElSLib.Parameters(SP, P1, out U1, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P1, out U1, out V1);
                     double eps = 10.0 * Epsilon(1.0);
-                    double dt = Max(Precision.PConfusion(), 0.01 * (W2 - W1));
+                    double dt = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), 0.01 * (W2 - W1));
                     if (Math.Abs(U1) < eps)
                     {
                         // May be U1 must be equal 2*PI?
-                        gp_Pnt Pd = myCurve.Value(W1 + dt);
+                        Point3D Pd = myCurve.Value(W1 + dt);
                         double ud, vd;
-                        ElSLib.Parameters(SP, Pd, out ud, out vd);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, Pd, out ud, out vd);
                         if (Math.Abs(U1 - ud) > M_PI)
                         {
                             U1 = 2.0 * M_PI;
@@ -678,22 +682,22 @@ public class ProjLib_ComputeApprox
                     else if (Math.Abs(2.0 * M_PI - U1) < eps)
                     {
                         // maybe U1 = 0.?
-                        gp_Pnt Pd = myCurve.Value(W1 + dt);
+                        Point3D Pd = myCurve.Value(W1 + dt);
                         double ud, vd;
-                        ElSLib.Parameters(SP, Pd, out ud, out vd);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, Pd, out ud, out vd);
                         if (Math.Abs(U1 - ud) > M_PI)
                         {
                             U1 = 0.0;
                         }
                     }
                     //
-                    ElSLib.Parameters(SP, P2, out U2, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P2, out U2, out V1);
                     if (Math.Abs(U2) < eps)
                     {
                         // May be U2 must be equal 2*PI?
-                        gp_Pnt Pd = myCurve.Value(W2 - dt);
+                        Point3D Pd = myCurve.Value(W2 - dt);
                         double ud, vd;
-                        ElSLib.Parameters(SP, Pd, out ud, out vd);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, Pd, out ud, out vd);
                         if (Math.Abs(U2 - ud) > M_PI)
                         {
                             U2 = 2.0 * M_PI;
@@ -702,20 +706,20 @@ public class ProjLib_ComputeApprox
                     else if (Math.Abs(2.0 * M_PI - U2) < eps)
                     {
                         // maybe U2 = 0.?
-                        gp_Pnt Pd = myCurve.Value(W2 - dt);
+                        Point3D Pd = myCurve.Value(W2 - dt);
                         double ud, vd;
-                        ElSLib.Parameters(SP, Pd, out ud, out vd);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, Pd, out ud, out vd);
                         if (Math.Abs(U2 - ud) > M_PI)
                         {
                             U2 = 0.0;
                         }
                     }
                     //
-                    ElSLib.Parameters(SP, P, out UU, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P, out UU, out V1);
                     // OCCT: U2, adjusted to the seam just above, is overwritten here with the U of the point at
                     // W1 + PI/8 (a curve parameter offset, whatever the curve's parameterisation).
                     P2 = myCurve.Value(W1 + M_PI / 8);
-                    ElSLib.Parameters(SP, P2, out U2, out V2);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P2, out U2, out V2);
                     //
                     if (NbSolutions == 1)
                     {
@@ -748,9 +752,9 @@ public class ProjLib_ComputeApprox
                     }
                     else
                     { // 0 or 2 solutions
-                        gp_Pnt Center = Circle.Location();
+                        Point3D Center = Circle.Location();
                         double U, V;
-                        ElSLib.SphereParameters(new gp_Ax3(gp.XOY()), 1, Center, out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.SphereParameters(new CoordinateSystem(Constants.XOY()), 1, Center, out U, out V);
                         myU1 = U - M_PI;
                         myU2 = U + M_PI;
                     }
@@ -777,13 +781,13 @@ public class ProjLib_ComputeApprox
                         }
 
                         // if P1.Z() equals +/- R we are at the vertex: not significant.
-                        gp_Pnt pp = P1.Transformed(Trsf);
+                        Point3D pp = P1.Transformed(Trsf);
 
                         if (Math.Abs(pp.X() * pp.X() + pp.Y() * pp.Y() + pp.Z() * pp.Z() - R * R) < Tol)
                         {
-                            gp_Pnt Center = Circle.Location();
+                            Point3D Center = Circle.Location();
                             double U, V;
-                            ElSLib.SphereParameters(new gp_Ax3(gp.XOY()), 1, Center, out U, out V);
+                            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(new CoordinateSystem(Constants.XOY()), 1, Center, out U, out V);
                             myU1 = U - M_PI;
                             myU2 = U + M_PI;
                             VCouture = false;
@@ -799,7 +803,7 @@ public class ProjLib_ComputeApprox
                 else
                 {
                     double U1, V1, U, V;
-                    ElSLib.Parameters(SP, P1, out U1, out V1);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P1, out U1, out V1);
                     double R = SP.Radius();
                     double Delta = 0.0, Step;
                     double eps = M_PI, dmax = 0.0, d = 0.0;
@@ -810,7 +814,7 @@ public class ProjLib_ComputeApprox
                     for (double par = W1 + Step; par <= plim; par += Step)
                     {
                         P = myCurve.Value(par);
-                        ElSLib.Parameters(SP, P, out U, out V);
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(SP, P, out U, out V);
                         U += Delta;
                         d = U - U1;
                         if (d > eps)
@@ -841,13 +845,13 @@ public class ProjLib_ComputeApprox
                         U1 = U;
                     }
 
-                    if (Math.Abs(pmin - W1) > Precision.PConfusion()
-                        && Math.Abs(pmin - W2) > Precision.PConfusion())
+                    if (Math.Abs(pmin - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(pmin - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         myU1 -= dmax * .5;
                     }
-                    if (Math.Abs(pmax - W1) > Precision.PConfusion()
-                        && Math.Abs(pmax - W2) > Precision.PConfusion())
+                    if (Math.Abs(pmax - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(pmax - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         myU2 += dmax * .5;
                     }
@@ -871,11 +875,11 @@ public class ProjLib_ComputeApprox
             }
             break;
             //
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
-                gp_Torus TR = mySurface.Torus();
+                Torus TR = mySurface.Torus();
                 double U1, V1, U, V, dU, dV;
-                ElSLib.Parameters(TR, P1, out U1, out V1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(TR, P1, out U1, out V1);
                 double R = TR.MinorRadius();
                 double DeltaU = 0.0, DeltaV = 0.0, Step;
                 double eps = M_PI, dmaxU = 0.0, dmaxV = 0.0;
@@ -888,7 +892,7 @@ public class ProjLib_ComputeApprox
                 for (double par = W1 + Step; par <= plim; par += Step)
                 {
                     P = myCurve.Value(par);
-                    ElSLib.Parameters(TR, P, out U, out V);
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(TR, P, out U, out V);
                     U += DeltaU;
                     V += DeltaV;
                     dU = U - U1;
@@ -947,23 +951,23 @@ public class ProjLib_ComputeApprox
                     V1 = V;
                 }
 
-                if (Math.Abs(pminU - W1) > Precision.PConfusion()
-                    && Math.Abs(pminU - W2) > Precision.PConfusion())
+                if (Math.Abs(pminU - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Math.Abs(pminU - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     myU1 -= dmaxU * .5;
                 }
-                if (Math.Abs(pmaxU - W1) > Precision.PConfusion()
-                    && Math.Abs(pmaxU - W2) > Precision.PConfusion())
+                if (Math.Abs(pmaxU - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Math.Abs(pmaxU - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     myU2 += dmaxU * .5;
                 }
-                if (Math.Abs(pminV - W1) > Precision.PConfusion()
-                    && Math.Abs(pminV - W2) > Precision.PConfusion())
+                if (Math.Abs(pminV - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Math.Abs(pminV - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     myV1 -= dmaxV * .5;
                 }
-                if (Math.Abs(pmaxV - W1) > Precision.PConfusion()
-                    && Math.Abs(pmaxV - W2) > Precision.PConfusion())
+                if (Math.Abs(pmaxV - W1) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Math.Abs(pmaxV - W2) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     myV2 += dmaxV * .5;
                 }
@@ -1060,22 +1064,22 @@ public class ProjLib_ComputeApprox
 
         public override double LastParameter() => (myCurve.LastParameter());
 
-        public override bool Value(double theT, NCollection_Array1<gp_Pnt2d> thePnt2d, NCollection_Array1<gp_Pnt> thePnt)
+        public override bool Value(double theT, NCollection_Array1<Point2D> thePnt2d, NCollection_Array1<Point3D> thePnt)
         {
             thePnt2d[1] =
                 Function_Value(theT, myCurve, mySurface, myU1, myU2, myV1, myV2, UCouture, VCouture);
             return true;
         }
 
-        public gp_Pnt2d Value(double theT)
+        public Point2D Value(double theT)
         {
             return Function_Value(theT, myCurve, mySurface, myU1, myU2, myV1, myV2, UCouture, VCouture);
         }
 
-        public override bool D1(double theT, NCollection_Array1<gp_Vec2d> theVec2d, NCollection_Array1<gp_Vec> theVec)
+        public override bool D1(double theT, NCollection_Array1<Vector2D> theVec2d, NCollection_Array1<Vector3D> theVec)
         {
-            gp_Pnt2d aPnt2d;
-            gp_Vec2d aVec2d;
+            Point2D aPnt2d;
+            Vector2D aVec2d;
             bool isOk = Function_D1(theT,
                                     out aPnt2d,
                                     out aVec2d,
@@ -1117,7 +1121,7 @@ public class ProjLib_ComputeApprox
     /// <summary>An empty algorithm with the tolerance Precision::PApproximation().</summary>
     public ProjLib_ComputeApprox()
     {
-        myTolerance = Precision.PApproximation();
+        myTolerance = global::Kerf.Engine.Foundation.Precision.PApproximation();
         myDegMin = -1;
         myDegMax = -1;
         myMaxSegments = -1;
@@ -1128,11 +1132,11 @@ public class ProjLib_ComputeApprox
     /// Approximates the projection of <paramref name="C"/> on <paramref name="S"/> within the 3D tolerance
     /// <paramref name="Tol"/> (at least Precision::PApproximation()).
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not analytical and the case is not a B-spline or Bezier
+    /// <exception cref="NoSuchObjectException">The surface is not analytical and the case is not a B-spline or Bezier
     /// curve on a plane.</exception>
     public ProjLib_ComputeApprox(Adaptor3d_Curve C, Adaptor3d_Surface S, double Tol)
     {
-        myTolerance = Max(Tol, Precision.PApproximation());
+        myTolerance = Max(Tol, global::Kerf.Engine.Foundation.Precision.PApproximation());
         myDegMin = -1;
         myDegMax = -1;
         myMaxSegments = -1;
@@ -1144,7 +1148,7 @@ public class ProjLib_ComputeApprox
     /// Computes the projection. If the surface is a plane and the curve a B-spline or a Bezier curve, the poles are
     /// projected (no approximation).
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject">The surface is not analytical and the case is not a B-spline or Bezier
+    /// <exception cref="NoSuchObjectException">The surface is not analytical and the case is not a B-spline or Bezier
     /// curve on a plane.</exception>
     public void Perform(Adaptor3d_Curve C, Adaptor3d_Surface S)
     {
@@ -1152,32 +1156,32 @@ public class ProjLib_ComputeApprox
         // don`t make an Approx but only the projection of the poles.
 
         int NbKnots, NbPoles;
-        GeomAbs_CurveType CType = C.GetType();
-        GeomAbs_SurfaceType SType = S.GetType();
+        CurveKind CType = C.GetType();
+        SurfaceKind SType = S.GetType();
 
         bool SurfIsAnal = ProjLib.IsAnaSurf(S);
 
-        bool CurvIsAnal = (CType != GeomAbs_BSplineCurve) && (CType != GeomAbs_BezierCurve)
-                          && (CType != GeomAbs_OffsetCurve) && (CType != GeomAbs_OtherCurve);
+        bool CurvIsAnal = (CType != BSplineCurve) && (CType != BezierCurve)
+                          && (CType != OffsetCurve) && (CType != OtherCurve);
 
         bool simplecase = SurfIsAnal && CurvIsAnal;
-        if (CType == GeomAbs_BSplineCurve || CType == GeomAbs_BezierCurve)
+        if (CType == BSplineCurve || CType == BezierCurve)
         {
             int aNbKnots = 1;
-            if (CType == GeomAbs_BSplineCurve)
+            if (CType == BSplineCurve)
             {
                 aNbKnots = C.NbKnots();
             }
             simplecase = simplecase && C.Degree() <= 2 && aNbKnots <= 2;
         }
 
-        if (CType == GeomAbs_BSplineCurve && SType == GeomAbs_Plane)
+        if (CType == BSplineCurve && SType == Plane)
         {
             // get the poles and eventually the weights
             Geom_BSplineCurve BS = C.BSpline();
             NbPoles = BS.NbPoles();
-            NCollection_Array1<gp_Pnt> P3d = BS.InternalPoles();
-            NCollection_Array1<gp_Pnt2d> Poles = new(1, NbPoles);
+            NCollection_Array1<Point3D> P3d = BS.InternalPoles();
+            NCollection_Array1<Point2D> Poles = new(1, NbPoles);
 
             // Project poles onto plane using optimized projector (avoids gp_Trsf per point)
             PlaneProjector aProj = new(S.Plane().Position());
@@ -1202,13 +1206,13 @@ public class ProjLib_ComputeApprox
                 myBSpline = new Geom2d_BSplineCurve(Poles, Knots, Mults, BS.Degree(), BS.IsPeriodic());
             }
         }
-        else if (CType == GeomAbs_BezierCurve && SType == GeomAbs_Plane)
+        else if (CType == BezierCurve && SType == Plane)
         {
             // get the poles and eventually the weights
             Geom_BezierCurve BezierCurvePtr = C.Bezier();
             NbPoles = BezierCurvePtr.NbPoles();
-            NCollection_Array1<gp_Pnt> P3d = BezierCurvePtr.InternalPoles();
-            NCollection_Array1<gp_Pnt2d> Poles = new(1, NbPoles);
+            NCollection_Array1<Point3D> P3d = BezierCurvePtr.InternalPoles();
+            NCollection_Array1<Point2D> Poles = new(1, NbPoles);
 
             // Project poles onto plane using optimized projector (avoids gp_Trsf per point)
             PlaneProjector aProj = new(S.Plane().Position());
@@ -1266,7 +1270,7 @@ public class ProjLib_ComputeApprox
             double aTolU = ComputeTolU(S, myTolerance);
             double aTolV = ComputeTolV(S, myTolerance);
             double aTol2d =
-                Max(Math.Sqrt(aTolU * aTolU + aTolV * aTolV), Precision.PConfusion());
+                Max(Math.Sqrt(aTolU * aTolU + aTolV * aTolV), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
             Approx_FitAndDivide2d Fit = new(Deg1, Deg2, myTolerance, aTol2d, true, aFistC, aLastC);
             Fit.SetMaxSegments(aMaxSegments);
@@ -1283,7 +1287,7 @@ public class ProjLib_ComputeApprox
                 int NbCurves = Fit.NbMultiCurves();
 
                 // try to make the curve at least C1
-                Convert_CompBezierCurves2dToBSplineCurve2d Conv = new();
+                CompBezierCurves2dToBSplineCurve2d Conv = new();
 
                 double Tol3d, Tol2d;
                 for (i = 1; i <= NbCurves; i++)
@@ -1291,15 +1295,15 @@ public class ProjLib_ComputeApprox
                     Fit.Error(i, out Tol3d, out Tol2d);
                     aNewTol2d = Max(aNewTol2d, Tol2d);
                     AppParCurves_MultiCurve MC = Fit.Value(i);               // Load the i-th Curve
-                    NCollection_Array1<gp_Pnt2d> Poles2d = new(1, MC.Degree() + 1); // Retrieve the poles
+                    NCollection_Array1<Point2D> Poles2d = new(1, MC.Degree() + 1); // Retrieve the poles
                     MC.Curve(1, Poles2d);
                     Conv.AddCurve(Poles2d);
                 }
 
                 // update the fields of ProjLib_Approx
                 Conv.Perform();
-                NbPoles = Conv.NbPoles();
-                NbKnots = Conv.NbKnots();
+                NbPoles = Conv.PoleCount;
+                NbKnots = Conv.KnotCount;
 
                 if (NbPoles <= 0 || NbPoles > 100000)
                 {
@@ -1310,14 +1314,14 @@ public class ProjLib_ComputeApprox
                     return;
                 }
 
-                NCollection_Array1<gp_Pnt2d> NewPoles = new(1, NbPoles);
+                NCollection_Array1<Point2D> NewPoles = new(1, NbPoles);
                 NCollection_Array1<double> NewKnots = new(1, NbKnots);
                 NCollection_Array1<int> NewMults = new(1, NbKnots);
 
                 Conv.KnotsAndMults(NewKnots, NewMults);
                 Conv.Poles(NewPoles);
 
-                BSplCLib.Reparametrize(C.FirstParameter(), C.LastParameter(), NewKnots);
+                global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(C.FirstParameter(), C.LastParameter(), NewKnots);
 
                 // Set NewKnots(NbKnots) exactly C->LastParameter()
                 // to avoid problems if trim is used.
@@ -1335,7 +1339,7 @@ public class ProjLib_ComputeApprox
                     // try to smoother the Curve GeomAbs_C1.
                     int aDeg = myBSpline.Degree();
                     bool OK = true;
-                    double aSmoothTol = Max(Precision.Confusion(), aNewTol2d);
+                    double aSmoothTol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), aNewTol2d);
                     for (int ij = 2; ij < NbKnots; ij++)
                     {
                         OK = OK && myBSpline.RemoveKnot(ij, aDeg - 1, aSmoothTol);
@@ -1366,64 +1370,64 @@ public class ProjLib_ComputeApprox
             double UFirst = F.FirstParameter();
             double ULast = F.LastParameter();
             double Umid = (UFirst + ULast) / 2;
-            gp_Pnt P3d = C.Value(Umid);
+            Point3D P3d = C.Value(Umid);
             double u = 0.0, v = 0.0;
             switch (SType)
             {
-                case GeomAbs_Plane:
+                case Plane:
                 {
-                    gp_Pln Plane = S.Plane();
-                    ElSLib.Parameters(Plane, P3d, out u, out v);
+                    Plane3D Plane = S.Plane();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Plane, P3d, out u, out v);
                     break;
                 }
-                case GeomAbs_Cylinder:
+                case SurfaceKind.Cylinder:
                 {
-                    gp_Cylinder Cylinder = S.Cylinder();
-                    ElSLib.Parameters(Cylinder, P3d, out u, out v);
+                    Cylinder Cylinder = S.Cylinder();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P3d, out u, out v);
                     break;
                 }
-                case GeomAbs_Cone:
+                case SurfaceKind.Cone:
                 {
-                    gp_Cone Cone = S.Cone();
-                    ElSLib.Parameters(Cone, P3d, out u, out v);
+                    Cone Cone = S.Cone();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P3d, out u, out v);
                     break;
                 }
-                case GeomAbs_Sphere:
+                case SurfaceKind.Sphere:
                 {
-                    gp_Sphere Sphere = S.Sphere();
-                    ElSLib.Parameters(Sphere, P3d, out u, out v);
+                    Sphere Sphere = S.Sphere();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, P3d, out u, out v);
                     break;
                 }
-                case GeomAbs_Torus:
+                case SurfaceKind.Torus:
                 {
-                    gp_Torus Torus = S.Torus();
-                    ElSLib.Parameters(Torus, P3d, out u, out v);
+                    Torus Torus = S.Torus();
+                    global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, P3d, out u, out v);
                     break;
                 }
                 default:
-                    throw new Standard_NoSuchObject("ProjLib_ComputeApprox::Value");
+                    throw new NoSuchObjectException("ProjLib_ComputeApprox::Value");
             }
             bool ToMirror = false;
             double du = 0.0, dv = 0.0;
             int number;
             if (F.VCouture)
             {
-                if (SType == GeomAbs_Sphere && Math.Abs(u - F.myU1) > M_PI)
+                if (SType == SurfaceKind.Sphere && Math.Abs(u - F.myU1) > M_PI)
                 {
                     ToMirror = true;
                     dv = -M_PI;
                     v = M_PI - v;
                 }
-                double newV = ElCLib.InPeriod(v, F.myV1, F.myV2);
+                double newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, F.myV1, F.myV2);
                 number = (int)(Math.Floor((newV - v) / (F.myV2 - F.myV1)));
                 dv -= number * (F.myV2 - F.myV1);
             }
-            if (F.UCouture || (F.VCouture && SType == GeomAbs_Sphere))
+            if (F.UCouture || (F.VCouture && SType == SurfaceKind.Sphere))
             {
                 double aNbPer;
-                gp_Pnt2d P2d = F.Value(Umid);
+                Point2D P2d = F.Value(Umid);
                 du = u - P2d.X();
-                du = (du < 0) ? (du - Precision.PConfusion()) : (du + Precision.PConfusion());
+                du = (du < 0) ? (du - global::Kerf.Engine.Foundation.Precision.PConfusion()) : (du + global::Kerf.Engine.Foundation.Precision.PConfusion());
                 aNbPer = Math.Truncate(du / M_PI); // modf's integral part
                 number = (int)aNbPer;
                 du = number * M_PI;
@@ -1433,11 +1437,11 @@ public class ProjLib_ComputeApprox
             {
                 if (du != 0.0 || dv != 0.0)
                 {
-                    myBSpline.Translate(new gp_Vec2d(du, dv));
+                    myBSpline.Translate(new Vector2D(du, dv));
                 }
                 if (ToMirror)
                 {
-                    gp_Ax2d Axe = new(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(gp_Dir2d.D.X));
+                    Axis2D Axe = new(new Point2D(0.0, 0.0), new Direction2D(Direction2D.D.X));
                     myBSpline.Mirror(Axe);
                 }
             }

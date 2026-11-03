@@ -2,13 +2,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation.Std;
+
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>The pair of indices of two interfering shapes.</summary>
 /// <remarks>
 /// Equality is OCCT's: unordered, so (1, 2) equals (2, 1), and the hash is computed on the ordered pair as OCCT's
 /// <c>std::hash&lt;BOPDS_Pair&gt;</c> does. The order (C++'s <c>operator&lt;</c>) is by the first index, then the
-/// second; <see cref="LessThan"/> gives it to <see cref="std_sort"/>.
+/// second; <see cref="LessThan"/> gives it to <see cref="Sorting"/>.
 /// </remarks>
 public partial struct BOPDS_Pair : IEquatable<BOPDS_Pair>, IComparable<BOPDS_Pair>
 {
@@ -54,8 +58,8 @@ public partial struct BOPDS_Pair : IEquatable<BOPDS_Pair>, IComparable<BOPDS_Pai
 
     // ---- OCCT.NET additions
 
-    /// <summary>C++'s <c>operator&lt;</c> for <see cref="std_sort"/>.</summary>
-    public readonly struct LessThan : std_heap.ILess<BOPDS_Pair>
+    /// <summary>C++'s <c>operator&lt;</c> for <see cref="Sorting"/>.</summary>
+    public readonly struct LessThan : Heap.ILess<BOPDS_Pair>
     {
         public bool Less(BOPDS_Pair theLeft, BOPDS_Pair theRight) => theLeft < theRight;
     }
@@ -73,5 +77,5 @@ public partial struct BOPDS_Pair : IEquatable<BOPDS_Pair>, IComparable<BOPDS_Pai
 
     public static bool operator !=(BOPDS_Pair theLeft, BOPDS_Pair theRight) => !theLeft.IsEqual(theRight);
 
-    public override readonly string ToString() => gp.Format("BOPDS_Pair", myIndex1, myIndex2);
+    public override readonly string ToString() => Constants.Format("BOPDS_Pair", myIndex1, myIndex2);
 }

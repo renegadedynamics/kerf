@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 /// of a Model, and recorded in a GeneralLib Optimized : once an entity has been queried, the GeneralLib is
 /// not longer queried Shareable between several users : as a Handle
 /// </summary>
-public class Interface_GTool : Standard_Transient
+public class Interface_GTool : Transient
 {
 
     /// <summary>
@@ -52,7 +54,7 @@ public class Interface_GTool : Standard_Transient
     /// Returns the Signature for a Transient Object in a Model It calls SignType to do that If SignType is not
     /// defined, return ClassName of &lt;ent&gt;
     /// </summary>
-    public string SignValue(Standard_Transient? ent, Interface_InterfaceModel? model)
+    public string SignValue(Transient? ent, Interface_InterfaceModel? model)
     {
         if (ent is null)
         {
@@ -60,7 +62,7 @@ public class Interface_GTool : Standard_Transient
         }
         if (thesign is null)
         {
-            return Interface_SignType.ClassName(ent.DynamicType().Name);
+            return Interface_SignType.ClassName(ent.DynamicTypeName());
         }
         return thesign.Value(ent, model);
     }
@@ -132,7 +134,7 @@ public class Interface_GTool : Standard_Transient
     /// Selects for an entity, its Module and Case Number It is optimised : once done for each entity, the result
     /// is mapped and the GeneralLib is not longer queried &lt;enforce&gt; True overpasses this optimisation
     /// </summary>
-    public bool Select(Standard_Transient? ent, out Interface_GeneralModule? gmod, out int CN, bool enforce = false)
+    public bool Select(Transient? ent, out Interface_GeneralModule? gmod, out int CN, bool enforce = false)
     {
         Type aType = ent.DynamicType();
         int num = thentmod.FindIndex(aType); // (ent);
@@ -157,5 +159,5 @@ public class Interface_GTool : Standard_Transient
 
     // The cache of selections, by type (OCCT keys them by the Standard_Type handle)
     private readonly NCollection_DataMap<Type, int> thentnum = new();
-    private readonly NCollection_IndexedDataMap<Type, Standard_Transient> thentmod = new();
+    private readonly NCollection_IndexedDataMap<Type, Transient> thentmod = new();
 }

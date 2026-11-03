@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -70,8 +74,8 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The points on the first and the second curve of the extremum of index <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
-    public void Points(int Index, out gp_Pnt2d P1, out gp_Pnt2d P2)
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
+    public void Points(int Index, out Point2D P1, out Point2D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "Geom2dAPI_ExtremaCurveCurve::Points");
         myExtCC.Points(Index, out Extrema_POnCurv2d PC1, out Extrema_POnCurv2d PC2);
@@ -81,7 +85,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The parameters on the first and the second curve of the extremum of index <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
     public void Parameters(int Index, out double U1, out double U2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "Geom2dAPI_ExtremaCurveCurve::Parameters");
@@ -92,7 +96,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The length of the extremum of index <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is not in [1, NbExtrema].</exception>
     public double Distance(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "Geom2dAPI_ExtremaCurveCurve:Distance");
@@ -100,15 +104,15 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The points of the shortest extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
-    public void NearestPoints(out gp_Pnt2d P1, out gp_Pnt2d P2)
+    /// <exception cref="NotDoneException">The computation failed.</exception>
+    public void NearestPoints(out Point2D P1, out Point2D P2)
     {
         StdFail_NotDone_Raise_if(!myIsDone, "Geom2dAPI_ExtremaCurveCurve:NearestPoints");
         Points(myIndex, out P1, out P2);
     }
 
     /// <summary>The parameters of the shortest extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public void LowerDistanceParameters(out double U1, out double U2)
     {
         StdFail_NotDone_Raise_if(!myIsDone, "Geom2dAPI_ExtremaCurveCurve:LowerDistanceParameters");
@@ -116,7 +120,7 @@ public class Geom2dAPI_ExtremaCurveCurve
     }
 
     /// <summary>The length of the shortest extremum.</summary>
-    /// <exception cref="StdFail_NotDone">The computation failed.</exception>
+    /// <exception cref="NotDoneException">The computation failed.</exception>
     public double LowerDistance()
     {
         StdFail_NotDone_Raise_if(!myIsDone, "Geom2dAPI_ExtremaCurveCurve:LowerDistance");
@@ -130,6 +134,6 @@ public class Geom2dAPI_ExtremaCurveCurve
     public static explicit operator double(Geom2dAPI_ExtremaCurveCurve theExtrema) => theExtrema.LowerDistance();
 
     /// <summary>OCCT's <c>operator int()</c>: the number of extrema of the Extrema algorithm.</summary>
-    /// <exception cref="StdFail_NotDone">The Extrema algorithm failed.</exception>
+    /// <exception cref="NotDoneException">The Extrema algorithm failed.</exception>
     public static explicit operator int(Geom2dAPI_ExtremaCurveCurve theExtrema) => theExtrema.myExtCC.NbExt();
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -147,7 +148,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         }
     }
 
-    private static void Same(Tally theTally, N.gp_Pnt theNative, in gp_Pnt thePort, string theWhat)
+    private static void Same(Tally theTally, N.gp_Pnt theNative, in Point3D thePort, string theWhat)
     {
         Same(theTally, theNative.X(), thePort.X(), theWhat + ".X");
         Same(theTally, theNative.Y(), thePort.Y(), theWhat + ".Y");

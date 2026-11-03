@@ -1,6 +1,8 @@
 // Port of OCCT's src/ModelingData/TKG2d/GTests/Geom2dGridEval_Ellipse_Test.cxx (V8_0_1).
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2dGridEval_EllipseTest
@@ -21,18 +23,18 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void BasicD0()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dGridEval_Ellipse anEval = new(anEllipse);
         Assert.NotNull(anEval.Geometry());
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 13);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(13, aGrid.Size());
 
         for (int i = 1; i <= 13; ++i)
         {
-            gp_Pnt2d aExpected = anEllipse.Value(aParams.Value(i));
+            Point2D aExpected = anEllipse.Value(aParams.Value(i));
             Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
         }
     }
@@ -40,7 +42,7 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void CardinalPoints()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dGridEval_Ellipse anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = new(1, 4);
@@ -49,7 +51,7 @@ public class Geom2dGridEval_EllipseTest
         aParams.SetValue(3, M_PI);
         aParams.SetValue(4, 3 * M_PI / 2);
 
-        NCollection_Array1<gp_Pnt2d> aGrid = anEval.EvaluateGrid(aParams);
+        NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         // u=0: (3, 0)
         Assert.Equal(3.0, aGrid.Value(1).X(), THE_TOLERANCE);
@@ -68,7 +70,7 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D1()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(1, 2), new gp_Dir2d(1, 0)), 5.0, 3.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(1, 2), new Direction2D(1, 0)), 5.0, 3.0);
         Geom2dGridEval_Ellipse anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 13);
@@ -77,7 +79,7 @@ public class Geom2dGridEval_EllipseTest
 
         for (int i = 1; i <= 13; ++i)
         {
-            anEllipse.D1(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1);
+            anEllipse.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
         }
@@ -86,7 +88,7 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D2()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dGridEval_Ellipse anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
@@ -95,7 +97,7 @@ public class Geom2dGridEval_EllipseTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            anEllipse.D2(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2);
+            anEllipse.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
@@ -105,7 +107,7 @@ public class Geom2dGridEval_EllipseTest
     [Fact]
     public void D3()
     {
-        Geom2d_Ellipse anEllipse = new(new gp_Ax22d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0)), 3.0, 2.0);
+        Geom2d_Ellipse anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         Geom2dGridEval_Ellipse anEval = new(anEllipse);
 
         NCollection_Array1<double> aParams = CreateUniformParams(0.0, 2 * M_PI, 9);
@@ -114,7 +116,7 @@ public class Geom2dGridEval_EllipseTest
 
         for (int i = 1; i <= 9; ++i)
         {
-            anEllipse.D3(aParams.Value(i), out gp_Pnt2d aPnt, out gp_Vec2d aD1, out gp_Vec2d aD2, out gp_Vec2d aD3);
+            anEllipse.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
             Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
             Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);

@@ -3,7 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
 
@@ -28,10 +31,10 @@ public class BRepIntCurveSurface_Inter
     private TopAbs_State myCurrentstate;
     private double myCurrentU;
     private double myCurrentV;
-    private Bnd_Box myCurveBox = new();
+    private Box myCurveBox = new();
     private int myIndFace;
     private readonly NCollection_Sequence<TopoDS_Shape> myFaces = new();
-    private NCollection_HArray1<Bnd_Box>? myFaceBoxes;
+    private NCollection_HArray1<Box>? myFaceBoxes;
 
     /// <summary>An empty intersector.</summary>
     public BRepIntCurveSurface_Inter()
@@ -48,7 +51,7 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>Loads the shape and the line, with the tolerance <paramref name="theTol"/> of the classification.</summary>
-    public void Init(in TopoDS_Shape theShape, in gp_Lin theLine, double theTol)
+    public void Init(in TopoDS_Shape theShape, in Line3D theLine, double theTol)
     {
         var geomline = new Geom_Line(theLine);
         var aCurve = new GeomAdaptor_Curve(geomline);
@@ -90,7 +93,7 @@ public class BRepIntCurveSurface_Inter
         double aFirst = theCurve.FirstParameter();
         double aLast = theCurve.LastParameter();
         myCurve = (GeomAdaptor_Curve)theCurve.ShallowCopy();
-        if (!Precision.IsInfinite(aFirst) && !Precision.IsInfinite(aLast))
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             BndLib_Add3dCurve.Add(myCurve, 0.0, ref myCurveBox);
         }
@@ -127,18 +130,18 @@ public class BRepIntCurveSurface_Inter
         for (; i <= myFaces.Length(); i++)
         {
             TopoDS_Shape aCurface = myFaces[i];
-            myFaceBoxes ??= new NCollection_HArray1<Bnd_Box>(1, myFaces.Length());
+            myFaceBoxes ??= new NCollection_HArray1<Box>(1, myFaces.Length());
 
-            ref Bnd_Box aFaceBox = ref myFaceBoxes[i];
-            if (aFaceBox.IsVoid())
+            ref Box aFaceBox = ref myFaceBoxes[i];
+            if (aFaceBox.IsVoid)
             {
                 BRepBndLib.Add(aCurface, ref aFaceBox);
                 aFaceBox.SetGap(myTolerance); // Precision::Confusion());
             }
 
-            bool isOut = (myCurve!.GetType() == GeomAbs_Line
+            bool isOut = (myCurve!.GetType() == Line
                               ? aFaceBox.IsOut(myCurve.Line())
-                              : (!myCurveBox.IsVoid() ? aFaceBox.IsOut(myCurveBox) : false));
+                              : (!myCurveBox.IsVoid ? aFaceBox.IsOut(myCurveBox) : false));
             if (isOut)
             {
                 continue;
@@ -179,7 +182,7 @@ public class BRepIntCurveSurface_Inter
             double anU = myIntcs.Point(j).U();
             double aV = myIntcs.Point(j).V();
 
-            gp_Pnt2d Puv = new(anU, aV);
+            Point2D Puv = new(anU, aV);
 
             myCurrentstate = myFastClass.Classify(Puv, myTolerance);
             if (myCurrentstate == TopAbs_ON || myCurrentstate == TopAbs_IN)
@@ -195,12 +198,12 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The current point.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public IntCurveSurface_IntersectionPoint Point()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         IntCurveSurface_IntersectionPoint ICPS = myIntcs.Point(myCurrentindex);
@@ -213,12 +216,12 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The U parameter of the current point on the current face.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public double U()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         //-- return(myIntcs.Point(myCurrentindex).U());
@@ -226,12 +229,12 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The V parameter of the current point on the current face.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public double V()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         //-- return(myIntcs.Point(myCurrentindex).V());
@@ -239,24 +242,24 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The parameter of the current point on the curve.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public double W()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return (myIntcs.Point(myCurrentindex).W());
     }
 
     /// <summary>The state of the current point in the current face: IN or ON.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public TopAbs_State State()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         //-- return(classifier.State());
@@ -264,12 +267,12 @@ public class BRepIntCurveSurface_Inter
     }
 
     /// <summary>The transition of the curve on the surface at the current point (IN, OUT or TANGENT).</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
+    /// <exception cref="NotDoneException">There is no current point.</exception>
     public IntCurveSurface_TransitionOnCurve Transition()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return (myIntcs.Point(myCurrentindex).Transition());
@@ -279,12 +282,12 @@ public class BRepIntCurveSurface_Inter
     public TopoDS_Face Face() => (TopoDS.Face(myFaces.Value(myIndFace)));
 
     /// <summary>The current point.</summary>
-    /// <exception cref="StdFail_NotDone">There is no current point.</exception>
-    public gp_Pnt Pnt()
+    /// <exception cref="NotDoneException">There is no current point.</exception>
+    public Point3D Pnt()
     {
         if (myCurrentindex == 0)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
 
         return (myIntcs.Point(myCurrentindex).Pnt());

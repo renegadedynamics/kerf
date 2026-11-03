@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Text;
 
 namespace OcctNet.Foundation.Tests;
@@ -9,8 +10,8 @@ public class Standard_ReadLineBufferTests
 {
     private static List<string> Lines(string theText, int theBufferSize, bool theMultiline = false)
     {
-        var aStream = new Standard_IStream(new MemoryStream(Encoding.Latin1.GetBytes(theText)));
-        var aBuffer = new Standard_ReadLineBuffer(theBufferSize);
+        var aStream = new InputStream(new MemoryStream(Encoding.Latin1.GetBytes(theText)));
+        var aBuffer = new ReadLineBuffer(theBufferSize);
         aBuffer.SetMultilineMode(theMultiline);
         var aLines = new List<string>();
         while (aBuffer.ReadLine(aStream, out Span<byte> aLine))
@@ -35,8 +36,8 @@ public class Standard_ReadLineBufferTests
     [Fact]
     public void The_buffer_reads_ahead_in_blocks()
     {
-        var aStream = new Standard_IStream(new MemoryStream(Encoding.ASCII.GetBytes("ab\ncd\nef\n")));
-        var aBuffer = new Standard_ReadLineBuffer(4);
+        var aStream = new InputStream(new MemoryStream(Encoding.ASCII.GetBytes("ab\ncd\nef\n")));
+        var aBuffer = new ReadLineBuffer(4);
         Assert.True(aBuffer.ReadLine(aStream, out Span<byte> aLine, out long aRead));
         Assert.Equal("ab", Encoding.ASCII.GetString(aLine));
         Assert.Equal(4, aRead);
@@ -64,7 +65,7 @@ public class Standard_ReadLineBufferTests
     [Fact]
     public void The_IStream_keeps_CPlusPlus_flags()
     {
-        var aStream = new Standard_IStream(new MemoryStream([1, 2, 3, (byte)' ', (byte)'\n', (byte)'x']));
+        var aStream = new InputStream(new MemoryStream([1, 2, 3, (byte)' ', (byte)'\n', (byte)'x']));
         Span<byte> aBuffer = stackalloc byte[2];
         Assert.Equal(2, aStream.Read(aBuffer));
         Assert.True(aStream.Good());
@@ -97,7 +98,7 @@ public class Standard_ReadLineBufferTests
     public void The_IStream_counts_from_the_streams_position()
     {
         var aMemory = new MemoryStream([0, 0, 7, 8]) { Position = 2 };
-        var aStream = new Standard_IStream(aMemory);
+        var aStream = new InputStream(aMemory);
         Assert.Equal(0, aStream.TellG());
         aStream.SeekGEnd();
         Assert.Equal(2, aStream.TellG());
@@ -105,7 +106,7 @@ public class Standard_ReadLineBufferTests
         Span<byte> aBuffer = stackalloc byte[1];
         aStream.Read(aBuffer);
         Assert.Equal(7, aBuffer[0]);
-        Assert.Throws<ArgumentException>(() => new Standard_IStream(new NonSeekableStream()));
+        Assert.Throws<ArgumentException>(() => new InputStream(new NonSeekableStream()));
     }
 
     private sealed class NonSeekableStream : MemoryStream
@@ -124,15 +125,15 @@ public class Standard_ReadLineBufferTests
     [InlineData(123456.789, "1.234567890000e+05")]
     [InlineData(double.PositiveInfinity, "inf")]
     public void FormatScientific_writes_as_printf_e(double theValue, string theExpected)
-        => Assert.Equal(theExpected, Standard_Stream.FormatScientific(theValue, 12));
+        => Assert.Equal(theExpected, StreamUtilities.FormatScientific(theValue, 12));
 
     [Fact]
     public void Strtod_reads_spans()
     {
-        Assert.Equal(1.5, Standard_Stream.Strtod("  1.5e0x".AsSpan(), out int anEnd));
+        Assert.Equal(1.5, StreamUtilities.Strtod("  1.5e0x".AsSpan(), out int anEnd));
         Assert.Equal(7, anEnd);
-        Assert.Equal(0.0, Standard_Stream.Strtod("abc".AsSpan(), out anEnd));
+        Assert.Equal(0.0, StreamUtilities.Strtod("abc".AsSpan(), out anEnd));
         Assert.Equal(0, anEnd);
-        Assert.Equal(double.PositiveInfinity, Standard_Stream.Strtod("3e400".AsSpan(), out _));
+        Assert.Equal(double.PositiveInfinity, StreamUtilities.Strtod("3e400".AsSpan(), out _));
     }
 }

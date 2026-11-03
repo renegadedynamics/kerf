@@ -40,16 +40,16 @@ public class StepAssemblyTests
     {
         var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.Wrapped));
         var reader = new StringReader(text);
-        O.Standard_Stream.SetInputLength(reader, text.Length);
+        global::Kerf.Engine.Foundation.StreamUtilities.SetInputLength(reader, text.Length);
         O.BRepTools.Read(out var read, reader);
         return read;
     }
 
-    private static O.Quantity_ColorRGBA Linear(Color color)
+    private static global::Kerf.Engine.Foundation.ColorWithAlpha Linear(Color color)
     {
         var rgba = color.ToQuantityColorRgba();
         var rgb = rgba.GetRGB();
-        return new O.Quantity_ColorRGBA((float)rgb.Red(), (float)rgb.Green(), (float)rgb.Blue(), (float)rgba.Alpha());
+        return new global::Kerf.Engine.Foundation.ColorWithAlpha((float)rgb.Red(), (float)rgb.Green(), (float)rgb.Blue(), (float)rgba.Alpha());
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public class StepAssemblyTests
             {
                 var c = it.Value();
                 if (child is Compound { AssemblyChildren.Count: > 0 } sub)
-                    doc.AddComponent(label, Assembly(sub, c.Located(new O.TopLoc_Location())), c.Location());
+                    doc.AddComponent(label, Assembly(sub, c.Located(new global::Kerf.Topology.Placement())), c.Location());
                 else
                 {
                     doc.AddComponent(label, c, false);
@@ -216,9 +216,9 @@ public class StepAssemblyTests
         {
             // A two-part assembly written as three files: the assembly, referring to a file per part
             var doc = O.XdeDoc_Document.FromTree(new O.XdeDoc_Tree(O.XdeDoc_Product.Assembly("pair",
-                O.XdeDoc_Product.Part(Occt(new Box(1, 1, 1)), "a").Placed(new O.TopLoc_Location()),
-                O.XdeDoc_Product.Part(Occt(new Sphere(1)), "b").Placed(new O.TopLoc_Location()))
-                .Placed(new O.TopLoc_Location())));
+                O.XdeDoc_Product.Part(Occt(new Box(1, 1, 1)), "a").Placed(new global::Kerf.Topology.Placement()),
+                O.XdeDoc_Product.Part(Occt(new Sphere(1)), "b").Placed(new global::Kerf.Topology.Placement()))
+                .Placed(new global::Kerf.Topology.Placement())));
             var writer = new O.STEPCAFControl_Writer();
             Assert.True(writer.Transfer(doc, O.STEPControl_StepModelType.STEPControl_AsIs, ""));
             var main = Path.Combine(folder, "pair.step");

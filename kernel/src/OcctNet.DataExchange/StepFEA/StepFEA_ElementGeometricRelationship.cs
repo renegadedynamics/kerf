@@ -6,12 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
 /// Representation of STEP entity ElementGeometricRelationship
 /// </summary>
-public class StepFEA_ElementGeometricRelationship : Standard_Transient
+public class StepFEA_ElementGeometricRelationship : Transient
 {
     private StepFEA_ElementOrElementGroup theElementRef = new StepFEA_ElementOrElementGroup();
     private StepElement_AnalysisItemWithinRepresentation theItem;

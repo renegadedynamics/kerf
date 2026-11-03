@@ -3,6 +3,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepMesh_GeomTool.IntFlag;
 
 namespace Occt;
@@ -15,7 +20,7 @@ namespace Occt;
 /// The wires are checked in parallel when the parameters ask for it and the face has several. Each loop body writes
 /// only its wire's slot; the pcurves are only read.
 /// </remarks>
-public class BRepMesh_FaceChecker : Standard_Transient
+public class BRepMesh_FaceChecker : Transient
 {
     /// <summary>A segment of a discrete pcurve, with its edge.</summary>
     /// <remarks>
@@ -28,13 +33,13 @@ public class BRepMesh_FaceChecker : Standard_Transient
         public IMeshData_Edge? EdgePtr;
 
         /// <summary>The first point.</summary>
-        public gp_Pnt2d Point1;
+        public Point2D Point1;
 
         /// <summary>The second point.</summary>
-        public gp_Pnt2d Point2;
+        public Point2D Point2;
 
         /// <summary>A segment of the edge between the points.</summary>
-        public Segment(IMeshData_Edge theEdgePtr, in gp_Pnt2d thePoint1, in gp_Pnt2d thePoint2)
+        public Segment(IMeshData_Edge theEdgePtr, in Point2D thePoint1, in Point2D thePoint2)
         {
             EdgePtr = theEdgePtr;
             Point1 = thePoint1;
@@ -48,7 +53,7 @@ public class BRepMesh_FaceChecker : Standard_Transient
     private readonly IMeshTools_Parameters myParameters; // OCCT holds a reference; the caller's doesn't change meanwhile
 
     private NCollection_Array1<NCollection_DynamicArray<Segment>?>? myWiresSegments;
-    private NCollection_Array1<NCollection_EBTree<int, Bnd_Box2d>?>? myWiresBndBoxTree;
+    private NCollection_Array1<IndexedSpatialTree<int, Box2d>?>? myWiresBndBoxTree;
     private NCollection_Array1<NCollection_Map<IMeshData_Edge>?>? myWiresIntersectingEdges;
     private NCollection_Map<IMeshData_Edge>? myIntersectingEdges;
 
@@ -65,7 +70,7 @@ public class BRepMesh_FaceChecker : Standard_Transient
         myIntersectingEdges = new NCollection_Map<IMeshData_Edge>(ReferenceEqualityComparer.Instance);
         collectSegments();
 
-        OSD_Parallel.For(0, myDFace.WiresNb(), perform, !isParallel());
+        OsdParallel.For(0, myDFace.WiresNb(), perform, !isParallel());
         collectResult();
 
         myWiresBndBoxTree = null;
@@ -84,7 +89,7 @@ public class BRepMesh_FaceChecker : Standard_Transient
     private void collectSegments()
     {
         SegmentsFiller aSegmentsFiller = new(myDFace, out myWiresSegments, out myWiresBndBoxTree);
-        OSD_Parallel.For(0, myDFace.WiresNb(), aSegmentsFiller.Process, !isParallel());
+        OsdParallel.For(0, myDFace.WiresNb(), aSegmentsFiller.Process, !isParallel());
 
         myWiresIntersectingEdges = new NCollection_Array1<NCollection_Map<IMeshData_Edge>?>(0, myDFace.WiresNb() - 1);
     }
@@ -99,7 +104,7 @@ public class BRepMesh_FaceChecker : Standard_Transient
         BndBox2dTreeSelector aSelector = new(2 * myDFace.GetDeflection());
         for (int aWireIt = theWireIndex; aWireIt < myDFace.WiresNb(); ++aWireIt)
         {
-            NCollection_EBTree<int, Bnd_Box2d> aBndBoxTree2 = myWiresBndBoxTree!.Value(aWireIt)!;
+            IndexedSpatialTree<int, Box2d> aBndBoxTree2 = myWiresBndBoxTree!.Value(aWireIt)!;
             NCollection_DynamicArray<Segment> aSegments2 = myWiresSegments.Value(aWireIt)!;
 
             aSelector.SetSegments(aSegments2);
@@ -142,11 +147,11 @@ public class BRepMesh_FaceChecker : Standard_Transient
     {
         private readonly IMeshData_Face myDFace;
         private readonly NCollection_Array1<NCollection_DynamicArray<Segment>?> myWiresSegments;
-        private readonly NCollection_Array1<NCollection_EBTree<int, Bnd_Box2d>?> myWiresBndBoxTree;
+        private readonly NCollection_Array1<IndexedSpatialTree<int, Box2d>?> myWiresBndBoxTree;
 
         public SegmentsFiller(IMeshData_Face theDFace,
                               out NCollection_Array1<NCollection_DynamicArray<Segment>?> theWiresSegments,
-                              out NCollection_Array1<NCollection_EBTree<int, Bnd_Box2d>?> theWiresBndBoxTree)
+                              out NCollection_Array1<IndexedSpatialTree<int, Box2d>?> theWiresBndBoxTree)
         {
             myDFace = theDFace;
             myWiresSegments = theWiresSegments = new(0, myDFace.WiresNb() - 1);
@@ -159,12 +164,12 @@ public class BRepMesh_FaceChecker : Standard_Transient
             IMeshData_Wire aDWire = myDFace.GetWire(theWireIndex);
 
             NCollection_DynamicArray<Segment> aSegments = new(aDWire.EdgesNb());
-            NCollection_EBTree<int, Bnd_Box2d> aBndBoxTree = new();
+            IndexedSpatialTree<int, Box2d> aBndBoxTree = new();
 
             myWiresSegments[theWireIndex] = aSegments;
             myWiresBndBoxTree[theWireIndex] = aBndBoxTree;
 
-            NCollection_UBTreeFiller<int, Bnd_Box2d> aBndBoxTreeFiller = new(aBndBoxTree);
+            SpatialTreeFiller<int, Box2d> aBndBoxTreeFiller = new(aBndBoxTree);
 
             for (int aEdgeIt = 0; aEdgeIt < aDWire.EdgesNb(); ++aEdgeIt)
             {
@@ -175,13 +180,13 @@ public class BRepMesh_FaceChecker : Standard_Transient
 
                 for (int aPointIt = 1; aPointIt < aPCurve.ParametersNb(); ++aPointIt)
                 {
-                    gp_Pnt2d aPnt1 = aPCurve.GetPoint(aPointIt - 1);
-                    gp_Pnt2d aPnt2 = aPCurve.GetPoint(aPointIt);
+                    Point2D aPnt1 = aPCurve.GetPoint(aPointIt - 1);
+                    Point2D aPnt2 = aPCurve.GetPoint(aPointIt);
 
-                    Bnd_Box2d aBox = new();
+                    Box2d aBox = new();
                     aBox.Add(aPnt1);
                     aBox.Add(aPnt2);
-                    aBox.Enlarge(Precision.Confusion());
+                    aBox.Enlarge(global::Kerf.Engine.Foundation.Precision.Confusion());
 
                     aBndBoxTreeFiller.Add(aSegments.Length(), aBox);
                     aSegments.Append(new Segment(aDEdge, aPnt1, aPnt2));
@@ -193,13 +198,13 @@ public class BRepMesh_FaceChecker : Standard_Transient
     }
 
     // Selector. Used to identify segments with overlapped bounding boxes.
-    private sealed class BndBox2dTreeSelector : NCollection_UBTree<int, Bnd_Box2d>.Selector
+    private sealed class BndBox2dTreeSelector : SpatialTree<int, Box2d>.Selector
     {
         private readonly double myMaxLoopSize;
         private int mySelfSegmentIndex;
         private NCollection_DynamicArray<Segment>? mySegments;
         private Segment mySegment;
-        private Bnd_Box2d myBox = new();
+        private Box2d myBox = new();
         private readonly NCollection_DynamicArray<int> myIndices;
 
         public BndBox2dTreeSelector(double theTolerance)
@@ -226,18 +231,18 @@ public class BRepMesh_FaceChecker : Standard_Transient
             myBox.SetVoid();
             myBox.Add(mySegment.Point1);
             myBox.Add(mySegment.Point2);
-            myBox.Enlarge(Precision.Confusion());
+            myBox.Enlarge(global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         // Indicates should the given box be rejected or not.
-        public override bool Reject(in Bnd_Box2d theBox) => myBox.IsOut(theBox);
+        public override bool Reject(in Box2d theBox) => myBox.IsOut(theBox);
 
         // Accepts segment with the given index in case if it fits conditions.
         public override bool Accept(in int theSegmentIndex)
         {
             Segment aSegment = mySegments!.Value(theSegmentIndex);
 
-            gp_Pnt2d aIntPnt = new();
+            Point2D aIntPnt = new();
             BRepMesh_GeomTool.IntFlag aIntStatus =
                 BRepMesh_GeomTool.IntSegSeg(mySegment.Point1.XY(),
                                             mySegment.Point2.XY(),
@@ -249,8 +254,8 @@ public class BRepMesh_FaceChecker : Standard_Transient
 
             if (aIntStatus == Cross)
             {
-                double aAngle = new gp_Vec2d(new gp_Pnt2d(mySegment.Point1.XY()), new gp_Pnt2d(mySegment.Point2.XY()))
-                                    .Angle(new gp_Vec2d(new gp_Pnt2d(aSegment.Point1.XY()), new gp_Pnt2d(aSegment.Point2.XY())));
+                double aAngle = new Vector2D(new Point2D(mySegment.Point1.XY()), new Point2D(mySegment.Point2.XY()))
+                                    .Angle(new Vector2D(new Point2D(aSegment.Point1.XY()), new Point2D(aSegment.Point2.XY())));
 
                 if (Math.Abs(aAngle) < MaxTangentAngle)
                 {
@@ -261,20 +266,20 @@ public class BRepMesh_FaceChecker : Standard_Transient
                 // wire's: along reversed edges a real crossing can measure zero area and be dropped (occt-issues.md).
                 if (mySelfSegmentIndex != -1)
                 {
-                    gp_XY aPrevVec = new();
+                    Xy aPrevVec = new();
                     double aSumS = 0.0;
-                    gp_XY aRefPnt = aIntPnt.Coord();
+                    Xy aRefPnt = aIntPnt.Coord();
                     for (int i = mySelfSegmentIndex; i < theSegmentIndex; ++i)
                     {
                         Segment aCurrSegment = mySegments.Value(i);
-                        gp_XY aCurVec = aCurrSegment.Point2.XY() - aRefPnt;
+                        Xy aCurVec = aCurrSegment.Point2.XY() - aRefPnt;
 
-                        if (aCurVec.SquareModulus() < gp.Resolution())
+                        if (aCurVec.SquareModulus() < Constants.Resolution())
                         {
                             continue;
                         }
 
-                        if (aPrevVec.SquareModulus() > gp.Resolution())
+                        if (aPrevVec.SquareModulus() > Constants.Resolution())
                         {
                             aSumS += aPrevVec ^ aCurVec;
                         }

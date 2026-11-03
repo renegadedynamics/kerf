@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_ShapeEnum;
@@ -14,7 +16,7 @@ namespace OcctNet.ModelingAlgorithms.Tests.BRepAlgoAPI;
 public class BRepAlgoAPI_ApiTests
 {
     private static TopoDS_Shape Box(double x, double y = 0, double z = 0, double dx = 1, double dy = 1, double dz = 1) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), dx, dy, dz).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     private static int Count(in TopoDS_Shape theShape, TopAbs_ShapeEnum theType)
     {
@@ -39,7 +41,7 @@ public class BRepAlgoAPI_ApiTests
 
     private static bool AllFrozen(in TopoDS_Shape theShape)
     {
-        if (theShape.TShape() is { } aT && !aT.IsFrozen())
+        if (theShape.TShape() is { } aT && !aT.IsFrozen)
         {
             return false;
         }
@@ -193,8 +195,8 @@ public class BRepAlgoAPI_ApiTests
     public void Progress_RunsToTheEnd_Monotonically(bool theParallel)
     {
         Recorder aRecorder = new();
-        Message_ProgressIndicator anIndicator = new(default, aRecorder);
-        TopoDS_Shape aResult = Occt.BRepAlgoAPI.Cut([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeCylinder(new gp_Ax2(new gp_Pnt(2, 2, -1), new gp_Dir(0, 0, 1)), 1, 6).Shape()],
+        ProgressIndicator anIndicator = new(default, aRecorder);
+        TopoDS_Shape aResult = Occt.BRepAlgoAPI.Cut([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(2, 2, -1), new Direction3D(0, 0, 1)), 1, 6).Shape()],
                                                    new BRepAlgoAPI_Options { RunParallel = theParallel }, anIndicator.Start());
         Assert.False(aResult.IsNull());
         Assert.NotEmpty(aRecorder.Values);
@@ -221,7 +223,7 @@ public class BRepAlgoAPI_ApiTests
         aFuse.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
         aFuse.SetTools(new NCollection_List<TopoDS_Shape>([b]));
         aFuse.SetRunParallel(theParallel);
-        aFuse.Build(new Message_ProgressIndicator(aSource.Token).Start());
+        aFuse.Build(new ProgressIndicator(aSource.Token).Start());
         Assert.False(aFuse.IsDone());
         Assert.True(aFuse.HasErrors());
         Assert.True(aFuse.HasError(typeof(BOPAlgo_AlertUserBreak)));
@@ -229,9 +231,9 @@ public class BRepAlgoAPI_ApiTests
         // the twin: OperationCanceledException over the failure and its report
         var anError = Assert.Throws<OperationCanceledException>(
             () => Occt.BRepAlgoAPI.Fuse([a], [b], new BRepAlgoAPI_Options { RunParallel = theParallel },
-                                        new Message_ProgressIndicator(aSource.Token).Start()));
+                                        new ProgressIndicator(aSource.Token).Start()));
         var aFailure = Assert.IsType<BRepAlgoAPI_Failure>(anError.InnerException);
-        Assert.True(aFailure.Report().HasAlert(typeof(BOPAlgo_AlertUserBreak), Message_Gravity.Message_Fail));
+        Assert.True(aFailure.Report().HasAlert(typeof(BOPAlgo_AlertUserBreak), Gravity.Fail));
         aSnapA.AssertUnchanged(a);
     }
 
@@ -245,7 +247,7 @@ public class BRepAlgoAPI_ApiTests
     public void Cancellation_DuringTheOperation_StopsWithUserBreak(bool theParallel, double theAt)
     {
         TopoDS_Shape a = Box(0, 0, 0, 4, 4, 4);
-        TopoDS_Shape b = new BRepPrimAPI_MakeSphere(new gp_Pnt(4, 4, 4), 2.5).Shape();
+        TopoDS_Shape b = new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape();
         ShapeSnapshot aSnapA = ShapeSnapshot.Of(a), aSnapB = ShapeSnapshot.Of(b);
         using CancellationTokenSource aSource = new();
         Recorder aRecorder = new();
@@ -256,7 +258,7 @@ public class BRepAlgoAPI_ApiTests
                 aSource.Cancel();
             }
         };
-        Message_ProgressIndicator anIndicator = new(aSource.Token, aRecorder);
+        ProgressIndicator anIndicator = new(aSource.Token, aRecorder);
 
         BRepAlgoAPI_Common aCommon = new();
         aCommon.SetArguments(new NCollection_List<TopoDS_Shape>([a]));
@@ -274,7 +276,7 @@ public class BRepAlgoAPI_ApiTests
         aSnapB.AssertUnchanged(b);
 
         // the same operation uncancelled afterwards gives the uncancelled result: nothing was left behind
-        TopoDS_Shape aRef = Occt.BRepAlgoAPI.Common([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeSphere(new gp_Pnt(4, 4, 4), 2.5).Shape()], new BRepAlgoAPI_Options());
+        TopoDS_Shape aRef = Occt.BRepAlgoAPI.Common([Box(0, 0, 0, 4, 4, 4)], [new BRepPrimAPI_MakeSphere(new Point3D(4, 4, 4), 2.5).Shape()], new BRepAlgoAPI_Options());
         TopoDS_Shape aAgain = Occt.BRepAlgoAPI.Common([a], [b], new BRepAlgoAPI_Options());
         Assert.Equal(Text(aRef), Text(aAgain));
     }

@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -21,19 +23,19 @@ public sealed class GeomBndLib_Surface
     /// <summary>The members of the per-type evaluators that the dispatcher calls through OCCT's <c>std::visit</c>.</summary>
     internal interface ISurfaceEvaluator
     {
-        Bnd_Box Box(double theTol);
+        Box Box(double theTol);
 
-        Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol);
+        Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol);
 
-        Bnd_Box BoxOptimal(double theTol);
+        Box BoxOptimal(double theTol);
 
-        Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol);
+        Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol);
     }
 
     private readonly Adaptor3d_Surface? myAdaptorRef;
     private Adaptor3d_Surface? myAdaptorOwned;
     private ISurfaceEvaluator? myEvaluator;
-    private GeomAbs_SurfaceType mySurfType;
+    private SurfaceKind mySurfType;
 
     private static Geom_Surface? unwrapSurface(Geom_Surface? theSurf)
     {
@@ -67,25 +69,25 @@ public sealed class GeomBndLib_Surface
 
         switch (mySurfType)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 myEvaluator = new GeomBndLib_Plane(new Geom_Plane(myAdaptorRef.Plane()));
                 break;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 myEvaluator = new GeomBndLib_Cylinder(new Geom_CylindricalSurface(myAdaptorRef.Cylinder()));
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 myEvaluator = new GeomBndLib_Cone(new Geom_ConicalSurface(myAdaptorRef.Cone()));
                 break;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 myEvaluator = new GeomBndLib_Sphere(new Geom_SphericalSurface(myAdaptorRef.Sphere()));
                 break;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 myEvaluator = new GeomBndLib_Torus(new Geom_ToroidalSurface(myAdaptorRef.Torus()));
                 break;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 myEvaluator = new GeomBndLib_BezierSurface(myAdaptorRef.Bezier());
                 break;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 myEvaluator = new GeomBndLib_BSplineSurface(myAdaptorRef.BSpline());
                 break;
             default:
@@ -97,7 +99,7 @@ public sealed class GeomBndLib_Surface
     /// <summary>Construct from a Geom_Surface.</summary>
     public GeomBndLib_Surface(Geom_Surface theSurf)
     {
-        mySurfType = GeomAbs_OtherSurface;
+        mySurfType = OtherSurface;
 
         if (theSurf is Geom_RectangularTrimmedSurface aTrim)
         {
@@ -124,46 +126,46 @@ public sealed class GeomBndLib_Surface
 
         // OCCT compares the dynamic type exactly (STANDARD_TYPE), not IsKind.
         Type aType = ((object)theSurf).GetType();
-        GeomAbs_SurfaceType aSurfType;
+        SurfaceKind aSurfType;
         if (aType == typeof(Geom_Plane))
         {
-            aSurfType = GeomAbs_Plane;
+            aSurfType = Plane;
         }
         else if (aType == typeof(Geom_CylindricalSurface))
         {
-            aSurfType = GeomAbs_Cylinder;
+            aSurfType = SurfaceKind.Cylinder;
         }
         else if (aType == typeof(Geom_ConicalSurface))
         {
-            aSurfType = GeomAbs_Cone;
+            aSurfType = SurfaceKind.Cone;
         }
         else if (aType == typeof(Geom_SphericalSurface))
         {
-            aSurfType = GeomAbs_Sphere;
+            aSurfType = SurfaceKind.Sphere;
         }
         else if (aType == typeof(Geom_ToroidalSurface))
         {
-            aSurfType = GeomAbs_Torus;
+            aSurfType = SurfaceKind.Torus;
         }
         else if (aType == typeof(Geom_BezierSurface))
         {
-            aSurfType = GeomAbs_BezierSurface;
+            aSurfType = BezierSurface;
         }
         else if (aType == typeof(Geom_BSplineSurface))
         {
-            aSurfType = GeomAbs_BSplineSurface;
+            aSurfType = BSplineSurface;
         }
         else if (aType == typeof(Geom_SurfaceOfRevolution))
         {
-            aSurfType = GeomAbs_SurfaceOfRevolution;
+            aSurfType = SurfaceOfRevolution;
         }
         else if (aType == typeof(Geom_SurfaceOfLinearExtrusion))
         {
-            aSurfType = GeomAbs_SurfaceOfExtrusion;
+            aSurfType = SurfaceOfExtrusion;
         }
         else if (aType == typeof(Geom_OffsetSurface))
         {
-            aSurfType = GeomAbs_OffsetSurface;
+            aSurfType = OffsetSurface;
         }
         else
         {
@@ -176,38 +178,38 @@ public sealed class GeomBndLib_Surface
 
     // OCCT's down_cast yields a null handle when the adaptor's type does not match its surface; the port's
     // evaluators then hold null, as OCCT's do, and fail when used.
-    private bool initFromSurfaceType(GeomAbs_SurfaceType theType, Geom_Surface theSurf)
+    private bool initFromSurfaceType(SurfaceKind theType, Geom_Surface theSurf)
     {
         switch (theType)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 myEvaluator = new GeomBndLib_Plane((theSurf as Geom_Plane)!);
                 return true;
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
                 myEvaluator = new GeomBndLib_Cylinder((theSurf as Geom_CylindricalSurface)!);
                 return true;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 myEvaluator = new GeomBndLib_Cone((theSurf as Geom_ConicalSurface)!);
                 return true;
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
                 myEvaluator = new GeomBndLib_Sphere((theSurf as Geom_SphericalSurface)!);
                 return true;
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
                 myEvaluator = new GeomBndLib_Torus((theSurf as Geom_ToroidalSurface)!);
                 return true;
-            case GeomAbs_BezierSurface:
+            case BezierSurface:
                 myEvaluator = new GeomBndLib_BezierSurface((theSurf as Geom_BezierSurface)!);
                 return true;
-            case GeomAbs_BSplineSurface:
+            case BSplineSurface:
                 myEvaluator = new GeomBndLib_BSplineSurface((theSurf as Geom_BSplineSurface)!);
                 return true;
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 myEvaluator = new GeomBndLib_SurfaceOfRevolution((theSurf as Geom_SurfaceOfRevolution)!);
                 return true;
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 myEvaluator = new GeomBndLib_SurfaceOfExtrusion((theSurf as Geom_SurfaceOfLinearExtrusion)!);
                 return true;
-            case GeomAbs_OffsetSurface:
+            case OffsetSurface:
                 myEvaluator = new GeomBndLib_OffsetSurface((theSurf as Geom_OffsetSurface)!);
                 return true;
             default:
@@ -217,19 +219,19 @@ public sealed class GeomBndLib_Surface
 
     private void initOtherSurface(Adaptor3d_Surface theSurf)
     {
-        mySurfType = GeomAbs_OtherSurface;
+        mySurfType = OtherSurface;
         myEvaluator = new GeomBndLib_OtherSurface(theSurf);
     }
 
     private void initOtherSurface(Geom_Surface theSurf)
     {
         myAdaptorOwned = new GeomAdaptor_Surface(theSurf);
-        mySurfType = GeomAbs_OtherSurface;
+        mySurfType = OtherSurface;
         myEvaluator = new GeomBndLib_OtherSurface(myAdaptorOwned);
     }
 
     /// <summary>Return detected surface type.</summary>
-    public new GeomAbs_SurfaceType GetType() => mySurfType;
+    public new SurfaceKind GetType() => mySurfType;
 
     private Adaptor3d_Surface? adaptor() => myAdaptorRef ?? myAdaptorOwned;
 
@@ -258,46 +260,46 @@ public sealed class GeomBndLib_Surface
     }
 
     /// <summary>Compute bounding box for full surface.</summary>
-    public Bnd_Box Box(double theTol)
+    public Box Box(double theTol)
     {
         if (adaptor() is not null)
         {
             return Box(effectiveU1(), effectiveU2(), effectiveV1(), effectiveV2(), theTol);
         }
 
-        return myEvaluator is null ? new Bnd_Box() : myEvaluator.Box(theTol);
+        return myEvaluator is null ? new Box() : myEvaluator.Box(theTol);
     }
 
     /// <summary>Compute bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
-        => myEvaluator is null ? new Bnd_Box() : myEvaluator.Box(theUMin, theUMax, theVMin, theVMax, theTol);
+    public Box Box(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+        => myEvaluator is null ? new Box() : myEvaluator.Box(theUMin, theUMax, theVMin, theVMax, theTol);
 
     /// <summary>Compute precise bounding box for full surface.</summary>
-    public Bnd_Box BoxOptimal(double theTol)
+    public Box BoxOptimal(double theTol)
     {
         if (adaptor() is not null)
         {
             return BoxOptimal(effectiveU1(), effectiveU2(), effectiveV1(), effectiveV2(), theTol);
         }
 
-        return myEvaluator is null ? new Bnd_Box() : myEvaluator.BoxOptimal(theTol);
+        return myEvaluator is null ? new Box() : myEvaluator.BoxOptimal(theTol);
     }
 
     /// <summary>Compute precise bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public Bnd_Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
-        => myEvaluator is null ? new Bnd_Box() : myEvaluator.BoxOptimal(theUMin, theUMax, theVMin, theVMax, theTol);
+    public Box BoxOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol)
+        => myEvaluator is null ? new Box() : myEvaluator.BoxOptimal(theUMin, theUMax, theVMin, theVMax, theTol);
 
     /// <summary>Add bounding box for full surface.</summary>
-    public void Add(double theTol, ref Bnd_Box theBox) => theBox.Add(Box(theTol));
+    public void Add(double theTol, ref Box theBox) => theBox.Add(Box(theTol));
 
     /// <summary>Add bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public void Add(double theUMin, double theUMax, double theVMin, double theVMax, double theTol, ref Bnd_Box theBox)
+    public void Add(double theUMin, double theUMax, double theVMin, double theVMax, double theTol, ref Box theBox)
         => theBox.Add(Box(theUMin, theUMax, theVMin, theVMax, theTol));
 
     /// <summary>Add precise bounding box for full surface.</summary>
-    public void AddOptimal(double theTol, ref Bnd_Box theBox) => theBox.Add(BoxOptimal(theTol));
+    public void AddOptimal(double theTol, ref Box theBox) => theBox.Add(BoxOptimal(theTol));
 
     /// <summary>Add precise bounding box for surface patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
-    public void AddOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol, ref Bnd_Box theBox)
+    public void AddOptimal(double theUMin, double theUMax, double theVMin, double theVMax, double theTol, ref Box theBox)
         => theBox.Add(BoxOptimal(theUMin, theUMax, theVMin, theVMax, theTol));
 }

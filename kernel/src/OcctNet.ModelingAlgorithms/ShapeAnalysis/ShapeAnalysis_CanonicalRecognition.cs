@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2022-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.GeomConvert_ConvType;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -88,7 +92,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
     }
 
-    private bool IsElementarySurf(GeomAbs_SurfaceType theTarget, double theTol, ref gp_Ax3 thePos,
+    private bool IsElementarySurf(SurfaceKind theTarget, double theTol, ref CoordinateSystem thePos,
                                   NCollection_Array1<double> theParams)
     {
         if (myStatus != 0)
@@ -160,12 +164,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// True if the underlying surface can be represented by a plane within <paramref name="theTol"/>; the plane is
     /// then set in <paramref name="thePln"/>. An edge or a wire is also tried with BRepLib_FindSurface.
     /// </summary>
-    public bool IsPlane(double theTol, ref gp_Pln thePln)
+    public bool IsPlane(double theTol, ref Plane3D thePln)
     {
-        gp_Ax3 aPos = thePln.Position();
+        CoordinateSystem aPos = thePln.Position();
         NCollection_Array1<double> aParams = new(1, 1);
         //
-        GeomAbs_SurfaceType aTarget = GeomAbs_Plane;
+        SurfaceKind aTarget = Plane;
         if (IsElementarySurf(aTarget, theTol, ref aPos, aParams))
         {
             thePln.SetPosition(aPos);
@@ -196,13 +200,13 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// <paramref name="theCyl"/>. For an edge or a wire, the sample cylinder (if its radius is set) starts a
     /// least-squares fit.
     /// </summary>
-    public bool IsCylinder(double theTol, ref gp_Cylinder theCyl)
+    public bool IsCylinder(double theTol, ref Cylinder theCyl)
     {
-        gp_Ax3 aPos = theCyl.Position();
+        CoordinateSystem aPos = theCyl.Position();
         NCollection_Array1<double> aParams = new(1, 1);
         aParams[1] = theCyl.Radius();
         //
-        GeomAbs_SurfaceType aTarget = GeomAbs_Cylinder;
+        SurfaceKind aTarget = SurfaceKind.Cylinder;
         if (IsElementarySurf(aTarget, theTol, ref aPos, aParams))
         {
             theCyl.SetPosition(aPos);
@@ -210,7 +214,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return true;
         }
 
-        if (aParams[1] > Occt.Precision.Infinite())
+        if (aParams[1] > Kerf.Engine.Foundation.Precision.Infinite())
         {
             // Sample cylinder does not seem to be set, least square method is not applicable.
             return false;
@@ -235,14 +239,14 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// <paramref name="theCone"/>. For an edge or a wire, the sample cone (if its radius is set) starts a least-squares
     /// fit.
     /// </summary>
-    public bool IsCone(double theTol, ref gp_Cone theCone)
+    public bool IsCone(double theTol, ref Cone theCone)
     {
-        gp_Ax3 aPos = theCone.Position();
+        CoordinateSystem aPos = theCone.Position();
         NCollection_Array1<double> aParams = new(1, 2);
         aParams[1] = theCone.SemiAngle();
         aParams[2] = theCone.RefRadius();
         //
-        GeomAbs_SurfaceType aTarget = GeomAbs_Cone;
+        SurfaceKind aTarget = SurfaceKind.Cone;
         if (IsElementarySurf(aTarget, theTol, ref aPos, aParams))
         {
             theCone.SetPosition(aPos);
@@ -251,7 +255,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return true;
         }
 
-        if (aParams[2] > Occt.Precision.Infinite())
+        if (aParams[2] > Kerf.Engine.Foundation.Precision.Infinite())
         {
             // Sample cone does not seem to be set, least square method is not applicable.
             return false;
@@ -277,13 +281,13 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// <paramref name="theSphere"/>. For an edge or a wire, the sample sphere (if its radius is set) starts a
     /// least-squares fit.
     /// </summary>
-    public bool IsSphere(double theTol, ref gp_Sphere theSphere)
+    public bool IsSphere(double theTol, ref Sphere theSphere)
     {
-        gp_Ax3 aPos = theSphere.Position();
+        CoordinateSystem aPos = theSphere.Position();
         NCollection_Array1<double> aParams = new(1, 1);
         aParams[1] = theSphere.Radius();
         //
-        GeomAbs_SurfaceType aTarget = GeomAbs_Sphere;
+        SurfaceKind aTarget = SurfaceKind.Sphere;
         if (IsElementarySurf(aTarget, theTol, ref aPos, aParams))
         {
             theSphere.SetPosition(aPos);
@@ -291,7 +295,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return true;
         }
         //
-        if (aParams[1] > Occt.Precision.Infinite())
+        if (aParams[1] > Kerf.Engine.Foundation.Precision.Infinite())
         {
             // Sample sphere does not seem to be set, least square method is not applicable.
             return false;
@@ -329,7 +333,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aWire;
     }
 
-    private bool IsConic(GeomAbs_CurveType theTarget, double theTol, ref gp_Ax2 thePos, NCollection_Array1<double> theParams)
+    private bool IsConic(CurveKind theTarget, double theTol, ref Frame3D thePos, NCollection_Array1<double> theParams)
     {
         if (myStatus != 0)
         {
@@ -362,7 +366,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
                 myStatus = 1;
                 return false;
             }
-            gp_Ax2 aPos = new();
+            Frame3D aPos = new();
             NCollection_Array1<double> aParams = new(1, theParams.Length());
             TopoDS_Shape anEdge = anIter.Value();
 
@@ -410,12 +414,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// True if the underlying curve (of an edge, or of every edge of a wire) can be represented by a line within
     /// <paramref name="theTol"/>; then set in <paramref name="theLin"/>.
     /// </summary>
-    public bool IsLine(double theTol, ref gp_Lin theLin)
+    public bool IsLine(double theTol, ref Line3D theLin)
     {
-        gp_Ax2 aPos = new();
+        Frame3D aPos = new();
         NCollection_Array1<double> aParams = new(1, 1);
 
-        GeomAbs_CurveType aTarget = GeomAbs_Line;
+        CurveKind aTarget = Line;
         bool isOK = IsConic(aTarget, theTol, ref aPos, aParams);
         if (isOK)
         {
@@ -428,12 +432,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// True if the underlying curve can be represented by a circle within <paramref name="theTol"/>; then set in
     /// <paramref name="theCirc"/>.
     /// </summary>
-    public bool IsCircle(double theTol, ref gp_Circ theCirc)
+    public bool IsCircle(double theTol, ref Circle3D theCirc)
     {
-        gp_Ax2 aPos = new();
+        Frame3D aPos = new();
         NCollection_Array1<double> aParams = new(1, 1);
 
-        GeomAbs_CurveType aTarget = GeomAbs_Circle;
+        CurveKind aTarget = Circle;
         bool isOK = IsConic(aTarget, theTol, ref aPos, aParams);
         if (isOK)
         {
@@ -447,12 +451,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     /// True if the underlying curve can be represented by an ellipse within <paramref name="theTol"/>; then set in
     /// <paramref name="theElips"/>.
     /// </summary>
-    public bool IsEllipse(double theTol, ref gp_Elips theElips)
+    public bool IsEllipse(double theTol, ref Ellipse3D theElips)
     {
-        gp_Ax2 aPos = new();
+        Frame3D aPos = new();
         NCollection_Array1<double> aParams = new(1, 2);
 
-        GeomAbs_CurveType aTarget = GeomAbs_Ellipse;
+        CurveKind aTarget = Ellipse;
         bool isOK = IsConic(aTarget, theTol, ref aPos, aParams);
         if (isOK)
         {
@@ -464,10 +468,10 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static Geom_Surface? GetSurface(in TopoDS_Face theFace, double theTol, GeomConvert_ConvType theType,
-                                            GeomAbs_SurfaceType theTarget, ref double theGap, ref int theStatus)
+                                            SurfaceKind theTarget, ref double theGap, ref int theStatus)
     {
         theStatus = 0;
-        Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out TopLoc_Location aLoc);
+        Geom_Surface? aSurf = BRep_Tool.Surface(theFace, out Placement aLoc);
         if (aSurf is null)
         {
             theStatus = 1;
@@ -482,7 +486,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return anAnaSurf;
         }
         //
-        if (!aLoc.IsIdentity())
+        if (!aLoc.IsIdentity)
         {
             anAnaSurf.Transform(aLoc.Transformation()); // a new surface of the converter
         }
@@ -492,7 +496,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static Geom_Surface? GetSurface(in TopoDS_Shell theShell, double theTol, GeomConvert_ConvType theType,
-                                            GeomAbs_SurfaceType theTarget, ref double theGap, ref int theStatus)
+                                            SurfaceKind theTarget, ref double theGap, ref int theStatus)
     {
         Geom_Surface? anElemSurf = null;
         TopoDS_Iterator anIter = new(theShell);
@@ -501,7 +505,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             theStatus = 1;
             return anElemSurf;
         }
-        gp_Ax3 aPos1 = new();
+        CoordinateSystem aPos1 = new();
         NCollection_Array1<double> aParams1 = new(1, Max(1, GetNbPars(theTarget)));
         TopoDS_Shape aFace = anIter.Value();
 
@@ -519,7 +523,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         {
             anIter.Next();
         }
-        gp_Ax3 aPos = new();
+        CoordinateSystem aPos = new();
         NCollection_Array1<double> aParams = new(1, Max(1, GetNbPars(theTarget)));
         bool isOK;
         for (; anIter.More(); anIter.Next())
@@ -544,7 +548,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static Geom_Surface? GetSurface(in TopoDS_Edge theEdge, double theTol, GeomConvert_ConvType theType,
-                                            GeomAbs_SurfaceType theTarget, ref gp_Ax3 thePos,
+                                            SurfaceKind theTarget, ref CoordinateSystem thePos,
                                             NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
         // Get surface list
@@ -555,7 +559,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         {
             j++;
             Geom_Surface? aSurf = null;
-            TopLoc_Location aLoc = new();
+            Placement aLoc = new();
             Geom2d_Curve? aPCurve = null;
             double ff = 0.0, ll = 0.0;
             BRep_Tool.CurveOnSurface(theEdge, ref aPCurve, ref aSurf, ref aLoc, ref ff, ref ll, j);
@@ -572,7 +576,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
                 continue;
             }
             //
-            if (!aLoc.IsIdentity())
+            if (!aLoc.IsIdentity)
             {
                 anAnaSurf.Transform(aLoc.Transformation()); // a new surface of the converter
             }
@@ -587,7 +591,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return null;
         }
 
-        gp_Ax3 aPos = new();
+        CoordinateSystem aPos = new();
         int aNbPars = Max(1, GetNbPars(theTarget));
         NCollection_Array1<double> aParams = new(1, aNbPars);
 
@@ -624,7 +628,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static Geom_Surface? GetSurface(in TopoDS_Wire theWire, double theTol, GeomConvert_ConvType theType,
-                                            GeomAbs_SurfaceType theTarget, ref gp_Ax3 thePos,
+                                            SurfaceKind theTarget, ref CoordinateSystem thePos,
                                             NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
         TopoDS_Iterator anIter = new(theWire);
@@ -636,7 +640,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
         // First edge
         TopoDS_Edge anEdge1 = TopoDS.Edge(anIter.Value());
-        gp_Ax3 aPos1 = thePos;
+        CoordinateSystem aPos1 = thePos;
         int aNbPars = GetNbPars(theTarget);
         NCollection_Array1<double> aParams1 = new(1, Max(1, aNbPars));
         double aGap1 = 0.0; // OCCT.NET: uninitialised in OCCT; written whenever the result is used
@@ -653,7 +657,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         anIter.Next();
         for (; anIter.More(); anIter.Next())
         {
-            gp_Ax3 aPos = aPos1;
+            CoordinateSystem aPos = aPos1;
             aNbPars = GetNbPars(theTarget);
             NCollection_Array1<double> aParams = new(1, Max(1, aNbPars));
             for (i = 1; i <= aNbPars; ++i)
@@ -679,11 +683,11 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return anElemSurf1;
     }
 
-    private static bool GetSurfaceByLS(in TopoDS_Wire theWire, double theTol, GeomAbs_SurfaceType theTarget, ref gp_Ax3 thePos,
+    private static bool GetSurfaceByLS(in TopoDS_Wire theWire, double theTol, SurfaceKind theTarget, ref CoordinateSystem thePos,
                                        NCollection_Array1<double> theParams, ref double theGap, ref int theStatus)
     {
         int aNbMaxInt = 100;
-        if (!GetSamplePoints(theWire, theTol, aNbMaxInt, out NCollection_HArray1<gp_XYZ>? aPoints))
+        if (!GetSamplePoints(theWire, theTol, aNbMaxInt, out NCollection_HArray1<Xyz>? aPoints))
         {
             return false;
         }
@@ -696,15 +700,15 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
 
         int aNbVar = 0;
-        if (theTarget == GeomAbs_Sphere)
+        if (theTarget == SurfaceKind.Sphere)
         {
             aNbVar = 4;
         }
-        else if (theTarget == GeomAbs_Cylinder)
+        else if (theTarget == SurfaceKind.Cylinder)
         {
             aNbVar = 4;
         }
-        else if (theTarget == GeomAbs_Cone)
+        else if (theTarget == SurfaceKind.Cone)
         {
             aNbVar = 5;
         }
@@ -724,16 +728,16 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         FillSolverData(theTarget, thePos, theParams, aStartPoint, aFBnd, aLBnd, aRelDev);
 
         //
-        double aTol = Occt.Precision.Confusion();
-        math_MultipleVarFunction aPFunc;
+        double aTol = Kerf.Engine.Foundation.Precision.Confusion();
+        MultipleVarFunction aPFunc;
         GeomConvert_FuncSphereLSDist aFuncSph = new(aPoints!);
         GeomConvert_FuncCylinderLSDist aFuncCyl = new(aPoints!, thePos.Direction());
         GeomConvert_FuncConeLSDist aFuncCon = new(aPoints!, thePos.Direction());
-        if (theTarget == GeomAbs_Sphere)
+        if (theTarget == SurfaceKind.Sphere)
         {
             aPFunc = aFuncSph;
         }
-        else if (theTarget == GeomAbs_Cylinder)
+        else if (theTarget == SurfaceKind.Cylinder)
         {
             aPFunc = aFuncCyl;
         }
@@ -749,7 +753,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         {
             aSteps[i] = (aLBnd[i] - aFBnd[i]) / aNbInt;
         }
-        math_PSO aGlobSolver = new(aPFunc, aFBnd, aLBnd, aSteps);
+        Pso aGlobSolver = new(aPFunc, aFBnd, aLBnd, aSteps);
         aGlobSolver.Perform(aSteps, out double _, aStartPoint);
         SetCanonicParameters(theTarget, aStartPoint, ref thePos, theParams);
 
@@ -760,33 +764,33 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return true;
         }
         //
-        math_Matrix aDirMatrix = new(1, aNbVar, 1, aNbVar, 0.0);
+        Matrix aDirMatrix = new(1, aNbVar, 1, aNbVar, 0.0);
         for (i = 1; i <= aNbVar; i++)
         {
             aDirMatrix[i, i] = 1.0;
         }
 
-        if (theTarget == GeomAbs_Cylinder || theTarget == GeomAbs_Cone)
+        if (theTarget == SurfaceKind.Cylinder || theTarget == SurfaceKind.Cone)
         {
             // Set search direction for location to be perpendicular to axis to avoid
             // searching along axis
-            gp_Dir aDir = thePos.Direction();
-            gp_Pln aPln = new(thePos.Location(), aDir);
-            gp_Dir aUDir = aPln.Position().XDirection();
-            gp_Dir aVDir = aPln.Position().YDirection();
+            Direction3D aDir = thePos.Direction();
+            Plane3D aPln = new(thePos.Location(), aDir);
+            Direction3D aUDir = aPln.Position().XDirection();
+            Direction3D aVDir = aPln.Position().YDirection();
             for (i = 1; i <= 3; ++i)
             {
                 aDirMatrix[i, 1] = aUDir.Coord(i);
                 aDirMatrix[i, 2] = aVDir.Coord(i);
-                gp_Dir aUVDir = new(aUDir.XYZ() + aVDir.XYZ());
+                Direction3D aUVDir = new(aUDir.XYZ() + aVDir.XYZ());
                 aDirMatrix[i, 3] = aUVDir.Coord(i);
             }
         }
 
-        math_Powell aSolver = new(aPFunc, aTol);
+        Powell aSolver = new(aPFunc, aTol);
         aSolver.Perform(aPFunc, aStartPoint, aDirMatrix);
 
-        if (aSolver.IsDone())
+        if (aSolver.IsDone)
         {
             aSolver.Location(aStartPoint);
             theStatus = 0;
@@ -807,10 +811,10 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static Geom_Curve? GetCurve(in TopoDS_Edge theEdge, double theTol, GeomConvert_ConvType theType,
-                                        GeomAbs_CurveType theTarget, ref double theGap, ref int theStatus)
+                                        CurveKind theTarget, ref double theGap, ref int theStatus)
     {
         theStatus = 0;
-        Geom_Curve? aCurv = BRep_Tool.Curve(theEdge, out TopLoc_Location aLoc, out double f, out double l);
+        Geom_Curve? aCurv = BRep_Tool.Curve(theEdge, out Placement aLoc, out double f, out double l);
         if (aCurv is null)
         {
             theStatus = 1;
@@ -826,12 +830,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return anAnaCurv;
         }
         //
-        if (!aLoc.IsIdentity())
+        if (!aLoc.IsIdentity)
         {
             // OCCT: when the edge's curve is already the target conic, the converter returns the edge's own curve,
             // and OCCT transforms that shared curve in place (occt-issues.md). OCCT.NET: frozen: it is frozen here, so
             // the port transforms a copy; the result is the same, and the edge is unchanged.
-            if (anAnaCurv.IsFrozen())
+            if (anAnaCurv.IsFrozen)
             {
                 anAnaCurv = (Geom_Curve)anAnaCurv.Copy();
             }
@@ -844,18 +848,18 @@ public sealed class ShapeAnalysis_CanonicalRecognition
 
     // Static methods
 
-    private static int GetNbPars(GeomAbs_CurveType theTarget)
+    private static int GetNbPars(CurveKind theTarget)
     {
         int aNbPars = 0;
         switch (theTarget)
         {
-            case GeomAbs_Line:
+            case Line:
                 aNbPars = 0;
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 aNbPars = 1;
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 aNbPars = 2;
                 break;
             default:
@@ -866,19 +870,19 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aNbPars;
     }
 
-    private static int GetNbPars(GeomAbs_SurfaceType theTarget)
+    private static int GetNbPars(SurfaceKind theTarget)
     {
         int aNbPars = 0;
         switch (theTarget)
         {
-            case GeomAbs_Plane:
+            case Plane:
                 aNbPars = 0;
                 break;
-            case GeomAbs_Cylinder:
-            case GeomAbs_Sphere:
+            case SurfaceKind.Cylinder:
+            case SurfaceKind.Sphere:
                 aNbPars = 1;
                 break;
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
                 aNbPars = 2;
                 break;
             default:
@@ -889,7 +893,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aNbPars;
     }
 
-    private static bool SetConicParameters(GeomAbs_CurveType theTarget, Geom_Curve? theConic, ref gp_Ax2 thePos,
+    private static bool SetConicParameters(CurveKind theTarget, Geom_Curve? theConic, ref Frame3D thePos,
                                            NCollection_Array1<double> theParams)
     {
         if (theConic is null)
@@ -902,20 +906,20 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return false;
         }
 
-        if (theTarget == GeomAbs_Line)
+        if (theTarget == Line)
         {
-            gp_Lin aLin = aGAC.Line();
+            Line3D aLin = aGAC.Line();
             thePos.SetAxis(aLin.Position());
         }
-        else if (theTarget == GeomAbs_Circle)
+        else if (theTarget == Circle)
         {
-            gp_Circ aCirc = aGAC.Circle();
+            Circle3D aCirc = aGAC.Circle();
             thePos = aCirc.Position();
             theParams[1] = aCirc.Radius();
         }
-        else if (theTarget == GeomAbs_Ellipse)
+        else if (theTarget == Ellipse)
         {
-            gp_Elips anElips = aGAC.Ellipse();
+            Ellipse3D anElips = aGAC.Ellipse();
             thePos = anElips.Position();
             theParams[1] = anElips.MajorRadius();
             theParams[2] = anElips.MinorRadius();
@@ -927,8 +931,8 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return true;
     }
 
-    private static bool CompareConicParams(GeomAbs_CurveType theTarget, double theTol, in gp_Ax2 theRefPos,
-                                           NCollection_Array1<double> theRefParams, in gp_Ax2 thePos,
+    private static bool CompareConicParams(CurveKind theTarget, double theTol, in Frame3D theRefPos,
+                                           NCollection_Array1<double> theRefParams, in Frame3D thePos,
                                            NCollection_Array1<double> theParams)
     {
         int i, aNbPars = GetNbPars(theTarget);
@@ -943,19 +947,19 @@ public sealed class ShapeAnalysis_CanonicalRecognition
 
         double anAngTol = theTol / (2.0 * M_PI);
         double aTol = theTol;
-        if (theTarget == GeomAbs_Line)
+        if (theTarget == Line)
         {
-            aTol = Occt.Precision.Infinite();
+            aTol = Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        gp_Ax1 aRef = theRefPos.Axis();
-        gp_Ax1 anAx1 = thePos.Axis();
-        gp_Ax1 anAx1Rev = anAx1.Reversed();
+        Axis3D aRef = theRefPos.Axis();
+        Axis3D anAx1 = thePos.Axis();
+        Axis3D anAx1Rev = anAx1.Reversed();
 
         return aRef.IsCoaxial(anAx1, anAngTol, aTol) || aRef.IsCoaxial(anAx1Rev, anAngTol, aTol);
     }
 
-    private static bool SetSurfParams(GeomAbs_SurfaceType theTarget, Geom_Surface? theElemSurf, ref gp_Ax3 thePos,
+    private static bool SetSurfParams(SurfaceKind theTarget, Geom_Surface? theElemSurf, ref CoordinateSystem thePos,
                                       NCollection_Array1<double> theParams)
     {
         //
@@ -975,27 +979,27 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return false;
         }
 
-        if (theTarget == GeomAbs_Plane)
+        if (theTarget == Plane)
         {
-            gp_Pln aPln = aGAS.Plane();
+            Plane3D aPln = aGAS.Plane();
             thePos = aPln.Position();
         }
-        else if (theTarget == GeomAbs_Cylinder)
+        else if (theTarget == SurfaceKind.Cylinder)
         {
-            gp_Cylinder aCyl = aGAS.Cylinder();
+            Cylinder aCyl = aGAS.Cylinder();
             thePos = aCyl.Position();
             theParams[1] = aCyl.Radius();
         }
-        else if (theTarget == GeomAbs_Cone)
+        else if (theTarget == SurfaceKind.Cone)
         {
-            gp_Cone aCon = aGAS.Cone();
+            Cone aCon = aGAS.Cone();
             thePos = aCon.Position();
             theParams[1] = aCon.SemiAngle();
             theParams[2] = aCon.RefRadius();
         }
-        else if (theTarget == GeomAbs_Sphere)
+        else if (theTarget == SurfaceKind.Sphere)
         {
-            gp_Sphere aSph = aGAS.Sphere();
+            Sphere aSph = aGAS.Sphere();
             thePos = aSph.Position();
             theParams[1] = aSph.Radius();
         }
@@ -1006,11 +1010,11 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return true;
     }
 
-    private static bool CompareSurfParams(GeomAbs_SurfaceType theTarget, double theTol, in gp_Ax3 theRefPos,
-                                          NCollection_Array1<double> theRefParams, in gp_Ax3 thePos,
+    private static bool CompareSurfParams(SurfaceKind theTarget, double theTol, in CoordinateSystem theRefPos,
+                                          NCollection_Array1<double> theRefParams, in CoordinateSystem thePos,
                                           NCollection_Array1<double> theParams)
     {
-        if (theTarget != GeomAbs_Plane)
+        if (theTarget != Plane)
         {
             if (Math.Abs(theRefParams[1] - theParams[1]) > theTol)
             {
@@ -1018,58 +1022,58 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             }
         }
         //
-        if (theTarget == GeomAbs_Sphere)
+        if (theTarget == SurfaceKind.Sphere)
         {
-            gp_Pnt aRefLoc = theRefPos.Location(), aLoc = thePos.Location();
+            Point3D aRefLoc = theRefPos.Location(), aLoc = thePos.Location();
             return aRefLoc.SquareDistance(aLoc) <= theTol * theTol;
         }
         //
         double anAngTol = theTol / (2.0 * M_PI);
         double aTol = theTol;
-        if (theTarget == GeomAbs_Cylinder || theTarget == GeomAbs_Cone)
+        if (theTarget == SurfaceKind.Cylinder || theTarget == SurfaceKind.Cone)
         {
-            aTol = Occt.Precision.Infinite();
+            aTol = Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        gp_Ax1 aRef = theRefPos.Axis();
-        gp_Ax1 anAx1 = thePos.Axis();
-        gp_Ax1 anAx1Rev = anAx1.Reversed();
+        Axis3D aRef = theRefPos.Axis();
+        Axis3D anAx1 = thePos.Axis();
+        Axis3D anAx1Rev = anAx1.Reversed();
         if (!(aRef.IsCoaxial(anAx1, anAngTol, aTol) || aRef.IsCoaxial(anAx1Rev, anAngTol, aTol)))
         {
             return false;
         }
 
-        if (theTarget == GeomAbs_Cone)
+        if (theTarget == SurfaceKind.Cone)
         {
-            gp_Cone aRefCone = new(theRefPos, theRefParams[1], theRefParams[2]);
-            gp_Cone aCone = new(thePos, theParams[1], theParams[2]);
-            gp_Pnt aRefApex = aRefCone.Apex();
-            gp_Pnt anApex = aCone.Apex();
+            Cone aRefCone = new(theRefPos, theRefParams[1], theRefParams[2]);
+            Cone aCone = new(thePos, theParams[1], theParams[2]);
+            Point3D aRefApex = aRefCone.Apex();
+            Point3D anApex = aCone.Apex();
             return aRefApex.SquareDistance(anApex) <= theTol * theTol;
         }
 
         return true;
     }
 
-    private static double DeviationSurfParams(GeomAbs_SurfaceType theTarget, in gp_Ax3 theRefPos,
-                                              NCollection_Array1<double> theRefParams, in gp_Ax3 thePos,
+    private static double DeviationSurfParams(SurfaceKind theTarget, in CoordinateSystem theRefPos,
+                                              NCollection_Array1<double> theRefParams, in CoordinateSystem thePos,
                                               NCollection_Array1<double> theParams)
     {
         double aDevPars = 0.0;
-        if (theTarget != GeomAbs_Plane)
+        if (theTarget != Plane)
         {
             aDevPars = Math.Abs(theRefParams[1] - theParams[1]);
         }
         //
-        if (theTarget == GeomAbs_Sphere)
+        if (theTarget == SurfaceKind.Sphere)
         {
-            gp_Pnt aRefLoc = theRefPos.Location(), aLoc = thePos.Location();
+            Point3D aRefLoc = theRefPos.Location(), aLoc = thePos.Location();
             aDevPars += aRefLoc.Distance(aLoc);
         }
         else
         {
-            gp_Dir aRefDir = theRefPos.Direction();
-            gp_Dir aDir = thePos.Direction();
+            Direction3D aRefDir = theRefPos.Direction();
+            Direction3D aDir = thePos.Direction();
             double anAngDev = (1.0 - Math.Abs(aRefDir * aDir));
             aDevPars += anAngDev;
         }
@@ -1078,12 +1082,12 @@ public sealed class ShapeAnalysis_CanonicalRecognition
     }
 
     private static bool GetSamplePoints(in TopoDS_Wire theWire, double theTol, int theMaxNbInt,
-                                        out NCollection_HArray1<gp_XYZ>? thePoints)
+                                        out NCollection_HArray1<Xyz>? thePoints)
     {
         thePoints = null; // OCCT.NET: OCCT leaves the caller's handle unchanged (null) when it returns false
         NCollection_DynamicArray<double> aLengths = new();
         NCollection_DynamicArray<BRepAdaptor_Curve> aCurves = new();
-        NCollection_DynamicArray<gp_XYZ> aPoints = new();
+        NCollection_DynamicArray<Xyz> aPoints = new();
         double aTol = Max(1.0e-3, theTol / 10.0);
         double aTotalLength = 0.0;
         TopoDS_Iterator anEIter = new(theWire);
@@ -1123,7 +1127,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             for (j = 1; j <= aNbPoints; ++j)
             {
                 double t = aPointGen.Parameter(j);
-                gp_Pnt aP = aC.Value(t);
+                Point3D aP = aC.Value(t);
                 aPoints.Append(aP.XYZ());
             }
         }
@@ -1133,7 +1137,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             return false;
         }
 
-        thePoints = new NCollection_HArray1<gp_XYZ>(1, aPoints.Length());
+        thePoints = new NCollection_HArray1<Xyz>(1, aPoints.Length());
         for (i = 0; i < aPoints.Length(); ++i)
         {
             thePoints.SetValue(i + 1, aPoints[i]);
@@ -1142,42 +1146,42 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return true;
     }
 
-    private static double GetLSGap(NCollection_HArray1<gp_XYZ> thePoints, GeomAbs_SurfaceType theTarget, in gp_Ax3 thePos,
+    private static double GetLSGap(NCollection_HArray1<Xyz> thePoints, SurfaceKind theTarget, in CoordinateSystem thePos,
                                    NCollection_Array1<double> theParams)
     {
         double aGap = 0.0;
-        gp_XYZ aLoc = thePos.Location().XYZ();
-        gp_Vec aDir = new(thePos.Direction());
+        Xyz aLoc = thePos.Location().XYZ();
+        Vector3D aDir = new(thePos.Direction());
 
         int i;
-        if (theTarget == GeomAbs_Sphere)
+        if (theTarget == SurfaceKind.Sphere)
         {
             double anR = theParams[1];
             for (i = thePoints.Lower(); i <= thePoints.Upper(); ++i)
             {
-                gp_XYZ aD = thePoints.Value(i) - aLoc;
+                Xyz aD = thePoints.Value(i) - aLoc;
                 aGap = Max(aGap, Math.Abs((aD.Modulus() - anR)));
             }
         }
-        else if (theTarget == GeomAbs_Cylinder)
+        else if (theTarget == SurfaceKind.Cylinder)
         {
             double anR = theParams[1];
             for (i = thePoints.Lower(); i <= thePoints.Upper(); ++i)
             {
-                gp_Vec aD = new(thePoints.Value(i) - aLoc);
+                Vector3D aD = new(thePoints.Value(i) - aLoc);
                 aD.Cross(aDir);
                 aGap = Max(aGap, Math.Abs((aD.Magnitude() - anR)));
             }
         }
-        else if (theTarget == GeomAbs_Cone)
+        else if (theTarget == SurfaceKind.Cone)
         {
             double anAng = theParams[1];
             double anR = theParams[2];
             for (i = thePoints.Lower(); i <= thePoints.Upper(); ++i)
             {
-                gp_Pnt aPi = new(thePoints.Value(i));
-                ElSLib.ConeParameters(thePos, anR, anAng, aPi, out double u, out double v);
-                ElSLib.ConeD0(u, v, thePos, anR, anAng, out gp_Pnt aPp);
+                Point3D aPi = new(thePoints.Value(i));
+                global::Kerf.Engine.Geometry.ElSLib.ConeParameters(thePos, anR, anAng, aPi, out double u, out double v);
+                global::Kerf.Engine.Geometry.ElSLib.ConeD0(u, v, thePos, anR, anAng, out Point3D aPp);
                 aGap = Max(aGap, aPi.SquareDistance(aPp));
             }
             aGap = Math.Sqrt(aGap);
@@ -1186,11 +1190,11 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         return aGap;
     }
 
-    private static void FillSolverData(GeomAbs_SurfaceType theTarget, in gp_Ax3 thePos, NCollection_Array1<double> theParams,
+    private static void FillSolverData(SurfaceKind theTarget, in CoordinateSystem thePos, NCollection_Array1<double> theParams,
                                        math_Vector theStartPoint, math_Vector theFBnd, math_Vector theLBnd,
                                        double theRelDev = 0.2)
     {
-        if (theTarget == GeomAbs_Sphere || theTarget == GeomAbs_Cylinder)
+        if (theTarget == SurfaceKind.Sphere || theTarget == SurfaceKind.Cylinder)
         {
             theStartPoint[1] = thePos.Location().X();
             theStartPoint[2] = thePos.Location().Y();
@@ -1207,7 +1211,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             theFBnd[4] = theStartPoint[4] - aDR;
             theLBnd[4] = theStartPoint[4] + aDR;
         }
-        if (theTarget == GeomAbs_Cone)
+        if (theTarget == SurfaceKind.Cone)
         {
             theStartPoint[1] = thePos.Location().X();
             theStartPoint[2] = thePos.Location().Y();
@@ -1215,7 +1219,7 @@ public sealed class ShapeAnalysis_CanonicalRecognition
             theStartPoint[4] = theParams[1]; // SemiAngle
             theStartPoint[5] = theParams[2]; // Radius
             double aDR = theRelDev * theParams[2];
-            if (aDR < Occt.Precision.Confusion())
+            if (aDR < Kerf.Engine.Foundation.Precision.Confusion())
             {
                 aDR = 0.1;
             }
@@ -1242,16 +1246,16 @@ public sealed class ShapeAnalysis_CanonicalRecognition
         }
     }
 
-    private static void SetCanonicParameters(GeomAbs_SurfaceType theTarget, math_Vector theSol, ref gp_Ax3 thePos,
+    private static void SetCanonicParameters(SurfaceKind theTarget, math_Vector theSol, ref CoordinateSystem thePos,
                                              NCollection_Array1<double> theParams)
     {
-        gp_Pnt aLoc = new(theSol[1], theSol[2], theSol[3]);
+        Point3D aLoc = new(theSol[1], theSol[2], theSol[3]);
         thePos.SetLocation(aLoc);
-        if (theTarget == GeomAbs_Sphere || theTarget == GeomAbs_Cylinder)
+        if (theTarget == SurfaceKind.Sphere || theTarget == SurfaceKind.Cylinder)
         {
             theParams[1] = theSol[4]; // radius
         }
-        else if (theTarget == GeomAbs_Cone)
+        else if (theTarget == SurfaceKind.Cone)
         {
             theParams[1] = theSol[4]; // semiangle
             theParams[2] = theSol[5]; // radius

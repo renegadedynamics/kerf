@@ -3,10 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.Extrema_ExtAlgo;
 using static Occt.Extrema_ExtFlag;
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -33,16 +36,16 @@ public class Extrema_ExtPS
     private double d12;
     private double d21;
     private double d22;
-    private gp_Pnt P11 = new();
-    private gp_Pnt P12 = new();
-    private gp_Pnt P21 = new();
-    private gp_Pnt P22 = new();
+    private Point3D P11 = new();
+    private Point3D P12 = new();
+    private Point3D P21 = new();
+    private Point3D P22 = new();
     private readonly NCollection_Sequence<double> mySqDist = new();
-    private GeomAbs_SurfaceType mytype;
+    private SurfaceKind mytype;
     private Extrema_ExtPExtS? myExtPExtS;
     private Extrema_ExtPRevS? myExtPRevS;
 
-    private static bool IsoIsDeg(Adaptor3d_Surface S, double Param, GeomAbs_IsoType IT, double TolMin, double TolMax)
+    private static bool IsoIsDeg(Adaptor3d_Surface S, double Param, IsoType IT, double TolMin, double TolMax)
     {
         double U1 = 0.0, U2 = 0.0, V1 = 0.0, V2 = 0.0, T;
         bool Along = true;
@@ -51,12 +54,12 @@ public class Extrema_ExtPS
         V1 = S.FirstVParameter();
         V2 = S.LastVParameter();
         double Step, D1NormMax;
-        if (IT == GeomAbs_IsoV)
+        if (IT == IsoV)
         {
-            if (!Precision.IsInfinite(U1) && !Precision.IsInfinite(U2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(U1) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(U2))
             {
                 Step = (U2 - U1) / 10;
-                if (Step < Precision.PConfusion())
+                if (Step < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
@@ -64,7 +67,7 @@ public class Extrema_ExtPS
 
                 for (T = U1; T <= U2; T = T + Step)
                 {
-                    S.D1(T, Param, out _, out gp_Vec D1U, out _);
+                    S.D1(T, Param, out _, out Vector3D D1U, out _);
                     D1NormMax = Max(D1NormMax, D1U.Magnitude());
                 }
 
@@ -76,17 +79,17 @@ public class Extrema_ExtPS
         }
         else
         {
-            if (!Precision.IsInfinite(V1) && !Precision.IsInfinite(V2))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(V1) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(V2))
             {
                 Step = (V2 - V1) / 10;
-                if (Step < Precision.PConfusion())
+                if (Step < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return false;
                 }
                 D1NormMax = 0.0;
                 for (T = V1; T <= V2; T = T + Step)
                 {
-                    S.D1(Param, T, out _, out _, out gp_Vec D1V);
+                    S.D1(Param, T, out _, out _, out Vector3D D1V);
                     D1NormMax = Max(D1NormMax, D1V.Magnitude());
                 }
 
@@ -104,7 +107,7 @@ public class Extrema_ExtPS
         PS.Parameter(out double U, out double V);
         if (myS!.IsUPeriodic())
         {
-            U = ElCLib.InPeriod(U, myuinf, myuinf + myS.UPeriod());
+            U = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, myuinf, myuinf + myS.UPeriod());
 
             // Handle trimmed surfaces.
             if (U > myusup + mytolu)
@@ -118,7 +121,7 @@ public class Extrema_ExtPS
         }
         if (myS.IsVPeriodic())
         {
-            V = ElCLib.InPeriod(V, myvinf, myvinf + myS.VPeriod());
+            V = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, myvinf, myvinf + myS.VPeriod());
 
             // Handle trimmed surfaces.
             if (V > myvsup + mytolv)
@@ -151,14 +154,14 @@ public class Extrema_ExtPS
         d12 = 0.0;
         d21 = 0.0;
         d22 = 0.0;
-        mytype = GeomAbs_OtherSurface;
+        mytype = OtherSurface;
     }
 
     /// <summary>
     /// The extrema between theP and theS on theS's whole range. theTolU and theTolV are the parametric tolerances of
     /// the solutions.
     /// </summary>
-    public Extrema_ExtPS(in gp_Pnt theP, Adaptor3d_Surface theS, double theTolU, double theTolV,
+    public Extrema_ExtPS(in Point3D theP, Adaptor3d_Surface theS, double theTolU, double theTolV,
         Extrema_ExtFlag theF = Extrema_ExtFlag_MINMAX, Extrema_ExtAlgo theA = Extrema_ExtAlgo_Grad)
     {
         myExtPS.SetFlag(theF);
@@ -171,7 +174,7 @@ public class Extrema_ExtPS
     }
 
     /// <summary>The extrema between theP and theS on [theUinf, theUsup] x [theVinf, theVsup].</summary>
-    public Extrema_ExtPS(in gp_Pnt theP, Adaptor3d_Surface theS, double theUinf, double theUsup, double theVinf,
+    public Extrema_ExtPS(in Point3D theP, Adaptor3d_Surface theS, double theUinf, double theUsup, double theVinf,
         double theVsup, double theTolU, double theTolV, Extrema_ExtFlag theF = Extrema_ExtFlag_MINMAX,
         Extrema_ExtAlgo theA = Extrema_ExtAlgo_Grad)
     {
@@ -193,19 +196,19 @@ public class Extrema_ExtPS
         myvinf = theVinf;
         myvsup = theVsup;
 
-        if (Precision.IsNegativeInfinite(myuinf))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(myuinf))
         {
             myuinf = -1e10;
         }
-        if (Precision.IsPositiveInfinite(myusup))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(myusup))
         {
             myusup = 1e10;
         }
-        if (Precision.IsNegativeInfinite(myvinf))
+        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(myvinf))
         {
             myvinf = -1e10;
         }
-        if (Precision.IsPositiveInfinite(myvsup))
+        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(myvsup))
         {
             myvsup = 1e10;
         }
@@ -214,19 +217,19 @@ public class Extrema_ExtPS
         mytolv = theTolV;
         mytype = myS.GetType();
 
-        bool isB = (myS.GetType() == GeomAbs_BSplineSurface || myS.GetType() == GeomAbs_BezierSurface);
+        bool isB = (myS.GetType() == BSplineSurface || myS.GetType() == BezierSurface);
 
         int nbU = (isB) ? 44 : 32;
         int nbV = (isB) ? 44 : 32;
 
         bool bUIsoIsDeg = false, bVIsoIsDeg = false;
 
-        if (myS.GetType() != GeomAbs_Plane)
+        if (myS.GetType() != Plane)
         {
-            bUIsoIsDeg = IsoIsDeg(theS, myuinf, GeomAbs_IsoU, 0.0, 1.0e-9)
-                         || IsoIsDeg(theS, myusup, GeomAbs_IsoU, 0.0, 1.0e-9);
-            bVIsoIsDeg = IsoIsDeg(theS, myvinf, GeomAbs_IsoV, 0.0, 1.0e-9)
-                         || IsoIsDeg(theS, myvsup, GeomAbs_IsoV, 0.0, 1.0e-9);
+            bUIsoIsDeg = IsoIsDeg(theS, myuinf, IsoU, 0.0, 1.0e-9)
+                         || IsoIsDeg(theS, myusup, IsoU, 0.0, 1.0e-9);
+            bVIsoIsDeg = IsoIsDeg(theS, myvinf, IsoV, 0.0, 1.0e-9)
+                         || IsoIsDeg(theS, myvsup, IsoV, 0.0, 1.0e-9);
         }
 
         if (bUIsoIsDeg)
@@ -245,30 +248,30 @@ public class Extrema_ExtPS
     }
 
     /// <summary>Computes the extrema for thePoint. Throws if the surface has not been initialized.</summary>
-    public void Perform(in gp_Pnt thePoint)
+    public void Perform(in Point3D thePoint)
     {
         myPoints.Clear();
         mySqDist.Clear();
 
         switch (mytype)
         {
-            case GeomAbs_Cylinder:
-                myExtPElS.Perform(thePoint, myS!.Cylinder(), Precision.Confusion());
+            case SurfaceKind.Cylinder:
+                myExtPElS.Perform(thePoint, myS!.Cylinder(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 break;
-            case GeomAbs_Plane:
-                myExtPElS.Perform(thePoint, myS!.Plane(), Precision.Confusion());
+            case Plane:
+                myExtPElS.Perform(thePoint, myS!.Plane(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 break;
-            case GeomAbs_Cone:
-                myExtPElS.Perform(thePoint, myS!.Cone(), Precision.Confusion());
+            case SurfaceKind.Cone:
+                myExtPElS.Perform(thePoint, myS!.Cone(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 break;
-            case GeomAbs_Sphere:
-                myExtPElS.Perform(thePoint, myS!.Sphere(), Precision.Confusion());
+            case SurfaceKind.Sphere:
+                myExtPElS.Perform(thePoint, myS!.Sphere(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 break;
-            case GeomAbs_Torus:
-                myExtPElS.Perform(thePoint, myS!.Torus(), Precision.Confusion());
+            case SurfaceKind.Torus:
+                myExtPElS.Perform(thePoint, myS!.Torus(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 break;
 
-            case GeomAbs_SurfaceOfExtrusion:
+            case SurfaceOfExtrusion:
                 {
                     if (myExtPExtS is null)
                     {
@@ -294,7 +297,7 @@ public class Extrema_ExtPS
                     return;
                 }
 
-            case GeomAbs_SurfaceOfRevolution:
+            case SurfaceOfRevolution:
                 {
                     if (myExtPRevS is null)
                     {
@@ -352,7 +355,7 @@ public class Extrema_ExtPS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return mySqDist.Value(N);
     }
@@ -362,7 +365,7 @@ public class Extrema_ExtPS
     {
         if (!IsDone())
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return mySqDist.Length();
     }
@@ -372,7 +375,7 @@ public class Extrema_ExtPS
     {
         if ((N < 1) || (N > NbExt()))
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         return myPoints.Value(N);
     }
@@ -382,7 +385,7 @@ public class Extrema_ExtPS
     /// and the origin, or (after the parameterised constructors) whatever was in memory.
     /// </summary>
     public void TrimmedSquareDistances(out double dUfVf, out double dUfVl, out double dUlVf, out double dUlVl,
-        out gp_Pnt PUfVf, out gp_Pnt PUfVl, out gp_Pnt PUlVf, out gp_Pnt PUlVl)
+        out Point3D PUfVf, out Point3D PUfVl, out Point3D PUlVf, out Point3D PUlVl)
     {
         dUfVf = d11; // OCCT: d11, ..., P22 are never computed
         dUfVl = d12;

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,23 +16,23 @@ public class GccAna_Circ2d3TanTests
     private const double Tol = 1.0e-7;
 
     /// <summary>An argument: a qualified circle, a qualified line or a point.</summary>
-    private readonly record struct Arg(int Kind, gp_Circ2d C, gp_Lin2d L, gp_Pnt2d P)
+    private readonly record struct Arg(int Kind, Circle2D C, Line2D L, Point2D P)
     {
-        public static Arg Of(in GccEnt_QualifiedCirc Q) => new(0, Q.Qualified(), new gp_Lin2d(), new gp_Pnt2d());
+        public static Arg Of(in GccEnt_QualifiedCirc Q) => new(0, Q.Qualified(), new Line2D(), new Point2D());
 
-        public static Arg Of(in GccEnt_QualifiedLin Q) => new(1, new gp_Circ2d(), Q.Qualified(), new gp_Pnt2d());
+        public static Arg Of(in GccEnt_QualifiedLin Q) => new(1, new Circle2D(), Q.Qualified(), new Point2D());
 
-        public static Arg Of(in gp_Pnt2d P) => new(2, new gp_Circ2d(), new gp_Lin2d(), P);
+        public static Arg Of(in Point2D P) => new(2, new Circle2D(), new Line2D(), P);
     }
 
-    private static gp_Circ2d Circ(double theX, double theY, double theR)
-        => new(new gp_Ax2d(new gp_Pnt2d(theX, theY), new gp_Dir2d(gp_Dir2d.D.X)), theR);
+    private static Circle2D Circ(double theX, double theY, double theR)
+        => new(new Axis2D(new Point2D(theX, theY), new Direction2D(Direction2D.D.X)), theR);
 
-    private static gp_Lin2d Lin(double theX, double theY, double theDX, double theDY)
-        => new(new gp_Pnt2d(theX, theY), new gp_Dir2d(theDX, theDY));
+    private static Line2D Lin(double theX, double theY, double theDX, double theDY)
+        => new(new Point2D(theX, theY), new Direction2D(theDX, theDY));
 
     /// <summary>The position of the solution relative to a circle, as GccEnt names it.</summary>
-    private static GccEnt_Position Classify(in gp_Circ2d theSol, in gp_Circ2d theArg)
+    private static GccEnt_Position Classify(in Circle2D theSol, in Circle2D theArg)
     {
         double d = theSol.Location().Distance(theArg.Location());
         double r = theSol.Radius();
@@ -51,16 +53,16 @@ public class GccAna_Circ2d3TanTests
     }
 
     /// <summary>The side of a line the solution is on: enclosed on the left, outside on the right.</summary>
-    private static GccEnt_Position Classify(in gp_Circ2d theSol, in gp_Lin2d theArg)
+    private static GccEnt_Position Classify(in Circle2D theSol, in Line2D theArg)
     {
         double aCross = theArg.Direction().XY() ^ (theSol.Location().XY() - theArg.Location().XY());
         return aCross > 0.0 ? GccEnt_enclosed : GccEnt_outside;
     }
 
-    private static void AssertNear(in gp_Pnt2d theExpected, in gp_Pnt2d theActual, double theTol = Tol)
+    private static void AssertNear(in Point2D theExpected, in Point2D theActual, double theTol = Tol)
         => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} != {theActual}");
 
-    private delegate void TangencyFn(int theIndex, out double theParSol, out double theParArg, out gp_Pnt2d thePnt);
+    private delegate void TangencyFn(int theIndex, out double theParSol, out double theParArg, out Point2D thePnt);
 
     /// <summary>Checks that every solution touches each argument, and the tangency data the solver gives.</summary>
     private static void CheckSolutions(GccAna_Circ2d3Tan theSolver, Arg theA1, Arg theA2, Arg theA3,
@@ -72,7 +74,7 @@ public class GccAna_Circ2d3TanTests
         Func<int, bool>[] aSame = [theSolver.IsTheSame1, theSolver.IsTheSame2, theSolver.IsTheSame3];
         for (int i = 1; i <= theSolver.NbSolutions(); i++)
         {
-            gp_Circ2d aSol = theSolver.ThisSolution(i);
+            Circle2D aSol = theSolver.ThisSolution(i);
             for (int k = 0; k < 3; k++)
             {
                 Arg anArg = anArgs[k];
@@ -92,19 +94,19 @@ public class GccAna_Circ2d3TanTests
                 {
                     continue;
                 }
-                aTangency[k](i, out double aParSol, out double aParArg, out gp_Pnt2d aPnt);
+                aTangency[k](i, out double aParSol, out double aParArg, out Point2D aPnt);
                 // the tangency point is on the solution, at ParSol
                 Assert.Equal(aSol.Radius(), aSol.Location().Distance(aPnt), Tol);
-                AssertNear(aPnt, ElCLib.Value(aParSol, aSol));
+                AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol));
                 switch (anArg.Kind)
                 {
                     case 0:
                         Assert.Equal(anArg.C.Radius(), anArg.C.Location().Distance(aPnt), Tol);
-                        AssertNear(aPnt, ElCLib.Value(aParArg, anArg.C));
+                        AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, anArg.C));
                         break;
                     case 1:
                         Assert.Equal(0.0, anArg.L.Distance(aPnt), Tol);
-                        AssertNear(aPnt, ElCLib.Value(aParArg, anArg.L));
+                        AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, anArg.L));
                         break;
                     default:
                         AssertNear(anArg.P, aPnt);
@@ -122,9 +124,9 @@ public class GccAna_Circ2d3TanTests
     // Three circles
     //=========================================================================
 
-    private static readonly gp_Circ2d C1 = Circ(0.0, 0.0, 1.0);
-    private static readonly gp_Circ2d C2 = Circ(5.0, 0.0, 1.5);
-    private static readonly gp_Circ2d C3 = Circ(2.0, 4.0, 0.75);
+    private static readonly Circle2D C1 = Circ(0.0, 0.0, 1.0);
+    private static readonly Circle2D C2 = Circ(5.0, 0.0, 1.5);
+    private static readonly Circle2D C3 = Circ(2.0, 4.0, 0.75);
 
     [Fact]
     public void ThreeCircles_Unqualified_EightApolloniusSolutions()
@@ -138,7 +140,7 @@ public class GccAna_Circ2d3TanTests
         HashSet<(GccEnt_Position, GccEnt_Position, GccEnt_Position)> aCombinations = [];
         for (int i = 1; i <= 8; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             aCombinations.Add((Classify(aSol, C1), Classify(aSol, C2), Classify(aSol, C3)));
             aSolver.WhichQualifier(i, out GccEnt_Position aQ1, out _, out _);
             Assert.Equal(Classify(aSol, C1), aQ1);
@@ -161,7 +163,7 @@ public class GccAna_Circ2d3TanTests
                     CheckSolutions(aSolver, Arg.Of(aQC1), Arg.Of(aQC2), Arg.Of(aQC3));
                     for (int i = 1; i <= aSolver.NbSolutions(); i++)
                     {
-                        gp_Circ2d aSol = aSolver.ThisSolution(i);
+                        Circle2D aSol = aSolver.ThisSolution(i);
                         Assert.Equal(aQ1, Classify(aSol, C1));
                         Assert.Equal(aQ2, Classify(aSol, C2));
                         Assert.Equal(aQ3, Classify(aSol, C3));
@@ -193,16 +195,16 @@ public class GccAna_Circ2d3TanTests
     {
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(C1), GccEnt.Unqualified(C1), GccEnt.Unqualified(C3), Tol);
         Assert.False(aSolver.IsDone());
-        Assert.Throws<StdFail_NotDone>(() => aSolver.ThisSolution(1));
+        Assert.Throws<NotDoneException>(() => aSolver.ThisSolution(1));
     }
 
     [Fact]
     public void ThreeCircles_TheSame_WhenAnArgumentIsASolution()
     {
         // C3 is tangent to C1 and C2, so it is one of the solutions, the same as the third argument
-        gp_Circ2d aA = Circ(0.0, 0.0, 1.0);
-        gp_Circ2d aB = Circ(4.0, 0.0, 1.0);
-        gp_Circ2d aC = Circ(2.0, 0.0, 1.0);
+        Circle2D aA = Circ(0.0, 0.0, 1.0);
+        Circle2D aB = Circ(4.0, 0.0, 1.0);
+        Circle2D aC = Circ(2.0, 0.0, 1.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aA), GccEnt.Unqualified(aB), GccEnt.Unqualified(aC), Tol);
         Assert.True(aSolver.IsDone());
         bool aFound = false;
@@ -211,7 +213,7 @@ public class GccAna_Circ2d3TanTests
             if (aSolver.IsTheSame3(i))
             {
                 aFound = true;
-                Assert.Throws<StdFail_NotDone>(() => aSolver.Tangency3(i, out _, out _, out _));
+                Assert.Throws<NotDoneException>(() => aSolver.Tangency3(i, out _, out _, out _));
             }
         }
         Assert.True(aFound);
@@ -221,13 +223,13 @@ public class GccAna_Circ2d3TanTests
     // Two circles and a line
     //=========================================================================
 
-    private static readonly gp_Lin2d LX = Lin(0.0, 0.0, 1.0, 0.0);
+    private static readonly Line2D LX = Lin(0.0, 0.0, 1.0, 0.0);
 
     [Fact]
     public void TwoCirclesLine_Unqualified()
     {
-        gp_Circ2d aA = Circ(0.0, 3.0, 1.0);
-        gp_Circ2d aB = Circ(5.0, 2.0, 1.5);
+        Circle2D aA = Circ(0.0, 3.0, 1.0);
+        Circle2D aB = Circ(5.0, 2.0, 1.5);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aA), GccEnt.Unqualified(aB), GccEnt.Unqualified(LX), Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(aA)), Arg.Of(GccEnt.Unqualified(aB)),
                        Arg.Of(GccEnt.Unqualified(LX)));
@@ -240,8 +242,8 @@ public class GccAna_Circ2d3TanTests
         // OCCT: the circle-circle-line constructor doesn't reject a centre whose radius fails the second circle's
         // or the line's check (GccAna_Circ2d3Tan_1.cxx), so with qualified circles it also returns circles that
         // touch only the first one. The solutions that do touch all three have the requested positions.
-        gp_Circ2d aA = Circ(0.0, 3.0, 1.0);
-        gp_Circ2d aB = Circ(5.0, 2.0, 1.5);
+        Circle2D aA = Circ(0.0, 3.0, 1.0);
+        Circle2D aB = Circ(5.0, 2.0, 1.5);
         GccEnt_QualifiedCirc aQA = GccEnt.Outside(aA), aQB = GccEnt.Outside(aB);
         GccEnt_QualifiedLin aQL = GccEnt.Enclosed(LX);
         GccAna_Circ2d3Tan aSolver = new(aQA, aQB, aQL, Tol);
@@ -249,7 +251,7 @@ public class GccAna_Circ2d3TanTests
         int aValid = 0, anInvalid = 0;
         for (int i = 1; i <= aSolver.NbSolutions(); i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             Assert.Equal(GccEnt_outside, Classify(aSol, aA));
             if (Classify(aSol, aB) == GccEnt_outside && Math.Abs(LX.Distance(aSol.Location()) - aSol.Radius()) <= Tol)
             {
@@ -272,8 +274,8 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void CircleTwoLines_Unqualified()
     {
-        gp_Circ2d aC = Circ(5.0, 5.0, 1.0);
-        gp_Lin2d aLY = Lin(0.0, 0.0, 0.0, 1.0);
+        Circle2D aC = Circ(5.0, 5.0, 1.0);
+        Line2D aLY = Lin(0.0, 0.0, 0.0, 1.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aC), GccEnt.Unqualified(LX), GccEnt.Unqualified(aLY), Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(aC)), Arg.Of(GccEnt.Unqualified(LX)),
                        Arg.Of(GccEnt.Unqualified(aLY)));
@@ -281,7 +283,7 @@ public class GccAna_Circ2d3TanTests
         for (int i = 1; i <= aSolver.NbSolutions(); i++)
         {
             // the centres are on the bisectors of the axes
-            gp_Pnt2d aP = aSolver.ThisSolution(i).Location();
+            Point2D aP = aSolver.ThisSolution(i).Location();
             Assert.Equal(Math.Abs(aP.X()), Math.Abs(aP.Y()), Tol);
         }
     }
@@ -291,9 +293,9 @@ public class GccAna_Circ2d3TanTests
     //=========================================================================
 
     // a counter-clockwise right triangle (0,0), (4,0), (0,3): its inside is on the left of each side
-    private static readonly gp_Lin2d T1 = Lin(0.0, 0.0, 1.0, 0.0);
-    private static readonly gp_Lin2d T2 = Lin(4.0, 0.0, -4.0, 3.0);
-    private static readonly gp_Lin2d T3 = Lin(0.0, 3.0, 0.0, -1.0);
+    private static readonly Line2D T1 = Lin(0.0, 0.0, 1.0, 0.0);
+    private static readonly Line2D T2 = Lin(4.0, 0.0, -4.0, 3.0);
+    private static readonly Line2D T3 = Lin(0.0, 3.0, 0.0, -1.0);
 
     [Fact]
     public void ThreeLines_Triangle_IncircleAndThreeExcircles()
@@ -305,7 +307,7 @@ public class GccAna_Circ2d3TanTests
         double[] aRadii = new double[4];
         for (int i = 1; i <= 4; i++)
         {
-            gp_Circ2d aSol = aSolver.ThisSolution(i);
+            Circle2D aSol = aSolver.ThisSolution(i);
             aRadii[i - 1] = aSol.Radius();
             aSolver.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2, out GccEnt_Position aQ3);
             Assert.Equal((Classify(aSol, T1), Classify(aSol, T2), Classify(aSol, T3)), (aQ1, aQ2, aQ3));
@@ -323,7 +325,7 @@ public class GccAna_Circ2d3TanTests
         CheckSolutions(aSolver, Arg.Of(aQ1), Arg.Of(aQ2), Arg.Of(aQ3));
         Assert.Equal(1, aSolver.NbSolutions());
         Assert.Equal(1.0, aSolver.ThisSolution(1).Radius(), Tol);
-        AssertNear(new gp_Pnt2d(1.0, 1.0), aSolver.ThisSolution(1).Location());
+        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location());
     }
 
     [Fact]
@@ -341,7 +343,7 @@ public class GccAna_Circ2d3TanTests
                     CheckSolutions(aSolver, Arg.Of(aQL1), Arg.Of(aQL2), Arg.Of(aQL3));
                     for (int i = 1; i <= aSolver.NbSolutions(); i++)
                     {
-                        gp_Circ2d aSol = aSolver.ThisSolution(i);
+                        Circle2D aSol = aSolver.ThisSolution(i);
                         Assert.Equal((aQ1, aQ2, aQ3), (Classify(aSol, T1), Classify(aSol, T2), Classify(aSol, T3)));
                     }
                     aTotal += aSolver.NbSolutions();
@@ -366,9 +368,9 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void TwoCirclesPoint()
     {
-        gp_Circ2d aA = Circ(0.0, 0.0, 1.0);
-        gp_Circ2d aB = Circ(6.0, 0.0, 2.0);
-        gp_Pnt2d aP = new(3.0, 4.0);
+        Circle2D aA = Circ(0.0, 0.0, 1.0);
+        Circle2D aB = Circ(6.0, 0.0, 2.0);
+        Point2D aP = new(3.0, 4.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aA), GccEnt.Unqualified(aB), aP, Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(aA)), Arg.Of(GccEnt.Unqualified(aB)), Arg.Of(aP));
         Assert.True(aSolver.NbSolutions() >= 2);
@@ -382,22 +384,22 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void CircleLinePoint()
     {
-        gp_Circ2d aC = Circ(0.0, 4.0, 1.0);
-        gp_Pnt2d aP = new(4.0, 2.0);
+        Circle2D aC = Circ(0.0, 4.0, 1.0);
+        Point2D aP = new(4.0, 2.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aC), GccEnt.Unqualified(LX), aP, Tol);
         // OCCT: the first tangency point is on the far side of the solution unless the solution is enclosed in
         // the circle (GccAna_Circ2d3Tan_5.cxx), so it isn't checked here
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(aC)), Arg.Of(GccEnt.Unqualified(LX)), Arg.Of(aP), 1);
         Assert.Equal(4, aSolver.NbSolutions());
-        aSolver.Tangency1(1, out _, out _, out gp_Pnt2d aPnt);
+        aSolver.Tangency1(1, out _, out _, out Point2D aPnt);
         Assert.True(Math.Abs(aC.Location().Distance(aPnt) - aC.Radius()) > 1.0e-3);
     }
 
     [Fact]
     public void TwoLinesPoint_TwoCirclesTangentToTheAxes()
     {
-        gp_Lin2d aLY = Lin(0.0, 0.0, 0.0, 1.0);
-        gp_Pnt2d aP = new(1.0, 2.0);
+        Line2D aLY = Lin(0.0, 0.0, 0.0, 1.0);
+        Point2D aP = new(1.0, 2.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(LX), GccEnt.Unqualified(aLY), aP, Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(LX)), Arg.Of(GccEnt.Unqualified(aLY)), Arg.Of(aP));
         // centres (t, t) with (1 - t)^2 + (2 - t)^2 = t^2: t = 1 or 5
@@ -411,9 +413,9 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void CircleTwoPoints()
     {
-        gp_Circ2d aC = Circ(0.0, 0.0, 1.0);
-        gp_Pnt2d aP2 = new(3.0, 0.0);
-        gp_Pnt2d aP3 = new(3.0, 2.0);
+        Circle2D aC = Circ(0.0, 0.0, 1.0);
+        Point2D aP2 = new(3.0, 0.0);
+        Point2D aP3 = new(3.0, 2.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(aC), aP2, aP3, Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(aC)), Arg.Of(aP2), Arg.Of(aP3));
         Assert.Equal(2, aSolver.NbSolutions());
@@ -422,8 +424,8 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void LineTwoPoints_TwoSolutions()
     {
-        gp_Pnt2d aP2 = new(0.0, 1.0);
-        gp_Pnt2d aP3 = new(0.0, 3.0);
+        Point2D aP2 = new(0.0, 1.0);
+        Point2D aP3 = new(0.0, 3.0);
         GccAna_Circ2d3Tan aSolver = new(GccEnt.Unqualified(LX), aP2, aP3, Tol);
         CheckSolutions(aSolver, Arg.Of(GccEnt.Unqualified(LX)), Arg.Of(aP2), Arg.Of(aP3));
         // centres (x, 2) at distance 2 from (0, 1): x = +-sqrt(3)
@@ -438,11 +440,11 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void ThreePoints_Circumcircle()
     {
-        gp_Pnt2d aP1 = new(0.0, 0.0), aP2 = new(2.0, 0.0), aP3 = new(0.0, 2.0);
+        Point2D aP1 = new(0.0, 0.0), aP2 = new(2.0, 0.0), aP3 = new(0.0, 2.0);
         GccAna_Circ2d3Tan aSolver = new(aP1, aP2, aP3, Tol);
         CheckSolutions(aSolver, Arg.Of(aP1), Arg.Of(aP2), Arg.Of(aP3));
         Assert.Equal(1, aSolver.NbSolutions());
-        AssertNear(new gp_Pnt2d(1.0, 1.0), aSolver.ThisSolution(1).Location());
+        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location());
         Assert.Equal(Math.Sqrt(2.0), aSolver.ThisSolution(1).Radius(), Tol);
         aSolver.WhichQualifier(1, out GccEnt_Position aQ1, out GccEnt_Position aQ2, out GccEnt_Position aQ3);
         Assert.Equal((GccEnt_noqualifier, GccEnt_noqualifier, GccEnt_noqualifier), (aQ1, aQ2, aQ3));
@@ -451,7 +453,7 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void ThreePoints_Collinear_NoSolution()
     {
-        GccAna_Circ2d3Tan aSolver = new(new gp_Pnt2d(0.0, 0.0), new gp_Pnt2d(1.0, 0.0), new gp_Pnt2d(3.0, 0.0), Tol);
+        GccAna_Circ2d3Tan aSolver = new(new Point2D(0.0, 0.0), new Point2D(1.0, 0.0), new Point2D(3.0, 0.0), Tol);
         Assert.True(aSolver.IsDone());
         Assert.Equal(0, aSolver.NbSolutions());
     }
@@ -459,7 +461,7 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void ThreePoints_Coincident_ZeroRadius()
     {
-        gp_Pnt2d aP = new(1.0, 2.0);
+        Point2D aP = new(1.0, 2.0);
         GccAna_Circ2d3Tan aSolver = new(aP, aP, aP, Tol);
         Assert.Equal(1, aSolver.NbSolutions());
         Assert.Equal(0.0, aSolver.ThisSolution(1).Radius());
@@ -472,12 +474,12 @@ public class GccAna_Circ2d3TanTests
     [Fact]
     public void Accessors_OutOfRange_Throw()
     {
-        GccAna_Circ2d3Tan aSolver = new(new gp_Pnt2d(0.0, 0.0), new gp_Pnt2d(2.0, 0.0), new gp_Pnt2d(0.0, 2.0), Tol);
-        Assert.Throws<Standard_OutOfRange>(() => aSolver.ThisSolution(0));
-        Assert.Throws<Standard_OutOfRange>(() => aSolver.ThisSolution(2));
-        Assert.Throws<Standard_OutOfRange>(() => aSolver.WhichQualifier(2, out _, out _, out _));
-        Assert.Throws<Standard_OutOfRange>(() => aSolver.Tangency1(2, out _, out _, out _));
-        Assert.Throws<Standard_OutOfRange>(() => aSolver.IsTheSame3(0));
+        GccAna_Circ2d3Tan aSolver = new(new Point2D(0.0, 0.0), new Point2D(2.0, 0.0), new Point2D(0.0, 2.0), Tol);
+        Assert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(0));
+        Assert.Throws<OutOfRangeException>(() => aSolver.ThisSolution(2));
+        Assert.Throws<OutOfRangeException>(() => aSolver.WhichQualifier(2, out _, out _, out _));
+        Assert.Throws<OutOfRangeException>(() => aSolver.Tangency1(2, out _, out _, out _));
+        Assert.Throws<OutOfRangeException>(() => aSolver.IsTheSame3(0));
     }
 
     [Fact]
@@ -488,6 +490,6 @@ public class GccAna_Circ2d3TanTests
                                         GccEnt.Unqualified(C3), Tol));
         Assert.Throws<GccEnt_BadQualifier>(
             () => new GccAna_Circ2d3Tan(GccEnt.Unqualified(C1), new GccEnt_QualifiedLin(LX, GccEnt_noqualifier),
-                                        new gp_Pnt2d(1.0, 1.0), Tol));
+                                        new Point2D(1.0, 1.0), Tol));
     }
 }

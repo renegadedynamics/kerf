@@ -2,36 +2,38 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingData.Tests;
 
 public class Geom2d_CircleTest
 {
     // Circle centered at origin, radius 5
     private readonly Geom2d_Circle myCircle =
-        new Geom2d_Circle(new gp_Circ2d(new gp_Ax2d(new gp_Pnt2d(0.0, 0.0), new gp_Dir2d(1.0, 0.0)), 5.0));
+        new Geom2d_Circle(new Circle2D(new Axis2D(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0)), 5.0));
 
     [Fact]
     public void ConstructFromCirc2d()
     {
-        Assert.Equal(5.0, myCircle.Radius(), Precision.Confusion());
+        Assert.Equal(5.0, myCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void ConstructFromAxisAndRadius()
     {
-        Geom2d_Circle aCircle = new Geom2d_Circle(new gp_Ax2d(new gp_Pnt2d(1.0, 2.0), new gp_Dir2d(1.0, 0.0)), 3.0);
-        Assert.Equal(3.0, aCircle.Radius(), Precision.Confusion());
-        Assert.Equal(1.0, aCircle.Location().X(), Precision.Confusion());
-        Assert.Equal(2.0, aCircle.Location().Y(), Precision.Confusion());
+        Geom2d_Circle aCircle = new Geom2d_Circle(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
+        Assert.Equal(3.0, aCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aCircle.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void ConstructFromAx22d()
     {
-        gp_Ax22d anAxis = new gp_Ax22d(new gp_Pnt2d(3.0, 4.0), new gp_Dir2d(1.0, 0.0), new gp_Dir2d(0.0, 1.0));
+        Frame2D anAxis = new Frame2D(new Point2D(3.0, 4.0), new Direction2D(1.0, 0.0), new Direction2D(0.0, 1.0));
         Geom2d_Circle aCircle = new Geom2d_Circle(anAxis, 7.0);
-        Assert.Equal(7.0, aCircle.Radius(), Precision.Confusion());
-        Assert.Equal(3.0, aCircle.Location().X(), Precision.Confusion());
+        Assert.Equal(7.0, aCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -51,45 +53,45 @@ public class Geom2d_CircleTest
     [Fact]
     public void Eccentricity()
     {
-        Assert.Equal(0.0, myCircle.Eccentricity(), Precision.Confusion());
+        Assert.Equal(0.0, myCircle.Eccentricity(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void SetRadius()
     {
         myCircle.SetRadius(10.0);
-        Assert.Equal(10.0, myCircle.Radius(), Precision.Confusion());
+        Assert.Equal(10.0, myCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Circ2d()
     {
-        gp_Circ2d aCirc = myCircle.Circ2d();
-        Assert.Equal(5.0, aCirc.Radius(), Precision.Confusion());
+        Circle2D aCirc = myCircle.Circ2d();
+        Assert.Equal(5.0, aCirc.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void EvalD0_AtZero()
     {
-        gp_Pnt2d aPnt = myCircle.EvalD0(0.0);
-        Assert.Equal(5.0, aPnt.X(), Precision.Confusion());
-        Assert.Equal(0.0, aPnt.Y(), Precision.Confusion());
+        Point2D aPnt = myCircle.EvalD0(0.0);
+        Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void EvalD0_AtPiHalf()
     {
-        gp_Pnt2d aPnt = myCircle.EvalD0(M_PI / 2.0);
-        Assert.Equal(0.0, aPnt.X(), Precision.Confusion());
-        Assert.Equal(5.0, aPnt.Y(), Precision.Confusion());
+        Point2D aPnt = myCircle.EvalD0(M_PI / 2.0);
+        Assert.Equal(0.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void EvalD0_AtPi()
     {
-        gp_Pnt2d aPnt = myCircle.EvalD0(M_PI);
-        Assert.Equal(-5.0, aPnt.X(), Precision.Confusion());
-        Assert.Equal(0.0, aPnt.Y(), Precision.Confusion());
+        Point2D aPnt = myCircle.EvalD0(M_PI);
+        Assert.Equal(-5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -97,8 +99,8 @@ public class Geom2d_CircleTest
     {
         Geom2d_Curve.ResD1 aR = myCircle.EvalD1(0.0);
         // Tangent at U=0 is (0, R) = (0, 5)
-        Assert.Equal(0.0, aR.D1.X(), Precision.Confusion());
-        Assert.Equal(5.0, aR.D1.Y(), Precision.Confusion());
+        Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aR.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -106,16 +108,16 @@ public class Geom2d_CircleTest
     {
         Geom2d_Curve.ResD2 aR = myCircle.EvalD2(0.0);
         // Second derivative at U=0 is (-R, 0) = (-5, 0)
-        Assert.Equal(-5.0, aR.D2.X(), Precision.Confusion());
-        Assert.Equal(0.0, aR.D2.Y(), Precision.Confusion());
+        Assert.Equal(-5.0, aR.D2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aR.D2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void EvalDN_Order1()
     {
-        gp_Vec2d aD1 = myCircle.EvalDN(0.0, 1);
-        Assert.Equal(0.0, aD1.X(), Precision.Confusion());
-        Assert.Equal(5.0, aD1.Y(), Precision.Confusion());
+        Vector2D aD1 = myCircle.EvalDN(0.0, 1);
+        Assert.Equal(0.0, aD1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aD1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -123,7 +125,7 @@ public class Geom2d_CircleTest
     {
         double aU = M_PI / 3.0;
         double aRev = myCircle.ReversedParameter(aU);
-        Assert.Equal(2.0 * M_PI - aU, aRev, Precision.Confusion());
+        Assert.Equal(2.0 * M_PI - aU, aRev, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -132,21 +134,21 @@ public class Geom2d_CircleTest
         Geom2d_Geometry aCopyGeom = myCircle.Copy();
         Geom2d_Circle? aCopy = aCopyGeom as Geom2d_Circle;
         Assert.NotNull(aCopy);
-        Assert.Equal(5.0, aCopy.Radius(), Precision.Confusion());
+        Assert.Equal(5.0, aCopy.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
         // Verify independence
         aCopy.SetRadius(1.0);
-        Assert.Equal(5.0, myCircle.Radius(), Precision.Confusion());
+        Assert.Equal(5.0, myCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Transform_Translation()
     {
-        gp_Trsf2d aTrsf = new gp_Trsf2d();
-        aTrsf.SetTranslation(new gp_Vec2d(10.0, 20.0));
+        Transform2D aTrsf = new Transform2D();
+        aTrsf.SetTranslation(new Vector2D(10.0, 20.0));
         myCircle.Transform(aTrsf);
-        Assert.Equal(10.0, myCircle.Location().X(), Precision.Confusion());
-        Assert.Equal(20.0, myCircle.Location().Y(), Precision.Confusion());
-        Assert.Equal(5.0, myCircle.Radius(), Precision.Confusion());
+        Assert.Equal(10.0, myCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(20.0, myCircle.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, myCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -155,9 +157,9 @@ public class Geom2d_CircleTest
         // All points on circle should be at distance R from center
         for (double u = 0.0; u < 2.0 * M_PI; u += M_PI / 6.0)
         {
-            gp_Pnt2d aPnt = myCircle.EvalD0(u);
+            Point2D aPnt = myCircle.EvalD0(u);
             double aDist = aPnt.Distance(myCircle.Location());
-            Assert.Equal(5.0, aDist, Precision.Confusion());
+            Assert.Equal(5.0, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 }

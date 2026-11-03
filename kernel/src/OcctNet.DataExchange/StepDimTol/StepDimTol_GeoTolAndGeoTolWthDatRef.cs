@@ -6,6 +6,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 public class StepDimTol_GeoTolAndGeoTolWthDatRef : StepDimTol_GeometricTolerance
@@ -17,7 +19,7 @@ public class StepDimTol_GeoTolAndGeoTolWthDatRef : StepDimTol_GeometricTolerance
     {
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepRepr_ShapeAspect theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType)
     {
         SetName(theName);
         SetDescription(theDescription);
@@ -27,7 +29,7 @@ public class StepDimTol_GeoTolAndGeoTolWthDatRef : StepDimTol_GeometricTolerance
         myToleranceType = theType;
     }
 
-    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Standard_Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType)
+    public void Init(TCollection_HAsciiString theName, TCollection_HAsciiString theDescription, Transient theMagnitude, StepDimTol_GeometricToleranceTarget theTolerancedShapeAspect, StepDimTol_GeometricToleranceWithDatumReference theGTWDR, StepDimTol_GeometricToleranceType theType)
     {
         SetName(theName);
         SetDescription(theDescription);

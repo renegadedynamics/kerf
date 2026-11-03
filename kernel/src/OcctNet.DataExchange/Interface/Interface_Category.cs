@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -52,7 +54,7 @@ public class Interface_Category
     }
 
     /// <summary>Determines the category number of an entity in its context, by the general service CategoryNumber.</summary>
-    public int CatNum(Standard_Transient? theEnt, Interface_ShareTool theShares)
+    public int CatNum(Transient? theEnt, Interface_ShareTool theShares)
     {
         if (theEnt is null)
         {
@@ -94,7 +96,7 @@ public class Interface_Category
         myNum.Init(0);
         for (i = 1; i <= nb; i++)
         {
-            Standard_Transient? anEnt = theModel.Value(i);
+            Transient? anEnt = theModel.Value(i);
             if (anEnt is null)
             {
                 continue;

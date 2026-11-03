@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
@@ -52,11 +53,11 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                 // Move the curve to the face, now and then onto it, so that extrema fall inside both
                 if (anOracle.Int(0, 3) != 0)
                 {
-                    gp_Pnt aOnC = aPC.Value(anOracle.Real(aF, aL));
-                    gp_Pnt aOnS = aPS.Value(anOracle.Real(aU1, aU2), anOracle.Real(aV1, aV2));
+                    Point3D aOnC = aPC.Value(anOracle.Real(aF, aL));
+                    Point3D aOnS = aPS.Value(anOracle.Real(aU1, aU2), anOracle.Real(aV1, aV2));
                     double aGap = anOracle.Bool() ? 0.0 : anOracle.Real(0.01, 2.0);
-                    gp_Vec aV = new(aOnC, aOnS);
-                    aV += new gp_Vec(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
+                    Vector3D aV = new(aOnC, aOnS);
+                    aV += new Vector3D(aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1), aGap * anOracle.Real(-1, 1));
                     using N.gp_Vec aNV = Oracle.ToNative(aV);
                     aNC.Translate(aNV);
                     aPC.Translate(aV);
@@ -79,12 +80,12 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                 N.BRepTools.UVBounds(aNF, ref aFU1, ref aFU2, ref aFV1, ref aFV2);
                 var aSurf = new GeomAdaptor_Surface(aPS, aFU1, aFU2, aFV1, aFV2);
                 var aCurv = new GeomAdaptor_Curve(aPC, aEF, aEL);
-                double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), Precision.Confusion());
+                double aTolS = Math.Min(N.BRep_Tool.Tolerance(aNF), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolS = Math.Min(aSurf.UResolution(aTolS), aSurf.VResolution(aTolS));
-                aTolS = Math.Max(aTolS, Precision.PConfusion());
-                double aTolC = Math.Min(N.BRep_Tool.Tolerance(aNE), Precision.Confusion());
+                aTolS = Math.Max(aTolS, global::Kerf.Engine.Foundation.Precision.PConfusion());
+                double aTolC = Math.Min(N.BRep_Tool.Tolerance(aNE), global::Kerf.Engine.Foundation.Precision.Confusion());
                 aTolC = aCurv.Resolution(aTolC);
-                aTolC = Math.Max(aTolC, Precision.PConfusion());
+                aTolC = Math.Max(aTolC, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
                 var aPort = new Extrema_ExtCS();
                 aPort.Initialize(aSurf, aFU1, aFU2, aFV1, aFV2, aTolC, aTolS);
@@ -158,7 +159,7 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
     // A finite range inside [theFirst, theLast] (a random one where that is infinite), whole half the time.
     private static (double First, double Last) Range(Oracle theO, double theFirst, double theLast, double theMinPart)
     {
-        if (Precision.IsInfinite(theFirst) || Precision.IsInfinite(theLast))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(theFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(theLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
             return (a, a + b);

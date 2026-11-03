@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepVisual_SurfaceStyleSilhouette : Standard_Transient
+public class StepVisual_SurfaceStyleSilhouette : Transient
 {
     private StepVisual_CurveStyle styleOfSilhouette;
 

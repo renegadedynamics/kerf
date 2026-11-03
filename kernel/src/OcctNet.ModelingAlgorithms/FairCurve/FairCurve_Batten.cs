@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using System.Globalization;
 using static Occt.FairCurve_AnalysisCode;
 
@@ -22,8 +26,8 @@ namespace Occt;
 public class FairCurve_Batten
 {
     protected FairCurve_AnalysisCode myCode;
-    protected gp_Pnt2d OldP1;
-    protected gp_Pnt2d OldP2;
+    protected Point2D OldP1;
+    protected Point2D OldP2;
     protected double OldAngle1;
     protected double OldAngle2;
     protected double OldHeight;
@@ -32,8 +36,8 @@ public class FairCurve_Batten
     protected bool OldFreeSliding;
     protected int OldConstraintOrder1;
     protected int OldConstraintOrder2;
-    protected gp_Pnt2d NewP1;
-    protected gp_Pnt2d NewP2;
+    protected Point2D NewP1;
+    protected Point2D NewP2;
     protected double NewAngle1;
     protected double NewAngle2;
     protected double NewHeight;
@@ -43,7 +47,7 @@ public class FairCurve_Batten
     protected int NewConstraintOrder1;
     protected int NewConstraintOrder2;
     protected int Degree;
-    protected NCollection_HArray1<gp_Pnt2d> Poles;
+    protected NCollection_HArray1<Point2D> Poles;
     protected NCollection_HArray1<double> Flatknots;
     protected NCollection_HArray1<double> Knots;
     protected NCollection_HArray1<int> Mults;
@@ -53,9 +57,9 @@ public class FairCurve_Batten
     /// <paramref name="Slope"/>. The other parameters start as: FreeSliding false, ConstraintOrder1 and 2 equal to 1,
     /// Angle1 and Angle2 equal to 0, SlidingFactor 1.
     /// </summary>
-    /// <exception cref="Standard_NullValue">P1 and P2 are confused (within Precision::Confusion).</exception>
-    /// <exception cref="Standard_NegativeValue"><paramref name="Height"/> is not positive.</exception>
-    public FairCurve_Batten(in gp_Pnt2d P1, in gp_Pnt2d P2, double Height, double Slope = 0)
+    /// <exception cref="NullValueException">P1 and P2 are confused (within Precision::Confusion).</exception>
+    /// <exception cref="NegativeValueException"><paramref name="Height"/> is not positive.</exception>
+    public FairCurve_Batten(in Point2D P1, in Point2D P2, double Height, double Slope = 0)
     {
         myCode = FairCurve_OK;
         OldP1 = P1;
@@ -80,20 +84,20 @@ public class FairCurve_Batten
         NewConstraintOrder2 = 1;
         Degree = 9;
 
-        if (P1.IsEqual(P2, Precision.Confusion()))
+        if (P1.IsEqual(P2, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            throw new Standard_NullValue("FairCurve : P1 and P2 are confused");
+            throw new NullValueException("FairCurve : P1 and P2 are confused");
         }
         if (Height <= 0)
         {
-            throw new Standard_NegativeValue("FairCurve : Height is not positive");
+            throw new NegativeValueException("FairCurve : Height is not positive");
         }
         //
         //   Initialize by a straight line (2 poles)
         //
         NCollection_HArray1<double> Iknots = new(1, 2);
         NCollection_HArray1<int> Imults = new(1, 2);
-        NCollection_HArray1<gp_Pnt2d> Ipoles = new(1, 2);
+        NCollection_HArray1<Point2D> Ipoles = new(1, 2);
 
         Iknots.SetValue(1, 0);
         Iknots.SetValue(2, 1);
@@ -106,16 +110,16 @@ public class FairCurve_Batten
 
         //  Increase the degree
 
-        NCollection_HArray1<gp_Pnt2d> Npoles = new(1, Degree + 1);
+        NCollection_HArray1<Point2D> Npoles = new(1, Degree + 1);
         NCollection_HArray1<double> Nweight = new(1, 2);
         NCollection_HArray1<double> Nknots = new(1, 2);
         NCollection_HArray1<int> Nmults = new(1, 2);
 
-        BSplCLib.IncreaseDegree(1,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(1,
                                 Degree,
                                 false,
                                 Ipoles.Array1(),
-                                BSplCLib.NoWeights(),
+                                global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
                                 Iknots.Array1(),
                                 Imults.Array1(),
                                 Npoles.ChangeArray1(),
@@ -133,9 +137,9 @@ public class FairCurve_Batten
 
         Flatknots =
           new NCollection_HArray1<double>(1,
-                                          BSplCLib.KnotSequenceLength(Mults.Array1(), Degree, false));
+                                          global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequenceLength(Mults.Array1(), Degree, false));
 
-        BSplCLib.KnotSequence(Knots.Array1(),
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(Knots.Array1(),
                               Mults.Array1(),
                               Degree,
                               false,
@@ -167,24 +171,24 @@ public class FairCurve_Batten
     }
 
     /// <summary>Moves the first point (which changes the angles as well).</summary>
-    /// <exception cref="Standard_NullValue">P1 and P2 are confused (within Precision::Confusion).</exception>
-    public void SetP1(in gp_Pnt2d P1)
+    /// <exception cref="NullValueException">P1 and P2 are confused (within Precision::Confusion).</exception>
+    public void SetP1(in Point2D P1)
     {
-        if (P1.IsEqual(NewP2, Precision.Confusion()))
+        if (P1.IsEqual(NewP2, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            throw new Standard_NullValue("FairCurve : P1 and P2 are confused");
+            throw new NullValueException("FairCurve : P1 and P2 are confused");
         }
         Angles(P1, NewP2);
         NewP1 = P1;
     }
 
     /// <summary>Moves the second point (which changes the angles as well).</summary>
-    /// <exception cref="Standard_NullValue">P1 and P2 are confused (within Precision::Confusion).</exception>
-    public void SetP2(in gp_Pnt2d P2)
+    /// <exception cref="NullValueException">P1 and P2 are confused (within Precision::Confusion).</exception>
+    public void SetP2(in Point2D P2)
     {
-        if (NewP1.IsEqual(P2, Precision.Confusion()))
+        if (NewP1.IsEqual(P2, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            throw new Standard_NullValue("FairCurve : P1 and P2 are confused");
+            throw new NullValueException("FairCurve : P1 and P2 are confused");
         }
         Angles(NewP1, P2);
         NewP2 = P2;
@@ -203,12 +207,12 @@ public class FairCurve_Batten
     }
 
     /// <summary>Sets the height of the deformation.</summary>
-    /// <exception cref="Standard_NegativeValue"><paramref name="Height"/> is not positive.</exception>
+    /// <exception cref="NegativeValueException"><paramref name="Height"/> is not positive.</exception>
     public void SetHeight(double Height)
     {
         if (Height <= 0)
         {
-            throw new Standard_NegativeValue("FairCurve : Height is no positive");
+            throw new NegativeValueException("FairCurve : Height is no positive");
         }
         NewHeight = Height;
     }
@@ -278,7 +282,7 @@ public class FairCurve_Batten
                 Ratio = (Ratio < 1 / Fraction ? Ratio : 1 / Fraction);
             }
 
-            gp_Vec2d DeltaP1 = new(OldP1, NewP1), DeltaP2 = new(OldP2, NewP2);
+            Vector2D DeltaP1 = new(OldP1, NewP1), DeltaP2 = new(OldP2, NewP2);
             if (Ratio == 1)
             {
                 End = true;
@@ -317,8 +321,8 @@ public class FairCurve_Batten
     }
 
     /// <summary>Computes the curve with respect to the delta-constraints.</summary>
-    private bool Compute(in gp_Vec2d DeltaP1,
-                         in gp_Vec2d DeltaP2,
+    private bool Compute(in Vector2D DeltaP1,
+                         in Vector2D DeltaP2,
                          double DeltaAngle1,
                          double DeltaAngle2,
                          out FairCurve_AnalysisCode ACode,
@@ -334,30 +338,30 @@ public class FairCurve_Batten
         knots[1] = 0;
         knots[2] = 1;
         NCollection_Array1<int> mults = new(1, 2);
-        NCollection_Array1<gp_Pnt2d> HermitePoles = new(1, L);
-        NCollection_Array1<gp_Pnt2d> Interpolation = new(1, L);
-        NCollection_HArray1<gp_Pnt2d> NPoles = new(1, Poles.Length());
+        NCollection_Array1<Point2D> HermitePoles = new(1, L);
+        NCollection_Array1<Point2D> Interpolation = new(1, L);
+        NCollection_HArray1<Point2D> NPoles = new(1, Poles.Length());
 
         // Polynoms of Hermite
-        math_Matrix HermiteCoef = new(1, L, 1, L);
-        Ok = PLib.HermiteCoefficients(0, 1, NewConstraintOrder1, NewConstraintOrder2, HermiteCoef);
+        Matrix HermiteCoef = new(1, L, 1, L);
+        Ok = global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0, 1, NewConstraintOrder1, NewConstraintOrder2, HermiteCoef);
         if (!Ok)
         {
             return false;
         }
 
         // Definition of constraints of interpolation
-        NCollection_Array1<gp_XY> ADelta = new(1, L);
-        gp_Vec2d VOld = new(OldP1, OldP2), VNew = new(-(OldP1.XY() + DeltaP1.XY()) + (OldP2.XY() + DeltaP2.XY()));
+        NCollection_Array1<Xy> ADelta = new(1, L);
+        Vector2D VOld = new(OldP1, OldP2), VNew = new(-(OldP1.XY() + DeltaP1.XY()) + (OldP2.XY() + DeltaP2.XY()));
         double DAngleRef = VNew.Angle(VOld);
 
         ADelta[1] = DeltaP1.XY();
         kk = 2;
         if (NewConstraintOrder1 > 0)
         {
-            gp_Vec2d OldDerive = new(Poles.Value(Poles.Lower()), Poles.Value(Poles.Lower() + 1));
+            Vector2D OldDerive = new(Poles.Value(Poles.Lower()), Poles.Value(Poles.Lower() + 1));
             double aKnotGap1 = Knots.Value(2) - Knots.Value(1);
-            if (Math.Abs(aKnotGap1) > Precision.Computational())
+            if (Math.Abs(aKnotGap1) > global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 OldDerive *= Degree / aKnotGap1;
             }
@@ -368,9 +372,9 @@ public class FairCurve_Batten
         kk += 1;
         if (NewConstraintOrder2 > 0)
         {
-            gp_Vec2d OldDerive = new(Poles.Value(Poles.Upper() - 1), Poles.Value(Poles.Upper()));
+            Vector2D OldDerive = new(Poles.Value(Poles.Upper() - 1), Poles.Value(Poles.Upper()));
             double aKnotGap2 = Knots.Value(Knots.Upper()) - Knots.Value(Knots.Upper() - 1);
-            if (Math.Abs(aKnotGap2) > Precision.Computational())
+            if (Math.Abs(aKnotGap2) > global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 OldDerive *= Degree / aKnotGap2;
             }
@@ -378,7 +382,7 @@ public class FairCurve_Batten
         }
 
         // Interpolation
-        gp_XY AuxXY = new(0, 0);
+        Xy AuxXY = new(0, 0);
         for (ii = 1; ii <= L; ii++)
         {
             AuxXY.SetCoord(0.0, 0);
@@ -389,7 +393,7 @@ public class FairCurve_Batten
             Interpolation[ii].SetXY(AuxXY);
         }
         // Conversion into BSpline of the same structure as the current batten.
-        PLib.CoefficientsPoles(Interpolation, PLib.NoWeights(), HermitePoles, PLib.NoWeights());
+        global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(Interpolation, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), HermitePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
 
         mults.Init(L);
 
@@ -414,7 +418,7 @@ public class FairCurve_Batten
           Alph1 = OldAngle1 + DeltaAngle1, Alph2 = OldAngle2 + DeltaAngle2,
           Dist = NPoles.Value(NPoles.Upper()).Distance(NPoles.Value(NPoles.Lower())),
           LReference = SlidingOfReference(Dist, Alph1, Alph2);
-        gp_Vec2d Ox = new(1, 0),
+        Vector2D Ox = new(1, 0),
           P1P2 = new(NPoles.Value(NPoles.Upper()).Coord() - NPoles.Value(NPoles.Lower()).Coord());
 
         // Angles corresponding to axis ox
@@ -452,7 +456,7 @@ public class FairCurve_Batten
                                                NewFreeSliding,
                                                Angle1,
                                                Angle2);
-        math_Vector VInit = new(1, EBatten.NbVariables());
+        math_Vector VInit = new(1, EBatten.VariableCount);
 
         // The valeur below is the smallest value of the criterion of flexion.
         double VConvex = 0.01 * Math.Pow(NewHeight / SlidingLength, 3);
@@ -470,7 +474,7 @@ public class FairCurve_Batten
                                       NbIterations,
                                       VConvex);
         Newton.Perform(EBatten, VInit);
-        Ok = Newton.IsDone();
+        Ok = Newton.IsDone;
 
         if (Ok)
         {
@@ -487,7 +491,7 @@ public class FairCurve_Batten
 
             if (NewConstraintOrder1 == 0)
             {
-                gp_Vec2d Tangente = new(Poles.Value(Poles.Lower() + 1).Coord()
+                Vector2D Tangente = new(Poles.Value(Poles.Lower() + 1).Coord()
                                         - Poles.Value(Poles.Lower()).Coord());
                 OldAngle1 = P1P2.Angle(Tangente);
             }
@@ -498,7 +502,7 @@ public class FairCurve_Batten
 
             if (NewConstraintOrder2 == 0)
             {
-                gp_Vec2d Tangente = new(Poles.Value(Poles.Upper()).Coord()
+                Vector2D Tangente = new(Poles.Value(Poles.Upper()).Coord()
                                         - Poles.Value(Poles.Upper() - 1).Coord());
                 OldAngle2 = (-Tangente).Angle(-P1P2);
             }
@@ -533,7 +537,7 @@ public class FairCurve_Batten
         Ok = EBatten.Variable(VInit);
 
         // Processing of non-convergence
-        if (!Newton.IsConverged())
+        if (!Newton.IsConverged)
         {
             ACode = FairCurve_NotConverged;
         }
@@ -569,7 +573,7 @@ public class FairCurve_Batten
             }
 
             NewBS.InsertKnots(NKnots.Array1(), NMults.Array1(), 1.0e-10);
-            NCollection_HArray1<gp_Pnt2d> NewNPoles = new(NewBS.InternalPoles());
+            NCollection_HArray1<Point2D> NewNPoles = new(NewBS.InternalPoles());
             NMults = new NCollection_HArray1<int>(NewBS.InternalMultiplicities());
             NKnots = new NCollection_HArray1<double>(NewBS.InternalKnots());
             NCollection_HArray1<double> FKnots = new(NewBS.InternalKnotSequence());
@@ -633,7 +637,7 @@ public class FairCurve_Batten
         else
         {
             double aSum = a1 + a2;
-            if (Math.Abs(aSum) < Precision.Angular())
+            if (Math.Abs(aSum) < global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return Compute(Dist, a1, M_PI / 2);
             }
@@ -667,7 +671,7 @@ public class FairCurve_Batten
     /// </summary>
     protected double Compute(double Dist, double Angle)
     {
-        if (Angle < Precision.Angular())
+        if (Angle < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return Dist;
         } // length of segment P1P2
@@ -704,13 +708,13 @@ public class FairCurve_Batten
     }
 
     /// <summary>The first point of the latest computation.</summary>
-    public gp_Pnt2d GetP1()
+    public Point2D GetP1()
     {
         return OldP1;
     }
 
     /// <summary>The second point of the latest computation.</summary>
-    public gp_Pnt2d GetP2()
+    public Point2D GetP2()
     {
         return OldP2;
     }
@@ -796,14 +800,14 @@ public class FairCurve_Batten
     }
 
     // o.width(7) applies to the next item only (OCCT writes "old | new" lines with it)
-    private protected static string Width7(string theText) => Standard_Stream.Setw(7, theText);
+    private protected static string Width7(string theText) => StreamUtilities.Setw(7, theText);
 
     private protected static void DumpPair(TextWriter o, double theOld, double theNew)
     {
-        int aPrecision = Standard_Stream.Precision(o);
-        o.Write(Width7(Standard_Stream.FormatReal(theOld, aPrecision)));
+        int aPrecision = StreamUtilities.Precision(o);
+        o.Write(Width7(StreamUtilities.FormatReal(theOld, aPrecision)));
         o.Write(" | ");
-        o.Write(Standard_Stream.FormatReal(theNew, aPrecision));
+        o.Write(StreamUtilities.FormatReal(theNew, aPrecision));
         o.Write('\n');
     }
 
@@ -834,9 +838,9 @@ public class FairCurve_Batten
         }
     }
 
-    private void Angles(in gp_Pnt2d P1, in gp_Pnt2d P2)
+    private void Angles(in Point2D P1, in Point2D P2)
     {
-        gp_Vec2d VOld = new(NewP1, NewP2), VNew = new(P1, P2);
+        Vector2D VOld = new(NewP1, NewP2), VNew = new(P1, P2);
         double Dangle = VOld.Angle(VNew);
         NewAngle1 -= Dangle;
         NewAngle2 += Dangle;

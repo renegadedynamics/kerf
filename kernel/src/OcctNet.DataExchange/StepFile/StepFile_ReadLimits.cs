@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Occt;
 /// <remarks>
 /// The defaults are far above any real file's (unit 8P's decision). A token (a string with its quotes, a name, a
 /// number, a run of blanks inside a comment) is limited by the scanner itself, as OCCT's is: 16,383 bytes, beyond which
-/// flex's buffer can't grow, a <see cref="Standard_Failure"/> (OCCT's "input buffer overflow").
+/// flex's buffer can't grow, a <see cref="FailureException"/> (OCCT's "input buffer overflow").
 /// </remarks>
 public sealed record StepFile_ReadLimits
 {

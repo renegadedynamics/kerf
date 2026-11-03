@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.StepToTopoDS_BuilderError;
 using static Occt.StepToTopoDS_GeometricToolError;
 using static Occt.TopoDSToStep_MakeFaceError;
@@ -82,9 +83,9 @@ public sealed class TopoStepTests
         var aBuilder = new StepToTopoDS_Builder();
         aBuilder.Init(aMSB.Value(), aTP);
         Assert.True(aBuilder.IsDone());
-        Assert.False(aBuilder.InternalValue().TShape()!.IsFrozen());
+        Assert.False(aBuilder.InternalValue().TShape()!.IsFrozen);
         TopoDS_Shape aSolid = aBuilder.Value();
-        Assert.True(aSolid.TShape()!.IsFrozen());
+        Assert.True(aSolid.TShape()!.IsFrozen);
         Assert.Equal(TopAbs_ShapeEnum.TopAbs_SOLID, aSolid.ShapeType());
         var aProps = new GProp_GProps();
         BRepGProp.VolumeProperties(aSolid, aProps);
@@ -94,9 +95,9 @@ public sealed class TopoStepTests
     [Fact]
     public void UpdateParam3d_reverses_a_frozen_curve_in_a_copy()
     {
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 2);
-        aPoles.SetValue(1, new gp_Pnt(0, 0, 0));
-        aPoles.SetValue(2, new gp_Pnt(10, 0, 0));
+        var aPoles = new NCollection_Array1<Point3D>(1, 2);
+        aPoles.SetValue(1, new Point3D(0, 0, 0));
+        aPoles.SetValue(2, new Point3D(10, 0, 0));
         var aKnots = new NCollection_Array1<double>(1, 2);
         aKnots.SetValue(1, 0);
         aKnots.SetValue(2, 1);
@@ -109,8 +110,8 @@ public sealed class TopoStepTests
         double w1 = 0.8, w2 = 0.2;
         StepToTopoDS_GeometricTool.UpdateParam3d(ref aRef, ref w1, ref w2, 1e-7, true);
         Assert.NotSame(aCurve, aRef);
-        Assert.Equal(new gp_Pnt(0, 0, 0), aCurve.StartPoint()); // the shared curve unchanged
-        Assert.Equal(new gp_Pnt(10, 0, 0), ((Geom_BSplineCurve)aRef).StartPoint());
+        Assert.Equal(new Point3D(0, 0, 0), aCurve.StartPoint()); // the shared curve unchanged
+        Assert.Equal(new Point3D(10, 0, 0), ((Geom_BSplineCurve)aRef).StartPoint());
         Assert.True(w1 < w2);
     }
 

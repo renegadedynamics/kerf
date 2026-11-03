@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -9,13 +10,13 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
 {
     private const int Cases = 1000;
 
-    private static N.gp_Lin2d ToNative(in gp_Lin2d theL)
+    private static N.gp_Lin2d ToNative(in Line2D theL)
     {
         using var anAx = Oracle.ToNative(theL.Position());
         return new N.gp_Lin2d(anAx);
     }
 
-    private static N.gp_Circ2d ToNative(in gp_Circ2d theC)
+    private static N.gp_Circ2d ToNative(in Circle2D theC)
     {
         using var anAx = Oracle.ToNative(theC.Position());
         return new N.gp_Circ2d(anAx, theC.Radius());
@@ -51,12 +52,12 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Lin2d aL1 = new(anOracle.Ax2d());
-            gp_Lin2d aL2 = (i % 10) switch
+            Line2D aL1 = new(anOracle.Ax2d());
+            Line2D aL2 = (i % 10) switch
             {
-                0 => new gp_Lin2d(anOracle.Pnt2d(), aL1.Direction()), // parallel
-                1 => new gp_Lin2d(aL1.Location(), aL1.Direction()), // identical
-                _ => new gp_Lin2d(anOracle.Ax2d()),
+                0 => new Line2D(anOracle.Pnt2d(), aL1.Direction()), // parallel
+                1 => new Line2D(aL1.Location(), aL1.Direction()), // identical
+                _ => new Line2D(anOracle.Ax2d()),
             };
             using var aN1 = ToNative(aL1);
             using var aN2 = ToNative(aL2);
@@ -73,14 +74,14 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax22d anAx1 = anOracle.Ax22d();
+            Frame2D anAx1 = anOracle.Ax22d();
             double aR1 = anOracle.Real(1, 50);
-            gp_Circ2d aC1 = new(anAx1, aR1);
+            Circle2D aC1 = new(anAx1, aR1);
             // Second center near the first so that most pairs intersect; concentric one time in ten
-            gp_Pnt2d aCenter2 = i % 10 == 0
+            Point2D aCenter2 = i % 10 == 0
                                     ? anAx1.Location()
-                                    : anAx1.Location().Translated(new gp_Vec2d(anOracle.Real(-60, 60), anOracle.Real(-60, 60)));
-            gp_Circ2d aC2 = new(new gp_Ax22d(aCenter2, anOracle.Dir2d(), anOracle.Bool()), i % 20 == 0 ? aR1 : anOracle.Real(1, 50));
+                                    : anAx1.Location().Translated(new Vector2D(anOracle.Real(-60, 60), anOracle.Real(-60, 60)));
+            Circle2D aC2 = new(new Frame2D(aCenter2, anOracle.Dir2d(), anOracle.Bool()), i % 20 == 0 ? aR1 : anOracle.Real(1, 50));
             using var aN1 = ToNative(aC1);
             using var aN2 = ToNative(aC2);
             using var aNative = new N.IntAna2d_AnaIntersection(aN1, aN2);
@@ -97,12 +98,12 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Ax22d anAx = anOracle.Ax22d();
+            Frame2D anAx = anOracle.Ax22d();
             double aR = anOracle.Real(1, 50);
-            gp_Circ2d aC = new(anAx, aR);
+            Circle2D aC = new(anAx, aR);
             // A line through a point near the circle, crossing it most of the time
-            gp_Pnt2d aP = anAx.Location().Translated(new gp_Vec2d(anOracle.Real(-1.2 * aR, 1.2 * aR), anOracle.Real(-1.2 * aR, 1.2 * aR)));
-            gp_Lin2d aL = new(aP, anOracle.Dir2d());
+            Point2D aP = anAx.Location().Translated(new Vector2D(anOracle.Real(-1.2 * aR, 1.2 * aR), anOracle.Real(-1.2 * aR, 1.2 * aR)));
+            Line2D aL = new(aP, anOracle.Dir2d());
             using var aNL = ToNative(aL);
             using var aNC = ToNative(aC);
             using var aNative = new N.IntAna2d_AnaIntersection(aNL, aNC);

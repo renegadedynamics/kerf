@@ -5,7 +5,8 @@
 
 #nullable disable warnings
 
-using static Occt.Quantity_NameOfColor;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.NameOfColor;
 using static Occt.StepVisual_ShadingSurfaceMethod;
 
 namespace Occt;
@@ -36,7 +37,7 @@ public class STEPConstruct_RenderingProperties
     }
 
     /// <summary>Constructor from RGBA color.</summary>
-    public STEPConstruct_RenderingProperties(in Quantity_ColorRGBA theRGBAColor)
+    public STEPConstruct_RenderingProperties(in ColorWithAlpha theRGBAColor)
     {
         reset();
         Init(theRGBAColor);
@@ -50,7 +51,7 @@ public class STEPConstruct_RenderingProperties
     }
 
     /// <summary>Constructor from surface color, transparency, and rendering method.</summary>
-    public STEPConstruct_RenderingProperties(in Quantity_Color theSurfaceColor, double theTransparency = 0.0)
+    public STEPConstruct_RenderingProperties(in Color theSurfaceColor, double theTransparency = 0.0)
     {
         reset();
         Init(theSurfaceColor, theTransparency);
@@ -61,7 +62,7 @@ public class STEPConstruct_RenderingProperties
 
     private void reset()
     {
-        mySurfaceColor = new Quantity_Color(Quantity_NOC_WHITE);
+        mySurfaceColor = new Color(NocWhite);
         myTransparency = 0.0;
         myRenderingMethod = StepVisual_ssmNormalShading;
         myIsDefined = false;
@@ -69,7 +70,7 @@ public class STEPConstruct_RenderingProperties
         myDiffuseReflectance = (0.0, false);
         mySpecularReflectance = (0.0, false);
         mySpecularExponent = (0.0, false);
-        mySpecularColour = (new Quantity_Color(Quantity_NOC_WHITE), false);
+        mySpecularColour = (new Color(NocWhite), false);
     }
 
     /// <summary>Sets ambient reflectance value</summary>
@@ -88,7 +89,7 @@ public class STEPConstruct_RenderingProperties
     /// <summary>Sets ambient, diffuse and specular reflectance values</summary>
     public void SetAmbientDiffuseAndSpecularReflectance(double theAmbientReflectance, double theDiffuseReflectance,
                                                         double theSpecularReflectance, double theSpecularExponent,
-                                                        in Quantity_Color theSpecularColour)
+                                                        in Color theSpecularColour)
     {
         myAmbientReflectance = (theAmbientReflectance, true);
         myDiffuseReflectance = (theDiffuseReflectance, true);
@@ -191,7 +192,7 @@ public class STEPConstruct_RenderingProperties
         // Decode surface color using STEPConstruct_Styles utility
         if (aColor is not null)
         {
-            Quantity_Color aDecodedColor = new Quantity_Color();
+            Color aDecodedColor = new Color();
             if (STEPConstruct_Styles.DecodeColor(aColor, ref aDecodedColor))
             {
                 mySurfaceColor = aDecodedColor;
@@ -232,7 +233,7 @@ public class STEPConstruct_RenderingProperties
                     myDiffuseReflectance = (aFullRefl.DiffuseReflectance(), true);
                     mySpecularReflectance = (aFullRefl.SpecularReflectance(), true);
                     mySpecularExponent = (aFullRefl.SpecularExponent(), true);
-                    Quantity_Color aSpecular = mySpecularColour.Item1;
+                    Color aSpecular = mySpecularColour.Item1;
                     bool isDecoded = STEPConstruct_Styles.DecodeColor(aFullRefl.SpecularColour(), ref aSpecular);
                     mySpecularColour = (aSpecular, isDecoded);
                 }
@@ -252,7 +253,7 @@ public class STEPConstruct_RenderingProperties
     }
 
     /// <summary>Initializes from RGBA color.</summary>
-    public void Init(in Quantity_ColorRGBA theRGBAColor)
+    public void Init(in ColorWithAlpha theRGBAColor)
     {
         reset();
         mySurfaceColor = theRGBAColor.GetRGB();
@@ -272,7 +273,7 @@ public class STEPConstruct_RenderingProperties
         }
 
         // Decode color using STEPConstruct_Styles utility
-        Quantity_Color aDecodedColor = new Quantity_Color();
+        Color aDecodedColor = new Color();
         if (STEPConstruct_Styles.DecodeColor(theColor, ref aDecodedColor))
         {
             mySurfaceColor = aDecodedColor;
@@ -281,7 +282,7 @@ public class STEPConstruct_RenderingProperties
     }
 
     /// <summary>Initializes from surface color, transparency and rendering method.</summary>
-    public void Init(in Quantity_Color theSurfaceColor, double theTransparency = 0.0)
+    public void Init(in Color theSurfaceColor, double theTransparency = 0.0)
     {
         reset();
         mySurfaceColor = theSurfaceColor;
@@ -290,13 +291,13 @@ public class STEPConstruct_RenderingProperties
     }
 
     /// <summary>Creates the ColorRGBA object from the current color and transparency</summary>
-    public Quantity_ColorRGBA GetRGBAColor()
+    public ColorWithAlpha GetRGBAColor()
     {
-        return new Quantity_ColorRGBA(mySurfaceColor, (float)(1.0 - myTransparency));
+        return new ColorWithAlpha(mySurfaceColor, (float)(1.0 - myTransparency));
     }
 
     /// <summary>Returns surface color</summary>
-    public Quantity_Color SurfaceColor() => mySurfaceColor;
+    public Color SurfaceColor() => mySurfaceColor;
 
     /// <summary>Returns transparency value</summary>
     public double Transparency() => myTransparency;
@@ -342,12 +343,12 @@ public class STEPConstruct_RenderingProperties
     public bool IsSpecularExponentDefined() => mySpecularExponent.Item2;
 
     /// <summary>Returns specular color</summary>
-    public Quantity_Color SpecularColour() => mySpecularColour.Item1;
+    public Color SpecularColour() => mySpecularColour.Item1;
 
     /// <summary>Returns whether specular color is defined</summary>
     public bool IsSpecularColourDefined() => mySpecularColour.Item2;
 
-    private Quantity_Color mySurfaceColor;
+    private Color mySurfaceColor;
     private double myTransparency;
     private StepVisual_ShadingSurfaceMethod myRenderingMethod;
     private bool myIsDefined;
@@ -355,5 +356,5 @@ public class STEPConstruct_RenderingProperties
     private (double, bool) myDiffuseReflectance;
     private (double, bool) mySpecularReflectance;
     private (double, bool) mySpecularExponent;
-    private (Quantity_Color, bool) mySpecularColour;
+    private (Color, bool) mySpecularColour;
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 using static Occt.Approx_ParametrizationType;
 
@@ -9,9 +10,9 @@ namespace OcctNet.ModelingData.Tests;
 // has no GTests for AppDef; the oracle tests compare it with native GeomAPI_PointsToBSpline.
 public class AppDef_BSplineComputeTests
 {
-    internal static NCollection_Array1<gp_Pnt> Sample3d(int theNb, Func<double, gp_Pnt> theF, bool theUneven = false)
+    internal static NCollection_Array1<Point3D> Sample3d(int theNb, Func<double, Point3D> theF, bool theUneven = false)
     {
-        NCollection_Array1<gp_Pnt> aPnts = new(1, theNb);
+        NCollection_Array1<Point3D> aPnts = new(1, theNb);
         for (int i = 1; i <= theNb; i++)
         {
             double t = (i - 1) / (double)(theNb - 1);
@@ -24,9 +25,9 @@ public class AppDef_BSplineComputeTests
         return aPnts;
     }
 
-    internal static NCollection_Array1<gp_Pnt2d> Sample2d(int theNb, Func<double, gp_Pnt2d> theF)
+    internal static NCollection_Array1<Point2D> Sample2d(int theNb, Func<double, Point2D> theF)
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = new(1, theNb);
+        NCollection_Array1<Point2D> aPnts = new(1, theNb);
         for (int i = 1; i <= theNb; i++)
         {
             aPnts[i] = theF((i - 1) / (double)(theNb - 1));
@@ -34,21 +35,21 @@ public class AppDef_BSplineComputeTests
         return aPnts;
     }
 
-    internal static gp_Pnt Cubic(double t) => new(1.0 + 2.0 * t - t * t + 3.0 * t * t * t, -t + 4.0 * t * t, 2.0 * t * t * t);
+    internal static Point3D Cubic(double t) => new(1.0 + 2.0 * t - t * t + 3.0 * t * t * t, -t + 4.0 * t * t, 2.0 * t * t * t);
 
-    internal static gp_Pnt Circle(double t) => new(5.0 * Math.Cos(t * 3.0), 5.0 * Math.Sin(t * 3.0), 0.0);
+    internal static Point3D Circle(double t) => new(5.0 * Math.Cos(t * 3.0), 5.0 * Math.Sin(t * 3.0), 0.0);
 
-    internal static gp_Pnt Sine(double t) => new(10.0 * t, Math.Sin(6.0 * t), 0.5 * Math.Cos(4.0 * t));
+    internal static Point3D Sine(double t) => new(10.0 * t, Math.Sin(6.0 * t), 0.5 * Math.Cos(4.0 * t));
 
     // The largest distance between the points and the curve at the computed parameters.
-    private static double MaxDistance(AppDef_BSplineCompute theComputer, NCollection_Array1<gp_Pnt> thePoints)
+    private static double MaxDistance(AppDef_BSplineCompute theComputer, NCollection_Array1<Point3D> thePoints)
     {
         AppParCurves_MultiBSpCurve aC = theComputer.Value();
         NCollection_Array1<double> aPar = theComputer.Parameters();
         double aMax = 0.0;
         for (int i = thePoints.Lower(); i <= thePoints.Upper(); i++)
         {
-            aC.Value(1, aPar[i], out gp_Pnt aP);
+            aC.Value(1, aPar[i], out Point3D aP);
             aMax = Math.Max(aMax, aP.Distance(thePoints[i]));
         }
         return aMax;
@@ -69,7 +70,7 @@ public class AppDef_BSplineComputeTests
     [MemberData(nameof(ParTypesAndSquares))]
     public void Cubic_IsReproduced(Approx_ParametrizationType thePar, bool theSquares)
     {
-        NCollection_Array1<gp_Pnt> aPnts = Sample3d(25, Cubic);
+        NCollection_Array1<Point3D> aPnts = Sample3d(25, Cubic);
         AppDef_BSplineCompute aComputer = new(3, 8, 1.0e-6, 1.0e-6, 5, true, thePar, theSquares);
         aComputer.Perform(new AppDef_MultiLine(aPnts));
 
@@ -79,8 +80,8 @@ public class AppDef_BSplineComputeTests
         Assert.Equal(0.0, aTol2d);
         Assert.True(MaxDistance(aComputer, aPnts) <= 1.0e-6);
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
-        aC.Value(1, 0.0, out gp_Pnt aFirst);
-        aC.Value(1, 1.0, out gp_Pnt aLast);
+        aC.Value(1, 0.0, out Point3D aFirst);
+        aC.Value(1, 1.0, out Point3D aLast);
         Assert.True(aFirst.Distance(aPnts[1]) < 1.0e-9);
         Assert.True(aLast.Distance(aPnts[25]) < 1.0e-9);
     }
@@ -89,9 +90,9 @@ public class AppDef_BSplineComputeTests
     [MemberData(nameof(ParTypesAndSquares))]
     public void CircleAndSine_AreFittedWithinTolerance(Approx_ParametrizationType thePar, bool theSquares)
     {
-        foreach (Func<double, gp_Pnt> aF in new Func<double, gp_Pnt>[] { Circle, Sine })
+        foreach (Func<double, Point3D> aF in new Func<double, Point3D>[] { Circle, Sine })
         {
-            NCollection_Array1<gp_Pnt> aPnts = Sample3d(40, aF, theUneven: true);
+            NCollection_Array1<Point3D> aPnts = Sample3d(40, aF, theUneven: true);
             AppDef_BSplineCompute aComputer = new(3, 8, 1.0e-4, 1.0e-6, 5, true, thePar, theSquares);
             aComputer.SetContinuity(2);
             aComputer.Perform(new AppDef_MultiLine(aPnts));
@@ -114,11 +115,11 @@ public class AppDef_BSplineComputeTests
     public void Parametrisations_GiveTheirParameters()
     {
         // Points at x = 0, 1, 3, 7: chord lengths 1, 2, 4.
-        NCollection_Array1<gp_Pnt> aPnts = new(1, 4);
+        NCollection_Array1<Point3D> aPnts = new(1, 4);
         double[] aX = [0.0, 1.0, 3.0, 7.0];
         for (int i = 1; i <= 4; i++)
         {
-            aPnts[i] = new gp_Pnt(aX[i - 1], 0.0, 0.0);
+            aPnts[i] = new Point3D(aX[i - 1], 0.0, 0.0);
         }
         AppDef_MultiLine aLine = new(aPnts);
 
@@ -138,7 +139,7 @@ public class AppDef_BSplineComputeTests
     [Fact]
     public void Line2d_IsFitted()
     {
-        NCollection_Array1<gp_Pnt2d> aPnts = Sample2d(30, t => new gp_Pnt2d(3.0 * Math.Cos(2.0 * t), 2.0 * Math.Sin(2.0 * t)));
+        NCollection_Array1<Point2D> aPnts = Sample2d(30, t => new Point2D(3.0 * Math.Cos(2.0 * t), 2.0 * Math.Sin(2.0 * t)));
         AppDef_BSplineCompute aComputer = new(new AppDef_MultiLine(aPnts), 3, 8, 1.0e-6, 1.0e-5, 5, true,
                                               Approx_ChordLength, true);
         Assert.True(aComputer.IsToleranceReached());
@@ -150,7 +151,7 @@ public class AppDef_BSplineComputeTests
         NCollection_Array1<double> aPar = aComputer.Parameters();
         for (int i = 1; i <= 30; i++)
         {
-            aC.Value(1, aPar[i], out gp_Pnt2d aP);
+            aC.Value(1, aPar[i], out Point2D aP);
             Assert.True(aP.Distance(aPnts[i]) <= 1.0e-5);
         }
     }
@@ -163,18 +164,18 @@ public class AppDef_BSplineComputeTests
         for (int i = 1; i <= aNb; i++)
         {
             double t = (i - 1) / (double)(aNb - 1);
-            NCollection_Array1<gp_Pnt> aP3d = NCollection_Array1<gp_Pnt>.From([Cubic(t)]);
-            NCollection_Array1<gp_Pnt2d> aP2d = NCollection_Array1<gp_Pnt2d>.From([new gp_Pnt2d(t, t * t)]);
+            NCollection_Array1<Point3D> aP3d = NCollection_Array1<Point3D>.From([Cubic(t)]);
+            NCollection_Array1<Point2D> aP2d = NCollection_Array1<Point2D>.From([new Point2D(t, t * t)]);
             aLine.SetValue(i, new AppDef_MultiPointConstraint(aP3d, aP2d));
         }
         AppDef_BSplineCompute aComputer = new(aLine, 3, 6, 1.0e-6, 1.0e-6, 5, true, Approx_IsoParametric, true);
         Assert.True(aComputer.IsToleranceReached());
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
         Assert.Equal(2, aC.NbCurves());
-        aC.Value(2, 0.5, out gp_Pnt2d aMid);
+        aC.Value(2, 0.5, out Point2D aMid);
         Assert.Equal(0.5, aMid.X(), 1e-9);
         Assert.Equal(0.25, aMid.Y(), 1e-9);
-        aC.Value(1, 0.5, out gp_Pnt aMid3d);
+        aC.Value(1, 0.5, out Point3D aMid3d);
         Assert.True(aMid3d.Distance(Cubic(0.5)) < 1e-9);
     }
 
@@ -186,11 +187,11 @@ public class AppDef_BSplineComputeTests
         for (int i = 1; i <= aNb; i++)
         {
             double t = (i - 1) / (double)(aNb - 1);
-            NCollection_Array1<gp_Pnt> aP = NCollection_Array1<gp_Pnt>.From([Circle(t)]);
+            NCollection_Array1<Point3D> aP = NCollection_Array1<Point3D>.From([Circle(t)]);
             if (i == 1 || i == aNb)
             {
-                gp_Vec aTangent = new(-15.0 * Math.Sin(3.0 * t), 15.0 * Math.Cos(3.0 * t), 0.0);
-                aLine.SetValue(i, new AppDef_MultiPointConstraint(aP, NCollection_Array1<gp_Vec>.From([aTangent])));
+                Vector3D aTangent = new(-15.0 * Math.Sin(3.0 * t), 15.0 * Math.Cos(3.0 * t), 0.0);
+                aLine.SetValue(i, new AppDef_MultiPointConstraint(aP, NCollection_Array1<Vector3D>.From([aTangent])));
             }
             else
             {
@@ -200,12 +201,12 @@ public class AppDef_BSplineComputeTests
         // The default constraints are TangencyPoint at both ends.
         AppDef_BSplineCompute aComputer = new(aLine, 3, 8, 1.0e-5, 1.0e-6, 5, true, Approx_ChordLength, true);
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
-        aC.D1(1, 0.0, out gp_Pnt aP0, out gp_Vec aV0);
-        aC.D1(1, 1.0, out gp_Pnt aP1, out gp_Vec aV1);
+        aC.D1(1, 0.0, out Point3D aP0, out Vector3D aV0);
+        aC.D1(1, 1.0, out Point3D aP1, out Vector3D aV1);
         Assert.True(aP0.Distance(Circle(0.0)) < 1e-9);
         Assert.True(aP1.Distance(Circle(1.0)) < 1e-9);
-        Assert.True(aV0.IsParallel(new gp_Vec(0.0, 1.0, 0.0), 1e-9));
-        Assert.True(aV1.IsParallel(new gp_Vec(-Math.Sin(3.0), Math.Cos(3.0), 0.0), 1e-9));
+        Assert.True(aV0.IsParallel(new Vector3D(0.0, 1.0, 0.0), 1e-9));
+        Assert.True(aV1.IsParallel(new Vector3D(-Math.Sin(3.0), Math.Cos(3.0), 0.0), 1e-9));
 
         // Without tangents, a TangencyPoint constraint falls back to a passing point.
         AppDef_BSplineCompute aNoTangents = new(new AppDef_MultiLine(Sample3d(aNb, Circle)), 3, 8, 1.0e-5, 1.0e-6, 5,
@@ -217,7 +218,7 @@ public class AppDef_BSplineComputeTests
     public void FewPoints_AreInterpolated()
     {
         // 5 points, degree 4 to 8 (the defaults): a degree 4 Bezier passes through them.
-        NCollection_Array1<gp_Pnt> aPnts = Sample3d(5, Sine);
+        NCollection_Array1<Point3D> aPnts = Sample3d(5, Sine);
         AppDef_BSplineCompute aComputer = new(new AppDef_MultiLine(aPnts));
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
         Assert.True(aComputer.IsToleranceReached());
@@ -225,14 +226,14 @@ public class AppDef_BSplineComputeTests
         Assert.True(MaxDistance(aComputer, aPnts) < 1e-9);
 
         // 4 points: 5 poles to compute for 4 points, so the algorithm interpolates with a C2 cubic.
-        NCollection_Array1<gp_Pnt> aFour = Sample3d(4, Sine);
+        NCollection_Array1<Point3D> aFour = Sample3d(4, Sine);
         AppDef_BSplineCompute aCubic = new(new AppDef_MultiLine(aFour));
         Assert.Equal(3, aCubic.Value().Degree());
         Assert.Equal(6, aCubic.Value().NbPoles());
         Assert.True(MaxDistance(aCubic, aFour) < 1e-9);
 
         // Two points: a segment.
-        NCollection_Array1<gp_Pnt> aTwo = Sample3d(2, Sine);
+        NCollection_Array1<Point3D> aTwo = Sample3d(2, Sine);
         AppDef_BSplineCompute aSegment = new(new AppDef_MultiLine(aTwo));
         Assert.Equal(1, aSegment.Value().Degree());
         Assert.Equal(2, aSegment.Value().NbPoles());
@@ -242,7 +243,7 @@ public class AppDef_BSplineComputeTests
     [Fact]
     public void GivenKnots_AreUsed()
     {
-        NCollection_Array1<gp_Pnt> aPnts = Sample3d(40, Sine);
+        NCollection_Array1<Point3D> aPnts = Sample3d(40, Sine);
         AppDef_BSplineCompute aComputer = new(3, 3, 1.0e-3, 1.0e-6, 0, false, Approx_ChordLength, true);
         aComputer.SetKnots(NCollection_Array1<double>.From([0.0, 0.25, 0.5, 0.75, 1.0]));
         aComputer.SetContinuity(2);
@@ -263,7 +264,7 @@ public class AppDef_BSplineComputeTests
     [Fact]
     public void GivenParameters_AreUsed()
     {
-        NCollection_Array1<gp_Pnt> aPnts = Sample3d(20, Cubic);
+        NCollection_Array1<Point3D> aPnts = Sample3d(20, Cubic);
         math_Vector aPar = new(1, 20);
         for (int i = 1; i <= 20; i++)
         {
@@ -274,7 +275,7 @@ public class AppDef_BSplineComputeTests
         Assert.True(aComputer.IsToleranceReached());
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
         Assert.Equal(4, aC.NbPoles());
-        aC.Value(1, 0.3, out gp_Pnt aP);
+        aC.Value(1, 0.3, out Point3D aP);
         Assert.True(aP.Distance(Cubic(0.3)) < 1e-12);
     }
 
@@ -282,7 +283,7 @@ public class AppDef_BSplineComputeTests
     public void ToleranceNotReached_KeepsTheBestCurve()
     {
         // Without cutting and with a low degree, a wavy curve can't be reached: the best curve is kept.
-        NCollection_Array1<gp_Pnt> aPnts = Sample3d(50, Sine);
+        NCollection_Array1<Point3D> aPnts = Sample3d(50, Sine);
         AppDef_BSplineCompute aComputer = new(new AppDef_MultiLine(aPnts), 3, 4, 1.0e-6, 1.0e-6, 5, false,
                                               Approx_ChordLength, true);
         Assert.False(aComputer.IsAllApproximated());
@@ -296,19 +297,19 @@ public class AppDef_BSplineComputeTests
     {
         // A closed curve with few points is interpolated; SetPeriodic averages the end tangents.
         int aNb = 12;
-        NCollection_Array1<gp_Pnt> aPnts = new(1, aNb);
+        NCollection_Array1<Point3D> aPnts = new(1, aNb);
         for (int i = 1; i <= aNb; i++)
         {
             double a = 2.0 * Math.PI * (i - 1) / (aNb - 1);
-            aPnts[i] = new gp_Pnt(Math.Cos(a), Math.Sin(a), 0.0);
+            aPnts[i] = new Point3D(Math.Cos(a), Math.Sin(a), 0.0);
         }
         AppDef_BSplineCompute aComputer = new(8, 8, 1.0e-6, 1.0e-6, 0, true, Approx_ChordLength, true);
         aComputer.SetPeriodic(true);
         aComputer.SetConstraints(AppParCurves_PassPoint, AppParCurves_PassPoint);
         aComputer.Interpol(new AppDef_MultiLine(aPnts));
         AppParCurves_MultiBSpCurve aC = aComputer.Value();
-        aC.D1(1, 0.0, out _, out gp_Vec aV0);
-        aC.D1(1, 1.0, out _, out gp_Vec aV1);
+        aC.D1(1, 0.0, out _, out Vector3D aV0);
+        aC.D1(1, 1.0, out _, out Vector3D aV1);
         Assert.True(aV0.IsParallel(aV1, 1e-9));
         Assert.Equal(3, aC.Degree());
     }

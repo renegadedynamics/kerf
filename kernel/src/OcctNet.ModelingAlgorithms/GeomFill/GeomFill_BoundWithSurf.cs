@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -25,7 +29,7 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
         myConS = (Adaptor3d_CurveOnSurface)CurveOnSurf.ShallowCopy();
     }
 
-    public override gp_Pnt Value(double U)
+    public override Point3D Value(double U)
     {
         double x = U;
         if (myPar is not null)
@@ -35,7 +39,7 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
         return myConS.Value(x);
     }
 
-    public override void D1(double U, out gp_Pnt P, out gp_Vec V)
+    public override void D1(double U, out Point3D P, out Vector3D V)
     {
         double x = U, dx = 1.0;
         if (myPar is not null)
@@ -48,12 +52,12 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
 
     public override bool HasNormals() => true;
 
-    public override gp_Vec Norm(double U)
+    public override Vector3D Norm(double U)
     {
         // voir s il ne faudrait pas utiliser LProp ou autre.
         if (!HasNormals())
         {
-            throw new Standard_Failure("BoundWithSurf Norm : pas de contrainte");
+            throw new FailureException("BoundWithSurf Norm : pas de contrainte");
         }
 
         double x, y;
@@ -63,23 +67,23 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
             w = myPar.Value(U);
         }
         myConS.GetCurve()!.Value(w).Coord(out x, out y);
-        gp_Pnt P;
-        gp_Vec Su, Sv;
+        Point3D P;
+        Vector3D Su, Sv;
         myConS.GetSurface()!.D1(x, y, out P, out Su, out Sv);
         Su.Cross(Sv);
         Su.Normalize();
         return Su;
     }
 
-    public override void D1Norm(double U, out gp_Vec N, out gp_Vec DN)
+    public override void D1Norm(double U, out Vector3D N, out Vector3D DN)
     {
         if (!HasNormals())
         {
-            throw new Standard_Failure("BoundWithSurf Norm : pas de contrainte");
+            throw new FailureException("BoundWithSurf Norm : pas de contrainte");
         }
 
-        gp_Pnt2d P2d;
-        gp_Vec2d V2d;
+        Point2D P2d;
+        Vector2D V2d;
         double x, y, dx, dy;
         double w = U, dw = 1.0;
         if (myPar is not null)
@@ -90,8 +94,8 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
         P2d.Coord(out x, out y);
         V2d.Multiply(dw);
         V2d.Coord(out dx, out dy);
-        gp_Pnt P;
-        gp_Vec Su, Sv, Suu, Suv, Svv;
+        Point3D P;
+        Vector3D Su, Sv, Suu, Suv, Svv;
         myConS.GetSurface()!.D2(x, y, out P, out Su, out Sv, out Suu, out Svv, out Suv);
         N = Su.Crossed(Sv);
         N.Normalize();
@@ -101,7 +105,7 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
         if (Math.Abs(deno) < 1.0e-16)
         {
             // on embraye sur un calcul approche, c est mieux que rien!?!
-            gp_Vec temp = Norm(U + 1.0e-12);
+            Vector3D temp = Norm(U + 1.0e-12);
             DN = N.Multiplied(-1.0);
             DN.Add(temp);
             DN.Multiply(1.0e-12);
@@ -113,11 +117,11 @@ public class GeomFill_BoundWithSurf : GeomFill_Boundary
             double c = (-nsuv * svsv + nsvv * susv) / deno;
             double d = (nsuv * susv - nsvv * susu) / deno;
 
-            gp_Vec temp1 = Su.Multiplied(a);
-            gp_Vec temp2 = Sv.Multiplied(b);
+            Vector3D temp1 = Su.Multiplied(a);
+            Vector3D temp2 = Sv.Multiplied(b);
             temp1.Add(temp2);
             temp2 = Su.Multiplied(c);
-            gp_Vec temp3 = Sv.Multiplied(d);
+            Vector3D temp3 = Sv.Multiplied(d);
             temp2.Add(temp3);
             temp1.Multiply(dx);
             temp2.Multiply(dy);

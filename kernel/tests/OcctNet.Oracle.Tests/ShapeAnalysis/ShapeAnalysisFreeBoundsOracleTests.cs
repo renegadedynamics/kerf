@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -167,9 +168,9 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             theError = aColon > 0 ? aMessage[..aColon] : aMessage;
             return null;
         }
-        catch (Standard_Failure anException)
+        catch (FailureException anException)
         {
-            theError = anException.GetType().Name;
+            theError = global::Kerf.Engine.Foundation.OcctTypeNames.Of(anException.GetType());
             return null;
         }
     }

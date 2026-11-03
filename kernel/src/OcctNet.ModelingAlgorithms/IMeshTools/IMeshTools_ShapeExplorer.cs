@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -32,7 +33,7 @@ public class IMeshTools_ShapeExplorer : IMeshData_Shape
         BRepLib.ReverseSortFaces(GetShape(), aFaceList);
         NCollection_Map<TopoDS_Shape> aFaceMap = new(TopTools_ShapeMapHasher.Instance);
 
-        TopLoc_Location aEmptyLoc = new();
+        Placement aEmptyLoc = new();
         var aFaceIter = new NCollection_List<TopoDS_Shape>.Iterator(aFaceList);
         for (; aFaceIter.More(); aFaceIter.Next())
         {
@@ -74,7 +75,7 @@ public class IMeshTools_ShapeExplorer : IMeshData_Shape
                 continue;
             }
 
-            theVisitor.Visit(isResetLocation ? TopoDS.Edge(aEdge.Located(new TopLoc_Location())) : aEdge);
+            theVisitor.Visit(isResetLocation ? TopoDS.Edge(aEdge.Located(new Placement())) : aEdge);
         }
     }
 }

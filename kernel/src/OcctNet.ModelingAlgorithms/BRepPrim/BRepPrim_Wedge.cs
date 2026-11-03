@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>Provides the wedge constructors without Builders.</summary>
@@ -14,19 +16,19 @@ internal sealed class BRepPrim_Wedge : BRepPrim_GWedge
     }
 
     /// <summary>A box of dimensions dx, dy, dz in the axes.</summary>
-    public BRepPrim_Wedge(in gp_Ax2 Axes, double dx, double dy, double dz)
+    public BRepPrim_Wedge(in Frame3D Axes, double dx, double dy, double dz)
         : base(new BRepPrim_Builder(), Axes, dx, dy, dz)
     {
     }
 
     /// <summary>A STEP right angular wedge: X2Min = 0, X2Max = ltx.</summary>
-    public BRepPrim_Wedge(in gp_Ax2 Axes, double dx, double dy, double dz, double ltx)
+    public BRepPrim_Wedge(in Frame3D Axes, double dx, double dy, double dz, double ltx)
         : base(new BRepPrim_Builder(), Axes, dx, dy, dz, ltx)
     {
     }
 
     /// <summary>A wedge with all the fields given.</summary>
-    public BRepPrim_Wedge(in gp_Ax2 Axes,
+    public BRepPrim_Wedge(in Frame3D Axes,
                           double xmin,
                           double ymin,
                           double zmin,

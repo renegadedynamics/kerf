@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.BOPAlgo_GlueEnum;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -165,7 +166,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     }
 
     /// <summary>OCCT's initialisation: the checks, the data structure, the context, the iterator and the mode.</summary>
-    protected virtual void Init(Message_ProgressRange theRange)
+    protected virtual void Init(ProgressRange theRange)
     {
         if (myArguments.Extent() == 0)
         {
@@ -173,7 +174,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
             return;
         }
         //
-        using var aPS = new Message_ProgressScope(theRange, "Initialization of Intersection algorithm", 1);
+        using var aPS = new ProgressScope(theRange, "Initialization of Intersection algorithm", 1);
         for (NCollection_List<TopoDS_Shape>.Iterator aIt = new(myArguments); aIt.More(); aIt.Next())
         {
             if (aIt.Value().IsNull())
@@ -205,7 +206,7 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     }
 
     /// <summary>Performs the intersection; an exception becomes <see cref="BOPAlgo_AlertIntersectionFailed"/>.</summary>
-    public override void Perform(Message_ProgressRange theRange = default)
+    public override void Perform(ProgressRange theRange = default)
     {
         try
         {
@@ -213,15 +214,15 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
             PerformInternal(theRange);
         }
         //
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             AddError(new BOPAlgo_AlertIntersectionFailed());
         }
     }
 
-    protected virtual void PerformInternal(Message_ProgressRange theRange)
+    protected virtual void PerformInternal(ProgressRange theRange)
     {
-        using var aPS = new Message_ProgressScope(theRange, "Performing intersection of shapes", 100);
+        using var aPS = new ProgressScope(theRange, "Performing intersection of shapes", 100);
 
         Init(aPS.Next(5));
         if (HasErrors())
@@ -343,12 +344,12 @@ public partial class BOPAlgo_PaveFiller : BOPAlgo_Algo
     }
 
     /// <summary>Repeats the intersection of the vertices whose tolerance has been increased.</summary>
-    protected void RepeatIntersection(Message_ProgressRange theRange)
+    protected void RepeatIntersection(ProgressRange theRange)
     {
         // Find all vertices with increased tolerance
         NCollection_IntMap anExtraInterfMap = new();
         int aNbS = myDS!.NbSourceShapes();
-        using var aPS = new Message_ProgressScope(theRange, "Repeat intersection", 3);
+        using var aPS = new ProgressScope(theRange, "Repeat intersection", 3);
         for (int i = 0; i < aNbS; ++i)
         {
             BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 
 namespace Occt;
@@ -20,10 +23,10 @@ public sealed class GccAna_Lin2dTanPer
 {
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Lin2d> linsol;
+    private readonly NCollection_Array1<Line2D> linsol;
     private readonly NCollection_Array1<GccEnt_Position> qualifier1;
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol;
-    private readonly NCollection_Array1<gp_Pnt2d> pntint2sol;
+    private readonly NCollection_Array1<Point2D> pnttg1sol;
+    private readonly NCollection_Array1<Point2D> pntint2sol;
     private readonly NCollection_Array1<double> par1sol;
     private readonly NCollection_Array1<double> par2sol;
     private readonly NCollection_Array1<double> pararg1;
@@ -31,10 +34,10 @@ public sealed class GccAna_Lin2dTanPer
 
     private GccAna_Lin2dTanPer(int theSize)
     {
-        linsol = new NCollection_Array1<gp_Lin2d>(1, theSize);
+        linsol = new NCollection_Array1<Line2D>(1, theSize);
         qualifier1 = new NCollection_Array1<GccEnt_Position>(1, theSize);
-        pnttg1sol = new NCollection_Array1<gp_Pnt2d>(1, theSize);
-        pntint2sol = new NCollection_Array1<gp_Pnt2d>(1, theSize);
+        pnttg1sol = new NCollection_Array1<Point2D>(1, theSize);
+        pntint2sol = new NCollection_Array1<Point2D>(1, theSize);
         par1sol = new NCollection_Array1<double>(1, theSize);
         par2sol = new NCollection_Array1<double>(1, theSize);
         pararg1 = new NCollection_Array1<double>(1, theSize);
@@ -49,10 +52,10 @@ public sealed class GccAna_Lin2dTanPer
     //=========================================================================
 
     /// <summary>The line through ThePnt perpendicular to TheLin.</summary>
-    public GccAna_Lin2dTanPer(in gp_Pnt2d ThePnt, in gp_Lin2d TheLin) : this(1)
+    public GccAna_Lin2dTanPer(in Point2D ThePnt, in Line2D TheLin) : this(1)
     {
-        linsol[1] = new gp_Lin2d(ThePnt,
-                                 new gp_Dir2d(-(TheLin.Direction().Y()),
+        linsol[1] = new Line2D(ThePnt,
+                                 new Direction2D(-(TheLin.Direction().Y()),
                                               // ===============================================================
                                               TheLin.Direction().X()));
         //                                      ========================
@@ -68,10 +71,10 @@ public sealed class GccAna_Lin2dTanPer
                 }
             }
         }
-        par1sol[1] = ElCLib.Parameter(linsol[1], pnttg1sol[1]);
-        par2sol[1] = ElCLib.Parameter(linsol[1], pntint2sol[1]);
+        par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[1], pnttg1sol[1]);
+        par2sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[1], pntint2sol[1]);
         pararg1[1] = 0.0;
-        pararg2[1] = ElCLib.Parameter(TheLin, pntint2sol[1]);
+        pararg2[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(TheLin, pntint2sol[1]);
         NbrSol = 1;
         WellDone = true;
     }
@@ -84,11 +87,11 @@ public sealed class GccAna_Lin2dTanPer
     //=========================================================================
 
     /// <summary>The line through ThePnt and the centre of TheCircle (perpendicular to the circle).</summary>
-    public GccAna_Lin2dTanPer(in gp_Pnt2d ThePnt, in gp_Circ2d TheCircle) : this(1)
+    public GccAna_Lin2dTanPer(in Point2D ThePnt, in Circle2D TheCircle) : this(1)
     {
-        linsol[1] = new gp_Lin2d(ThePnt,
+        linsol[1] = new Line2D(ThePnt,
                                  // ============================
-                                 new gp_Dir2d(TheCircle.Location().XY() - ThePnt.XY()));
+                                 new Direction2D(TheCircle.Location().XY() - ThePnt.XY()));
         //                      ================================================
         pnttg1sol[1] = ThePnt;
         IntAna2d_AnaIntersection Intp = new(linsol[1], TheCircle);
@@ -107,11 +110,11 @@ public sealed class GccAna_Lin2dTanPer
                 }
             }
         }
-        par1sol[1] = ElCLib.Parameter(linsol[1], pnttg1sol[1]);
-        par2sol[1] = ElCLib.Parameter(linsol[1], pntint2sol[1]);
+        par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[1], pnttg1sol[1]);
+        par2sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[1], pntint2sol[1]);
         pararg1[1] = 0.0;
         // a circle of radius 0 puts the intersection at its centre
-        pararg2[1] = ElCLib.Parameter(TheCircle, pntint2sol[1]);
+        pararg2[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(TheCircle, pntint2sol[1]);
         NbrSol = 1;
         WellDone = true;
     }
@@ -125,13 +128,13 @@ public sealed class GccAna_Lin2dTanPer
 
     /// <summary>The lines tangent to the qualified circle and perpendicular to TheLin.</summary>
     /// <exception cref="GccEnt_BadQualifier">The circle is qualified enclosed.</exception>
-    public GccAna_Lin2dTanPer(in GccEnt_QualifiedCirc Qualified1, in gp_Lin2d TheLin) : this(2)
+    public GccAna_Lin2dTanPer(in GccEnt_QualifiedCirc Qualified1, in Line2D TheLin) : this(2)
     {
         WellDone = false;
         int nbsol = 0;
         int signe = 0;
         NbrSol = 0;
-        gp_Circ2d C1 = Qualified1.Qualified();
+        Circle2D C1 = Qualified1.Qualified();
 
         // OCCT: qualifier1 is never set by this constructor
         if (Qualified1.IsEnclosed())
@@ -156,18 +159,18 @@ public sealed class GccAna_Lin2dTanPer
             nbsol = 2;
             signe = -1;
         }
-        gp_XY xy = C1.Radius() * TheLin.Direction().XY();
+        Xy xy = C1.Radius() * TheLin.Direction().XY();
         for (int j = 1; j <= nbsol; j++)
         {
             signe = -signe;
             NbrSol++;
-            linsol[NbrSol] = new gp_Lin2d(new gp_Pnt2d((C1.Location().XY()).Added(signe * xy)),
+            linsol[NbrSol] = new Line2D(new Point2D((C1.Location().XY()).Added(signe * xy)),
                                           //   =======================================================================
-                                          new gp_Dir2d(-TheLin.Direction().Y(),
+                                          new Direction2D(-TheLin.Direction().Y(),
                                                        //                           =================================
                                                        TheLin.Direction().X()));
             //                                    ========================
-            pnttg1sol[NbrSol] = new gp_Pnt2d((C1.Location().XY()).Added(signe * xy));
+            pnttg1sol[NbrSol] = new Point2D((C1.Location().XY()).Added(signe * xy));
             IntAna2d_AnaIntersection Intp = new(linsol[NbrSol], TheLin);
             if (Intp.IsDone())
             {
@@ -179,11 +182,11 @@ public sealed class GccAna_Lin2dTanPer
                     }
                 }
             }
-            par1sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
-            par2sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
+            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
+            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
             // a circle of radius 0 puts the tangency point at its centre
-            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-            pararg2[NbrSol] = ElCLib.Parameter(TheLin, pntint2sol[NbrSol]);
+            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(TheLin, pntint2sol[NbrSol]);
             WellDone = true;
         }
     }
@@ -200,12 +203,12 @@ public sealed class GccAna_Lin2dTanPer
     /// (as OCCT computes them: they don't pass through the centre of TheCircle).
     /// </summary>
     /// <exception cref="GccEnt_BadQualifier">The circle is qualified enclosed.</exception>
-    public GccAna_Lin2dTanPer(in GccEnt_QualifiedCirc Qualified1, in gp_Circ2d TheCircle) : this(2)
+    public GccAna_Lin2dTanPer(in GccEnt_QualifiedCirc Qualified1, in Circle2D TheCircle) : this(2)
     {
         WellDone = false;
         NbrSol = 0;
         int signe = 0;
-        gp_Circ2d C1 = Qualified1.Qualified();
+        Circle2D C1 = Qualified1.Qualified();
 
         if (Qualified1.IsEnclosed())
         {
@@ -237,13 +240,13 @@ public sealed class GccAna_Lin2dTanPer
         {
             NbrSol++;
             signe = -signe;
-            gp_Dir2d D1 = new(TheCircle.Location().XY() - C1.Location().XY());
-            linsol[NbrSol] = new gp_Lin2d(new gp_Pnt2d((C1.Location().XY())
+            Direction2D D1 = new(TheCircle.Location().XY() - C1.Location().XY());
+            linsol[NbrSol] = new Line2D(new Point2D((C1.Location().XY())
                                                        //   ===================================================
                                                        + signe * (D1.XY() * C1.Radius())),
-                                          new gp_Dir2d(-D1.Y(), D1.X()));
+                                          new Direction2D(-D1.Y(), D1.X()));
             //                     ======================================================
-            pnttg1sol[NbrSol] = new gp_Pnt2d((C1.Location().XY()) + signe * (D1.XY() * C1.Radius()));
+            pnttg1sol[NbrSol] = new Point2D((C1.Location().XY()) + signe * (D1.XY() * C1.Radius()));
             IntAna2d_AnaIntersection Intp = new(linsol[NbrSol], TheCircle);
             if (Intp.IsDone())
             {
@@ -260,12 +263,12 @@ public sealed class GccAna_Lin2dTanPer
                     }
                 }
             }
-            par1sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
-            par2sol[NbrSol] = ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
+            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pnttg1sol[NbrSol]);
+            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol[NbrSol], pntint2sol[NbrSol]);
             // a circle of radius 0 puts the tangency point at its centre, and a line missing TheCircle leaves the
             // intersection at the origin, which may be TheCircle's centre
-            pararg1[NbrSol] = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-            pararg2[NbrSol] = ElCLib.Parameter(TheCircle, pntint2sol[NbrSol]);
+            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+            pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(TheCircle, pntint2sol[NbrSol]);
             WellDone = true;
         }
     }
@@ -281,7 +284,7 @@ public sealed class GccAna_Lin2dTanPer
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return NbrSol;
     }
@@ -294,11 +297,11 @@ public sealed class GccAna_Lin2dTanPer
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -307,30 +310,30 @@ public sealed class GccAna_Lin2dTanPer
     }
 
     /// <summary>The solution number Index.</summary>
-    /// <exception cref="Standard_RangeError">Index is out of range (OCCT throws this base class here).</exception>
-    public gp_Lin2d ThisSolution(int Index)
+    /// <exception cref="RangeErrorException">Index is out of range (OCCT throws this base class here).</exception>
+    public Line2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_RangeError();
+            throw new RangeErrorException();
         }
         return linsol[Index];
     }
 
     /// <summary>The tangency point of the solution number Index with the first argument, and its parameters.</summary>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d Pnt)
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D Pnt)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -341,15 +344,15 @@ public sealed class GccAna_Lin2dTanPer
     }
 
     /// <summary>The intersection of the solution number Index with the second argument, and its parameters.</summary>
-    public void Intersection2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    public void Intersection2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {

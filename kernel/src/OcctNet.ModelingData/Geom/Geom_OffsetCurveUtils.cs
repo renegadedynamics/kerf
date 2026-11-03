@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -11,7 +15,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// OCCT's function templates over the curve type are ported for the instantiations OCCT uses:
-/// <see cref="AdjustDerivative(Geom_Curve, int, double, ref gp_Vec, ref gp_Vec, ref gp_Vec, ref gp_Vec, out bool)"/>
+/// <see cref="AdjustDerivative(Geom_Curve, int, double, ref Vector3D, ref Vector3D, ref Vector3D, ref Vector3D, out bool)"/>
 /// over <see cref="Geom_Curve"/> and <see cref="Adaptor3d_Curve"/>, and the <c>Evaluate*</c> functions over
 /// <see cref="Adaptor3d_Curve"/> (GeomAdaptor_Curve's basis adaptor). Both curve types have the same evaluation
 /// members, so the bodies are identical.
@@ -22,13 +26,13 @@ internal static class Geom_OffsetCurveUtils
     /// The offset point: theValue is the basis point on input and the offset point on output. False if the
     /// normal p' ^ Dir has a magnitude at most theTolerance.
     /// </summary>
-    internal static bool CalculateD0(ref gp_Pnt theValue,
-                                     in gp_Vec theD1,
-                                     in gp_XYZ theDirXYZ,
+    internal static bool CalculateD0(ref Point3D theValue,
+                                     in Vector3D theD1,
+                                     in Xyz theDirXYZ,
                                      double theOffset,
                                      double theTolerance = gp_Resolution)
     {
-        gp_XYZ Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
+        Xyz Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
         double R = Ndir.Modulus();
         if (R <= theTolerance)
         {
@@ -40,10 +44,10 @@ internal static class Geom_OffsetCurveUtils
     }
 
     /// <summary>The offset point and first derivative (theValue and theD1 are the basis's on input).</summary>
-    internal static bool CalculateD1(ref gp_Pnt theValue,
-                                     ref gp_Vec theD1,
-                                     in gp_Vec theD2,
-                                     in gp_XYZ theDirXYZ,
+    internal static bool CalculateD1(ref Point3D theValue,
+                                     ref Vector3D theD1,
+                                     in Vector3D theD2,
+                                     in Xyz theDirXYZ,
                                      double theOffset,
                                      double theTolerance = gp_Resolution)
     {
@@ -52,8 +56,8 @@ internal static class Geom_OffsetCurveUtils
 
         // P'(u) = p'(u) + (Offset / R**2) * (DNdir/DU * R -  Ndir * (DR/R))
 
-        gp_XYZ Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
+        Xyz Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
+        Xyz DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
         double R2 = Ndir.SquareModulus();
         double R = Math.Sqrt(R2);
         double R3 = R * R2;
@@ -80,7 +84,7 @@ internal static class Geom_OffsetCurveUtils
         // P(u)
         theValue.ChangeCoord().Add(Ndir);
         // P'(u)
-        theD1.Add(new gp_Vec(DNdir));
+        theD1.Add(new Vector3D(DNdir));
         return true;
     }
 
@@ -88,11 +92,11 @@ internal static class Geom_OffsetCurveUtils
     /// The offset point and first two derivatives (the basis's on input). theIsDirChange: the tangent was
     /// reversed at a singular point (see <c>AdjustDerivative</c>).
     /// </summary>
-    internal static bool CalculateD2(ref gp_Pnt theValue,
-                                     ref gp_Vec theD1,
-                                     ref gp_Vec theD2,
-                                     in gp_Vec theD3,
-                                     in gp_XYZ theDirXYZ,
+    internal static bool CalculateD2(ref Point3D theValue,
+                                     ref Vector3D theD1,
+                                     ref Vector3D theD2,
+                                     in Vector3D theD3,
+                                     in Xyz theDirXYZ,
                                      double theOffset,
                                      bool theIsDirChange,
                                      double theTolerance = gp_Resolution)
@@ -105,9 +109,9 @@ internal static class Geom_OffsetCurveUtils
         // P"(u) = p"(u) + (Offset / R) * (D2Ndir/DU - DNdir * (2.0 * Dr/ R**2) +
         //         Ndir * ( (3.0 * Dr**2 / R**4) - (D2r / R**2)))
 
-        gp_XYZ Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ D2Ndir = (theD3.XYZ()).Crossed(theDirXYZ);
+        Xyz Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
+        Xyz DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
+        Xyz D2Ndir = (theD3.XYZ()).Crossed(theDirXYZ);
         double R2 = Ndir.SquareModulus();
         double R = Math.Sqrt(R2);
         double R3 = R2 * R;
@@ -152,23 +156,23 @@ internal static class Geom_OffsetCurveUtils
         // P(u)
         theValue.ChangeCoord().Add(Ndir);
         // P'(u) :
-        theD1.Add(new gp_Vec(DNdir));
+        theD1.Add(new Vector3D(DNdir));
         // P"(u) :
         if (theIsDirChange)
         {
             theD2.Reverse();
         }
-        theD2.Add(new gp_Vec(D2Ndir));
+        theD2.Add(new Vector3D(D2Ndir));
         return true;
     }
 
     /// <summary>The offset point and first three derivatives (the basis's on input, plus its D4).</summary>
-    internal static bool CalculateD3(ref gp_Pnt theValue,
-                                     ref gp_Vec theD1,
-                                     ref gp_Vec theD2,
-                                     ref gp_Vec theD3,
-                                     in gp_Vec theD4,
-                                     in gp_XYZ theDirXYZ,
+    internal static bool CalculateD3(ref Point3D theValue,
+                                     ref Vector3D theD1,
+                                     ref Vector3D theD2,
+                                     ref Vector3D theD3,
+                                     in Vector3D theD4,
+                                     in Xyz theDirXYZ,
                                      double theOffset,
                                      bool theIsDirChange,
                                      double theTolerance = gp_Resolution)
@@ -186,10 +190,10 @@ internal static class Geom_OffsetCurveUtils
         //          (D3r/R2) * Ndir + (6.0 * Dr * Dr / R4) * Ndir +
         //          (6.0 * Dr * D2r / R4) * Ndir - (15.0 * Dr* Dr* Dr /R6) * Ndir
 
-        gp_XYZ Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ D2Ndir = (theD3.XYZ()).Crossed(theDirXYZ);
-        gp_XYZ D3Ndir = (theD4.XYZ()).Crossed(theDirXYZ);
+        Xyz Ndir = (theD1.XYZ()).Crossed(theDirXYZ);
+        Xyz DNdir = (theD2.XYZ()).Crossed(theDirXYZ);
+        Xyz D2Ndir = (theD3.XYZ()).Crossed(theDirXYZ);
+        Xyz D3Ndir = (theD4.XYZ()).Crossed(theDirXYZ);
         double R2 = Ndir.SquareModulus();
         double R = Math.Sqrt(R2);
         double R3 = R2 * R;
@@ -252,15 +256,15 @@ internal static class Geom_OffsetCurveUtils
         // P(u)
         theValue.ChangeCoord().Add(Ndir);
         // P'(u) :
-        theD1.Add(new gp_Vec(DNdir));
+        theD1.Add(new Vector3D(DNdir));
         // P"(u)
-        theD2.Add(new gp_Vec(D2Ndir));
+        theD2.Add(new Vector3D(D2Ndir));
         // P"'(u)
         if (theIsDirChange)
         {
             theD3.Reverse();
         }
-        theD3.Add(new gp_Vec(D3Ndir));
+        theD3.Add(new Vector3D(D3Ndir));
         return true;
     }
 
@@ -274,13 +278,13 @@ internal static class Geom_OffsetCurveUtils
     internal static bool AdjustDerivative(Geom_Curve theCurve,
                                           int theMaxDerivative,
                                           double theU,
-                                          ref gp_Vec theD1,
-                                          ref gp_Vec theD2,
-                                          ref gp_Vec theD3,
-                                          ref gp_Vec theD4,
+                                          ref Vector3D theD1,
+                                          ref Vector3D theD2,
+                                          ref Vector3D theD3,
+                                          ref Vector3D theD4,
                                           out bool theIsDirectionChange)
     {
-        double aTol = gp.Resolution();
+        double aTol = Constants.Resolution();
         const double aMinStep = 1e-7;
         const int aMaxDerivOrder = 3;
 
@@ -303,7 +307,7 @@ internal static class Geom_OffsetCurveUtils
 
         // Derivative is approximated by Taylor-series
         int anIndex = 1; // Derivative order
-        gp_Vec V;
+        Vector3D V;
 
         do
         {
@@ -321,19 +325,19 @@ internal static class Geom_OffsetCurveUtils
             u = theU - aDelta;
         }
 
-        gp_Pnt aP1;
-        gp_Pnt aP2;
+        Point3D aP1;
+        Point3D aP2;
         aP1 = theCurve.EvalD0(Min(theU, u));
         aP2 = theCurve.EvalD0(Max(theU, u));
 
-        gp_Vec V1 = new gp_Vec(aP1, aP2);
+        Vector3D V1 = new Vector3D(aP1, aP2);
         theIsDirectionChange = V.Dot(V1) < 0.0;
         double aSign = theIsDirectionChange ? -1.0 : 1.0;
 
         theD1 = V * aSign;
         for (int i = 1; i < theMaxDerivative; i++)
         {
-            gp_Vec aDN = theCurve.EvalDN(theU, anIndex + i);
+            Vector3D aDN = theCurve.EvalDN(theU, anIndex + i);
             // C++: *(aDeriv[i - 1]) = aDN * aSign, with aDeriv = {&theD2, &theD3, &theD4}
             switch (i)
             {
@@ -352,17 +356,17 @@ internal static class Geom_OffsetCurveUtils
         return true;
     }
 
-    /// <inheritdoc cref="AdjustDerivative(Geom_Curve, int, double, ref gp_Vec, ref gp_Vec, ref gp_Vec, ref gp_Vec, out bool)"/>
+    /// <inheritdoc cref="AdjustDerivative(Geom_Curve, int, double, ref Vector3D, ref Vector3D, ref Vector3D, ref Vector3D, out bool)"/>
     internal static bool AdjustDerivative(Adaptor3d_Curve theCurve,
                                           int theMaxDerivative,
                                           double theU,
-                                          ref gp_Vec theD1,
-                                          ref gp_Vec theD2,
-                                          ref gp_Vec theD3,
-                                          ref gp_Vec theD4,
+                                          ref Vector3D theD1,
+                                          ref Vector3D theD2,
+                                          ref Vector3D theD3,
+                                          ref Vector3D theD4,
                                           out bool theIsDirectionChange)
     {
-        double aTol = gp.Resolution();
+        double aTol = Constants.Resolution();
         const double aMinStep = 1e-7;
         const int aMaxDerivOrder = 3;
 
@@ -385,7 +389,7 @@ internal static class Geom_OffsetCurveUtils
 
         // Derivative is approximated by Taylor-series
         int anIndex = 1; // Derivative order
-        gp_Vec V;
+        Vector3D V;
 
         do
         {
@@ -403,19 +407,19 @@ internal static class Geom_OffsetCurveUtils
             u = theU - aDelta;
         }
 
-        gp_Pnt aP1;
-        gp_Pnt aP2;
+        Point3D aP1;
+        Point3D aP2;
         aP1 = theCurve.EvalD0(Min(theU, u));
         aP2 = theCurve.EvalD0(Max(theU, u));
 
-        gp_Vec V1 = new gp_Vec(aP1, aP2);
+        Vector3D V1 = new Vector3D(aP1, aP2);
         theIsDirectionChange = V.Dot(V1) < 0.0;
         double aSign = theIsDirectionChange ? -1.0 : 1.0;
 
         theD1 = V * aSign;
         for (int i = 1; i < theMaxDerivative; i++)
         {
-            gp_Vec aDN = theCurve.EvalDN(theU, anIndex + i);
+            Vector3D aDN = theCurve.EvalDN(theU, anIndex + i);
             switch (i)
             {
                 case 1:
@@ -436,9 +440,9 @@ internal static class Geom_OffsetCurveUtils
     /// <summary>The offset point of the basis curve at theU; false if the normal is undefined.</summary>
     internal static bool EvaluateD0(double theU,
                                     Adaptor3d_Curve theBasisCurve,
-                                    in gp_Dir theDir,
+                                    in Direction3D theDir,
                                     double theOffset,
-                                    out gp_Pnt theValue)
+                                    out Point3D theValue)
     {
         Geom_Curve.ResD1 aD1 = theBasisCurve.EvalD1(theU);
         theValue = aD1.Point;
@@ -448,10 +452,10 @@ internal static class Geom_OffsetCurveUtils
     /// <summary>The offset point and first derivative at theU.</summary>
     internal static bool EvaluateD1(double theU,
                                     Adaptor3d_Curve theBasisCurve,
-                                    in gp_Dir theDir,
+                                    in Direction3D theDir,
                                     double theOffset,
-                                    out gp_Pnt theValue,
-                                    out gp_Vec theD1)
+                                    out Point3D theValue,
+                                    out Vector3D theD1)
     {
         Geom_Curve.ResD2 aD2 = theBasisCurve.EvalD2(theU);
         theValue = aD2.Point;
@@ -462,22 +466,22 @@ internal static class Geom_OffsetCurveUtils
     /// <summary>The offset point and first two derivatives at theU (singular points handled).</summary>
     internal static bool EvaluateD2(double theU,
                                     Adaptor3d_Curve theBasisCurve,
-                                    in gp_Dir theDir,
+                                    in Direction3D theDir,
                                     double theOffset,
-                                    out gp_Pnt theValue,
-                                    out gp_Vec theD1,
-                                    out gp_Vec theD2)
+                                    out Point3D theValue,
+                                    out Vector3D theD1,
+                                    out Vector3D theD2)
     {
         Geom_Curve.ResD3 aD3Result = theBasisCurve.EvalD3(theU);
         theValue = aD3Result.Point;
         theD1 = aD3Result.D1;
         theD2 = aD3Result.D2;
-        gp_Vec aD3 = aD3Result.D3;
+        Vector3D aD3 = aD3Result.D3;
 
         bool isDirectionChange = false;
-        if (theD1.SquareMagnitude() <= gp.Resolution())
+        if (theD1.SquareMagnitude() <= Constants.Resolution())
         {
-            gp_Vec aDummyD4 = new gp_Vec();
+            Vector3D aDummyD4 = new Vector3D();
             if (!AdjustDerivative(theBasisCurve, 3, theU, ref theD1, ref theD2, ref aD3, ref aDummyD4, out isDirectionChange))
             {
                 return false;
@@ -490,22 +494,22 @@ internal static class Geom_OffsetCurveUtils
     /// <summary>The offset point and first three derivatives at theU (singular points handled).</summary>
     internal static bool EvaluateD3(double theU,
                                     Adaptor3d_Curve theBasisCurve,
-                                    in gp_Dir theDir,
+                                    in Direction3D theDir,
                                     double theOffset,
-                                    out gp_Pnt theValue,
-                                    out gp_Vec theD1,
-                                    out gp_Vec theD2,
-                                    out gp_Vec theD3)
+                                    out Point3D theValue,
+                                    out Vector3D theD1,
+                                    out Vector3D theD2,
+                                    out Vector3D theD3)
     {
         Geom_Curve.ResD3 aD3Result = theBasisCurve.EvalD3(theU);
         theValue = aD3Result.Point;
         theD1 = aD3Result.D1;
         theD2 = aD3Result.D2;
         theD3 = aD3Result.D3;
-        gp_Vec aD4 = theBasisCurve.EvalDN(theU, 4);
+        Vector3D aD4 = theBasisCurve.EvalDN(theU, 4);
 
         bool isDirectionChange = false;
-        if (theD1.SquareMagnitude() <= gp.Resolution())
+        if (theD1.SquareMagnitude() <= Constants.Resolution())
         {
             if (!AdjustDerivative(theBasisCurve, 4, theU, ref theD1, ref theD2, ref theD3, ref aD4, out isDirectionChange))
             {
@@ -529,13 +533,13 @@ internal static class Geom_OffsetCurveUtils
     /// </summary>
     internal static bool EvaluateDN(double theU,
                                     Adaptor3d_Curve theBasisCurve,
-                                    in gp_Dir theDir,
+                                    in Direction3D theDir,
                                     double theOffset,
                                     int theN,
-                                    out gp_Vec theDN)
+                                    out Vector3D theDN)
     {
-        gp_Pnt aPnt;
-        gp_Vec aDummy;
+        Point3D aPnt;
+        Vector3D aDummy;
         switch (theN)
         {
             case 1:

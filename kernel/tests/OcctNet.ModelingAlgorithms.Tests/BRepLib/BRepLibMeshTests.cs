@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -24,7 +28,7 @@ public class BRepLibMeshTests
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(theShape))
         {
             TopoDS_Face aFwd = TopoDS.Face(aF.Oriented(TopAbs_FORWARD));
-            gp_Pln aPln = ((Geom_Plane)BRep_Tool.Surface(aFwd)!).Pln();
+            Plane3D aPln = ((Geom_Plane)BRep_Tool.Surface(aFwd)!).Pln();
             var aVertices = new List<TopoDS_Vertex>();
             for (var anExp = new TopExp_Explorer(aFwd, TopAbs_EDGE); anExp.More(); anExp.Next())
             {
@@ -33,17 +37,17 @@ public class BRepLibMeshTests
             }
 
             int n = aVertices.Count;
-            var aTri = new Poly_Triangulation(n, n - 2, true);
+            var aTri = new Triangulation(n, n - 2, true);
             for (int i = 0; i < n; i++)
             {
-                gp_Pnt aP = BRep_Tool.Pnt(aVertices[i]);
+                Point3D aP = BRep_Tool.Pnt(aVertices[i]);
                 aTri.SetNode(i + 1, aP);
-                ElSLib.Parameters(aPln, aP, out double u, out double v);
-                aTri.SetUVNode(i + 1, new gp_Pnt2d(u, v));
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, aP, out double u, out double v);
+                aTri.SetUVNode(i + 1, new Point2D(u, v));
             }
             for (int i = 1; i <= n - 2; i++)
             {
-                aTri.SetTriangle(i, new Poly_Triangle(1, i + 1, i + 2));
+                aTri.SetTriangle(i, new Triangle1(1, i + 1, i + 2));
             }
             aTri.Deflection(theDeflection);
             aB.UpdateFace(aF, aTri);
@@ -55,7 +59,7 @@ public class BRepLibMeshTests
                 var aNodes = new NCollection_Array1<int>(1, 2);
                 aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
                 aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
-                aB.UpdateEdge(anE, new Poly_PolygonOnTriangulation(aNodes), aTri, new TopLoc_Location());
+                aB.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, new Placement());
             }
         }
     }
@@ -75,18 +79,18 @@ public class BRepLibMeshTests
     private static TopoDS_Shell MeshedRoof(double theSlope)
     {
         var aB = new BRep_Builder();
-        gp_Pnt[] aPoints = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0), new(0, 2, theSlope), new(1, 2, theSlope)];
+        Point3D[] aPoints = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0), new(0, 2, theSlope), new(1, 2, theSlope)];
         TopoDS_Vertex[] aV = aPoints.Select(p => TestShapes.Vertex(p)).ToArray();
         var anEdges = new Dictionary<(int, int), TopoDS_Edge>();
         TopoDS_Shell aShell = new();
         aB.MakeShell(ref aShell);
-        aB.Add(aShell, TestShapes.PolygonFace(aV, new gp_Dir(0, 0, 1), anEdges, [0, 1, 2, 3]));
-        aB.Add(aShell, TestShapes.PolygonFace(aV, new gp_Dir(0, -theSlope, 1), anEdges, [3, 2, 5, 4]));
+        aB.Add(aShell, TestShapes.PolygonFace(aV, new Direction3D(0, 0, 1), anEdges, [0, 1, 2, 3]));
+        aB.Add(aShell, TestShapes.PolygonFace(aV, new Direction3D(0, -theSlope, 1), anEdges, [3, 2, 5, 4]));
         MeshPlanarFaces(aShell, 0.0);
         return TopoDS.Shell(TestShapes.Frozen((TopoDS_Shape)aShell));
     }
 
-    private static Poly_Triangulation Triangulation(in TopoDS_Face theF) => BRep_Tool.Triangulation(theF, out _)!;
+    private static Triangulation Triangulation(in TopoDS_Face theF) => BRep_Tool.Triangulation(theF, out _)!;
 
     [Fact]
     public void UpdateDeflection_replaces_each_triangulation_by_a_copy_with_the_measured_deflection()
@@ -99,20 +103,20 @@ public class BRepLibMeshTests
         BRepLib.UpdateDeflection(aCopy);
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
         {
-            Poly_Triangulation anOld = Triangulation(aF);
+            Triangulation anOld = Triangulation(aF);
             Assert.Equal(0.3, anOld.Deflection());
             TopoDS_Face aNewF = TopoDS.Face(aH.Modified(aF)[0]);
-            Poly_Triangulation aNew = Triangulation(aNewF);
+            Triangulation aNew = Triangulation(aNewF);
             Assert.NotSame(anOld, aNew);
             Assert.Equal(0.0, aNew.Deflection()); // the planar mesh is exact
-            Assert.True(aNew.IsFrozen());
+            Assert.True(aNew.IsFrozen);
             Assert.Equal(1, ((BRep_TFace)aNewF.TShape()!).NbTriangulations());
             // the edges' polygons now refer to the copy
             for (var anExp = new TopExp_Explorer(aNewF, TopAbs_EDGE); anExp.More(); anExp.Next())
             {
                 TopoDS_Edge anE = TopoDS.Edge(anExp.Current());
-                Assert.NotNull(BRep_Tool.PolygonOnTriangulation(anE, aNew, new TopLoc_Location()));
-                Assert.Null(BRep_Tool.PolygonOnTriangulation(anE, anOld, new TopLoc_Location()));
+                Assert.NotNull(BRep_Tool.PolygonOnTriangulation(anE, aNew, new Placement()));
+                Assert.Null(BRep_Tool.PolygonOnTriangulation(anE, anOld, new Placement()));
             }
         }
         aBefore.AssertUnchanged(aBox);
@@ -124,7 +128,7 @@ public class BRepLibMeshTests
         TopoDS_Solid aBox = MeshedBox(0.3);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
         TopoDS_Shape aResult = BRepLib.DeflectionUpdated(aBox, out BRepTools_History aH);
-        Assert.True(aResult.TShape()!.IsFrozen());
+        Assert.True(aResult.TShape()!.IsFrozen);
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
         {
             TopoDS_Face aNewF = TopoDS.Face(Assert.Single(aH.Modified(aF)));
@@ -142,7 +146,7 @@ public class BRepLibMeshTests
         Assert.True(isCorrected);
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aNormals))
         {
-            Assert.True(Triangulation(aF).HasNormals());
+            Assert.True(Triangulation(aF).HasNormals);
         }
         // normals present: nothing to do, and the result is the input itself
         Assert.True(BRepLib.NormalConsistencyEnsured(aNormals, out isCorrected).IsEqual(aNormals));
@@ -155,23 +159,23 @@ public class BRepLibMeshTests
     {
         var aB = new BRep_Builder();
         // a cylinder face meshed with one quad: its midpoints are off the surface by 1 - cos(pi / 4) / ...
-        var aCyl = new Geom_CylindricalSurface(new gp_Ax3(), 1.0);
+        var aCyl = new Geom_CylindricalSurface(new CoordinateSystem(), 1.0);
         TopoDS_Face aF = new BRepLib_MakeFace(aCyl, 0, Math.PI / 2, 0, 1, Conf).InternalFace();
-        var aTri = new Poly_Triangulation(4, 2, true);
+        var aTri = new Triangulation(4, 2, true);
         (double u, double v)[] aUV = [(0, 0), (Math.PI / 2, 0), (Math.PI / 2, 1), (0, 1)];
         for (int i = 0; i < 4; i++)
         {
             aTri.SetNode(i + 1, aCyl.Value(aUV[i].u, aUV[i].v));
-            aTri.SetUVNode(i + 1, new gp_Pnt2d(aUV[i].u, aUV[i].v));
+            aTri.SetUVNode(i + 1, new Point2D(aUV[i].u, aUV[i].v));
         }
-        aTri.SetTriangle(1, new Poly_Triangle(1, 2, 3));
-        aTri.SetTriangle(2, new Poly_Triangle(1, 3, 4));
+        aTri.SetTriangle(1, new Triangle1(1, 2, 3));
+        aTri.SetTriangle(2, new Triangle1(1, 3, 4));
         aB.UpdateFace(aF, aTri);
         BRepLib.UpdateDeflection(aF);
         // the inner link (1, 3): its midpoint (0.5, 0.5, 0.5) against the surface at (pi / 4, 0.5)
-        double aLink = new gp_Pnt(0.5, 0.5, 0.5).Distance(aCyl.Value(Math.PI / 4, 0.5));
+        double aLink = new Point3D(0.5, 0.5, 0.5).Distance(aCyl.Value(Math.PI / 4, 0.5));
         // the triangle midpoints: ((1 + 0 + 0) / 3, (0 + 1 + 1) / 3) against (pi / 6, 1 / 3) and the other
-        double aMid = new gp_Pnt(1.0 / 3, 2.0 / 3, 1.0 / 3).Distance(aCyl.Value(Math.PI / 3, 1.0 / 3));
+        double aMid = new Point3D(1.0 / 3, 2.0 / 3, 1.0 / 3).Distance(aCyl.Value(Math.PI / 3, 1.0 / 3));
         Assert.Equal(Math.Max(aLink, aMid), Triangulation(aF).Deflection(), 1e-12);
     }
 
@@ -184,16 +188,16 @@ public class BRepLibMeshTests
         Assert.True(BRepLib.EnsureNormalConsistency(aCopy));
         foreach (TopoDS_Face aF in BRepGPropTestShapes.Faces(aBox))
         {
-            Assert.False(Triangulation(aF).HasNormals());
+            Assert.False(Triangulation(aF).HasNormals);
             TopoDS_Face aNewF = TopoDS.Face(aH.Modified(aF)[0]);
-            Poly_Triangulation aNew = Triangulation(aNewF);
-            Assert.True(aNew.HasNormals());
-            gp_Dir aN = ((Geom_Plane)BRep_Tool.Surface(aNewF)!).Pln().Axis().Direction();
+            Triangulation aNew = Triangulation(aNewF);
+            Assert.True(aNew.HasNormals);
+            Direction3D aN = ((Geom_Plane)BRep_Tool.Surface(aNewF)!).Pln().Axis().Direction();
             if (aNewF.Orientation() == TopAbs_REVERSED)
             {
                 aN.Reverse();
             }
-            for (int i = 1; i <= aNew.NbNodes(); i++)
+            for (int i = 1; i <= aNew.NodeCount; i++)
             {
                 Assert.True(aNew.Normal(i).IsEqual(aN, 1e-6)); // the box's faces are at right angles: nothing is smoothed
             }
@@ -211,22 +215,22 @@ public class BRepLibMeshTests
         TopoDS_Shape aCopy = BRepTools.CopyForWrite(aRoof, out _);
         Assert.True(BRepLib.EnsureNormalConsistency(aCopy, 0.1));
         List<TopoDS_Face> aFaces = BRepGPropTestShapes.Faces(aCopy);
-        var aN1 = new gp_XYZ(0, 0, 1);
-        gp_XYZ aN2 = new gp_Dir(0, -aSlope, 1).XYZ();
-        var anAverage = new gp_Dir(aN1 + aN2);
-        Poly_Triangulation aT1 = Triangulation(aFaces[0]), aT2 = Triangulation(aFaces[1]);
+        var aN1 = new global::Kerf.Engine.Geometry.Xyz(0, 0, 1);
+        global::Kerf.Engine.Geometry.Xyz aN2 = new Direction3D(0, -aSlope, 1).XYZ();
+        var anAverage = new Direction3D(aN1 + aN2);
+        Triangulation aT1 = Triangulation(aFaces[0]), aT2 = Triangulation(aFaces[1]);
         // nodes 3, 4 of the first face are (1, 1, 0), (0, 1, 0); nodes 1, 2 of the second
-        foreach ((Poly_Triangulation aT, int aNode) in new[] { (aT1, 3), (aT1, 4), (aT2, 1), (aT2, 2) })
+        foreach ((Triangulation aT, int aNode) in new[] { (aT1, 3), (aT1, 4), (aT2, 1), (aT2, 2) })
         {
             Assert.True(aT.Normal(aNode).IsEqual(anAverage, 1e-6));
         }
-        Assert.True(aT1.Normal(1).IsEqual(new gp_Dir(aN1), 1e-6));
-        Assert.True(aT2.Normal(3).IsEqual(new gp_Dir(aN2), 1e-6));
+        Assert.True(aT1.Normal(1).IsEqual(new Direction3D(aN1), 1e-6));
+        Assert.True(aT2.Normal(3).IsEqual(new Direction3D(aN2), 1e-6));
 
         // a smaller angular tolerance: the normals are only computed
         TopoDS_Shape aCopy2 = BRepTools.CopyForWrite(aRoof, out _);
         Assert.True(BRepLib.EnsureNormalConsistency(aCopy2, 0.01));
-        Assert.True(Triangulation(BRepGPropTestShapes.Faces(aCopy2)[0]).Normal(3).IsEqual(new gp_Dir(aN1), 1e-6));
+        Assert.True(Triangulation(BRepGPropTestShapes.Faces(aCopy2)[0]).Normal(3).IsEqual(new Direction3D(aN1), 1e-6));
     }
 
     [Fact]
@@ -234,14 +238,14 @@ public class BRepLibMeshTests
     {
         TopoDS_Solid aBox = MeshedBox(0.0);
         TopoDS_Face aF = BRepGPropTestShapes.Faces(aBox)[0];
-        Poly_Triangulation aT = Triangulation(aF);
-        Assert.Throws<Standard_ImmutableObject>(() => BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aT));
+        Triangulation aT = Triangulation(aF);
+        Assert.Throws<ImmutableObjectException>(() => BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aT));
 
-        Poly_Triangulation aWithNormals = BRepLib_ToolTriangulatedShape.NormalsComputed(aF, aT)!;
+        Triangulation aWithNormals = BRepLib_ToolTriangulatedShape.NormalsComputed(aF, aT)!;
         Assert.NotSame(aT, aWithNormals);
-        Assert.False(aT.HasNormals());
-        gp_Dir aN = ((Geom_Plane)BRep_Tool.Surface(aF)!).Pln().Axis().Direction();
-        for (int i = 1; i <= aWithNormals.NbNodes(); i++)
+        Assert.False(aT.HasNormals);
+        Direction3D aN = ((Geom_Plane)BRep_Tool.Surface(aF)!).Pln().Axis().Direction();
+        for (int i = 1; i <= aWithNormals.NodeCount; i++)
         {
             Assert.True(aWithNormals.Normal(i).IsEqual(aN, 1e-6));
         }
@@ -249,40 +253,40 @@ public class BRepLibMeshTests
         Assert.Null(BRepLib_ToolTriangulatedShape.NormalsComputed(aF, null));
 
         // without UV nodes: the average of the triangles' normals
-        Poly_Triangulation aCopy = aT.Copy();
+        Triangulation aCopy = aT.Copy();
         aCopy.RemoveUVNodes();
-        BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aCopy, new Poly_Connect());
-        Assert.True(aCopy.HasNormals());
+        BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aCopy, new Connect());
+        Assert.True(aCopy.HasNormals);
     }
 
     [Fact]
     public void ComputeNormals_falls_back_to_flat_normals_at_a_singular_point()
     {
         // a cone apex: the surface normal is undefined at v = 0
-        var aCone = new Geom_ConicalSurface(new gp_Ax3(), Math.PI / 4, 1.0);
+        var aCone = new Geom_ConicalSurface(new CoordinateSystem(), Math.PI / 4, 1.0);
         TopoDS_Face aF = BRepGPropTestShapes.NaturalFace(aCone);
         double aV0 = -1.0 / Math.Sin(Math.PI / 4); // the apex
-        var aT = new Poly_Triangulation(3, 1, true);
+        var aT = new Triangulation(3, 1, true);
         aT.SetNode(1, aCone.Value(0, aV0));
         aT.SetNode(2, aCone.Value(0, 0));
         aT.SetNode(3, aCone.Value(Math.PI / 2, 0));
-        aT.SetUVNode(1, new gp_Pnt2d(0, aV0));
-        aT.SetUVNode(2, new gp_Pnt2d(0, 0));
-        aT.SetUVNode(3, new gp_Pnt2d(Math.PI / 2, 0));
-        aT.SetTriangle(1, new Poly_Triangle(1, 2, 3));
+        aT.SetUVNode(1, new Point2D(0, aV0));
+        aT.SetUVNode(2, new Point2D(0, 0));
+        aT.SetUVNode(3, new Point2D(Math.PI / 2, 0));
+        aT.SetTriangle(1, new Triangle1(1, 2, 3));
         BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aT);
-        gp_XYZ v1 = aT.Node(2).Coord() - aT.Node(1).Coord();
-        gp_XYZ v2 = aT.Node(3).Coord() - aT.Node(2).Coord();
-        Assert.True(aT.Normal(1).IsEqual(new gp_Dir(v1 ^ v2), 1e-6));
+        global::Kerf.Engine.Geometry.Xyz v1 = aT.Node(2).Coord() - aT.Node(1).Coord();
+        global::Kerf.Engine.Geometry.Xyz v2 = aT.Node(3).Coord() - aT.Node(2).Coord();
+        Assert.True(aT.Normal(1).IsEqual(new Direction3D(v1 ^ v2), 1e-6));
     }
 
     private sealed class Collector : BRepLib_PointCloudShape
     {
-        public readonly List<(gp_Pnt P, gp_Vec N, gp_Pnt2d UV, TopoDS_Shape F)> Points = [];
+        public readonly List<(Point3D P, Vector3D N, Point2D UV, TopoDS_Shape F)> Points = [];
 
         public Collector(in TopoDS_Shape theShape) : base(theShape) { }
 
-        protected override void addPoint(in gp_Pnt thePoint, in gp_Vec theNorm, in gp_Pnt2d theUV, in TopoDS_Shape theFace)
+        protected override void addPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in TopoDS_Shape theFace)
             => Points.Add((thePoint, theNorm, theUV, theFace));
     }
 
@@ -295,7 +299,7 @@ public class BRepLibMeshTests
         Assert.Equal(24, aCloud.NbPointsByDensity(0.3));
         Assert.True(aCloud.GeneratePointsByDensity(0.3));
         Assert.Equal(24, aCloud.Points.Count);
-        foreach ((gp_Pnt aP, gp_Vec aN, _, _) in aCloud.Points)
+        foreach ((Point3D aP, Vector3D aN, _, _) in aCloud.Points)
         {
             double[] c = [aP.X(), aP.Y(), aP.Z()];
             Assert.All(c, x => Assert.InRange(x, -1e-12, 1 + 1e-12));
@@ -312,7 +316,7 @@ public class BRepLibMeshTests
         var aFar = new Collector(aBox);
         aFar.SetDistance(0.5);
         Assert.True(aFar.GeneratePointsByDensity(0.3));
-        foreach ((gp_Pnt aP, gp_Vec aN, _, _) in aFar.Points)
+        foreach ((Point3D aP, Vector3D aN, _, _) in aFar.Points)
         {
             double[] c = [aP.X(), aP.Y(), aP.Z()];
             Assert.All(c, x => Assert.InRange(x, -0.5 - 1e-12, 1.5 + 1e-12));
@@ -339,10 +343,10 @@ public class BRepLibMeshTests
         Assert.Equal(24, aCloud.NbPointsByTriangulation());
         Assert.True(aCloud.GeneratePointsByTriangulation());
         Assert.Equal(24, aCloud.Points.Count);
-        foreach ((gp_Pnt aP, gp_Vec aN, _, TopoDS_Shape aF) in aCloud.Points)
+        foreach ((Point3D aP, Vector3D aN, _, TopoDS_Shape aF) in aCloud.Points)
         {
-            gp_Dir aFaceN = ((Geom_Plane)BRep_Tool.Surface(TopoDS.Face(aF))!).Pln().Axis().Direction();
-            Assert.True(new gp_Dir(aN).IsParallel(aFaceN, 1e-6));
+            Direction3D aFaceN = ((Geom_Plane)BRep_Tool.Surface(TopoDS.Face(aF))!).Pln().Axis().Direction();
+            Assert.True(new Direction3D(aN).IsParallel(aFaceN, 1e-6));
         }
         aBefore.AssertUnchanged(aBox);
 

@@ -5,7 +5,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -21,17 +24,17 @@ namespace Occt;
 /// a finite difference. Keeps a reference to the curve, as OCCT does. Where OCCT's <c>Value</c>, <c>Values</c> and
 /// <c>Derivative</c> return false without writing their results, the port sets them to 0 (decision 32).
 /// </remarks>
-public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
+public class Extrema_PCFOfEPCOfExtPC2d : FunctionWithDerivative
 {
     private const double TolFactor = 1.0e-12;
     private const double MinTol = 1.0e-20;
     private const double MinStep = 1.0e-7;
     private const int MaxOrder = 3;
 
-    private gp_Pnt2d myP = new();
+    private Point2D myP = new();
     private Adaptor2d_Curve2d? myC;
     private double myU;
-    private gp_Pnt2d myPc = new();
+    private Point2D myPc = new();
     private double myD1f;
     private readonly NCollection_Sequence<double> mySqDist = new();
     private readonly NCollection_Sequence<int> myIsMin = new();
@@ -61,7 +64,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
     }
 
     /// <summary>The function for the point theP and the curve theC.</summary>
-    public Extrema_PCFOfEPCOfExtPC2d(in gp_Pnt2d theP, Adaptor2d_Curve2d theC)
+    public Extrema_PCFOfEPCOfExtPC2d(in Point2D theP, Adaptor2d_Curve2d theC)
     {
         myP = theP;
         myC = theC;
@@ -75,10 +78,10 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
 
         switch (Extrema_Curve2dTool.GetType(theC))
         {
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_OtherCurve:
+            case BezierCurve:
+            case BSplineCurve:
+            case OffsetCurve:
+            case OtherCurve:
                 myMaxDerivOrder = MaxOrder;
                 myTol = SearchOfTolerance();
                 break;
@@ -102,10 +105,10 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
 
         switch (Extrema_Curve2dTool.GetType(theC))
         {
-            case GeomAbs_BezierCurve:
-            case GeomAbs_BSplineCurve:
-            case GeomAbs_OffsetCurve:
-            case GeomAbs_OtherCurve:
+            case BezierCurve:
+            case BSplineCurve:
+            case OffsetCurve:
+            case OtherCurve:
                 myMaxDerivOrder = MaxOrder;
                 myTol = SearchOfTolerance();
                 break;
@@ -117,7 +120,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
     }
 
     /// <summary>Sets the point, and clears the extrema found.</summary>
-    public void SetPoint(in gp_Pnt2d theP)
+    public void SetPoint(in Point2D theP)
     {
         myP = theP;
         myPinit = true;
@@ -127,22 +130,22 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
     }
 
     /// <summary>F(u).</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public override bool Value(double theU, out double theF)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch("No init");
+            throw new TypeMismatchException("No init");
         }
 
         myU = theU;
-        gp_Vec2d D1c;
+        Vector2D D1c;
         Extrema_Curve2dTool.D1(myC!, myU, out myPc, out D1c);
 
         // OCCT tests X and Y only, never Z
-        if (Precision.IsInfinite(D1c.X()) || Precision.IsInfinite(D1c.Y()))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(D1c.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(D1c.Y()))
         {
-            theF = Precision.Infinite();
+            theF = global::Kerf.Engine.Foundation.Precision.Infinite();
             return false;
         }
 
@@ -167,7 +170,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
                 // Derivative is approximated by Taylor-series
 
                 int n = 1; // Derivative order
-                gp_Vec2d V;
+                Vector2D V;
                 bool IsDeriveFound;
 
                 do
@@ -190,10 +193,10 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
                         u = myU - aDelta;
                     }
 
-                    Extrema_Curve2dTool.D0(myC!, Min(myU, u), out gp_Pnt2d P1);
-                    Extrema_Curve2dTool.D0(myC!, Max(myU, u), out gp_Pnt2d P2);
+                    Extrema_Curve2dTool.D0(myC!, Min(myU, u), out Point2D P1);
+                    Extrema_Curve2dTool.D0(myC!, Max(myU, u), out Point2D P2);
 
-                    gp_Vec2d V1 = new(P1, P2);
+                    Vector2D V1 = new(P1, P2);
                     double aDirFactor = V.Dot(V1);
 
                     if (aDirFactor < 0.0)
@@ -208,8 +211,8 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
                 else
                 {
                     // Derivative is approximated by three points
-                    gp_Pnt2d Ptemp = new();
-                    gp_Pnt2d P1, P2, P3;
+                    Point2D Ptemp = new();
+                    Point2D P1, P2, P3;
                     bool IsParameterGrown;
 
                     if (myU - myUinfium < 2 * aDelta)
@@ -227,7 +230,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
                         IsParameterGrown = false;
                     }
 
-                    gp_Vec2d V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
+                    Vector2D V1 = new(Ptemp, P1), V2 = new(Ptemp, P2), V3 = new(Ptemp, P3);
 
                     if (IsParameterGrown)
                     {
@@ -249,32 +252,32 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
             return false;
         }
 
-        gp_Vec2d PPc = new(myP, myPc);
+        Vector2D PPc = new(myP, myPc);
         theF = PPc.Dot(D1c) / Ndu;
         return true;
     }
 
     /// <summary>F'(u).</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public override bool Derivative(double theU, out double theDF)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return Values(theU, out _, out theDF);
     }
 
     /// <summary>F(u) and F'(u).</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public override bool Values(double theU, out double theF, out double theDF)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch("No init");
+            throw new TypeMismatchException("No init");
         }
 
-        gp_Pnt2d myPc_old = myPc, myP_old = myP;
+        Point2D myPc_old = myPc, myP_old = myP;
 
         if (Value(theU, out theF) == false)
         {
@@ -287,7 +290,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
         myPc = myPc_old;
         myP = myP_old;
 
-        Extrema_Curve2dTool.D2(myC!, myU, out myPc, out gp_Vec2d D1c, out gp_Vec2d D2c);
+        Extrema_Curve2dTool.D2(myC!, myU, out myPc, out Vector2D D1c, out Vector2D D2c);
 
         double Ndu = D1c.Magnitude();
         if (Ndu <= myTol) // Singular case
@@ -344,7 +347,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
         }
         else
         {
-            gp_Vec2d PPc = new(myP, myPc);
+            Vector2D PPc = new(myP, myPc);
             theDF = Ndu + (PPc.Dot(D2c) / Ndu) - theF * (D1c.Dot(D2c)) / (Ndu * Ndu);
         }
 
@@ -355,12 +358,12 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
     }
 
     /// <summary>Saves the extremum just found: its square distance, point, and whether it is a minimum.</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public override int GetStateNumber()
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         mySqDist.Append(myPc.SquareDistance(myP));
 
@@ -383,34 +386,34 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
     public int NbExt() => mySqDist.Length();
 
     /// <summary>The Nth square distance.</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public double SquareDistance(int theN)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return mySqDist.Value(theN);
     }
 
     /// <summary>True if the Nth extremum is a minimum.</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public bool IsMin(int theN)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return (myIsMin.Value(theN) == 1);
     }
 
     /// <summary>The Nth extremum point.</summary>
-    /// <exception cref="Standard_TypeMismatch">The point or the curve is not set.</exception>
+    /// <exception cref="TypeMismatchException">The point or the curve is not set.</exception>
     public Extrema_POnCurv2d Point(int theN)
     {
         if (!myPinit || !myCinit)
         {
-            throw new Standard_TypeMismatch();
+            throw new TypeMismatchException();
         }
         return myPoint.Value(theN);
     }
@@ -430,7 +433,7 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
         double aStep = (myUsupremum - myUinfium) / (double)NPoint;
 
         int aNum = 0;
-        double aMax = -Precision.Infinite();
+        double aMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
 
         do
         {
@@ -440,9 +443,9 @@ public class Extrema_PCFOfEPCOfExtPC2d : math_FunctionWithDerivative
                 u = myUsupremum;
             }
 
-            Extrema_Curve2dTool.D1(myC!, u, out _, out gp_Vec2d VDer);
+            Extrema_Curve2dTool.D1(myC!, u, out _, out Vector2D VDer);
 
-            if (Precision.IsInfinite(VDer.X()) || Precision.IsInfinite(VDer.Y()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(VDer.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(VDer.Y()))
             {
                 continue;
             }

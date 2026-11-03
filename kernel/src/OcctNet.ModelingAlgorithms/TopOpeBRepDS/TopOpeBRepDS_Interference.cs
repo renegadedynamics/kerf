@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -20,7 +22,7 @@ namespace Occt;
 /// is often held by several lists of the data structure (a shape's and a curve's), so a change is seen by all.
 /// </para>
 /// </remarks>
-public class TopOpeBRepDS_Interference : Standard_Transient
+public class TopOpeBRepDS_Interference : Transient
 {
     private TopOpeBRepDS_Transition myTransition;
     private int mySupport;

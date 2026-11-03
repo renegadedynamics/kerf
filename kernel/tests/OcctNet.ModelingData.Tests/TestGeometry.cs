@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_Shape;
+using Kerf.Geometry;
+using static Kerf.Geometry.Continuity;
 
 namespace OcctNet.ModelingData.Tests;
 
@@ -12,20 +13,20 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 internal sealed class TestLine : Geom_Curve
 {
-    private gp_Pnt myOrigin;
-    private gp_Vec myDir;
+    private Point3D myOrigin;
+    private Vector3D myDir;
 
-    public TestLine(in gp_Pnt theOrigin, in gp_Vec theDir)
+    public TestLine(in Point3D theOrigin, in Vector3D theDir)
     {
         myOrigin = theOrigin;
         myDir = theDir;
     }
 
-    public gp_Pnt Origin() => myOrigin;
+    public Point3D Origin() => myOrigin;
 
-    public gp_Vec Dir() => myDir;
+    public Vector3D Dir() => myDir;
 
-    protected internal override void Transform(in gp_Trsf T)
+    protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
         myOrigin.Transform(T);
@@ -42,28 +43,28 @@ internal sealed class TestLine : Geom_Curve
 
     public override double ReversedParameter(double U) => -U;
 
-    public override double FirstParameter() => -Precision.Infinite();
+    public override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public override double LastParameter() => Precision.Infinite();
+    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed() => false;
 
     public override bool IsPeriodic() => false;
 
-    public override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public override Continuity Continuity() => CN;
 
     public override bool IsCN(int N) => true;
 
-    public override gp_Pnt EvalD0(double U) => myOrigin.Translated(myDir * U);
+    public override Point3D EvalD0(double U) => myOrigin.Translated(myDir * U);
 
     public override ResD1 EvalD1(double U) => new ResD1 { Point = EvalD0(U), D1 = myDir };
 
-    public override ResD2 EvalD2(double U) => new ResD2 { Point = EvalD0(U), D1 = myDir, D2 = new gp_Vec(0, 0, 0) };
+    public override ResD2 EvalD2(double U) => new ResD2 { Point = EvalD0(U), D1 = myDir, D2 = new Vector3D(0, 0, 0) };
 
     public override ResD3 EvalD3(double U) =>
-        new ResD3 { Point = EvalD0(U), D1 = myDir, D2 = new gp_Vec(0, 0, 0), D3 = new gp_Vec(0, 0, 0) };
+        new ResD3 { Point = EvalD0(U), D1 = myDir, D2 = new Vector3D(0, 0, 0), D3 = new Vector3D(0, 0, 0) };
 
-    public override gp_Vec EvalDN(double U, int N) => N == 1 ? myDir : new gp_Vec(0, 0, 0);
+    public override Vector3D EvalDN(double U, int N) => N == 1 ? myDir : new Vector3D(0, 0, 0);
 }
 
 /// <summary>
@@ -72,7 +73,7 @@ internal sealed class TestLine : Geom_Curve
 /// </summary>
 internal sealed class TestSaddle : Geom_Surface
 {
-    protected internal override void Transform(in gp_Trsf T) => throw new NotSupportedException();
+    protected internal override void Transform(in Transform3D T) => throw new NotSupportedException();
 
     public override Geom_Geometry Copy() => new TestSaddle();
 
@@ -104,16 +105,16 @@ internal sealed class TestSaddle : Geom_Surface
 
     public override Geom_Curve VIso(double V) => throw new NotSupportedException();
 
-    public override GeomAbs_Shape Continuity() => GeomAbs_CN;
+    public override Continuity Continuity() => CN;
 
     public override bool IsCNu(int N) => true;
 
     public override bool IsCNv(int N) => true;
 
-    public override gp_Pnt EvalD0(double U, double V) => new gp_Pnt(U, 2 * V, U * V);
+    public override Point3D EvalD0(double U, double V) => new Point3D(U, 2 * V, U * V);
 
     public override ResD1 EvalD1(double U, double V) =>
-        new ResD1 { Point = EvalD0(U, V), D1U = new gp_Vec(1, 0, V), D1V = new gp_Vec(0, 2, U) };
+        new ResD1 { Point = EvalD0(U, V), D1U = new Vector3D(1, 0, V), D1V = new Vector3D(0, 2, U) };
 
     public override ResD2 EvalD2(double U, double V)
     {
@@ -121,14 +122,14 @@ internal sealed class TestSaddle : Geom_Surface
         return new ResD2
         {
             Point = a.Point, D1U = a.D1U, D1V = a.D1V,
-            D2U = new gp_Vec(0, 0, 0), D2V = new gp_Vec(0, 0, 0), D2UV = new gp_Vec(0, 0, 1),
+            D2U = new Vector3D(0, 0, 0), D2V = new Vector3D(0, 0, 0), D2UV = new Vector3D(0, 0, 1),
         };
     }
 
     public override ResD3 EvalD3(double U, double V)
     {
         ResD2 a = EvalD2(U, V);
-        gp_Vec z = new gp_Vec(0, 0, 0);
+        Vector3D z = new Vector3D(0, 0, 0);
         return new ResD3
         {
             Point = a.Point, D1U = a.D1U, D1V = a.D1V, D2U = a.D2U, D2V = a.D2V, D2UV = a.D2UV,
@@ -136,11 +137,11 @@ internal sealed class TestSaddle : Geom_Surface
         };
     }
 
-    public override gp_Vec EvalDN(double U, double V, int Nu, int Nv) => (Nu, Nv) switch
+    public override Vector3D EvalDN(double U, double V, int Nu, int Nv) => (Nu, Nv) switch
     {
-        (1, 0) => new gp_Vec(1, 0, V),
-        (0, 1) => new gp_Vec(0, 2, U),
-        (1, 1) => new gp_Vec(0, 0, 1),
-        _ => new gp_Vec(0, 0, 0),
+        (1, 0) => new Vector3D(1, 0, V),
+        (0, 1) => new Vector3D(0, 2, U),
+        (1, 1) => new Vector3D(0, 0, 1),
+        _ => new Vector3D(0, 0, 0),
     };
 }

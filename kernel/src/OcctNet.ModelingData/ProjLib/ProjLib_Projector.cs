@@ -5,7 +5,9 @@
 
 //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -16,12 +18,12 @@ namespace Occt;
 /// <remarks>A working object (decision 21): its setters are public, as in OCCT.</remarks>
 public class ProjLib_Projector
 {
-    protected GeomAbs_CurveType myType;
-    protected gp_Lin2d myLin = new();
-    protected gp_Circ2d myCirc = new();
-    protected gp_Elips2d myElips = new();
-    protected gp_Hypr2d myHypr = new();
-    protected gp_Parab2d myParab = new();
+    protected CurveKind myType;
+    protected Line2D myLin = new();
+    protected Circle2D myCirc = new();
+    protected Ellipse2D myElips = new();
+    protected Hyperbola2D myHypr = new();
+    protected Parabola2D myParab = new();
     protected Geom2d_BSplineCurve? myBSpline;
     protected Geom2d_BezierCurve? myBezier;
     protected bool myIsPeriodic;
@@ -32,7 +34,7 @@ public class ProjLib_Projector
     {
         myIsPeriodic = false;
         isDone = false;
-        myType = GeomAbs_BSplineCurve; // OCCT: documented as OtherCurve
+        myType = BSplineCurve; // OCCT: documented as OtherCurve
     }
 
     public bool IsDone() => isDone;
@@ -44,9 +46,9 @@ public class ProjLib_Projector
     }
 
     /// <summary>The type of the projected curve. Hides <see cref="object.GetType"/> (decision 98).</summary>
-    public new GeomAbs_CurveType GetType() => myType;
+    public new CurveKind GetType() => myType;
 
-    public void SetType(GeomAbs_CurveType Type)
+    public void SetType(CurveKind Type)
     {
         myType = Type;
     }
@@ -58,79 +60,79 @@ public class ProjLib_Projector
         myIsPeriodic = true;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The type is not Line.</exception>
-    public gp_Lin2d Line()
+    /// <exception cref="NoSuchObjectException">The type is not Line.</exception>
+    public Line2D Line()
     {
-        if (myType != GeomAbs_Line)
+        if (myType != global::Kerf.Geometry.CurveKind.Line)
         {
-            throw new Standard_NoSuchObject("ProjLib_Projector::Line");
+            throw new NoSuchObjectException("ProjLib_Projector::Line");
         }
         return myLin;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The type is not Circle.</exception>
-    public gp_Circ2d Circle()
+    /// <exception cref="NoSuchObjectException">The type is not Circle.</exception>
+    public Circle2D Circle()
     {
-        if (myType != GeomAbs_Circle)
+        if (myType != global::Kerf.Geometry.CurveKind.Circle)
         {
-            throw new Standard_NoSuchObject("ProjLib_Projector::Circle");
+            throw new NoSuchObjectException("ProjLib_Projector::Circle");
         }
         return myCirc;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The type is not Ellipse.</exception>
-    public gp_Elips2d Ellipse()
+    /// <exception cref="NoSuchObjectException">The type is not Ellipse.</exception>
+    public Ellipse2D Ellipse()
     {
-        if (myType != GeomAbs_Ellipse)
+        if (myType != global::Kerf.Geometry.CurveKind.Ellipse)
         {
-            throw new Standard_NoSuchObject("ProjLib_Projector::Ellipse");
+            throw new NoSuchObjectException("ProjLib_Projector::Ellipse");
         }
         return myElips;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The type is not Hyperbola.</exception>
-    public gp_Hypr2d Hyperbola()
+    /// <exception cref="NoSuchObjectException">The type is not Hyperbola.</exception>
+    public Hyperbola2D Hyperbola()
     {
-        if (myType != GeomAbs_Hyperbola)
+        if (myType != global::Kerf.Geometry.CurveKind.Hyperbola)
         {
-            throw new Standard_NoSuchObject("ProjLib_Projector::Hyperbola");
+            throw new NoSuchObjectException("ProjLib_Projector::Hyperbola");
         }
         return myHypr;
     }
 
-    /// <exception cref="Standard_NoSuchObject">The type is not Parabola.</exception>
-    public gp_Parab2d Parabola()
+    /// <exception cref="NoSuchObjectException">The type is not Parabola.</exception>
+    public Parabola2D Parabola()
     {
-        if (myType != GeomAbs_Parabola)
+        if (myType != global::Kerf.Geometry.CurveKind.Parabola)
         {
-            throw new Standard_NoSuchObject("ProjLib_Projector::Parabola");
+            throw new NoSuchObjectException("ProjLib_Projector::Parabola");
         }
         return myParab;
     }
 
-    public virtual void Project(in gp_Lin L)
+    public virtual void Project(in Line3D L)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
-    public virtual void Project(in gp_Circ C)
+    public virtual void Project(in Circle3D C)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
-    public virtual void Project(in gp_Elips E)
+    public virtual void Project(in Ellipse3D E)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
-    public virtual void Project(in gp_Parab P)
+    public virtual void Project(in Parabola3D P)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
-    public virtual void Project(in gp_Hypr H)
+    public virtual void Project(in Hyperbola3D H)
     {
-        myType = GeomAbs_OtherCurve;
+        myType = OtherCurve;
     }
 
     /// <summary>
@@ -144,19 +146,19 @@ public class ProjLib_Projector
                        double Period)
     {
         _ = CLast;
-        if (myType == GeomAbs_Line)
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
             //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272 Begin
             //     if ( myLin.Direction().Y() == 0.) {
             //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272 End
             //      gp_Pnt2d PFirst, PLast;
-            gp_Pnt2d PFirst;
-            PFirst = ElCLib.Value(CFirst, myLin);
+            Point2D PFirst;
+            PFirst = global::Kerf.Engine.Geometry.ElCLib.Value(CFirst, myLin);
             // PLast  = ElCLib::Value(CLast ,myLin);
             // double U = std::min( PFirst.X(), PLast.X());
             double U = PFirst.X();
-            double NewU = ElCLib.InPeriod(U, UFirst, UFirst + Period);
-            myLin.Translate(new gp_Vec2d(NewU - U, 0.0));
+            double NewU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(U, UFirst, UFirst + Period);
+            myLin.Translate(new Vector2D(NewU - U, 0.0));
         }
     }
 
@@ -171,19 +173,19 @@ public class ProjLib_Projector
                        double Period)
     {
         _ = CLast;
-        if (myType == GeomAbs_Line)
+        if (myType == global::Kerf.Geometry.CurveKind.Line)
         {
             //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272 Begin
             //     if ( myLin.Direction().X() == 0.) {
             //  Modified by skv - Wed Aug 11 15:45:58 2004 OCC6272 End
             //      gp_Pnt2d PFirst, PLast;
-            gp_Pnt2d PFirst;
-            PFirst = ElCLib.Value(CFirst, myLin);
+            Point2D PFirst;
+            PFirst = global::Kerf.Engine.Geometry.ElCLib.Value(CFirst, myLin);
             // PLast  = ElCLib::Value(CLast ,myLin);
             // double V = std::min( PFirst.Y(), PLast.Y());
             double V = PFirst.Y();
-            double NewV = ElCLib.InPeriod(V, VFirst, VFirst + Period);
-            myLin.Translate(new gp_Vec2d(0.0, NewV - V));
+            double NewV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(V, VFirst, VFirst + Period);
+            myLin.Translate(new Vector2D(0.0, NewV - V));
         }
     }
 

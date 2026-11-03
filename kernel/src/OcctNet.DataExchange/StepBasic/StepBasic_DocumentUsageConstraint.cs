@@ -6,9 +6,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
-public class StepBasic_DocumentUsageConstraint : Standard_Transient
+public class StepBasic_DocumentUsageConstraint : Transient
 {
     private StepBasic_Document theSource;
     private TCollection_HAsciiString theSE;

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
 using static OcctNet.Foundation.Tests.MathLin_Comparison_Test_Helpers;
 
 namespace OcctNet.Foundation.Tests;
@@ -17,7 +18,7 @@ public class MathLin_ComparisonTest
     public void Solve_3x3System()
     {
         // Create a 3x3 matrix
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 3.0;
         aA[1, 2] = 2.0;
         aA[1, 3] = -1.0;
@@ -35,13 +36,13 @@ public class MathLin_ComparisonTest
         aB[3] = 0.0;
 
         // Solve using new API
-        var aNewResult = MathLin.Solve(aA, aB);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aA, aB);
+        Assert.True(aNewResult.IsDone);
         Assert.True(aNewResult.Solution is not null);
 
         // Solve using legacy API
-        math_Gauss aOldGauss = new(aA);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aA);
+        Assert.True(aOldGauss.IsDone);
         math_Vector aOldX = new(1, 3);
         aOldGauss.Solve(aB, aOldX);
 
@@ -56,7 +57,7 @@ public class MathLin_ComparisonTest
     public void Solve_5x5System()
     {
         // Create a 5x5 diagonally dominant matrix
-        math_Matrix aA = new(1, 5, 1, 5, 0.0);
+        Matrix aA = new(1, 5, 1, 5, 0.0);
         for (int i = 1; i <= 5; ++i)
         {
             aA[i, i] = 10.0;
@@ -78,12 +79,12 @@ public class MathLin_ComparisonTest
         }
 
         // Solve using new API
-        var aNewResult = MathLin.Solve(aA, aB);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aA, aB);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_Gauss aOldGauss = new(aA);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aA);
+        Assert.True(aOldGauss.IsDone);
         math_Vector aOldX = new(1, 5);
         aOldGauss.Solve(aB, aOldX);
 
@@ -98,7 +99,7 @@ public class MathLin_ComparisonTest
     public void Determinant_3x3Matrix()
     {
         // Create a 3x3 matrix with known determinant
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 6.0;
         aA[1, 2] = 1.0;
         aA[1, 3] = 1.0;
@@ -111,13 +112,13 @@ public class MathLin_ComparisonTest
         // Expected determinant: -306
 
         // Compute using new API
-        var aNewResult = MathLin.Determinant(aA);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Determinant(aA);
+        Assert.True(aNewResult.IsDone);
         Assert.True(aNewResult.Determinant is not null);
 
         // Compute using legacy API
-        math_Gauss aOldGauss = new(aA);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aA);
+        Assert.True(aOldGauss.IsDone);
         double aOldDet = aOldGauss.Determinant();
 
         // Compare determinants
@@ -129,19 +130,19 @@ public class MathLin_ComparisonTest
     public void Determinant_IdentityMatrix()
     {
         // Create identity matrix
-        math_Matrix aI = new(1, 4, 1, 4, 0.0);
+        Matrix aI = new(1, 4, 1, 4, 0.0);
         for (int i = 1; i <= 4; ++i)
         {
             aI[i, i] = 1.0;
         }
 
         // Compute using new API
-        var aNewResult = MathLin.Determinant(aI);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Determinant(aI);
+        Assert.True(aNewResult.IsDone);
 
         // Compute using legacy API
-        math_Gauss aOldGauss = new(aI);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aI);
+        Assert.True(aOldGauss.IsDone);
         double aOldDet = aOldGauss.Determinant();
 
         // Both should be 1.0
@@ -153,7 +154,7 @@ public class MathLin_ComparisonTest
     public void Invert_3x3Matrix()
     {
         // Create a 3x3 matrix
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[1, 3] = 3.0;
@@ -165,14 +166,14 @@ public class MathLin_ComparisonTest
         aA[3, 3] = 0.0;
 
         // Compute inverse using new API
-        var aNewResult = MathLin.Invert(aA);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Invert(aA);
+        Assert.True(aNewResult.IsDone);
         Assert.True(aNewResult.Inverse is not null);
 
         // Compute inverse using legacy API
-        math_Gauss aOldGauss = new(aA);
-        Assert.True(aOldGauss.IsDone());
-        math_Matrix aOldInv = new(1, 3, 1, 3);
+        Gauss aOldGauss = new(aA);
+        Assert.True(aOldGauss.IsDone);
+        Matrix aOldInv = new(1, 3, 1, 3);
         aOldGauss.Invert(aOldInv);
 
         // Compare inverse matrices
@@ -189,7 +190,7 @@ public class MathLin_ComparisonTest
     public void Invert_VerifyByMultiplication()
     {
         // Create a 3x3 matrix
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 2.0;
         aA[1, 2] = 1.0;
         aA[1, 3] = 1.0;
@@ -201,11 +202,11 @@ public class MathLin_ComparisonTest
         aA[3, 3] = 2.0;
 
         // Compute inverse using new API
-        var aNewResult = MathLin.Invert(aA);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Invert(aA);
+        Assert.True(aNewResult.IsDone);
 
         // Multiply A * A^-1 and check if result is identity
-        math_Matrix aProduct = aA * (aNewResult.Inverse!);
+        Matrix aProduct = aA * (aNewResult.Inverse!);
 
         for (int i = 1; i <= 3; ++i)
         {
@@ -221,7 +222,7 @@ public class MathLin_ComparisonTest
     public void LU_Decomposition()
     {
         // Create a 3x3 matrix
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 2.0;
         aA[1, 2] = 1.0;
         aA[1, 3] = 1.0;
@@ -233,17 +234,17 @@ public class MathLin_ComparisonTest
         aA[3, 3] = 9.0;
 
         // Perform LU decomposition
-        var aLUResult = MathLin.LU(aA);
-        Assert.True(aLUResult.IsDone());
+        var aLUResult = global::Kerf.Engine.Numerics.Linear.MathLin.LU(aA);
+        Assert.True(aLUResult.IsDone);
         Assert.True(aLUResult.LU is not null);
         Assert.True(aLUResult.Pivot is not null);
         Assert.True(aLUResult.Determinant is not null);
 
         // Extract L (lower triangular with 1s on diagonal) and U (upper triangular)
-        math_Matrix aLUMat = aLUResult.LU!;
+        Matrix aLUMat = aLUResult.LU!;
 
-        math_Matrix aL = new(1, 3, 1, 3, 0.0);
-        math_Matrix aU = new(1, 3, 1, 3, 0.0);
+        Matrix aL = new(1, 3, 1, 3, 0.0);
+        Matrix aU = new(1, 3, 1, 3, 0.0);
 
         for (int i = 1; i <= 3; ++i)
         {
@@ -259,7 +260,7 @@ public class MathLin_ComparisonTest
         }
 
         // Compute L * U (for verification purposes)
-        math_Matrix aLU = aL * aU;
+        Matrix aLU = aL * aU;
         _ = aLU; // Used to verify decomposition quality via solve
 
         // Verify by solving a system and checking residual
@@ -268,8 +269,8 @@ public class MathLin_ComparisonTest
         aB[2] = 2.0;
         aB[3] = 3.0;
 
-        var aSolveResult = MathLin.Solve(aA, aB);
-        Assert.True(aSolveResult.IsDone());
+        var aSolveResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aA, aB);
+        Assert.True(aSolveResult.IsDone);
 
         // Compute residual: A*x - b
         math_Vector aResidual = aA * (aSolveResult.Solution!);
@@ -284,7 +285,7 @@ public class MathLin_ComparisonTest
     public void SingularMatrix_Detection()
     {
         // Create a singular matrix (row 3 = row 1)
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 2.0;
         aA[1, 3] = 3.0;
@@ -296,12 +297,12 @@ public class MathLin_ComparisonTest
         aA[3, 3] = 3.0;
 
         // New API should report failure
-        var aNewResult = MathLin.LU(aA);
-        Assert.False(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.LU(aA);
+        Assert.False(aNewResult.IsDone);
 
         // Legacy API should also report failure
-        math_Gauss aOldGauss = new(aA);
-        Assert.False(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aA);
+        Assert.False(aOldGauss.IsDone);
     }
 
     [Fact]
@@ -309,7 +310,7 @@ public class MathLin_ComparisonTest
     {
         // Create 4x4 Hilbert matrix (ill-conditioned)
         int   aN = 4;
-        math_Matrix aH = new(1, aN, 1, aN);
+        Matrix aH = new(1, aN, 1, aN);
         for (int i = 1; i <= aN; ++i)
         {
             for (int j = 1; j <= aN; ++j)
@@ -326,12 +327,12 @@ public class MathLin_ComparisonTest
         }
 
         // Solve using new API
-        var aNewResult = MathLin.Solve(aH, aB);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aH, aB);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_Gauss aOldGauss = new(aH);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aH);
+        Assert.True(aOldGauss.IsDone);
         math_Vector aOldX = new(1, aN);
         aOldGauss.Solve(aB, aOldX);
 
@@ -356,17 +357,17 @@ public class MathLin_ComparisonTest
 
         foreach (var aCase in aCases)
         {
-            math_Matrix aA = new(1, 2, 1, 2);
+            Matrix aA = new(1, 2, 1, 2);
             aA[1, 1] = aCase.a11;
             aA[1, 2] = aCase.a12;
             aA[2, 1] = aCase.a21;
             aA[2, 2] = aCase.a22;
 
-            var aNewResult = MathLin.Determinant(aA);
-            Assert.True(aNewResult.IsDone());
+            var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Determinant(aA);
+            Assert.True(aNewResult.IsDone);
 
-            math_Gauss aOldGauss = new(aA);
-            Assert.True(aOldGauss.IsDone());
+            Gauss aOldGauss = new(aA);
+            Assert.True(aOldGauss.IsDone);
 
             Assert.Equal(aOldGauss.Determinant(), aNewResult.Determinant!.Value, THE_TOLERANCE);
             Assert.Equal(aCase.expectedDet, aNewResult.Determinant!.Value, THE_TOLERANCE);
@@ -377,7 +378,7 @@ public class MathLin_ComparisonTest
     public void Solve_KnownSolution()
     {
         // Create system with known solution x = (1, 2, 3)
-        math_Matrix aA = new(1, 3, 1, 3);
+        Matrix aA = new(1, 3, 1, 3);
         aA[1, 1] = 1.0;
         aA[1, 2] = 0.0;
         aA[1, 3] = 0.0;
@@ -397,8 +398,8 @@ public class MathLin_ComparisonTest
         math_Vector aB = aA * aExpectedX;
 
         // Solve using new API
-        var aNewResult = MathLin.Solve(aA, aB);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aA, aB);
+        Assert.True(aNewResult.IsDone);
 
         // Compare with expected
         for (int i = 1; i <= 3; ++i)
@@ -411,7 +412,7 @@ public class MathLin_ComparisonTest
     public void Solve_ComplexKnownSolution()
     {
         // Create a more complex system with known solution x = (1, -1, 2, -2)
-        math_Matrix aA = new(1, 4, 1, 4);
+        Matrix aA = new(1, 4, 1, 4);
         aA[1, 1] = 5.0;
         aA[1, 2] = 7.0;
         aA[1, 3] = 6.0;
@@ -439,12 +440,12 @@ public class MathLin_ComparisonTest
         math_Vector aB = aA * aExpectedX;
 
         // Solve using new API
-        var aNewResult = MathLin.Solve(aA, aB);
-        Assert.True(aNewResult.IsDone());
+        var aNewResult = global::Kerf.Engine.Numerics.Linear.MathLin.Solve(aA, aB);
+        Assert.True(aNewResult.IsDone);
 
         // Solve using legacy API
-        math_Gauss aOldGauss = new(aA);
-        Assert.True(aOldGauss.IsDone());
+        Gauss aOldGauss = new(aA);
+        Assert.True(aOldGauss.IsDone);
         math_Vector aOldX = new(1, 4);
         aOldGauss.Solve(aB, aOldX);
 

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -20,12 +24,12 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
     private readonly double myf;
     private readonly double myfOnS;
     private readonly double myRatio;
-    private gp_Mat M = new gp_Mat();
-    private gp_Mat DM = new gp_Mat();
-    private gp_Mat D2M = new gp_Mat();
-    private gp_Vec V = new gp_Vec();
-    private gp_Vec DV = new gp_Vec();
-    private gp_Vec D2V = new gp_Vec();
+    private Matrix3x3 M = new Matrix3x3();
+    private Matrix3x3 DM = new Matrix3x3();
+    private Matrix3x3 D2M = new Matrix3x3();
+    private Vector3D V = new Vector3D();
+    private Vector3D DV = new Vector3D();
+    private Vector3D D2V = new Vector3D();
 
     /// <summary>
     /// The sweep of Section along Location: the section law is evaluated at
@@ -47,8 +51,8 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
     public override bool D0(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Point2D> Poles2d,
                             NCollection_Array1<double> Weigths)
     {
         int ii, L;
@@ -69,7 +73,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
 
         for (ii = 1; ii <= L; ii++)
         {
-            ref gp_XYZ aux = ref Poles[ii].ChangeCoord();
+            ref Xyz aux = ref Poles[ii].ChangeCoord();
             aux *= M;
             aux += V.XYZ();
         }
@@ -79,17 +83,17 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
     public override bool D1(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
-                            NCollection_Array1<gp_Vec2d> DPoles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Point2D> Poles2d,
+                            NCollection_Array1<Vector2D> DPoles2d,
                             NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths)
     {
         int ii, L;
         bool Ok;
         double T = myfOnS + (Param - myf) * myRatio;
-        gp_XYZ PPrim;
+        Xyz PPrim;
         L = Poles.Length();
 
         Ok = myLoc.D1(Param, ref M, ref V, ref DM, ref DV, Poles2d, DPoles2d);
@@ -106,7 +110,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         for (ii = 1; ii <= L; ii++)
         {
             PPrim = DPoles[ii].XYZ();
-            ref gp_XYZ P = ref Poles[ii].ChangeCoord();
+            ref Xyz P = ref Poles[ii].ChangeCoord();
             PPrim *= myRatio;
             DWeigths[ii] *= myRatio;
             PPrim *= M;
@@ -123,12 +127,12 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
     public override bool D2(double Param,
                             double First,
                             double Last,
-                            NCollection_Array1<gp_Pnt> Poles,
-                            NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Vec> D2Poles,
-                            NCollection_Array1<gp_Pnt2d> Poles2d,
-                            NCollection_Array1<gp_Vec2d> DPoles2d,
-                            NCollection_Array1<gp_Vec2d> D2Poles2d,
+                            NCollection_Array1<Point3D> Poles,
+                            NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Vector3D> D2Poles,
+                            NCollection_Array1<Point2D> Poles2d,
+                            NCollection_Array1<Vector2D> DPoles2d,
+                            NCollection_Array1<Vector2D> D2Poles2d,
                             NCollection_Array1<double> Weigths,
                             NCollection_Array1<double> DWeigths,
                             NCollection_Array1<double> D2Weigths)
@@ -152,13 +156,13 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
 
         for (ii = 1; ii <= L; ii++)
         {
-            gp_XYZ PSecn = D2Poles[ii].XYZ();
-            gp_XYZ PPrim = DPoles[ii].XYZ();
+            Xyz PSecn = D2Poles[ii].XYZ();
+            Xyz PPrim = DPoles[ii].XYZ();
             PPrim *= myRatio;
             DWeigths[ii] *= myRatio;
             PSecn *= squareratio;
             D2Weigths[ii] *= squareratio;
-            ref gp_XYZ P = ref Poles[ii].ChangeCoord();
+            ref Xyz P = ref Poles[ii].ChangeCoord();
 
             PSecn *= M;
             PSecn += 2 * (DM * PPrim);
@@ -196,7 +200,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
 
     public override bool IsRational() => mySec.IsRational();
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         int Nb_Sec, Nb_Loc;
         Nb_Sec = mySec.NbIntervals(S);
@@ -224,11 +228,11 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         }
         myLoc.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntS, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         return Inter.Length() - 1;
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         int Nb_Sec, Nb_Loc, ii;
         Nb_Sec = mySec.NbIntervals(S);
@@ -264,7 +268,7 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         }
         myLoc.Intervals(IntL, S);
 
-        GeomLib.FuseIntervals(IntS, IntL, Inter, Precision.PConfusion() * 0.99);
+        GeomLib.FuseIntervals(IntS, IntL, Inter, global::Kerf.Engine.Foundation.Precision.PConfusion() * 0.99);
         for (ii = 1; ii <= Inter.Length(); ii++)
         {
             T[ii] = Inter[ii];
@@ -296,11 +300,11 @@ public class GeomFill_SweepFunction : Approx_SweepFunction
         myLoc.SetTolerance(Tol3d, Tol2d);
     }
 
-    public override gp_Pnt BarycentreOfSurf()
+    public override Point3D BarycentreOfSurf()
     {
-        gp_Pnt Bary;
-        gp_Vec Translate = new gp_Vec();
-        gp_Mat aM = new gp_Mat();
+        Point3D Bary;
+        Vector3D Translate = new Vector3D();
+        Matrix3x3 aM = new Matrix3x3();
 
         Bary = mySec.BarycentreOfSurf();
         myLoc.GetAverageLaw(ref aM, ref Translate);

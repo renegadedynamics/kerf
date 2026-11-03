@@ -3,9 +3,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
-using static Occt.GeomAbs_Shape;
-using static Occt.gp_TrsfForm;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using Kerf.Topology;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.TransformForm;
 using static Occt.TopAbs_Orientation;
 
 namespace Occt;
@@ -211,7 +215,7 @@ public sealed partial class ShapeBuild_Edge
             }
 
             Geom_Surface? surface = null;
-            TopLoc_Location L = new TopLoc_Location();
+            Placement L = new Placement();
             if (!isC3d)
             {
                 surface = fromGC.Surface();
@@ -273,7 +277,7 @@ public sealed partial class ShapeBuild_Edge
                     }
                 }
 
-                if (doCheck && ((Math.Abs(newF - aCrvF) > Precision.PConfusion() && newF < aCrvF) || newF >= aCrvL))
+                if (doCheck && ((Math.Abs(newF - aCrvF) > global::Kerf.Engine.Foundation.Precision.PConfusion() && newF < aCrvF) || newF >= aCrvL))
                 {
                     double aShift = AdjustByPeriod(newF, 0.5 * (aCrvF + aCrvL), aPeriod);
                     newF += aShift;
@@ -313,8 +317,8 @@ public sealed partial class ShapeBuild_Edge
     /// <remarks>Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen.</remarks>
     internal void CopyPCurves(in TopoDS_Edge toedge, in TopoDS_Edge fromedge)
     {
-        TopLoc_Location fromLoc = fromedge.Location();
-        TopLoc_Location toLoc = toedge.Location();
+        Placement fromLoc = fromedge.Location();
+        Placement toLoc = toedge.Location();
         // OCCT.NET: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
@@ -328,7 +332,7 @@ public sealed partial class ShapeBuild_Edge
             if (fromGC.IsCurveOnSurface())
             {
                 Geom_Surface? surface = fromGC.Surface();
-                TopLoc_Location L = fromGC.Location();
+                Placement L = fromGC.Location();
                 bool found = false;
                 NCollection_List<BRep_CurveRepresentation> tolist = ((BRep_TEdge)toedge.TShape()!).ChangeCurves();
                 BRep_GCurve? toGC = null;
@@ -354,7 +358,7 @@ public sealed partial class ShapeBuild_Edge
                 toGC!.PCurve((Geom2d_Curve)pcurve.Copy());
 
                 // bug OCC209 invalid location of pcurve in the edge after copying
-                TopLoc_Location newLoc = (fromLoc * L).Predivided(toLoc); //(L * fromLoc).Predivided(toLoc);
+                Placement newLoc = (fromLoc * L).Predivided(toLoc); //(L * fromLoc).Predivided(toLoc);
                 toGC.Location(newLoc);
                 if (fromGC.IsCurveOnClosedSurface())
                 {
@@ -408,12 +412,12 @@ public sealed partial class ShapeBuild_Edge
     /// <remarks>Internal: it writes into the edge, which throws if it is frozen.</remarks>
     internal void RemovePCurve(in TopoDS_Edge edge, Geom_Surface? surf)
     {
-        RemovePCurve(edge, surf, new TopLoc_Location());
+        RemovePCurve(edge, surf, new Placement());
     }
 
     /// <summary>Removes the edge's pcurve (both, for a seam) on the surface at the location.</summary>
     /// <remarks>Internal: it writes into the edge, which throws if it is frozen.</remarks>
-    internal void RemovePCurve(in TopoDS_Edge edge, Geom_Surface? surf, in TopLoc_Location loc)
+    internal void RemovePCurve(in TopoDS_Edge edge, Geom_Surface? surf, in Placement loc)
     {
         var B = new BRep_Builder();
         Geom2d_Curve? c2dNull = null;
@@ -468,8 +472,8 @@ public sealed partial class ShapeBuild_Edge
     // not stored but returned by BRep_Tools::CurveOnSurface
     private static int CountPCurves(in TopoDS_Edge edge, in TopoDS_Face face)
     {
-        Geom_Surface? S = BRep_Tool.Surface(face, out TopLoc_Location L);
-        TopLoc_Location l = L.Predivided(edge.Location());
+        Geom_Surface? S = BRep_Tool.Surface(face, out Placement L);
+        Placement l = L.Predivided(edge.Location());
 
         // OCCT.NET: frozen: the list is only read (OCCT takes it with ChangeCurves)
         for (var itcr = new NCollection_List<BRep_CurveRepresentation>.Iterator(((BRep_TEdge)edge.TShape()!).Curves());
@@ -558,10 +562,10 @@ public sealed partial class ShapeBuild_Edge
     /// B-splines, conics approximated). The range in <paramref name="aFirst"/>, <paramref name="aLast"/> is
     /// transformed with it. The curve returned is a new object, not frozen, like a Geom Copy().
     /// </summary>
-    public Geom2d_Curve TransformPCurve(Geom2d_Curve pcurve, in gp_Trsf2d trans, double uFact, ref double aFirst, ref double aLast)
+    public Geom2d_Curve TransformPCurve(Geom2d_Curve pcurve, in Transform2D trans, double uFact, ref double aFirst, ref double aLast)
     {
         Geom2d_Curve result = (Geom2d_Curve)pcurve.Copy();
-        if (trans.Form() != gp_Identity)
+        if (trans.Form() != Identity)
         {
             result.Transform(trans);
             aFirst = result.TransformedParameter(aFirst, trans);
@@ -580,23 +584,23 @@ public sealed partial class ShapeBuild_Edge
             result = (Geom2d_Curve)thecurve.BasisCurve().Copy();
         }
 
-        gp_GTrsf2d tMatu = new gp_GTrsf2d();
-        tMatu.SetAffinity(new gp_Ax2d(new gp_Pnt2d(0, 0), new gp_Dir2d(0, 1)), uFact); // gp::OY2d()
-        gp_XY pXY;
+        GeneralTransform2D tMatu = new GeneralTransform2D();
+        tMatu.SetAffinity(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), uFact); // gp::OY2d()
+        Xy pXY;
 
         if (result is Geom2d_Line aLine2d)
         {
-            aLine2d.D0(aFirst, out gp_Pnt2d Pf);
+            aLine2d.D0(aFirst, out Point2D Pf);
             pXY = Pf.XY();
             tMatu.Transforms(ref pXY);
             Pf.SetXY(pXY);
-            aLine2d.D0(aLast, out gp_Pnt2d Pl);
+            aLine2d.D0(aLast, out Point2D Pl);
             pXY = Pl.XY();
             tMatu.Transforms(ref pXY);
             Pl.SetXY(pXY);
-            gp_Lin2d line2d = new gp_Lin2d(Pf, new gp_Dir2d(new gp_Vec2d(Pf, Pl)));
-            aFirst = ElCLib.Parameter(line2d, Pf);
-            aLast = ElCLib.Parameter(line2d, Pl);
+            Line2D line2d = new Line2D(Pf, new Direction2D(new Vector2D(Pf, Pl)));
+            aFirst = global::Kerf.Engine.Geometry.ElCLib.Parameter(line2d, Pf);
+            aLast = global::Kerf.Engine.Geometry.ElCLib.Parameter(line2d, Pl);
             Geom2d_Line Gline2d = new Geom2d_Line(line2d);
             return Gline2d;
         }
@@ -604,7 +608,7 @@ public sealed partial class ShapeBuild_Edge
         {
             // transform the Poles of the BSplineCurve
             int nbPol = bezier.NbPoles();
-            gp_Pnt2d Pt1 = new gp_Pnt2d();
+            Point2D Pt1 = new Point2D();
             for (int i = 1; i <= nbPol; i++)
             {
                 pXY = bezier.Pole(i).XY();
@@ -621,14 +625,14 @@ public sealed partial class ShapeBuild_Edge
             if (result is Geom2d_Conic)
             {
                 Geom2d_Curve tcurve = new Geom2d_TrimmedCurve(result, aFirst, aLast); // protection against parabols ets
-                var approx = new Geom2dConvert_ApproxCurve(tcurve, Precision.Approximation(), GeomAbs_C1, 100, 6);
+                var approx = new Geom2dConvert_ApproxCurve(tcurve, global::Kerf.Engine.Foundation.Precision.Approximation(), C1, 100, 6);
                 if (approx.HasResult())
                 {
                     aBSpline2d = approx.InternalCurve()!;
                 }
                 else
                 {
-                    aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, Convert_QuasiAngular);
+                    aBSpline2d = Geom2dConvert.CurveToBSplineCurve(tcurve, QuasiAngular);
                 }
 
                 aFirst = aBSpline2d.FirstParameter();
@@ -636,7 +640,7 @@ public sealed partial class ShapeBuild_Edge
             }
             else if (result is not Geom2d_BSplineCurve)
             {
-                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(result, Convert_QuasiAngular);
+                aBSpline2d = Geom2dConvert.CurveToBSplineCurve(result, QuasiAngular);
             }
             else
             {
@@ -645,7 +649,7 @@ public sealed partial class ShapeBuild_Edge
 
             // transform the Poles of the BSplineCurve
             int nbPol = aBSpline2d.NbPoles();
-            gp_Pnt2d Pt1 = new gp_Pnt2d();
+            Point2D Pt1 = new Point2D();
             for (int i = 1; i <= nbPol; i++)
             {
                 pXY = aBSpline2d.Pole(i).XY();
@@ -727,7 +731,7 @@ public sealed partial class ShapeBuild_Edge
                 return true;
             }
         }
-        catch (Standard_Failure) when (!edge.TShape()!.IsFrozen())
+        catch (FailureException) when (!edge.TShape()!.IsFrozen)
         {
         }
 
@@ -738,14 +742,14 @@ public sealed partial class ShapeBuild_Edge
     /// Makes <paramref name="edge"/> a new edge on the 3D curve (over its whole range) placed at
     /// <paramref name="L"/>; unchanged if BRepBuilderAPI_MakeEdge fails. Frozen.
     /// </summary>
-    public void MakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in TopLoc_Location L)
+    public void MakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in Placement L)
     {
         InternalMakeEdge(ref edge, curve, L);
         freezeNew(edge);
     }
 
     /// <summary>As above, over the range [p1, p2]. Frozen.</summary>
-    public void MakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in TopLoc_Location L, double p1, double p2)
+    public void MakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in Placement L, double p1, double p2)
     {
         InternalMakeEdge(ref edge, curve, L, p1, p2);
         freezeNew(edge);
@@ -766,27 +770,27 @@ public sealed partial class ShapeBuild_Edge
     }
 
     /// <summary>Makes <paramref name="edge"/> a new edge on the pcurve on the surface at the location. Frozen.</summary>
-    public void MakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in TopLoc_Location L)
+    public void MakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in Placement L)
     {
         InternalMakeEdge(ref edge, pcurve, S, L);
         freezeNew(edge);
     }
 
     /// <summary>As above, over the range [p1, p2]. Frozen.</summary>
-    public void MakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in TopLoc_Location L, double p1, double p2)
+    public void MakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in Placement L, double p1, double p2)
     {
         InternalMakeEdge(ref edge, pcurve, S, L, p1, p2);
         freezeNew(edge);
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
-    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in TopLoc_Location L)
+    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in Placement L)
     {
         InternalMakeEdge(ref edge, curve, L, curve.FirstParameter(), curve.LastParameter());
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
-    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in TopLoc_Location L, double p1, double p2)
+    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom_Curve curve, in Placement L, double p1, double p2)
     {
         var ME = new BRepBuilderAPI_MakeEdge(curve, p1, p2);
         if (!ME.IsDone())
@@ -795,14 +799,14 @@ public sealed partial class ShapeBuild_Edge
         }
 
         TopoDS_Edge E = ME.InternalEdge();
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             var B = new BRep_Builder();
             B.UpdateEdge(E, curve, L, 0.0);
             B.Range(E, p1, p2);
 
             TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-            gp_Pnt P1 = BRep_Tool.Pnt(V1), P2 = BRep_Tool.Pnt(V2);
+            Point3D P1 = BRep_Tool.Pnt(V1), P2 = BRep_Tool.Pnt(V2);
             B.UpdateVertex(V1, P1.Transformed(L.Transformation()), 0.0);
             B.UpdateVertex(V2, P2.Transformed(L.Transformation()), 0.0);
         }
@@ -819,18 +823,18 @@ public sealed partial class ShapeBuild_Edge
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
     internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, in TopoDS_Face face, double p1, double p2)
     {
-        Geom_Surface S = BRep_Tool.Surface(face, out TopLoc_Location L)!;
+        Geom_Surface S = BRep_Tool.Surface(face, out Placement L)!;
         InternalMakeEdge(ref edge, pcurve, S, L, p1, p2);
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
-    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in TopLoc_Location L)
+    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in Placement L)
     {
         InternalMakeEdge(ref edge, pcurve, S, L, pcurve.FirstParameter(), pcurve.LastParameter());
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
-    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in TopLoc_Location L, double p1, double p2)
+    internal void InternalMakeEdge(ref TopoDS_Edge edge, Geom2d_Curve pcurve, Geom_Surface S, in Placement L, double p1, double p2)
     {
         var ME = new BRepBuilderAPI_MakeEdge(pcurve, S, p1, p2);
         if (!ME.IsDone())
@@ -839,7 +843,7 @@ public sealed partial class ShapeBuild_Edge
         }
 
         TopoDS_Edge E = ME.InternalEdge();
-        if (!L.IsIdentity())
+        if (!L.IsIdentity)
         {
             RemovePCurve(E, S);
             var B = new BRep_Builder();
@@ -847,7 +851,7 @@ public sealed partial class ShapeBuild_Edge
             B.Range(E, S, L, p1, p2);
 
             TopExp.Vertices(E, out TopoDS_Vertex V1, out TopoDS_Vertex V2);
-            gp_Pnt P1 = BRep_Tool.Pnt(V1), P2 = BRep_Tool.Pnt(V2);
+            Point3D P1 = BRep_Tool.Pnt(V1), P2 = BRep_Tool.Pnt(V2);
             B.UpdateVertex(V1, P1.Transformed(L.Transformation()), 0.0);
             B.UpdateVertex(V2, P2.Transformed(L.Transformation()), 0.0);
         }

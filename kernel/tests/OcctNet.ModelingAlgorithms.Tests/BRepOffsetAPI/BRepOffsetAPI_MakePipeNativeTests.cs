@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -173,9 +174,9 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                 }
             }
         }
-        catch (Standard_Failure anE)
+        catch (FailureException anE)
         {
-            aOut.Append($"THROW {anE.GetType().Name}\n");
+            aOut.Append($"THROW {Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType())}\n");
         }
         catch (Exception anE) when (anE is NullReferenceException or IndexOutOfRangeException)
         {

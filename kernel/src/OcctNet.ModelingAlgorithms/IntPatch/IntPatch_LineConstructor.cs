@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Geometry;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 using static Occt.TopAbs_State;
@@ -43,9 +44,9 @@ public partial class IntPatch_LineConstructor
     {
         int i = 1, nbvtx;
         double firstp, lastp;
-        double Tol = Precision.PConfusion() * 100.0; // JMB le 13 Jan 2000. Report de la correction du PRO19653
-        GeomAbs_SurfaceType typs1 = mySurf1.GetType();
-        GeomAbs_SurfaceType typs2 = mySurf2.GetType();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0; // JMB le 13 Jan 2000. Report de la correction du PRO19653
+        SurfaceKind typs1 = mySurf1.GetType();
+        SurfaceKind typs2 = mySurf2.GetType();
 
         IntPatch_IType typl = L.ArcType();
         if (typl == IntPatch_Analytic)
@@ -71,12 +72,12 @@ public partial class IntPatch_LineConstructor
                 if (firstp != lastp)
                 {
                     double pmid = (firstp + lastp) * 0.5;
-                    gp_Pnt Pmid = ALine.Value(pmid);
+                    Point3D Pmid = ALine.Value(pmid);
                     Parameters(mySurf1, mySurf2, Pmid, ref u1, ref v1, ref u2, ref v2);
                     Recadre(mySurf1, mySurf2, ref u1, ref v1, ref u2, ref v2);
                     TopAbs_State in1, in2;
-                    in1 = myDom1.Classify(new gp_Pnt2d(u1, v1), Tol, false);
-                    in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new gp_Pnt2d(u2, v2), Tol, false) : TopAbs_OUT;
+                    in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
+                    in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false) : TopAbs_OUT;
                     if (in1 == TopAbs_OUT || in2 == TopAbs_OUT)
                     {
                     }
@@ -142,13 +143,13 @@ public partial class IntPatch_LineConstructor
 
                     // modified by NIZHNY-MKK  Tue Apr  3 15:03:40 2001.BEGIN
                     //------------------------------------------
-                    gp_Pnt ap = new gp_Pnt();
-                    gp_Vec ad1u = new gp_Vec(), ad1v = new gp_Vec();
+                    Point3D ap = new Point3D();
+                    Vector3D ad1u = new Vector3D(), ad1v = new Vector3D();
                     mySurf1.D1(u1, v1, out ap, out ad1u, out ad1v);
                     double aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
                     //------------------------------------------
 
-                    TopAbs_State in1 = myDom1.Classify(new gp_Pnt2d(u1, v1), aTolerance, false);
+                    TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), aTolerance, false);
                     TopAbs_State in2 = TopAbs_OUT;
                     if (in1 != TopAbs_OUT)
                     {
@@ -156,7 +157,7 @@ public partial class IntPatch_LineConstructor
                         mySurf2.D1(u2, v2, out ap, out ad1u, out ad1v);
                         aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
                         //------------------------------------------
-                        in2 = myDom2.Classify(new gp_Pnt2d(u2, v2), aTolerance, false);
+                        in2 = myDom2.Classify(new Point2D(u2, v2), aTolerance, false);
                     }
                     // modified by NIZHNY-MKK  Tue Apr  3 15:06:31 2001.END
 
@@ -178,9 +179,9 @@ public partial class IntPatch_LineConstructor
                         if (in1 != TopAbs_IN)
                         {
                             double du, dv;
-                            gp_Pnt2d pvF = new gp_Pnt2d(vFu1, vFv1);
-                            gp_Pnt2d pvL = new gp_Pnt2d(vLu1, vLv1);
-                            gp_Pnt2d pPm = new gp_Pnt2d(u1, v1);
+                            Point2D pvF = new Point2D(vFu1, vFv1);
+                            Point2D pvL = new Point2D(vLu1, vLv1);
+                            Point2D pPm = new Point2D(u1, v1);
                             double dpvFpPm = pvF.Distance(pPm);
                             double dpvLpPm = pvL.Distance(pPm);
                             if (dpvFpPm > dpvLpPm)
@@ -195,14 +196,14 @@ public partial class IntPatch_LineConstructor
                             }
                             mySurf1.D1(du, dv, out ap, out ad1u, out ad1v);
                             aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
-                            in1 = myDom1.Classify(new gp_Pnt2d(du, dv), aTolerance, false);
+                            in1 = myDom1.Classify(new Point2D(du, dv), aTolerance, false);
                         }
                         if (in2 != TopAbs_IN)
                         {
                             double du, dv;
-                            gp_Pnt2d pvF = new gp_Pnt2d(vFu2, vFv2);
-                            gp_Pnt2d pvL = new gp_Pnt2d(vLu2, vLv2);
-                            gp_Pnt2d pPm = new gp_Pnt2d(u2, v2);
+                            Point2D pvF = new Point2D(vFu2, vFv2);
+                            Point2D pvL = new Point2D(vLu2, vLv2);
+                            Point2D pPm = new Point2D(u2, v2);
                             double dpvFpPm = pvF.Distance(pPm);
                             double dpvLpPm = pvL.Distance(pPm);
                             if (dpvFpPm > dpvLpPm)
@@ -217,7 +218,7 @@ public partial class IntPatch_LineConstructor
                             }
                             mySurf2.D1(du, dv, out ap, out ad1u, out ad1v);
                             aTolerance = ComputeParametricTolerance(TolArc, ad1u, ad1v);
-                            in2 = myDom2.Classify(new gp_Pnt2d(du, dv), aTolerance, false);
+                            in2 = myDom2.Classify(new Point2D(du, dv), aTolerance, false);
                         }
                     } // end of if(std::abs(int_lastp-int_firstp) == 1)
 
@@ -292,43 +293,43 @@ public partial class IntPatch_LineConstructor
             {
                 firstp = GLine.Vertex(i).ParameterOnLine();
                 lastp = GLine.Vertex(i + 1).ParameterOnLine();
-                if (Math.Abs(firstp - lastp) > Precision.PConfusion())
+                if (Math.Abs(firstp - lastp) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     intrvtested = true;
                     double pmid = (firstp + lastp) * 0.5;
-                    gp_Pnt Pmid = new gp_Pnt();
+                    Point3D Pmid = new Point3D();
                     if (typl == IntPatch_Lin)
                     {
-                        Pmid = ElCLib.Value(pmid, GLine.Line());
+                        Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Line());
                     }
                     else if (typl == IntPatch_Circle)
                     {
-                        Pmid = ElCLib.Value(pmid, GLine.Circle());
+                        Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Circle());
                     }
                     else if (typl == IntPatch_Ellipse)
                     {
-                        Pmid = ElCLib.Value(pmid, GLine.Ellipse());
+                        Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Ellipse());
                     }
                     else if (typl == IntPatch_Hyperbola)
                     {
-                        Pmid = ElCLib.Value(pmid, GLine.Hyperbola());
+                        Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Hyperbola());
                     }
                     else if (typl == IntPatch_Parabola)
                     {
-                        Pmid = ElCLib.Value(pmid, GLine.Parabola());
+                        Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Parabola());
                     }
                     Parameters(mySurf1, mySurf2, Pmid, ref u1, ref v1, ref u2, ref v2);
                     Recadre(mySurf1, mySurf2, ref u1, ref v1, ref u2, ref v2);
 
-                    gp_Vec Du = new gp_Vec(), Dv = new gp_Vec();
-                    gp_Pnt P = new gp_Pnt();
+                    Vector3D Du = new Vector3D(), Dv = new Vector3D();
+                    Point3D P = new Point3D();
                     myDom1.Init();
                     if (myDom2.More()) // OCCT tests myDom2 after initialising myDom1
                     {
                         mySurf1.D1(u1, v1, out P, out Du, out Dv);
                         Tol = ComputeParametricTolerance(myDom1.Tol3d(myDom1.Value()), Du, Dv);
                     }
-                    TopAbs_State in1 = myDom1.Classify(new gp_Pnt2d(u1, v1), Tol, false);
+                    TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
 
                     myDom2.Init();
                     if (in1 != TopAbs_OUT && myDom2.More())
@@ -336,7 +337,7 @@ public partial class IntPatch_LineConstructor
                         mySurf2.D1(u2, v2, out P, out Du, out Dv);
                         Tol = ComputeParametricTolerance(myDom2.Tol3d(myDom2.Value()), Du, Dv);
                     }
-                    TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new gp_Pnt2d(u2, v2), Tol, false)
+                    TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
                                                            : TopAbs_OUT;
                     // modified by NIZHNY-OFV  Wed May 30 17:04:08 2001.BEGIN
                     // --purpose: section algo with infinite prism works now!!!
@@ -376,24 +377,24 @@ public partial class IntPatch_LineConstructor
                 }
                 if (acadr >= cadrinf && acadr <= cadrsup)
                 {
-                    if (Math.Abs(firstp - lastp) > Precision.PConfusion())
+                    if (Math.Abs(firstp - lastp) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         intrvtested = true;
                         double pmid = (firstp + lastp) * 0.5;
-                        gp_Pnt Pmid;
+                        Point3D Pmid;
                         if (typl == IntPatch_Circle)
                         {
-                            Pmid = ElCLib.Value(pmid, GLine.Circle());
+                            Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Circle());
                         }
                         else
                         {
-                            Pmid = ElCLib.Value(pmid, GLine.Ellipse());
+                            Pmid = global::Kerf.Engine.Geometry.ElCLib.Value(pmid, GLine.Ellipse());
                         }
                         Parameters(mySurf1, mySurf2, Pmid, ref u1, ref v1, ref u2, ref v2);
                         Recadre(mySurf1, mySurf2, ref u1, ref v1, ref u2, ref v2);
                         // Tol is the last one the loop above computed, as in OCCT.
-                        TopAbs_State in1 = myDom1.Classify(new gp_Pnt2d(u1, v1), Tol, false);
-                        TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new gp_Pnt2d(u2, v2), Tol, false)
+                        TopAbs_State in1 = myDom1.Classify(new Point2D(u1, v1), Tol, false);
+                        TopAbs_State in2 = (in1 != TopAbs_OUT) ? myDom2.Classify(new Point2D(u2, v2), Tol, false)
                                                                : TopAbs_OUT;
                         // modified by NIZHNY-OFV  Wed May 30 17:04:08 2001.BEGIN
                         // --purpose: section algo with infinite prism works now!!!
@@ -468,19 +469,19 @@ public partial class IntPatch_LineConstructor
                 { //-- On na classifie pas sur 1
                     double u0 = Vtx1.ParameterOnLine();
                     double u1 = Vtx2.ParameterOnLine();
-                    if (Math.Abs(u1 - u0) > Precision.PConfusion())
+                    if (Math.Abs(u1 - u0) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         double u = (999.0 * u0 + u1) * 0.001;
 
-                        gp_Pnt P0 = Vtx1.Value();
-                        gp_Pnt2d Px2d = RLine.ArcOnS1()!.Value(u);
-                        gp_Pnt Px = mySurf1.Value(Px2d.X(), Px2d.Y());
-                        gp_Vec P0Px = new gp_Vec(P0, Px);
+                        Point3D P0 = Vtx1.Value();
+                        Point2D Px2d = RLine.ArcOnS1()!.Value(u);
+                        Point3D Px = mySurf1.Value(Px2d.X(), Px2d.Y());
+                        Vector3D P0Px = new Vector3D(P0, Px);
 
                         Vtx1.PntOn2S().Parameters(out double U1, out double V1, out double U2, out double V2);
 
-                        gp_Vec D1u = new gp_Vec(), D1v = new gp_Vec();
-                        gp_Pnt P = new gp_Pnt();
+                        Vector3D D1u = new Vector3D(), D1v = new Vector3D();
+                        Point3D P = new Point3D();
                         mySurf2.D1(U2, V2, out P, out D1u, out D1v);
                         myDom2.Init();
                         if (myDom2.More())
@@ -489,11 +490,11 @@ public partial class IntPatch_LineConstructor
                         }
 
                         //-- le 23 mars 1999
-                        TopAbs_State bornin = myDom2.Classify(new gp_Pnt2d(U2, V2), Tol, false);
+                        TopAbs_State bornin = myDom2.Classify(new Point2D(U2, V2), Tol, false);
                         if (bornin != TopAbs_OUT)
                         {
                             Vtx2.PntOn2S().Parameters(out _, out _, out double U2t, out double V2t);
-                            bornin = myDom2.Classify(new gp_Pnt2d(U2t, V2t), Tol, false);
+                            bornin = myDom2.Classify(new Point2D(U2t, V2t), Tol, false);
                         }
                         if (bornin == TopAbs_OUT)
                         {
@@ -526,24 +527,24 @@ public partial class IntPatch_LineConstructor
                         V2 += deltav;
                         if (bornin != TopAbs_OUT)
                         {
-                            TopAbs_State in2 = myDom2.Classify(new gp_Pnt2d(U2, V2), Tol, false);
+                            TopAbs_State in2 = myDom2.Classify(new Point2D(U2, V2), Tol, false);
                             deltau *= 0.05;
                             deltav *= 0.05;
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom2.Classify(new gp_Pnt2d(U2 + deltau, V2), Tol, false);
+                                in2 = myDom2.Classify(new Point2D(U2 + deltau, V2), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom2.Classify(new gp_Pnt2d(U2 - deltau, V2), Tol, false);
+                                in2 = myDom2.Classify(new Point2D(U2 - deltau, V2), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom2.Classify(new gp_Pnt2d(U2, V2 + deltav), Tol, false);
+                                in2 = myDom2.Classify(new Point2D(U2, V2 + deltav), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom2.Classify(new gp_Pnt2d(U2, V2 - deltav), Tol, false);
+                                in2 = myDom2.Classify(new Point2D(U2, V2 - deltav), Tol, false);
                             }
 
                             if (in2 != TopAbs_OUT)
@@ -557,19 +558,19 @@ public partial class IntPatch_LineConstructor
                 {
                     double u0 = Vtx1.ParameterOnLine();
                     double u1 = Vtx2.ParameterOnLine();
-                    if (Math.Abs(u1 - u0) > Precision.PConfusion())
+                    if (Math.Abs(u1 - u0) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         double u = (999.0 * u0 + u1) * 0.001;
 
-                        gp_Pnt P0 = Vtx1.Value();
-                        gp_Pnt2d Px2d = RLine.ArcOnS2()!.Value(u);
-                        gp_Pnt Px = mySurf2.Value(Px2d.X(), Px2d.Y());
-                        gp_Vec P0Px = new gp_Vec(P0, Px);
+                        Point3D P0 = Vtx1.Value();
+                        Point2D Px2d = RLine.ArcOnS2()!.Value(u);
+                        Point3D Px = mySurf2.Value(Px2d.X(), Px2d.Y());
+                        Vector3D P0Px = new Vector3D(P0, Px);
 
                         Vtx1.PntOn2S().Parameters(out double U1, out double V1, out _, out _);
 
-                        gp_Vec D1u = new gp_Vec(), D1v = new gp_Vec();
-                        gp_Pnt P = new gp_Pnt();
+                        Vector3D D1u = new Vector3D(), D1v = new Vector3D();
+                        Point3D P = new Point3D();
                         mySurf1.D1(U1, V1, out P, out D1u, out D1v);
                         myDom1.Init();
                         if (myDom2.More()) // OCCT tests myDom2 after initialising myDom1
@@ -578,11 +579,11 @@ public partial class IntPatch_LineConstructor
                         }
 
                         //-- le 23 mars 1999
-                        TopAbs_State bornin = myDom1.Classify(new gp_Pnt2d(U1, V1), Tol, false);
+                        TopAbs_State bornin = myDom1.Classify(new Point2D(U1, V1), Tol, false);
                         if (bornin != TopAbs_OUT)
                         {
                             Vtx2.PntOn2S().Parameters(out double U1t, out double V1t, out _, out _);
-                            bornin = myDom1.Classify(new gp_Pnt2d(U1t, V1t), Tol, false);
+                            bornin = myDom1.Classify(new Point2D(U1t, V1t), Tol, false);
                         }
                         if (bornin == TopAbs_OUT)
                         {
@@ -616,24 +617,24 @@ public partial class IntPatch_LineConstructor
 
                         if (bornin != TopAbs_OUT)
                         {
-                            TopAbs_State in2 = myDom1.Classify(new gp_Pnt2d(U1, V1), Tol, false);
+                            TopAbs_State in2 = myDom1.Classify(new Point2D(U1, V1), Tol, false);
                             deltau *= 0.05;
                             deltav *= 0.05;
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom1.Classify(new gp_Pnt2d(U1 + deltau, V1), Tol, false);
+                                in2 = myDom1.Classify(new Point2D(U1 + deltau, V1), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom1.Classify(new gp_Pnt2d(U1 - deltau, V1), Tol, false);
+                                in2 = myDom1.Classify(new Point2D(U1 - deltau, V1), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom1.Classify(new gp_Pnt2d(U1, V1 + deltav), Tol, false);
+                                in2 = myDom1.Classify(new Point2D(U1, V1 + deltav), Tol, false);
                             }
                             if (in2 == TopAbs_OUT)
                             {
-                                in2 = myDom1.Classify(new gp_Pnt2d(U1, V1 - deltav), Tol, false);
+                                in2 = myDom1.Classify(new Point2D(U1, V1 - deltav), Tol, false);
                             }
 
                             if (in2 != TopAbs_OUT)

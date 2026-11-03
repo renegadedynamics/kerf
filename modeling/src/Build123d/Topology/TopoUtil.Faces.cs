@@ -1,3 +1,4 @@
+using Kerf.Geometry;
 using Occt;
 
 namespace Build123d;
@@ -23,8 +24,8 @@ internal static partial class TopoUtil
     {
         double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
         BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
-        var point = new gp_Pnt();
-        var normal = new gp_Vec();
+        var point = new Point3D();
+        var normal = new Vector3D();
         var props = new BRepGProp_Face(face);
         props.Normal(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin), out point, out normal);
         return new Vector(normal).Normalized();

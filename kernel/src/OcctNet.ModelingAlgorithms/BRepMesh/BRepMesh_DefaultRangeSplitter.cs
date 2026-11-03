@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -37,11 +39,11 @@ public class BRepMesh_DefaultRangeSplitter
         myRangeU.first = myRangeV.first = 1.0e100;
         myRangeU.second = myRangeV.second = -1.0e100;
         myDelta.first = myDelta.second = 1.0;
-        myTolerance.first = myTolerance.second = Precision.Confusion();
+        myTolerance.first = myTolerance.second = global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     /// <summary>Registers a border point.</summary>
-    public virtual void AddPoint(in gp_Pnt2d thePoint)
+    public virtual void AddPoint(in Point2D thePoint)
     {
         myRangeU.first = Min(thePoint.X(), myRangeU.first);
         myRangeU.second = Max(thePoint.X(), myRangeU.second);
@@ -79,7 +81,7 @@ public class BRepMesh_DefaultRangeSplitter
 
         double aLengthU = computeLengthU();
         double aLengthV = computeLengthV();
-        myIsValid = aLengthU > Precision.PConfusion() && aLengthV > Precision.PConfusion();
+        myIsValid = aLengthU > global::Kerf.Engine.Foundation.Precision.PConfusion() && aLengthV > global::Kerf.Engine.Foundation.Precision.PConfusion();
 
         if (myIsValid)
         {
@@ -95,22 +97,22 @@ public class BRepMesh_DefaultRangeSplitter
     /// The point scaled from the real parametric space to the face's basis if <paramref name="isToFaceBasis"/>, or
     /// back.
     /// </summary>
-    public gp_Pnt2d Scale(in gp_Pnt2d thePoint, bool isToFaceBasis)
+    public Point2D Scale(in Point2D thePoint, bool isToFaceBasis)
     {
-        return isToFaceBasis ? new gp_Pnt2d((thePoint.X() - myRangeU.first) / myDelta.first,
+        return isToFaceBasis ? new Point2D((thePoint.X() - myRangeU.first) / myDelta.first,
                                             (thePoint.Y() - myRangeV.first) / myDelta.second)
-                             : new gp_Pnt2d(thePoint.X() * myDelta.first + myRangeU.first,
+                             : new Point2D(thePoint.X() * myDelta.first + myRangeU.first,
                                             thePoint.Y() * myDelta.second + myRangeV.first);
     }
 
     /// <summary>The nodes generated from the surface and the parameters; none (null) by default.</summary>
-    public virtual NCollection_List<gp_Pnt2d>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
+    public virtual NCollection_List<Point2D>? GenerateSurfaceNodes(in IMeshTools_Parameters theParameters)
     {
         return null;
     }
 
     /// <summary>The 3D point of the point of the surface's parametric space.</summary>
-    public gp_Pnt Point(in gp_Pnt2d thePoint2d) => GetSurface().Value(thePoint2d.X(), thePoint2d.Y());
+    public Point3D Point(in Point2D thePoint2d) => GetSurface().Value(thePoint2d.X(), thePoint2d.Y());
 
     /// <summary>Computes the parametric tolerance from the lengths along U and V.</summary>
     protected virtual void computeTolerance(double theLenU, double theLenV)
@@ -162,7 +164,7 @@ public class BRepMesh_DefaultRangeSplitter
     private double computeLengthU()
     {
         double longu = 0.0;
-        gp_Pnt P11, P12, P21, P22, P31, P32;
+        Point3D P11, P12, P21, P22, P31, P32;
 
         double du = 0.05 * (myRangeU.second - myRangeU.first);
         double dfvave = 0.5 * (myRangeV.second + myRangeV.first);
@@ -191,7 +193,7 @@ public class BRepMesh_DefaultRangeSplitter
     private double computeLengthV()
     {
         double longv = 0.0;
-        gp_Pnt P11, P12, P21, P22, P31, P32;
+        Point3D P11, P12, P21, P22, P31, P32;
 
         double dv = 0.05 * (myRangeV.second - myRangeV.first);
         double dfuave = 0.5 * (myRangeU.second + myRangeU.first);

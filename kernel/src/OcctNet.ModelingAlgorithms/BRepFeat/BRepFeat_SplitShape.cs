@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Schematiq.Collections;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -68,7 +69,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Adds the wire <paramref name="W"/> on the face <paramref name="F"/>.</summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="F"/> does not belong to the original shape.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="F"/> does not belong to the original shape.</exception>
     public void Add(in TopoDS_Wire W, in TopoDS_Face F)
     {
         myWOnShape!.Bind(W, F);
@@ -84,7 +85,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// Adds the compound <paramref name="Comp"/> of edges lying on the face <paramref name="F"/>; edges connected
     /// geometrically must share their vertices.
     /// </summary>
-    /// <exception cref="Standard_NoSuchObject"><paramref name="F"/> does not belong to the original shape.</exception>
+    /// <exception cref="NoSuchObjectException"><paramref name="F"/> does not belong to the original shape.</exception>
     public void Add(in TopoDS_Compound Comp, in TopoDS_Face F)
     {
         myWOnShape!.Bind(Comp, F);
@@ -107,7 +108,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     /// Returns the faces of the "left" part on the shape, built from <see cref="DirectLeft"/> with the faces connected
     /// to this set, and so on (frozen).
     /// </summary>
-    /// <exception cref="StdFail_NotDone">The splitting isn't done.</exception>
+    /// <exception cref="NotDoneException">The splitting isn't done.</exception>
     public ISchematiqList<TopoDS_Shape> Left()
     {
         BeforePublishingLists();
@@ -149,7 +150,7 @@ public sealed class BRepFeat_SplitShape : BRepBuilderAPI_MakeShape
     }
 
     /// <summary>Builds the cut and the resulting faces and edges as well.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         mySShape.Perform(myWOnShape!);
         if (mySShape.IsDone())

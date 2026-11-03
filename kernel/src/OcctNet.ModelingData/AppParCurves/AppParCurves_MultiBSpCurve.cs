@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -92,75 +96,75 @@ public class AppParCurves_MultiBSpCurve : AppParCurves_MultiCurve
     public override int Degree() => myDegree;
 
     /// <summary>The point at <paramref name="U"/> of the 3d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void Value(int CuIndex, double U, out gp_Pnt Pt)
+    public override void Value(int CuIndex, double U, out Point3D Pt)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D0(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt);
     }
 
     /// <summary>The point at <paramref name="U"/> of the 2d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void Value(int CuIndex, double U, out gp_Pnt2d Pt)
+    public override void Value(int CuIndex, double U, out Point2D Pt)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D0(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt);
     }
 
     /// <summary>The point and first derivative at <paramref name="U"/> of the 3d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void D1(int CuIndex, double U, out gp_Pnt Pt, out gp_Vec V1)
+    public override void D1(int CuIndex, double U, out Point3D Pt, out Vector3D V1)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D1(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1);
     }
 
     /// <summary>The point and two derivatives at <paramref name="U"/> of the 3d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void D2(int CuIndex, double U, out gp_Pnt Pt, out gp_Vec V1, out gp_Vec V2)
+    public override void D2(int CuIndex, double U, out Point3D Pt, out Vector3D V1, out Vector3D V2)
     {
         if (Dimension(CuIndex) != 3)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point3D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D2(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1, out V2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1, out V2);
     }
 
     /// <summary>The point and first derivative at <paramref name="U"/> of the 2d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void D1(int CuIndex, double U, out gp_Pnt2d Pt, out gp_Vec2d V1)
+    public override void D1(int CuIndex, double U, out Point2D Pt, out Vector2D V1)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D1(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D1(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1);
     }
 
     /// <summary>The point and two derivatives at <paramref name="U"/> of the 2d B-spline curve <paramref name="CuIndex"/>.</summary>
-    public override void D2(int CuIndex, double U, out gp_Pnt2d Pt, out gp_Vec2d V1, out gp_Vec2d V2)
+    public override void D2(int CuIndex, double U, out Point2D Pt, out Vector2D V1, out Vector2D V2)
     {
         if (Dimension(CuIndex) != 2)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
-        NCollection_Array1<gp_Pnt2d> TabPoles = new(1, tabPoint!.Length());
+        NCollection_Array1<Point2D> TabPoles = new(1, tabPoint!.Length());
         Curve(CuIndex, TabPoles);
-        BSplCLib.D2(U, 0, myDegree, false, TabPoles, BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1, out V2);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(U, 0, myDegree, false, TabPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), myknots!, mymults, out Pt, out V1, out V2);
     }
 
     /// <summary>Writes the number of curves (OCCT's pole listing is commented out).</summary>

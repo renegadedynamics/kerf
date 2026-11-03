@@ -5,6 +5,8 @@
 
 //  Modified by skv - Fri Dec 26 12:20:14 2003 OCC4455
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.ChFiDS_TypeOfConcavity;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -76,7 +78,7 @@ public sealed class BRepOffset_Inter3d
 
     /// <summary>Computes the intersections of the given faces among each other.</summary>
     public void CompletInt(NCollection_List<TopoDS_Shape> SetOfFaces, BRepAlgo_Image InitOffsetFace,
-                           Message_ProgressRange theRange)
+                           ProgressRange theRange)
     {
         //---------------------------------------------------------------
         // Calculate the intersections of offset faces
@@ -87,7 +89,7 @@ public sealed class BRepOffset_Inter3d
         BOPTools_BoxTree aBBTree = new();
         aBBTree.SetSize(SetOfFaces.Extent());
         //
-        NCollection_IndexedDataMap<TopoDS_Shape, Bnd_Box> aMFaces = new(TopTools_ShapeMapHasher.Instance);
+        NCollection_IndexedDataMap<TopoDS_Shape, Box> aMFaces = new(TopTools_ShapeMapHasher.Instance);
         // Construct bounding boxes for faces and add them to the tree
         NCollection_List<TopoDS_Shape>.Iterator aItL = new(SetOfFaces);
         for (; aItL.More(); aItL.Next())
@@ -95,12 +97,12 @@ public sealed class BRepOffset_Inter3d
             TopoDS_Face aF = TopoDS.Face(aItL.Value());
             //
             // compute bounding box
-            Bnd_Box aBoxF = new();
+            Box aBoxF = new();
             BRepBndLib.Add(aF, ref aBoxF);
             //
             int i = aMFaces.Add(aF, aBoxF);
             //
-            aBBTree.Add(i, Bnd_Tools.Bnd2BVH(aBoxF));
+            aBBTree.Add(i, Tools.Bnd2BVH(aBoxF));
         }
 
         // Build BVH
@@ -116,7 +118,7 @@ public sealed class BRepOffset_Inter3d
         // Treat the selected pairs
         NCollection_LinearVector<BOPTools_PairSelector<NCollection_Vec3<double>>.PairIDs> aPairs = aSelector.Pairs();
         int aNbPairs = aPairs.Size();
-        using Message_ProgressScope aPS = new(theRange, "Complete intersection", aNbPairs);
+        using ProgressScope aPS = new(theRange, "Complete intersection", aNbPairs);
         for (int iPair = 0; iPair < aNbPairs; ++iPair, aPS.Next())
         {
             if (!aPS.More())
@@ -243,7 +245,7 @@ public sealed class BRepOffset_Inter3d
     /// <summary>Computes the connections of the offset faces that have to be connected by arcs.</summary>
     public void ConnexIntByArc(NCollection_List<TopoDS_Shape> SetOfFaces, in TopoDS_Shape ShapeInit,
                                BRepOffset_Analyse Analyse, BRepAlgo_Image InitOffsetFace,
-                               Message_ProgressRange theRange)
+                               ProgressRange theRange)
     {
         ChFiDS_TypeOfConcavity OT = ChFiDS_Concave;
         if (mySide == TopAbs_OUT)
@@ -255,8 +257,8 @@ public sealed class BRepOffset_Inter3d
         TopoDS_Face F1 = new(), F2 = new();
         TopoDS_Edge NullEdge = new();
         TopoDS_Face NullFace = new();
-        using Message_ProgressScope aPSOuter = new(theRange, null, 2);
-        using Message_ProgressScope aPSIntF = new(aPSOuter.Next(), "Intersecting offset faces", 1, true);
+        using ProgressScope aPSOuter = new(theRange, null, 2);
+        using ProgressScope aPSIntF = new(aPSOuter.Next(), "Intersecting offset faces", 1, true);
         //---------------------------------------------------------------------
         // etape 1 : Intersection of faces // corresponding to the initial faces
         //           separated by a concave edge if offset > 0, otherwise convex.
@@ -297,7 +299,7 @@ public sealed class BRepOffset_Inter3d
         //---------------------------------------------------------------------
         TopoDS_Vertex[] V = [new(), new()];
         NCollection_List<TopoDS_Shape>.Iterator it = new();
-        using Message_ProgressScope aPSIntT = new(aPSOuter.Next(), "Intersecting tubes", 1, true);
+        using ProgressScope aPSIntT = new(aPSOuter.Next(), "Intersecting tubes", 1, true);
         for (Exp.Init(ShapeInit, TopAbs_EDGE); Exp.More(); Exp.Next(), aPSIntT.Next())
         {
             if (!aPSIntT.More())
@@ -434,7 +436,7 @@ public sealed class BRepOffset_Inter3d
     public void ConnexIntByInt(in TopoDS_Shape SI, NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset> MapSF,
                                BRepOffset_Analyse Analyse, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> MES,
                                NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Build,
-                               NCollection_List<TopoDS_Shape> Failed, Message_ProgressRange theRange,
+                               NCollection_List<TopoDS_Shape> Failed, ProgressRange theRange,
                                bool bIsPlanar = false)
     {
         NCollection_IndexedMap<TopoDS_Shape> VEmap = new(TopTools_ShapeMapHasher.Instance);
@@ -447,7 +449,7 @@ public sealed class BRepOffset_Inter3d
         //
         TopExp.MapShapes(SI, TopAbs_EDGE, VEmap);
         // Take the vertices for treatment
-        using Message_ProgressScope aPSOuter = new(theRange, null, 10);
+        using ProgressScope aPSOuter = new(theRange, null, 10);
         if (bIsPlanar)
         {
             aNb = VEmap.Extent();
@@ -630,7 +632,7 @@ public sealed class BRepOffset_Inter3d
         }
         //
         aNb = VEmap.Extent();
-        using Message_ProgressScope aPSInter = new(aPSOuter.Next(8), "Intersecting offset faces", aNb);
+        using ProgressScope aPSInter = new(aPSOuter.Next(8), "Intersecting offset faces", aNb);
         for (i = 1; i <= aNb; ++i, aPSInter.Next())
         {
             if (!aPSInter.More())
@@ -829,7 +831,7 @@ public sealed class BRepOffset_Inter3d
         //
         // create unique intersection for each localized shared part
         aNb = aDMIntE.Extent();
-        using Message_ProgressScope aPSPostTreat = new(aPSOuter.Next(2), "Creating unique intersection", aNb);
+        using ProgressScope aPSPostTreat = new(aPSOuter.Next(2), "Creating unique intersection", aNb);
         for (i = 1; i <= aNb; ++i, aPSPostTreat.Next())
         {
             if (!aPSPostTreat.More())
@@ -1023,7 +1025,7 @@ public sealed class BRepOffset_Inter3d
                                 NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset> MapSF,
                                 BRepOffset_Analyse Analyse, NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> MES,
                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> Build,
-                                NCollection_List<TopoDS_Shape> Failed, Message_ProgressRange theRange,
+                                NCollection_List<TopoDS_Shape> Failed, ProgressRange theRange,
                                 bool bIsPlanar = false)
     {
         NCollection_Map<TopoDS_Shape> MV = new(TopTools_ShapeMapHasher.Instance);
@@ -1049,7 +1051,7 @@ public sealed class BRepOffset_Inter3d
         }
         TopAbs_State Side = TopAbs_OUT;
 
-        using Message_ProgressScope aPS = new(theRange, "Intersecting with deepening faces", aNb);
+        using ProgressScope aPS = new(theRange, "Intersecting with deepening faces", aNb);
         for (i = 1; i <= aNb; i++, aPS.Next())
         {
             if (!aPS.More())
@@ -1247,7 +1249,7 @@ public sealed class BRepOffset_Inter3d
     /// <summary>Computes the connections of the not offset (context) faces that have to be connected by arcs.</summary>
     public void ContextIntByArc(NCollection_IndexedMap<TopoDS_Shape> ContextFaces, bool InSide,
                                 BRepOffset_Analyse Analyse, BRepAlgo_Image InitOffsetFace,
-                                BRepAlgo_Image InitOffsetEdge, Message_ProgressRange theRange)
+                                BRepAlgo_Image InitOffsetEdge, ProgressRange theRange)
     {
         NCollection_List<TopoDS_Shape> LInt1 = new(), LInt2 = new();
         NCollection_Map<TopoDS_Shape> MV = new(TopTools_ShapeMapHasher.Instance);
@@ -1265,7 +1267,7 @@ public sealed class BRepOffset_Inter3d
             myTouched.Add(CF);
         }
 
-        using Message_ProgressScope aPS = new(theRange, "Intersecting with deepening faces", ContextFaces.Extent());
+        using ProgressScope aPS = new(theRange, "Intersecting with deepening faces", ContextFaces.Extent());
         for (j = 1; j <= ContextFaces.Extent(); j++, aPS.Next())
         {
             if (!aPS.More())

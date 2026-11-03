@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.IntPatch_IType;
 using static Occt.IntSurf_TypeTrans;
 
@@ -9,8 +10,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntPatch_ALineTests
 {
     // x^2 + y^2 = 1 and (x - 0.5)^2 + y^2 + z^2 = 4: two closed curves, z = +-sqrt(2.75 + x).
-    private static readonly gp_Cylinder theCyl = new(new gp_Ax3(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 1.0);
-    private static readonly gp_Sphere theSph = new(new gp_Ax3(new gp_Pnt(0.5, 0, 0), new gp_Dir(0, 0, 1)), 2.0);
+    private static readonly Cylinder theCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+    private static readonly Sphere theSph = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
     private static IntPatch_ALine MakeLine()
     {
@@ -20,7 +21,7 @@ public class IntPatch_ALineTests
         return new IntPatch_ALine(anInter.Curve(1), false, IntSurf_In, IntSurf_Out);
     }
 
-    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new gp_Lin2d(new gp_Pnt2d(0, 0), new gp_Dir2d(1, 0))));
+    private static Adaptor2d_Curve2d Arc() => new Geom2dAdaptor_Curve(new Geom2d_Line(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
 
     private static IntPatch_Point Vertex(IntPatch_ALine theLine, double theParam, Adaptor2d_Curve2d? theArcOnS1 = null)
     {
@@ -46,14 +47,14 @@ public class IntPatch_ALineTests
         for (int i = 1; i < 10; ++i)
         {
             double t = aFirst + (aLast - aFirst) * i / 10.0;
-            gp_Pnt aP = aLine.Value(t);
+            Point3D aP = aLine.Value(t);
             Assert.Equal(1.0, aP.X() * aP.X() + aP.Y() * aP.Y(), 1.0e-9);
-            Assert.Equal(4.0, aP.SquareDistance(new gp_Pnt(0.5, 0, 0)), 1.0e-9);
+            Assert.Equal(4.0, aP.SquareDistance(new Point3D(0.5, 0, 0)), 1.0e-9);
 
-            Assert.True(aLine.D1(t, out gp_Pnt aPd, out gp_Vec aDu));
+            Assert.True(aLine.D1(t, out Point3D aPd, out Vector3D aDu));
             Assert.True(aPd.IsEqual(aP, 1.0e-12));
             double h = 1.0e-6;
-            gp_Vec aFd = new(aLine.Value(t - h), aLine.Value(t + h));
+            Vector3D aFd = new(aLine.Value(t - h), aLine.Value(t + h));
             Assert.True(aDu.IsEqual(aFd.Divided(2.0 * h), 1.0e-5, 1.0e-5));
 
             NCollection_List<double> aParams = new();

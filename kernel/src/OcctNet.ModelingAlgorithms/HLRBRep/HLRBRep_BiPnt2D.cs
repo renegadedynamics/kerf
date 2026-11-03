@@ -2,14 +2,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>A 2D segment of a polygonal hidden-line result, with the shape it comes from and its kind (smooth, sewn, outline, internal).</summary>
 /// <remarks>A C++ value class, so a struct. The setters are internal, with <c>With</c> twins.</remarks>
 public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 {
-    private gp_Pnt2d myP1;
-    private gp_Pnt2d myP2;
+    private Point2D myP1;
+    private Point2D myP2;
     private TopoDS_Shape myShape;
     private bool myRg1Line;
     private bool myRgNLine;
@@ -18,8 +22,8 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 
     public HLRBRep_BiPnt2D()
     {
-        myP1 = new gp_Pnt2d();
-        myP2 = new gp_Pnt2d();
+        myP1 = new Point2D();
+        myP2 = new Point2D();
         myShape = new TopoDS_Shape();
         myRg1Line = false;
         myRgNLine = false;
@@ -29,8 +33,8 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
 
     public HLRBRep_BiPnt2D(double x1, double y1, double x2, double y2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
-        myP1 = new gp_Pnt2d(x1, y1);
-        myP2 = new gp_Pnt2d(x2, y2);
+        myP1 = new Point2D(x1, y1);
+        myP2 = new Point2D(x2, y2);
         myShape = S;
         myRg1Line = reg1;
         myRgNLine = regn;
@@ -38,10 +42,10 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
         myIntLine = intl;
     }
 
-    public HLRBRep_BiPnt2D(in gp_XY thePoint1, in gp_XY thePoint2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
+    public HLRBRep_BiPnt2D(in Xy thePoint1, in Xy thePoint2, in TopoDS_Shape S, bool reg1, bool regn, bool outl, bool intl)
     {
-        myP1 = new gp_Pnt2d(thePoint1);
-        myP2 = new gp_Pnt2d(thePoint2);
+        myP1 = new Point2D(thePoint1);
+        myP2 = new Point2D(thePoint2);
         myShape = S;
         myRg1Line = reg1;
         myRgNLine = regn;
@@ -49,9 +53,9 @@ public partial struct HLRBRep_BiPnt2D : IEquatable<HLRBRep_BiPnt2D>
         myIntLine = intl;
     }
 
-    public readonly gp_Pnt2d P1() => myP1;
+    public readonly Point2D P1() => myP1;
 
-    public readonly gp_Pnt2d P2() => myP2;
+    public readonly Point2D P2() => myP2;
 
     public readonly TopoDS_Shape Shape() => myShape;
 

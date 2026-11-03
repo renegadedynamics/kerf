@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 using static Occt.IMeshData_Status;
 using static Occt.TopAbs_Orientation;
@@ -30,7 +33,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     private IMeshData_Face? myDFace;
     private IMeshTools_Parameters myParameters = new();
     private BRepMesh_DataStructureOfDelaun? myStructure;
-    private NCollection_DynamicArray<gp_Pnt>? myNodesMap;
+    private NCollection_DynamicArray<Point3D>? myNodesMap;
     private NCollection_DataMap<int, int>? myUsedNodes;
 
     /// <summary>An algorithm.</summary>
@@ -41,14 +44,14 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     /// <summary>Meshes the face.</summary>
     public override void Perform(IMeshData_Face theDFace,
                                  in IMeshTools_Parameters theParameters,
-                                 Message_ProgressRange theRange)
+                                 ProgressRange theRange)
     {
         try
         {
             myDFace = theDFace;
             myParameters = theParameters;
             myStructure = new BRepMesh_DataStructureOfDelaun();
-            myNodesMap = new NCollection_DynamicArray<gp_Pnt>(256);
+            myNodesMap = new NCollection_DynamicArray<Point3D>(256);
             myUsedNodes = new NCollection_DataMap<int, int>();
 
             if (initDataStructure())
@@ -81,14 +84,14 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     protected BRepMesh_DataStructureOfDelaun getStructure() => myStructure!;
 
     /// <summary>The 3D nodes, indexed by the structure's nodes' <c>Location3d</c>.</summary>
-    protected NCollection_DynamicArray<gp_Pnt> getNodesMap() => myNodesMap!;
+    protected NCollection_DynamicArray<Point3D> getNodesMap() => myNodesMap!;
 
     /// <summary>
     /// Registers the point in the 3D nodes and adds the 2D point to the mesh structure; returns the node's index in
     /// the structure.
     /// </summary>
-    protected virtual int registerNode(in gp_Pnt thePoint,
-                                       in gp_Pnt2d thePoint2d,
+    protected virtual int registerNode(in Point3D thePoint,
+                                       in Point2D thePoint2d,
                                        BRepMesh_DegreeOfFreedom theMovability,
                                        bool isForceAdd)
     {
@@ -114,7 +117,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     }
 
     /// <summary>Adds the 2D point to the mesh structure; returns the node's index in the structure.</summary>
-    protected virtual int addNodeToStructure(in gp_Pnt2d thePoint,
+    protected virtual int addNodeToStructure(in Point2D thePoint,
                                              int theLocation3d,
                                              BRepMesh_DegreeOfFreedom theMovability,
                                              bool isForceAdd)
@@ -124,7 +127,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     }
 
     /// <summary>The 2D point of the vertex.</summary>
-    protected virtual gp_Pnt2d getNodePoint2d(in BRepMesh_Vertex theVertex) => new(theVertex.Coord());
+    protected virtual Point2D getNodePoint2d(in BRepMesh_Vertex theVertex) => new(theVertex.Coord());
 
     /// <summary>Initializes the data structure from the model's data: the wires' nodes and links.</summary>
     protected virtual bool initDataStructure()
@@ -202,7 +205,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     }
 
     /// <summary>Generates the mesh of the contour stored in the data structure.</summary>
-    protected abstract void generateMesh(Message_ProgressRange theRange);
+    protected abstract void generateMesh(ProgressRange theRange);
 
     // If the given edge has another pcurve for current face coinciding with specified one,
     // returns TopAbs_INTERNAL flag. Elsewhere returns orientation of specified pcurve.
@@ -214,17 +217,17 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
             if (ReferenceEquals(aPCurve.GetFace(), myDFace) && !ReferenceEquals(thePCurve, aPCurve))
             {
                 // Simple check that another pcurve of seam edge does not coincide with reference one.
-                gp_Pnt2d aPnt1_1 = thePCurve.GetPoint(0);
-                gp_Pnt2d aPnt2_1 = thePCurve.GetPoint(thePCurve.ParametersNb() - 1);
+                Point2D aPnt1_1 = thePCurve.GetPoint(0);
+                Point2D aPnt2_1 = thePCurve.GetPoint(thePCurve.ParametersNb() - 1);
 
-                gp_Pnt2d aPnt1_2 = aPCurve.GetPoint(0);
-                gp_Pnt2d aPnt2_2 = aPCurve.GetPoint(aPCurve.ParametersNb() - 1);
+                Point2D aPnt1_2 = aPCurve.GetPoint(0);
+                Point2D aPnt2_2 = aPCurve.GetPoint(aPCurve.ParametersNb() - 1);
 
                 double aSqDist1 =
                     Min(aPnt1_1.SquareDistance(aPnt1_2), aPnt1_1.SquareDistance(aPnt2_2));
                 double aSqDist2 =
                     Min(aPnt2_1.SquareDistance(aPnt1_2), aPnt2_1.SquareDistance(aPnt2_2));
-                if (aSqDist1 < Precision.SquareConfusion() && aSqDist2 < Precision.SquareConfusion())
+                if (aSqDist1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion() && aSqDist2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     return TopAbs_INTERNAL;
                 }
@@ -260,7 +263,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     // Commits generated triangulation to TopoDS face.
     private void commitSurfaceTriangulation()
     {
-        Poly_Triangulation? aTriangulation = collectTriangles();
+        Triangulation? aTriangulation = collectTriangles();
         if (aTriangulation is null)
         {
             myDFace!.SetStatus(IMeshData_Failure);
@@ -273,7 +276,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     }
 
     // Collects triangles to output data.
-    private Poly_Triangulation? collectTriangles()
+    private Triangulation? collectTriangles()
     {
         NCollection_PackedMapOfInteger aTriangles = myStructure!.ElementsOfDomain();
         if (aTriangles.IsEmpty())
@@ -281,7 +284,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
             return null;
         }
 
-        Poly_Triangulation aRes = new();
+        Triangulation aRes = new();
         aRes.ResizeTriangles(aTriangles.Extent(), false);
         Span<int> aNode = stackalloc int[3];
         NCollection_PackedMapOfInteger.Iterator aTriIt = new(aTriangles);
@@ -301,7 +304,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
                 aNode[i] = myUsedNodes.Find(aNode[i]);
             }
 
-            aRes.SetTriangle(aTriangeId, new Poly_Triangle(aNode[0], aNode[1], aNode[2]));
+            aRes.SetTriangle(aTriangeId, new Triangle1(aNode[0], aNode[1], aNode[2]));
         }
         aRes.ResizeNodes(myUsedNodes!.Extent(), false);
         aRes.AddUVNodes();
@@ -309,7 +312,7 @@ public abstract class BRepMesh_BaseMeshAlgo : IMeshTools_MeshAlgo
     }
 
     // Collects nodes to output data.
-    private void collectNodes(Poly_Triangulation theTriangulation)
+    private void collectNodes(Triangulation theTriangulation)
     {
         for (int i = 1; i <= myNodesMap!.Length(); ++i)
         {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_State;
 
@@ -13,7 +14,7 @@ public class TopTrans_CurveTransition_PortTests
 {
     private const double Tol = 1.0e-9;
 
-    private static gp_Dir D(double x, double y) => new(x, y, 0.0);
+    private static Direction3D D(double x, double y) => new(x, y, 0.0);
 
     [Fact]
     public void Empty_and_reset_transitions()

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.DrawLite;
 
 namespace OcctNet.DrawLite.Tests;
@@ -41,7 +42,7 @@ public class DrawShapeCommandsTests
         Assert.Equal("f", i.Eval($"restore {DataOcc}/face.brep f"));
         Assert.Equal("1", i.Eval("isdraw f"));
         Assert.Equal("0", i.Eval("isdraw nothing"));
-        Assert.True(i.GetShape("f").TShape()!.IsFrozen());
+        Assert.True(i.GetShape("f").TShape()!.IsFrozen);
 
         // as in Draw, the Tcl variable's value is the name given to Draw::Set: restore's upvar'ed "n"
         Assert.Equal("n", i.Eval("set f"));
@@ -182,7 +183,7 @@ public class DrawShapeCommandsTests
         {
             Assert.Equal($"Number of shapes in {aName}\n" + FaceExtent, i.Eval($"nbshapes {aName}"));
             Assert.Equal(aProps, i.Eval($"sprops {aName} -full"));
-            Assert.True(i.GetShape(aName).TShape()!.IsFrozen());
+            Assert.True(i.GetShape(aName).TShape()!.IsFrozen);
         }
 
         // the text file starts as Draw's (DBRep_DrawableShape, then the shape set), bsave's ends with Draw's "0"
@@ -267,7 +268,7 @@ public class DrawShapeCommandsTests
         i.Eval("add f c");
         Assert.Equal(3, i.GetShape("c").NbChildren());
         Assert.Equal(2, aBefore.NbChildren());
-        Assert.True(i.GetShape("c").TShape()!.IsFrozen());
+        Assert.True(i.GetShape("c").TShape()!.IsFrozen);
 
         // a sub-shape isn't free: OCCT's builder refuses it
         i.Eval("explode f e");
@@ -311,7 +312,7 @@ public class DrawShapeCommandsTests
         Assert.Equal("shape FACE REVERSED Free Modified Closed Infinite Convex", i.Eval("dtyp f"));
         i.Eval("explode f v");
         Assert.Equal("shape VERTEX REVERSED Free Modified Closed Infinite Convex", i.Eval("dtyp f_1"));
-        Assert.True(i.GetShape("f").TShape()!.IsFrozen());
+        Assert.True(i.GetShape("f").TShape()!.IsFrozen);
 
         // the shape bound before is unchanged
         i.SetShape("g", aBefore);
@@ -415,7 +416,7 @@ public class DrawShapeCommandsTests
         Assert.True(i.GetShape("s").IsPartner(anOriginal));
         i.Eval("reset s");
         // as in OCCT, an elementary location of the identity (TopLoc_Location(gp_Trsf()))
-        Assert.Equal(gp_TrsfForm.gp_Identity, i.GetShape("s").Location().Transformation().Form());
+        Assert.Equal(TransformForm.Identity, i.GetShape("s").Location().Transformation().Form());
 
         // tmove sets the location of another shape
         i.Eval($"restore {DataOcc}/solid.brep m; ttranslate m 5 0 0; tmove s m");

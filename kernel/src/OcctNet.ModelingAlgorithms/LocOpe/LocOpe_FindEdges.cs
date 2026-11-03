@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -64,8 +66,8 @@ public sealed class LocOpe_FindEdges
         for (expf.Init(myFFrom, TopAbs_EDGE); expf.More(); expf.Next())
         {
             TopoDS_Edge edgf = TopoDS.Edge(expf.Current());
-            Cf = BRep_Tool.Curve(edgf, out TopLoc_Location Loc, out ff, out lf)!;
-            if (!Loc.IsIdentity())
+            Cf = BRep_Tool.Curve(edgf, out Placement Loc, out ff, out lf)!;
+            if (!Loc.IsIdentity)
             {
                 Geom_Geometry GGf = Cf.Transformed(Loc.Transformation());
                 Cf = (Geom_Curve)GGf;
@@ -85,7 +87,7 @@ public sealed class LocOpe_FindEdges
             {
                 TopoDS_Edge edgt = TopoDS.Edge(expt.Current());
                 Ct = BRep_Tool.Curve(edgt, out Loc, out ft, out lt)!;
-                if (!Loc.IsIdentity())
+                if (!Loc.IsIdentity)
                 {
                     Geom_Geometry GGt = Ct.Transformed(Loc.Transformation());
                     Ct = (Geom_Curve)GGt;
@@ -101,22 +103,22 @@ public sealed class LocOpe_FindEdges
                     continue;
                 }
                 // On a presomption de confusion
-                double Tol = Precision.Confusion();
+                double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
                 if (Tt == typeof(Geom_Line))
                 {
-                    gp_Lin lif = ((Geom_Line)Cf).Lin();
-                    gp_Lin lit = ((Geom_Line)Ct).Lin();
-                    gp_Pnt p1 = ElCLib.Value(ff, lif);
-                    gp_Pnt p2 = ElCLib.Value(lf, lif);
-                    double prm1 = ElCLib.Parameter(lit, p1);
-                    double prm2 = ElCLib.Parameter(lit, p2);
+                    Line3D lif = ((Geom_Line)Cf).Lin();
+                    Line3D lit = ((Geom_Line)Ct).Lin();
+                    Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(ff, lif);
+                    Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(lf, lif);
+                    double prm1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lit, p1);
+                    double prm2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lit, p2);
                     if (prm1 >= ft - Tol && prm1 <= lt + Tol && prm2 >= ft - Tol && prm2 <= lt + Tol)
                     {
                         Tol *= Tol;
-                        gp_Pnt pt = ElCLib.Value(prm1, lit);
+                        Point3D pt = global::Kerf.Engine.Geometry.ElCLib.Value(prm1, lit);
                         if (pt.SquareDistance(p1) <= Tol)
                         {
-                            pt = ElCLib.Value(prm2, lit);
+                            pt = global::Kerf.Engine.Geometry.ElCLib.Value(prm2, lit);
                             if (pt.SquareDistance(p2) <= Tol)
                             {
                                 myLFrom.Append(edgf);
@@ -128,26 +130,26 @@ public sealed class LocOpe_FindEdges
                 }
                 else if (Tt == typeof(Geom_Circle))
                 {
-                    gp_Circ cif = ((Geom_Circle)Cf).Circ();
-                    gp_Circ cit = ((Geom_Circle)Ct).Circ();
+                    Circle3D cif = ((Geom_Circle)Cf).Circ();
+                    Circle3D cit = ((Geom_Circle)Ct).Circ();
                     if (Math.Abs(cif.Radius() - cit.Radius()) <= Tol
                         && cif.Location().SquareDistance(cit.Location()) <= Tol * Tol)
                     {
                         // Point debut, calage dans periode, et detection meme sens
 
-                        ElCLib.D1(ff, cif, out gp_Pnt p1, out gp_Vec tgf);
-                        gp_Pnt p2 = ElCLib.Value(lf, cif);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(ff, cif, out Point3D p1, out Vector3D tgf);
+                        Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(lf, cif);
 
-                        double prm1 = ElCLib.Parameter(cit, p1);
-                        double Tol2d = Precision.PConfusion();
+                        double prm1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cit, p1);
+                        double Tol2d = global::Kerf.Engine.Foundation.Precision.PConfusion();
                         if (Math.Abs(prm1 - ft) <= Tol2d)
                         {
                             prm1 = ft;
                         }
-                        prm1 = ElCLib.InPeriod(prm1, ft, ft + 2.0 * Math.PI);
-                        ElCLib.D1(prm1, cit, out p1, out gp_Vec tgt);
+                        prm1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(prm1, ft, ft + 2.0 * Math.PI);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(prm1, cit, out p1, out Vector3D tgt);
 
-                        double prm2 = ElCLib.Parameter(cit, p2);
+                        double prm2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cit, p2);
                         if (tgt.Dot(tgf) > 0.0)
                         { // meme sens
                             while (prm2 <= prm1)
@@ -157,7 +159,7 @@ public sealed class LocOpe_FindEdges
                         }
                         else
                         {
-                            if (Math.Abs(prm1 - ft) <= Precision.Angular())
+                            if (Math.Abs(prm1 - ft) <= global::Kerf.Engine.Foundation.Precision.Angular())
                             {
                                 prm1 += 2.0 * Math.PI;
                             }
@@ -181,8 +183,8 @@ public sealed class LocOpe_FindEdges
                 }
                 else if (Tt == typeof(Geom_Ellipse))
                 {
-                    gp_Elips cif = ((Geom_Ellipse)Cf).Elips();
-                    gp_Elips cit = ((Geom_Ellipse)Ct).Elips();
+                    Ellipse3D cif = ((Geom_Ellipse)Cf).Elips();
+                    Ellipse3D cit = ((Geom_Ellipse)Ct).Elips();
 
                     if (Math.Abs(cif.MajorRadius() - cit.MajorRadius()) <= Tol
                         && Math.Abs(cif.MinorRadius() - cit.MinorRadius()) <= Tol
@@ -190,14 +192,14 @@ public sealed class LocOpe_FindEdges
                     {
                         // Point debut, calage dans periode, et detection meme sens
 
-                        ElCLib.D1(ff, cif, out gp_Pnt p1, out gp_Vec tgf);
-                        gp_Pnt p2 = ElCLib.Value(lf, cif);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(ff, cif, out Point3D p1, out Vector3D tgf);
+                        Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(lf, cif);
 
-                        double prm1 = ElCLib.Parameter(cit, p1);
-                        prm1 = ElCLib.InPeriod(prm1, ft, ft + 2.0 * Math.PI);
-                        ElCLib.D1(prm1, cit, out p1, out gp_Vec tgt);
+                        double prm1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cit, p1);
+                        prm1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(prm1, ft, ft + 2.0 * Math.PI);
+                        global::Kerf.Engine.Geometry.ElCLib.D1(prm1, cit, out p1, out Vector3D tgt);
 
-                        double prm2 = ElCLib.Parameter(cit, p2);
+                        double prm2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cit, p2);
                         if (tgt.Dot(tgf) > 0.0)
                         { // meme sens
                             while (prm2 <= prm1)
@@ -207,7 +209,7 @@ public sealed class LocOpe_FindEdges
                         }
                         else
                         {
-                            if (Math.Abs(prm1 - ft) <= Precision.Angular())
+                            if (Math.Abs(prm1 - ft) <= global::Kerf.Engine.Foundation.Precision.Angular())
                             {
                                 prm1 += 2.0 * Math.PI;
                             }
@@ -252,8 +254,8 @@ public sealed class LocOpe_FindEdges
 
                         if (IsSame)
                         {
-                            NCollection_Array1<gp_Pnt> Pf = Bf.InternalPoles();
-                            NCollection_Array1<gp_Pnt> Pt = Bt.InternalPoles();
+                            NCollection_Array1<Point3D> Pf = Bf.InternalPoles();
+                            NCollection_Array1<Point3D> Pt = Bt.InternalPoles();
 
                             double tol3d = BRep_Tool.Tolerance(edgt);
                             for (int p = 1; p <= nbpoles; p++)
@@ -343,8 +345,8 @@ public sealed class LocOpe_FindEdges
 
                     if (IsSame)
                     {
-                        NCollection_Array1<gp_Pnt> Pf = Bf.InternalPoles();
-                        NCollection_Array1<gp_Pnt> Pt = Bt.InternalPoles();
+                        NCollection_Array1<Point3D> Pf = Bf.InternalPoles();
+                        NCollection_Array1<Point3D> Pt = Bt.InternalPoles();
 
                         for (int p = 1; p <= nbpoles; p++)
                         {

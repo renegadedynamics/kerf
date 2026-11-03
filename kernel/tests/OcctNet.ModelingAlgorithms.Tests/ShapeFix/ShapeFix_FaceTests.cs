@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
@@ -17,9 +18,9 @@ public class ShapeFix_FaceTests
 {
     private const double Conf = 1e-7;
 
-    private static gp_Ax2 ZAx2(double theZ = 0.0) => new(new gp_Pnt(0, 0, theZ), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+    private static Frame3D ZAx2(double theZ = 0.0) => new(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
-    private static gp_Ax3 ZAx3() => new(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1), new gp_Dir(1, 0, 0));
+    private static CoordinateSystem ZAx3() => new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
 
     private static TopoDS_Wire CircleWire(double theZ, double theR)
     {
@@ -27,10 +28,10 @@ public class ShapeFix_FaceTests
         return new BRepBuilderAPI_MakeWire(anEdge).Wire();
     }
 
-    private static TopoDS_Wire PolygonWire(params gp_Pnt[] thePoints)
+    private static TopoDS_Wire PolygonWire(params Point3D[] thePoints)
     {
         var aPoly = new BRepBuilderAPI_MakePolygon();
-        foreach (gp_Pnt aP in thePoints)
+        foreach (Point3D aP in thePoints)
         {
             aPoly.Add(aP);
         }
@@ -61,10 +62,10 @@ public class ShapeFix_FaceTests
     private static void AssertFrozen(in TopoDS_Shape theShape)
     {
         Assert.False(theShape.IsNull());
-        Assert.True(theShape.TShape()!.IsFrozen());
+        Assert.True(theShape.TShape()!.IsFrozen);
         foreach (TopoDS_Shape anE in SubShapes(theShape, TopAbs_EDGE))
         {
-            Assert.True(anE.TShape()!.IsFrozen());
+            Assert.True(anE.TShape()!.IsFrozen);
         }
     }
 
@@ -81,7 +82,7 @@ public class ShapeFix_FaceTests
     public void MissingSeam_OnACylinderBand_TheFrozenInputIsUnchanged_TheResultIsValidAndFrozen()
     {
         TopoDS_Face aFace = CylinderBand(5.0, 10.0);
-        Assert.True(aFace.TShape()!.IsFrozen());
+        Assert.True(aFace.TShape()!.IsFrozen);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aContext = new ShapeBuild_ReShape();
 
@@ -146,8 +147,8 @@ public class ShapeFix_FaceTests
     [Fact]
     public void FixOrientation_AMisorientedHole_IsReversed_TheOuterWireIsTheCallers()
     {
-        TopoDS_Wire anOuter = PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0));
-        TopoDS_Wire aHole = PolygonWire(new gp_Pnt(3, 3, 0), new gp_Pnt(6, 3, 0), new gp_Pnt(6, 6, 0), new gp_Pnt(3, 6, 0));
+        TopoDS_Wire anOuter = PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0));
+        TopoDS_Wire aHole = PolygonWire(new Point3D(3, 3, 0), new Point3D(6, 3, 0), new Point3D(6, 6, 0), new Point3D(3, 6, 0));
         var aMaker = new BRepBuilderAPI_MakeFace(anOuter, true);
         aMaker.Add(aHole); // counter-clockwise, as the outer wire: misoriented
         TopoDS_Face aFace = aMaker.Face();
@@ -171,7 +172,7 @@ public class ShapeFix_FaceTests
     [Fact]
     public void Perform_AValidFace_GivesBackTheCallersFace()
     {
-        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new gp_Pln(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0.0, 1.0, 0.0, 1.0).Face();
+        TopoDS_Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.0, 1.0, 0.0, 1.0).Face();
         var aContext = new ShapeBuild_ReShape();
         var aFix = new ShapeFix_Face(aFace);
         aFix.SetContext(aContext);
@@ -185,8 +186,8 @@ public class ShapeFix_FaceTests
     [Fact]
     public void FixSmallAreaWire_ASliverHoleIsRemoved()
     {
-        TopoDS_Wire anOuter = PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0));
-        TopoDS_Wire aSliver = PolygonWire(new gp_Pnt(3, 3, 0), new gp_Pnt(3, 7, 0), new gp_Pnt(3 + 1e-9, 5, 0));
+        TopoDS_Wire anOuter = PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0));
+        TopoDS_Wire aSliver = PolygonWire(new Point3D(3, 3, 0), new Point3D(3, 7, 0), new Point3D(3 + 1e-9, 5, 0));
         var aMaker = new BRepBuilderAPI_MakeFace(anOuter, true);
         aMaker.Add(aSliver);
         TopoDS_Face aFace = aMaker.Face();
@@ -218,14 +219,14 @@ public class ShapeFix_FaceTests
         // OCCT's test lets a FORWARD vertex through to TopoDS::Wire (occt-issues.md); its release build keeps it
         var aB = new BRep_Builder();
         TopoDS_Face aFace = TopoDS.Face(new BRepBuilderAPI_MakeFace(
-            PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)), true).Face().EmptyCopied());
+            PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0)), true).Face().EmptyCopied());
         TopoDS_Face aSource = new BRepBuilderAPI_MakeFace(
-            PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)), true).Face();
+            PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0)), true).Face();
         for (var anIt = new TopoDS_Iterator(aSource); anIt.More(); anIt.Next())
         {
             aB.Add(aFace, anIt.Value());
         }
-        aB.Add(aFace, TestShapes.Vertex(new gp_Pnt(5, 5, 0))); // FORWARD
+        aB.Add(aFace, TestShapes.Vertex(new Point3D(5, 5, 0))); // FORWARD
         TestShapes.Frozen(aFace);
 
         var aFix = new ShapeFix_Face(aFace);
@@ -237,8 +238,8 @@ public class ShapeFix_FaceTests
     public void FixSplitFace_TwoOuterWires_MakeTwoFaces()
     {
         // two disjoint squares as the outer wires of one planar face
-        TopoDS_Wire aW1 = PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(4, 0, 0), new gp_Pnt(4, 4, 0), new gp_Pnt(0, 4, 0));
-        TopoDS_Wire aW2 = PolygonWire(new gp_Pnt(6, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 4, 0), new gp_Pnt(6, 4, 0));
+        TopoDS_Wire aW1 = PolygonWire(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 4, 0), new Point3D(0, 4, 0));
+        TopoDS_Wire aW2 = PolygonWire(new Point3D(6, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 4, 0), new Point3D(6, 4, 0));
         var aMaker = new BRepBuilderAPI_MakeFace(aW1, true);
         aMaker.Add(aW2);
         TopoDS_Face aFace = aMaker.Face();
@@ -262,8 +263,8 @@ public class ShapeFix_FaceTests
     [Fact]
     public void FixWiresTwoCoincEdges_AWireOfTwoCoincidentEdgesIsRemoved()
     {
-        TopoDS_Wire anOuter = PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0));
-        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new gp_Pnt(2, 2, 0), new gp_Pnt(5, 5, 0)).Edge();
+        TopoDS_Wire anOuter = PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0));
+        TopoDS_Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(2, 2, 0), new Point3D(5, 5, 0)).Edge();
         var aB = new BRep_Builder();
         var aTwo = new TopoDS_Wire();
         aB.MakeWire(ref aTwo);
@@ -286,13 +287,13 @@ public class ShapeFix_FaceTests
     {
         // a frozen face's sub-shapes would be copied; an unfrozen one (as ShapeFix_Shell gives) is worked in place
         var aB = new BRep_Builder();
-        TopoDS_Wire anOuter = TopoDS.Wire(PolygonWire(new gp_Pnt(0, 0, 0), new gp_Pnt(10, 0, 0), new gp_Pnt(10, 10, 0), new gp_Pnt(0, 10, 0)).EmptyCopied());
+        TopoDS_Wire anOuter = TopoDS.Wire(PolygonWire(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0)).EmptyCopied());
         var aFace = new TopoDS_Face();
-        aB.MakeFace(ref aFace, new Geom_Plane(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), Conf);
+        aB.MakeFace(ref aFace, new Geom_Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Conf);
         TopoDS_Vertex[] aV =
         [
-            TestShapes.Vertex(new gp_Pnt(0, 0, 0)), TestShapes.Vertex(new gp_Pnt(0, 10, 0)),
-            TestShapes.Vertex(new gp_Pnt(10, 10, 0)), TestShapes.Vertex(new gp_Pnt(10, 0, 0)),
+            TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(0, 10, 0)),
+            TestShapes.Vertex(new Point3D(10, 10, 0)), TestShapes.Vertex(new Point3D(10, 0, 0)),
         ];
         for (int i = 0; i < 4; i++)
         {
@@ -304,7 +305,7 @@ public class ShapeFix_FaceTests
         var aFix = new ShapeFix_Face(aFace);
         Assert.True(aFix.FixOrientation());
         TopoDS_Face aResult = aFix.InternalFace();
-        Assert.False(aResult.TShape()!.IsFrozen());
+        Assert.False(aResult.TShape()!.IsFrozen);
         // the edges are the very ones of the input (no copy was made)
         foreach (TopoDS_Shape anEdge in SubShapes(aFace, TopAbs_EDGE))
         {

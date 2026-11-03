@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -41,12 +45,12 @@ public sealed class GeomLib_CheckBSplineCurve
         if ((!myCurve.IsPeriodic()) && num_poles >= 4)
         {
 
-            gp_Vec tangent, tangent_normalized = new(), a_vector, avector_normalized;
+            Vector3D tangent, tangent_normalized = new(), a_vector, avector_normalized;
 
             double CrossProdSqTol = myAngularTolerance * myAngularTolerance;
 
             // Near first
-            tangent = new gp_Vec(myCurve.Pole(1), myCurve.Pole(2));
+            tangent = new Vector3D(myCurve.Pole(1), myCurve.Pole(2));
             tangent_magnitude = tangent.Magnitude();
             if (tangent_magnitude > myTolerance)
             {
@@ -55,14 +59,14 @@ public sealed class GeomLib_CheckBSplineCurve
 
             for (ii = 3; ii <= num_poles; ii++)
             {
-                a_vector = new gp_Vec(myCurve.Pole(1), myCurve.Pole(ii));
+                a_vector = new Vector3D(myCurve.Pole(1), myCurve.Pole(ii));
                 vector_magnitude = a_vector.Magnitude();
 
                 if (tangent_magnitude > myTolerance && vector_magnitude > myTolerance)
                 {
                     avector_normalized = a_vector / vector_magnitude;
 
-                    gp_Vec CrossProd = tangent_normalized ^ avector_normalized;
+                    Vector3D CrossProd = tangent_normalized ^ avector_normalized;
                     double CrossProdSqLength = CrossProd.SquareMagnitude();
                     if (CrossProdSqLength > CrossProdSqTol)
                     {
@@ -80,7 +84,7 @@ public sealed class GeomLib_CheckBSplineCurve
             }
 
             // Near last
-            tangent = new gp_Vec(myCurve.Pole(num_poles), myCurve.Pole(num_poles - 1));
+            tangent = new Vector3D(myCurve.Pole(num_poles), myCurve.Pole(num_poles - 1));
             tangent_magnitude = tangent.Magnitude();
             if (tangent_magnitude > myTolerance)
             {
@@ -89,14 +93,14 @@ public sealed class GeomLib_CheckBSplineCurve
 
             for (ii = num_poles - 2; ii >= 1; ii--)
             {
-                a_vector = new gp_Vec(myCurve.Pole(num_poles), myCurve.Pole(ii));
+                a_vector = new Vector3D(myCurve.Pole(num_poles), myCurve.Pole(ii));
                 vector_magnitude = a_vector.Magnitude();
 
                 if (tangent_magnitude > myTolerance && vector_magnitude > myTolerance)
                 {
                     avector_normalized = a_vector / vector_magnitude;
 
-                    gp_Vec CrossProd = tangent_normalized ^ avector_normalized;
+                    Vector3D CrossProd = tangent_normalized ^ avector_normalized;
                     double CrossProdSqLength = CrossProd.SquareMagnitude();
                     if (CrossProdSqLength > CrossProdSqTol)
                     {
@@ -157,13 +161,13 @@ public sealed class GeomLib_CheckBSplineCurve
     {
         if (myFixFirstTangent && FirstFlag)
         {
-            gp_XYZ XYZ1 = theCurve.Pole(1).XYZ();
-            gp_XYZ XYZ2 = theCurve.Pole(myIndSecondPole).XYZ();
+            Xyz XYZ1 = theCurve.Pole(1).XYZ();
+            Xyz XYZ2 = theCurve.Pole(myIndSecondPole).XYZ();
             double NbSamples = myIndSecondPole - 1;
             for (int i = 2; i < myIndSecondPole; i++)
             {
                 double ii = i - 1;
-                gp_Pnt aNewPole = new((1.0 - ii / NbSamples) * XYZ1 + ii / NbSamples * XYZ2);
+                Point3D aNewPole = new((1.0 - ii / NbSamples) * XYZ1 + ii / NbSamples * XYZ2);
                 theCurve.SetPole(i, aNewPole);
             }
         }
@@ -172,13 +176,13 @@ public sealed class GeomLib_CheckBSplineCurve
         {
             int num_poles = theCurve.NbPoles();
 
-            gp_XYZ XYZ1 = theCurve.Pole(num_poles).XYZ();
-            gp_XYZ XYZ2 = theCurve.Pole(myIndPrelastPole).XYZ();
+            Xyz XYZ1 = theCurve.Pole(num_poles).XYZ();
+            Xyz XYZ2 = theCurve.Pole(myIndPrelastPole).XYZ();
             double NbSamples = num_poles - myIndPrelastPole;
             for (int i = num_poles - 1; i > myIndPrelastPole; i--)
             {
                 double ii = num_poles - i;
-                gp_Pnt aNewPole = new((1.0 - ii / NbSamples) * XYZ1 + ii / NbSamples * XYZ2);
+                Point3D aNewPole = new((1.0 - ii / NbSamples) * XYZ1 + ii / NbSamples * XYZ2);
                 theCurve.SetPole(i, aNewPole);
             }
         }

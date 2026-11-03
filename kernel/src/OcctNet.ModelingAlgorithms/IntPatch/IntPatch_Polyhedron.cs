@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -22,12 +28,12 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     private const double DEFLECTION_COEFF = 1.1;
     private const int NBMAXUV = 30;
 
-    private Bnd_Box TheBnd = new();
-    private NCollection_HArray1<Bnd_Box>? TheComponentsBnd;
+    private Box TheBnd = new();
+    private NCollection_HArray1<Box>? TheComponentsBnd;
     private double TheDeflection;
     private readonly int nbdeltaU;
     private readonly int nbdeltaV;
-    private gp_Pnt[]? C_MyPnts;
+    private Point3D[]? C_MyPnts;
     private double[]? C_MyU;
     private double[]? C_MyV;
 #pragma warning disable CS0414 // OCCT sets them; only its undefined Has... getters would read them (see the remarks)
@@ -95,7 +101,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     private void Init(Adaptor3d_Surface Surface)
     {
         int t = (nbdeltaU + 1) * (nbdeltaV + 1) + 1;
-        gp_Pnt[] CMyPnts = new gp_Pnt[t];
+        Point3D[] CMyPnts = new Point3D[t];
         double[] CMyU = new double[t];
         double[] CMyV = new double[t];
         C_MyPnts = CMyPnts;
@@ -124,7 +130,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
 
         // Use grid evaluator for batch point evaluation
         GeomGridEval_Surface anEval = new(Surface);
-        NCollection_Array2<gp_Pnt> aGridPnts = anEval.EvaluateGrid(aUParams, aVParams);
+        NCollection_Array2<Point3D> aGridPnts = anEval.EvaluateGrid(aUParams, aVParams);
 
         // Copy to internal arrays and build bounding box
         int Index = 1;
@@ -174,7 +180,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     public double DeflectionOverEstimation() => TheDeflection;
 
     /// <summary>The box of the polyhedron.</summary>
-    public Bnd_Box Bounding() => TheBnd;
+    public Box Bounding() => TheBnd;
 
     /// <summary>
     /// Computes the boxes of the triangles, enlarged by the deflection; a triangle with an edge shorter than 1e-7 has
@@ -182,16 +188,16 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     /// </summary>
     public void FillBounding()
     {
-        TheComponentsBnd = new NCollection_HArray1<Bnd_Box>(1, NbTriangles());
-        Bnd_Box Boite = new();
+        TheComponentsBnd = new NCollection_HArray1<Box>(1, NbTriangles());
+        Box Boite = new();
         int nbtriangles = NbTriangles();
         for (int iTri = 1; iTri <= nbtriangles; iTri++)
         {
             Triangle(iTri, out int p1, out int p2, out int p3);
             Boite.SetVoid();
-            gp_Pnt P1 = Point(p1);
-            gp_Pnt P2 = Point(p2);
-            gp_Pnt P3 = Point(p3);
+            Point3D P1 = Point(p1);
+            Point3D P2 = Point(p2);
+            Point3D P3 = Point(p3);
             if (P1.SquareDistance(P2) > LONGUEUR_MINI_EDGE_TRIANGLE)
             {
                 if (P1.SquareDistance(P3) > LONGUEUR_MINI_EDGE_TRIANGLE)
@@ -210,7 +216,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>The boxes of the triangles (the polyhedron's own array: don't modify).</summary>
-    public NCollection_HArray1<Bnd_Box> ComponentsBounding() => TheComponentsBnd!;
+    public NCollection_HArray1<Box> ComponentsBounding() => TheComponentsBnd!;
 
     /// <summary>The number of triangles (2 × nbdU × nbdV).</summary>
     public int NbTriangles() => nbdeltaU * nbdeltaV * 2;
@@ -485,20 +491,20 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     /// from the origin. On a triangle with an edge shorter than 1e-7 the normal is (1, 0, 0) and
     /// <paramref name="PolarDistance"/> is left unchanged, as in OCCT.
     /// </summary>
-    public void PlaneEquation(int Triang, out gp_XYZ NormalVector, ref double PolarDistance)
+    public void PlaneEquation(int Triang, out Xyz NormalVector, ref double PolarDistance)
     {
         Triangle(Triang, out int i1, out int i2, out int i3);
 
-        gp_XYZ Pointi1 = Point(i1).XYZ();
-        gp_XYZ Pointi2 = Point(i2).XYZ();
-        gp_XYZ Pointi3 = Point(i3).XYZ();
+        Xyz Pointi1 = Point(i1).XYZ();
+        Xyz Pointi2 = Point(i2).XYZ();
+        Xyz Pointi3 = Point(i3).XYZ();
 
-        gp_XYZ v1 = Pointi2 - Pointi1;
-        gp_XYZ v2 = Pointi3 - Pointi2;
-        gp_XYZ v3 = Pointi1 - Pointi3;
+        Xyz v1 = Pointi2 - Pointi1;
+        Xyz v2 = Pointi3 - Pointi2;
+        Xyz v3 = Pointi1 - Pointi3;
 
         // OCCT: on a degenerate triangle PolarDistance is left as it was (occt-issues.md, 5D)
-        NormalVector = new gp_XYZ();
+        NormalVector = new Xyz();
         if (v1.SquareModulus() <= LONGUEUR_MINI_EDGE_TRIANGLE)
         {
             NormalVector.SetCoord(1.0, 0.0, 0.0);
@@ -517,7 +523,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
 
         NormalVector = (v1 ^ v2) + (v2 ^ v3) + (v3 ^ v1);
         double aNormLen = NormalVector.Modulus();
-        if (aNormLen < gp.Resolution())
+        if (aNormLen < Constants.Resolution())
         {
             PolarDistance = 0.0;
         }
@@ -529,16 +535,16 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>True if the triangle <paramref name="Triang"/> contains <paramref name="ThePnt"/>.</summary>
-    public bool Contain(int Triang, in gp_Pnt ThePnt)
+    public bool Contain(int Triang, in Point3D ThePnt)
     {
         Triangle(Triang, out int i1, out int i2, out int i3);
-        gp_XYZ Pointi1 = Point(i1).XYZ();
-        gp_XYZ Pointi2 = Point(i2).XYZ();
-        gp_XYZ Pointi3 = Point(i3).XYZ();
+        Xyz Pointi1 = Point(i1).XYZ();
+        Xyz Pointi2 = Point(i2).XYZ();
+        Xyz Pointi3 = Point(i3).XYZ();
 
-        gp_XYZ v1 = (Pointi2 - Pointi1) ^ (ThePnt.XYZ() - Pointi1);
-        gp_XYZ v2 = (Pointi3 - Pointi2) ^ (ThePnt.XYZ() - Pointi2);
-        gp_XYZ v3 = (Pointi1 - Pointi3) ^ (ThePnt.XYZ() - Pointi3);
+        Xyz v1 = (Pointi2 - Pointi1) ^ (ThePnt.XYZ() - Pointi1);
+        Xyz v2 = (Pointi3 - Pointi2) ^ (ThePnt.XYZ() - Pointi2);
+        Xyz v3 = (Pointi1 - Pointi3) ^ (ThePnt.XYZ() - Pointi3);
         return v1 * v2 >= 0.0 && v2 * v3 >= 0.0 && v3 * v1 >= 0.0;
     }
 
@@ -574,7 +580,7 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>The point of index <paramref name="Index"/> and its parameters.</summary>
-    public gp_Pnt Point(int Index, out double U, out double V)
+    public Point3D Point(int Index, out double U, out double V)
     {
         U = C_MyU![Index];
         V = C_MyV![Index];
@@ -582,10 +588,10 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>The point of index <paramref name="Index"/>.</summary>
-    public gp_Pnt Point(int Index) => C_MyPnts![Index];
+    public Point3D Point(int Index) => C_MyPnts![Index];
 
     /// <summary>Does nothing (as in OCCT: "must not be called").</summary>
-    public void Point(in gp_Pnt thePnt, int lig, int col, double U, double V)
+    public void Point(in Point3D thePnt, int lig, int col, double U, double V)
     {
         _ = thePnt;
         _ = lig;
@@ -595,5 +601,5 @@ public sealed class IntPatch_Polyhedron : IIntCurveSurface_Polyhedron
     }
 
     /// <summary>The point of index <paramref name="Index"/>.</summary>
-    public void Point(int Index, out gp_Pnt P) => P = C_MyPnts![Index];
+    public void Point(int Index, out Point3D P) => P = C_MyPnts![Index];
 }

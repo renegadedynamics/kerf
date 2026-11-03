@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -354,7 +355,7 @@ internal sealed class AdvApp2Var_SysBase
         {
             double[] aDoubles => MemoryMarshal.AsBytes(aDoubles.AsSpan()),
             int[] anInts => MemoryMarshal.AsBytes(anInts.AsSpan()),
-            _ => throw new Standard_ProgramError("AdvApp2Var_SysBase: unexpected allocation type"),
+            _ => throw new ProgramErrorException("AdvApp2Var_SysBase: unexpected allocation type"),
         };
         return MemoryMarshal.Read<double>(aBytes.Slice(theByteOffset));
     }

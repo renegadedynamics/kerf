@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 using static Occt.Transfer_StatusResult;
 
@@ -27,7 +28,7 @@ namespace Occt;
 /// 12401).
 /// </para>
 /// </remarks>
-public class Transfer_ProcessForFinder : Standard_Transient
+public class Transfer_ProcessForFinder : Transient
 {
     /// <summary>
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is
@@ -40,7 +41,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         therootm = false;
         thelevel = 0;
         therootl = 0;
-        themessenger = Message.DefaultMessenger();
+        themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         thetrace = 0;
         theindex = 0;
     }
@@ -49,7 +50,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// Sets TransferProcess at initial state. Gives an Initial size (indicative) for the Map when known (default is
     /// 10000). Sets a specified printer.
     /// </summary>
-    public Transfer_ProcessForFinder(Message_Messenger? messenger, int nb = 10000)
+    public Transfer_ProcessForFinder(Messenger? messenger, int nb = 10000)
     {
         themap = NewMap(nb);
         theerrh = true;
@@ -375,11 +376,11 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Sets Messenger used for outputting messages (null: the default messenger).</summary>
-    public void SetMessenger(Message_Messenger? messenger)
+    public void SetMessenger(Messenger? messenger)
     {
         if (messenger is null)
         {
-            themessenger = Message.DefaultMessenger();
+            themessenger = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         }
         else
         {
@@ -388,7 +389,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Returns Messenger used for outputting messages. The returned object is guaranteed to be non-null.</summary>
-    public Message_Messenger Messenger()
+    public Messenger Messenger()
     {
         return themessenger;
     }
@@ -409,19 +410,19 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>New name for AddFail (Msg).</summary>
-    public void SendFail(Transfer_Finder? start, Message_Msg amsg)
+    public void SendFail(Transfer_Finder? start, Msg amsg)
     {
         AddFail(start, amsg);
     }
 
     /// <summary>New name for AddWarning (Msg).</summary>
-    public void SendWarning(Transfer_Finder? start, Message_Msg amsg)
+    public void SendWarning(Transfer_Finder? start, Msg amsg)
     {
         AddWarning(start, amsg);
     }
 
     /// <summary>Adds an information message. Trace is filled if trace level is at least 3.</summary>
-    public void SendMsg(Transfer_Finder? start, Message_Msg amsg)
+    public void SendMsg(Transfer_Finder? start, Msg amsg)
     {
         Transfer_Binder? binder = FindAndMask(start);
         if (binder is null)
@@ -433,9 +434,9 @@ public class Transfer_ProcessForFinder : Standard_Transient
         if (thetrace > 0)
         {
             StartTrace(binder, start, thelevel, 6);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             aSender.Append(amsg.Value());
-            if (amsg.IsEdited() && thetrace > 2)
+            if (amsg.IsEdited && thetrace > 2)
             {
                 aSender.Append(" [from: ").Append(amsg.Original()).Append("]");
             }
@@ -456,7 +457,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         if (thetrace > 0)
         {
             StartTrace(binder, start, thelevel, 1);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendFail();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendFail();
             aSender.Append("    --> Fail : ").Append(mess);
             if (orig.Length != 0 && thetrace > 2)
             {
@@ -473,9 +474,9 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Adds an Error Message to a starting entity from the definition of a Msg (Original+Value).</summary>
-    public void AddFail(Transfer_Finder? start, Message_Msg amsg)
+    public void AddFail(Transfer_Finder? start, Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddFail(start, amsg.Value(), amsg.Original());
         }
@@ -498,7 +499,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         if (thetrace > 1)
         {
             StartTrace(binder, start, thelevel, 2);
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendWarning();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendWarning();
             aSender.Append("    --> Warning : ").Append(mess);
             if (orig.Length != 0 && thetrace > 2)
             {
@@ -509,9 +510,9 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Adds a Warning Message to a starting entity from the definition of a Msg (Original+Value).</summary>
-    public void AddWarning(Transfer_Finder? start, Message_Msg amsg)
+    public void AddWarning(Transfer_Finder? start, Msg amsg)
     {
-        if (amsg.IsEdited())
+        if (amsg.IsEdited)
         {
             AddWarning(start, amsg.Value(), amsg.Original());
         }
@@ -547,7 +548,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// Binds a starting object with a Transient Result. Uses a SimpleBinderOfTransient to work. If there is already
     /// one but with no Result set, sets its Result.
     /// </summary>
-    public void BindTransient(Transfer_Finder? start, Standard_Transient? res)
+    public void BindTransient(Transfer_Finder? start, Transient? res)
     {
         if (res is null)
         {
@@ -579,7 +580,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// Returns the Result of the Transfer of an object <paramref name="start"/> as a Transient Result. Returns a Null
     /// Handle if there is no Transient Result. Supposes that Binding is done with a SimpleBinderOfTransient.
     /// </summary>
-    public Standard_Transient? FindTransient(Transfer_Finder? start)
+    public Transient? FindTransient(Transfer_Finder? start)
     {
         Transfer_SimpleBinderOfTransient? binder = Find(start) as Transfer_SimpleBinderOfTransient;
         if (binder is null)
@@ -617,7 +618,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
 
     /// <summary>Adds an item to a list of results bound to a starting object.</summary>
     /// <exception cref="Transfer_TransferFailure">Nothing is bound, or the binder is not a MultipleBinder.</exception>
-    public void AddMultiple(Transfer_Finder? start, Standard_Transient? res)
+    public void AddMultiple(Transfer_Finder? start, Transient? res)
     {
         Transfer_Binder? binder = FindAndMask(start);
         Transfer_MultipleBinder? multr = binder as Transfer_MultipleBinder;
@@ -642,7 +643,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// transient result IsKind(atype). Returns True and fills <paramref name="val"/> if found. Else, returns False
     /// (<paramref name="val"/> is not touched, not even nullified).
     /// </summary>
-    public bool FindTypedTransient(Transfer_Finder? start, Type? atype, ref Standard_Transient? val)
+    public bool FindTypedTransient(Transfer_Finder? start, Type? atype, ref Transient? val)
     {
         return GetTypedTransient(Find(start), atype, ref val);
     }
@@ -651,22 +652,22 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// Searches for a transient result recorded in a Binder, whatever this Binder is recorded or not in this process.
     /// Strictly equivalent to <see cref="Transfer_SimpleBinderOfTransient.GetTypedResult"/>.
     /// </summary>
-    public bool GetTypedTransient(Transfer_Binder? binder, Type? atype, ref Standard_Transient? val)
+    public bool GetTypedTransient(Transfer_Binder? binder, Type? atype, ref Transient? val)
     {
         return Transfer_SimpleBinderOfTransient.GetTypedResult(binder, atype, ref val);
     }
 
     /// <summary>Safe variant for arbitrary type of argument (OCCT's template).</summary>
-    public bool FindTypedTransient<T>(Transfer_Finder? start, Type? atype, ref T? val) where T : Standard_Transient
+    public bool FindTypedTransient<T>(Transfer_Finder? start, Type? atype, ref T? val) where T : Transient
     {
-        Standard_Transient? aVal = val;
+        Transient? aVal = val;
         return FindTypedTransient(start, atype, ref aVal) && (val = aVal as T) is not null;
     }
 
     /// <summary>Safe variant for arbitrary type of argument (OCCT's template).</summary>
-    public bool GetTypedTransient<T>(Transfer_Binder? start, Type? atype, ref T? val) where T : Standard_Transient
+    public bool GetTypedTransient<T>(Transfer_Binder? start, Type? atype, ref T? val) where T : Transient
     {
-        Standard_Transient? aVal = val;
+        Transient? aVal = val;
         return GetTypedTransient(start, atype, ref aVal) && (val = aVal as T) is not null;
     }
 
@@ -731,7 +732,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Returns a Root Entity given its number in the list (1-NbRoots).</summary>
-    /// <exception cref="Standard_OutOfRange">No root has the number.</exception>
+    /// <exception cref="OutOfRangeException">No root has the number.</exception>
     public Transfer_Finder? Root(int num)
     {
         int ind = 0;
@@ -743,7 +744,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Returns the Binder bound with a Root Entity given its number.</summary>
-    /// <exception cref="Standard_OutOfRange">No root has the number.</exception>
+    /// <exception cref="OutOfRangeException">No root has the number.</exception>
     public Transfer_Binder? RootItem(int num)
     {
         int ind = 0;
@@ -801,7 +802,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// Roots are managed : nothing is done if a Result is already Bound, an exception is raised in case of error.
     /// </summary>
     /// <exception cref="Transfer_TransferFailure">The object's transfer is in error status.</exception>
-    public Transfer_Binder? Transferring(Transfer_Finder? start, Message_ProgressRange theProgress = default)
+    public Transfer_Binder? Transferring(Transfer_Finder? start, ProgressRange theProgress = default)
     {
         Transfer_Binder? former = FindAndMask(start);
         // We consider that this new Transfer request therefore corresponds to a
@@ -815,7 +816,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
                 return former;
             }
 
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             Transfer_StatusExec statex = former.StatusExec();
             switch (statex)
             {
@@ -866,7 +867,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         // 2. former->StatusExec() == Transfer_StatusLoop (that's what triggered hasDeadLoop)
         if (hasDeadLoop)
         {
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             if (thetrace != 0)
             {
                 aSender.Append("                  *** Dead Loop : Finding head of Loop :").Append('\n');
@@ -882,7 +883,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         }
         else if (theerrh)
         {
-            using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
             // Transfer under protection for exceptions (for notification in fact)
             int oldlev = thelevel;
             try
@@ -976,14 +977,14 @@ public class Transfer_ProcessForFinder : Standard_Transient
     // Internal action of Transfer, called by Transferring, with or without ErrorHandle. It invokes the Actor to work
     // (set by SetActor), and tries its Nexts if no result is produced, until a Non Null Binder is produced. But keep in
     // mind that a Null Binder can always be returned if a Starting Entity has not been recognized at all.
-    private Transfer_Binder? TransferProduct(Transfer_Finder? start, Message_ProgressRange theProgress)
+    private Transfer_Binder? TransferProduct(Transfer_Finder? start, ProgressRange theProgress)
     {
         thelevel++; // decrement and if == 0, root transfer
         Transfer_Binder? binder = null;
         Transfer_ActorOfProcessForFinder? actor = theactor;
 
         // We scan the Next until we have a Result
-        using var aScope = new Message_ProgressScope(theProgress, null, 1, true);
+        using var aScope = new ProgressScope(theProgress, null, 1, true);
         while (actor is not null)
         {
             if (actor.Recognize(start))
@@ -1026,7 +1027,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     }
 
     /// <summary>Same as Transferring but does not return the Binder. Simply returns True in case of success (for user call).</summary>
-    public bool Transfer(Transfer_Finder? start, Message_ProgressRange theProgress = default)
+    public bool Transfer(Transfer_Finder? start, ProgressRange theProgress = default)
     {
         Transfer_Binder? binder = Transferring(start, theProgress);
         return binder is not null;
@@ -1055,7 +1056,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
     /// </summary>
     public void StartTrace(Transfer_Binder? binder, Transfer_Finder? start, int level, int mode)
     {
-        using Message_Messenger.StreamBuffer aSender = themessenger.SendInfo();
+        using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = themessenger.SendInfo();
         // ###  Fail (Roots:50)  --  Start start->DynamicType()
         // ###  Fail (Roots:50)  --  Start id:#label.. Type:start->DynamicType()
         if (thetrace > 3)
@@ -1138,7 +1139,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
         if (start is not null)
         {
             S.Write(" Type:");
-            S.Write(start.DynamicType().Name);
+            S.Write(start.DynamicTypeName());
         }
     }
 
@@ -1467,7 +1468,7 @@ public class Transfer_ProcessForFinder : Standard_Transient
 
     private bool theerrh;
     private int thetrace;
-    private Message_Messenger themessenger;
+    private Messenger themessenger;
     private int thelevel;
     private int therootl;
     private bool therootm;

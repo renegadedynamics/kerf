@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -39,9 +40,9 @@ public static class DemoCore
         // Some data/occ files carry meshes: meshed afresh, as a shape built in Bento would be
         aShape = BRepTools.Cleaned(aShape);
 
-        var aBox = new Bnd_Box();
+        var aBox = new Box();
         BRepBndLib.Add(aShape, ref aBox, true);
-        double aDiagonal = aBox.IsVoid() ? 0.0 : Math.Sqrt(aBox.SquareExtent());
+        double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         aResult.Deflection = aDiagonal > 1e-6 ? aDiagonal * thePercent / 100 : 1e-3;
 
         long t2 = Stopwatch.GetTimestamp();

@@ -6,60 +6,62 @@
 // DEFINE_ALERT_WITH_SHAPE (a TopoDS_AlertWithShape), so callers can check them by type (decision 584):
 // algo.HasError(typeof(BOPAlgo_AlertSelfInterferingShape)). Their message texts are in BOPAlgo_BOPAlgo_msg.
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Boolean operation was stopped by user.</summary>
-public sealed class BOPAlgo_AlertUserBreak : Message_Alert
+public sealed class BOPAlgo_AlertUserBreak : Alert
 {
 }
 
 /// <summary>Boolean operation of given type is not allowed on the given inputs.</summary>
-public sealed class BOPAlgo_AlertBOPNotAllowed : Message_Alert
+public sealed class BOPAlgo_AlertBOPNotAllowed : Alert
 {
 }
 
 /// <summary>The type of Boolean Operation is not set.</summary>
-public sealed class BOPAlgo_AlertBOPNotSet : Message_Alert
+public sealed class BOPAlgo_AlertBOPNotSet : Alert
 {
 }
 
 /// <summary>Building of the result shape has failed.</summary>
-public sealed class BOPAlgo_AlertBuilderFailed : Message_Alert
+public sealed class BOPAlgo_AlertBuilderFailed : Alert
 {
 }
 
 /// <summary>The intersection of the arguments has failed.</summary>
-public sealed class BOPAlgo_AlertIntersectionFailed : Message_Alert
+public sealed class BOPAlgo_AlertIntersectionFailed : Alert
 {
 }
 
 /// <summary>More than one argument is provided.</summary>
-public sealed class BOPAlgo_AlertMultipleArguments : Message_Alert
+public sealed class BOPAlgo_AlertMultipleArguments : Alert
 {
 }
 
 /// <summary>The Pave Filler (the intersection tool) has not been created.</summary>
-public sealed class BOPAlgo_AlertNoFiller : Message_Alert
+public sealed class BOPAlgo_AlertNoFiller : Alert
 {
 }
 
 /// <summary>Null input shapes.</summary>
-public sealed class BOPAlgo_AlertNullInputShapes : Message_Alert
+public sealed class BOPAlgo_AlertNullInputShapes : Alert
 {
 }
 
 /// <summary>Cannot connect face intersection curves.</summary>
-public sealed class BOPAlgo_AlertPostTreatFF : Message_Alert
+public sealed class BOPAlgo_AlertPostTreatFF : Alert
 {
 }
 
 /// <summary>The BuilderSolid algorithm has failed.</summary>
-public sealed class BOPAlgo_AlertSolidBuilderFailed : Message_Alert
+public sealed class BOPAlgo_AlertSolidBuilderFailed : Alert
 {
 }
 
 /// <summary>There are no enough arguments to perform the operation.</summary>
-public sealed class BOPAlgo_AlertTooFewArguments : Message_Alert
+public sealed class BOPAlgo_AlertTooFewArguments : Alert
 {
 }
 
@@ -134,7 +136,7 @@ public sealed class BOPAlgo_AlertUnsupportedType(in TopoDS_Shape theShape) : Top
 }
 
 /// <summary>No faces have been found for removal.</summary>
-public sealed class BOPAlgo_AlertNoFacesToRemove : Message_Alert
+public sealed class BOPAlgo_AlertNoFacesToRemove : Alert
 {
 }
 
@@ -144,7 +146,7 @@ public sealed class BOPAlgo_AlertUnableToRemoveTheFeature(in TopoDS_Shape theSha
 }
 
 /// <summary>The Feature Removal algorithm has failed.</summary>
-public sealed class BOPAlgo_AlertRemoveFeaturesFailed : Message_Alert
+public sealed class BOPAlgo_AlertRemoveFeaturesFailed : Alert
 {
 }
 
@@ -169,7 +171,7 @@ public sealed class BOPAlgo_AlertUnknownShape(in TopoDS_Shape theShape) : TopoDS
 }
 
 /// <summary>No periodicity has been requested for the shape.</summary>
-public sealed class BOPAlgo_AlertNoPeriodicityRequired : Message_Alert
+public sealed class BOPAlgo_AlertNoPeriodicityRequired : Alert
 {
 }
 
@@ -189,7 +191,7 @@ public sealed class BOPAlgo_AlertUnableToRepeat(in TopoDS_Shape theShape) : Topo
 }
 
 /// <summary>Multi-dimensional arguments.</summary>
-public sealed class BOPAlgo_AlertMultiDimensionalArguments : Message_Alert
+public sealed class BOPAlgo_AlertMultiDimensionalArguments : Alert
 {
 }
 

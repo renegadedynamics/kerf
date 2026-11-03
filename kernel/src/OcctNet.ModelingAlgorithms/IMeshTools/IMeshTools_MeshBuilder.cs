@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Message_Status;
+using Kerf.Engine.Foundation;
+using static Kerf.Engine.Foundation.Status;
 
 namespace Occt;
 
@@ -12,13 +13,13 @@ namespace Occt;
 /// fits the parameters; otherwise its triangulation is replaced.
 /// </summary>
 /// <remarks>
-/// Statuses: <see cref="Message_Done1"/>, finished without errors; <see cref="Message_Fail1"/>, an invalid context;
-/// <see cref="Message_Fail2"/>, an unexpected error; <see cref="Message_Fail3"/>, the edges couldn't be discretized;
-/// <see cref="Message_Fail4"/>, the model couldn't be healed; <see cref="Message_Fail5"/>, pre-processing failed;
-/// <see cref="Message_Fail6"/>, the faces couldn't be discretized; <see cref="Message_Fail7"/>, post-processing
-/// failed; <see cref="Message_Fail8"/>, user break; <see cref="Message_Warn1"/>, the shape has nothing to mesh.
+/// Statuses: <see cref="Done1"/>, finished without errors; <see cref="Fail1"/>, an invalid context;
+/// <see cref="Fail2"/>, an unexpected error; <see cref="Fail3"/>, the edges couldn't be discretized;
+/// <see cref="Fail4"/>, the model couldn't be healed; <see cref="Fail5"/>, pre-processing failed;
+/// <see cref="Fail6"/>, the faces couldn't be discretized; <see cref="Fail7"/>, post-processing
+/// failed; <see cref="Fail8"/>, user break; <see cref="Warn1"/>, the shape has nothing to mesh.
 /// </remarks>
-public class IMeshTools_MeshBuilder : Message_Algorithm
+public class IMeshTools_MeshBuilder : Algorithm
 {
     private IMeshTools_Context? myContext;
 
@@ -40,18 +41,18 @@ public class IMeshTools_MeshBuilder : Message_Algorithm
     public IMeshTools_Context? GetContext() => myContext;
 
     /// <summary>Meshes the shape of the context.</summary>
-    public virtual void Perform(Message_ProgressRange theRange)
+    public virtual void Perform(ProgressRange theRange)
     {
         ClearStatus();
 
         IMeshTools_Context? aContext = GetContext();
         if (aContext is null)
         {
-            SetStatus(Message_Fail1);
+            SetStatus(Fail1);
             return;
         }
 
-        using var aPS = new Message_ProgressScope(theRange, "Mesh Perform", 10);
+        using var aPS = new ProgressScope(theRange, "Mesh Perform", 10);
 
         if (aContext.BuildModel())
         {
@@ -65,37 +66,37 @@ public class IMeshTools_MeshBuilder : Message_Algorithm
                         {
                             if (aContext.PostProcessModel())
                             {
-                                SetStatus(Message_Done1);
+                                SetStatus(Done1);
                             }
                             else
                             {
-                                SetStatus(Message_Fail7);
+                                SetStatus(Fail7);
                             }
                         }
                         else
                         {
                             if (!aPS.More())
                             {
-                                SetStatus(Message_Fail8);
+                                SetStatus(Fail8);
                                 aContext.Clean();
                                 return;
                             }
-                            SetStatus(Message_Fail6);
+                            SetStatus(Fail6);
                         }
                     }
                     else
                     {
-                        SetStatus(Message_Fail5);
+                        SetStatus(Fail5);
                     }
                 }
                 else
                 {
-                    SetStatus(Message_Fail4);
+                    SetStatus(Fail4);
                 }
             }
             else
             {
-                SetStatus(Message_Fail3);
+                SetStatus(Fail3);
             }
         }
         else
@@ -104,12 +105,12 @@ public class IMeshTools_MeshBuilder : Message_Algorithm
 
             if (aModelBuilder is null)
             {
-                SetStatus(Message_Fail1);
+                SetStatus(Fail1);
             }
             else
             {
                 // Is null shape or another problem?
-                SetStatus(aModelBuilder.GetStatus().IsSet(Message_Fail1) ? Message_Warn1 : Message_Fail2);
+                SetStatus(aModelBuilder.GetStatus().IsSet(Fail1) ? Warn1 : Fail2);
             }
         }
 

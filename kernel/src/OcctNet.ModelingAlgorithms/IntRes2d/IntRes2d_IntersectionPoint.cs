@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>An intersection point between two 2D curves: the point, its parameters and transitions on both curves.</summary>
@@ -14,7 +20,7 @@ namespace Occt;
 /// </remarks>
 public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_IntersectionPoint>
 {
-    private gp_Pnt2d pt;
+    private Point2D pt;
     private double p1;
     private double p2;
     private IntRes2d_Transition trans1;
@@ -23,7 +29,7 @@ public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_Intersect
     /// <summary>Empty constructor.</summary>
     public IntRes2d_IntersectionPoint()
     {
-        pt = new gp_Pnt2d();
+        pt = new Point2D();
         p1 = RealLast();
         p2 = RealLast();
         trans1 = new IntRes2d_Transition();
@@ -35,7 +41,7 @@ public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_Intersect
     /// <paramref name="Trans1"/> (resp. <paramref name="Uc2"/> and <paramref name="Trans2"/>) refer to the first
     /// curve (resp. the second); otherwise to the second (resp. the first).
     /// </summary>
-    public IntRes2d_IntersectionPoint(in gp_Pnt2d P, double Uc1, double Uc2, in IntRes2d_Transition Trans1,
+    public IntRes2d_IntersectionPoint(in Point2D P, double Uc1, double Uc2, in IntRes2d_Transition Trans1,
                                       in IntRes2d_Transition Trans2, bool ReversedFlag)
     {
         pt = P;
@@ -55,7 +61,7 @@ public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_Intersect
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the values of the point; the parameters mean what they mean for the constructor.</summary>
-    internal void SetValues(in gp_Pnt2d P, double Uc1, double Uc2, in IntRes2d_Transition Trans1,
+    internal void SetValues(in Point2D P, double Uc1, double Uc2, in IntRes2d_Transition Trans1,
                             in IntRes2d_Transition Trans2, bool ReversedFlag)
     {
         pt = P;
@@ -78,7 +84,7 @@ public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_Intersect
     // Queries
 
     /// <summary>The intersection point in the 2D space.</summary>
-    public readonly gp_Pnt2d Value() => pt;
+    public readonly Point2D Value() => pt;
 
     /// <summary>The parameter on the first curve.</summary>
     public readonly double ParamOnFirst() => p1;
@@ -107,5 +113,5 @@ public partial struct IntRes2d_IntersectionPoint : IEquatable<IntRes2d_Intersect
         => !theLeft.Equals(theRight);
 
     public override readonly string ToString()
-        => $"{gp.Format("IntRes2d_IntersectionPoint", pt.X(), pt.Y(), p1, p2)} {trans1} {trans2}";
+        => $"{Constants.Format("IntRes2d_IntersectionPoint", pt.X(), pt.Y(), p1, p2)} {trans1} {trans2}";
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -32,20 +33,20 @@ internal static class BOPTestClassifyCommands
 
         if (n >= 5)
         {
-            theDI.SetDrawable(a[1], DrawGeometry.Of(new gp_Pnt(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))));
+            theDI.SetDrawable(a[1], DrawGeometry.Of(new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))));
         }
         else
         {
-            theDI.SetDrawable(a[1], DrawGeometry.Of(new gp_Pnt2d(theDI.Atof(a[2]), theDI.Atof(a[3]))));
+            theDI.SetDrawable(a[1], DrawGeometry.Of(new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]))));
         }
 
         return 0;
     }
 
     /// <summary>DrawTrSurf::GetPoint: the 3D point of that name, else the point is left as it is.</summary>
-    internal static bool GetPoint(DrawInterpreter theDI, string theName, ref gp_Pnt P)
+    internal static bool GetPoint(DrawInterpreter theDI, string theName, ref Point3D P)
     {
-        if (theDI.GetDrawable(theName) is DrawGeometry { Geometry: gp_Pnt aPoint })
+        if (theDI.GetDrawable(theName) is DrawGeometry { Geometry: Point3D aPoint })
         {
             P = aPoint;
             return true;
@@ -55,9 +56,9 @@ internal static class BOPTestClassifyCommands
     }
 
     /// <summary>DrawTrSurf::GetPoint2d: the 2D point of that name, else the point is left as it is.</summary>
-    internal static bool GetPoint2d(DrawInterpreter theDI, string theName, ref gp_Pnt2d P)
+    internal static bool GetPoint2d(DrawInterpreter theDI, string theName, ref Point2D P)
     {
-        if (theDI.GetDrawable(theName) is DrawGeometry { Geometry: gp_Pnt2d aPoint })
+        if (theDI.GetDrawable(theName) is DrawGeometry { Geometry: Point2D aPoint })
         {
             P = aPoint;
             return true;
@@ -87,7 +88,7 @@ internal static class BOPTestClassifyCommands
             return 1;
         }
 
-        var aP = new gp_Pnt2d(8.0, 9.0);
+        var aP = new Point2D(8.0, 9.0);
         GetPoint2d(theDI, theArgVec[2], ref aP);
         TopoDS_Face aF = TopoDS.Face(aS);
         double aTol = theArgNb >= 4 ? theDI.Atof(theArgVec[3]) : BRep_Tool.Tolerance(aF);
@@ -120,7 +121,7 @@ internal static class BOPTestClassifyCommands
             return 1;
         }
 
-        var aP = new gp_Pnt(8.0, 9.0, 10.0);
+        var aP = new Point3D(8.0, 9.0, 10.0);
         GetPoint(theDI, theArgVec[2], ref aP);
         double aTol = theArgNb == 4 ? theDI.Atof(theArgVec[3]) : 1.0e-7;
 

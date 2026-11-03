@@ -2,14 +2,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_GlobOptMinTest
 {
     // Simple quadratic function: f(x,y) = (x-1)^2 + (y-2)^2, minimum at (1, 2)
-    private sealed class QuadraticFunction : math_MultipleVarFunction
+    private sealed class QuadraticFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -21,9 +26,12 @@ public class math_GlobOptMinTest
     }
 
     // Multi-modal function with multiple local minima: f(x,y) = sin(x) + sin(y) + 0.1*(x^2 + y^2)
-    private sealed class MultiModalFunction : math_MultipleVarFunction
+    private sealed class MultiModalFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -35,9 +43,12 @@ public class math_GlobOptMinTest
     }
 
     // 1D function: f(x) = sin(x) + 0.5*sin(3*x) with multiple local minima
-    private sealed class MultiModal1DFunction : math_MultipleVarFunction
+    private sealed class MultiModal1DFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 1; }
+        public override int VariableCount {
+            get
+            { return 1; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -48,9 +59,12 @@ public class math_GlobOptMinTest
     }
 
     // Rosenbrock function in 2D: f(x,y) = (1-x)^2 + 100*(y-x^2)^2
-    private sealed class RosenbrockFunction : math_MultipleVarFunction
+    private sealed class RosenbrockFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -64,9 +78,12 @@ public class math_GlobOptMinTest
     }
 
     // Simple linear function: f(x,y) = x + y (minimum at bounds)
-    private sealed class LinearFunction : math_MultipleVarFunction
+    private sealed class LinearFunction : MultipleVarFunction
     {
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -79,7 +96,7 @@ public class math_GlobOptMinTest
     // f(x,y) = a*(y - b*x^2 + c*x - r)^2 + s*(1-t)*cos(x) + s
     // Standard parameters: a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/(8pi)
     // Global minimum value: ~0.397887 at 3 locations: (-pi,12.275), (pi,2.275), (9.42478,2.475)
-    private sealed class BraninFunction : math_MultipleVarFunctionWithHessian
+    private sealed class BraninFunction : MultipleVarFunctionWithHessian
     {
         public BraninFunction()
         {
@@ -91,7 +108,10 @@ public class math_GlobOptMinTest
             t = 1.0 / (8.0 * M_PI);
         }
 
-        public override int NbVariables() { return 2; }
+        public override int VariableCount {
+            get
+            { return 2; }
+        }
 
         public override bool Value(math_Vector theX, out double theF)
         {
@@ -120,7 +140,7 @@ public class math_GlobOptMinTest
             return true;
         }
 
-        public override bool Values(math_Vector theX, out double theF, math_Vector theG, math_Matrix theH)
+        public override bool Values(math_Vector theX, out double theF, math_Vector theG, Matrix theH)
         {
             Value(theX, out theF);
             Gradient(theX, theG);
@@ -153,11 +173,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(true); // Find single solution
 
-        Assert.True(aSolver.isDone(), "Should successfully optimize quadratic function");
-        Assert.True(aSolver.NbExtrema() > 0, "Should find at least one extremum");
+        Assert.True(aSolver.IsDone(), "Should successfully optimize quadratic function");
+        Assert.True(aSolver.ExtremaCount > 0, "Should find at least one extremum");
 
         math_Vector aSol = new(1, 2);
         aSolver.Points(1, aSol);
@@ -181,11 +201,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 5.0;
         aUpperBorder[2] = 5.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(false); // Find all solutions
 
-        Assert.True(aSolver.isDone(), "Should successfully optimize multi-modal function");
-        Assert.True(aSolver.NbExtrema() >= 1, "Should find at least one extremum for multi-modal function");
+        Assert.True(aSolver.IsDone(), "Should successfully optimize multi-modal function");
+        Assert.True(aSolver.ExtremaCount >= 1, "Should find at least one extremum for multi-modal function");
 
         // Check that at least one solution exists
         math_Vector aSol = new(1, 2);
@@ -206,11 +226,11 @@ public class math_GlobOptMinTest
         math_Vector aUpperBorder = new(1, 1);
         aUpperBorder[1] = 2.0 * M_PI;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(false); // Find all solutions
 
-        Assert.True(aSolver.isDone(), "Should successfully optimize 1D function");
-        Assert.True(aSolver.NbExtrema() > 0, "Should find at least one extremum");
+        Assert.True(aSolver.IsDone(), "Should successfully optimize 1D function");
+        Assert.True(aSolver.ExtremaCount > 0, "Should find at least one extremum");
 
         math_Vector aSol = new(1, 1);
         aSolver.Points(1, aSol);
@@ -231,11 +251,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(true); // Find single solution
 
-        Assert.True(aSolver.isDone(), "Should find single solution");
-        Assert.Equal(1, aSolver.NbExtrema());
+        Assert.True(aSolver.IsDone(), "Should find single solution");
+        Assert.Equal(1, aSolver.ExtremaCount);
     }
 
     [Fact]
@@ -252,11 +272,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 3.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(false); // Find all solutions
 
-        Assert.True(aSolver.isDone(), "Should find all solutions");
-        Assert.True(aSolver.NbExtrema() >= 1, "Should find at least one extremum");
+        Assert.True(aSolver.IsDone(), "Should find all solutions");
+        Assert.True(aSolver.ExtremaCount >= 1, "Should find at least one extremum");
     }
 
     [Fact]
@@ -273,7 +293,7 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 9, 1.0e-3, 1.0e-8);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 9, 1.0e-3, 1.0e-8);
 
         // Test setting and getting tolerances
         double aDiscTol, aSameTol;
@@ -288,7 +308,7 @@ public class math_GlobOptMinTest
         Assert.Equal(1.0e-6, aSameTol, 1.0e-12);
 
         aSolver.Perform(true);
-        Assert.True(aSolver.isDone(), "Should work with custom tolerances");
+        Assert.True(aSolver.IsDone(), "Should work with custom tolerances");
     }
 
     [Fact]
@@ -305,7 +325,7 @@ public class math_GlobOptMinTest
         aGlobalUpper[1] = 5.0;
         aGlobalUpper[2] = 5.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aGlobalLower, aGlobalUpper);
+        GlobOptMin aSolver = new(aFunc, aGlobalLower, aGlobalUpper);
 
         // Set local parameters (smaller search box)
         math_Vector aLocalLower = new(1, 2);
@@ -319,7 +339,7 @@ public class math_GlobOptMinTest
         aSolver.SetLocalParams(aLocalLower, aLocalUpper);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should work with local parameters");
+        Assert.True(aSolver.IsDone(), "Should work with local parameters");
 
         math_Vector aSol = new(1, 2);
         aSolver.Points(1, aSol);
@@ -341,7 +361,7 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
 
         // Test default continuity
         int aDefaultCont = aSolver.GetContinuity();
@@ -355,7 +375,7 @@ public class math_GlobOptMinTest
         Assert.Equal(2, aSolver.GetContinuity());
 
         aSolver.Perform(true);
-        Assert.True(aSolver.isDone(), "Should work with different continuity settings");
+        Assert.True(aSolver.IsDone(), "Should work with different continuity settings");
     }
 
     [Fact]
@@ -372,18 +392,18 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
 
         // Test default minimal value
         double aDefaultMin = aSolver.GetFunctionalMinimalValue();
-        Assert.Equal(-Precision.Infinite(), aDefaultMin);
+        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aDefaultMin);
 
         // Set functional minimal value
         aSolver.SetFunctionalMinimalValue(-1.0);
         Assert.Equal(-1.0, aSolver.GetFunctionalMinimalValue(), 1.0e-12);
 
         aSolver.Perform(true);
-        Assert.True(aSolver.isDone(), "Should work with functional minimal value");
+        Assert.True(aSolver.IsDone(), "Should work with functional minimal value");
     }
 
     [Fact]
@@ -400,7 +420,7 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 3.0;
         aUpperBorder[2] = 4.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
 
         // Test default state
         bool aDefaultState = aSolver.GetLipConstState();
@@ -415,7 +435,7 @@ public class math_GlobOptMinTest
         Assert.False(aSolver.GetLipConstState(), "Lipschitz constant should be unlocked");
 
         aSolver.Perform(true);
-        Assert.True(aSolver.isDone(), "Should work with Lipschitz constant state management");
+        Assert.True(aSolver.IsDone(), "Should work with Lipschitz constant state management");
     }
 
     [Fact]
@@ -432,11 +452,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 2.0;
         aUpperBorder[2] = 3.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 50, 1.0e-2, 1.0e-6);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 50, 1.0e-2, 1.0e-6);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should handle Rosenbrock function");
-        Assert.True(aSolver.NbExtrema() > 0, "Should find at least one extremum");
+        Assert.True(aSolver.IsDone(), "Should handle Rosenbrock function");
+        Assert.True(aSolver.ExtremaCount > 0, "Should find at least one extremum");
 
         math_Vector aSol = new(1, 2);
         aSolver.Points(1, aSol);
@@ -459,11 +479,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 2.0;
         aUpperBorder[2] = 2.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should handle linear function");
-        Assert.True(aSolver.NbExtrema() > 0, "Should find at least one extremum");
+        Assert.True(aSolver.IsDone(), "Should handle linear function");
+        Assert.True(aSolver.ExtremaCount > 0, "Should find at least one extremum");
 
         math_Vector aSol = new(1, 2);
         aSolver.Points(1, aSol);
@@ -488,10 +508,10 @@ public class math_GlobOptMinTest
         aUpperBorder1[2] = 4.0;
 
         // Create solver with first function
-        math_GlobOptMin aSolver = new(aFunc1, aLowerBorder1, aUpperBorder1);
+        GlobOptMin aSolver = new(aFunc1, aLowerBorder1, aUpperBorder1);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should work with first function");
+        Assert.True(aSolver.IsDone(), "Should work with first function");
 
         // Change to second function and different bounds
         math_Vector aLowerBorder2 = new(1, 2);
@@ -505,7 +525,7 @@ public class math_GlobOptMinTest
         aSolver.SetGlobalParams(aFunc2, aLowerBorder2, aUpperBorder2);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should work after changing global params");
+        Assert.True(aSolver.IsDone(), "Should work after changing global params");
     }
 
     [Fact]
@@ -522,11 +542,11 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 2.0;
         aUpperBorder[2] = 2.0;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder);
         aSolver.Perform(false); // Find all solutions
 
-        Assert.True(aSolver.isDone(), "Should find multiple solutions");
-        int aNbSol = aSolver.NbExtrema();
+        Assert.True(aSolver.IsDone(), "Should find multiple solutions");
+        int aNbSol = aSolver.ExtremaCount;
         Assert.True(aNbSol > 0, "Should have at least one solution");
 
         // Test accessing all solutions
@@ -553,10 +573,10 @@ public class math_GlobOptMinTest
         aUpperBorder[1] = 1.01;
         aUpperBorder[2] = 2.01;
 
-        math_GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 9, 1.0e-3, 1.0e-8);
+        GlobOptMin aSolver = new(aFunc, aLowerBorder, aUpperBorder, 9, 1.0e-3, 1.0e-8);
         aSolver.Perform(true);
 
-        Assert.True(aSolver.isDone(), "Should handle small search space");
+        Assert.True(aSolver.IsDone(), "Should handle small search space");
 
         math_Vector aSol = new(1, 2);
         aSolver.Points(1, aSol);
@@ -630,11 +650,11 @@ public class math_GlobOptMinTest
             }
         }
 
-        math_GlobOptMin aFinder = new(aFunc, aLower, aUpper, aLipConst);
+        GlobOptMin aFinder = new(aFunc, aLower, aUpper, aLipConst);
         aFinder.Perform();
 
-        Assert.True(aFinder.isDone(), "Optimizer must converge on Branin function");
+        Assert.True(aFinder.IsDone(), "Optimizer must converge on Branin function");
         Assert.Equal(0.39788735772, aFinder.GetF(), 0.1);
-        Assert.Equal(3, aFinder.NbExtrema());
+        Assert.Equal(3, aFinder.ExtremaCount);
     }
 }

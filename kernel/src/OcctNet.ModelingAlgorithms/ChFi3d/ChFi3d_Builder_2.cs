@@ -4,13 +4,17 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.ChFi3d_Builder_0;
 using static Occt.ChFi3d_Builder_2;
 using static Occt.ChFiDS_ErrorStatus;
 using static Occt.ChFiDS_State;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopAbs_State;
@@ -70,7 +74,7 @@ public partial class ChFi3d_Builder
     // purpose  : Encapsulates call to PerformSurf/SimulSurf
     //========================================================================
 
-    internal void CallPerformSurf(ChFiDS_Stripe? Stripe, bool Simul, NCollection_Sequence<ChFiDS_SurfData> SeqSD, ChFiDS_SurfData? SD, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, BRepAdaptor_Surface? HS1, BRepAdaptor_Surface? HS3, in gp_Pnt2d pp1, in gp_Pnt2d pp3, Adaptor3d_TopolTool? It1, BRepAdaptor_Surface? HS2, BRepAdaptor_Surface? HS4, in gp_Pnt2d pp2, in gp_Pnt2d pp4, Adaptor3d_TopolTool? It2, double MaxStep, double Fleche, double _unused1, ref double First, ref double Last, bool Inside, bool _unused2, bool forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl, ref BRepAdaptor_Surface? Surf1, ref BRepAdaptor_Surface? Surf2)
+    internal void CallPerformSurf(ChFiDS_Stripe? Stripe, bool Simul, NCollection_Sequence<ChFiDS_SurfData> SeqSD, ChFiDS_SurfData? SD, ChFiDS_ElSpine? HGuide, ChFiDS_Spine? Spine, BRepAdaptor_Surface? HS1, BRepAdaptor_Surface? HS3, in Point2D pp1, in Point2D pp3, Adaptor3d_TopolTool? It1, BRepAdaptor_Surface? HS2, BRepAdaptor_Surface? HS4, in Point2D pp2, in Point2D pp4, Adaptor3d_TopolTool? It2, double MaxStep, double Fleche, double _unused1, ref double First, ref double Last, bool Inside, bool _unused2, bool forward, bool RecOnS1, bool RecOnS2, math_Vector Soldep, ref int intf, ref int intl, ref BRepAdaptor_Surface? Surf1, ref BRepAdaptor_Surface? Surf2)
     {
         BRepAdaptor_Surface? HSon1 = null, HSon2 = null;
         HSon1 = HS1;
@@ -224,7 +228,7 @@ public partial class ChFi3d_Builder
     //             and identification of the face by connection to that edge.
     //=======================================================================
 
-    private void StartSol(ChFiDS_Stripe? Stripe, ChFiDS_ElSpine? HGuide, ref BRepAdaptor_Surface? HS1, ref BRepAdaptor_Surface? HS2, BRepTopAdaptor_TopolTool? I1, BRepTopAdaptor_TopolTool? I2, ref gp_Pnt2d P1, ref gp_Pnt2d P2, ref double First)
+    private void StartSol(ChFiDS_Stripe? Stripe, ChFiDS_ElSpine? HGuide, ref BRepAdaptor_Surface? HS1, ref BRepAdaptor_Surface? HS2, BRepTopAdaptor_TopolTool? I1, BRepTopAdaptor_TopolTool? I2, ref Point2D P1, ref Point2D P2, ref double First)
     {
         ref ChFiDS_Spine? Spine = ref Stripe.ChangeSpine();
         ChFiDS_ElSpine els = HGuide; // a reference in OCCT
@@ -244,8 +248,8 @@ public partial class ChFi3d_Builder
         int nbessai = 0;
         int iedge = 0;
         int RC = Stripe.Choix();
-        gp_Vec2d derive = new();
-        gp_Pnt2d P2d = new();
+        Vector2D derive = new();
+        Point2D P2d = new();
         TopoDS_Edge cured = new();
         TopoDS_Face f1 = new(), f2 = new();
         TopAbs_Orientation Or1 = default, Or2 = default;
@@ -253,7 +257,7 @@ public partial class ChFi3d_Builder
         math_Vector SolDep = new(1, 4);
         Geom2d_Curve? PC = null;
         Extrema_ExtPC PExt = new();
-        PExt.Initialize(els, Spine.FirstParameter(1), Spine.LastParameter(nbed), Precision.Confusion());
+        PExt.Initialize(els, Spine.FirstParameter(1), Spine.LastParameter(nbed), global::Kerf.Engine.Foundation.Precision.Confusion());
         TopAbs_State Pos1 = default, Pos2 = default;
         for (nbessai = 0; nbessai <= nbessaimax; nbessai++)
         {
@@ -284,7 +288,7 @@ public partial class ChFi3d_Builder
             I1.Initialize(HS1);
             PC.D1(woned, out P1, out derive);
             // There are points on the border, and internal points are found
-            if (derive.Magnitude() > Precision.PConfusion())
+            if (derive.Magnitude() > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 derive.Normalize();
                 derive.Rotate(M_PI / 2);
@@ -320,7 +324,7 @@ public partial class ChFi3d_Builder
             SolDep[3] = P2.X();
             SolDep[4] = P2.Y();
             BRepAdaptor_Curve Ced = Spine.CurrentElementarySpine(iedge);
-            gp_Pnt pnt = Ced.Value(woned);
+            Point3D pnt = Ced.Value(woned);
 
             if (Projection(PExt, pnt, els, ref w, tolapp3d)
                     && PerformFirstSection(Spine, HGuide, Choix, HS1, HS2, I1, I2, w, SolDep, ref Pos1, ref Pos2))
@@ -365,17 +369,17 @@ public partial class ChFi3d_Builder
             SolDep[3] = P2.X();
             SolDep[4] = P2.Y();
             BRepAdaptor_Curve Ced = Spine.CurrentElementarySpine(iedge);
-            gp_Pnt pnt = Ced.Value(woned);
+            Point3D pnt = Ced.Value(woned);
             //    Extrema_LocateExtPC ext(pnt,els,w,1.e-8);
             //    if(ext.IsDone()){
             //      w = ext.Point().Parameter();
             if (Projection(PExt, pnt, els, ref w, tolapp3d))
             {
                 PerformFirstSection(Spine, HGuide, Choix, HS1, HS2, I1, I2, w, SolDep, ref Pos1, ref Pos2);
-                gp_Pnt P = new();
-                gp_Vec V = new();
+                Point3D P = new();
+                Vector3D V = new();
                 HGuide.D1(w, out P, out V);
-                Geom_Plane? pl = new Geom_Plane(P, new gp_Dir(V));
+                Geom_Plane? pl = new Geom_Plane(P, new Direction3D(V));
                 GeomAdaptor_Surface? plane = new GeomAdaptor_Surface(pl);
 
                 bool bonvoisin = true, found = false;
@@ -418,7 +422,7 @@ public partial class ChFi3d_Builder
             }
         }
         Spine.SetErrorStatus(ChFiDS_StartsolFailure);
-        throw new Standard_Failure("StartSol echec");
+        throw new FailureException("StartSol echec");
     }
 
     //=================================================================================================
@@ -441,14 +445,14 @@ public partial class ChFi3d_Builder
 
     private bool StartSol(ChFiDS_Spine Spine,
                           BRepAdaptor_Surface HS,            // New face
-                          ref gp_Pnt2d pons,                 // " Localization
+                          ref Point2D pons,                 // " Localization
                           ref BRepAdaptor_Curve2d HC,        // Representation of the obstacle
                           ref double W, ChFiDS_SurfData SD, bool isfirst, int ons,
                           BRepAdaptor_Surface HSref,         // The other representation
                           BRepAdaptor_Curve2d HCref,         // of the obstacle
                           ref bool RecP, ref bool RecS, ref bool RecRst, ref bool c1obstacle,
                           ref BRepAdaptor_Surface HSBis,     // Face of support
-                          ref gp_Pnt2d PBis,                 // and its point
+                          ref Point2D PBis,                 // and its point
                           bool decroch, in TopoDS_Vertex Vref)
     {
         RecP = false;
@@ -556,9 +560,9 @@ public partial class ChFi3d_Builder
                     ChFiDS_FaceInterference fi = SD.Interference(ons);
                     Geom2d_Curve? pcf = fi.PCurveOnFace();
                     double ww = fi.Parameter(isfirst);
-                    gp_Pnt2d pww = pcf is null ? SD.Get2dPoints(isfirst, ons) : pcf.Value(ww);
-                    gp_Pnt2d p1 = HC.Value(w1);
-                    gp_Pnt2d p2 = HC.Value(w2);
+                    Point2D pww = pcf is null ? SD.Get2dPoints(isfirst, ons) : pcf.Value(ww);
+                    Point2D p1 = HC.Value(w1);
+                    Point2D p2 = HC.Value(w2);
 
                     if (p1.Distance(pww) > p2.Distance(pww))
                     {
@@ -602,15 +606,15 @@ public partial class ChFi3d_Builder
             // connected to FRef along the newedge.
             if (newedge.IsNull())
             {
-                throw new Standard_Failure("StartSol : chain is not possible, new obstacle not found");
+                throw new FailureException("StartSol : chain is not possible, new obstacle not found");
             }
             if (IsG1(myEFMap, newedge, Fref, ref Fv))
             {
-                throw new Standard_Failure("StartSol : chain is not possible, config non processed");
+                throw new FailureException("StartSol : chain is not possible, config non processed");
             }
             else if (Fv.IsNull())
             {
-                throw new Standard_Failure("StartSol : chain is not possible, new obstacle not found");
+                throw new FailureException("StartSol : chain is not possible, new obstacle not found");
             }
             else
             {
@@ -668,7 +672,7 @@ public partial class ChFi3d_Builder
             // (A static local function: C# lambdas cannot capture the ref parameters W and pons.)
             static bool prepareDefaultReturn(in TopoDS_Edge anArcEdge, in TopoDS_Face F, BRepAdaptor_Surface HS,
                                              in ChFiDS_CommonPoint aCommonPoint, ref Geom2d_Curve aPCurve,
-                                             ref double W, ref gp_Pnt2d pons)
+                                             ref double W, ref Point2D pons)
             {
                 aPCurve = getCurveOnSurface(anArcEdge, F);
                 if (aPCurve is null)
@@ -885,8 +889,8 @@ public partial class ChFi3d_Builder
             else
             { // Processing using the spine
                 bool FindFace = false;
-                gp_Pnt Point = new();
-                gp_Vec VecSpine = new();
+                Point3D Point = new();
+                Vector3D VecSpine = new();
                 Spine.D1(Pc.Parameter(), out Point, out VecSpine);
 
                 // It is checked if one leaves from the current face.
@@ -1054,7 +1058,7 @@ public partial class ChFi3d_Builder
         bool decroch1 = false, decroch2 = false;
         bool RecP1 = false, RecS1 = false, RecRst1 = false, obstacleon1 = false;
         bool RecP2 = false, RecS2 = false, RecRst2 = false, obstacleon2 = false;
-        gp_Pnt2d pp1 = new(), pp2 = new(), pp3 = new(), pp4 = new();
+        Point2D pp1 = new(), pp2 = new(), pp3 = new(), pp4 = new();
         double w1 = 0.0, w2 = 0.0;
         math_Vector Soldep = new(1, 4);
         math_Vector SoldepCS = new(1, 3);
@@ -1273,7 +1277,7 @@ public partial class ChFi3d_Builder
                 }
                 else
                 {
-                    throw new Standard_Failure("PerformSetOfSurfOnElSpine : Chaining is impossible.");
+                    throw new FailureException("PerformSetOfSurfOnElSpine : Chaining is impossible.");
                 }
             }
 
@@ -1411,7 +1415,7 @@ public partial class ChFi3d_Builder
                 else
                 { // Otherwise invalidation of the stripe.
                     Spine.SetErrorStatus(ChFiDS_WalkingFailure);
-                    throw new Standard_Failure("CallPerformSurf : Path failed!");
+                    throw new FailureException("CallPerformSurf : Path failed!");
                 }
             }
 
@@ -1571,8 +1575,8 @@ public partial class ChFi3d_Builder
         BRepTopAdaptor_TopolTool? It2 = new BRepTopAdaptor_TopolTool();
 
         double WFirst = 0.0, WLast = 0.0;
-        gp_Vec TFirst = new(), TLast = new(), TEndPeriodic = new();
-        gp_Pnt PFirst = new(), PLast = new(), PEndPeriodic = new();
+        Vector3D TFirst = new(), TLast = new(), TEndPeriodic = new();
+        Point3D PFirst = new(), PLast = new(), PEndPeriodic = new();
         bool intf = false, intl = false;
 
         // OCCT copies two default ElSpines into the handles: new default ones here
@@ -1698,7 +1702,7 @@ public partial class ChFi3d_Builder
                         {
                             WStartPeriodic = WFirst;
                             WEndPeriodic = WStartPeriodic + Spine.Period();
-                            WLast = ElCLib.InPeriod(WLast, WStartPeriodic, WEndPeriodic);
+                            WLast = global::Kerf.Engine.Geometry.ElCLib.InPeriod(WLast, WStartPeriodic, WEndPeriodic);
                             if (WLast <= WFirst + tolesp)
                             {
                                 WLast += Spine.Period();
@@ -1895,10 +1899,10 @@ public partial class ChFi3d_Builder
                 ref ChFiDS_CommonPoint cpd2 = ref cursd.ChangeVertexFirstOnS2();
                 ref ChFiDS_CommonPoint cpf1 = ref cursd.ChangeVertexLastOnS1();
                 ref ChFiDS_CommonPoint cpf2 = ref cursd.ChangeVertexLastOnS2();
-                gp_Pnt pd1 = cpd1.Point();
-                gp_Pnt pd2 = cpd2.Point();
-                gp_Pnt pf1 = cpf1.Point();
-                gp_Pnt pf2 = cpf2.Point();
+                Point3D pd1 = cpd1.Point();
+                Point3D pd2 = cpd2.Point();
+                Point3D pf1 = cpf1.Point();
+                Point3D pf2 = cpf2.Point();
                 double ddeb = pd1.Distance(pd2);
                 double dfin = pf1.Distance(pf2);
                 double don1 = pd1.Distance(pf1);
@@ -1908,7 +1912,7 @@ public partial class ChFi3d_Builder
                 if ((tw1 && !possibleon1) || (tw2 && !possibleon2))
                 {
                     Spine.SetErrorStatus(ChFiDS_TwistedSurface);
-                    throw new Standard_Failure("adjustment by reprocessing the non-written points");
+                    throw new FailureException("adjustment by reprocessing the non-written points");
                 }
 
                 // It is checked if there are presentable neighbors
@@ -1953,7 +1957,7 @@ public partial class ChFi3d_Builder
                     if (!yaprevon1 || !yanexton1)
                     {
                         Spine.SetErrorStatus(ChFiDS_TwistedSurface);
-                        throw new Standard_Failure("adjustment by reprocessing the non-written points: no neighbor");
+                        throw new FailureException("adjustment by reprocessing the non-written points: no neighbor");
                     }
                     ref ChFiDS_FaceInterference previntf1_ = ref prevsd.ChangeInterferenceOnS1();
                     ref ChFiDS_FaceInterference nextintf1_ = ref nextsd.ChangeInterferenceOnS1();
@@ -1966,7 +1970,7 @@ public partial class ChFi3d_Builder
                         Geom2d_Curve? pcprev1 = previntf1_.PCurveOnFace();
                         Geom2d_Curve? pcnext1 = nextintf1_.PCurveOnFace();
                         double nprevpar1 = 0.0, nnextpar1 = 0.0;
-                        gp_Pnt2d p2d = new();
+                        Point2D p2d = new();
                         //  Modified by Sergey KHROMOV - Wed Feb  5 12:03:17 2003 Begin
                         // 	  if(ChFi3d_IntTraces(prevsd,prevpar1_,ref nprevpar1,1,1,
                         // 			      nextsd,nextpar1_,ref nnextpar1,1,-1,p2d)){
@@ -1981,8 +1985,8 @@ public partial class ChFi3d_Builder
                         }
                         else
                         {
-                            gp_Pnt2d pdeb1 = new(), pfin1 = new();
-                            gp_Vec2d vdeb1 = new(), vfin1 = new();
+                            Point2D pdeb1 = new(), pfin1 = new();
+                            Vector2D vdeb1 = new(), vfin1 = new();
                             pcprev1.D1(prevpar1_, out pdeb1, out vdeb1);
                             pcnext1.D1(nextpar1_, out pfin1, out vfin1);
                             Bon1 = ChFi3d_mkbound(S1, out PC1, -1, pdeb1, vdeb1, 1, pfin1, vfin1, tolapp3d, 2.0e-4);
@@ -1993,11 +1997,11 @@ public partial class ChFi3d_Builder
                         // here the base is on 3D tangents of neighbors.
                         Geom_Curve? c3dprev1 = DStr.Curve(previntf1_.LineIndex()).Curve();
                         Geom_Curve? c3dnext1 = DStr.Curve(nextintf1_.LineIndex()).Curve();
-                        gp_Pnt Pdeb1 = new(), Pfin1 = new();
-                        gp_Vec Vdeb1 = new(), Vfin1 = new();
+                        Point3D Pdeb1 = new(), Pfin1 = new();
+                        Vector3D Vdeb1 = new(), Vfin1 = new();
                         c3dprev1.D1(prevpar1_, out Pdeb1, out Vdeb1);
                         c3dnext1.D1(nextpar1_, out Pfin1, out Vfin1);
-                        gp_Pnt2d pdeb1 = new(), pfin1 = new();
+                        Point2D pdeb1 = new(), pfin1 = new();
                         double pardeb1 = intf1.FirstParameter();
                         double parfin1 = intf1.LastParameter();
                         pdeb1 = PC1.Value(pardeb1);
@@ -2013,7 +2017,7 @@ public partial class ChFi3d_Builder
                 {
                     if (!yaprevon2 || !yanexton2)
                     {
-                        throw new Standard_Failure("adjustment by reprocessing the non-written points: no neighbor");
+                        throw new FailureException("adjustment by reprocessing the non-written points: no neighbor");
                     }
                     ref ChFiDS_FaceInterference previntf2_ = ref prevsd.ChangeInterferenceOnS2();
                     ref ChFiDS_FaceInterference nextintf2_ = ref nextsd.ChangeInterferenceOnS2();
@@ -2026,7 +2030,7 @@ public partial class ChFi3d_Builder
                         Geom2d_Curve? pcprev2 = previntf2_.PCurveOnFace();
                         Geom2d_Curve? pcnext2 = nextintf2_.PCurveOnFace();
                         double nprevpar2 = 0.0, nnextpar2 = 0.0;
-                        gp_Pnt2d p2d = new();
+                        Point2D p2d = new();
                         //  Modified by Sergey KHROMOV - Wed Feb  5 12:03:17 2003 Begin
                         // 	  if(ChFi3d_IntTraces(prevsd,prevpar2_,ref nprevpar2,2,1,
                         // 			      nextsd,nextpar2_,ref nnextpar2,2,-1,p2d)){
@@ -2041,8 +2045,8 @@ public partial class ChFi3d_Builder
                         }
                         else
                         {
-                            gp_Pnt2d pdeb2 = new(), pfin2 = new();
-                            gp_Vec2d vdeb2 = new(), vfin2 = new();
+                            Point2D pdeb2 = new(), pfin2 = new();
+                            Vector2D vdeb2 = new(), vfin2 = new();
                             pcprev2.D1(prevpar2_, out pdeb2, out vdeb2);
                             pcnext2.D1(nextpar2_, out pfin2, out vfin2);
                             Bon2 = ChFi3d_mkbound(S2, out PC2, -1, pdeb2, vdeb2, 1, pfin2, vfin2, tolapp3d, 2.0e-4);
@@ -2053,11 +2057,11 @@ public partial class ChFi3d_Builder
                         // here the base is on 3D tangents of neighbors.
                         Geom_Curve? c3dprev2 = DStr.Curve(previntf2_.LineIndex()).Curve();
                         Geom_Curve? c3dnext2 = DStr.Curve(nextintf2_.LineIndex()).Curve();
-                        gp_Pnt Pdeb2 = new(), Pfin2 = new();
-                        gp_Vec Vdeb2 = new(), Vfin2 = new();
+                        Point3D Pdeb2 = new(), Pfin2 = new();
+                        Vector3D Vdeb2 = new(), Vfin2 = new();
                         c3dprev2.D1(prevpar2_, out Pdeb2, out Vdeb2);
                         c3dnext2.D1(nextpar2_, out Pfin2, out Vfin2);
-                        gp_Pnt2d pdeb2 = new(), pfin2 = new();
+                        Point2D pdeb2 = new(), pfin2 = new();
                         double pardeb2 = intf2.FirstParameter();
                         double parfin2 = intf2.LastParameter();
                         pdeb2 = PC2.Value(pardeb2);
@@ -2085,10 +2089,10 @@ public partial class ChFi3d_Builder
                 Geom2d_Curve? pcsnext2 = nextintf2.PCurveOnSurf();
                 double prevpar2 = previntf2.LastParameter();
                 double nextpar2 = nextintf2.FirstParameter();
-                gp_Pnt2d pdebs1 = pcsprev1.Value(prevpar1);
-                gp_Pnt2d pdebs2 = pcsprev2.Value(prevpar2);
-                gp_Pnt2d pfins1 = pcsnext1.Value(nextpar1);
-                gp_Pnt2d pfins2 = pcsnext2.Value(nextpar2);
+                Point2D pdebs1 = pcsprev1.Value(prevpar1);
+                Point2D pdebs2 = pcsprev2.Value(prevpar2);
+                Point2D pfins1 = pcsnext1.Value(nextpar1);
+                Point2D pfins2 = pcsnext2.Value(nextpar2);
                 Bdeb = ChFi3d_mkbound(sprev, pdebs1, pdebs2, tolapp3d, 2.0e-4);
                 Bfin = ChFi3d_mkbound(snext, pfins1, pfins2, tolapp3d, 2.0e-4);
 
@@ -2221,7 +2225,7 @@ public partial class ChFi3d_Builder
                 curp2.SetTolerance(tol2);
                 nextp2.SetTolerance(tol2);
 
-                Bnd_Box b1 = new(), b2 = new();
+                Box b1 = new(), b2 = new();
                 if (curp1.IsOnArc())
                 {
                     ChFi3d_EnlargeBox(curp1.Arc(), myEFMap[curp1.Arc()], curp1.ParameterOnArc(), ref b1);
@@ -2253,9 +2257,9 @@ public partial class ChFi3d_Builder
                 if (periodic)
                 {
                     period = Spine.Period();
-                    nwf = ElCLib.InPeriod(WF, -tolesp, period - tolesp);
+                    nwf = global::Kerf.Engine.Geometry.ElCLib.InPeriod(WF, -tolesp, period - tolesp);
                     IF = Spine.Index(nwf, true);
-                    nwl = ElCLib.InPeriod(WL, tolesp, period + tolesp);
+                    nwl = global::Kerf.Engine.Geometry.ElCLib.InPeriod(WL, tolesp, period + tolesp);
                     IL = Spine.Index(nwl, false);
                     if (nwl < nwf + tolesp)
                     {
@@ -2306,9 +2310,9 @@ public partial class ChFi3d_Builder
                         double wi = Spine.LastParameter(iloc);
                         if (periodic)
                         {
-                            wi = ElCLib.InPeriod(wi, WF, WF + period);
+                            wi = global::Kerf.Engine.Geometry.ElCLib.InPeriod(wi, WF, WF + period);
                         }
-                        gp_Pnt pv = Spine.Value(wi);
+                        Point3D pv = Spine.Value(wi);
                         Extrema_LocateExtPC ext = new(pv, curhels, wi, 1.0e-8);
                         wv[i] = wi;
                         if (ext.IsDone())
@@ -2402,25 +2406,25 @@ internal static class ChFi3d_Builder_2
         return BRep_Tool.CurveOnSurface(theEdge, theFace, out aFirstParam, out aLastParam);
     }
 
-    internal static void ChFi3d_CoupeParPlan(in ChFiDS_CommonPoint compoint1, in ChFiDS_CommonPoint compoint2, GeomAdaptor_Surface? HConge, in gp_Pnt2d UV1, in gp_Pnt2d UV2, double tol3d, double tol2d, ref Geom_Curve? C3d, ref Geom2d_Curve? pcurve, ref double tolreached, ref double Pardeb, ref double Parfin, ref bool plane)
+    internal static void ChFi3d_CoupeParPlan(in ChFiDS_CommonPoint compoint1, in ChFiDS_CommonPoint compoint2, GeomAdaptor_Surface? HConge, in Point2D UV1, in Point2D UV2, double tol3d, double tol2d, ref Geom_Curve? C3d, ref Geom2d_Curve? pcurve, ref double tolreached, ref double Pardeb, ref double Parfin, ref bool plane)
     {
         plane = true;
         if (compoint1.IsOnArc() && compoint2.IsOnArc())
         {
-            gp_Pnt P1 = new(), P2 = new();
+            Point3D P1 = new(), P2 = new();
             BRepAdaptor_Curve BCurv1 = new(compoint1.Arc());
             BRepAdaptor_Curve BCurv2 = new(compoint2.Arc());
             double parE1 = 0.0, parE2 = 0.0;
             parE1 = compoint1.ParameterOnArc();
             parE2 = compoint2.ParameterOnArc();
-            gp_Vec t1 = new(), t2 = new();
+            Vector3D t1 = new(), t2 = new();
             BCurv1.D1(parE1, out P1, out t1);
             BCurv2.D1(parE2, out P2, out t2);
-            gp_Dir tgt1 = new(t1);
-            gp_Dir tgt2 = new(t2);
-            gp_Vec v12 = new(P2.X() - P1.X(), P2.Y() - P1.Y(), P2.Z() - P1.Z());
-            gp_Dir d12 = new(v12);
-            gp_Dir nor = tgt1.Crossed(d12);
+            Direction3D tgt1 = new(t1);
+            Direction3D tgt2 = new(t2);
+            Vector3D v12 = new(P2.X() - P1.X(), P2.Y() - P1.Y(), P2.Z() - P1.Z());
+            Direction3D d12 = new(v12);
+            Direction3D nor = tgt1.Crossed(d12);
             Geom_Plane? Plan = new Geom_Plane(P1, nor);
             double scal = 0.0;
             scal = Math.Abs(nor.Dot(tgt2));
@@ -2477,19 +2481,19 @@ internal static class ChFi3d_Builder_2
         Geom_Curve? anArcCurve = 
             BRep_Tool.Curve(aCommonPoint.Arc(), out aDummyParam1, out aDummyParam2);
 
-        gp_Pnt aDummyPoint = new(); // Not used.
-        gp_Vec anArcTangent = new(); // Tangent to the arc at the common point.
+        Point3D aDummyPoint = new(); // Not used.
+        Vector3D anArcTangent = new(); // Tangent to the arc at the common point.
         anArcCurve.D1(aCommonPoint.ParameterOnArc(), out aDummyPoint, out anArcTangent);
 
-        gp_Vec aCommonPointVector = aCommonPoint.Vector();
+        Vector3D aCommonPointVector = aCommonPoint.Vector();
         return aCommonPointVector.IsParallel(anArcTangent, anAngularTolerance);
     }
 
-    internal static bool BonVoisin(in gp_Pnt Point, BRepAdaptor_Surface? HS, ref TopoDS_Face F, GeomAdaptor_Surface? plane, in TopoDS_Edge cured, ref double XDep, ref double YDep, ChFiDS_Map EFMap, double tol3d)
+    internal static bool BonVoisin(in Point3D Point, BRepAdaptor_Surface? HS, ref TopoDS_Face F, GeomAdaptor_Surface? plane, in TopoDS_Edge cured, ref double XDep, ref double YDep, ChFiDS_Map EFMap, double tol3d)
     {
         bool bonvoisin = true;
         double winter = 0.0;
-        gp_Pnt papp = HS.Value(XDep, YDep);
+        Point3D papp = HS.Value(XDep, YDep);
         double dist = RealLast();
         BRepAdaptor_Curve? hc = new BRepAdaptor_Curve();
         Geom2d_Curve? PC = null;
@@ -2505,7 +2509,7 @@ internal static class ChFi3d_Builder_2
                 double tolc = hc.Resolution(tol3d);
                 if (ChFi3d_InterPlaneEdge(plane, hc, ref winter, true, tolc))
                 {
-                    gp_Pnt np = hc.Value(winter);
+                    Point3D np = hc.Value(winter);
                     double ndist = np.SquareDistance(papp);
                     if (ndist < dist)
                     {
@@ -2551,14 +2555,14 @@ internal static class ChFi3d_Builder_2
                                 PC.Value(winter).Coord(out XDep, out YDep);
                                 if (issame)
                                 {
-                                    gp_Pnt spt = new();
-                                    gp_Vec sdu = new(), sdv = new(), nors = new();
+                                    Point3D spt = new();
+                                    Vector3D sdu = new(), sdv = new(), nors = new();
                                     HS.D1(XDep, YDep, out spt, out sdu, out sdv);
                                     nors = sdu.Crossed(sdv);
-                                    gp_Pnt cpt = new();
-                                    gp_Vec cd = new();
+                                    Point3D cpt = new();
+                                    Vector3D cd = new();
                                     hc.D1(winter, out cpt, out cd);
-                                    gp_Vec vref = new(Point, cpt);
+                                    Vector3D vref = new(Point, cpt);
                                     TopoDS_Face fff = ff;
                                     fff.Orientation(TopAbs_FORWARD);
                                     if (vref.Dot(nors.Crossed(cd)) < 0.0)
@@ -2582,7 +2586,7 @@ internal static class ChFi3d_Builder_2
         return bonvoisin;
     }
 
-    internal static bool Projection(Extrema_ExtPC PExt, in gp_Pnt P, Adaptor3d_Curve C, ref double W, double Tol)
+    internal static bool Projection(Extrema_ExtPC PExt, in Point3D P, Adaptor3d_Curve C, ref double W, double Tol)
     {
         double Dist2 = 0.0, daux2 = 0.0;
         Dist2 = C.Value(W).SquareDistance(P);
@@ -2629,7 +2633,7 @@ internal static class ChFi3d_Builder_2
         return Ok;
     }
 
-    internal static void TgtKP(ChFiDS_SurfData? CD, ChFiDS_Spine? Spine, int iedge, bool isfirst, ref gp_Pnt ped, ref gp_Vec ded)
+    internal static void TgtKP(ChFiDS_SurfData? CD, ChFiDS_Spine? Spine, int iedge, bool isfirst, ref Point3D ped, ref Vector3D ded)
     {
         double wtg = CD.InterferenceOnS1().Parameter(isfirst);
         BRepAdaptor_Curve bc = Spine.CurrentElementarySpine(iedge);
@@ -2645,7 +2649,7 @@ internal static class ChFi3d_Builder_2
         ded.Normalize();
     }
 
-    internal static bool IsInput(in gp_Vec Vec, in TopoDS_Vertex Ve, in TopoDS_Face Fa)
+    internal static bool IsInput(in Vector3D Vec, in TopoDS_Vertex Ve, in TopoDS_Face Fa)
     {
         TopExp_Explorer FaceExp = new(Fa, TopAbs_WIRE);
         BRepTools_WireExplorer WireExp = new();
@@ -2653,8 +2657,8 @@ internal static class ChFi3d_Builder_2
         TopoDS_Wire W = new();
         TopoDS_Edge E = new();
         TopoDS_Vertex Vf = new(), Vl = new();
-        gp_Vec[] Vec3d = new gp_Vec[2];
-        gp_Pnt Point = new();
+        Vector3D[] Vec3d = new Vector3D[2];
+        Point3D Point = new();
 
         // Find edges and compute 3D vectors
         for (; (FaceExp.More() && (Trouve < 2)); FaceExp.Next())
@@ -2684,11 +2688,11 @@ internal static class ChFi3d_Builder_2
             return false;
         }
         // Calculate the normal and the angles in the associated vector plane
-        gp_Vec Normal = new();
+        Vector3D Normal = new();
         Normal = Vec3d[0] ^ Vec3d[1];
-        if (Normal.SquareMagnitude() < Precision.Confusion())
+        if (Normal.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
         { // Colinear case
-            return (Vec.IsParallel(Vec3d[0], Precision.Confusion()));
+            return (Vec.IsParallel(Vec3d[0], global::Kerf.Engine.Foundation.Precision.Confusion()));
         }
 
         double amin = 0.0, amax = 0.0;
@@ -2704,15 +2708,15 @@ internal static class ChFi3d_Builder_2
         }
 
         // Projection of the vector
-        gp_Ax3 Axe = new(Point, new gp_Dir(Normal), new gp_Dir(Vec3d[0]));
-        gp_Trsf Transf = new();
+        CoordinateSystem Axe = new(Point, new Direction3D(Normal), new Direction3D(Vec3d[0]));
+        Transform3D Transf = new();
         Transf.SetTransformation(Axe);
-        gp_XYZ coord = Vec.XYZ();
+        Xyz coord = Vec.XYZ();
         Transf.Transforms(ref coord);
         coord.SetZ(0);
         Transf.Invert();
         Transf.Transforms(ref coord);
-        gp_Vec theProj = new(coord);
+        Vector3D theProj = new(coord);
 
         // and finally...
         double Angle = theProj.AngleWithRef(Vec3d[0], Normal);
@@ -2831,21 +2835,21 @@ internal static class ChFi3d_Builder_2
         if (PCurve1 != PCurve2)
         {
             // This is a cutting edge, it is necessary to make a small Geometric test
-            gp_Vec tgarc = new();
-            gp_Pnt P = new();
+            Vector3D tgarc = new();
+            Point3D P = new();
             BRepAdaptor_Curve AC = new(Arc);
             AC.D1(Precedant.ParameterOnArc(), out P, out tgarc);
-            tochange = tgarc.IsParallel(Precedant.Vector(), Precision.Confusion());
+            tochange = tgarc.IsParallel(Precedant.Vector(), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         if (tochange)
         {
-            Courant.SetArc(Precision.Confusion(), Arc, Precedant.ParameterOnArc(),
+            Courant.SetArc(global::Kerf.Engine.Foundation.Precision.Confusion(), Arc, Precedant.ParameterOnArc(),
                                           TopAbs.Reverse(Precedant.TransitionOnArc()));
         }
     }
 
-    internal static void ChFi3d_BuildPlane(TopOpeBRepDS_DataStructure DStr, BRepAdaptor_Surface? HS, ref gp_Pnt2d pons, ChFiDS_SurfData? SD, bool isfirst, int ons)
+    internal static void ChFi3d_BuildPlane(TopOpeBRepDS_DataStructure DStr, BRepAdaptor_Surface? HS, ref Point2D pons, ChFiDS_SurfData? SD, bool isfirst, int ons)
     {
         TopoDS_Face F = TopoDS.Face(DStr.Shape(SD.Index(ons)));
         if (F.IsNull())
@@ -2863,14 +2867,14 @@ internal static class ChFi3d_Builder_2
             if (theProp.IsNormalDefined())
             {
                 Geom_Plane? Pln = new Geom_Plane(theProp.Value(), theProp.Normal());
-                TopoDS_Face NewF = new BRepLib_MakeFace(Pln, Precision.Confusion()).Face();
+                TopoDS_Face NewF = new BRepLib_MakeFace(Pln, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
                 NewF.Orientation(F.Orientation());
                 pons.SetCoord(0.0, 0.0);
                 HS.Initialize(NewF);
                 return; // everything is good !
             }
         }
-        throw new Standard_Failure("ChFi3d_BuildPlane : echec .");
+        throw new FailureException("ChFi3d_BuildPlane : echec .");
     }
 
     internal static void ChFi3d_SingularExtremity(ChFiDS_Stripe? stripe, TopOpeBRepDS_DataStructure DStr, in TopoDS_Vertex Vtx, double tol3d, double tol2d)
@@ -2878,7 +2882,7 @@ internal static class ChFi3d_Builder_2
         ChFiDS_SurfData? Fd = null;
         double tolreached = 0.0;
         double Pardeb = 0.0, Parfin = 0.0;
-        gp_Pnt2d VOnS1 = new(), VOnS2 = new();
+        Point2D VOnS1 = new(), VOnS2 = new();
         Geom_Curve? C3d = null;
         Geom2d_Curve? PCurv = null;
         TopOpeBRepDS_Curve Crv = new();
@@ -2981,7 +2985,7 @@ internal static class ChFi3d_Builder_2
         double tolreached = 0.0;
         if (sp.IsPeriodic())
         {
-            Bnd_Box b1 = new(), b2 = new();
+            Box b1 = new(), b2 = new();
             ChFiDS_SurfData? SDF = Stripe.SetOfSurfData().First();
             ChFiDS_CommonPoint CV1 = SDF.VertexFirstOnS1();
             ChFiDS_CommonPoint CV2 = SDF.VertexFirstOnS2();
@@ -3053,11 +3057,11 @@ internal static class ChFi3d_Builder_2
         if (freedeb)
         {
             sp.SetFirstStatus(ChFiDS_FreeBoundary);
-            Bnd_Box b1 = new(), b2 = new();
+            Box b1 = new(), b2 = new();
             if (!cpdeb1.Point().IsEqual(cpdeb2.Point(), 0))
             {
                 bool plane = false;
-                gp_Pnt2d UV1 = new(), UV2 = new();
+                Point2D UV1 = new(), UV2 = new();
                 UV1 =
                     SDdeb.InterferenceOnS1().PCurveOnSurf().Value(SDdeb.InterferenceOnS1().FirstParameter());
                 UV2 =
@@ -3118,11 +3122,11 @@ internal static class ChFi3d_Builder_2
         if (freefin)
         {
             sp.SetLastStatus(ChFiDS_FreeBoundary);
-            Bnd_Box b1 = new(), b2 = new();
+            Box b1 = new(), b2 = new();
             if (!cpfin1.Point().IsEqual(cpfin2.Point(), 0))
             {
                 bool plane = false;
-                gp_Pnt2d UV1 = new(), UV2 = new();
+                Point2D UV1 = new(), UV2 = new();
                 UV1 =
                     SDfin.InterferenceOnS1().PCurveOnSurf().Value(SDfin.InterferenceOnS1().LastParameter());
                 UV2 =
@@ -3227,7 +3231,7 @@ internal static class ChFi3d_Builder_2
     {
         if (Ref == Item)
         {
-            throw new Standard_Failure("InsertAfter : twice the same surfdata.");
+            throw new FailureException("InsertAfter : twice the same surfdata.");
         }
 
         NCollection_Sequence<ChFiDS_SurfData> Seq = 
@@ -3286,7 +3290,7 @@ internal static class ChFi3d_Builder_2
     {
         if (Ref == Item)
         {
-            throw new Standard_Failure("InsertBefore : twice the same surfdata.");
+            throw new FailureException("InsertBefore : twice the same surfdata.");
         }
 
         NCollection_Sequence<ChFiDS_SurfData> Seq = 
@@ -3306,7 +3310,7 @@ internal static class ChFi3d_Builder_2
         }
     }
 
-    internal static double ChFi3d_BoxDiag(in Bnd_Box box)
+    internal static double ChFi3d_BoxDiag(in Box box)
     {
         double a = 0.0, b = 0.0, c = 0.0, d = 0.0, e = 0.0, f = 0.0;
         box.Get(out a, out b, out c, out d, out e, out f);

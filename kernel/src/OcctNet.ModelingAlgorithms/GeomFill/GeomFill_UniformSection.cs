@@ -3,7 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.Convert_ParameterisationType;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
 namespace Occt;
 
@@ -29,41 +30,41 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
         Geom_BSplineCurve? aCurve = C as Geom_BSplineCurve;
         if (aCurve is null)
         {
-            aCurve = GeomConvert.CurveToBSplineCurve(C, Convert_QuasiAngular);
+            aCurve = GeomConvert.CurveToBSplineCurve(C, QuasiAngular);
             if (aCurve.IsPeriodic())
             {
                 int M = aCurve.Degree() / 2 + 1;
-                aCurve.RemoveKnot(1, M, Precision.Confusion());
+                aCurve.RemoveKnot(1, M, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
         myCurve = aCurve;
     }
 
-    public override bool D0(double Param, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<double> Weights)
+    public override bool D0(double Param, NCollection_Array1<Point3D> Poles, NCollection_Array1<double> Weights)
     {
         Poles.Assign(myCurve.InternalPoles());
         Weights.Assign(myCurve.InternalWeightsArray());
         return true;
     }
 
-    public override bool D1(double Param, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
+    public override bool D1(double Param, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
                             NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
         Poles.Assign(myCurve.InternalPoles());
         Weights.Assign(myCurve.InternalWeightsArray());
-        gp_Vec V0 = new gp_Vec(0, 0, 0);
+        Vector3D V0 = new Vector3D(0, 0, 0);
         DPoles.Init(V0);
         DWeights.Init(0);
         return true;
     }
 
-    public override bool D2(double Param, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                            NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<double> Weights,
+    public override bool D2(double Param, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                            NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<double> Weights,
                             NCollection_Array1<double> DWeights, NCollection_Array1<double> D2Weights)
     {
         Poles.Assign(myCurve.InternalPoles());
         Weights.Assign(myCurve.InternalWeightsArray());
-        gp_Vec V0 = new gp_Vec(0, 0, 0);
+        Vector3D V0 = new Vector3D(0, 0, 0);
         DPoles.Init(V0);
         DWeights.Init(0);
         D2Poles.Init(V0);
@@ -75,7 +76,7 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
     public override Geom_BSplineSurface? BSplineSurface()
     {
         int ii, NbPoles = myCurve.NbPoles();
-        NCollection_Array2<gp_Pnt> Poles = new(1, NbPoles, 1, 2);
+        NCollection_Array2<Point3D> Poles = new(1, NbPoles, 1, 2);
         NCollection_Array1<double> CurKnots = myCurve.InternalKnots();
         NCollection_Array1<double> UKnots = new(CurKnots);
         NCollection_Array1<double> VKnots = new(1, 2);
@@ -122,9 +123,9 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
 
     public override bool IsVPeriodic() => true;
 
-    public override int NbIntervals(GeomAbs_Shape S) => 1;
+    public override int NbIntervals(Continuity S) => 1;
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         T[T.Lower()] = First;
         T[T.Upper()] = Last;
@@ -157,12 +158,12 @@ public class GeomFill_UniformSection : GeomFill_SectionLaw
         }
     }
 
-    public override gp_Pnt BarycentreOfSurf()
+    public override Point3D BarycentreOfSurf()
     {
         // OCCT: starts at the section's first parameter but steps to the B-spline's last one.
         double U = mySection.FirstParameter(), Delta;
-        gp_Pnt P;
-        gp_Pnt Bary = new gp_Pnt();
+        Point3D P;
+        Point3D Bary = new Point3D();
 
         Delta = (myCurve.LastParameter() - U) / 20;
         Bary.SetCoord(0.0, 0.0, 0.0);

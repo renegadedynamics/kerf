@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using static Occt.BRepMesh_DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -12,14 +15,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BRepMeshWatsonDelabellaTests
 {
     // Builds the frontier wires and interior nodes into a fresh structure; returns it and the frontier links.
-    private static BRepMesh_DataStructureOfDelaun Build(IReadOnlyList<IReadOnlyList<gp_XY>> theWires,
-                                                        IReadOnlyList<gp_XY> theInterior,
+    private static BRepMesh_DataStructureOfDelaun Build(IReadOnlyList<IReadOnlyList<Xy>> theWires,
+                                                        IReadOnlyList<Xy> theInterior,
                                                         out List<int> theFrontier)
     {
         BRepMesh_DataStructureOfDelaun aStructure = new();
         theFrontier = [];
         int aLocation = 0;
-        foreach (IReadOnlyList<gp_XY> aWire in theWires)
+        foreach (IReadOnlyList<Xy> aWire in theWires)
         {
             List<int> aNodes = [.. aWire.Select(p => aStructure.AddNode(new BRepMesh_Vertex(p, ++aLocation, BRepMesh_Frontier)))];
             for (int i = 0; i < aNodes.Count; ++i)
@@ -28,7 +31,7 @@ public class BRepMeshWatsonDelabellaTests
             }
         }
 
-        foreach (gp_XY aPoint in theInterior)
+        foreach (Xy aPoint in theInterior)
         {
             aStructure.AddNode(new BRepMesh_Vertex(aPoint, ++aLocation, BRepMesh_Free));
         }
@@ -39,7 +42,7 @@ public class BRepMeshWatsonDelabellaTests
     // BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation, as unit 4D will port it.
     private static void buildBaseTriangulation(BRepMesh_DataStructureOfDelaun aStructure)
     {
-        Bnd_B2d aBox = new();
+        B2d aBox = new();
         int aNodesNb = aStructure.NbNodes();
         double[] aPoints = new double[2 * (aNodesNb + 4)];
         for (int aNodeIt = 0; aNodeIt < aNodesNb; ++aNodeIt)
@@ -47,12 +50,12 @@ public class BRepMeshWatsonDelabellaTests
             BRepMesh_Vertex aVertex = aStructure.GetNode(aNodeIt + 1);
             aPoints[2 * aNodeIt + 0] = aVertex.Coord().X();
             aPoints[2 * aNodeIt + 1] = aVertex.Coord().Y();
-            aBox.Add(new gp_Pnt2d(aVertex.Coord()));
+            aBox.Add(new Point2D(aVertex.Coord()));
         }
 
         aBox.Enlarge(0.1 * (aBox.CornerMax() - aBox.CornerMin()).Modulus());
-        gp_XY aMin = aBox.CornerMin();
-        gp_XY aMax = aBox.CornerMax();
+        Xy aMin = aBox.CornerMin();
+        Xy aMax = aBox.CornerMax();
         (double, double)[] aCorners = [(aMin.X(), aMin.Y()), (aMax.X(), aMin.Y()), (aMax.X(), aMax.Y()), (aMin.X(), aMax.Y())];
         for (int k = 0; k < 4; ++k)
         {
@@ -139,7 +142,7 @@ public class BRepMeshWatsonDelabellaTests
         foreach ((int a, int b, int c) in BRepMeshDelaunTests.Triangles(theStructure))
         {
             aNodes.UnionWith([a, b, c]);
-            gp_XY pa = theStructure.GetNode(a).Coord();
+            Xy pa = theStructure.GetNode(a).Coord();
             anArea += 0.5 * ((theStructure.GetNode(b).Coord() - pa) ^ (theStructure.GetNode(c).Coord() - pa));
         }
 
@@ -152,23 +155,23 @@ public class BRepMeshWatsonDelabellaTests
     [MemberData(nameof(Seeds))]
     public void Both_cover_a_square_with_a_hole(int theSeed)
     {
-        List<gp_XY> anOuter = [];
-        List<gp_XY> aHole = [];
+        List<Xy> anOuter = [];
+        List<Xy> aHole = [];
         for (int i = 0; i < 40; ++i)
         {
             double t = 2 * Math.PI * i / 40;
-            anOuter.Add(new gp_XY(5 * Math.Cos(t), 4 * Math.Sin(t)));
+            anOuter.Add(new Xy(5 * Math.Cos(t), 4 * Math.Sin(t)));
             if (i % 4 == 0)
             {
-                aHole.Add(new gp_XY(1.0 + Math.Cos(-t), 0.5 + Math.Sin(-t)));
+                aHole.Add(new Xy(1.0 + Math.Cos(-t), 0.5 + Math.Sin(-t)));
             }
         }
 
         Random aRandom = new(theSeed);
-        List<gp_XY> anInterior = [];
+        List<Xy> anInterior = [];
         while (anInterior.Count < 150)
         {
-            gp_XY p = new(10 * aRandom.NextDouble() - 5, 8 * aRandom.NextDouble() - 4);
+            Xy p = new(10 * aRandom.NextDouble() - 5, 8 * aRandom.NextDouble() - 4);
             double anEllipse = p.X() * p.X() / 25 + p.Y() * p.Y() / 16;
             double aHoleDist = Math.Sqrt((p.X() - 1.0) * (p.X() - 1.0) + (p.Y() - 0.5) * (p.Y() - 0.5));
             if (anEllipse < 0.8 && aHoleDist > 1.3)

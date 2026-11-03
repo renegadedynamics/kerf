@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Globalization;
 
 namespace Occt;
@@ -149,7 +150,7 @@ public class FEmTool_ProfileMatrix : FEmTool_SparseMatrix
     {
         if (!IsDecomp)
         {
-            throw new StdFail_NotDone("Decomposition must be done");
+            throw new NotDoneException("Decomposition must be done");
         }
 
         int i, j, jj, DiagAddr, CurrAddr;
@@ -192,14 +193,14 @@ public class FEmTool_ProfileMatrix : FEmTool_SparseMatrix
     /// <summary>Not implemented: throws Standard_NotImplemented, as OCCT.</summary>
     public override bool Prepare()
     {
-        throw new Standard_NotImplemented("FEmTool_ProfileMatrix::Prepare");
+        throw new MethodNotImplementedException("FEmTool_ProfileMatrix::Prepare");
     }
 
     /// <summary>Not implemented: throws Standard_NotImplemented, as OCCT.</summary>
     public override void Solve(math_Vector B, math_Vector Init, math_Vector X, math_Vector Residual,
                                double Tolerance = 1.0e-8, int NbIterations = 50)
     {
-        throw new Standard_NotImplemented("FEmTool_ProfileMatrix::Solve");
+        throw new MethodNotImplementedException("FEmTool_ProfileMatrix::Solve");
     }
 
     /// <summary>MX = H X.</summary>

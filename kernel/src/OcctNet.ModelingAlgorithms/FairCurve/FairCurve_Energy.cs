@@ -4,6 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -15,28 +21,31 @@ namespace Occt;
 /// writes the poles that correspond to the variables into it (<see cref="Poles"/>), as OCCT does: FairCurve_Batten
 /// relies on it to read the optimised poles back (decision 859).
 /// </remarks>
-public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
+public abstract class FairCurve_Energy : MultipleVarFunctionWithHessian
 {
-    protected NCollection_HArray1<gp_Pnt2d> MyPoles;
+    protected NCollection_HArray1<Point2D> MyPoles;
     protected int MyContrOrder1;
     protected int MyContrOrder2;
     protected bool MyWithAuxValue;
     protected int MyNbVar;
 
     private readonly int MyNbValues;
-    private readonly NCollection_Array1<gp_XY> MyLinearForm;
-    private readonly NCollection_Array1<gp_XY> MyQuadForm;
+    private readonly NCollection_Array1<Xy> MyLinearForm;
+    private readonly NCollection_Array1<Xy> MyQuadForm;
     private readonly math_Vector MyGradient;
     private readonly math_Vector MyHessian;
 
     /// <summary>The number of variables of the energy.</summary>
-    public override int NbVariables()
+    public override int VariableCount
     {
-        return MyNbVar;
+        get
+        {
+            return MyNbVar;
+        }
     }
 
     /// <summary>The poles (the caller's array, which the evaluations write).</summary>
-    public NCollection_HArray1<gp_Pnt2d> Poles()
+    public NCollection_HArray1<Point2D> Poles()
     {
         return MyPoles;
     }
@@ -50,7 +59,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
     /// Angles are measured from the Ox axis. <paramref name="ContrOrder1"/> and <paramref name="ContrOrder2"/> are 0, 1
     /// or 2.
     /// </summary>
-    protected FairCurve_Energy(NCollection_HArray1<gp_Pnt2d> Poles,
+    protected FairCurve_Energy(NCollection_HArray1<Point2D> Poles,
                                int ContrOrder1,
                                int ContrOrder2,
                                bool WithAuxValue = false,
@@ -66,16 +75,16 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         MyWithAuxValue = WithAuxValue;
         MyNbVar = 2 * (Poles.Length() - 2) - ContrOrder2 - ContrOrder1 + (WithAuxValue ? 1 : 0);
         MyNbValues = 2 * Poles.Length() + (WithAuxValue ? 1 : 0);
-        MyLinearForm = new NCollection_Array1<gp_XY>(0, 1);
-        MyQuadForm = new NCollection_Array1<gp_XY>(0, 1);
+        MyLinearForm = new NCollection_Array1<Xy>(0, 1);
+        MyQuadForm = new NCollection_Array1<Xy>(0, 1);
         MyGradient = new math_Vector(0, MyNbValues);
         MyHessian = new math_Vector(0, MyNbValues + MyNbValues * (MyNbValues + 1) / 2);
 
         // chesk angles in reference (Ox,Oy)
-        gp_XY L0 = new(Math.Cos(Angle1), Math.Sin(Angle1)), L1 = new(-Math.Cos(Angle2), Math.Sin(Angle2));
+        Xy L0 = new(Math.Cos(Angle1), Math.Sin(Angle1)), L1 = new(-Math.Cos(Angle2), Math.Sin(Angle2));
         MyLinearForm.SetValue(0, L0);
         MyLinearForm.SetValue(1, L1);
-        gp_XY Q0 = new(-Math.Sin(Angle1), Math.Cos(Angle1)), Q1 = new(Math.Sin(Angle2), Math.Cos(Angle2));
+        Xy Q0 = new(-Math.Sin(Angle1), Math.Cos(Angle1)), Q1 = new(Math.Sin(Angle2), Math.Cos(Angle2));
         MyQuadForm.SetValue(0, ((double)Degree) / (Degree - 1) * Curvature1 * Q0);
         MyQuadForm.SetValue(1, ((double)Degree) / (Degree - 1) * Curvature2 * Q1);
     }
@@ -111,7 +120,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         // .... by calculation
         if (MyContrOrder1 >= 1)
         {
-            gp_XY DPole = new(Vect[Vdeb], Vect[Vdeb + 1]);
+            Xy DPole = new(Vect[Vdeb], Vect[Vdeb + 1]);
             Grad[DebG] = MyLinearForm[0] * DPole;
             Vdeb += 2;
             DebG += 1;
@@ -120,7 +129,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         {
             double Lambda0 =
               MyPoles.Value(MyPoles.Lower()).Distance(MyPoles.Value(MyPoles.Lower() + 1));
-            gp_XY DPole = new(Vect[Vdeb], Vect[Vdeb + 1]);
+            Xy DPole = new(Vect[Vdeb], Vect[Vdeb + 1]);
             Grad[DebG - 1] += (MyLinearForm[0] + 2 * Lambda0 * MyQuadForm[0]) * DPole;
             Grad[DebG] = MyLinearForm[0] * DPole;
             Vdeb += 2;
@@ -133,7 +142,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         }
         if (MyContrOrder2 >= 1)
         {
-            gp_XY DPole = new(Vect[Vfin - 1], Vect[Vfin]);
+            Xy DPole = new(Vect[Vfin - 1], Vect[Vfin]);
             Grad[FinG] = MyLinearForm[1] * DPole;
             FinG -= 1;
         }
@@ -141,7 +150,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         {
             double Lambda1 =
               MyPoles.Value(MyPoles.Upper()).Distance(MyPoles.Value(MyPoles.Upper() - 1));
-            gp_XY DPole = new(Vect[Vfin - 3], Vect[Vfin - 2]);
+            Xy DPole = new(Vect[Vfin - 3], Vect[Vfin - 2]);
             Grad[FinG] = Grad[FinG + 1] + (MyLinearForm[1] + 2 * Lambda1 * MyQuadForm[1]) * DPole;
             Grad[FinG + 1] = MyLinearForm[1] * DPole;
             FinG -= 1;
@@ -178,7 +187,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
     /// <paramref name="H"/> at <paramref name="X"/>; false if they could not be computed (E is then 0; OCCT leaves the
     /// caller's variable unchanged).
     /// </summary>
-    public override bool Values(math_Vector X, out double E, math_Vector G, math_Matrix H)
+    public override bool Values(math_Vector X, out double E, math_Vector G, Matrix H)
     {
         bool IsDone;
 
@@ -195,7 +204,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
     }
 
     /// <summary>Makes the hessian matrix <paramref name="H"/> from the intermediate format.</summary>
-    protected void Hessian1(math_Vector Vect, math_Matrix H)
+    protected void Hessian1(math_Vector Vect, Matrix H)
     {
 
         int ii, jj, kk, Vk;
@@ -230,11 +239,11 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
 
             if (MyContrOrder1 >= 2)
             {
-                gp_XY Laux = (MyLinearForm[0] + 2 * Lambda0 * MyQuadForm[0]);
+                Xy Laux = (MyLinearForm[0] + 2 * Lambda0 * MyQuadForm[0]);
                 jj = Vdeb - 2 * (MyContrOrder1 - 1);
                 kk = Indice(jj, jj - 2);     // X1X2
                 ii = Indice(jj + 1, jj - 2); // X1Y2
-                gp_XY Aux = new(Vect[kk + 2], Vect[ii + 3]);
+                Xy Aux = new(Vect[kk + 2], Vect[ii + 3]);
 
                 H[1, 1] +=
                   2
@@ -286,7 +295,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
             if (MyWithAuxValue)
             {
                 kk = Indice(Vup, Vdeb - 2 * (MyContrOrder1 - 1));
-                gp_XY Pole = new(Vect[kk], Vect[kk + 1]);
+                Xy Pole = new(Vect[kk], Vect[kk + 1]);
                 H[MyNbVar, 1] += (MyLinearForm[0] + 2 * Lambda0 * MyQuadForm[0]) * Pole;
                 H[MyNbVar, 2] = MyLinearForm[0].X() * Vect[kk] + MyLinearForm[0].Y() * Vect[kk + 1];
             }
@@ -334,7 +343,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
             if (MyContrOrder2 >= 2)
             {
                 // H(jj,jj) +=
-                gp_XY Laux = (MyLinearForm[1] + 2 * Lambda1 * MyQuadForm[1]);
+                Xy Laux = (MyLinearForm[1] + 2 * Lambda1 * MyQuadForm[1]);
                 jj = Vfin + 2 * MyContrOrder2 - 3;
                 kk = Indice(jj + 2, jj); // Xn-1Xn-2
                 ii = Indice(jj + 3, jj); // Yn-1Xn-2
@@ -351,7 +360,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
 
                 H[FinH + 2, FinH + 1] =
                   Cos1 * Vect[kk] + CosSin1 * (Vect[ii] + Vect[kk + 1]) / 2 + Sin1 * Vect[ii + 1];
-                gp_XY Aux = new(Vect[ll], Vect[ll + jj + 1]);
+                Xy Aux = new(Vect[ll], Vect[ll + jj + 1]);
                 H[FinH + 2, FinH + 1] +=
                   Laux * MyLinearForm[1].Multiplied(Aux)
                   + (Laux.X() * MyLinearForm[1].Y() + Laux.Y() * MyLinearForm[1].X()) * Vect[ll + jj];
@@ -400,7 +409,7 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
             if (MyContrOrder2 >= 2)
             {
                 kk = Indice(Vup, Vfin + 2 * MyContrOrder2 - 3);
-                gp_XY Pole = new(Vect[kk], Vect[kk + 1]);
+                Xy Pole = new(Vect[kk], Vect[kk + 1]);
                 H[MyNbVar, FinH + 1] += (MyLinearForm[1] + 2 * Lambda1 * MyQuadForm[1]) * Pole;
                 H[MyNbVar, FinH + 2] = MyLinearForm[1] * Pole;
             }
@@ -446,14 +455,14 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
         }
         if (MyContrOrder1 == 2)
         {
-            gp_Vec2d b1b2 = new(MyPoles.Value(MyPoles.Lower() + 1), MyPoles.Value(MyPoles.Lower() + 2));
+            Vector2D b1b2 = new(MyPoles.Value(MyPoles.Lower() + 1), MyPoles.Value(MyPoles.Lower() + 2));
             X[IndexDeb2] = b1b2.XY() * MyLinearForm[0];
             IndexDeb1 += 1;
             IndexDeb2 += 1;
         }
         if (MyContrOrder2 == 2)
         {
-            gp_Vec2d bn2bn1 = new(MyPoles.Value(MyPoles.Upper() - 2), MyPoles.Value(MyPoles.Upper() - 1));
+            Vector2D bn2bn1 = new(MyPoles.Value(MyPoles.Upper() - 2), MyPoles.Value(MyPoles.Upper() - 1));
             X[IndexFin2] = -bn2bn1.XY() * MyLinearForm[1];
             IndexFin1 -= 1;
             IndexFin2 -= 1;
@@ -534,15 +543,15 @@ public abstract class FairCurve_Energy : math_MultipleVarFunctionWithHessian
     }
 
     /// <summary>Computes the pole that depends on the variables and the G1 constraint.</summary>
-    protected void ComputePolesG1(int Side, double Lambda, in gp_Pnt2d P1, out gp_Pnt2d P2)
+    protected void ComputePolesG1(int Side, double Lambda, in Point2D P1, out Point2D P2)
     {
-        P2 = new gp_Pnt2d(P1.XY() + MyLinearForm[Side] * Lambda);
+        P2 = new Point2D(P1.XY() + MyLinearForm[Side] * Lambda);
     }
 
     /// <summary>Computes the pole that depends on the variables and the G2 constraint.</summary>
-    protected void ComputePolesG2(int Side, double Lambda, double Rho, in gp_Pnt2d P1, out gp_Pnt2d P2)
+    protected void ComputePolesG2(int Side, double Lambda, double Rho, in Point2D P1, out Point2D P2)
     {
-        P2 = new gp_Pnt2d(P1.XY() + MyLinearForm[Side] * (Lambda + Rho) + MyQuadForm[Side] * (Lambda * Lambda));
+        P2 = new Point2D(P1.XY() + MyLinearForm[Side] * (Lambda + Rho) + MyQuadForm[Side] * (Lambda * Lambda));
     }
 
     /// <summary>Computes the energy (and its derivatives up to <paramref name="DerivativeOrder"/>) in the intermediate format.</summary>

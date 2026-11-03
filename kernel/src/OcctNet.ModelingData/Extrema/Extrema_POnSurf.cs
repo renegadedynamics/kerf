@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
 using System.Globalization;
 
 namespace Occt;
@@ -16,18 +18,18 @@ public partial struct Extrema_POnSurf : IEquatable<Extrema_POnSurf>
 {
     private double myU;
     private double myV;
-    private gp_Pnt myP;
+    private Point3D myP;
 
     /// <summary>An indefinite point on surface.</summary>
     public Extrema_POnSurf()
     {
-        myU = Precision.Infinite();
-        myV = Precision.Infinite();
-        myP = new gp_Pnt(Precision.Infinite(), Precision.Infinite(), Precision.Infinite());
+        myU = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myV = global::Kerf.Engine.Foundation.Precision.Infinite();
+        myP = new Point3D(global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
     }
 
     /// <summary>A point on surface with its parameter values on the surface.</summary>
-    public Extrema_POnSurf(double theU, double theV, in gp_Pnt theP)
+    public Extrema_POnSurf(double theU, double theV, in Point3D theP)
     {
         myU = theU;
         myV = theV;
@@ -37,7 +39,7 @@ public partial struct Extrema_POnSurf : IEquatable<Extrema_POnSurf>
     // Mutators (internal: see docs/translation-rules.md)
 
     /// <summary>Sets the parameters and the point.</summary>
-    internal void SetParameters(double theU, double theV, in gp_Pnt thePnt)
+    internal void SetParameters(double theU, double theV, in Point3D thePnt)
     {
         myU = theU;
         myV = theV;
@@ -47,7 +49,7 @@ public partial struct Extrema_POnSurf : IEquatable<Extrema_POnSurf>
     // Queries
 
     /// <summary>The 3D point.</summary>
-    public readonly gp_Pnt Value() => myP;
+    public readonly Point3D Value() => myP;
 
     /// <summary>The parameter values on the surface.</summary>
     public readonly void Parameter(out double theU, out double theV)

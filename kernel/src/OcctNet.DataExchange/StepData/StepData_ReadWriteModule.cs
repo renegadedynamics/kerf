@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -77,7 +79,7 @@ public abstract class StepData_ReadWriteModule : Interface_ReaderModule
     }
 
     /// <summary>General Read Function, calls ReadStep.</summary>
-    public override void Read(int CN, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Standard_Transient? ent)
+    public override void Read(int CN, Interface_FileReaderData? data, int num, ref Interface_Check? ach, Transient? ent)
     {
         if (data is not StepData_StepReaderData stepdat)
         {
@@ -87,8 +89,8 @@ public abstract class StepData_ReadWriteModule : Interface_ReaderModule
     }
 
     /// <summary>Specific Read Function. Works with StepReaderData.</summary>
-    public abstract void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Standard_Transient? ent);
+    public abstract void ReadStep(int CN, StepData_StepReaderData data, int num, Interface_Check ach, Transient? ent);
 
     /// <summary>Write Function, switched by CaseNum.</summary>
-    public abstract void WriteStep(int CN, StepData_StepWriter SW, Standard_Transient? ent);
+    public abstract void WriteStep(int CN, StepData_StepWriter SW, Transient? ent);
 }

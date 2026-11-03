@@ -3,10 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.BRepFill_TransitionStyle;
 using static Occt.BRepLib_FaceError;
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 using static Occt.GeomFill_ApproxStyle;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -22,7 +27,7 @@ namespace Occt;
 /// A working object (decision 21) used by <see cref="BRepFill_Pipe"/> and <see cref="BRepFill_PipeShell"/>, as in
 /// OCCT: it writes into the section edges and vertices it is given (the bounds, the section law's shapes), builds on
 /// them, and hands out the unfrozen result and tables. Its callers give it shapes they own (decision 924); a frozen
-/// shape reaching a write throws <see cref="Standard_ImmutableObject"/>. It calls <c>SetInterval</c> and
+/// shape reaching a write throws <see cref="ImmutableObjectException"/>. It calls <c>SetInterval</c> and
 /// <c>SetTolerance</c> on the location law's elementary laws, which are BRepFill's per-edge copies (decision 900).
 /// </para>
 /// </remarks>
@@ -37,7 +42,7 @@ internal sealed class BRepFill_Sweep
     private double myAngMin;
     private double myAngMax;
     private GeomFill_ApproxStyle myApproxStyle;
-    private GeomAbs_Shape myContinuity;
+    private Continuity myContinuity;
     private int myDegmax;
     private int mySegmax;
     private bool myForceApproxC1;
@@ -75,7 +80,7 @@ internal sealed class BRepFill_Sweep
 
             switch (c.GetType())
             {
-                case GeomAbs_BezierCurve:
+                case BezierCurve:
                 {
                     // Put all poles for bezier
                     Geom_BezierCurve GC = c.Bezier();
@@ -86,7 +91,7 @@ internal sealed class BRepFill_Sweep
                     }
                     break;
                 }
-                case GeomAbs_BSplineCurve:
+                case BSplineCurve:
                 {
                     // Put all poles for bspline
                     Geom_BSplineCurve GC = c.BSpline();
@@ -97,21 +102,21 @@ internal sealed class BRepFill_Sweep
                     }
                     break;
                 }
-                case GeomAbs_Line:
+                case Line:
                 {
                     NbPoints += 2;
                     break;
                 }
-                case GeomAbs_Circle:
-                case GeomAbs_Ellipse:
-                case GeomAbs_Hyperbola:
-                case GeomAbs_Parabola:
+                case Circle:
+                case Ellipse:
+                case Hyperbola:
+                case Parabola:
                 {
                     NbPoints += 4;
                     break;
                 }
                 default:
-                    NbPoints += 15 + c.NbIntervals(GeomAbs_C3);
+                    NbPoints += 15 + c.NbIntervals(C3);
                     break;
             } // switch (c.GetType()) ...
         } // for (; iter.More(); iter.Next())
@@ -157,11 +162,11 @@ internal sealed class BRepFill_Sweep
 
     //=================================================================================================
 
-    private static void Box(GeomFill_SectionLaw Sec, double U, ref Bnd_Box Box)
+    private static void Box(GeomFill_SectionLaw Sec, double U, ref Box Box)
     {
         Box.SetVoid();
         Sec.SectionShape(out int NbPoles, out _, out _);
-        NCollection_Array1<gp_Pnt> Poles = new(1, NbPoles);
+        NCollection_Array1<Point3D> Poles = new(1, NbPoles);
         NCollection_Array1<double> W = new(1, NbPoles);
         Sec.D0(U, Poles, W);
         for (int ii = 1; ii <= NbPoles; ii++)
@@ -175,9 +180,9 @@ internal sealed class BRepFill_Sweep
     // purpose  : Check if E is an edge of sewing on S
     //           and make the representation HadHoc
     //=======================================================================
-    private static Geom2d_Curve? Couture(in TopoDS_Edge E, Geom_Surface S, in TopLoc_Location L)
+    private static Geom2d_Curve? Couture(in TopoDS_Edge E, Geom_Surface S, in Placement L)
     {
-        TopLoc_Location l = L.Predivided(E.Location());
+        Placement l = L.Predivided(E.Location());
         bool Eisreversed = (E.Orientation() == TopAbs_REVERSED);
 
         // find the representation (OCCT reads ChangeCurves(); the port only reads the list)
@@ -226,8 +231,8 @@ internal sealed class BRepFill_Sweep
             t = step * i;
             t = (1 - t) * f + t * l;
             Pcurv.Value(t).Coord(out double u, out double v);
-            gp_Pnt pS = S.Value(u, v);
-            gp_Pnt pC = C3d.Value(t);
+            Point3D pS = S.Value(u, v);
+            Point3D pC = C3d.Value(t);
             double d2 = pS.SquareDistance(pC);
             tolreached = Max(tolreached, d2);
         }
@@ -238,7 +243,7 @@ internal sealed class BRepFill_Sweep
             return false;
         }
         tolreached *= 2.0;
-        tolreached = Max(tolreached, Precision.Confusion());
+        tolreached = Max(tolreached, global::Kerf.Engine.Foundation.Precision.Confusion());
         return true;
     }
 
@@ -264,7 +269,7 @@ internal sealed class BRepFill_Sweep
         }
         else
         {
-            tolreached = Max(tolreached, Precision.Confusion());
+            tolreached = Max(tolreached, global::Kerf.Engine.Foundation.Precision.Confusion());
             tolreached *= 1.05;
         }
         return true;
@@ -301,8 +306,8 @@ internal sealed class BRepFill_Sweep
                                                  S,
                                                  HC2d.FirstParameter(),
                                                  HC2d.LastParameter(),
-                                                 Precision.Confusion());
-            AppCurve.Perform(10, 10, GeomAbs_C1, true);
+                                                 global::Kerf.Engine.Foundation.Precision.Confusion());
+            AppCurve.Perform(10, 10, C1, true);
             if (AppCurve.IsDone() && AppCurve.HasResult())
             {
                 C3d = AppCurve.Curve3d();
@@ -376,12 +381,12 @@ internal sealed class BRepFill_Sweep
         for (int i = 0; i <= NCONTROL; i++)
         {
             double aParam = fpar + i * delta;
-            gp_Pnt aPnt = aCurve.Value(aParam);
+            Point3D aPnt = aCurve.Value(aParam);
             for (int j = 0; j < 2; j++)
             {
                 if (PCurveExists[j])
                 {
-                    gp_Pnt aPntFromFace = BAcurve[j].Value(aParam);
+                    Point3D aPntFromFace = BAcurve[j].Value(aParam);
                     double aSqDist = aPnt.SquareDistance(aPntFromFace);
                     if (aSqDist > MaxSqDist)
                     {
@@ -402,25 +407,25 @@ internal sealed class BRepFill_Sweep
     //=======================================================================
     private static void Oriente(Geom_Surface S, ref TopoDS_Edge E)
     {
-        gp_Vec2d URef = new(1, 0), VRef = new(0, 1);
+        Vector2D URef = new(1, 0), VRef = new(0, 1);
         bool isuiso, isfirst, isopposite;
         S.Bounds(out double UFirst, out _, out double VFirst, out _);
         Geom2d_Curve C;
 
-        C = BRep_Tool.CurveOnSurface(E, S, new TopLoc_Location(), out double f, out double l)!;
-        C.D1((f + l) / 2, out gp_Pnt2d P, out gp_Vec2d D);
+        C = BRep_Tool.CurveOnSurface(E, S, new Placement(), out double f, out double l)!;
+        C.D1((f + l) / 2, out Point2D P, out Vector2D D);
 
         isuiso = D.IsParallel(VRef, 0.1);
 
         if (isuiso)
         {
-            isfirst = (Math.Abs(P.X() - UFirst) < Precision.Confusion());
+            isfirst = (Math.Abs(P.X() - UFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
             isopposite = D.IsOpposite(VRef, 0.1);
             E.Orientation(TopAbs_REVERSED);
         }
         else
         {
-            isfirst = (Math.Abs(P.Y() - VFirst) < Precision.Confusion());
+            isfirst = (Math.Abs(P.Y() - VFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
             isopposite = D.IsOpposite(URef, 0.1);
             E.Orientation(TopAbs_FORWARD);
         }
@@ -440,7 +445,7 @@ internal sealed class BRepFill_Sweep
     {
         Geom2d_Curve? C2d = BRep_Tool.CurveOnSurface(E, F, out _, out _);
         Geom_Surface? S = BRep_Tool.Surface(F);
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         double Tol = BRep_Tool.Tolerance(E);
         BB.UpdateEdge(E, C2d, S, Loc, Tol);
         BRepCheck_Edge Check = new(E);
@@ -532,10 +537,10 @@ internal sealed class BRepFill_Sweep
                 BRep_TEdge TE2 = (BRep_TEdge)E2.TShape()!;
                 BRep_TEdge TE3 = (BRep_TEdge)E3.TShape()!;
                 BRep_TEdge TE4 = (BRep_TEdge)E4.TShape()!;
-                TE1.Tolerance(Precision.Confusion());
-                TE2.Tolerance(Precision.Confusion());
-                TE3.Tolerance(Precision.Confusion());
-                TE4.Tolerance(Precision.Confusion());
+                TE1.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
+                TE2.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
+                TE3.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
+                TE4.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 TopoDS_Wire theWire = new BRepLib_MakeWire(E1, E2, E3, E4).InternalWire();
                 int NbPoints = NumberOfPoles(theWire);
@@ -606,15 +611,15 @@ internal sealed class BRepFill_Sweep
         if (IsPlan)
         { // Suspend representation 2d
           // and construct face Plane
-            gp_Pnt aPnt;
-            gp_Vec DU, DV, NS, NP;
+            Point3D aPnt;
+            Vector3D DU, DV, NS, NP;
             S.Bounds(out double Ufirst, out double Ulast, out double Vfirst, out double Vlast);
             S.D1((Ufirst + Ulast) / 2.0, (Vfirst + Vlast) / 2.0, out aPnt, out DU, out DV);
             NS = DU ^ DV;
-            NP = new gp_Vec(thePlane!.Pln().Axis().Direction());
+            NP = new Vector3D(thePlane!.Pln().Axis().Direction());
             if (NS.Dot(NP) < 0.0)
             {
-                if (thePlane.IsFrozen())
+                if (thePlane.IsFrozen)
                 {
                     // OCCT.NET: BRepLib_FindSurface can return the plane of a face already built (the edges' pcurves
                     // lie on it), and OCCT reverses that shared plane in place, changing the other face too
@@ -630,7 +635,7 @@ internal sealed class BRepFill_Sweep
             else
             {
                 Geom2d_Curve? NullC2d = null;
-                TopLoc_Location Loc = new();
+                Placement Loc = new();
                 BB.UpdateEdge(E1, NullC2d, S, Loc, Tol1);
                 BB.UpdateEdge(E2, NullC2d, S, Loc, Tol2);
                 BB.UpdateEdge(E3, NullC2d, S, Loc, Tol3);
@@ -646,7 +651,7 @@ internal sealed class BRepFill_Sweep
 
         if (!IsPlan)
         { // Cas Standard : Ajout
-            BB.MakeFace(ref F, S, Precision.Confusion());
+            BB.MakeFace(ref F, S, global::Kerf.Engine.Foundation.Precision.Confusion());
             BB.Add(F, WW);
         }
 
@@ -672,21 +677,21 @@ internal sealed class BRepFill_Sweep
                                          double l,
                                          double Tol3d)
     {
-        gp_Pnt P;
+        Point3D P;
         double Tol1, Tol2, Tol, d;
         BRep_Builder B = new();
         TopoDS_Edge E = new();
 
-        gp_Pnt P1 = BRep_Tool.Pnt(VF);
+        Point3D P1 = BRep_Tool.Pnt(VF);
         Tol1 = BRep_Tool.Tolerance(VF);
-        gp_Pnt P2 = BRep_Tool.Pnt(VL);
+        Point3D P2 = BRep_Tool.Pnt(VL);
         Tol2 = BRep_Tool.Tolerance(VL);
         Tol = Max(Tol1, Tol2);
 
         if (VF.IsSame(VL) || (P1.Distance(P2) < Tol))
         {
             // Degenerated case
-            C2d.D0(f, out gp_Pnt2d P2d);
+            C2d.D0(f, out Point2D P2d);
             S.D0(P2d.X(), P2d.Y(), out P);
             d = P1.Distance(P);
             if (d > Tol)
@@ -705,7 +710,7 @@ internal sealed class BRepFill_Sweep
             B.UpdateVertex(VL, Tol);
 
             B.MakeEdge(ref E);
-            B.UpdateEdge(E, C2d, S, new TopLoc_Location(), Tol);
+            B.UpdateEdge(E, C2d, S, new Placement(), Tol);
             B.Add(E, VF);
             B.Add(E, VL);
             B.Range(E, f, l);
@@ -734,7 +739,7 @@ internal sealed class BRepFill_Sweep
         }
 
         E = MkE.InternalEdge();
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         B.UpdateEdge(E, C2d, S, Loc, Tol3d);
 
         IntTools_Context? aNullCtx = null;
@@ -743,7 +748,7 @@ internal sealed class BRepFill_Sweep
             TopoDS_Vertex aV = VF;
             B.UpdateVertex(aV, P1.Distance(P2));
             B.MakeEdge(ref E);
-            B.UpdateEdge(E, C2d, S, new TopLoc_Location(), Tol);
+            B.UpdateEdge(E, C2d, S, new Placement(), Tol);
             B.Add(E, TopoDS.Vertex(aV.Oriented(TopAbs_FORWARD)));
             B.Add(E, TopoDS.Vertex(aV.Oriented(TopAbs_REVERSED)));
             B.Range(E, f, l);
@@ -763,8 +768,8 @@ internal sealed class BRepFill_Sweep
                                 in TopoDS_Shape F2,
                                 NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> EEmap,
                                 double Tol,
-                                in gp_Ax2 Axe,
-                                in gp_Vec TangentOnPart1,
+                                in Frame3D Axe,
+                                in Vector3D TangentOnPart1,
                                 ref TopoDS_Edge Aux1,
                                 ref TopoDS_Edge Aux2,
                                 ref TopoDS_Face Result)
@@ -819,16 +824,16 @@ internal sealed class BRepFill_Sweep
         // Prof1's param domain may equals to Prof2's param domain *(-1), which means EF.Orientation() ==
         // EL.Orientation()
         bool bSameCurveDomain = EF.Orientation() != EL.Orientation();
-        gp_Pnt P1, P2, P;
+        Point3D P1, P2, P;
 
         // Choose the angle of opening
-        gp_Trsf aTf = new();
-        aTf.SetTransformation(new gp_Ax3(Axe));
+        Transform3D aTf = new();
+        aTf.SetTransformation(new CoordinateSystem(Axe));
 
         // Choose the furthest point from the "center of revolution"
         // to provide correct angle measurement.
         double[] aPrm = [f1, 0.5 * (f1 + l1), l1];
-        gp_Pnt[] aP1 = [Prof1.Value(aPrm[0]).Transformed(aTf),
+        Point3D[] aP1 = [Prof1.Value(aPrm[0]).Transformed(aTf),
                         Prof1.Value(aPrm[1]).Transformed(aTf),
                         Prof1.Value(aPrm[2]).Transformed(aTf)];
 
@@ -845,17 +850,17 @@ internal sealed class BRepFill_Sweep
         }
 
         double[] aPrm2 = [f2, 0.5 * (f2 + l2), l2];
-        gp_Pnt aP2 = Prof2.Value(aPrm2[bSameCurveDomain ? aMaxIdx : 2 - aMaxIdx]).Transformed(aTf);
-        gp_Vec2d aV1 = new(aP1[aMaxIdx].Z(), aP1[aMaxIdx].X());
-        gp_Vec2d aV2 = new(aP2.Z(), aP2.X());
-        if (aV1.SquareMagnitude() <= gp.Resolution() || aV2.SquareMagnitude() <= gp.Resolution())
+        Point3D aP2 = Prof2.Value(aPrm2[bSameCurveDomain ? aMaxIdx : 2 - aMaxIdx]).Transformed(aTf);
+        Vector2D aV1 = new(aP1[aMaxIdx].Z(), aP1[aMaxIdx].X());
+        Vector2D aV2 = new(aP2.Z(), aP2.X());
+        if (aV1.SquareMagnitude() <= Constants.Resolution() || aV2.SquareMagnitude() <= Constants.Resolution())
         {
             return false;
         }
 
         Angle = aV1.Angle(aV2);
 
-        gp_Ax1 axe = new(Axe.Location(), Axe.YDirection());
+        Axis3D axe = new(Axe.Location(), Axe.YDirection());
 
         if (Angle < 0)
         {
@@ -869,7 +874,7 @@ internal sealed class BRepFill_Sweep
 
         // Control the direction of the rotation
         bool ToReverseResult = false;
-        gp_Vec d1u;
+        Vector3D d1u;
         d1u = Surf.DN(0, aPrm[aMaxIdx], 1, 0);
         if (d1u.Angle(TangentOnPart1) > M_PI / 2)
         { // Invert everything
@@ -879,13 +884,13 @@ internal sealed class BRepFill_Sweep
         Geom2d_Curve C1, C2, C4;
         Geom2d_Curve? C3 = null;
         Geom2d_Line L;
-        gp_Pnt2d P2d = new(0.0, 0.0);
+        Point2D P2d = new(0.0, 0.0);
 
-        L = new Geom2d_Line(P2d, gp.DY2d());
+        L = new Geom2d_Line(P2d, Constants.DY2d());
         C1 = new Geom2d_TrimmedCurve(L, f1, l1);
 
         P2d.SetCoord(Angle, 0.0);
-        L = new Geom2d_Line(P2d, gp.DY2d());
+        L = new Geom2d_Line(P2d, Constants.DY2d());
         C2 = new Geom2d_TrimmedCurve(L, f1, l1);
 
         // It is required to control the direction and the range.
@@ -903,7 +908,7 @@ internal sealed class BRepFill_Sweep
             V2 = V1;
             V1 = aux;
         }
-        GeomLib.SameRange(Precision.PConfusion(),
+        GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                           C2,
                           C2.FirstParameter(),
                           C2.LastParameter(),
@@ -913,26 +918,26 @@ internal sealed class BRepFill_Sweep
         C2 = C3!;
 
         P2d.SetCoord(0.0, f1);
-        L = new Geom2d_Line(P2d, gp.DX2d());
+        L = new Geom2d_Line(P2d, Constants.DX2d());
         C3 = new Geom2d_TrimmedCurve(L, 0, Angle);
 
         P2d.SetCoord(0.0, l1);
-        L = new Geom2d_Line(P2d, gp.DX2d());
+        L = new Geom2d_Line(P2d, Constants.DX2d());
         C4 = new Geom2d_TrimmedCurve(L, 0, Angle);
         // (OCCT's commented-out deformation by GeomPlate and its unused points are left out.)
 
         // Update des Edges
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         Geom_Curve C3d;
-        B.UpdateEdge(E1, C1, Surf, Loc, /*Tol3d*/ Precision.Confusion());
-        B.UpdateEdge(E2, C2, Surf, Loc, /*Tol3d*/ Precision.Confusion());
+        B.UpdateEdge(E1, C1, Surf, Loc, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
+        B.UpdateEdge(E2, C2, Surf, Loc, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (E3.IsSame(E4))
         {
             if (!WithE3)
             {
                 C3d = Surf.VIso(f1);
-                E3 = BuildEdge(C3d, C3, Surf, Vf, V1, 0, Angle, /*Tol3d*/ Precision.Confusion());
+                E3 = BuildEdge(C3d, C3, Surf, Vf, V1, 0, Angle, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -943,11 +948,11 @@ internal sealed class BRepFill_Sweep
                     B.Range(E3, 0, Angle);
                     TopoDS_Vertex V = TopExp.LastVertex(E3);
                     BRep_TVertex TVlast = (BRep_TVertex)V.TShape()!;
-                    TVlast.Tolerance(Precision.Confusion());
+                    TVlast.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
             }
 
-            B.UpdateEdge(E3, C3, C4, Surf, Loc, /*Tol3d*/ Precision.Confusion());
+            B.UpdateEdge(E3, C3, C4, Surf, Loc, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             E4 = E3;
             E4.Reverse();
         }
@@ -956,7 +961,7 @@ internal sealed class BRepFill_Sweep
             if (!WithE3)
             {
                 C3d = Surf.VIso(f1);
-                E3 = BuildEdge(C3d, C3, Surf, Vf, V1, 0, Angle, /*Tol3d*/ Precision.Confusion());
+                E3 = BuildEdge(C3d, C3, Surf, Vf, V1, 0, Angle, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -967,16 +972,16 @@ internal sealed class BRepFill_Sweep
                     B.Range(E3, 0, Angle);
                     TopoDS_Vertex V = TopExp.LastVertex(E3);
                     BRep_TVertex TVlast = (BRep_TVertex)V.TShape()!;
-                    TVlast.Tolerance(Precision.Confusion());
+                    TVlast.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
 
-                B.UpdateEdge(E3, C3, Surf, Loc, /*Tol3d*/ Precision.Confusion());
+                B.UpdateEdge(E3, C3, Surf, Loc, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             }
 
             if (!WithE4)
             {
                 C3d = Surf.VIso(l1);
-                E4 = BuildEdge(C3d, C4, Surf, Vl, V2, 0, Angle, /*Tol3d*/ Precision.Confusion());
+                E4 = BuildEdge(C3d, C4, Surf, Vl, V2, 0, Angle, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -987,10 +992,10 @@ internal sealed class BRepFill_Sweep
                     B.Range(E4, 0, Angle);
                     TopoDS_Vertex V = TopExp.LastVertex(E4);
                     BRep_TVertex TVlast = (BRep_TVertex)V.TShape()!;
-                    TVlast.Tolerance(Precision.Confusion());
+                    TVlast.Tolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
 
-                B.UpdateEdge(E4, C4, Surf, Loc, /*Tol3d*/ Precision.Confusion());
+                B.UpdateEdge(E4, C4, Surf, Loc, /*Tol3d*/ global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -998,8 +1003,8 @@ internal sealed class BRepFill_Sweep
         BuildFace(Surf, E1, E3, E2, E4, EEmap, false, false, ref Result);
 
         // Set the continuities.
-        B.Continuity(E1, TopoDS.Face(F1), Result, GeomAbs_G1);
-        B.Continuity(E2, TopoDS.Face(F2), Result, GeomAbs_G1);
+        B.Continuity(E1, TopoDS.Face(F1), Result, G1);
+        B.Continuity(E2, TopoDS.Face(F2), Result, G1);
 
         // Render the calculated borders.
         if (!BRep_Tool.Degenerated(E3))
@@ -1028,12 +1033,12 @@ internal sealed class BRepFill_Sweep
         Angle = RealFirst();
         for (int i = 0; i < 3; i++)
         {
-            gp_Vec D1U, D1V, N1, N2;
+            Vector3D D1U, D1V, N1, N2;
             C1.D0(aPrm[i], out P2d);
             Surf.D1(P2d.X(), P2d.Y(), out P, out D1U, out D1V);
             N1 = D1U ^ D1V;
 
-            if (N1.SquareMagnitude() < Precision.SquareConfusion())
+            if (N1.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
@@ -1044,7 +1049,7 @@ internal sealed class BRepFill_Sweep
             AS.D1(P2d.X(), P2d.Y(), out P, out D1U, out D1V);
             N2 = D1U ^ D1V;
 
-            if (N2.SquareMagnitude() < Precision.SquareConfusion())
+            if (N2.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
@@ -1113,11 +1118,11 @@ internal sealed class BRepFill_Sweep
         List.Clear();
         TopExp_Explorer Exp = new(Face, TopAbs_EDGE);
         Geom_Curve? Cref, C;
-        Cref = BRep_Tool.Curve(TopoDS.Edge(Edge), out TopLoc_Location Lref, out _, out _);
+        Cref = BRep_Tool.Curve(TopoDS.Edge(Edge), out Placement Lref, out _, out _);
 
         for (; Exp.More(); Exp.Next())
         {
-            C = BRep_Tool.Curve(TopoDS.Edge(Exp.Current()), out TopLoc_Location L, out _, out _);
+            C = BRep_Tool.Curve(TopoDS.Edge(Exp.Current()), out Placement L, out _, out _);
             if (ReferenceEquals(Cref, C) && (Lref.IsEqual(L)))
             {
                 List.Append(Exp.Current());
@@ -1141,7 +1146,7 @@ internal sealed class BRepFill_Sweep
             val = Last;
         }
         TopoDS_Vertex aV = new();
-        B.MakeVertex(ref aV, Iso.Value(val), Precision.Confusion());
+        B.MakeVertex(ref aV, Iso.Value(val), global::Kerf.Engine.Foundation.Precision.Confusion());
         Vertex = aV;
     }
 
@@ -1189,7 +1194,7 @@ internal sealed class BRepFill_Sweep
             {
                 tol = Tol;
             }
-            Iso.D0((Iso.FirstParameter() + Iso.LastParameter()) / 2, out gp_Pnt P);
+            Iso.D0((Iso.FirstParameter() + Iso.LastParameter()) / 2, out Point3D P);
             if (P.Distance(BRep_Tool.Pnt(V)) < tol)
             {
                 GeomAdaptor_Curve AC = new(Iso);
@@ -1208,7 +1213,7 @@ internal sealed class BRepFill_Sweep
         else
         {
             // Construction Via 3d
-            gp_Pnt P1, P2;
+            Point3D P1, P2;
             double p1, p2, p11, p12, p21, p22;
             bool fwd = false;
             p1 = Iso.FirstParameter();
@@ -1275,7 +1280,7 @@ internal sealed class BRepFill_Sweep
 
             if (!MkE.IsDone())
             { // Erreur de construction !!
-                throw new Standard_ConstructionError("BRepFill_Sweep::BuildEdge");
+                throw new ConstructionErrorException("BRepFill_Sweep::BuildEdge");
             }
 
             E = MkE.InternalEdge();
@@ -1283,22 +1288,22 @@ internal sealed class BRepFill_Sweep
 
         // Associate 2d
         Geom2d_Line L;
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         S.Bounds(out double Umin, out _, out double Vmin, out _);
         if (isUiso)
         {
-            gp_Pnt2d P = new(ValIso, Vmin - Iso.FirstParameter());
-            gp_Vec2d V = new(0.0, 1.0);
-            L = new Geom2d_Line(P, new gp_Dir2d(V));
+            Point2D P = new(ValIso, Vmin - Iso.FirstParameter());
+            Vector2D V = new(0.0, 1.0);
+            L = new Geom2d_Line(P, new Direction2D(V));
         }
         else
         {
-            gp_Pnt2d P = new(Umin - Iso.FirstParameter(), ValIso);
-            gp_Vec2d V = new(1.0, 0.0);
-            L = new Geom2d_Line(P, new gp_Dir2d(V));
+            Point2D P = new(Umin - Iso.FirstParameter(), ValIso);
+            Vector2D V = new(1.0, 0.0);
+            L = new Geom2d_Line(P, new Direction2D(V));
         }
 
-        B.UpdateEdge(E, L, S, Loc, Precision.Confusion());
+        B.UpdateEdge(E, L, S, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (sing)
         {
             B.Range(E, S, Loc, Iso.FirstParameter(), Iso.LastParameter());
@@ -1323,7 +1328,7 @@ internal sealed class BRepFill_Sweep
         Geom2d_Line L;
         Geom2d_Curve? PCurve;
         Geom2d_Curve CL;
-        TopLoc_Location Loc = new();
+        Placement Loc = new();
         double F2d, L2d;
         S.Bounds(out double UFirst, out double ULast, out double VFirst, out double VLast);
 
@@ -1342,7 +1347,7 @@ internal sealed class BRepFill_Sweep
         if (Vf.IsSame(Vl))
         { // Singular case ?
             double tol = BRep_Tool.Tolerance(Vf);
-            Iso.D0((Iso.FirstParameter() + Iso.LastParameter()) / 2, out gp_Pnt Pmid);
+            Iso.D0((Iso.FirstParameter() + Iso.LastParameter()) / 2, out Point3D Pmid);
             if (Pmid.Distance(BRep_Tool.Pnt(Vf)) < tol)
             {
                 GeomAdaptor_Curve AC = new(Iso);
@@ -1352,17 +1357,17 @@ internal sealed class BRepFill_Sweep
 
         if (isUiso)
         {
-            gp_Pnt2d P = new(ValIso, 0);
-            gp_Vec2d V = new(0.0, 1.0);
-            L = new Geom2d_Line(P, new gp_Dir2d(V));
+            Point2D P = new(ValIso, 0);
+            Vector2D V = new(0.0, 1.0);
+            L = new Geom2d_Line(P, new Direction2D(V));
             F2d = VFirst;
             L2d = VLast;
         }
         else
         {
-            gp_Pnt2d P = new(0.0, ValIso);
-            gp_Vec2d V = new(1.0, 0.0);
-            L = new Geom2d_Line(P, new gp_Dir2d(V));
+            Point2D P = new(0.0, ValIso);
+            Vector2D V = new(1.0, 0.0);
+            L = new Geom2d_Line(P, new Direction2D(V));
             F2d = UFirst;
             L2d = ULast;
         }
@@ -1372,8 +1377,8 @@ internal sealed class BRepFill_Sweep
         double R, First, Last, Tol = 1.0e-4;
         bool reverse = false;
 
-        gp_Pnt POnS;
-        gp_Pnt2d P2d;
+        Point3D POnS;
+        Point2D P2d;
         BRep_Tool.Range(E, out First, out Last);
 
         if (!Vf.IsSame(Vl))
@@ -1386,12 +1391,12 @@ internal sealed class BRepFill_Sweep
         else if (!sing)
         {
             // Test angle between "First Tangente"
-            gp_Vec V3d = new();
+            Vector3D V3d = new();
             BRepAdaptor_Curve C3d = new(E);
 
-            C3d.D1(First, out POnS, out gp_Vec dC3d);
-            CL.D1(F2d, out P2d, out gp_Vec2d V2d);
-            S.D1(P2d.X(), P2d.Y(), out POnS, out gp_Vec du, out gp_Vec dv);
+            C3d.D1(First, out POnS, out Vector3D dC3d);
+            CL.D1(F2d, out P2d, out Vector2D V2d);
+            S.D1(P2d.X(), P2d.Y(), out POnS, out Vector3D du, out Vector3D dv);
             V3d.SetLinearForm(V2d.X(), du, V2d.Y(), dv);
             reverse = (dC3d.Angle(V3d) > Tol);
         }
@@ -1416,7 +1421,7 @@ internal sealed class BRepFill_Sweep
         if (First != F2d || Last != L2d)
         {
             Geom2d_Curve? C2d = null;
-            GeomLib.SameRange(Precision.PConfusion(), CL, F2d, L2d, First, Last, ref C2d);
+            GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(), CL, F2d, L2d, First, Last, ref C2d);
             CL = new Geom2d_TrimmedCurve(C2d!, First, Last);
         }
 
@@ -1445,7 +1450,7 @@ internal sealed class BRepFill_Sweep
         PCurve = Couture(E, S, Loc);
         if (PCurve is null)
         {
-            B.UpdateEdge(E, CL, S, Loc, Precision.Confusion());
+            B.UpdateEdge(E, CL, S, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else
         { // Sewing edge
@@ -1453,11 +1458,11 @@ internal sealed class BRepFill_Sweep
             Oriente(S, ref e);
             if (e.Orientation() == TopAbs_REVERSED)
             {
-                B.UpdateEdge(E, CL, PCurve, S, Loc, Precision.Confusion());
+                B.UpdateEdge(E, CL, PCurve, S, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
-                B.UpdateEdge(E, PCurve, CL, S, Loc, Precision.Confusion());
+                B.UpdateEdge(E, PCurve, CL, S, Loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -1478,7 +1483,7 @@ internal sealed class BRepFill_Sweep
         double t, dt, l;
         int ii;
         Geom_Curve Iso;
-        gp_Pnt P1, P2, P3;
+        Point3D P1, P2, P3;
 
         S.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
@@ -1596,7 +1601,7 @@ internal sealed class BRepFill_Sweep
         myAuxShape.Clear();
 
         myApproxStyle = GeomFill_Location;
-        myContinuity = GeomAbs_C2;
+        myContinuity = C2;
         myDegmax = 11;
         mySegmax = 30;
         myForceApproxC1 = false;
@@ -1659,7 +1664,7 @@ internal sealed class BRepFill_Sweep
     /// </summary>
     public void SetAngularControl(double MinAngle = 0.01, double MaxAngle = 6.0)
     {
-        myAngMin = Max(MinAngle, Precision.Angular());
+        myAngMin = Max(MinAngle, global::Kerf.Engine.Foundation.Precision.Angular());
         myAngMax = Min(MaxAngle, 6.28);
     }
 
@@ -1680,7 +1685,7 @@ internal sealed class BRepFill_Sweep
     private bool CorrectApproxParameters()
     {
         TopoDS_Wire thePath = myLoc.Wire();
-        GeomAbs_Shape NewCont = myContinuity;
+        Continuity NewCont = myContinuity;
         int NewSegmax = mySegmax;
 
         TopoDS_Iterator iter = new(thePath);
@@ -1688,8 +1693,8 @@ internal sealed class BRepFill_Sweep
         {
             TopoDS_Edge anEdge = TopoDS.Edge(iter.Value());
             BRepAdaptor_Curve aBAcurve = new(anEdge);
-            GeomAbs_Shape aContinuity = aBAcurve.Continuity();
-            int aNbInterv = aBAcurve.NbIntervals(GeomAbs_CN);
+            Continuity aContinuity = aBAcurve.Continuity();
+            int aNbInterv = aBAcurve.NbIntervals(CN);
             if (aContinuity < NewCont)
             {
                 NewCont = aContinuity;
@@ -1716,7 +1721,7 @@ internal sealed class BRepFill_Sweep
     {
         _ = Transition;
         int ipath, isec = 1;
-        gp_Pnt P1;
+        Point3D P1;
 
         BRep_Builder B = new();
         int NbPath = myLoc.NbLaw();
@@ -2168,7 +2173,7 @@ internal sealed class BRepFill_Sweep
             }
             else
             {
-                TopLoc_Location Identity = new();
+                Placement Identity = new();
                 Vertex[isec, 1].Location(Identity);
                 B.UpdateVertex(TopoDS.Vertex(Vertex[isec, 1]), S.Value(u, v), mySec.VertexTol(isec - 1, Vi[1]));
             }
@@ -2274,7 +2279,7 @@ internal sealed class BRepFill_Sweep
             }
             else
             {
-                TopLoc_Location Identity = new();
+                Placement Identity = new();
                 Vertex[isec, NbPath + 1].Location(Identity);
                 B.UpdateVertex(TopoDS.Vertex(Vertex[isec, NbPath + 1]),
                                S.Value(u, v),
@@ -2478,8 +2483,8 @@ internal sealed class BRepFill_Sweep
                     {
                         if (!Vertex[1, ipath].IsSame(Vertex[1, ipath + 1]))
                         {
-                            gp_Pnt P1 = BRep_Tool.Pnt(TopoDS.Vertex(Vertex[1, ipath]));
-                            gp_Pnt P2 = BRep_Tool.Pnt(TopoDS.Vertex(Vertex[1, ipath + 1]));
+                            Point3D P1 = BRep_Tool.Pnt(TopoDS.Vertex(Vertex[1, ipath]));
+                            Point3D P2 = BRep_Tool.Pnt(TopoDS.Vertex(Vertex[1, ipath + 1]));
                             if (P1.Distance(P2) <= myTol3d)
                             {
                                 Vertex[1, ipath + 1] = Vertex[1, ipath];
@@ -2694,7 +2699,7 @@ internal sealed class BRepFill_Sweep
             {
                 if (isec > 1)
                 {
-                    isG1 = (mySec.Continuity(isec - 1, myTolAngular) >= GeomAbs_G1);
+                    isG1 = (mySec.Continuity(isec - 1, myTolAngular) >= G1);
                 }
                 else
                 {
@@ -2716,7 +2721,7 @@ internal sealed class BRepFill_Sweep
                         B.Continuity(TopoDS.Edge(myUEdges.Value(isec, IPath)),
                                      TopoDS.Face(myFaces.Value(isec - 1, IPath)),
                                      FF,
-                                     GeomAbs_G1);
+                                     G1);
                     }
                 }
             }
@@ -2834,7 +2839,7 @@ internal sealed class BRepFill_Sweep
                       NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> Tapes,
                       NCollection_DataMap<TopoDS_Shape, NCollection_HArray2<TopoDS_Shape>> Rails,
                       BRepFill_TransitionStyle Transition = BRepFill_Modified,
-                      GeomAbs_Shape Continuity = GeomAbs_C2,
+                      Continuity Continuity = C2,
                       GeomFill_ApproxStyle Approx = GeomFill_Location,
                       int Degmax = 11,
                       int Segmax = 30)
@@ -3177,8 +3182,8 @@ internal sealed class BRepFill_Sweep
         bool isTangent = false;
         double F, L;
         int I1, I2, ii;
-        gp_Pnt P1, P2;
-        gp_Vec T1, T2, Tang, Sortant = new();
+        Point3D P1, P2;
+        Vector3D T1, T2, Tang, Sortant = new();
 
         if (Index > 1)
         {
@@ -3203,14 +3208,14 @@ internal sealed class BRepFill_Sweep
         if (T1.Angle(T2) < myAngMin)
         {
             isTangent = true;
-            gp_Vec t1, t2, V = new();
-            gp_Mat M = new();
+            Vector3D t1, t2, V = new();
+            Matrix3x3 M = new();
             myLoc.Law(I1).GetDomain(out F, out L);
             myLoc.Law(I1).D0(L, ref M, ref V);
-            t1 = new gp_Vec(M.Column(3));
+            t1 = new Vector3D(M.Column(3));
             myLoc.Law(I2).GetDomain(out F, out L);
             myLoc.Law(I2).D0(L, ref M, ref V); // OCCT: the next law's frame at its end, not its start
-            t2 = new gp_Vec(M.Column(3));
+            t2 = new Vector3D(M.Column(3));
 
             if (t1.Angle(t2) < myAngMin)
             {
@@ -3229,8 +3234,8 @@ internal sealed class BRepFill_Sweep
         }
 
         Tang = T1 + T2; // Average direction
-        gp_Dir NormalOfBisPlane = new(Tang);
-        gp_Vec anIntersectPointCrossDirection = T1.Crossed(T2);
+        Direction3D NormalOfBisPlane = new(Tang);
+        Vector3D anIntersectPointCrossDirection = T1.Crossed(T2);
         if (isTangent)
         {
             Sortant -= Tang.Dot(Tang) * Tang;
@@ -3243,11 +3248,11 @@ internal sealed class BRepFill_Sweep
         }
 
         P1.BaryCenter(0.5, P2, 0.5);
-        gp_Dir N = new(Sortant);
-        gp_Dir Dx = new(Tang);
+        Direction3D N = new(Sortant);
+        Direction3D Dx = new(Tang);
 
-        gp_Ax2 Axe = new(P1, N, Dx);
-        gp_Ax2 AxeOfBisPlane = new(P1, NormalOfBisPlane);
+        Frame3D Axe = new(P1, N, Dx);
+        Frame3D AxeOfBisPlane = new(P1, NormalOfBisPlane);
 
         // Construct 2 intersecting Shells
         NCollection_HArray2<TopoDS_Shape> UEdges = new(1, mySec.NbLaw() + 1, 1, myLoc.NbLaw());
@@ -3262,19 +3267,19 @@ internal sealed class BRepFill_Sweep
         Translate(myUEdges, I1, aUEdges, 1);
         Translate(myUEdges, I2, aUEdges, 2);
 
-        gp_Vec aNormal = T2 + T1;
+        Vector3D aNormal = T2 + T1;
         TopoDS_Face aPlaneF = new();
 
-        if (aNormal.Magnitude() > gp.Resolution())
+        if (aNormal.Magnitude() > Constants.Resolution())
         {
-            gp_Pln pl = new(P1, new gp_Dir(aNormal));
+            Plane3D pl = new(P1, new Direction3D(aNormal));
             BRepLib_MakeFace aFMaker = new(pl);
 
             if (aFMaker.Error() == BRepLib_FaceDone)
             {
                 aPlaneF = aFMaker.InternalFace();
                 BRep_Builder aBB = new();
-                aBB.UpdateFace(aPlaneF, Precision.Confusion() * 10.0);
+                aBB.UpdateFace(aPlaneF, global::Kerf.Engine.Foundation.Precision.Confusion() * 10.0);
             }
         }
 
@@ -3472,8 +3477,8 @@ internal sealed class BRepFill_Sweep
                 I2 = Index;
             }
 
-            gp_Vec V1 = new(), V2 = new(), T1 = new(), T2 = new();
-            gp_Mat M1 = new(), M2 = new();
+            Vector3D V1 = new(), V2 = new(), T1 = new(), T2 = new();
+            Matrix3x3 M1 = new(), M2 = new();
             double R, f, l;
 
             myLoc.Law(I1).GetDomain(out f, out l);
@@ -3502,7 +3507,7 @@ internal sealed class BRepFill_Sweep
             myLoc.CurvilinearBounds(I1, out _, out Ll);
             U = SecFirst + (Ll / Length) * SecLen;
 
-            Bnd_Box box = new();
+            Box box = new();
             Box(Sec, U, ref box);
             box.Get(out double Xmin, out double Ymin, out double Zmin, out double Xmax, out double Ymax, out double Zmax);
 
@@ -3550,7 +3555,7 @@ internal sealed class BRepFill_Sweep
                                     mySec.Vertex(isec, Param),
                                     ErrApp + mySec.VertexTol(isec - 1, Param),
                                     out TopoDS_Vertex vv);
-        gp_Pnt P1, P2;
+        Point3D P1, P2;
         P1 = BRep_Tool.Pnt(vv);
         P2 = BRep_Tool.Pnt(TheV);
 
@@ -3572,7 +3577,7 @@ internal sealed class BRepFill_Sweep
     private void RebuildTopOrBottomEdge(in TopoDS_Edge aNewEdge, ref TopoDS_Edge anEdge, NCollection_Map<TopoDS_Shape> ReversedEdges)
     {
         Geom_Curve? aNewCurve = BRep_Tool.Curve(aNewEdge, out double fpar, out double lpar);
-        TopLoc_Location Identity = new();
+        Placement Identity = new();
 
         bool ToReverse = false;
         bool IsDegen = BRep_Tool.Degenerated(aNewEdge);
@@ -3595,8 +3600,8 @@ internal sealed class BRepFill_Sweep
                     }
                     else
                     {
-                        gp_Pnt Pnt1 = BRep_Tool.Pnt(V1);
-                        gp_Pnt NewPnt1 = BRep_Tool.Pnt(NewV1);
+                        Point3D Pnt1 = BRep_Tool.Pnt(V1);
+                        Point3D NewPnt1 = BRep_Tool.Pnt(NewV1);
                         double TolSum = BRep_Tool.Tolerance(V1) + BRep_Tool.Tolerance(NewV1);
                         if (!Pnt1.IsEqual(NewPnt1, TolSum))
                         {
@@ -3608,8 +3613,8 @@ internal sealed class BRepFill_Sweep
             else
             {
                 Geom_Curve OldCurve = BRep_Tool.Curve(anEdge, out double OldFirst, out double OldLast)!;
-                OldCurve.D1(0.5 * (OldFirst + OldLast), out _, out gp_Vec OldD1);
-                aNewCurve!.D1(0.5 * (fpar + lpar), out _, out gp_Vec NewD1);
+                OldCurve.D1(0.5 * (OldFirst + OldLast), out _, out Vector3D OldD1);
+                aNewCurve!.D1(0.5 * (fpar + lpar), out _, out Vector3D NewD1);
                 if (OldD1 * NewD1 < 0.0)
                 {
                     ToReverse = true;
@@ -3622,7 +3627,7 @@ internal sealed class BRepFill_Sweep
         TEdge.Tolerance(BRep_Tool.Tolerance(aNewEdge));
         BRep_Builder BB = new();
         BB.Range(anEdge, fpar, lpar);
-        BB.UpdateEdge(anEdge, aNewCurve, Precision.Confusion());
+        BB.UpdateEdge(anEdge, aNewCurve, global::Kerf.Engine.Foundation.Precision.Confusion());
         BRep_TEdge TE = (BRep_TEdge)aNewEdge.TShape()!;
         NCollection_List<BRep_CurveRepresentation> lcr = TE.Curves();
         NCollection_List<BRep_CurveRepresentation>.Iterator itrep = new(lcr);
@@ -3634,8 +3639,8 @@ internal sealed class BRepFill_Sweep
                 BRep_GCurve GC = (BRep_GCurve)CurveRep;
                 Geom2d_Curve? aPCurve = GC.PCurve();
                 Geom_Surface? aSurf = GC.Surface();
-                TopLoc_Location aLoc = aNewEdge.Location() * GC.Location();
-                BB.UpdateEdge(anEdge, aPCurve, aSurf, aLoc, Precision.Confusion());
+                Placement aLoc = aNewEdge.Location() * GC.Location();
+                BB.UpdateEdge(anEdge, aPCurve, aSurf, aLoc, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 

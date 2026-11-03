@@ -2,6 +2,8 @@
 // of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 public sealed partial class ShapeBuild_Edge
@@ -63,10 +65,10 @@ public sealed partial class ShapeBuild_Edge
     public TopoDS_Edge PCurveRemoved(in TopoDS_Edge edge, Geom_Surface? surf)
         => onCopy(edge, aCopy => RemovePCurve(aCopy, surf), out _);
 
-    /// <summary>The functional twin of <see cref="RemovePCurve(in TopoDS_Edge, Geom_Surface, in TopLoc_Location)"/>.</summary>
-    public TopoDS_Edge PCurveRemoved(in TopoDS_Edge edge, Geom_Surface? surf, in TopLoc_Location loc)
+    /// <summary>The functional twin of <see cref="RemovePCurve(in TopoDS_Edge, Geom_Surface, in Placement)"/>.</summary>
+    public TopoDS_Edge PCurveRemoved(in TopoDS_Edge edge, Geom_Surface? surf, in Placement loc)
     {
-        TopLoc_Location aLoc = loc;
+        Placement aLoc = loc;
         return onCopy(edge, aCopy => RemovePCurve(aCopy, surf, aLoc), out _);
     }
 

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The accessors of IntPatch_Polyhedron that IntPatch_InterferencePolyhedron and the BVH use.</summary>
@@ -13,10 +17,10 @@ namespace Occt;
 public static class IntPatch_PolyhedronTool
 {
     /// <summary>The box of the polyhedron.</summary>
-    public static Bnd_Box Bounding(IntPatch_Polyhedron thePolyh) => thePolyh.Bounding();
+    public static Box Bounding(IntPatch_Polyhedron thePolyh) => thePolyh.Bounding();
 
     /// <summary>The boxes of the triangles (the polyhedron's own array: don't modify).</summary>
-    public static NCollection_HArray1<Bnd_Box> ComponentsBounding(IntPatch_Polyhedron thePolyh) =>
+    public static NCollection_HArray1<Box> ComponentsBounding(IntPatch_Polyhedron thePolyh) =>
         thePolyh.ComponentsBounding();
 
     /// <summary>The deflection of the polyhedron.</summary>
@@ -30,7 +34,7 @@ public static class IntPatch_PolyhedronTool
         thePolyh.Triangle(Index, out P1, out P2, out P3);
 
     /// <summary>The point of index <paramref name="Index"/>.</summary>
-    public static gp_Pnt Point(IntPatch_Polyhedron thePolyh, int Index) => thePolyh.Point(Index);
+    public static Point3D Point(IntPatch_Polyhedron thePolyh, int Index) => thePolyh.Point(Index);
 
     /// <summary>The triangle connected to <paramref name="Triang"/> through an edge (see IntPatch_Polyhedron.TriConnex).</summary>
     public static int TriConnex(IntPatch_Polyhedron thePolyh, int Triang, int Pivot, int Pedge, out int TriCon,

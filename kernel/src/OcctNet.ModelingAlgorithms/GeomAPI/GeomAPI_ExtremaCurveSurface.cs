@@ -4,6 +4,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -50,7 +52,7 @@ public class GeomAPI_ExtremaCurveSurface
         GeomAdaptor_Curve TheCurve = new(Curve);
         GeomAdaptor_Surface TheSurface = new(Surface);
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myExtCS.Initialize(TheSurface, Tol, Tol);
         myExtCS.Perform(TheCurve, TheCurve.FirstParameter(), TheCurve.LastParameter());
         myIsDone = myExtCS.IsDone() && (myExtCS.IsParallel() || myExtCS.NbExt() > 0);
@@ -83,7 +85,7 @@ public class GeomAPI_ExtremaCurveSurface
         GeomAdaptor_Curve TheCurve = new(Curve, Wmin, Wmax);
         GeomAdaptor_Surface TheSurface = new(Surface, Umin, Umax, Vmin, Vmax);
 
-        double Tol = Precision.PConfusion();
+        double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myExtCS.Initialize(TheSurface, Umin, Umax, Vmin, Vmax, Tol, Tol);
         myExtCS.Perform(TheCurve, Wmin, Wmax);
         myIsDone = myExtCS.IsDone() && (myExtCS.IsParallel() || myExtCS.NbExt() > 0);
@@ -123,7 +125,7 @@ public class GeomAPI_ExtremaCurveSurface
     public static explicit operator int(GeomAPI_ExtremaCurveSurface theExt) => theExt.NbExtrema();
 
     /// <summary>The points of the extremum of index <paramref name="Index"/>, on the curve and on the surface.</summary>
-    public void Points(int Index, out gp_Pnt P1, out gp_Pnt P2)
+    public void Points(int Index, out Point3D P1, out Point3D P2)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbExtrema(), "GeomAPI_ExtremaCurveCurve::Points");
 
@@ -156,7 +158,7 @@ public class GeomAPI_ExtremaCurveSurface
     public bool IsParallel() => myExtCS.IsParallel();
 
     /// <summary>The points of the nearest extremum. Throws StdFail_NotDone if there is none.</summary>
-    public void NearestPoints(out gp_Pnt PC, out gp_Pnt PS)
+    public void NearestPoints(out Point3D PC, out Point3D PS)
     {
         StdFail_NotDone_Raise_if(!myIsDone, "GeomAPI_ExtremaCurveSurface::NearestPoints");
 

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using static Occt.Approx_Status;
 
 namespace Occt;
@@ -31,7 +32,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     public static int NbP3d(AppDef_MultiLine ML) => ML.Value(1).NbPoints();
 
     /// <summary>The 3d points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt)
+    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         int nbp3d = MPC.NbPoints(), low = tabPt.Lower();
@@ -42,7 +43,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 2d points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt2d> tabPt2d)
+    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Point2D> tabPt2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         int nbp3d = MPC.NbPoints();
@@ -55,8 +56,8 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 3d and 2d points of the MultiPoint <paramref name="MPointIndex"/>.</summary>
-    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Pnt> tabPt,
-                             NCollection_Array1<gp_Pnt2d> tabPt2d)
+    public static void Value(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Point3D> tabPt,
+                             NCollection_Array1<Point2D> tabPt2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         int i, nbp2d = MPC.NbPoints2d(), low2d = tabPt2d.Lower();
@@ -72,7 +73,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 3d tangents of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV)
+    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsTangencyPoint())
@@ -91,7 +92,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 2d tangents of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsTangencyPoint())
@@ -111,8 +112,8 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 3d and 2d tangents of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Tangency(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                NCollection_Array1<Vector2D> tabV2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsTangencyPoint())
@@ -158,7 +159,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 3d curvatures of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV)
+    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsCurvaturePoint())
@@ -177,7 +178,7 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 2d curvatures of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector2D> tabV2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsCurvaturePoint())
@@ -197,8 +198,8 @@ public readonly struct AppDef_MyLineTool : IApprox_LineTool<AppDef_MultiLine>
     }
 
     /// <summary>The 3d and 2d curvatures of the MultiPoint <paramref name="MPointIndex"/>; false if it has none.</summary>
-    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<gp_Vec> tabV,
-                                 NCollection_Array1<gp_Vec2d> tabV2d)
+    public static bool Curvature(AppDef_MultiLine ML, int MPointIndex, NCollection_Array1<Vector3D> tabV,
+                                 NCollection_Array1<Vector2D> tabV2d)
     {
         AppDef_MultiPointConstraint MPC = ML.Value(MPointIndex);
         if (MPC.IsCurvaturePoint())

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
 using System.Text;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -22,9 +24,9 @@ internal static class PaveFillerDump
 {
     private static string H(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string P(gp_Pnt theP) => H(theP.X()) + " " + H(theP.Y()) + " " + H(theP.Z());
+    private static string P(Point3D theP) => H(theP.X()) + " " + H(theP.Y()) + " " + H(theP.Z());
 
-    private static string P2(gp_Pnt2d theP) => H(theP.X()) + " " + H(theP.Y());
+    private static string P2(Point2D theP) => H(theP.X()) + " " + H(theP.Y());
 
     private static string Sorted(IEnumerable<int> theValues) => string.Join(",", theValues.OrderBy(x => x));
 
@@ -138,7 +140,7 @@ internal static class PaveFillerDump
                 aB.Append("pb ").Append(i).Append(' ').Append(PB(aPB));
                 if (aPB.HasShrunkData())
                 {
-                    aPB.ShrunkData(out double aTS1, out double aTS2, out Bnd_Box _, out bool aSplittable);
+                    aPB.ShrunkData(out double aTS1, out double aTS2, out Box _, out bool aSplittable);
                     aB.Append(" sh ").Append(H(aTS1)).Append(' ').Append(H(aTS2)).Append(' ').Append(aSplittable ? 1 : 0);
                 }
                 BOPDS_CommonBlock? aCB = theDS.CommonBlock(aPB);
@@ -224,7 +226,7 @@ internal static class PaveFillerDump
                   .Append(" tv ").Append(string.Join(",", aNC.TechnoVertices()));
                 IntTools_Curve anIC = aNC.Curve();
                 double aT1 = 0, aT2 = 0;
-                gp_Pnt aP1 = new(), aP2 = new();
+                Point3D aP1 = new(), aP2 = new();
                 if (anIC.Bounds(ref aT1, ref aT2, ref aP1, ref aP2))
                 {
                     aB.Append(" b ").Append(H(aT1)).Append(' ').Append(H(aT2)).Append(' ').Append(P(aP1)).Append(' ').Append(P(aP2));

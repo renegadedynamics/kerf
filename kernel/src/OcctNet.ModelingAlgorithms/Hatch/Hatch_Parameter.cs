@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -51,5 +53,5 @@ public readonly struct Hatch_Parameter : IEquatable<Hatch_Parameter>
     public static bool operator !=(Hatch_Parameter left, Hatch_Parameter right) => !left.Equals(right);
 
     public override string ToString() =>
-        $"{gp.Format("Hatch_Parameter", myPar1, myPar2)} start={myStart} index={myIndex}";
+        $"{Constants.Format("Hatch_Parameter", myPar1, myPar2)} start={myStart} index={myIndex}";
 }

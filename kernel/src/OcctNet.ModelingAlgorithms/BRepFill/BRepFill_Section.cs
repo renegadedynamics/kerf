@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -50,7 +51,7 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
     }
 
     /// <summary>The section <paramref name="Profile"/> (a wire or a vertex) placed on the spine's vertex <paramref name="V"/>.</summary>
-    /// <exception cref="Standard_Failure">The profile is neither a wire nor a vertex.</exception>
+    /// <exception cref="FailureException">The profile is neither a wire nor a vertex.</exception>
     public BRepFill_Section(in TopoDS_Shape Profile, in TopoDS_Vertex V, bool WithContact, bool WithCorrection)
     {
         vertex = V;
@@ -88,7 +89,7 @@ public partial struct BRepFill_Section : IEquatable<BRepFill_Section>
         }
         else
         {
-            throw new Standard_Failure("BRepFill_Section: bad shape type of section");
+            throw new FailureException("BRepFill_Section: bad shape type of section");
         }
     }
 

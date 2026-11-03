@@ -6,6 +6,8 @@
 
 // pdn 17.12.98 ie_exhaust-A.stp
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -86,7 +88,7 @@ public class ShapeFix_Shell : ShapeFix_Root
     /// Fixes the faces of the shell (if the face mode allows) and the orientation of the faces (if the orientation
     /// mode allows), and corrects the closed flag of the shells. Returns true if something was done.
     /// </summary>
-    public bool Perform(Message_ProgressRange theProgress = default)
+    public bool Perform(ProgressRange theProgress = default)
     {
         if (Context() is null)
         {
@@ -101,7 +103,7 @@ public class ShapeFix_Shell : ShapeFix_Root
     }
 
     // ShapeFix_Shell::Perform on the working shell
-    private bool perform(Message_ProgressRange theProgress)
+    private bool perform(ProgressRange theProgress)
     {
         bool status = false;
         if (Context() is null)
@@ -119,7 +121,7 @@ public class ShapeFix_Shell : ShapeFix_Root
             int aNbFaces = S.NbChildren();
 
             // Start progress scope (no need to check if progress exists -- it is safe)
-            using var aPS = new Message_ProgressScope(theProgress, "Fixing face", aNbFaces);
+            using var aPS = new ProgressScope(theProgress, "Fixing face", aNbFaces);
 
             for (var iter = new TopoDS_Iterator(S); iter.More() && aPS.More(); iter.Next(), aPS.Next())
             {
@@ -158,7 +160,7 @@ public class ShapeFix_Shell : ShapeFix_Root
                 if (aSas.HasFreeEdges())
                 {
                     aCurShell.Closed(false);
-                    SendWarning(new Message_Msg("FixAdvShell.FixClosedFlag.MSG0")); // Shell has incorrect flag isClosed
+                    SendWarning(new Msg("FixAdvShell.FixClosedFlag.MSG0")); // Shell has incorrect flag isClosed
                 }
                 aSas.Clear();
             }
@@ -866,7 +868,7 @@ public class ShapeFix_Shell : ShapeFix_Root
     // function : BoxIn
     // purpose  : Check if one face contains inside other.
     //=======================================================================
-    private static int BoxIn(in Bnd_Box theBox1, in Bnd_Box theBox2)
+    private static int BoxIn(in Box theBox1, in Box theBox2)
     {
         int aNumIn = 0;
         theBox1.Get(out double aXmin1, out double aYmin1, out double aZmin1, out double aXmax1, out double aYmax1, out double aZmax1);
@@ -897,10 +899,10 @@ public class ShapeFix_Shell : ShapeFix_Root
     //=======================================================================
     private static void GetClosedShells(NCollection_Sequence<TopoDS_Shape> Shells, NCollection_Sequence<TopoDS_Shape> aRemainShells)
     {
-        var aBoxes = new NCollection_Array1<Bnd_Box>(1, Shells.Length());
+        var aBoxes = new NCollection_Array1<Box>(1, Shells.Length());
         for (int i = 1; i <= Shells.Length(); i++)
         {
-            var Box = new Bnd_Box();
+            var Box = new Box();
             BRepBndLib.AddClose(Shells.Value(i), ref Box);
             aBoxes.SetValue(i, Box);
         }
@@ -1417,7 +1419,7 @@ public class ShapeFix_Shell : ShapeFix_Root
         if (BRep_Tool.IsClosed(myShell) ? isFreeBoundaries : !isFreeBoundaries)
         {
             myShell.Closed(!isFreeBoundaries);
-            SendWarning(new Message_Msg("FixAdvShell.FixClosedFlag.MSG0")); // Shell has incorrect flag isClosed
+            SendWarning(new Msg("FixAdvShell.FixClosedFlag.MSG0")); // Shell has incorrect flag isClosed
         }
         bool isGetShells = true;
         // Gets possible shells with taking in account of multiconnexity.
@@ -1499,7 +1501,7 @@ public class ShapeFix_Shell : ShapeFix_Root
 
             done     = true;
             myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL);
-            SendWarning(new Message_Msg("FixAdvShell.FixOrientation.MSG20")); // Impossible to orient faces in shell, several shells created
+            SendWarning(new Msg("FixAdvShell.FixOrientation.MSG20")); // Impossible to orient faces in shell, several shells created
             return true;
         }
         if (aNumMultShell > 1)
@@ -1567,11 +1569,11 @@ public class ShapeFix_Shell : ShapeFix_Root
             Context()?.Replace(shell, myShape);
             if (myNbShells == 1)
             {
-                SendWarning(new Message_Msg("FixAdvShell.FixOrientation.MSG0")); // Faces were incorrectly oriented in the shell, corrected
+                SendWarning(new Msg("FixAdvShell.FixOrientation.MSG0")); // Faces were incorrectly oriented in the shell, corrected
             }
             else
             {
-                SendWarning(new Message_Msg("FixAdvShell.FixOrientation.MSG30")); // Improperly connected shell split into parts
+                SendWarning(new Msg("FixAdvShell.FixOrientation.MSG30")); // Improperly connected shell split into parts
             }
             return true;
         }

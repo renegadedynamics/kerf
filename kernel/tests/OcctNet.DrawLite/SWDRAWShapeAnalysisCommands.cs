@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -56,7 +57,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
         TopoDS_Face F = TopoDS.Face(Shape);
         Geom_Surface thesurf = BRep_Tool.Surface(F)!; // pas locface
-        var aClassifier = new BRepTopAdaptor_FClass2d(F, Precision.Confusion());
+        var aClassifier = new BRepTopAdaptor_FClass2d(F, global::Kerf.Engine.Foundation.Precision.Confusion());
         //  On y va
         double X, Y, Z, U, V;
         X = U = theDI.Atof(argv[2]);
@@ -64,23 +65,23 @@ internal static class SWDRAWShapeAnalysisCommands
         if (argc > 4)
         {
             Z = theDI.Atof(argv[4]);
-            var P3D = new gp_Pnt(X, Y, Z);
+            var P3D = new Point3D(X, Y, Z);
             di.Append(" Point 3D X = ").Append(X).Append("  Y = ").Append(Y).Append("  Z = ").Append(Z).Append("\n");
             thesurf.Bounds(out double uf, out double ul, out double vf, out double vl);
 
-            if (Precision.IsInfinite(uf))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf))
             {
                 uf = -1000;
             }
-            if (Precision.IsInfinite(ul))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(ul))
             {
                 ul = 1000;
             }
-            if (Precision.IsInfinite(vf))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vf))
             {
                 vf = -1000;
             }
-            if (Precision.IsInfinite(vl))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vl))
             {
                 vl = 1000;
             }
@@ -90,11 +91,11 @@ internal static class SWDRAWShapeAnalysisCommands
             var proj = new GeomAPI_ProjectPointOnSurf(P3D, thesurf, uf - du, ul + du, vf - dv, vl + dv);
             int sol, nPSurf = proj.NbPoints();
             int anIndSol = 0, anIndMin = 0;
-            double aMinDist = Standard.RealLast();
+            double aMinDist = global::Kerf.Engine.Foundation.Standard.RealLast();
             for (sol = 1; sol <= nPSurf; sol++)
             {
                 proj.Parameters(sol, out U, out V);
-                TopAbs_State aStatus = aClassifier.Perform(new gp_Pnt2d(U, V));
+                TopAbs_State aStatus = aClassifier.Perform(new Point2D(U, V));
                 if (aStatus == TopAbs_State.TopAbs_OUT)
                 {
                     continue;
@@ -129,14 +130,14 @@ internal static class SWDRAWShapeAnalysisCommands
         else // Check 2D point
         {
             di.Append(" Point UV  U = ").Append(U).Append("  V = ").Append(V).Append("\n");
-            TopAbs_State aStatus = aClassifier.Perform(new gp_Pnt2d(U, V));
+            TopAbs_State aStatus = aClassifier.Perform(new Point2D(U, V));
             if (aStatus == TopAbs_State.TopAbs_OUT)
             {
                 di.Append("does not belong to the face").Append("\n");
             }
             else
             {
-                gp_Pnt P3D = thesurf.Value(U, V);
+                Point3D P3D = thesurf.Value(U, V);
                 di.Append(" => proj  X = ").Append(P3D.X()).Append("  Y = ").Append(P3D.Y()).Append("  Z = ").Append(P3D.Z()).Append("\n");
             }
         }
@@ -198,8 +199,8 @@ internal static class SWDRAWShapeAnalysisCommands
         di.Append("Precision (BRepBuilderAPI) : ").Append(BRepBuilderAPI.Precision()).Append("  Projection : ").Append(X)
           .Append("  ").Append(Y).Append("  ").Append(Z).Append("\n");
 
-        var P3D = new gp_Pnt(X, Y, Z);
-        double dist = new ShapeAnalysis_Curve().Project(C!, P3D, BRepBuilderAPI.Precision(), out gp_Pnt res, out double param, cf, cl);
+        var P3D = new Point3D(X, Y, Z);
+        double dist = new ShapeAnalysis_Curve().Project(C!, P3D, BRepBuilderAPI.Precision(), out Point3D res, out double param, cf, cl);
         res.Coord(out X, out Y, out Z);
         di.Append("Result : ").Append(X).Append("  ").Append(Y).Append("  ").Append(Z).Append("\nParam = ").Append(param)
           .Append("  Gap = ").Append(dist).Append("\n");
@@ -235,7 +236,7 @@ internal static class SWDRAWShapeAnalysisCommands
         double Y = theDI.Atof(argv[5]);
         double Z = theDI.Atof(argv[6]);
 
-        var aP3D = new gp_Pnt(X, Y, Z);
+        var aP3D = new Point3D(X, Y, Z);
 
         bool IsStartPoint = false;
         double startpar = 0.0;
@@ -247,7 +248,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
         var aCOnS = new Adaptor3d_CurveOnSurface(new BRepAdaptor_Curve2d(aEdge, aFace), new BRepAdaptor_Surface(aFace, false));
 
-        gp_Pnt aPnt;
+        Point3D aPnt;
         double aParam;
         var aTool = new ShapeAnalysis_Curve();
         double aDist;
@@ -423,7 +424,7 @@ internal static class SWDRAWShapeAnalysisCommands
             TopoDS_Edge edge = TopoDS.Edge(exp.Current());
             sae.CheckSameParameter(edge, ref tol, nbpnts);
             double t = BRep_Tool.Tolerance(edge);
-            double rel = tol / (t > Precision.Confusion() ? t : Precision.Confusion());
+            double rel = tol / (t > global::Kerf.Engine.Foundation.Precision.Confusion() ? t : global::Kerf.Engine.Foundation.Precision.Confusion());
             ave += tol;
             relave += rel;
             if (num == 0)
@@ -770,7 +771,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
         }
 
-        var analyser = new ShapeAnalysis_Wire(TopoDS.Wire(wire), TopoDS.Face(face), Precision.Confusion());
+        var analyser = new ShapeAnalysis_Wire(TopoDS.Wire(wire), TopoDS.Face(face), global::Kerf.Engine.Foundation.Precision.Confusion());
         bool result = analyser.CheckSelfIntersection();
 
         if (result)
@@ -886,8 +887,8 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1;
         }
 
-        GeomAbs_SurfaceType[] aTargets =
-            [GeomAbs_SurfaceType.GeomAbs_Plane, GeomAbs_SurfaceType.GeomAbs_Cylinder, GeomAbs_SurfaceType.GeomAbs_Cone, GeomAbs_SurfaceType.GeomAbs_Sphere];
+        SurfaceKind[] aTargets =
+            [SurfaceKind.Plane, SurfaceKind.Cylinder, SurfaceKind.Cone, SurfaceKind.Sphere];
         int isurf = 0;
         if (n > 3)
         {
@@ -926,7 +927,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 return 1;
             }
             aSampleSurf.Load(aGSurf);
-            GeomAbs_SurfaceType aSType = aSampleSurf.GetType();
+            SurfaceKind aSType = aSampleSurf.GetType();
             if (aSType != aTargets[isurf])
             {
                 di.Append("Sample surface has wrong type").Append("\n");
@@ -938,10 +939,10 @@ internal static class SWDRAWShapeAnalysisCommands
         Geom_Surface? aRes = null;
         switch (aTargets[isurf])
         {
-            case GeomAbs_SurfaceType.GeomAbs_Plane:
+            case SurfaceKind.Plane:
             {
-                var aPln = new gp_Pln();
-                if (aSampleSurf.GetType() == GeomAbs_SurfaceType.GeomAbs_Plane)
+                var aPln = new Plane3D();
+                if (aSampleSurf.GetType() == SurfaceKind.Plane)
                 {
                     aPln = aSampleSurf.Plane();
                 }
@@ -951,10 +952,10 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
-                var aCyl = new gp_Cylinder();
-                if (aSampleSurf.GetType() == GeomAbs_SurfaceType.GeomAbs_Cylinder)
+                var aCyl = new Cylinder();
+                if (aSampleSurf.GetType() == SurfaceKind.Cylinder)
                 {
                     aCyl = aSampleSurf.Cylinder();
                 }
@@ -964,10 +965,10 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                var aCon = new gp_Cone();
-                if (aSampleSurf.GetType() == GeomAbs_SurfaceType.GeomAbs_Cone)
+                var aCon = new Cone();
+                if (aSampleSurf.GetType() == SurfaceKind.Cone)
                 {
                     aCon = aSampleSurf.Cone();
                 }
@@ -977,10 +978,10 @@ internal static class SWDRAWShapeAnalysisCommands
                 }
                 break;
             }
-            case GeomAbs_SurfaceType.GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
-                var aSph = new gp_Sphere();
-                if (aSampleSurf.GetType() == GeomAbs_SurfaceType.GeomAbs_Sphere)
+                var aSph = new Sphere();
+                if (aSampleSurf.GetType() == SurfaceKind.Sphere)
                 {
                     aSph = aSampleSurf.Sphere();
                 }
@@ -1026,7 +1027,7 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1;
         }
 
-        GeomAbs_CurveType[] aTargets = [GeomAbs_CurveType.GeomAbs_Line, GeomAbs_CurveType.GeomAbs_Circle, GeomAbs_CurveType.GeomAbs_Ellipse];
+        CurveKind[] aTargets = [CurveKind.Line, CurveKind.Circle, CurveKind.Ellipse];
         int icurv = 0;
         if (n > 3)
         {
@@ -1044,7 +1045,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
         }
 
-        double tol = Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 4)
         {
             tol = theDI.Atof(a[4]);
@@ -1054,27 +1055,27 @@ internal static class SWDRAWShapeAnalysisCommands
         Geom_Curve? aRes = null;
         switch (aTargets[icurv])
         {
-            case GeomAbs_CurveType.GeomAbs_Line:
+            case CurveKind.Line:
             {
-                var aLin = new gp_Lin();
+                var aLin = new Line3D();
                 if (aCanonRec.IsLine(tol, ref aLin))
                 {
                     aRes = new Geom_Line(aLin);
                 }
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Circle:
+            case CurveKind.Circle:
             {
-                var aCirc = new gp_Circ();
+                var aCirc = new Circle3D();
                 if (aCanonRec.IsCircle(tol, ref aCirc))
                 {
                     aRes = new Geom_Circle(aCirc);
                 }
                 break;
             }
-            case GeomAbs_CurveType.GeomAbs_Ellipse:
+            case CurveKind.Ellipse:
             {
-                var anElips = new gp_Elips();
+                var anElips = new Ellipse3D();
                 if (aCanonRec.IsEllipse(tol, ref anElips))
                 {
                     aRes = new Geom_Ellipse(anElips);

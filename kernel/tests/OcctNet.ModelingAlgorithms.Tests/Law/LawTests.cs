@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>The Law package functions, Law_BSplineKnotSplitting and GeomFill_TgtField's defaults.</summary>
@@ -14,7 +18,7 @@ public class LawTests
         aMix.Bounds(out double f, out double l);
         Assert.Equal((0.0, 2.0), (f, l));
         Law_BSpline aCurve = aMix.Curve()!;
-        Assert.True(aCurve.IsFrozen());
+        Assert.True(aCurve.IsFrozen);
         Assert.Equal(3, aCurve.Degree());
         Assert.Equal(6, aCurve.NbPoles());
         Assert.Equal(aCurve.Pole(1), aCurve.Pole(2));
@@ -61,7 +65,7 @@ public class LawTests
     public void Scale_AndScaleCub_GoFromTheEndValuesToOne()
     {
         Law_BSpline aScale = Law.Scale(0.0, 4.0, true, true, 2.0, 0.5);
-        Assert.False(aScale.IsFrozen());
+        Assert.False(aScale.IsFrozen);
         Assert.Equal(2.0, aScale.Value(0.0), 1.0e-12);
         Assert.Equal(0.5, aScale.Value(4.0), 1.0e-12);
         Assert.Equal(1.0, aScale.Value(2.0), 1.0e-12);
@@ -87,21 +91,21 @@ public class LawTests
     public void Reparametrize_ByArcLength()
     {
         // a parabola y = x^2 on [0, 1]: the law maps [0, 1] onto x by approximate arc length
-        var aPoles = new NCollection_Array1<gp_Pnt>(1, 3);
-        aPoles[1] = new gp_Pnt(0, 0, 0);
-        aPoles[2] = new gp_Pnt(0.5, 0, 0);
-        aPoles[3] = new gp_Pnt(1, 1, 0);
+        var aPoles = new NCollection_Array1<Point3D>(1, 3);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(0.5, 0, 0);
+        aPoles[3] = new Point3D(1, 1, 0);
         var aCurve = new GeomAdaptor_Curve(new Geom_BezierCurve(aPoles));
         Law_BSpline aLaw = Law.Reparametrize(aCurve, 0.0, 1.0, false, false, 0.0, 0.0, false, 21);
-        Assert.False(aLaw.IsFrozen());
+        Assert.False(aLaw.IsFrozen);
         Assert.Equal(0.0, aLaw.Value(0.0), 1.0e-12);
         Assert.Equal(1.0, aLaw.Value(1.0), 1.0e-12);
         // equal steps of the law give nearly equal chords
-        gp_Pnt aPrev = aCurve.Value(aLaw.Value(0.0));
+        Point3D aPrev = aCurve.Value(aLaw.Value(0.0));
         double aMin = double.MaxValue, aMax = 0.0;
         for (int i = 1; i <= 10; i++)
         {
-            gp_Pnt aP = aCurve.Value(aLaw.Value(i / 10.0));
+            Point3D aP = aCurve.Value(aLaw.Value(i / 10.0));
             double d = aP.Distance(aPrev);
             aMin = Math.Min(aMin, d);
             aMax = Math.Max(aMax, d);
@@ -132,7 +136,7 @@ public class LawTests
         aMults[2] = 1; // C2
         aMults[3] = 2; // C1
         aMults[4] = 3; // C0
-        var aPoles = new NCollection_Array1<double>(1, BSplCLib.NbPoles(3, false, aMults));
+        var aPoles = new NCollection_Array1<double>(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(3, false, aMults));
         var aCurve = new Law_BSpline(aPoles, aKnots, aMults, 3);
         int[] Splits(int theCont)
         {
@@ -149,17 +153,17 @@ public class LawTests
         Assert.Equal([1, 4, 5], Splits(1));
         Assert.Equal([1, 3, 4, 5], Splits(2));
         Assert.Equal([1, 2, 3, 4, 5], Splits(3));
-        Assert.Throws<Standard_RangeError>(() => new Law_BSplineKnotSplitting(aCurve, -1));
-        Assert.Throws<Standard_RangeError>(() => new Law_BSplineKnotSplitting(aCurve, 1).SplitValue(4));
+        Assert.Throws<RangeErrorException>(() => new Law_BSplineKnotSplitting(aCurve, -1));
+        Assert.Throws<RangeErrorException>(() => new Law_BSplineKnotSplitting(aCurve, 1).SplitValue(4));
     }
 
     private sealed class ConstantField : GeomFill_TgtField
     {
-        public override gp_Vec Value(double W) => new gp_Vec(1, 0, 0);
+        public override Vector3D Value(double W) => new Vector3D(1, 0, 0);
 
-        public override gp_Vec D1(double W) => new gp_Vec();
+        public override Vector3D D1(double W) => new Vector3D();
 
-        public override void D1(double W, out gp_Vec V, out gp_Vec DV)
+        public override void D1(double W, out Vector3D V, out Vector3D DV)
         {
             V = Value(W);
             DV = D1(W);

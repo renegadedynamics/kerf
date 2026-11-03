@@ -10,6 +10,8 @@
 // DF(ui, Poles(ui)) ce qui implique un calcul des nouveaux poles
 //  a chaque appel.
 
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static Occt.AppParCurves_Constraint;
 
 namespace Occt;
@@ -28,7 +30,7 @@ namespace Occt;
 /// </remarks>
 /// <typeparam name="MultiLine">The MultiLine type.</typeparam>
 /// <typeparam name="ToolLine">The line tool reading <typeparamref name="MultiLine"/>.</typeparam>
-public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFunctionWithGradient
+public class AppParCurves_Function<MultiLine, ToolLine> : MultipleVarFunctionWithGradient
     where ToolLine : struct, IAppParCurves_LineTool<MultiLine>
 {
     // OCCT's Done field is written but never read; it is left out
@@ -38,12 +40,12 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
     private readonly math_Vector myParameters;
     private double FVal;
     private readonly math_Vector ValGrad_F;
-    private readonly math_Matrix MyF;
-    private readonly math_Matrix PTLX;
-    private readonly math_Matrix PTLY;
-    private readonly math_Matrix PTLZ;
-    private readonly math_Matrix A;
-    private readonly math_Matrix DA;
+    private readonly Matrix MyF;
+    private readonly Matrix PTLX;
+    private readonly Matrix PTLY;
+    private readonly Matrix PTLZ;
+    private readonly Matrix A;
+    private readonly Matrix DA;
     private readonly AppParCurves_LeastSquare<MultiLine, ToolLine> MyLeastSquare;
     private readonly bool Contraintes;
     private readonly int NbP;
@@ -70,12 +72,12 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
         MyMultiCurve = new AppParCurves_MultiCurve(Deg + 1);
         myParameters = new math_Vector(Parameters.Lower(), Parameters.Upper());
         ValGrad_F = new math_Vector(FirstPoint, LastPoint);
-        MyF = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLX = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLY = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        PTLZ = new math_Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
-        A = new math_Matrix(FirstPoint, LastPoint, 1, Deg + 1);
-        DA = new math_Matrix(FirstPoint, LastPoint, 1, Deg + 1);
+        MyF = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLX = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLY = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        PTLZ = new Matrix(FirstPoint, LastPoint, 1, ToolLine.NbP3d(SSP) + ToolLine.NbP2d(SSP), 0.0);
+        A = new Matrix(FirstPoint, LastPoint, 1, Deg + 1);
+        DA = new Matrix(FirstPoint, LastPoint, 1, Deg + 1);
         MyLeastSquare = new AppParCurves_LeastSquare<MultiLine, ToolLine>(SSP,
                                                                           FirstPoint,
                                                                           LastPoint,
@@ -158,8 +160,8 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
                 }
             }
 
-            NCollection_Array1<gp_Pnt> TabP = new(1, mynb3d);
-            NCollection_Array1<gp_Pnt2d> TabP2d = new(1, mynb2d);
+            NCollection_Array1<Point3D> TabP = new(1, mynb3d);
+            NCollection_Array1<Point2D> TabP2d = new(1, mynb2d);
 
             for (i = FirstP; i <= LastP; i++)
             {
@@ -377,13 +379,13 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
             double Scal, AA, BB, CC, DAA, DBB, DCC;
             double FX, FY, FZ, AIJ, DAIJ, px, py, pz, Fi;
             AppParCurves_Constraint Cons = AppParCurves_NoConstraint;
-            math_Matrix Grad_F = new(FirstP, LastP, 1, NbCu, 0.0);
+            Matrix Grad_F = new(FirstP, LastP, 1, NbCu, 0.0);
             math_Vector PTCXCI = new(1, Npol), PTCYCI = new(1, Npol), PTCZCI = new(1, Npol);
             math_Vector PTCOXCI = new(1, Npol), PTCOYCI = new(1, Npol), PTCOZCI = new(1, Npol);
             ERR3d = ERR2d = 0.0;
 
-            math_Matrix PTCOX = new(1, Npol, 1, NbCu), PTCOY = new(1, Npol, 1, NbCu), PTCOZ = new(1, Npol, 1, NbCu);
-            math_Matrix PTCX = new(1, Npol, 1, NbCu), PTCY = new(1, Npol, 1, NbCu), PTCZ = new(1, Npol, 1, NbCu);
+            Matrix PTCOX = new(1, Npol, 1, NbCu), PTCOY = new(1, Npol, 1, NbCu), PTCOZ = new(1, Npol, 1, NbCu);
+            Matrix PTCX = new(1, Npol, 1, NbCu), PTCY = new(1, Npol, 1, NbCu), PTCZ = new(1, Npol, 1, NbCu);
             int Inc;
 
             MyMultiCurve = MyLeastSquare.BezierValue();
@@ -427,25 +429,25 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
                 ValGrad_F[j] = 0.0;
             }
 
-            math_Matrix TrA = new(A.LowerCol(), A.UpperCol(), A.LowerRow(), A.UpperRow());
-            math_Matrix TrDA = new(DA.LowerCol(), DA.UpperCol(), DA.LowerRow(), DA.UpperRow());
-            math_Matrix RESTM = new(A.LowerCol(), A.UpperCol(), A.LowerCol(), A.UpperCol());
+            Matrix TrA = new(A.LowerCol(), A.UpperCol(), A.LowerRow(), A.UpperRow());
+            Matrix TrDA = new(DA.LowerCol(), DA.UpperCol(), DA.LowerRow(), DA.UpperRow());
+            Matrix RESTM = new(A.LowerCol(), A.UpperCol(), A.LowerCol(), A.UpperCol());
 
-            math_Matrix K = Resol.ConstraintMatrix();
-            math_Matrix DK = Resol.ConstraintDerivative(MyMultiLine, X, Degre, DA);
-            math_Matrix TK = new(K.LowerCol(), K.UpperCol(), K.LowerRow(), K.UpperRow());
+            Matrix K = Resol.ConstraintMatrix();
+            Matrix DK = Resol.ConstraintDerivative(MyMultiLine, X, Degre, DA);
+            Matrix TK = new(K.LowerCol(), K.UpperCol(), K.LowerRow(), K.UpperRow());
             TK.Initialized(K.Transposed());
             math_Vector Vardua = Resol.Duale();
-            math_Matrix KK = new(K.LowerCol(), K.UpperCol(), Vardua.Lower(), Vardua.Upper());
+            Matrix KK = new(K.LowerCol(), K.UpperCol(), Vardua.Lower(), Vardua.Upper());
             KK.Initialized((K.Transposed()) * (Resol.InverseMatrix()));
-            math_Matrix DTK = new(DK.LowerCol(), DK.UpperCol(), DK.LowerRow(), DK.UpperRow());
+            Matrix DTK = new(DK.LowerCol(), DK.UpperCol(), DK.LowerRow(), DK.UpperRow());
             DTK.Initialized(DK.Transposed());
             TrA.Initialized(A.Transposed());
             TrDA.Initialized(DA.Transposed());
             RESTM.Initialized((A.Transposed() * A).Inverse());
 
             math_Vector DPTCO = new(1, K.ColNumber());
-            math_Matrix DPTCO1 = new(FirstP, LastP, 1, K.ColNumber());
+            Matrix DPTCO1 = new(FirstP, LastP, 1, K.ColNumber());
             math_Vector DKPTC = new(1, K.RowNumber());
 
             FVal = 0.0;
@@ -720,7 +722,7 @@ public class AppParCurves_Function<MultiLine, ToolLine> : math_MultipleVarFuncti
     }
 
     /// <summary>The number of variables: the number of points.</summary>
-    public override int NbVariables() => NbP;
+    public override int VariableCount => NbP;
 
     /// <summary>The gradient of F at <paramref name="X"/>.</summary>
     public override bool Gradient(math_Vector X, math_Vector G)

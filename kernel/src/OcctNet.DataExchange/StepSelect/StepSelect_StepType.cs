@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using System.Text;
 
 namespace Occt;
@@ -44,7 +45,7 @@ public class StepSelect_StepType : IFSelect_Signature
     /// Returns the Step Type defined from the Protocol (see above). If &lt;ent&gt; is not recognised, produces
     /// "..NOT FROM SCHEMA &lt;name&gt;.."
     /// </summary>
-    public override string Value(Standard_Transient ent, Interface_InterfaceModel model)
+    public override string Value(Transient ent, Interface_InterfaceModel model)
     {
         lock (myMutex)
         {

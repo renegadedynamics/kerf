@@ -2,9 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -14,27 +17,27 @@ namespace Occt;
 /// </summary>
 public interface IIntCurveSurface_CurveTool<TheCurve> : IIntImp_ZerCSParCurveTool<TheCurve>
 {
-    static abstract GeomAbs_CurveType GetType(in TheCurve C);
+    static abstract CurveKind GetType(in TheCurve C);
 
-    static abstract gp_Lin Line(in TheCurve C);
+    static abstract Line3D Line(in TheCurve C);
 
-    static abstract gp_Circ Circle(in TheCurve C);
+    static abstract Circle3D Circle(in TheCurve C);
 
-    static abstract gp_Elips Ellipse(in TheCurve C);
+    static abstract Ellipse3D Ellipse(in TheCurve C);
 
-    static abstract gp_Parab Parabola(in TheCurve C);
+    static abstract Parabola3D Parabola(in TheCurve C);
 
-    static abstract gp_Hypr Hyperbola(in TheCurve C);
+    static abstract Hyperbola3D Hyperbola(in TheCurve C);
 
-    static abstract int NbIntervals(in TheCurve C, GeomAbs_Shape S);
+    static abstract int NbIntervals(in TheCurve C, Continuity S);
 
-    static abstract void Intervals(in TheCurve C, NCollection_Array1<double> T, GeomAbs_Shape S);
+    static abstract void Intervals(in TheCurve C, NCollection_Array1<double> T, Continuity S);
 
     static abstract bool IsPeriodic(in TheCurve C);
 
     static abstract double Period(in TheCurve C);
 
-    static abstract void D0(in TheCurve C, double U, out gp_Pnt P);
+    static abstract void D0(in TheCurve C, double U, out Point3D P);
 
     static abstract int NbSamples(in TheCurve C, double U0, double U1);
 
@@ -48,29 +51,29 @@ public interface IIntCurveSurface_CurveTool<TheCurve> : IIntImp_ZerCSParCurveToo
 /// </summary>
 public interface IIntCurveSurface_SurfaceTool<TheSurface> : IIntImp_ZerCSParPSurfaceTool<TheSurface>
 {
-    static abstract GeomAbs_SurfaceType GetType(in TheSurface S);
+    static abstract SurfaceKind GetType(in TheSurface S);
 
-    static abstract gp_Pln Plane(in TheSurface S);
+    static abstract Plane3D Plane(in TheSurface S);
 
-    static abstract gp_Cylinder Cylinder(in TheSurface S);
+    static abstract Cylinder Cylinder(in TheSurface S);
 
-    static abstract gp_Cone Cone(in TheSurface S);
+    static abstract Cone Cone(in TheSurface S);
 
-    static abstract gp_Sphere Sphere(in TheSurface S);
+    static abstract Sphere Sphere(in TheSurface S);
 
-    static abstract gp_Torus Torus(in TheSurface S);
+    static abstract Torus Torus(in TheSurface S);
 
     static abstract int NbSamplesU(in TheSurface S, double u1, double u2);
 
     static abstract int NbSamplesV(in TheSurface S, double v1, double v2);
 
-    static abstract int NbUIntervals(in TheSurface S, GeomAbs_Shape Sh);
+    static abstract int NbUIntervals(in TheSurface S, Continuity Sh);
 
-    static abstract int NbVIntervals(in TheSurface S, GeomAbs_Shape Sh);
+    static abstract int NbVIntervals(in TheSurface S, Continuity Sh);
 
-    static abstract void UIntervals(in TheSurface S, NCollection_Array1<double> T, GeomAbs_Shape Sh);
+    static abstract void UIntervals(in TheSurface S, NCollection_Array1<double> T, Continuity Sh);
 
-    static abstract void VIntervals(in TheSurface S, NCollection_Array1<double> T, GeomAbs_Shape Sh);
+    static abstract void VIntervals(in TheSurface S, NCollection_Array1<double> T, Continuity Sh);
 
     static abstract Adaptor3d_Surface UTrim(in TheSurface S, double First, double Last, double Tol);
 
@@ -86,15 +89,15 @@ public interface IIntCurveSurface_SurfaceTool<TheSurface> : IIntImp_ZerCSParPSur
 
     static abstract double VPeriod(in TheSurface S);
 
-    static abstract void D0(in TheSurface S, double U, double V, out gp_Pnt P);
+    static abstract void D0(in TheSurface S, double U, double V, out Point3D P);
 
     static abstract Adaptor3d_Surface BasisSurface(in TheSurface S);
 
     static abstract Adaptor3d_Curve BasisCurve(in TheSurface S);
 
-    static abstract gp_Dir Direction(in TheSurface S);
+    static abstract Direction3D Direction(in TheSurface S);
 
-    static abstract gp_Ax1 AxeOfRevolution(in TheSurface S);
+    static abstract Axis3D AxeOfRevolution(in TheSurface S);
 
     static abstract double OffsetValue(in TheSurface S);
 }
@@ -124,13 +127,13 @@ public interface IIntCurveSurface_ThePolygon<TSelf, TheCurve> : IIntCurveSurface
 /// <summary>What the intersection reads from the polyhedron of a surface: its box, triangles, points and parameters.</summary>
 public interface IIntCurveSurface_Polyhedron
 {
-    Bnd_Box Bounding();
+    Box Bounding();
 
     void Triangle(int Index, out int P1, out int P2, out int P3);
 
-    gp_Pnt Point(int Index);
+    Point3D Point(int Index);
 
-    gp_Pnt Point(int Index, out double U, out double V);
+    Point3D Point(int Index, out double U, out double V);
 
     void Parameters(int Index, out double U, out double V);
 }
@@ -152,7 +155,7 @@ public interface IIntCurveSurface_TheInterference<TSelf, ThePolygon, ThePolyhedr
 {
     static abstract TSelf Create(ThePolygon thePolyg, ThePolyhedron thePolyh);
 
-    static abstract TSelf Create(ThePolygon thePolyg, ThePolyhedron thePolyh, Bnd_BoundSortBox theBoundSB);
+    static abstract TSelf Create(ThePolygon thePolyg, ThePolyhedron thePolyh, BoundSortBox theBoundSB);
 }
 
 /// <summary>The curve/surface function of the generic intersection, with OCCT's constructor (IntCurveSurface_TheCSFunctionOfHInter).</summary>
@@ -212,7 +215,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     where ThePolygon : IIntCurveSurface_ThePolygon<ThePolygon, TheCurve>
     where ThePolyhedron : IIntCurveSurface_ThePolyhedron<ThePolyhedron, TheSurface>
     where TheInterference : Intf_Interference, IIntCurveSurface_TheInterference<TheInterference, ThePolygon, ThePolyhedron>
-    where TheCSFunction : math_FunctionSetWithDerivatives, IIntImp_CSFunction<TheSurface, TheCurve>,
+    where TheCSFunction : FunctionSetWithDerivatives, IIntImp_CSFunction<TheSurface, TheCurve>,
     IIntCurveSurface_TheCSFunction<TheCSFunction, TheSurface, TheCurve>
     where TheExactInter : IntImp_IntCS<TheCSFunction, TheSurface, TheSurfaceTool, TheCurve, TheCurveTool>,
     IIntCurveSurface_TheExactInter<TheExactInter, TheCSFunction>
@@ -304,7 +307,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     /// triangles' boxes sorted in <paramref name="BndBSB"/> (IntCurveSurface_InterImpl::PerformPolygonPolyhedronBSB).
     /// </summary>
     public void Perform(in TheCurve curve, ThePolygon polygon, in TheSurface surface, ThePolyhedron polyhedron,
-                        Bnd_BoundSortBox BndBSB)
+                        BoundSortBox BndBSB)
     {
         ResetFields();
         done = true;
@@ -325,36 +328,36 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
         double UU1 = U1, UU2 = U2, VV1 = V1, VV2 = V2;
         IntCurveSurface_InterUtils.ClampUVParameters(ref UU1, ref UU2, ref VV1, ref VV2);
 
-        GeomAbs_CurveType aCurveType = TheCurveTool.GetType(curve);
+        CurveKind aCurveType = TheCurveTool.GetType(curve);
 
         switch (aCurveType)
         {
-            case GeomAbs_Line:
+            case Line:
                 PerformConicSurf(TheCurveTool.Line(curve), curve, surface, UU1, VV1, UU2, VV2);
                 break;
-            case GeomAbs_Circle:
+            case Circle:
                 PerformConicSurf(TheCurveTool.Circle(curve), curve, surface, UU1, VV1, UU2, VV2);
                 break;
-            case GeomAbs_Ellipse:
+            case Ellipse:
                 PerformConicSurf(TheCurveTool.Ellipse(curve), curve, surface, UU1, VV1, UU2, VV2);
                 break;
-            case GeomAbs_Parabola:
+            case Parabola:
                 PerformConicSurf(TheCurveTool.Parabola(curve), curve, surface, UU1, VV1, UU2, VV2);
                 break;
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
                 PerformConicSurf(TheCurveTool.Hyperbola(curve), curve, surface, UU1, VV1, UU2, VV2);
                 break;
             default:
             {
-                int nbIntervalsOnCurve = TheCurveTool.NbIntervals(curve, GeomAbs_C2);
-                GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
-                if ((aSurfaceType != GeomAbs_Plane) && (aSurfaceType != GeomAbs_Cylinder)
-                    && (aSurfaceType != GeomAbs_Cone) && (aSurfaceType != GeomAbs_Sphere))
+                int nbIntervalsOnCurve = TheCurveTool.NbIntervals(curve, C2);
+                SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
+                if ((aSurfaceType != Plane) && (aSurfaceType != SurfaceKind.Cylinder)
+                    && (aSurfaceType != SurfaceKind.Cone) && (aSurfaceType != SurfaceKind.Sphere))
                 {
                     if (nbIntervalsOnCurve > 1)
                     {
                         NCollection_Array1<double> TabW = new(1, nbIntervalsOnCurve + 1);
-                        TheCurveTool.Intervals(curve, TabW, GeomAbs_C2);
+                        TheCurveTool.Intervals(curve, TabW, C2);
                         for (int i = 1; i <= nbIntervalsOnCurve; i++)
                         {
                             double u1 = TabW.Value(i);
@@ -396,7 +399,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     /// </summary>
     protected void InternalPerform(in TheCurve curve, ThePolygon polygon, in TheSurface surface,
                                    ThePolyhedron polyhedron, double u0, double v0, double u1, double v1,
-                                   Bnd_BoundSortBox BSB)
+                                   BoundSortBox BSB)
     {
         TheInterference interference = TheInterference.Create(polygon, polyhedron, BSB);
         InternalPerformInterference(interference, curve, polygon, surface, polyhedron, u0, v0, u1, v1);
@@ -422,7 +425,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     {
         TheCSFunction theicsfunction = TheCSFunction.Create(surface, curve);
         TheExactInter intersectionExacte = TheExactInter.Create(theicsfunction, THE_TOLTANGENCY);
-        math_FunctionSetRoot rsnld = new(intersectionExacte.Function());
+        FunctionSetRoot rsnld = new(intersectionExacte.Function());
 
         double winf = polygon.InfParameter();
         double wsup = polygon.SupParameter();
@@ -463,11 +466,11 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     protected void InternalPerform(in TheCurve curve, ThePolygon polygon, in TheSurface surface, double U1, double V1,
                                    double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
-        if ((aSurfaceType != GeomAbs_Plane) && (aSurfaceType != GeomAbs_Cylinder) && (aSurfaceType != GeomAbs_Cone)
-            && (aSurfaceType != GeomAbs_Sphere))
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
+        if ((aSurfaceType != Plane) && (aSurfaceType != SurfaceKind.Cylinder) && (aSurfaceType != SurfaceKind.Cone)
+            && (aSurfaceType != SurfaceKind.Sphere))
         {
-            if (aSurfaceType != GeomAbs_BSplineSurface)
+            if (aSurfaceType != BSplineSurface)
             {
                 int nbsu = TheSurfaceTool.NbSamplesU(surface, U1, U2);
                 int nbsv = TheSurfaceTool.NbSamplesV(surface, V1, V2);
@@ -507,33 +510,33 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     }
 
     /// <summary>The intersection of a line with the surface (IntCurveSurface_InterImpl::PerformConicSurfLine).</summary>
-    protected void PerformConicSurf(in gp_Lin Line, in TheCurve curve, in TheSurface surface, double U1, double V1,
+    protected void PerformConicSurf(in Line3D Line, in TheCurve curve, in TheSurface surface, double U1, double V1,
                                     double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
         bool isAnaProcessed = true;
 
         switch (aSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IntAna_IntConicQuad LinPlane = new(Line, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, LinPlane);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 IntAna_IntConicQuad LinCylinder = new(Line, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, LinCylinder);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 IntAna_IntConicQuad LinSphere = new(Line, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, LinSphere);
                 break;
             }
-            case GeomAbs_Torus:
+            case SurfaceKind.Torus:
             {
                 NCollection_DynamicArray<IntCurveSurface_IntersectionPoint> aPoints = new();
                 if (IntCurveSurface_InterUtils.ProcessLinTorus<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool>(
@@ -550,10 +553,10 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                 }
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
-                double correction = 1.0E+5 * Precision.Angular();
-                gp_Cone cn = TheSurfaceTool.Cone(surface);
+                double correction = 1.0E+5 * global::Kerf.Engine.Foundation.Precision.Angular();
+                Cone cn = TheSurfaceTool.Cone(surface);
                 if (Math.Abs(cn.SemiAngle()) < M_PI / 2.0 - correction)
                 {
                     IntAna_IntConicQuad LinCone = new(Line, new IntAna_Quadric(cn));
@@ -583,29 +586,29 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                 nbsv = 1;
             }
 
-            bool U1inf = Precision.IsInfinite(U1);
-            bool U2inf = Precision.IsInfinite(U2);
-            bool V1inf = Precision.IsInfinite(V1);
-            bool V2inf = Precision.IsInfinite(V2);
+            bool U1inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(U1);
+            bool U2inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(U2);
+            bool V1inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(V1);
+            bool V2inf = global::Kerf.Engine.Foundation.Precision.IsInfinite(V2);
 
             double U1new = U1, U2new = U2, V1new = V1, V2new = V2;
             bool NoIntersection = false;
 
             if (U1inf || U2inf || V1inf || V2inf)
             {
-                if (aSurfaceType == GeomAbs_SurfaceOfExtrusion)
+                if (aSurfaceType == SurfaceOfExtrusion)
                 {
                     IntCurveSurface_InterUtils.EstLimForInfExtr<TheSurface, TheSurfaceTool>(
                         Line, surface, false, nbsu, U1inf, U2inf, V1inf, V2inf, ref U1new, ref U2new, ref V1new,
                         ref V2new, out NoIntersection);
                 }
-                else if (aSurfaceType == GeomAbs_SurfaceOfRevolution)
+                else if (aSurfaceType == SurfaceOfRevolution)
                 {
                     IntCurveSurface_InterUtils.EstLimForInfRevl<TheSurface, TheSurfaceTool>(
                         Line, surface, U1inf, U2inf, V1inf, V2inf, ref U1new, ref U2new, ref V1new, ref V2new,
                         out NoIntersection);
                 }
-                else if (aSurfaceType == GeomAbs_OffsetSurface)
+                else if (aSurfaceType == OffsetSurface)
                 {
                     IntCurveSurface_InterUtils.EstLimForInfOffs<TheSurface, TheSurfaceTool>(
                         Line, surface, nbsu, U1inf, U2inf, V1inf, V2inf, ref U1new, ref U2new, ref V1new, ref V2new,
@@ -633,7 +636,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
 
             ThePolyhedron polyhedron = ThePolyhedron.Create(surface, nbsu, nbsv, U1new, V1new, U2new, V2new);
             Intf_Tool bndTool = new();
-            Bnd_Box boxLine = new();
+            Box boxLine = new();
             bndTool.LinBox(Line, polyhedron.Bounding(), ref boxLine);
 
             for (int nbseg = 1; nbseg <= bndTool.NbSegments(); nbseg++)
@@ -652,32 +655,32 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     }
 
     /// <summary>The intersection of a circle with the surface (IntCurveSurface_InterImpl::PerformConicSurfCircle).</summary>
-    protected void PerformConicSurf(in gp_Circ Circle, in TheCurve curve, in TheSurface surface, double U1, double V1,
+    protected void PerformConicSurf(in Circle3D Circle, in TheCurve curve, in TheSurface surface, double U1, double V1,
                                     double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
         switch (aSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IntAna_IntConicQuad CircPlane = new(Circle, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE,
                                                     THE_TOLERANCE);
                 AppendIntAna(curve, surface, CircPlane);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 IntAna_IntConicQuad CircCylinder = new(Circle, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, CircCylinder);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 IntAna_IntConicQuad CircCone = new(Circle, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, CircCone);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 IntAna_IntConicQuad CircSphere = new(Circle, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, CircSphere);
@@ -693,33 +696,33 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     }
 
     /// <summary>The intersection of an ellipse with the surface (IntCurveSurface_InterImpl::PerformConicSurfEllipse).</summary>
-    protected void PerformConicSurf(in gp_Elips Ellipse, in TheCurve curve, in TheSurface surface, double U1,
+    protected void PerformConicSurf(in Ellipse3D Ellipse, in TheCurve curve, in TheSurface surface, double U1,
                                     double V1, double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
         switch (aSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IntAna_IntConicQuad EllipsePlane = new(Ellipse, TheSurfaceTool.Plane(surface),
                                                        THE_TOLERANCE_ANGULAIRE, THE_TOLERANCE);
                 AppendIntAna(curve, surface, EllipsePlane);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 IntAna_IntConicQuad EllipseCylinder =
                     new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, EllipseCylinder);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 IntAna_IntConicQuad EllipseCone = new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, EllipseCone);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 IntAna_IntConicQuad EllipseSphere = new(Ellipse, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, EllipseSphere);
@@ -735,31 +738,31 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     }
 
     /// <summary>The intersection of a parabola with the surface (IntCurveSurface_InterImpl::PerformConicSurfParabola).</summary>
-    protected void PerformConicSurf(in gp_Parab Parab, in TheCurve curve, in TheSurface surface, double U1, double V1,
+    protected void PerformConicSurf(in Parabola3D Parab, in TheCurve curve, in TheSurface surface, double U1, double V1,
                                     double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
         switch (aSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IntAna_IntConicQuad ParabPlane = new(Parab, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, ParabPlane);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 IntAna_IntConicQuad ParabCylinder = new(Parab, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, ParabCylinder);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 IntAna_IntConicQuad ParabCone = new(Parab, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, ParabCone);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 IntAna_IntConicQuad ParabSphere = new(Parab, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, ParabSphere);
@@ -779,7 +782,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                 }
                 ThePolyhedron polyhedron = ThePolyhedron.Create(surface, nbsu, nbsv, U1, V1, U2, V2);
                 Intf_Tool bndTool = new();
-                Bnd_Box boxParab = new();
+                Box boxParab = new();
                 bndTool.ParabBox(Parab, polyhedron.Bounding(), ref boxParab);
                 for (int nbseg = 1; nbseg <= bndTool.NbSegments(); nbseg++)
                 {
@@ -793,31 +796,31 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
     }
 
     /// <summary>The intersection of a hyperbola with the surface (IntCurveSurface_InterImpl::PerformConicSurfHyperbola).</summary>
-    protected void PerformConicSurf(in gp_Hypr Hypr, in TheCurve curve, in TheSurface surface, double U1, double V1,
+    protected void PerformConicSurf(in Hyperbola3D Hypr, in TheCurve curve, in TheSurface surface, double U1, double V1,
                                     double U2, double V2)
     {
-        GeomAbs_SurfaceType aSurfaceType = TheSurfaceTool.GetType(surface);
+        SurfaceKind aSurfaceType = TheSurfaceTool.GetType(surface);
         switch (aSurfaceType)
         {
-            case GeomAbs_Plane:
+            case Plane:
             {
                 IntAna_IntConicQuad HyprPlane = new(Hypr, TheSurfaceTool.Plane(surface), THE_TOLERANCE_ANGULAIRE);
                 AppendIntAna(curve, surface, HyprPlane);
                 break;
             }
-            case GeomAbs_Cylinder:
+            case SurfaceKind.Cylinder:
             {
                 IntAna_IntConicQuad HyprCylinder = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Cylinder(surface)));
                 AppendIntAna(curve, surface, HyprCylinder);
                 break;
             }
-            case GeomAbs_Cone:
+            case SurfaceKind.Cone:
             {
                 IntAna_IntConicQuad HyprCone = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Cone(surface)));
                 AppendIntAna(curve, surface, HyprCone);
                 break;
             }
-            case GeomAbs_Sphere:
+            case SurfaceKind.Sphere:
             {
                 IntAna_IntConicQuad HyprSphere = new(Hypr, new IntAna_Quadric(TheSurfaceTool.Sphere(surface)));
                 AppendIntAna(curve, surface, HyprSphere);
@@ -837,7 +840,7 @@ public class IntCurveSurface_Inter<TheCurve, TheCurveTool, TheSurface, TheSurfac
                 }
                 ThePolyhedron polyhedron = ThePolyhedron.Create(surface, nbsu, nbsv, U1, V1, U2, V2);
                 Intf_Tool bndTool = new();
-                Bnd_Box boxHypr = new();
+                Box boxHypr = new();
                 bndTool.HyprBox(Hypr, polyhedron.Bounding(), ref boxHypr);
                 for (int nbseg = 1; nbseg <= bndTool.NbSegments(); nbseg++)
                 {

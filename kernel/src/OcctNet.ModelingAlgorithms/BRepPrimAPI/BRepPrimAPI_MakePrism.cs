@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -33,7 +37,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     /// sub-shapes are copied; with <paramref name="Canonize"/>, the extrusions of lines and circles are planes and
     /// cylinders.
     /// </summary>
-    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in gp_Vec V, bool Copy = false, bool Canonize = true)
+    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in Vector3D V, bool Copy = false, bool Canonize = true)
     {
         myPrism = new BRepSweep_Prism(check(GeneratingShapeForWrite(S)), V, Copy, Canonize);
         Build();
@@ -43,7 +47,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     /// A semi-infinite (<paramref name="Inf"/> false) or infinite prism of base <paramref name="S"/> along
     /// <paramref name="D"/>.
     /// </summary>
-    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in gp_Dir D, bool Inf = true, bool Copy = false, bool Canonize = true)
+    public BRepPrimAPI_MakePrism(in TopoDS_Shape S, in Direction3D D, bool Inf = true, bool Copy = false, bool Canonize = true)
     {
         myPrism = new BRepSweep_Prism(check(GeneratingShapeForWrite(S)), D, Inf, Copy, Canonize);
         Build();
@@ -53,7 +57,7 @@ public class BRepPrimAPI_MakePrism : BRepPrimAPI_MakeSweep
     internal BRepSweep_Prism Prism() => myPrism;
 
     /// <summary>Builds the resulting shape (redefined from MakeShape).</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myShape = myPrism.Shape();
         KeepUnchangedGenerating(ref myShape);

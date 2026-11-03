@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The function of a general chamfer between two surfaces along a guide curve: linear sections.</summary>
@@ -32,7 +36,7 @@ public abstract class BlendFunc_GenChamfer : Blend_Function
     }
 
     /// <summary>Value then Derivatives.</summary>
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         bool val = Value(X, F);
         return (val && Derivatives(X, D));
@@ -66,7 +70,7 @@ public abstract class BlendFunc_GenChamfer : Blend_Function
 
         for (int i = 1; i <= 4; i++)
         {
-            if (!Precision.IsInfinite(InfBound[i]) && !Precision.IsInfinite(SupBound[i]))
+            if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(InfBound[i]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(SupBound[i]))
             {
                 double range = (SupBound[i] - InfBound[i]);
                 InfBound[i] -= range;
@@ -95,12 +99,12 @@ public abstract class BlendFunc_GenChamfer : Blend_Function
         Weights.Init(1);
     }
 
-    public override int NbIntervals(GeomAbs_Shape S)
+    public override int NbIntervals(Continuity S)
     {
         return curv.NbIntervals(BlendFunc.NextShape(S));
     }
 
-    public override void Intervals(NCollection_Array1<double> T, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
         curv.Intervals(T, BlendFunc.NextShape(S));
     }
@@ -137,35 +141,35 @@ public abstract class BlendFunc_GenChamfer : Blend_Function
 
     /// <summary>Obsolete: the section at (U1, V1), (U2, V2) as a line with its parameter range.</summary>
     public void Section(double Param, double U1, double V1, double U2, double V2, out double Pdeb, out double Pfin,
-                        ref gp_Lin C)
+                        ref Line3D C)
     {
-        gp_Pnt pts1 = surf1.Value(U1, V1);
-        gp_Pnt pts2 = surf2.Value(U2, V2);
-        gp_Dir dir = new gp_Dir(new gp_Vec(pts1, pts2));
+        Point3D pts1 = surf1.Value(U1, V1);
+        Point3D pts2 = surf2.Value(U2, V2);
+        Direction3D dir = new Direction3D(new Vector3D(pts1, pts2));
 
         C.SetLocation(pts1);
         C.SetDirection(dir);
 
         Pdeb = 0.0;
-        Pfin = ElCLib.Parameter(C, pts2);
+        Pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(C, pts2);
     }
 
     /// <summary>Not computed: returns false.</summary>
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Vec> D2Poles, NCollection_Array1<gp_Pnt2d> Poles2d,
-                                 NCollection_Array1<gp_Vec2d> DPoles2d, NCollection_Array1<gp_Vec2d> D2Poles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Vector3D> D2Poles, NCollection_Array1<Point2D> Poles2d,
+                                 NCollection_Array1<Vector2D> DPoles2d, NCollection_Array1<Vector2D> D2Poles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights,
                                  NCollection_Array1<double> D2Weights)
     {
         return false;
     }
 
-    public override bool Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles, NCollection_Array1<gp_Vec> DPoles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<gp_Vec2d> DPoles2d,
+    public override bool Section(in Blend_Point P, NCollection_Array1<Point3D> Poles, NCollection_Array1<Vector3D> DPoles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<Vector2D> DPoles2d,
                                  NCollection_Array1<double> Weights, NCollection_Array1<double> DWeights)
     {
         math_Vector sol = new(1, 4), valsol = new(1, 4);
-        math_Matrix gradsol = new(1, 4, 1, 4);
+        Matrix gradsol = new(1, 4, 1, 4);
 
         double prm = P.Parameter();
         int low = Poles.Lower();
@@ -205,8 +209,8 @@ public abstract class BlendFunc_GenChamfer : Blend_Function
         return (!istgt);
     }
 
-    public override void Section(in Blend_Point P, NCollection_Array1<gp_Pnt> Poles,
-                                 NCollection_Array1<gp_Pnt2d> Poles2d, NCollection_Array1<double> Weights)
+    public override void Section(in Blend_Point P, NCollection_Array1<Point3D> Poles,
+                                 NCollection_Array1<Point2D> Poles2d, NCollection_Array1<double> Weights)
     {
         double u1, v1, u2, v2, prm = P.Parameter();
         int low = Poles.Lower();

@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>The mapping of directions (Direction from Geom and Geom2d, Dir and Dir2d from gp) to a STEP direction.</summary>
@@ -17,7 +19,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 3D direction.</summary>
-    public GeomToStep_MakeDirection(in gp_Dir D)
+    public GeomToStep_MakeDirection(in Direction3D D)
     {
         StepGeom_Direction Dir = new StepGeom_Direction();
         NCollection_HArray1<double> aDirRatios = new NCollection_HArray1<double>(1, 3);
@@ -36,7 +38,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     //=============================================================================
 
     /// <summary>A 2D direction.</summary>
-    public GeomToStep_MakeDirection(in gp_Dir2d D)
+    public GeomToStep_MakeDirection(in Direction2D D)
     {
         StepGeom_Direction Dir = new StepGeom_Direction();
         NCollection_HArray1<double> aDirRatios = new NCollection_HArray1<double>(1, 2);
@@ -56,7 +58,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     /// <summary>A 3D direction.</summary>
     public GeomToStep_MakeDirection(Geom_Direction Direc)
     {
-        gp_Dir D;
+        Direction3D D;
         StepGeom_Direction Dir = new StepGeom_Direction();
         NCollection_HArray1<double> aDirRatios = new NCollection_HArray1<double>(1, 3);
         D = Direc.Dir();
@@ -77,7 +79,7 @@ public sealed class GeomToStep_MakeDirection : GeomToStep_Root
     /// <summary>A 2D direction.</summary>
     public GeomToStep_MakeDirection(Geom2d_Direction Direc)
     {
-        gp_Dir2d D;
+        Direction2D D;
         StepGeom_Direction Dir = new StepGeom_Direction();
         NCollection_HArray1<double> aDirRatios = new NCollection_HArray1<double>(1, 2);
         D = Direc.Dir2d();

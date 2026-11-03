@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Transfer_StatusExec;
 using static Occt.Transfer_StatusResult;
 
@@ -20,7 +21,7 @@ namespace Occt;
 /// it is "Used", it cannot. A Binder can also bring a list of next results. A binder is a working object of the
 /// transfer process (decision 21): its setters are public, as OCCT's.
 /// </remarks>
-public abstract class Transfer_Binder : Standard_Transient
+public abstract class Transfer_Binder : Transient
 {
     /// <summary>Sets fields at initial values.</summary>
     protected Transfer_Binder()

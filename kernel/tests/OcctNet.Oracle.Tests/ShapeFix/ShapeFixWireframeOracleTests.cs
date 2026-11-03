@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using System.Diagnostics;
 using Xunit.Abstractions;
 using static Occt.ShapeExtend_Status;
@@ -85,7 +86,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
             aPRes = aFix.Shape();
             aPStatus = $"{aSmall}/{aGaps}, " + Status(aFix.StatusWireGaps, aFix.StatusSmallEdges);
         }
-        catch (Standard_Failure e)
+        catch (FailureException e)
         {
             aPErr = ShapeFixOracleRun.ErrorOf(e);
         }

@@ -4,9 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_IsoType;
-using static Occt.GeomAbs_Shape;
-using static Occt.GeomAbs_SurfaceType;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Bounds;
+using Kerf.Geometry;
+using static Kerf.Engine.Geometry.IsoType;
+using static Kerf.Geometry.Continuity;
+using static Kerf.Geometry.SurfaceKind;
 
 namespace Occt;
 
@@ -32,7 +35,7 @@ namespace Occt;
 /// before they are cached or handed out.
 /// </para>
 /// </remarks>
-public class ShapeAnalysis_Surface : Standard_Transient
+public class ShapeAnalysis_Surface : Transient
 {
     protected Geom_Surface?         mySurf;
     protected GeomAdaptor_Surface?  myAdSur;
@@ -40,9 +43,9 @@ public class ShapeAnalysis_Surface : Standard_Transient
     protected bool                  myExtOK;
     protected int                   myNbDeg;
     protected double[]              myPreci    = new double[4];
-    protected gp_Pnt[]              myP3d      = new gp_Pnt[4];
-    protected gp_Pnt2d[]            myFirstP2d = new gp_Pnt2d[4];
-    protected gp_Pnt2d[]            myLastP2d  = new gp_Pnt2d[4];
+    protected Point3D[]              myP3d      = new Point3D[4];
+    protected Point2D[]            myFirstP2d = new Point2D[4];
+    protected Point2D[]            myLastP2d  = new Point2D[4];
     protected double[]              myFirstPar = new double[4];
     protected double[]              myLastPar  = new double[4];
     protected bool[]                myUIsoDeg  = new bool[4];
@@ -56,10 +59,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
     protected Geom_Curve?           myIsoVF;
     protected Geom_Curve?           myIsoVL;
     protected bool                  myIsoBoxes;
-    protected Bnd_Box               myBndUF = new Bnd_Box();
-    protected Bnd_Box               myBndUL = new Bnd_Box();
-    protected Bnd_Box               myBndVF = new Bnd_Box();
-    protected Bnd_Box               myBndVL = new Bnd_Box();
+    protected Box               myBndUF = new Box();
+    protected Box               myBndUL = new Box();
+    protected Box               myBndVF = new Box();
+    protected Box               myBndVL = new Box();
     protected double                myGap;
     protected double                myUDelt;
     protected double                myVDelt;
@@ -68,8 +71,8 @@ public class ShapeAnalysis_Surface : Standard_Transient
 
     private static void RestrictBounds(ref double theFirst, ref double theLast)
     {
-        bool isFInf = Precision.IsNegativeInfinite(theFirst);
-        bool isLInf = Precision.IsPositiveInfinite(theLast);
+        bool isFInf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(theFirst);
+        bool isLInf = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(theLast);
         if (isFInf || isLInf)
         {
             if (isFInf && isLInf)
@@ -191,10 +194,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
     public double Gap() => myGap;
 
     /// <summary>Returns the point of parameters (u, v).</summary>
-    public gp_Pnt Value(double u, double v) => myAdSur!.Value(u, v);
+    public Point3D Value(double u, double v) => myAdSur!.Value(u, v);
 
     /// <summary>Returns the point of parameters p2d.</summary>
-    public gp_Pnt Value(in gp_Pnt2d p2d) => myAdSur!.Value(p2d.X(), p2d.Y());
+    public Point3D Value(in Point2D p2d) => myAdSur!.Value(p2d.X(), p2d.Y());
 
     private void ComputeSingularities()
     {
@@ -288,10 +291,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
             myLastPar[2]  = myLastPar[3]  = su2;
             myUIsoDeg[2]  = myUIsoDeg[3]  = false;
 
-            gp_Pnt Corner1 = myAdSur.Value(su1, sv1);
-            gp_Pnt Corner2 = myAdSur.Value(su1, sv2);
-            gp_Pnt Corner3 = myAdSur.Value(su2, sv1);
-            gp_Pnt Corner4 = myAdSur.Value(su2, sv2);
+            Point3D Corner1 = myAdSur.Value(su1, sv1);
+            Point3D Corner2 = myAdSur.Value(su1, sv2);
+            Point3D Corner3 = myAdSur.Value(su2, sv1);
+            Point3D Corner4 = myAdSur.Value(su2, sv2);
 
             myPreci[0] = Max(Corner1.Distance(Corner2), Max(myP3d[0].Distance(Corner1), myP3d[0].Distance(Corner2)));
             myPreci[1] = Max(Corner3.Distance(Corner4), Max(myP3d[1].Distance(Corner3), myP3d[1].Distance(Corner4)));
@@ -342,7 +345,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// middle of the iso-line), the first and last 2D points and parameters of the iso-line, and whether it is a U
     /// iso-line. Returns false, leaving the outputs unchanged, if <paramref name="num"/> is out of range.
     /// </summary>
-    public bool Singularity(int num, ref double preci, ref gp_Pnt P3d, ref gp_Pnt2d firstP2d, ref gp_Pnt2d lastP2d,
+    public bool Singularity(int num, ref double preci, ref Point3D P3d, ref Point2D firstP2d, ref Point2D lastP2d,
                             ref double firstpar, ref double lastpar, ref bool uisodeg)
     {
         // The fields are C arrays numbered from 0; num starts at 1
@@ -370,7 +373,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// Returns true if a surface boundary is degenerated with <paramref name="preci"/> and the point is within
     /// <paramref name="preci"/> of its singular point.
     /// </summary>
-    public bool IsDegenerated(in gp_Pnt P3d, double preci)
+    public bool IsDegenerated(in Point3D P3d, double preci)
     {
         if (myNbDeg < 0)
         {
@@ -391,10 +394,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
     }
 
     /// <summary>
-    /// As <see cref="IsDegenerated(in gp_Pnt, double)"/>, and returns the characteristics of the singularity nearest
+    /// As <see cref="IsDegenerated(in Point3D, double)"/>, and returns the characteristics of the singularity nearest
     /// to the point among those matching (the outputs are unchanged when there is none).
     /// </summary>
-    public bool DegeneratedValues(in gp_Pnt P3d, double preci, ref gp_Pnt2d firstP2d, ref gp_Pnt2d lastP2d,
+    public bool DegeneratedValues(in Point3D P3d, double preci, ref Point2D firstP2d, ref Point2D lastP2d,
                                   ref double firstPar, ref double lastPar, bool forward = true)
     {
         _ = forward;
@@ -439,7 +442,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// point of <paramref name="result"/>), and sets the coordinate of <paramref name="result"/> along it from
     /// <paramref name="neighbour"/>.
     /// </summary>
-    public bool ProjectDegenerated(in gp_Pnt P3d, double preci, in gp_Pnt2d neighbour, ref gp_Pnt2d result)
+    public bool ProjectDegenerated(in Point3D P3d, double preci, in Point2D neighbour, ref Point2D result)
     {
         if (myNbDeg < 0)
         {
@@ -491,7 +494,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// a singularity, and if so sets their undetermined 2D coordinate from the nearest point that doesn't (evenly
     /// distributed if all do). Returns true if some points were adjusted.
     /// </summary>
-    public bool ProjectDegenerated(int nbrPnt, NCollection_Sequence<gp_Pnt> points, NCollection_Sequence<gp_Pnt2d> pnt2d,
+    public bool ProjectDegenerated(int nbrPnt, NCollection_Sequence<Point3D> points, NCollection_Sequence<Point2D> pnt2d,
                                    double preci, bool direct)
     {
         if (myNbDeg < 0)
@@ -525,13 +528,13 @@ public class ShapeAnalysis_Surface : Standard_Transient
         }
 
         myGap = Math.Sqrt(gapMin);
-        gp_Pnt2d pk = new gp_Pnt2d();
+        Point2D pk = new Point2D();
 
         int k;
         for (k = j + step; k <= nbrPnt && k >= 1; k += step)
         {
             pk = pnt2d[k];
-            gp_Pnt P1 = points[k];
+            Point3D P1 = points[k];
             if (myP3d[indMin].SquareDistance(P1) > prec2 && myP3d[indMin].SquareDistance(Value(pk)) > prec2)
             {
                 break;
@@ -580,11 +583,11 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// <paramref name="tol"/>, and its 2D extent is more than <paramref name="ratio"/> times the resolution of that
     /// 3D extent. This detects singularities otherwise than ComputeSingularities.
     /// </summary>
-    public bool IsDegenerated(in gp_Pnt2d p2d1, in gp_Pnt2d p2d2, double tol, double ratio)
+    public bool IsDegenerated(in Point2D p2d1, in Point2D p2d2, double tol, double ratio)
     {
-        gp_Pnt p1    = Value(p2d1);
-        gp_Pnt p2    = Value(p2d2);
-        gp_Pnt pm    = Value(new gp_Pnt2d(0.5 * (p2d1.XY() + p2d2.XY())));
+        Point3D p1    = Value(p2d1);
+        Point3D p2    = Value(p2d2);
+        Point3D pm    = Value(new Point2D(0.5 * (p2d1.XY() + p2d2.XY())));
         double max3d = Max(p1.Distance(p2), Max(pm.Distance(p1), pm.Distance(p2)));
         if (max3d > tol)
         {
@@ -595,7 +598,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
         double              RU = SA.UResolution(1.0);
         double              RV = SA.VResolution(1.0);
 
-        if (RU < Precision.PConfusion() || RV < Precision.PConfusion())
+        if (RU < global::Kerf.Engine.Foundation.Precision.PConfusion() || RV < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -621,7 +624,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                 iso = surf.VIso(par);
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             iso = null;
         }
@@ -689,7 +692,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// </summary>
     public bool IsUClosed(double preci = -1)
     {
-        double prec      = Max(preci, Precision.Confusion());
+        double prec      = Max(preci, global::Kerf.Engine.Foundation.Precision.Confusion());
         double anUmidVal = -1.0;
         if (myUCloseVal < 0)
         {
@@ -709,32 +712,32 @@ public class ShapeAnalysis_Surface : Standard_Transient
             // Adapted computations
             // #67 rln S4135
             GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
-            GeomAbs_SurfaceType surftype  = SurfAdapt.GetType();
+            SurfaceKind surftype  = SurfAdapt.GetType();
             if (mySurf is Geom_RectangularTrimmedSurface)
             {
-                surftype = GeomAbs_OtherSurface;
+                surftype = OtherSurface;
             }
 
             switch (surftype)
             {
-                case GeomAbs_Plane:
+                case Plane:
                 {
                     myUCloseVal = RealLast();
                     break;
                 }
-                case GeomAbs_SurfaceOfExtrusion:
+                case SurfaceOfExtrusion:
                 { //: c8 abv 03 Mar 98: UKI60094 #753: process Geom_SurfaceOfLinearExtrusion
                     var        extr = (Geom_SurfaceOfLinearExtrusion)mySurf;
                     Geom_Curve crv  = extr.BasisCurve();
                     double     f    = crv.FirstParameter();
                     double     l    = crv.LastParameter();
                     //: r3 abv (smh) 30 Mar 99: protect against unexpected signals
-                    if (!Precision.IsInfinite(f) && !Precision.IsInfinite(l))
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
                     {
-                        gp_Pnt p1 = crv.Value(f);
-                        gp_Pnt p2 = crv.Value(l);
+                        Point3D p1 = crv.Value(f);
+                        Point3D p2 = crv.Value(l);
                         myUCloseVal = p1.SquareDistance(p2);
-                        gp_Pnt pm = crv.Value((f + l) / 2.0);
+                        Point3D pm = crv.Value((f + l) / 2.0);
                         anUmidVal = p1.SquareDistance(pm);
                     }
                     else
@@ -744,7 +747,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
 
                     break;
                 }
-                case GeomAbs_BSplineSurface:
+                case BSplineSurface:
                 {
                     var    bs      = (Geom_BSplineSurface)mySurf;
                     int    nbup    = bs.NbUPoles();
@@ -766,10 +769,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     { // #6 //:h4
                         int    nbvk = bs.NbVKnots();
                         double v    = bs.VKnot(1);
-                        gp_Pnt p1   = SurfAdapt.Value(uf, v);
-                        gp_Pnt p2   = SurfAdapt.Value(ul, v);
+                        Point3D p1   = SurfAdapt.Value(uf, v);
+                        Point3D p2   = SurfAdapt.Value(ul, v);
                         myUCloseVal = p1.SquareDistance(p2);
-                        gp_Pnt pm = SurfAdapt.Value((uf + ul) / 2.0, v);
+                        Point3D pm = SurfAdapt.Value((uf + ul) / 2.0, v);
                         anUmidVal = p1.SquareDistance(pm);
                         distmin   = myUCloseVal;
                         for (int i = 2; i <= nbvk; i++)
@@ -819,7 +822,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
 
                     break;
                 }
-                case GeomAbs_BezierSurface:
+                case BezierSurface:
                 {
                     var    bz      = (Geom_BezierSurface)mySurf;
                     int    nbup    = bz.NbUPoles();
@@ -858,10 +861,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
                 { // Geom_RectangularTrimmedSurface and Geom_OffsetSurface
                     double distmin  = RealLast();
                     int    nbpoints = 101; // can be revised
-                    gp_Pnt p1       = SurfAdapt.Value(uf, vf);
-                    gp_Pnt p2       = SurfAdapt.Value(ul, vf);
+                    Point3D p1       = SurfAdapt.Value(uf, vf);
+                    Point3D p2       = SurfAdapt.Value(ul, vf);
                     myUCloseVal = p1.SquareDistance(p2);
-                    gp_Pnt pm = SurfAdapt.Value((uf + ul) / 2, vf);
+                    Point3D pm = SurfAdapt.Value((uf + ul) / 2, vf);
                     anUmidVal = p1.SquareDistance(pm);
                     distmin   = myUCloseVal;
                     for (int i = 1; i < nbpoints; i++)
@@ -907,7 +910,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// </summary>
     public bool IsVClosed(double preci = -1)
     {
-        double prec     = Max(preci, Precision.Confusion());
+        double prec     = Max(preci, global::Kerf.Engine.Foundation.Precision.Confusion());
         double aVmidVal = -1.0;
         if (myVCloseVal < 0)
         {
@@ -927,33 +930,33 @@ public class ShapeAnalysis_Surface : Standard_Transient
             // Adapted computations
             // #67 rln S4135
             GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
-            GeomAbs_SurfaceType surftype  = SurfAdapt.GetType();
+            SurfaceKind surftype  = SurfAdapt.GetType();
             if (mySurf is Geom_RectangularTrimmedSurface)
             {
-                surftype = GeomAbs_OtherSurface;
+                surftype = OtherSurface;
             }
 
             switch (surftype)
             {
-                case GeomAbs_Plane:
-                case GeomAbs_Cone:
-                case GeomAbs_Cylinder:
-                case GeomAbs_Sphere:
-                case GeomAbs_SurfaceOfExtrusion:
+                case Plane:
+                case SurfaceKind.Cone:
+                case SurfaceKind.Cylinder:
+                case SurfaceKind.Sphere:
+                case SurfaceOfExtrusion:
                 {
                     myVCloseVal = RealLast();
                     break;
                 }
-                case GeomAbs_SurfaceOfRevolution:
+                case SurfaceOfRevolution:
                 {
                     var        revol = (Geom_SurfaceOfRevolution)mySurf;
                     Geom_Curve crv   = revol.BasisCurve();
-                    gp_Pnt     p1    = crv.Value(crv.FirstParameter());
-                    gp_Pnt     p2    = crv.Value(crv.LastParameter());
+                    Point3D     p1    = crv.Value(crv.FirstParameter());
+                    Point3D     p2    = crv.Value(crv.LastParameter());
                     myVCloseVal = p1.SquareDistance(p2);
                     break;
                 }
-                case GeomAbs_BSplineSurface:
+                case BSplineSurface:
                 {
                     var    bs      = (Geom_BSplineSurface)mySurf;
                     int    nbvp    = bs.NbVPoles();
@@ -972,10 +975,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     { // #6 //:h4
                         int    nbuk = bs.NbUKnots();
                         double u    = bs.UKnot(1);
-                        gp_Pnt p1   = SurfAdapt.Value(u, vf);
-                        gp_Pnt p2   = SurfAdapt.Value(u, vl);
+                        Point3D p1   = SurfAdapt.Value(u, vf);
+                        Point3D p2   = SurfAdapt.Value(u, vl);
                         myVCloseVal = p1.SquareDistance(p2);
-                        gp_Pnt pm = SurfAdapt.Value(u, (vf + vl) / 2.0);
+                        Point3D pm = SurfAdapt.Value(u, (vf + vl) / 2.0);
                         aVmidVal = p1.SquareDistance(pm);
                         distmin  = myVCloseVal;
                         for (int i = 2; i <= nbuk; i++)
@@ -1025,7 +1028,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
 
                     break;
                 }
-                case GeomAbs_BezierSurface:
+                case BezierSurface:
                 {
                     var    bz      = (Geom_BezierSurface)mySurf;
                     int    nbvp    = bz.NbVPoles();
@@ -1064,9 +1067,9 @@ public class ShapeAnalysis_Surface : Standard_Transient
                 { // Geom_RectangularTrimmedSurface and Geom_OffsetSurface
                     double distmin  = RealLast();
                     int    nbpoints = 101; // can be revised
-                    gp_Pnt p1       = SurfAdapt.Value(uf, vf);
-                    gp_Pnt p2       = SurfAdapt.Value(uf, vl);
-                    gp_Pnt pm       = SurfAdapt.Value(uf, (vf + vl) / 2);
+                    Point3D p1       = SurfAdapt.Value(uf, vf);
+                    Point3D p2       = SurfAdapt.Value(uf, vl);
+                    Point3D pm       = SurfAdapt.Value(uf, (vf + vl) / 2);
                     myVCloseVal = p1.SquareDistance(p2);
                     aVmidVal    = p1.SquareDistance(pm);
                     distmin     = myVCloseVal;
@@ -1108,7 +1111,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     }
 
     // Newton algo (S4030); returns 0 (failed), 1 or 2 (found, near a singular point)
-    private int SurfaceNewton(in gp_Pnt2d p2dPrev, in gp_Pnt P3D, double preci, ref gp_Pnt2d sol)
+    private int SurfaceNewton(in Point2D p2dPrev, in Point3D P3D, double preci, ref Point2D sol)
     {
         GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
         Bounds(out double uf, out double ul, out double vf, out double vl);
@@ -1117,25 +1120,25 @@ public class ShapeAnalysis_Surface : Standard_Transient
         double UF = uf - du, UL = ul + du;
         double VF = vf - dv, VL = vl + dv;
 
-        double Tol     = Precision.Confusion();
+        double Tol     = global::Kerf.Engine.Foundation.Precision.Confusion();
         double Tol2    = Tol * Tol; //, rs2p=1e10;
         double U       = p2dPrev.X(), V = p2dPrev.Y();
-        var    rsfirst = new gp_Vec(P3D.XYZ() - Value(U, V).XYZ()); // pdn
+        var    rsfirst = new Vector3D(P3D.XYZ() - Value(U, V).XYZ()); // pdn
         for (int i = 0; i < 25; i++)
         {
-            SurfAdapt.D2(U, V, out gp_Pnt pnt, out gp_Vec ru, out gp_Vec rv, out gp_Vec ruu, out gp_Vec rvv, out gp_Vec ruv);
+            SurfAdapt.D2(U, V, out Point3D pnt, out Vector3D ru, out Vector3D rv, out Vector3D ruu, out Vector3D rvv, out Vector3D ruv);
 
             // normal
             double ru2  = ru * ru, rv2 = rv * rv;
-            gp_Vec n    = ru ^ rv;
+            Vector3D n    = ru ^ rv;
             double nrm2 = n.SquareMagnitude();
-            if (nrm2 < 1e-10 || Precision.IsPositiveInfinite(nrm2))
+            if (nrm2 < 1e-10 || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(nrm2))
             {
                 break; // n == 0, use standard
             }
 
             // discriminant
-            var    rs   = new gp_Vec(P3D.XYZ() - Value(U, V).XYZ());
+            var    rs   = new Vector3D(P3D.XYZ() - Value(U, V).XYZ());
             double rSuu = (rs * ruu);
             double rSvv = (rs * rvv);
             double rSuv = (rs * ruv);
@@ -1190,32 +1193,32 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// <paramref name="p2dPrev"/> by Newton's method. A solution farther than <paramref name="maxpreci"/> (when
     /// positive) from the point is bad, and <see cref="UVFromIso"/> is tried; if Newton fails, ValueOfUV is used.
     /// </summary>
-    public gp_Pnt2d NextValueOfUV(in gp_Pnt2d p2dPrev, in gp_Pnt P3D, double preci, double maxpreci = -1.0)
+    public Point2D NextValueOfUV(in Point2D p2dPrev, in Point3D P3D, double preci, double maxpreci = -1.0)
     {
         GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
-        GeomAbs_SurfaceType surftype  = SurfAdapt.GetType();
+        SurfaceKind surftype  = SurfAdapt.GetType();
 
         switch (surftype)
         {
-            case GeomAbs_BezierSurface:
-            case GeomAbs_BSplineSurface:
-            case GeomAbs_SurfaceOfExtrusion:
-            case GeomAbs_SurfaceOfRevolution:
-            case GeomAbs_OffsetSurface:
+            case BezierSurface:
+            case BSplineSurface:
+            case SurfaceOfExtrusion:
+            case SurfaceOfRevolution:
+            case OffsetSurface:
             {
-                if (surftype == GeomAbs_BSplineSurface)
+                if (surftype == BSplineSurface)
                 {
                     Geom_BSplineSurface aBSpline = SurfAdapt.BSpline();
 
                     // Check near to knot position ~ near to C0 points on U isoline.
-                    if (SurfAdapt.UContinuity() == GeomAbs_C0)
+                    if (SurfAdapt.UContinuity() == C0)
                     {
                         int aMinIndex = aBSpline.FirstUKnotIndex();
                         int aMaxIndex = aBSpline.LastUKnotIndex();
                         for (int anIdx = aMinIndex; anIdx <= aMaxIndex; ++anIdx)
                         {
                             double aKnot = aBSpline.UKnot(anIdx);
-                            if (Math.Abs(aKnot - p2dPrev.X()) < Precision.Confusion())
+                            if (Math.Abs(aKnot - p2dPrev.X()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 return ValueOfUV(P3D, preci);
                             }
@@ -1223,14 +1226,14 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     }
 
                     // Check near to knot position ~ near to C0 points on U isoline.
-                    if (SurfAdapt.VContinuity() == GeomAbs_C0)
+                    if (SurfAdapt.VContinuity() == C0)
                     {
                         int aMinIndex = aBSpline.FirstVKnotIndex();
                         int aMaxIndex = aBSpline.LastVKnotIndex();
                         for (int anIdx = aMinIndex; anIdx <= aMaxIndex; ++anIdx)
                         {
                             double aKnot = aBSpline.VKnot(anIdx);
-                            if (Math.Abs(aKnot - p2dPrev.Y()) < Precision.Confusion())
+                            if (Math.Abs(aKnot - p2dPrev.Y()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 return ValueOfUV(P3D, preci);
                             }
@@ -1238,19 +1241,19 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     }
                 }
 
-                gp_Pnt2d sol = new gp_Pnt2d();
+                Point2D sol = new Point2D();
                 int      res = SurfaceNewton(p2dPrev, P3D, preci, ref sol);
                 if (res != 0)
                 {
                     double gap = P3D.Distance(Value(sol));
                     if (res == 2 || //: q6 abv 19 Mar 99: protect against strange attractors
-                        (maxpreci > 0.0 && gap - maxpreci > Precision.Confusion()))
+                        (maxpreci > 0.0 && gap - maxpreci > global::Kerf.Engine.Foundation.Precision.Confusion()))
                     { //: q1: check with maxpreci
                         double U = sol.X(), V = sol.Y();
                         myGap = UVFromIso(P3D, preci, ref U, ref V);
                         if (gap >= myGap)
                         {
-                            return new gp_Pnt2d(U, V);
+                            return new Point2D(U, V);
                         }
                     }
 
@@ -1273,7 +1276,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// handles points near the surface's boundaries and failures of Extrema. Sets <see cref="Gap"/> to the distance
     /// from the point to the solution (-1 and (0, 0) on surfaces it doesn't handle).
     /// </summary>
-    public gp_Pnt2d ValueOfUV(in gp_Pnt P3D, double preci)
+    public Point2D ValueOfUV(in Point3D P3D, double preci)
     {
         GeomAdaptor_Surface SurfAdapt = Adaptor3d()!;
         double              S         = 0.0, T = 0.0;
@@ -1285,59 +1288,59 @@ public class ShapeAnalysis_Surface : Standard_Transient
         { //: c9 abv 3 Mar 98: UKI60107-1 #350: to prevent 'catch' from catching exception raising below it
             try
             { // ajout CKY 30-DEC-1997 (cf ProStep TR6 r_89-ug)
-                GeomAbs_SurfaceType surftype = SurfAdapt.GetType();
+                SurfaceKind surftype = SurfAdapt.GetType();
                 switch (surftype)
                 {
-                    case GeomAbs_Plane:
+                    case Plane:
                     {
-                        gp_Pln Plane = SurfAdapt.Plane();
-                        ElSLib.Parameters(Plane, P3D, out S, out T);
+                        Plane3D Plane = SurfAdapt.Plane();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Plane, P3D, out S, out T);
                         break;
                     }
-                    case GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                     {
-                        gp_Cylinder Cylinder = SurfAdapt.Cylinder();
-                        ElSLib.Parameters(Cylinder, P3D, out S, out T);
+                        Cylinder Cylinder = SurfAdapt.Cylinder();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cylinder, P3D, out S, out T);
                         S += ShapeAnalysis.AdjustByPeriod(S, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
-                    case GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                     {
-                        gp_Cone Cone = SurfAdapt.Cone();
-                        ElSLib.Parameters(Cone, P3D, out S, out T);
+                        Cone Cone = SurfAdapt.Cone();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Cone, P3D, out S, out T);
                         S += ShapeAnalysis.AdjustByPeriod(S, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
-                    case GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                     {
-                        gp_Sphere Sphere = SurfAdapt.Sphere();
-                        ElSLib.Parameters(Sphere, P3D, out S, out T);
+                        Sphere Sphere = SurfAdapt.Sphere();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Sphere, P3D, out S, out T);
                         S += ShapeAnalysis.AdjustByPeriod(S, 0.5 * (uf + ul), 2 * M_PI);
                         break;
                     }
-                    case GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                     {
-                        gp_Torus Torus = SurfAdapt.Torus();
-                        ElSLib.Parameters(Torus, P3D, out S, out T);
+                        Torus Torus = SurfAdapt.Torus();
+                        global::Kerf.Engine.Geometry.ElSLib.Parameters(Torus, P3D, out S, out T);
                         S += ShapeAnalysis.AdjustByPeriod(S, 0.5 * (uf + ul), 2 * M_PI);
                         T += ShapeAnalysis.AdjustByPeriod(T, 0.5 * (vf + vl), 2 * M_PI);
                         break;
                     }
-                    case GeomAbs_BezierSurface:
-                    case GeomAbs_BSplineSurface:
-                    case GeomAbs_SurfaceOfExtrusion:
-                    case GeomAbs_SurfaceOfRevolution:
-                    case GeomAbs_OffsetSurface: //: d0 abv 3 Mar 98: UKI60107-1 #350
+                    case BezierSurface:
+                    case BSplineSurface:
+                    case SurfaceOfExtrusion:
+                    case SurfaceOfRevolution:
+                    case OffsetSurface: //: d0 abv 3 Mar 98: UKI60107-1 #350
                     {
                         S = (uf + ul) / 2;
                         T = (vf + vl) / 2; // there will be at least something
                                            // pdn to fix hangs PRO17015
-                        if ((surftype == GeomAbs_SurfaceOfExtrusion) && Precision.IsInfinite(uf)
-                            && Precision.IsInfinite(ul))
+                        if ((surftype == SurfaceOfExtrusion) && global::Kerf.Engine.Foundation.Precision.IsInfinite(uf)
+                            && global::Kerf.Engine.Foundation.Precision.IsInfinite(ul))
                         {
                             // conic case
-                            var      prev     = new gp_Pnt2d(S, T);
-                            gp_Pnt2d solution = new gp_Pnt2d();
+                            var      prev     = new Point2D(S, T);
+                            Point2D solution = new Point2D();
                             if (SurfaceNewton(prev, P3D, preci, ref solution) != 0)
                             {
                                 return solution;
@@ -1374,7 +1377,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                                 dv = Min(myVDelt, SurfAdapt.VResolution(preci));
                             }
 
-                            double Tol = Precision.PConfusion();
+                            double Tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
                             myExtPS.SetFlag(Extrema_ExtFlag.Extrema_ExtFlag_MIN);
                             myExtPS.Initialize(SurfAdapt, uf - du, ul + du, vf - dv, vl + dv, Tol, Tol);
                             myExtOK = true;
@@ -1402,7 +1405,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                             // file CEA_cuve-V5.igs Entityes 244, 259, 847, 925
                             // if project point3D on SurfaceOfRevolution Extreme recompute 2d point, but
                             // returns an old distance from 3d to solution :-(
-                            gp_Pnt aCheckPnt = SurfAdapt.Value(S, T);
+                            Point3D aCheckPnt = SurfAdapt.Value(S, T);
                             dist2Min = P3D.SquareDistance(aCheckPnt);
                             // end of WORKAROUND
                             double disSurf = Math.Sqrt(dist2Min); //, disCurv =1.e10;
@@ -1414,7 +1417,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                             bool possLockal = false; //: study S4030 (optimizing)
                             if (disSurf > preci)
                             {
-                                var pp = new gp_Pnt2d(UU, VV);
+                                var pp = new Point2D(UU, VV);
                                 if (SurfaceNewton(pp, P3D, preci, ref pp) != 0)
                                 { //: q2 abv 16 Mar 99: PRO7226 #412920
                                     double dist = P3D.Distance(Value(pp));
@@ -1428,12 +1431,12 @@ public class ShapeAnalysis_Surface : Standard_Transient
 
                                 if (disSurf < 10 * preci)
                                 {
-                                    if (mySurf!.Continuity() != GeomAbs_C0)
+                                    if (mySurf!.Continuity() != C0)
                                     {
-                                        double Tol = Precision.Confusion();
-                                        SurfAdapt.D1(UU, VV, out gp_Pnt pnt, out gp_Vec D1U, out gp_Vec D1V);
-                                        gp_Vec b    = D1U.Crossed(D1V);
-                                        var    a    = new gp_Vec(pnt, P3D);
+                                        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+                                        SurfAdapt.D1(UU, VV, out Point3D pnt, out Vector3D D1U, out Vector3D D1V);
+                                        Vector3D b    = D1U.Crossed(D1V);
+                                        var    a    = new Vector3D(pnt, P3D);
                                         double ab   = a.Dot(b);
                                         double nrm2 = b.SquareMagnitude();
                                         if (nrm2 > 1e-10)
@@ -1478,11 +1481,11 @@ public class ShapeAnalysis_Surface : Standard_Transient
                         break;
                 }
             } // end Try ValueOfUV (CKY 30-DEC-1997)
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 // No reason, but who knows. Better to return something wrong than to stop.
-                S = (Precision.IsInfinite(uf)) ? 0 : (uf + ul) / 2.0;
-                T = (Precision.IsInfinite(vf)) ? 0 : (vf + vl) / 2.0;
+                S = (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf)) ? 0 : (uf + ul) / 2.0;
+                T = (global::Kerf.Engine.Foundation.Precision.IsInfinite(vf)) ? 0 : (vf + vl) / 2.0;
             }
         } //: c9
 
@@ -1501,7 +1504,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
             T     = 0.0;
         }
 
-        return new gp_Pnt2d(S, T);
+        return new Point2D(S, T);
     }
 
     /// <summary>
@@ -1509,20 +1512,20 @@ public class ShapeAnalysis_Surface : Standard_Transient
     /// iso-lines through (U, V), then up to 5 alternating iso-lines through the new U and V. Returns the best distance
     /// between the point and the surface at the resulting (U, V), or a very large value on failure.
     /// </summary>
-    public double UVFromIso(in gp_Pnt P3d, double preci, ref double U, ref double V)
+    public double UVFromIso(in Point3D P3d, double preci, ref double U, ref double V)
     {
         //  Projection that considers the isos as follows:
         //  the 4 boundaries, plus the isos in U and in V
         //  Often, one of the two is good...
         double theMin = RealLast();
 
-        gp_Pnt pntres;
+        Point3D pntres;
         double Cf, Cl, UU, VV;
 
         //  Starting the search: point already found (?)
         UU = U;
         VV = V;
-        gp_Pnt depart = myAdSur!.Value(U, V);
+        Point3D depart = myAdSur!.Value(U, V);
         theMin = depart.Distance(P3d);
 
         if (theMin < preci / 10)
@@ -1541,7 +1544,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
         try
         { // RAJOUT
             // pdn Create BndBox containing point;
-            var aPBox = new Bnd_Box();
+            var aPBox = new Box();
             aPBox.Set(P3d);
 
             // modified by rln on 04/12/97 in order to use these variables later
@@ -1552,9 +1555,9 @@ public class ShapeAnalysis_Surface : Standard_Transient
             for (int num = 0; num < 6; num++)
             {
                 UV = (num < 3); // 0-1-2 : iso-U  3-4-5 : iso-V
-                if (!(Adaptor3d()!.GetType() == GeomAbs_OffsetSurface))
+                if (!(Adaptor3d()!.GetType() == OffsetSurface))
                 {
-                    Bnd_Box? anIsoBox = null;
+                    Box? anIsoBox = null;
                     iso = null;
                     switch (num)
                     {
@@ -1591,7 +1594,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     }
 
                     //    Go on it
-                    if (!Precision.IsInfinite(par) && iso is not null)
+                    if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(par) && iso is not null)
                     {
                         if (anIsoBox.HasValue && anIsoBox.Value.Distance(aPBox) > theMin)
                         {
@@ -1618,7 +1621,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     Adaptor3d_Curve? anAdaptor  = null;
                     var              aGeomCurve = new GeomAdaptor_Curve();
 
-                    Bnd_Box? anIsoBox = null;
+                    Box? anIsoBox = null;
                     switch (num)
                     {
                         case 0:
@@ -1635,7 +1638,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                             break;
                         case 2:
                             par = U;
-                            anIsoCurve.Load(GeomAbs_IsoU, U);
+                            anIsoCurve.Load(IsoU, U);
                             anAdaptor = anIsoCurve;
                             break;
                         case 3:
@@ -1652,7 +1655,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
                             break;
                         case 5:
                             par = V;
-                            anIsoCurve.Load(GeomAbs_IsoV, V);
+                            anIsoCurve.Load(IsoV, V);
                             anAdaptor = anIsoCurve;
                             break;
                         default:
@@ -1677,7 +1680,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
             // added by rln on 04/12/97 iterational process
             double PrevU    = U, PrevV = V;
             int    MaxIters = 5, Iters = 0;
-            if (!(Adaptor3d()!.GetType() == GeomAbs_OffsetSurface))
+            if (!(Adaptor3d()!.GetType() == OffsetSurface))
             {
                 while (((PrevU != UU) || (PrevV != VV)) && (Iters < MaxIters) && (theMin > preci))
                 {
@@ -1759,12 +1762,12 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     if (UV)
                     {
                         par = UU;
-                        anIsoCurve.Load(GeomAbs_IsoU, UU);
+                        anIsoCurve.Load(IsoU, UU);
                     }
                     else
                     {
                         par = VV;
-                        anIsoCurve.Load(GeomAbs_IsoV, VV);
+                        anIsoCurve.Load(IsoV, VV);
                     }
 
                     Cf = anIsoCurve.FirstParameter();
@@ -1788,12 +1791,12 @@ public class ShapeAnalysis_Surface : Standard_Transient
                     if (UV)
                     {
                         par = UU;
-                        anIsoCurve.Load(GeomAbs_IsoU, UU);
+                        anIsoCurve.Load(IsoU, UU);
                     }
                     else
                     {
                         par = VV;
-                        anIsoCurve.Load(GeomAbs_IsoV, VV);
+                        anIsoCurve.Load(IsoV, VV);
                     }
 
                     Cf = anIsoCurve.FirstParameter();
@@ -1821,7 +1824,7 @@ public class ShapeAnalysis_Surface : Standard_Transient
             U = UU;
             V = VV;
         } // end try RAJOUT
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             theMin = RealLast(); // the starting theMin
         }
@@ -1848,10 +1851,10 @@ public class ShapeAnalysis_Surface : Standard_Transient
             {
                 myPreci[minIndex] = myPreci[i];
                 myPreci[i]        = minPreci;
-                gp_Pnt tmpP3d = myP3d[minIndex];
+                Point3D tmpP3d = myP3d[minIndex];
                 myP3d[minIndex] = myP3d[i];
                 myP3d[i]        = tmpP3d;
-                gp_Pnt2d tmpP2d = myFirstP2d[minIndex];
+                Point2D tmpP2d = myFirstP2d[minIndex];
                 myFirstP2d[minIndex] = myFirstP2d[i];
                 myFirstP2d[i]        = tmpP2d;
                 tmpP2d               = myLastP2d[minIndex];
@@ -1896,48 +1899,48 @@ public class ShapeAnalysis_Surface : Standard_Transient
         ComputeBoundIsos();
         if (myIsoUF is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUF), Precision.Confusion(), ref myBndUF);
+            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUF);
         }
 
         if (myIsoUL is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUL), Precision.Confusion(), ref myBndUL);
+            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoUL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndUL);
         }
 
         if (myIsoVF is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVF), Precision.Confusion(), ref myBndVF);
+            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVF), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVF);
         }
 
         if (myIsoVL is not null)
         {
-            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVL), Precision.Confusion(), ref myBndVL);
+            BndLib_Add3dCurve.Add(new GeomAdaptor_Curve(myIsoVL), global::Kerf.Engine.Foundation.Precision.Confusion(), ref myBndVL);
         }
     }
 
     /// <summary>The bounding box of the iso-curve at the first U bound.</summary>
-    public Bnd_Box GetBoxUF()
+    public Box GetBoxUF()
     {
         ComputeBoxes();
         return myBndUF;
     }
 
     /// <summary>The bounding box of the iso-curve at the last U bound.</summary>
-    public Bnd_Box GetBoxUL()
+    public Box GetBoxUL()
     {
         ComputeBoxes();
         return myBndUL;
     }
 
     /// <summary>The bounding box of the iso-curve at the first V bound.</summary>
-    public Bnd_Box GetBoxVF()
+    public Box GetBoxVF()
     {
         ComputeBoxes();
         return myBndVF;
     }
 
     /// <summary>The bounding box of the iso-curve at the last V bound.</summary>
-    public Bnd_Box GetBoxVL()
+    public Box GetBoxVL()
     {
         ComputeBoxes();
         return myBndVL;

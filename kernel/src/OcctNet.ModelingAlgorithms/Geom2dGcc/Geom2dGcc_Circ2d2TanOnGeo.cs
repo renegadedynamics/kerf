@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using static Occt.GccEnt_Position;
 using static Occt.GccInt_IType;
 
@@ -29,14 +32,14 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
 
     private bool WellDone;
     private int NbrSol;
-    private readonly NCollection_Array1<gp_Circ2d> cirsol = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Circle2D> cirsol = new(1, aNbSolMAX);
     private readonly NCollection_Array1<GccEnt_Position> qualifier1 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<GccEnt_Position> qualifier2 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<int> TheSame1 = new(1, aNbSolMAX);
     private readonly NCollection_Array1<int> TheSame2 = new(1, aNbSolMAX);
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg1sol = new(1, aNbSolMAX);
-    private readonly NCollection_Array1<gp_Pnt2d> pnttg2sol = new(1, aNbSolMAX);
-    private readonly NCollection_Array1<gp_Pnt2d> pntcen = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Point2D> pnttg1sol = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Point2D> pnttg2sol = new(1, aNbSolMAX);
+    private readonly NCollection_Array1<Point2D> pntcen = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> par1sol = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> par2sol = new(1, aNbSolMAX);
     private readonly NCollection_Array1<double> pararg1 = new(1, aNbSolMAX);
@@ -63,13 +66,13 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Circ2d          C1 = Qualified1.Qualified();
-        gp_Circ2d          C2 = Qualified2.Qualified();
+        Circle2D          C1 = Qualified1.Qualified();
+        Circle2D          C2 = Qualified2.Qualified();
         double             R1 = C1.Radius();
         double             R2 = C2.Radius();
-        gp_Dir2d           dirx = new(gp_Dir2d.D.X);
-        gp_Pnt2d           center1 = C1.Location();
-        gp_Pnt2d           center2 = C2.Location();
+        Direction2D           dirx = new(Direction2D.D.X);
+        Point2D           center1 = C1.Location();
+        Point2D           center2 = C2.Location();
         GccAna_Circ2dBisec Bis = new(C1, C2);
         if (Bis.IsDone())
         {
@@ -95,11 +98,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                 {
                     case GccInt_Cir:
                     {
-                        gp_Circ2d       Circ = Sol.Circle();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(0.0, Circ),
+                        Circle2D       Circ = Sol.Circle();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ),
                                                               0.0,
                                                               Tol1,
-                                                              ElCLib.Value(2.0 * M_PI, Circ),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Circ),
                                                               2.0 * M_PI,
                                                               Tol2);
                         D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -108,11 +111,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     case GccInt_Ell:
                     {
-                        gp_Elips2d      Elips = Sol.Ellipse();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(0.0, Elips),
+                        Ellipse2D      Elips = Sol.Ellipse();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Elips),
                                                               0.0,
                                                               Tol1,
-                                                              ElCLib.Value(2.0 * M_PI, Elips),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Elips),
                                                               2.0 * M_PI,
                                                               Tol2);
                         D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -121,11 +124,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     case GccInt_Hpr:
                     {
-                        gp_Hypr2d       Hypr = Sol.Hyperbola();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(-4.0, Hypr),
+                        Hyperbola2D       Hypr = Sol.Hyperbola();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(-4.0, Hypr),
                                                               -4.0,
                                                               Tol1,
-                                                              ElCLib.Value(4.0, Hypr),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(4.0, Hypr),
                                                               4.0,
                                                               Tol2);
                         Intp.Perform(Hypr, D1, Cu2, D2, Tol1, Tol2);
@@ -133,14 +136,14 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     case GccInt_Lin:
                     {
-                        gp_Lin2d        Line = Sol.Line();
+                        Line2D        Line = Sol.Line();
                         IntRes2d_Domain D1 = new();
                         Intp.Perform(Line, D1, Cu2, D2, Tol1, Tol2);
                     }
                     break;
                     default:
                     {
-                        throw new Standard_ConstructionError();
+                        throw new ConstructionErrorException();
                     }
                 }
                 if (Intp.IsDone())
@@ -149,7 +152,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     {
                         for (int j = 1; j <= Intp.NbPoints(); j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double   dist1 = Center.Distance(C1.Location());
                             double   dist2 = Center.Distance(C2.Location());
                             int      nbsol = 0;
@@ -222,7 +225,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                 for (int k = 1; k <= nnsol && NbrSol < aNbSolMAX; k++)
                                 {
                                     NbrSol++;
-                                    cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius[k]);
+                                    cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius[k]);
                                     //              ==========================================================
                                     double distcc1 = Center.Distance(center1);
                                     double distcc2 = Center.Distance(center2);
@@ -265,10 +268,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                     else
                                     {
                                         TheSame1[NbrSol] = 0;
-                                        gp_Dir2d dc1 = new(C1.Location().XY() - Center.XY());
-                                        pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius[k] * dc1.XY());
-                                        par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                        pararg1[NbrSol]   = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                        Direction2D dc1 = new(C1.Location().XY() - Center.XY());
+                                        pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc1.XY());
+                                        par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                        pararg1[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                                     }
                                     if (dist2 <= Tol && Math.Abs(Radius[k] - C2.Radius()) <= Tol)
                                     {
@@ -277,10 +280,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                     else
                                     {
                                         TheSame2[NbrSol] = 0;
-                                        gp_Dir2d dc2 = new(C2.Location().XY() - Center.XY());
-                                        pnttg2sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius[k] * dc2.XY());
-                                        par2sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                        pararg2[NbrSol]   = ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
+                                        Direction2D dc2 = new(C2.Location().XY() - Center.XY());
+                                        pnttg2sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc2.XY());
+                                        par2sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                        pararg2[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
                                     }
                                     pntcen[NbrSol]  = Center;
                                     parcen3[NbrSol] = Intp.Point(j).ParamOnSecond();
@@ -322,14 +325,14 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Dir2d  dirx = new(gp_Dir2d.D.X);
-        gp_Circ2d C1 = Qualified1.Qualified();
-        gp_Lin2d  L2 = Qualified2.Qualified();
+        Direction2D  dirx = new(Direction2D.D.X);
+        Circle2D C1 = Qualified1.Qualified();
+        Line2D  L2 = Qualified2.Qualified();
         double    R1 = C1.Radius();
-        gp_Pnt2d  center1 = C1.Location();
-        gp_Pnt2d  origin2 = L2.Location();
-        gp_Dir2d  dir2 = L2.Direction();
-        gp_Dir2d  normL2 = new(-dir2.Y(), dir2.X());
+        Point2D  center1 = C1.Location();
+        Point2D  origin2 = L2.Location();
+        Direction2D  dir2 = L2.Direction();
+        Direction2D  normL2 = new(-dir2.Y(), dir2.X());
 
         GccAna_CircLin2dBisec Bis = new(C1, L2);
         if (Bis.IsDone())
@@ -351,18 +354,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                 {
                     case GccInt_Lin:
                     {
-                        gp_Lin2d        Line = Sol.Line();
+                        Line2D        Line = Sol.Line();
                         IntRes2d_Domain D1 = new();
                         Intp.Perform(Line, D1, C2, D2, Tol1, Tol2);
                     }
                     break;
                     case GccInt_Par:
                     {
-                        gp_Parab2d      Parab = Sol.Parabola();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(-40, Parab),
+                        Parabola2D      Parab = Sol.Parabola();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(-40, Parab),
                                                               -40,
                                                               Tol1,
-                                                              ElCLib.Value(40, Parab),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(40, Parab),
                                                               40,
                                                               Tol1);
                         Intp.Perform(Parab, D1, C2, D2, Tol1, Tol2);
@@ -370,7 +373,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     default:
                     {
-                        throw new Standard_ConstructionError();
+                        throw new ConstructionErrorException();
                     }
                 }
                 if (Intp.IsDone())
@@ -379,7 +382,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     {
                         for (int j = 1; j <= Intp.NbPoints() && NbrSol < aNbSolMAX; j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double   dist1 = Center.Distance(center1);
                             //	    int nbsol = 1;
                             bool ok = false;
@@ -429,9 +432,9 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                             if (ok)
                             {
                                 NbrSol++;
-                                cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                                cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                                 //            =======================================================
-                                gp_Dir2d dc2 = new(origin2.XY() - Center.XY());
+                                Direction2D dc2 = new(origin2.XY() - Center.XY());
                                 double   distcc1 = Center.Distance(center1);
                                 if (!Qualified1.IsUnqualified())
                                 {
@@ -468,17 +471,17 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                 else
                                 {
                                     TheSame1[NbrSol] = 0;
-                                    gp_Dir2d dc1 = new(center1.XY() - Center.XY());
-                                    pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc1.XY());
-                                    par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                    pararg1[NbrSol]   = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                    Direction2D dc1 = new(center1.XY() - Center.XY());
+                                    pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * dc1.XY());
+                                    par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                    pararg1[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                                 }
                                 TheSame2[NbrSol]  = 0;
-                                double sign       = dc2.Dot(new gp_Dir2d(-dir2.Y(), dir2.X()));
-                                dc2               = new gp_Dir2d(sign * new gp_XY(-dir2.Y(), dir2.X()));
-                                pnttg2sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc2.XY());
-                                par2sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                pararg2[NbrSol]   = ElCLib.Parameter(L2, pnttg2sol[NbrSol]);
+                                double sign       = dc2.Dot(new Direction2D(-dir2.Y(), dir2.X()));
+                                dc2               = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                                pnttg2sol[NbrSol] = new Point2D(Center.XY() + Radius * dc2.XY());
+                                par2sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                pararg2[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(L2, pnttg2sol[NbrSol]);
                                 pntcen[NbrSol]    = Center;
                                 parcen3[NbrSol]   = Intp.Point(j).ParamOnSecond();
                             }
@@ -517,15 +520,15 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         }
         double            Tol    = Math.Abs(Tolerance);
         double            Radius = 0;
-        gp_Dir2d          dirx = new(gp_Dir2d.D.X);
-        gp_Lin2d          L1 = Qualified1.Qualified();
-        gp_Lin2d          L2 = Qualified2.Qualified();
-        gp_Dir2d          dir1 = L1.Direction();
-        gp_Dir2d          dir2 = L2.Direction();
-        gp_Dir2d          Dnor1 = new(-dir1.Y(), dir1.X());
-        gp_Dir2d          Dnor2 = new(-dir2.Y(), dir2.X());
-        gp_Pnt2d          origin1 = L1.Location();
-        gp_Pnt2d          origin2 = L2.Location();
+        Direction2D          dirx = new(Direction2D.D.X);
+        Line2D          L1 = Qualified1.Qualified();
+        Line2D          L2 = Qualified2.Qualified();
+        Direction2D          dir1 = L1.Direction();
+        Direction2D          dir2 = L2.Direction();
+        Direction2D          Dnor1 = new(-dir1.Y(), dir1.X());
+        Direction2D          Dnor2 = new(-dir2.Y(), dir2.X());
+        Point2D          origin1 = L1.Location();
+        Point2D          origin2 = L2.Location();
         GccAna_Lin2dBisec Bis = new(L1, L2);
         if (Bis.IsDone())
         {
@@ -548,7 +551,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     {
                         for (int j = 1; j <= Intp.NbPoints() && NbrSol < aNbSolMAX; j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double   dist1 = L1.Distance(Center);
                             double   dist2 = L2.Distance(Center);
                             //	    int nbsol = 1;
@@ -604,10 +607,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                             if (ok)
                             {
                                 NbrSol++;
-                                cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                                cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                                 //            =======================================================
-                                gp_Dir2d dc1 = new(origin1.XY() - Center.XY());
-                                gp_Dir2d dc2 = new(origin2.XY() - Center.XY());
+                                Direction2D dc1 = new(origin1.XY() - Center.XY());
+                                Direction2D dc2 = new(origin2.XY() - Center.XY());
                                 if (!Qualified1.IsUnqualified())
                                 {
                                     qualifier1[NbrSol] = Qualified1.Qualifier();
@@ -635,15 +638,15 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                 TheSame1[NbrSol]  = 0;
                                 TheSame2[NbrSol]  = 0;
                                 double sign       = dc1.Dot(Dnor1);
-                                dc1               = new gp_Dir2d(sign * new gp_XY(-dir1.Y(), dir1.X()));
-                                pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc1.XY());
-                                par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                pararg1[NbrSol]   = ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
-                                sign              = dc2.Dot(new gp_Dir2d(-dir2.Y(), dir2.X()));
-                                dc2               = new gp_Dir2d(sign * new gp_XY(-dir2.Y(), dir2.X()));
-                                pnttg2sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc2.XY());
-                                par2sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                pararg2[NbrSol]   = ElCLib.Parameter(L2, pnttg2sol[NbrSol]);
+                                dc1               = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                                pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * dc1.XY());
+                                par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                pararg1[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
+                                sign              = dc2.Dot(new Direction2D(-dir2.Y(), dir2.X()));
+                                dc2               = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                                pnttg2sol[NbrSol] = new Point2D(Center.XY() + Radius * dc2.XY());
+                                par2sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                pararg2[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(L2, pnttg2sol[NbrSol]);
                                 pntcen[NbrSol]    = Center;
                                 parcen3[NbrSol]   = Intp.Point(j).ParamOnSecond();
                             }
@@ -666,7 +669,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant C1.        +
     //=========================================================================
     /// <summary>Circles tangent to a qualified circle and through a point, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in gp_Pnt2d Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedCirc Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -682,10 +685,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         }
         double                Tol = Math.Abs(Tolerance);
         double                Radius;
-        gp_Dir2d              dirx = new(gp_Dir2d.D.X);
-        gp_Circ2d             C1 = Qualified1.Qualified();
+        Direction2D              dirx = new(Direction2D.D.X);
+        Circle2D             C1 = Qualified1.Qualified();
         double                R1 = C1.Radius();
-        gp_Pnt2d              center1 = C1.Location();
+        Point2D              center1 = C1.Location();
         GccAna_CircPnt2dBisec Bis = new(C1, Point2);
         if (Bis.IsDone())
         {
@@ -706,11 +709,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                 {
                     case GccInt_Cir:
                     {
-                        gp_Circ2d       Circ = Sol.Circle();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(0.0, Circ),
+                        Circle2D       Circ = Sol.Circle();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Circ),
                                                               0.0,
                                                               Tol1,
-                                                              ElCLib.Value(2.0 * M_PI, Circ),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Circ),
                                                               2.0 * M_PI,
                                                               Tol2);
                         D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -719,18 +722,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     case GccInt_Lin:
                     {
-                        gp_Lin2d        Line = Sol.Line();
+                        Line2D        Line = Sol.Line();
                         IntRes2d_Domain D1 = new();
                         Intp.Perform(Line, D1, C2, D2, Tol1, Tol2);
                     }
                     break;
                     case GccInt_Ell:
                     {
-                        gp_Elips2d      Elips = Sol.Ellipse();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(0.0, Elips),
+                        Ellipse2D      Elips = Sol.Ellipse();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, Elips),
                                                               0.0,
                                                               Tol1,
-                                                              ElCLib.Value(2.0 * M_PI, Elips),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, Elips),
                                                               2.0 * M_PI,
                                                               Tol2);
                         D1.SetEquivalentParameters(0.0, 2.0 * M_PI);
@@ -739,11 +742,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     case GccInt_Hpr:
                     {
-                        gp_Hypr2d       Hypr = Sol.Hyperbola();
-                        IntRes2d_Domain D1 = new(ElCLib.Value(-4.0, Hypr),
+                        Hyperbola2D       Hypr = Sol.Hyperbola();
+                        IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(-4.0, Hypr),
                                                               -4.0,
                                                               Tol1,
-                                                              ElCLib.Value(4.0, Hypr),
+                                                              global::Kerf.Engine.Geometry.ElCLib.Value(4.0, Hypr),
                                                               4.0,
                                                               Tol2);
                         Intp.Perform(Hypr, D1, C2, D2, Tol1, Tol2);
@@ -751,7 +754,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     break;
                     default:
                     {
-                        throw new Standard_ConstructionError();
+                        throw new ConstructionErrorException();
                     }
                 }
                 if (Intp.IsDone())
@@ -760,7 +763,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     {
                         for (int j = 1; j <= Intp.NbPoints() && NbrSol < aNbSolMAX; j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             Radius       = Center.Distance(Point2);
                             double dist1 = center1.Distance(Center);
                             //	    int nbsol = 1;
@@ -790,7 +793,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                             if (ok)
                             {
                                 NbrSol++;
-                                cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                                cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                                 //            =======================================================
                                 double distcc1 = Center.Distance(center1);
                                 if (!Qualified1.IsUnqualified())
@@ -817,18 +820,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                                 else
                                 {
                                     TheSame1[NbrSol] = 0;
-                                    gp_Dir2d dc1 = new(center1.XY() - Center.XY());
-                                    pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc1.XY());
+                                    Direction2D dc1 = new(center1.XY() - Center.XY());
+                                    pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * dc1.XY());
                                     par1sol[NbrSol]   = 0.0;
-                                    par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                    pararg1[NbrSol]   = ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                    par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                    pararg1[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
                                 }
                                 TheSame2[NbrSol]  = 0;
                                 pnttg2sol[NbrSol] = Point2;
                                 pntcen[NbrSol]    = Center;
                                 parcen3[NbrSol]   = Intp.Point(j).ParamOnSecond();
                                 pararg2[NbrSol]   = 0.0;
-                                par2sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                                par2sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
                             }
                         }
                     }
@@ -849,7 +852,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  Les choix s effectuent a partir des Qualifieurs qualifiant L1.        +
     //=========================================================================
     /// <summary>Circles tangent to a qualified line and through a point, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in gp_Pnt2d Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in GccEnt_QualifiedLin Qualified1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -863,11 +866,11 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         {
             throw new GccEnt_BadQualifier();
         }
-        gp_Dir2d             dirx = new(gp_Dir2d.D.X);
-        gp_Lin2d             L1 = Qualified1.Qualified();
-        gp_Pnt2d             origin1 = L1.Location();
-        gp_Dir2d             dir1 = L1.Direction();
-        gp_Dir2d             normal = new(-dir1.Y(), dir1.X());
+        Direction2D             dirx = new(Direction2D.D.X);
+        Line2D             L1 = Qualified1.Qualified();
+        Point2D             origin1 = L1.Location();
+        Direction2D             dir1 = L1.Direction();
+        Direction2D             normal = new(-dir1.Y(), dir1.X());
         GccAna_LinPnt2dBisec Bis = new(L1, Point2);
         if (Bis.IsDone())
         {
@@ -885,18 +888,18 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             {
                 case GccInt_Lin:
                 {
-                    gp_Lin2d        Line = Sol.Line();
+                    Line2D        Line = Sol.Line();
                     IntRes2d_Domain D1 = new();
                     Intp.Perform(Line, D1, C2, D2, Tol1, Tol2);
                 }
                 break;
                 case GccInt_Par:
                 {
-                    gp_Parab2d      Parab = Sol.Parabola();
-                    IntRes2d_Domain D1 = new(ElCLib.Value(-40, Parab),
+                    Parabola2D      Parab = Sol.Parabola();
+                    IntRes2d_Domain D1 = new(global::Kerf.Engine.Geometry.ElCLib.Value(-40, Parab),
                                                           -40,
                                                           Tol1,
-                                                          ElCLib.Value(40, Parab),
+                                                          global::Kerf.Engine.Geometry.ElCLib.Value(40, Parab),
                                                           40,
                                                           Tol1);
                     Intp.Perform(Parab, D1, C2, D2, Tol1, Tol2);
@@ -904,7 +907,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                 break;
                 default:
                 {
-                    throw new Standard_ConstructionError();
+                    throw new ConstructionErrorException();
                 }
             }
             if (Intp.IsDone())
@@ -913,7 +916,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                 {
                     for (int j = 1; j <= Intp.NbPoints() && NbrSol < aNbSolMAX; j++)
                     {
-                        gp_Pnt2d Center = Intp.Point(j).Value();
+                        Point2D Center = Intp.Point(j).Value();
                         double   Radius = L1.Distance(Center);
                         //	  int nbsol = 1;
                         bool ok = false;
@@ -942,10 +945,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                         if (ok)
                         {
                             NbrSol++;
-                            cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //          =======================================================
                             qualifier2[NbrSol] = GccEnt_noqualifier;
-                            gp_Dir2d dc2 = new(origin1.XY() - Center.XY());
+                            Direction2D dc2 = new(origin1.XY() - Center.XY());
                             if (!Qualified1.IsUnqualified())
                             {
                                 qualifier1[NbrSol] = Qualified1.Qualifier();
@@ -960,14 +963,14 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                             }
                             TheSame1[NbrSol] = 0;
                             TheSame2[NbrSol] = 0;
-                            gp_Dir2d dc1 = new(origin1.XY() - Center.XY());
-                            double   sign     = dc1.Dot(new gp_Dir2d(-dir1.Y(), dir1.X()));
-                            dc1               = new gp_Dir2d(sign * new gp_XY(-dir1.Y(), dir1.X()));
-                            pnttg1sol[NbrSol] = new gp_Pnt2d(Center.XY() + Radius * dc1.XY());
-                            par1sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            pararg1[NbrSol]   = ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
+                            Direction2D dc1 = new(origin1.XY() - Center.XY());
+                            double   sign     = dc1.Dot(new Direction2D(-dir1.Y(), dir1.X()));
+                            dc1               = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                            pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius * dc1.XY());
+                            par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            pararg1[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(L1, pnttg1sol[NbrSol]);
                             pnttg2sol[NbrSol] = Point2;
-                            par2sol[NbrSol]   = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                            par2sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
                             pararg2[NbrSol]   = 0.0;
                             pntcen[NbrSol]    = Center;
                             parcen3[NbrSol]   = Intp.Point(j).ParamOnSecond();
@@ -989,7 +992,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     //  donne les points parmis lesquels nous allons choisir les solutions.   +
     //=========================================================================
     /// <summary>Circles through two points, centred on a curve.</summary>
-    public Geom2dGcc_Circ2d2TanOnGeo(in gp_Pnt2d Point1, in gp_Pnt2d Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
+    public Geom2dGcc_Circ2d2TanOnGeo(in Point2D Point1, in Point2D Point2, Geom2dAdaptor_Curve OnCurv, double Tolerance)
     {
 
         WellDone        = false;
@@ -999,7 +1002,7 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
         double lastparam;
         double Tol = Math.Abs(Tolerance);
         NbrSol     = 0;
-        gp_Dir2d          dirx = new(gp_Dir2d.D.X);
+        Direction2D          dirx = new(Direction2D.D.X);
         GccAna_Pnt2dBisec Bis = new(Point1, Point2);
         if (Bis.IsDone())
         {
@@ -1026,10 +1029,10 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                     {
                         for (int j = 1; j <= Intp.NbPoints() && NbrSol < aNbSolMAX; j++)
                         {
-                            gp_Pnt2d Center = Intp.Point(j).Value();
+                            Point2D Center = Intp.Point(j).Value();
                             double   Radius = Point2.Distance(Center);
                             NbrSol++;
-                            cirsol[NbrSol] = new gp_Circ2d(new gp_Ax2d(Center, dirx), Radius);
+                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
                             //           =======================================================
                             qualifier1[NbrSol] = GccEnt_noqualifier;
                             qualifier2[NbrSol] = GccEnt_noqualifier;
@@ -1040,8 +1043,8 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
                             pnttg2sol[NbrSol]  = Point2;
                             pararg1[NbrSol]    = 0.0;
                             pararg2[NbrSol]    = 0.0;
-                            par1sol[NbrSol]    = ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            par2sol[NbrSol]    = ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
+                            par1sol[NbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                            par2sol[NbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
                             parcen3[NbrSol]    = Intp.Point(j).ParamOnSecond();
                         }
                     }
@@ -1064,34 +1067,34 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     }
 
     /// <summary>Solution Index.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
-    public gp_Circ2d ThisSolution(int Index)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
+    public Circle2D ThisSolution(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         return cirsol[Index];
     }
 
     /// <summary>The qualifiers of solution Index relative to the two arguments.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
     public void WhichQualifier(int Index, out GccEnt_Position Qualif1, out GccEnt_Position Qualif2)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1101,17 +1104,17 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     }
 
     /// <summary>The tangency point of solution Index on the first argument, with its parameters on both.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the first argument.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
-    public void Tangency1(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the first argument.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
+    public void Tangency1(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1123,23 +1126,23 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
 
     /// <summary>The tangency point of solution Index on the second argument, with its parameters on both.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed, or the solution is the second argument.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
-    public void Tangency2(int Index, out double ParSol, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed, or the solution is the second argument.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
+    public void Tangency2(int Index, out double ParSol, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1151,23 +1154,23 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
             }
             else
             {
-                throw new StdFail_NotDone();
+                throw new NotDoneException();
             }
         }
     }
 
     /// <summary>The centre of solution Index and its parameter on the centre's curve.</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
-    public void CenterOn3(int Index, out double ParArg, out gp_Pnt2d PntSol)
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
+    public void CenterOn3(int Index, out double ParArg, out Point2D PntSol)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         else if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
         else
         {
@@ -1177,17 +1180,17 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     }
 
     /// <summary>True if solution Index is the first argument (a circle).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
     public bool IsTheSame1(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame1[Index] == 0)
@@ -1199,17 +1202,17 @@ public sealed class Geom2dGcc_Circ2d2TanOnGeo
     }
 
     /// <summary>True if solution Index is the second argument (a circle).</summary>
-    /// <exception cref="StdFail_NotDone">The construction failed.</exception>
-    /// <exception cref="Standard_OutOfRange">Index is not in [1, NbSolutions()].</exception>
+    /// <exception cref="NotDoneException">The construction failed.</exception>
+    /// <exception cref="OutOfRangeException">Index is not in [1, NbSolutions()].</exception>
     public bool IsTheSame2(int Index)
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         if (Index <= 0 || Index > NbrSol)
         {
-            throw new Standard_OutOfRange();
+            throw new OutOfRangeException();
         }
 
         if (TheSame2[Index] == 0)

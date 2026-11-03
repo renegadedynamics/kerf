@@ -3,8 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.math_Status;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Engine.Numerics.NumericStatus;
 
 namespace Occt;
 
@@ -27,7 +31,7 @@ public sealed class GeomLib_CheckCurveOnSurface
         myErrorStatus = 0;
         myMaxDistance = RealLast();
         myMaxParameter = 0.0;
-        myTolRange = Precision.PConfusion();
+        myTolRange = global::Kerf.Engine.Foundation.Precision.PConfusion();
         myIsParallel = false;
     }
 
@@ -59,7 +63,7 @@ public sealed class GeomLib_CheckCurveOnSurface
         myErrorStatus = 0;
         myMaxDistance = RealLast();
         myMaxParameter = 0.0;
-        myTolRange = Precision.PConfusion();
+        myTolRange = global::Kerf.Engine.Foundation.Precision.PConfusion();
     }
 
     /// <summary>
@@ -115,7 +119,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                              anIntervals);
 
             // OSD_ThreadPool's default pool launches one thread per logical processor.
-            int aNbThreads = myIsParallel ? Min(anIntervals.Length(), OSD_Parallel.NbLogicalProcessors()) : 1;
+            int aNbThreads = myIsParallel ? Min(anIntervals.Length(), OsdParallel.LogicalProcessorCount) : 1;
             NCollection_Array1<Adaptor3d_Curve> aCurveArray = new(0, aNbThreads - 1);
             NCollection_Array1<Adaptor3d_Curve> aCurveOnSurfaceArray = new(0, aNbThreads - 1);
             for (int anI = 0; anI < aNbThreads; ++anI)
@@ -134,7 +138,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 // OSD_ThreadPool::Launcher: each thread takes the next element of [Lower, Upper); every element is
                 // computed on its own, so the distribution doesn't change the results.
                 int aLower = anIntervals.Lower(), anUpper = anIntervals.Upper();
-                OSD_Parallel.For(0, aNbThreads, theThreadIndex =>
+                OsdParallel.For(0, aNbThreads, theThreadIndex =>
                 {
                     for (int anI = aLower + theThreadIndex; anI < anUpper; anI += aNbThreads)
                     {
@@ -153,7 +157,7 @@ public sealed class GeomLib_CheckCurveOnSurface
 
             myMaxDistance = Math.Sqrt(Math.Abs(myMaxDistance));
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             myErrorStatus = 3;
         }
@@ -180,7 +184,7 @@ public sealed class GeomLib_CheckCurveOnSurface
     /// <summary>The parameter at which the distance is maximal.</summary>
     public double MaxParameter() => myMaxParameter;
 
-    private sealed class GeomLib_CheckCurveOnSurface_TargetFunc : math_MultipleVarFunctionWithHessian
+    private sealed class GeomLib_CheckCurveOnSurface_TargetFunc : MultipleVarFunctionWithHessian
     {
         private readonly Adaptor3d_Curve myCurve1;
         private readonly Adaptor3d_Curve myCurve2;
@@ -198,7 +202,7 @@ public sealed class GeomLib_CheckCurveOnSurface
 
         // returns the number of parameters of the function
         // (the function is one-dimension).
-        public override int NbVariables() => 1;
+        public override int VariableCount => 1;
 
         // returns value of the function when parameters are equal to theX
         public override bool Value(math_Vector theX, out double theFVal) => Value(theX[1], out theFVal);
@@ -215,11 +219,11 @@ public sealed class GeomLib_CheckCurveOnSurface
                     return false;
                 }
 
-                gp_Pnt aP1 = myCurve1.Value(theX), aP2 = myCurve2.Value(theX);
+                Point3D aP1 = myCurve1.Value(theX), aP2 = myCurve2.Value(theX);
 
                 theFVal = -1.0 * aP1.SquareDistance(aP2);
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -254,8 +258,8 @@ public sealed class GeomLib_CheckCurveOnSurface
                     return false;
                 }
                 //
-                gp_Pnt aP1, aP2;
-                gp_Vec aDC1, aDC2, aDCC1 = new(), aDCC2 = new();
+                Point3D aP1, aP2;
+                Vector3D aDC1, aDC2, aDCC1 = new(), aDCC2 = new();
                 //
                 if (!theWithDeriv2)
                 {
@@ -268,17 +272,17 @@ public sealed class GeomLib_CheckCurveOnSurface
                     myCurve2.D2(theX, out aP2, out aDC2, out aDCC2);
                 }
 
-                gp_Vec aVec1 = new(aP1, aP2), aVec2 = aDC2 - aDC1;
+                Vector3D aVec1 = new(aP1, aP2), aVec2 = aDC2 - aDC1;
                 //
                 theDeriv1 = -2.0 * aVec1.Dot(aVec2);
 
                 if (theWithDeriv2)
                 {
-                    gp_Vec aVec3 = aDCC2 - aDCC1;
+                    Vector3D aVec3 = aDCC2 - aDCC1;
                     theDeriv2 = -2.0 * (aVec2.SquareMagnitude() + aVec1.Dot(aVec3));
                 }
             }
-            catch (Standard_Failure)
+            catch (FailureException)
             {
                 return false;
             }
@@ -303,7 +307,7 @@ public sealed class GeomLib_CheckCurveOnSurface
         }
 
         // returns value, gradient and hessian
-        public override bool Values(math_Vector theX, out double theVal, math_Vector theGrad, math_Matrix theHessian)
+        public override bool Values(math_Vector theX, out double theVal, math_Vector theGrad, Matrix theHessian)
         {
             if (!Value(theX, out theVal))
             {
@@ -328,16 +332,16 @@ public sealed class GeomLib_CheckCurveOnSurface
 
         private struct Coefficients
         {
-            public gp_XYZ Origin;
-            public gp_XYZ Cos;
-            public gp_XYZ Sin;
+            public Xyz Origin;
+            public Xyz Cos;
+            public Xyz Sin;
         }
 
-        private static Coefficients getCoefficients(Adaptor3d_Curve theCurve, GeomAbs_CurveType theType)
+        private static Coefficients getCoefficients(Adaptor3d_Curve theCurve, CurveKind theType)
         {
-            if (theType == GeomAbs_Circle)
+            if (theType == Circle)
             {
-                gp_Circ aCircle = theCurve.Circle();
+                Circle3D aCircle = theCurve.Circle();
                 return new Coefficients
                 {
                     Origin = aCircle.Location().XYZ(),
@@ -346,7 +350,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 };
             }
 
-            gp_Elips anEllipse = theCurve.Ellipse();
+            Ellipse3D anEllipse = theCurve.Ellipse();
             return new Coefficients
             {
                 Origin = anEllipse.Location().XYZ(),
@@ -358,9 +362,9 @@ public sealed class GeomLib_CheckCurveOnSurface
         // Computes the exact maximum for elementary compositions supported by the adaptors.
         public bool ElementaryMaximum(ref double theBestValue, ref double theBestParameter)
         {
-            GeomAbs_CurveType aType1 = myCurve1.GetType();
-            GeomAbs_CurveType aType2 = myCurve2.GetType();
-            if (aType1 == GeomAbs_Line && aType2 == GeomAbs_Line)
+            CurveKind aType1 = myCurve1.GetType();
+            CurveKind aType2 = myCurve2.GetType();
+            if (aType1 == Line && aType2 == Line)
             {
                 double aFirstValue, aLastValue;
                 if (!Value(myFirst, out aFirstValue) || !Value(myLast, out aLastValue))
@@ -381,8 +385,8 @@ public sealed class GeomLib_CheckCurveOnSurface
                 return true;
             }
 
-            bool isTrigType1 = aType1 == GeomAbs_Circle || aType1 == GeomAbs_Ellipse;
-            bool isTrigType2 = aType2 == GeomAbs_Circle || aType2 == GeomAbs_Ellipse;
+            bool isTrigType1 = aType1 == Circle || aType1 == Ellipse;
+            bool isTrigType2 = aType2 == Circle || aType2 == Ellipse;
             if (!isTrigType1 || !isTrigType2)
             {
                 return false;
@@ -391,9 +395,9 @@ public sealed class GeomLib_CheckCurveOnSurface
             Coefficients aCoeffs1 = getCoefficients(myCurve1, aType1);
             Coefficients aCoeffs2 = getCoefficients(myCurve2, aType2);
 
-            gp_XYZ anOffset = aCoeffs1.Origin - aCoeffs2.Origin;
-            gp_XYZ aCosCoeff = aCoeffs1.Cos - aCoeffs2.Cos;
-            gp_XYZ aSinCoeff = aCoeffs1.Sin - aCoeffs2.Sin;
+            Xyz anOffset = aCoeffs1.Origin - aCoeffs2.Origin;
+            Xyz aCosCoeff = aCoeffs1.Cos - aCoeffs2.Cos;
+            Xyz aSinCoeff = aCoeffs1.Sin - aCoeffs2.Sin;
 
             // Coefficients of the derivative of the squared distance in trigonometric form.
             double aCosCos = 2.0 * aCosCoeff.Dot(aSinCoeff);
@@ -415,7 +419,7 @@ public sealed class GeomLib_CheckCurveOnSurface
             }
 
             double aPeriod = 2.0 * M_PI;
-            double aFirst = ElCLib.InPeriod(myFirst, 0.0, aPeriod);
+            double aFirst = global::Kerf.Engine.Geometry.ElCLib.InPeriod(myFirst, 0.0, aPeriod);
             double aShift = aFirst - myFirst;
             double aLast = aFirst + Min(myLast - myFirst, aPeriod);
             // std::max of an initializer list
@@ -424,15 +428,15 @@ public sealed class GeomLib_CheckCurveOnSurface
             aScale = Max(aScale, Math.Abs(aCos));
             aScale = Max(aScale, Math.Abs(aSin));
             aScale = Max(aScale, Math.Abs(aConstant));
-            math_TrigonometricFunctionRoots aRoots = new(aCosCos / aScale,
+            TrigonometricFunctionRoots aRoots = new(aCosCos / aScale,
                                                          aCosSin / aScale,
                                                          aCos / aScale,
                                                          aSin / aScale,
                                                          aConstant / aScale,
                                                          aFirst,
                                                          aLast);
-            if (!aRoots.IsDone() || aRoots.InfiniteRoots()
-                || (myLast - myFirst >= aPeriod && aRoots.NbSolutions() == 0))
+            if (!aRoots.IsDone || aRoots.InfiniteRoots()
+                || (myLast - myFirst >= aPeriod && aRoots.SolutionCount == 0))
             {
                 return false;
             }
@@ -445,7 +449,7 @@ public sealed class GeomLib_CheckCurveOnSurface
             {
                 return false;
             }
-            for (int anIndex = 1; anIndex <= aRoots.NbSolutions(); ++anIndex)
+            for (int anIndex = 1; anIndex <= aRoots.SolutionCount; ++anIndex)
             {
                 if (!updateBest(aRoots.Value(anIndex) - aShift, ref theBestValue, ref theBestParameter))
                 {
@@ -567,11 +571,11 @@ public sealed class GeomLib_CheckCurveOnSurface
         bool isTrimmed3D = false, isTrimmed2D = false;
 
         //
-        if (theCurve3d.GetType() == GeomAbs_BSplineCurve)
+        if (theCurve3d.GetType() == BSplineCurve)
         {
             aBS3DCurv = theCurve3d.BSpline();
         }
-        if (theCurve2d.GetType() == GeomAbs_BSplineCurve)
+        if (theCurve2d.GetType() == BSplineCurve)
         {
             aBS2DCurv = theCurve2d.BSpline();
         }
@@ -697,7 +701,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 double aVal3D = anArrKnots3D.Value(anIndex3D), aVal2D = anArrKnots2D.Value(anIndex2D);
                 double aDelta = aVal3D - aVal2D;
 
-                if (aDelta < Precision.PConfusion())
+                if (aDelta < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 { // aVal3D <= aVal2D
                     if ((aVal3D > theFirst) && (aVal3D < theLast))
                     {
@@ -711,7 +715,7 @@ public sealed class GeomLib_CheckCurveOnSurface
 
                     anIndex3D++;
 
-                    if (-aDelta < Precision.PConfusion())
+                    if (-aDelta < global::Kerf.Engine.Foundation.Precision.PConfusion())
                     { // aVal3D == aVal2D
                         anIndex2D++;
                     }
@@ -747,7 +751,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 theNbParticles = Max(theNbParticles, aBS2DCurv.Degree());
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             aNbSubIntervals = 0;
         }
@@ -765,7 +769,7 @@ public sealed class GeomLib_CheckCurveOnSurface
     {
         theBestValue = 0.0;
         double aDeltaParam = theParSup[1] - theParInf[1];
-        if (aDeltaParam < Precision.PConfusion())
+        if (aDeltaParam < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
@@ -773,7 +777,7 @@ public sealed class GeomLib_CheckCurveOnSurface
         math_Vector aStepPar = new(1, 1);
         aStepPar[1] = theEpsilon * aDeltaParam;
 
-        math_PSOParticlesPool aParticles = new(theNbParticles, 1);
+        PsoParticlesPool aParticles = new(theNbParticles, 1);
 
         // They are used for finding a position of theNbParticles worst places
         int aNbControlPoints = 3 * theNbParticles;
@@ -789,7 +793,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 continue;
             }
 
-            PSO_Particle aParticle = aParticles.GetWorstParticle();
+            Particle aParticle = aParticles.GetWorstParticle();
 
             if (aVal > aParticle.BestDistance)
             {
@@ -802,7 +806,7 @@ public sealed class GeomLib_CheckCurveOnSurface
             aParticle.BestDistance = aVal;
         }
 
-        math_PSO aPSO = new(theFunction, theParInf, theParSup, aStepPar);
+        Pso aPSO = new(theFunction, theParInf, theParSup, aStepPar);
         aPSO.Perform(aParticles, theNbParticles, out theBestValue, theOutputParam);
 
         return true;
@@ -843,10 +847,10 @@ public sealed class GeomLib_CheckCurveOnSurface
 
             // Here, anOutputParam contains parameter, which is near to optimal.
             // It needs to be more precise. Precision is made by math_NewtonMinimum.
-            math_NewtonMinimum aMinSol = new(theFunction);
+            NewtonMinimum aMinSol = new(theFunction);
             aMinSol.Perform(theFunction, anOutputParam);
 
-            if (aMinSol.IsDone() && (aMinSol.GetStatus() == math_OK))
+            if (aMinSol.IsDone && (aMinSol.GetStatus() == OK))
             { // math_NewtonMinimum has precised the value. We take it.
                 aMinSol.Location(anOutputParam);
                 theBestParameter = anOutputParam[1];
@@ -875,7 +879,7 @@ public sealed class GeomLib_CheckCurveOnSurface
                 }
             }
         }
-        catch (Standard_Failure)
+        catch (FailureException)
         {
             return false;
         }

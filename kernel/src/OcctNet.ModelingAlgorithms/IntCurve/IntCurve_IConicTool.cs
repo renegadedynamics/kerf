@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
 
 namespace Occt;
 
@@ -21,169 +23,169 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
     private double prm1;
     private double prm2;
     private double prm3;
-    private gp_Ax22d Axis;
-    private GeomAbs_CurveType type;
-    private gp_Trsf2d Abs_To_Object;
+    private Frame2D Axis;
+    private CurveKind type;
+    private Transform2D Abs_To_Object;
 
-    private readonly gp_Trsf2d Object_To_Abs => Abs_To_Object.Inverted();
+    private readonly Transform2D Object_To_Abs => Abs_To_Object.Inverted();
 
     public IntCurve_IConicTool()
     {
         prm1 = 0.0;
         prm2 = 0.0;
         prm3 = 0.0;
-        Axis = new gp_Ax22d();
-        type = GeomAbs_OtherCurve;
-        Abs_To_Object = new gp_Trsf2d();
+        Axis = new Frame2D();
+        type = OtherCurve;
+        Abs_To_Object = new Transform2D();
         // ###### PLACER LE TYPE NON DEFINI ######
     }
 
-    public IntCurve_IConicTool(in gp_Lin2d Line)
+    public IntCurve_IConicTool(in Line2D Line)
         : this()
     {
         Line.Coefficients(out prm1, out prm2, out prm3);
-        Axis = new gp_Ax22d(Line.Position(), true);
-        type = GeomAbs_Line;
+        Axis = new Frame2D(Line.Position(), true);
+        type = global::Kerf.Geometry.CurveKind.Line;
     }
 
-    public IntCurve_IConicTool(in gp_Elips2d Elips)
+    public IntCurve_IConicTool(in Ellipse2D Elips)
         : this()
     {
         prm1 = Elips.MajorRadius();
         prm2 = Elips.MinorRadius();
         prm3 = Math.Sqrt(prm1 * prm1 - prm2 * prm2);
         Axis = Elips.Axis();
-        Abs_To_Object.SetTransformation(gp.OX2d(), Axis.XAxis());
-        type = GeomAbs_Ellipse;
+        Abs_To_Object.SetTransformation(Constants.OX2d(), Axis.XAxis());
+        type = Ellipse;
     }
 
-    public IntCurve_IConicTool(in gp_Circ2d C)
+    public IntCurve_IConicTool(in Circle2D C)
         : this()
     {
         prm1 = C.Radius();
         Axis = C.Axis();
         prm2 = Axis.Location().X();
         prm3 = Axis.Location().Y();
-        Abs_To_Object.SetTransformation(gp.OX2d(), Axis.XAxis());
-        type = GeomAbs_Circle;
+        Abs_To_Object.SetTransformation(Constants.OX2d(), Axis.XAxis());
+        type = Circle;
     }
 
-    public IntCurve_IConicTool(in gp_Parab2d P)
+    public IntCurve_IConicTool(in Parabola2D P)
         : this()
     {
         prm1 = P.Focal();
         prm2 = 4.0 * prm1;
         Axis = P.Axis();
-        Abs_To_Object.SetTransformation(gp.OX2d(), Axis.XAxis());
-        type = GeomAbs_Parabola;
+        Abs_To_Object.SetTransformation(Constants.OX2d(), Axis.XAxis());
+        type = Parabola;
     }
 
-    public IntCurve_IConicTool(in gp_Hypr2d H)
+    public IntCurve_IConicTool(in Hyperbola2D H)
         : this()
     {
         prm1 = H.MajorRadius();
         prm2 = H.MinorRadius();
         Axis = H.Axis();
-        Abs_To_Object.SetTransformation(gp.OX2d(), Axis.XAxis());
-        type = GeomAbs_Hyperbola;
+        Abs_To_Object.SetTransformation(Constants.OX2d(), Axis.XAxis());
+        type = Hyperbola;
     }
 
-    public readonly gp_Pnt2d Value(double X)
+    public readonly Point2D Value(double X)
     {
         switch (type)
         {
-            case GeomAbs_Line:
-                return (ElCLib.LineValue(X, Axis.XAxis()));
-            case GeomAbs_Ellipse:
-                return (ElCLib.EllipseValue(X, Axis, prm1, prm2));
-            case GeomAbs_Circle:
-                return (ElCLib.CircleValue(X, Axis, prm1));
-            case GeomAbs_Parabola:
-                return (ElCLib.ParabolaValue(X, Axis, prm1));
-            case GeomAbs_Hyperbola:
-                return (ElCLib.HyperbolaValue(X, Axis, prm1, prm2));
+            case Line:
+                return (global::Kerf.Engine.Geometry.ElCLib.LineValue(X, Axis.XAxis()));
+            case Ellipse:
+                return (global::Kerf.Engine.Geometry.ElCLib.EllipseValue(X, Axis, prm1, prm2));
+            case Circle:
+                return (global::Kerf.Engine.Geometry.ElCLib.CircleValue(X, Axis, prm1));
+            case Parabola:
+                return (global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(X, Axis, prm1));
+            case Hyperbola:
+                return (global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(X, Axis, prm1, prm2));
             default:
             {
                 // OCCT prints "### Erreur sur le  type de la courbe ###" to std::cout.
-                return (new gp_Pnt2d(0.0, 0.0));
+                return (new Point2D(0.0, 0.0));
             }
         }
     }
 
-    public readonly void D1(double X, out gp_Pnt2d Pt, out gp_Vec2d Tan)
+    public readonly void D1(double X, out Point2D Pt, out Vector2D Tan)
     {
         switch (type)
         {
-            case GeomAbs_Line:
-                ElCLib.LineD1(X, Axis.XAxis(), out Pt, out Tan);
+            case Line:
+                global::Kerf.Engine.Geometry.ElCLib.LineD1(X, Axis.XAxis(), out Pt, out Tan);
                 break;
-            case GeomAbs_Ellipse:
-                ElCLib.EllipseD1(X, Axis, prm1, prm2, out Pt, out Tan);
+            case Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.EllipseD1(X, Axis, prm1, prm2, out Pt, out Tan);
                 break;
-            case GeomAbs_Circle:
-                ElCLib.CircleD1(X, Axis, prm1, out Pt, out Tan);
+            case Circle:
+                global::Kerf.Engine.Geometry.ElCLib.CircleD1(X, Axis, prm1, out Pt, out Tan);
                 break;
-            case GeomAbs_Parabola:
-                ElCLib.ParabolaD1(X, Axis, prm1, out Pt, out Tan);
+            case Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.ParabolaD1(X, Axis, prm1, out Pt, out Tan);
                 break;
-            case GeomAbs_Hyperbola:
-                ElCLib.HyperbolaD1(X, Axis, prm1, prm2, out Pt, out Tan);
+            case Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.HyperbolaD1(X, Axis, prm1, prm2, out Pt, out Tan);
                 break;
             default:
             {
                 // OCCT prints an error and leaves the outputs unchanged (decision 32: zeros).
-                Pt = new gp_Pnt2d(0.0, 0.0);
-                Tan = new gp_Vec2d(0.0, 0.0);
+                Pt = new Point2D(0.0, 0.0);
+                Tan = new Vector2D(0.0, 0.0);
                 break;
             }
         }
     }
 
-    public readonly void D2(double X, out gp_Pnt2d Pt, out gp_Vec2d Tan, out gp_Vec2d Norm)
+    public readonly void D2(double X, out Point2D Pt, out Vector2D Tan, out Vector2D Norm)
     {
         switch (type)
         {
-            case GeomAbs_Line:
-                ElCLib.LineD1(X, Axis.XAxis(), out Pt, out Tan);
-                Norm = new gp_Vec2d(0.0, 0.0);
+            case Line:
+                global::Kerf.Engine.Geometry.ElCLib.LineD1(X, Axis.XAxis(), out Pt, out Tan);
+                Norm = new Vector2D(0.0, 0.0);
                 break;
-            case GeomAbs_Ellipse:
-                ElCLib.EllipseD2(X, Axis, prm1, prm2, out Pt, out Tan, out Norm);
+            case Ellipse:
+                global::Kerf.Engine.Geometry.ElCLib.EllipseD2(X, Axis, prm1, prm2, out Pt, out Tan, out Norm);
                 break;
-            case GeomAbs_Circle:
-                ElCLib.CircleD2(X, Axis, prm1, out Pt, out Tan, out Norm);
+            case Circle:
+                global::Kerf.Engine.Geometry.ElCLib.CircleD2(X, Axis, prm1, out Pt, out Tan, out Norm);
                 break;
-            case GeomAbs_Parabola:
-                ElCLib.ParabolaD2(X, Axis, prm1, out Pt, out Tan, out Norm);
+            case Parabola:
+                global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(X, Axis, prm1, out Pt, out Tan, out Norm);
                 break;
-            case GeomAbs_Hyperbola:
-                ElCLib.HyperbolaD2(X, Axis, prm1, prm2, out Pt, out Tan, out Norm);
+            case Hyperbola:
+                global::Kerf.Engine.Geometry.ElCLib.HyperbolaD2(X, Axis, prm1, prm2, out Pt, out Tan, out Norm);
                 break;
             default:
             {
                 // OCCT prints an error and leaves the outputs unchanged (decision 32: zeros).
-                Pt = new gp_Pnt2d(0.0, 0.0);
-                Tan = new gp_Vec2d(0.0, 0.0);
-                Norm = new gp_Vec2d(0.0, 0.0);
+                Pt = new Point2D(0.0, 0.0);
+                Tan = new Vector2D(0.0, 0.0);
+                Norm = new Vector2D(0.0, 0.0);
                 break;
             }
         }
     }
 
     /// <summary>The signed distance between the point and the implicit curve.</summary>
-    public readonly double Distance(in gp_Pnt2d ThePoint)
+    public readonly double Distance(in Point2D ThePoint)
     {
         switch (type)
         {
-            case GeomAbs_Line:
+            case Line:
             {
                 return (prm1 * ThePoint.X() + prm2 * ThePoint.Y() + prm3);
             }
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
                 // OCCT's AN_ELIPS is 0: the distance through the affinity on the minor axis.
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 double x = P.X();
                 double y = P.Y() * (prm1 / prm2);
@@ -191,26 +193,26 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
                 return (d);
             }
 
-            case GeomAbs_Circle:
+            case Circle:
             {
                 double Dx = prm2 - ThePoint.X();
                 double Dy = prm3 - ThePoint.Y();
                 return (Math.Sqrt(Dx * Dx + Dy * Dy) - prm1);
             }
 
-            case GeomAbs_Parabola:
+            case Parabola:
             { //-- Distance(X,Y) = Y**2 - 2 P X
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 return (P.Y() * P.Y() - prm2 * P.X());
             }
 
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             { //-- Distance(X,Y) = (X/a)**2 - (Y/b)**2 -1
                 //--                 pour x>0
                 //--     -(Y/b)**2 - 1  sinon ??
                 //--     avec un gradient avec x -> std::abs(x)
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 if (P.X() > 0.0)
                 {
@@ -230,16 +232,16 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
     }
 
     /// <summary>The gradient of the signed distance between a point and the implicit curve, at the point.</summary>
-    public readonly gp_Vec2d GradDistance(in gp_Pnt2d ThePoint)
+    public readonly Vector2D GradDistance(in Point2D ThePoint)
     {
         switch (type)
         {
-            case GeomAbs_Line:
-                return (new gp_Vec2d(prm1, prm2));
+            case Line:
+                return (new Vector2D(prm1, prm2));
 
-            case GeomAbs_Circle:
+            case Circle:
             {
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 double Gradx = 0.0;
                 double Grady = 0.0;
@@ -251,13 +253,13 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
                     Gradx = x / temp1;
                     Grady = y / temp1;
                 }
-                gp_Vec2d Gradient = new(Gradx, Grady);
+                Vector2D Gradient = new(Gradx, Grady);
                 Gradient.Transform(Object_To_Abs);
                 return (Gradient);
             }
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 double Gradx = 0.0;
                 double Grady = 0.0;
@@ -269,32 +271,32 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
                     Gradx = x / temp1;
                     Grady = (y * (prm1 / prm2)) / temp1;
                 }
-                gp_Vec2d Gradient = new(Gradx, Grady);
+                Vector2D Gradient = new(Gradx, Grady);
                 Gradient.Transform(Object_To_Abs);
                 return (Gradient);
             }
 
-            case GeomAbs_Parabola:
+            case Parabola:
             { //-- Distance(X,Y) = Y**2 - 2 P X
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
-                gp_Vec2d Gradient = new(-prm2, P.Y() + P.Y());
+                Vector2D Gradient = new(-prm2, P.Y() + P.Y());
                 Gradient.Transform(Object_To_Abs);
                 return (Gradient);
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             { //-- Distance(X,Y) = (X/a)**2 - (Y/b)**2 -1
-                gp_Pnt2d P = ThePoint;
+                Point2D P = ThePoint;
                 P.Transform(Abs_To_Object);
                 //--### la Branche a X negatif doit ramener vers les X positifs
-                gp_Vec2d Gradient = new(2.0 * Math.Abs(P.X()) / (prm1 * prm1), -2.0 * P.Y() / (prm2 * prm2));
+                Vector2D Gradient = new(2.0 * Math.Abs(P.X()) / (prm1 * prm1), -2.0 * P.Y() / (prm2 * prm2));
                 Gradient.Transform(Object_To_Abs);
                 return (Gradient);
             }
             default:
             {
                 // OCCT prints "### Erreur sur le  type de la courbe ###" to std::cout.
-                return (new gp_Vec2d(0.0, 0.0));
+                return (new Vector2D(0.0, 0.0));
             }
         }
     }
@@ -303,27 +305,27 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
     /// The parameter of the point of the implicit curve corresponding to <paramref name="P"/>, coherent with the
     /// signed distance.
     /// </summary>
-    public readonly double FindParameter(in gp_Pnt2d P)
+    public readonly double FindParameter(in Point2D P)
     {
         double Param = 0;
 
         switch (type)
         {
-            case GeomAbs_Line:
-                Param = ElCLib.LineParameter(Axis.XAxis(), P);
+            case Line:
+                Param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Axis.XAxis(), P);
                 break;
 
-            case GeomAbs_Circle:
-                Param = ElCLib.CircleParameter(Axis, P);
+            case Circle:
+                Param = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(Axis, P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
                 }
                 break;
 
-            case GeomAbs_Ellipse:
+            case Ellipse:
             {
-                Param = ElCLib.EllipseParameter(Axis, prm1, prm2, P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.EllipseParameter(Axis, prm1, prm2, P);
                 if (Param < 0.0)
                 {
                     Param += M_PI + M_PI;
@@ -331,14 +333,14 @@ public struct IntCurve_IConicTool : IIntImpParGen_ImpTool
                 break;
             }
 
-            case GeomAbs_Parabola:
+            case Parabola:
             {
-                Param = ElCLib.ParabolaParameter(Axis, P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.ParabolaParameter(Axis, P);
                 break;
             }
-            case GeomAbs_Hyperbola:
+            case Hyperbola:
             {
-                Param = ElCLib.HyperbolaParameter(Axis, prm1, prm2, P);
+                Param = global::Kerf.Engine.Geometry.ElCLib.HyperbolaParameter(Axis, prm1, prm2, P);
                 break;
             }
             default:

@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -21,7 +27,7 @@ namespace Occt;
 /// <see cref="SetImplicitSurface"/> and never changes it afterwards (decision 608).
 /// </para>
 /// </remarks>
-public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetWithDerivatives
+public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivatives
     where ThePSurfaceTool : IIntImp_ZerCSParPSurfaceTool<ThePSurface>
 {
     private const double EpsAng = 1.0e-8;
@@ -33,18 +39,18 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     private double u;
     private double v;
     private double tol;
-    private gp_Pnt pntsol;
+    private Point3D pntsol;
     private double valf;
     private bool computed;
     private bool tangent;
     private double tgdu;
     private double tgdv;
-    private gp_Vec gradient;
+    private Vector3D gradient;
     private bool derived;
-    private gp_Vec d1u;
-    private gp_Vec d1v;
-    private gp_Vec d3d;
-    private gp_Dir2d d2d;
+    private Vector3D d1u;
+    private Vector3D d1v;
+    private Vector3D d3d;
+    private Direction2D d2d;
 
     /// <summary>An empty function; <see cref="Set(ThePSurface)"/> and <see cref="SetImplicitSurface"/> load it.</summary>
     public IntImp_ZerImpFunc()
@@ -54,18 +60,18 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         u = 0.0;
         v = 0.0;
         tol = 0.0;
-        pntsol = new gp_Pnt();
+        pntsol = new Point3D();
         valf = 0.0;
         computed = false;
         tangent = false;
         tgdu = 0.0;
         tgdv = 0.0;
-        gradient = new gp_Vec();
+        gradient = new Vector3D();
         derived = false;
-        d1u = new gp_Vec();
-        d1v = new gp_Vec();
-        d3d = new gp_Vec();
-        d2d = new gp_Dir2d();
+        d1u = new Vector3D();
+        d1v = new Vector3D();
+        d3d = new Vector3D();
+        d2d = new Direction2D();
     }
 
     public IntImp_ZerImpFunc(ThePSurface PS, in IntSurf_Quadric IS)
@@ -128,7 +134,7 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         return true;
     }
 
-    public override bool Derivatives(math_Vector X, math_Matrix D)
+    public override bool Derivatives(math_Vector X, Matrix D)
     {
         u = X[1];
         v = X[2];
@@ -141,7 +147,7 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
         return true;
     }
 
-    public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+    public override bool Values(math_Vector X, math_Vector F, Matrix D)
     {
         u = X[1];
         v = X[2];
@@ -162,7 +168,7 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     public double Tolerance() => tol;
 
     /// <summary>The point of the last evaluation.</summary>
-    public gp_Pnt Point() => pntsol;
+    public Point3D Point() => pntsol;
 
     /// <summary>
     /// True if the surfaces are tangent at the last evaluated point; otherwise computes the tangent of the
@@ -189,7 +195,7 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
             if (!tangent)
             {
                 d3d.SetLinearForm(tgdu, d1u, tgdv, d1v);
-                d2d = new gp_Dir2d(tgdu, tgdv);
+                d2d = new Direction2D(tgdu, tgdv);
                 if (d3d.Magnitude() <= Tolpetit)
                 { // jag
                     tangent = true;
@@ -200,21 +206,21 @@ public class IntImp_ZerImpFunc<ThePSurface, ThePSurfaceTool> : math_FunctionSetW
     }
 
     /// <summary>The tangent of the intersection in 3D. Throws StdFail_UndefinedDerivative at a tangent point.</summary>
-    public gp_Vec Direction3d()
+    public Vector3D Direction3d()
     {
         if (IsTangent())
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return d3d;
     }
 
     /// <summary>The tangent in the parametric space. Throws StdFail_UndefinedDerivative at a tangent point.</summary>
-    public gp_Dir2d Direction2d()
+    public Direction2D Direction2d()
     {
         if (IsTangent())
         {
-            throw new StdFail_UndefinedDerivative();
+            throw new UndefinedDerivativeException();
         }
         return d2d;
     }

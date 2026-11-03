@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
+using Kerf.Topology;
 using Xunit.Abstractions;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
@@ -58,7 +60,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 return Placed(theOracle, TwinShapes.Up(aTwins.Box(theOracle.Real(0.5, 20), theOracle.Real(0.5, 20), theOracle.Real(0.5, 20))));
             case 1:
             {
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
                 return Placed(theOracle, TwinShapes.Up(aTwins.CylinderFace(theOracle.Real(0.5, 5), theOracle.Real(0.5, 5), aL, aNL)));
             }
             case 2:
@@ -67,10 +69,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
             {
                 // a compound sharing a box and a face at several locations and orientations
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aBox = TwinShapes.Up(aTwins.Box(theOracle.Real(1, 5), theOracle.Real(1, 5), theOracle.Real(1, 5)));
-                (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
                 Twin<N.TopoDS_Shape, TopoDS_Shape> aFace = TwinShapes.Up(aTwins.CylinderFace(1.0, 2.0, aL, aNL));
-                (N.TopLoc_Location aNL1, TopLoc_Location aL1) = RandomLocation(theOracle);
-                (N.TopLoc_Location aNL2, TopLoc_Location aL2) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL1, Placement aL1) = RandomLocation(theOracle);
+                (N.TopLoc_Location aNL2, Placement aL2) = RandomLocation(theOracle);
                 Twin<N.TopoDS_Compound, TopoDS_Compound> aCompound = aTwins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
@@ -88,7 +90,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = theShape;
         if (theOracle.Bool())
         {
-            (N.TopLoc_Location aNL, TopLoc_Location aL) = RandomLocation(theOracle);
+            (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle);
             aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
         }
 
@@ -96,13 +98,13 @@ public class TopologyOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>A rigid location (a rotation, a translation or both) built from the same raw numbers on both sides.</summary>
-    internal static (N.TopLoc_Location, TopLoc_Location) RandomLocation(Oracle theOracle)
+    internal static (N.TopLoc_Location, Placement) RandomLocation(Oracle theOracle)
     {
         var aNT = new N.gp_Trsf();
-        var aT = new gp_Trsf();
+        var aT = new Transform3D();
         if (theOracle.Bool())
         {
-            (N.gp_Ax1 aNAx, gp_Ax1 anAx) = GeomOracleInputs.Ax1s(theOracle);
+            (N.gp_Ax1 aNAx, Axis3D anAx) = GeomOracleInputs.Ax1s(theOracle);
             double anAngle = theOracle.Angle();
             using (aNAx)
             {
@@ -114,24 +116,24 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
         if (theOracle.Bool())
         {
-            gp_Vec aV = theOracle.Vec();
+            Vector3D aV = theOracle.Vec();
             using var aNV = Oracle.ToNative(aV);
             var aNT2 = new N.gp_Trsf();
             aNT2.SetTranslation(aNV);
             aNT = aNT2.Multiplied(aNT);
-            aT = gp_Trsf.Translation(aV).Multiplied(aT);
+            aT = Transform3D.Translation(aV).Multiplied(aT);
         }
 
-        return (new N.TopLoc_Location(aNT), new TopLoc_Location(aT));
+        return (new N.TopLoc_Location(aNT), new Placement(aT));
     }
 
     /// <summary>A square face with a rectangular hole, on a random plane (the hole's wire first).</summary>
     private static Twin<N.TopoDS_Face, TopoDS_Face> FaceWithHole(Oracle theOracle, TwinShapes theTwins)
     {
-        gp_Pnt anOrigin = theOracle.Pnt();
-        gp_XYZ aNormal = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ aRef = GeomOracleInputs.RawDir(theOracle);
-        gp_XYZ anX = aNormal.Crossed(aRef);
+        Point3D anOrigin = theOracle.Pnt();
+        global::Kerf.Engine.Geometry.Xyz aNormal = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz aRef = GeomOracleInputs.RawDir(theOracle);
+        global::Kerf.Engine.Geometry.Xyz anX = aNormal.Crossed(aRef);
         while (anX.Modulus() < 0.1)
         {
             aRef = GeomOracleInputs.RawDir(theOracle);
@@ -139,15 +141,15 @@ public class TopologyOracleTests(ITestOutputHelper output)
         }
 
         // the corners in the plane's own coordinates, placed by the port's plane (both sides get these points)
-        var aPln = new gp_Pln(new gp_Ax3(anOrigin, new gp_Dir(aNormal), new gp_Dir(anX)));
+        var aPln = new Plane3D(new CoordinateSystem(anOrigin, new Direction3D(aNormal), new Direction3D(anX)));
         double aSize = theOracle.Real(4, 10);
         double hu1 = theOracle.Real(0.5, 1.5), hu2 = theOracle.Real(2, 3.5), hv1 = theOracle.Real(0.5, 1.5), hv2 = theOracle.Real(2, 3.5);
         (double U, double V)[] aUV = [(0, 0), (aSize, 0), (aSize, aSize), (0, aSize), (hu1, hv1), (hu1, hv2), (hu2, hv2), (hu2, hv1)];
-        var aPoints = new gp_Pnt[8];
+        var aPoints = new Point3D[8];
         var aV = new Twin<N.TopoDS_Vertex, TopoDS_Vertex>[8];
         for (int i = 0; i < 8; i++)
         {
-            aPoints[i] = ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
+            aPoints[i] = global::Kerf.Engine.Geometry.ElSLib.Value(aUV[i].U, aUV[i].V, aPln);
             aV[i] = theTwins.Vertex(aPoints[i], 1e-6);
         }
 
@@ -292,7 +294,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
                     theOracle.Same((int)aS.N.ShapeType(), (int)aS.P.ShapeType(), "ShapeType");
                     theOracle.Same((int)aS.N.Orientation(), (int)aS.P.Orientation(), "Orientation");
                     theOracle.Same(aS.N.NbChildren(), aS.P.NbChildren(), "NbChildren");
-                    theOracle.Same(aS.N.Location().IsIdentity(), aS.P.Location().IsIdentity(), "Location.IsIdentity");
+                    theOracle.Same(aS.N.Location().IsIdentity(), aS.P.Location().IsIdentity, "Location.IsIdentity");
                     using (N.gp_Trsf aNT = aS.N.Location().Transformation())
                     {
                         theOracle.Same(aNT, aS.P.Location().Transformation(), "Location");
@@ -478,7 +480,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         using var aNLoc = new N.TopLoc_Location();
         double aNF2 = 0, aNL2 = 0;
         N.Geom_Curve? aNC = N.BRep_Tool.Curve(theNE, aNLoc, ref aNF2, ref aNL2);
-        Geom_Curve? aC = BRep_Tool.Curve(theE, out TopLoc_Location aLoc, out double f2, out double l2);
+        Geom_Curve? aC = BRep_Tool.Curve(theE, out Placement aLoc, out double f2, out double l2);
         theOracle.Same(aNC is null, aC is null, "Curve is null");
         using (N.gp_Trsf aNT = aNLoc.Transformation())
         {
@@ -608,7 +610,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
             using var aNP1 = new N.gp_Pnt2d();
             using var aNP2 = new N.gp_Pnt2d();
             N.BRep_Tool.UVPoints(aNE, theNF, aNP1, aNP2);
-            BRep_Tool.UVPoints(anE, theF, out gp_Pnt2d aP1, out gp_Pnt2d aP2);
+            BRep_Tool.UVPoints(anE, theF, out Point2D aP1, out Point2D aP2);
             theOracle.Same(aNP1, aP1, "UVPoints first");
             theOracle.Same(aNP2, aP2, "UVPoints last");
             theOracle.Same(N.BRep_Tool.IsClosed(aNE, theNF), BRep_Tool.IsClosed(anE, theF), "IsClosed(E, F)");

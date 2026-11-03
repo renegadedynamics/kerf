@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.StepElement_EnumeratedCurveElementFreedom;
 
 namespace Occt;
@@ -29,7 +30,7 @@ public class StepElement_CurveElementFreedom : StepData_SelectType
     /// Recognizes a kind of CurveElementFreedom select type
     /// return 0
     /// </summary>
-    public override int CaseNum(Standard_Transient ent)
+    public override int CaseNum(Transient ent)
     {
         return 0;
     }

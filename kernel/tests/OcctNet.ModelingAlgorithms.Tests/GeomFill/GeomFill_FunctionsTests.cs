@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
 using static OcctNet.ModelingAlgorithms.Tests.LocationLawTestSupport;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,33 +14,33 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void LocFunction_DN_IsTheVectorThenTheColumns()
     {
-        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new gp_Vec(0, 0, 1), 0.2));
+        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
         aLaw.SetCurve(new GeomAdaptor_Curve(WavyCurve()));
         var aFunc = new GeomFill_LocFunction(aLaw);
 
-        var P = new NCollection_Array1<gp_Pnt2d>(1, 1);
-        var DP = new NCollection_Array1<gp_Vec2d>(1, 1);
-        var D2P = new NCollection_Array1<gp_Vec2d>(1, 1);
-        gp_Mat M = new(), DM = new(), D2M = new();
-        gp_Vec V = new(), DV = new(), D2V = new();
+        var P = new NCollection_Array1<Point2D>(1, 1);
+        var DP = new NCollection_Array1<Vector2D>(1, 1);
+        var D2P = new NCollection_Array1<Vector2D>(1, 1);
+        Matrix3x3 M = new(), DM = new(), D2M = new();
+        Vector3D V = new(), DV = new(), D2V = new();
         aLaw.D2(0.45, ref M, ref V, ref DM, ref DV, ref D2M, ref D2V, P, DP, D2P);
 
         Span<double> aRes = stackalloc double[12];
         int anIer = -1;
-        (gp_Mat, gp_Vec)[] anExpected = [(M, V), (DM, DV), (D2M, D2V)];
+        (Matrix3x3, Vector3D)[] anExpected = [(M, V), (DM, DV), (D2M, D2V)];
         for (int anOrder = 0; anOrder <= 2; anOrder++)
         {
             aFunc.DN(0.45, 0, 1, anOrder, aRes, ref anIer);
             Assert.Equal(0, anIer);
-            (gp_Mat aM, gp_Vec aV) = anExpected[anOrder];
-            Assert.Equal(aV.XYZ(), new gp_XYZ(aRes[0], aRes[1], aRes[2]));
+            (Matrix3x3 aM, Vector3D aV) = anExpected[anOrder];
+            Assert.Equal(aV.XYZ(), new Xyz(aRes[0], aRes[1], aRes[2]));
             for (int c = 1; c <= 3; c++)
             {
-                Assert.Equal(aM.Column(c), new gp_XYZ(aRes[3 * c], aRes[3 * c + 1], aRes[3 * c + 2]));
+                Assert.Equal(aM.Column(c), new Xyz(aRes[3 * c], aRes[3 * c + 1], aRes[3 * c + 2]));
             }
         }
         // OCCT reads through a null pointer for another order; the port throws
-        Assert.Throws<Standard_OutOfRange>(() =>
+        Assert.Throws<OutOfRangeException>(() =>
         {
             Span<double> aR = stackalloc double[12];
             int anI = 0;
@@ -47,8 +51,8 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void LocFunction_DN_ReportsAFailedLaw()
     {
-        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new gp_Vec(0, 0, 1), 0.2));
-        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(0, 0, 0), new gp_Dir(0, 0, 1)), 0, 1));
+        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
+        aLaw.SetCurve(new GeomAdaptor_Curve(new Geom_Line(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
         var aFunc = new GeomFill_LocFunction(aLaw);
         var aRes = new double[12];
         int anIer = 0;
@@ -56,12 +60,12 @@ public class GeomFill_FunctionsTests
         Assert.Equal(1, anIer);
     }
 
-    private static void CheckDerivatives(math_FunctionSetWithDerivatives theF, math_Vector theX, double theTol)
+    private static void CheckDerivatives(FunctionSetWithDerivatives theF, math_Vector theX, double theTol)
     {
         int n = theF.NbVariables();
-        var D = new math_Matrix(1, n, 1, n);
+        var D = new Matrix(1, n, 1, n);
         var F = new math_Vector(1, n);
-        var D2 = new math_Matrix(1, n, 1, n);
+        var D2 = new Matrix(1, n, 1, n);
         Assert.True(theF.Derivatives(theX, D));
         Assert.True(theF.Values(theX, F, D2));
         const double h = 1e-6;
@@ -92,8 +96,8 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void FunctionDraft_DerivativesMatchFiniteDifferences()
     {
-        var aSurf = new GeomAdaptor_Surface(new Geom_SphericalSurface(new gp_Ax3(gp.XOY()), 5));
-        var aGen = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(1, 2, 0), new gp_Dir(1, 1, -1)));
+        var aSurf = new GeomAdaptor_Surface(new Geom_SphericalSurface(new CoordinateSystem(Constants.XOY()), 5));
+        var aGen = new GeomAdaptor_Curve(new Geom_Line(new Point3D(1, 2, 0), new Direction3D(1, 1, -1)));
         var E = new GeomFill_FunctionDraft(aSurf, aGen);
         Assert.Equal(3, E.NbVariables());
         Assert.Equal(3, E.NbEquations());
@@ -106,7 +110,7 @@ public class GeomFill_FunctionsTests
         // the second derivatives in (u, v) are the surface's, negated
         var T = new GeomFill_Tensor(3, 3, 3);
         Assert.True(E.Deriv2X(X, T));
-        aSurf.D2(0.4, -0.3, out _, out _, out _, out gp_Vec D2U, out gp_Vec D2V, out gp_Vec D2UV);
+        aSurf.D2(0.4, -0.3, out _, out _, out _, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
         for (int i = 1; i <= 3; i++)
         {
             Assert.Equal(0.0, T[i, 1, 1]);
@@ -116,13 +120,13 @@ public class GeomFill_FunctionsTests
             Assert.Equal(-D2V.Coord(i), T[i, 3, 3]);
         }
 
-        var DTX = new math_Matrix(1, 3, 1, 3);
-        Assert.True(E.DerivTX(new gp_Vec(1, 2, 3), 0.5, DTX));
+        var DTX = new Matrix(1, 3, 1, 3);
+        Assert.True(E.DerivTX(new Vector3D(1, 2, 3), 0.5, DTX));
         Assert.Equal(2 * Math.Sin(0.5), DTX[2, 1]);
         Assert.Equal(0.0, DTX[2, 2]);
 
         var F = new math_Vector(1, 3);
-        Assert.True(E.DerivT(aGen, 0.3, 2.0, new gp_Vec(1, 0, 0), 0.5, F));
+        Assert.True(E.DerivT(aGen, 0.3, 2.0, new Vector3D(1, 0, 0), 0.5, F));
         Assert.Equal(1 / Math.Sqrt(3) + 2 * Math.Sin(0.5), F[1], 1e-15);
     }
 
@@ -136,7 +140,7 @@ public class GeomFill_FunctionsTests
         var V = new math_Vector(1, 2);
         V[1] = 3;
         V[2] = 4;
-        var M = new math_Matrix(1, 2, 1, 3);
+        var M = new Matrix(1, 2, 1, 3);
         T.Multiply(V, M);
         Assert.Equal(2 * 3 + 4, M[1, 1]);
         Assert.Equal(3 + 4, M[1, 2]);
@@ -147,10 +151,10 @@ public class GeomFill_FunctionsTests
     public void FunctionGuide_DerivativesMatchFiniteDifferences()
     {
         // a constant section: the radial segment [0, 3] along X, revolved about the path's tangent
-        var aSection = new GeomFill_UniformSection(new Geom_TrimmedCurve(new Geom_Line(gp.OX()), 0, 3));
-        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new gp_Pnt(1, 1, 0), new gp_Dir(0, 0.3, 1)));
+        var aSection = new GeomFill_UniformSection(new Geom_TrimmedCurve(new Geom_Line(Constants.OX()), 0, 3));
+        var aGuide = new GeomAdaptor_Curve(new Geom_Line(new Point3D(1, 1, 0), new Direction3D(0, 0.3, 1)));
         var E = new GeomFill_FunctionGuide(aSection, aGuide);
-        E.SetParam(0.0, new gp_Pnt(0, 0, 1), new gp_XYZ(0, 0, 1), new gp_XYZ(1, 0, 0));
+        E.SetParam(0.0, new Point3D(0, 0, 1), new Xyz(0, 0, 1), new Xyz(1, 0, 0));
         var X = new math_Vector(1, 3);
         X[1] = 0.8;
         X[2] = 0.6;
@@ -167,6 +171,6 @@ public class GeomFill_FunctionsTests
         Assert.Equal(0.0, F.Norm(), 1e-12);
 
         var DFDT = new math_Vector(1, 3);
-        Assert.True(E.DerivT(X, new gp_XYZ(0, 0, 1), new gp_XYZ(0, 0, 0), DFDT));
+        Assert.True(E.DerivT(X, new Xyz(0, 0, 1), new Xyz(0, 0, 0), DFDT));
     }
 }

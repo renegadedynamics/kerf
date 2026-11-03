@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Kerf.Topology;
 using System.Runtime.CompilerServices;
 
 namespace Occt;
@@ -37,19 +40,19 @@ namespace Occt;
 public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
 {
     private TopoDS_TShape? myTShape;
-    private TopLoc_Location myLocation;
+    private Placement myLocation;
     private TopAbs_Orientation myOrient;
 
     /// <summary>A null shape, referring to nothing (orientation EXTERNAL, as OCCT's).</summary>
     public TopoDS_Shape()
     {
         myTShape = null;
-        myLocation = new TopLoc_Location();
+        myLocation = new Placement();
         myOrient = TopAbs_Orientation.TopAbs_EXTERNAL;
     }
 
     /// <summary>A shape with the given fields: the conversions between the shape types.</summary>
-    internal TopoDS_Shape(TopoDS_TShape? theTShape, in TopLoc_Location theLocation, TopAbs_Orientation theOrient)
+    internal TopoDS_Shape(TopoDS_TShape? theTShape, in Placement theLocation, TopAbs_Orientation theOrient)
     {
         myTShape = theTShape;
         myLocation = theLocation;
@@ -70,14 +73,14 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     }
 
     /// <summary>The shape's local coordinate system.</summary>
-    public readonly TopLoc_Location Location() => myLocation;
+    public readonly Placement Location() => myLocation;
 
     /// <summary>Sets the shape's local coordinate system.</summary>
     /// <param name="theLoc">The new local coordinate system.</param>
     /// <param name="theRaiseExc">Throw if the transformation has a scale or is negative.</param>
-    internal void Location(in TopLoc_Location theLoc, bool theRaiseExc = false)
+    internal void Location(in Placement theLoc, bool theRaiseExc = false)
     {
-        gp_Trsf aTrsf = theLoc.Transformation();
+        Transform3D aTrsf = theLoc.Transformation();
         if (theRaiseExc)
         {
             validateTransformation(aTrsf);
@@ -89,7 +92,7 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     /// <summary>This shape with its local coordinate system set to <paramref name="theLoc"/>.</summary>
     /// <param name="theLoc">The new local coordinate system.</param>
     /// <param name="theRaiseExc">Throw if the transformation has a scale or is negative.</param>
-    public readonly TopoDS_Shape Located(in TopLoc_Location theLoc, bool theRaiseExc = false)
+    public readonly TopoDS_Shape Located(in Placement theLoc, bool theRaiseExc = false)
     {
         TopoDS_Shape aShape = this;
         aShape.Location(theLoc, theRaiseExc);
@@ -114,7 +117,7 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     public readonly TopoDS_TShape? TShape() => myTShape;
 
     /// <summary>The type of the shape: VERTEX, EDGE, and so on.</summary>
-    /// <exception cref="Standard_NullObject">The shape is null.</exception>
+    /// <exception cref="NullObjectException">The shape is null.</exception>
     public readonly TopAbs_ShapeEnum ShapeType() => nonNullTShape().ShapeType();
 
     /// <summary>The free flag of the underlying shape.</summary>
@@ -168,9 +171,9 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     /// <summary>Multiplies the shape's location by <paramref name="thePosition"/>.</summary>
     /// <param name="thePosition">The transformation to apply.</param>
     /// <param name="theRaiseExc">Throw if the transformation has a scale or is negative.</param>
-    internal void Move(in TopLoc_Location thePosition, bool theRaiseExc = false)
+    internal void Move(in Placement thePosition, bool theRaiseExc = false)
     {
-        gp_Trsf aTrsf = thePosition.Transformation();
+        Transform3D aTrsf = thePosition.Transformation();
         if (theRaiseExc)
         {
             validateTransformation(aTrsf);
@@ -182,7 +185,7 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     /// <summary>This shape with its location multiplied by <paramref name="thePosition"/>.</summary>
     /// <param name="thePosition">The transformation to apply.</param>
     /// <param name="theRaiseExc">Throw if the transformation has a scale or is negative.</param>
-    public readonly TopoDS_Shape Moved(in TopLoc_Location thePosition, bool theRaiseExc = false)
+    public readonly TopoDS_Shape Moved(in Placement thePosition, bool theRaiseExc = false)
     {
         TopoDS_Shape aShape = this;
         aShape.Move(thePosition, theRaiseExc);
@@ -260,18 +263,18 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
     internal void TShape(TopoDS_TShape? theTShape) => myTShape = theTShape;
 
     // Checks if the transformation contains scaling or negative values.
-    private static void validateTransformation(in gp_Trsf theTrsf)
+    private static void validateTransformation(in Transform3D theTrsf)
     {
-        if (Math.Abs(Math.Abs(theTrsf.ScaleFactor()) - 1.0) > TopLoc_Location.ScalePrec() || theTrsf.IsNegative())
+        if (Math.Abs(Math.Abs(theTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec() || theTrsf.IsNegative)
         {
             // Exception
-            throw new Standard_DomainError("Transformation with scaling transformation is forbidden");
+            throw new DomainErrorException("Transformation with scaling transformation is forbidden");
         }
     }
 
     // OCCT dereferences the null handle (undefined behaviour); the port throws Standard_NullObject.
     private readonly TopoDS_TShape nonNullTShape()
-        => myTShape ?? throw new Standard_NullObject("TopoDS_Shape: the shape is null");
+        => myTShape ?? throw new NullObjectException("TopoDS_Shape: the shape is null");
 
     // </generated-members>
 
@@ -312,7 +315,7 @@ public partial struct TopoDS_Shape : IEquatable<TopoDS_Shape>
         _ => false,
     };
 
-    internal static int HashCodeOf(TopoDS_TShape? theTShape, in TopLoc_Location theLocation)
+    internal static int HashCodeOf(TopoDS_TShape? theTShape, in Placement theLocation)
     {
         int aHL = theLocation.HashCode();
         int aHT = RuntimeHelpers.GetHashCode(theTShape);

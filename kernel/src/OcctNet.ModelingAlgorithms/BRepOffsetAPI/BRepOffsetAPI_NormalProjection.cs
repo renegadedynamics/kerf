@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -32,7 +36,7 @@ public sealed class BRepOffsetAPI_NormalProjection : BRepBuilderAPI_MakeShape
     public void Add(in TopoDS_Shape ToProj) => myNormalProjector.Add(ToProj);
 
     /// <summary>Sets the approximation's parameters (<see cref="BRepAlgo_NormalProjection.SetParams"/>).</summary>
-    public void SetParams(double Tol3D, double Tol2D, GeomAbs_Shape InternalContinuity, int MaxDegree, int MaxSeg) =>
+    public void SetParams(double Tol3D, double Tol2D, Continuity InternalContinuity, int MaxDegree, int MaxSeg) =>
         myNormalProjector.SetParams(Tol3D, Tol2D, InternalContinuity, MaxDegree, MaxSeg);
 
     /// <summary>The maximum distance between the shape and what is projected (none if negative).</summary>
@@ -45,7 +49,7 @@ public sealed class BRepOffsetAPI_NormalProjection : BRepBuilderAPI_MakeShape
     public void Compute3d(bool With3d = true) => myNormalProjector.Compute3d(With3d);
 
     /// <summary>Builds the projection.</summary>
-    public override void Build(Message_ProgressRange theRange = default)
+    public override void Build(ProgressRange theRange = default)
     {
         myNormalProjector.Build();
         myShape = myNormalProjector.InternalProjection();

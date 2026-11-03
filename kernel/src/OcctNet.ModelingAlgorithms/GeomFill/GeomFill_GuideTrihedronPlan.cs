@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.GeomAbs_CurveType;
-using static Occt.GeomAbs_Shape;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using static Kerf.Geometry.CurveKind;
+using static Kerf.Geometry.Continuity;
 
 namespace Occt;
 
@@ -21,7 +23,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 {
     private new Adaptor3d_Curve? myTrimmed;
     private new Adaptor3d_Curve? myCurve;
-    private readonly NCollection_HArray2<gp_Pnt2d> Pole;
+    private readonly NCollection_HArray2<Point2D> Pole;
     private readonly math_Vector X;
     private readonly math_Vector XTol;
     private readonly math_Vector Inf;
@@ -57,7 +59,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         myGuide = theGuide; // guide
         myTrimG = theGuide;
         myNbPts = 20; // nb points pour calculs
-        Pole = new NCollection_HArray2<gp_Pnt2d>(1, 1, 1, myNbPts); // tab pr stocker Pprime (pt sur guide)
+        Pole = new NCollection_HArray2<Point2D>(1, 1, 1, myNbPts); // tab pr stocker Pprime (pt sur guide)
         frenet = new GeomFill_Frenet();
         XTol.Init(1.0e-6);
         XTol[1] = myGuide.Resolution(1.0e-6);
@@ -67,7 +69,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
     private void Init()
     {
         myStatus = GeomFill_PipeError.GeomFill_PipeOk;
-        gp_Vec Tangent = new gp_Vec(), Normal = new gp_Vec(), BiNormal = new gp_Vec();
+        Vector3D Tangent = new Vector3D(), Normal = new Vector3D(), BiNormal = new Vector3D();
         int ii;
         double t, DeltaG, w = 0.0;
         double f = myCurve!.FirstParameter();
@@ -98,9 +100,9 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         {
             t = (double)(myNbPts - ii) * f + (double)(ii - 1) * l;
             t /= (myNbPts - 1);
-            myCurve.D0(t, out gp_Pnt P);
+            myCurve.D0(t, out Point3D P);
             frenet.D0(t, ref Tangent, ref Normal, ref BiNormal);
-            Plan = new Geom_Plane(P, new gp_Dir(Tangent));
+            Plan = new Geom_Plane(P, new Direction3D(Tangent));
             Pl = new GeomAdaptor_Surface(Plan);
 
             Int.Perform(myTrimG, Pl); // intersection plan / guide
@@ -114,7 +116,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
             }
             else
             {
-                gp_Pnt Pmin;
+                Point3D Pmin;
                 PInt = Int.Point(1);
                 Pmin = PInt.Pnt();
                 double Dmin = P.Distance(Pmin);
@@ -142,7 +144,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
                 }
             }
 
-            gp_Pnt2d p1 = new gp_Pnt2d(t, w); // on stocke les parametres
+            Point2D p1 = new Point2D(t, w); // on stocke les parametres
             Pole.SetValue(1, ii, p1);
         } // for_ii
     }
@@ -159,10 +161,10 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 
     public override Adaptor3d_Curve Guide() => myGuide!;
 
-    public override bool D0(double Param, ref gp_Vec Tangent, ref gp_Vec Normal, ref gp_Vec BiNormal)
+    public override bool D0(double Param, ref Vector3D Tangent, ref Vector3D Normal, ref Vector3D BiNormal)
     {
-        gp_Pnt Pprime;
-        myCurve!.D0(Param, out gp_Pnt P);
+        Point3D Pprime;
+        myCurve!.D0(Param, out Point3D P);
         frenet.D0(Param, ref Tangent, ref Normal, ref BiNormal);
 
         // initialisation de la recherche
@@ -174,13 +176,13 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         GeomFill_PlanFunc E = new GeomFill_PlanFunc(P, Tangent, myGuide!);
 
         // resolution
-        math_FunctionRoot Result = new math_FunctionRoot(E, X[1], XTol[1], Inf[1], Sup[1], Iter);
+        FunctionRoot Result = new FunctionRoot(E, X[1], XTol[1], Inf[1], Sup[1], Iter);
 
-        if (Result.IsDone())
+        if (Result.IsDone)
         {
             double Res = Result.Root();
             Pprime = myTrimG!.Value(Res); // pt sur courbe guide
-            gp_Vec n = new gp_Vec(P, Pprime); // vecteur definissant la normale du triedre
+            Vector3D n = new Vector3D(P, Pprime); // vecteur definissant la normale du triedre
 
             Normal = n.Normalized();
             BiNormal = Tangent.Crossed(Normal);
@@ -195,11 +197,11 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         return true;
     }
 
-    public override bool D1(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec Normal, ref gp_Vec DNormal,
-                            ref gp_Vec BiNormal, ref gp_Vec DBiNormal)
+    public override bool D1(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D Normal, ref Vector3D DNormal,
+                            ref Vector3D BiNormal, ref Vector3D DBiNormal)
     {
         // triedre de frenet sur la trajectoire
-        myCurve!.D1(Param, out gp_Pnt P, out gp_Vec To);
+        myCurve!.D1(Param, out Point3D P, out Vector3D To);
         frenet.D1(Param, ref Tangent, ref DTangent, ref Normal, ref DNormal, ref BiNormal, ref DBiNormal);
 
         // tolerance sur E
@@ -210,13 +212,13 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         GeomFill_PlanFunc E = new GeomFill_PlanFunc(P, Tangent, myGuide!);
 
         // resolution
-        math_FunctionRoot Result = new math_FunctionRoot(E, X[1], XTol[1], Inf[1], Sup[1], Iter);
+        FunctionRoot Result = new FunctionRoot(E, X[1], XTol[1], Inf[1], Sup[1], Iter);
 
-        if (Result.IsDone())
+        if (Result.IsDone)
         {
             double Res = Result.Root();
-            myTrimG!.D1(Res, out gp_Pnt PG, out gp_Vec TG);
-            gp_Vec n = new gp_Vec(P, PG), dn = new gp_Vec(); // vecteur definissant la normale du triedre
+            myTrimG!.D1(Res, out Point3D PG, out Vector3D TG);
+            Vector3D n = new Vector3D(P, PG), dn = new Vector3D(); // vecteur definissant la normale du triedre
             double Norm = n.Magnitude();
             if (Norm < 1.0e-12)
             {
@@ -248,9 +250,9 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
     }
 
     /// <summary>Computes the Frenet trihedron of the path and its derivatives, and returns false (as OCCT).</summary>
-    public override bool D2(double Param, ref gp_Vec Tangent, ref gp_Vec DTangent, ref gp_Vec D2Tangent, ref gp_Vec Normal,
-                            ref gp_Vec DNormal, ref gp_Vec D2Normal, ref gp_Vec BiNormal, ref gp_Vec DBiNormal,
-                            ref gp_Vec D2BiNormal)
+    public override bool D2(double Param, ref Vector3D Tangent, ref Vector3D DTangent, ref Vector3D D2Tangent, ref Vector3D Normal,
+                            ref Vector3D DNormal, ref Vector3D D2Normal, ref Vector3D BiNormal, ref Vector3D DBiNormal,
+                            ref Vector3D D2BiNormal)
     {
         myCurve!.D2(Param, out _, out _, out _);
         // triedre de Frenet sur la trajectoire
@@ -269,35 +271,35 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 
     public override GeomFill_PipeError ErrorStatus() => myStatus;
 
-    private static GeomAbs_Shape CurveShape(GeomAbs_Shape S)
+    private static Continuity CurveShape(Continuity S)
     {
         switch (S)
         {
-            case GeomAbs_C0:
-                return GeomAbs_C1;
-            case GeomAbs_C1:
-                return GeomAbs_C2;
-            case GeomAbs_C2:
-                return GeomAbs_C3;
+            case C0:
+                return C1;
+            case C1:
+                return C2;
+            case C2:
+                return C3;
             default:
-                return GeomAbs_CN;
+                return CN;
         }
     }
 
     /// <summary>The intervals of the path (a provisional version in OCCT: the guide is not taken into account).</summary>
-    public override int NbIntervals(GeomAbs_Shape S) => myCurve!.NbIntervals(CurveShape(S));
+    public override int NbIntervals(Continuity S) => myCurve!.NbIntervals(CurveShape(S));
 
-    public override void Intervals(NCollection_Array1<double> TT, GeomAbs_Shape S)
+    public override void Intervals(NCollection_Array1<double> TT, Continuity S)
     {
         myCurve!.Intervals(TT, CurveShape(S));
     }
 
     public override void SetInterval(double First, double Last)
     {
-        myTrimmed = myCurve!.Trim(First, Last, Precision.Confusion());
+        myTrimmed = myCurve!.Trim(First, Last, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
-    public override void GetAverageLaw(ref gp_Vec ATangent, ref gp_Vec ANormal, ref gp_Vec ABiNormal)
+    public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
     {
         int ii;
         double t, Delta = (myCurve!.LastParameter() - myCurve.FirstParameter()) / 20.001;
@@ -305,7 +307,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
         ATangent.SetCoord(0.0, 0.0, 0.0);
         ANormal.SetCoord(0.0, 0.0, 0.0);
         ABiNormal.SetCoord(0.0, 0.0, 0.0);
-        gp_Vec T = new gp_Vec(), N = new gp_Vec(), B = new gp_Vec();
+        Vector3D T = new Vector3D(), N = new Vector3D(), B = new Vector3D();
 
         for (ii = 1; ii <= 20; ii++)
         {
@@ -322,7 +324,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 
     public override bool IsConstant()
     {
-        if ((myCurve!.GetType() == GeomAbs_Line) && (myGuide!.GetType() == GeomAbs_Line))
+        if ((myCurve!.GetType() == Line) && (myGuide!.GetType() == Line))
         {
             double Angle;
             Angle = myCurve.Line().Angle(myGuide.Line());
@@ -398,7 +400,7 @@ public class GeomFill_GuideTrihedronPlan : GeomFill_TrihedronWithGuide
 
         if (myGuide!.IsPeriodic())
         {
-            X[1] = ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
+            X[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(X[1], myGuide.FirstParameter(), myGuide.LastParameter());
         }
     }
 }

@@ -1,6 +1,8 @@
 // New in OCCT.NET (unit 8T): the immutable assembly tree in place of XCAF (decision 1229). Not a port.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Occt;
 public sealed class XdeDoc_Instance
 {
     /// <summary>The product placed at the location, with the instance's own attributes.</summary>
-    public XdeDoc_Instance(XdeDoc_Product theProduct, in TopLoc_Location theLocation, XdeDoc_Attributes? theAttributes = null)
+    public XdeDoc_Instance(XdeDoc_Product theProduct, in Placement theLocation, XdeDoc_Attributes? theAttributes = null)
     {
         Product = theProduct ?? throw new ArgumentNullException(nameof(theProduct));
         Location = theLocation;
@@ -20,13 +22,13 @@ public sealed class XdeDoc_Instance
     }
 
     /// <summary>The product at its own place (identity location), with no attribute of its own.</summary>
-    public XdeDoc_Instance(XdeDoc_Product theProduct) : this(theProduct, new TopLoc_Location()) { }
+    public XdeDoc_Instance(XdeDoc_Product theProduct) : this(theProduct, new Placement()) { }
 
     /// <summary>The product.</summary>
     public XdeDoc_Product Product { get; }
 
     /// <summary>The location, in the parent's coordinates (the world's for a root).</summary>
-    public TopLoc_Location Location { get; }
+    public Placement Location { get; }
 
     /// <summary>The instance's own attributes (override the product's).</summary>
     public XdeDoc_Attributes Attributes { get; }
@@ -43,12 +45,12 @@ public sealed class XdeDoc_Instance
         get
         {
             TopoDS_Shape aShape = Product.Shape;
-            return aShape.IsNull() || Location.IsIdentity() ? aShape : aShape.Moved(Location);
+            return aShape.IsNull() || Location.IsIdentity ? aShape : aShape.Moved(Location);
         }
     }
 
     /// <summary>The instance with another location.</summary>
-    public XdeDoc_Instance WithLocation(in TopLoc_Location theLocation) => new(Product, theLocation, Attributes);
+    public XdeDoc_Instance WithLocation(in Placement theLocation) => new(Product, theLocation, Attributes);
 
     /// <summary>The instance with other attributes.</summary>
     public XdeDoc_Instance WithAttributes(XdeDoc_Attributes theAttributes) => new(Product, Location, theAttributes);

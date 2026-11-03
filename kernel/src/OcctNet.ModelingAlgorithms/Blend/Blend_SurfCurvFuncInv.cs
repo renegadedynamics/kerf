@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Occt;
 /// the surface. Its variables are wguide, wcurv, wrst: the parameters on the guide line, on the curve and on the
 /// restriction.
 /// </summary>
-public abstract class Blend_SurfCurvFuncInv : math_FunctionSetWithDerivatives
+public abstract class Blend_SurfCurvFuncInv : FunctionSetWithDerivatives
 {
     /// <summary>Returns 3.</summary>
     public override int NbVariables()

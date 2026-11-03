@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace OcctNet.Foundation.Tests;
 
 public class math_NewtonFunctionSetRootTest
@@ -12,7 +14,7 @@ public class math_NewtonFunctionSetRootTest
 
     // Simple 2x2 system: x^2 + y^2 = 1, x - y = 0
     // Solution: x = y = +/-1/Math.Sqrt(2)
-    private class CircleLineSystem : math_FunctionSetWithDerivatives
+    private class CircleLineSystem : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -25,7 +27,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0 * X[1]; // df1/dx = 2x
             D[1, 2] = 2.0 * X[2]; // df1/dy = 2y
@@ -34,7 +36,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -44,7 +46,7 @@ public class math_NewtonFunctionSetRootTest
 
     // Linear system: 2x + y = 3, x + 2y = 3
     // Solution: x = 1, y = 1
-    private class LinearSystem : math_FunctionSetWithDerivatives
+    private class LinearSystem : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 2; }
 
@@ -57,7 +59,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector theUnused, math_Matrix D)
+        public override bool Derivatives(math_Vector theUnused, Matrix D)
         {
             D[1, 1] = 2.0; // df1/dx = 2
             D[1, 2] = 1.0; // df1/dy = 1
@@ -66,7 +68,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -76,7 +78,7 @@ public class math_NewtonFunctionSetRootTest
 
     // Single equation: x^2 - 4 = 0
     // Solution: x = +/-2
-    private class QuadraticFunction : math_FunctionSetWithDerivatives
+    private class QuadraticFunction : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 1; }
 
@@ -88,13 +90,13 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 2.0 * X[1];
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -104,7 +106,7 @@ public class math_NewtonFunctionSetRootTest
 
     // 3x3 system: x + y + z = 6, x - y = 0, 2z = 4
     // Solution: x = 2, y = 2, z = 2
-    private class ThreeVariableSystemFunction : math_FunctionSetWithDerivatives
+    private class ThreeVariableSystemFunction : FunctionSetWithDerivatives
     {
         public override int NbVariables() { return 3; }
 
@@ -118,7 +120,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Derivatives(math_Vector X, math_Matrix D)
+        public override bool Derivatives(math_Vector X, Matrix D)
         {
             D[1, 1] = 1.0;
             D[1, 2] = 1.0;
@@ -132,7 +134,7 @@ public class math_NewtonFunctionSetRootTest
             return true;
         }
 
-        public override bool Values(math_Vector X, math_Vector F, math_Matrix D)
+        public override bool Values(math_Vector X, math_Vector F, Matrix D)
         {
             Value(X, F);
             Derivatives(X, D);
@@ -149,7 +151,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -157,7 +159,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(1.0, root[1], TOLERANCE);
@@ -171,14 +173,14 @@ public class math_NewtonFunctionSetRootTest
         math_Vector tolerance = new(1, 1);
         tolerance[1] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 1);
         startingPoint[1] = 1.5; // Start near positive root
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, Math.Abs(root[1]), TOLERANCE); // Should find +/-2
@@ -192,7 +194,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.7; // Start near positive solution
@@ -200,7 +202,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(M_SQRT1_2, Math.Abs(root[1]), 1.0e-5);
@@ -217,7 +219,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[2] = 1.0e-6;
         tolerance[3] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 3);
         startingPoint[1] = 0.0;
@@ -226,7 +228,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(2.0, root[1], TOLERANCE);
@@ -242,7 +244,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -258,7 +260,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint, lowerBound, upperBound);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(1.0, root[1], TOLERANCE);
@@ -273,7 +275,7 @@ public class math_NewtonFunctionSetRootTest
     public void AlternativeConstructor()
     {
         LinearSystem func = new();
-        math_NewtonFunctionSetRoot solver = new(func, 1.0e-6); // Only function tolerance
+        NewtonFunctionSetRoot solver = new(func, 1.0e-6); // Only function tolerance
 
         math_Vector tolerance = new(1, 2);
         tolerance[1] = 1.0e-6;
@@ -287,7 +289,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(1.0, root[1], TOLERANCE);
@@ -302,7 +304,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6, 10); // Limited iterations
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6, 10); // Limited iterations
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -310,8 +312,8 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbIterations() <= 10);
+        Assert.True(solver.IsDone);
+        Assert.True(solver.IterationCount <= 10);
     }
 
     [Fact]
@@ -322,7 +324,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -330,9 +332,9 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbIterations() > 0);
-        Assert.True(solver.NbIterations() < 20); // Should converge reasonably fast
+        Assert.True(solver.IsDone);
+        Assert.True(solver.IterationCount > 0);
+        Assert.True(solver.IterationCount < 20); // Should converge reasonably fast
     }
 
     [Fact]
@@ -343,7 +345,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -351,9 +353,9 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        math_Matrix jacobian = solver.Derivative();
+        Matrix jacobian = solver.Derivative();
         Assert.Equal(2, jacobian.RowNumber());
         Assert.Equal(2, jacobian.ColNumber());
 
@@ -372,7 +374,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -380,7 +382,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector errors = solver.FunctionSetErrors();
         Assert.Equal(2, errors.Length());
@@ -398,7 +400,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -406,7 +408,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         // Test output methods
         math_Vector rootCopy = new(1, 2);
@@ -414,7 +416,7 @@ public class math_NewtonFunctionSetRootTest
         Assert.Equal(1.0, rootCopy[1], TOLERANCE);
         Assert.Equal(1.0, rootCopy[2], TOLERANCE);
 
-        math_Matrix derivativeCopy = new(1, 2, 1, 2);
+        Matrix derivativeCopy = new(1, 2, 1, 2);
         solver.Derivative(derivativeCopy);
         Assert.Equal(2.0, derivativeCopy[1, 1], TOLERANCE);
         Assert.Equal(2.0, derivativeCopy[2, 2], TOLERANCE);
@@ -433,7 +435,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -441,9 +443,9 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
-        int iterations = solver.NbIterations();
+        int iterations = solver.IterationCount;
         Assert.True(iterations > 0);
         Assert.True(iterations <= 100); // Default max iterations
     }
@@ -456,7 +458,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-6;
         tolerance[2] = 1.0e-6;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-6);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.99; // Very close to solution
@@ -464,8 +466,8 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
-        Assert.True(solver.NbIterations() <= 5); // Should converge quickly
+        Assert.True(solver.IsDone);
+        Assert.True(solver.IterationCount <= 5); // Should converge quickly
     }
 
     [Fact]
@@ -476,7 +478,7 @@ public class math_NewtonFunctionSetRootTest
         tolerance[1] = 1.0e-10;
         tolerance[2] = 1.0e-10;
 
-        math_NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-10);
+        NewtonFunctionSetRoot solver = new(func, tolerance, 1.0e-10);
 
         math_Vector startingPoint = new(1, 2);
         startingPoint[1] = 0.0;
@@ -484,7 +486,7 @@ public class math_NewtonFunctionSetRootTest
 
         solver.Perform(func, startingPoint);
 
-        Assert.True(solver.IsDone());
+        Assert.True(solver.IsDone);
 
         math_Vector root = solver.Root();
         Assert.Equal(1.0, root[1], 1.0e-8);

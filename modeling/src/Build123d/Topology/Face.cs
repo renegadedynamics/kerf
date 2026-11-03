@@ -1,3 +1,5 @@
+using Kerf.Geometry;
+using Kerf.Topology;
 using Occt;
 
 namespace Build123d;
@@ -95,34 +97,34 @@ public partial class Face : Shape2D
                 var adaptor = new GeomAdaptor_Surface(surface);
                 switch (adaptor.GetType())
                 {
-                    case GeomAbs_SurfaceType.GeomAbs_Cone:
+                    case SurfaceKind.Cone:
                     {
                         var cone = adaptor.Cone();
                         var ax = cone.Axis();
                         return new Axis(ax);
                     }
-                    case GeomAbs_SurfaceType.GeomAbs_Cylinder:
+                    case SurfaceKind.Cylinder:
                     {
                         var cylinder = adaptor.Cylinder();
                         var ax = cylinder.Axis();
                         return new Axis(ax);
                     }
-                    case GeomAbs_SurfaceType.GeomAbs_Sphere:
+                    case SurfaceKind.Sphere:
                     {
                         var sphere = adaptor.Sphere();
                         var ax3 = sphere.Position();
                         var loc = ax3.Location();
                         var dir = ax3.Direction();
-                        var ax1 = new gp_Ax1(loc, dir);
+                        var ax1 = new Axis3D(loc, dir);
                         return new Axis(ax1);
                     }
-                    case GeomAbs_SurfaceType.GeomAbs_Torus:
+                    case SurfaceKind.Torus:
                     {
                         var torus = adaptor.Torus();
                         var ax = torus.Axis();
                         return new Axis(ax);
                     }
-                    case GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution:
+                    case SurfaceKind.SurfaceOfRevolution:
                     {
                         var ax = adaptor.AxeOfRevolution();
                         return new Axis(ax);
@@ -270,14 +272,14 @@ public partial class Face : Shape2D
                     var props = new BRepLProp_SLProps(surface, u, v, 2, Constants.Tolerance);
                     if (!props.IsCurvatureDefined())
                         continue;
-                    var point = new gp_Pnt();
-                    var normal = new gp_Vec();
+                    var point = new Point3D();
+                    var normal = new Vector3D();
                     outward.Normal(u, v, out point, out normal);
                     if (normal.Magnitude() < 1e-12)
                         continue;
                     // Curvatures signed toward the outward normal: negative bends away
                     var propsNormal = props.Normal();
-                    var normalDir = new gp_Dir(normal);
+                    var normalDir = new Direction3D(normal);
                     var sign = propsNormal.Dot(normalDir) > 0 ? 1.0 : -1.0;
                     var a = sign * props.MinCurvature();
                     var b = sign * props.MaxCurvature();
@@ -331,8 +333,8 @@ public partial class Face : Shape2D
             {
                 // A left-handed plane was returned
                 var ax2 = position.Ax2();
-                var ax3 = new gp_Ax3(ax2);
-                pln = new gp_Pln(ax3);
+                var ax3 = new CoordinateSystem(ax2);
+                pln = new Plane3D(ax3);
             }
             return new Plane(pln);
         }
@@ -462,7 +464,7 @@ public partial class Face : Shape2D
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && (points.Count != weights.Count || points[0].Count != weights[0].Count))
             throw new ArgumentException("A weight must be provided for each control point");
-        var poles = new NCollection_Array2<gp_Pnt>(1, points.Count, 1, points[0].Count);
+        var poles = new NCollection_Array2<Point3D>(1, points.Count, 1, points[0].Count);
         for (int i = 0; i < points.Count; i++)
             for (int j = 0; j < points[i].Count; j++)
             {
@@ -480,7 +482,7 @@ public partial class Face : Shape2D
         }
         else
             bezier = new Geom_BezierSurface(poles);
-        var maker = new BRepBuilderAPI_MakeFace(bezier, Precision.Confusion());
+        var maker = new BRepBuilderAPI_MakeFace(bezier, global::Kerf.Engine.Foundation.Precision.Confusion());
         return new Face(maker.Face());
     }
 
@@ -504,7 +506,7 @@ public partial class Face : Shape2D
             throw new ArgumentException("exterior contains empty edges");
         var surface = new BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
         foreach (var edge in edges)
-            surface.Add(edge.TopoEdge, GeomAbs_Shape.GeomAbs_C0);
+            surface.Add(edge.TopoEdge, Continuity.C0);
         var face = BuildFilling(surface, "Error building non-planar face with provided exterior");
         var points = surfacePoints?.ToList();
         if (points is { Count: > 0 })
@@ -539,7 +541,7 @@ public partial class Face : Shape2D
             surface.Build();
             return new Face(TopoDS.Face(surface.Shape()));
         }
-        catch (Standard_Failure e)
+        catch (global::Kerf.Engine.Foundation.FailureException e)
         {
             throw new InvalidOperationException(error, e);
         }
@@ -558,7 +560,7 @@ public partial class Face : Shape2D
         {
             return new Face(maker.Face());
         }
-        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
+        catch (global::Kerf.Engine.Foundation.FailureException e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires", e);
         }
@@ -571,7 +573,7 @@ public partial class Face : Shape2D
     public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Vector>> points, double tolerance = 1e-2,
                                                     (double, double, double)? smoothing = null, int minDeg = 1, int maxDeg = 3)
     {
-        var array = new NCollection_Array2<gp_Pnt>(1, points.Count, 1, points[0].Count);
+        var array = new NCollection_Array2<Point3D>(1, points.Count, 1, points[0].Count);
         for (int i = 0; i < points.Count; i++)
             for (int j = 0; j < points[i].Count; j++)
             {
@@ -581,14 +583,14 @@ public partial class Face : Shape2D
         GeomAPI_PointsToBSplineSurface builder;
         if (smoothing is var (w1, w2, w3))
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
-            builder = new GeomAPI_PointsToBSplineSurface(array, w1, w2, w3, Math.Max(maxDeg, 6), GeomAbs_Shape.GeomAbs_C2, tolerance);
+            builder = new GeomAPI_PointsToBSplineSurface(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
         else
-            builder = new GeomAPI_PointsToBSplineSurface(array, minDeg, maxDeg, GeomAbs_Shape.GeomAbs_C2, tolerance);
+            builder = new GeomAPI_PointsToBSplineSurface(array, minDeg, maxDeg, Continuity.C2, tolerance);
         {
             if (!builder.IsDone())
                 throw new InvalidOperationException("B-spline approximation failed");
             var surface = builder.Surface();
-            var maker = new BRepBuilderAPI_MakeFace(surface, Precision.Confusion());
+            var maker = new BRepBuilderAPI_MakeFace(surface, global::Kerf.Engine.Foundation.Precision.Confusion());
             return new Face(maker.Face());
         }
     }
@@ -606,17 +608,17 @@ public partial class Face : Shape2D
     public static Face MakeSurfacePatch(IEnumerable<(Edge Edge, Face Face, ContinuityLevel Continuity)>? edgeFaceConstraints = null,
                                         IEnumerable<Edge>? edgeConstraints = null, IEnumerable<Vector>? pointConstraints = null)
     {
-        static GeomAbs_Shape Continuity(ContinuityLevel c) => c switch
+        static Continuity Continuity(ContinuityLevel c) => c switch
         {
-            ContinuityLevel.C0 => GeomAbs_Shape.GeomAbs_C0,
-            ContinuityLevel.C1 => GeomAbs_Shape.GeomAbs_G1,
-            _ => GeomAbs_Shape.GeomAbs_G2,
+            ContinuityLevel.C0 => global::Kerf.Geometry.Continuity.C0,
+            ContinuityLevel.C1 => global::Kerf.Geometry.Continuity.G1,
+            _ => global::Kerf.Geometry.Continuity.G2,
         };
         var patch = new BRepOffsetAPI_MakeFilling();
         foreach (var (edge, face, continuity) in edgeFaceConstraints ?? [])
             patch.Add(edge.TopoEdge, face.TopoFace, Continuity(continuity));
         foreach (var edge in edgeConstraints ?? [])
-            patch.Add(edge.TopoEdge, GeomAbs_Shape.GeomAbs_C0);
+            patch.Add(edge.TopoEdge, global::Kerf.Geometry.Continuity.C0);
         foreach (var p in pointConstraints ?? [])
         {
             var pnt = p.ToGpPnt();
@@ -743,8 +745,8 @@ public partial class Face : Shape2D
     /// <summary>The unit normal at surface parameters (u, v), with the face's orientation.</summary>
     internal Vector NormalAtParameters(double u, double v)
     {
-        var pnt = new gp_Pnt();
-        var normal = new gp_Vec();
+        var pnt = new Point3D();
+        var normal = new Vector3D();
         var props = new BRepGProp_Face(TopoFace);
         props.Normal(u, v, out pnt, out normal);
         return new Vector(normal).Normalized();
@@ -783,7 +785,7 @@ public partial class Face : Shape2D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't find param on empty face");
-        var location = new TopLoc_Location();
+        var location = new Placement();
         var surface = BRep_Tool.Surface(TopoFace, out location)!;
         var trsf = location.Transformation();
         var inverse = trsf.Inverted();
@@ -842,9 +844,9 @@ public partial class Face : Shape2D
     private Location LocationAtParameters(double u, double v, Vector? xDir)
     {
         var surface = GeomAdaptor();
-        var pnt = new gp_Pnt();
-        var du = new gp_Vec();
-        var dv = new gp_Vec();
+        var pnt = new Point3D();
+        var du = new Vector3D();
+        var dv = new Vector3D();
         surface.D1(u, v, out pnt, out du, out dv);
         var origin = new Vector(pnt);
         var zDir = new Vector(du).Cross(new Vector(dv)).Normalized();
@@ -877,8 +879,8 @@ public partial class Face : Shape2D
     public bool IsCoplanar(Plane plane)
     {
         var (u0, _, v0, _) = UVBounds();
-        var pnt = new gp_Pnt();
-        var normal = new gp_Vec();
+        var pnt = new Point3D();
+        var normal = new Vector3D();
         var props = new BRepGProp_Face(TopoFace);
         props.Normal(u0, v0, out pnt, out normal);
         return plane.Contains(new Vector(pnt)) && 1 - Math.Abs(plane.ZDir.Dot(new Vector(normal))) < Constants.Tolerance;
@@ -901,7 +903,7 @@ public partial class Face : Shape2D
         {
             face = new Face(maker.Face());
         }
-        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
+        catch (global::Kerf.Engine.Foundation.FailureException e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires", e);
         }

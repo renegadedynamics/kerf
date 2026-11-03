@@ -6,6 +6,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
 using static Occt.Interface_ParamType;
 using static Occt.StepGeom_PreferredSurfaceCurveRepresentation;
 
@@ -45,7 +46,7 @@ internal class RWStepGeom_RWSeamCurve
 
         NCollection_HArray1<StepGeom_PcurveOrSurface> aAssociatedGeometry = null;
         StepGeom_PcurveOrSurface aAssociatedGeometryItem = new StepGeom_PcurveOrSurface();
-        Standard_Transient assgeomval = null;
+        Transient assgeomval = null;
         int nsub3 = 0;
         if (data.ReadSubList(num, 3, "associated_geometry", ach, ref nsub3))
         {

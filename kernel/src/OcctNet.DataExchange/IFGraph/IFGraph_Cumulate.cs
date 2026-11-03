@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -26,7 +28,7 @@ public class IFGraph_Cumulate : Interface_GraphContent
     /// <summary>
     /// adds an entity and its shared ones to the list
     /// </summary>
-    public void GetFromEntity(Standard_Transient? ent)
+    public void GetFromEntity(Transient? ent)
     {
         IFGraph_AllShared iter = new IFGraph_AllShared(new Interface_Graph(thegraph.Model()), ent); // OCCT: not evaluated (Begin), so GetFromIter adds nothing
         GetFromIter(iter);
@@ -115,7 +117,7 @@ public class IFGraph_Cumulate : Interface_GraphContent
     /// returns number of times an Entity has been counted (0 means forgotten, more than 1 means overlap, 1 is
     /// normal)
     /// </summary>
-    public int NbTimes(Standard_Transient? ent)
+    public int NbTimes(Transient? ent)
     {
         int num = thegraph.EntityNumber(ent);
         if (num == 0)

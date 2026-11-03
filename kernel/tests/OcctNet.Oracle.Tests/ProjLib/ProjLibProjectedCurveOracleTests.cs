@@ -1,7 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.GeomAbs_CurveType;
+using static Kerf.Geometry.CurveKind;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -36,7 +37,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
         {
             return;
         }
-        theO.Same(true, theN.IsInstance(theP.GetType().Name), $"{theWhat} type {theP.GetType().Name}");
+        theO.Same(true, theN.IsInstance(global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())), $"{theWhat} type {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())}");
         theO.Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " first");
         theO.Same(theN.LastParameter(), theP.LastParameter(), theWhat + " last");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic(), theWhat + " periodic");
@@ -71,7 +72,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     internal static (double First, double Last) Range(Geom_Curve theC, double theHalfRange)
     {
         double aF = theC.FirstParameter(), aL = theC.LastParameter();
-        if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             return (-theHalfRange, theHalfRange);
         }
@@ -79,7 +80,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     }
 
     // GeomAPI::To2d's body.
-    private static Geom2d_Curve? To2d(Geom_Curve C, in gp_Pln P)
+    private static Geom2d_Curve? To2d(Geom_Curve C, in Plane3D P)
     {
         Geom2d_Curve? result = null;
         GeomAdaptor_Curve HC = new(C);
@@ -88,7 +89,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
 
         ProjLib_ProjectedCurve Proj = new(HS, HC);
 
-        if (Proj.GetType() != GeomAbs_OffsetCurve && Proj.GetType() != GeomAbs_OtherCurve)
+        if (Proj.GetType() != OffsetCurve && Proj.GetType() != OtherCurve)
         {
             result = Geom2dAdaptor.MakeCurve(Proj);
         }
@@ -107,7 +108,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
             {
                 string aWhat = $"{CurveKinds[aKind]} {i}";
                 (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anO, aKind);
-                (N.gp_Ax3 aNAx, gp_Ax3 anAx) = GeomOracleInputs.Ax3s(anO);
+                (N.gp_Ax3 aNAx, CoordinateSystem anAx) = GeomOracleInputs.Ax3s(anO);
                 using (aNC)
                 using (aNAx)
                 using (var aNPln = new N.gp_Pln(aNAx))
@@ -115,7 +116,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
                     N.Geom2d_Curve? aNRes = null;
                     Geom2d_Curve? aPRes = null;
                     Exception? aNErr = Catch(() => aNRes = N.GeomAPI.To2d(aNC, aNPln));
-                    Exception? aPErr = Catch(() => aPRes = To2d(aPC, new gp_Pln(anAx)));
+                    Exception? aPErr = Catch(() => aPRes = To2d(aPC, new Plane3D(anAx)));
                     using (aNRes)
                     {
                         if (!SameOutcome(aNErr, aPErr, aWhat))
@@ -170,7 +171,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
             {
                 string aWhat = $"{CurveKinds[aKind]} {i}";
                 (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anO, aKind);
-                (N.gp_Ax3 aNAx, gp_Ax3 anAx) = GeomOracleInputs.Ax3s(anO);
+                (N.gp_Ax3 aNAx, CoordinateSystem anAx) = GeomOracleInputs.Ax3s(anO);
                 // An edge range inside the curve's range (periodic curves: any range up to a period).
                 (double aF0, double aL0) = Range(aPC, aRange);
                 if (aPC.IsPeriodic())

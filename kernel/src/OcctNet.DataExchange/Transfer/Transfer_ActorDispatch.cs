@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -62,11 +64,11 @@ public class Transfer_ActorDispatch : Transfer_ActorOfTransientProcess
     /// Specific action : it calls the method Transfer from CopyTool i.e. the general service Copy, then returns the
     /// Binder produced by the TransientProcess.
     /// </summary>
-    public override Transfer_Binder? Transfer(Standard_Transient? start, Transfer_TransientProcess? TP,
-                                              Message_ProgressRange theProgress = default)
+    public override Transfer_Binder? Transfer(Transient? start, Transfer_TransientProcess? TP,
+                                              ProgressRange theProgress = default)
     {
         // OCCT.NET fix (decision 1207): the copy of <start> is the copy tool's own, not the process's again
-        Standard_Transient? aFormer = thetool.myDispatched;
+        Transient? aFormer = thetool.myDispatched;
         thetool.myDispatched = start;
         try
         {

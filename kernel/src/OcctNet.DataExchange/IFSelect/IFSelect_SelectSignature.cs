@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -145,7 +147,7 @@ public class IFSelect_SelectSignature : IFSelect_SelectExtract
     /// Returns True for an Entity (model-&gt;Value(num)) of which the signature matches the text given as
     /// creation time May also work with a Counter from the Graph
     /// </summary>
-    public override bool SortInGraph(int rank, Standard_Transient? ent, Interface_Graph G)
+    public override bool SortInGraph(int rank, Transient? ent, Interface_Graph G)
     {
         bool res;
         string txt;
@@ -201,8 +203,8 @@ public class IFSelect_SelectSignature : IFSelect_SelectExtract
                     txt = thecounter.ComputedSign(ent, G);
                 }
 
-                int val = atoi(txt);
-                int lav = atoi(signtext);
+                int val = Atoi(txt);
+                int lav = Atoi(signtext);
                 switch (jmod)
                 {
                     case 2:
@@ -237,7 +239,7 @@ public class IFSelect_SelectSignature : IFSelect_SelectExtract
     /// <summary>
     /// Not called, defined only to remove a deferred method here
     /// </summary>
-    public override bool Sort(int rank, Standard_Transient? ent, Interface_InterfaceModel? model)
+    public override bool Sort(int rank, Transient? ent, Interface_InterfaceModel? model)
     {
         return true;
     }

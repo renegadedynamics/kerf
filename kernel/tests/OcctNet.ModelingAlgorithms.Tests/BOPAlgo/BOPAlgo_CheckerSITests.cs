@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using OcctNet.TestHarness;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -8,7 +9,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_CheckerSITests
 {
     internal static TopoDS_Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
-        new BRepPrimAPI_MakeBox(new gp_Pnt(x, y, z), dx, dy, dz).Shape();
+        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     internal static TopoDS_Compound Compound(params TopoDS_Shape[] theShapes)
     {
@@ -130,8 +131,8 @@ public class BOPAlgo_CheckerSITests
     public void Serial_equals_parallel()
     {
         TopoDS_Shape aC = Compound(Box(0, 0, 0, 10, 10, 10), Box(5, 5, 5, 10, 10, 10),
-                                   new BRepPrimAPI_MakeSphere(new gp_Pnt(10, 10, 10), 4).Shape(),
-                                   new BRepPrimAPI_MakeTorus(new gp_Ax2(new gp_Pnt(3, 3, 3), new gp_Dir(0, 0, 1)), 4, 1).Shape());
+                                   new BRepPrimAPI_MakeSphere(new Point3D(10, 10, 10), 4).Shape(),
+                                   new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(3, 3, 3), new Direction3D(0, 0, 1)), 4, 1).Shape());
         string aSerial = DeterminismHarness.AssertSerialEqualsParallel(() => PaveFillerDump.Write(Check(aC, 9, true).PDS()!), 2);
         Assert.Equal(PaveFillerDump.Write(Check(aC).PDS()!), aSerial);
     }

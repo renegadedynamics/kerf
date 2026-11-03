@@ -3,7 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
-using static Occt.Message_Gravity;
+using static Kerf.Engine.Foundation.Gravity;
 
 namespace OcctNet.Foundation.Tests;
 
@@ -15,11 +15,11 @@ public sealed class DefaultMessengerCollection
 }
 
 /// <summary>Custom message printer that collects messages into a string builder.</summary>
-internal sealed class TestMessagePrinter(StringBuilder theStream) : Message_Printer
+internal sealed class TestMessagePrinter(StringBuilder theStream) : global::Kerf.Engine.Foundation.Printer
 {
-    protected override void send(string theString, Message_Gravity theGravity)
+    protected override void SendCore(string theString, global::Kerf.Engine.Foundation.Gravity theGravity)
     {
-        if (theGravity >= Message_Info)
+        if (theGravity >= Info)
         {
             theStream.Append(theString).Append('\n');
         }
@@ -27,16 +27,16 @@ internal sealed class TestMessagePrinter(StringBuilder theStream) : Message_Prin
 }
 
 /// <summary>A printer recording each message with its gravity, whatever the gravity.</summary>
-internal sealed class RecordingPrinter : Message_Printer
+internal sealed class RecordingPrinter : global::Kerf.Engine.Foundation.Printer
 {
-    public readonly List<(string Text, Message_Gravity Gravity)> Messages = [];
+    public readonly List<(string Text, global::Kerf.Engine.Foundation.Gravity Gravity)> Messages = [];
 
     public RecordingPrinter()
     {
-        SetTraceLevel(Message_Trace);
+        SetTraceLevel(Trace);
     }
 
-    protected override void send(string theString, Message_Gravity theGravity)
+    protected override void SendCore(string theString, global::Kerf.Engine.Foundation.Gravity theGravity)
     {
         lock (Messages)
         {
@@ -57,10 +57,10 @@ public class Message_Messenger_Test
 
         StringBuilder anOutput = new();
         TestMessagePrinter aPrinter = new(anOutput);
-        Message_Messenger aMsgMgr = Message.DefaultMessenger();
+        global::Kerf.Engine.Foundation.Messenger aMsgMgr = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
 
         // Save original printers
-        NCollection_Sequence<Message_Printer> anOriginalPrinters = new();
+        NCollection_Sequence<global::Kerf.Engine.Foundation.Printer> anOriginalPrinters = new();
         anOriginalPrinters.Append(aMsgMgr.ChangePrinters());
 
         // Replace with our test printer
@@ -69,7 +69,7 @@ public class Message_Messenger_Test
 
         // Scope block to test output of message on destruction of a stream buffer
         {
-            using Message_Messenger.StreamBuffer aSender = Message.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aSender = global::Kerf.Engine.Foundation.Message.SendInfo();
 
             // Check that messages output to sender and directly to messenger do not intermix
             aSender.Append("Sender message 1: start ...");
@@ -78,13 +78,13 @@ public class Message_Messenger_Test
             aSender.Flush(true);
 
             // Check that empty stream buffer does not produce output on destruction
-            Message.SendInfo().Dispose();
+            global::Kerf.Engine.Foundation.Message.SendInfo().Dispose();
 
             // Additional message to check that they go in expected order
             aMsgMgr.Send("Direct message 2");
 
             // Check that empty stream buffer does produce empty line if explicit flush is requested
-            using Message_Messenger.StreamBuffer anEmptySender = Message.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer anEmptySender = global::Kerf.Engine.Foundation.Message.SendInfo();
             anEmptySender.Flush(true);
 
             // Last message should be sent on destruction of a sender
@@ -122,15 +122,15 @@ public class Message_Messenger_Test
         // Test basic stream buffer functionality
         StringBuilder anOutput = new();
         TestMessagePrinter aPrinter = new(anOutput);
-        Message_Messenger aMsgMgr = Message.DefaultMessenger();
+        global::Kerf.Engine.Foundation.Messenger aMsgMgr = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
 
-        NCollection_Sequence<Message_Printer> anOriginalPrinters = new();
+        NCollection_Sequence<global::Kerf.Engine.Foundation.Printer> anOriginalPrinters = new();
         anOriginalPrinters.Append(aMsgMgr.ChangePrinters());
 
         aMsgMgr.ChangePrinters().Clear();
         aMsgMgr.AddPrinter(aPrinter);
         {
-            using Message_Messenger.StreamBuffer aBuffer = Message.SendInfo();
+            using global::Kerf.Engine.Foundation.Messenger.StreamBuffer aBuffer = global::Kerf.Engine.Foundation.Message.SendInfo();
             aBuffer.Append("Test message").Append('\n');
         }
 
@@ -149,7 +149,7 @@ public class Message_MessengerAdditionsTest
     [Fact]
     public void DefaultMessenger_SendsNothing()
     {
-        Message_Messenger aDefault = Message.DefaultMessenger();
+        global::Kerf.Engine.Foundation.Messenger aDefault = global::Kerf.Engine.Foundation.Message.DefaultMessenger();
         Assert.Equal(0, aDefault.Printers().Length());
 
         // Nothing reaches the console: capture it while sending every kind of message
@@ -159,15 +159,15 @@ public class Message_MessengerAdditionsTest
         {
             Console.SetOut(aCapture);
             Console.SetError(aCapture);
-            Message.SendFail("fail");
-            Message.SendAlarm("alarm");
-            Message.SendWarning("warning");
-            Message.SendInfo("info");
-            Message.SendTrace("trace");
-            Message.Send("text", Message_Fail);
-            Message.SendFail().Append("buffer ").Append(1).Append(2.5).Flush();
-            Message.SendWarning().Endl();
-            new Message_Algorithm().SendMessages(Message_Trace);
+            global::Kerf.Engine.Foundation.Message.SendFail("fail");
+            global::Kerf.Engine.Foundation.Message.SendAlarm("alarm");
+            global::Kerf.Engine.Foundation.Message.SendWarning("warning");
+            global::Kerf.Engine.Foundation.Message.SendInfo("info");
+            global::Kerf.Engine.Foundation.Message.SendTrace("trace");
+            global::Kerf.Engine.Foundation.Message.Send("text", Fail);
+            global::Kerf.Engine.Foundation.Message.SendFail().Append("buffer ").Append(1).Append(2.5).Flush();
+            global::Kerf.Engine.Foundation.Message.SendWarning().Endl();
+            new global::Kerf.Engine.Foundation.Algorithm().SendMessages(Trace);
         }
         finally
         {
@@ -181,26 +181,26 @@ public class Message_MessengerAdditionsTest
     public void SetDefaultMessenger_InstallsAndRestores()
     {
         RecordingPrinter aPrinter = new();
-        Message.SetDefaultMessenger(new Message_Messenger(aPrinter));
+        global::Kerf.Engine.Foundation.Message.SetDefaultMessenger(new global::Kerf.Engine.Foundation.Messenger(aPrinter));
         try
         {
-            Message.SendWarning("w");
-            Message.SendFail().Append("f ").Append(42).Append(' ').Append(0.1).Flush();
-            Message.Send(Message_Info).Append(true).Dispose();
-            Assert.Equal([("w", Message_Warning), ("f 42 0.1", Message_Fail), ("1", Message_Info)], aPrinter.Messages);
+            global::Kerf.Engine.Foundation.Message.SendWarning("w");
+            global::Kerf.Engine.Foundation.Message.SendFail().Append("f ").Append(42).Append(' ').Append(0.1).Flush();
+            global::Kerf.Engine.Foundation.Message.Send(Info).Append(true).Dispose();
+            Assert.Equal([("w", Warning), ("f 42 0.1", Fail), ("1", Info)], aPrinter.Messages);
         }
         finally
         {
-            Message.SetDefaultMessenger(null);
+            global::Kerf.Engine.Foundation.Message.SetDefaultMessenger(null);
         }
-        Assert.Equal(0, Message.DefaultMessenger().Printers().Length());
+        Assert.Equal(0, global::Kerf.Engine.Foundation.Message.DefaultMessenger().Printers().Length());
     }
 
     [Fact]
     public void Messenger_PrinterList()
     {
         RecordingPrinter aFirst = new(), aSecond = new();
-        Message_Messenger aMessenger = new(aFirst);
+        global::Kerf.Engine.Foundation.Messenger aMessenger = new(aFirst);
         Assert.False(aMessenger.AddPrinter(aFirst));
         Assert.True(aMessenger.AddPrinter(aSecond));
         aMessenger.SendInfo("both");
@@ -209,11 +209,11 @@ public class Message_MessengerAdditionsTest
         aMessenger.SendInfo("second");
         Assert.Equal(1, aMessenger.RemovePrinters(typeof(RecordingPrinter)));
         Assert.Equal(0, aMessenger.Printers().Length());
-        Assert.Equal([("both", Message_Info)], aFirst.Messages);
-        Assert.Equal([("both", Message_Info), ("second", Message_Info)], aSecond.Messages);
+        Assert.Equal([("both", Info)], aFirst.Messages);
+        Assert.Equal([("both", Info), ("second", Info)], aSecond.Messages);
 
         // Printers() is a copy
-        Message_Messenger anOther = new(aFirst);
+        global::Kerf.Engine.Foundation.Messenger anOther = new(aFirst);
         anOther.Printers().Clear();
         Assert.Equal(1, anOther.Printers().Length());
     }
@@ -222,13 +222,13 @@ public class Message_MessengerAdditionsTest
     public void Printer_TraceLevelFilters()
     {
         StringBuilder anOutput = new();
-        Message_PrinterOStream aPrinter = new(new StringWriter(anOutput), Message_Warning);
-        Message_Messenger aMessenger = new(aPrinter);
+        global::Kerf.Engine.Foundation.PrinterOStream aPrinter = new(new StringWriter(anOutput), Warning);
+        global::Kerf.Engine.Foundation.Messenger aMessenger = new(aPrinter);
         aMessenger.SendInfo("info");
         aMessenger.SendWarning("warning");
         aMessenger.SendFail("fail");
-        aMessenger.Send(new StringBuilder("stream"), Message_Alarm);
-        aMessenger.Send(aMessenger, Message_Fail);
+        aMessenger.Send(new StringBuilder("stream"), Alarm);
+        aMessenger.Send(aMessenger, Fail);
         aPrinter.Close();
         string[] aLines = anOutput.ToString().Split('\n');
         Assert.Equal("warning", aLines[0]);
@@ -236,15 +236,15 @@ public class Message_MessengerAdditionsTest
         Assert.Equal("stream", aLines[2]);
         Assert.StartsWith("Message_Messenger: 0x", aLines[3]);
         Assert.Equal("", aLines[4]);
-        Assert.Equal(Message_Warning, aPrinter.GetTraceLevel());
+        Assert.Equal(Warning, aPrinter.GetTraceLevel());
         Assert.Null(aPrinter.GetStream());
     }
 
     [Fact]
     public void FillTime()
     {
-        Assert.Equal("05h:12m:26.33s", Message.FillTime(5, 12, 26.3345));
-        Assert.Equal("06m:34.50s", Message.FillTime(0, 6, 34.496));
-        Assert.Equal("4.50s", Message.FillTime(0, 0, 4.5));
+        Assert.Equal("05h:12m:26.33s", global::Kerf.Engine.Foundation.Message.FillTime(5, 12, 26.3345));
+        Assert.Equal("06m:34.50s", global::Kerf.Engine.Foundation.Message.FillTime(0, 6, 34.496));
+        Assert.Equal("4.50s", global::Kerf.Engine.Foundation.Message.FillTime(0, 0, 4.5));
     }
 }

@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -13,11 +17,11 @@ namespace Occt;
 /// A working object (decision 21). It keeps the caller's knot and pole arrays as OCCT keeps the handles, and reads the
 /// poles as the energy that owns it moves them.
 /// </remarks>
-public abstract class FairCurve_DistributionOfEnergy : math_FunctionSet
+public abstract class FairCurve_DistributionOfEnergy : FunctionSet
 {
     protected int MyBSplOrder;
     protected NCollection_HArray1<double> MyFlatKnots;
-    protected NCollection_HArray1<gp_Pnt2d> MyPoles;
+    protected NCollection_HArray1<Point2D> MyPoles;
     protected int MyDerivativeOrder;
     protected int MyNbVar;
     protected int MyNbEqua;
@@ -37,7 +41,7 @@ public abstract class FairCurve_DistributionOfEnergy : math_FunctionSet
 
     protected FairCurve_DistributionOfEnergy(int BSplOrder,
                                              NCollection_HArray1<double> FlatKnots,
-                                             NCollection_HArray1<gp_Pnt2d> Poles,
+                                             NCollection_HArray1<Point2D> Poles,
                                              int DerivativeOrder,
                                              int NbValAux = 0)
     {

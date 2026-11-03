@@ -2,11 +2,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>Thrown when the arguments of a construction are parallel and the solution is undefined.</summary>
-[OcctName("Geom2dGcc_IsParallel")]
-public class Geom2dGcc_IsParallel : Standard_DomainError
+public class Geom2dGcc_IsParallel : DomainErrorException
 {
     public Geom2dGcc_IsParallel() { }
 

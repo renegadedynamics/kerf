@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.TopOpeBRepDS_Config;
 
 namespace Occt;
@@ -828,7 +829,7 @@ public sealed class TopOpeBRepDS_DataStructure
 
         if (r == 0)
         {
-            throw new Standard_ProgramError("FacesFiller::Insert SD 2");
+            throw new ProgramErrorException("FacesFiller::Insert SD 2");
         }
 
         TopoDS_Shape Sr = Shape(r);
@@ -1011,12 +1012,12 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The point <paramref name="I"/>.</summary>
-    /// <exception cref="Standard_ProgramError"><paramref name="I"/> is not between 1 and <see cref="NbPoints"/>.</exception>
+    /// <exception cref="ProgramErrorException"><paramref name="I"/> is not between 1 and <see cref="NbPoints"/>.</exception>
     public TopOpeBRepDS_Point Point(int I)
     {
         if (I < 1 || I > myNbPoints)
         {
-            throw new Standard_ProgramError("TopOpeBRepDS_DataStructure::Point");
+            throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
         if (myPoints.IsBound(I))
@@ -1030,12 +1031,12 @@ public sealed class TopOpeBRepDS_DataStructure
     }
 
     /// <summary>The point <paramref name="I"/> for writing.</summary>
-    /// <exception cref="Standard_ProgramError"><paramref name="I"/> is not between 1 and <see cref="NbPoints"/>.</exception>
+    /// <exception cref="ProgramErrorException"><paramref name="I"/> is not between 1 and <see cref="NbPoints"/>.</exception>
     internal ref TopOpeBRepDS_Point ChangePoint(int I)
     {
         if (I < 1 || I > myNbPoints)
         {
-            throw new Standard_ProgramError("TopOpeBRepDS_DataStructure::Point");
+            throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
         if (myPoints.IsBound(I))

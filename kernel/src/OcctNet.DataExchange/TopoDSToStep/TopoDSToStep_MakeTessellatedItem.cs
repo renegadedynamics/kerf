@@ -5,6 +5,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace Occt;
@@ -18,43 +23,43 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
     private StepVisual_TessellatedItem theTessellatedItem;
 
     // Get parameters from a TriangulatedFace or TriangulatedSurfaceSet Poly_Triangulation
-    private static void InitTriangulation(Poly_Triangulation theMesh, TCollection_HAsciiString theName, StepVisual_CoordinatesList theCoordinates,
-                                          NCollection_HArray1<gp_XYZ> thePoints, NCollection_HArray2<double> theNormals,
+    private static void InitTriangulation(Triangulation theMesh, TCollection_HAsciiString theName, StepVisual_CoordinatesList theCoordinates,
+                                          NCollection_HArray1<Xyz> thePoints, NCollection_HArray2<double> theNormals,
                                           NCollection_HArray1<int> theIndices, NCollection_HArray2<int> theTrias,
                                           in StepData_Factors theLocalFactors)
     {
         double aFactor = theLocalFactors.LengthFactor();
-        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NbNodes(); ++aNodeIndex)
+        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NodeCount; ++aNodeIndex)
         {
             thePoints.SetValue(aNodeIndex, theMesh.Node(aNodeIndex).XYZ() / aFactor);
         }
 
         theCoordinates.Init(theName, thePoints);
 
-        if (!theMesh.HasNormals())
+        if (!theMesh.HasNormals)
         {
             // OCCT.NET: OCCT computes the normals into the face's own triangulation; the port into a copy, so the
             // shape written never changes (decision 1252)
-            theMesh = new Poly_Triangulation(theMesh);
-            Poly.ComputeNormals(theMesh);
+            theMesh = new Triangulation(theMesh);
+            global::Kerf.Engine.Meshing.Poly.ComputeNormals(theMesh);
         }
 
-        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NbNodes(); ++aNodeIndex)
+        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NodeCount; ++aNodeIndex)
         {
-            gp_Dir aNorm = theMesh.Normal(aNodeIndex);
+            Direction3D aNorm = theMesh.Normal(aNodeIndex);
             theNormals.SetValue(aNodeIndex, 1, aNorm.X());
             theNormals.SetValue(aNodeIndex, 2, aNorm.Y());
             theNormals.SetValue(aNodeIndex, 3, aNorm.Z());
         }
 
-        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NbNodes(); ++aNodeIndex)
+        for (int aNodeIndex = 1; aNodeIndex <= theMesh.NodeCount; ++aNodeIndex)
         {
             theIndices.SetValue(aNodeIndex, aNodeIndex);
         }
 
-        for (int aTriangleIndex = 1; aTriangleIndex <= theMesh.NbTriangles(); ++aTriangleIndex)
+        for (int aTriangleIndex = 1; aTriangleIndex <= theMesh.TriangleCount; ++aTriangleIndex)
         {
-            Poly_Triangle aT = theMesh.Triangle(aTriangleIndex);
+            Triangle1 aT = theMesh.Triangle(aTriangleIndex);
             theTrias.SetValue(aTriangleIndex, 1, aT.Value(1));
             theTrias.SetValue(aTriangleIndex, 2, aT.Value(2));
             theTrias.SetValue(aTriangleIndex, 3, aT.Value(3));
@@ -67,20 +72,20 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
 
     public TopoDSToStep_MakeTessellatedItem(in TopoDS_Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
                                             bool theToPreferSurfaceSet, in StepData_Factors theLocalFactors,
-                                            Message_ProgressRange theProgress = default)
+                                            ProgressRange theProgress = default)
     {
         Init(theFace, theTool, theFP, theToPreferSurfaceSet, theLocalFactors, theProgress);
     }
 
     public TopoDSToStep_MakeTessellatedItem(in TopoDS_Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP,
-                                            in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                                            in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         Init(theShell, theTool, theFP, theLocalFactors, theProgress);
     }
 
     /// <summary>Creates a triangulated_face or a triangulated_surface_set from a face.</summary>
     public void Init(in TopoDS_Face theFace, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, bool theToPreferSurfaceSet,
-                     in StepData_Factors theLocalFactors, Message_ProgressRange theProgress = default)
+                     in StepData_Factors theLocalFactors, ProgressRange theProgress = default)
     {
         done = false;
         if (theProgress.UserBreak())
@@ -88,7 +93,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
             return;
         }
 
-        Poly_Triangulation aMesh = BRep_Tool.Triangulation(theFace, out TopLoc_Location aLoc);
+        Triangulation aMesh = BRep_Tool.Triangulation(theFace, out Placement aLoc);
         if (aMesh is null)
         {
             var anErrShape = new TransferBRep_ShapeMapper(theFace);
@@ -98,10 +103,10 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
 
         var aName = new TCollection_HAsciiString("");
         var aCoordinates = new StepVisual_CoordinatesList();
-        var aPoints = new NCollection_HArray1<gp_XYZ>(1, aMesh.NbNodes());
-        var aNormals = new NCollection_HArray2<double>(1, aMesh.NbNodes(), 1, 3);
-        var anIndices = new NCollection_HArray1<int>(1, aMesh.NbNodes());
-        var aTrias = new NCollection_HArray2<int>(1, aMesh.NbTriangles(), 1, 3);
+        var aPoints = new NCollection_HArray1<Xyz>(1, aMesh.NodeCount);
+        var aNormals = new NCollection_HArray2<double>(1, aMesh.NodeCount, 1, 3);
+        var anIndices = new NCollection_HArray1<int>(1, aMesh.NodeCount);
+        var aTrias = new NCollection_HArray2<int>(1, aMesh.TriangleCount, 1, 3);
         InitTriangulation(aMesh, aName, aCoordinates, aPoints, aNormals, anIndices, aTrias, theLocalFactors);
 
         bool aHasGeomLink = theTool.IsBound(theFace);
@@ -111,19 +116,19 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
             StepShape_TopologicalRepresentationItem aTopoItem = theTool.Find(theFace);
             aGeomLink.SetValue(aTopoItem);
             var aTriaFace = new StepVisual_TriangulatedFace();
-            aTriaFace.Init(aName, aCoordinates, aMesh.NbNodes(), aNormals, aHasGeomLink, aGeomLink, anIndices, aTrias);
+            aTriaFace.Init(aName, aCoordinates, aMesh.NodeCount, aNormals, aHasGeomLink, aGeomLink, anIndices, aTrias);
             theTessellatedItem = aTriaFace;
         }
         else if (theToPreferSurfaceSet)
         {
             var aTriaSurfaceSet = new StepVisual_TriangulatedSurfaceSet();
-            aTriaSurfaceSet.Init(aName, aCoordinates, aMesh.NbNodes(), aNormals, anIndices, aTrias);
+            aTriaSurfaceSet.Init(aName, aCoordinates, aMesh.NodeCount, aNormals, anIndices, aTrias);
             theTessellatedItem = aTriaSurfaceSet;
         }
         else
         {
             var aTriaFace = new StepVisual_TriangulatedFace();
-            aTriaFace.Init(aName, aCoordinates, aMesh.NbNodes(), aNormals, aHasGeomLink, aGeomLink, anIndices, aTrias);
+            aTriaFace.Init(aName, aCoordinates, aMesh.NodeCount, aNormals, aHasGeomLink, aGeomLink, anIndices, aTrias);
             theTessellatedItem = aTriaFace;
         }
 
@@ -132,7 +137,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
 
     /// <summary>Creates a tessellated_shell from a shell.</summary>
     public void Init(in TopoDS_Shell theShell, TopoDSToStep_Tool theTool, Transfer_FinderProcess theFP, in StepData_Factors theLocalFactors,
-                     Message_ProgressRange theProgress = default)
+                     ProgressRange theProgress = default)
     {
         done = false;
         theTessellatedItem = null;
@@ -148,7 +153,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
         {
         }
 
-        using var aPS = new Message_ProgressScope(theProgress, null, aNbFaces);
+        using var aPS = new ProgressScope(theProgress, null, aNbFaces);
 
         var aTessFaces = new NCollection_Sequence<StepVisual_TessellatedStructuredItem>();
         for (anExp.Init(theShell, TopAbs_FACE); anExp.More() && aPS.More(); anExp.Next(), aPS.Next())
@@ -190,7 +195,7 @@ public sealed class TopoDSToStep_MakeTessellatedItem : TopoDSToStep_Root
         done = true;
     }
 
-    /// <exception cref="StdFail_NotDone">The mapping wasn't done.</exception>
+    /// <exception cref="NotDoneException">The mapping wasn't done.</exception>
     public StepVisual_TessellatedItem Value()
     {
         StdFail_NotDone_Raise_if(!done, "TopoDSToStep_MakeTessellatedItem::Value() - no result");

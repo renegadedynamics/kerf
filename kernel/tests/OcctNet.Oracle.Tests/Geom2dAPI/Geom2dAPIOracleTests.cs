@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry;
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -42,7 +44,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     using var aNP = new N.gp_Pnt2d(Px, Py);
                     using var aND = new N.gp_Dir2d(Dx, Dy);
                     aN = new N.Geom2d_Line(aNP, aND);
-                    aP = new Geom2d_Line(new gp_Pnt2d(Px, Py), new gp_Dir2d(Dx, Dy));
+                    aP = new Geom2d_Line(new Point2D(Px, Py), new Direction2D(Dx, Dy));
                     break;
                 }
                 case 1:
@@ -51,7 +53,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     using var aNP = new N.gp_Pnt2d(Px, Py);
                     using var aND = new N.gp_Dir2d(Dx, Dy);
                     using var aNA = new N.gp_Ax2d(aNP, aND);
-                    gp_Ax2d anA = new(new gp_Pnt2d(Px, Py), new gp_Dir2d(Dx, Dy));
+                    Axis2D anA = new(new Point2D(Px, Py), new Direction2D(Dx, Dy));
                     if (Kind == 1)
                     {
                         aN = new N.Geom2d_Circle(aNA, R1, Sense);
@@ -95,7 +97,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         {
             thePort();
         }
-        catch (Standard_Failure anE)
+        catch (global::Kerf.Engine.Foundation.FailureException anE)
         {
             aPortError = anE;
         }
@@ -106,7 +108,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
 
     private static (double X, double Y) RawDir(Oracle theO)
     {
-        gp_XY aV = GeomOracleInputs.RawDir2d(theO);
+        Xy aV = GeomOracleInputs.RawDir2d(theO);
         return (aV.X(), aV.Y());
     }
 
@@ -215,11 +217,11 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         }
 
         double aF = thePort.FirstParameter(), aL = thePort.LastParameter();
-        if (Precision.IsInfinite(aF) || Precision.IsInfinite(aL))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             (aF, aL) = (-10, 10);
         }
-        thePort.D1(theO.Real(aF, aL), out gp_Pnt2d aP, out gp_Vec2d aV);
+        thePort.D1(theO.Real(aF, aL), out Point2D aP, out Vector2D aV);
         bool isTangent = aMode >= 7 && aV.Magnitude() > 1e-6;
         double aDx, aDy;
         if (isTangent)
@@ -375,10 +377,10 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             using (aNC)
             {
                 double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
-                bool aWithRange = anOracle.Bool() || Precision.IsInfinite(aF) || Precision.IsInfinite(aL);
+                bool aWithRange = anOracle.Bool() || global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
                 if (aWithRange)
                 {
-                    (aF, aL) = Precision.IsInfinite(aF) || Precision.IsInfinite(aL)
+                    (aF, aL) = global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL)
                         ? (anOracle.Real(-20, 0), anOracle.Real(0.5, 20))
                         : (anOracle.Real(aF, aL), anOracle.Real(aF, aL));
                     if (aF > aL)
@@ -388,11 +390,11 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                 }
                 for (int k = 0; k < 3; k++)
                 {
-                    gp_Pnt2d aP = aPC.Value(anOracle.Real(aF, aL));
+                    Point2D aP = aPC.Value(anOracle.Real(aF, aL));
                     if (k > 0)
                     {
                         double aScale = k == 1 ? anOracle.Real(1e-3, 1) : anOracle.Real(1, 30);
-                        aP = new gp_Pnt2d(aP.X() + aScale * anOracle.Real(-1, 1), aP.Y() + aScale * anOracle.Real(-1, 1));
+                        aP = new Point2D(aP.X() + aScale * anOracle.Real(-1, 1), aP.Y() + aScale * anOracle.Real(-1, 1));
                     }
                     string aW = $"#{c} {aS.Name} [{aF:R}, {aL:R}] point {k}";
                     using N.gp_Pnt2d aNP = Oracle.ToNative(aP);

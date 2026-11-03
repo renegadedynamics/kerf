@@ -4,6 +4,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -42,7 +46,7 @@ public class Geom2dAPI_InterCurveCurve
     }
 
     /// <summary>Computes the intersections between <paramref name="C1"/> and <paramref name="C2"/>.</summary>
-    /// <exception cref="Standard_NullObject">A curve is null.</exception>
+    /// <exception cref="NullObjectException">A curve is null.</exception>
     public void Init(Geom2d_Curve C1, Geom2d_Curve C2, double Tol = 1.0e-6)
     {
         Standard_NullObject_Raise_if(C1 is null, "Geom2dAPI_InterCurveCurve::Init - C1 is null");
@@ -57,7 +61,7 @@ public class Geom2dAPI_InterCurveCurve
     }
 
     /// <summary>Computes the self-intersections of <paramref name="C1"/>.</summary>
-    /// <exception cref="Standard_NullObject">The curve is null.</exception>
+    /// <exception cref="NullObjectException">The curve is null.</exception>
     public void Init(Geom2d_Curve C1, double Tol = 1.0e-6)
     {
         Standard_NullObject_Raise_if(C1 is null, "Geom2dAPI_InterCurveCurve::Init - C1 is null");
@@ -83,8 +87,8 @@ public class Geom2dAPI_InterCurveCurve
     }
 
     /// <summary>The intersection point of index <paramref name="Index"/>.</summary>
-    /// <exception cref="Standard_OutOfRange"><paramref name="Index"/> is not in [1, NbPoints].</exception>
-    public gp_Pnt2d Point(int Index)
+    /// <exception cref="OutOfRangeException"><paramref name="Index"/> is not in [1, NbPoints].</exception>
+    public Point2D Point(int Index)
     {
         Standard_OutOfRange_Raise_if(Index < 1 || Index > NbPoints(), "Geom2dAPI_InterCurveCurve::Point");
 
@@ -112,8 +116,8 @@ public class Geom2dAPI_InterCurveCurve
     /// If the segment is opposite, the second portion runs from the parameter of the segment's last point to that
     /// of its first point.
     /// </remarks>
-    /// <exception cref="Standard_OutOfRange"><paramref name="theIndex"/> is not in [1, NbSegments].</exception>
-    /// <exception cref="Standard_NullObject">The algorithm was not initialised.</exception>
+    /// <exception cref="OutOfRangeException"><paramref name="theIndex"/> is not in [1, NbSegments].</exception>
+    /// <exception cref="NullObjectException">The algorithm was not initialised.</exception>
     public void Segment(int theIndex, out Geom2d_Curve theCurve1, out Geom2d_Curve theCurve2)
     {
         Standard_OutOfRange_Raise_if(theIndex < 1 || theIndex > NbSegments(), "Geom2dAPI_InterCurveCurve::Segment");

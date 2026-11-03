@@ -3,15 +3,19 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Meshing;
+
+using Kerf.Topology;
+
 namespace Occt;
 
 /// <summary>The representation of an edge by two 2D polygons in the parametric space of a closed surface.</summary>
 public class BRep_PolygonOnClosedSurface : BRep_PolygonOnSurface
 {
-    private Poly_Polygon2D? myPolygon2;
+    private Polygon2D? myPolygon2;
 
     /// <summary>The polygons <paramref name="P1"/> and <paramref name="P2"/> on <paramref name="S"/> (all frozen here).</summary>
-    public BRep_PolygonOnClosedSurface(Poly_Polygon2D? P1, Poly_Polygon2D? P2, Geom_Surface? S, in TopLoc_Location L)
+    public BRep_PolygonOnClosedSurface(Polygon2D? P1, Polygon2D? P2, Geom_Surface? S, in Placement L)
         : base(P1, S, L)
     {
         P2?.Freeze(); // OCCT.NET: attached meshes are frozen
@@ -21,9 +25,9 @@ public class BRep_PolygonOnClosedSurface : BRep_PolygonOnSurface
     /// <summary>True.</summary>
     public override bool IsPolygonOnClosedSurface() => true;
 
-    public override Poly_Polygon2D? Polygon2() => myPolygon2;
+    public override Polygon2D? Polygon2() => myPolygon2;
 
-    internal override void Polygon2(Poly_Polygon2D? P)
+    internal override void Polygon2(Polygon2D? P)
     {
         CheckMutable();
         P?.Freeze(); // OCCT.NET: attached meshes are frozen

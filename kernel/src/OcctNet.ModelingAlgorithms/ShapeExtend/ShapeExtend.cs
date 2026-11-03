@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.ShapeExtend_Status;
 
 namespace Occt;
@@ -15,13 +16,13 @@ public static class ShapeExtend
 
     /// <summary>
     /// Inits using of ShapeExtend: loads the messages output by Shape Healing's algorithms (SHMessage's texts) into
-    /// <see cref="Message_MsgFile"/>, once per process, unless they are there already.
+    /// <see cref="MsgFile"/>, once per process, unless they are there already.
     /// </summary>
     /// <remarks>
     /// OCCT first tries the message file that the environment variable CSF_SHMessage names; the port loads only the
     /// text compiled in, OCCT's SHAPE.us (decision 975). Process-wide state, as OCCT's, behind a lock.
     /// </remarks>
-    /// <exception cref="Standard_ProgramError">The messages can't be loaded (never with the compiled-in text).</exception>
+    /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
     public static void Init()
     {
         lock (initLock)
@@ -34,13 +35,13 @@ public static class ShapeExtend
             init = true;
 
             // load Message File for Shape Healing
-            if (!Message_MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
+            if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
             {
                 // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_SHMessage", "SHAPE") left out (decision 975)
-                Message_MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
-                if (!Message_MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
+                MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+                if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
                 {
-                    throw new Standard_ProgramError(
+                    throw new ProgramErrorException(
                         "Critical Error - message resources for ShapeExtend are invalid or undefined!");
                 }
             }

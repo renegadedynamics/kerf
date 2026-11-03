@@ -3,6 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Occt.IMeshData_Status;
 
 namespace Occt;
@@ -20,7 +24,7 @@ namespace Occt;
 /// <para>
 /// The edge loop is serial, as OCCT forces it ("data races on edges sharing the same TShape"). The face loop runs in
 /// parallel when the parameters ask for it: each body updates only its face's triangulation, and shares one
-/// immutable <see cref="Poly_TriangulationParameters"/>, as OCCT does.
+/// immutable <see cref="TriangulationParameters"/>, as OCCT does.
 /// </para>
 /// </remarks>
 public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
@@ -33,7 +37,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
     /// <summary>Post-processes the model; false without a model.</summary>
     protected override bool performInternal(IMeshData_Model? theModel,
                                             in IMeshTools_Parameters theParameters,
-                                            Message_ProgressRange theRange)
+                                            ProgressRange theRange)
     {
         _ = theRange;
         if (theModel is null)
@@ -42,14 +46,14 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
         }
 
         // TODO: Force single threaded solution due to data races on edges sharing the same TShape
-        OSD_Parallel.For(0,
+        OsdParallel.For(0,
                          theModel.EdgesNb(),
                          new PolygonCommitter(theModel).Process,
                          true /*!theParameters.InParallel*/);
 
         // Estimate deflection here due to BRepLib::EstimateDeflection requires
         // existence of both Poly_Triangulation and Poly_PolygonOnTriangulation.
-        OSD_Parallel.For(0,
+        OsdParallel.For(0,
                          theModel.FacesNb(),
                          new DeflectionEstimator(theModel, theParameters).Process,
                          !theParameters.InParallel);
@@ -93,7 +97,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
         {
             IMeshData_Curve aCurve = theDEdge.GetCurve();
 
-            NCollection_Array1<gp_Pnt> aNodes = new(1, aCurve.ParametersNb());
+            NCollection_Array1<Point3D> aNodes = new(1, aCurve.ParametersNb());
             NCollection_Array1<double> aUVNodes = new(1, aCurve.ParametersNb());
             for (int i = 1; i <= aCurve.ParametersNb(); ++i)
             {
@@ -101,7 +105,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
                 aUVNodes[i] = aCurve.GetParameter(i - 1);
             }
 
-            Poly_Polygon3D aPoly3D = new(aNodes, aUVNodes);
+            Polygon3D aPoly3D = new(aNodes, aUVNodes);
             aPoly3D.Deflection(theDEdge.GetDeflection());
 
             BRepMesh_ShapeTool.UpdateEdge(theDEdge.GetEdge(), aPoly3D);
@@ -138,7 +142,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
             {
                 TopoDS_Face aFace = aMapOfPCurves.FindKey(aPolygonIt).GetFace();
 
-                Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out TopLoc_Location aLoc);
+                Triangulation? aTriangulation = BRep_Tool.Triangulation(aFace, out Placement aLoc);
 
                 if (aTriangulation is not null)
                 {
@@ -165,7 +169,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
         }
 
         // Collects polygonal data for the given pcurve
-        private static Poly_PolygonOnTriangulation collectPolygon(IMeshData_PCurve thePCurve, double theDeflection)
+        private static PolygonOnTriangulation collectPolygon(IMeshData_PCurve thePCurve, double theDeflection)
         {
             NCollection_Array1<int> aNodes = new(1, thePCurve.ParametersNb());
             NCollection_Array1<double> aParams = new(1, thePCurve.ParametersNb());
@@ -175,7 +179,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
                 aParams[i] = thePCurve.GetParameter(i - 1);
             }
 
-            Poly_PolygonOnTriangulation aPolygon = new(aNodes, aParams);
+            PolygonOnTriangulation aPolygon = new(aNodes, aParams);
 
             aPolygon.Deflection(theDeflection);
             return aPolygon;
@@ -186,12 +190,12 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
     private sealed class DeflectionEstimator
     {
         private readonly IMeshData_Model myModel;
-        private readonly Poly_TriangulationParameters myParams;
+        private readonly TriangulationParameters myParams;
 
         public DeflectionEstimator(IMeshData_Model theModel, in IMeshTools_Parameters theParams)
         {
             myModel = theModel;
-            myParams = new Poly_TriangulationParameters(theParams.Deflection,
+            myParams = new TriangulationParameters(theParams.Deflection,
                                                         theParams.Angle,
                                                         theParams.MinSize);
         }
@@ -207,7 +211,7 @@ public class BRepMesh_ModelPostProcessor : IMeshTools_ModelAlgo
 
             BRepLib.UpdateDeflection(aDFace.GetFace());
 
-            Poly_Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out TopLoc_Location _);
+            Triangulation? aTriangulation = BRep_Tool.Triangulation(aDFace.GetFace(), out Placement _);
 
             if (aTriangulation is not null)
             {

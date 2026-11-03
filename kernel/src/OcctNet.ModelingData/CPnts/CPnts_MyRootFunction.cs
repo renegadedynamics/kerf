@@ -4,13 +4,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Numerics;
+
 namespace Occt;
 
 /// <summary>
 /// The function solved by Newton's method to find X with Integral(X0, X, F) = L (the length of a curve and its
 /// derivative).
 /// </summary>
-public sealed class CPnts_MyRootFunction : math_FunctionWithDerivative
+public sealed class CPnts_MyRootFunction : FunctionWithDerivative
 {
     private readonly CPnts_MyGaussFunction myFunction = new();
     private double myX0;
@@ -53,16 +55,16 @@ public sealed class CPnts_MyRootFunction : math_FunctionWithDerivative
     /// <remarks>On failure F is 0, where OCCT leaves it unchanged (decision 32).</remarks>
     public override bool Value(double X, out double F)
     {
-        math_GaussSingleIntegration Length;
+        GaussSingleIntegration Length;
         if (myTol <= 0)
         {
-            Length = new math_GaussSingleIntegration(myFunction, myX0, X, myOrder);
+            Length = new GaussSingleIntegration(myFunction, myX0, X, myOrder);
         }
         else
         {
-            Length = new math_GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
+            Length = new GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
         }
-        if (Length.IsDone())
+        if (Length.IsDone)
         {
             F = Length.Value() - myL;
             return true;
@@ -83,16 +85,16 @@ public sealed class CPnts_MyRootFunction : math_FunctionWithDerivative
     /// <remarks>On failure F and Df are 0, where OCCT leaves them unchanged (decision 32).</remarks>
     public override bool Values(double X, out double F, out double Df)
     {
-        math_GaussSingleIntegration Length;
+        GaussSingleIntegration Length;
         if (myTol <= 0)
         {
-            Length = new math_GaussSingleIntegration(myFunction, myX0, X, myOrder);
+            Length = new GaussSingleIntegration(myFunction, myX0, X, myOrder);
         }
         else
         {
-            Length = new math_GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
+            Length = new GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
         }
-        if (Length.IsDone())
+        if (Length.IsDone)
         {
             F = Length.Value() - myL;
             return myFunction.Value(X, out Df);

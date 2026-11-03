@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Foundation;
+
 namespace Occt;
 
 /// <summary>
@@ -125,7 +127,7 @@ public class Interface_CopyTool
     /// This method does nothing and returns False if the Protocol does not recognize &lt;ent&gt;. It basically
     /// makes a Deep Copy without changing the Types. It can be redefined for special uses.
     /// </summary>
-    public virtual bool Copy(Standard_Transient? entfrom, ref Standard_Transient? entto, bool mapped, bool errstat)
+    public virtual bool Copy(Transient? entfrom, ref Transient? entto, bool mapped, bool errstat)
     {
         bool res = true;
         if (entfrom == theent)
@@ -179,9 +181,9 @@ public class Interface_CopyTool
     /// Starting Model, the ReportEntity will also be copied with its Content if it has one (at least
     /// ShallowCopy; Complete Copy if the Protocol recognizes the Content : see method Copy)
     /// </summary>
-    public Standard_Transient? Transferred(Standard_Transient? ent)
+    public Transient? Transferred(Transient? ent)
     {
-        Standard_Transient res = null;
+        Transient res = null;
         if (ent is null)
         {
             return res; // Copy of a Null : very simple ...
@@ -225,7 +227,7 @@ public class Interface_CopyTool
                 }
                 else
                 {
-                    Standard_Transient contfrom, contto = null;
+                    Transient contfrom, contto = null;
                     contfrom = rep.Content();
                     Interface_ReportEntity repto = new Interface_ReportEntity(rep.Check(), res);
                     if (contfrom is not null)
@@ -258,7 +260,7 @@ public class Interface_CopyTool
     /// normal Copy), but can also be called to enforce a result : in the latter case, the enforced result must
     /// be compatible with the other Transfers which are performed
     /// </summary>
-    public void Bind(Standard_Transient? ent, Standard_Transient? res)
+    public void Bind(Transient? ent, Transient? res)
     {
         int num = themod.Number(ent);
         themap.Bind(ent, res);
@@ -269,7 +271,7 @@ public class Interface_CopyTool
     /// Search for the result of a Starting Object (i.e. an Entity) Returns True if a Result is Bound (and fills
     /// "result") Returns False if no result is Bound
     /// </summary>
-    public bool Search(Standard_Transient? ent, out Standard_Transient? res)
+    public bool Search(Transient? ent, out Transient? res)
     {
         return themap.Search(ent, out res);
     }
@@ -290,7 +292,7 @@ public class Interface_CopyTool
     /// as follow : Integer num = 0; while ( (num = CopyTool.LastCopiedAfter(num,ent,res)) ) { .. Process
     /// Starting &lt;ent&gt; and its Result &lt;res&gt; }
     /// </summary>
-    public int LastCopiedAfter(int numfrom, out Standard_Transient? ent, out Standard_Transient? res)
+    public int LastCopiedAfter(int numfrom, out Transient? ent, out Transient? res)
     {
         int nb = thelst.Length();
         ent = null; // OCCT leaves them as they were when none follows
@@ -312,9 +314,9 @@ public class Interface_CopyTool
     /// <summary>
     /// Transfers one Entity and records result into the Transfer List Calls method Transferred
     /// </summary>
-    public void TransferEntity(Standard_Transient? ent)
+    public void TransferEntity(Transient? ent)
     {
-        Standard_Transient res = Transferred(ent);
+        Transient res = Transferred(ent);
     }
 
     /// <summary>
@@ -339,14 +341,14 @@ public class Interface_CopyTool
         int nb = themod.NbEntities();
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient ent = themod.Value(i);
-            Standard_Transient res = null;
+            Transient ent = themod.Value(i);
+            Transient res = null;
             if (!themap.Search(ent, out res))
             {
                 continue; // entity not transferred
             }
             //    Renewal of "Imply" references.  Warning, do not copy if not loaded
-            Standard_Transient aRep = null;
+            Transient aRep = null;
             if (!therep.Search(ent, out aRep))
             {
                 Implied(ent, res);
@@ -391,15 +393,15 @@ public class Interface_CopyTool
         int nb = themod.NbEntities();
         for (int i = 1; i <= nb; i++)
         {
-            Standard_Transient ent = themod.Value(i);
-            Standard_Transient res = null;
+            Transient ent = themod.Value(i);
+            Transient res = null;
             if (!themap.Search(ent, out res))
             {
                 continue;
             }
             if (withreports)
             {
-                Standard_Transient rep = null;
+                Transient rep = null;
                 if (therep.Search(ent, out rep))
                 {
                     res = rep;
@@ -421,15 +423,15 @@ public class Interface_CopyTool
         for (int i = 1; i <= nb; i++)
         {
             int j = therts.Value(i);
-            Standard_Transient ent = themod.Value(j);
-            Standard_Transient res = null;
+            Transient ent = themod.Value(j);
+            Transient res = null;
             if (!themap.Search(ent, out res))
             {
                 continue;
             }
             if (withreports)
             {
-                Standard_Transient rep = null;
+                Transient rep = null;
                 if (therep.Search(ent, out rep))
                 {
                     res = rep;
@@ -447,7 +449,7 @@ public class Interface_CopyTool
     /// standard method ShallowCopy is called to produce &lt;ento&gt; from &lt;entfrom&gt; : hence it is not
     /// void) No mapping is managed by this method
     /// </summary>
-    protected internal virtual bool NewVoid(Standard_Transient? entfrom, ref Standard_Transient? entto)
+    protected internal virtual bool NewVoid(Transient? entfrom, ref Transient? entto)
     {
         if (entfrom == theent)
         {
@@ -474,7 +476,7 @@ public class Interface_CopyTool
     /// <summary>
     /// Renews the Implied References of one already Copied Entity
     /// </summary>
-    protected internal virtual void Implied(Standard_Transient? entfrom, Standard_Transient? entto)
+    protected internal virtual void Implied(Transient? entfrom, Transient? entto)
     {
         Interface_GeneralModule module = null;
         int CN;
@@ -492,7 +494,7 @@ public class Interface_CopyTool
     private int thelev;
     private NCollection_Sequence<int> therts = new NCollection_Sequence<int>();
     private bool theimp;
-    private Standard_Transient? theent;
+    private Transient? theent;
     private Interface_GeneralModule? themdu;
     private int theCN;
 }

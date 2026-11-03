@@ -2,9 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.MathUtils;
+using Occt;
+using static Kerf.Engine.Numerics.Utilities.MathUtils;
 
-namespace Occt;
+namespace Kerf.Engine.Numerics.Linear;
 
 /// <summary>Modern linear algebra: Crout LDL^T decomposition of symmetric matrices.</summary>
 public static partial class MathLin
@@ -12,13 +13,13 @@ public static partial class MathLin
     /// <summary>Result for Crout LDL^T decomposition (symmetric matrices).</summary>
     public struct CroutResult
     {
-        public MathUtils.Status Status = MathUtils.Status.NotConverged;
+        public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Lower triangular matrix (unit diagonal).</summary>
-        public math_Matrix? L;
+        public Matrix? L;
         /// <summary>Diagonal elements.</summary>
         public math_Vector? D;
         /// <summary>Inverse matrix (full, mirrored from the lower triangle).</summary>
-        public math_Matrix? Inverse;
+        public Matrix? Inverse;
         /// <summary>Matrix determinant.</summary>
         public double? Determinant;
 
@@ -26,214 +27,214 @@ public static partial class MathLin
         {
         }
 
-        public readonly bool IsDone() => Status == MathUtils.Status.OK;
+        public readonly bool IsDone => Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;
 
-        public static explicit operator bool(CroutResult theResult) => theResult.IsDone();
+        public static explicit operator bool(CroutResult result) => result.IsDone;
 
-        public static bool operator true(CroutResult theResult) => theResult.IsDone();
+        public static bool operator true(CroutResult result) => result.IsDone;
 
-        public static bool operator false(CroutResult theResult) => !theResult.IsDone();
+        public static bool operator false(CroutResult result) => !result.IsDone;
     }
 
     /// <summary>
     /// Crout decomposition of a symmetric matrix, A = L * D * L^T, using only its lower triangle; also computes
     /// the inverse. Pivots of magnitude at most theMinPivot are singular.
     /// </summary>
-    public static CroutResult Crout(math_Matrix theA, double theMinPivot = 1.0e-20)
+    public static CroutResult Crout(Matrix a, double minPivot = 1.0e-20)
     {
-        CroutResult aResult = new();
+        CroutResult result = new();
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aColLower = theA.LowerCol();
-        int aColUpper = theA.UpperCol();
-        int aN = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int colLower = a.LowerCol();
+        int colUpper = a.UpperCol();
+        int n = rowUpper - rowLower + 1;
 
         // Check for square matrix
-        if (aN != aColUpper - aColLower + 1)
+        if (n != colUpper - colLower + 1)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
         // Working matrices with 1-based indexing
-        math_Matrix aL = new(1, aN, 1, aN, 0.0);
-        math_Vector aDiag = new(1, aN);
+        Matrix l = new(1, n, 1, n, 0.0);
+        math_Vector diag = new(1, n);
 
-        double aDet = 1.0;
+        double det = 1.0;
 
         // Crout decomposition: A = L * D * L^T
-        for (int i = 1; i <= aN; ++i)
+        for (int i = 1; i <= n; ++i)
         {
             // Compute L(i,j) for j < i (C++'s aScale here is aScale1: C# doesn't allow the name again below)
             for (int j = 1; j <= i - 1; ++j)
             {
-                double aScale1 = 0.0;
+                double scale1 = 0.0;
                 for (int k = 1; k <= j - 1; ++k)
                 {
-                    aScale1 += aL[i, k] * aL[j, k] * aDiag[k];
+                    scale1 += l[i, k] * l[j, k] * diag[k];
                 }
-                aL[i, j] = (theA[i + aRowLower - 1, j + aColLower - 1] - aScale1) / aDiag[j];
+                l[i, j] = (a[i + rowLower - 1, j + colLower - 1] - scale1) / diag[j];
             }
 
             // Compute D(i)
-            double aScale = 0.0;
+            double scale = 0.0;
             for (int k = 1; k <= i - 1; ++k)
             {
-                aScale += aL[i, k] * aL[i, k] * aDiag[k];
+                scale += l[i, k] * l[i, k] * diag[k];
             }
-            aDiag[i] = theA[i + aRowLower - 1, i + aColLower - 1] - aScale;
-            aDet *= aDiag[i];
+            diag[i] = a[i + rowLower - 1, i + colLower - 1] - scale;
+            det *= diag[i];
 
             // Check for singularity
-            if (Math.Abs(aDiag[i]) <= theMinPivot)
+            if (Math.Abs(diag[i]) <= minPivot)
             {
-                aResult.Status = Status.Singular;
-                return aResult;
+                result.Status = Status.Singular;
+                return result;
             }
 
-            aL[i, i] = 1.0;
+            l[i, i] = 1.0;
         }
 
         // Compute inverse of L
-        aL[1, 1] = 1.0 / aL[1, 1];
-        for (int i = 2; i <= aN; ++i)
+        l[1, 1] = 1.0 / l[1, 1];
+        for (int i = 2; i <= n; ++i)
         {
             for (int k = 1; k <= i - 1; ++k)
             {
-                double aScale = 0.0;
+                double scale = 0.0;
                 for (int j = k; j <= i - 1; ++j)
                 {
-                    aScale += aL[i, j] * aL[j, k];
+                    scale += l[i, j] * l[j, k];
                 }
-                aL[i, k] = -aScale / aL[i, i];
+                l[i, k] = -scale / l[i, i];
             }
-            aL[i, i] = 1.0 / aL[i, i];
+            l[i, i] = 1.0 / l[i, i];
         }
 
         // Compute inverse of A (lower triangle only)
-        math_Matrix aInv = new(1, aN, 1, aN, 0.0);
-        for (int j = 1; j <= aN; ++j)
+        Matrix inv = new(1, n, 1, n, 0.0);
+        for (int j = 1; j <= n; ++j)
         {
-            double aScale = aL[j, j] * aL[j, j] / aDiag[j];
-            for (int k = j + 1; k <= aN; ++k)
+            double scale = l[j, j] * l[j, j] / diag[j];
+            for (int k = j + 1; k <= n; ++k)
             {
-                aScale += aL[k, j] * aL[k, j] / aDiag[k];
+                scale += l[k, j] * l[k, j] / diag[k];
             }
-            aInv[j, j] = aScale;
+            inv[j, j] = scale;
 
-            for (int i = j + 1; i <= aN; ++i)
+            for (int i = j + 1; i <= n; ++i)
             {
-                aScale = aL[i, j] * aL[i, i] / aDiag[i];
-                for (int k = i + 1; k <= aN; ++k)
+                scale = l[i, j] * l[i, i] / diag[i];
+                for (int k = i + 1; k <= n; ++k)
                 {
-                    aScale += aL[k, j] * aL[k, i] / aDiag[k];
+                    scale += l[k, j] * l[k, i] / diag[k];
                 }
-                aInv[i, j] = aScale;
+                inv[i, j] = scale;
             }
         }
 
         // Copy results with original indexing
-        aResult.L = new math_Matrix(aRowLower, aRowUpper, aColLower, aColUpper, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        result.L = new Matrix(rowLower, rowUpper, colLower, colUpper, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
             for (int j = 1; j <= i; ++j)
             {
-                aResult.L[i + aRowLower - 1, j + aColLower - 1] = aL[i, j];
+                result.L[i + rowLower - 1, j + colLower - 1] = l[i, j];
             }
         }
 
-        aResult.D = new math_Vector(aRowLower, aRowUpper);
-        for (int i = 1; i <= aN; ++i)
+        result.D = new math_Vector(rowLower, rowUpper);
+        for (int i = 1; i <= n; ++i)
         {
-            aResult.D[i + aRowLower - 1] = aDiag[i];
+            result.D[i + rowLower - 1] = diag[i];
         }
 
-        aResult.Inverse = new math_Matrix(aRowLower, aRowUpper, aColLower, aColUpper, 0.0);
-        for (int i = 1; i <= aN; ++i)
+        result.Inverse = new Matrix(rowLower, rowUpper, colLower, colUpper, 0.0);
+        for (int i = 1; i <= n; ++i)
         {
             for (int j = 1; j <= i; ++j)
             {
-                aResult.Inverse[i + aRowLower - 1, j + aColLower - 1] = aInv[i, j];
+                result.Inverse[i + rowLower - 1, j + colLower - 1] = inv[i, j];
             }
             // Mirror to upper triangle for full symmetric matrix
-            for (int j = i + 1; j <= aN; ++j)
+            for (int j = i + 1; j <= n; ++j)
             {
-                aResult.Inverse[i + aRowLower - 1, j + aColLower - 1] = aInv[j, i];
+                result.Inverse[i + rowLower - 1, j + colLower - 1] = inv[j, i];
             }
         }
 
-        aResult.Determinant = aDet;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Determinant = det;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Solve symmetric linear system Ax = b using Crout decomposition (x = A^-1 b).</summary>
-    public static LinearResult SolveCrout(math_Matrix theA, math_Vector theB, double theMinPivot = 1.0e-20)
+    public static LinearResult SolveCrout(Matrix a, math_Vector b, double minPivot = 1.0e-20)
     {
-        LinearResult aResult = new();
+        LinearResult result = new();
 
         // Perform Crout decomposition
-        CroutResult aCrout = Crout(theA, theMinPivot);
-        if (!aCrout.IsDone())
+        CroutResult crout = Crout(a, minPivot);
+        if (!crout.IsDone)
         {
-            aResult.Status = aCrout.Status;
-            return aResult;
+            result.Status = crout.Status;
+            return result;
         }
 
-        int aRowLower = theA.LowerRow();
-        int aRowUpper = theA.UpperRow();
-        int aN = aRowUpper - aRowLower + 1;
+        int rowLower = a.LowerRow();
+        int rowUpper = a.UpperRow();
+        int n = rowUpper - rowLower + 1;
 
         // Check dimensions
-        if (theB.Length() != aN)
+        if (b.Length() != n)
         {
-            aResult.Status = Status.InvalidInput;
-            return aResult;
+            result.Status = Status.InvalidInput;
+            return result;
         }
 
-        math_Matrix aInv = aCrout.Inverse!;
-        int aBLower = theB.Lower();
+        Matrix inv = crout.Inverse!;
+        int bLower = b.Lower();
 
         // Compute X = Inverse * B using symmetry
         // OCCT: the inverse's columns are indexed from LowerRow, though it has A's column bounds: wrong or out of
         // range when LowerCol differs from LowerRow.
-        math_Vector aSolution = new(aRowLower, aRowUpper, 0.0);
-        aResult.Solution = aSolution;
-        for (int i = 1; i <= aN; ++i)
+        math_Vector solution = new(rowLower, rowUpper, 0.0);
+        result.Solution = solution;
+        for (int i = 1; i <= n; ++i)
         {
-            double aSum = aInv[i + aRowLower - 1, 1 + aRowLower - 1] * theB[1 + aBLower - 1];
+            double sum = inv[i + rowLower - 1, 1 + rowLower - 1] * b[1 + bLower - 1];
             for (int j = 2; j <= i; ++j)
             {
-                aSum += aInv[i + aRowLower - 1, j + aRowLower - 1] * theB[j + aBLower - 1];
+                sum += inv[i + rowLower - 1, j + rowLower - 1] * b[j + bLower - 1];
             }
-            for (int j = i + 1; j <= aN; ++j)
+            for (int j = i + 1; j <= n; ++j)
             {
-                aSum += aInv[j + aRowLower - 1, i + aRowLower - 1] * theB[j + aBLower - 1];
+                sum += inv[j + rowLower - 1, i + rowLower - 1] * b[j + bLower - 1];
             }
-            aSolution[i + aRowLower - 1] = aSum;
+            solution[i + rowLower - 1] = sum;
         }
 
-        aResult.Determinant = aCrout.Determinant;
-        aResult.Status = Status.OK;
-        return aResult;
+        result.Determinant = crout.Determinant;
+        result.Status = Status.OK;
+        return result;
     }
 
     /// <summary>Compute inverse of symmetric matrix using Crout decomposition.</summary>
-    public static InverseResult InvertCrout(math_Matrix theA, double theMinPivot = 1.0e-20)
+    public static InverseResult InvertCrout(Matrix a, double minPivot = 1.0e-20)
     {
-        InverseResult aResult = new();
+        InverseResult result = new();
 
-        CroutResult aCrout = Crout(theA, theMinPivot);
-        if (!aCrout.IsDone())
+        CroutResult crout = Crout(a, minPivot);
+        if (!crout.IsDone)
         {
-            aResult.Status = aCrout.Status;
-            return aResult;
+            result.Status = crout.Status;
+            return result;
         }
 
-        aResult.Status = Status.OK;
-        aResult.Inverse = aCrout.Inverse;
-        aResult.Determinant = aCrout.Determinant;
-        return aResult;
+        result.Status = Status.OK;
+        result.Inverse = crout.Inverse;
+        result.Determinant = crout.Determinant;
+        return result;
     }
 }

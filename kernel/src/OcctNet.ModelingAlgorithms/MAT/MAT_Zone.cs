@@ -3,13 +3,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using static Occt.MAT_Side;
 
 namespace Occt;
 
 /// <summary>The zone of a basic element: the part of the plane nearer to it than to any other element, described
 /// by the arcs on its frontier.</summary>
-public sealed class MAT_Zone : Standard_Transient
+public sealed class MAT_Zone : Transient
 {
     private readonly NCollection_Sequence<MAT_Arc> frontier = new();
     private bool limited;

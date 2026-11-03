@@ -3,6 +3,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Kerf.Geometry;
+
 namespace Occt;
 
 /// <summary>
@@ -16,7 +22,7 @@ public sealed class GccAna_LinPnt2dBisec
     private GccInt_Bisec? bissol;
 
     /// <summary>Constructs the bisecting curve of Line1 and Point2.</summary>
-    public GccAna_LinPnt2dBisec(in gp_Lin2d Line1, in gp_Pnt2d Point2)
+    public GccAna_LinPnt2dBisec(in Line2D Line1, in Point2D Point2)
     {
         WellDone = false;
 
@@ -33,23 +39,23 @@ public sealed class GccAna_LinPnt2dBisec
             double ypoint2 = Point2.Y();
             if ((-ydir * (xpoint2 - xloc) + xdir * (ypoint2 - yloc)) > 0.0)
             {
-                gp_Ax2d axeparab = new(new gp_Pnt2d(Point2.XY() - dist / 2.0 * new gp_XY(-ydir, xdir)),
-                                       new gp_Dir2d(-ydir, xdir));
-                gp_Parab2d bislinpnt = new(axeparab, dist / 2.0);
+                Axis2D axeparab = new(new Point2D(Point2.XY() - dist / 2.0 * new Xy(-ydir, xdir)),
+                                       new Direction2D(-ydir, xdir));
+                Parabola2D bislinpnt = new(axeparab, dist / 2.0);
                 bissol = new GccInt_BParab(bislinpnt);
             }
             else
             {
-                gp_Ax2d axeparab = new(new gp_Pnt2d(Point2.XY() + dist / 2.0 * new gp_XY(-ydir, xdir)),
-                                       new gp_Dir2d(ydir, -xdir));
-                gp_Parab2d bislinpnt = new(axeparab, dist / 2.0);
+                Axis2D axeparab = new(new Point2D(Point2.XY() + dist / 2.0 * new Xy(-ydir, xdir)),
+                                       new Direction2D(ydir, -xdir));
+                Parabola2D bislinpnt = new(axeparab, dist / 2.0);
                 bissol = new GccInt_BParab(bislinpnt);
             }
             WellDone = true;
         }
         else
         {
-            gp_Lin2d bislinpnt = new(Point2, new gp_Dir2d(-ydir, xdir));
+            Line2D bislinpnt = new(Point2, new Direction2D(-ydir, xdir));
             bissol = new GccInt_BLine(bislinpnt);
             WellDone = true;
         }
@@ -66,7 +72,7 @@ public sealed class GccAna_LinPnt2dBisec
     {
         if (!WellDone)
         {
-            throw new StdFail_NotDone();
+            throw new NotDoneException();
         }
         return bissol!;
     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Geometry;
 using Xunit.Abstractions;
 
 namespace OcctNet.Oracle.Tests;
@@ -9,7 +10,7 @@ public class GceOracleTests(ITestOutputHelper output)
 {
     private const int Cases = 500;
 
-    private static void SameLin(Oracle theOracle, N.gp_Lin theNative, in gp_Lin thePort, string theWhat)
+    private static void SameLin(Oracle theOracle, N.gp_Lin theNative, in Line3D thePort, string theWhat)
     {
         using var aNP = theNative.Location();
         using var aND = theNative.Direction();
@@ -24,10 +25,10 @@ public class GceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt();
             // Settled: the native gp_Dir constructor normalises again (see Oracle.Settled)
-            gp_Dir aD = Oracle.Settled(anOracle.Dir());
-            gp_Ax1 anAx = new(anOracle.Pnt(), Oracle.Settled(anOracle.Dir()));
+            Direction3D aD = Oracle.Settled(anOracle.Dir());
+            Axis3D anAx = new(anOracle.Pnt(), Oracle.Settled(anOracle.Dir()));
             using var aNP1 = Oracle.ToNative(aP1);
             using var aNP2 = Oracle.ToNative(aP2);
             using var aND = Oracle.ToNative(aD);
@@ -46,7 +47,7 @@ public class GceOracleTests(ITestOutputHelper output)
             }
 
             // Two points, coincident one time in ten
-            gp_Pnt aQ = i % 10 == 0 ? aP1 : aP2;
+            Point3D aQ = i % 10 == 0 ? aP1 : aP2;
             using var aNQ = Oracle.ToNative(aQ);
             using (var aN = new N.gce_MakeLin(aNP1, aNQ))
             {
@@ -60,7 +61,7 @@ public class GceOracleTests(ITestOutputHelper output)
                 }
             }
 
-            gp_Lin aLin = new(anAx);
+            Line3D aLin = new(anAx);
             using var aNLin = new N.gp_Lin(aNAx);
             using (var aN = new N.gce_MakeLin(aNLin, aNP2))
             using (var aNL = aN.Value())
@@ -82,7 +83,7 @@ public class GceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         for (int i = 0; i < Cases; i++)
         {
-            gp_Pnt aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt(), aP3 = anOracle.Pnt();
+            Point3D aP1 = anOracle.Pnt(), aP2 = anOracle.Pnt(), aP3 = anOracle.Pnt();
             using var aNP1 = Oracle.ToNative(aP1);
             using var aNP2 = Oracle.ToNative(aP2);
             using var aNP3 = Oracle.ToNative(aP3);
@@ -99,7 +100,7 @@ public class GceOracleTests(ITestOutputHelper output)
             using var aNBasis = aNTrimmed!.BasisCurve();
             using var aNCircle = N.Geom_Circle.DownCast(aNBasis);
             using var aNCirc = aNCircle!.Circ();
-            gp_Circ aCirc = aPort.Value();
+            Circle3D aCirc = aPort.Value();
 
             anOracle.Same(aNCirc.Radius(), aCirc.Radius(), "radius", 1e-9);
             using var aNPos = aNCirc.Position();
